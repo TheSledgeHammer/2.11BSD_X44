@@ -9,14 +9,55 @@
 #ifndef _SYS_TYPES_H
 #define	_SYS_TYPES_H
 
+/* Machine type dependent parameters. */
+#include <machine/ansi.h>
+#include <machine/machtypes.h>
+
 #include <sys/ansi.h>
 #include <sys/select.h>
 #include <sys/stdint.h>
 
-/* Machine type dependent parameters. */
-#include <machine/ansi.h>
+#ifndef	_BSD_INT8_T_
+typedef	__int8_t			int8_t;
+#define	_BSD_INT8_T_
+#endif
+
+#ifndef	_BSD_UINT8_T_
+typedef	__uint8_t			uint8_t;
+#define	_BSD_UINT8_T_
+#endif
+
+#ifndef	_BSD_INT16_T_
+typedef	__int16_t			int16_t;
+#define	_BSD_INT16_T_
+#endif
+
+#ifndef	_BSD_UINT16_T_
+typedef	__uint16_t			uint16_t;
+#define	_BSD_UINT16_T_
+#endif
+
+#ifndef	_BSD_INT32_T_
+typedef	__int32_t			int32_t;
+#define	_BSD_INT32_T_
+#endif
+
+#ifndef	_BSD_UINT32_T_
+typedef	__uint32_t			uint32_t;
+#define	_BSD_UINT32_T_
+#endif
+
+#ifndef	_BSD_INT64_T_
+typedef	__int64_t			int64_t;
+#define	_BSD_INT64_T_
+#endif
+
+#ifndef	_BSD_UINT64_T_
+typedef	__uint64_t			uint64_t;
+#define	_BSD_UINT64_T_
+#endif
+
 #include <machine/endian_machdep.h>
-#include <machine/machtypes.h>
 
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
@@ -67,46 +108,6 @@ typedef	int	    			ssize_t;
 
 #ifndef howmany
 #define	howmany(x, y)		(((x)+((y)-1))/(y))
-#endif
-
-#ifndef	_BSD_INT8_T_
-typedef	__int8_t			int8_t;
-#define	_BSD_INT8_T_
-#endif
-
-#ifndef	_BSD_UINT8_T_
-typedef	__uint8_t			uint8_t;
-#define	_BSD_UINT8_T_
-#endif
-
-#ifndef	_BSD_INT16_T_
-typedef	__int16_t			int16_t;
-#define	_BSD_INT16_T_
-#endif
-
-#ifndef	_BSD_UINT16_T_
-typedef	__uint16_t			uint16_t;
-#define	_BSD_UINT16_T_
-#endif
-
-#ifndef	_BSD_INT32_T_
-typedef	__int32_t			int32_t;
-#define	_BSD_INT32_T_
-#endif
-
-#ifndef	_BSD_UINT32_T_
-typedef	__uint32_t			uint32_t;
-#define	_BSD_UINT32_T_
-#endif
-
-#ifndef	_BSD_INT64_T_
-typedef	__int64_t			int64_t;
-#define	_BSD_INT64_T_
-#endif
-
-#ifndef	_BSD_UINT64_T_
-typedef	__uint64_t			uint64_t;
-#define	_BSD_UINT64_T_
 #endif
 
 #ifdef	_BSD_CLOCK_T_

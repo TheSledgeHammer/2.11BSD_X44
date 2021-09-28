@@ -3,9 +3,8 @@
 #ifndef	_SGTTY_H_
 #define	_SGTTY_H_
 
-#ifndef	_IOCTL_
 #include <sys/ioctl.h>
-#endif
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int gtty (int, struct sgttyb *);

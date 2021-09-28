@@ -72,7 +72,13 @@ struct lconv {
 
 __BEGIN_DECLS
 struct lconv	*localeconv (void);
+#ifdef __SETLOCALE_SOURCE__
 char			*setlocale (int, const char *);
+char			*__setlocale_mb_len_max_32 (int, const char *);
+char			*__setlocale (int, const char *);
+#else /* !__SETLOCALE_SOURCE__ */
+char			*setlocale (int, const char *);
+#endif /* !__SETLOCALE_SOURCE__ */
 __END_DECLS
 
 #endif /* _LOCALE_H_ */

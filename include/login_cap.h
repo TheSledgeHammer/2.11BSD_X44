@@ -69,7 +69,7 @@ struct passwd;
 
 login_cap_t *login_getclass(const char *);
 #ifndef __LIBC12_SOURCE__
-login_cap_t *login_getpwclass(const struct passwd *) __RENAME(__login_getpwclass50);
+login_cap_t *login_getpwclass(const struct passwd *);
 #endif
 void	login_close(login_cap_t *);
 int	 	login_getcapbool(login_cap_t *, const char *, unsigned int);
@@ -80,7 +80,7 @@ quad_t	login_getcaptime(login_cap_t *, const char *, quad_t, quad_t);
 
 int		setclasscontext(const char *, unsigned int);
 #ifndef __LIBC12_SOURCE__
-int		setusercontext(login_cap_t *, struct passwd *, uid_t, unsigned int) __RENAME(__setusercontext50);
+int		setusercontext(login_cap_t *, struct passwd *, uid_t, unsigned int);
 #endif
 void	setuserpath(login_cap_t *, const char *, envfunc_t, void *);
 int		setuserenv(login_cap_t *, envfunc_t, void *);

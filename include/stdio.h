@@ -44,27 +44,14 @@
 #ifndef	_STDIO_H_
 #define	_STDIO_H_
 
-#if !defined(_ANSI_SOURCE) && !defined(__STRICT_ANSI__)
-#include <sys/types.h>
-#endif
-
 #include <sys/cdefs.h>
 #include <sys/ansi.h>
+
+#include <machine/ansi.h>
 
 #ifdef	_BSD_SIZE_T_
 typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
-#endif
-#ifdef	_BSD_SSIZE_T_
-typedef	_BSD_SSIZE_T_	ssize_t;
-#undef	_BSD_SSIZE_T_
-#endif
-
-#if defined(_POSIX_C_SOURCE)
-#ifndef __VA_LIST_DECLARED
-typedef __va_list 		va_list;
-#define __VA_LIST_DECLARED
-#endif
 #endif
 
 #include <sys/null.h>
@@ -73,10 +60,14 @@ typedef __va_list 		va_list;
  * innards of an fpos_t anyway.  The library internally uses off_t,
  * which we assume is exactly as big as eight chars.
  */
+#if (!defined(_ANSI_SOURCE) && !defined(__STRICT_ANSI__)) || defined(_LIBC)
+typedef __off_t fpos_t;
+#else
 typedef struct __sfpos {
 	__off_t 		_pos;
 	__mbstate_t 	_mbstate_in, _mbstate_out;
 } fpos_t;
+#endif
 
 #define	_FSTDIO			/* Define for new stdio with functions. */
 
