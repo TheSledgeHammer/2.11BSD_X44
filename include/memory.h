@@ -5,15 +5,5 @@
  *
  *	@(#)memory.h	5.1 (Berkeley) 85/08/05
  */
-#include <string.h>
 
-/*
- * Definitions of the Sys5 compat memory manipulation routines
- */
-/*
-extern char *memccpy();
-extern char *memchr();
-extern int 	memcmp();
-extern char *memcpy();
-extern char *memset();
-*/
+#include <string.h>

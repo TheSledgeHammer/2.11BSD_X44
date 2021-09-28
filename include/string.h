@@ -55,48 +55,45 @@ typedef	_BSD_SIZE_T_	size_t;
 #include <sys/null.h>
 
 #include <sys/cdefs.h>
-
 __BEGIN_DECLS
-
 void	*memchr (const void *, int, size_t);
 int	 	memcmp (const void *, const void *, size_t);
-void	*memcpy (void *, const void *, size_t);
+void	*memcpy (void * __restrict, const void * __restrict, size_t);
 void	*memmove (void *, const void *, size_t);
 void	*memset (void *, int, size_t);
-char	*strcat (char *, const char *);
+char	*strcat (char * __restrict, const char * __restrict);
 char	*strchr (const char *, int);
 int	 	strcmp (const char *, const char *);
 int	 	strcoll (const char *, const char *);
-char	*strcpy (char *, const char *);
+char	*strcpy (char * __restrict, const char * __restrict);
 size_t	 strcspn (const char *, const char *);
-char	*strerror (int);
-size_t	 strlen (const char *);
-char	*strncat (char *, const char *, size_t);
+char 	*strerror (int);
+size_t	strlen (const char *);
+char	*strncat (char * __restrict, const char * __restrict, size_t);
 int	 	strncmp (const char *, const char *, size_t);
-char	*strncpy (char *, const char *, size_t);
+char	*strncpy (char * __restrict, const char * __restrict, size_t);
 char	*strpbrk (const char *, const char *);
 char	*strrchr (const char *, int);
-size_t	 strspn (const char *, const char *);
+size_t	strspn (const char *, const char *);
 char	*strstr (const char *, const char *);
-char	*strtok (char *, const char *);
-//char	*strtok_r (char *, const char *, char **);
-size_t	 strxfrm (char *, const char *, size_t);
+char	*strtok (char * __restrict, const char * __restrict);
+#if (_POSIX_C_SOURCE - 0 >= 199506L) || (_XOPEN_SOURCE - 0 >= 500) || \
+    defined(_REENTRANT) || defined(_NETBSD_SOURCE)
+char	*strtok_r (char *, const char *, char **);
+#endif /* _POSIX_C_SOURCE >= 199506 || XOPEN_SOURCE >= 500 || ... */
+size_t	strxfrm (char * __restrict, const char * __restrict, size_t);
 
-/* Nonstandard routines */
-
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-int	 	bcmp (const void *, const void *, size_t);
-void	bcopy (const void *, void *, size_t);
-void	bzero (void *, size_t);
-int	 	ffs (int);
-char	*index (const char *, int);
+#if defined(_XOPEN_SOURCE) || defined(_NETBSD_SOURCE)
 void	*memccpy (void *, const void *, int, size_t);
-char	*rindex (const char *, int);
-int		strcasecmp (const char *, const char *);
 char	*strdup (const char *);
-int	 	strncasecmp (const char *, const char *, size_t);
+#endif
+
+#if defined(_NETBSD_SOURCE)
+#include <strings.h>		/* for backwards-compatibilty */
+char	*strcasestr (const char *, const char *);
+size_t	strlcat (char *, const char *, size_t);
+size_t	strlcpy (char *, const char *, size_t);
 char	*strsep (char **, const char *);
-void	swab (const void *, void *, size_t);
 #endif
 __END_DECLS
 

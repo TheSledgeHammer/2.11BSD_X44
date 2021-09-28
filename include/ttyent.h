@@ -32,6 +32,7 @@ struct	ttyent { 			/* see getttyent(3) */
 	int		ty_status;		/* status flags (see below for defines) */
 	char 	*ty_window;		/* command to start up window manager */
 	char	*ty_comment;	/* usually the location of the terminal */
+	char 	*ty_class;/* category of tty usage */
 };
 
 #define TTY_ON		0x01	/* enable logins (startup getty) */
@@ -43,10 +44,10 @@ struct	ttyent { 			/* see getttyent(3) */
 #define TTY_DTRCTS  0x40    /* set 'CDTRCTS' on open (dev. specific) */
 
 __BEGIN_DECLS
-extern struct ttyent *getttyent();
-extern struct ttyent *getttynam();
-int setttyent(void);
-int endttyent(void);
+struct ttyent *getttyent (void);
+struct ttyent *getttynam (const char *);
+int setttyent (void);
+int endttyent (void);
 __END_DECLS
 
 #endif /* !_TTYENT_H_ */

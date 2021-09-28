@@ -94,10 +94,10 @@ typedef struct regexp {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-extern regexp 	*regcomp();
-extern int 		regexec();
-extern void 	regsub();
-extern void 	regerror();
+regexp *regcomp(const char *);
+int regexec(const  regexp *, const char *);
+void regsub(const  regexp *, const char *, char *);
+void regerror(const char *);
 __END_DECLS
 
 #endif /* !_REGEXP_H_ */

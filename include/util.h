@@ -37,8 +37,13 @@
 #define _UTIL_H_
 
 #include <sys/cdefs.h>
+//#include <sys/ttycom.h>
 #include <sys/types.h>
-#include <sys/ansi.h>
+#include <stdio.h>
+#include <pwd.h>
+#include <termios.h>
+#include <utmp.h>
+//#include <utmpx.h>
 
 #ifdef  _BSD_TIME_T_
 typedef _BSD_TIME_T_    time_t;

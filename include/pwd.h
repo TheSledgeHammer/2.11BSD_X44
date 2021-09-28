@@ -48,7 +48,6 @@
 #define _PASSWORD_WARNDAYS	14		/* days to warn about expiry */
 #define _PASSWORD_CHGNOW	-1		/* special day to force password change at next login */
 
-
 struct passwd {
 	char	*pw_name;			/* user name */
 	char	*pw_passwd;			/* encrypted password */

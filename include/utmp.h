@@ -39,8 +39,9 @@ struct utmp {
 };
 
 __BEGIN_DECLS
-int utmpname(const char *);
-void setutent(void);
-void endutent(void);
+int 		utmpname (const char *);
+void 		setutent (void);
+struct utmp *getutent (void);
+void 		endutent (void);
 __END_DECLS
 #endif /* !_UTMP_H_ */

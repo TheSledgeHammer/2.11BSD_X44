@@ -75,16 +75,10 @@
 #define	_REGEX_H_
 
 #include <sys/cdefs.h>
-//#include <sys/types.h>
+#include <sys/types.h>
 
 /* types */
 typedef	__off_t		regoff_t;
-/*
-#ifndef _SIZE_T_DECLARED
-typedef	__size_t	size_t;
-#define	_SIZE_T_DECLARED
-#endif
-*/
 
 typedef struct {
 	int 			re_magic;

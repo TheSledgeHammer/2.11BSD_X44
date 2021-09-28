@@ -38,6 +38,7 @@
 #define	_NDBM_H_
 
 #include <sys/cdefs.h>
+#include <stdint.h>
 #include <db.h>
 
 #if defined(_NETBSD_SOURCE)

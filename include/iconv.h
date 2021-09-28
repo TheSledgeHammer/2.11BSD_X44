@@ -1,7 +1,7 @@
-/*	$NetBSD: wctype.h,v 1.9 2013/04/27 21:35:25 joerg Exp $	*/
+/*	$NetBSD: iconv.h,v 1.7 2019/10/24 18:17:59 kamil Exp $	*/
 
 /*-
- * Copyright (c)1999 Citrus Project,
+ * Copyright (c)2003 Citrus Project,
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,53 +25,33 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	citrus Id: wctype.h,v 1.4 2000/12/21 01:50:21 itojun Exp
  */
 
-#ifndef _WCTYPE_H_
-#define	_WCTYPE_H_
+#ifndef _ICONV_H_
+#define _ICONV_H_
 
 #include <sys/cdefs.h>
 #include <machine/ansi.h>
 
-#ifdef	_BSD_WINT_T_
-typedef	_BSD_WINT_T_    wint_t;
-#undef	_BSD_WINT_T_
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
 #endif
 
-#ifdef	_BSD_WCTRANS_T_
-typedef	_BSD_WCTRANS_T_	wctrans_t;
-#undef	_BSD_WCTRANS_T_
-#endif
-
-#ifdef	_BSD_WCTYPE_T_
-typedef	_BSD_WCTYPE_T_	wctype_t;
-#undef	_BSD_WCTYPE_T_
-#endif
-
-#ifndef WEOF
-#define	WEOF	((wint_t)-1)
-#endif
+struct __tag_iconv_t;
+typedef	struct __tag_iconv_t	*iconv_t;
 
 __BEGIN_DECLS
-int			iswalnum(wint_t);
-int			iswalpha(wint_t);
-int			iswblank(wint_t);
-int			iswcntrl(wint_t);
-int			iswdigit(wint_t);
-int			iswgraph(wint_t);
-int			iswlower(wint_t);
-int			iswprint(wint_t);
-int			iswpunct(wint_t);
-int			iswspace(wint_t);
-int			iswupper(wint_t);
-int			iswxdigit(wint_t);
-int			iswctype(wint_t, wctype_t);
-wint_t		towctrans(wint_t, wctrans_t);
-wint_t		towlower(wint_t);
-wint_t		towupper(wint_t);
-wctrans_t 	wctrans(const char *);
-wctype_t 	wctype(const char *);
+iconv_t	iconv_open(const char *, const char *);
+size_t	iconv(iconv_t, char ** __restrict, size_t * __restrict, char ** __restrict, size_t * __restrict);
+int		iconv_close(iconv_t);
+/*
+ * non-portable interfaces for iconv
+ */
+int		__iconv_get_list(char ***, size_t *);
+void	__iconv_free_list(char **, size_t);
+size_t	__iconv(iconv_t, char **, size_t *, char **, size_t *, __uint32_t, size_t *);
+#define __ICONV_F_HIDE_INVALID	0x0001
 __END_DECLS
 
-#endif		/* _WCTYPE_H_ */
+#endif /* !_ICONV_H_ */

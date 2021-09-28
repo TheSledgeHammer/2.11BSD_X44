@@ -32,21 +32,32 @@ typedef	_BSD_SIZE_T_	size_t;
 
 #include <machine/machtypes.h>
 
+
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
+#endif
+
+#if defined(_NETBSD_SOURCE)
+#include <sys/null.h>
+#endif
+
+#include <sys/cdefs.h>
+
 __BEGIN_DECLS
-/* Routines described in string(3) */
-char	*strcat(), *strncat(), *strcpy(), *strncpy(), *index(), *rindex();
-int		strcmp(), strncmp(), strcasecmp(), strncasecmp(), strlen();
-
-/* Routines described in memory(BA_LIB); System V compatibility */
-char	*memccpy(), *memchr(), *memcpy(), *memset(), *strchr(),
-		*strdup(), *strpbrk(), *strrchr(), *strsep(), *strtok();
-int		memcmp(), strcspn(), strspn();
-
-/* Routines from ANSI X3J11 */
-char	*strerror();
+int	 	bcmp (const void *, const void *, size_t);
+void	bcopy (const void *, void *, size_t);
+void	bzero (void *, size_t);
+int	 	ffs (int);
+char	*index (const char *, int);
+char	*rindex (const char *, int);
+int	 	strcasecmp (const char *, const char *);
+int	 	strncasecmp (const char *, const char *, size_t);
 __END_DECLS
 
+#if defined(_NETBSD_SOURCE)
 #include <string.h>
+#endif
 
 #if _FORTIFY_SOURCE > 0
 #include <ssp/strings.h>
