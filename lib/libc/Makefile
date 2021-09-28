@@ -82,6 +82,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 	mv -f assym.h.tmp assym.h
 .endif
 
+#.include "${.CURDIR}/citrus/Makefile.inc"
 .include "${.CURDIR}/db/Makefile.inc"
 .include "${.CURDIR}/dlfcn/Makefile.inc"
 .include "${.CURDIR}/compat-4.1/Makefile.inc"
@@ -92,6 +93,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/gen/Makefile.inc"
 .include "${.CURDIR}/gmon/Makefile.inc"
 .include "${.CURDIR}/hash/Makefile.inc"
+.include "${.CURDIR}/iconv/Makefile.inc"
 .include "${.CURDIR}/inet/Makefile.inc"
 .include "${.CURDIR}/locale/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"

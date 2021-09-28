@@ -77,8 +77,7 @@ char	*strrchr (const char *, int);
 size_t	strspn (const char *, const char *);
 char	*strstr (const char *, const char *);
 char	*strtok (char * __restrict, const char * __restrict);
-#if (_POSIX_C_SOURCE - 0 >= 199506L) || (_XOPEN_SOURCE - 0 >= 500) || \
-    defined(_REENTRANT) || defined(_NETBSD_SOURCE)
+#if (_POSIX_C_SOURCE - 0 >= 199506L) || (_XOPEN_SOURCE - 0 >= 500) || defined(_REENTRANT) || defined(_NETBSD_SOURCE)
 char	*strtok_r (char *, const char *, char **);
 #endif /* _POSIX_C_SOURCE >= 199506 || XOPEN_SOURCE >= 500 || ... */
 size_t	strxfrm (char * __restrict, const char * __restrict, size_t);

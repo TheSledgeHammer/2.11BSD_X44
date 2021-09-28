@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	boot0cfg btxld chown chroot config mtree paxctl pwd_mkdb
+SUBDIR=	boot0cfg btxld chown chroot config mtree paxctl pwd_mkdb zic
 
 .if ${TOOLCHAIN_MISSING} != "no"
 SUBDIR+= mdsetimage

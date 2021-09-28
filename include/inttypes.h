@@ -34,7 +34,7 @@
 
 #include <sys/cdefs.h>
 //#include <sys/featuretest.h>
-//#include <sys/inttypes.h>
+#include <sys/inttypes.h>
 #include <machine/ansi.h>
 
 #if defined(_BSD_WCHAR_T_) && !defined(__cplusplus)

@@ -11,8 +11,8 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitmap.h boot.h buf.h 		\
 			domain.h endian.h errno.h event.h eventvar.h exec_aout.h 			\
 			exec_coff.h exec_ecoff.h exec_elf.h exec_linker.h exec_macho.h 		\
 			exec_pecoff.h exec_script.h exec_xcoff.h exec.h extent.h fcntl.h 	\
-			fdio.h file.h filedesc.h fnv_hash.h fperr.h gmon.h ioccom.h			\
-			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h				\
+			fdio.h file.h filedesc.h fnv_hash.h fperr.h gmon.h inttypes.h 		\
+			ioccom.h ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h	\
 			lock.h lockf.h malloc.h map.h mbuf.h memrange.h midiio.h			\
 			mman.h mount.h msgbuf.h mtio.h namei.h null.h param.h percpu.h		\
 			poll.h power.h prf.h proc.h protosw.h ptrace.h pty.h queue.h 		\

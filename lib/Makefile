@@ -33,7 +33,8 @@ SUBDIR+=	.WAIT
 SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
-SUBDIR+=  	${USRLIBDIR}/libdbm 	\
+SUBDIR+=  	${USRLIBDIR}/libbz2 	\
+			${USRLIBDIR}/libdbm 	\
 			${USRLIBDIR}/libmp 		\
 			${USRLIBDIR}/libtermcap \
 			${USRLIBDIR}/libutil 	\
