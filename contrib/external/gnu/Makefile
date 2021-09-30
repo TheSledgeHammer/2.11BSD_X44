@@ -22,6 +22,6 @@ SUBDIR+=	${EXTERNAL_GCC_SUBDIR}
 SUBDIR+=    ${EXTERNAL_GDB_SUBDIR}
 .endif
 
-SUBDIR+= autoconf gettext gmp mpc mpfr texinfo
+SUBDIR+= gettext texinfo
 
 .include <bsd.subdir.mk>
