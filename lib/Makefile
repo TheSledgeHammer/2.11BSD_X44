@@ -46,8 +46,14 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 SUBDIR+=	libkern
 .endif
 
+SUBDIR+=	../contrib/am-utils/lib
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/lib
+
+SUBDIR+=	../contrib/expat/lib
+
+
+SUBDIR+=	../contrib/external/gnu/libmalloc
 
 .if (${MKGCC} != "no")
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libobjc
@@ -74,6 +80,7 @@ SUBDIR+=	../contrib/xz/lib			# depends on libpthread
 
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
+SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
 
 
 .if (${MKBINUTILS} != "no")
@@ -93,8 +100,12 @@ SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
 SUBDIR+=	../contrib/llvm/include
 .endif
 
+SUBDIR+=	../contrib/libcbor/lib
+
 #==================== 2nd library dependency barrier ====================
 SUBDIR+=	.WAIT
+
+SUBDIR+=	${USRLIBDIR}/libwrap
 
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 .for sanitizer in asan lsan ubsan
@@ -111,6 +122,14 @@ SUBDIR+=	../contrib/llvm/librt
 SUBDIR+=	../contrib/libarchive/lib	# depends on libxz
 
 SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
+
+.if (${MKATF} != "no")
+SUBDIR+=	../contrib/atf/lib		# depends on libstdc++
+.endif
+
+#SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
+#SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
+#SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
