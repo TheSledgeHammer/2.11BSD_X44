@@ -4,9 +4,11 @@ lib2648/		UNIMPLEMENTED
 libF77/			UNIMPLEMENTED
 libI77/			UNIMPLEMENTED
 libU77/			UNIMPLEMENTED
+libbz2/			NetBSD
 libcurses/		4.4BSD-Lite2
 libdbm/			4.3BSD		  (dbm & ndbm before it was merged into Berkley DB)
 libedit/		4.4BSD-Lite2
+libexecinfo/		NetBSD
 libg/			UNIMPLEMENTED (4.3 should be ported)
 libln/			UNIMPLEMENTED
 libm/			UNIMPLEMENTED  4.3 (no attempt made to convert yet - won't run on a PDP11)
