@@ -504,7 +504,7 @@ DESTDIR?=
 # non-DYNAMICROOT behavior (i.e. it is only enabled for programs in /bin
 # and /sbin).  See <bsd.shlib.mk>.
 #
-MKDYNAMICROOT?=	yes
+#MKDYNAMICROOT?=	yes
 
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
@@ -575,6 +575,27 @@ MKGCC:= no
 .if defined(EXTERNAL_TOOLCHAIN)
 MKGCC:= no
 .endif
+
+#
+# GCC warnings with simple disables.  Use these with eg
+# COPTS.foo.c+= ${GCC_NO_STRINGOP_TRUNCATION}.
+#
+GCC_NO_FORMAT_TRUNCATION=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-format-truncation :}
+GCC_NO_FORMAT_OVERFLOW=		${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-format-overflow :}
+GCC_NO_STRINGOP_OVERFLOW=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-stringop-overflow :}
+GCC_NO_IMPLICIT_FALLTHRU=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-implicit-fallthrough :}         
+GCC_NO_STRINGOP_TRUNCATION=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 8:? -Wno-stringop-truncation :}
+GCC_NO_CAST_FUNCTION_TYPE=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 8:? -Wno-cast-function-type :}
+GCC_NO_ADDR_OF_PACKED_MEMBER=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 9:? -Wno-address-of-packed-member :}
+GCC_NO_MAYBE_UNINITIALIZED=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 10:? -Wno-maybe-uninitialized :}
+GCC_NO_RETURN_LOCAL_ADDR=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 10:? -Wno-return-local-addr :}
+
+#
+# Clang warnings
+#
+CLANG_NO_ADDR_OF_PACKED_MEMBER=	${${ACTIVE_CC} == "clang" :? -Wno-error=address-of-packed-member :}
+
+NO_ADDR_OF_PACKED_MEMBER=	${CLANG_NO_ADDR_OF_PACKED_MEMBER} ${GCC_NO_ADDR_OF_PACKED_MEMBER}
 
 #
 # Location of the file that contains the major and minor numbers of the
@@ -654,7 +675,7 @@ dependall:	.NOTMAIN realdepend .MAKE
 # Supported NO* options (if defined, MK* will be forced to "no",
 # regardless of user's mk.conf setting).
 #
-.for var in 																		\
+.for var in \
 	CRYPTO DOC HTML LIBCSANITIZER LINKLIB LINT MAN NLS OBJ PIC PICINSTALL PROFILE 	\
 	SHARE STATICLIB DEBUGLIB SANITIZER RELRO
 .if defined(NO${var})
@@ -702,43 +723,64 @@ MKSTATICPIE?=	no
 #
 # MK* options which default to "yes".
 #
-.for var in 								\
-	BINUTILS BSDTAR							\
-	CATPAGES CXX 							\
-	DOC 									\
-	GCC GDB GROFF 							\
-	HTML 									\
-	IEEEFP INET6 INFO 						\
-	KERBEROS KERBEROS4 						\
-	LIBSTDCXX LINKLIB 						\
-	MAN MANDOC MAKEMANDB					\
-	NLS NPF 								\
-	OBJ 									\
-	PIC PICINSTALL PICLIB POSTFIX PROFILE 	\
-	SENDMAIL SHARE STATICLIB 				\
-	UNBOUND  								\
-	YP
-MK${var}?=	yes
+_MKVARS.yes= \
+	MKATF \
+	MKBINUTILS \
+	MKBSDTAR \
+	MKCOMPLEX MKCVS MKCXX \
+	MKDOC MKDTC \
+	MKDYNAMICROOT \
+	MKGCC MKGDB MKGROFF \
+	MKHESIOD MKHTML \
+	MKIEEEFP MKINET6 MKINFO MKIPFILTER MKISCSI \
+	MKKERBEROS \
+	MKKMOD \
+	MKLDAP MKLIBSTDCXX MKLINKLIB MKLVM \
+	MKMAN MKMANDOC \
+	MKMDNS \
+	MKMAKEMANDB \
+	MKNLS \
+	MKNPF \
+	MKOBJ \
+	MKPAM MKPERFUSE \
+	MKPF MKPIC MKPICLIB MKPOSTFIX MKPROFILE \
+	MKRUMP \
+	MKSHARE MKSKEY MKSTATICLIB \
+	MKUNBOUND \
+	MKX11FONTS \
+	MKYP
+.for var in ${_MKVARS.yes}
+${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
 .endfor
 
 #
 # MK* options which default to "no".
 #
-.for var in 							\
-	ARZERO								\
-	BSDGREP								\
-	CATPAGES							\
-	DEBUG DEBUGLIB 						\
-	KYUA								\
-	LIBCXX LLD LLDB LLVM LLVMRT LINT 	\
-	MANZ 								\
-	OBJDIRS 							\
-	PCC PICINSTALL						\
-	REPRO								\
-	SOFTFLOAT STRIPIDENT 				\
-	UNPRIVED UPDATE
-MK${var}?=	no
+_MKVARS.no= \
+	MKARGON2 \
+	MKARZERO \
+	MKBSDGREP \
+	MKCATPAGES MKCOMPATTESTS MKCOMPATX11 MKCTF \
+	MKDEBUG MKDEBUGLIB MKDTB MKDTRACE \
+	MKEXTSRC \
+	MKFIRMWARE \
+	MKGROFFHTMLDOC \
+	MKKYUA \
+	MKLIBCXX MKLLD MKLLDB MKLLVM MKLLVMRT MKLINT \
+	MKMANZ MKMCLINKER \
+	MKNOUVEAUFIRMWARE MKNSD \
+	MKOBJDIRS \
+	MKPCC MKPICINSTALL MKPIGZGZIP \
+	MKRADEONFIRMWARE MKREPRO \
+	MKSLJIT MKSOFTFLOAT MKSTRIPIDENT \
+	MKTEGRAFIRMWARE MKTPM \
+	MKUNPRIVED MKUPDATE \
+	MKX11 MKX11MOTIF MKXORG_SERVER \
+	MKZFS
+.for var in ${_MKVARS.no}
+${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
 .endfor
+
 
 #
 # MKGCCCMDS is only valid if we are building GCC so make it dependent on that.
@@ -798,7 +840,7 @@ MKOBJDIRS:=		no
 .endif
 
 .if ${MKSHARE} == "no"
-MKCATPAGES:=	no
+MKCATPAGES:=		no
 MKDOC:=			no
 MKINFO:=		no
 MKHTML:=		no
