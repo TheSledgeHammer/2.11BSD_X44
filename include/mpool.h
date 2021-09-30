@@ -74,15 +74,15 @@ typedef struct MPOOL {
 	void    			(*pgout) (void *, pgno_t, void *);
 	void				*pgcookie;		/* cookie for page in/out routines */
 #ifdef STATISTICS
-	u_long	cachehit;
-	u_long	cachemiss;
-	u_long	pagealloc;
-	u_long	pageflush;
-	u_long	pageget;
-	u_long	pagenew;
-	u_long	pageput;
-	u_long	pageread;
-	u_long	pagewrite;
+	u_long				cachehit;
+	u_long				cachemiss;
+	u_long				pagealloc;
+	u_long				pageflush;
+	u_long				pageget;
+	u_long				pagenew;
+	u_long				pageput;
+	u_long				pageread;
+	u_long				pagewrite;
 #endif
 } MPOOL;
 

@@ -45,6 +45,7 @@
 #ifndef	_CTYPE_H_
 #define _CTYPE_H_
 
+#include <sys/cdefs.h>
 #include <runetype.h>
 
 #define	_CTYPE_A		0x00000100L		/* Alpha */
@@ -126,7 +127,7 @@ __isctype(_BSD_RUNE_T_ c, unsigned long f)
 	return((((c & _CRMASK) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
-/* _ANSI_LIBRARY is defined by lib/libc/gen/isctype.c. */
+/* _ANSI_LIBRARY is defined by lib/libc/locale/isctype.c. */
 #if !defined(_ANSI_LIBRARY)
 static __inline _BSD_RUNE_T_
 toupper(_BSD_RUNE_T_ c)
@@ -142,7 +143,6 @@ tolower(_BSD_RUNE_T_ c)
 #endif /* !_ANSI_LIBRARY */
 
 #else /* !_USE_CTYPE_INLINE_ */
-
 __BEGIN_DECLS
 int				__istype (_BSD_RUNE_T_, unsigned long);
 int				__isctype (_BSD_RUNE_T_, unsigned long);

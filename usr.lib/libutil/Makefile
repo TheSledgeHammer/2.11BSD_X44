@@ -28,10 +28,10 @@ WARNS?=	5
 LIB=	util
 CPPFLAGS+=-DLIBC_SCCS -I${.CURDIR}
 LINTFLAGS+=-w
-SRCS+=	dkcksum.c login.c ogin_tty.c logout.c logwtmp.c	\
-		pty.c
+SRCS+=	dkcksum.c efun.c login.c login_tty.c logout.c logwtmp.c	\
+		pty.c stat_flags.c
 
-MAN=	disklabel_dkcksum.3 login.3
+MAN=	disklabel_dkcksum.3 efun.3 login.3 stat_flags.3
 
 COPTS.logwtmp.c+=	${GCC_NO_STRINGOP_TRUNCATION}
 
