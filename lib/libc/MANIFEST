@@ -3,9 +3,8 @@ Folder			Version
 arch/i386/		4.4BSD-Lite2
 compat-4.1/		2.11BSD
 compat-4.3/		2.11BSD
-compat-netbsd/	NetBSD
-compat-sys5/	2.11BSD
-db/				NetBSD
+compat-sys5/		2.11BSD
+db/			NetBSD
 dlfcn/			NetBSD
 gen/			2.11BSD/4.4BSD-lite2
 gmon/			4.4BSD-Lite2
@@ -13,9 +12,9 @@ hash/			NetBSD
 iconv/			NetBSD
 include/		NetBSD
 inet/			2.11BSD
-locale/			4.4BSD-Lite2
+locale/			4.4BSD-Lite2/NetBSD
 net/			2.11BSD
-ns/				2.11BSD
+ns/			2.11BSD
 quad/			4.4BSD-Lite2
 regex/			NetBSD
 stdio/			2.11BSD/4.4BSD-lite2/NetBSD
