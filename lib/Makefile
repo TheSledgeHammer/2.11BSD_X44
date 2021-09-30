@@ -34,13 +34,13 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
-			${USRLIBDIR}/libdbm 	\
-			${USRLIBDIR}/libmp 		\
-			${USRLIBDIR}/libtermcap \
-			${USRLIBDIR}/libutil 	\
-			${USRLIBDIR}/libvmf 	\
-			${USRLIBDIR}/liby 		\
-			${USRLIBDIR}/libz
+		${USRLIBDIR}/libdbm 	\
+		${USRLIBDIR}/libmp 	\
+		${USRLIBDIR}/libtermcap \
+		${USRLIBDIR}/libutil 	\
+		${USRLIBDIR}/libvmf 	\
+		${USRLIBDIR}/liby 	\
+		${USRLIBDIR}/libz
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
@@ -51,7 +51,6 @@ SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/lib
 
 SUBDIR+=	../contrib/expat/lib
-
 
 SUBDIR+=	../contrib/external/gnu/libmalloc
 
@@ -75,21 +74,19 @@ SUBDIR+=	../contrib/external/gnu/mpc/lib/libmpc
 #==================== 1st library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-
-SUBDIR+=	../contrib/xz/lib			# depends on libpthread
+SUBDIR+=	../contrib/xz/lib		# depends on libpthread
 
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
 
-
 .if (${MKBINUTILS} != "no")
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
 .endif
 
-.if (${MKLIBCXX} != "no")
-SUBDIR+=	../contrib/libc++
-.endif
+#.if (${MKLIBCXX} != "no")
+#SUBDIR+=	../contrib/libc++
+#.endif
 
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
@@ -100,12 +97,12 @@ SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
 SUBDIR+=	../contrib/llvm/include
 .endif
 
-SUBDIR+=	../contrib/libcbor/lib
+#SUBDIR+=	../contrib/libcbor/lib
 
 #==================== 2nd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+=	${USRLIBDIR}/libwrap
+#SUBDIR+=	${USRLIBDIR}/libwrap
 
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 .for sanitizer in asan lsan ubsan
@@ -121,7 +118,7 @@ SUBDIR+=	../contrib/llvm/librt
 
 SUBDIR+=	../contrib/libarchive/lib	# depends on libxz
 
-SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
+SUBDIR+=	../contrib/file/lib		# depends on libz, libbz2, libxz
 
 .if (${MKATF} != "no")
 SUBDIR+=	../contrib/atf/lib		# depends on libstdc++
