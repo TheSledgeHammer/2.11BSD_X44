@@ -11,8 +11,8 @@
 
 SRCS+=	abort.c abs.c atexit.c atof.c atoi.c atol.c bsearch.c calloc.c div.c exit.c getenv.c 	\
 		getopt_long.c getopt.c getsubopt.c heapsort.c labs.c ldiv.c malloc.c merge.c qsort.c 	\
-		radixsort.c random.c reallocarr.c reallocarray.c setenv.c strod.c strtoimax.c strtol.c 	\
-		strtoll.c strtoul.c strtoumax.c strtouq.c system.c
+		radixsort.c random.c reallocarr.c reallocarray.c setenv.c strod.c strtoi.c strtoimax.c strtol.c 	\
+		strtoll.c strtou.c strtoul.c strtoumax.c strtouq.c system.c
 
 .include "${ARCHDIR}/stdlib/Makefile.inc"
 
