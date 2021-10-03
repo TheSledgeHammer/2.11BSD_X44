@@ -61,7 +61,7 @@
 
 #include <devel/sys/malloctypes.h>
 
-static struct vm_amap *amap_alloc1(int, int, int);
+static struct vm_amap *vm_amap_alloc1(int, int, int);
 
 static struct simplelock amap_list_lock;
 static LIST_HEAD(, vm_amap) amap_list;
@@ -70,7 +70,7 @@ static LIST_HEAD(, vm_amap) amap_list;
  * local functions
  */
 static inline void
-amap_list_insert(struct vm_amap *amap)
+vm_amap_list_insert(struct vm_amap *amap)
 {
 	simple_lock(&amap_list_lock);
 	LIST_INSERT_HEAD(&amap_list, amap, am_list);
@@ -78,7 +78,7 @@ amap_list_insert(struct vm_amap *amap)
 }
 
 static inline void
-amap_list_remove(struct vm_amap *amap)
+vm_amap_list_remove(struct vm_amap *amap)
 {
 	simple_lock(&amap_list_lock);
 	LIST_REMOVE(amap, am_list);
@@ -162,7 +162,7 @@ pp_setreflen(ppref, offset, ref, len)
 #endif
 
 void
-amap_init()
+vm_amap_init()
 {
 	register struct vm_amap *amap;
 	MALLOC(amap, struct vm_amap *, sizeof(struct vm_amap), M_VMAMAP, M_WAITOK);
@@ -180,7 +180,7 @@ amap_init()
  * => lock on returned amap is init'd
  */
 static inline struct vm_amap *
-amap_alloc1(slots, padslots, waitf)
+vm_amap_alloc1(slots, padslots, waitf)
 	int slots, padslots, waitf;
 {
 	struct vm_amap *amap;
@@ -231,7 +231,7 @@ fail1:
  */
 
 struct vm_amap *
-amap_alloc(sz, padsz, waitf)
+vm_amap_alloc(sz, padsz, waitf)
 	vaddr_t sz, padsz;
 	int waitf;
 {
@@ -241,10 +241,10 @@ amap_alloc(sz, padsz, waitf)
 	AMAP_B2SLOT(slots, sz); /* load slots */
 	AMAP_B2SLOT(padslots, padsz);
 
-	amap = amap_alloc1(slots, padslots, waitf);
+	amap = vm_amap_alloc1(slots, padslots, waitf);
 	if (amap)
 		memset(amap->am_anon, 0, (slots + padslots) * sizeof(struct vm_anon*));
-		amap_list_insert(amap);
+		vm_amap_list_insert(amap);
 	return (amap);
 }
 
@@ -255,7 +255,7 @@ amap_alloc(sz, padsz, waitf)
  * => the amap should have a zero reference count and be empty
  */
 void
-amap_free(amap)
+vm_amap_free(amap)
 	struct vm_amap *amap;
 {
 #ifdef DIAGNOSTIC
@@ -285,7 +285,7 @@ amap_free(amap)
  * => XXXCDC: support padding at this level?
  */
 void
-amap_extend(entry, addsize)
+vm_amap_extend(entry, addsize)
 	vm_map_entry_t entry;
 	vm_size_t addsize;
 {
@@ -320,7 +320,7 @@ amap_extend(entry, addsize)
 	if (amap->am_nslot >= slotneed) {
 #ifdef VM_AMAP_PPREF
 		if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
-			amap_pp_adjref(amap, slotoff + slotmapped, addsize, 1);
+			vm_amap_pp_adjref(amap, slotoff + slotmapped, addsize, 1);
 		}
 #endif
 		amap_unlock(amap);
@@ -448,7 +448,7 @@ amap_extend(entry, addsize)
  * => entry's map and amap must be locked by the caller
  */
 void
-amap_share_protect(entry, prot)
+vm_amap_share_protect(entry, prot)
 	vm_map_entry_t entry;
 	vm_prot_t prot;
 {
@@ -489,13 +489,13 @@ amap_share_protect(entry, prot)
  */
 
 void
-amap_wipeout(amap)
+vm_amap_wipeout(amap)
 	vm_amap_t amap;
 {
 	int lcv, slot;
 	vm_anon_t anon;
 
-	amap_list_remove(amap);
+	vm_amap_list_remove(amap);
 	amap_unlock(amap);
 
 	for (lcv = 0 ; lcv < amap->am_nused ; lcv++) {
@@ -525,7 +525,7 @@ amap_wipeout(amap)
 
 	amap->am_ref = 0;	/* ... was one */
 	amap->am_nused = 0;
-	amap_free(amap);	/* will unlock and free amap */
+	vm_amap_free(amap);	/* will unlock and free amap */
 }
 
 /*
@@ -543,7 +543,7 @@ amap_wipeout(amap)
  */
 
 void
-amap_copy(map, entry, waitf, canchunk, startva, endva)
+vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 	vm_map_t map;
 	vm_map_entry_t entry;
 	int waitf;
@@ -578,7 +578,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 		}
 
 		entry->aref.ar_pageoff = 0;
-		entry->aref.ar_amap = amap_alloc(entry->end - entry->start, 0,
+		entry->aref.ar_amap = vm_amap_alloc(entry->end - entry->start, 0,
 		    waitf);
 		if (entry->aref.ar_amap != NULL)
 			entry->etype &= ~VM_ET_NEEDSCOPY;
@@ -605,7 +605,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 	 */
 
 	AMAP_B2SLOT(slots, entry->end - entry->start);
-	amap = amap_alloc1(slots, 0, waitf);
+	amap = vm_amap_alloc1(slots, 0, waitf);
 	if (amap == NULL) {
 		return;
 	}
@@ -623,7 +623,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 	if (srcamap->am_ref == 1) {		/* take it over? */
 		entry->etype &= ~VM_ET_NEEDSCOPY;
 		amap->am_ref--;				/* drop final reference to map */
-		amap_free(amap);			/* dispose of new (unused) amap */
+		vm_amap_free(amap);			/* dispose of new (unused) amap */
 		amap_unlock(srcamap);
 		return;
 	}
@@ -657,14 +657,14 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 		srcamap->am_flags &= ~AMAP_SHARED;   /* clear shared flag */
 #ifdef VM_AMAP_PPREF
 	if (srcamap->am_ppref && srcamap->am_ppref != PPREF_NONE) {
-		amap_pp_adjref(srcamap, entry->aref.ar_pageoff,
+		vm_amap_pp_adjref(srcamap, entry->aref.ar_pageoff,
 		    entry->end - entry->start, -1);
 	}
 #endif
 
 	amap_unlock(srcamap);
 
-	amap_list_insert(amap);
+	vm_amap_list_insert(amap);
 
 	/*
 	 * install new amap.
@@ -702,7 +702,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
  */
 
 void
-amap_cow_now(map, entry)
+vm_amap_cow_now(map, entry)
 	vm_map_t  map;
 	vm_map_entry_t entry;
 {
@@ -822,7 +822,7 @@ ReStart:
  * => origref->ar_amap should be unlocked (we will lock)
  */
 void
-amap_splitref(origref, splitref, offset)
+vm_amap_splitref(origref, splitref, offset)
 	vm_aref_t origref, splitref;
 	vaddr_t offset;
 {
@@ -849,7 +849,7 @@ amap_splitref(origref, splitref, offset)
 	 * establish ppref before we add a duplicate reference to the amap
 	 */
 	if (origref->ar_amap->am_ppref == NULL)
-		amap_pp_establish(origref->ar_amap);
+		vm_amap_pp_establish(origref->ar_amap);
 #endif
 
 	splitref->ar_amap = origref->ar_amap;
@@ -867,7 +867,7 @@ amap_splitref(origref, splitref, offset)
  * => amap locked by caller
  */
 void
-amap_pp_establish(amap)
+vm_amap_pp_establish(amap)
 	vm_amap_t amap;
 {
 
@@ -897,7 +897,7 @@ amap_pp_establish(amap)
  * => caller must check that ppref != PPREF_NONE before calling
  */
 void
-amap_pp_adjref(amap, curslot, bytelen, adjval)
+vm_amap_pp_adjref(amap, curslot, bytelen, adjval)
 	vm_amap_t amap;
 	int curslot;
 	vm_size_t bytelen;
@@ -948,7 +948,7 @@ amap_pp_adjref(amap, curslot, bytelen, adjval)
 			panic("amap_pp_adjref: negative reference count");
 		pp_setreflen(ppref, lcv, ref, len);
 		if (ref == 0)
-			amap_wiperange(amap, lcv, len);
+			vm_amap_wiperange(amap, lcv, len);
 	}
 
 }
@@ -960,7 +960,7 @@ amap_pp_adjref(amap, curslot, bytelen, adjval)
  * => both map and amap must be locked by caller.
  */
 void
-amap_wiperange(amap, slotoff, slots)
+vm_amap_wiperange(amap, slotoff, slots)
 	vm_amap_t amap;
 	int slotoff, slots;
 {

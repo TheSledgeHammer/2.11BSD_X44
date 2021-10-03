@@ -18,9 +18,6 @@
 
 
 ## MISC:
-- aobject_pager & segment_pager:
-	- Keep independent or create new pgops for aobjects & segments
-	
 - vm_slab:
 	- Backends:
 		- Extents: pros & cons?

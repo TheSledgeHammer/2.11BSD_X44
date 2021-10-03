@@ -34,13 +34,13 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
-		${USRLIBDIR}/libdbm 	\
-		${USRLIBDIR}/libmp 	\
-		${USRLIBDIR}/libtermcap \
-		${USRLIBDIR}/libutil 	\
-		${USRLIBDIR}/libvmf 	\
-		${USRLIBDIR}/liby 	\
-		${USRLIBDIR}/libz
+			${USRLIBDIR}/libdbm 	\
+			${USRLIBDIR}/libmp 		\
+			${USRLIBDIR}/libtermcap \
+			${USRLIBDIR}/libutil 	\
+			${USRLIBDIR}/libvmf 	\
+			${USRLIBDIR}/liby 		\
+			${USRLIBDIR}/libz
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
@@ -97,8 +97,6 @@ SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
 SUBDIR+=	../contrib/llvm/include
 .endif
 
-#SUBDIR+=	../contrib/libcbor/lib
-
 #==================== 2nd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
@@ -118,10 +116,10 @@ SUBDIR+=	../contrib/llvm/librt
 
 SUBDIR+=	../contrib/libarchive/lib	# depends on libxz
 
-SUBDIR+=	../contrib/file/lib		# depends on libz, libbz2, libxz
+SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
 
 .if (${MKATF} != "no")
-SUBDIR+=	../contrib/atf/lib		# depends on libstdc++
+SUBDIR+=	../contrib/atf/lib			# depends on libstdc++
 .endif
 
 #SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses

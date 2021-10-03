@@ -4,8 +4,8 @@
 .include <bsd.own.mk>
 
 SUBDIR= bzip cap_mkdb cksum compile_et crunch ctags db genassym gencat gprof hexdump join 		\
-		lorder m4 make man menuc mkcsmapper mkdep mkesdb mklocale mktemp msgc rpcgen sed 		\
-		sortinfo stat tic time touch tsort uudecode uuencode vgrind write xinstall xlint
+	ldd lorder m4 make man menuc mkcsmapper mkdep mkesdb mklocale mktemp msgc rpcgen sed 		\
+	sortinfo stat tic time touch tsort uudecode uuencode vgrind write xinstall xlint
 												
 SUBDIR+= ../contrib/zlib/pigz/bin/pigz
 

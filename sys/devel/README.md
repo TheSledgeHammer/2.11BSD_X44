@@ -7,15 +7,14 @@ an offical release is made.)
 
 ### Devel Contents
 
-- Arch:
+- Arch: Machine dependent code to be included
   - i386: (Partially implemented in arch/i386)
-	- smp/multi-cpu:
-		- machine-independent code: 90% complete
-			- smp-related methods for cpu
-		- machine-dependent code: 75% complete
-			- boot: considering FreeBSD's mpboot.s
-			- smp: alloction to assign interrupts to CPUs
-			- tsc: missing struct timecounter
+	- timecounters
+	- threading: ucontext & mcontext
+
+- Dev: Device code to be included
+	- Floppy
+	- USB
 
 - ADVVM (AdvVM): Logical Volume Manager
   - A Volume Manager for BSD.
@@ -62,30 +61,29 @@ an offical release is made.)
     - Extended Attributes
 
 - VM: Updates & Changes (See: "/devel/vm")
-- Planned:
-  - Ovl and Vm interactions
-    - Allowing vm to make use of the ovl
-  - Anonymous virtual memory support: (see: "devel/vm/uvm")
-    - Ports the anonymous virtual memory from NetBSD's UVM
-      - uvm_anon: aka vm_anon: working as is. Minor changes needed
-      - uvm_amap: aka vm_amap: working as is. Minor changes needed
-      - uvm_aobj: aka vm_aobject: following changes needed:
-        - uao_pager: seperate to uao_pager
-        - remove duplicate vm_object references: e.g. uao_reference
-        - uao_create: deprecated.
-          - vm object is already created.  
-          - Only needed for initializing an aobject (as is), which invokes the point below with swap.
-        - Interactions with swap.
-          - Either:
-       a) modify swap to make use of these changes.
-       b) modify aobject
+	- Planned:
+  		- Ovl and Vm interactions
+    		- Allowing vm to make use of the ovl
+  		- Anonymous virtual memory support: (see: "devel/vm/uvm")
+    	- Ports the anonymous virtual memory from NetBSD's UVM
+      		- uvm_anon: aka vm_anon: working as is. Minor changes needed
+      		- uvm_amap: aka vm_amap: working as is. Minor changes needed
+      		- uvm_aobj: aka vm_aobject: following changes needed:
+       	 	- uao_pager: seperate to uao_pager
+        	- remove duplicate vm_object references: e.g. uao_reference
+        	- uao_create: deprecated.
+         		- vm object is already created.  
+          		- Only needed for initializing an aobject (as is), which invokes the point below with swap.
+        	- Interactions with swap.
+          		- Either:
+       				a) modify swap to make use of these changes.
+       				b) modify aobject
 
-  - Virtual Segments: Logical Address
-    - Improve internal VM operations.
-      - Most noteably when used in conjunction with overlays (see below)
-    - Planned:
-      - Optional support for seperate Instruction & Data space
-      - Optional support for psuedo-segments (stack, code, text)
+  		- Virtual Segments: Logical Address
+    		- Improve internal VM operations.
+     	 	- Most noteably when used in conjunction with overlays (see below)
+      	- Optional support for seperate Instruction & Data space
+      	- Optional support for psuedo-segments (stack, code, text)
 
 - OVL: Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/vm/ovl")
   - OVLSpace: A portion of physical memory with vm-like features
