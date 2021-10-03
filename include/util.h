@@ -39,6 +39,7 @@
 #include <sys/cdefs.h>
 #include <sys/tty.h>
 #include <sys/types.h>
+#include <sys/inttypes.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <termios.h>
@@ -105,8 +106,8 @@ size_t 		estrlcpy(char *, const char *, size_t);
 size_t 		estrlcat(char *, const char *, size_t);
 char 		*estrdup(const char *);
 char 		*estrndup(const char *, size_t);
-//intmax_t	estrtoi(const char *, int, intmax_t, intmax_t);
-//uintmax_t	estrtou(const char *, int, uintmax_t, uintmax_t);
+intmax_t	estrtoi(const char *, int, intmax_t, intmax_t);
+uintmax_t	estrtou(const char *, int, uintmax_t, uintmax_t);
 void 		*ecalloc(size_t, size_t);
 void 		*emalloc(size_t);
 void 		*erealloc(void *, size_t);
