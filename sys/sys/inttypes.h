@@ -45,4 +45,8 @@
 
 #include <sys/stdint.h>
 
+#if !defined(__cplusplus) || defined(__STDC_FORMAT_MACROS) || (__cplusplus >= 201103L)
+#include <machine/machtypes.h>
+#endif
+
 #endif /* !_SYS_INTTYPES_H_ */
