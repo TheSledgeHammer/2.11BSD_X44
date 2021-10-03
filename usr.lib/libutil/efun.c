@@ -174,7 +174,6 @@ evasprintf(char ** __restrict ret, const char * __restrict format, va_list ap)
 	return rv;
 }
 
-/*
 intmax_t
 estrtoi(const char * nptr, int base, intmax_t lo, intmax_t hi)
 {
@@ -202,4 +201,3 @@ estrtou(const char * nptr, int base, uintmax_t lo, uintmax_t hi)
 	}
 	return rv;
 }
-*/
