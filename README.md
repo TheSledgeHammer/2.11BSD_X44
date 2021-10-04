@@ -43,7 +43,7 @@
     - UFS1/UFS2:
       - Journaling:
       - Dirhash: Work in Progress
-- New Filesystems (In Kernel):
+- Filesystems to Add:
   - EXT2/3/4
   - NTFS
   - HPFS
@@ -89,9 +89,9 @@ Please read the following NetBSD guide for more information:
 - Your code should ideally fit the following guidelines & rules below
 - Licensing: 3-Clause BSD license preferable:
   - Externally Maintained code should be placed in one of the following:
-  	1) BSD licensed code: 		contrib/"project name"
-  	2) Non-BSD licensed code: 	contrib/external/"project name"
-  	3) OS Compatability code: 	contrib/external/compat/"os name"
+  	1) BSD licensed code: 		 contrib/"project name"
+  	2) Non-BSD licensed code:  contrib/"license"/"project name"
+  	3) OS Compatability code:  contrib/oscompat/"os name"
 - These rules in place to make it pleasant & easier for everyone.
   - It is highly recommended that you adhere to the following Contribution Guidelines & Rules.
   - Failing to follow the Contribution Guidelines & Rules will prevent your code from being accepted.
