@@ -18,7 +18,7 @@
 SUBDIR=		csu .WAIT
 
 .if (${MKGCC} != "no")
-SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgcc .WAIT
+SUBDIR+=	../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgcc .WAIT
 .endif
 
 SUBDIR+=	libc
@@ -34,36 +34,37 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
-			${USRLIBDIR}/libdbm 	\
-			${USRLIBDIR}/libmp 		\
-			${USRLIBDIR}/libtermcap \
-			${USRLIBDIR}/libutil 	\
-			${USRLIBDIR}/libvmf 	\
-			${USRLIBDIR}/liby 		\
-			${USRLIBDIR}/libz
+		${USRLIBDIR}/libdbm 	\
+		${USRLIBDIR}/libmp 	\
+		${USRLIBDIR}/libpci	\
+		${USRLIBDIR}/libtermcap \
+		${USRLIBDIR}/libutil 	\
+		${USRLIBDIR}/libvmf 	\
+		${USRLIBDIR}/liby 	\
+		${USRLIBDIR}/libz
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
 .endif
 
-SUBDIR+=	../contrib/am-utils/lib
+#SUBDIR+=	../contrib/am-utils/lib
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/lib
 
-SUBDIR+=	../contrib/expat/lib
+#SUBDIR+=	../contrib/expat/lib
 
-SUBDIR+=	../contrib/external/gnu/libmalloc
+SUBDIR+=	../contrib/gnu/libmalloc
 
 .if (${MKGCC} != "no")
-SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libobjc
-SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgomp
+SUBDIR+=	../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libobjc
+SUBDIR+=	../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgomp
 # Should probably move GMP, MPFR and MPC builds into the GCC >= 4.5
 # specific build area, but we get better parallelism this way.
 # We don't build compat versions of these.
 . if !defined(MLIBDIR) && (${MKGCCCMDS} != "no")
-SUBDIR+=	../contrib/external/gnu/gmp/lib/libgmp
-SUBDIR+=	../contrib/external/gnu/mpfr/lib/libmpfr
-SUBDIR+=	../contrib/external/gnu/mpc/lib/libmpc
+SUBDIR+=	../contrib/gnu/gmp/lib/libgmp
+SUBDIR+=	../contrib/gnu/mpfr/lib/libmpfr
+SUBDIR+=	../contrib/gnu/mpc/lib/libmpc
 . endif
 .endif
 
@@ -81,16 +82,16 @@ SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
 
 .if (${MKBINUTILS} != "no")
-SUBDIR+=	../contrib/external/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
+SUBDIR+=	../contrib/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
 .endif
 
-#.if (${MKLIBCXX} != "no")
-#SUBDIR+=	../contrib/libc++
-#.endif
+.if (${MKLIBCXX} != "no")
+SUBDIR+=	../contrib/libc++
+.endif
 
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
-SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
-SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
+SUBDIR+=	../contri/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
+SUBDIR+=	../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
 .endif
 
 .if (${MKLLVMRT} != "no" && (!defined(MLIBDIR) || ${MKCOMPATX11} != "no"))
@@ -104,8 +105,8 @@ SUBDIR+=	.WAIT
 
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 .for sanitizer in asan lsan ubsan
-.if exists(../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer})
-SUBDIR+= ../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
+.if exists(../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer})
+SUBDIR+= ../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
 .endif
 .endfor
 .endif
@@ -118,13 +119,13 @@ SUBDIR+=	../contrib/libarchive/lib	# depends on libxz
 
 SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
 
-.if (${MKATF} != "no")
-SUBDIR+=	../contrib/atf/lib			# depends on libstdc++
-.endif
+#.if (${MKATF} != "no")
+#SUBDIR+=	../contrib/atf/lib			# depends on libstdc++
+#.endif
 
-#SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
-#SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
-#SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
+SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
+SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
+SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT

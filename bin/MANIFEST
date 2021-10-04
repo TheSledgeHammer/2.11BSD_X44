@@ -23,7 +23,7 @@ mkdir/		4.4BSD-Lite2
 mt/			UNIMPLEMENTED
 mv/			4.4BSD-Lite2
 passwd/		2.11BSD
-pax/		4.4BSD-Lite2
+pax/		NetBSD
 ping/		2.11BSD
 ps/			4.4BSD-Lite2
 rcp/		4.4BSD-Lite2

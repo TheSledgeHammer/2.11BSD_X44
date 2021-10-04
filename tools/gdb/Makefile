@@ -3,7 +3,7 @@
 .include <bsd.hostinit.mk>
 
 MODULE=		gdb
-GDBDIR=		${.CURDIR}/../../contrib/external/gnu/${EXTERNAL_GDB_SUBDIR}
+GDBDIR=		${.CURDIR}/../../contrib/gnu/${EXTERNAL_GDB_SUBDIR}
 GNUHOSTDIST=    ${GDBDIR}/dist
 
 FIND_ARGS=	\! \( -type d -name sim -prune \)

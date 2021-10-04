@@ -4,7 +4,7 @@
 
 HOSTPROGNAME=	${MACHINE_GNU_PLATFORM}-dbsym
 
-HOST_SRCDIR=    contrib/external/gnu/binutils/usr.sbin/dbsym
+HOST_SRCDIR=    contrib/gnu/binutils/usr.sbin/dbsym
 
 TOOLCHAINOBJ!=	cd 	${.CURDIR}/../binutils && ${PRINTOBJDIR}
 BFDDIR?=			${TOOLCHAINOBJ}/build/bfd

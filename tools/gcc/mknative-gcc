@@ -27,10 +27,10 @@ fi
 
 case $0 in
 	*mknative-gcc.old)
-		_OUTDIRBASE="contrib/external/gnu/gcc.old"
+		_OUTDIRBASE="contrib/gnu/gcc.old"
 		;;
 	*)
-		_OUTDIRBASE="contrib/external/gnu/gcc"
+		_OUTDIRBASE="contrib/gnu/gcc"
 		;;
 esac
 _OUTDIR="$_TOP/$_OUTDIRBASE"
@@ -38,9 +38,9 @@ _OUTDIR="$_TOP/$_OUTDIRBASE"
 sanitise_includes () {
 	sed \
 		-e "s,-I$_DESTDIR/usr/include,,g" \
-		-e "s,-I$_SRC/contrib/external/gnu/mpfr/dist/src,,g" \
-		-e "s,-I$_SRC/contrib/external/gnu/mpc/dist/src,,g" \
-		-e "s,-I$_SRC/contrib/external/gnu/gmp/lib/libgmp/arch/[a-z_0-9-]*,,g" \
+		-e "s,-I$_SRC/contrib/gnu/mpfr/dist/src,,g" \
+		-e "s,-I$_SRC/contrib/gnu/mpc/dist/src,,g" \
+		-e "s,-I$_SRC/contrib/gnu/gmp/lib/libgmp/arch/[a-z_0-9-]*,,g" \
 		-e "s,-I$_TOOLDIR/include,,g" \
 		-e "s,-I/usr/include/[^ 	]*,,"
 }

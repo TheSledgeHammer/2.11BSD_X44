@@ -26,7 +26,7 @@ HOST_CFLAGS+=-O2 -no-cpp-precomp
 
 MAKE_PROGRAM?=	${MAKE}
 
-GNUHOSTDIST?=	${.CURDIR}/../../contrib/external/gnu/${MODULE}/dist
+GNUHOSTDIST?=	${.CURDIR}/../../contrib/gnu/${MODULE}/dist
 
 FIND_ARGS+=	\! \( -type d \( \
 			-name 'CVS' -o \

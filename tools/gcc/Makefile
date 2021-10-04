@@ -5,7 +5,7 @@
 GCC_LANGUAGES=c c++ objc
 MODULE=		${EXTERNAL_GCC_SUBDIR}
 
-GCCDIST=	${.CURDIR}/../../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/dist
+GCCDIST=	${.CURDIR}/../../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/dist
 GNUHOSTDIST=	${GCCDIST}
 
 .if ${HAVE_GCC} == 9
@@ -164,9 +164,9 @@ native-gcc: .native/.configure_done
 		${MACHINE_GNU_PLATFORM} ${GCC_MACHINE_ARCH} ${DESTDIR} ${TOOLDIR}
 
 NATIVE_CONFIGURE_ARGS=	${COMMON_CONFIGURE_ARGS}
-MPC=		${NETBSDSRCDIR}/contrib/external/gnu/mpc
-MPFR=		${NETBSDSRCDIR}/contrib/external/gnu/mpfr
-GMP=		${NETBSDSRCDIR}/contrib/external/gnu/gmp
+MPC=		${NETBSDSRCDIR}/contrib/gnu/mpc
+MPFR=		${NETBSDSRCDIR}/contrib/gnu/mpfr
+GMP=		${NETBSDSRCDIR}/contrib/gnu/gmp
 MPCOBJ!=	cd ${MPC}/lib/libmpc && ${PRINTOBJDIR}
 MPFROBJ!=	cd ${MPFR}/lib/libmpfr && ${PRINTOBJDIR}
 GMPOBJ!=	cd ${GMP}/lib/libgmp && ${PRINTOBJDIR}

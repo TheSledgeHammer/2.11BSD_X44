@@ -1,35 +1,40 @@
 Application	Version
 -----------	-------
-lib2648/		UNIMPLEMENTED
-libF77/			UNIMPLEMENTED
-libI77/			UNIMPLEMENTED
-libU77/			UNIMPLEMENTED
-libbz2/			NetBSD
-libcurses/		4.4BSD-Lite2
-libdbm/			4.3BSD		  (dbm & ndbm before it was merged into Berkley DB)
-libedit/		4.4BSD-Lite2
-libexecinfo/		NetBSD
-libg/			UNIMPLEMENTED (4.3 should be ported)
-libln/			UNIMPLEMENTED
-libm/			UNIMPLEMENTED  4.3 (no attempt made to convert yet - won't run on a PDP11)
-libmp/			4.3BSD
-libpc/			UNIMPLEMENTED
-libom/			4.3BSD  	   (used for both libom.a and libm.a)
-libplot/		UNIMPLEMENTED
-libtermcap/		4.4BSD-Lite2
-libutil/		4.4BSD-Lite2
-libvmf			4.3BSD
-liby/			4.3BSD
-libz/			NetBSD
+libbz2/		NetBSD
+libcurses/	4.4BSD-Lite2
+libdbm/		4.3BSD		 	(dbm & ndbm before it was merged into Berkley DB)
+libedit/	4.4BSD-Lite2
+libexecinfo/	NetBSD
+libform/	NetBSD
+libmenu/	NetBSD
+libmp/		4.3BSD
+libom/		4.3BSD  	   	(used for both libom.a and libm.a)
+libpanel/	NetBSD
+libpci/		NetBSD
+libtermcap/	4.4BSD-Lite2
+libutil/	4.4BSD-Lite2
+libvmf		4.3BSD
+liby/		4.3BSD
+libz/		NetBSD
+
+lib2648/	UNIMPLEMENTED
+libF77/		UNIMPLEMENTED
+libI77/		UNIMPLEMENTED
+libU77/		UNIMPLEMENTED
+libpc/		UNIMPLEMENTED
+libplot/	UNIMPLEMENTED
+libg/		UNIMPLEMENTED 		(4.3 should be ported)
+libln/		UNIMPLEMENTED
+libm/		UNIMPLEMENTED  		(4.3 no attempt made to convert yet - won't run on a PDP11)
 
 Notes
 -----
 libm/	We haven't made any effort to convert the new math library for
-		the PDP-11 yet (if it's even possible).  If anyone does it for
-		us, PLEASE #ifdef your changes on "pdp11".  A PDP support
-		subdirectory would be nice too ...  In any case, till that
-		happens (sic), 2.11BSD uses libom and hides that fact from
-		applications by linking libm.a to libom.a in /usr/lib.
+	the PDP-11 yet (if it's even possible).  If anyone does it for
+	us, PLEASE #ifdef your changes on "pdp11".  A PDP support
+	subdirectory would be nice too ...  In any case, till that
+	happens (sic), 2.11BSD uses libom and hides that fact from
+	applications by linking libm.a to libom.a in /usr/lib.
 
 The directorie PORT is somewhat special.  It contains source from the 4.3
 that should probably be ported to 2.11 as soon as someone has the time
