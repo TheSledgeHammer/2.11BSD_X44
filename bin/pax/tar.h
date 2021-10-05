@@ -1,3 +1,5 @@
+/*	$NetBSD: tar.h,v 1.10 2013/01/24 17:43:44 christos Exp $	*/
+
 /*-
  * Copyright (c) 1992 Keith Muller.
  * Copyright (c) 1992, 1993
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -61,6 +59,14 @@
 #define	DIRTYPE		'5'		/* Directory */
 #define	FIFOTYPE	'6'		/* FIFO */
 #define	CONTTYPE	'7'		/* high perf file */
+#define GLOBXTYPE	'g'		/* global extended header */
+#define FILEXTYPE	'x'		/* file extended header */
+
+/*
+ * GNU tar compatibility;
+ */
+#define LONGLINKTYPE	'K'		/* Long Symlink */
+#define LONGNAMETYPE	'L'		/* Long File */
 
 /*
  * Mode field encoding of the different file types - values in octal
@@ -91,8 +97,8 @@
  */
 typedef struct {
 	char name[TNMSZ];		/* name of entry */
-	char mode[8]; 			/* mode */
-	char uid[8]; 			/* uid */
+	char mode[8];			/* mode */
+	char uid[8];			/* uid */
 	char gid[8];			/* gid */
 	char size[12];			/* size */
 	char mtime[12];			/* modification time */
@@ -111,12 +117,12 @@ typedef struct {
 /*
  * default device names
  */
-#define	DEV_0		"/dev/rmt0"
-#define	DEV_1		"/dev/rmt1"
-#define	DEV_4		"/dev/rmt4"
-#define	DEV_5		"/dev/rmt5"
-#define	DEV_7		"/dev/rmt7"
-#define	DEV_8		"/dev/rmt8"
+extern char DEV_0[];
+extern char DEV_1[];
+extern char DEV_4[];
+extern char DEV_5[];
+extern char DEV_7[];
+extern char DEV_8[];
 #endif /* _PAX_ */
 
 /*
@@ -130,8 +136,8 @@ typedef struct {
 
 typedef struct {
 	char name[TNMSZ];		/* name of entry */
-	char mode[8]; 			/* mode */
-	char uid[8]; 			/* uid */
+	char mode[8];			/* mode */
+	char uid[8];			/* uid */
 	char gid[8];			/* gid */
 	char size[12];			/* size */
 	char mtime[12];			/* modification time */

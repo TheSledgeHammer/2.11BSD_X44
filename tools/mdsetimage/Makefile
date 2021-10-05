@@ -4,7 +4,7 @@
 
 HOSTPROGNAME=	${MACHINE_GNU_PLATFORM}-mdsetimage
 
-HOST_SRCDIR=	contrib/external/gnu/binutils/usr.sbin/mdsetimage
+HOST_SRCDIR=	contrib/gnu/binutils/usr.sbin/mdsetimage
 
 TOOLCHAINOBJ!=	cd ${.CURDIR}/../binutils && ${PRINTOBJDIR}
 BFDDIR?=	${TOOLCHAINOBJ}/build/bfd

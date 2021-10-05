@@ -1,3 +1,5 @@
+/*	$NetBSD: cpio.h,v 1.6 2003/10/13 07:41:22 agc Exp $	*/
+
 /*-
  * Copyright (c) 1992 Keith Muller.
  * Copyright (c) 1992, 1993
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -70,7 +68,7 @@ typedef struct {
 	char	c_mtime[11];		/* modification time */
 	char	c_namesize[6];		/* length of pathname */
 	char	c_filesize[11];		/* length of file in bytes */
-} HD_CPIO; 
+} HD_CPIO;
 
 #define	MAGIC		070707		/* transportable archive id */
 
@@ -81,7 +79,7 @@ typedef struct {
 #endif /* _PAX_ */
 
 /*
- * Binary cpio header structure 
+ * Binary cpio header structure
  *
  * CAUTION! CAUTION! CAUTION!
  * Each field really represents a 16 bit short (NOT ASCII). Described as
@@ -101,7 +99,7 @@ typedef struct {
 	u_char	h_namesize[2];
 	u_char	h_filesize_1[2];
 	u_char	h_filesize_2[2];
-} HD_BCPIO; 
+} HD_BCPIO;
 
 #ifdef _PAX_
 /*
@@ -139,7 +137,7 @@ typedef struct {
 	char	c_rmin[8];		/* special file minor # */
 	char	c_namesize[8];		/* length of pathname */
 	char	c_chksum[8];		/* 0 OR CRC of bytes of FILE data */
-} HD_VCPIO; 
+} HD_VCPIO;
 
 #define	VMAGIC		070701		/* sVr4 new portable archive id */
 #define	VCMAGIC		070702		/* sVr4 new portable archive id CRC */

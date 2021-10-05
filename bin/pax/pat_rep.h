@@ -1,3 +1,5 @@
+/*	$NetBSD: pat_rep.h,v 1.7 2008/02/24 20:42:46 joerg Exp $	*/
+
 /*-
  * Copyright (c) 1992 Keith Muller.
  * Copyright (c) 1992, 1993
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -37,18 +35,17 @@
  *	@(#)pat_rep.h	8.1 (Berkeley) 5/31/93
  */
 
+#include <regex.h>
 /*
  * data structure for storing user supplied replacement strings (-s)
  */
 typedef struct replace {
 	char		*nstr;	/* the new string we will substitute with */
-#	ifdef NET2_REGEX
-	regexp		*rcmp;	/* compiled regular expression used to match */
-#	else
 	regex_t		rcmp;	/* compiled regular expression used to match */
-#	endif
 	int		flgs;	/* print conversions? global in operation?  */
 #define	PRNT		0x1
 #define	GLOB		0x2
+#define RENM		0x4
+#define SYML		0x8
 	struct replace	*fow;	/* pointer to next pattern */
 } REPLACE;

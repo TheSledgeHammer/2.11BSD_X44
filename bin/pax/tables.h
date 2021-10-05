@@ -1,3 +1,5 @@
+/*	$NetBSD: tables.h,v 1.10 2007/04/29 20:23:34 msaitoh Exp $	*/
+
 /*-
  * Copyright (c) 1992 Keith Muller.
  * Copyright (c) 1992, 1993
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -79,7 +77,7 @@ typedef struct hrdlnk {
 typedef struct ftm {
 	int		namelen;	/* file name length */
 	time_t		mtime;		/* files last modification time */
-	off_t		seek;		/* loacation in scratch file */
+	off_t		seek;		/* location in scratch file */
 	struct ftm	*fow;
 } FTM;
 
@@ -105,7 +103,7 @@ typedef struct namt {
  * this table. (When the inode field in the archive header are too small, we
  * remap the dev on writes to remove accidental collisions).
  *
- * The list is hashed by device number using chain collision resolution. Off of 
+ * The list is hashed by device number using chain collision resolution. Off of
  * each DEVT are linked the various remaps for this device based on those bits
  * in the inode which were truncated. For example if we are just remapping to
  * avoid a device number during an update append, off the DEVT we would have
@@ -135,7 +133,7 @@ typedef struct dlist {
 } DLIST;
 
 /*
- * ftree directory access time reset table. When we are done with with a
+ * ftree directory access time reset table. When we are done with a
  * subtree we reset the access and mod time of the directory when the tflag is
  * set. Not really explicitly specified in the pax spec, but easy and fast to
  * do (and this may have even been intended in the spec, it is not clear).
@@ -163,10 +161,16 @@ typedef struct atdir {
  */
 
 typedef struct dirdata {
+#ifdef DIRS_USE_FILE
 	int nlen;	/* length of the directory name (includes \0) */
 	off_t npos;	/* position in file where this dir name starts */
+#else
+	char *name;	/* file name */
+	struct dirdata *next;
+#endif
 	mode_t mode;	/* file mode to restore */
 	time_t mtime;	/* mtime to set */
 	time_t atime;	/* atime to set */
+	long fflags;	/* file flags to set */
 	int frc_mode;	/* do we force mode settings? */
 } DIRDATA;

@@ -1,3 +1,5 @@
+/*	$NetBSD: options.h,v 1.11 2007/04/23 18:40:22 christos Exp $	*/
+
 /*-
  * Copyright (c) 1992 Keith Muller.
  * Copyright (c) 1992, 1993
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -45,52 +43,57 @@
 #define NM_CPIO "cpio"
 #define NM_PAX  "pax"
 
+/* special value for -E */
+#define none	"none"
+
 /*
  * Constants used to specify the legal sets of flags in pax. For each major
  * operation mode of pax, a set of illegal flags is defined. If any one of
  * those illegal flags are found set, we scream and exit
  */
-#define NONE	"none"
 
 /*
  * flags (one for each option).
  */
-#define	AF	0x00000001
-#define	BF	0x00000002
-#define	CF	0x00000004
-#define	DF	0x00000008
-#define	FF	0x00000010
-#define	IF	0x00000020
-#define	KF	0x00000040
-#define	LF	0x00000080
-#define	NF	0x00000100
-#define	OF	0x00000200
-#define	PF	0x00000400
-#define	RF	0x00000800
-#define	SF	0x00001000
-#define	TF	0x00002000
-#define	UF	0x00004000
-#define	VF	0x00008000
-#define	WF	0x00010000
-#define	XF	0x00020000
-#define	CBF	0x00040000	/* nonstandard extension */
-#define	CDF	0x00080000	/* nonstandard extension */
-#define	CEF	0x00100000	/* nonstandard extension */
-#define	CGF	0x00200000	/* nonstandard extension */
-#define	CHF	0x00400000	/* nonstandard extension */
-#define	CLF	0x00800000	/* nonstandard extension */
-#define	CPF	0x01000000	/* nonstandard extension */
-#define	CTF	0x02000000	/* nonstandard extension */
-#define	CUF	0x04000000	/* nonstandard extension */
-#define	CXF	0x08000000
-#define	CYF	0x10000000	/* nonstandard extension */
-#define	CZF	0x20000000	/* nonstandard extension */
+#define AF	0x000000001ULL
+#define BF	0x000000002ULL
+#define CF	0x000000004ULL
+#define DF	0x000000008ULL
+#define FF	0x000000010ULL
+#define IF	0x000000020ULL
+#define KF	0x000000040ULL
+#define LF	0x000000080ULL
+#define NF	0x000000100ULL
+#define OF	0x000000200ULL
+#define PF	0x000000400ULL
+#define RF	0x000000800ULL
+#define SF	0x000001000ULL
+#define TF	0x000002000ULL
+#define UF	0x000004000ULL
+#define VF	0x000008000ULL
+#define WF	0x000010000ULL
+#define XF	0x000020000ULL
+#define CAF	0x000040000ULL	/* nonstandard extension */
+#define CBF	0x000080000ULL	/* nonstandard extension */
+#define CDF	0x000100000ULL	/* nonstandard extension */
+#define CEF	0x000200000ULL	/* nonstandard extension */
+#define CGF	0x000400000ULL	/* nonstandard extension */
+#define CHF	0x000800000ULL	/* nonstandard extension */
+#define CLF	0x001000000ULL	/* nonstandard extension */
+#define CMF	0x002000000ULL	/* nonstandard extension */
+#define CPF	0x004000000ULL	/* nonstandard extension */
+#define CTF	0x008000000ULL	/* nonstandard extension */
+#define CUF	0x010000000ULL	/* nonstandard extension */
+#define VSF	0x020000000ULL	/* non-standard */
+#define CXF	0x040000000ULL
+#define CYF	0x080000000ULL	/* nonstandard extension */
+#define CZF	0x100000000ULL	/* nonstandard extension */
 
 /*
  * ascii string indexed by bit position above (alter the above and you must
  * alter this string) used to tell the user what flags caused us to complain
  */
-#define FLGCH	"abcdfiklnoprstuvwxBDEGHLPTUXYZ"
+#define FLGCH	"abcdfiklnoprstuvwxABDEGHLMPTUVXYZ"
 
 /*
  * legal pax operation bit patterns
@@ -107,7 +110,7 @@
  * Illegal option flag subsets based on pax operation
  */
 
-#define	BDEXTR	(AF|BF|LF|TF|WF|XF|CBF|CHF|CLF|CPF|CXF)
+#define	BDEXTR	(AF|BF|LF|TF|WF|XF|CBF|CHF|CLF|CMF|CPF|CXF)
 #define	BDARCH	(CF|KF|LF|NF|PF|RF|CDF|CEF|CYF|CZF)
-#define	BDCOPY	(AF|BF|FF|OF|XF|CBF|CEF)
-#define	BDLIST (AF|BF|IF|KF|LF|OF|PF|RF|TF|UF|WF|XF|CBF|CDF|CHF|CLF|CPF|CXF|CYF|CZF)
+#define	BDCOPY	(AF|BF|FF|OF|XF|CAF|CBF|CEF)
+#define	BDLIST (AF|BF|IF|KF|LF|OF|PF|RF|TF|UF|WF|XF|CBF|CDF|CHF|CLF|CMF|CPF|CXF|CYF|CZF)

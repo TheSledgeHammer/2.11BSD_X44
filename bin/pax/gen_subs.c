@@ -1,3 +1,5 @@
+/*	$NetBSD: gen_subs.c,v 1.37 2018/11/30 00:53:11 christos Exp $	*/
+
 /*-
  * Copyright (c) 1992 Keith Muller.
  * Copyright (c) 1992, 1993
@@ -14,11 +16,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -35,21 +33,35 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
+#include <sys/cdefs.h>
+#if !defined(lint)
+#if 0
 static char sccsid[] = "@(#)gen_subs.c	8.1 (Berkeley) 5/31/93";
+#else
+__RCSID("$NetBSD: gen_subs.c,v 1.37 2018/11/30 00:53:11 christos Exp $");
+#endif
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/param.h>
-#include <stdio.h>
+
 #include <ctype.h>
-#include <tzfile.h>
-#include <utmp.h>
-#include <unistd.h>
+#include <grp.h>
+#include <pwd.h>
+#include <vis.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <tzfile.h>
+#include <unistd.h>
+
 #include "pax.h"
 #include "extern.h"
 
@@ -62,7 +74,7 @@ static char sccsid[] = "@(#)gen_subs.c	8.1 (Berkeley) 5/31/93";
  */
 #define MODELEN 20
 #define DATELEN 64
-#define SIXMONTHS	 ((DAYS_PER_NYEAR / 2) * SECS_PER_DAY)
+#define SIXMONTHS	 ((DAYSPERNYEAR / 2) * SECSPERDAY)
 #define CURFRMT		"%b %e %H:%M"
 #define OLDFRMT		"%b %e  %Y"
 #ifndef UT_NAMESIZE
@@ -71,31 +83,43 @@ static char sccsid[] = "@(#)gen_subs.c	8.1 (Berkeley) 5/31/93";
 #define UT_GRPSIZE	6
 
 /*
+ * convert time to string
+ */
+static void
+formattime(char *buf, size_t buflen, time_t when)
+{
+	int error;
+	struct tm tm;
+	(void)localtime_r(&when, &tm);
+
+	if (when + SIXMONTHS <= time(NULL))
+		error = strftime(buf, buflen, OLDFRMT, &tm);
+	else
+		error = strftime(buf, buflen, CURFRMT, &tm);
+
+	if (error == 0)
+		buf[0] = '\0';
+}
+
+/*
  * ls_list()
  *	list the members of an archive in ls format
  */
 
-#if __STDC__
 void
-ls_list(register ARCHD *arcn, time_t now)
-#else
-void
-ls_list(arcn, now)
-	register ARCHD *arcn;
-	time_t now;
-#endif
+ls_list(ARCHD *arcn, time_t now, FILE *fp)
 {
-	register struct stat *sbp;
+	struct stat *sbp;
 	char f_mode[MODELEN];
 	char f_date[DATELEN];
-	char *timefrmt;
+	const char *user, *group;
 
 	/*
 	 * if not verbose, just print the file name
 	 */
 	if (!vflag) {
-		(void)printf("%s\n", arcn->name);
-		(void)fflush(stdout);
+		(void)fprintf(fp, "%s\n", arcn->name);
+		(void)fflush(fp);
 		return;
 	}
 
@@ -105,182 +129,93 @@ ls_list(arcn, now)
 	sbp = &(arcn->sb);
 	strmode(sbp->st_mode, f_mode);
 
-	if (ltmfrmt == NULL) {
-		/*
-		 * no locale specified format. time format based on age
-		 * compared to the time pax was started.
-		 */
-		if ((sbp->st_mtime + SIXMONTHS) <= now)
-			timefrmt = OLDFRMT;
-		else
-			timefrmt = CURFRMT;
-	} else
-		timefrmt = ltmfrmt;
-
+	/*
+	 * time format based on age compared to the time pax was started.
+	 */
+	formattime(f_date, sizeof(f_date), arcn->sb.st_mtime);
 	/*
 	 * print file mode, link count, uid, gid and time
 	 */
-	if (strftime(f_date,DATELEN,timefrmt,localtime(&(sbp->st_mtime))) == 0)
-		f_date[0] = '\0';
-	(void)printf("%s%2u %-*s %-*s ", f_mode, sbp->st_nlink, UT_NAMESIZE,
-		name_uid(sbp->st_uid, 1), UT_GRPSIZE,
-		name_gid(sbp->st_gid, 1));
+	user = user_from_uid(sbp->st_uid, 0);
+	group = group_from_gid(sbp->st_gid, 0);
+	(void)fprintf(fp, "%s%2lu %-*s %-*s ", f_mode,
+	    (unsigned long)sbp->st_nlink,
+	    UT_NAMESIZE, user ? user : "", UT_GRPSIZE, group ? group : "");
 
 	/*
 	 * print device id's for devices, or sizes for other nodes
 	 */
 	if ((arcn->type == PAX_CHR) || (arcn->type == PAX_BLK))
-#		ifdef NET2_STAT
-		(void)printf("%4u,%4u ", MAJOR(sbp->st_rdev),
-#		else
-		(void)printf("%4lu,%4lu ", MAJOR(sbp->st_rdev),
-#		endif
-		    MINOR(sbp->st_rdev));
+		(void)fprintf(fp, "%4lu,%4lu ", (long) MAJOR(sbp->st_rdev),
+		    (long) MINOR(sbp->st_rdev));
 	else {
-#		ifdef NET2_STAT
-		(void)printf("%9lu ", sbp->st_size);
-#		else
-		(void)printf("%9qu ", sbp->st_size);
-#		endif
+		(void)fprintf(fp, OFFT_FP("9") " ", (OFFT_T)sbp->st_size);
 	}
 
 	/*
 	 * print name and link info for hard and soft links
 	 */
-	(void)printf("%s %s", f_date, arcn->name);
+	(void)fprintf(fp, "%s %s", f_date, arcn->name);
 	if ((arcn->type == PAX_HLK) || (arcn->type == PAX_HRG))
-		(void)printf(" == %s\n", arcn->ln_name);
+		(void)fprintf(fp, " == %s\n", arcn->ln_name);
 	else if (arcn->type == PAX_SLK)
-		(void)printf(" => %s\n", arcn->ln_name);
+		(void)fprintf(fp, " -> %s\n", arcn->ln_name);
 	else
-		(void)putchar('\n');
-	(void)fflush(stdout);
-	return;
+		(void)fputc('\n', fp);
+	(void)fflush(fp);
 }
 
 /*
  * tty_ls()
- * 	print a short summary of file to tty.
+ *	print a short summary of file to tty.
  */
 
-#if __STDC__
 void
-ls_tty(register ARCHD *arcn)
-#else
-void
-ls_tty(arcn)
-	register ARCHD *arcn;
-#endif
+ls_tty(ARCHD *arcn)
 {
 	char f_date[DATELEN];
 	char f_mode[MODELEN];
-	char *timefrmt;
 
-	if (ltmfrmt == NULL) {
-		/*
-		 * no locale specified format
-		 */
-		if ((arcn->sb.st_mtime + SIXMONTHS) <= time((time_t *)NULL))
-			timefrmt = OLDFRMT;
-		else
-			timefrmt = CURFRMT;
-	} else
-		timefrmt = ltmfrmt;
-
-	/*
-	 * convert time to string, and print
-	 */
-	if (strftime(f_date, DATELEN, timefrmt,
-	    localtime(&(arcn->sb.st_mtime))) == 0)
-		f_date[0] = '\0';
+	formattime(f_date, sizeof(f_date), arcn->sb.st_mtime);
 	strmode(arcn->sb.st_mode, f_mode);
 	tty_prnt("%s%s %s\n", f_mode, f_date, arcn->name);
 	return;
 }
 
-/*
- * zf_strncpy()
- *	copy src to dest up to len chars (stopping at first '\0'), when src is
- *	shorter than len, pads to len with '\0'. big performance win (and 
- *	a lot easier to code) over strncpy(), then a strlen() then a
- *	bzero(). (or doing the bzero() first).
- */
-
-#if __STDC__
 void
-zf_strncpy(register char *dest, register char *src, int len)
-#else
-void
-zf_strncpy(dest, src, len)
-	register char *dest;
-	register char *src;
-	int len;
-#endif
+safe_print(const char *str, FILE *fp)
 {
-	register char *stop;
+	char visbuf[5];
+	const char *cp;
 
-	stop = dest + len;
-	while ((dest < stop) && (*src != '\0'))
-		*dest++ = *src++;
-	while (dest < stop)
-		*dest++ = '\0';
-	return;
+	/*
+	 * if printing to a tty, use vis(3) to print special characters.
+	 */
+	if (isatty(fileno(fp))) {
+		for (cp = str; *cp; cp++) {
+			(void)vis(visbuf, cp[0], VIS_CSTYLE, cp[1]);
+			(void)fputs(visbuf, fp);
+		}
+	} else {
+		(void)fputs(str, fp);
+	}
 }
 
 /*
- * l_strncpy()
- *	copy src to dest up to len chars (stopping at first '\0')
- * Return:
- *	number of chars copied. (Note this is a real performance win over
- *	doing a strncpy() then a strlen()
- */
-
-#if __STDC__
-int
-l_strncpy(register char *dest, register char *src, int len)
-#else
-int
-l_strncpy(dest, src, len)
-	register char *dest;
-	register char *src;
-	int len;
-#endif
-{
-	register char *stop;
-	register char *start;
-
-	stop = dest + len;
-	start = dest;
-	while ((dest < stop) && (*src != '\0'))
-		*dest++ = *src++;
-	if (dest < stop)
-		*dest = '\0';
-	return(dest - start);
-}
-
-/*
- * asc_ul()
- *	convert hex/octal character string into a u_long. We do not have to
+ * asc_u32()
+ *	convert hex/octal character string into a uint32_t. We do not have to
  *	check for overflow! (the headers in all supported formats are not large
  *	enough to create an overflow).
  *	NOTE: strings passed to us are NOT TERMINATED.
  * Return:
- *	unsigned long value
+ *	uint32_t value
  */
 
-#if __STDC__
-u_long
-asc_ul(register char *str, int len, register int base)
-#else
-u_long
-asc_ul(str, len, base)
-	register char *str;
-	int len;
-	register int base;
-#endif
+uint32_t
+asc_u32(char *str, int len, int base)
 {
-	register char *stop;
-	u_long tval = 0;
+	char *stop;
+	uint32_t tval = 0;
 
 	stop = str + len;
 
@@ -306,34 +241,32 @@ asc_ul(str, len, base)
 				break;
 		}
 	} else {
- 		while ((str < stop) && (*str >= '0') && (*str <= '7'))
+		while ((str < stop) && (*str >= '0') && (*str <= '7'))
 			tval = (tval << 3) + (*str++ - '0');
 	}
-	return(tval);
+	return tval;
 }
 
 /*
- * ul_asc()
- *	convert an unsigned long into an hex/oct ascii string. pads with LEADING
+ * u32_asc()
+ *	convert an uintmax_t into an hex/oct ascii string. pads with LEADING
  *	ascii 0's to fill string completely
  *	NOTE: the string created is NOT TERMINATED.
  */
 
-#if __STDC__
 int
-ul_asc(u_long val, register char *str, register int len, register int base)
-#else
-int
-ul_asc(val, str, len, base)
-	u_long val;
-	register char *str;
-	register int len;
-	register int base;
-#endif
+u32_asc(uintmax_t val, char *str, int len, int base)
 {
-	register char *pt;
-	u_long digit;
-	
+	char *pt;
+	uint32_t digit;
+	uintmax_t p;
+
+	p = val & TOP_HALF;
+	if (p && p != TOP_HALF)
+		return -1;
+
+	val &= BOTTOM_HALF;
+
 	/*
 	 * WARNING str is not '\0' terminated by this routine
 	 */
@@ -348,7 +281,7 @@ ul_asc(val, str, len, base)
 		while (pt >= str) {
 			if ((digit = (val & 0xf)) < 10)
 				*pt-- = '0' + (char)digit;
-			else 
+			else
 				*pt-- = 'a' + (char)(digit - 10);
 			if ((val = (val >> 4)) == (u_long)0)
 				break;
@@ -356,7 +289,7 @@ ul_asc(val, str, len, base)
 	} else {
 		while (pt >= str) {
 			*pt-- = '0' + (char)(val & 0x7);
-			if ((val = (val >> 3)) == (u_long)0)
+			if ((val = (val >> 3)) == 0)
 				break;
 		}
 	}
@@ -366,37 +299,50 @@ ul_asc(val, str, len, base)
 	 */
 	while (pt >= str)
 		*pt-- = '0';
-	if (val != (u_long)0)
-		return(-1);
-	return(0);
+	if (val != 0)
+		return -1;
+	return 0;
 }
 
-#ifndef NET2_STAT
 /*
- * asc_uqd()
- *	convert hex/octal character string into a u_quad_t. We do not have to
- *	check for overflow! (the headers in all supported formats are not large
- *	enough to create an overflow).
+ * asc_umax()
+ *	convert hex/octal/base-256 value into a uintmax.
  *	NOTE: strings passed to us are NOT TERMINATED.
  * Return:
- *	u_quad_t value
+ *	uintmax_t value; UINTMAX_MAX for overflow/negative
  */
 
-#if __STDC__
-u_quad_t
-asc_uqd(register char *str, int len, register int base)
-#else
-u_quad_t
-asc_uqd(str, len, base)
-	register char *str;
-	int len;
-	register int base;
-#endif
+uintmax_t
+asc_umax(char *str, int len, int base)
 {
-	register char *stop;
-	u_quad_t tval = 0;
+	char *stop;
+	uintmax_t tval = 0;
 
 	stop = str + len;
+
+	/*
+	 * if the highest bit of first byte is set, it's base-256 encoded
+	 * (base-256 is basically (n-1)-bit big endian signed
+	 */
+	if (str < stop && (*str & 0x80)) {
+		/*
+		 * uintmax_t can't be negative, so fail on negative numbers
+		 */
+		if (*str & 0x40)
+			return UINTMAX_MAX;
+
+		tval = *str++ & 0x3f;
+		while (str < stop) {
+			/*
+			 * check for overflow
+			 */
+			if (tval > (UINTMAX_MAX/256))
+				return UINTMAX_MAX;
+			tval = (tval << 8) | ((*str++) & 0xFF);
+		}
+
+		return tval;
+	}
 
 	/*
 	 * skip over leading blanks and zeros
@@ -420,34 +366,25 @@ asc_uqd(str, len, base)
 				break;
 		}
 	} else {
- 		while ((str < stop) && (*str >= '0') && (*str <= '7'))
+		while ((str < stop) && (*str >= '0') && (*str <= '7'))
 			tval = (tval << 3) + (*str++ - '0');
 	}
-	return(tval);
+	return tval;
 }
 
 /*
- * uqd_asc()
- *	convert an u_quad_t into a hex/oct ascii string. pads with LEADING
- *	ascii 0's to fill string completely
+ * umax_asc()
+ *	convert an uintmax_t into a hex/oct ascii string. pads with
+ *	LEADING ascii 0's to fill string completely
  *	NOTE: the string created is NOT TERMINATED.
  */
 
-#if __STDC__
 int
-uqd_asc(u_quad_t val, register char *str, register int len, register int base)
-#else
-int
-uqd_asc(val, str, len, base)
-	u_quad_t val;
-	register char *str;
-	register int len;
-	register int base;
-#endif
+umax_asc(uintmax_t val, char *str, int len, int base)
 {
-	register char *pt;
-	u_quad_t digit;
-	
+	char *pt;
+	uintmax_t digit;
+
 	/*
 	 * WARNING str is not '\0' terminated by this routine
 	 */
@@ -462,15 +399,15 @@ uqd_asc(val, str, len, base)
 		while (pt >= str) {
 			if ((digit = (val & 0xf)) < 10)
 				*pt-- = '0' + (char)digit;
-			else 
+			else
 				*pt-- = 'a' + (char)(digit - 10);
-			if ((val = (val >> 4)) == (u_quad_t)0)
+			if ((val = (val >> 4)) == 0)
 				break;
 		}
 	} else {
 		while (pt >= str) {
 			*pt-- = '0' + (char)(val & 0x7);
-			if ((val = (val >> 3)) == (u_quad_t)0)
+			if ((val = (val >> 3)) == 0)
 				break;
 		}
 	}
@@ -480,8 +417,21 @@ uqd_asc(val, str, len, base)
 	 */
 	while (pt >= str)
 		*pt-- = '0';
-	if (val != (u_quad_t)0)
-		return(-1);
-	return(0);
+	if (val != 0)
+		return -1;
+	return 0;
 }
-#endif
+
+int
+check_Aflag(void)
+{
+
+	if (Aflag > 0)
+		return 1;
+	if (Aflag == 0) {
+		Aflag = -1;
+		tty_warn(0,
+		 "Removing leading / from absolute path names in the archive");
+	}
+	return 0;
+}
