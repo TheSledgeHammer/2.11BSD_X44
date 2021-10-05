@@ -90,12 +90,13 @@ extern struct 	linesw linesw[];
  * Swap device table
  */
 struct swdevt {
-	dev_t			sw_dev;
-	int				sw_flags;
-	int				sw_nblks;
-	struct vnode 	*sw_vp;
-
-	//struct swapdev *sw_swapdev;
+	dev_t			sw_dev;					/* device id */
+	int				sw_flags;				/* flags */
+	int				sw_nblks;				/* total blocks */
+	int				sw_inuse;				/* blocks in use */
+	struct vnode 	*sw_vp;					/* swap vnode */
+	struct swapdev 	*sw_swapdev;			/* swapdrum device */
+	char			sw_path[PATH_MAX+1]; 	/* path name */
 };
 
 #define	SW_FREED		0x01

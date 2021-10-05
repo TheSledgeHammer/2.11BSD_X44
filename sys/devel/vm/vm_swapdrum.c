@@ -129,6 +129,31 @@ swapdrum_init(swp)
 	&vndbuf_pool = (struct vndbuf)rmalloc(&swapmap, sizeof(struct vndbuf));
 }
 
+void
+vm_swap_stats(cmd, sp, sec, retval)
+	int cmd;
+	struct swdevt *sp;
+	int sec;
+	register_t *retval;
+{
+	struct swappri *spp;
+	struct swapdev *sdp;
+	int count = 0;
+
+	LIST_FOREACH(spp, &swap_priority, spi_swappri) {
+		for (sdp = CIRCLEQ_FIRST(&spp->spi_swapdev);
+				sdp != (void*) &spp->spi_swapdev && sec-- > 0; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
+			sdp->swd_swdevt->sw_inuse = btodb((u_int64_t)sdp->swd_npginuse << PAGE_SHIFT);
+			(void)memcpy(sp, &sdp->swd_swdevt, sizeof(struct swdevt));
+			(void)memcpy(&sp->sw_path, sdp->swd_path, sdp->swd_pathlen);
+			count++;
+			sp++;
+		}
+	}
+	*retval = count;
+	return;
+}
+
 /*
  * swaplist functions: functions that operate on the list of swap
  * devices on the system.
@@ -280,6 +305,215 @@ swapdrum_getsdp(pgno)
 	return (NULL);
 }
 
+struct swapctl_args {
+	syscallarg(int) 	cmd;
+	syscallarg(void *) 	arg;
+	syscallarg(int) 	misc;
+};
+
+int
+swapctl(p, uap, retval)
+	struct proc *p;
+	struct swapctl_args *uap;
+	int *retval;
+{
+	struct vnode *vp;
+	struct nameidata nd;
+	struct swappri *spp;
+	struct swapdev *sdp;
+	struct swdevt *sp;
+	char userpath[PATH_MAX + 1];
+	size_t	len;
+	int	error, misc;
+	int	priority;
+
+	misc = SCARG(uap, misc);
+
+	/*
+	 * ensure serialized syscall access by grabbing the swap_syscall_lock
+	 */
+	lockmgr(&swap_syscall_lock, LK_EXCLUSIVE, NULL);
+
+	/*
+	 * we handle the non-priv NSWAP and STATS request first.
+	 *
+	 * SWAP_NSWAP: return number of config'd swap devices
+	 * [can also be obtained with uvmexp sysctl]
+	 */
+	if (SCARG(uap, cmd) == SWAP_NSWAP) {
+		*retval = cnt.v_nswapdev;
+		error = 0;
+		goto out;
+	}
+
+	/*
+	 * all other requests require superuser privs.   verify.
+	 */
+	if ((error = suser1(p->p_ucred, &p->p_acflag))) {
+		goto out;
+	}
+
+	/*
+	 * at this point we expect a path name in arg.   we will
+	 * use namei() to gain a vnode reference (vref), and lock
+	 * the vnode (VOP_LOCK).
+	 *
+	 * XXX: a NULL arg means use the root vnode pointer (e.g. for
+	 * miniroot)
+	 */
+	if (SCARG(uap, arg) == NULL) {
+		vp = rootvp;		/* miniroot */
+		if (vget(vp, LK_EXCLUSIVE)) {
+			error = EBUSY;
+			goto out;
+		}
+		if (SCARG(uap, cmd) == SWAP_ON &&
+		    copystr("miniroot", userpath, sizeof userpath, &len))
+			panic("swapctl: miniroot copy failed");
+	} else {
+		int		space;
+		char	*where;
+
+		if (SCARG(uap, cmd) == SWAP_ON) {
+			if ((error = copyinstr(SCARG(uap, arg), userpath, sizeof userpath, &len)))
+				goto out;
+			space = UIO_SYSSPACE;
+			where = userpath;
+		} else {
+			space = UIO_USERSPACE;
+			where = (char *)SCARG(uap, arg);
+		}
+		NDINIT(&nd, LOOKUP, FOLLOW|LOCKLEAF, space, where, p);
+		if ((error = namei(&nd))) {
+			goto out;
+		}
+		vp = nd.ni_vp;
+	}
+	/* note: "vp" is referenced and locked */
+
+	error = 0;		/* assume no error */
+	switch(SCARG(uap, cmd)) {
+
+	case SWAP_DUMPDEV:
+		if (vp->v_type != VBLK) {
+			error = ENOTBLK;
+			break;
+		}
+		dumpdev = vp->v_rdev;
+		break;
+
+	case SWAP_CTL:
+		/*
+		 * get new priority, remove old entry (if any) and then
+		 * reinsert it in the correct place.  finally, prune out
+		 * any empty priority structures.
+		 */
+		priority = SCARG(uap, misc);
+		spp = malloc(sizeof *spp, M_VMSWAP, M_WAITOK);
+		simple_lock(&swap_data_lock);
+		if ((sdp = swaplist_find(vp, 1)) == NULL) {
+			error = ENOENT;
+		} else {
+			swaplist_insert(sdp, spp, priority);
+			swaplist_trim();
+		}
+		simple_unlock(&swap_data_lock);
+		if (error)
+			free(spp, M_VMSWAP);
+		break;
+
+	case SWAP_ON:
+
+		/*
+		 * check for duplicates.   if none found, then insert a
+		 * dummy entry on the list to prevent someone else from
+		 * trying to enable this device while we are working on
+		 * it.
+		 */
+
+		priority = SCARG(uap, misc);
+		//sdp = malloc(sizeof *sdp, M_VMSWAP, M_WAITOK);
+		//spp = malloc(sizeof *spp, M_VMSWAP, M_WAITOK);
+		memset(sdp, 0, sizeof(*sdp));
+		sp->sw_flags = SW_FAKE;
+		sp->sw_vp = vp;
+		sp->sw_dev = (vp->v_type == VBLK) ? vp->v_rdev : NODEV;
+		simple_lock(&swap_data_lock);
+		if (swaplist_find(vp, 0) != NULL) {
+			error = EBUSY;
+			simple_unlock(&swap_data_lock);
+			//bufq_free(&sdp->swd_tab);
+			//free(sdp, M_VMSWAP);
+			//free(spp, M_VMSWAP);
+			break;
+		}
+		swaplist_insert(sdp, spp, priority);
+		simple_unlock(&swap_data_lock);
+
+		sdp->swd_pathlen = len;
+		sdp->swd_path = malloc(sdp->swd_pathlen, M_VMSWAP, M_WAITOK);
+		if (copystr(userpath, sdp->swd_path, sdp->swd_pathlen, 0) != 0)
+			panic("swapctl: copystr");
+
+		/*
+		 * we've now got a FAKE placeholder in the swap list.
+		 * now attempt to enable swap on it.  if we fail, undo
+		 * what we've done and kill the fake entry we just inserted.
+		 * if swap_on is a success, it will clear the SWF_FAKE flag
+		 */
+
+		if ((error = swapdrum_on(p, sp)) != 0) {
+			simple_lock(&swap_data_lock);
+			(void) swaplist_find(vp, 1);  /* kill fake entry */
+			swaplist_trim();
+			simple_unlock(&swap_data_lock);
+			//bufq_free(&sdp->swd_tab);
+			//free(sdp->swd_path, M_VMSWAP);
+			//free(sdp, M_VMSWAP);
+			break;
+		}
+		break;
+
+	case SWAP_OFF:
+		simple_lock(&swap_data_lock);
+		if ((sdp = swaplist_find(vp, 0)) == NULL) {
+			simple_unlock(&swap_data_lock);
+			error = ENXIO;
+			break;
+		}
+
+		/*
+		 * If a device isn't in use or enabled, we
+		 * can't stop swapping from it (again).
+		 */
+		if ((sp->sw_flags & (SW_INUSE|SW_ENABLE)) == 0) {
+			simple_unlock(&swap_data_lock);
+			error = EBUSY;
+			break;
+		}
+
+		/*
+		 * do the real work.
+		 */
+		error = swapdrum_off(p, sp);
+		break;
+
+	default:
+		error = EINVAL;
+	}
+
+	/*
+	 * done!  release the ref gained by namei() and unlock.
+	 */
+	vput(vp);
+
+out:
+	lockmgr(&swap_syscall_lock, LK_RELEASE, NULL);
+	return (error);
+}
+
+
+
 int
 swapdrum_on(p, sp)
 	struct proc *p;
@@ -409,7 +643,7 @@ swapdrum_on(p, sp)
 	}
 
 	/* check if vp == rootvp via swap_miniroot */
-	error = swap_miniroot(sp, sdp, vp, npages);
+	error = swap_miniroot(sp, sdp, vp, npages, addr);
 	if(error != 0) {
 		return (error);
 	}
@@ -478,12 +712,13 @@ swapdrum_off(p, sp)
 }
 
 int
-swap_miniroot(p, sp, sdp, vp, npages)
+swap_miniroot(p, sp, sdp, vp, npages, addr)
 	struct proc 	*p;
 	struct swdevt 	*sp;
 	struct swapdev 	*sdp;
 	struct vnode 	*vp;
 	int npages;
+	long addr;
 {
 	/*
 	 * if the vnode we are swapping to is the root vnode
@@ -517,4 +752,336 @@ swap_miniroot(p, sp, sdp, vp, npages)
 		return (ENXIO);
 	}
 	return (0);
+}
+
+/*
+ * swstrategy: perform I/O on the drum
+ *
+ * => we must map the i/o request from the drum to the correct swapdev.
+ */
+void
+swstrategy(bp)
+	struct buf *bp;
+{
+	struct swdevt	*sp;
+	struct swapdev *sdp;
+	struct vnode *vp;
+	int s, pageno, bn;
+
+	sdp = sp->sw_swapdev;
+
+	/*
+	 * convert block number to swapdev.   note that swapdev can't
+	 * be yanked out from under us because we are holding resources
+	 * in it (i.e. the blocks we are doing I/O on).
+	 */
+	pageno = dbtob((int64_t)bp->b_blkno) >> PAGE_SHIFT;
+	simple_lock(&swap_data_lock);
+	sdp = swapdrum_getsdp(pageno);
+	simple_unlock(&swap_data_lock);
+	if (sdp == NULL) {
+		bp->b_error = EINVAL;
+		bp->b_flags |= B_ERROR;
+		biodone(bp);
+		return;
+	}
+
+	/*
+	 * convert drum page number to block number on this swapdev.
+	 */
+
+	pageno -= sdp->swd_drumoffset;	/* page # on swapdev */
+	bn = btodb((u_int64_t)pageno << PAGE_SHIFT); /* convert to diskblock */
+
+	/*
+	 * for block devices we finish up here.
+	 * for regular files we have to do more work which we delegate
+	 * to sw_reg_strategy().
+	 */
+
+	switch (sp->sw_vp->v_type) {
+	default:
+		panic("swstrategy: vnode type 0x%x", sp->sw_vp->v_type);
+
+	case VBLK:
+
+		/*
+		 * must convert "bp" from an I/O on /dev/drum to an I/O
+		 * on the swapdev (sdp).
+		 */
+		s = splbio();
+		bp->b_blkno = bn;		/* swapdev block number */
+		vp = sp->sw_vp;			/* swapdev vnode pointer */
+		bp->b_dev = sp->sw_dev;	/* swapdev dev_t */
+
+		/*
+		 * if we are doing a write, we have to redirect the i/o on
+		 * drum's v_numoutput counter to the swapdevs.
+		 */
+		if ((bp->b_flags & B_READ) == 0) {
+			vwakeup(bp);	/* kills one 'v_numoutput' on drum */
+			V_INCR_NUMOUTPUT(vp);	/* put it on swapdev */
+		}
+
+		/*
+		 * finally plug in swapdev vnode and start I/O
+		 */
+		bp->b_vp = vp;
+		splx(s);
+		VOP_STRATEGY(bp);
+		return;
+
+	case VREG:
+		/*
+		 * delegate to sw_reg_strategy function.
+		 */
+		sw_reg_strategy(sp, bp, bn);
+		return;
+	}
+	/* NOTREACHED */
+}
+
+
+/*
+ * sw_reg_strategy: handle swap i/o to regular files
+ */
+static void
+sw_reg_strategy(sp, bp, bn)
+	struct swdevt	*sp;
+	struct buf	*bp;
+	int		bn;
+{
+	struct swapdev	*sdp;
+	struct vnode	*vp;
+	struct vndxfer	*vnx;
+	daddr_t		nbn;
+	caddr_t		addr;
+	off_t		byteoff;
+	int		s, off, nra, error, sz, resid;
+
+	sdp = sp->sw_swapdev;
+
+	/*
+	 * allocate a vndxfer head for this transfer and point it to
+	 * our buffer.
+	 */
+	vnx = &vndxfer_pool;
+	vnx->vx_flags = VX_BUSY;
+	vnx->vx_error = 0;
+	vnx->vx_pending = 0;
+	vnx->vx_bp = bp;
+	vnx->vx_sdp = sdp;
+
+	/*
+	 * setup for main loop where we read filesystem blocks into
+	 * our buffer.
+	 */
+	error = 0;
+	bp->b_resid = bp->b_bcount;	/* nothing transfered yet! */
+	addr = bp->b_data;		/* current position in buffer */
+	byteoff = dbtob((u_int64_t)bn);
+
+	for (resid = bp->b_resid; resid; resid -= sz) {
+		struct vndbuf	*nbp;
+
+		/*
+		 * translate byteoffset into block number.  return values:
+		 *   vp = vnode of underlying device
+		 *  nbn = new block number (on underlying vnode dev)
+		 *  nra = num blocks we can read-ahead (excludes requested
+		 *	block)
+		 */
+		nra = 0;
+		error = VOP_BMAP(sp->sw_vp, byteoff / sdp->swd_bsize, &vp, &nbn, &nra);
+		if (error == 0 && nbn == (daddr_t)-1) {
+			/*
+			 * this used to just set error, but that doesn't
+			 * do the right thing.  Instead, it causes random
+			 * memory errors.  The panic() should remain until
+			 * this condition doesn't destabilize the system.
+			 */
+#if 1
+			panic("sw_reg_strategy: swap to sparse file");
+#else
+			error = EIO;	/* failure */
+#endif
+		}
+
+		/*
+		 * punt if there was an error or a hole in the file.
+		 * we must wait for any i/o ops we have already started
+		 * to finish before returning.
+		 *
+		 * XXX we could deal with holes here but it would be
+		 * a hassle (in the write case).
+		 */
+		if (error) {
+			s = splbio();
+			vnx->vx_error = error;	/* pass error up */
+			goto out;
+		}
+
+		/*
+		 * compute the size ("sz") of this transfer (in bytes).
+		 */
+		off = byteoff % sdp->swd_bsize;
+		sz = (1 + nra) * sdp->swd_bsize - off;
+		if (sz > resid)
+			sz = resid;
+
+		/*
+		 * now get a buf structure.   note that the vb_buf is
+		 * at the front of the nbp structure so that you can
+		 * cast pointers between the two structure easily.
+		 */
+		nbp = rmalloc(&vndbuf_pool, sizeof(nbp));
+		BUF_INIT(&nbp->vb_buf);
+		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
+		nbp->vb_buf.b_bcount   = sz;
+		nbp->vb_buf.b_bufsize  = sz;
+		nbp->vb_buf.b_error    = 0;
+		nbp->vb_buf.b_data     = addr;
+		nbp->vb_buf.b_lblkno   = 0;
+		nbp->vb_buf.b_blkno    = nbn + btodb(off);
+		nbp->vb_buf.b_pblkno   = nbp->vb_buf.b_blkno;
+		nbp->vb_buf.b_iodone   = sw_reg_iodone;
+		nbp->vb_buf.b_vp       = vp;
+		if (vp->v_type == VBLK) {
+			nbp->vb_buf.b_dev = vp->v_rdev;
+		}
+
+		nbp->vb_xfer = vnx;	/* patch it back in to vnx */
+
+		/*
+		 * Just sort by block number
+		 */
+		s = splbio();
+		if (vnx->vx_error != 0) {
+			rmfree(&vndbuf_pool, sizeof(nbp), nbp);
+			goto out;
+		}
+		vnx->vx_pending++;
+
+		/* sort it in and start I/O if we are not over our limit */
+		BUFQ_PUT(&sdp->swd_tab, &nbp->vb_buf);
+		sw_reg_start(sdp);
+		splx(s);
+
+		/*
+		 * advance to the next I/O
+		 */
+		byteoff += sz;
+		addr += sz;
+	}
+
+	s = splbio();
+
+out: /* Arrive here at splbio */
+	vnx->vx_flags &= ~VX_BUSY;
+	if (vnx->vx_pending == 0) {
+		if (vnx->vx_error != 0) {
+			bp->b_error = vnx->vx_error;
+			bp->b_flags |= B_ERROR;
+		}
+		rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+		biodone(bp);
+	}
+	splx(s);
+}
+
+/*
+ * sw_reg_start: start an I/O request on the requested swapdev
+ *
+ * => reqs are sorted by b_rawblkno (above)
+ */
+static void
+sw_reg_start(sp)
+	struct swdevt	*sp;
+{
+	struct swapdev	*sdp;
+	struct buf		*bp;
+
+	sdp = sp->sw_swapdev;
+
+	/* recursion control */
+	if ((sp->sw_flags & SW_BUSY) != 0)
+		return;
+
+	sp->sw_flags |= SW_BUSY;
+
+	while (sdp->swd_active < sdp->swd_maxactive) {
+		bp = BUFQ_GET(&sdp->swd_tab);
+		if (bp == NULL)
+			break;
+		sdp->swd_active++;
+
+		if ((bp->b_flags & B_READ) == 0)
+			V_INCR_NUMOUTPUT(bp->b_vp);
+
+		VOP_STRATEGY(bp);
+	}
+	sp->sw_flags &= ~SW_BUSY;
+}
+
+/*
+ * sw_reg_iodone: one of our i/o's has completed and needs post-i/o cleanup
+ *
+ * => note that we can recover the vndbuf struct by casting the buf ptr
+ */
+static void
+sw_reg_iodone(bp)
+	struct buf *bp;
+{
+	struct vndbuf *vbp = (struct vndbuf *) bp;
+	struct vndxfer *vnx = vbp->vb_xfer;
+	struct buf *pbp = vnx->vx_bp;		/* parent buffer */
+	struct swapdev	*sdp = vnx->vx_sdp;
+	int s, resid, error;
+
+	/*
+	 * protect vbp at splbio and update.
+	 */
+
+	s = splbio();
+	resid = vbp->vb_buf.b_bcount - vbp->vb_buf.b_resid;
+	pbp->b_resid -= resid;
+	vnx->vx_pending--;
+
+	if (vbp->vb_buf.b_flags & B_ERROR) {
+		/* pass error upward */
+		error = vbp->vb_buf.b_error ? vbp->vb_buf.b_error : EIO;
+		vnx->vx_error = error;
+	}
+
+	/*
+	 * kill vbp structure
+	 */
+	rmfree(&vndbuf_pool, sizeof(vbp), vbp);
+
+	/*
+	 * wrap up this transaction if it has run to completion or, in
+	 * case of an error, when all auxiliary buffers have returned.
+	 */
+	if (vnx->vx_error != 0) {
+		/* pass error upward */
+		pbp->b_flags |= B_ERROR;
+		pbp->b_error = vnx->vx_error;
+		if ((vnx->vx_flags & VX_BUSY) == 0 && vnx->vx_pending == 0) {
+			rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+			biodone(pbp);
+		}
+	} else if (pbp->b_resid == 0) {
+		KASSERT(vnx->vx_pending == 0);
+		if ((vnx->vx_flags & VX_BUSY) == 0) {
+			rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+			biodone(pbp);
+		}
+	}
+
+	/*
+	 * done!   start next swapdev I/O if one is pending
+	 */
+	sdp->swd_active--;
+	sw_reg_start(sdp);
+	splx(s);
 }

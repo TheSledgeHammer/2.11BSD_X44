@@ -40,15 +40,12 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+#include <sys/queue.h>
 #include <sys/file.h>
 
 #include <miscfs/specfs/specdev.h>
 
 #include <devel/vm/include/vm_swap.h>
-
-#define swdevt_member(swp, member)				(swp->sw_ ## member)
-#define swdevt_find_by_index(member, val)	 	(&swdevt[member].sw_ ## val)
-#define swdevt_find_by_dev(dev, member)			(swdevt_find_by_index(dev, member))
 
 int	nswap, nswdev;
 #ifdef SEQSWAP
@@ -110,7 +107,7 @@ swapinit()
 	sp->b_actf = NULL;
 }
 
-static void
+void
 swap_sequential(swp, niswdev, niswap)
 	struct swdevt *swp;
 	int	niswdev, niswap;
@@ -155,7 +152,7 @@ swap_sequential(swp, niswdev, niswap)
 	nswap += niswap;
 }
 
-static void
+void
 swap_interleaved(swp, nswdev, nswap)
 	struct swdevt *swp;
 	int	nswdev, nswap;
@@ -289,79 +286,4 @@ swapoff(p, uap, retval)
 	}
 
 	return (0);
-}
-
-int
-swallocate(p, index)
-	struct proc *p;
-	int index;
-{
-
-	return (0);
-}
-
-int
-swfree(p, index)
-	struct proc *p;
-	int index;
-{
-	return (0);
-}
-
-int
-swcreate(p, index)
-	struct proc *p;
-	int index;
-{
-	return (0);
-}
-
-int
-swdestroy()
-{
-	return (0);
-}
-
-int
-swread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	return (rawread(dev, uio));
-}
-
-int
-swwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	return (rawwrite(dev, uio));
-}
-
-void
-swstrategy(bp)
-	register struct buf *bp;
-{
-
-}
-
-int
-vm_swap_put(swslot, ppsp, npages, flags)
-	struct vm_page **ppsp;
-	int swslot, npages, flags;
-{
-	int error;
-	error = vm_swap_io();
-
-
-	return (error);
-}
-
-int
-vm_swap_get(page, swslot, flags)
-	struct vm_page *page;
-	int swslot, flags;
-{
-	int error;
-	return (error);
 }

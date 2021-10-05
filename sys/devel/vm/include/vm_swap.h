@@ -31,31 +31,6 @@
 
 #include <sys/queue.h>
 
-/*
- * Swap device table
- */
-struct swdevt1 {
-	dev_t			sw_dev;
-	int				sw_flags;
-	int				sw_nblks;
-	struct vnode 	*sw_vp;
-
-	struct swapdev 	*sw_swapdev;
-};
-
-/*
- * Swap device switch (WIP)
- */
-struct swdevsw {
-	int 		(*s_allocate)();
-	int 		(*s_free)();
-	int			(*s_create)(struct swapdev *swdev);
-	int			(*s_destroy)(struct swapdev *swdev);
-	int 		(*s_read)(dev_t dev, struct uio *uio, int ioflag);
-	int 		(*s_write)(dev_t dev, struct uio *uio, int ioflag);
-	void 		(*s_strategy)(struct buf *bp);
-};
-
 #define	SWSLOT_BAD						(-1)
 
 /*
@@ -127,6 +102,14 @@ struct vndbuf {
 
 struct vm_page;
 
+#define SWAP_ON				1		/* begin swapping on device */
+#define SWAP_OFF			2		/* stop swapping on device */
+#define SWAP_NSWAP			3		/* how many swap devices ? */
+#define SWAP_CTL			5		/* change priority on device */
+#define SWAP_STATS			6		/* get device info */
+#define SWAP_DUMPDEV		7		/* use this device as dump device */
+#define SWAP_GETDUMPDEV		8		/* use this device as dump device */
+
 #define	SW_FREED			0x01
 #define	SW_SEQUENTIAL		0x02
 #define SW_INUSE			0x04		/* in use: we have swapped here */
@@ -135,7 +118,8 @@ struct vm_page;
 #define SW_FAKE				0x20		/* fake: still being built */
 #define sw_freed			sw_flags	/* XXX compat */
 
+struct lock 				swap_syscall_lock;
 simple_lock_data_t 			swap_data_lock;
-extern struct swdevt1 		swdevt[];
+extern struct swdevt 		swdevt[];
 
 #endif /* _VM_SWAP_H_ */
