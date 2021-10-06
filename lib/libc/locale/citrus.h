@@ -1,8 +1,30 @@
-/*
- * citrus.h
+/*	$NetBSD: citrus_ctype.h,v 1.2 2003/03/05 20:18:15 tshiozak Exp $	*/
+
+/*-
+ * Copyright (c)2002 Citrus Project,
+ * All rights reserved.
  *
- *  Created on: 6 Oct 2021
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
  */
 
 #ifndef _CITRUS_CTYPE_H_
@@ -61,27 +83,6 @@ struct _citrus_ctype_rec {
 };
 
 typedef struct _citrus_ctype_rec *_citrus_ctype_t;
-
-/*
-ctype_init
-uninit
-get_mb_cur_max
-mblen
-mbrlen
-mbrtowc
-mbsinit
-mbsrtowcs
-mbsnrtowcs
-mbstowcs
-mbtowc
-wcrtomb
-wcsrtombs
-wcsnrtombs
-wcstombs
-wctomb
-btowc
-wctob
-*/
 
 static __inline unsigned
 _citrus_ctype_get_mb_cur_max(_citrus_ctype_t cc)
@@ -201,4 +202,24 @@ _citrus_ctype_wctob(_citrus_ctype_t cc, wint_t c, int *cresult)
 
 extern _citrus_ctype_rec_t _citrus_ctype_default;
 
+/*
+ctype_init
+uninit
+get_mb_cur_max
+mblen
+mbrlen
+mbrtowc
+mbsinit
+mbsrtowcs
+mbsnrtowcs
+mbstowcs
+mbtowc
+wcrtomb
+wcsrtombs
+wcsnrtombs
+wcstombs
+wctomb
+btowc
+wctob
+*/
 #endif /* _CITRUS_CTYPE_H_ */

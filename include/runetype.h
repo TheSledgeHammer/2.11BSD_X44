@@ -95,7 +95,6 @@ typedef struct {
 	_RuneEntry		*ranges;		/* Pointer to the ranges */
 } _RuneRange;
 
-
 /*
  * expanded rune locale declaration.  local to the host.  host endian.
  */
