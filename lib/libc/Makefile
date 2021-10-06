@@ -58,6 +58,9 @@
 #	the host lookup routines that use /etc/hosts.
 #
 
+# generated code depends on RTTI
+LIBCSANITIZERFLAGS+=	${${ACTIVE_CC} == "clang":? -fno-sanitize=function :}
+
 .include "Makefile.inc"
 
 LIB=		c
@@ -76,9 +79,9 @@ CLEANFILES+=	assym.h assym.h.tmp
 
 assym.h: ${ARCHDIR}/genassym.cf
 	${_MKTARGET_CREATE}
-	${TOOL_GENASSYM} -- ${CC} ${CFLAGS:N-Wa,*} 							\
-		${CPPFLAGS} ${CPPFLAGS.assym.h} ${PROF} 						\
-		${GENASSYM_CPPFLAGS} < ${ARCHDIR}/genassym.cf > assym.h.tmp && 	\
+	${TOOL_GENASSYM} -- ${CC} ${CFLAGS:N-Wa,*} \
+		${CPPFLAGS} ${CPPFLAGS.assym.h} ${PROF} \
+		${GENASSYM_CPPFLAGS} < ${ARCHDIR}/genassym.cf > assym.h.tmp && \
 	mv -f assym.h.tmp assym.h
 .endif
 
@@ -109,14 +112,59 @@ assym.h: ${ARCHDIR}/genassym.cf
 
 .include "${.CURDIR}/sys/Makefile.inc"
 
-beforeinstall: tags
-	install -c -o bin -g bin -m 444 tags /var/db/libc.tags
 
+# Remove from SRCS the .c files for any .S files added by the MD makefiles,
+# also remove from SRCS the .c files for the .S and .c files in NO_SRCS.
+# Add the .c file for .S files (in both variables) to LSRCS so that the
+# 'normal' .c file for assembly files is used for the lint librray.
+#
+# Usage:
+# Add .S files to NO_SRSC when another .S file provides the entry points.
+# Add .c files to NO_SRSC when another .c file provides the entry points.
+# (lint is run on all .c files in SRCS)
+
+.for check_file in ${SRCS:M*.S} ${NO_SRCS}
+unwanted_file := ${SRCS:M${check_file:.S=.c}}
+.if "${unwanted_file}" != ""
+SRCS := ${SRCS:N${unwanted_file}}
+.if "${unwanted_file}" != "${check_file}"
+LSRCS := ${LSRCS} ${unwanted_file}
+.endif
+.endif
+.endfor
+
+NLS=	C.msg Pig.msg ca.msg cs.msg de.msg es.msg fi.msg fr.msg nl.msg \
+		no.msg pl.msg sk.msg sv.msg
+
+.if ${MKREPRO:Uno} == "yes"
+REGEX_SPECIALS=[][)(^$$.?*\\;]
+MKREPRO_SED=   -e 's;${NETBSDSRCDIR:C/${REGEX_SPECIALS}/\\\\&/g};/usr/src;'
+.endif
+
+.if !defined(MLIBDIR) != "yes"
+realall: tags
 tags: ${SRCS}
-	ctags ${.ALLSRC:M*.c}
-	egrep -o "^ENTRY(.*)|^FUNC(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
+	${_MKTARGET_CREATE}
+	-${TOOL_CTAGS} -f ${.TARGET}.tmp -w ${.ALLSRC:M*.c}
+	-egrep "^ENTRY(.*)|^FUNC(.*)|^SYSCALL(.*)" /dev/null ${.ALLSRC:M*.S} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
-	    >> tags; sort -o tags tags
+           >> ${.TARGET}.tmp
+.if ${MKREPRO:Uno} == "yes"
+	sed ${MKREPRO_SED} <${.TARGET}.tmp | sort -o ${.TARGET}
+.else
+	sort -o ${.TARGET} ${.TARGET}.tmp
+.endif
+	rm -f ${.TARGET}.tmp
+
+FILES=		tags
+FILESNAME=	libc.tags
+FILESDIR=	/var/db
+.endif
+
+# workaround for I18N stuffs: build singlebyte setlocale() for libc.a,
+# multibyte for libc.so.  the quirk should be removed when we support
+# dlopen() from within statically linked binaries.
+CSHLIBFLAGS+=	-D_I18N_DYNAMIC
 
 .include <bsd.lib.mk>
 

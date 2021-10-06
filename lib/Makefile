@@ -34,14 +34,15 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
-		${USRLIBDIR}/libdbm 	\
-		${USRLIBDIR}/libmp 	\
-		${USRLIBDIR}/libpci	\
-		${USRLIBDIR}/libtermcap \
-		${USRLIBDIR}/libutil 	\
-		${USRLIBDIR}/libvmf 	\
-		${USRLIBDIR}/liby 	\
-		${USRLIBDIR}/libz
+			${USRLIBDIR}/libdbm 	\
+			${USRLIBDIR}/libm 		\
+			${USRLIBDIR}/libmp 		\
+			${USRLIBDIR}/libpci		\
+			${USRLIBDIR}/libtermcap \
+			${USRLIBDIR}/libutil 	\
+			${USRLIBDIR}/libvmf 	\
+			${USRLIBDIR}/liby 		\
+			${USRLIBDIR}/libz
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern

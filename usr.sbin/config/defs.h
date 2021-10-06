@@ -159,16 +159,16 @@ struct files;
 TAILQ_HEAD(filelist, files);
 
 struct module {
-	const char		*m_name;
+	const char			*m_name;
 #if 1
 	struct attrlist		*m_deps;
 #else
 	struct attrlist		*m_attrs;
 	struct modulelist	*m_deps;
 #endif
-	int			m_expanding;
+	int					m_expanding;
 	struct filelist		m_files;
-	int			m_weight;
+	int					m_weight;
 };
 
 /*
