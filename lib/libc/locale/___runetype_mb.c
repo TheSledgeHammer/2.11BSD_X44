@@ -38,7 +38,7 @@ __RCSID("$NetBSD: ___runetype_mb.c,v 1.9 2003/08/07 16:43:03 agc Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include <wctype.h>
-#include "rune.h"
+#include <rune.h>
 #include "rune_local.h"
 
 _RuneType
@@ -46,21 +46,21 @@ ___runetype_mb(c)
 	wint_t c;
 {
 	uint32_t x;
-	_RuneRange *rr = &_CurrentRuneLocale->rl_runetype_ext;
-	_RuneEntry *re = rr->rr_rune_ranges;
+	_RuneRange *rr = &_CurrentRuneLocale->runetype_ext;
+	_RuneEntry *re = rr->ranges;
 
 	if (c == WEOF)
 		return(0U);
 
-	for (x = 0; x < rr->rr_nranges; ++x, ++re) {
+	for (x = 0; x < rr->nranges; ++x, ++re) {
 		/* XXX assumes wchar_t = int */
-		if ((__nbrune_t)c < re->re_min)
+		if ((rune_t)c < re->min)
 			return(0U);
-		if ((__nbrune_t)c <= re->re_max) {
-			if (re->re_rune_types)
-				return(re->re_rune_types[(__nbrune_t)c - re->re_min]);
+		if ((rune_t)c <= re->max) {
+			if (re->types)
+				return(re->types[(rune_t)c - re->min]);
 			else
-				return(re->re_map);
+				return(re->map);
 		}
 	}
 	return(0U);

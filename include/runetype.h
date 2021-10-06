@@ -73,8 +73,12 @@ typedef	_BSD_WCTYPE_T_	wctype_t;
 #define	WEOF 			((wint_t)-1)
 #endif
 
-#define	_CACHED_RUNES	(1 <<8 )	/* Must be a power of 2 */
-#define	_CRMASK			(~(_CACHED_RUNES - 1))
+typedef uint64_t		_runepad_t;
+typedef uint32_t 		_RuneType;
+
+#define	_CACHED_RUNES			(1 << 8 )	/* Must be a power of 2 */
+#define _RUNE_ISCACHED(c)		((c) >= 0 && (c) < _CACHED_RUNES)
+#define _DEFAULT_INVALID_RUNE	((rune_t)-3)
 
 /*
  * The lower 8 bits of runetype[] contain the digit value of the rune.
@@ -91,34 +95,84 @@ typedef struct {
 	_RuneEntry		*ranges;		/* Pointer to the ranges */
 } _RuneRange;
 
+
+/*
+ * expanded rune locale declaration.  local to the host.  host endian.
+ */
+/*
+ * wctrans stuffs.
+ */
+typedef struct _WCTransEntry {
+	char			*name;
+	rune_t			*cached;
+	_RuneRange		*extmap;
+} _WCTransEntry;
+
+#define _WCTRANS_INDEX_LOWER	0
+#define _WCTRANS_INDEX_UPPER	1
+#define _WCTRANS_NINDEXES		2
+
+/*
+ * wctype stuffs.
+ */
+typedef struct _WCTypeEntry {
+	char			*name;
+	_RuneType		mask;
+} _WCTypeEntry;
+
+#define _WCTYPE_INDEX_ALNUM		0
+#define _WCTYPE_INDEX_ALPHA		1
+#define _WCTYPE_INDEX_BLANK		2
+#define _WCTYPE_INDEX_CNTRL		3
+#define _WCTYPE_INDEX_DIGIT		4
+#define _WCTYPE_INDEX_GRAPH		5
+#define _WCTYPE_INDEX_LOWER		6
+#define _WCTYPE_INDEX_PRINT		7
+#define _WCTYPE_INDEX_PUNCT		8
+#define _WCTYPE_INDEX_SPACE		9
+#define _WCTYPE_INDEX_UPPER		10
+#define _WCTYPE_INDEX_XDIGIT	11
+#define _WCTYPE_NINDEXES		12
+
+/*
+ * ctype stuffs
+ */
 typedef struct {
-	char			magic[8];		/* Magic saying what version we are */
-	char			encoding[32];	/* ASCII name of this encoding */
+	char						magic[8];		/* Magic saying what version we are */
+	char						encoding[32];	/* ASCII name of this encoding */
 
-	rune_t			(*sgetrune) (const char *, unsigned int, char const **);
-	int				(*sputrune) (rune_t, char *, unsigned int, char **);
-	rune_t			invalid_rune;
+	rune_t						(*sgetrune) (const char *, unsigned int, char const **);
+	int							(*sputrune) (rune_t, char *, unsigned int, char **);
+	rune_t						invalid_rune;
 
-	unsigned long	runetype[_CACHED_RUNES];
-	rune_t			maplower[_CACHED_RUNES];
-	rune_t			mapupper[_CACHED_RUNES];
+	unsigned long				runetype[_CACHED_RUNES];
+	rune_t						maplower[_CACHED_RUNES];
+	rune_t						mapupper[_CACHED_RUNES];
 
 	/*
 	 * The following are to deal with Runes larger than _CACHED_RUNES - 1.
 	 * Their data is actually contiguous with this structure so as to make
 	 * it easier to read/write from/to disk.
 	 */
-	_RuneRange		runetype_ext;
-	_RuneRange		maplower_ext;
-	_RuneRange		mapupper_ext;
+	_RuneRange					runetype_ext;
+	_RuneRange					maplower_ext;
+	_RuneRange					mapupper_ext;
 
-	void			*variable;	/* Data which depends on the encoding */
-	int				variable_len;	/* how long that data is */
+	void						*variable;	/* Data which depends on the encoding */
+	int							variable_len;	/* how long that data is */
+
+	/*
+	 * the following portion is generated on the fly
+	 */
+	char						*codeset;
+	struct _citrus_ctype_rec	*citrus_ctype;
+	_WCTransEntry				wctrans[_WCTRANS_NINDEXES];
+	_WCTypeEntry				wctype[_WCTYPE_NINDEXES];
 } _RuneLocale;
 
-#define	_RUNE_MAGIC_1	"RuneMagi"	/* Indicates version 0 of RuneLocale */
+#define	_RUNE_MAGIC_1			"RuneMagi"	/* Indicates version 0 of RuneLocale */
 
-extern _RuneLocale _DefaultRuneLocale;
-extern _RuneLocale *_CurrentRuneLocale;
+extern _RuneLocale 				_DefaultRuneLocale;
+extern _RuneLocale 				*_CurrentRuneLocale;
 
 #endif	/* !_RUNETYPE_H_ */

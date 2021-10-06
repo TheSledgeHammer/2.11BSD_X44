@@ -62,23 +62,55 @@
 #define	_CTYPE_I		0x00080000L		/* Ideogram */
 #define	_CTYPE_T		0x00100000L		/* Special */
 #define	_CTYPE_Q		0x00200000L		/* Phonogram */
+#define	_CTYPE_SWM		0xc0000000L		/* Mask to get screen width data */
+#define	_CTYPE_SWS		30				/* Bits to shift to get width */
 #define	_CTYPE_SW0		0x20000000L		/* 0 width character */
 #define	_CTYPE_SW1		0x40000000L		/* 1 width character */
 #define	_CTYPE_SW2		0x80000000L		/* 2 width character */
 #define	_CTYPE_SW3		0xc0000000L		/* 3 width character */
 
+__BEGIN_DECLS
+int	isalnum (int);
+int	isalpha (int);
+int	iscntrl (int);
+int	isdigit (int);
+int	isgraph (int);
+int	islower (int);
+int	isprint (int);
+int	ispunct (int);
+int	isspace (int);
+int	isupper (int);
+int	isxdigit (int);
+int	tolower (int);
+int	toupper (int);
+
+#if __ISO_C_VISIBLE >= 1999
+int	isblank(int);
+#endif
+
+#if __BSD_VISIBLE
+int	digittoint(int);
+int	ishexnumber(int);
+int	isideogram(int);
+int	isnumber(int);
+int	isphonogram(int);
+int	isrune(int);
+int	isspecial(int);
+#endif
+__END_DECLS
+
 extern	char			_ctype_[];
-#define	isalpha(c)		((_ctype_+1)[c]&(_CTYPE_U|_CTYPE_L))
-#define	isupper(c)		((_ctype_+1)[c]&_CTYPE_U)
-#define	islower(c)		((_ctype_+1)[c]&_CTYPE_L)
-#define	isdigit(c)		((_ctype_+1)[c]&_CTYPE_N)				/* ANSI -- locale independent */
-#define	isxdigit(c)		((_ctype_+1)[c]&(_CTYPE_N|_CTYPE_X)) 	/* ANSI -- locale independent */
-#define	isspace(c)		((_ctype_+1)[c]&_CTYPE_S)
-#define ispunct(c)		((_ctype_+1)[c]&_CTYPE_P)
-#define isalnum(c)		((_ctype_+1)[c]&(_CTYPE_U|_CTYPE_L|_CTYPE_N))
-#define isprint(c)		((_ctype_+1)[c]&(_CTYPE_P|_CTYPE_U|_CTYPE_L|_CTYPE_N|_CTYPE_B))
-#define isgraph(c)		((_ctype_+1)[c]&(_CTYPE_P|_CTYPE_U|_CTYPE_L|_CTYPE_N))
-#define iscntrl(c)		((_ctype_+1)[c]&_CTYPE_C)
+#define	isalpha(c)		((_ctype_+ 1)[c]&(_CTYPE_U|_CTYPE_L))
+#define	isupper(c)		((_ctype_+ 1)[c]&_CTYPE_U)
+#define	islower(c)		((_ctype_+ 1)[c]&_CTYPE_L)
+#define	isdigit(c)		((_ctype_+ 1)[c]&_CTYPE_N)				/* ANSI -- locale independent */
+#define	isxdigit(c)		((_ctype_+ 1)[c]&(_CTYPE_N|_CTYPE_X)) 	/* ANSI -- locale independent */
+#define	isspace(c)		((_ctype_+ 1)[c]&_CTYPE_S)
+#define ispunct(c)		((_ctype_+ 1)[c]&_CTYPE_P)
+#define isalnum(c)		((_ctype_+ 1)[c]&(_CTYPE_U|_CTYPE_L|_CTYPE_N))
+#define isprint(c)		((_ctype_+ 1)[c]&(_CTYPE_P|_CTYPE_U|_CTYPE_L|_CTYPE_N|_CTYPE_B))
+#define isgraph(c)		((_ctype_+ 1)[c]&(_CTYPE_P|_CTYPE_U|_CTYPE_L|_CTYPE_N))
+#define iscntrl(c)		((_ctype_+ 1)[c] &_CTYPE_C)
 #define isascii(c)		((unsigned)(c)<=0177)
 #define toupper(c)		((c)-'a'+'A')
 #define tolower(c)		((c)-'A'+'a')
@@ -109,45 +141,39 @@ __END_DECLS
  * #define _USE_CTYPE_INLINE_.  Otherwise, use the C library
  * functions.
  */
-#if !defined(_USE_CTYPE_CLIBRARY_) && defined(__GNUC__) || defined(__cplusplus)
-#define	_USE_CTYPE_INLINE_	1
-#endif
+#if !defined(_USE_CTYPE_CLIBRARY_) && \
+	defined(_USE_CTYPE_INLINE_) || defined(__GNUC__) || defined(__cplusplus)
 
-#if defined(_USE_CTYPE_INLINE_)
 static __inline int
 __istype(_BSD_RUNE_T_ c, unsigned long f)
 {
-	return((((c & _CRMASK) ? ___runetype(c) :
-	    _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
+	return((((_RUNE_ISCACHED(c)) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
 }
 
 static __inline int
 __isctype(_BSD_RUNE_T_ c, unsigned long f)
 {
-	return((((c & _CRMASK) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
-}
-
-/* _ANSI_LIBRARY is defined by lib/libc/locale/isctype.c. */
-#if !defined(_ANSI_LIBRARY)
-static __inline _BSD_RUNE_T_
-toupper(_BSD_RUNE_T_ c)
-{
-	return((c & _CRMASK) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+	return((((_RUNE_ISCACHED(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
 static __inline _BSD_RUNE_T_
-tolower(_BSD_RUNE_T_ c)
+__toupper(_BSD_RUNE_T_ c)
 {
-	return((c & _CRMASK) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+	return((_RUNE_ISCACHED(c)) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
-#endif /* !_ANSI_LIBRARY */
 
-#else /* !_USE_CTYPE_INLINE_ */
+static __inline _BSD_RUNE_T_
+__tolower(_BSD_RUNE_T_ c)
+{
+	return((_RUNE_ISCACHED(c)) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+}
+
+#else
 __BEGIN_DECLS
 int				__istype (_BSD_RUNE_T_, unsigned long);
 int				__isctype (_BSD_RUNE_T_, unsigned long);
-_BSD_RUNE_T_	toupper (_BSD_RUNE_T_);
-_BSD_RUNE_T_	tolower (_BSD_RUNE_T_);
+_BSD_RUNE_T_	_toupper (_BSD_RUNE_T_);
+_BSD_RUNE_T_	_tolower (_BSD_RUNE_T_);
 __END_DECLS
 #endif /* _USE_CTYPE_INLINE_ */
 #endif

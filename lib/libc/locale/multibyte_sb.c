@@ -42,6 +42,7 @@ __RCSID("$NetBSD: multibyte_sb.c,v 1.4 2003/08/07 16:43:04 agc Exp $");
 #include <errno.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <rune.h>
 
 /*
  * Stub multibyte character functions.
@@ -250,7 +251,7 @@ wint_t
 btowc(c)
 	int c;
 {
-	if (c == EOF || c & ~0xFF)
+	if (c == EOF || (c & ~0xFF))
 		return WEOF;
 	return (wint_t)c;
 }
@@ -259,7 +260,7 @@ int
 wctob(c)
 	wint_t c;
 {
-	if (c == WEOF || c & ~0xFF)
+	if (c == WEOF || (c & ~0xFF))
 		return EOF;
 	return (int)c;
 }

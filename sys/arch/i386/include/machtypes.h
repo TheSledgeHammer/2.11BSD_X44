@@ -168,7 +168,7 @@ typedef	__uint32_t						__uintptr_t;
 
 typedef	int								__wchar_t;
 typedef int								__wint_t;
-typedef	int								__rune_t;
+typedef	__uint32_t						__rune_t;
 typedef	void *							__wctrans_t;
 typedef	void *							__wctype_t;
 

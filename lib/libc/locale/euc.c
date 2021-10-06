@@ -51,7 +51,7 @@ rune_t	_EUC_sgetrune (const char *, size_t, char const **);
 int		_EUC_sputrune (rune_t, char *, size_t, char **);
 
 typedef struct {
-	int	count[4];
+	int		count[4];
 	rune_t	bits[4];
 	rune_t	mask;
 } _EucInfo;

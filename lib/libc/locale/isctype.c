@@ -103,12 +103,40 @@ isgraph(c)
 	return (__istype((c), _CTYPE_G));
 }
 
+#undef ishexnumber
+int
+ishexnumber(int c)
+{
+	return (__istype(c, _CTYPE_X));
+}
+
+#undef isideogram
+int
+isideogram(int c)
+{
+	return (__istype(c, _CTYPE_I));
+}
+
 #undef islower
 int
 islower(c)
 	int c;
 {
 	return (__istype((c), _CTYPE_L));
+}
+
+#undef isnumber
+int
+isnumber(int c)
+{
+	return (__istype(c, _CTYPE_N));
+}
+
+#undef isphonogram
+int
+isphonogram(int c)
+{
+	return (__istype(c, _CTYPE_Q));
 }
 
 #undef isprint
@@ -127,12 +155,27 @@ ispunct(c)
 	return (__istype((c), _CTYPE_P));
 }
 
+#undef isrune
+int
+isrune(int c)
+{
+	return (__istype(c, 0xFFFFFF00L));
+}
+
 #undef isspace
 int
 isspace(c)
 	int c;
 {
 	return (__istype((c), _CTYPE_S));
+}
+
+
+#undef isspecial
+int
+isspecial(int c)
+{
+	return (__istype(c, _CTYPE_T));
 }
 
 #undef isupper
@@ -164,7 +207,7 @@ int
 tolower(c)
 	int c;
 {
-        return((c & _CRMASK) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+	return (__tolower(c));
 }
 
 #undef toupper
@@ -172,5 +215,5 @@ int
 toupper(c)
 	int c;
 {
-        return((c & _CRMASK) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+	return (__toupper(c));
 }

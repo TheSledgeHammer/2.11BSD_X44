@@ -1,7 +1,7 @@
-/*	$NetBSD: _wctrans_local.h,v 1.2 2003/04/06 18:33:23 tshiozak Exp $	*/
+/*	$NetBSD: multibyte_c90.c,v 1.4 2003/03/05 20:18:16 tshiozak Exp $	*/
 
 /*-
- * Copyright (c)2003 Citrus Project,
+ * Copyright (c)2002 Citrus Project,
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,36 +26,81 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _WCTRANS_LOCAL_H_
-#define _WCTRANS_LOCAL_H_
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: multibyte_c90.c,v 1.4 2003/03/05 20:18:16 tshiozak Exp $");
+#endif /* LIBC_SCCS and not lint */
 
+#include <sys/types.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <wchar.h>
 #include <rune.h>
-#include "rune_local.h"
+#include "citrus.h"
+#include "multibyte.h"
 
-wint_t	_towctrans_ext(wint_t, _WCTransEntry *);
-void	_wctrans_init(_RuneLocale *);
-
-static __inline wint_t
-_towctrans(wint_t c, _WCTransEntry *te)
+int
+mblen(const char *s, size_t n)
 {
-	return (_RUNE_ISCACHED(c) ?
-		te->cached[(rune_t)c]:_towctrans_ext(c, te));
+	int ret;
+	int err0;
+
+	err0 = _citrus_ctype_mblen(_to_cur_ctype(), s, n, &ret);
+	if (err0)
+		errno = err0;
+
+	return ret;
 }
 
-static __inline struct _WCTransEntry *
-_wctrans_lower(_RuneLocale *rl)
+size_t
+mbstowcs(wchar_t *pwcs, const char *s, size_t n)
 {
-	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name==NULL)
-		_wctrans_init(rl);
-	return (&rl->wctrans[_WCTRANS_INDEX_LOWER]);
+	size_t ret;
+	int err0;
+
+	err0 = _citrus_ctype_mbstowcs(_to_cur_ctype(), pwcs, s, n, &ret);
+	if (err0)
+		errno = err0;
+
+	return ret;
 }
 
-static __inline struct _WCTransEntry *
-_wctrans_upper(_RuneLocale *rl)
+int
+mbtowc(wchar_t *pw, const char *s, size_t n)
 {
-	if (rl->wctrans[_WCTRANS_INDEX_UPPER].name==NULL)
-		_wctrans_init(rl);
-	return (&rl->wctrans[_WCTRANS_INDEX_UPPER]);
+	int ret;
+	int err0;
+
+	err0 = _citrus_ctype_mbtowc(_to_cur_ctype(), pw, s, n, &ret);
+	if (err0)
+		errno = err0;
+
+	return ret;
 }
 
-#endif
+size_t
+wcstombs(char *s, const wchar_t *wcs, size_t n)
+{
+	size_t ret;
+	int err0;
+
+	err0 = _citrus_ctype_wcstombs(_to_cur_ctype(), s, wcs, n, &ret);
+	if (err0)
+		errno = err0;
+
+	return ret;
+}
+
+int
+wctomb(char *s, wchar_t wc)
+{
+	int ret;
+	int err0;
+
+	err0 = _citrus_ctype_wctomb(_to_cur_ctype(), s, wc, &ret);
+	if (err0)
+		errno = err0;
+
+	return ret;
+}

@@ -36,6 +36,8 @@
 #ifndef _LOCALE_H_
 #define _LOCALE_H_
 
+#include <sys/queue.h>
+
 struct lconv {
 	char	*decimal_point;
 	char	*thousands_sep;
@@ -69,6 +71,24 @@ struct lconv {
 #define	_LC_LAST	6		/* marks end */
 
 #include <sys/cdefs.h>
+
+#define _LOCALENAME_LEN_MAX 33
+
+typedef void *_locale_part_t;
+
+struct _locale_cache_t {
+	SLIST_ENTRY(_locale_cache_t) 	cache_link;
+	const char 						*monetary_name;
+	const char 						*numeric_name;
+	struct lconv 					ldata;
+};
+
+struct _locale {
+	const struct _locale_cache_t 	*cache;
+	char 							query[_LOCALENAME_LEN_MAX * (_LC_LAST - 1)];
+	const char 						*part_name[_LC_LAST];
+	_locale_part_t 					part_impl[_LC_LAST];
+};
 
 __BEGIN_DECLS
 struct lconv	*localeconv (void);

@@ -30,25 +30,25 @@
 #define _RUNE_LOCAL_H_
 
 /* rune.c */
-extern _RuneLocale *_Read_RuneMagi __P((FILE *fp));
-extern _RuneLocale *_Read_CTypeAsRune __P((FILE *fp));
-extern void _NukeRune __P((_RuneLocale *));
+extern _RuneLocale *_Read_RuneMagi (FILE *fp);
+extern _RuneLocale *_Read_CTypeAsRune (FILE *fp);
+extern void 		_NukeRune (_RuneLocale *);
 
 /* setrunelocale.c */
-extern int _xpg4_setrunelocale __P((char *));
-extern _RuneLocale *_findrunelocale __P((char *));
-extern int _newrunelocale __P((char *));
+extern int _xpg4_setrunelocale (char *);
+extern _RuneLocale *_findrunelocale (char *);
+extern int _newrunelocale (char *);
 
 /* runeglue.c */
-extern int __runetable_to_netbsd_ctype __P((const char *));
+extern int __runetable_to_netbsd_ctype (const char *);
 
 /* ___runetype_mb.c */
-extern _RuneType ___runetype_mb __P((wint_t));
+extern _RuneType ___runetype_mb (wint_t);
 
 /* ___tolower_mb.c */
-extern wint_t ___tolower_mb __P((wint_t));
+extern wint_t ___tolower_mb (wint_t);
 
 /* ___toupper_mb.c */
-extern wint_t ___toupper_mb __P((wint_t));
+extern wint_t ___toupper_mb (wint_t);
 
 #endif

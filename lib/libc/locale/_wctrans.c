@@ -68,7 +68,7 @@ __RCSID("$NetBSD: _wctrans.c,v 1.5 2003/08/07 16:43:03 agc Exp $");
 #include <wctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "rune.h"
+#include <rune.h>
 #include "rune_local.h"
 #include "_wctrans_local.h"
 
@@ -79,12 +79,12 @@ __RCSID("$NetBSD: _wctrans.c,v 1.5 2003/08/07 16:43:03 agc Exp $");
 void
 _wctrans_init(_RuneLocale *rl)
 {
-	rl->rl_wctrans[_WCTRANS_INDEX_LOWER].te_name = "tolower";
-	rl->rl_wctrans[_WCTRANS_INDEX_LOWER].te_cached = rl->rl_maplower;
-	rl->rl_wctrans[_WCTRANS_INDEX_LOWER].te_extmap = &rl->rl_maplower_ext;
-	rl->rl_wctrans[_WCTRANS_INDEX_UPPER].te_name = "toupper";
-	rl->rl_wctrans[_WCTRANS_INDEX_UPPER].te_cached = rl->rl_mapupper;
-	rl->rl_wctrans[_WCTRANS_INDEX_UPPER].te_extmap = &rl->rl_mapupper_ext;
+	rl->wctrans[_WCTRANS_INDEX_LOWER].name = "tolower";
+	rl->wctrans[_WCTRANS_INDEX_LOWER].cached = rl->maplower;
+	rl->wctrans[_WCTRANS_INDEX_LOWER].extmap = &rl->maplower_ext;
+	rl->wctrans[_WCTRANS_INDEX_UPPER].name = "toupper";
+	rl->wctrans[_WCTRANS_INDEX_UPPER].cached = rl->mapupper;
+	rl->wctrans[_WCTRANS_INDEX_UPPER].extmap = &rl->mapupper_ext;
 }
 
 /*
@@ -95,18 +95,18 @@ wint_t
 _towctrans_ext(wint_t c, struct _WCTransEntry *te)
 {
 	uint32_t x;
-	_RuneRange *rr = te->te_extmap;
-	_RuneEntry *re = rr->rr_rune_ranges;
+	_RuneRange *rr = te->extmap;
+	_RuneEntry *re = rr->ranges;
 
 	if (c == WEOF)
 		return(c);
 
-	for (x = 0; x < rr->rr_nranges; ++x, ++re) {
+	for (x = 0; x < rr->nranges; ++x, ++re) {
 		/* XXX assumes wchar_t = int */
-		if ((__nbrune_t)c < re->re_min)
+		if ((_nbrune_t)c < re->min)
 			return(c);
-		if ((__nbrune_t)c <= re->re_max)
-			return(re->re_map + (__nbrune_t)c - re->re_min);
+		if ((_nbrune_t)c <= re->max)
+			return(re->map + (_nbrune_t)c - re->min);
 	}
 	return(c);
 }

@@ -52,6 +52,14 @@
 #define sgetrune(s, n, r)       (*__sgetrune)((s), (n), (r))
 #define sputrune(c, s, n, r)    (*__sputrune)((c), (s), (n), (r))
 
+/*
+ * Other namespace conversion.
+ */
+#define _DEFAULT_INVALID_RUNE	_INVALID_RUNE
+
+extern size_t 					__mb_len_max_runtime;
+#define __MB_LEN_MAX_RUNTIME	__mb_len_max_runtime
+
 __BEGIN_DECLS
 char	*mbrune (const char *, rune_t);
 char	*mbrrune (const char *, rune_t);

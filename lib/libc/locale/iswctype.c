@@ -46,7 +46,9 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>
-#include "rune.h"
+#include <rune.h>
+#include <runetype.h>
+
 #include "rune_local.h"
 #include "_wctrans_local.h"
 
@@ -54,10 +56,10 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #define __inline
 #endif
 
-static __inline _RuneType 	__runetype_w __P((wint_t));
-static __inline int 		__isctype_w __P((wint_t, _RuneType));
-static __inline wint_t 		__toupper_w __P((wint_t));
-static __inline wint_t 		__tolower_w __P((wint_t));
+static __inline _RuneType 	__runetype_w (wint_t);
+static __inline int 		__isctype_w (wint_t, _RuneType);
+static __inline wint_t 		__toupper_w (wint_t);
+static __inline wint_t 		__tolower_w (wint_t);
 
 static __inline _RuneType
 __runetype_w(c)
@@ -65,8 +67,7 @@ __runetype_w(c)
 {
 	_RuneLocale *rl = _CurrentRuneLocale;
 
-	return (_RUNE_ISCACHED(c) ?
-		rl->rl_runetype[c] : ___runetype_mb(c));
+	return (_RUNE_ISCACHED(c) ? rl->runetype[c] : ___runetype_mb(c));
 }
 
 static __inline int
@@ -208,7 +209,7 @@ int
 wcwidth(c)
 	wchar_t c;
 {
-        return (((unsigned)__runetype_w(c) & _CTYPE_SWM) >> _CTYPE_SWS);
+	return (((unsigned)__runetype_w(c) & _CTYPE_SWM) >> _CTYPE_SWS);
 }
 
 #undef wctrans
@@ -219,12 +220,12 @@ wctrans(charclass)
 	int i;
 	_RuneLocale *rl = _CurrentRuneLocale;
 
-	if (rl->rl_wctrans[_WCTRANS_INDEX_LOWER].te_name==NULL)
+	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name==NULL)
 		_wctrans_init(rl);
 
 	for (i=0; i<_WCTRANS_NINDEXES; i++)
-		if (!strcmp(rl->rl_wctrans[i].te_name, charclass))
-			return ((wctrans_t)&rl->rl_wctrans[i]);
+		if (!strcmp(rl->wctrans[i].name, charclass))
+			return ((wctrans_t)&rl->wctrans[i]);
 
 	return ((wctrans_t)NULL);
 }
@@ -250,8 +251,8 @@ wctype(const char *property)
 	_RuneLocale *rl = _CurrentRuneLocale;
 
 	for (i=0; i<_WCTYPE_NINDEXES; i++)
-		if (!strcmp(rl->rl_wctype[i].te_name, property))
-			return ((wctype_t)&rl->rl_wctype[i]);
+		if (!strcmp(rl->wctype[i].name, property))
+			return ((wctype_t)&rl->wctype[i]);
 	return ((wctype_t)NULL);
 }
 
@@ -267,5 +268,5 @@ iswctype(wint_t c, wctype_t charclass)
 		return 0;
 	}
 
-	return (__isctype_w(c, ((_WCTypeEntry *)charclass)->te_mask));
+	return (__isctype_w(c, ((_WCTypeEntry *)charclass)->mask));
 }

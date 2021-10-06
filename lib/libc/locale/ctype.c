@@ -41,6 +41,9 @@
 static char sccsid[] = "@(#)ctype.c	8.2 (Berkeley) 1/21/94";
 #endif /* LIBC_SCCS and not lint */
 
+#include <ctype.h>
+#include <wctype.h>
+
 #define	_U	0x01
 #define	_L	0x02
 #define	_N	0x04
