@@ -36,7 +36,7 @@ __RCSID("$NetBSD: multibyte_amd1.c,v 1.5 2003/03/05 20:18:16 tshiozak Exp $");
 #include <errno.h>
 #include <sys/types.h>
 #include <rune.h>
-#include "citrus.h"
+#include "citrus_ctype.h"
 #include "multibyte.h"
 
 size_t

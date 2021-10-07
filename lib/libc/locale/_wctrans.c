@@ -103,10 +103,10 @@ _towctrans_ext(wint_t c, struct _WCTransEntry *te)
 
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		/* XXX assumes wchar_t = int */
-		if ((_nbrune_t)c < re->min)
+		if ((rune_t)c < re->min)
 			return(c);
-		if ((_nbrune_t)c <= re->max)
-			return(re->map + (_nbrune_t)c - re->min);
+		if ((rune_t)c <= re->max)
+			return(re->map + (rune_t)c - re->min);
 	}
 	return(c);
 }

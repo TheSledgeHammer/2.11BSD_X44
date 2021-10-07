@@ -281,5 +281,3 @@ _RuneLocale _DefaultRuneLocale = {
 	NULL
 };
 _RuneLocale *_CurrentRuneLocale = &_DefaultRuneLocale;
-
-int __mb_cur_max = 1;

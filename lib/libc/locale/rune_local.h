@@ -30,25 +30,10 @@
 #define _RUNE_LOCAL_H_
 
 /* rune.c */
-extern _RuneLocale *_Read_RuneMagi (FILE *fp);
-extern _RuneLocale *_Read_CTypeAsRune (FILE *fp);
-extern void 		_NukeRune (_RuneLocale *);
+unsigned long		___runetype (rune_t);
+extern rune_t 		___toupper (rune_t);
+extern rune_t 		___tolower (rune_t);
 
-/* setrunelocale.c */
-extern int _xpg4_setrunelocale (char *);
-extern _RuneLocale *_findrunelocale (char *);
-extern int _newrunelocale (char *);
-
-/* runeglue.c */
-extern int __runetable_to_netbsd_ctype (const char *);
-
-/* ___runetype_mb.c */
-extern _RuneType ___runetype_mb (wint_t);
-
-/* ___tolower_mb.c */
-extern wint_t ___tolower_mb (wint_t);
-
-/* ___toupper_mb.c */
-extern wint_t ___toupper_mb (wint_t);
-
+/* __runetype_mb.c */
+extern _RuneType 	___runetype_mb (wint_t);
 #endif

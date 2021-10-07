@@ -103,9 +103,9 @@ typedef union {
 	char 		__mbstate8[128];
 } __mbstate_t;
 
-#define	_BSD_WCHAR_T_		int				/* wchar_t */
-#define _BSD_WINT_T_		int				/* wint_t */
-#define	_BSD_RUNE_T_		int				/* rune_t */
+#define	_BSD_WCHAR_T_		__wchar_t		/* wchar_t */
+#define _BSD_WINT_T_		__wint_t		/* wint_t */
+#define	_BSD_RUNE_T_		__rune_t		/* rune_t */
 
 #define _BSD_WCTRANS_T_		__wctrans_t		/* wctrans_t */
 #define _BSD_WCTYPE_T_		__wctype_t		/* wctype_t */

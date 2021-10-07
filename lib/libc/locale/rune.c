@@ -45,6 +45,7 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 
 #include <ctype.h>
 #include <limits.h>
+#include <wctype.h>
 #include <rune.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,6 +57,12 @@ extern int			_EUC_init (_RuneLocale *);
 static _RuneLocale	*_Read_RuneMagi (FILE *);
 
 static char *PathLocale = 0;
+
+void
+wctype_init(_RuneLocale *rl)
+{
+	memcpy(&rl->wctype, &_DefaultRuneLocale.wctype, sizeof(rl->wctype));
+}
 
 int
 setrunelocale(encoding)
@@ -88,6 +95,8 @@ setrunelocale(encoding)
 		fclose(fp);
 		return (EFTYPE);
 	}
+
+	wctype_init(rl);
 
 	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF2")) {
 		return (_UTF2_init(rl));
@@ -239,7 +248,7 @@ _Read_RuneMagi(fp)
 
 unsigned long
 ___runetype(c)
-	_BSD_RUNE_T_ c;
+	rune_t c;
 {
 	int x;
 	_RuneRange *rr = &_CurrentRuneLocale->runetype_ext;
@@ -260,9 +269,34 @@ ___runetype(c)
 	return(0L);
 }
 
-_BSD_RUNE_T_
+_RuneType
+___runetype_mb(c)
+	wint_t c;
+{
+	uint32_t x;
+	_RuneRange *rr = &_CurrentRuneLocale->runetype_ext;
+	_RuneEntry *re = rr->ranges;
+
+	if (c == WEOF)
+		return(0U);
+
+	for (x = 0; x < rr->nranges; ++x, ++re) {
+		/* XXX assumes wchar_t = int */
+		if ((rune_t)c < re->min)
+			return(0U);
+		if ((rune_t)c <= re->max) {
+			if (re->types)
+				return(re->types[(rune_t)c - re->min]);
+			else
+				return(re->map);
+		}
+	}
+	return(0U);
+}
+
+rune_t
 ___toupper(c)
-	_BSD_RUNE_T_ c;
+	rune_t c;
 {
 	int x;
 	_RuneRange *rr = &_CurrentRuneLocale->mapupper_ext;
@@ -279,9 +313,9 @@ ___toupper(c)
 	return(c);
 }
 
-_BSD_RUNE_T_
+rune_t
 ___tolower(c)
-	_BSD_RUNE_T_ c;
+	rune_t c;
 {
 	int x;
 	_RuneRange *rr = &_CurrentRuneLocale->maplower_ext;

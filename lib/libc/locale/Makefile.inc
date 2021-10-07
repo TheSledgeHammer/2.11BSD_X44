@@ -3,8 +3,8 @@
 # locale sources
 .PATH: ${ARCHDIR}/locale ${.CURDIR}/locale
 
-SRCS+=	ansi.c ctype.c euc.c frune.c isctype.c lconv.c localeconv.c 	\
-		mbrune.c __mb_cur_max.c none.c rune.c setlocale.c table.c 		\
+SRCS+=	ansi.c citrus_ctype.c ctype.c euc.c frune.c isctype.c lconv.c 	\
+		localeconv.c mbrune.c __mb_cur_max.c none.c rune.c setlocale.c table.c 		\
 		utf2.c utf8.c wcscoll.c wcstod.c wcstol.c wcstoll.c wcstoimax.c \
 		wcstoul.c wcstoull.c wcstoumax.c wcsxfrm.c aliasname.c
 
@@ -18,7 +18,7 @@ CPPFLAGS+=-UWITH_RUNE
 # citrus multibyte locale support
 # we have quirk for libc.a - see the last part of lib/libc/Makefile
 CPPFLAGS+=-DWITH_RUNE -I${.CURDIR}
-SRCS+=	___runetype_mb.c _wctrans.c iswctype.c multibyte_c90.c multibyte_amd1.c
+SRCS+=	 _wctrans.c iswctype.c multibyte_c90.c multibyte_amd1.c
 .endif
 
 MAN+=	ctype.3 isalnum.3 isalpha.3 isascii.3 isblank.3 iscntrl.3 		\

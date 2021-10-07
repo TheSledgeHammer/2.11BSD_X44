@@ -170,7 +170,6 @@ isspace(c)
 	return (__istype((c), _CTYPE_S));
 }
 
-
 #undef isspecial
 int
 isspecial(int c)

@@ -58,7 +58,7 @@ typedef	_BSD_SIZE_T_	size_t;
 
 #ifdef	_BSD_WCHAR_T_
 #ifndef _ANSI_SOURCE
-typedef	_BSD_WCHAR_T_	rune_t;
+typedef	_BSD_RUNE_T_	rune_t;
 #endif
 typedef	_BSD_WCHAR_T_	wchar_t;
 #undef	_BSD_WCHAR_T_
@@ -135,7 +135,7 @@ int	 	wctomb (char *, wchar_t);
 int	 	mbtowc (wchar_t * __restrict, const char * __restrict, size_t);
 size_t	wcstombs (char * __restrict, const wchar_t * __restrict, size_t);
 
-//#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || defined(_NETBSD_SOURCE)
+#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE) || defined(_NETBSD_SOURCE)
 
 
 /*
@@ -148,7 +148,7 @@ int	 	rand_r (unsigned int *);
 /*
  * X/Open Portability Guide >= Issue 4
  */
-//#if (_XOPEN_SOURCE - 0) >= 4 || defined(_NETBSD_SOURCE)
+#if (_XOPEN_SOURCE - 0) >= 4 || defined(_NETBSD_SOURCE)
 double	 drand48 (void);
 double	 erand48 (unsigned short[3]);
 long	 jrand48 (unsigned short[3]);
@@ -223,7 +223,7 @@ int	 	unsetenv (const char *);
 /*
  * Implementation-defined extensions
  */
-//#if defined(_NETBSD_SOURCE)
+#if defined(_NETBSD_SOURCE)
 #if defined(alloca) && (alloca == __builtin_alloca) && (__GNUC__ < 2)
 void		*alloca (int);     /* built-in for gcc */
 #else

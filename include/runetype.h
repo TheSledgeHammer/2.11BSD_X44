@@ -43,8 +43,12 @@
 #include <sys/ansi.h>
 #include <machine/ansi.h>
 
+#ifdef  _BSD_RUNE_T_
+typedef _BSD_RUNE_T_	rune_t;
+#undef  _BSD_RUNE_T_
+#endif
+
 #ifdef  _BSD_WCHAR_T_
-typedef _BSD_WCHAR_T_	rune_t;
 typedef _BSD_WCHAR_T_	wchar_t;
 #undef  _BSD_WCHAR_T_
 #endif
@@ -157,13 +161,12 @@ typedef struct {
 	_RuneRange					maplower_ext;
 	_RuneRange					mapupper_ext;
 
-	void						*variable;	/* Data which depends on the encoding */
+	void						*variable;		/* Data which depends on the encoding */
 	int							variable_len;	/* how long that data is */
 
 	/*
 	 * the following portion is generated on the fly
 	 */
-	char						*codeset;
 	struct _citrus_ctype_rec	*citrus_ctype;
 	_WCTransEntry				wctrans[_WCTRANS_NINDEXES];
 	_WCTypeEntry				wctype[_WCTYPE_NINDEXES];

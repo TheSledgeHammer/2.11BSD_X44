@@ -41,6 +41,7 @@ _UTF8_init(_RuneLocale *rl)
 
 	rl->sgetrune = _UTF8_sgetrune;
 	rl->sputrune = _UTF8_sputrune;
+
 	_CurrentRuneLocale = rl;
 	__mb_cur_max = 6;
 
