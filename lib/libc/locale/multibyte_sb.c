@@ -41,6 +41,7 @@ __RCSID("$NetBSD: multibyte_sb.c,v 1.4 2003/08/07 16:43:04 agc Exp $");
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <wchar.h>
 #include <rune.h>
 

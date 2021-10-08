@@ -329,5 +329,6 @@ ___tolower(c)
 		if (c <= re->max)
 			return(re->map + c - re->min);
 	}
+	sputrune();
 	return(c);
 }

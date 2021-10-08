@@ -42,12 +42,25 @@
 #include <runetype.h>
 #include <stdio.h>
 
+struct _citrus_ctype_ops {
+  rune_t					(*co_sgetrune) (const char *, unsigned int, char const **);
+  int						(*co_sputrune) (rune_t, char *, unsigned int, char **);
+};
+
+struct _citrus_ctype {
+  struct _citrus_ctype_ops	 *cc_ops;
+  //void					*cc_closure;
+};
+
+typedef struct _citrus_ctype_ops	_citrus_ctype_ops_t;
+typedef struct _citrus_ctype		_citrus_ctype_t;
+
 #define	_PATH_LOCALE			"/usr/share/locale"
 
 #define _INVALID_RUNE   		_CurrentRuneLocale->invalid_rune
 
-#define __sgetrune      		_CurrentRuneLocale->sgetrune
-#define __sputrune     		 	_CurrentRuneLocale->sputrune
+#define __sgetrune      		_CurrentRuneLocale->citrus->cc_ops->co_sgetrune
+#define __sputrune     		 	_CurrentRuneLocale->citrus->cc_ops->co_sputrune
 
 #define sgetrune(s, n, r)       (*__sgetrune)((s), (n), (r))
 #define sputrune(c, s, n, r)    (*__sputrune)((c), (s), (n), (r))

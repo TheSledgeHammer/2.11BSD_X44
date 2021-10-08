@@ -45,6 +45,15 @@ static char sccsid[] = "@(#)utf2.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "locale/citrus_ctype.h"
+
+typedef _Encoding_Info				_UTF2EncodingInfo;
+typedef _Encoding_TypeInfo 			_UTF2CTypeInfo;
+typedef _Encoding_State				_UTF2State;
+
+#define _FUNCNAME(m)				_UTF2_citrus_type_##m
+#define _ENCODING_MB_CUR_MAX(_ei_)	3
+
 rune_t	_UTF2_sgetrune (const char *, size_t, char const **);
 int		_UTF2_sputrune (rune_t, char *, size_t, char **);
 
@@ -57,11 +66,65 @@ int
 _UTF2_init(rl)
 	_RuneLocale *rl;
 {
-	rl->sgetrune = _UTF2_sgetrune;
-	rl->sputrune = _UTF2_sputrune;
+	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
+	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
+
+	rl->citrus->cc_ops->co_sgetrune = _UTF2_sgetrune;
+	rl->citrus->cc_ops->co_sputrune = _UTF2_sputrune;
+
 	_CurrentRuneLocale = rl;
-	__mb_cur_max = 3;
+
 	return (0);
+}
+
+int
+_UTF2_citrus_ctype_mbrtowc_priv(_UTF2EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
+{
+	return (_UTF2_getrune_mb(ei, pwc, s, n, psenc, nresult));
+}
+
+int
+_UTF2_citrus_ctype_wcrtomb_priv(_UTF2EncodingInfo *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
+{
+	return (_UTF2_putrune_mb(ei, s, n, wc, psenc, nresult));
+}
+
+static int
+_UTF2_getrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
+{
+	wchar_t wchar;
+	const char *s0;
+
+	_DIAGASSERT(nresult != 0);
+	_DIAGASSERT(s != NULL);
+	_DIAGASSERT(psenc != NULL);
+
+	s0 = *s;
+
+	if (s0 == NULL) {
+		_citrus_ctype_init_state(ei, psenc);
+		*nresult = 0; /* state independent */
+		return 0;
+	}
+
+	wchar = (wchar_t) _UTF2_sgetrune(s, n, nresult);
+
+	if (pwc != NULL) {
+		*pwc = wchar;
+	}
+	*nresult = (wchar == 0) ? 0 : s0 - *s;
+	*s = s0;
+
+	return (0);
+}
+
+static int
+_UTF2_putrune_mb(_UTF2EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
+{
+	_DIAGASSERT(nresult != 0);
+	_DIAGASSERT(s != NULL);
+
+	return (_UTF2_sputrune(wc, s, n, nresult));
 }
 
 rune_t

@@ -1,4 +1,60 @@
 /*-
+ * Copyright (c)2002 Citrus Project,
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+/*-
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Paul Borman at Krystal Technologies.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+/*-
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -47,25 +103,31 @@ static char sccsid[] = "@(#)euc.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "locale/citrus_ctype.h"
+
+typedef _Encoding_Info				_EUCEncodingInfo;
+typedef _Encoding_TypeInfo 			_EUCCTypeInfo;
+typedef _Encoding_State				_EUCState;
+
+#define _FUNCNAME(m)				_EUC_citrus_type_##m
+#define _ENCODING_MB_CUR_MAX(_ei_)	3
+
 rune_t	_EUC_sgetrune (const char *, size_t, char const **);
 int		_EUC_sputrune (rune_t, char *, size_t, char **);
-
-typedef struct {
-	int		count[4];
-	rune_t	bits[4];
-	rune_t	mask;
-} _EucInfo;
 
 int
 _EUC_init(rl)
 	_RuneLocale *rl;
 {
-	_EucInfo *ei;
+	_EUCEncodingInfo *ei;
 	int x;
 	char *v, *e;
 
-	rl->sgetrune = _EUC_sgetrune;
-	rl->sputrune = _EUC_sputrune;
+	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
+	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
+
+	rl->citrus->cc_ops->co_sgetrune = _EUC_sgetrune;
+	rl->citrus->cc_ops->co_sputrune = _EUC_sputrune;
 
 	if (!rl->variable) {
 		free(rl);
@@ -76,7 +138,7 @@ _EUC_init(rl)
 	while (*v == ' ' || *v == '\t')
 		++v;
 
-	if ((ei = malloc(sizeof(_EucInfo))) == NULL) {
+	if ((ei = malloc(sizeof(_EUCEncodingInfo))) == NULL) {
 		free(rl);
 		return (ENOMEM);
 	}
@@ -104,19 +166,71 @@ _EUC_init(rl)
 		free(ei);
 		return (EFTYPE);
 	}
-	if (sizeof(_EucInfo) <= rl->variable_len) {
-		memcpy(rl->variable, ei, sizeof(_EucInfo));
+	if (sizeof(_EUCEncodingInfo) <= rl->variable_len) {
+		memcpy(rl->variable, ei, sizeof(_EUCEncodingInfo));
 		free(ei);
 	} else {
 		rl->variable = &ei;
 	}
-	rl->variable_len = sizeof(_EucInfo);
+	rl->variable_len = sizeof(_EUCEncodingInfo);
 	_CurrentRuneLocale = rl;
-	__mb_cur_max = 3;
 	return (0);
 }
 
-#define	CEI	((_EucInfo *)(_CurrentRuneLocale->variable))
+int
+_EUC_citrus_ctype_mbrtowc_priv(_EUCEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
+{
+	return (_EUC_getrune_mb(ei, pwc, s, n, psenc, nresult));
+}
+
+int
+_EUC_citrus_ctype_wcrtomb_priv(_EUCEncodingInfo *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
+{
+	return (_EUC_putrune_mb(ei, s, n, wc, psenc, nresult));
+}
+
+static int
+_EUC_getrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
+{
+	wchar_t wchar;
+	const char *s0, *s1 = NULL;
+
+	_DIAGASSERT(nresult != 0);
+	_DIAGASSERT(ei != NULL);
+	_DIAGASSERT(psenc != NULL);
+	_DIAGASSERT(s != NULL);
+
+	s0 = *s;
+
+	if (s0 == NULL) {
+		_citrus_ctype_init_state(ei, psenc);
+		*nresult = 0; /* state independent */
+		return 0;
+	}
+
+	wchar = (wchar_t) _EUC_sgetrune(s, n, nresult);
+
+	if (pwc) {
+		*pwc = wchar;
+	}
+	if (!wchar) {
+		*nresult = 0;
+	}
+
+	return (0);
+}
+
+static int
+_EUC_putrune_mb(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
+{
+	int ret;
+	_DIAGASSERT(nresult != 0);
+	_DIAGASSERT(s != NULL);
+
+	return (_EUC_sputrune(wc, s, n, nresult));
+}
+
+#define	CEI	((_EUCEncodingInfo *)(_CurrentRuneLocale->variable))
 
 #define	_SS2	0x008e
 #define	_SS3	0x008f
@@ -129,6 +243,7 @@ _euc_set(c)
 
 	return ((c & 0x80) ? c == _SS3 ? 3 : c == _SS2 ? 2 : 1 : 0);
 }
+
 rune_t
 _EUC_sgetrune(string, n, result)
 	const char *string;

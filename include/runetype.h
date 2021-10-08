@@ -143,9 +143,6 @@ typedef struct _WCTypeEntry {
 typedef struct {
 	char						magic[8];		/* Magic saying what version we are */
 	char						encoding[32];	/* ASCII name of this encoding */
-
-	rune_t						(*sgetrune) (const char *, unsigned int, char const **);
-	int							(*sputrune) (rune_t, char *, unsigned int, char **);
 	rune_t						invalid_rune;
 
 	unsigned long				runetype[_CACHED_RUNES];
@@ -167,7 +164,7 @@ typedef struct {
 	/*
 	 * the following portion is generated on the fly
 	 */
-	struct _citrus_ctype_rec	*citrus_ctype;
+	_citrus_ctype_t				*citrus;
 	_WCTransEntry				wctrans[_WCTRANS_NINDEXES];
 	_WCTypeEntry				wctype[_WCTYPE_NINDEXES];
 } _RuneLocale;

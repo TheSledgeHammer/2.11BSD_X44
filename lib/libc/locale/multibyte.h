@@ -48,15 +48,15 @@ typedef struct _RuneStatePriv {
 typedef union _RuneState {
 	mbstate_t				__pad;
 	struct _RuneStatePriv	__priv;
-	#define rs_runelocale	__priv.__runelocale
-	#define rs_private		__priv.__private
+#define rs_runelocale		__priv.__runelocale
+#define rs_private			__priv.__private
 } _RuneState;
 
 #define _RUNE_LOCALE(loc) \
 	((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
 
 #define _CITRUS_CTYPE(loc) \
-	(((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))->citrus_ctype)
+	(((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))->citrus)
 
 /* */
 
@@ -86,7 +86,7 @@ _ps_to_ctype(mbstate_t const *ps, locale_t loc)
 
 	_DIAGASSERT(_ps_to_runelocale(ps) != NULL);
 
-	return _ps_to_runelocale(ps)->citrus_ctype;
+	return _ps_to_runelocale(ps)->citrus;
 }
 
 static __inline void *
@@ -110,7 +110,7 @@ _init_ps(_RuneLocale *rl, mbstate_t *ps)
 {
 	size_t dum;
 	_ps_to_runestate(ps)->rs_runelocale = rl;
-	_citrus_ctype_mbrtowc(rl->citrus_ctype, NULL, NULL, 0, _ps_to_private(ps), &dum);
+	_citrus_ctype_mbrtowc(rl->citrus, NULL, NULL, 0, _ps_to_private(ps), &dum);
 }
 
 static __inline void

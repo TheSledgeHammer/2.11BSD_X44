@@ -207,10 +207,7 @@ bye:
 }
 
 static int
-_FUNCNAME(wcsrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s,
-			  const wchar_t ** __restrict pwcs,
-			  size_t n, _ENCODING_STATE * __restrict psenc,
-			  size_t * __restrict nresult)
+_FUNCNAME(wcsrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s, const wchar_t ** __restrict pwcs, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
 	int cnt = 0, err;
 	char buf[MB_LEN_MAX];
@@ -229,8 +226,7 @@ _FUNCNAME(wcsrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s,
 #if _ENCODING_IS_STATE_DEPENDENT
 		state = *psenc;
 #endif
-		err = _FUNCNAME(wcrtomb_priv)(ei, buf, sizeof(buf),
-					      *pwcs0, psenc, &siz);
+		err = _FUNCNAME(wcrtomb_priv)(ei, buf, sizeof(buf), *pwcs0, psenc, &siz);
 		if (siz == (size_t)-1) {
 			*nresult = siz;
 			return (err);
@@ -265,7 +261,6 @@ _FUNCNAME(wcsrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s,
 	return (0);
 }
 
-
 /* ----------------------------------------------------------------------
  * templates for public functions
  */
@@ -288,33 +283,27 @@ _citrus_ctype_unpack_state(_ENCODING_INFO *ei, _ENCODING_STATE *s, const void *p
 	memcpy((void *)s, pspriv, sizeof(*s));
 }
 
-#define _RESTART_BEGIN(_func_, _cei_, _pspriv_, _pse_)				\
-do {																\
-	_ENCODING_STATE _state;											\
-	do {															\
-		if (_pspriv_ == NULL) {										\
-			_pse_ = &_CEI_TO_STATE(_cei_, _func_);					\
-			if (_STATE_NEEDS_EXPLICIT_INIT(_pse_)) {				\
-			    init_state(_CEI_TO_EI(_cei_), (_pse_));				\
-			} else {												\
-				_pse_ = &_state;									\
-				unpack_state(_CEI_TO_EI(_cei_), _pse_, _pspriv_); 	\
-			}														\
-		}															\
+#define _RESTART_BEGIN(_func_, _cei_, _pspriv_, _pse_)								\
+do {																				\
+	_ENCODING_STATE _state;															\
+	do {																			\
+		if (_pspriv_ == NULL) {														\
+			_pse_ = &_CEI_TO_STATE(_cei_, _func_);									\
+			if (_STATE_NEEDS_EXPLICIT_INIT(_pse_)) {								\
+				_citrus_ctype_init_state(_CEI_TO_EI(_cei_), (_pse_));				\
+			} else {																\
+				_pse_ = &_state;													\
+				_citrus_ctype_unpack_state(_CEI_TO_EI(_cei_), _pse_, _pspriv_); 	\
+			}																		\
+		}																			\
 } while (/*CONSTCOND*/0)
 
-#define _RESTART_END(_func_, _cei_, _pspriv_, _pse_)				\
-	if (_pspriv_ != NULL) {											\
-		pack_state(_CEI_TO_EI(_cei_), _pspriv_, _pse_);				\
-	}																\
+#define _RESTART_END(_func_, _cei_, _pspriv_, _pse_)								\
+	if (_pspriv_ != NULL) {															\
+		_citrus_ctype_pack_state(_CEI_TO_EI(_cei_), _pspriv_, _pse_);				\
+	}																				\
 } while (/*CONSTCOND*/0)
-/*
-void
-_citrus_ctype_set_mb_cur_max(void *cl, unsigned mb_cur_max)
-{
-	_ENCODING_MB_CUR_MAX(_CEI_TO_EI(_TO_CEI(cl))) = mb_cur_max;
-}
-*/
+
 unsigned
 /*ARGSUSED*/
 _citrus_ctype_get_mb_cur_max(void *cl)
@@ -333,8 +322,8 @@ _citrus_ctype_mblen(void * __restrict cl, const char * __restrict s, size_t n, i
 	psenc = &_CEI_TO_STATE(_TO_CEI(cl), mblen);
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	if (_STATE_NEEDS_EXPLICIT_INIT(psenc))
-		init_state(ei, psenc);
-	return mbtowc_priv(ei, NULL, s, n, psenc, nresult);
+		_citrus_ctype_init_state(ei, psenc);
+	return _FUNCNAME(mbtowc_priv)(ei, NULL, s, n, psenc, nresult);
 }
 
 int
@@ -349,10 +338,10 @@ _citrus_ctype_mbrlen(void * __restrict cl, const char * __restrict s, size_t n, 
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	_RESTART_BEGIN(mbrlen, _TO_CEI(cl), pspriv, psenc);
 	if (s == NULL) {
-		init_state(ei, psenc);
+		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0;
 	} else {
-		err = mbrtowc_priv(ei, NULL, (const char **)&s, n,
+		err = _FUNCNAME(mbrtowc_priv)(ei, NULL, (const char **)&s, n,
 		    (void *)psenc, nresult);
 	}
 	_RESTART_END(mbrlen, _TO_CEI(cl), pspriv, psenc);
@@ -372,10 +361,10 @@ _citrus_ctype_mbrtowc(void * __restrict cl, wchar_t * __restrict pwc, const char
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	_RESTART_BEGIN(mbrtowc, _TO_CEI(cl), pspriv, psenc);
 	if (s == NULL) {
-		init_state(ei, psenc);
+		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0;
 	} else {
-		err = mbrtowc_priv(ei, pwc, (const char **)&s, n, (void *)psenc, nresult);
+		err = _FUNCNAME(mbrtowc_priv)(ei, pwc, (const char **)&s, n, (void *)psenc, nresult);
 	}
 	_RESTART_END(mbrtowc, _TO_CEI(cl), pspriv, psenc);
 
@@ -393,7 +382,7 @@ _citrus_ctype_mbsinit(void * __restrict cl, const void * __restrict pspriv, int 
 		return (0);
 	}
 
-	unpack_state(_CEI_TO_EI(_TO_CEI(cl)), &state, pspriv);
+	_citrus_ctype_unpack_state(_CEI_TO_EI(_TO_CEI(cl)), &state, pspriv);
 
 	*nresult = (state.chlen == 0); /* XXX: FIXME */
 
@@ -411,7 +400,7 @@ _citrus_ctype_mbsrtowcs(void * __restrict cl, wchar_t * __restrict pwcs, const c
 
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	_RESTART_BEGIN(mbsrtowcs, _TO_CEI(cl), pspriv, psenc);
-	err = mbsrtowcs_priv(ei, pwcs, s, n, psenc, nresult);
+	err = _FUNCNAME(mbsrtowcs_priv)(ei, pwcs, s, n, psenc, nresult);
 	_RESTART_END(mbsrtowcs, _TO_CEI(cl), pspriv, psenc);
 
 	return (err);
@@ -427,8 +416,8 @@ _citrus_ctype_mbstowcs(void * __restrict cl, wchar_t * __restrict pwcs, const ch
 	_DIAGASSERT(cl != NULL);
 
 	ei = _CEI_TO_EI(_TO_CEI(cl));
-	init_state(ei, &state);
-	err = mbsrtowcs_priv(ei, pwcs, (const char **)&s, n, &state, nresult);
+	_citrus_ctype_init_state(ei, &state);
+	err = _FUNCNAME(mbsrtowcs_priv)(ei, pwcs, (const char **)&s, n, &state, nresult);
 	if (*nresult == (size_t)-2) {
 		err = EINVAL;
 		*nresult = (size_t)-1;
@@ -448,8 +437,8 @@ _citrus_ctype_mbtowc(void * __restrict cl, wchar_t * __restrict pwc, const char 
 	psenc = &_CEI_TO_STATE(_TO_CEI(cl), mbtowc);
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	if (_STATE_NEEDS_EXPLICIT_INIT(psenc))
-		init_state(ei, psenc);
-	return mbtowc_priv(ei, pwc, s, n, psenc, nresult);
+		_citrus_ctype_init_state(ei, psenc);
+	return _FUNCNAME(mbtowc_priv)(ei, pwc, s, n, psenc, nresult);
 }
 
 int
@@ -489,7 +478,7 @@ _citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t wc, voi
 		sz -= rsz;
 	}
 #endif
-	err = wcrtomb_priv(_CEI_TO_EI(_TO_CEI(cl)), s, sz, wc, psenc, nresult);
+	err = _FUNCNAME(wcrtomb_priv)(_CEI_TO_EI(_TO_CEI(cl)), s, sz, wc, psenc, nresult);
 #if _ENCODING_IS_STATE_DEPENDENT
 	if (err == 0)
 		*nresult += rsz;
@@ -514,7 +503,7 @@ _citrus_ctype_wcsrtombs(void * __restrict cl, char * __restrict s, const wchar_t
 
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	_RESTART_BEGIN(wcsrtombs, _TO_CEI(cl), pspriv, psenc);
-	err = wcsrtombs_priv(ei, s, pwcs, n, psenc, nresult);
+	err = _FUNCNAME(wcsrtombs_priv)(ei, s, pwcs, n, psenc, nresult);
 	_RESTART_END(wcsrtombs, _TO_CEI(cl), pspriv, psenc);
 
 	return err;
@@ -531,8 +520,8 @@ _citrus_ctype_wcstombs(void * __restrict cl, char * __restrict s, const wchar_t 
 	_DIAGASSERT(cl != NULL);
 
 	ei = _CEI_TO_EI(_TO_CEI(cl));
-	init_state(ei, &state);
-	err = wcsrtombs_priv(ei, s, (const wchar_t **)&pwcs, n, &state, nresult);
+	_citrus_ctype_init_state(ei, &state);
+	err = _FUNCNAME(wcsrtombs_priv)(ei, s, (const wchar_t **)&pwcs, n, &state, nresult);
 
 	return err;
 }
@@ -553,9 +542,9 @@ _citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int 
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	psenc = &_CEI_TO_STATE(_TO_CEI(cl), wctomb);
 	if (_STATE_NEEDS_EXPLICIT_INIT(psenc))
-		init_state(ei, psenc);
+		_citrus_ctype_init_state(ei, psenc);
 	if (s == NULL) {
-		init_state(ei, psenc);
+		_citrus_ctype_init_state(ei, psenc);
 		*nresult = _ENCODING_IS_STATE_DEPENDENT;
 		return 0;
 	}
@@ -574,7 +563,7 @@ _citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int 
 		sz -= rsz;
 	}
 #endif
-	err = wcrtomb_priv(ei, s, sz, wc, psenc, &nr);
+	err = _FUNCNAME(wcrtomb_priv)(ei, s, sz, wc, psenc, &nr);
 #if _ENCODING_IS_STATE_DEPENDENT
 	if (err == 0)
 		*nresult = (int)(nr + rsz);
@@ -587,7 +576,7 @@ _citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int 
 
 int
 /*ARGSUSED*/
-_citrus_ctype_btowc(_citrus_ctype_rec_t * __restrict cc, int c, wint_t * __restrict wcresult)
+_citrus_ctype_btowc(_citrus_ctype_t * __restrict cc, int c, wint_t * __restrict wcresult)
 {
 	_ENCODING_STATE state;
 	_ENCODING_INFO *ei;
@@ -597,17 +586,17 @@ _citrus_ctype_btowc(_citrus_ctype_rec_t * __restrict cc, int c, wint_t * __restr
 	size_t nr;
 	int err;
 
-	_DIAGASSERT(cc != NULL && cc->cc_closure != NULL);
+	_DIAGASSERT(cc != NULL /*&& cc->cc_closure != NULL*/);
 
 	if (c == EOF) {
 		*wcresult = WEOF;
 		return 0;
 	}
-	ei = _CEI_TO_EI(_TO_CEI(cc->cc_closure));
-	init_state(ei, &state);
+	ei = _CEI_TO_EI(_TO_CEI(cc));
+	_citrus_ctype_init_state(ei, &state);
 	mb = (char)(unsigned)c;
 	s = &mb;
-	err = mbrtowc_priv(ei, &wc, &s, 1, &state, &nr);
+	err = _FUNCNAME(mbrtowc_priv)(ei, &wc, &s, 1, &state, &nr);
 	if (!err && (nr == 0 || nr == 1))
 		*wcresult = (wint_t)wc;
 	else
@@ -618,7 +607,7 @@ _citrus_ctype_btowc(_citrus_ctype_rec_t * __restrict cc, int c, wint_t * __restr
 
 int
 /*ARGSUSED*/
-_citrus_ctype_wctob(_citrus_ctype_rec_t * __restrict cc, wint_t wc, int * __restrict cresult)
+_citrus_ctype_wctob(_citrus_ctype_t * __restrict cc, wint_t wc, int * __restrict cresult)
 {
 	_ENCODING_STATE state;
 	_ENCODING_INFO *ei;
@@ -626,14 +615,14 @@ _citrus_ctype_wctob(_citrus_ctype_rec_t * __restrict cc, wint_t wc, int * __rest
 	size_t nr;
 	int err;
 
-	_DIAGASSERT(cc != NULL && cc->cc_closure != NULL);
+	_DIAGASSERT(cc != NULL/* && cc->cc_closure != NULL*/);
 
 	if (wc == WEOF) {
 		*cresult = EOF;
 		return 0;
 	}
-	ei = _CEI_TO_EI(_TO_CEI(cc->cc_closure));
-	init_state(ei, &state);
+	ei = _CEI_TO_EI(_TO_CEI(cc));
+	_citrus_ctype_init_state(ei, &state);
 	err = wcrtomb_priv(ei, buf, _ENCODING_MB_CUR_MAX(ei), (wchar_t)wc, &state, &nr);
 	if (!err && nr == 1)
 		*cresult = buf[0];

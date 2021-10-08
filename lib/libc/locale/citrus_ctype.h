@@ -30,11 +30,12 @@
 #ifndef _CITRUS_CTYPE_H_
 #define _CITRUS_CTYPE_H_
 
+#include <rune.h>
+
 /* generic encoding structures*/
 typedef struct {
 	wchar_t				ch[3];
 	int 				chlen;
-	int					want;
 } _Encoding_State;
 
 typedef struct {
@@ -73,51 +74,6 @@ typedef struct {
 #define _ENCODING_MB_CUR_MAX(_ei_)			(_ei_)->mb_cur_max
 #define _ENCODING_IS_STATE_DEPENDENT		0
 #define _STATE_NEEDS_EXPLICIT_INIT(_ps_)	0
-
-/* citrus ops */
-typedef struct _citrus_ctype_ops_rec	_citrus_ctype_ops_rec_t;
-typedef struct _citrus_ctype_rec		_citrus_ctype_rec_t;
-
-typedef unsigned 	(*_citrus_ctype_get_mb_cur_max_t)(void *);
-typedef int			(*_citrus_ctype_mblen_t)(void * __restrict, const char * __restrict, size_t, int * __restrict);
-typedef int			(*_citrus_ctype_mbrlen_t)(void * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
-typedef int			(*_citrus_ctype_mbrtowc_t)(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
-typedef int			(*_citrus_ctype_mbsinit_t)(void * __restrict, const void * __restrict, int * __restrict);
-typedef int			(*_citrus_ctype_mbsrtowcs_t)(void * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, void * __restrict, size_t * __restrict);
-typedef int			(*_citrus_ctype_mbsnrtowcs_t)(_citrus_ctype_rec_t * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, size_t, void * __restrict, size_t * __restrict);
-typedef int			(*_citrus_ctype_mbstowcs_t)(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, size_t * __restrict);
-typedef int			(*_citrus_ctype_mbtowc_t)(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, int * __restrict);
-typedef int			(*_citrus_ctype_wcrtomb_t)(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
-typedef int			(*_citrus_ctype_wcsrtombs_t)(void * __restrict, char * __restrict, const wchar_t ** __restrict, size_t, void * __restrict, size_t * __restrict);
-typedef int			(*_citrus_ctype_wcsnrtombs_t)(_citrus_ctype_rec_t * __restrict, char * __restrict, const wchar_t ** __restrict, size_t, size_t, void * __restrict, size_t * __restrict);
-typedef int			(*_citrus_ctype_wcstombs_t)(void * __restrict, char * __restrict, const wchar_t * __restrict, size_t, size_t * __restrict);
-typedef int			(*_citrus_ctype_wctomb_t)(void * __restrict, char * __restrict, wchar_t, int * __restrict);
-typedef int			(*_citrus_ctype_btowc_t)(_citrus_ctype_rec_t * __restrict, int, wint_t * __restrict);
-typedef int			(*_citrus_ctype_wctob_t)(_citrus_ctype_rec_t * __restrict, wint_t, int * __restrict);
-
-struct _citrus_ctype_ops_rec {
-	_citrus_ctype_get_mb_cur_max_t	co_get_mb_cur_max;
-	_citrus_ctype_mblen_t			co_mblen;
-	_citrus_ctype_mbrlen_t			co_mbrlen;
-	_citrus_ctype_mbrtowc_t			co_mbrtowc;
-	_citrus_ctype_mbsinit_t			co_mbsinit;
-	_citrus_ctype_mbsrtowcs_t		co_mbsrtowcs;
-	_citrus_ctype_mbstowcs_t		co_mbstowcs;
-	_citrus_ctype_mbtowc_t			co_mbtowc;
-	_citrus_ctype_wcrtomb_t			co_wcrtomb;
-	_citrus_ctype_wcsrtombs_t		co_wcsrtombs;
-	_citrus_ctype_wcstombs_t		co_wcstombs;
-	_citrus_ctype_wctomb_t			co_wctomb;
-	_citrus_ctype_btowc_t			co_btowc;
-	_citrus_ctype_wctob_t			co_wctob;
-	_citrus_ctype_mbsnrtowcs_t		co_mbsnrtowcs;
-	_citrus_ctype_wcsnrtombs_t		co_wcsnrtombs;
-};
-
-struct _citrus_ctype_rec {
-	_citrus_ctype_ops_rec_t			*cc_ops;
-	void							*cc_closure;
-};
 
 __BEGIN_DECLS
 /*
@@ -167,7 +123,8 @@ int 		_citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t w
 int 		_citrus_ctype_wcsrtombs(void * __restrict cl, char * __restrict s, const wchar_t ** __restrict pwcs, size_t n, void * __restrict pspriv, size_t * __restrict nresult);
 int 		_citrus_ctype_wcstombs(void * __restrict cl, char * __restrict s, const wchar_t * __restrict pwcs, size_t n, size_t * __restrict nresult);
 int 		_citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int * __restrict nresult);
-int 		_citrus_ctype_btowc(_citrus_ctype_rec_t * __restrict cc, int c, wint_t * __restrict wcresult);
-int 		_citrus_ctype_wctob(_citrus_ctype_rec_t * __restrict cc, wint_t wc, int * __restrict cresult);
+int 		_citrus_ctype_btowc(_citrus_ctype_t * __restrict cc, int c, wint_t * __restrict wcresult);
+int 		_citrus_ctype_wctob(_citrus_ctype_t * __restrict cc, wint_t wc, int * __restrict cresult);
 __END_DECLS
 #endif /* _CITRUS_CTYPE_H_ */
+
