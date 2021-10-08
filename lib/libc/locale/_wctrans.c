@@ -73,21 +73,6 @@ __RCSID("$NetBSD: _wctrans.c,v 1.5 2003/08/07 16:43:03 agc Exp $");
 #include "_wctrans_local.h"
 
 /*
- * _wctrans_init:
- */
-
-void
-_wctrans_init(_RuneLocale *rl)
-{
-	rl->wctrans[_WCTRANS_INDEX_LOWER].name = "tolower";
-	rl->wctrans[_WCTRANS_INDEX_LOWER].cached = rl->maplower;
-	rl->wctrans[_WCTRANS_INDEX_LOWER].extmap = &rl->maplower_ext;
-	rl->wctrans[_WCTRANS_INDEX_UPPER].name = "toupper";
-	rl->wctrans[_WCTRANS_INDEX_UPPER].cached = rl->mapupper;
-	rl->wctrans[_WCTRANS_INDEX_UPPER].extmap = &rl->mapupper_ext;
-}
-
-/*
  * _wctrans_ext:
  *	translate a character (extended part)
  */

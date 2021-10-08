@@ -58,10 +58,23 @@ static _RuneLocale	*_Read_RuneMagi (FILE *);
 
 static char *PathLocale = 0;
 
+/* wctype_init: */
 void
 wctype_init(_RuneLocale *rl)
 {
 	memcpy(&rl->wctype, &_DefaultRuneLocale.wctype, sizeof(rl->wctype));
+}
+
+/* _wctrans_init: */
+void
+wctrans_init(_RuneLocale *rl)
+{
+	rl->wctrans[_WCTRANS_INDEX_LOWER].name = "tolower";
+	rl->wctrans[_WCTRANS_INDEX_LOWER].cached = rl->maplower;
+	rl->wctrans[_WCTRANS_INDEX_LOWER].extmap = &rl->maplower_ext;
+	rl->wctrans[_WCTRANS_INDEX_UPPER].name = "toupper";
+	rl->wctrans[_WCTRANS_INDEX_UPPER].cached = rl->mapupper;
+	rl->wctrans[_WCTRANS_INDEX_UPPER].extmap = &rl->mapupper_ext;
 }
 
 int
@@ -97,6 +110,7 @@ setrunelocale(encoding)
 	}
 
 	wctype_init(rl);
+	wctrans_init(rl);
 
 	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF2")) {
 		return (_UTF2_init(rl));

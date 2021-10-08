@@ -33,28 +33,24 @@
 #include "rune_local.h"
 
 wint_t	_towctrans_ext(wint_t, _WCTransEntry *);
-void	_wctrans_init(_RuneLocale *);
 
 static __inline wint_t
 _towctrans(wint_t c, _WCTransEntry *te)
 {
-	return (_RUNE_ISCACHED(c) ?
-		te->cached[(rune_t)c]:_towctrans_ext(c, te));
+	return (_RUNE_ISCACHED(c) ? te->cached[(rune_t)c]:_towctrans_ext(c, te));
 }
 
 static __inline struct _WCTransEntry *
 _wctrans_lower(_RuneLocale *rl)
 {
-	if (rl->wctrans[_WCTRANS_INDEX_LOWER].name==NULL)
-		_wctrans_init(rl);
+	_DIAGASSERT(rl->wctrans[_WCTRANS_INDEX_LOWER].name != NULL);
 	return (&rl->wctrans[_WCTRANS_INDEX_LOWER]);
 }
 
 static __inline struct _WCTransEntry *
 _wctrans_upper(_RuneLocale *rl)
 {
-	if (rl->wctrans[_WCTRANS_INDEX_UPPER].name==NULL)
-		_wctrans_init(rl);
+	_DIAGASSERT(rl->wctrans[_WCTRANS_INDEX_UPPER].name != NULL);
 	return (&rl->wctrans[_WCTRANS_INDEX_UPPER]);
 }
 

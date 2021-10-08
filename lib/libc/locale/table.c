@@ -39,27 +39,31 @@
 static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 #endif /* LIBC_SCCS and not lint */
 
-//#include <sys/types.h>
-
 #include <stdlib.h>
+#include <stddef.h>
 #include <ctype.h>
 #include <locale.h>
 #include <assert.h>
 #include <wchar.h>
 #include <rune.h>
+#include <runetype.h>
 #include "rune_local.h"
 #include "citrus_ctype.h"
 
 extern rune_t	_none_sgetrune (const char *, size_t, char const **);
 extern int		_none_sputrune (rune_t, char *, size_t, char **);
-extern int		_none_init (char *, char **);
+
+_citrus_ctype_t _citrus_ctype_default = {
+		.cc_ops = {
+				.co_sgetrune = _none_sgetrune,
+				.co_sputrune = _none_sputrune,
+		}
+};
 
 _RuneLocale _DefaultRuneLocale = {
     _RUNE_MAGIC_1,
-    "NONE",
-    _none_sgetrune,
-    _none_sputrune,
-	_DEFAULT_INVALID_RUNE,
+    "none",
+	0xFFFD,
 	{/*00*/	_CTYPE_C,
 			_CTYPE_C,
 			_CTYPE_C,
@@ -259,25 +263,18 @@ _RuneLocale _DefaultRuneLocale = {
 	{ 0, NULL },
 	{ 0, NULL },
 	NULL, 0,
-	"US-ASCII",
-	{
-		    { NULL, NULL, NULL },
-		    { NULL, NULL, NULL },
-	},
-	{
-		    { "alnum", _CTYPE_A|_CTYPE_D },
-		    { "alpha", _CTYPE_A },
-		    { "blank", _CTYPE_B },
-		    { "cntrl", _CTYPE_C },
-		    { "digit", _CTYPE_D },
-		    { "graph", _CTYPE_G },
-		    { "lower", _CTYPE_L },
-		    { "print", _CTYPE_R },
-		    { "punct", _CTYPE_P },
-		    { "space", _CTYPE_S },
-		    { "upper", _CTYPE_U },
-		    { "xdigit", _CTYPE_X },
-	},
-	NULL
+	"646",
+	&_citrus_ctype_default,
+    {
+    		{   "towlower",
+    				__UNCONST(&_DefaultRuneLocale.maplower[0]),
+					__UNCONST(&_DefaultRuneLocale.maplower_ext)
+    		},
+
+			{   "towupper",
+					__UNCONST(&_DefaultRuneLocale.mapupper[0]),
+					__UNCONST(&_DefaultRuneLocale.mapupper_ext)
+			},
+    }
 };
 _RuneLocale *_CurrentRuneLocale = &_DefaultRuneLocale;

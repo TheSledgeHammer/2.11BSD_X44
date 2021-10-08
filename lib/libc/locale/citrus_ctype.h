@@ -32,7 +32,7 @@
 
 #include <rune.h>
 
-/* generic encoding structures*/
+/* generic encoding structures */
 typedef struct {
 	wchar_t				ch[3];
 	int 				chlen;
