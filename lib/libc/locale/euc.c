@@ -180,17 +180,17 @@ _EUC_init(rl)
 int
 _EUC_citrus_ctype_mbrtowc_priv(_EUCEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
 {
-	return (_EUC_getrune_mb(ei, pwc, s, n, psenc, nresult));
+	return (_EUC_sgetrune_mb(ei, pwc, s, n, psenc, nresult));
 }
 
 int
 _EUC_citrus_ctype_wcrtomb_priv(_EUCEncodingInfo *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
 {
-	return (_EUC_putrune_mb(ei, s, n, wc, psenc, nresult));
+	return (_EUC_sputrune_mb(ei, s, n, wc, psenc, nresult));
 }
 
 static int
-_EUC_getrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
+_EUC_sgetrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
 {
 	wchar_t wchar;
 	const char *s0, *s1 = NULL;
@@ -221,7 +221,7 @@ _EUC_getrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _
 }
 
 static int
-_EUC_putrune_mb(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
+_EUC_sputrune_mb(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
 {
 	int ret;
 	_DIAGASSERT(nresult != 0);

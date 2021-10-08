@@ -80,17 +80,17 @@ _UTF2_init(rl)
 int
 _UTF2_citrus_ctype_mbrtowc_priv(_UTF2EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
 {
-	return (_UTF2_getrune_mb(ei, pwc, s, n, psenc, nresult));
+	return (_UTF2_sgetrune_mb(ei, pwc, s, n, psenc, nresult));
 }
 
 int
 _UTF2_citrus_ctype_wcrtomb_priv(_UTF2EncodingInfo *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
 {
-	return (_UTF2_putrune_mb(ei, s, n, wc, psenc, nresult));
+	return (_UTF2_sputrune_mb(ei, s, n, wc, psenc, nresult));
 }
 
 static int
-_UTF2_getrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
+_UTF2_sgetrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
 {
 	wchar_t wchar;
 	const char *s0;
@@ -119,7 +119,7 @@ _UTF2_getrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n,
 }
 
 static int
-_UTF2_putrune_mb(_UTF2EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
+_UTF2_sputrune_mb(_UTF2EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
 {
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(s != NULL);
