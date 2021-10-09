@@ -66,17 +66,17 @@ static struct sastack 			*sa_getstack(struct sadata *);
 static inline struct sastack 	*sa_getstack0(struct sadata *);
 static inline int 				sast_compare(struct sastack *, struct sastack *);
 #ifdef SMP
-static int 						sa_increaseconcurrency(struct lwp *, int);
+static int 						sa_increaseconcurrency(struct proc *, int);
 #endif
-static void 					sa_setwoken(struct lwp *);
+static void 					sa_setwoken(struct proc *);
 static void 					sa_switchcall(void *);
-static int 						sa_newcachelwp(struct lwp *);
-static inline void 				sa_makeupcalls(struct lwp *);
-static struct lwp 				*sa_vp_repossess(struct lwp *l);
+static int 						sa_newcachelwp(struct proc *);
+static inline void 				sa_makeupcalls(struct proc *);
+static struct lwp 				*sa_vp_repossess(struct proc *);
 
-static inline int 				sa_pagefault(struct lwp *, ucontext_t *);
+static inline int 				sa_pagefault(struct proc *, ucontext_t *);
 
-static void 					sa_upcall0(struct sadata_upcall *, int, struct lwp *, struct lwp *, size_t, void *, void (*)(void *));
+static void 					sa_upcall0(struct sadata_upcall *, int, struct proc *, struct proc *, size_t, void *, void (*)(void *));
 static void 					sa_upcall_getstate(union sau_state *, struct lwp *);
 
 #define SA_DEBUG
@@ -189,7 +189,7 @@ sa_newsavp(struct sadata *sa)
 }
 
 int
-sys_sa_register(struct lwp *l, void *v, register_t *retval)
+sys_sa_register(struct proc *p, void *v, register_t *retval)
 {
 	struct sys_sa_register_args /* {
 		syscallarg(sa_upcall_t) new;
@@ -200,8 +200,7 @@ sys_sa_register(struct lwp *l, void *v, register_t *retval)
 	int error;
 	sa_upcall_t prev;
 
-	error = dosa_register(l, SCARG(uap, new), &prev, SCARG(uap, flags),
-	    SCARG(uap, stackinfo_offset));
+	error = dosa_register(p, SCARG(uap, new), &prev, SCARG(uap, flags), SCARG(uap, stackinfo_offset));
 	if (error)
 		return error;
 

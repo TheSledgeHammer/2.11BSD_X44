@@ -39,9 +39,8 @@
 #ifndef _KERNEL
 #include <sys/types.h>
 #include <sys/null.h>
-#endif
-
 #include <sys/disktype.h>
+#endif
 
 #include <lib/libsa/diskapm.h>
 #include <lib/libsa/diskgpt.h>

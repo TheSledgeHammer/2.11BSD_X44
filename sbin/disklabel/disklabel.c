@@ -34,6 +34,11 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
+#include <sys/cdefs.h>
 #ifndef lint
 static char copyright[] =
 "@(#) Copyright (c) 1987, 1993\n\
@@ -46,19 +51,39 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <sys/signal.h>
 #include <sys/errno.h>
-#include <sys/file.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
 #define DKTYPENAMES
-#include <sys/disklabel.h>
-#include <ufs/ufs/dinode.h>
-#include <ufs/ffs/fs.h>
-#include <unistd.h>
+#define FSTYPENAMES
+
+#include <ctype.h>
+#include <err.h>
+#include <errno.h>
+#include <signal.h>
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <unistd.h>
+
+#include <ufs/ufs/dinode.h>
+#include <ufs/ffs/fs.h>
+#if HAVE_NBTOOL_CONFIG_H
+#include <nbinclude/sys/disklabel.h>
+#include <nbinclude/sys/disktype.h>
+#include <nbinclude/sys/boot.h>
+#include "../../include/disktab.h"
+#else
+#include <sys/disklabel.h>
+#include <sys/disktype.h>
+#include <sys/boot.h>
+#include <util.h>
+#include <disktab.h>
+#endif /* HAVE_NBTOOL_CONFIG_H */
+
 #include "pathnames.h"
 
 /*

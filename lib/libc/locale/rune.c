@@ -112,10 +112,10 @@ setrunelocale(encoding)
 	wctype_init(rl);
 	wctrans_init(rl);
 
-	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF2")) {
-		return (_UTF2_init(rl));
-	} else if (!strcmp(rl->encoding, "UTF-8")) {
+	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF-8")) {
 		return (_UTF8_init(rl));
+	} else if (!strcmp(rl->encoding, "UTF-2")) {
+		return (_UTF2_init(rl));
 	} else if (!strcmp(rl->encoding, "NONE")) {
 		return (_none_init(rl));
 	} else if (!strcmp(rl->encoding, "EUC")) {

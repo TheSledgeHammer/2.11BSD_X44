@@ -256,7 +256,7 @@ mpxchan()
 	struct	mpx_group	*gp, *ngp;
 	struct	mpx_args	vec;
 
-	struct	a {
+	struct a {
 		int	cmd;
 		int	*argvec;
 	} *uap = (struct a *)u->u_ap;

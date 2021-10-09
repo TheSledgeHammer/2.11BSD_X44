@@ -31,12 +31,21 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
+#include <sys/cdefs.h>
 #ifndef lint
 static char sccsid[] = "@(#)dkcksum.c	8.1 (Berkeley) 6/5/93";
 #endif /* not lint */
 
 #include <sys/types.h>
+#if HAVE_NBTOOL_CONFIG_H
+#include <nbinclude/sys/disklabel.h>
+#else
 #include <sys/disklabel.h>
+#endif /* HAVE_NBTOOL_CONFIG_H */
 
 u_short
 dkcksum(lp)

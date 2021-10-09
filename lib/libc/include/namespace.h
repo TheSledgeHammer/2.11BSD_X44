@@ -38,39 +38,39 @@
 
 #include <sys/cdefs.h>
 
-#define brk				_brk
-#define catclose		_catclose
-#define catgets			_catgets
-#define catopen			_catopen
-#define daylight		_daylight
-#define err				_err
-#define errx			_errx
+#define brk					_brk
+#define catclose			_catclose
+#define catgets				_catgets
+#define catopen				_catopen
+#define daylight			_daylight
+#define err					_err
+#define errx				_errx
 #ifdef _REENTRANT
-#define fileno			_fileno
+#define fileno				_fileno
 #endif
-#define fork			_fork
-#define fseeko			_fseeko
-#define ftello			_ftello
-#define getcontext		_getcontext
-#define inet_aton		_inet_aton
-#define inet_pton		_inet_pton
-#define pipe			_pipe
-#define sbrk			_sbrk
-#define strlcat			_strlcat
-#define strlcpy			_strlcpy
-#define strtoimax		_strtoimax
-#define strtoll			_strtoll
-#define strtoull		_strtoull
-#define strtoumax		_strtoumax
-#define sys_errlist		_sys_errlist
-#define sys_nerr		_sys_nerr
-#define sys_siglist		_sys_siglist
-#define verr			_verr
-#define verrx			_verrx
-#define vwarn			_vwarn
-#define vwarnx			_vwarnx
-#define warn			_warn
-#define warnx			_warnx
+#define fork				_fork
+#define fseeko				_fseeko
+#define ftello				_ftello
+#define getcontext			_getcontext
+#define inet_aton			_inet_aton
+#define inet_pton			_inet_pton
+#define pipe				_pipe
+#define sbrk				_sbrk
+#define strlcat				_strlcat
+#define strlcpy				_strlcpy
+#define strtoimax			_strtoimax
+#define strtoll				_strtoll
+#define strtoull			_strtoull
+#define strtoumax			_strtoumax
+#define sys_errlist			_sys_errlist
+#define sys_nerr			_sys_nerr
+#define sys_siglist			_sys_siglist
+#define verr				_verr
+#define verrx				_verrx
+#define vwarn				_vwarn
+#define vwarnx				_vwarnx
+#define warn				_warn
+#define warnx				_warnx
 
 #ifdef __weak_alias
 #define MD2Final			_MD2Final

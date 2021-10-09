@@ -7,10 +7,9 @@ compat-sys5/	2.11BSD
 compiler_rt/	NetBSD
 db/				NetBSD
 dlfcn/			NetBSD
-gen/			2.11BSD/4.4BSD-lite2
+gen/			2.11BSD/4.4BSD-lite2/NetBSD
 gmon/			4.4BSD-Lite2
 hash/			NetBSD
-iconv/			NetBSD
 include/		NetBSD
 inet/			2.11BSD
 locale/			4.4BSD-Lite2/NetBSD
