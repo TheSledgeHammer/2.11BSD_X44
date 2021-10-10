@@ -48,7 +48,7 @@
 #define __MIDIIO_UNSET_POSIX_SOURCE
 #define _POSIX_SOURCE		/* make sure we don't get all the gunk */
 #endif
-#include <machine/endian_machdep.h>
+#include <machine/endian.h>
 #ifdef __MIDIIO_UNSET_POSIX_SOURCE
 #undef _POSIX_SOURCE
 #undef __MIDIIO_UNSET_POSIX_SOURCE

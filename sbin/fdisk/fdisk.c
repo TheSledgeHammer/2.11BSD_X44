@@ -25,7 +25,7 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+/* __FBSDID("$FreeBSD$"); */
 
 #include <sys/disk.h>
 #include <sys/disklabel.h>
@@ -38,7 +38,6 @@ __FBSDID("$FreeBSD$");
 #include <fcntl.h>
 #include <err.h>
 #include <errno.h>
-//#include <libgeom.h>
 #include <paths.h>
 #include <regex.h>
 #include <stdint.h>

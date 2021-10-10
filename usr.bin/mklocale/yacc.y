@@ -1,5 +1,3 @@
-/*	$NetBSD: yacc.y,v 1.34 2019/10/13 21:12:32 christos Exp $	*/
-
 %{
 /*-
  * Copyright (c) 1993
@@ -16,7 +14,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,74 +35,33 @@
  * SUCH DAMAGE.
  */
 
-#if HAVE_NBTOOL_CONFIG_H
-#include "nbtool_config.h"
-#endif
-
-#include <sys/cdefs.h>
 #ifndef lint
-#if 0
 static char sccsid[] = "@(#)yacc.y	8.1 (Berkeley) 6/6/93";
-static char rcsid[] = "$FreeBSD$";
-#else
-__RCSID("$NetBSD: yacc.y,v 1.34 2019/10/13 21:12:32 christos Exp $");
-#endif
 #endif /* not lint */
 
-#include <sys/types.h>
-#include <netinet/in.h>	/* Needed by <arpa/inet.h> on NetBSD 1.5. */
-#include <arpa/inet.h>	/* Needed for htonl on POSIX systems. */
-
-#include <err.h>
-#include <locale.h>
+#include <ctype.h>
+#include <rune.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-
-#include "runetype_file.h"
 
 #include "ldef.h"
 
-const char	*locale_file = "<stdout>";
+char	*locale_file = "<stdout>";
 
-rune_map	maplower = { { 0, }, };
-rune_map	mapupper = { { 0, }, };
-rune_map	types = { { 0, }, };
+rune_map	maplower = { 0, };
+rune_map	mapupper = { 0, };
+rune_map	types = { 0, };
 
-_FileRuneLocale new_locale = { { 0, }, };
+_RuneLocale	new_locale = { 0, };
 
-size_t rl_variable_len = (size_t)0; 
-void *rl_variable = NULL;
-
-__nbrune_t	charsetbits = (__nbrune_t)0x00000000;
-#if 0
-__nbrune_t	charsetmask = (__nbrune_t)0x0000007f;
-#endif
-__nbrune_t	charsetmask = (__nbrune_t)0xffffffff;
-
-void set_map(rune_map *, rune_list *, u_int32_t);
-void set_digitmap(rune_map *, rune_list *);
-void add_map(rune_map *, rune_list *, u_int32_t);
-
-__dead void	usage(void);
-int		yyerror(const char *s);
-void		*xmalloc(unsigned int sz);
-u_int32_t	*xlalloc(unsigned int sz);
-u_int32_t	*xrelalloc(u_int32_t *old, unsigned int sz);
-void		dump_tables(void);
-int		yyparse(void);
-extern int	yylex(void);
-
-/* mklocaledb.c */
-extern void mklocaledb(const char *, FILE *, FILE *);
-
+void set_map (rune_map *, rune_list *, u_long);
+void set_digitmap (rune_map *, rune_list *);
+void add_map (rune_map *, rune_list *, u_long);
 %}
 
 %union	{
-    __nbrune_t	rune;
+    rune_t	rune;
     int		i;
     char	*str;
 
@@ -116,7 +77,6 @@ extern void mklocaledb(const char *, FILE *, FILE *);
 %token		DIGITMAP
 %token	<i>	LIST
 %token	<str>	VARIABLE
-%token		CHARSET
 %token		ENCODING
 %token		INVALID
 %token	<str>	STRING
@@ -137,50 +97,14 @@ table	:	entry
 	;
 
 entry	:	ENCODING STRING
-		{ strlcpy(new_locale.frl_encoding, $2, sizeof(new_locale.frl_encoding)); }
+		{ strncpy(new_locale.encoding, $2, sizeof(new_locale.encoding)); }
 	|	VARIABLE
-		{ rl_variable_len = strlen($1) + 1;
-		  rl_variable = strdup($1);
-		  new_locale.frl_variable_len = htonl((u_int32_t)rl_variable_len);
-		}
-	|	CHARSET RUNE
-		{ charsetbits = $2; charsetmask = 0x0000007f; }
-	|	CHARSET RUNE RUNE
-		{ charsetbits = $2; charsetmask = $3; }
-	|	CHARSET STRING
-		{ int final = $2[strlen($2) - 1] & 0x7f;
-		  charsetbits = final << 24;
-		  if ($2[0] == '$') {
-			charsetmask = 0x00007f7f;
-			if (strchr(",-./", $2[1]))
-				charsetbits |= 0x80;
-			if (0xd0 <= final && final <= 0xdf)
-				charsetmask |= 0x007f0000;
-		  } else {
-			charsetmask = 0x0000007f;
-			if (strchr(",-./", $2[0]))
-				charsetbits |= 0x80;
-			if (strlen($2) == 2 && $2[0] == '!')
-				charsetbits |= ((0x80 | $2[0]) << 16);
-		  }
-
-		  /*
-		   * special rules
-		   */
-		  if (charsetbits == ('B' << 24)
-		   && charsetmask == 0x0000007f) {
-			/*ASCII: 94B*/
-			charsetbits = 0;
-			charsetmask = 0x0000007f;
-		  } else if (charsetbits == (('A' << 24) | 0x80)
-		  	  && charsetmask == 0x0000007f) {
-		  	/*Latin1: 96A*/
-			charsetbits = 0x80;
-			charsetmask = 0x0000007f;
-		  }
+		{ new_locale.variable_len = strlen($1) + 1;
+		  new_locale.variable = malloc(new_locale.variable_len);
+		  strcpy((char *)new_locale.variable, $1);
 		}
 	|	INVALID RUNE
-		{ new_locale.frl_invalid_rune = htonl((u_int32_t)$2); }
+		{ new_locale.invalid_rune = $2; }
 	|	LIST list
 		{ set_map(&types, $2, $1); }
 	|	MAPLOWER map
@@ -194,29 +118,29 @@ entry	:	ENCODING STRING
 list	:	RUNE
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($1 & charsetmask) | charsetbits;
-		    $$->max = ($1 & charsetmask) | charsetbits;
+		    $$->min = $1;
+		    $$->max = $1;
 		    $$->next = 0;
 		}
 	|	RUNE THRU RUNE
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($1 & charsetmask) | charsetbits;
-		    $$->max = ($3 & charsetmask) | charsetbits;
+		    $$->min = $1;
+		    $$->max = $3;
 		    $$->next = 0;
 		}
 	|	list RUNE
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($2 & charsetmask) | charsetbits;
-		    $$->max = ($2 & charsetmask) | charsetbits;
+		    $$->min = $2;
+		    $$->max = $2;
 		    $$->next = $1;
 		}
 	|	list RUNE THRU RUNE
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($2 & charsetmask) | charsetbits;
-		    $$->max = ($4 & charsetmask) | charsetbits;
+		    $$->min = $2;
+		    $$->max = $4;
 		    $$->next = $1;
 		}
 	;
@@ -224,32 +148,32 @@ list	:	RUNE
 map	:	LBRK RUNE RUNE RBRK
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($2 & charsetmask) | charsetbits;
-		    $$->max = ($2 & charsetmask) | charsetbits;
+		    $$->min = $2;
+		    $$->max = $2;
 		    $$->map = $3;
 		    $$->next = 0;
 		}
 	|	map LBRK RUNE RUNE RBRK
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($3 & charsetmask) | charsetbits;
-		    $$->max = ($3 & charsetmask) | charsetbits;
+		    $$->min = $3;
+		    $$->max = $3;
 		    $$->map = $4;
 		    $$->next = $1;
 		}
 	|	LBRK RUNE THRU RUNE ':' RUNE RBRK
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($2 & charsetmask) | charsetbits;
-		    $$->max = ($4 & charsetmask) | charsetbits;
+		    $$->min = $2;
+		    $$->max = $4;
 		    $$->map = $6;
 		    $$->next = 0;
 		}
 	|	map LBRK RUNE THRU RUNE ':' RUNE RBRK
 		{
 		    $$ = (rune_list *)malloc(sizeof(rune_list));
-		    $$->min = ($3 & charsetmask) | charsetbits;
-		    $$->max = ($5 & charsetmask) | charsetbits;
+		    $$->min = $3;
+		    $$->max = $5;
 		    $$->map = $7;
 		    $$->next = $1;
 		}
@@ -257,33 +181,33 @@ map	:	LBRK RUNE RUNE RBRK
 %%
 
 int debug = 0;
-FILE *ofile;
+FILE *fp = stdout;
 
-int
-main(int ac, char *av[])
+main(ac, av)
+	int ac;
+	char *av[];
 {
     int x;
-    const char *locale_type;
 
     extern char *optarg;
     extern int optind;
 
-    locale_type = NULL;
-    while ((x = getopt(ac, av, "do:t:")) != EOF) {
+    while ((x = getopt(ac, av, "do:")) != EOF) {
 	switch(x) {
 	case 'd':
 	    debug = 1;
 	    break;
 	case 'o':
 	    locale_file = optarg;
-	    if ((ofile = fopen(locale_file, "w")) == 0)
-		err(1, "unable to open output file %s", locale_file);
+	    if ((fp = fopen(locale_file, "w")) == 0) {
+		perror(locale_file);
+		exit(1);
+	    }
 	    break;
-        case 't':
-	    locale_type = optarg;
-            break;
 	default:
-	    usage();
+	usage:
+	    fprintf(stderr, "Usage: mklocale [-d] [-o output] [source]\n");
+	    exit(1);
 	}
     }
 
@@ -291,53 +215,33 @@ main(int ac, char *av[])
     case 0:
 	break;
     case 1:
-	if (freopen(av[optind], "r", stdin) == 0)
-	    err(1, "unable to open input file %s", av[optind]);
+	if (freopen(av[optind], "r", stdin) == 0) {
+	    perror(av[optind]);
+	    exit(1);
+	}
 	break;
     default:
-	usage();
+	goto usage;
     }
-
-    if (ofile == NULL)
-	ofile = stdout;
-    if (locale_type != NULL && strcasecmp(locale_type, "CTYPE")) {
-	mklocaledb(locale_type, stdin, ofile);
-	return 0;
-    }
-
-    for (x = 0; x < _CTYPE_CACHE_SIZE; ++x) {
+    for (x = 0; x < _CACHED_RUNES; ++x) {
 	mapupper.map[x] = x;
 	maplower.map[x] = x;
     }
-
-    new_locale.frl_invalid_rune = htonl((u_int32_t)_DEFAULT_INVALID_RUNE);
-    memcpy(new_locale.frl_magic, _RUNECT10_MAGIC, sizeof(new_locale.frl_magic));
+    new_locale.invalid_rune = _INVALID_RUNE;
+    memcpy(new_locale.magic, _RUNE_MAGIC_1, sizeof(new_locale.magic));
 
     yyparse();
-
-    return 0;
-
 }
 
-void
-usage(void)
-{
-    fprintf(stderr,
-	"usage: mklocale [-d] [-o output] [-t type] [source]\n");
-
-    exit(1);
-}
-
-int
-yyerror(const char *s)
+yyerror(s)
+	char *s;
 {
     fprintf(stderr, "%s\n", s);
-
-    return 0;
 }
 
 void *
-xmalloc(unsigned int sz)
+xmalloc(sz)
+	unsigned int sz;
 {
     void *r = malloc(sz);
     if (!r) {
@@ -347,10 +251,11 @@ xmalloc(unsigned int sz)
     return(r);
 }
 
-u_int32_t *
-xlalloc(unsigned int sz)
+u_long *
+xlalloc(sz)
+	unsigned int sz;
 {
-    u_int32_t *r = (u_int32_t *)malloc(sz * sizeof(u_int32_t));
+    u_long *r = (u_long *)malloc(sz * sizeof(u_long));
     if (!r) {
 	perror("xlalloc");
 	abort();
@@ -358,11 +263,12 @@ xlalloc(unsigned int sz)
     return(r);
 }
 
-u_int32_t *
-xrelalloc(u_int32_t *old, unsigned int sz)
+u_long *
+xrelalloc(old, sz)
+	u_long *old;
+	unsigned int sz;
 {
-    u_int32_t *r = (u_int32_t *)realloc((char *)old,
-						sz * sizeof(u_int32_t));
+    u_long *r = (u_long *)realloc((char *)old, sz * sizeof(u_long));
     if (!r) {
 	perror("xrelalloc");
 	abort();
@@ -371,10 +277,11 @@ xrelalloc(u_int32_t *old, unsigned int sz)
 }
 
 void
-set_map(rune_map *map, rune_list *list, u_int32_t flag)
+set_map(map, list, flag)
+	rune_map *map;
+	rune_list *list;
+	u_long flag;
 {
-    list->map &= charsetmask;
-    list->map |= charsetbits;
     while (list) {
 	rune_list *nlist = list->next;
 	add_map(map, list, flag);
@@ -383,9 +290,11 @@ set_map(rune_map *map, rune_list *list, u_int32_t flag)
 }
 
 void
-set_digitmap(rune_map *map, rune_list *list)
+set_digitmap(map, list)
+	rune_map *map;
+	rune_list *list;
 {
-    __nbrune_t i;
+    rune_t i;
 
     while (list) {
 	rune_list *nlist = list->next;
@@ -403,14 +312,17 @@ set_digitmap(rune_map *map, rune_list *list)
 }
 
 void
-add_map(rune_map *map, rune_list *list, u_int32_t flag)
+add_map(map, list, flag)
+	rune_map *map;
+	rune_list *list;
+	u_long flag;
 {
-    __nbrune_t i;
+    rune_t i;
     rune_list *lr = 0;
     rune_list *r;
-    __nbrune_t run;
+    rune_t run;
 
-    while (list->min < _CTYPE_CACHE_SIZE && list->min <= list->max) {
+    while (list->min < _CACHED_RUNES && list->min <= list->max) {
 	if (flag)
 	    map->map[list->min++] |= flag;
 	else
@@ -566,7 +478,7 @@ add_map(rune_map *map, rune_list *list, u_int32_t flag)
 	    for (i = r->max+1; i <= list->max; ++i)
 		r->types[i - r->min] = flag;
 	}
-	r->max = list->max;
+	r->max = r->max;
 	free(list);
     }
 
@@ -609,12 +521,10 @@ add_map(rune_map *map, rune_list *list, u_int32_t flag)
 }
 
 void
-dump_tables(void)
+dump_tables()
 {
-    int x, n;
+    int x;
     rune_list *list;
-    FILE *fp = ofile;
-    u_int32_t nranges;
 
     /*
      * See if we can compress some of the istype arrays
@@ -629,16 +539,18 @@ dump_tables(void)
 	}
     }
 
+    new_locale.invalid_rune = htonl(new_locale.invalid_rune);
+
     /*
      * Fill in our tables.  Do this in network order so that
      * diverse machines have a chance of sharing data.
      * (Machines like Crays cannot share with little machines due to
      *  word size.  Sigh.  We tried.)
      */
-    for (x = 0; x < _CTYPE_CACHE_SIZE; ++x) {
-	new_locale.frl_runetype[x] = htonl(types.map[x]);
-	new_locale.frl_maplower[x] = htonl(maplower.map[x]);
-	new_locale.frl_mapupper[x] = htonl(mapupper.map[x]);
+    for (x = 0; x < _CACHED_RUNES; ++x) {
+	new_locale.runetype[x] = htonl(types.map[x]);
+	new_locale.maplower[x] = htonl(maplower.map[x]);
+	new_locale.mapupper[x] = htonl(mapupper.map[x]);
     }
 
     /*
@@ -646,33 +558,29 @@ dump_tables(void)
      */
     list = types.root;
 
-    nranges = (u_int32_t)0;
     while (list) {
-	++nranges;
+	new_locale.runetype_ext.nranges++;
 	list = list->next;
     }
-    new_locale.frl_runetype_ext.frr_nranges =
-	htonl(nranges);
+    new_locale.runetype_ext.nranges = htonl(new_locale.runetype_ext.nranges);
 
     list = maplower.root;
 
-    nranges = (u_int32_t)0;
     while (list) {
-	++nranges;
+	new_locale.maplower_ext.nranges++;
 	list = list->next;
     }
-    new_locale.frl_maplower_ext.frr_nranges =
-	htonl(nranges);
+    new_locale.maplower_ext.nranges = htonl(new_locale.maplower_ext.nranges);
 
     list = mapupper.root;
 
-    nranges = (u_int32_t)0;
     while (list) {
-	++nranges;
+	new_locale.mapupper_ext.nranges++;
 	list = list->next;
     }
-    new_locale.frl_mapupper_ext.frr_nranges =
-	htonl(nranges);
+    new_locale.mapupper_ext.nranges = htonl(new_locale.mapupper_ext.nranges);
+
+    new_locale.variable_len = htonl(new_locale.variable_len);
 
     /*
      * Okay, we are now ready to write the new locale file.
@@ -681,87 +589,108 @@ dump_tables(void)
     /*
      * PART 1: The _RuneLocale structure
      */
-    if (fwrite((char *)&new_locale, sizeof(new_locale), 1, fp) != 1)
-	err(1, "writing _FileRuneLocale to %s", locale_file);
+    if (fwrite((char *)&new_locale, sizeof(new_locale), 1, fp) != 1) {
+	perror(locale_file);
+	exit(1);
+    }
     /*
      * PART 2: The runetype_ext structures (not the actual tables)
      */
-    for (list = types.root, n = 0; list != NULL; list = list->next, n++) {
-	_FileRuneEntry re;
+    list = types.root;
 
-	memset(&re, 0, sizeof(re));
-	re.fre_min = htonl(list->min);
-	re.fre_max = htonl(list->max);
-	re.fre_map = htonl(list->map);
+    while (list) {
+	_RuneEntry re;
 
-	if (fwrite((char *)&re, sizeof(re), 1, fp) != 1)
-	    err(1, "writing runetype_ext #%d to %s", n, locale_file);
+	re.min = htonl(list->min);
+	re.max = htonl(list->max);
+	re.map = htonl(list->map);
+
+	if (fwrite((char *)&re, sizeof(re), 1, fp) != 1) {
+	    perror(locale_file);
+	    exit(1);
+	}
+
+        list = list->next;
     }
     /*
      * PART 3: The maplower_ext structures
      */
-    for (list = maplower.root, n = 0; list != NULL; list = list->next, n++) {
-	_FileRuneEntry re;
+    list = maplower.root;
 
-	memset(&re, 0, sizeof(re));
-	re.fre_min = htonl(list->min);
-	re.fre_max = htonl(list->max);
-	re.fre_map = htonl(list->map);
+    while (list) {
+	_RuneEntry re;
 
-	if (fwrite((char *)&re, sizeof(re), 1, fp) != 1)
-	    err(1, "writing maplower_ext #%d to %s", n, locale_file);
+	re.min = htonl(list->min);
+	re.max = htonl(list->max);
+	re.map = htonl(list->map);
+
+	if (fwrite((char *)&re, sizeof(re), 1, fp) != 1) {
+	    perror(locale_file);
+	    exit(1);
+	}
+
+        list = list->next;
     }
     /*
      * PART 4: The mapupper_ext structures
      */
-    for (list = mapupper.root, n = 0; list != NULL; list = list->next, n++) {
-	_FileRuneEntry re;
+    list = mapupper.root;
 
-	memset(&re, 0, sizeof(re));
-	re.fre_min = htonl(list->min);
-	re.fre_max = htonl(list->max);
-	re.fre_map = htonl(list->map);
+    while (list) {
+	_RuneEntry re;
 
-	if (fwrite((char *)&re, sizeof(re), 1, fp) != 1)
-	    err(1, "writing mapupper_ext #%d to %s", n, locale_file);
+	re.min = htonl(list->min);
+	re.max = htonl(list->max);
+	re.map = htonl(list->map);
+
+	if (fwrite((char *)&re, sizeof(re), 1, fp) != 1) {
+	    perror(locale_file);
+	    exit(1);
+	}
+
+        list = list->next;
     }
     /*
      * PART 5: The runetype_ext tables
      */
-    for (list = types.root, n = 0; list != NULL; list = list->next, n++) {
+    list = types.root;
+
+    while (list) {
 	for (x = 0; x < list->max - list->min + 1; ++x)
 	    list->types[x] = htonl(list->types[x]);
 
 	if (!list->map) {
-	    if (fwrite((char *)list->types,
-		       (list->max - list->min + 1) * sizeof(u_int32_t),
-		       1, fp) != 1)
-		err(1, "writing runetype_ext table #%d to %s", n, locale_file);
+	    if (fwrite((char *)&list->types,
+		(list->max - list->min + 1)*sizeof(u_long), 1, fp) != 1) {
+		perror(locale_file);
+		exit(1);
+	    }
 	}
+        list = list->next;
     }
     /*
      * PART 5: And finally the variable data
      */
-    if (rl_variable_len != 0 &&
-	fwrite((char *)rl_variable, rl_variable_len, 1, fp) != 1)
-	err(1, "writing variable data to %s", locale_file);
+    if (fwrite((char *)new_locale.variable,
+	       ntohl(new_locale.variable_len), 1, fp) != 1) {
+	perror(locale_file);
+	exit(1);
+    }
     fclose(fp);
 
     if (!debug)
 	return;
 
-    if (new_locale.frl_encoding[0])
-	fprintf(stderr, "ENCODING	%.*s\n",
-	    (int)sizeof(new_locale.frl_encoding), new_locale.frl_encoding);
-    if (rl_variable)
-	fprintf(stderr, "VARIABLE	%.*s\n",
-	    (int)rl_variable_len, (char *)rl_variable);
+    if (new_locale.encoding[0])
+	fprintf(stderr, "ENCODING	%s\n", new_locale.encoding);
+    if (new_locale.variable)
+	fprintf(stderr, "VARIABLE	%s\n", new_locale.variable);
 
     fprintf(stderr, "\nMAPLOWER:\n\n");
 
-    for (x = 0; x < _CTYPE_CACHE_SIZE; ++x) {
+    for (x = 0; x < _CACHED_RUNES; ++x) {
 	if (isprint(maplower.map[x]))
-	    fprintf(stderr, " '%c'", (int)maplower.map[x]);
+	    fprintf(stderr, " '%c'", maplower.map[x]);
 	else if (maplower.map[x])
 	    fprintf(stderr, "%04x", maplower.map[x]);
 	else
@@ -778,9 +707,9 @@ dump_tables(void)
 
     fprintf(stderr, "\nMAPUPPER:\n\n");
 
-    for (x = 0; x < _CTYPE_CACHE_SIZE; ++x) {
+    for (x = 0; x < _CACHED_RUNES; ++x) {
 	if (isprint(mapupper.map[x]))
-	    fprintf(stderr, " '%c'", (int)mapupper.map[x]);
+	    fprintf(stderr, " '%c'", mapupper.map[x]);
 	else if (mapupper.map[x])
 	    fprintf(stderr, "%04x", mapupper.map[x]);
 	else
@@ -798,95 +727,93 @@ dump_tables(void)
 
     fprintf(stderr, "\nTYPES:\n\n");
 
-    for (x = 0; x < _CTYPE_CACHE_SIZE; ++x) {
-	u_int32_t r = types.map[x];
+    for (x = 0; x < _CACHED_RUNES; ++x) {
+	u_long r = types.map[x];
 
 	if (r) {
 	    if (isprint(x))
-		fprintf(stderr, " '%c':%2d", x, (int)(r & 0xff));
+		fprintf(stderr, " '%c': %2d", x, r & 0xff);
 	    else
-		fprintf(stderr, "%04x:%2d", x, (int)(r & 0xff));
+		fprintf(stderr, "%04x: %2d", x, r & 0xff);
 
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_A) ? "alph" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_C) ? "ctrl" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_D) ? "dig" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_G) ? "graf" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_L) ? "low" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_P) ? "punc" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_S) ? "spac" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_U) ? "upp" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_X) ? "xdig" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_B) ? "blnk" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_R) ? "prnt" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_I) ? "ideo" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_T) ? "spec" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_Q) ? "phon" : "");
+	    fprintf(stderr, " %4s", (r & _A) ? "alph" : "");
+	    fprintf(stderr, " %4s", (r & _C) ? "ctrl" : "");
+	    fprintf(stderr, " %4s", (r & _D) ? "dig" : "");
+	    fprintf(stderr, " %4s", (r & _G) ? "graf" : "");
+	    fprintf(stderr, " %4s", (r & _L) ? "low" : "");
+	    fprintf(stderr, " %4s", (r & _P) ? "punc" : "");
+	    fprintf(stderr, " %4s", (r & _S) ? "spac" : "");
+	    fprintf(stderr, " %4s", (r & _U) ? "upp" : "");
+	    fprintf(stderr, " %4s", (r & _X) ? "xdig" : "");
+	    fprintf(stderr, " %4s", (r & _B) ? "blnk" : "");
+	    fprintf(stderr, " %4s", (r & _R) ? "prnt" : "");
+	    fprintf(stderr, " %4s", (r & _I) ? "ideo" : "");
+	    fprintf(stderr, " %4s", (r & _T) ? "spec" : "");
+	    fprintf(stderr, " %4s", (r & _Q) ? "phon" : "");
 	    fprintf(stderr, "\n");
 	}
     }
 
     for (list = types.root; list; list = list->next) {
 	if (list->map && list->min + 3 < list->max) {
-	    u_int32_t r = list->map;
+	    u_long r = list->map;
 
-	    fprintf(stderr, "%04x:%2d", list->min, r & 0xff);
+	    fprintf(stderr, "%04x: %2d", list->min, r & 0xff);
 
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_A) ? "alph" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_C) ? "ctrl" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_D) ? "dig" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_G) ? "graf" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_L) ? "low" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_P) ? "punc" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_S) ? "spac" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_U) ? "upp" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_X) ? "xdig" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_B) ? "blnk" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_R) ? "prnt" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_I) ? "ideo" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_T) ? "spec" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_Q) ? "phon" : "");
+	    fprintf(stderr, " %4s", (r & _A) ? "alph" : "");
+	    fprintf(stderr, " %4s", (r & _C) ? "ctrl" : "");
+	    fprintf(stderr, " %4s", (r & _D) ? "dig" : "");
+	    fprintf(stderr, " %4s", (r & _G) ? "graf" : "");
+	    fprintf(stderr, " %4s", (r & _L) ? "low" : "");
+	    fprintf(stderr, " %4s", (r & _P) ? "punc" : "");
+	    fprintf(stderr, " %4s", (r & _S) ? "spac" : "");
+	    fprintf(stderr, " %4s", (r & _U) ? "upp" : "");
+	    fprintf(stderr, " %4s", (r & _X) ? "xdig" : "");
+	    fprintf(stderr, " %4s", (r & _B) ? "blnk" : "");
+	    fprintf(stderr, " %4s", (r & _R) ? "prnt" : "");
+	    fprintf(stderr, " %4s", (r & _I) ? "ideo" : "");
+	    fprintf(stderr, " %4s", (r & _T) ? "spec" : "");
+	    fprintf(stderr, " %4s", (r & _Q) ? "phon" : "");
 	    fprintf(stderr, "\n...\n");
 
-	    fprintf(stderr, "%04x:%2d", list->max, r & 0xff);
+	    fprintf(stderr, "%04x: %2d", list->max, r & 0xff);
 
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_A) ? "alph" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_C) ? "ctrl" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_D) ? "dig" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_G) ? "graf" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_L) ? "low" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_P) ? "punc" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_S) ? "spac" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_U) ? "upp" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_X) ? "xdig" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_B) ? "blnk" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_R) ? "prnt" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_I) ? "ideo" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_T) ? "spec" : "");
-	    fprintf(stderr, " %4s", (r & _RUNETYPE_Q) ? "phon" : "");
-            fprintf(stderr, " %1u", (unsigned)((r & _RUNETYPE_SWM)>>_RUNETYPE_SWS));
+	    fprintf(stderr, " %4s", (r & _A) ? "alph" : "");
+	    fprintf(stderr, " %4s", (r & _C) ? "ctrl" : "");
+	    fprintf(stderr, " %4s", (r & _D) ? "dig" : "");
+	    fprintf(stderr, " %4s", (r & _G) ? "graf" : "");
+	    fprintf(stderr, " %4s", (r & _L) ? "low" : "");
+	    fprintf(stderr, " %4s", (r & _P) ? "punc" : "");
+	    fprintf(stderr, " %4s", (r & _S) ? "spac" : "");
+	    fprintf(stderr, " %4s", (r & _U) ? "upp" : "");
+	    fprintf(stderr, " %4s", (r & _X) ? "xdig" : "");
+	    fprintf(stderr, " %4s", (r & _B) ? "blnk" : "");
+	    fprintf(stderr, " %4s", (r & _R) ? "prnt" : "");
+	    fprintf(stderr, " %4s", (r & _I) ? "ideo" : "");
+	    fprintf(stderr, " %4s", (r & _T) ? "spec" : "");
+	    fprintf(stderr, " %4s", (r & _Q) ? "phon" : "");
 	    fprintf(stderr, "\n");
 	} else 
 	for (x = list->min; x <= list->max; ++x) {
-	    u_int32_t r = ntohl(list->types[x - list->min]);
+	    u_long r = ntohl(list->types[x - list->min]);
 
 	    if (r) {
-		fprintf(stderr, "%04x:%2d", x, (int)(r & 0xff));
+		fprintf(stderr, "%04x: %2d", x, r & 0xff);
 
-		fprintf(stderr, " %4s", (r & _RUNETYPE_A) ? "alph" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_C) ? "ctrl" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_D) ? "dig" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_G) ? "graf" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_L) ? "low" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_P) ? "punc" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_S) ? "spac" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_U) ? "upp" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_X) ? "xdig" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_B) ? "blnk" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_R) ? "prnt" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_I) ? "ideo" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_T) ? "spec" : "");
-		fprintf(stderr, " %4s", (r & _RUNETYPE_Q) ? "phon" : "");
-                fprintf(stderr, " %1u", (unsigned)((r & _RUNETYPE_SWM)>>_RUNETYPE_SWS));
+		fprintf(stderr, " %4s", (r & _A) ? "alph" : "");
+		fprintf(stderr, " %4s", (r & _C) ? "ctrl" : "");
+		fprintf(stderr, " %4s", (r & _D) ? "dig" : "");
+		fprintf(stderr, " %4s", (r & _G) ? "graf" : "");
+		fprintf(stderr, " %4s", (r & _L) ? "low" : "");
+		fprintf(stderr, " %4s", (r & _P) ? "punc" : "");
+		fprintf(stderr, " %4s", (r & _S) ? "spac" : "");
+		fprintf(stderr, " %4s", (r & _U) ? "upp" : "");
+		fprintf(stderr, " %4s", (r & _X) ? "xdig" : "");
+		fprintf(stderr, " %4s", (r & _B) ? "blnk" : "");
+		fprintf(stderr, " %4s", (r & _R) ? "prnt" : "");
+		fprintf(stderr, " %4s", (r & _I) ? "ideo" : "");
+		fprintf(stderr, " %4s", (r & _T) ? "spec" : "");
+		fprintf(stderr, " %4s", (r & _Q) ? "phon" : "");
 		fprintf(stderr, "\n");
 	    }
 	}

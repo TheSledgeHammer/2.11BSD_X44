@@ -47,7 +47,7 @@
 #include <sys/bus.h>
 #include <sys/sysctl.h>
 
-#include <machine/endian_machdep.h>
+#include <machine/endian.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>

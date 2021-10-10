@@ -73,12 +73,10 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include <ufs/ffs/fs.h>
 #if HAVE_NBTOOL_CONFIG_H
 #include <nbinclude/sys/disklabel.h>
-#include <nbinclude/sys/disktype.h>
 #include <nbinclude/sys/boot.h>
 #include "../../include/disktab.h"
 #else
 #include <sys/disklabel.h>
-#include <sys/disktype.h>
 #include <sys/boot.h>
 #include <util.h>
 #include <disktab.h>
@@ -1297,7 +1295,7 @@ Warning(fmt, a1, a2, a3, a4, a5)
 {
 
 	fprintf(stderr, "Warning, ");
-	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
+//	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
 	fprintf(stderr, "\n");
 }
 

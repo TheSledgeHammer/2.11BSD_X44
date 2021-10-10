@@ -39,8 +39,9 @@
 #ifndef _KERNEL
 #include <sys/types.h>
 #include <sys/null.h>
-#include <sys/disktype.h>
 #endif
+
+
 
 /*
  * Disk description table, see disktab(5)
@@ -57,32 +58,54 @@
 
 /* XXX these should be defined per controller (or drive) elsewhere, not here! */
 
-#define LABELSECTOR		1					/* sector containing label */
-#define LABELOFFSET		0					/* offset of label in sector */
+#define LABELSECTOR			1					/* sector containing label */
+#define LABELOFFSET			0					/* offset of label in sector */
 
 #ifndef	LABELSECTOR
-#define LABELSECTOR		0					/* sector containing label */
+#define LABELSECTOR			0					/* sector containing label */
 #endif
 
 #ifndef	LABELOFFSET
-#define LABELOFFSET		64					/* offset of label in sector */
+#define LABELOFFSET			64					/* offset of label in sector */
 #endif
 
-#define DISKMAGIC		BSD_MAGIC			/* The disk magic number */
+/* 4.4BSD & Later disklabel definitions */
+#define BSD_MAGIC			0x82564557U			/* The disk magic number */
+
+#define	BSD_NPARTS_MIN		8
+#define	BSD_NPARTS_MAX		20
+
+/* Size of bootblock area in sector-size neutral bytes */
+#define BSD_BOOTBLOCK_SIZE	8192
+
+/* partition containing whole disk */
+#define	BSD_PART_RAW		2
+
+/* partition normally containing swap */
+#define	BSD_PART_SWAP		1
+
+/* Drive-type specific data size (in number of 32-bit inegrals) */
+#define	BSD_NDRIVEDATA		5
+
+/* Number of spare 32-bit integrals following drive-type data */
+#define	BSD_NSPARE			5
+
+/* 2.11BSD disklabel definitions */
+#define DISKMAGIC			BSD_MAGIC			/* The disk magic number */
 
 #ifndef MAXPARTITIONS
-#define	MAXPARTITIONS	8
+#define	MAXPARTITIONS		8
 #endif
 
 /* Size of bootblock area in sector-size neutral bytes */
-#define BBSIZE			BSD_BOOTBLOCK_SIZE
+#define BBSIZE				BSD_BOOTBLOCK_SIZE
 
-#define	LABEL_PART		BSD_PART_RAW
-#define	RAW_PART		BSD_PART_RAW
-#define	SWAP_PART		BSD_PART_SWAP
+#define	LABEL_PART			BSD_PART_RAW
+#define	RAW_PART			BSD_PART_RAW
+#define	SWAP_PART			BSD_PART_SWAP
 
-#define NDDATA			BSD_NDRIVEDATA
-#define NSPARE			BSD_NSPARE
+#define NDDATA				BSD_NDRIVEDATA
+#define NSPARE				BSD_NSPARE
 
 /*
  * 2.11BSD's disklabels are different than 4.4BSD for a couple reasons:
@@ -215,6 +238,138 @@ struct disklabel {
 .set	d_end_,276			/* size of disk label */
 #endif /* LOCORE */
 
+/* d_type values: */
+#define	DTYPE_SMD			1		/* SMD, XSMD; VAX hp/up */
+#define	DTYPE_MSCP			2		/* MSCP */
+#define	DTYPE_DEC			3		/* other DEC (rk, rl) */
+#define	DTYPE_SCSI			4		/* SCSI */
+#define	DTYPE_ESDI			5		/* ESDI interface */
+#define	DTYPE_ST506			6		/* ST506 etc. */
+#define	DTYPE_HPIB			7		/* CS/80 on HP-IB */
+#define	DTYPE_HPFL			8		/* HP Fiber-link */
+#define	DTYPE_FLOPPY		10		/* floppy */
+#define	DTYPE_CCD			11		/* concatenated disk */
+#define	DTYPE_VND			12		/* vnode pseudo-disk */
+#define	DTYPE_VINUM			13		/* vinum volume */
+#define	DTYPE_DOC2K			14		/* Msys DiskOnChip */
+#define	DTYPE_RAID			15		/* CMU RAIDFrame */
+#define	DTYPE_JFS2			16		/* IBM JFS 2 */
+
+/* d_subtype values: */
+#define DSTYPE_INDOSPART	0x8			/* is inside dos partition */
+#define DSTYPE_DOSPART(s)	((s) & 3)	/* dos partition number */
+#define DSTYPE_GEOMETRY		0x10		/* drive params in label */
+
+#ifdef DKTYPENAMES
+static char *dktypenames[] = {
+		"unknown",
+		"SMD",
+		"MSCP",
+		"old DEC",
+		"SCSI",
+		"ESDI",
+		"ST506",
+		"HP-IB",
+		"HP-FL",
+		"type 9",
+		"floppy",
+		"ccd",
+		"vnd",
+		"Vinum",
+		"DOC2K",
+		"Raid",
+		"?",
+		"jfs",
+		NULL
+};
+#define DKMAXTYPES	(sizeof(dktypenames) / sizeof(dktypenames[0]) - 1)
+#endif
+
+/*
+ * Filesystem type and version.
+ * Used to interpret other filesystem-specific
+ * per-partition information.
+ */
+/*
+ * 2.11BSD uses type 5 filesystems even though block numbers are 4 bytes
+ * (rather than the packed 3 byte format) and the directory structure is
+ * that of 4.3BSD (long filenames).
+*/
+#define	FS_UNUSED			0		/* unused */
+#define	FS_SWAP				1		/* swap */
+#define	FS_V6				2		/* Sixth Edition */
+#define	FS_V7				3		/* Seventh Edition */
+#define	FS_SYSV				4		/* System V */
+#define	FS_V71K				5		/* V7 with 1K blocks (4.1, 2.9) */
+#define	FS_V8				6		/* Eighth Edition, 4K blocks */
+#define	FS_BSDFFS			7		/* 4.2BSD fast filesystem */
+#define	FS_MSDOS			8		/* MSDOS filesystem */
+#define	FS_BSDLFS			9		/* 4.4BSD log-structured filesystem */
+#define	FS_OTHER			10		/* in use, but unknown/unsupported */
+#define	FS_HPFS				11		/* OS/2 high-performance filesystem */
+#define	FS_ISO9660			12		/* ISO 9660, normally CD-ROM */
+#define	FS_BOOT				13		/* partition contains bootstrap */
+#define	FS_VINUM			14		/* Vinum drive */
+#define	FS_RAID				15		/* RAIDFrame drive */
+#define	FS_FILECORE			16		/* Acorn Filecore Filing System */
+#define	FS_EXT2FS			17		/* ext2fs */
+#define	FS_NTFS				18		/* Windows/NT file system */
+#define	FS_CCD				20		/* concatenated disk component */
+#define	FS_JFS2				22		/* IBM JFS2 */
+#define	FS_HAMMER			23		/* DragonFlyBSD Hammer FS */
+#define	FS_HAMMER2			24		/* DragonFlyBSD Hammer2 FS */
+#define	FS_UDF				25		/* UDF */
+#define	FS_EFS				26		/* SGI's Extent File system */
+#define	FS_ZFS				27		/* Sun's ZFS */
+#define	FS_NANDFS			30		/* FreeBSD nandfs (NiLFS derived) */
+
+#ifdef	FSTYPENAMES
+static char *fstypenames[] = {
+	"unused",
+	"swap",
+	"Version 6",
+	"Version 7",
+	"System V",
+	"2.11BSD",
+	"Eighth Edition",
+	"4.2BSD",
+	"MSDOS",
+	"4.4LFS",
+	"unknown",
+	"HPFS",
+	"ISO9660",
+	"boot",
+	"Vinum",
+	"Raid",
+	"Filecore",
+	"EXT2FS",
+	"NTFS",
+	"?",
+	"ccd",
+	"jfs",
+	"HAMMER",
+	"HAMMER2",
+	"UDF",
+	"?",
+	"EFS",
+	"ZFS",
+	"?",
+	"?",
+	"nandfs",
+	NULL
+};
+#define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
+#endif
+
+/*
+ * flags shared by various drives:
+ */
+#define	D_REMOVABLE		0x01				/* removable media */
+#define	D_ECC			0x02				/* supports ECC */
+#define	D_BADSECT		0x04				/* supports bad sector forw. */
+#define	D_RAMDISK		0x08				/* disk emulator */
+#define	D_CHAIN			0x10				/* can do back-back transfers */
+
 /*
  * Drive data for SMD.
  */
@@ -245,9 +400,9 @@ struct disklabel {
  */
 struct format_op {
 	char				*df_buf;
-	int					df_count;		/* value-result */
+	int					df_count;			/* value-result */
 	daddr_t				df_startblk;
-	int					df_reg[8];		/* result */
+	int					df_reg[8];			/* result */
 };
 
 /*

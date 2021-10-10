@@ -1,5 +1,3 @@
-/*	$NetBSD: ldef.h,v 1.8 2010/05/22 18:15:21 tnozaki Exp $	*/
-
 /*-
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -15,7 +13,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -38,14 +40,14 @@
  * This should look a LOT like a _RuneEntry
  */
 typedef struct rune_list {
-    __nbrune_t		min;
-    __nbrune_t 		max;
-    __nbrune_t 		map;
-    u_int32_t		*types;
+    rune_t		min;
+    rune_t 		max;
+    rune_t 		map;
+    u_long		*types;
     struct rune_list	*next;
 } rune_list;
 
 typedef struct rune_map {
-    u_int32_t		map[_CTYPE_CACHE_SIZE];
-    rune_list		*root;
+    u_long		map[_CACHED_RUNES];
+    rune_list	*root;
 } rune_map;

@@ -1,5 +1,3 @@
-/*	$NetBSD: lex.l,v 1.20 2016/09/03 05:56:59 dholland Exp $	*/
-
 %{
 /*-
  * Copyright (c) 1993
@@ -16,7 +14,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,31 +35,16 @@
  * SUCH DAMAGE.
  */
 
-#if HAVE_NBTOOL_CONFIG_H
-#include "nbtool_config.h"
-#endif
-
-#include <sys/cdefs.h>
 #ifndef lint
-#if 0
 static char sccsid[] = "@(#)lex.l	8.1 (Berkeley) 6/6/93";
-#else
-__RCSID("$NetBSD: lex.l,v 1.20 2016/09/03 05:56:59 dholland Exp $");
-#endif
 #endif /* not lint */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "citrus_namespace.h"
-#include "citrus_bcs.h"
-
-#include "runetype_file.h"
-
 #include "ldef.h"
-#include "yacc.h"
-
-int yylex(void);
+#include "y.tab.h"
 %}
 
 ODIGIT	[0-7]
@@ -66,7 +53,7 @@ XDIGIT	[0-9a-fA-F]
 W	[\t\n\r ]
 
 %%
-\'.\'				{ yylval.rune = (unsigned char)yytext[1];
+\'.\'				{ yylval.rune = yytext[1];
 				  return(RUNE); }
 
 '\\a'				{ yylval.rune = '\a';
@@ -84,11 +71,11 @@ W	[\t\n\r ]
 '\\v'				{ yylval.rune = '\v';
 				  return(RUNE); }
 
-0x{XDIGIT}+			{ yylval.rune = _bcs_strtoul(yytext, 0, 16);
+0x{XDIGIT}+			{ yylval.rune = strtol(yytext, 0, 16);
 				  return(RUNE); }
-0{ODIGIT}+			{ yylval.rune = _bcs_strtoul(yytext, 0, 8);
+0{ODIGIT}+			{ yylval.rune = strtol(yytext, 0, 8);
 				  return(RUNE); }
-{DIGIT}+			{ yylval.rune = _bcs_strtoul(yytext, 0, 10);
+{DIGIT}+			{ yylval.rune = strtol(yytext, 0, 10);
 				  return(RUNE); }
 
 
@@ -97,38 +84,20 @@ MAPUPPER			{ return(MAPUPPER); }
 TODIGIT				{ return(DIGITMAP); }
 INVALID				{ return(INVALID); }
 
-ALPHA				{ yylval.i = _RUNETYPE_A|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-CONTROL				{ yylval.i = _RUNETYPE_C;
-				  return(LIST); }
-DIGIT				{ yylval.i = _RUNETYPE_D|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-GRAPH				{ yylval.i = _RUNETYPE_G|_RUNETYPE_R;
-				  return(LIST); }
-LOWER				{ yylval.i = _RUNETYPE_L|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-PUNCT				{ yylval.i = _RUNETYPE_P|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-SPACE				{ yylval.i = _RUNETYPE_S;
-				  return(LIST); }
-UPPER				{ yylval.i = _RUNETYPE_U|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-XDIGIT				{ yylval.i = _RUNETYPE_X|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-BLANK				{ yylval.i = _RUNETYPE_B;
-				  return(LIST); }
-PRINT				{ yylval.i = _RUNETYPE_R;
-				  return(LIST); }
-IDEOGRAM			{ yylval.i = _RUNETYPE_I|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-SPECIAL				{ yylval.i = _RUNETYPE_T|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-PHONOGRAM			{ yylval.i = _RUNETYPE_Q|_RUNETYPE_R|_RUNETYPE_G;
-				  return(LIST); }
-SWIDTH0				{ yylval.i = _RUNETYPE_SW0; return(LIST); }
-SWIDTH1				{ yylval.i = _RUNETYPE_SW1; return(LIST); }
-SWIDTH2				{ yylval.i = _RUNETYPE_SW2; return(LIST); }
-SWIDTH3				{ yylval.i = _RUNETYPE_SW3; return(LIST); }
+ALPHA				{ yylval.i = _A|_R|_G; return(LIST); }
+CONTROL				{ yylval.i = _C; return(LIST); }
+DIGIT				{ yylval.i = _D|_R|_G; return(LIST); }
+GRAPH				{ yylval.i = _G|_R; return(LIST); }
+LOWER				{ yylval.i = _L|_R|_G; return(LIST); }
+PUNCT				{ yylval.i = _P|_R|_G; return(LIST); }
+SPACE				{ yylval.i = _S; return(LIST); }
+UPPER				{ yylval.i = _U|_R|_G; return(LIST); }
+XDIGIT				{ yylval.i = _X|_R|_G; return(LIST); }
+BLANK				{ yylval.i = _B; return(LIST); }
+PRINT				{ yylval.i = _R; return(LIST); }
+IDEOGRAM			{ yylval.i = _I|_R|_G; return(LIST); }
+SPECIAL				{ yylval.i = _T|_R|_G; return(LIST); }
+PHONOGRAM			{ yylval.i = _Q|_R|_G; return(LIST); }
 
 VARIABLE[\t ]			{ static char vbuf[1024];
 				  char *v = vbuf;
@@ -141,8 +110,6 @@ VARIABLE[\t ]			{ static char vbuf[1024];
 				  yylval.str = vbuf;
 				  return(VARIABLE);
 				}
-
-CHARSET				{ return(CHARSET); }
 
 ENCODING			{ return(ENCODING); }
 
@@ -178,8 +145,7 @@ ENCODING			{ return(ENCODING); }
 %%
 
 #if	!defined(yywrap)
-int
-yywrap(void)
+yywrap()
 {
 	return(1);
 }

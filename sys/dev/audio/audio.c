@@ -82,7 +82,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_prot.h>
 
-#include <machine/endian_machdep.h>
+#include <machine/endian.h>
 #include <dev/audio/audio_if.h>
 #include <dev/audio/audiovar.h>
 

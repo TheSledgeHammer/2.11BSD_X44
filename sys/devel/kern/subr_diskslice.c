@@ -52,49 +52,6 @@
 #include <ufs/ffs/fs.h>
 
 static struct dkdevice 	*dk;
-/*
-int
-dkdriver_open(dev, flags, devtype, p)
-	dev_t dev;
-	int flags, devtype;
-	struct proc *p;
-{
-	register struct dkdevice *disk;
-	register struct dkdriver *driver;
-	int unit, rv;
-
-	unit = dkunit(dev);
-	disk = &dk[unit];
-	driver = disk->dk_driver;
-
-	rv = (*driver->d_open)(dev, flags, devtype, p);
-	if(rv != 0) {
-		return (-1);
-	}
-	return (rv);
-}
-
-int
-dkdriver_close(dev, flags, devtype, p)
-	dev_t dev;
-	int flags, devtype;
-	struct proc *p;
-{
-	register struct dkdevice *disk;
-	register struct dkdriver *driver;
-	int unit, rv;
-
-	unit = dkunit(dev);
-	disk = &dk[unit];
-	driver = disk->dk_driver;
-
-	rv = (*driver->d_close)(dev, flags, devtype, p);
-	if (rv != 0) {
-		return (-1);
-	}
-	return (rv);
-}
-*/
 
 static struct disklabel *
 clone_label(lp)
@@ -733,8 +690,7 @@ dsopen(dev, mode, flags, sspp, lp)
 			msg = "inconsistent sector size";
 		if (msg != NULL) {
 			if (sp->ds_type == DOSPTYP_386BSD /* XXX */)
-				log(LOG_WARNING, "%s: cannot find label (%s)\n",
-				    sname, msg);
+				log(LOG_WARNING, "%s: cannot find label (%s)\n", sname, msg);
 			free(lp1, M_DEVBUF);
 			continue;
 		}

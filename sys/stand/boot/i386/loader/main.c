@@ -256,12 +256,12 @@ set_diskformat(struct i386_devdesc currdev, int major, int biosdev)
 {
 	if (dvar_istrue(dvar_get("bsd_slices")) && !dvar_istrue(dvar_get("bsd_traditional"))) {
 		bsd_slices(currdev, major, biosdev);
-		printf("bsd slices format set");
+		printf("setting disks to bsd slices format \n");
 		goto success;
 	}
 	if (dvar_istrue(dvar_get("bsd_traditional")) && !dvar_istrue(dvar_get("bsd_slices"))) {
 		bsd_traditional(currdev, major, biosdev);
-		printf("bsd traditional format set");
+		printf("setting disks to bsd traditional format \n");
 		goto success;
 	}
 	if (dvar_istrue(dvar_get("bsd_slices")) && dvar_istrue(dvar_get("bsd_traditional"))) {
@@ -270,11 +270,11 @@ set_diskformat(struct i386_devdesc currdev, int major, int biosdev)
 	}
 
 success:
-	printf("successfully \n");
+	printf("disk format set successfully \n");
 
 defacto:
-	printf("disk format set to default (bsd_slices) \n");
-	bsd_slices(currdev, major, biosdev);
+	printf("disk format set to default (bsd_traditional) \n");
+	bsd_traditional(currdev, major, biosdev);
 }
 
 void

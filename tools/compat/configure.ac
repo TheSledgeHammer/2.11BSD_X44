@@ -79,7 +79,7 @@ AC_CHECK_HEADERS(sys/ioctl.h sys/mman.h sys/param.h sys/socket.h sys/stat.h 	\
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS(sys/mtio.h sys/syslimits.h getopt.h malloc.h sys/poll.h 		\
 	stddef.h sys/uio.h)
-AC_CHECK_HEADERS(sys/cdefs.h machine/endian_machdep.h sys/endian.h 				\
+AC_CHECK_HEADERS(sys/cdefs.h machine/endian.h sys/endian.h 						\
 	err.h libgen.h paths.h libgen.h stdint.h util.h resolv.h 					\
 	arpa/nameser.h,, [test -f include/$ac_header || touch include/$ac_header])
 AC_CHECK_HEADERS(rpc/types.h,,

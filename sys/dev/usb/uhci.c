@@ -66,7 +66,7 @@
 
 #include <machine/bus_space.h>
 #include <machine/bus_dma.h>
-#include <machine/endian_machdep.h>
+#include <machine/endian.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>

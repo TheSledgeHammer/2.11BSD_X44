@@ -27,14 +27,24 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD$"); */
-
 
 #include <sys/param.h>
 #include <sys/disklabel.h>
 #include <sys/stat.h>
 
+#if HAVE_NBTOOL_CONFIG_H
+#include <nbinclude/sys/disklabel.h>
+#include <nbinclude/sys/diskmbr.h>
+#else
+#include <sys/disklabel.h>
+#include <sys/diskmbr.h>
+#endif
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -44,6 +54,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fstab.h>
+
+#include <util.h>
 
 #define MBRSIZE         512     /* master boot record size */
 

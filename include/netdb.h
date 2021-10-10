@@ -16,7 +16,7 @@
 #define	_NETDB_H_
 
 #include <sys/cdefs.h>
-//#include <machine/endian_machdep.h>
+#include <machine/endian.h>
 //#include <sys/ansi.h>
 
 /*

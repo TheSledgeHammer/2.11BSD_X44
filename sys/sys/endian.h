@@ -44,7 +44,7 @@
 #define	_BIG_ENDIAN		4321	/* MSB first: 68000, ibm, net */
 #define	_PDP_ENDIAN		3412	/* LSB first in word, MSW first in long */
 
-#include <machine/endian_machdep.h>
+#include <machine/endian.h>
 
 /*
  * Define the order of 32-bit words in 64-bit words.
