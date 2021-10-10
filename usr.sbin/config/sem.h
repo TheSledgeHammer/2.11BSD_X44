@@ -77,7 +77,7 @@ void		deldev(const char *, int);
 void		addpseudo(const char *, int);
 void		delpseudo(const char *, int);
 void		addpseudoroot(const char *);
-void		adddevm(const char *, int32_t, int32_t,
+void		adddevm(const char *, devmajor_t, devmajor_t,
 			struct condexpr *, struct nvlist *);
 int		fixdevis(void);
 const char     *ref(const char *);

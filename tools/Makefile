@@ -93,11 +93,10 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cksum db																\
 		file lint1 																\
 		sortinfo 																\
-		.WAIT menuc mklocale mknod msgc 										\
-		.WAIT disklabel 														\
-		.WAIT paxctl 															\
-		.WAIT fdisk																\
-		.WAIT boot0cfg															\
+		.WAIT menuc mknod msgc 										\
+		.WAIT  										\
+		.WAIT 											\
+		.WAIT 
 		pwd_mkdb vgrind	zic												
 														
 SUBDIR+= stat .WAIT config xz-bin

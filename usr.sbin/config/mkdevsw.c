@@ -90,7 +90,7 @@ emitheader(FILE *fp)
 }
 
 static void
-dentry(FILE *fp, struct hashtab *t, int32_t  i, char p)
+dentry(FILE *fp, struct hashtab *t, devmajor_t i, char p)
 {
 	const struct devm *dm;
 	char mstr[16];
@@ -104,7 +104,7 @@ dentry(FILE *fp, struct hashtab *t, int32_t  i, char p)
 }
 
 static void
-pentry(FILE *fp, struct hashtab *t, int32_t  i, char p)
+pentry(FILE *fp, struct hashtab *t, devmajor_t i, char p)
 {
 	const struct devm *dm;
 	char mstr[16];
@@ -126,7 +126,7 @@ pentry(FILE *fp, struct hashtab *t, int32_t  i, char p)
 static void
 emitdevm(FILE *fp)
 {
-	int32_t  i;
+	devmajor_t i;
 
 	fputs("\n/* device switch table for block device */\n", fp);
 

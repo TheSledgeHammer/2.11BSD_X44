@@ -8,9 +8,8 @@ A General todo list. Don't hesitate to add to this list. :)
 		- disklabel
 		- fdisk
 		- boot0cfg
-	- btxld: machine/exec.h & sys/exec_elf.h
+	- btxld
 	- zic
-	- stat: strnvis undefined
 - Tools to Remove (Alternative)
 	- Groff (Mandoc)
 	- PCC (LLVM) Doesn't compile properly
@@ -43,7 +42,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## kern:
 - event/kqfilter: implement in device io
 - diskslices
-	
+
 ## arch:
 - i386/x86: (Merged under i386)
 	- swapgeneric.c: Update... Contains deprecated code.
@@ -52,12 +51,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - Code planned for future integration
 - update copyright headers
 - See devel folder: README.md
-	
+
 ## dev:
 - Essential Driver Support:
 	- usb:
 		- add: vhci, xhci
-	
+
 ## fs:
 
 
@@ -65,7 +64,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - libsa:
 - libkern:
 - x86emu:
-	
+
 ## net / netimp / netinet / netns:
 Of Interest Todo:
 - 2.11BSD's networking stack
@@ -78,7 +77,7 @@ Of Interest Todo:
 - boot:
 	- efi: For common efi code.
 		- Makfiles:
-			- Adjust makefiles. 
+			- Adjust makefiles.
 		- loader:
 			- efiserialio.c
 			- missing efi commands

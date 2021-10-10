@@ -142,8 +142,8 @@ struct	hashtab *cdevmtab;	/* character devm lookup */
 
 int	ndevi;				/* number of devi's (before packing) */
 int	npspecs;			/* number of parent specs */
-int32_t  maxbdevm;			/* max number of block major */
-int32_t  maxcdevm;			/* max number of character major */
+devmajor_t maxbdevm;			/* max number of block major */
+devmajor_t maxcdevm;			/* max number of character major */
 int	do_devsw;			/* 0 if pre-devsw config */
 int	oktopackage;			/* 0 before setmachine() */
 int	devilevel;			/* used for devi->i_level */
