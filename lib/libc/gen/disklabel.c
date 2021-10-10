@@ -51,9 +51,11 @@ __RCSID("$NetBSD: disklabel.c,v 1.37 2012/06/25 22:32:43 abs Exp $");
 
 #if HAVE_NBTOOL_CONFIG_H
 #include <nbinclude/sys/disklabel.h>
+#include <nbinclude/sys/disktype.h>
 #include <nbinclude/disktab.h>
 #else
 #include <sys/disklabel.h>
+#include <sys/disktype.h>
 #include <disktab.h>
 #endif /* HAVE_NBTOOL_CONFIG_H */
 
@@ -65,6 +67,10 @@ __RCSID("$NetBSD: disklabel.c,v 1.37 2012/06/25 22:32:43 abs Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(getdiskbyname,_getdiskbyname)
+#endif
 
 #if 0
 static void	error(int);

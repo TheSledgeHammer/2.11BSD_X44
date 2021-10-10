@@ -29,7 +29,7 @@
 #ifndef _MACHINE_BOOTINFO_H_
 #define _MACHINE_BOOTINFO_H_
 
-#include <lib/libsa/diskmbr.h>
+#include <sys/diskmbr.h>
 
 #define	BOOTINFO_VERSION		1
 

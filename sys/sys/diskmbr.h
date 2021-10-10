@@ -35,10 +35,6 @@
 #ifndef _LIBSA_DISKMBR_H_
 #define	_LIBSA_DISKMBR_H_
 
-#include <sys/disklabel.h>
-#include <sys/ioctl.h>
-#include <sys/ioccom.h>
-
 #define	DOSBBSECTOR			0		/* DOS boot block relative sector number */
 #define	DOSDSNOFF			440		/* WinNT/2K/XP Drive Serial Number offset */
 #define	DOSPARTOFF			446
@@ -98,11 +94,6 @@ struct dos_partition {
 CTASSERT(sizeof (struct dos_partition) == DOSPARTSIZE);
 #endif
 
-#define	DPSECT(s) 	((s) & 0x3f)				/* isolate relevant bits of sector */
-#define	DPCYL(c, s) ((c) + (((s) & 0xc0)<<2))	/* and those that are cylinder */
-
-#define DIOCSMBR 	_IOW('M', 129, u_char[512])
-
 struct directory {
 	unsigned char name[8];		/* file name */
 	unsigned char ext[3];		/* file extension */
@@ -132,4 +123,11 @@ struct bootsector {
 	unsigned char junk[476];	/* who cares? */
 };
 
+#define	DPSECT(s) 	((s) & 0x3f)				/* isolate relevant bits of sector */
+#define	DPCYL(c, s) ((c) + (((s) & 0xc0)<<2))	/* and those that are cylinder */
+
+/*
+ * Diskmbr-specific ioctls.
+ */
+#define DIOCSMBR 	_IOW('M', 129, u_char[512])
 #endif /* !_LIBSA_DISKMBR_H_ */

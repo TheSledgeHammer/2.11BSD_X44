@@ -33,8 +33,7 @@ _ARCH_INCS!=	${TOOL_SED} -e 's/^\#.*//' ${.CURDIR}/../headerlist
 
 _INCS=		disktab.h
 _SYSINCS=	boot.h 		\
-			disklabel.h \
-			disktype.h	\
+			disklabel.h diskapm.h diskgpt.h diskmbr.h disktype.h \
 			dkbad.h 	\
 			exec_elf.h exec_ecoff.h
 

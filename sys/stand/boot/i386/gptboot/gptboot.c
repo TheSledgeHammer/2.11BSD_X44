@@ -19,13 +19,12 @@
 #include <sys/dirent.h>
 #include <sys/reboot.h>
 #include <sys/disklabel.h>
+#include <sys/diskgpt.h>
 #include <sys/uuid.h>
 
 #include <machine/bootinfo.h>
 #include <machine/elf_machdep.h>
 #include <machine/psl.h>
-
-#include <lib/libsa/diskgpt.h>
 
 #include <stdarg.h>
 

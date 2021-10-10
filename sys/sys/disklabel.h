@@ -42,10 +42,6 @@
 #include <sys/disktype.h>
 #endif
 
-#include <lib/libsa/diskapm.h>
-#include <lib/libsa/diskgpt.h>
-#include <lib/libsa/diskmbr.h>
-
 /*
  * Disk description table, see disktab(5)
  */

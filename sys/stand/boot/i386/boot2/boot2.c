@@ -21,8 +21,8 @@
 #include <sys/reboot.h>
 
 #include <sys/disklabel.h>
+#include <sys/diskmbr.h>
 #include <sys/dirent.h>
-#include <lib/libsa/diskmbr.h>
 #include <machine/bootinfo.h>
 #include <machine/psl.h>
 #include <machine/elf_machdep.h>
@@ -34,6 +34,7 @@
 #include <btxv86.h>
 
 #include "boot2.h"
+
 #include "lib.h"
 
 #define IO_KEYBOARD		1

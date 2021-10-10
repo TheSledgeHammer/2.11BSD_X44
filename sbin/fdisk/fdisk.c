@@ -38,7 +38,7 @@ __FBSDID("$FreeBSD$");
 #include <fcntl.h>
 #include <err.h>
 #include <errno.h>
-#include <libgeom.h>
+//#include <libgeom.h>
 #include <paths.h>
 #include <regex.h>
 #include <stdint.h>
@@ -106,8 +106,8 @@ typedef struct cmd {
     int			n_args;
     struct arg {
 	char	argtype;
-	int	arg_val;
-    }			args[MAX_ARGS];
+	int		arg_val;
+    }		args[MAX_ARGS];
 } CMD;
 
 static int B_flag  = 0;		/* replace boot code */
