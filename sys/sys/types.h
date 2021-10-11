@@ -11,7 +11,7 @@
 
 /* Machine type dependent parameters. */
 #include <machine/ansi.h>
-#include <machine/machtypes.h>
+#include <machine/types.h>
 
 #include <sys/ansi.h>
 #include <sys/select.h>

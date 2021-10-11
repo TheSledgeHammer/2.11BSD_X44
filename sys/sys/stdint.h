@@ -34,7 +34,7 @@
 
 #include <sys/cdefs.h>
 
-#include <machine/machtypes.h>
+#include <machine/types.h>
 
 #ifndef	_BSD_INT8_T_
 typedef	__int8_t			int8_t;

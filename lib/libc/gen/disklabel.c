@@ -157,7 +157,7 @@ getdiskbyname(const char *name)
 	getnumdflt(dp->d_headswitch, "hs", 0);
 	getnumdflt(dp->d_trkseek, "ts", 0);
 	getnumdflt(dp->d_bbsize, "bs", BBSIZE);
-	getnumdflt(dp->d_sbsize, "sb", SBLOCKSIZE);
+	getnumdflt(dp->d_sbsize, "sb", SBSIZE);
 	strcpy(psize, "px");	/* XXX: strcpy is safe */
 	strcpy(pbsize, "bx");	/* XXX: strcpy is safe */
 	strcpy(pfsize, "fx");	/* XXX: strcpy is safe */

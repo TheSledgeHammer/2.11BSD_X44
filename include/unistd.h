@@ -42,7 +42,7 @@
 #ifndef _UNISTD_H_
 #define	_UNISTD_H_
 #include <machine/ansi.h>
-#include <machine/machtypes.h>
+#include <machine/types.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/unistd.h>

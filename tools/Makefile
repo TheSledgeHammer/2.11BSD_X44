@@ -97,7 +97,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT disklabel 														\
 		.WAIT paxctl 															\
 		.WAIT fdisk																\
-		.WAIT btxld boot0cfg													\
+		.WAIT boot0cfg															\
 		pwd_mkdb vgrind	zic												
 														
 SUBDIR+= stat .WAIT config xz-bin

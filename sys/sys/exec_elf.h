@@ -46,7 +46,7 @@
 #include <stddef.h>
 #endif /* _KERNEL || _STANDALONE */
 
-#include <machine/machtypes.h>
+#include <machine/types.h>
 #include <machine/elf_machdep.h>
 
 typedef	uint8_t				Elf_Byte;
