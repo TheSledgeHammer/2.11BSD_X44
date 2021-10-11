@@ -26,7 +26,17 @@
 #define	_PATH_PASSWD		"/etc/passwd"
 #define	_PATH_MASTERPASSWD	"/etc/master.passwd"
 #define	_PATH_MKPASSWD		"/etc/mkpasswd"
-#define	_PATH_PTMP			"/etc/ptmp"
+#define	_PATH_PTMP		"/etc/ptmp"
+
+
+#define	_PATH_PASSWD_CONF	"/etc/passwd.conf"
+#define	_PATH_PASSWDCONF	_PATH_PASSWD_CONF	/* XXX: compat */
+#define	_PATH_USERMGMT_CONF	"/etc/usermgmt.conf"
+
+#define	_PATH_MP_DB		"/etc/pwd.db"
+#define	_PATH_SMP_DB		"/etc/spwd.db"
+
+#define	_PATH_PWD_MKDB		"/usr/sbin/pwd_mkdb"
 
 #define	_PW_KEYBYNAME		'0'		/* stored by name */
 #define	_PW_KEYBYUID		'1'		/* stored by uid */
