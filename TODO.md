@@ -1,28 +1,23 @@
 A General todo list. Don't hesitate to add to this list. :)
 
 # TODO:
-## General:
-- Compiler
-- Makefiles
-- Bug Fixes &/or missing critical content
-
 ## Compiler/Tools:
-- Can't Compile
-	- pax
-	- tic
+- Needs Fixing:
+	- Disklabel Associated
+		- mklocale
+		- disklabel
+		- fdisk
+		- boot0cfg
+	- btxld
+	- zic
+	- stat: strnvis undefined
 - Tools to Remove (Alternative)
 	- Groff (Mandoc)
+	- PCC (LLVM) Doesn't compile properly
 - Unimplemented:
-	- LLVM/Clang
 	- rpcgen
-	- GDB	(Would be nice to remove)
-	- GCC	(Would be nice to remove)
-	- pigz
-	- makefs
-	- date
-- To Add (when needed)
-	- xz
-	- zic
+	- GDB
+	- GCC
 
 # usr/ (User & OS Libraries):
 ## lib:
@@ -30,7 +25,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## libexec:
 
 ## sbin:
-- fsck: replace references to ufs_daddr_t
 
 ## share:
 
