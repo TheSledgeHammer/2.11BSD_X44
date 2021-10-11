@@ -8,7 +8,7 @@ A General todo list. Don't hesitate to add to this list. :)
 		- disklabel
 		- fdisk
 		- boot0cfg
-	- btxld
+	- btxld: machine/exec.h & sys/exec_elf.h
 	- zic
 	- stat: strnvis undefined
 - Tools to Remove (Alternative)
