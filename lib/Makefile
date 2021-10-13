@@ -50,7 +50,7 @@ SUBDIR+=	libkern
 
 #SUBDIR+=	../contrib/am-utils/lib
 SUBDIR+=	../contrib/flex/lib
-SUBDIR+=	../contrib/elftoolchain/lib
+SUBDIR+=	../contrib/elftoolchain/lib/libelf
 
 #SUBDIR+=	../contrib/expat/lib
 
@@ -78,6 +78,7 @@ SUBDIR+=	.WAIT
 
 SUBDIR+=	../contrib/xz/lib		# depends on libpthread
 
+SUBDIR+=	../contrib/elftoolchain/lib/libdwarf # depends on libelf
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
