@@ -152,8 +152,7 @@ HAVE_LIBGCC_EH?=	yes
 .if defined(COVERITY_TOP_CONFIG) || \
     ${MACHINE} == "alpha" || \
     ${MACHINE} == "hppa" || \
-    ${MACHINE} == "ia64" || \
-    ${MACHINE_CPU} == "mips"
+    ${MACHINE} == "ia64"
 HAVE_SSP?=	no
 .else
 HAVE_SSP?=	yes
@@ -556,33 +555,6 @@ MACHINES.i386=		i386
 MACHINES.riscv=		riscv
 MACHINES.x86_64=	amd64
 
-# OBJCOPY flags to create a.out binaries for old firmware
-# shared among src/distrib and ${MACHINE}/conf/Makefile.${MACHINE}.inc
-.if ${MACHINE_CPU} == "arm"
-OBJCOPY_ELF2AOUT_FLAGS?=	\
-	-O a.out-arm-netbsd	\
-	-R .ident		\
-	-R .ARM.attributes	\
-	-R .ARM.exidx		\
-	-R .ARM.extab		\
-	-R .SUNW_ctf		\
-	-R .arm.atpcs		\
-	-R .comment		\
-	-R .debug_abbrev	\
-	-R .debug_aranges	\
-	-R .debug_info		\
-	-R .debug_line		\
-	-R .debug_frame		\
-	-R .debug_loc		\
-	-R .debug_pubnames	\
-	-R .debug_pubtypes	\
-	-R .debug_ranges	\
-	-R .debug_str		\
-	-R .debug_macinfo	\
-	-R .eh_frame		\
-	-R .note.netbsd.ident
-.endif
-
 #
 # Targets to check if DESTDIR or RELEASEDIR is provided
 #
@@ -846,9 +818,9 @@ MKCOMPATX11:=	no
 #
 # These platforms always use softfloat.
 #
-.if (${MACHINE_CPU} == "arm" && ${MACHINE_ARCH:M*hf*} == "")
-MKSOFTFLOAT=	yes
-.endif
+#.if (${MACHINE_CPU} == "arm" && ${MACHINE_ARCH:M*hf*} == "")
+#MKSOFTFLOAT=	yes
+#.endif
 
 #
 # PIE is enabled on many platforms by default.
