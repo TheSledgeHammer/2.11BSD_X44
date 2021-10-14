@@ -10,10 +10,6 @@ A General todo list. Don't hesitate to add to this list. :)
 		- boot0cfg
 	- btxld
 	- zic
-	- mandoc
-- Tools to Remove (Alternative)
-	- Groff (Mandoc)
-	- PCC (LLVM) Doesn't compile properly
 - Unimplemented:
 	- rpcgen
 
