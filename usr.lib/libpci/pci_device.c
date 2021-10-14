@@ -47,8 +47,7 @@ __RCSID("$NetBSD: pci_device.c,v 1.2 2003/03/08 09:53:45 lukem Exp $");
 
 #include <pci.h>
 
-#include <dev/pci/pciio.h>
-
+#include <dev/core/pci/pciio.h>
 /*
  * pcidev_conf_read:
  *

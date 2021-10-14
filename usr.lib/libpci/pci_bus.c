@@ -47,7 +47,7 @@ __RCSID("$NetBSD: pci_bus.c,v 1.2 2003/03/08 09:53:45 lukem Exp $");
 
 #include <pci.h>
 
-#include <dev/pci/pciio.h>
+#include <dev/core/pci/pciio.h>
 
 /*
  * pcibus_conf_read:
@@ -55,8 +55,7 @@ __RCSID("$NetBSD: pci_bus.c,v 1.2 2003/03/08 09:53:45 lukem Exp $");
  *	Read a config word for a given bus/device/function.
  */
 int
-pcibus_conf_read(int fd, u_int bus, u_int device, u_int func, u_int reg,
-    uint32_t *valp)
+pcibus_conf_read(int fd, u_int bus, u_int device, u_int func, u_int reg, uint32_t *valp)
 {
 	struct pciio_bdf_cfgreg bdfr;
 	int rv;

@@ -26,6 +26,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ *	SCCS id	@(#)mx1.c	2.1 (Berkeley)	8/5/83
+ */
+/*
+ *	SCCS id	@(#)mx2.c	2.1 (Berkeley)	8/5/83
+ */
+
 #include <sys/cdefs.h>
 
 #include <sys/systm.h>
@@ -204,7 +211,7 @@ mpx_create_group()
 }
 
 int
-mpx_grouptable()
+mpx_grouptable(void)
 {
 	register int i;
 	int error;
@@ -322,7 +329,7 @@ mpxchan()
 		if (uap->cmd == MPXN) {
 			if ((vp = valloc(pipedev)) == NULL)
 				return;
-			vap->va_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u.u_cmask;
+			vap->va_mode = ((vec.m_arg[1] & 0777) + S_IFMPC) & ~u.u_cmask;
 			vp->v_flag = IACC | IUPD | ICHG;
 		} else {
 			u->u_dirp = vec.m_name;
@@ -387,7 +394,7 @@ mpxchan()
 		vp = fp->f_data;
 		switch (vap->va_mode & IFMT) {
 
-		case IFMPC:
+		case S_IFMPC:
 			if ((fp->f_flag & FMP) != FMP) {
 				u.u_error = ENXIO;
 				return;
@@ -399,7 +406,7 @@ mpxchan()
 			u.u_r.r_val1 = cpx(ngp);
 			return;
 
-		case IFCHR:
+		case S_IFCHR:
 			dev = (dev_t) vap->va_rdev;
 			tp = cdevsw[major(dev)].d_ttys;
 			if (tp == NULL) {
@@ -427,7 +434,6 @@ mpxchan()
 		default:
 			u.u_error = ENXIO;
 			return;
-
 		}
 
 		/*
@@ -643,7 +649,7 @@ mxfalloc(fp)
  * Grow a branch on a tree.
  */
 void *
-mtree(sub,master)
+mtree(sub, master)
 	register struct mpx_group *sub, *master;
 {
 	register int i;

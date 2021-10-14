@@ -113,7 +113,7 @@ struct htbc_htransaction {
 };
 
 #define HASH_VERSION			HTREE_HALF_MD4					/* make configurable */
-#define HASH_SEED(hash_seed) 	(random_hash_seed(hash_seed));
+#define HASH_SEED(hash_seed) 	(htbc_random_hash_seed(hash_seed));
 #define HASH_MAJOR 				(prospector32(random()))
 #define HASH_MINOR 				(prospector32(random()))
 

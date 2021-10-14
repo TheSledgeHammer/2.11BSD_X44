@@ -37,7 +37,7 @@ __RCSID("$NetBSD: pci_drvname.c,v 1.2 2016/09/24 23:12:54 mrg Exp $");
 
 #include <pci.h>
 
-#include <dev/pci/pciio.h>
+#include <dev/core/pci/pciio.h>
 
 /*
  * pci_drvname:
@@ -67,8 +67,7 @@ pci_drvname(int fd, u_int device, u_int func, char *name, size_t len)
  *	What's the driver name for a PCI device on any PCI bus?
  */
 int
-pci_drvnameonbus(int fd, u_int bus, u_int device, u_int func, char *name,
-		 size_t len)
+pci_drvnameonbus(int fd, u_int bus, u_int device, u_int func, char *name, size_t len)
 {
 	struct pciio_drvnameonbus drvname;
 	int rv;

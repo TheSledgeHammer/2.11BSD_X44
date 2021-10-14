@@ -48,19 +48,16 @@
 typedef uint32_t pcireg_t;	/* XXX */
 
 /* pci_bus.c */
-int	pcibus_conf_read(int, unsigned int, unsigned int, unsigned int,
-		unsigned int, pcireg_t *);
-int	pcibus_conf_write(int, unsigned int, unsigned int, unsigned int,
-		unsigned int, pcireg_t);
+int		pcibus_conf_read(int, unsigned int, unsigned int, unsigned int, unsigned int, pcireg_t *);
+int		pcibus_conf_write(int, unsigned int, unsigned int, unsigned int, unsigned int, pcireg_t);
 
 /* pci_device.c */
-int	pcidev_conf_read(int, unsigned int, pcireg_t *);
-int	pcidev_conf_write(int, unsigned int, pcireg_t);
+int		pcidev_conf_read(int, unsigned int, pcireg_t *);
+int		pcidev_conf_write(int, unsigned int, pcireg_t);
 
 /* pci_drvname.c */
-int	pci_drvname(int, unsigned int, unsigned int, char *, size_t);
-int	pci_drvnameonbus(int, unsigned int, unsigned int, unsigned int, char *,
-		size_t);
+int		pci_drvname(int, unsigned int, unsigned int, char *, size_t);
+int		pci_drvnameonbus(int, unsigned int, unsigned int, unsigned int, char *, size_t);
 
 /* pci_subr.c */
 void	pci_devinfo(pcireg_t, pcireg_t, int, char *, size_t);

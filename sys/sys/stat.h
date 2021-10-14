@@ -67,6 +67,7 @@ struct stat {
 
 #define	S_IFMT	 0170000		/* type of file */
 #define	S_IFDIR	 0040000		/* directory */
+#define	S_IFMPC	 0030000		/* multiplexed char special */
 #define	S_IFCHR	 0020000		/* character special */
 #define	S_IFBLK	 0060000		/* block special */
 #define	S_IFREG	 0100000		/* regular */

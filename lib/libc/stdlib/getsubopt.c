@@ -29,6 +29,10 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
@@ -42,6 +46,10 @@ __RCSID("$NetBSD: getsubopt.c,v 1.7 2003/08/07 16:43:40 agc Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(getsubopt,_getsubopt)
+#endif
 
 /*
  * The SVID interface to getsubopt provides no way of figuring out which

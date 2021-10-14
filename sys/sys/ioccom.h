@@ -91,5 +91,4 @@
 #define	_IOWR(x,y,t)		(IOC_INOUT|((long)(sizeof(t) & IOCPARM_MASK)<<16)|('x'<<8)|y)
 #endif
 
-
 #endif /* !_SYS_IOCCOM_H_ */

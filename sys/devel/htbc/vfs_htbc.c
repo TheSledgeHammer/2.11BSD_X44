@@ -144,7 +144,7 @@ struct htbc {
 	int 										ht_dealloclim;		/* max count */
 };
 
-#define	HTBC_INODETRK_SIZE 83
+#define	HTBC_INODETRK_SIZE 						83
 
 static struct htbc_dealloc 						*htbc_dealloc;
 struct htbc_hashchain							*htbc_blockchain;				/* add to htbc structure */
@@ -512,7 +512,7 @@ htbc_read(data, len, devvp, pbn)
 /* HTBC Hashchain */
 
 void
-random_hash_seed(hash_seed)
+htbc_random_hash_seed(hash_seed)
 	uint32_t* hash_seed;
 {
 	u_long rand;
@@ -534,7 +534,7 @@ htbc_chain_hash(const char *name, int len)
 }
 
 void
-get_hash_seed(struct htbc_inode *hi, uint32_t *seed)
+htbc_get_hash_seed(struct htbc_inode *hi, uint32_t *seed)
 {
 	for (int i = 0; i < 4; i++) {
 		seed[i] = hi->hi_hash_seed[i];
@@ -693,6 +693,7 @@ htbc_add_block_transaction(struct htbc_htransaction *trans)
 void
 htbc_add_inode_transaction(struct htbc_htransaction *trans)
 {
+	htbc_inodetrk_init(trans, HTBC_INODETRK_SIZE);
 
 }
 

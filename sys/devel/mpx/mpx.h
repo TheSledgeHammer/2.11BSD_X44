@@ -142,8 +142,8 @@ struct mpx_args {
 	int								m_arg[3];
 };
 
-#define FMPX	FREAD | FWRITE
-#define FMPY 	FREAD | FWRITE
+#define FMPX						FREAD | FWRITE
+#define FMPY 						FREAD | FWRITE
 
 #define MPX_LOCK(mpx)				simple_lock((mpx)->mpp_lock)
 #define MPX_UNLOCK(mpx)				simple_unlock((mpx)->mpp_lock)
