@@ -39,16 +39,17 @@ LIBCRTBEGIN=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o ${_GCC_CRTBEGIN}
 LIBCRTEND=	${_GCC_CRTEND} ${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crtn.o
 .MADE: ${LIBCRTEND}
 .endif
-_SHLINKER=	${SHLINKDIR}/ld.elf_so
-.else
-LIBCRTBEGIN?=
-LIBCRTEND?=
 _SHLINKER=	${SHLINKDIR}/ld.so
 .endif
 
 .ifndef LIBCRT0
 LIBCRT0=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crt0.o
 .MADE: ${LIBCRT0}
+.endif
+
+.ifndef LIBCRTI
+LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
+.MADE: ${LIBCRTI}
 .endif
 
 ##### Installed system library definitions
@@ -70,7 +71,7 @@ LIBZ?=			${DESTDIR}/usr.lib/libz.a
 
 .ifndef LIBSTDCXX
 LIBSTDCXX=	${DESTDIR}/usr/lib/libstdc++.a
-.MADE: ${LIBSTDCXX}
+.MADE: 		${LIBSTDCXX}
 .endif
 
 ##### Build and install rules

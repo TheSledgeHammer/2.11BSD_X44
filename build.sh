@@ -618,6 +618,22 @@ level of source directory"
 valid_MACHINE_ARCH='
 MACHINE=amd64		MACHINE_ARCH=x86_64
 MACHINE=evbarm		MACHINE_ARCH=			NO_DEFAULT
+MACHINE=evbarm		MACHINE_ARCH=earmv4		ALIAS=evbearmv4-el		ALIAS=evbarmv4-el
+MACHINE=evbarm		MACHINE_ARCH=earmv4eb	ALIAS=evbearmv4-eb		ALIAS=evbarmv4-eb
+MACHINE=evbarm		MACHINE_ARCH=earmv5		ALIAS=evbearmv5-el		ALIAS=evbarmv5-el
+MACHINE=evbarm		MACHINE_ARCH=earmv5hf	ALIAS=evbearmv5hf-el	ALIAS=evbarmv5hf-el
+MACHINE=evbarm		MACHINE_ARCH=earmv5eb	ALIAS=evbearmv5-eb		ALIAS=evbarmv5-eb
+MACHINE=evbarm		MACHINE_ARCH=earmv5hfeb	ALIAS=evbearmv5hf-eb	ALIAS=evbarmv5hf-eb
+MACHINE=evbarm		MACHINE_ARCH=earmv6		ALIAS=evbearmv6-el		ALIAS=evbarmv6-el
+MACHINE=evbarm		MACHINE_ARCH=earmv6hf	ALIAS=evbearmv6hf-el	ALIAS=evbarmv6hf-el
+MACHINE=evbarm		MACHINE_ARCH=earmv6eb	ALIAS=evbearmv6-eb		ALIAS=evbarmv6-eb
+MACHINE=evbarm		MACHINE_ARCH=earmv6hfeb	ALIAS=evbearmv6hf-eb	ALIAS=evbarmv6hf-eb
+MACHINE=evbarm		MACHINE_ARCH=earmv7		ALIAS=evbearmv7-el		ALIAS=evbarmv7-el
+MACHINE=evbarm		MACHINE_ARCH=earmv7eb	ALIAS=evbearmv7-eb		ALIAS=evbarmv7-eb
+MACHINE=evbarm		MACHINE_ARCH=earmv7hf	ALIAS=evbearmv7hf-el	ALIAS=evbarmv7hf-el
+MACHINE=evbarm		MACHINE_ARCH=earmv7hfeb	ALIAS=evbearmv7hf-eb	ALIAS=evbarmv7hf-eb
+MACHINE=evbarm		MACHINE_ARCH=aarch64	ALIAS=evbarm64-el		ALIAS=evbarm64
+MACHINE=evbarm		MACHINE_ARCH=aarch64eb	ALIAS=evbarm64-eb
 MACHINE=i386		MACHINE_ARCH=i386
 MACHINE=riscv		MACHINE_ARCH=riscv64	ALIAS=riscv64 DEFAULT
 MACHINE=riscv		MACHINE_ARCH=riscv32	ALIAS=riscv32

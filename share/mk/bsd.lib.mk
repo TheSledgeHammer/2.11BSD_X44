@@ -1,44 +1,96 @@
-#	$NetBSD: bsd.lib.mk,v 1.250 2004/02/23 21:12:13 skrll Exp $
+#	$NetBSD: bsd.lib.mk,v 1.385 2021/08/21 11:55:24 andvar Exp $
 #	@(#)bsd.lib.mk	8.3 (Berkeley) 4/22/94
 
 .include <bsd.init.mk>
 .include <bsd.shlib.mk>
 .include <bsd.gcc.mk>
+
 # Pull in <bsd.sys.mk> here so we can override its .c.o rule
 .include <bsd.sys.mk>
 
+LIBISMODULE?=	no
+LIBISPRIVATE?=	no
+LIBISCXX?=		no
+
+.if ${LIBISMODULE} != "no"
+_LIB_PREFIX?=	# empty
+MKDEBUGLIB:=	no
+MKLINT:=		no
+MKPICINSTALL:=	no
+MKPROFILE:=	no
+MKSTATICLIB:=	no
+.else
+_LIB_PREFIX?=	lib
+.endif
+
+.if ${LIBISPRIVATE} != "no"
+MKDEBUGLIB:=	no
+MKLINT:=	no
+MKPICINSTALL:=	no
+. if defined(NOSTATICLIB) && ${MKPICLIB} != "no"
+MKSTATICLIB:=	no
+. elif ${LIBISPRIVATE} != "pic"
+MKPIC:=		no
+. endif
+MKPROFILE:=	no
+.endif
+
 ##### Basic targets
-.PHONY:			checkver libinstall
+.PHONY:		checkver libinstall
 realinstall:	checkver libinstall
-clean:			cleanlib
 
 ##### LIB specific flags.
-COPTS+=    	${COPTS.lib${LIB}}
-CPPFLAGS+=  ${CPPFLAGS.lib${LIB}}
-CXXFLAGS+=  ${CXXFLAGS.lib${LIB}}
-LDADD+=     ${LDADD.lib${LIB}}
-LDFLAGS+=   ${LDFLAGS.lib${LIB}}
-LDSTATIC+=  ${LDSTATIC.lib${LIB}}
+# XXX: This is needed for programs that link with .a libraries
+# Perhaps a more correct solution is to always generate _pic.a
+# files or always have a shared library.
+# Another fix is to provide rcrt0.o like OpenBSD does and
+# do relocations for static PIE.
+.if defined(MKPIE) && (${MKPIE} != "no") && !defined(NOPIE)
+CFLAGS+=        ${PIE_CFLAGS}
+AFLAGS+=        ${PIE_AFLAGS}
+.endif
+
+PGFLAGS+=	-pg
+.if ${MKPIC} != "no"
+PGFLAGS+=	-fPIC
+.endif
+
+##### Libraries that this may depend upon.
+.if defined(LIBDPLIBS) && ${MKPIC} != "no"				# {
+.for _lib _dir in ${LIBDPLIBS}
+.if !defined(LIBDO.${_lib})
+LIBDO.${_lib}!=	cd "${_dir}" && ${PRINTOBJDIR}
+.MAKEOVERRIDES+=LIBDO.${_lib}
+.endif
+.if ${LIBDO.${_lib}} == "_external"
+LDADD+=		-l${_lib}
+.else
+LDADD+=		-L${LIBDO.${_lib}} -l${_lib}
+DPADD+=		${LIBDO.${_lib}}/lib${_lib}.so	# Don't use _LIB_PREFIX
+.endif
+.endfor
+.endif									# }
 
 ##### Build and install rules
-MKDEP_SUFFIXES?=	.o .po .so .ln
-CPPFLAGS+=	${DESTDIR:D-nostdinc ${CPPFLAG_ISYSTEM} ${DESTDIR}/usr/include}
-CXXFLAGS+=	${DESTDIR:D-nostdinc++ ${CPPFLAG_ISYSTEMXX} ${DESTDIR}/usr/include/g++}
+MKDEP_SUFFIXES?=	.o .po .pico .go .ln .d
 
-.if !defined(SHLIB_MAJOR) && exists(${SHLIB_VERSION_FILE})
+.if !defined(SHLIB_MAJOR) && exists(${SHLIB_VERSION_FILE})		# {
 SHLIB_MAJOR != . ${SHLIB_VERSION_FILE} ; echo $$major
 SHLIB_MINOR != . ${SHLIB_VERSION_FILE} ; echo $$minor
 SHLIB_TEENY != . ${SHLIB_VERSION_FILE} ; echo $$teeny
+
+DPADD+=	${SHLIB_VERSION_FILE}
 
 # Check for higher installed library versions.
 .if !defined(NOCHECKVER) && !defined(NOCHECKVER_${LIB}) && \
 	exists(${NETBSDSRCDIR}/lib/checkver)
 checkver:
-	@(cd ${.CURDIR} && \
+	@(cd "${.CURDIR}" && \
+	    HOST_SH=${HOST_SH:Q} AWK=${TOOL_AWK:Q} \
 	    ${HOST_SH} ${NETBSDSRCDIR}/lib/checkver -v ${SHLIB_VERSION_FILE} \
-		    -d ${DESTDIR}${_LIBSODIR} ${LIB})
+		    -d ${_DEST.OBJ} ${LIB})
 .endif
-.endif
+.endif									# }
 
 .if !target(checkver)
 checkver:
@@ -65,7 +117,8 @@ print-shlib-teeny:
 	@false
 .endif
 
-.if defined(SHLIB_MAJOR) && !empty(SHLIB_MAJOR)
+.if ${LIBISPRIVATE} == "no"
+.if defined(SHLIB_MAJOR) && !empty(SHLIB_MAJOR)				# {
 .if defined(SHLIB_MINOR) && !empty(SHLIB_MINOR)
 .if defined(SHLIB_TEENY) && !empty(SHLIB_TEENY)
 SHLIB_FULLVERSION=${SHLIB_MAJOR}.${SHLIB_MINOR}.${SHLIB_TEENY}
@@ -75,49 +128,36 @@ SHLIB_FULLVERSION=${SHLIB_MAJOR}.${SHLIB_MINOR}
 .else
 SHLIB_FULLVERSION=${SHLIB_MAJOR}
 .endif
+.endif									# }
 .endif
 
 # add additional suffixes not exported.
 # .po is used for profiling object files.
-# .so is used for PIC object files.
-.SUFFIXES: .out .a .ln .so .po .o .s .S .c .cc .cpp .cxx .C .m .F .f .r .y .l .cl .p .h
+# .pico is used for PIC object files.
+.SUFFIXES: .out .a .ln .pico .po .go .o .s .S .c .cc .cpp .cxx .C .m .F .f .r .y .l .cl .p .h
 .SUFFIXES: .sh .m4 .m
 
 
 # Set PICFLAGS to cc flags for producing position-independent code,
-# if not already set.  Includes -DPIC, if required.
+# if not already set.
 
 # Data-driven table using make variables to control how shared libraries
 # are built for different platforms and object formats.
-# OBJECT_FMT:		currently either "ELF" or "a.out", from <bsd.own.mk>
+# SHLIB_MAJOR, SHLIB_MINOR, SHLIB_TEENY: Major, minor, and teeny version
+#			numbers of shared library
 # SHLIB_SOVERSION:	version number to be compiled into a shared library
-#			via -soname. Usualy ${SHLIB_MAJOR} on ELF.
+#			via -soname. Usually ${SHLIB_MAJOR} on ELF.
 #			NetBSD/pmax used to use ${SHLIB_MAJOR}[.${SHLIB_MINOR}
 #			[.${SHLIB_TEENY}]]
 # SHLIB_SHFLAGS:	Flags to tell ${LD} to emit shared library.
 #			with ELF, also set shared-lib version for ld.so.
 # SHLIB_LDSTARTFILE:	support .o file, call C++ file-level constructors
 # SHLIB_LDENDFILE:	support .o file, call C++ file-level destructors
-# FPICFLAGS:		flags for ${FC} to compile .[fF] files to .so objects.
-# CPPICFLAGS:		flags for ${CPP} to preprocess .[sS] files for ${AS}
-# CPICFLAGS:		flags for ${CC} to compile .[cC] files to pic objects.
-# CSHLIBFLAGS:		flags for ${CC} to compile .[cC] files to .so objects.
-#			(usually includes ${CPICFLAGS})
-# CAPICFLAGS:		flags for ${CC} to compiling .[Ss] files
-#		 	(usually just ${CPPPICFLAGS} ${CPICFLAGS})
-# APICFLAGS:		flags for ${AS} to assemble .[sS] to .so objects.
 
-# Platform-independent flags for NetBSD shared libraries
-SHLIB_SOVERSION=${SHLIB_FULLVERSION}
-SHLIB_SHFLAGS=
-FPICFLAGS ?= 	-fPIC
-CPICFLAGS?= 	-fPIC -DPIC
-CPPPICFLAGS?= 	-DPIC
-CAPICFLAGS?= 	${CPPPICFLAGS} ${CPICFLAGS}
-APICFLAGS?= 	-k
+PICFLAGS ?= -fPIC
 
 .if ${MKPICLIB} != "no"
-CSHLIBFLAGS+= ${CPICFLAGS}
+CSHLIBFLAGS+= ${PICFLAGS} ${SANITIZERFLAGS} ${LIBCSANITIZERFLAGS}
 .endif
 
 .if defined(CSHLIBFLAGS) && !empty(CSHLIBFLAGS)
@@ -126,112 +166,135 @@ MKSHLIBOBJS= yes
 MKSHLIBOBJS= no
 .endif
 
-# Platform-independent linker flags for ELF shared libraries
-.if ${OBJECT_FMT} == "ELF"
-SHLIB_SOVERSION=	${SHLIB_MAJOR}
-SHLIB_SHFLAGS=		-Wl,-soname,lib${LIB}.so.${SHLIB_SOVERSION}
-SHLIB_LDSTARTFILE?=	${DESTDIR}/usr/lib/crti.o ${_GCC_CRTBEGINS}
-SHLIB_LDENDFILE?=	${_GCC_CRTENDS} ${DESTDIR}/usr/lib/crtn.o
+.if (${MKDEBUG:Uno} != "no" && !defined(NODEBUG)) || \
+    (defined(CFLAGS) && !empty(CFLAGS:M*-g*))
+# We only add -g to the shared library objects
+# because we don't currently split .a archives.
+CSHLIBFLAGS+=	-g
+.if ${LIBISPRIVATE} != "no"
+CFLAGS+=	-g
+.endif
 .endif
 
+# Platform-independent linker flags for ELF shared libraries
+SHLIB_SOVERSION=	${SHLIB_MAJOR}
+SHLIB_SHFLAGS=		-Wl,-soname,${_LIB}.so.${SHLIB_SOVERSION}
+SHLIB_SHFLAGS+=		${SANITIZERFLAGS}
+.if !defined(SHLIB_WARNTEXTREL) || ${SHLIB_WARNTEXTREL} != "no"
+SHLIB_SHFLAGS+=		-Wl,--warn-shared-textrel
+.endif
+.if !defined(SHLIB_MKMAP) || ${SHLIB_MKMAP} != "no"
+SHLIB_SHFLAGS+=		-Wl,-Map=${_LIB}.so.${SHLIB_SOVERSION}.map
+.endif
+CLEANFILES+=		${_LIB}.so.${SHLIB_SOVERSION}.map
+SHLIB_LDSTARTFILE?=	${_GCC_CRTI} ${_GCC_CRTBEGINS}
+SHLIB_LDENDFILE?=	${_GCC_CRTENDS} ${_GCC_CRTN}
+
 CFLAGS+=	${COPTS}
+OBJCFLAGS+=	${OBJCOPTS}
+AFLAGS+=	${COPTS}
 FFLAGS+=	${FOPTS}
+
+.if defined(CTFCONVERT)
+.if defined(CFLAGS) && !empty(CFLAGS:M*-g*)
+CTFFLAGS+=	-g
+.if defined(HAVE_GCC)
+#CFLAGS+=	-gdwarf-2
+.endif
+.endif
+.endif
+
+LIBSTRIPAOBJS=	yes
+.if !defined(CFLAGS) || empty(CFLAGS:M*-g*)
+LIBSTRIPCOBJS=	yes
+.endif
+.if !defined(OBJCFLAGS) || empty(OBJCFLAGS:M*-g*)
+LIBSTRIPOBJCOBJS=	yes
+.endif
+.if !defined(FFLAGS) || empty(FFLAGS:M*-g*)
+LIBSTRIPFOBJS=	yes
+.endif
+.if !defined(CSHLIBFLAGS) || empty(CSHLIBFLAGS:M*-g*) 
+LIBSTRIPSHLIBOBJS=	yes
+.endif
 
 .c.o:
 	${_MKTARGET_COMPILE}
-	${COMPILE.c} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(COPTS) && !empty(COPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.c} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
 .c.po:
 	${_MKTARGET_COMPILE}
-	${COMPILE.c} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} -pg ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(COPTS) && !empty(COPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -X -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.c} ${PROFFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${PGFLAGS} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
-.c.so:
+.c.go:
 	${_MKTARGET_COMPILE}
-	${COMPILE.c} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${CSHLIBFLAGS} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(COPTS) && !empty(COPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
-.endif
+	${COMPILE.c} ${DEBUGFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} -g ${.IMPSRC} -o ${.TARGET}
 
-.c.ln:
+.c.pico:
 	${_MKTARGET_COMPILE}
-	${LINT} ${LINTFLAGS} \
-	    ${CPPFLAGS:C/-([IDU])[  ]*/-\1/Wg:M-[IDU]*} \
-	    ${CPPFLAGS.${.IMPSRC:T}:C/-([IDU])[  ]*/-\1/Wg:M-[IDU]*} \
-	    -i ${.IMPSRC}
+	${COMPILE.c} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${CSHLIBFLAGS} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPSHLIBOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
 
 .cc.o .cpp.o .cxx.o .C.o:
 	${_MKTARGET_COMPILE}
-	${COMPILE.cc} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(COPTS) && !empty(COPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.cc} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
-.cc.po .cpp.po .cxx.o .C.po:
+.cc.po .cpp.po .cxx.po .C.po:
 	${_MKTARGET_COMPILE}
-	${COMPILE.cc} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} -pg ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(COPTS) && !empty(COPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -X -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.cc} ${PROFFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${PGFLAGS} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
-.cc.so .cpp.so .cxx.so .C.so:
+.cc.go .cpp.go .cxx.go .C.go:
 	${_MKTARGET_COMPILE}
-	${COMPILE.cc} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${CSHLIBFLAGS} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(COPTS) && !empty(COPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.cc} ${DEBUGFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} -g ${.IMPSRC} -o ${.TARGET}
+
+.cc.pico .cpp.pico .cxx.pico .C.pico:
+	${_MKTARGET_COMPILE}
+	${COMPILE.cc} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${CSHLIBFLAGS} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPSHLIBOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
 .f.o:
 	${_MKTARGET_COMPILE}
-	${COMPILE.f} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(FOPTS) && !empty(FOPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.f} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPFOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
 .f.po:
 	${_MKTARGET_COMPILE}
-	${COMPILE.f} -pg ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(FOPTS) && !empty(FOPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -X -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.f} ${PROFFLAGS} ${PGFLAGS} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPFOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
-.f.so:
+.f.go:
 	${_MKTARGET_COMPILE}
-	${COMPILE.f} ${FPICFLAGS} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(FOPTS) && !empty(FOPTS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.f} ${DEBUGFLAGS} -g ${.IMPSRC} -o ${.TARGET}
+
+.f.pico:
+	${_MKTARGET_COMPILE}
+	${COMPILE.f} ${PICFLAGS} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPFOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
 .f.ln:
@@ -240,343 +303,578 @@ FFLAGS+=	${FOPTS}
 
 .m.o:
 	${_MKTARGET_COMPILE}
-	${COMPILE.m} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(OBJCFLAGS) && !empty(OBJCFLAGS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.m} ${OBJCOPTS.${.IMPSRC:T}} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPOBJCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
 .m.po:
 	${_MKTARGET_COMPILE}
-	${COMPILE.m} -pg ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(OBJCFLAGS) && !empty(OBJCFLAGS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -X -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.m} ${PROFFLAGS} ${PGFLAGS} ${OBJCOPTS.${.IMPSRC:T}} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPOBJCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
-.m.so:
+.m.go:
 	${_MKTARGET_COMPILE}
-	${COMPILE.m} ${CSHLIBFLAGS} ${.IMPSRC} -o ${.TARGET}.tmp
-.if defined(OBJCFLAGS) && !empty(OBJCFLAGS:M*-g*)
-	mv ${.TARGET}.tmp ${.TARGET}
-.else
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.m} ${DEBUGFLAGS} -g ${OBJCOPTS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPOBJCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
-.S.o .s.o:
+.m.pico:
 	${_MKTARGET_COMPILE}
-	${COMPILE.S} \
-	    ${CFLAGS:C/-([IDU])[  ]*/-\1/Wg:M-[IDU]*} \
-	    ${AINC} ${.IMPSRC} -o ${.TARGET}.tmp
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.m} ${CSHLIBFLAGS} ${OBJCOPTS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPOBJCOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
 
-.S.po .s.po:
+.s.o:
 	${_MKTARGET_COMPILE}
-	${COMPILE.S} -DGPROF -DPROF \
-	    ${CFLAGS:C/-([IDU])[  ]*/-\1/Wg:M-[IDU]*} \
-	    ${AINC} ${.IMPSRC} -o ${.TARGET}.tmp
-	${LD} -X -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.s} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPAOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
 
-.S.so .s.so:
+.S.o:
 	${_MKTARGET_COMPILE}
-	${COMPILE.S} ${CAPICFLAGS} \
-	    ${CFLAGS:C/-([IDU])[  ]*/-\1/Wg:M-[IDU]*} \
-	    ${AINC} ${.IMPSRC} -o ${.TARGET}.tmp
-	${LD} -x -r ${.TARGET}.tmp -o ${.TARGET}
-	rm -f ${.TARGET}.tmp
+	${COMPILE.S} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPAOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
 
-.if defined(LIB)
+.s.po:
+	${_MKTARGET_COMPILE}
+	${COMPILE.s} ${PROFFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPAOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
+
+.S.po:
+	${_MKTARGET_COMPILE}
+	${COMPILE.S} ${PROFFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} ${OBJECT_TARGET}
+	${CTFCONVERT_RUN}
+.if defined(LIBSTRIPAOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
+
+.s.go:
+	${_MKTARGET_COMPILE}
+	${COMPILE.s} ${DEBUGFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}
+
+.S.go:
+	${_MKTARGET_COMPILE}
+	${COMPILE.S} ${DEBUGFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}
+
+.s.pico:
+	${_MKTARGET_COMPILE}
+	${COMPILE.s} ${PICFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPAOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
+
+.S.pico:
+	${_MKTARGET_COMPILE}
+	${COMPILE.S} ${PICFLAGS} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC} -o ${.TARGET}
+.if defined(LIBSTRIPAOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
+.endif
+
+# Declare a few variables to make our life easier later.
+_LIB:=${_LIB_PREFIX}${LIB}
+_LIB.a:=${_LIB}.a
+_LIB_p.a:=${_LIB}_p.a
+_LIB_g.a:=${_LIB}_g.a
+_LIB_pic.a:=${_LIB}_pic.a
+_LIB.ln:=llib-l${LIB}.ln
+
+.if ${MKPIC} != "no" && defined(SHLIB_FULLVERSION)
+_LIB.so:=${_LIB}.so
+_LIB.so.major:=${_LIB}.so.${SHLIB_MAJOR}
+_LIB.so.full:=${_LIB}.so.${SHLIB_FULLVERSION}
+_LIB.so.link:=${_LIB}.so.${SHLIB_FULLVERSION}.link
+.if ${MKDEBUG:Uno} != "no" && !defined(NODEBUG)
+_LIB.so.debug:=${_LIB.so.full}.debug
+.endif
+.endif
+
+_DEST.LIB:=${DESTDIR}${LIBDIR}
+_DEST.OBJ:=${DESTDIR}${_LIBSODIR}
+_DEST.LINT:=${DESTDIR}${LINTLIBDIR}
+_DEST.DEBUG:=${DESTDIR}${DEBUGDIR}${LIBDIR}
+_DEST.ODEBUG:=${DESTDIR}${DEBUGDIR}${_LIBSODIR}
+
+.if defined(LIB)							# {
 .if (${MKPIC} == "no" || (defined(LDSTATIC) && ${LDSTATIC} != "") \
 	|| ${MKLINKLIB} != "no") && ${MKSTATICLIB} != "no"
-_LIBS=lib${LIB}.a
+_LIBS=${_LIB.a}
 .else
 _LIBS=
 .endif
 
-OBJS+=${SRCS:N*.h:N*.sh:R:S/$/.o/g}
+.if ${LIBISPRIVATE} != "no" \
+   && (defined(USE_COMBINE) && ${USE_COMBINE} == "yes" \
+   && !defined(NOCOMBINE))						# {
+.for f in ${SRCS:N*.h:N*.sh:C/\.[yl]$/.c/g}
+COMBINEFLAGS.${LIB}.$f := ${CPPFLAGS.$f:D1} ${CPUFLAGS.$f:D2} ${COPTS.$f:D3} ${OBJCOPTS.$f:D4} ${CXXFLAGS.$f:D5}
+.if empty(COMBINEFLAGS.${LIB}.${f}) && !defined(NOCOMBINE.$f)
+COMBINESRCS+=	${f}
+NODPSRCS+=	${f}
+.else
+OBJS+=  	${f:R:S/$/.o/}
+.endif
+.endfor
 
-.if ${MKPROFILE} != "no"
-_LIBS+=lib${LIB}_p.a
-POBJS+=${OBJS:.o=.po}
+.if !empty(COMBINESRCS)
+OBJS+=		${_LIB}_combine.o
+${_LIB}_combine.o: ${COMBINESRCS}
+	${_MKTARGET_COMPILE}
+	${COMPILE.c} -MD --combine ${.ALLSRC} -o ${.TARGET}
+.if defined(LIBSTRIPOBJS)
+	${OBJCOPY} ${OBJCOPYLIBFLAGS} ${.TARGET}
 .endif
 
-.if ${MKPIC} != "no"
+CLEANFILES+=	${_LIB}_combine.d
+
+.if exists("${_LIB}_combine.d")
+.include "${_LIB}_combine.d"
+.endif
+.endif   # empty(XSRCS.${LIB})
+.else							# } {
+OBJS+=${SRCS:N*.h:N*.sh:R:S/$/.o/g}
+.endif							# }
+
+STOBJS+=${OBJS}
+
+LOBJS+=${LSRCS:.c=.ln} ${SRCS:M*.c:.c=.ln}
+
+.if ${LIBISPRIVATE} != "no"
+# No installation is required
+libinstall::
+.endif
+
+.if ${MKDEBUGLIB} != "no"
+_LIBS+=${_LIB_g.a}
+GOBJS+=${OBJS:.o=.go}
+DEBUGFLAGS?=-DDEBUG
+.endif
+
+.if ${MKPROFILE} != "no"
+_LIBS+=${_LIB_p.a}
+POBJS+=${OBJS:.o=.po}
+PROFFLAGS?=-DGPROF -DPROF
+.endif
+
+.if ${MKPIC} != "no"							# {
 .if ${MKPICLIB} == "no"
 .if ${MKSHLIBOBJS} != "no"
 # make _pic.a, which isn't really pic,
 # since it's needed for making shared lib.
 # but don't install it.
-SOLIB=lib${LIB}_pic.a
-SOBJS+=${OBJS:.o=.so}
+SOLIB=${_LIB_pic.a}
+SOBJS+=${OBJS:.o=.pico}
 .else
-SOLIB=lib${LIB}.a
+SOLIB=${_LIB.a}
 .endif
 .else
-SOLIB=lib${LIB}_pic.a
+SOLIB=${_LIB_pic.a}
 _LIBS+=${SOLIB}
-SOBJS+=${OBJS:.o=.so}
+SOBJS+=${OBJS:.o=.pico}
 .endif
 .if defined(SHLIB_FULLVERSION)
-_LIBS+=lib${LIB}.so.${SHLIB_FULLVERSION}
+_LIBS+=${_LIB.so.full}
 .endif
-.endif
+.endif									# }
 
-LOBJS+=${LSRCS:.c=.ln} ${SRCS:M*.c:.c=.ln}
-.if ${MKLINT} != "no" && ${MKLINKLIB} != "no" && !empty(LOBJS)
-_LIBS+=llib-l${LIB}.ln
+.if ${MKLINT} != "no" && !empty(LOBJS)
+_LIBS+=${_LIB.ln}
 .endif
 
 ALLOBJS=
 .if (${MKPIC} == "no" || (defined(LDSTATIC) && ${LDSTATIC} != "") \
 	|| ${MKLINKLIB} != "no") && ${MKSTATICLIB} != "no"
-ALLOBJS+=${OBJS}
+ALLOBJS+=${STOBJS}
 .endif
 ALLOBJS+=${POBJS} ${SOBJS}
-.if ${MKLINT} != "no" && ${MKLINKLIB} != "no" && !empty(LOBJS)
+.if ${MKLINT} != "no" && !empty(LOBJS)
 ALLOBJS+=${LOBJS}
 .endif
-.else
+.else	# !defined(LIB)							# } {
 LOBJS=
 SOBJS=
+.endif	# !defined(LIB)							# }
+
+_YLSRCS=	${SRCS:M*.[ly]:C/\..$/.c/} ${YHEADER:D${SRCS:M*.y:.y=.h}}
+
+.NOPATH: ${ALLOBJS} ${_LIBS} ${_YLSRCS}
+
+realall: ${SRCS} ${ALLOBJS:O} ${_LIBS} ${_LIB.so.debug}
+
+.if ${MKARZERO} == "yes"
+_ARFL=crsD
+_ARRANFL=sD
+_INSTRANLIB=
+.else
+_ARFL=crs
+_ARRANFL=s
+_INSTRANLIB=${empty(PRESERVE):?-a "${RANLIB} -t":}
 .endif
 
-.NOPATH: ${ALLOBJS} ${_LIBS} ${SRCS:M*.[ly]:C/\..$/.c/} ${YHEADER:D${SRCS:M*.y:.y=.h}}
-
-realall: ${SRCS} ${ALLOBJS:O} ${_LIBS}
-
+# If you change this, please consider reflecting the change in
+# the override in sys/rump/Makefile.rump.
 .if !target(__archivebuild)
 __archivebuild: .USE
 	${_MKTARGET_BUILD}
-	rm -f ${.TARGET}
-	${AR} cq ${.TARGET} `NM=${NM} ${LORDER} ${.ALLSRC:M*o} | ${TSORT}`
-	${RANLIB} ${.TARGET}
+	@rm -f ${.TARGET}
+	${AR} ${_ARFL} ${.TARGET} `NM=${NM} ${LORDER} ${.ALLSRC:M*o} | ${TSORT}`
 .endif
 
 .if !target(__archiveinstall)
 __archiveinstall: .USE
 	${_MKTARGET_INSTALL}
 	${INSTALL_FILE} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
-	    ${UPDATE:D:U-a "${RANLIB} -t"} ${SYSPKGTAG} ${.ALLSRC} ${.TARGET}
+	    ${_INSTRANLIB} ${.ALLSRC} ${.TARGET}
 .endif
 
 __archivesymlinkpic: .USE
 	${_MKTARGET_INSTALL}
-	${INSTALL_SYMLINK} ${SYSPKGTAG} ${.ALLSRC} ${.TARGET}
+	${INSTALL_SYMLINK} ${.ALLSRC} ${.TARGET}
 
-DPSRCS+=	${SRCS:M*.l:.l=.c} ${SRCS:M*.y:.y=.c}
-CLEANFILES+=	${SRCS:M*.l:.l=.c} ${SRCS:M*.y:.y=.c}
-CLEANFILES+=	${YHEADER:D${SRCS:M*.y:.y=.h}}
+.if !target(__buildstdlib)
+__buildstdlib: .USE
+	@echo building standard ${.TARGET:T:S/.o//:S/lib//} library
+	@rm -f ${.TARGET}
+	@${LINK.c:S/-nostdinc//} -nostdlib ${LDFLAGS} -Wno-unused-command-line-argument -r -o ${.TARGET} `NM=${NM} ${LORDER} ${.ALLSRC:M*o} | ${TSORT}`
+.endif
 
-${OBJS} ${POBJS} ${SOBJS} ${LOBJS}: ${DPSRCS}
+.if !target(__buildproflib)
+__buildproflib: .USE
+	@echo building profiled ${.TARGET:T:S/.o//:S/lib//} library
+	${_MKTARGET_BUILD}
+	@rm -f ${.TARGET}
+	@${LINK.c:S/-nostdinc//} -nostdlib ${LDFLAGS} -r -o ${.TARGET} `NM=${NM} ${LORDER} ${.ALLSRC:M*po} | ${TSORT}`
+.endif
 
-lib${LIB}.a:: ${OBJS} __archivebuild
+DPSRCS+=	${_YLSRCS}
+CLEANFILES+=	${_YLSRCS}
 
-lib${LIB}_p.a:: ${POBJS} __archivebuild
+${STOBJS} ${POBJS} ${GOBJS} ${SOBJS} ${LOBJS}: ${DPSRCS}
 
-lib${LIB}_pic.a:: ${SOBJS} __archivebuild
+${_LIB.a}:: ${STOBJS} __archivebuild
 
+${_LIB_p.a}:: ${POBJS} __archivebuild
+
+${_LIB_pic.a}:: ${SOBJS} __archivebuild
+
+${_LIB_g.a}:: ${GOBJS} __archivebuild
 
 _LIBLDOPTS=
 .if ${SHLIBDIR} != "/usr/lib"
-_LIBLDOPTS+=	-Wl,-rpath-link,${DESTDIR}${SHLIBDIR}:${DESTDIR}/usr/lib \
-		-R${SHLIBDIR} \
-		-L${DESTDIR}${SHLIBDIR}
+_LIBLDOPTS+=	-Wl,-rpath,${SHLIBDIR} \
+		-L=${SHLIBDIR}
 .elif ${SHLIBINSTALLDIR} != "/usr/lib"
-_LIBLDOPTS+=	-Wl,-rpath-link,${DESTDIR}${SHLIBINSTALLDIR}:${DESTDIR}/usr/lib \
-		-L${DESTDIR}${SHLIBINSTALLDIR}
+_LIBLDOPTS+=	-Wl,-rpath-link,${DESTDIR}${SHLIBINSTALLDIR} \
+		-L=${SHLIBINSTALLDIR}
+.endif
+.if ${MKSTRIPSYM:Uyes} == "yes"
+_LIBLDOPTS+=	-Wl,-x
+.else
+_LIBLDOPTS+=	-Wl,-X
 .endif
 
-lib${LIB}.so.${SHLIB_FULLVERSION}: ${SOLIB} ${DPADD} \
-    ${SHLIB_LDSTARTFILE} ${SHLIB_LDENDFILE}
-	${_MKTARGET_BUILD}
-	rm -f lib${LIB}.so.${SHLIB_FULLVERSION}
-.if defined(DESTDIR)
-	${CC} -Wl,-nostdlib -B${_GCC_CRTDIR}/ -B${DESTDIR}/usr/lib/ \
-	    ${_LIBLDOPTS} \
-	    -Wl,-x -shared ${SHLIB_SHFLAGS} ${LDFLAGS} -o ${.TARGET} \
-	    -Wl,--whole-archive ${SOLIB} \
-	    -Wl,--no-whole-archive ${LDADD} \
-	    -L${_GCC_LIBGCCDIR}
-.else
-	${CC} -Wl,-x -shared ${SHLIB_SHFLAGS} ${LDFLAGS} -o ${.TARGET} \
-	    ${_LIBLDOPTS} \
-	    -Wl,--whole-archive ${SOLIB} -Wl,--no-whole-archive ${LDADD}
+# gcc -shared now adds -lc automatically. For libraries other than libc and
+# libgcc* we add as a dependency the installed shared libc. For libc and
+# libgcc* we avoid adding libc as a dependency by using -nostdlib. Note that
+# -Xl,-nostdlib is not enough because we want to tell the compiler-driver not
+# to add standard libraries, not the linker.
+.if !defined(LIB)
+.if !empty(LIBC_SO)
+DPLIBC ?= ${DESTDIR}${LIBC_SO}
 .endif
-.if ${OBJECT_FMT} == "ELF"
+.else
+.if ${LIB} != "c" && ${LIB:Mgcc*} == ""
+.if !empty(LIBC_SO)
+DPLIBC ?= ${DESTDIR}${LIBC_SO}
+.endif
+.else
+LDLIBC ?= -nodefaultlibs
+.if ${HAVE_LIBGCC} == "yes" && ${LIB} == "c"
+LDADD+= -lgcc
+.endif
+.endif
+.endif
+
+.if ${LIBISCXX} != "no"
+LIBCC:=	${CXX}
+. if ${MKLIBCXX} == "yes"
+LIBDPLIBS+=     c++	${.CURDIR}/../../../../../contrib/libc++/lib
+. else
+LIBDPLIBS+=     stdc++	${.CURDIR}/../../../../../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
+. endif
+.else
+LIBCC:=	${CC}
+.endif
+
+_LDADD.${_LIB}=	${LDADD} ${LDADD.${_LIB}}
+_LDFLAGS.${_LIB}=	${LDFLAGS} ${LDFLAGS.${_LIB}}
+
+_MAINLIBDEPS=	${SOLIB} ${DPADD} ${DPLIBC} \
+		${SHLIB_LDSTARTFILE} ${SHLIB_LDENDFILE}
+
+.if defined(_LIB.so.debug)
+${_LIB.so.debug}: ${_LIB.so.link}
+	${_MKTARGET_CREATE}
+	(  ${OBJCOPY} --only-keep-debug \
+		${_LIB.so.link} ${_LIB.so.debug} \
+	) || (rm -f ${.TARGET}; false)
+${_LIB.so.full}: ${_LIB.so.link} ${_LIB.so.debug}
+	${_MKTARGET_CREATE}
+	(  ${OBJCOPY} --strip-debug -p -R .gnu_debuglink \
+		--add-gnu-debuglink=${_LIB.so.debug} \
+		${_LIB.so.link} ${_LIB.so.full}.tmp && \
+		${MV} ${_LIB.so.full}.tmp ${_LIB.so.full} \
+	) || (rm -f ${.TARGET}; false)
+${_LIB.so.link}: ${_MAINLIBDEPS}
+.else # aka no MKDEBUG
+${_LIB.so.full}: ${_MAINLIBDEPS}
+.endif
+	${_MKTARGET_BUILD}
+	rm -f ${.TARGET}
+	${LIBCC} ${LDLIBC} -shared ${SHLIB_SHFLAGS} \
+	    ${_LDFLAGS.${_LIB}} -o ${.TARGET}.tmp ${_LIBLDOPTS} \
+	    -Wl,--whole-archive ${SOLIB} \
+	    -Wl,--no-whole-archive ${_LDADD.${_LIB}}
+.if ${MKSTRIPIDENT} != "no"
+	${OBJCOPY} -R .ident ${.TARGET}.tmp
+.endif
+	${MV} ${.TARGET}.tmp ${.TARGET}
 #  We don't use INSTALL_SYMLINK here because this is just
 #  happening inside the build directory/objdir. XXX Why does
 #  this spend so much effort on libraries that aren't live??? XXX
-	${HOST_LN} -sf lib${LIB}.so.${SHLIB_FULLVERSION} lib${LIB}.so.${SHLIB_MAJOR}.tmp
-	mv -f lib${LIB}.so.${SHLIB_MAJOR}.tmp lib${LIB}.so.${SHLIB_MAJOR}
-	${HOST_LN} -sf lib${LIB}.so.${SHLIB_FULLVERSION} lib${LIB}.so.tmp
-	mv -f lib${LIB}.so.tmp lib${LIB}.so
+#  XXX Also creates dead symlinks until the .full rule runs
+#  above and creates the main link
+.if defined(SHLIB_FULLVERSION) && defined(SHLIB_MAJOR) && \
+    "${SHLIB_FULLVERSION}" != "${SHLIB_MAJOR}"
+	${HOST_LN} -sf ${_LIB.so.full} ${_LIB.so.major}.tmp
+	${MV} ${_LIB.so.major}.tmp ${_LIB.so.major}
 .endif
+	${HOST_LN} -sf ${_LIB.so.full} ${_LIB.so}.tmp
+	${MV} ${_LIB.so}.tmp ${_LIB.so}
 
-.if !empty(LOBJS)
+.if !empty(LOBJS)							# {
 LLIBS?=		-lc
-llib-l${LIB}.ln: ${LOBJS}
+${_LIB.ln}: ${LOBJS}
 	${_MKTARGET_COMPILE}
-	rm -f llib-l${LIB}.ln
+	rm -f ${.TARGET}
 .if defined(DESTDIR)
 	${LINT} -C${LIB} ${.ALLSRC} -L${DESTDIR}/usr/libdata ${LLIBS}
 .else
 	${LINT} -C${LIB} ${.ALLSRC} ${LLIBS}
 .endif
+.endif									# }
+
+lint: ${LOBJS}
+.if defined(LOBJS) && !empty(LOBJS)
+	${LINT} ${LINTFLAGS} ${LOBJS}
 .endif
 
-cleanlib: .PHONY
-	rm -f a.out [Ee]rrs mklog core *.core ${CLEANFILES}
-	rm -f lib${LIB}.a ${OBJS}
-	rm -f lib${LIB}_p.a ${POBJS}
-	rm -f lib${LIB}_pic.a lib${LIB}.so.* lib${LIB}.so ${SOBJS}
-	rm -f ${OBJS:=.tmp} ${POBJS:=.tmp} ${SOBJS:=.tmp}
-	rm -f llib-l${LIB}.ln ${LOBJS}
 
-.if !target(libinstall)
+# If the number of entries in CLEANFILES is too large, then the
+# commands in bsd.clean.mk encounter errors like "exec(/bin/sh)
+# failed (Argument list too long)".  Avoid that by splitting the
+# files to clean into several lists using different variable names.
+# __cleanuse is an internal target in bsd.clean.mk; the way we
+# use it here mimics the way it's used by the clean target in
+# bsd.clean.mk.
+#
+clean: libclean1 libclean2 libclean3 libclean4 libclean5
+libclean1: .PHONY .MADE __cleanuse LIBCLEANFILES1
+libclean2: .PHONY .MADE __cleanuse LIBCLEANFILES2
+libclean3: .PHONY .MADE __cleanuse LIBCLEANFILES3
+libclean4: .PHONY .MADE __cleanuse LIBCLEANFILES4
+libclean5: .PHONY .MADE __cleanuse LIBCLEANFILES5
+CLEANFILES+= a.out [Ee]rrs mklog core *.core
+LIBCLEANFILES1+= ${_LIB.a}   ${STOBJS} ${STOBJS:=.tmp}
+LIBCLEANFILES2+= ${_LIB_p.a} ${POBJS}  ${POBJS:=.tmp}
+LIBCLEANFILES3+= ${_LIB_g.a} ${GOBJS}  ${GOBJS:=.tmp}
+LIBCLEANFILES4+= ${_LIB_pic.a}
+.if ${MKPIC} != "no" && defined(SHLIB_FULLVERSION)
+LIBCLEANFILES4+= ${_LIB.so}.* ${_LIB.so} ${_LIB.so.debug}
+.endif
+LIBCLEANFILES4+= ${SOBJS} ${SOBJS:=.tmp}
+LIBCLEANFILES5+= ${_LIB.ln} ${LOBJS}
+
+.if !target(libinstall)							# {
 # Make sure it gets defined, in case MKPIC==no && MKLINKLIB==no
 libinstall::
 
 .if ${MKLINKLIB} != "no" && ${MKSTATICLIB} != "no"
-libinstall:: ${DESTDIR}${LIBDIR}/lib${LIB}.a
-.PRECIOUS: ${DESTDIR}${LIBDIR}/lib${LIB}.a
+libinstall:: ${_DEST.LIB}/${_LIB.a}
+.PRECIOUS: ${_DEST.LIB}/${_LIB.a}
 
-.if !defined(UPDATE)
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}.a)
-${DESTDIR}${LIBDIR}/lib${LIB}.a! .MADE
+.if ${MKUPDATE} == "no"
+.if !defined(BUILD) && !make(all) && !make(${_LIB.a})
+${_DEST.LIB}/${_LIB.a}! .MADE
 .endif
-${DESTDIR}${LIBDIR}/lib${LIB}.a! lib${LIB}.a __archiveinstall
+${_DEST.LIB}/${_LIB.a}! ${_LIB.a} __archiveinstall
 .else
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}.a)
-${DESTDIR}${LIBDIR}/lib${LIB}.a: .MADE
+.if !defined(BUILD) && !make(all) && !make(${_LIB.a})
+${_DEST.LIB}/${_LIB.a}: .MADE
 .endif
-${DESTDIR}${LIBDIR}/lib${LIB}.a: lib${LIB}.a __archiveinstall
+${_DEST.LIB}/${_LIB.a}: ${_LIB.a} __archiveinstall
 .endif
 .endif
 
 .if ${MKPROFILE} != "no"
-libinstall:: ${DESTDIR}${LIBDIR}/lib${LIB}_p.a
-.PRECIOUS: ${DESTDIR}${LIBDIR}/lib${LIB}_p.a
+libinstall:: ${_DEST.LIB}/${_LIB_p.a}
+.PRECIOUS: ${_DEST.LIB}/${_LIB_p.a}
 
-.if !defined(UPDATE)
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}_p.a)
-${DESTDIR}${LIBDIR}/lib${LIB}_p.a! .MADE
+.if ${MKUPDATE} == "no"
+.if !defined(BUILD) && !make(all) && !make(${_LIB_p.a})
+${_DEST.LIB}/${_LIB_p.a}! .MADE
 .endif
-${DESTDIR}${LIBDIR}/lib${LIB}_p.a! lib${LIB}_p.a __archiveinstall
+${_DEST.LIB}/${_LIB_p.a}! ${_LIB_p.a} __archiveinstall
 .else
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}_p.a)
-${DESTDIR}${LIBDIR}/lib${LIB}_p.a: .MADE
+.if !defined(BUILD) && !make(all) && !make(${_LIB_p.a})
+${_DEST.LIB}/${_LIB_p.a}: .MADE
 .endif
-${DESTDIR}${LIBDIR}/lib${LIB}_p.a: lib${LIB}_p.a __archiveinstall
+${_DEST.LIB}/${_LIB_p.a}: ${_LIB_p.a} __archiveinstall
+.endif
+.endif
+
+.if ${MKDEBUGLIB} != "no"
+libinstall:: ${_DEST.LIB}/${_LIB_g.a}
+.PRECIOUS: ${_DEST.LIB}/${_LIB_g.a}
+
+.if ${MKUPDATE} == "no"
+.if !defined(BUILD) && !make(all) && !make(${_LIB_g.a})
+${_DEST.LIB}/${_LIB_g.a}! .MADE
+.endif
+${_DEST.LIB}/${_LIB_g.a}! ${_LIB_g.a} __archiveinstall
+.else
+.if !defined(BUILD) && !make(all) && !make(${LIB_g.a})
+${_DEST.LIB}/${_LIB_g.a}: .MADE
+.endif
+${_DEST.LIB}/${_LIB_g.a}: ${_LIB_g.a} __archiveinstall
 .endif
 .endif
 
 .if ${MKPIC} != "no" && ${MKPICINSTALL} != "no"
-libinstall:: ${DESTDIR}${LIBDIR}/lib${LIB}_pic.a
-.PRECIOUS: ${DESTDIR}${LIBDIR}/lib${LIB}_pic.a
+libinstall:: ${_DEST.LIB}/${_LIB_pic.a}
+.PRECIOUS: ${_DEST.LIB}/${_LIB_pic.a}
 
-.if !defined(UPDATE)
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}_pic.a)
-${DESTDIR}${LIBDIR}/lib${LIB}_pic.a! .MADE
+.if ${MKUPDATE} == "no"
+.if !defined(BUILD) && !make(all) && !make(${_LIB_pic.a})
+${_DEST.LIB}/${_LIB_pic.a}! .MADE
 .endif
 .if ${MKPICLIB} == "no"
-${DESTDIR}${LIBDIR}/lib${LIB}_pic.a! lib${LIB}.a __archivesymlinkpic
+${_DEST.LIB}/${_LIB_pic.a}! ${_LIB.a} __archivesymlinkpic
 .else
-${DESTDIR}${LIBDIR}/lib${LIB}_pic.a! lib${LIB}_pic.a __archiveinstall
+${_DEST.LIB}/${_LIB_pic.a}! ${_LIB_pic.a} __archiveinstall
 .endif
 .else
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}_pic.a)
-${DESTDIR}${LIBDIR}/lib${LIB}_pic.a: .MADE
+.if !defined(BUILD) && !make(all) && !make(${_LIB_pic.a})
+${_DEST.LIB}/${_LIB_pic.a}: .MADE
 .endif
 .if ${MKPICLIB} == "no"
-${DESTDIR}${LIBDIR}/lib${LIB}_pic.a: lib${LIB}.a __archivesymlinkpic
+${_DEST.LIB}/${_LIB_pic.a}: ${_LIB.a} __archivesymlinkpic
 .else
-${DESTDIR}${LIBDIR}/lib${LIB}_pic.a: lib${LIB}_pic.a __archiveinstall
+${_DEST.LIB}/${_LIB_pic.a}: ${_LIB_pic.a} __archiveinstall
 .endif
 .endif
 .endif
 
 .if ${MKPIC} != "no" && defined(SHLIB_FULLVERSION)
-libinstall:: ${DESTDIR}${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION}
-.PRECIOUS: ${DESTDIR}${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION}
 
-.if !defined(UPDATE)
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}.so.${SHLIB_FULLVERSION})
-${DESTDIR}${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION}! .MADE
+libinstall:: ${_DEST.OBJ}/${_LIB.so.full}
+.PRECIOUS: ${_DEST.OBJ}/${_LIB.so.full}
+
+.if ${MKUPDATE} == "no"
+.if !defined(BUILD) && !make(all) && !make(${_LIB.so.full})
+${_DEST.OBJ}/${_LIB.so.full}! .MADE
 .endif
-${DESTDIR}${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION}! lib${LIB}.so.${SHLIB_FULLVERSION}
+${_DEST.OBJ}/${_LIB.so.full}! ${_LIB.so.full}
 .else
-.if !defined(BUILD) && !make(all) && !make(lib${LIB}.so.${SHLIB_FULLVERSION})
-${DESTDIR}${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION}: .MADE
+.if !defined(BUILD) && !make(all) && !make(${_LIB.so.full})
+${_DEST.OBJ}/${_LIB.so.full}: .MADE
 .endif
-${DESTDIR}${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION}: lib${LIB}.so.${SHLIB_FULLVERSION}
+${_DEST.OBJ}/${_LIB.so.full}: ${_LIB.so.full}
 .endif
 	${_MKTARGET_INSTALL}
 	${INSTALL_FILE} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
-		${SYSPKGTAG} ${.ALLSRC} ${.TARGET}
+	    ${.ALLSRC} ${.TARGET}
 .if ${_LIBSODIR} != ${LIBDIR}
-	${INSTALL_SYMLINK} ${SYSPKGTAG} \
-		${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION} \
-		${DESTDIR}${LIBDIR}/lib${LIB}.so.${SHLIB_FULLVERSION}
+	${INSTALL_SYMLINK} -l r ${_DEST.OBJ}/${_LIB.so.full} \
+	    ${_DEST.LIB}/${_LIB.so.full} 
 .endif
-.if ${OBJECT_FMT} == "a.out" && !defined(DESTDIR)
-	/sbin/ldconfig -m ${_LIBSODIR} ${LIBDIR}
-.endif
-.if ${OBJECT_FMT} == "ELF"
-	${INSTALL_SYMLINK} ${SYSPKGTAG} \
-		lib${LIB}.so.${SHLIB_FULLVERSION} \
-		${DESTDIR}${_LIBSODIR}/lib${LIB}.so.${SHLIB_MAJOR}
+.if defined(SHLIB_FULLVERSION) && defined(SHLIB_MAJOR) && \
+    "${SHLIB_FULLVERSION}" != "${SHLIB_MAJOR}"
+	${INSTALL_SYMLINK} ${_LIB.so.full} ${_DEST.OBJ}/${_LIB.so.major}
 .if ${_LIBSODIR} != ${LIBDIR}
-	${INSTALL_SYMLINK} ${SYSPKGTAG} \
-		${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION} \
-		${DESTDIR}${LIBDIR}/lib${LIB}.so.${SHLIB_MAJOR}
+	${INSTALL_SYMLINK} -l r ${_DEST.OBJ}/${_LIB.so.full} \
+	    ${_DEST.LIB}/${_LIB.so.major}
+.endif
 .endif
 .if ${MKLINKLIB} != "no"
-	${INSTALL_SYMLINK} ${SYSPKGTAG} \
-		lib${LIB}.so.${SHLIB_FULLVERSION} \
-		${DESTDIR}${_LIBSODIR}/lib${LIB}.so
+	${INSTALL_SYMLINK}  ${_LIB.so.full} ${_DEST.OBJ}/${_LIB.so}
 .if ${_LIBSODIR} != ${LIBDIR}
-	${INSTALL_SYMLINK} ${SYSPKGTAG} \
-		${_LIBSODIR}/lib${LIB}.so.${SHLIB_FULLVERSION} \
-		${DESTDIR}${LIBDIR}/lib${LIB}.so
-.endif
+	${INSTALL_SYMLINK} -l r ${_DEST.OBJ}/${_LIB.so.full} \
+	    ${_DEST.LIB}/${_LIB.so}
 .endif
 .endif
 .endif
 
-.if ${MKLINT} != "no" && ${MKLINKLIB} != "no" && !empty(LOBJS)
-libinstall:: ${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln
-.PRECIOUS: ${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln
+.if defined(_LIB.so.debug)
+libinstall:: ${_DEST.DEBUG}/${_LIB.so.debug}
+.PRECIOUS: ${_DEST.DEBUG}/${_LIB.so.debug}
 
-.if !defined(UPDATE)
-.if !defined(BUILD) && !make(all) && !make(llib-l${LIB}.ln)
-${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln! .MADE
+${_DEST.DEBUG}/${_LIB.so.debug}: ${_LIB.so.debug}
+	${_MKTARGET_INSTALL}
+	${INSTALL_FILE} -o ${DEBUGOWN} -g ${DEBUGGRP} -m ${DEBUGMODE} \
+	    ${.ALLSRC} ${.TARGET}
+.if ${_LIBSODIR} != ${LIBDIR}
+	${INSTALL_SYMLINK} -l r ${_DEST.DEBUG}/${_LIB.so.debug} \
+	    ${_DEST.ODEBUG}/${_LIB.so.debug} 
 .endif
-${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln! llib-l${LIB}.ln
+.endif
+
+.if ${MKLINT} != "no" && !empty(LOBJS)
+libinstall:: ${_DEST.LINT}/${_LIB.ln}
+.PRECIOUS: ${_DEST.LINT}/${_LIB.ln}
+
+.if ${MKUPDATE} == "no"
+.if !defined(BUILD) && !make(all) && !make(${_LIB.ln})
+${_DEST.LINT}/${_LIB.ln}! .MADE
+.endif
+${_DEST.LINT}/${_LIB.ln}! ${_LIB.ln}
 .else
-.if !defined(BUILD) && !make(all) && !make(llib-l${LIB}.ln)
-${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln: .MADE
+.if !defined(BUILD) && !make(all) && !make(${_LIB.ln})
+${_DEST.LINT}/${_LIB.ln}: .MADE
 .endif
-${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln: llib-l${LIB}.ln
+${_DEST.LINT}/${_LIB.ln}: ${_LIB.ln}
 .endif
 	${_MKTARGET_INSTALL}
 	${INSTALL_FILE} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
-		${SYSPKGTAG} ${.ALLSRC} ${DESTDIR}${LINTLIBDIR}
+		${.ALLSRC} ${_DEST.LINT}
 .endif
-.endif
+.endif	# !target(libinstall)						# }
 
 ##### Pull in related .mk logic
+LINKSOWN?= 	${LIBOWN}
+LINKSGRP?= 	${LIBGRP}
+LINKSMODE?= ${LIBMODE}
 .include <bsd.man.mk>
 .include <bsd.nls.mk>
 .include <bsd.files.mk>
 .include <bsd.inc.mk>
 .include <bsd.links.mk>
 .include <bsd.dep.mk>
+.include <bsd.clang-analyze.mk>
+.include <bsd.clean.mk>
 
 ${TARGETS}:	# ensure existence

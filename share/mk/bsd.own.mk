@@ -109,6 +109,23 @@ EXTERNAL_GDB_SUBDIR=		gdb.old
 EXTERNAL_GDB_SUBDIR=		/does/not/exist
 .endif
 
+#
+# What OpenSSL is used?
+# 
+
+#
+# Does the platform support ACPI?
+#
+
+#
+# Does the platform support UEFI?
+#
+
+
+#
+# Does the platform support NVMM?
+#
+
 .if !empty(MACHINE_ARCH:Mearm*)
 _LIBC_COMPILER_RT.${MACHINE_ARCH}=	yes
 .endif
@@ -129,6 +146,20 @@ HAVE_LIBGCC?=	yes
 HAVE_LIBGCC_EH?=	no
 .else
 HAVE_LIBGCC_EH?=	yes
+.endif
+
+# Coverity does not like SSP
+.if defined(COVERITY_TOP_CONFIG) || \
+    ${MACHINE} == "alpha" || \
+    ${MACHINE} == "hppa" || \
+    ${MACHINE} == "ia64" || \
+    ${MACHINE_CPU} == "mips"
+HAVE_SSP?=	no
+.else
+HAVE_SSP?=	yes
+.if !defined(NOFORT) && ${USE_FORT:Uno} != "no"
+USE_SSP?=	yes
+.endif
 .endif
 
 .if empty(.MAKEFLAGS:tW:M*-V .OBJDIR*)
@@ -259,7 +290,32 @@ TOOL_OBJC.clang=	${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-clang
 TOOL_CC.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-pcc
 TOOL_CPP.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-pcpp
 TOOL_CXX.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-p++
-.endif	# EXTERNAL_TOOLCHAIN		
+.endif	# EXTERNAL_TOOLCHAIN
+
+#
+# Make sure DESTDIR is set, so that builds with these tools always
+# get appropriate -nostdinc, -nostdlib, etc. handling.  The default is
+# <empty string>, meaning start from /, the root directory.
+#
+DESTDIR?=
+
+# Don't append another copy of sysroot (coming from COMPATCPPFLAGS etc.)
+# because it confuses Coverity. Still we need to cov-configure specially
+# for each specific sysroot argument.
+# Also don't add a sysroot at all if a rumpkernel build.
+.if !defined(HOSTPROG) && !defined(HOSTLIB) && !defined(RUMPRUN)
+.  if ${DESTDIR} != ""
+.	if empty(CPPFLAGS:M*--sysroot=*)
+CPPFLAGS+=	--sysroot=${DESTDIR}
+.	endif
+LDFLAGS+=	--sysroot=${DESTDIR}
+.  else
+.	if empty(CPPFLAGS:M*--sysroot=*)
+CPPFLAGS+=	--sysroot=/
+.	endif
+LDFLAGS+=	--sysroot=/
+.  endif
+.endif
 
 DBSYM=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-dbsym
 INSTALL=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-install
@@ -463,6 +519,70 @@ TOOL_ZIC=			zic
 
 .endif	# USETOOLS != yes						# }
 
+# Standalone code should not be compiled with PIE or CTF
+# Should create a better test
+.if defined(BINDIR) && ${BINDIR} == "/usr/mdec"
+NOPIE=			# defined
+NOCTF=			# defined
+.elif ${MACHINE} == "sun2"
+NOPIE=			# we don't have PIC, so no PIE
+.endif
+
+# Fallback to ensure that all variables are defined to something
+TOOL_CC.false=		false
+TOOL_CPP.false=		false
+TOOL_CXX.false=		false
+TOOL_FC.false=		false
+TOOL_OBJC.false=	false
+
+AVAILABLE_COMPILER?=	${HAVE_PCC:Dpcc} ${HAVE_LLVM:Dclang} ${HAVE_GCC:Dgcc} false
+
+.for _t in CC CPP CXX FC OBJC
+ACTIVE_${_t}=	${AVAILABLE_COMPILER:@.c.@ ${ !defined(UNSUPPORTED_COMPILER.${.c.}) && defined(TOOL_${_t}.${.c.}) :? ${.c.} : }@:[1]}
+SUPPORTED_${_t}=${AVAILABLE_COMPILER:Nfalse:@.c.@ ${ !defined(UNSUPPORTED_COMPILER.${.c.}) && defined(TOOL_${_t}.${.c.}) :? ${.c.} : }@}
+.endfor
+# make bugs prevent moving this into the .for loop
+CC=		${TOOL_CC.${ACTIVE_CC}}
+CPP=	${TOOL_CPP.${ACTIVE_CPP}}
+CXX=	${TOOL_CXX.${ACTIVE_CXX}}
+FC=		${TOOL_FC.${ACTIVE_FC}}
+OBJC=	${TOOL_OBJC.${ACTIVE_OBJC}}
+
+# For each ${MACHINE_CPU}, list the ports that use it.
+MACHINES.aarch64=	evbarm
+MACHINES.arm=		acorn32 cats epoc32 evbarm hpcarm \
+					iyonix netwinder shark zaurus
+MACHINES.i386=		i386
+MACHINES.riscv=		riscv
+MACHINES.x86_64=	amd64
+
+# OBJCOPY flags to create a.out binaries for old firmware
+# shared among src/distrib and ${MACHINE}/conf/Makefile.${MACHINE}.inc
+.if ${MACHINE_CPU} == "arm"
+OBJCOPY_ELF2AOUT_FLAGS?=	\
+	-O a.out-arm-netbsd	\
+	-R .ident		\
+	-R .ARM.attributes	\
+	-R .ARM.exidx		\
+	-R .ARM.extab		\
+	-R .SUNW_ctf		\
+	-R .arm.atpcs		\
+	-R .comment		\
+	-R .debug_abbrev	\
+	-R .debug_aranges	\
+	-R .debug_info		\
+	-R .debug_line		\
+	-R .debug_frame		\
+	-R .debug_loc		\
+	-R .debug_pubnames	\
+	-R .debug_pubtypes	\
+	-R .debug_ranges	\
+	-R .debug_str		\
+	-R .debug_macinfo	\
+	-R .eh_frame		\
+	-R .note.netbsd.ident
+.endif
+
 #
 # Targets to check if DESTDIR or RELEASEDIR is provided
 #
@@ -485,26 +605,6 @@ check_RELEASEDIR: .PHONY .NOTMAIN
 	@true
 .endif
 .endif
-
-.if ${USETOOLS} == "yes"						# {
-#
-# Make sure DESTDIR is set, so that builds with these tools always
-# get appropriate -nostdinc, -nostdlib, etc. handling.  The default is
-# <empty string>, meaning start from /, the root directory.
-#
-DESTDIR?=
-.endif											# }
-
-#
-# Build a dynamically linked /bin and /sbin, with the necessary shared
-# libraries moved from /usr/lib to /lib and the shared linker moved
-# from /usr/libexec to /lib
-#
-# Note that if the BINDIR is not /bin or /sbin, then we always use the
-# non-DYNAMICROOT behavior (i.e. it is only enabled for programs in /bin
-# and /sbin).  See <bsd.shlib.mk>.
-#
-#MKDYNAMICROOT?=	yes
 
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
@@ -576,6 +676,17 @@ MKGCC:= no
 MKGCC:= no
 .endif
 
+MKGDB.riscv32=	no
+MKGDB.riscv64=	no
+
+# No kernel modules for or1k, riscv or mips (yet)
+MKKMOD.riscv32=	no
+MKKMOD.riscv64=	no
+
+# No profiling for or1k (yet)
+MKPROFILE.riscv32=no
+MKPROFILE.riscv64=no
+
 #
 # GCC warnings with simple disables.  Use these with eg
 # COPTS.foo.c+= ${GCC_NO_STRINGOP_TRUNCATION}.
@@ -604,18 +715,28 @@ NO_ADDR_OF_PACKED_MEMBER=	${CLANG_NO_ADDR_OF_PACKED_MEMBER} ${GCC_NO_ADDR_OF_PAC
 #
 SHLIB_VERSION_FILE?= ${.CURDIR}/shlib_version
 
-# For each ${MACHINE_CPU}, list the ports that use it.
-MACHINES.aarch64=	evbarm
-MACHINES.arm=		evbarm
-MACHINES.i386=		i386
-MACHINES.riscv=		riscv
-MACHINES.x86_64=	amd64
-
 #
 # GNU sources and packages sometimes see architecture names differently.
 #
 GNU_ARCH.aarch64eb=aarch64_be
 GNU_ARCH.earm=arm
+GNU_ARCH.earmhf=arm
+GNU_ARCH.earmeb=armeb
+GNU_ARCH.earmhfeb=armeb
+GNU_ARCH.earmv4=armv4
+GNU_ARCH.earmv4eb=armv4eb
+GNU_ARCH.earmv5=arm
+GNU_ARCH.earmv5hf=arm
+GNU_ARCH.earmv5eb=armeb
+GNU_ARCH.earmv5hfeb=armeb
+GNU_ARCH.earmv6=armv6
+GNU_ARCH.earmv6hf=armv6
+GNU_ARCH.earmv6eb=armv6eb
+GNU_ARCH.earmv6hfeb=armv6eb
+GNU_ARCH.earmv7=armv7
+GNU_ARCH.earmv7hf=armv7
+GNU_ARCH.earmv7eb=armv7eb
+GNU_ARCH.earmv7hfeb=armv7eb
 GNU_ARCH.i386=i486
 GCC_CONFIG_ARCH.i386=i486
 GCC_CONFIG_TUNE.i386=nocona
@@ -628,14 +749,22 @@ MACHINE_GNU_ARCH=${GNU_ARCH.${MACHINE_ARCH}:U${MACHINE_ARCH}}
 #
 .if (!empty(MACHINE_ARCH:Mearm*))
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf-${MACHINE_ARCH:C/eb//:C/v[4-7]//:S/earm/eabi/}
-.elif ${OBJECT_FMT} == "ELF" &&  		\
-	(${MACHINE_GNU_ARCH} == "arm" || 	\
+.elif (${MACHINE_GNU_ARCH} == "arm" || 	\
 	${MACHINE_GNU_ARCH} == "armeb" || 	\
 	${MACHINE_ARCH} == "i386")
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
 .else
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 .endif
+
+.if !empty(MACHINE_ARCH:M*arm*)
+# Flags to pass to CC for using the old APCS ABI on ARM for compat or stand.
+ARM_APCS_FLAGS=	-mabi=apcs-gnu -mfloat-abi=soft -marm
+ARM_APCS_FLAGS+= ${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 8:? -mno-thumb-interwork :}
+ARM_APCS_FLAGS+=${${ACTIVE_CC} == "clang":? -target ${MACHINE_GNU_ARCH}--netbsdelf -B ${TOOLDIR}/${MACHINE_GNU_PLATFORM}/bin :}
+.endif
+
+GENASSYM_CPPFLAGS+=	${${ACTIVE_CC} == "clang":? -no-integrated-as :}
 
 TARGETS+=		all clean cleandir depend dependall includes 					\
 				install lint obj regress tags html analyze describe 		
@@ -676,8 +805,9 @@ dependall:	.NOTMAIN realdepend .MAKE
 # regardless of user's mk.conf setting).
 #
 .for var in \
-	CRYPTO DOC HTML LIBCSANITIZER LINKLIB LINT MAN NLS OBJ PIC PICINSTALL PROFILE 	\
-	SHARE STATICLIB DEBUGLIB SANITIZER RELRO
+	COMPAT CRYPTO DOC HTML INFO LIBCSANITIZER LINKLIB \
+	LINT MAN NLS OBJ PIC PICINSTALL PROFILE SHARE \
+	STATICLIB DEBUGLIB SANITIZER RELRO
 .if defined(NO${var})
 MK${var}:=	no
 .endif
@@ -692,13 +822,42 @@ MK${var}:=	yes
 .endif
 .endfor
 
+
+#
+# MK* options which have variable defaults.
+#
+# aarch64eb is not yet supported.
+#
+.if ${MACHINE_ARCH} == "x86_64" || \
+	(${MACHINE_ARCH} == "aarch64" && ${HAVE_GCC:U0} == 0) || \
+	${MACHINE_ARCH} == "riscv64" || \
+    !empty(MACHINE_ARCH:Mearm*)
+MKCOMPAT?=	yes
+.else
+# Don't let this build where it really isn't supported.
+MKCOMPAT:=	no
+.endif
+
+.if ${MKCOMPAT} == "no"
+MKCOMPATTESTS:=	no
+MKCOMPATX11:=	no
+.endif
+
+#
+# These platforms always use softfloat.
+#
+.if (${MACHINE_CPU} == "arm" && ${MACHINE_ARCH:M*hf*} == "")
+MKSOFTFLOAT=	yes
+.endif
+
 #
 # PIE is enabled on many platforms by default.
 #
 # Coverity does not like PIE
 .if !defined(COVERITY_TOP_CONFIG) && \
     (${MACHINE_ARCH} == "i386" || \
-    ${MACHINE_ARCH} == "x86_64")
+    ${MACHINE_ARCH} == "x86_64" || \
+    ${MACHINE_CPU} == "arm")
 MKPIE?=		yes
 .else
 MKPIE?=		no
@@ -754,6 +913,24 @@ ${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
 .endfor
 
 #
+# MKGCCCMDS is only valid if we are building GCC so make it dependent on that.
+#
+_MKVARS.yes += MKGCCCMDS
+MKGCCCMDS?=	${MKGCC}
+
+#
+# Sanitizers, only "address" and "undefined" are supported by gcc
+#
+MKSANITIZER?=		no
+USE_SANITIZER?=		address
+
+#
+# Sanitizers implemented in libc, only "undefined" is supported
+#
+MKLIBCSANITIZER?=	no
+USE_LIBCSANITIZER?=	undefined
+
+#
 # MK* options which default to "no".
 #
 _MKVARS.no= \
@@ -780,25 +957,6 @@ _MKVARS.no= \
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
 .endfor
-
-
-#
-# MKGCCCMDS is only valid if we are building GCC so make it dependent on that.
-#
-_MKVARS.yes += MKGCCCMDS
-MKGCCCMDS?=	${MKGCC}
-
-#
-# Sanitizers, only "address" and "undefined" are supported by gcc
-#
-MKSANITIZER?=		no
-USE_SANITIZER?=		address
-
-#
-# Sanitizers implemented in libc, only "undefined" is supported
-#
-MKLIBCSANITIZER?=	no
-USE_LIBCSANITIZER?=	undefined
 
 #
 # Force some options off if their dependencies are off.
@@ -848,8 +1006,13 @@ MKMAN:=			no
 MKNLS:=			no
 .endif
 
-_NEEDS_LIBCXX.i386=		yes
-_NEEDS_LIBCXX.x86_64=	yes
+.if !empty(MACHINE_ARCH:Mearm*)
+_NEEDS_LIBCXX.${MACHINE_ARCH}=	yes
+.endif
+_NEEDS_LIBCXX.aarch64=		yes
+_NEEDS_LIBCXX.aarch64eb=	yes
+_NEEDS_LIBCXX.i386=			yes
+_NEEDS_LIBCXX.x86_64=		yes
 
 .if ${MKLLVM} == "yes" && ${_NEEDS_LIBCXX.${MACHINE_ARCH}:Uno} == "yes"
 MKLIBCXX:=		yes

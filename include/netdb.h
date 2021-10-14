@@ -17,7 +17,17 @@
 
 #include <sys/cdefs.h>
 #include <machine/endian.h>
-//#include <sys/ansi.h>
+#include <sys/ansi.h>
+#include <inttypes.h>
+
+/*
+ * Data types
+ */
+
+#ifdef  _BSD_SIZE_T_
+typedef _BSD_SIZE_T_	size_t;
+#undef  _BSD_SIZE_T_
+#endif
 
 /*
  * Structures returned by network
@@ -32,7 +42,7 @@ struct	hostent {
 	int			h_addrtype;			/* host address type */
 	int			h_length;			/* length of address */
 	char		**h_addr_list;		/* list of addresses from name server */
-#define	h_addr	h_addr_list[0]	/* address, for backward compatiblity */
+#define	h_addr	h_addr_list[0]		/* address, for backward compatiblity */
 };
 
 /*
@@ -59,11 +69,6 @@ struct	protoent {
 	int			p_proto;		/* protocol # */
 };
 
-struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
-struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
-struct servent	*getservbyname(), *getservbyport(), *getservent();
-struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
-
 /*
  * Error return codes from gethostbyname() and gethostbyaddr()
  * (left in extern int h_errno).
@@ -77,5 +82,11 @@ struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
 
 unsigned long	gethostid();
 
+__BEGIN_DECLS
+struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
+struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
+struct servent	*getservbyname(), *getservbyport(), *getservent();
+struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
+__END_DECLS
 
 #endif /* !_NETDB_H_ */
