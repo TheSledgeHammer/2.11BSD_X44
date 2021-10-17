@@ -48,11 +48,8 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 SUBDIR+=	libkern
 .endif
 
-#SUBDIR+=	../contrib/am-utils/lib
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/lib/libelf
-
-#SUBDIR+=	../contrib/expat/lib
 
 SUBDIR+=	../contrib/gnu/libmalloc
 
@@ -87,10 +84,6 @@ SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
 SUBDIR+=	../contrib/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
 .endif
 
-.if (${MKLIBCXX} != "no")
-SUBDIR+=	../contrib/libc++
-.endif
-
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 SUBDIR+=	../contri/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
 SUBDIR+=	../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
@@ -120,10 +113,6 @@ SUBDIR+=	../contrib/llvm/librt
 SUBDIR+=	../contrib/libarchive/lib	# depends on libxz
 
 SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
-
-#.if (${MKATF} != "no")
-#SUBDIR+=	../contrib/atf/lib			# depends on libstdc++
-#.endif
 
 SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses

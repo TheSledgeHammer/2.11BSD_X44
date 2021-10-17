@@ -11,10 +11,6 @@ SUBDIR+= ingres
 SUBDIR+= llvm
 .endif
 
-.if (${MKLIBCXX} != "no")
-SUBDIR+= libc++
-.endif
-
 .if (${MKPCC} != "no")
 SUBDIR+= pcc
 .endif
