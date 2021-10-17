@@ -82,7 +82,9 @@ To build just the tools for i386, in the src directory:
 Compiler Success:
 
 GCC: i386(tools = yes; kernel = untested)
+
 Clang: No, missing needed components in the bsd mk files.
+
 PCC: No, compiler issues.
 
 Please read the following NetBSD guide for more information:
