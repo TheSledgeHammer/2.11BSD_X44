@@ -9,7 +9,7 @@ NOCTF=	# defined
 .sinclude "../../Makefile.gcc_path"
 
 GCC_MACHINE_ARCH=${MACHINE_ARCH:S/earmv5/earm/}
-.include "../../../lgpl3/gmp/Makefile.arch"
+.include "../../../gnu/gmp/Makefile.arch"
 
 TOP=		${NETBSDSRCDIR}
 DIST=		${GCCDIST}
@@ -20,9 +20,9 @@ CPPFLAGS+=	-DLOCALEDIR=\"/usr/share/locale\" -DNETBSD_NATIVE
 HOST_CPPFLAGS+=	-I${.CURDIR}/..
 
 # Link in the GMP/MPFR/MPC headers since we don't install them
-GMPDISTDIR=	${NETBSDSRCDIR}/external/lgpl3/gmp
-MPFRDISTDIR=	${NETBSDSRCDIR}/external/lgpl3/mpfr
-MPCDISTDIR=	${NETBSDSRCDIR}/external/lgpl3/mpc
+GMPDISTDIR=	${NETBSDSRCDIR}/contrib/gnu/gmp
+MPFRDISTDIR=	${NETBSDSRCDIR}/contrib/gnu/mpfr
+MPCDISTDIR=	${NETBSDSRCDIR}/contrib/gnu/mpc
 
 BUILDSYMLINKS+=	${GMPDISTDIR}/lib/libgmp/arch/${GMP_MACHINE_ARCH}/gmp.h gmp.h
 BUILDSYMLINKS+=	${MPFRDISTDIR}/dist/src/mpfr.h mpfr.h
