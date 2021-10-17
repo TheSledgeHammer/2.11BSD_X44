@@ -123,6 +123,9 @@ typedef unsigned long ulong_t;
 #if HAVE_SYS_SYSLIMITS_H
 #include <sys/syslimits.h>
 #endif
+#if HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
 #if HAVE_STDDEF_H
 #include <stddef.h>
 #endif
@@ -537,6 +540,14 @@ char *strsep(char **, const char *);
 
 #if !HAVE_DECL_STRTOLL
 long long strtoll(const char *, char **, int);
+#endif
+
+#if !HAVE_DECL_STRTOI
+intmax_t strtoi(const char * __restrict, char ** __restrict, int, intmax_t, intmax_t, int *);
+#endif
+
+#if !HAVE_DECL_STRTOU
+uintmax_t strtou(const char * __restrict, char ** __restrict, int, uintmax_t, uintmax_t, int *);
 #endif
 
 #if !HAVE_USER_FROM_UID
