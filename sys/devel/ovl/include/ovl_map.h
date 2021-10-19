@@ -29,7 +29,7 @@
 #ifndef	OVL_MAP_
 #define	OVL_MAP_
 
-#include "ovl.h"
+#include "../../../ovl/include/ovl.h"
 
 struct ovl_map_clist;
 struct ovl_map_rb_tree;

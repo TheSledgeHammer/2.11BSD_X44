@@ -120,5 +120,4 @@ struct vm_page;
 struct lock 				swap_syscall_lock;
 simple_lock_data_t 			swap_data_lock;
 extern struct swdevt 		swdevt[];
-
 #endif /* _VM_SWAP_H_ */

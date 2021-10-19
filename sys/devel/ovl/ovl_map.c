@@ -92,10 +92,10 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
-#include <vm/include/vm.h>
+#include <devel/vm/include/vm.h>
 
-#include <vm/ovl/include/ovl.h>
 #include <devel/sys/malloctypes.h>
+#include <devel/ovl/include/ovl.h>
 
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)

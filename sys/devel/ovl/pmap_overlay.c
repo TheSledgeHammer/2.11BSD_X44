@@ -31,10 +31,10 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 
-#include <vm/include/vm.h>
+#include <devel/vm/include/vm.h>
 
-#include <vm/ovl/include/ovl.h>
-#include <vm/ovl/include/pmap_overlay.h>
+#include <devel/ovl/include/ovl.h>
+#include <devel/ovl/include/pmap_overlay.h>
 
 vm_offset_t						overlay_avail;
 vm_offset_t 					overlay_end;

@@ -287,3 +287,53 @@ swapoff(p, uap, retval)
 
 	return (0);
 }
+
+
+int
+swalloc(index)
+	int index;
+{
+	register struct swdevt 	*sp;
+	int npages;
+
+	sp = &swdevt[index];
+	npages = MAXPHYS >> PAGE_SHIFT;
+
+	vm_swap_alloc(sp, &npages, TRUE);
+
+	return (0);
+}
+
+struct swdevt swdevt[] = {
+		/* dev, flags, nblks, inuse */
+		{ 1, 0,	0, 0 },
+		{ NODEV, 1,	0, 0 },
+};
+
+void
+swapconf()
+{
+	register struct swdevt 	*swp;
+	register int nblks;
+
+	for (swp = swdevt; swp->sw_dev != NODEV; swp++)	{
+		if ( (u_int)swp->sw_dev >= nblkdev ){
+			break;
+		}
+
+		if (bdevsw[major(swp->sw_dev)].d_psize) {
+			nblks = (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
+			if (nblks != -1 && (swp->sw_nblks == 0 || swp->sw_nblks > nblks)) {
+				swp->sw_nblks = nblks;
+			}
+			swp->sw_inuse = 0;
+		}
+	}
+
+	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize) {
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - (Maxmem * NBPG/512);
+	}
+	if (dumplo < 0) {
+		dumplo = 0;
+	}
+}

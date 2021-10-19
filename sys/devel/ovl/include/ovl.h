@@ -44,7 +44,6 @@
  * OVA_MIN_ADDRESS = VM_MIN_ADDRESS - x amount
  */
 
-
 #ifndef _OVL_H_
 #define _OVL_H_
 
@@ -69,10 +68,10 @@ typedef struct ovl_page			*ovl_page_t;
 #include <sys/tree.h>
 #include <sys/queue.h>
 #include <devel/vm/include/vm.h>
-#include <devel/vm/ovl/include/ovl_map.h>
-#include <devel/vm/ovl/include/ovl_object.h>
-#include <devel/vm/ovl/include/ovl_overlay.h>
-#include <devel/vm/ovl/include/ovl_segment.h>
+#include <devel/ovl/include/ovl_map.h>
+#include <devel/ovl/include/ovl_object.h>
+#include <devel/ovl/include/ovl_overlay.h>
+#include <devel/ovl/include/ovl_segment.h>
 
 #include <devel/sys/malloctypes.h>
 

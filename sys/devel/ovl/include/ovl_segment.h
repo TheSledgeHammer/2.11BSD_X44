@@ -29,8 +29,8 @@
 #ifndef _OVL_SEGMENT_H_
 #define _OVL_SEGMENT_H_
 
-#include <devel/vm/ovl/ovl.h>
-#include <devel/vm/ovl/ovl_object.h>
+#include <devel/ovl/include/ovl.h>
+#include <devel/ovl/include/ovl_object.h>
 
 struct vsegment_hash_head;
 TAILQ_HEAD(vsegment_hash_head , ovl_object);

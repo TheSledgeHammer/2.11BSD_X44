@@ -116,7 +116,7 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <devel/vm/include/vm_amap.h>			/* Work in Progress */
 #include <devel/vm/include/vm_anon.h>			/* Work in Progress */
 
-#include <devel/vm/ovl/include/ovl.h>
+#include <devel/ovl/include/ovl.h>
 
 /*
  *	MACH VM locking type mappings to kernel types

@@ -26,9 +26,14 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+struct buf;
+struct proc;
 struct ovlspace;
+struct vmtotal;
+struct mount;
+struct vnode;
 
-//#ifdef KERNEL
+#ifdef KERNEL
 void			ovl_mem_init(void);
 vm_offset_t		omem_alloc(ovl_map_t, vm_size_t);
 void			omem_free(ovl_map_t, vm_offset_t, vm_size_t);
@@ -51,4 +56,4 @@ void			ovl_segment_remove_vm_segment(vm_segment_t);
 void			ovl_page_insert_vm_page(ovl_page_t, vm_page_t);
 vm_page_t		ovl_page_lookup_vm_page(ovl_page_t);
 void			ovl_page_remove_vm_page(vm_page_t);
-//#endif
+#endif

@@ -157,8 +157,7 @@ swapinit()
 	if (nswdev > 1)
 		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
 	nswap *= nswdev;
-	if (swdevt[0].sw_vp == NULL &&
-	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
+	if (swdevt[0].sw_vp == NULL && bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
 		panic("swapvp");
 #endif
 	if (nswap == 0)
@@ -350,6 +349,7 @@ swapon(p, uap, retval)
 	vrele(vp);
 	return (EINVAL);
 }
+
 
 /*
  * Swfree(index) frees the index'th portion of the swap map.

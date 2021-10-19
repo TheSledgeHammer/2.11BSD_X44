@@ -70,34 +70,6 @@
 #endif
 
 /*
- * Generic configuration;  all in one
- */
-dev_t	rootdev = makedev(0,0);
-dev_t	dumpdev = makedev(0,1);
-int		nswap;
-
-struct swdevt swdevt[] = {
-		{ 1, 0,	0 },
-		{ NODEV, 1,	0 },
-};
-long dumplo;
-int	dmmin, dmmax, dmtext;
-
-#define	DOSWAP				/* change swdevt and dumpdev */
-u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
-
-static	char devname[][2] = {
-	'w','d',	/* 0 = wd */
-	's','w',	/* 1 = sw */
-	'f','d',	/* 2 = fd */
-	'w','t',	/* 3 = wt */
-	'x','d',	/* 4 = xd */
-};
-
-#define	PARTITIONMASK	0x7
-#define	PARTITIONSHIFT	3
-
-/*
  * The following several variables are related to
  * the configuration process, and are used in initializing
  * the machine.
@@ -136,6 +108,7 @@ configure()
 	 * Configure swap area and related system
 	 * parameter based on device(s) used.
 	 */
+	setroot();
 	swapconf();
 
 	spl0();
@@ -156,8 +129,35 @@ md_device_init(devsw)
 {
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);			/* CMOS Interface */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &apm_cdevsw, NULL);				/* Power Management (APM) Interface */
-
 }
+
+/*
+ * Generic configuration;  all in one
+ */
+dev_t	rootdev = makedev(0,0);
+dev_t	dumpdev = makedev(0,1);
+int		nswap;
+
+struct swdevt swdevt[] = {
+		{ 1, 0,	0 },
+		{ NODEV, 1,	0 },
+};
+long dumplo;
+int	dmmin, dmmax, dmtext;
+
+#define	DOSWAP				/* change swdevt and dumpdev */
+u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
+
+static	char devname[][2] = {
+	'w','d',	/* 0 = wd */
+	's','w',	/* 1 = sw */
+	'f','d',	/* 2 = fd */
+	'w','t',	/* 3 = wt */
+	'x','d',	/* 4 = xd */
+};
+
+#define	PARTITIONMASK	0x7
+#define	PARTITIONSHIFT	3
 
 /*
  * Configure swap space and related parameters.
@@ -182,7 +182,6 @@ swapconf()
 	}
 	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize) {
 		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - (Maxmem * NBPG/512);
-		/*dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;*/
 	}
 	if (dumplo < 0) {
 		dumplo = 0;

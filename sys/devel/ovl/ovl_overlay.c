@@ -69,7 +69,7 @@
  *	Overlay memory management.
  */
 
-#include <devel/vm/ovl/include/ovl.h>
+#include <devel/ovl/include/ovl.h>
 
 vm_offset_t
 omem_alloc(map, size)

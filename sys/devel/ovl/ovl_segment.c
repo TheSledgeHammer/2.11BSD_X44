@@ -33,8 +33,8 @@
 
 #include <sys/user.h>
 
-#include <devel/vm/ovl/include/ovl.h>
-#include <devel/vm/ovl/include/ovl_segment.h>
+#include <devel/ovl/include/ovl.h>
+#include <devel/ovl/include/ovl_segment.h>
 
 struct ovseglist			*ovl_segment_buckets;
 int							ovl_segment_bucket_count = 0;	/* How big is array? */

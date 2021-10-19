@@ -92,7 +92,7 @@
 #ifndef OVL_PAGE_H_
 #define OVL_PAGE_H_
 
-#include <devel/vm/ovl/ovl.h>
+#include <devel/ovl/include/ovl.h>
 #include <sys/tree.h>
 
 struct vpage_hash_head;

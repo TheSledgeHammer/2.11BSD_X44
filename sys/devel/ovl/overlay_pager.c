@@ -96,9 +96,9 @@
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_page.h>
 
-#include <devel/vm/ovl/include/ovl.h>
-#include <devel/vm/ovl/include/ovl_page.h>
-#include <devel/vm/ovl/include/overlay_pager.h>
+#include <devel/ovl/include/ovl.h>
+#include <devel/ovl/include/ovl_page.h>
+#include <devel/ovl/include/overlay_pager.h>
 
 struct pagerlst 	overlay_pager_list;
 
