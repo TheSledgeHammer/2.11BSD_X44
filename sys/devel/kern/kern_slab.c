@@ -197,10 +197,10 @@ slab_lookup(cache, size, mtype)
 }
 
 void
-slab_insert(cache, size, mtype, flags)
+slab_insert(cache, size, mtype)
 	slab_cache_t cache;
     long  		size;
-    int	    	mtype, flags;
+    int	    	mtype;
 {
     register slab_t slab;
     register u_long indx;
@@ -208,7 +208,6 @@ slab_insert(cache, size, mtype, flags)
 	indx = BUCKETINDX(size);
 	slab->s_size = size;
 	slab->s_mtype = mtype;
-	slab->s_flags = flags;
 
     slab = &slab_list[BUCKETINDX(size)];
     cache->sc_link = slab;
@@ -260,11 +259,11 @@ slab_kmembucket(slab)
  * block of memory to be allocated
  */
 struct kmembuckets *
-kmembucket_search(cache, meta, size, mtype, flags)
+kmembucket_search(cache, meta, size, mtype)
 	slab_cache_t    cache;
 	slab_metadata_t meta;
 	long size;
-	int mtype, flags;
+	int mtype;
 {
 	register slab_t slab, next;
 	register struct kmembuckets *kbp;
@@ -279,7 +278,7 @@ kmembucket_search(cache, meta, size, mtype, flags)
 	aslots = ALLOCATED_SLOTS(slab->s_size);
 	fslots = SLOTSFREE(bslots, aslots);
 
-	switch (flags) {
+	switch (slab->s_flags) {
 	case SLAB_FULL:
 		next = CIRCLEQ_NEXT(slab, s_list);
 		CIRCLEQ_FOREACH(next, &cache->sc_head, s_list) {
@@ -343,9 +342,9 @@ malloc(size, type, flags)
 		panic("malloc - bogus type");
 	}
 #endif
-	slab_insert(&slabCache, size, type, flags);
+	slab_insert(&slabCache, size, type);
 	slab = &slabCache->sc_link;
-	kbp = kmembucket_search(&slabCache, slab->s_meta, size, type, flags);
+	kbp = kmembucket_search(&slabCache, slab->s_meta, size, type);
 	s = splimp();
 #ifdef KMEMSTATS
     while (ksp->ks_memuse >= ksp->ks_limit) {
@@ -506,7 +505,7 @@ free(addr, type)
 	kup = btokup(addr);
 	size = 1 << kup->ku_indx;
 	slab = slab_lookup(&slabCache, size, type);
-	kbp = kmembucket_search(&slabCache, slab->s_meta, size, type, flags);
+	kbp = kmembucket_search(&slabCache, slab->s_meta, size, type);
 	s = splimp();
 #ifdef DIAGNOSTIC
 	if (size > NBPG * CLSIZE)
