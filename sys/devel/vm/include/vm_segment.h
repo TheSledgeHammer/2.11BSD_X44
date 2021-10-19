@@ -74,6 +74,7 @@ struct vm_segment {
 #define SEG_ALLOCATED	0x020	/* segment has been allocated */
 #define	SEG_BUSY		0x040	/* segment is in transit (O) */
 #define	SEG_CLEAN		0x080	/* segment has not been modified */
+#define	SEG_RELEASED	0x100	/* segment to be freed when unbusied */
 
 #define	VM_SEGMENT_CHECK(seg) { 											\
 	if ((((unsigned int) seg) < ((unsigned int) &vm_segment_array[0])) || 	\

@@ -52,12 +52,10 @@
 
 #define VM_AMAP_C		/* ensure disabled inlines are in */
 
-#include <vm/include/vm.h>
-#include <vm/include/vm_page.h>
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_page.h>
 #include <vm/include/vm_kern.h>
-
-#include <devel/vm/uvm/uvm.h>
-#include <devel/vm/uvm/vm_amap.h>
+#include <devel/vm/include/vm_amap.h>
 
 #include <devel/sys/malloctypes.h>
 
@@ -515,7 +513,7 @@ vm_amap_wipeout(amap)
 			/*
 			 * we had the last reference to a vm_anon. free it.
 			 */
-			vm_anfree(anon);
+			vm_anon_free(anon);
 		}
 	}
 
@@ -764,7 +762,7 @@ ReStart:
 			/*
 			 * ok, time to do a copy-on-write to a new anon
 			 */
-			nanon = vm_analloc();
+			nanon = vm_anon_alloc();
 			if (nanon)
 				npg = vm_page_alloc(NULL, 0, nanon, 0);	/* XXX: Not correct */
 			else
@@ -777,7 +775,7 @@ ReStart:
 				 * we can't ...
 				 */
 				if (nanon)
-					vm_anfree(nanon);
+					vm_anon_free(nanon);
 				simple_unlock(&anon->an_lock);
 				amap_unlock(amap);
 				vm_wait("cownowpage");
@@ -1009,10 +1007,8 @@ vm_amap_wiperange(amap, slotoff, slots)
 		amap->am_anon[curslot] = NULL;
 		ptr = amap->am_bckptr[curslot];
 		if (ptr != (amap->am_nused - 1)) {
-			amap->am_slots[ptr] =
-			    amap->am_slots[amap->am_nused - 1];
-			amap->am_bckptr[amap->am_slots[ptr]] =
-			    ptr;    /* back ptr. */
+			amap->am_slots[ptr] = amap->am_slots[amap->am_nused - 1];
+			amap->am_bckptr[amap->am_slots[ptr]] = ptr;    /* back ptr. */
 		}
 		amap->am_nused--;
 
@@ -1027,9 +1023,215 @@ vm_amap_wiperange(amap, slotoff, slots)
 			 * we just eliminated the last reference to an anon.
 			 * free it.
 			 */
-			vm_anfree(anon);
+			vm_anon_free(anon);
 		}
 	}
 }
 
 #endif
+
+/*
+ * amap_lookup: look up a page in an amap
+ *
+ * => amap should be locked by caller.
+ */
+vm_anon_t
+vm_amap_lookup(aref, offset)
+	vm_amap_t aref;
+	caddr_t offset;
+{
+	int slot;
+	vm_amap_t amap = aref->ar_amap;
+
+	AMAP_B2SLOT(slot, offset);
+	slot += aref->ar_pageoff;
+
+	if (slot >= amap->am_nslot) {
+		panic("amap_lookup: offset out of range");
+	}
+
+	return (amap->am_anon[slot]);
+}
+
+/*
+ * amap_lookups: look up a range of pages in an amap
+ *
+ * => amap should be locked by caller.
+ * => XXXCDC: this interface is biased toward array-based amaps.  fix.
+ */
+void
+vm_amap_lookups(aref, offset, anons, npages)
+	vm_amap_t aref;
+	caddr_t offset;
+	vm_anon_t *anons;
+	int npages;
+{
+	int slot;
+	vm_amap_t amap = aref->ar_amap;
+
+	AMAP_B2SLOT(slot, offset);
+	slot += aref->ar_pageoff;
+
+	if ((slot + (npages - 1)) >= amap->am_nslot) {
+		panic("amap_lookups: offset out of range");
+	}
+
+	memcpy(anons, &amap->am_anon[slot], npages * sizeof(struct vm_anon *));
+
+	return;
+}
+
+/*
+ * amap_add: add (or replace) a page to an amap
+ *
+ * => caller must lock amap.
+ * => if (replace) caller must lock anon because we might have to call
+ *	pmap_page_protect on the anon's page.
+ * => returns an "offset" which is meaningful to amap_unadd().
+ */
+caddr_t
+vm_amap_add(aref, offset, anon, replace)
+	vm_aref_t aref;
+	caddr_t offset;
+	vm_anon_t anon;
+	int replace;
+{
+	int slot;
+	vm_amap_t amap = aref->ar_amap;
+
+	AMAP_B2SLOT(slot, offset);
+	slot += aref->ar_pageoff;
+
+	if (slot >= amap->am_nslot)
+		panic("amap_add: offset out of range");
+
+	if (replace) {
+
+		if (amap->am_anon[slot] == NULL)
+			panic("amap_add: replacing null anon");
+		if (amap->am_anon[slot]->u.an_page != NULL && (amap->am_flags & AMAP_SHARED) != 0) {
+			pmap_page_protect(VM_PAGE_TO_PHYS(amap->am_anon[slot]->u.an_page), VM_PROT_NONE);
+			/*
+			 * XXX: suppose page is supposed to be wired somewhere?
+			 */
+		}
+	} else {   /* !replace */
+		if (amap->am_anon[slot] != NULL)
+			panic("amap_add: slot in use");
+
+		amap->am_bckptr[slot] = amap->am_nused;
+		amap->am_slots[amap->am_nused] = slot;
+		amap->am_nused++;
+	}
+	amap->am_anon[slot] = anon;
+
+	return(slot);
+}
+
+/*
+ * amap_unadd: remove a page from an amap, given we know the slot #.
+ *
+ * => caller must lock amap
+ */
+void
+vm_amap_unadd(amap, slot)
+	vm_amap_t 	amap;
+	caddr_t 	slot;
+{
+	int ptr;
+
+	if (slot >= amap->am_nslot)
+		panic("amap_add: offset out of range");
+
+	if (amap->am_anon[slot] == NULL)
+		panic("amap_unadd: nothing there");
+
+	amap->am_anon[slot] = NULL;
+	ptr = amap->am_bckptr[slot];
+
+	if (ptr != (amap->am_nused - 1)) {	/* swap to keep slots contig? */
+		amap->am_slots[ptr] = amap->am_slots[amap->am_nused - 1];
+		amap->am_bckptr[amap->am_slots[ptr]] = ptr;	/* back link */
+	}
+	amap->am_nused--;
+}
+
+/*
+ * amap_ref: gain a reference to an amap
+ *
+ * => amap must not be locked (we will lock)
+ * => called at fork time to gain the child's reference
+ */
+void
+vm_amap_ref(entry, flags)
+	vm_map_entry_t entry;
+	int flags;
+{
+	vm_amap_t amap = entry->aref.ar_amap;
+
+	amap_lock(amap);
+	amap->am_ref++;
+	if (flags & AMAP_SHARED)
+		amap->am_flags |= AMAP_SHARED;
+#ifdef UVM_AMAP_PPREF
+	if (amap->am_ppref == NULL && (flags & AMAP_REFALL) == 0 && (entry->start - entry->end) >> PAGE_SHIFT != amap->am_nslot)
+		vm_amap_pp_establish(amap);
+	if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
+		if (flags & AMAP_REFALL)
+			vm_amap_pp_adjref(amap, 0, amap->am_nslot << PAGE_SHIFT, 1);
+		else
+			vm_amap_pp_adjref(amap, entry->aref.ar_pageoff, entry->end - entry->start, 1);
+	}
+#endif
+	amap_unlock(amap);
+}
+
+/*
+ * amap_unref: remove a reference to an amap
+ *
+ * => caller must remove all pmap-level references to this amap before
+ *	dropping the reference
+ * => called from uvm_unmap_detach [only]  ... note that entry is no
+ *	longer part of a map and thus has no need for locking
+ * => amap must be unlocked (we will lock it).
+ */
+void
+vm_amap_unref(entry, all)
+	vm_map_entry_t entry;
+	int all;
+{
+	vm_amap_t amap = entry->aref.ar_amap;
+
+	/*
+	 * lock it
+	 */
+	amap_lock(amap);
+
+	/*
+	 * if we are the last reference, free the amap and return.
+	 */
+
+	if (amap->am_ref == 1) {
+		vm_amap_wipeout(amap);	/* drops final ref and frees */
+		return;			/* no need to unlock */
+	}
+
+	/*
+	 * otherwise just drop the reference count(s)
+	 */
+
+	amap->am_ref--;
+	if (amap->am_ref == 1 && (amap->am_flags & AMAP_SHARED) != 0)
+		amap->am_flags &= ~AMAP_SHARED;	/* clear shared flag */
+#ifdef UVM_AMAP_PPREF
+	if (amap->am_ppref == NULL && all == 0 && (entry->start - entry->end) >> PAGE_SHIFT != amap->am_nslot)
+		vm_amap_pp_establish(amap);
+	if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
+		if (all)
+			vm_amap_pp_adjref(amap, 0, amap->am_nslot << PAGE_SHIFT, -1);
+		else
+			vm_amap_pp_adjref(amap, entry->aref.ar_pageoff, entry->end - entry->start, -1);
+	}
+#endif
+	amap_unlock(amap);
+}

@@ -214,3 +214,4 @@
 163 STD         { int kqueue(); }
 164 STD         { int swapon(); }
 165 UNIMPL      { int swapoff(); }
+166 UNIMPL      { int swapctl(); }

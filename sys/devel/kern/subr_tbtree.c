@@ -40,9 +40,8 @@
 
 #include <devel/sys/tbtree.h>
 
-#include <devel/vm/ovl/include/ovl.h>
-#include <devel/vm/ovl/include/ovl_extern.h>
-#include <devel/vm/ovl/include/ovl_overlay.h>
+static caddr_t 	tbmalloc(unsigned long, int);
+static void 	tbfree(void *, unsigned long, int);
 
 /* Allocate Tertiary Buddy Tree */
 void
@@ -285,29 +284,29 @@ tbtree_malloc(ktp, size, type, flags)
 
     if(powerof2(size)) {
         left = tbtree_left(ktp, size);
-        ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
+        ktp->tb_addr = (caddr_t) tbmalloc(right->tb_size, type, flags);
 
 	} else if(powerof2(size - 2)) {
 		middle = tbtree_middle(ktp, size);
-        ktp->tb_addr = (caddr_t) oorkmalloc(middle->tb_size, type, flags);
+        ktp->tb_addr = (caddr_t) tbmalloc(middle->tb_size, type, flags);
 
 	} else if (powerof2(size - 3)) {
 		right = tbtree_right(ktp, size);
-        ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
+        ktp->tb_addr = (caddr_t) tbmalloc(right->tb_size, type, flags);
 
 	} else {
 		/* allocates size (tmp) if it has a log base of 2 */
 		if(powerof2(tmp)) {
 			left = tbtree_left(ktp, size);
-            ktp->tb_addr = (caddr_t) oorkmalloc(left->tb_size, type, flags);
+            ktp->tb_addr = (caddr_t) tbmalloc(left->tb_size, type, flags);
 
 		} else if(powerof2(tmp - 2)) {
 			middle = tbtree_middle(ktp, size);
-            ktp->tb_addr = (caddr_t) oorkmalloc(middle->tb_size, type, flags);
+            ktp->tb_addr = (caddr_t) tbmalloc(middle->tb_size, type, flags);
 
 		} else if (powerof2(tmp - 3)) {
 			right = tbtree_right(ktp, size);
-            ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
+            ktp->tb_addr = (caddr_t) tbmalloc(right->tb_size, type, flags);
 		}
     }
     return (ktp->tb_addr);
@@ -330,15 +329,14 @@ tbtree_free(ktp, addr, size, type)
 		free = ktp->tb_freelist1;
 		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist1, size);
-			oorkfree(toFind->tb_addr, size, type);
+			tbfree(toFind->tb_addr, size, type);
 		}
 	}
 	if((toFind->tb_type == TYPE_01 && toFind == tbtree_middle(ktp, size))|| (toFind->tb_type == TYPE_10 && toFind == tbtree_right(ktp, size))) {
 		free = ktp->tb_freelist2;
 		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist2, size);
-			omem_free(omem_map, toFind->tb_addr, size);
-			oorkfree(toFind->tb_addr, size, type);
+			tbfree(toFind->tb_addr, size, type);
 		}
 	}
 	ktp->tb_entries--;
@@ -391,32 +389,32 @@ asl_search(free, size)
 }
 
 /* [Internal use only] allocate to kernel or overlay */
-caddr_t
-oorkmalloc(size, type, flags)
+static caddr_t
+tbmalloc(size, flags)
 	unsigned long size;
-	int type, flags;
+	int flags;
 {
 	caddr_t va;
 	/* Allocates to Overlay Space */
-	if (type == M_OVERLAY || flags == M_OVERLAY) {
-		va = (caddr_t) omem_malloc(omem_map, size, flags);
+	if (flags & M_OVERLAY) {
+		va = (caddr_t) omalloc(size, flags);
 	} else {
-		va = (caddr_t) kmem_malloc(kmem_map, size, flags);
+		va = (caddr_t) kmalloc(size, flags);
 	}
 	return (va);
 }
 
 /* [Internal use only] free from kernel or overlay */
-void
-oorkfree(addr, size, type)
+static void
+tbfree(addr, size, type)
 	void *addr;
 	unsigned long size;
 	int type;
 {
 	/* Free from Overlay Space */
-	if (type == M_OVERLAY) {
-		omem_free(omem_map, addr, size);
+	if (type & M_OVERLAY) {
+		ofree(addr, size, (type & M_OVERLAY));
 	} else {
-		kmem_free(kmem_map, addr, size);
+		kfree(addr, size);
 	}
 }

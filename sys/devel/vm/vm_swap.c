@@ -199,7 +199,7 @@ sw_swapdev(index)
  * if already swapping on this device.
  */
 struct swapon_args {
-	char	*name;
+	syscallarg(char)	*name;
 };
 
 /* ARGSUSED */
@@ -257,7 +257,7 @@ swapon(p, uap, retval)
  * if already swapping on this device.
  */
 struct swapoff_args {
-	char	*name;
+	syscallarg(char) *name;
 };
 
 int

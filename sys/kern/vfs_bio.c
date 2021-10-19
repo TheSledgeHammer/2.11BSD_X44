@@ -722,8 +722,7 @@ allocbuf(bp, size)
 		splx(s);
 
 		/* move the page to it and note this change */
-		pagemove(bp->b_data + desired_size,
-		    nbp->b_data, bp->b_bufsize - desired_size);
+		pagemove(bp->b_data + desired_size, nbp->b_data, bp->b_bufsize - desired_size);
 		nbp->b_bufsize = bp->b_bufsize - desired_size;
 		bp->b_bufsize = desired_size;
 		nbp->b_bcount = 0;

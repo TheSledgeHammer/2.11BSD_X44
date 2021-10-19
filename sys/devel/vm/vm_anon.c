@@ -42,12 +42,18 @@
 #include <sys/malloc.h>
 #include <sys/vmmeter.h>
 
-#include <vm/include/vm_page.h>
+#include <devel/vm/include/vm_page.h>
 #include <vm/include/vm_kern.h>
 
-#include <devel/vm/uvm/uvm.h>
-#include <vm/include/vm.h>
-//#include <vm/include/vm_swap.h>
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_swap.h>
+
+struct vm_anonblock {
+	LIST_ENTRY(vm_anonblock) 	list;
+	int 						count;
+	struct vm_anon 				*anons;
+};
+static LIST_HEAD(anonlist, vm_anonblock) anonblock_list;
 
 /*
  * allocate anons
@@ -59,6 +65,7 @@ vm_anon_init()
 
 	int nanon = cnt.v_free_count - (cnt.v_free_count / 16); /* XXXCDC ??? */
 	int lcv;
+	simple_lock_init(&anon->u.an_freelock);
 
 	/*
 	 * Allocate the initial anons.
@@ -76,7 +83,6 @@ vm_anon_init()
 		anon[lcv].u.an_nxt = anon->u.an_free;
 		anon->u.an_free = &anon[lcv];
 	}
-	simple_lock_init(&anon->u.an_freelock);
 }
 
 /*
@@ -114,7 +120,7 @@ vm_anon_add(pages)
  * allocate an anon
  */
 vm_anon_t
-vm_analloc()
+vm_anon_alloc()
 {
 	vm_anon_t a;
 
@@ -128,7 +134,8 @@ vm_analloc()
 		a->u.an_page = NULL;		/* so we can free quickly */
 	}
 	simple_unlock(&a->u.an_freelock);
-	return(a);
+
+	return (a);
 }
 
 /*
@@ -140,7 +147,7 @@ vm_analloc()
  * => we may lock the pageq's.
  */
 void
-vm_anfree(anon)
+vm_anon_free(anon)
 	vm_anon_t anon;
 {
 	vm_page_t pg;

@@ -60,8 +60,10 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/user.h>
 #include <sys/buf.h>
+#include <sys/bufq.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
@@ -70,8 +72,13 @@
 #include <sys/map.h>
 #include <sys/extent.h>
 #include <sys/file.h>
+#include <sys/user.h>
+#include <sys/types.h>
+#include <sys/conf.h>
+#include <sys/devsw.h>
 
 #include <miscfs/specfs/specdev.h>
+
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_swap.h>
 
@@ -409,7 +416,7 @@ swapctl(p, uap, retval)
 		 * any empty priority structures.
 		 */
 		priority = SCARG(uap, misc);
-		spp = malloc(sizeof *spp, M_VMSWAP, M_WAITOK);
+		spp = malloc(sizeof *spp, M_SWAPMAP, M_WAITOK);
 		simple_lock(&swap_data_lock);
 		if ((sdp = swaplist_find(vp, 1)) == NULL) {
 			error = ENOENT;
@@ -419,7 +426,7 @@ swapctl(p, uap, retval)
 		}
 		simple_unlock(&swap_data_lock);
 		if (error)
-			free(spp, M_VMSWAP);
+			free(spp, M_SWAPMAP);
 		break;
 
 	case SWAP_ON:
@@ -432,26 +439,27 @@ swapctl(p, uap, retval)
 		 */
 
 		priority = SCARG(uap, misc);
-		//sdp = malloc(sizeof *sdp, M_VMSWAP, M_WAITOK);
-		//spp = malloc(sizeof *spp, M_VMSWAP, M_WAITOK);
+		sdp = (struct swapdev *)malloc(sizeof *sdp, M_SWAPMAP, M_WAITOK);
+		spp = (struct swappri *)malloc(sizeof *spp, M_SWAPMAP, M_WAITOK);
 		memset(sdp, 0, sizeof(*sdp));
 		sp->sw_flags = SW_FAKE;
 		sp->sw_vp = vp;
 		sp->sw_dev = (vp->v_type == VBLK) ? vp->v_rdev : NODEV;
+		bufq_alloc(&sdp->swd_tab, BUFQ_DISKSORT|BUFQ_SORT_RAWBLOCK);
 		simple_lock(&swap_data_lock);
 		if (swaplist_find(vp, 0) != NULL) {
 			error = EBUSY;
 			simple_unlock(&swap_data_lock);
-			//bufq_free(&sdp->swd_tab);
-			//free(sdp, M_VMSWAP);
-			//free(spp, M_VMSWAP);
+			bufq_free(&sdp->swd_tab);
+			free(sdp, M_SWAPMAP);
+			free(spp, M_SWAPMAP);
 			break;
 		}
 		swaplist_insert(sdp, spp, priority);
 		simple_unlock(&swap_data_lock);
 
 		sdp->swd_pathlen = len;
-		sdp->swd_path = malloc(sdp->swd_pathlen, M_VMSWAP, M_WAITOK);
+		sdp->swd_path = malloc(sdp->swd_pathlen, M_SWAPMAP, M_WAITOK);
 		if (copystr(userpath, sdp->swd_path, sdp->swd_pathlen, 0) != 0)
 			panic("swapctl: copystr");
 
@@ -467,9 +475,9 @@ swapctl(p, uap, retval)
 			(void) swaplist_find(vp, 1);  /* kill fake entry */
 			swaplist_trim();
 			simple_unlock(&swap_data_lock);
-			//bufq_free(&sdp->swd_tab);
-			//free(sdp->swd_path, M_VMSWAP);
-			//free(sdp, M_VMSWAP);
+			bufq_free(&sdp->swd_tab);
+			free(sdp->swd_path, M_SWAPMAP);
+			free(sdp, M_SWAPMAP);
 			break;
 		}
 		break;
@@ -511,8 +519,6 @@ out:
 	lockmgr(&swap_syscall_lock, LK_RELEASE, NULL);
 	return (error);
 }
-
-
 
 int
 swapdrum_on(p, sp)
@@ -567,7 +573,6 @@ swapdrum_on(p, sp)
 			return (ENXIO);
 		}
 		break;
-#ifdef SWAP_TO_FILES
 	case VREG:
 		if ((error = VOP_GETATTR(vp, &va, p->p_ucred, p))) {
 			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
@@ -584,7 +589,6 @@ swapdrum_on(p, sp)
 		 * at any one time.   take it easy on NFS servers.
 		 */
 		break;
-#endif
 	default:
 		(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
 		return (ENXIO);
@@ -649,6 +653,11 @@ swapdrum_on(p, sp)
 	}
 
 	/*
+	 * add anon's to reflect the swap space we added
+	 */
+	vm_anon_add(size);
+
+	/*
 	 * add a ref to vp to reflect usage as a swap device.
 	 */
 	vref(vp);
@@ -661,12 +670,9 @@ swapdrum_on(p, sp)
 	sdp->swd_npages = npages;
 	sp->sw_flags &= ~SW_FAKE;	/* going live */
 	sp->sw_flags |= (SW_INUSE|SW_ENABLE);
+	cnt.v_swpages += size;
+	cnt.v_swpgavail += size;
 	simple_unlock(&swap_data_lock);
-	cnt.v_swpages += npages;
-	/*
-	 * add anon's to reflect the swap space we added
-	 */
-	vm_anon_add(size);
 
 	return (0);
 
@@ -687,27 +693,46 @@ swapdrum_off(p, sp)
 {
 	struct swapdev 	*sdp;
 	char			*name;
+	int 			npages;
 
 	sdp = sp->sw_swapdev;
+	name = sdp->swd_ex->ex_name;
+	npages = sdp->swd_npages;
 
 	/* turn off the enable flag */
 	sp->sw_flags &= ~SW_ENABLE;
+	cnt.v_swpgavail -= npages;
+	simple_unlock(&swap_data_lock);
+
+	/*
+	 * done with the vnode.
+	 * drop our ref on the vnode before calling VOP_CLOSE()
+	 * so that spec_close() can tell if this is the last close.
+	 */
+	vrele(sp->sw_vp);
+	if(sp->sw_vp != rootvp) {
+		(void) VOP_CLOSE(sp->sw_vp, FREAD|FWRITE, p->p_ucred, p);
+	}
+
+	simple_lock(&swap_data_lock);
+	cnt.v_swpages -= npages;
+	cnt.v_swpginuse -= sdp->swd_npgbad;
+	if (swaplist_find(sp->sw_vp, 1) == NULL) {
+		panic("swap_off: swapdev not in list");
+	}
+	swaplist_trim();
+	simple_unlock(&swap_data_lock);
 
 	/*
 	 * free all resources!
 	 */
 	extent_free(swapextent, sdp->swd_drumoffset, sdp->swd_drumsize, EX_WAITOK);
-	name = sdp->swd_ex->ex_name;
 	extent_destroy(sdp->swd_ex);
 	rmfree(&swapmap, sizeof(name), name);
 	rmfree(&swapmap, sizeof(sdp->swd_ex), (caddr_t)sdp->swd_ex);
-	if(sp->sw_vp != rootvp) {
-		(void) VOP_CLOSE(sp->sw_vp, FREAD|FWRITE, p->p_ucred, p);
-	}
-	if(sp->sw_vp) {
-		vrele(sp->sw_vp);
-	}
+	bufq_free(&sdp->swd_tab);
 	rmfree(&swapmap, sizeof(sdp), (caddr_t)sdp);
+
 	return (0);
 }
 
@@ -764,8 +789,8 @@ swstrategy(bp)
 	struct buf *bp;
 {
 	struct swdevt	*sp;
-	struct swapdev *sdp;
-	struct vnode *vp;
+	struct swapdev 	*sdp;
+	struct vnode 	*vp;
 	int s, pageno, bn;
 
 	sdp = sp->sw_swapdev;
@@ -802,6 +827,7 @@ swstrategy(bp)
 	switch (sp->sw_vp->v_type) {
 	default:
 		panic("swstrategy: vnode type 0x%x", sp->sw_vp->v_type);
+		break;
 
 	case VBLK:
 
@@ -819,8 +845,8 @@ swstrategy(bp)
 		 * drum's v_numoutput counter to the swapdevs.
 		 */
 		if ((bp->b_flags & B_READ) == 0) {
-			vwakeup(bp);	/* kills one 'v_numoutput' on drum */
-			V_INCR_NUMOUTPUT(vp);	/* put it on swapdev */
+			vwakeup(bp);		/* kills one 'v_numoutput' on drum */
+			vp->v_numoutput++;	/* put it on swapdev */
 		}
 
 		/*
@@ -841,23 +867,22 @@ swstrategy(bp)
 	/* NOTREACHED */
 }
 
-
 /*
  * sw_reg_strategy: handle swap i/o to regular files
  */
 static void
 sw_reg_strategy(sp, bp, bn)
 	struct swdevt	*sp;
-	struct buf	*bp;
-	int		bn;
+	struct buf		*bp;
+	int				bn;
 {
 	struct swapdev	*sdp;
 	struct vnode	*vp;
 	struct vndxfer	*vnx;
-	daddr_t		nbn;
-	caddr_t		addr;
-	off_t		byteoff;
-	int		s, off, nra, error, sz, resid;
+	daddr_t			nbn;
+	caddr_t			addr;
+	off_t			byteoff;
+	int	s, off, nra, error, sz, resid;
 
 	sdp = sp->sw_swapdev;
 
@@ -892,7 +917,7 @@ sw_reg_strategy(sp, bp, bn)
 		 *	block)
 		 */
 		nra = 0;
-		error = VOP_BMAP(sp->sw_vp, byteoff / sdp->swd_bsize, &vp, &nbn, &nra);
+		error = VOP_BMAP(sp->sw_vp, (byteoff / sdp->swd_bsize), &vp, &nbn, &nra);
 		if (error == 0 && nbn == (daddr_t)-1) {
 			/*
 			 * this used to just set error, but that doesn't
@@ -935,7 +960,7 @@ sw_reg_strategy(sp, bp, bn)
 		 * cast pointers between the two structure easily.
 		 */
 		nbp = rmalloc(&vndbuf_pool, sizeof(nbp));
-		BUF_INIT(&nbp->vb_buf);
+		&nbp->vb_buf = &swbuf;
 		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
 		nbp->vb_buf.b_bcount   = sz;
 		nbp->vb_buf.b_bufsize  = sz;
@@ -1000,6 +1025,7 @@ sw_reg_start(sp)
 {
 	struct swapdev	*sdp;
 	struct buf		*bp;
+	struct vnode	*vp;
 
 	sdp = sp->sw_swapdev;
 
@@ -1011,12 +1037,16 @@ sw_reg_start(sp)
 
 	while (sdp->swd_active < sdp->swd_maxactive) {
 		bp = BUFQ_GET(&sdp->swd_tab);
-		if (bp == NULL)
+		if (bp == NULL) {
 			break;
+		}
 		sdp->swd_active++;
-
-		if ((bp->b_flags & B_READ) == 0)
-			V_INCR_NUMOUTPUT(bp->b_vp);
+		vp = bp->b_vp;
+		if ((bp->b_flags & B_READ) == 0) {
+			simple_lock(vp->v_interlock);
+			vp->v_numoutput++;
+			simple_unlock(vp->v_interlock);
+		}
 
 		VOP_STRATEGY(bp);
 	}
@@ -1084,4 +1114,115 @@ sw_reg_iodone(bp)
 	sdp->swd_active--;
 	sw_reg_start(sdp);
 	splx(s);
+}
+
+/*
+ * uvm_swap_alloc: allocate space on swap
+ *
+ * => allocation is done "round robin" down the priority list, as we
+ *	allocate in a priority we "rotate" the circle queue.
+ * => space can be freed with uvm_swap_free
+ * => we return the page slot number in /dev/drum (0 == invalid slot)
+ * => we lock uvm.swap_data_lock
+ * => XXXMRG: "LESSOK" INTERFACE NEEDED TO EXTENT SYSTEM
+ */
+int
+vm_swap_alloc(nslots, lessok)
+	int 		*nslots;	/* IN/OUT */
+	boolean_t 	lessok;
+{
+	struct swdevt	*sp;
+	struct swapdev 	*sdp;
+	struct swappri 	*spp;
+	u_long			result;
+
+	sdp = sp->sw_swapdev;
+
+	/*
+	 * no swap devices configured yet?   definite failure.
+	 */
+	if (cnt.v_nswapdev < 1)
+		return 0;
+
+	/*
+	 * lock data lock, convert slots into blocks, and enter loop
+	 */
+	simple_lock(&swap_data_lock);
+
+ReTry: /* XXXMRG */
+	for (spp = LIST_FIRST(swap_priority); spp != NULL; spp = LIST_NEXT(spp, spi_swappri)) {
+		for (sdp = CIRCLEQ_FIRST(spp->spi_swapdev); sdp != (void*) &spp->spi_swapdev; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
+			/* if it's not enabled, then we can't swap from it */
+			if ((sp->sw_flags & SW_ENABLE) == 0)
+				continue;
+			if (sdp->swd_npginuse + *nslots > sdp->swd_npages)
+				continue;
+			if (extent_alloc(sdp->swd_ex, *nslots, EX_NOALIGN, EX_NOBOUNDARY, EX_MALLOCOK | EX_NOWAIT, &result) != 0) {
+				continue;
+			}
+
+			/*
+			 * successful allocation!  now rotate the circleq.
+			 */
+			CIRCLEQ_REMOVE(&spp->spi_swapdev, sdp, swd_next);
+			CIRCLEQ_INSERT_TAIL(&spp->spi_swapdev, sdp, swd_next);
+			sdp->swd_npginuse += *nslots;
+			cnt.v_swpginuse += *nslots;
+			simple_unlock(&swap_data_lock);
+			/* done!  return drum slot number */
+			return (result + sdp->swd_drumoffset);
+		}
+	}
+
+	if (*nslots > 1 && lessok) {
+		*nslots = 1;
+		goto ReTry;
+		/* XXXMRG: ugh!  extent should support this for us */
+	}
+
+	simple_unlock(&swap_data_lock);
+	return (0);		/* failed */
+}
+
+/*
+ * uvm_swap_free: free swap slots
+ *
+ * => this can be all or part of an allocation made by uvm_swap_alloc
+ * => we lock uvm.swap_data_lock
+ */
+void
+vm_swap_free(startslot, nslots)
+	int startslot;
+	int nslots;
+{
+	struct swapdev *sdp;
+
+	/*
+	 * convert drum slot offset back to sdp, free the blocks
+	 * in the extent, and return.   must hold pri lock to do
+	 * lookup and access the extent.
+	 */
+	simple_lock(&swap_data_lock);
+	sdp = swapdrum_getsdp(startslot);
+
+	#ifdef DIAGNOSTIC
+	if (cnt.v_nswapdev < 1)
+		panic("vm_swap_free: cnt.v_nswapdev < 1\n");
+	if (sdp == NULL) {
+		printf("vm_swap_free: startslot %d, nslots %d\n", startslot, nslots);
+		panic("vm_swap_free: unmapped address\n");
+	}
+#endif
+
+	if (extent_free(sdp->swd_ex, startslot - sdp->swd_drumoffset, nslots, EX_MALLOCOK|EX_NOWAIT) != 0) {
+		printf("warning: resource shortage: %d slots of swap lost\n", nslots);
+	}
+
+	sdp->swd_npginuse -= nslots;
+	cnt.v_swpginuse -= nslots;
+#ifdef DIAGNOSTIC
+	if (sdp->swd_npginuse < 0)
+		panic("vm_swap_free: inuse < 0");
+#endif
+	simple_unlock(&swap_data_lock);
 }

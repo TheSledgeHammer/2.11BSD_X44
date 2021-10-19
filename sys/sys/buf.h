@@ -51,8 +51,7 @@ struct iodone_chain {
  * We only need three words for these, so this abbreviated
  * definition saves some space.
  */
-struct bufhd
-{
+struct bufhd {
 	short				b_flags;			/* see defines below */
 	struct	buf 		*b_forw, *b_back;	/* fwd/bkwd pointer in chain */
 };
@@ -60,8 +59,7 @@ struct bufhd
 /*
  * The buffer header describes an I/O operation in the kernel.
  */
-struct buf
-{
+struct buf {
 	/* 2.11BSD Orig */
 	struct	buf 		*b_forw, *b_back;	/* hash chain (2 way street) */
 	struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
@@ -126,7 +124,7 @@ extern struct bufhashhdr *bufhashtbl, invalhash;
 
 struct bqueues;
 TAILQ_HEAD(bqueues, buf);
-extern struct bqueues bufqueues[];
+extern struct bqueues 	bufqueues[];
 
 #define	bftopaddr(bp)	((u_int)(bp)->b_un.b_addr >> 6 | (bp)->b_xmem << 10)
 #define	bfree(bp)		(bp)->b_bcount = 0

@@ -83,8 +83,8 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm.h>
 
-#include <devel/vm/include/vm_slab.h>
 #include <devel/sys/malloctypes.h>
+#include "../sys/slab.h"
 
 struct slab_cache       *slabCache;
 struct slab 			slab_list[MINBUCKET + 16];
@@ -584,7 +584,6 @@ free(addr, type)
 void
 kmeminit()
 {
-	register struct kmembuckets bucket;
 	register long indx;
 	int npg;
 
@@ -609,13 +608,12 @@ kmeminit()
 
 #ifdef KMEMSTATS
 		for(indx = 0; indx < MINBUCKET + 16; indx++) {
-			bucket = &slab_list[indx].s_bucket;
 			if (1 << indx >= CLBYTES) {
-				bucket[indx].kb_elmpercl = 1;
+				 &slab_list[indx].s_bucket->kb_elmpercl = 1;
 			} else {
-				bucket[indx].kb_elmpercl = CLBYTES / (1 << indx);
+				&slab_list[indx].s_bucket->kb_elmpercl = CLBYTES / (1 << indx);
 			}
-			bucket[indx].kb_highwat = 5 * bucket[indx].kb_elmpercl;
+			&slab_list[indx].s_bucket->kb_highwat = 5 * &slab_list[indx].s_bucket->kb_elmpercl;
 		}
 		for (indx = 0; indx < M_LAST; indx++) {
 			kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;

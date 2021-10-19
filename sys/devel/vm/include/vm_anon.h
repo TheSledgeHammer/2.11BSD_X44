@@ -96,8 +96,8 @@ struct vm_aref {
  * prototypes
  */
 
-struct vm_anon 	*vm_analloc (void);
-void 			vm_anfree (struct vm_anon *);
+struct vm_anon 	*vm_anon_alloc (void);
+void 			vm_anon_free (struct vm_anon *);
 void 			vm_anon_init (void);
 void 			vm_anon_add (int);
 void 			vm_anon_dropswap (struct vm_anon *);

@@ -18,7 +18,7 @@
 
 
 ## MISC:
-- vm_slab:
+- kern_slab:
 	- Backends:
 		- Extents: pros & cons?
 		- Kern_Malloc (Current):

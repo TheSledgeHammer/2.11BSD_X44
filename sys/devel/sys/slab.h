@@ -30,6 +30,7 @@
 #define _VM_SLAB_H_
 
 #include <sys/malloc.h>
+#include <sys/queue.h>
 #include <devel/vm/include/vm.h>
 
 /* Hold metadata on a slab */

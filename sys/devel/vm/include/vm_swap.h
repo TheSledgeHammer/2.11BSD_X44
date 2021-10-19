@@ -53,13 +53,12 @@ struct swapdev {
 	struct extent						*swd_ex;		/* extent for this swapdev */
 	char								swd_exname[12];	/* name of extent above */
 	CIRCLEQ_ENTRY(swapdev)				swd_next;		/* priority circleq */
-//#ifdef SWAP_TO_FILES
+
 	int									swd_bsize;		/* blocksize (bytes) */
 	int									swd_maxactive;	/* max active i/o reqs */
 	int									swd_active;		/* # of active i/o reqs */
-	struct buf							swd_tab;		/* buffer list */
+	struct bufq_state					swd_tab;		/* buffer list */
 	struct ucred						*swd_cred;		/* cred for file access */
-//#endif
 };
 
 /*

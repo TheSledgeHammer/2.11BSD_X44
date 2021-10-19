@@ -37,6 +37,7 @@
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/buf.h>
+#include <sys/types.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
 #include <sys/proc.h>
@@ -52,7 +53,6 @@
 /*
  * Indirect driver for multi-controller paging.
  */
-
 const struct bdevsw swap_bdevsw = {
 		.d_open = nullopen,
 		.d_close = nullclose,
@@ -175,10 +175,10 @@ swapinit()
 	for (i = 0; i < nswbuf - 1; i++, sp++) {
 		sp->b_actf = sp + 1;
 		sp->b_rcred = sp->b_wcred = p->p_ucred;
-		sp->b_vnbufs.le_next = NOLIST;
+		LIST_NEXT(sp, b_vnbufs) = NOLIST;
 	}
 	sp->b_rcred = sp->b_wcred = p->p_ucred;
-	sp->b_vnbufs.le_next = NOLIST;
+	LIST_NEXT(sp, b_vnbufs) = NOLIST;
 	sp->b_actf = NULL;
 }
 
@@ -290,7 +290,7 @@ swstrategy(bp)
  * if already swapping on this device.
  */
 struct swapon_args {
-	char	*name;
+	syscallarg(char) *name;
 };
 
 /* ARGSUSED */

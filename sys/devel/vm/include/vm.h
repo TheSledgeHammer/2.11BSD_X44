@@ -106,18 +106,17 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <vm/include/vm_systm.h>
 
 #include <devel/vm/include/vm_page.h>
-
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_text.h>			/* Work in Progress */
 #include <devel/vm/include/vm_stack.h>			/* Work in Progress */
-#include <devel/vm/ovl/include/ovl.h>
 
-#include <devel/vm/uvm/vm_aobject.h>			/* Work in Progress */
-#include <devel/vm/uvm/vm_amap.h>				/* Work in Progress */
-#include <devel/vm/uvm/vm_anon.h>				/* Work in Progress */
-#include <devel/vm/uvm/uvm.h>
+#include <devel/vm/include/vm_aobject.h>		/* Work in Progress */
+#include <devel/vm/include/vm_amap.h>			/* Work in Progress */
+#include <devel/vm/include/vm_anon.h>			/* Work in Progress */
+
+#include <devel/vm/ovl/include/ovl.h>
 
 /*
  *	MACH VM locking type mappings to kernel types
@@ -139,11 +138,6 @@ struct vmspace {
 	int				 		vm_refcnt;			/* number of references */
 	caddr_t			 		vm_shm;				/* SYS5 shared memory private data XXX */
 
-//	union vm_pseudo_segment	vm_psegment;		/* VM pseudo-segments */
-//	struct vm_data 			vm_data;			/* VM data segment */
-//	struct vm_stack			vm_stack;			/* VM stack segment */
-//	struct vm_text			vm_text;			/* VM text segment */
-
 /* we copy from vm_startcopy to the end of the structure on fork */
 #define vm_startcopy 		vm_rssize
 	segsz_t 		 		vm_rssize; 			/* current resident set size in pages */
@@ -157,4 +151,17 @@ struct vmspace {
 	caddr_t 		 		vm_minsaddr;		/* user VA at min stack growth */
 	caddr_t 		 		vm_maxsaddr;		/* user VA at max stack growth */
 };
+
+/*
+ * vm_map_entry etype bits:
+ */
+#define VM_ET_OBJ				0x01	/* it is a vm_object */
+#define VM_ET_SUBMAP			0x02	/* it is a vm_map submap */
+#define VM_ET_COPYONWRITE 		0x04	/* copy_on_write */
+#define VM_ET_NEEDSCOPY			0x08	/* needs_copy */
+
+#define VM_ET_ISOBJ(E)			(((E)->etype & VM_ET_OBJ) != 0)
+#define VM_ET_ISSUBMAP(E)		(((E)->etype & VM_ET_SUBMAP) != 0)
+#define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
+#define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
 #endif /* _VM_H */

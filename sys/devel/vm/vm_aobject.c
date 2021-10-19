@@ -47,15 +47,16 @@
 #include <sys/proc.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+#include <sys/vmmeter.h>
 
-#include <vm/include/vm.h>
-#include <vm/include/vm_object.h>
-#include <vm/include/vm_page.h>
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_object.h>
+#include <devel/vm/include/vm_segment.h>
+#include <devel/vm/include/vm_page.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_pager.h>
+#include <devel/vm/include/vm_aobject.h>
 
-#include <devel/vm/uvm/uvm.h>
-#include <devel/vm/uvm/vm_aobject.h>
 #include <devel/sys/malloctypes.h>
 
 /*
@@ -223,9 +224,9 @@ vm_aobject_free(aobj)
 						 * this page is no longer
 						 * only in swap.
 						 */
-						simple_lock(&uvm.swap_data_lock);
+						simple_lock(&swap_data_lock);
 						cnt.v_swpgonly--;
-						simple_unlock(&uvm.swap_data_lock);
+						simple_unlock(&swap_data_lock);
 					}
 				}
 				next = LIST_NEXT(elt, list);
@@ -246,9 +247,9 @@ vm_aobject_free(aobj)
 				vm_swap_free(slot, 1);
 
 				/* this page is no longer only in swap. */
-				simple_lock(&uvm.swap_data_lock);
+				simple_lock(&swap_data_lock);
 				cnt.v_swpgonly--;
-				simple_unlock(&uvm.swap_data_lock);
+				simple_unlock(&swap_data_lock);
 			}
 		}
 		FREE(aobj->u_swslots, M_VMAOBJ);
