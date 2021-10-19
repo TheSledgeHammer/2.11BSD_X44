@@ -198,7 +198,7 @@ startup(firstaddr)
 	printcpuinfo();
 	panicifcpuunsupported();
 
-	printf("real mem  = %d\n", ctob());
+	printf("real mem  = %d\n", ctob(physmem));
 
 	/*
 	 * Allocate space for system data structures.
