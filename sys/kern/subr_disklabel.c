@@ -205,7 +205,7 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 	int	(*strat)();
 	dev_t	dev;
 	int	cmd;
-	register caddr_t data;
+	void *data;
 	int	flag;
 {
   register struct disklabel *lp;

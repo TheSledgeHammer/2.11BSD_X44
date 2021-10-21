@@ -36,9 +36,56 @@
 #include <sys/errno.h>
 #include <sys/syslog.h>
 
-struct buf			dktab;
-struct buf			dkutab[];
-struct dkdevice 	*dk;
+/* dkdriver declaration */
+#define DKDRIVER_DECL(name, strat, minphys, open, close, ioctl, dump, start, mklabel)	\
+	struct dkdriver (name##_dkdrv) = { (#name), (strat), (minphys), (open), (close), (ioctl), (dump), (start), (mklabel) }
+
+
+void
+dkdriver_strategy(disk, bp)
+	struct dkdevice *disk;
+	struct buf *bp;
+{
+	register struct buf *dp;
+	register struct dkdriver *driver;
+	int s, unit;
+	void rv;
+
+	unit = dkunit(bp->b_dev);
+	driver = disk[unit].dk_driver;
+
+	if(!(disk->dk_flags & DKF_ALIVE)) {
+		bp->b_error = ENXIO;
+		bp->b_flags |= B_ERROR;
+	}
+	s = partition_check(bp, disk);
+	if (s < 0) {
+		bp->b_flags |= B_ERROR;
+	}
+	if (s == 0) {
+		biodone(bp);
+	}
+	bp->b_cylin = bp->b_blkno / (disk->dk_label->d_ntracks * disk->dk_label->d_nsectors);
+
+	dp = bp[unit];
+	s = splbio();
+	disksort(dp, bp);
+	if (dp->b_active == 0) {
+		dkustart(unit);
+		if (bp->b_active == 0) {
+			dkstart();
+		}
+	}
+	splx(s);
+}
+
+void
+dkdriver_minphys(disk, bp)
+	struct dkdevice *disk;
+	struct buf *bp;
+{
+	register struct dkdriver *driver;
+}
 
 int
 dkdriver_open(disk, dev, flags, mode, p)
@@ -51,14 +98,14 @@ dkdriver_open(disk, dev, flags, mode, p)
 	int ret, part, mask, rv, unit;
 
 	unit = dkunit(dev);
-	driver = disk->dk_driver;
+	driver = disk[unit].dk_driver;
 
 	while (disk->dk_flags & (DKF_OPENING | DKF_CLOSING)) {
 		sleep(disk, PRIBIO);
 	}
 
 	if ((disk->dk_flags & DKF_ALIVE) == 0) {
-		disk->dk_dev->d_type[unit] = 0;
+		//disk->dk_dev->d_type = 0;
 		disk->dk_flags |= DKF_ALIVE;
 	}
 	if (disk->dk_openmask == 0) {
@@ -105,9 +152,10 @@ dkdriver_close(disk, dev, flags, mode, p)
 	struct proc *p;
 {
 	register struct dkdriver *driver;
-	int part, mask, rv;
+	int unit, part, mask, rv;
 
-	driver = disk->dk_driver;
+	unit = dkunit(dev);
+	driver = disk[unit].dk_driver;
 
 	if (mode == S_IFCHR) {
 		disk->dk_copenmask |= mask;
@@ -142,58 +190,109 @@ done:
 	return (rv);
 }
 
-void
-dkdriver_strategy(bp)
-	struct buf *bp;
+int
+dkdriver_ioctl(disk, dev, cmd, data, flag, p)
+	struct dkdevice *disk;
+	dev_t dev;
+	u_long cmd;
+	void *data;
+	int flag;
+	struct proc *p;
 {
-	register struct buf *dp;
-	register struct dkdevice *disk;
 	register struct dkdriver *driver;
-	int s, unit;
-	void rv;
+	int unit, error;
 
-	unit = dkunit(bp->b_dev);
-	disk = &dk[unit];
-	driver = disk->dk_driver;
+	unit = dkunit(dev);
+	driver = disk[unit].dk_driver;
 
-	if(!(disk->dk_flags & DKF_ALIVE)) {
-		bp->b_error = ENXIO;
-		goto bad;
+	error = disk_ioctl(disk, dev, cmd, data, flag, p);
+	if (error != 0) {
+		return (error);
 	}
-	s = partition_check(bp, disk);
-	if (s < 0) {
-		goto bad;
+
+	error = ioctldisklabel(disk, driver->d_strategy, dev, cmd, data, flag);
+	if (error != 0) {
+		return (error);
 	}
-	if (s == 0) {
-		goto done;
-	}
-	bp->b_cylin = bp->b_blkno / (disk->dk_label->d_ntracks * disk->dk_label->d_nsectors);
 
-	dp = &dkutab[unit];
-	s = splbio();
-	disksort(dp, bp);
-	if (dp->b_active == 0) {
-		dkustart(unit);
-		if (dktab.b_active == 0) {
-			dkstart();
-		}
-	}
-	splx(s);
-	rv = (*driver->d_strategy)(bp);
-
-	return (rv);
-
-bad:
-	bp->b_flags |= B_ERROR;
-
-done:
-	biodone(bp);
+	return (0);
 }
 
 int
-dkdriver_start()
+dkdriver_dump(disk, dev)
+	struct dkdevice *disk;
+	dev_t dev;
 {
+	register struct dkdriver *driver;
+	int unit, error;
 
+	unit = dkunit(dev);
+	driver = disk[unit].dk_driver;
+
+	return (0);
+}
+
+void
+dkdriver_start(disk, bp, addr)
+	struct dkdevice *disk;
+	struct buf * bp;
+	daddr_t addr;
+{
+	register struct dkdriver *driver;
+	int unit, error;
+
+	unit = dkunit(bp->b_dev);
+	driver = disk[unit].dk_driver;
+
+	if (disk->dk_busy < 2)
+		disk->dk_busy++;
+	/*
+	if (disk->dk_busy > 1)
+		goto done;
+	 */
+	while (disk->dk_busy > 0) {
+
+		while (bp != NULL) {
+			disk_busy(&disk);
+			// mutex_exit(&dksc->sc_iolock);
+			error = driver->d_start(bp, addr);
+		//	mutex_enter(&dksc->sc_iolock);
+			if (error == EAGAIN || error == ENOMEM) {
+				disk_unbusy(&disk, 0);
+				//disk_wait(&dksc->sc_dkdev);
+				break;
+			}
+
+			if (error != 0) {
+				bp->b_error = error;
+				bp->b_resid = bp->b_bcount;
+				dkdriver_done1(disk, bp);
+			}
+		}
+		disk->dk_busy--;
+	}
+}
+
+int
+dkdriver_mklabel(disk)
+	struct dkdevice *disk;
+{
+	register struct dkdriver *driver;
+}
+
+static void
+dkdriver_done1(disk, bp)
+	struct dkdevice *disk;
+	struct buf *bp;
+	//boolean_t lock;
+{
+	if (bp->b_error != 0) {
+		struct cfdriver *cd = disk->dk_dev->dv_cfdata->cf_driver;
+		diskerr(bp, cd->cd_name, "error", LOG_PRINTF, 0, disk->dk_label);
+		printf("\n");
+	}
+	disk_unbusy(disk, bp->b_bcount - bp->b_resid, (bp->b_flags & B_READ));
+	biodone(bp);
 }
 
 void

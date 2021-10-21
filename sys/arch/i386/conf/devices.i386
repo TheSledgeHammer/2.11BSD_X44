@@ -84,9 +84,9 @@ file	arch/i386/isa/isapnp_machdep.c	    isapnp
 # XXX this needs to be done very late, so it's done here.  This feels
 # like a kludge, but it might be for the best.
 
-defflag	PCIC_ISA_ALLOC_IOBASE
-defflag	PCIC_ISA_ALLOC_IOSIZE
-defflag	PCIC_ISA_INTR_ALLOC_MASK
+defparam PCIC_ISA_ALLOC_IOBASE
+defparam PCIC_ISA_ALLOC_IOSIZE
+defparam PCIC_ISA_INTR_ALLOC_MASK
 
 device	pcic: pcmciabus
 device	pcic {[controller = -1], [socket = -1]}

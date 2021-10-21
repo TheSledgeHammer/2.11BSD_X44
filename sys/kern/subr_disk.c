@@ -93,14 +93,15 @@ void
 disk_attach(diskp)
 	struct dkdevice *diskp;
 {
+	int s;
 	diskp->dk_label = malloc(sizeof(struct disklabel), M_DEVBUF, M_NOWAIT);
-	diskp->dk_cpulabel = malloc(sizeof(struct cpu_disklabel), M_DEVBUF, M_NOWAIT);
-	if ((diskp->dk_label == NULL) || (diskp->dk_cpulabel == NULL)) {
+	//diskp->dk_cpulabel = malloc(sizeof(struct cpu_disklabel), M_DEVBUF, M_NOWAIT);
+	if ((diskp->dk_label == NULL)/* || (diskp->dk_cpulabel == NULL)*/) {
 			panic("disk_attach: can't allocate storage for disklabel");
 	}
 
 	memset(diskp->dk_label, 0, sizeof(struct disklabel));
-	memset(diskp->dk_cpulabel, 0, sizeof(struct cpu_disklabel));
+	//memset(diskp->dk_cpulabel, 0, sizeof(struct cpu_disklabel));
 
 	/*
 	 * Set the attached timestamp.
@@ -135,7 +136,7 @@ disk_detach(diskp)
 	 * Free the space used by the disklabel structures.
 	 */
 	free(diskp->dk_label, M_DEVBUF);
-	free(diskp->dk_cpulabel, M_DEVBUF);
+	//free(diskp->dk_cpulabel, M_DEVBUF);
 }
 
 /*
@@ -187,6 +188,45 @@ disk_unbusy(diskp, bcount)
 	if (bcount > 0) {
 		diskp->dk_bytes += bcount;
 		diskp->dk_bps++;
+	}
+}
+
+int
+disk_ioctl(diskp, dev, cmd, data, flag, p)
+	struct dkdevice *diskp;
+	dev_t			dev;
+	int				cmd;
+	void 			*data;
+	int				flag;
+	struct proc 	*p;
+{
+	struct disklabel *lp;
+	//struct diskslices *ssp;
+	int error;
+
+	lp = diskp->dk_label;
+	ssp = diskp->dk_slices;
+
+	if (dev == NODEV) {
+		return (ENOIOCTL);
+	}
+	/*
+	if(ssp != NULL) {
+		return (dsioctl(dev, cmd, data, flag, &ssp));
+	}
+	*/
+
+	switch (cmd) {
+	case DIOCGSECTORSIZE:
+		*(u_int *)data = lp->d_secsize;
+		return (0);
+
+	case DIOCGMEDIASIZE:
+		*(off_t *)data = (off_t)lp->d_secsize * lp->d_secperunit;
+		return (0);
+
+	default:
+		return (ENOIOCTL);
 	}
 }
 

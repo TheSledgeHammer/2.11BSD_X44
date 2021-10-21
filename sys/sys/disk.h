@@ -85,7 +85,7 @@
  */
 struct buf;
 struct disklabel;
-struct cpu_disklabel;
+//struct cpu_disklabel;
 
 struct disklist_head;
 TAILQ_HEAD(disklist_head, dkdevice);				/* the disklist is a TAILQ */
@@ -109,9 +109,10 @@ struct dkdevice {
 	struct dkdriver 		*dk_driver;				/* pointer to driver */
 	daddr_t					dk_labelsector;			/* sector containing label */
 	struct disklabel 		dk_label;				/* label */
-	struct diskslice		dk_slice;				/* slice */
+	//struct diskslices		dk_slices;				/* slices */
 	struct partition 		dk_parts[MAXPARTITIONS];/* in-kernel portion */
-	struct cpu_disklabel 	*dk_cpulabel;
+	//struct diskslice		dk_slice;				/* slice */
+	//struct cpu_disklabel 	*dk_cpulabel;
 };
 
 struct dkdriver {
@@ -165,21 +166,18 @@ struct disksort_stats {
 #define dkpart(dev)			(minor(dev) & 07)
 #define dkminor(unit, part)	(((unit) << 3) | (part))
 
-/* dkdriver declaration */
-#define DKDRIVER_DECL(name, strat, minphys, open, close, ioctl, dump, start, mklabel)	\
-	struct dkdriver (name##_dkdrv) = { (#name), (strat), (minphys), (open), (close), (ioctl), (dump), (start), (mklabel) }
-
 #ifdef KERNEL
 extern	int disk_count;			/* number of disks in global disklist */
 
-void	disk_init (void);
-void	disk_attach (struct dkdevice *);
-void	disk_detach (struct dkdevice *);
-void	disk_busy (struct dkdevice *);
-void	disk_unbusy (struct dkdevice *, long);
-void	disk_resetstat (struct dkdevice *);
-struct	dkdevice *disk_find (char *);
-void	disksort (struct buf *, struct buf *);
-int		diskerr (struct dkdevice *, struct buf *, char *, int, int);
+void				disk_init (void);
+void				disk_attach (struct dkdevice *);
+void				disk_detach (struct dkdevice *);
+void				disk_busy (struct dkdevice *);
+void				disk_unbusy (struct dkdevice *, long);
+int					disk_ioctl (struct dkdevice *, dev_t, u_long, void *, int, struct proc *);
+void				disk_resetstat (struct dkdevice *);
+struct dkdevice 	*disk_find (char *);
+void				disksort (struct buf *, struct buf *);
+int					diskerr (struct dkdevice *, struct buf *, char *, int, int);
 #endif
 #endif /* _SYS_DISK_H_ */

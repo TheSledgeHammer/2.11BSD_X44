@@ -67,7 +67,7 @@ struct device {
 	char				dv_xname[16];			/* external name (name + unit) */
 	struct	device 		*dv_parent;				/* pointer to parent device */
 	int					dv_flags;				/* misc. flags; see below */
-	struct cfhint 		*dv_hint;
+	struct cfhint 		*dv_hint;				/* config hints per device */
 };
 
 /* dv_flags */

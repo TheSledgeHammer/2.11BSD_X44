@@ -13,7 +13,6 @@ device	atapibus {drive = -1}
 attach	atapibus at atapi
 file	dev/disk/atapi/atapiconf.c      atapibus						needs-flag
 
-
 device	cd: disk
 attach	cd at atapibus
 file	dev/disk/atapi/cd_atapi.c		cd_atapibus

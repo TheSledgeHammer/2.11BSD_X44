@@ -51,8 +51,6 @@
 
 #include <ufs/ffs/fs.h>
 
-static struct dkdevice 	*dk;
-
 static struct disklabel *
 clone_label(lp)
 	struct disklabel *lp;
@@ -308,8 +306,8 @@ dsioctl(dev, cmd, data, flags, sspp)
 	ssp = *sspp;
 	sp = &ssp->dss_slices[slice];
 	lp = sp->ds_label;
-	switch (cmd) {
 
+	switch (cmd) {
 	case DIOCGDINFO:
 		if (lp == NULL)
 			return (EINVAL);
@@ -317,10 +315,11 @@ dsioctl(dev, cmd, data, flags, sspp)
 		return (0);
 
 	case DIOCGMEDIASIZE:
-		if (lp == NULL)
+		if (lp == NULL) {
 			*(off_t*) data = (off_t) sp->ds_size * ssp->dss_secsize;
-		else
+		} else {
 			*(off_t*) data = (off_t) lp->d_partitions[dkpart(dev)].p_size * lp->d_secsize;
+		}
 		return (0);
 
 	case DIOCGSECTORSIZE:
@@ -328,8 +327,7 @@ dsioctl(dev, cmd, data, flags, sspp)
 		return (0);
 
 	case DIOCGSLICEINFO:
-		bcopy(ssp, data,
-				(char*) &ssp->dss_slices[ssp->dss_nslices] - (char*) ssp);
+		bcopy(ssp, data, (char*) &ssp->dss_slices[ssp->dss_nslices] - (char*) ssp);
 		return (0);
 
 	case DIOCSDINFO:
@@ -347,11 +345,9 @@ dsioctl(dev, cmd, data, flags, sspp)
 		else {
 			openmask = sp->ds_openmask;
 			if (slice == COMPATIBILITY_SLICE)
-				openmask |=
-						ssp->dss_slices[ssp->dss_first_bsd_slice].ds_openmask;
+				openmask |=	ssp->dss_slices[ssp->dss_first_bsd_slice].ds_openmask;
 			else if (slice == ssp->dss_first_bsd_slice)
-				openmask |= ssp->dss_slices[
-				COMPATIBILITY_SLICE].ds_openmask;
+				openmask |= ssp->dss_slices[COMPATIBILITY_SLICE].ds_openmask;
 		}
 		error = setdisklabel(lp, (struct disklabel*) data, (u_long) openmask);
 		/* XXX why doesn't setdisklabel() check this? */
@@ -409,8 +405,7 @@ dsioctl(dev, cmd, data, flags, sspp)
 					openmask; openmask >>= 1, part++) {
 				if (!(openmask & 1))
 					continue;
-				error = dsopen(dkmodslice(dkmodpart(dev, part), slice), S_IFCHR,
-						ssp->dss_oflags, sspp, lp);
+				error = dsopen(dkmodslice(dkmodpart(dev, part), slice), S_IFCHR, ssp->dss_oflags, sspp, lp);
 				if (error != 0) {
 					free(lp, M_DEVBUF);
 					*sspp = ssp;
