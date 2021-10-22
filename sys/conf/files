@@ -5,6 +5,7 @@ include										"conf/devices"
 include 									"conf/filesystems"
 include 									"conf/network"
 
+include 									"dev/files.dev"
 include 									"ddb/files.ddb"
 
 # Kernel Sources
