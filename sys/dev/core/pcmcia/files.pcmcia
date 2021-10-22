@@ -6,8 +6,8 @@
 defflag	PCMCIAVERBOSE
 
 device	pcmcia {[function = -1], [irq = -1]}
-file	dev/pcmcia/pcmcia.c					pcmcia
-file	dev/pcmcia/pcmcia_cis.c				pcmcia
+file	dev/core/pcmcia/pcmcia.c				pcmcia
+file	dev/core/pcmcia/pcmcia_cis.c				pcmcia
 
 # device declaration in sys/conf/files
 attach	pcmcia at pcmciabus
