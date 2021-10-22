@@ -3,6 +3,8 @@
 # Video Configuration Files
 #
 
+include "dev/video/videomode/files.videomode"
+
 # generic ISA VGA
 attach	vga at isa with vga_isa
 file	dev/video/vga/vga_isa.c				vga_isa			needs-flag

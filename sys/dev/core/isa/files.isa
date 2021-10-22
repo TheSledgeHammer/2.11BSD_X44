@@ -12,17 +12,15 @@ device	isa {[port = -1], [size = 0],
 	     [iomem = -1], [iosiz = 0],
 	     [irq = -1], [drq = -1]}
 attach	isa at isabus
-file	dev/isa/isa.c				isa 			needs-flag
-file	dev/isa/isahint.c			isa
+file	dev/core/isa/isa.c				isa 			needs-flag
 
 # ISA DMA controller
 define	isadma
-file	dev/isa/isadma.c			isadma 			needs-flag
-
+file	dev/core/isa/isadma.c			isadma 			needs-flag
 
 # Serial and parallel drivers #
 attach	com at isa with com_isa
-file	dev/isa/com_isa.c			com_isa
+file	dev/core/isa/com_isa.c			com_isa
 
 attach	com at commulti with com_multi
-file	dev/isa/com_multi.c			com_multi
+file	dev/core/isa/com_multi.c		com_multi

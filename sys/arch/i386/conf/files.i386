@@ -53,10 +53,13 @@ file 	arch/i386/i386/mp_machdep.c
 file	arch/i386/i386/mpboot.S
 
 # i386 Devices & Drivers
-include "arch/i386/conf/devices.i386"
+#include "arch/i386/conf/devices.i386"
 
 #
 # Compatibility modules
 #
 # VM86 mode
 file	arch/i386/i386/vm86.c			vm86
+
+
+#include "arch/i386/conf/majors.i386"

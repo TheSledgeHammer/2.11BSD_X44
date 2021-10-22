@@ -3,9 +3,8 @@
 # Disk Configuration Files
 #
 include		"dev/disk/ata/files.ata"
-#include		"dev/disk/atapi/files.atapi"
 include		"dev/disk/scsi/files.scsi"
 
 # pseudo disks
-file 		dev/ccd/ccd.c			ccd			needs-flag
-file 		dev/vnd/vnd.c			vnd			needs-flag
+file 		dev/disk/ccd/ccd.c			ccd			needs-flag
+file 		dev/disk/vnd/vnd.c			vnd			needs-flag

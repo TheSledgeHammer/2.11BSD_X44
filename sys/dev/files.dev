@@ -12,10 +12,10 @@
 # XXX: Needs to be included in devices.archtype (Follow i386 for an example)
 # 
 # sub-directory configuration files
-#
+# NOTE: files.core must be first
 
-include		"dev/audio/files.audio"
 include		"dev/core/files.core"
+include		"dev/audio/files.audio"
 include		"dev/disk/files.disk"
 include 	"dev/misc/files.misc"
 include		"dev/usb/files.usb"

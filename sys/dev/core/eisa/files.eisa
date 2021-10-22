@@ -4,7 +4,7 @@
 # Included by ports that need it.  Requires that the SCSI files be
 # defined first.
 
-defopt	EISAVERBOSE
+defflag	EISAVERBOSE
 
 device	eisa {[slot = -1]}
 attach	eisa at eisabus

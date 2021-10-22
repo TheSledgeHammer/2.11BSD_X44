@@ -1,0 +1,11 @@
+#	$NetBSD: files.videomode,v 1.4 2010/05/04 21:17:10 macallan Exp $
+
+define	videomode
+define	edid
+define	vesagtf
+
+file	dev/video/videomode/videomode.c		videomode | edid
+
+file	dev/video/videomode/edid.c			edid
+
+file	dev/video/videomode/vesagtf.c		vesagtf | edid

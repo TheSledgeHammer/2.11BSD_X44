@@ -6,5 +6,6 @@
 defflag	opt_apm.h		APM_V10_ONLY APM_NO_V12 APMDEBUG
 						APM_POWER_PRINT
 defparam opt_apm.h		APMDEBUG_VALUE
+
 device	apm
 file	dev/apm/apm.c	apm

@@ -7,8 +7,7 @@
 # SCSI disks
 file	dev/disk/scsi/scsi_base.c		scsi | atapibus
 file	dev/disk/scsi/scsi_ioctl.c		scsi | atapibus
-file	dev/disk/scsi/scsiconf.c		scsi | atapibus
-file	dev/disk/scsi/scsi_base.c		scsi | atapibus
+
 # ATAPI disks
 file	dev/disk/atapi/atapi_base.c		atapibus
 file	dev/disk/atapi/atapi_wdc.c		atapibus & atabus & wdc_base
@@ -22,7 +21,8 @@ attach	atapibus at atapi
 file	dev/disk/atapi/atapiconf.c      atapibus						needs-flag
 
 device	cd: disk
-attach	cd at scsibus, atapibus
+attach	cd at scsibus with cd_scsibus
+attach	cd at atapibus with cd_atapibus
 file	dev/disk/scsi/cd_scsi.c			cd_scsibus
 file	dev/disk/atapi/cd_atapi.c		cd_atapibus
 file	dev/disk/scsi/cd.c				cd | cd_scsibus | cd_atapibus 	needs-flag
@@ -32,7 +32,8 @@ attach	ch at scsibus
 file	dev/disk/scsi/ch.c				ch needs-flag
 
 device	sd: disk
-attach	sd at scsibus, atapibus
+attach	sd at scsibus with sd_scsibus
+attach	sd at atapibus with sd_atapibus
 file	dev/disk/scsi/sd_scsi.c			sd_scsibus
 file	dev/disk/atapi/sd_atapi.c		sd_atapibus
 file	dev/disk/scsi/sd.c				sd | sd_scsibus | sd_atapibus 	needs-flag

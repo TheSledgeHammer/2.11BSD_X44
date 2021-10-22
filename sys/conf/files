@@ -6,7 +6,6 @@ include 									"conf/filesystems"
 include 									"conf/network"
 
 include 									"ddb/files.ddb"
-include 									"dev/files.dev"
 
 # Kernel Sources
 file	kern/exec_aout.c					exec_aout

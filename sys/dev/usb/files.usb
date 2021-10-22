@@ -4,47 +4,61 @@
 # Included by ports that need it.  Ports that use it must provide
 # their own "major" declarations for the appropriate devices.
 
-defopt	USBVERBOSE
+defflag	USBVERBOSE
 
+define	usbdevif { [port = -1], [configuration = -1], [interface = -1],
+		   [vendor = -1], [product = -1], [release = -1] }
+		  
+define	ucombus {[ portno = -1 ]}			# Modem and com serial port "bus"
+define	uhidbus {[ reportid = -1 ]}			# HID "bus"
+		  
 device	usb { }
 attach	usb at usbus
-file	dev/usb/hid.c			usb
 file	dev/usb/usb.c			usb			needs-flag
 file	dev/usb/usbdi.c			usb
 file	dev/usb/usbdi_util.c	usb
-file	dev/usb/usb_mem.c		usb
 file	dev/usb/usb_subr.c		usb
 file	dev/usb/usb_quirks.c	usb
 
+define	usb_dma: usb
+file	dev/usb/usb_mem.c		usb_dma		needs-flag
+
+# HID processing
+define  hid
+file    dev/usb/hid.c			hid
+
 # Hub driver
-device	uhub { [port = -1], [configuration = -1], [interface = -1] }
+device	uhub: usbdevif
 attach	uhub at usb
 file	dev/usb/uhub.c			usb
 
-attach	uhub at uhub with uhub_uhub
-
 # Com ports
-#device	ucom
-#attach	ucom at uhub
-#file	dev/usb/ucom.c			ucom		needs-flag
+device	ucom
+attach	ucom at ucombus
+file	dev/usb/ucom.c			ucom | ucombus needs-flag
 
 # Generic devices
 device	ugen
-attach	ugen at uhub
+attach	ugen at usbdevif
 file	dev/usb/ugen.c			ugen		needs-flag
 
+# HID root device for multiple report IDs
+device	uhidev: hid, uhidbus
+attach	uhidev at usbifif
+file	dev/usb/uhidev.c		uhidev
+
 # Generic HID devices
-device	uhid
-attach	uhid at uhub
+device	uhid: hid
+attach	uhid at uhidbus
 file	dev/usb/uhid.c			uhid		needs-flag
 
 # Keyboards
-device	ukbd: wskbddev
-attach	ukbd at uhub
+device	ukbd: hid, wskbddev
+attach	ukbd at uhidbus
 file	dev/usb/ukbd.c			ukbd		needs-flag
 file	dev/usb/ukbdmap.c		ukbd
 
 # Mice
-device	ums: wsmousedev
-attach	ums at uhub
+device	ums: hid, wsmousedev
+attach	ums at uhidbus
 file	dev/usb/ums.c			ums			needs-flag
