@@ -87,8 +87,8 @@ int			                    slab_count;                                     /* num
 #define LARGE_OBJECT(s)        	(BUCKETINDX((s)) >= 10)
 
 /* slot macros */
-#define BUCKET_SLOTS(bsize)     ((bsize)/(BUCKETINDX(bsize)))       			/* Number of slots in a bucket */
-#define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size))							/* Number slots taken by space to be allocated */
+#define BUCKET_SLOTS(bsize)     ((bsize)/BUCKETINDX(bsize))       				/* Number of slots in a bucket */
+#define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size)/BUCKETINDX(size))			/* Number slots taken by space to be allocated */
 #define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
 
 /* proto types */

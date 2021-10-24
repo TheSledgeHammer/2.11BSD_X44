@@ -84,7 +84,7 @@
 #include <vm/include/vm.h>
 
 #include <devel/sys/malloctypes.h>
-#include "../sys/slab.h"
+#include <devel/sys/slab.h>
 
 struct slab_cache       *slabCache;
 struct slab 			slab_list[MINBUCKET + 16];
@@ -146,16 +146,19 @@ slabmeta(slab, size)
 	meta->sm_bindx = indx;
 	meta->sm_bslots = BUCKET_SLOTS(meta->sm_bsize);
 	meta->sm_aslots = ALLOCATED_SLOTS(size);
-	meta->sm_fslots = SLOTSFREE(meta->sm_bslots, meta->sm_aslots);
+	meta->sm_fslots = SLOTSFREE(bsize, size);
 	if (meta->sm_fslots < 0) {
 		meta->sm_fslots = 0;
 	}
 
+	u_long lowerbound = percent(meta->sm_bslots, 5); 	/* lower bucket boundary */
+	u_long upperbound = percent(meta->sm_bslots, 95);  	/* upper bucket boundary */
+
 	/* test if free bucket slots is between 5% to 95% */
-	if((meta->sm_fslots >= (meta->sm_bslots * 0.05)) && (meta->sm_fslots <= (meta->sm_bslots * 0.95))) {
+	if((meta->sm_fslots >= lowerbound) && (meta->sm_fslots <= upperbound)) {
 		slab->s_flags |= SLAB_PARTIAL;
 	/* test if free bucket slots is greater than 95% */
-	} else if(meta->sm_fslots > (meta->sm_bslots * 0.95)) {
+	} else if(meta->sm_fslots > upperbound) {
 		slab->s_flags |= SLAB_FULL;
 	} else {
 		slab->s_flags |= SLAB_EMPTY;
@@ -276,7 +279,7 @@ kmembucket_search(cache, meta, size, mtype)
 	bsize = BUCKETSIZE(indx);
 	bslots = BUCKET_SLOTS(bsize);
 	aslots = ALLOCATED_SLOTS(slab->s_size);
-	fslots = SLOTSFREE(bslots, aslots);
+	fslots = SLOTSFREE(bsize, slab->s_size);
 
 	switch (slab->s_flags) {
 	case SLAB_FULL:
@@ -526,8 +529,7 @@ free(addr, type)
 		ksp->ks_memuse -= size;
 		kup->ku_indx = 0;
 		kup->ku_pagecnt = 0;
-		if (ksp->ks_memuse + size >= ksp->ks_limit
-				&& ksp->ks_memuse < ksp->ks_limit)
+		if (ksp->ks_memuse + size >= ksp->ks_limit && ksp->ks_memuse < ksp->ks_limit)
 			wakeup((caddr_t) ksp);
 		ksp->ks_inuse--;
 		kbp->kb_total -= 1;
@@ -667,4 +669,16 @@ ofree(addr, size, type)
 	if(type & M_OVERLAY) {
 		omem_free(omem_map, (vm_offset_t) addr, size);
 	}
+}
+
+/*
+ * calculates the percentage of a value.
+ */
+u_long
+percent(val, per)
+    u_long val;
+    int per;
+{
+    u_long p = (val / 100) * per;
+    return (p);
 }

@@ -105,12 +105,12 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <vm/include/vm_mac.h>
 #include <vm/include/vm_systm.h>
 
+#include <devel/vm/include/vm_map.h>
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_text.h>			/* Work in Progress */
-#include <devel/vm/include/vm_stack.h>			/* Work in Progress */
 
 #include <devel/vm/include/vm_aobject.h>		/* Work in Progress */
 #include <devel/vm/include/vm_amap.h>			/* Work in Progress */

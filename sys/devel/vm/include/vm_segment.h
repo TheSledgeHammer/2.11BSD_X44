@@ -43,7 +43,7 @@
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm_param.h>
-#include <devel/vm/include/vm_stack.h>
+#include <devel/vm/include/vm_text.h>
 
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);

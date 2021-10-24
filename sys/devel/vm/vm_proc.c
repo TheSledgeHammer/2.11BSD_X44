@@ -343,7 +343,7 @@ swapout_seg(p, freecore, odata, ostack)
 	p->p_flag &= ~(P_SLOAD | P_SLOCK);
 	p->p_time = 0;
 
-//	cnt.v_swpout++;
+	cnt.v_swpout++;
 	if (runout) {
 		runout = 0;
 		wakeup((caddr_t) &runout);

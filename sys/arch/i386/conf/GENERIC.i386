@@ -64,3 +64,192 @@ options 	  	EISAVERBOSE		# verbose EISA device autoconfig messages
 options 		PCIVERBOSE		# verbose PCI device autoconfig messages
 options 		PCMCIAVERBOSE	# verbose PCMCIA configuration messages
 options 		SCSIVERBOSE		# human readable SCSI error messages
+#options 		USBVERBOSE		# verbose USB device autoconfig messages
+#options 		MCAVERBOSE		# verbose MCA device autoconfig messages
+#options 		HDAUDIOVERBOSE	# verbose HDAUDIO driver messages
+
+#
+# Device configuration
+#
+
+# PCI bus support
+pci*			at mainbus? bus ?
+pci*			at pchb? bus ?
+
+# PCI bridges
+pchb*			at pci? dev ? function ?	# PCI-Host bridges
+pcib*			at pci? dev ? function ?	# PCI-ISA bridges
+
+# EISA bus support
+eisa0			at mainbus?
+#eisa0			at pceb?
+
+# ISA bus support
+isa0			at mainbus?
+#isa0			at pceb?
+isa0			at pcib?
+
+# PCMCIA bus support
+pcmcia* 		at pcic? controller ? socket ?
+pcmcia* 		at tcic? controller ? socket ?
+
+# MCA bus support
+mca0			at mainbus?
+
+# ISA PCMCIA controllers
+pcic0			at isa? port 0x3e0 iomem 0xd0000 iosiz 0x10000
+pcic1			at isa? port 0x3e2 iomem 0xe0000 iosiz 0x4000
+pcic2			at isa? port 0x3e4 iomem 0xe0000 iosiz 0x4000
+tcic0			at isa? port 0x240 iomem 0xd0000 iosiz 0x10000
+
+# PCI PCMCIA controllers
+pcic0			at pci? dev? function ?
+
+# ISA Plug-and-Play bus support
+isapnp0 		at isa?
+
+# ISA Plug-and-Play PCMCIA controllers
+pcic*			at isapnp?
+
+# Console Devices
+
+# wscons
+pckbc0			at isa?						# PC keyboard controller
+pckbd*			at pckbc?					# PC keyboard
+pms*			at pckbc?					# PS/2 mouse for wsmouse
+#options 		PMS_DISABLE_POWERHOOK		# Disable PS/2 reset on resume
+options 		PMS_SYNAPTICS_TOUCHPAD		# Enable support for Synaptics Touchpads
+options 		PMS_ELANTECH_TOUCHPAD		# Enable support for Elantech Touchpads
+options 		PMS_ALPS_TOUCHPAD			# Enable support for Alps Touchpads
+# vga@isa and pcdisplay@isa are disabled; see PR#49290
+#vga0			at isa?
+vga*			at pci? dev ? function ?
+#pcdisplay0		at isa?						# CGA, MDA, EGA, HGA
+genfb*			at pci? dev ? function ?
+options 		VCONS_DRAW_INTR
+#machfb* 		at pci? dev ? function ? 	# ATI Mach64 framebuffer driver
+wsdisplay*		at vga? console ?
+#wsdisplay*		at pcdisplay? console ?
+wsdisplay*		at wsemuldisplaydev?
+#wsdisplay*		at machfb? console ?
+wskbd*			at pckbd? console ?
+wsmouse*		at pms? mux 0
+wsmouse*		at wsmousedev?
+
+# Serial Devices
+
+# PCI serial interfaces
+com*			at puc? port ?				# 16x50s on "universal" comm boards
+
+# PCMCIA serial interfaces
+com*			at pcmcia? function ?		# Modems and serial cards
+
+pcmcom* 		at pcmcia? function ?		# PCMCIA multi-port serial cards
+com*			at pcmcom? slave ?			# ...and the slave devices
+
+# ISA serial interfaces
+#options 		COM_HAYESP					# adds Hayes ESP serial board support
+com0			at isa? port 0x3f8 irq 4	# Standard PC serial ports
+com1			at isa? port 0x2f8 irq 3
+com2			at isa? port 0x3e8 irq 5
+
+# SCSI Controllers and Devices
+
+# SCSI bus support
+scsibus* 		at scsi?
+
+# SCSI devices
+sd*				at scsibus? target ? lun ?	# SCSI disk drives
+st*				at scsibus? target ? lun ?	# SCSI tape drives
+cd*				at scsibus? target ? lun ?	# SCSI CD-ROM drives
+ch*				at scsibus? target ? lun ?	# SCSI autochangers
+#ses*			at scsibus? target ? lun ?	# SCSI Enclosure Services devices
+ss*				at scsibus? target ? lun ?	# SCSI scanners
+uk*				at scsibus? target ? lun ?	# SCSI unknown
+
+# ISA Plug-and-Play IDE controllers
+wdc*			at isapnp?
+
+# ISA ST506, ESDI, and IDE controllers
+# Use flags 0x01 if you want to try to use 32bits data I/O (the driver will
+# fall back to 16bits I/O if 32bits I/O are not functional).
+# Some controllers pass the initial 32bit test, but will fail later.
+wdc0			at isa? port 0x1f0 irq 14 flags 0x00
+wdc1			at isa? port 0x170 irq 15 flags 0x00
+
+# ATA (IDE) bus support
+atabus* 		at ata?
+options 		ATADEBUG
+
+# IDE drives
+# Flags are used only with controllers that support DMA operations
+# and mode settings (e.g. some pciide controllers)
+# The lowest order four bits (rightmost digit) of the flags define the PIO
+# mode to use, the next set of four bits the DMA mode and the third set the
+# UltraDMA mode. For each set of four bits, the 3 lower bits define the mode
+# to use, and the last bit must be 1 for this setting to be used.
+# For DMA and UDMA, 0xf (1111) means 'disable'.
+# 0x0fac means 'use PIO mode 4, DMA mode 2, disable UltraDMA'.
+# (0xc=1100, 0xa=1010, 0xf=1111)
+# 0x0000 means "use whatever the drive claims to support".
+wd*				at atabus? drive ? flags 0x0000
+
+# ATAPI bus support
+atapibus* 		at atapi?
+
+# ATAPI devices
+# flags have the same meaning as for IDE drives.
+cd*				at atapibus? drive ? flags 0x0000	# ATAPI CD-ROM drives
+sd*				at atapibus? drive ? flags 0x0000	# ATAPI disk drives
+st*				at atapibus? drive ? flags 0x0000	# ATAPI tape drives
+uk*				at atapibus? drive ? flags 0x0000	# ATAPI unknown
+
+# Network Interfaces
+
+# USB Controller and Devices
+
+# PCI USB controllers
+#xhci*			at pci?	dev ? function ?	# eXtensible Host Controller
+ehci*			at pci?	dev ? function ?	# Enhanced Host Controller
+#gcscehci* 		at pci? dev ? function ?	# Enhanced Host Controller (Geode CSC)
+ohci*			at pci?	dev ? function ?	# Open Host Controller
+uhci*			at pci?	dev ? function ?	# Universal Host Controller (Intel)
+
+# USB bus support
+#usb*			at xhci?
+usb*			at ehci?
+#usb*			at gcscehci?
+usb*			at ohci?
+#usb*			at slhci?
+usb*			at uhci?
+
+# Mice
+
+# ISA busmice
+lms0			at isa? port 0x23c irq 5	# Logitech bus mouse
+lms1			at isa? port 0x238 irq 5
+mms0			at isa? port 0x23c irq 5	# Microsoft InPort mouse
+mms1			at isa? port 0x238 irq 5
+wsmouse*		at lms? mux 0
+wsmouse*		at mms? mux 0
+
+# Pseudo-Devices
+
+# disk/mass storage pseudo-devices
+pseudo-device	ccd							# concatenated/striped disk devices
+
+pseudo-device	vnd							# disk-like interface to files
+
+# network pseudo-devices
+pseudo-device	bpfilter					# Berkeley packet filter
+
+# miscellaneous pseudo-devices
+pseudo-device	pty							# pseudo-terminals
+pseudo-device	sequencer					# MIDI sequencer
+
+# wscons pseudo-devices
+pseudo-device	wsmux						# mouse & keyboard multiplexor
+pseudo-device	wsfont
+
+# cmos(4) pseudo-device
+pseudo-device	cmos

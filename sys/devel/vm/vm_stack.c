@@ -32,7 +32,6 @@
 #include <sys/map.h>
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
-#include <devel/vm/include/vm_stack.h>
 #include <devel/vm/include/vm_text.h>
 #include <devel/vm/include/vm_param.h>
 
@@ -59,7 +58,7 @@ vm_psegment_init(seg, start, end)
 	text = (struct vm_text *)rmalloc(&coremap, sizeof(struct vm_text *));
 
 	vm_psegment_extent_create(pseg, "vm_psegment", start, end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
-	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size, 0, EX_WAITOK | EX_MALLOCOK);
+	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size, EX_WAITOK | EX_MALLOCOK);
 
 	vm_psegment_extent_suballoc(pseg, sizeof(data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK); 	/* data extent region */
 	vm_psegment_extent_suballoc(pseg, sizeof(stack), 0, PSEG_STACK, EX_WAITOK | EX_MALLOCOK);	/* stack extent region */

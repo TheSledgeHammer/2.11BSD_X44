@@ -52,9 +52,11 @@
 
 #define VM_AMAP_C		/* ensure disabled inlines are in */
 
-#include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_page.h>
 #include <vm/include/vm_kern.h>
+
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_map.h>
+#include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm_amap.h>
 
 #include <devel/sys/malloctypes.h>

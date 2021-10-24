@@ -254,9 +254,9 @@ dkdriver_start(disk, bp, addr)
 
 		while (bp != NULL) {
 			disk_busy(&disk);
-			// mutex_exit(&dksc->sc_iolock);
+			// simple_unlock(&dksc->sc_iolock);
 			error = driver->d_start(bp, addr);
-		//	mutex_enter(&dksc->sc_iolock);
+			//simple_lock(&dksc->sc_iolock);
 			if (error == EAGAIN || error == ENOMEM) {
 				disk_unbusy(&disk, 0);
 				//disk_wait(&dksc->sc_dkdev);
