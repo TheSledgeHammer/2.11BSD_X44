@@ -14,14 +14,13 @@ define	uhidbus {[ reportid = -1 ]}			# HID "bus"
 		  
 device	usb { }
 attach	usb at usbus
-file	dev/usb/usb.c			usb			needs-flag
+file	dev/usb/usb.c			usb		needs-flag
 file	dev/usb/usbdi.c			usb
-file	dev/usb/usbdi_util.c	usb
+file	dev/usb/usbdi_util.c		usb
 file	dev/usb/usb_subr.c		usb
-file	dev/usb/usb_quirks.c	usb
+file	dev/usb/usb_quirks.c		usb
 
-define	usb_dma: usb
-file	dev/usb/usb_mem.c		usb_dma		needs-flag
+file	dev/usb/usb_mem.c		usb		needs-flag
 
 # HID processing
 define  hid
@@ -39,12 +38,12 @@ file	dev/usb/ucom.c			ucom | ucombus needs-flag
 
 # Generic devices
 device	ugen
-attach	ugen at usbdevif
+attach	ugen at usb
 file	dev/usb/ugen.c			ugen		needs-flag
 
 # HID root device for multiple report IDs
 device	uhidev: hid, uhidbus
-attach	uhidev at usbifif
+attach	uhidev at usb
 file	dev/usb/uhidev.c		uhidev
 
 # Generic HID devices
