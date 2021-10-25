@@ -3,26 +3,10 @@
 # i386/x86 Devices & Drivers
 #
 
-# Machine-independent Devices & Drivers
-include "dev/files.dev"
-
-# vnode disk pseudo-device
-major	{vnd = 14}
-
-# Machine-independent SCSI drivers
-major	{sd = 4}
-major	{st = 5}
-major	{cd = 6}
-
-# Machine-independent ATA drivers
-major	{wd = 0}
-
 #
 # System bus types
 #
-define 	mainbus { }
-device	mainbus: apmbus, isabus, eisabus, 
-		pcibus,
+device	mainbus: isabus, eisabus, mcabus, pcibus, mainbus, bioscall, apmbus, ioapicbus
 attach	mainbus at root
 file	arch/i386/i386/mainbus.c	    	mainbus
 

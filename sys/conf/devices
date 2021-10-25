@@ -84,6 +84,7 @@ file	dev/misc/pccons/pckbc.c				pckbc			needs-flag
 #
 # USB Devices & Attributes
 #
+
 defparam USB_MEM_RESERVE
 
 device	uhci: usbus
