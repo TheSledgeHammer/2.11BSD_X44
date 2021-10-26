@@ -1,6 +1,6 @@
 /*	$NetBSD: isadmareg.h,v 1.5 1997/06/06 23:43:56 thorpej Exp $	*/
 
-#include <core/ic/i8237reg.h>
+#include <dev/core/ic/i8237reg.h>
 
 /*
  * Register definitions for DMA controller 1 (channels 0..3):

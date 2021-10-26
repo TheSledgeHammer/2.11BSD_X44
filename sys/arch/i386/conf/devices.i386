@@ -72,7 +72,6 @@ defparam PCIC_ISA_ALLOC_IOBASE
 defparam PCIC_ISA_ALLOC_IOSIZE
 defparam PCIC_ISA_INTR_ALLOC_MASK
 
-device	pcic: pcmciabus
 device	pcic {[controller = -1], [socket = -1]}
 file	dev/core/ic/i82365.c			   pcic
 
@@ -85,10 +84,10 @@ attach	pcic at pci with pcic_pci
 file	dev/core/pci/i82365_pci.c		   pcic_pci
 
 # PIC (Apic)
-define  lapic
-device 	ioapic: lapic
-attach 	ioapic at mainbus
-file	arch/i386/apic/apic_machdep.c	   ioapic | lapic
+#define  lapic
+#device 	ioapic: lapic
+#attach 	ioapic at mainbus
+file	arch/i386/apic/apic_machdep.c	   	ioapic | lapic
 file	arch/i386/apic/apic.c			   ioapic | lapic
 file	arch/i386/apic/apicvector.S		   ioapic | lapic
 file	arch/i386/apic/ioapic.c			   ioapic 					needs-flag

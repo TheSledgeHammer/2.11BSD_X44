@@ -59,7 +59,5 @@ file		arch/i386/i386/mpboot.S
 file		arch/i386/i386/vm86.c			vm86
 
 # Machine Devices & Drivers
-include 	"dev/files.dev"
 include 	"arch/i386/conf/devices.i386"
-
 include 	"arch/i386/conf/majors.i386"

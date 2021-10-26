@@ -34,8 +34,8 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <core/isa/isareg.h>
-#include <core/isa/isavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 
 int
 isahint_match(parent, cf, aux)

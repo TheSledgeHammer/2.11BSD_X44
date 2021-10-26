@@ -40,8 +40,8 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <core/pci/pcireg.h>
-#include <core/pci/pcivar.h>
+#include <dev/core/pci/pcireg.h>
+#include <dev/core/pci/pcivar.h>
 
 int 	pcimatch (struct device *, struct cfdata *, void *);
 void 	pciattach (struct device *, struct device *, void *);

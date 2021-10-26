@@ -44,15 +44,15 @@
 #include <machine/bus_space.h>
 #include <machine/intr.h>
 
-#include <core/isa/isareg.h>
-#include <core/isa/isavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 
-#include <core/pcmcia/pcmciareg.h>
-#include <core/pcmcia/pcmciavar.h>
-#include <core/pcmcia/pcmciachip.h>
+#include <dev/core/pcmcia/pcmciareg.h>
+#include <dev/core/pcmcia/pcmciavar.h>
+#include <dev/core/pcmcia/pcmciachip.h>
 
-#include <core/ic/i82365reg.h>
-#include <core/ic/i82365var.h>
+#include <dev/core/ic/i82365reg.h>
+#include <dev/core/ic/i82365var.h>
 
 /*****************************************************************************
  * Configurable parameters.

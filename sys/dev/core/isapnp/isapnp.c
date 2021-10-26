@@ -42,10 +42,10 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <core/isa/isadmavar.h>
-#include <core/isa/isavar.h>
-#include <core/isapnp/isapnpreg.h>
-#include <core/isapnp/isapnpvar.h>
+#include <dev/core/isa/isadmavar.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/isapnp/isapnpreg.h>
+#include <dev/core/isapnp/isapnpvar.h>
 
 static void isapnp_init (struct isapnp_softc *);
 static __inline u_char isapnp_shift_bit (struct isapnp_softc *);
@@ -66,11 +66,7 @@ static int isapnp_submatch (struct device *, struct cfdata *, void *);
 static int isapnp_find (struct isapnp_softc *, int);
 static int isapnp_match (struct device *, struct cfdata *, void *);
 static void isapnp_attach (struct device *, struct device *, void *);
-/*
-struct cfdriver isapnp_cd = {
-	NULL, "isapnp", isapnp_match, isapnp_attach, DV_DULL, sizeof(struct isapnp_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, isapnp, &isapnp_cops, DV_DULL, sizeof(struct isapnp_softc));
 CFOPS_DECL(isapnp, isapnp_attach, isapnp_attach, NULL, NULL);
 

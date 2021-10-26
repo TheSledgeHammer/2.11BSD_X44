@@ -46,20 +46,16 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <core/eisa/eisadevs.h>
-#include <core/eisa/eisareg.h>
-#include <core/eisa/eisavar.h>
+#include <dev/core/eisa/eisadevs.h>
+#include <dev/core/eisa/eisareg.h>
+#include <dev/core/eisa/eisavar.h>
 
 int		eisamatch (struct device *, struct cfdata *, void *);
 void	eisaattach (struct device *, struct device *, void *);
 int		eisasubmatch (struct device *, struct cfdata *, void *);
 int	 	eisaprint (void *, const char *);
 void 	eisa_devinfo (const char *, char *);
-/*
-struct cfdriver eisa_cd = {
-	NULL, "eisa", eisamatch, eisaattach, DV_DULL, sizeof(struct device)
-};
-*/
+
 CFDRIVER_DECL(NULL, eisa, &eisa_cops, DV_DULL, sizeof(struct device));
 CFOPS_DECL(eisa, eisamatch, eisaattach, NULL, NULL);
 

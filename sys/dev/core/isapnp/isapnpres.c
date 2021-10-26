@@ -42,9 +42,9 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <core/isa/isavar.h>
-#include <core/isapnp/isapnpreg.h>
-#include <core/isapnp/isapnpvar.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/isapnp/isapnpreg.h>
+#include <dev/core/isapnp/isapnpvar.h>
 
 
 static int isapnp_wait_status (struct isapnp_softc *);

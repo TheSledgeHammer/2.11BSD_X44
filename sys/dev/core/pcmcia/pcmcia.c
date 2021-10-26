@@ -40,9 +40,9 @@
 /* XXX only needed for intr debugging */
 #include <vm/include/vm.h>
 
-#include <core/pcmcia/pcmciareg.h>
-#include <core/pcmcia/pcmciachip.h>
-#include <core/pcmcia/pcmciavar.h>
+#include <dev/core/pcmcia/pcmciareg.h>
+#include <dev/core/pcmcia/pcmciachip.h>
+#include <dev/core/pcmcia/pcmciavar.h>
 
 #include "locators.h"
 

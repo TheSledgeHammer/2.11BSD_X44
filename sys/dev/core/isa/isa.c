@@ -39,9 +39,9 @@
 
 #include <machine/intr.h>
 
-#include <core/isa/isadmareg.h>
-#include <core/isa/isareg.h>
-#include <core/isa/isavar.h>
+#include <dev/core/isa/isadmareg.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 
 int 	isamatch (struct device *, struct cfdata *, void *);
 void 	isaattach (struct device *, struct device *, void *);

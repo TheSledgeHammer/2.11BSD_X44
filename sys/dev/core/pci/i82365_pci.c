@@ -35,11 +35,11 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <core/ic/i82365reg.h>
-#include <core/ic/i82365var.h>
-#include <core/pci/pcidevs.h>
-#include <core/pci/pcireg.h>
-#include <core/pci/pcivar.h>
+#include <dev/core/ic/i82365reg.h>
+#include <dev/core/ic/i82365var.h>
+#include <dev/core/pci/pcidevs.h>
+#include <dev/core/pci/pcireg.h>
+#include <dev/core/pci/pcivar.h>
 /*
  * PCI constants.
  * XXX These should be in a common file!
@@ -55,11 +55,7 @@ void	pcic_pci_attach (struct device *, struct device *, void *);
 
 void	*pcic_pci_chip_intr_establish (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
 void	pcic_pci_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
-/*
-struct cfdriver pcic_pci_ca = {
-	NULL, "pcic_pci", pcic_pci_match, pcic_pci_attach, DV_DULL, sizeof(struct pcic_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, pcic_pci, &pcic_pci_cops, DV_DULL, sizeof(struct pcic_softc));
 CFOPS_DECL(pcic_pci, pcic_pci_match, pcic_pci_attach, NULL, NULL);
 

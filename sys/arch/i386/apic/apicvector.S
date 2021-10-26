@@ -42,11 +42,6 @@
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
-
-/* belongs in icu.s when ready */
-		.globl _C_LABEL(idepth)
-_C_LABEL(idepth):
-		.long	0xffff
 		
 #ifdef SMP	
 #if NLAPIC > 0

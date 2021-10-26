@@ -44,7 +44,7 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <core/pci/pcireg.h>
+#include <dev/core/pci/pcireg.h>
 
 /*
  * Structures and definitions needed by the machine-dependent header.

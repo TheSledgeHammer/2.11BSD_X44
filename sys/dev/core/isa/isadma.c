@@ -52,11 +52,11 @@
 #include <vm/include/vm_param.h>
 #include <machine/param.h>
 
-#include <core/ic/i8237reg.h>
-#include <core/isa/isadmareg.h>
-#include <core/isa/isadmavar.h>
-#include <core/isa/isareg.h>
-#include <core/isa/isavar.h>
+#include <dev/core/ic/i8237reg.h>
+#include <dev/core/isa/isadmareg.h>
+#include <dev/core/isa/isadmavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 
 /*
  * High byte of DMA address is stored in this DMAPG register for
