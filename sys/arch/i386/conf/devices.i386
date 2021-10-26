@@ -6,7 +6,8 @@
 #
 # System bus types
 #
-device	mainbus: isabus, eisabus, mcabus, pcibus, mainbus, bioscall, apmbus, ioapicbus
+define mainbus {[apid = -1]}
+device	mainbus: isabus, eisabus, pcibus, bioscall, mainbus
 attach	mainbus at root
 file	arch/i386/i386/mainbus.c	    	mainbus
 
@@ -14,6 +15,18 @@ file	arch/i386/i386/mainbus.c	    	mainbus
 # of certain devices/BIOS features
 define bioscall
 file	arch/i386/i386/bioscall.S	    	bioscall 					needs-flag
+
+define	bios
+device	bios
+attach	bios at mainbus
+#file	arch/i386/i386/bios.c			    bios needs-count
+
+# MP configuration using Intel SMP specification 1.4
+define	mpbios
+device	mpbios
+attach	mpbios at mainbus
+file 	arch/i386/i386/mpbios.c			mpbios   needs-flag
+file	arch/i386/i386/mpboot.S			mpbios
 
 # CPUS
 define cpu { [apid = -1] }
@@ -24,9 +37,6 @@ file   arch/i386/i386/cpu.c					cpu
 # CMOS RAM #
 defpseudo cmos
 file	arch/i386/isa/cmos.c				cmos 						needs-flag
-
-# MP configuration using Intel SMP specification 1.4
-file 	arch/i386/i386/mpbios.c			   mpbios   
 
 # PCI-only drivers
 file	arch/i386/pci/pci_machdep.c	    	pci
@@ -43,10 +53,10 @@ file	arch/i386/pci/pcib.c		    	pcib
 
 # ISA and mixed ISA+EISA or ISA+PCI drivers
 
-file	arch/i386/isa/isa_machdep.c	    	isa
+file	arch/i386/isa/isa_machdep.c	    	isabus
 
 # PC clock
-file	arch/i386/isa/clock.c		    	isa
+file	arch/i386/isa/clock.c		    	isabus
 
 # Numeric Processing Extension; Math Co-processor
 device	npx
@@ -84,11 +94,9 @@ attach	pcic at pci with pcic_pci
 file	dev/core/pci/i82365_pci.c		   pcic_pci
 
 # PIC (Apic)
-#define  lapic
-#device 	ioapic: lapic
-#attach 	ioapic at mainbus
-file	arch/i386/apic/apic_machdep.c	   	ioapic | lapic
-file	arch/i386/apic/apic.c			   ioapic | lapic
-file	arch/i386/apic/apicvector.S		   ioapic | lapic
+device	ioapic: mpbios, lapic
+attach	ioapic at mainbus
 file	arch/i386/apic/ioapic.c			   ioapic 					needs-flag
-file	arch/i386/apic/lapic.c			   lapic 					needs-flag
+
+define	lapic
+file	arch/i386/apic/lapic.c			   lapic 					  needs-flag
