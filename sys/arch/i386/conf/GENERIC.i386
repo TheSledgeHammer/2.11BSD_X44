@@ -109,7 +109,7 @@ config			twobsd	root on ? type ?
 #
 
 mainbus0    at root
-cpu* 			  at mainbus?
+cpu0 			  at mainbus?
 bios0	      at mainbus0
 ioapic* 		at mainbus?
 
