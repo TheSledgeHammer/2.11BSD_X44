@@ -70,11 +70,7 @@ void	pcmcia_attach (struct device *, struct device *, void *);
 int		pcmcia_print (void *, const char *);
 
 int		pcmcia_card_intr (void *);
-/*
-struct cfdriver pcmcia_cd = {
-	NULL, "pcmcia", pcmcia_match, pcmcia_attach, DV_DULL, sizeof(struct pcmcia_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, pcmcia, &pcmcia_cops, DV_DULL, sizeof(struct pcmcia_softc));
 CFOPS_DECL(pcmcia, pcmcia_match, pcmcia_attach, NULL, NULL);
 
@@ -218,19 +214,11 @@ pcmcia_card_detach(dev)
 }
 
 int
-#ifdef __BROKEN_INDIRECT_CONFIG
-pcmcia_submatch(parent, match, aux)
-	struct device *parent;
-	void *match, *aux;
-{
-	struct cfdata *cf = match;
-#else
 pcmcia_submatch(parent, cf, aux)
 	struct device *parent;
 	struct cfdata *cf;
 	void *aux;
 {
-#endif
 	struct pcmcia_attach_args *paa = aux;
 
 	if (cf->cf_loc[PCMCIACF_FUNCTION] != PCMCIACF_FUNCTION_DEFAULT &&

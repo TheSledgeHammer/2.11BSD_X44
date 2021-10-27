@@ -136,17 +136,17 @@ consinit_io(consinfo)
 {
 	if (!strcmp(consinfo->bi_devname, "pc")) {
 #if (NVGA > 0)
-		if (!vga_cnattach(X86_BUS_SPACE_IO, X86_BUS_SPACE_MEM, -1, 1)) {
+		if (!vga_cnattach(I386_BUS_SPACE_IO, I386_BUS_SPACE_MEM, -1, 1)) {
 			goto dokbd;
 		}
 #endif /* NVGA > 0 */
 #if (NEGA > 0)
-		if (!ega_cnattach(X86_BUS_SPACE_IO, X86_BUS_SPACE_MEM)) {
+		if (!ega_cnattach(I386_BUS_SPACE_IO, I386_BUS_SPACE_MEM)) {
 			goto dokbd;
 		}
 #endif /* NEGA > 0 */
 #if (NPCDISPLAY > 0)
-		if (!pcdisplay_cnattach(X86_BUS_SPACE_IO, X86_BUS_SPACE_MEM)) {
+		if (!pcdisplay_cnattach(I386_BUS_SPACE_IO, I386_BUS_SPACE_MEM)) {
 			goto dokbd;
 		}
 #endif /* NPCDISPLAY > 0 */
@@ -157,7 +157,7 @@ consinit_io(consinfo)
 
 dokbd:
 #if (NPCKBC > 0)
-	pckbc_cnattach(X86_BUS_SPACE_IO, IO_KBD, KBCMDP, PCKBC_KBD_SLOT);
+	pckbc_cnattach(I386_BUS_SPACE_IO, IO_KBD, KBCMDP, PCKBC_KBD_SLOT);
 #endif /* NPCKBC > 0 */
 #if NPCKBC == 0 && NUKBD > 0
 		ukbd_cnattach();

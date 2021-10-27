@@ -6,7 +6,7 @@
 # PC PPI + TIMER 1 (speaker interface)
 device	pcppi {}
 attach	pcppi at isa
-file	dev/audio/speaker/pcppi.c					pcppi
+file	dev/audio/speaker/pcppi.c					pcppi					needs-flag
 
 device	spkr
 attach	spkr at pcppi

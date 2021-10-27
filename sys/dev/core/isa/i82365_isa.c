@@ -115,11 +115,6 @@ void	*pcic_isa_chip_intr_establish (pcmcia_chipset_handle_t,
 	    struct pcmcia_function *, int, int (*) (void *), void *);
 void	pcic_isa_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
 
-/*
-struct cfdriver pcic_isa_ca = {
-	NULL, "pcic_isa", pcic_isa_probe, pcic_isa_attach, DV_DULL, sizeof(struct pcic_softc)
-};
-*/
 CFDRIVER_DECL(NULL, pcic_isa, &pcic_isa_cops, DV_DULL, sizeof(struct pcic_softc));
 CFOPS_DECL(pcic_isa, pcic_isa_probe, pcic_isa_attach, NULL, NULL);
 
@@ -144,16 +139,30 @@ static struct pcmcia_chip_functions pcic_isa_functions = {
 int
 pcic_isa_probe(parent, match, aux)
 	struct device *parent;
-	void *match, *aux;
+	struct cfdata *match;
+	void *aux;
 {
 	struct isa_attach_args *ia = aux;
 	bus_space_tag_t iot = ia->ia_iot;
 	bus_space_handle_t ioh, memh;
 	int val, found;
 
+	if (ia->ia_nio < 1) {
+		return 0;
+	}
+	if (ia->ia_niomem < 1) {
+		return 0;
+	}
+
+	if (ISA_DIRECT_CONFIG(ia))
+		return 0;
+
 	/* Disallow wildcarded i/o address. */
 	if (ia->ia_iobase == IOBASEUNK)
 		return (0);
+	if(ia->ia_maddr == MADDRUNK) {
+		return (0);
+	}
 
 	if (bus_space_map(iot, ia->ia_iobase, PCIC_IOSIZE, 0, &ioh))
 		return (0);
@@ -162,6 +171,7 @@ pcic_isa_probe(parent, match, aux)
 		ia->ia_msize = PCIC_MEMSIZE;
 
 	if (bus_space_map(ia->ia_memt, ia->ia_maddr, ia->ia_msize, 0, &memh))
+		bus_space_unmap(iot, ioh, PCIC_IOSIZE);
 		return (0);
 
 	found = 0;
@@ -209,7 +219,14 @@ pcic_isa_probe(parent, match, aux)
 	if (!found)
 		return (0);
 
+	ia->ia_nio = 1;
 	ia->ia_iosize = PCIC_IOSIZE;
+
+	ia->ia_niomem = 1;
+
+	/* IRQ is special. */
+
+	ia->ia_ndrq = 0;
 
 	return (1);
 }

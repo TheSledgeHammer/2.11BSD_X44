@@ -159,6 +159,17 @@ struct pdevinit {
 	int					pdev_count;
 };
 
+/* deferred config queues */
+struct deferred_config {
+	struct deferred_config			*dc_next;
+	struct deferred_config			*dc_prev;
+
+	//TAILQ_ENTRY(deferred_config) 	dc_queue;
+	struct device 					*dc_dev;
+	void 							(*dc_func)(struct device *);
+};
+//TAILQ_HEAD(deferred_config_head, deferred_config);
+
 /* configure hints */
 struct cfhint {
 	char				*ch_name;		/* device name */
@@ -189,10 +200,14 @@ struct cfresource {
 #define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
 	struct cfops (name##_cops) = { (#name), (matfn), (attfn), (detfn), (actfn) }
 
-struct	device 	*alldevs;			/* head of list of all devices */
-struct	evcnt 	*allevents;			/* head of list of all events */
-struct cfhint 	*allhints;			/* head of list of device hints */
-int 			cfhint_count; 		/* hint count */
+struct device 			*alldevs;					/* head of list of all devices */
+struct deferred_config	*deferred_config_queue; 	/* head of deferred queue */
+struct deferred_config	*interrupt_config_queue; 	/* head of interrupt queue */
+struct evcnt 			*allevents;					/* head of list of all events */
+struct cfhint 			*allhints;					/* head of list of device hints */
+int 					cfhint_count; 				/* hint count */
+//struct deferred_config_head deferred_config_queue;
+//struct deferred_config_head interrupt_config_queue;
 
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search (cfmatch_t, struct device *, void *);
@@ -204,6 +219,10 @@ void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
 int				config_detach(struct device *, int);
 int 			config_activate (struct device *);
 int 			config_deactivate (struct device *);
+void 			config_defer(struct device *, void (*)(struct device *));
+void 			config_interrupts(struct device *, void (*)(struct device *));
+void 			config_pending_incr(void);
+void 			config_pending_decr(void);
 int     		config_hint_enabled(struct device *);
 int     		config_hint_disabled(struct device *);
 void 			evcnt_attach (struct device *, const char *, struct evcnt *);
@@ -222,6 +241,6 @@ int				resource_set_int(const char *name, int unit, const char *resname, int val
 int				resource_set_long(const char *name, int unit, const char *resname, long value);
 int				resource_set_string(const char *name, int unit, const char *resname, const char *value);
 int				resource_count(void);
-void			resource_init();
+void			resource_init(void);
 
 #endif /* !_SYS_DEVICE_H_ */

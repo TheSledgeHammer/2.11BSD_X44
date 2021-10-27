@@ -310,5 +310,6 @@ typedef u_int8_t pci_intr_line_t;
 #define	PCI_INTERRUPT_PIN_B					0x02
 #define	PCI_INTERRUPT_PIN_C					0x03
 #define	PCI_INTERRUPT_PIN_D					0x04
+#define	PCI_INTERRUPT_PIN_MAX				0x04
 
 #endif /* _DEV_PCI_PCIREG_H_ */

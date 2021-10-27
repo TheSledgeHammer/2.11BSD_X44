@@ -52,18 +52,36 @@
 #include <lib/libkern/libkern.h>
 
 /* device macros */
-/* Insq/Remq for device lists */
-#define dev_insert(dev, dv) {							\
+/* Insertq/Removeq for device lists */
+#define device_insert(dev, dv) {						\
 	(dev)->dv_next = (dv)->dv_next; 					\
 	(dev)->dv_prev = (dv);								\
 	(dv)->dv_next->dv_prev = (dev);						\
 	(dv)->dv_next = (dev);								\
 }
 
-#define dev_remove(dev) {								\
+#define device_remove(dev) {							\
 	(dev)->dv_prev->dv_next = (dev)->dv_next;			\
 	(dev)->dv_next->dv_prev = (dev)->dv_prev;			\
 }
+
+/* deferred config macros */
+/* Insertq/Removeq */
+#define cfdefer_insert(dcf, dc) {						\
+	(dcf)->dc_next = (dc)->dc_next; 					\
+	(dcf)->dc_prev = (dc);								\
+	(dc)->dc_next->dc_prev = (dcf);						\
+	(dc)->dc_next = (dcf);								\
+}
+
+#define cfdefer_remove(dc) {							\
+	(dc)->dc_prev->dc_next = (dc)->dc_next;				\
+	(dc)->dc_next->dc_prev = (dc)->dc_prev;				\
+}
+
+static void config_process_deferred(struct deferred_config *, struct device *);
+
+__volatile int config_pending;		/* semaphore for mountroot */
 
 /*
  * Autoconfiguration subroutines.
@@ -229,7 +247,11 @@ config_found(parent, aux, print)
 }
 
 struct device *
-config_found_sm(struct device *parent, void *aux, cfprint_t print, cfmatch_t submatch)
+config_found_sm(parent, aux, print, submatch)
+	struct device *parent;
+	void *aux;
+	cfprint_t print;
+	cfmatch_t submatch;
 {
 	struct cfdata *cf;
 
@@ -314,7 +336,7 @@ config_attach(parent, cf, aux, print)
 	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);
 					/* XXX cannot wait! */
 	bzero(dev, cd->cd_devsize);
-	dev_insert(dev, *nextp);	/* link up */
+	device_insert(dev, *nextp);	/* link up */
 	//*nextp = dev;				/* link up */
 	//nextp = &dev->dv_next;
 	dev->dv_class = cd->cd_class;
@@ -371,6 +393,8 @@ config_attach(parent, cf, aux, print)
 		    cf->cf_fstate == FSTATE_NOTFOUND)
 			cf->cf_fstate = FSTATE_FOUND;
 	(*cops->cops_attach)(parent, dev, aux);
+
+	config_process_deferred(&deferred_config_queue, dev);
 }
 
 /*
@@ -455,7 +479,7 @@ config_detach(dev, flags)
 	/*
 	 * Unlink from device list.
 	 */
-	dev_remove(dev);
+	device_remove(dev);
 
 	/*
 	 * Remove from cfdriver's array, tell the world, and free softc.
@@ -534,6 +558,141 @@ config_deactivate(dev)
 		}
 	}
 	return (rv);
+}
+
+void
+config_defer(dev, func)
+	struct device *dev;
+	void (*func)(struct device *);
+{
+	struct deferred_config *dc;
+	struct deferred_config **dcf = &deferred_config_queue;
+
+	if (dev->dv_parent == NULL) {
+		panic("config_defer: can't defer config of a root device");
+	}
+#ifdef DIAGNOSTIC
+	for(dc = dcf; dc != NULL; dc = dc->dc_next) {
+		if (dc->dc_dev == dev) {
+			panic("config_defer: deferred twice");
+		}
+	}
+#endif
+/*
+#ifdef DIAGNOSTIC
+	for (dc = TAILQ_FIRST(&deferred_config_queue); dc != NULL; dc = TAILQ_NEXT(dc, dc_queue)) {
+		if (dc->dc_dev == dev)
+			panic("config_defer: deferred twice");
+	}
+#endif
+*/
+	dc = malloc(sizeof(*dc), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
+	if (dc == NULL)
+		panic("config_defer: unable to allocate callback");
+
+	dc->dc_dev = dev;
+	dc->dc_func = func;
+	cfdefer_insert(dc, *dcf);
+//	TAILQ_INSERT_TAIL(&deferred_config_queue, dc, dc_queue);
+	config_pending_incr();
+}
+
+/*
+ * Defer some autoconfiguration for a device until after interrupts
+ * are enabled.
+ */
+void
+config_interrupts(dev, func)
+	struct device *dev;
+	void (*func)(struct device *);
+{
+	struct deferred_config *dc;
+	struct deferred_config **dcf = &interrupt_config_queue;
+	/*
+	 * If interrupts are enabled, callback now.
+	 */
+	if (cold == 0) {
+		(*func)(dev);
+		return;
+	}
+
+#ifdef DIAGNOSTIC
+	for(dc = dcf; dc != NULL; dc = dc->dc_next) {
+		if (dc->dc_dev == dev) {
+			panic("config_defer: deferred twice");
+		}
+	}
+#endif
+/*
+#ifdef DIAGNOSTIC
+	for (dc = TAILQ_FIRST(&interrupt_config_queue); dc != NULL; dc = TAILQ_NEXT(dc, dc_queue)) {
+		if (dc->dc_dev == dev)
+			panic("config_interrupts: deferred twice");
+	}
+#endif
+*/
+	dc = malloc(sizeof(*dc), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
+	if (dc == NULL)
+		panic("config_interrupts: unable to allocate callback");
+
+	dc->dc_dev = dev;
+	dc->dc_func = func;
+	cfdefer_insert(dc, *dcf);
+//	TAILQ_INSERT_TAIL(&interrupt_config_queue, dc, dc_queue);
+	config_pending_incr();
+}
+
+/*
+ * Process a deferred configuration queue.
+ */
+static void
+config_process_deferred(queue, parent)
+	struct deferred_config *queue;
+	struct device *parent;
+{
+	struct deferred_config *dc, *ndc;
+
+	for(dc = queue; dc != NULL; dc = dc->dc_next) {
+		ndc = dc->dc_next;
+		if (parent == NULL || dc->dc_dev->dv_parent == parent) {
+			cfdefer_remove(dc);
+			(*dc->dc_func)(dc->dc_dev);
+			free(dc, M_DEVBUF);
+			config_pending_decr();
+		}
+	}
+/*
+	for (dc = TAILQ_FIRST(queue); dc != NULL; dc = ndc) {
+		ndc = TAILQ_NEXT(dc, dc_queue);
+		if (parent == NULL || dc->dc_dev->dv_parent == parent) {
+			TAILQ_REMOVE(queue, dc, dc_queue);
+			(*dc->dc_func)(dc->dc_dev);
+			free(dc, M_DEVBUF);
+			config_pending_decr();
+		}
+	}
+	*/
+}
+
+/*
+ * Manipulate the config_pending semaphore.
+ */
+void
+config_pending_incr(void)
+{
+	config_pending++;
+}
+
+void
+config_pending_decr(void)
+{
+#ifdef DIAGNOSTIC
+	if (config_pending == 0)
+		panic("config_pending_decr: config_pending == 0");
+#endif
+	config_pending--;
+	if (config_pending == 0)
+		wakeup((void *)&config_pending);
 }
 
 int
