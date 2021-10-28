@@ -66,12 +66,26 @@ struct wsdisplay_emulops {
 #define WSCOL_MAGENTA		5
 #define WSCOL_CYAN			6
 #define WSCOL_WHITE			7
+#define WSCOL_LIGHT_GREY	(WSCOL_BLACK+8)
+#define WSCOL_LIGHT_RED		(WSCOL_RED+8)
+#define WSCOL_LIGHT_GREEN	(WSCOL_GREEN+8)
+#define WSCOL_LIGHT_BROWN	(WSCOL_BROWN+8)
+#define WSCOL_LIGHT_BLUE	(WSCOL_BLUE+8)
+#define WSCOL_LIGHT_MAGENTA	(WSCOL_MAGENTA+8)
+#define WSCOL_LIGHT_CYAN	(WSCOL_CYAN+8)
+#define WSCOL_LIGHT_WHITE	(WSCOL_WHITE+8)
 /* flag values: */
 #define WSATTR_REVERSE		1
 #define WSATTR_HILIT		2
 #define WSATTR_BLINK		4
 #define WSATTR_UNDERLINE 	8
 #define WSATTR_WSCOLORS 	16
+#define WSATTR_USERMASK 	0x0fff
+/* private flags used by the driver */
+#define WSATTR_PRIVATE1  	4096
+#define WSATTR_PRIVATE2  	8192
+#define WSATTR_PRIVATE3 	16384
+#define WSATTR_PRIVATE4 	32768
 	/* XXX need a free_attr() ??? */
 };
 

@@ -18,7 +18,7 @@ MAKECONF?=	/etc/mk.conf
 #
 # CPU model, derived from MACHINE_ARCH
 #
-MACHINE_CPU= ${MACHINE_ARCH::C/e?arm.*/arm/:S/aarch64eb/aarch64/:C/riscv../riscv/}
+MACHINE_CPU= ${MACHINE_ARCH:C/e?arm.*/arm/:S/aarch64eb/aarch64/:C/riscv../riscv/}
 
 #
 # Subdirectory used below ${RELEASEDIR} when building a release

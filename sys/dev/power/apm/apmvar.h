@@ -30,8 +30,8 @@
 #ifndef _DEV_APM_APMVAR_H_
 #define _DEV_APM_APMVAR_H_
 
-#include <dev/misc/apm/apmbios.h>
-#include <dev/misc/apm/apmio.h>
+#include <dev/power/apm/apmbios.h>
+#include <dev/power/apm/apmio.h>
 #include <sys/select.h>				/* for struct selinfo */
 
 struct apm_accessops {

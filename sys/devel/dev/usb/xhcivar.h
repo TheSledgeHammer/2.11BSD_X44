@@ -60,7 +60,7 @@ struct xhci_ring {
 	u_int 						xr_ntrb;		/* number of elements for above */
 	u_int 						xr_ep;			/* enqueue pointer */
 	u_int 						xr_cs;			/* cycle state */
-	bool 						is_halted;
+	boolean_t					is_halted;
 };
 
 struct xhci_slot {
@@ -84,10 +84,10 @@ struct xhci_softc {
 	struct usbd_bus	 			sc_bus;			/* USB 3 bus */
 	struct usbd_bus 			sc_bus2;		/* USB 2 bus */
 
-	kmutex_t 					sc_lock;
-	kmutex_t 					sc_intr_lock;
+	//kmutex_t 					sc_lock;
+	//kmutex_t 					sc_intr_lock;
 
-	pool_cache_t 				sc_xferpool;
+	//pool_cache_t 				sc_xferpool;
 
 	bus_size_t 					sc_pgsz;		/* xHCI page size */
 	uint32_t 					sc_ctxsz;
@@ -118,13 +118,13 @@ struct xhci_softc {
 	usb_dma_t 					sc_spbufarray_dma;
 	usb_dma_t 					*sc_spbuf_dma;
 
-	kcondvar_t 					sc_cmdbusy_cv;
-	kcondvar_t 					sc_command_cv;
+	//kcondvar_t 					sc_cmdbusy_cv;
+	//kcondvar_t 					sc_command_cv;
 	bus_addr_t 					sc_command_addr;
 	struct xhci_soft_trb 		sc_result_trb;
-	bool 						sc_resultpending;
+	boolean_t 					sc_resultpending;
 
-	bool 						sc_dying;
+	boolean_t 					sc_dying;
 
 	void 						(*sc_vendor_init)(struct xhci_softc *);
 	int 						(*sc_vendor_port_status)(struct xhci_softc *, uint32_t, int);
@@ -136,15 +136,15 @@ struct xhci_softc {
 	uint32_t 					sc_hcc2;		/* copy of HCCPARAMS2 */
 };
 
-int		xhci_init(struct xhci_softc *);
-void	xhci_start(struct xhci_softc *);
-int		xhci_intr(void *);
-int		xhci_detach(struct xhci_softc *, int);
-int		xhci_activate(struct device *, enum devact);
-void	xhci_childdet(struct device *, struct device *);
-bool	xhci_suspend(struct device *, const pmf_qual_t *);
-bool	xhci_resume(struct device *, const pmf_qual_t *);
-bool	xhci_shutdown(struct device *, int);
+int			xhci_init(struct xhci_softc *);
+void		xhci_start(struct xhci_softc *);
+int			xhci_intr(void *);
+int			xhci_detach(struct xhci_softc *, int);
+int			xhci_activate(struct device *, enum devact);
+void		xhci_childdet(struct device *, struct device *);
+boolean_t	xhci_suspend(struct device *, const pmf_qual_t *);
+boolean_t	xhci_resume(struct device *, const pmf_qual_t *);
+boolean_t	xhci_shutdown(struct device *, int);
 
 #define XHCI_TRANSFER_RING_TRBS 256
 

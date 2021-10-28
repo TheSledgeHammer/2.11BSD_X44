@@ -1,7 +1,7 @@
 #	$211BSD: Makefile,v 1.0 2021/10/28 23:59:27 Exp $
 
-SUBDIR=  pccons wscons
+SUBDIR=  apm
 
-INCSDIR= /usr/include/dev/misc
+INCSDIR= /usr/include/dev/power
 
 .include <bsd.kinc.mk>

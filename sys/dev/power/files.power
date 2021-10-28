@@ -1,0 +1,5 @@
+# $211BSD:
+#
+# Misc Configuration Files
+
+include 	"dev/misc/apm/files.apm"

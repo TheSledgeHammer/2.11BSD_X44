@@ -53,7 +53,7 @@
 #include <sys/conf.h>
 #include <sys/errno.h>
 
-#include <dev/misc/apm/apmvar.h>
+#include <dev/power/apm/apmvar.h>
 
 #include "ioconf.h"
 

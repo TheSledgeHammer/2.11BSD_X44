@@ -73,7 +73,7 @@
 #include <dev/usb/ohcireg.h>
 #include <dev/usb/ohcivar.h>
 
-#include <dev/misc/apm/power.h>
+#include <sys/power.h>
 
 #ifdef OHCI_DEBUG
 #define DPRINTF(x)		if (ohcidebug) logprintf x
