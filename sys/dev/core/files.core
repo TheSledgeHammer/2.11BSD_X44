@@ -4,7 +4,7 @@
 # Common device code
 #
 include 	"dev/core/eisa/files.eisa"
-include 	"dev/core/isa/files.ic"
+include 	"dev/core/ic/files.ic"
 include 	"dev/core/isa/files.isa"
 include 	"dev/core/isapnp/files.isapnp"
 include 	"dev/core/pci/files.pci"
