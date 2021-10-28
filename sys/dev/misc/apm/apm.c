@@ -209,11 +209,11 @@ apm_power_print(struct apm_softc *sc, struct apm_power_info *pi)
 {
 
 	if (pi->battery_life != APM_BATT_LIFE_UNKNOWN) {
-		aprint_normal_dev(sc->sc_dev,
+		printf(sc->sc_dev,
 		    "battery life expectancy: %d%%\n",
 		    pi->battery_life);
 	}
-	aprint_normal_dev(sc->sc_dev, "A/C state: ");
+	printf(sc->sc_dev, "A/C state: ");
 	switch (pi->ac_state) {
 	case APM_AC_OFF:
 		printf("off\n");
@@ -229,7 +229,7 @@ apm_power_print(struct apm_softc *sc, struct apm_power_info *pi)
 		printf("unknown\n");
 		break;
 	}
-	aprint_normal_dev(sc->sc_dev, "battery charge state:");
+	printf(sc->sc_dev, "battery charge state:");
 	if (apm_minver == 0)
 		switch (pi->battery_state) {
 		case APM_BATT_HIGH:
@@ -266,7 +266,7 @@ apm_power_print(struct apm_softc *sc, struct apm_power_info *pi)
 		}
 		printf("\n");
 		if (pi->minutes_valid) {
-			aprint_normal_dev(sc->sc_dev, "estimated ");
+			printf(sc->sc_dev, "estimated ");
 			if (pi->minutes_left / 60)
 				printf("%dh ", pi->minutes_left / 60);
 			printf("%dm\n", pi->minutes_left % 60);
@@ -283,7 +283,7 @@ apm_suspend(struct apm_softc *sc)
 
 	if (sc->sc_power_state == PWR_SUSPEND) {
 #ifdef APMDEBUG
-		aprint_debug_dev(sc->sc_dev,
+		printf(sc->sc_dev,
 		    "apm_suspend: already suspended?\n");
 #endif
 		return;
@@ -311,7 +311,7 @@ apm_standby(struct apm_softc *sc)
 
 	if (sc->sc_power_state == PWR_STANDBY) {
 #ifdef APMDEBUG
-		aprint_debug_dev(sc->sc_dev,
+		printf(sc->sc_dev,
 		    "apm_standby: already standing by?\n");
 #endif
 		return;
@@ -335,7 +335,7 @@ apm_resume(struct apm_softc *sc, u_int event_type, u_int event_info)
 {
 	if (sc->sc_power_state == PWR_RESUME) {
 #ifdef APMDEBUG
-		aprint_debug_dev(sc->sc_dev, "apm_resume: already running?\n");
+		printf(sc->sc_dev, "apm_resume: already running?\n");
 #endif
 		return;
 	}
@@ -581,7 +581,7 @@ apm_set_ver(struct apm_softc *sc)
 		apm_minver = 0;
 	}
 ok:
-	aprint_normal("Power Management spec V%d.%d", apm_majver, apm_minver);
+printf("Power Management spec V%d.%d", apm_majver, apm_minver);
 	apm_inited = 1;
 }
 
@@ -597,7 +597,7 @@ apm_attach(struct apm_softc *sc)
 {
 	u_int numbatts, capflags;
 
-	aprint_normal(": ");
+	printf(": ");
 
 	switch ((APM_MAJOR_VERS(sc->sc_vers) << 8) + APM_MINOR_VERS(sc->sc_vers)) {
 	case 0x0100:
@@ -613,7 +613,7 @@ apm_attach(struct apm_softc *sc)
 	}
 
 	apm_set_ver(sc);	/* prints version info */
-	aprint_normal("\n");
+	printf("\n");
 	if (apm_minver >= 2)
 		(*sc->sc_ops->aa_get_capabilities)(sc->sc_cookie, &numbatts,
 		    &capflags);
@@ -649,13 +649,13 @@ apm_attach(struct apm_softc *sc)
 	/*
 		if (sc->sc_ops->aa_disconnect)
 			(*sc->sc_ops->aa_disconnect)(sc->sc_cookie);
-		aprint_error_dev(sc->sc_dev, "unable to create thread, "
+		printf(sc->sc_dev, "unable to create thread, "
 		    "kernel APM support disabled\n");
 	}
 	*/
 
 	if (!pmf_device_register(sc->sc_dev, NULL, NULL))
-		aprint_error_dev(sc->sc_dev, "couldn't establish power handler\n");
+		printf(sc->sc_dev, "couldn't establish power handler\n");
 }
 
 void

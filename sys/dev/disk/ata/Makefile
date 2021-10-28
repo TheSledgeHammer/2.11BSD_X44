@@ -2,6 +2,7 @@
 
 INCSDIR= /usr/include/dev/disk/ata
 
-INCS=	atareg.h atavar.h wdvar.h
+# Only install includes which are used by userland
+INCS=	atareg.h
 
 .include <bsd.kinc.mk>

@@ -100,10 +100,10 @@
 
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/isareg.h>
-#include <dev/core/isa/comreg.h>
-#include <dev/core/isa/comvar.h>
 #include <dev/core/ic/ns16550reg.h>
 #include <dev/core/ic/st16650reg.h>
+#include <dev/core/ic/comreg.h>
+#include <dev/core/ic/comvar.h>
 #ifdef COM_HAYESP
 #include <dev/ic/hayespreg.h>
 #endif
@@ -161,8 +161,6 @@ integrate void com_schedrx (struct com_softc *);
 void	comdiag	(void *);
 
 extern struct cfdriver com_cd;
-CFDRIVER_DECL(NULL, com, &com_cops, DV_DULL, sizeof(struct com_softc));
-CFOPS_DECL(com, comprobe, comattach, NULL, NULL);
 
 dev_type_open(comopen);
 dev_type_close(comclose);
@@ -264,7 +262,7 @@ comspeed(speed, frequency)
 #ifdef COM_DEBUG
 int	com_debug = 0;
 
-void comstatus __P((struct com_softc *, char *));
+void comstatus (struct com_softc *, char *);
 void
 comstatus(sc, str)
 	struct com_softc *sc;

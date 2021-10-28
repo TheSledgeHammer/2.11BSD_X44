@@ -181,7 +181,7 @@ pckbportprint(void *aux, const char *pnp)
 	struct pckbport_attach_args *pa = aux;
 
 	if (!pnp)
-		aprint_normal(" (%s slot)", pckbport_slot_names[pa->pa_slot]);
+		printf(" (%s slot)", pckbport_slot_names[pa->pa_slot]);
 	return QUIET;
 }
 

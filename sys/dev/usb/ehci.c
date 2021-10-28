@@ -317,30 +317,30 @@ ehci_init(ehci_softc_t *sc)
 	sc->sc_offs = EREAD1(sc, EHCI_CAPLENGTH);
 
 	version = EREAD2(sc, EHCI_HCIVERSION);
-	aprint_normal("%s: EHCI version %x.%x\n", sc->sc_bus.bdev.dv_xname,
+	printf("%s: EHCI version %x.%x\n", sc->sc_bus.bdev.dv_xname,
 	       version >> 8, version & 0xff);
 
 	sparams = EREAD4(sc, EHCI_HCSPARAMS);
 	DPRINTF(("ehci_init: sparams=0x%x\n", sparams));
 	sc->sc_npcomp = EHCI_HCS_N_PCC(sparams);
 	if (EHCI_HCS_N_CC(sparams) != sc->sc_ncomp) {
-		aprint_error("%s: wrong number of companions (%d != %d)\n",
+		printf("%s: wrong number of companions (%d != %d)\n",
 		       sc->sc_bus.bdev.dv_xname,
 		       EHCI_HCS_N_CC(sparams), sc->sc_ncomp);
 #if NOHCI == 0 || NUHCI == 0
-		aprint_error("%s: ohci or uhci probably not configured\n",
+		printf("%s: ohci or uhci probably not configured\n",
 			     sc->sc_bus.bdev.dv_xname);
 #endif
 		return (USBD_IOERROR);
 	}
 	if (sc->sc_ncomp > 0) {
-		aprint_normal("%s: companion controller%s, %d port%s each:",
+		printf("%s: companion controller%s, %d port%s each:",
 		    sc->sc_bus.bdev.dv_xname, sc->sc_ncomp!=1 ? "s" : "",
 		    EHCI_HCS_N_PCC(sparams),
 		    EHCI_HCS_N_PCC(sparams)!=1 ? "s" : "");
 		for (i = 0; i < sc->sc_ncomp; i++)
-			aprint_normal(" %s", sc->sc_comps[i]->bdev.dv_xname);
-		aprint_normal("\n");
+			printf(" %s", sc->sc_comps[i]->bdev.dv_xname);
+		printf("\n");
 	}
 	sc->sc_noport = EHCI_HCS_N_PORTS(sparams);
 	cparams = EREAD4(sc, EHCI_HCCPARAMS);
@@ -365,7 +365,7 @@ ehci_init(ehci_softc_t *sc)
 			break;
 	}
 	if (hcr) {
-		aprint_error("%s: reset timeout\n",
+		printf("%s: reset timeout\n",
 		    sc->sc_bus.bdev.dv_xname);
 		return (USBD_IOERROR);
 	}
@@ -445,7 +445,7 @@ ehci_init(ehci_softc_t *sc)
 			break;
 	}
 	if (hcr) {
-		aprint_error("%s: run timeout\n", sc->sc_bus.bdev.dv_xname);
+		printf("%s: run timeout\n", sc->sc_bus.bdev.dv_xname);
 		return (USBD_IOERROR);
 	}
 

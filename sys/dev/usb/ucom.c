@@ -1106,9 +1106,9 @@ ucomprint(void *aux, const char *pnp)
 	struct ucom_attach_args *uca = aux;
 
 	if (pnp)
-		aprint_normal("ucom at %s", pnp);
+		printf("ucom at %s", pnp);
 	if (uca->portno != UCOM_UNK_PORTNO)
-		aprint_normal(" portno %d", uca->portno);
+		printf(" portno %d", uca->portno);
 	return (UNCONF);
 }
 

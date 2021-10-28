@@ -16,11 +16,6 @@ file	arch/i386/i386/mainbus.c	    	mainbus
 define bioscall
 file	arch/i386/i386/bioscall.S	    	bioscall 					needs-flag
 
-define	bios
-device	bios
-attach	bios at mainbus
-#file	arch/i386/i386/bios.c			    bios needs-count
-
 # MP configuration using Intel SMP specification 1.4
 define	mpbios
 device	mpbios
@@ -40,11 +35,17 @@ file	arch/i386/isa/cmos.c				cmos 						needs-flag
 
 # PCI-only drivers
 file	arch/i386/pci/pci_machdep.c	    	pci
+file	arch/i386/pci/pcic_pci_machdep.c	pcic_pci
 
 # PCI-Host bridge chipsets
-device	pchb:	pcibus
+device	pchb: pcibus
 attach	pchb at pci
 file	arch/i386/pci/pchb.c		    	pchb
+
+# PCI-EISA bridges
+device	pceb: eisabus, isabus
+attach	pceb at pci
+file	arch/i386/pci/pceb.c				pceb
 
 # PCI-ISA bridges
 device	pcib: isabus
@@ -92,6 +93,13 @@ file	dev/core/isa/i82365_isa.c		   pcic_isa
 # PCIC pcmcia contoller on PCI bus.
 attach	pcic at pci with pcic_pci
 file	dev/core/pci/i82365_pci.c		   pcic_pci
+
+# PCIC pcmcia controller on PnP board
+attach	pcic at isapnp with pcic_isapnp
+file	dev/core/isapnp/i82365_isapnp.c	   	pcic_isapnp
+
+# Code common to ISA and ISAPnP attachments
+file	dev/core/isa/i82365_isasubr.c	   	pcic_isa | pcic_isapnp | pcic_pci
 
 # PIC (Apic)
 device	ioapic: mpbios, lapic

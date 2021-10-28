@@ -37,22 +37,20 @@
 
 #include <dev/core/ic/i82365reg.h>
 #include <dev/core/ic/i82365var.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 #include <dev/core/pci/pcidevs.h>
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
+
 /*
  * PCI constants.
  * XXX These should be in a common file!
  */
 #define	PCI_CBIO		0x10	/* Configuration Base IO Address */
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-int		pcic_pci_match (struct device *, void *, void *);
-#else
 int		pcic_pci_match (struct device *, struct cfdata *, void *);
-#endif
 void	pcic_pci_attach (struct device *, struct device *, void *);
-
 void	*pcic_pci_chip_intr_establish (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
 void	pcic_pci_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
 
@@ -80,11 +78,7 @@ static struct pcmcia_chip_functions pcic_pci_functions = {
 int
 pcic_pci_match(parent, match, aux)
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata  *match;
-#endif
 	void *aux;
 {
 	struct pci_attach_args *pa = (struct pci_attach_args *) aux;
@@ -195,9 +189,6 @@ pcic_pci_attach(parent, self, aux)
  * XXX This is almost totally wrong!  We need to map to PCI interupts,
  * XXX which themselves map to somthing else.
  */
-
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
 
 void *
 pcic_pci_chip_intr_establish(pch, pf, ipl, fct, arg)

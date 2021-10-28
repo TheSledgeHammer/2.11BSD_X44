@@ -1,0 +1,14 @@
+# $211BSD$ files.ic
+#
+
+#
+# CHIPS and Technologies 82C7[12][01] Universal Peripheral Controller
+#
+device	upc { [offset = -1] }
+attach	wdc at upc with wdc_upc
+attach	com at upc with com_upc
+attach	lpt at upc with lpt_upc
+file	dev/core/ic/upc.c					upc
+file	dev/core/ic/wdc_upc.c				wdc_upc
+file	dev/core/ic/com_upc.c				com_upc
+file	dev/core/ic/lpt_upc.c				lpt_upc

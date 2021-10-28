@@ -430,7 +430,7 @@ ksyms_addsyms_elf(int symsize, void *start, void *end)
 	addsymtab("211bsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, ctfstart, ctfsize, ksyms_nmap);
 
 #ifdef DEBUG
-	aprint_normal("Loaded initial symtab at %p, strtab at %p, # entries %ld\n",
+	printf("Loaded initial symtab at %p, strtab at %p, # entries %ld\n",
 	    kernel_symtab.sd_symstart, kernel_symtab.sd_strstart,
 	    (long)kernel_symtab.sd_symsize/sizeof(Elf_Sym));
 #endif

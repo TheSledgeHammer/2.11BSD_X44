@@ -104,6 +104,21 @@ struct pcmcia_config_entry {
 	SIMPLEQ_ENTRY(pcmcia_config_entry) cfe_list;
 };
 
+
+struct pcmcia_funce_disk {
+	int pfd_interface;
+};
+
+struct pcmcia_funce_lan {
+	int pfl_nidlen;
+	u_int8_t pfl_nid[8];
+};
+
+union pcmcia_funce {
+	struct pcmcia_funce_disk pfv_disk;
+	struct pcmcia_funce_lan  pfv_lan;
+};
+
 struct pcmcia_function {
 	/* read off the card */
 	int			number;
@@ -112,13 +127,13 @@ struct pcmcia_function {
 	u_long		ccr_base;
 	u_long		ccr_mask;
 	SIMPLEQ_HEAD(, pcmcia_config_entry) cfe_head;
-	SIMPLEQ_ENTRY(pcmcia_function) pf_list;
+	SIMPLEQ_ENTRY(pcmcia_function) 		pf_list;
 	/* run-time state */
 	struct pcmcia_softc *sc;
 	struct pcmcia_config_entry *cfe;
 	struct pcmcia_mem_handle pf_pcmh;
-#define	pf_ccrt		pf_pcmh.memt
-#define	pf_ccrh		pf_pcmh.memh
+#define	pf_ccrt			pf_pcmh.memt
+#define	pf_ccrh			pf_pcmh.memh
 #define	pf_ccr_mhandle	pf_pcmh.mhandle
 #define	pf_ccr_realsize	pf_pcmh.realsize
 	bus_addr_t	pf_ccr_offset;
@@ -127,6 +142,12 @@ struct pcmcia_function {
 	void	*ih_arg;
 	int		ih_ipl;
 	int		pf_flags;
+
+
+	union pcmcia_funce pf_funce; /* CISTPL_FUNCE */
+#define pf_funce_disk_interface pf_funce.pfv_disk.pfd_interface
+#define pf_funce_lan_nid pf_funce.pfv_lan.pfl_nid
+#define pf_funce_lan_nidlen pf_funce.pfv_lan.pfl_nidlen
 };
 
 /* pf_flags */
@@ -187,6 +208,9 @@ struct pcmcia_tuple {
 	bus_space_tag_t	memt;
 	bus_space_handle_t memh;
 };
+
+#define PCMCIACF_FUNCTION_DEFAULT 	-1
+#define PCMCIACF_FUNCTION 			0
 
 void	pcmcia_read_cis (struct pcmcia_softc *);
 void	pcmcia_print_cis (struct pcmcia_softc *);

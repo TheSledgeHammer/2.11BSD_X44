@@ -43,6 +43,7 @@ mi_device_init(devsw)
 	struct devswtable *devsw;
 {
 	console_init(devsw);		/* console interfaces */
+	core_init(devsw);			/* core interfaces */
 	swap_init(devsw);			/* swap interfaces */
 	tty_init(devsw);			/* tty interfaces */
 	wscons_init(devsw);			/* wscons & pccons interfaces */
@@ -74,6 +75,15 @@ console_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);				/* virtual console */
 }
 
+/* Add core driver configuration */
+void
+core_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);			/* Serial port */
+	DEVSWIO_CONFIG_INIT(devsw, NLPT, NULL, &lpt_cdevsw, NULL);			/* parallel printer */
+}
+
 /* Add disk driver configuration */
 void
 disk_init(devsw)
@@ -100,7 +110,6 @@ void
 misc_init(devsw)
 	struct devswtable *devsw;
 {
-	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);				/* Serial port */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */
 }
 
@@ -159,4 +168,5 @@ wscons_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NWSKBD, NULL, &wskbd_cdevsw, NULL);			/* Wscons Keyboard */
 	DEVSWIO_CONFIG_INIT(devsw, NWSMOUSE, NULL, &wsmouse_cdevsw, NULL);		/* Wscons Mouse */
 	DEVSWIO_CONFIG_INIT(devsw, NWSMUX, NULL, &wsmux_cdevsw, NULL);			/* Wscons Multiplexor */
+	DEVSWIO_CONFIG_INIT(devsw, NWSFONT, NULL, &wsfont_cdevsw, NULL);		/* Wsfont */
 }

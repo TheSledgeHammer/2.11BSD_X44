@@ -44,6 +44,8 @@
 #define	WAITTIME    		(10 * hz)    /* time to wait for a completion */
 	/* this is a lot for hard drives, but not for cdroms */
 
+#define WDC_NREG	8 /* number of command registers */
+
 struct channel_queue {  /* per channel queue (may be shared) */
 	TAILQ_HEAD(xferhead, wdc_xfer) sc_xfer;
 };
@@ -56,20 +58,21 @@ struct channel_softc { /* Per channel data */
 	/* Our registers */
 	bus_space_tag_t       	cmd_iot;
 	bus_space_handle_t    	cmd_ioh;
+	bus_space_handle_t    	cmd_iohs[WDC_NREG];
 	bus_space_tag_t       	ctl_iot;
 	bus_space_handle_t    	ctl_ioh;
 	/* data32{iot,ioh} are only used for 32 bit xfers */
 	bus_space_tag_t         data32iot;
 	bus_space_handle_t      data32ioh;
 	/* Our state */
-	int ch_flags;
+	int 					ch_flags;
 #define WDCF_ACTIVE   		0x01	/* channel is active */
 #define WDCF_IRQ_WAIT 		0x10	/* controller is waiting for irq */
 #define WDCF_DMA_WAIT 		0x20	/* controller is waiting for DMA */
-	u_int8_t ch_status;         /* copy of status register */
-	u_int8_t ch_error;          /* copy of error register */
+	u_int8_t 				ch_status;         /* copy of status register */
+	u_int8_t 				ch_error;          /* copy of error register */
 	/* per-drive infos */
-	struct ata_drive_datas ch_drive[2];
+	struct ata_drive_datas 	ch_drive[2];
 
 	/*
 	 * channel queues. May be the same for all channels, if hw channels

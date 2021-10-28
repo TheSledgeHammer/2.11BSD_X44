@@ -26,11 +26,11 @@
 #include <sys/cdefs.h>
 
 #include <machine/cpufunc.h>
-#include <dev/core/isa/comreg.h>
 #include <dev/core/ic/ns16550reg.h>
 #include <dev/core/pci/pcireg.h>
 
 #include <lib/libsa/stand.h>
+#include <dev/core/ic/comreg.h>
 #include "bootstrap.h"
 #include "libi386.h"
 

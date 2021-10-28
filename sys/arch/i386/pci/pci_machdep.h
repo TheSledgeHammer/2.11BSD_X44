@@ -78,6 +78,14 @@ typedef int 	pci_intr_handle_t;
 extern int pci_mode;
 int			pci_mode_detect (void);
 
+
+/*
+ * Section 6.2.4, `Miscellaneous Functions' of the PCI Specification,
+ * says that 255 means `unknown' or `no connection' to the interrupt
+ * controller on a PC.
+ */
+#define	I386_PCI_INTERRUPT_LINE_NO_CONNECTION	0xff
+
 /*
  * Functions provided to machine-independent PCI code.
  */

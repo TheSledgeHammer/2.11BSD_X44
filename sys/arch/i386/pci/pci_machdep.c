@@ -92,7 +92,6 @@
 #define _I386_BUS_DMA_PRIVATE
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
-
 #include <machine/pio.h>
 
 #include <i386/isa/icu.h>
@@ -100,6 +99,18 @@
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcidevs.h>
+
+
+#if NIOAPIC > 0
+#include <machine/apic/ioapicreg.h>
+#include <machine/apic/ioapicvar.h>
+#include <machine/mpbiosvar.h>
+#include <machine/pic.h>
+#endif
+
+#ifdef MPBIOS
+#include <machine/mpbiosvar.h>
+#endif
 
 int pci_mode = -1;
 
@@ -137,7 +148,7 @@ struct {
  * of these functions.
  */
 struct i386_bus_dma_tag pci_bus_dma_tag = {
-	NULL,			/* _cookie */
+	NULL,					/* _cookie */
 	bus_dmamap_create,
 	bus_dmamap_destroy,
 	bus_dmamap_load,
@@ -145,7 +156,7 @@ struct i386_bus_dma_tag pci_bus_dma_tag = {
 	bus_dmamap_load_uio,
 	bus_dmamap_load_raw,
 	bus_dmamap_unload,
-	NULL,			/* _dmamap_sync */
+	NULL,					/* _dmamap_sync */
 	bus_dmamem_alloc,
 	bus_dmamem_free,
 	bus_dmamem_map,
@@ -161,6 +172,10 @@ pci_attach_hook(parent, self, pba)
 
 	if (pba->pba_bus == 0)
 		printf(": configuration mode %d", pci_mode);
+
+#ifdef MPBIOS
+	mpbios_pci_attach_hook(parent, self, pba);
+#endif
 }
 
 int
@@ -470,7 +485,7 @@ pci_intr_map(pc, intrtag, pin, line, ihp)
 	 * that the BIOS did its job, we also recognize that as meaning that
 	 * the BIOS has not configured the device.
 	 */
-	if (line == 0 || line == 255) {
+	if (line == 0 || line == I386_PCI_INTERRUPT_LINE_NO_CONNECTION) {
 		printf("pci_intr_map: no mapping for pin %c\n", '@' + pin);
 		goto bad;
 	} else {

@@ -319,7 +319,7 @@ pckbc_attach(sc)
 
 	t->t_pt = pckbport_attach(t, &pckbc_ops);
 	if (t->t_pt == NULL) {
-		aprint_error(": attach failed\n");
+		printf(": attach failed\n");
 		return;
 	}
 

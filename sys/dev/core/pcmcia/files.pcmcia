@@ -11,3 +11,7 @@ file	dev/core/pcmcia/pcmcia_cis.c				pcmcia
 
 # device declaration in sys/conf/files
 attach	pcmcia at pcmciabus
+
+# PCMCIA IDE controller
+attach	wdc at pcmcia with wdc_pcmcia
+file	dev/core/pcmcia/wdc_pcmcia.c				wdc_pcmcia

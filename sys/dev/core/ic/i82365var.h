@@ -36,10 +36,17 @@
 #include <dev/core/pcmcia/pcmciareg.h>
 
 struct pcic_handle {
+	struct device 		*ph_parent;
+	bus_space_tag_t 	ph_bus_t;	/* I/O or MEM?  I don't mind */
+	bus_space_handle_t 	ph_bus_h;
+	uint8_t 			(*ph_read)(struct pcic_handle *, int);
+	void 				(*ph_write)(struct pcic_handle *, int, uint8_t);
 	struct pcic_softc 	*sc;
-	int					vendor;
+	int					vendor;		/* vendor of chip */
+	int					chip;		/* chip index 0 or 1 */
 	int					sock;
 	int					flags;
+	int					laststate;
 	int					memalloc;
 	struct {
 		bus_addr_t		addr;
@@ -57,13 +64,29 @@ struct pcic_handle {
 	struct device 		*pcmcia;
 };
 
-#define	PCIC_FLAG_SOCKETP	0x0001
-#define	PCIC_FLAG_CARDP		0x0002
+#define	PCIC_FLAG_SOCKETP		0x0001
+#define	PCIC_FLAG_CARDP			0x0002
+#define	PCIC_FLAG_ENABLED		0x0004
 
-#define	C0SA PCIC_CHIP0_BASE+PCIC_SOCKETA_INDEX
-#define	C0SB PCIC_CHIP0_BASE+PCIC_SOCKETB_INDEX
-#define	C1SA PCIC_CHIP1_BASE+PCIC_SOCKETA_INDEX
-#define	C1SB PCIC_CHIP1_BASE+PCIC_SOCKETB_INDEX
+#define PCIC_LASTSTATE_PRESENT	0x0002
+#define PCIC_LASTSTATE_HALF		0x0001
+#define PCIC_LASTSTATE_EMPTY	0x0000
+
+#define	C0SA	0
+#define	C0SB	PCIC_SOCKET_OFFSET
+#define	C1SA	PCIC_CHIP_OFFSET
+#define	C1SB	PCIC_CHIP_OFFSET + PCIC_SOCKET_OFFSET
+
+#define	PCIC_VENDOR_NONE			-1
+#define	PCIC_VENDOR_UNKNOWN			0
+#define	PCIC_VENDOR_I82365SLR0		1
+#define	PCIC_VENDOR_I82365SLR1		2
+#define	PCIC_VENDOR_CIRRUS_PD67XX	3
+#define PCIC_VENDOR_I82365SL_DF		4
+#define PCIC_VENDOR_IBM				5
+#define PCIC_VENDOR_IBM_KING		6
+#define PCIC_VENDOR_RICOH_5C296		7
+#define PCIC_VENDOR_RICOH_5C396		8
 
 /*
  * This is sort of arbitrary.  It merely needs to be "enough". It can be
@@ -73,7 +96,7 @@ struct pcic_handle {
 #define	PCIC_MEM_PAGES	4
 #define	PCIC_MEMSIZE	PCIC_MEM_PAGES*PCIC_MEM_PAGESIZE
 
-#define	PCIC_NSLOTS	4
+#define	PCIC_NSLOTS		4
 
 struct pcic_softc {
 	struct device 		dev;
@@ -108,6 +131,9 @@ struct pcic_softc {
 	void				*ih;
 
 	struct pcic_handle 	handle[PCIC_NSLOTS];
+	/* for use by underlying chip code for discovering irqs */
+	int intr_detect, intr_false;
+	int intr_mask[PCIC_NSLOTS / 2];	/* probed intterupts if possible */
 };
 
 

@@ -8,4 +8,4 @@ defflag	opt_apm.h		APM_V10_ONLY APM_NO_V12 APMDEBUG
 defparam opt_apm.h		APMDEBUG_VALUE
 
 device	apm
-file	dev/apm/apm.c	apm
+file	dev/misc/apm/apm.c	apm

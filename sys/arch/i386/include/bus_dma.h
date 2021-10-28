@@ -116,7 +116,12 @@ struct i386_bus_dmamap {
  *	DMA for a given bus.
  */
 struct i386_bus_dma_tag {
-	void	*_cookie;		/* cookie used in the guts */
+	void	 *_cookie;		/* cookie used in the guts */
+
+	bus_addr_t _bounce_thresh;
+//	bus_addr_t _bounce_alloc_lo;
+//	bus_addr_t _bounce_alloc_hi;
+//	int		(*_may_bounce)(bus_dma_tag_t, bus_dmamap_t, int, int *);
 
 	/*
 	 * DMA mapping methods.

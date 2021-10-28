@@ -73,7 +73,7 @@ powerhook_establish(const char *name, void (*fn)(int, void *), void *arg)
 	strlcpy(ndp->sfd_name, name, sizeof(ndp->sfd_name));
 	TAILQ_INSERT_HEAD(&powerhook_list, ndp, sfd_list);
 
-	aprint_error("%s: WARNING: powerhook_establish is deprecated\n", name);
+	printf("%s: WARNING: powerhook_establish is deprecated\n", name);
 	return (ndp);
 }
 

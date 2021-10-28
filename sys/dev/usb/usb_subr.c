@@ -1127,11 +1127,11 @@ usbd_print(aux, pnp)
 	 * by each driver.
 	 */
 	if (uaa->vendor != UHUB_UNK_VENDOR)
-		aprint_normal(" vendor 0x%04x", uaa->vendor);
+		printf(" vendor 0x%04x", uaa->vendor);
 	if (uaa->product != UHUB_UNK_PRODUCT)
-		aprint_normal(" product 0x%04x", uaa->product);
+		printf(" product 0x%04x", uaa->product);
 	if (uaa->release != UHUB_UNK_RELEASE)
-		aprint_normal(" release 0x%04x", uaa->release);
+		printf(" release 0x%04x", uaa->release);
 #endif
 	return (UNCONF);
 }

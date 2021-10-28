@@ -53,6 +53,13 @@ attach	atabus at ata
 file	dev/core/ic/wdc.c					(ata_dma | atabus) & atabus & wdc_base 	needs-flag
 
 #
+# SERIAL Devices & Attributes
+#
+
+device	com { } : tty
+file	dev/core/isa/com.c					com			needs-flag
+
+#
 # NETWORK Devices & Attributes 
 # we have generic code for arc(net), ether(net), fddi, and atm.
 #

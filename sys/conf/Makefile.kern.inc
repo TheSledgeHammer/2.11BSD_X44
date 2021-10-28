@@ -134,15 +134,6 @@ COPTS.${j}+=-g
 #
 COPTS.debugsyms.c+=	-g
 
-# Add CTF sections for DTrace
-.if defined(CTFCONVERT)
-COMPILE_CTFCONVERT=	${_MKSHECHO}\
-			${CTFCONVERT} ${CTFFLAGS} ${.TARGET} && \
-			${CTFCONVERT} ${CTFFLAGS} ${.TARGET}
-.else
-COMPILE_CTFCONVERT=	${_MKSHNOECHO}
-.endif
-
 KCOMPILE.c=	${CC} ${COPTS.${<:T}} ${CFLAGS} ${CPPFLAGS} -c $< -o $@
 KCOMPILE.s=	${CC} ${AFLAGS} ${AFLAGS.${<:T}} ${CPPFLAGS} -c $< -o $@
 KLINK.o=	${LD} -r ${LINKFORMAT} -Map=${.TARGET}.map -o ${.TARGET} ${.ALLSRC}

@@ -90,10 +90,9 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/core/isa/comreg.h>
-#include <dev/core/isa/comvar.h>
-
 #include <dev/core/isa/isavar.h>
+#include <dev/core/ic/comreg.h>
+#include <dev/core/ic/comvar.h>
 
 struct com_isa_softc {
 	struct	com_softc 	sc_com;	/* real "com" softc */
@@ -106,11 +105,7 @@ struct com_isa_softc {
 int com_isa_probe(struct device *, void *, void *);
 void com_isa_attach(struct device *, struct device *, void *);
 void com_isa_cleanup (void *);
-/*
-struct cfdriver com_isa_ca = {
-	NULL, "com_isa", com_isa_probe, com_isa_attach, DV_DULL, sizeof(struct com_isa_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, com_isa, &com_isa_cops, DV_DULL, sizeof(struct com_isa_softc));
 CFOPS_DECL(com_isa, com_isa_probe, com_isa_attach, NULL, NULL);
 

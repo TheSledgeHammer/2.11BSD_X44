@@ -291,9 +291,9 @@ uhidevprint(void *aux, const char *pnp)
 	struct uhidev_attach_arg *uha = aux;
 
 	if (pnp)
-		aprint_normal("uhid at %s", pnp);
+		printf("uhid at %s", pnp);
 	if (uha->reportid != 0)
-		aprint_normal(" reportid %d", uha->reportid);
+		printf(" reportid %d", uha->reportid);
 	return (UNCONF);
 }
 

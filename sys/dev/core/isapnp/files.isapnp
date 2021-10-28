@@ -11,3 +11,9 @@ device	isapnp {[port = -1], [size = 0],
 attach	isapnp at isa
 file	dev/core/isapnp/isapnp.c			isapnp			needs-flag
 file	dev/core/isapnp/isapnpres.c			isapnp
+file	dev/core/isapnp/isapnpdevs.c			isapnp
+
+
+# IDE disks
+attach	wdc at isapnp with wdc_isapnp
+file	dev/core/isapnp/wdc_isapnp.c			wdc_isapnp

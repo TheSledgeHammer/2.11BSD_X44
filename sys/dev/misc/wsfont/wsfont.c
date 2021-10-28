@@ -459,7 +459,7 @@ wsfont_lock(int cookie, struct wsdisplay_font **ptr)
 			neu = wsfont_add0(ent->font, 1);
 			neu->flags |= WSFONT_COPY;
 
-			aprint_debug("wsfont: font '%s' bito %d byteo %d "
+			printf("wsfont: font '%s' bito %d byteo %d "
 			    "copied to bito %d byteo %d\n",
 			    ent->font->name,
 			    ent->font->bitorder, ent->font->byteorder,

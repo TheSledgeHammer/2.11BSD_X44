@@ -383,7 +383,7 @@ pcic_isa_chip_intr_establish(pch, pf, ipl, fct, arg)
 	pcmcia_chipset_handle_t pch;
 	struct pcmcia_function *pf;
 	int ipl;
-	int (*fct) __P((void *));
+	int (*fct) (void *);
 	void *arg;
 {
 	struct pcic_handle *h = (struct pcic_handle *) pch;

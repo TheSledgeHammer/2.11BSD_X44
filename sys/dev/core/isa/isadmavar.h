@@ -39,9 +39,12 @@
 
 #define MAX_ISADMA		65536
 
-#define	DMAMODE_WRITE	0
-#define	DMAMODE_READ	1
-#define	DMAMODE_LOOP	2
+#define	DMAMODE_WRITE		0x00
+#define	DMAMODE_READ		0x01
+#define	DMAMODE_SINGLE		0x00
+#define	DMAMODE_DEMAND		0x02
+#define	DMAMODE_LOOP		0x04
+#define	DMAMODE_LOOPDEMAND	(DMAMODE_LOOP | DMAMODE_DEMAND)
 
 struct isa_mem {
 	struct device 			*isadev;

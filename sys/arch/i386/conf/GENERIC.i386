@@ -108,9 +108,8 @@ config			twobsd	root on ? type ?
 # Device configuration
 #
 
-mainbus0    at root
-cpu0 			  at mainbus?
-bios0	      at mainbus0
+mainbus0    	at root
+cpu0 			at mainbus?
 ioapic* 		at mainbus?
 
 # PCI bus support
@@ -119,14 +118,20 @@ pci*			at pchb? bus ?
 
 # PCI bridges
 pchb*			at pci? dev ? function ?	# PCI-Host bridges
+pceb*			at pci? dev ? function ?	# PCI-EISA bridges
 pcib*			at pci? dev ? function ?	# PCI-ISA bridges
 
 # EISA bus support
 eisa0			at mainbus?
+eisa0			at pceb?
 
 # ISA bus support
 isa0			at mainbus?
+isa0			at pceb?
 isa0			at pcib?
+
+# PCMCIA bus support
+pcmcia* 		at pcic? controller ? socket ?
 
 # ISA Plug-and-Play bus support
 isapnp0 		at isa?
@@ -139,21 +144,21 @@ npx0			at isa? port 0xf0 irq 13	# x86 math coprocessor
 # Console Devices
 
 # wscons
-pckbc0			  at isa?						# PC keyboard controller
-pckbd*			  at pckbc?					# PC keyboard
-pms*			    at pckbc?					# PS/2 mouse for wsmouse
-vga0			    at isa?
-#vga*			    at pci? dev ? function ?
+pckbc0			at isa?						# PC keyboard controller
+pckbd*			at pckbc?					# PC keyboard
+pms*			at pckbc?					# PS/2 mouse for wsmouse
+vga0			at isa?
+vga*			at pci? dev ? function ?
 pcdisplay0		at isa?						# CGA, MDA, EGA, HGA
 wsdisplay*		at vga? console ?
 #wsdisplay*		at pcdisplay? console ?
 wsdisplay*		at wsemuldisplaydev?
-wskbd*			  at pckbd? console ?
-wsmouse*		  at pms? mux 0
-wsmouse*		  at wsmousedev?
+wskbd*			at pckbd? console ?
+wsmouse*		at pms? mux 0
+wsmouse*		at wsmousedev?
 
-pcppi0			  at isa?
-#sysbeep0		  at pcppi?
+pcppi0			at isa?
+#sysbeep0		at pcppi?
 
 # Serial Devices
 
@@ -183,14 +188,14 @@ ss*				at scsibus? target ? lun ?	# SCSI scanners
 uk*				at scsibus? target ? lun ?	# SCSI unknown
 
 # ISA Plug-and-Play IDE controllers
-#wdc*			at isapnp?
+wdc*			at isapnp?
 
 # ISA ST506, ESDI, and IDE controllers
 # Use flags 0x01 if you want to try to use 32bits data I/O (the driver will
 # fall back to 16bits I/O if 32bits I/O are not functional).
 # Some controllers pass the initial 32bit test, but will fail later.
-#wdc0			at isa? port 0x1f0 irq 14 flags 0x00
-#wdc1			at isa? port 0x170 irq 15 flags 0x00
+wdc0			at isa? port 0x1f0 irq 14 flags 0x00
+wdc1			at isa? port 0x170 irq 15 flags 0x00
 
 # ATA (IDE) bus support
 atabus* 		at ata?
@@ -216,7 +221,7 @@ atapibus* 		at atapi?
 # flags have the same meaning as for IDE drives.
 cd*				at atapibus? drive ? flags 0x0000	# ATAPI CD-ROM drives
 sd*				at atapibus? drive ? flags 0x0000	# ATAPI disk drives
-#st*				at atapibus? drive ? flags 0x0000	# ATAPI tape drives
+#st*			at atapibus? drive ? flags 0x0000	# ATAPI tape drives
 uk*				at atapibus? drive ? flags 0x0000	# ATAPI unknown
 
 # Network Interfaces
