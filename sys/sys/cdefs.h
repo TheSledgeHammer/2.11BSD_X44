@@ -39,20 +39,57 @@
 #ifndef	_CDEFS_H_
 #define	_CDEFS_H_
 
-#if defined(__cplusplus)
-#define	__BEGIN_DECLS	extern "C" {
-#define	__END_DECLS	};
+/*
+ * Macro to test if we're using a GNU C compiler of a specific vintage
+ * or later, for e.g. features that appeared in a particular version
+ * of GNU C.  Usage:
+ *
+ *	#if __GNUC_PREREQ__(major, minor)
+ *	...cool feature...
+ *	#else
+ *	...delete feature...
+ *	#endif
+ */
+#ifdef __GNUC__
+#define	__GNUC_PREREQ__(x, y)								\
+	((__GNUC__ == (x) && __GNUC_MINOR__ >= (y)) ||			\
+	 (__GNUC__ > (x)))
 #else
-#define	__BEGIN_DECLS
-#define	__END_DECLS
+#define	__GNUC_PREREQ__(x, y)	0
 #endif
 
-#include <sys/cdefs.h>
+/*
+ * Macros to test Clang/LLVM features.
+ * Testing against Clang-specific extensions.
+ */
+#ifndef	__has_attribute
+#define	__has_attribute(x)	0
+#endif
+#ifndef	__has_extension
+#define	__has_extension		__has_feature
+#endif
+#ifndef	__has_feature
+#define	__has_feature(x)	0
+#endif
+#ifndef	__has_include
+#define	__has_include(x)	0
+#endif
+#ifndef	__has_builtin
+#define	__has_builtin(x)	0
+#endif
 
 #ifdef __ELF__
 #include <sys/cdefs_elf.h>
 #else
 #include <sys/cdefs_aout.h>
+#endif
+
+#if defined(__cplusplus)
+#define	__BEGIN_DECLS	extern "C" {
+#define	__END_DECLS		};
+#else
+#define	__BEGIN_DECLS
+#define	__END_DECLS
 #endif
 
 #ifdef __GNUC__
@@ -70,6 +107,10 @@
  * in between its arguments.  __CONCAT can also concatenate double-quoted
  * strings produced by the __STRING macro, but this only works with ANSI C.
  */
+
+#define	___STRING(x)	__STRING(x)
+#define	___CONCAT(x,y)	__CONCAT(x,y)
+
 #if defined(__STDC__) || defined(__cplusplus)
 #define	__P(protos)		protos		/* full-blown ANSI C */
 #define	__CONCAT(x,y)	x ## y
@@ -78,25 +119,34 @@
 #define	__const			const		/* define reserved names to standard */
 #define	__signed		signed
 #define	__volatile		volatile
+
+#define	__CONCAT3(a,b,c)			a ## b ## c
+#define	__CONCAT4(a,b,c,d)			a ## b ## c ## d
+#define	__CONCAT5(a,b,c,d,e)		a ## b ## c ## d ## e
+#define	__CONCAT6(a,b,c,d,e,f)		a ## b ## c ## d ## e ## f
+#define	__CONCAT7(a,b,c,d,e,f,g)	a ## b ## c ## d ## e ## f ## g
+#define	__CONCAT8(a,b,c,d,e,f,g,h)	a ## b ## c ## d ## e ## f ## g ## h
+
 #if defined(__cplusplus) || defined(__PCC__)
-#define	__inline		inline		/* convert to C++ keyword */
+#define	__inline	inline			/* convert to C++/C99 keyword */
 #else
 #if !defined(__GNUC__) && !defined(__lint__)
-#define	__inline			/* delete GCC keyword */
-#endif /* !__GNUC__ */
+#define	__inline					/* delete GCC keyword */
+#endif /* !__GNUC__  && !__lint__ */
 #endif /* !__cplusplus */
 
 #else	/* !(__STDC__ || __cplusplus) */
-#define	__P(protos)		()		/* traditional C preprocessor */
+#define	__P(protos)		()			/* traditional C preprocessor */
 #define	__CONCAT(x,y)	x/**/y
 #define	__STRING(x)		"x"
 
 #ifndef __GNUC__
-#define	__const				/* delete pseudo-ANSI C keywords */
+#define	__const						/* delete pseudo-ANSI C keywords */
 #define	__inline
 #define	__signed
 #define	__volatile
 #endif	/* !__GNUC__ */
+
 /*
  * In non-ANSI C environments, new programs will want ANSI-only C keywords
  * deleted from the program and old programs will want them left alone.
@@ -106,11 +156,11 @@
  * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
  */
 #ifndef	NO_ANSI_KEYWORDS
-#define	const				/* delete ANSI C keywords */
-#define	inline
-#define	signed
-#define	volatile
-#endif
+#define	const		__const			/* convert ANSI C keywords */
+#define	inline		__inline
+#define	signed		__signed
+#define	volatile	__volatile
+#endif /* !NO_ANSI_KEYWORDS */
 #endif	/* !(__STDC__ || __cplusplus) */
 
 /*
@@ -121,6 +171,17 @@
 #else
 #define	__aconst
 #endif
+
+/*
+ * The following macro is used to remove const cast-away warnings
+ * from gcc -Wcast-qual; it should be used with caution because it
+ * can hide valid errors; in particular most valid uses are in
+ * situations where the API requires it, not to cast away string
+ * constants. We don't use *intptr_t on purpose here and we are
+ * explicit about unsigned long so that we don't have additional
+ * dependencies.
+ */
+#define __UNCONST(a)	((void *)(unsigned long)(const void *)(a))
 
 /*
  * Compile Time Assertion.
@@ -197,28 +258,8 @@
 #endif
 
 /*
- * Testing against Clang-specific extensions.
- */
-#ifndef	__has_attribute
-#define	__has_attribute(x)	0
-#endif
-#ifndef	__has_extension
-#define	__has_extension		__has_feature
-#endif
-#ifndef	__has_feature
-#define	__has_feature(x)	0
-#endif
-#ifndef	__has_include
-#define	__has_include(x)	0
-#endif
-#ifndef	__has_builtin
-#define	__has_builtin(x)	0
-#endif
-
-/*
  * Keywords added in C11.
  */
-
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
 
 #if !defined(__cplusplus) && !__has_extension(c_atomic) && \
@@ -230,7 +271,4 @@
 #define	_Atomic(T)		struct { T volatile __val; }
 #endif
 #endif
-
-#define	__GLOBL1(sym)	__asm__(".globl " #sym)
-#define	__GLOBL(sym)	__GLOBL1(sym)
 #endif /* !_CDEFS_H_ */

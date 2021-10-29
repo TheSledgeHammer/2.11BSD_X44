@@ -1,4 +1,4 @@
-/*	$NetBSD: savar.h,v 1.20 2006/06/25 08:12:54 yamt Exp $	*/
+/*	$NetBSD: savar.h,v 1.15 2004/03/14 01:08:47 cl Exp $	*/
 
 /*-
  * Copyright (c) 2001 The NetBSD Foundation, Inc.
@@ -57,17 +57,6 @@ union sau_state {
 	} ss_deferred;
 };
 
-struct sa_emul {
-	size_t		sae_ucsize;					/* Size of ucontext_t */
-	size_t		sae_sasize;					/* Size of sa_t */
-	size_t		sae_sapsize;				/* Size of (sa_t *) */
-	int			(*sae_sacopyout)(int, const void *, void *);
-	int			(*sae_upcallconv)(struct proc *, int, size_t *, void **, void (**)(void *));
-	void		(*sae_upcall)(struct proc *, int, int, int, void *, void *, void *, sa_upcall_t);
-	void		(*sae_getucontext)(struct proc *, void *);
-	void		*(*sae_ucsp)(void *); 		/* Stack ptr from an ucontext_t */
-};
-
 struct sadata_upcall {
 	SIMPLEQ_ENTRY(sadata_upcall)	sau_next;
 	int								sau_flags;
@@ -123,37 +112,30 @@ struct sadata {
 	LIST_HEAD(, sadata_vp)			sa_vps;					/* list of "virtual processors" */
 };
 
-SPLAY_PROTOTYPE(sasttree, sastack, sast_node, sast_compare);
-SPLAY_GENERATE(sasttree, sastack, sast_node, sast_compare);
+#define SA_FLAG_ALL	SA_FLAG_PREEMPT
 
-#define SA_FLAG_ALL		SA_FLAG_PREEMPT
+extern struct pool sadata_pool;		/* memory pool for sadata structures */
+extern struct pool saupcall_pool;	/* memory pool for pending upcalls */
+extern struct pool sastack_pool;	/* memory pool for sastack structs */
+extern struct pool savp_pool;		/* memory pool for sadata_vp structures */
 
-#define	SA_MAXNUMSTACKS	16		/* Maximum number of upcall stacks per VP. */
+#define	SA_MAXNUMSTACKS	16			/* Maximum number of upcall stacks per VP. */
 
 struct sadata_upcall *sadata_upcall_alloc(int);
 void		sadata_upcall_free(struct sadata_upcall *);
 
 void		sa_release(struct proc *);
-void		sa_switch(struct proc *, struct sadata_upcall *, int);
-void		sa_preempt(struct proc *);
-void		sa_yield(struct proc *);
-int			sa_upcall(struct proc *, int, struct proc *, struct proc *, size_t, void *, void (*)(void *));
+void		sa_switch(struct lwp *, int);
+void		sa_preempt(struct lwp *);
+void		sa_yield(struct lwp *);
+int			sa_upcall(struct lwp *, int, struct lwp *, struct lwp *, size_t, void *);
 
-void		sa_putcachelwp(struct proc *, struct proc *);
-struct proc *sa_getcachelwp(struct sadata_vp *);
+void		sa_putcachelwp(struct proc *, struct lwp *);
+struct lwp 	*sa_getcachelwp(struct sadata_vp *);
 
-void		sa_unblock_userret(struct proc *);
-void		sa_upcall_userret(struct proc *);
-void		cpu_upcall(struct proc *, int, int, int, void *, void *, void *, sa_upcall_t);
 
-typedef int (*sa_copyin_stack_t)(stack_t *, int, stack_t *);
-int			sa_stacks1(struct proc *, register_t *, int, stack_t *, sa_copyin_stack_t);
-int			dosa_register(struct proc *, sa_upcall_t, sa_upcall_t *, int, ssize_t);
-
-void		*sa_ucsp(void *);
-
-#define SAOUT_UCONTEXT	0
-#define SAOUT_SA_T		1
-#define SAOUT_SAP_T		2
+void		sa_unblock_userret(struct lwp *);
+void		sa_upcall_userret(struct lwp *);
+void		cpu_upcall(struct lwp *, int, int, int, void *, void *, void *, sa_upcall_t);
 
 #endif /* !_SYS_SAVAR_H_ */

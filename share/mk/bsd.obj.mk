@@ -16,7 +16,6 @@ __objdir:= ${MAKEOBJDIRPREFIX}${__curdir}
 .else
 __objdir:= ${MAKEOBJDIR}
 .endif
-
 # MAKEOBJDIR and MAKEOBJDIRPREFIX are env variables supported
 # by make(1).  We simply mkdir -p the specified path.
 # If that fails - we do a mkdir to get the appropriate error message
@@ -38,16 +37,16 @@ obj:
 	fi
 .endif
 .else
-PAWD?=			/bin/pwd
+PAWD?=		/bin/pwd
 
 __objdirsuffix=	${OBJMACHINE:D.${MACHINE}${OBJMACHINE_ARCH:D-${MACHINE_ARCH}}}
-__objdir=		obj${__objdirsuffix}
+__objdir=	obj${__objdirsuffix}
 
 __usrobjdir=	${BSDOBJDIR}${USR_OBJMACHINE:D.${MACHINE}}
 __usrobjdirpf=	${USR_OBJMACHINE:D:U${__objdirsuffix}}
 
 .if defined(BUILDID)
-__objdir:=		${__objdir}.${BUILDID}
+__objdir:=	${__objdir}.${BUILDID}
 __usrobjdirpf:=	${__usrobjdirpf}.${BUILDID}
 __need_objdir_target=yes
 .endif

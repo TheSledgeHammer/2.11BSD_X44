@@ -251,7 +251,7 @@ char		*strstr (const char *, const char *);
  * ffs is an instruction on vax.
  */
 int	 		ffs (int);
-#if __GNUC_PREREQ__(2, 95) && !defined(__vax__)
+#if __GNUC_PREREQ__(2, 95)
 #define	ffs(x)			__builtin_ffs(x)
 #endif
 
@@ -281,7 +281,7 @@ size_t	 	strlcpy (char *, const char *, size_t);
 size_t	 	strlcat (char *, const char *, size_t);
 int	 		strncasecmp (const char *, const char *, size_t);
 u_long	 	strtoul (const char *, char **, int);
-void	 	hexdump(void (*)(const char *, ...) __printflike(1, 2), const char *, const void *, size_t);
+//void	 	hexdump(void (*)(const char *, ...) __printflike(1, 2), const char *, const void *, size_t);
 
 #define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
 

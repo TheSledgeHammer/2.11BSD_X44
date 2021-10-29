@@ -31,11 +31,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/systm.h>
-#include <sys/unistd.h>
-#include <sys/null.h>
 
 #ifdef _STANDALONE
 #include <lib/libkern/libkern.h>
@@ -46,12 +43,11 @@ __assert(func, file, line, expression)
 	const char *func, *file, *expression;
 	int line;
 {
-	if (func == NULL)
-		panic("Assertion failed: (%s), file %s, line %d.",
-		    expression, file, line);
-	else
-		panic(
-		    "Assertion failed: (%s), function %s, file %s, line %d.", expression, func, file, line);
+	if (func == NULL) {
+		panic("Assertion failed: (%s), file %s, line %d.", expression, file, line);
+	} else {
+		panic("Assertion failed: (%s), function %s, file %s, line %d.", expression, func, file, line);
+	}
 }
 
 /* coverity[+kill] */

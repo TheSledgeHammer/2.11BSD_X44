@@ -39,7 +39,6 @@
 #define _UC_CLRSTACK	0x00020000
 #define _UC_VM			0x00040000
 
-
 /*
  * General register state
  */
