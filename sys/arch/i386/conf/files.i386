@@ -59,4 +59,3 @@ file		arch/i386/i386/vm86.c			vm86
 
 # Machine Devices & Drivers
 include 	"arch/i386/conf/devices.i386"
-include 	"arch/i386/conf/majors.i386"

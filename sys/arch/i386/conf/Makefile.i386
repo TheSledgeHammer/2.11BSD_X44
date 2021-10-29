@@ -14,6 +14,7 @@
 # after which config should be rerun for all machines of that type.
 
 
+NOSANITIZER=	# defined
 MACHINE_ARCH=	i386
 USETOOLS?=		no
 NEED_OWN_INSTALL_TARGET?=no
@@ -36,15 +37,15 @@ CFLAGS+=	-msoft-float
 CFLAGS+=	-mno-mmx -mno-sse -mno-avx
 
 ##
-## (3) libkern
+## (3) libkern and compat
 ##
-KERN_AS=		obj
-.include "$S/lib/libkern/Makefile.inc"
-.ifndef PROF
-LIBKERN=		${KERNLIB}
-.else
-LIBKERN=		${KERNLIB_PROF}
-.endif
+#KERN_AS=		obj
+#.include "$S/lib/libkern/Makefile.inc"
+#.ifndef PROF
+#LIBKERN=		${KERNLIB}
+#.else
+#LIBKERN=		${KERNLIB_PROF}
+#.endif
 
 ##
 ## (4) local objects, compile rules, and dependencies
@@ -52,7 +53,7 @@ LIBKERN=		${KERNLIB_PROF}
 MD_OBJS=	locore.o support.o apicvector.o legacyvector.o icu.o
 MD_CFILES=
 MD_SFILES=	${I386}/i386/locore.S ${I386}/i386/support.S ${I386}/apic/apicvector.S\
-			${I386}/apic/legacyvector.S ${I386}/isa/icu.S 
+		${I386}/apic/legacyvector.S ${I386}/isa/icu.S 
 
 locore.o: ${I386}/i386/locore.S assym.h
 	${NORMAL_S}

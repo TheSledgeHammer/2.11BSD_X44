@@ -131,7 +131,7 @@ isa0			at pceb?
 isa0			at pcib?
 
 # PCMCIA bus support
-pcmcia* 		at pcic? controller ? socket ?
+#pcmcia* 		at pcic? controller ? socket ?
 
 # ISA Plug-and-Play bus support
 isapnp0 		at isa?
@@ -177,15 +177,15 @@ pcppi0			at isa?
 # SCSI Controllers and Devices
 
 # SCSI bus support
-scsibus* 		at scsi?
+#scsibus* 		at scsi?
 
 # SCSI devices
-sd*				at scsibus? target ? lun ?	# SCSI disk drives
-st*				at scsibus? target ? lun ?	# SCSI tape drives
-cd*				at scsibus? target ? lun ?	# SCSI CD-ROM drives
-ch*				at scsibus? target ? lun ?	# SCSI autochangers
-ss*				at scsibus? target ? lun ?	# SCSI scanners
-uk*				at scsibus? target ? lun ?	# SCSI unknown
+#sd*				at scsibus? target ? lun ?	# SCSI disk drives
+#st*				at scsibus? target ? lun ?	# SCSI tape drives
+#cd*				at scsibus? target ? lun ?	# SCSI CD-ROM drives
+#ch*				at scsibus? target ? lun ?	# SCSI autochangers
+#ss*				at scsibus? target ? lun ?	# SCSI scanners
+#uk*				at scsibus? target ? lun ?	# SCSI unknown
 
 # ISA Plug-and-Play IDE controllers
 wdc*			at isapnp?
@@ -236,18 +236,18 @@ uk*				at atapibus? drive ? flags 0x0000	# ATAPI unknown
 #uhci*			at pci?	dev ? function ?	# Universal Host Controller (Intel)
 
 # USB bus support
-usb*			at ehci?
-usb*			at ohci?
-usb*			at uhci?
+#usb*			at ehci?
+#usb*			at ohci?
+#usb*			at uhci?
 #usb*			at xhci?
 #usb*			at gcscehci?
 #usb*			at slhci?
 
 # Audio support
-audio*			at audio?
+#audio*			at audio?
 
 # MIDI support
-midi*			at midi?
+#midi*			at midi?
 
 # Pseudo-Devices
 
