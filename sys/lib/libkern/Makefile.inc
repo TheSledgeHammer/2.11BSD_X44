@@ -1,4 +1,4 @@
-#	$NetBSD: Makefile.inc,v 1.46 2018/09/22 12:24:04 rin Exp $
+#	$NetBSD: Makefile.inc,v 1.37 2003/11/07 23:34:28 dsl Exp $
 #
 #	Configuration variables (default values are below):
 #
@@ -7,8 +7,7 @@
 #		objects are to be built.  Defaults to ${.OBJDIR}/lib/kern.
 #	KERN_AS	may be set to 'obj' to build a object from the library's
 #		object files.  (Otherwise, a library will be built.)
-#		Defaults to 'obj' if OPT_MODULAR is set. Otherwise,
-#		'library' is used as a default value.
+#		Defaults to 'library'.
 #	KERNMISCCPPFLAGS
 #		Miscellaneous cpp flags to be passed to the library's Makefile
 #		when building.
@@ -19,14 +18,10 @@
 
 # Default values:
 KERNDST?=	${.OBJDIR}/lib/kern
-.if !empty(OPT_MODULAR)
-KERN_AS?=	obj
-.else
 KERN_AS?=	library
-.endif
 KERNDOTDIR?= ../../.
 
-KERNDIR=	${S:S@^.@${KERNDOTDIR}@:q}/lib/libkern
+KERNDIR=	${S:S@^.@${KERNDOTDIR}@:Q}/lib/libkern
 .if (${KERN_AS} == "obj")
 KERNLIB=	${KERNDST}/libkern.o
 KERNLIB_PROF=	${KERNDST}/libkern.po
@@ -39,21 +34,19 @@ LIBKERNLNBN=	llib-lkern.ln
 KERNLIBLN=	${KERNDST}/${LIBKERNLNBN}
 
 KERNMAKE= \
-	cd ${KERNDST} && ${MAKE} -f ${KERNDIR:q}/Makefile \
-	    KERNDIR=${KERNDIR:q} \
-	    CC=${CC:q} CFLAGS=${CFLAGS:q} CPUFLAGS= \
-	    AS=${AS:q} AFLAGS=${AFLAGS:q} \
-	    LORDER=${LORDER:q} \
-	    TSORT=${TSORT:q} \
-	    LD=${LD:q} STRIP=${STRIP:q} \
-	    AR=${AR:q} NM=${NM:q} \
-	    RANLIB=${RANLIB:q} SIZE=${SIZE:q} \
-	    MACHINE=${MACHINE} MACHINE_ARCH=${MACHINE_ARCH:q} \
-	    KERNCPPFLAGS=${CPPFLAGS:S@^-I.@-I${KERNDOTDIR}@g:q} \
-	    KERNMISCCPPFLAGS=${KERNMISCCPPFLAGS:q} \
-	    LINTFLAGS=${KERNLINTFLAGS:q} \
-	    LIBKERN_ARCH=${LIBKERN_ARCH:q} \
-	    COMMON_MACHINE_ARCH=${COMMON_MACHINE_ARCH:q} \
+	cd ${KERNDST} && ${MAKE} -f ${KERNDIR:Q}/Makefile \
+	    KERNDIR=${KERNDIR:Q} \
+	    CC=${CC:Q} CFLAGS=${CFLAGS:Q} \
+	    AS=${AS:Q} AFLAGS=${AFLAGS:Q} \
+	    LORDER=${LORDER:Q} \
+	    TSORT=${TSORT:Q} \
+	    LD=${LD:Q} STRIP=${STRIP:Q} \
+	    AR=${AR:Q} NM=${NM:Q} \
+	    RANLIB=${RANLIB:Q} SIZE=${SIZE:Q} \
+	    MACHINE=${MACHINE} MACHINE_ARCH=${MACHINE_ARCH:Q} \
+	    KERNCPPFLAGS=${CPPFLAGS:S@^-I.@-I${KERNDOTDIR}@g:Q} \
+	    KERNMISCCPPFLAGS=${KERNMISCCPPFLAGS:Q} \
+	    LINTFLAGS=${KERNLINTFLAGS:Q} \
 	    ${KERNMISCMAKEFLAGS}
 
 ${KERNLIB}:		.NOTMAIN .MAKE __always_make_kernlib
@@ -77,12 +70,12 @@ ${KERNLIBLN}:		.NOTMAIN .MAKE __always_make_kernlib
 	@${KERNMAKE} ${LIBKERNLNBN}
 
 clean:			.NOTMAIN cleankernlib
-cleankernlib:		.NOTMAIN
+cleankernlib:		.NOTMAIN 
 	@echo cleaning the kern library objects
 	@if [ -d "${KERNDST}" ]; then ${KERNMAKE} clean; fi
 
 cleandir distclean:	.NOTMAIN cleandirkernlib
-cleandirkernlib:	.NOTMAIN
+cleandirkernlib:	.NOTMAIN 
 	@echo cleandiring the kern library objects
 	@if [ -d "${KERNDST}" ]; then ${KERNMAKE} cleandir; fi
 
@@ -96,5 +89,3 @@ __always_make_kernlib:	.NOTMAIN
 
 .PHONY: __always_make_kernlib
 .PHONY: cleankernlib cleandirkernlib dependkernlib
-
-//.include "${.PARSEDIR}/../../../common/lib/libc/Makefile.inc"

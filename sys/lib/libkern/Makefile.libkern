@@ -29,8 +29,10 @@ M= ${KERNDIR}/arch/${ARCHSUBDIR}
 
 CPPFLAGS+=	-I$M ${KERNCPPFLAGS} ${KERNMISCCPPFLAGS}
 
-.include "${.PARSEDIR}/../../lib/libc/Makefile.inc"
-.include "${.PARSEDIR}/../../lib/libutil/Makefile.inc"
+.include "${.PARSEDIR}/../../../lib/libc/Makefile.inc"
+#.include "${.PARSEDIR}/../../../usr.lib/libutil/Makefile.inc"
+
+CPPFLAGS+= -I${KERNDIR}/../../../lib/libc/hash/
 
 .PATH.c: ${KERNDIR}
 .if exists ($M/Makefile.inc)
