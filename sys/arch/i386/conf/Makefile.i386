@@ -67,7 +67,7 @@ apicvector.o: ${I386}/apic/apicvector.S assym.h
 legacyvector.o: ${I386}/apic/legacyvector.S assym.h
 	${NORMAL_S}
 
-lock_stubs.o: ${I386}/isa/icu.S assym.h
+icu.o: ${I386}/isa/icu.S assym.h
 	${NORMAL_S}
 
 ##
