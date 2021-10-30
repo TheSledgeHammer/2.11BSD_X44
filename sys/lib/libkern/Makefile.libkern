@@ -52,15 +52,14 @@ SRCS+=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c 	\
 SRCS+=	__assert.c __main.c
 SRCS+=	inet_addr.c intoa.c
 SRCS+=	bswap16.c bswap32.c bswap64.c
-SRCS+=	arc4random.c murmur3_32.c prospectorhash.c
+SRCS+=	murmur3_32.c prospectorhash.c
 SRCS+=	pmatch.c mcount.c bcd.c ffs.c 
 
 SRCS+=	strstr.c strlcpy.c strlcat.c
 
 SRCS+=	bcmp.c bcopy.c max.c min.c locc.c
-SRCS+=	imax.c imin.c lmax.c lmin.c uimax.c uimin.c ulmax.c ulmin.c
-SRCS+=	memmove.c
-SRCS+=	memcmp.c memmem.c
+SRCS+=	imax.c imin.c lmax.c lmin.c ulmax.c ulmin.c
+SRCS+=	memmove.c memcmp.c
 
 SRCS+=	memcpy.c
 .if empty(SRCS:Mmemset2.*)
@@ -73,11 +72,11 @@ SRCS+=	scanc.c skpc.c
 SRCS+=	random.c
 
 SRCS+=	memchr.c
-SRCS+=	strcat.c strchr.c strcmp.c strcpy.c strcspn.c strlen.c strnlen.c
-SRCS+=	strncat.c strrchr.c strncmp.c strncpy.c strpbrk.c strspn.c
+SRCS+=	strcat.c strchr.c strcmp.c strcpy.c strlen.c
+SRCS+=	strrchr.c strncmp.c strncpy.c
 SRCS+=	strcasecmp.c strncasecmp.c
 
-SRCS+=	qsort.c rindex.c
+SRCS+=	qsort.c #rindex.c
 
 SRCS+=	hexdump.c
 
