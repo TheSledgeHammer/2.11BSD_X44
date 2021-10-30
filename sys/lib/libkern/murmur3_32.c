@@ -26,7 +26,7 @@
  * $FreeBSD$
  */
 
-#include <sys/hash.h>
+//#include <sys/hash.h>
 #include <sys/endian.h>
 #include <sys/stdint.h>
 #include <sys/types.h>
