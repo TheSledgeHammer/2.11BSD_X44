@@ -22,7 +22,7 @@ file	dev/core/isa/isadma.c			isadma 			needs-flag
 attach	com at isa with com_isa
 file	dev/core/isa/com_isa.c			com_isa
 
-attach	com at commulti with com_multi
+define	commulti {[slave = -1]}
 file	dev/core/isa/com_multi.c		com_multi
 
 #
