@@ -1,4 +1,4 @@
-/*	$NetBSD: mkswap.c,v 1.10 2015/09/03 13:53:36 uebayasi Exp $	*/
+/*	$NetBSD: mkswap.c,v 1.16.2.1 2004/06/22 07:21:29 tron Exp $	*/
 
 /*
  * Copyright (c) 1992, 1993
@@ -44,15 +44,11 @@
 #include "nbtool_config.h"
 #endif
 
-#include <sys/cdefs.h>
-__RCSID("$NetBSD: mkswap.c,v 1.10 2015/09/03 13:53:36 uebayasi Exp $");
-
 #include <sys/param.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <err.h>
 #include "defs.h"
 #include "sem.h"
 
@@ -98,14 +94,15 @@ mkoneswap(struct config *cf)
 	(void)snprintf(fname, sizeof(fname), "swap%s.c", cf->cf_name);
 	(void)snprintf(tname, sizeof(tname), "swap%s.c.tmp", cf->cf_name);
 	if ((fp = fopen(tname, "w")) == NULL) {
-		warn("cannot open %s", fname);
+		(void)fprintf(stderr, "config: cannot write %s: %s\n",
+		    fname, strerror(errno));
 		return (1);
 	}
+	if (fputs("\
+#include <sys/param.h>\n\
+#include <sys/conf.h>\n\n", fp) < 0)
+		goto wrerror;
 
-	autogen_comment(fp, fname);
-
-	fputs("#include <sys/param.h>\n"
-		"#include <sys/conf.h>\n\n", fp);
 	/*
 	 * Emit the root device.
 	 */
@@ -115,10 +112,12 @@ mkoneswap(struct config *cf)
 	else
 		snprintf(specinfo, sizeof(specinfo), "\"%s\"",
 		    cf->cf_root->nv_str);
-	fprintf(fp, "const char *rootspec = %s;\n", specinfo);
-	fprintf(fp, "dev_t\trootdev = %s;\t/* %s */\n\n",
-		mkdevstr((dev_t)nv->nv_num),
-		nv->nv_str == s_qmark ? "wildcarded" : nv->nv_str);
+	if (fprintf(fp, "const char *rootspec = %s;\n", specinfo) < 0)
+		goto wrerror;
+	if (fprintf(fp, "dev_t\trootdev = %s;\t/* %s */\n\n",
+	    mkdevstr(nv->nv_int),
+	    nv->nv_str == s_qmark ? "wildcarded" : nv->nv_str) < 0)
+		goto wrerror;
 
 	/*
 	 * Emit the dump device.
@@ -128,19 +127,25 @@ mkoneswap(struct config *cf)
 		strlcpy(specinfo, "NULL", sizeof(specinfo));
 	else
 		snprintf(specinfo, sizeof(specinfo), "\"%s\"", cf->cf_dump->nv_str);
-	fprintf(fp, "const char *dumpspec = %s;\n", specinfo);
-	fprintf(fp, "dev_t\tdumpdev = %s;\t/* %s */\n\n",
-		nv ? mkdevstr((dev_t)nv->nv_num) : "NODEV",
-		nv ? nv->nv_str : "unspecified");
+	if (fprintf(fp, "const char *dumpspec = %s;\n", specinfo) < 0)
+		goto wrerror;
+	if (fprintf(fp, "dev_t\tdumpdev = %s;\t/* %s */\n\n",
+	    nv ? mkdevstr(nv->nv_int) : "NODEV",
+	    nv ? nv->nv_str : "unspecified") < 0)
+		goto wrerror;
 
 	/*
 	 * Emit the root file system.
 	 */
-	fprintf(fp, "const char *rootfstype = \"%s\";\n",
-		cf->cf_fstype ? cf->cf_fstype : "?");
-
-	fflush(fp);
-	if (ferror(fp))
+	if (cf->cf_fstype == NULL)
+		strlcpy(specinfo, "NULL", sizeof(specinfo));
+	else {
+		snprintf(specinfo, sizeof(specinfo), "%s_mountroot",
+		    cf->cf_fstype);
+		if (fprintf(fp, "int %s(void);\n", specinfo) < 0)
+			goto wrerror;
+	}
+	if (fprintf(fp, "int (*mountroot)(void) = %s;\n", specinfo) < 0)
 		goto wrerror;
 
 	if (fclose(fp)) {
@@ -148,17 +153,16 @@ mkoneswap(struct config *cf)
 		goto wrerror;
 	}
 	if (moveifchanged(tname, fname) != 0) {
-		warn("error renaming %s", fname);
+		(void)fprintf(stderr, "config: error renaming %s: %s\n",
+		    fname, strerror(errno));
 		return (1);
 	}
 	return (0);
-
  wrerror:
-	warn("error writing %s", fname);
+	(void)fprintf(stderr, "config: error writing %s: %s\n",
+	    fname, strerror(errno));
 	if (fp != NULL)
 		(void)fclose(fp);
-#if 0
-	(void)unlink(fname);
-#endif
+	/* (void)unlink(fname); */
 	return (1);
 }

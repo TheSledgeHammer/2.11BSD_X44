@@ -1,5 +1,5 @@
 %{
-/*	$NetBSD: gram.y,v 1.56 2020/07/26 22:40:52 uwe Exp $	*/
+/*	$NetBSD: gram.y,v 1.47 2003/11/19 21:10:27 christos Exp $	*/
 
 /*
  * Copyright (c) 1992, 1993
@@ -42,8 +42,6 @@
  */
 
 #include <sys/cdefs.h>
-__RCSID("$NetBSD: gram.y,v 1.56 2020/07/26 22:40:52 uwe Exp $");
-
 #include <sys/types.h>
 #include <sys/param.h>
 #include <ctype.h>
@@ -57,11 +55,9 @@ __RCSID("$NetBSD: gram.y,v 1.56 2020/07/26 22:40:52 uwe Exp $");
 #define	FORMAT(n) (((n).fmt == 8 && (n).val != 0) ? "0%llo" : \
     ((n).fmt == 16) ? "0x%llx" : "%lld")
 
-#define	stop(s)	cfgerror(s), exit(1)
+#define	stop(s)	error(s), exit(1)
 
 static	struct	config conf;	/* at most one active at a time */
-static	int	nowarn;		/* if warning suppression is on */
-
 
 /*
  * Allocation wrapper functions
@@ -74,10 +70,6 @@ static void wrap_cleanup(void);
  * Allocation wrapper type codes
  */
 #define WRAP_CODE_nvlist	1
-#define WRAP_CODE_defoptlist	2
-#define WRAP_CODE_loclist	3
-#define WRAP_CODE_attrlist	4
-#define WRAP_CODE_condexpr	5
 
 /*
  * The allocation wrappers themselves
@@ -85,70 +77,51 @@ static void wrap_cleanup(void);
 #define DECL_ALLOCWRAP(t)	static struct t *wrap_mk_##t(struct t *arg)
 
 DECL_ALLOCWRAP(nvlist);
-DECL_ALLOCWRAP(defoptlist);
-DECL_ALLOCWRAP(loclist);
-DECL_ALLOCWRAP(attrlist);
-DECL_ALLOCWRAP(condexpr);
 
-/* allow shorter names */
-#define wrap_mk_loc(p) wrap_mk_loclist(p)
-#define wrap_mk_cx(p) wrap_mk_condexpr(p)
 
-/*
- * Macros for allocating new objects
- */
-
-/* old-style for struct nvlist */
-#define	new0(n,s,p,i,x)	wrap_mk_nvlist(newnv(n, s, p, i, x))
-#define	new_n(n)	new0(n, NULL, NULL, 0, NULL)
-#define	new_nx(n, x)	new0(n, NULL, NULL, 0, x)
-#define	new_ns(n, s)	new0(n, s, NULL, 0, NULL)
-#define	new_si(s, i)	new0(NULL, s, NULL, i, NULL)
+/* the following is used to recover nvlist space after errors */
+/* static	struct	nvlist *alloc[1000]; 
+#static	int	adepth;
+#define	new0(n,s,p,i,x)	(alloc[adepth++] = newnv(n, s, p, i, x))
+*/
+#define	new0(n,s,p,i,x)		wrap_mk_nvlist(newnv(n, s, p, i, x))
+#define	new_n(n)			new0(n, NULL, NULL, 0, NULL)
+#define	new_nx(n, x)		new0(n, NULL, NULL, 0, x)
+#define	new_ns(n, s)		new0(n, s, NULL, 0, NULL)
+#define	new_si(s, i)		new0(NULL, s, NULL, i, NULL)
 #define	new_spi(s, p, i)	new0(NULL, s, p, i, NULL)
-#define	new_nsi(n,s,i)	new0(n, s, NULL, i, NULL)
-#define	new_np(n, p)	new0(n, NULL, p, 0, NULL)
-#define	new_s(s)	new0(NULL, s, NULL, 0, NULL)
-#define	new_p(p)	new0(NULL, NULL, p, 0, NULL)
-#define	new_px(p, x)	new0(NULL, NULL, p, 0, x)
-#define	new_sx(s, x)	new0(NULL, s, NULL, 0, x)
-#define	new_nsx(n,s,x)	new0(n, s, NULL, 0, x)
-#define	new_i(i)	new0(NULL, NULL, NULL, i, NULL)
+#define	new_nsi(n,s,i)		new0(n, s, NULL, i, NULL)
+#define	new_np(n, p)		new0(n, NULL, p, 0, NULL)
+#define	new_s(s)			new0(NULL, s, NULL, 0, NULL)
+#define	new_p(p)			new0(NULL, NULL, p, 0, NULL)
+#define	new_px(p, x)		new0(NULL, NULL, p, 0, x)
+#define	new_sx(s, x)		new0(NULL, s, NULL, 0, x)
+#define	new_nsx(n,s,x)		new0(n, s, NULL, 0, x)
+#define	new_i(i)			new0(NULL, NULL, NULL, i, NULL)
+
+#define	fx_atom(s)			new0(s, NULL, NULL, FX_ATOM, NULL)
+#define	fx_not(e)			new0(NULL, NULL, NULL, FX_NOT, e)
+#define	fx_and(e1, e2)		new0(NULL, NULL, e1, FX_AND, e2)
+#define	fx_or(e1, e2)		new0(NULL, NULL, e1, FX_OR, e2)
 
 /* new style, type-polymorphic; ordinary and for types with multiple flavors */
-#define MK0(t)		wrap_mk_##t(mk_##t())
-#define MK1(t, a0)	wrap_mk_##t(mk_##t(a0))
-#define MK2(t, a0, a1)	wrap_mk_##t(mk_##t(a0, a1))
+#define MK0(t)				wrap_mk_##t(mk_##t())
+#define MK1(t, a0)			wrap_mk_##t(mk_##t(a0))
+#define MK2(t, a0, a1)		wrap_mk_##t(mk_##t(a0, a1))
 #define MK3(t, a0, a1, a2)	wrap_mk_##t(mk_##t(a0, a1, a2))
 
-#define MKF0(t, f)		wrap_mk_##t(mk_##t##_##f())
+#define MKF0(t, f)			wrap_mk_##t(mk_##t##_##f())
 #define MKF1(t, f, a0)		wrap_mk_##t(mk_##t##_##f(a0))
 #define MKF2(t, f, a0, a1)	wrap_mk_##t(mk_##t##_##f(a0, a1))
 
-/*
- * Data constructors
- */
-
-static struct defoptlist *mk_defoptlist(const char *, const char *,
-					const char *);
-static struct loclist *mk_loc(const char *, const char *, long long);
-static struct loclist *mk_loc_val(const char *, struct loclist *);
-static struct attrlist *mk_attrlist(struct attrlist *, struct attr *);
-static struct condexpr *mk_cx_atom(const char *);
-static struct condexpr *mk_cx_not(struct condexpr *);
-static struct condexpr *mk_cx_and(struct condexpr *, struct condexpr *);
-static struct condexpr *mk_cx_or(struct condexpr *, struct condexpr *);
-
-/*
- * Other private functions
- */
-
-static	void	setmachine(const char *, const char *, struct nvlist *, int);
+static	void	cleanup(void);
+static	void	setmachine(const char *, const char *, struct nvlist *);
 static	void	check_maxpart(void);
 
-static struct loclist *present_loclist(struct loclist *ll);
-static void app(struct loclist *, struct loclist *);
-static struct loclist *locarray(const char *, int, struct loclist *, int);
-static struct loclist *namelocvals(const char *, struct loclist *);
+static	void	app(struct nvlist *, struct nvlist *);
+
+static	struct nvlist *mk_nsis(const char *, int, struct nvlist *, int);
+static	struct nvlist *mk_ns(const char *, struct nvlist *);
 
 %}
 
@@ -157,16 +130,9 @@ static struct loclist *namelocvals(const char *, struct loclist *);
 	struct	devbase *devb;
 	struct	deva *deva;
 	struct	nvlist *list;
-	struct defoptlist *defoptlist;
-	struct loclist *loclist;
-	struct attrlist *attrlist;
-	struct condexpr *condexpr;
 	const char *str;
 	struct	numconst num;
 	int64_t	val;
-	u_char	flag;
-	devmajor_t devmajor;
-	int32_t i32;
 }
 
 %token	AND AT ATTACH
@@ -191,909 +157,452 @@ static struct loclist *namelocvals(const char *, struct loclist *);
 %token	<str> PATHNAME QSTRING WORD EMPTYSTRING
 %token	ENDDEFS
 
-%type	<condexpr>	fopts condexpr condatom
-%type	<condexpr>	cond_or_expr cond_and_expr cond_prefix_expr
-%type	<condexpr>	 cond_base_expr
+%left '|'
+%left '&'
+
+%type	<list>	fopts fexpr fatom
 %type	<str>	fs_spec
-%type	<flag>	fflags fflag oflags oflag
+%type	<val>	fflgs fflag oflgs oflag
 %type	<str>	rule
 %type	<attr>	depend
 %type	<devb>	devbase
 %type	<deva>	devattach_opt
-%type	<list>	atlist
-%type	<loclist> interface_opt
+%type	<list>	atlist interface_opt
 %type	<str>	atname
-%type	<loclist>	loclist locdef
+%type	<list>	loclist locdef
 %type	<str>	locdefault
-%type	<loclist>	values locdefaults
-%type	<attrlist>	depend_list depends
-%type	<loclist>	locators locator
+%type	<list>	values locdefaults
+%type	<list>	depend_list depends
+%type	<list>	locators locator
 %type	<list>	dev_spec
 %type	<str>	device_instance
 %type	<str>	attachment
 %type	<str>	value
-%type	<val>	major_minor
+%type	<val>	major_minor npseudo
 %type	<num>	signed_number
-%type	<i32>	int32 npseudo device_flags no
+%type	<val>	int32 device_flags no
 %type	<str>	deffs
 %type	<list>	deffses
-%type	<defoptlist>	defopt
-%type	<defoptlist>	defopts
+%type	<str>	fsoptfile_opt
+%type	<str>	defopt
+%type	<list>	defopts
+%type	<list>	defoptdeps
 %type	<str>	optdepend
 %type	<list>	optdepends
 %type	<list>	optdepend_list
 %type	<str>	optfile_opt
 %type	<list>	subarches
-%type	<str>	filename stringvalue locname mkvarname
-%type	<devmajor>	device_major_block device_major_char
-%type	<list>	devnodes devnodetype devnodeflags devnode_dims
+%type	<str>	filename stringvalue locname
+%type	<val>	device_major_block device_major_char
 
 %%
 
 /*
- * A complete configuration consists of both the selection part (a
- * kernel config such as GENERIC or SKYNET, plus also the various
- * std.* files), which selects the material to be in the kernel, and
- * also the definition part (files, files.*, etc.) that declares what
- * material is available to be placed in kernels.
- *
- * The two parts have almost entirely separate syntaxes. This grammar
- * covers both of them. When config is run on a kernel configuration
- * file, the std.* file for the port is included explicitly. The
- * files.* files are included implicitly when the std.* file declares
- * the machine type.
- *
- * The machine spec, which brings in the definition part, must appear
- * before all configuration material except for the "topthings"; these
- * are the "source" and "build" declarations that tell config where
- * things are. These are not used by default.
- *
- * A previous version of this comment contained the following text:
- *
- *       Note that we do not have sufficient keywords to enforce any
- *       order between elements of "topthings" without introducing
- *       shift/reduce conflicts.  Instead, check order requirements in
- *       the C code.
- *
- * As of March 2012 this comment makes no sense, as there are only two
- * topthings and no reason for them to be forcibly ordered.
- * Furthermore, the statement about conflicts is false.
+ * A configuration consists of a machine type, followed by the machine
+ * definition files (via the include() mechanism), followed by the
+ * configuration specification(s) proper.  In effect, this is two
+ * separate grammars, with some shared terminals and nonterminals.
+ * Note that we do not have sufficient keywords to enforce any order
+ * between elements of "topthings" without introducing shift/reduce
+ * conflicts.  Instead, check order requirements in the C code.
  */
+Configuration:
+	topthings			/* dirspecs, include "std.arch" */
+	machine_spec			/* "machine foo" from machine descr. */
+	dev_defs ENDDEFS		/* all machine definition files */
+					{ check_maxpart(); }
+	specs;				/* rest of machine description */
 
-/* Complete configuration. */
-configuration:
-	topthings machine_spec definition_part selection_part
-;
-
-/* Sequence of zero or more topthings. */
 topthings:
-	  /* empty */
-	| topthings topthing
-;
+	topthings topthing |
+	/* empty */;
 
-/* Directory specification. */
 topthing:
-	                  '\n'
-	| SOURCE filename '\n'		{ if (!srcdir) srcdir = $2; }
-	| BUILD  filename '\n'		{ if (!builddir) builddir = $2; }
-;
+	SOURCE filename '\n'		{ if (!srcdir) srcdir = $2; } |
+	BUILD  filename '\n'		{ if (!builddir) builddir = $2; } |
+	include '\n' |
+	'\n';
 
-/* "machine foo" from std.whatever */
 machine_spec:
-	  XMACHINE WORD '\n'			{ setmachine($2,NULL,NULL,0); }
-	| XMACHINE WORD WORD '\n'		{ setmachine($2,$3,NULL,0); }
-	| XMACHINE WORD WORD subarches '\n'	{ setmachine($2,$3,$4,0); }
-	| IOCONF WORD '\n'			{ setmachine($2,NULL,NULL,1); }
-	| error { stop("cannot proceed without machine or ioconf specifier"); }
-;
+	XMACHINE WORD '\n'		{ setmachine($2,NULL,NULL); } |
+	XMACHINE WORD WORD subarches_opt '\n'	{ setmachine($2,$3,$4); } |
+	error { stop("cannot proceed without machine specifier"); };
 
-/* One or more sub-arches. */
+subarches_opt:
+	subarches			|
+	/* empty */			{ $$ = NULL; };
+
 subarches:
-	  WORD				{ $$ = new_n($1); }
-	| subarches WORD		{ $$ = new_nx($2, $1); }
-;
-
-no:
-	  NO	{ $$ = 0; }
-	| CNO	{ $$ = 1; }
-;
-
-/************************************************************/
-
-/*
- * The machine definitions grammar.
- */
-
-/* Complete definition part: the contents of all files.* files. */
-definition_part:
-	definitions ENDDEFS		{
-		CFGDBG(1, "ENDDEFS");
-		check_maxpart();
-		check_version();
-	}
-;
-
-/* Zero or more definitions. Trap errors. */
-definitions:
-	  /* empty */
-	| definitions '\n'
-	| definitions definition '\n'	{ wrap_continue(); }
-	| definitions error '\n'	{ wrap_cleanup(); }
-	| definitions ENDFILE		{ enddefs(); checkfiles(); }
-;
-
-/* A single definition. */
-definition:
-	  define_file
-	| define_object
-	| define_device_major
-	| define_prefix
-	| define_buildprefix
-	| define_devclass
-	| define_filesystems
-	| define_attribute
-	| define_option
-	| define_flag
-	| define_obsolete_flag
-	| define_param
-	| define_obsolete_param
-	| define_device
-	| define_device_attachment
-	| define_maxpartitions
-	| define_maxusers
-	| define_makeoptions
-	| define_pseudo
-	| define_pseudodev
-	| define_major
-	| define_version
-;
-
-/* source file: file foo/bar.c bar|baz needs-flag compile-with blah */
-define_file:
-	XFILE filename fopts fflags rule	{ addfile($2, $3, $4, $5); }
-;
-
-/* object file: object zot.o foo|zot needs-flag */
-define_object:
-	XOBJECT filename fopts oflags	{ addfile($2, $3, $4, NULL); }
-;
-
-/* device major declaration */
-define_device_major:
-	DEVICE_MAJOR WORD device_major_char device_major_block fopts devnodes
-					{
-		adddevm($2, $3, $4, $5, $6);
-		do_devsw = 1;
-	}
-;
-
-/* prefix delimiter */
-define_prefix:
-	  PREFIX filename		{ prefix_push($2); }
-	| PREFIX			{ prefix_pop(); }
-;
-
-define_buildprefix:
-	  BUILDPREFIX filename		{ buildprefix_push($2); }
-	| BUILDPREFIX WORD		{ buildprefix_push($2); }
-	| BUILDPREFIX			{ buildprefix_pop(); }
-;
-
-define_devclass:
-	DEVCLASS WORD			{ (void)defdevclass($2, NULL, NULL, 1); }
-;
-
-define_filesystems:
-	DEFFS deffses optdepend_list	{ deffilesystem($2, $3); }
-;
-
-define_attribute:
-	DEFINE WORD interface_opt depend_list
-					{ (void)defattr0($2, $3, $4, 0); }
-;
-
-define_option:
-	DEFOPT optfile_opt defopts optdepend_list
-					{ defoption($2, $3, $4); }
-;
-
-define_flag:
-	DEFFLAG optfile_opt defopts optdepend_list
-					{ defflag($2, $3, $4, 0); }
-;
-
-define_obsolete_flag:
-	OBSOLETE DEFFLAG optfile_opt defopts
-					{ defflag($3, $4, NULL, 1); }
-;
-
-define_param:
-	DEFPARAM optfile_opt defopts optdepend_list
-					{ defparam($2, $3, $4, 0); }
-;
-
-define_obsolete_param:
-	OBSOLETE DEFPARAM optfile_opt defopts
-					{ defparam($3, $4, NULL, 1); }
-;
-
-define_device:
-	DEVICE devbase interface_opt depend_list
-					{ defdev($2, $3, $4, 0); }
-;
-
-define_device_attachment:
-	ATTACH devbase AT atlist devattach_opt depend_list
-					{ defdevattach($5, $2, $4, $6); }
-;
-
-define_maxpartitions:
-	MAXPARTITIONS int32		{ maxpartitions = $2; }
-;
-
-define_maxusers:
-	MAXUSERS int32 int32 int32
-					{ setdefmaxusers($2, $3, $4); }
-;
-
-define_makeoptions:
-	MAKEOPTIONS condmkopt_list
-;
-
-define_pseudo:
-	/* interface_opt in DEFPSEUDO is for backwards compatibility */
-	DEFPSEUDO devbase interface_opt depend_list
-					{ defdev($2, $3, $4, 1); }
-;
-
-define_pseudodev:
-	DEFPSEUDODEV devbase interface_opt depend_list
-					{ defdev($2, $3, $4, 2); }
-;
-
-define_major:
-	MAJOR '{' majorlist '}'
-;
-
-define_version:
-	VERSION int32		{ setversion($2); }
-;
-
-/* file options: optional expression of conditions */
-fopts:
-	  /* empty */			{ $$ = NULL; }
-	| condexpr			{ $$ = $1; }
-;
-
-/* zero or more flags for a file */
-fflags:
-	  /* empty */			{ $$ = 0; }
-	| fflags fflag			{ $$ = $1 | $2; }
-;
-
-/* one flag for a file */
-fflag:
-	  NEEDS_COUNT			{ $$ = FI_NEEDSCOUNT; }
-	| NEEDS_FLAG			{ $$ = FI_NEEDSFLAG; }
-;
-
-/* extra compile directive for a source file */
-rule:
-	  /* empty */			{ $$ = NULL; }
-	| COMPILE_WITH stringvalue	{ $$ = $2; }
-;
-
-/* zero or more flags for an object file */
-oflags:
-	  /* empty */			{ $$ = 0; }
-	| oflags oflag			{ $$ = $1 | $2; }
-;
-
-/* a single flag for an object file */
-oflag:
-	NEEDS_FLAG			{ $$ = FI_NEEDSFLAG; }
-;
-
-/* char 55 */
-device_major_char:
-	  /* empty */			{ $$ = -1; }
-	| CHAR int32			{ $$ = $2; }
-;
-
-/* block 33 */
-device_major_block:
-	  /* empty */			{ $$ = -1; }
-	| BLOCK int32			{ $$ = $2; }
-;
-
-/* device node specification */
-devnodes:
-	  /* empty */			{ $$ = new_s("DEVNODE_DONTBOTHER"); }
-	| devnodetype ',' devnodeflags	{ $$ = nvcat($1, $3); }
-	| devnodetype			{ $$ = $1; }
-;
-
-/* device nodes without flags */
-devnodetype:
-	  SINGLE			{ $$ = new_s("DEVNODE_SINGLE"); }
-	| VECTOR '=' devnode_dims  { $$ = nvcat(new_s("DEVNODE_VECTOR"), $3); }
-;
-
-/* dimensions (?) */
-devnode_dims:
-	  NUMBER			{ $$ = new_i($1.val); }
-	| NUMBER ':' NUMBER		{
-		struct nvlist *__nv1, *__nv2;
-
-		__nv1 = new_i($1.val);
-		__nv2 = new_i($3.val);
-		$$ = nvcat(__nv1, __nv2);
-	  }
-;
-
-/* flags for device nodes */
-devnodeflags:
-	LINKZERO			{ $$ = new_s("DEVNODE_FLAG_LINKZERO");}
-;
-
-/* one or more file system names */
-deffses:
-	  deffs				{ $$ = new_n($1); }
-	| deffses deffs			{ $$ = new_nx($2, $1); }
-;
-
-/* a single file system name */
-deffs:
-	WORD				{ $$ = $1; }
-;
-
-/* optional locator specification */
-interface_opt:
-	  /* empty */			{ $$ = NULL; }
-	| '{' '}'			{ $$ = present_loclist(NULL); }
-	| '{' loclist '}'		{ $$ = present_loclist($2); }
-;
-
-/*
- * loclist order matters, must use right recursion
- * XXX wot?
- */
-
-/* list of locator definitions */
-loclist:
-	  locdef			{ $$ = $1; }
-	| locdef ',' loclist		{ $$ = $1; app($1, $3); }
-;
-
-/*
- * "[ WORD locdefault ]" syntax may be unnecessary...
- */
-
-/* one locator definition */
-locdef:
-	  locname locdefault 		{ $$ = MK3(loc, $1, $2, 0); }
-	| locname			{ $$ = MK3(loc, $1, NULL, 0); }
-	| '[' locname locdefault ']'	{ $$ = MK3(loc, $2, $3, 1); }
-	| locname '[' int32 ']'	{ $$ = locarray($1, $3, NULL, 0); }
-	| locname '[' int32 ']' locdefaults
-					{ $$ = locarray($1, $3, $5, 0); }
-	| '[' locname '[' int32 ']' locdefaults ']'
-					{ $$ = locarray($2, $4, $6, 1); }
-;
-
-/* locator name */
-locname:
-	  WORD				{ $$ = $1; }
-	| QSTRING			{ $$ = $1; }
-;
-
-/* locator default value */
-locdefault:
-	'=' value			{ $$ = $2; }
-;
-
-/* multiple locator default values */
-locdefaults:
-	'=' '{' values '}'		{ $$ = $3; }
-;
-
-/* list of depends, may be empty */
-depend_list:
-	  /* empty */			{ $$ = NULL; }
-	| ':' depends			{ $$ = $2; }
-;
-
-/* one or more depend items */
-depends:
-	  depend			{ $$ = MK2(attrlist, NULL, $1); }
-	| depends ',' depend		{ $$ = MK2(attrlist, $1, $3); }
-;
-
-/* one depend item (which is an attribute) */
-depend:
-	WORD				{ $$ = refattr($1); }
-;
-
-/* list of option depends, may be empty */
-optdepend_list:
-	  /* empty */			{ $$ = NULL; }
-	| ':' optdepends		{ $$ = $2; }
-;
-
-/* a list of option dependencies */
-optdepends:
-	  optdepend			{ $$ = new_n($1); }
-	| optdepends ',' optdepend	{ $$ = new_nx($3, $1); }
-;
-
-/* one option depend, which is an option name */
-optdepend:
-	WORD				{ $$ = $1; }
-;
-
-
-/* list of places to attach: attach blah at ... */
-atlist:
-	  atname			{ $$ = new_n($1); }
-	| atlist ',' atname		{ $$ = new_nx($3, $1); }
-;
-
-/* a place to attach a device */
-atname:
-	  WORD				{ $$ = $1; }
-	| ROOT				{ $$ = NULL; }
-;
-
-/* one or more defined options */
-defopts:
-	  defopt			{ $$ = $1; }
-	| defopts defopt		{ $$ = defoptlist_append($2, $1); }
-;
-
-/* one defined option */
-defopt:
-	  WORD				{ $$ = MK3(defoptlist, $1, NULL, NULL); }
-	| WORD '=' value		{ $$ = MK3(defoptlist, $1, $3, NULL); }
-	| WORD COLONEQ value		{ $$ = MK3(defoptlist, $1, NULL, $3); }
-	| WORD '=' value COLONEQ value	{ $$ = MK3(defoptlist, $1, $3, $5); }
-;
-
-/* list of conditional makeoptions */
-condmkopt_list:
-	  condmkoption
-	| condmkopt_list ',' condmkoption
-;
-
-/* one conditional make option */
-condmkoption:
-	condexpr mkvarname PLUSEQ value	{ appendcondmkoption($1, $2, $4); }
-;
-
-/* device name */
-devbase:
-	WORD				{ $$ = getdevbase($1); }
-;
-
-/* optional attachment: with foo */
-devattach_opt:
-	  /* empty */			{ $$ = NULL; }
-	| WITH WORD			{ $$ = getdevattach($2); }
-;
-
-/* list of major numbers */
-/* XXX why is this right-recursive? */
-majorlist:
-	  majordef
-	| majorlist ',' majordef
-;
-
-/* one major number */
-majordef:
-	devbase '=' int32		{ setmajor($1, $3); }
-;
-
-int32:
-	NUMBER	{
-		if ($1.val > INT_MAX || $1.val < INT_MIN)
-			cfgerror("overflow %" PRId64, $1.val);
-		else
-			$$ = (int32_t)$1.val;
-	}
-;
-
-/************************************************************/
-
-/*
- * The selection grammar.
- */
-
-/* Complete selection part: all std.* files plus selected config. */
-selection_part:
-	selections
-;
-
-/* Zero or more config items. Trap errors. */
-selections:
-	  /* empty */
-	| selections '\n'
-	| selections selection '\n'	{ wrap_continue(); }
-	| selections error '\n'		{ wrap_cleanup(); }
-;
-
-/* One config item. */
-selection:
-	  definition
-	| select_attr
-	| select_no_attr
-	| select_no_filesystems
-	| select_filesystems
-	| select_no_makeoptions
-	| select_makeoptions
-	| select_no_options
-	| select_options
-	| select_maxusers
-	| select_ident
-	| select_no_ident
-	| select_config
-	| select_no_config
-	| select_no_pseudodev
-	| select_pseudodev
-	| select_pseudoroot
-	| select_no_device_instance_attachment
-	| select_no_device_attachment
-	| select_no_device_instance
-	| select_device_instance
-;
-
-select_attr:
-	SELECT WORD			{ addattr($2); }
-;
-
-select_no_attr:
-	no SELECT WORD			{ delattr($3, $1); }
-;
-
-select_no_filesystems:
-	no FILE_SYSTEM { nowarn = $1; } no_fs_list { nowarn = 0; }
-;
-
-select_filesystems:
-	FILE_SYSTEM fs_list
-;
-
-select_no_makeoptions:
-	no MAKEOPTIONS { nowarn = $1; } no_mkopt_list { nowarn = 0; }
-;
-
-select_makeoptions:
-	MAKEOPTIONS mkopt_list
-;
-
-select_no_options:
-	no OPTIONS { nowarn = $1; } no_opt_list { nowarn = 0; }
-;
-
-select_options:
-	OPTIONS opt_list
-;
-
-select_maxusers:
-	MAXUSERS int32			{ setmaxusers($2); }
-;
-
-select_ident:
-	IDENT stringvalue		{ setident($2); }
-;
-
-select_no_ident:
-	no IDENT			{ setident(NULL); }
-;
-
-select_config:
-	CONFIG conf root_spec sysparam_list
-					{ addconf(&conf); }
-;
-
-select_no_config:
-	no CONFIG WORD			{ delconf($3, $1); }
-;
-
-select_no_pseudodev:
-	no PSEUDO_DEVICE WORD		{ delpseudo($3, $1); }
-;
-
-select_pseudodev:
-	PSEUDO_DEVICE WORD npseudo	{ addpseudo($2, $3); }
-;
-
-select_pseudoroot:
-	PSEUDO_ROOT device_instance	{ addpseudoroot($2); }
-;
-
-select_no_device_instance_attachment:
-	no device_instance AT attachment
-					{ deldevi($2, $4, $1); }
-;
-
-select_no_device_attachment:
-	no DEVICE AT attachment		{ deldeva($4, $1); }
-;
-
-select_no_device_instance:
-	no device_instance		{ deldev($2, $1); }
-;
-
-select_device_instance:
-	device_instance AT attachment locators device_flags
-					{ adddev($1, $3, $4, $5); }
-;
-
-/* list of filesystems */
-fs_list:
-	  fsoption
-	| fs_list ',' fsoption
-;
-
-/* one filesystem */
-fsoption:
-	WORD				{ addfsoption($1); }
-;
-
-/* list of filesystems that had NO in front */
-no_fs_list:
-	  no_fsoption
-	| no_fs_list ',' no_fsoption
-;
-
-/* one filesystem that had NO in front */
-no_fsoption:
-	WORD				{ delfsoption($1, nowarn); }
-;
-
-/* list of make options */
-/* XXX why is this right-recursive? */
-mkopt_list:
-	  mkoption
-	| mkopt_list ',' mkoption
-;
-
-/* one make option */
-mkoption:
-	  mkvarname '=' value		{ addmkoption($1, $3); }
-	| mkvarname PLUSEQ value	{ appendmkoption($1, $3); }
-;
-
-/* list of make options that had NO in front */
-no_mkopt_list:
-	  no_mkoption
-	| no_mkopt_list ',' no_mkoption
-;
-
-/* one make option that had NO in front */
-/* XXX shouldn't this be mkvarname rather than WORD? */
-no_mkoption:
-	WORD				{ delmkoption($1, nowarn); }
-;
-
-/* list of options */
-opt_list:
-	  option
-	| opt_list ',' option
-;
-
-/* one option */
-option:
-	  WORD				{ addoption($1, NULL); }
-	| WORD '=' value		{ addoption($1, $3); }
-;
-
-/* list of options that had NO in front */
-no_opt_list:
-	  no_option
-	| no_opt_list ',' no_option
-;
-
-/* one option that had NO in front */
-no_option:
-	WORD				{ deloption($1, nowarn); }
-;
-
-/* the name in "config name root on ..." */
-conf:
-	WORD				{
-		conf.cf_name = $1;
-		conf.cf_where.w_srcline = currentline();
-		conf.cf_fstype = NULL;
-		conf.cf_root = NULL;
-		conf.cf_dump = NULL;
-	}
-;
-
-/* root fs specification */
-root_spec:
-	  ROOT on_opt dev_spec		{ setconf(&conf.cf_root, "root", $3); }
-	| ROOT on_opt dev_spec fs_spec	{ setconf(&conf.cf_root, "root", $3); }
-;
-
-/* device for root fs or dump */
-dev_spec:
-	  '?'				{ $$ = new_spi(intern("?"),
-					    NULL,
-					    (long long)NODEV); }
-	| QSTRING			{ $$ = new_spi($1,
-					    __UNCONST("spec"),
-					    (long long)NODEV); }
-	| WORD				{ $$ = new_spi($1,
-					    NULL,
-					    (long long)NODEV); }
-	| major_minor			{ $$ = new_si(NULL, $1); }
-;
-
-/* major and minor device number */
-major_minor:
-	MAJOR NUMBER MINOR NUMBER	{ $$ = (int64_t)makedev($2.val, $4.val); }
-;
-
-/* filesystem type for root fs specification */
-fs_spec:
-	  TYPE '?'		   { setfstype(&conf.cf_fstype, intern("?")); }
-	| TYPE WORD			{ setfstype(&conf.cf_fstype, $2); }
-;
-
-/* zero or more additional system parameters */
-sysparam_list:
-	  /* empty */
-	| sysparam_list sysparam
-;
-
-/* one additional system parameter (there's only one: dumps) */
-sysparam:
-	DUMPS on_opt dev_spec	       { setconf(&conf.cf_dump, "dumps", $3); }
-;
-
-/* number of pseudo devices to configure (which is optional) */
-npseudo:
-	  /* empty */			{ $$ = 1; }
-	| int32				{ $$ = $1; }
-;
-
-/* name of a device to configure */
-device_instance:
-	  WORD				{ $$ = $1; }
-	| WORD '*'			{ $$ = starref($1); }
-;
-
-/* name of a device to configure an attachment to */
-attachment:
-	  ROOT				{ $$ = NULL; }
-	| WORD				{ $$ = $1; }
-	| WORD '?'			{ $$ = wildref($1); }
-;
-
-/* zero or more locators */
-locators:
-	  /* empty */			{ $$ = NULL; }
-	| locators locator		{ $$ = $2; app($2, $1); }
-;
-
-/* one locator */
-locator:
-	  WORD '?'			{ $$ = MK3(loc, $1, NULL, 0); }
-	| WORD values			{ $$ = namelocvals($1, $2); }
-;
-
-/* optional device flags */
-device_flags:
-	  /* empty */			{ $$ = 0; }
-	| FLAGS int32			{ $$ = $2; }
-;
-
-/************************************************************/
-
-/*
- * conditions
- */
-
-
-/*
- * order of options is important, must use right recursion
- *
- * dholland 20120310: wut?
- */
-
-/* expression of conditions */
-condexpr:
-	cond_or_expr
-;
-
-cond_or_expr:
-	  cond_and_expr
-	| cond_or_expr '|' cond_and_expr	{ $$ = MKF2(cx, or, $1, $3); }
-;
-
-cond_and_expr:
-	  cond_prefix_expr
-	| cond_and_expr '&' cond_prefix_expr	{ $$ = MKF2(cx, and, $1, $3); }
-;
-
-cond_prefix_expr:
-	  cond_base_expr
-/* XXX notyet - need to strengthen downstream first */
-/*	| '!' cond_prefix_expr			{ $$ = MKF1(cx, not, $2); } */
-;
-
-cond_base_expr:
-	  condatom			{ $$ = $1; }
-	| '!' condatom			{ $$ = MKF1(cx, not, $2); }
-	| '(' condexpr ')'		{ $$ = $2; }
-;
-
-/* basic element of config element expression: a config element */
-condatom:
-	WORD				{ $$ = MKF1(cx, atom, $1); }
-;
-
-/************************************************************/
+	subarches WORD			{ $$ = new_nx($2, $1); } |
+	WORD				{ $$ = new_n($1); };
 
 /*
  * Various nonterminals shared between the grammars.
  */
+file:
+	XFILE filename fopts fflgs rule	{ addfile($2, $3, $4, $5); };
 
-/* variable name for make option */
-mkvarname:
-	  QSTRING			{ $$ = $1; }
-	| WORD				{ $$ = $1; }
-;
+object:
+	XOBJECT filename fopts oflgs	{ addobject($2, $3, $4); };
 
-/* optional file for an option */
+device_major:
+	DEVICE_MAJOR WORD device_major_char device_major_block fopts
+					{ adddevm($2, $3, $4, $5); };
+
+device_major_block:
+	BLOCK NUMBER			{ $$ = $2.val; } |
+	/* empty */			{ $$ = -1; };
+
+device_major_char:
+	CHAR NUMBER			{ $$ = $2.val; } |
+	/* empty */			{ $$ = -1; };
+
+/* order of options is important, must use right recursion */
+fopts:
+	fexpr				{ $$ = $1; } |
+	/* empty */			{ $$ = NULL; };
+
+fexpr:
+	fatom				{ $$ = $1; } |
+	'!' fatom			{ $$ = fx_not($2); } |
+	fexpr '&' fexpr			{ $$ = fx_and($1, $3); } |
+	fexpr '|' fexpr			{ $$ = fx_or($1, $3); } |
+	'(' fexpr ')'			{ $$ = $2; };
+
+fatom:
+	WORD				{ $$ = fx_atom($1); };
+
+fflgs:
+	fflgs fflag			{ $$ = $1 | $2; } |
+	/* empty */			{ $$ = 0; };
+
+fflag:
+	NEEDS_COUNT			{ $$ = FI_NEEDSCOUNT; } |
+	NEEDS_FLAG			{ $$ = FI_NEEDSFLAG; };
+
+oflgs:
+	oflgs oflag			{ $$ = $1 | $2; } |
+	/* empty */			{ $$ = 0; };
+
+oflag:
+	NEEDS_FLAG			{ $$ = OI_NEEDSFLAG; };
+
+rule:
+	COMPILE_WITH stringvalue	{ $$ = $2; } |
+	/* empty */			{ $$ = NULL; };
+
+include:
+	INCLUDE filename		{ (void) include($2, 0, 0, 1); } |
+	CINCLUDE filename		{ (void) include($2, 0, 1, 1); };
+
+package:
+	PACKAGE filename		{ package($2); };
+
+prefix:
+	PREFIX filename			{ prefix_push($2); } |
+	PREFIX				{ prefix_pop(); };
+
+/*
+ * The machine definitions grammar.
+ */
+dev_defs:
+	dev_defs dev_def |
+	dev_defs ENDFILE		{ enddefs(); checkfiles(); } |
+	/* empty */;
+
+dev_def:
+	one_def '\n'			{ adepth = 0; } |
+	'\n' |
+	error '\n'			{ cleanup(); };
+
+one_def:
+	file |
+	object |
+	device_major			{ do_devsw = 1; } |
+	include |
+	package |
+	prefix |
+	DEVCLASS WORD			{ (void)defattr($2, NULL, NULL, 1); } |
+	DEFFS fsoptfile_opt deffses	{ deffilesystem($2, $3); } |
+	DEFINE WORD interface_opt attrs_opt
+					{ (void)defattr($2, $3, $4, 0); } |
+	DEFOPT optfile_opt defopts defoptdeps
+					{ defoption($2, $3, $4); } |
+	DEFFLAG optfile_opt defopts defoptdeps
+					{ defflag($2, $3, $4); } |
+	DEFPARAM optfile_opt defopts defoptdeps
+					{ defparam($2, $3, $4); } |
+	DEVICE devbase interface_opt attrs_opt
+					{ defdev($2, $3, $4, 0); } |
+	ATTACH devbase AT atlist devattach_opt attrs_opt
+					{ defdevattach($5, $2, $4, $6); } |
+	MAXPARTITIONS NUMBER		{ maxpartitions = $2.val; } |
+	MAXUSERS NUMBER NUMBER NUMBER	{ setdefmaxusers($2.val, $3.val, $4.val); } |
+	DEFPSEUDO devbase interface_opt attrs_opt
+					{ defdev($2, $3, $4, 1); } |
+	MAJOR '{' majorlist '}';
+
+atlist:
+	atlist ',' atname		{ $$ = new_nx($3, $1); } |
+	atname				{ $$ = new_n($1); };
+
+atname:
+	WORD				{ $$ = $1; } |
+	ROOT				{ $$ = NULL; };
+
+deffses:
+	deffses deffs			{ $$ = new_nx($2, $1); } |
+	deffs				{ $$ = new_n($1); };
+
+deffs:
+	WORD				{ $$ = $1; };
+
+defoptdeps:
+	':' optdeps			{ $$ = $2; } |
+	/* empty */			{ $$ = NULL; };
+
+optdeps:
+	optdeps ',' optdep		{ $$ = new_nx($3, $1); } |
+	optdep				{ $$ = new_n($1); };
+
+optdep:
+	WORD				{ $$ = $1; };
+
+defopts:
+	defopts defopt			{ $$ = new_nx($2, $1); } |
+	defopt				{ $$ = new_n($1); };
+
+defopt:
+	WORD				{ $$ = $1; };
+
+devbase:
+	WORD				{ $$ = getdevbase($1); };
+
+devattach_opt:
+	WITH WORD			{ $$ = getdevattach($2); } |
+	/* empty */			{ $$ = NULL; };
+
+interface_opt:
+	'{' loclist_opt '}'		{ $$ = new_nx("", $2); } |
+	/* empty */			{ $$ = NULL; };
+
+loclist_opt:
+	loclist				{ $$ = $1; } |
+	/* empty */			{ $$ = NULL; };
+
+/* loclist order matters, must use right recursion */
+loclist:
+	locdef ',' loclist		{ $$ = $1; app($1, $3); } |
+	locdef				{ $$ = $1; };
+
+/* "[ WORD locdefault ]" syntax may be unnecessary... */
+locdef:
+	locname locdefault 		{ $$ = new_nsi($1, $2, 0); } |
+	locname				{ $$ = new_nsi($1, NULL, 0); } |
+	'[' locname locdefault ']'	{ $$ = new_nsi($2, $3, 1); } |
+	locname '[' NUMBER ']'		{ $$ = mk_nsis($1, $3.val, NULL, 0); } |
+	locname '[' NUMBER ']' locdefaults
+					{ $$ = mk_nsis($1, $3.val, $5, 0); } |
+	'[' locname '[' NUMBER ']' locdefaults ']'
+					{ $$ = mk_nsis($2, $4.val, $6, 1); };
+
+locname:
+	WORD				{ $$ = $1; } |
+	QSTRING				{ $$ = $1; };
+
+locdefault:
+	'=' value			{ $$ = $2; };
+
+locdefaults:
+	'=' '{' values '}'		{ $$ = $3; };
+
+fsoptfile_opt:
+	filename			{ $$ = $1; } |
+	/* empty */			{ $$ = NULL; };
+
 optfile_opt:
-	  /* empty */			{ $$ = NULL; }
-	| filename			{ $$ = $1; }
-;
+	filename			{ $$ = $1; } |
+	/* empty */			{ $$ = NULL; };
 
-/* filename. */
 filename:
-	  QSTRING			{ $$ = $1; }
-	| PATHNAME			{ $$ = $1; }
-;
+	QSTRING				{ $$ = $1; } |
+	PATHNAME			{ $$ = $1; };
 
-/* constant value */
 value:
-	  QSTRING			{ $$ = $1; }
-	| WORD				{ $$ = $1; }
-	| EMPTYSTRING			{ $$ = $1; }
-	| signed_number			{
-		char bf[40];
+	QSTRING				{ $$ = $1; } |
+	WORD				{ $$ = $1; } |
+	EMPTY				{ $$ = $1; } |
+	signed_number			{ char bf[40];
+					  (void)snprintf(bf, sizeof(bf),
+					      FORMAT($1), (long long)$1.val);
+					  $$ = intern(bf); };
 
-		(void)snprintf(bf, sizeof(bf), FORMAT($1), (long long)$1.val);
-		$$ = intern(bf);
-	  }
-;
-
-/* constant value that is a string */
 stringvalue:
-	  QSTRING			{ $$ = $1; }
-	| WORD				{ $$ = $1; }
-;
+	QSTRING				{ $$ = $1; } |
+	WORD				{ $$ = $1; };
 
-/* comma-separated list of values */
-/* XXX why right-recursive? */
 values:
-	  value				{ $$ = MKF2(loc, val, $1, NULL); }
-	| value ',' values		{ $$ = MKF2(loc, val, $1, $3); }
-;
+	value ',' values		{ $$ = new_sx($1, $3); } |
+	value				{ $$ = new_s($1); };
 
-/* possibly negative number */
 signed_number:
-	  NUMBER			{ $$ = $1; }
-	| '-' NUMBER			{ $$.fmt = $2.fmt; $$.val = -$2.val; }
-;
+	NUMBER				{ $$ = $1; } |
+	'-' NUMBER			{ $$.fmt = $2.fmt; $$.val = -$2.val; };
 
-/* optional ON keyword */
+attrs_opt:
+	':' attrs			{ $$ = $2; } |
+	/* empty */			{ $$ = NULL; };
+
+attrs:
+	attrs ',' attr			{ $$ = new_px($3, $1); } |
+	attr				{ $$ = new_p($1); };
+
+attr:
+	WORD				{ $$ = getattr($1); };
+
+majorlist:
+	majorlist ',' majordef |
+	majordef;
+
+majordef:
+	devbase '=' NUMBER		{ setmajor($1, $3.val); };
+
+
+/*
+ * The configuration grammar.
+ */
+specs:
+	specs spec |
+	/* empty */;
+
+spec:
+	config_spec '\n'		{ adepth = 0; } |
+	'\n' |
+	error '\n'			{ cleanup(); };
+
+config_spec:
+	one_def |
+	NO FILE_SYSTEM no_fs_list |
+	FILE_SYSTEM fs_list |
+	NO MAKEOPTIONS no_mkopt_list |
+	MAKEOPTIONS mkopt_list |
+	NO OPTIONS no_opt_list |
+	OPTIONS opt_list |
+	MAXUSERS NUMBER			{ setmaxusers($2.val); } |
+	IDENT stringvalue		{ setident($2); } |
+	CONFIG conf root_spec sysparam_list
+					{ addconf(&conf); } |
+	NO PSEUDO_DEVICE WORD		{ delpseudo($3); } |
+	PSEUDO_DEVICE WORD npseudo	{ addpseudo($2, $3); } |
+	NO device_instance AT attachment
+					{ deldev($2, $4); } |
+	device_instance AT attachment locators flags_opt
+					{ adddev($1, $3, $4, $5); };
+
+fs_list:
+	fs_list ',' fsoption |
+	fsoption;
+
+fsoption:
+	WORD				{ addfsoption($1); };
+
+no_fs_list:
+	no_fs_list ',' no_fsoption |
+	no_fsoption;
+
+no_fsoption:
+	WORD				{ delfsoption($1); };
+
+mkopt_list:
+	mkopt_list ',' mkoption |
+	mkoption;
+
+mkoption:
+	WORD '=' value			{ addmkoption($1, $3); }
+
+no_mkopt_list:
+	no_mkopt_list ',' no_mkoption |
+	no_mkoption;
+
+no_mkoption:
+	WORD				{ delmkoption($1); }
+
+opt_list:
+	opt_list ',' option |
+	option;
+
+option:
+	WORD				{ addoption($1, NULL); } |
+	WORD '=' value			{ addoption($1, $3); };
+
+no_opt_list:
+	no_opt_list ',' no_option |
+	no_option;
+
+no_option:
+	WORD				{ deloption($1); };
+
+conf:
+	WORD				{ conf.cf_name = $1;
+					    conf.cf_lineno = currentline();
+					    conf.cf_fstype = NULL;
+					    conf.cf_root = NULL;
+					    conf.cf_dump = NULL; };
+
+root_spec:
+	ROOT on_opt dev_spec fs_spec_opt
+				{ setconf(&conf.cf_root, "root", $3); };
+
+fs_spec_opt:
+	TYPE fs_spec		{ setfstype(&conf.cf_fstype, $2); } |
+	/* empty */;
+
+fs_spec:
+	'?'				{ $$ = intern("?"); } |
+	WORD				{ $$ = $1; };
+
+sysparam_list:
+	sysparam_list sysparam |
+	/* empty */;
+
+sysparam:
+	DUMPS on_opt dev_spec	 { setconf(&conf.cf_dump, "dumps", $3); };
+
+dev_spec:
+	'?'				{ $$ = new_si(intern("?"), NODEV); } |
+	WORD				{ $$ = new_si($1, NODEV); } |
+	major_minor			{ $$ = new_si(NULL, $1); };
+
+major_minor:
+	MAJOR NUMBER MINOR NUMBER	{ $$ = makedev($2.val, $4.val); };
+
 on_opt:
-	  /* empty */
-	| ON
-;
+	ON | /* empty */;
+
+npseudo:
+	NUMBER				{ $$ = $1.val; } |
+	/* empty */			{ $$ = 1; };
+
+device_instance:
+	WORD '*'			{ $$ = starref($1); } |
+	WORD				{ $$ = $1; };
+
+attachment:
+	ROOT				{ $$ = NULL; } |
+	WORD '?'			{ $$ = wildref($1); } |
+	WORD				{ $$ = $1; };
+
+locators:
+	locators locator		{ $$ = $2; app($2, $1); } |
+	/* empty */			{ $$ = NULL; };
+
+locator:
+	WORD values			{ $$ = mk_ns($1, $2); } |
+	WORD '?'			{ $$ = new_ns($1, NULL); };
+
+flags_opt:
+	FLAGS NUMBER			{ $$ = $2.val; } |
+	/* empty */			{ $$ = 0; };
 
 %%
 
@@ -1101,252 +610,40 @@ void
 yyerror(const char *s)
 {
 
-	cfgerror("%s", s);
+	error("%s", s);
 }
 
-/************************************************************/
-
 /*
- * Wrap allocations that live on the parser stack so that we can free
- * them again on error instead of leaking.
- */
-
-#define MAX_WRAP 1000
-
-struct wrap_entry {
-	void *ptr;
-	unsigned typecode;
-};
-
-static struct wrap_entry wrapstack[MAX_WRAP];
-static unsigned wrap_depth;
-
-/*
- * Remember pointer PTR with type-code CODE.
+ * Cleanup procedure after syntax error: release any nvlists
+ * allocated during parsing the current line.
  */
 static void
-wrap_alloc(void *ptr, unsigned code)
+cleanup(void)
 {
-	unsigned pos;
+	struct nvlist **np;
+	int i;
 
-	if (wrap_depth >= MAX_WRAP) {
-		panic("allocation wrapper stack overflow");
-	}
-	pos = wrap_depth++;
-	wrapstack[pos].ptr = ptr;
-	wrapstack[pos].typecode = code;
+	for (np = alloc, i = adepth; --i >= 0; np++)
+		nvfree(*np);
+	adepth = 0;
 }
-
-/*
- * We succeeded; commit to keeping everything that's been allocated so
- * far and clear the stack.
- */
-static void
-wrap_continue(void)
-{
-	wrap_depth = 0;
-}
-
-/*
- * We failed; destroy all the objects allocated.
- */
-static void
-wrap_cleanup(void)
-{
-	unsigned i;
-
-	/*
-	 * Destroy each item. Note that because everything allocated
-	 * is entered on the list separately, lists and trees need to
-	 * have their links blanked before being destroyed. Also note
-	 * that strings are interned elsewhere and not handled by this
-	 * mechanism.
-	 */
-
-	for (i=0; i<wrap_depth; i++) {
-		switch (wrapstack[i].typecode) {
-		    case WRAP_CODE_nvlist:
-			nvfree(wrapstack[i].ptr);
-			break;
-		    case WRAP_CODE_defoptlist:
-			{
-				struct defoptlist *dl = wrapstack[i].ptr;
-
-				dl->dl_next = NULL;
-				defoptlist_destroy(dl);
-			}
-			break;
-		    case WRAP_CODE_loclist:
-			{
-				struct loclist *ll = wrapstack[i].ptr;
-
-				ll->ll_next = NULL;
-				loclist_destroy(ll);
-			}
-			break;
-		    case WRAP_CODE_attrlist:
-			{
-				struct attrlist *al = wrapstack[i].ptr;
-
-				al->al_next = NULL;
-				al->al_this = NULL;
-				attrlist_destroy(al);
-			}
-			break;
-		    case WRAP_CODE_condexpr:
-			{
-				struct condexpr *cx = wrapstack[i].ptr;
-
-				cx->cx_type = CX_ATOM;
-				cx->cx_atom = NULL;
-				condexpr_destroy(cx);
-			}
-			break;
-		    default:
-			panic("invalid code %u on allocation wrapper stack",
-			      wrapstack[i].typecode);
-		}
-	}
-
-	wrap_depth = 0;
-}
-
-/*
- * Instantiate the wrapper functions.
- *
- * Each one calls wrap_alloc to save the pointer and then returns the
- * pointer again; these need to be generated with the preprocessor in
- * order to be typesafe.
- */
-#define DEF_ALLOCWRAP(t) \
-	static struct t *				\
-	wrap_mk_##t(struct t *arg)			\
-	{						\
-		wrap_alloc(arg, WRAP_CODE_##t);		\
-		return arg;				\
-	}
-
-DEF_ALLOCWRAP(nvlist);
-DEF_ALLOCWRAP(defoptlist);
-DEF_ALLOCWRAP(loclist);
-DEF_ALLOCWRAP(attrlist);
-DEF_ALLOCWRAP(condexpr);
-
-/************************************************************/
-
-/*
- * Data constructors
- *
- * (These are *beneath* the allocation wrappers.)
- */
-
-static struct defoptlist *
-mk_defoptlist(const char *name, const char *val, const char *lintval)
-{
-	return defoptlist_create(name, val, lintval);
-}
-
-static struct loclist *
-mk_loc(const char *name, const char *str, long long num)
-{
-	return loclist_create(name, str, num);
-}
-
-static struct loclist *
-mk_loc_val(const char *str, struct loclist *next)
-{
-	struct loclist *ll;
-
-	ll = mk_loc(NULL, str, 0);
-	ll->ll_next = next;
-	return ll;
-}
-
-static struct attrlist *
-mk_attrlist(struct attrlist *next, struct attr *a)
-{
-	return attrlist_cons(next, a);
-}
-
-static struct condexpr *
-mk_cx_atom(const char *s)
-{
-	struct condexpr *cx;
-
-	cx = condexpr_create(CX_ATOM);
-	cx->cx_atom = s;
-	return cx;
-}
-
-static struct condexpr *
-mk_cx_not(struct condexpr *sub)
-{
-	struct condexpr *cx;
-
-	cx = condexpr_create(CX_NOT);
-	cx->cx_not = sub;
-	return cx;
-}
-
-static struct condexpr *
-mk_cx_and(struct condexpr *left, struct condexpr *right)
-{
-	struct condexpr *cx;
-
-	cx = condexpr_create(CX_AND);
-	cx->cx_and.left = left;
-	cx->cx_and.right = right;
-	return cx;
-}
-
-static struct condexpr *
-mk_cx_or(struct condexpr *left, struct condexpr *right)
-{
-	struct condexpr *cx;
-
-	cx = condexpr_create(CX_OR);
-	cx->cx_or.left = left;
-	cx->cx_or.right = right;
-	return cx;
-}
-
-/************************************************************/
 
 static void
-setmachine(const char *mch, const char *mcharch, struct nvlist *mchsubarches,
-	int isioconf)
+setmachine(const char *mch, const char *mcharch, struct nvlist *mchsubarches)
 {
 	char buf[MAXPATHLEN];
 	struct nvlist *nv;
-
-	if (isioconf) {
-		if (include(_PATH_DEVNULL, ENDDEFS, 0, 0) != 0)
-			exit(1);
-		ioconfname = mch;
-		return;
-	}
 
 	machine = mch;
 	machinearch = mcharch;
 	machinesubarches = mchsubarches;
 
 	/*
-	 * Define attributes for all the given names
-	 */
-	if (defattr(machine, NULL, NULL, 0) != 0 ||
-	    (machinearch != NULL &&
-	     defattr(machinearch, NULL, NULL, 0) != 0))
-		exit(1);
-	for (nv = machinesubarches; nv != NULL; nv = nv->nv_next) {
-		if (defattr(nv->nv_name, NULL, NULL, 0) != 0)
-			exit(1);
-	}
-
-	/*
 	 * Set up the file inclusion stack.  This empty include tells
 	 * the parser there are no more device definitions coming.
 	 */
-	if (include(_PATH_DEVNULL, ENDDEFS, 0, 0) != 0)
+	strlcpy(buf, _PATH_DEVNULL, sizeof(buf));
+	if (include(buf, ENDDEFS, 0, 0) != 0)
 		exit(1);
 
 	/* Include arch/${MACHINE}/conf/files.${MACHINE} */
@@ -1378,57 +675,30 @@ setmachine(const char *mch, const char *mcharch, struct nvlist *mchsubarches,
 	 */
 	if (include("conf/files", ENDFILE, 0, 0) != 0)
 		exit(1);
-
-	oktopackage = 1;
 }
 
 static void
 check_maxpart(void)
 {
 
-	if (maxpartitions <= 0 && ioconfname == NULL) {
+	if (maxpartitions <= 0) {
 		stop("cannot proceed without maxpartitions specifier");
 	}
 }
 
 static void
-check_version(void)
+app(struct nvlist *p, struct nvlist *q)
 {
-	/*
-	 * In essence, version is 0 and is not supported anymore
-	 */
-	if (version < CONFIG_MINVERSION)
-		stop("your sources are out of date -- please update.");
+	while (p->nv_next)
+		p = p->nv_next;
+	p->nv_next = q;
 }
 
-/*
- * Prepend a blank entry to the locator definitions so the code in
- * sem.c can distinguish "empty locator list" from "no locator list".
- * XXX gross.
- */
-static struct loclist *
-present_loclist(struct loclist *ll)
+static struct nvlist *
+mk_nsis(const char *name, int count, struct nvlist *adefs, int opt)
 {
-	struct loclist *ret;
-
-	ret = MK3(loc, "", NULL, 0);
-	ret->ll_next = ll;
-	return ret;
-}
-
-static void
-app(struct loclist *p, struct loclist *q)
-{
-	while (p->ll_next)
-		p = p->ll_next;
-	p->ll_next = q;
-}
-
-static struct loclist *
-locarray(const char *name, int count, struct loclist *adefs, int opt)
-{
-	struct loclist *defs = adefs;
-	struct loclist **p;
+	struct nvlist *defs = adefs;
+	struct nvlist **p;
 	char buf[200];
 	int i;
 
@@ -1439,27 +709,27 @@ locarray(const char *name, int count, struct loclist *adefs, int opt)
 	p = &defs;
 	for(i = 0; i < count; i++) {
 		if (*p == NULL)
-			*p = MK3(loc, NULL, "0", 0);
+			*p = new_s("0");
 		snprintf(buf, sizeof(buf), "%s%c%d", name, ARRCHR, i);
-		(*p)->ll_name = i == 0 ? name : intern(buf);
-		(*p)->ll_num = i > 0 || opt;
-		p = &(*p)->ll_next;
+		(*p)->nv_name = i == 0 ? name : intern(buf);
+		(*p)->nv_int = i > 0 || opt;
+		p = &(*p)->nv_next;
 	}
 	*p = 0;
 	return defs;
 }
 
 
-static struct loclist *
-namelocvals(const char *name, struct loclist *vals)
+static struct nvlist *
+mk_ns(const char *name, struct nvlist *vals)
 {
-	struct loclist *p;
+	struct nvlist *p;
 	char buf[200];
 	int i;
 
-	for (i = 0, p = vals; p; i++, p = p->ll_next) {
+	for(i = 0, p = vals; p; i++, p = p->nv_next) {
 		snprintf(buf, sizeof(buf), "%s%c%d", name, ARRCHR, i);
-		p->ll_name = i == 0 ? name : intern(buf);
+		p->nv_name = i == 0 ? name : intern(buf);
 	}
 	return vals;
 }

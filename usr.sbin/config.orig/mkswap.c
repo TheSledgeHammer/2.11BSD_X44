@@ -1,4 +1,4 @@
-/*	$NetBSD: mkswap.c,v 1.9 1997/10/18 07:59:30 lukem Exp $	*/
+/*	$NetBSD: mkswap.c,v 1.10 2015/09/03 13:53:36 uebayasi Exp $	*/
 
 /*
  * Copyright (c) 1992, 1993
@@ -21,11 +21,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -49,118 +45,120 @@
 #endif
 
 #include <sys/cdefs.h>
+__RCSID("$NetBSD: mkswap.c,v 1.10 2015/09/03 13:53:36 uebayasi Exp $");
+
 #include <sys/param.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <err.h>
 #include "defs.h"
 #include "sem.h"
 
-static	char  	*mkdevstr (dev_t);
-static	int		mkoneswap (struct config *);
+static	char   *mkdevstr(dev_t);
+static	int	mkoneswap(struct config *);
 
 /*
  * Make the various swap*.c files.  Nothing to do for generic swap.
  */
 int
-mkswap()
+mkswap(void)
 {
 	struct config *cf;
 
-	for (cf = allcf; cf != NULL; cf = cf->cf_next)
+	TAILQ_FOREACH(cf, &allcf, cf_next) {
 		if (mkoneswap(cf))
 			return (1);
+	}
 	return (0);
 }
 
 static char *
-mkdevstr(d)
-	dev_t d;
+mkdevstr(dev_t d)
 {
 	static char buf[32];
 
 	if (d == NODEV)
-		(void)sprintf(buf, "NODEV");
+		(void)snprintf(buf, sizeof(buf), "NODEV");
 	else
-		(void)sprintf(buf, "makedev(%d, %d)", major(d), minor(d));
+		(void)snprintf(buf, sizeof(buf), "makedev(%d, %d)",
+		    major(d), minor(d));
 	return buf;
 }
 
 static int
-mkoneswap(cf)
-	struct config *cf;
+mkoneswap(struct config *cf)
 {
 	struct nvlist *nv;
 	FILE *fp;
-	char fname[200];
+	char fname[200], tname[200];
 	char specinfo[200];
 
-	(void)sprintf(fname, "swap%s.c", cf->cf_name);
-	if ((fp = fopen(fname, "w")) == NULL) {
-		(void)fprintf(stderr, "config: cannot write %s: %s\n",
-		    fname, strerror(errno));
+	(void)snprintf(fname, sizeof(fname), "swap%s.c", cf->cf_name);
+	(void)snprintf(tname, sizeof(tname), "swap%s.c.tmp", cf->cf_name);
+	if ((fp = fopen(tname, "w")) == NULL) {
+		warn("cannot open %s", fname);
 		return (1);
 	}
-	if (fputs("\
-#include <sys/param.h>\n\
-#include <sys/conf.h>\n\n", fp) < 0)
-		goto wrerror;
 
+	autogen_comment(fp, fname);
+
+	fputs("#include <sys/param.h>\n"
+		"#include <sys/conf.h>\n\n", fp);
 	/*
 	 * Emit the root device.
 	 */
 	nv = cf->cf_root;
 	if (cf->cf_root->nv_str == s_qmark)
-		strcpy(specinfo, "NULL");
+		strlcpy(specinfo, "NULL", sizeof(specinfo));
 	else
-		sprintf(specinfo, "\"%s\"", cf->cf_root->nv_str);
-	if (fprintf(fp, "const char *rootspec = %s;\n", specinfo) < 0)
-		goto wrerror;
-	if (fprintf(fp, "dev_t\trootdev = %s;\t/* %s */\n\n",
-	    mkdevstr(nv->nv_int),
-	    nv->nv_str == s_qmark ? "wildcarded" : nv->nv_str) < 0)
-		goto wrerror;
+		snprintf(specinfo, sizeof(specinfo), "\"%s\"",
+		    cf->cf_root->nv_str);
+	fprintf(fp, "const char *rootspec = %s;\n", specinfo);
+	fprintf(fp, "dev_t\trootdev = %s;\t/* %s */\n\n",
+		mkdevstr((dev_t)nv->nv_num),
+		nv->nv_str == s_qmark ? "wildcarded" : nv->nv_str);
 
 	/*
 	 * Emit the dump device.
 	 */
 	nv = cf->cf_dump;
 	if (cf->cf_dump == NULL)
-		strcpy(specinfo, "NULL");
+		strlcpy(specinfo, "NULL", sizeof(specinfo));
 	else
-		sprintf(specinfo, "\"%s\"", cf->cf_dump->nv_str);
-	if (fprintf(fp, "const char *dumpspec = %s;\n", specinfo) < 0)
-		goto wrerror;
-	if (fprintf(fp, "dev_t\tdumpdev = %s;\t/* %s */\n\n",
-	    nv ? mkdevstr(nv->nv_int) : "NODEV",
-	    nv ? nv->nv_str : "unspecified") < 0)
-		goto wrerror;
+		snprintf(specinfo, sizeof(specinfo), "\"%s\"", cf->cf_dump->nv_str);
+	fprintf(fp, "const char *dumpspec = %s;\n", specinfo);
+	fprintf(fp, "dev_t\tdumpdev = %s;\t/* %s */\n\n",
+		nv ? mkdevstr((dev_t)nv->nv_num) : "NODEV",
+		nv ? nv->nv_str : "unspecified");
 
 	/*
 	 * Emit the root file system.
 	 */
-	if (cf->cf_fstype == NULL)
-		strcpy(specinfo, "NULL");
-	else {
-		sprintf(specinfo, "%s_mountroot", cf->cf_fstype);
-		if (fprintf(fp, "extern int %s (void);\n", specinfo) < 0)
-			goto wrerror;
-	}
-	if (fprintf(fp, "int (*mountroot) (void) = %s;\n", specinfo) < 0)
+	fprintf(fp, "const char *rootfstype = \"%s\";\n",
+		cf->cf_fstype ? cf->cf_fstype : "?");
+
+	fflush(fp);
+	if (ferror(fp))
 		goto wrerror;
 
 	if (fclose(fp)) {
 		fp = NULL;
 		goto wrerror;
 	}
+	if (moveifchanged(tname, fname) != 0) {
+		warn("error renaming %s", fname);
+		return (1);
+	}
 	return (0);
-wrerror:
-	(void)fprintf(stderr, "config: error writing %s: %s\n",
-	    fname, strerror(errno));
+
+ wrerror:
+	warn("error writing %s", fname);
 	if (fp != NULL)
 		(void)fclose(fp);
-	/* (void)unlink(fname); */
+#if 0
+	(void)unlink(fname);
+#endif
 	return (1);
 }

@@ -1,4 +1,4 @@
-/*	$NetBSD: files.c,v 1.23.2.1 2004/06/22 07:26:45 tron Exp $	*/
+/*	$NetBSD: files.c,v 1.37 2020/03/07 19:26:13 christos Exp $	*/
 
 /*
  * Copyright (c) 1992, 1993
@@ -44,14 +44,23 @@
 #include "nbtool_config.h"
 #endif
 
+#include <sys/cdefs.h>
+__RCSID("$NetBSD: files.c,v 1.37 2020/03/07 19:26:13 christos Exp $");
+
 #include <sys/param.h>
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <util.h>
 #include "defs.h"
 
 extern const char *yyfile;
+
+int nallfiles;
+size_t nselfiles;
+struct files **selfiles;
 
 /*
  * We check that each full path name is unique.  File base names
@@ -64,13 +73,11 @@ static struct hashtab *pathtab;		/* full path names */
 
 static struct files **unchecked;
 
+static void	addfiletoattr(const char *, struct files *);
 static int	checkaux(const char *, void *);
 static int	fixcount(const char *, void *);
 static int	fixfsel(const char *, void *);
 static int	fixsel(const char *, void *);
-static int	expr_eval(struct nvlist *,
-		    int (*)(const char *, void *), void *);
-static void	expr_free(struct nvlist *);
 
 void
 initfiles(void)
@@ -79,41 +86,56 @@ initfiles(void)
 	basetab = ht_new();
 	pathtab = ht_new();
 	TAILQ_INIT(&allfiles);
+	TAILQ_INIT(&allcfiles);
+	TAILQ_INIT(&allsfiles);
+	TAILQ_INIT(&allofiles);
 	unchecked = &TAILQ_FIRST(&allfiles);
-	TAILQ_INIT(&allobjects);
 }
 
 void
-addfile(const char *path, struct nvlist *optx, int flags, const char *rule)
+addfile(const char *path, struct condexpr *optx, u_char flags, const char *rule)
 {
 	struct files *fi;
 	const char *dotp, *tail;
 	size_t baselen;
+	size_t dirlen;
 	int needc, needf;
 	char base[200];
+	char dir[MAXPATHLEN];
 
 	/* check various errors */
 	needc = flags & FI_NEEDSCOUNT;
 	needf = flags & FI_NEEDSFLAG;
 	if (needc && needf) {
-		error("cannot mix needs-count and needs-flag");
+		cfgerror("cannot mix needs-count and needs-flag");
 		goto bad;
 	}
 	if (optx == NULL && (needc || needf)) {
-		error("nothing to %s for %s", needc ? "count" : "flag", path);
+		cfgerror("nothing to %s for %s", needc ? "count" : "flag",
+		    path);
+		goto bad;
+	}
+	if (*path == '/') {
+		cfgerror("path must be relative");
 		goto bad;
 	}
 
 	/* find last part of pathname, and same without trailing suffix */
 	tail = strrchr(path, '/');
-	if (tail == NULL)
+	if (tail == NULL) {
+		dirlen = 0;
 		tail = path;
-	else
+	} else {
+		dirlen = (size_t)(tail - path);
 		tail++;
+	}
+	memcpy(dir, path, dirlen);
+	dir[dirlen] = '\0';
+
 	dotp = strrchr(tail, '.');
 	if (dotp == NULL || dotp[1] == 0 ||
-	    (baselen = dotp - tail) >= sizeof(base)) {
-		error("invalid pathname `%s'", path);
+	    (baselen = (size_t)(dotp - tail)) >= sizeof(base)) {
+		cfgerror("invalid pathname `%s'", path);
 		goto bad;
 	}
 
@@ -136,63 +158,78 @@ addfile(const char *path, struct nvlist *optx, int flags, const char *rule)
 		 * options for specific files.
 		 */
 		if (rule != NULL && optx == NULL && flags == 0 &&
-		    yyfile != fi->fi_srcfile) {
+		    yyfile != fi->fi_where.w_srcfile) {
 			fi->fi_mkrule = rule;
 			return;
 		}
-		error("duplicate file %s", path);
-		xerror(fi->fi_srcfile, fi->fi_srcline,
+		cfgerror("duplicate file %s", path);
+		cfgxerror(fi->fi_where.w_srcfile, fi->fi_where.w_srcline,
 		    "here is the original definition");
 		goto bad;
 	}
 	memcpy(base, tail, baselen);
-	base[baselen] = 0;
-	fi->fi_srcfile = yyfile;
-	fi->fi_srcline = currentline();
+	base[baselen] = '\0';
+	fi->fi_where.w_srcfile = yyfile;
+	fi->fi_where.w_srcline = currentline();
 	fi->fi_flags = flags;
 	fi->fi_path = path;
 	fi->fi_tail = tail;
 	fi->fi_base = intern(base);
+	fi->fi_dir = intern(dir);
 	fi->fi_prefix = SLIST_EMPTY(&prefixes) ? NULL :
 			SLIST_FIRST(&prefixes)->pf_prefix;
+	fi->fi_buildprefix = SLIST_EMPTY(&buildprefixes) ? NULL :
+			SLIST_FIRST(&buildprefixes)->pf_prefix;
+	fi->fi_len = strlen(path);
+	fi->fi_suffix = path[fi->fi_len - 1];
 	fi->fi_optx = optx;
 	fi->fi_optf = NULL;
 	fi->fi_mkrule = rule;
-	TAILQ_INSERT_TAIL(&allfiles, fi, fi_next);
+	fi->fi_attr = NULL;
+	fi->fi_order = (int)nallfiles + (includedepth << 16);
+	switch (fi->fi_suffix) {
+	case 'c':
+		TAILQ_INSERT_TAIL(&allcfiles, fi, fi_snext);
+		TAILQ_INSERT_TAIL(&allfiles, fi, fi_next);
+		break;
+	case 'S':
+		fi->fi_suffix = 's';
+		/* FALLTHRU */
+	case 's':
+		TAILQ_INSERT_TAIL(&allsfiles, fi, fi_snext);
+		TAILQ_INSERT_TAIL(&allfiles, fi, fi_next);
+		break;
+	case 'o':
+		TAILQ_INSERT_TAIL(&allofiles, fi, fi_snext);
+		TAILQ_INSERT_TAIL(&allfiles, fi, fi_next);
+		break;
+	default:
+		cfgxerror(fi->fi_where.w_srcfile, fi->fi_where.w_srcline,
+		    "unknown suffix");
+		break;
+	}
+	CFGDBG(3, "file added `%s' at order score %d", fi->fi_path, fi->fi_order);
+	nallfiles++;
 	return;
  bad:
-	expr_free(optx);
+	if (optx != NULL) {
+		condexpr_destroy(optx);
+	}
 }
 
-void
-addobject(const char *path, struct nvlist *optx, int flags)
+static void
+addfiletoattr(const char *name, struct files *fi)
 {
-	struct objects *oi;
+	struct attr *a;
 
-	/*
-	 * Commit this object to memory.  We will decide later whether it
-	 * will be used after all.
-	 */
-	oi = ecalloc(1, sizeof *oi);
-	if (ht_insert(pathtab, path, oi)) {
-		free(oi);
-		if ((oi = ht_lookup(pathtab, path)) == NULL)
-			panic("addfile: ht_lookup(%s)", path);
-		error("duplicate file %s", path);
-		xerror(oi->oi_srcfile, oi->oi_srcline,
-		    "here is the original definition");
-	} 
-	oi->oi_srcfile = yyfile;
-	oi->oi_srcline = currentline();
-	oi->oi_flags = flags;
-	oi->oi_path = path;
-	oi->oi_prefix = SLIST_EMPTY(&prefixes) ? NULL :
-			SLIST_FIRST(&prefixes)->pf_prefix;
-	oi->oi_optx = optx;
-	oi->oi_optf = NULL;
-	TAILQ_INSERT_TAIL(&allobjects, oi, oi_next);
-	return;
-}     
+	a = ht_lookup(attrtab, name);
+	if (a == NULL) {
+		CFGDBG(1, "attr `%s' not found", name);
+	} else {
+		fi->fi_attr = a;
+		TAILQ_INSERT_TAIL(&a->a_files, fi, fi_anext);
+	}
+}
 
 /*
  * We have finished reading some "files" file, either ../../conf/files
@@ -225,13 +262,28 @@ checkaux(const char *name, void *context)
 	struct files *fi = context;
 
 	if (ht_lookup(devbasetab, name) == NULL) {
-		xerror(fi->fi_srcfile, fi->fi_srcline,
+		cfgxerror(fi->fi_where.w_srcfile, fi->fi_where.w_srcline,
 		    "`%s' is not a countable device",
 		    name);
 		/* keep fixfiles() from complaining again */
 		fi->fi_flags |= FI_HIDDEN;
 	}
 	return (0);
+}
+
+static int
+cmpfiles(const void *a, const void *b)
+{
+	const struct files * const *fia = a, * const *fib = b;
+	int sa = (*fia)->fi_order;
+	int sb = (*fib)->fi_order;
+
+	if (sa < sb)
+		return -1;
+	else if (sa > sb)
+		return 1;
+	else
+		return 0;
 }
 
 /*
@@ -245,15 +297,33 @@ fixfiles(void)
 	struct files *fi, *ofi;
 	struct nvlist *flathead, **flatp;
 	int err, sel;
+	struct config *cf;
+ 	char swapname[100];
+
+	/* Place these files at last. */
+	int onallfiles = nallfiles;
+	nallfiles = 1 << 30;
+	addfile("devsw.c", NULL, 0, NULL);
+	addfile("ioconf.c", NULL, 0, NULL);
+
+	TAILQ_FOREACH(cf, &allcf, cf_next) {
+ 		(void)snprintf(swapname, sizeof(swapname), "swap%s.c",
+ 		    cf->cf_name);
+ 		addfile(intern(swapname), NULL, 0, NULL);
+ 	}
+	nallfiles = onallfiles;
 
 	err = 0;
 	TAILQ_FOREACH(fi, &allfiles, fi_next) {
+
 		/* Skip files that generated counted-device complaints. */
 		if (fi->fi_flags & FI_HIDDEN)
 			continue;
 
-		/* Optional: see if it is to be included. */
 		if (fi->fi_optx != NULL) {
+			if (fi->fi_optx->cx_type == CX_ATOM) {
+				addfiletoattr(fi->fi_optx->cx_u.atom, fi);
+			}
 			flathead = NULL;
 			flatp = &flathead;
 			sel = expr_eval(fi->fi_optx,
@@ -264,6 +334,11 @@ fixfiles(void)
 			fi->fi_optf = flathead;
 			if (!sel)
 				continue;
+		}
+		if (fi->fi_attr && fi->fi_attr->a_deselected) {
+			CFGDBG(5, "file `%s' deselected because attr `%s' was",
+			    fi->fi_path, fi->fi_attr->a_name);
+			continue;
 		}
 
 		/* We like this file.  Make sure it generates a unique .o. */
@@ -278,66 +353,58 @@ fixfiles(void)
 				if (ht_replace(basetab, fi->fi_base, fi) != 1)
 					panic("fixfiles ht_replace(%s)",
 					    fi->fi_base);
-				ofi->fi_flags &= ~FI_SEL;
+				ofi->fi_flags &= (u_char)~FI_SEL;
 				ofi->fi_flags |= FI_HIDDEN;
 			} else {
-				xerror(fi->fi_srcfile, fi->fi_srcline,
+				cfgxerror(fi->fi_where.w_srcfile, fi->fi_where.w_srcline,
 				    "object file collision on %s.o, from %s",
 				    fi->fi_base, fi->fi_path);
-				xerror(ofi->fi_srcfile, ofi->fi_srcline,
+				cfgxerror(ofi->fi_where.w_srcfile, ofi->fi_where.w_srcline,
 				    "here is the previous file: %s",
 				    ofi->fi_path);
 				err = 1;
 			}
 		}
 		fi->fi_flags |= FI_SEL;
+		nselfiles++;
+		CFGDBG(3, "file selected `%s'", fi->fi_path);
+
+		/* Add other files to the default "netbsd" attribute. */
+		if (fi->fi_attr == NULL) {
+			addfiletoattr(allattr.a_name, fi);
+		}
+		CFGDBG(3, "file `%s' belongs to attr `%s'", fi->fi_path,
+		    fi->fi_attr->a_name);
 	}
+
+	/* Order files. */
+	selfiles = malloc(nselfiles * sizeof(fi));
+	unsigned i = 0;
+	TAILQ_FOREACH(fi, &allfiles, fi_next) {
+		if ((fi->fi_flags & FI_SEL) == 0)
+			continue;
+		selfiles[i++] = fi;
+	}
+	assert(i <= nselfiles);
+	nselfiles = i;
+	qsort(selfiles, nselfiles, (unsigned)sizeof(fi), cmpfiles);
 	return (err);
 }
 
-/*    
- * We have finished reading everything.  Tack the objects down: calculate
- * selection.
- */   
-int    
-fixobjects(void)
-{     
-	struct objects *oi;
-	struct nvlist *flathead, **flatp;
-	int err, sel; 
- 
-	err = 0;
-	TAILQ_FOREACH(oi, &allobjects, oi_next) {
-		/* Optional: see if it is to be included. */
-		if (oi->oi_optx != NULL) {
-			flathead = NULL;
-			flatp = &flathead;
-			sel = expr_eval(oi->oi_optx,
-			    oi->oi_flags & OI_NEEDSFLAG ? fixfsel :
-			    fixsel,
-			    &flatp);
-			oi->oi_optf = flathead;
-			if (!sel)
-				continue;
-		}
-
-		oi->oi_flags |= OI_SEL;  
-	}
-	return (err);
-}     
 
 /*
  * We have finished reading everything.  Tack the devsws down: calculate
  * selection.
  */
-/*
 int
 fixdevsw(void)
 {
+	int error;
 	struct devm *dm, *res;
 	struct hashtab *fixdevmtab;
 	char mstr[16];
 
+	error = 0;
 	fixdevmtab = ht_new();
 
 	TAILQ_FOREACH(dm, &alldevms, dm_next) {
@@ -345,23 +412,28 @@ fixdevsw(void)
 		if (res != NULL) {
 			if (res->dm_cmajor != dm->dm_cmajor ||
 			    res->dm_bmajor != dm->dm_bmajor) {
-				xerror(res->dm_srcfile, res->dm_srcline,
-				       "device-major '%s' is inconsistent: "
-				       "block %d, char %d", res->dm_name,
-				       res->dm_bmajor, res->dm_cmajor);
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major '%s' is inconsistent: "
-				       "block %d, char %d", dm->dm_name,
-				       dm->dm_bmajor, dm->dm_cmajor);
-				return (1);
+				cfgxerror(res->dm_where.w_srcfile,
+				    res->dm_where.w_srcline,
+				    "device-major '%s' "
+				    "block %d, char %d redefined"
+				    " at %s:%d as block %d, char %d",
+				    res->dm_name,
+				    res->dm_bmajor, res->dm_cmajor,
+				    dm->dm_where.w_srcfile, dm->dm_where.w_srcline,
+				    dm->dm_bmajor, dm->dm_cmajor);
 			} else {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major '%s' is duplicated: "
-				       "block %d, char %d",
-				       dm->dm_name, dm->dm_bmajor,
-				       dm->dm_cmajor);
-				return (1);
+				cfgxerror(res->dm_where.w_srcfile,
+				    res->dm_where.w_srcline,
+				    "device-major '%s' "
+				    "(block %d, char %d) duplicated"
+				    " at %s:%d",
+				    dm->dm_name, dm->dm_bmajor,
+				    dm->dm_cmajor,
+				    dm->dm_where.w_srcfile,
+				    dm->dm_where.w_srcline);
 			}
+			error = 1;
+			goto out;
 		}
 		if (ht_insert(fixdevmtab, intern(dm->dm_name), dm)) {
 			panic("fixdevsw: %s char %d block %d",
@@ -372,19 +444,22 @@ fixdevsw(void)
 		    !expr_eval(dm->dm_opts, fixsel, NULL))
 			continue;
 
-		if (dm->dm_cmajor != -1) {
+		if (dm->dm_cmajor != NODEVMAJOR) {
 			if (ht_lookup(cdevmtab, intern(dm->dm_name)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major of character device '%s' "
-				       "is already defined", dm->dm_name);
-				return (1);
+				cfgxerror(dm->dm_where.w_srcfile,
+				    dm->dm_where.w_srcline,
+				   "device-major of character device '%s' "
+				   "is already defined", dm->dm_name);
+				error = 1;
+				goto out;
 			}
 			(void)snprintf(mstr, sizeof(mstr), "%d", dm->dm_cmajor);
 			if (ht_lookup(cdevmtab, intern(mstr)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
+				cfgxerror(dm->dm_where.w_srcfile, dm->dm_where.w_srcline,
 				       "device-major of character major '%d' "
 				       "is already defined", dm->dm_cmajor);
-				return (1);
+				error = 1;
+				goto out;
 			}
 			if (ht_insert(cdevmtab, intern(dm->dm_name), dm) ||
 			    ht_insert(cdevmtab, intern(mstr), dm)) {
@@ -392,19 +467,21 @@ fixdevsw(void)
 				      dm->dm_name, dm->dm_cmajor);
 			}
 		}
-		if (dm->dm_bmajor != -1) {
+		if (dm->dm_bmajor != NODEVMAJOR) {
 			if (ht_lookup(bdevmtab, intern(dm->dm_name)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
+				cfgxerror(dm->dm_where.w_srcfile, dm->dm_where.w_srcline,
 				       "device-major of block device '%s' "
 				       "is already defined", dm->dm_name);
-				return (1);
+				error = 1;
+				goto out;
 			}
 			(void)snprintf(mstr, sizeof(mstr), "%d", dm->dm_bmajor);
 			if (ht_lookup(bdevmtab, intern(mstr)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
+				cfgxerror(dm->dm_where.w_srcfile, dm->dm_where.w_srcline,
 				       "device-major of block major '%d' "
 				       "is already defined", dm->dm_bmajor);
-				return (1);
+				error = 1;
+				goto out;
 			}
 			if (ht_insert(bdevmtab, intern(dm->dm_name), dm) || 
 			    ht_insert(bdevmtab, intern(mstr), dm)) {
@@ -414,9 +491,11 @@ fixdevsw(void)
 		}
 	}
 
-	return (0);
+out:
+	ht_free(fixdevmtab);
+	return (error);
 }
-*/
+
 /*
  * Called when evaluating a needs-count expression.  Make sure the
  * atom is a countable device.  The expression succeeds iff there
@@ -465,6 +544,7 @@ fixfsel(const char *name, void *context)
  * As for fixfsel above, but we do not need the flat list.
  */
 static int
+/*ARGSUSED*/
 fixsel(const char *name, void *context)
 {
 
@@ -479,63 +559,32 @@ fixsel(const char *name, void *context)
  * No short circuiting ever occurs.  fn must return 0 or 1 (otherwise
  * our mixing of C's bitwise & boolean here may give surprises).
  */
-static int
-expr_eval(struct nvlist *expr, int (*fn)(const char *, void *), void *context)
+int
+expr_eval(struct condexpr *expr, int (*fn)(const char *, void *), void *ctx)
 {
 	int lhs, rhs;
 
-	switch (expr->nv_int) {
+	switch (expr->cx_type) {
 
-	case FX_ATOM:
-		return ((*fn)(expr->nv_name, context));
+	case CX_ATOM:
+		return ((*fn)(expr->cx_atom, ctx));
 
-	case FX_NOT:
-		return (!expr_eval(expr->nv_next, fn, context));
+	case CX_NOT:
+		return (!expr_eval(expr->cx_not, fn, ctx));
 
-	case FX_AND:
-		lhs = expr_eval(expr->nv_ptr, fn, context);
-		rhs = expr_eval(expr->nv_next, fn, context);
+	case CX_AND:
+		lhs = expr_eval(expr->cx_and.left, fn, ctx);
+		rhs = expr_eval(expr->cx_and.right, fn, ctx);
 		return (lhs & rhs);
 
-	case FX_OR:
-		lhs = expr_eval(expr->nv_ptr, fn, context);
-		rhs = expr_eval(expr->nv_next, fn, context);
+	case CX_OR:
+		lhs = expr_eval(expr->cx_or.left, fn, ctx);
+		rhs = expr_eval(expr->cx_or.right, fn, ctx);
 		return (lhs | rhs);
 	}
-	panic("expr_eval %d", expr->nv_int);
+	panic("invalid condexpr type %d", (int)expr->cx_type);
 	/* NOTREACHED */
 	return (0);
-}
-
-/*
- * Free an expression tree.
- */
-static void
-expr_free(struct nvlist *expr)
-{
-	struct nvlist *rhs;
-
-	/* This loop traverses down the RHS of each subexpression. */
-	for (; expr != NULL; expr = rhs) {
-		switch (expr->nv_int) {
-
-		/* Atoms and !-exprs have no left hand side. */
-		case FX_ATOM:
-		case FX_NOT:
-			break;
-
-		/* For AND and OR nodes, free the LHS. */
-		case FX_AND:
-		case FX_OR:
-			expr_free(expr->nv_ptr);
-			break;
-
-		default:
-			panic("expr_free %d", expr->nv_int);
-		}
-		rhs = expr->nv_next;
-		nvfree(expr);
-	}
 }
 
 #ifdef DEBUG
@@ -557,7 +606,7 @@ static void
 pr0(struct nvlist *e)
 {
 
-	switch (e->nv_int) {
+	switch (e->nv_num) {
 	case FX_ATOM:
 		printf(" %s", e->nv_name);
 		return;
@@ -571,7 +620,7 @@ pr0(struct nvlist *e)
 		printf(" (|");
 		break;
 	default:
-		printf(" (?%d?", e->nv_int);
+		printf(" (?%lld?", e->nv_num);
 		break;
 	}
 	if (e->nv_ptr)

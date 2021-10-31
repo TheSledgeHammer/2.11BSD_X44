@@ -1,4 +1,4 @@
-/*	$NetBSD: sem.h,v 1.20 2016/08/07 10:37:24 christos Exp $	*/
+/*	$NetBSD: sem.h,v 1.18 2003/08/07 11:25:17 agc Exp $	*/
 
 /*
  * Copyright (c) 1992, 1993
@@ -42,50 +42,33 @@
 
 void		enddefs(void);
 
-void		setversion(int);
 void		setdefmaxusers(int, int, int);
 void		setmaxusers(int);
 void		setident(const char *);
-int		defattr0(const char *, struct loclist *, struct attrlist *, int);
-int		defattr(const char *, struct loclist *, struct attrlist *, int);
-int		defiattr(const char *, struct loclist *, struct attrlist *, int);
-int		defdevclass(const char *, struct loclist *, struct attrlist *, int);
-void		defdev(struct devbase *, struct loclist *, struct attrlist *, int);
+int			defattr(const char *, struct nvlist *, struct nvlist *, int);
+void		defdev(struct devbase *, struct nvlist *, struct nvlist *, int);
 void		defdevattach(struct deva *, struct devbase *, struct nvlist *,
-			     struct attrlist *);
+			     struct nvlist *);
 struct devbase *getdevbase(const char *);
 struct deva    *getdevattach(const char *);
-struct attr	*mkattr(const char *);
 struct attr    *getattr(const char *);
-struct attr    *refattr(const char *);
-int		getrefattr(const char *, struct attr **);
 void		expandattr(struct attr *, void (*)(struct attr *));
-void		addattr(const char *);
-void		delattr(const char *, int);
 void		selectattr(struct attr *);
-void		deselectattr(struct attr *);
-void		dependattrs(void);
 void		setmajor(struct devbase *, int);
 void		addconf(struct config *);
 void		setconf(struct nvlist **, const char *, struct nvlist *);
-void		delconf(const char *, int);
 void		setfstype(const char **, const char *);
-void		adddev(const char *, const char *, struct loclist *, int);
-void		deldevi(const char *, const char *, int);
-void		deldeva(const char *, int);
-void		deldev(const char *, int);
+void		adddev(const char *, const char *, struct nvlist *, int);
+void		deldev(const char *, const char *);
 void		addpseudo(const char *, int);
-void		delpseudo(const char *, int);
-void		addpseudoroot(const char *);
-void		adddevm(const char *, devmajor_t, devmajor_t,
-			struct condexpr *, struct nvlist *);
-int		fixdevis(void);
-const char     *ref(const char *);
-const char     *starref(const char *);
-const char     *wildref(const char *);
-int		has_attr(struct attrlist *, const char *);
+void		delpseudo(const char *);
+void		adddevm(const char *, int, int, struct nvlist *);
+void		fixdevis(void);
+const char  *ref(const char *);
+const char  *starref(const char *);
+const char  *wildref(const char *);
+int			has_attr(struct nvlist *, const char *);
 
 extern const char *s_qmark;
 extern const char *s_none;
 extern const char *s_ifnet;
-extern size_t nattrs;

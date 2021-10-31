@@ -106,7 +106,7 @@ struct stat {
 #define	S_ISBLK(m)	((m & 0170000) == 0060000)	/* block special */
 #define	S_ISREG(m)	((m & 0170000) == 0100000)	/* regular file */
 
-
+#define	DEFFILEMODE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
 #define S_BLKSIZE	512		/* block size used in the stat struct */
 
 /*
@@ -133,10 +133,9 @@ struct stat {
 /*
  * Shorthand abbreviations of above.
  */
-#define	APPEND		(UF_APPEND | SF_APPEND)
-#define	IMMUTABLE	(UF_IMMUTABLE | SF_IMMUTABLE)
+#define	APPEND			(UF_APPEND | SF_APPEND)
+#define	IMMUTABLE		(UF_IMMUTABLE | SF_IMMUTABLE)
 #endif
-
 
 #ifndef KERNEL
 #include <sys/cdefs.h>

@@ -7,7 +7,7 @@ NOMAN=		# defined
 .include <bsd.own.mk>
 
 LIB=		bz2
-DIST=		${NETBSDSRCDIR}/external/bsd/bzip2/dist
+DIST=		${NETBSDSRCDIR}/contrib/bzip2/dist
 .PATH:		${DIST}
 
 SRCS=		blocksort.c huffman.c crctable.c randtable.c compress.c \

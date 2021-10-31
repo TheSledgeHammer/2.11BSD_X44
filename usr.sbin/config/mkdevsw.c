@@ -1,4 +1,4 @@
-/*	$NetBSD: mkdevsw.c,v 1.15 2016/07/16 07:13:26 pgoyette Exp $	*/
+/*	$NetBSD: mkdevsw.c,v 1.4.2.1 2004/06/22 07:17:40 tron Exp $	*/
 
 /*
  * Copyright (c) 2002 The NetBSD Foundation, Inc.
@@ -15,6 +15,13 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	  This product includes software developed by the NetBSD
+ *	  Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -33,20 +40,16 @@
 #include "nbtool_config.h"
 #endif
 
-#include <sys/cdefs.h>
-__RCSID("$NetBSD: mkdevsw.c,v 1.15 2016/07/16 07:13:26 pgoyette Exp $");
-
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <err.h>
 
 #include "defs.h"
 
-static void emitconv(FILE *);
-static void emitdev(FILE *);
-static void emitdevm(FILE *);
-static void emitheader(FILE *);
+static int emitconv(FILE *);
+static int emitdev(FILE *);
+static int emitdevm(FILE *);
+static int emitheader(FILE *);
 
 int
 mkdevsw(void)
@@ -54,188 +57,183 @@ mkdevsw(void)
 	FILE *fp;
 
 	if ((fp = fopen("devsw.c.tmp", "w")) == NULL) {
-		warn("cannot create devsw.c");
+		(void)fprintf(stderr, "config: cannot write devsw.c: %s\n",
+			      strerror(errno));
 		return (1);
 	}
 
-	emitheader(fp);
-	emitdevm(fp);
-	emitconv(fp);
-	emitdev(fp);
-
-	fflush(fp);
-	if (ferror(fp)) {
-		warn("error writing devsw.c");
-		fclose(fp);
-		return 1;
+	if (emitheader(fp) || emitdevm(fp) || emitconv(fp) || emitdev(fp)) {
+		(void)fprintf(stderr, "config: error writing devsw.c: %s\n",
+			      strerror(errno));
+		(void)fclose(fp);
+		return (1);
 	}
 
 	(void)fclose(fp);
 
 	if (moveifchanged("devsw.c.tmp", "devsw.c") != 0) {
-		warn("error renaming devsw.c");
+		(void)fprintf(stderr, "config: error renaming devsw.c: %s\n",
+			      strerror(errno));
 		return (1);
 	}
 
 	return (0);
 }
 
-static void
+static int
 emitheader(FILE *fp)
 {
-	autogen_comment(fp, "devsw.c");
+	if (fprintf(fp, "/*\n * MACHINE GENERATED: DO NOT EDIT\n *\n"
+		    " * devsw.c, from \"%s\"\n */\n\n", conffile) < 0) {
+		return (1);
+	}
 
-	fputs("#include <sys/param.h>\n"
-		  "#include <sys/conf.h>\n", fp);
-}
+	if (fputs("#include <sys/param.h>\n"
+		  "#include <sys/conf.h>\n"
+		  "\n#define\tDEVSW_ARRAY_SIZE(x)\t"
+		  "(sizeof((x))/sizeof((x)[0]))\n", fp) < 0) {
+		return (1);
+	}
 
-static void
-dentry(FILE *fp, struct hashtab *t, devmajor_t i, char p)
-{
-	const struct devm *dm;
-	char mstr[16];
-
-	(void)snprintf(mstr, sizeof(mstr), "%d", i);
-	if ((dm = ht_lookup(t, intern(mstr))) == NULL)
-		return;
-
-	fprintf(fp, "extern const struct %cdevsw %s_%cdevsw;\n",
-	    p, dm->dm_name, p);
-}
-
-static void
-pentry(FILE *fp, struct hashtab *t, devmajor_t i, char p)
-{
-	const struct devm *dm;
-	char mstr[16];
-
-	(void)snprintf(mstr, sizeof(mstr), "%d", i);
-	dm = ht_lookup(t, intern(mstr));
-
-	if (dm)
-		fprintf(fp, "\t&%s_%cdevsw", dm->dm_name, p); 
-	else
-		fputs("\tNULL", fp);
-
-	fprintf(fp, ",\t// %3d\n", i);
+	return (0);
 }
 
 /*
  * Emit device switch table for character/block device.
  */
-static void
+static int
 emitdevm(FILE *fp)
 {
-	devmajor_t i;
+	struct devm *dm;
+	char mstr[16];
+	int i;
 
-	fputs("\n/* device switch table for block device */\n", fp);
+	if (fputs("\n/* device switch table for block device */\n", fp) < 0)
+		return (1);
 
-	for (i = 0; i <= maxbdevm ; i++)
-		dentry(fp, bdevmtab, i, 'b');
+	for (i = 0 ; i <= maxbdevm ; i++) {
+		(void)snprintf(mstr, sizeof(mstr), "%d", i);
+		if ((dm = ht_lookup(bdevmtab, intern(mstr))) == NULL)
+			continue;
 
-	fputs("\nconst struct bdevsw *bdevsw0[] = {\n", fp);
+		if (fprintf(fp, "extern const struct bdevsw %s_bdevsw;\n",
+			    dm->dm_name) < 0)
+			return (1);
+	}
 
-	for (i = 0; i <= maxbdevm; i++)
-		pentry(fp, bdevmtab, i, 'b');
+	if (fputs("\nconst struct bdevsw *bdevsw0[] = {\n", fp) < 0)
+		return (1);
 
-	fputs("};\n\nconst struct bdevsw **bdevsw = bdevsw0;\n", fp);
+	for (i = 0 ; i <= maxbdevm ; i++) {
+		(void)snprintf(mstr, sizeof(mstr), "%d", i);
+		if ((dm = ht_lookup(bdevmtab, intern(mstr))) == NULL) {
+			if (fprintf(fp, "\tNULL,\n") < 0)
+				return (1);
+		} else {
+			if (fprintf(fp, "\t&%s_bdevsw,\n", dm->dm_name) < 0)
+				return (1);
+		}
+	}
 
-	fputs("const int sys_bdevsws = __arraycount(bdevsw0);\n"
-		  "int max_bdevsws = __arraycount(bdevsw0);\n", fp);
+	if (fputs("};\n\nconst struct bdevsw **bdevsw = bdevsw0;\n", fp) < 0)
+		return (1);
 
-	fputs("\n/* device switch table for character device */\n", fp);
+	if (fputs("const int sys_bdevsws = DEVSW_ARRAY_SIZE(bdevsw0);\n"
+		  "int max_bdevsws = DEVSW_ARRAY_SIZE(bdevsw0);\n", fp) < 0)
+		return (1);
 
-	for (i = 0; i <= maxcdevm; i++)
-		dentry(fp, cdevmtab, i, 'c');
+	if (fputs("\n/* device switch table for character device */\n", fp) < 0)
+		return (1);
 
-	fputs("\nconst struct cdevsw *cdevsw0[] = {\n", fp);
+	for (i = 0 ; i <= maxcdevm ; i++) {
+		(void)snprintf(mstr, sizeof(mstr), "%d", i);
+		if ((dm = ht_lookup(cdevmtab, intern(mstr))) == NULL)
+			continue;
 
-	for (i = 0; i <= maxcdevm; i++)
-		pentry(fp, cdevmtab, i, 'c');
+		if (fprintf(fp, "extern const struct cdevsw %s_cdevsw;\n",
+			    dm->dm_name) < 0)
+			return (1);
+	}
 
-	fputs("};\n\nconst struct cdevsw **cdevsw = cdevsw0;\n", fp);
+	if (fputs("\nconst struct cdevsw *cdevsw0[] = {\n", fp) < 0)
+		return (1);
 
-	fputs("const int sys_cdevsws = __arraycount(cdevsw0);\n"
-		  "int max_cdevsws = __arraycount(cdevsw0);\n", fp);
+	for (i = 0 ; i <= maxcdevm ; i++) {
+		(void)snprintf(mstr, sizeof(mstr), "%d", i);
+		if ((dm = ht_lookup(cdevmtab, intern(mstr))) == NULL) {
+			if (fprintf(fp, "\tNULL,\n") < 0)
+				return (1);
+		} else {
+			if (fprintf(fp, "\t&%s_cdevsw,\n", dm->dm_name) < 0)
+				return (1);
+		}
+	}
+
+	if (fputs("};\n\nconst struct cdevsw **cdevsw = cdevsw0;\n", fp) < 0)
+		return (1);
+
+	if (fputs("const int sys_cdevsws = DEVSW_ARRAY_SIZE(cdevsw0);\n"
+		  "int max_cdevsws = DEVSW_ARRAY_SIZE(cdevsw0);\n", fp) < 0)
+		return (1);
+
+	return (0);
 }
 
 /*
  * Emit device major conversion table.
  */
-static void
+static int
 emitconv(FILE *fp)
 {
 	struct devm *dm;
 
-	fputs("\n/* device conversion table */\n"
-		  "struct devsw_conv devsw_conv0[] = {\n", fp);
+	if (fputs("\n/* device conversion table */\n"
+		  "struct devsw_conv devsw_conv0[] = {\n", fp) < 0)
+		return (-1);
 	TAILQ_FOREACH(dm, &alldevms, dm_next) {
-		if (version < 20100430) {
-			/* Emit compatible structure */
-			fprintf(fp, "\t{ \"%s\", %d, %d },\n", dm->dm_name,
-			    dm->dm_bmajor, dm->dm_cmajor);
-			continue;
-		}
-		struct nvlist *nv;
-		const char *d_class, *d_flags = "0";
-		int d_vec[2] = { 0, 0 };
-		int i = 0;
-
-		/*
-		 * "parse" info.  currently the rules are simple:
-		 *  1) first entry defines class
-		 *  2) next ones without n_str are d_vectdim
-		 *  3) next one with n_str is d_flags
-		 *  4) EOL
-		 */
-		nv = dm->dm_devnodes;
-		d_class = nv->nv_str;
-		while ((nv = nv->nv_next) != NULL) {
-			if (i > 2)
-				panic("invalid devnode definition");
-			if (nv->nv_str) {
-				d_flags = nv->nv_str;
-				break;
-			}
-			if (nv->nv_num > INT_MAX || nv->nv_num < INT_MIN)
-				panic("out of range devnode definition");
-			d_vec[i++] = (int)nv->nv_num;
-		}
-
-		fprintf(fp, "\t{ \"%s\", %d, %d, %s, %s, { %d, %d }},\n",
-			    dm->dm_name, dm->dm_bmajor, dm->dm_cmajor,
-			    d_class, d_flags, d_vec[0], d_vec[1]);
-
+		if (fprintf(fp, "\t{ \"%s\", %d, %d },\n", dm->dm_name,
+			    dm->dm_bmajor, dm->dm_cmajor) < 0)
+			return (1);
 	}
-	fputs("};\n\n"
+	if (fputs("};\n\n"
 		  "struct devsw_conv *devsw_conv = devsw_conv0;\n"
-		  "int max_devsw_convs = __arraycount(devsw_conv0);\n",
-		  fp);
+		  "int max_devsw_convs = DEVSW_ARRAY_SIZE(devsw_conv0);\n",
+		  fp) < 0)
+		return (1);
+
+	return (0);
 }
 
 /*
  * Emit specific device major informations.
  */
-static void
+static int
 emitdev(FILE *fp)
 {
 	struct devm *dm;
 	char mstr[16];
 
-	fputs("\n", fp);
+	if (fputs("\n", fp) < 0)
+		return (1);
 
 	(void)strlcpy(mstr, "swap", sizeof(mstr));
-	if ((dm = ht_lookup(bdevmtab, intern(mstr))) != NULL) {
-		fprintf(fp, "const dev_t swapdev = makedev(%d, 0);\n",
-			    dm->dm_bmajor);
-	}
+	if ((dm = ht_lookup(bdevmtab, intern(mstr))) == NULL)
+		panic("swap device is not configured");
+	if (fprintf(fp, "const dev_t swapdev = makedev(%d, 0);\n",
+		    dm->dm_bmajor) < 0)
+		return (1);
 
 	(void)strlcpy(mstr, "mem", sizeof(mstr));
 	if ((dm = ht_lookup(cdevmtab, intern(mstr))) == NULL)
 		panic("memory device is not configured");
-	fprintf(fp, "const dev_t zerodev = makedev(%d, DEV_ZERO);\n",
-		    dm->dm_cmajor);
+	if (fprintf(fp, "const dev_t zerodev = makedev(%d, DEV_ZERO);\n",
+		    dm->dm_cmajor) < 0)
+		return (1);
 
-	fputs("\n/* mem_no is only used in iskmemdev() */\n", fp);
-	fprintf(fp, "const int mem_no = %d;\n", dm->dm_cmajor);
+	if (fputs("\n/* mem_no is only used in iskmemdev() */\n", fp) < 0)
+		return (1);
+	if (fprintf(fp, "const int mem_no = %d;\n", dm->dm_cmajor) < 0)
+		return (1);
+
+	return (0);
 }

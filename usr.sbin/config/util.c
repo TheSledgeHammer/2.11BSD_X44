@@ -1,4 +1,4 @@
-/*	$NetBSD: util.c,v 1.21 2020/03/07 19:26:13 christos Exp $	*/
+/*	$NetBSD: util.c,v 1.20.2.1 2004/06/22 07:26:01 tron Exp $	*/
 
 /*
  * Copyright (c) 1992, 1993
@@ -44,71 +44,82 @@
 #include "nbtool_config.h"
 #endif
 
-#include <sys/cdefs.h>
-__RCSID("$NetBSD: util.c,v 1.21 2020/03/07 19:26:13 christos Exp $");
-
-#include <sys/types.h>
-#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <util.h>
-#include <err.h>
+#include <sys/types.h>
 #include "defs.h"
 
-extern const char *yyfile;
-
-static void cfgvxerror(const char *, int, const char *, va_list)
-	     __printflike(3, 0);
-static void cfgvxdbg(const char *, int, const char *, va_list)
-	     __printflike(3, 0);
-static void cfgvxwarn(const char *, int, const char *, va_list)
-	     __printflike(3, 0);
-static void cfgvxmsg(const char *, int, const char *, const char *, va_list)
-     __printflike(4, 0);
-
-/************************************************************/
+static void nomem(void);
+static void vxerror(const char *, int, const char *, va_list)
+	     __attribute__((__format__(__printf__, 3, 0)));
+static void vxwarn(const char *, int, const char *, va_list)
+	     __attribute__((__format__(__printf__, 3, 0)));
+static void vxmsg(const char *fname, int line, const char *class, 
+		  const char *fmt, va_list)
+     __attribute__((__format__(__printf__, 4, 0)));
 
 /*
- * Prefix stack
+ * Calloc, with abort on error.
  */
-
-static void
-prefixlist_push(struct prefixlist *pl, const char *path)
+void *
+ecalloc(size_t nelem, size_t size)
 {
-	struct prefix *prevpf = SLIST_FIRST(pl);
-	struct prefix *pf;
+	void *p;
+
+	if ((p = calloc(nelem, size)) == NULL)
+		nomem();
+	return (p);
+}
+
+/*
+ * Malloc, with abort on error.
+ */
+void *
+emalloc(size_t size)
+{
+	void *p;
+
+	if ((p = malloc(size)) == NULL)
+		nomem();
+	return (p);
+}
+
+/*
+ * Realloc, with abort on error.
+ */
+void *
+erealloc(void *p, size_t size)
+{
+	void *q;
+
+	if ((q = realloc(p, size)) == NULL)
+		nomem();
+	p = q;
+	return (p);
+}
+
+/*
+ * Strdup, with abort on error.
+ */
+char *
+estrdup(const char *p)
+{
 	char *cp;
 
-	pf = ecalloc(1, sizeof(struct prefix));
-
-	if (prevpf != NULL) {
-		cp = emalloc(strlen(prevpf->pf_prefix) + 1 +
-		    strlen(path) + 1);
-		(void) sprintf(cp, "%s/%s", prevpf->pf_prefix, path);
-		pf->pf_prefix = intern(cp);
-		free(cp);
-	} else
-		pf->pf_prefix = intern(path);
-
-	SLIST_INSERT_HEAD(pl, pf, pf_next);
+	if ((cp = strdup(p)) == NULL)
+		nomem();
+	return (cp);
 }
 
 static void
-prefixlist_pop(struct prefixlist *allpl, struct prefixlist *pl)
+nomem(void)
 {
-	struct prefix *pf;
 
-	if ((pf = SLIST_FIRST(pl)) == NULL) {
-		cfgerror("no prefixes on the stack to pop");
-		return;
-	}
-
-	SLIST_REMOVE_HEAD(pl, pf_next);
-	/* Remember this prefix for emitting -I... directives later. */
-	SLIST_INSERT_HEAD(allpl, pf, pf_next);
+	(void)fprintf(stderr, "config: out of memory\n");
+	exit(1);
 }
 
 /*
@@ -117,7 +128,22 @@ prefixlist_pop(struct prefixlist *allpl, struct prefixlist *pl)
 void
 prefix_push(const char *path)
 {
-	prefixlist_push(&prefixes, path);
+	struct prefix *pf;
+	char *cp;
+
+	pf = ecalloc(1, sizeof(struct prefix));
+
+	if (! SLIST_EMPTY(&prefixes) && *path != '/') {
+		cp = emalloc(strlen(SLIST_FIRST(&prefixes)->pf_prefix) + 1 +
+		    strlen(path) + 1);
+		(void) sprintf(cp, "%s/%s",
+		    SLIST_FIRST(&prefixes)->pf_prefix, path);
+		pf->pf_prefix = intern(cp);
+		free(cp);
+	} else
+		pf->pf_prefix = intern(path);
+
+	SLIST_INSERT_HEAD(&prefixes, pf, pf_next);
 }
 
 /*
@@ -126,25 +152,16 @@ prefix_push(const char *path)
 void
 prefix_pop(void)
 {
-	prefixlist_pop(&allprefixes, &prefixes);
-}
+	struct prefix *pf;
 
-/*
- * Push a buildprefix onto the buildprefix stack.
- */
-void
-buildprefix_push(const char *path)
-{
-	prefixlist_push(&buildprefixes, path);
-}
+	if ((pf = SLIST_FIRST(&prefixes)) == NULL) {
+		error("no prefixes on the stack to pop");
+		return;
+	}
 
-/*
- * Pop a buildprefix off the buildprefix stack.
- */
-void
-buildprefix_pop(void)
-{
-	prefixlist_pop(&allbuildprefixes, &buildprefixes);
+	SLIST_REMOVE_HEAD(&prefixes, pf_next);
+	/* Remember this prefix for emitting -I... directives later. */
+	SLIST_INSERT_HEAD(&allprefixes, pf, pf_next);
 }
 
 /*
@@ -179,30 +196,28 @@ sourcepath(const char *file)
 	return (cp);
 }
 
-/************************************************************/
-
-/*
- * Data structures
- */
-
-/*
- * nvlist
- */
+static struct nvlist *nvfreelist;
 
 struct nvlist *
-newnv(const char *name, const char *str, void *ptr, long long i, struct nvlist *next)
+newnv(const char *name, const char *str, void *ptr, int i, struct nvlist *next)
 {
 	struct nvlist *nv;
 
-	nv = ecalloc(1, sizeof(*nv));
+	if ((nv = nvfreelist) == NULL)
+		nv = ecalloc(1, sizeof(*nv));
+	else
+		nvfreelist = nv->nv_next;
 	nv->nv_next = next;
 	nv->nv_name = name;
-	nv->nv_str = str;
-	nv->nv_ptr = ptr;
-	nv->nv_num = i;
-	nv->nv_where.w_srcfile = yyfile;
-	nv->nv_where.w_srcline = currentline();
-	return nv;
+	if (ptr == NULL)
+		nv->nv_str = str;
+	else {
+		if (str != NULL)
+			panic("newnv");
+		nv->nv_ptr = ptr;
+	}
+	nv->nv_int = i;
+	return (nv);
 }
 
 /*
@@ -212,7 +227,9 @@ void
 nvfree(struct nvlist *nv)
 {
 
-	free(nv);
+	memset(nv, 0, sizeof(*nv));
+	nv->nv_next = nvfreelist;
+	nvfreelist = nv;
 }
 
 /*
@@ -225,277 +242,28 @@ nvfreel(struct nvlist *nv)
 
 	for (; nv != NULL; nv = next) {
 		next = nv->nv_next;
-		free(nv);
+		memset(nv, 0, sizeof(*nv));
+		nv->nv_next = nvfreelist;
+		nvfreelist = nv;
 	}
 }
 
-struct nvlist *
-nvcat(struct nvlist *nv1, struct nvlist *nv2)
-{
-	struct nvlist *nv;
-
-	if (nv1 == NULL)
-		return nv2;
-
-	for (nv = nv1; nv->nv_next != NULL; nv = nv->nv_next);
-
-	nv->nv_next = nv2;
-	return nv1;
-}
-
-/*
- * Option definition lists
- */
-
-struct defoptlist *
-defoptlist_create(const char *name, const char *val, const char *lintval)
-{
-	struct defoptlist *dl;
-
-	dl = emalloc(sizeof(*dl));
-	dl->dl_next = NULL;
-	dl->dl_name = name;
-	dl->dl_value = val;
-	dl->dl_lintvalue = lintval;
-	dl->dl_obsolete = 0;
-	dl->dl_depends = NULL;
-	dl->dl_where.w_srcfile = yyfile;
-	dl->dl_where.w_srcline = currentline();
-	return dl;
-}
-
 void
-defoptlist_destroy(struct defoptlist *dl)
-{
-	struct defoptlist *next;
-
-	while (dl != NULL) {
-		next = dl->dl_next;
-		dl->dl_next = NULL;
-
-		// XXX should we assert that dl->dl_deps is null to
-		// be sure the deps have already been destroyed?
-		free(dl);
-
-		dl = next;
-	}
-}
-
-struct defoptlist *
-defoptlist_append(struct defoptlist *dla, struct defoptlist *dlb)
-{
-	struct defoptlist *dl;
-
-	if (dla == NULL)
-		return dlb;
-
-	for (dl = dla; dl->dl_next != NULL; dl = dl->dl_next)
-		;
-
-	dl->dl_next = dlb;
-	return dla;
-}
-
-/*
- * Locator lists
- */
-
-struct loclist *
-loclist_create(const char *name, const char *string, long long num)
-{
-	struct loclist *ll;
-
-	ll = emalloc(sizeof(*ll));
-	ll->ll_name = name;
-	ll->ll_string = string;
-	ll->ll_num = num;
-	ll->ll_next = NULL;
-	return ll;
-}
-
-void
-loclist_destroy(struct loclist *ll)
-{
-	struct loclist *next;
-
-	while (ll != NULL) {
-		next = ll->ll_next;
-		ll->ll_next = NULL;
-		free(ll);
-		ll = next;
-	}
-}
-
-/*
- * Attribute lists
- */
-
-struct attrlist *
-attrlist_create(void)
-{
-	struct attrlist *al;
-
-	al = emalloc(sizeof(*al));
-	al->al_next = NULL;
-	al->al_this = NULL;
-	return al;
-}
-
-struct attrlist *
-attrlist_cons(struct attrlist *next, struct attr *a)
-{
-	struct attrlist *al;
-
-	al = attrlist_create();
-	al->al_next = next;
-	al->al_this = a;
-	return al;
-}
-
-void
-attrlist_destroy(struct attrlist *al)
-{
-	assert(al->al_next == NULL);
-	assert(al->al_this == NULL);
-	free(al);
-}
-
-void
-attrlist_destroyall(struct attrlist *al)
-{
-	struct attrlist *next;
-
-	while (al != NULL) {
-		next = al->al_next;
-		al->al_next = NULL;
-		/* XXX should we make the caller guarantee this? */
-		al->al_this = NULL;
-		attrlist_destroy(al);
-		al = next;
-	}
-}
-
-/*
- * Condition expressions
- */
-
-/*
- * Create an expression node.
- */
-struct condexpr *
-condexpr_create(enum condexpr_types type)
-{
-	struct condexpr *cx;
-
-	cx = emalloc(sizeof(*cx));
-	cx->cx_type = type;
-	switch (type) {
-
-	    case CX_ATOM:
-		cx->cx_atom = NULL;
-		break;
-
-	    case CX_NOT:
-		cx->cx_not = NULL;
-		break;
-
-	    case CX_AND:
-		cx->cx_and.left = NULL;
-		cx->cx_and.right = NULL;
-		break;
-
-	    case CX_OR:
-		cx->cx_or.left = NULL;
-		cx->cx_or.right = NULL;
-		break;
-	
-	    default:
-		panic("condexpr_create: invalid expr type %d", (int)type);
-	}
-	return cx;
-}
-
-/*
- * Free an expression tree.
- */
-void
-condexpr_destroy(struct condexpr *expr)
-{
-	switch (expr->cx_type) {
-
-	    case CX_ATOM:
-		/* nothing */
-		break;
-
-	    case CX_NOT:
-		condexpr_destroy(expr->cx_not);
-		break;
-
-	    case CX_AND:
-		condexpr_destroy(expr->cx_and.left);
-		condexpr_destroy(expr->cx_and.right);
-		break;
-
-	    case CX_OR:
-		condexpr_destroy(expr->cx_or.left);
-		condexpr_destroy(expr->cx_or.right);
-		break;
-
-	    default:
-		panic("condexpr_destroy: invalid expr type %d",
-		      (int)expr->cx_type);
-	}
-	free(expr);
-}
-
-/************************************************************/
-
-/*
- * Diagnostic messages
- */
-
-void
-cfgdbg(const char *fmt, ...)
+warn(const char *fmt, ...)
 {
 	va_list ap;
 	extern const char *yyfile;
 
 	va_start(ap, fmt);
-	cfgvxdbg(yyfile, currentline(), fmt, ap);
+	vxwarn(yyfile, currentline(), fmt, ap);
 	va_end(ap);
 }
 
-void
-cfgwarn(const char *fmt, ...)
-{
-	va_list ap;
-	extern const char *yyfile;
-
-	va_start(ap, fmt);
-	cfgvxwarn(yyfile, currentline(), fmt, ap);
-	va_end(ap);
-}
-
-void
-cfgxwarn(const char *file, int line, const char *fmt, ...)
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	cfgvxwarn(file, line, fmt, ap);
-	va_end(ap);
-}
 
 static void
-cfgvxdbg(const char *file, int line, const char *fmt, va_list ap)
+vxwarn(const char *file, int line, const char *fmt, va_list ap)
 {
-	cfgvxmsg(file, line, "debug: ", fmt, ap);
-}
-
-static void
-cfgvxwarn(const char *file, int line, const char *fmt, va_list ap)
-{
-	cfgvxmsg(file, line, "warning: ", fmt, ap);
+	vxmsg(file, line, "warning: ", fmt, ap);
 }
 
 /*
@@ -503,13 +271,13 @@ cfgvxwarn(const char *file, int line, const char *fmt, va_list ap)
  * and line number.
  */
 void
-cfgerror(const char *fmt, ...)
+error(const char *fmt, ...)
 {
 	va_list ap;
 	extern const char *yyfile;
 
 	va_start(ap, fmt);
-	cfgvxerror(yyfile, currentline(), fmt, ap);
+	vxerror(yyfile, currentline(), fmt, ap);
 	va_end(ap);
 }
 
@@ -518,12 +286,12 @@ cfgerror(const char *fmt, ...)
  * find out about it until later).
  */
 void
-cfgxerror(const char *file, int line, const char *fmt, ...)
+xerror(const char *file, int line, const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
-	cfgvxerror(file, line, fmt, ap);
+	vxerror(file, line, fmt, ap);
 	va_end(ap);
 }
 
@@ -531,9 +299,9 @@ cfgxerror(const char *file, int line, const char *fmt, ...)
  * Internal form of error() and xerror().
  */
 static void
-cfgvxerror(const char *file, int line, const char *fmt, va_list ap)
+vxerror(const char *file, int line, const char *fmt, va_list ap)
 {
-	cfgvxmsg(file, line, "", fmt, ap);
+	vxmsg(file, line, "", fmt, ap);
 	errors++;
 }
 
@@ -547,7 +315,7 @@ panic(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	(void)fprintf(stderr, "%s: panic: ", getprogname());
+	(void)fprintf(stderr, "config: panic: ");
 	(void)vfprintf(stderr, fmt, ap);
 	(void)putc('\n', stderr);
 	va_end(ap);
@@ -558,24 +326,11 @@ panic(const char *fmt, ...)
  * Internal form of error() and xerror().
  */
 static void
-cfgvxmsg(const char *file, int line, const char *msgclass, const char *fmt,
+vxmsg(const char *file, int line, const char *msgclass, const char *fmt,
       va_list ap)
 {
 
 	(void)fprintf(stderr, "%s:%d: %s", file, line, msgclass);
 	(void)vfprintf(stderr, fmt, ap);
 	(void)putc('\n', stderr);
-}
-
-void
-autogen_comment(FILE *fp, const char *targetfile)
-{
-
-	(void)fprintf(fp,
-	    "/*\n"
-	    " * MACHINE GENERATED: DO NOT EDIT\n"
-	    " *\n"
-	    " * %s, from \"%s\"\n"
-	    " */\n\n",
-	    targetfile, conffile);
 }
