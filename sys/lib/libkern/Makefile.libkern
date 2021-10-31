@@ -30,7 +30,6 @@ M= ${KERNDIR}/arch/${ARCHSUBDIR}
 CPPFLAGS+=	-I$M ${KERNCPPFLAGS} ${KERNMISCCPPFLAGS}
 
 .include "${.PARSEDIR}/../../../lib/libc/Makefile.inc"
-#.include "${.PARSEDIR}/../../../usr.lib/libutil/Makefile.inc"
 
 CPPFLAGS+= -I${KERNDIR}/../../../lib/libc/hash/
 
@@ -66,7 +65,7 @@ SRCS+=	memcpy.c
 SRCS+=	memset.c
 .endif
 
-SRCS+=	strtoul.c 
+SRCS+=	strtoul.c strdup.c strspn.c strtol.c
 
 SRCS+=	scanc.c skpc.c
 SRCS+=	random.c

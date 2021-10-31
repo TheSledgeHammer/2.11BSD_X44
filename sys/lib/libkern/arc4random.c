@@ -68,9 +68,9 @@
 #include <sys/rnd.h>
 #endif
 
-#define	ARC4_MAXRUNS 16384
+#define	ARC4_MAXRUNS 		16384
 #define	ARC4_RESEED_SECONDS 300
-#define	ARC4_KEYBYTES 32 /* 256 bit key */
+#define	ARC4_KEYBYTES 		32 /* 256 bit key */
 
 static u_int8_t arc4_i, arc4_j;
 static int arc4_initialized = 0;
