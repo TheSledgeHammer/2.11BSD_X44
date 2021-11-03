@@ -39,14 +39,15 @@ options 		DDB				# in-kernel debugger
 options			PTRACE			# ptrace(2) system call
 
 # File systems
-options			FFS				# UFS1 & 2
-options    		LFS				# log-structured file system
-options			MFS				# memory file system
-options			CD9660			# ISO 9660 + Rock Ridge file system
-options			MSDOSFS			# MS-DOS file system
-options			FDESC			# /dev/fd
-options			FIFO			# FIFOs; RECOMMENDED
-options			UFS211			# 2.11BSD's UFS
+file-system 		FFS			# UFS
+file-system 		LFS			# log-structured file system
+file-system 		MFS			# memory file system
+file-system 		UFS211			# 2.11BSD's UFS
+file-system 		CD9660			# ISO 9660 + Rock Ridge file system
+file-system 		MSDOSFS			# MS-DOS file system
+file-system 		FDESC			# /dev/fd
+file-system 		FIFO			# FIFOs; RECOMMENDED
+file-system 		UNION			# union file system
 
 # File system options
 options			QUOTA			# UFS quotas

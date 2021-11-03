@@ -7,7 +7,7 @@
 # System bus types
 #
 define mainbus {[apid = -1]}
-device	mainbus: isabus, eisabus, pcibus, bioscall, mainbus
+device	mainbus: isabus, eisabus, pcibus, mainbus
 attach	mainbus at root
 file	arch/i386/i386/mainbus.c	    	mainbus
 
@@ -101,10 +101,9 @@ file	dev/core/isapnp/i82365_isapnp.c	   	pcic_isapnp
 # Code common to ISA and ISAPnP attachments
 file	dev/core/isa/i82365_isasubr.c	   	pcic_isa | pcic_isapnp | pcic_pci
 
-# PIC (Apic)
+# PIC (APIC)
+define	lapic
 device	ioapic: mpbios, lapic
 attach	ioapic at mainbus
 file	arch/i386/apic/ioapic.c			   ioapic 					needs-flag
-
-define	lapic
-file	arch/i386/apic/lapic.c			   lapic 					  needs-flag
+file	arch/i386/apic/lapic.c			   lapic 					needs-flag

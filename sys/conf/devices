@@ -94,6 +94,7 @@ file	dev/misc/pccons/pckbc.c				pckbc			needs-flag
 
 defparam USB_MEM_RESERVE
 
+# UHCI USB controller
 device	uhci: usbus
 file	dev/usb/uhci.c						uhci			needs-flag
 
@@ -119,7 +120,7 @@ file	dev/video/vga/vga_common.c			vga
 defpseudo 	  	ksyms
 defpseudo     	sequencer
 
-defpseudodev  	vnd:						disk
+defpseudo  		vnd:						disk
 defpseudo 	 	ccd:						disk
 
 defpseudo 		pty: 						tty

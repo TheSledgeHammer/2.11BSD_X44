@@ -2,4 +2,4 @@
 #
 # Misc Configuration Files
 
-include 	"dev/misc/apm/files.apm"
+include 	"dev/power/apm/files.apm"

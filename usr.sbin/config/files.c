@@ -330,7 +330,7 @@ fixobjects(void)
  * We have finished reading everything.  Tack the devsws down: calculate
  * selection.
  */
-/*
+
 int
 fixdevsw(void)
 {
@@ -416,7 +416,7 @@ fixdevsw(void)
 
 	return (0);
 }
-*/
+
 /*
  * Called when evaluating a needs-count expression.  Make sure the
  * atom is a countable device.  The expression succeeds iff there

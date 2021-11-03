@@ -1,7 +1,18 @@
 #	@(#)filesystems 211BSD 30/8/21
 # 	Filsystem Sources
 
-# FS Sources
+deffs						UFS211
+deffs						FFS
+deffs	fs_mfs.h			MFS		# XXX
+deffs	fs_lfs.h			LFS		# XXX
+deffs						CD9660
+deffs						MSDOSFS
+deffs						LOFS
+deffs						FDESC
+deffs						FIFO
+deffs	fs_union.h			UNION
+
+# CD9660 Sources
 file 	fs/isofs/cd9660/cd9660_bmap.c		cd9660
 file 	fs/isofs/cd9660/cd9660_lookup.c		cd9660
 file 	fs/isofs/cd9660/cd9660_node.c		cd9660
@@ -9,6 +20,8 @@ file 	fs/isofs/cd9660/cd9660_rrip.c		cd9660
 file 	fs/isofs/cd9660/cd9660_util.c		cd9660
 file 	fs/isofs/cd9660/cd9660_vfsops.c		cd9660
 file 	fs/isofs/cd9660/cd9660_vnops.c		cd9660
+
+# MSDOSFS Sources
 file 	fs/msdosfs/msdosfs_conv.c			msdosfs
 file 	fs/msdosfs/msdosfs_denode.c			msdosfs
 file 	fs/msdosfs/msdosfs_fat.c			msdosfs
@@ -59,6 +72,7 @@ file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_quota.c					quota & (ffs | lfs | mfs)
 file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
+
 # UFS211 Sources
 file	ufs/ufs211/ufs211_alloc.c			ufs211
 file	ufs/ufs211/ufs211_bmap.c			ufs211
