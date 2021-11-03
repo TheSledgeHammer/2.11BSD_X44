@@ -409,7 +409,7 @@ extern struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
 extern struct prefixlist	curdirs;		/* curdir stack */
 
 extern struct	devi 	**packed;		/* arrayified table for packed devi's */
-extern int				npacked;		/* size of packed table, <= ndevi */
+extern size_t				npacked;		/* size of packed table, <= ndevi */
 
 extern struct locators {			/* loc[] table for config */
 	const char **vec;

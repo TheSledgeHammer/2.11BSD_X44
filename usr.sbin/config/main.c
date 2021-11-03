@@ -109,7 +109,6 @@ struct	nvlist *fsoptions;		/* filesystems */
 struct	nvlist *mkoptions;		/* makeoptions */
 struct	hashtab *devbasetab;	/* devbase lookup */
 struct	hashtab *devatab;		/* devbase attachment lookup */
-struct	hashtab *devitab;		/* device instance lookup */
 struct	hashtab *selecttab;		/* selects things that are "optional foo" */
 struct	hashtab *needcnttab;	/* retains names marked "needs-count" */
 struct	hashtab *opttab;		/* table of configured options */
@@ -423,9 +422,10 @@ main(int argc, char **argv)
 	/*
 	 * Fix device-majors.
 	 */
+	/*
 	if (fixdevsw())
 		stop();
-
+	*/
 	/*
 	 * Perform cross-checking.
 	 */
@@ -460,7 +460,7 @@ main(int argc, char **argv)
 	 * Ready to go.  Build all the various files.
 	 */
 	if (mksymlinks() || mkmakefile() || mkheaders() || mkswap() ||
-	    mkioconf() || mkident())
+	    mkioconf() /* || (do_devsw ? mkdevsw() : 0) */|| mkident())
 		stop();
 	(void)printf("Build directory is %s\n", builddir);
 	(void)printf("Don't forget to run \"make depend\"\n");
@@ -470,9 +470,9 @@ main(int argc, char **argv)
 static void
 usage(void)
 {
-	(void)fprintf("usage: config [-Ppv] [-s srcdir] [-b builddir] "
+	(void)fputs("usage: config [-Ppv] [-s srcdir] [-b builddir] "
 		"[sysname]\n", stderr);
-	(void)fprintf("       config -x [kernel-file]\n", stderr);
+	(void)fputs("       config -x [kernel-file]\n", stderr);
 	exit(1);
 }
 
