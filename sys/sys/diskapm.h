@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _LIBSA_DISKAPM_H_
-#define	_LIBSA_DISKAPM_H_
+#ifndef _SYS_DISKAPM_H_
+#define	_SYS_DISKAPM_H_
 
 /* Driver Descriptor Record. */
 struct apm_ddr {
@@ -66,4 +66,4 @@ struct apm_ent {
 #define	APM_ENT_TYPE_APPLE_HFS		"Apple_HFS"
 #define	APM_ENT_TYPE_APPLE_UFS		"Apple_UNIX_SVR2"
 
-#endif /* _LIBSA_DISKAPM_H_ */
+#endif /* _SYS_DISKAPM_H_ */

@@ -41,7 +41,6 @@
  *	from: @(#)gram.y	8.1 (Berkeley) 6/6/93
  */
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <ctype.h>
@@ -59,60 +58,25 @@
 
 static	struct	config conf;	/* at most one active at a time */
 
-/*
- * Allocation wrapper functions
- */
-static void wrap_alloc(void *ptr, unsigned code);
-static void wrap_continue(void);
-static void wrap_cleanup(void);
-
-/*
- * Allocation wrapper type codes
- */
-#define WRAP_CODE_nvlist	1
-
-/*
- * The allocation wrappers themselves
- */
-#define DECL_ALLOCWRAP(t)	static struct t *wrap_mk_##t(struct t *arg)
-
-DECL_ALLOCWRAP(nvlist);
-
-
 /* the following is used to recover nvlist space after errors */
-/* static	struct	nvlist *alloc[1000]; 
-#static	int	adepth;
+static	struct	nvlist *alloc[1000];
+static	int	adepth;
 #define	new0(n,s,p,i,x)	(alloc[adepth++] = newnv(n, s, p, i, x))
-*/
-#define	new0(n,s,p,i,x)		wrap_mk_nvlist(newnv(n, s, p, i, x))
-#define	new_n(n)			new0(n, NULL, NULL, 0, NULL)
-#define	new_nx(n, x)		new0(n, NULL, NULL, 0, x)
-#define	new_ns(n, s)		new0(n, s, NULL, 0, NULL)
-#define	new_si(s, i)		new0(NULL, s, NULL, i, NULL)
-#define	new_spi(s, p, i)	new0(NULL, s, p, i, NULL)
-#define	new_nsi(n,s,i)		new0(n, s, NULL, i, NULL)
-#define	new_np(n, p)		new0(n, NULL, p, 0, NULL)
-#define	new_s(s)			new0(NULL, s, NULL, 0, NULL)
-#define	new_p(p)			new0(NULL, NULL, p, 0, NULL)
-#define	new_px(p, x)		new0(NULL, NULL, p, 0, x)
-#define	new_sx(s, x)		new0(NULL, s, NULL, 0, x)
-#define	new_nsx(n,s,x)		new0(n, s, NULL, 0, x)
-#define	new_i(i)			new0(NULL, NULL, NULL, i, NULL)
+#define	new_n(n)	new0(n, NULL, NULL, 0, NULL)
+#define	new_nx(n, x)	new0(n, NULL, NULL, 0, x)
+#define	new_ns(n, s)	new0(n, s, NULL, 0, NULL)
+#define	new_si(s, i)	new0(NULL, s, NULL, i, NULL)
+#define	new_nsi(n,s,i)	new0(n, s, NULL, i, NULL)
+#define	new_np(n, p)	new0(n, NULL, p, 0, NULL)
+#define	new_s(s)	new0(NULL, s, NULL, 0, NULL)
+#define	new_p(p)	new0(NULL, NULL, p, 0, NULL)
+#define	new_px(p, x)	new0(NULL, NULL, p, 0, x)
+#define	new_sx(s, x)	new0(NULL, s, NULL, 0, x)
 
-#define	fx_atom(s)			new0(s, NULL, NULL, FX_ATOM, NULL)
-#define	fx_not(e)			new0(NULL, NULL, NULL, FX_NOT, e)
-#define	fx_and(e1, e2)		new0(NULL, NULL, e1, FX_AND, e2)
-#define	fx_or(e1, e2)		new0(NULL, NULL, e1, FX_OR, e2)
-
-/* new style, type-polymorphic; ordinary and for types with multiple flavors */
-#define MK0(t)				wrap_mk_##t(mk_##t())
-#define MK1(t, a0)			wrap_mk_##t(mk_##t(a0))
-#define MK2(t, a0, a1)		wrap_mk_##t(mk_##t(a0, a1))
-#define MK3(t, a0, a1, a2)	wrap_mk_##t(mk_##t(a0, a1, a2))
-
-#define MKF0(t, f)			wrap_mk_##t(mk_##t##_##f())
-#define MKF1(t, f, a0)		wrap_mk_##t(mk_##t##_##f(a0))
-#define MKF2(t, f, a0, a1)	wrap_mk_##t(mk_##t##_##f(a0, a1))
+#define	fx_atom(s)	new0(s, NULL, NULL, FX_ATOM, NULL)
+#define	fx_not(e)	new0(NULL, NULL, NULL, FX_NOT, e)
+#define	fx_and(e1, e2)	new0(NULL, NULL, e1, FX_AND, e2)
+#define	fx_or(e1, e2)	new0(NULL, NULL, e1, FX_OR, e2)
 
 static	void	cleanup(void);
 static	void	setmachine(const char *, const char *, struct nvlist *);
@@ -135,26 +99,13 @@ static	struct nvlist *mk_ns(const char *, struct nvlist *);
 	int64_t	val;
 }
 
-%token	AND AT ATTACH
-%token	BLOCK BUILD
-%token	CHAR COLONEQ COMPILE_WITH CONFIG
-%token	DEFFS DEFINE DEFOPT DEFPARAM DEFFLAG DEFPSEUDO DEFPSEUDODEV
-%token	DEVICE DEVCLASS DUMPS DEVICE_MAJOR
-%token	ENDFILE
-%token	XFILE FILE_SYSTEM FLAGS
-%token	IDENT IOCONF
-%token	LINKZERO
-%token	XMACHINE MAJOR MAKEOPTIONS MAXUSERS MAXPARTITIONS MINOR
-%token	NEEDS_COUNT NEEDS_FLAG NO CNO
-%token	XOBJECT OBSOLETE ON OPTIONS
-%token	PACKAGE PLUSEQ PREFIX BUILDPREFIX PSEUDO_DEVICE PSEUDO_ROOT
-%token	ROOT
-%token	SELECT SINGLE SOURCE
-%token	TYPE
-%token	VECTOR VERSION
-%token	WITH
+%token	AND AT ATTACH BUILD CINCLUDE COMPILE_WITH CONFIG DEFFS DEFINE DEFOPT 
+%token	DEFPARAM DEFFLAG DEFPSEUDO DEVICE DEVCLASS DUMPS ENDFILE XFILE XOBJECT
+%token	FILE_SYSTEM FLAGS IDENT INCLUDE XMACHINE MAJOR MAKEOPTIONS
+%token	MAXUSERS MAXPARTITIONS MINOR ON OPTIONS PACKAGE PREFIX PSEUDO_DEVICE
+%token	ROOT SOURCE TYPE WITH NEEDS_COUNT NEEDS_FLAG NO BLOCK CHAR DEVICE_MAJOR
 %token	<num> NUMBER
-%token	<str> PATHNAME QSTRING WORD EMPTYSTRING
+%token	<str> PATHNAME QSTRING WORD EMPTY
 %token	ENDDEFS
 
 %left '|'
@@ -164,15 +115,15 @@ static	struct nvlist *mk_ns(const char *, struct nvlist *);
 %type	<str>	fs_spec
 %type	<val>	fflgs fflag oflgs oflag
 %type	<str>	rule
-%type	<attr>	depend
+%type	<attr>	attr
 %type	<devb>	devbase
 %type	<deva>	devattach_opt
 %type	<list>	atlist interface_opt
 %type	<str>	atname
-%type	<list>	loclist locdef
+%type	<list>	loclist_opt loclist locdef
 %type	<str>	locdefault
 %type	<list>	values locdefaults
-%type	<list>	depend_list depends
+%type	<list>	attrs_opt attrs
 %type	<list>	locators locator
 %type	<list>	dev_spec
 %type	<str>	device_instance
@@ -180,18 +131,17 @@ static	struct nvlist *mk_ns(const char *, struct nvlist *);
 %type	<str>	value
 %type	<val>	major_minor npseudo
 %type	<num>	signed_number
-%type	<val>	int32 device_flags no
+%type	<val>	flags_opt
 %type	<str>	deffs
 %type	<list>	deffses
 %type	<str>	fsoptfile_opt
 %type	<str>	defopt
 %type	<list>	defopts
+%type	<str>	optdep
+%type	<list>	optdeps
 %type	<list>	defoptdeps
-%type	<str>	optdepend
-%type	<list>	optdepends
-%type	<list>	optdepend_list
 %type	<str>	optfile_opt
-%type	<list>	subarches
+%type	<list>	subarches_opt subarches
 %type	<str>	filename stringvalue locname
 %type	<val>	device_major_block device_major_char
 

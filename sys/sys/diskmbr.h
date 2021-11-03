@@ -32,8 +32,8 @@
  * $FreeBSD$
  */
 
-#ifndef _LIBSA_DISKMBR_H_
-#define	_LIBSA_DISKMBR_H_
+#ifndef _SYS_DISKMBR_H_
+#define	_SYS_DISKMBR_H_
 
 #define	DOSBBSECTOR			0		/* DOS boot block relative sector number */
 #define	DOSDSNOFF			440		/* WinNT/2K/XP Drive Serial Number offset */
@@ -130,4 +130,4 @@ struct bootsector {
  * Diskmbr-specific ioctls.
  */
 #define DIOCSMBR 	_IOW('M', 129, u_char[512])
-#endif /* !_LIBSA_DISKMBR_H_ */
+#endif /* !_SYS_DISKMBR_H_ */

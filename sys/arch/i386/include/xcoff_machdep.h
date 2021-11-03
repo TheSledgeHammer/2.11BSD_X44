@@ -44,7 +44,7 @@
 #ifdef _KERNEL
 #define XCOFF_MAGIC_I386			0x1fe
 #define	XCOFF_BADMAG(ex)			\
-	(ex->f_magic != ECOFF_MAGIC_I386)
+	(ex->f_magic != XCOFF_MAGIC_I386)
 
 #define XCOFF_FLAG_EXEC				0002
 #define XCOFF_SEGMENT_ALIGNMENT(ep) \

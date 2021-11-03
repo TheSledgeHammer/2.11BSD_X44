@@ -41,8 +41,6 @@
 #include <sys/null.h>
 #endif
 
-
-
 /*
  * Disk description table, see disktab(5)
  */
