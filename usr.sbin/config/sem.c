@@ -109,8 +109,6 @@ initsem(void)
 
 	TAILQ_INIT(&allpseudo);
 
-	TAILQ_INIT(&alldevms);
-
 	s_ifnet = intern("ifnet");
 	s_qmark = intern("?");
 	s_none = intern("none");
@@ -427,8 +425,7 @@ getdevbase(const char *name)
  * There may be a list of (plain) attributes.
  */
 void
-defdevattach(struct deva *deva, struct devbase *dev, struct nvlist *atlist,
-	     struct nvlist *attrs)
+defdevattach(struct deva *deva, struct devbase *dev, struct nvlist *atlist, struct nvlist *attrs)
 {
 	struct nvlist *nv;
 	struct attr *a;
@@ -617,16 +614,9 @@ major2name(int maj)
 	struct devbase *dev;
 	struct devm *dm;
 
-	if (!do_devsw) {
-		TAILQ_FOREACH(dev, &allbases, d_next) {
-			if (dev->d_major == maj)
-				return (dev->d_name);
-		}
-	} else {
-		TAILQ_FOREACH(dm, &alldevms, dm_next) {
-			if (dm->dm_bmajor == maj)
-				return (dm->dm_name);
-		}
+	TAILQ_FOREACH(dev, &allbases, d_next) {
+		if (dev->d_major == maj)
+			return (dev->d_name);
 	}
 	return (NULL);
 }
@@ -634,17 +624,12 @@ major2name(int maj)
 int
 dev2major(struct devbase *dev)
 {
-	struct devm *dm;
-
-	if (!do_devsw)
+	if (dev->d_major)
 		return (dev->d_major);
 
-	TAILQ_FOREACH(dm, &alldevms, dm_next) {
-		if (strcmp(dm->dm_name, dev->d_name) == 0)
-			return (dm->dm_bmajor);
-	}
 	return (NODEV);
 }
+
 
 /*
  * Make a string description of the device at maj/min.
@@ -1109,42 +1094,6 @@ delpseudo(const char *name)
 	TAILQ_REMOVE(&allpseudo, i, i_next);
 	if (ht_remove(devitab, name))
 		panic("delpseudo(%s) - can't remove from devitab", name);
-}
-
-void
-adddevm(const char *name, int cmajor, int bmajor, struct nvlist *options)
-{
-	struct devm *dm;
-
-	if (cmajor < -1 || cmajor >= 4096) {
-		error("character major %d is invalid", cmajor);
-		nvfreel(options);
-		return;
-	}
-
-	if (bmajor < -1 || bmajor >= 4096) {
-		error("block major %d is invalid", bmajor);
-		nvfreel(options);
-		return;
-	}
-	if (cmajor == -1 && bmajor == -1) {
-		error("both character/block majors are not specified");
-		nvfreel(options);
-		return;
-	}
-
-	dm = ecalloc(1, sizeof(*dm));
-	dm->dm_srcfile = yyfile;
-	dm->dm_srcline = currentline();
-	dm->dm_name = name;
-	dm->dm_cmajor = cmajor;
-	dm->dm_bmajor = bmajor;
-	dm->dm_opts = options;
-
-	TAILQ_INSERT_TAIL(&alldevms, dm, dm_next);
-
-	maxcdevm = MAX(maxcdevm, dm->dm_cmajor);
-	maxbdevm = MAX(maxbdevm, dm->dm_bmajor);
 }
 
 void

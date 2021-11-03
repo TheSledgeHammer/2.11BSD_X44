@@ -47,8 +47,7 @@ void		setmaxusers(int);
 void		setident(const char *);
 int			defattr(const char *, struct nvlist *, struct nvlist *, int);
 void		defdev(struct devbase *, struct nvlist *, struct nvlist *, int);
-void		defdevattach(struct deva *, struct devbase *, struct nvlist *,
-			     struct nvlist *);
+void		defdevattach(struct deva *, struct devbase *, struct nvlist *, struct nvlist *);
 struct devbase *getdevbase(const char *);
 struct deva    *getdevattach(const char *);
 struct attr    *getattr(const char *);
@@ -62,7 +61,6 @@ void		adddev(const char *, const char *, struct nvlist *, int);
 void		deldev(const char *, const char *);
 void		addpseudo(const char *, int);
 void		delpseudo(const char *);
-void		adddevm(const char *, int, int, struct nvlist *);
 void		fixdevis(void);
 const char  *ref(const char *);
 const char  *starref(const char *);

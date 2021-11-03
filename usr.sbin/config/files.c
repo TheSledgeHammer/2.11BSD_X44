@@ -186,8 +186,7 @@ addobject(const char *path, struct nvlist *optx, int flags)
 	oi->oi_srcline = currentline();
 	oi->oi_flags = flags;
 	oi->oi_path = path;
-	oi->oi_prefix = SLIST_EMPTY(&prefixes) ? NULL :
-			SLIST_FIRST(&prefixes)->pf_prefix;
+	oi->oi_prefix = SLIST_EMPTY(&prefixes) ? NULL : SLIST_FIRST(&prefixes)->pf_prefix;
 	oi->oi_optx = optx;
 	oi->oi_optf = NULL;
 	TAILQ_INSERT_TAIL(&allobjects, oi, oi_next);
@@ -225,8 +224,7 @@ checkaux(const char *name, void *context)
 	struct files *fi = context;
 
 	if (ht_lookup(devbasetab, name) == NULL) {
-		xerror(fi->fi_srcfile, fi->fi_srcline,
-		    "`%s' is not a countable device",
+		xerror(fi->fi_srcfile, fi->fi_srcline, "`%s' is not a countable device",
 		    name);
 		/* keep fixfiles() from complaining again */
 		fi->fi_flags |= FI_HIDDEN;
@@ -325,97 +323,6 @@ fixobjects(void)
 	}
 	return (err);
 }     
-
-/*
- * We have finished reading everything.  Tack the devsws down: calculate
- * selection.
- */
-
-int
-fixdevsw(void)
-{
-	struct devm *dm, *res;
-	struct hashtab *fixdevmtab;
-	char mstr[16];
-
-	fixdevmtab = ht_new();
-
-	TAILQ_FOREACH(dm, &alldevms, dm_next) {
-		res = ht_lookup(fixdevmtab, intern(dm->dm_name));
-		if (res != NULL) {
-			if (res->dm_cmajor != dm->dm_cmajor ||
-			    res->dm_bmajor != dm->dm_bmajor) {
-				xerror(res->dm_srcfile, res->dm_srcline,
-				       "device-major '%s' is inconsistent: "
-				       "block %d, char %d", res->dm_name,
-				       res->dm_bmajor, res->dm_cmajor);
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major '%s' is inconsistent: "
-				       "block %d, char %d", dm->dm_name,
-				       dm->dm_bmajor, dm->dm_cmajor);
-				return (1);
-			} else {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major '%s' is duplicated: "
-				       "block %d, char %d",
-				       dm->dm_name, dm->dm_bmajor,
-				       dm->dm_cmajor);
-				return (1);
-			}
-		}
-		if (ht_insert(fixdevmtab, intern(dm->dm_name), dm)) {
-			panic("fixdevsw: %s char %d block %d",
-			      dm->dm_name, dm->dm_cmajor, dm->dm_bmajor);
-		}
-
-		if (dm->dm_opts != NULL &&
-		    !expr_eval(dm->dm_opts, fixsel, NULL))
-			continue;
-
-		if (dm->dm_cmajor != -1) {
-			if (ht_lookup(cdevmtab, intern(dm->dm_name)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major of character device '%s' "
-				       "is already defined", dm->dm_name);
-				return (1);
-			}
-			(void)snprintf(mstr, sizeof(mstr), "%d", dm->dm_cmajor);
-			if (ht_lookup(cdevmtab, intern(mstr)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major of character major '%d' "
-				       "is already defined", dm->dm_cmajor);
-				return (1);
-			}
-			if (ht_insert(cdevmtab, intern(dm->dm_name), dm) ||
-			    ht_insert(cdevmtab, intern(mstr), dm)) {
-				panic("fixdevsw: %s character major %d",
-				      dm->dm_name, dm->dm_cmajor);
-			}
-		}
-		if (dm->dm_bmajor != -1) {
-			if (ht_lookup(bdevmtab, intern(dm->dm_name)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major of block device '%s' "
-				       "is already defined", dm->dm_name);
-				return (1);
-			}
-			(void)snprintf(mstr, sizeof(mstr), "%d", dm->dm_bmajor);
-			if (ht_lookup(bdevmtab, intern(mstr)) != NULL) {
-				xerror(dm->dm_srcfile, dm->dm_srcline,
-				       "device-major of block major '%d' "
-				       "is already defined", dm->dm_bmajor);
-				return (1);
-			}
-			if (ht_insert(bdevmtab, intern(dm->dm_name), dm) || 
-			    ht_insert(bdevmtab, intern(mstr), dm)) {
-				panic("fixdevsw: %s block major %d",
-				      dm->dm_name, dm->dm_bmajor);
-			}
-		}
-	}
-
-	return (0);
-}
 
 /*
  * Called when evaluating a needs-count expression.  Make sure the

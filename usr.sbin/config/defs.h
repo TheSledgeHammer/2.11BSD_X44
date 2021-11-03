@@ -207,10 +207,10 @@ struct devbase {
 };
 
 struct deva {
-	const char *d_name;		/* name of attachment, e.g. "com_isa" */
+	const char *d_name;			/* name of attachment, e.g. "com_isa" */
 	TAILQ_ENTRY(deva) d_next;	/* list of all instances */
 	struct	deva *d_bsame;		/* list on same base */
-	int	d_isdef;		/* set once properly defined */
+	int	d_isdef;				/* set once properly defined */
 	struct	devbase *d_devbase;	/* the base device */
 	struct	nvlist *d_atlist;	/* e.g., "at tg" (attr list) */
 	struct	nvlist *d_attrs;	/* attributes, if any */
@@ -321,19 +321,6 @@ struct prefix {
 };
 
 /*
- * Device major informations.
- */
-struct devm {
-	TAILQ_ENTRY(devm) dm_next;
-	const char	*dm_srcfile;	/* the name of the "majors" file */
-	u_short		dm_srcline;	/* the line number */
-	const char	*dm_name;	/* [bc]devsw name */
-	int		dm_cmajor;	/* character major */
-	int		dm_bmajor;	/* block major */
-	struct nvlist	*dm_opts;	/* options */
-};
-
-/*
  * Hash tables look up name=value pairs.  The pointer value of the name
  * is assumed to be constant forever; this can be arranged by interning
  * the name.  (This is fairly convenient since our lexer does this for
@@ -373,14 +360,13 @@ extern struct	hashtab *defparamtab;	/* options that have been "defparam"'d */
 extern struct	hashtab *deffstab;	/* defined file systems */
 extern struct	hashtab *optfiletab;	/* "defopt"'d option .h files */
 extern struct	hashtab *attrtab;	/* attributes (locators, etc.) */
-extern struct	hashtab *bdevmtab;	/* block devm lookup */
-extern struct	hashtab *cdevmtab;	/* character devm lookup */
+//extern struct	hashtab *bdevmtab;	/* block devm lookup */
+//extern struct	hashtab *cdevmtab;	/* character devm lookup */
 
 TAILQ_HEAD(devbasetq, devbase);
 TAILQ_HEAD(devatq, deva);
 TAILQ_HEAD(conftq, config);
 TAILQ_HEAD(devitq, devi);
-TAILQ_HEAD(devmtq, devm);
 TAILQ_HEAD(pspectq, pspec);
 
 extern struct devbasetq allbases;	/* list of all devbase structures */
@@ -389,14 +375,10 @@ extern struct devatq 	alldevas;	/* list of all devbase attachments */
 extern struct conftq 	allcf;		/* list of configured kernels */
 extern struct devitq 	alldevi,	/* list of all instances */
 		     	 	 	allpseudo;	/* list of all pseudo-devices */
-extern struct devmtq 	alldevms;	/* list of all device-majors */
 extern struct pspectq 	allpspecs;	/* list of all parent specs */
 
 extern int	ndevi;				/* number of devi's (before packing) */
 extern int	npspecs;			/* number of parent specs */
-extern int	maxbdevm;			/* max number of block major */
-extern int	maxcdevm;			/* max number of character major */
-extern int	do_devsw;			/* 0 if pre-devsw config */
 
 TAILQ_HEAD(filelist, files);
 TAILQ_HEAD(objlist, objects);
@@ -467,9 +449,6 @@ void	setupdirs(void);
 
 /* main.c */
 void	logconfig_include(FILE *, const char *);
-
-/* mkdevsw.c */
-int	mkdevsw(void);
 
 /* mkheaders.c */
 int	mkheaders(void);

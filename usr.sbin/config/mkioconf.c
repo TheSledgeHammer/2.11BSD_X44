@@ -95,8 +95,7 @@ mkioconf(void)
 	if (v != 0 || emitcfdrivers(fp) || emitexterns(fp) ||
 	    emitcfattachinit(fp) || emitloc(fp) || emitparents(fp) ||
 	    emitcfdata(fp) || emitroots(fp) || emitpseudo(fp) ||
-	    emitvfslist(fp) ||
-	    (do_devsw ? 0 : emitname2blk(fp))) {
+	    emitvfslist(fp) || emitname2blk(fp)) {
 		if (v >= 0)
 			(void)fprintf(stderr,
 			    "config: error writing ioconf.c: %s\n",

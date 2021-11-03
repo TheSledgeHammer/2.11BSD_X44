@@ -144,7 +144,6 @@ static	struct nvlist *mk_ns(const char *, struct nvlist *);
 %type	<str>	optfile_opt
 %type	<list>	subarches_opt subarches
 %type	<str>	filename stringvalue locname
-%type	<val>	device_major_block device_major_char
 
 %%
 
@@ -195,18 +194,6 @@ file:
 
 object:
 	XOBJECT filename fopts oflgs	{ addobject($2, $3, $4); };
-
-device_major:
-	DEVICE_MAJOR WORD device_major_char device_major_block fopts
-					{ adddevm($2, $3, $4, $5); };
-
-device_major_block:
-	BLOCK NUMBER			{ $$ = $2.val; } |
-	/* empty */			{ $$ = -1; };
-
-device_major_char:
-	CHAR NUMBER			{ $$ = $2.val; } |
-	/* empty */			{ $$ = -1; };
 
 /* order of options is important, must use right recursion */
 fopts:
@@ -269,11 +256,10 @@ dev_def:
 one_def:
 	file |
 	object |
-	device_major			{ do_devsw = 1; } |
 	include |
 	package |
 	prefix |
-	DEVCLASS WORD			{ (void)defattr($2, NULL, NULL, 1); } |
+	DEVCLASS WORD				{ (void)defattr($2, NULL, NULL, 1); } |
 	DEFFS fsoptfile_opt deffses	{ deffilesystem($2, $3); } |
 	DEFINE WORD interface_opt attrs_opt
 					{ (void)defattr($2, $3, $4, 0); } |
@@ -284,10 +270,10 @@ one_def:
 	DEFPARAM optfile_opt defopts defoptdeps
 					{ defparam($2, $3, $4); } |
 	DEVICE devbase interface_opt attrs_opt
-					{ defdev($2, $3, $4, 0); } |
+									{ defdev($2, $3, $4, 0); } |
 	ATTACH devbase AT atlist devattach_opt attrs_opt
-					{ defdevattach($5, $2, $4, $6); } |
-	MAXPARTITIONS NUMBER		{ maxpartitions = $2.val; } |
+									{ defdevattach($5, $2, $4, $6); } |
+	MAXPARTITIONS NUMBER			{ maxpartitions = $2.val; } |
 	MAXUSERS NUMBER NUMBER NUMBER	{ setdefmaxusers($2.val, $3.val, $4.val); } |
 	DEFPSEUDO devbase interface_opt attrs_opt
 					{ defdev($2, $3, $4, 1); } |

@@ -45,11 +45,11 @@ file	miscfs/union/union_vnops.c			union
 # UFS Sources
 file	ufs/ffs/ffs_alloc.c					ffs | mfs
 file	ufs/ffs/ffs_balloc.c				ffs | mfs
-file	ufs/lfs/ffs_inode.c					ffs | mfs
-file	ufs/lfs/ffs_subr.c					ffs | mfs
-file	ufs/lfs/ffs_tables.c				ffs | mfs
-file	ufs/lfs/ffs_vfsops.c				ffs | mfs
-file	ufs/lfs/ffs_vnops.c					ffs | mfs 
+file	ufs/ffs/ffs_inode.c					ffs | mfs
+file	ufs/ffs/ffs_subr.c					ffs | mfs
+file	ufs/ffs/ffs_tables.c				ffs | mfs
+file	ufs/ffs/ffs_vfsops.c				ffs | mfs
+file	ufs/ffs/ffs_vnops.c					ffs | mfs 
 file	ufs/lfs/lfs_alloc.c	    			lfs
 file	ufs/lfs/lfs_bio.c	    			lfs
 file	ufs/lfs/lfs_balloc.c				lfs
@@ -63,9 +63,8 @@ file	ufs/lfs/lfs_vfsops.c				lfs
 file	ufs/lfs/lfs_vnops.c	    			lfs
 file	ufs/mfs/mfs_vfsops.c				mfs
 file	ufs/mfs/mfs_vnops.c					mfs
+
 file	ufs/ufs/ufs_bmap.c					ffs | lfs | mfs
-file	ufs/ufs/ufs_disksubr.c				ffs | lfs | mfs
-file	ufs/ufs/ufs_extern.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_ihash.c					ffs | lfs | mfs
 file	ufs/ufs/ufs_inode.c					ffs | lfs | mfs
 file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs

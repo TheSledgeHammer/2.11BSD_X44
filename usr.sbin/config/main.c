@@ -81,7 +81,6 @@ struct devbasetq allbases;
 struct devatq alldevas;
 struct conftq allcf;
 struct devitq alldevi, allpseudo;
-struct devmtq alldevms;
 struct pspectq allpspecs;
 
 struct devi **packed;
@@ -119,8 +118,6 @@ struct	hashtab *defparamtab;	/* options that have been "defparam"'d */
 struct	hashtab *deffstab;		/* defined file systems */
 struct	hashtab *optfiletab;	/* "defopt"'d option .h files */
 struct	hashtab *attrtab;		/* attributes (locators, etc.) */
-struct	hashtab *bdevmtab;		/* block devm lookup */
-struct	hashtab *cdevmtab;		/* character devm lookup */
 
 struct devbasetq allbases;	/* list of all devbase structures */
 struct devbasetq allbases;	/* list of all devbase structures */
@@ -128,14 +125,10 @@ struct devatq 	alldevas;	/* list of all devbase attachments */
 struct conftq 	allcf;		/* list of configured kernels */
 struct devitq 	alldevi,	/* list of all instances */
 		     	allpseudo;	/* list of all pseudo-devices */
-struct devmtq 	alldevms;	/* list of all device-majors */
 struct pspectq 	allpspecs;	/* list of all parent specs */
 
 int	ndevi;				/* number of devi's (before packing) */
 int	npspecs;			/* number of parent specs */
-int	maxbdevm;			/* max number of block major */
-int	maxcdevm;			/* max number of character major */
-int	do_devsw;			/* 0 if pre-devsw config */
 
 struct filelist		allfiles;		/* list of all kernel source files */
 struct objlist 		allobjects;		/* list of all kernel object and library files */
@@ -324,10 +317,6 @@ main(int argc, char **argv)
 	defparamtab = ht_new();
 	defflagtab = ht_new();
 	optfiletab = ht_new();
-	bdevmtab = ht_new();
-	maxbdevm = 0;
-	cdevmtab = ht_new();
-	maxcdevm = 0;
 	nextopt = &options;
 	nextmkopt = &mkoptions;
 	nextfsopt = &fsoptions;
@@ -368,8 +357,7 @@ main(int argc, char **argv)
 		snprintf(cname, sizeof(cname), "%s/config.tmp.XXXXXX", tmpdir);
 		cfd = mkstemp(cname);
 		if (cfd == -1) {
-			fprintf(stderr, "config: cannot create %s: %s", cname,
-			    strerror(errno));
+			fprintf(stderr, "config: cannot create %s: %s", cname, strerror(errno));
 			exit(2);
 		}
 
@@ -420,13 +408,6 @@ main(int argc, char **argv)
 		stop();
 
 	/*
-	 * Fix device-majors.
-	 */
-	/*
-	if (fixdevsw())
-		stop();
-	*/
-	/*
 	 * Perform cross-checking.
 	 */
 	if (maxusers == 0) {
@@ -460,7 +441,7 @@ main(int argc, char **argv)
 	 * Ready to go.  Build all the various files.
 	 */
 	if (mksymlinks() || mkmakefile() || mkheaders() || mkswap() ||
-	    mkioconf() /* || (do_devsw ? mkdevsw() : 0) */|| mkident())
+	    mkioconf() || mkident())
 		stop();
 	(void)printf("Build directory is %s\n", builddir);
 	(void)printf("Don't forget to run \"make depend\"\n");
