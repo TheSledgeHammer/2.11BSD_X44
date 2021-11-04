@@ -79,7 +79,8 @@
  *	The start and end address of physical memory is passed in.
  */
 
-void vm_mem_init()
+void
+vm_mem_init()
 {
 	extern vm_offset_t	avail_start, avail_end;
 	extern vm_offset_t	virtual_avail, virtual_end;

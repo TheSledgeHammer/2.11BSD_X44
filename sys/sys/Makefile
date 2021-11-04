@@ -18,11 +18,11 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitmap.h boot.h buf.h 		\
 			poll.h power.h prf.h proc.h protosw.h ptrace.h pty.h queue.h 		\
 			reboot.h resource.h resourcevar.h rwlock.h scanio.h scsiio.h 		\
 			select.h signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h	\
-			stdbool.h stdint.h syscall.h syscallargs.h sysctl.h syslimits.h		\
-			syslog.h systm.h tablet.h termios.h time.h timeb.h times.h trace.h	\
-			tree.h tty.h ttychars.h ttydefaults.h ttydev.h types.h ucred.h		\
-			uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h vcmd.h 			\
-			videoio.h vlimit.h vmmeter.h vnode.h wait.h			
+			stdbool.h stddef.h stdint.h syscall.h syscallargs.h sysctl.h 		\
+			syslimits.h	syslog.h systm.h tablet.h termios.h time.h timeb.h 		\
+			times.h trace.h	tree.h tty.h ttychars.h ttydefaults.h ttydev.h 		\
+			types.h ucred.h	uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h \
+			vcmd.h videoio.h vlimit.h vmmeter.h vnode.h wait.h			
 
 INCSYMLINKS=									\
 		sys/exec_elf.h 	/usr/include/elf.h 		\
@@ -30,6 +30,7 @@ INCSYMLINKS=									\
 		sys/poll.h 		/usr/include/poll.h 	\
 		sys/stdarg.h 	/usr/include/stdarg.h 	\
 		sys/stdbool.h 	/usr/include/stdbool.h 	\
+		sys/stddef.h 	/usr/include/stddef.h 	\
 		sys/stdint.h 	/usr/include/stdint.h 	\
 		sys/syslog.h 	/usr/include/syslog.h 	\
 		sys/termios.h 	/usr/include/termios.h 	\

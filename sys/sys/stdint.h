@@ -33,7 +33,6 @@
 #define _SYS_STDINT_H_
 
 #include <sys/cdefs.h>
-
 #include <machine/types.h>
 
 #ifndef	_BSD_INT8_T_

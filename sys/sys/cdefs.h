@@ -258,6 +258,16 @@
 #endif
 
 /*
+ * Finally deal with BSD-specific interfaces that are not covered
+ * by any standards.  We expose these when none of the POSIX or XPG
+ * macros is defined or if the user explicitly asks for them.
+ */
+#if !defined(_BSD_SOURCE) && \
+   (defined(_ANSI_SOURCE) || defined(__XPG_VISIBLE) || defined(__POSIX_VISIBLE))
+# define __BSD_VISIBLE		0
+#endif
+
+/*
  * Keywords added in C11.
  */
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L

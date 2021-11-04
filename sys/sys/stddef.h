@@ -1,8 +1,6 @@
-/*	$NetBSD: stddef.h,v 1.4 1994/10/26 00:56:26 cgd Exp $	*/
-
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,11 +30,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)stddef.h	5.5 (Berkeley) 4/3/91
+ *	@(#)stddef.h	8.1 (Berkeley) 6/2/93
  */
 
-#ifndef _STDDEF_H_
-#define _STDDEF_H_
+#ifndef _SYS_STDDEF_H_
+#define _SYS_STDDEF_H_
 
 #include <machine/ansi.h>
 
@@ -60,7 +58,6 @@ typedef	_BSD_WCHAR_T_	wchar_t;
 
 #include <sys/null.h>
 
-#define	__offsetof(type, member)	((size_t)(&((type *)0)->member))
-#define	offsetof(type, member)		((size_t)(unsigned long)(&((type *)0)->member))
+#define	offsetof(type, member)	((size_t)(&((type *)0)->member))
 
-#endif /* _STDDEF_H_ */
+#endif /* _SYS_STDDEF_H_ */

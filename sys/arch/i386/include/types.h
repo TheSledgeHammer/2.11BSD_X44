@@ -35,13 +35,10 @@
  *	@(#)types.h	7.5 (Berkeley) 3/9/91
  */
 
-#ifndef	_MACHTYPES_H_
-#define	_MACHTYPES_H_
+#ifndef	_I386_MACHTYPES_H_
+#define	_I386_MACHTYPES_H_
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
-
-#if !defined(_ANSI_SOURCE)
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 typedef struct _physadr {
 	int 	r[1];
 } *physadr;
@@ -51,8 +48,14 @@ typedef struct label_t {
 } label_t;
 #endif
 
+/* VM system types */
 typedef	unsigned long					vm_offset_t;
 typedef	unsigned long					vm_size_t;
+
+typedef unsigned long					__vaddr_t;
+typedef unsigned long					__paddr_t;
+typedef unsigned long					__vsize_t;
+typedef unsigned long					__psize_t;
 
 /*
  * Basic integral types.  Omit the typedef if
@@ -118,9 +121,6 @@ typedef	unsigned long long int	 		uint_fast64_t;
 
 /* 7.18.1.4 Integer types capable of holding object pointers */
 
-typedef	int		             			__intptr_t;
-typedef	unsigned int	      			__uintptr_t;
-
 typedef	long							__intptr_t;
 typedef	unsigned long					__uintptr_t;
 
@@ -138,40 +138,32 @@ typedef	unsigned long long int	  		uintmax_t;
 
 #define	__BIT_TYPES_DEFINED__
 
-/* Register size */
-typedef long							__register_t;
-typedef	unsigned long					__uregister_t;
-
-/* VM system types */
-typedef unsigned long					__vaddr_t;
-typedef unsigned long					__paddr_t;
-typedef unsigned long					__vsize_t;
-typedef unsigned long					__psize_t;
-
-typedef	__int64_t						__ptrdiff_t;	/* ptr1 - ptr2 */
-typedef	__int64_t						__register_t;
-typedef	__int64_t						__segsz_t;		/* segment size (in pages) */
-typedef	__uint64_t						__size_t;		/* sizeof() */
-typedef	__int64_t						__ssize_t;		/* byte count or error */
-typedef	__int64_t						__time_t;		/* time()... */
-typedef	__uint64_t						__uintfptr_t;
-typedef	__uint64_t						__uintptr_t;
-
+#ifdef __LP64__
+/* 64-bit */
+typedef	__int64_t						__ptrdiff_t;
+typedef	__int64_t						__segsz_t;
+typedef	__uint64_t						__size_t;
+typedef	__int64_t						__ssize_t;
+typedef	__int64_t						__time_t;
+#else
+/* 32-bit */
 typedef	__int32_t						__ptrdiff_t;
-typedef	__int32_t						__register_t;
 typedef	__int32_t						__segsz_t;
 typedef	__uint32_t						__size_t;
 typedef	__int32_t						__ssize_t;
 typedef	__int32_t						__time_t;
-typedef	__uint32_t						__uintfptr_t;
-typedef	__uint32_t						__uintptr_t;
+#endif
 
+/* Register size */
+typedef long							__register_t;
+typedef	unsigned long					__uregister_t;
+
+/* Wide character support types */
 typedef	int								__wchar_t;
 typedef int								__wint_t;
 typedef	__uint32_t						__rune_t;
 typedef	void 							*__wctrans_t;
 typedef	void 							*__wctype_t;
-
 
 /*
  * 7.18.2 Limits of specified-width integer types.
@@ -302,4 +294,4 @@ typedef	void 							*__wctype_t;
 #define	INTMAX_C(_c)		__CONCAT(_c, LL)
 #define	UINTMAX_C(_c)		__CONCAT(_c, ULL)
 
-#endif /* _MACHTYPES_H_ */
+#endif /* _I386_MACHTYPES_H_ */

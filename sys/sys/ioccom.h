@@ -42,6 +42,16 @@
  * any in or out parameters in the upper word.  The high 3 bits of the
  * upper word are used to encode the in/out status of the parameter.
  */
+/*
+ * Ioctl's have the command encoded in the lower word,
+ * and the size of any in or out parameters in the upper
+ * word.  The high 2 bits of the upper word are used
+ * to encode the in/out status of the parameter; for now
+ * we restrict parameters to at most 256 bytes (disklabels are 216 bytes).
+ */
+#ifdef COMPAT_211BSD
+#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
+#endif
 #define	IOCPARM_MASK		0x1fff		/* parameter length, at most 13 bits */
 #define	IOCPARM_LEN(x)		(((x) >> 16) & IOCPARM_MASK)
 #define	IOCBASECMD(x)		((x) & ~(IOCPARM_MASK << 16))
@@ -53,6 +63,7 @@
 #define	IOC_IN				0x80000000	/* copy in parameters */
 #define	IOC_INOUT			(IOC_IN|IOC_OUT)
 #define	IOC_DIRMASK			0xe0000000	/* mask for IN/OUT/VOID */
+/* the 0x20000000 is so we can distinguish new ioctl's from old */
 
 #define	_IOC(inout, group, num, len) \
 	(inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num))
@@ -62,21 +73,6 @@
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(g,n,t)		_IOC(IOC_INOUT,	(g), (n), sizeof(t))
 
-/*
- * Ioctl's have the command encoded in the lower word,
- * and the size of any in or out parameters in the upper
- * word.  The high 2 bits of the upper word are used
- * to encode the in/out status of the parameter; for now
- * we restrict parameters to at most 256 bytes (disklabels are 216 bytes).
- */
-#ifdef COMPAT_211BSD
-#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
-#define	IOC_VOID			0x20000000	/* no parameters */
-#define	IOC_OUT				0x40000000	/* copy out parameters */
-#define	IOC_IN				0x80000000	/* copy in parameters */
-#define	IOC_INOUT			(IOC_IN|IOC_OUT)
-#endif
-/* the 0x20000000 is so we can distinguish new ioctl's from old */
 #ifdef KERNEL
 #define	_IO(x,y)			(('x'<<8)|y)
 #define	_IOR(x,y,t)			(('x'<<8)|y)

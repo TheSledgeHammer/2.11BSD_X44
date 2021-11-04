@@ -14,8 +14,6 @@
 #include <machine/types.h>
 
 #include <sys/ansi.h>
-#include <sys/select.h>
-#include <sys/stdint.h>
 
 #ifndef	_BSD_INT8_T_
 typedef	__int8_t			int8_t;
@@ -58,32 +56,33 @@ typedef	__uint64_t			uint64_t;
 #endif
 
 /* BSD-style unsigned bits types */
-typedef uregister_t			u_register_t;
 typedef	uint8_t				u_int8_t;
 typedef	uint16_t			u_int16_t;
 typedef	uint32_t			u_int32_t;
 typedef	uint64_t			u_int64_t;
 
-#include <machine/endian.h>
-
+#ifndef _POSIX_SOURCE
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
 typedef	unsigned int		u_int;
 typedef	unsigned long		u_long;
+
+typedef unsigned char		unchar;		/* Sys V compatibility */
 typedef	unsigned short		ushort;		/* Sys V compatibility */
 typedef	unsigned int		uint;		/* Sys V compatibility */
+typedef unsigned long		ulong;		/* Sys V compatibility */
+#endif /* _POSIX_SOURCE */
 
-typedef	unsigned long long 	u_quad_t; 	/* quads */
-typedef	long long			quad_t;
-typedef	quad_t *			qaddr_t;
+typedef	uint64_t	 		u_quad_t; 	/* quads */
+typedef	int64_t				quad_t;
+typedef	quad_t 				*qaddr_t;
 
 typedef u_long				fixpt_t;	/* fixed point number */
 typedef	u_short				nlink_t;	/* link count */
 typedef	long				segsz_t;	/* segment size */
 
 typedef	long				daddr_t;	/* disk address */
-typedef	char *				caddr_t;	/* core address */
-typedef unsigned long		vaddr_t;	/* virtual address */
+typedef	char 				*caddr_t;	/* core address */
 typedef	u_long				ino_t;		/* inode number*/
 typedef	long				swblk_t;	/* swap offset */
 typedef	long				time_t;		/* time? */
@@ -97,12 +96,7 @@ typedef	unsigned long		cpuid_t;
 typedef char				bool_t;		/* boolean */
 typedef long				memaddr;	/* core or swap address */
 
-typedef	u_long				size_t;
-typedef	int	    			ssize_t;
-
- typedef struct	_quad {
-	long 					val[2];
-} quad;
+#include <sys/select.h>
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -116,6 +110,8 @@ typedef	int	    			ssize_t;
 #ifndef howmany
 #define	howmany(x, y)		(((x)+((y)-1))/(y))
 #endif
+
+#include <machine/endian.h>
 
 #ifdef	_BSD_CLOCK_T_
 typedef	_BSD_CLOCK_T_		clock_t;

@@ -32,6 +32,7 @@
  */
 #ifndef _SYS_BUF_H_
 #define	_SYS_BUF_H_
+
 #include <sys/queue.h>
 
 #define NOLIST ((struct buf *)0x87654321)
