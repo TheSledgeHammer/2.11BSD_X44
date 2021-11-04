@@ -35,6 +35,7 @@
 #include <sys/wait.h>
 #include <sys/queue.h>
 #include "devel/sys/kthread.h"
+#include "devel/sys/threadpool.h"
 
 #include <vm/include/vm_param.h>
 
@@ -177,9 +178,11 @@ kthread_run_deferred_queue(void)
 
 /* Threadpool's FIFO Queue (IPC) */
 void
-kthreadpool_itpc_send(itpc, ktpool)
+kthreadpool_itpc_send(itpc, ktpool, pid, cmd)
 	struct threadpool_itpc *itpc;
     struct kthreadpool *ktpool;
+    pid_t pid;
+    int cmd;
 {
      /* sync itpc to threadpool */
     itpc->itc_ktpool = ktpool;
@@ -187,25 +190,64 @@ kthreadpool_itpc_send(itpc, ktpool)
 	/* send flagged jobs */
 	ktpool->ktp_issender = TRUE;
 	ktpool->ktp_isreciever = FALSE;
+
 	/* command / action */
+	switch(cmd) {
+	case ITPC_SCHEDULE:
+		kthreadpool_schedule_job(ktpool, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_CANCEL:
+		kthreadpool_cancel_job(ktpool, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_DESTROY:
+		kthreadpool_job_destroy(ktpool->ktp_jobs);
+		break;
+
+	case ITPC_DONE:
+		kthreadpool_job_done(ktpool->ktp_jobs);
+		break;
+	}
 
 	/* update job pool */
+	itpc_check_kthreadpool(itpc, pid);
 }
 
 void
-kthreadpool_itpc_recieve(itpc, ktpool)
+kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
 	struct threadpool_itpc *itpc;
     struct kthreadpool *ktpool;
+    pid_t pid;
+    int cmd;
 {
     /* sync itpc to threadpool */
 	itpc->itc_ktpool = ktpool;
 	itpc->itc_jobs = ktpool->ktp_jobs; /* add/ get current job */
 	ktpool->ktp_issender = FALSE;
 	ktpool->ktp_isreciever = TRUE;
-    /* command / action */
 
+    /* command / action */
+	switch(cmd) {
+	case ITPC_SCHEDULE:
+		kthreadpool_schedule_job(ktpool, itpc->itc_jobs);
+		break;
+
+	case ITPC_CANCEL:
+		kthreadpool_cancel_job(ktpool, itpc->itc_jobs);
+		break;
+
+	case ITPC_DESTROY:
+		kthreadpool_job_destroy(itpc->itc_jobs);
+		break;
+
+	case ITPC_DONE:
+		kthreadpool_job_done(itpc->itc_jobs);
+		break;
+	}
 
 	/* update job pool */
+	itpc_verify_kthreadpool(itpc, pid);
 }
 
 /* Initialize a lock on a kthread */

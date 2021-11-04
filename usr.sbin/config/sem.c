@@ -72,8 +72,7 @@ static struct deva errdeva;
 
 static int has_errobj(struct nvlist *, void *);
 static struct nvlist *addtoattr(struct nvlist *, struct devbase *);
-static int resolve(struct nvlist **, const char *, const char *,
-		   struct nvlist *, int);
+static int resolve(struct nvlist **, const char *, const char *, struct nvlist *, int);
 static struct pspec *getpspec(struct attr *, struct devbase *, int);
 static struct devi *newdevi(const char *, int, struct devbase *d);
 static struct devi *getdevi(const char *);

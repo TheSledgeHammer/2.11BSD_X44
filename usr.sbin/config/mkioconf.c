@@ -71,13 +71,13 @@ static int emitname2blk(FILE *);
 
 #define	SEP(pos, max)	(((u_int)(pos) % (max)) == 0 ? "\n\t" : " ")
 
-#define ARRNAME(n, l) (strchr((n), ARRCHR) && strncmp((n), (l), strlen((l))) == 0)
+#define ARRNAME(n, l) 	(strchr((n), ARRCHR) && strncmp((n), (l), strlen((l))) == 0)
 
 /*
  * NEWLINE can only be used in the emitXXX functions.
  * In most cases it can be subsumed into an fprintf.
  */
-#define	NEWLINE		if (putc('\n', fp) < 0) return (1)
+#define	NEWLINE			if (putc('\n', fp) < 0) return (1)
 
 int
 mkioconf(void)

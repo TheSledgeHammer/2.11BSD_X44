@@ -111,12 +111,10 @@ struct threadpool_itpc {
 extern struct itc_threadpool itpc;
 
 /* Threadpool ITPC Commands */
-enum itpc_cmds {
-	ITPC_SCHEDULE,
-	ITPC_CANCEL,
-	ITPC_DESTROY,
-	ITPC_DONE
-};
+#define ITPC_SCHEDULE 	0
+#define ITPC_CANCEL		1
+#define ITPC_DESTROY	2
+#define ITPC_DONE		3
 
 /* General ITPC */
 void 	itpc_threadpool_init(void);

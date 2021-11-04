@@ -518,19 +518,18 @@ dsmakeslicestruct(nslices, lp)
 }
 
 char *
-dsname(dev, unit, slice, part, partname)
+dsname(dev, dkname, unit, slice, part, partname)
 	dev_t	dev;
+	char	*dkname;
 	int		unit;
 	int		slice;
 	int		part;
 	char	*partname;
 {
-	struct dkdevice *disk;
 	static char name[32];
 	const char *dname;
 
-	disk = &dk[dkunit(dev)];
-	dname = disk->dk_name;
+	dname = dkname;
 	if (strlen(dname) > 16) {
 		dname = "nametoolong";
 	}
@@ -540,8 +539,7 @@ dsname(dev, unit, slice, part, partname)
 		partname[0] = 'a' + part;
 		partname[1] = '\0';
 		if (slice != COMPATIBILITY_SLICE)
-			snprintf(name + strlen(name), sizeof(name) - strlen(name), "s%d",
-					slice - 1);
+			snprintf(name + strlen(name), sizeof(name) - strlen(name), "s%d", slice - 1);
 	}
 	return (name);
 }
@@ -572,7 +570,6 @@ dsopen(dev, mode, flags, sspp, lp)
 	struct diskslices *ssp;
 	int unit;
 
-	//dev->si_bsize_phys = lp->d_secsize;
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
 		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long)lp->d_secsize);

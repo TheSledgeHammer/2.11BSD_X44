@@ -175,11 +175,6 @@ mpx_get_group(dev)
 	return (groups[d]);
 }
 
-mpx_get_pgrp()
-{
-
-}
-
 struct mpx_chan *
 mpx_create_channel(index, isport)
 	int index;

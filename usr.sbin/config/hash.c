@@ -80,10 +80,10 @@ static struct hashenthead hefreelist = TAILQ_HEAD_INITIALIZER(hefreelist);
  */
 #define	HASHFRACTION(sz) ((sz) * 3 / 2)
 
-static void			ht_expand(struct hashtab *);
-static void			ht_init(struct hashtab *, size_t);
-static inline u_int		hash(const char *);
-static inline struct hashent   *newhashent(const char *, u_int);
+static void						ht_expand(struct hashtab *);
+static void						ht_init(struct hashtab *, size_t);
+static inline u_int				hash(const char *);
+static inline struct hashent   	*newhashent(const char *, u_int);
 
 /*
  * Initialize a new hash table.  The size must be a power of 2.

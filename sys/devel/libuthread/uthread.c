@@ -40,6 +40,7 @@
 #include <sys/rwlock.h>
 #include <sys/user.h>
 #include "devel/sys/kthread.h"
+#include "devel/sys/threadpool.h"
 
 extern struct uthread uthread0;
 struct uthread *curuthread = &uthread0;
@@ -170,9 +171,10 @@ uthread_run_deferred_queue(void)
 }
 
 void
-uthreadpool_itpc_send(itpc, utpool, cmd)
+uthreadpool_itpc_send(itpc, utpool, pid, cmd)
 	struct threadpool_itpc *itpc;
     struct uthreadpool *utpool;
+    pid_t pid;
     int cmd;
 {
     /* sync itpc to threadpool */
@@ -184,11 +186,11 @@ uthreadpool_itpc_send(itpc, utpool, cmd)
 	/* command / action */
 	switch(cmd) {
 	case ITPC_SCHEDULE:
-		uthreadpool_schedule_job(utpool, utpool->utp_jobs);
+		uthreadpool_schedule_job(utpool, itpc->itc_jobs);
 		break;
 
 	case ITPC_CANCEL:
-		uthreadpool_cancel_job(utpool, utpool->utp_jobs);
+		uthreadpool_cancel_job(utpool, itpc->itc_jobs);
 		break;
 
 	case ITPC_DESTROY:
@@ -200,15 +202,15 @@ uthreadpool_itpc_send(itpc, utpool, cmd)
 		break;
 	}
 
-	itpc_check_uthreadpool(itpc, utpool);
-
 	/* update job pool */
+	itpc_check_uthreadpool(itpc, pid);
 }
 
 void
-uthreadpool_itpc_recieve(itpc, utpool, cmd)
+uthreadpool_itpc_recieve(itpc, utpool, pid, cmd)
 	struct threadpool_itpc *itpc;
 	struct uthreadpool 		*utpool;
+	pid_t pid;
 	int cmd;
 {
 	/* sync itpc to threadpool */
@@ -220,23 +222,22 @@ uthreadpool_itpc_recieve(itpc, utpool, cmd)
 	/* command / action */
 	switch(cmd) {
 	case ITPC_SCHEDULE:
-		uthreadpool_schedule_job();
+		uthreadpool_schedule_job(utpool, itpc->itc_jobs);
 		break;
 	case ITPC_CANCEL:
-		uthreadpool_cancel_job();
+		uthreadpool_cancel_job(utpool, itpc->itc_jobs);
 		break;
 	case ITPC_DESTROY:
 		uthreadpool_job_destroy(itpc->itc_jobs);
 		utpool->utp_jobs = itpc->itc_jobs;
 		break;
 	case ITPC_DONE:
-		uthreadpool_job_done();
+		uthreadpool_job_done(itpc->itc_jobs);
 		break;
 	}
 
-	itpc_verify_uthreadpool(itpc, utpool);
-
 	/* update job pool */
+	itpc_verify_uthreadpool(itpc, pid);
 }
 
 /* Initialize a Mutex on a kthread

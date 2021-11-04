@@ -192,8 +192,8 @@ struct pspec {
  * attachment.
  */
 struct devbase {
-	const char *d_name;		/* e.g., "sd" */
-	TAILQ_ENTRY(devbase) d_next;
+	const char 				*d_name;		/* e.g., "sd" */
+	TAILQ_ENTRY(devbase) 	d_next;
 	int	d_isdef;		/* set once properly defined */
 	int	d_ispseudo;		/* is a pseudo-device */
 	int	d_major;		/* used for "root on sd0", e.g. */
@@ -402,9 +402,9 @@ TAILQ_HEAD(filelist, files);
 TAILQ_HEAD(objlist, objects);
 SLIST_HEAD(prefixlist, prefix);
 
-extern struct filelist		allfiles;	/* list of all kernel source files */
-extern struct objlist 		allobjects;	/* list of all kernel object and library files */
-extern struct prefixlist 	prefixes;	/* prefix stack */
+extern struct filelist		allfiles;		/* list of all kernel source files */
+extern struct objlist 		allobjects;		/* list of all kernel object and library files */
+extern struct prefixlist 	prefixes;		/* prefix stack */
 extern struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
 extern struct prefixlist	curdirs;		/* curdir stack */
 

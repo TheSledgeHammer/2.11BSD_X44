@@ -4,10 +4,10 @@
 WARNS=6
 
 PROG=	config
-SRCS=	files.c gram.y hash.c main.c mkheaders.c mkioconf.c \
-	mkmakefile.c mkswap.c pack.c scan.l sem.c util.c
+SRCS=	files.c gram.y hash.c main.c mkdevsw.c mkheaders.c mkioconf.c \
+		mkmakefile.c mkswap.c pack.c scan.l sem.c util.c
 	
-#MAN=	config.8
+MAN=	config.8
 YHEADER=1
 CPPFLAGS+=-I${.CURDIR} -I.
 
