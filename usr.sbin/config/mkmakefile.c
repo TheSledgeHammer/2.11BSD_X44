@@ -44,6 +44,7 @@
 #include "nbtool_config.h"
 #endif
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <ctype.h>
 #include <errno.h>

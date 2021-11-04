@@ -65,7 +65,7 @@ SRCS+=	memcpy.c
 SRCS+=	memset.c
 .endif
 
-SRCS+=	strtoul.c strdup.c strspn.c strtol.c
+SRCS+=	strtoul.c
 
 SRCS+=	scanc.c skpc.c
 SRCS+=	random.c

@@ -40,6 +40,7 @@
 #include "nbtool_config.h"
 #endif
 
+#include <sys/cdefs.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>

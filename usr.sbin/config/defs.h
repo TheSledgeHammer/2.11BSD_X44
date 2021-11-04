@@ -58,6 +58,7 @@
 #endif
 
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -375,35 +376,45 @@ extern struct	hashtab *attrtab;	/* attributes (locators, etc.) */
 extern struct	hashtab *bdevmtab;	/* block devm lookup */
 extern struct	hashtab *cdevmtab;	/* character devm lookup */
 
-TAILQ_HEAD(, devbase)	allbases;	/* list of all devbase structures */
-TAILQ_HEAD(, deva)		alldevas;	/* list of all devbase attachments */
-TAILQ_HEAD(, config)	allcf;		/* list of configured kernels */
-TAILQ_HEAD(, devi)		alldevi,	/* list of all instances */
-						allpseudo;	/* list of all pseudo-devices */
-TAILQ_HEAD(, devm)		alldevms;	/* list of all device-majors */
-TAILQ_HEAD(, pspec)		allpspecs;	/* list of all parent specs */
+TAILQ_HEAD(devbasetq, devbase);
+TAILQ_HEAD(devatq, deva);
+TAILQ_HEAD(conftq, config);
+TAILQ_HEAD(devitq, devi);
+TAILQ_HEAD(devmtq, devm);
+TAILQ_HEAD(pspectq, pspec);
+
+extern struct devbasetq allbases;	/* list of all devbase structures */
+extern struct devbasetq allbases;	/* list of all devbase structures */
+extern struct devatq 	alldevas;	/* list of all devbase attachments */
+extern struct conftq 	allcf;		/* list of configured kernels */
+extern struct devitq 	alldevi,	/* list of all instances */
+		     	 	 	allpseudo;	/* list of all pseudo-devices */
+extern struct devmtq 	alldevms;	/* list of all device-majors */
+extern struct pspectq 	allpspecs;	/* list of all parent specs */
+
 extern int	ndevi;				/* number of devi's (before packing) */
 extern int	npspecs;			/* number of parent specs */
 extern int	maxbdevm;			/* max number of block major */
 extern int	maxcdevm;			/* max number of character major */
 extern int	do_devsw;			/* 0 if pre-devsw config */
 
-TAILQ_HEAD(, files)		allfiles;	/* list of all kernel source files */
-TAILQ_HEAD(, objects)	allobjects;	/* list of all kernel object and
-					   library files */
+TAILQ_HEAD(filelist, files);
+TAILQ_HEAD(objlist, objects);
+SLIST_HEAD(prefixlist, prefix);
 
-SLIST_HEAD(, prefix)	prefixes,	/* prefix stack */
-			allprefixes;	/* all prefixes used (after popped) */
-SLIST_HEAD(, prefix)	curdirs;	/* curdir stack */
+extern struct filelist		allfiles;	/* list of all kernel source files */
+extern struct objlist 		allobjects;	/* list of all kernel object and library files */
+extern struct prefixlist 	prefixes;	/* prefix stack */
+extern struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
+extern struct prefixlist	curdirs;		/* curdir stack */
 
 extern struct	devi 	**packed;		/* arrayified table for packed devi's */
-extern int	npacked;		/* size of packed table, <= ndevi */
+extern int				npacked;		/* size of packed table, <= ndevi */
 
-struct {			/* loc[] table for config */
+extern struct locators {			/* loc[] table for config */
 	const char **vec;
 	int	used;
 } locators;
-extern struct locators;
 
 struct numconst {
 	int64_t	val;

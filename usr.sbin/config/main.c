@@ -44,6 +44,7 @@
 #include "nbtool_config.h"
 #endif
 
+#include <sys/cdefs.h>
 #ifndef MAKE_BOOTSTRAP
 #include <sys/cdefs.h>
 #define	COPYRIGHT(x)	__COPYRIGHT(x)

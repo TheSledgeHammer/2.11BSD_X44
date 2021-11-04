@@ -41,7 +41,7 @@
  *	from: @(#)scan.l	8.1 (Berkeley) 6/6/93
  */
 
-//#include <sys/cdefs.h>
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <errno.h>
@@ -70,8 +70,6 @@ struct incl {
 };
 static struct incl *incl;
 static int endinclude(void);
-
-//#define	yywrap() 1
 
 %}
 

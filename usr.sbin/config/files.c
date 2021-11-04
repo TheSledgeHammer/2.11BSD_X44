@@ -44,9 +44,11 @@
 #include "nbtool_config.h"
 #endif
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include "defs.h"
@@ -68,8 +70,7 @@ static int	checkaux(const char *, void *);
 static int	fixcount(const char *, void *);
 static int	fixfsel(const char *, void *);
 static int	fixsel(const char *, void *);
-static int	expr_eval(struct nvlist *,
-		    int (*)(const char *, void *), void *);
+static int	expr_eval(struct nvlist *, int (*)(const char *, void *), void *);
 static void	expr_free(struct nvlist *);
 
 void
@@ -153,8 +154,7 @@ addfile(const char *path, struct nvlist *optx, int flags, const char *rule)
 	fi->fi_path = path;
 	fi->fi_tail = tail;
 	fi->fi_base = intern(base);
-	fi->fi_prefix = SLIST_EMPTY(&prefixes) ? NULL :
-			SLIST_FIRST(&prefixes)->pf_prefix;
+	fi->fi_prefix = SLIST_EMPTY(&prefixes) ? NULL : SLIST_FIRST(&prefixes)->pf_prefix;
 	fi->fi_optx = optx;
 	fi->fi_optf = NULL;
 	fi->fi_mkrule = rule;
