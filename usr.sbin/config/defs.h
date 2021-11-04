@@ -360,8 +360,6 @@ extern struct	hashtab *defparamtab;	/* options that have been "defparam"'d */
 extern struct	hashtab *deffstab;	/* defined file systems */
 extern struct	hashtab *optfiletab;	/* "defopt"'d option .h files */
 extern struct	hashtab *attrtab;	/* attributes (locators, etc.) */
-//extern struct	hashtab *bdevmtab;	/* block devm lookup */
-//extern struct	hashtab *cdevmtab;	/* character devm lookup */
 
 TAILQ_HEAD(devbasetq, devbase);
 TAILQ_HEAD(devatq, deva);
@@ -408,7 +406,6 @@ void	initfiles(void);
 void	checkfiles(void);
 int	fixfiles(void);		/* finalize */
 int	fixobjects(void);
-int	fixdevsw(void);
 void	addfile(const char *, struct nvlist *, int, const char *);
 void	addobject(const char *, struct nvlist *, int);
 
