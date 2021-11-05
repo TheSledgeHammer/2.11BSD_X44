@@ -185,8 +185,8 @@ kthreadpool_itpc_send(itpc, ktpool, pid, cmd)
     int cmd;
 {
      /* sync itpc to threadpool */
-    itpc->itc_ktpool = ktpool;
-    itpc->itc_jobs = ktpool->ktp_jobs;  /* add/ get current job */
+    itpc->itpc_ktpool = ktpool;
+    itpc->itpc_jobs = ktpool->ktp_jobs;  /* add/ get current job */
 	/* send flagged jobs */
 	ktpool->ktp_issender = TRUE;
 	ktpool->ktp_isreciever = FALSE;
@@ -222,27 +222,27 @@ kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
     int cmd;
 {
     /* sync itpc to threadpool */
-	itpc->itc_ktpool = ktpool;
-	itpc->itc_jobs = ktpool->ktp_jobs; /* add/ get current job */
+	itpc->itpc_ktpool = ktpool;
+	itpc->itpc_jobs = ktpool->ktp_jobs; /* add/ get current job */
 	ktpool->ktp_issender = FALSE;
 	ktpool->ktp_isreciever = TRUE;
 
     /* command / action */
 	switch(cmd) {
 	case ITPC_SCHEDULE:
-		kthreadpool_schedule_job(ktpool, itpc->itc_jobs);
+		kthreadpool_schedule_job(ktpool, itpc->itpc_jobs);
 		break;
 
 	case ITPC_CANCEL:
-		kthreadpool_cancel_job(ktpool, itpc->itc_jobs);
+		kthreadpool_cancel_job(ktpool, itpc->itpc_jobs);
 		break;
 
 	case ITPC_DESTROY:
-		kthreadpool_job_destroy(itpc->itc_jobs);
+		kthreadpool_job_destroy(itpc->itpc_jobs);
 		break;
 
 	case ITPC_DONE:
-		kthreadpool_job_done(itpc->itc_jobs);
+		kthreadpool_job_done(itpc->itpc_jobs);
 		break;
 	}
 

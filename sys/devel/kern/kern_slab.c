@@ -212,7 +212,7 @@ slab_insert(cache, size, mtype)
 	slab->s_size = size;
 	slab->s_mtype = mtype;
 
-    slab = &slab_list[BUCKETINDX(size)];
+    slab = &slab_list[indx];
     cache->sc_link = slab;
 
     slab_lock(&slab_list_lock);

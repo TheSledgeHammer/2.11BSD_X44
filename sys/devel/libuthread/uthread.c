@@ -178,19 +178,19 @@ uthreadpool_itpc_send(itpc, utpool, pid, cmd)
     int cmd;
 {
     /* sync itpc to threadpool */
-	itpc->itc_utpool = utpool;
-	itpc->itc_jobs = utpool->utp_jobs;
+	itpc->itpc_utpool = utpool;
+	itpc->itpc_jobs = utpool->utp_jobs;
 	utpool->utp_issender = TRUE;
 	utpool->utp_isreciever = FALSE;
 
 	/* command / action */
 	switch(cmd) {
 	case ITPC_SCHEDULE:
-		uthreadpool_schedule_job(utpool, itpc->itc_jobs);
+		uthreadpool_schedule_job(utpool, itpc->itpc_jobs);
 		break;
 
 	case ITPC_CANCEL:
-		uthreadpool_cancel_job(utpool, itpc->itc_jobs);
+		uthreadpool_cancel_job(utpool, itpc->itpc_jobs);
 		break;
 
 	case ITPC_DESTROY:
@@ -214,25 +214,25 @@ uthreadpool_itpc_recieve(itpc, utpool, pid, cmd)
 	int cmd;
 {
 	/* sync itpc to threadpool */
-	itpc->itc_utpool = utpool;
-	itpc->itc_jobs = utpool->utp_jobs;
+	itpc->itpc_utpool = utpool;
+	itpc->itpc_jobs = utpool->utp_jobs;
 	utpool->utp_issender = FALSE;
 	utpool->utp_isreciever = TRUE;
 
 	/* command / action */
 	switch(cmd) {
 	case ITPC_SCHEDULE:
-		uthreadpool_schedule_job(utpool, itpc->itc_jobs);
+		uthreadpool_schedule_job(utpool, itpc->itpc_jobs);
 		break;
 	case ITPC_CANCEL:
-		uthreadpool_cancel_job(utpool, itpc->itc_jobs);
+		uthreadpool_cancel_job(utpool, itpc->itpc_jobs);
 		break;
 	case ITPC_DESTROY:
-		uthreadpool_job_destroy(itpc->itc_jobs);
-		utpool->utp_jobs = itpc->itc_jobs;
+		uthreadpool_job_destroy(itpc->itpc_jobs);
+		utpool->utp_jobs = itpc->itpc_jobs;
 		break;
 	case ITPC_DONE:
-		uthreadpool_job_done(itpc->itc_jobs);
+		uthreadpool_job_done(itpc->itpc_jobs);
 		break;
 	}
 

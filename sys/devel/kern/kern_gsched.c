@@ -41,8 +41,10 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
-#include "sys/gsched.h"
-#include "sys/malloctypes.h"
+#include "devel/sys/gsched.h"
+#include "devel/sys/gsched_cfs.h"
+#include "devel/sys/gsched_edf.h"
+#include "devel/sys/malloctypes.h"
 
 static struct gsched *gsched_setup(struct proc *);
 static void	gsched_edf_setup(struct gsched *, struct proc *);
@@ -127,15 +129,15 @@ gsched_cfs(gsd)
 
 /* Return difference between time and estcpu */
 u_char
-gsched_timediff(time, estcpu)
-	u_char time;
+gsched_timediff(timo, estcpu)
+	u_char timo;
 	u_int estcpu;
 {
 	u_char diff;
-	if (time > estcpu) {
-		diff = time - estcpu;
+	if (timo > estcpu) {
+		diff = timo - estcpu;
 	} else {
-		diff = estcpu - time;
+		diff = estcpu - timo;
 	}
 	return (diff);
 }

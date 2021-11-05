@@ -145,7 +145,7 @@ struct uthreadpool {
     u_char								utp_pri;			/* priority */
 
     /* Inter Threadpool Communication */
-    struct threadpool_itpc				utp_itc;			/* threadpool ipc ptr */
+    struct threadpool_itpc				utp_itpc;			/* threadpool ipc ptr */
     boolean_t							utp_issender;		/* is itc sender */
     boolean_t							utp_isreciever;		/* is itc reciever */
     int									utp_retcnt;			/* retry count in itc pool */

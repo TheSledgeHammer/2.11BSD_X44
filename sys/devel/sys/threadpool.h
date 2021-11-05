@@ -66,46 +66,46 @@ struct threadpool_job  {
 	lock_t								*job_lock;
 	volatile unsigned int				job_refcnt;
 
-	struct threadpool_itpc				*job_itc;
-#define job_ktpool						job_itc->itc_ktpool
-#define job_utpool						job_itc->itc_utpool
+	struct threadpool_itpc				*job_itpc;
+#define job_ktpool						job_itpc->itpc_ktpool
+#define job_utpool						job_itpc->itpc_utpool
 #define	job_ktp_thread					job_ktpool.ktp_overseer
 #define	job_utp_thread					job_utpool.utp_overseer
 };
 
 
 /* Inter-Threadpool-Communication (ITPC) */
-TAILQ_HEAD(itc_head, threadpool_itpc);
+TAILQ_HEAD(itpc_head, threadpool_itpc);
 struct threadpool_itpc {
-	struct itc_head						itc_header;			/* Threadpool ITPC queue header */
-	TAILQ_ENTRY(threadpool_itpc) 		itc_entry;			/* Threadpool ITPC queue entries */
-	int 								itc_refcnt;			/* Threadpool ITPC entries in pool */
+	struct itpc_head					itpc_header;		/* Threadpool ITPC queue header */
+	TAILQ_ENTRY(threadpool_itpc) 		itpc_entry;			/* Threadpool ITPC queue entries */
+	int 								itpc_refcnt;		/* Threadpool ITPC entries in pool */
 
-	struct kthreadpool					itc_ktpool;			/* Pointer to Kernel Threadpool */
-	struct uthreadpool					itc_utpool;			/* Pointer to User Threadpool */
+	struct kthreadpool					itpc_ktpool;		/* Pointer to Kernel Threadpool */
+	struct uthreadpool					itpc_utpool;		/* Pointer to User Threadpool */
 
 	/* job related info */
-	struct threadpool_job				itc_jobs;
-	const char							*itc_job_name;
+	struct threadpool_job				itpc_jobs;
+	const char							*itpc_job_name;
 
 	/* thread info */
 	union  {
 		struct {
-			struct kthread				*itc_kthread;
-			pid_t						itc_ktid;			/* KThread's Thread ID */
-			struct tgrp 				itc_ktgrp; 			/* KThread's Thread Group */
-			struct job_head				itc_ktjob;			/* KThread's Job */
+			struct kthread				*itpc_kthread;
+			pid_t						itpc_ktid;			/* KThread's Thread ID */
+			struct tgrp 				itpc_ktgrp; 		/* KThread's Thread Group */
+			struct job_head				itpc_ktjob;			/* KThread's Job */
 		} kt;
 
 		struct {
-			struct uthread				*itc_uthread;
-			pid_t						itc_utid;			/* UThread's Thread ID */
-			struct tgrp 				itc_utgrp; 			/* UThread's Thread Group */
-			struct job_head				itc_utjob;			/* UThread's Job */
+			struct uthread				*itpc_uthread;
+			pid_t						itpc_utid;			/* UThread's Thread ID */
+			struct tgrp 				itpc_utgrp; 		/* UThread's Thread Group */
+			struct job_head				itpc_utjob;			/* UThread's Job */
 		} ut;
 	} info;
-#define itc_ktinfo						info.kt
-#define itc_utinfo						info.ut
+#define itpc_ktinfo						info.kt
+#define itpc_utinfo						info.ut
 };
 
 extern struct itc_threadpool itpc;
@@ -126,11 +126,11 @@ void	kthreadpool_put(struct kthreadpool *, u_char);
 
 void	threadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, lock_t, const char *, ...);
 void	threadpool_job_destroy(struct threadpool_job *);
-void	threadpool_job_done(struct threadpool_job *);
+void	kthreadpool_job_done(struct threadpool_job *);
 
-void	threadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
-void	threadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
-bool	threadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
+void	kthreadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
+void	kthreadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
+bool	kthreadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
 
 /* uthreadpools */
 void	uthreadpool_init(void);

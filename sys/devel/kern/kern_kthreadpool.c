@@ -463,8 +463,8 @@ threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t
 	job->job_lock = lock;
 	job->job_name = name;
 	job->job_refcnt = 0;
-	job->job_itc->itc_ktpool = NULL;
-	job->job_itc->itc_utpool = NULL;
+	job->job_itpc->itpc_ktpool = NULL;
+	job->job_itpc->itpc_utpool = NULL;
 	job->job_func = func;
 }
 
@@ -513,7 +513,7 @@ threadpool_job_rele(struct threadpool_job *job)
 }
 
 void
-threadpool_job_done(struct threadpool_job *job)
+kthreadpool_job_done(struct threadpool_job *job)
 {
 	KASSERT(job->job_ktp_thread != NULL);
 	KASSERT(job->job_ktp_thread->ktpt_proc == curproc);
@@ -541,7 +541,7 @@ threadpool_job_done(struct threadpool_job *job)
 }
 
 void
-threadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
+kthreadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 {
 	if (__predict_true(job->job_ktp_thread != NULL)) {
 		return;
@@ -565,7 +565,7 @@ threadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 }
 
 bool
-threadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *job)
+kthreadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *job)
 {
 	/*
 	 * XXXJRT This fails (albeit safely) when all of the following
@@ -607,7 +607,7 @@ threadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *j
 }
 
 void
-threadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
+kthreadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 {
 	/*
 	 * We may sleep here, but we can't ASSERT_SLEEPABLE() because
@@ -765,10 +765,10 @@ itpc_threadpool_setup(itpc)
 	if(itpc == NULL) {
 		MALLOC(itpc, struct threadpool_itpc *, sizeof(struct threadpool_itpc *), M_ITPC, NULL);
 	}
-	TAILQ_INIT(itpc->itc_header);
-	itpc->itc_refcnt = 0;
-	itpc->itc_jobs = NULL;
-	itpc->itc_job_name = NULL;
+	TAILQ_INIT(itpc->itpc_header);
+	itpc->itpc_refcnt = 0;
+	itpc->itpc_jobs = NULL;
+	itpc->itpc_job_name = NULL;
 }
 
 /* Add kthread to itpc queue */
@@ -780,16 +780,16 @@ itpc_add_kthreadpool(itpc, ktpool)
     struct kthread *kt = NULL;
 
     if(ktpool != NULL) {
-        itpc->itc_ktpool = ktpool;
+        itpc->itpc_ktpool = ktpool;
         kt = ktpool->ktp_overseer.ktpt_kthread;
         if(kt != NULL) {
-        	itpc->itc_ktinfo->itc_kthread = kt;
-        	itpc->itc_ktinfo->itc_ktid = kt->kt_tid;
-        	itpc->itc_ktinfo->itc_ktgrp = kt->kt_pgrp;
-        	itpc->itc_ktinfo->itc_ktjob =  ktpool->ktp_overseer.ktpt_job;
-            itpc->itc_refcnt++;
+        	itpc->itpc_ktinfo->itpc_kthread = kt;
+        	itpc->itpc_ktinfo->itpc_ktid = kt->kt_tid;
+        	itpc->itpc_ktinfo->itpc_ktgrp = kt->kt_pgrp;
+        	itpc->itpc_ktinfo->itpc_ktjob =  ktpool->ktp_overseer.ktpt_job;
+            itpc->itpc_refcnt++;
             ktpool->ktp_initcq = TRUE;
-            TAILQ_INSERT_HEAD(itpc->itc_header, itpc, itc_entry);
+            TAILQ_INSERT_HEAD(itpc->itpc_header, itpc, itpc_entry);
         } else {
         	printf("no kthread found in kthreadpool");
         }
@@ -806,16 +806,16 @@ itpc_remove_kthreadpool(itpc, ktpool)
 {
 	register struct kthread *kt;
 
-	kt = itpc->itc_ktinfo->itc_kthread;
+	kt = itpc->itpc_ktinfo->itpc_kthread;
 	if (ktpool != NULL) {
-		TAILQ_FOREACH(itpc, itpc->itc_header, itc_entry) {
-			if (TAILQ_NEXT(itpc, itc_entry)->itc_ktpool == ktpool &&  ktpool->ktp_overseer.ktpt_kthread == kt) {
+		TAILQ_FOREACH(itpc, itpc->itpc_header, itpc_entry) {
+			if (TAILQ_NEXT(itpc, itpc_entry)->itpc_ktpool == ktpool &&  ktpool->ktp_overseer.ktpt_kthread == kt) {
 				if(kt != NULL) {
-		        	itpc->itc_ktinfo->itc_kthread = NULL;
-		        	itpc->itc_ktinfo->itc_ktjob = NULL;
-					itpc->itc_refcnt--;
+		        	itpc->itpc_ktinfo->itpc_kthread = NULL;
+		        	itpc->itpc_ktinfo->itpc_ktjob = NULL;
+					itpc->itpc_refcnt--;
 					ktpool->ktp_initcq = FALSE;
-					TAILQ_REMOVE(itpc->itc_header, itpc, itc_entry);
+					TAILQ_REMOVE(itpc->itpc_header, itpc, itpc_entry);
 				} else {
 					printf("cannot remove kthread. does not exist");
 				}
@@ -835,9 +835,9 @@ itpc_check_kthreadpool(itpc, ktpool)
 	kt = ktpool->ktp_overseer.ktpt_kthread;
 	if(ktpool->ktp_issender) {
 		printf("kernel threadpool to send");
-		if(itpc->itc_ktpool == ktpool) {
-			if(itpc->itc_ktinfo->itc_kthread == kt) {
-				if(itpc->itc_ktinfo->itc_ktid == kt->kt_tid) {
+		if(itpc->itpc_ktpool == ktpool) {
+			if(itpc->itpc_ktinfo->itpc_kthread == kt) {
+				if(itpc->itpc_ktinfo->itpc_ktid == kt->kt_tid) {
 					printf("kthread tid found");
 				} else {
 					printf("kthread tid not found");
@@ -878,9 +878,9 @@ itpc_verify_kthreadpool(itpc, ktpool)
 	kt = ktpool->ktp_overseer.ktpt_kthread;
 	if(ktpool->ktp_isreciever) {
 		printf("kernel threadpool to recieve");
-		if(itpc->itc_ktpool == ktpool) {
-			if(itpc->itc_ktinfo->itc_kthread == kt) {
-				if(itpc->itc_ktinfo->itc_ktid == kt->kt_tid) {
+		if(itpc->itpc_ktpool == ktpool) {
+			if(itpc->itpc_ktinfo->itpc_kthread == kt) {
+				if(itpc->itpc_ktinfo->itpc_ktid == kt->kt_tid) {
 					printf("kthread tid found");
 				} else {
 					printf("kthread tid not found");

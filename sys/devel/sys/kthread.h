@@ -176,11 +176,11 @@ struct kthreadpool {
     u_char								ktp_pri;			/* priority */
 
     /* Inter Threadpool Communication */
-    struct threadpool_itpc				ktp_itc;			/* threadpool ipc ptr */
-    boolean_t							ktp_issender;		/* is itc sender */
-    boolean_t							ktp_isreciever;		/* is itc reciever */
-    int									ktp_retcnt;			/* retry count in itc pool */
-    boolean_t							ktp_initcq;			/* check if in itc queue */
+    struct threadpool_itpc				ktp_itpc;			/* threadpool ipc ptr */
+    boolean_t							ktp_issender;		/* is itpc sender */
+    boolean_t							ktp_isreciever;		/* is itpc reciever */
+    int									ktp_retcnt;			/* retry count in itpc pool */
+    boolean_t							ktp_initcq;			/* check if in itpc queue */
 };
 
 #define	TIDHSZ							16

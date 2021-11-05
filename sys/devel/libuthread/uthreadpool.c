@@ -458,8 +458,8 @@ uthreadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_
 	job->job_lock = lock;
 	job->job_name = name;
 	job->job_refcnt = 0;
-	job->job_itc->itc_ktpool = NULL;
-	job->job_itc->itc_utpool = NULL;
+	job->job_itpc->itpc_ktpool = NULL;
+	job->job_itpc->itpc_utpool = NULL;
 	job->job_func = func;
 }
 
@@ -758,16 +758,16 @@ itpc_add_uthreadpool(itpc, utpool)
 
 	/* check user threadpool is not null & has a job/task entry to send */
 	if(utpool != NULL) {
-		itpc->itc_utpool = utpool;
+		itpc->itpc_utpool = utpool;
 		ut = utpool->utp_overseer.utpt_uthread;
 		if(ut != NULL) {
-			itpc->itc_utinfo->itc_uthread = ut;
-			itpc->itc_utinfo->itc_utid = ut->ut_tid;
-			itpc->itc_utinfo->itc_utgrp = ut->ut_pgrp;
-			itpc->itc_utinfo->itc_utjob = utpool->utp_overseer.utpt_job;
-			itpc->itc_refcnt++;
+			itpc->itpc_utinfo->itpc_uthread = ut;
+			itpc->itpc_utinfo->itpc_utid = ut->ut_tid;
+			itpc->itpc_utinfo->itpc_utgrp = ut->ut_pgrp;
+			itpc->itpc_utinfo->itpc_utjob = utpool->utp_overseer.utpt_job;
+			itpc->itpc_refcnt++;
 			utpool->utp_initcq = TRUE;
-			TAILQ_INSERT_HEAD(itpc->itc_header, itpc, itc_entry);
+			TAILQ_INSERT_HEAD(itpc->itpc_header, itpc, itpc_entry);
 		} else {
 			printf("no uthread found in uthreadpool");
 		}
@@ -787,16 +787,16 @@ itpc_remove_uthreadpool(itpc, utpool)
 {
 	struct uthread *ut;
 
-	ut = itpc->itc_utinfo->itc_uthread;
+	ut = itpc->itpc_utinfo->itpc_uthread;
 	if(utpool != NULL) {
-		TAILQ_FOREACH(itpc, itpc->itc_header, itc_entry) {
-			if(TAILQ_NEXT(itpc, itc_entry)->itc_utpool == utpool && utpool->utp_overseer.utpt_uthread == ut) {
+		TAILQ_FOREACH(itpc, itpc->itpc_header, itpc_entry) {
+			if(TAILQ_NEXT(itpc, itpc_entry)->itpc_utpool == utpool && utpool->utp_overseer.utpt_uthread == ut) {
 				if(ut != NULL) {
-					itpc->itc_utinfo->itc_uthread = NULL;
-					itpc->itc_utinfo->itc_utjob = NULL;
-					itpc->itc_refcnt--;
+					itpc->itpc_utinfo->itpc_uthread = NULL;
+					itpc->itpc_utinfo->itpc_utjob = NULL;
+					itpc->itpc_refcnt--;
 					utpool->utp_initcq = FALSE;
-					TAILQ_REMOVE(itpc->itc_header, itpc, itc_entry);
+					TAILQ_REMOVE(itpc->itpc_header, itpc, itpc_entry);
 				} else {
 					printf("cannot remove uthread. does not exist");
 				}
@@ -816,9 +816,9 @@ itpc_check_uthreadpool(itpc, utpool)
 	ut = utpool->utp_overseer.utpt_uthread;
 	if(utpool->utp_issender) {
 		printf("user threadpool to send");
-		if(itpc->itc_utpool == utpool) {
-			if(itpc->itc_utinfo->itc_uthread == ut) {
-				if(itpc->itc_utinfo->itc_utid == ut->ut_tid) {
+		if(itpc->itpc_utpool == utpool) {
+			if(itpc->itpc_utinfo->itpc_uthread == ut) {
+				if(itpc->itpc_utinfo->itpc_utid == ut->ut_tid) {
 					printf("uthread tid found");
 				} else {
 					printf("uthread tid not found");
@@ -859,9 +859,9 @@ itpc_verify_uthreadpool(itpc, utpool)
 	ut = utpool->utp_overseer.utpt_uthread;
 	if(utpool->utp_isreciever) {
 		printf("user threadpool to recieve");
-		if(itpc->itc_utpool == utpool) {
-			if(itpc->itc_utinfo->itc_uthread == ut) {
-				if(itpc->itc_utinfo->itc_utid == ut->ut_tid) {
+		if(itpc->itpc_utpool == utpool) {
+			if(itpc->itpc_utinfo->itpc_uthread == ut) {
+				if(itpc->itpc_utinfo->itpc_utid == ut->ut_tid) {
 					printf("uthread tid found");
 				} else {
 					printf("uthread tid not found");
