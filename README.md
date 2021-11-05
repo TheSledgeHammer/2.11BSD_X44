@@ -81,7 +81,7 @@ To build just the tools for i386, in the src directory:
 
 Compiler Success:
 
-GCC: i386(tools = yes; kernel = untested)
+GCC: i386(tools = yes; kernel = fix compilation errors)
 
 Clang: No, missing needed components in the bsd mk files.
 
