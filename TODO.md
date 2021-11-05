@@ -1,7 +1,8 @@
 A General todo list. Don't hesitate to add to this list. :)
 
 # TODO:
-## Compiler/Tools:
+## Compiler:
+### Tools:
 - Needs Fixing:
 	- Disklabel Associated
 		- mklocale
@@ -12,6 +13,12 @@ A General todo list. Don't hesitate to add to this list. :)
 	- zic
 - Unimplemented:
 	- rpcgen
+
+### Kernel:
+- Building Kernel/Arch:
+	- Config:
+	- Compile:
+		- numerous compilation errors 
 
 # usr/ (User & OS Libraries):
 ## lib:
@@ -40,7 +47,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## arch:
 - i386/x86: (Merged under i386)
-	- swapgeneric.c: Update... Contains deprecated code.
 
 ## devel: (planned)
 - Code planned for future integration
