@@ -1,4 +1,4 @@
-#	$NetBSD: genassym.sh,v 1.8 1997/08/20 06:58:10 mikel Exp $
+#	$NetBSD: genassym.sh,v 1.12 2002/11/17 19:24:50 chs Exp $
 
 #
 # Copyright (c) 1997 Matthias Pfaller.
@@ -35,12 +35,27 @@
 
 awk=${AWK:-awk}
 
-if [ $1 = '-c' ] ; then
+if [ "$1" = '-c' ] ; then
 	shift
 	ccode=1
 else
 	ccode=0
 fi
+
+# Deal with any leading environment settings..
+
+while [ "$1" ]
+do
+	case "$1" in
+	*=*)
+		eval export "$1"
+		shift
+		;;
+	*)	
+		break
+		;;
+	esac
+done
 
 trap "rm -f /tmp/$$.c /tmp/genassym.$$" 0 1 2 3 15
 
@@ -49,13 +64,20 @@ BEGIN {
 	printf("#ifndef _KERNEL\n#define _KERNEL\n#endif\n");
 	printf("#define	offsetof(type, member) ((size_t)(&((type *)0)->member))\n");
 	defining = 0;
+	type = "long";
+	asmtype = "n";
+	asmprint = "";
 }
-
 $0 ~ /^[ \t]*#.*/ || $0 ~ /^[ \t]*$/ {
 	# Just ignore comments and empty lines
 	next;
 }
-
+$0 ~ /^config[ \t]/ {
+	type = $2;
+	asmtype = $3;
+	asmprint = $4;
+	next;
+}
 /^include[ \t]/ {
 	if (defining != 0) {
 		defining = 0;
@@ -64,7 +86,6 @@ $0 ~ /^[ \t]*#.*/ || $0 ~ /^[ \t]*$/ {
 	printf("#%s\n", $0);
 	next;
 }
-
 $0 ~ /^if[ \t]/ ||
 $0 ~ /^ifdef[ \t]/ ||
 $0 ~ /^ifndef[ \t]/ ||
@@ -74,23 +95,22 @@ $0 ~ /^endif/ {
 	printf("#%s\n", $0);
 	next;
 }
-
 /^struct[ \t]/ {
 	structname = $2;
 	$0 = "define " structname "_SIZEOF sizeof(struct " structname ")";
 	# fall through
 }
-
 /^member[ \t]/ {
-	$0 = "define " $2 " offsetof(struct " structname ", " $2 ")";
+	if (NF > 2)
+		$0 = "define " $2 " offsetof(struct " structname ", " $3 ")";
+	else
+		$0 = "define " $2 " offsetof(struct " structname ", " $2 ")";
 	# fall through
 }
-
 /^export[ \t]/ {
 	$0 = "define " $2 " " $2;
 	# fall through
 }
-
 /^define[ \t]/ {
 	if (defining == 0) {
 		defining = 1;
@@ -103,23 +123,20 @@ $0 ~ /^endif/ {
 	value = $0
 	gsub("^define[ \t]+[A-Za-z_][A-Za-z_0-9]*[ \t]+", "", value)
 	if (ccode)
-		printf("printf(\"#define " $2 " %%ld\\n\", (long)" value ");\n");
+		printf("printf(\"#define " $2 " %%ld\\n\", (%s)" value ");\n", type);
 	else
-		printf("__asm(\"XYZZY %s %%0\" : : \"n\" (%s));\n", $2, value);
+		printf("__asm(\"XYZZY %s %%%s0\" : : \"%s\" (%s));\n", $2, asmprint, asmtype, value);
 	next;
 }
-
 /^quote[ \t]/ {
 	gsub("^quote[ \t]+", "");
 	print;
 	next;
 }
-
 {
 	printf("syntax error in line %d\n", FNR) >"/dev/stderr";
 	exit(1);
 }
-
 END {
 	if (defining != 0) {
 		defining = 0;
@@ -139,6 +156,8 @@ if [ $ccode = 1 ] ; then
 else
 	# Kill all of the "#" and "$" modifiers; locore.s already
 	# prepends the correct "constant" modifier.
-	"$@" -S /tmp/$$.c -o -| sed -e 's/#//g' -e 's/\$//g' | \
+	"$@" -S /tmp/$$.c -o - > /tmp/genassym.$$ && \
+	    sed -e 's/#//g' -e 's/\$//g' < /tmp/genassym.$$ | \
 	    sed -n 's/.*XYZZY/#define/gp'
 fi
+
