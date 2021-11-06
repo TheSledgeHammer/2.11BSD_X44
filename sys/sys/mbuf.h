@@ -263,7 +263,7 @@ int		nmbclusters;
 struct	mbuf *mfree, *mclfree;
 char	mclrefcnt[NMBCLUSTERS + 1];
 int		m_want;
-struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
+//struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
 #ifndef	pdp11
 caddr_t	m_clalloc();
 #endif

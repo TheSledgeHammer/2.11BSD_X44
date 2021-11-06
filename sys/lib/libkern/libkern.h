@@ -36,6 +36,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/stddef.h>
 #include <sys/null.h>
 
 /* BCD conversions. */
@@ -193,11 +194,6 @@ tolower(int ch)
 	return (ch);
 }
 
-#ifndef offsetof
-#define	offsetof(type, member) \
-	((size_t)(unsigned long)(&(((type *)0)->member)))
-#endif
-
 /* hash Functions */
 uint32_t 	prospector32(uint32_t x);
 uint32_t 	lowbias32(uint32_t x);
@@ -281,7 +277,7 @@ size_t	 	strlcpy (char *, const char *, size_t);
 size_t	 	strlcat (char *, const char *, size_t);
 int	 		strncasecmp (const char *, const char *, size_t);
 u_long	 	strtoul (const char *, char **, int);
-//void	 	hexdump(void (*)(const char *, ...) __printflike(1, 2), const char *, const void *, size_t);
+void	 	hexdump(void (*)(const char *, ...) __printflike(1, 2), const char *, const void *, size_t);
 
 #define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
 

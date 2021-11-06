@@ -49,7 +49,7 @@ struct pstats {
 #define	pstat_endzero	pstat_startcopy
 
 #define	pstat_startcopy	p_timer
-	struct	itimerval 	p_timer[3];	/* virtual-time timers */
+	struct	itimerval 	*p_timer[3];	/* virtual-time timers */
 
 	struct uprof {					/* profile arguments */
 		caddr_t			pr_base;	/* buffer base */
@@ -61,7 +61,7 @@ struct pstats {
 	} p_prof;
 
 #define	pstat_endcopy	p_start
-	struct	timeval 	p_start;	/* starting time */
+	struct	timeval 	*p_start;	/* starting time */
 };
 
 /*

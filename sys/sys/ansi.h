@@ -39,8 +39,9 @@
 #ifndef	_SYS_ANSI_H_
 #define	_SYS_ANSI_H_
 
-//#include <sys/cdefs.h>
+#include <sys/cdefs.h>
 #include <machine/ansi.h>
+#include <machine/types.h>
 
 typedef char *				__caddr_t;		/* core address */
 typedef __uint32_t			__gid_t;		/* group id */

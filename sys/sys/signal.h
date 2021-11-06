@@ -51,9 +51,9 @@
 #define	SIG_DFL		(int (*)())0
 #define	SIG_IGN		(int (*)())1
 
-#ifndef KERNEL
+//#ifndef KERNEL
 int	(*signal())();
-#endif
+//#endif
 
 typedef u_long 		sigset_t;
 

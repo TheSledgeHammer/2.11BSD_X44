@@ -75,10 +75,10 @@
 #include <sys/types.h>
 
 __BEGIN_DECLS
-uint32_t	htonl __P((uint32_t)) __attribute__((__const__));
-uint16_t	htons __P((uint16_t)) __attribute__((__const__));
-uint32_t	ntohl __P((uint32_t)) __attribute__((__const__));
-uint16_t	ntohs __P((uint16_t)) __attribute__((__const__));
+uint32_t	htonl (uint32_t) __attribute__((__const__));
+uint16_t	htons (uint16_t) __attribute__((__const__));
+uint32_t	ntohl (uint32_t) __attribute__((__const__));
+uint16_t	ntohs (uint16_t) __attribute__((__const__));
 __END_DECLS
 
 /*
@@ -252,48 +252,4 @@ le64enc(void *pp, uint64_t u)
 
 #include <lib/libkern/libkern.h>
 
-static __inline u_int16_t
-bswap16(x)
-	u_int16_t x;
-{
-	return ((x << 8) & 0xff00) | ((x >> 8) & 0x00ff);
-}
-
-static __inline u_int32_t
-bswap32(x)
-	u_int32_t x;
-{
-	return ((x << 24) & 0xff000000) | ((x << 8) & 0x00ff0000)
-			| ((x >> 8) & 0x0000ff00) | ((x >> 24) & 0x000000ff);
-}
-
-static __inline
-u_int64_t
-bswap64(x)
-	u_int64_t x;
-{
-#ifdef _LP64
-	/*
-	 * Assume we have wide enough registers to do it without touching
-	 * memory.
-	 */
-	return  ( (x << 56) & 0xff00000000000000UL ) |
-		( (x << 40) & 0x00ff000000000000UL ) |
-		( (x << 24) & 0x0000ff0000000000UL ) |
-		( (x <<  8) & 0x000000ff00000000UL ) |
-		( (x >>  8) & 0x00000000ff000000UL ) |
-		( (x >> 24) & 0x0000000000ff0000UL ) |
-		( (x >> 40) & 0x000000000000ff00UL ) |
-		( (x >> 56) & 0x00000000000000ffUL );
-#else
-	/*
-	 * Split the operation in two 32bit steps.
-	 */
-	u_int32_t tl, th;
-
-	th = bswap32((u_int32_t) (x & 0x00000000ffffffffULL));
-	tl = bswap32((u_int32_t) ((x >> 32) & 0x00000000ffffffffULL));
-	return ((u_int64_t) th << 32) | tl;
-#endif
-}
 #endif /* !_SYS_ENDIAN_H_ */
