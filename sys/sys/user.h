@@ -11,9 +11,6 @@
 
 #include <sys/cdefs.h>
 
-#include <machine/pcb.h>
-#include <machine/param.h>
-
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/exec.h>
@@ -30,6 +27,10 @@
 #include <sys/ucred.h>
 
 #include <vm/include/vm.h>			/* XXX */
+
+#include <machine/param.h>
+#include <machine/pcb.h>
+#include <machine/types.h>
 
 /*
  * data that doesn't need to be referenced while the process is swapped.

@@ -657,7 +657,7 @@ vm86_getaddr(struct vm86context *vmc, u_short sel, u_short off)
 	vm_offset_t addr;
 
 	addr = (vm_offset_t)MAKE_ADDR(sel, off);
-	page = addr >> PAGE_SHIFT;
+	page = addr >> PGSHIFT;
 	for (i = 0; i < vmc->npages; i++)
 		if (page == vmc->pmap[i].pte_num)
 			return (vmc->pmap[i].kva + (addr & PAGE_MASK));

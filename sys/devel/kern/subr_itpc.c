@@ -52,9 +52,7 @@ static void
 itpc_setup(itpc)
 	struct threadpool_itpc *itpc;
 {
-	if(itpc == NULL) {
-		MALLOC(itpc, struct threadpool_itpc *, sizeof(struct threadpool_itpc *), M_ITPC, NULL);
-	}
+	MALLOC(itpc, struct threadpool_itpc *, sizeof(struct threadpool_itpc *), M_ITPC, NULL);
 	TAILQ_INIT(itpc->itpc_header);
 	itpc->itpc_refcnt = 0;
 	itpc->itpc_jobs = NULL;

@@ -48,7 +48,7 @@
 #define	NPORT					1024					/* # of ports we allow to be mapped */
 
 struct pcb {
-	struct	i386tss 			pcb_tss;
+	struct i386tss 				pcb_tss;
 #define pcb_edi					pcb_tss.tss_edi
 #define pcb_esi					pcb_tss.tss_esi
 #define	pcb_ebp					pcb_tss.tss_ebp

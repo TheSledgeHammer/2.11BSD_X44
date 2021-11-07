@@ -33,6 +33,8 @@
  *	@(#)signal.h	8.2 (Berkeley) 5/3/95
  */
 
+#ifndef _I386_SIGNAL_H_
+#define _I386_SIGNAL_H_
 /*
  * Machine-dependent signal definitions
  */
@@ -41,6 +43,7 @@
 
 #include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
 
+#if defined(_KERNEL)
 /*
  * Information pushed on stack when a signal is delivered.
  * This is used by the kernel to restore state following
@@ -79,6 +82,7 @@ struct sigcontext {
 #define sc_fp sc_ebp	/* fp to restore */
 #define sc_pc sc_eip	/* pc to restore */
 #define sc_ps sc_eflags	/* psl to restore */
-
+#endif /* _KERNEL */
 
 #endif	/* !_ANSI_SOURCE && !_POSIX_SOURCE */
+#endif	/* !_I386_SIGNAL_H_ */

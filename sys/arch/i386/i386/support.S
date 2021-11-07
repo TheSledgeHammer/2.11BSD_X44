@@ -484,7 +484,7 @@ ENTRY(ltr)
 ENTRY(lcr3)
 		inb		$0x84,%al	# check wristwatch
 		movl	4(%esp),%eax
- 		orl		$ I386_CR3PAT,%eax
+ 		orl		$I386_CR3PAT,%eax
 		movl	%eax,%cr3
 		inb		$0x84,%al	# check wristwatch
 		ret

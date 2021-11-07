@@ -36,6 +36,7 @@
  #	@(#)genassym.c	8.2 (Berkeley) 9/23/93
  #
 
+include <sys/cdefs.h>
 include <sys/param.h>
 include <sys/buf.h>
 include <sys/map.h>
@@ -44,19 +45,25 @@ include <sys/mbuf.h>
 include <sys/msgbuf.h>
 include <sys/syscall.h>
 include <sys/stddef.h>
-include <sys/user.h>
+include <sys/vmmeter.h>
 
 include <vm/include/vm.h>
 
+include <machine/bootinfo.h>
 include <machine/cpu.h>
-include <machine/trap.h>
+include <machine/frame.h>
+include <machine/pcb.h>
+include <machine/pic.h>
 include <machine/psl.h>
 include <machine/reg.h>
+include <machine/trap.h>
+include <machine/tss.h>
+include <machine/signal.h>
+
 include <machine/vmparam.h>
 
-include "isa.h"
-if NISA > 0
-include <i386/isa/isa_machdep.h>
+if NIOAPIC > 0
+include <i386/include/apic/ioapicvar.h>
 endif
 
 define I386_CR3PAT 			I386_CR3PAT
@@ -85,7 +92,6 @@ define V_FAULTS 			offsetof(struct vmmeter , v_faults)
 
 define KSTACK_PAGES			KSTACK_PAGES
 define PAGE_SIZE			PGSIZE
-define PAGE_SHIFT			PGSHIFT
 define PAGE_MASK			PGOFSET
 
 define UPAGES 				UPAGES
@@ -117,20 +123,20 @@ define PCB_ESP2 			offsetof(struct pcb, pcb_tss.tss_esp2)
 define PCB_SS0 				offsetof(struct pcb, pcb_tss.tss_ss0)
 define PCB_SS1 				offsetof(struct pcb, pcb_tss.tss_ss1)
 define PCB_SS2 				offsetof(struct pcb, pcb_tss.tss_ss2)
-define PCB_CR0				offsetof(struct pcb, pcb_tss.tss_cr0)
-define PCB_CR2				offsetof(struct pcb, pcb_tss.tss_cr2)
-define PCB_CR3 				offsetof(struct pcb, pcb_tss.tss_cr3)
-define PCB_CR4				offsetof(struct pcb, pcb_tss.tss_cr4)
+define PCB_CR0				offsetof(struct pcb, pcb_cr0)
+define PCB_CR2				offsetof(struct pcb, pcb_cr2)
+define PCB_CR3 				offsetof(struct pcb, pcb_cr3)
+define PCB_CR4				offsetof(struct pcb, pcb_cr4)
 define PCB_EIP 				offsetof(struct pcb, pcb_tss.tss_eip)
 define PCB_EFLAGS 			offsetof(struct pcb, pcb_tss.tss_eflags)
 define PCB_EAX 				offsetof(struct pcb, pcb_tss.tss_eax)
 define PCB_ECX 				offsetof(struct pcb, pcb_tss.tss_ecx)
 define PCB_EDX 				offsetof(struct pcb, pcb_tss.tss_edx)
-define PCB_EBX 				offsetof(struct pcb, pcb_tss.tss_ebx)
-define PCB_ESP 				offsetof(struct pcb, pcb_tss.tss_esp)
-define PCB_EBP 				offsetof(struct pcb, pcb_tss.tss_ebp)
-define PCB_ESI 				offsetof(struct pcb, pcb_tss.tss_esi)
-define PCB_EDI 				offsetof(struct pcb, pcb_tss.tss_edi)
+define PCB_EBX 				offsetof(struct pcb, pcb_ebx)
+define PCB_ESP 				offsetof(struct pcb, pcb_esp)
+define PCB_EBP 				offsetof(struct pcb, pcb_ebp)
+define PCB_ESI 				offsetof(struct pcb, pcb_esi)
+define PCB_EDI 				offsetof(struct pcb, pcb_edi)
 define PCB_ES 				offsetof(struct pcb, pcb_tss.tss_es)
 define PCB_CS 				offsetof(struct pcb, pcb_tss.tss_cs)
 define PCB_SS 				offsetof(struct pcb, pcb_tss.tss_ss)
@@ -188,7 +194,6 @@ define IH_NEXT				offsetof(struct intrhand, ih_next)
 
 define IS_HANDLERS			offsetof(struct intrsource, is_handlers)
 define IS_PIC				offsetof(struct intrsource, is_pic)
-define IS_FLAGS				offsetof(struct intrsource, is_flags)
 define IS_PIN				offsetof(struct intrsource, is_pin)
 define IS_TYPE				offsetof(struct intrsource, is_type)
 define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)

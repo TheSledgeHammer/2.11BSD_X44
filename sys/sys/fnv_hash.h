@@ -10,6 +10,8 @@
 #ifndef _SYS_FNV_HASH_H_
 #define	_SYS_FNV_HASH_H_
 
+#include <sys/types.h>
+
 typedef u_int32_t Fnv32_t;
 typedef u_int64_t Fnv64_t;
 

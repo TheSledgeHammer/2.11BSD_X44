@@ -28,6 +28,9 @@
 #ifndef _MACHINE_PERCPU_H_
 #define _MACHINE_PERCPU_H_
 
+#include <sys/percpu.h>
+#include <sys/stddef.h>
+
 extern struct percpu 				__percpu[];
 
 #define	PERCPU_MD_FIELDS 																\

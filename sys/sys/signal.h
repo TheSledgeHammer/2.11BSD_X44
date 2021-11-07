@@ -78,7 +78,7 @@ struct	sigaction {
 #define	SIG_UNBLOCK	2		/* unblock specified signal set */
 #define	SIG_SETMASK	3		/* set specified signal set */
 
-typedef	int (*sig_t)();		/* type of signal function */
+typedef	int (*sig_t)(void);		/* type of signal function */
 
 /*
  * Structure used in sigaltstack call.

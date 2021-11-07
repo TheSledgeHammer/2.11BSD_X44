@@ -452,7 +452,7 @@ kthreadpool_thread(void *arg)
 }
 
 /* Threadpool Jobs */
-/*
+
 void
 threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t lock, char *name, const char *fmt, ...)
 {
@@ -512,7 +512,7 @@ threadpool_job_rele(struct threadpool_job *job)
 		}
 	} while (atomic_cas_uint(&job->job_refcnt, refcnt, (refcnt - 1)) != refcnt);
 }
-*/
+
 void
 kthreadpool_job_done(struct threadpool_job *job)
 {
@@ -600,7 +600,6 @@ kthreadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *
 		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
 		simple_unlock(&ktpool->ktp_lock);
 		threadpool_job_rele(job);
-		//itpc_job_rele(&ktpool->ktp_itpc, job);
 		return TRUE;
 	} else {
 		/* Too late -- already running.  */

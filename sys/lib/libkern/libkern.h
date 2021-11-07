@@ -36,6 +36,7 @@
  */
 #include <sys/types.h>
 #include <sys/stddef.h>
+#include <sys/inttypes.h>
 #include <sys/null.h>
 
 /* BCD conversions. */
@@ -276,7 +277,7 @@ size_t	 	strlcpy (char *, const char *, size_t);
 size_t	 	strlcat (char *, const char *, size_t);
 int	 		strncasecmp (const char *, const char *, size_t);
 u_long	 	strtoul (const char *, char **, int);
-void	 	hexdump(void (*)(const char *, ...) __printflike(1, 2), const char *, const void *, size_t);
+void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 
 #define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
 

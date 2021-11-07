@@ -26,6 +26,7 @@ NEED_OWN_INSTALL_TARGET?=no
 
 I386=			$S/arch/i386
 GENASSYM_CONF=	${I386}/i386/genassym.cf
+#GENASSYM_CONF=	${I386}/i386/genassym.c
 
 ##
 ## (2) compile settings
