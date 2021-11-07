@@ -56,7 +56,7 @@ ctop_t 				 	*ctop;
 static __inline void
 ctop_init()
 {
-	ctop = (ctop_t *)malloc(sizeof(ctop_t *));
+	ctop = (ctop_t *)malloc(sizeof(ctop_t *), M_TOPO, M_WAITOK);
 	bitmap_init();
 }
 

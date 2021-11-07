@@ -108,7 +108,7 @@ struct clockinfo {
 	int	profhz;		/* profiling clock frequency */
 };
 
-#ifdef KERNEL  || STANDALONE
+#ifdef KERNEL  /*|| STANDALONE*/
 extern volatile time_t	time_second;
 #endif
 

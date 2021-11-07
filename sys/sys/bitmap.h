@@ -29,6 +29,7 @@
 #ifndef _SYS_BITMAP_H_
 #define _SYS_BITMAP_H_
 
+#include <sys/cdefs.h>
 #include <sys/queue.h>
 
 struct bitlist;
@@ -42,7 +43,7 @@ struct bitmap {
 typedef struct bitmap   bitmap_t;
 
 extern struct bitlist 	bitset[];
-extern bitmap_counter;
+extern int bitmap_counter;
 
 void		bitmap_init(void);
 void		bitmap_insert(uint64_t);
