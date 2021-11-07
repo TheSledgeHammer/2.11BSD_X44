@@ -30,8 +30,6 @@
 #define	_SYS_BUS_H_
 
 #include <sys/types.h>
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
 
 struct bus_space_reservation {
 	bus_addr_t _bsr_start;

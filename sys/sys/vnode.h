@@ -256,6 +256,7 @@ extern	struct vattr va_null;		/* predefined null vattr structure */
 #define	LEASE_WRITE	0x2		/* Check lease for modifiers */
 
 #endif /* KERNEL */
+struct componentname
 
 struct vnodeops {
 	int	(*vop_lookup)		(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp);
@@ -797,7 +798,7 @@ void 	vref (struct vnode *vp);
 void 	vrele (struct vnode *vp);
 
 /* vfs_vops.c */
-void 	vop_init(); 					/* initialize vnode vector operations (vops) */
+void 	vop_init(void ); 					/* initialize vnode vector operations (vops) */
 void 	vop_alloc(struct vnodeops *); 	/* allocate vnode vector operations (vops) */
 void	vop_free(struct vnodeops *);	/* free vnode vector operations (vops) */
 #endif /* KERNEL */

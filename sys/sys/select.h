@@ -79,8 +79,8 @@ struct proc;
 void	selrecord (struct proc *selector, struct selinfo *);
 void	selwakeup (struct selinfo *);
 
-int		select();
-int		pselect();
+//int		select();
+//int		pselect();
 
 static __inline void
 selnotify(struct selinfo *sip, long knhint)

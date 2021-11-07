@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ucred.h>
+
 #include <vm/include/vm.h>			/* XXX */
 
 /*
@@ -170,3 +171,5 @@ struct user {
 #ifdef KERNEL
 extern struct user 		u;
 #endif
+#endif /* _SYS_USER_H_ */
+

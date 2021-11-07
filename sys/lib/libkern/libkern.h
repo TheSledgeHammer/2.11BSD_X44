@@ -34,15 +34,14 @@
  *	@(#)libkern.h	8.1 (Berkeley) 6/10/93
  * 	$Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
  */
-
 #include <sys/types.h>
 #include <sys/stddef.h>
 #include <sys/null.h>
 
 /* BCD conversions. */
-extern u_char const		bcd2bin_data[];
-extern u_char const		bin2bcd_data[];
-extern char const		hex2ascii_data[];
+extern u_char const	bcd2bin_data[];
+extern u_char const	bin2bcd_data[];
+extern char const	hex2ascii_data[];
 
 #define	bcd2bin(bcd)	(bcd2bin_data[bcd])
 #define	bin2bcd(bin)	(bin2bcd_data[bin])
@@ -134,7 +133,7 @@ abs(int j)
 	return(j < 0 ? -j : j);
 }
 
-static __inline
+static __inline int
 isspace(int ch)
 {
 	return (ch == ' ' || (ch >= '\t' && ch <= '\r'));

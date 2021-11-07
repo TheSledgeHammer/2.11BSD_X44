@@ -80,6 +80,7 @@ struct execa {
 	char	**envp;
 };
 
+struct exec_linker;
 typedef int (*exec_makecmds_fcn)(struct proc *, struct exec_linker *);
 
 struct execsw {

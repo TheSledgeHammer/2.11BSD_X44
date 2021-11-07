@@ -12,6 +12,9 @@
 #include <machine/proc.h>		/* Machine-dependent proc substruct. */
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/queue.h>
+#include <sys/callout.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 
 /*
  * One structure allocated per active
@@ -68,10 +71,10 @@ struct	proc {
     caddr_t	            p_wchan;		/* event process is awaiting */
 	caddr_t	            p_wmesg;	 	/* Reason for sleep. */
 	u_int				p_swtime;	 	/* Time swapped in or out. */
-	struct callout 		*p_tsleep_ch;	/* callout for tsleep */
+	struct callout 		p_tsleep_ch;	/* callout for tsleep */
 
-    struct	itimerval   *p_realtimer;	/* Alarm timer. */
-    struct	timeval     *p_rtime;	    /* Real time. */
+    struct	itimerval   p_realtimer;	/* Alarm timer. */
+    struct	timeval     p_rtime;	    /* Real time. */
     u_quad_t 			p_uticks;		/* Statclock hits in user mode. */
     u_quad_t 			p_sticks;		/* Statclock hits in system mode. */
     u_quad_t 			p_iticks;		/* Statclock hits processing intr. */
@@ -123,7 +126,7 @@ struct	proc {
 	size_t				p_ssize;		/* size of stack segment (clicks) */
 	size_t				p_tsize;		/* size of text segment (clicks) */
 
-    struct	k_itimerval *p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
+    struct	k_itimerval p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short 			p_acflag;	    /* Accounting flags. */
 
 	short				p_locks;		/* DEBUG: lockmgr count of held locks */
@@ -135,8 +138,8 @@ struct	proc {
 	int					p_pflag;		/* private flags (machine-dependent) */
 
     short				p_xstat;		/* exit status for wait */
-	struct  rusage    	*p_ru;			/* exit information */
-	struct  k_rusage    *p_kru;			/* exit information kernel */
+	struct  rusage    	p_ru;			/* exit information */
+	struct  k_rusage    	p_kru;			/* exit information kernel */
 
 	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
 	//char				*p_name;		/* (: name, optional */

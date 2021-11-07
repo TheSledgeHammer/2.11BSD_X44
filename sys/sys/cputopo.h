@@ -41,6 +41,7 @@
 #ifndef _SYS_CPU_H_
 #define _SYS_CPU_H_
 
+#include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/bitmap.h>
 #include <machine/cpu.h>

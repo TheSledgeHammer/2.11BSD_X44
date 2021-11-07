@@ -71,6 +71,8 @@
 #ifndef _I386_BUS_DMA_H_
 #define _I386_BUS_DMA_H_
 
+#include <sys/bus.h>
+
 /*
  *	bus_dma_segment_t
  *
@@ -118,7 +120,7 @@ struct i386_bus_dmamap {
 struct i386_bus_dma_tag {
 	void	 *_cookie;		/* cookie used in the guts */
 
-	bus_addr_t _bounce_thresh;
+//	bus_addr_t _bounce_thresh;
 //	bus_addr_t _bounce_alloc_lo;
 //	bus_addr_t _bounce_alloc_hi;
 //	int		(*_may_bounce)(bus_dma_tag_t, bus_dmamap_t, int, int *);

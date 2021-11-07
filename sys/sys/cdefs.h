@@ -257,6 +257,38 @@
 #define	__used		__unused
 #endif
 
+#if __GNUC_PREREQ__(2, 96) || defined(__lint__)
+#define	__predict_true(exp)	__builtin_expect((exp) != 0, 1)
+#define	__predict_false(exp)	__builtin_expect((exp) != 0, 0)
+#else
+#define	__predict_true(exp)	(exp)
+#define	__predict_false(exp)	(exp)
+#endif
+
+/*
+ * Compiler-dependent macros to declare that functions take printf-like
+ * or scanf-like arguments.  They are null except for versions of gcc
+ * that are known to support the features properly (old versions of gcc-2
+ * didn't permit keeping the keywords out of the application namespace).
+ */
+#if __GNUC_PREREQ__(2, 7) || defined(__lint__)
+#define __printflike(fmtarg, firstvararg)	\
+	    __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#ifndef __syslog_attribute__
+#define __syslog__ __printf__
+#endif
+#define __sysloglike(fmtarg, firstvararg)	\
+	    __attribute__((__format__ (__syslog__, fmtarg, firstvararg)))
+#define __scanflike(fmtarg, firstvararg)	\
+	    __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
+#define __format_arg(fmtarg)    __attribute__((__format_arg__ (fmtarg)))
+#else
+#define __printflike(fmtarg, firstvararg)	/* nothing */
+#define __scanflike(fmtarg, firstvararg)	/* nothing */
+#define __sysloglike(fmtarg, firstvararg)	/* nothing */
+#define __format_arg(fmtarg)			/* nothing */
+#endif
+
 /*
  * Finally deal with BSD-specific interfaces that are not covered
  * by any standards.  We expose these when none of the POSIX or XPG

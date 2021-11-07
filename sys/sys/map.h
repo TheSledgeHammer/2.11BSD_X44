@@ -7,6 +7,8 @@
  */
 #ifndef	 _SYS_MAP_H_
 #define	 _SYS_MAP_H_
+
+#include <vm/include/vm.h>
 /*
  * Resource Allocation Maps.
  *
@@ -46,10 +48,10 @@ struct vmmapent {
 };
 
 /* ovl_overlay.h: for memory definitions */
-struct ovlmapent {
-	char           		*m_name;	/* ovl map resource name */
-	ovl_map_t      		m_ovlmap;	/* ovl map memory resources */
-};
+//struct ovlmapent {
+//	char           		*m_name;	/* ovl map resource name */
+//	ovl_map_t      		m_ovlmap;	/* ovl map memory resources */
+//};
 
 /* macros */
 #define RMALLOC(mp, cast, size) {							\

@@ -43,6 +43,7 @@ include <sys/proc.h>
 include <sys/mbuf.h>
 include <sys/msgbuf.h>
 include <sys/syscall.h>
+include <sys/stddef.h>
 include <sys/user.h>
 
 include <vm/include/vm.h>
@@ -196,7 +197,7 @@ if NIOAPIC > 0
 define SPIC_IOAPIC			offsetof(struct softpic, sp_intsrc.is_pic)
 define IOAPIC_SC_REG		offsetof(struct ioapic_softc, sc_reg)
 define IOAPIC_SC_DATA		offsetof(struct ioapic_softc, sc_data)
-#endif
+endif
 
 define IPL_NONE				IPL_NONE
 define IPL_SOFTCLOCK		IPL_SOFTCLOCK

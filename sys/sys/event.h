@@ -32,6 +32,7 @@
 #define	_SYS_EVENT_H_
 
 #include <sys/types.h>			/* for size_t */
+#include <machine/types.h>			/* for size_t */
 #include <sys/stdint.h>			/* for uintptr_t */
 #include <sys/null.h>			/* for NULL */
 
@@ -217,7 +218,7 @@ struct knote {
 	struct kevent			kn_kevent;
 	uint32_t				kn_status;	/* q: flags below */
 	uint32_t				kn_sfflags;	/*    saved filter flags */
-	uintptr_t				kn_sdata;	/*    saved data field */
+	__uintptr_t				kn_sdata;	/*    saved data field */
 	union {
 			struct file 	*p_fp;		/* file data pointer */
 			struct proc 	*p_proc;	/* proc pointer */
