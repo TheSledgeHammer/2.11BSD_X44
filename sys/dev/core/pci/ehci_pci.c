@@ -78,8 +78,8 @@ struct ehci_pci_softc {
 	void 			*sc_ih;		/* interrupt vectoring */
 };
 
-CFATTACH_DECL(ehci_pci, sizeof(struct ehci_pci_softc),
-    ehci_pci_match, ehci_pci_attach, ehci_pci_detach, ehci_activate);
+CFDRIVER_DECL(NULL, ehci_pci, &ehci_pci_cops, DV_DULL, sizeof(struct ehci_pci_softc));
+CFOPS_DECL(ehci_pci, ehci_pci_match, ehci_pci_attach, ehci_pci_detach, ehci_activate);
 
 int
 ehci_pci_match(struct device *parent, struct cfdata *match, void *aux)
