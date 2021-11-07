@@ -40,7 +40,8 @@
 
 #include <arch/i386/include/param.h>
 #include <arch/i386/include/vmparam.h>
-#include <devel/vm/include/vmmac.h>
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_mac.h>
 
 /*
  * Data structure

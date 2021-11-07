@@ -230,25 +230,16 @@ uk*				at atapibus? drive ? flags 0x0000	# ATAPI unknown
 # USB Controller and Devices
 
 # PCI USB controllers
+ehci*			at pci?	dev ? function ?	# Enhanced Host Controller
+ohci*			at pci?	dev ? function ?	# Open Host Controller
+uhci*			at pci?	dev ? function ?	# Universal Host Controller (Intel)
 #xhci*			at pci?	dev ? function ?	# eXtensible Host Controller
-#ehci*			at pci?	dev ? function ?	# Enhanced Host Controller
-#gcscehci* 		at pci? dev ? function ?	# Enhanced Host Controller (Geode CSC)
-#ohci*			at pci?	dev ? function ?	# Open Host Controller
-#uhci*			at pci?	dev ? function ?	# Universal Host Controller (Intel)
 
 # USB bus support
-#usb*			at ehci?
-#usb*			at ohci?
-#usb*			at uhci?
+usb*			at ehci?
+usb*			at ohci?
+usb*			at uhci?
 #usb*			at xhci?
-#usb*			at gcscehci?
-#usb*			at slhci?
-
-# Audio support
-#audio*			at audio?
-
-# MIDI support
-#midi*			at midi?
 
 # Pseudo-Devices
 

@@ -242,6 +242,8 @@ void		 vm_page_startup (vm_offset_t *, vm_offset_t *);
 void		 vm_page_unwire (vm_page_t);
 void		 vm_page_wire (vm_page_t);
 boolean_t	 vm_page_zero_fill (vm_page_t);
+int		 	 vm_page_alloc_memory (vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int, int);
+void		 vm_page_free_memory (struct pglist *);
 
 #endif /* KERNEL */
 #endif /* !_VM_PAGE_ */

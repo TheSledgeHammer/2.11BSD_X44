@@ -120,11 +120,6 @@ struct i386_bus_dmamap {
 struct i386_bus_dma_tag {
 	void	 *_cookie;		/* cookie used in the guts */
 
-//	bus_addr_t _bounce_thresh;
-//	bus_addr_t _bounce_alloc_lo;
-//	bus_addr_t _bounce_alloc_hi;
-//	int		(*_may_bounce)(bus_dma_tag_t, bus_dmamap_t, int, int *);
-
 	/*
 	 * DMA mapping methods.
 	 */
@@ -146,7 +141,6 @@ struct i386_bus_dma_tag {
 	void	(*_dmamem_unmap) (bus_dma_tag_t, caddr_t, size_t);
 	int		(*_dmamem_mmap) (bus_dma_tag_t, bus_dma_segment_t *, int, int, int, int);
 };
-typedef struct i386_bus_dma_tag		*bus_dma_tag_t;
 
 #define	bus_dmamap_create(t, s, n, m, b, f, p)		\
 	(*(t)->_dmamap_create)((t), (s), (n), (m), (b), (f), (p))
@@ -177,12 +171,4 @@ typedef struct i386_bus_dma_tag		*bus_dma_tag_t;
 #define	bus_dmamem_mmap(t, sg, n, o, p, f)			\
 	(*(t)->_dmamem_mmap)((t), (sg), (n), (o), (p), (f))
 
-
-int	i386_memio_map (bus_space_tag_t t, bus_addr_t addr, bus_size_t size, int flags, bus_space_handle_t *bshp);
-/* like map, but without extent map checking/allocation */
-int	_i386_memio_map (bus_space_tag_t t, bus_addr_t addr, bus_size_t size, int flags, bus_space_handle_t *bshp);
-void i386_memio_unmap (bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t size);
-int	i386_memio_subregion (bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t offset, bus_size_t size, bus_space_handle_t *nbshp);
-int	i386_memio_alloc (bus_space_tag_t t, bus_addr_t rstart, bus_addr_t rend, bus_size_t size, bus_size_t align, bus_size_t boundary, int flags, bus_addr_t *addrp, bus_space_handle_t *bshp);
-void i386_memio_free (bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t size);
 #endif /* _I386_BUS_DMA_H_ */

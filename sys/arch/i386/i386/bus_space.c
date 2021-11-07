@@ -38,16 +38,17 @@
 #include <sys/malloc.h>
 #include <sys/extent.h>
 #include <sys/user.h>
+#include <sys/bus.h>
 
 #include <vm/include/vm_extern.h>
 
-#include <sys/bus.h>
-#include <arch/i386/include/pio.h>
-#include <arch/i386/isa/isa_machdep.h>
+#include <i386/isa/isa_machdep.h>
+#include <dev/core/isa/isareg.h>
 
+#include <machine/pio.h>
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
-#include <dev/core/isa/isareg.h>
+
 
 static struct bus_space_tag i386_io = { .bst_type = I386_BUS_SPACE_IO };
 static struct bus_space_tag i386_mem = { .bst_type = I386_BUS_SPACE_MEM };
@@ -56,15 +57,15 @@ bus_space_tag_t i386_bus_space_io = &i386_io;
 bus_space_tag_t i386_bus_space_mem = &i386_mem;
 
 static inline boolean_t
-i386_bus_space_is_io(bus_space_tag_t t)
+i386_bus_space_is_io(struct bus_space_tag t)
 {
-	return t->bst_type == I386_BUS_SPACE_IO;
+	return (t->bst_type == I386_BUS_SPACE_IO);
 }
 
 static inline boolean_t
-i386_bus_space_is_mem(bus_space_tag_t t)
+i386_bus_space_is_mem(struct bus_space_tag t)
 {
-	return t->bst_type == I386_BUS_SPACE_MEM;
+	return (t->bst_type == I386_BUS_SPACE_MEM);
 }
 /*
  *	int bus_space_map  __P((bus_space_tag_t t, bus_addr_t addr,

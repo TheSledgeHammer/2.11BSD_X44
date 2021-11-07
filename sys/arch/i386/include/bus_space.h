@@ -103,10 +103,16 @@ struct bus_space_tag  {
 	void				*bst_ctx;
 };
 
-typedef	u_long bus_space_handle_t;
-
 extern bus_space_tag_t i386_bus_space_mem;
 extern bus_space_tag_t i386_bus_space_io;
+
+int		i386_memio_map (bus_space_tag_t t, bus_addr_t addr, bus_size_t size, int flags, bus_space_handle_t *bshp);
+/* like map, but without extent map checking/allocation */
+int		_i386_memio_map (bus_space_tag_t t, bus_addr_t addr, bus_size_t size, int flags, bus_space_handle_t *bshp);
+void 	i386_memio_unmap (bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t size);
+int		i386_memio_subregion (bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t offset, bus_size_t size, bus_space_handle_t *nbshp);
+int		i386_memio_alloc (bus_space_tag_t t, bus_addr_t rstart, bus_addr_t rend, bus_size_t size, bus_size_t align, bus_size_t boundary, int flags, bus_addr_t *addrp, bus_space_handle_t *bshp);
+void 	i386_memio_free (bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t size);
 
 /*
  *	void bus_space_read_multi_N __P((bus_space_tag_t tag,

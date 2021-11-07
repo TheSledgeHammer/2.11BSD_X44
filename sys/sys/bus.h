@@ -29,39 +29,10 @@
 #ifndef _SYS_BUS_H_
 #define	_SYS_BUS_H_
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 
-struct bus_space_reservation {
-	bus_addr_t _bsr_start;
-	bus_size_t _bsr_size;
-};
-typedef struct bus_space_reservation bus_space_reservation_t;
-
-static __inline bus_size_t
-bus_space_reservation_size(bus_space_reservation_t *bsr)
-{
-	return bsr->_bsr_size;
-}
-
-static __inline bus_space_reservation_t *
-bus_space_reservation_init(bus_space_reservation_t *bsr, bus_addr_t addr, bus_size_t size)
-{
-	bsr->_bsr_start = addr;
-	bsr->_bsr_size = size;
-	return bsr;
-}
-
-static __inline bus_addr_t
-bus_space_reservation_addr(bus_space_reservation_t *bsr)
-{
-	return bsr->_bsr_start;
-}
-
-/*
- * Forwards needed by prototypes below.
- */
-struct mbuf;
-struct uio;
+#include <machine/bus_space.h>
 
 /*
  * Bus address and size types
@@ -74,6 +45,38 @@ typedef u_long 	bus_size_t;
  */
 typedef	int 	bus_space_tag_t;
 typedef	u_long 	bus_space_handle_t;
+
+struct bus_space_reservation {
+	bus_addr_t _bsr_start;
+	bus_size_t _bsr_size;
+};
+typedef struct bus_space_reservation bus_space_reservation_t;
+
+static __inline bus_size_t
+bus_space_reservation_size(bus_space_reservation_t *bsr)
+{
+	return (bsr->_bsr_size);
+}
+
+static __inline bus_space_reservation_t *
+bus_space_reservation_init(bus_space_reservation_t *bsr, bus_addr_t addr, bus_size_t size)
+{
+	bsr->_bsr_start = addr;
+	bsr->_bsr_size = size;
+	return (bsr);
+}
+
+static __inline bus_addr_t
+bus_space_reservation_addr(bus_space_reservation_t *bsr)
+{
+	return (bsr->_bsr_start);
+}
+
+/*
+ * Forwards needed by prototypes below.
+ */
+struct mbuf;
+struct uio;
 
 /* bus_space(9) */
 
@@ -216,7 +219,6 @@ int		bus_dmamap_load_uio(bus_dma_tag_t, bus_dmamap_t, struct uio *, int);
 int		bus_dmamap_load_raw(bus_dma_tag_t, bus_dmamap_t, bus_dma_segment_t *, int, bus_size_t, int);
 void	bus_dmamap_unload(bus_dma_tag_t, bus_dmamap_t);
 void	bus_dmamap_sync (bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
-//void	_bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_addr_t, bus_size_t, int);
 
 int		bus_dmamem_alloc(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
 void	bus_dmamem_free(bus_dma_tag_t, bus_dma_segment_t *, int);

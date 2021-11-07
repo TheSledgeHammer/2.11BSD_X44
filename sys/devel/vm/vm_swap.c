@@ -288,20 +288,28 @@ swapoff(p, uap, retval)
 	return (0);
 }
 
-
 int
-swalloc(index)
+swalloc(index, lessok)
 	int index;
+	boolean_t 	lessok;
 {
 	register struct swdevt 	*sp;
-	int npages;
+	int npages, error;
 
 	sp = &swdevt[index];
 	npages = MAXPHYS >> PAGE_SHIFT;
 
-	vm_swap_alloc(sp, &npages, TRUE);
+	error = vm_swap_alloc(sp, &npages, lessok);
 
-	return (0);
+	return (error);
+}
+
+void
+swfree(startslot, nslots)
+	int startslot;
+	int nslots;
+{
+	vm_swap_free(startslot, nslots);
 }
 
 struct swdevt swdevt[] = {

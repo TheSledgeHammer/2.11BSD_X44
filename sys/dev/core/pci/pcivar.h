@@ -108,6 +108,7 @@ struct pci_attach_args {
 	pci_chipset_tag_t 	pa_pc;
 	int					pa_flags;	/* flags; see below */
 
+	u_int				pa_bus;
 	u_int				pa_device;
 	u_int				pa_function;
 	pcitag_t			pa_tag;

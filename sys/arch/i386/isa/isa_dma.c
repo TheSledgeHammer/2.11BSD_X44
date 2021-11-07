@@ -217,8 +217,7 @@ _isa_bus_dmamap_create(t, size, nsegments, maxsegsz, boundary, flags, dmamp)
 	size_t cookiesize;
 
 	/* Call common function to create the basic map. */
-	error = bus_dmamap_create(t, size, nsegments, maxsegsz, boundary,
-	    flags, dmamp);
+	error = bus_dmamap_create(t, size, nsegments, maxsegsz, boundary, flags, dmamp);
 	if (error)
 		return (error);
 

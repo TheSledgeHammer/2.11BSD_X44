@@ -59,12 +59,17 @@ struct	sigacts {
 };
 
 /* signal flags */
-#define	SAS_OLDMASK	0x01		/* need to restore mask before pause */
+#define	SAS_OLDMASK		0x01		/* need to restore mask before pause */
 #define	SAS_ALTSTACK	0x02		/* have alternate signal stack */
 
 /* additional signal action values, used only temporarily/internally */
-#define	SIG_CATCH	(int (*)())2
-#define	SIG_HOLD	(int (*)())3
+#define	SIG_CATCH	(void (*) (int))2
+#define	SIG_HOLD	(void (*) (int))3
+
+/*
+ * get signal action for process and signal; currently only for current process
+ */
+#define SIGACTION(p, sig)	(p->p_sigacts->ps_sigact[(sig)])
 
 /*
  * Determine signal that should be delivered to process p, the current
@@ -79,6 +84,11 @@ struct	sigacts {
 	    (((p)->p_flag & P_TRACED) == 0 &&				\
 	    ((p)->p_sigacts & ~(p)->p_sigmask) == 0)) ?		\
 	    0 : issignal(p))
+
+/*
+ * Clear a pending signal from a process.
+ */
+#define	CLRSIG(p, sig)	{ (p)->p_siglist &= ~sigmask(sig); }
 
 /*
  * Signal properties and actions.

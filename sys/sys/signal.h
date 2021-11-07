@@ -47,13 +47,9 @@
 #define SIGUSR1 	30		/* user defined signal 1 */
 #define SIGUSR2 	31		/* user defined signal 2 */
 
-#define	SIG_ERR		(int (*)())-1
-#define	SIG_DFL		(int (*)())0
-#define	SIG_IGN		(int (*)())1
-
-//#ifndef KERNEL
-int	(*signal())();
-//#endif
+#define	SIG_ERR		((void (*) (int)) -1)
+#define	SIG_DFL		((void (*) (int))  0)
+#define	SIG_IGN		((void (*) (int))  1)
 
 typedef u_long 		sigset_t;
 
@@ -61,9 +57,9 @@ typedef u_long 		sigset_t;
  * Signal vector "template" used in sigaction call.
  */
 struct	sigaction {
-	int				(*sa_handler)();/* signal handler */
-	sigset_t 		sa_mask;		/* signal mask to apply */
-	int				sa_flags;		/* see signal options below */
+	int				(*sa_handler)(int);	/* signal handler */
+	sigset_t 		sa_mask;			/* signal mask to apply */
+	int				sa_flags;			/* see signal options below */
 };
 
 #define SA_ONSTACK		0x0001	/* take signal on signal stack */
@@ -96,7 +92,7 @@ struct	sigaltstack {
  * Signal vector "template" used in sigvec call.
  */
 struct	sigvec {
-	int				(*sv_handler)();	/* signal handler */
+	int				(*sv_handler)(int);	/* signal handler */
 	long 			sv_mask;			/* signal mask to apply */
 	int				sv_flags;			/* see signal options below */
 };
@@ -147,7 +143,10 @@ struct sigcontext {
 
 #ifndef KERNEL
 #include <sys/cdefs.h>
-extern long	sigblock(), sigsetmask();
+extern long	sigblock(int);
+extern long	sigsetmask(int);
+//void	(*signal (int, void (*) (int))) (int);
+int		(*signal (int, void (*) (int))) (int);
 #define	BADSIG		SIG_ERR
 #endif
 

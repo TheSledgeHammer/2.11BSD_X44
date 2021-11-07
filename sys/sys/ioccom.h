@@ -80,7 +80,7 @@
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(x,y,t)			(('x'<<8)|y)
 #else
-//#define	_IO(x,y)			(IOC_VOID|('x'<<8)|y)
+#define	_IO(x,y)			(IOC_VOID|('x'<<8)|y)
 #define	_IOR(x,y,t)			(IOC_OUT|((long)(sizeof(t) & IOCPARM_MASK)<<16)|('x'<<8)|y)
 #define	_IOW(x,y,t)			(IOC_IN|((long)(sizeof(t) & IOCPARM_MASK)<<16)|('x'<<8)|y)
 /* this should be _IORW, but stdio got there first */

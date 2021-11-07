@@ -72,6 +72,8 @@ int com_is_console(bus_space_tag_t, bus_addr_t, bus_space_handle_t *);
 #define	RX_IBUF_OVERFLOWED		0x08
 #define	RX_ANY_BLOCK			0x0f
 
+#define	COM_TYPE_NORMAL			0	/* normal 16x50 */
+
 int com_is_console (bus_space_tag_t, int, bus_space_handle_t *);
 
 struct com_softc {

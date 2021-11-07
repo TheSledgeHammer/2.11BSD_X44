@@ -111,6 +111,7 @@ extern struct swdevt swdevt[];
 extern void mi_device_init(struct devswtable *devsw);
 extern void	audio_init(struct devswtable *devsw);
 extern void	console_init(struct devswtable *devsw);
+extern void	core_init(struct devswtable *devsw);
 extern void	disk_init(struct devswtable *devsw);
 extern void	misc_init(struct devswtable *devsw);
 extern void	network_init(struct devswtable *devsw);

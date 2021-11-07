@@ -93,8 +93,8 @@
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
-
 #include <machine/isa_machdep.h>
+
 #include <dev/core/isa/isareg.h>
 
 /*
@@ -114,7 +114,6 @@ static	long iomem_ex_storage[EXTENT_FIXED_STORAGE_SIZE(8) / sizeof(long)];
 struct	extent *ioport_ex;
 struct	extent *iomem_ex;
 static	int ioport_malloc_safe;
-typedef unsigned long paddr_t;
 
 int	i386_mem_add_mapping (bus_addr_t, bus_size_t, int, bus_space_handle_t *);
 
@@ -856,8 +855,8 @@ bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs,
 	 * Allocate pages from the VM system.
 	 */
 	TAILQ_INIT(&mlist);
-	error = vm_page_alloc_memory(size, low, high,
-	    alignment, boundary, &mlist, nsegs, (flags & BUS_DMA_NOWAIT) == 0);
+	error = vm_page_alloc_memory(size, low, high, alignment, boundary, &mlist, nsegs, (flags & BUS_DMA_NOWAIT) == 0); /* uvm_pglistalloc */
+
 	if (error)
 		return (error);
 
@@ -865,13 +864,13 @@ bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs,
 	 * Compute the location, size, and number of segments actually
 	 * returned by the VM code.
 	 */
-	m = mlist.tqh_first;
+	m = TAILQ_FIRST(mlist);
 	curseg = 0;
 	lastaddr = segs[curseg].ds_addr = VM_PAGE_TO_PHYS(m);
 	segs[curseg].ds_len = PAGE_SIZE;
-	m = m->pageq.tqe_next;
+	m = TAILQ_NEXT(m, pageq);
 
-	for (; m != NULL; m = m->pageq.tqe_next) {
+	for (; m != NULL; m = TAILQ_NEXT(m, pageq)) {
 		curaddr = VM_PAGE_TO_PHYS(m);
 #ifdef DIAGNOSTIC
 		if (curaddr < low || curaddr >= high) {
