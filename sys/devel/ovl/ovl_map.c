@@ -760,7 +760,7 @@ ovl_map_findspace(map, start, length, addr)
 		if ((entry = map->ovl_first_free) != CIRCLEQ_FIRST(&map->ovl_header))
 			start = entry->ovle_end;
 	} else {
-		if (vm_map_lookup_entry(map, start, &tmp))
+		if (ovl_map_lookup_entry(map, start, &tmp))
 			start = tmp->ovle_end;
 		entry = tmp;
 	}
@@ -861,7 +861,7 @@ ovl_map_submap(map, start, end, submap)
 
 	ovl_map_lock(map);
 
-	ovl_MAP_RANGE_CHECK(map, start, end);
+	OVL_MAP_RANGE_CHECK(map, start, end);
 
 	if (ovl_map_lookup_entry(map, start, &entry)) {
 		ovl_map_clip_start(map, entry, start);
