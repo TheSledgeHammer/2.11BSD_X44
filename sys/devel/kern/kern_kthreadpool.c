@@ -405,7 +405,7 @@ kthreadpool_thread(void *arg)
 	/* Wait until we're initialized and on the queue.  */
 	simple_lock(&ktpool->ktp_lock);
 
-	KASSERT(kthread->ktpt_proc == curproc);
+	KASSERT(kthread->ktpt_proc == curproc());
 	for (;;) {
 		/* Wait until we are assigned a job.  */
 		while (kthread->ktpt_job == NULL) {
@@ -421,9 +421,9 @@ kthreadpool_thread(void *arg)
 
 		/* Set our proc name to reflect what job we're doing.  */
 		//proc_lock(curproc);
-		char *const proc_name = curproc->p_name;
-		kthread->ktpt_kthread_savedname = curproc->p_name;
-		curproc->p_name = job->job_name;
+		char *const proc_name = curproc()->p_name;
+		kthread->ktpt_kthread_savedname = curproc()->p_name;
+		curproc()->p_name = job->job_name;
 		//proc_unlock(curproc);
 
 		simple_unlock(&ktpool->ktp_lock);
@@ -432,7 +432,7 @@ kthreadpool_thread(void *arg)
 		(*job->job_func)(job);
 
 		/* proc name restored in threadpool_job_done(). */
-		KASSERTMSG((curproc->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
+		KASSERTMSG((curproc()->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
 
 		/*
 		 * We can compare pointers, but we can no longer deference
@@ -452,6 +452,7 @@ kthreadpool_thread(void *arg)
 }
 
 /* Threadpool Jobs */
+/*
 void
 threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t lock, char *name, const char *fmt, ...)
 {
@@ -511,21 +512,21 @@ threadpool_job_rele(struct threadpool_job *job)
 		}
 	} while (atomic_cas_uint(&job->job_refcnt, refcnt, (refcnt - 1)) != refcnt);
 }
-
+*/
 void
 kthreadpool_job_done(struct threadpool_job *job)
 {
 	KASSERT(job->job_ktp_thread != NULL);
-	KASSERT(job->job_ktp_thread->ktpt_proc == curproc);
+	KASSERT(job->job_ktp_thread->ktpt_proc == curproc());
 
 	/*
 	 * We can safely read this field; it's only modified right before
 	 * we call the job work function, and we are only preserving it
 	 * to use here; no one cares if it contains junk afterward.
 	 */
-	//proc_lock(curproc);
-	curproc->p_name = job->job_ktp_thread->ktpt_kthread_savedname;
-	//proc_unlock(curproc);
+	//proc_lock(curproc());
+	curproc()->p_name = job->job_ktp_thread->ktpt_kthread_savedname;
+	//proc_unlock(curproc());
 
 	/*
 	 * Inline the work of threadpool_job_rele(); the job is already
@@ -599,6 +600,7 @@ kthreadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *
 		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
 		simple_unlock(&ktpool->ktp_lock);
 		threadpool_job_rele(job);
+		//itpc_job_rele(&ktpool->ktp_itpc, job);
 		return TRUE;
 	} else {
 		/* Too late -- already running.  */
@@ -749,26 +751,6 @@ kthreadpool_percpu_fini()
 	}
 	kthreadpool_destroy(*ktpoolp);
 	free(*ktpoolp, M_KTPOOLTHREAD);
-}
-
-/* Threadpool ITPC */
-void
-itpc_threadpool_init(void)
-{
-	itpc_threadpool_setup(&itpc);
-}
-
-static void
-itpc_threadpool_setup(itpc)
-	struct threadpool_itpc *itpc;
-{
-	if(itpc == NULL) {
-		MALLOC(itpc, struct threadpool_itpc *, sizeof(struct threadpool_itpc *), M_ITPC, NULL);
-	}
-	TAILQ_INIT(itpc->itpc_header);
-	itpc->itpc_refcnt = 0;
-	itpc->itpc_jobs = NULL;
-	itpc->itpc_job_name = NULL;
 }
 
 /* Add kthread to itpc queue */

@@ -14,6 +14,7 @@
 #include <machine/types.h>
 
 #include <sys/ansi.h>
+//#include <sys/stdint.h>
 
 #ifndef	_BSD_INT8_T_
 typedef	__int8_t			int8_t;

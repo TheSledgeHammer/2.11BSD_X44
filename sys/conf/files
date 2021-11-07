@@ -51,9 +51,9 @@ file	kern/kern_time.c
 file	kern/kern_timeout.c
 file	kern/kern_xxx.c
 file	kern/subr_autoconf.c
-file	kern/subr_bitmap.c
+file	kern/subr_bitlist.c
 file	kern/subr_boot.c
-file	kern/subr_cpu_topo.c
+file	kern/subr_cputopo.c
 file	kern/subr_devsw.c
 file	kern/subr_disk.c
 file	kern/subr_disklabel.c

@@ -48,6 +48,7 @@
 #define	_SYS_DISK_H_
 
 #include <sys/queue.h>
+#include <sys/device.h>
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
 #include <sys/ioccom.h>

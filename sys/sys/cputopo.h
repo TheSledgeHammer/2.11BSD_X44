@@ -43,65 +43,10 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
-#include <sys/bitmap.h>
+#include <sys/malloc.h>
+#include <sys/bitlist.h>
+
 #include <machine/cpu.h>
-
-union cpu_top {
-    uint32_t 			ct_mask;
-};
-typedef union cpu_top 	ctop_t;
-
-ctop_t 				 	*ctop;
-
-static __inline void
-ctop_init()
-{
-	ctop = (ctop_t *)malloc(sizeof(ctop_t *), M_TOPO, M_WAITOK);
-	bitmap_init();
-}
-
-static __inline void
-ctop_set(top, val)
-	ctop_t 	*top;
-	uint32_t val;
-{
-    top = ctop;
-    top->ct_mask = val;
-    bitmap_insert(val);
-}
-
-static __inline uint32_t
-ctop_get(top)
-	ctop_t *top;
-{
-    top = ctop;
-    return (bitmap_search(top->ct_mask)->value);
-}
-
-static __inline void
-ctop_remove(top)
-	ctop_t *top;
-{
-    top = ctop;
-    bitmap_remove(top->ct_mask);
-}
-
-static __inline int
-ctop_isset(top, val)
-	ctop_t *top;
-	uint32_t val;
-{
-	if(top->ct_mask != val) {
-		return (1);
-	}
-	return (0);
-}
-
-/* ctop macros */
-#define CPU_SET(top, val) 	(ctop_set(top, val))
-#define CPU_GET(top) 		(ctop_get(top))
-#define CPU_ISSET(top, val)	(ctop_isset(top, val))
-#define CPU_EMPTY(top)		((top) == NULL)
 
 /*
  * Types of nodes in the topological tree.

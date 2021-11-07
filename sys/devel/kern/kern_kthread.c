@@ -193,20 +193,40 @@ kthreadpool_itpc_send(itpc, ktpool, pid, cmd)
 
 	/* command / action */
 	switch(cmd) {
+	case ITPC_INIT:
+		itpc_job_init(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_DEAD:
+		itpc_job_dead(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_DESTROY:
+		itpc_job_destroy(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_HOLD:
+		itpc_job_hold(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_RELE:
+		itpc_job_rele(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
 	case ITPC_SCHEDULE:
 		kthreadpool_schedule_job(ktpool, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_DONE:
+		kthreadpool_job_done(ktpool->ktp_jobs);
 		break;
 
 	case ITPC_CANCEL:
 		kthreadpool_cancel_job(ktpool, ktpool->ktp_jobs);
 		break;
 
-	case ITPC_DESTROY:
-		kthreadpool_job_destroy(ktpool->ktp_jobs);
-		break;
-
-	case ITPC_DONE:
-		kthreadpool_job_done(ktpool->ktp_jobs);
+	case ITPC_CANCEL_ASYNC:
+		kthreadpool_cancel_job_async(ktpool, ktpool->ktp_jobs);
 		break;
 	}
 
@@ -227,22 +247,42 @@ kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
 	ktpool->ktp_issender = FALSE;
 	ktpool->ktp_isreciever = TRUE;
 
-    /* command / action */
+	/* command / action */
 	switch(cmd) {
-	case ITPC_SCHEDULE:
-		kthreadpool_schedule_job(ktpool, itpc->itpc_jobs);
+	case ITPC_INIT:
+		itpc_job_init(ktpool->ktp_itpc, ktpool->ktp_jobs);
 		break;
 
-	case ITPC_CANCEL:
-		kthreadpool_cancel_job(ktpool, itpc->itpc_jobs);
+	case ITPC_DEAD:
+		itpc_job_dead(ktpool->ktp_itpc, ktpool->ktp_jobs);
 		break;
 
 	case ITPC_DESTROY:
-		kthreadpool_job_destroy(itpc->itpc_jobs);
+		itpc_job_destroy(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_HOLD:
+		itpc_job_hold(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_RELE:
+		itpc_job_rele(ktpool->ktp_itpc, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_SCHEDULE:
+		kthreadpool_schedule_job(ktpool, ktpool->ktp_jobs);
 		break;
 
 	case ITPC_DONE:
-		kthreadpool_job_done(itpc->itpc_jobs);
+		kthreadpool_job_done(ktpool->ktp_jobs);
+		break;
+
+	case ITPC_CANCEL:
+		kthreadpool_cancel_job(ktpool, ktpool->ktp_jobs);
+		break;
+
+	case ITPC_CANCEL_ASYNC:
+		kthreadpool_cancel_job_async(ktpool, ktpool->ktp_jobs);
 		break;
 	}
 

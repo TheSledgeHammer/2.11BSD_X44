@@ -26,28 +26,40 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_BITMAP_H_
-#define _SYS_BITMAP_H_
+#ifndef _SYS_BITLIST_H_
+#define _SYS_BITLIST_H_
 
-#include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/queue.h>
 
-struct bitlist;
-LIST_HEAD(bitlist, bitmap);
-struct bitmap {
-	LIST_ENTRY(bitmap) entry;
+struct bitlist_header;
+LIST_HEAD(bitlist_header, bitlist);
+struct bitlist {
+	LIST_ENTRY(bitlist) 	entry;
     union {
-        uint64_t        value;
+        uint64_t        	value;
     };
 };
-typedef struct bitmap   bitmap_t;
+typedef struct bitlist   	bitlist_t;
 
-extern struct bitlist 	bitset[];
-extern int bitmap_counter;
+union cpu_top {
+    uint32_t 				ct_mask;
+};
+typedef union cpu_top 		ctop_t;
 
-void		bitmap_init(void);
-void		bitmap_insert(uint64_t);
-bitmap_t 	*bitmap_search(uint64_t);
-void		bitmap_remove(uint64_t);
+/* ctop macros */
+#define CPU_SET(top, val) 	(ctop_set(top, val))
+#define CPU_GET(top) 		(ctop_get(top))
+#define CPU_ISSET(top, val)	(ctop_isset(top, val))
+#define CPU_EMPTY(top)		((top) == NULL)
 
-#endif /* _SYS_BITMAP_H_ */
+extern struct bitlist_header bitset[];
+extern int 					bitlist_counter;
+extern ctop_t 				*ctop;
+
+void		bitlist_init(void);
+void		bitlist_insert(uint64_t);
+bitlist_t 	*bitlist_search(uint64_t);
+void		bitlist_remove(uint64_t);
+
+#endif /* _SYS_BITLIST_H_ */

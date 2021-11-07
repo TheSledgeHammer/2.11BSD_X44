@@ -205,7 +205,7 @@ disk_ioctl(diskp, dev, cmd, data, flag, p)
 	int error;
 
 	lp = diskp->dk_label;
-	ssp = diskp->dk_slices;
+	//ssp = diskp->dk_slices;
 
 	if (dev == NODEV) {
 		return (ENOIOCTL);

@@ -4,7 +4,7 @@
 
 INCSDIR= 	/usr/include/sys
 
-INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitmap.h boot.h buf.h 		\
+INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h buf.h 	\
 			bufq.h bus.h callout.h cdefs_aout.h cdefs_elf.h cdefs.h cdio.h 		\
 			chio.h clist.h conf.h cputopo.h device.h devsw.h dirent.h disk.h 	\
 			diskapm.h diskgpt.h disklabel.h diskmbr.h dk.h dkbad.h dmap.h 		\

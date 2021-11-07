@@ -46,8 +46,7 @@
 #include <machine/psl.h>
 #include <machine/frame.h>
 #include <machine/segments.h>
-//#include <machine/cpuinfo.h>
-#include <arch/i386/include/cpuinfo.h>
+#include <machine/cpuinfo.h>
 
 struct pmap;
 /*

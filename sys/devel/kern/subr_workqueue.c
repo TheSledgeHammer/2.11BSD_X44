@@ -178,7 +178,7 @@ workqueue_exit(struct work *wk, void *arg)
 	 * is workqueue_finiqueue.
 	 */
 
-	KASSERT(q->q_worker == curproc);
+	KASSERT(q->q_worker == curproc());
 	simple_lock(&q->q_lock);
 	q->q_worker = NULL;
 	simple_unlock(&q->q_lock);
