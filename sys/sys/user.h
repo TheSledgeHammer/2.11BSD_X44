@@ -42,8 +42,8 @@
 //#define	MAXCOMLEN		MAXNAMLEN				/* <= MAXNAMLEN, >= sizeof(ac_comm) */
 #define USIZE 			UPAGES					/* pdp11 equivalent of UPAGES */
 
-struct	pcb {									/* fake pcb structure */
-	int					(*pcb_sigc)();			/* pointer to trampoline code in user space */
+struct pcb {									/* fake pcb structure */
+	int				(*pcb_sigc)(void);			/* pointer to trampoline code in user space */
 };
 
 struct	fps {

@@ -31,7 +31,7 @@
 #include <sys/percpu.h>
 #include <sys/stddef.h>
 
-extern struct percpu 				__percpu[];
+extern struct percpu 				*__percpu[];
 
 #define	PERCPU_MD_FIELDS 																\
 	struct	cpu_info				*pc_cpuinfo;		/* Self-reference */			\

@@ -28,7 +28,9 @@
 #ifndef _I386_CPUINFO_H_
 #define _I386_CPUINFO_H_
 
+#include <sys/device.h>
 #include <sys/cputopo.h>
+#include <sys/percpu.h>
 #include <machine/intr.h>
 
 struct percpu;

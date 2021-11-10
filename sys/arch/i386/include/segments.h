@@ -226,7 +226,7 @@ struct region_descriptor {
 #define	SEGEX_IDT		0x02	/* interrupt descriptor table */
 #define	SEGEX_TI		0x04	/* local descriptor table */
 								/* other bits are affected descriptor index */
-#define SEGEX_IDX(s)	((s)>>3)&0x1fff)
+#define SEGEX_IDX(s)		((s)>>3)&0x1fff)
 
 /*
  * Entries in the Interrupt Descriptor Table (IDT)
@@ -234,8 +234,8 @@ struct region_descriptor {
 #define	NIDT			256
 #define	NRSVIDT			32		/* reserved entries for cpu exceptions */
 
-extern ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
-extern sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */
+extern int ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
+extern int sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */
 
 void   lgdt(struct region_descriptor *rdp);
 

@@ -108,19 +108,20 @@ struct 	pcb;
 void	savectx (struct pcb *);
 
 /* clock.c */
+
 extern u_int tsc_freq;
 
 void	startrtclock(void);
 int		clockintr(void *);
-int		gettick();
+int		gettick(void);
 void	delay(int);
 void	sysbeepstop(void);
 int		sysbeep(int, int);
 void	findcpuspeed(void);
 void	cpu_initclocks(void);
 void	rtcinit(void);
-int		rtcget(mc_todregs *);
-void	rtcput(mc_todregs *);
+int	rtcget(u_int *);
+void	rtcput(u_int *);
 int 	yeartoday (int);
 int		bcdtobin(int);
 int		bintobcd(int);

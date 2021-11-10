@@ -760,13 +760,15 @@ struct proc;
 struct stat;
 struct ucred;
 struct uio;
+enum uio_seg;
+enum uio_rw;
 struct vattr;
 struct vnode;
 struct vop_bwrite_args;
 
 int 	bdevvp (dev_t dev, struct vnode **vpp);
 void	cvtstat (struct stat *st, struct ostat *ost);
-int 	getnewvnode (enum vtagtype tag, struct mount *mp, int (**vops)(), struct vnode **vpp);
+int 	getnewvnode (enum vtagtype tag, struct mount *mp, const struct vnodeops *vops, struct vnode **vpp);
 void	insmntque (struct vnode *vp, struct mount *mp);
 void 	vattr_null (struct vattr *vap);
 void	vdevgone(int, int, int, enum vtype);

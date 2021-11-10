@@ -35,6 +35,7 @@
 #include <sys/stdint.h>			/* for uintptr_t */
 #include <sys/null.h>			/* for NULL */
 
+
 #define	EVFILT_READ			0U
 #define	EVFILT_WRITE		1U
 #define	EVFILT_AIO			2U	/* attached to aio requests */
@@ -47,7 +48,7 @@
 #define	EVFILT_SYSCOUNT		9U	/* number of filters */
 
 struct kevent {
-	uintptr_t	ident;		/* identifier for this event */
+	__uintptr_t	ident;		/* identifier for this event */
 	uint32_t	filter;		/* filter for event */
 	uint32_t	flags;		/* action flags for kqueue */
 	uint32_t	fflags;		/* filter flag value */
@@ -56,7 +57,7 @@ struct kevent {
 };
 
 static __inline void
-_EV_SET(struct kevent *_kevp, uintptr_t _ident, uint32_t _filter,
+_EV_SET(struct kevent *_kevp, __uintptr_t _ident, uint32_t _filter,
     uint32_t _flags, uint32_t _fflags, int64_t _data, void *_udata)
 {
 	_kevp->ident = _ident;
@@ -68,7 +69,7 @@ _EV_SET(struct kevent *_kevp, uintptr_t _ident, uint32_t _filter,
 }
 
 #define EV_SET(kevp, ident, filter, flags, fflags, data, udata)		\
-    _EV_SET((kevp), __CAST(uintptr_t, (ident)), (filter), (flags), 	\
+    _EV_SET((kevp), __CAST(__uintptr_t, (ident)), (filter), (flags), 	\
     (fflags), (data), __CAST(void *, (udata)))
 
 /* actions */
@@ -161,7 +162,7 @@ SIMPLEQ_HEAD(klist, knote);
 
 struct kfilter_mapping {
 	char			*name;		/* name to lookup or return */
-	size_t			len;		/* length of name */
+	uint32_t		len;		/* length of name */
 	uint32_t		filter;		/* filter to lookup or return */
 };
 

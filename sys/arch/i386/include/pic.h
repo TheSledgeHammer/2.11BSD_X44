@@ -43,8 +43,8 @@
 /* Softpic, acts as a selector for which PIC/APIC to use: see softpic.c */
 struct softpic {
     struct cpu_info         *sp_cpu;
-    struct intrsource       sp_intsrc;
-    struct intrhand         sp_inthnd;
+    struct intrsource       *sp_intsrc;
+    struct intrhand         *sp_inthnd;
     int                     sp_template;
     unsigned int 			sp_vector:8;
     int                     sp_irq;
@@ -86,7 +86,7 @@ struct pic {
  */
 struct intrsource {
 	struct pic 				*is_pic;
-    struct intrhand     	*is_handlers;	/* handler chain */
+    	struct intrhand     	*is_handlers;	/* handler chain */
 	u_long 					*is_count;
 	u_long 					*is_straycount;
 	u_int 					is_index;
@@ -135,8 +135,8 @@ void 			*intr_establish(boolean_t, int, int, int, int, int (*)(void *), void *);
 void			intr_disestablish(struct intrhand *);
 int				fakeintr(void *);
 
-void			intr_default_setup();
-void			intr_calculatemasks();
+void			intr_default_setup(void);
+void			intr_calculatemasks(void);
 
 void 			intr_add_pcibus(struct pcibus_attach_args *);
 int	 			intr_find_mpmapping(int, int, int *);

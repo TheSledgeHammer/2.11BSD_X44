@@ -58,6 +58,14 @@ enum devclass {
 	DV_TTY			/* serial line interface (???) */
 };
 
+/*
+ * Actions for cd_activate.
+ */
+enum devact {
+	DVACT_ACTIVATE,		/* activate the device */
+	DVACT_DEACTIVATE	/* deactivate the device */
+};
+
 struct device {
 	enum devclass		dv_class;				/* this device's classification */
 	struct	device 		*dv_next;				/* next in list of all */
@@ -91,7 +99,7 @@ struct cfdata {
 	int					*cf_loc;				/* locators (machine dependent) */
 	int					cf_flags;				/* flags from config */
 	short				*cf_parents;			/* potential parents */
-	void				(**cf_ivstubs)();		/* config-generated vectors, if any */
+	void				(**cf_ivstubs)(void);		/* config-generated vectors, if any */
 };
 #define FSTATE_NOTFOUND	0						/* has not been found */
 #define	FSTATE_FOUND	1						/* has been found */
@@ -131,14 +139,6 @@ struct cfops {
 /* Flags given to config_detach(), and the ca_detach function. */
 #define	DETACH_FORCE	0x01					/* force detachment; hardware gone */
 #define	DETACH_QUIET	0x02					/* don't print a notice */
-
-/*
- * Actions for cd_activate.
- */
-enum devact {
-	DVACT_ACTIVATE,		/* activate the device */
-	DVACT_DEACTIVATE	/* deactivate the device */
-};
 
 /*
  * Configuration printing functions, and their return codes.  The second

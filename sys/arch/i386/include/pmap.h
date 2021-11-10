@@ -163,12 +163,19 @@ struct pv_entry {
 };
 typedef struct pv_entry		*pv_entry_t;
 
+
 #define	PT_ENTRY_NULL				((pt_entry_t) 0)
 #define	PD_ENTRY_NULL				((pd_entry_t) 0)
 #define	PV_ENTRY_NULL				((pv_entry_t) 0)
 
 #define	PV_CI						0x01		/* all entries must be cache inhibited */
 #define PV_PTPAGE					0x02		/* entry maps a page table page */
+
+#ifdef PMAP_PAE_COMP
+#include <machine/pmap_pae.h>
+#else
+#include <machine/pmap_nopae.h>
+#endif
 
 #ifdef	KERNEL
 
@@ -182,5 +189,6 @@ pv_entry_t							pv_table;	/* array of entries, one per page */
 
 extern int pae_mode;
 extern int i386_pmap_PDRSHIFT;
-#endif	KERNEL
+#endif	/* KERNEL */
+
 #endif	/* _PMAP_MACHINE_ */

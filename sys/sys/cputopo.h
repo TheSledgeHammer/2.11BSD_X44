@@ -79,7 +79,7 @@ struct topo_node {
 	TAILQ_ENTRY(topo_node)					siblings;
 	union cpu_top							cpuset;
 	topo_node_type							type;
-	uintptr_t								subtype;
+	__uintptr_t								subtype;
 	hwid_t									hwid;
 	cpuid_t									id;
 	int										nchildren;

@@ -39,7 +39,6 @@
 /*
  * Intel 386 process control block
  */
-
 #include <machine/segments.h>
 #include <machine/tss.h>
 #include <machine/npx.h>
