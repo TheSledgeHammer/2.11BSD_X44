@@ -41,7 +41,7 @@
 #define	MMAXOFF		(MSIZE-MTAIL)					/* offset where data ends */
 #define	MLEN		(MSIZE-MMINOFF-MTAIL)			/* mbuf data length */
 #define	MHLEN		(MLEN - sizeof(struct pkthdr))	/* data len w/pkthdr */
-#define	NMBCLUSTERS	12
+//#define	NMBCLUSTERS	12
 #define	NMBPCL		(CLBYTES/MSIZE)					/* # mbufs per cluster */
 #define	MINCLSIZE	(MHLEN + MLEN)					/* smallest amount to put in cluster */
 /*

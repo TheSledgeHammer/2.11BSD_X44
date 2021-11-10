@@ -66,7 +66,7 @@
  *	Virtual memory map module definitions.
  */
 
-#ifndef	_VM_MAP_
+//#ifndef	_VM_MAP_
 #define	_VM_MAP_
 
 struct vm_map_clist;

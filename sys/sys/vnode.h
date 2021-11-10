@@ -256,7 +256,7 @@ extern	struct vattr va_null;		/* predefined null vattr structure */
 #define	LEASE_WRITE	0x2		/* Check lease for modifiers */
 
 #endif /* KERNEL */
-struct componentname
+struct componentname;
 
 struct vnodeops {
 	int	(*vop_lookup)		(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp);
@@ -776,7 +776,7 @@ int 	vget (struct vnode *vp, int lockflag, struct proc *p);
 void 	vgone (struct vnode *vp);
 int		vinvalbuf (struct vnode *vp, int save, struct ucred *cred, struct proc *p, int slpflag, int slptimeo);
 void	vprint (char *label, struct vnode *vp);
-int		vrecycle (struct vnode *vp, struct simplelock *inter_lkp, struct proc *p);
+//int		vrecycle (struct vnode *vp, struct simplelock *inter_lkp, struct proc *p);
 int		vn_bwrite (struct vop_bwrite_args *ap);
 int 	vn_close (struct vnode *vp, int flags, struct ucred *cred, struct proc *p);
 int 	vn_closefile (struct file *fp, struct proc *p);

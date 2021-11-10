@@ -113,8 +113,8 @@ struct ttysize {
 #define	TIOCSETA			_IOW('t', 20, struct termios) 	/* set termios struct */
 #define	TIOCSETAW			_IOW('t', 21, struct termios) 	/* drain output, set */
 #define	TIOCSETAF			_IOW('t', 22, struct termios) 	/* drn out, fls in, set */
-/* 4.4BSD's TIOCGETD		_IOR('t', 26, int) 				/* get line discipline */
-/* 4.4BSD's TIOCSETD		_IOW('t', 27, int)				/* set line discipline */
+/* 4.4BSD's TIOCGETD		_IOR('t', 26, int) 				 get line discipline */
+/* 4.4BSD's TIOCSETD		_IOW('t', 27, int)				 set line discipline */
 #define	TANDEM				0x00000001						/* send stopc on out q full */
 #define	CBREAK				0x00000002						/* half-cooked mode */
 						/* 	0x4 (old LCASE) */

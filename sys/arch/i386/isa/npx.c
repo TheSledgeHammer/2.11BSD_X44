@@ -57,6 +57,7 @@
 #include <sys/vmmeter.h>
 
 #include <machine/cpu.h>
+#include <i386/include/cpuinfo.h>
 #include <machine/intr.h>
 #include <machine/npx.h>
 #include <machine/pio.h>
@@ -118,7 +119,7 @@ extern int 					i386_fpu_exception;
 extern int 					i386_fpu_fdivbug;
 struct npx_softc			*npx_softc;	/* XXXSMP: per-cpu */
 
-int (*npxdna_func)(struct cpu_info *) = npxdna_notset;
+int (*npxdna_func)(struct cpu_info *);
 
 enum npx_type {
 	NPX_NONE = 0,
@@ -178,6 +179,18 @@ asm __volatile(".text\n\t"
 		"fistpl	(%esp)\n\t"
 		"popl	%eax\n\t"
 		"ret\n\t");
+
+struct proc *
+npxproc(void)
+{
+	struct cpu_info *ci = curcpu();
+	struct proc *p;
+
+	KASSERT(ci == curcpu());
+	p = ci->cpu_npxproc;
+
+	return (p);
+}
 
 static __inline void
 fpu_save(union savefpu *addr)

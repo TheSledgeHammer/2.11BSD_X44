@@ -79,7 +79,6 @@ struct uio {
 #define UIO_SMALLIOV	8		/* 8 on stack, else rmalloc */
 #endif /* KERNEL */
 
-
 #ifndef KERNEL
 int	uiomove (caddr_t, int, struct uio *);
 #else /* !KERNEL */

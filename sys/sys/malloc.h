@@ -38,9 +38,6 @@
 
 #define KMEMSTATS
 
-#define MINBUCKET	    4				/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * CLBYTES)
-
 /* flags to malloc */
 #define	M_WAITOK		0x0000
 #define	M_NOWAIT		0x0001

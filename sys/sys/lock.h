@@ -42,24 +42,56 @@
 
 #include <machine/param.h>
 
+/* A Not so Simple_Lock */
+/*
+ * lock object: array_based queuing lock (ABQL)
+ */
+struct lock_object_cpu {
+	volatile u_int				loc_my_ticket;
+};
+
+struct lock_object {
+	struct lock_object_cpu	 	lo_cpus[NCPUS];
+	volatile u_int				lo_nxt_ticket;
+	int							lo_can_serve[NCPUS];
+
+	const struct lock_type		*lo_type;			/* Unused */
+	const char 					*lo_name;			/* Individual lock name. */
+	u_int						lo_flags;			/* Unused */
+	//struct witness 				*lo_witness;	/* Data for witness. Unused */
+};
+
+struct lock_type {
+	const char					*lt_name;
+};
+
+/* lock holder */
+struct lock_holder {
+	pid_t						lh_pid;
+	struct pgrp 				*lh_pgrp;
+
+	struct proc 				*lh_proc;
+	//struct kthread 				*lh_kthread;
+	//struct uthread 				*lh_uthread;
+};
+
 /*
  * The general lock structure.  Provides for multiple shared locks,
  * upgrading from shared to exclusive, and sleeping until the lock
  * can be gained. The simple locks are defined in <machine/param.h>.
  */
-
 struct lock {
-	struct  lock_object		lk_lnterlock;		/* lock object */
-	struct  lock_holder		lk_lockholder;		/* lock holder */
+	struct  lock_object			lk_lnterlock;		/* lock object */
+	struct  lock_holder			lk_lockholder;		/* lock holder */
 
-    int						lk_sharecount;		/* # of accepted shared locks */
-    int						lk_waitcount;		/* # of processes sleeping for lock */
-    short					lk_exclusivecount;	/* # of recursive exclusive locks */
+    int							lk_sharecount;		/* # of accepted shared locks */
+    int							lk_waitcount;		/* # of processes sleeping for lock */
+    short						lk_exclusivecount;	/* # of recursive exclusive locks */
 
-    u_int					lk_flags;			/* see below */
-    short					lk_prio;			/* priority at which to sleep */
-    char					*lk_wmesg;			/* resource sleeping (for tsleep) */
-    int						lk_timo;			/* maximum sleep time (for tsleep) */
+    u_int						lk_flags;			/* see below */
+    short						lk_prio;			/* priority at which to sleep */
+    char						*lk_wmesg;			/* resource sleeping (for tsleep) */
+    int							lk_timo;			/* maximum sleep time (for tsleep) */
 };
 typedef struct lock       	*lock_t;
 
@@ -158,44 +190,14 @@ typedef struct lock       	*lock_t;
 #define LK_KERNPROC 	((pid_t) -2)
 #define LK_NOPROC 		((pid_t) -1)
 
-/* A Not so Simple_Lock */
-
-/* lock object: array_based queuing lock (ABQL) */
-struct lock_object_cpu {
-	volatile u_int				loc_my_ticket;
-};
-
-struct lock_object {
-	struct lock_object_cpu	 	lo_cpus[NCPUS];
-	volatile u_int				lo_nxt_ticket;
-	int							lo_can_serve[NCPUS];
-
-	const struct lock_type		*lo_type;			/* Unused */
-	const char 					*lo_name;			/* Individual lock name. */
-	u_int						lo_flags;			/* Unused */
-	//struct witness 				*lo_witness;	/* Data for witness. Unused */
-};
-
-struct lock_type {
-	const char					*lt_name;
-};
-
-/* lock holder */
-struct lock_holder {
-	pid_t						lh_pid;
-	struct pgrp 				*lh_pgrp;
-
-	struct proc 				*lh_proc;
-	struct kthread 				*lh_kthread;
-	struct uthread 				*lh_uthread;
-};
-
-/* lock holder macros */
+/*
+ * lock holder macros
+ */
 #define LOCKHOLDER_PID(h)		((h)->lh_pid)
 #define LOCKHOLDER_PGRP(h)		((h)->lh_pgrp)
 #define PROC_LOCKHOLDER(h)		((h)->lh_proc)
-#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
-#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
+//#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
+//#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
 
 #ifdef KERNEL
 extern struct lock_holder 		*kernel_lockholder;

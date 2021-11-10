@@ -82,6 +82,11 @@
 #include <machine/param.h>
 #include <machine/limits.h>
 
+/* alignment */
+#define	ALIGNBYTES				_ALIGNBYTES
+#define	ALIGN(p)				_ALIGN(p)
+#define	ALIGNED_POINTER(p,t)	_ALIGNED_POINTER(p,t)
+
 /*
  * Priorities
  */
@@ -121,21 +126,21 @@
 #define	CLSHIFT			(PGSHIFT + CLSIZELOG2)
 
 #if CLSIZE==1
-#define	clbase(i)	(i)
-#define	clrnd(i)	(i)
+#define	clbase(i)		(i)
+#define	clrnd(i)		(i)
 #else
 /* Give the base virtual address (first of CLSIZE). */
-#define	clbase(i)	((i) &~ (CLSIZE-1))
+#define	clbase(i)		((i) &~ (CLSIZE-1))
 /* round a number of clicks up to a whole cluster */
-#define	clrnd(i)	(((i) + (CLSIZE-1)) &~ ((long)(CLSIZE-1)))
+#define	clrnd(i)		(((i) + (CLSIZE-1)) &~ ((long)(CLSIZE-1)))
 #endif
 
 /* CBLOCK is the size of a clist block, must be power of 2 */
-#define	CBLOCK	64									/* Clist block size, must be a power of 2. */
-#define CBQSIZE	(CBLOCK/NBBY)						/* Quote bytes/cblock - can do better. */
-													/* Data chars/clist. */
-#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
-#define	CROUND	(CBLOCK - 1)						/* clist rounding */
+#define	CBLOCK			64									/* Clist block size, must be a power of 2. */
+#define CBQSIZE			(CBLOCK/NBBY)						/* Quote bytes/cblock - can do better. */
+															/* Data chars/clist. */
+#define	CBSIZE			(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
+#define	CROUND			(CBLOCK - 1)						/* clist rounding */
 
 /*
  * File system parameters and macros.
@@ -221,38 +226,4 @@
 #define	FSHIFT	11		/* bits to right of fixed binary point */
 #define FSCALE	(1<<FSHIFT)
 
-/*
- * Round p (pointer or byte index) up to a correctly-aligned value for all
- * data types (int, long, ...).   The result is u_int and must be cast to
- * any desired pointer type.
- *
- * ALIGNED_POINTER is a boolean macro that checks whether an address
- * is valid to fetch data elements of type t from on this architecture
- * using ALIGNED_POINTER_LOAD.  This does not reflect the optimal
- * alignment, just the possibility (within reasonable limits).
- *
- *	uint32_t x;
- *	unsigned char *p = ...;
- *
- *	if (ALIGNED_POINTER(p, uint32_t)) {
- *		uint32_t t;
- *		ALIGNED_POINTER_LOAD(&t, p, uint32_t);
- *		x = t;
- *	} else {
- *		uint32_t t;
- *		memcpy(&t, p, sizeof(t));
- *		x = t;
- *	}
- *
- */
-#define ALIGNBYTES					ALIGNBYTES
-#ifndef ALIGN
-#define	ALIGN(p)					(((uintptr_t)(p) + ALIGNBYTES) & ~ALIGNBYTES)
-#endif
-#ifndef ALIGNED_POINTER
-#define	ALIGNED_POINTER(p,t)		((((uintptr_t)(p)) & (__alignof(t) - 1)) == 0)
-#endif
-#ifndef ALIGNED_POINTER_LOAD
-#define	ALIGNED_POINTER_LOAD(q,p,t)	(*(q) = *((const t *)(p)))
-#endif
 #endif /* _SYS_PARAM_H_ */

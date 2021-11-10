@@ -54,6 +54,7 @@
 #define dirent 		direct
 
 #define	MAXNAMLEN	255
+
 struct dirent {
 	unsigned long	d_fileno;				/* file number of entry */
 	unsigned short	d_reclen;				/* length of this record */

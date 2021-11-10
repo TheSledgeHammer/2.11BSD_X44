@@ -258,10 +258,10 @@
 #endif
 
 #if __GNUC_PREREQ__(2, 96) || defined(__lint__)
-#define	__predict_true(exp)	__builtin_expect((exp) != 0, 1)
+#define	__predict_true(exp)		__builtin_expect((exp) != 0, 1)
 #define	__predict_false(exp)	__builtin_expect((exp) != 0, 0)
 #else
-#define	__predict_true(exp)	(exp)
+#define	__predict_true(exp)		(exp)
 #define	__predict_false(exp)	(exp)
 #endif
 
@@ -286,7 +286,7 @@
 #define __printflike(fmtarg, firstvararg)	/* nothing */
 #define __scanflike(fmtarg, firstvararg)	/* nothing */
 #define __sysloglike(fmtarg, firstvararg)	/* nothing */
-#define __format_arg(fmtarg)			/* nothing */
+#define __format_arg(fmtarg)				/* nothing */
 #endif
 
 /*

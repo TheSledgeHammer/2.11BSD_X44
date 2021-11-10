@@ -42,6 +42,7 @@
  */
 
 #ifndef	_I386_NPX_H_
+#define	_I386_NPX_H_
 
 /* Default x87 control word. */
 #define	___NPX87___		0x037f
@@ -134,16 +135,6 @@ struct	emcsts {
 	long				em_dl;				/* memory mapped D low register when swtched */
 };
 
-static __inline struct proc *
-npxproc()
-{
-	struct cpu_info *ci = curcpu();
-	struct proc *p;
+struct proc *npxproc(void);
 
-	KASSERT(ci->cpu_npxproc == p);
-	p = ci->cpu_npxproc;
-
-	return (p);
-}
-
-#endif _I386_NPX_H_
+#endif /* _I386_NPX_H_ */

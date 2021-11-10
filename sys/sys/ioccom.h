@@ -67,18 +67,13 @@
 
 #define	_IOC(inout, group, num, len) \
 	(inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num))
-#define	_IO(g,n)			_IOC(IOC_VOID,	(g), (n), 0)
-#define	_IOR(g,n,t)			_IOC(IOC_OUT,	(g), (n), sizeof(t))
-#define	_IOW(g,n,t)			_IOC(IOC_IN,	(g), (n), sizeof(t))
-/* this should be _IORW, but stdio got there first */
-#define	_IOWR(g,n,t)		_IOC(IOC_INOUT,	(g), (n), sizeof(t))
 
 #ifdef KERNEL
 #define	_IO(x,y)			(('x'<<8)|y)
 #define	_IOR(x,y,t)			(('x'<<8)|y)
 #define	_IOW(x,y,t)			(('x'<<8)|y)
 /* this should be _IORW, but stdio got there first */
-#define	_IOWR(x,y,t)			(('x'<<8)|y)
+#define	_IOWR(x,y,t)		(('x'<<8)|y)
 #else
 #define	_IO(x,y)			(IOC_VOID|('x'<<8)|y)
 #define	_IOR(x,y,t)			(IOC_OUT|((long)(sizeof(t) & IOCPARM_MASK)<<16)|('x'<<8)|y)

@@ -63,7 +63,7 @@ vm_psegment_init(seg, start, end)
 	vm_psegment_extent_suballoc(pseg, sizeof(data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK); 	/* data extent region */
 	vm_psegment_extent_suballoc(pseg, sizeof(stack), 0, PSEG_STACK, EX_WAITOK | EX_MALLOCOK);	/* stack extent region */
 	vm_psegment_extent_suballoc(pseg, sizeof(text), 0, PSEG_TEXT, EX_WAITOK | EX_MALLOCOK);		/* text extent region */
-	vm_text_init(text);
+	vm_text_init(text);	/* initialize vm_text */
 
 	pseg->ps_data = data;
 	pseg->ps_stack = stack;

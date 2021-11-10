@@ -61,9 +61,15 @@
  * Round p (pointer or byte index) up to a correctly-aligned value for all
  * data types (int, long, ...).   The result is u_int and must be cast to
  * any desired pointer type.
+ * ALIGNED_POINTER is a boolean macro that checks whether an address
+ * is valid to fetch data elements of type t from on this architecture
+ * using ALIGNED_POINTER_LOAD.  This does not reflect the optimal
+ * alignment, just the possibility (within reasonable limits).
  */
-#define	ALIGNBYTES	3
-#define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
+
+#define	_ALIGNBYTES				(sizeof(int) - 1)
+#define	_ALIGN(p)				(((unsigned long)(p) + _ALIGNBYTES) &~ _ALIGNBYTES)
+#define	_ALIGNED_POINTER(p,t)	((((unsigned long)(p)) & (__alignof(t) - 1)) == 0)
 
 #define	NBPG			4096				/* bytes/page (PAGE SIZE) */
 #define NBPDE			1024				/* page directory size in bytes (PDE SIZE) */
@@ -144,19 +150,19 @@
  * Some macros for units conversion
  */
 /* Core clicks (4096 bytes) to segments and vice versa */
-#define	ctos(x)	(x)
-#define	stoc(x)	(x)
+#define	ctos(x)			(x)
+#define	stoc(x)			(x)
 
 /* Core clicks (4096 bytes) to disk blocks */
-#define	ctod(x)	((x)<<(PGSHIFT-DEV_BSHIFT))
-#define	dtoc(x)	((x)>>(PGSHIFT-DEV_BSHIFT))
-#define	dtob(x)	((x)<<DEV_BSHIFT)
+#define	ctod(x)			((x)<<(PGSHIFT-DEV_BSHIFT))
+#define	dtoc(x)			((x)>>(PGSHIFT-DEV_BSHIFT))
+#define	dtob(x)			((x)<<DEV_BSHIFT)
 
 /* clicks to bytes */
-#define	ctob(x)	((x)<<PGSHIFT)
+#define	ctob(x)			((x)<<PGSHIFT)
 
 /* bytes to clicks */
-#define	btoc(x)	(((unsigned)(x)+(NBPG-1))>>PGSHIFT)
+#define	btoc(x)			(((unsigned)(x)+(NBPG-1))>>PGSHIFT)
 
 #define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
 	((bytes) >> DEV_BSHIFT)
@@ -184,6 +190,6 @@
 #define i386_ptob(x)		((unsigned)(x) << PGSHIFT)
 
 #ifndef KERNEL
-/* DELAY is in locore.s for the kernel */
+/* DELAY is in locore.S for the kernel */
 #define	DELAY(n)			{ register int N = (n); while (--N > 0); }
 #endif

@@ -281,23 +281,31 @@ void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 
 #define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
 
-#ifdef NDEBUG						/* tradition! */
-#define	assert(e)	((void)0)
-#else
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
-		kern_assert(__KASSERTSTR, "", #e, __FILE__, __LINE__))
-#ifdef __STDC__
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		   		\
-		__assert("", __FILE__, __LINE__, #e))
-#else
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
-		__assert("", __FILE__, __LINE__, "e"))
-#endif
-#endif
-
 #ifdef __COVERITY__
 #ifndef DIAGNOSTIC
 #define DIAGNOSTIC
+#endif
+#endif
+
+#ifndef	CTASSERT
+#define	CTASSERT(x)				__CTASSERT(x)
+#endif
+#ifndef	CTASSERT_SIGNED
+#define	CTASSERT_SIGNED(x)		__CTASSERT(((typeof(x))-1) < 0)
+#endif
+#ifndef	CTASSERT_UNSIGNED
+#define	CTASSERT_UNSIGNED(x)	__CTASSERT(((typeof(x))-1) >= 0)
+#endif
+
+#ifdef NDEBUG						/* tradition! */
+#define	assert(e)	((void)0)
+#else
+#ifdef __STDC__
+#define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
+			    __assert("", __FILE__, __LINE__, #e))
+#else
+#define	assert(e)	(__predict_true((e)) ? (void)0 :		   	 	\
+			    __assert("", __FILE__, __LINE__, "e"))
 #endif
 #endif
 
@@ -312,53 +320,25 @@ void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 #endif /* !lint */
 #else /* DIAGNOSTIC */
 #define _DIAGASSERT(a)			assert(a)
-#define	KASSERTMSG(e, msg, ...)										\
-			(__predict_true((e)) ? (void)0 :		    			\
-			    kern_assert(__KASSERTSTR msg, "diagnostic ", #e,	\
-				__FILE__, __LINE__, ## __VA_ARGS__))
+#define	KASSERTMSG(e, msg, ...)	(__predict_true((e)) ? (void)0 :	\
+			    __assert(__KASSERTSTR msg, "diagnostic ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
 
 #define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    kern_assert(__KASSERTSTR, "diagnostic ", #e,	    \
-				__FILE__, __LINE__))
-#ifdef __STDC__
-#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert("diagnostic ", __FILE__, __LINE__, #e))
-#else
-#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert("diagnostic ", __FILE__, __LINE__, "e"))
-#endif
+			    __assert(__KASSERTSTR, "diagnostic ", #e, __FILE__, __LINE__))
 #endif
 
 #ifndef DEBUG
 #ifdef lint
-#define	KDASSERT(e)	/* NOTHING */
+#define	KDASSERTMSG(e,msg, ...)	/* NOTHING */
+#define	KDASSERT(e)				/* NOTHING */
 #else /* lint */
-#define	KDASSERT(e)	((void)0)
+#define	KDASSERTMSG(e,msg, ...)	((void)0)
+#define	KDASSERT(e)				((void)0)
 #endif /* lint */
 #else
-#ifdef __STDC__
-#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert("debugging ", __FILE__, __LINE__, #e))
-#else
-#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert("debugging ", __FILE__, __LINE__, "e"))
-#endif
-#endif
+#define	KASSERTMSG(e, msg, ...)	(__predict_true((e)) ? (void)0 :	\
+			    __assert(__KASSERTSTR msg, "debugging  ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
 
-#ifndef	CTASSERT
-#define	CTASSERT(x)				__CTASSERT(x)
-#endif
-#ifndef	CTASSERT_SIGNED
-#define	CTASSERT_SIGNED(x)		__CTASSERT(((typeof(x))-1) < 0)
-#endif
-#ifndef	CTASSERT_UNSIGNED
-#define	CTASSERT_UNSIGNED(x)	__CTASSERT(((typeof(x))-1) >= 0)
-#endif
-
-#ifndef offsetof
-#if __GNUC_PREREQ__(4, 0)
-#define offsetof(type, member)	__builtin_offsetof(type, member)
-#else
-#define	offsetof(type, member) ((size_t)(unsigned long)(&(((type *)0)->member)))
-#endif
+#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
+			    __assert(__KASSERTSTR, "debugging  ", #e, __FILE__, __LINE__))
 #endif

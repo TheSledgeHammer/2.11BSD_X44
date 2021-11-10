@@ -86,12 +86,12 @@ typedef	__uintptr_t			uintptr_t;
 #endif
 
 #ifndef _BSD_REGISTER_T_
-typedef	__register_t 			register_t;
+typedef	__register_t 		register_t;
 #define _BSD_REGISTER_T_
 #endif
 
 #ifndef _BSD_UREGISTER_T_
-typedef	__uregister_t 			uregister_t;
+typedef	__uregister_t 		uregister_t;
 #define _BSD_UREGISTER_T_
 #endif
 

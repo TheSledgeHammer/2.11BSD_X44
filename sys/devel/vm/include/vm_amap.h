@@ -234,7 +234,7 @@ AMAP_INLINE
 struct vm_amap	*vm_amap_alloc (caddr_t, caddr_t, int); 							/* allocate a new amap */
 void			vm_amap_copy (vm_map_t, vm_map_entry_t, int, caddr_t, caddr_t); 	/* clear amap needs-copy flag */
 void			vm_amap_cow_now (vm_map_t, vm_map_entry_t); 						/* resolve all COW faults now */
-int				vm_amap_extend	(vm_map_entry_t, size_t, int); 						/* make amap larger */
+int				vm_amap_extend	(vm_map_entry_t, size_t); 							/* make amap larger */
 void			vm_amap_free (vm_amap_t); 											/* free amap */
 void			vm_amap_ref (vm_amap_t, vaddr_t, size_t, int);						/* add a reference to an amap */
 void			vm_amap_share_protect (vm_map_entry_t, vm_prot_t); 					/* protect pages in a shared amap */

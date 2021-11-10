@@ -51,6 +51,7 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/map.h>
+#include <sys/types.h>
 #include <vm/include/vm.h>
 #endif
 
@@ -188,6 +189,8 @@ struct ctlname {
 #define	KERN_PROC_TTY		4	/* by controlling tty */
 #define	KERN_PROC_UID		5	/* by effective uid */
 #define	KERN_PROC_RUID		6	/* by real uid */
+
+struct vmspace;
 
 /* 
  * KERN_PROC subtype ops return arrays of augmented proc structures:

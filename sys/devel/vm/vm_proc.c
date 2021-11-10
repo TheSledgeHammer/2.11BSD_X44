@@ -5,6 +5,7 @@
  *
  *	@(#)vm_proc.c	1.2 (2.11BSD GTE) 12/24/92
  */
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -220,8 +221,9 @@ sureg()
 {
 	int taddr, daddr, saddr;
 
-	taddr = daddr = u.u_procp->p_daddr;
-	saddr = u.u_procp->p_saddr;
+	taddr = u->u_procp->p_daddr;
+	daddr = u->u_procp->p_daddr;
+	saddr = u->u_procp->p_saddr;
 }
 
 /*

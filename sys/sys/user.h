@@ -25,6 +25,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ucred.h>
+#include <sys/dirent.h>
 
 #include <vm/include/vm.h>			/* XXX */
 
@@ -38,7 +39,7 @@
  * 0140000; contains the system stack (and possibly network stack) per
  * user; is cross referenced with the proc structure for the same process.
  */
-#define	MAXCOMLEN		MAXNAMLEN				/* <= MAXNAMLEN, >= sizeof(ac_comm) */
+//#define	MAXCOMLEN		MAXNAMLEN				/* <= MAXNAMLEN, >= sizeof(ac_comm) */
 #define USIZE 			UPAGES					/* pdp11 equivalent of UPAGES */
 
 struct	pcb {									/* fake pcb structure */

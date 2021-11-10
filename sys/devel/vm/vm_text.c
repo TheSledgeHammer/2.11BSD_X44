@@ -25,8 +25,6 @@ void
 vm_text_init(xp)
 	vm_text_t 		xp;
 {
-    int ntexts;
-
     simple_lock_init(&vm_text_list_lock, "vm_text_list_lock");
     TAILQ_INIT(&vm_text_list);
 }

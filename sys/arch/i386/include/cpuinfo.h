@@ -136,7 +136,7 @@ curcpu(void)
 	__asm volatile(
 			"movl %%fs:%1, %0" : "=r" (ci) : "m"
 			(*(struct cpu_info * const *)&((struct cpu_info *)0)->cpu_self)
-			);
+	);
 	return (ci);
 }
 #endif /* _I386_CPUINFO_H_ */

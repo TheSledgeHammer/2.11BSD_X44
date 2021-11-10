@@ -47,20 +47,20 @@
  * Data structure
  */
 struct vm_data {
-    segsz_t 			psx_dsize;		/* data size */
-	caddr_t				psx_daddr;		/* data addr */
-	int 				psx_dflag;		/* data flags */
-	u_long				*psx_dresult;	/* data extent */
+    segsz_t 				psx_dsize;				/* data size */
+	caddr_t					psx_daddr;				/* data addr */
+	int 					psx_dflag;				/* data flags */
+	u_long					*psx_dresult;			/* data extent */
 };
 
 /*
  * Stack structure
  */
 struct vm_stack {
-	segsz_t 			psx_ssize;		/* stack size */
-	caddr_t				psx_saddr;		/* stack addr */
-    int 				psx_sflag;		/* stack flags */
-    u_long				*psx_sresult;	/* stack extent */
+	segsz_t 				psx_ssize;				/* stack size */
+	caddr_t					psx_saddr;				/* stack addr */
+    int 					psx_sflag;				/* stack flags */
+    u_long					*psx_sresult;			/* stack extent */
 };
 
 /*
@@ -69,12 +69,12 @@ struct vm_stack {
  * procedure on swap device.
  * Manipulated by text.c
  */
-#define	NXDAD				12		/* param.h:MAXTSIZ / vmparam.h:DMTEXT */
+#define	NXDAD				12						/* param.h:MAXTSIZ / vmparam.h:DMTEXT */
 
 struct txtlist;
 TAILQ_HEAD(txtlist, vm_text);
 struct vm_text {
-    /* text extent info */
+    /* vm_text extents */
 	segsz_t 				psx_tsize;				/* text size */
 	caddr_t					psx_taddr;				/* text addr */
     int 					psx_tflag;				/* text flags */
@@ -112,28 +112,28 @@ struct vm_text {
  */
 struct vm_xstats {
     u_long	                psxs_alloc;			    /* calls to xalloc */
-    u_long	                psxs_alloc_inuse;		    /* found in use/sticky */
-    u_long	                psxs_alloc_cachehit;		/* found in cache */
+    u_long	                psxs_alloc_inuse;		/* found in use/sticky */
+    u_long	                psxs_alloc_cachehit;	/* found in cache */
     u_long	                psxs_alloc_cacheflush;	/* flushed cached text */
     u_long	                psxs_alloc_unused;		/* flushed unused cached text */
     u_long	                psxs_free;			    /* calls to xfree */
-    u_long	                psxs_free_inuse;		    /* still in use/sticky */
-    u_long	                psxs_free_cache;		    /* placed in cache */
-    u_long	                psxs_free_cacheswap;		/* swapped out to place in cache */
+    u_long	                psxs_free_inuse;		/* still in use/sticky */
+    u_long	                psxs_free_cache;		/* placed in cache */
+    u_long	                psxs_free_cacheswap;	/* swapped out to place in cache */
     u_long					psxs_purge;				/* calls to xpurge */
 };
 
 /* pseudo segment registers */
 union vm_pseudo_segment {
-    struct vm_data      ps_data;
-    struct vm_stack     ps_stack;
-    struct vm_text      ps_text;
+    struct vm_data      	ps_data;
+    struct vm_stack     	ps_stack;
+    struct vm_text      	ps_text;
 
-    struct extent 		*ps_extent;		/* segments extent allocator */
-    vm_offset_t         *ps_start;		/* start of space */
-    vm_offset_t         *ps_end;		/* end of space */
-    size_t				ps_size;		/* total size (data + stack + text) */
-    int 				ps_flags;		/* flags */
+    struct extent 			*ps_extent;				/* segments extent allocator */
+    vm_offset_t         	*ps_start;				/* start of space */
+    vm_offset_t         	*ps_end;				/* end of space */
+    size_t					ps_size;				/* total size (data + stack + text) */
+    int 					ps_flags;				/* flags */
 };
 
 extern
@@ -146,9 +146,9 @@ simple_lock_data_t			vm_text_list_lock;
 #define xunlock(lock)		simple_unlock(lock);
 
 /* pseudo-segment types */
-#define PSEG_DATA			1			/* data segment */
-#define PSEG_STACK			2			/* stack segment */
-#define PSEG_TEXT			3			/* text segment */
+#define PSEG_DATA			1						/* data segment */
+#define PSEG_STACK			2						/* stack segment */
+#define PSEG_TEXT			3						/* text segment */
 
 /* pseudo-segment flags */
 #define PSEG_SEP			(PSEG_DATA | PSEG_STACK)				/* I&D seperation */
@@ -214,7 +214,7 @@ void	vm_psegment_extent_free(vm_psegment_t *, caddr_t, u_long, int, int);
 void	vm_psegment_extent_destroy(vm_psegment_t *);
 
 /* vm_text */
-void	vm_text_init(vm_psegment_t, u_long, int);
+void	vm_text_init(vm_text_t);
 void	vm_xalloc(struct vnode *, u_long, off_t);
 void	vm_xfree(void);
 void	vm_xexpand(struct proc *, vm_text_t);

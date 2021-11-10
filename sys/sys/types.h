@@ -56,6 +56,26 @@ typedef	__uint64_t			uint64_t;
 #define	_BSD_UINT64_T_
 #endif
 
+#ifndef	_BSD_INTPTR_T_
+typedef	__intptr_t			intptr_t;
+#define	_BSD_INTPTR_T_
+#endif
+
+#ifndef	_BSD_UINTPTR_T_
+typedef	__uintptr_t			uintptr_t;
+#define	_BSD_UINTPTR_T_
+#endif
+
+#ifndef _BSD_REGISTER_T_
+typedef	__register_t 		register_t;
+#define _BSD_REGISTER_T_
+#endif
+
+#ifndef _BSD_UREGISTER_T_
+typedef	__uregister_t 		uregister_t;
+#define _BSD_UREGISTER_T_
+#endif
+
 /* BSD-style unsigned bits types */
 typedef	uint8_t				u_int8_t;
 typedef	uint16_t			u_int16_t;

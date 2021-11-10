@@ -32,7 +32,6 @@
 #define	_SYS_EVENT_H_
 
 #include <sys/types.h>			/* for size_t */
-#include <machine/types.h>			/* for size_t */
 #include <sys/stdint.h>			/* for uintptr_t */
 #include <sys/null.h>			/* for NULL */
 
