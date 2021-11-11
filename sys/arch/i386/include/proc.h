@@ -37,7 +37,7 @@
  * Machine-dependent part of the proc structure for i386.
  */
 struct mdproc {
-	struct	trapframe 	*md_regs;		/* registers on current frame */
+	struct trapframe 	*md_regs;		/* registers on current frame */
 	int					md_flags;		/* machine-dependent flags */
 	int					md_tss_sel;		/* TSS selector */
 	volatile int 		md_astpending;	/* AST pending for this process */

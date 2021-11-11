@@ -42,11 +42,11 @@
 //#define	MAXCOMLEN		MAXNAMLEN				/* <= MAXNAMLEN, >= sizeof(ac_comm) */
 #define USIZE 			UPAGES					/* pdp11 equivalent of UPAGES */
 
-struct pcb {									/* fake pcb structure */
-	int				(*pcb_sigc)(void);			/* pointer to trampoline code in user space */
+struct upcb {									/* fake pcb structure */
+	int					(*upcb_sigc)(void);		/* pointer to trampoline code in user space */
 };
 
-struct	fps {
+struct fps {
 	short				u_fpsr;					/* FP status register */
 	double				u_fpregs[6];			/* FP registers */
 };
@@ -164,7 +164,6 @@ struct user {
 
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
 	struct kinfo_proc 	u_kproc;				/* proc + eproc */
-	struct md_coredump 	u_md;					/* machine dependent glop */
 
 /* 1.8 User Threads */
 	//struct uthread		*u_uthread;			/* ptr to uthread */

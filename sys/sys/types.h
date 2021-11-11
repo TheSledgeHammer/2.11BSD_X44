@@ -113,7 +113,6 @@ typedef	u_long				uid_t;		/* user id */
 typedef	u_long				gid_t;		/* group id */
 typedef	u_char	    		pid_t;		/* process id */
 typedef	u_short				mode_t;		/* permissions */
-//typedef	unsigned long		cpuid_t;
 typedef char				bool_t;		/* boolean */
 typedef long				memaddr;	/* core or swap address */
 

@@ -71,7 +71,6 @@
 #define	T_RESERVED			28	/* reserved fault base */
 
 /* definitions for <sys/signal.h> */
-#define	ILL_RESAD_FAULT		T_RESADFLT
 #define	ILL_PRIVIN_FAULT	T_PRIVINFLT
 #define	ILL_RESOP_FAULT		T_RESOPFLT
 #define ILL_ALIGN_FAULT		T_ALIGNFLT

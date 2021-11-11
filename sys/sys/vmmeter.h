@@ -97,10 +97,6 @@ struct vmsum {
 	long		v_swpin;					/* swapins */
 	long		v_swpout;					/* swapouts */
 };
-#ifdef KERNEL
-struct vmrate	cnt, rate;
-struct vmsum	sum;
-#endif
 
 /* systemwide totals computed every five seconds */
 struct vmtotal {
@@ -119,9 +115,6 @@ struct vmtotal {
 	long		t_armshr;					/* active real memory used by text, clicks */
 	long		t_free;						/* free memory pages, kb */
 };
-#ifdef KERNEL
-struct	vmtotal total;
-#endif
 
 /* Optional instrumentation. */
 #ifdef PGINPROF
@@ -159,4 +152,9 @@ unsigned rectime;		/* accumulator for reclaim times */
 unsigned pgintime;		/* accumulator for page in times */
 #endif
 
+#ifdef _KERNEL
+struct vmrate	cnt, rate;
+struct vmsum	sum;
+struct vmtotal 	total;
+#endif
 #endif /* _SYS_VMMETER_H_ */

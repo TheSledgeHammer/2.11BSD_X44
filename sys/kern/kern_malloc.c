@@ -51,9 +51,9 @@ char *memname[] = INITKMEMNAMES;
 
 /* [internal use only] */
 caddr_t	kmalloc(unsigned long, int);
-caddr_t	omalloc(unsigned long, int);
+//caddr_t	omalloc(unsigned long, int);
 void	kfree(void *, short);
-void	ofree(void *, short, int);
+//void	ofree(void *, short, int);
 
 #ifdef DIAGNOSTIC
 
@@ -392,8 +392,17 @@ kmalloc(size, flags)
 	return (va);
 }
 
+/* free memory from vm [internal use only] */
+void
+kfree(addr, size)
+	void *addr;
+	short size;
+{
+	kmem_free(kmem_map, (vm_offset_t) addr, size);
+}
 
 /* allocate memory to ovl [internal use only] */
+/*
 caddr_t
 omalloc(size, flags)
 	unsigned long size;
@@ -413,17 +422,10 @@ omalloc(size, flags)
 	}
 	return (va);
 }
-
-/* free memory from vm [internal use only] */
-void
-kfree(addr, size)
-	void *addr;
-	short size;
-{
-	kmem_free(kmem_map, (vm_offset_t) addr, size);
-}
+*/
 
 /* free memory from ovl [internal use only] */
+/*
 void
 ofree(addr, size, type)
 	void *addr;
@@ -434,3 +436,4 @@ ofree(addr, size, type)
 		omem_free(omem_map, (vm_offset_t) addr, size);
 	}
 }
+*/

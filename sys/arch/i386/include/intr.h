@@ -78,53 +78,10 @@ int iunmask[NIPL];
 
 extern void Xspllower (void);
 
-static __inline int splraise (int);
-static __inline int spllower (int);
-static __inline void splx (int);
-static __inline void softintr (int);
-
-/*
- * Add a mask to cpl, and return the old value of cpl.
- */
-static __inline int
-splraise(ncpl)
-	register int ncpl;
-{
-	register int ocpl = cpl;
-
-	cpl = ocpl | ncpl;
-	return (ocpl);
-}
-
-/*
- * Restore a value to cpl (unmasking interrupts).  If any unmasked
- * interrupts are pending, call Xspllower() to process them.
- */
-static __inline void
-splx(ncpl)
-	register int ncpl;
-{
-	cpl = ncpl;
-	if (ipending & ~ncpl) {
-		Xspllower();
-	}
-}
-
-/*
- * Same as splx(), but we return the old value of spl, for the
- * benefit of some splsoftclock() callers.
- */
-static __inline int
-spllower(ncpl)
-	register int ncpl;
-{
-	register int ocpl = cpl;
-
-	cpl = ncpl;
-	if (ipending & ~ncpl)
-		Xspllower();
-	return (ocpl);
-}
+extern int splraise (int);
+extern int spllower (int);
+extern void splx (int);
+extern void softintr (int);
 
 /*
  * Hardware interrupt masks
@@ -153,18 +110,6 @@ spllower(ncpl)
 #define	splimp()		splraise(imask[IPL_IMP])
 #define	splhigh()		splraise(imask[IPL_HIGH])
 #define	spl0()			spllower(0)
-
-/*
- * Software interrupt registration
- *
- * We hand-code this to ensure that it's atomic.
- */
-static __inline void
-softintr(mask)
-	register int mask;
-{
-	__asm __volatile("orl %0,_ipending" : : "ir" (1 << mask));
-}
 
 #define	setsoftast(p)	aston(p)
 #define	setsoftclock()	softintr(SIR_CLOCK)

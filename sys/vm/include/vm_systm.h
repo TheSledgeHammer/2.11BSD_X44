@@ -15,7 +15,7 @@
  * Miscellaneous virtual memory subsystem variables and structures.
  */
 
-size_t		freemem = cnt.v_free_count;		/* remaining clicks of free memory */
+int			freemem = cnt.v_free_count;		/* remaining clicks of free memory */
 
 #if defined(KERNEL)
 int			avefree;		/* moving average of remaining free clicks */

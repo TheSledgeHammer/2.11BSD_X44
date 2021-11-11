@@ -119,15 +119,15 @@ struct	sigstack {
  * a non-standard exit is performed.
  */
 struct sigcontext {
-	int		sc_onstack;		/* sigstack state to restore */
-	long 	sc_mask;		/* signal mask to restore */
-	int		sc_sp;			/* sp to restore */
-	int		sc_fp;			/* fp to restore */
-	int		sc_r1;			/* r1 to restore */
-	int		sc_r0;			/* r0 to restore */
-	int		sc_pc;			/* pc to restore */
-	int		sc_ps;			/* psl to restore */
-	int		sc_ovno;		/* overlay to restore */
+	int				sc_onstack;		/* sigstack state to restore */
+	long 			sc_mask;		/* signal mask to restore */
+	int				sc_sp;			/* sp to restore */
+	int				sc_fp;			/* fp to restore */
+	int				sc_r1;			/* r1 to restore */
+	int				sc_r0;			/* r0 to restore */
+	int				sc_pc;			/* pc to restore */
+	int				sc_ps;			/* psl to restore */
+	int				sc_ovno;		/* overlay to restore */
 };
 
 /*

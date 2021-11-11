@@ -72,6 +72,7 @@
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
 #include <machine/gdt.h>
+#include <machine/intr.h>
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
@@ -1151,14 +1152,69 @@ need_resched(p)
 }
 
 /*
+ * Add a mask to cpl, and return the old value of cpl.
+ */
+int
+splraise(ncpl)
+	register int ncpl;
+{
+	register int ocpl = cpl;
+
+	cpl = ocpl | ncpl;
+	return (ocpl);
+}
+
+/*
+ * Restore a value to cpl (unmasking interrupts).  If any unmasked
+ * interrupts are pending, call Xspllower() to process them.
+ */
+void
+splx(ncpl)
+	register int ncpl;
+{
+	cpl = ncpl;
+	if (ipending & ~ncpl) {
+		Xspllower();
+	}
+}
+
+/*
+ * Same as splx(), but we return the old value of spl, for the
+ * benefit of some splsoftclock() callers.
+ */
+int
+spllower(ncpl)
+	register int ncpl;
+{
+	register int ocpl = cpl;
+
+	cpl = ncpl;
+	if (ipending & ~ncpl)
+		Xspllower();
+	return (ocpl);
+}
+
+/*
+ * Software interrupt registration
+ *
+ * We hand-code this to ensure that it's atomic.
+ */
+void
+softintr(mask)
+	register int mask;
+{
+	__asm __volatile("orl %0,_ipending" : : "ir" (1 << mask));
+}
+
+/*
  * Provide inb() and outb() as functions.  They are normally only available as
  * inline functions, thus cannot be called from the debugger.
  */
 
 /* silence compiler warnings */
 
-u_char inb_(u_short);
-void outb_(u_short, u_char);
+u_char 	inb_(u_short);
+void 	outb_(u_short, u_char);
 
 u_char
 inb_(u_short port)

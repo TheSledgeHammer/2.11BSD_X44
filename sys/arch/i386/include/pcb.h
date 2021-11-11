@@ -56,9 +56,9 @@ struct pcb {
 #define	pcb_eib					pcb_tss.tss_eip
 
 #define	pcb_ptd					pcb_tss.tss_cr3
-	struct	savefpu				pcb_savefpu;			/* floating point state (context) for 287/387 */
-	struct  cpu_info 			*pcb_fpcpu;				/* cpu holding our fp state. */
-	struct	emcsts				pcb_saveemc;			/* Cyrix EMC state */
+	struct savefpu				pcb_savefpu;			/* floating point state (context) for 287/387 */
+	struct cpu_info 			*pcb_fpcpu;				/* cpu holding our fp state. */
+	struct emcsts				pcb_saveemc;			/* Cyrix EMC state */
 	u_long						pcb_iomap[NPORT/32];	/* i/o port bitmap */
 #define	pcb_cr0					pcb_tss.tss_cr0			/* saved image of CR0 */
 #define	pcb_cr2					pcb_tss.tss_cr2
@@ -81,20 +81,10 @@ struct pcb {
 	int							pcb_cmap2;				/* XXX temporary PTE - will prefault instead */
 	struct segment_descriptor 	pcb_tssd;				/* tss descriptor */
 	int							vm86_eflags;			/* virtual eflags for vm86 mode */
-//	u_long						pcb_scvm86[2];			/* vm86bios scratch space */
 	struct vm86_kernel 			pcb_vm86;				/* vm86 area */
-};
-
-
-/*
- * The pcb is augmented with machine-dependent additional data for
- * core dumps. For the i386: ???
- */
-struct md_coredump {
-	int     pad;		/* XXX? -- cgd */
+	//	u_long						pcb_scvm86[2];			/* vm86bios scratch space */
 };
 
 #ifdef _KERNEL
-struct pcb *curpcb;		/* our current running pcb */
-struct trapframe;
+struct pcb 						*curpcb;		/* our current running pcb */
 #endif

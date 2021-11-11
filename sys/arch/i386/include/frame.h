@@ -69,7 +69,6 @@ struct trapframe {
 };
 
 /* Superset of trap frame, for traps from virtual-8086 mode */
-
 struct trapframe_vm86 {
 	int	tf_fs;
 	int	tf_es;
