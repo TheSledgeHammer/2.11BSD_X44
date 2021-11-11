@@ -34,4 +34,6 @@ links:
 	-for i in ${DI386}; do \
 	    (cd $$i && rm -f tags; ln -s ../tags tags); done
 
+SUBDIR=	compile include
+
 .include <bsd.subdir.mk>

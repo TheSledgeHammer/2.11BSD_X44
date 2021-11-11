@@ -1055,6 +1055,7 @@ syscall1:
 		jmp		_C_LABEL(Xdoreti)
 /**********************************************************************/
 
-#include <i386/i386/support.S>
-#include <i386/isa/icu.S>
-#include <i386/isa/vector.S>
+//#include <i386/i386/support.S>
+//#include <i386/isa/icu.S>
+//#include <i386/apic/legacyvector.S>
+//#include <i386/apic/apicvector.S>

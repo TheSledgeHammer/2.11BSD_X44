@@ -41,6 +41,8 @@
 #include <sys/types.h>
 
 #include <machine/pcb.h>
+#include <machine/segments.h>
+#include <machine/specialreg.h>
 
 /*
  * Flush MMU TLB
@@ -67,19 +69,19 @@ bsrl(u_int mask)
 	return (result);
 }
 
-#define	HAVE_INLINE_FFS
+//#define	HAVE_INLINE_FFS
 
-static __inline int
-ffs(int mask)
-{
+//static __inline int
+//ffs(int mask)
+//{
 	/*
 	 * Note that gcc-2's builtin ffs would be used if we didn't declare
 	 * this inline or turn off the builtin.  The builtin is faster but
 	 * broken in gcc-2.4.5 and slower but working in gcc-2.5 and later
 	 * versions.
 	 */
-	 return (mask == 0 ? mask : (int)bsfl((u_int)mask) + 1);
-}
+//	 return (mask == 0 ? mask : (int)bsfl((u_int)mask) + 1);
+//}
 
 #define	HAVE_INLINE_FLS
 
@@ -391,20 +393,6 @@ static __inline void
 ia32_pause(void)
 {
 	__asm __volatile("pause");
-}
-
-static __inline u_char
-read_cyrix_reg(u_char reg)
-{
-	outb(0x22, reg);
-	return inb(0x23);
-}
-
-static __inline void
-write_cyrix_reg(u_char reg, u_char data)
-{
-	outb(0x22, reg);
-	outb(0x23, data);
 }
 
 #endif /* !_I386_CPUFUNC_H_ */

@@ -36,6 +36,9 @@
  *	@(#)frame.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _I386_FRAME_H_
+#define _I386_FRAME_H_
+
 /*
  * System stack frames.
  */
@@ -133,5 +136,7 @@ struct sigframe {
 	int					sf_eax;
 	int					sf_edx;
 	int					sf_ecx;
-	struct	sigcontext 	sf_sc;
+	struct	osigcontext 	sf_sc;
 };
+
+#endif /* _I386_FRAME_H_ */

@@ -69,15 +69,21 @@
 #ifndef	_VM_PARAM_
 #define	_VM_PARAM_
 
+#ifdef _KERNEL
+#include <sys/types.h>
 #include <machine/vmparam.h>
+#include <sys/resourcevar.h>
+#endif
 
 /*
  * This belongs in types.h, but breaks too many existing programs.
  */
+ /*
 typedef int	boolean_t;
 typedef boolean_t bool;
 #define	TRUE	1
 #define	FALSE	0
+*/
 
 /*
  *	The machine independent pages are refered to as PAGES.  A page

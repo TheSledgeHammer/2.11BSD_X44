@@ -34,14 +34,14 @@
  
 #include "assym.h"
 
-#include <machine/isa/icu.h>
+#include <i386/isa/icu.h>
 #include <machine/apic/ioapicreg.h>
-#include <machine/apic/ioaaicvar.h>
+#include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 		
 #ifdef SMP	
 #if NLAPIC > 0
