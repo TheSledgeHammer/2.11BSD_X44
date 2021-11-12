@@ -36,7 +36,9 @@
 #ifndef _SYS_MALLOC_H_
 #define	_SYS_MALLOC_H_
 
+#ifndef KMEMSTATS
 #define KMEMSTATS
+#endif
 
 /* flags to malloc */
 #define	M_WAITOK		0x0000

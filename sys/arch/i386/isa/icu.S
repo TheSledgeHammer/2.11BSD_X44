@@ -162,7 +162,7 @@ IDTVEC(softnet)
 		xorl	%edi,%edi
 		xchgl	_C_LABEL(netisr),%edi
 #ifdef INET
-#include "arp.h"
+//#include "arp.h"
 #if NARP > 0
 	DONET(NETISR_ARP, _C_LABEL(arpintr))
 #endif
@@ -186,7 +186,7 @@ IDTVEC(softnet)
 #ifdef NETATALK
 	DONET(NETISR_ATALK, _C_LABEL(atintr))
 #endif
-#include "ppp.h"
+//#include "ppp.h"
 #if NPPP > 0
 	DONET(NETISR_PPP, _C_LABEL(pppintr))
 #endif

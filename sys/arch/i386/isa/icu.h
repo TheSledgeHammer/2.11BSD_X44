@@ -85,5 +85,5 @@ extern unsigned short			idepth;
 
 #define MAX_INTR_SOURCES 		ICU_OFFSET
 #define NUM_LEGACY_IRQS			ICU_LEN
-
+#endif
 #endif	/* __I386_ICU__ */

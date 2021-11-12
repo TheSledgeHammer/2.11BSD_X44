@@ -36,6 +36,10 @@
  *	@(#)pcb.h	8.2 (Berkeley) 1/21/94
  */
 
+
+#ifndef _I386_PCB_H_
+#define _I386_PCB_H_
+
 /*
  * Intel 386 process control block
  */
@@ -88,3 +92,4 @@ struct pcb {
 #ifdef _KERNEL
 struct pcb 						*curpcb;		/* our current running pcb */
 #endif
+#endif /* _I386_PCB_H_ */

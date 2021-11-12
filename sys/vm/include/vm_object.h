@@ -69,7 +69,6 @@
 #ifndef	_VM_OBJECT_
 #define	_VM_OBJECT_
 
-#include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pager.h>
 

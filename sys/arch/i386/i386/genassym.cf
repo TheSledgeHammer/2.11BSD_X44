@@ -51,6 +51,7 @@ include <vm/include/vm.h>
 
 include <machine/bootinfo.h>
 include <machine/cpu.h>
+include <machine/cpufunc.h>
 include <machine/frame.h>
 include <machine/pcb.h>
 include <machine/pic.h>
@@ -83,12 +84,12 @@ define P_PID 				offsetof(struct proc, p_pid)
 define SSLEEP 				SSLEEP
 define SRUN 				SRUN
 
-define V_SWTCH 				offsetof(struct vmmeter , v_swtch)
-define V_TRAP 				offsetof(struct vmmeter , v_trap)
-define V_SYSCALL 			offsetof(struct vmmeter , v_syscall)
-define V_INTR 				offsetof(struct vmmeter , v_intr)
-define V_SOFT 				offsetof(struct vmmeter , v_soft)
-define V_FAULTS 			offsetof(struct vmmeter , v_faults)
+define V_SWTCH 				offsetof(struct vmrate, v_swtch)
+define V_TRAP 				offsetof(struct vmrate, v_trap)
+define V_SYSCALL 			offsetof(struct vmrate, v_syscall)
+define V_INTR 				offsetof(struct vmrate, v_intr)
+define V_SOFT 				offsetof(struct vmrate, v_soft)
+define V_FAULTS 			offsetof(struct vmrate, v_faults)
 
 define KSTACK_PAGES			KSTACK_PAGES
 define PAGE_SIZE			PGSIZE

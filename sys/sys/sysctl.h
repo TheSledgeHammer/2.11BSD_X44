@@ -200,15 +200,13 @@ struct kinfo_proc {
 	struct	eproc {
 		struct	proc 	*e_paddr;				/* address of proc */
 
-		dev_t			e_tdev;					/* controlling tty dev */
-		pid_t			e_tpgid;				/* tty process group id */
 		uid_t			e_ruid;					/* real uid */
 
 		struct	session *e_sess;				/* session pointer */
 		struct	pcred 	e_pcred;				/* process credentials */
 		struct	ucred 	e_ucred;				/* current credentials */
 
-		struct	vmspace e_vm;					/* address space */
+		struct	vmspace *e_vm;					/* address space */
 		pid_t			e_ppid;					/* parent process id */
 		pid_t			e_pgid;					/* process group id */
 		short			e_jobc;					/* job control counter */

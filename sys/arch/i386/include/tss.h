@@ -35,6 +35,8 @@
  *
  *	@(#)tss.h	8.1 (Berkeley) 6/11/93
  */
+#ifndef _I386_TSS_H_
+#define _I386_TSS_H_
 
 /*
  * Intel 386 Context Data Type
@@ -73,3 +75,5 @@ struct i386tss {
 	int			tss_ioopt;	/* options & io offset bitmap: currently zero */
 							/* XXX unimplemented .. i/o permission bitmap */
 };
+
+#endif	/* !_I386_TSS_H_ */
