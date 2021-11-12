@@ -26,7 +26,6 @@ NEED_OWN_INSTALL_TARGET?=no
 
 I386=			$S/arch/i386
 GENASSYM_CONF=	${I386}/i386/genassym.cf
-#GENASSYM_CONF=	${I386}/i386/genassym.c
 
 ##
 ## (2) compile settings
@@ -51,15 +50,12 @@ CFLAGS+=	-mno-mmx -mno-sse -mno-avx
 ##
 ## (4) local objects, compile rules, and dependencies
 ##
-MD_OBJS=	locore.o support.o apicvector.o legacyvector.o icu.o
+MD_OBJS=	locore.o apicvector.o legacyvector.o icu.o
 MD_CFILES=
-MD_SFILES=	${I386}/i386/locore.S ${I386}/i386/support.S ${I386}/apic/apicvector.S\
+MD_SFILES=	${I386}/i386/locore.S ${I386}/apic/apicvector.S \
 		${I386}/apic/legacyvector.S ${I386}/isa/icu.S 
 
 locore.o: ${I386}/i386/locore.S assym.h
-	${NORMAL_S}
-
-support.o: ${I386}/i386/support.S assym.h
 	${NORMAL_S}
 
 apicvector.o: ${I386}/apic/apicvector.S assym.h
@@ -74,14 +70,16 @@ icu.o: ${I386}/isa/icu.S assym.h
 ##
 ## (5) link settings
 ##
-TEXTADDR?=			c0100000
+TEXTADDR?=		c0100000
 LINKFLAGS_NORMAL=	-X
 KERNLDSCRIPT?=		${I386}/conf/kern.ldscript
 
 ##
 ## (6) port specific target dependencies
 ##
+support.o: assym.h
 vm86bios.o bioscall.o: assym.h
+mpbios.o: assym.h
 
 ##
 ## (7) misc settings

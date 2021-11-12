@@ -37,14 +37,14 @@
  *
  */
 
-#include "assym.h"
 #include <machine/asm.h>
 #include <machine/cputypes.h>
 #include <machine/pmap.h>
 #include <machine/specialreg.h>
 
-#define	NOP	inb $0x84, %al ; inb $0x84, %al
-#define	IDXSHIFT 10
+#include "assym.h"
+
+#define	IDXSHIFT 	10
 
 /*
  * Support routines for GCC

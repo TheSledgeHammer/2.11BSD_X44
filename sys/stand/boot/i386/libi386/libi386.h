@@ -62,27 +62,27 @@ extern struct devsw 	biosdisk;
 extern struct devsw 	pxedisk;
 extern struct fs_ops 	pxe_fsops;
 
-int			bc_add(int biosdev);					/* Register CD booted from. */
-int			bc_getdev(struct i386_devdesc *dev);	/* return dev_t for (dev) */
-int			bc_bios2unit(int biosdev);				/* xlate BIOS device -> bioscd unit */
-int			bc_unit2bios(int unit);					/* xlate bioscd unit -> BIOS device */
-u_int32_t	bd_getbigeom(int bunit);				/* return geometry in bootinfo format */
-int			bd_bios2unit(int biosdev);				/* xlate BIOS device -> biosdisk unit */
-int			bd_unit2bios(int unit);					/* xlate biosdisk unit -> BIOS device */
-int			bd_getdev(struct i386_devdesc *dev);	/* return dev_t for (dev) */
+int			bc_add(int);						/* Register CD booted from. */
+int			bc_getdev(struct i386_devdesc *);	/* return dev_t for (dev) */
+int			bc_bios2unit(int);					/* xlate BIOS device -> bioscd unit */
+int			bc_unit2bios(int);					/* xlate bioscd unit -> BIOS device */
+u_int32_t	bd_getbigeom(int);					/* return geometry in bootinfo format */
+int			bd_bios2unit(int);					/* xlate BIOS device -> biosdisk unit */
+int			bd_unit2bios(int);					/* xlate biosdisk unit -> BIOS device */
+int			bd_getdev(struct i386_devdesc *);	/* return dev_t for (dev) */
 
-ssize_t		i386_copyin(const void *src, vm_offset_t dest, const size_t len);
-ssize_t		i386_copyout(const vm_offset_t src, void *dest, const size_t len);
-ssize_t		i386_readin(const int fd, vm_offset_t dest, const size_t len);
+ssize_t		i386_copyin(const void *, vm_offset_t, const size_t);
+ssize_t		i386_copyout(const vm_offset_t, void *, const size_t);
+ssize_t		i386_readin(const int, vm_offset_t, const size_t);
 
 int			i386_autoload(void);
-int			i386_getdev(void **vdev, const char *devspec, const char **path);
-char		*i386_fmtdev(void *vdev);
-int			i386_setcurrdev(struct env_var *ev, int flags, const void *value);
+int			i386_getdev(void **, const char *, const char **);
+char		*i386_fmtdev(void *);
+int			i386_setcurrdev(struct env_var *, int , const void *);
 
 /* disk format: use slices or traditional */
-void		bsd_slices(struct i386_devdesc currdev, int major, int biosdev);
-void		bsd_traditional(struct i386_devdesc currdev, int major, int biosdev);
+void		bsd_slices(struct i386_devdesc, int, int);
+void		bsd_traditional(struct i386_devdesc, int, int);
 
 struct preloaded_file;
 void		bios_getmem(void);
@@ -99,8 +99,8 @@ extern vm_offset_t	high_heap_base;	/* for use as the heap */
 
 /* 16KB buffer space for real mode data transfers. */
 #define	BIO_BUFFER_SIZE 0x4000
-void 		*bio_alloc(size_t size);
-void 		bio_free(void *ptr, size_t size);
+void 		*bio_alloc(size_t);
+void 		bio_free(void *, size_t);
 
 /*
  * Values for width parameter to biospci_{read,write}_config
@@ -110,16 +110,20 @@ void 		bio_free(void *ptr, size_t size);
 #define BIOSPCI_32BITS	2
 
 void		biospci_detect(void);
-int			biospci_find_devclass(uint32_t class, int index, uint32_t *locator);
-int			biospci_read_config(uint32_t locator, int offset, int width, uint32_t *val);
-uint32_t 	biospci_locator(int8_t bus, uint8_t device, uint8_t function);
-int			biospci_write_config(uint32_t locator, int offset, int width, uint32_t val);
+int			biospci_find_devclass(uint32_t, int, uint32_t *);
+int			biospci_find_device(uint32_t, int, uint32_t *);
+int			biospci_read_config(uint32_t, int, int, uint32_t *);
+uint32_t 	biospci_locator(int8_t, uint8_t, uint8_t);
+int			biospci_write_config(uint32_t, int, int, uint32_t);
 void		biosacpi_detect(void);
 
+void		bios_getsmap(void);
+void		bios_addsmapdata(struct preloaded_file *);
+
 /* bootinfo.c */
-int			bi_getboothowto(char *kargs);
-void		bi_setboothowto(int howto);
-vm_offset_t	bi_copyenv(vm_offset_t addr);
+int			bi_getboothowto(char *);
+void		bi_setboothowto(int);
+vm_offset_t	bi_copyenv(vm_offset_t);
 
 /* bootload.c */
 void 		bi_init(void);

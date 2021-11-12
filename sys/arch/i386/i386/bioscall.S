@@ -32,8 +32,9 @@
 
 #include <machine/param.h>
 #include <machine/bioscall.h>
-
 #include <machine/asm.h>
+
+#include "assym.h"
 
 		.data
 		ALIGN_DATA

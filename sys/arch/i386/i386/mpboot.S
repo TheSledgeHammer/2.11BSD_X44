@@ -29,13 +29,12 @@
  * $FreeBSD$
  */
 
-#include "assym.h"
-
 #include <machine/asm.h>					/* miscellaneous asm macros */
 #include <machine/apic/ioapicreg.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/specialreg.h>
 
+#include "assym.h"
 /*
  * this code MUST be enabled here and in mp_machdep.c
  * it follows the very early stages of AP boot by placing values in CMOS ram.

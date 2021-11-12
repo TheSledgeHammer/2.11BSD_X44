@@ -29,6 +29,8 @@
 #include <machine/asm.h>				/* miscellaneous asm macros */
 #include <machine/trap.h>
 
+#include "assym.h"
+
 #define SCR_NEWPTD		PCB_ESI			/* readability macros */
 #define SCR_VMFRAME		PCB_EBP			/* see vm86.c for explanation */
 #define SCR_STACK		PCB_ESP

@@ -37,9 +37,11 @@
  *	@(#)icu.s	8.1 (Berkeley) 6/11/93
  */
 
-#include "assym.h"
+#include <machine/asm.h>
 #include <i386/isa/icu.h>
 #include <net/netisr.h>
+
+#include "assym.h"
 
 		.data
 		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(idepth)

@@ -27,7 +27,7 @@
  */
 
 #include <sys/cdefs.h>
-
+#include <sys/null.h>
 /*
  * PnP enumerator using the PCI BIOS.
  */
@@ -339,7 +339,7 @@ biospci_find_devclass(uint32_t class, int index, uint32_t *locator)
 	return (0);
 }
 
-static int
+int
 biospci_find_device(uint32_t devid, int index, uint32_t *locator)
 {
 	v86.ctl = V86_FLAGS;

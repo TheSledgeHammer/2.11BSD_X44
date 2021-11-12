@@ -201,11 +201,6 @@ _MD_OBJS=	${MD_OBJS}
 SYSTEM_LIB=	${MD_LIBS} ${LIBKERN}
 SYSTEM_OBJ?=	${_MD_OBJS} ${OBJS} ${SYSTEM_LIB}
 SYSTEM_DEP+=	Makefile ${SYSTEM_OBJ:O}
-.if defined(CTFMERGE)
-SYSTEM_CTFMERGE= ${CTFMERGE} ${CTFMFLAGS} -o ${.TARGET} ${SYSTEM_OBJ} ${EXTRA_OBJ} vers.o
-.else
-SYSTEM_CTFMERGE= ${_MKSHECHO}
-.endif
 
 REMOVE_SWAP=   [@]
 .for k in ${KERNELS}
@@ -310,7 +305,6 @@ ${_s:T:R}.o: ${_s}
 
 .include "${S}/conf/assym.mk"
 .include "${S}/conf/lint.mk"
-.include "${S}/conf/copts.mk"
 
 ##
 ## (7) misc targets: install, clean(dir), depend(all), lint, links, tags,

@@ -45,9 +45,8 @@
  *		Written by William F. Jolitz, 386BSD Project
  */
 
-#include "assym.h"
-
 #include <sys/errno.h>
+#include <sys/reboot.h>
 
 #include <machine/asm.h>
 #include <machine/psl.h>
@@ -58,16 +57,12 @@
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
 
+#include "assym.h"
+
 /**********************************************************************/
 /* Some Handy Macros */
 
-#define	KDSEL		0x10
-
-#define	NOP			inb $0x84, %al ; inb $0x84, %al
-#define	FASTER_NOP	pushl %eax ; inb $0x84,%al ; popl %eax
 #define	RELOC(x)	((x) - KERNBASE)
-
-#define	LCALL(x,y)	.byte 0x9a ; .long y; .word x
 
 #define	PANIC(msg)				  \
 		xorl 	%eax,%eax		; \
@@ -81,7 +76,7 @@
 		pushl 	1f				; \
 		call 	_printf			; \
 		MSG(msg) 				; \
-		popl %eax 				; \
+		popl 	%eax 			; \
 		popal
 
 #define	MSG(msg)		.data; 1: .asciz msg; .text
@@ -1054,7 +1049,3 @@ syscall1:
 		pushl	$0
 		jmp		_C_LABEL(Xdoreti)
 /**********************************************************************/
-
-#include <i386/i386/support.S>
-#include <i386/isa/icu.S>
-#include <i386/isa/vector.S>

@@ -39,6 +39,20 @@
 
 #include <sys/cdefs.h>
 
+#define	NOP				\
+	inb 	$0x84, %al;	\
+	inb 	$0x84, %al
+
+#define	FASTER_NOP		\
+	pushl 	%eax; 		\
+	inb 	$0x84,%al; 	\
+	popl 	%eax
+
+#define	LCALL(x,y)		\
+	.byte 	0x9a;		\
+	.long 	y; 			\
+	.word 	x
+
 #ifdef PIC
 #define	PIC_PROLOGUE								\
 	pushl	%ebx;									\
