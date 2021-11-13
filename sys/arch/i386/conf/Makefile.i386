@@ -1,7 +1,6 @@
-#	$NetBSD: Makefile.i386,v 1.194 2018/09/22 12:24:02 rin Exp $
-#	@(#)Makefile.i386	8.1 (Berkeley) 6/11/93
-#
-# Makefile for 4.4 BSD
+#	$NetBSD: Makefile.i386,v 1.133.2.2.2.1 2005/02/06 07:45:25 jmc Exp $
+
+# Makefile for NetBSD
 #
 # This makefile is constructed from a machine description:
 #	config machineid
@@ -12,20 +11,22 @@
 # Machine generic makefile changes should be made in
 #	/sys/arch/i386/conf/Makefile.i386
 # after which config should be rerun for all machines of that type.
+#
+# To specify debugging, add the config line: makeoptions DEBUG="-g"
+# A better way is to specify -g only for a few files.
+#
+#	makeoptions DEBUGLIST="uvm* trap if_*"
 
-
-NOSANITIZER=	# defined
 MACHINE_ARCH=	i386
-USETOOLS?=		no
+USETOOLS?=	no
 NEED_OWN_INSTALL_TARGET?=no
 .include <bsd.own.mk>
 
 ##
 ## (1) port identification
 ##
-
 I386=		$S/arch/i386
-GENASSYM_CONF=	${I386}/i386/genassym.cf
+GENASSYM=	${I386}/i386/genassym.cf
 
 ##
 ## (2) compile settings
@@ -39,44 +40,40 @@ CFLAGS+=	-mno-mmx -mno-sse -mno-avx
 ##
 ## (3) libkern and compat
 ##
-#KERN_AS=		obj
-#.include "$S/lib/libkern/Makefile.inc"
-#.ifndef PROF
-#LIBKERN=		${KERNLIB}
-#.else
-#LIBKERN=		${KERNLIB_PROF}
-#.endif
+#KERN_AS=	obj
 
 ##
 ## (4) local objects, compile rules, and dependencies
 ##
 MD_OBJS=	locore.o apicvector.o legacyvector.o icu.o
 MD_CFILES=
-MD_SFILES=	${I386}/i386/locore.S ${I386}/apic/apicvector.S \
-		${I386}/apic/legacyvector.S ${I386}/isa/icu.S 
+MD_SFILES=	${I386}/i386/locore.S ${I386}/isa/icu.S \
+		${I386}/apic/apicvector.S ${I386}/apic/legacyvector.S
 
 locore.o: ${I386}/i386/locore.S assym.h
-	${NORMAL_S}
-
-apicvector.o: ${I386}/apic/apicvector.S assym.h
-	${NORMAL_S}
-	
-legacyvector.o: ${I386}/apic/legacyvector.S assym.h
 	${NORMAL_S}
 
 icu.o: ${I386}/isa/icu.S assym.h
 	${NORMAL_S}
 
+apicvector.o: ${I386}/apic/vector.S assym.h
+	${NORMAL_S}
+
+legacyvector.o: ${I386}/apic/legacyvector.S assym.h
+	${NORMAL_S}
+
 ##
 ## (5) link settings
 ##
-TEXTADDR?=		c0100000
+TEXTADDR?=	c0100000
 LINKFLAGS_NORMAL=	-X
-KERNLDSCRIPT?=		${I386}/conf/kern.ldscript
+KERN_LDSCRIPT?=	kern.ldscript
+LINKFORMAT=	-T ${I386}/conf/${KERN_LDSCRIPT}
 
 ##
 ## (6) port specific target dependencies
 ##
+
 support.o: assym.h
 vm86bios.o bioscall.o mpbios.o: assym.h
 
@@ -103,7 +100,7 @@ vm86bios.o bioscall.o mpbios.o: assym.h
 
 %LOAD
 
-%RULES
+%RULES     
 
 ##
 ## (9) port independent kernel machinery
