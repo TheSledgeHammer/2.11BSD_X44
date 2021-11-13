@@ -390,7 +390,7 @@ ${_s:T:R}.d: ${_s}
 # List of kernel images that will be installed into the root file system.
 # Some platforms may need to install more than one (e.g. a netbsd.aout file
 # to be loaded directly by the firmware), so this can be overriden by them.
-KERNIMAGES?=	netbsd
+KERNIMAGES?=	twobsd
 
 .if !target(install)
 # The install target can be redefined by putting a

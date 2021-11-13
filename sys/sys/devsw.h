@@ -113,6 +113,9 @@ struct proc;
 struct tty;
 struct uio;
 struct vnode;
+struct bdevsw;
+struct cdevsw;
+struct linesw;
 
 /*
  * Types for d_type.
@@ -126,7 +129,7 @@ struct vnode;
 /* devswtable & devsw_io */
 extern struct devswtable 		sys_devsw;
 
-void							devswtable_init();
+void							devswtable_init(void);
 int								devswtable_configure(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
 int								devsw_io_iskmemdev(dev_t);
 int								devsw_io_iszerodev(dev_t);

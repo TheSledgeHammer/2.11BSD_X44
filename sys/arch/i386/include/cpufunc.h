@@ -69,20 +69,6 @@ bsrl(u_int mask)
 	return (result);
 }
 
-//#define	HAVE_INLINE_FFS
-
-//static __inline int
-//ffs(int mask)
-//{
-	/*
-	 * Note that gcc-2's builtin ffs would be used if we didn't declare
-	 * this inline or turn off the builtin.  The builtin is faster but
-	 * broken in gcc-2.4.5 and slower but working in gcc-2.5 and later
-	 * versions.
-	 */
-//	 return (mask == 0 ? mask : (int)bsfl((u_int)mask) + 1);
-//}
-
 #define	HAVE_INLINE_FLS
 
 static __inline int

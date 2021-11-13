@@ -110,7 +110,7 @@
  * return true to panic system, false to ignore.
  */
 int
-isa_nmi()
+isa_nmi(void)
 {
 	log(LOG_CRIT, "NMI port 61 %x, port 70 %x\n", inb(0x61), inb(0x70));
 	return (0);

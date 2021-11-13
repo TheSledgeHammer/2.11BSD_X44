@@ -24,7 +24,7 @@ NEED_OWN_INSTALL_TARGET?=no
 ## (1) port identification
 ##
 
-I386=			$S/arch/i386
+I386=		$S/arch/i386
 GENASSYM_CONF=	${I386}/i386/genassym.cf
 
 ##
@@ -78,8 +78,7 @@ KERNLDSCRIPT?=		${I386}/conf/kern.ldscript
 ## (6) port specific target dependencies
 ##
 support.o: assym.h
-vm86bios.o bioscall.o: assym.h
-mpbios.o: assym.h
+vm86bios.o bioscall.o mpbios.o: assym.h
 
 ##
 ## (7) misc settings

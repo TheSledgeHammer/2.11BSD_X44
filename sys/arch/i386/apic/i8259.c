@@ -92,8 +92,6 @@ static void 	i8259_hwunmask(struct softpic *, int);
 static void 	i8259_setup(struct softpic *, struct cpu_info *, int, int, int);
 static void		i8259_reinit_irqs(void);
 
-//unsigned short 	imen;
-
 struct pic i8259_template = {
 		.pic_type = PIC_I8259,
 		.pic_hwmask = i8259_hwmask,
@@ -105,7 +103,7 @@ struct pic i8259_template = {
 
 /* initialize 8259's */
 void
-i8259_default_setup()
+i8259_default_setup(void)
 {
 	outb(IO_ICU1, 0x11);				/* reset; program device, four bytes */
 	outb(IO_ICU1 + 1, ICU_OFFSET); 		/* starting at this vector index */

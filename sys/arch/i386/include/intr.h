@@ -86,35 +86,35 @@ extern void softintr (int);
 /*
  * Hardware interrupt masks
  */
-#define	splbio()		splraise(imask[IPL_BIO])
-#define	splnet()		splraise(imask[IPL_NET])
-#define	spltty()		splraise(imask[IPL_TTY])
-#define	splaudio()		splraise(imask[IPL_AUDIO])
-#define	splclock()		splraise(imask[IPL_CLOCK])
-#define	splstatclock()	splclock()
-#define	splserial()		splraise(imask[IPL_SERIAL])
-#define splipi()		splraise(IPL_IPI)
+#define	splbio()			splraise(imask[IPL_BIO])
+#define	splnet()			splraise(imask[IPL_NET])
+#define	spltty()			splraise(imask[IPL_TTY])
+#define	splaudio()			splraise(imask[IPL_AUDIO])
+#define	splclock()			splraise(imask[IPL_CLOCK])
+#define	splstatclock()		splclock()
+#define	splserial()			splraise(imask[IPL_SERIAL])
+#define splipi()			splraise(IPL_IPI)
 /*
  * Software interrupt masks
  *
  * NOTE: splsoftclock() is used by hardclock() to lower the priority from
  * clock to softclock before it calls softclock().
  */
-#define	splsoftclock()	spllower(imask[IPL_SOFTCLOCK])
-#define	splsoftnet()	splraise(imask[IPL_SOFTNET])
-#define	splsoftserial()	splraise(imask[IPL_SOFTSERIAL])
+#define	splsoftclock()		spllower(imask[IPL_SOFTCLOCK])
+#define	splsoftnet()		splraise(imask[IPL_SOFTNET])
+#define	splsoftserial()		splraise(imask[IPL_SOFTSERIAL])
 
 /*
  * Miscellaneous
  */
-#define	splimp()		splraise(imask[IPL_IMP])
-#define	splhigh()		splraise(imask[IPL_HIGH])
-#define	spl0()			spllower(0)
+#define	splimp()			splraise(imask[IPL_IMP])
+#define	splhigh()			splraise(imask[IPL_HIGH])
+#define	spl0()				spllower(0)
 
-#define	setsoftast(p)	aston(p)
-#define	setsoftclock()	softintr(SIR_CLOCK)
-#define	setsoftnet()	softintr(SIR_NET)
-#define	setsoftserial()	softintr(SIR_SERIAL)
+#define	setsoftast(p)		aston(p)
+#define	setsoftclock()		softintr(SIR_CLOCK)
+#define	setsoftnet()		softintr(SIR_NET)
+#define	setsoftserial()		softintr(SIR_SERIAL)
 
 #define I386_IPI_HALT		0x00000001
 #define I386_IPI_MICROSET	0x00000002

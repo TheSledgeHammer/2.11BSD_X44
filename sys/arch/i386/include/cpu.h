@@ -120,7 +120,7 @@ int		sysbeep(int, int);
 void	findcpuspeed(void);
 void	cpu_initclocks(void);
 void	rtcinit(void);
-int	rtcget(u_int *);
+int		rtcget(u_int *);
 void	rtcput(u_int *);
 int 	yeartoday (int);
 int		bcdtobin(int);
@@ -142,14 +142,7 @@ int		i386_set_ldt (struct proc *, char *, register_t *);
 #endif
 
 /* isa_machdep.c */
-void	isa_defaultirq (void);
 int		isa_nmi (void);
-
-/* bus_machdep.c */
-void 	i386_bus_space_init	(void);
-void 	i386_bus_space_mallocok	(void);
-void	i386_bus_space_check (vm_offset_t, int, int);
-
 #endif /* _KERNEL */
 
 /*

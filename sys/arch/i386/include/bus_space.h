@@ -106,6 +106,10 @@ struct bus_space_tag  {
 extern bus_space_tag_t i386_bus_space_mem;
 extern bus_space_tag_t i386_bus_space_io;
 
+void 	i386_bus_space_init	(void);
+void 	i386_bus_space_mallocok	(void);
+void	i386_bus_space_check (vm_offset_t, int, int);
+
 int		i386_memio_map (bus_space_tag_t t, bus_addr_t addr, bus_size_t size, int flags, bus_space_handle_t *bshp);
 /* like map, but without extent map checking/allocation */
 int		_i386_memio_map (bus_space_tag_t t, bus_addr_t addr, bus_size_t size, int flags, bus_space_handle_t *bshp);

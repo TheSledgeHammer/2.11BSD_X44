@@ -27,7 +27,7 @@ struct bdevsw {
 	int			(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int			(*d_strategy)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int			(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
-	int			(*d_root)();		/* parameters vary by architecture */
+	int			(*d_root)(void);		/* parameters vary by architecture */
 	int			(*d_dump)(dev_t dev);
 	daddr_t		(*d_psize)(dev_t dev);
 	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
@@ -76,8 +76,8 @@ struct linesw {
 	int			(*l_write)(struct tty *tp, struct uio *uio, int flag);
 	int			(*l_ioctl)(struct tty *tp, int cmd, caddr_t data, int flag, struct proc *p);
 	int			(*l_rint)(int c, struct tty *tp);
-	int			(*l_rend)();
-	int			(*l_meta)();
+	int			(*l_rend)(void);
+	int			(*l_meta)(void);
 	int			(*l_start)(struct tty *tp);
 	int			(*l_modem)(struct tty *tp, int flag);
 	int			(*l_poll)(struct tty *tp, int flag, struct proc *p);
