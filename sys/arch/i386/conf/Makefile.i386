@@ -56,7 +56,7 @@ locore.o: ${I386}/i386/locore.S assym.h
 icu.o: ${I386}/isa/icu.S assym.h
 	${NORMAL_S}
 
-apicvector.o: ${I386}/apic/vector.S assym.h
+apicvector.o: ${I386}/apic/apicvector.S assym.h
 	${NORMAL_S}
 
 legacyvector.o: ${I386}/apic/legacyvector.S assym.h
