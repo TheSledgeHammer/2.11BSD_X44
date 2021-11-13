@@ -93,7 +93,8 @@
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
-#include <machine/isa_machdep.h>
+
+#include <i386/isa/isa_machdep.h>
 
 #include <dev/core/isa/isareg.h>
 

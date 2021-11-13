@@ -33,7 +33,7 @@
  */
  
 #include <machine/asm.h>
-#include <machine/isa/icu.h>
+#include <i386/isa/icu.h>
 #include <machine/apic/ioapicreg.h>
 #include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicreg.h>

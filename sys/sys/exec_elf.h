@@ -39,7 +39,6 @@
 #ifndef _SYS_EXEC_ELF_H_
 #define _SYS_EXEC_ELF_H_
 
-
 #if defined(_KERNEL) || defined(_STANDALONE)
 #include <sys/types.h>
 #else
@@ -375,7 +374,6 @@ typedef struct {
 
 /* Symbol Table index of the undefined symbol */
 #define	ELF_SYM_UNDEFINED	0
-
 
 #define STN_UNDEF			0	/* undefined index */
 
@@ -824,7 +822,6 @@ typedef struct {
 #define SYMINFO_CURRENT			1
 #define SYMINFO_NUM				2
 
-#ifdef _KERNEL
 /*
  * These constants are used for Elf32_Verdef struct's version number.
  */
@@ -976,4 +973,5 @@ int		twoelevenbsd_elf_signature(struct exec_linker *, Elf_Ehdr *);
 int		twoelevenbsd_elf_probe(struct exec_linker *, void *, char *, caddr_t *);
 
 #endif /* _KERNEL */
+
 #endif /* _SYS_EXEC_ELF_H_ */

@@ -59,16 +59,17 @@
 /*
  * Data structures private to kobj, shared only with kernel grovellers.
  */
-#ifndef _SYS_KOBJ_IMPL_H_
-#define	_SYS_KOBJ_IMPL_H_
+#ifndef _DEV_KOBJ_IMPL_H_
+#define	_DEV_KOBJ_IMPL_H_
 
 #define	ELFSIZE		ARCH_ELFSIZE_
 #define	MAXMODNAME	32 		/* Unused: modules not implemented */
 
 #include <sys/systm.h>
-#include <kobj/kobj.h>
 #include <sys/exec.h>
 #include <sys/exec_elf.h>
+
+#include <dev/misc/kobj/kobj.h>
 
 typedef struct {
 	void		*addr;
@@ -133,4 +134,4 @@ struct kobj {
 	kobj_close_fn		ko_close;
 };
 
-#endif	/* _SYS_KOBJ_IMPL_H_ */
+#endif	/* _DEV_KOBJ_IMPL_H_ */

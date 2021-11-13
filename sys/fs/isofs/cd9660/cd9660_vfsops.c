@@ -56,9 +56,9 @@
 #include <sys/user.h>
 
 #include <miscfs/specfs/specdev.h>
-#include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/cd9660_node.h>
-#include <isofs/cd9660/cd9660_mount.h>
+#include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_node.h>
+#include <fs/isofs/cd9660/cd9660_mount.h>
 
 extern int enodev ();
 

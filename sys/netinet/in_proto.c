@@ -41,7 +41,7 @@ extern	int raw_usrreq();
  * Using the raw interface entry to get the timer routine
  * in is a kludge.
  */
-#include "imp.h"
+//#include "imp.h"
 #if NIMP > 0
 int	rimp_output(), hostslowtimo();
 #endif

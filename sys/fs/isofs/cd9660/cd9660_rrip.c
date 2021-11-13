@@ -50,10 +50,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/cd9660_node.h>
-#include <isofs/cd9660/cd9660_rrip.h>
-#include <isofs/cd9660/iso_rrip.h>
+#include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_node.h>
+#include <fs/isofs/cd9660/cd9660_rrip.h>
+#include <fs/isofs/cd9660/iso_rrip.h>
 
 /*
  * POSIX file attribute

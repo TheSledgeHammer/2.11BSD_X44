@@ -56,8 +56,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _SYS_KOBJ_H_
-#define _SYS_KOBJ_H
+#ifndef _DEV_KOBJ_H
+#define _DEV_KOBJ_H
 
 #if !defined(ELFSIZE)
 #define ELFSIZE 	KERN_ELFSIZE
@@ -87,4 +87,4 @@ int		kobj_self_reloc(kobj_t);
 
 /* implementation interface. */
 //int		kobj_renamespace(Elf_Sym *, size_t, char **, size_t *);
-#endif	/* _SYS_KOBJ_H_ */
+#endif	/* _DEV_KOBJ_H */

@@ -50,10 +50,10 @@
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsdisplayvar.h>
 
-#include "pcweasel.h"
+//#include "pcweasel.h"
 #if NPCWEASEL > 0
-#include <dev/isa/weaselreg.h>
-#include <dev/isa/weaselvar.h>
+#include <dev/core/isa/weaselreg.h>
+#include <dev/core/isa/weaselvar.h>
 #endif
 
 struct pcdisplay_config {

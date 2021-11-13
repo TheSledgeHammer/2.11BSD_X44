@@ -47,8 +47,7 @@
 __KERNEL_RCSID(0, "$NetBSD: isapnpdevs.c,v 1.59 2004/01/28 19:34:17 jdolecek Exp $");
 
 #include <sys/param.h>
-#include <dev/isapnp/isapnpdevs.h>
-
+#include <dev/core/isapnp/isapnpdevs.h>
 
 /* Adaptec SCSI */
 static const struct isapnp_matchinfo isapnp_aha_devlogic[] = {

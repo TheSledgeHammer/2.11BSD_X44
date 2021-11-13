@@ -71,8 +71,8 @@
 #include <sys/ksyms.h>
 #include <vm/include/vm_extern.h>
 
-#include <kobj/kobj.h>
-#include <kobj/kobj_impl.h>
+#include <dev/misc/kobj/kobj.h>
+#include <dev/misc/kobj/kobj_impl.h>
 
 #define kobj_error(_kobj, ...) kobj_out(__func__, __LINE__, _kobj, __VA_ARGS__)
 

@@ -28,7 +28,7 @@ char *syscallnames[] = {
 	"lseek",			/* 19 = lseek */
 	"getpid",			/* 20 = getpid */
 	"mount",			/* 21 = mount */
-	"umount",			/* 22 = umount */
+	"unmount",			/* 22 = unmount */
 	"__sysctl",			/* 23 = __sysctl */
 	"getuid",			/* 24 = getuid */
 	"geteuid",			/* 25 = geteuid */
@@ -170,4 +170,7 @@ char *syscallnames[] = {
 	"kenv",			/* 161 = kenv */
 	"kevent",			/* 162 = kevent */
 	"kqueue",			/* 163 = kqueue */
+	"swapon",			/* 164 = swapon */
+	"#165 (unimplemented { int swapoff ( ) ; })",		/* 165 = unimplemented { int swapoff ( ) ; } */
+	"#166 (unimplemented { int swapctl ( ) ; })",		/* 166 = unimplemented { int swapctl ( ) ; } */
 };

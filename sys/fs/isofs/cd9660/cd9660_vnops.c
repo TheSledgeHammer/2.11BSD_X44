@@ -55,9 +55,9 @@
 
 #include <miscfs/specfs/specdev.h>
 #include <miscfs/fifofs/fifo.h>
-#include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/cd9660_node.h>
-#include <isofs/cd9660/iso_rrip.h>
+#include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_node.h>
+#include <fs/isofs/cd9660/iso_rrip.h>
 
 #if 0
 /*

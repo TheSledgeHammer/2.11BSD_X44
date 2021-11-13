@@ -50,10 +50,10 @@
 #include <sys/stat.h>
 #include <sys/user.h>
 
-#include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/cd9660_node.h>
-#include <isofs/cd9660/cd9660_mount.h>
-#include <isofs/cd9660/iso_rrip.h>
+#include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_node.h>
+#include <fs/isofs/cd9660/cd9660_mount.h>
+#include <fs/isofs/cd9660/iso_rrip.h>
 
 /*
  * Structures associated with iso_node caching.

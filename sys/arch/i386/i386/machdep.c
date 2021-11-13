@@ -77,7 +77,8 @@
 #include <machine/reg.h>
 #include <machine/specialreg.h>
 #include <machine/bootinfo.h>
-#include <machine/isa_machdep.h>
+
+#include <i386/isa/isa_machdep.h>
 
 #include <dev/core/ic/i8042reg.h>
 #include <dev/core/isa/isareg.h>

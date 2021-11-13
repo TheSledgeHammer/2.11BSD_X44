@@ -53,7 +53,6 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/vnode.h>
-#include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/file.h>
@@ -62,12 +61,14 @@
 #include <sys/malloc.h>
 #include <sys/dirent.h>
 
-#include <msdosfs/bpb.h>
-#include <msdosfs/bootsect.h>
-#include <msdosfs/direntry.h>
-#include <msdosfs/denode.h>
-#include <msdosfs/msdosfsmount.h>
-#include <msdosfs/fat.h>
+#include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
+
+#include <fs/msdosfs/bpb.h>
+#include <fs/msdosfs/bootsect.h>
+#include <fs/msdosfs/direntry.h>
+#include <fs/msdosfs/denode.h>
+#include <fs/msdosfs/msdosfsmount.h>
+#include <fs/msdosfs/fat.h>
 
 int msdosfs_mount (struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
 int msdosfs_start (struct mount *, int, struct proc *);

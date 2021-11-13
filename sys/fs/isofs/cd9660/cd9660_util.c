@@ -48,13 +48,13 @@
 #include <sys/buf.h>
 #include <sys/proc.h>
 #include <sys/conf.h>
+#include <sys/malloc.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <miscfs/specfs/specdev.h> /* XXX */
 #include <miscfs/fifofs/fifo.h> /* XXX */
-#include <sys/malloc.h>
 
-#include <isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/iso.h>
 
 /*
  * translate and compare a filename

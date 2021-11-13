@@ -49,10 +49,11 @@ struct wsemul_ops {
 	void	(*detach) (void *cookie, u_int *crow, u_int *ccol);
 	void    (*reset) (void *, enum wsemul_resetops);
 };
-
+/*
 #if defined(_KERNEL) && !defined(_LKM)
 #include "opt_wsemul.h"
 #endif
+*/
 
 #ifndef WSEMUL_NO_DUMB
 extern const struct wsemul_ops wsemul_dumb_ops;

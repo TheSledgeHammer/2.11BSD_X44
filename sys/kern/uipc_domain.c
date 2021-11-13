@@ -42,7 +42,7 @@ domaininit()
 #ifdef NS
 	ADDDOMAIN(ns);
 #endif
-#include "imp.h"
+//#include "imp.h"
 #if NIMP > 0
 	ADDDOMAIN(imp);
 #endif

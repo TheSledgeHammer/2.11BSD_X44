@@ -1,3 +1,5 @@
+/* $211BSD$ */
+
 /*
  * System call switch table.
  *
@@ -30,7 +32,7 @@ int	fchflags();
 int	lseek();
 int	getpid();
 int	mount();
-int	umount();
+int	unmount();
 int	__sysctl();
 int	getuid();
 int	geteuid();
@@ -152,6 +154,7 @@ int	sysarch();
 int	kenv();
 int	kevent();
 int	kqueue();
+int	swapon();
 
 #ifdef COMPAT_43
 #define COMPAT_43(func) __CONCAT(COMPAT_43_,func)
@@ -166,6 +169,11 @@ int	COMPAT_43(sigstack)();
 int	COMPAT_43(truncate)();
 int	COMPAT_43(ftruncate)();
 int	COMPAT_43(getdirentries)();
+
+#else /* COMPAT_43 */
+#define COMPAT_43(func) nosys
+#endif /* COMPAT_43 */
+
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {
@@ -214,7 +222,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    mount },				/* 21 = mount */
 	{ 0, 0,
-	    umount },				/* 22 = umount */
+	    unmount },				/* 22 = unmount */
 	{ 0, 0,
 	    __sysctl },				/* 23 = __sysctl */
 	{ 0, 0,
@@ -497,6 +505,12 @@ struct sysent sysent[] = {
 	    kevent },				/* 162 = kevent */
 	{ 0, 0,
 	    kqueue },				/* 163 = kqueue */
+	{ 0, 0,
+	    swapon },				/* 164 = swapon */
+	{ 0, 0,
+	    nosys },				/* 165 = unimplemented { int swapoff ( ) ; } */
+	{ 0, 0,
+	    nosys },				/* 166 = unimplemented { int swapctl ( ) ; } */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);

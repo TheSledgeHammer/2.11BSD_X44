@@ -144,6 +144,9 @@ vm_map_t		kmap_free;
 static void	_vm_map_clip_end (vm_map_t, vm_map_entry_t, vm_offset_t);
 static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
 
+static void	vm_map_reference_amap(struct vm_map_entry *, int);
+static void	vm_map_unreference_amap(struct vm_map_entry *, int);
+
 void
 vm_map_startup()
 {
@@ -428,6 +431,28 @@ vm_cl_remove(map, entry)
     if(tail && vm_cl_space(map, entry)) {
         CIRCLEQ_REMOVE(&map->cl_header, tail, cl_entry);
     }
+}
+
+/*
+ * wrapper for calling amap_ref()
+ */
+static __inline void
+vm_map_reference_amap(entry, flags)
+	struct vm_map_entry *entry;
+	int flags;
+{
+	vm_amap_ref(entry->aref.ar_amap, entry->aref.ar_pageoff, (entry->end - entry->start) >> PAGE_SHIFT, flags);
+}
+
+/*
+ * wrapper for calling amap_unref()
+ */
+static __inline void
+vm_map_unreference_amap(entry, flags)
+	struct vm_map_entry *entry;
+	int flags;
+{
+	vm_amap_unref(entry->aref.ar_amap, entry->aref.ar_pageoff, (entry->end - entry->start) >> PAGE_SHIFT, flags);
 }
 
 /*
@@ -1784,6 +1809,10 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	vm_object_t 			object;
 	vm_offset_t 			offset;
 
+	vm_amap_t amap;
+	vm_anon_t anon;
+	vm_page_t pg;
+
 	vm_map_lock_read(map);
 	VM_MAP_RANGE_CHECK(map, start, end);
 	if (!vm_map_lookup_entry(map, start, &entry)) {
@@ -1812,8 +1841,26 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	 * objects as we go.
 	 */
 	for (current = entry; current->start < end; current = CIRCLEQ_NEXT(current, cl_entry)) {
+
+		amap = current->aref.ar_amap;	/* top layer */
+		amap_lock(amap);
+
 		offset = current->offset + (start - current->start);
 		size = (end <= current->end ? end : current->end) - start;
+
+		for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
+			anon = vm_amap_lookup(&current->aref, offset);
+			if (anon == NULL) {
+				continue;
+			}
+			simple_lock(&anon->an_lock);
+			pg = anon->u.an_page;
+			if (pg == NULL) {
+				simple_unlock(&anon->an_lock);
+				continue;
+			}
+		}
+
 		if (current->is_a_map) {
 			register vm_map_t smap;
 			vm_map_entry_t tentry;

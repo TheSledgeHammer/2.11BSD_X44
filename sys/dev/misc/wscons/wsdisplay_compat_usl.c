@@ -32,7 +32,7 @@
  *
  */
 
-#include "opt_compat_freebsd.h"
+//#include "opt_compat_freebsd.h"
 #include "opt_compat_netbsd.h"
 
 #include <sys/param.h>

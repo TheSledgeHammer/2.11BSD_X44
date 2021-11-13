@@ -213,7 +213,7 @@ vga_load_builtinfont(struct vga_handle *vh, u_int8_t *font, int firstchar,
 }
 #endif /* !VGA_RASTERCONSOLE */
 
-//#ifdef VGA_RESET
+#ifdef VGA_RESET
 /*
  * vga_reset():
  *	Reset VGA registers to put it into 80x25 text mode. (mode 3)

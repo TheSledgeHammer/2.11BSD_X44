@@ -12,21 +12,21 @@
  *	@(#)ip_input.c	7.9.2 (2.11BSD GTE) 1995/10/09
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/mbuf.h"
-#include "sys/domain.h"
-#include "sys/protosw.h"
-#include "sys/socket.h"
-#include "sys/errno.h"
-#include "sys/time.h"
-#include "sys/kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
 #include <net/route.h>
 #include <net/if.h>
 
-#include "netinet/in.h"
-#include "netinet/in_pcb.h"
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>

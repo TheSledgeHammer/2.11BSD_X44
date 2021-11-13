@@ -30,7 +30,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip_var.h>
 
-#include <machine/mtpr.h>
+//#include <machine/mtpr.h>
 
 #define ovbcopy(a,b,c)	bcopy(a,b,c)
 struct mbuf *ip_insertoptions();

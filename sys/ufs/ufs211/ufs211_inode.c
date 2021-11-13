@@ -16,10 +16,10 @@
 #include <sys/systm.h>
 #include <sys/syslog.h>
 
-#include <ufs211_extern.h>
-#include <ufs211_fs.h>
-#include <ufs211_inode.h>
-#include <ufs211_quota.h>
+#include <ufs/ufs211/ufs211_extern.h>
+#include <ufs/ufs211/ufs211_fs.h>
+#include <ufs/ufs211/ufs211_inode.h>
+#include <ufs/ufs211/ufs211_quota.h>
 
 #define	SINGLE				0	/* index of single indirect block */
 #define	DOUBLE				1	/* index of double indirect block */

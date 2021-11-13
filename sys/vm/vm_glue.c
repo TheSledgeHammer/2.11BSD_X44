@@ -289,8 +289,6 @@ vm_init_limits(p)
 	p->p_rlimit[RLIMIT_RSS].rlim_cur = ptoa(rss_limit);
 }
 
-#include "vm_pageout.h"
-
 #ifdef DEBUG
 int		enableswap = 1;
 int		swapdebug = 0;

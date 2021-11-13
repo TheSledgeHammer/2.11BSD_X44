@@ -37,7 +37,7 @@
 
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
-#include <machinee/param.h>
+#include <machine/param.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
 #include <machine/percpu.h>

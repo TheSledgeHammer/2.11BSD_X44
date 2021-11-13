@@ -41,7 +41,6 @@
 ; redistributions should be placed in the reserved range at the end
 ; of the current calls.
 
-
 ;0	INDIR		{ int syscall(); }
 0   STD     	{ int indir(); }
 1   STD     	{ int exit(); }

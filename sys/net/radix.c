@@ -43,8 +43,6 @@
 #include <sys/malloc.h>
 #define	M_DONTWAIT M_NOWAIT
 #include <sys/domain.h>
-#else
-#include <stdlib.h>
 #endif
 #include <sys/syslog.h>
 #include <net/radix.h>

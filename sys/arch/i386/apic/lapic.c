@@ -52,7 +52,7 @@
 
 #include <dev/core/ic/i8253reg.h>
 
-#include <machine/isa/isa_machdep.h> 			/* XXX intrhand */
+#include <i386/isa/isa_machdep.h>
 
 #include <machine/cpu.h>
 #include <machine/pic.h>

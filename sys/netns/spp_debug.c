@@ -49,7 +49,7 @@ spp_trace(act, ostate, sp, si, req)
 	struct spidp *si;
 	int req;
 {
-//#ifdef INET
+#ifdef INET
 	u_short seq, ack, len, alo;
 	u_long iptime();
 	int flags;

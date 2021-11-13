@@ -41,7 +41,7 @@
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
  */
 
-#include "bpfilter.h"
+//#include "bpfilter.h"
 
 #if NBPFILTER > 0
 

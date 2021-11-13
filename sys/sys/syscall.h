@@ -27,7 +27,7 @@
 #define	SYS_lseek	19
 #define	SYS_getpid	20
 #define	SYS_mount	21
-#define	SYS_umount	22
+#define	SYS_unmount	22
 #define	SYS___sysctl	23
 #define	SYS_getuid	24
 #define	SYS_geteuid	25
@@ -169,4 +169,5 @@
 #define	SYS_kenv	161
 #define	SYS_kevent	162
 #define	SYS_kqueue	163
-#define	SYS_MAXSYSCALL	164
+#define	SYS_swapon	164
+#define	SYS_MAXSYSCALL	167

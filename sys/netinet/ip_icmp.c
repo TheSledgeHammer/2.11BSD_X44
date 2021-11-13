@@ -12,14 +12,14 @@
  *	@(#)ip_icmp.c	7.7.2 (2.11BSD GTE) 1995/10/10
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "time.h"
-#include "kernel.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/errno.h>
 
 #include <net/route.h>
 #include <net/if.h>

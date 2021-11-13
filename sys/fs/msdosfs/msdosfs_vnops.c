@@ -59,18 +59,19 @@
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <sys/signalvar.h>
-#include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
 #include <sys/malloc.h>
 #include <sys/dirent.h>
 #include <sys/lockf.h>
 
 #include <vm/include/vm.h>
 
-#include <msdosfs/bpb.h>
-#include <msdosfs/direntry.h>
-#include <msdosfs/denode.h>
-#include <msdosfs/msdosfsmount.h>
-#include <msdosfs/fat.h>
+#include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
+
+#include <fs/msdosfs/bpb.h>
+#include <fs/msdosfs/direntry.h>
+#include <fs/msdosfs/denode.h>
+#include <fs/msdosfs/msdosfsmount.h>
+#include <fs/msdosfs/fat.h>
 
 /*
  * Some general notes:

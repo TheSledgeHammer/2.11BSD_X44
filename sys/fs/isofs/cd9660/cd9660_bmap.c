@@ -46,8 +46,8 @@
 #include <sys/mount.h>
 #include <sys/user.h>
 
-#include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/cd9660_node.h>
+#include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_node.h>
 
 /*
  * Bmap converts a the logical block number of a file to its physical block

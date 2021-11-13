@@ -60,8 +60,8 @@
 /*
  * MSDOSFS include files.
  */
-#include <msdosfs/direntry.h>
-#include <msdosfs/denode.h>
+#include <fs/msdosfs/direntry.h>
+#include <fs/msdosfs/denode.h>
 
 /*
  * Days in each month in a regular year.

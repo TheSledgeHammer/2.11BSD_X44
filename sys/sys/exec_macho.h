@@ -41,7 +41,7 @@
 
 #include <sys/param.h>
 
-#include <machine/int_types.h>
+#include <machine/types.h>
 #include <machine/macho_machdep.h>
 
 /*
