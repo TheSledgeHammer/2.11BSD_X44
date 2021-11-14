@@ -39,6 +39,7 @@
  * Chris Demetriou, January 10, 1998.
  */
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/systm.h>

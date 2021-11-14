@@ -87,6 +87,7 @@ static const char _rcsid[] __attribute__ ((unused)) =
  * to `wscons_events' and passes them up to the appropriate reader.
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/device.h>

@@ -35,6 +35,7 @@ static const char _copyright[] __attribute__ ((unused)) =
 static const char _rcsid[] __attribute__ ((unused)) =
     "$NetBSD: wsemulconf.c,v 1.3 1998/06/15 17:10:37 drochner Exp $";
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/null.h>

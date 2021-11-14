@@ -82,7 +82,7 @@ static const char _rcsid[] __attribute__ ((unused)) =
 /*
  * Internal "wscons_event" queue interface for the keyboard and mouse drivers.
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/fcntl.h>
 #include <sys/malloc.h>

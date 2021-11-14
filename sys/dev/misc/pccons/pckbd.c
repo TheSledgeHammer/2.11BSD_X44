@@ -97,12 +97,11 @@
 #include <dev/misc/wscons/wskbdvar.h>
 #include <dev/misc/wscons/wsksymdef.h>
 #include <dev/misc/wscons/wsksymvar.h>
-/*
+
 #include "locators.h"
 
 #include "opt_pckbd_layout.h"
 #include "opt_wsdisplay_compat.h"
-*/
 
 struct pckbd_internal {
 	int t_isconsole;

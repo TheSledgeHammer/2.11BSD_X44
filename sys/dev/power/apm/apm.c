@@ -35,6 +35,8 @@
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: apm.c,v 1.34 2020/12/19 01:18:58 thorpej Exp $"); */
 
+#include "opt_apm.h"
+
 #if defined(DEBUG) && !defined(APMDEBUG)
 #define	APMDEBUG
 #endif

@@ -116,10 +116,15 @@
 #define	ptetoav(pt)	 		(i386_ptob(pt - APTmap))
 #define	avtophys(va)  		(i386_ptob(avtopte(va)) | ((int)(va) & PGOFSET))
 
+#ifndef LOCORE
+#include <sys/queue.h>
 /*
  * Pmap stuff
  */
+struct pmap_head;
+LIST_HEAD(pmap_head, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
+	LIST_ENTRY(pmap) 		pm_list;		/* List of all pmaps */
 	uint32_t				*pm_pdir_nopae;	/* KVA of page directory */
 	uint32_t				*pm_ptab_nopae;	/* KVA of page table */
 	uint64_t				*pm_pdir_pae;	/* KVA of page directory */
@@ -128,7 +133,7 @@ struct pmap {
 	boolean_t				pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
 	short					pm_count;		/* pmap reference count */
-	struct lock_object		pm_lock;		/* lock on pmap */
+	simple_lock_data_t		pm_lock;		/* lock on pmap */
 	struct pmap_statistics	pm_stats;		/* pmap statistics */
 	long					pm_ptpages;		/* more stats: PT pages */
 	int 					pm_flags;		/* see below */
@@ -189,5 +194,5 @@ pv_entry_t							pv_table;	/* array of entries, one per page */
 extern int pae_mode;
 extern int i386_pmap_PDRSHIFT;
 #endif	/* KERNEL */
-
+#endif /* !LOCORE */
 #endif	/* _I386_PMAP_H_ */

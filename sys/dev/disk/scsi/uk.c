@@ -34,6 +34,7 @@
  * Originally by Julian Elischer (julian@tfs.com)
  */
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/errno.h>

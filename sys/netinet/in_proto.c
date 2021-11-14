@@ -113,7 +113,7 @@ struct domain impdomain =
       impsw, &impsw[sizeof (impsw)/sizeof(impsw[0])] };
 #endif
 
-#include "hy.h"
+//#include "hy.h"
 #if NHY > 0
 /*
  * HYPERchannel protocol family: raw interface.

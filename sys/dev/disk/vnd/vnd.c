@@ -61,6 +61,7 @@
  * NOTE 3: Doesn't interact with leases, should it?
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/namei.h>

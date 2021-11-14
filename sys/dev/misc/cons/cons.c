@@ -39,6 +39,7 @@
  *	@(#)cons.c	8.2 (Berkeley) 1/12/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>

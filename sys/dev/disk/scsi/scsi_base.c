@@ -33,6 +33,7 @@
  * Originally written by Julian Elischer (julian@dialix.oz.au)
  */
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/systm.h>

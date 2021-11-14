@@ -44,6 +44,15 @@
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: ukbd.c,v 1.85 2003/03/11 16:44:00 augustss Exp $"); */
 
+#ifdef _KERNEL_OPT
+#include "opt_ddb.h"
+#include "opt_ukbd.h"
+#include "opt_ukbd_layout.h"
+#include "opt_usb.h"
+#include "opt_usbverbose.h"
+#include "opt_wsdisplay_compat.h"
+#endif /* _KERNEL_OPT */
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/callout.h>

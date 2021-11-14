@@ -61,9 +61,9 @@ __KERNEL_RCSID(0, "$NetBSD: i82365_isasubr.c,v 1.33 2003/09/05 01:02:52 mycroft 
  * Configurable parameters.
  *****************************************************************************/
 
-//#include "opt_pcic_isa_alloc_iobase.h"
-//#include "opt_pcic_isa_alloc_iosize.h"
-//#include "opt_pcic_isa_intr_alloc_mask.h"
+#include "opt_pcic_isa_alloc_iobase.h"
+#include "opt_pcic_isa_alloc_iosize.h"
+#include "opt_pcic_isa_intr_alloc_mask.h"
 
 /*
  * Default I/O allocation range.  If both are set to non-zero, these

@@ -34,9 +34,11 @@
  *
  */
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/audioio.h>
 #include <dev/audio/auconv/auconv.h>
+
 #include <machine/endian.h>
 
 #if BYTE_ORDER == LITTLE_ENDIAN

@@ -83,6 +83,7 @@ static const char _rcsid[] __attribute__ ((unused)) =
  * Mouse driver.
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/ioctl.h>

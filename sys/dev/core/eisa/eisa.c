@@ -38,6 +38,10 @@
  * living on it.
  */
 
+#include <sys/cdefs.h>
+
+#include "opt_eisaverbose.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>

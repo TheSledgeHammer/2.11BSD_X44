@@ -100,7 +100,7 @@ vm86bios.o bioscall.o mpbios.o: assym.h
 
 %LOAD
 
-%RULES     
+%RULES
 
 ##
 ## (9) port independent kernel machinery

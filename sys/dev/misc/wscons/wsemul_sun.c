@@ -36,7 +36,7 @@ static const char _rcsid[] __attribute__ ((unused)) =
     "$NetBSD: wsemul_sun.c,v 1.10 1999/01/17 15:44:57 drochner Exp $";
 
 /* XXX DESCRIPTION/SOURCE OF INFORMATION */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/time.h>

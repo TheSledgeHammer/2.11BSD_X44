@@ -35,6 +35,7 @@ static const char _copyright[] __attribute__ ((unused)) =
 static const char _rcsid[] __attribute__ ((unused)) =
     "$NetBSD: wscons_glue.c,v 1.5 1999/01/18 20:03:59 drochner Exp $";
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>

@@ -76,6 +76,7 @@
  * Supports automatic hardware flow control on StarTech ST16C650A UART
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ioctl.h>
@@ -105,7 +106,7 @@
 #include <dev/core/ic/comreg.h>
 #include <dev/core/ic/comvar.h>
 #ifdef COM_HAYESP
-#include <dev/ic/hayespreg.h>
+#include <dev/core/ic/hayespreg.h>
 #endif
 #define	com_lcr	com_cfcr
 #include <dev/misc/cons/cons.h>

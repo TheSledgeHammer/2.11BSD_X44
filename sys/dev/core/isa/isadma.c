@@ -40,7 +40,7 @@
 /*
  * Device driver for the ISA on-board DMA controller.
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>

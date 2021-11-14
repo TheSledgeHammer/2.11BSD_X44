@@ -33,6 +33,7 @@
  * special functions for the HP ScanJet IIc and IIcx
  */
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/systm.h>

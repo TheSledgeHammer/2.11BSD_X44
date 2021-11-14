@@ -31,10 +31,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-//#include "opt_compat_freebsd.h"
+/*
+#include "opt_compat_freebsd.h"
 #include "opt_compat_netbsd.h"
-
+*/
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ioctl.h>

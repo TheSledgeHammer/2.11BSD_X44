@@ -40,6 +40,12 @@
 
 #include <sys/cdefs.h>
 
+#ifdef _KERNEL_OPT
+#include "opt_compat_netbsd.h"
+#include "opt_usb.h"
+#include "opt_usbverbose.h"
+#endif
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -75,7 +81,6 @@ static int usbd_submatch (struct device *, struct cfdata *cf, void *);
 static void usbd_free_iface_data (usbd_device_handle dev, int ifcno);
 static void usbd_kill_pipe (usbd_pipe_handle);
 static usbd_status usbd_probe_and_attach (struct device *parent, usbd_device_handle dev, int port, int addr);
-
 
 #ifdef USBVERBOSE
 typedef u_int16_t usb_vendor_id_t;

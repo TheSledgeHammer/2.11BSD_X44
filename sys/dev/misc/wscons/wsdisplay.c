@@ -35,6 +35,7 @@ static const char _copyright[] __attribute__ ((unused)) =
 static const char _rcsid[] __attribute__ ((unused)) =
     "$NetBSD: wsdisplay.c,v 1.22.2.1 1999/10/19 16:39:20 he Exp $";
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/device.h>

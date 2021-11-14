@@ -74,6 +74,7 @@
 /*
  * COM driver, uses National Semiconductor NS16450/NS16550AF UART
  */
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ioctl.h>

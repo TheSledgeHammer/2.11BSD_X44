@@ -87,6 +87,7 @@
 #include <sys/memrange.h>
 #include <sys/sysctl.h>
 #include <sys/cputopo.h>
+#include <sys/queue.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 
@@ -292,6 +293,9 @@ extern u_long 		tramp_idleptd;
 boolean_t			pmap_testbit();
 void				pmap_clear_modify();
 void 				pmap_activate (pmap_t, struct pcb *);
+
+/* linked list of all non-kernel pmaps */
+static struct pmap_head pmaps;
 
 /*
  * All those kernel PT submaps that BSD is so fond of
@@ -526,6 +530,7 @@ pmap_bootstrap(firstaddr, loadaddr)
 	kernel_pmap->pm_pdir = IdlePDPT;
 #endif
 	simple_lock_init(&kernel_pmap->pm_lock, "kernel_pmap_lock");
+	LIST_INIT(&pmaps);
 	kernel_pmap->pm_count = 1;
 	kernel_pmap->pm_stats.resident_count = res;
 
@@ -740,6 +745,7 @@ pmap_init(phys_start, phys_end)
 	addr = (vm_offset_t) pv_table;
 	addr += sizeof(struct pv_entry) * npg;
 	pmap_attributes = (char *) addr;
+
 #ifdef DEBUG
 	if (pmapdebug & PDB_INIT)
 		printf("pmap_init: %x bytes (%x pgs): tbl %x attr %x\n", s, npg, pv_table, pmap_attributes);
@@ -866,6 +872,7 @@ pmap_pinit(pmap)
 
 	pmap->pm_count = 1;
 	simple_lock_init(&pmap->pm_lock, "pmap_lock");
+	LIST_INSERT_HEAD(&pmaps, pmap, pm_list);
 }
 
 /*
@@ -883,10 +890,12 @@ pmap_destroy(pmap)
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_destroy(%x)\n", pmap);
 #endif
-	if (pmap == NULL)
+	if (pmap == NULL) {
 		return;
+	}
 
 	simple_lock(&pmap->pm_lock);
+	LIST_REMOVE(pmap, pm_list);
 	count = --pmap->pm_count;
 	simple_unlock(&pmap->pm_lock);
 	if (count == 0) {

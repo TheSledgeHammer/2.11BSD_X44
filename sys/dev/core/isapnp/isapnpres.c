@@ -32,7 +32,7 @@
 /*
  * Resource parser for Plug and Play cards.
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>

@@ -30,7 +30,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//#include "opt_pcmciaverbose.h"
+#include <sys/cdefs.h>
+
+#include "opt_pcmciaverbose.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
