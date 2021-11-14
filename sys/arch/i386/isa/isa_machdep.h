@@ -80,8 +80,8 @@
  * or in spite of using isavar.h, and should be fixed.
  */
 
-#ifndef _I386_ISA_MACHDEP_H_			/* XXX */
-#define _I386_ISA_MACHDEP_H_			/* XXX */
+#ifndef _I386_ISA_MACHDEP_H_
+#define _I386_ISA_MACHDEP_H_
 
 #include <sys/queue.h>
 
@@ -196,4 +196,4 @@ struct i386_isa_dma_cookie {
  */
 #define ISA_HOLE_VADDR(p)  ((void *) ((u_long)(p) - ISA_HOLE_START))
 
-#endif /* _I386_ISA_MACHDEP_H_ XXX */
+#endif /* _I386_ISA_MACHDEP_H_ */

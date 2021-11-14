@@ -30,6 +30,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _I386_EISA_MACHDEP_H_
+#define _I386_EISA_MACHDEP_H_
+
 /*
  * Machine-specific definitions for EISA autoconfiguration.
  */
@@ -61,3 +64,5 @@ void		*eisa_intr_establish (eisa_chipset_tag_t, eisa_intr_handle_t, int, int, in
 void		eisa_intr_disestablish (eisa_chipset_tag_t, void *);
 int			eisa_mem_alloc (bus_space_tag_t, bus_size_t, bus_size_t, bus_addr_t, int, bus_addr_t *, bus_space_handle_t *);
 void		eisa_mem_free (bus_space_tag_t, bus_space_handle_t, bus_size_t);
+
+#endif /* _I386_EISA_MACHDEP_H_ */

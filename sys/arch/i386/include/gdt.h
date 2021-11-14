@@ -25,10 +25,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MACHINE_GDT_H_
-#define _MACHINE_GDT_H_
+#ifndef _I386_GDT_H_
+#define _I386_GDT_H_
 
 void allocate_gdt(struct soft_segment_descriptor *gdt[]);
 void allocate_ldt(struct soft_segment_descriptor *ldt[]);
 
-#endif /* _MACHINE_GDT_H_ */
+#endif /* _I386_GDT_H_ */

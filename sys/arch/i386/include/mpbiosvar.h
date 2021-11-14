@@ -38,7 +38,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef _I386_MPBIOSVAR_H_
 #define _I386_MPBIOSVAR_H_
 

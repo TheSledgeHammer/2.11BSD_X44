@@ -108,4 +108,5 @@ static int				i82489_ipi_init(int);
 static int				i82489_ipi_startup(int, int);
 static int				x2apic_ipi_init(int);
 static int				x2apic_ipi_startup(int, int);
+
 #endif /* _I386_LAPICVAR_H_ */

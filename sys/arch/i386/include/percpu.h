@@ -25,8 +25,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MACHINE_PERCPU_H_
-#define _MACHINE_PERCPU_H_
+#ifndef _I386_PERCPU_H_
+#define _I386_PERCPU_H_
 
 #include <sys/percpu.h>
 #include <sys/stddef.h>
@@ -72,4 +72,4 @@ __curkthread(void)
 }
 */
 #endif /* _KERNEL */
-#endif /* _MACHINE_PERCPU_H_ */
+#endif /* _I386_PERCPU_H_ */

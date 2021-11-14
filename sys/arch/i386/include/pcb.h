@@ -36,7 +36,6 @@
  *	@(#)pcb.h	8.2 (Berkeley) 1/21/94
  */
 
-
 #ifndef _I386_PCB_H_
 #define _I386_PCB_H_
 

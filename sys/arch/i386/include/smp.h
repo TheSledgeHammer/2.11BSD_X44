@@ -71,4 +71,5 @@ void	pmap_do_tlb_shootdown(pmap_t, struct cpu_info *);
 void 	smp_masked_invltlb(u_int, pmap_t);
 void	smp_masked_invlpg(u_int, vm_offset_t, pmap_t);
 void	smp_masked_invlpg_range(u_int, vm_offset_t, vm_offset_t, pmap_t);
+
 #endif /* _I386_SMP_H_ */

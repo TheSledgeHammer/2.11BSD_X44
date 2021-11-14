@@ -36,6 +36,8 @@
  *	@(#)vmparam.h	8.2 (Berkeley) 4/22/94
  */
 
+#ifndef _I386_VMPARAM_H_
+#define _I386_VMPARAM_H_
 
 /*
  * Machine dependent constants for 386.
@@ -215,3 +217,5 @@
 
 /* pcb base */
 #define	pcbb(p)					((u_int)(p)->p_addr)
+
+#endif /* !_I386_VMPARAM_H_ */

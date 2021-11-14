@@ -33,6 +33,9 @@
  *	@(#)profile.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _I386_PROFILE_H_
+#define _I386_PROFILE_H_
+
 #define	_MCOUNT_DECL static inline void _mcount
 
 #define	MCOUNT \
@@ -54,3 +57,5 @@ extern void mcount() asm("mcount"); void mcount() { \
 	frompcindex = ((int *)frompcindex)[1]; \
 	_mcount(frompcindex, selfpc); \
 }
+
+#endif /* _I386_PROFILE_H_ */

@@ -47,8 +47,8 @@
  * from hp300:	@(#)pmap.h	7.2 (Berkeley) 12/16/90
  */
 
-#ifndef	_PMAP_MACHINE_
-#define	_PMAP_MACHINE_
+#ifndef	_I386_PMAP_H_
+#define	_I386_PMAP_H_
 
 #ifdef PMAP_PAE_COMP
 #include <machine/pmap_pae.h>
@@ -190,4 +190,4 @@ extern int pae_mode;
 extern int i386_pmap_PDRSHIFT;
 #endif	/* KERNEL */
 
-#endif	/* _PMAP_MACHINE_ */
+#endif	/* _I386_PMAP_H_ */

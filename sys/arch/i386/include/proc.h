@@ -33,6 +33,9 @@
  *	@(#)proc.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _I386_PROC_H_
+#define _I386_PROC_H_
+
 /*
  * Machine-dependent part of the proc structure for i386.
  */
@@ -53,3 +56,5 @@ struct mdproc {
 
 extern struct user 		*proc0paddr;
 extern vm_offset_t 		proc0kstack;
+
+#endif /* _I386_PROC_H_ */

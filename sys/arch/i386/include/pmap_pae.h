@@ -50,8 +50,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_PMAP_PAE_H
-#define	_MACHINE_PMAP_PAE_H
+#ifndef _I386_PMAP_PAE_H
+#define	_I386_PMAP_PAE_H
 
 #define	NTRPPTD			2		/* Number of PTDs for trampoline mapping */
 #define	LOWPTDI			2		/* low memory map pde */
@@ -107,4 +107,4 @@ extern pd_entry_t 		*IdlePTD_pae;	/* physical address of "Idle" state directory 
  */
 extern pt_entry_t 		*KPTmap_pae;
 
-#endif /* _MACHINE_PMAP_PAE_H */
+#endif /* _I386_PMAP_PAE_H */

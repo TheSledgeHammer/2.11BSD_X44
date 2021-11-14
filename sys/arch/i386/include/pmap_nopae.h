@@ -50,8 +50,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_PMAP_NOPAE_H
-#define	_MACHINE_PMAP_NOPAE_H
+#ifndef _I386_PMAP_NOPAE_H
+#define	_I386_PMAP_NOPAE_H
 
 #define	NTRPPTD			1
 #define	LOWPTDI			1
@@ -80,4 +80,4 @@ extern pd_entry_t 		PTDpde[], APTDpde[];
 extern pd_entry_t 		*IdlePTD_nopae;
 extern pt_entry_t 		*KPTmap_nopae;
 
-#endif /* _MACHINE_PMAP_NOPAE_H */
+#endif /* _I386_PMAP_NOPAE_H */

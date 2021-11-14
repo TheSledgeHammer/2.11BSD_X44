@@ -36,6 +36,9 @@
  *	@(#)param.h	8.3 (Berkeley) 5/14/95
  */
 
+#ifndef	_I386_PARAM_H_
+#define	_I386_PARAM_H_
+
 /*
  * Machine dependent constants for Intel 386.
  */
@@ -193,3 +196,5 @@
 /* DELAY is in locore.S for the kernel */
 #define	DELAY(n)			{ register int N = (n); while (--N > 0); }
 #endif
+
+#endif /* _I386_PARAM_H_ */

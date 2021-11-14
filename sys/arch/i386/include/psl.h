@@ -37,8 +37,8 @@
  */
 
 
-#ifndef _MACHINE_PSL_H_
-#define	_MACHINE_PSL_H_
+#ifndef _I386_PSL_H_
+#define	_I386_PSL_H_
 
 /*
  * 386 processor status longword.
@@ -81,4 +81,4 @@
 #define	PSL_USERSTATIC	(PSL_MBO | PSL_MBZ | PSL_I | PSL_IOPL | PSL_NT | PSL_VM | PSL_VIF | PSL_VIP)
 #define PSL_USER		(PSL_C | PSL_PF | PSL_AF | PSL_Z | PSL_N | PSL_T | PSL_V | PSL_D | PSL_AC)
 
-#endif /* !_MACHINE_PSL_H_ */
+#endif /* !_I386_PSL_H_ */

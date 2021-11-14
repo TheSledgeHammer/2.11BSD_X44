@@ -36,8 +36,8 @@
  *	@(#)icu.h	8.1 (Berkeley) 6/11/93
  */
 
-#ifndef	__I386_ICU__
-#define	__I386_ICU__
+#ifndef	_I386_ICU_H_
+#define	_I386_ICU_H_
 
 #ifndef	LOCORE
 
@@ -86,4 +86,4 @@ extern unsigned short			idepth;
 #define MAX_INTR_SOURCES 		ICU_OFFSET
 #define NUM_LEGACY_IRQS			ICU_LEN
 #endif
-#endif	/* __I386_ICU__ */
+#endif	/* _I386_ICU_H_ */

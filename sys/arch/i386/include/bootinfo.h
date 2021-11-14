@@ -26,8 +26,8 @@
  *
  */
 
-#ifndef _MACHINE_BOOTINFO_H_
-#define _MACHINE_BOOTINFO_H_
+#ifndef _I386_BOOTINFO_H_
+#define _I386_BOOTINFO_H_
 
 #include <sys/diskmbr.h>
 
@@ -142,4 +142,4 @@ extern int						end;
 extern int 						*esym;
 #endif
 
-#endif /* _MACHINE_BOOTINFO_H_ */
+#endif /* _I386_BOOTINFO_H_ */

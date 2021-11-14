@@ -33,9 +33,8 @@
  *	@(#)endian.h	8.1 (Berkeley) 6/10/93
  */
 
-#ifndef _ENDIAN_H_
-#define	_ENDIAN_H_
-
+#ifndef _I386_ENDIAN_H_
+#define	_I386_ENDIAN_H_
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
@@ -53,4 +52,4 @@
 #define	__ntohl(x)		__bswap32(x)
 #define	__ntohs(x)		__bswap16(x)
 
-#endif /* !_ENDIAN_H_ */
+#endif /* !_I386_ENDIAN_H_ */

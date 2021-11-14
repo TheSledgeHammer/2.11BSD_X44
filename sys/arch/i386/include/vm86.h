@@ -31,8 +31,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_VM86_H_
-#define _MACHINE_VM86_H_ 1
+#ifndef _I386_VM86_H_
+#define _I386_VM86_H_ 1
 
 /* standard register representation */
 typedef union {
@@ -166,4 +166,4 @@ extern int vm86_getptr(struct vm86context *, vm_offset_t, u_short *, u_short *);
 extern vm_offset_t vm86_getaddr(struct vm86context *, u_short, u_short);
 #endif /* _KERNEL */
 
-#endif /* _MACHINE_VM86_H_ */
+#endif /* _I386_VM86_H_ */

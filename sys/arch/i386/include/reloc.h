@@ -50,4 +50,4 @@ struct relocation_info {
 			    		r_copy :  1;  	/* run time copy */
 };
 
-#endif
+#endif /* _I386_MACHINE_RELOC_H_ */

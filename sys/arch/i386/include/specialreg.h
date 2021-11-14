@@ -66,8 +66,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_SPECIALREG_H_
-#define	_MACHINE_SPECIALREG_H_
+#ifndef _I386_SPECIALREG_H_
+#define	_I386_SPECIALREG_H_
 
 /*
  * 386 Special registers:
@@ -1148,4 +1148,4 @@
 #define	AMD_WT_ALLOC_PRE					0x20000	/* programmable range enable */
 #define	AMD_WT_ALLOC_FRE					0x10000	/* fixed (A0000-FFFFF) range enable */
 
-#endif /* !_MACHINE_SPECIALREG_H_ */
+#endif /* !_I386_SPECIALREG_H_ */

@@ -34,9 +34,9 @@
  * $FreeBSD$
  */
 
-#ifndef	_EXEC_H_
+#ifndef	_I386_EXEC_H_
 #define	_EXEC_H_
 
 #define __LDPGSZ	4096
 
-#endif /* !_EXEC_H_ */
+#endif /* !_I386_EXEC_H_ */

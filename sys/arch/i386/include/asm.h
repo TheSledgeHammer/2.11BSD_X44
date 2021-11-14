@@ -34,8 +34,8 @@
  *	@(#)asm.h	5.5 (Berkeley) 5/7/91
  */
 
-#ifndef _MACHINE_ASM_H_
-#define	_MACHINE_ASM_H_
+#ifndef _I386_ASM_H_
+#define	_I386_ASM_H_
 
 #include <sys/cdefs.h>
 
@@ -146,4 +146,4 @@
 	.stabs msg,30,0,0,0 ;							\
 	.stabs __STRING(_/**/sym),1,0,0,0
 #endif /* __STDC__ */
-#endif /* _MACHINE_ASM_H_ */
+#endif /* _I386_ASM_H_ */

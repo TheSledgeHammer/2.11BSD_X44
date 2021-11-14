@@ -32,8 +32,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MACHINE_ATOMIC_H_
-#define _MACHINE_ATOMIC_H_
+#ifndef _I386_ATOMIC_H_
+#define _I386_ATOMIC_H_
 
 /*
  * Perform atomic operations on memory. Should be atomic with respect
@@ -313,4 +313,4 @@ i386_atomic_clearbits_l(volatile u_int32_t *ptr, unsigned long bits)
 #undef _LOCK
 
 #endif /* !defined(_LOCORE) */
-#endif /* _MACHINE_ATOMIC_H_ */
+#endif /* _I386_ATOMIC_H_ */

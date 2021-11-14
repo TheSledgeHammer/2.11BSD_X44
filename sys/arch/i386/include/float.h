@@ -33,6 +33,9 @@
  *	@(#)float.h	8.1 (Berkeley) 6/10/93
  */
 
+#ifndef _I386_FLOAT_H_
+#define	_I386_FLOAT_H_
+
 #define FLT_RADIX		2				/* b */
 #define FLT_ROUNDS		1				/* FP addition rounds to nearest */
 
@@ -65,3 +68,5 @@
 #define LDBL_MAX_EXP	16384
 #define LDBL_MAX		1.1897314953572317650E+4932L
 #define LDBL_MAX_10_EXP	4932
+
+#endif /* !_I386_FLOAT_H_ */

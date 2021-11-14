@@ -31,8 +31,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_SETJMP_H_
-#define	_MACHINE_SETJMP_H_
+#ifndef _I386_SETJMP_H_
+#define	_I386_SETJMP_H_
 
 #include <sys/cdefs.h>
 
@@ -44,4 +44,4 @@ typedef	struct _sigjmp_buf { long _sjb[_JBLEN]; } sigjmp_buf[1];
 
 typedef	struct _jmp_buf { long _jb[_JBLEN]; } jmp_buf[1];
 
-#endif /* !_MACHINE_SETJMP_H_ */
+#endif /* !_I386_SETJMP_H_ */

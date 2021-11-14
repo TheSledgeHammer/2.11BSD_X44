@@ -35,6 +35,10 @@
  *
  *	@(#)reg.h	8.1 (Berkeley) 6/11/93
  */
+
+#ifndef	_I386_REG_H_
+#define	_I386_REG_H_
+
 #include <machine/types.h>
 /*
  * Location of the users' stored
@@ -140,3 +144,5 @@ struct dbreg {
 #ifdef _KERNEL
 struct proc;
 #endif
+
+#endif	/* _I386_REG_H_ */

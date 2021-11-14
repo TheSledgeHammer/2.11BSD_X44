@@ -54,7 +54,4 @@ struct 	proc;
 struct 	exec_linker;
 #endif	/* _KERNEL */
 
-struct xcoff_symhdr {
-
-};
 #endif /* _I386_XCOFF_MACHDEP_H_ */

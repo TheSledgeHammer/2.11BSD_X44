@@ -66,6 +66,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _I386_ISAPNP_MACHDEP_H_
+#define _I386_ISAPNP_MACHDEP_H_
 /*
  * Functions provided to machine-independent ISA PnP code.
  */
@@ -73,3 +75,5 @@ int		isapnp_map (struct isapnp_softc *);
 void	isapnp_unmap (struct isapnp_softc *);
 int		isapnp_map_readport (struct isapnp_softc *);
 void	isapnp_unmap_readport (struct isapnp_softc *);
+
+#endif	/* _I386_ISAPNP_MACHDEP_H_ */

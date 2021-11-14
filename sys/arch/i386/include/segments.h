@@ -42,7 +42,6 @@
  *	William F. Jolitz (william@ernie.berkeley.edu) 6/20/1989
  */
 
-
 #ifndef _I386_SEGMENTS_H_
 #define _I386_SEGMENTS_H_
 

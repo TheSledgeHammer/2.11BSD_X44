@@ -47,8 +47,8 @@
  * structure used in page clustering.
  */
 
-#ifndef _MACHINE_PTE_H_
-#define _MACHINE_PTE_H_
+#ifndef _I386_PTE_H_
+#define _I386_PTE_H_
 
 #define	PG_RO		0x000		/* R/O	Read-Only		*/
 #define	PG_V		0x001		/* P	Valid			*/
@@ -97,4 +97,4 @@
  */
 #define	dirty(pte)	((*(int *)pte & PG_M) != 0)
 
-#endif /* _MACHINE_PTE_H_ */
+#endif /* _I386_PTE_H_ */

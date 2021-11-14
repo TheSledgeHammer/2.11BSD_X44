@@ -30,6 +30,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _I386_PCI_MACHDEP_H_
+#define _I386_PCI_MACHDEP_H_
 /*
  * Machine-specific definitions for PCI autoconfiguration.
  */
@@ -107,3 +109,5 @@ void		pci_intr_disestablish (pci_chipset_tag_t, void *);
 void		*pci_map_int (pcitag_t, int, int (*)(void *), void *);
 int			pci_map_io (pcitag_t, int, int *);
 int			pci_map_mem (pcitag_t, int, vm_offset_t *, vm_offset_t *);
+
+#endif /* _I386_PCI_MACHDEP_H_ */

@@ -36,13 +36,13 @@
  *	@(#)npx.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef	_I386_NPX_H_
+#define	_I386_NPX_H_
+
 /*
  * 287/387 NPX Coprocessor Data Structures and Constants
  * W. Jolitz 1/90
  */
-
-#ifndef	_I386_NPX_H_
-#define	_I386_NPX_H_
 
 /* Default x87 control word. */
 #define	___NPX87___		0x037f

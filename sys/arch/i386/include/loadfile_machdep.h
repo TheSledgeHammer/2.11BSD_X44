@@ -29,6 +29,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _I386_LOADFILE_MACHDEP_H_
+#define _I386_LOADFILE_MACHDEP_H_
+
 #define BOOT_AOUT
 #define BOOT_ELF32
 #define BOOT_ELF64
@@ -76,3 +79,4 @@ void 	vcopy(u_long, u_long, u_long *, size_t);
 void 	vzero(u_long, u_long *, size_t);
 
 #endif
+#endif /* _I386_LOADFILE_MACHDEP_H_ */

@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _MACHINE_PC_BIOS_H_
-#define _MACHINE_PC_BIOS_H_
+#ifndef _I386_PC_BIOS_H_
+#define _I386_PC_BIOS_H_
 
 #include <machine/vmparam.h>
 
@@ -253,4 +253,4 @@ void		set_bios_selectors(struct bios_segments *, int);
 
 #endif
 
-#endif /* _MACHINE_PC_BIOS_H_ */
+#endif /* _I386_PC_BIOS_H_ */

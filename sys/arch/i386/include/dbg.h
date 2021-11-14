@@ -35,7 +35,8 @@
  *
  *	@(#)dbg.h	8.1 (Berkeley) 6/11/93
  */
-
+#ifndef	_I386_DBG_H_
+#define	_I386_DBG_H_
 /*
  * Screen debug flags
  */
@@ -50,3 +51,5 @@
 #define	DCLK		0x0100	/* print on clock activity */
 #define	DDSK		0x0200	/* print on disk activity */
 #define	DSIGNAL		0x0400	/* print on signal delivery */
+
+#endif	/* _I386_DBG_H_ */

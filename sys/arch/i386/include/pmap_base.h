@@ -36,8 +36,8 @@
  *
  */
 
-#ifndef _PMAP_BASE_MACHINE_
-#define	_PMAP_BASE_MACHINE_
+#ifndef _I386_PMAP_BASE_H_
+#define	_I386_PMAP_BASE_H_
 
 struct pmap_args {
 	void (*pmap_cold_map)(u_long pa, u_long va, u_long cnt);
@@ -105,4 +105,4 @@ void	pmap_cold(void);
 void	pmap_pae_cold(void);
 void	pmap_nopae_cold(void);
 
-#endif /* _MACHINE_PMAP_BASE_H_ */
+#endif /* _I386_PMAP_BASE_H_ */

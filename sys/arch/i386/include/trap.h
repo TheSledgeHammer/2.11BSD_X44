@@ -36,6 +36,9 @@
  *	@(#)trap.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _I386_TRAP_H_
+#define _I386_TRAP_H_
+
 /*
  * Trap type values
  * also known in trap.c for name strings
@@ -92,3 +95,5 @@
 
 #define TC_TSS				0x80000000
 #define TC_FLAGMASK			(TC_TSS)
+
+#endif /* !_I386_TRAP_H_ */
