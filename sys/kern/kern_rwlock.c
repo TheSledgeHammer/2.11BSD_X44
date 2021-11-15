@@ -30,12 +30,15 @@
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
+#include <sys/lock.h>
 #include <sys/rwlock.h>
 
 #include <machine/cpu.h>
 
 void		rwlock_pause(rwlock_t, int);
 void		rwlock_acquire(rwlock_t, int, int, int);
+
+struct lock_holder *kernel_lockholder;
 
 #if NCPUS > 1
 #define PAUSE(rwl, wanted)						\
@@ -213,7 +216,7 @@ rwlock_write_held(rwl)
 	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return (0);
-	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | curproc);
+	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | curproc());
 }
 
 /*
@@ -282,12 +285,12 @@ void
 rwlock_lock(rwl)
     __volatile rwlock_t rwl;
 {
-	lock_object_acquire(&rwl->rwl_lnterlock);
+	simple_lock(&rwl->rwl_lnterlock);
 }
 
 void
 rwlock_unlock(rwl)
     __volatile rwlock_t rwl;
 {
-	lock_object_release(&rwl->rwl_lnterlock);
+	simple_unlock(&rwl->rwl_lnterlock);
 }

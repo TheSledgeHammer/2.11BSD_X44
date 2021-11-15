@@ -199,15 +199,15 @@ typedef struct lock       	*lock_t;
 //#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
 //#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct lock_holder 		*kernel_lockholder;
 #endif
 
 struct proc;
 
-void			lockinit (struct lock *, int prio, char *wmesg, int timo, int flags);
-int				lockmgr (__volatile struct lock *, u_int flags, struct lock_object *, pid_t pid);
-int				lockstatus (struct lock *);
+void			lockinit (lock_t, int prio, char *wmesg, int timo, int flags);
+int				lockmgr (__volatile lock_t, u_int flags, struct lock_object *, pid_t pid);
+int				lockstatus (lock_t);
 
 void			simple_lock_init(struct lock_object *, const char *);
 void 			simple_lock(struct lock_object *);
@@ -217,10 +217,12 @@ int				simple_lock_try(struct lock_object *);
 void			lockholder_init(struct proc *);
 void 			set_proc_lock(struct lock_holder *, struct proc *);
 struct proc 	*get_proc_lock(struct lock_holder *);
+
 /*
 void 			set_kthread_lock(struct lock_holder *, struct kthread *);
 struct kthread 	*get_kthread_lock(struct lock_holder *);
 void 			set_uthread_lock(struct lock_holder *, struct uthread *);
 struct uthread 	*get_uthread_lock(struct lock_holder *);
 */
+
 #endif /* !_SYS_LOCK_H_ */

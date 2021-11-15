@@ -47,7 +47,6 @@ union wait	{
 #define w_stopval	w_S.w_Stopval
 #define w_stopsig	w_S.w_Stopsig
 
-
 #define	WSTOPPED	0177	/* value of s.stopval if process is stopped */
 
 /*

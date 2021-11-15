@@ -434,28 +434,6 @@ vm_cl_remove(map, entry)
 }
 
 /*
- * wrapper for calling amap_ref()
- */
-static __inline void
-vm_map_reference_amap(entry, flags)
-	struct vm_map_entry *entry;
-	int flags;
-{
-	vm_amap_ref(entry->aref.ar_amap, entry->aref.ar_pageoff, (entry->end - entry->start) >> PAGE_SHIFT, flags);
-}
-
-/*
- * wrapper for calling amap_unref()
- */
-static __inline void
-vm_map_unreference_amap(entry, flags)
-	struct vm_map_entry *entry;
-	int flags;
-{
-	vm_amap_unref(entry->aref.ar_amap, entry->aref.ar_pageoff, (entry->end - entry->start) >> PAGE_SHIFT, flags);
-}
-
-/*
  *	vm_map_create:
  *
  *	Creates and returns a new empty VM map with
@@ -1840,13 +1818,11 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	 * Make a second pass, cleaning/uncaching pages from the indicated
 	 * objects as we go.
 	 */
+
 	for (current = entry; current->start < end; current = CIRCLEQ_NEXT(current, cl_entry)) {
-
-		amap = current->aref.ar_amap;	/* top layer */
+/*
+		amap = current->aref.ar_amap;
 		amap_lock(amap);
-
-		offset = current->offset + (start - current->start);
-		size = (end <= current->end ? end : current->end) - start;
 
 		for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
 			anon = vm_amap_lookup(&current->aref, offset);
@@ -1860,7 +1836,9 @@ vm_map_clean(map, start, end, syncio, invalidate)
 				continue;
 			}
 		}
-
+*/
+		offset = current->offset + (start - current->start);
+		size = (end <= current->end ? end : current->end) - start;
 		if (current->is_a_map) {
 			register vm_map_t smap;
 			vm_map_entry_t tentry;
@@ -2079,14 +2057,14 @@ vm_map_check_protection(map, start, end, protection)
 	vm_map_entry_t		tmp_entry;
 
 	if (!vm_map_lookup_entry(map, start, &tmp_entry)) {
-		return(FALSE);
+		return (FALSE);
 	}
 
 	entry = tmp_entry;
 
 	while (start < end) {
 		if (entry == CIRCLEQ_FIRST(&map->cl_header)) {
-			return(FALSE);
+			return (FALSE);
 		}
 
 		/*
@@ -2094,7 +2072,7 @@ vm_map_check_protection(map, start, end, protection)
 		 */
 
 		if (start < entry->start) {
-			return(FALSE);
+			return (FALSE);
 		}
 
 		/*
@@ -2102,7 +2080,7 @@ vm_map_check_protection(map, start, end, protection)
 		 */
 
 		if ((entry->protection & protection) != protection) {
-			return(FALSE);
+			return (FALSE);
 		}
 
 		/* go to next entry */
@@ -2110,7 +2088,7 @@ vm_map_check_protection(map, start, end, protection)
 		start = entry->end;
 		entry = CIRCLEQ_NEXT(entry, cl_entry);
 	}
-	return(TRUE);
+	return (TRUE);
 }
 
 /*

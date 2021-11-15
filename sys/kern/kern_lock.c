@@ -477,16 +477,32 @@ count(lkp, x)
 	*/
 }
 
-/* Simple lock Interface: Compatibility with existing lock infrastructure */
+void
+lkp_lock(lkp)
+	__volatile lock_t lkp;
+{
+	simple_lock(&lkp->lk_lnterlock);
+}
 
-#define lkp_lock(lkp) 		\
-		simple_lock((lkp)->lk_lnterlock);
+void
+lkp_unlock(lkp)
+	__volatile lock_t lkp;
+{
+	simple_unlock(&lkp->lk_lnterlock);
+}
 
-#define lkp_unlock(lkp) 	\
-		simple_unlock((lkp)->lk_lnterlock);
+void
+lkp_lock_try(lkp)
+	__volatile lock_t lkp;
+{
+	simple_lock_try(&lkp->lk_lnterlock);
+}
 
-#define lkp_lock_try(lkp) 	\
-		simple_lock_try((lkp)->lk_lnterlock);
+/*
+ * Simple lock Interface:
+ * Compatibility with existing lock infrastructure.
+ * Provides a common lock object.
+ */
 
 /* simple_lock_init */
 void
@@ -528,9 +544,11 @@ simple_lock_try(lock)
 }
 
 /*
+ * Lock-Object Implementation: Array-Based-Queuing-Lock.
+ */
+/*
  * [Internal Use Only]:
- * Lock-Object: (Simple-Lock Replacement)
- * An Array-Based-Queuing-Lock.
+ * Initialize Lock-Object
  */
 void
 lock_object_init(lock, type, name, flags)

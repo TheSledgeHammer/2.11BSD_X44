@@ -102,7 +102,8 @@
  *
  */
 
-/* New VM Object Structure:
+/*
+ * New VM Object Structure:
  * Layout: (Assuming n Segments per Object (architecture dependent)
  *
  * 			 |----> Segment 1 -------> Pages 1 to (n-1)
@@ -1257,7 +1258,7 @@ vm_object_coalesce(prev_object, next_object, prev_offset, next_offset, prev_size
 	 *	prev_entry may be in use anyway)
 	 */
 
-	if (prev_object->ref_count > 1||
+	if (prev_object->ref_count > 1 ||
 	prev_object->pager != NULL ||
 	prev_object->shadow != NULL ||
 	prev_object->copy != NULL) {

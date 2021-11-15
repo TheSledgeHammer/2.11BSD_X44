@@ -1824,7 +1824,7 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	}
 
 	vm_map_unlock_read(map);
-	return(KERN_SUCCESS);
+	return (KERN_SUCCESS);
 }
 
 /*
