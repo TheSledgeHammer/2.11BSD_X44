@@ -101,7 +101,7 @@
 #include "locators.h"
 
 #include "opt_pckbd_layout.h"
-#include "opt_wsdisplay_compat.h"
+//#include "opt_wsdisplay_compat.h"
 
 struct pckbd_internal {
 	int t_isconsole;
