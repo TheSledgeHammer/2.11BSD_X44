@@ -98,19 +98,10 @@ define PAGE_MASK			PGOFSET
 define UPAGES 				UPAGES
 define HIGHPAGES			HIGHPAGES
 define CLSIZE 				CLSIZE
-define NBPG 				NBPG
-define NPTEPG 				NPTEPG
 define PGSHIFT 				PGSHIFT
-define PDRSHIFT 			PDRSHIFT
 define SYSPTSIZE 			SYSPTSIZE
 define USRPTSIZE 			USRPTSIZE
 define USRIOSIZE 			USRIOSIZE
-
-define PSL_T				PSL_T
-define PSL_NT				PSL_NT
-define PSL_MBO				PSL_MBO
-define PSL_AC				PSL_AC
-define PSL_ID				PSL_ID
 
 define USRSTACK 			USRSTACK
 define MSGBUFPTECNT 		btoc(sizeof (struct msgbuf))
@@ -156,8 +147,6 @@ define PCB_ONFAULT 			offsetof(struct pcb, pcb_onfault)
 define PCB_VM86				offsetof(struct pcb, pcb_vm86)
 define PCB_SIZE				sizeof(struct pcb)
 define PCB_VM86CALL			PCB_VM86CALL
-
-define NKMEMCLUSTERS 		NKMEMCLUSTERS
 
 define U_PROF 				offsetof(struct user, u_stats.p_prof)
 define U_PROFSCALE 			offsetof(struct user, u_stats.p_prof.pr_scale)
@@ -216,8 +205,6 @@ define IPL_IPI				IPL_IPI
 define LIR_IPI				LIR_IPI
 define LIR_TIMER			LIR_TIMER
 
-define IREENT_MAGIC			IREENT_MAGIC
-
 define BOOTINFO_SIZE		sizeof(struct bootinfo)
 define BI_VERSION			offsetof(struct bootinfo, bi_version)
 define BI_KERNELNAME		offsetof(struct bootinfo, bi_kernelname)
@@ -227,8 +214,6 @@ define BI_SYMTAB			offsetof(struct bootinfo, bi_envp.bi_symtab)
 define BI_NSYMTAB			offsetof(struct bootinfo, bi_envp.bi_nsymtab)
 define BI_ESYMTAB			offsetof(struct bootinfo, bi_envp.bi_esymtab)
 define BI_KERNEND			offsetof(struct bootinfo, bi_envp.bi_kernend)
-define KERNLOAD				KERNLOAD
-define KERNBASE				KERNBASE
 
 define VM86_FRAMESIZE		sizeof(struct vm86frame)
 define VM86_STACK_SPACE 	VM86_STACK_SPACE

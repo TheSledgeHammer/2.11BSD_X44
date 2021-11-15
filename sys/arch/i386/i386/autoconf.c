@@ -74,7 +74,6 @@
  * the configuration process, and are used in initializing
  * the machine.
  */
-int			dkn;		/* number of iostat dk numbers assigned so far */
 extern int	cold;		/* cold start flag initialized in locore.s */
 
 /*
@@ -108,7 +107,6 @@ configure()
 	 * Configure swap area and related system
 	 * parameter based on device(s) used.
 	 */
-	setroot();
 	swapconf();
 
 	spl0();
@@ -147,14 +145,6 @@ int	dmmin, dmmax, dmtext;
 
 #define	DOSWAP				/* change swdevt and dumpdev */
 u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
-
-static	char devname[][2] = {
-	'w','d',	/* 0 = wd */
-	's','w',	/* 1 = sw */
-	'f','d',	/* 2 = fd */
-	'w','t',	/* 3 = wt */
-	'x','d',	/* 4 = xd */
-};
 
 #define	PARTITIONMASK	0x7
 #define	PARTITIONSHIFT	3
@@ -204,9 +194,6 @@ setroot()
 		return;
 	}
 	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	if (majdev > sizeof(devname) / sizeof(devname[0])) {
-		return;
-	}
 	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
 	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
@@ -218,9 +205,9 @@ setroot()
 	 * If the original rootdev is the same as the one
 	 * just calculated, don't need to adjust the swap configuration.
 	 */
-	if (rootdev == orootdev)
+	if (rootdev == orootdev) {
 		return;
-	printf("changing root device to %c%c%d%c\n", devname[majdev][0], devname[majdev][1], mindev >> PARTITIONSHIFT, part + 'a');
+	}
 #ifdef DOSWAP
 	mindev &= ~PARTITIONMASK;
 	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {

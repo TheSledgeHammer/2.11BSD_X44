@@ -72,11 +72,15 @@
 #define	PIC_GOTOFF(x)	x
 #endif
 
+#ifdef __ELF__
+# define _C_LABEL(x)	x
+#else
 # ifdef __STDC__
 #  define _C_LABEL(x)	_ ## x
 # else
 #  define _C_LABEL(x)	_/**/x
 # endif
+#endif
 #define	_ASM_LABEL(x)	x
 
 #ifdef __STDC__
@@ -85,6 +89,17 @@
 #else
 # define __CONCAT(x,y)	x/**/y
 # define __STRING(x)	"x"
+#endif
+
+/* let kernels and others override entrypoint alignment */
+#if !defined(_ALIGN_TEXT) && !defined(_KERNEL)
+# ifdef _STANDALONE
+#  define _ALIGN_TEXT .align 1
+# elif defined __ELF__
+#  define _ALIGN_TEXT .align 16
+# else
+#  define _ALIGN_TEXT .align 4
+# endif
 #endif
 
 /*
@@ -98,14 +113,8 @@
 	.weak alias; 									\
 	alias = sym
 
-/* let kernels and others override entrypoint alignment */
-#ifndef _ALIGN_TEXT
-#define _ALIGN_TEXT 								\
-	.align 2,0x90
-#endif
-
 #define _START_ENTRY								\
-	.text; .p2align 2,0x90
+	.text; _ALIGN_TEXT
 
 #ifdef __STDC__
 #define	ENTRY(name) 								\
@@ -146,4 +155,22 @@
 	.stabs msg,30,0,0,0 ;							\
 	.stabs __STRING(_/**/sym),1,0,0,0
 #endif /* __STDC__ */
+
+#ifdef _KERNEL
+#ifdef _STANDALONE
+#define ALIGN_DATA		.align	4
+#define ALIGN_TEXT		.align	4	/* 4-byte boundaries */
+#define SUPERALIGN_TEXT	.align	16	/* 15-byte boundaries */
+#elif defined __ELF__
+#define ALIGN_DATA		.align	4
+#define ALIGN_TEXT		.align	16	/* 16-byte boundaries */
+#define SUPERALIGN_TEXT	.align	16	/* 16-byte boundaries */
+#else
+#define ALIGN_DATA		.align	2
+#define ALIGN_TEXT		.align	4	/* 16-byte boundaries */
+#define SUPERALIGN_TEXT	.align	4	/* 16-byte boundaries */
+#endif /* __ELF__ */
+
+#define _ALIGN_TEXT ALIGN_TEXT
+#endif /* _KERNEL */
 #endif /* _I386_ASM_H_ */

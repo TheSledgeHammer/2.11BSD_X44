@@ -62,26 +62,9 @@
 /**********************************************************************/
 /* Some Handy Macros */
 
-#define	RELOC(x)	((x) - KERNBASE)
+#define	_RELOC(x)		((x) - KERNBASE)
+#define	RELOC(x)		_RELOC(_C_LABEL(x))
 
-#define	PANIC(msg)				  \
-		xorl 	%eax,%eax		; \
-		movl 	%eax,_waittime	; \
-		pushl 	1f				; \
-		call 	_panic; 1: .asciz 	msg
-
-#define	PRINTF(n,msg)			  \
-		pushal 					; \
-		nop 					; \
-		pushl 	1f				; \
-		call 	_printf			; \
-		MSG(msg) 				; \
-		popl 	%eax 			; \
-		popal
-
-#define	MSG(msg)		.data; 1: .asciz msg; .text
-
-#define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
 #define	TRAP(a)			pushl $(a) ; jmp alltraps
 #define	ZTRAP(a)		pushl $0 ; TRAP(a)
 
@@ -621,7 +604,7 @@ sw0:	.asciz	"swtch"
  * When no processes are on the runq, Swtch branches to idle
  * to wait for something to come ready.
  */
-ENTRY(Idle)
+ENTRY(idle)
 		call	_C_LABEL(spl0)
 		cmpl	$0,_C_LABEL(whichqs)
 		jne		sw1
@@ -948,19 +931,20 @@ IDTVEC(fpu)
  * error.  It would be better to handle npx interrupts as traps but
  * this is difficult for nested interrupts.
  */
-		pushl	$0						/* dummy error code */
+		pushl	$0									/* dummy error code */
 		pushl	$T_ASTFLT
 		pushal
-		nop								/* silly, the bug is for popal and it only
-				 		 				 * bites when the next instruction has a
-				 		 				 * complicated address mode */
+		nop											/* silly, the bug is for popal and it only
+				 		 				 			 * bites when the next instruction has a
+				 		 				 			 * complicated address mode
+				 		 				 			 */
 		pushl	%ds
-		pushl	%es						/* now the stack frame is a trap frame */
+		pushl	%es									/* now the stack frame is a trap frame */
 		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax
 		movl	%ax,%ds
 		movl	%ax,%es
 		pushl	_C_LABEL(cpl)
-		pushl	$0						/* dummy unit to finish building intr frame */
+		pushl	$0									/* dummy unit to finish building intr frame */
 		incl	_C_LABEL(cnt)+V_TRAP
 		call	_C_LABEL(npxintr)
 		jmp		_C_LABEL(Xdoreti)
@@ -988,9 +972,9 @@ calltrap:
  * Return through doreti to handle ASTs.  Have to change trap frame
  * to interrupt frame.
  */
-		movl	$T_ASTFLT,4+4+32(%esp)	/* new trap type (err code not used) */
+		movl	$T_ASTFLT,4+4+32(%esp)				/* new trap type (err code not used) */
 		pushl	_C_LABEL(cpl)
-		pushl	$0						/* dummy unit */
+		pushl	$0									/* dummy unit */
 		jmp		_C_LABEL(Xdoreti)
 
 /*
@@ -1004,7 +988,7 @@ IDTVEC(osyscall)
 		pushfl
 		andb	$~((PSL_T|PSL_NT)>>8),1(%esp)
 		popfl
-		pushl	$7						/* size of instruction for restart	*/
+		pushl	$7									/* size of instruction for restart	*/
 		jmp		syscall1
 
 /*
@@ -1048,4 +1032,5 @@ syscall1:
 		pushl	_C_LABEL(cpl)
 		pushl	$0
 		jmp		_C_LABEL(Xdoreti)
+
 /**********************************************************************/
