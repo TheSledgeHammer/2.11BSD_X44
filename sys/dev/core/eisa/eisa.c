@@ -217,7 +217,7 @@ struct eisa_knowndev {
 };
 #define EISA_KNOWNDEV_NOPROD	0x01		/* match on vendor only */
 
-#include <dev/eisa/eisadevs_data.h>
+#include <dev/core/eisa/eisadevs_data.h>
 #endif /* EISAVERBOSE */
 
 void

@@ -50,7 +50,7 @@
 #include <dev/misc/wscons/wscons_callbacks.h>
 #include <dev/misc/wscons/wsdisplay_usl_io.h>
 
-#include "opt_wsdisplay_compat.h"
+//#include "opt_wsdisplay_compat.h"
 
 struct usl_syncdata {
 	struct wsscreen *s_scr;

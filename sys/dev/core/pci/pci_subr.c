@@ -212,7 +212,7 @@ struct pci_knowndev {
 };
 #define	PCI_KNOWNDEV_NOPROD	0x01		/* match on vendor only */
 
-#include <dev/pci/pcidevs_data.h>
+#include <dev/core/pci/pcidevs_data.h>
 #endif /* PCIVERBOSE */
 
 void
