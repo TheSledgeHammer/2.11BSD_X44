@@ -55,9 +55,6 @@
 #include <machine/specialreg.h>
 
 #include "npx.h"
-#if NNPX > 0
-extern struct proc *npxproc;
-#endif
 
 /*
  * Finish a fork operation, with process p2 nearly set up.
@@ -142,7 +139,9 @@ cpu_exit(p)
 
 #if NNPX > 0
 	/* free cporcessor (if we have it) */
-	if( p == npxproc) npxproc =0;
+	if( p == npxproc()) {
+		npxproc() = 0;
+	}
 #endif
 
 	/* move to inactive space and stack, passing arg accross */
@@ -153,7 +152,7 @@ cpu_exit(p)
 	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
 
 	p->p_addr = (struct user *) &nullpcb;
-	mi_switch();
+	swtch();
 	/* NOTREACHED */
 }
 #else
@@ -162,14 +161,15 @@ void
 cpu_exit(p)
 	register struct proc *p;
 {
-
 	/* free coprocessor (if we have it) */
 #if NNPX > 0
-	if( p == npxproc) npxproc =0;
+	if( p == npxproc()) {
+		npxproc() = 0;
+	}
 #endif
 
-	curproc = p;
-	mi_switch();
+	curproc() = p;
+	swtch();
 }
 
 void

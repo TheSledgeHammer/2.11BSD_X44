@@ -36,7 +36,6 @@
 #include <sys/param.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
-#include <vm/include/pmap.h>
-#include <machine/pmap.h>
 #include <machine/pmap_nopae.h>
+#include <vm/include/pmap.h>
 #include "pmap.c"

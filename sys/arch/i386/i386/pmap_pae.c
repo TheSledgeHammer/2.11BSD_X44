@@ -32,11 +32,13 @@
 #include <sys/cdefs.h>
 /*__FBSDID("$FreeBSD$"); */
 
+#ifndef PMAP_PAE_COMP
 #define	PMAP_PAE_COMP
+#else
 #include <sys/param.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
-#include <vm/include/pmap.h>
-#include <machine/pmap.h>
 #include <machine/pmap_pae.h>
+#include <vm/include/pmap.h>
 #include "pmap.c"
+#endif

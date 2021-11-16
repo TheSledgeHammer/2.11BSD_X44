@@ -44,7 +44,7 @@ pmap_overlay(firstaddr)
 {
 	overlay_avail = (vm_offset_t)firstaddr;
 	overlay_end = 	OVL_MAX_ADDRESS;
-	virtual_avail = (vm_offset_t)firstaddr;
+	virtual_avail = (vm_offset_t)overlay_end;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
 
 	simple_lock_init(&overlay_pmap->pm_lock, "overlay_pmap_lock");
@@ -56,10 +56,7 @@ pmap_bootstrap_overlay_alloc(size)
 {
 	vm_offset_t val;
 	int i;
-	extern boolean_t vm_page_startup_initialized;
-	if (vm_page_startup_initialized) {
-		panic("pmap_bootstrap_overlay_alloc: called after startup initialized");
-	}
+
 	size = round_page(size);
 	val = overlay_avail;
 
@@ -68,6 +65,7 @@ pmap_bootstrap_overlay_alloc(size)
 			avail_start += PAGE_SIZE;
 		}
 		overlay_avail = pmap_map_overlay(overlay_avail, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
+		avail_start += PAGE_SIZE;
 	}
 
 	bzero ((caddr_t) val, size);
@@ -82,7 +80,7 @@ pmap_map_overlay(virt, start, end, prot)
 	int			prot;
 {
 	while (start < end) {
-		pmap_enter(overlay_pmap, virt, start, prot, FALSE);
+		pmap_enter(overlay_pmap, virt, start, prot, FALSE);	/* would need to change */
 		virt += PAGE_SIZE;
 		start += PAGE_SIZE;
 	}
