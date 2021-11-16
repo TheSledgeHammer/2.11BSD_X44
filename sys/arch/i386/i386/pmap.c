@@ -275,7 +275,11 @@ int					i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
 boolean_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
 char				*pmap_attributes;	/* reference and modify bits */
 
-extern u_long 		KPTphys;		/* phys addr of kernel page tables */
+pd_entry_t 			*IdlePTD;			/* phys addr of kernel PTD */
+pdpt_entry_t 		*IdlePDPT;			/* phys addr of kernel PDPT */
+pt_entry_t 			*KPTmap;			/* address of kernel page tables */
+
+extern u_long 		KPTphys;			/* phys addr of kernel page tables */
 extern u_long 		tramp_idleptd;
 
 boolean_t			pmap_testbit();
