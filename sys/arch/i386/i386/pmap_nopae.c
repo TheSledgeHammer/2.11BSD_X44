@@ -36,8 +36,7 @@
 #include <sys/param.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
-#define	pm_pdir	pm_pdir_nopae
-#define	pm_ptab	pm_ptab_nopae
-#include <machine/pmap_nopae.h>
 #include <vm/include/pmap.h>
+#include <machine/pmap.h>
+#include <machine/pmap_nopae.h>
 #include "pmap.c"

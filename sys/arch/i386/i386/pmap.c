@@ -275,18 +275,6 @@ int					i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
 boolean_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
 char				*pmap_attributes;	/* reference and modify bits */
 
-#ifdef PMAP_PAE_COMP
-pd_entry_t 			*IdlePTD_pae;	/* phys addr of kernel PTD */
-pdpt_entry_t 		*IdlePDPT;		/* phys addr of kernel PDPT */
-pt_entry_t 			*KPTmap_pae;	/* address of kernel page tables */
-#define	IdlePTD		IdlePTD_pae
-#define	KPTmap		KPTmap_pae
-#else
-pd_entry_t 			*IdlePTD_nopae;
-pt_entry_t 			*KPTmap_nopae;
-#define	IdlePTD		IdlePTD_nopae
-#define	KPTmap		KPTmap_nopae
-#endif
 extern u_long 		KPTphys;		/* phys addr of kernel page tables */
 extern u_long 		tramp_idleptd;
 
@@ -467,9 +455,9 @@ pmap_cold(void)
 
 	kernel_vm_end = /* 0 + */NKPT * NBPDR;
 #ifdef PMAP_PAE_COMP
-	i386_pmap_PDRSHIFT = PD_SHIFT_PAE;
+	i386_pmap_PDRSHIFT = PD_SHIFT;
 #else
-	i386_pmap_PDRSHIFT = PD_SHIFT_NOPAE;
+	i386_pmap_PDRSHIFT = PD_SHIFT;
 #endif
 }
 
@@ -492,7 +480,6 @@ pmap_bootstrap(firstaddr, loadaddr)
 {
 	vm_offset_t va;
 	pt_entry_t *pte, *unused;
-	struct pcpu *pc;
 	u_long res;
 	int i;
 
@@ -2325,6 +2312,7 @@ pmap_invalidate_all(pmap)
 void
 pmap_tlb_init()
 {
+	int i;
 	simple_lock_init(&pmap_tlb_shootdown_job_lock, "pmap_tlb_shootdown_job_lock");
 	for (i = 0; i < NCPUS; i++) {
 		TAILQ_INIT(&pmap_tlb_shootdown_q[i].pq_head);

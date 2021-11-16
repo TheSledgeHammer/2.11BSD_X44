@@ -65,14 +65,6 @@
 #define NKPDE				(KVA_PAGES)				/* number of page tables/pde's */
 #endif
 
-#define	PD_SHIFT_PAE		21						/* LOG2(NBPDR) */
-#define	PG_FRAME_PAE		(0x000ffffffffff000ull)
-#define	PG_PS_FRAME_PAE		(0x000fffffffe00000ull)	/* PD_MASK_PAE */
-
-#define	PD_SHIFT_NOPAE		22
-#define	PG_FRAME_NOPAE		(~PAGE_MASK)
-#define	PG_PS_FRAME_NOPAE	(0xffc00000)			/* PD_MASK_NOPAE */
-
 /*
  * One page directory, shared between
  * kernel and user modes.
@@ -118,6 +110,7 @@
 
 #ifndef LOCORE
 #include <sys/queue.h>
+
 /*
  * Pmap stuff
  */
@@ -125,10 +118,13 @@ struct pmap_head;
 LIST_HEAD(pmap_head, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
 	LIST_ENTRY(pmap) 		pm_list;		/* List of all pmaps */
-	uint32_t				*pm_pdir_nopae;	/* KVA of page directory */
-	uint32_t				*pm_ptab_nopae;	/* KVA of page table */
-	uint64_t				*pm_pdir_pae;	/* KVA of page directory */
-	uint64_t				*pm_ptab_pae;	/* KVA of page table */
+#ifdef PMAP_PAE_COMP
+	uint64_t				*pm_pdir;		/* KVA of page directory */
+	uint64_t				*pm_ptab;		/* KVA of page table */
+#else
+	uint32_t				*pm_pdir;		/* KVA of page directory */
+	uint32_t				*pm_ptab;		/* KVA of page table */
+#endif
 
 	boolean_t				pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
@@ -143,7 +139,7 @@ struct pmap {
 };
 typedef struct pmap			*pmap_t;
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern pmap_t		kernel_pmap_store;
 #define kernel_pmap (&kernel_pmap_store)
 #endif
@@ -174,25 +170,30 @@ struct pv_entry {
 };
 typedef struct pv_entry		*pv_entry_t;
 
-#define	PT_ENTRY_NULL				((pt_entry_t) 0)
-#define	PD_ENTRY_NULL				((pd_entry_t) 0)
-#define	PV_ENTRY_NULL				((pv_entry_t) 0)
+#define	PT_ENTRY_NULL		((pt_entry_t) 0)
+#define	PD_ENTRY_NULL		((pd_entry_t) 0)
+#define	PV_ENTRY_NULL		((pv_entry_t) 0)
 
-#define	PV_CI						0x01		/* all entries must be cache inhibited */
-#define PV_PTPAGE					0x02		/* entry maps a page table page */
+#define	PV_CI				0x01		/* all entries must be cache inhibited */
+#define PV_PTPAGE			0x02		/* entry maps a page table page */
 
-#ifdef	KERNEL
+#ifdef _KERNEL
+extern pt_entry_t 			PTmap[], APTmap[];
+extern pd_entry_t 			PTD[], APTD[];
+extern pd_entry_t 			PTDpde[], APTDpde[];
+extern pd_entry_t 			*IdlePTD;
+extern pt_entry_t 			*KPTmap;
+extern pdpt_entry_t 		*IdlePDPT;
 
-pv_entry_t							pv_table;	/* array of entries, one per page */
+pv_entry_t					pv_table;	/* array of entries, one per page */
+extern int 					pae_mode;
+extern int 					i386_pmap_PDRSHIFT;
 
-#define pa_index(pa)				atop(pa - vm_first_phys)
-#define pa_to_pvh(pa)				(&pv_table[pa_index(pa)])
+#define pa_index(pa)		atop(pa - vm_first_phys)
+#define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
 
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
-
-extern int pae_mode;
-extern int i386_pmap_PDRSHIFT;
 #endif	/* KERNEL */
 #endif /* !LOCORE */
 #endif	/* _I386_PMAP_H_ */

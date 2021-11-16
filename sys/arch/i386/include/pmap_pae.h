@@ -53,6 +53,10 @@
 #ifndef _I386_PMAP_PAE_H
 #define	_I386_PMAP_PAE_H
 
+#define	PD_SHIFT		21						/* LOG2(NBPDR) */
+#define	PG_FRAME		(0x000ffffffffff000ull)
+#define	PG_PS_FRAME		(0x000fffffffe00000ull)	/* PD_MASK_PAE */
+
 #define	NTRPPTD			2		/* Number of PTDs for trampoline mapping */
 #define	LOWPTDI			2		/* low memory map pde */
 #define	KERNPTDI		4		/* start of kernel text pde */
@@ -60,9 +64,9 @@
 #define NPGPTD			4		/* Num of pages for page directory */
 #define NPGPTD_SHIFT	9
 #undef	PDRSHIFT
-#define	PDRSHIFT		PD_SHIFT_PAE
+#define	PDRSHIFT		PD_SHIFT
 #undef	NBPDR
-#define NBPDR			(1 << PD_SHIFT_PAE)	/* bytes/page dir */
+#define NBPDR			(1 << PD_SHIFT)	/* bytes/page dir */
 
 /*
  * Size of Kernel address space.  This is the number of page table pages
@@ -90,9 +94,9 @@ typedef uint64_t 		pdpt_entry_t;
 typedef uint64_t 		pd_entry_t;
 typedef uint64_t 		pt_entry_t;
 
-extern pdpt_entry_t 	*IdlePDPT;
+//extern pdpt_entry_t 	*IdlePDPT;
 extern pt_entry_t 		pg_nx;
-extern pd_entry_t 		*IdlePTD_pae;	/* physical address of "Idle" state directory */
+//extern pd_entry_t 		*IdlePTD_pae;	/* physical address of "Idle" state directory */
 
 /*
  * KPTmap is a linear mapping of the kernel page table.  It differs from the
@@ -105,6 +109,6 @@ extern pd_entry_t 		*IdlePTD_pae;	/* physical address of "Idle" state directory 
  * pages.  Later, it is reinitialized by pmap_bootstrap() to allow for
  * expansion of the kernel page table.
  */
-extern pt_entry_t 		*KPTmap_pae;
+//extern pt_entry_t 		*KPTmap_pae;
 
 #endif /* _I386_PMAP_PAE_H */

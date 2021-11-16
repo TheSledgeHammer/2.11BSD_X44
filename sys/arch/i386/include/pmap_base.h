@@ -63,7 +63,7 @@ struct pmap_args {
 	void (*pmap_enter)(pmap_t pmap, vm_offset_t va, vm_offset_t pa, vm_prot_t prot, boolean_t wired);
 	void (*pmap_page_protect)(vm_offset_t phys, vm_prot_t prot);
 	void (*pmap_change_wiring)(pmap_t pmap, vm_offset_t va, boolean_t wired);
-	struct pte *(*pmap_pte)(pmap_t pmap, vm_offset_t va);
+	pt_entry_t *(*pmap_pte)(pmap_t pmap, vm_offset_t va);
 	vm_offset_t (*pmap_extract)(pmap_t pmap, vm_offset_t va);
 	void (*pmap_copy)(pmap_t dst_pmap, pmap_t src_pmap, vm_offset_t dst_addr, vm_size_t	len, vm_offset_t src_addr);
 	void (*pmap_update)();

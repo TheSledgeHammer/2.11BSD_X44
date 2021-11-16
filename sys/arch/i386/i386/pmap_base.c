@@ -222,7 +222,7 @@ pmap_change_wiring(pmap_t pmap, vm_offset_t va, boolean_t wired)
 	pmap_args_ptr->pmap_change_wiring(pmap, va, wired);
 }
 
-struct pte *
+pt_entry_t *
 pmap_pte(pmap_t pmap, vm_offset_t va)
 {
 	return (pmap_args_ptr->pmap_pte(pmap, va));

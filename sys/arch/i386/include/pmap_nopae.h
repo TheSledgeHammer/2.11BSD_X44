@@ -53,6 +53,10 @@
 #ifndef _I386_PMAP_NOPAE_H
 #define	_I386_PMAP_NOPAE_H
 
+#define	PD_SHIFT		22
+#define	PG_FRAME		(~PAGE_MASK)
+#define	PG_PS_FRAME		(0xffc00000)			/* PD_MASK_NOPAE */
+
 #define	NTRPPTD			1
 #define	LOWPTDI			1
 #define	KERNPTDI		2
@@ -60,9 +64,9 @@
 #define NPGPTD			1
 #define NPGPTD_SHIFT	10
 #undef	PDRSHIFT
-#define	PDRSHIFT		PD_SHIFT_NOPAE
+#define	PDRSHIFT		PD_SHIFT
 #undef	NBPDR
-#define NBPDR			(1 << PD_SHIFT_NOPAE)	/* bytes/page dir */
+#define NBPDR			(1 << PD_SHIFT)			/* bytes/page dir */
 
 #define KVA_PAGES		(256*4)
 
@@ -74,10 +78,11 @@ typedef uint32_t 		pd_entry_t;
 typedef uint32_t 		pt_entry_t;
 typedef	uint32_t 		pdpt_entry_t;
 
+/*
 extern pt_entry_t 		PTmap[], APTmap[];
 extern pd_entry_t 		PTD[], APTD[];
 extern pd_entry_t 		PTDpde[], APTDpde[];
 extern pd_entry_t 		*IdlePTD_nopae;
 extern pt_entry_t 		*KPTmap_nopae;
-
+*/
 #endif /* _I386_PMAP_NOPAE_H */
