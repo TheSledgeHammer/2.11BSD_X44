@@ -938,6 +938,20 @@ pmap_reference(pmap)
 }
 
 /*
+ *	remove a reference to the specified pmap.
+ */
+void
+pmap_unreference(pmap)
+	pmap_t	pmap;
+{
+	if (pmap != NULL) {
+		simple_lock(&pmap->pm_lock);
+		pmap->pm_count--;
+		simple_unlock(&pmap->pm_lock);
+	}
+}
+
+/*
  *	Remove the given range of addresses from the specified map.
  *
  *	It is assumed that the start and end are properly

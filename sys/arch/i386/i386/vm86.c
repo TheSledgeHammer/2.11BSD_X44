@@ -41,12 +41,13 @@
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_page.h>
 
+#include <i386/include/gdt.h>
 #include <machine/pcb.h>
 #include <machine/psl.h>
 #include <machine/specialreg.h>
 #include <machine/sysarch.h>
 #include <machine/segments.h>
-#include <machine/support.s>
+#include <machine/support.S>
 
 extern int 					vm86pa;
 extern struct pcb 			*vm86pcb;
@@ -393,16 +394,8 @@ vm86_initialize(void)
 	u_int *addr;
 	struct vm86_layout *vml = (struct vm86_layout *)vm86paddr;
 	struct pcb *pcb;
-	struct soft_segment_descriptor ssd = {
-		0,					/* segment base address (overwritten) */
-		0,					/* length (overwritten) */
-		SDT_SYS386TSS,		/* segment type */
-		0,					/* priority level */
-		1,					/* descriptor present */
-		0, 0,
-		0,					/* default 16 size */
-		0					/* granularity */
-	};
+	struct soft_segment_descriptor ssd;
+	setup_descriptor_table(ssd, 0, 0, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
 
 	/*
 	 * this should be a compile time error, but cpp doesn't grok sizeof().

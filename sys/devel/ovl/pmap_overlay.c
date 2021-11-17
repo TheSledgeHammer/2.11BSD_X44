@@ -47,7 +47,7 @@ pmap_overlay(firstaddr)
 	virtual_avail = (vm_offset_t)overlay_end;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
 
-	simple_lock_init(&overlay_pmap->pm_lock, "overlay_pmap_lock");
+	simple_lock_init(&kernel_pmap->pm_lock, "overlay_pmap_lock");
 }
 
 void *

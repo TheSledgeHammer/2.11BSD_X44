@@ -97,7 +97,7 @@ struct gsched {
 	struct proc 			*gsc_proc;		/* pointer to proc */
 
     u_char  				gsc_priweight;	/* priority weighting: see below. */
-    char					gsc_slack;		/* slack / laxity time */
+    u_char					gsc_slack;		/* slack / laxity time */
 
     /* pointer to schedulers */
     struct gsched_edf		*gsc_edf;		/* earliest deadline first scheduler */

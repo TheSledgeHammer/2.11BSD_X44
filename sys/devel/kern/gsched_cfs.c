@@ -116,8 +116,6 @@
 #define priwfactor(loadav, priweight)   (loadfactor(loadav) / (priweight))
 #define	decay_cpu(loadfac, cpu)	        (((loadfac) * (cpu)) / ((loadfac) + FSCALE))
 
-/* make part of gsched, it potentially could be used elsewhere  */
-
 /* cpu decay  */
 unsigned int
 cfs_decay(p, priweight)
@@ -139,8 +137,6 @@ cfs_decay(p, priweight)
     return (newcpu);
 }
 
-/* XXX: make part of gsched, it potentially could be used elsewhere  */
-
 /* update cpu decay */
 void
 cfs_update(p, priweight)
@@ -160,8 +156,9 @@ cfs_update(p, priweight)
 		p->p_estcpu = 0;
 	} else {
 		p->p_slptime--;						/* 2nd round: (1st round in schedcpu) */
-		while (newcpu && --p->p_slptime)
+		while (newcpu && --p->p_slptime) {
 			newcpu = (int) decay_cpu(loadfac, newcpu);
+		}
 		p->p_estcpu = min(newcpu, UCHAR_MAX);
 	}
 }
@@ -181,14 +178,21 @@ cfs_rb_compare(a, b)
 	return (0);
 }
 
-/* calculate cfs's dynamic variables */
+/*
+ * calculate base scheduling period
+ * calculated from slack/ laxity time.
+ */
 void
-cfs_compute(cfs)
+cfs_compute(cfs, slack)
 	struct gsched_cfs *cfs;
+	u_char slack;
 {
-	cfs->cfs_btl = BTL;
-	cfs->cfs_bmg = BMG;
-	cfs->cfs_bsched = BSCHEDULE;
+	u_char new_bsched; 			/* new base schedule period */
+
+	if(EBSCHEDULE(slack, cfs)) {
+		new_bsched = (slack * cfs->cfs_bmg);
+		cfs->cfs_bsched = new_bsched;
+	}
 }
 
 int
@@ -197,10 +201,8 @@ cfs_schedcpu(p)
 {
 	register struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
 
-	u_char tmp_bsched; 			/* temp base schedule period */
-	u_char new_bsched;			/* new base schedule period */
 	int cpticks = 0;			/* p_cpticks counter (deadline) */
-	char slack;					/* slack/laxity time */
+	u_char slack;					/* slack/laxity time */
 
 	slack = p->p_gsched->gsc_slack;
 	if(p->p_gsched->gsc_priweight != 0) {
@@ -227,16 +229,7 @@ cfs_schedcpu(p)
 	setrq(p);
 
 	/* calculate cfs variables */
-	cfs_compute(cfs);
-
-	/* check base scheduling period:
-	 * This is calculated from slack/ laxity time.
-	 */
-	if(EBSCHEDULE(slack, cfs)) {
-		tmp_bsched = cfs->cfs_bsched;
-		new_bsched = (slack * cfs->cfs_bmg);
-		cfs->cfs_bsched = new_bsched;
-	}
+	cfs_compute(cfs, slack);
 
 	/* run-through red-black tree */
 	struct proc *nxt;

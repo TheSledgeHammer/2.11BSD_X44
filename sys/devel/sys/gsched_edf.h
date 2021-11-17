@@ -49,7 +49,7 @@ struct gsched_edf {
     u_char  			edf_time;			/* resident time for scheduling */
     char    			edf_slptime;		/* Time since last blocked. secs sleeping */
 
-    char 				edf_slack;			/* slack / laxity time */
+    u_char 				edf_slack;			/* slack / laxity time */
     char				edf_release;		/* time till release from current block. see above */
     int					edf_priweight;		/* priority weighting (calculated from various factors) */
 

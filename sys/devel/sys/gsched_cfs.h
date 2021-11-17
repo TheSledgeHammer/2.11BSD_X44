@@ -51,7 +51,7 @@
 #define BSCHEDULE     			(BTL / BMG)            				/* base scheduling period */
 
 /* Error Checking */
-#define EBSCHEDULE(slack, p)   	(slack > (p)->cfs_bsched)  			/* new scheduling period if slack/laxity time exceeds base scheduling period (BTL/BMG) */
+#define EBSCHEDULE(slack, p)   	((slack) > (p)->cfs_bsched)  		/* new scheduling period if slack/laxity time exceeds base scheduling period (BTL/BMG) */
 
 struct gsched_cfs_rbtree;
 RB_HEAD(gsched_cfs_rbtree, gsched_cfs);

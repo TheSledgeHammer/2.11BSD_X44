@@ -28,7 +28,10 @@
 #ifndef _I386_GDT_H_
 #define _I386_GDT_H_
 
-void allocate_gdt(struct soft_segment_descriptor *gdt[]);
-void allocate_ldt(struct soft_segment_descriptor *ldt[]);
+void setup_descriptor_table(struct soft_segment_descriptor *, unsigned int,
+		unsigned int, unsigned int, unsigned int, unsigned int, unsigned int,
+		unsigned int, unsigned int, unsigned int);
+void allocate_gdt(struct soft_segment_descriptor *);
+void allocate_ldt(struct soft_segment_descriptor *);
 
 #endif /* _I386_GDT_H_ */
