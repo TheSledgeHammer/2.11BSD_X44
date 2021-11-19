@@ -630,7 +630,6 @@ dev2major(struct devbase *dev)
 	return (NODEV);
 }
 
-
 /*
  * Make a string description of the device at maj/min.
  */

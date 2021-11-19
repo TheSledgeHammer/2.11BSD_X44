@@ -60,7 +60,7 @@
 
 static const char *srcpath(struct files *); 
 
-//static const char *prefix_prologue(const char *);
+static const char *prefix_prologue(const char *);
 
 static int emitdefs(FILE *);
 static int emitfiles(FILE *, int, int);
@@ -194,7 +194,7 @@ srcpath(struct files *fi)
 #endif
 }
 
-/*
+
 static const char *
 prefix_prologue(const char *path)
 {
@@ -204,7 +204,6 @@ prefix_prologue(const char *path)
 	else
 		return ("$S/");
 }
-*/
 
 static int
 emitdefs(FILE *fp)
@@ -281,22 +280,18 @@ emitobjs(FILE *fp)
 	TAILQ_FOREACH(oi, &allobjects, oi_next) {
 		if ((oi->oi_flags & OI_SEL) == 0)
 			continue;
-		len = strlen(oi->oi_path) + 3;
-
-		//if (*oi->oi_path != '/') {
-		//	len += 3;	/* "$S/" */
-		//	if (oi->oi_prefix != NULL)
-		//		len += strlen(oi->oi_prefix) + 1;
-		//}
+		len = strlen(oi->oi_path);
+		if (*oi->oi_path != '/') {
+			len += 3;	/* "$S/" */
+			if (oi->oi_prefix != NULL)
+				len += strlen(oi->oi_prefix) + 1;
+		}
 		if (lpos + len > 72) {
 			if (fputs(" \\\n", fp) < 0)
 				return (1);
 			sp = '\t';
 			lpos = 7;
 		}
-		if (fprintf(fp, "%c$S/%s", sp, oi->oi_path) < 0)
-			return (1);
-		/*
 		if (*oi->oi_path == '/') {
 			if (fprintf(fp, "%c%s", sp, oi->oi_path) < 0)
 				return (1);
@@ -311,7 +306,6 @@ emitobjs(FILE *fp)
 					return (1);
 			}
 		}
-		*/
 		lpos += len + 1;
 		sp = ' ';
 	}
@@ -357,10 +351,8 @@ emitfiles(FILE *fp, int suffix, int upper_suffix)
 			continue;
 		if (*fpath != '/') {
 			len += 3; /* "$S/" */
-			/*
 			if (fi->fi_prefix != NULL)
 				len += strlen(fi->fi_prefix) + 1;
-			*/
 		}
 		if (lpos + len > 72) {
 			if (fputs(" \\\n", fp) < 0)
@@ -368,9 +360,6 @@ emitfiles(FILE *fp, int suffix, int upper_suffix)
 			sp = '\t';
 			lpos = 7;
 		}
-		if (fprintf(fp, "%c%s%s", sp, *fpath != '/' ? "$S/" : "", fpath) < 0)
-			return (1);
-		/*
 		if (*fi->fi_path == '/') {
 			if (fprintf(fp, "%c%s", sp, fi->fi_path) < 0)
 				return (1);
@@ -384,7 +373,6 @@ emitfiles(FILE *fp, int suffix, int upper_suffix)
 					return (1);
 			}
 		}
-		*/
 		lpos += len + 1;
 		sp = ' ';
 	}
@@ -431,9 +419,6 @@ emitrules(FILE *fp)
 			continue;
 		if ((fpath = srcpath(fi)) == NULL)
 			return (1);
-		if (fprintf(fp, "%s.o: %s%s\n", fi->fi_base, *fpath != '/' ? "$S/" : "", fpath) < 0)
-			return (1);
-		/*
 		if (*fpath == '/') {
 			if (fprintf(fp, "%s.o: %s\n", fi->fi_base, fpath) < 0)
 				return (1);
@@ -449,7 +434,6 @@ emitrules(FILE *fp)
 					return (1);
 			}
 		}
-		*/
 		if ((cp = fi->fi_mkrule) == NULL) {
 			cp = "NORMAL";
 			ch = fpath[strlen(fpath) - 1];

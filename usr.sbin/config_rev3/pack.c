@@ -233,6 +233,29 @@ packdevi(void)
 }
 
 /*
+ * Return true if two aliases are "the same".  In this case, they need
+ * to have the same parent spec, have the same config flags, and have
+ * the same locators.
+ */
+static int
+sameas(struct devi *i1, struct devi *i2)
+{
+	const char **p1, **p2;
+/*
+	if (i1->i_pspec != i2->i_pspec)
+		return (0);
+*/
+	if (i1->i_atattr != i2->i_atattr)
+		return (0);
+	if (i1->i_cfflags != i2->i_cfflags)
+		return (0);
+	for (p1 = i1->i_locs, p2 = i2->i_locs; *p1 == *p2; p2++)
+		if (*p1++ == 0)
+			return (1);
+	return (0);
+}
+
+/*
  * Add the parents associated with "src" to the (presumably uncollapsed)
  * instance "dst".
  */
@@ -321,27 +344,6 @@ nparents(struct devi **p, struct devbase *dev, int unit)
 		}
 	}
 	return (n);
-}
-
-/*
- * Return true if two aliases are "the same".  In this case, they need
- * to have the same parent spec, have the same config flags, and have
- * the same locators.
- */
-static int
-sameas(struct devi *i1, struct devi *i2)
-{
-	const char **p1, **p2;
-/*
-	if (i1->i_pspec != i2->i_pspec)
-		return (0);
-*/
-	if (i1->i_cfflags != i2->i_cfflags)
-		return (0);
-	for (p1 = i1->i_locs, p2 = i2->i_locs; *p1 == *p2; p2++)
-		if (*p1++ == 0)
-			return (1);
-	return (0);
 }
 
 static void

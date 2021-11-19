@@ -150,8 +150,8 @@ struct attr {
 	int					a_loclen;		/* length of above list */
 	struct	nvlist 		*a_devs;		/* children */
 	struct	nvlist 		*a_refs;		/* parents */
-	//struct	nvlist 		*a_deps;		/* we depend on these other attrs */
-	//int					a_expanding;	/* to detect cycles in attr graph */
+	struct	nvlist 		*a_deps;		/* we depend on these other attrs */
+	int					a_expanding;	/* to detect cycles in attr graph */
 };
 
 /*
@@ -282,7 +282,7 @@ struct files {
 	const char 				*fi_path;		/* full file path */
 	const char 				*fi_tail;		/* name, i.e., strrchr(fi_path, '/') + 1 */
 	const char 				*fi_base;		/* tail minus ".c" (or whatever) */
-	//const char 				*fi_prefix;		/* any file prefix */
+	const char 				*fi_prefix;		/* any file prefix */
 	struct  nvlist 			*fi_optx;		/* options expression */
 	struct  nvlist 			*fi_optf;		/* flattened version of above, if needed */
 	const char 				*fi_mkrule;		/* special make rule, if any */
@@ -304,7 +304,7 @@ struct objects {
 	u_char					oi_flags;		/* as below */
 	char					oi_lastc;		/* last char from path */
 	const char 				*oi_path;		/* full object path */
-	//const char 				*oi_prefix;		/* any file prefix */
+	const char 				*oi_prefix;		/* any file prefix */
 	struct  nvlist 			*oi_optx;		/* options expression */
 	struct  nvlist 			*oi_optf;		/* flattened version of above, if needed */
 };
@@ -321,10 +321,10 @@ struct objects {
  * File/object prefixes.  These are arranged in a stack, and affect
  * the behavior of the source path.
  */
-//struct prefix {
-//	SLIST_ENTRY(prefix)	pf_next;	/* next prefix in stack */
-//	const char		*pf_prefix;	/* the actual prefix */
-//};
+struct prefix {
+	SLIST_ENTRY(prefix)		pf_next;		/* next prefix in stack */
+	const char				*pf_prefix;		/* the actual prefix */
+};
 
 /*
  * Hash tables look up name=value pairs.  The pointer value of the name
@@ -385,20 +385,20 @@ extern int				ndevi;				/* number of devi's (before packing) */
 
 TAILQ_HEAD(filelist, files);
 TAILQ_HEAD(objlist, objects);
-//SLIST_HEAD(prefixlist, prefix);
+SLIST_HEAD(prefixlist, prefix);
 
 extern struct filelist		allfiles;		/* list of all kernel source files */
 extern struct objlist 		allobjects;		/* list of all kernel object and library files */
-//extern struct prefixlist 	prefixes;		/* prefix stack */
-//extern struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
-//extern struct prefixlist	curdirs;		/* curdir stack */
+extern struct prefixlist 	prefixes;		/* prefix stack */
+extern struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
+extern struct prefixlist	curdirs;		/* curdir stack */
 
 extern struct	devi 		**packed;		/* arrayified table for packed devi's */
 extern size_t				npacked;		/* size of packed table, <= ndevi */
 
 
 extern struct parents {						/* pv[] table for config */
-	int64_t		*vec;
+	short		*vec;
 	int			used;
 } parents;
 
@@ -488,8 +488,8 @@ void	*ecalloc(size_t, size_t);
 void	*emalloc(size_t);
 void	*erealloc(void *, size_t);
 char	*estrdup(const char *);
-//void	prefix_push(const char *);
-//void	prefix_pop(void);
+void	prefix_push(const char *);
+void	prefix_pop(void);
 char	*sourcepath(const char *);
 void	warn(const char *, ...)				/* immediate warns */
      __attribute__((__format__(__printf__, 1, 2)));	

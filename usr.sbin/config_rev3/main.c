@@ -131,9 +131,9 @@ int				npspecs;			/* number of parent specs */
 
 struct filelist		allfiles;		/* list of all kernel source files */
 struct objlist 		allobjects;		/* list of all kernel object and library files */
-//struct prefixlist 	prefixes;		/* prefix stack */
-//struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
-//struct prefixlist	curdirs;		/* curdir stack */
+struct prefixlist 	prefixes;		/* prefix stack */
+struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
+struct prefixlist	curdirs;		/* curdir stack */
 
 int	vflag;				/* verbose output */
 int	Pflag;				/* pack locators */
@@ -1083,14 +1083,14 @@ hasparent(struct devi *i)
 	 * Case (1): A parent was named.  Either it's configured, or not.
 	 */
 	if (i->i_atdev != NULL)
-		return (devbase_has_instances(i->i_atdev, i->i_atunit));
+		return (devbase_has_instances(i->i_atdev, atunit));
 
 	/*
 	 * Case (2): No parent was named.  Look for devs that provide the attr.
 	 */
 	if (i->i_atattr != NULL)
 		for (nv = i->i_atattr->a_refs; nv != NULL; nv = nv->nv_next)
-			if (devbase_has_instances(nv->nv_ptr, i->i_atunit))
+			if (devbase_has_instances(nv->nv_ptr, atunit))
 				return (1);
 	return (0);
 }

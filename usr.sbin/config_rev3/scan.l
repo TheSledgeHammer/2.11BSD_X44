@@ -198,45 +198,45 @@ with		return WITH;
 
 int interesting = 1;
 
-//static int
-//curdir_push(const char *fname)
-//{
-//	struct prefix *pf;
-//	char *p, *d, *f;
-//
-//	/* Set up the initial "current directory" for include directives. */
-//	d = dirname(f = estrdup(fname));
-//	if (*d == '/')
-//		p = estrdup(d);
-//	else {
-//		char *cwd, buf[PATH_MAX];
-//
-//		if ((cwd = getcwd(buf, sizeof(buf))) == NULL)
-//			return (-1);
-//		p = emalloc(strlen(cwd) + strlen(d) + 2);
-//		sprintf(p, "%s/%s", cwd, d);
-//	}
-//	free(f);
-//	pf = ecalloc(1, sizeof(*pf));
-//	pf->pf_prefix = p;
-//	SLIST_INSERT_HEAD(&curdirs, pf, pf_next);
-//
-//	return (0);
-//}
+static int
+curdir_push(const char *fname)
+{
+	struct prefix *pf;
+	char *p, *d, *f;
 
-//static void
-//curdir_pop(void)
-//{
-//	struct prefix *pf;
-//
-//	pf = SLIST_FIRST(&curdirs);
-//	SLIST_REMOVE_HEAD(&curdirs, pf_next);
-//	if (SLIST_EMPTY(&curdirs))
-//		panic("curdirs is empty");
-//	/* LINTED cast away const (pf_prefix is malloc'd for curdirs) */
-//	free((void *)pf->pf_prefix);
-//	free(pf);
-//}
+	/* Set up the initial "current directory" for include directives. */
+	d = dirname(f = estrdup(fname));
+	if (*d == '/')
+		p = estrdup(d);
+	else {
+		char *cwd, buf[PATH_MAX];
+
+		if ((cwd = getcwd(buf, sizeof(buf))) == NULL)
+			return (-1);
+		p = emalloc(strlen(cwd) + strlen(d) + 2);
+		sprintf(p, "%s/%s", cwd, d);
+	}
+	free(f);
+	pf = ecalloc(1, sizeof(*pf));
+	pf->pf_prefix = p;
+	SLIST_INSERT_HEAD(&curdirs, pf, pf_next);
+
+	return (0);
+}
+
+static void
+curdir_pop(void)
+{
+	struct prefix *pf;
+
+	pf = SLIST_FIRST(&curdirs);
+	SLIST_REMOVE_HEAD(&curdirs, pf_next);
+	if (SLIST_EMPTY(&curdirs))
+		panic("curdirs is empty");
+	/* LINTED cast away const (pf_prefix is malloc'd for curdirs) */
+	free((void *)pf->pf_prefix);
+	free(pf);
+}
 
 /*
  * Open the "main" file (conffile).
@@ -309,7 +309,7 @@ include(const char *fname, int ateof, int conditional, int direct)
 		havedirs = 1;
 		setupdirs();
 	}
-/*
+
 	if (fname[0] == '/')
 		s = estrdup(fname);
 	else if (fname[0] == '.' && fname[1] == '/') {
@@ -319,8 +319,8 @@ include(const char *fname, int ateof, int conditional, int direct)
 	} else
 	
 	s = sourcepath(fname);
-*/
-	s = (*fname == '/') ? strdup(fname) : sourcepath(fname);
+
+	//s = (*fname == '/') ? strdup(fname) : sourcepath(fname);
 	if ((fp = fopen(s, "r")) == NULL) {
 		if (conditional == 0)
 			error("cannot open %s for reading: %s\n", s,
@@ -331,14 +331,13 @@ include(const char *fname, int ateof, int conditional, int direct)
 		free(s);
 		return (-1);
 	}
-	/*
+	
 	if (curdir_push(s) == -1) {
 		error("cannot record current working directory for %s\n", s);
 		fclose(fp);
 		free(s);
 		return (-1);
 	}
-	*/
 	in = ecalloc(1, sizeof *in);
 	in->in_prev = incl;
 	in->in_buf = YY_CURRENT_BUFFER;

@@ -126,44 +126,44 @@ nomem(void)
 /*
  * Push a prefix onto the prefix stack.
  */
-//void
-//prefix_push(const char *path)
-//{
-//	struct prefix *pf;
-//	char *cp;
+void
+prefix_push(const char *path)
+{
+	struct prefix *pf;
+	char *cp;
 
-//	pf = ecalloc(1, sizeof(struct prefix));
+	pf = ecalloc(1, sizeof(struct prefix));
 
-//	if (! SLIST_EMPTY(&prefixes) && *path != '/') {
-//		cp = emalloc(strlen(SLIST_FIRST(&prefixes)->pf_prefix) + 1 +
-//		    strlen(path) + 1);
-//		(void) sprintf(cp, "%s/%s",
-//		    SLIST_FIRST(&prefixes)->pf_prefix, path);
-//		pf->pf_prefix = intern(cp);
-//		free(cp);
-//	} else
-//		pf->pf_prefix = intern(path);
+	if (! SLIST_EMPTY(&prefixes) && *path != '/') {
+		cp = emalloc(strlen(SLIST_FIRST(&prefixes)->pf_prefix) + 1 +
+		    strlen(path) + 1);
+		(void) sprintf(cp, "%s/%s",
+		    SLIST_FIRST(&prefixes)->pf_prefix, path);
+		pf->pf_prefix = intern(cp);
+		free(cp);
+	} else
+		pf->pf_prefix = intern(path);
 
-//	SLIST_INSERT_HEAD(&prefixes, pf, pf_next);
-//}
+	SLIST_INSERT_HEAD(&prefixes, pf, pf_next);
+}
 
 /*
  * Pop a prefix off the prefix stack.
  */
-//void
-//prefix_pop(void)
-//{
-//	struct prefix *pf;
+void
+prefix_pop(void)
+{
+	struct prefix *pf;
 
-//	if ((pf = SLIST_FIRST(&prefixes)) == NULL) {
-//		error("no prefixes on the stack to pop");
-//		return;
-//	}
+	if ((pf = SLIST_FIRST(&prefixes)) == NULL) {
+		error("no prefixes on the stack to pop");
+		return;
+	}
 
-//	SLIST_REMOVE_HEAD(&prefixes, pf_next);
+	SLIST_REMOVE_HEAD(&prefixes, pf_next);
 	/* Remember this prefix for emitting -I... directives later. */
-//	SLIST_INSERT_HEAD(&allprefixes, pf, pf_next);
-//}
+	SLIST_INSERT_HEAD(&allprefixes, pf, pf_next);
+}
 
 /*
  * Prepend the source path to a file name.
@@ -171,9 +171,9 @@ nomem(void)
 char *
 sourcepath(const char *file)
 {
-	//size_t len;
+	size_t len;
 	char *cp;
-/*
+
 	struct prefix *pf;
 
 	pf = SLIST_EMPTY(&prefixes) ? NULL : SLIST_FIRST(&prefixes);
@@ -195,9 +195,7 @@ sourcepath(const char *file)
 			    pf->pf_prefix, file);
 	} else
 		(void) sprintf(cp, "%s/%s", srcdir, file);
-*/
-	cp = emalloc(strlen(srcdir) + 1 + strlen(file) + 1);
-	(void)sprintf(cp, "%s/%s", srcdir, file);
+
 	return (cp);
 }
 
