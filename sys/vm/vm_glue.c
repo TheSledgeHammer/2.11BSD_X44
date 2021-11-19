@@ -532,7 +532,7 @@ assert_wait(event, ruptible)
 #ifdef lint
 	ruptible++;
 #endif
-	curproc->p_thread = event;
+	curproc()->p_thread = event;
 }
 
 void
@@ -540,8 +540,8 @@ thread_block()
 {
 	int s = splhigh();
 
-	if (curproc->p_thread) {
-		tsleep(curproc->p_thread, PVM, "thrd_block", 0);
+	if (curproc()->p_thread) {
+		tsleep(curproc()->p_thread, PVM, "thrd_block", 0);
 	}
 	splx(s);
 }
@@ -557,9 +557,9 @@ thread_sleep(event, lock, ruptible)
 #ifdef lint
 	ruptible++;
 #endif
-	curproc->p_thread = event;
+	curproc()->p_thread = event;
 	simple_unlock(lock);
-	if (curproc->p_thread) {
+	if (curproc()->p_thread) {
 		tsleep(event, PVM, "thrd_sleep", 0);
 	}
 	splx(s);

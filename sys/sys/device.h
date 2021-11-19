@@ -68,12 +68,12 @@ enum devact {
 
 struct device {
 	enum devclass		dv_class;				/* this device's classification */
-	struct	device 		*dv_next;				/* next in list of all */
-	struct	device 		*dv_prev;				/* prev in list of all */
-	struct	cfdata		*dv_cfdata;				/* config data that found us */
+	struct device 		*dv_next;				/* next in list of all */
+	struct device 		*dv_prev;				/* prev in list of all */
+	struct cfdata		*dv_cfdata;				/* config data that found us */
 	int					dv_unit;				/* device unit number */
 	char				dv_xname[16];			/* external name (name + unit) */
-	struct	device 		*dv_parent;				/* pointer to parent device */
+	struct device 		*dv_parent;				/* pointer to parent device */
 	int					dv_flags;				/* misc. flags; see below */
 	struct cfhint 		*dv_hint;				/* config hints per device */
 };
@@ -83,8 +83,8 @@ struct device {
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
-	struct	evcnt 		*ev_next;				/* linked list */
-	struct	device 		*ev_dev;				/* associated device */
+	struct evcnt 		*ev_next;				/* linked list */
+	struct device 		*ev_dev;				/* associated device */
 	int					ev_count;				/* how many have occurred */
 	char				ev_name[8];				/* what to call them (systat display) */
 };
@@ -93,13 +93,13 @@ struct evcnt {
  * Configuration data (i.e., data placed in ioconf.c).
  */
 struct cfdata {
-	struct	cfdriver 	*cf_driver;				/* config driver */
+	struct cfdriver 	*cf_driver;				/* config driver */
 	short				cf_unit;				/* unit number */
 	short				cf_fstate;				/* finding state (below) */
 	int					*cf_loc;				/* locators (machine dependent) */
 	int					cf_flags;				/* flags from config */
 	short				*cf_parents;			/* potential parents */
-	void				(**cf_ivstubs)(void);		/* config-generated vectors, if any */
+	void				(**cf_ivstubs)(void);	/* config-generated vectors, if any */
 };
 #define FSTATE_NOTFOUND	0						/* has not been found */
 #define	FSTATE_FOUND	1						/* has been found */
@@ -161,14 +161,11 @@ struct pdevinit {
 
 /* deferred config queues */
 struct deferred_config {
-	struct deferred_config			*dc_next;
-	struct deferred_config			*dc_prev;
-
-	//TAILQ_ENTRY(deferred_config) 	dc_queue;
-	struct device 					*dc_dev;
-	void 							(*dc_func)(struct device *);
+	struct deferred_config	*dc_next;
+	struct deferred_config	*dc_prev;
+	struct device 			*dc_dev;
+	void 					(*dc_func)(struct device *);
 };
-//TAILQ_HEAD(deferred_config_head, deferred_config);
 
 /* configure hints */
 struct cfhint {
@@ -206,8 +203,6 @@ struct deferred_config	*interrupt_config_queue; 	/* head of interrupt queue */
 struct evcnt 			*allevents;					/* head of list of all events */
 struct cfhint 			*allhints;					/* head of list of device hints */
 int 					cfhint_count; 				/* hint count */
-//struct deferred_config_head deferred_config_queue;
-//struct deferred_config_head interrupt_config_queue;
 
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search (cfmatch_t, struct device *, void *);
