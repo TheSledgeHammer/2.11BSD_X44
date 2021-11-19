@@ -202,7 +202,7 @@ cfs_schedcpu(p)
 	register struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
 
 	int cpticks = 0;			/* p_cpticks counter (deadline) */
-	u_char slack;					/* slack/laxity time */
+	u_char slack;				/* slack/laxity time */
 
 	slack = p->p_gsched->gsc_slack;
 	if(p->p_gsched->gsc_priweight != 0) {

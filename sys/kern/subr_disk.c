@@ -44,6 +44,7 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
+#include <sys/bufq.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
 #include <sys/disklabel.h>
@@ -54,6 +55,7 @@
 
 struct disklist_head disklist;	/* TAILQ_HEAD */
 int	disk_count;					/* number of drives in global disklist */
+struct bufq 		bufq_list;	/* bufq head */
 
 /*
  * Initialize the disklist.  Called by main() before autoconfiguration.
@@ -408,4 +410,127 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 		sn %= lp->d_secpercyl;
 		(*pr)(" tn %d sn %d)", sn / lp->d_nsectors, sn % lp->d_nsectors);
 	}
+}
+
+char *
+disk_name(disk, dev)
+	struct dkdevice *disk;
+	dev_t 			dev;
+{
+	return (disk[dkunit(dev)].dk_name);
+}
+
+struct dkdriver *
+disk_driver(disk, dev)
+	struct dkdevice *disk;
+	dev_t 			dev;
+{
+	return (disk[dkunit(dev)].dk_driver);
+}
+
+struct disklabel
+disk_label(disk, dev)
+	struct dkdevice *disk;
+	dev_t 			dev;
+{
+	return (disk[dkunit(dev)].dk_label);
+}
+
+struct partition
+disk_partition(disk, dev)
+	struct dkdevice *disk;
+	dev_t 			dev;
+{
+	return (disk[dkunit(dev)].dk_parts);
+}
+
+struct device
+disk_device(disk, dev)
+	struct dkdevice *disk;
+	dev_t 			dev;
+{
+	return (disk[dkunit(dev)].dk_dev);
+}
+
+/* bufq routines */
+
+/*
+ * Create a device buffer queue.
+ */
+void
+bufq_alloc(bufq, flags)
+	struct bufq_state *bufq;
+	int flags;
+{
+	bufq->bq_flags = flags;
+	TAILQ_INIT(&bufq_list);
+	MALLOC(bufq->bq_private, struct bufq_state *, sizeof(struct bufq_state *), M_DEVBUF, M_ZERO);
+
+	bufq->bq_get = bufq_get;
+	bufq->bq_put = bufq_put;
+}
+
+/*
+ * Destroy a device buffer queue.
+ */
+void
+bufq_free(bufq)
+	struct bufq_state *bufq;
+{
+	KASSERT(bufq->bq_private != NULL);
+	KASSERT(BUFQ_PEEK(bufq) == NULL);
+	FREE(bufq->bq_private, M_DEVBUF);
+
+	bufq->bq_get = NULL;
+	bufq->bq_put = NULL;
+}
+
+void
+bufq_put(bufq, bp)
+	struct bufq_state *bufq;
+	struct buf *bp;
+{
+	register struct bufq *bfq;
+
+	bfq = &bufq_list;
+	bufq->bq_private = (struct buf *)bp;
+	TAILQ_INSERT_HEAD(bfq, bufq, bq_entry);
+
+	(*bufq->bq_put)(bufq, bp);
+}
+
+struct buf *
+bufq_get(bufq)
+	struct bufq_state *bufq;
+{
+	register struct bufq *bfq;
+	register struct buf *bp;
+
+	bfq = &bufq_list;
+	for (bufq = TAILQ_FIRST(bfq); bufq != NULL; bufq = TAILQ_NEXT(bufq, bq_entry)) {
+		bp = (*bufq->bq_get)(bufq, 1);
+		if (bufq->bq_private == (struct buf *)bp) {
+			TAILQ_REMOVE(bfq, bufq, bq_entry);
+			return (bp);
+		}
+	}
+	return (NULL);
+}
+
+struct buf *
+bufq_peek(bufq)
+	struct bufq_state *bufq;
+{
+	register struct bufq *bfq;
+	register struct buf *bp;
+
+	bfq = &bufq_list;
+	bufq = TAILQ_FIRST(bfq);
+	if (bufq != NULL) {
+		bp = (*bufq->bq_get)(bufq, 0);
+		if (bufq->bq_private == (struct buf *)bp) {
+			return (bp);
+		}
+	}
+	return (NULL);
 }

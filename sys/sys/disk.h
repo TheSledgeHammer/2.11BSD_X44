@@ -123,7 +123,7 @@ struct dkdriver {
 	int						(*d_close) (dev_t, int, int, struct proc *);
 	int						(*d_ioctl) (dev_t, int, caddr_t, int, struct proc *);
 	int						(*d_dump) (dev_t);
-	void					(*d_start) (struct buf *, daddr_t);
+	void					(*d_start) (struct buf */*, daddr_t*/);
 	int						(*d_mklabel) (struct dkdevice *);
 };
 
@@ -180,5 +180,13 @@ void				disk_resetstat (struct dkdevice *);
 struct dkdevice 	*disk_find (char *);
 void				disksort (struct buf *, struct buf *);
 int					diskerr (struct dkdevice *, struct buf *, char *, int, int);
+
+char 				*disk_name(struct dkdevice *, dev_t);
+struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);
+struct disklabel	disk_label(struct dkdevice *, dev_t);
+struct partition	disk_partition(struct dkdevice *, dev_t);
+struct device		disk_device(struct dkdevice *, dev_t);
+
+//struct diskslice	disk_slice(struct dkdevice *, dev_t);
 #endif
 #endif /* _SYS_DISK_H_ */

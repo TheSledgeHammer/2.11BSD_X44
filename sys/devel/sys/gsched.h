@@ -86,6 +86,7 @@
 #ifndef _SYS_GSCHED_H
 #define _SYS_GSCHED_H
 
+#include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
@@ -127,17 +128,16 @@ enum priw {
 	 PW_LAXITY = 25,		/* Current Processes Laxity/Slack Time */
 };
 
-#define PW_FACTOR(w, f)  ((float)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
+#define PW_FACTOR(w, f)  	percent(w, f) /* w's weighting for a given factor(f) see above */
 
 /*
  * Priority Weighting Calculation:
- * XXX: Needs Tuning: currently any factor below 4 results in 0 (with above weightings).
  */
 #define PRIORITY_WEIGHTING(pw, pwp, pwd, pwl, pws) {		\
 	(pw) = 	((PW_FACTOR((pwp), PW_PRIORITY) +  				\
 			PW_FACTOR((pwd), PW_DEADLINE) + 				\
 			PW_FACTOR((pwl), PW_LAXITY) + 					\
-			PW_FACTOR((pws), PW_SLEEP)) / 4); 				\
+			PW_FACTOR((pws), PW_SLEEP))); 					\
 };
 
 void 				gsched_init(struct proc *);

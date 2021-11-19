@@ -76,15 +76,22 @@
 #ifndef _SYS_BUFQ_H_
 #define _SYS_BUFQ_H_
 
+#include <sys/queue.h>
+
 /*
  * Device driver buffer queue.
  */
+struct bufq;
+TAILQ_HEAD(bufq, bufq_state);
 struct bufq_state {
-	void 		(*bq_put)(struct bufq_state *, struct buf *);
-	struct buf 	*(*bq_get)(struct bufq_state *, int);
-	void 		*bq_private;
-	int 		bq_flags;			/* Flags from bufq_alloc() */
+	TAILQ_ENTRY(bufq_state) bq_entry;
+	void 					(*bq_put)(struct bufq_state *, struct buf *);
+	struct buf 				*(*bq_get)(struct bufq_state *, int);
+	void 					*bq_private;
+	int 					bq_flags;			/* Flags from bufq_alloc() */
 };
+
+extern struct bufq 			bufq_list;			/* bufq queue */
 
 /*
  * Flags for bufq_alloc.

@@ -73,7 +73,6 @@
 
 struct vm_map_clist;
 struct vm_map_rb_tree;
-RB_PROTOTYPE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
 
 /*
  *	Types defined:

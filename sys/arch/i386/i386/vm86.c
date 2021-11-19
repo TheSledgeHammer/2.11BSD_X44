@@ -41,7 +41,7 @@
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_page.h>
 
-#include <i386/include/gdt.h>
+#include <machine/gdt.h>
 #include <machine/pcb.h>
 #include <machine/psl.h>
 #include <machine/specialreg.h>

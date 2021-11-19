@@ -178,8 +178,9 @@
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #endif
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
-#define roundup2(x, y)  (((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+#define roundup2(x, y)  (((x)+((y)-1))&(~((y)-1))) 	/* if y is powers of two */
 #define powerof2(x)		((((x)-1)&(x))==0)
+#define percent(x, y)	(((x) / 100) * (y)) 		/* calculate the percentage of a value */
 
 /*
  * Macros for fast min/max.

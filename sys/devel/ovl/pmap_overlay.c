@@ -34,7 +34,6 @@
 #include <devel/vm/include/vm.h>
 
 #include <devel/ovl/include/ovl.h>
-#include <devel/ovl/include/pmap_overlay.h>
 
 vm_offset_t						overlay_avail;
 vm_offset_t 					overlay_end;
@@ -46,8 +45,6 @@ pmap_overlay(firstaddr)
 	overlay_end = 	OVL_MAX_ADDRESS;
 	virtual_avail = (vm_offset_t)overlay_end;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
-
-	simple_lock_init(&kernel_pmap->pm_lock, "overlay_pmap_lock");
 }
 
 void *
@@ -80,7 +77,7 @@ pmap_map_overlay(virt, start, end, prot)
 	int			prot;
 {
 	while (start < end) {
-		pmap_enter(overlay_pmap, virt, start, prot, FALSE);	/* would need to change */
+		pmap_enter(kernel_pmap(), virt, start, prot, FALSE);
 		virt += PAGE_SIZE;
 		start += PAGE_SIZE;
 	}

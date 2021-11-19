@@ -40,7 +40,6 @@
 #define DKDRIVER_DECL(name, strat, minphys, open, close, ioctl, dump, start, mklabel)	\
 	struct dkdriver (name##_dkdrv) = { (#name), (strat), (minphys), (open), (close), (ioctl), (dump), (start), (mklabel) }
 
-
 void
 dkdriver_strategy(disk, bp)
 	struct dkdevice *disk;
@@ -141,6 +140,7 @@ dkdriver_open(disk, dev, flags, mode, p)
 	}
 
 done:
+	lockmgr(&dksc->sc_iolock, LK_RELEASE, NULL);
 	return (rv);
 }
 
@@ -218,20 +218,6 @@ dkdriver_ioctl(disk, dev, cmd, data, flag, p)
 	return (0);
 }
 
-int
-dkdriver_dump(disk, dev)
-	struct dkdevice *disk;
-	dev_t dev;
-{
-	register struct dkdriver *driver;
-	int unit, error;
-
-	unit = dkunit(dev);
-	driver = disk[unit].dk_driver;
-
-	return (0);
-}
-
 void
 dkdriver_start(disk, bp, addr)
 	struct dkdevice *disk;
@@ -256,7 +242,7 @@ dkdriver_start(disk, bp, addr)
 			disk_busy(&disk);
 			// simple_unlock(&dksc->sc_iolock);
 			error = driver->d_start(bp, addr);
-			//simple_lock(&dksc->sc_iolock);
+			simple_lock(&dksc->sc_iolock);
 			if (error == EAGAIN || error == ENOMEM) {
 				disk_unbusy(&disk, 0);
 				//disk_wait(&dksc->sc_dkdev);
@@ -278,6 +264,11 @@ dkdriver_mklabel(disk)
 	struct dkdevice *disk;
 {
 	register struct dkdriver *driver;
+	struct	disklabel *lp = disk->dk_label;
+
+	lp->d_partitions[RAW_PART].p_fstype = FS_BSDFFS;
+	strncpy(lp->d_packname, "default label", sizeof(lp->d_packname));
+	lp->d_checksum = dkcksum(lp);
 }
 
 static void

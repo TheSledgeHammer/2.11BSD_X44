@@ -151,11 +151,11 @@ slabmeta(slab, size)
 		meta->sm_fslots = 0;
 	}
 
-	u_long lowerbound = percent(meta->sm_bslots, 5); 	/* lower bucket boundary */
+	u_long lowerbound = percent(meta->sm_bslots, 0); 	/* lower bucket boundary */
 	u_long upperbound = percent(meta->sm_bslots, 95);  	/* upper bucket boundary */
 
 	/* test if free bucket slots is between 5% to 95% */
-	if((meta->sm_fslots >= lowerbound) && (meta->sm_fslots <= upperbound)) {
+	if((meta->sm_fslots > lowerbound) && (meta->sm_fslots <= upperbound)) {
 		slab->s_flags |= SLAB_PARTIAL;
 	/* test if free bucket slots is greater than 95% */
 	} else if(meta->sm_fslots > upperbound) {
@@ -669,16 +669,4 @@ ofree(addr, size, type)
 	if(type & M_OVERLAY) {
 		omem_free(omem_map, (vm_offset_t) addr, size);
 	}
-}
-
-/*
- * calculates the percentage of a value.
- */
-u_long
-percent(val, per)
-    u_long val;
-    int per;
-{
-    u_long p = (val / 100) * per;
-    return (p);
 }

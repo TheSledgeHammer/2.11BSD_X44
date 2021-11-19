@@ -212,6 +212,7 @@ vmspace_free(vm)
  *
  * The caller must hold the related map lock.
  */
+RB_PROTOTYPE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
 RB_GENERATE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
 
 static int
