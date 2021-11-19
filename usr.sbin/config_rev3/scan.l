@@ -198,19 +198,19 @@ with		return WITH;
 
 int interesting = 1;
 
-static int
-curdir_push(const char *fname)
-{
-	struct prefix *pf;
-	char *p, *d, *f;
-
-	/* Set up the initial "current directory" for include directives. */
-	d = dirname(f = estrdup(fname));
-	if (*d == '/')
-		p = estrdup(d);
-	else {
-		char *cwd, buf[PATH_MAX];
-
+//static int
+//curdir_push(const char *fname)
+//{
+//	struct prefix *pf;
+//	char *p, *d, *f;
+//
+//	/* Set up the initial "current directory" for include directives. */
+//	d = dirname(f = estrdup(fname));
+//	if (*d == '/')
+//		p = estrdup(d);
+//	else {
+//		char *cwd, buf[PATH_MAX];
+//
 //		if ((cwd = getcwd(buf, sizeof(buf))) == NULL)
 //			return (-1);
 //		p = emalloc(strlen(cwd) + strlen(d) + 2);
