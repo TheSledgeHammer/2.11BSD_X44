@@ -151,7 +151,7 @@ struct attr {
 	struct	nvlist 		*a_devs;		/* children */
 	struct	nvlist 		*a_refs;		/* parents */
 	struct	nvlist 		*a_deps;		/* we depend on these other attrs */
-	int					a_expanding;	/* to detect cycles in attr graph */
+	int			a_expanding;	/* to detect cycles in attr graph */
 };
 
 /*

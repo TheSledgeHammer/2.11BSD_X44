@@ -86,6 +86,7 @@ struct devitq alldevi, allpseudo;
 struct devi **packed;
 size_t npacked;
 
+struct parents  parents;
 struct locators locators;
 
 const char 		*conffile;			/* source file, e.g., "GENERIC.sparc" */

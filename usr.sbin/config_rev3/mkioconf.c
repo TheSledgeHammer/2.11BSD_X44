@@ -407,7 +407,7 @@ emitparents(FILE *fp)
 static int
 emitcfdata(FILE *fp)
 {
-	struct devi **p, *i, *ps;
+	struct devi **p, *i, **ps;
 	//struct pspec *ps;
 	int unit, v;
 	const char *state, *basename, *attachment;
