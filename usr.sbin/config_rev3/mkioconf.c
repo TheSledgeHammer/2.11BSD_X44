@@ -65,7 +65,6 @@ static int emithdr(FILE *);
 static int emitloc(FILE *);
 static int emitpseudo(FILE *);
 static int emitpv(FILE *);
-//static int emitparents(FILE *);
 static int emitroots(FILE *);
 static int emitvfslist(FILE *);
 static int emitname2blk(FILE *);
@@ -94,7 +93,7 @@ mkioconf(void)
 	}
 	v = emithdr(fp);
 	if (v != 0 || emitcfdrivers(fp) || emitexterns(fp) ||
-	    emitcfattachinit(fp) || emitloc(fp) || emitpv(fp) /*emitparents(fp) */ ||
+	    emitcfattachinit(fp) || emitloc(fp) || emitpv(fp) ||
 	    emitcfdata(fp) || emitroots(fp) || emitpseudo(fp) ||
 	    emitvfslist(fp) || emitname2blk(fp)) {
 		if (v >= 0)
@@ -366,42 +365,6 @@ static short pv[%d] = {",
 }
 
 /*
- * Emit static parent data.
- */
-/*
-static int
-emitparents(FILE *fp)
-{
-	struct pspec *p;
-
-	NEWLINE;
-	TAILQ_FOREACH(p, &allpspecs, p_list) {
-		if (p->p_devs == NULL)
-			continue;
-		if (fprintf(fp,
-"static const struct cfparent pspec%d = {\n", p->p_inst) < 0)
-			return (1);
-		if (fprintf(fp, "\t\"%s\", ", p->p_iattr->a_name) < 0)
-			return (1);
-		if (p->p_atdev != NULL) {
-			if (fprintf(fp, "\"%s\", ", p->p_atdev->d_name) < 0)
-				return (1);
-			if (p->p_atunit == WILD &&
-			    fprintf(fp, "DVUNIT_ANY") < 0)
-				return (1);
-			else if (p->p_atunit != WILD &&
-				 fprintf(fp, "%d", p->p_atunit) < 0)
-				return (1);
-		} else if (fprintf(fp, "NULL, 0") < 0)
-			return (1);
-		if (fprintf(fp, "\n};\n") < 0)
-			return (1);
-	}
-
-	return (0);
-}
-*/
-/*
  * Emit the cfdata array.
  */
 static int
@@ -422,7 +385,7 @@ emitcfdata(FILE *fp)
 #define STAR FSTATE_STAR\n\
 \n\
 struct cfdata cfdata[] = {\n\
-    /* driver           attachment    unit state loc   flags pspec\n\
+    /* attachment       driver        unit state loc   flags parents\n\
        locnames */\n") < 0)
 		return (1);
 	for (p = packed; (i = *p) != NULL; p++) {
@@ -437,19 +400,6 @@ struct cfdata cfdata[] = {\n\
 		}
 		if (v == 0 && fputs("root", fp) < 0)
 			return (1);
-		/*
-		 if ((ps = i->i_pspec) != NULL) {
-		 if (ps->p_atdev != NULL && ps->p_atunit != WILD) {
-		 if (fprintf(fp, "%s%d", ps->p_atdev->d_name, ps->p_atunit) < 0)
-		 return (1);
-		 } else if (ps->p_atdev != NULL) {
-		 if (fprintf(fp, "%s?", ps->p_atdev->d_name) < 0)
-		 return (1);
-		 } else {
-		 if (fprintf(fp, "%s?", ps->p_iattr->a_name) < 0)
-		 return (1);
-		 }
-		 */
 		a = i->i_atattr;
 		for (nv = a->a_locs, v = 0; nv != NULL; nv = nv->nv_next, v++) {
 			if (ARRNAME(nv->nv_name, lastname)) {
@@ -488,21 +438,6 @@ struct cfdata cfdata[] = {\n\
 				strlen(basename) < 3 ? "\t\t" : "\t", unit, state, loc,
 				i->i_cfflags, i->i_pvoff, a->a_locs ? a->a_name : "null") < 0)
 			return (1);
-		/*
-		if (fprintf(fp, "    {\"%s\",%s\"%s\",%s%2d, %s, %7s, %#6x, ", basename,
-				strlen(basename) < 8 ? "\t\t" : "\t", attachment,
-				strlen(attachment) < 5 ? "\t\t" : "\t", unit, state, loc,
-				i->i_cfflags) < 0)
-			return (1);
-		if (ps != NULL) {
-			if (fprintf(fp, "&pspec%d,\n", ps->p_inst) < 0)
-				return (1);
-		} else if (fputs("NULL,\n", fp) < 0)
-			return (1);
-		if (fprintf(fp, "     %scf_locnames},\n",
-				(a != NULL && a->a_locs != NULL) ? a->a_name : "null") < 0)
-			return (1);
-	*/
 	}
 	return (fputs("    {0}\n};\n", fp) < 0);
 }
