@@ -65,6 +65,7 @@ static int emithdr(FILE *);
 static int emitloc(FILE *);
 static int emitpseudo(FILE *);
 static int emitpv(FILE *);
+//static int emitparents(FILE *);
 static int emitroots(FILE *);
 static int emitvfslist(FILE *);
 static int emitname2blk(FILE *);
@@ -92,8 +93,8 @@ mkioconf(void)
 		return (1);
 	}
 	v = emithdr(fp);
-	if (v != 0 || emitcfdrivers(fp) || emitexterns(fp) ||
-	    emitcfattachinit(fp) || emitloc(fp) || emitpv(fp) ||
+	if (v != 0 || /* emitcfdrivers(fp) ||*/ emitexterns(fp) ||
+	    /* emitcfattachinit(fp) ||*/ emitloc(fp) || emitpv(fp) /*emitparents(fp) */ ||
 	    emitcfdata(fp) || emitroots(fp) || emitpseudo(fp) ||
 	    emitvfslist(fp) || emitname2blk(fp)) {
 		if (v >= 0)
@@ -226,14 +227,14 @@ emitcfdrivers(FILE *fp)
 static int
 emitexterns(FILE *fp)
 {
-	struct deva *da;
-
+	struct devbase *d;
+	
 	NEWLINE;
-	TAILQ_FOREACH(da, &alldevas, d_next) {
-		if (!deva_has_instances(da, WILD))
+	TAILQ_FOREACH(d, &allbases, d_next) {
+		if (!devbase_has_instances(d, WILD))
 			continue;
-		if (fprintf(fp, "extern struct cfattach %s_ca;\n",
-			    da->d_name) < 0)
+		if (fprintf(fp, "extern struct cfdriver %s_cd;\n",
+			    d->d_name) < 0)
 			return (1);
 	}
 	return (0);
@@ -373,7 +374,7 @@ emitcfdata(FILE *fp)
 	struct devi **p, *i, **ps;
 	//struct pspec *ps;
 	int unit, v;
-	const char *state, *basename, *attachment;
+	const char *vs, *state, *basename, *attachment;
 	struct nvlist *nv;
 	struct attr *a;
 	char *loc;
@@ -425,6 +426,14 @@ struct cfdata cfdata[] = {\n\
 			unit = i->i_unit;
 			state = "NORM";
 		}
+		/*
+		if (i->i_ivoff < 0) {
+			vs = "";
+			v = 0;
+		} else {
+			vs = "vec+";
+			v = i->i_ivoff;
+		}*/
 		if (i->i_locoff >= 0) {
 			(void) snprintf(locbuf, sizeof(locbuf), "loc+%3d", i->i_locoff);
 			loc = locbuf;
