@@ -13,16 +13,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	- zic
 - Unimplemented:
 	- rpcgen
-	
-- Refine:
-	- config: 
-		- contains unneccessary/wrong information: cfdata & cfdriver
-		- items to remove: 
-			- cfdata: parent attributes, optional parent & unit, 
-			pspec, atname, locnames
-		- items to change/add:
-			- cfdata: ivstubs (vectors)
-			- cfdriver: cf_ops	(driver operations)
 			
 ### Kernel:
 - Building Kernel/Arch:
