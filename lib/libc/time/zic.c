@@ -38,29 +38,29 @@ static char	elsieid[] = "@(#)zic.c	7.116";
 #endif
 
 struct rule {
-	const char *	r_filename;
-	int		r_linenum;
-	const char *	r_name;
+	const char 	*r_filename;
+	int			r_linenum;
+	const char 	*r_name;
 
-	int		r_loyear;	/* for example, 1986 */
-	int		r_hiyear;	/* for example, 1986 */
-	const char *	r_yrtype;
+	int			r_loyear;	/* for example, 1986 */
+	int			r_hiyear;	/* for example, 1986 */
+	const char 	*r_yrtype;
 
-	int		r_month;	/* 0..11 */
+	int			r_month;	/* 0..11 */
 
-	int		r_dycode;	/* see below */
-	int		r_dayofmonth;
-	int		r_wday;
+	int			r_dycode;	/* see below */
+	int			r_dayofmonth;
+	int			r_wday;
 
 	long		r_tod;		/* time from midnight */
-	int		r_todisstd;	/* above is standard time if TRUE */
+	int			r_todisstd;	/* above is standard time if TRUE */
 					/* or wall clock time if FALSE */
-	int		r_todisgmt;	/* above is GMT if TRUE */
+	int			r_todisgmt;	/* above is GMT if TRUE */
 					/* or local time if FALSE */
 	long		r_stdoff;	/* offset from standard time */
-	const char *	r_abbrvar;	/* variable part of abbreviation */
+	const char 	*r_abbrvar;	/* variable part of abbreviation */
 
-	int		r_todo;		/* a rule to do (used in outzone) */
+	int			r_todo;		/* a rule to do (used in outzone) */
 	time_t		r_temp;		/* used in outzone */
 };
 
@@ -90,58 +90,58 @@ struct zone {
 	time_t			z_untiltime;
 };
 
-extern int	getopt P((int argc, char * const argv[], const char * options));
-extern int	link P((const char * fromname, const char * toname));
+extern int	getopt (int argc, char * const argv[], const char * options);
+extern int	link (const char * fromname, const char * toname);
 extern char *	optarg;
 extern int	optind;
 
-static int	atcomp P((const void *, const void *));
-static void	addtt P((time_t starttime, int type));
-static int	addtype P((long gmtoff, const char * abbr, int isdst, int ttisstd, int ttisgmt));
-static void	leapadd P((time_t t, int positive, int rolling, int count));
-static void	adjleap P((void));
-static void	associate P((void));
-static int	ciequal P((const char * ap, const char * bp));
-static void	convert P((long val, char * buf));
-static void	dolink P((const char * fromfile, const char * tofile));
-static void	doabbr P((char * abbr, int abbrlen, const char * format,
-			const char * letters, int isdst));
-static void	eat P((const char * name, int num));
-static void	eats P((const char * name, int num, const char * rname, int rnum));
-static long	eitol P((int i));
-static void	error P((const char * message));
-static char **	getfields P((char * buf));
-static long	gethms P((const char * string, const char * errstrng,
-			int signable));
-static void	infile P((const char * filename));
-static void	inleap P((char ** fields, int nfields));
-static void	inlink P((char ** fields, int nfields));
-static void	inrule P((char ** fields, int nfields));
-static int	inzcont P((char ** fields, int nfields));
-static int	inzone P((char ** fields, int nfields));
-static int	inzsub P((char ** fields, int nfields, int iscont));
-static int	itsabbr P((const char * abbr, const char * word));
-static int	itsdir P((const char * name));
-static int	lowerit P((int c));
-int		main P((int, char **));
-static char *	memcheck P((char * tocheck));
-static int	mkdirs P((char * filename));
-static void	newabbr P((const char * abbr));
-static long	oadd P((long t1, long t2));
-static void	outzone P((const struct zone * zp, int ntzones));
-static void	puttzcode P((long code, FILE * fp));
-static int	rcomp P((const void * leftp, const void * rightp));
-static time_t	rpytime P((const struct rule * rp, int wantedy));
-static void	rulesub P((struct rule * rp, const char * loyearp, const char * hiyearp, const char * typep, const char * monthp, const char * dayp, const char * timep));
-static void	setboundaries P((void));
-static time_t	tadd P((time_t t1, long t2));
-static void	usage P((void));
-static void	warning P((const char * const));
-static void	writezone P((const char * name));
-static int	yearistype P((int year, const char * type));
+static int	atcomp (const void *, const void *);
+static void	addtt (time_t starttime, int type);
+static int	addtype (long gmtoff, const char * abbr, int isdst, int ttisstd, int ttisgmt);
+static void	leapadd (time_t t, int positive, int rolling, int count);
+static void	adjleap (void);
+static void	associate (void);
+static int	ciequal (const char * ap, const char * bp);
+static void	convert (long val, char * buf);
+static void	dolink (const char * fromfile, const char * tofile);
+static void	doabbr (char * abbr, int abbrlen, const char * format,
+			const char * letters, int isdst);
+static void	eat (const char * name, int num);
+static void	eats (const char * name, int num, const char * rname, int rnum);
+static long	eitol (int i);
+static void	error (const char * message);
+static char **	getfields (char * buf);
+static long	gethms (const char * string, const char * errstrng,
+			int signable);
+static void	infile (const char * filename);
+static void	inleap (char ** fields, int nfields);
+static void	inlink (char ** fields, int nfields);
+static void	inrule (char ** fields, int nfields);
+static int	inzcont (char ** fields, int nfields);
+static int	inzone (char ** fields, int nfields);
+static int	inzsub (char ** fields, int nfields, int iscont);
+static int	itsabbr (const char * abbr, const char * word);
+static int	itsdir (const char * name);
+static int	lowerit (int c);
+int		main (int, char **);
+static char *	memcheck (char * tocheck);
+static int	mkdirs (char * filename);
+static void	newabbr (const char * abbr);
+static long	oadd (long t1, long t2);
+static void	outzone (const struct zone * zp, int ntzones);
+static void	puttzcode (long code, FILE * fp);
+static int	rcomp (const void * leftp, const void * rightp);
+static time_t	rpytime (const struct rule * rp, int wantedy);
+static void	rulesub (struct rule * rp, const char * loyearp, const char * hiyearp, const char * typep, const char * monthp, const char * dayp, const char * timep);
+static void	setboundaries (void);
+static time_t	tadd (time_t t1, long t2);
+static void	usage (void);
+static void	warning (const char * const);
+static void	writezone (const char * name);
+static int	yearistype (int year, const char * type);
 
 #if !(HAVE_STRERROR - 0)
-static char *	strerror P((int));
+static char *	strerror (int));
 #endif /* !(HAVE_STRERROR - 0) */
 
 static int			charcnt;
@@ -264,7 +264,7 @@ struct lookup {
 	const int	l_value;
 };
 
-static struct lookup const *	byword P((const char * string,
+static struct lookup const *	byword (const char * string,
 					const struct lookup * lp));
 
 static struct lookup const	line_codes[] = {
@@ -344,14 +344,14 @@ static const int	len_years[2] = {
 static struct attype {
 	time_t		at;
 	unsigned char	type;
-}			attypes[TZ_MAX_TIMES];
+}				attypes[TZ_MAX_TIMES];
 static long		gmtoffs[TZ_MAX_TYPES];
 static char		isdsts[TZ_MAX_TYPES];
 static unsigned char	abbrinds[TZ_MAX_TYPES];
 static char		ttisstds[TZ_MAX_TYPES];
 static char		ttisgmts[TZ_MAX_TYPES];
 static char		chars[TZ_MAX_CHARS];
-static time_t		trans[TZ_MAX_LEAPS];
+static time_t	trans[TZ_MAX_LEAPS];
 static long		corr[TZ_MAX_LEAPS];
 static char		roll[TZ_MAX_LEAPS];
 
@@ -448,7 +448,7 @@ const char * const	string;
 }
 
 static void
-usage P((void))
+usage (void)
 {
 	(void) fprintf(stderr, _("%s: usage is %s [ --version ] [ -s ] [ -v ] [ -l localtime ] [ -p posixrules ] \\\n\t[ -d directory ] [ -L leapseconds ] [ -y yearistype ] [ filename ... ]\n"),
 		progname, progname);
@@ -676,7 +676,7 @@ warning(_("hard link failed, symbolic link used"));
 #define TIME_T_BITS_IN_FILE	((TYPE_BIT(time_t) < MAX_BITS_IN_FILE) ? TYPE_BIT(time_t) : MAX_BITS_IN_FILE)
 
 static void
-setboundaries P((void))
+setboundaries (void)
 {
 	if (TYPE_SIGNED(time_t)) {
 		min_time = ~ (time_t) 0;
@@ -1903,7 +1903,7 @@ int		count;
 }
 
 static void
-adjleap P((void))
+adjleap (void)
 {
 	register int	i;
 	register long	last = 0;

@@ -155,20 +155,6 @@ struct attr {
 };
 
 /*
- * Parent specification.  Multiple device instances may share a
- * given parent spec.  Parent specs are emitted only if there are
- * device instances which actually reference it.
- */
-struct pspec {
-	TAILQ_ENTRY(pspec) 	p_list;			/* link on parent spec list */
-	struct	attr 		*p_iattr;		/* interface attribute of parent */
-	struct	devbase 	*p_atdev;		/* optional parent device base */
-	int					p_atunit;		/* optional parent device unit */
-	struct	nvlist 		*p_devs;		/* children using it */
-	int					p_inst;			/* parent spec instance */
-};
-
-/*
  * The "base" part (struct devbase) of a device ("uba", "sd"; but not
  * "uba2" or "sd0").  It may be found "at" one or more attributes,
  * including "at root" (this is represented by a NULL attribute), as
@@ -194,28 +180,28 @@ struct pspec {
 struct devbase {
 	const char 				*d_name;		/* e.g., "sd" */
 	TAILQ_ENTRY(devbase) 	d_next;
-	int	d_isdef;		/* set once properly defined */
-	int	d_ispseudo;		/* is a pseudo-device */
-	int	d_major;		/* used for "root on sd0", e.g. */
-	struct	nvlist *d_attrs;	/* attributes, if any */
-	int	d_umax;			/* highest unit number + 1 */
-	struct	devi *d_ihead;		/* first instance, if any */
-	struct	devi **d_ipp;		/* used for tacking on more instances */
-	struct	deva *d_ahead;		/* first attachment, if any */
-	struct	deva **d_app;		/* used for tacking on attachments */
-	struct	attr *d_classattr;	/* device class attribute (if any) */
+	int						d_isdef;		/* set once properly defined */
+	int						d_ispseudo;		/* is a pseudo-device */
+	int						d_major;		/* used for "root on sd0", e.g. */
+	struct	nvlist 			*d_attrs;		/* attributes, if any */
+	int						d_umax;			/* highest unit number + 1 */
+	struct	devi 			*d_ihead;		/* first instance, if any */
+	struct	devi 			**d_ipp;		/* used for tacking on more instances */
+	struct	deva 			*d_ahead;		/* first attachment, if any */
+	struct	deva 			**d_app;		/* used for tacking on attachments */
+	struct	attr 			*d_classattr;	/* device class attribute (if any) */
 };
 
 struct deva {
-	const char *d_name;			/* name of attachment, e.g. "com_isa" */
-	TAILQ_ENTRY(deva) d_next;	/* list of all instances */
-	struct	deva *d_bsame;		/* list on same base */
-	int	d_isdef;				/* set once properly defined */
-	struct	devbase *d_devbase;	/* the base device */
-	struct	nvlist *d_atlist;	/* e.g., "at tg" (attr list) */
-	struct	nvlist *d_attrs;	/* attributes, if any */
-	struct	devi *d_ihead;		/* first instance, if any */
-	struct	devi **d_ipp;		/* used for tacking on more instances */
+	const char 				*d_name;		/* name of attachment, e.g. "com_isa" */
+	TAILQ_ENTRY(deva) 		d_next;			/* list of all instances */
+	struct	deva 			*d_bsame;		/* list on same base */
+	int						d_isdef;		/* set once properly defined */
+	struct	devbase 		*d_devbase;		/* the base device */
+	struct	nvlist 			*d_atlist;		/* e.g., "at tg" (attr list) */
+	struct	nvlist 			*d_attrs;		/* attributes, if any */
+	struct	devi 			*d_ihead;		/* first instance, if any */
+	struct	devi 			**d_ipp;		/* used for tacking on more instances */
 };
 
 /*
@@ -230,26 +216,31 @@ struct deva {
  */
 struct devi {
 	/* created while parsing config file */
-	const char *i_name;	/* e.g., "sd0" */
-	int	i_unit;		/* unit from name, e.g., 0 */
-	struct	devbase *i_base;/* e.g., pointer to "sd" base */
-	TAILQ_ENTRY(devi) i_next; /* list of all instances */
-	struct	devi *i_bsame;	/* list on same base */
-	struct	devi *i_asame;	/* list on same base attachment */
-	struct	devi *i_alias;	/* other aliases of this instance */
-	const char *i_at;	/* where this is "at" (NULL if at root) */
-	struct	pspec *i_pspec;	/* parent spec (NULL if at root) */
-	struct	deva *i_atdeva;
-	const char **i_locs;	/* locators (as given by pspec's iattr) */
-	int	i_cfflags;	/* flags from config line */
-	int	i_lineno;	/* line # in config, for later errors */
+	const char 				*i_name;		/* e.g., "sd0" */
+	int						i_unit;			/* unit from name, e.g., 0 */
+	struct	devbase 		*i_base;		/* e.g., pointer to "sd" base */
+	TAILQ_ENTRY(devi) 		i_next; 		/* list of all instances */
+	struct	devi 			*i_bsame;		/* list on same base */
+	struct	devi 			*i_asame;		/* list on same base attachment */
+	struct	devi 			*i_alias;		/* other aliases of this instance */
+	const char 				*i_at;			/* where this is "at" (NULL if at root) */
+	struct	attr 			*i_atattr;		/* attr that allowed attach */
+	struct	devbase 		*i_atdev;		/* if "at <devname><unit>", else NULL */
+	struct	deva 			*i_atdeva;
+	const char 				**i_locs;		/* locators (as given by iattr) */
+	int						i_atunit;		/* unit from "at" */
+	int						i_cfflags;		/* flags from config line */
+	int						i_lineno;		/* line # in config, for later errors */
 
 	/* created during packing or ioconf.c generation */
-	short	i_collapsed;	/* set => this alias no longer needed */
-	short	i_cfindex;	/* our index in cfdata */
-	short	i_locoff;	/* offset in locators.vec */
-
+	short					i_collapsed;	/* set => this alias no longer needed */
+	short					i_cfindex;		/* our index in cfdata */
+	short					i_pvlen;		/* number of parents */
+	short					i_pvoff;		/* offset in parents.vec */
+	short					i_locoff;		/* offset in locators.vec */
+	struct	devi 			**i_parents;	/* the parents themselves */
 };
+
 /* special units */
 #define	STAR	(-1)		/* unit number for, e.g., "sd*" */
 #define	WILD	(-2)		/* unit number for, e.g., "sd?" */
@@ -268,56 +259,56 @@ struct devi {
  * contain counts or `need' flags; this is used in mkheaders().
  */
 struct files {
-	TAILQ_ENTRY(files) fi_next;
-	const char *fi_srcfile;	/* the name of the "files" file that got us */
-	u_short	fi_srcline;	/* and the line number */
-	u_char	fi_flags;	/* as below */
-	char	fi_lastc;	/* last char from path */
-	const char *fi_path;	/* full file path */
-	const char *fi_tail;	/* name, i.e., strrchr(fi_path, '/') + 1 */
-	const char *fi_base;	/* tail minus ".c" (or whatever) */
-	const char *fi_prefix;	/* any file prefix */
-	struct  nvlist *fi_optx;/* options expression */
-	struct  nvlist *fi_optf;/* flattened version of above, if needed */
-	const char *fi_mkrule;	/* special make rule, if any */
+	TAILQ_ENTRY(files) 		fi_next;
+	const char 				*fi_srcfile;	/* the name of the "files" file that got us */
+	u_short					fi_srcline;		/* and the line number */
+	u_char					fi_flags;		/* as below */
+	char					fi_lastc;		/* last char from path */
+	const char 				*fi_path;		/* full file path */
+	const char 				*fi_tail;		/* name, i.e., strrchr(fi_path, '/') + 1 */
+	const char 				*fi_base;		/* tail minus ".c" (or whatever) */
+	const char 				*fi_prefix;		/* any file prefix */
+	struct  nvlist 			*fi_optx;		/* options expression */
+	struct  nvlist 			*fi_optf;		/* flattened version of above, if needed */
+	const char 				*fi_mkrule;		/* special make rule, if any */
 };
 /* flags */
-#define	FI_SEL		0x01	/* selected */
-#define	FI_NEEDSCOUNT	0x02	/* needs-count */
-#define	FI_NEEDSFLAG	0x04	/* needs-flag */
-#define	FI_HIDDEN	0x08	/* obscured by other(s), base names overlap */
+#define	FI_SEL				0x01			/* selected */
+#define	FI_NEEDSCOUNT		0x02			/* needs-count */
+#define	FI_NEEDSFLAG		0x04			/* needs-flag */
+#define	FI_HIDDEN			0x08			/* obscured by other(s), base names overlap */
 
 /*
  * Objects and libraries.  This allows precompiled object and library
  * files (e.g. binary-only device drivers) to be linked in.
  */
 struct objects {
-	TAILQ_ENTRY(objects) oi_next;
-	const char *oi_srcfile;	/* the name of the "objects" file that got us */
-	u_short	oi_srcline;	/* and the line number */
-	u_char	oi_flags;	/* as below */
-	char	oi_lastc;	/* last char from path */
-	const char *oi_path;	/* full object path */
-	const char *oi_prefix;	/* any file prefix */
-	struct  nvlist *oi_optx;/* options expression */
-	struct  nvlist *oi_optf;/* flattened version of above, if needed */
+	TAILQ_ENTRY(objects) 	oi_next;
+	const char 				*oi_srcfile;	/* the name of the "objects" file that got us */
+	u_short					oi_srcline;		/* and the line number */
+	u_char					oi_flags;		/* as below */
+	char					oi_lastc;		/* last char from path */
+	const char 				*oi_path;		/* full object path */
+	const char 				*oi_prefix;		/* any file prefix */
+	struct  nvlist 			*oi_optx;		/* options expression */
+	struct  nvlist 			*oi_optf;		/* flattened version of above, if needed */
 };
 /* flags */
-#define	OI_SEL		0x01	/* selected */
-#define	OI_NEEDSFLAG	0x02	/* needs-flag */
+#define	OI_SEL				0x01			/* selected */
+#define	OI_NEEDSFLAG		0x02			/* needs-flag */
 
-#define	FX_ATOM		0	/* atom (in nv_name) */
-#define	FX_NOT		1	/* NOT expr (subexpression in nv_next) */
-#define	FX_AND		2	/* AND expr (lhs in nv_ptr, rhs in nv_next) */
-#define	FX_OR		3	/* OR expr (lhs in nv_ptr, rhs in nv_next) */
+#define	FX_ATOM				0				/* atom (in nv_name) */
+#define	FX_NOT				1				/* NOT expr (subexpression in nv_next) */
+#define	FX_AND				2				/* AND expr (lhs in nv_ptr, rhs in nv_next) */
+#define	FX_OR				3				/* OR expr (lhs in nv_ptr, rhs in nv_next) */
 
 /*
  * File/object prefixes.  These are arranged in a stack, and affect
  * the behavior of the source path.
  */
 struct prefix {
-	SLIST_ENTRY(prefix)	pf_next;	/* next prefix in stack */
-	const char		*pf_prefix;	/* the actual prefix */
+	SLIST_ENTRY(prefix)		pf_next;		/* next prefix in stack */
+	const char				*pf_prefix;		/* the actual prefix */
 };
 
 /*
@@ -329,54 +320,50 @@ struct prefix {
  */
 struct hashtab;
 
-extern const char *conffile;		/* source file, e.g., "GENERIC.sparc" */
-extern const char *machine;		/* machine type, e.g., "sparc" or "sun3" */
-extern const char *machinearch;	/* machine arch, e.g., "sparc" or "m68k" */
-extern struct	nvlist *machinesubarches;
-				/* machine subarches, e.g., "sun68k" or "hpc" */
-extern const char *srcdir;		/* path to source directory (rel. to build) */
-extern const char *builddir;		/* path to build directory */
-extern const char *defbuilddir;	/* default build directory */
-extern const char *ident;		/* kernel "ident"ification string */
-extern int	errors;			/* counts calls to error() */
-extern int	minmaxusers;		/* minimum "maxusers" parameter */
-extern int	defmaxusers;		/* default "maxusers" parameter */
-extern int	maxmaxusers;		/* default "maxusers" parameter */
-extern int	maxusers;		/* configuration's "maxusers" parameter */
-extern int	maxpartitions;		/* configuration's "maxpartitions" parameter */
-extern struct	nvlist *options;	/* options */
-extern struct	nvlist *fsoptions;	/* filesystems */
-extern struct	nvlist *mkoptions;	/* makeoptions */
-extern struct	hashtab *devbasetab;	/* devbase lookup */
-extern struct	hashtab *devatab;	/* devbase attachment lookup */
-extern struct	hashtab *devitab;	/* device instance lookup */
-extern struct	hashtab *selecttab;	/* selects things that are "optional foo" */
-extern struct	hashtab *needcnttab;	/* retains names marked "needs-count" */
-extern struct	hashtab *opttab;	/* table of configured options */
-extern struct	hashtab *fsopttab;	/* table of configured file systems */
-extern struct	hashtab *defopttab;	/* options that have been "defopt"'d */
-extern struct	hashtab *defflagtab;	/* options that have been "defflag"'d */
-extern struct	hashtab *defparamtab;	/* options that have been "defparam"'d */
-extern struct	hashtab *deffstab;	/* defined file systems */
-extern struct	hashtab *optfiletab;	/* "defopt"'d option .h files */
-extern struct	hashtab *attrtab;	/* attributes (locators, etc.) */
+extern const char 		*conffile;			/* source file, e.g., "GENERIC.sparc" */
+extern const char 		*machine;			/* machine type, e.g., "sparc" or "sun3" */
+extern const char 		*machinearch;		/* machine arch, e.g., "sparc" or "m68k" */
+extern struct	nvlist 	*machinesubarches;	/* machine subarches, e.g., "sun68k" or "hpc" */
+extern const char 		*srcdir;			/* path to source directory (rel. to build) */
+extern const char 		*builddir;			/* path to build directory */
+extern const char 		*defbuilddir;		/* default build directory */
+extern const char 		*ident;				/* kernel "ident"ification string */
+extern int				errors;				/* counts calls to error() */
+extern int				minmaxusers;		/* minimum "maxusers" parameter */
+extern int				defmaxusers;		/* default "maxusers" parameter */
+extern int				maxmaxusers;		/* default "maxusers" parameter */
+extern int				maxusers;			/* configuration's "maxusers" parameter */
+extern int				maxpartitions;		/* configuration's "maxpartitions" parameter */
+extern struct	nvlist 	*options;			/* options */
+extern struct	nvlist 	*fsoptions;			/* filesystems */
+extern struct	nvlist 	*mkoptions;			/* makeoptions */
+extern struct	hashtab *devbasetab;		/* devbase lookup */
+extern struct	hashtab *devatab;			/* devbase attachment lookup */
+extern struct	hashtab *devitab;			/* device instance lookup */
+extern struct	hashtab *selecttab;			/* selects things that are "optional foo" */
+extern struct	hashtab *needcnttab;		/* retains names marked "needs-count" */
+extern struct	hashtab *opttab;			/* table of configured options */
+extern struct	hashtab *fsopttab;			/* table of configured file systems */
+extern struct	hashtab *defopttab;			/* options that have been "defopt"'d */
+extern struct	hashtab *defflagtab;		/* options that have been "defflag"'d */
+extern struct	hashtab *defparamtab;		/* options that have been "defparam"'d */
+extern struct	hashtab *deffstab;			/* defined file systems */
+extern struct	hashtab *optfiletab;		/* "defopt"'d option .h files */
+extern struct	hashtab *attrtab;			/* attributes (locators, etc.) */
 
 TAILQ_HEAD(devbasetq, devbase);
 TAILQ_HEAD(devatq, deva);
 TAILQ_HEAD(conftq, config);
 TAILQ_HEAD(devitq, devi);
-TAILQ_HEAD(pspectq, pspec);
 
-extern struct devbasetq allbases;	/* list of all devbase structures */
-extern struct devbasetq allbases;	/* list of all devbase structures */
-extern struct devatq 	alldevas;	/* list of all devbase attachments */
-extern struct conftq 	allcf;		/* list of configured kernels */
-extern struct devitq 	alldevi,	/* list of all instances */
-		     	 	 	allpseudo;	/* list of all pseudo-devices */
-extern struct pspectq 	allpspecs;	/* list of all parent specs */
+extern struct devbasetq allbases;			/* list of all devbase structures */
+extern struct devbasetq allbases;			/* list of all devbase structures */
+extern struct devatq 	alldevas;			/* list of all devbase attachments */
+extern struct conftq 	allcf;				/* list of configured kernels */
+extern struct devitq 	alldevi,			/* list of all instances */
+		     	 	 	allpseudo;			/* list of all pseudo-devices */
 
-extern int	ndevi;				/* number of devi's (before packing) */
-extern int	npspecs;			/* number of parent specs */
+extern int				ndevi;				/* number of devi's (before packing) */
 
 TAILQ_HEAD(filelist, files);
 TAILQ_HEAD(objlist, objects);
@@ -388,38 +375,44 @@ extern struct prefixlist 	prefixes;		/* prefix stack */
 extern struct prefixlist	allprefixes;	/* all prefixes used (after popped) */
 extern struct prefixlist	curdirs;		/* curdir stack */
 
-extern struct	devi 	**packed;		/* arrayified table for packed devi's */
+extern struct	devi 		**packed;		/* arrayified table for packed devi's */
 extern size_t				npacked;		/* size of packed table, <= ndevi */
 
-extern struct locators {			/* loc[] table for config */
-	const char **vec;
-	int	used;
+
+extern struct parents {						/* pv[] table for config */
+	short		*vec;
+	int			used;
+} parents;
+
+extern struct locators {					/* loc[] table for config */
+	const char 	**vec;
+	int			used;
 } locators;
 
 struct numconst {
-	int64_t	val;
-	int fmt;
+	int64_t		val;
+	int 		fmt;
 };
 
 /* files.c */
 void	initfiles(void);
 void	checkfiles(void);
-int	fixfiles(void);		/* finalize */
-int	fixobjects(void);
+int		fixfiles(void);		/* finalize */
+int		fixobjects(void);
 void	addfile(const char *, struct nvlist *, int, const char *);
 void	addobject(const char *, struct nvlist *, int);
 
 /* hash.c */
 struct	hashtab *ht_new(void);
-int	ht_insrep(struct hashtab *, const char *, void *, int);
+int		ht_insrep(struct hashtab *, const char *, void *, int);
 #define	ht_insert(ht, nam, val) ht_insrep(ht, nam, val, 0)
 #define	ht_replace(ht, nam, val) ht_insrep(ht, nam, val, 1)
-int	ht_remove(struct hashtab *, const char *);
+int		ht_remove(struct hashtab *, const char *);
 void	*ht_lookup(struct hashtab *, const char *);
 void	initintern(void);
 const char *intern(const char *);
 typedef int (*ht_callback)(const char *, void *, void *);
-int	ht_enumerate(struct hashtab *, ht_callback, void *);
+int		ht_enumerate(struct hashtab *, ht_callback, void *);
 
 /* main.c */
 void	addoption(const char *, const char *);
@@ -432,9 +425,9 @@ void	defparam(const char *, struct nvlist *, struct nvlist *);
 void	deloption(const char *);
 void	delfsoption(const char *);
 void	delmkoption(const char *);
-int	devbase_has_instances(struct devbase *, int);
+int		devbase_has_instances(struct devbase *, int);
 struct nvlist * find_declared_option(const char *);
-int	deva_has_instances(struct deva *, int);
+int		deva_has_instances(struct deva *, int);
 void	setupdirs(void);
 
 /* tests on option types */
@@ -448,26 +441,26 @@ void	setupdirs(void);
 void	logconfig_include(FILE *, const char *);
 
 /* mkheaders.c */
-int	mkheaders(void);
-int	moveifchanged(const char *, const char *);
+int		mkheaders(void);
+int		moveifchanged(const char *, const char *);
 
 /* mkioconf.c */
-int	mkioconf(void);
+int		mkioconf(void);
 
 /* mkmakefile.c */
-int	mkmakefile(void);
+int		mkmakefile(void);
 
 /* mkswap.c */
-int	mkswap(void);
+int		mkswap(void);
 
 /* pack.c */
 void	pack(void);
 
 /* scan.l */
-int	currentline(void);
-int	firstfile(const char *);
+int		currentline(void);
+int		firstfile(const char *);
 void	package(const char *);
-int	include(const char *, int, int, int);
+int		include(const char *, int, int, int);
 
 /* sem.c, other than for yacc actions */
 void	initsem(void);
@@ -494,4 +487,4 @@ void	nvfreel(struct nvlist *);
 
 /* liby */
 void	yyerror(const char *);
-int	yylex(void);
+int		yylex(void);

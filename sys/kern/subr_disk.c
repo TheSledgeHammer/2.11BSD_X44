@@ -48,6 +48,7 @@
 #include <sys/syslog.h>
 #include <sys/time.h>
 #include <sys/disklabel.h>
+#include <sys/diskslice.h>
 #include <sys/disk.h>
 #include <sys/user.h>
 
@@ -97,13 +98,13 @@ disk_attach(diskp)
 {
 	int s;
 	diskp->dk_label = malloc(sizeof(struct disklabel), M_DEVBUF, M_NOWAIT);
-	//diskp->dk_cpulabel = malloc(sizeof(struct cpu_disklabel), M_DEVBUF, M_NOWAIT);
-	if ((diskp->dk_label == NULL)/* || (diskp->dk_cpulabel == NULL)*/) {
+	diskp->dk_slices = malloc(sizeof(struct diskslices), M_DEVBUF, M_NOWAIT);
+	if ((diskp->dk_label == NULL) || (diskp->dk_slices == NULL)) {
 			panic("disk_attach: can't allocate storage for disklabel");
 	}
 
 	memset(diskp->dk_label, 0, sizeof(struct disklabel));
-	//memset(diskp->dk_cpulabel, 0, sizeof(struct cpu_disklabel));
+	memset(diskp->dk_slices, 0, sizeof(struct diskslices));
 
 	/*
 	 * Set the attached timestamp.
@@ -138,7 +139,7 @@ disk_detach(diskp)
 	 * Free the space used by the disklabel structures.
 	 */
 	free(diskp->dk_label, M_DEVBUF);
-	//free(diskp->dk_cpulabel, M_DEVBUF);
+	free(diskp->dk_slices, M_DEVBUF);
 }
 
 /*
@@ -203,20 +204,19 @@ disk_ioctl(diskp, dev, cmd, data, flag, p)
 	struct proc 	*p;
 {
 	struct disklabel *lp;
-	//struct diskslices *ssp;
+	struct diskslices *ssp;
 	int error;
 
 	lp = diskp->dk_label;
-	//ssp = diskp->dk_slices;
+	ssp = diskp->dk_slices;
 
 	if (dev == NODEV) {
 		return (ENOIOCTL);
 	}
-	/*
+
 	if(ssp != NULL) {
 		return (dsioctl(dev, cmd, data, flag, &ssp));
 	}
-	*/
 
 	switch (cmd) {
 	case DIOCGSECTORSIZE:
@@ -434,6 +434,14 @@ disk_label(disk, dev)
 	dev_t 			dev;
 {
 	return (disk[dkunit(dev)].dk_label);
+}
+
+struct diskslices
+disk_slices(disk, dev)
+	struct dkdevice *disk;
+	dev_t 			dev;
+{
+	return (disk[dkunit(dev)].dk_slices);
 }
 
 struct partition

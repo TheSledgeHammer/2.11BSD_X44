@@ -27,7 +27,6 @@ libpc/		UNIMPLEMENTED
 libplot/	UNIMPLEMENTED
 libg/		UNIMPLEMENTED 		(4.3 should be ported)
 libln/		UNIMPLEMENTED
-libm/		UNIMPLEMENTED  		(4.3 no attempt made to convert yet - won't run on a PDP11)
 
 Notes
 -----

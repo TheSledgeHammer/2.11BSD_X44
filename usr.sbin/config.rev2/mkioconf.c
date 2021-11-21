@@ -64,8 +64,7 @@ static int emitcfattachinit(FILE *);
 static int emithdr(FILE *);
 static int emitloc(FILE *);
 static int emitpseudo(FILE *);
-static int emitpv(FILE *);
-//static int emitparents(FILE *);
+static int emitparents(FILE *);
 static int emitroots(FILE *);
 static int emitvfslist(FILE *);
 static int emitname2blk(FILE *);
@@ -93,8 +92,8 @@ mkioconf(void)
 		return (1);
 	}
 	v = emithdr(fp);
-	if (v != 0 || /* emitcfdrivers(fp) ||*/ emitexterns(fp) ||
-	    /* emitcfattachinit(fp) ||*/ emitloc(fp) || emitpv(fp) /*emitparents(fp) */ ||
+	if (v != 0 || emitcfdrivers(fp) || emitexterns(fp) ||
+	    emitcfattachinit(fp) || emitloc(fp) || emitparents(fp) ||
 	    emitcfdata(fp) || emitroots(fp) || emitpseudo(fp) ||
 	    emitvfslist(fp) || emitname2blk(fp)) {
 		if (v >= 0)
@@ -227,14 +226,14 @@ emitcfdrivers(FILE *fp)
 static int
 emitexterns(FILE *fp)
 {
-	struct devbase *d;
-	
+	struct deva *da;
+
 	NEWLINE;
-	TAILQ_FOREACH(d, &allbases, d_next) {
-		if (!devbase_has_instances(d, WILD))
+	TAILQ_FOREACH(da, &alldevas, d_next) {
+		if (!deva_has_instances(da, WILD))
 			continue;
-		if (fprintf(fp, "extern struct cfdriver %s_cd;\n",
-			    d->d_name) < 0)
+		if (fprintf(fp, "extern struct cfattach %s_ca;\n",
+			    da->d_name) < 0)
 			return (1);
 	}
 	return (0);
@@ -348,21 +347,38 @@ static int loc[1] = { -1 };\n") < 0)
 }
 
 /*
- * Emit global parents-vector.
+ * Emit static parent data.
  */
 static int
-emitpv(FILE *fp)
+emitparents(FILE *fp)
 {
-	int i;
+	struct pspec *p;
 
-	if (fprintf(fp, "\n/* parent vectors */\n\
-static short pv[%d] = {",
-			parents.used) < 0)
-		return (1);
-	for (i = 0; i < parents.used; i++)
-		if (fprintf(fp, "%s%d,", SEP(i, 16), parents.vec[i]) < 0)
+	NEWLINE;
+	TAILQ_FOREACH(p, &allpspecs, p_list) {
+		if (p->p_devs == NULL)
+			continue;
+		if (fprintf(fp,
+"static const struct cfparent pspec%d = {\n", p->p_inst) < 0)
 			return (1);
-	return (fprintf(fp, "\n};\n") < 0);
+		if (fprintf(fp, "\t\"%s\", ", p->p_iattr->a_name) < 0)
+			return (1);
+		if (p->p_atdev != NULL) {
+			if (fprintf(fp, "\"%s\", ", p->p_atdev->d_name) < 0)
+				return (1);
+			if (p->p_atunit == WILD &&
+			    fprintf(fp, "DVUNIT_ANY") < 0)
+				return (1);
+			else if (p->p_atunit != WILD &&
+				 fprintf(fp, "%d", p->p_atunit) < 0)
+				return (1);
+		} else if (fprintf(fp, "NULL, 0") < 0)
+			return (1);
+		if (fprintf(fp, "\n};\n") < 0)
+			return (1);
+	}
+
+	return (0);
 }
 
 /*
@@ -371,10 +387,10 @@ static short pv[%d] = {",
 static int
 emitcfdata(FILE *fp)
 {
-	struct devi **p, *i, **ps;
-	//struct pspec *ps;
+	struct devi **p, *i;
+	struct pspec *ps;
 	int unit, v;
-	const char *vs, *state, *basename, *attachment;
+	const char *state, *basename, *attachment;
 	struct nvlist *nv;
 	struct attr *a;
 	char *loc;
@@ -386,31 +402,46 @@ emitcfdata(FILE *fp)
 #define STAR FSTATE_STAR\n\
 \n\
 struct cfdata cfdata[] = {\n\
-    /* attachment       driver        unit state loc   flags parents\n\
+    /* driver           attachment    unit state loc   flags pspec\n\
        locnames */\n") < 0)
 		return (1);
 	for (p = packed; (i = *p) != NULL; p++) {
 		/* the description */
 		if (fprintf(fp, "/*%3d: %s at ", i->i_cfindex, i->i_name) < 0)
 			return (1);
-		ps = i->i_parents;
-		for (v = 0; v < i->i_pvlen; v++) {
-			if (fprintf(fp, "%s%s", v == 0 ? "" : "|", i->i_parents[v]->i_name)
-					< 0)
-				return (1);
-		}
-		if (v == 0 && fputs("root", fp) < 0)
-			return (1);
-		a = i->i_atattr;
-		for (nv = a->a_locs, v = 0; nv != NULL; nv = nv->nv_next, v++) {
-			if (ARRNAME(nv->nv_name, lastname)) {
-				if (fprintf(fp, " %s %s", nv->nv_name, i->i_locs[v]) < 0)
+		if ((ps = i->i_pspec) != NULL) {
+			if (ps->p_atdev != NULL &&
+			    ps->p_atunit != WILD) {
+				if (fprintf(fp, "%s%d", ps->p_atdev->d_name,
+					    ps->p_atunit) < 0)
+					return (1);
+			} else if (ps->p_atdev != NULL) {
+				if (fprintf(fp, "%s?", ps->p_atdev->d_name) < 0)
 					return (1);
 			} else {
-				if (fprintf(fp, " %s %s", nv->nv_name, i->i_locs[v]) < 0)
+				if (fprintf(fp, "%s?", ps->p_iattr->a_name) < 0)
 					return (1);
-				lastname = nv->nv_name;
 			}
+
+			a = ps->p_iattr;
+			for (nv = a->a_locs, v = 0; nv != NULL;
+			     nv = nv->nv_next, v++) {
+				if (ARRNAME(nv->nv_name, lastname)) {
+					if (fprintf(fp, " %s %s",
+					    nv->nv_name, i->i_locs[v]) < 0)
+						return (1);
+				} else {
+					if (fprintf(fp, " %s %s",
+						    nv->nv_name,
+						    i->i_locs[v]) < 0)
+						return (1);
+					lastname = nv->nv_name;
+				}
+			}
+		} else {
+			a = NULL;
+			if (fputs("root", fp) < 0)
+				return (1);
 		}
 
 		if (fputs(" */\n", fp) < 0)
@@ -426,26 +457,27 @@ struct cfdata cfdata[] = {\n\
 			unit = i->i_unit;
 			state = "NORM";
 		}
-		/*
-		if (i->i_ivoff < 0) {
-			vs = "";
-			v = 0;
-		} else {
-			vs = "vec+";
-			v = i->i_ivoff;
-		}*/
 		if (i->i_locoff >= 0) {
-			(void) snprintf(locbuf, sizeof(locbuf), "loc+%3d", i->i_locoff);
+			(void)snprintf(locbuf, sizeof(locbuf), "loc+%3d",
+			    i->i_locoff);
 			loc = locbuf;
-		} else {
+		} else
 			loc = "loc";
-		}
-		if (fprintf(fp, "\
-	    {&%s_ca,%s&%s_cd,%s%2d, %s, %7s, %#6x, pv+%2d,\n\
-	     %scf_locnames},\n",
-				attachment, strlen(attachment) < 6 ? "\t\t" : "\t", basename,
-				strlen(basename) < 3 ? "\t\t" : "\t", unit, state, loc,
-				i->i_cfflags, i->i_pvoff, a->a_locs ? a->a_name : "null") < 0)
+		if (fprintf(fp, "    {\"%s\",%s\"%s\",%s%2d, %s, %7s, %#6x, ",
+			    basename, strlen(basename) < 8 ? "\t\t"
+			    				   : "\t",
+			    attachment, strlen(attachment) < 5 ? "\t\t"
+			    				       : "\t",
+			    unit, state, loc, i->i_cfflags) < 0)
+			return (1);
+		if (ps != NULL) {
+			if (fprintf(fp, "&pspec%d,\n", ps->p_inst) < 0)
+				return (1);
+		} else if (fputs("NULL,\n", fp) < 0)
+			return (1);
+		if (fprintf(fp, "     %scf_locnames},\n",
+			    (a != NULL && a->a_locs != NULL) ? a->a_name
+							     : "null") < 0)
 			return (1);
 	}
 	return (fputs("    {0}\n};\n", fp) < 0);

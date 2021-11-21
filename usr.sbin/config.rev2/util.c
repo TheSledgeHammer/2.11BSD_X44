@@ -173,7 +173,6 @@ sourcepath(const char *file)
 {
 	size_t len;
 	char *cp;
-
 	struct prefix *pf;
 
 	pf = SLIST_EMPTY(&prefixes) ? NULL : SLIST_FIRST(&prefixes);
@@ -195,7 +194,6 @@ sourcepath(const char *file)
 			    pf->pf_prefix, file);
 	} else
 		(void) sprintf(cp, "%s/%s", srcdir, file);
-
 	return (cp);
 }
 

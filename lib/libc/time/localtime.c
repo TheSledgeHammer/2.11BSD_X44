@@ -26,7 +26,7 @@ __RCSID("$NetBSD: localtime.c,v 1.35.4.1 2005/04/16 10:44:52 tron Exp $");
 #include "private.h"
 #include "tzfile.h"
 #include "fcntl.h"
-#include "reentrant.h"
+//#include "reentrant.h"
 
 #ifdef __weak_alias
 __weak_alias(ctime_r,_ctime_r)
@@ -144,47 +144,47 @@ struct rule {
 ** Prototypes for static functions.
 */
 
-static long		detzcode P((const char * codep));
-static const char *	getzname P((const char * strp));
-static const char *	getnum P((const char * strp, int * nump, int min,
-				int max));
-static const char *	getsecs P((const char * strp, long * secsp));
-static const char *	getoffset P((const char * strp, long * offsetp));
-static const char *	getrule P((const char * strp, struct rule * rulep));
-static void		gmtload P((struct state * sp));
-static void		gmtsub P((const time_t * timep, long offset,
-				struct tm * tmp));
-static void		localsub P((const time_t * timep, long offset,
-				struct tm * tmp));
-static int		increment_overflow P((int * number, int delta));
-static int		normalize_overflow P((int * tensptr, int * unitsptr,
-				int base));
-static void		settzname P((void));
-static time_t		time1 P((struct tm * tmp,
-				void(*funcp) P((const time_t *,
-				long, struct tm *)),
-				long offset));
-static time_t		time2 P((struct tm *tmp,
-				void(*funcp) P((const time_t *,
-				long, struct tm*)),
-				long offset, int * okayp));
-static time_t		time2sub P((struct tm *tmp,
-				void(*funcp) P((const time_t *,
-				long, struct tm*)),
-				long offset, int * okayp, int do_norm_secs));
-static void		timesub P((const time_t * timep, long offset,
-				const struct state * sp, struct tm * tmp));
-static int		tmcomp P((const struct tm * atmp,
-				const struct tm * btmp));
-static time_t		transtime P((time_t janfirst, int year,
-				const struct rule * rulep, long offset));
-static int		tzload P((const char * name, struct state * sp));
-static int		tzparse P((const char * name, struct state * sp,
-				int lastditch));
-static void		tzset_unlocked P((void));
-static void		tzsetwall_unlocked P((void));
+static long		detzcode (const char * codep);
+static const char *	getzname (const char * strp);
+static const char *	getnum (const char * strp, int * nump, int min,
+				int max);
+static const char *	getsecs (const char * strp, long * secsp);
+static const char *	getoffset (const char * strp, long * offsetp);
+static const char *	getrule (const char * strp, struct rule * rulep);
+static void		gmtload (struct state * sp);
+static void		gmtsub (const time_t * timep, long offset,
+				struct tm * tmp);
+static void		localsub (const time_t * timep, long offset,
+				struct tm * tmp);
+static int		increment_overflow (int * number, int delta);
+static int		normalize_overflow (int * tensptr, int * unitsptr,
+				int base);
+static void		settzname (void);
+static time_t		time1 (struct tm * tmp,
+				void(*funcp) (const time_t *,
+				long, struct tm *),
+				long offset);
+static time_t		time2 (struct tm *tmp,
+				void(*funcp) (const time_t *,
+				long, struct tm*),
+				long offset, int * okayp);
+static time_t		time2sub (struct tm *tmp,
+				void(*funcp) (const time_t *,
+				long, struct tm*),
+				long offset, int * okayp, int do_norm_secs);
+static void		timesub (const time_t * timep, long offset,
+				const struct state * sp, struct tm * tmp);
+static int		tmcomp (const struct tm * atmp,
+				const struct tm * btmp);
+static time_t		transtime (time_t janfirst, int year,
+				const struct rule * rulep, long offset);
+static int		tzload (const char * name, struct state * sp);
+static int		tzparse (const char * name, struct state * sp,
+				int lastditch);
+static void		tzset_unlocked (void);
+static void		tzsetwall_unlocked (void);
 #ifdef STD_INSPIRED
-static long		leapcorr P((time_t * timep));
+static long		leapcorr (time_t * timep);
 #endif
 
 #ifdef ALL_STATE
@@ -260,7 +260,7 @@ const char * const	codep;
 }
 
 static void
-settzname P((void))
+settzname (void)
 {
 	register struct state * const	sp = lclptr;
 	register int			i;
@@ -969,7 +969,7 @@ struct state * const	sp;
 }
 
 static void
-tzsetwall_unlocked P((void))
+tzsetwall_unlocked (void)
 {
 	if (lcl_is_set < 0)
 		return;
@@ -997,7 +997,7 @@ tzsetwall_unlocked P((void))
 static
 #endif /* !defined STD_INSPIRED */
 void
-tzsetwall P((void))
+tzsetwall (void)
 {
 	rwlock_wrlock(&lcl_lock);
 	tzsetwall_unlocked();
@@ -1005,7 +1005,7 @@ tzsetwall P((void))
 }
 
 static void
-tzset_unlocked P((void))
+tzset_unlocked (void)
 {
 	register const char *	name;
 
@@ -1048,7 +1048,7 @@ tzset_unlocked P((void))
 }
 
 void
-tzset P((void))
+tzset (void)
 {
 	rwlock_wrlock(&lcl_lock);
 	tzset_unlocked();
@@ -1169,10 +1169,10 @@ struct tm * const	tmp;
 	** "UTC+xxxx" or "UTC-xxxx" if offset is non-zero,
 	** but this is no time for a treasure hunt.
 	*/
-	if (offset != 0)
+	if (offset != 0) {
 		/* LINTED const castaway */
 		tmp->TM_ZONE = (__aconst char *)wildabbr;
-	else {
+	} else {
 #ifdef ALL_STATE
 		if (gmtptr == NULL)
 			tmp->TM_ZONE = (__aconst char *)gmt;
@@ -1407,7 +1407,7 @@ register const struct tm * const btmp;
 static time_t
 time2sub(tmp, funcp, offset, okayp, do_norm_secs)
 struct tm * const	tmp;
-void (* const		funcp) P((const time_t*, long, struct tm*));
+void (* const		funcp) (const time_t*, long, struct tm*);
 const long		offset;
 int * const		okayp;
 const int		do_norm_secs;
@@ -1562,7 +1562,7 @@ label:
 static time_t
 time2(tmp, funcp, offset, okayp)
 struct tm * const	tmp;
-void (* const		funcp) P((const time_t*, long, struct tm*));
+void (* const		funcp) (const time_t*, long, struct tm*);
 const long		offset;
 int * const		okayp;
 {
@@ -1580,7 +1580,7 @@ int * const		okayp;
 static time_t
 time1(tmp, funcp, offset)
 struct tm * const	tmp;
-void (* const		funcp) P((const time_t *, long, struct tm *));
+void (* const		funcp) (const time_t *, long, struct tm *);
 const long		offset;
 {
 	register time_t			t;

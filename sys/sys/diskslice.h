@@ -29,7 +29,11 @@
 #ifndef	_SYS_DISKSLICE_H_
 #define	_SYS_DISKSLICE_H_
 
+#ifndef _KERNEL
+#include <sys/types.h>
+#include <sys/null.h>
 #include <sys/reboot.h>
+#endif
 
 struct diskslice {
 	u_long					ds_offset;				/* starting sector */
@@ -66,19 +70,30 @@ struct diskslices {
 #define	dkslice(dev)					((minor(dev) >> 16) & 0x1f)
 #define	dksparebits(dev)       			((minor(dev) >> 25) & 0x7f)
 
+static __inline dev_t
+dkmodpart(dev_t dev, int part)
+{
+	return (makedev(major(dev), (minor(dev) & ~7) | part));
+}
+
+static __inline dev_t
+dkmodslice(dev_t dev, int slice)
+{
+	return (makedev(major(dev), (minor(dev) & ~0x1f0000) | (slice << 16)));
+}
+
 struct buf;
 struct disklabel;
 
-dev_t 	makediskslice(dev_t, int, int, int);
-int		dscheck (struct buf *, struct diskslices *);
-void 	dsclose (dev_t, int, struct diskslices *);
-void 	dsgone (struct diskslices **);
-int		dsinit (dev_t, struct disklabel *, struct diskslices **);
-int		dsioctl (dev_t, u_long, caddr_t, int, struct diskslices **);
-int		dsisopen(struct diskslices *);
-struct diskslices *dsmakeslicestruct (int, struct disklabel *);
-char	*dsname (dev_t, int, int, int, char *);
-int		dsopen (dev_t, int, u_int, struct diskslices **, struct disklabel *);
-int		dssize (dev_t, struct diskslices **);
+dev_t 				makediskslice(dev_t, int, int, int);
+int					dscheck (struct buf *, struct diskslices *);
+void 				dsclose (dev_t, int, struct diskslices *);
+void 				dsgone (struct diskslices **);
+int					dsioctl (dev_t, u_long, caddr_t, int, struct diskslices **);
+int					dsisopen(struct diskslices *);
+struct diskslices 	*dsmakeslicestruct (int, struct disklabel *);
+char				*dsname (dev_t, int, int, int, char *);
+int					dsopen (struct dkdevice *, dev_t, int, u_int, struct disklabel *);
+int					dssize (struct dkdevice *, dev_t);
 #endif /* _KERNEL */
 #endif /* _SYS_DISKSLICE_H_ */

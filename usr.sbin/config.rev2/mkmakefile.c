@@ -194,7 +194,6 @@ srcpath(struct files *fi)
 #endif
 }
 
-
 static const char *
 prefix_prologue(const char *path)
 {
@@ -345,12 +344,13 @@ emitfiles(FILE *fp, int suffix, int upper_suffix)
 		if ((fi->fi_flags & FI_SEL) == 0)
 			continue;
 		if ((fpath = srcpath(fi)) == NULL)
-			return (1);
+                        return (1);
 		len = strlen(fpath);
-		if (!((fpath[len - 1] == suffix) || (upper_suffix && fpath[len - 1] == toupper(suffix))))
+		if (! ((fpath[len - 1] == suffix) ||
+		    (upper_suffix && fpath[len - 1] == toupper(suffix))))
 			continue;
 		if (*fpath != '/') {
-			len += 3; /* "$S/" */
+			len += 3;	/* "$S/" */
 			if (fi->fi_prefix != NULL)
 				len += strlen(fi->fi_prefix) + 1;
 		}
@@ -365,8 +365,9 @@ emitfiles(FILE *fp, int suffix, int upper_suffix)
 				return (1);
 		} else {
 			if (fi->fi_prefix != NULL) {
-				if (fprintf(fp, "%c%s%s/%s", sp, prefix_prologue(fi->fi_prefix),
-						fi->fi_prefix, fi->fi_path) < 0)
+				if (fprintf(fp, "%c%s%s/%s", sp,
+				    prefix_prologue(fi->fi_prefix),
+				    fi->fi_prefix, fi->fi_path) < 0)
 					return (1);
 			} else {
 				if (fprintf(fp, "%c$S/%s", sp, fi->fi_path) < 0)

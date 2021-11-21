@@ -56,16 +56,16 @@
  */
 struct hashent {
 	// XXXLUKEM: a SIMPLEQ might be more appropriate
-	TAILQ_ENTRY(hashent) h_next;
-	const char *h_name;		/* the string */
-	u_int	h_hash;			/* its hash value */
-	void	*h_value;		/* other values (for name=value) */
+	TAILQ_ENTRY(hashent) 	h_next;
+	const char 				*h_name;		/* the string */
+	u_int					h_hash;			/* its hash value */
+	void					*h_value;		/* other values (for name=value) */
 };
 struct hashtab {
-	size_t	ht_size;		/* size (power of 2) */
-	u_int	ht_mask;		/* == ht_size - 1 */
-	u_int	ht_used;		/* number of entries used */
-	u_int	ht_lim;			/* when to expand */
+	size_t					ht_size;		/* size (power of 2) */
+	u_int					ht_mask;		/* == ht_size - 1 */
+	u_int					ht_used;		/* number of entries used */
+	u_int					ht_lim;			/* when to expand */
 	TAILQ_HEAD(hashenthead, hashent) *ht_tab;
 };
 

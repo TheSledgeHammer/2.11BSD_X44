@@ -63,28 +63,28 @@ const char *s_ifnet;		/* magic attribute */
 const char *s_qmark;
 const char *s_none;
 
-static struct hashtab 	*cfhashtab;	/* for config lookup */
-struct hashtab 			*devitab;		/* etc */
+static struct hashtab *cfhashtab;	/* for config lookup */
+struct hashtab *devitab;		/* etc */
 
-static struct attr 		errattr;
-static struct devbase 	errdev;
-static struct deva 		errdeva;
+static struct attr errattr;
+static struct devbase errdev;
+static struct deva errdeva;
 
-static int 			has_errobj(struct nvlist *, void *);
+static int has_errobj(struct nvlist *, void *);
 static struct nvlist *addtoattr(struct nvlist *, struct devbase *);
-static int 			resolve(struct nvlist **, const char *, const char *, struct nvlist *, int);
-//static struct pspec *getpspec(struct attr *, struct devbase *, int);
-static struct devi 	*newdevi(const char *, int, struct devbase *d);
-static struct devi 	*getdevi(const char *);
-static const char 	*concat(const char *, int);
-static char 		*extend(char *, const char *);
-static int 			split(const char *, size_t, char *, size_t, int *);
-static void 		selectbase(struct devbase *, struct deva *);
-static int 			onlist(struct nvlist *, void *);
-static const char 	**fixloc(const char *, struct attr *, struct nvlist *);
-static const char 	*makedevstr(int, int);
-static const char 	*major2name(int);
-static int 			dev2major(struct devbase *);
+static int resolve(struct nvlist **, const char *, const char *, struct nvlist *, int);
+static struct pspec *getpspec(struct attr *, struct devbase *, int);
+static struct devi *newdevi(const char *, int, struct devbase *d);
+static struct devi *getdevi(const char *);
+static const char *concat(const char *, int);
+static char *extend(char *, const char *);
+static int split(const char *, size_t, char *, size_t, int *);
+static void selectbase(struct devbase *, struct deva *);
+static int onlist(struct nvlist *, void *);
+static const char **fixloc(const char *, struct attr *, struct nvlist *);
+static const char *makedevstr(int, int);
+static const char *major2name(int);
+static int dev2major(struct devbase *);
 
 extern const char *yyfile;
 
@@ -99,7 +99,7 @@ initsem(void)
 
 	TAILQ_INIT(&alldevas);
 
-	//TAILQ_INIT(&allpspecs);
+	TAILQ_INIT(&allpspecs);
 
 	cfhashtab = ht_new();
 	TAILQ_INIT(&allcf);
@@ -630,6 +630,7 @@ dev2major(struct devbase *dev)
 	return (NODEV);
 }
 
+
 /*
  * Make a string description of the device at maj/min.
  */
@@ -846,9 +847,7 @@ newdevi(const char *name, int unit, struct devbase *d)
 	i->i_asame = NULL;
 	i->i_alias = NULL;
 	i->i_at = NULL;
-//	i->i_pspec = NULL;
-	i->i_atattr = NULL;
-	i->i_atdev = NULL;
+	i->i_pspec = NULL;
 	i->i_atdeva = NULL;
 	i->i_locs = NULL;
 	i->i_cfflags = 0;
@@ -866,7 +865,7 @@ void
 adddev(const char *name, const char *at, struct nvlist *loclist, int flags)
 {
 	struct devi *i;		/* the new instance */
-	//struct pspec *p;	/* and its pspec */
+	struct pspec *p;	/* and its pspec */
 	struct attr *attr;	/* attribute that allows attach */
 	struct devbase *ib;	/* i->i_base */
 	struct devbase *ab;	/* not NULL => at another dev */
@@ -881,7 +880,7 @@ adddev(const char *name, const char *at, struct nvlist *loclist, int flags)
 	iba = NULL;
 	if (at == NULL) {
 		/* "at root" */
-//		p = NULL;
+		p = NULL;
 		if ((i = getdevi(name)) == NULL)
 			goto bad;
 		/*
@@ -973,8 +972,8 @@ adddev(const char *name, const char *at, struct nvlist *loclist, int flags)
 		 * Find the parent spec.  If a matching one has not yet been
 		 * created, create one.
 		 */
-//		p = getpspec(attr, ab, atunit);
-//		p->p_devs = newnv(NULL, NULL, i, 0, p->p_devs);
+		p = getpspec(attr, ab, atunit);
+		p->p_devs = newnv(NULL, NULL, i, 0, p->p_devs);
 
 		/* find out which attachment it uses */
 		hit = 0;
@@ -989,11 +988,8 @@ adddev(const char *name, const char *at, struct nvlist *loclist, int flags)
 	if ((i->i_locs = fixloc(name, attr, loclist)) == NULL)
 		goto bad;
 	i->i_at = at;
-	i->i_atattr = attr;
-	i->i_atdev = ab;
-//	i->i_pspec = p;
+	i->i_pspec = p;
 	i->i_atdeva = iba;
-	i->i_atunit = atunit;
 	i->i_cfflags = flags;
 
 	*iba->d_ipp = i;
@@ -1115,7 +1111,6 @@ fixdevis(void)
 /*
  * Look up a parent spec, creating a new one if it does not exist.
  */
-/*
 static struct pspec *
 getpspec(struct attr *attr, struct devbase *ab, int atunit)
 {
@@ -1139,7 +1134,6 @@ getpspec(struct attr *attr, struct devbase *ab, int atunit)
 
 	return (p);
 }
-*/
 
 /*
  * Define a new instance of a specific device.

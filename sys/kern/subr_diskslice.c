@@ -26,13 +26,6 @@
  * $FreeBSD$
  */
 
-/*
- * TODO:
- * Fix Following:
- * - dsname()
- * - dssize()
- */
-
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -42,11 +35,11 @@
 #include <sys/syslog.h>
 #include <sys/time.h>
 #include <sys/disklabel.h>
+#include <sys/diskslice.h>
 #include <sys/disk.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
 #include <sys/stat.h>
-#include <sys/diskslice.h>
 #include <sys/conf.h>
 
 #include <ufs/ffs/fs.h>
@@ -518,9 +511,9 @@ dsmakeslicestruct(nslices, lp)
 }
 
 char *
-dsname(dev, dkname, unit, slice, part, partname)
-	dev_t	dev;
-	char	*dkname;
+dsname(disk, dev, unit, slice, part, partname)
+	struct dkdevice *disk;
+	dev_t			dev;
 	int		unit;
 	int		slice;
 	int		part;
@@ -529,7 +522,7 @@ dsname(dev, dkname, unit, slice, part, partname)
 	static char name[32];
 	const char *dname;
 
-	dname = dkname;
+	dname = disk_name(disk, dev);
 	if (strlen(dname) > 16) {
 		dname = "nametoolong";
 	}
@@ -538,24 +531,24 @@ dsname(dev, dkname, unit, slice, part, partname)
 	if (slice != WHOLE_DISK_SLICE || part != RAW_PART) {
 		partname[0] = 'a' + part;
 		partname[1] = '\0';
-		if (slice != COMPATIBILITY_SLICE)
+		if (slice != COMPATIBILITY_SLICE) {
 			snprintf(name + strlen(name), sizeof(name) - strlen(name), "s%d", slice - 1);
+		}
 	}
 	return (name);
 }
-
 /*
  * This should only be called when the unit is inactive and the strategy
  * routine should not allow it to become active unless we call it.  Our
  * strategy routine must be special to allow activity.
  */
 int
-dsopen(dev, mode, flags, sspp, lp)
-	dev_t	dev;
-	int		mode;
-	u_int	flags;
-	struct diskslices **sspp;
-	struct disklabel *lp;
+dsopen(disk, dev, mode, flags, lp)
+	struct dkdevice 	*disk;
+	dev_t				dev;
+	int					mode;
+	u_int				flags;
+	struct disklabel 	*lp;
 {
 	dev_t dev1;
 	int error;
@@ -572,7 +565,8 @@ dsopen(dev, mode, flags, sspp, lp)
 
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
-		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long)lp->d_secsize);
+		printf("%s: invalid sector size %lu\n", devtoname(dev),
+				(u_long) lp->d_secsize);
 		return (EINVAL);
 	}
 
@@ -580,26 +574,25 @@ dsopen(dev, mode, flags, sspp, lp)
 	 * XXX reinitialize the slice table unless there is an open device
 	 * on the unit.  This should only be done if the media has changed.
 	 */
-	ssp = *sspp;
+	ssp = disk_slices(disk, dev);
 	if (!dsisopen(ssp)) {
 		if (ssp != NULL)
-			dsgone(sspp);
+			dsgone(ssp);
 		/*
 		 * Allocate a minimal slices "struct".  This will become
 		 * the final slices "struct" if we don't want real slices
 		 * or if we can't find any real slices.
 		 */
-		*sspp = dsmakeslicestruct(BASE_SLICE, lp);
+		ssp = dsmakeslicestruct(BASE_SLICE, lp);
 
 		if (!(flags & DSO_ONESLICE)) {
 			TRACE(("dsinit\n"));
-			error = dsinit(dev, lp, sspp);
+			error = dsinit(dev, lp, ssp);
 			if (error != 0) {
-				dsgone(sspp);
+				dsgone(ssp);
 				return (error);
 			}
 		}
-		ssp = *sspp;
 		ssp->dss_oflags = flags;
 
 		/*
@@ -607,20 +600,16 @@ dsopen(dev, mode, flags, sspp, lp)
 		 * slice cover the whole disk.
 		 */
 		if (ssp->dss_nslices == BASE_SLICE)
-			ssp->dss_slices[COMPATIBILITY_SLICE].ds_size
-				= lp->d_secperunit;
+			ssp->dss_slices[COMPATIBILITY_SLICE].ds_size = lp->d_secperunit;
 
 		/* Point the compatibility slice at the BSD slice, if any. */
 		for (slice = BASE_SLICE; slice < ssp->dss_nslices; slice++) {
 			sp = &ssp->dss_slices[slice];
 			if (sp->ds_type == DOSPTYP_386BSD /* XXX */) {
 				ssp->dss_first_bsd_slice = slice;
-				ssp->dss_slices[COMPATIBILITY_SLICE].ds_offset
-					= sp->ds_offset;
-				ssp->dss_slices[COMPATIBILITY_SLICE].ds_size
-					= sp->ds_size;
-				ssp->dss_slices[COMPATIBILITY_SLICE].ds_type
-					= sp->ds_type;
+				ssp->dss_slices[COMPATIBILITY_SLICE].ds_offset = sp->ds_offset;
+				ssp->dss_slices[COMPATIBILITY_SLICE].ds_size = sp->ds_size;
+				ssp->dss_slices[COMPATIBILITY_SLICE].ds_type = sp->ds_type;
 				break;
 			}
 		}
@@ -632,30 +621,27 @@ dsopen(dev, mode, flags, sspp, lp)
 	/* Initialize secondary info for all slices.  */
 	for (slice = 0; slice < ssp->dss_nslices; slice++) {
 		sp = &ssp->dss_slices[slice];
-		if (sp->ds_label != NULL
-#ifdef __alpha__
-		    && slice != WHOLE_DISK_SLICE
-#endif
-		    )
+		if (sp->ds_label != NULL)
 			continue;
 		dev1 = dkmodslice(dkmodpart(dev, RAW_PART), slice);
 #if 0
-		sname = dsname(dev, unit, slice, RAW_PART, partname);
+			sname = dsname(disk, dev, unit, slice, RAW_PART, partname);
 #else
-		*partname='\0';
-		sname = dsname(dev, unit, slice, RAW_PART, partname);
+		*partname = '\0';
+		sname = dsname(disk, dev, unit, slice, RAW_PART, partname);
 #endif
 		/*
 		 * XXX this should probably only be done for the need_init
 		 * case, but there may be a problem with DIOCSYNCSLICEINFO.
 		 */
-		set_ds_wlabel(ssp, slice, TRUE);	/* XXX invert */
+		set_ds_wlabel(ssp, slice, TRUE); /* XXX invert */
 		lp1 = clone_label(lp);
 		TRACE(("readdisklabel\n"));
-		if (flags & DSO_NOLABELS)
+		if (flags & DSO_NOLABELS) {
 			msg = NULL;
-		else {
-			msg = readdisklabel(dev1, lp1);
+		} else {
+
+			msg = readdisklabel(disk, disk->dk_driver->d_strategy, lp1);
 
 			/*
 			 * readdisklabel() returns NULL for success, and an
@@ -687,13 +673,12 @@ dsopen(dev, mode, flags, sspp, lp)
 			continue;
 		}
 		if (lp1->d_flags & D_BADSECT) {
-			log(LOG_ERR, "%s: bad sector table not supported\n",
-			    sname);
+			log(LOG_ERR, "%s: bad sector table not supported\n", sname);
 			free(lp1, M_DEVBUF);
 			continue;
 		}
 		set_ds_label(ssp, slice, lp1);
-		set_ds_labeldevs(dev1, ssp);
+		set_ds_labeldevs(dev, ssp);
 		set_ds_wlabel(ssp, slice, FALSE);
 	}
 
@@ -703,32 +688,35 @@ dsopen(dev, mode, flags, sspp, lp)
 	sp = &ssp->dss_slices[slice];
 	part = dkpart(dev);
 	if (part != RAW_PART
-	    && (sp->ds_label == NULL || part >= sp->ds_label->d_npartitions))
-		return (EINVAL);	/* XXX needs translation */
+			&& (sp->ds_label == NULL || part >= sp->ds_label->d_npartitions))
+		return (EINVAL); /* XXX needs translation */
 	mask = 1 << part;
 	sp->ds_openmask |= mask;
+
 	return (0);
 }
 
 int
-dssize(dev, sspp)
-	dev_t	dev;
-	struct diskslices **sspp;
+dssize(disk, dev)
+	struct dkdevice *disk;
+	dev_t			dev;
 {
 	struct disklabel *lp;
+	struct diskslices *ssp;
+	struct dkdriver *dkr;
 	int	part;
 	int	slice;
-	struct diskslices *ssp;
 
-	slice = dkslice(dev);
 	part = dkpart(dev);
-	ssp = *sspp;
+	slice = dkslice(dev);
+	dkr = disk_driver(disk, dev);
+	ssp = disk_slices(disk, dev);
 	if (ssp == NULL || slice >= ssp->dss_nslices || !(ssp->dss_slices[slice].ds_openmask & (1 << part))) {
-		if (dkdriver_open(dev, FREAD, S_IFCHR, (struct proc*) NULL) != 0) {
+		if (dkr->d_open(disk, dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL) != 0) {
 			return (-1);
 		}
-		dkdriver_close(dev, FREAD, S_IFCHR, (struct proc*) NULL);
-		ssp = *sspp;
+		dkr->d_close(disk, dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL);
+		ssp = disk_slices(disk, dev);
 	}
 	lp = ssp->dss_slices[slice].ds_label;
 	if (lp == NULL) {

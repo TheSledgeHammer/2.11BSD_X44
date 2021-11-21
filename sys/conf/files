@@ -57,6 +57,7 @@ file	kern/subr_cputopo.c
 file	kern/subr_devsw.c
 file	kern/subr_disk.c
 file	kern/subr_disklabel.c
+file	kern/subr_diskslice.c
 file	kern/subr_extent.c
 file	kern/subr_hints.c
 file	kern/subr_log.c

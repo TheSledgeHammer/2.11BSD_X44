@@ -70,7 +70,7 @@ dkdriver_strategy(disk, bp)
 	s = splbio();
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
-		dkustart(unit);
+		dkstart(unit);
 		if (bp->b_active == 0) {
 			dkstart();
 		}

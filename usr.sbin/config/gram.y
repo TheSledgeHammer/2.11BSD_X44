@@ -236,6 +236,7 @@ include:
 package:
 	PACKAGE filename		{ package($2); };
 
+
 prefix:
 	PREFIX filename			{ prefix_push($2); } |
 	PREFIX				{ prefix_pop(); };

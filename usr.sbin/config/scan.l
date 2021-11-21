@@ -61,12 +61,12 @@ const char *lastfile;
  * Data for returning to previous files from include files.
  */
 struct incl {
-	struct	incl *in_prev;	/* previous includes in effect, if any */
-	YY_BUFFER_STATE in_buf;	/* previous lex state */
-	const char *in_fname;	/* previous file name */
-	int	in_lineno;	/* previous line number */
-	int	in_ateof;	/* token to insert at EOF */
-	int	in_interesting;	/* previous value for "interesting" */
+	struct	incl *in_prev;		/* previous includes in effect, if any */
+	YY_BUFFER_STATE in_buf;		/* previous lex state */
+	const char 	*in_fname;		/* previous file name */
+	int			in_lineno;		/* previous line number */
+	int			in_ateof;		/* token to insert at EOF */
+	int			in_interesting;	/* previous value for "interesting" */
 };
 static struct incl *incl;
 static int endinclude(void);
@@ -82,8 +82,8 @@ WORD	[A-Za-z_][-A-Za-z_0-9]*
 		/* Local variables for yylex() */
 		int tok;
 
-and		return AND;
-at		return AT;
+and			return AND;
+at			return AT;
 attach		return ATTACH;
 block		return BLOCK;
 build		return BUILD;
@@ -114,9 +114,9 @@ maxusers	return MAXUSERS;
 minor		return MINOR;
 needs-count	return NEEDS_COUNT;
 needs-flag	return NEEDS_FLAG;
-no		return NO;
+no			return NO;
 object		return XOBJECT;
-on		return ON;
+on			return ON;
 options		return OPTIONS;
 package		return PACKAGE;
 prefix		return PREFIX;
@@ -317,7 +317,8 @@ include(const char *fname, int ateof, int conditional, int direct)
 		s = emalloc(strlen(pf->pf_prefix) + strlen(fname));
 		sprintf(s, "%s/%s", pf->pf_prefix, fname + 2);
 	} else
-		s = sourcepath(fname);
+	
+	s = sourcepath(fname);
 	if ((fp = fopen(s, "r")) == NULL) {
 		if (conditional == 0)
 			error("cannot open %s for reading: %s\n", s,
@@ -328,6 +329,7 @@ include(const char *fname, int ateof, int conditional, int direct)
 		free(s);
 		return (-1);
 	}
+	
 	if (curdir_push(s) == -1) {
 		error("cannot record current working directory for %s\n", s);
 		fclose(fp);

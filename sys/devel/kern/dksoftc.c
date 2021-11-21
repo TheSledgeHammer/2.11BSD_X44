@@ -46,6 +46,7 @@ dk_open(dksc, dev, flags, fmt, p)
 	int	part = dkpart(dev);
 	int	pmask = 1 << part;
 	int	ret = 0;
+	int error;
 
 	dk = dksc->sc_dkdev;
 	dkr = disk_driver(dk, dev);
@@ -57,6 +58,10 @@ dk_open(dksc, dev, flags, fmt, p)
 
 	part = dkpart(dev);
 	pmask = 1 << part;
+
+	error = DKR_OPEN(dk, dev, flags, fmt, p);
+
+
 }
 
 int

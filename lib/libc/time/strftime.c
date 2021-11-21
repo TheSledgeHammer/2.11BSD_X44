@@ -72,12 +72,12 @@ static const char	sccsid[] = "@(#)strftime.c	5.4 (Berkeley) 3/14/89";
 #include "fcntl.h"
 #include "locale.h"
 
-#include "sys/localedef.h"
+//#include "sys/localedef.h"
 #define Locale	_CurrentTimeLocale
 
-static char *	_add P((const char *, char *, const char *));
-static char *	_conv P((int, const char *, char *, const char *));
-static char *	_fmt P((const char *, const struct tm *, char *, const char *, int *));
+static char *	_add (const char *, char *, const char *);
+static char *	_conv (int, const char *, char *, const char *);
+static char *	_fmt (const char *, const struct tm *, char *, const char *, int *);
 
 #define NO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU
 

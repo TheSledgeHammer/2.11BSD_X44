@@ -41,7 +41,7 @@ __RCSID("$NetBSD: strptime.c,v 1.22 2000/12/20 20:56:34 christos Exp $");
 #endif
 
 #include "namespace.h"
-#include <sys/localedef.h>
+//#include <sys/localedef.h>
 #include <ctype.h>
 #include <locale.h>
 #include <string.h>
@@ -63,7 +63,7 @@ __weak_alias(strptime,_strptime)
 #define	LEGAL_ALT(x)		{ if (alt_format & ~(x)) return (0); }
 
 
-static	int conv_num __P((const unsigned char **, int *, int, int));
+static	int conv_num (const unsigned char **, int *, int, int);
 
 
 char *

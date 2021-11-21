@@ -50,6 +50,7 @@
 #include <sys/queue.h>
 #include <sys/device.h>
 #include <sys/disklabel.h>
+#include <sys/diskslice.h>
 #include <sys/ioctl.h>
 #include <sys/ioccom.h>
 
@@ -86,7 +87,7 @@
  */
 struct buf;
 struct disklabel;
-//struct cpu_disklabel;
+struct diskslices;
 
 struct disklist_head;
 TAILQ_HEAD(disklist_head, dkdevice);				/* the disklist is a TAILQ */
@@ -110,7 +111,7 @@ struct dkdevice {
 	struct dkdriver 		*dk_driver;				/* pointer to driver */
 	daddr_t					dk_labelsector;			/* sector containing label */
 	struct disklabel 		dk_label;				/* label */
-	//struct diskslices		dk_slices;				/* slices */
+	struct diskslices		dk_slices;				/* slices */
 	struct partition 		dk_parts[MAXPARTITIONS];/* in-kernel portion */
 	//struct diskslice		dk_slice;				/* slice */
 	//struct cpu_disklabel 	*dk_cpulabel;
@@ -123,7 +124,7 @@ struct dkdriver {
 	int						(*d_close) (dev_t, int, int, struct proc *);
 	int						(*d_ioctl) (dev_t, int, caddr_t, int, struct proc *);
 	int						(*d_dump) (dev_t);
-	void					(*d_start) (struct buf */*, daddr_t*/);
+	void					(*d_start) (struct buf *);
 	int						(*d_mklabel) (struct dkdevice *);
 };
 
@@ -168,7 +169,7 @@ struct disksort_stats {
 #define dkminor(unit, part)	(((unit) << 3) | (part))
 
 #ifdef KERNEL
-extern	int disk_count;			/* number of disks in global disklist */
+extern	int 		disk_count;			/* number of disks in global disklist */
 
 void				disk_init (void);
 void				disk_attach (struct dkdevice *);
@@ -184,9 +185,8 @@ int					diskerr (struct dkdevice *, struct buf *, char *, int, int);
 char 				*disk_name(struct dkdevice *, dev_t);
 struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);
 struct disklabel	disk_label(struct dkdevice *, dev_t);
+struct diskslices	disk_slices(struct dkdevice *, dev_t);
 struct partition	disk_partition(struct dkdevice *, dev_t);
 struct device		disk_device(struct dkdevice *, dev_t);
-
-//struct diskslice	disk_slice(struct dkdevice *, dev_t);
 #endif
 #endif /* _SYS_DISK_H_ */
