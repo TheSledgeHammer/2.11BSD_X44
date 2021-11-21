@@ -54,7 +54,7 @@
 #define	_I386_PMAP_NOPAE_H
 
 #define	PD_SHIFT		22
-#define	PG_FRAME		(~PAGE_MASK)
+//#define	PG_FRAME		(~PAGE_MASK)
 #define	PG_PS_FRAME		(0xffc00000)			/* PD_MASK_NOPAE */
 
 #define	NTRPPTD			1
