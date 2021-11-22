@@ -38,9 +38,10 @@ struct slab_metadata {
     int                         sm_bslots;           							/* bucket slots available */
     int							sm_aslots;										/* bucket slots to be allocated */
     int                      	sm_fslots;       								/* bucket slots free */
-
     u_long 						sm_bsize; 										/* bucket size */
     u_long 						sm_bindx;	 									/* bucket index */
+    u_long 						sm_min;											/* bucket min */
+    u_long 						sm_max;											/* bucket max */
 };
 typedef struct slab_metadata    *slab_metadata_t;
 
@@ -92,13 +93,13 @@ int			                    slab_count;                                     /* num
 #define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
 
 /* proto types */
-void				slab_init(void);
 slab_t				slab_object(slab_cache_t, long);
 slab_t  			slab_lookup(slab_cache_t, long, int);
-void				slab_insert(slab_cache_t, long, int, int);
+void				slab_insert(slab_cache_t, long, int);
 void				slab_remove(slab_cache_t, long);
 struct kmembuckets 	*slab_kmembucket(slab_t);
 struct kmembuckets 	*kmembucket_search(slab_cache_t, slab_metadata_t, long, int, int);
+
 /*
 #define	MALLOC(space, cast, size, type, flags) { 					\
 	register struct kmembuckets *kbp = &slab_list[BUCKETINDX(size)].s_bucket; 	\

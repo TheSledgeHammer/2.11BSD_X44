@@ -240,8 +240,6 @@ struct kmemusage {
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
-//	struct slab			*kb_slab;		/* slab alloctor */
-
 	caddr_t 			kb_next;		/* list of free blocks */
 	caddr_t 			kb_last;		/* last free block */
 

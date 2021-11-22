@@ -66,7 +66,7 @@
  *	Resident memory system definitions.
  */
 
-#ifndef	_VM_PAGE_
+//#ifndef	_VM_PAGE_
 #define	_VM_PAGE_
 
 #include <devel/vm/include/vm.h>
@@ -108,7 +108,6 @@ struct vm_page {
 	vm_offset_t				offset;		/* offset into segment (O,(S,P)) */
 
 	vm_anon_t				anon;		/* anon (O,(S,P)) */
-	u_short					loan_count;
 	u_short					pqflags;	/* page queue flags [P] */
 
 	u_short					wire_count;	/* wired down maps refs (P) */
@@ -140,7 +139,7 @@ struct vm_page {
 #define PG_FREE				0x08000		/* page is on free list */
 #define PG_ANON				0x10000		/* page is part of an anon, rather than an vm_object */
 #define PG_AOBJ				0x20000		/* page is part of an anonymous vm_object */
-#define PG_SWAPBACKED		(PQ_ANON|PQ_AOBJ)
+#define PG_SWAPBACKED		(PG_ANON|PG_AOBJ)
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { 											\

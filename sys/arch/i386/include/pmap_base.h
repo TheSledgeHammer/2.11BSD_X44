@@ -77,6 +77,8 @@ struct pmap_args {
 	boolean_t (*pmap_is_referenced)(vm_offset_t pa);
 	boolean_t (*pmap_is_modified)(vm_offset_t pa);
 	vm_offset_t (*pmap_phys_address)(int ppn);
+	void (*pmap_kenter)(vm_offset_t va, vm_offset_t pa);
+	void (*pmap_kremove)(vm_offset_t va);
 	void (*i386_protection_init)();
 	boolean_t (*pmap_testbit)(vm_offset_t pa, int bit);
 	void (*pmap_changebit)(vm_offset_t pa, int bit, boolean_t setem);

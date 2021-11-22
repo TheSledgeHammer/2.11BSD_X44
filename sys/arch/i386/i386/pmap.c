@@ -1010,15 +1010,10 @@ pmap_remove(pmap, sva, eva)
 		do {
 			bits |= *(int *)pte & (PG_U|PG_M);
 			*(int *)pte++ = 0;
-			/*TBIS(va + ix * I386_PAGE_SIZE);*/
 		} while (++ix != i386pagesperpage);
 		if (pmap == &curproc->p_vmspace->vm_pmap) {
 			pmap_activate(pmap, (struct pcb *)curproc->p_addr);
 		}
-		/* are we current address space or kernel? */
-		/*if (pmap->pm_pdir[PTDPTDI].pd_pfnum == PTDpde.pd_pfnum
-			|| pmap == kernel_pmap)
-		load_cr3(curpcb->pcb_ptd);*/
 		tlbflush();
 
 #ifdef needednotdone
@@ -1199,7 +1194,6 @@ pmap_protect(pmap, sva, eva, prot)
 		do {
 			/* clear VAC here if PG_RO? */
 			pmap_pte_set_prot(pte++, i386prot);
-			/*TBIS(va + ix * I386_PAGE_SIZE);*/
 		} while (++ix != i386pagesperpage);
 	}
 out:
@@ -1402,7 +1396,6 @@ validate:
 	ix = 0;
 	do {
 		*(int*) pte++ = npte;
-		/*TBIS(va);*/
 		npte += I386_PAGE_SIZE;
 		va += I386_PAGE_SIZE;
 	} while (++ix != i386pagesperpage);
@@ -1411,8 +1404,6 @@ validate:
 #ifdef DEBUGx
 cache, tlb flushes
 #endif
-	/*pads(pmap);*/
-	/*load_cr3(((struct pcb *)curproc->p_addr)->pcb_ptd);*/
 	tlbflush();
 }
 
@@ -1657,11 +1648,6 @@ int x;
 		pg("pmap_activate(%x, %x) ", pmap, pcbp);
 #endif
 	PMAP_ACTIVATE(pmap, pcbp);
-/*printf("pde ");
-for(x=0x3f6; x < 0x3fA; x++)
-	printf("%x ", pmap->pm_pdir[x]);*/
-/*pads(pmap);*/
-/*pg(" pcb_cr3 %x", pcbp->pcb_cr3);*/
 }
 
 /*
@@ -1751,16 +1737,12 @@ pmap_pageable(pmap, sva, eva, pageable)
 		if ((pmapdebug & (PDB_FOLLOW|PDB_PTPAGE)) == PDB_PTPAGE)
 			printf("pmap_pageable(%x, %x, %x, %x)", pmap, sva, eva, pageable);
 #endif
-		/*if (!pmap_pde_v(pmap_pde(pmap, sva)))
-			return;*/
 		if(pmap_pte(pmap, sva) == 0)
 			return;
 		pa = pmap_pte_pa(pmap_pte(pmap, sva));
 		if (pa < vm_first_phys || pa >= vm_last_phys)
 			return;
 		pv = pa_to_pvh(pa);
-		/*if (!ispt(pv->pv_va))
-			return;*/
 #ifdef DEBUG
 		if (pv->pv_va != sva || pv->pv_next) {
 			pg("pmap_pageable: bad PT page va %x next %x\n", pv->pv_va, pv->pv_next);
@@ -1850,14 +1832,53 @@ pmap_is_modified(pa)
 		return(rv);
 	}
 #endif
-	return(pmap_testbit(pa, PG_M));
+	return (pmap_testbit(pa, PG_M));
 }
 
 vm_offset_t
 pmap_phys_address(ppn)
 	int ppn;
 {
-	return(i386_ptob(ppn));
+	return (i386_ptob(ppn));
+}
+
+/*
+ * add a wired page to the kva
+ * note that in order for the mapping to take effect -- you
+ * should do a pmap_update after doing the pmap_kenter...
+ */
+void
+pmap_kenter(va, pa)
+	vm_offset_t va;
+	register vm_offset_t pa;
+{
+	register pt_entry_t *pte;
+	int wasvalid = 0;
+
+	pte = vtopte(va);
+
+	if (*pte)
+		wasvalid++;
+
+	*pte = (pt_entry_t) ((int) (pa | PG_RW | PG_V | PG_W));
+
+	if (wasvalid)
+		pmap_update();
+}
+
+/*
+ * remove a page from the kernel pagetables
+ */
+void
+pmap_kremove(va)
+	vm_offset_t va;
+{
+	register pt_entry_t *pte;
+
+	pte = vtopte(va);
+
+	*pte = (pt_entry_t) 0;
+	pmap_update();
 }
 
 /*

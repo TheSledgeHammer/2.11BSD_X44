@@ -307,6 +307,18 @@ pmap_phys_address(int ppn)
 }
 
 void
+pmap_kenter(vm_offset_t va, vm_offset_t pa)
+{
+	pmap_args_ptr->pmap_kenter(va, pa);
+}
+
+void
+pmap_kremove(vm_offset_t va)
+{
+	pmap_args_ptr->pmap_kremove(va);
+}
+
+void
 i386_protection_init()
 {
 	pmap_args_ptr->i386_protection_init();

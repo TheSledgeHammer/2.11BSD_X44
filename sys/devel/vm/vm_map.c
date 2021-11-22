@@ -144,9 +144,6 @@ vm_map_t		kmap_free;
 static void	_vm_map_clip_end (vm_map_t, vm_map_entry_t, vm_offset_t);
 static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
 
-static void	vm_map_reference_amap(struct vm_map_entry *, int);
-static void	vm_map_unreference_amap(struct vm_map_entry *, int);
-
 void
 vm_map_startup()
 {

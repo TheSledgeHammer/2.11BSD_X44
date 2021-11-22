@@ -245,6 +245,9 @@ vm_object_deallocate(object)
 
 	while (object != NULL) {
 
+		/* detach aobject */
+		vm_aobject_detach(object);
+
 		/*
 		 *	The cache holds a reference (uncounted) to
 		 *	the object; we must lock it before removing

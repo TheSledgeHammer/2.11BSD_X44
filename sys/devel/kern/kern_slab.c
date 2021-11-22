@@ -151,14 +151,14 @@ slabmeta(slab, size)
 		meta->sm_fslots = 0;
 	}
 
-	u_long lowerbound = percent(meta->sm_bslots, 0); 	/* lower bucket boundary */
-	u_long upperbound = percent(meta->sm_bslots, 95);  	/* upper bucket boundary */
+	meta->sm_min = percent(meta->sm_bslots, 0); 	/* lower bucket boundary */
+	meta->sm_max = percent(meta->sm_bslots, 95);  	/* upper bucket boundary */
 
-	/* test if free bucket slots is between 5% to 95% */
-	if((meta->sm_fslots > lowerbound) && (meta->sm_fslots <= upperbound)) {
+	/* test if free bucket slots is greater than 0 and less or equal to 95% */
+	if((meta->sm_fslots > meta->sm_min) && (meta->sm_fslots <= meta->sm_max)) {
 		slab->s_flags |= SLAB_PARTIAL;
 	/* test if free bucket slots is greater than 95% */
-	} else if(meta->sm_fslots > upperbound) {
+	} else if(meta->sm_fslots > meta->sm_max) {
 		slab->s_flags |= SLAB_FULL;
 	} else {
 		slab->s_flags |= SLAB_EMPTY;
@@ -167,8 +167,8 @@ slabmeta(slab, size)
 
 slab_t
 slab_object(cache, size)
-    slab_cache_t cache;
-    long    size;
+    slab_cache_t 	cache;
+    long    		size;
 {
     register slab_t   slab;
     if(LARGE_OBJECT(size)) {
@@ -599,26 +599,30 @@ kmeminit()
 #if	(MAXALLOCSAVE < CLBYTES)
 		ERROR!_kmeminit:_MAXALLOCSAVE_too_small
 #endif
-		npg = VM_KMEM_SIZE / NBPG;
-		kmemusage = (struct kmemusage *) kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
-		kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
+	npg = VM_KMEM_SIZE / NBPG;
+	slabCache = (struct slab_cache*) kmem_alloc(kernel_map,
+			(vm_size_t)(npg * sizeof(struct slab_cache)));
+	kmemusage = (struct kmemusage*) kmem_alloc(kernel_map,
+			(vm_size_t)(npg * sizeof(struct kmemusage)));
+	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t*) &kmembase,
+			(vm_offset_t*) &kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 
-		slabCache = (slab_cache_t) rmalloc(coremap, sizeof(slab_cache_t));
-		CIRCLEQ_INIT(&slabCache->sc_head);
-		slab_count = 0;
+	CIRCLEQ_INIT(&slabCache->sc_head);
+	slab_count = 0;
 
 #ifdef KMEMSTATS
-		for(indx = 0; indx < MINBUCKET + 16; indx++) {
-			if (1 << indx >= CLBYTES) {
-				 &slab_list[indx].s_bucket->kb_elmpercl = 1;
-			} else {
-				&slab_list[indx].s_bucket->kb_elmpercl = CLBYTES / (1 << indx);
-			}
-			&slab_list[indx].s_bucket->kb_highwat = 5 * &slab_list[indx].s_bucket->kb_elmpercl;
+	for (indx = 0; indx < MINBUCKET + 16; indx++) {
+		if (1 << indx >= CLBYTES) {
+			&slab_list[indx].s_bucket->kb_elmpercl = 1;
+		} else {
+			&slab_list[indx].s_bucket->kb_elmpercl = CLBYTES / (1 << indx);
 		}
-		for (indx = 0; indx < M_LAST; indx++) {
-			kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
-		}
+		&slab_list[indx].s_bucket->kb_highwat = 5
+				* &slab_list[indx].s_bucket->kb_elmpercl;
+	}
+	for (indx = 0; indx < M_LAST; indx++) {
+		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
+	}
 #endif
 }
 

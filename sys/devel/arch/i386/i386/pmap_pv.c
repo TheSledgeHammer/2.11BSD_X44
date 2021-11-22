@@ -218,7 +218,6 @@ get_pt_entry(pmap)
 	return (APTmap);
 }
 
-
 /*
  * If it is the first entry on the list, it is actually
  * in the header and we must copy the following entry up
@@ -256,45 +255,6 @@ pmap_remove_entry(pmap, pv, va)
 		}
 	}
 	splx(s);
-}
-
-/*
- * add a wired page to the kva
- * note that in order for the mapping to take effect -- you
- * should do a pmap_update after doing the pmap_kenter...
- */
-void
-pmap_kenter(va, pa)
-	vm_offset_t va;
-	register vm_offset_t pa;
-{
-	register pt_entry_t *pte;
-	int wasvalid = 0;
-
-	pte = vtopte(va);
-
-	if (*pte)
-		wasvalid++;
-
-	*pte = (pt_entry_t) ((int) (pa | PG_RW | PG_V | PG_W));
-
-	if (wasvalid)
-		pmap_update();
-}
-
-/*
- * remove a page from the kernel pagetables
- */
-void
-pmap_kremove(va)
-	vm_offset_t va;
-{
-	register pt_entry_t *pte;
-
-	pte = vtopte(va);
-
-	*pte = (pt_entry_t) 0;
-	pmap_update();
 }
 
 /*
