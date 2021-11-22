@@ -15,18 +15,22 @@
 #include <sys/buf.h>
 #include <sys/signal.h>
 #include <sys/signalvar.h>
+#include <sys/gsched.h>
 #include <vm/include/vm.h>
 
 #include <machine/cpu.h>
 
-#define	SQSIZE	16						/* Must be power of 2 */
-#define	HASH(x)	(((int)x >> 5) & (SQSIZE - 1))
-#define	SCHMAG	8/10
-#define	PPQ		(128 / NQS)				/* priorities per queue */
+/* decay 95% of `p_pctcpu' in 60 seconds; see CCPU_SHIFT before changing */
+fixpt_t	ccpu = 		0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
+#define	CCPU_SHIFT	11
 
-struct proc 	*slpque[SQSIZE];
+#define	SQSIZE		16						/* Must be power of 2 */
+#define	HASH(x)		(((int)x >> 5) & (SQSIZE - 1))
+#define	SCHMAG		8/10
+#define	PPQ			(128 / NQS)				/* priorities per queue */
 
-int				lbolt;					/* once a second sleep address */
+struct proc 		*slpque[SQSIZE];
+int					lbolt;					/* once a second sleep address */
 
 /*
  * Force switch among equal priority processes every 100ms.
@@ -47,7 +51,7 @@ schedcpu(arg)
 	void *arg;
 {
 	register struct proc *p;
-	register int a;
+	register int a, s;
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -65,11 +69,27 @@ schedcpu(arg)
 			psignal(p, SIGALRM);
 			p->p_realtimer.it_value = p->p_realtimer.it_interval;
 		}
+		p->p_swtime++;
 		if (p->p_stat == SSLEEP || p->p_stat == SSTOP)
 			if (p->p_slptime != 127)
 				p->p_slptime++;
-		if (p->p_slptime > 1)
+		p->p_pctcpu = (p->p_pctcpu * ccpu) >> FSHIFT;
+		if (p->p_slptime > 1) {
 			continue;
+		}
+		s = splstatclock();			/* prevent state changes */
+		/*
+		 * p_pctcpu is only for ps.
+		 */
+#if	(FSHIFT >= CCPU_SHIFT)
+		p->p_pctcpu += (hz == 100)?
+			((fixpt_t) p->p_cpticks) << (FSHIFT - CCPU_SHIFT):
+		        	100 * (((fixpt_t) p->p_cpticks)
+				<< (FSHIFT - CCPU_SHIFT)) / hz;
+#else
+		p->p_pctcpu += ((FSCALE - ccpu) * (p->p_cpticks * FSCALE / hz)) >> FSHIFT;
+#endif
+		p->p_cpticks = 0;
 		a = (p->p_cpu & 0377) * SCHMAG + p->p_nice;
 		if (a < 0)
 			a = 0;
@@ -78,11 +98,12 @@ schedcpu(arg)
 		p->p_cpu = a;
 		if (p->p_pri >= PUSER) {
 			setpri(p);
-			if((p != curproc) &&
-					p->p_stat == SRUN &&
-					(p->p_flag & P_INMEM) &&
-					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
-				remrq(p);
+		}
+		if(edf_schedcpu(p)) {
+			if((p != curproc()) && p->p_stat == SRUN && (p->p_flag & P_INMEM) && (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
+				if(cfs_schedcpu(p)) {
+					continue;
+				}
 				p->p_pri = p->p_usrpri;
 				setpri(p);
 			} else {
@@ -90,12 +111,13 @@ schedcpu(arg)
 			}
 		}
 	}
+
 	vmmeter();
 	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
 	}
-	if (bclnlist != NULL) {
+	if(bclnlist != NULL) {
 		wakeup((caddr_t)pageproc);
 	}
 	++runrun;					/* swtch at least once a second */

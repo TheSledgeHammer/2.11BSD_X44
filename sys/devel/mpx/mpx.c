@@ -1172,8 +1172,6 @@ sdata(gp)
 	return ((int) gp);
 }
 
-
-
 struct mpx_chan *
 xcp(gp, x)
 	register struct mpx_group *gp;

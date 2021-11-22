@@ -67,6 +67,7 @@
 #include <sys/protosw.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
+#include <sys/gsched.h>
 #include <sys/ksyms.h>
 #include <vm/include/vm.h>
 
@@ -158,11 +159,6 @@ main(framep)
 	 * Initialize process and pgrp structures.
 	 */
 	procinit();
-
-	/*
-	 * Initialize process lockholder structure
-	 */
-	lockholder_init(p);
 
 	/*
 	 * Initialize device switch tables & kernel environment
@@ -289,6 +285,9 @@ main(framep)
 	/* Initialize kernel profiling. */
 	kmstartup();
 #endif
+
+	/* Initialize Global Scheduler */
+	gsched_init(p);
 
 	/* Kick off timeout driven events by calling first time. */
 	roundrobin(NULL);

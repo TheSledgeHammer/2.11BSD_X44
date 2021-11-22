@@ -584,7 +584,7 @@ dsopen(disk, dev, mode, flags, lp)
 		 * or if we can't find any real slices.
 		 */
 		ssp = dsmakeslicestruct(BASE_SLICE, lp);
-
+/*
 		if (!(flags & DSO_ONESLICE)) {
 			TRACE(("dsinit\n"));
 			error = dsinit(dev, lp, ssp);
@@ -593,6 +593,7 @@ dsopen(disk, dev, mode, flags, lp)
 				return (error);
 			}
 		}
+*/
 		ssp->dss_oflags = flags;
 
 		/*
@@ -678,7 +679,7 @@ dsopen(disk, dev, mode, flags, lp)
 			continue;
 		}
 		set_ds_label(ssp, slice, lp1);
-		set_ds_labeldevs(dev, ssp);
+		set_ds_labeldevs(dev1, ssp);
 		set_ds_wlabel(ssp, slice, FALSE);
 	}
 

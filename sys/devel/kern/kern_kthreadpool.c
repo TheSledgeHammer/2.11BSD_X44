@@ -64,6 +64,7 @@
 #include <sys/user.h>
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
+#include <sys/stdbool.h>
 #include <sys/percpu.h>
 
 #include <vm/include/vm_param.h>
@@ -93,7 +94,7 @@ struct kthreadpool_percpu {
 static LIST_HEAD(, kthreadpool_percpu) 	percpu_kthreadpools;
 
 static struct kthreadpool_unbound *
-kthreadpool_lookup_unbound(u_char pri)
+kthreadpool_lookup_unbound(pid_t pri)
 {
 	struct kthreadpool_unbound *ktpu;
 	LIST_FOREACH(ktpu, &unbound_kthreadpools, ktpu_link) {
@@ -118,7 +119,7 @@ kthreadpool_remove_unbound(struct kthreadpool_unbound *ktpu)
 }
 
 static struct kthreadpool_percpu *
-kthreadpool_lookup_percpu(u_char pri)
+kthreadpool_lookup_percpu(pid_t pri)
 {
 	struct kthreadpool_percpu *ktpp;
 
@@ -156,7 +157,7 @@ kthreadpool_init(void)
 /* KThread pool creation */
 
 static int
-kthreadpool_create(struct kthreadpool *ktpool, u_char pri)
+kthreadpool_create(struct kthreadpool *ktpool, pid_t pri)
 {
 	struct proc *p;
 	int ktflags;
@@ -238,7 +239,7 @@ kthreadpool_rele(ktpool)
 /* Unbound thread pools */
 
 int
-kthreadpool_get(struct kthreadpool **ktpoolp, u_char pri)
+kthreadpool_get(struct kthreadpool **ktpoolp, pid_t pri)
 {
 	struct kthreadpool_unbound *ktpu, *tmp = NULL;
 	int error;
@@ -275,7 +276,7 @@ kthreadpool_get(struct kthreadpool **ktpoolp, u_char pri)
 }
 
 void
-kthreadpool_put(struct kthreadpool *ktpool, u_char pri)
+kthreadpool_put(struct kthreadpool *ktpool, pid_t pri)
 {
 	struct kthreadpool_unbound *ktpu;
 
@@ -405,7 +406,7 @@ kthreadpool_thread(void *arg)
 	/* Wait until we're initialized and on the queue.  */
 	simple_lock(&ktpool->ktp_lock);
 
-	KASSERT(kthread->ktpt_proc == curproc());
+	KASSERT(kthread->ktpt_proc == curproc);
 	for (;;) {
 		/* Wait until we are assigned a job.  */
 		while (kthread->ktpt_job == NULL) {
@@ -421,9 +422,9 @@ kthreadpool_thread(void *arg)
 
 		/* Set our proc name to reflect what job we're doing.  */
 		//proc_lock(curproc);
-		char *const proc_name = curproc()->p_name;
-		kthread->ktpt_kthread_savedname = curproc()->p_name;
-		curproc()->p_name = job->job_name;
+		char *const proc_name = curproc->p_name;
+		kthread->ktpt_kthread_savedname = curproc->p_name;
+		curproc->p_name = job->job_name;
 		//proc_unlock(curproc);
 
 		simple_unlock(&ktpool->ktp_lock);
@@ -432,7 +433,7 @@ kthreadpool_thread(void *arg)
 		(*job->job_func)(job);
 
 		/* proc name restored in threadpool_job_done(). */
-		KASSERTMSG((curproc()->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
+		KASSERTMSG((curproc->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
 
 		/*
 		 * We can compare pointers, but we can no longer deference
@@ -517,16 +518,16 @@ void
 kthreadpool_job_done(struct threadpool_job *job)
 {
 	KASSERT(job->job_ktp_thread != NULL);
-	KASSERT(job->job_ktp_thread->ktpt_proc == curproc());
+	KASSERT(job->job_ktp_thread->ktpt_proc == curproc);
 
 	/*
 	 * We can safely read this field; it's only modified right before
 	 * we call the job work function, and we are only preserving it
 	 * to use here; no one cares if it contains junk afterward.
 	 */
-	//proc_lock(curproc());
-	curproc()->p_name = job->job_ktp_thread->ktpt_kthread_savedname;
-	//proc_unlock(curproc());
+	//proc_lock(curproc);
+	curproc->p_name = job->job_ktp_thread->ktpt_kthread_savedname;
+	//proc_unlock(curproc);
 
 	/*
 	 * Inline the work of threadpool_job_rele(); the job is already

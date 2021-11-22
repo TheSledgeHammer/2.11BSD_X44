@@ -168,7 +168,7 @@ cpu_exit(p)
 	}
 #endif
 
-	curproc() = p;
+	curproc = p;
 	swtch();
 }
 

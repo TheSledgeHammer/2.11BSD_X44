@@ -69,10 +69,7 @@ struct lock_type {
 struct lock_holder {
 	pid_t						lh_pid;
 	struct pgrp 				*lh_pgrp;
-
-	struct proc 				*lh_proc;
-	//struct kthread 				*lh_kthread;
-	//struct uthread 				*lh_uthread;
+	void						*lh_data;			/* data of the current lockholder */
 };
 
 /*
@@ -215,14 +212,6 @@ void 			simple_unlock(struct lock_object *);
 int				simple_lock_try(struct lock_object *);
 
 void			lockholder_init(struct proc *);
-void 			set_proc_lock(struct lock_holder *, struct proc *);
-struct proc 	*get_proc_lock(struct lock_holder *);
-
-/*
-void 			set_kthread_lock(struct lock_holder *, struct kthread *);
-struct kthread 	*get_kthread_lock(struct lock_holder *);
-void 			set_uthread_lock(struct lock_holder *, struct uthread *);
-struct uthread 	*get_uthread_lock(struct lock_holder *);
-*/
-
+void			lockholder_set(struct lock_holder *, void *, pid_t, struct pgrp *);
+void			*lockholder_get(struct lock_holder *, void *);
 #endif /* !_SYS_LOCK_H_ */

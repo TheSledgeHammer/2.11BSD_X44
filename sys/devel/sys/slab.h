@@ -99,5 +99,35 @@ void				slab_insert(slab_cache_t, long, int, int);
 void				slab_remove(slab_cache_t, long);
 struct kmembuckets 	*slab_kmembucket(slab_t);
 struct kmembuckets 	*kmembucket_search(slab_cache_t, slab_metadata_t, long, int, int);
+/*
+#define	MALLOC(space, cast, size, type, flags) { 					\
+	register struct kmembuckets *kbp = &slab_list[BUCKETINDX(size)].s_bucket; 	\
+	long s = splimp(); 												\
+	if (kbp->kb_next == NULL) { 									\
+		(space) = (cast)malloc((u_long)(size), type, flags); 		\
+	} else { 														\
+		(space) = (cast)kbp->kb_next; 								\
+		kbp->kb_next = *(caddr_t *)(space); 						\
+	} 																\
+	splx(s); 														\
+}
 
+#define FREE(addr, type) { 											\
+	register struct kmembuckets *kbp; 								\
+	register struct kmemusage *kup = btokup(addr); 					\
+	long s = splimp(); 												\
+	if (1 << kup->ku_indx > MAXALLOCSAVE) { 						\
+		free((caddr_t)(addr), type); 								\
+	} else { 														\
+		kbp = &slab_list[kup->ku_indx].s_bucket;					\
+		if (kbp->kb_next == NULL) 									\
+			kbp->kb_next = (caddr_t)(addr); 						\
+		else 														\
+			*(caddr_t *)(kbp->kb_last) = (caddr_t)(addr); 			\
+		*(caddr_t *)(addr) = NULL; 									\
+		kbp->kb_last = (caddr_t)(addr); 							\
+	} 																\
+	splx(s); 														\
+}
+*/
 #endif /* _VM_SLAB_H_ */

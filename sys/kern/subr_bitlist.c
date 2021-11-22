@@ -47,14 +47,14 @@
 #include <sys/user.h>
 #include <sys/bitlist.h>
 
-#define BITHASH_MASK 256
-struct bitlist_header   bitset[BITHASH_MASK];
-int 				 	bitlist_counter;
-struct lock_object   	*bitlist_lock;
-ctop_t 					*ctop;
+#define BITHASH_MASK 			256
+struct bitlist_header   		bitset[BITHASH_MASK];
+int 				 			bitlist_counter;
+struct lock_object   			*bitlist_lock;
+ctop_t 							*ctop;
 
-#define bitlist_lock(lock) 	(simple_lock(lock))
-#define bitlist_unlock(lock) (simple_unlock(lock))
+#define bitlist_lock(lock) 		(simple_lock(lock))
+#define bitlist_unlock(lock) 	(simple_unlock(lock))
 
 void
 ctop_init(void)

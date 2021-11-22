@@ -21,6 +21,8 @@ file	kern/exec_script.c					exec_script
 file	kern/exec_subr.c
 file	kern/exec_xcoff32.c					exec_xcoff32
 file	kern/exec_xcoff64.c					exec_xcoff64
+file	kern/gsched_cfs.c					
+file	kern/gsched_edf.c							
 file	kern/init_main.c
 file	kern/init_sysent.c
 file	kern/kern_acct.c
@@ -33,6 +35,7 @@ file	kern/kern_exec.c
 file	kern/kern_exit.c
 file	kern/kern_fork.c
 file	kern/kern_ktrace.c					ktrace
+file	kern/kern_gsched.c
 file	kern/kern_ksyms.c
 file	kern/kern_lock.c
 file	kern/kern_malloc.c

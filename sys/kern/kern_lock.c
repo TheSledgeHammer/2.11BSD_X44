@@ -92,8 +92,7 @@ lockinit(lkp, prio, wmesg, timo, flags)
 	lkp->lk_wmesg = wmesg;
 
 	/* lock holder */
-	lkp->lk_lockholder = &kernel_lockholder;
-	LOCKHOLDER_PID(lkp->lk_lockholder) = LK_NOPROC;
+	lockholder_init(lkp->lk_lockholder, LK_NOPROC, NULL);
 }
 
 /* Determine the status of a lock. */
@@ -619,88 +618,41 @@ lock_object_try(lock)
 /*
  * Lock Holder:
  */
-static void
-lockholder_alloc(holder)
-	struct lock_holder *holder;
+void
+lockholder_init(holder, pid, pgrp)
+	struct lock_holder 	*holder;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
 {
-	MALLOC(holder, struct lock_holder *, M_LOCK, M_WAITOK);
+	holder = &kernel_lockholder;
 	memset(holder, 0, sizeof(struct lock_holder));
+	holder->lh_pid = pid;
+	holder->lh_pgrp = pgrp;
 }
 
 void
-lockholder_init(proc)
-	struct proc *proc;
+lockholder_set(holder, data, pid, pgrp)
+	struct lock_holder 	*holder;
+	void 				*data;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
 {
-	/*
-	struct kthread *kthread;
-	struct uthread *uthread;
-	kthread = proc->p_kthreado;
-	uthread = kthread->kt_uthreado;
-	*/
-	lockholder_alloc(&kernel_lockholder);
-	PROC_LOCKHOLDER(kernel_lockholder) = proc;
-	//KTHREAD_LOCKHOLDER(kernel_lockholder) = kthread;
-	//UTHREAD_LOCKHOLDER(kernel_lockholder) = uthread;
+	if(holder == NULL) {
+		holder = &kernel_lockholder;
+		memset(holder, 0, sizeof(struct lock_holder));
+	}
+	holder->lh_data = data;
+	holder->lh_pid = pid;
+	holder->lh_pgrp = pgrp;
 }
 
-void
-set_proc_lock(holder, proc)
+void *
+lockholder_get(holder, data)
 	struct lock_holder 	*holder;
-	struct proc 		*proc;
+	void 				*data;
 {
-	holder->lh_pid = proc->p_pid;
-	holder->lh_pgrp = proc->p_pgrp;
-	PROC_LOCKHOLDER(holder) = proc;
-}
-
-struct proc *
-get_proc_lock(holder)
-	struct lock_holder 	*holder;
-{
-	if(PROC_LOCKHOLDER(holder)->p_pid == holder->lh_pid) {
-		return (PROC_LOCKHOLDER(holder));
+	if(holder->lh_data == data) {
+		return (data);
 	}
 	return (NULL);
 }
-
-/*
-void
-set_kthread_lock(holder, kthread)
-	struct lock_holder 	*holder;
-	struct kthread 		*kthread;
-{
-	holder->lh_pid = kthread->kt_tid;
-	holder->lh_pgrp = kthread->kt_pgrp;
-	KTHREAD_LOCKHOLDER(holder) = kthread;
-}
-
-struct kthread *
-get_kthread_lock(holder)
-	struct lock_holder 	*holder;
-{
-	if(KTHREAD_LOCKHOLDER(holder)->kt_tid == holder->lh_pid) {
-		return (KTHREAD_LOCKHOLDER(holder));
-	}
-	return (NULL);
-}
-
-void
-set_uthread_lock(holder, uthread)
-	struct lock_holder 	*holder;
-	struct uthread 		*uthread;
-{
-	holder->lh_pid = uthread->ut_tid;
-	holder->lh_pgrp = uthread->ut_pgrp;
-	UTHREAD_LOCKHOLDER(holder) = uthread;
-}
-
-struct uthread *
-get_uthread_lock(holder)
-	struct lock_holder 	*holder;
-{
-	if(UTHREAD_LOCKHOLDER(holder)->ut_tid == holder->lh_pid) {
-		return (UTHREAD_LOCKHOLDER(holder));
-	}
-	return (NULL);
-}
-*/

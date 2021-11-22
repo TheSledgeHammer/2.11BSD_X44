@@ -73,7 +73,6 @@ struct threadpool_job  {
 #define	job_utp_thread					job_utpool.utp_overseer
 };
 
-
 /* Inter-Threadpool-Communication (ITPC) */
 TAILQ_HEAD(itpc_head, threadpool_itpc);
 struct threadpool_itpc {
@@ -144,7 +143,7 @@ void	threadpool_job_destroy(struct threadpool_job *);
 void	kthreadpool_job_done(struct threadpool_job *);
 void	kthreadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
 void	kthreadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
-bool	kthreadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
+bool_t	kthreadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
 
 /* uthreadpools */
 void	uthreadpool_init(void);
@@ -157,6 +156,6 @@ void	uthreadpool_job_destroy(struct threadpool_job *);
 void	uthreadpool_job_done(struct threadpool_job *);
 void	uthreadpool_schedule_job(struct uthreadpool *, struct threadpool_job *);
 void	uthreadpool_cancel_job(struct uthreadpool *, struct threadpool_job *);
-bool	uthreadpool_cancel_job_async(struct uthreadpool *, struct threadpool_job *);
+bool_t	uthreadpool_cancel_job_async(struct uthreadpool *, struct threadpool_job *);
 
 #endif /* SYS_THREADPOOL_H_ */

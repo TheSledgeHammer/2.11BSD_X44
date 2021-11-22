@@ -67,8 +67,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	rwl->rwl_wmesg = wmesg;
 
 	/* lock holder */
-	rwl->rwl_lockholder = &kernel_lockholder;
-	LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOPROC;
+	lockholder_init(rwl->rwl_lockholder, RW_NOPROC, NULL);
 }
 
 int
@@ -216,7 +215,7 @@ rwlock_write_held(rwl)
 	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return (0);
-	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | curproc());
+	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | curproc));
 }
 
 /*

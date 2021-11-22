@@ -42,8 +42,8 @@
 #ifndef _SYS_GSCHED_CFS_H
 #define _SYS_GSCHED_CFS_H
 
-#include <gsched.h>
 #include <sys/tree.h>
+#include "../../sys/gsched.h"
 
 /* Generic Base stats for CFS */
 #define BTL             		20                      			/* base target latency */

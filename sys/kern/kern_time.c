@@ -12,6 +12,8 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <sys/time.h>
+#include <sys/times.h>
 
 register struct timeval *time;
 /* 
@@ -165,14 +167,16 @@ getitimer()
 		syscallarg(u_int) which;
 		syscallarg(struct itimerval *) itv;
 	} *uap = (struct a *)u->u_ap;
-	register struct itimerval aitv;
+
+	register struct itimerval *aitv;
 	register int s;
 
 	if (uap->which > ITIMER_PROF) {
 		u->u_error = EINVAL;
 		return;
 	}
-	aitv.it_interval.tv_usec = 0;
+	aitv->itv_interval;
+	aitv.itv_interval.tv_usec = 0;
 	aitv.it_value.tv_usec = 0;
 	s = splclock();
 	if (uap->which == ITIMER_REAL) {
@@ -200,6 +204,7 @@ setitimer()
 		syscallarg(struct itimerval *) itv;
 		syscallarg(struct itimerval *) oitv;
 	} *uap = (struct a *)u->u_ap;
+
 	struct itimerval aitv;
 	register struct itimerval *aitvp;
 	int s;

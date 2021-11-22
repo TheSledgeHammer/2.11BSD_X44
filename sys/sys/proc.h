@@ -73,8 +73,8 @@ struct	proc {
 	u_int				p_swtime;	 	/* Time swapped in or out. */
 	struct callout 		p_tsleep_ch;	/* callout for tsleep */
 
-    struct	itimerval   p_realtimer;	/* Alarm timer. */
-    struct	timeval     p_rtime;	    /* Real time. */
+    struct itimerval   	*p_realtimer;	/* Alarm timer. */
+    struct timeval     	p_rtime;	    /* Real time. */
     u_quad_t 			p_uticks;		/* Statclock hits in user mode. */
     u_quad_t 			p_sticks;		/* Statclock hits in system mode. */
     u_quad_t 			p_iticks;		/* Statclock hits processing intr. */
@@ -97,7 +97,7 @@ struct	proc {
     sigset_t 			p_sigmask;		/* Current signal mask. */
     sigset_t 			p_sigignore;	/* Signals being ignored */
     sigset_t 			p_sigcatch;		/* Signals being caught by user */
-    struct  sigcontext		p_sigctx;		/* Shared signal state */
+    struct  sigcontext	p_sigctx;		/* Shared signal state */
 
     u_char				p_pri;			/* Process  priority, negative is high */
     u_char				p_cpu;			/* cpu usage for scheduling */
@@ -126,7 +126,7 @@ struct	proc {
 	size_t				p_ssize;		/* size of stack segment (clicks) */
 	size_t				p_tsize;		/* size of text segment (clicks) */
 
-    struct	k_itimerval p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
+    struct k_itimerval 	p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short 			p_acflag;	    /* Accounting flags. */
 
 	short				p_locks;		/* DEBUG: lockmgr count of held locks */
@@ -139,12 +139,12 @@ struct	proc {
 
     short				p_xstat;		/* exit status for wait */
 	struct  rusage    	p_ru;			/* exit information */
-	struct  k_rusage    	p_kru;			/* exit information kernel */
+	struct  k_rusage    p_kru;			/* exit information kernel */
+
+	struct gsched		*p_gsched;		/* global scheduler */
 
 	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
-	//char				*p_name;		/* (: name, optional */
-
-	//struct gsched		*p_gsched;		/* global scheduler */
+	char				*p_name;		/* (: name, optional */
 
 	//union vm_pseudo_segment *p_psegp;
 	//struct vm_text		*p_textp;		/* text */
@@ -152,7 +152,7 @@ struct	proc {
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
 
-struct	session {
+struct session {
 	int					s_count;		/* Ref cnt; pgrps in session. */
 	struct	proc 		*s_leader;		/* Session leader. */
 	struct	vnode 		*s_ttyvp;		/* inode of controlling terminal. */
@@ -160,7 +160,7 @@ struct	session {
 	char				s_login[MAXLOGNAME];/* Setlogin() name. */
 };
 
-struct	pgrp {
+struct pgrp {
 	struct	pgrp 		*pg_hforw;		/* Forward link in hash bucket. */
 	struct	proc 		*pg_mem;		/* Pointer to pgrp members. */
 	struct	session 	*pg_session;	/* Pointer to session. */

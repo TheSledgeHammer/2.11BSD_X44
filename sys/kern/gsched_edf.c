@@ -31,12 +31,21 @@
  * Designed to schedule per single run-queue.
  */
 
-#include <sys/proc.h>
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
 #include <sys/user.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/signal.h>
+#include <sys/signalvar.h>
+#include <sys/gsched.h>
+#include <sys/gsched_edf.h>
+
+#include <vm/include/vm.h>
 
 #include <machine/cpu.h>
-
-#include "sys/gsched_edf.h"
 
 /* return slack/laxity time */
 u_char

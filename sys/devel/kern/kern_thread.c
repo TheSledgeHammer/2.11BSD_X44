@@ -128,7 +128,8 @@ tgdelete(tgrp)
 	if (pgp == NULL)
 		panic("tgdelete: can't find pgrp on hash chain");
 #endif
-	if (--tgrp->pg_session->s_count == 0)
+	if (--tgrp->pg_session->s_count == 0) {
 		FREE(tgrp, M_PGRP);
+	}
 	FREE(tgrp, M_PGRP);
 }

@@ -9,6 +9,8 @@
 #ifndef	_SYS_TIME_H_
 #define	_SYS_TIME_H_
 
+#include <sys/types.h>
+
 /*
  * Structure returned by gettimeofday(2) system call,
  * and used in other calls.
@@ -87,16 +89,15 @@ struct timezone {
 #define	ITIMER_VIRTUAL	1
 #define	ITIMER_PROF		2
 
-struct	k_itimerval {
+struct k_itimerval {
 	long			it_interval;	/* timer interval */
 	long			it_value;		/* current value */
 };
 
-struct	itimerval {
-	struct	timeval it_interval;	/* timer interval */
-	struct	timeval it_value;		/* current value */
+struct itimerval {
+	struct timeval 	it_interval;	/* timer interval */
+	struct timeval 	it_value;		/* current value */
 };
-
 
 /*
  * Getkerninfo clock information structure

@@ -26,7 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* The Global Scheduler Interface:
+/*
+ * The Global Scheduler Interface:
  * For interfacing different scheduling algorithms into the 2.11BSD Kernel
  * Should Primarily contain functions used in both the kernel & the various scheduler/s
  */
@@ -40,16 +41,18 @@
 #include <sys/proc.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
+#include <sys/gsched.h>
+#include <sys/gsched_cfs.h>
+#include <sys/gsched_edf.h>
 
-#include "devel/sys/gsched.h"
-#include "devel/sys/gsched_cfs.h"
-#include "devel/sys/gsched_edf.h"
-#include "devel/sys/malloctypes.h"
+#include <vm/include/vm.h>
 
-static struct gsched *gsched_setup(struct proc *);
-static void	gsched_edf_setup(struct gsched *, struct proc *);
-static void	gsched_cfs_setup(struct gsched *, struct proc *);
-static int gsched_compare(struct proc *, struct proc *);
+#include <machine/cpu.h>
+
+static struct gsched 	*gsched_setup(struct proc *);
+static void				gsched_edf_setup(struct gsched *, struct proc *);
+static void				gsched_cfs_setup(struct gsched *, struct proc *);
+static int 				gsched_compare(struct proc *, struct proc *);
 
 void
 gsched_init(p)

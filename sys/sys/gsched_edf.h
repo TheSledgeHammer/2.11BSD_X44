@@ -29,7 +29,7 @@
 #ifndef _SYS_GSCHED_EDF_H
 #define _SYS_GSCHED_EDF_H
 
-#include <gsched.h>
+#include "../../sys/gsched.h"
 
 struct gsched_edf {
 	struct gsched 		*edf_gsched;		/* pointer to global scheduler */

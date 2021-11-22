@@ -1012,8 +1012,8 @@ pmap_remove(pmap, sva, eva)
 			*(int *)pte++ = 0;
 			/*TBIS(va + ix * I386_PAGE_SIZE);*/
 		} while (++ix != i386pagesperpage);
-		if (pmap == &curproc()->p_vmspace->vm_pmap) {
-			pmap_activate(pmap, (struct pcb *)curproc()->p_addr);
+		if (pmap == &curproc->p_vmspace->vm_pmap) {
+			pmap_activate(pmap, (struct pcb *)curproc->p_addr);
 		}
 		/* are we current address space or kernel? */
 		/*if (pmap->pm_pdir[PTDPTDI].pd_pfnum == PTDpde.pd_pfnum
@@ -1203,8 +1203,8 @@ pmap_protect(pmap, sva, eva, prot)
 		} while (++ix != i386pagesperpage);
 	}
 out:
-	if (pmap == &curproc()->p_vmspace->vm_pmap)
-		pmap_activate(pmap, (struct pcb*) curproc()->p_addr);
+	if (pmap == &curproc->p_vmspace->vm_pmap)
+		pmap_activate(pmap, (struct pcb*) curproc->p_addr);
 }
 
 /*

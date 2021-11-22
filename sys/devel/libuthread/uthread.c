@@ -249,8 +249,8 @@ uthread_lock_init(lkp, ut)
 {
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-	set_uthread_lockholder(lkp->lk_lockholder, ut);
-    if(get_uthread_lockholder(lkp->lk_lockholder, ut->ut_tid) == NULL) {
+    lockholder_set(lkp->lk_lockholder, ut, ut->ut_tid, ut->ut_pgrp);
+    if(lockholder_get(lkp->lk_lockholder, ut) == NULL) {
     	panic("uthread lock unavailable");
     	error = EBUSY;
     }
@@ -281,8 +281,8 @@ uthread_rwlock_init(rwl, ut)
 {
 	int error = 0;
 	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
-	set_uthread_lockholder(rwl->rwl_lockholder, ut);
-    if(get_uthread_lockholder(rwl->rwl_lockholder, ut->ut_tid) == NULL) {
+	lockholder_set(rwl->rwl_lockholder, ut, ut->ut_tid, ut->ut_pgrp);
+    if(lockholder_get(rwl->rwl_lockholder, ut) == NULL) {
     	panic("uthread rwlock unavailable");
     	error = EBUSY;
     }

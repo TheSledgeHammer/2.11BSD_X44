@@ -127,7 +127,7 @@
 #define M_BITMAP		76	/* bitmap structure */
 #define M_PERCPU		77	/* percpu structure */
 #define M_UFS211		78	/* UFS211 bufmap */
-#define M_LOCK			79	/* lock structures */
+#define M_GSCHED		79	/* global scheduler structures */
 #define	M_TEMP			80	/* misc temporary data buffers */
 #define	M_LAST			81	/* Must be last type + 1 */
 
@@ -210,8 +210,8 @@
 	"cpu topo",		/* 75 M_TOPO */			\
 	"bitmap",		/* 76 M_BITMAP */		\
 	"percpu",		/* 77 M_PERCPU */		\
-	"ufs211 buf",	/* 78 M_UFS211 */			\
-	"kernel lock",	/* 79 M_LOCK */			\
+	"ufs211 buf",	/* 78 M_UFS211 */		\
+	"gscheduler",	/* 79 M_GSCHED */		\
 	"temp",			/* 80 M_TEMP */ 		\
 }
 
@@ -233,12 +233,10 @@ struct kmemusage {
 	union {
 		u_short 		freecnt;		/* for small allocations, free pieces in page */
 		u_short 		pagecnt;		/* for large allocations, pages alloced */
-	//	u_short			ovlcnt;			/* for allocations, overlays alloced */
 	} ku_un;
 };
 #define ku_freecnt 		ku_un.freecnt
 #define ku_pagecnt 		ku_un.pagecnt
-//#define ku_ovlcnt 		ku_un.ovlcnt
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
@@ -256,6 +254,7 @@ struct kmembuckets {
 };
 
 #ifdef KERNEL
+#define BUCKETSIZE(indx)	(powertwo(indx))
 #define	MINALLOCSIZE		(1 << MINBUCKET)
 #define BUCKETINDX(size) 							\
 	((size) <= (MINALLOCSIZE * 128) 				\

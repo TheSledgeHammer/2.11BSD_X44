@@ -133,15 +133,7 @@ malloc(size, type, flags)
 			va = kmalloc(size, flags);
 		}
 		*/
-
-		if (size > MAXALLOCSAVE) {
-			allocsize = roundup(size, CLBYTES);
-		} else {
-			allocsize = 1 << indx;
-		}
-		npg = clrnd(btoc(allocsize));
-
-		va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+    	va = kmalloc(size, flags);
 
         if (va == NULL) {
         	splx(s);
@@ -244,7 +236,6 @@ out:
 		memset(va, 0, size);
 	return ((void *) va);
 }
-
 
 /* Free a block of memory allocated by malloc */
 void
