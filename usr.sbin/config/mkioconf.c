@@ -322,7 +322,7 @@ struct cfdata cfdata[] = {\n\
 			loc = "loc";
 		}
 		if (fprintf(fp, "\
-	    {&%s_ca,%s&%s_cd,%s%2d, %s, %7s, %#6x, pv+%2d,\n\
+	    {&%s_cd,%s%2d, %s, %7s, %#6x, pv+%2d,\n\
 	     %scf_locnames},\n",
 				basename, strlen(basename) < 3 ? "\t\t" : "\t", unit, state, loc,
 				i->i_cfflags, i->i_pvoff, a->a_locs ? a->a_name : "null") < 0)
