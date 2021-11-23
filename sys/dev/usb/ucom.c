@@ -898,7 +898,7 @@ ucomstart(struct tty *tp)
 			CLR(tp->t_state, TS_ASLEEP);
 			wakeup(&tp->t_outq);
 		}
-		selwakeup(&tp->t_wsel);
+		selwakeup1(&tp->t_wsel);
 		if (tp->t_outq.c_cc == 0)
 			goto out;
 	}

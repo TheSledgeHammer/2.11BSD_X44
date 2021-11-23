@@ -501,5 +501,5 @@ usb_needs_explore(bus)
 {
 	DPRINTFN(2,("usb_needs_explore\n"));
 	bus->needs_explore = 1;
-	selwakeup(&bus->usbctl->sc_consel);
+	selwakeup1(&bus->usbctl->sc_consel);
 }

@@ -700,18 +700,6 @@ struct vop_update_args {
 	int 					a_waitfor;
 };
 
-struct vop_pageread {
-	struct vop_generic_args	a_head;
-
-	vm_page_t				a_page;
-};
-
-struct vop_pagewrite {
-	struct vop_generic_args	a_head;
-
-	vm_page_t				a_page;
-};
-
 /* Special cases: */
 struct vop_strategy_args {
 	struct vop_generic_args	a_head;
@@ -752,6 +740,7 @@ extern struct vnodeops vops;
 /*
  * Public vnode manipulation functions.
  */
+struct cluster_save;
 struct file;
 struct mount;
 struct nameidata;
@@ -760,8 +749,8 @@ struct proc;
 struct stat;
 struct ucred;
 struct uio;
-enum uio_seg;
 enum uio_rw;
+enum uio_seg;
 struct vattr;
 struct vnode;
 struct vop_bwrite_args;

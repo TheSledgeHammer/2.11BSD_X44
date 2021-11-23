@@ -345,7 +345,7 @@ deliver:
 		mb->used++;
 	}
 	midi_wakeup(&sc->rchan);
-	selwakeup(&sc->rsel);
+	selwakeup1(&sc->rsel);
 	if (sc->async)
 		psignal(sc->async, SIGIO);
 }
@@ -541,7 +541,7 @@ midi_start_output(sc, intr)
 		mb->used--;
 	}
 	midi_wakeup(&sc->wchan);
-	selwakeup(&sc->wsel);
+	selwakeup1(&sc->wsel);
 	if (sc->async)
 		psignal(sc->async, SIGIO);
 	if (mb->used > 0) {

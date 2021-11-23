@@ -96,7 +96,7 @@ struct wseventvar {
 #define	splwsevent()	spltty()
 
 #define	WSEVENT_WAKEUP(ev) { 		\
-	selwakeup(&(ev)->sel); 			\
+	selwakeup1(&(ev)->sel); 		\
 	if ((ev)->wanted) { 			\
 		(ev)->wanted = 0; 			\
 		wakeup((caddr_t)(ev)); 		\

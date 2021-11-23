@@ -1009,9 +1009,8 @@ vm_map_simplify_entry(map, entry)
 	vm_map_t	map;
 	vm_map_entry_t	entry;
 {
-#ifdef	lint
-	map++;
-#endif
+	vm_map_entry_t next, prev;
+	vm_size_t prevsize, esize;
 
 	/*
 	 *	If this entry corresponds to a sharing map, then
@@ -1021,44 +1020,63 @@ vm_map_simplify_entry(map, entry)
 	 *	of our neighbors.
 	 */
 
-	if (entry->is_sub_map)
+	if (entry->is_sub_map) {
 		return;
-	if (entry->is_a_map) {
-#if	0
-		vm_map_t	my_share_map;
-		int		count;
-
-		my_share_map = entry->object.share_map;	
-		simple_lock(&my_share_map->ref_lock);
-		count = my_share_map->ref_count;
-		simple_unlock(&my_share_map->ref_lock);
-		
-		if (count == 1) {
-			/* Can move the region from
-			 * entry->start to entry->end (+ entry->offset)
-			 * in my_share_map into place of entry.
-			 * Later.
-			 */
-		}
-#endif
 	}
-	else {
-		/*
-		 *	Try to merge with our neighbors.
-		 *
-		 *	Conditions for merge are:
-		 *
-		 *	1.  entries are adjacent.
-		 *	2.  both entries point to objects
-		 *	    with null pagers.
-		 *
-		 * 	If a merge is possible, we replace the two
-		 *	entries with a single entry, then merge
-		 *	the two objects into a single object.
-		 *
-		 *	Now, all that is left to do is write the
-		 *	code!
-		 */
+
+	prev = CIRCLEQ_PREV(entry, cl_entry);
+	if(entry != CIRCLEQ_FIRST(&map->cl_header)) {
+		prevsize = prev->end - prev->start;
+		if ( (prev->end == entry->start) &&
+				(prev->object.vm_object == entry->object.vm_object) &&
+				(!prev->object.vm_object ||
+						(prev->offset + prevsize == entry->offset)) &&
+						/* (prev->eflags == entry->eflags) && */
+						(prev->protection == entry->protection) &&
+						(prev->max_protection == entry->max_protection) &&
+						(prev->inheritance == entry->inheritance) &&
+						(prev->wired_count == entry->wired_count)) {
+			if (map->first_free == prev) {
+				map->first_free = entry;
+			}
+			if (map->hint == prev) {
+				map->hint = entry;
+			}
+			vm_map_entry_unlink(map, prev);
+			entry->start = prev->start;
+			entry->offset = prev->offset;
+			if (prev->object.vm_object) {
+				vm_object_deallocate(prev->object.vm_object);
+			}
+			vm_map_entry_dispose(map, prev);
+		}
+	}
+
+	next = CIRCLEQ_NEXT(entry, cl_entry);
+	if(entry != CIRCLEQ_FIRST(&map->cl_header)) {
+		esize = entry->end - entry->start;
+		if ((entry->end == next->start) &&
+				(next->object.vm_object == entry->object.vm_object) &&
+				(!entry->object.vm_object ||
+						(entry->offset + esize == next->offset)) &&
+						/* (next->eflags == entry->eflags) && */
+						(next->protection == entry->protection) &&
+						(next->max_protection == entry->max_protection) &&
+						(next->inheritance == entry->inheritance) &&
+						(next->wired_count == entry->wired_count)) {
+			if (map->first_free == next){
+				map->first_free = entry;
+			}
+			if (map->hint == next) {
+				map->hint = entry;
+			}
+			vm_map_entry_unlink(map, next);
+			entry->end = next->end;
+			if (next->object.vm_object) {
+				vm_object_deallocate(next->object.vm_object);
+			}
+			vm_map_entry_dispose(map, next);
+		}
 	}
 }
 

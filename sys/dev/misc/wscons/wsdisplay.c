@@ -1195,7 +1195,7 @@ wsdisplaystart(tp)
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
 		}
-		selwakeup(&tp->t_wsel);
+		selwakeup1(&tp->t_wsel);
 	}
 	splx(s);
 }

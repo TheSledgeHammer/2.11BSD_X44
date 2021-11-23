@@ -86,6 +86,9 @@ int	noproc;							/* no one is running just now */
 extern void startup();
 
 /* General Function Declarations */
+struct clockframe;
+struct timeval;
+
 int 	nodev (void);
 int 	nulldev (void);
 int 	nullop (void);
@@ -95,10 +98,6 @@ int 	enxio (void);
 int 	eopnotsupp (void);
 int 	einval (void);
 int 	nonet (void);
-
-int		selscan (fd_set *, *, int, int);
-int		seltrue (dev_t, int );
-void	selwakeup (struct proc *, long);
 
 void 	*hashinit (int, int, u_long *);
 

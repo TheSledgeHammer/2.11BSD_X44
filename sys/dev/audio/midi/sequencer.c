@@ -299,7 +299,7 @@ seq_timeout(addr)
 	seq_startoutput(sc);
 	if (SEQ_QLEN(&sc->outq) < sc->lowat) {
 		seq_wakeup(&sc->wchan);
-		selwakeup(&sc->wsel);
+		selwakeup1(&sc->wsel);
 		if (sc->async)
 			psignal(sc->async, SIGIO);
 	}
@@ -362,7 +362,7 @@ seq_input_event(sc, cmd)
 		return (ENOMEM);
 	SEQ_QPUT(q, *cmd);
 	seq_wakeup(&sc->rchan);
-	selwakeup(&sc->rsel);
+	selwakeup1(&sc->rsel);
 	if (sc->async)
 		psignal(sc->async, SIGIO);
 	return 0;
@@ -1415,4 +1415,3 @@ midi_writebytes(unit, buf, cc)
 #endif /* NMIDI == 0 */
 
 #endif /* NSEQUENCER > 0 */
-

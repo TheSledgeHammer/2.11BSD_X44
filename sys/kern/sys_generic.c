@@ -491,6 +491,27 @@ selscan(ibits, obits, nfd, retval)
 	return (0);
 }
 
+/*
+ * Record a select request.
+ */
+void
+selrecord(selector, sip)
+	struct proc *selector;
+	struct selinfo *sip;
+{
+	struct proc *p;
+	pid_t mypid;
+
+	mypid = selector->p_pid;
+	if (sip->si_pid == mypid)
+		return;
+	if (sip->si_pid && (p = pfind(sip->si_pid)) &&
+	    (p->p_wchan == (caddr_t)&selwait))
+		sip->si_flags |= SI_COLL;
+	else
+		sip->si_pid = mypid;
+}
+
 /*ARGSUSED*/
 int
 seltrue(dev, flag)
@@ -501,6 +522,9 @@ seltrue(dev, flag)
 	return (flag & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
 }
 
+/*
+ * Do a wakeup when a selectable event occurs.
+ */
 void
 selwakeup(p, coll)
 	register struct proc *p;
@@ -521,6 +545,36 @@ selwakeup(p, coll)
 			p->p_flag &= ~P_SELECT;
 		splx(s);
 	}
+}
+
+void
+_selwakeup(sip)
+	register struct selinfo *sip;
+{
+	register struct proc *p;
+
+	if (sip->si_pid == 0) {
+		return;
+	}
+	if (sip->si_flags & SI_COLL) {
+		sip->si_flags &= ~SI_COLL;
+		continue;
+	}
+	p = pfind(sip->si_pid);
+	sip->si_pid = 0;
+
+	selwakeup(p, sip->si_flags);
+}
+
+void
+selnotify(sip, knhint)
+	struct selinfo *sip;
+	long knhint;
+{
+	if (sip->si_pid != 0) {
+		_selwakeup(sip);
+	}
+	KNOTE(&sip->si_klist, knhint);
 }
 
 int

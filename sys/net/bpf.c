@@ -490,7 +490,7 @@ bpf_wakeup(d)
 {
 	wakeup((caddr_t)d);
 #if BSD >= 199103
-	selwakeup(&d->bd_sel);
+	selwakeup1(&d->bd_sel);
 	/* XXX */
 	d->bd_sel.si_pid = 0;
 #else

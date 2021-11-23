@@ -37,8 +37,7 @@
 #define	_SYS_SELECT_H_
 
 #include <sys/types.h>
-
-#include "event.h"		/* for struct klist */
+#include <sys/event.h>		/* for struct klist */
 
 /*
  * Select uses bit masks of file descriptors in longs.
@@ -76,19 +75,16 @@ struct selinfo {
 #ifndef KERNEL
 struct proc;
 
-void	selrecord (struct proc *selector, struct selinfo *);
-void	selwakeup (struct selinfo *);
+void	selrecord (struct proc *, struct selinfo *);
+void	_selwakeup (struct selinfo *);
+void	selwakeup (struct proc *, long);
+int		selscan (fd_set *, fd_set *, int, int);
+int		seltrue (dev_t, int );
+void 	selnotify(struct selinfo *, long);
 
-//int		select();
-//int		pselect();
-
-static __inline void
-selnotify(struct selinfo *sip, long knhint)
-{
-	if (sip->si_pid != 0)
-		selwakeup(sip);
-	KNOTE(&sip->si_klist, knhint);
-}
+/* 4.4BSD compat */
+#define selwakeup1(sel) \
+	(_selwakeup(sel))
 #endif /* !KERNEL */
 
 #endif /* !_SYS_SELECT_H_ */

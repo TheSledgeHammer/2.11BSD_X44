@@ -48,6 +48,7 @@ extern char const	hex2ascii_data[];
 #define	bin2bcd(bin)	(bin2bcd_data[bin])
 #define	hex2ascii(hex)	(hex2ascii_data[hex])
 
+/*
 static __inline int 	imax (int, int) __attribute__ ((unused));
 static __inline int 	imin (int, int) __attribute__ ((unused));
 static __inline u_int 	max (u_int, u_int) __attribute__ ((unused));
@@ -193,16 +194,36 @@ tolower(int ch)
 		return (ch + 0x20);
 	return (ch);
 }
+*/
+
+int 	imax (int, int);
+int 	imin (int, int);
+u_int 	max (u_int, u_int);
+u_int 	min (u_int, u_int);
+long 	lmax (long, long);
+long 	lmin (long, long);
+u_long 	ulmax (u_long, u_long);
+u_long 	ulmin (u_long, u_long);
+int 	abs (int);
+
+int 	isspace (int);
+int 	isascii (int);
+int 	isupper (int);
+int 	islower (int);
+int 	isalpha (int);
+int 	isdigit (int);
+int 	isxdigit (int);
+int 	toupper (int);
+int 	tolower (int);
 
 /* hash Functions */
-uint32_t 	prospector32(uint32_t x);
-uint32_t 	lowbias32(uint32_t x);
-uint32_t 	lowbias32_r(uint32_t x);
-uint32_t 	triple32(uint32_t x);
-uint32_t 	triple32_r(uint32_t x);
-uint32_t 	hash32(uint32_t x);
-uint32_t 	murmurhash32_mix32(uint32_t x);
-
+uint32_t 	prospector32(uint32_t);
+uint32_t 	lowbias32(uint32_t);
+uint32_t 	lowbias32_r(uint32_t);
+uint32_t 	triple32(uint32_t);
+uint32_t 	triple32_r(uint32_t);
+uint32_t 	hash32(uint32_t);
+uint32_t 	murmurhash32_mix32(uint32_t);
 uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
 uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
 
@@ -246,7 +267,7 @@ char		*strstr (const char *, const char *);
 /*
  * ffs is an instruction on vax.
  */
-int	 	ffs(int);
+int	 		ffs(int);
 #if __GNUC_PREREQ__(2, 95) && (!defined(__vax__) || __GNUC_PREREQ__(4,1))
 #define	ffs(x)	__builtin_ffs(x)
 #endif

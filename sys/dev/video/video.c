@@ -466,7 +466,7 @@ video_intr(void *addr)
 		printf("%s: interrupt but no streams!\n", __func__);
 	if (sc->sc_vidmode == VIDMODE_READ)
 		wakeup(sc);
-	selwakeup(&sc->sc_rsel);
+	selwakeup1(&sc->sc_rsel);
 }
 
 int

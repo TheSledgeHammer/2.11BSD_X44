@@ -40,8 +40,8 @@ struct slab_metadata {
     int                      	sm_fslots;       								/* bucket slots free */
     u_long 						sm_bsize; 										/* bucket size */
     u_long 						sm_bindx;	 									/* bucket index */
-    u_long 						sm_min;											/* bucket min */
-    u_long 						sm_max;											/* bucket max */
+    u_long 						sm_min;											/* bucket minimum boundary */
+    u_long 						sm_max;											/* bucket maximum boundary */
 };
 typedef struct slab_metadata    *slab_metadata_t;
 

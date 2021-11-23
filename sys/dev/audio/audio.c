@@ -1908,7 +1908,7 @@ audio_pint(v)
 	if ((sc->sc_mode & AUMODE_PLAY) && !cb->pause) {
 		if (cb->used <= cb->usedlow) {
 			audio_wakeup(&sc->sc_wchan);
-			selwakeup(&sc->sc_wsel);
+			selwakeup1(&sc->sc_wsel);
 			if (sc->sc_async_audio) {
 				DPRINTFN(3, ("audio_pint: sending SIGIO %p\n", 
                                              sc->sc_async_audio));
@@ -1920,7 +1920,7 @@ audio_pint(v)
 	/* Possible to return one or more "phantom blocks" now. */
 	if (!sc->sc_full_duplex && sc->sc_rchan) {
 		audio_wakeup(&sc->sc_rchan);
-		selwakeup(&sc->sc_rsel);
+		selwakeup1(&sc->sc_rsel);
 		if (sc->sc_async_audio)
 			psignal(sc->sc_async_audio, SIGIO);
 	}
@@ -2017,7 +2017,7 @@ audio_rint(v)
 	}
 
 	audio_wakeup(&sc->sc_rchan);
-	selwakeup(&sc->sc_rsel);
+	selwakeup1(&sc->sc_rsel);
 	if (sc->sc_async_audio)
 		psignal(sc->sc_async_audio, SIGIO);
 }
