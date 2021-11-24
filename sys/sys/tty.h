@@ -262,6 +262,7 @@ int	cttyopen (dev_t dev, int flag, int mode, struct proc *p);
 int	cttyread (dev_t dev, struct uio *uio, int flag);
 int cttywrite(dev_t dev, struct uio *uio, int flag);
 int cttypoll(dev_t dev, int events, struct proc *p);
+int	cttykqfilter(dev_t dev, struct knote *kn);
 int	cttyselect (dev_t dev, int flag, struct proc *p);
 
 /* From tty_tty.c. */
@@ -270,6 +271,7 @@ int	syread(dev_t dev, struct uio *uio, int flag);
 int	sywrite(dev_t dev, struct uio *uio, int flag);
 int syioctl(dev_t dev, u_int cmd, caddr_t addr, int flag);
 int	sypoll(dev_t dev, int events);
+int	sykqfilter(dev_t dev, struct knote *kn);
 int	syselect(dev_t dev, int flag);
 
 #endif

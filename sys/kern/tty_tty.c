@@ -24,8 +24,10 @@ syopen(dev, flag, type)
 	dev_t dev;
 	int flag, type;
 {
-	if (u->u_ttyp == NULL)
+	if (u->u_ttyp == NULL) {
+		u->u_error = ENXIO;
 		return (ENXIO);
+	}
 	return (cttyopen(u->u_ttyd, flag, type, u->u_procp));
 }
 
@@ -36,8 +38,10 @@ syread(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	if (u->u_ttyp == NULL)
+	if (u->u_ttyp == NULL) {
+		u->u_error = ENXIO;
 		return (ENXIO);
+	}
 	return (cttyread(u->u_ttyd, uio, flag));
 }
 
@@ -48,8 +52,10 @@ sywrite(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	if (u->u_ttyp == NULL)
+	if (u->u_ttyp == NULL) {
+		u->u_error = ENXIO;
 		return (ENXIO);
+	}
 	return (cttywrite(u->u_ttyd, uio, flag));
 }
 
@@ -67,8 +73,10 @@ syioctl(dev, cmd, addr, flag)
 		u->u_procp->p_pgrp = 0;
 		return (0);
 	}
-	if (u->u_ttyp == NULL)
+	if (u->u_ttyp == NULL) {
+		u->u_error = ENXIO;
 		return (ENXIO);
+	}
 	return (cttyioctl(u->u_ttyd, cmd, addr, flag, u->u_procp));
 }
 
@@ -78,10 +86,9 @@ syselect(dev, flag)
 	dev_t dev;
 	int flag;
 {
-
 	if (u->u_ttyp == NULL) {
 		u->u_error = ENXIO;
-		return (0);
+		return (ENXIO);
 	}
 	return (cttyselect(u->u_ttyd, flag, u->u_procp));
 }
@@ -91,10 +98,21 @@ sypoll(dev, events)
 	dev_t dev;
 	int events;
 {
-
 	if (u->u_ttyp == NULL) {
 		u->u_error = ENXIO;
-		return (0);
+		return (ENXIO);
 	}
 	return (cttypoll(u->u_ttyd, events, u->u_procp));
+}
+
+int
+sykqfilter(dev, kn)
+	dev_t dev;
+	struct knote *kn;
+{
+	if (u->u_ttyp == NULL) {
+		u->u_error = ENXIO;
+		return (ENXIO);
+	}
+	return (cttykqfilter(dev, kn));
 }

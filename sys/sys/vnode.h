@@ -766,41 +766,42 @@ struct vattr;
 struct vnode;
 struct vop_bwrite_args;
 
-int 	bdevvp (dev_t dev, struct vnode **vpp);
-void	cvtstat (struct stat *st, struct ostat *ost);
-int 	getnewvnode (enum vtagtype tag, struct mount *mp, const struct vnodeops *vops, struct vnode **vpp);
-void	insmntque (struct vnode *vp, struct mount *mp);
-void 	vattr_null (struct vattr *vap);
-void	vdevgone(int, int, int, enum vtype);
-int 	vcount (struct vnode *vp);
-int		vflush (struct mount *mp, struct vnode *skipvp, int flags);
-int 	vget (struct vnode *vp, int lockflag, struct proc *p);
-void 	vgone (struct vnode *vp);
-int		vinvalbuf (struct vnode *vp, int save, struct ucred *cred, struct proc *p, int slpflag, int slptimeo);
-void	vprint (char *label, struct vnode *vp);
-int		vn_bwrite (struct vop_bwrite_args *ap);
-int 	vn_close (struct vnode *vp, int flags, struct ucred *cred, struct proc *p);
-int 	vn_closefile (struct file *fp, struct proc *p);
-int		vn_ioctl (struct file *fp, u_long com, caddr_t data, struct proc *p);
-int		vn_lock (struct vnode *vp, int flags, struct proc *p);
-int 	vn_open (struct nameidata *ndp, int fmode, int cmode);
-int 	vn_rdwr (enum uio_rw rw, struct vnode *vp, caddr_t base, int len, off_t offset, enum uio_seg segflg, int ioflg, struct ucred *cred, int *aresid, struct proc *p);
-int		vn_read (struct file *fp, struct uio *uio, struct ucred *cred);
-int		vn_select (struct file *fp, int which, struct proc *p);
-int		vn_stat (struct vnode *vp, struct stat *sb, struct proc *p);
-int		vn_write (struct file *fp, struct uio *uio, struct ucred *cred);
+int 	bdevvp (dev_t dev, struct vnode **);
+void	cvtstat (struct stat *, struct ostat *);
+int 	getnewvnode (enum vtagtype, struct mount *, const struct vnodeops *, struct vnode **);
+void	insmntque (struct vnode *, struct mount *);
+void 	vattr_null (struct vattr *);
+void	vdevgone(int, int, int, enum);
+int 	vcount (struct vnode *);
+int		vflush (struct mount *, struct vnode *, int);
+int 	vget (struct vnode *, int, struct proc *);
+int		vrecycle(struct vnode *, struct lock_object *, struct proc *);
+void 	vgone (struct vnode *);
+int		vinvalbuf (struct vnode * int, struct ucred *, struct proc *, int, int);
+void	vprint (char *, struct vnode *);
+int		vn_bwrite (struct vop_bwrite_args *);
+int 	vn_close (struct vnode *, int, struct ucred *, struct proc *);
+int 	vn_closefile (struct file *, struct proc *);
+int		vn_ioctl (struct file *, u_long, caddr_t, struct proc *);
+int		vn_lock (struct vnode *, int, struct proc *);
+int 	vn_open (struct nameidata *, int, int);
+int 	vn_rdwr (enum uio_rw, struct vnode *, caddr_t, int, off_t, enum uio_seg, int, struct ucred *, int *, struct proc *);
+int		vn_read (struct file *, struct uio *, struct ucred *);
+int		vn_select (struct file *, int, struct proc *);
+int		vn_stat (struct vnode *, struct stat *, struct proc *);
+int		vn_write (struct file *, struct uio *, struct ucred *);
 int		vop_noislocked (struct vop_islocked_args *);
 int		vop_nolock (struct vop_lock_args *);
 int		vop_nounlock (struct vop_unlock_args *);
 int		vop_revoke (struct vop_revoke_args *);
-struct 	vnode *checkalias (struct vnode *vp, dev_t nvp_rdev, struct mount *mp);
-void 	vput (struct vnode *vp);
-void 	vref (struct vnode *vp);
-void 	vrele (struct vnode *vp);
+struct 	vnode *checkalias (struct vnode *, dev_t, struct mount *);
+void 	vput (struct vnode *);
+void 	vref (struct vnode *);
+void 	vrele (struct vnode *);
 
 /* vfs_vops.c */
 void 	vop_init(void ); 					/* initialize vnode vector operations (vops) */
-void 	vop_alloc(struct vnodeops *); 	/* allocate vnode vector operations (vops) */
-void	vop_free(struct vnodeops *);	/* free vnode vector operations (vops) */
+void 	vop_alloc(struct vnodeops *); 		/* allocate vnode vector operations (vops) */
+void	vop_free(struct vnodeops *);		/* free vnode vector operations (vops) */
 #endif /* KERNEL */
 #endif /* !_SYS_VNODE_H_ */

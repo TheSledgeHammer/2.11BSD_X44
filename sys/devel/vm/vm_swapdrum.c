@@ -139,7 +139,7 @@ swapdrum_init(swp)
 	 * that block 0 is reserved (used to indicate an allocation
 	 * failure, or no allocation).
 	 */
-	swapextent = extent_create("swapextent", 1, INT_MAX, &swapmap.m_type, 0, 0, EX_NOWAIT);
+	swapextent = extent_create("swapextent", 1, INT_MAX, M_SWAPMAP, 0, 0, EX_NOWAIT);
 	if (swapextent == 0) {
 		panic("swapinit: extent_create failed");
 	}

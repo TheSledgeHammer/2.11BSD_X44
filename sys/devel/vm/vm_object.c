@@ -144,6 +144,7 @@ vm_object_init(size, flags)
 	register int	i;
 
 	TAILQ_INIT(&vm_object_cached_list);
+	//SPLAY_INIT(&vm_object_cached_tree);
 	RB_INIT(&vm_object_tree);
 	vm_object_count = 0;
 	simple_lock_init(&vm_cache_lock);
@@ -203,7 +204,7 @@ _vm_object_allocate(size, object)
 	object->shadow_offset = (vm_offset_t) 0;
 
 	simple_lock(&vm_object_tree_lock);
-	RB_INSERT(objecttree, &vm_object_tree, object);
+	RB_INSERT(objectrbt, &vm_object_tree, object);
 	vm_object_count++;
 	cnt.v_nzfod += atop(size);
 	simple_unlock(&vm_object_tree_lock);
@@ -245,7 +246,7 @@ vm_object_deallocate(object)
 
 	while (object != NULL) {
 
-		/* detach aobject */
+		/* detach an aobject */
 		vm_aobject_detach(object);
 
 		/*
@@ -278,7 +279,7 @@ vm_object_deallocate(object)
 		 */
 
 		if (object->flags & OBJ_CANPERSIST) {
-
+			//SPLAY_INSERT(objectspt, &vm_object_cached_tree, object);
 			TAILQ_INSERT_TAIL(&vm_object_cached_list, object, cached_list);
 			vm_object_cached++;
 			vm_object_cache_unlock();
@@ -377,7 +378,7 @@ vm_object_terminate(object)
 		vm_pager_deallocate(object->pager);
 
 	simple_lock(&vm_object_tree_lock);
-	RB_REMOVE(objecttree, &vm_object_tree, object);
+	RB_REMOVE(objectrbt, &vm_object_tree, object);
 	vm_object_count--;
 	simple_unlock(&vm_object_tree_lock);
 
@@ -558,6 +559,7 @@ vm_object_cache_trim()
 
 	vm_object_cache_lock();
 	while (vm_object_cached > vm_cache_max) {
+		//object = SPLAY_FIRST(&vm_object_cached_tree);
 		object = TAILQ_FIRST(vm_object_cached_list);
 		vm_object_cache_unlock();
 
@@ -649,7 +651,6 @@ vm_object_pmap_remove(object, start, end)
  *	The new object and offset into that object
  *	are returned in the source parameters.
  */
-
 void
 vm_object_shadow(object, offset, length)
 	vm_object_t	*object;	/* IN/OUT */
@@ -707,8 +708,11 @@ vm_object_rb_compare(obj1, obj2)
 	return (0);
 }
 
-RB_PROTOTYPE(objecttree, vm_object, object_tree, vm_object_rb_compare);
-RB_GENERATE(objecttree, vm_object, object_tree, vm_object_rb_compare);
+RB_PROTOTYPE(objectrbt, vm_object, object_tree, vm_object_rb_compare);
+RB_GENERATE(objectrbt, vm_object, object_tree, vm_object_rb_compare);
+
+//SPLAY_PROTOTYPE(objectspt, vm_object, cached_tree, vm_object_rb_compare);
+//SPLAY_GENERATE(objectspt, vm_object, cached_tree, vm_object_rb_compare);
 
 RB_PROTOTYPE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
 RB_GENERATE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
@@ -729,7 +733,6 @@ vm_object_hash(pager)
  *	vm_object_lookup looks in the object cache for an object with the
  *	specified pager and paging id.
  */
-
 vm_object_t
 vm_object_lookup(pager)
 	vm_pager_t	pager;
@@ -745,6 +748,7 @@ vm_object_lookup(pager)
 		if (object->pager == pager) {
 			vm_object_lock(object);
 			if (object->ref_count == 0) {
+				//SPLAY_REMOVE(objectspt, &vm_object_cached_tree, object);
 				TAILQ_REMOVE(&vm_object_cached_list, object, cached_list);
 				vm_object_cached--;
 			}
@@ -763,7 +767,6 @@ vm_object_lookup(pager)
  *	vm_object_enter enters the specified object/pager/id into
  *	the hash table.
  */
-
 void
 vm_object_enter(object, pager)
 	vm_object_t	object;
@@ -800,7 +803,6 @@ vm_object_enter(object, pager)
  *	is locked.  XXX this should be fixed
  *	by reorganizing vm_object_deallocate.
  */
-
 void
 vm_object_remove(pager)
 	register vm_pager_t	pager;
@@ -835,6 +837,7 @@ vm_object_cache_clear()
 	 *	list of cached objects.
 	 */
 	vm_object_cache_lock();
+	//while((object = SPLAY_FIND(objectspt, &vm_object_cached_tree, object)) != NULL) {
 	while ((object = TAILQ_FIRST(&vm_object_cached_list)) != NULL) {
 		vm_object_cache_unlock();
 
@@ -1025,7 +1028,7 @@ vm_object_collapse(object)
 			vm_object_unlock(backing_object);
 
 			simple_lock(&vm_object_list_lock);
-			TAILQ_REMOVE(&vm_object_list, backing_object, object_list);
+			RB_REMOVE(objectrbt, &vm_object_tree, backing_object);
 			vm_object_count--;
 			simple_unlock(&vm_object_list_lock);
 

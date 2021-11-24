@@ -60,12 +60,12 @@
  *
  * For the implementation:
  * Please look at the following:
- *  - devel/sys/gsched_cfs.h
- *  - devel/sys/gsched_edf.h
- *  - devel/kern/kern_gsched.c
- *  - devel/kern/kern_synch2.c
- *  - devel/kern/gsched_cfs.c
- *  - devel/kern/gsched_edf.c
+ *  - sys/gsched_cfs.h
+ *  - sys/gsched_edf.h
+ *  - kern/kern_gsched.c
+ *  - kern/kern_synch.c
+ *  - kern/gsched_cfs.c
+ *  - kern/gsched_edf.c
  *
  * Scheduler Decision Tree:
  * 																						 --> Process Complete --> Process Exits
@@ -121,14 +121,11 @@ struct gsched_domain {
 };
 
 /* Priority Weighting Factors */
-enum priw {
-	 PW_PRIORITY = 25, 	 	/* Current Processes Priority */
-	 PW_DEADLINE = 25,		/* Current Processes Deadline Time */
-	 PW_SLEEP = 25,			/* Current Processes Sleep Time */
-	 PW_LAXITY = 25,		/* Current Processes Laxity/Slack Time */
-};
-
-#define PW_FACTOR(w, f)  	percent(w, f) /* w's weighting for a given factor(f) see above */
+#define	PW_PRIORITY 		25 	 			/* Current Processes Priority */
+#define	PW_DEADLINE 		25				/* Current Processes Deadline Time */
+#define	PW_SLEEP 			25				/* Current Processes Sleep Time */
+#define PW_LAXITY 			25				/* Current Processes Laxity/Slack Time */
+#define PW_FACTOR(w, f)  	percent(w, f) 	/* w's weighting for a given factor(f) see above */
 
 /*
  * Priority Weighting Calculation:
@@ -137,7 +134,7 @@ enum priw {
 	(pw) = 	((PW_FACTOR((pwp), PW_PRIORITY) +  				\
 			PW_FACTOR((pwd), PW_DEADLINE) + 				\
 			PW_FACTOR((pwl), PW_LAXITY) + 					\
-			PW_FACTOR((pws), PW_SLEEP))); 					\
+			PW_FACTOR((pws), PW_SLEEP))/4);					\
 };
 
 void 				gsched_init(struct proc *);

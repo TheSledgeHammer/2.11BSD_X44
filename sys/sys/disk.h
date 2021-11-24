@@ -182,7 +182,6 @@ struct dkdevice 	*disk_find (char *);
 void				disksort (struct buf *, struct buf *);
 int					diskerr (struct dkdevice *, struct buf *, char *, int, int);
 
-char 				*disk_name(struct dkdevice *, dev_t);
 struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);
 struct disklabel	disk_label(struct dkdevice *, dev_t);
 struct diskslices	disk_slices(struct dkdevice *, dev_t);

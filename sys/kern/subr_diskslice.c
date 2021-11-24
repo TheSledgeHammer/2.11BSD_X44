@@ -522,7 +522,7 @@ dsname(disk, dev, unit, slice, part, partname)
 	static char name[32];
 	const char *dname;
 
-	dname = disk_name(disk, dev);
+	dname = disk[dkunit(dev)].dk_name;
 	if (strlen(dname) > 16) {
 		dname = "nametoolong";
 	}

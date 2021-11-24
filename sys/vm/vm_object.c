@@ -1197,7 +1197,7 @@ vm_object_collapse(object)
 			vm_object_unlock(backing_object);
 
 			simple_lock(&vm_object_list_lock);
-			RB_REMOVE(object_t, &vm_object_list, backing_object);
+			RB_REMOVE(object_t, &vm_object_tree, backing_object);
 			vm_object_count--;
 			simple_unlock(&vm_object_list_lock);
 

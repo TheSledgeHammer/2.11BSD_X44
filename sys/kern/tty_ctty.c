@@ -62,6 +62,7 @@ const struct cdevsw ctty_cdevsw = {
 		.d_tty = nulltty,
 		.d_select = cttyselect,
 		.d_poll = cttypoll,
+		.d_kqfilter = cttykqfilter,
 		.d_mmap = nullmmap,
 		.d_discard = nulldiscard,
 		.d_type = D_TTY
@@ -197,3 +198,16 @@ cttypoll(dev, events, p)
 	return (VOP_POLL(ttyvp, FREAD|FWRITE, events, p));
 }
 
+static int
+cttykqfilter(dev, kn)
+	dev_t dev;
+	struct knote *kn;
+{
+	/* This is called from filt_fileattach() by the attaching process. */
+	struct proc *p = curproc;
+	struct vnode *ttyvp = cttyvp(p);
+
+	if (ttyvp == NULL)
+		return (1);
+	return (VOP_KQFILTER(ttyvp, kn));
+}

@@ -452,28 +452,17 @@ lock_acquire(lkp, error, extflags, wanted)
 	}
 }
 
+/* TODO: Fix me. */
 void
 count(lkp, x)
 	struct lock	*lkp;
 	short x;
 {
-	if (PROC_LOCKHOLDER(lkp->lk_lockholder)) {
-		struct proc p = PROC_LOCKHOLDER(lkp->lk_lockholder);
+	if (LOCKHOLDER_DATA(lkp->lk_lockholder) != NULL) {
+		struct proc *p = (struct proc *)LOCKHOLDER_DATA(lkp->lk_lockholder);
 		p->p_locks += x;
 		return;
 	}
-	/*
-	if(KTHREAD_LOCKHOLDER(lkp->lk_lockholder)) {
-		struct kthread *kt = KTHREAD_LOCKHOLDER(lkp->lk_lockholder);
-		kt->kt_locks += x;
-		return;
-	}
-	if(UTHREAD_LOCKHOLDER(lkp->lk_lockholder)) {
-		struct uthread *ut = UTHREAD_LOCKHOLDER(lkp->lk_lockholder);
-		ut->ut_locks += x;
-		return;
-	}
-	*/
 }
 
 void

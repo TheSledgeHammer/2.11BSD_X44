@@ -90,6 +90,7 @@ struct vm_object {
 	struct vm_object				*shadow;				/* My shadow */
 	vm_offset_t						shadow_offset;			/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)			cached_list;			/* for persistence */
+	//SPLAY_ENTRY(vm_object)			cached_tree;			/* for persistence */
 };
 
 /* flags */
@@ -111,17 +112,20 @@ struct vm_object_hash_entry {
 };
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
-#ifdef	KERNEL
-struct objecttree;
-RB_HEAD(objecttree, vm_object);
+//#ifdef	KERNEL
+struct objectrbt;
+RB_HEAD(objectrbt, vm_object);
+//struct objectspt;
+//SPLAY_HEAD(objectspt, vm_object);
 struct objectlist;
 TAILQ_HEAD(objectlist, vm_object);
 
-struct objectlist	vm_object_cached_list;	/* rbtree of objects persisting */
+//struct objectspt	vm_object_cached_tree;
+struct objectlist	vm_object_cached_list;	/* list of cached objects persisting */
 int					vm_object_cached;		/* size of cached list */
 simple_lock_data_t	vm_cache_lock;			/* lock for object cache */
 
-struct objecttree	vm_object_tree;			/* rbtree of allocated objects */
+struct objectrbt	vm_object_tree;			/* rbtree of allocated objects */
 long				vm_object_count;		/* count of all objects */
 simple_lock_data_t	vm_object_tree_lock;	/* lock for object rbtree and count */
 

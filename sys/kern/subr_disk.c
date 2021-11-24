@@ -54,9 +54,9 @@
 
 #include <machine/param.h>
 
-struct disklist_head disklist;	/* TAILQ_HEAD */
-int	disk_count;					/* number of drives in global disklist */
-struct bufq 		bufq_list;	/* bufq head */
+struct disklist_head 	disklist;	/* TAILQ_HEAD */
+int						disk_count;	/* number of drives in global disklist */
+struct bufq 			bufq_list;	/* bufq head */
 
 /*
  * Initialize the disklist.  Called by main() before autoconfiguration.
@@ -412,14 +412,7 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 	}
 }
 
-char *
-disk_name(disk, dev)
-	struct dkdevice *disk;
-	dev_t 			dev;
-{
-	return (disk[dkunit(dev)].dk_name);
-}
-
+/* disk functions for easy access */
 struct dkdriver *
 disk_driver(disk, dev)
 	struct dkdevice *disk;
@@ -461,7 +454,6 @@ disk_device(disk, dev)
 }
 
 /* bufq routines */
-
 /*
  * Create a device buffer queue.
  */
@@ -470,10 +462,9 @@ bufq_alloc(bufq, flags)
 	struct bufq_state *bufq;
 	int flags;
 {
-	bufq->bq_flags = flags;
 	TAILQ_INIT(&bufq_list);
 	MALLOC(bufq->bq_private, struct bufq_state *, sizeof(struct bufq_state *), M_DEVBUF, M_ZERO);
-
+	bufq->bq_flags = flags;
 	bufq->bq_get = bufq_get;
 	bufq->bq_put = bufq_put;
 }

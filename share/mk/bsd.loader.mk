@@ -17,7 +17,7 @@ EFIINC=						${EFISRC}/include
 EFIINCMD=					${EFIINC}/${MACHINE}
 DLOADER=					${BOOTSRC}/dloader
 LDRSRC=						${BOOTSRC}/common
-#UBOOTSRC=					${BOOTSRC}/uboot
+UBOOTSRC=					${BOOTSRC}/uboot
 LIBCSRC=					/lib/libc
 
 BOOTOBJ=					${BOOTSTAND}
