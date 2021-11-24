@@ -38,7 +38,7 @@
 #include <lib/libsa/stand.h>
 #include <boot/common/bootstrap.h>
 #include <boot/common/smbios.h>
-#include <boot/i386/common/bootargs.h>
+#include <boot/arch/i386/common/bootargs.h>
 #include <lib/libkern/libkern.h>
 
 #include <machine/bootinfo.h>
