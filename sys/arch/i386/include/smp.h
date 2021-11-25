@@ -53,13 +53,6 @@ extern volatile int 	smp_started;
 extern int 				smp_threads_per_core;
 extern u_int 			all_cpus;
 
-/* IPI handlers (FreeBSD) */
-#define	IDTVEC(name)	__CONCAT(X, name)
-extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
-		IDTVEC(invlpg),						/* TLB shootdowns - 1 page */
-		IDTVEC(invlrng),					/* TLB shootdowns - page range */
-		IDTVEC(invlcache);					/* Write back and invalidate cache */
-
 void 	bootMP(void);
 
 void 	cpu_alloc(struct cpu_info *);

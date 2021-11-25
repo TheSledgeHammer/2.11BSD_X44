@@ -44,9 +44,12 @@
 #include <machine/gdt.h>
 #include <machine/pcb.h>
 #include <machine/psl.h>
+#include <machine/pte.h>
 #include <machine/specialreg.h>
 #include <machine/sysarch.h>
 #include <machine/segments.h>
+#include <machine/vm86.h>
+
 #include <machine/support.S>
 
 extern int 					vm86pa;
@@ -485,6 +488,130 @@ vm86_initialize(void)
         msgbufinit((vm_offset_t)vm86paddr + sizeof(struct vm86_layout),
             ctob(3) - sizeof(struct vm86_layout));
 #endif
+}
+
+void
+vm86_initial_bioscalls(basemem, extmem)
+	int *basemem, *extmem;
+{
+	int i, method;
+	int hasbrokenint12;
+	struct vm86frame vmf;
+	struct vm86context vmc;
+	uint64_t highwat = 0;
+	u_long pa;
+	pt_entry_t pte;
+	struct {
+		uint64_t base;
+		uint64_t length;
+		uint32_t type;
+	} *smap;
+
+	hasbrokenint12 = 0;
+	bzero(&vmf, sizeof(struct vm86frame));		/* safety */
+	vm86_initialize();
+
+	/*
+	 * Some newer BIOSes has broken INT 12H implementation which cause
+	 * kernel panic immediately. In this case, we need to scan SMAP
+	 * with INT 15:E820 first, then determine base memory size.
+	 */
+	if (hasbrokenint12) {
+		goto int15e820;
+	}
+
+	/*
+	 * Perform "base memory" related probes & setup
+	 */
+	vm86_intcall(0x12, &vmf);
+	*basemem = vmf.vmf_ax;
+	if (basemem > 640) {
+		printf("Preposterous BIOS basemem of %uK, truncating to 640K\n", basemem);
+		basemem = 640;
+	}
+	*extmem = 0;
+
+	for (pa = trunc_page(basemem * 1024); pa < ISA_HOLE_START; pa += PAGE_SIZE) {
+		pte = vtopte(pa + KERNBASE);
+		*pte = pa | PG_RW | PG_V;
+	}
+
+	/*
+	 * if basemem != 640, map pages r/w into vm86 page table so
+	 * that the bios can scribble on it.
+	 */
+	pte = (pt_entry_t) vm86paddr;
+	for (i = *basemem / 4; i < 160; i++) {
+		pte[i] = (i << PAGE_SHIFT) | PG_V | PG_RW | PG_U;
+	}
+
+int15e820:
+	/*
+	 * map page 1 R/W into the kernel page table so we can use it
+	 * as a buffer.  The kernel will unmap this page later.
+	 */
+	pte = (pt_entry_t) vtopte(KERNBASE + (1 << PAGE_SHIFT));
+	*pte = (1 << PAGE_SHIFT) | PG_RW | PG_V;
+
+	/*
+	 * get memory map with INT 15:E820
+	 */
+#define SMAPSIZ 	sizeof(*smap)
+#define SMAP_SIG	0x534D4150			/* 'SMAP' */
+
+	vmc.npages = 0;
+	smap = (void*) vm86_addpage(&vmc, 1, KERNBASE + (1 << PAGE_SHIFT));
+	vm86_getptr(&vmc, (vm_offset_t) smap, &vmf.vmf_es, &vmf.vmf_di);
+
+	vmf.vmf_ebx = 0;
+	do {
+		vmf.vmf_eax = 0xE820;
+		vmf.vmf_edx = SMAP_SIG;
+		vmf.vmf_ecx = SMAPSIZ;
+		i = vm86_datacall(0x15, &vmf, &vmc);
+		if (i || vmf.vmf_eax != SMAP_SIG) {
+			break;
+		}
+		if (boothowto & RB_VERBOSE) {
+			printf("SMAP type=%02x base=%016llx len=%016llx\n", smap->type, smap->base, smap->length);
+		}
+		if (smap->type == 0x01 && smap->base >= highwat) {
+			*extmem += (smap->length / 1024);
+			highwat = smap->base + smap->length;
+		}
+#ifndef PAE
+		if (smap->base >= 0xffffffff) {
+			printf("%uK of memory above 4GB ignored\n", (u_int)(smap->length / 1024));
+		}
+#endif
+	} while (vmf.vmf_ebx != 0);
+
+	if (*extmem != 0) {
+		if (*extmem > *basemem) {
+			*extmem -= *basemem;
+			method = 0xE820;
+			goto done;
+		}
+		printf("E820: extmem (%d) < basemem (%d)\n", *extmem, *basemem);
+	}
+
+	/*
+	 * try memory map with INT 15:E801
+	 */
+	vmf.vmf_ax = 0xE801;
+	if (vm86_intcall(0x15, &vmf) == 0) {
+		*extmem = vmf.vmf_cx + vmf.vmf_dx * 64;
+		method = 0xE801;
+		goto done;
+	}
+
+	vmf.vmf_ah = 0x88;
+	vm86_intcall(0x15, &vmf);
+	*extmem = vmf.vmf_ax;
+	method = 0x88;
+
+done:
+	printf("BIOS basemem: %dK, extmem: %dK (from %#x call)\n", *basemem, *extmem, method);
 }
 
 vm_offset_t

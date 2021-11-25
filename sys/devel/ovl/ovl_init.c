@@ -118,6 +118,7 @@ ovl_mem_init()
 
 /* Placeholder: Belongs in kern_malloc.c */
  char *omembase, *omemlimit;
+
  void
  omeminit()
  {

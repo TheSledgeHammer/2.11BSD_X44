@@ -114,6 +114,11 @@ static int	start_ap(int apic_id);
 /* Set to 1 once we're ready to let the APs out of the pen. */
 static volatile int aps_ready = 0;
 
+#define	IDTVEC(name)	__CONCAT(X, name)
+extern	IDTVEC(pmap_invalidate_all),		/* TLB shootdowns - global */
+		IDTVEC(pmap_invalidate_page),		/* TLB shootdowns - 1 page */
+		IDTVEC(pmap_invalidate_range);		/* TLB shootdowns - page range */
+
 /*
  * Initialize the IPI handlers and start up the AP's.
  */
