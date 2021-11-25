@@ -10,8 +10,8 @@
  * User visible structures and constants
  * related to terminal handling.
  */
-#ifndef _TTYCHARS_
-#define	_TTYCHARS_
+#ifndef _SYS_TTYCHARS_H_
+#define	_SYS_TTYCHARS_H_
 
 struct ttychars {
 	char	tc_erase;	/* erase last character */
@@ -50,4 +50,4 @@ struct ttychars {
 #define	CFLUSH	CTRL(o)
 #define	CWERASE	CTRL(w)
 #define	CLNEXT	CTRL(v)
-#endif /* _TTYCHARS_ */
+#endif /* _SYS_TTYCHARS_H_ */
