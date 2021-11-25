@@ -9,8 +9,8 @@
 /*
  * Terminal definitions related to underlying hardware.
  */
-#ifndef _SYS_TTYDEV_
-#define	_SYS_TTYDEV_
+#ifndef _SYS_TTYDEV_H_
+#define	_SYS_TTYDEV_H_
 
 /*
  * Speeds
@@ -48,4 +48,4 @@
 #define	DMBIC		2
 #define	DMGET		3
 #endif
-#endif /* !_SYS_TTYDEV_ */
+#endif /* !_SYS_TTYDEV_H_ */
