@@ -256,6 +256,7 @@ extern	struct vattr va_null;		/* predefined null vattr structure */
 #define	LEASE_WRITE	0x2		/* Check lease for modifiers */
 
 #endif /* KERNEL */
+struct cluster_save;
 struct componentname;
 
 struct vnodeops {
@@ -740,7 +741,6 @@ extern struct vnodeops vops;
 /*
  * Public vnode manipulation functions.
  */
-struct cluster_save;
 struct file;
 struct mount;
 struct nameidata;
