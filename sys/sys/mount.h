@@ -110,7 +110,7 @@ struct	xmount {
  * Flags set by internal operations.
  */
 #define	MNT_LOCAL			0x00001000	/* filesystem is stored locally */
-#define	MNT_QUOTA			0x00002000	/* quotas are enabled on filesystem */
+/*					0x00002000 */
 #define	MNT_ROOTFS			0x00004000	/* identifies the root filesystem */
 
 /*
