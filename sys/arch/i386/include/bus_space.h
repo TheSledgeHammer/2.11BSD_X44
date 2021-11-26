@@ -72,24 +72,18 @@
 #define _I386_BUS_SPACE_H_
 
 #include <sys/bus.h>
-
 #include <machine/pio.h>
-
-#ifndef __BUS_SPACE_COMPAT_OLDDEFS
-#define	__BUS_SPACE_COMPAT_OLDDEFS
-#endif
 
 /*
  * Values for the i386 bus space tag, not to be used directly by MI code.
  */
-#define	I386_BUS_SPACE_IO	0	/* space is i/o space */
-#define I386_BUS_SPACE_MEM	1	/* space is mem space */
+#define	I386_BUS_SPACE_IO				0	/* space is i/o space */
+#define I386_BUS_SPACE_MEM				1	/* space is mem space */
 
-#define __BUS_SPACE_HAS_STREAM_METHODS 1
+#define __BUS_SPACE_HAS_STREAM_METHODS 	1
 
 struct bus_space_tag;
 typedef	struct bus_space_tag 		*bus_space_tag_t;
-
 struct bus_space_tag  {
 	int					bst_type;
 	bus_space_tag_t		bst_super;

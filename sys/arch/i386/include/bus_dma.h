@@ -73,6 +73,9 @@
 
 #include <sys/bus.h>
 
+typedef struct i386_bus_dma_segment		*bus_dma_tag_t;
+typedef struct i386_bus_dmamap			*bus_dmamap_t;
+
 /*
  *	bus_dma_segment_t
  *
@@ -141,34 +144,5 @@ struct i386_bus_dma_tag {
 	void	(*_dmamem_unmap) (bus_dma_tag_t, caddr_t, size_t);
 	int		(*_dmamem_mmap) (bus_dma_tag_t, bus_dma_segment_t *, int, int, int, int);
 };
-
-#define	bus_dmamap_create(t, s, n, m, b, f, p)		\
-	(*(t)->_dmamap_create)((t), (s), (n), (m), (b), (f), (p))
-#define	bus_dmamap_destroy(t, p)					\
-	(*(t)->_dmamap_destroy)((t), (p))
-#define	bus_dmamap_load(t, m, b, s, p, f)			\
-	(*(t)->_dmamap_load)((t), (m), (b), (s), (p), (f))
-#define	bus_dmamap_load_mbuf(t, m, b, f)			\
-	(*(t)->_dmamap_load_mbuf)((t), (m), (b), (f))
-#define	bus_dmamap_load_uio(t, m, u, f)				\
-	(*(t)->_dmamap_load_uio)((t), (m), (u), (f))
-#define	bus_dmamap_load_raw(t, m, sg, n, s, f)		\
-	(*(t)->_dmamap_load_raw)((t), (m), (sg), (n), (s), (f))
-#define	bus_dmamap_unload(t, p)						\
-	(*(t)->_dmamap_unload)((t), (p))
-#define	bus_dmamap_sync(t, p, o)					\
-	(void)((t)->_dmamap_sync ?						\
-	    (*(t)->_dmamap_sync)((t), (p), (o)) : (void)0)
-
-#define	bus_dmamem_alloc(t, s, a, b, sg, n, r, f)	\
-	(*(t)->_dmamem_alloc)((t), (s), (a), (b), (sg), (n), (r), (f))
-#define	bus_dmamem_free(t, sg, n)					\
-	(*(t)->_dmamem_free)((t), (sg), (n))
-#define	bus_dmamem_map(t, sg, n, s, k, f)			\
-	(*(t)->_dmamem_map)((t), (sg), (n), (s), (k), (f))
-#define	bus_dmamem_unmap(t, k, s)					\
-	(*(t)->_dmamem_unmap)((t), (k), (s))
-#define	bus_dmamem_mmap(t, sg, n, o, p, f)			\
-	(*(t)->_dmamem_mmap)((t), (sg), (n), (o), (p), (f))
 
 #endif /* _I386_BUS_DMA_H_ */

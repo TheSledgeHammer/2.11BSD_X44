@@ -37,14 +37,13 @@
 /*
  * Bus address and size types
  */
-typedef u_long 	bus_addr_t;
-typedef u_long 	bus_size_t;
+typedef uint64_t	bus_addr_t;
+typedef size_t  	bus_size_t;
 
 /*
  * Access methods for bus resources and address space.
  */
-typedef	int 	bus_space_tag_t;
-typedef	u_long 	bus_space_handle_t;
+typedef	unsigned long 	bus_space_handle_t;
 
 struct bus_space_reservation {
 	bus_addr_t _bsr_start;
@@ -159,6 +158,7 @@ void		bus_space_copy_region_stream_2(bus_space_tag_t, bus_space_handle_t, bus_si
 void		bus_space_copy_region_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, bus_size_t);
 void		bus_space_copy_region_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, bus_size_t);
 
+#ifdef __HAVE_NO_BUS_DMA
 /* bus_dma(9) */
 typedef void *bus_dma_tag_t;
 
@@ -184,6 +184,10 @@ typedef struct bus_dmamap {
 	int					dm_nsegs;		/* # valid segments in mapping */
 	bus_dma_segment_t 	dm_segs[1];		/* segments; variable length */
 } *bus_dmamap_t;
+
+#else
+#include <machine/bus_dma.h>
+#endif /* __HAVE_NO_BUS_DMA */
 
 /* Flags used in various bus DMA methods. */
 #define	BUS_DMA_WAITOK			0x000	/* safe to sleep (pseudo-flag) */

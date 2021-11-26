@@ -69,7 +69,8 @@ struct uio {
 	int				uio_resid;
 	enum	uio_seg uio_segflg;
 	enum	uio_rw 	uio_rw;
-	struct	proc 	*uio_procp
+	struct proc 	*uio_procp;
+	struct vmspace 	*uio_vmspace;
 };
 
 /*

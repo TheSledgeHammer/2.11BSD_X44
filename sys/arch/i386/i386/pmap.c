@@ -94,14 +94,14 @@
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_param.h>
 
-#include <machine/param.h>
+#include <machine/atomic.h>
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
-#include <machine/atomic.h>
+#include <machine/param.h>
+#include <machine/pte.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
-#include <machine/pte.h>
 #ifdef SMP
 #include <machine/smp.h>
 #endif
@@ -477,8 +477,7 @@ pmap_set_nx(void)
 
 void
 pmap_bootstrap(firstaddr, loadaddr)
-	vm_offset_t firstaddr;
-	vm_offset_t loadaddr;
+	vm_offset_t firstaddr, loadaddr;
 {
 	vm_offset_t va;
 	pt_entry_t *pte, *unused;

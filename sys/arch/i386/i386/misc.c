@@ -40,10 +40,11 @@
 #include <sys/errno.h>
 #include <vm/include/vm_param.h>
 
-#include <machine/vmparam.h>
+#include <machine/cpufunc.h>
 #include <machine/param.h>
 #include <machine/pmap.h>
 #include <machine/pte.h>
+#include <machine/vmparam.h>
 
 extern pt_entry_t		*CMAP1, *CMAP2;
 extern caddr_t			CADDR1, CADDR2;
@@ -109,6 +110,7 @@ copyout (from, to, len)
  */
 void
 clearseg(n)
+	int n;
 {
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
 	lcr3(rcr3());
@@ -122,6 +124,7 @@ clearseg(n)
  */
 void
 copyseg(frm, n)
+	int frm, n;
 {
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
 	lcr3(rcr3());
@@ -134,6 +137,7 @@ copyseg(frm, n)
  */
 void
 physcopyseg(frm, to)
+	int frm, to;
 {
 	*(int*) CMAP1 = PG_V | PG_KW | ctob(frm);
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(to);
@@ -165,6 +169,7 @@ _remque(element)
 	((struct prochd*) (element->ph_rlink))->ph_link = element->ph_link;
 	element->ph_rlink = (struct proc*) 0;
 }
+
 
 vmunaccess() {}
 

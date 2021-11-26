@@ -60,14 +60,18 @@
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
 
-#include <net/netisr.h>
-
-#include <dev/misc/cons/cons.h>
-
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
+#include <net/netisr.h>
+
+#include <dev/core/ic/i8042reg.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/misc/cons/cons.h>
+
+#include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
@@ -76,17 +80,9 @@
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
-#include <machine/bootinfo.h>
+#include <machine/vm86.h>
 
 #include <i386/isa/isa_machdep.h>
-
-#include <dev/core/ic/i8042reg.h>
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
-
-#ifdef VM86
-#include <machine/vm86.h>
-#endif
 
 #include "npx.h"
 #if NNPX > 0
@@ -458,7 +454,6 @@ sendsig(catcher, sig, mask, code)
 	/*
 	 * Build the signal context to be used by sigreturn.
 	 */
-//#ifdef VM86
 	if (tf->tf_eflags & PSL_VM) {
 		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
 		struct vm86_kernel *vm86 =  &p->p_addr->u_pcb.pcb_vm86;
@@ -475,9 +470,7 @@ sendsig(catcher, sig, mask, code)
 		 * getting to vm86 mode, so turn it off.
 		 */
 		tf->tf_eflags &= ~(PSL_VM | PSL_T | PSL_VIF | PSL_VIP);
-	} else
-//#endif /* VM86 */
-	{
+	} else {
 		frame.sf_sc.sc_gs = tf->tf_gs;
 		frame.sf_sc.sc_fs = tf->tf_fs;
 		frame.sf_sc.sc_es = tf->tf_es;
@@ -562,7 +555,6 @@ sigreturn(p, uap, retval)
 	if (copyin((caddr_t)scp, &context, sizeof(*scp)) != 0)
 		return (EFAULT);
 
-//#ifdef VM86
 	if (context.sc_eflags & PSL_VM) {
 		struct trapframe_vm86 *tf = (struct trapframe_vm86 *)tf;
 		struct vm86_kernel *vm86;
@@ -588,9 +580,7 @@ sigreturn(p, uap, retval)
 		tf->tf_vm86_fs = context.sc_fs;
 		tf->tf_vm86_es = context.sc_es;
 		tf->tf_vm86_ds = context.sc_ds;
-	} else
-//#endif /* VM86 */
-	{
+	} else {
 		/*
 		 * Check for security violations.  If we're returning to
 		 * protected mode, the CPU will validate the segment registers
@@ -713,7 +703,6 @@ long	dumplo = 0; 			/* blocks */
 void
 dumpsys()
 {
-
 	if (dumpdev == NODEV)
 		return;
 	if ((minor(dumpdev) & 07) != 1)
@@ -982,9 +971,8 @@ init386(first)
 	enable_intr();
 
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
-//#ifdef VM86
 	vm86_initial_bioscalls(&biosbasemem, &biosextmem);
-//#else
+
 	/*
 	 * This memory size stuff is a real mess.  Here is a simple
 	 * setup that just believes the BIOS.  After the rest of
@@ -994,7 +982,6 @@ init386(first)
 	 */
 	biosbasemem = rtcin(RTC_BASELO) + (rtcin(RTC_BASEHI) << 8);
 	biosextmem = rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI) << 8);
-//#endif
 	Maxmem = btoc((biosextmem + 1024) * 1024);
 	maxmem = Maxmem - 1;
 	physmem = btoc(biosbasemem * 1024 + (biosextmem - 1) * 1024);

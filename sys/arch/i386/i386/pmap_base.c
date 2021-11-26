@@ -54,9 +54,9 @@
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
-#include <machine/vmparam.h>
 #include <machine/pmap_base.h>
 #include <machine/specialreg.h>
+#include <machine/vmparam.h>
 
 vm_offset_t virtual_avail;	/* VA of first avail page (after kernel bss) */
 vm_offset_t virtual_end;	/* VA of last avail page (end of kernel AS) */

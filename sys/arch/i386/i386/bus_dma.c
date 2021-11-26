@@ -91,12 +91,12 @@
 
 #include <vm/include/vm_extern.h>
 
+#include <dev/core/isa/isareg.h>
+
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
 #include <i386/isa/isa_machdep.h>
-
-#include <dev/core/isa/isareg.h>
 
 /*
  * Extent maps to manage I/O and ISA memory hole space.  Allocate
@@ -437,6 +437,59 @@ i386_memio_subregion(t, bsh, offset, size, nbshp)
 }
 
 /*
+ * Utility function to load a linear buffer.
+ */
+static int
+bus_dmamap_load_buffer(bus_dma_tag_t t, bus_dmamap_t map, void *buf,
+    bus_size_t buflen, struct vmspace *vm, int flags)
+{
+	bus_size_t sgsize;
+	bus_addr_t curaddr;
+	caddr_t vaddr = (caddr_t)buf;
+	pmap_t pmap;
+
+	if (vm != NULL)
+		pmap = vm_map_pmap(&vm->vm_map);
+	else
+		pmap = pmap_kernel();
+
+	while (buflen > 0) {
+		int error;
+
+		/*
+		 * Get the bus address for this segment.
+		 */
+		curaddr = _BUS_VIRT_TO_BUS(pmap, vaddr);
+
+		/*
+		 * Compute the segment size, and adjust counts.
+		 */
+		sgsize = PAGE_SIZE - ((u_long)vaddr & PGOFSET);
+		if (buflen < sgsize)
+			sgsize = buflen;
+
+		/*
+		 * If we're beyond the bounce threshold, notify
+		 * the caller.
+		 */
+		if (map->_dm_bounce_thresh != 0 &&
+		    curaddr + sgsize >= map->_dm_bounce_thresh)
+			return (EINVAL);
+
+
+		error = bus_dmamap_load_busaddr(t, map, curaddr, sgsize);
+		if (error)
+			return error;
+
+		vaddr += sgsize;
+		buflen -= sgsize;
+	}
+
+	return (0);
+}
+
+
+/*
  * Common function for DMA map creation.  May be called by bus-specific
  * DMA map creation functions.
  */
@@ -476,7 +529,7 @@ bus_dmamap_create(t, size, nsegments, maxsegsz, boundary, flags, dmamp)
 	map = (struct i386_bus_dmamap *)mapstore;
 	map->_dm_size = size;
 	map->_dm_segcnt = nsegments;
-	map->_dm_maxsegsz = maxsegsz;
+	map->_dm_maxmaxsegsz = maxsegsz;
 	map->_dm_boundary = boundary;
 	map->_dm_flags = flags & ~(BUS_DMA_WAITOK|BUS_DMA_NOWAIT);
 	map->dm_nsegs = 0;		/* no valid mappings */
@@ -565,7 +618,7 @@ bus_dmamap_load(t, map, buf, buflen, p, flags)
 		} else {
 			if (curaddr == lastaddr &&
 			    (map->dm_segs[seg].ds_len + sgsize) <=
-			     map->_dm_maxsegsz &&
+			     map->_dm_maxmaxsegsz &&
 			     (map->_dm_boundary == 0 ||
 			     (map->dm_segs[seg].ds_addr & bmask) ==
 			     (curaddr & bmask)))
@@ -593,6 +646,63 @@ bus_dmamap_load(t, map, buf, buflen, p, flags)
 	return (0);
 }
 
+static int
+bus_dmamap_load_busaddr(bus_dma_tag_t t, bus_dmamap_t map, bus_addr_t addr, bus_size_t size)
+{
+	bus_dma_segment_t * const segs = map->dm_segs;
+	int nseg = map->dm_nsegs;
+	bus_addr_t bmask = ~(map->_dm_boundary - 1);
+	bus_addr_t lastaddr = 0xdead; /* XXX gcc */
+	bus_size_t sgsize;
+
+	if (nseg > 0)
+		lastaddr = segs[nseg-1].ds_addr + segs[nseg-1].ds_len;
+again:
+	sgsize = size;
+	/*
+	 * Make sure we don't cross any boundaries.
+	 */
+	if (map->_dm_boundary > 0) {
+		bus_addr_t baddr; /* next boundary address */
+
+		baddr = (addr + map->_dm_boundary) & bmask;
+		if (sgsize > (baddr - addr))
+			sgsize = (baddr - addr);
+	}
+
+	/*
+	 * Insert chunk into a segment, coalescing with
+	 * previous segment if possible.
+	 */
+	if (nseg > 0 && addr == lastaddr &&
+	    segs[nseg-1].ds_len + sgsize <= map->dm_maxsegsz &&
+	    (map->_dm_boundary == 0 ||
+	     (segs[nseg-1].ds_addr & bmask) == (addr & bmask))) {
+		/* coalesce */
+		segs[nseg-1].ds_len += sgsize;
+	} else if (nseg >= map->_dm_segcnt) {
+		return EFBIG;
+	} else {
+		/* new segment */
+		segs[nseg].ds_addr = addr;
+		segs[nseg].ds_len = sgsize;
+		nseg++;
+	}
+
+	lastaddr = addr + sgsize;
+	if (map->_dm_bounce_thresh != 0 && lastaddr > map->_dm_bounce_thresh)
+		return EINVAL;
+
+	addr += sgsize;
+	size -= sgsize;
+	if (size > 0)
+		goto again;
+
+	map->dm_nsegs = nseg;
+
+	return (0);
+}
+
 /*
  * Like _bus_dmamap_load(), but for mbufs.
  */
@@ -617,7 +727,6 @@ bus_dmamap_load_uio(t, map, uio, flags)
 	struct uio *uio;
 	int flags;
 {
-
 	panic("bus_dmamap_load_uio: not implemented");
 }
 
@@ -626,16 +735,51 @@ bus_dmamap_load_uio(t, map, uio, flags)
  * bus_dmamem_alloc().
  */
 int
-bus_dmamap_load_raw(t, map, segs, nsegs, size, flags)
+bus_dmamap_load_raw(t, map, segs, nsegs, size0, flags)
 	bus_dma_tag_t t;
 	bus_dmamap_t map;
 	bus_dma_segment_t *segs;
 	int nsegs;
-	bus_size_t size;
+	bus_size_t size0;
 	int flags;
 {
+	bus_size_t size;
+	int i, error = 0;
 
-	panic("bus_dmamap_load_raw: not implemented");
+	/*
+	 * Make sure that on error condition we return "no valid mappings."
+	 */
+	map->dm_mapsize = 0;
+	map->dm_nsegs = 0;
+	KASSERT(map->dm_maxsegsz <= map->_dm_maxmaxsegsz);
+
+	if (size0 > map->_dm_size)
+		return EINVAL;
+
+	for (i = 0, size = size0; i < nsegs && size > 0; i++) {
+		bus_dma_segment_t *ds = &segs[i];
+		bus_size_t sgsize;
+
+		sgsize = min(ds->ds_len, size);
+		if (sgsize == 0)
+			continue;
+		error = bus_dmamap_load_busaddr(t, map, ds->ds_addr, sgsize);
+		if (error != 0)
+			break;
+		size -= sgsize;
+	}
+
+	if (error != 0) {
+		map->dm_mapsize = 0;
+		map->dm_nsegs = 0;
+		return error;
+	}
+
+	/* XXX TBD bounce */
+
+	map->dm_mapsize = size0;
+	return (0);
+	//panic("bus_dmamap_load_raw: not implemented");
 }
 
 /*
@@ -652,6 +796,8 @@ bus_dmamap_unload(t, map)
 	 * No resources to free; just mark the mappings as
 	 * invalid.
 	 */
+	map->dm_maxsegsz = map->_dm_maxmaxsegsz;
+	map->dm_mapsize = 0;
 	map->dm_nsegs = 0;
 }
 
@@ -665,7 +811,6 @@ bus_dmamap_sync(t, map, op)
 	bus_dmamap_t map;
 	bus_dmasync_op_t op;
 {
-
 	/* Nothing to do here. */
 }
 

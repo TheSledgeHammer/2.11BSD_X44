@@ -133,14 +133,13 @@ struct pmap {
 	struct pmap_statistics	pm_stats;		/* pmap statistics */
 	long					pm_ptpages;		/* more stats: PT pages */
 	int 					pm_flags;		/* see below */
-
 	int						pm_active;		/* active on cpus */
 	u_int32_t 				pm_cpus;		/* mask of CPUs using pmap */
 };
 typedef struct pmap			*pmap_t;
 
 #ifdef _KERNEL
-extern pmap_t		kernel_pmap_store;
+extern struct 		kernel_pmap_store;
 #define kernel_pmap (&kernel_pmap_store)
 #endif
 
@@ -194,6 +193,12 @@ extern int 					i386_pmap_PDRSHIFT;
 
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
+
+/* misc.c */
+int		copyout(void *, void *, u_int);
+void	clearseg(int);
+void	copyseg(int, int);
+void	physcopyseg(int, int);
 #endif	/* KERNEL */
 #endif /* !LOCORE */
 #endif	/* _I386_PMAP_H_ */
