@@ -733,6 +733,7 @@ pmap_init(phys_start, phys_end)
 	npg = atop(phys_end - phys_start);
 	s = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
 	s = round_page(s);
+
 	pv_table = (pv_entry_t *)kmem_alloc(kernel_map, s);
 	addr = (vm_offset_t) pv_table;
 	addr += sizeof(struct pv_entry) * npg;
@@ -2076,8 +2077,7 @@ pmap_pvdump(pa)
 
 	printf("pa %x", pa);
 	for (pv = pa_to_pvh(pa); pv; pv = pv->pv_next) {
-		printf(" -> pmap %x, va %x, flags %x", pv->pv_pmap, pv->pv_va,
-				pv->pv_flags);
+		printf(" -> pmap %x, va %x, flags %x", pv->pv_pmap, pv->pv_va, pv->pv_flags);
 		pmap_pads(pv->pv_pmap);
 	}
 	printf(" ");
@@ -2118,20 +2118,24 @@ pmap_pads(pm)
 	unsigned va, i, j;
 	register int *ptep;
 
-	if (pm == kernel_pmap())
+	if (pm == kernel_pmap()) {
 		return;
+	}
 	for (i = 0; i < 1024; i++) {
-		if (pm->pm_pdir[i].pd_v) {
+		if (pmap_pde_v(pm->pm_pdir[i])) {
 			for (j = 0; j < 1024; j++) {
 				va = (i << 22) + (j << 12);
-				if (pm == kernel_pmap() && va < 0xfe000000)
+				if (pm == kernel_pmap() && va < 0xfe000000) {
 					continue;
-				if (pm != kernel_pmap() && va > UPT_MAX_ADDRESS)
+				}
+				if (pm != kernel_pmap() && va > UPT_MAX_ADDRESS) {
 					continue;
+				}
 				ptep = pmap_pte(pm, va);
-				if (pmap_pte_v(ptep))
+				if (pmap_pte_v(ptep)) {
 					printf("%x:%x ", va, *(int*) ptep);
-			};
+				}
+			}
 		}
 	}
 }

@@ -53,6 +53,7 @@
 #include <sys/sysctl.h>
 #include <sys/cputopo.h>
 #include <sys/queue.h>
+#include <sys/tree.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>

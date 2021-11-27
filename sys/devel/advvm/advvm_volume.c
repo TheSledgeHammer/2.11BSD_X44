@@ -29,10 +29,12 @@
  */
 
 #include <sys/extent.h>
+#include <sys/null.h>
 #include <sys/tree.h>
 #include <lib/libkern/libkern.h>
 
 #include <devel/sys/malloctypes.h>
+#include <devel/advvm/advvm_domain.h>
 #include <devel/advvm/advvm_var.h>
 #include <devel/advvm/advvm_volume.h>
 

@@ -28,7 +28,7 @@
  *	@(#)advvm_fileset.h 1.0 	7/01/21
  */
 
-/* filesets is a pool of advvm_domains */
+/* filesets is a pool of advvm_domains. */
 
 #ifndef _DEV_ADVVM_FILESET_H_
 #define _DEV_ADVVM_FILESET_H_

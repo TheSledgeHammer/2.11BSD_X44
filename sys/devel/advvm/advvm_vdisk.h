@@ -44,16 +44,13 @@
  */
 
 struct advvm_freelist;
-LIST_HEAD(advvm_freelist, advvm_stgdesc);
-struct advvm_stgdesc {
+LIST_HEAD(advvm_freelist, advvm_vdfree);
+struct advvm_vdfree {
 	uint32_t						avd_startcluster;	/* vd cluster number of first free cluster */
 	uint32_t						avd_numcluster;		/* number of free clusters */
-
-	struct advvm_stgdesc 			*avd_prev;
-	struct advvm_stgdesc 			*avd_next;
-	LIST_ENTRY(advvm_stgdesc)		avd_entry;
+	LIST_ENTRY(advvm_vdfree)		avd_entry;
 };
-typedef struct advvm_stgdesc		advvm_stgdesc_t;
+typedef struct advvm_vdfree			advvm_vdfree_t;
 
 /*
  * vd - this structure describes a virtual disk, including accessed
