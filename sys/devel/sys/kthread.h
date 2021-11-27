@@ -217,7 +217,7 @@ void			kthread_create_deferred(void (*)(void *), void *);
 void			kthread_run_deferred_queue(void);
 
 struct kthread *ktfind (pid_t);				/* Find kthread by id. */
-int				leavektgrp (kthread_t);
+int				leavektgrp (kthread_t);		/* leave thread group */
 
 /* KThread ITPC */
 extern void 	kthreadpool_itpc_send (struct threadpool_itpc *, struct kthreadpool *);

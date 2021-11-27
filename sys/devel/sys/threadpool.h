@@ -57,7 +57,6 @@
 /* Threadpool Jobs */
 TAILQ_HEAD(job_head, threadpool_job);
 typedef void threadpool_job_fn_t(struct threadpool_job *);
-/* Threadpool Jobs */
 struct threadpool_job  {
 	TAILQ_ENTRY(threadpool_job)			job_entry;
 	struct wqueue						job_wqueue;
@@ -73,7 +72,7 @@ struct threadpool_job  {
 #define	job_utp_thread					job_utpool.utp_overseer
 };
 
-/* Inter-Threadpool-Communication (ITPC) */
+/* Inter-Threadpool Communication (ITPC) */
 TAILQ_HEAD(itpc_head, threadpool_itpc);
 struct threadpool_itpc {
 	struct itpc_head					itpc_header;		/* Threadpool ITPC queue header */

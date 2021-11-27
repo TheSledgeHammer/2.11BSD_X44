@@ -693,7 +693,7 @@ boot(arghowto)
 
 u_long	dumpmag = 	0x8fca0101;	/* magic number for savecore */
 int		dumpsize = 	0;			/* also for savecore */
-long	dumplo = 0; 			/* blocks */
+long	dumplo = 	0; 			/* blocks */
 
 /*
  * Doadump comes here after turning off memory management and
@@ -1138,7 +1138,7 @@ need_resched(p)
 {
 	want_resched(p);
 
-	if(p) {
+	if (p) {
 		aston(p);
 	}
 }

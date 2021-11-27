@@ -147,7 +147,7 @@ extern struct 		kernel_pmap_store;
  * Macros for speed
  */
 #define PMAP_ACTIVATE(pmapp, pcbp) 							\
-	if ((pmapp) != NULL /*&& (pmapp)->pm_pdchanged */) {  	\
+	if ((pmapp) != NULL && (pmapp)->pm_pdchanged) {  		\
 		(pcbp)->pcb_cr3 = 									\
 		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); 	\
 		if ((pmapp) == &curproc->p_vmspace->vm_pmap) 		\

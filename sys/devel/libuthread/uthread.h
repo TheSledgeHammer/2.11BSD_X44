@@ -152,7 +152,6 @@ struct uthreadpool {
     boolean_t							utp_initcq;			/* check if in itc queue */
 };
 
-
 struct uthread 							*uthreadNUTHREAD;	/* the uthread table itself */
 
 struct uthread 							*alluthread;		/* List of active uthreads. */
@@ -173,8 +172,8 @@ int 			uthread_exit (int);
 void			uthread_create_deferred(void (*)(void *), void *);
 void			uthread_run_deferred_queue(void);
 
-struct uthread *utfind (pid_t);
-int				leaveutgrp(uthread_t);
+struct uthread *utfind (pid_t);			/* Find uthread by id. */
+int				leaveutgrp(uthread_t);	/* leave thread group */
 
 /* UThread ITPC */
 extern void 	uthreadpool_itpc_send(struct threadpool_itpc *, struct uthreadpool *);

@@ -408,13 +408,13 @@ vm_page_lookup(segment, offset)
 		if ((mem->segment == segment) && (mem->offset == offset)) {
 			simple_unlock(&page_bucket_lock);
 			splx(spl);
-			return(mem);
+			return (mem);
 		}
 	}
 
 	simple_unlock(&page_bucket_lock);
 	splx(spl);
-	return(NULL);
+	return (NULL);
 }
 
 /*
@@ -665,7 +665,7 @@ vm_page_zero_fill(m)
 
 	m->flags &= ~PG_CLEAN;
 	pmap_zero_page(VM_PAGE_TO_PHYS(m));
-	return(TRUE);
+	return (TRUE);
 }
 
 /*

@@ -1502,7 +1502,6 @@ pmap_pte(pmap, va)
 	register pmap_t	pmap;
 	vm_offset_t va;
 {
-
 #ifdef DEBUGx
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_pte(%x, %x) ->\n", pmap, va);
@@ -1605,7 +1604,7 @@ pmap_update()
 }
 
 /*
- *	Routine:	pmap_collect
+ *	Routine:	pmap_collect (Taken from 4.4BSD lite2 HP300)
  *	Function:
  *		Garbage collects the physical map system for
  *		pages which are no longer used.
@@ -1618,7 +1617,7 @@ pmap_update()
  */
 void
 pmap_collect(pmap)
-	pmap_t		pmap;
+	pmap_t	pmap;
 {
 	register vm_offset_t pa;
 	register pv_entry_t pv;
@@ -1629,10 +1628,45 @@ pmap_collect(pmap)
 #ifdef DEBUG
 	int *pde;
 	int opmapdebug;
-	printf("pmap_collect(%x) ", pmap);
 #endif
 	if (pmap != kernel_pmap())
 		return;
+
+#ifdef DEBUG
+	if (pmapdebug & PDB_FOLLOW)
+		printf("pmap_collect(%x)\n", pmap);
+#endif
+	s = splimp();
+	for (pa = vm_first_phys; pa < vm_last_phys; pa += PAGE_SIZE) {
+		/*
+		 * Locate physical pages which are being used as kernel
+		 * page table pages.
+		 */
+		pv = pa_to_pvh(pa);
+		if (pv->pv_pmap != kernel_pmap() || !(pv->pv_flags & PV_PTPAGE)) {
+			continue;
+		}
+		do {
+			if (pv->pv_pmap == kernel_pmap()) {
+				break;
+			}
+		} while (pv == pv->pv_next);
+		if (pv == NULL)
+			continue;
+#ifdef DEBUG
+		pmap_pvdump(pa);
+		continue;
+#endif
+		pte = (int *)(pv->pv_va + I386_PAGE_SIZE);
+		while (--pte >= (int*) pv->pv_va /* && *pte == PG_NV */)
+			;
+		if (pte >= (int*) pv->pv_va) {
+			continue;
+		}
+		kpa = pmap_extract(pmap, pv->pv_va);
+		pmap_remove_all(kpa);
+	}
+	splx(s);
 }
 
 /* [ macro again?, should I force kstack into user map here? -wfj ] */

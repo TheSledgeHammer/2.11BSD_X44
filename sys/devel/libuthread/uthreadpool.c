@@ -802,6 +802,8 @@ itpc_remove_uthreadpool(itpc, utpool)
 				}
 			}
 		}
+	} else {
+		printf("no uthread to remove");
 	}
 }
 
@@ -843,7 +845,7 @@ retry:
 			/* exit queue, reset count to 0 and panic */
 			itpc_remove_uthreadpool(itpc, utpool);
 			utpool->utp_retcnt = 0;
-			panic("uthreadpool x exited itc queue after 5 failed attempts");
+			panic("uthreadpool x exited itpc queue after 5 failed attempts");
 		}
 	}
 }

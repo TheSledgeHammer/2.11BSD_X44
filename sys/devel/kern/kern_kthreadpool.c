@@ -803,6 +803,8 @@ itpc_remove_kthreadpool(itpc, ktpool)
 				}
 			}
 		}
+	} else {
+		printf("no kthread to remove");
 	}
 }
 
@@ -844,7 +846,7 @@ retry:
 			/* exit queue, reset count to 0 and panic */
 			itpc_remove_kthreadpool(itpc, ktpool);
 			ktpool->ktp_retcnt = 0;
-			panic("kthreadpool x exited itc queue after 5 failed attempts");
+			panic("kthreadpool x exited itpc queue after 5 failed attempts");
 		}
 	}
 }

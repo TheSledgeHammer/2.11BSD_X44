@@ -26,8 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_SLAB_H_
-#define _VM_SLAB_H_
+#ifndef _SYS_SLAB_H_
+#define _SYS_SLAB_H_
 
 #include <sys/malloc.h>
 #include <sys/queue.h>
@@ -48,7 +48,6 @@ typedef struct slab_metadata    *slab_metadata_t;
 struct slab {
     CIRCLEQ_ENTRY(slab)         s_list;                                         /* slab list entry */
     struct kmembuckets			*s_bucket;										/* slab kmembucket */
-
     slab_metadata_t             s_meta;                                         /* slab metadata */
     void						*s_metaaddr;
 
@@ -131,4 +130,4 @@ struct kmembuckets 	*kmembucket_search(slab_cache_t, slab_metadata_t, long, int,
 	splx(s); 														\
 }
 */
-#endif /* _VM_SLAB_H_ */
+#endif /* _SYS_SLAB_H_ */
