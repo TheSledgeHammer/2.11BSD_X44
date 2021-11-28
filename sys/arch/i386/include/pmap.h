@@ -139,7 +139,7 @@ struct pmap {
 typedef struct pmap			*pmap_t;
 
 #ifdef _KERNEL
-extern struct 		kernel_pmap_store;
+extern struct pmap  *kernel_pmap_store;
 #define kernel_pmap (&kernel_pmap_store)
 #endif
 
@@ -151,7 +151,7 @@ extern struct 		kernel_pmap_store;
 		(pcbp)->pcb_cr3 = 									\
 		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); 	\
 		if ((pmapp) == &curproc->p_vmspace->vm_pmap) 		\
-			lr3((pcbp)->pcb_cr3); 							\
+			lcr3((pcbp)->pcb_cr3); 							\
 		(pmapp)->pm_pdchanged = FALSE; 						\
 	}
 
@@ -199,6 +199,10 @@ int		copyout(void *, void *, u_int);
 void	clearseg(int);
 void	copyseg(int, int);
 void	physcopyseg(int, int);
+
+void 	pmap_invalidate_page(pmap_t, vm_offset_t);
+void 	pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
+void	pmap_invalidate_all(pmap_t);
 #endif	/* KERNEL */
 #endif /* !LOCORE */
 #endif	/* _I386_PMAP_H_ */

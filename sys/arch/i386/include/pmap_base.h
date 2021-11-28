@@ -39,6 +39,8 @@
 #ifndef _I386_PMAP_BASE_H_
 #define	_I386_PMAP_BASE_H_
 
+struct pmap_tlb_shootdown_q;
+
 struct pmap_args {
 	void (*pmap_cold_map)(u_long pa, u_long va, u_long cnt);
 	void (*pmap_cold_mapident)(u_long pa, u_long cnt);

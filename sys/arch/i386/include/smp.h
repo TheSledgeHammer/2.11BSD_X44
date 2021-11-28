@@ -55,8 +55,4 @@ extern u_int 			all_cpus;
 
 void 	bootMP(void);
 void 	cpu_alloc(struct cpu_info *);
-void 	pmap_invalidate_page(pmap_t, vm_offset_t);
-void 	pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
-void	pmap_invalidate_all(pmap_t);
-
 #endif /* _I386_SMP_H_ */
