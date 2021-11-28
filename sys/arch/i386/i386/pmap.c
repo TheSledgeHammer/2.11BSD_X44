@@ -88,6 +88,7 @@
 #include <sys/sysctl.h>
 #include <sys/cputopo.h>
 #include <sys/queue.h>
+#include <sys/vmmeter.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
@@ -214,6 +215,9 @@ int pmapvacflush = 0;
 #define pte_prot(m, p)	(protection_codes[p])
 int	protection_codes[8];
 
+struct pmap_tlb_shootdown_job;
+struct pmap_tlb_shootdown_q;
+
 struct pmap	kernel_pmap_store;
 
 static int pgeflag = 0;			/* PG_G or-in */
@@ -229,16 +233,13 @@ pt_entry_t pg_nx;
 
 extern int pat_works;
 extern int pg_ps_enabled;
-
 extern int elf32_nxstack;
-
-struct pmap_tlb_shootdown_job;
-struct pmap_tlb_shootdown_q;
 
 #define	PAT_INDEX_SIZE	8
 static int pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
-extern char 		_end[];
+extern u_long 		KERNend;
+extern vm_offset_t 	kernel_vm_end;
 extern u_long 		physfree;			/* phys addr of next free page */
 extern u_long 		vm86phystk;			/* PA of vm86/bios stack */
 extern u_long 		vm86paddr;			/* address of vm86 region */
@@ -491,15 +492,15 @@ pmap_bootstrap(firstaddr, loadaddr)
 	 * Count bootstrap data as being resident in case any of this data is
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
-	kernel_pmap()->pm_pdir = IdlePTD;
+	kernel_pmap->pm_pdir = IdlePTD;
 
 #ifdef PMAP_PAE_COMP
-	kernel_pmap()->pm_pdir = IdlePDPT;
+	kernel_pmap->pm_pdir = IdlePDPT;
 #endif
-	simple_lock_init(&kernel_pmap()->pm_lock, "kernel_pmap_lock");
+	simple_lock_init(&kernel_pmap->pm_lock, "kernel_pmap_lock");
 	LIST_INIT(&pmaps);
-	kernel_pmap()->pm_count = 1;
-	kernel_pmap()->pm_stats.resident_count = res;
+	kernel_pmap->pm_count = 1;
+	kernel_pmap->pm_stats.resident_count = res;
 
 #define	SYSMAP(c, p, v, n)	\
 	v = (c)va; va += ((n) * I386_PAGE_SIZE); p = pte; pte += (n);
@@ -2205,8 +2206,8 @@ pmap_bios16_leave(void *arg)
 }
 
 /* Pmap Arguments */
-/*
-struct pmap_args pmap_arg = {
+
+struct pmap_args pmap_args_ptr = {
 		.pmap_cold_map 				= &pmap_cold_map,
 		.pmap_cold_mapident 		= &pmap_cold_mapident,
 		.pmap_remap_lower 			= &pmap_remap_lower,
@@ -2265,4 +2266,3 @@ struct pmap_args pmap_arg = {
 		.pmap_tlb_shootdown_job_get = &pmap_tlb_shootdown_job_get,
 		.pmap_tlb_shootdown_job_put = &pmap_tlb_shootdown_job_put
 };
-*/

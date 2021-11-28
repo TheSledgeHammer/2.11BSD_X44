@@ -70,9 +70,10 @@
 #define	_VM_PARAM_
 
 #ifdef _KERNEL
-#include <sys/types.h>
-#include <machine/vmparam.h>
 #include <sys/resourcevar.h>
+#include <sys/types.h>
+#include <sys/vmmeter.h>
+#include <machine/vmparam.h>
 #endif
 
 /*
@@ -130,7 +131,7 @@ extern int			page_shift;
  *	Convert addresses to pages and vice versa.
  *	No rounding is used.
  */
-#ifdef KERNEL
+#ifdef _KERNEL
 #define	atop(x)		(((unsigned long)(x)) >> PAGE_SHIFT)
 #define	ptoa(x)		((vm_offset_t)((x) << PAGE_SHIFT))
 

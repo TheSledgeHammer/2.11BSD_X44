@@ -94,8 +94,8 @@ typedef uint64_t 		pdpt_entry_t;
 typedef uint64_t 		pd_entry_t;
 typedef uint64_t 		pt_entry_t;
 
-//extern pdpt_entry_t 	*IdlePDPT;
 extern pt_entry_t 		pg_nx;
+//extern pdpt_entry_t 	*IdlePDPT;
 //extern pd_entry_t 		*IdlePTD_pae;	/* physical address of "Idle" state directory */
 
 /*

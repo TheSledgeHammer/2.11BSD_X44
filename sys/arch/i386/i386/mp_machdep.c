@@ -56,7 +56,6 @@
 #include <machine/vm86.h>
 #include <machine/smp.h>
 #include <machine/percpu.h>
-#include <machine/pmap_smp.h>
 
 #define WARMBOOT_TARGET		0
 #define WARMBOOT_OFF		(PMAP_MAP_LOW + 0x0467)

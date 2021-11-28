@@ -77,12 +77,4 @@
 typedef uint32_t 		pd_entry_t;
 typedef uint32_t 		pt_entry_t;
 typedef	uint32_t 		pdpt_entry_t;
-
-/*
-extern pt_entry_t 		PTmap[], APTmap[];
-extern pd_entry_t 		PTD[], APTD[];
-extern pd_entry_t 		PTDpde[], APTDpde[];
-extern pd_entry_t 		*IdlePTD_nopae;
-extern pt_entry_t 		*KPTmap_nopae;
-*/
 #endif /* _I386_PMAP_NOPAE_H */

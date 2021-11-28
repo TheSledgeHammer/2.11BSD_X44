@@ -73,7 +73,6 @@ int i386_pmap_PDRSHIFT;
 
 struct pmap kernel_pmap_store;
 static struct pmap_args *pmap_args_ptr;
-extern struct pmap_args pmap_pae_args, pmap_nopae_args;
 int pae_mode;
 
 void

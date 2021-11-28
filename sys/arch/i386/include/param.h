@@ -79,9 +79,8 @@
 
 #define	PGOFSET			(NBPG-1)			/* byte offset into page */
 #define	PGSHIFT			12					/* LOG2(NBPG) */
-
 #define PGSIZE			(1 << PGSHIFT)		/* bytes/page (PAGE SIZE) */
-//#define PGMASK			(PGSIZE - 1)		/* PGOFSET */
+#define PGMASK			PGOFSET				/* PGOFSET (PGSIZE - 1) */
 #define	NPTEPG			(NBPG / sizeof(pt_entry_t))
 
 /* Size in bytes of the page directory */
@@ -90,6 +89,10 @@
 #define NPDEPTD			(NBPTD / sizeof(pd_entry_t))
 /* Number of PDEs in one page of the page directory, 512 vs. 1024 */
 #define NPDEPG			(NBPG / sizeof(pd_entry_t))
+
+#define	PAGE_SHIFT		PGSHIFT
+#define	PAGE_SIZE		PGSIZE
+#define	PAGE_MASK		PGMASK
 
 #ifndef PDRSHIFT
 #define	PDRSHIFT		i386_pmap_PDRSHIFT

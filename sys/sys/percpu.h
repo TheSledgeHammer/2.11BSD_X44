@@ -52,7 +52,7 @@ struct percpu {
 	u_int					pc_cpuid;			/* This cpu number */
 	u_int					pc_cpumask;			/* This cpu mask */
 	LIST_ENTRY(percpu) 		pc_entry;
-	struct kthread			*pc_curkthread;
+	//struct kthread			*pc_curkthread;
 
 	size_t					pc_dynamic;			/* Dynamic per-cpu data area */
 	size_t					pc_size;			/* Static per-cpu allocation */
