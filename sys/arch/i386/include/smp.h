@@ -17,7 +17,7 @@
 
 #include <sys/bus.h>
 
-#include <arch/i386/isa/icu.h>
+#include <i386/isa/icu.h>
 
 #include <machine/frame.h>
 #include <machine/intr.h>
@@ -54,15 +54,9 @@ extern int 				smp_threads_per_core;
 extern u_int 			all_cpus;
 
 void 	bootMP(void);
-
 void 	cpu_alloc(struct cpu_info *);
-
-void	pmap_tlb_shootdown(pmap_t, vm_offset_t, vm_offset_t, int32_t *);
-void	pmap_tlb_shootnow(pmap_t, int32_t);
-void	pmap_do_tlb_shootdown(pmap_t, struct cpu_info *);
-
-void 	smp_masked_invltlb(u_int, pmap_t);
-void	smp_masked_invlpg(u_int, vm_offset_t, pmap_t);
-void	smp_masked_invlpg_range(u_int, vm_offset_t, vm_offset_t, pmap_t);
+void 	pmap_invalidate_page(pmap_t, vm_offset_t);
+void 	pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
+void	pmap_invalidate_all(pmap_t);
 
 #endif /* _I386_SMP_H_ */

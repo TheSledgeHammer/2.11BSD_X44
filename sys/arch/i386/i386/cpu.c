@@ -195,7 +195,6 @@ void
 cpu_smp_init(ci)
 	struct cpu_info *ci;
 {
-	//init_secondary(ci);
 	ci->cpu_flags |= CPUF_PRESENT | CPUF_AP;
 
 	cpu_mp_setmaxid();

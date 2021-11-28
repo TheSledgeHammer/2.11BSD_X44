@@ -175,7 +175,6 @@ hashinit(elements, type, hashmask)
 	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
 		continue;
 	hashsize >>= 1;
-	hashtbl = rmalloc((u_long)hashsize * sizeof(*hashtbl), type);
 	hashtbl = rmalloc(type, (u_long)hashsize * sizeof(*hashtbl));
 	for (i = 0; i < hashsize; i++)
 		LIST_INIT(&hashtbl[i]);

@@ -149,7 +149,7 @@ advvm_malloc(addr, size)
 	void 	*addr;
 	u_long 	size;
 {
-	addr = malloc(addr, size, M_ADVVM, M_WAITOK);
+	addr = (void *)malloc(addr, size, M_ADVVM, M_WAITOK);
 }
 
 void
