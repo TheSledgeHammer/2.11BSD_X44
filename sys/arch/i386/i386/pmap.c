@@ -96,6 +96,8 @@
 
 #include <machine/atomic.h>
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
+#include <machine/cpuinfo.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
 #include <machine/param.h>
@@ -105,6 +107,7 @@
 #ifdef SMP
 #include <machine/smp.h>
 #endif
+#include <machine/pmap.h>
 #include <machine/pmap_base.h>
 #include <machine/pmap_tlb.h>
 
@@ -229,6 +232,9 @@ extern int pg_ps_enabled;
 
 extern int elf32_nxstack;
 
+struct pmap_tlb_shootdown_job;
+struct pmap_tlb_shootdown_q;
+
 #define	PAT_INDEX_SIZE	8
 static int pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
@@ -257,8 +263,8 @@ pt_entry_t 			*KPTmap;			/* address of kernel page tables */
 extern u_long 		KPTphys;			/* phys addr of kernel page tables */
 extern u_long 		tramp_idleptd;
 
-boolean_t			pmap_testbit();
-void				pmap_clear_modify();
+boolean_t			pmap_testbit(vm_offset_t, int);
+void				pmap_clear_modify(vm_offset_t);
 void 				pmap_activate (pmap_t, struct pcb *);
 
 /* linked list of all non-kernel pmaps */
@@ -485,7 +491,7 @@ pmap_bootstrap(firstaddr, loadaddr)
 	 * Count bootstrap data as being resident in case any of this data is
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
-	kernel_pmap->pm_pdir = IdlePTD;
+	kernel_pmap()->pm_pdir = IdlePTD;
 
 #ifdef PMAP_PAE_COMP
 	kernel_pmap()->pm_pdir = IdlePDPT;
@@ -758,11 +764,11 @@ pmap_map(virt, start, end, prot)
 
 	va = sva = virt;
 	while (start < end) {
-		pmap_enter(kernel_pmap(), va, start, prot, FALSE);
+		pmap_enter(kernel_pmap, va, start, prot, FALSE);
 		va += PAGE_SIZE;
 		start += PAGE_SIZE;
 	}
-	pmap_invalidate_range(kernel_pmap(), sva, va);
+	pmap_invalidate_range(kernel_pmap, sva, va);
 	*virt = va;
 	return (sva);
 }
@@ -800,7 +806,7 @@ pmap_create(size)
 		return(NULL);
 
 	/* XXX: is it ok to wait here? */
-	pmap = (pmap_t) malloc(sizeof *pmap, M_VMPMAP, M_WAITOK);
+	pmap = (pmap_t) malloc(sizeof(*pmap), M_VMPMAP, M_WAITOK);
 #ifdef notifwewait
 	if (pmap == NULL)
 		panic("pmap_create: cannot allocate a pmap");
@@ -834,7 +840,7 @@ pmap_pinit(pmap)
 	bcopy(PTD + KPTDI_FIRST, pmap->pm_pdir + KPTDI_FIRST, (KPTDI_LAST - KPTDI_FIRST + 1)*4);
 
 	/* install self-referential address mapping entry */
-	*(int *)(pmap->pm_pdir + PTDPTDI) = (int)pmap_extract(kernel_pmap(), (vm_offset_t)pmap->pm_pdir) | PG_V | PG_URKW;
+	*(int *)(pmap->pm_pdir + PTDPTDI) = (int)pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir) | PG_V | PG_URKW;
 
 	pmap->pm_count = 1;
 	simple_lock_init(&pmap->pm_lock, "pmap_lock");
@@ -1213,7 +1219,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 	/* also, should not muck with PTD va! */
 
 #ifdef DEBUG
-	if (pmap == kernel_pmap())
+	if (pmap == kernel_pmap)
 		enter_stats.kernel++;
 	else
 		enter_stats.user++;
@@ -1488,7 +1494,7 @@ pmap_pte(pmap, va)
 	if (pmap && pmap_pde_v(pmap_pde(pmap, va))) {
 
 		/* are we current address space or kernel? */
-		if (pmap->pm_pdir[PTDPTDI] == PTDpde || pmap == kernel_pmap()) {
+		if (pmap->pm_pdir[PTDPTDI] == PTDpde || pmap == kernel_pmap) {
 			return ((pt_entry_t *) vtopte(va));
 		} else {
 			/* otherwise, we are alternate address space */
@@ -1499,7 +1505,7 @@ pmap_pte(pmap, va)
 			newpf = *pde & PG_FRAME;
 			if ((*PMAP2 & PG_FRAME) != newpf) {
 				*PMAP2 = newpf | PG_RW | PG_V | PG_A | PG_M;
-				pmap_invalidate_page(kernel_pmap(), (vm_offset_t)PADDR2);
+				pmap_invalidate_page(kernel_pmap, (vm_offset_t)PADDR2);
 			}
 			return ((pt_entry_t *)(avtopte(va)));
 		}
@@ -1603,7 +1609,7 @@ pmap_collect(pmap)
 	int *pde;
 	int opmapdebug;
 #endif
-	if (pmap != kernel_pmap())
+	if (pmap != kernel_pmap)
 		return;
 
 #ifdef DEBUG
@@ -1617,11 +1623,11 @@ pmap_collect(pmap)
 		 * page table pages.
 		 */
 		pv = pa_to_pvh(pa);
-		if (pv->pv_pmap != kernel_pmap() || !(pv->pv_flags & PV_PTPAGE)) {
+		if (pv->pv_pmap != kernel_pmap || !(pv->pv_flags & PV_PTPAGE)) {
 			continue;
 		}
 		do {
-			if (pv->pv_pmap == kernel_pmap()) {
+			if (pv->pv_pmap == kernel_pmap) {
 				break;
 			}
 		} while (pv == pv->pv_next);
@@ -1655,6 +1661,14 @@ int x;
 		pg("pmap_activate(%x, %x) ", pmap, pcbp);
 #endif
 	PMAP_ACTIVATE(pmap, pcbp);
+	/*
+	if(pmap != NULL && pmap->pm_pdchanged) {
+		pcbp = pmap_extract(kernel_pmap, pmap->pm_pdir);
+		if(pmap == &curproc->p_vmspace->vm_pmap) {
+			lcr3(pcbp->pcb_cr3);
+		}
+	}
+	*/
 }
 
 /*
@@ -1673,7 +1687,7 @@ pmap_zero_page(phys)
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_zero_page(%x)", phys);
 #endif
-	phys >>= PG_SHIFT;
+	phys >>= PGSHIFT;
 	ix = 0;
 	do {
 		clearseg(phys++);
@@ -1696,8 +1710,8 @@ pmap_copy_page(src, dst)
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_copy_page(%x, %x)", src, dst);
 #endif
-	src >>= PG_SHIFT;
-	dst >>= PG_SHIFT;
+	src >>= PGSHIFT;
+	dst >>= PGSHIFT;
 	ix = 0;
 	do {
 		physcopyseg(src++, dst++);
@@ -1736,7 +1750,7 @@ pmap_pageable(pmap, sva, eva, pageable)
 	 *	- we are called with only one page at a time
 	 *	- PT pages have only one pv_table entry
 	 */
-	if (pmap == kernel_pmap() && pageable && sva + PAGE_SIZE == eva) {
+	if (pmap == kernel_pmap && pageable && sva + PAGE_SIZE == eva) {
 		register pv_entry_t pv;
 		register vm_offset_t pa;
 
@@ -1917,7 +1931,6 @@ i386_protection_init()
 	}
 }
 
-static
 boolean_t
 pmap_testbit(pa, bit)
 	register vm_offset_t pa;
@@ -1970,6 +1983,10 @@ pmap_changebit(pa, bit, setem)
 	vm_offset_t va;
 	int s;
 	boolean_t firstpage = TRUE;
+	
+	struct proc *p;
+	
+	p = &curproc;
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_BITS)
@@ -2024,8 +2041,8 @@ pmap_changebit(pa, bit, setem)
 				pte++;
 			} while (++ix != i386pagesperpage);
 
-			if (pv->pv_pmap == &curproc->p_vmspace->vm_pmap)
-				pmap_activate(pv->pv_pmap, (struct pcb*) curproc->p_addr);
+			if (pv->pv_pmap == &p->p_vmspace->vm_pmap)
+				pmap_activate(pv->pv_pmap, (struct pcb*) &p->p_addr);
 		}
 #ifdef somethinglikethis
 		if (setem && bit == PG_RO && (pmapvacflush & PVF_PROTECT)) {
@@ -2158,18 +2175,18 @@ static void *
 pmap_bios16_enter(void)
 {
 	struct bios16_pmap_handle *h;
-	extern int IdlePTD;
+	extern pd_entry_t *IdlePTD;
 
 	/*
 	 * no page table, so create one and install it.
 	 */
-	h = malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
+	h = (struct bios16_pmap_handle *)malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
 	h->pte = (pt_entry_t *) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
 	h->ptd = IdlePTD;
 	*h->pte = vm86phystk | PG_RW | PG_V;
 	h->orig_ptd = *h->ptd;
 	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
-	pmap_invalidate_all(kernel_pmap()); /* XXX insurance for now */
+	pmap_invalidate_all(kernel_pmap); /* XXX insurance for now */
 	return (h);
 }
 
@@ -2183,11 +2200,12 @@ pmap_bios16_leave(void *arg)
 	/*
 	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
 	 */
-	pmap_invalidate_all(kernel_pmap());
+	pmap_invalidate_all(kernel_pmap);
 	free(h->pte, M_TEMP); /* ... and free it */
 }
 
 /* Pmap Arguments */
+/*
 struct pmap_args pmap_arg = {
 		.pmap_cold_map 				= &pmap_cold_map,
 		.pmap_cold_mapident 		= &pmap_cold_mapident,
@@ -2247,3 +2265,4 @@ struct pmap_args pmap_arg = {
 		.pmap_tlb_shootdown_job_get = &pmap_tlb_shootdown_job_get,
 		.pmap_tlb_shootdown_job_put = &pmap_tlb_shootdown_job_put
 };
+*/
