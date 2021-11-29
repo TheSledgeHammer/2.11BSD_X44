@@ -44,9 +44,11 @@
 #include <devel/vm_extent.h>
 
 /* example vm_map startup using extents */
-vm_extent_t		kmap_extent, kentry_extent;
+vm_extent_t		kmap_extent, kentry_extent, vmspace_extent;
 vm_map_t 		kmapex;
 vm_map_entry_t 	kentryex;
+
+long 			vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
 long 			kmap_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_t))];
 long			kentry_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_entry_t))];
 
@@ -101,7 +103,7 @@ vm_exalloc_region(ex, start, size, flags)
 	int error = extent_alloc_region(ex, start, size, flags);
 	if (error != 0) {
 		vm_exdestroy(ex);
-		panic("vm_extent_alloc_region: failed to allocate extent region");
+		panic("vm_exalloc_region: failed to allocate extent region");
 	}
 }
 
@@ -115,7 +117,7 @@ vm_exalloc_subregion(ex, size, alignment, boundary, flags, result)
 	int error = extent_alloc(ex, size, alignment, boundary, flags, result);
 	if (error != 0) {
 		vm_exfree(ex, ex->ex_start, size, flags);
-		panic("vm_extent_alloc_subregion: failed to allocate extent subregion");
+		panic("vm_exalloc_subregion: failed to allocate extent subregion");
 	}
 }
 
@@ -129,7 +131,7 @@ vm_exfree(ex, start, size, flags)
 	if (ex) {
 		error = extent_free(ex, start, size, flags);
 		if (error != 0) {
-			panic("vm_extent_free: extent not freed");
+			panic("vm_exfree: extent not freed");
 		}
 	}
 }

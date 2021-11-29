@@ -90,9 +90,15 @@
 /* Number of PDEs in one page of the page directory, 512 vs. 1024 */
 #define NPDEPG			(NBPG / sizeof(pd_entry_t))
 
-//#define	PAGE_SHIFT		PGSHIFT
-//#define	PAGE_SIZE		PGSIZE
-//#define	PAGE_MASK		PGMASK
+#ifndef PAGE_SHIFT
+#define	PAGE_SHIFT		PGSHIFT
+#endif
+#ifndef PAGE_SIZE
+#define	PAGE_SIZE		PGSIZE
+#endif
+#ifndef PAGE_MASK
+#define	PAGE_MASK		PGMASK
+#endif
 
 #ifndef PDRSHIFT
 #define	PDRSHIFT		i386_pmap_PDRSHIFT
