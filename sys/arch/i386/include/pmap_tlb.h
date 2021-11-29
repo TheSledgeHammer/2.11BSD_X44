@@ -66,11 +66,4 @@ struct pmap_tlb_shootdown_q {
 struct lock_object 							pmap_tlb_shootdown_job_lock;
 union pmap_tlb_shootdown_job_al 			*pj_page, *pj_free;
 
-void	pmap_tlb_init(void);
-void	pmap_tlb_shootnow(pmap_t, int32_t);
-void	pmap_tlb_shootdown(pmap_t, vm_offset_t, vm_offset_t, int32_t);
-void	pmap_do_tlb_shootdown(pmap_t, struct cpu_info *);
-void	pmap_tlb_shootdown_q_drain(struct pmap_tlb_shootdown_q *);
-struct pmap_tlb_shootdown_job *pmap_tlb_shootdown_job_get(struct pmap_tlb_shootdown_q *);
-void	pmap_tlb_shootdown_job_put(struct pmap_tlb_shootdown_q *, struct pmap_tlb_shootdown_job *);
 #endif /* _I386_PMAP_TLB_H_ */

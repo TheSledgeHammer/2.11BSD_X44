@@ -1656,20 +1656,26 @@ pmap_activate(pmap, pcbp)
 	register pmap_t pmap;
 	struct pcb *pcbp;
 {
-int x;
+	int x;
 #ifdef DEBUG
 	if (pmapdebug & (PDB_FOLLOW|PDB_PDRTAB))
 		pg("pmap_activate(%x, %x) ", pmap, pcbp);
 #endif
-	PMAP_ACTIVATE(pmap, pcbp);
-	/*
 	if(pmap != NULL && pmap->pm_pdchanged) {
 		pcbp = pmap_extract(kernel_pmap, pmap->pm_pdir);
 		if(pmap == &curproc->p_vmspace->vm_pmap) {
 			lcr3(pcbp->pcb_cr3);
 		}
+		pmap->pm_pdchanged = FALSE;
 	}
-	*/
+}
+
+void
+pmap_deactivate(pmap, pcbp)
+	register pmap_t pmap;
+	struct pcb *pcbp;
+{
+
 }
 
 /*

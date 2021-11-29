@@ -144,20 +144,6 @@ extern struct pmap  *kernel_pmap_store;
 #endif
 
 /*
- * Macros for speed
- */
-#define PMAP_ACTIVATE(pmapp, pcbp) 							\
-	if ((pmapp) != NULL && (pmapp)->pm_pdchanged) {  		\
-		(pcbp)->pcb_cr3 = 									\
-		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); 	\
-		if ((pmapp) == &curproc->p_vmspace->vm_pmap) 		\
-			lcr3((pcbp)->pcb_cr3); 							\
-		(pmapp)->pm_pdchanged = FALSE; 						\
-	}
-
-#define PMAP_DEACTIVATE(pmapp, pcbp)
-
-/*
  * For each vm_page_t, there is a list of all currently valid virtual
  * mappings of that page.  An entry is a pv_entry_t, the list is pv_table.
  */
@@ -171,10 +157,9 @@ typedef struct pv_entry		*pv_entry_t;
 
 #define	PT_ENTRY_NULL		((pt_entry_t) 0)
 #define	PD_ENTRY_NULL		((pd_entry_t) 0)
-#define	PV_ENTRY_NULL		((pv_entry_t) 0)
 
-#define	PV_CI				0x01		/* all entries must be cache inhibited */
-#define PV_PTPAGE			0x02		/* entry maps a page table page */
+#define	PV_CI				0x01			/* all entries must be cache inhibited */
+#define PV_PTPAGE			0x02			/* entry maps a page table page */
 
 #ifdef _KERNEL
 extern pt_entry_t 			PTmap[], APTmap[];

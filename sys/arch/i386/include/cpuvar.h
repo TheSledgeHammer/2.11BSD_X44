@@ -74,13 +74,6 @@ extern	u_int		cpu_power_edx;
 
 extern	u_int		max_apic_id;
 
-struct	pcb;
-struct	proc;
-struct  dbreg;
-struct	reg;
-struct	fpreg;
-struct	trapframe;
-
 void	finishidentcpu(void);
 bool	fix_cpuid(void);
 void	identify_cpu1(void);
