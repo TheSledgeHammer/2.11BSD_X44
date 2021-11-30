@@ -50,8 +50,6 @@
 #include <machine/segments.h>
 #include <machine/vm86.h>
 
-#include <machine/support.S>
-
 extern int 					vm86pa;
 extern struct pcb 			*vm86pcb;
 
