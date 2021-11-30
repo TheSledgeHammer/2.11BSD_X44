@@ -53,7 +53,7 @@
 #ifdef SMP
 #include <machine/smp.h>
 #endif
-#include <machine/pmap_base.h>
+#include <machine/pmap_reg.h>
 #include <machine/pmap_tlb.h>
 
 vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
