@@ -109,8 +109,6 @@ struct pv_entry {
 typedef struct pv_entry		*pv_entry_t;
 
 #ifdef _KERNEL
-
-
 extern struct pmap  		*kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
 extern u_long 				physfree;		/* phys addr of next free page */

@@ -1710,7 +1710,7 @@ pmap_activate(pmap, pcbp)
 #endif
 	if(pmap != NULL && pmap->pm_pdchanged) {
 
-#ifdef PAE
+#ifdef PMAP_PAE_COMP
 		pcbp = pmap_extract(kernel_pmap, pmap->pm_pdpt);
 #else
 		pcbp = pmap_extract(kernel_pmap, pmap->pm_pdir);
