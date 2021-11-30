@@ -822,36 +822,6 @@ void
 pmap_pinit(pmap)
 	register pmap_t pmap;
 {
-#ifdef DEBUG
-	if (pmapdebug & (PDB_FOLLOW|PDB_CREATE))
-		pg("pmap_pinit(%x)\n", pmap);
-#endif
-
-	/*
-	 * No need to allocate page table space yet but we do need a
-	 * valid page directory table.
-	 */
-	pmap->pm_pdir = (pd_entry_t *) kmem_alloc(kernel_map, NBPTD);
-
-	/* wire in kernel global address entries */
-	bcopy(PTD + KPTDI_FIRST, pmap->pm_pdir + KPTDI_FIRST, (KPTDI_LAST - KPTDI_FIRST + 1)*4);
-
-	/* install self-referential address mapping entry */
-	*(int *)(pmap->pm_pdir + PTDPTDI) = (int)pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir) | PG_V | PG_URKW;
-
-	pmap->pm_active = 0;
-	pmap->pm_count = 1;
-	pmap_lock_init(pmap, "pmap_lock");
-
-	pmap_lock(pmap);
-	LIST_INSERT_HEAD(&pmaps, pmap, pm_list);
-	pmap_unlock(pmap);
-}
-
-void
-pmap_pinit0(pmap)
-	register pmap_t pmap;
-{
 	int i;
 
 #ifdef DEBUG
