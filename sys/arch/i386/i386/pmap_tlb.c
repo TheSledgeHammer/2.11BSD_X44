@@ -60,7 +60,7 @@
 #ifdef SMP
 #include <machine/smp.h>
 #endif
-#include <machine/pmap_base.h>
+#include <machine/pmap_reg.h>
 #include <machine/pmap_tlb.h>
 
 /******************** TLB shootdown code ********************/
