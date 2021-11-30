@@ -114,7 +114,6 @@
 
 typedef uint32_t	 		pd_entry_t;
 typedef uint32_t 			pt_entry_t;
-typedef	uint32_t 			pdpt_entry_t;
 
 #else
 #define	PMAP_PAE_COMP

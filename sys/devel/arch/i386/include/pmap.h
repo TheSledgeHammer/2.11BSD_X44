@@ -79,6 +79,7 @@ struct pmap {
 #ifdef PMAP_PAE_COMP
 	uint64_t				*pm_pdir;		/* KVA of page directory */
 	uint64_t				*pm_ptab;		/* KVA of page table */
+	uint64_t				*pm_pdpt;		/* KVA of page director pointer table */
 #else
 	uint32_t				*pm_pdir;		/* KVA of page directory */
 	uint32_t				*pm_ptab;		/* KVA of page table */
@@ -108,6 +109,8 @@ struct pv_entry {
 typedef struct pv_entry		*pv_entry_t;
 
 #ifdef _KERNEL
+
+
 extern struct pmap  		*kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
 extern u_long 				physfree;		/* phys addr of next free page */
@@ -129,6 +132,10 @@ pv_entry_t					pv_table;		/* array of entries, one per page */
 	((pmap)->pm_stats.resident_count)
 #define	pmap_wired_count(pmap)		\
 	((pmap)->pm_stats.wired_count)
+
+#define pmap_lock_init(pmap, name) 	(simple_lock_init((pmap)->pm_lock, (name)))
+#define pmap_lock(pmap)				(simple_lock((pmap)->pm_lock))
+#define pmap_unlock(pmap)			(simple_unlock((pmap)->pm_lock))
 
 /* proto types */
 void        pmap_bootstrap(vm_offset_t, vm_offset_t);
