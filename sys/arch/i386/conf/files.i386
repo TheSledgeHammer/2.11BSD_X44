@@ -8,50 +8,47 @@ maxpartitions 16
 
 maxusers 2 16 64
 
-file		arch/i386/apic/apic_machdep.c	   	ioapic | lapic
-file		arch/i386/apic/apic.c			ioapic | lapic
+file		arch/i386/apic/apic_machdep.c	   	  ioapic | lapic
+file		arch/i386/apic/apic.c			          ioapic | lapic
 file		arch/i386/apic/i8259.c
 file		arch/i386/i386/aout_machdep.c	    	exec_aout
-file   	 	arch/i386/i386/autoconf.c
-file    	arch/i386/i386/bios.c             	bios
-file    	arch/i386/i386/bus_dma.c
-file    	arch/i386/i386/bus_space.c
-file    	arch/i386/i386/consinit.c
-file		arch/i386/i386/cpu_topo.c		cpu
-file		arch/i386/i386/db_disasm.c	   	ddb
+file   	arch/i386/i386/autoconf.c
+file    arch/i386/i386/bios.c             	bios
+file    arch/i386/i386/bus_dma.c
+file    arch/i386/i386/bus_space.c
+file    arch/i386/i386/consinit.c
+file		arch/i386/i386/cpu_topo.c		        cpu
+file		arch/i386/i386/db_disasm.c	   	    ddb
 file		arch/i386/i386/db_interface.c	    	ddb
-file		arch/i386/i386/db_trace.c	        ddb
-file    	arch/i386/i386/dkbad.c
-file    	arch/i386/i386/gdt.c
-file    	arch/i386/i386/identcpu.c
-file    	arch/i386/i386/in_cksum.c	        inet
-file    	arch/i386/i386/initcpu.c
-file    	arch/i386/i386/intr.c             
-file    	arch/i386/i386/ipi.c              	smp
-file    	arch/i386/i386/k6_mem.c           	mtrr
-file    	arch/i386/i386/kobj_machdep.c
-file    	arch/i386/i386/machdep.c
+file		arch/i386/i386/db_trace.c	          ddb
+file    arch/i386/i386/dkbad.c
+file    arch/i386/i386/gdt.c
+file    arch/i386/i386/identcpu.c
+file    arch/i386/i386/in_cksum.c	          inet
+file    arch/i386/i386/initcpu.c
+file    arch/i386/i386/intr.c             
+file    arch/i386/i386/ipi.c              	smp
+file    arch/i386/i386/k6_mem.c           	mtrr
+file    arch/i386/i386/kobj_machdep.c
+file    arch/i386/i386/machdep.c
 file		arch/i386/i386/macho_machdep.c	  	exec_macho
 file		arch/i386/i386/math_emulate.c	    	math_emulate
-file    	arch/i386/i386/mem.c
-file    	arch/i386/i386/misc.c
-file 		arch/i386/i386/mp_machdep.c		smp
-file    	arch/i386/i386/pmap_base.c
-file    	arch/i386/i386/pmap_nopae.c
-file    	arch/i386/i386/pmap_pae.c
-file    	arch/i386/i386/pmap_tlb.c
-file    	arch/i386/i386/pmap_smp.c
-file    	arch/i386/i386/pmap.c
-file    	arch/i386/i386/process_machdep.c
-file    	arch/i386/i386/softintr.c
-file    	arch/i386/i386/softpic.c
-file    	arch/i386/i386/support.S
-file    	arch/i386/i386/sys_machdep.c
-file    	arch/i386/i386/trap.c
-file    	arch/i386/i386/vm_machdep.c
+file    arch/i386/i386/mem.c
+file    arch/i386/i386/misc.c
+file 		arch/i386/i386/mp_machdep.c		      smp
+file    arch/i386/i386/pmap.c
+file    arch/i386/i386/pmap_smp.c
+file    arch/i386/i386/pmap_tlb.c
+file    arch/i386/i386/process_machdep.c
+file    arch/i386/i386/softintr.c
+file    arch/i386/i386/softpic.c
+file    arch/i386/i386/support.S
+file    arch/i386/i386/sys_machdep.c
+file    arch/i386/i386/trap.c
+file    arch/i386/i386/vm_machdep.c
 file		arch/i386/i386/vm86.c			
 file		arch/i386/i386/vm86bios.S		
-file		dev/misc/cons/cons.c			cons
+file		dev/misc/cons/cons.c			          cons
 
 # Machine Devices & Drivers
 include 	"arch/i386/conf/devices.i386"
