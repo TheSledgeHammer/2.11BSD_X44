@@ -47,50 +47,8 @@
  * from hp300:	@(#)pmap.h	7.2 (Berkeley) 12/16/90
  */
 
-#ifndef	_I386_PMAP_H_
-#define	_I386_PMAP_H_
-
-#ifdef PMAP_PAE_COMP
-#include <machine/pmap_pae.h>
-#else
-#include <machine/pmap_nopae.h>
-#endif
-
-/*
- * 386 page table entry and page table directory
- * W.Jolitz, 8/89
- */
-
-#ifndef NKPDE
-#define NKPDE				(KVA_PAGES)				/* number of page tables/pde's */
-#endif
-
-/*
- * One page directory, shared between
- * kernel and user modes.
- */
-#define I386_PAGE_SIZE		NBPG
-#define I386_PDR_SIZE		NBPDR
-
-#define I386_KPDES			8 										/* KPT page directory size */
-#define I386_UPDES			(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
-
-#define	UPTDI				0x3f6									/* ptd entry for u./kernel&user stack */
-#define	PTDPTDI				0x3f7									/* ptd entry that points to ptd! */
-#define	KPTDI_FIRST			0x3f8									/* start of kernel virtual pde's */
-#define	KPTDI_LAST			0x3fA									/* last of kernel virtual pde's */
-
-//#define	KPTDI				0										/* start of kernel virtual pde's */
-
-/*
- * Input / Output Memory Physical Addresses
- */
-/*
- * XXX doesn't really belong here I guess...
- */
-#define ISA_HOLE_START    	0xa0000
-#define ISA_HOLE_END    	0x100000
-#define ISA_HOLE_LENGTH 	(ISA_HOLE_END-ISA_HOLE_START)
+#ifndef _I386_PMAP_H_
+#define _I386_PMAP_H_
 
 /*
  * virtual address to page table entry and
@@ -121,11 +79,11 @@ struct pmap {
 #ifdef PMAP_PAE_COMP
 	uint64_t				*pm_pdir;		/* KVA of page directory */
 	uint64_t				*pm_ptab;		/* KVA of page table */
+	uint64_t				*pm_pdpt;		/* KVA of page director pointer table */
 #else
 	uint32_t				*pm_pdir;		/* KVA of page directory */
 	uint32_t				*pm_ptab;		/* KVA of page table */
 #endif
-
 	boolean_t				pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
 	short					pm_count;		/* pmap reference count */
@@ -136,12 +94,7 @@ struct pmap {
 	int						pm_active;		/* active on cpus */
 	u_int32_t 				pm_cpus;		/* mask of CPUs using pmap */
 };
-typedef struct pmap			*pmap_t;
-
-#ifdef _KERNEL
-extern struct pmap  *kernel_pmap_store;
-#define kernel_pmap (&kernel_pmap_store)
-#endif
+typedef struct pmap 		*pmap_t;
 
 /*
  * For each vm_page_t, there is a list of all currently valid virtual
@@ -155,40 +108,82 @@ struct pv_entry {
 };
 typedef struct pv_entry		*pv_entry_t;
 
-#define	PT_ENTRY_NULL		((pt_entry_t) 0)
-#define	PD_ENTRY_NULL		((pd_entry_t) 0)
-
-#define	PV_CI				0x01			/* all entries must be cache inhibited */
-#define PV_PTPAGE			0x02			/* entry maps a page table page */
-
 #ifdef _KERNEL
-extern pt_entry_t 			PTmap[], APTmap[];
-extern pd_entry_t 			PTD[], APTD[];
-extern pd_entry_t 			PTDpde[], APTDpde[];
-extern pd_entry_t 			*IdlePTD;
-extern pt_entry_t 			*KPTmap;
-extern pdpt_entry_t 		*IdlePDPT;
-
-pv_entry_t					pv_table;	/* array of entries, one per page */
+extern struct pmap  		*kernel_pmap_store;
+#define kernel_pmap 		(&kernel_pmap_store)
+extern u_long 				physfree;		/* phys addr of next free page */
+extern u_long 				vm86phystk;		/* PA of vm86/bios stack */
+//extern u_long 				vm86paddr;		/* address of vm86 region */
+extern int 					vm86pa;			/* phys addr of vm86 region */
+extern u_long 				KPTphys;		/* phys addr of kernel page tables */
+extern u_long 				KERNend;
+extern vm_offset_t 			kernel_vm_end;
+extern u_long 				tramp_idleptd;
 extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
+pv_entry_t					pv_table;		/* array of entries, one per page */
 
 #define pa_index(pa)		atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
 
-#define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
-#define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
+#define	pmap_resident_count(pmap)	\
+	((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)		\
+	((pmap)->pm_stats.wired_count)
 
-/* misc.c */
-int		copyout(void *, void *, u_int);
-void	clearseg(int);
-void	copyseg(int, int);
-void	physcopyseg(int, int);
+#define pmap_lock_init(pmap, name) 	(simple_lock_init((pmap)->pm_lock, (name)))
+#define pmap_lock(pmap)				(simple_lock((pmap)->pm_lock))
+#define pmap_unlock(pmap)			(simple_unlock((pmap)->pm_lock))
 
-/* pmap_smp.c */
-void 	pmap_invalidate_page(pmap_t, vm_offset_t);
-void 	pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
-void	pmap_invalidate_all(pmap_t);
+struct cpu_info;
+struct pcb;
+/* proto types */
+void        pmap_bootstrap(vm_offset_t, vm_offset_t);
+void        *pmap_bootstrap_alloc(u_long);
+void        pmap_init(vm_offset_t, vm_offset_t);
+vm_offset_t pmap_map(vm_offset_t, vm_offset_t, vm_offset_t, int);
+pmap_t      pmap_create(vm_size_t);
+void        pmap_pinit(pmap_t);
+void        pmap_destroy(pmap_t);
+void        pmap_release(pmap_t);
+void        pmap_reference(pmap_t);
+void        pmap_remove(pmap_t, vm_offset_t, vm_offset_t);
+void        pmap_protect(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t);
+void        pmap_enter(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t);
+void        pmap_page_protect(vm_offset_t, vm_prot_t);
+void        pmap_change_wiring(pmap_t, vm_offset_t, boolean_t);
+vm_offset_t pmap_extract(pmap_t, vm_offset_t);
+void        pmap_copy(pmap_t, pmap_t, vm_offset_t, vm_size_t, vm_offset_t);
+void        pmap_update(void);
+void        pmap_collect(pmap_t);
+void        pmap_activate(pmap_t, struct pcb *);
+void        pmap_zero_page(vm_offset_t);
+void        pmap_copy_page(vm_offset_t, vm_offset_t);
+void        pmap_pageable(pmap_t, vm_offset_t, vm_offset_t, boolean_t);
+void        pmap_clear_modify(vm_offset_t);
+void        pmap_clear_reference(vm_offset_t);
+boolean_t   pmap_is_referenced(vm_offset_t);
+boolean_t   pmap_is_modified(vm_offset_t);
+vm_offset_t pmap_phys_address(int);
+void        pmap_kenter(vm_offset_t, vm_offset_t);
+void        pmap_changebit(vm_offset_t, int, boolean_t);
+void        pmap_bios16_enter(void);
+void        pmap_bios16_leave(void *);
+/* SMP */
+void        pmap_invalidate_page(pmap_t, vm_offset_t);
+void        pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
+void        pmap_invalidate_all(pmap_t);
+/* TLB */
+void		pmap_tlb_init(void);
+void        pmap_tlb_shootnow(pmap_t, int32_t);
+void        pmap_tlb_shootdown(pmap_t, vm_offset_t, vm_offset_t, int32_t *);
+void        pmap_do_tlb_shootdown(pmap_t, struct cpu_info *);
+
+int			copyout(void *, void *, u_int);
+void		clearseg(int);
+void		copyseg(int, int);
+void		physcopyseg(int, int);
+
 #endif	/* KERNEL */
-#endif /* !LOCORE */
-#endif	/* _I386_PMAP_H_ */
+#endif 	/* !LOCORE */
+#endif 	/* _I386_PMAP_H_ */
