@@ -29,10 +29,22 @@
 #ifndef _VM_EXTENT_H_
 #define _VM_EXTENT_H_
 
-typedef struct extent 	*vm_extent_t;
+struct vm_extent {
+	LIST_ENTRY(vm_extent) 	ve_exnode;		/* extent entry */
+	struct extent 			*ve_extent;
+	u_long 					ve_size1;		/* extent region */
+	u_long 					ve_size2;		/* extent subregion */
+	u_long 					*ve_result;
+	struct lock_object		*ve_lock;
+};
+typedef struct vm_extent	*vm_extent_t;
+
+#define vm_extent_lock_init(ex) (simple_lock_init((ex)->ve_lock, "vm_extent_lock"))
+#define vm_extent_lock(ex) 		(simple_lock((ex)->ve_lock))
+#define vm_extent_unlock(ex) 	(simple_unlock((ex)->ve_lock))
 
 void		vm_exbootinit(vm_extent_t, char *, u_long, u_long, int, caddr_t, size_t, int);
-vm_extent_t	vm_exinit(vm_extent_t, char *, u_long, u_long, int, caddr_t, size_t, int);
+vm_extent_t	vm_exinit(char *, u_long, u_long, int, caddr_t, size_t, int);
 void		vm_exalloc_region(vm_extent_t, u_long, u_long, flags);
 void		vm_exalloc_subregion(vm_extent_t, u_long, u_long, u_long, int, u_long);
 void		vm_exfree(vm_extent_t, u_long, u_long, int);

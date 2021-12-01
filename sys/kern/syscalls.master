@@ -129,9 +129,7 @@
 84	COMPAT_43	{ int lstat(); }
 85	STD		    { int pathconf(); }
 86  STD     	{ int getitimer(); }
-; 87 old gethostname
 87  STD   	    { int setsid(); } 
-; 88 old sethostname
 88  STD   	    { int setpgid(); }
 89  STD     	{ int getdtablesize(); }
 90  STD     	{ int dup2(); }
@@ -195,6 +193,8 @@
 148 OBSOL     	old setquota
 149 STD     	{ int quota(); }
 150 STD     	{ int getsockname(); }
+; 87 old gethostname
+; 88 old sethostname
 ; Syscalls 151-160 are special for 2BSD
 151	COMPAT_43	{ int getdirentries(); }
 152 OBSOL     	old nostk
@@ -213,3 +213,13 @@
 163 STD         { int kqueue(); }
 164 STD         { int swapon(); }
 165 UNIMPL      { int swapctl(); }
+#ifdef KTRACE
+166 STD			{ int ktrace(); }
+#else 
+166 UNIMPL		ktrace
+#endif
+#ifdef TRACE
+167 STD			{ int vtrace(); }
+#else
+167	UNIMPL		vtrace
+#endif

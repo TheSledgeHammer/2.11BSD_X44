@@ -57,6 +57,38 @@ vm_map_startup1()
 {
 	vm_exbootinit(kmap_extent, "KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_FAST);
 	vm_exbootinit(kentry_extent, "KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_FAST);
+
+	vm_exbootinit(vmspace_extent, "VMSPACE", min, max, M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_FAST);
+
+	struct vmspace *vm = (struct vmspace *)vm_exalloc(vmspace_extent);
+}
+
+LIST_HEAD(exlist, vm_extent) exlist = LIST_HEAD_INITIALIZER(exlist);
+
+vm_extent_t
+vm_exinit(name, start, end, mtype, storage, storagesize, flags)
+	char 	*name;
+	u_long 	start, end;
+	int 	mtype;
+	caddr_t storage;
+	size_t 	storagesize;
+	int 	flags;
+{
+	register vm_extent_t ex;
+
+	ex = (vm_extent_t)malloc(sizeof(vm_extent_t), M_VMEXTENT, M_WAITOK);
+
+	if(ex == NULL) {
+		return (NULL);
+	}
+
+	ex->ve_extent = extent_create(name, start, end, mtype, storage, storagesize, flags);
+	if(vm_exalloc_region(ex->ve_extent, start, (end - start), flags) != 0) {
+		vm_exfree(ex, start, ex->ve_size1, flags);
+		return (NULL);
+	}
+	vm_extent_lock_init(ex);
+	return (ex);
 }
 
 /* create an extent and allocate to the extent map */
@@ -71,54 +103,91 @@ vm_exbootinit(ex, name, start, end, mtype, storage, storagesize, flags)
 	int 	flags;
 {
 	ex = vm_exinit(name, start, end, mtype, storage, storagesize, flags);
-	vm_exalloc_region(ex, start, (end - start), flags);
 }
 
-/* create an extent without allocating to the extent map */
+void *
+vm_exalloc(ex)
+	vm_extent_t	ex;
+{
+	void *item;
+
+	vm_extent_lock(ex);
+	item = (void *)vm_exget(ex->ve_extent->ex_name, ex->ve_extent->ex_start, ex->ve_extent->ex_end);
+	vm_extent_unlock(ex);
+
+	return (item);
+}
+
 vm_extent_t
-vm_exinit(name, start, end, mtype, storage, storagesize, flags)
-	char 	*name;
-	u_long 	start, end;
-	int 	mtype;
-	caddr_t storage;
-	size_t 	storagesize;
-	int 	flags;
+vm_exget(name, start, end)
+	char 		*name;
+	u_long 		start, end;
 {
 	register vm_extent_t ex;
+	register struct extent *ext;
 
-	ex = extent_create(name, start, end, mtype, storage, storagesize, flags);
-	if (ex == NULL) {
-		return (NULL);
+	vm_extent_lock(ex);
+	for(ex = LIST_FIRST(&exlist); ex != NULL; ex = LIST_NEXT(ex, ve_exnode)) {
+		ext = ex->ve_extent;
+		if((ext->ex_name == name) && (ext->ex_start == start) && (ext->ex_end == end)) {
+			vm_extent_unlock(ex);
+			return (ex);
+		}
 	}
-
-	return (ex);
+	vm_extent_unlock(ex);
+	return (NULL);
 }
 
-void
+int
 vm_exalloc_region(ex, start, size, flags)
-	vm_extent_t	ex;
+	vm_extent_t ex;
 	u_long 		start, size;
 	int 		flags;
 {
-	int error = extent_alloc_region(ex, start, size, flags);
-	if (error != 0) {
-		vm_exdestroy(ex);
-		panic("vm_exalloc_region: failed to allocate extent region");
+	register struct extent *ext;
+
+	if (ex == NULL) {
+		return (1);
 	}
+
+	ext = ex->ve_extent;
+	vm_extent_lock(ex);
+	if (extent_alloc_region(ext, start, size, flags)) {
+		ex->ve_size1 = size;
+		LIST_INSERT_HEAD(&exlist, ex, ve_exnode);
+		vm_extent_unlock(ex);
+		return (0);
+	}
+	vm_exfree(ex, start, size, flags);
+	vm_extent_unlock(ex);
+	return (1);
 }
 
-void
+int
 vm_exalloc_subregion(ex, size, alignment, boundary, flags, result)
 	vm_extent_t ex;
 	u_long 		size, alignment, boundary;
 	int 		flags;
 	u_long 		*result;
 {
-	int error = extent_alloc(ex, size, alignment, boundary, flags, result);
-	if (error != 0) {
-		vm_exfree(ex, ex->ex_start, size, flags);
-		panic("vm_exalloc_subregion: failed to allocate extent subregion");
+	register struct extent *ext;
+
+	if (ex == NULL) {
+		return (1);
 	}
+
+	ext = ex->ve_extent;
+	vm_extent_lock(ex);
+	if(extent_alloc(ex, size, alignment, boundary, flags, result)) {
+		ex->ve_size2 = size;
+		ex->ve_result = result;
+		LIST_INSERT_HEAD(&exlist, ex, ve_exnode);
+		vm_extent_unlock(ex);
+		return (0);
+	}
+	vm_exfree(ex, ext->ex_start, size, flags);
+	vm_extent_unlock(ex);
+	return (1);
 }
 
 void
@@ -127,12 +196,17 @@ vm_exfree(ex, start, size, flags)
 	u_long 		start, size;
 	int 		flags;
 {
-	int error;
-	if (ex) {
-		error = extent_free(ex, start, size, flags);
+	register struct extent *ext;
+
+	ext = ex->ve_extent;
+	vm_extent_lock(ex);
+	if (ext) {
+		error = extent_free(ext, start, size, flags);
 		if (error != 0) {
 			panic("vm_exfree: extent not freed");
 		}
+		LIST_REMOVE(ex, ve_exnode);
+		vm_extent_unlock(ex);
 	}
 }
 
@@ -140,5 +214,13 @@ void
 vm_exdestroy(ex)
 	vm_extent_t ex;
 {
-	extent_destroy(ex);
+	register struct extent *ext;
+
+	ext = ex->ve_extent;
+	vm_extent_lock(ex);
+	if (ext) {
+		extent_destroy(ext);
+		LIST_REMOVE(ex, ve_exnode);
+		vm_extent_unlock(ex);
+	}
 }
