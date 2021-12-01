@@ -72,6 +72,7 @@
 #define _I386_BUS_SPACE_H_
 
 #include <sys/bus.h>
+
 #include <machine/pio.h>
 
 /*
@@ -81,24 +82,6 @@
 #define I386_BUS_SPACE_MEM				1	/* space is mem space */
 
 #define __BUS_SPACE_HAS_STREAM_METHODS 	1
-
-struct bus_space_tag;
-typedef	struct bus_space_tag 		*bus_space_tag_t;
-struct bus_space_tag  {
-	int					bst_type;
-	bus_space_tag_t		bst_super;
-
-	/* bst_present: bitmap indicating overrides present (1) in *this* tag,
-	 * bst_exists: bitmap indicating overrides present (1) in *this* tag
-	 * or in an ancestor's tag (follow bst_super to ancestors)
-	 */
-	uint64_t			bst_present;
-	uint64_t			bst_exists;
-	void				*bst_ctx;
-};
-
-extern bus_space_tag_t i386_bus_space_mem;
-extern bus_space_tag_t i386_bus_space_io;
 
 void 	i386_bus_space_init	(void);
 void 	i386_bus_space_mallocok	(void);

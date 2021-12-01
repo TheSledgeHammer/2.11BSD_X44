@@ -77,7 +77,7 @@ It is only recommended at this stage for testing the cross-compiler or adding ne
 
 To build just the tools for i386, in the src directory:
 
-./build.sh -U -u -j4 -m i386 tools
+./build.sh -U -u -j4 -m i386 -O ~/obj tools
 
 Compiler Success:
 
@@ -98,8 +98,7 @@ Please read the following NetBSD guide for more information:
 - Licensing: 3-Clause BSD license preferable:
   - Externally Maintained code should be placed in one of the following:
   	1) BSD licensed code: 		 contrib/"project name"
-  	2) Non-BSD licensed code:  contrib/"license"/"project name"
-  	3) OS Compatability code:  contrib/oscompat/"os name"
+  	2) OS Compatability code:  contrib/oscompat/"os name"
 - These rules in place to make it pleasant & easier for everyone.
   - It is highly recommended that you adhere to the following Contribution Guidelines & Rules.
   - Failing to follow the Contribution Guidelines & Rules will prevent your code from being accepted.

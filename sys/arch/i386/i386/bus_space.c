@@ -42,31 +42,15 @@
 
 #include <vm/include/vm_extern.h>
 
-#include <i386/isa/isa_machdep.h>
 #include <dev/core/isa/isareg.h>
 
+#include <i386/isa/isa_machdep.h>
+
+#include <machine/cpufunc.h>
 #include <machine/pio.h>
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-
-static struct bus_space_tag i386_io = { .bst_type = I386_BUS_SPACE_IO };
-static struct bus_space_tag i386_mem = { .bst_type = I386_BUS_SPACE_MEM };
-
-bus_space_tag_t i386_bus_space_io = &i386_io;
-bus_space_tag_t i386_bus_space_mem = &i386_mem;
-
-static inline boolean_t
-i386_bus_space_is_io(struct bus_space_tag t)
-{
-	return (t->bst_type == I386_BUS_SPACE_IO);
-}
-
-static inline boolean_t
-i386_bus_space_is_mem(struct bus_space_tag t)
-{
-	return (t->bst_type == I386_BUS_SPACE_MEM);
-}
 /*
  *	int bus_space_map  __P((bus_space_tag_t t, bus_addr_t addr,
  *	    bus_size_t size, int flags, bus_space_handle_t *bshp));
@@ -152,13 +136,20 @@ bus_space_free(t, h, s)
 }
 
 caddr_t
-bus_space_mmap(bus_space_tag_t, bus_addr_t, off_t, int, int)
+bus_space_mmap(t, addr, off, prot, flags)
+	bus_space_tag_t t;
+	bus_addr_t addr;
+	off_t off;
+	int prot;
+	int flags;
 {
 	panic("bus_space_mmap: not implemented");
 }
 
 void *
-bus_space_vaddr(bus_space_tag_t, bus_space_handle_t)
+bus_space_vaddr(tag, bsh)
+	bus_space_tag_t	tag;
+	bus_space_handle_t bsh;
 {
 	panic("bus_space_vaddr: not implemented");
 }

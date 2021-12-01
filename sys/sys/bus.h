@@ -43,33 +43,8 @@ typedef size_t  	bus_size_t;
 /*
  * Access methods for bus resources and address space.
  */
+typedef	int 			bus_space_tag_t;
 typedef	unsigned long 	bus_space_handle_t;
-
-struct bus_space_reservation {
-	bus_addr_t _bsr_start;
-	bus_size_t _bsr_size;
-};
-typedef struct bus_space_reservation bus_space_reservation_t;
-
-static __inline bus_size_t
-bus_space_reservation_size(bus_space_reservation_t *bsr)
-{
-	return (bsr->_bsr_size);
-}
-
-static __inline bus_space_reservation_t *
-bus_space_reservation_init(bus_space_reservation_t *bsr, bus_addr_t addr, bus_size_t size)
-{
-	bsr->_bsr_start = addr;
-	bsr->_bsr_size = size;
-	return (bsr);
-}
-
-static __inline bus_addr_t
-bus_space_reservation_addr(bus_space_reservation_t *bsr)
-{
-	return (bsr->_bsr_start);
-}
 
 /*
  * Forwards needed by prototypes below.

@@ -2059,31 +2059,23 @@ pmap_changebit(pa, bit, setem)
 			pte = (int*) pmap_pte(pv->pv_pmap, va);
 			ix = 0;
 			do {
-				if (setem)
+				if(setem) {
 					npte = *pte | bit;
-				else
+					pmap_invalidate_page(pv->pv_pmap, pv->pv_va);
+				} else {
 					npte = *pte & ~bit;
+					pmap_invalidate_page(pv->pv_pmap, pv->pv_va);
+				}
 				if (*pte != npte) {
 					*pte = npte;
-					/*TBIS(va);*/
 				}
 				va += I386_PAGE_SIZE;
 				pte++;
 			} while (++ix != i386pagesperpage);
 
 			if (pv->pv_pmap == &p->p_vmspace->vm_pmap)
-				pmap_activate(pv->pv_pmap, (struct pcb*) &p->p_addr);
+				pmap_activate(pv->pv_pmap, (struct pcb*) &p->p_addr->u_pcb);
 		}
-#ifdef somethinglikethis
-		if (setem && bit == PG_RO && (pmapvacflush & PVF_PROTECT)) {
-			if ((pmapvacflush & PVF_TOTAL) || toflush == 3)
-				DCIA();
-			else if (toflush == 2)
-				DCIS();
-			else
-				DCIU();
-		}
-#endif
 	}
 	splx(s);
 }
@@ -2161,40 +2153,6 @@ pmap_pads(pm)
 }
 #endif
 
-static u_int
-pmap_get_kcr3(void)
-{
-#ifdef PMAP_PAE_COMP
-	return ((u_int)IdlePDPT);
-#else
-	return ((u_int)IdlePTD);
-#endif
-}
-
-static u_int
-pmap_get_cr3(pmap)
-	pmap_t pmap;
-{
-#ifdef PMAP_PAE_COMP
-	return ((u_int)vtophys(pmap->pm_pdir));
-#else
-	return ((u_int)vtophys(pmap->pm_pdir));
-#endif
-}
-
-static caddr_t
-pmap_cmap3(pa, pte_bits)
-	caddr_t pa;
-	u_int pte_bits;
-{
-	pt_entry_t *pte;
-
-	pte = CMAP3;
-	*pte = pa | pte_bits;
-	//invltlb();
-	return (CADDR3);
-}
-
 struct bios16_pmap_handle {
 	pt_entry_t	*pte;
 	pd_entry_t	*ptd;
@@ -2233,4 +2191,3 @@ pmap_bios16_leave(void *arg)
 	pmap_invalidate_all(kernel_pmap);
 	free(h->pte, M_TEMP); /* ... and free it */
 }
-
