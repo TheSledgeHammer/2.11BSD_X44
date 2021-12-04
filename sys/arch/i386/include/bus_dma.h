@@ -98,7 +98,7 @@ struct i386_bus_dmamap {
 	 */
 	bus_size_t			_dm_size;			/* largest DMA transfer mappable */
 	int					_dm_segcnt;			/* number of segs this map can map */
-	bus_size_t			_dm_maxsegsz; 	/* fixed largest possible segment */
+	bus_size_t			_dm_maxsegsz; 		/* fixed largest possible segment */
 	bus_size_t			_dm_boundary;		/* don't cross this */
 	bus_addr_t			_dm_bounce_thresh; 	/* bounce threshold; see tag */
 	int					_dm_flags;			/* misc. flags */

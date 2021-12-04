@@ -48,7 +48,6 @@
 
 #include <vm/include/vm_extern.h>
 #include <devel/arch/i386/include/bus.h>
-#include <arch/i386/include/bus_dma.h>
 
 /*
  * Common function for DMA map creation.  May be called by bus-specific
@@ -295,6 +294,14 @@ _bus_dmamap_sync(t, map, offset, len, ops)
 {
 
 	/* Nothing to do here. */
+	/*
+	switch (ops) {
+	case BUS_DMASYNC_PREREAD:
+	case BUS_DMASYNC_POSTREAD:
+	case BUS_DMASYNC_PREWRITE:
+	case BUS_DMASYNC_POSTWRITE:
+	}
+	*/
 }
 
 /*

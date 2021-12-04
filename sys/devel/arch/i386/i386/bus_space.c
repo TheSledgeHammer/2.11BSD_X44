@@ -1,8 +1,40 @@
-/*
- * bus.c
+/*	$NetBSD: bus_space.c,v 1.2 2003/03/14 18:47:53 christos Exp $	*/
+
+/*-
+ * Copyright (c) 1996, 1997, 1998 The NetBSD Foundation, Inc.
+ * All rights reserved.
  *
- *  Created on: 4 Dec 2021
- *      Author: marti
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Charles M. Hannum and by Jason R. Thorpe of the Numerical Aerospace
+ * Simulation Facility, NASA Ames Research Center.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/cdefs.h>
@@ -20,10 +52,9 @@
 
 #include <dev/core/isa/isareg.h>
 
+#include <i386/isa/isa_machdep.h>
 
 #include <devel/arch/i386/include/bus.h>
-
-#include <i386/isa/isa_machdep.h>
 
 /*
  * Extent maps to manage I/O and ISA memory hole space.  Allocate
@@ -291,11 +322,11 @@ i386_mem_add_mapping(bpa, size, cacheable, bshp)
 			} else {
 				*pte |= PG_N;
 			}
-			pmap_tlb_shootdown(kernel_pmap, va, *pte, &cpumask);
+			//pmap_tlb_shootdown(kernel_pmap, va, *pte, &cpumask);
 		}
 	}
 
-	pmap_tlb_shootnow(cpumask);
+//	pmap_tlb_shootnow(cpumask);
 	pmap_update(kernel_pmap);
 	return (0);
 }
@@ -650,7 +681,802 @@ bus_space_vaddr(tag, bsh)
 {
 	//panic("bus_space_vaddr: not implemented");
 
-	return((tag == I386_BUS_SPACE_MEM ? (void *)(bsh) : (void *)0));
+	return ((tag == I386_BUS_SPACE_MEM ? (void *)(bsh) : (void *)0));
+}
+
+/*
+ *	u_intN_t bus_space_read_N(bus_space_tag_t tag,
+ *	    bus_space_handle_t bsh, bus_size_t offset);
+ *
+ * Read a 1, 2, 4, or 8 byte quantity from bus space
+ * described by tag/handle/offset.
+ */
+
+u_int8_t
+bus_space_read_1(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	return (t == I386_BUS_SPACE_IO ? (inb(h + o)) : (*(volatile u_int8_t *)(h + o)));
+}
+
+u_int16_t
+bus_space_read_2(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	return (__BUS_SPACE_ADDRESS_SANITY(h + o, u_int16_t, "bus addr"), (t == I386_BUS_SPACE_IO ? (inw(h + o)) : (*(volatile u_int16_t *)(h + o))));
+}
+
+u_int32_t
+bus_space_read_4(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	return (__BUS_SPACE_ADDRESS_SANITY(h + o, u_int32_t, "bus addr"), (t == I386_BUS_SPACE_IO ? (inl(h + o)) : (*(volatile u_int32_t *)(h + o))));
+}
+
+#if 0	/* Cause a link error for bus_space_read_8 */
+u_int64_t
+bus_space_read_8(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	panic("!!! bus_space_read_8 not implemented !!!");
+}
+#endif
+
+u_int8_t
+bus_space_read_stream_1(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	return (bus_space_read_1(t, h, o));
+}
+
+u_int16_t
+bus_space_read_stream_2(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	return (bus_space_read_2(t, h, o));
+}
+
+u_int32_t
+bus_space_read_stream_4(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	return (bus_space_read_4(t, h, o));
+}
+
+#if 0	/* Cause a link error for bus_space_read_stream_8 */
+u_int64_t
+bus_space_read_stream_8(t, h, o)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+{
+	panic("!!! bus_space_read_stream_8 not implemented !!!");
+}
+#endif
+/*
+ *	void bus_space_read_multi_N(bus_space_tag_t tag,
+ *	    bus_space_handle_t bsh, bus_size_t offset,
+ *	    u_intN_t *addr, size_t count);
+ *
+ * Read `count' 1, 2, 4, or 8 byte quantities from bus space
+ * described by tag/handle/offset and copy into buffer provided.
+ */
+
+void
+bus_space_read_multi_1(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int8_t *ptr;
+	size_t cnt;
+{
+	if ((t) == I386_BUS_SPACE_IO) {
+		insb((h) + (o), (ptr), (cnt));
+	} else {
+		void *dummy1;
+		int dummy2;
+		void *dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	movb (%2),%%al										;	\
+				stosb												;	\
+				loop 1b" :
+				"=D" (dummy1), "=c" (dummy2), "=r" (dummy3), "=&a" (__x) :
+				"0" ((ptr)), "1" ((cnt)), "2" ((h) + (o)) :
+				"memory");
+	}
+}
+
+void
+bus_space_read_multi_2(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int16_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int16_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int16_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		insw((h) + (o), (ptr), (cnt));
+	} else {
+		void *dummy1;
+		int dummy2;
+		void *dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	movw (%2),%%ax										;	\
+				stosw												;	\
+				loop 1b" :
+				"=D" (dummy1), "=c" (dummy2), "=r" (dummy3), "=&a" (__x) :
+				"0" ((ptr)), "1" ((cnt)), "2" ((h) + (o)) :
+				"memory");
+	}
+}
+
+void
+bus_space_read_multi_4(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int32_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int32_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int32_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		insl((h) + (o), (ptr), (cnt));
+	} else {
+		void *dummy1;
+		int dummy2;
+		void *dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	movl (%2),%%eax										;	\
+				stosl												;	\
+				loop 1b" :
+				"=D" (dummy1), "=c" (dummy2), "=r" (dummy3), "=&a" (__x) :
+				"0" ((ptr)), "1" ((cnt)), "2" ((h) + (o)) :
+				"memory");
+	}
+}
+
+#if 0	/* Cause a link error for bus_space_read_multi_8 */
+void
+bus_space_read_multi_8(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int64_t *ptr;
+	size_t cnt;
+{
+	panic("!!! bus_space_read_multi_8 not implemented !!!");
+}
+#endif
+
+void
+bus_space_read_multi_stream_1(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int8_t *ptr;
+	size_t cnt;
+{
+	bus_space_read_multi_1(t, h, o, ptr, cnt);
+}
+
+void
+bus_space_read_multi_stream_2(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int16_t *ptr;
+	size_t cnt;
+{
+	bus_space_read_multi_2(t, h, o, ptr, cnt);
+}
+
+void
+bus_space_read_multi_stream_4(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int32_t *ptr;
+	size_t cnt;
+{
+	bus_space_read_multi_4(t, h, o, ptr, cnt);
+}
+
+#if 0	/* Cause a link error for bus_space_read_multi_stream_8 */
+void
+bus_space_read_multi_stream_8(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int64_t *ptr;
+	size_t cnt;
+{
+	panic("!!! bus_space_read_multi_stream_8 not implemented !!!");
+}
+#endif
+
+/*
+ *	void bus_space_read_region_N(bus_space_tag_t tag,
+ *	    bus_space_handle_t bsh, bus_size_t offset,
+ *	    u_intN_t *addr, size_t count);
+ *
+ * Read `count' 1, 2, 4, or 8 byte quantities from bus space
+ * described by tag/handle and starting at `offset' and copy into
+ * buffer provided.
+ */
+
+void
+bus_space_read_region_1(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int8_t *ptr;
+	size_t cnt;
+{
+	if ((t) == I386_BUS_SPACE_IO) {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	inb %w1,%%al										;	\
+				stosb												;	\
+				incl %1												;	\
+				loop 1b" :
+				"=&a" (__x), "=d" (dummy1), "=D" (dummy2),
+				"=c" (dummy3) :
+				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt)) :
+				"memory");
+	} else {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		__asm __volatile("											\
+				cld													;	\
+				repne												;	\
+				movsb" :
+				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3) :
+				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
+				"memory");
+	}
+}
+
+void
+bus_space_read_region_2(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int16_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int16_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int16_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	inw %w1,%%ax										;	\
+				stosw												;	\
+				addl $2,%1											;	\
+				loop 1b" :
+				"=&a" (__x), "=d" (dummy1), "=D" (dummy2),
+				"=c" (dummy3)
+				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt))
+				"memory");
+	} else {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		__asm __volatile("											\
+				cld													;	\
+				repne												;	\
+				movsw"
+				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3)
+				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt))
+				"memory");
+	}
+}
+
+void
+bus_space_read_region_4(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int32_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int32_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int32_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	inl %w1,%%eax										;	\
+				stosl												;	\
+				addl $4,%1											;	\
+				loop 1b" :
+				"=&a" (__x), "=d" (dummy1), "=D" (dummy2),
+				"=c" (dummy3) :
+				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt)) :
+				"memory");
+	} else {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		__asm __volatile("											\
+				cld													;	\
+				repne												;	\
+				movsl" :
+				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3) :
+				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
+				"memory");
+	}
+}
+
+#if 0	/* Cause a link error for bus_space_read_region_8 */
+void
+bus_space_read_region_8(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int64_t *ptr;
+	size_t cnt;
+{
+	panic("!!! bus_space_read_region_8 not implemented !!!");
+}
+#endif
+
+void
+bus_space_read_region_stream_1(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int8_t *ptr;
+	size_t cnt;
+{
+	bus_space_read_region_1(t, h, o, ptr, cnt);
+}
+
+void
+bus_space_read_region_stream_2(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int16_t *ptr;
+	size_t cnt;
+{
+	bus_space_read_region_2(t, h, o, ptr, cnt);
+}
+
+void
+bus_space_read_region_stream_4(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int32_t *ptr;
+	size_t cnt;
+{
+	bus_space_read_region_4(t, h, o, ptr, cnt);
+}
+
+#if 0	/* Cause a link error for bus_space_read_region_stream_8 */
+void
+bus_space_read_region_stream_8(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int64_t *ptr;
+	size_t cnt;
+{
+	panic("!!! bus_space_read_region_stream_8 not implemented !!!");
+}
+#endif
+
+/*
+ *	void bus_space_write_N(bus_space_tag_t tag,
+ *	    bus_space_handle_t bsh, bus_size_t offset,
+ *	    u_intN_t value);
+ *
+ * Write the 1, 2, 4, or 8 byte value `value' to bus space
+ * described by tag/handle/offset.
+ */
+
+void
+bus_space_write_1(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int8_t v;
+{
+	if ((t) == I386_BUS_SPACE_IO) {
+		outb((h) + (o), (v));
+	} else {
+		((void) (*(volatile u_int8_t*) ((h) + (o)) = (v)));
+	}
+}
+
+void
+bus_space_write_2(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int16_t v;
+{
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int16_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		outw((h) + (o), (v));
+	} else {
+		((void) (*(volatile u_int16_t*) ((h) + (o)) = (v)));
+	}
+}
+
+void
+bus_space_write_4(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int32_t v;
+{
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int32_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		outl((h) + (o), (v));
+	} else {
+		((void) (*(volatile u_int32_t*) ((h) + (o)) = (v)));
+	}
+}
+
+#if 0	/* Cause a link error for bus_space_write_8 */
+void
+bus_space_write_8(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int64_t v;
+{
+	panic("!!! bus_space_write_8 not implemented !!!");
+}
+#endif
+
+void
+bus_space_write_stream_1(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int8_t v;
+{
+	bus_space_write_1(t, h, o, v);
+}
+
+void
+bus_space_write_stream_2(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int16_t v;
+{
+	bus_space_write_2(t, h, o, v);
+}
+
+void
+bus_space_write_stream_4(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int32_t v;
+{
+	bus_space_write_4(t, h, o, v);
+}
+
+#if 0	/* Cause a link error for bus_space_write_stream_8 */
+void
+bus_space_write_stream_8(t, h, o, v)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int64_t v;
+{
+	panic("!!! bus_space_write_stream_8 not implemented !!!");
+}
+#endif
+
+/*
+ *	void bus_space_write_multi_N(bus_space_tag_t tag,
+ *	    bus_space_handle_t bsh, bus_size_t offset,
+ *	    const u_intN_t *addr, size_t count);
+ *
+ * Write `count' 1, 2, 4, or 8 byte quantities from the buffer
+ * provided to bus space described by tag/handle/offset.
+ */
+
+void
+bus_space_write_multi_1(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int8_t *ptr;
+	size_t cnt;
+{
+	if ((t) == I386_BUS_SPACE_IO) {
+		outsb((h) + (o), (ptr), (cnt));
+	} else {
+		void *dummy1;
+		int dummy2;
+		void *dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	lodsb												;	\
+				movb %%al,(%2)										;	\
+				loop 1b" :
+				"=S" (dummy1), "=c" (dummy2), "=r" (dummy3), "=&a" (__x) :
+				"0" ((ptr)), "1" ((cnt)), "2" ((h) + (o)));
+	}
+}
+
+void
+bus_space_write_multi_2(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int16_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int16_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int16_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		outsw((h) + (o), (ptr), (cnt));
+	} else {
+		void *dummy1;
+		int dummy2;
+		void *dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	lodsw												;	\
+				movw %%ax,(%2)										;	\
+				loop 1b" :
+				"=S" (dummy1), "=c" (dummy2), "=r" (dummy3), "=&a" (__x) :
+				"0" ((ptr)), "1" ((cnt)), "2" ((h) + (o)));
+	}
+}
+
+void
+bus_space_write_multi_4(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int32_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int32_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int32_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		outsl((h) + (o), (ptr), (cnt));
+	} else {
+		void *dummy1;
+		int dummy2;
+		void *dummy3;
+		int __x;
+		__asm __volatile("											\
+				cld													;	\
+			1:	lodsl												;	\
+				movl %%eax,(%2)										;	\
+				loop 1b" :
+				"=S" (dummy1), "=c" (dummy2), "=r" (dummy3), "=&a" (__x) :
+				"0" ((ptr)), "1" ((cnt)), "2" ((h) + (o)));
+	}
+}
+
+#if 0	/* Cause a link error for bus_space_write_multi_8 */
+void
+bus_space_write_multi_8(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int64_t *ptr;
+	size_t cnt;
+{
+	panic("!!! bus_space_write_multi_8 not implemented !!!");
+}
+#endif
+
+void
+bus_space_write_multi_stream_1(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int8_t *ptr;
+	size_t cnt;
+{
+	bus_space_write_multi_1(t, h, o, ptr, cnt);
+}
+
+void
+bus_space_write_multi_stream_2(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int16_t *ptr;
+	size_t cnt;
+{
+	bus_space_write_multi_2(t, h, o, ptr, cnt);
+}
+
+void
+bus_space_write_multi_stream_4(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int32_t *ptr;
+	size_t cnt;
+{
+	bus_space_write_multi_4(t, h, o, ptr, cnt);
+}
+
+#if 0	/* Cause a link error for bus_space_write_multi_stream_8 */
+void
+bus_space_write_multi_stream_8(t, h, o, ptr, cnt)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int64_t *ptr;
+	size_t cnt;
+{
+	panic("!!! bus_space_write_multi_stream_8 not implemented !!!");
+}
+#endif
+
+/*
+ *	void bus_space_write_region_N(bus_space_tag_t tag,
+ *	    bus_space_handle_t bsh, bus_size_t offset,
+ *	    const u_intN_t *addr, size_t count);
+ *
+ * Write `count' 1, 2, 4, or 8 byte quantities from the buffer provided
+ * to bus space described by tag/handle starting at `offset'.
+ */
+
+void
+bus_space_write_region_1(t, h, o, ptr, cnt)
+	bus_space_tag_t	t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int8_t *ptr;
+	size_t cnt;
+{
+	if ((t) == I386_BUS_SPACE_IO) {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		int __x;
+		__asm __volatile("											\
+			cld													;	\
+		1:	lodsb												;	\
+			outb %%al,%w1										;	\
+			incl %1												;	\
+			loop 1b" :
+				"=&a" (__x), "=d" (dummy1), "=S" (dummy2),
+				"=c" (dummy3) :
+				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt)) :
+				"memory");
+	} else {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		__asm __volatile("											\
+			cld													;	\
+			repne												;	\
+			movsb" :
+				"=D" (dummy1), "=S" (dummy2), "=c" (dummy3) :
+				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
+				"memory");
+	}
+}
+
+void
+bus_space_write_region_2(t, h, o, ptr, cnt)
+	bus_space_tag_t	t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int16_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int16_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int16_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		int __x;
+		__asm __volatile("											\
+					cld													;	\
+				1:	lodsw												;	\
+					outw %%ax,%w1										;	\
+					addl $2,%1											;	\
+					loop 1b" :
+				"=&a" (__x), "=d" (dummy1), "=S" (dummy2),
+				"=c" (dummy3) :
+				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt)) :
+				"memory");
+	} else {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		__asm __volatile("											\
+					cld													;	\
+					repne												;	\
+					movsw" :
+				"=D" (dummy1), "=S" (dummy2), "=c" (dummy3) :
+				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
+				"memory");
+	}
+}
+
+void
+bus_space_write_region_4(t, h, o, ptr, cnt)
+	bus_space_tag_t	t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	const u_int32_t *ptr;
+	size_t cnt;
+{
+	__BUS_SPACE_ADDRESS_SANITY((ptr), u_int32_t, "buffer");
+	__BUS_SPACE_ADDRESS_SANITY((h) + (o), u_int32_t, "bus addr");
+	if ((t) == I386_BUS_SPACE_IO) {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		int __x;
+		__asm __volatile("											\
+					cld													;	\
+				1:	lodsl												;	\
+					outl %%eax,%w1										;	\
+					addl $4,%1											;	\
+					loop 1b" :
+				"=&a" (__x), "=d" (dummy1), "=S" (dummy2),
+				"=c" (dummy3) :
+				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt)) :
+				"memory");
+	} else {
+		int dummy1;
+		void *dummy2;
+		int dummy3;
+		__asm __volatile("											\
+					cld													;	\
+					repne												;	\
+					movsl" :
+				"=D" (dummy1), "=S" (dummy2), "=c" (dummy3) :
+				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
+				"memory");
+	}
 }
 
 /*
@@ -661,7 +1487,7 @@ bus_space_vaddr(tag, bsh)
  * Write the 1, 2, 4, or 8 byte value `val' to bus space described
  * by tag/handle/offset `count' times.
  */
-static void
+void
 bus_space_set_multi_1(t, h, o, v, c)
 	bus_space_tag_t t;
 	bus_space_handle_t h;
@@ -682,7 +1508,7 @@ bus_space_set_multi_1(t, h, o, v, c)
 	}
 }
 
-static void
+void
 bus_space_set_multi_2(t, h, o, v, c)
 	bus_space_tag_t t;
 	bus_space_handle_t h;
@@ -703,7 +1529,7 @@ bus_space_set_multi_2(t, h, o, v, c)
 	}
 }
 
-static void
+void
 bus_space_set_multi_4(t, h, o, v, c)
 	bus_space_tag_t 	t;
 	bus_space_handle_t 	h;
@@ -713,16 +1539,19 @@ bus_space_set_multi_4(t, h, o, v, c)
 {
 	bus_addr_t addr = h + o;
 
-	if (t == I386_BUS_SPACE_IO)
-		while (c--)
+	if (t == I386_BUS_SPACE_IO) {
+		while (c--) {
 			outl(addr, v);
-	else
-		while (c--)
+		}
+	} else {
+		while (c--) {
 			*(volatile u_int32_t*) (addr) = v;
+		}
+	}
 }
 
 #if 0	/* Cause a link error for bus_space_set_multi_8 */
-static void
+void
 bus_space_set_multi_8(t, h, o, v, c)
 	bus_space_tag_t 	t;
 	bus_space_handle_t 	h;
@@ -742,7 +1571,7 @@ bus_space_set_multi_8(t, h, o, v, c)
  * Write `count' 1, 2, 4, or 8 byte value `val' to bus space described
  * by tag/handle starting at `offset'.
  */
-static void
+void
 bus_space_set_region_1(t, h, o, v, c)
 	bus_space_tag_t t;
 	bus_space_handle_t h;
@@ -763,7 +1592,7 @@ bus_space_set_region_1(t, h, o, v, c)
 	}
 }
 
-static void
+void
 bus_space_set_region_2(t, h, o, v, c)
 	bus_space_tag_t t;
 	bus_space_handle_t h;
@@ -784,7 +1613,7 @@ bus_space_set_region_2(t, h, o, v, c)
 	}
 }
 
-static void
+void
 bus_space_set_region_4(t, h, o, v, c)
 	bus_space_tag_t t;
 	bus_space_handle_t h;
@@ -806,7 +1635,7 @@ bus_space_set_region_4(t, h, o, v, c)
 }
 
 #if 0	/* Cause a link error for bus_space_set_region_8 */
-static void
+void
 bus_space_set_region_8(t, h, o, v, c)
 	bus_space_tag_t t;
 	bus_space_handle_t h;
@@ -828,7 +1657,7 @@ bus_space_set_region_8(t, h, o, v, c)
  * at tag/bsh1/off1 to bus space starting at tag/bsh2/off2.
  */
 
-static void
+void
 bus_space_copy_region_1(t, h1, o1, h2, o2, c)
 	bus_space_tag_t t;
 	bus_space_handle_t h1;
@@ -865,7 +1694,7 @@ bus_space_copy_region_1(t, h1, o1, h2, o2, c)
 	}
 }
 
-static void
+void
 bus_space_copy_region_2(t, h1, o1, h2, o2, c)
 	bus_space_tag_t 	t;
 	bus_space_handle_t 	h1;
@@ -902,7 +1731,7 @@ bus_space_copy_region_2(t, h1, o1, h2, o2, c)
 	}
 }
 
-static void
+void
 bus_space_copy_region_4(t, h1, o1, h2, o2, c)
 	bus_space_tag_t 	t;
 	bus_space_handle_t 	h1;
@@ -940,7 +1769,7 @@ bus_space_copy_region_4(t, h1, o1, h2, o2, c)
 }
 
 #if 0	/* Cause a link error for bus_space_copy_8 */
-static void
+void
 bus_space_copy_region_8(t, h1, o1, h2, o2, c)
 	bus_space_tag_t 	t;
 	bus_space_handle_t 	h1;
@@ -950,5 +1779,55 @@ bus_space_copy_region_8(t, h1, o1, h2, o2, c)
 	size_t 				c;
 {
 	panic("!!! bus_space_copy_region_8 unimplemented !!!");
+}
+#endif
+
+void
+bus_space_copy_region_stream_1(t, h1, o1, h2, o2, c)
+	bus_space_tag_t 	t;
+	bus_space_handle_t 	h1;
+	bus_size_t 			o1;
+	bus_space_handle_t 	h2;
+	bus_size_t 			o2;
+	size_t 				c;
+{
+	bus_space_copy_region_1(t, h1, o1, h2, o2, c);
+}
+
+void
+bus_space_copy_region_stream_2(t, h1, o1, h2, o2, c)
+	bus_space_tag_t 	t;
+	bus_space_handle_t 	h1;
+	bus_size_t 			o1;
+	bus_space_handle_t 	h2;
+	bus_size_t 			o2;
+	size_t 				c;
+{
+	bus_space_copy_region_2(t, h1, o1, h2, o2, c);
+}
+
+void
+bus_space_copy_region_stream_4(t, h1, o1, h2, o2, c)
+	bus_space_tag_t 	t;
+	bus_space_handle_t 	h1;
+	bus_size_t 			o1;
+	bus_space_handle_t 	h2;
+	bus_size_t 			o2;
+	size_t 				c;
+{
+	bus_space_copy_region_4(t, h1, o1, h2, o2, c);
+}
+
+#if 0	/* Cause a link error for bus_space_copy_8 */
+void
+bus_space_copy_region_stream_8(t, h1, o1, h2, o2, c)
+	bus_space_tag_t 	t;
+	bus_space_handle_t 	h1;
+	bus_size_t 			o1;
+	bus_space_handle_t 	h2;
+	bus_size_t 			o2;
+	size_t 				c;
+{
+	panic("!!! bus_space_copy_region_stream_8 unimplemented !!!");
 }
 #endif
