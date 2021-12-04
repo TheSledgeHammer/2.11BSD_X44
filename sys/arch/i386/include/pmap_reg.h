@@ -79,16 +79,6 @@
 
 //#define	KPTDI				0										/* start of kernel virtual pde's */
 
-/*
- * Input / Output Memory Physical Addresses
- */
-/*
- * XXX doesn't really belong here I guess...
- */
-#define ISA_HOLE_START    	0xa0000
-#define ISA_HOLE_END    	0x100000
-#define ISA_HOLE_LENGTH 	(ISA_HOLE_END-ISA_HOLE_START)
-
 #ifndef PMAP_PAE_COMP
 /* NOPAE Constants */
 #define	PD_SHIFT			22
@@ -171,7 +161,7 @@ extern pd_entry_t 			PTDpde[], APTDpde[];
 extern pd_entry_t 			*IdlePTD;
 extern pt_entry_t 			*KPTmap;
 #ifdef PMAP_PAE_COMP
-extern pdpt_entry_t 			*IdlePDPT;
+extern pdpt_entry_t 		*IdlePDPT;
 #endif
 #endif	/* _KERNEL */
 #endif /* _I386_PMAP_REG_H_ */

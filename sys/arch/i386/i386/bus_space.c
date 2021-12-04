@@ -143,7 +143,9 @@ bus_space_mmap(t, addr, off, prot, flags)
 	int prot;
 	int flags;
 {
-	panic("bus_space_mmap: not implemented");
+	//panic("bus_space_mmap: not implemented");
+
+	return (i386_memio_mmap(t, addr, off, prot, flags));
 }
 
 void *
@@ -151,100 +153,10 @@ bus_space_vaddr(tag, bsh)
 	bus_space_tag_t	tag;
 	bus_space_handle_t bsh;
 {
-	panic("bus_space_vaddr: not implemented");
+	//panic("bus_space_vaddr: not implemented");
+
+	return((tag == I386_BUS_SPACE_MEM ? (void *)(bsh) : (void *)0));
 }
-
-/*
- *	u_intN_t bus_space_read_N __P((bus_space_tag_t tag,
- *	    bus_space_handle_t bsh, bus_size_t offset));
- *
- * Read a 1, 2, 4, or 8 byte quantity from bus space
- * described by tag/handle/offset.
- */
-u_int8_t
-bus_space_read_1(t, h, o)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-{
-	return (((t) == I386_BUS_SPACE_IO ? (inb((h) + (o))) :	(*(volatile u_int8_t *)((h) + (o)))));
-}
-
-u_int16_t
-bus_space_read_2(t, h, o)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-{
-	return (((t) == I386_BUS_SPACE_IO ? (inw((h) + (o))) : (*(volatile u_int16_t *)((h) + (o)))));
-}
-
-u_int32_t
-bus_space_read_4(t, h, o)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-{
-	return(((t) == I386_BUS_SPACE_IO ? (inl((h) + (o))) : (*(volatile u_int32_t *)((h) + (o)))));
-}
-
-#if 0	/* Cause a link error for bus_space_read_8 */
-#define	bus_space_read_8(t, h, o)	!!! bus_space_read_8 unimplemented !!!
-#endif
-
-/*
- *	void bus_space_write_N __P((bus_space_tag_t tag,
- *	    bus_space_handle_t bsh, bus_size_t offset,
- *	    u_intN_t value));
- *
- * Write the 1, 2, 4, or 8 byte value `value' to bus space
- * described by tag/handle/offset.
- */
-void
-bus_space_write_1(t, h, o, v)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int v;
-{
-	if ((t) == I386_BUS_SPACE_IO) {
-		outb((h) + (o), (v));
-	} else {
-		((void)(*(volatile u_int8_t *)((h) + (o)) = (v)));
-	}
-}
-
-void
-bus_space_write_2(t, h, o, v)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int v;
-{
-	if ((t) == I386_BUS_SPACE_IO) {
-		outb((h) + (o), (v));
-	} else {
-		((void)(*(volatile u_int16_t *)((h) + (o)) = (v)));
-	}
-}
-
-void
-bus_space_write_4(t, h, o, v)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int v;
-{
-	if ((t) == I386_BUS_SPACE_IO) {
-		outb((h) + (o), (v));
-	} else {
-		((void)(*(volatile u_int32_t *)((h) + (o)) = (v)));
-	}
-}
-
-#if 0	/* Cause a link error for bus_space_write_8 */
-#define	bus_space_write_8	!!! bus_space_write_8 not implemented !!!
-#endif
 
 /*
  *	void bus_space_set_multi_N __P((bus_space_tag_t tag,
@@ -264,12 +176,15 @@ bus_space_set_multi_1(t, h, o, v, c)
 {
 	bus_addr_t addr = h + o;
 
-	if (t == I386_BUS_SPACE_IO)
-		while (c--)
+	if (t == I386_BUS_SPACE_IO) {
+		while (c--) {
 			outb(addr, v);
-	else
-		while (c--)
+		}
+	} else {
+		while (c--) {
 			*(volatile u_int8_t*) (addr) = v;
+		}
+	}
 }
 
 void
@@ -282,12 +197,15 @@ bus_space_set_multi_2(t, h, o, v, c)
 {
 	bus_addr_t addr = h + o;
 
-	if (t == I386_BUS_SPACE_IO)
-		while (c--)
+	if (t == I386_BUS_SPACE_IO) {
+		while (c--) {
 			outw(addr, v);
-	else
-		while (c--)
+		}
+	} else {
+		while (c--) {
 			*(volatile u_int16_t*) (addr) = v;
+		}
+	}
 }
 
 void
@@ -309,7 +227,16 @@ bus_space_set_multi_4(t, h, o, v, c)
 }
 
 #if 0	/* Cause a link error for bus_space_set_multi_8 */
-#define	bus_space_set_multi_8 !!! bus_space_set_multi_8 unimplemented !!!
+void
+bus_space_set_multi_8(t, h, o, v, c)
+	bus_space_tag_t 	t;
+	bus_space_handle_t 	h;
+	bus_size_t 			o;
+	u_int64_t 			v;
+	size_t 				c;
+{
+	panic("!!! bus_space_set_multi_8 unimplemented !!!");
+}
 #endif
 
 /*
@@ -330,12 +257,15 @@ bus_space_set_region_1(t, h, o, v, c)
 {
 	bus_addr_t addr = h + o;
 
-	if (t == I386_BUS_SPACE_IO)
-		for (; c != 0; c--, addr++)
+	if (t == I386_BUS_SPACE_IO) {
+		for (; c != 0; c--, addr++) {
 			outb(addr, v);
-	else
-		for (; c != 0; c--, addr++)
+		}
+	} else {
+		for (; c != 0; c--, addr++) {
 			*(volatile u_int8_t*) (addr) = v;
+		}
+	}
 }
 
 void
@@ -348,12 +278,15 @@ bus_space_set_region_2(t, h, o, v, c)
 {
 	bus_addr_t addr = h + o;
 
-	if (t == I386_BUS_SPACE_IO)
-		for (; c != 0; c--, addr += 2)
+	if (t == I386_BUS_SPACE_IO) {
+		for (; c != 0; c--, addr += 2) {
 			outw(addr, v);
-	else
-		for (; c != 0; c--, addr += 2)
+		}
+	} else {
+		for (; c != 0; c--, addr += 2) {
 			*(volatile u_int16_t*) (addr) = v;
+		}
+	}
 }
 
 void
@@ -366,16 +299,28 @@ bus_space_set_region_4(t, h, o, v, c)
 {
 	bus_addr_t addr = h + o;
 
-	if (t == I386_BUS_SPACE_IO)
-		for (; c != 0; c--, addr += 4)
+	if (t == I386_BUS_SPACE_IO) {
+		for (; c != 0; c--, addr += 4) {
 			outl(addr, v);
-	else
-		for (; c != 0; c--, addr += 4)
+		}
+	} else {
+		for (; c != 0; c--, addr += 4) {
 			*(volatile u_int32_t*) (addr) = v;
+		}
+	}
 }
 
 #if 0	/* Cause a link error for bus_space_set_region_8 */
-#define	bus_space_set_region_8	!!! bus_space_set_region_8 unimplemented !!!
+void
+bus_space_set_region_8(t, h, o, v, c)
+	bus_space_tag_t t;
+	bus_space_handle_t h;
+	bus_size_t o;
+	u_int64_t v;
+	size_t c;
+{
+	panic("!!! bus_space_set_region_8 unimplemented !!!");
+}
 #endif
 
 /*
@@ -500,5 +445,15 @@ bus_space_copy_region_4(t, h1, o1, h2, o2, c)
 }
 
 #if 0	/* Cause a link error for bus_space_copy_8 */
-#define	bus_space_copy_region_8	!!! bus_space_copy_region_8 unimplemented !!!
+void
+bus_space_copy_region_8(t, h1, o1, h2, o2, c)
+	bus_space_tag_t 	t;
+	bus_space_handle_t 	h1;
+	bus_size_t 			o1;
+	bus_space_handle_t 	h2;
+	bus_size_t 			o2;
+	size_t 				c;
+{
+	panic("!!! bus_space_copy_region_8 unimplemented !!!");
+}
 #endif

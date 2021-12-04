@@ -938,3 +938,34 @@ extent_print(ex)
 	for (rp = LIST_FIRST(ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link))
 		printf("     0x%lx - 0x%lx\n", rp->er_start, rp->er_end);
 }
+
+/*
+struct extent *
+extent_get(ex, name, start, end)
+	struct extent *ex;
+	char *name;
+	u_long start, end;
+{
+	if(ex->ex_name == name && ex->ex_start == start && ex->ex_end == end) {
+		return (ex);
+	}
+	return (NULL);
+}
+
+struct extent_region *
+extent_get_region(ex, name, start, end)
+	struct extent *ex;
+	char *name;
+	u_long start, end;
+{
+	register struct extent_region *rp;
+	if(extent_get(ex, name, start, end)) {
+		for(rp = LIST_FIRST(ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link)) {
+			if((rp->er_start >= ex->ex_start && rp->er_start < ex->ex_end) && (rp->er_end > ex->ex_start && rp->er_end <= ex->ex_end)) {
+				return (rp);
+			}
+		}
+	}
+	return (NULL);
+}
+*/

@@ -103,10 +103,10 @@ __inw(int port)
 static __inline void
 insw(int port, void *addr, int cnt)
 {
-	__asm __volatile("cld\n\trepne\n\tinsw"		:
-												:
-			 "d" (port), "D" (addr), "c" (cnt)	:
-			 "%edi", "%ecx", "memory");
+	__asm __volatile("cld\n\trepne\n\tinsw" :
+			:
+			"d" (port), "D" (addr), "c" (cnt) :
+			"%edi", "%ecx", "memory");
 }
 
 #define	inl(port) \
@@ -131,10 +131,10 @@ __inl(int port)
 static __inline void
 insl(int port, void *addr, int cnt)
 {
-	__asm __volatile("cld\n\trepne\n\tinsl"		:
-												:
-			 "d" (port), "D" (addr), "c" (cnt)	:
-			 "%edi", "%ecx", "memory");
+	__asm __volatile("cld\n\trepne\n\tinsl" :
+			:
+			"d" (port), "D" (addr), "c" (cnt) :
+			"%edi", "%ecx", "memory");
 }
 
 #define	outb(port, data) \
@@ -155,10 +155,10 @@ __outb(int port, u_int8_t data)
 static __inline void
 outsb(int port, void *addr, int cnt)
 {
-	__asm __volatile("cld\n\trepne\n\toutsb"	:
-												:
-			 "d" (port), "S" (addr), "c" (cnt)	:
-			 "%esi", "%ecx");
+	__asm __volatile("cld\n\trepne\n\toutsb" :
+			:
+			"d" (port), "S" (addr), "c" (cnt) :
+			"%esi", "%ecx");
 }
 
 #define	outw(port, data) \
@@ -179,10 +179,10 @@ __outw(int port, u_int16_t data)
 static __inline void
 outsw(int port, void *addr, int cnt)
 {
-	__asm __volatile("cld\n\trepne\n\toutsw"	:
-												:
-			 "d" (port), "S" (addr), "c" (cnt)	:
-			 "%esi", "%ecx");
+	__asm __volatile("cld\n\trepne\n\toutsw" :
+			:
+			"d" (port), "S" (addr), "c" (cnt) :
+			"%esi", "%ecx");
 }
 
 #define	outl(port, data) \
@@ -203,9 +203,9 @@ __outl(int port, u_int32_t data)
 static __inline void
 outsl(int port, void *addr, int cnt)
 {
-	__asm __volatile("cld\n\trepne\n\toutsl" 	:
-												:
-			"d" (port), "S" (addr), "c" (cnt)	:
+	__asm __volatile("cld\n\trepne\n\toutsl" :
+			:
+			"d" (port), "S" (addr), "c" (cnt) :
 			"%esi", "%ecx");
 }
 

@@ -72,7 +72,6 @@
 #define _I386_BUS_SPACE_H_
 
 #include <sys/bus.h>
-
 #include <machine/pio.h>
 
 /*

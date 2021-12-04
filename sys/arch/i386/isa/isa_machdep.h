@@ -189,11 +189,19 @@ struct i386_isa_dma_cookie {
  * XXX These should be converted to machine- and bus-mapping-independent
  * function definitions, invoked through the softc.
  */
+/*
+ * Input / Output Memory Physical Addresses
+ */
 
+#define ISA_HOLE_START    	0xa0000
+#define ISA_HOLE_END    	0x100000
+#define ISA_HOLE_LENGTH 	(ISA_HOLE_END-ISA_HOLE_START)
+
+#define ISA_PHYSADDR(v) 	((bus_addr_t)(v) - ISA_HOLE_START)
 /*
  * Given a physical address in the "hole",
  * return a kernel virtual address.
  */
-#define ISA_HOLE_VADDR(p)  ((void *) ((u_long)(p) - ISA_HOLE_START))
+#define ISA_HOLE_VADDR(p)  	((void *) ((u_long)(p) - ISA_HOLE_START))
 
 #endif /* _I386_ISA_MACHDEP_H_ */

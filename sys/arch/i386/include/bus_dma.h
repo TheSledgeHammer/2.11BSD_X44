@@ -82,11 +82,11 @@ typedef struct i386_bus_dmamap			*bus_dmamap_t;
  *	Describes a single contiguous DMA transaction.  Values
  *	are suitable for programming into DMA registers.
  */
-typedef struct i386_bus_dma_segment {
+struct i386_bus_dma_segment {
 	bus_addr_t			ds_addr;			/* DMA address */
 	bus_size_t			ds_len;				/* length of transfer */
-} bus_dma_segment_t;
-
+};
+typedef struct i386_bus_dma_segment		bus_dma_segment_t;
 /*
  *	bus_dmamap_t
  *
@@ -98,7 +98,7 @@ struct i386_bus_dmamap {
 	 */
 	bus_size_t			_dm_size;			/* largest DMA transfer mappable */
 	int					_dm_segcnt;			/* number of segs this map can map */
-	bus_size_t			_dm_maxmaxsegsz; 	/* fixed largest possible segment */
+	bus_size_t			_dm_maxsegsz; 	/* fixed largest possible segment */
 	bus_size_t			_dm_boundary;		/* don't cross this */
 	bus_addr_t			_dm_bounce_thresh; 	/* bounce threshold; see tag */
 	int					_dm_flags;			/* misc. flags */
@@ -108,7 +108,6 @@ struct i386_bus_dmamap {
 	/*
 	 * PUBLIC MEMBERS: these are used by machine-independent code.
 	 */
-	bus_size_t			dm_maxsegsz;		/* largest possible segment */
 	bus_size_t			dm_mapsize;			/* size of the mapping */
 	int					dm_nsegs;			/* # valid segments in mapping */
 	bus_dma_segment_t 	dm_segs[1];			/* segments; variable length */
@@ -121,6 +120,7 @@ struct i386_bus_dmamap {
  *	DMA for a given bus.
  */
 struct i386_bus_dma_tag {
+	bus_addr_t _bounce_thresh;
 	void	 *_cookie;		/* cookie used in the guts */
 
 	/*
@@ -144,5 +144,34 @@ struct i386_bus_dma_tag {
 	void	(*_dmamem_unmap) (bus_dma_tag_t, caddr_t, size_t);
 	int		(*_dmamem_mmap) (bus_dma_tag_t, bus_dma_segment_t *, int, int, int, int);
 };
+
+#define	bus_dmamap_create(t, s, n, m, b, f, p)						\
+	(*(t)->_dmamap_create)((t), (s), (n), (m), (b), (f), (p))
+#define	bus_dmamap_destroy(t, p)									\
+	(*(t)->_dmamap_destroy)((t), (p))
+#define	bus_dmamap_load(t, m, b, s, p, f)							\
+	(*(t)->_dmamap_load)((t), (m), (b), (s), (p), (f))
+#define	bus_dmamap_load_mbuf(t, m, b, f)							\
+	(*(t)->_dmamap_load_mbuf)((t), (m), (b), (f))
+#define	bus_dmamap_load_uio(t, m, u, f)								\
+	(*(t)->_dmamap_load_uio)((t), (m), (u), (f))
+#define	bus_dmamap_load_raw(t, m, sg, n, s, f)						\
+	(*(t)->_dmamap_load_raw)((t), (m), (sg), (n), (s), (f))
+#define	bus_dmamap_unload(t, p)										\
+	(*(t)->_dmamap_unload)((t), (p))
+#define	bus_dmamap_sync(t, p, o, l, ops)							\
+	(void)((t)->_dmamap_sync ?										\
+	    (*(t)->_dmamap_sync)((t), (p), (o), (l), (ops)) : (void)0)
+
+#define	bus_dmamem_alloc(t, s, a, b, sg, n, r, f)					\
+	(*(t)->_dmamem_alloc)((t), (s), (a), (b), (sg), (n), (r), (f))
+#define	bus_dmamem_free(t, sg, n)									\
+	(*(t)->_dmamem_free)((t), (sg), (n))
+#define	bus_dmamem_map(t, sg, n, s, k, f)							\
+	(*(t)->_dmamem_map)((t), (sg), (n), (s), (k), (f))
+#define	bus_dmamem_unmap(t, k, s)									\
+	(*(t)->_dmamem_unmap)((t), (k), (s))
+#define	bus_dmamem_mmap(t, sg, n, o, p, f)							\
+	(*(t)->_dmamem_mmap)((t), (sg), (n), (o), (p), (f))
 
 #endif /* _I386_BUS_DMA_H_ */

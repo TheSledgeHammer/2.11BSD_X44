@@ -32,19 +32,19 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-#include <machine/bus_space.h>
+#include <devel/arch/i386/include/bus.h>
 
 /*
  * Bus address and size types
  */
-typedef uint64_t	bus_addr_t;
-typedef size_t  	bus_size_t;
+typedef u_long 		bus_addr_t;
+typedef u_long   	bus_size_t;
 
 /*
  * Access methods for bus resources and address space.
  */
-typedef	int 			bus_space_tag_t;
-typedef	unsigned long 	bus_space_handle_t;
+typedef	int 		bus_space_tag_t;
+typedef	u_long		bus_space_handle_t;
 
 /*
  * Forwards needed by prototypes below.
@@ -77,19 +77,20 @@ caddr_t		bus_space_mmap(bus_space_tag_t, bus_addr_t, off_t, int, int);
 
 void		*bus_space_vaddr(bus_space_tag_t, bus_space_handle_t);
 
+/*
 void		bus_space_barrier(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_size_t, int);
 
-uint8_t		bus_space_read_1(bus_space_tag_t, bus_space_handle_t, bus_size_t);
-uint8_t		bus_space_read_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int8_t	bus_space_read_1(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int8_t	bus_space_read_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t);
 
-uint16_t 	bus_space_read_2(bus_space_tag_t, bus_space_handle_t, bus_size_t);
-uint16_t 	bus_space_read_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int16_t 	bus_space_read_2(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int16_t 	bus_space_read_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t);
 
-uint32_t 	bus_space_read_4(bus_space_tag_t, bus_space_handle_t, bus_size_t);
-uint32_t 	bus_space_read_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int32_t 	bus_space_read_4(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int32_t 	bus_space_read_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t);
 
-uint64_t 	bus_space_read_8(bus_space_tag_t, bus_space_handle_t, bus_size_t);
-uint64_t 	bus_space_read_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int64_t 	bus_space_read_8(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int64_t 	bus_space_read_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t);
 
 void		bus_space_write_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, uint8_t);
 void		bus_space_write_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, uint8_t);
@@ -102,7 +103,7 @@ void		bus_space_write_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, 
 
 void		bus_space_write_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, uint64_t);
 void		bus_space_write_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, uint64_t);
-
+*/
 void		bus_space_set_multi_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t, bus_size_t);
 void		bus_space_set_multi_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t, bus_size_t);
 void		bus_space_set_multi_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t, bus_size_t);
@@ -197,7 +198,7 @@ int		bus_dmamap_load_mbuf(bus_dma_tag_t, bus_dmamap_t, struct mbuf *, int);
 int		bus_dmamap_load_uio(bus_dma_tag_t, bus_dmamap_t, struct uio *, int);
 int		bus_dmamap_load_raw(bus_dma_tag_t, bus_dmamap_t, bus_dma_segment_t *, int, bus_size_t, int);
 void	bus_dmamap_unload(bus_dma_tag_t, bus_dmamap_t);
-void	bus_dmamap_sync (bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
+void	bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
 
 int		bus_dmamem_alloc(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
 void	bus_dmamem_free(bus_dma_tag_t, bus_dma_segment_t *, int);

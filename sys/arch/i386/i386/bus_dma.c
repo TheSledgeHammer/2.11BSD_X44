@@ -618,7 +618,7 @@ bus_dmamap_load(t, map, buf, buflen, p, flags)
 		} else {
 			if (curaddr == lastaddr &&
 			    (map->dm_segs[seg].ds_len + sgsize) <=
-			     map->_dm_maxmaxsegsz &&
+			     map->_dm_maxsegsz &&
 			     (map->_dm_boundary == 0 ||
 			     (map->dm_segs[seg].ds_addr & bmask) ==
 			     (curaddr & bmask)))
