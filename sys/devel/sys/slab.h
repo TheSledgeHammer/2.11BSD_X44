@@ -67,7 +67,7 @@ struct slab_cache {
 };
 typedef struct slab_cache      *slab_cache_t;
 
-struct slab			        	slab_list;
+struct slab			        	kmemslab;
 int			                    slab_count;                                     /* number of items in slablist */
 
 #define slab_lock(lock)			simple_lock(lock)
@@ -101,7 +101,7 @@ struct kmembuckets 	*kmembucket_search(slab_cache_t, slab_metadata_t, long, int,
 
 /*
 #define	MALLOC(space, cast, size, type, flags) { 					\
-	register struct kmembuckets *kbp = &slab_list[BUCKETINDX(size)].s_bucket; 	\
+	register struct kmembuckets *kbp = &kmemslab[BUCKETINDX(size)].s_bucket; 	\
 	long s = splimp(); 												\
 	if (kbp->kb_next == NULL) { 									\
 		(space) = (cast)malloc((u_long)(size), type, flags); 		\
@@ -119,7 +119,7 @@ struct kmembuckets 	*kmembucket_search(slab_cache_t, slab_metadata_t, long, int,
 	if (1 << kup->ku_indx > MAXALLOCSAVE) { 						\
 		free((caddr_t)(addr), type); 								\
 	} else { 														\
-		kbp = &slab_list[kup->ku_indx].s_bucket;					\
+		kbp = &kmemslab[kup->ku_indx].s_bucket;					\
 		if (kbp->kb_next == NULL) 									\
 			kbp->kb_next = (caddr_t)(addr); 						\
 		else 														\

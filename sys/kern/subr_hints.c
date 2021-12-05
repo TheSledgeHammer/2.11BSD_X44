@@ -38,8 +38,6 @@
 #include <sys/conf.h>
 #include <sys/device.h>
 
-#include <machine/bus.h>
-
 /*
  * Access functions for device resources.
  */

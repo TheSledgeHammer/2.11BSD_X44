@@ -408,4 +408,4 @@ void		bus_space_copy_region_stream_2(bus_space_tag_t, bus_space_handle_t, bus_si
 void		bus_space_copy_region_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
 void		bus_space_copy_region_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
 
-#endif /* SYS_DEVEL_ARCH_I386_INCLUDE_BUS_H_ */
+#endif /* _I386_BUS_H_ */

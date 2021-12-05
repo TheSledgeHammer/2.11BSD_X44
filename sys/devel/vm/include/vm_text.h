@@ -140,7 +140,7 @@ extern
 struct txtlist              vm_text_list;
 
 extern
-simple_lock_data_t			vm_text_list_lock;
+simple_lock_data_t			vm_text_lock;
 
 #define xlock(lock)			simple_lock(lock);
 #define xunlock(lock)		simple_unlock(lock);

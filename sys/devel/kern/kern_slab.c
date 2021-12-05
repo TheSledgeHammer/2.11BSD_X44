@@ -87,8 +87,8 @@
 #include <devel/sys/slab.h>
 
 struct slab_cache       *slabCache;
-struct slab 			slab_list[MINBUCKET + 16];
-simple_lock_data_t		slab_list_lock;
+struct slab 			kmemslab[MINBUCKET + 16];
+simple_lock_data_t		slab_lock;
 struct kmemstats 		kmemstats[M_LAST];
 struct kmemusage 		*kmemusage;
 char *kmembase, 		*kmemlimit;
@@ -187,15 +187,15 @@ slab_lookup(cache, size, mtype)
 {
     register slab_t   slab;
 
-    slab = &slab_list[BUCKETINDX(size)];
-    slab_lock(&slab_list_lock);
+    slab = &kmemslab[BUCKETINDX(size)];
+    slab_lock(&slab_lock);
 	for(slab = slab_object(cache, size); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
 		if(slab->s_size == size && slab->s_mtype == mtype) {
-			slab_unlock(&slab_list_lock);
+			slab_unlock(&slab_lock);
 			return (slab);
 		}
 	}
-	slab_unlock(&slab_list_lock);
+	slab_unlock(&slab_lock);
     return (NULL);
 }
 
@@ -212,10 +212,10 @@ slab_insert(cache, size, mtype)
 	slab->s_size = size;
 	slab->s_mtype = mtype;
 
-    slab = &slab_list[indx];
+    slab = &kmemslab[indx];
     cache->sc_link = slab;
 
-    slab_lock(&slab_list_lock);
+    slab_lock(&slab_lock);
 	if (indx < 10) {
 		slab->s_stype = SLAB_SMALL;
 		  CIRCLEQ_INSERT_HEAD(cache->sc_head, slab, s_list);
@@ -223,7 +223,7 @@ slab_insert(cache, size, mtype)
 		slab->s_stype = SLAB_LARGE;
 		CIRCLEQ_INSERT_TAIL(cache->sc_head, slab, s_list);
 	}
-	slab_unlock(&slab_list_lock);
+	slab_unlock(&slab_lock);
     slab_count++;
 
     /* update metadata */
@@ -237,10 +237,10 @@ slab_remove(cache, size)
 {
 	slab_t slab;
 
-	slab = &slab_list[BUCKETINDX(size)];
-	slab_lock(&slab_list_lock);
+	slab = &kmemslab[BUCKETINDX(size)];
+	slab_lock(&slab_lock);
 	CIRCLEQ_REMOVE(cache->sc_head, slab, s_list);
-	slab_unlock(&slab_list_lock);
+	slab_unlock(&slab_lock);
 	slab_count--;
 
     /* update metadata */
@@ -588,7 +588,7 @@ kmeminit()
 	register long indx;
 	int npg;
 
-	simple_lock_init(&slab_list_lock, "slab_list_lock");
+	simple_lock_init(&slab_lock, "slab_lock");
 
 #if	((MAXALLOCSAVE & (MAXALLOCSAVE - 1)) != 0)
 		ERROR!_kmeminit:_MAXALLOCSAVE_not_power_of_2
@@ -613,11 +613,11 @@ kmeminit()
 #ifdef KMEMSTATS
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
 		if (1 << indx >= CLBYTES) {
-			&slab_list[indx].s_bucket->kb_elmpercl = 1;
+			&kmemslab[indx].s_bucket->kb_elmpercl = 1;
 		} else {
-			&slab_list[indx].s_bucket->kb_elmpercl = CLBYTES / (1 << indx);
+			&kmemslab[indx].s_bucket->kb_elmpercl = CLBYTES / (1 << indx);
 		}
-		&slab_list[indx].s_bucket->kb_highwat = 5
+		&kmemslab[indx].s_bucket->kb_highwat = 5
 				* &slab_list[indx].s_bucket->kb_elmpercl;
 	}
 	for (indx = 0; indx < M_LAST; indx++) {

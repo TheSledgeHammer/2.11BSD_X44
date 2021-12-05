@@ -140,14 +140,9 @@ struct swdevt swdevt[] = {
 		{ 1, 0,	0 },
 		{ NODEV, 1,	0 },
 };
+
 long dumplo;
 int	dmmin, dmmax, dmtext;
-
-#define	DOSWAP				/* change swdevt and dumpdev */
-u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
-
-#define	PARTITIONMASK	0x7
-#define	PARTITIONSHIFT	3
 
 /*
  * Configure swap space and related parameters.
@@ -176,55 +171,4 @@ swapconf()
 	if (dumplo < 0) {
 		dumplo = 0;
 	}
-}
-
-/*
- * Attempt to find the device from which we were booted.
- * If we can do so, and not instructed not to do so,
- * change rootdev to correspond to the load device.
- */
-void
-setroot()
-{
-	int majdev, mindev, unit, part, adaptor;
-	dev_t temp, orootdev;
-	struct swdevt *swp;
-
-	if ((boothowto & RB_DFLTROOT) || (bootdev & B_MAGICMASK) != (u_long) B_DEVMAGIC) {
-		return;
-	}
-	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
-	mindev = (unit << PARTITIONSHIFT) + part;
-	orootdev = rootdev;
-	rootdev = makedev(majdev, mindev);
-
-	/*
-	 * If the original rootdev is the same as the one
-	 * just calculated, don't need to adjust the swap configuration.
-	 */
-	if (rootdev == orootdev) {
-		return;
-	}
-#ifdef DOSWAP
-	mindev &= ~PARTITIONMASK;
-	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {
-		if (majdev == major(swp->sw_dev) && mindev == (minor(swp->sw_dev) & ~PARTITIONMASK)) {
-			temp = swdevt[0].sw_dev;
-			swdevt[0].sw_dev = swp->sw_dev;
-			swp->sw_dev = temp;
-			break;
-		}
-	}
-	if (swp->sw_dev == NODEV)
-		return;
-	/*
-	 * If dumpdev was the same as the old primary swap
-	 * device, move it to the new primary swap device.
-	 */
-	if (temp == dumpdev)
-		dumpdev = swdevt[0].sw_dev;
-#endif
 }

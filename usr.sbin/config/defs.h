@@ -106,8 +106,8 @@ struct nvlist {
 		const char 	*un_str;
 		void 		*un_ptr;
 	} nv_un;
-#define	nv_str	nv_un.un_str
-#define	nv_ptr	nv_un.un_ptr
+#define	nv_str		nv_un.un_str
+#define	nv_ptr		nv_un.un_ptr
 	int				nv_int;
 	int				nv_ifunit;		/* XXX XXX XXX */
 	int				nv_flags;
