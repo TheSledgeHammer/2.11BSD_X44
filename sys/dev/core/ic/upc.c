@@ -56,7 +56,7 @@ __KERNEL_RCSID(0, "$NetBSD: upc.c,v 1.7 2003/11/29 19:33:34 bjh21 Exp $");
 #include <dev/core/ic/upcreg.h>
 #include <dev/core/ic/upcvar.h>
 
-//#include "locators.h"
+#include "locators.h"
 
 /* Conventional port to use for 82C710 configuration */
 #define UPC1_PORT_CRI	0x390

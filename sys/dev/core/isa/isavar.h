@@ -144,17 +144,14 @@ struct isa_attach_args {
 	int 					ia_ndrq;
 };
 
-#define	IOBASEUNK			-1				/* i/o address is unknown (ISACF_PORT_DEFAULT) */
-#define	MADDRUNK			-1				/* shared memory address is unknown (ISACF_IOMEM_DEFAULT) */
-#define	IRQUNK				-1				/* interrupt request line is unknown (ISACF_IRQ_DEFAULT) */
-#define	DRQUNK				-1				/* DMA request line is unknown (ISACF_DRQ_DEFAULT)  */
-
 /*
  * Test to determine if a given call to an ISA device probe routine
  * is actually an attempt to do direct configuration.
  */
 #define	ISA_DIRECT_CONFIG(ia)						\
 	((ia)->ia_pnpname != NULL || (ia)->ia_pnpcompatnames != NULL)
+
+#include "locators.h"
 
 /*
  * Per-device ISA variables
@@ -225,14 +222,10 @@ struct isa_softc {
 	bus_space_handle_t   	sc_delaybah;
 };
 
-#define	ISA_DRQ_ISFREE(isadev, drq) \
-	((((struct isa_softc *)(isadev))->sc_drqmap & (1 << (drq))) == 0)
-
-#define	ISA_DRQ_ALLOC(isadev, drq) \
-	((struct isa_softc *)(isadev))->sc_drqmap |= (1 << (drq))
-
-#define	ISA_DRQ_FREE(isadev, drq) \
-	((struct isa_softc *)(isadev))->sc_drqmap &= ~(1 << (drq))
+#define	IOBASEUNK			-1				/* i/o address is unknown (ISACF_PORT_DEFAULT) */
+#define	MADDRUNK			-1				/* shared memory address is unknown (ISACF_IOMEM_DEFAULT) */
+#define	IRQUNK				-1				/* interrupt request line is unknown (ISACF_IRQ_DEFAULT) */
+#define	DRQUNK				-1				/* DMA request line is unknown (ISACF_DRQ_DEFAULT)  */
 
 #define	ISACF_IOBASE 		0
 #define	ISACF_IOSIZE 		1
@@ -241,6 +234,23 @@ struct isa_softc {
 #define	ISACF_IRQ			4
 #define	ISACF_DRQ			5
 #define	ISACF_DRQ2 			6
+
+#define	cf_iobase			cf_loc[ISACF_IOBASE]
+#define	cf_iosize			cf_loc[ISACF_IOSIZE]
+#define	cf_maddr			cf_loc[ISACF_MADDR]
+#define	cf_msize			cf_loc[ISACF_MSIZE]
+#define	cf_irq				cf_loc[ISACF_IRQ]
+#define	cf_drq				cf_loc[ISACF_DRQ]
+#define	cf_drq2				cf_loc[ISACF_DRQ2]
+
+#define	ISA_DRQ_ISFREE(isadev, drq) \
+	((((struct isa_softc *)(isadev))->sc_drqmap & (1 << (drq))) == 0)
+
+#define	ISA_DRQ_ALLOC(isadev, drq) \
+	((struct isa_softc *)(isadev))->sc_drqmap |= (1 << (drq))
+
+#define	ISA_DRQ_FREE(isadev, drq) \
+	((struct isa_softc *)(isadev))->sc_drqmap &= ~(1 << (drq))
 
 /*
  * ISA interrupt handler manipulation.

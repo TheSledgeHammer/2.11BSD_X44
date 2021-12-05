@@ -13,6 +13,7 @@ device	isa {[port = -1], [size = 0],
 	     [irq = -1], [drq = -1]}
 attach	isa at isabus
 file	dev/core/isa/isa.c			isa 			needs-flag
+file	dev/core/isa/isahint.c			isa
 
 # ISA DMA controller
 define	isadma

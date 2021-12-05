@@ -43,7 +43,7 @@
 
 #include <dev/misc/pccons/pckbportvar.h>
 
-//#include "locators.h"
+#include "locators.h"
 
 #ifdef __HAVE_NWSCONS /* XXX: this port uses sys/dev/pckbport */
 #include "pckbd.h"
