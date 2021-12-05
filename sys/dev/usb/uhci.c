@@ -64,8 +64,7 @@
 #include <sys/proc.h>
 #include <sys/queue.h>
 
-#include <machine/bus_space.h>
-#include <machine/bus_dma.h>
+#include <machine/bus.h>
 #include <machine/endian.h>
 
 #include <dev/usb/usb.h>

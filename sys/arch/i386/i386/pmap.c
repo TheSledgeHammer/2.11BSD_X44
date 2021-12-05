@@ -108,12 +108,9 @@
 #ifdef SMP
 #include <machine/smp.h>
 #endif
-#include <devel/arch/i386/include/pmap.h>
-#include <devel/arch/i386/include/pmap_reg.h>
-#include <arch/i386/include/pmap_tlb.h>
-
-struct pmap_tlb_shootdown_job;
-struct pmap_tlb_shootdown_q;
+#include <machine/pmap.h>
+#include <machine/pmap_reg.h>
+#include <machine/pmap_tlb.h>
 
 /*
  * Allocate various and sundry SYSMAPs used in the days of old VM
@@ -292,7 +289,7 @@ static void
 pmap_cold_map(pa, va, cnt)
 	u_long pa, va, cnt;
 {
-	pt_entry_t *pt;
+	pt_entry_t pt;
 	for (pt = (pt_entry_t *)KPTphys + atop(va); cnt > 0; cnt--, pt++, va += PAGE_SIZE, pa += PAGE_SIZE) {
 		*pt = pa | PG_V | PG_RW | PG_A | PG_M;
 	}

@@ -721,9 +721,7 @@ vm86_intcall(int intnum, struct vm86frame *vmf)
 	vmf->vmf_trapno = intnum;
 	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall);
 	simple_lock(&vm86_lock);
-	critical_enter();
 	retval = p(vmf);
-	critical_exit();
 	simple_unlock(&vm86_lock);
 	return (retval);
 }

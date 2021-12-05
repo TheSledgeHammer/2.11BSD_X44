@@ -85,8 +85,7 @@
 
 #include <sys/queue.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 /*
  * XXX THIS FILE IS A MESS.  copyright: berkeley's probably.

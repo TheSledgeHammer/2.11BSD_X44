@@ -77,8 +77,7 @@
 #define	_DEV_ISA_ISAVAR_H_
 
 #include <sys/queue.h>
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 /*
  * Definitions for ISA autoconfiguration.

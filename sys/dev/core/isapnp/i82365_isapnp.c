@@ -39,8 +39,7 @@ __KERNEL_RCSID(0, "$NetBSD: i82365_isapnp.c,v 1.15 2002/10/02 16:33:58 thorpej E
 #include <sys/extent.h>
 #include <sys/malloc.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/core/isa/isareg.h>

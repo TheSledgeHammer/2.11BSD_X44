@@ -35,8 +35,7 @@ __KERNEL_RCSID(0, "$NetBSD: wdc_upc.c,v 1.15 2004/01/03 22:56:53 thorpej Exp $")
 #include <sys/malloc.h>
 #include <sys/systm.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/disk/ata/atavar.h> /* XXX needed by wdcvar.h */

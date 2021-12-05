@@ -41,8 +41,7 @@
 #include <dev/core/isa/isavar.h>
 #include <dev/core/pci/pcivar.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <i386/isa/isa_machdep.h>
 #include <i386/eisa/eisa_machdep.h>

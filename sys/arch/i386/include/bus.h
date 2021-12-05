@@ -71,11 +71,28 @@
 #ifndef _I386_BUS_H_
 #define _I386_BUS_H_
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
-
 #include <sys/bus.h>
-#include <arch/i386/include/pio.h>
+
+#include <machine/pio.h>
+
+/*
+ * Bus address and size types
+ */
+typedef u_long 		bus_addr_t;
+typedef u_long   	bus_size_t;
+
+/*
+ * Access methods for bus resources and address space.
+ */
+typedef	int 		bus_space_tag_t;
+typedef	u_long		bus_space_handle_t;
+
+/*
+ * Forwards needed by prototypes below.
+ */
+struct mbuf;
+struct proc;
+struct uio;
 
 #ifdef BUS_SPACE_DEBUG
 #include <sys/systm.h> /* for printf() prototype */
@@ -140,6 +157,30 @@ void 	i386_memio_free (bus_space_tag_t, bus_space_handle_t, bus_size_t);
 typedef struct i386_bus_dma_segment		*bus_dma_tag_t;
 typedef struct i386_bus_dmamap			*bus_dmamap_t;
 
+/* Flags used in various bus DMA methods. */
+#define	BUS_DMA_WAITOK			0x000	/* safe to sleep (pseudo-flag) */
+#define	BUS_DMA_NOWAIT			0x001	/* not safe to sleep */
+#define	BUS_DMA_ALLOCNOW		0x002	/* perform resource allocation now */
+#define	BUS_DMA_COHERENT		0x004	/* hint: map memory DMA coherent */
+#define	BUS_DMA_STREAMING		0x008	/* hint: sequential, unidirectional */
+#define	BUS_DMA_BUS1			0x010	/* placeholders for bus functions... */
+#define	BUS_DMA_BUS2			0x020
+#define	BUS_DMA_BUS3			0x040
+#define	BUS_DMA_BUS4			0x080
+#define	BUS_DMA_READ			0x100	/* mapping is device -> memory only */
+#define	BUS_DMA_WRITE			0x200	/* mapping is memory -> device only */
+#define	BUS_DMA_NOCACHE			0x400	/* hint: map non-cached memory */
+#define	BUS_DMA_PREFETCHABLE	0x800	/* hint: map non-cached but allow things like write combining */
+
+/*
+ *	bus_dmasync_op_t
+ *	Operations performed by bus_dmamap_sync().
+ */
+#define	BUS_DMASYNC_PREREAD 	0x01	/* pre-read synchronization */
+#define	BUS_DMASYNC_POSTREAD	0x02	/* post-read synchronization */
+#define	BUS_DMASYNC_PREWRITE	0x04	/* pre-write synchronization */
+#define	BUS_DMASYNC_POSTWRITE	0x08	/* post-write synchronization */
+
 /*
  *	bus_dma_segment_t
  *
@@ -147,35 +188,10 @@ typedef struct i386_bus_dmamap			*bus_dmamap_t;
  *	are suitable for programming into DMA registers.
  */
 struct i386_bus_dma_segment {
-	bus_addr_t			ds_addr;			/* DMA address */
-	bus_size_t			ds_len;				/* length of transfer */
+	bus_addr_t			ds_addr;		/* DMA address */
+	bus_size_t			ds_len;			/* length of transfer */
 };
 typedef struct i386_bus_dma_segment		bus_dma_segment_t;
-/*
- *	bus_dmamap_t
- *
- *	Describes a DMA mapping.
- */
-struct i386_bus_dmamap {
-	/*
-	 * PRIVATE MEMBERS: not for use by machine-independent code.
-	 */
-	bus_size_t			_dm_size;			/* largest DMA transfer mappable */
-	int					_dm_segcnt;			/* number of segs this map can map */
-	bus_size_t			_dm_maxsegsz; 		/* fixed largest possible segment */
-	bus_size_t			_dm_boundary;		/* don't cross this */
-	bus_addr_t			_dm_bounce_thresh; 	/* bounce threshold; see tag */
-	int					_dm_flags;			/* misc. flags */
-
-	void				*_dm_cookie;		/* cookie for bus-specific functions */
-
-	/*
-	 * PUBLIC MEMBERS: these are used by machine-independent code.
-	 */
-	bus_size_t			dm_mapsize;			/* size of the mapping */
-	int					dm_nsegs;			/* # valid segments in mapping */
-	bus_dma_segment_t 	dm_segs[1];			/* segments; variable length */
-};
 
 /*
  *	bus_dma_tag_t
@@ -184,31 +200,33 @@ struct i386_bus_dmamap {
  *	DMA for a given bus.
  */
 struct i386_bus_dma_tag {
-	bus_addr_t _bounce_thresh;
-	void	 *_cookie;		/* cookie used in the guts */
+//	bus_addr_t _bounce_thresh;
+	void	*_cookie;		/* cookie used in the guts */
 
 	/*
 	 * DMA mapping methods.
 	 */
-	int		(*_dmamap_create) (bus_dma_tag_t, bus_size_t, int, bus_size_t, bus_size_t, int, bus_dmamap_t *);
-	void	(*_dmamap_destroy) (bus_dma_tag_t, bus_dmamap_t);
-	int		(*_dmamap_load) (bus_dma_tag_t, bus_dmamap_t, void *, bus_size_t, struct proc *, int);
-	int		(*_dmamap_load_mbuf) (bus_dma_tag_t, bus_dmamap_t, struct mbuf *, int);
-	int		(*_dmamap_load_uio) (bus_dma_tag_t, bus_dmamap_t, struct uio *, int);
-	int		(*_dmamap_load_raw) (bus_dma_tag_t, bus_dmamap_t, bus_dma_segment_t *, int, bus_size_t, int);
-	void	(*_dmamap_unload) (bus_dma_tag_t, bus_dmamap_t);
-	void	(*_dmamap_sync) (bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
+	int		(*_dmamap_create)(bus_dma_tag_t, bus_size_t, int, bus_size_t, bus_size_t, int, bus_dmamap_t *);
+	void	(*_dmamap_destroy)(bus_dma_tag_t, bus_dmamap_t);
+	int		(*_dmamap_load)(bus_dma_tag_t, bus_dmamap_t, void *, bus_size_t, struct proc *, int);
+	int		(*_dmamap_load_mbuf)(bus_dma_tag_t, bus_dmamap_t, struct mbuf *, int);
+	int		(*_dmamap_load_uio)(bus_dma_tag_t, bus_dmamap_t, struct uio *, int);
+	int		(*_dmamap_load_raw)(bus_dma_tag_t, bus_dmamap_t, bus_dma_segment_t *, int, bus_size_t, int);
+	void	(*_dmamap_unload)(bus_dma_tag_t, bus_dmamap_t);
+	void	(*_dmamap_sync)(bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
 
 	/*
 	 * DMA memory utility functions.
 	 */
-	int		(*_dmamem_alloc) (bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
-	void	(*_dmamem_free) (bus_dma_tag_t, bus_dma_segment_t *, int);
-	int		(*_dmamem_map) (bus_dma_tag_t, bus_dma_segment_t *, int, size_t, caddr_t *, int);
-	void	(*_dmamem_unmap) (bus_dma_tag_t, caddr_t, size_t);
-	int		(*_dmamem_mmap) (bus_dma_tag_t, bus_dma_segment_t *, int, int, int, int);
+	int		(*_dmamem_alloc)(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
+	void	(*_dmamem_free)(bus_dma_tag_t, bus_dma_segment_t *, int);
+	int		(*_dmamem_map)(bus_dma_tag_t, bus_dma_segment_t *, int, size_t, caddr_t *, int);
+	void	(*_dmamem_unmap)(bus_dma_tag_t, caddr_t, size_t);
+	int		(*_dmamem_mmap)(bus_dma_tag_t, bus_dma_segment_t *, int, int, int, int);
+	int		(*_dmamem_alloc_range)(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int, vm_offset_t, vm_offset_t);
 };
 
+/* macros */
 #define	bus_dmamap_create(t, s, n, m, b, f, p)						\
 	(*(t)->_dmamap_create)((t), (s), (n), (m), (b), (f), (p))
 #define	bus_dmamap_destroy(t, p)									\
@@ -238,30 +256,34 @@ struct i386_bus_dma_tag {
 #define	bus_dmamem_mmap(t, sg, n, o, p, f)							\
 	(*(t)->_dmamem_mmap)((t), (sg), (n), (o), (p), (f))
 
-/* Flags used in various bus DMA methods. */
-#define	BUS_DMA_WAITOK			0x000	/* safe to sleep (pseudo-flag) */
-#define	BUS_DMA_NOWAIT			0x001	/* not safe to sleep */
-#define	BUS_DMA_ALLOCNOW		0x002	/* perform resource allocation now */
-#define	BUS_DMA_COHERENT		0x004	/* hint: map memory DMA coherent */
-#define	BUS_DMA_STREAMING		0x008	/* hint: sequential, unidirectional */
-#define	BUS_DMA_BUS1			0x010	/* placeholders for bus functions... */
-#define	BUS_DMA_BUS2			0x020
-#define	BUS_DMA_BUS3			0x040
-#define	BUS_DMA_BUS4			0x080
-#define	BUS_DMA_READ			0x100	/* mapping is device -> memory only */
-#define	BUS_DMA_WRITE			0x200	/* mapping is memory -> device only */
-#define	BUS_DMA_NOCACHE			0x400	/* hint: map non-cached memory */
-#define	BUS_DMA_PREFETCHABLE	0x800	/* hint: map non-cached but allow things like write combining */
-
 /*
- *	bus_dmasync_op_t
- *	Operations performed by bus_dmamap_sync().
+ *	bus_dmamap_t
+ *
+ *	Describes a DMA mapping.
  */
-#define		BUS_DMASYNC_PREREAD 	0x01	/* pre-read synchronization */
-#define		BUS_DMASYNC_POSTREAD	0x02	/* post-read synchronization */
-#define		BUS_DMASYNC_PREWRITE	0x04	/* pre-write synchronization */
-#define		BUS_DMASYNC_POSTWRITE	0x08	/* post-write synchronization */
+struct i386_bus_dmamap {
+	/*
+	 * PRIVATE MEMBERS: not for use by machine-independent code.
+	 */
+	bus_size_t			_dm_size;			/* largest DMA transfer mappable */
+	int					_dm_segcnt;			/* number of segs this map can map */
+	bus_size_t			_dm_maxsegsz; 		/* fixed largest possible segment */
+	bus_size_t			_dm_boundary;		/* don't cross this */
+	bus_addr_t			_dm_bounce_thresh; 	/* bounce threshold; see tag */
+	int					_dm_flags;			/* misc. flags */
 
+	void				*_dm_cookie;		/* cookie for bus-specific functions */
+
+	/*
+	 * PUBLIC MEMBERS: these are used by machine-independent code.
+	 */
+	bus_size_t			dm_mapsize;			/* size of the mapping */
+	int					dm_nsegs;			/* # valid segments in mapping */
+	bus_dma_segment_t 	dm_segs[1];			/* segments; variable length */
+};
+
+#ifdef _I386_BUS_DMA_PRIVATE
+/* prototypes */
 int		_bus_dmamap_create(bus_dma_tag_t, bus_size_t, int, bus_size_t, bus_size_t, int, bus_dmamap_t *);
 void	_bus_dmamap_destroy(bus_dma_tag_t, bus_dmamap_t);
 int		_bus_dmamap_load(bus_dma_tag_t, bus_dmamap_t, void *, bus_size_t, struct proc *, int);
@@ -276,7 +298,7 @@ void	_bus_dmamem_free(bus_dma_tag_t, bus_dma_segment_t *, int);
 int		_bus_dmamem_map(bus_dma_tag_t, bus_dma_segment_t *, int, size_t, caddr_t *, int);
 void	_bus_dmamem_unmap(bus_dma_tag_t, caddr_t, size_t);
 int		_bus_dmamem_mmap(bus_dma_tag_t, bus_dma_segment_t *, int, off_t, int, int);
-int 	_bus_dmamap_load_buffer(bus_dma_tag_t, bus_dmamap_t, void *, bus_size_t, struct proc *, int, u_long, int, int);
-int		_bus_dmamem_alloc_range(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int, int, vm_offset_t, vm_offset_t);
+int		_bus_dmamem_alloc_range(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int, vm_offset_t, vm_offset_t);
 
+#endif /* _I386_BUS_DMA_PRIVATE */
 #endif /* SYS_DEVEL_ARCH_I386_INCLUDE_BUS_H_ */

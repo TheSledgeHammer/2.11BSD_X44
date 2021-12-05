@@ -41,8 +41,7 @@
 
 #include <vm/include/vm.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/core/isa/isareg.h>

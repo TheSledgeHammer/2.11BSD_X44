@@ -34,8 +34,7 @@ __KERNEL_RCSID(0, "$NetBSD: lpt_upc.c,v 1.5 2002/10/02 16:33:34 thorpej Exp $");
 #include <sys/device.h>
 #include <sys/systm.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/core/ic/lptvar.h>

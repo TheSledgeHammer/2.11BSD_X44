@@ -46,8 +46,7 @@ __KERNEL_RCSID(0, "$NetBSD: wdc_isapnp.c,v 1.15 2001/11/15 22:56:53 09:48:10 luk
 #include <sys/bus.h>
 #include <sys/malloc.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/core/isa/isavar.h>

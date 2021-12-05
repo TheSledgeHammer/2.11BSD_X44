@@ -42,8 +42,7 @@
  * separated into eisa_machdep.h.
  */
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <dev/core/eisa/eisareg.h>		/* For ID register & string info. */
 

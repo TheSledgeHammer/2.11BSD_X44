@@ -69,7 +69,6 @@ struct mbuf {
 	short				m_flags;		/* flags; see below */
 	struct	mbuf 		*m_act;			/* link in higher-level mbuf list */
 };
-//#define	m_pkthdr		m_cont->mc_pkthdr
 
 /* record/packet header in first mbuf of chain; valid if M_PKTHDR set */
 struct	pkthdr {

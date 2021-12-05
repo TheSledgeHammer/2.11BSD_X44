@@ -61,8 +61,7 @@
 #include <dev/usb/usbdivar.h>
 #include <dev/usb/usb_quirks.h>
 
-#include <machine/bus_space.h>
-#include <machine/bus_dma.h>
+#include <machine/bus.h>
 
 #ifdef USB_DEBUG
 #define DPRINTF(x)		if (usbdebug) printf x

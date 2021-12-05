@@ -29,8 +29,7 @@
 #ifndef __UPCVAR_H
 #define __UPCVAR_H
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 struct upc_irqhandle {
 	int		(*uih_func)(void *);

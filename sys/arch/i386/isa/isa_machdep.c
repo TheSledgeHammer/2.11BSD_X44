@@ -86,10 +86,7 @@
 #include <sys/malloc.h>
 #include <sys/proc.h>
 
-//#define _I386_BUS_DMA_PRIVATE
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
-
+#include <machine/bus.h>
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 #include <machine/segments.h>

@@ -45,8 +45,7 @@ __KERNEL_RCSID(0, "$NetBSD: upc.c,v 1.7 2003/11/29 19:33:34 bjh21 Exp $");
 #include <sys/device.h>
 #include <sys/systm.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <dev/disk/ata/atavar.h> /* XXX needed by wdcvar.h */
 #include <dev/core/ic/comreg.h>

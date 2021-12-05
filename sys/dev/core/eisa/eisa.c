@@ -47,8 +47,7 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <dev/core/eisa/eisadevs.h>
 #include <dev/core/eisa/eisareg.h>

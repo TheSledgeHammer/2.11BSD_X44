@@ -51,8 +51,7 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 
-#include <machine/bus_space.h>
-#include <machine/bus_dma.h>
+#include <machine/bus.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>

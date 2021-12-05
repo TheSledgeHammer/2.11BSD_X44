@@ -80,8 +80,7 @@
 #include <sys/extent.h>
 
 #define _I386_BUS_DMA_PRIVATE
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <i386/isa/icu.h>
 #include <dev/core/isa/isareg.h>
@@ -107,6 +106,7 @@ struct i386_bus_dma_tag eisa_bus_dma_tag = {
 	bus_dmamem_map,
 	bus_dmamem_unmap,
 	bus_dmamem_mmap,
+	_bus_dmamem_alloc_range
 };
 
 void

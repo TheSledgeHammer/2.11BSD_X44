@@ -42,8 +42,7 @@ __KERNEL_RCSID(0, "$NetBSD: i82365_isasubr.c,v 1.33 2003/09/05 01:02:52 mycroft 
 #include <sys/extent.h>
 #include <sys/malloc.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/core/isa/isareg.h>

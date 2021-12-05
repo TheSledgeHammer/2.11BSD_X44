@@ -49,8 +49,7 @@ __KERNEL_RCSID(0, "$NetBSD: ohci_pci.c,v 1.23 2002/10/02 16:51:47 thorpej Exp $"
 #include <sys/proc.h>
 #include <sys/queue.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/usb_pci.h>

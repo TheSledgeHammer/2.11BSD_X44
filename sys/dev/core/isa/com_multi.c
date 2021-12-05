@@ -92,8 +92,7 @@
 #include <sys/bus.h>
 
 #include <machine/intr.h>
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/com_multi.h>

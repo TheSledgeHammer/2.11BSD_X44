@@ -54,8 +54,7 @@
 #include <sys/proc.h>
 #endif
 
-#include <machine/bus_space.h>
-#include <machine/bus_dma.h>
+#include <machine/bus.h>
 
 #include <sys/extent.h>
 #include <vm/include/vm_extern.h>

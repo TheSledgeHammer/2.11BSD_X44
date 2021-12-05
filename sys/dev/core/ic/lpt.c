@@ -68,8 +68,7 @@ __KERNEL_RCSID(0, "$NetBSD: lpt.c,v 1.63 2003/06/29 22:30:13 fvdl Exp $");
 #include <sys/conf.h>
 #include <sys/syslog.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/core/ic/lptreg.h>

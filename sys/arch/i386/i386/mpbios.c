@@ -118,8 +118,7 @@
 #include <machine/vmparam.h>
 #include <machine/specialreg.h>
 #include <machine/cpuvar.h>
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <machine/cpu.h>
 #include <machine/apic/apic.h>
 #include <machine/apic/ioapicreg.h>

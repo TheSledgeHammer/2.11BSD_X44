@@ -44,8 +44,7 @@ __KERNEL_RCSID(0, "$NetBSD: pceb.c,v 1.12 2003/02/26 22:23:07 fvdl Exp $");
 #include <sys/systm.h>
 #include <sys/device.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <dev/core/isa/isavar.h>
 #include <dev/core/eisa/eisavar.h>

@@ -12,8 +12,7 @@
 
 #include <dev/core/pci/pcivar.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 #include <arch/i386/pci/pci_machdep.h>
 
 /*

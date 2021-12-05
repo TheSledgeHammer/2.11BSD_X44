@@ -32,8 +32,7 @@
 #ifndef _PCMCIA_PCMCIACHIP_H_
 #define	_PCMCIA_PCMCIACHIP_H_
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 struct pcmcia_function;
 struct pcmcia_mem_handle;

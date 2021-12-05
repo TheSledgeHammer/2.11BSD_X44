@@ -33,8 +33,7 @@
 #include <sys/kernel.h>
 #include <sys/user.h>
 
-#include <machine/bus_dma.h>
-#include <machine/bus_space.h>
+#include <machine/bus.h>
 
 #include <dev/misc/pccons/pckbportvar.h>
 
