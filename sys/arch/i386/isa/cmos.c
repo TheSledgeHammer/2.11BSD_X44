@@ -73,7 +73,7 @@
 #include <sys/lock.h>
 #include <sys/user.h>
 
-#include <sys/bus.h>
+#include <machine/bus.h>
 #include <machine/intr.h>
 
 #include <dev/core/ic/mc146818reg.h>

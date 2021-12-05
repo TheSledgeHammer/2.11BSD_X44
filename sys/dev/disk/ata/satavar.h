@@ -32,8 +32,9 @@
 #ifndef _DEV_ATA_SATAVAR_H_
 #define	_DEV_ATA_SATAVAR_H_
 
-#include <sys/bus.h>
 #include <dev/disk/ata/atavar.h>
+
+#include <machine/bus.h>
 
 /*
  * Declaration of common data structures and functions for Serial ATA.

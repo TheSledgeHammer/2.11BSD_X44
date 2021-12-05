@@ -44,7 +44,6 @@
 #include <sys/devsw.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
-#include <sys/bus.h>
 #include <sys/lock.h>
 #include <sys/user.h>
 
@@ -54,6 +53,7 @@
 
 #include <i386/isa/isa_machdep.h>
 
+#include <machine/bus.h>
 #include <machine/cpu.h>
 #include <machine/pic.h>
 #include <machine/intr.h>

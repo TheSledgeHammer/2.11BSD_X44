@@ -45,11 +45,12 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/device.h>
-#include <sys/bus.h>
 #include <sys/malloc.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
+
+#include <machine/bus.h>
 #include <machine/param.h>
 
 #include <dev/core/ic/i8237reg.h>

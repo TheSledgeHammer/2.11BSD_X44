@@ -117,7 +117,7 @@ int		_isa_bus_dmamap_load_mbuf(bus_dma_tag_t, bus_dmamap_t, struct mbuf *, int);
 int		_isa_bus_dmamap_load_uio(bus_dma_tag_t, bus_dmamap_t, struct uio *, int);
 int		_isa_bus_dmamap_load_raw(bus_dma_tag_t, bus_dmamap_t, bus_dma_segment_t *, int, bus_size_t, int);
 void	_isa_bus_dmamap_unload(bus_dma_tag_t, bus_dmamap_t);
-void	_isa_bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_addr_t, bus_size_t, int);
+void	_isa_bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
 
 int		_isa_bus_dmamem_alloc(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
 void	_isa_bus_dmamem_free(bus_dma_tag_t, bus_dma_segment_t *, int);

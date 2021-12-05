@@ -35,9 +35,10 @@
 #include <sys/malloc.h>
 #include <sys/sysctl.h>
 #include <sys/systm.h>
-#include <sys/bus.h>
 #include <sys/conf.h>
 #include <sys/device.h>
+
+#include <machine/bus.h>
 
 /*
  * Access functions for device resources.

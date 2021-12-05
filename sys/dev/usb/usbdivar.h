@@ -43,7 +43,8 @@
 
 #include <sys/callout.h>
 #include <sys/lock.h>
-#include <sys/bus.h>
+
+#include <machine/bus.h>
 
 struct usbd_xfer;
 struct usbd_pipe;

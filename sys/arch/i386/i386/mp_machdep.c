@@ -29,7 +29,6 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/bus.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
@@ -45,6 +44,7 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
 
+#include <machine/bus.h>
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
 #include <machine/pcb.h>

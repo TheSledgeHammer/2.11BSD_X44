@@ -47,6 +47,7 @@
 #include <sys/proc.h>
 
 #include <vm/include/vm_extern.h>
+
 #include <machine/bus.h>
 
 /*
@@ -284,12 +285,10 @@ _bus_dmamap_unload(t, map)
  * by bus-specific DMA map synchronization functions.
  */
 void
-_bus_dmamap_sync(t, map, offset, len, ops)
+_bus_dmamap_sync(t, map, op)
 	bus_dma_tag_t t;
 	bus_dmamap_t map;
-	bus_addr_t offset;
-	bus_size_t len;
-	int ops;
+	bus_dmasync_op_t op;
 {
 
 	/* Nothing to do here. */

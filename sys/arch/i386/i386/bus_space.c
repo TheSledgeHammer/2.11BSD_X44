@@ -46,7 +46,6 @@
 #include <sys/mbuf.h>
 #include <sys/extent.h>
 #include <sys/proc.h>
-#include <sys/bus.h>
 
 #include <vm/include/vm_extern.h>
 
@@ -54,6 +53,7 @@
 
 #include <i386/isa/isa_machdep.h>
 
+#include <i386/include/bus.h>
 #include <machine/pmap.h>
 #include <machine/pmap_reg.h>
 
@@ -473,108 +473,6 @@ i386_memio_mmap(t, addr, off, prot, flags)
 	 * the upper layers want to map.
 	 */
 	return (i386_btop(addr + off));
-}
-
-void
-i386_memio_set_multi_1(t, h, o, v, c)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int8_t v;
-	size_t c;
-{
-	bus_space_set_multi_1(t, h, o, v, c);
-}
-
-void
-i386_memio_set_multi_2(t, h, o, v, c)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int16_t v;
-	size_t c;
-{
-	bus_space_set_multi_2(t, h, o, v, c);
-}
-
-void
-i386_memio_set_multi_4(t, h, o, v, c)
-	bus_space_tag_t 	t;
-	bus_space_handle_t 	h;
-	bus_size_t 			o;
-	u_int32_t 			v;
-	size_t 				c;
-{
-	bus_space_set_multi_4(t, h, o, v, c);
-}
-
-void
-i386_memio_set_region_1(t, h, o, v, c)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int8_t v;
-	size_t c;
-{
-	bus_space_set_region_1(t, h, o, v, c);
-}
-
-void
-i386_memio_set_region_2(t, h, o, v, c)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int16_t v;
-	size_t c;
-{
-	bus_space_set_region_2(t, h, o, v, c);
-}
-
-void
-i386_memio_set_region_4(t, h, o, v, c)
-	bus_space_tag_t t;
-	bus_space_handle_t h;
-	bus_size_t o;
-	u_int32_t v;
-	size_t c;
-{
-	bus_space_set_region_4(t, h, o, v, c);
-}
-
-void
-i386_memio_copy_region_1(t, h1, o1, h2, o2, c)
-	bus_space_tag_t t;
-	bus_space_handle_t h1;
-	bus_size_t o1;
-	bus_space_handle_t h2;
-	bus_size_t o2;
-	size_t c;
-{
-	bus_space_copy_region_1(t, h1, o1, h2, o2, c);
-}
-
-void
-i386_memio_copy_region_2(t, h1, o1, h2, o2, c)
-	bus_space_tag_t 	t;
-	bus_space_handle_t 	h1;
-	bus_size_t 			o1;
-	bus_space_handle_t 	h2;
-	bus_size_t 			o2;
-	size_t 				c;
-{
-	bus_space_copy_region_2(t, h1, o1, h2, o2, c);
-}
-
-void
-i386_memio_copy_region_4(t, h1, o1, h2, o2, c)
-	bus_space_tag_t 	t;
-	bus_space_handle_t 	h1;
-	bus_size_t 			o1;
-	bus_space_handle_t 	h2;
-	bus_size_t 			o2;
-	size_t 				c;
-{
-	bus_space_copy_region_4(t, h1, o1, h2, o2, c);
 }
 
 /*

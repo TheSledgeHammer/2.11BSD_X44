@@ -42,7 +42,6 @@ __KERNEL_RCSID(0, "$NetBSD: wdc_isa.c,v 1.40 2004/01/03 22:56:53 thorpej Exp $")
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
-#include <sys/bus.h>
 #include <sys/malloc.h>
 
 #include <machine/bus.h>

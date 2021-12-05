@@ -78,13 +78,14 @@
 #include <sys/devsw.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
-#include <sys/bus.h>
 #include <sys/lock.h>
 #include <sys/user.h>
 
 #include <vm/include/vm_extern.h>
 
 #include <i386/isa/isa_machdep.h> 			/* XXX intrhand */
+
+#include <machine/bus.h>
 #include <machine/pio.h>
 #include <machine/pmap.h>
 #include <machine/intr.h>

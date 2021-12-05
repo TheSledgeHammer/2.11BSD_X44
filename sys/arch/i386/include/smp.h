@@ -15,10 +15,9 @@
 #ifndef _I386_SMP_H_
 #define _I386_SMP_H_
 
-#include <sys/bus.h>
-
 #include <i386/isa/icu.h>
 
+#include <machine/bus.h>
 #include <machine/frame.h>
 #include <machine/intr.h>
 #include <machine/pcb.h>

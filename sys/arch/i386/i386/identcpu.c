@@ -40,7 +40,6 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
-#include <sys/bus.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/sysctl.h>
@@ -49,6 +48,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/pmap.h>
 
+#include <machine/bus.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>

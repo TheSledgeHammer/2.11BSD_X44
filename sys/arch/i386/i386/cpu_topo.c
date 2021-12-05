@@ -28,13 +28,13 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/bus.h>
 #include <sys/malloc.h>
 #include <sys/memrange.h>
 #include <sys/cputopo.h>
 
 #include <vm/include/vm_param.h>
 
+#include <machine/bus.h>
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
 #include <machine/param.h>

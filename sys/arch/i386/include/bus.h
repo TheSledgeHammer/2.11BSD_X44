@@ -71,8 +71,6 @@
 #ifndef _I386_BUS_H_
 #define _I386_BUS_H_
 
-#include <sys/bus.h>
-
 #include <machine/pio.h>
 
 /*
@@ -141,6 +139,17 @@ struct uio;
 
 #define __BUS_SPACE_HAS_STREAM_METHODS 	1
 
+/* bus_space(9) */
+
+/* Map types. */
+#define	BUS_SPACE_MAP_CACHEABLE			0x01
+#define	BUS_SPACE_MAP_LINEAR			0x02
+#define	BUS_SPACE_MAP_PREFETCHABLE		0x04
+
+/* Bus read/write barrier methods. */
+#define	BUS_SPACE_BARRIER_READ			0x01		/* force read barrier */
+#define	BUS_SPACE_BARRIER_WRITE			0x02		/* force write barrier */
+
 void 	i386_bus_space_init	(void);
 void 	i386_bus_space_mallocok	(void);
 void	i386_bus_space_check (vm_offset_t, int, int);
@@ -174,12 +183,15 @@ typedef struct i386_bus_dmamap			*bus_dmamap_t;
 
 /*
  *	bus_dmasync_op_t
+ *
  *	Operations performed by bus_dmamap_sync().
  */
-#define	BUS_DMASYNC_PREREAD 	0x01	/* pre-read synchronization */
-#define	BUS_DMASYNC_POSTREAD	0x02	/* post-read synchronization */
-#define	BUS_DMASYNC_PREWRITE	0x04	/* pre-write synchronization */
-#define	BUS_DMASYNC_POSTWRITE	0x08	/* post-write synchronization */
+typedef enum {
+	BUS_DMASYNC_PREREAD,
+	BUS_DMASYNC_POSTREAD,
+	BUS_DMASYNC_PREWRITE,
+	BUS_DMASYNC_POSTWRITE,
+} bus_dmasync_op_t;
 
 /*
  *	bus_dma_segment_t
@@ -200,7 +212,6 @@ typedef struct i386_bus_dma_segment		bus_dma_segment_t;
  *	DMA for a given bus.
  */
 struct i386_bus_dma_tag {
-//	bus_addr_t _bounce_thresh;
 	void	*_cookie;		/* cookie used in the guts */
 
 	/*
@@ -241,9 +252,9 @@ struct i386_bus_dma_tag {
 	(*(t)->_dmamap_load_raw)((t), (m), (sg), (n), (s), (f))
 #define	bus_dmamap_unload(t, p)										\
 	(*(t)->_dmamap_unload)((t), (p))
-#define	bus_dmamap_sync(t, p, o, l, ops)							\
+#define	bus_dmamap_sync(t, p, o)									\
 	(void)((t)->_dmamap_sync ?										\
-	    (*(t)->_dmamap_sync)((t), (p), (o), (l), (ops)) : (void)0)
+	    (*(t)->_dmamap_sync)((t), (p), (o)) : (void)0)
 
 #define	bus_dmamem_alloc(t, s, a, b, sg, n, r, f)					\
 	(*(t)->_dmamem_alloc)((t), (s), (a), (b), (sg), (n), (r), (f))
@@ -284,21 +295,117 @@ struct i386_bus_dmamap {
 
 #ifdef _I386_BUS_DMA_PRIVATE
 /* prototypes */
-int		_bus_dmamap_create(bus_dma_tag_t, bus_size_t, int, bus_size_t, bus_size_t, int, bus_dmamap_t *);
-void	_bus_dmamap_destroy(bus_dma_tag_t, bus_dmamap_t);
-int		_bus_dmamap_load(bus_dma_tag_t, bus_dmamap_t, void *, bus_size_t, struct proc *, int);
-int		_bus_dmamap_load_mbuf(bus_dma_tag_t, bus_dmamap_t, struct mbuf *, int);
-int		_bus_dmamap_load_uio(bus_dma_tag_t, bus_dmamap_t, struct uio *, int);
-int		_bus_dmamap_load_raw(bus_dma_tag_t, bus_dmamap_t, bus_dma_segment_t *, int, bus_size_t, int);
-void	_bus_dmamap_unload(bus_dma_tag_t, bus_dmamap_t);
-void	_bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_addr_t, bus_size_t, int);
+int			_bus_dmamap_create(bus_dma_tag_t, bus_size_t, int, bus_size_t, bus_size_t, int, bus_dmamap_t *);
+void		_bus_dmamap_destroy(bus_dma_tag_t, bus_dmamap_t);
+int			_bus_dmamap_load(bus_dma_tag_t, bus_dmamap_t, void *, bus_size_t, struct proc *, int);
+int			_bus_dmamap_load_mbuf(bus_dma_tag_t, bus_dmamap_t, struct mbuf *, int);
+int			_bus_dmamap_load_uio(bus_dma_tag_t, bus_dmamap_t, struct uio *, int);
+int			_bus_dmamap_load_raw(bus_dma_tag_t, bus_dmamap_t, bus_dma_segment_t *, int, bus_size_t, int);
+void		_bus_dmamap_unload(bus_dma_tag_t, bus_dmamap_t);
+void		_bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_dmasync_op_t);
 
-int		_bus_dmamem_alloc(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
-void	_bus_dmamem_free(bus_dma_tag_t, bus_dma_segment_t *, int);
-int		_bus_dmamem_map(bus_dma_tag_t, bus_dma_segment_t *, int, size_t, caddr_t *, int);
-void	_bus_dmamem_unmap(bus_dma_tag_t, caddr_t, size_t);
-int		_bus_dmamem_mmap(bus_dma_tag_t, bus_dma_segment_t *, int, off_t, int, int);
-int		_bus_dmamem_alloc_range(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int, vm_offset_t, vm_offset_t);
+int			_bus_dmamem_alloc(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
+void		_bus_dmamem_free(bus_dma_tag_t, bus_dma_segment_t *, int);
+int			_bus_dmamem_map(bus_dma_tag_t, bus_dma_segment_t *, int, size_t, caddr_t *, int);
+void		_bus_dmamem_unmap(bus_dma_tag_t, caddr_t, size_t);
+int			_bus_dmamem_mmap(bus_dma_tag_t, bus_dma_segment_t *, int, off_t, int, int);
+int			_bus_dmamem_alloc_range(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int, vm_offset_t, vm_offset_t);
 
 #endif /* _I386_BUS_DMA_PRIVATE */
+
+/* _I386_BUS_SPACE_ */
+int			bus_space_map(bus_space_tag_t, bus_addr_t, bus_size_t, int, bus_space_handle_t *);
+void		bus_space_unmap(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+int			bus_space_subregion(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_size_t, bus_space_handle_t *);
+int			bus_space_alloc(bus_space_tag_t, bus_addr_t, bus_addr_t, bus_size_t, bus_size_t, bus_size_t, int, bus_addr_t *, bus_space_handle_t *);
+void		bus_space_free(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+caddr_t		bus_space_mmap(bus_space_tag_t, bus_addr_t, off_t, int, int);
+void		*bus_space_vaddr(bus_space_tag_t, bus_space_handle_t);
+//void		bus_space_barrier(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_size_t, int);
+
+u_int8_t	bus_space_read_1(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int16_t 	bus_space_read_2(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int32_t 	bus_space_read_4(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int64_t 	bus_space_read_8(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+
+u_int8_t	bus_space_read_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int16_t 	bus_space_read_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int32_t 	bus_space_read_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+u_int64_t 	bus_space_read_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+
+void		bus_space_read_multi_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t *, size_t);
+void		bus_space_read_multi_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t *, size_t);
+void		bus_space_read_multi_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t *, size_t);
+void		bus_space_read_multi_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t *, size_t);
+
+void		bus_space_read_multi_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t *, size_t);
+void		bus_space_read_multi_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t *, size_t);
+void		bus_space_read_multi_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t *, size_t);
+void		bus_space_read_multi_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t *, size_t);
+
+void		bus_space_read_region_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int8_t *, size_t);
+void		bus_space_read_region_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int16_t *, size_t);
+void		bus_space_read_region_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int32_t *, size_t);
+void		bus_space_read_region_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int64_t *, size_t);
+
+void		bus_space_read_region_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int8_t *, size_t);
+void		bus_space_read_region_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int16_t *, size_t);
+void		bus_space_read_region_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int32_t *, size_t);
+void		bus_space_read_region_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int64_t *, size_t);
+
+void		bus_space_write_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t);
+void		bus_space_write_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t);
+void		bus_space_write_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t);
+void		bus_space_write_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t);
+
+void		bus_space_write_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t);
+void		bus_space_write_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t);
+void		bus_space_write_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t);
+void		bus_space_write_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t);
+
+void		bus_space_write_multi_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int8_t *, size_t);
+void		bus_space_write_multi_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int16_t *, size_t);
+void		bus_space_write_multi_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int32_t *, size_t);
+void		bus_space_write_multi_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int64_t *, size_t);
+
+void		bus_space_write_multi_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int8_t *, size_t);
+void		bus_space_write_multi_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int16_t *, size_t);
+void		bus_space_write_multi_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int32_t *, size_t);
+void		bus_space_write_multi_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int64_t *, size_t);
+
+void		bus_space_write_region_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int8_t *, size_t);
+void		bus_space_write_region_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int16_t *, size_t);
+void		bus_space_write_region_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int32_t *, size_t);
+void		bus_space_write_region_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, const u_int64_t *, size_t);
+
+void		bus_space_set_multi_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t, size_t);
+void		bus_space_set_multi_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t, size_t);
+void		bus_space_set_multi_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t, size_t);
+void		bus_space_set_multi_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t, size_t);
+
+void		bus_space_set_multi_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t, size_t);
+void		bus_space_set_multi_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t, size_t);
+void		bus_space_set_multi_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t, size_t);
+void		bus_space_set_multi_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t, size_t);
+
+void		bus_space_set_region_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t, size_t);
+void		bus_space_set_region_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t, size_t);
+void		bus_space_set_region_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t, size_t);
+void		bus_space_set_region_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t, size_t);
+
+void		bus_space_set_region_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int8_t, size_t);
+void		bus_space_set_region_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int16_t, size_t);
+void		bus_space_set_region_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int32_t, size_t);
+void		bus_space_set_region_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, u_int64_t, size_t);
+
+void		bus_space_copy_region_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+void		bus_space_copy_region_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+void		bus_space_copy_region_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+void		bus_space_copy_region_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+
+void		bus_space_copy_region_stream_1(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+void		bus_space_copy_region_stream_2(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+void		bus_space_copy_region_stream_4(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+void		bus_space_copy_region_stream_8(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_space_handle_t, bus_size_t, size_t);
+
 #endif /* SYS_DEVEL_ARCH_I386_INCLUDE_BUS_H_ */

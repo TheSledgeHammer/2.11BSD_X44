@@ -89,7 +89,6 @@
 #include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/device.h>
-#include <sys/bus.h>
 
 #include <machine/intr.h>
 #include <machine/bus.h>

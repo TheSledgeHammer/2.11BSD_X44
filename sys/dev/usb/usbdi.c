@@ -44,7 +44,6 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/device.h>
-#include <sys/bus.h>
 #include <sys/conf.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
@@ -56,6 +55,8 @@
 #include <dev/usb/usbdi.h>
 #include <dev/usb/usbdi_util.h>
 #include <dev/usb/usbdivar.h>
+
+#include <machine/bus.h>
  
 #ifdef USB_DEBUG
 #define DPRINTF(x)		if (usbdebug) printf x
