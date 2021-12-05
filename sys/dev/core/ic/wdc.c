@@ -92,10 +92,10 @@
 #include <machine/bus.h>
 
 #ifndef __BUS_SPACE_HAS_STREAM_METHODS
-#define bus_space_write_multi_stream_2	bus_space_write_multi_2
-#define bus_space_write_multi_stream_4	bus_space_write_multi_4
-#define bus_space_read_multi_stream_2	bus_space_read_multi_2
-#define bus_space_read_multi_stream_4	bus_space_read_multi_4
+//#define bus_space_write_multi_stream_2	bus_space_write_multi_2
+//#define bus_space_write_multi_stream_4	bus_space_write_multi_4
+//#define bus_space_read_multi_stream_2	bus_space_read_multi_2
+//#define bus_space_read_multi_stream_4	bus_space_read_multi_4
 #endif /* __BUS_SPACE_HAS_STREAM_METHODS */
 
 #include <dev/core/ic/wdcreg.h>
@@ -103,8 +103,8 @@
 
 #include <dev/disk/ata/atavar.h>
 #include <dev/disk/ata/atareg.h>
-#include <dev/disk/scsi/scsi_all.h>
-#include <dev/disk/scsi/scsiconf.h>
+//#include <dev/disk/scsi/scsi_all.h>
+//#include <dev/disk/scsi/scsiconf.h>
 
 #define WDCDELAY  100 /* 100 microseconds */
 #define WDCNDELAY_RST (WDC_RESET_WAIT * 1000 / WDCDELAY)
@@ -121,6 +121,7 @@ void  		__wdccommand_done (struct channel_softc *, struct wdc_xfer *);
 void  		__wdccommand_start (struct channel_softc *, struct wdc_xfer *);
 int   		__wdccommand_intr (struct channel_softc *, struct wdc_xfer *, int);
 int   		wdprint (void *, const char *);
+int  		atapi_print (void *, const char *);
 
 
 #define DEBUG_INTR   0x01
@@ -409,8 +410,9 @@ wdcattach(chp)
 		aa_link.aa_openings = 1;
 		aa_link.aa_drv_data = 0;
 		aa_link.aa_bus_private = NULL;
+		//cfprint_t atprint = atapi_print;
 		(void)config_found(&chp->wdc->sc_dev,
-		    (void *)&aa_link, atapi_print);
+		    (void *)&aa_link, &atapi_print);
 #endif
 	}
 
@@ -424,7 +426,7 @@ wdcattach(chp)
 		aa_link.aa_channel = chp->channel;
 		aa_link.aa_openings = 1;
 		aa_link.aa_drv_data = &chp->ch_drive[i];
-		if (config_found(&chp->wdc->sc_dev, (void *)&aa_link, wdprint))
+		if (config_found(&chp->wdc->sc_dev, (void *)&aa_link, &wdprint))
 			wdc_probe_caps(&chp->ch_drive[i]);
 	}
 
@@ -490,7 +492,7 @@ wdcstart(chp)
 #endif /* WDC_DIAGNOSTIC */
 
 	/* is there a xfer ? */
-	if ((xfer = chp->ch_queue->sc_xfer.tqh_first) == NULL)
+	if ((xfer = TAILQ_FIRST(chp->ch_queue->sc_xfer)) == NULL)
 		return;
 
 	/* adjust chp, in case we have a shared queue */
@@ -1260,7 +1262,7 @@ __wdccommand_done(chp, xfer)
 	}
 	wdc_free_xfer(chp, xfer);
 	if (wdc_c->flags & AT_WAIT)
-		wakeup(wdc_c);
+		wakeup((caddr_t)wdc_c);
 	else if (wdc_c->callback)
 		wdc_c->callback(wdc_c->callback_arg);
 	wdcstart(chp);
@@ -1359,20 +1361,13 @@ wdc_get_xfer(flags)
 	int s;
 
 	s = splbio();
-	if ((xfer = xfer_free_list.lh_first) != NULL) {
+	if ((xfer = LIST_FIRST(&xfer_free_list)) != NULL) {
 		LIST_REMOVE(xfer, free_list);
 		splx(s);
-#ifdef DIAGNOSTIC
-		if ((xfer->c_flags & C_INUSE) != 0)
-			panic("wdc_get_xfer: xfer already in use\n");
-#endif
 	} else {
 		splx(s);
 		WDCDEBUG_PRINT(("wdc:making xfer %d\n",wdc_nxfer), DEBUG_XFERS);
-		xfer = malloc(sizeof(*xfer), M_DEVBUF,
-		    ((flags & WDC_NOSLEEP) != 0 ? M_NOWAIT : M_WAITOK));
-		if (xfer == NULL)
-			return 0;
+		xfer = (struct wdc_xfer *)malloc(sizeof(*xfer), M_DEVBUF, ((flags & WDC_NOSLEEP) != 0 ? M_NOWAIT : M_WAITOK));
 #ifdef DIAGNOSTIC
 		xfer->c_flags &= ~C_INUSE;
 #endif
@@ -1387,7 +1382,7 @@ wdc_get_xfer(flags)
 	splx(s);
 	memset(xfer, 0, sizeof(struct wdc_xfer));
 	xfer->c_flags = C_INUSE;
-	return xfer;
+	return (xfer);
 }
 
 void

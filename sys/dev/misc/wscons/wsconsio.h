@@ -43,6 +43,7 @@
  *	96-255	reserved for future use
  */
 
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ioccom.h>
 #include <dev/misc/wscons/wsksymvar.h>
@@ -68,7 +69,6 @@ struct wscons_event {
 #define	WSCONS_EVENT_MOUSE_ABSOLUTE_Y	9	/* Y location */
 #define	WSCONS_EVENT_MOUSE_DELTA_Z		10	/* Z delta amount */
 #define	WSCONS_EVENT_MOUSE_ABSOLUTE_Z	11	/* Z location */
-
 
 /*
  * Keyboard ioctls (0 - 31)
@@ -163,7 +163,6 @@ struct wskbd_map_data {
 /*
  * Display ioctls (64 - 95)
  */
-
 /* Get display type */
 #define	WSDISPLAYIO_GTYPE				_IOR('W', 64, u_int)
 #define		WSDISPLAY_TYPE_UNKNOWN		0	/* unknown */

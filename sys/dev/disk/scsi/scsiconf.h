@@ -52,8 +52,9 @@
 typedef	int			boolean;
 
 #include <sys/queue.h>
-#include <machine/cpu.h>
 #include <dev/disk/scsi/scsi_debug.h>
+
+#include <machine/cpu.h>
 
 /*
  * The following documentation tries to describe the relationship between the
@@ -86,6 +87,7 @@ typedef	int			boolean;
 
 struct buf;
 struct scsi_xfer;
+struct scsi_link;
 
 /*
  * These entrypoints are called by the high-end drivers to get services from
@@ -281,7 +283,7 @@ struct scsi_xfer {
 	int						error;		/* an error value	*/
 	struct	buf 			*bp;		/* If we need to associate with a buf */
 	union {
-		struct  scsipi_sense_data 	scsi_sense; /* 32 bytes */
+		struct  scsi_sense_data 	scsi_sense; /* 32 bytes */
 		u_int32_t 					atapi_sense;
 	} sense;
 

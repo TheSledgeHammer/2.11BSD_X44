@@ -40,6 +40,7 @@
 #include <sys/queue.h>
 #include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/atapi/atapiconf.h>
+#include <sys/callout.h>
 
 #define	WAITTIME    		(10 * hz)    /* time to wait for a completion */
 	/* this is a lot for hard drives, but not for cdroms */
@@ -66,11 +67,11 @@ struct channel_softc { /* Per channel data */
 	bus_space_handle_t      data32ioh;
 	/* Our state */
 	int 					ch_flags;
-#define WDCF_ACTIVE   		0x01	/* channel is active */
-#define WDCF_IRQ_WAIT 		0x10	/* controller is waiting for irq */
-#define WDCF_DMA_WAIT 		0x20	/* controller is waiting for DMA */
-	u_int8_t 				ch_status;         /* copy of status register */
-	u_int8_t 				ch_error;          /* copy of error register */
+#define WDCF_ACTIVE   		0x01				/* channel is active */
+#define WDCF_IRQ_WAIT 		0x10				/* controller is waiting for irq */
+#define WDCF_DMA_WAIT 		0x20				/* controller is waiting for DMA */
+	u_int8_t 				ch_status;         	/* copy of status register */
+	u_int8_t 				ch_error;          	/* copy of error register */
 	/* per-drive infos */
 	struct ata_drive_datas 	ch_drive[2];
 
@@ -86,8 +87,8 @@ struct wdc_softc { /* Per controller state */
 	/* mandatory fields */
 	int           			cap;
 /* Capabilities supported by the controller */
-#define	WDC_CAPABILITY_DATA16 			0x0001    /* can do  16-bit data access */
-#define	WDC_CAPABILITY_DATA32 			0x0002    /* can do 32-bit data access */
+#define	WDC_CAPABILITY_DATA16 			0x0001  /* can do  16-bit data access */
+#define	WDC_CAPABILITY_DATA32 			0x0002  /* can do 32-bit data access */
 #define WDC_CAPABILITY_MODE   			0x0004	/* controller knows its PIO/DMA modes */
 #define	WDC_CAPABILITY_DMA    			0x0008	/* DMA */
 #define	WDC_CAPABILITY_UDMA   			0x0010	/* Ultra-DMA/33 */
@@ -97,11 +98,11 @@ struct wdc_softc { /* Per controller state */
 #define WDC_CAPABILITY_NO_EXTRA_RESETS 	0x0100 	/* only reset once */
 #define WDC_CAPABILITY_PREATA 			0x0200 	/* ctrl can be a pre-ata one */
 #define WDC_CAPABILITY_IRQACK 			0x0400 	/* callback to ack interrupt */
-	u_int8_t      			PIO_cap; /* highest PIO mode supported */
-	u_int8_t      			DMA_cap; /* highest DMA mode supported */
-	u_int8_t      			UDMA_cap; /* highest UDMA mode supported */
-	int 					nchannels;	/* Number of channels on this controller */
-	struct channel_softc 	**channels;  /* channels-specific datas (array) */
+	u_int8_t      			PIO_cap; 			/* highest PIO mode supported */
+	u_int8_t      			DMA_cap; 			/* highest DMA mode supported */
+	u_int8_t      			UDMA_cap; 			/* highest UDMA mode supported */
+	int 					nchannels;			/* Number of channels on this controller */
+	struct channel_softc 	**channels;  		/* channels-specific datas (array) */
 
 	/*
 	 * The reference count here is used for both IDE and ATAPI devices.
@@ -199,4 +200,3 @@ void	wdc_delref (struct channel_softc *);
 #define WDC_RESET_WAIT 31000
 
 void wdc_atapibus_attach (struct channel_softc *);
-int  atapi_print (void *, const char *);

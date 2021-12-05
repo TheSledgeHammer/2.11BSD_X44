@@ -79,52 +79,52 @@ PATH	[A-Za-z_0-9]*[./][-A-Za-z_0-9./]*
 WORD	[A-Za-z_][-A-Za-z_0-9]*
 
 %%
-		/* Local variables for yylex() */
-		int tok;
+				/* Local variables for yylex() */
+				int tok;
 
-and			return AND;
-at			return AT;
-attach		return ATTACH;
-block		return BLOCK;
-build		return BUILD;
-char		return CHAR;
-cinclude	return CINCLUDE;
+and				return AND;
+at				return AT;
+attach			return ATTACH;
+block			return BLOCK;
+build			return BUILD;
+char			return CHAR;
+cinclude		return CINCLUDE;
 compile-with	return COMPILE_WITH;
-config		return CONFIG;
-deffs		return DEFFS;
-define		return DEFINE;
-defflag		return DEFFLAG;
-defopt		return DEFOPT;
-defparam	return DEFPARAM;
-defpseudo	return DEFPSEUDO;
-devclass	return DEVCLASS;
-device		return DEVICE;
+config			return CONFIG;
+deffs			return DEFFS;
+define			return DEFINE;
+defflag			return DEFFLAG;
+defopt			return DEFOPT;
+defparam		return DEFPARAM;
+defpseudo		return DEFPSEUDO;
+devclass		return DEVCLASS;
+device			return DEVICE;
 device-major	return DEVICE_MAJOR;
-dumps		return DUMPS;
-file		return XFILE;
-file-system	return FILE_SYSTEM;
-flags		return FLAGS;
-ident		return IDENT;
-include		return INCLUDE;
-machine		return XMACHINE;
-major		return MAJOR;
-makeoptions	return MAKEOPTIONS;
+dumps			return DUMPS;
+file			return XFILE;
+file-system		return FILE_SYSTEM;
+flags			return FLAGS;
+ident			return IDENT;
+include			return INCLUDE;
+machine			return XMACHINE;
+major			return MAJOR;
+makeoptions		return MAKEOPTIONS;
 maxpartitions	return MAXPARTITIONS;
-maxusers	return MAXUSERS;
-minor		return MINOR;
-needs-count	return NEEDS_COUNT;
-needs-flag	return NEEDS_FLAG;
-no			return NO;
-object		return XOBJECT;
-on			return ON;
-options		return OPTIONS;
-package		return PACKAGE;
-prefix		return PREFIX;
+maxusers		return MAXUSERS;
+minor			return MINOR;
+needs-count		return NEEDS_COUNT;
+needs-flag		return NEEDS_FLAG;
+no				return NO;
+object			return XOBJECT;
+on				return ON;
+options			return OPTIONS;
+package			return PACKAGE;
+prefix			return PREFIX;
 pseudo-device	return PSEUDO_DEVICE;
-root		return ROOT;
-source		return SOURCE;
-type		return TYPE;
-with		return WITH;
+root			return ROOT;
+source			return SOURCE;
+type			return TYPE;
+with			return WITH;
 
 {PATH}	{
 		yylval.str = intern(yytext);

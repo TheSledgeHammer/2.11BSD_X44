@@ -82,8 +82,6 @@ static void 			selectbase(struct devbase *, struct deva *);
 static int 				onlist(struct nvlist *, void *);
 static const char 		**fixloc(const char *, struct attr *, struct nvlist *);
 static const char 		*makedevstr(int, int);
-static const char 		*major2name(int);
-static int 				dev2major(struct devbase *);
 
 extern const char *yyfile;
 
@@ -101,6 +99,7 @@ initsem(void)
 	cfhashtab = ht_new();
 	TAILQ_INIT(&allcf);
 
+	devitab = ht_new();
 	TAILQ_INIT(&alldevi);
 	errdev.d_name = "<internal>";
 
@@ -227,12 +226,11 @@ defattr(const char *name, struct nvlist *locs, struct nvlist *deps,
 		a->a_locs = NULL;
 	}
 	if (devclass) {
-		size_t l = strlen(name) + 4;
-		char *classenum = alloca(l), *cp;
+		char *classenum = alloca(strlen(name) + 4), *cp;
 		int errored = 0;
 
-		strlcpy(classenum, "DV_", l);
-		strlcat(classenum, name, l);
+		strcpy(classenum, "DV_");
+		strcat(classenum, name);
 		for (cp = classenum + 3; *cp; cp++) {
 			if (!errored &&
 			    (!isalnum(*cp) ||
@@ -605,42 +603,25 @@ setmajor(struct devbase *d, int n)
 		d->d_major = n;
 }
 
-const char *
-major2name(int maj)
-{
-	struct devbase *dev;
-	struct devm *dm;
-
-	TAILQ_FOREACH(dev, &allbases, d_next) {
-		if (dev->d_major == maj)
-			return (dev->d_name);
-	}
-	return (NULL);
-}
-
-int
-dev2major(struct devbase *dev)
-{
-	if (dev->d_major)
-		return (dev->d_major);
-
-	return (NODEV);
-}
-
 /*
  * Make a string description of the device at maj/min.
  */
 static const char *
 makedevstr(int maj, int min)
 {
-	const char *devname;
+	struct devbase *dev;
 	char buf[32];
 
-	devname = major2name(maj);
-	if (devname == NULL)
+	TAILQ_FOREACH(dev, &allbases, d_next) {
+		if (dev->d_major == maj) {
+			break;
+		}
+	}
+
+	if (dev == NULL)
 		(void)snprintf(buf, sizeof(buf), "<%d/%d>", maj, min);
 	else
-		(void)snprintf(buf, sizeof(buf), "%s%d%c", devname,
+		(void)snprintf(buf, sizeof(buf), "%s%d%c", dev->d_name,
 		    min / maxpartitions, (min % maxpartitions) + 'a');
 
 	return (intern(buf));
@@ -728,13 +709,12 @@ resolve(struct nvlist **nvp, const char *name, const char *what,
 		nv->nv_int = NODEV;
 		nv->nv_ifunit = unit;	/* XXX XXX XXX */
 	} else {
-		maj = dev2major(dev);
-		if (maj == NODEV) {
+		if (dev->d_major == NODEV) {
 			error("%s: can't make %s device from `%s'",
 			    name, what, nv->nv_str);
 			return (1);
 		}
-		nv->nv_int = makedev(maj, unit * maxpartitions + part);
+		nv->nv_int = makedev(dev->d_major, unit * maxpartitions + part);
 	}
 
 	nv->nv_name = dev->d_name;

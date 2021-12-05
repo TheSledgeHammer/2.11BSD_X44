@@ -100,7 +100,7 @@ struct cfdata {
 	int					cf_flags;				/* flags from config */
 	short				*cf_parents;			/* potential parents */
 	const char 			**cf_locnames;			/* locator names (machine dependent) */
-	void				(**cf_ivstubs)(void);	/* config-generated vectors, if any */
+//	void				(**cf_ivstubs)(void);	/* config-generated vectors, if any */
 };
 #define FSTATE_NOTFOUND	0						/* has not been found */
 #define	FSTATE_FOUND	1						/* has been found */
@@ -147,7 +147,7 @@ struct cfops {
  * of the parent device.  The return value is ignored if the device was
  * configured, so most functions can return UNCONF unconditionally.
  */
-typedef int 			(*cfprint_t) (void *, char *);
+typedef int 			(*cfprint_t) (void *, const char *);
 #define	QUIET			0		/* print nothing */
 #define	UNCONF			1		/* print " not configured\n" */
 #define	UNSUPP			2		/* print " not supported\n" */
@@ -206,22 +206,22 @@ struct cfhint 			*allhints;					/* head of list of device hints */
 int 					cfhint_count; 				/* hint count */
 
 int				config_match(struct device *, struct cfdata *, void *);
-struct cfdata 	*config_search (cfmatch_t, struct device *, void *);
-struct cfdata 	*config_rootsearch (cfmatch_t, char *, void *);
-int 			config_found (struct device *, void *, cfprint_t);
+struct cfdata 	*config_search(cfmatch_t, struct device *, void *);
+struct cfdata 	*config_rootsearch(cfmatch_t, char *, void *);
+int 			config_found(struct device *, void *, cfprint_t);
 struct device 	*config_found_sm(struct device *, void *, cfprint_t, cfmatch_t);
-int 			config_rootfound (char *, void *);
-void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
+int 			config_rootfound(char *, void *);
+void 			config_attach(struct device *, struct cfdata *, void *, cfprint_t);
 int				config_detach(struct device *, int);
-int 			config_activate (struct device *);
-int 			config_deactivate (struct device *);
+int 			config_activate(struct device *);
+int 			config_deactivate(struct device *);
 void 			config_defer(struct device *, void (*)(struct device *));
 void 			config_interrupts(struct device *, void (*)(struct device *));
 void 			config_pending_incr(void);
 void 			config_pending_decr(void);
 int     		config_hint_enabled(struct device *);
 int     		config_hint_disabled(struct device *);
-void 			evcnt_attach (struct device *, const char *, struct evcnt *);
+void 			evcnt_attach(struct device *, const char *, struct evcnt *);
 
 /* Access functions for device resources. */
 int				resource_int_value(const char *name, int unit, const char *resname, int *result);

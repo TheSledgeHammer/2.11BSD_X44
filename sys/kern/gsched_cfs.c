@@ -268,6 +268,9 @@ cfs_schedcpu(p)
 					if (cfs->cfs_time == cfs->cfs_bsched) {
 						goto runout;
 						break;
+					} else {
+						goto out;
+						break;
 					}
 				} else {
 					/* SHOULD NEVER REACH THIS POINT!! */

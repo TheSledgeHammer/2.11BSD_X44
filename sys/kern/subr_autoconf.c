@@ -304,7 +304,7 @@ config_attach(parent, cf, aux, print)
 	register struct device *parent;
 	register struct cfdata *cf;
 	register void *aux;
-	cfprint_t print;
+	cfprint_t 		print;
 {
 	register struct device *dev;
 	register struct cfdriver *cd;
@@ -333,12 +333,9 @@ config_attach(parent, cf, aux, print)
 		panic("config_attach: device name too long");
 
 	/* get memory for all device vars */
-	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);
-					/* XXX cannot wait! */
+	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);	/* XXX cannot wait! */
 	bzero(dev, cd->cd_devsize);
 	device_insert(dev, *nextp);	/* link up */
-	//*nextp = dev;				/* link up */
-	//nextp = &dev->dv_next;
 	dev->dv_class = cd->cd_class;
 	dev->dv_cfdata = cf;
 	dev->dv_unit = myunit;
