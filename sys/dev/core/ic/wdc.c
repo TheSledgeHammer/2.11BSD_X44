@@ -410,9 +410,8 @@ wdcattach(chp)
 		aa_link.aa_openings = 1;
 		aa_link.aa_drv_data = 0;
 		aa_link.aa_bus_private = NULL;
-		//cfprint_t atprint = atapi_print;
 		(void)config_found(&chp->wdc->sc_dev,
-		    (void *)&aa_link, &atapi_print);
+		    (void *)&aa_link, (cfprint_t)atapi_print);
 #endif
 	}
 
@@ -426,7 +425,7 @@ wdcattach(chp)
 		aa_link.aa_channel = chp->channel;
 		aa_link.aa_openings = 1;
 		aa_link.aa_drv_data = &chp->ch_drive[i];
-		if (config_found(&chp->wdc->sc_dev, (void *)&aa_link, &wdprint))
+		if (config_found(&chp->wdc->sc_dev, (void *)&aa_link, (cfprint_t)wdprint))
 			wdc_probe_caps(&chp->ch_drive[i]);
 	}
 
@@ -553,7 +552,7 @@ wdcintr(arg)
 	}
 
 	WDCDEBUG_PRINT(("wdcintr\n"), DEBUG_INTR);
-	xfer = chp->ch_queue->sc_xfer.tqh_first;
+	xfer = TAILQ_FIRST(chp->ch_queue->sc_xfer);
 	if (chp->ch_flags & WDCF_DMA_WAIT) {
 		chp->wdc->dma_status =
 		    (*chp->wdc->dma_finish)(chp->wdc->dma_arg, chp->channel,
@@ -743,7 +742,7 @@ wdcwait(chp, mask, bits, timeout)
 #ifdef WDCNDELAY_DEBUG
 	/* After autoconfig, there should be no long delays. */
 	if (!cold && time > WDCNDELAY_DEBUG) {
-		struct wdc_xfer *xfer = chp->ch_queue->sc_xfer.tqh_first;
+		struct wdc_xfer *xfer = TAILQ_FIRST(chp->ch_queue->sc_xfer);
 		if (xfer == NULL)
 			printf("%s channel %d: warning: busy-wait took %dus\n",
 			    chp->wdc->sc_dev.dv_xname, chp->channel,
@@ -1408,7 +1407,7 @@ __wdcerror(chp, msg)
 	struct channel_softc *chp;
 	char *msg;
 {
-	struct wdc_xfer *xfer = chp->ch_queue->sc_xfer.tqh_first;
+	struct wdc_xfer *xfer = TAILQ_FIRST(chp->ch_queue->sc_xfer);
 
 	if (xfer == NULL)
 		printf("%s:%d: %s\n", chp->wdc->sc_dev.dv_xname, chp->channel,

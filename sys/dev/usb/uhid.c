@@ -133,11 +133,7 @@ static void uhid_intr(struct uhidev *, void *, u_int len);
 static int uhid_do_read(struct uhid_softc *, struct uio *uio, int);
 static int uhid_do_write(struct uhid_softc *, struct uio *uio, int);
 static int uhid_do_ioctl(struct uhid_softc*, u_long, caddr_t, int, struct proc *);
-/*
-struct cfdriver uhid_cd = {
-		NULL, "uhid", uhid_match, uhid_attach, DV_DULL, sizeof(struct uhid_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, uhid, &uhid_cops, DV_DULL, sizeof(struct uhid_softc));
 CFOPS_DECL(uhid, uhid_match, uhid_attach, uhid_detach, uhid_activate);
 

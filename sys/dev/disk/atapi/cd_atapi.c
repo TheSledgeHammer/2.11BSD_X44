@@ -69,11 +69,7 @@
 
 int	cd_atapibus_match (struct device *, struct cfdata *, void *);
 void cd_atapibus_attach (struct device *, struct device *, void *);
-/*
-struct cfdriver cd_atapibus_cd = {
-	NULL, "cd_atapibus", cd_atapibus_match, cd_atapibus_attach, DV_DULL, sizeof(struct cd_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, cd_atapibus, &cd_atapibus_cops, DV_DULL, sizeof(struct cd_softc));
 CFOPS_DECL(cd_atapibus, cd_atapibus_match, cd_atapibus_attach, NULL, NULL);
 

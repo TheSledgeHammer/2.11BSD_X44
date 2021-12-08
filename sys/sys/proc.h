@@ -115,7 +115,7 @@ struct	proc {
 
     void				*p_thread;		/* Id for this "thread"; Mach glue. XXX */
 
-    struct	proc 	    *p_link;		/* linked list of running processes */
+    struct proc 	    *p_link;		/* linked list of running processes */
 
     struct user			*p_addr;		/* virtual address of u. area */
 
@@ -291,16 +291,16 @@ int			setpri (struct proc *);
 void		setrun (struct proc *);
 void		setrq (struct proc *);
 void		remrq (struct proc *);
-struct proc getrq(struct proc *);
+struct proc getrq (struct proc *);
 void		swtch ();
-void		sleep (void *chan, int pri);
-int			tsleep (void *chan, int pri, char *wmesg, int timo);
+void		sleep (void *, int);
+int			tsleep (void *, int, char *, int);
 void		unsleep (struct proc *);
-void		wakeup (void *chan);
+void		wakeup (void *);
 void		reschedule(struct proc *);
 
 void		procinit (void);
-int 		chgproccnt (uid_t, int diff);
+int 		chgproccnt (uid_t, int);
 int			acct_process (struct proc *);
 int			leavepgrp (struct proc *);
 int			enterpgrp (struct proc *, pid_t, int);

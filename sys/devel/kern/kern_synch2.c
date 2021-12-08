@@ -107,6 +107,6 @@ mi_switch()
 	 * Pick a new current process and record its start time.
 	 */
 	cnt.v_swtch++;
-	cpu_switch(p);
+	swtch();
 	microtime(&runtime);
 }

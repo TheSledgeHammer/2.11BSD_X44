@@ -124,11 +124,10 @@ typedef struct ohci_softc {
 	char 						sc_vendor[16];
 	int 						sc_id_vendor;
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	void 						*sc_powerhook;		/* cookie from power hook */
-	void 						*sc_shutdownhook;		/* cookie from shutdown hook */
-#endif
-	u_int32_t 					sc_control;		/* Preserved during suspend/standby */
+	void 						*sc_shutdownhook;	/* cookie from shutdown hook */
+
+	u_int32_t 					sc_control;			/* Preserved during suspend/standby */
 	u_int32_t 					sc_intre;
 
 	u_int 						sc_overrun_cnt;

@@ -178,8 +178,10 @@ com_isa_attach(parent, self, aux)
 	 * Shutdown hook for buggy BIOSs that don't recognize the UART
 	 * without a disabled FIFO.
 	 */
+	/*
 	if (shutdownhook_establish(com_isa_cleanup, sc) == NULL)
 		panic("com_isa_attach: could not establish shutdown hook");
+	*/
 }
 
 void

@@ -502,11 +502,13 @@ uhci_init(uhci_softc_t *sc)
 	sc->sc_bus.methods = &uhci_bus_methods;
 	sc->sc_bus.pipe_size = sizeof(struct uhci_pipe);
 
+	/*
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 	sc->sc_suspend = PWR_RESUME;
 	sc->sc_powerhook = powerhook_establish(uhci_power, sc);
 	sc->sc_shutdownhook = shutdownhook_establish(uhci_shutdown, sc);
 #endif
+	*/
 
 	DPRINTFN(1,("uhci_init: enabling\n"));
 	UWRITE2(sc, UHCI_INTR, UHCI_INTR_TOCRCIE | UHCI_INTR_RIE |
@@ -546,12 +548,12 @@ uhci_detach(struct uhci_softc *sc, int flags)
 
 	if (rv != 0)
 		return (rv);
-
+/*
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 	powerhook_disestablish(sc->sc_powerhook);
 	shutdownhook_disestablish(sc->sc_shutdownhook);
 #endif
-
+*/
 	/* Free all xfers associated with this HC. */
 	for (;;) {
 		xfer = SIMPLEQ_FIRST(&sc->sc_free_xfers);
@@ -2141,7 +2143,7 @@ uhci_device_intr_close(usbd_pipe_handle pipe)
 
 	for(i = 0; i < npoll; i++)
 		uhci_free_sqh(sc, upipe->u.intr.qhs[i]);
-	free(upipe->u.intr.qhs, M_USBHC);
+	free(upipe->u.intr.qhs, M_USB);
 
 	/* XXX free other resources */
 }
@@ -2508,7 +2510,7 @@ uhci_device_isoc_close(usbd_pipe_handle pipe)
 	}
 	splx(s);
 
-	free(iso->stds, M_USBHC);
+	free(iso->stds, M_USB);
 }
 
 usbd_status
@@ -2526,7 +2528,7 @@ uhci_setup_isoc(usbd_pipe_handle pipe)
 	int i, s;
 
 	iso = &upipe->u.iso;
-	iso->stds = malloc(UHCI_VFRAMELIST_COUNT * sizeof (uhci_soft_td_t *), M_USBHC, M_WAITOK);
+	iso->stds = malloc(UHCI_VFRAMELIST_COUNT * sizeof (uhci_soft_td_t *), M_USB, M_WAITOK);
 
 	token = rd ? UHCI_TD_IN (0, endpt, addr, 0) :
 		     UHCI_TD_OUT(0, endpt, addr, 0);
@@ -2561,7 +2563,7 @@ uhci_setup_isoc(usbd_pipe_handle pipe)
  bad:
 	while (--i >= 0)
 		uhci_free_std(sc, iso->stds[i]);
-	free(iso->stds, M_USBHC);
+	free(iso->stds, M_USB);
 	return (USBD_NOMEM);
 }
 
@@ -2775,7 +2777,7 @@ uhci_device_setintr(uhci_softc_t *sc, struct uhci_pipe *upipe, int ival)
 
 	upipe->u.intr.npoll = npoll;
 	upipe->u.intr.qhs =
-		malloc(npoll * sizeof(uhci_soft_qh_t *), M_USBHC, M_WAITOK);
+		malloc(npoll * sizeof(uhci_soft_qh_t *), M_USB, M_WAITOK);
 
 	/*
 	 * Figure out which offset in the schedule that has most

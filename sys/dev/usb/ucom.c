@@ -149,11 +149,7 @@ const struct cdevsw ucom_cdevsw = {
 		.d_discard = nodiscard,
 		.d_type = D_TTY
 };
-/*
-struct cfdriver ucom_cd = {
-		NULL, "ucom", ucom_match, ucom_attach, DV_TTY, sizeof(struct ucom_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, ucom, &ucom_cops, DV_TTY, sizeof(struct ucom_softc));
 CFOPS_DECL(ucom, ucom_match, ucom_attach, ucom_detach, ucom_activate);
 

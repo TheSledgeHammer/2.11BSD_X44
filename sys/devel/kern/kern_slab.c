@@ -180,7 +180,7 @@ slab_object(cache, size)
 }
 
 slab_t
-slab_lookup(cache, size, mtype)
+slab_get(cache, size, mtype)
 	slab_cache_t 	cache;
 	long    		size;
 	int 			mtype;
@@ -200,7 +200,7 @@ slab_lookup(cache, size, mtype)
 }
 
 void
-slab_insert(cache, size, mtype)
+slab_create(cache, size, mtype)
 	slab_cache_t cache;
     long  		size;
     int	    	mtype;
@@ -231,7 +231,7 @@ slab_insert(cache, size, mtype)
 }
 
 void
-slab_remove(cache, size)
+slab_destroy(cache, size)
 	slab_cache_t cache;
 	long  	size;
 {
@@ -273,7 +273,7 @@ kmembucket_search(cache, meta, size, mtype)
 	long indx, bsize;
 	int bslots, aslots, fslots;
 
-	slab = slab_lookup(cache, size, mtype);
+	slab = slab_get(cache, size, mtype);
 
 	indx = BUCKETINDX(size);
 	bsize = BUCKETSIZE(indx);
@@ -345,7 +345,7 @@ malloc(size, type, flags)
 		panic("malloc - bogus type");
 	}
 #endif
-	slab_insert(&slabCache, size, type);
+	slab_create(&slabCache, size, type);
 	slab = &slabCache->sc_link;
 	kbp = kmembucket_search(&slabCache, slab->s_meta, size, type);
 	s = splimp();
@@ -507,7 +507,7 @@ free(addr, type)
 #endif
 	kup = btokup(addr);
 	size = 1 << kup->ku_indx;
-	slab = slab_lookup(&slabCache, size, type);
+	slab = slab_get(&slabCache, size, type);
 	kbp = kmembucket_search(&slabCache, slab->s_meta, size, type);
 	s = splimp();
 #ifdef DIAGNOSTIC
@@ -576,7 +576,7 @@ free(addr, type)
 	kbp->kb_last = addr;
 	if(slab->s_flags == SLAB_EMPTY && kbp == NULL) {
 		slab->s_bucket = kbp;
-		slab_remove(&slabCache, size);
+		slab_destroy(&slabCache, size);
 	}
 	splx(s);
 }
@@ -600,8 +600,7 @@ kmeminit()
 		ERROR!_kmeminit:_MAXALLOCSAVE_too_small
 #endif
 	npg = VM_KMEM_SIZE / NBPG;
-	slabCache = (struct slab_cache*) kmem_alloc(kernel_map,
-			(vm_size_t)(npg * sizeof(struct slab_cache)));
+	slabCache = (struct slab_cache*) kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct slab_cache)));
 	kmemusage = (struct kmemusage*) kmem_alloc(kernel_map,
 			(vm_size_t)(npg * sizeof(struct kmemusage)));
 	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t*) &kmembase,
@@ -624,6 +623,14 @@ kmeminit()
 		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
 	}
 #endif
+}
+
+void
+slabcache_create(cache, size)
+	struct slab_cache *cache;
+	long 				size;
+{
+	cache = (struct slab_cache *) kmem_alloc(kernel_map, (vm_size_t)(size * sizeof(struct slab_cache)));
 }
 
 /* allocate memory to vm [internal use only] */

@@ -93,9 +93,9 @@ int			                    slab_count;                                     /* num
 
 /* proto types */
 slab_t				slab_object(slab_cache_t, long);
-slab_t  			slab_lookup(slab_cache_t, long, int);
-void				slab_insert(slab_cache_t, long, int);
-void				slab_remove(slab_cache_t, long);
+slab_t  			slab_get(slab_cache_t, long, int);
+void				slab_create(slab_cache_t, long, int);
+void				slab_destroy(slab_cache_t, long);
 struct kmembuckets 	*slab_kmembucket(slab_t);
 struct kmembuckets 	*kmembucket_search(slab_cache_t, slab_metadata_t, long, int, int);
 

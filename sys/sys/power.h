@@ -34,13 +34,13 @@
 /*
  * Power management hooks.
  */
-
 #define PWR_RESUME		0
 #define PWR_SUSPEND		1
 #define PWR_STANDBY		2
 #define PWR_SOFTRESUME	3
 #define PWR_SOFTSUSPEND	4
 #define PWR_SOFTSTANDBY	5
+#define PWR_SHUTDOWN	6	/* Only invoked by the shutdown hook */
 #define PWR_NAMES 			\
 	"resume",		/* 0 */ \
 	"suspend",		/* 1 */ \
@@ -49,8 +49,19 @@
 	"softsuspend",	/* 4 */ \
 	"softstandby"	/* 5 */
 
-void	*powerhook_establish(const char *, void (*)(int, void *), void *);
+#define HOOKNAMSIZ		128
+
+/* do_hook types */
+#define HKLIST_SHUTDOWN 0x01
+#define HKLIST_POWER 	0x02
+
+typedef void (*hook_func_t)(int, void *);
+
+void	*powerhook_establish(const char *, hook_func_t, void *);
 void	powerhook_disestablish(void *);
 void	dopowerhooks(int);
+void	*shutdownhook_establish(hook_func_t, void *);
+void	shutdownhook_disestablish(void *);
+void	doshutdownhooks(void);
 
 #endif /* _SYS_POWER_H_ */

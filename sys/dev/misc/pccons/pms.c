@@ -85,11 +85,7 @@ struct pms_softc {		/* driver status information */
 int pmsprobe(struct device *, struct cfdata *, void *);
 void pmsattach(struct device *, struct device *, void *);
 void pmsinput(void *, int);
-/*
-struct cfdriver pms_cd = {
-		NULL, "pms", pmsprobe, pmsattach, DV_DULL, sizeof(struct pms_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, pms, &pms_cops, DV_DULL, sizeof(struct pms_softc));
 CFOPS_DECL(pms, pmsprobe, pmsattach, NULL, NULL);
 

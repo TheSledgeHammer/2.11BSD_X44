@@ -355,13 +355,10 @@ wdattach(parent, self, aux)
 	wd->sc_dk.dk_name = wd->sc_dev.dv_xname;
 	disk_attach(&wd->sc_dk);
 	wd->sc_wdc_bio.lp = wd->sc_dk.dk_label;
+	/*
 	if (shutdownhook_establish(wd_shutdown, wd) == NULL)
-		printf("%s: WARNING: unable to establish shutdown hook\n",
-				wd->sc_dev.dv_xname);
-#if NRND > 0
-	rnd_attach_source(&wd->rnd_source, wd->sc_dev.dv_xname,
-			  RND_TYPE_DISK, 0);
-#endif
+		printf("%s: WARNING: unable to establish shutdown hook\n", wd->sc_dev.dv_xname);
+	*/
 }
 
 /*

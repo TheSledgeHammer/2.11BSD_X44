@@ -206,9 +206,9 @@ struct scsi_link {
 	} _scsi_link;
 	TAILQ_HEAD(, scsi_xfer) pending_xfers;
 
-	int (*scsi_cmd) (struct scsi_link *, struct scsi_generic *, int cmdlen, u_char *data_addr, int datalen, int retries, int timeout, struct buf *bp, int flags);
-	int (*scsi_interpret_sense) (struct scsi_xfer *);
-	void (*sc_print_addr) (struct scsi_link *sc_link);
+	int 	(*scsi_cmd) (struct scsi_link *, struct scsi_generic *, int cmdlen, u_char *data_addr, int datalen, int retries, int timeout, struct buf *bp, int flags);
+	int 	(*scsi_interpret_sense) (struct scsi_xfer *);
+	void 	(*sc_print_addr) (struct scsi_link *sc_link);
 };
 #define scsi_scsi 			_scsi_link.scsi_scsi
 #define scsi_atapi 			_scsi_link.scsi_atapi

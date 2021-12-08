@@ -90,11 +90,7 @@ struct ch_softc {
 /* Autoconfiguration glue */
 int		chmatch (struct device *, void *, void *);
 void	chattach (struct device *, struct device *, void *);
-/*
-struct cfdriver ch_cd = {
-	NULL, "ch", chmatch, chattach, DV_DULL, sizeof(struct ch_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, ch, &ch_cops, DV_DULL, sizeof(struct ch_softc));
 CFOPS_DECL(ch, chmatch, chattach, NULL, NULL);
 

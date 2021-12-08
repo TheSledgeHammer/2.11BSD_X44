@@ -20,8 +20,8 @@ file	arch/i386/i386/bioscall.S	    	bioscall 					needs-flag
 define	mpbios
 device	mpbios
 attach	mpbios at mainbus
-file 	arch/i386/i386/mpbios.c			mpbios   needs-flag
-file	arch/i386/i386/mpboot.S			mpbios
+file 	arch/i386/i386/mpbios.c				mpbios   needs-flag
+file	arch/i386/i386/mpboot.S				mpbios
 
 # CPUS
 define cpu { [apid = -1] }
@@ -32,6 +32,14 @@ file   arch/i386/i386/cpu.c					cpu
 # CMOS RAM #
 defpseudo cmos
 file	arch/i386/isa/cmos.c				cmos 						needs-flag
+
+# PC Mice; Logitech-style, Microsoft-style, and PS/2-style
+device	lms: wsmousedev
+attach	lms at isa
+file	arch/i386/isa/lms.c					lms 						needs-flag
+device	mms: wsmousedev
+attach	mms at isa
+file	arch/i386/isa/mms.c					mms 						needs-flag
 
 # PCI-only drivers
 file	arch/i386/pci/pci_machdep.c	    	pci
@@ -96,10 +104,10 @@ file	dev/core/pci/i82365_pci.c		   pcic_pci
 
 # PCIC pcmcia controller on PnP board
 attach	pcic at isapnp with pcic_isapnp
-file	dev/core/isapnp/i82365_isapnp.c	   	pcic_isapnp
+file	dev/core/isapnp/i82365_isapnp.c	   pcic_isapnp
 
 # Code common to ISA and ISAPnP attachments
-file	dev/core/isa/i82365_isasubr.c	   	pcic_isa | pcic_isapnp | pcic_pci
+file	dev/core/isa/i82365_isasubr.c	   pcic_isa | pcic_isapnp | pcic_pci
 
 # PIC (APIC)
 define	lapic

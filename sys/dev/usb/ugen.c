@@ -139,11 +139,7 @@ const struct cdevsw ugen_cdevsw = {
 		.d_discard = nodiscard,
 		.d_type = D_OTHER
 };
-/*
-struct cfdriver ugen_cd = {
-		NULL, "ugen", ugen_match, ugen_attach, DV_TTY, sizeof(struct ucom_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, ugen, &ugen_cops, DV_TTY, sizeof(struct ugen_softc));
 CFOPS_DECL(ugen, ugen_match, ugen_attach, ugen_detach, ugen_activate);
 

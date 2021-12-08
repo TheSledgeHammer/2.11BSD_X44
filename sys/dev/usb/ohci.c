@@ -351,12 +351,12 @@ ohci_detach(struct ohci_softc *sc, int flags)
 		return (rv);
 
 	usb_uncallout(sc->sc_tmo_rhsc, ohci_rhsc_enable, sc);
-
+/*
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 	powerhook_disestablish(sc->sc_powerhook);
 	shutdownhook_disestablish(sc->sc_shutdownhook);
 #endif
-
+*/
 	usb_delay_ms(&sc->sc_bus, 300); /* XXX let stray task complete */
 
 	/* free data structures XXX */
@@ -843,11 +843,9 @@ ohci_init(ohci_softc_t *sc)
 	sc->sc_bus.methods = &ohci_bus_methods;
 	sc->sc_bus.pipe_size = sizeof(struct ohci_pipe);
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	sc->sc_control = sc->sc_intre = 0;
-	sc->sc_powerhook = powerhook_establish(ohci_power, sc);
-	sc->sc_shutdownhook = shutdownhook_establish(ohci_shutdown, sc);
-#endif
+//	sc->sc_powerhook = powerhook_establish(sc->sc_bus.bdev->dv_xname, ohci_power, sc);
+//	sc->sc_shutdownhook = shutdownhook_establish(sc->sc_bus.bdev->dv_xname, ohci_shutdown, sc);
 
 	usb_callout_init(sc->sc_tmo_rhsc);
 

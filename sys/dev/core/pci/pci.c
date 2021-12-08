@@ -47,11 +47,6 @@ int 	pcimatch (struct device *, struct cfdata *, void *);
 void 	pciattach (struct device *, struct device *, void *);
 int		pciprint (void *, const char *);
 int		pcisubmatch (struct device *, struct cfdata *, void *);
-/*
-struct cfdriver pci_cd = {
-	NULL, "pci", pcimatch, pciattach, DV_DULL, sizeof(struct device)
-};
-*/
 
 CFDRIVER_DECL(NULL, pci, &pci_cops, DV_DULL, sizeof(struct device));
 CFOPS_DECL(pci, pcimatch, pciattach, NULL, NULL);

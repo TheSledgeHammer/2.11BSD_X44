@@ -68,7 +68,6 @@ struct lofscache {
 	struct lofsnode	*ac_forw;
 	struct lofsnode	*ac_back;
 };
-
 static struct lofscache lofscache[NLOFSCACHE];
 
 /*
@@ -91,8 +90,10 @@ lofs_init()
  */
 static struct lofscache *
 lofs_hash(targetvp)
-struct vnode *targetvp;
+	struct vnode *targetvp;
 {
+	struct lofscache *locache;
+
 	return (&lofscache[LOFS_NHASH(targetvp)]);
 }
 

@@ -55,11 +55,7 @@ const struct cdevsw spkr_cdevsw = {
 		.d_discard = nodiscard,
 		.d_type = D_OTHER
 };
-/*
-struct cfdriver spkr_cd = {
-	NULL, "spkr", spkrprobe, spkrattach, DV_DULL, sizeof(struct spkr_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, spkr, &spkr_cops, DV_DULL, sizeof(struct spkr_softc));
 CFOPS_DECL(spkr, spkrprobe, spkrattach, NULL, NULL);
 

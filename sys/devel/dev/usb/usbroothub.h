@@ -56,4 +56,4 @@ struct usb3_roothub_bos_descriptors {
 
 #define	USBROOTHUB_INTR_ENDPT	1
 
-extern const struct usbd_pipe_methods roothub_ctrl_methods;
+extern const struct usbd_pipe_methods 		roothub_ctrl_methods;

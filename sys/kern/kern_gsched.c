@@ -180,4 +180,9 @@ gsched_sort(cur, nxt)
             cur->p_nxt = nxt;
         }
     }
+
+/*
+ * struct proc *rq = getrq(cur);
+ * qsort(rq, NQS, sizeof(struct proc), gsched_compare);
+ */
 }

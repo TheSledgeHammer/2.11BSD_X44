@@ -275,11 +275,7 @@ int		st_rewind (struct st_softc *, u_int, int);
 int		st_interpret_sense (struct scsi_xfer *);
 int		st_touch_tape (struct st_softc *);
 int		st_erase (struct st_softc *, int full, int flags);
-/*
-struct cfdriver st_cd = {
-	NULL, "st", stmatch, stattach, DV_TAPE, sizeof(struct st_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, st, &st_cops, DV_TAPE, sizeof(struct st_softc));
 CFOPS_DECL(st, stmatch, stattach, NULL, NULL);
 

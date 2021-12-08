@@ -174,11 +174,7 @@ int		au_portof (struct audio_softc *, char *);
 /* The default audio mode: 8 kHz mono ulaw */
 struct audio_params audio_default = 
 	{ 8000, AUDIO_ENCODING_ULAW, 8, 1, 0, 1 };
-/*
-struct cfdriver audio_cd = {
-	NULL, "audio", audioprobe, audioattach, DV_DULL, sizeof(struct audio_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, audio, &audio_cops, DV_DULL, sizeof(struct audio_softc));
 CFOPS_DECL(audio, audioprobe, audioattach, NULL, NULL);
 
