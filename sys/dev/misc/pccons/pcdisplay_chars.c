@@ -32,6 +32,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+
 #include <machine/bus.h>
 
 #include <dev/core/ic/mc6845reg.h>

@@ -85,10 +85,10 @@ static int pckbc_wait_output (bus_space_tag_t, bus_space_handle_t);
 static int pckbc_get8042cmd (struct pckbc_internal *);
 static int pckbc_put8042cmd (struct pckbc_internal *);
 
-void pckbc_cleanqueue (struct pckbc_slotdata *);
-void pckbc_cleanup (void *);
-int pckbc_cmdresponse (struct pckbc_internal *, pckbc_slot_t, u_char);
-void pckbc_start (struct pckbc_internal *, pckbc_slot_t);
+void 	pckbc_cleanqueue (struct pckbc_slotdata *);
+void 	pckbc_cleanup (void *);
+int 	pckbc_cmdresponse (struct pckbc_internal *, pckbc_slot_t, u_char);
+void 	pckbc_start (struct pckbc_internal *, pckbc_slot_t);
 
 const char * const pckbc_slot_names[] = { "kbd", "aux" };
 
@@ -490,14 +490,14 @@ pckbc_set_poll(self, slot, on)
 		t->t_slotdata[slot]->poll_data = -1;
 		t->t_slotdata[slot]->poll_stat = -1;
 	} else {
-                int s;
+		int s;
 
-                /*
-                 * If disabling polling on a device that's been configured,
-                 * make sure there are no bytes left in the FIFO, holding up
-                 * the interrupt line.  Otherwise we won't get any further
-                 * interrupts.
-                 */
+		/*
+		 * If disabling polling on a device that's been configured,
+		 * make sure there are no bytes left in the FIFO, holding up
+		 * the interrupt line.  Otherwise we won't get any further
+		 * interrupts.
+		 */
 		if (t->t_sc) {
 			s = spltty();
 			pckbcintr(t->t_sc);

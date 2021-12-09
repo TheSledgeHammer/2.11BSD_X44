@@ -30,7 +30,6 @@
 #define _DEV_IC_PCKBCVAR_H_
 
 #include <sys/callout.h>
-
 #include <dev/misc/pccons/pckbportvar.h>
 
 #define PCKBCCF_SLOT            0
@@ -38,9 +37,9 @@
 
 typedef void *pckbc_tag_t;
 typedef int pckbc_slot_t;
-#define	PCKBC_KBD_SLOT		0
-#define	PCKBC_AUX_SLOT		1
-#define	PCKBC_NSLOTS		2
+#define	PCKBC_KBD_SLOT			0
+#define	PCKBC_AUX_SLOT			1
+#define	PCKBC_NSLOTS			2
 
 /* Simple cmd/slot ringbuffer structure */
 struct pckbc_rbuf_item {

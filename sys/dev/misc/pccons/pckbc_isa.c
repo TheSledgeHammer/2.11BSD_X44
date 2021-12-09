@@ -57,10 +57,10 @@ struct pckbc_isa_softc {
 	int 				sc_irq[PCKBC_NSLOTS];
 };
 
-CFDRIVER_DECL(NULL, pckbc_cd, &pckbc_cd_cops, DV_DULL, sizeof(struct pckbc_isa_softc));
-CFOPS_DECL(pckbc_cd, pckbc_isa_match, pckbc_isa_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, pckbc, &pckbc_cops, DV_DULL, sizeof(struct pckbc_isa_softc));
+CFOPS_DECL(pckbc, pckbc_isa_match, pckbc_isa_attach, NULL, NULL);
 
-void	pckbc_isa_intr_establish (struct pckbc_softc *, pckbc_slot_t);
+void	pckbc_isa_intr_establish(struct pckbc_softc *, pckbc_slot_t);
 
 int
 pckbc_isa_match(parent, match, aux)

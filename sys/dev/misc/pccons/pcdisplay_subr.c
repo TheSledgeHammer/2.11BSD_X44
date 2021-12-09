@@ -33,6 +33,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+
 #include <machine/bus.h>
 
 #include <dev/core/ic/mc6845reg.h>
@@ -49,8 +50,8 @@ pcdisplay_cursor_init(scr, existing)
 	int existing;
 {
 #ifdef PCDISPLAY_SOFTCURSOR
-	bus_space_tag_t memt;
-	bus_space_handle_t memh;
+	bus_space_tag_t 	memt;
+	bus_space_handle_t 	memh;
 	int off;
 
 	pcdisplay_6845_write(scr->hdl, curstart, 0x10);
@@ -78,10 +79,8 @@ pcdisplay_cursor_init(scr, existing)
 	 * Don't touch the hardware if this is not the first screen.
 	 */
 	if (existing) {
-		pcdisplay_6845_write(scr->hdl, curstart,
-				     scr->type->fontheight - 2);
-		pcdisplay_6845_write(scr->hdl, curend,
-				     scr->type->fontheight - 1);
+		pcdisplay_6845_write(scr->hdl, curstart, scr->type->fontheight - 2);
+		pcdisplay_6845_write(scr->hdl, curend, scr->type->fontheight - 1);
 	}
 #endif
 	scr->cursoron = 1;

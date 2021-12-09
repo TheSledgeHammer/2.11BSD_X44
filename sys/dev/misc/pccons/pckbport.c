@@ -96,10 +96,10 @@ static const char * const pckbport_slot_names[] = { "kbd", "aux" };
 
 static struct pckbport_tag pckbport_cntag;
 
-#define KBC_DEVCMD_ACK 0xfa
-#define KBC_DEVCMD_RESEND 0xfe
+#define KBC_DEVCMD_ACK 		0xfa
+#define KBC_DEVCMD_RESEND 	0xfe
 
-#define	KBD_DELAY	DELAY(8)
+#define	KBD_DELAY			DELAY(8)
 
 static int
 pckbport_poll_data1(pckbport_tag_t t, pckbport_slot_t slot)

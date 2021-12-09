@@ -1,4 +1,4 @@
-/*	$NetBSD: wskbdutil.c,v 1.6 1998/09/17 18:10:53 drochner Exp $	*/
+/*	$NetBSD: wskbdutil.c,v 1.10 2001/11/15 09:48:19 lukem Exp $	*/
 
 /*-
  * Copyright (c) 1997 The NetBSD Foundation, Inc.

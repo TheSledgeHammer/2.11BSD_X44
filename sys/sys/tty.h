@@ -12,6 +12,8 @@
 #include <sys/termios.h>
 #include <sys/select.h>
 #include <sys/ttydefaults.h>
+#include <sys/lock.h>
+#include <sys/callout.h>
 
 /*
  * A clist structure is the head of a linked list queue
@@ -67,10 +69,12 @@ struct tty {
 	struct	pgrp 			*t_pgrp;										/* Foreground process group. */
 	struct	session 		*t_session;										/* Enclosing session. */
 	struct	termios 		t_termios;										/* Termios state. */
+	struct	lock_object		t_slock;										/* mutex for all access to this tty */
 	int						t_hiwat;										/* High water mark. */
 	int						t_lowat;										/* Low water mark. */
 	int						t_gen;											/* Generation number. */
 	struct	clist 			t_outq;											/* Device output queue. */
+	struct	callout 		t_rstrt_ch;										/* for delayed output start */
 	long					t_outcc;										/* Output queue statistics. */
 	struct	proc 			*t_rsel;										/* Tty read/oob select. */
 	struct	proc 			*t_wsel;										/* Tty write select. */

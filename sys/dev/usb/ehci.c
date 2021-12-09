@@ -957,6 +957,7 @@ OOO
 	splx(s);
 }
 #endif
+
 /*
  * Shut down the controller when the system is going down.
  */

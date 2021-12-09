@@ -1,4 +1,4 @@
-/* $NetBSD: wskbdvar.h,v 1.6 1998/08/02 14:18:07 drochner Exp $ */
+/* $NetBSD: wskbdvar.h,v 1.11 2001/10/13 15:56:16 augustss Exp $ */
 
 /*
  * Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.
@@ -55,6 +55,7 @@ struct wskbd_accessops {
 struct wskbd_consops {
 	void    (*getc) (void *, u_int *, int *);
 	void    (*pollc) (void *, int);
+	void	(*bell)(void *, u_int, u_int, u_int);
 };
 
 /*
@@ -69,14 +70,21 @@ struct wskbddev_attach_args {
 	void							*accesscookie;		/* access cookie */
 };
 
+#include "locators.h"
+
 #define WSKBDDEVCF_CONSOLE			1
 #define WSKBDDEVCF_CONSOLE_DEFAULT	-1					/* spec'd as console? */
 #define	WSKBDDEVCF_CONSOLE_UNK		(WSKBDDEVCF_CONSOLE_DEFAULT)
 #define WSKBDDEVCF_MUX				1
+
+#define	wskbddevcf_console			cf_loc[WSKBDDEVCF_CONSOLE]	/* spec'd as console? */
+#define	wskbddevcf_mux				cf_loc[WSKBDDEVCF_MUX]
+
 /*
  * Autoconfiguration helper functions.
  */
 void	wskbd_cnattach (const struct wskbd_consops *, void *, const struct wskbd_mapdata *);
+void	wskbd_cndetach(void);
 int		wskbddevprint (void *, const char *);
 
 /*
@@ -91,3 +99,4 @@ void	wskbd_rawinput (struct device *, char *, int);
  */
 int		wskbd_cngetc (dev_t dev);
 void	wskbd_cnpollc (dev_t dev, int poll);
+void	wskbd_cnbell (dev_t, u_int, u_int, u_int);

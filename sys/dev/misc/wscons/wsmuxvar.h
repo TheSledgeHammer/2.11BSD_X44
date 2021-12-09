@@ -81,9 +81,9 @@ struct wssrcops {
 struct wsmux_softc {
 	struct wsevsrc 			sc_base;
 	struct proc 			*sc_p;		/* open proc */
-	CIRCLEQ_HEAD(, wsevsrc) sc_cld; /* list of children */
+	CIRCLEQ_HEAD(, wsevsrc) sc_cld; 	/* list of children */
 #ifdef WSDISPLAY_COMPAT_RAWKBD
-	int 					sc_rawkbd;		        /* A hack to remember the kbd mode */
+	int 					sc_rawkbd;	/* A hack to remember the kbd mode */
 #endif
 };
 

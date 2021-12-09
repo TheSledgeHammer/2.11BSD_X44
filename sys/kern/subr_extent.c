@@ -939,6 +939,14 @@ extent_print(ex)
 		printf("     0x%lx - 0x%lx\n", rp->er_start, rp->er_end);
 }
 
+extent_fill()
+	struct extent *ex;
+{
+	if(ex) {
+
+	}
+}
+
 /*
 struct extent *
 extent_get(ex, name, start, end)

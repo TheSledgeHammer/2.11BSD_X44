@@ -1,4 +1,4 @@
-/* $NetBSD: wsemul_sun.c,v 1.10 1999/01/17 15:44:57 drochner Exp $ */
+/* $NetBSD: wsemul_sun.c,v 1.17 2002/09/27 15:37:40 provos Exp $ */
 
 /*
  * Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.
@@ -30,11 +30,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-static const char _copyright[] __attribute__ ((unused)) =
-    "Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.";
-static const char _rcsid[] __attribute__ ((unused)) =
-    "$NetBSD: wsemul_sun.c,v 1.10 1999/01/17 15:44:57 drochner Exp $";
-
 /* XXX DESCRIPTION/SOURCE OF INFORMATION */
 #include <sys/cdefs.h>
 #include <sys/param.h>
@@ -51,12 +46,12 @@ static const char _rcsid[] __attribute__ ((unused)) =
 
 #include "opt_wskernattr.h"
 
-void	*wsemul_sun_cnattach (const struct wsscreen_descr *, void *, int, int, long);
-void	*wsemul_sun_attach (int console, const struct wsscreen_descr *, void *, int, int, void *, long);
-void	wsemul_sun_output (void *cookie, const u_char *data, u_int count, int);
-int		wsemul_sun_translate (void *cookie, keysym_t, char **);
-void	wsemul_sun_detach (void *cookie, u_int *crowp, u_int *ccolp);
-void	wsemul_sun_resetop (void *, enum wsemul_resetops);
+void	*wsemul_sun_cnattach(const struct wsscreen_descr *, void *, int, int, long);
+void	*wsemul_sun_attach(int console, const struct wsscreen_descr *, void *, int, int, void *, long);
+void	wsemul_sun_output(void *cookie, const u_char *data, u_int count, int);
+int		wsemul_sun_translate(void *cookie, keysym_t, char **);
+void	wsemul_sun_detach(void *cookie, u_int *crowp, u_int *ccolp);
+void	wsemul_sun_resetop(void *, enum wsemul_resetops);
 
 const struct wsemul_ops wsemul_sun_ops = {
 	"sun",
@@ -96,10 +91,10 @@ struct wsemul_sun_emuldata {
 #endif
 };
 
-static u_int	wsemul_sun_output_normal (struct wsemul_sun_emuldata *, u_char, int);
-static u_int	wsemul_sun_output_haveesc (struct wsemul_sun_emuldata *, u_char);
-static u_int	wsemul_sun_output_control (struct wsemul_sun_emuldata *, u_char);
-static void		wsemul_sun_control (struct wsemul_sun_emuldata *, u_char);
+static u_int	wsemul_sun_output_normal(struct wsemul_sun_emuldata *, u_char, int);
+static u_int	wsemul_sun_output_haveesc(struct wsemul_sun_emuldata *, u_char);
+static u_int	wsemul_sun_output_control(struct wsemul_sun_emuldata *, u_char);
+static void		wsemul_sun_control(struct wsemul_sun_emuldata *, u_char);
 
 struct wsemul_sun_emuldata wsemul_sun_console_emuldata;
 
@@ -475,18 +470,26 @@ wsemul_sun_output_control(edp, c)
 	u_int i;
 
 	switch (c) {
-	case '0': case '1': case '2': case '3': case '4': /* argument digit */
-	case '5': case '6': case '7': case '8': case '9':
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4': /* argument digit */
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
 		edp->args[0] = (edp->args[0] * 10) + (c - '0');
-                break;
+		break;
 
-	case ';':		/* argument terminator */
+	case ';': /* argument terminator */
 		for (i = 1; i < SUN_EMUL_NARGS; i++)
 			edp->args[i] = edp->args[i - 1];
 		edp->args[0] = 0;
 		break;
 
-	default:		/* end of escape sequence */
+	default: /* end of escape sequence */
 		wsemul_sun_control(edp, c);
 		newstate = SUN_EMUL_STATE_NORMAL;
 		break;
@@ -531,9 +534,9 @@ wsemul_sun_output(cookie, data, count, kernel)
 #ifdef DIAGNOSTIC
 			panic("wsemul_sun: invalid state %d\n", edp->state);
 #endif
-                        /* try to recover, if things get screwed up... */
+			/* try to recover, if things get screwed up... */
 			newstate = wsemul_sun_output_normal(edp, *data, 0);
-                        break;
+			break;
 		}
 		edp->state = newstate;
 	}

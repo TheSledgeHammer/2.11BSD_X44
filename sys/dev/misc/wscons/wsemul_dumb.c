@@ -1,4 +1,4 @@
-/* $NetBSD: wsemul_dumb.c,v 1.6 1999/01/17 15:44:57 drochner Exp $ */
+/* $NetBSD: wsemul_dumb.c,v 1.8 2001/10/13 15:56:15 augustss Exp $ */
 
 /*
  * Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.
@@ -30,11 +30,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-static const char _copyright[] __attribute__ ((unused)) =
-    "Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.";
-static const char _rcsid[] __attribute__ ((unused)) =
-    "$NetBSD: wsemul_dumb.c,v 1.6 1999/01/17 15:44:57 drochner Exp $";
-
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -47,12 +42,12 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <dev/misc/wscons/wsemulvar.h>
 #include <dev/misc/wscons/ascii.h>
 
-void	*wsemul_dumb_cnattach (const struct wsscreen_descr *, void *, int, int, long);
-void	*wsemul_dumb_attach (int console, const struct wsscreen_descr *, void *, int, int, void *, long);
-void	wsemul_dumb_output (void *cookie, const u_char *data, u_int count, int);
-int		wsemul_dumb_translate (void *cookie, keysym_t, char **);
-void	wsemul_dumb_detach (void *cookie, u_int *crowp, u_int *ccolp);
-void	wsemul_dumb_resetop (void *, enum wsemul_resetops);
+void	*wsemul_dumb_cnattach(const struct wsscreen_descr *, void *, int, int, long);
+void	*wsemul_dumb_attach(int console, const struct wsscreen_descr *, void *, int, int, void *, long);
+void	wsemul_dumb_output(void *cookie, const u_char *data, u_int count, int);
+int		wsemul_dumb_translate(void *cookie, keysym_t, char **);
+void	wsemul_dumb_detach(void *cookie, u_int *crowp, u_int *ccolp);
+void	wsemul_dumb_resetop(void *, enum wsemul_resetops);
 
 const struct wsemul_ops wsemul_dumb_ops = {
 	"dumb",
@@ -239,7 +234,7 @@ wsemul_dumb_resetop(cookie, op)
 	switch (op) {
 	case WSEMUL_CLEARSCREEN:
 		(*edp->emulops->eraserows)(edp->emulcookie, 0, edp->nrows,
-					   edp->defattr);
+				edp->defattr);
 		edp->ccol = edp->crow = 0;
 		(*edp->emulops->cursor)(edp->emulcookie, 1, 0, 0);
 		break;

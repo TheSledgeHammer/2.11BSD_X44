@@ -1,4 +1,4 @@
-/* $NetBSD: wsdisplayvar.h,v 1.11.2.1 1999/10/19 16:42:59 he Exp $ */
+/* $NetBSD: wsdisplayvar.h,v 1.25.4.2 2004/06/07 09:47:19 tron Exp $ */
 
 /*
  * Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.
@@ -56,7 +56,7 @@ struct wsdisplay_emulops {
 	void	(*erasecols) (void *c, int row, int startcol, int ncols, long);
 	void	(*copyrows) (void *c, int srcrow, int dstrow, int nrows);
 	void	(*eraserows) (void *c, int row, int nrows, long);
-	int		(*alloc_attr) (void *c, int fg, int bg, int flags, long *);
+	int		(*allocattr) (void *c, int fg, int bg, int flags, long *);
 /* fg / bg values. Made identical to ANSI terminal color codes. */
 #define WSCOL_BLACK			0
 #define WSCOL_RED			1
@@ -100,9 +100,11 @@ struct wsscreen_descr {
 #define WSSCREEN_HILIT		4	/* can highlight (however) */
 #define WSSCREEN_BLINK		8	/* can blink */
 #define WSSCREEN_UNDERLINE	16	/* can underline */
+	void *modecookie;
 };
 
 struct wsdisplay_font;
+struct wsdisplay_char;
 /*
  * Display access functions, invoked by user-land programs which require
  * direct device access, such as X11.
@@ -113,10 +115,14 @@ struct wsdisplay_font;
 struct wsdisplay_accessops {
 	int		(*ioctl) (void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
 	int		(*mmap) (void *v, off_t off, int prot);
-	int		(*alloc_screen) (void *, const struct wsscreen_descr *, void **, int *, int *, long *);
-	void	(*free_screen) (void *, void *);
-	void	(*show_screen) (void *, void *);
-	int		(*load_font) (void *, void *, struct wsdisplay_font *);
+	int		(*alloc_screen)(void *, const struct wsscreen_descr *, void **, int *, int *, long *);
+	void	(*free_screen)(void *, void *);
+	int		(*show_screen)(void *, void *, int, void (*) (void *, int, int), void *);
+	int		(*load_font)(void *, void *, struct wsdisplay_font *);
+	void	(*pollc)(void *, int);
+	int		(*getwschar)(void *, struct wsdisplay_char *);
+	int		(*putwschar)(void *, struct wsdisplay_char *);
+	void	(*scroll)(void *, void *, int);
 };
 
 /*
@@ -145,9 +151,15 @@ struct wsemuldisplaydev_attach_args {
 	void								*accesscookie;	/* access cookie */
 };
 
+#include "locators.h"
+
 #define WSEMULDISPLAYDEVCF_CONSOLE				0
 #define WSEMULDISPLAYDEVCF_CONSOLE_DEFAULT		-1	/* spec'd as console? */
 #define	WSEMULDISPLAYDEVCF_CONSOLE_UNK			(WSEMULDISPLAYDEVCF_CONSOLE_DEFAULT)
+
+#define	wsemuldisplaydevcf_console	cf_loc[WSEMULDISPLAYDEVCF_CONSOLE]	/* spec'd as console? */
+#define	wsemuldisplaydevcf_kbdmux	cf_loc[WSEMULDISPLAYDEVCF_KBDMUX]
+#define	wsdisplaydevcf_kbdmux		cf_loc[WSDISPLAYDEVCF_KBDMUX]
 
 struct wscons_syncops {
 	int 	(*detach) (void *, int, void (*)(void *, int, int), void *);
@@ -159,33 +171,52 @@ struct wscons_syncops {
 /*
  * Autoconfiguration helper functions.
  */
-void	wsdisplay_cnattach (const struct wsscreen_descr *, void *, int, int, long);
-int		wsdisplaydevprint (void *, const char *);
-int		wsemuldisplaydevprint (void *, const char *);
+void	wsdisplay_cnattach(const struct wsscreen_descr *, void *, int, int, long);
+int		wsdisplaydevprint(void *, const char *);
+int		wsemuldisplaydevprint(void *, const char *);
 
 /*
  * Console interface.
  */
-void	wsdisplay_cnputc (dev_t dev, int i);
+void	wsdisplay_cnputc(dev_t dev, int i);
 
 /*
  * for use by compatibility code
  */
 struct wsdisplay_softc;
 struct wsscreen;
-int wsscreen_attach_sync (struct wsscreen *, const struct wscons_syncops *, void *);
-int wsscreen_detach_sync (struct wsscreen *);
-int wsscreen_lookup_sync (struct wsscreen *, const struct wscons_syncops *, void **);
+int wsscreen_attach_sync(struct wsscreen *, const struct wscons_syncops *, void *);
+int wsscreen_detach_sync(struct wsscreen *);
+int wsscreen_lookup_sync(struct wsscreen *, const struct wscons_syncops *, void **);
 
-int wsdisplay_maxscreenidx (struct wsdisplay_softc *);
-int wsdisplay_screenstate (struct wsdisplay_softc *, int);
-int wsdisplay_getactivescreen (struct wsdisplay_softc *);
-int wsscreen_switchwait (struct wsdisplay_softc *, int);
+int wsdisplay_maxscreenidx(struct wsdisplay_softc *);
+int wsdisplay_screenstate(struct wsdisplay_softc *, int);
+int wsdisplay_getactivescreen(struct wsdisplay_softc *);
+int wsscreen_switchwait(struct wsdisplay_softc *, int);
 
-int wsdisplay_internal_ioctl (struct wsdisplay_softc *sc, struct wsscreen *, u_long cmd, caddr_t data, int flag, struct proc *p);
+int wsdisplay_internal_ioctl(struct wsdisplay_softc *sc, struct wsscreen *, u_long cmd, caddr_t data, int flag, struct proc *p);
 
-int wsdisplay_usl_ioctl1 (struct wsdisplay_softc *, u_long, caddr_t, int, struct proc *);
+int wsdisplay_usl_ioctl1(struct wsdisplay_softc *, u_long, caddr_t, int, struct proc *);
 
-int wsdisplay_usl_ioctl2 (struct wsdisplay_softc *, struct wsscreen *, u_long, caddr_t, int, struct proc *);
+int wsdisplay_usl_ioctl2(struct wsdisplay_softc *, struct wsscreen *, u_long, caddr_t, int, struct proc *);
 
-int wsdisplay_cfg_ioctl (struct wsdisplay_softc *sc, u_long cmd, caddr_t data, int flag, struct proc *p);
+int wsdisplay_cfg_ioctl(struct wsdisplay_softc *sc, u_long cmd, caddr_t data, int flag, struct proc *p);
+
+#ifdef WSDISPLAY_SCROLLSUPPORT
+void wsdisplay_scroll (void *v, int op);
+#endif
+
+#define WSDISPLAY_SCROLL_BACKWARD	1
+#define WSDISPLAY_SCROLL_FORWARD	(1 << 1)
+#define WSDISPLAY_SCROLL_RESET		(1 << 2)
+#define WSDISPLAY_SCROLL_LOW		(1 << 3)
+
+int wsdisplay_stat_inject(struct device *dev, u_int type, int value);
+
+/*
+ * for general use
+ */
+#define WSDISPLAY_NULLSCREEN	-1
+void wsdisplay_switchtoconsole(void);
+const struct wsscreen_descr *
+    wsdisplay_screentype_pick(const struct wsscreen_list *, const char *);

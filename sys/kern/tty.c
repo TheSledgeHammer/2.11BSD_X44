@@ -2036,7 +2036,8 @@ ttymalloc()
 	struct tty *tp;
 	tp = malloc(sizeof(*tp), M_TTY, M_WAITOK);
 	memset(tp, 0, sizeof(*tp));
-
+	simple_lock_init(&tp->t_slock);
+	callout_init(&tp->t_rstrt_ch);
 	/* XXX: default to 1024 chars for now */
 	clist_alloc_cblocks(&tp->t_rawq, 1024, 1);
 	clist_alloc_cblocks(&tp->t_canq, 1024, 1);
@@ -2056,6 +2057,7 @@ void
 ttyfree(tp)
 	struct tty *tp;
 {
+	callout_stop(&tp->t_rstrt_ch);
 	clist_free_cblocks(&tp->t_rawq);
 	clist_free_cblocks(&tp->t_canq);
 	clist_free_cblocks(&tp->t_outq);

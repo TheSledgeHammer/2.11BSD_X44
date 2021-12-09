@@ -1,4 +1,4 @@
-/* $NetBSD: wsemulvar.h,v 1.6 1999/01/17 15:46:15 drochner Exp $ */
+/* $NetBSD: wsemulvar.h,v 1.8 2001/10/13 15:56:16 augustss Exp $ */
 
 /*
  * Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.
@@ -42,18 +42,17 @@ enum wsemul_resetops {
 struct wsemul_ops {
 	const char *name;
 
-	void	*(*cnattach) (const struct wsscreen_descr *, void *, int, int, long);
-	void	*(*attach) (int console, const struct wsscreen_descr *, void *, int, int, void *, long);
-	void	(*output) (void *cookie, const u_char *data, u_int count, int);
-	int		(*translate) (void *, keysym_t, char **);
-	void	(*detach) (void *cookie, u_int *crow, u_int *ccol);
-	void    (*reset) (void *, enum wsemul_resetops);
+	void	*(*cnattach)(const struct wsscreen_descr *, void *, int, int, long);
+	void	*(*attach)(int console, const struct wsscreen_descr *, void *, int, int, void *, long);
+	void	(*output)(void *cookie, const u_char *data, u_int count, int);
+	int		(*translate)(void *, keysym_t, char **);
+	void	(*detach)(void *cookie, u_int *crow, u_int *ccol);
+	void    (*reset)(void *, enum wsemul_resetops);
 };
-/*
-#if defined(_KERNEL) && !defined(_LKM)
+
+#if defined(_KERNEL)
 #include "opt_wsemul.h"
 #endif
-*/
 
 #ifndef WSEMUL_NO_DUMB
 extern const struct wsemul_ops wsemul_dumb_ops;

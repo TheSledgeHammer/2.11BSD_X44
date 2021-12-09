@@ -1,4 +1,4 @@
-/*	$NetBSD: wsksymdef.h,v 1.24.2.1 1999/12/04 19:41:46 he Exp $ */
+/*	$NetBSD: wsksymdef.h,v 1.47.8.1.2.4 2005/10/09 17:50:19 tron Exp $ */
 
 /*-
  * Copyright (c) 1997 The NetBSD Foundation, Inc.
@@ -258,6 +258,11 @@
 #define	KS_thorn 			0xfe
 #define	KS_ydiaeresis 		0xff
 
+#define KS_Odoubleacute 	0x150
+#define KS_odoubleacute 	0x151
+#define KS_Udoubleacute 	0x170
+#define KS_udoubleacute 	0x171
+
 /*
  * Group Dead (dead accents)
  */
@@ -274,28 +279,28 @@
  * Group 1 (modifiers)
  */
 
-#define	KS_Shift_L 			0xf101
-#define	KS_Shift_R 			0xf102
-#define	KS_Control_L 		0xf103
-#define	KS_Control_R 		0xf104
-#define	KS_Caps_Lock 		0xf105
-#define	KS_Shift_Lock 		0xf106
-#define	KS_Alt_L 			0xf107
-#define	KS_Alt_R 			0xf108
-#define	KS_Multi_key 		0xf109
-#define	KS_Mode_switch 		0xf10a
-#define	KS_Num_Lock 		0xf10b
-#define KS_Hold_Screen		0xf10c
-#define KS_Cmd				0xf10d
-#define KS_Cmd1				0xf10e
-#define KS_Cmd2				0xf10f
-#define KS_Meta_L			0xf110
-#define KS_Meta_R			0xf111
-#define KS_Zenkaku_Hankaku	0xf112	/* Zenkaku/Hankaku toggle */
+#define	KS_Shift_L 				0xf101
+#define	KS_Shift_R 				0xf102
+#define	KS_Control_L 			0xf103
+#define	KS_Control_R 			0xf104
+#define	KS_Caps_Lock 			0xf105
+#define	KS_Shift_Lock 			0xf106
+#define	KS_Alt_L 				0xf107
+#define	KS_Alt_R 				0xf108
+#define	KS_Multi_key 			0xf109
+#define	KS_Mode_switch 			0xf10a
+#define	KS_Num_Lock 			0xf10b
+#define KS_Hold_Screen			0xf10c
+#define KS_Cmd					0xf10d
+#define KS_Cmd1					0xf10e
+#define KS_Cmd2					0xf10f
+#define KS_Meta_L				0xf110
+#define KS_Meta_R				0xf111
+#define KS_Zenkaku_Hankaku		0xf112	/* Zenkaku/Hankaku toggle */
 #define KS_Hiragana_Katakana	0xf113	/* Hiragana/Katakana toggle */
-#define KS_Henkan_Mode		0xf114	/* Start/Stop Conversion */
-#define KS_Henkan			0xf115	/* Alias for Henkan_Mode */
-#define KS_Muhenkan			0xf116	/* Cancel Conversion */
+#define KS_Henkan_Mode			0xf114	/* Start/Stop Conversion */
+#define KS_Henkan				0xf115	/* Alias for Henkan_Mode */
+#define KS_Muhenkan				0xf116	/* Cancel Conversion */
 
 /*
  * Group 2 (keypad) character in low byte
@@ -398,33 +403,47 @@
 #define KS_Find				0xf38c
 #define KS_Select			0xf38d
 
-#define KS_Menu				0xf3c0
-#define KS_Pause			0xf3c1
-#define KS_Print_Screen		0xf3c2
+#define KS_Menu					0xf3c0
+#define KS_Pause				0xf3c1
+#define KS_Print_Screen			0xf3c2
 
 /*
  * Group 4 (command)
  */
 
-#define KS_Cmd_Screen0		0xf400
-#define KS_Cmd_Screen1		0xf401
-#define KS_Cmd_Screen2		0xf402
-#define KS_Cmd_Screen3		0xf403
-#define KS_Cmd_Screen4		0xf404
-#define KS_Cmd_Screen5		0xf405
-#define KS_Cmd_Screen6		0xf406
-#define KS_Cmd_Screen7		0xf407
-#define KS_Cmd_Screen8		0xf408
-#define KS_Cmd_Screen9		0xf409
-#define KS_Cmd_Debugger		0xf420
-#define KS_Cmd_ResetEmul	0xf421
-#define KS_Cmd_ResetClose	0xf422
+#define KS_Cmd_Screen0			0xf400
+#define KS_Cmd_Screen1			0xf401
+#define KS_Cmd_Screen2			0xf402
+#define KS_Cmd_Screen3			0xf403
+#define KS_Cmd_Screen4			0xf404
+#define KS_Cmd_Screen5			0xf405
+#define KS_Cmd_Screen6			0xf406
+#define KS_Cmd_Screen7			0xf407
+#define KS_Cmd_Screen8			0xf408
+#define KS_Cmd_Screen9			0xf409
+#define KS_Cmd_Debugger			0xf420
+#define KS_Cmd_ResetEmul		0xf421
+#define KS_Cmd_ResetClose		0xf422
+#define KS_Cmd_BacklightOn		0xf423
+#define KS_Cmd_BacklightOff		0xf424
+#define KS_Cmd_BacklightToggle	0xf425
+#define KS_Cmd_BrightnessUp		0xf426
+#define KS_Cmd_BrightnessDown	0xf427
+#define KS_Cmd_BrightnessRotate	0xf428
+#define KS_Cmd_ContrastUp		0xf429
+#define KS_Cmd_ContrastDown		0xf42a
+#define KS_Cmd_ContrastRotate	0xf42b
+#define KS_Cmd_ScrollFastUp		0xf42c
+#define KS_Cmd_ScrollFastDown	0xf42d
+#define KS_Cmd_ScrollSlowUp		0xf42e
+#define KS_Cmd_ScrollSlowDown	0xf42f
+
 
 /*
  * Group 5 (internal)
  */
 
-#define KS_voidSymbol		0xf500
+#define KS_voidSymbol			0xf500
 
 /*ENDKEYSYMDECL*/
 
@@ -432,17 +451,17 @@
  * keysym groups
  */
 
-#define KS_GROUP_Mod		0xf100
-#define KS_GROUP_Keypad		0xf200
-#define KS_GROUP_Function	0xf300
-#define KS_GROUP_Command	0xf400
-#define KS_GROUP_Internal	0xf500
-#define KS_GROUP_Dead		0xf801		/* not encoded in keysym */
-#define KS_GROUP_Ascii		0xf802		/* not encoded in keysym */
-#define KS_GROUP_Keycode	0xf803		/* not encoded in keysym */
+#define KS_GROUP_Mod			0xf100
+#define KS_GROUP_Keypad			0xf200
+#define KS_GROUP_Function		0xf300
+#define KS_GROUP_Command		0xf400
+#define KS_GROUP_Internal		0xf500
+#define KS_GROUP_Dead			0xf801		/* not encoded in keysym */
+#define KS_GROUP_Ascii			0xf802		/* not encoded in keysym */
+#define KS_GROUP_Keycode		0xf803		/* not encoded in keysym */
 
-#define KS_NUMKEYCODES		0x1000
-#define KS_KEYCODE(v)		((v) | 0xe000)
+#define KS_NUMKEYCODES			0x1000
+#define KS_KEYCODE(v)			((v) | 0xe000)
 
 #define KS_GROUP(k)	((k) >= 0x0300 && (k) < 0x0370 ? KS_GROUP_Dead : \
 			    	(((k) & 0xf000) == 0xe000 ? KS_GROUP_Keycode : \
@@ -459,37 +478,6 @@
 #define KB_ENCODING(e)		((e) & 0x0000ff00)
 #define KB_VARIANT(e)		((e) & 0xffff00ff)
 
-#define	KB_NONE				0x0000
-#define KB_USER				0x0100
-#define KB_US				0x0200
-#define KB_DE				0x0300
-#define KB_DK				0x0400
-#define KB_IT				0x0500
-#define KB_FR				0x0600
-#define KB_UK				0x0700
-#define KB_JP				0x0800
-#define KB_SV				0x0900
-#define KB_NO				0x0a00
-#define KB_ES				0x0b00
-#define KB_HU				0x0c00
-#define KB_BE				0x0d00
-#define KB_RU				0x0e00
-#define KB_SG				0x0f00
-#define KB_SF				0x1000
-#define KB_PT				0x1100
-#define KB_UA				0x1200
-#define KB_LT				0x1300
-#define KB_LA				0x1400
-#define KB_BR				0x1500
-#define KB_NL				0x1600
-#define KB_TR				0x1700
-#define KB_PL				0x1800
-#define KB_SI				0x1900
-#define KB_CF				0x1a00
-#define KB_LV				0x1b00
-#define KB_IS				0x1c00
-#define KB_EE				0x1d00
-
 #define KB_NODEAD			0x00000001 /* disable dead accents */
 #define KB_DECLK			0x00000002 /* DEC LKnnn layout */
 #define KB_LK401			0x00000004 /* DEC LK401 instead LK201 */
@@ -498,49 +486,50 @@
 #define KB_METAESC			0x00000020 /* generate ESC prefix on ALT-key */
 #define KB_IOPENER			0x00000040 /* f1-f12 -> ESC,f1-f11 */
 #define KB_MACHDEP			0x00000080 /* machine dependent */
-#define KB_APPLE			0x00010000 /* Apple specific layout */
-#define KB_COLEMAK			0x02000000 /* Colemak layout */
-#define KB_DEFAULT			0x80000000 /* (attach-only) default layout */
 
-#define KB_NAMETAB \
-	{ KB_USER,	"user" }, \
-	{ KB_US,	"us" }, \
-	{ KB_DE,	"de" }, \
-	{ KB_DK,	"dk" }, \
-	{ KB_IT,	"it" }, \
-	{ KB_FR,	"fr" }, \
-	{ KB_UK,	"uk" }, \
-	{ KB_JP,	"jp" }, \
-	{ KB_SV,	"sv" }, \
-	{ KB_NO,	"no" }, \
-	{ KB_ES,	"es" }, \
-	{ KB_HU,	"hu" }, \
-	{ KB_BE,	"be" }, \
-	{ KB_RU,	"ru" }, \
-	{ KB_UA,	"ua" }, \
-	{ KB_SG,	"sg" }, \
-	{ KB_SF,	"sf" }, \
-	{ KB_PT,	"pt" }, \
-	{ KB_LT,	"lt" }, \
-	{ KB_LA,	"la" }, \
-	{ KB_BR,	"br" },	\
-	{ KB_NL,	"nl" }, \
-	{ KB_TR,	"tr" }, \
-	{ KB_PL,	"pl" }, \
-	{ KB_SI,	"si" }, \
-	{ KB_CF,	"cf" }, \
-	{ KB_LV,	"lv" }, \
-	{ KB_IS,	"is" }, \
-	{ KB_EE,	"ee" }	\
-	{ KB_NODEAD,	"nodead" }, \
-	{ KB_DECLK,	"declk" }, \
-	{ KB_LK401,	"lk401" }, \
-	{ KB_SWAPCTRLCAPS, "swapctrlcaps" }, \
-	{ KB_DVORAK,	"dvorak" }, \
-	{ KB_METAESC,	"metaesc" }, \
-	{ KB_IOPENER,	"iopener" }, \
-	{ KB_MACHDEP,	"machdep" }, \
-	{ KB_APPLE,	"apple" }, \
-	{ KB_COLEMAK,	"colemak" }
+/*
+ * Define keyboard type and texts all in one table.
+ * Include default variants (and their text form) for sysinst.
+ * Sort (loosely) by country name.
+ */
+#define KB_ENC_FUN(action) \
+action(KB_USER,	0,	0x0100,	"user",	,	"User-defined")	\
+action(KB_US,	0,	0x0200,	"us",	,	"US-English")	\
+action(KB_UK,	0,	0x0700,	"uk",	,	"UK-English")	\
+action(KB_BE,	0,	0x1300,	"be",	,	"Belgian")	\
+action(KB_DK,	0,	0x0400,	"dk",	,	"Danish")	\
+action(KB_FI,	0,	0x0900,	"fi",	,	"Finnish")	\
+action(KB_FR,	0,	0x0600,	"fr",	,	"French")	\
+action(KB_DE, KB_NODEAD,0x0300,	"de",".nodead",	"German")	\
+action(KB_HU,	0,	0x0c00,	"hu",	,	"Hungarian")	\
+action(KB_IT,	0,	0x0500,	"it",	,	"Italian")	\
+action(KB_JP,	0,	0x0800,	"jp",	,	"Japanese")	\
+action(KB_NO,	0,	0x0a00,	"no",	,	"Norwegian")	\
+action(KB_PL,	0,	0x0d00,	"pl",	,	"Polish")	\
+action(KB_PT,	0,	0x1100,	"pt",	,	"Portugese")	\
+action(KB_RU,	0,	0x0e00,	"ru",	,	"Russian")	\
+action(KB_ES,	0,	0x0b00,	"es",	,	"Spanish")	\
+action(KB_SV,	0,	0x0900,	"sv",	,	"Swedish")	\
+action(KB_SF,	0,	0x1000,	"sf",	,	"Swiss French")	\
+action(KB_SG,	0,	0x0f00,	"sg",	,	"Swiss German")	\
+action(KB_UA,	0,	0x1200,	"ua",	,	"Ukrainian")
+
+/* Define all the KB_xx numeric values using above table */
+#define KBF_ENUM(tag, tagf, value, cc, ccf, country) tag=value,
+enum { KB_ENC_FUN(KBF_ENUM) KB_NEXT=0x1400 };
+
+/* Define list of KB_xxx and country codes for array initialisation */
+#define KBF_ENCTAB(tag, tagf, value, cc, ccf, country) { tag, cc },
+#define KB_ENCTAB KB_ENC_FUN(KBF_ENCTAB)
+
+#define KB_VARTAB \
+	{ KB_NODEAD,		"nodead" }, \
+	{ KB_DECLK,			"declk" }, \
+	{ KB_LK401,			"lk401" }, \
+	{ KB_SWAPCTRLCAPS, 	"swapctrlcaps" }, \
+	{ KB_DVORAK,		"dvorak" }, \
+	{ KB_METAESC,		"metaesc" }, \
+	{ KB_IOPENER,		"iopener" }, \
+	{ KB_MACHDEP,		"machdep" }
 
 #endif /* !_DEV_WSCONS_WSKSYMDEF_H_ */

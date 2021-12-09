@@ -47,9 +47,7 @@
 	"standby",		/* 2 */ \
 	"softresume",	/* 3 */ \
 	"softsuspend",	/* 4 */ \
-	"softstandby"	/* 5 */
-
-#define HOOKNAMSIZ		128
+	"softstandby"	/* 5 */	\
 
 /* do_hook types */
 #define HKLIST_SHUTDOWN 0x01
@@ -57,7 +55,7 @@
 
 typedef void (*hook_func_t)(int, void *);
 
-void	*powerhook_establish(const char *, hook_func_t, void *);
+void	*powerhook_establish(hook_func_t, void *);
 void	powerhook_disestablish(void *);
 void	dopowerhooks(int);
 void	*shutdownhook_establish(hook_func_t, void *);

@@ -1,5 +1,8 @@
 /* $NetBSD: wsdisplay_usl_io.h,v 1.1 1998/06/11 22:00:04 drochner Exp $ */
 
+#ifndef _DEV_WSCONS_WSDISPLAY_USL_IO_H_
+#define _DEV_WSCONS_WSDISPLAY_USL_IO_H_
+
 #define VT_OPENQRY	_IOR('v', 1, int)
 #define VT_SETMODE	_IOW('v', 2, vtmode_t)
 #define VT_GETMODE	_IOR('v', 3, vtmode_t)
@@ -80,3 +83,5 @@ struct pcvtid {
 
 /* syscons compatibility */
 #define CONS_GETVERS	_IOR('c', 74, int)
+
+#endif /* _DEV_WSCONS_WSDISPLAY_USL_IO_H_ */

@@ -2,7 +2,7 @@
 
 INCSDIR= /usr/include/dev/misc/pccons
 
-INCS= pcdisplay.h pcdisplayvar.h pckbcvar.h pckbdreg.h pckbdvar.h pckbportvar.h \
-		pmsreg.h wskbdmap_mfii.h
+# Only install includes which are used by userland
+INCS=	pckbdreg.h
 
 .include <bsd.kinc.mk>

@@ -1,4 +1,4 @@
-/* $NetBSD: wsemul_vt100_subr.c,v 1.5 1999/01/10 00:28:21 augustss Exp $ */
+/* $NetBSD: wsemul_vt100_subr.c,v 1.15 2004/03/24 17:26:53 drochner Exp $ */
 
 /*
  * Copyright (c) 1998
@@ -12,12 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed for the NetBSD Project
- *	by Matthias Drochner.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -41,7 +35,9 @@
 #include <dev/misc/wscons/wsemulvar.h>
 #include <dev/misc/wscons/wsemul_vt100var.h>
 
-static int vt100_selectattribute (struct wsemul_vt100_emuldata *, int, int, int, long *);
+//#include "opt_wsemul.h"
+
+static int vt100_selectattribute(struct wsemul_vt100_emuldata *, int, int, int, long *, long *);
 static int vt100_ansimode (struct wsemul_vt100_emuldata *, int, int);
 static int vt100_decmode (struct wsemul_vt100_emuldata *, int, int);
 #define VTMODE_SET 33
@@ -185,7 +181,7 @@ wsemul_vt100_handle_csi(edp, c)
 	u_char c;
 {
 	int n, help, flags, fgcol, bgcol;
-	long attr;
+	long attr, bkgdattr;
 
 #define A3(a, b, c) (((a) << 16) | ((b) << 8) | (c))
 	switch (A3(edp->modif1, edp->modif2, c)) {
@@ -214,12 +210,10 @@ wsemul_vt100_handle_csi(edp, c)
 		for (n = 0; n < edp->nargs; n++)
 			vt100_ansimode(edp, ARG(n), VTMODE_RESET);
 		break;
-		;
 	case A3('?', '\0', 'l'): /* DECRM */
 		for (n = 0; n < edp->nargs; n++)
 			vt100_decmode(edp, ARG(n), VTMODE_RESET);
 		break;
-		;
 	case A3('\0', '$', 'p'): /* DECRQM request mode ANSI */
 		vt100_ansimode(edp, ARG(0), VTMODE_REPORT);
 		break;
@@ -320,7 +314,7 @@ wsemul_vt100_handle_csi(edp, c)
 			break;
 		case 1: /* cursor information report */
 #ifdef VT100_PRINTNOTIMPL
-			printf("CSI1$w ignored\n");
+					printf("CSI1$w ignored\n");
 #endif
 			break;
 		case 2: /* tab stop report */
@@ -379,7 +373,7 @@ wsemul_vt100_handle_csi(edp, c)
 
 	case A2('&', 'u'): /* DECRQUPSS request user preferred
 	 supplemental set */
-		wsdisplay_emulinput(edp->emulcookie, "\033P0!u%5\033\\", 9);
+		wsdisplay_emulinput(edp->cbcookie, "\033P0!u%5\033\\", 9);
 		break;
 
 	case '@': /* ICH insert character VT300 only */
@@ -387,7 +381,7 @@ wsemul_vt100_handle_csi(edp, c)
 		help = NCOLS - (edp->ccol + n);
 		if (help > 0)
 			COPYCOLS(edp->ccol, edp->ccol + n, help);
-		ERASECOLS(edp->ccol, n, edp->defattr);
+		ERASECOLS(edp->ccol, n, edp->bkgdattr);
 		break;
 	case 'A': /* CUU */
 		edp->crow -= min(DEF1_ARG(0), ROWS_ABOVE);
@@ -437,11 +431,11 @@ wsemul_vt100_handle_csi(edp, c)
 		help = NCOLS - (edp->ccol + n);
 		if (help > 0)
 			COPYCOLS(edp->ccol + n, edp->ccol, help);
-		ERASECOLS(NCOLS - n, n, edp->defattr);
+		ERASECOLS(NCOLS - n, n, edp->bkgdattr);
 		break;
 	case 'X': /* ECH erase character */
 		n = min(DEF1_ARG(0), COLS_LEFT + 1);
-		ERASECOLS(edp->ccol, n, edp->defattr);
+		ERASECOLS(edp->ccol, n, edp->bkgdattr);
 		break;
 	case 'c': /* DA primary */
 		if (ARG(0) == 0)
@@ -471,17 +465,16 @@ wsemul_vt100_handle_csi(edp, c)
 		for (n = 0; n < edp->nargs; n++) {
 			switch (ARG(n)) {
 			case 0: /* reset */
-				attr = edp->defattr;
+				if (n == edp->nargs - 1) {
+					edp->bkgdattr = edp->curattr = edp->defattr;
+					edp->attrflags = 0;
+					edp->fgcol = WSCOL_WHITE;
+					edp->bgcol = WSCOL_BLACK;
+					return;
+				}
 				flags = 0;
 				fgcol = WSCOL_WHITE;
 				bgcol = WSCOL_BLACK;
-				if (n == edp->nargs - 1) {
-					edp->curattr = attr;
-					edp->attrflags = flags;
-					edp->fgcol = fgcol;
-					edp->bgcol = bgcol;
-					return;
-				}
 				break;
 			case 1: /* bold */
 				flags |= WSATTR_HILIT;
@@ -535,15 +528,16 @@ wsemul_vt100_handle_csi(edp, c)
 #ifdef VT100_PRINTUNKNOWN
 				printf("CSI%dm unknown\n", ARG(n));
 #endif
+				break;
 			}
 		}
-		if (vt100_selectattribute(edp, flags, fgcol, bgcol, &attr)) {
+		if (vt100_selectattribute(edp, flags, fgcol, bgcol, &attr, &bkgdattr)) {
 #ifdef VT100_DEBUG
-			printf("error allocating attr %d/%d/%x\n",
-			       fgcol, bgcol, flags);
+			printf("error allocating attr %d/%d/%x\n", fgcol, bgcol, flags);
 #endif
 		} else {
 			edp->curattr = attr;
+			edp->bkgdattr = bkgdattr;
 			edp->attrflags = flags;
 			edp->fgcol = fgcol;
 			edp->bgcol = bgcol;
@@ -614,6 +608,7 @@ wsemul_vt100_handle_csi(edp, c)
 #ifdef VT100_PRINTUNKNOWN
 		printf("CSI%c (%d, %d) unknown\n", c, ARG(0), ARG(1));
 #endif
+		break;
 	}
 }
 
@@ -623,15 +618,36 @@ wsemul_vt100_handle_csi(edp, c)
  * is not supported
  */
 static int
-vt100_selectattribute(edp, flags, fgcol, bgcol, attr)
+vt100_selectattribute(edp, flags, fgcol, bgcol, attr, bkgdattr)
 	struct wsemul_vt100_emuldata *edp;
 	int flags, fgcol, bgcol;
-	long *attr;
+	long *attr, *bkgdattr;
 {
+	int error;
+
+	if ((flags & WSATTR_WSCOLORS)
+			&& !(edp->scrcapabilities & WSSCREEN_WSCOLORS)) {
+		flags &= ~WSATTR_WSCOLORS;
+#ifdef VT100_DEBUG
+		printf("colors ignored (impossible)\n");
+#endif
+	}
+	error = (*edp->emulops->allocattr)(edp->emulcookie, fgcol, bgcol,
+			flags & WSATTR_WSCOLORS, bkgdattr);
+	if (error)
+		return (error);
+
 	if ((flags & WSATTR_HILIT) && !(edp->scrcapabilities & WSSCREEN_HILIT)) {
 		flags &= ~WSATTR_HILIT;
 		if (edp->scrcapabilities & WSSCREEN_WSCOLORS) {
+#if defined(WSEMUL_VT100_HILIT_FG) && WSEMUL_VT100_HILIT_FG != -1
+			fgcol = WSEMUL_VT100_HILIT_FG;
+#elif !defined(WSEMUL_VT100_HILIT_FG)
 			fgcol = WSCOL_RED;
+#endif
+#if defined(WSEMUL_VT100_HILIT_BG) && WSEMUL_VT100_HILIT_BG != -1
+			bgcol = WSEMUL_VT100_HILIT_BG;
+#endif
 			flags |= WSATTR_WSCOLORS;
 		} else {
 #ifdef VT100_DEBUG
@@ -643,8 +659,14 @@ vt100_selectattribute(edp, flags, fgcol, bgcol, attr)
 			&& !(edp->scrcapabilities & WSSCREEN_UNDERLINE)) {
 		flags &= ~WSATTR_UNDERLINE;
 		if (edp->scrcapabilities & WSSCREEN_WSCOLORS) {
+#if defined(WSEMUL_VT100_UNDERLINE_FG) && WSEMUL_VT100_UNDERLINE_FG != -1
+			fgcol = WSEMUL_VT100_UNDERLINE_FG;
+#endif
+#if defined(WSEMUL_VT100_UNDERLINE_BG) && WSEMUL_VT100_UNDERLINE_BG != -1
+			bgcol = WSEMUL_VT100_UNDERLINE_BG;
+#elif !defined(WSEMUL_VT100_UNDERLINE_BG)
 			bgcol = WSCOL_BROWN;
-			flags &= ~WSATTR_UNDERLINE;
+#endif
 			flags |= WSATTR_WSCOLORS;
 		} else {
 #ifdef VT100_DEBUG
@@ -673,15 +695,12 @@ vt100_selectattribute(edp, flags, fgcol, bgcol, attr)
 #endif
 		}
 	}
-	if ((flags & WSATTR_WSCOLORS)
-			&& !(edp->scrcapabilities & WSSCREEN_WSCOLORS)) {
-		flags &= ~WSATTR_WSCOLORS;
-#ifdef VT100_DEBUG
-		printf("colors ignored (impossible)\n");
-#endif
-	}
-	return ((*edp->emulops->alloc_attr)(edp->emulcookie, fgcol, bgcol, flags,
-			attr));
+	error = (*edp->emulops->allocattr)(edp->emulcookie, fgcol, bgcol, flags,
+			attr);
+	if (error)
+		return (error);
+
+	return (0);
 }
 
 /*

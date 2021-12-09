@@ -42,31 +42,28 @@
 
 struct hook_desc {
 	TAILQ_ENTRY(hook_desc) 	hk_list;
-
 	hook_func_t				hk_fn;
 	void					*hk_arg;
-	char					hk_name[HOOKNAMSIZ];
 };
 typedef TAILQ_HEAD(hook_head, hook_desc) hook_list_t;
 
 struct hook_list {
 	hook_list_t	 			hl_list;
-	char					hl_namebuf[HOOKNAMSIZ];
 };
 
 int	powerhook_debug = 0;
 
 static void *
-hook_establish(hook_list_t *list, const char *name, hook_func_t fn, void *arg)
+hook_establish(hook_list_t *list, hook_func_t fn, void *arg)
 {
 	struct hook_desc *hd;
 	hd = malloc(sizeof(*hd), M_DEVBUF, M_NOWAIT);
-	if (hd == NULL)
+	if (hd == NULL) {
 		return (NULL);
+	}
 
 	hd->hk_fn = fn;
 	hd->hk_arg = arg;
-	strlcpy(hd->hk_name, name, sizeof(hd->hk_name));
 	TAILQ_INSERT_HEAD(list, hd, hk_list);
 
 	return (hd);
@@ -125,14 +122,14 @@ do_hooks(hook_list_t *list, int why, int type)
 		if (why == PWR_RESUME || why == PWR_SOFTRESUME) {
 			TAILQ_FOREACH_REVERSE(hd, list, hook_head, hk_list) {
 				if (powerhook_debug) {
-					printf("dopowerhooks %s: %s (%p)\n", why_name, hd->hk_name, hd);
+					printf("dopowerhooks %s: (%p)\n", why_name, hd);
 				}
 				(*hd->hk_fn)(why, hd->hk_arg);
 			}
 		}  else {
 			TAILQ_FOREACH(hd, list, hk_list) {
 				if (powerhook_debug) {
-					printf("dopowerhooks %s: %s (%p)\n", why_name, hd->hk_name, hd);
+					printf("dopowerhooks %s: (%p)\n", why_name, hd);
 				}
 				(*hd->hk_fn)(why, hd->hk_arg);
 			}
@@ -161,7 +158,7 @@ static hook_list_t shutdownhook_list = TAILQ_HEAD_INITIALIZER(shutdownhook_list)
 void *
 shutdownhook_establish(hook_func_t fn, void *arg)
 {
-	return (hook_establish(&shutdownhook_list, NULL, fn, arg));
+	return (hook_establish(&shutdownhook_list, fn, arg));
 }
 
 void
@@ -187,9 +184,9 @@ doshutdownhooks(void)
 static hook_list_t powerhook_list = TAILQ_HEAD_INITIALIZER(powerhook_list);
 
 void *
-powerhook_establish(const char *name, hook_func_t fn, void *arg)
+powerhook_establish(hook_func_t fn, void *arg)
 {
-	return (hook_establish(&powerhook_list, name, fn, arg));
+	return (hook_establish(&powerhook_list, fn, arg));
 }
 
 void
