@@ -59,6 +59,8 @@ void ukattach (struct device *, struct device *, void *);
 CFDRIVER_DECL(NULL, uk, &uk_cops, DV_DULL, sizeof(struct uk_softc));
 CFOPS_DECL(uk, ukmatch, ukattach, NULL, NULL);
 
+extern struct cfdriver uk_cd;
+
 static dev_type_open(ukopen);
 static dev_type_close(ukclose);
 static dev_type_ioctl(ukioctl);

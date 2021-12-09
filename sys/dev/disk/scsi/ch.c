@@ -94,6 +94,8 @@ void	chattach (struct device *, struct device *, void *);
 CFDRIVER_DECL(NULL, ch, &ch_cops, DV_DULL, sizeof(struct ch_softc));
 CFOPS_DECL(ch, chmatch, chattach, NULL, NULL);
 
+extern struct cfdriver ch_cd;
+
 struct scsi_inquiry_pattern ch_patterns[] =
 		{ { T_CHANGER, T_REMOV, "", "", "" }, };
 
@@ -115,7 +117,6 @@ const struct cdevsw ch_cdevsw = {
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
 };
-
 
 /* SCSI glue */
 struct scsi_device ch_switch = {

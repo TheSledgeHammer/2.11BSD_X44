@@ -175,6 +175,16 @@ pcppi0			at isa?
 #com1			at isa? port 0x2f8 irq 3
 #com2			at isa? port 0x3e8 irq 5
 
+# Mice
+
+# ISA busmice
+lms0			at isa? port 0x23c irq 5	# Logitech bus mouse
+lms1			at isa? port 0x238 irq 5
+mms0			at isa? port 0x23c irq 5	# Microsoft InPort mouse
+mms1			at isa? port 0x238 irq 5
+wsmouse*		at lms? mux 0
+wsmouse*		at mms? mux 0
+
 # SCSI Controllers and Devices
 
 # SCSI bus support

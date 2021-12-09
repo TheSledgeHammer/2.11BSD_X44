@@ -101,7 +101,10 @@ int		cd_get_parms (struct cd_softc *, int);
 
 CFDRIVER_DECL(NULL, cd, &cd_cops, DV_DISK, sizeof(struct cd_softc));
 CFOPS_DECL(cd, cdmatch, cdattach, NULL, NULL);
-DKDRIVER_DECL(cd, cdstrategy, cdminphys, cdopen, cdclose, cdioctl, cddump, cdstart, cdgetdisklabel);
+
+extern struct cfdriver cd_cd;
+
+struct dkdriver cddkdriver = { cdstrategy };
 
 struct scsi_device cd_switch = {
 	NULL,			/* use default error handler */

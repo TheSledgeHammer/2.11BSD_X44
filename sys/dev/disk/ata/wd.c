@@ -170,7 +170,10 @@ int		wdprint	(void *, char *);
 
 CFDRIVER_DECL(NULL, wd, &wd_cops, DV_DISK, sizeof(struct wd_softc));
 CFOPS_DECL(wd, wdprobe, wdattach, NULL, NULL);
-DKDRIVER_DECL(wd, wdstrategy, NULL, wdopen, wdclose, wdioctl, wddump, wdstart, wdgetdisklabel);
+
+extern struct cfdriver wd_cd;
+
+struct dkdriver wddkdriver = { wdstrategy };
 
 static dev_type_open(wdopen);
 static dev_type_close(wdclose);
@@ -225,21 +228,21 @@ void	wi_free (struct wd_ioctl *);
 struct	wd_ioctl *wi_get (void);
 void	wdioctlstrategy (struct buf *);
 
-void  wdgetdefaultlabel (struct wd_softc *, struct disklabel *);
-void  wdgetdisklabel	(struct wd_softc *);
-void  wdstrategy	(struct buf *);
-void  wdstart	(void *);
-void  __wdstart	(struct wd_softc*, struct buf *);
-void  wdrestart (void*);
-int   wd_get_params (struct wd_softc *, u_int8_t, struct ataparams *);
-void  wd_flushcache (struct wd_softc *, int);
-void  wd_shutdown (void*);
+void  wdgetdefaultlabel(struct wd_softc *, struct disklabel *);
+void  wdgetdisklabel(struct wd_softc *);
+void  wdstrategy(struct buf *);
+void  wdstart(void *);
+void  __wdstart(struct wd_softc*, struct buf *);
+void  wdrestart(void*);
+int   wd_get_params(struct wd_softc *, u_int8_t, struct ataparams *);
+void  wd_flushcache(struct wd_softc *, int);
+void  wd_shutdown(void*);
 
 #ifdef HAS_BAD144_HANDLING
 static void bad144intern (struct wd_softc *);
 #endif
-int		wdlock	(struct wd_softc *);
-void	wdunlock	(struct wd_softc *);
+int		wdlock(struct wd_softc *);
+void	wdunlock(struct wd_softc *);
 
 int
 wdprobe(parent, match, aux)

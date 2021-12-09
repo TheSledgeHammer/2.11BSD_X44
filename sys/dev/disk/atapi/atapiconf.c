@@ -62,13 +62,11 @@ int		atapiprint (void *, const char *);
 
 int		atapi_probe_bus (int, int);
 void	atapi_probedev (struct atapibus_softc *, int );
-/*
-extern struct cfdriver atapibus_cd = {
-		NULL, "atapi_cd", atapibusmatch, atapibusattach, DV_DISK, sizeof(struct atapibus_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, atapibus, &atapibus_cops, DV_DISK, sizeof(struct atapibus_softc));
 CFOPS_DECL(atapibus, atapibusattach, atapibusattach, NULL, NULL);
+
+extern struct cfdriver atapibus_cd;
 
 int atapibusprint (void *, const char *);
 

@@ -50,4 +50,5 @@ struct ttychars {
 #define	CFLUSH	CTRL(o)
 #define	CWERASE	CTRL(w)
 #define	CLNEXT	CTRL(v)
+
 #endif /* _SYS_TTYCHARS_H_ */

@@ -95,6 +95,8 @@ int scsibussubmatch (struct device *, struct cfdata *, void *);
 CFDRIVER_DECL(NULL, scsibus, &scsibus_cops, DV_DULL, sizeof(struct scsibus_softc));
 CFOPS_DECL(scsibus, scsibusmatch, scsibusattach, NULL, NULL);
 
+extern struct cfdriver scsibus_cd;
+
 int scsibusprint (void *, char *);
 int
 scsiprint(aux, pnp)

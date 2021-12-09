@@ -70,6 +70,8 @@ void ssattach (struct device *, struct device *, void *);
 CFDRIVER_DECL(NULL, ss, &ss_cops, DV_DULL, sizeof(struct ss_softc));
 CFOPS_DECL(ss, ssmatch, ssattach, NULL, NULL);
 
+extern struct cfdriver ss_cd;
+
 static dev_type_open(ssopen);
 static dev_type_close(ssclose);
 static dev_type_read(ssread);

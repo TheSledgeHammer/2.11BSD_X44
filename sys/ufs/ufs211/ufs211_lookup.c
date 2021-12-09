@@ -5,6 +5,7 @@
  *
  *	@(#)ufs_namei.c	1.5 (2.11BSD GTE) 1997/1/30
  */
+
 #include <sys/param.h>
 
 #include <sys/systm.h>

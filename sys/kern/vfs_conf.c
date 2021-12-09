@@ -72,57 +72,57 @@ static struct vfsconf vfsconflist[] = {
 
 	/* Fast Filesystem */
 #ifdef FFS
-	{ &ufs_vfsops, "ufs", 1, 0, MNT_LOCAL, ffs_mountroot, NULL },
+	{ &ufs_vfsops, "ufs", VT_UFS, 0, MNT_LOCAL, ffs_mountroot, NULL },
 #endif
 
 	/* Log-based Filesystem */
 #ifdef LFS
-	{ &lfs_vfsops, "lfs", 5, 0, MNT_LOCAL, lfs_mountroot, NULL },
+	{ &lfs_vfsops, "lfs", VT_LFS, 0, MNT_LOCAL, lfs_mountroot, NULL },
 #endif
 
 	/* Memory-based Filesystem */
 #ifdef MFS
-	{ &mfs_vfsops, "mfs", 3, 0, MNT_LOCAL, mfs_mountroot, NULL },
+	{ &mfs_vfsops, "mfs", VT_MFS, 0, MNT_LOCAL, mfs_mountroot, NULL },
 #endif
 
 	/* 2.11BSD UFS Filesystem  */
 #ifdef UFS211
-	{ &ufs211_vfsops, "ufs211", 17, 0, MNT_LOCAL, NULL, NULL }
+	{ &ufs211_vfsops, "ufs211", VT_UFS211, 0, MNT_LOCAL, NULL, NULL }
 #endif
 
 	/* ISO9660 (aka CDROM) Filesystem */
 #ifdef CD9660
-	{ &cd9660_vfsops, "cd9660", 14, 0, MNT_LOCAL, cd9660_mountroot, NULL },
+	{ &cd9660_vfsops, "cd9660", VT_ISOFS, 0, MNT_LOCAL, cd9660_mountroot, NULL },
 #endif
 
 	/* MSDOS Filesystem */
 #ifdef MSDOS
-	{ &msdos_vfsops, "msdos", 4, 0, MNT_LOCAL, NULL, NULL },
+	{ &msdos_vfsops, "msdos", VT_MSDOSFS, 0, MNT_LOCAL, NULL, NULL },
 #endif
 
 	/* Loopback Filesystem */
 #ifdef LOFS
-	{ &lofs_vfsops, "loopback", 6, 0, 0, NULL, NULL },
+	{ &lofs_vfsops, "loopback", VT_LOFS, 0, 0, NULL, NULL },
 #endif
 
 	/* File Descriptor Filesystem */
 #ifdef FDESC
-	{ &fdesc_vfsops, "fdesc", 7, 0, 0, NULL, NULL },
+	{ &fdesc_vfsops, "fdesc", VT_FDESC, 0, 0, NULL, NULL },
 #endif
 
 	/* Sun-compatible Network Filesystem */
 #ifdef NFS
-	{ &nfs_vfsops, "nfs", 2, 0, 0, nfs_mountroot, NULL },
+	{ &nfs_vfsops, "nfs", VT_NFS, 0, 0, nfs_mountroot, NULL },
 #endif
 
 	/* UFML Filesystem  */
 #ifdef UFML
-	{ &ufml_vfsops, "ufml", 16, 0, 0, NULL, NULL }
+	{ &ufml_vfsops, "ufml", VT_UFML, 0, 0, NULL, NULL }
 #endif
 
 	/* Union (translucent) Filesystem */
 #ifdef UNION
-	{ &union_vfsops, "union", 15, 0, 0, NULL, NULL },
+	{ &union_vfsops, "union", VT_UNION, 0, 0, NULL, NULL },
 #endif
 };
 

@@ -48,173 +48,25 @@ extern char const	hex2ascii_data[];
 #define	bin2bcd(bin)	(bin2bcd_data[bin])
 #define	hex2ascii(hex)	(hex2ascii_data[hex])
 
-/*
-static __inline int 	imax (int, int) __attribute__ ((unused));
-static __inline int 	imin (int, int) __attribute__ ((unused));
-static __inline u_int 	max (u_int, u_int) __attribute__ ((unused));
-static __inline u_int 	min (u_int, u_int) __attribute__ ((unused));
-static __inline long 	lmax (long, long) __attribute__ ((unused));
-static __inline long 	lmin (long, long) __attribute__ ((unused));
-static __inline u_long 	ulmax (u_long, u_long) __attribute__ ((unused));
-static __inline u_long 	ulmin (u_long, u_long) __attribute__ ((unused));
-static __inline int 	abs (int) __attribute__ ((unused));
+int 	imax(int, int);
+int 	imin(int, int);
+u_int 	max(u_int, u_int);
+u_int 	min(u_int, u_int);
+long 	lmax(long, long);
+long 	lmin(long, long);
+u_long 	ulmax(u_long, u_long);
+u_long 	ulmin(u_long, u_long);
+int 	abs(int);
 
-static __inline int 	isspace (int) __attribute__((__unused__));
-static __inline int 	isascii (int) __attribute__((__unused__));
-static __inline int 	isupper (int) __attribute__((__unused__));
-static __inline int 	islower (int) __attribute__((__unused__));
-static __inline int 	isalpha (int) __attribute__((__unused__));
-static __inline int 	isdigit (int) __attribute__((__unused__));
-static __inline int 	isxdigit (int) __attribute__((__unused__));
-static __inline int 	toupper (int) __attribute__((__unused__));
-static __inline int 	tolower (int) __attribute__((__unused__));
-
-static __inline int
-imax(int a, int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline int
-imin(int a, int b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline long
-lmax(long a, long b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline long
-lmin(long a, long b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline u_int
-max(u_int a, u_int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_int
-min(u_int a, u_int b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline quad_t
-qmax(quad_t a, quad_t b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline quad_t
-qmin(quad_t a, quad_t b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline u_long
-ulmax(u_long a, u_long b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_long
-ulmin(u_long a, u_long b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline int
-abs(int j)
-{
-	return(j < 0 ? -j : j);
-}
-
-static __inline int
-isspace(int ch)
-{
-	return (ch == ' ' || (ch >= '\t' && ch <= '\r'));
-}
-
-static __inline int
-isascii(int ch)
-{
-	return ((ch & ~0x7f) == 0);
-}
-
-static __inline int
-isupper(int ch)
-{
-	return (ch >= 'A' && ch <= 'Z');
-}
-
-static __inline int
-islower(int ch)
-{
-	return (ch >= 'a' && ch <= 'z');
-}
-
-static __inline int
-isalpha(int ch)
-{
-	return (isupper(ch) || islower(ch));
-}
-
-static __inline int
-isdigit(int ch)
-{
-	return (ch >= '0' && ch <= '9');
-}
-
-static __inline int
-isxdigit(int ch)
-{
-	return (isdigit(ch) ||
-	    (ch >= 'A' && ch <= 'F') ||
-	    (ch >= 'a' && ch <= 'f'));
-}
-
-static __inline int
-toupper(int ch)
-{
-	if (islower(ch))
-		return (ch - 0x20);
-	return (ch);
-}
-
-static __inline int
-tolower(int ch)
-{
-	if (isupper(ch))
-		return (ch + 0x20);
-	return (ch);
-}
-*/
-
-int 	imax (int, int);
-int 	imin (int, int);
-u_int 	max (u_int, u_int);
-u_int 	min (u_int, u_int);
-long 	lmax (long, long);
-long 	lmin (long, long);
-u_long 	ulmax (u_long, u_long);
-u_long 	ulmin (u_long, u_long);
-int 	abs (int);
-
-int 	isspace (int);
-int 	isascii (int);
-int 	isupper (int);
-int 	islower (int);
-int 	isalpha (int);
-int 	isdigit (int);
-int 	isxdigit (int);
-int 	toupper (int);
-int 	tolower (int);
+int 	isspace(int);
+int 	isascii(int);
+int 	isupper(int);
+int 	islower(int);
+int 	isalpha(int);
+int 	isdigit(int);
+int 	isxdigit(int);
+int 	toupper(int);
+int 	tolower(int);
 
 /* hash Functions */
 uint32_t 	prospector32(uint32_t);
@@ -363,3 +215,152 @@ void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 #define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
 			    __assert(__KASSERTSTR, "debugging  ", #e, __FILE__, __LINE__))
 #endif
+
+
+/*
+static __inline int 	imax (int, int) __attribute__ ((unused));
+static __inline int 	imin (int, int) __attribute__ ((unused));
+static __inline u_int 	max (u_int, u_int) __attribute__ ((unused));
+static __inline u_int 	min (u_int, u_int) __attribute__ ((unused));
+static __inline long 	lmax (long, long) __attribute__ ((unused));
+static __inline long 	lmin (long, long) __attribute__ ((unused));
+static __inline u_long 	ulmax (u_long, u_long) __attribute__ ((unused));
+static __inline u_long 	ulmin (u_long, u_long) __attribute__ ((unused));
+static __inline int 	abs (int) __attribute__ ((unused));
+
+static __inline int 	isspace (int) __attribute__((__unused__));
+static __inline int 	isascii (int) __attribute__((__unused__));
+static __inline int 	isupper (int) __attribute__((__unused__));
+static __inline int 	islower (int) __attribute__((__unused__));
+static __inline int 	isalpha (int) __attribute__((__unused__));
+static __inline int 	isdigit (int) __attribute__((__unused__));
+static __inline int 	isxdigit (int) __attribute__((__unused__));
+static __inline int 	toupper (int) __attribute__((__unused__));
+static __inline int 	tolower (int) __attribute__((__unused__));
+
+static __inline int
+imax(int a, int b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline int
+imin(int a, int b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline long
+lmax(long a, long b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline long
+lmin(long a, long b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline u_int
+max(u_int a, u_int b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline u_int
+min(u_int a, u_int b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline quad_t
+qmax(quad_t a, quad_t b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline quad_t
+qmin(quad_t a, quad_t b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline u_long
+ulmax(u_long a, u_long b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline u_long
+ulmin(u_long a, u_long b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline int
+abs(int j)
+{
+	return(j < 0 ? -j : j);
+}
+
+static __inline int
+isspace(int ch)
+{
+	return (ch == ' ' || (ch >= '\t' && ch <= '\r'));
+}
+
+static __inline int
+isascii(int ch)
+{
+	return ((ch & ~0x7f) == 0);
+}
+
+static __inline int
+isupper(int ch)
+{
+	return (ch >= 'A' && ch <= 'Z');
+}
+
+static __inline int
+islower(int ch)
+{
+	return (ch >= 'a' && ch <= 'z');
+}
+
+static __inline int
+isalpha(int ch)
+{
+	return (isupper(ch) || islower(ch));
+}
+
+static __inline int
+isdigit(int ch)
+{
+	return (ch >= '0' && ch <= '9');
+}
+
+static __inline int
+isxdigit(int ch)
+{
+	return (isdigit(ch) ||
+	    (ch >= 'A' && ch <= 'F') ||
+	    (ch >= 'a' && ch <= 'f'));
+}
+
+static __inline int
+toupper(int ch)
+{
+	if (islower(ch))
+		return (ch - 0x20);
+	return (ch);
+}
+
+static __inline int
+tolower(int ch)
+{
+	if (isupper(ch))
+		return (ch + 0x20);
+	return (ch);
+}
+*/

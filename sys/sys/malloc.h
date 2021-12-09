@@ -334,5 +334,6 @@ extern char *kmembase;
 
 extern void *malloc (unsigned long size, int type, int flags);
 extern void free (void *addr, int type);
+extern void *realloc (void *newaddr, unsigned long newsize, int type, int flags);
 #endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */

@@ -47,17 +47,18 @@
 /*
  * Vnode types.  VNON means no type.
  */
-enum vtype	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
+enum vtype {
+	VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD
+};
 
 /*
  * Vnode tag types.
  * These are for the benefit of external programs only (e.g., pstat)
  * and should NEVER be inspected by the kernel.
  */
-enum vtagtype	{
-	VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_MSDOSFS, VT_LFS, VT_LOFS, VT_FDESC,
-	VT_PORTAL, VT_NULL, VT_UMAP, VT_KERNFS, VT_PROCFS, VT_AFS, VT_ISOFS,
-	VT_UNION, VT_UFML, VT_UFS211
+enum vtagtype {
+	VT_NON,	VT_UFS,	VT_MFS,	VT_LFS,	VT_UFS211, VT_NFS, VT_LOFS,
+	VT_FDESC, VT_ISOFS, VT_MSDOSFS,	VT_UNION, VT_UFML
 };
 
 /*

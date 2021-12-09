@@ -100,7 +100,10 @@ static int sd_mode_sense (struct sd_softc *, struct scsi_mode_sense_data *, int,
 
 CFDRIVER_DECL(NULL, sd, &sd_cops, DV_DISK, sizeof(struct sd_softc));
 CFOPS_DECL(sd, sdmatch, sdattach, NULL, NULL);
-DKDRIVER_DECL(sd, sdstrategy, sdminphys, sdopen, sdclose, sdioctl, sddump, sdstart, sdgetdisklabel);
+
+extern struct cfdriver sd_cd;
+
+struct dkdriver sddkdriver = { sdstrategy };
 
 static dev_type_open(sdopen);
 static dev_type_close(sdclose);
