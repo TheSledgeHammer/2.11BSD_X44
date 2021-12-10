@@ -248,7 +248,6 @@ int
 wdprobe(parent, match, aux)
 	struct device *parent;
 	struct cfdata *match;
-
 	void *aux;
 {
 	struct ata_atapi_attach *aa_link = aux;

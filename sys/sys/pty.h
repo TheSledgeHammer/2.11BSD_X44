@@ -19,9 +19,9 @@
 
 #ifdef KERNEL
 
-#include "uio.h"
-#include "tty.h"
-#include "conf.h"
+#include <sys/uio.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
 
 #ifndef PTY_NUNITS
 #define PTY_NUNITS 4            			/* 4 units by default */

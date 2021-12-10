@@ -66,20 +66,20 @@ extern	struct consdev 	*cn_tab;
 extern	struct tty 		*cn_tty;
 extern	struct vnode 	*cn_devvp;
 
-void	cninit (void);
-int		cnopen (dev_t, int, int, struct proc *);
-int		cnclose (dev_t, int, int, struct proc *);
-int		cnread (dev_t, struct uio *, int);
-int		cnwrite (dev_t, struct uio *, int);
-int		cnioctl (dev_t, u_long, caddr_t, int, struct proc *);
-int		cnpoll (dev_t, int, struct proc *);
+void	cninit(void);
+int		cnopen(dev_t, int, int, struct proc *);
+int		cnclose(dev_t, int, int, struct proc *);
+int		cnread(dev_t, struct uio *, int);
+int		cnwrite(dev_t, struct uio *, int);
+int		cnioctl(dev_t, u_long, caddr_t, int, struct proc *);
+int		cnpoll(dev_t, int, struct proc *);
 void	cnbell(u_int, u_int, u_int);
 void	cnflush(void);
-int		cngetc (void);
-void	cnputc (int);
-void	cnpollc (int);
-void	cnrint (void);
-void	nullcnpollc (dev_t, int);
+int		cngetc(void);
+void	cnputc(int);
+void	cnpollc(int);
+void	cnrint(void);
+void	nullcnpollc(dev_t, int);
 
 /* console-specific types */
 #define	dev_type_cnprobe(n)	void n (struct consdev *)

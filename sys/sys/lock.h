@@ -194,6 +194,10 @@ typedef struct lock       	*lock_t;
 #define LOCKHOLDER_PGRP(h)		((h)->lh_pgrp)
 #define LOCKHOLDER_DATA(h)		((h)->lh_data)
 
+#define LOCKHOLDER_PROC(h) 		((struct proc *)LOCKHOLDER_DATA(h))
+//#define LOCKHOLDER_KTHREAD(h) 	((struct kthread *)LOCKHOLDER_DATA(h))
+//#define LOCKHOLDER_UTHREAD(h) 	((struct uthread *)LOCKHOLDER_DATA(h))
+
 struct proc;
 
 #ifdef _KERNEL
@@ -209,6 +213,6 @@ void 			simple_unlock(struct lock_object *);
 int				simple_lock_try(struct lock_object *);
 void			lockholder_init(struct proc *);
 void			lockholder_set(struct lock_holder *, void *, pid_t, struct pgrp *);
-void			*lockholder_get(struct lock_holder *, void *);
+void			*lockholder_get(struct lock_holder *, void *, pid_t);
 
 #endif /* !_SYS_LOCK_H_ */

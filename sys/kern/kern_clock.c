@@ -167,8 +167,6 @@ hardclock(frame, pc)
 	}
 }
 
-int	dk_ndrive = DK_NDRIVE;
-
 /*
  * Gather statistics on resource utilization.
  *
@@ -288,8 +286,9 @@ timeout(fun, arg, t)
 	register int t;
 {
 	register struct callout *p1, *p2, *pnew;
-	register int s = splclock();
+	register int s;
 
+	s = splclock();
 	if (t <= 0)
 		t = 1;
 	pnew = callfree;
@@ -367,7 +366,9 @@ hzto(tv)
 {
 	register long ticks;
 	register long sec;
-	register int s = splhigh();
+	register int s;
+
+	s = splhigh();
 
 	/*
 	 * If number of milliseconds will fit in 32 bit arithmetic,

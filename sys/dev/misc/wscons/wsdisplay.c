@@ -216,7 +216,7 @@ static struct wsdisplay_softc *wsdisplay_console_device;
 static struct wsscreen_internal wsdisplay_console_conf;
 
 static int wsdisplay_getc_dummy(dev_t);
-static void wsdisplay_pollc_dummy(dev_t, int);
+static void wsdisplay_pollc(dev_t, int);
 
 static int wsdisplay_cons_pollmode;
 static void (*wsdisplay_cons_kbd_pollc)(dev_t, int);
@@ -226,11 +226,13 @@ static struct consdev wsdisplay_cons = {
 		.cn_init = NULL,
 		.cn_getc = wsdisplay_getc_dummy,
 		.cn_putc = wsdisplay_cnputc,
-		.cn_pollc = wsdisplay_pollc_dummy,
+		.cn_pollc = wsdisplay_pollc,
+		.cn_bell = NULL,
+		.cn_flush = NULL,
+		.cn_tp = NULL,
 		.cn_dev = NODEV,
 		.cn_pri = CN_NORMAL
 };
-
 
 #ifndef WSDISPLAY_DEFAULTSCREENS
 # define WSDISPLAY_DEFAULTSCREENS	0
@@ -1362,8 +1364,6 @@ wsdisplaymmap(dev, offset, prot)
 	return ((*sc->sc_accessops->mmap)(sc->sc_accesscookie, offset, prot));
 }
 
-
-
 void
 wsdisplaystart(tp)
 	register struct tty *tp;
@@ -1450,7 +1450,6 @@ wsdisplaystop(tp, flag)
 			SET(tp->t_state, TS_FLUSH);
 	splx(s);
 }
-
 
 /* Set line parameters. */
 int

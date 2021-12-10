@@ -299,7 +299,7 @@ kthread_lock_init(lkp, kt)
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
     lockholder_set(lkp->lk_lockholder, kt, kt->kt_tid, kt->kt_pgrp);
-    if(lockholder_get(lkp->lk_lockholder, kt) == NULL) {
+    if(lockholder_get(lkp->lk_lockholder, kt, kt->kt_tid) == NULL) {
     	panic("kthread lock unavailable");
     	error = EBUSY;
     }
@@ -330,7 +330,7 @@ kthread_rwlock_init(rwl, kt)
 	int error = 0;
 	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
 	lockholder_set(rwl->rwl_lockholder, kt, kt->kt_tid, kt->kt_pgrp);
-    if(lockholder_get(rwl->rwl_lockholder, kt) == NULL) {
+    if(lockholder_get(rwl->rwl_lockholder, kt, kt->kt_tid) == NULL) {
     	panic("kthread rwlock unavailable");
     	error = EBUSY;
     }

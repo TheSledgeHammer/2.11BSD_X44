@@ -124,7 +124,7 @@
 #define	M_TTY			73	/* allocated tty structures */
 #define M_KEVENT 		74	/* kevents/knotes */
 #define M_TOPO			75	/* cpu topology structure */
-#define M_BITMAP		76	/* bitmap structure */
+#define M_BITLIST		76	/* bitlist structure */
 #define M_PERCPU		77	/* percpu structure */
 #define M_UFS211		78	/* UFS211 bufmap */
 #define M_GSCHED		79	/* global scheduler structures */

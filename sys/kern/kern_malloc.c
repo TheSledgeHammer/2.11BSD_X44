@@ -342,8 +342,9 @@ realloc(curaddr, newsize, type, flags)
 	struct kmemusage *kup;
 	unsigned long cursize;
 	void *newaddr;
-
+#ifdef DIAGNOSTIC
 	long alloc;
+#endif /* DIAGNOSTIC */
 
 	/*
 	 * realloc() with a NULL pointer is the same as malloc().

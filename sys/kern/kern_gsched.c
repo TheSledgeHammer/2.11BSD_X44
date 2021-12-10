@@ -47,8 +47,6 @@
 
 #include <vm/include/vm.h>
 
-#include <machine/cpu.h>
-
 static struct gsched 	*gsched_setup(struct proc *);
 static void				gsched_edf_setup(struct gsched *, struct proc *);
 static void				gsched_cfs_setup(struct gsched *, struct proc *);

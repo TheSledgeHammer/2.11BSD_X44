@@ -130,7 +130,7 @@ bitlist_insert(value)
     register bitlist_t *mask;
 
     head = &bitset[bithash(value)];
-    mask = (bitlist_t *)malloc(sizeof(bitlist_t *), M_TOPO, M_WAITOK);
+    mask = (bitlist_t *)malloc(sizeof(bitlist_t *), M_BITLIST, M_WAITOK);
     mask->value = value;
     bitlist_lock(&bitlist_lock);
     LIST_INSERT_HEAD(head, mask, entry);

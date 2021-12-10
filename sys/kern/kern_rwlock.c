@@ -215,7 +215,7 @@ rwlock_write_held(rwl)
 	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return (0);
-	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | curproc));
+	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC) == (RW_HAVE_WRITE | curproc));
 }
 
 /*

@@ -75,11 +75,11 @@ struct selinfo {
 #ifndef KERNEL
 struct proc;
 
-void	selrecord (struct proc *, struct selinfo *);
-void	_selwakeup (struct selinfo *);
-void	selwakeup (struct proc *, long);
-int		selscan (fd_set *, fd_set *, int, int);
-int		seltrue (dev_t, int );
+void	selrecord(struct proc *, struct selinfo *);
+void	_selwakeup(struct selinfo *);
+void	selwakeup(struct proc *, long);
+int		selscan(fd_set *, fd_set *, int, int);
+int		seltrue(dev_t, int );
 void 	selnotify(struct selinfo *, long);
 
 /* 4.4BSD compat */

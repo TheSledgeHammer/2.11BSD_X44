@@ -452,15 +452,17 @@ lock_acquire(lkp, error, extflags, wanted)
 	}
 }
 
-/* TODO: Fix me. */
+/* TODO: make applicable for threads  */
 void
 count(lkp, x)
 	struct lock	*lkp;
 	short x;
 {
-	if (LOCKHOLDER_DATA(lkp->lk_lockholder) != NULL) {
-		struct proc *p = (struct proc *)LOCKHOLDER_DATA(lkp->lk_lockholder);
-		p->p_locks += x;
+	struct lock_holder *holder;
+
+	holder = lkp->lk_lockholder;
+	if(lockholder_get(holder, LOCKHOLDER_PROC(holder), LOCKHOLDER_PROC(holder)->p_pid)) {
+		LOCKHOLDER_PROC(holder)->p_locks += x;
 		return;
 	}
 }
@@ -636,11 +638,12 @@ lockholder_set(holder, data, pid, pgrp)
 }
 
 void *
-lockholder_get(holder, data)
+lockholder_get(holder, data, pid)
 	struct lock_holder 	*holder;
 	void 				*data;
+	pid_t 				pid;
 {
-	if(holder->lh_data == data) {
+	if((holder->lh_data == data) && (holder->lh_pid == pid)) {
 		return (data);
 	}
 	return (NULL);
