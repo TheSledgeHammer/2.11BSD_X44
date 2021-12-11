@@ -39,34 +39,25 @@
 #include <sys/errno.h>
 #include <sys/queue.h>
 #include <sys/lock.h>
-#include <sys/user.h>
 
 #include <machine/bus.h>
 
 #include <dev/core/ic/i8042reg.h>
-#include <dev/misc/pccons/pckbcvar.h>
 
+#include <dev/misc/pccons/pckbcvar.h>
 #include <dev/misc/pccons/pckbportvar.h>
 
-//#include "rnd.h"
 #include "locators.h"
-
-#if NRND > 0
-#include <sys/rnd.h>
-#endif
 
 /* data per slave device */
 struct pckbc_slotdata {
 	int polling;	/* don't process data in interrupt handler */
 	int poll_data;	/* data read from inr handler if polling */
 	int poll_stat;	/* status read from inr handler if polling */
-#if NRND > 0
-	rndsource_element_t	rnd_source;
-#endif
 };
 
-static void pckbc_init_slotdata (struct pckbc_slotdata *));
-static int pckbc_attach_slot (struct pckbc_softc *, pckbc_slot_t));
+static void pckbc_init_slotdata (struct pckbc_slotdata *);
+static int pckbc_attach_slot (struct pckbc_softc *, pckbc_slot_t);
 
 struct pckbc_internal pckbc_consdata;
 int pckbc_console_attached;
@@ -253,9 +244,8 @@ pckbc_is_console(iot, addr)
 	bus_space_tag_t iot;
 	bus_addr_t addr;
 {
-	if (pckbc_console && !pckbc_console_attached &&
-	    pckbc_consdata.t_iot == iot &&
-	    pckbc_consdata.t_addr == addr)
+	if (pckbc_console && !pckbc_console_attached && pckbc_consdata.t_iot == iot
+			&& pckbc_consdata.t_addr == addr)
 		return (1);
 	return (0);
 }
@@ -293,11 +283,6 @@ pckbc_attach_slot(sc, slot)
 		t->t_slotdata[slot] = NULL;
 	}
 
-#if NRND > 0
-	if (child != NULL && t->t_slotdata[slot] != NULL)
-		rnd_attach_source(&t->t_slotdata[slot]->rnd_source,
-		    child->dv_xname, RND_TYPE_TTY, 0);
-#endif
 	return child != NULL;
 }
 
@@ -549,10 +534,6 @@ pckbcintr_hard(vsc)
 		KBD_DELAY;
 		data = bus_space_read_1(t->t_iot, t->t_ioh_d, 0);
 
-#if NRND > 0
-		rnd_add_uint32(&q->rnd_source, (stat<<8)|data);
-#endif
-
 		if (q->polling) {
 			q->poll_data = data;
 			q->poll_stat = stat;
@@ -634,10 +615,6 @@ pckbcintr(vsc)
 		KBD_DELAY;
 		data = bus_space_read_1(t->t_iot, t->t_ioh_d, 0);
 
-#if NRND > 0
-		rnd_add_uint32(&q->rnd_source, (stat<<8)|data);
-#endif
-
 		pckbportintr(t->t_pt, slot, data);
 	}
 
@@ -658,10 +635,10 @@ pckbc_cnattach(iot, addr, cmd_offset, slot)
 	int res = 0;
 
 	if (bus_space_map(iot, addr + KBDATAP, 1, 0, &ioh_d))
-                return (ENXIO);
+		return (ENXIO);
 	if (bus_space_map(iot, addr + cmd_offset, 1, 0, &ioh_c)) {
 		bus_space_unmap(iot, ioh_d, 1);
-                return (ENXIO);
+		return (ENXIO);
 	}
 
 	memset(&pckbc_consdata, 0, sizeof(pckbc_consdata));

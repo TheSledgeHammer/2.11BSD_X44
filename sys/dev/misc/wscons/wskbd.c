@@ -1215,6 +1215,8 @@ wskbdkqfilter(dev, kn)
 	return (wsevent_kqfilter(sc->sc_base.me_evp, kn));
 }
 
+#if NWSDISPLAY > 0
+
 int
 wskbd_pickfree(void)
 {

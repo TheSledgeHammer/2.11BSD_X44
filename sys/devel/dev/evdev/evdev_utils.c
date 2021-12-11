@@ -31,7 +31,6 @@
 #include <sys/param.h>
 
 #include <sys/conf.h>
-//#include <sys/kbio.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
@@ -41,7 +40,7 @@
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/input.h>
 
-#include <machine/bus.h>
+//#include <machine/bus.h>
 
 #define	NONE	KEY_RESERVED
 
@@ -276,8 +275,7 @@ evdev_push_mouse_btn(struct evdev_dev *evdev, int buttons)
 	size_t i;
 
 	for (i = 0; i < nitems(evdev_mouse_button_codes); i++)
-		evdev_push_key(evdev, evdev_mouse_button_codes[i],
-		    buttons & (1 << i));
+		evdev_push_key(evdev, evdev_mouse_button_codes[i], buttons & (1 << i));
 }
 
 void

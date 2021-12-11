@@ -123,6 +123,7 @@ int	 		ffs(int);
 #if __GNUC_PREREQ__(2, 95) && (!defined(__vax__) || __GNUC_PREREQ__(4,1))
 #define	ffs(x)	__builtin_ffs(x)
 #endif
+int	 		ffsl(long);
 
 u_int16_t	bswap16(u_int16_t);
 u_int32_t	bswap32(u_int32_t);

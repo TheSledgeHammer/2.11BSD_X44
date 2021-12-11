@@ -259,7 +259,7 @@ wsmouse_activate(struct device *self, enum devact act)
  * vnode and return (which will deallocate the softc).
  */
 int
-wsmouse_detach(struct device  *self, int flags)
+wsmouse_detach(struct device *self, int flags)
 {
 	struct wsmouse_softc *sc = (struct wsmouse_softc *)self;
 	struct wseventvar *evar;

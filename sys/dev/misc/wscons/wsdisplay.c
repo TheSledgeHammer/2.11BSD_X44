@@ -33,7 +33,6 @@
 #include <sys/cdefs.h>
 
 #include "opt_wsdisplay_compat.h"
-#include "opt_compat_netbsd.h"
 #include "wskbd.h"
 #include "wsmux.h"
 #include "wsdisplay.h"
@@ -92,9 +91,7 @@ struct wsscreen {
 };
 
 struct wsscreen *wsscreen_attach(struct wsdisplay_softc *, int,
-				 const char *,
-				 const struct wsscreen_descr *, void *,
-				 int, int, long);
+				 const char *, const struct wsscreen_descr *, void *, int, int, long);
 void wsscreen_detach(struct wsscreen *);
 int wsdisplay_addscreen(struct wsdisplay_softc *, int, const char *, const char *);
 static void wsdisplay_shutdownhook(void *);

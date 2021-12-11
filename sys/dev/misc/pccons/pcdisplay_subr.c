@@ -39,10 +39,9 @@
 #include <dev/core/ic/mc6845reg.h>
 #include <dev/misc/pccons/pcdisplayvar.h>
 #include <dev/misc/wscons/wsconsio.h>
-
 #include <dev/misc/wscons/wsdisplayvar.h>
 
-//#include "opt_wsdisplay_compat.h" /* for WSDISPLAY_CHARFUNCS */
+#include "opt_wsdisplay_compat.h" /* for WSDISPLAY_CHARFUNCS */
 
 void
 pcdisplay_cursor_init(scr, existing)

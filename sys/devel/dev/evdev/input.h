@@ -77,7 +77,7 @@ struct input_keymap_entry {
 };
 
 #define	EVDEV_IOC_MAGIC		'E'
-#define	EVIOCGVERSION		_IOR(EVDEV_IOC_MAGIC, 0x01, int)		/* get driver version */
+#define	EVIOCGVERSION		_IOR(EVDEV_IOC_MAGIC, 0x01, int)				/* get driver version */
 #define	EVIOCGID			_IOR(EVDEV_IOC_MAGIC, 0x02, struct input_id)	/* get device ID */
 #define	EVIOCGREP			_IOR(EVDEV_IOC_MAGIC, 0x03, unsigned int[2])	/* get repeat settings */
 #define	EVIOCSREP			_IOW(EVDEV_IOC_MAGIC, 0x03, unsigned int[2])	/* set repeat settings */
@@ -92,25 +92,25 @@ struct input_keymap_entry {
 #define	EVIOCGUNIQ(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x08, len)	/* get unique identifier */
 #define	EVIOCGPROP(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x09, len)	/* get device properties */
 
-#define	EVIOCGMTSLOTS(len)	_IOC(IOC_INOUT,	EVDEV_IOC_MAGIC, 0x0a, len)	/* get MT slots values */
+#define	EVIOCGMTSLOTS(len)	_IOC(IOC_INOUT,	EVDEV_IOC_MAGIC, 0x0a, len)		/* get MT slots values */
 
-#define	EVIOCGKEY(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x18, len)	/* get global key state */
-#define	EVIOCGLED(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x19, len)	/* get all LEDs */
-#define	EVIOCGSND(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x1a, len)	/* get all sounds status */
-#define	EVIOCGSW(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x1b, len)	/* get all switch states */
+#define	EVIOCGKEY(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x18, len)		/* get global key state */
+#define	EVIOCGLED(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x19, len)		/* get all LEDs */
+#define	EVIOCGSND(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x1a, len)		/* get all sounds status */
+#define	EVIOCGSW(len)		_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x1b, len)		/* get all switch states */
 
 #define	EVIOCGBIT(ev,len)	_IOC(IOC_OUT, EVDEV_IOC_MAGIC, 0x20 + (ev), len)			/* get event bits */
 #define	EVIOCGABS(abs)		_IOR(EVDEV_IOC_MAGIC, 0x40 + (abs), struct input_absinfo)	/* get abs value/limits */
 #define	EVIOCSABS(abs)		_IOW(EVDEV_IOC_MAGIC, 0xc0 + (abs), struct input_absinfo)	/* set abs value/limits */
 
 #define	EVIOCSFF			_IOW(EVDEV_IOC_MAGIC, 0x80, struct ff_effect)	/* send a force effect to a force feedback device */
-#define	EVIOCRMFF			_IOWINT(EVDEV_IOC_MAGIC, 0x81)			/* Erase a force effect */
-#define	EVIOCGEFFECTS		_IOR(EVDEV_IOC_MAGIC, 0x84, int)		/* Report number of effects playable at the same time */
+#define	EVIOCRMFF			_IOWINT(EVDEV_IOC_MAGIC, 0x81)					/* Erase a force effect */
+#define	EVIOCGEFFECTS		_IOR(EVDEV_IOC_MAGIC, 0x84, int)				/* Report number of effects playable at the same time */
 
-#define	EVIOCGRAB			_IOWINT(EVDEV_IOC_MAGIC, 0x90)			/* Grab/Release device */
-#define	EVIOCREVOKE			_IOWINT(EVDEV_IOC_MAGIC, 0x91)			/* Revoke device access */
+#define	EVIOCGRAB			_IOWINT(EVDEV_IOC_MAGIC, 0x90)					/* Grab/Release device */
+#define	EVIOCREVOKE			_IOWINT(EVDEV_IOC_MAGIC, 0x91)					/* Revoke device access */
 
-#define	EVIOCSCLOCKID		_IOW(EVDEV_IOC_MAGIC, 0xa0, int)		/* Set clockid to be used for timestamps */
+#define	EVIOCSCLOCKID		_IOW(EVDEV_IOC_MAGIC, 0xa0, int)				/* Set clockid to be used for timestamps */
 
 /*
  * IDs.

@@ -95,7 +95,7 @@
 #define	KEY_5						6
 #define	KEY_6						7
 #define	KEY_7						8
-#define	KEY_8						9
+#define	KEY_8				9
 #define	KEY_9			10
 #define	KEY_0			11
 #define	KEY_MINUS		12
@@ -860,7 +860,7 @@
  */
 #define	ABS_RESERVED		0x2e
 
-#define	ABS_MT_SLOT		0x2f	/* MT slot being modified */
+#define	ABS_MT_SLOT			0x2f	/* MT slot being modified */
 #define	ABS_MT_TOUCH_MAJOR	0x30	/* Major axis of touching ellipse */
 #define	ABS_MT_TOUCH_MINOR	0x31	/* Minor axis (omit if circular) */
 #define	ABS_MT_WIDTH_MAJOR	0x32	/* Major axis of approaching ellipse */
@@ -876,33 +876,33 @@
 #define	ABS_MT_TOOL_X		0x3c	/* Center X tool position */
 #define	ABS_MT_TOOL_Y		0x3d	/* Center Y tool position */
 
-#define	ABS_MAX			0x3f
-#define	ABS_CNT			(ABS_MAX+1)
+#define	ABS_MAX				0x3f
+#define	ABS_CNT				(ABS_MAX+1)
 
 /*
  * Switch events
  */
 
-#define	SW_LID			0x00  /* set = lid shut */
-#define	SW_TABLET_MODE		0x01  /* set = tablet mode */
-#define	SW_HEADPHONE_INSERT	0x02  /* set = inserted */
-#define	SW_RFKILL_ALL		0x03  /* rfkill master switch, type "any"
+#define	SW_LID					0x00  /* set = lid shut */
+#define	SW_TABLET_MODE			0x01  /* set = tablet mode */
+#define	SW_HEADPHONE_INSERT		0x02  /* set = inserted */
+#define	SW_RFKILL_ALL			0x03  /* rfkill master switch, type "any"
 					 set = radio enabled */
-#define	SW_RADIO		SW_RFKILL_ALL	/* deprecated */
+#define	SW_RADIO				SW_RFKILL_ALL	/* deprecated */
 #define	SW_MICROPHONE_INSERT	0x04  /* set = inserted */
-#define	SW_DOCK			0x05  /* set = plugged into dock */
-#define	SW_LINEOUT_INSERT	0x06  /* set = inserted */
+#define	SW_DOCK					0x05  /* set = plugged into dock */
+#define	SW_LINEOUT_INSERT		0x06  /* set = inserted */
 #define	SW_JACK_PHYSICAL_INSERT 0x07  /* set = mechanical switch set */
-#define	SW_VIDEOOUT_INSERT	0x08  /* set = inserted */
+#define	SW_VIDEOOUT_INSERT		0x08  /* set = inserted */
 #define	SW_CAMERA_LENS_COVER	0x09  /* set = lens covered */
-#define	SW_KEYPAD_SLIDE		0x0a  /* set = keypad slide out */
-#define	SW_FRONT_PROXIMITY	0x0b  /* set = front proximity sensor active */
-#define	SW_ROTATE_LOCK		0x0c  /* set = rotate locked/disabled */
-#define	SW_LINEIN_INSERT	0x0d  /* set = inserted */
-#define	SW_MUTE_DEVICE		0x0e  /* set = device disabled */
-#define	SW_PEN_INSERTED		0x0f  /* set = pen inserted */
-#define	SW_MAX			0x0f
-#define	SW_CNT			(SW_MAX+1)
+#define	SW_KEYPAD_SLIDE			0x0a  /* set = keypad slide out */
+#define	SW_FRONT_PROXIMITY		0x0b  /* set = front proximity sensor active */
+#define	SW_ROTATE_LOCK			0x0c  /* set = rotate locked/disabled */
+#define	SW_LINEIN_INSERT		0x0d  /* set = inserted */
+#define	SW_MUTE_DEVICE			0x0e  /* set = device disabled */
+#define	SW_PEN_INSERTED			0x0f  /* set = pen inserted */
+#define	SW_MAX					0x0f
+#define	SW_CNT					(SW_MAX+1)
 
 /*
  * Misc events

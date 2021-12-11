@@ -279,9 +279,10 @@ wsmux_do_open(struct wsmux_softc *sc, struct wseventvar *evar)
 	sc->sc_base.me_evp = evar; /* remember event variable, mark as open */
 
 	/* Open all children. */
-	CIRCLEQ_FOREACH(me, &sc->sc_cld, me_next) {
+	CIRCLEQ_FOREACH(me, &sc->sc_cld, me_next)
+	{
 		DPRINTF(("wsmuxopen: %s: m=%p dev=%s\n",
-			 sc->sc_base.me_dv.dv_xname, me, me->me_dv.dv_xname));
+						sc->sc_base.me_dv.dv_xname, me, me->me_dv.dv_xname));
 #ifdef DIAGNOSTIC
 		if (me->me_evp != NULL) {
 			printf("wsmuxopen: dev already in use\n");
@@ -292,14 +293,14 @@ wsmux_do_open(struct wsmux_softc *sc, struct wseventvar *evar)
 			continue;
 		}
 		{
-		int error = wsevsrc_open(me, evar);
-		if (error) {
-			DPRINTF(("wsmuxopen: open failed %d\n", error));
-		}
+			int error = wsevsrc_open(me, evar);
+			if (error) {
+				DPRINTF(("wsmuxopen: open failed %d\n", error));
+			}
 		}
 #else
 		/* ignore errors, failing children will not be marked open */
-		(void)wsevsrc_open(me, evar);
+		(void) wsevsrc_open(me, evar);
 #endif
 	}
 }

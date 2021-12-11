@@ -26,7 +26,7 @@
  *
  */
 
-//#include "opt_pcdisplay.h"
+#include "opt_pcdisplay.h"
 
 struct pcdisplayscreen {
 	struct pcdisplay_handle 	*hdl;
@@ -90,3 +90,4 @@ void	pcdisplay_eraserows(void *, int, int, long);
 struct wsdisplay_char;
 int		pcdisplay_getwschar(void *, struct wsdisplay_char *);
 int		pcdisplay_putwschar(void *, struct wsdisplay_char *);
+int 	pcdisplay_cnattach(bus_space_tag_t, bus_space_tag_t);

@@ -125,7 +125,7 @@ lockmgr(lkp, flags, interlkp, pid)
 	u_int flags;
 	struct lock_object *interlkp;
 	pid_t pid;
-{
+ {
 	int error;
 	int extflags;
 	error = 0;

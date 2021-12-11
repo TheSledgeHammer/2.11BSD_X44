@@ -138,7 +138,7 @@ wsevent_read(ev, uio, flags)
 	 * Make sure we can return at least 1.
 	 */
 	if (uio->uio_resid < sizeof(struct wscons_event))
-		return (EMSGSIZE);	/* ??? */
+		return (EMSGSIZE); /* ??? */
 	s = splwsevent();
 	while (ev->get == ev->put) {
 		if (flags & IO_NDELAY) {
@@ -146,8 +146,7 @@ wsevent_read(ev, uio, flags)
 			return (EWOULDBLOCK);
 		}
 		ev->wanted = 1;
-		error = tsleep((caddr_t)ev, PWSEVENT | PCATCH,
-		    "wsevent_read", 0);
+		error = tsleep((caddr_t) ev, PWSEVENT | PCATCH, "wsevent_read", 0);
 		if (error) {
 			splx(s);
 			return (error);
@@ -158,9 +157,9 @@ wsevent_read(ev, uio, flags)
 	 * there).
 	 */
 	if (ev->put < ev->get)
-		cnt = WSEVENT_QSIZE - ev->get;	/* events in [get..QSIZE) */
+		cnt = WSEVENT_QSIZE - ev->get; /* events in [get..QSIZE) */
 	else
-		cnt = ev->put - ev->get;	/* events in [get..put) */
+		cnt = ev->put - ev->get; /* events in [get..put) */
 	splx(s);
 	n = howmany(uio->uio_resid, sizeof(struct wscons_event));
 	if (cnt > n)
@@ -172,13 +171,12 @@ wsevent_read(ev, uio, flags)
 	 * stop.  Otherwise move from front of queue to put index, if there
 	 * is anything there to move.
 	 */
-	if ((ev->get = (ev->get + cnt) % WSEVENT_QSIZE) != 0 ||
-	    n == 0 || error || (cnt = ev->put) == 0)
+	if ((ev->get = (ev->get + cnt) % WSEVENT_QSIZE) != 0 || n == 0 || error
+			|| (cnt = ev->put) == 0)
 		return (error);
 	if (cnt > n)
 		cnt = n;
-	error = uiomove(&ev->q[0],
-	    cnt * sizeof(struct wscons_event), uio);
+	error = uiomove(&ev->q[0], cnt * sizeof(struct wscons_event), uio);
 	ev->get = cnt;
 	return (error);
 }

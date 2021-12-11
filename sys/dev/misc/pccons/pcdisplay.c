@@ -34,7 +34,7 @@
 #include <sys/kernel.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
-#include <sys/user.h>
+//#include <sys/user.h>
 
 #include <machine/bus.h>
 
@@ -48,12 +48,6 @@
 
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsdisplayvar.h>
-
-//#include "pcweasel.h"
-#if NPCWEASEL > 0
-#include <dev/core/isa/weaselreg.h>
-#include <dev/core/isa/weaselvar.h>
-#endif
 
 struct pcdisplay_config {
 	struct pcdisplayscreen 	pcs;
@@ -82,7 +76,7 @@ static int pcdisplay_probe_mono (bus_space_tag_t, bus_space_tag_t);
 static void pcdisplay_init (struct pcdisplay_config *, bus_space_tag_t, bus_space_tag_t, int);
 static int pcdisplay_allocattr (void *, int, int, int, long *);
 
-CFDRIVER_DECL(NULL, pcdisplay_isa, &pcdisplay_cops, DV_DULL, sizeof(struct pcdisplay_softc));
+CFDRIVER_DECL(NULL, pcdisplay, &pcdisplay_cops, DV_DULL, sizeof(struct pcdisplay_softc));
 CFOPS_DECL(pcdisplay, pcdisplay_match, pcdisplay_attach, NULL, NULL);
 
 const struct wsdisplay_emulops pcdisplay_emulops = {
@@ -184,15 +178,13 @@ pcdisplay_init(dc, iot, memt, mono)
 	struct pcdisplay_handle *ph = &dc->dc_ph;
 	int cpos;
 
-        ph->ph_iot = iot;
-        ph->ph_memt = memt;
+	ph->ph_iot = iot;
+	ph->ph_memt = memt;
 	dc->mono = mono;
 
-	if (bus_space_map(memt, mono ? 0xb0000 : 0xb8000, 0x8000,
-			  0, &ph->ph_memh))
+	if (bus_space_map(memt, mono ? 0xb0000 : 0xb8000, 0x8000, 0, &ph->ph_memh))
 		panic("pcdisplay_init: cannot map memory");
-	if (bus_space_map(iot, mono ? 0x3b0 : 0x3d0, 0x10,
-			  0, &ph->ph_ioh_6845))
+	if (bus_space_map(iot, mono ? 0x3b0 : 0x3d0, 0x10, 0, &ph->ph_ioh_6845))
 		panic("pcdisplay_init: cannot map io");
 
 	/*
@@ -288,9 +280,11 @@ pcdisplay_attach(parent, self, aux)
 		pcdisplay_console_attached = 1;
 	} else {
 		dc = malloc(sizeof(struct pcdisplay_config), M_DEVBUF, M_WAITOK);
-		if (ia->ia_iobase != 0x3b0 && ia->ia_maddr != 0xb0000 && pcdisplay_probe_col(ia->ia_iot, ia->ia_memt))
+		if (ia->ia_iobase != 0x3b0 && ia->ia_maddr != 0xb0000
+				&& pcdisplay_probe_col(ia->ia_iot, ia->ia_memt))
 			pcdisplay_init(dc, ia->ia_iot, ia->ia_memt, 0);
-		else if (ia->ia_iobase != 0x3d0 && ia->ia_maddr != 0xb8000 && pcdisplay_probe_mono(ia->ia_iot, ia->ia_memt))
+		else if (ia->ia_iobase != 0x3d0 && ia->ia_maddr != 0xb8000
+				&& pcdisplay_probe_mono(ia->ia_iot, ia->ia_memt))
 			pcdisplay_init(dc, ia->ia_iot, ia->ia_memt, 1);
 		else
 			panic("pcdisplay_attach: display disappeared");
@@ -321,9 +315,9 @@ pcdisplay_cnattach(iot, memt)
 	pcdisplay_init(&pcdisplay_console_dc, iot, memt, mono);
 
 	wsdisplay_cnattach(&pcdisplay_scr, &pcdisplay_console_dc,
-			   pcdisplay_console_dc.pcs.cursorcol,
-			   pcdisplay_console_dc.pcs.cursorrow,
-			   FG_LIGHTGREY | BG_BLACK);
+			pcdisplay_console_dc.pcs.cursorcol,
+			pcdisplay_console_dc.pcs.cursorrow,
+			FG_LIGHTGREY | BG_BLACK);
 
 	pcdisplayconsole = 1;
 	return (0);

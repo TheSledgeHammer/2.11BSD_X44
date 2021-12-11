@@ -56,6 +56,8 @@ struct wscons_event {
 	u_int			type;
 	int				value;
 	struct timespec	time;
+
+	u_int			code;
 };
 
 /* Event type definitions.  Comment for each is information in value. */
@@ -282,7 +284,6 @@ struct wsmouse_id {
 #define	WSDISPLAY_TYPE_SUNTCX		38	/* Sun TCX */
 #define	WSDISPLAY_TYPE_SUNFFB		39	/* Sun creator FFB */
 
-
 /* Basic display information.  Not applicable to all display types. */
 struct wsdisplay_fbinfo {
 	u_int	height;				/* height in pixels */
@@ -462,7 +463,7 @@ struct wsmux_device {
 #define	WSMUXIO_REMOVE_DEVICE		_IOW('W', 98, struct wsmux_device)
 #define	WSMUX_REMOVE_DEVICE			WSMUXIO_REMOVE_DEVICE /* XXX compat */
 
-#define	WSMUX_MAXDEV 32
+#define	WSMUX_MAXDEV 				32
 struct wsmux_device_list {
 	int 				ndevices;
 	struct wsmux_device devices[WSMUX_MAXDEV];

@@ -74,8 +74,7 @@ evdev_mt_init(struct evdev_dev *evdev)
 
 	slots = MAXIMAL_MT_SLOT(evdev) + 1;
 
-	evdev->ev_mt = malloc(offsetof(struct evdev_mt, ev_mt_slots) +
-	     sizeof(struct evdev_mt_slot) * slots, M_EVDEV, M_WAITOK | M_ZERO);
+	evdev->ev_mt = malloc(offsetof(struct evdev_mt, ev_mt_slots) + sizeof(struct evdev_mt_slot) * slots, M_EVDEV, M_WAITOK | M_ZERO);
 
 	/* Initialize multitouch protocol type B states */
 	for (slot = 0; slot < slots; slot++) {

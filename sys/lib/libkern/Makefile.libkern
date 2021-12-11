@@ -52,7 +52,8 @@ SRCS+=	__assert.c __main.c
 SRCS+=	inet_addr.c intoa.c
 SRCS+=	bswap16.c bswap32.c bswap64.c
 SRCS+=	murmur3_32.c prospectorhash.c
-SRCS+=	pmatch.c mcount.c bcd.c ffs.c 
+SRCS+=	pmatch.c mcount.c bcd.c ffs.c \
+		ffsl.c
 
 SRCS+=	strstr.c strlcpy.c strlcat.c
 
