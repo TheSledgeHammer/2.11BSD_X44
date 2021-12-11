@@ -95,7 +95,6 @@
 #include <machine/proc.h>
 #include <machine/reg.h>
 
-
 #ifdef DEBUG
 int	trapdebug = 0;
 #endif
@@ -231,7 +230,7 @@ userret(p, pc, oticks)
 		s = splstatclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
-		mi_switch();
+		swtch();
 		splx(s);
 		while ((sig = CURSIG(p)) != 0) {
 			postsig(sig);

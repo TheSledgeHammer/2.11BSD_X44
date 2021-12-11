@@ -73,65 +73,41 @@
 #include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/scsi/scsi_tape.h>
 #include <dev/disk/scsi/scsiconf.h>
+#include <dev/disk/scsi/stvar.h>
 
 /* Defines for device specific stuff */
-#define DEF_FIXED_BSIZE  512
-#define	ST_RETRIES	4	/* only on non IO commands */
+#define DEF_FIXED_BSIZE 512
+#define	ST_RETRIES		4					/* only on non IO commands */
 
 #define STMODE(z)	( minor(z)       & 0x03)
 #define STDSTY(z)	((minor(z) >> 2) & 0x03)
 #define STUNIT(z)	((minor(z) >> 4)       )
 #define CTLMODE	3
 
-#define SCSI_2_MAX_DENSITY_CODE	0x17	/* maximum density code specified
-					 * in SCSI II spec. */
-/*
- * Define various devices that we know mis-behave in some way,
- * and note how they are bad, so we can correct for them
- */
-struct modes {
-	u_int quirks;			/* same definitions as in quirkdata */
-	int blksize;
-	u_int8_t density;
-};
-
-struct quirkdata {
-	u_int quirks;
-#define	ST_Q_FORCE_BLKSIZE	0x0001
-#define	ST_Q_SENSE_HELP		0x0002	/* must do READ for good MODE SENSE */
-#define	ST_Q_IGNORE_LOADS	0x0004
-#define	ST_Q_BLKSIZE		0x0008	/* variable-block media_blksize > 0 */
-	u_int page_0_size;
-#define	MAX_PAGE_0_SIZE	64
-	struct modes modes[4];
-};
-
-struct st_quirk_inquiry_pattern {
-	struct scsi_inquiry_pattern pattern;
-	struct quirkdata quirkdata;
-};
+#define SCSI_2_MAX_DENSITY_CODE	0x17		/* maximum density code specified
+ 	 	 	 	 	 	 	 	 	 	 	 * in SCSI II spec. */
 
 struct st_quirk_inquiry_pattern st_quirk_patterns[] = {
 	{{T_SEQUENTIAL, T_REMOV,
 	 "        ", "                ", "    "}, {0, 0, {
-		{ST_Q_FORCE_BLKSIZE, 512, 0},		/* minor 0-3 */
-		{ST_Q_FORCE_BLKSIZE, 512, QIC_24},	/* minor 4-7 */
+		{ST_Q_FORCE_BLKSIZE, 512, 0},			/* minor 0-3 */
+		{ST_Q_FORCE_BLKSIZE, 512, QIC_24},		/* minor 4-7 */
 		{ST_Q_FORCE_BLKSIZE, 0, HALFINCH_1600},	/* minor 8-11 */
 		{ST_Q_FORCE_BLKSIZE, 0, HALFINCH_6250}	/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "TANDBERG", " TDC 3600       ", ""},     {0, 12, {
-		{0, 0, 0},				/* minor 0-3 */
-		{ST_Q_FORCE_BLKSIZE, 0, QIC_525},	/* minor 4-7 */
-		{0, 0, QIC_150},			/* minor 8-11 */
-		{0, 0, QIC_120}				/* minor 12-15 */
+		{0, 0, 0},								/* minor 0-3 */
+		{ST_Q_FORCE_BLKSIZE, 0, QIC_525},		/* minor 4-7 */
+		{0, 0, QIC_150},						/* minor 8-11 */
+		{0, 0, QIC_120}							/* minor 12-15 */
 	}}},
  	{{T_SEQUENTIAL, T_REMOV,
  	 "TANDBERG", " TDC 3800       ", ""},     {0, 0, {
-		{ST_Q_FORCE_BLKSIZE, 512, 0},		/* minor 0-3 */
-		{0, 0, QIC_525},			/* minor 4-7 */
-		{0, 0, QIC_150},			/* minor 8-11 */
-		{0, 0, QIC_120}				/* minor 12-15 */
+		{ST_Q_FORCE_BLKSIZE, 512, 0},			/* minor 0-3 */
+		{0, 0, QIC_525},						/* minor 4-7 */
+		{0, 0, QIC_150},						/* minor 8-11 */
+		{0, 0, QIC_120}							/* minor 12-15 */
 	}}},
 	/*
 	 * At least -005 and -007 need this.  I'll assume they all do unless I
@@ -139,10 +115,10 @@ struct st_quirk_inquiry_pattern st_quirk_patterns[] = {
 	 */
 	{{T_SEQUENTIAL, T_REMOV,
 	 "ARCHIVE ", "VIPER 2525 25462", ""},     {0, 0, {
-		{ST_Q_SENSE_HELP, 0, 0},		/* minor 0-3 */
-		{ST_Q_SENSE_HELP, 0, QIC_525},		/* minor 4-7 */
-		{0, 0, QIC_150},			/* minor 8-11 */
-		{0, 0, QIC_120}				/* minor 12-15 */
+		{ST_Q_SENSE_HELP, 0, 0},				/* minor 0-3 */
+		{ST_Q_SENSE_HELP, 0, QIC_525},			/* minor 4-7 */
+		{0, 0, QIC_150},						/* minor 8-11 */
+		{0, 0, QIC_120}							/* minor 12-15 */
 	}}},
 	/*
 	 * One user reports that this works for his tape drive.  It probably
@@ -150,110 +126,73 @@ struct st_quirk_inquiry_pattern st_quirk_patterns[] = {
 	 */
 	{{T_SEQUENTIAL, T_REMOV,
 	 "SANKYO  ", "CP525           ", ""},    {0, 0, {
-		{ST_Q_FORCE_BLKSIZE, 512, 0},		/* minor 0-3 */
-		{ST_Q_FORCE_BLKSIZE, 512, QIC_525},	/* minor 4-7 */
-		{0, 0, QIC_150},			/* minor 8-11 */
-		{0, 0, QIC_120}				/* minor 12-15 */
+		{ST_Q_FORCE_BLKSIZE, 512, 0},			/* minor 0-3 */
+		{ST_Q_FORCE_BLKSIZE, 512, QIC_525},		/* minor 4-7 */
+		{0, 0, QIC_150},						/* minor 8-11 */
+		{0, 0, QIC_120}							/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "ANRITSU ", "DMT780          ", ""},     {0, 0, {
-		{ST_Q_FORCE_BLKSIZE, 512, 0},		/* minor 0-3 */
-		{ST_Q_FORCE_BLKSIZE, 512, QIC_525},	/* minor 4-7 */
-		{0, 0, QIC_150},			/* minor 8-11 */
-		{0, 0, QIC_120}				/* minor 12-15 */
+		{ST_Q_FORCE_BLKSIZE, 512, 0},			/* minor 0-3 */
+		{ST_Q_FORCE_BLKSIZE, 512, QIC_525},		/* minor 4-7 */
+		{0, 0, QIC_150},						/* minor 8-11 */
+		{0, 0, QIC_120}							/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "ARCHIVE ", "VIPER 150  21247", ""},     {0, 12, {
-		{0, 0, 0},				/* minor 0-3 */
-		{0, 0, QIC_150},			/* minor 4-7 */
-		{0, 0, QIC_120},			/* minor 8-11 */
-		{0, 0, QIC_24}				/* minor 12-15 */
+		{0, 0, 0},								/* minor 0-3 */
+		{0, 0, QIC_150},						/* minor 4-7 */
+		{0, 0, QIC_120},						/* minor 8-11 */
+		{0, 0, QIC_24}							/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "WANGTEK ", "5099ES SCSI", ""},          {0, 0, {
-		{ST_Q_FORCE_BLKSIZE, 512, 0},		/* minor 0-3 */
-		{0, 0, QIC_11},				/* minor 4-7 */
-		{0, 0, QIC_24},				/* minor 8-11 */
-		{0, 0, QIC_24}				/* minor 12-15 */
+		{ST_Q_FORCE_BLKSIZE, 512, 0},			/* minor 0-3 */
+		{0, 0, QIC_11},							/* minor 4-7 */
+		{0, 0, QIC_24},							/* minor 8-11 */
+		{0, 0, QIC_24}							/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "WANGTEK ", "5150ES SCSI", ""},          {0, 0, {
-		{ST_Q_FORCE_BLKSIZE, 512, 0},		/* minor 0-3 */
-		{0, 0, QIC_24},				/* minor 4-7 */
-		{0, 0, QIC_120},			/* minor 8-11 */
-		{0, 0, QIC_150}				/* minor 12-15 */
+		{ST_Q_FORCE_BLKSIZE, 512, 0},			/* minor 0-3 */
+		{0, 0, QIC_24},							/* minor 4-7 */
+		{0, 0, QIC_120},						/* minor 8-11 */
+		{0, 0, QIC_150}							/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "WANGTEK ", "5525ES SCSI REV7", ""},     {0, 0, {
-		{0, 0, 0},							/* minor 0-3 */
-		{ST_Q_BLKSIZE, 0, QIC_525},			/* minor 4-7 */
-		{0, 0, QIC_150},					/* minor 8-11 */
-		{0, 0, QIC_120}						/* minor 12-15 */
+		{0, 0, 0},								/* minor 0-3 */
+		{ST_Q_BLKSIZE, 0, QIC_525},				/* minor 4-7 */
+		{0, 0, QIC_150},						/* minor 8-11 */
+		{0, 0, QIC_120}							/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "WangDAT ", "Model 1300      ", ""},     {0, 0, {
-		{0, 0, 0},							/* minor 0-3 */
-		{ST_Q_FORCE_BLKSIZE, 512, DDS},		/* minor 4-7 */
-		{ST_Q_FORCE_BLKSIZE, 1024, DDS},	/* minor 8-11 */
-		{ST_Q_FORCE_BLKSIZE, 0, DDS}		/* minor 12-15 */
+		{0, 0, 0},								/* minor 0-3 */
+		{ST_Q_FORCE_BLKSIZE, 512, DDS},			/* minor 4-7 */
+		{ST_Q_FORCE_BLKSIZE, 1024, DDS},		/* minor 8-11 */
+		{ST_Q_FORCE_BLKSIZE, 0, DDS}			/* minor 12-15 */
 	}}},
 	{{T_SEQUENTIAL, T_REMOV,
 	 "EXABYTE ", "EXB-8200        ", "263H"}, {0, 5, {
-		{0, 0, 0},				/* minor 0-3 */
-		{0, 0, 0},				/* minor 4-7 */
-		{0, 0, 0},				/* minor 8-11 */
-		{0, 0, 0}				/* minor 12-15 */
+		{0, 0, 0},								/* minor 0-3 */
+		{0, 0, 0},								/* minor 4-7 */
+		{0, 0, 0},								/* minor 8-11 */
+		{0, 0, 0}								/* minor 12-15 */
 	}}},
 #if 0
 	{{T_SEQUENTIAL, T_REMOV,
 	 "EXABYTE ", "EXB-8200        ", ""},     {0, 12, {
-		{0, 0, 0},				/* minor 0-3 */
-		{0, 0, 0},				/* minor 4-7 */
-		{0, 0, 0},				/* minor 8-11 */
-		{0, 0, 0}				/* minor 12-15 */
+		{0, 0, 0},								/* minor 0-3 */
+		{0, 0, 0},								/* minor 4-7 */
+		{0, 0, 0},								/* minor 8-11 */
+		{0, 0, 0}								/* minor 12-15 */
 	}}},
 #endif
 };
 
 #define NOEJECT 0
-#define EJECT 1
-
-struct st_softc {
-	struct device sc_dev;
-/*--------------------present operating parameters, flags etc.----------------*/
-	int flags;		/* see below                          */
-	u_int quirks;		/* quirks for the open mode           */
-	int blksize;		/* blksize we are using                */
-	u_int8_t density;	/* present density                    */
-	u_int page_0_size;	/* size of page 0 data		      */
-	u_int last_dsty;	/* last density opened               */
-/*--------------------device/scsi parameters----------------------------------*/
-	struct scsi_link *sc_link;	/* our link to the adpter etc.        */
-/*--------------------parameters reported by the device ----------------------*/
-	int blkmin;		/* min blk size                       */
-	int blkmax;		/* max blk size                       */
-	struct quirkdata *quirkdata;	/* if we have a rogue entry           */
-/*--------------------parameters reported by the device for this media--------*/
-	u_long numblks;		/* nominal blocks capacity            */
-	int media_blksize;	/* 0 if not ST_FIXEDBLOCKS            */
-	u_int8_t media_density;	/* this is what it said when asked    */
-/*--------------------quirks for the whole drive------------------------------*/
-	u_int drive_quirks;	/* quirks of this drive               */
-/*--------------------How we should set up when opening each minor device----*/
-	struct modes modes[4];	/* plus more for each mode            */
-	u_int8_t  modeflags[4];	/* flags for the modes                */
-#define DENSITY_SET_BY_USER	0x01
-#define DENSITY_SET_BY_QUIRK	0x02
-#define BLKSIZE_SET_BY_USER	0x04
-#define BLKSIZE_SET_BY_QUIRK	0x08
-/*--------------------storage for sense data returned by the drive------------*/
-	u_char sense_data[MAX_PAGE_0_SIZE];	/*
-						 * additional sense data needed
-						 * for mode sense/select.
-						 */
-	struct buf buf_queue;		/* the queue of pending IO operations */
-};
-
+#define EJECT 	1
 
 int		stmatch (struct device *, void *, void *);
 void	stattach (struct device *, struct device *, void *);
@@ -278,6 +217,10 @@ int		st_erase (struct st_softc *, int full, int flags);
 
 CFDRIVER_DECL(NULL, st, &st_cops, DV_TAPE, sizeof(struct st_softc));
 CFOPS_DECL(st, stmatch, stattach, NULL, NULL);
+
+extern struct cfdriver st_cd;
+
+struct dkdriver stdkdriver = { ststrategy };
 
 static dev_type_open(stopen);
 static dev_type_close(stclose);
@@ -318,29 +261,6 @@ struct scsi_device st_switch = {
 	NULL,
 	NULL,
 };
-
-#define	ST_INFO_VALID	0x0001
-#define	ST_BLOCK_SET	0x0002	/* block size, mode set by ioctl      */
-#define	ST_WRITTEN		0x0004	/* data have been written, EOD needed */
-#define	ST_FIXEDBLOCKS	0x0008
-#define	ST_AT_FILEMARK	0x0010
-#define	ST_EIO_PENDING	0x0020	/* we couldn't report it then (had data) */
-#define	ST_NEW_MOUNT	0x0040	/* still need to decide mode              */
-#define	ST_READONLY		0x0080	/* st_mode_sense says write protected */
-#define	ST_FM_WRITTEN	0x0100	/*
-				 * EOF file mark written  -- used with
-				 * ~ST_WRITTEN to indicate that multiple file
-				 * marks have been written
-				 */
-#define	ST_BLANK_READ	0x0200	/* BLANK CHECK encountered already */
-#define	ST_2FM_AT_EOD	0x0400	/* write 2 file marks at EOD */
-#define	ST_MOUNTED		0x0800	/* Device is presently mounted */
-#define	ST_DONTBUFFER	0x1000	/* Disable buffering/caching */
-
-#define	ST_PER_ACTION	(ST_AT_FILEMARK | ST_EIO_PENDING | ST_BLANK_READ)
-#define	ST_PER_MOUNT	(ST_INFO_VALID | ST_BLOCK_SET | ST_WRITTEN | \
-			 ST_FIXEDBLOCKS | ST_READONLY | ST_FM_WRITTEN | \
-			 ST_2FM_AT_EOD | ST_PER_ACTION)
 
 struct scsi_inquiry_pattern st_patterns[] = {
 	{T_SEQUENTIAL, T_REMOV,

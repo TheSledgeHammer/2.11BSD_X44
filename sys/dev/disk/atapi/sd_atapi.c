@@ -50,7 +50,6 @@
 #include <sys/device.h>
 #include <sys/disk.h>
 #include <sys/conf.h>
-#include <sys/user.h>
 
 #include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/scsi/scsi_disk.h>
@@ -59,7 +58,7 @@
 #include <dev/disk/atapi/atapiconf.h>
 #include <dev/disk/scsi/sdvar.h>
 
-int	sd_atapibus_match (struct device *, struct cfdata *, void *);
+int		sd_atapibus_match (struct device *, struct cfdata *, void *);
 void	sd_atapibus_attach (struct device *, struct device *, void *);
 
 CFDRIVER_DECL(NULL, sd_atapibus, &sd_atapibus_cops, DV_DULL, sizeof(struct sd_softc));
@@ -113,7 +112,7 @@ sd_atapibus_attach(parent, self, aux)
 	struct scsibus_attach_args *sa = aux;
 	struct scsi_link *sc_link = sa->sa_sc_link;
 
-	SC_DEBUG(sc_link, SDEV_DB2, ("sd_atapi_attach: "));
+	SC_DEBUG(sc_link, SDEV_DB2, ("sdattach: "));
 
 	sd->type = (sa->sa_inqbuf.type & SID_TYPE);
 	scsi_strvis(sd->name, 16, sa->sa_inqbuf.product, 16);

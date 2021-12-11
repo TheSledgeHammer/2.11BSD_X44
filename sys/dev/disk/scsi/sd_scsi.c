@@ -77,7 +77,7 @@ void	sd_scsibus_attach (struct device *, struct device *, void *);
 CFDRIVER_DECL(NULL, sd_scsibus, &sd_scsibus_cops, DV_DULL, sizeof(struct sd_softc));
 CFOPS_DECL(sd_scsibus, sd_scsibus_match, sd_scsibus_attach, NULL, NULL);
 
-struct scsipi_inquiry_pattern sd_scsibus_patterns[] = {
+struct scsi_inquiry_pattern sd_scsibus_patterns[] = {
 	{T_DIRECT, T_FIXED,
 	 "",         "",                 ""},
 	{T_DIRECT, T_REMOV,
@@ -253,7 +253,7 @@ sd_scsibus_get_parms(sd, dp, flags)
 						_3btol(scsi_sense.pages.rigid_geometry.ncyl),
 						scsi_sense.pages.rigid_geometry.nheads,
 						_2btol(scsi_sense.pages.rigid_geometry.st_cyl_wp),
-						_2btol(scsipi_sense.pages.rigid_geometry.st_cyl_rwc),
+						_2btol(scsi_sense.pages.rigid_geometry.st_cyl_rwc),
 						_2btol(scsi_sense.pages.rigid_geometry.land_zone)));
 
 		/*

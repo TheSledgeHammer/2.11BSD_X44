@@ -188,15 +188,15 @@ wsmouse*		at mms? mux 0
 # SCSI Controllers and Devices
 
 # SCSI bus support
-#scsibus* 		at scsi?
+scsibus* 		at scsi?
 
 # SCSI devices
-#sd*				at scsibus? target ? lun ?	# SCSI disk drives
-#st*				at scsibus? target ? lun ?	# SCSI tape drives
-#cd*				at scsibus? target ? lun ?	# SCSI CD-ROM drives
-#ch*				at scsibus? target ? lun ?	# SCSI autochangers
-#ss*				at scsibus? target ? lun ?	# SCSI scanners
-#uk*				at scsibus? target ? lun ?	# SCSI unknown
+sd*				at scsibus? target ? lun ?	# SCSI disk drives
+st*				at scsibus? target ? lun ?	# SCSI tape drives
+cd*				at scsibus? target ? lun ?	# SCSI CD-ROM drives
+ch*				at scsibus? target ? lun ?	# SCSI autochangers
+ss*				at scsibus? target ? lun ?	# SCSI scanners
+uk*				at scsibus? target ? lun ?	# SCSI unknown
 
 # ISA Plug-and-Play IDE controllers
 wdc*			at isapnp?

@@ -1,7 +1,11 @@
-/*	$NetBSD: scsi_tape.h,v 1.8 1996/03/19 03:05:15 mycroft Exp $	*/
+/*	$NetBSD: scsi_tape.h,v 1.20 2001/04/25 17:53:39 bouyer Exp $	*/
 
-/*
- * Copyright (c) 1994 Charles Hannum.  All rights reserved.
+/*-
+ * Copyright (c) 1998 The NetBSD Foundation, Inc.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Charles M. Hannum.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,20 +17,23 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by Charles Hannum.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
@@ -57,30 +64,30 @@
  * SCSI command formats
  */
 
-#define	READ				0x08
-#define WRITE				0x0a
+#define	READ					0x08
+#define WRITE					0x0a
 struct scsi_rw_tape {
 	u_int8_t opcode;
 	u_int8_t byte2;
-#define	SRW_FIXED			0x01
+#define	SRW_FIXED				0x01
 	u_int8_t len[3];
 	u_int8_t control;
 };
 
-#define	SPACE				0x11
+#define	SPACE					0x11
 struct scsi_space {
 	u_int8_t opcode;
 	u_int8_t byte2;
-#define	SS_CODE				0x03
-#define SP_BLKS				0x00
-#define SP_FILEMARKS		0x01
-#define SP_SEQ_FILEMARKS	0x02
-#define	SP_EOM				0x03
+#define	SS_CODE					0x03
+#define SP_BLKS					0x00
+#define SP_FILEMARKS			0x01
+#define SP_SEQ_FILEMARKS		0x02
+#define	SP_EOM					0x03
 	u_int8_t number[3];
 	u_int8_t control;
 };
 
-#define	WRITE_FILEMARKS		0x10
+#define	WRITE_FILEMARKS			0x10
 struct scsi_write_filemarks {
 	u_int8_t opcode;
 	u_int8_t byte2;
@@ -88,39 +95,39 @@ struct scsi_write_filemarks {
 	u_int8_t control;
 };
 
-#define REWIND				0x01
+#define REWIND					0x01
 struct scsi_rewind {
 	u_int8_t opcode;
 	u_int8_t byte2;
-#define	SR_IMMED			0x01
+#define	SR_IMMED				0x01
 	u_int8_t unused[3];
 	u_int8_t control;
 };
 
-#define LOAD				0x1b
+#define LOAD					0x1b
 struct scsi_load {
 	u_int8_t opcode;
 	u_int8_t byte2;
-#define	SL_IMMED			0x01
+#define	SL_IMMED				0x01
 	u_int8_t unused[2];
 	u_int8_t how;
-#define LD_UNLOAD			0x00
-#define LD_LOAD				0x01
-#define LD_RETENSION		0x02
+#define LD_UNLOAD				0x00
+#define LD_LOAD					0x01
+#define LD_RETENSION			0x02
 	u_int8_t control;
 };
 
-#define	ERASE				0x19
+#define	ERASE					0x19
 struct scsi_erase {
 	u_int8_t opcode;
 	u_int8_t byte2;
-#define	SE_LONG				0x01
-#define	SE_IMMED			0x02
+#define	SE_LONG					0x01
+#define	SE_IMMED				0x02
 	u_int8_t unused[3];
 	u_int8_t control;
 };
 
-#define	READ_BLOCK_LIMITS	0x05
+#define	READ_BLOCK_LIMITS		0x05
 struct scsi_block_limits {
 	u_int8_t opcode;
 	u_int8_t byte2;
@@ -136,33 +143,33 @@ struct scsi_block_limits_data {
 
 /* See SCSI-II spec 9.3.3.1 */
 struct scsi_tape_dev_conf_page {
-	u_int8_t pagecode;				/* 0x10 */
-	u_int8_t pagelength;			/* 0x0e */
+	u_int8_t pagecode;					/* 0x10 */
+	u_int8_t pagelength;				/* 0x0e */
 	u_int8_t byte2;
-#define	SMT_CAP				0x40	/* change active partition */
-#define	SMT_CAF				0x20	/* change active format */
-#define	SMT_AFMASK			0x1f	/* active format mask */
+#define	SMT_CAP					0x40	/* change active partition */
+#define	SMT_CAF					0x20	/* change active format */
+#define	SMT_AFMASK				0x1f	/* active format mask */
 	u_int8_t active_partition;
 	u_int8_t wb_full_ratio;
 	u_int8_t rb_empty_ratio;
 	u_int8_t wrdelay_time[2];
 	u_int8_t byte8;
-#define	SMT_DBR				0x80	/* data buffer recovery */
-#define	SMT_BIS				0x40	/* block identifiers supported */
-#define	SMT_RSMK			0x20	/* report setmarks */
-#define	SMT_AVC				0x10	/* automatic velocity control */
-#define SMT_SOCF_MASK		0xc0	/* stop on consecutive formats */
-#define	SMT_RBO				0x20	/* recover buffer order */
-#define	SMT_REW				0x10	/* report early warning */
+#define	SMT_DBR					0x80	/* data buffer recovery */
+#define	SMT_BIS					0x40	/* block identifiers supported */
+#define	SMT_RSMK				0x20	/* report setmarks */
+#define	SMT_AVC					0x10	/* automatic velocity control */
+#define SMT_SOCF_MASK			0xc0	/* stop on consecutive formats */
+#define	SMT_RBO					0x20	/* recover buffer order */
+#define	SMT_REW					0x10	/* report early warning */
 	u_int8_t gap_size;
 	u_int8_t byte10;
-#define	SMT_EODDEFINED		0xe0	/* EOD defined */
-#define	SMT_EEG				0x10	/* enable EOD generation */
-#define	SMT_SEW				0x80	/* synchronize at early warning */
+#define	SMT_EODDEFINED			0xe0	/* EOD defined */
+#define	SMT_EEG					0x10	/* enable EOD generation */
+#define	SMT_SEW					0x80	/* synchronize at early warning */
 	u_int8_t ew_bufsize[3];
 	u_int8_t sel_comp_alg;
-#define	SMT_COMP_NONE		0x00
-#define	SMT_COMP_DEFAULT	0x01
+#define	SMT_COMP_NONE			0x00
+#define	SMT_COMP_DEFAULT		0x01
 	u_int8_t reserved;
 };
 
@@ -183,6 +190,24 @@ struct block_desc_cipher {
 	u_int8_t other;
 #define ST150_SEC				0x01	/* soft error count */
 #define	SR150_AUI				0x02	/* autoload inhibit */
+};
+
+#define	READ_POSITION			0x34
+struct scsi_tape_read_position {
+	u_int8_t opcode;					/* READ_POSITION */
+	u_int8_t byte1;						/* set LSB to read hardware block pos */
+	u_int8_t reserved[8];
+};
+
+#define	LOCATE		0x2B
+struct scsi_tape_locate {
+	u_int8_t opcode;
+	u_int8_t byte2;
+	u_int8_t reserved1;
+	u_int8_t blkaddr[4];
+	u_int8_t reserved2;
+	u_int8_t partition;
+	u_int8_t control;
 };
 
 /**********************************************************************
@@ -244,5 +269,6 @@ struct block_desc_cipher {
 #define QIC_1320		0x12
 #define DDS				0x13
 #define DAT_1			0x13
-
+#define QIC_3095		0x45
+#define QIC_3220		0x47
 #endif /* _SCSI_TAPE_H_ */

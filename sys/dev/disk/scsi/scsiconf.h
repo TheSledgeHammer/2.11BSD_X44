@@ -323,7 +323,8 @@ struct scsi_quirk_inquiry_pattern {
 #define	SCSI_DATA_OUT				0x1000	/* expect data to flow OUT of memory	*/
 #define	SCSI_TARGET					0x2000	/* This defines a TARGET mode op.	*/
 #define	SCSI_ESCAPE					0x4000	/* Escape operation			*/
-
+#define SCSI_DATA_ONSTACK			0x8000	/* data is alloc'ed on stack */
+#define	SCSI_DISCOVERY				0x10000	/* doing device discovery */
 /*
  * Escape op codes.  This provides an extensible setup for operations
  * that are not scsi commands.  They are intended for modal operations.
