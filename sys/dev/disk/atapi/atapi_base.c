@@ -85,7 +85,7 @@ atapi_interpret_sense(xs)
 	 * more than the sense key
 	 */
 	if (xs->error == XS_SENSE)
-		return (scsipi_interpret_sense(xs));
+		return (scsi_interpret_sense(xs));
 
 	key = (xs->sense.atapi_sense & 0xf0) >> 4;
 	switch (key) {
@@ -204,7 +204,7 @@ atapi_print_addr(sc_link)
  * to associate with the transfer, we need that too.
  */
 int
-atapi_scsipi_cmd(sc_link, scsi_cmd, cmdlen, data_addr, datalen, retries, timeout, bp, flags)
+atapi_scsi_cmd(sc_link, scsi_cmd, cmdlen, data_addr, datalen, retries, timeout, bp, flags)
 	struct scsi_link *sc_link;
 	struct scsi_generic *scsi_cmd;
 	int cmdlen;
@@ -282,7 +282,7 @@ atapi_mode_sense(l, page, data, len, flags, retries, timeout)
 	scsi_cmd.page = page;
 	_lto2b(len, scsi_cmd.length);
 
-	error = scsipi_command(l, (struct scsipi_generic*) &scsi_cmd,
+	error = scsi_command(l, (struct scsipi_generic*) &scsi_cmd,
 			sizeof(scsi_cmd), (void*) data, len, retries, timeout, NULL,
 			flags | SCSI_DATA_IN);
 	SC_DEBUG(l, SDEV_DB2, ("atapi_mode_sense: error=%d\n", error));

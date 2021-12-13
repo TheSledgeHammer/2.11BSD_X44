@@ -178,7 +178,7 @@ struct ff_envelope {
 	uint16_t	attack_length;	/* duration of the attach (ms) */
 	uint16_t	attack_level;	/* level at the beginning (0x0000 - 0x7fff) */
 	uint16_t	fade_length;	/* duratin of fade (ms) */
-	uint16_t	fade_level;	/* level at the end of fade */
+	uint16_t	fade_level;		/* level at the end of fade */
 };
 
 struct ff_constant_effect {

@@ -151,7 +151,7 @@ struct wdc_xfer {
 	u_int8_t 				drive;
 
 	/* Information about the current transfer  */
-	void 					*cmd; /* wdc, ata or scsipi command structure */
+	void 					*cmd; 			/* wdc, ata or scsipi command structure */
 	void 					*databuf;
 	int 					c_bcount;      /* byte count left */
 	int 					c_skip;        /* bytes already transferred */

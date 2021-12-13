@@ -84,8 +84,8 @@
 #define	M_VMOBJHASH		33	/* VM object hash structure */
 #define	M_VMPMAP		34	/* VM pmap */
 #define	M_VMPVENT		35	/* VM phys-virt mapping entry */
-#define	M_VMPAGER		36	/* XXX: VM pager struct */
-#define	M_VMPGDATA		37	/* XXX: VM pager private data */
+#define	M_VMPAGER		36	/* VM pager struct */
+#define	M_VMPGDATA		37	/* VM pager private data */
 #define	M_FILE			38	/* Open file structure */						/* UN-USED */
 #define	M_FILEDESC		39	/* Open file descriptor table */
 #define	M_LOCKF			40	/* Byte-range locking structures */

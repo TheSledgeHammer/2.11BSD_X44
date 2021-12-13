@@ -56,7 +56,6 @@ struct wscons_event {
 	u_int			type;
 	int				value;
 	struct timespec	time;
-
 	u_int			code;
 };
 

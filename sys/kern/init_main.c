@@ -147,7 +147,7 @@ main(framep)
 
 	startup();
 
-	kmem_rmapinit();
+	rmapinit();
 
 	ksyms_init();
 	prf_init();

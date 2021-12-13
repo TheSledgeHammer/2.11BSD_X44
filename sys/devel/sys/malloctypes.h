@@ -42,6 +42,7 @@
 
 #define M_VMAMAP 		73	/* VM amap structures */
 #define M_VMAOBJ 		74	/* VM aobject structure */
+#define M_VMPSEG		93	/* pseudo-segment structure */
 #define M_OVLMAP		75	/* OVL map structures */
 #define	M_OVLMAPENT		76	/* OVL map entry structures */
 #define M_OVLOBJ		77	/* OVL object structure */
@@ -51,13 +52,11 @@
 #define M_ITPC			81	/* inter-threadpool communication */
 #define M_WORKQUEUE		82	/* workqueue */
 #define M_HTBC			83	/* HTree Blockchain structure */
-#define M_GSCHED		84	/* Global Scheduler */
 #define M_SA			85	/* Scheduler Activations */
 #define M_HTREE			86	/* vfs htree structure */
-#define M_VMSLAB		87 	/* VM slab structures */
 #define M_ADVVM			88 	/* AdvVM structures structures */
 #define M_MPX			92	/* multiplexor structure */
-#define M_VMPSEG		93	/* pseudo-segment structure */
+
 
 /* Overlay Malloc */
 #define overlay_malloc(size, type, flags) 				\

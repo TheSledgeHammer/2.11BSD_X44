@@ -25,71 +25,6 @@ bit_change(bitstr_t *bitstr, int bit, int value)
 		bit_clear(bitstr, bit);
 }
 
-int
-evdev_register(struct evdev_dev *evdev)
-{
-	/* Initialize internal structures */
-	LIST_INIT(&evdev->ev_clients);
-
-	if (evdev_event_supported(evdev, EV_REP)
-			&& bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
-		/* Initialize callout */
-		callout_init(&evdev->ev_rep_callout);
-		if (evdev->ev_rep[REP_DELAY] == 0 && evdev->ev_rep[REP_PERIOD] == 0) {
-			/* Supply default values */
-			evdev->ev_rep[REP_DELAY] = 250;
-			evdev->ev_rep[REP_PERIOD] = 33;
-		}
-	}
-	/* Initialize multitouch protocol type B states */
-	if (bit_test(evdev->ev_abs_flags, ABS_MT_SLOT) && evdev->ev_absinfo != NULL
-			&& MAXIMAL_MT_SLOT(evdev) > 0) {
-		evdev_mt_init(evdev);
-	}
-
-	/* Estimate maximum report size */
-	if (evdev->ev_report_size == 0) {
-		ret = evdev_set_report_size(evdev, evdev_estimate_report_size(evdev));
-		if (ret != 0) {
-			return (ret);
-		}
-	}
-
-	return (0);
-}
-
-int
-evdev_unregister(struct evdev_dev *evdev)
-{
-	struct evdev_client *client;
-	int ret;
-	debugf(evdev, "%s: unregistered evdev provider: %s\n",
-			evdev->ev_shortname, evdev->ev_name);
-
-	EVDEV_LOCK(evdev);
-	/* Wake up sleepers */
-	LIST_FOREACH(client, &evdev->ev_clients, ec_link) {
-		evdev_revoke_client(client);
-		evdev_dispose_client(evdev, client);
-		EVDEV_CLIENT_LOCKQ(client);
-		evdev_notify_event(client);
-		EVDEV_CLIENT_UNLOCKQ(client);
-	}
-	EVDEV_UNLOCK(evdev);
-
-	/*
-	 * For some devices, e.g. keyboards, ev_absinfo and ev_mt
-	 * may be NULL, so check before freeing them.
-	 */
-	if (evdev->ev_absinfo != NULL)
-	    evdev_free_absinfo(evdev->ev_absinfo);
-	if (evdev->ev_mt != NULL)
-	    evdev_mt_free(evdev);
-
-	return (ret);
-}
-
-
 struct evdev_dev *
 evdev_alloc(void)
 {
@@ -110,6 +45,13 @@ static struct input_absinfo *
 evdev_alloc_absinfo(void)
 {
 	return (malloc(sizeof(struct input_absinfo) * ABS_CNT, M_EVDEV, M_WAITOK | M_ZERO));
+}
+
+
+static void
+evdev_free_absinfo(struct input_absinfo *absinfo)
+{
+	free(absinfo, M_EVDEV);
 }
 
 int
@@ -184,6 +126,70 @@ evdev_estimate_report_size(struct evdev_dev *evdev)
 	return (size);
 }
 
+int
+evdev_register(struct evdev_dev *evdev)
+{
+	/* Initialize internal structures */
+	//LIST_INIT(&evdev->ev_clients);
+
+	if (evdev_event_supported(evdev, EV_REP)
+			&& bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
+		/* Initialize callout */
+		callout_init(&evdev->ev_rep_callout);
+		if (evdev->ev_rep[REP_DELAY] == 0 && evdev->ev_rep[REP_PERIOD] == 0) {
+			/* Supply default values */
+			evdev->ev_rep[REP_DELAY] = 250;
+			evdev->ev_rep[REP_PERIOD] = 33;
+		}
+	}
+	/* Initialize multitouch protocol type B states */
+	if (bit_test(evdev->ev_abs_flags, ABS_MT_SLOT) && evdev->ev_absinfo != NULL
+			&& MAXIMAL_MT_SLOT(evdev) > 0) {
+		evdev_mt_init(evdev);
+	}
+
+	/* Estimate maximum report size */
+	if (evdev->ev_report_size == 0) {
+		ret = evdev_set_report_size(evdev, evdev_estimate_report_size(evdev));
+		if (ret != 0) {
+			return (ret);
+		}
+	}
+
+	return (0);
+}
+
+int
+evdev_unregister(struct evdev_dev *evdev)
+{
+	struct evdev_client *client;
+	int ret;
+	debugf(evdev, "%s: unregistered evdev provider: %s\n",
+			evdev->ev_shortname, evdev->ev_name);
+
+	EVDEV_LOCK(evdev);
+	/* Wake up sleepers */
+	LIST_FOREACH(client, &evdev->ev_clients, ec_link) {
+		evdev_revoke_client(client);
+		evdev_dispose_client(evdev, client);
+		EVDEV_CLIENT_LOCKQ(client);
+		evdev_notify_event(client);
+		EVDEV_CLIENT_UNLOCKQ(client);
+	}
+	EVDEV_UNLOCK(evdev);
+
+	/*
+	 * For some devices, e.g. keyboards, ev_absinfo and ev_mt
+	 * may be NULL, so check before freeing them.
+	 */
+	if (evdev->ev_absinfo != NULL)
+	    evdev_free_absinfo(evdev->ev_absinfo);
+	if (evdev->ev_mt != NULL)
+	    evdev_mt_free(evdev);
+
+	return (ret);
+}
+
 inline void
 evdev_set_name(struct evdev_dev *evdev, const char *name)
 {
@@ -219,7 +225,6 @@ evdev_set_serial(struct evdev_dev *evdev, const char *serial)
 inline void
 evdev_set_methods(struct evdev_dev *evdev, void *softc, const struct evdev_methods *methods)
 {
-
 	evdev->ev_methods = methods;
 	evdev->ev_softc = softc;
 }
@@ -329,8 +334,7 @@ evdev_event_supported(struct evdev_dev *evdev, uint16_t type)
 }
 
 inline void
-evdev_set_absinfo(struct evdev_dev *evdev, uint16_t axis,
-    struct input_absinfo *absinfo)
+evdev_set_absinfo(struct evdev_dev *evdev, uint16_t axis, struct input_absinfo *absinfo)
 {
 
 	KASSERT(axis < ABS_CNT ("invalid evdev abs property"));
@@ -588,8 +592,7 @@ evdev_sparse_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 }
 
 static void
-evdev_propagate_event(struct evdev_dev *evdev, uint16_t type, uint16_t code,
-    int32_t value)
+evdev_propagate_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
 	struct evdev_client *client;
 
@@ -616,8 +619,6 @@ evdev_send_event(struct evdev_dev *evdev, uint16_t type, uint16_t code,
     int32_t value)
 {
 	enum evdev_sparse_result sparse;
-
-
 
 	sparse = evdev_sparse_event(evdev, type, code, value);
 	switch (sparse) {
@@ -658,8 +659,7 @@ evdev_push_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t 
 }
 
 int
-evdev_inject_event(struct evdev_dev *evdev, uint16_t type, uint16_t code,
-    int32_t value)
+evdev_inject_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
 	int ret = 0;
 
@@ -699,6 +699,61 @@ push:
 	}
 
 	return (ret);
+}
+
+int
+evdev_register_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+{
+	int ret = 0;
+
+	debugf(evdev, "adding new client for device %s", evdev->ev_shortname);
+
+	evdev = sc->sc_evdev;
+	KASSERT(evdev);
+	evdev->ev_softc = sc;
+	if(evdev->ev_softc != NULL) {
+		debugf(evdev, "calling ev_open() on device %s", evdev->ev_shortname);
+		return (0);
+	}
+
+	return (1);
+}
+
+void
+evdev_dispose_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+{
+	debugf(evdev, "removing client for device %s", evdev->ev_shortname);
+
+	KASSERT(evdev);
+
+	if (evdev_event_supported(evdev, EV_REP) && bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
+		evdev_stop_repeat(evdev);
+	}
+	evdev_release_client(evdev, sc);
+}
+
+int
+evdev_grab_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+{
+	KASSERT(evdev);
+
+	if (evdev->ev_softc != NULL) {
+		return (EBUSY);
+	}
+	evdev->ev_softc = sc;
+	return (0);
+}
+
+int
+evdev_release_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+{
+	KASSERT(evdev);
+
+	if (evdev->ev_softc != sc) {
+		return (EINVAL);
+	}
+	evdev->ev_softc = NULL;
+	return (0);
 }
 
 static void

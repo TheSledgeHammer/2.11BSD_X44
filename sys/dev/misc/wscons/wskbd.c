@@ -212,7 +212,7 @@ static int  wskbd_detach(struct device *, int);
 static int  wskbd_activate(struct device *, enum devact);
 
 static int  wskbd_displayioctl(struct device *, u_long, caddr_t, int, struct proc *);
-//#if NWSDISPLAY > 0
+#if NWSDISPLAY > 0
 static int  wskbd_set_display(struct device *, struct wsevsrc *);
 #else
 //#define wskbd_set_display NULL
@@ -894,7 +894,7 @@ wskbdioctl(dev, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
-	return (wskbd_do_ioctl(wskbd_cd.cd_devs[minor(dev)], cmd, data, flag,p));
+	return (wskbd_do_ioctl(wskbd_cd.cd_devs[minor(dev)], cmd, data, flag, p));
 }
 
 /* A wrapper around the ioctl() workhorse to make reference counting easy. */

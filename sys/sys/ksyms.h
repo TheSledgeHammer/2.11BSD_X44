@@ -85,7 +85,7 @@ static int 					ksyms_maxlen;
 static bool 				ksyms_isopen;
 static bool 				ksyms_initted;
 static bool 				ksyms_loaded;
-static struct simple_lock 	ksyms_lock;
+static struct lock_object 	ksyms_lock;
 static struct ksyms_symtab 	kernel_symtab;
 
 static void ksyms_sizes_calc(void);

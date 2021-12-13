@@ -49,8 +49,6 @@
  */
 _Static_assert(sizeof(bitstr_t) == sizeof(unsigned long), "bitstr_t size mismatch");
 
-MALLOC_DECLARE(M_EVDEV);
-
 struct evdev_client;
 struct evdev_mt;
 
@@ -105,12 +103,16 @@ struct evdev_dev {
 	char						ev_shortname[NAMELEN];
 	char						ev_serial[NAMELEN];
 	int							ev_unit;
+
 	enum evdev_lock_type		ev_lock_type;
-	struct lock_object			*ev_lock;		/* State lock */
-	struct lock					ev_mtx;			/* Internal state lock */
+	//struct lock_object			*ev_lock;		/* State lock */
+	struct lock					ev_lock;			/* Internal state lock */
 	struct lock_object			ev_list_lock;	/* Client list lock */
+
 	struct input_id				ev_id;
-	struct evdev_client 		*ev_grabber;						/* (s) */
+
+//	struct evdev_client 		*ev_grabber;						/* (s) */
+
 	size_t						ev_report_size;
 
 	/* Supported features: */
@@ -146,39 +148,42 @@ struct evdev_dev {
 	uint64_t					ev_report_count;					/* (s) */
 
 	/* Parent driver callbacks: */
-	//const struct evdev_methods 	*ev_methods;
-	struct evdev_softc 			*ev_softc;
-
-	LIST_ENTRY(evdev_dev) 		ev_link;
-	LIST_HEAD(, evdev_client) 	ev_clients;							/* (l) */
+	struct evdev_softc 			*ev_softc; 			/* softc callback */
 };
 
-#define	EVDEV_LOCK(evdev)		simple_lock((evdev)->ev_lock)
-#define	EVDEV_UNLOCK(evdev)		simple_unlock((evdev)->ev_lock)
+#define	EVDEV_LOCK(evdev)			simple_lock((evdev)->ev_lock)
+#define	EVDEV_UNLOCK(evdev)			simple_unlock((evdev)->ev_lock)
+#define	EVDEV_LOCK_ASSERT(evdev) 	KASSERT(lockstatus((evdev)->ev_lock) != 0)
 
-struct evdev_client {
-	struct evdev_dev 			*ec_evdev;
-	struct lock_object			ec_buffer_mtx;			/* Client queue lock */
-	size_t						ec_buffer_size;
-	size_t						ec_buffer_head;			/* (q) */
-	size_t						ec_buffer_tail;			/* (q) */
-	size_t						ec_buffer_ready;		/* (q) */
-	enum evdev_clock_id			ec_clock_id;
+struct evdev_softc {
+	struct evdev_dev 			*sc_evdev;			/* evdev pointer */
+	struct wsevsrc				sc_base;			/* evdev to wscons events */
 
-	LIST_ENTRY(evdev_client) 	ec_link;				/* (l) */
+	struct lock_object			sc_buffer_lock;
+	size_t						sc_buffer_size;
+	size_t						sc_buffer_head;		/* (q) */
+	size_t						sc_buffer_tail;		/* (q) */
+	size_t						sc_buffer_ready;	/* (q) */
 
-	struct wscons_event			ec_buffer[];
-	struct wseventvar			ec_event;
+	enum evdev_clock_id			sc_clock_id;
+
+	int							sc_refcnt;
+	u_char						sc_dying;			/* device is being detached */
+
+	evdev_keycode_t				*sc_set_keycode;
+	evdev_keycode_t 			*sc_get_keycode;
+
+	struct input_event			sc_buffer[];
 };
 
-#define	EVDEV_CLIENT_LOCKQ(client)		simple_lock(&(client)->ec_buffer_mtx)
-#define	EVDEV_CLIENT_UNLOCKQ(client)	simple_unlock(&(client)->ec_buffer_mtx)
+#define	EVDEV_CLIENT_LOCKQ(client)		simple_lock(&(client)->sc_buffer_lock)
+#define	EVDEV_CLIENT_UNLOCKQ(client)	simple_unlock(&(client)->sc_buffer_lock)
 
 #define	EVDEV_CLIENT_EMPTYQ(client) 							\
-    ((client)->ec_buffer_head == (client)->ec_buffer_ready)
+    ((client)->sc_buffer_head == (client)->sc_buffer_ready)
 #define	EVDEV_CLIENT_SIZEQ(client) 								\
-    (((client)->ec_buffer_ready + (client)->ec_buffer_size - 	\
-      (client)->ec_buffer_head) % (client)->ec_buffer_size)
+    (((client)->sc_buffer_ready + (client)->sc_buffer_size - 	\
+      (client)->sc_buffer_head) % (client)->sc_buffer_size)
 
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
@@ -191,6 +196,7 @@ void 	evdev_set_absinfo(struct evdev_dev *, uint16_t, struct input_absinfo *);
 void 	evdev_restore_after_kdb(struct evdev_dev *);
 
 /* Client interface: */
+/*
 int 	evdev_register_client(struct evdev_dev *, struct evdev_client *);
 void 	evdev_dispose_client(struct evdev_dev *, struct evdev_client *);
 int 	evdev_grab_client(struct evdev_dev *, struct evdev_client *);
@@ -198,6 +204,7 @@ int 	evdev_release_client(struct evdev_dev *, struct evdev_client *);
 void 	evdev_client_push(struct evdev_client *, uint16_t, uint16_t, int32_t);
 void 	evdev_notify_event(struct evdev_client *);
 void 	evdev_revoke_client(struct evdev_client *);
+*/
 
 /* Multitouch related functions: */
 void 	evdev_mt_init(struct evdev_dev *);
