@@ -204,9 +204,9 @@ struct proc;
 extern struct lock_holder 		*kernel_lockholder;
 #endif
 
-void			lockinit (lock_t, int, char *, int, int);
-int				lockmgr (__volatile lock_t, u_int, struct lock_object *, pid_t);
-int				lockstatus (lock_t);
+void			lockinit(lock_t, int, char *, int, int);
+int				lockmgr(__volatile lock_t, u_int, struct lock_object *, pid_t);
+int				lockstatus(lock_t);
 void			simple_lock_init(struct lock_object *, const char *);
 void 			simple_lock(struct lock_object *);
 void 			simple_unlock(struct lock_object *);

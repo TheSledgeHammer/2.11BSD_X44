@@ -396,7 +396,7 @@ pcdisplay_show_screen(v, cookie, waitok, cb, cbarg)
 	void *v;
 	void *cookie;
 	int waitok;
-	void (*cb) __P((void *, int, int));
+	void (*cb) (void *, int, int);
 	void *cbarg;
 {
 #ifdef DIAGNOSTIC

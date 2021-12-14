@@ -159,10 +159,11 @@ updatepri(p)
 */
 
 int
-tsleep(ident, priority, timo)
-	caddr_t	ident;
+tsleep(ident, priority, wmesg, timo)
+	void *ident;
 	int	priority;
 	u_short	timo;
+	char *wmesg;
 {
 	register struct proc *p = u->u_procp;
 	register struct proc **qp;
@@ -192,7 +193,8 @@ tsleep(ident, priority, timo)
 	if	(ident == NULL || p->p_stat != SRUN)
 		panic("tsleep");
 #endif
-	p->p_wchan = ident;
+	p->p_wchan = (caddr_t)ident;
+	p->p_wmesg = wmesg;
 	p->p_slptime = 0;
 	p->p_pri = priority & PRIMASK;
 	qp = &slpque[HASH(ident)];

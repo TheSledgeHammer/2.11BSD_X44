@@ -32,10 +32,6 @@
 #include <sys/types.h>
 #include <dev/evdev/input.h>
 
-//#include <sys/epoch.h>
-//#include <sys/kbio.h>
-//#include <dev/kbd/kbdreg.h>
-
 #define M_EVDEV		90
 #define	NAMELEN		80
 

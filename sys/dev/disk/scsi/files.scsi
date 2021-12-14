@@ -1,53 +1,69 @@
-#	$NetBSD: files.scsi,v 1.4 1996/05/16 04:01:08 mycroft Exp $
+#	$NetBSD: files.scsipi,v 1.37 2003/10/08 10:58:13 bouyer Exp $
 #
-# Config.new file and device description for machine-independent SCSI code.
-# Included by ports that need it.  Ports that usee it must provide
+# Config file and device description for machine-independent SCSI code.
+# Included by ports that need it.  Ports that use it must provide
 # their own "major" declarations for the appropriate devices.
 
-# SCSI disks
-file	dev/disk/scsi/scsi_base.c		scsi | atapibus
-file	dev/disk/scsi/scsi_ioctl.c		scsi | atapibus
+defflag	opt_scsi.h		SCSIVERBOSE ST_ENABLE_EARLYWARN
+						SES_ENABLE_PASSTHROUGH SCSI_OLD_NOINQUIRY
+defparam opt_scsi.h		ST_MOUNT_DELAY SDRETRIES SD_IO_TIMEOUT
 
-# ATAPI disks
-file	dev/disk/atapi/atapi_base.c		atapibus
-file	dev/disk/atapi/atapi_wdc.c		atapibus & atabus & wdc_base
+defflag	opt_scsipi_debug.h	SCSIPI_DEBUG
+defparam opt_scsipi_debug.h	SCSIPI_DEBUG_TYPE
+							SCSIPI_DEBUG_TARGET
+							SCSIPI_DEBUG_LUN
+							SCSIPI_DEBUG_FLAGS
 
-device	scsibus {target = -1, lun = -1}
+file	dev/disk/scsi/scsipiconf.c		scsi_core | atapibus
+file	dev/disk/scsi/scsipi_base.c		scsi_core | atapibus
+file	dev/disk/scsi/scsipi_ioctl.c	scsi_core | atapibus
+file	dev/disk/scsi/scsipi_verbose.c	(scsi_core | atapibus) & scsiverbose
+file	dev/disk/scsi/scsi_base.c		scsi_core 
+file	dev/disk/scsi/atapi_base.c		atapibus
+file	dev/disk/scsi/atapi_wdc.c		atapibus & atabus
+
+device	scsibus {target = -1, lun = -1}: scsi_core
 attach	scsibus at scsi
 file	dev/disk/scsi/scsiconf.c		scsibus							needs-flag
 
 device	atapibus {drive = -1}
 attach	atapibus at atapi
-file	dev/disk/atapi/atapiconf.c      atapibus						needs-flag
+file	dev/disk/scsi/atapiconf.c      atapibus						needs-flag
 
 device	cd: disk
-attach	cd at scsibus with cd_scsibus
-attach	cd at atapibus with cd_atapibus
-file	dev/disk/scsi/cd_scsi.c			cd_scsibus
-file	dev/disk/atapi/cd_atapi.c		cd_atapibus
-file	dev/disk/scsi/cd.c				cd | cd_scsibus | cd_atapibus 	needs-flag
+attach	cd at scsibus, atapibus
+file	dev/disk/scsi/cd.c				cd								needs-flag
 
-device	ch: disk
+device	ch
 attach	ch at scsibus
-file	dev/disk/scsi/ch.c				ch needs-flag
+file	dev/disk/scsi/ch.c				ch								needs-flag
+
+#device	se: ifnet, ether, arp
+#attach	se at scsibus
+#file	dev/disk/scsi/if_se.c			se								needs-flag
 
 device	sd: disk
-attach	sd at scsibus with sd_scsibus
-attach	sd at atapibus with sd_atapibus
-file	dev/disk/scsi/sd_scsi.c			sd_scsibus
-file	dev/disk/atapi/sd_atapi.c		sd_atapibus
-file	dev/disk/scsi/sd.c				sd | sd_scsibus | sd_atapibus 	needs-flag
+attach	sd at scsibus, atapibus
+file	dev/disk/scsi/sd.c				sd								needs-flag
 
 device	st: tape
-attach	st at scsibus
-file	dev/disk/scsi/st.c				st 								needs-flag
+attach	st at scsibus with st_scsibus
+attach	st at atapibus with st_atapibus
+file	dev/disk/scsi/st.c				st | st_scsibus | st_atapibus 	needs-flag
+file	dev/disk/scsi/st_scsi.c			st_scsibus
+file	dev/disk/scsi/st_atapi.c		st_atapibus
 
-device	ss: tape
+device ses
+attach ses at scsibus
+file   dev/disk/scsi/ses.c				ses								needs-flag
+
+
+device	ss
 attach	ss at scsibus
-file	dev/disk/scsi/ss.c				ss 								needs-flag
+file	dev/disk/scsi/ss.c				ss								needs-flag
 file	dev/disk/scsi/ss_mustek.c		ss
 file	dev/disk/scsi/ss_scanjet.c		ss
 
-device	uk: disk
+device	uk
 attach	uk at scsibus, atapibus
-file	dev/disk/scsi/uk.c				uk 								needs-flag
+file	dev/disk/scsi/uk.c				uk								needs-flag

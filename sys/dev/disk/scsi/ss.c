@@ -1,4 +1,4 @@
-/*	$NetBSD: ss.c,v 1.10 1996/05/05 19:52:55 christos Exp $	*/
+/*	$NetBSD: ss.c,v 1.51.2.1 2004/09/11 12:56:41 he Exp $	*/
 
 /*
  * Copyright (c) 1995 Kenneth Stailey.  All rights reserved.
@@ -31,7 +31,8 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
+__KERNEL_RCSID(0, "$NetBSD: ss.c,v 1.51.2.1 2004/09/11 12:56:41 he Exp $");
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/fcntl.h>
@@ -43,9 +44,11 @@
 #include <sys/user.h>
 #include <sys/device.h>
 #include <sys/conf.h>
+#include <sys/vnode.h>
 #include <sys/scanio.h>
 
 #include <dev/disk/scsi/scsi_all.h>
+#include <dev/disk/scsi/scsipi_all.h>
 #include <dev/disk/scsi/scsi_scanner.h>
 #include <dev/disk/scsi/scsiconf.h>
 #include <dev/disk/scsi/ssvar.h>
@@ -54,6 +57,7 @@
 
 #define SSMODE(z)	( minor(z)       & 0x03)
 #define SSUNIT(z)	((minor(z) >> 4)       )
+#define SSNMINOR 16
 
 /*
  * If the mode is 3 (e.g. minor = 3,7,11,15)
@@ -64,18 +68,20 @@
 #define MODE_NONREWIND	1
 #define MODE_CONTROL	3
 
-int ssmatch (struct device *, void *, void *);
-void ssattach (struct device *, struct device *, void *);
+int ssmatch(struct device *, struct cfdata *, void *);
+void ssattach(struct device *, struct device *, void *);
+int ssdetach(struct device *self, int flags);
+int ssactivate(struct device *self, enum devact act);
 
 CFDRIVER_DECL(NULL, ss, &ss_cops, DV_DULL, sizeof(struct ss_softc));
-CFOPS_DECL(ss, ssmatch, ssattach, NULL, NULL);
+CFOPS_DECL(ss, ssmatch, ssattach, ssdetach, ssactivate);
 
 extern struct cfdriver ss_cd;
 
-static dev_type_open(ssopen);
-static dev_type_close(ssclose);
-static dev_type_read(ssread);
-static dev_type_ioctl(ssioctl);
+dev_type_open(ssopen);
+dev_type_close(ssclose);
+dev_type_read(ssread);
+dev_type_ioctl(ssioctl);
 
 const struct cdevsw ss_cdevsw = {
 		.d_open = ssopen,
@@ -92,38 +98,46 @@ const struct cdevsw ss_cdevsw = {
 };
 
 void    ssstrategy (struct buf *);
-void    ssstart (void *);
+void    ssstart (struct scsipi_periph *);
 void	ssminphys (struct buf *);
 
-struct scsi_device ss_switch = {
+const struct scsipi_periphsw ss_switch = {
 	NULL,
 	ssstart,
 	NULL,
 	NULL,
 };
 
-struct scsi_inquiry_pattern ss_patterns[] = {
+const struct scsipi_inquiry_pattern ss_patterns[] = {
 	{T_SCANNER, T_FIXED,
 	 "",         "",                 ""},
 	{T_SCANNER, T_REMOV,
 	 "",         "",                 ""},
 	{T_PROCESSOR, T_FIXED,
+	 "HP      ", "C1130A          ", ""},
+	{T_PROCESSOR, T_FIXED,
 	 "HP      ", "C1750A          ", ""},
 	{T_PROCESSOR, T_FIXED,
 	 "HP      ", "C2500A          ", ""},
+	{T_PROCESSOR, T_FIXED,
+	 "HP      ", "C2520A          ", ""},
+	{T_PROCESSOR, T_FIXED,
+	 "HP      ", "C5110A          ", ""},
+	{T_PROCESSOR, T_FIXED,
+	 "HP      ", "C7670A          ", ""},
+	{T_PROCESSOR, T_FIXED,
+	 "HP      ", "", ""},
 };
 
 int
-ssmatch(parent, match, aux)
-	struct device *parent;
-	void *match, *aux;
+ssmatch(struct device *parent, struct cfdata *match, void *aux)
 {
-	struct scsibus_attach_args *sa = aux;
+	struct scsipibus_attach_args *sa = aux;
 	int priority;
 
-	(void) scsi_inqmatch(sa->sa_inqbuf, (caddr_t) ss_patterns,
-			sizeof(ss_patterns) / sizeof(ss_patterns[0]),
-			sizeof(ss_patterns[0]), &priority);
+	(void)scsipi_inqmatch(&sa->sa_inqbuf,
+	    (caddr_t)ss_patterns, sizeof(ss_patterns) / sizeof(ss_patterns[0]),
+	    sizeof(ss_patterns[0]), &priority);
 	return (priority);
 }
 
@@ -134,60 +148,117 @@ ssmatch(parent, match, aux)
  * special handlers into the ss_softc structure
  */
 void
-ssattach(parent, self, aux)
-	struct device *parent, *self;
-	void *aux;
+ssattach(struct device *parent, struct device *self, void *aux)
 {
 	struct ss_softc *ss = (void *)self;
-	struct scsibus_attach_args *sa = aux;
-	struct scsi_link *sc_link = sa->sa_sc_link;
+	struct scsipibus_attach_args *sa = aux;
+	struct scsipi_periph *periph = sa->sa_periph;
 
-	SC_DEBUG(sc_link, SDEV_DB2, ("ssattach: "));
+	SC_DEBUG(periph, SCSIPI_DB2, ("ssattach: "));
+
+	ss->flags |= SSF_AUTOCONF;
 
 	/*
 	 * Store information needed to contact our base driver
 	 */
-	ss->sc_link = sc_link;
-	sc_link->device = &ss_switch;
-	sc_link->device_softc = ss;
-	sc_link->openings = 1;
+	ss->sc_periph = periph;
+	periph->periph_dev = &ss->sc_dev;
+	periph->periph_switch = &ss_switch;
+
+	printf("\n");
+
+	/*
+	 * Set up the buf queue for this device
+	 */
+	bufq_alloc(&ss->buf_queue, BUFQ_FCFS);
+
+	callout_init(&ss->sc_callout);
 
 	/*
 	 * look for non-standard scanners with help of the quirk table
 	 * and install functions for special handling
 	 */
-	SC_DEBUG(sc_link, SDEV_DB2, ("ssattach:\n"));
-	if (!bcmp(sa->sa_inqbuf->vendor, "MUSTEK  ", 8))
+	SC_DEBUG(periph, SCSIPI_DB2, ("ssattach:\n"));
+	if (memcmp(sa->sa_inqbuf.vendor, "MUSTEK", 6) == 0)
 		mustek_attach(ss, sa);
-	if (!bcmp(sa->sa_inqbuf->vendor, "HP      ", 8))
+	if (memcmp(sa->sa_inqbuf.vendor, "HP      ", 8) == 0 &&
+	    memcmp(sa->sa_inqbuf.product, "ScanJet 5300C", 13) != 0)
 		scanjet_attach(ss, sa);
 	if (ss->special == NULL) {
 		/* XXX add code to restart a SCSI2 scanner, if any */
 	}
 
-	/*
-	 * Set up the buf queue for this device
-	 */
-	ss->buf_queue.b_active = 0;
-	ss->buf_queue.b_actf = 0;
-	ss->buf_queue.b_actb = &ss->buf_queue.b_actf;
+	ss->flags &= ~SSF_AUTOCONF;
+}
+
+int
+ssdetach(struct device *self, int flags)
+{
+	struct ss_softc *ss = (struct ss_softc *) self;
+	struct buf *bp;
+	int s, cmaj, mn;
+
+	/* locate the major number */
+	cmaj = cdevsw_lookup_major(&ss_cdevsw);
+
+	/* kill any pending restart */
+	callout_stop(&ss->sc_callout);
+
+	s = splbio();
+
+	/* Kill off any queued buffers. */
+	while ((bp = BUFQ_GET(&ss->buf_queue)) != NULL) {
+		bp->b_error = EIO;
+		bp->b_flags |= B_ERROR;
+		bp->b_resid = bp->b_bcount;
+		biodone(bp);
+	}
+
+	bufq_free(&ss->buf_queue);
+
+	/* Kill off any pending commands. */
+	scsipi_kill_pending(ss->sc_periph);
+
+	splx(s);
+
+	/* Nuke the vnodes for any open instances */
+	mn = SSUNIT(self->dv_unit);
+	vdevgone(cmaj, mn, mn+SSNMINOR-1, VCHR);
+
+	return (0);
+}
+
+int
+ssactivate(struct device *self, enum devact act)
+{
+	int rv = 0;
+
+	switch (act) {
+	case DVACT_ACTIVATE:
+		rv = EOPNOTSUPP;
+		break;
+
+	case DVACT_DEACTIVATE:
+		/*
+		 * Nothing to do; we key off the device's DVF_ACTIVE.
+		 */
+		break;
+	}
+	return (rv);
 }
 
 /*
  * open the device.
  */
 int
-ssopen(dev, flag, mode, p)
-	dev_t dev;
-	int flag;
-	int mode;
-	struct proc *p;
+ssopen(dev_t dev, int flag, int mode, struct proc *p)
 {
 	int unit;
 	u_int ssmode;
-	int error = 0;
+	int error;
 	struct ss_softc *ss;
-	struct scsi_link *sc_link;
+	struct scsipi_periph *periph;
+	struct scsipi_adapter *adapt;
 
 	unit = SSUNIT(dev);
 	if (unit >= ss_cd.cd_ndevs)
@@ -196,31 +267,39 @@ ssopen(dev, flag, mode, p)
 	if (!ss)
 		return (ENXIO);
 
+	if ((ss->sc_dev.dv_flags & DVF_ACTIVE) == 0)
+		return (ENODEV);
+
 	ssmode = SSMODE(dev);
-	sc_link = ss->sc_link;
 
-	SC_DEBUG(sc_link, SDEV_DB1, ("open: dev=0x%x (unit %d (of %d))\n", dev,
-					unit, ss_cd.cd_ndevs));
+	periph = ss->sc_periph;
+	adapt = periph->periph_channel->chan_adapter;
 
-	if (sc_link->flags & SDEV_OPEN) {
+	SC_DEBUG(periph, SCSIPI_DB1, ("open: dev=0x%x (unit %d (of %d))\n", dev,
+	    unit, ss_cd.cd_ndevs));
+
+	if (periph->periph_flags & PERIPH_OPEN) {
 		printf("%s: already open\n", ss->sc_dev.dv_xname);
 		return (EBUSY);
 	}
 
+	if ((error = scsipi_adapter_addref(adapt)) != 0)
+		return (error);
+
 	/*
 	 * Catch any unit attention errors.
 	 *
-	 * SCSI_IGNORE_MEDIA_CHANGE: when you have an ADF, some scanners
+	 * XS_CTL_IGNORE_MEDIA_CHANGE: when you have an ADF, some scanners
 	 * consider paper to be a changeable media
 	 *
 	 */
-	error = scsi_test_unit_ready(sc_link,
-			SCSI_IGNORE_MEDIA_CHANGE | SCSI_IGNORE_ILLEGAL_REQUEST
-					| (ssmode == MODE_CONTROL ? SCSI_IGNORE_NOT_READY : 0));
+	error = scsipi_test_unit_ready(periph,
+	    XS_CTL_IGNORE_MEDIA_CHANGE | XS_CTL_IGNORE_ILLEGAL_REQUEST |
+	    (ssmode == MODE_CONTROL ? XS_CTL_IGNORE_NOT_READY : 0));
 	if (error)
 		goto bad;
 
-	sc_link->flags |= SDEV_OPEN; /* unit attn are now errors */
+	periph->periph_flags |= PERIPH_OPEN;	/* unit attn now errors */
 
 	/*
 	 * If the mode is 3 (e.g. minor = 3,7,11,15)
@@ -230,10 +309,12 @@ ssopen(dev, flag, mode, p)
 	if (ssmode == MODE_CONTROL)
 		return (0);
 
-	SC_DEBUG(sc_link, SDEV_DB2, ("open complete\n"));
+	SC_DEBUG(periph, SCSIPI_DB2, ("open complete\n"));
 	return (0);
 
-	bad: sc_link->flags &= ~SDEV_OPEN;
+bad:
+	scsipi_adapter_delref(adapt);
+	periph->periph_flags &= ~PERIPH_OPEN;
 	return (error);
 }
 
@@ -242,19 +323,17 @@ ssopen(dev, flag, mode, p)
  * occurence of an open device
  */
 int
-ssclose(dev, flag, mode, p)
-	dev_t dev;
-	int flag;
-	int mode;
-	struct proc *p;
+ssclose(dev_t dev, int flag, int mode, struct proc *p)
 {
 	struct ss_softc *ss = ss_cd.cd_devs[SSUNIT(dev)];
+	struct scsipi_periph *periph = ss->sc_periph;
+	struct scsipi_adapter *adapt = periph->periph_channel->chan_adapter;
 	int error;
 
-	SC_DEBUG(ss->sc_link, SDEV_DB1, ("closing\n"));
+	SC_DEBUG(ss->sc_periph, SCSIPI_DB1, ("closing\n"));
 
 	if (SSMODE(dev) == MODE_REWIND) {
-		if (ss->special->rewind_scanner) {
+		if (ss->special && ss->special->rewind_scanner) {
 			/* call special handler to rewind/abort scan */
 			error = (ss->special->rewind_scanner)(ss);
 			if (error)
@@ -265,7 +344,11 @@ ssclose(dev, flag, mode, p)
 		ss->sio.scan_window_size = 0;
 		ss->flags &= ~SSF_TRIGGERED;
 	}
-	ss->sc_link->flags &= ~SDEV_OPEN;
+
+	scsipi_wait_drain(periph);
+
+	scsipi_adapter_delref(adapt);
+	periph->periph_flags &= ~PERIPH_OPEN;
 
 	return (0);
 }
@@ -277,12 +360,12 @@ ssclose(dev, flag, mode, p)
  * minphys
  */
 void
-ssminphys(bp)
-	struct buf *bp;
+ssminphys(struct buf *bp)
 {
-	register struct ss_softc *ss = ss_cd.cd_devs[SSUNIT(bp->b_dev)];
+	struct ss_softc *ss = ss_cd.cd_devs[SSUNIT(bp->b_dev)];
+	struct scsipi_periph *periph = ss->sc_periph;
 
-	(ss->sc_link->adapter->scsi_minphys)(bp);
+	scsipi_adapter_minphys(periph->periph_channel, bp);
 
 	/*
 	 * trim the transfer further for special devices this is
@@ -290,7 +373,7 @@ ssminphys(bp)
 	 * time, also some cannot disconnect, so the read must be
 	 * short enough to happen quickly
 	 */
-	if (ss->special->minphys)
+	if (ss->special && ss->special->minphys)
 		(ss->special->minphys)(ss, bp);
 }
 
@@ -308,9 +391,12 @@ ssread(dev, uio, flag)
 	struct ss_softc *ss = ss_cd.cd_devs[SSUNIT(dev)];
 	int error;
 
+	if ((ss->sc_dev.dv_flags & DVF_ACTIVE) == 0)
+		return (ENODEV);
+
 	/* if the scanner has not yet been started, do it now */
 	if (!(ss->flags & SSF_TRIGGERED)) {
-		if (ss->special->trigger_scanner) {
+		if (ss->special && ss->special->trigger_scanner) {
 			error = (ss->special->trigger_scanner)(ss);
 			if (error)
 				return (error);
@@ -331,11 +417,30 @@ ssstrategy(bp)
 	struct buf *bp;
 {
 	struct ss_softc *ss = ss_cd.cd_devs[SSUNIT(bp->b_dev)];
-	struct buf *dp;
+	struct scsipi_periph *periph = ss->sc_periph;
 	int s;
 
-	SC_DEBUG(ss->sc_link, SDEV_DB1,
-			("ssstrategy %ld bytes @ blk %d\n", bp->b_bcount, bp->b_blkno));
+	SC_DEBUG(ss->sc_periph, SCSIPI_DB1,
+	    ("ssstrategy %ld bytes @ blk %" PRId64 "\n", bp->b_bcount, bp->b_blkno));
+
+	/*
+	 * If the device has been made invalid, error out
+	 */
+	if ((ss->sc_dev.dv_flags & DVF_ACTIVE) == 0) {
+		bp->b_flags |= B_ERROR;
+		if (periph->periph_flags & PERIPH_OPEN)
+			bp->b_error = EIO;
+		else
+			bp->b_error = ENODEV;
+		goto done;
+	}
+
+	/* If negative offset, error */
+	if (bp->b_blkno < 0) {
+		bp->b_flags |= B_ERROR;
+		bp->b_error = EINVAL;
+		goto done;
+	}
 
 	if (bp->b_bcount > ss->sio.scan_window_size)
 		bp->b_bcount = ss->sio.scan_window_size;
@@ -353,23 +458,18 @@ ssstrategy(bp)
 	 * at the end (a bit silly because we only have on user..
 	 * (but it could fork()))
 	 */
-	dp = &ss->buf_queue;
-	bp->b_actf = NULL;
-	bp->b_actb = dp->b_actb;
-	*dp->b_actb = bp;
-	dp->b_actb = &bp->b_actf;
+	BUFQ_PUT(&ss->buf_queue, bp);
 
 	/*
 	 * Tell the device to get going on the transfer if it's
 	 * not doing anything, otherwise just wait for completion
 	 * (All a bit silly if we're only allowing 1 open but..)
 	 */
-	ssstart(ss);
+	ssstart(ss->sc_periph);
 
 	splx(s);
 	return;
-	bp->b_flags |= B_ERROR;
-	done:
+done:
 	/*
 	 * Correctly set the buf to indicate a completed xfer
 	 */
@@ -381,7 +481,7 @@ ssstrategy(bp)
  * ssstart looks to see if there is a buf waiting for the device
  * and that the device is not already busy. If both are true,
  * It dequeues the buf and creates a scsi command to perform the
- * transfer required. The transfer request will call scsi_done
+ * transfer required. The transfer request will call scsipi_done
  * on completion, which will in turn call this routine again
  * so that the next queued transfer is performed.
  * The bufs are queued by the strategy routine (ssstrategy)
@@ -392,39 +492,32 @@ ssstrategy(bp)
  * ssstart() is called at splbio
  */
 void
-ssstart(v)
-	void *v;
+ssstart(periph)
+	struct scsipi_periph *periph;
 {
-	struct ss_softc *ss = v;
-	struct scsi_link *sc_link = ss->sc_link;
-	register struct buf *bp, *dp;
+	struct ss_softc *ss = (void *)periph->periph_dev;
+	struct buf *bp;
 
-	SC_DEBUG(sc_link, SDEV_DB2, ("ssstart "));
+	SC_DEBUG(periph, SCSIPI_DB2, ("ssstart "));
 	/*
 	 * See if there is a buf to do and we are not already
 	 * doing one
 	 */
-	while (sc_link->openings > 0) {
+	while (periph->periph_active < periph->periph_openings) {
 		/* if a special awaits, let it proceed first */
-		if (sc_link->flags & SDEV_WAITING) {
-			sc_link->flags &= ~SDEV_WAITING;
-			wakeup((caddr_t) sc_link);
+		if (periph->periph_flags & PERIPH_WAITING) {
+			periph->periph_flags &= ~PERIPH_WAITING;
+			wakeup((caddr_t)periph);
 			return;
 		}
 
 		/*
 		 * See if there is a buf with work for us to do..
 		 */
-		dp = &ss->buf_queue;
-		if ((bp = dp->b_actf) == NULL)
+		if ((bp = BUFQ_PEEK(&ss->buf_queue)) == NULL)
 			return;
-		if ((dp = bp->b_actf) != NULL)
-			dp->b_actb = bp->b_actb;
-		else
-			ss->buf_queue.b_actb = bp->b_actb;
-		*bp->b_actb = dp;
 
-		if (ss->special->read) {
+		if (ss->special && ss->special->read) {
 			(ss->special->read)(ss, bp);
 		} else {
 			/* generic scsi2 scanner read */
@@ -432,6 +525,15 @@ ssstart(v)
 		}
 	}
 }
+
+void
+ssrestart(void *v)
+{
+	int s = splbio();
+	ssstart((struct scsipi_periph *)v);
+	splx(s);
+}
+
 
 /*
  * Perform special action on behalf of the user;
@@ -449,9 +551,12 @@ ssioctl(dev, cmd, addr, flag, p)
 	int error = 0;
 	struct scan_io *sio;
 
+	if ((ss->sc_dev.dv_flags & DVF_ACTIVE) == 0)
+		return (ENODEV);
+
 	switch (cmd) {
 	case SCIOCGET:
-		if (ss->special->get_params) {
+		if (ss->special && ss->special->get_params) {
 			/* call special handler */
 			error = (ss->special->get_params)(ss);
 			if (error)
@@ -460,12 +565,12 @@ ssioctl(dev, cmd, addr, flag, p)
 			/* XXX add code for SCSI2 scanner, if any */
 			return (EOPNOTSUPP);
 		}
-		bcopy(&ss->sio, addr, sizeof(struct scan_io));
+		memcpy(addr, &ss->sio, sizeof(struct scan_io));
 		break;
 	case SCIOCSET:
-		sio = (struct scan_io*) addr;
+		sio = (struct scan_io *)addr;
 
-		if (ss->special->set_params) {
+		if (ss->special && ss->special->set_params) {
 			/* call special handler */
 			error = (ss->special->set_params)(ss, sio);
 			if (error)
@@ -476,7 +581,7 @@ ssioctl(dev, cmd, addr, flag, p)
 		}
 		break;
 	case SCIOCRESTART:
-		if (ss->special->rewind_scanner) {
+		if (ss->special && ss->special->rewind_scanner ) {
 			/* call special handler */
 			error = (ss->special->rewind_scanner)(ss);
 			if (error)
@@ -491,9 +596,8 @@ ssioctl(dev, cmd, addr, flag, p)
 		break;
 #endif
 	default:
-		if (SSMODE(dev) != MODE_CONTROL)
-			return (ENOTTY);
-		return (scsi_do_ioctl(ss->sc_link, dev, cmd, addr, flag, p));
+		return (scsipi_do_ioctl(ss->sc_periph, dev, cmd, addr,
+		    flag, p));
 	}
 	return (error);
 }

@@ -118,7 +118,7 @@ ehci_pci_attach(struct device *parent, struct device *self, void *aux)
 	/* Map I/O registers */
 	if (pci_mapreg_map(pa, PCI_CBMEM, PCI_MAPREG_TYPE_MEM, 0,
 			   &sc->sc.iot, &sc->sc.ioh, NULL, &sc->sc.sc_size)) {
-		aprint_error("%s: can't map memory space\n", devname);
+		printf("%s: can't map memory space\n", devname);
 		return;
 	}
 
@@ -195,7 +195,7 @@ ehci_pci_attach(struct device *parent, struct device *self, void *aux)
 
 	r = ehci_init(&sc->sc);
 	if (r != USBD_NORMAL_COMPLETION) {
-		aprint_error("%s: init failed, error=%d\n", devname, r);
+		printf("%s: init failed, error=%d\n", devname, r);
 		return;
 	}
 

@@ -1,3 +1,5 @@
+/*	$NetBSD: scsi_scanner.h,v 1.7 2001/11/19 17:18:08 soren Exp $	*/
+
 /*
  * Copyright (c) 1995 Kenneth Stailey.  All rights reserved.
  *   modified for configurable scanner support by Joachim Koenig
@@ -32,9 +34,6 @@
  * SCSI scanner interface description
  */
 
-#ifndef	_SCSI_SCANNER_H_
-#define _SCSI_SCANNER_H_
-
 /* SCSI scanner commands */
 #define GET_IMAGE_STATUS	0x0f
 #define READ_BIG			0x28
@@ -51,17 +50,6 @@ struct scsi_rw_scanner {
 	u_int8_t byte2;
 #define	SRW_FIXED			0x01
 	u_int8_t len[3];
-	u_int8_t control;
-};
-
-struct scsi_start_stop {
-	u_int8_t opcode;
-	u_int8_t byte2;
-	u_int8_t unused[2];
-	u_int8_t how;
-#define	SSS_STOP			0x00
-#define	SSS_START			0x01
-#define	SSS_LOEJ			0x02
 	u_int8_t control;
 };
 
@@ -93,10 +81,10 @@ struct scsi_window_data {
 	u_int8_t brightness;
 	u_int8_t threshold;
 	u_int8_t contrast;
-	u_int8_t image_comp;	    /* image composition (data type) */
+	u_int8_t image_comp;	    	/* image composition (data type) */
 	u_int8_t bits_per_pixel;
 	u_int8_t halftone_pattern[2];
-	u_int8_t rif:1;		    /* reverse image format (mono negative) */
+	u_int8_t rif:1;		  			  /* reverse image format (mono negative) */
 	u_int8_t res2:4;
 	u_int8_t pad_type:3;
 	u_int8_t bit_ordering[2];
@@ -110,5 +98,3 @@ struct scsi_window_data {
 #define MUSTEK_SET_WINDOW	0x04	/* set image area and windows */
 #define MUSTEK_ADF			0x10	/* ADF and backtracking selection */
 #define MUSTEK_LUT			0x55	/* look up table download */
-
-#endif /* _SCSI_SCANNER_H_ */

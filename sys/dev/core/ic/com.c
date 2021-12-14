@@ -1601,7 +1601,7 @@ com_rxsoft(sc, tp)
 	struct com_softc *sc;
 	struct tty *tp;
 {
-	int (*rint) __P((int c, struct tty *tp)) = linesw[tp->t_line].l_rint;
+	int (*rint) (int c, struct tty *tp) = linesw[tp->t_line].l_rint;
 	u_char *get, *end;
 	u_int cc, scc;
 	u_char lsr;

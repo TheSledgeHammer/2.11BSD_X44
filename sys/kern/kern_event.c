@@ -943,7 +943,7 @@ kqueue_scan(struct file *fp, size_t maxevents, struct kevent *ulistp,
 			simple_unlock(&kq->kq_lock);
 		} else {
 			kq->kq_state |= KQ_SLEEP;
-			error = ltsleep(kq, PSOCK | PCATCH | PNORELOCK, "kqread", timeout,
+			error = tsleep(kq, PSOCK | PCATCH | PNORELOCK, "kqread", timeout,
 					&kq->kq_lock);
 		}
 		splx(s);

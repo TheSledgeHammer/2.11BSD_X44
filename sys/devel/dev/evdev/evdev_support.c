@@ -4,11 +4,10 @@
  *  Created on: 11 Dec 2021
  *      Author: marti
  */
-#include "freebsd_bitstring.h"
-
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/evdev_private.h>
 #include <dev/evdev/input.h>
+#include "freebsd-bitstring.h"
 
 #ifdef EVDEV_DEBUG
 #define	debugf(evdev, fmt, args...)	kprintf("evdev: " fmt "\n", ##args)

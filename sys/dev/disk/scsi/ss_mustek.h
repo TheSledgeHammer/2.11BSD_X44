@@ -1,4 +1,4 @@
-/*	$NetBSD: ss_mustek.h,v 1.2 1996/03/19 03:05:15 mycroft Exp $	*/
+/*	$NetBSD: ss_mustek.h,v 1.5 1998/02/13 08:28:59 enami Exp $	*/
 
 /*
  * Copyright (c) 1995 Joachim Koenig-Baltes.  All rights reserved.
@@ -29,9 +29,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef	_SS_MUSTEK_H_
-#define _SS_MUSTEK_H_ 1
-
 /*
  * support for MUSTEK flatbed SCSI scanners MFS-06000CX and MFS-12000CX
  * (600 and 1200 dpi horizontally resp), not conforming to the SCSI2 spec.
@@ -57,8 +54,8 @@
 #define MUSTEK_LUT			0x55	/* look up table download */
 
 /* the size spec is at the same bit position in different commands */
-#define	MUSTEK_UNIT_INCHES	0x00
-#define MUSTEK_UNIT_PIXELS	0x08
+#define	MUSTEK_UNIT_INCHES		0x00
+#define MUSTEK_UNIT_PIXELS		0x08
 #ifdef MUSTEK_INCH_SPEC
 #define MUSTEK_UNIT_SPEC	MUSTEK_UNIT_INCHES
 #else
@@ -146,8 +143,8 @@ struct mustek_mode_select_cmd {
  *         660  720  780  840  900  960 1020 1080 1140 1200 dpi
  */
 struct mustek_mode_select_data {
-#define MUSTEK_MODE_MASK				0x83
-#define MUSTEK_HT_PATTERN_BUILTIN		0x00
+#define MUSTEK_MODE_MASK		0x83
+#define MUSTEK_HT_PATTERN_BUILTIN	0x00
 #define MUSTEK_HT_PATTERN_DOWNLOADED	0x10
 	u_int8_t mode;
 	u_int8_t resolution;
@@ -175,5 +172,3 @@ struct mustek_start_scan_cmd {
 	u_int8_t mode;
 	u_int8_t control;
 };
-
-#endif /* _SS_MUSTEK_H_ */

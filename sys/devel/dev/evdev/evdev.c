@@ -44,8 +44,8 @@
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/evdev_private.h>
 #include <dev/evdev/input.h>
-#include <dev/evdev/freebsd_bitstring.h>
 #include <dev/misc/wscons/wsconsio.h>
+#include "freebsd-bitstring.h"
 
 #ifdef EVDEV_DEBUG
 #define	debugf(client, fmt, args...)	printf("evdev cdev: "fmt"\n", ##args)

@@ -1,12 +1,12 @@
-/*	$NetBSD: scsiconf.h,v 1.50.4.1 2004/09/11 12:52:42 he Exp $	*/
+/*	$NetBSD: scsipi_debug.h,v 1.14 2001/05/30 11:46:34 mrg Exp $	*/
 
 /*-
- * Copyright (c) 1998, 1999 The NetBSD Foundation, Inc.
+ * Copyright (c) 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Charles M. Hannum; by Jason R. Thorpe of the Numerical Aerospace
- * Simulation Facility, NASA Ames Research Center.
+ * by by Jason R. Thorpe of the Numerical Aerospace Simulation Facility,
+ * NASA Ames Research Center.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,53 +37,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(_KERNEL_OPT)
+#include "opt_scsipi_debug.h"
+#endif
+
 /*
  * Originally written by Julian Elischer (julian@tfs.com)
- * for TRW Financial Systems for use under the MACH(2.5) operating system.
- *
- * TRW Financial Systems, in accordance with their agreement with Carnegie
- * Mellon University, makes this software available to CMU to distribute
- * or use in any manner that they see fit as long as this message is kept with
- * the software. For this reason TFS also grants any other persons or
- * organisations permission to use or modify this software.
- *
- * TFS supplies this software to be publicly redistributed
- * on the understanding that TFS is not responsible for the correct
- * functioning of this software in any circumstances.
- *
- * Ported to run under 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
  */
 
-#ifndef _DEV_SCSIPI_SCSICONF_H_
-#define _DEV_SCSIPI_SCSICONF_H_
+#define	SCSIPI_DB1	0x0001		/* scsi commands, errors, data */ 
+#define	SCSIPI_DB2	0x0002		/* routine flow tracking */
+#define	SCSIPI_DB3	0x0004		/* internal to routine flows */
+#define	SCSIPI_DB4	0x0008		/* level 4 debugging for this dev */
 
-#include <dev/disk/scsi/scsipiconf.h>
+/*
+ * The following options allow us to build a kernel with debugging on
+ * by default for a certain type of device.  We can always enable
+ * debugging on a specific device using an ioctl.
+ */
+#ifndef SCSIPI_DEBUG_TYPE
+#define	SCSIPI_DEBUG_TYPE	SCSIPI_BUSTYPE_ATAPI
+#endif
 
-#define SCSICF_CHANNEL				0
-#define SCSICF_CHANNEL_DEFAULT		-1
-#define SCSIBUSCF_TARGET 			0
-#define SCSIBUSCF_TARGET_DEFAULT 	-1
-#define SCSIBUSCF_LUN 				1
-#define SCSIBUSCF_LUN_DEFAULT 		-1
+#ifndef SCSIPI_DEBUG_TARGET
+#define	SCSIPI_DEBUG_TARGET	-1	/* disabled */
+#endif
 
-int	scsiprint (void *, const char *);
+#ifndef	SCSIPI_DEBUG_LUN
+#define	SCSIPI_DEBUG_LUN	0
+#endif
 
-struct scsibus_softc {
-	struct device sc_dev;
-	struct scsipi_channel *sc_channel;	/* our scsipi_channel */
-	int	sc_flags;
-};
+/*
+ * Default debugging flags for above.
+ */
+#ifndef SCSIPI_DEBUG_FLAGS
+#define	SCSIPI_DEBUG_FLAGS	(SCSIPI_DB1|SCSIPI_DB2|SCSIPI_DB3)
+#endif
 
-/* sc_flags */
-#define	SCSIBUSF_OPEN	0x00000001	/* bus is open */
+#ifdef SCSIPI_DEBUG
+#define	SC_DEBUG(periph, flags, x)					\
+do {												\
+	if ((periph)->periph_dbflags & (flags)) {		\
+		scsipi_printaddr((periph));					\
+		printf x ;									\
+	}												\
+} while (0)
 
-extern const struct scsipi_bustype scsi_bustype;
-
-int		scsi_change_def (struct scsipi_periph *, int);
-void	scsi_kill_pending (struct scsipi_periph *);
-void	scsi_print_addr (struct scsipi_periph *);
-int		scsi_probe_bus (struct scsibus_softc *, int, int);
-int		scsi_scsipi_cmd (struct scsipi_periph *, struct scsipi_xfer *,
-	    struct scsipi_generic *, int, void *, size_t,
-	    int, int, struct buf *, int);
-#endif /* _DEV_SCSIPI_SCSICONF_H_ */
+#define	SC_DEBUGN(periph, flags, x)					\
+do {												\
+	if ((periph)->periph_dbflags & (flags))			\
+		printf x ;									\
+} while (0)
+#else
+#define	SC_DEBUG(periph, flags, x)	/* nothing */
+#define	SC_DEBUGN(periph, flags, x)	/* nothing */
+#endif

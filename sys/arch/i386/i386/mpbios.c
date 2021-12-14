@@ -214,7 +214,7 @@ mp_print(aux, pnp)
 {
 	struct cpu_attach_args *caa = (struct cpu_attach_args*) aux;
 	if (pnp)
-		aprint_normal("%s at %s:", caa->caa_name, pnp);
+		printf("%s at %s:", caa->caa_name, pnp);
 	return (UNCONF);
 }
 

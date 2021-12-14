@@ -48,9 +48,10 @@ static int wdc_upc_match(struct device *, struct cfdata *, void *);
 static void wdc_upc_attach(struct device *, struct device *, void *);
 
 struct wdc_upc_softc {
-	struct wdc_softc 		sc_wdc;
-	struct channel_softc 	*sc_chanlist[1];
-	struct channel_softc 	sc_channel;
+	struct wdc_softc sc_wdc;
+	struct wdc_channel *sc_chanlist[1];
+	struct wdc_channel sc_channel;
+	struct ata_queue sc_chqueue;
 };
 
 CFDRIVER_DECL(NULL, wdc_upc, &wdc_upc_cops, DV_DULL, sizeof(struct wdc_upc_softc));
@@ -79,29 +80,25 @@ wdc_upc_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_chanlist[0] = &sc->sc_channel;
 	sc->sc_wdc.channels = sc->sc_chanlist;
 	sc->sc_channel.cmd_iot = ua->ua_iot;
-	sc->sc_channel.cmd_ioh = ua->ua_ioh;
+	sc->sc_channel.cmd_baseioh = ua->ua_ioh;
 	sc->sc_channel.ctl_iot = ua->ua_iot;
 	sc->sc_channel.ctl_ioh = ua->ua_ioh2;
-	sc->sc_channel.channel = 0;
-	sc->sc_channel.wdc = &sc->sc_wdc;
-	sc->sc_channel.ch_queue = malloc(sizeof(struct channel_queue), M_DEVBUF, M_NOWAIT);
-	if (sc->sc_channel.ch_queue == NULL) {
-		printf("%s: can't allocate memory for command queue\n",
-		sc->sc_wdc.sc_dev.dv_xname);
-		return;
-	}
-
+	sc->sc_channel.ch_channel = 0;
+	sc->sc_channel.ch_wdc = &sc->sc_wdc;
+	sc->sc_channel.ch_queue = &sc->sc_chqueue;
 	for (i = 0; i < WDC_NREG; i++) {
 		if (bus_space_subregion(ua->ua_iot, ua->ua_ioh, i,
 		    i == 0 ? 4 : 1, &sc->sc_channel.cmd_iohs[i]) != 0) {
-			aprint_error("%s: can't subregion I/O space\n",
+			printf("%s: can't subregion I/O space\n",
 			    sc->sc_wdc.sc_dev.dv_xname);
 			return;
 		}
 	}
 
-	upc_intr_establish(ua->ua_irqhandle, IPL_BIO, wdcintr, &sc->sc_channel);
+	upc_intr_establish(ua->ua_irqhandle, IPL_BIO, wdcintr,
+			   &sc->sc_channel);
 
+	printf("\n");
 	printf("\n");
 
 	wdcattach(&sc->sc_channel);

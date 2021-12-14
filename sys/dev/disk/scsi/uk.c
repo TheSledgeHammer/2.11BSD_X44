@@ -1,7 +1,11 @@
-/*	$NetBSD: uk.c,v 1.15 1996/03/17 00:59:57 thorpej Exp $	*/
+/*	$NetBSD: uk.c,v 1.41 2003/09/08 01:26:42 mycroft Exp $	*/
 
-/*
- * Copyright (c) 1994 Charles Hannum.  All rights reserved.
+/*-
+ * Copyright (c) 1998 The NetBSD Foundation, Inc.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Charles M. Hannum.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,57 +17,67 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by Charles Hannum.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* 
+/*
  * Dummy driver for a device we can't identify.
  * Originally by Julian Elischer (julian@tfs.com)
  */
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
+__KERNEL_RCSID(0, "$NetBSD: uk.c,v 1.41 2003/09/08 01:26:42 mycroft Exp $");
+
 #include <sys/param.h>
+#include <sys/systm.h>
+
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/device.h>
-#include <sys/user.h>
+#include <sys/conf.h>
+#include <sys/vnode.h>
 
 #include <dev/disk/scsi/scsi_all.h>
+#include <dev/disk/scsi/scsipi_all.h>
 #include <dev/disk/scsi/scsiconf.h>
 
 #define	UKUNIT(z)	(minor(z))
 
 struct uk_softc {
-	struct device 	sc_dev;
+	struct device sc_dev;
 
-	struct scsi_link *sc_link;	/* all the inter level info */
+	struct scsipi_periph *sc_periph; /* all the inter level info */
 };
 
-int ukmatch (struct device *, void *, void *);
+int ukmatch (struct device *, struct cfdata *, void *);
 void ukattach (struct device *, struct device *, void *);
+int ukactivate (struct device *, enum devact);
+int ukdetach (struct device *, int);
 
 CFDRIVER_DECL(NULL, uk, &uk_cops, DV_DULL, sizeof(struct uk_softc));
-CFOPS_DECL(uk, ukmatch, ukattach, NULL, NULL);
+CFOPS_DECL(uk, ukmatch, ukattach, ukdetach, ukactivate);
 
 extern struct cfdriver uk_cd;
 
-static dev_type_open(ukopen);
-static dev_type_close(ukclose);
-static dev_type_ioctl(ukioctl);
+dev_type_open(ukopen);
+dev_type_close(ukclose);
+dev_type_ioctl(ukioctl);
 
 const struct cdevsw uk_cdevsw = {
 		.d_open = ukopen,
@@ -79,23 +93,14 @@ const struct cdevsw uk_cdevsw = {
 		.d_type = D_OTHER
 };
 
-/*
- * This driver is so simple it uses all the default services
- */
-struct scsi_device uk_switch = {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-};
-
 int
 ukmatch(parent, match, aux)
 	struct device *parent;
-	void *match, *aux;
+	struct cfdata *match;
+	void *aux;
 {
 
-	return 1;
+	return (1);
 }
 
 /*
@@ -108,58 +113,103 @@ ukattach(parent, self, aux)
 	void *aux;
 {
 	struct uk_softc *uk = (void *)self;
-	struct scsibus_attach_args *sa = aux;
-	struct scsi_link *sc_link = sa->sa_sc_link;
+	struct scsipibus_attach_args *sa = aux;
+	struct scsipi_periph *periph = sa->sa_periph;
 
-	SC_DEBUG(sc_link, SDEV_DB2, ("ukattach: "));
+	SC_DEBUG(periph, SCSIPI_DB2, ("ukattach: "));
 
 	/*
 	 * Store information needed to contact our base driver
 	 */
-	uk->sc_link = sc_link;
-	sc_link->device = &uk_switch;
-	sc_link->device_softc = uk;
-	sc_link->openings = 1;
+	uk->sc_periph = periph;
+	periph->periph_dev = &uk->sc_dev;
 
 	printf("\n");
-	printf("%s: unknown device\n", uk->sc_dev.dv_xname);
 }
+
+int
+ukactivate(self, act)
+	struct device *self;
+	enum devact act;
+{
+	int rv = 0;
+ 
+	switch (act) {
+	case DVACT_ACTIVATE:
+		rv = EOPNOTSUPP;
+		break;
+ 
+	case DVACT_DEACTIVATE:
+		/*
+		 * Nothing to do; we key off the device's DVF_ACTIVE.
+		 */
+		break;
+	}
+	return (rv);
+}
+ 
+int
+ukdetach(self, flags)
+	struct device *self;
+	int flags;
+{
+	/*struct uk_softc *uk = (struct uk_softc *) self;*/
+	int cmaj, mn;
+ 
+	/* locate the major number */
+	cmaj = cdevsw_lookup_major(&uk_cdevsw);
+ 
+	/* Nuke the vnodes for any open instances */
+	mn = self->dv_unit;
+	vdevgone(cmaj, mn, mn, VCHR);
+ 
+	return (0);
+}
+
+
 
 /*
  * open the device.
  */
 int
-ukopen(dev)
+ukopen(dev, flag, fmt, p)
 	dev_t dev;
+	int flag, fmt;
+	struct proc *p;
 {
-	int unit;
+	int unit, error;
 	struct uk_softc *uk;
-	struct scsi_link *sc_link;
+	struct scsipi_periph *periph;
+	struct scsipi_adapter *adapt;
 
 	unit = UKUNIT(dev);
 	if (unit >= uk_cd.cd_ndevs)
-		return ENXIO;
+		return (ENXIO);
 	uk = uk_cd.cd_devs[unit];
-	if (!uk)
-		return ENXIO;
+	if (uk == NULL)
+		return (ENXIO);
 
-	sc_link = uk->sc_link;
+	periph = uk->sc_periph;
+	adapt = periph->periph_channel->chan_adapter;
 
-	SC_DEBUG(sc_link, SDEV_DB1,
-			("ukopen: dev=0x%x (unit %d (of %d))\n", dev, unit, uk_cd.cd_ndevs));
+	SC_DEBUG(periph, SCSIPI_DB1,
+	    ("ukopen: dev=0x%x (unit %d (of %d))\n", dev, unit,
+		uk_cd.cd_ndevs));
 
 	/*
 	 * Only allow one at a time
 	 */
-	if (sc_link->flags & SDEV_OPEN) {
+	if (periph->periph_flags & PERIPH_OPEN) {
 		printf("%s: already open\n", uk->sc_dev.dv_xname);
-		return EBUSY;
+		return (EBUSY);
 	}
 
-	sc_link->flags |= SDEV_OPEN;
+	if ((error = scsipi_adapter_addref(adapt)) != 0)
+		return (error);
+	periph->periph_flags |= PERIPH_OPEN;
 
-	SC_DEBUG(sc_link, SDEV_DB3, ("open complete\n"));
-	return 0;
+	SC_DEBUG(periph, SCSIPI_DB3, ("open complete\n"));
+	return (0);
 }
 
 /*
@@ -167,15 +217,23 @@ ukopen(dev)
  * occurence of an open device
  */
 int
-ukclose(dev)
+ukclose(dev, flag, fmt, p)
 	dev_t dev;
+	int flag, fmt;
+	struct proc *p;
 {
 	struct uk_softc *uk = uk_cd.cd_devs[UKUNIT(dev)];
+	struct scsipi_periph *periph = uk->sc_periph;
+	struct scsipi_adapter *adapt = periph->periph_channel->chan_adapter;
 
-	SC_DEBUG(uk->sc_link, SDEV_DB1, ("closing\n"));
-	uk->sc_link->flags &= ~SDEV_OPEN;
+	SC_DEBUG(uk->sc_periph, SCSIPI_DB1, ("closing\n"));
 
-	return 0;
+	scsipi_wait_drain(periph);
+
+	scsipi_adapter_delref(adapt);
+	periph->periph_flags &= ~PERIPH_OPEN;
+
+	return (0);
 }
 
 /*
@@ -192,5 +250,5 @@ ukioctl(dev, cmd, addr, flag, p)
 {
 	register struct uk_softc *uk = uk_cd.cd_devs[UKUNIT(dev)];
 
-	return scsi_do_ioctl(uk->sc_link, dev, cmd, addr, flag, p);
+	return (scsipi_do_ioctl(uk->sc_periph, dev, cmd, addr, flag, p));
 }

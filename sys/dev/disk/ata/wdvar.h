@@ -1,7 +1,7 @@
-/*	$NetBSD: wdvar.h,v 1.3.4.1 2000/07/07 17:33:48 he Exp $	*/
+/*	$NetBSD: wdvar.h,v 1.26 2003/12/14 05:38:20 thorpej Exp $	*/
 
 /*
- * Copyright (c) 1998 Manuel Bouyer.
+ * Copyright (c) 1998, 2001 Manuel Bouyer.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,11 +13,9 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *	This product includes software developed by Manuel Bouyer.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -29,43 +27,57 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
-/* Params needed by the controller to perform an ATA bio */
-struct ata_bio {
-    volatile u_int16_t 	flags; 	/* cmd flags */
-#define ATA_NOSLEEP 	0x0001 	/* Can't sleep */
-#define ATA_POLL    	0x0002 	/* poll for completion */
-#define ATA_ITSDONE 	0x0004 	/* the transfer is as done as it gets */
-#define ATA_SINGLE  	0x0008 	/* transfer has to be done in single-sector mode */
-#define ATA_LBA     	0x0010 	/* tranfert uses LBA adressing */
-#define ATA_READ    	0x0020 	/* tranfert is a read (otherwise a write) */
-#define ATA_CORR    	0x0040 	/* transfer had a corrected error */
-    int 				multi; 	/* number of blocks to transfer in multi-mode */
-    struct disklabel 	*lp; 	/* pointer to drive's label info */
-    daddr_t 			blkno; 	/* block addr */
-    daddr_t 			blkdone; /* number of blks transfered */
-    daddr_t 			nblks; 	/* number of block currently transfering */
-    int     			nbytes; /* number of bytes currently transfering */
-    long    			bcount; /* total number of bytes */
-    char*   			databuf; /* data buffer adress */
-    volatile int 		error;
-#define NOERROR 		0 		/* There was no error (r_error invalid) */
-#define ERROR   		1 		/* check r_error */
-#define ERR_DF			2 		/* Drive fault */
-#define ERR_DMA 		3 		/* DMA error */
-#define TIMEOUT 		4 		/* device timed out */
-    u_int8_t 			r_error; 		/* copy of error register */
-    daddr_t 			badsect[127];   /* 126 plus trailing -1 marker */
+#ifndef _DEV_ATA_WDVAR_H_
+#define	_DEV_ATA_WDVAR_H_
+
+struct wd_softc {
+	/* General disk infos */
+	struct device sc_dev;
+	struct dkdevice sc_dk;
+	struct lock sc_lock;
+	struct bufq_state sc_q;
+	struct callout sc_restart_ch;
+	int sc_quirks;			/* any quirks drive might have */
+	/* IDE disk soft states */
+	struct ata_bio sc_wdc_bio; /* current transfer */
+	struct buf *sc_bp; /* buf being transfered */
+	struct ata_drive_datas *drvp; /* Our controller's infos */
+	const struct ata_bustype *atabus;
+	int openings;
+	struct ataparams sc_params;/* drive characteristics found */
+	int sc_flags;	  
+#define	WDF_WLABEL	0x004 /* label is writable */
+#define	WDF_LABELLING	0x008 /* writing label */
+/*
+ * XXX Nothing resets this yet, but disk change sensing will when ATA-4 is
+ * more fully implemented.
+ */
+#define WDF_LOADED	0x010 /* parameters loaded */
+#define WDF_WAIT	0x020 /* waiting for resources */
+#define WDF_LBA		0x040 /* using LBA mode */
+#define WDF_KLABEL	0x080 /* retain label after 'full' close */
+#define WDF_LBA48	0x100 /* using 48-bit LBA mode */
+	u_int64_t sc_capacity;
+	int cyl; /* actual drive parameters */
+	int heads;
+	int sectors;
+	int retries; /* number of xfer retry */
+
+	void *sc_sdhook;		/* our shutdown hook */
+
+	SLIST_HEAD(, disk_badsectors)	sc_bslist;
+	u_int sc_bscount;
+
+#if NRND > 0
+	rndsource_element_t	rnd_source;
+#endif
 };
 
-#define ATACF_CHANNEL 			0
-#define ATACF_CHANNEL_DEFAULT 	-1
+#define sc_drive sc_wdc_bio.drive
+#define sc_mode sc_wdc_bio.mode
+#define sc_multi sc_wdc_bio.multi
+#define sc_badsect sc_wdc_bio.badsect
 
-#define ATACF_DRIVE 			1
-#define ATACF_DRIVE_DEFAULT		-1
-
-int wdc_ata_bio (struct ata_drive_datas*, struct ata_bio*);
-
-void wddone (void *);
+#endif /* _DEV_ATA_WDVAR_H_ */

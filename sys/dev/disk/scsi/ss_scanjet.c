@@ -1,4 +1,4 @@
-/*	$NetBSD: ss_scanjet.c,v 1.6 1996/05/18 22:58:01 christos Exp $	*/
+/*	$NetBSD: ss_scanjet.c,v 1.28.8.1 2004/09/11 12:57:39 he Exp $	*/
 
 /*
  * Copyright (c) 1995 Kenneth Stailey.  All rights reserved.
@@ -34,7 +34,8 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
+__KERNEL_RCSID(0, "$NetBSD: ss_scanjet.c,v 1.28.8.1 2004/09/11 12:57:39 he Exp $");
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/fcntl.h>
@@ -47,10 +48,13 @@
 #include <sys/device.h>
 #include <sys/conf.h>		/* for cdevsw */
 #include <sys/scanio.h>
+#include <sys/kernel.h>
 
 #include <dev/disk/scsi/scsi_all.h>
+#include <dev/disk/scsi/scsipi_all.h>
 #include <dev/disk/scsi/scsi_scanner.h>
 #include <dev/disk/scsi/scsiconf.h>
+#include <dev/disk/scsi/scsipi_base.h>
 #include <dev/disk/scsi/ssvar.h>
 
 #define SCANJET_RETRIES 4
@@ -61,14 +65,10 @@ int scanjet_trigger_scanner (struct ss_softc *);
 int scanjet_read (struct ss_softc *, struct buf *);
 
 /* only used internally */
-int scanjet_ctl_write (struct ss_softc *, char *, u_int, int);
-int scanjet_ctl_read (struct ss_softc *, char *, u_int, int);
+int scanjet_ctl_write (struct ss_softc *, char *, u_int);
+int scanjet_ctl_read (struct ss_softc *, char *, u_int);
 int scanjet_set_window (struct ss_softc *);
 int scanjet_compute_sizes (struct ss_softc *);
-/* Maybe move to libkern? */
-__inline static int atoi (const char *);
-__inline static char *strchr (const char *, char);
-
 
 /*
  * structure for the special handlers
@@ -90,30 +90,39 @@ struct ss_special scanjet_special = {
 void
 scanjet_attach(ss, sa)
 	struct ss_softc *ss;
-	struct scsibus_attach_args *sa;
+	struct scsipibus_attach_args *sa;
 {
-#ifdef SCSIDEBUG
-	struct scsi_link *sc_link = sa->sa_sc_link;
-#endif
 	int error;
 
-	SC_DEBUG(sc_link, SDEV_DB1, ("scanjet_attach: start\n"));
+	SC_DEBUG(ss->sc_periph, SCSIPI_DB1, ("scanjet_attach: start\n"));
 	ss->sio.scan_scanner_type = 0;
 
-	printf("\n%s: ", ss->sc_dev.dv_xname);
+	printf("%s: ", ss->sc_dev.dv_xname);
 
 	/* first, check the model (which determines nothing yet) */
 
-	if (!bcmp(sa->sa_inqbuf->product, "C1750A", 6)) {
+	if (!memcmp(sa->sa_inqbuf.product, "C1750A", 6)) {
 		ss->sio.scan_scanner_type = HP_SCANJET_IIC;
 		printf("HP ScanJet IIc");
-	}
-	if (!bcmp(sa->sa_inqbuf->product, "C2500A", 6)) {
+	} else if (!memcmp(sa->sa_inqbuf.product, "C2500A", 6)) {
 		ss->sio.scan_scanner_type = HP_SCANJET_IIC;
 		printf("HP ScanJet IIcx");
+	} else if (!memcmp(sa->sa_inqbuf.product, "C2520A", 6)) {
+		ss->sio.scan_scanner_type = HP_SCANJET_IIC;
+		printf("HP ScanJet 4c");
+	} else if (!memcmp(sa->sa_inqbuf.product, "C1130A", 6)) {
+		ss->sio.scan_scanner_type = HP_SCANJET_IIC;
+		printf("HP ScanJet 4p");
+	} else if (!memcmp(sa->sa_inqbuf.product, "C5110A", 6)) {
+		ss->sio.scan_scanner_type = HP_SCANJET_IIC;
+		printf("HP ScanJet 5p");
+	} else {
+		ss->sio.scan_scanner_type = HP_SCANJET_IIC;
+		printf("HP ScanJet (unknown model)");
 	}
 
-	SC_DEBUG(sc_link, SDEV_DB1, ("scanjet_attach: scanner_type = %d\n",
+	SC_DEBUG(ss->sc_periph, SCSIPI_DB1,
+	    ("scanjet_attach: scanner_type = %d\n",
 	    ss->sio.scan_scanner_type));
 
 	/* now install special handlers */
@@ -204,7 +213,7 @@ scanjet_set_params(ss, sio)
 
 	/* change ss_softc to the new values, but save ro-variables */
 	sio->scan_scanner_type = ss->sio.scan_scanner_type;
-	bcopy(sio, &ss->sio, sizeof(struct scan_io));
+	memcpy(&ss->sio, sio, sizeof(struct scan_io));
 
 	error = scanjet_set_window(ss);
 	if (error) {
@@ -245,7 +254,7 @@ scanjet_trigger_scanner(ss)
 
 	/* send "trigger" operation */
 	strcpy(escape_codes, "\033*f0S");
-	error = scanjet_ctl_write(ss, escape_codes, strlen(escape_codes), 0);
+	error = scanjet_ctl_write(ss, escape_codes, strlen(escape_codes));
 	if (error) {
 		uprintf("%s: trigger_scanner failed\n", ss->sc_dev.dv_xname);
 		return (error);
@@ -260,12 +269,14 @@ scanjet_read(ss, bp)
 	struct buf *bp;
 {
 	struct scsi_rw_scanner cmd;
-	struct scsi_link *sc_link = ss->sc_link;
+	struct scsipi_xfer *xs;
+	struct scsipi_periph *periph = ss->sc_periph;
+	int error;
 
 	/*
 	 *  Fill out the scsi command
 	 */
-	bzero(&cmd, sizeof(cmd));
+	memset(&cmd, 0, sizeof(cmd));
 	cmd.opcode = READ;
 
 	/*
@@ -277,16 +288,35 @@ scanjet_read(ss, bp)
 	/*
 	 * go ask the adapter to do all this for us
 	 */
-	if (scsi_scsi_cmd(sc_link, (struct scsi_generic *) &cmd, sizeof(cmd),
-	    (u_char *) bp->b_data, bp->b_bcount, SCANJET_RETRIES, 100000, bp,
-	    SCSI_NOSLEEP | SCSI_DATA_IN) != SUCCESSFULLY_QUEUED)
-		printf("%s: not queued\n", ss->sc_dev.dv_xname);
-	else {
-		ss->sio.scan_window_size -= bp->b_bcount;
-		if (ss->sio.scan_window_size < 0)
-			ss->sio.scan_window_size = 0;
+	xs = scsipi_make_xs(periph,
+	    (struct scsipi_generic *) &cmd, sizeof(cmd),
+	    (u_char *) bp->b_data, bp->b_bcount,
+	    SCANJET_RETRIES, 100000, bp,
+	    XS_CTL_NOSLEEP | XS_CTL_ASYNC | XS_CTL_DATA_IN);
+	if (xs == NULL) {
+		/*
+		 * out of memory. Keep this buffer in the queue, and
+		 * retry later.
+		 */
+		callout_reset(&ss->sc_callout, hz / 2, ssrestart,
+		    periph);
+		return(0);
 	}
-
+#ifdef DIAGNOSTIC
+	if (BUFQ_GET(&ss->buf_queue) != bp)
+		panic("ssstart(): dequeued wrong buf");
+#else
+	BUFQ_GET(&ss->buf_queue);
+#endif
+	error = scsipi_command(periph, xs,
+	    (struct scsipi_generic *) &cmd, sizeof(cmd),
+	    (u_char *) bp->b_data, bp->b_bcount, SCANJET_RETRIES, 100000, bp,
+	    XS_CTL_NOSLEEP | XS_CTL_ASYNC | XS_CTL_DATA_IN);
+	/* with a scsipi_xfer preallocated, scsipi_command can't fail */
+	KASSERT(error == 0);
+	ss->sio.scan_window_size -= bp->b_bcount;
+	if (ss->sio.scan_window_size < 0)
+		ss->sio.scan_window_size = 0;
 	return (0);
 }
 
@@ -295,20 +325,25 @@ scanjet_read(ss, bp)
  * Do a synchronous write.  Used to send control messages.
  */
 int 
-scanjet_ctl_write(ss, buf, size, flags)
+scanjet_ctl_write(ss, buf, size)
 	struct ss_softc *ss;
 	char *buf;
 	u_int size;
-	int flags;
 {
 	struct scsi_rw_scanner cmd;
+	int flags;
 
-	bzero(&cmd, sizeof(cmd));
+	flags = 0;
+	if ((ss->flags & SSF_AUTOCONF) != 0)
+		flags |= XS_CTL_DISCOVERY;
+
+	memset(&cmd, 0, sizeof(cmd));
 	cmd.opcode = WRITE;
 	_lto3b(size, cmd.len);
-	return (scsi_scsi_cmd(ss->sc_link, (struct scsi_generic *) &cmd,
+	return (scsipi_command(ss->sc_periph, NULL,
+	    (struct scsipi_generic *) &cmd,
 	    sizeof(cmd), (u_char *) buf, size, 0, 100000, NULL,
-	    flags | SCSI_DATA_OUT));
+	    flags | XS_CTL_DATA_OUT | XS_CTL_DATA_ONSTACK));
 }
 
 
@@ -316,35 +351,40 @@ scanjet_ctl_write(ss, buf, size, flags)
  * Do a synchronous read.  Used to read responses to control messages.
  */
 int
-scanjet_ctl_read(ss, buf, size, flags)
+scanjet_ctl_read(ss, buf, size)
 	struct ss_softc *ss;
 	char *buf;
 	u_int size;
-	int flags;
 {
 	struct scsi_rw_scanner cmd;
+	int flags;
 
-	bzero(&cmd, sizeof(cmd));
+	flags = 0;
+	if ((ss->flags & SSF_AUTOCONF) != 0)
+		flags |= XS_CTL_DISCOVERY;
+
+	memset(&cmd, 0, sizeof(cmd));
 	cmd.opcode = READ;
 	_lto3b(size, cmd.len);
-	return (scsi_scsi_cmd(ss->sc_link, (struct scsi_generic *) &cmd,
+	return (scsipi_command(ss->sc_periph, NULL,
+	    (struct scsipi_generic *) &cmd,
 	    sizeof(cmd), (u_char *) buf, size, 0, 100000, NULL,
-	    flags | SCSI_DATA_IN));
+	    flags | XS_CTL_DATA_IN | XS_CTL_DATA_ONSTACK));
 }
 
 
 #ifdef SCANJETDEBUG
 static void show_es(char *es)
 {
-  char *p = es;
-  while (*p) {
-    if (*p == '\033')
-      printf("[Esc]");
-    else
-      printf("%c", *p);
-    ++p;
-  }
-  printf("\n");
+	char *p = es;
+	while (*p) {
+		if (*p == '\033')
+			printf("[Esc]");
+		else
+			printf("%c", *p);
+		++p;
+	}
+	printf("\n");
 }
 #endif
 
@@ -359,18 +399,12 @@ scanjet_set_window(ss)
 
 	p = escape_codes;
 
-	sprintf(p, "\033*f%ldP", ss->sio.scan_width / 4);
-	p += strlen(p);
-	sprintf(p, "\033*f%ldQ", ss->sio.scan_height / 4);
-	p += strlen(p);
-	sprintf(p, "\033*f%ldX", ss->sio.scan_x_origin / 4);
-	p += strlen(p);
-	sprintf(p, "\033*f%ldY", ss->sio.scan_y_origin / 4);
-	p += strlen(p);
-	sprintf(p, "\033*a%dR", ss->sio.scan_x_resolution);
-	p += strlen(p);
-	sprintf(p, "\033*a%dS", ss->sio.scan_y_resolution);
-	p += strlen(p);
+	p += sprintf(p, "\033*f%ldP", ss->sio.scan_width / 4);
+	p += sprintf(p, "\033*f%ldQ", ss->sio.scan_height / 4);
+	p += sprintf(p, "\033*f%ldX", ss->sio.scan_x_origin / 4);
+	p += sprintf(p, "\033*f%ldY", ss->sio.scan_y_origin / 4);
+	p += sprintf(p, "\033*a%dR", ss->sio.scan_x_resolution);
+	p += sprintf(p, "\033*a%dS", ss->sio.scan_y_resolution);
      
 	switch (ss->sio.scan_image_mode) {
 	case SIM_BINARY_MONOCHROME:
@@ -414,38 +448,11 @@ scanjet_set_window(ss)
 		break;
 	}
 
-	sprintf(p, "\033*a%dG", ss->sio.scan_bits_per_pixel);
-	p += strlen(p);
-	sprintf(p, "\033*a%dL", (int)(ss->sio.scan_brightness) - 128);
-	p += strlen(p);
-	sprintf(p, "\033*a%dK", (int)(ss->sio.scan_contrast) - 128);
-	p += strlen(p);
+	p += sprintf(p, "\033*a%dG", ss->sio.scan_bits_per_pixel);
+	p += sprintf(p, "\033*a%dL", (int)(ss->sio.scan_brightness) - 128);
+	p += sprintf(p, "\033*a%dK", (int)(ss->sio.scan_contrast) - 128);
 
-	return (scanjet_ctl_write(ss, escape_codes, p - escape_codes, 0));
-}
-
-/* atoi() and strchr() are from /sys/arch/amiga/dev/ite.c
-   and are only used in scanjet_compute_sizes */
-
-__inline static int
-atoi(cp)
-	const char *cp;
-{
-	int n;
-
-	for (n = 0; *cp && *cp >= '0' && *cp <= '9'; cp++)
-		n = n * 10 + *cp - '0';
-
-	return (n);
-}
-
-__inline static char *
-strchr(cp, ch)
-	const char *cp;
-	char ch;
-{
-	while (*cp && *cp != ch) cp++;
-	return (*cp ? (char *)cp : 0);
+	return (scanjet_ctl_write(ss, escape_codes, p - escape_codes));
 }
 
 int
@@ -453,9 +460,9 @@ scanjet_compute_sizes(ss)
 	struct ss_softc *ss;
 {
 	int error;
-	static char *wfail = "%s: interrogate write failed\n";
-	static char *rfail = "%s: interrogate read failed\n";
-	static char *dfail = "%s: bad data returned\n";
+	static const char *wfail = "%s: interrogate write failed\n";
+	static const char *rfail = "%s: interrogate read failed\n";
+	static const char *dfail = "%s: bad data returned\n";
 	char escape_codes[20];
 	char response[20];
 	char *p;
@@ -478,12 +485,12 @@ scanjet_compute_sizes(ss)
 		strcpy(escape_codes, "\033*s1024E"); /* pixels wide */
 		break;
 	}
-	error = scanjet_ctl_write(ss, escape_codes, strlen(escape_codes), 0);
+	error = scanjet_ctl_write(ss, escape_codes, strlen(escape_codes));
 	if (error) {
 		uprintf(wfail, ss->sc_dev.dv_xname);
 		return (error);
 	}
-	error = scanjet_ctl_read(ss, response, 20, 0);
+	error = scanjet_ctl_read(ss, response, 20);
 	if (error) {
 		uprintf(rfail, ss->sc_dev.dv_xname);
 		return (error);
@@ -493,17 +500,17 @@ scanjet_compute_sizes(ss)
 		uprintf(dfail, ss->sc_dev.dv_xname);
 		return (EIO);
 	}
-	ss->sio.scan_pixels_per_line = atoi(p + 1);
+	ss->sio.scan_pixels_per_line = strtoul(p + 1, NULL, 10);
 	if (ss->sio.scan_image_mode < SIM_GRAYSCALE)
 		ss->sio.scan_pixels_per_line *= 8;
 
 	strcpy(escape_codes, "\033*s1026E"); /* pixels high */
-	error = scanjet_ctl_write(ss, escape_codes, strlen(escape_codes), 0);
+	error = scanjet_ctl_write(ss, escape_codes, strlen(escape_codes));
 	if (error) {
 		uprintf(wfail, ss->sc_dev.dv_xname);
 		return (error);
 	}
-	error = scanjet_ctl_read(ss, response, 20, 0);
+	error = scanjet_ctl_read(ss, response, 20);
 	if (error) {
 		uprintf(rfail, ss->sc_dev.dv_xname);
 		return (error);
@@ -513,7 +520,7 @@ scanjet_compute_sizes(ss)
 		uprintf(dfail, ss->sc_dev.dv_xname);
 		return (EIO);
 	}
-	ss->sio.scan_lines = atoi(p + 1);
+	ss->sio.scan_lines = strtoul(p + 1, NULL, 10);
 
 	ss->sio.scan_window_size = ss->sio.scan_lines *
 	    ((ss->sio.scan_pixels_per_line * ss->sio.scan_bits_per_pixel) / 8);

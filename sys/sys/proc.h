@@ -306,6 +306,11 @@ int			leavepgrp (struct proc *);
 int			enterpgrp (struct proc *, pid_t, int);
 void		fixjobc (struct proc *, struct pgrp *, int);
 int			inferior (struct proc *);
+
+/* Compatibility with old, non-interlocked tsleep call */
+#define	tsleep(chan, pri, wmesg, timo)					\
+		ltsleep(chan, pri, wmesg, timo, NULL)
+
 #endif 	/* KERNEL */
 
 #endif	/* !_SYS_PROC_H_ */

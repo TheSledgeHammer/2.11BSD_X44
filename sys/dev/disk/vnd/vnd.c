@@ -710,7 +710,7 @@ vndthrottle(vnd, vp)
 	struct vnode *vp;
 {
 #ifdef NFSCLIENT
-	extern int (**nfsv2_vnodeop_p) __P((void *));
+	extern int (**nfsv2_vnodeop_p) (void *);
 
 	if (vp->v_op == nfsv2_vnodeop_p)
 		vnd->sc_maxactive = 2;

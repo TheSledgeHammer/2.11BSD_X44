@@ -420,8 +420,8 @@ audio_attach_mi(ahwp, hdlp, dev)
 }
 
 #ifdef AUDIO_DEBUG
-void	audio_printsc __P((struct audio_softc *));
-void	audio_print_params __P((char *, struct audio_params *));
+void	audio_printsc (struct audio_softc *);
+void	audio_print_params (char *, struct audio_params *);
 
 void
 audio_printsc(sc)
