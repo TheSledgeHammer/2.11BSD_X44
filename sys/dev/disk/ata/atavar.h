@@ -313,3 +313,4 @@ int	ata_set_mode(struct ata_drive_datas *, u_int8_t, u_int8_t);
 
 void	ata_dmaerr(struct ata_drive_datas *, int);
 #endif /* _KERNEL */
+#endif /* _DEV_ATA_ATAVAR_H_ */
