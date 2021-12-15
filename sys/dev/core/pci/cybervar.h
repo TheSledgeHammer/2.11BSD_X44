@@ -1,11 +1,11 @@
-/* $NetBSD: usbroothub.h,v 1.3 2017/11/28 07:36:08 skrll Exp $ */
+/*	$NetBSD: cybervar.h,v 1.1 2004/02/03 19:51:39 fredb Exp $	*/
 
 /*-
- * Copyright (c) 2014 The NetBSD Foundation, Inc.
+ * Copyright (c) 2004 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Nick Hudson
+ * by Frederick S. Bruckman.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,6 +15,13 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -29,31 +36,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <dev/usb/usb.h>
+#ifndef _PCI_CYBERVAR_H_
+#define	_PCI_CYBERVAR_H_
 
-int usb_makestrdesc(usb_string_descriptor_t *, int, const char *);
-int usb_makelangtbl(usb_string_descriptor_t *, int);
+#include <dev/core/pci/pcivar.h>
 
-struct usb_roothub_descriptors {
-	usb_config_descriptor_t 				urh_confd;
-	usb_interface_descriptor_t 				urh_ifcd;
-	usb_endpoint_descriptor_t 				urh_endpd;
-};
+void write_siig10x_usrreg(pci_chipset_tag_t, pcitag_t, int, int);
+void write_siig20x_usrreg(pci_chipset_tag_t, pcitag_t, int, int);
 
-struct usb3_roothub_descriptors {
-	usb_config_descriptor_t 				urh_confd;
-	usb_interface_descriptor_t 				urh_ifcd;
-	usb_endpoint_descriptor_t 				urh_endpd;
-	usb_endpoint_ss_comp_descriptor_t 		urh_endpssd;
-};
-
-struct usb3_roothub_bos_descriptors {
-	usb_bos_descriptor_t 					urh_bosd;
-	usb_devcap_usb2ext_descriptor_t 		urh_usb2extd;
-	usb_devcap_ss_descriptor_t 				rh_ssd;
-	usb_devcap_container_id_descriptor_t 	urh_containerd;
-};
-
-#define	USBROOTHUB_INTR_ENDPT	1
-
-extern const struct usbd_pipe_methods 		roothub_ctrl_methods;
+#endif /* !_PCI_CYBERVAR_H_ */

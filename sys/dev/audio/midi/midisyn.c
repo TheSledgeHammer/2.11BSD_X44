@@ -52,7 +52,7 @@
 #include <sys/midiio.h>
 #include <sys/device.h>
 
-#include <dev/audio/audio_if.h>
+#include <dev/audio/generic/audio_if.h>
 #include <dev/audio/midi/midi_if.h>
 #include <dev/audio/midi/midivar.h>
 #include <dev/audio/midi/midisynvar.h>

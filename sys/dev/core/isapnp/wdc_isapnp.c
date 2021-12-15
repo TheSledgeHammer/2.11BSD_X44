@@ -61,8 +61,9 @@ __KERNEL_RCSID(0, "$NetBSD: wdc_isapnp.c,v 1.15 2001/11/15 22:56:53 09:48:10 luk
 
 struct wdc_isapnp_softc {
 	struct	wdc_softc 		sc_wdcdev;
-	struct	channel_softc 	*wdc_chanlist[1];
-	struct	channel_softc 	wdc_channel;
+	struct	wdc_channel 	*wdc_chanlist[1];
+	struct	wdc_channel 	wdc_channel;
+	struct	ata_queue 		wdc_chqueue;
 	isa_chipset_tag_t 		sc_ic;
 	void					*sc_ih;
 	int						sc_drq;
@@ -127,16 +128,16 @@ wdc_isapnp_attach(parent, self, aux)
 	 * (2 byte) region in auxioh.
 	 */
 	if (ipa->ipa_io[0].length == 8) {
-		sc->wdc_channel.cmd_ioh = ipa->ipa_io[0].h;
+		sc->wdc_channel.cmd_baseioh = ipa->ipa_io[0].h;
 		sc->wdc_channel.ctl_ioh = ipa->ipa_io[1].h;
 	} else {
-		sc->wdc_channel.cmd_ioh = ipa->ipa_io[1].h;
+		sc->wdc_channel.cmd_baseioh = ipa->ipa_io[1].h;
 		sc->wdc_channel.ctl_ioh = ipa->ipa_io[0].h;
 	}
 
 	for (i = 0; i < WDC_NREG; i++) {
 		if (bus_space_subregion(sc->wdc_channel.cmd_iot,
-		    sc->wdc_channel.cmd_ioh, i, i == 0 ? 4 : 1,
+		    sc->wdc_channel.cmd_baseioh, i, i == 0 ? 4 : 1,
 		    &sc->wdc_channel.cmd_iohs[i]) != 0) {
 			printf(": couldn't subregion registers\n");
 			return;
@@ -164,9 +165,9 @@ wdc_isapnp_attach(parent, self, aux)
 	sc->wdc_chanlist[0] = &sc->wdc_channel;
 	sc->sc_wdcdev.channels = sc->wdc_chanlist;
 	sc->sc_wdcdev.nchannels = 1;
-	sc->wdc_channel.channel = 0;
-	sc->wdc_channel.wdc = &sc->sc_wdcdev;
-	sc->wdc_channel.ch_queue = malloc(sizeof(struct channel_queue), M_DEVBUF, M_NOWAIT);
+	sc->wdc_channel.ch_channel = 0;
+	sc->wdc_channel.ch_wdc = &sc->sc_wdcdev;
+	sc->wdc_channel.ch_queue = &sc->wdc_chqueue;//malloc(sizeof(struct channel_queue), M_DEVBUF, M_NOWAIT);
 	if (sc->wdc_channel.ch_queue == NULL) {
 		printf("%s: can't allocate memory for command queue",
 				sc->sc_wdcdev.sc_dev.dv_xname);

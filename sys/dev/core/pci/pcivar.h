@@ -40,9 +40,8 @@
  * configuration.  Some of this information is machine-specific, and is
  * provided by pci_machdep.h.
  */
-
+#include <sys/device.h>
 #include <machine/bus.h>
-
 #include <dev/core/pci/pcireg.h>
 
 /*
@@ -50,24 +49,17 @@
  */
 typedef u_int32_t pcireg_t;		/* configuration space register XXX */
 struct pcibus_attach_args;
+struct pci_softc;
 
 /*
  * Machine-dependent definitions.
  */
-#if (alpha + atari + bebox + i386 != 1)
-//ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
-#endif
-#if alpha
-#include <alpha/pci/pci_machdep.h>
-#endif
-#if atari
-#include <atari/pci/pci_machdep.h>
-#endif
-#if bebox
-#include <bebox/pci/pci_machdep.h>
-#endif
-#if i386
-#include <i386/pci/pci_machdep.h>
+
+#ifdef _KERNEL
+/*
+ * Machine-dependent definitions.
+ */
+#include <machine/pci_machdep.h>
 #endif
 
 /*
@@ -104,6 +96,7 @@ struct pci_attach_args {
 	bus_space_tag_t 	pa_iot;		/* pci i/o space tag */
 	bus_space_tag_t 	pa_memt;	/* pci mem space tag */
 	bus_dma_tag_t 		pa_dmat;	/* DMA tag */
+	bus_dma_tag_t 		pa_dmat64;	/* DMA tag */
 	pci_chipset_tag_t 	pa_pc;
 	int					pa_flags;	/* flags; see below */
 
@@ -132,6 +125,10 @@ struct pci_attach_args {
  */
 #define	PCI_FLAGS_IO_ENABLED	0x01		/* I/O space is enabled */
 #define	PCI_FLAGS_MEM_ENABLED	0x02		/* memory space is enabled */
+#define	PCI_FLAGS_MRL_OKAY		0x04		/* Memory Read Line okay */
+#define	PCI_FLAGS_MRM_OKAY		0x08		/* Memory Read Multiple okay */
+#define	PCI_FLAGS_MWI_OKAY		0x10		/* Memory Write and Invalidate
+						   	   okay */
 
 /*
  * Locators devices that attach to 'pcibus', as specified to config.
@@ -163,5 +160,7 @@ int		pci_mapreg_map (struct pci_attach_args *, int, pcireg_t, int, bus_space_tag
  */
 void	pci_devinfo (pcireg_t, pcireg_t, int, char *);
 void	set_pci_isa_bridge_callback (void (*)(void *), void *);
+
+#endif /* _KERNEL */
 
 #endif /* _DEV_PCI_PCIVAR_H_ */

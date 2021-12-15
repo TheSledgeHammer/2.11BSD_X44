@@ -121,8 +121,20 @@ com_isa_probe(parent, match, aux)
 	int rv = 1;
 	struct isa_attach_args *ia = aux;
 
+	if (ia->ia_nio < 1)
+		return (0);
+	if (ia->ia_nirq < 1)
+		return (0);
+
+	if (ISA_DIRECT_CONFIG(ia))
+		return (0);
+
 	/* Disallow wildcarded i/o address. */
 	if (ia->ia_iobase == IOBASEUNK)
+		return (0);
+
+	/* Don't allow wildcarded IRQ. */
+	if (ia->ia_irq == IRQUNK)
 		return (0);
 
 	iot = ia->ia_iot;
@@ -138,8 +150,13 @@ com_isa_probe(parent, match, aux)
 	}
 
 	if (rv) {
+		ia->ia_nio = 1;
 		ia->ia_iosize = COM_NPORTS;
 		ia->ia_msize = 0;
+		ia->ia_nirq = 1;
+
+		ia->ia_niomem = 0;
+		ia->ia_ndrq = 0;
 	}
 	return (rv);
 }

@@ -2524,10 +2524,9 @@ ohci_root_ctrl_start(usbd_xfer_handle xfer)
 		hubd = ohci_hubd;
 		hubd.bNbrPorts = sc->sc_noport;
 		USETW(hubd.wHubCharacteristics,
-		      (v & OHCI_NPS ? UHD_PWR_NO_SWITCH :
-		       v & OHCI_PSM ? UHD_PWR_GANGED : UHD_PWR_INDIVIDUAL)
-		      /* XXX overcurrent */
-		      );
+				(v & OHCI_NPS ? UHD_PWR_NO_SWITCH : v & OHCI_PSM ? UHD_PWR_GANGED : UHD_PWR_INDIVIDUAL)
+				/* XXX overcurrent */
+				);
 		hubd.bPwrOn2PwrGood = OHCI_GET_POTPGT(v);
 		v = OREAD4(sc, OHCI_RH_DESCRIPTOR_B);
 		for (i = 0, l = sc->sc_noport; l > 0; i++, l -= 8, v >>= 8)

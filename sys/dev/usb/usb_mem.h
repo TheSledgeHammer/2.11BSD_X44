@@ -67,7 +67,7 @@ typedef struct usb_dma			usb_dma_t;
 #define DMAADDR(dma, o) 		((dma)->block->map->dm_segs[0].ds_addr + (dma)->offs + (o))
 #define KERNADDR(dma, o) 		((void *)((char *)((dma)->block->kaddr + (dma)->offs) + (o)))
 
-usbd_status	usb_allocmem(usbd_bus_handle,size_t,size_t, usb_dma_t *);
+usbd_status	usb_allocmem(usbd_bus_handle, size_t, size_t, usb_dma_t *);
 void		usb_freemem(usbd_bus_handle, usb_dma_t *);
 
 struct extent;

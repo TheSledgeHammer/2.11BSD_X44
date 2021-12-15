@@ -125,6 +125,7 @@ const struct cdevsw uhid_cdevsw = {
 		.d_mmap = nommap,
 		.d_strategy = nostrategy,
 		.d_discard = nodiscard,
+		.d_kqfilter = uhidkqfilter,
 		.d_type = D_OTHER
 };
 
@@ -598,7 +599,6 @@ uhidpoll(dev_t dev, int events, struct proc * p)
 	return (revents);
 }
 
-/*
 static void
 filt_uhidrdetach(struct knote *kn)
 {
@@ -660,4 +660,3 @@ uhidkqfilter(dev_t dev, struct knote *kn)
 
 	return (0);
 }
-*/

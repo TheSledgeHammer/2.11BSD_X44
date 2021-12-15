@@ -83,8 +83,8 @@
 #include <vm/include/vm_prot.h>
 
 #include <machine/endian.h>
-#include <dev/audio/audio_if.h>
-#include <dev/audio/audiovar.h>
+#include <dev/audio/generic/audio_if.h>
+#include <dev/audio/generic/audiovar.h>
 
 #ifdef AUDIO_DEBUG
 #define DPRINTF(x)		if (audiodebug) printf x

@@ -58,7 +58,7 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <dev/audio/audio_if.h>
+#include <dev/audio/generic/audio_if.h>
 #include <dev/audio/midi/midi_if.h>
 #include <dev/audio/midi/midivar.h>
 

@@ -124,7 +124,7 @@ struct isa_attach_args {
 
 	isa_chipset_tag_t 		ia_ic;
 
-	int						ia_iobase;		/* base i/o address */
+	int						ia_iobase;		/* base i/o address ia.addr */
 	int						ia_iosize;		/* span of ports used */
 	int						ia_irq;			/* interrupt request */
 	int						ia_drq;			/* DMA request */

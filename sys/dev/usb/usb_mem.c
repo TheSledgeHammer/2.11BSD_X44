@@ -84,9 +84,9 @@ struct usb_frag_dma {
 	LIST_ENTRY(usb_frag_dma) 	next;
 };
 
-static usbd_status	usb_block_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_block_t **);
-static void		usb_block_real_freemem  (usb_dma_block_t *);
-static void		usb_block_freemem  (usb_dma_block_t *);
+static usbd_status	usb_block_allocmem(bus_dma_tag_t, size_t, size_t, usb_dma_block_t **);
+static void			usb_block_real_freemem(usb_dma_block_t *);
+static void			usb_block_freemem(usb_dma_block_t *);
 
 static LIST_HEAD(, usb_dma_block) usb_blk_freelist = LIST_HEAD_INITIALIZER(usb_blk_freelist);
 static int usb_blk_nfree = 0;

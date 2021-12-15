@@ -4,11 +4,11 @@
 # Included by ports that need it.  Requires that the SCSI files be
 # defined first.
 
-defflag	PCIVERBOSE
+defflag	opt_pci.h	PCIVERBOSE
 
 device	pci {[dev = -1], [function = -1]}
 attach	pci at pcibus
-file	dev/core/pci/pci.c			pci 				needs-flag
+file	dev/core/pci/pci.c		pci 				needs-flag
 file	dev/core/pci/pci_map.c		pci
 file	dev/core/pci/pci_subr.c		pci
 
@@ -25,3 +25,18 @@ attach	ehci at pci with ehci_pci
 file	dev/core/pci/ehci_pci.c		ehci_pci
 
 file	dev/core/pci/usb_pci.c		ehci_pci | ehci_cardbus
+
+# PCI "universal" communication device driver, for PCI com, lpt, etc. ports
+# (see documentation in the driver for what, exactly, should be supported)
+device	puc { port = -1 }
+attach	puc at pci
+file	dev/core/pci/puc.c		puc
+file	dev/core/pci/pucdata.c		puc
+
+
+attach	com at puc with com_puc
+file	dev/core/pci/com_puc.c		com_puc
+file	dev/core/pci/cyber.c		com_puc
+
+attach	lpt at puc with lpt_puc
+file	dev/core/pci/lpt_puc.c		lpt_puc & !ppbus

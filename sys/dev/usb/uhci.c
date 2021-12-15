@@ -165,12 +165,12 @@ static void		uhci_enter_ctl_q(uhci_softc_t *, uhci_soft_qh_t *, uhci_intr_info_t
 static void		uhci_exit_ctl_q(uhci_softc_t *, uhci_soft_qh_t *);
 #endif
 
-static void		uhci_free_std_chain(uhci_softc_t *, uhci_soft_td_t *, uhci_soft_td_t *);
+static void			uhci_free_std_chain(uhci_softc_t *, uhci_soft_td_t *, uhci_soft_td_t *);
 static usbd_status	uhci_alloc_std_chain(struct uhci_pipe *, uhci_softc_t *, int, int, u_int16_t, usb_dma_t *, uhci_soft_td_t **, uhci_soft_td_t **);
-static void		uhci_poll_hub(void *);
-static void		uhci_waitintr(uhci_softc_t *, usbd_xfer_handle);
-static void		uhci_check_intr(uhci_softc_t *, uhci_intr_info_t *);
-static void		uhci_idone(uhci_intr_info_t *);
+static void			uhci_poll_hub(void *);
+static void			uhci_waitintr(uhci_softc_t *, usbd_xfer_handle);
+static void			uhci_check_intr(uhci_softc_t *, uhci_intr_info_t *);
+static void			uhci_idone(uhci_intr_info_t *);
 
 static void		uhci_abort_xfer(usbd_xfer_handle, usbd_status status);
 
@@ -193,13 +193,13 @@ static usbd_status	uhci_allocm(struct usbd_bus *, usb_dma_t *, u_int32_t);
 static void		uhci_freem(struct usbd_bus *, usb_dma_t *);
 
 static usbd_xfer_handle	uhci_allocx(struct usbd_bus *);
-static void		uhci_freex(struct usbd_bus *, usbd_xfer_handle);
+static void				uhci_freex(struct usbd_bus *, usbd_xfer_handle);
 
 static usbd_status	uhci_device_ctrl_transfer(usbd_xfer_handle);
 static usbd_status	uhci_device_ctrl_start(usbd_xfer_handle);
-static void		uhci_device_ctrl_abort(usbd_xfer_handle);
-static void		uhci_device_ctrl_close(usbd_pipe_handle);
-static void		uhci_device_ctrl_done(usbd_xfer_handle);
+static void			uhci_device_ctrl_abort(usbd_xfer_handle);
+static void			uhci_device_ctrl_close(usbd_pipe_handle);
+static void			uhci_device_ctrl_done(usbd_xfer_handle);
 
 static usbd_status	uhci_device_intr_transfer(usbd_xfer_handle);
 static usbd_status	uhci_device_intr_start(usbd_xfer_handle);
