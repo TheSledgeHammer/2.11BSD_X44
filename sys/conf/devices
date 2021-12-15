@@ -16,16 +16,17 @@ define										pcmciaslot {[slot = -1]}					# PCMCIA slot itself
 #
 # Generic Attributes
 #
-define										ata   {[channel = -1]}
 define	 									disk
 define	 									tape
 define	 									ifnet
 define	 									tty
+define										ata   {[channel = -1]}
 define										ata_hl	{[drive = -1]}
 define	 									atapi { }
 define	 									audio { }
 define										midi { }
-define	 									scsi {[channel = -1]}
++define	                  scsi_core
+define	 									scsi {[channel = -1]}: scsi_core 
 define 										pckbport {[slot = -1]}
 define										pckbport_machdep_cnattach
 define										videobus { }
