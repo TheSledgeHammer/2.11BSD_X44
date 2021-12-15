@@ -63,7 +63,7 @@ __KERNEL_RCSID(0, "$NetBSD: scsipiconf.c,v 1.20.4.1 2004/09/11 12:54:14 he Exp $
 #include <sys/device.h>
 #include <sys/proc.h>
 
-#include <vm/inlcude/vm_extern.h>
+//#include <vm/inlcude/vm_extern.h>
 
 #include <dev/disk/scsi/scsipi_all.h>
 #include <dev/disk/scsi/scsipiconf.h>

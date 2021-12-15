@@ -57,7 +57,6 @@
 __KERNEL_RCSID(0, "$NetBSD: sd.c,v 1.216.2.3 2004/09/11 12:55:11 he Exp $");
 
 #include "opt_scsi.h"
-#include "rnd.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>

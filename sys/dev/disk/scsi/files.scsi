@@ -16,8 +16,8 @@ defparam opt_scsipi_debug.h	SCSIPI_DEBUG_TYPE
 
 file	dev/disk/scsi/scsipiconf.c		scsi_core | atapibus
 file	dev/disk/scsi/scsipi_base.c		scsi_core | atapibus
-file	dev/disk/scsi/scsipi_ioctl.c	scsi_core | atapibus
-file	dev/disk/scsi/scsipi_verbose.c	(scsi_core | atapibus) & scsiverbose
+file	dev/disk/scsi/scsipi_ioctl.c		scsi_core | atapibus
+file	dev/disk/scsi/scsipi_verbose.c		(scsi_core | atapibus) & scsiverbose
 file	dev/disk/scsi/scsi_base.c		scsi_core 
 file	dev/disk/scsi/atapi_base.c		atapibus
 file	dev/disk/scsi/atapi_wdc.c		atapibus & atabus

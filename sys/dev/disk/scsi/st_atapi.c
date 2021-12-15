@@ -34,7 +34,6 @@
 __KERNEL_RCSID(0, "$NetBSD: st_atapi.c,v 1.12 2003/10/05 17:48:49 bouyer Exp $");
 
 #include "opt_scsi.h"
-#include "rnd.h"
 
 #include <sys/param.h>
 #include <sys/device.h>

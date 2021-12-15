@@ -46,9 +46,6 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: scsipi_ioctl.c,v 1.46.4.1.4.1 2005/11/03 20:24:30 riz Exp $");
 
-#include "opt_compat_freebsd.h"
-#include "opt_compat_netbsd.h"
-
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/systm.h>
