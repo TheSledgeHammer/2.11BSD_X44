@@ -104,7 +104,7 @@ Source Roadmap:
 | sbin | System commands. |
 | share | Shared resources. |
 | sys | Kernel sources. |
-| sys/`arch`/conf | Kernel configuration files. GENERIC.'arch' is the configuration used in release builds. NOTES contains documentation of all possible entries. |
+| sys/arch/`arch`/conf | Kernel configuration files. GENERIC.'arch' is the configuration used in release builds. |
 | sys/stand | Boot loader sources. |
 | tools | Utilities for toolchain & cross-compiling. |
 | usr.bin | User commands. |
