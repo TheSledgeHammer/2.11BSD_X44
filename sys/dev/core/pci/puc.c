@@ -370,7 +370,6 @@ static const char *
 puc_port_type_name(type)
 	int type;
 {
-
 	switch (type) {
 	case PUC_PORT_TYPE_COM:
 		return "com";

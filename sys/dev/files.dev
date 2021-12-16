@@ -4,10 +4,11 @@
 #	The dev folder is broken down into two layers.
 #	- Core (1st Layer): 
 #		- Consists of all the machine-independent common code using the following categories:
-#			- Currently: EISA, IC, ISA, ISAPNP, PCI, PCMCIA
+#			- i.e: EISA, IC, ISA, ISAPNP, MCA, OFISA, PCI, PCMCIA
 #	- Devices (2nd Layer):
 #		- Consists of all machine-independent devices using the following categories:
-#			- Currently: Audio, Disk, Misc(kobj, ksym, etc), USB, Video
+#			- i.e: Audio, Disk, Misc, USB, Video
+#			- Misc: devices that don't fit any category or that fit multiple categories
 #
 # XXX: Needs to be included in devices.archtype (Follow i386 for an example)
 # 

@@ -30,7 +30,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/device.h>
+#include <sys/callout.h>
 
 int comcnattach(bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t);
 
@@ -65,21 +65,14 @@ int com_is_console(bus_space_tag_t, bus_addr_t, bus_space_handle_t *);
 #define	COM_IBUFSIZE			(32 * 512)
 #define	COM_IHIGHWATER			((3 * COM_IBUFSIZE) / 4)
 
-/* Com rx */
-#define	RX_TTY_BLOCKED			0x01
-#define	RX_TTY_OVERFLOWED		0x02
-#define	RX_IBUF_BLOCKED			0x04
-#define	RX_IBUF_OVERFLOWED		0x08
-#define	RX_ANY_BLOCK			0x0f
-
-#define	COM_TYPE_NORMAL			0	/* normal 16x50 */
-
 int com_is_console (bus_space_tag_t, int, bus_space_handle_t *);
 
 struct com_softc {
 	struct device 		sc_dev;
 	void 				*sc_si;
 	struct tty 			*sc_tty;
+
+	struct callout 		sc_diag_callout;
 
 	int 				sc_iobase;
 	int 				sc_frequency;
@@ -110,6 +103,11 @@ struct com_softc {
 	      	  	  	  	sc_heldtbc;
 
 	volatile u_char 	sc_rx_flags,
+#define	RX_TTY_BLOCKED			0x01
+#define	RX_TTY_OVERFLOWED		0x02
+#define	RX_IBUF_BLOCKED			0x04
+#define	RX_IBUF_OVERFLOWED		0x08
+#define	RX_ANY_BLOCK			0x0f
 						sc_tx_busy,
 						sc_tx_done,
 						sc_tx_stopped,
@@ -119,6 +117,14 @@ struct com_softc {
 	volatile u_char 	sc_heldchange;
 	volatile u_char 	sc_msr, sc_msr_delta, sc_msr_mask, sc_mcr, sc_mcr_active, sc_lcr, sc_ier, sc_fifo, sc_dlbl, sc_dlbh, sc_efr;
 	u_char 				sc_mcr_dtr, sc_mcr_rts, sc_msr_cts, sc_msr_dcd;
+#ifdef COM_HAYESP
+	u_char 				sc_prescaler;
+#endif
+	int 				sc_type;
+#define	COM_TYPE_NORMAL		0	/* normal 16x50 */
+#define	COM_TYPE_HAYESP		1	/* Hayes ESP modem */
+#define	COM_TYPE_PXA2x0		2	/* Intel PXA2x0 processor built-in */
+#define	COM_TYPE_AU1x00		3	/* AMD/Alchemy Au1x000 proc. built-in */
 
 	/* power management hooks */
 	int 				(*enable)(struct com_softc *);
@@ -134,6 +140,7 @@ struct com_softc {
 
 	//u_char 				*sc_ibuf, *sc_ibufp, *sc_ibufhigh, *sc_ibufend;
 	//u_char 				sc_ibufs[2][COM_IBUFSIZE];
+	struct lock_object	sc_lock;
 };
 
 /* Macros to clear/set/test flags. */
@@ -146,12 +153,9 @@ int 	comintr (void *);
 void 	com_attach_subr (struct com_softc *);
 int 	cominit (bus_space_tag_t, int, int, int, tcflag_t, bus_space_handle_t *);
 int 	com_detach (struct device *, int);
-//int 	com_activate (struct device *, enum devact);
+int 	com_activate (struct device *, enum devact);
 
 #ifndef __GENERIC_SOFT_INTERRUPTS
-#if defined(arc)
-#define	__NO_SOFT_SERIAL_INTERRUPT
-#endif
 #ifdef __NO_SOFT_SERIAL_INTERRUPT
 #define	IPL_SERIAL		IPL_TTY
 #define	splserial()		spltty()

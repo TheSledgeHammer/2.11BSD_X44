@@ -91,6 +91,26 @@ Please read the following NetBSD guide for more information:
 
 <https://www.netbsd.org/docs/guide/en/chap-build.html>
 
+Source Roadmap:
+---------------
+| Directory | Description |
+| --------- | ----------- |
+| bin | System/user commands. |
+| contrib | Packages contributed by 3rd parties. |
+| etc | Template files for /etc. |
+| include | System include files. |
+| lib | System libraries. |
+| libexec | System daemons. |
+| sbin | System commands. |
+| share | Shared resources. |
+| sys | Kernel sources. |
+| sys/`arch`/conf | Kernel configuration files. GENERIC.'arch' is the configuration used in release builds. NOTES contains documentation of all possible entries. |
+| sys/stand | Boot loader sources. |
+| tools | Utilities for toolchain & cross-compiling. |
+| usr.bin | User commands. |
+| usr.lib | System User libraries for /lib. |
+| usr.sbin | System administration commands. |
+
 ## Contribution
 
 - Anyone is welcome to contribute.

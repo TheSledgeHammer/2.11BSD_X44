@@ -34,7 +34,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## usr.bin:
 
 ## usr.lib:
-- libkvm
+- libkvm: missing functions
 
 ## usr.sbin:
 
@@ -55,7 +55,20 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## dev:
 - Essential Driver Support:
-	- usb:
+	- Audio:
+		- Check that all audio devices available are also configured	
+	- Core:
+		- add: parallel printer(atppc driver)
+		- ISAPNP: 
+			- add com
+		- MCA: to add
+		- PCI:
+			- add agp, pciide
+		- PCMCIA:
+			- add com, 
+	- Disk:
+		- Add: ahci & floppy
+	- USB:
 		- add: vhci, xhci
 
 ## fs:
@@ -65,6 +78,9 @@ A General todo list. Don't hesitate to add to this list. :)
 - libsa:
 - libkern:
 - x86emu:
+
+## miscfs:
+
 
 ## net / netimp / netinet / netns:
 Of Interest Todo:

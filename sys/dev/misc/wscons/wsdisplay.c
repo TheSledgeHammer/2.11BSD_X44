@@ -290,7 +290,7 @@ wsscreen_attach(sc, console, emul, type, cookie, ccol, crow, defattr)
 
 	scr->scr_tty = ttymalloc();
 
-	//tty_attach(scr->scr_tty);
+	tty_init_console(scr->scr_tty, 0);
 	scr->scr_hold_screen = 0;
 	if (WSSCREEN_HAS_EMULATOR(scr))
 		scr->scr_flags = 0;
