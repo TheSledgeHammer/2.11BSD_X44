@@ -339,7 +339,7 @@ loop:
 		retval[0] = 0;
 		return (0);
 	}
-	error = tsleep(q, PWAIT | PCATCH, 0);
+	error = tsleep(q, PWAIT | PCATCH, "wait", 0);
 	if	(error == 0)
 		goto loop;
 	return(error);

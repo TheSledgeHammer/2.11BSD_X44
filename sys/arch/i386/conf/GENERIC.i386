@@ -57,17 +57,17 @@ options 		COMPAT_43		# and 4.3BSD
 
 # Networking options
 options 		INET			# IP + ICMP + TCP + UDP
-options 		NS				# XNS
+options 		NS			# XNS
 
 # These options enable verbose messages for several subsystems.
 # Warning, these may compile large string tables into the kernel!
 options 	  	EISAVERBOSE		# verbose EISA device autoconfig messages
 options 		PCIVERBOSE		# verbose PCI device autoconfig messages
-options 		PCMCIAVERBOSE	# verbose PCMCIA configuration messages
+options 		PCMCIAVERBOSE		# verbose PCMCIA configuration messages
 options 		SCSIVERBOSE		# human readable SCSI error messages
 #options 		USBVERBOSE		# verbose USB device autoconfig messages
 #options 		MCAVERBOSE		# verbose MCA device autoconfig messages
-#options 		HDAUDIOVERBOSE	# verbose HDAUDIO driver messages
+#options 		HDAUDIOVERBOSE		# verbose HDAUDIO driver messages
 
 #
 # wscons options
@@ -159,7 +159,7 @@ wsmouse*		at pms? mux 0
 wsmouse*		at wsmousedev?
 
 pcppi0			at isa?
-sysbeep0		at pcppi?
+#sysbeep0		at pcppi?
 
 # Serial Devices
 
@@ -178,12 +178,12 @@ com2			at isa? port 0x3e8 irq 5
 # Parallel Printer Interfaces
 
 # PCI parallel printer interfaces
-lpt*			at puc? port ?			# || ports on "universal" comm boards
+#lpt*			at puc? port ?			# || ports on "universal" comm boards
 
 # ISA parallel printer interfaces
-lpt0			at isa? port 0x378 irq 7	# standard PC parallel ports
-lpt1			at isa? port 0x278
-lpt2			at isa? port 0x3bc
+#lpt0			at isa? port 0x378 irq 7	# standard PC parallel ports
+#lpt1			at isa? port 0x278
+#lpt2			at isa? port 0x3bc
 
 # Mice
 
@@ -261,24 +261,6 @@ usb*			at ehci?
 usb*			at ohci?
 usb*			at uhci?
 #usb*			at xhci?
-
-# USB Hubs
-uhub*			at usb?
-uhub*			at uhub? port ? configuration ? interface ?
-
-# USB HID device
-uhidev*			at uhub? port ? configuration ? interface ?
-
-# USB Mice
-ums*			at uhidev? reportid ?
-wsmouse* 		at ums? mux 0
-
-# USB Keyboards
-ukbd*			at uhidev? reportid ?
-wskbd*			at ukbd? console ? mux 1
-
-# USB Generic HID devices
-uhid*			at uhidev? reportid ?
 
 # Pseudo-Devices
 

@@ -85,6 +85,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/file.h>
 #include <sys/uio.h>
 #include <sys/kernel.h>

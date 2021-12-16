@@ -55,33 +55,6 @@
 #define TTYDEF_CFLAG	(CREAD | CS8 | HUPCL)
 #define TTYDEF_SPEED	(B9600)
 
-/*
- * Control Character Defaults
- */
-#define CTRL(x)		(x&037)
-#define	CEOF		CTRL('d')
-#define	CEOL		((unsigned char)'\377')	/* XXX avoid _POSIX_VDISABLE */
-#define	CERASE		0177
-#define	CINTR		CTRL('c')
-#define	CSTATUS		((unsigned char)'\377')	/* XXX avoid _POSIX_VDISABLE */
-#define	CKILL		CTRL('u')
-#define	CMIN		1
-#define	CQUIT		034		/* FS, ^\ */
-#define	CSUSP		CTRL('z')
-#define	CTIME		0
-#define	CDSUSP		CTRL('y')
-#define	CSTART		CTRL('q')
-#define	CSTOP		CTRL('s')
-#define	CLNEXT		CTRL('v')
-#define	CDISCARD 	CTRL('o')
-#define	CWERASE 	CTRL('w')
-#define	CREPRINT 	CTRL('r')
-#define	CEOT		CEOF
-/* compat */
-#define	CBRK		CEOL
-#define CRPRNT		CREPRINT
-#define	CFLUSH		CDISCARD
-
 /* PROTECTED INCLUSION ENDS HERE */
 #endif /* !_SYS_TTYDEFAULTS_H_ */
 

@@ -298,7 +298,7 @@ sigsuspend()
 	u->u_oldmask = p->p_sigmask;
 	u->u_psflags |= SAS_OLDMASK;
 	p->p_sigmask = nmask & ~ sigcantmask;
-	while (tsleep((caddr_t) &u, PPAUSE | PCATCH, 0) == 0)
+	while (tsleep((caddr_t) &u, PPAUSE | PCATCH, "pause", 0) == 0)
 		;
 	/* always return EINTR rather than ERESTART */
 	return(u->u_error = EINTR);
@@ -367,7 +367,7 @@ sigwait()
 
 	wanted |= sigcantmask;
 	while ((sigsavail = (wanted & p->p_sigacts)) == 0)
-		tsleep(&u->u_signal[0], PPAUSE | PCATCH, 0);
+		tsleep(&u->u_signal[0], PPAUSE | PCATCH, "sigwait", 0);
 
 	if (sigsavail & sigcantmask) {
 		error = EINTR;

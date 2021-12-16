@@ -297,7 +297,7 @@ void		sleep (void *, int);
 int			tsleep (void *, int, char *, int);
 void		unsleep (struct proc *);
 void		wakeup (void *);
-void		reschedule(struct proc *);
+void		reschedule (struct proc *);
 
 void		procinit (void);
 int 		chgproccnt (uid_t, int);

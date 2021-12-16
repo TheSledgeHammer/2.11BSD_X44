@@ -124,6 +124,8 @@ extern void softintr (int);
 #define I386_IPI_MTRR		0x00000020
 #define I386_IPI_GDT		0x00000040
 
+struct cpu_info;
+
 int 	i386_send_ipi(struct cpu_info *, int);
 void	i386_self_ipi(int);
 void 	i386_broadcast_ipi(int);

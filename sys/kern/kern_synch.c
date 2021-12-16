@@ -159,17 +159,16 @@ updatepri(p)
 */
 
 int
-tsleep(ident, priority, wmesg, timo)
+tsleep(ident, priority, timo)
 	void *ident;
 	int	priority;
 	u_short	timo;
-	char *wmesg;
 {
 	register struct proc *p = u->u_procp;
 	register struct proc **qp;
 	int	s;
 	int	sig, catch = priority & PCATCH;
-	void	endtsleep();
+	void	endtsleep;
 
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
@@ -304,7 +303,7 @@ sleep(chan, pri)
 		priority |= PCATCH;
 	}
 
-	u->u_error = tsleep(chan, priority, 0);
+	u->u_error = tsleep(chan, priority, "sleep", 0);
 /*
  * sleep does not return anything.  If it was a non-interruptible sleep _or_
  * a successful/normal sleep (one for which a wakeup was done) then return.
