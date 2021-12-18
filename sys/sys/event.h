@@ -35,7 +35,6 @@
 #include <sys/stdint.h>			/* for uintptr_t */
 #include <sys/null.h>			/* for NULL */
 
-
 #define	EVFILT_READ			0U
 #define	EVFILT_WRITE		1U
 #define	EVFILT_AIO			2U	/* attached to aio requests */
@@ -68,7 +67,7 @@ _EV_SET(struct kevent *_kevp, __uintptr_t _ident, uint32_t _filter,
 	_kevp->udata = _udata;
 }
 
-#define EV_SET(kevp, ident, filter, flags, fflags, data, udata)		\
+#define EV_SET(kevp, ident, filter, flags, fflags, data, udata)			\
     _EV_SET((kevp), __CAST(__uintptr_t, (ident)), (filter), (flags), 	\
     (fflags), (data), __CAST(void *, (udata)))
 

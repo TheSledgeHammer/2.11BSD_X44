@@ -114,39 +114,40 @@
 int comprobeHAYESP (bus_space_handle_t hayespioh, struct com_softc *sc);
 #endif
 
-static void com_enable_debugport (struct com_softc *);
 
-void	com_attach_subr	(struct com_softc *sc);
-void	com_config (struct com_softc *);
-void	com_shutdown (struct com_softc *);
-int		comspeed (long, long);
-static	u_char	cflag2lcr (tcflag_t);
-int		comparam (struct tty *, struct termios *);
-void	comstart (struct tty *);
-void	comstop	(struct tty *, int);
-int		comhwiflow (struct tty *, int);
+ static void com_enable_debugport(struct com_softc *);
 
-void	com_loadchannelregs (struct com_softc *);
-void	com_hwiflow (struct com_softc *);
-void	com_break (struct com_softc *, int);
-void	com_modem (struct com_softc *, int);
-void	tiocm_to_com (struct com_softc *, int, int);
-int		com_to_tiocm (struct com_softc *);
-void	com_iflush (struct com_softc *);
+ void	com_config(struct com_softc *);
+ void	com_shutdown(struct com_softc *);
+ int	comspeed(long, long, int);
+ static	u_char	cflag2lcr(tcflag_t);
+ int	comparam(struct tty *, struct termios *);
+ void	comstart(struct tty *);
+ int	comhwiflow(struct tty *, int);
 
-int		com_common_getc	(bus_space_tag_t, bus_space_handle_t);
-void	com_common_putc	(bus_space_tag_t, bus_space_handle_t, int);
+ void	com_loadchannelregs(struct com_softc *);
+ void	com_hwiflow(struct com_softc *);
+ void	com_break(struct com_softc *, int);
+ void	com_modem(struct com_softc *, int);
+ void	tiocm_to_com(struct com_softc *, u_long, int);
+ int	com_to_tiocm(struct com_softc *);
+ void	com_iflush(struct com_softc *);
 
-int		comcngetc (dev_t);
-void	comcnputc (dev_t, int);
-void	comcnpollc (dev_t, int);
+ int	com_common_getc(dev_t, bus_space_tag_t, bus_space_handle_t);
+ void	com_common_putc(dev_t, bus_space_tag_t, bus_space_handle_t, int);
+
+ int	cominit(bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t, bus_space_handle_t *);
+
+int		comcngetc(dev_t);
+void	comcnputc(dev_t, int);
+void	comcnpollc(dev_t, int);
 
 #define	integrate	static inline
 #ifdef __GENERIC_SOFT_INTERRUPTS
-void 	comsoft (void *);
+void 	comsoft(void *);
 #else
 #ifndef __NO_SOFT_SERIAL_INTERRUPT
-void 	comsoft (void);
+void 	comsoft(void);
 #else
 void 	comsoft (void *);
 static struct callout comsoft_callout = CALLOUT_INITIALIZER;
@@ -179,6 +180,7 @@ const struct cdevsw com_cdevsw = {
 	.d_tty = comtty,
 	.d_poll = compoll,
 	.d_mmap = nommap,
+	.d_kqfilter = ttykqfilter,
 	.d_type = D_TTY
 };
 
@@ -911,10 +913,6 @@ comopen(dev, flag, mode, p)
 
 	splx(s);
 
-	error = ttyopen(tp, COMDIALOUT(dev), ISSET(flag, O_NONBLOCK));
-	if (error)
-		goto bad;
-
 	error = (*linesw[tp->t_line].l_open)(dev, tp);
 	if (error)
 		goto bad;
@@ -1173,7 +1171,8 @@ com_modem(sc, onoff)
 void
 tiocm_to_com(sc, how, ttybits)
 	struct com_softc *sc;
-	int how, ttybits;
+	u_long how;
+	int ttybits;
 {
 	u_char combits;
 
@@ -1274,7 +1273,7 @@ comparam(tp, t)
 	struct termios *t;
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(tp->t_dev)];
-	int ospeed;// = comspeed(t->c_ospeed, sc->sc_frequency);
+	int ospeed;
 	u_char lcr;
 	int s;
 
@@ -1713,7 +1712,7 @@ com_rxsoft(sc, tp)
 	struct com_softc *sc;
 	struct tty *tp;
 {
-	int (*rint) (int c, struct tty *tp) = linesw[tp->t_line].l_rint;
+	int (*rint) (int c, struct tty *tp) = *linesw[tp->t_line].l_rint;
 	u_char *get, *end;
 	u_int cc, scc;
 	u_char lsr;
@@ -2237,7 +2236,7 @@ com_common_putc(dev, iot, ioh, c)
 int
 cominit(iot, iobase, rate, frequency, type, cflag, iohp)
 	bus_space_tag_t iot;
-	int iobase;
+	bus_addr_t iobase;
 	int rate, frequency, type;
 	tcflag_t cflag;
 	bus_space_handle_t *iohp;
@@ -2280,7 +2279,7 @@ struct consdev comcons = {
 int
 comcnattach(iot, iobase, rate, frequency, type, cflag)
 	bus_space_tag_t iot;
-	int iobase;
+	bus_addr_t iobase;
 	int rate, frequency, type;
 	tcflag_t cflag;
 {
@@ -2333,7 +2332,7 @@ comcnpollc(dev, on)
 int
 com_kgdb_attach(iot, iobase, rate, frequency, type, cflag)
 	bus_space_tag_t iot;
-	int iobase;
+	bus_addr_t iobase;
 	int rate, frequency, type;
 	tcflag_t cflag;
 {
@@ -2391,7 +2390,7 @@ com_kgdb_putc(arg, c)
 int
 com_is_console(iot, iobase, ioh)
 	bus_space_tag_t iot;
-	int iobase;
+	bus_addr_t iobase;
 	bus_space_handle_t *ioh;
 {
 	bus_space_handle_t help;

@@ -83,9 +83,9 @@ __KERNEL_RCSID(0, "$NetBSD: wdc.c,v 1.172.2.7.2.10 2005/08/23 13:35:55 tron Exp 
 #include <sys/buf.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
-#include <sys/pool.h>
 #include <sys/syslog.h>
 #include <sys/proc.h>
+#include <sys/errno.h>
 
 #include <machine/intr.h>
 #include <machine/bus.h>
@@ -104,12 +104,12 @@ __KERNEL_RCSID(0, "$NetBSD: wdc.c,v 1.172.2.7.2.10 2005/08/23 13:35:55 tron Exp 
 
 #include "locators.h"
 
-#include "ataraid.h"
+//#include "ataraid.h"
 #include "atapibus.h"
 #include "wd.h"
 
 #if NATARAID > 0
-#include <dev/ata/ata_raidvar.h>
+#include <dev/disk/ata/ata_raidvar.h>
 #endif
 
 #define WDCDELAY  100 /* 100 microseconds */
@@ -2107,8 +2107,7 @@ wdc_get_xfer(int flags)
 	int s;
 
 	s = splbio();
-	xfer = pool_get(&wdc_xfer_pool,
-	    ((flags & WDC_NOSLEEP) != 0 ? PR_NOWAIT : PR_WAITOK));
+	xfer = &wdc_xfer_pool;
 	splx(s);
 	if (xfer != NULL) {
 		memset(xfer, 0, sizeof(struct ata_xfer));
@@ -2134,7 +2133,7 @@ wdc_free_xfer(struct wdc_channel *chp, struct ata_xfer *xfer)
 	s = splbio();
 	chp->ch_flags &= ~WDCF_ACTIVE;
 	TAILQ_REMOVE(&chp->ch_queue->queue_xfer, xfer, c_xferchain);
-	pool_put(&wdc_xfer_pool, xfer);
+	free(xfer, M_DEVBUF);
 	splx(s);
 }
 

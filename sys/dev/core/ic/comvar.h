@@ -31,9 +31,13 @@
  */
 
 #include <sys/callout.h>
+#include <sys/timepps.h>
+#include <sys/lock.h>
 
 int comcnattach(bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t);
-
+#ifdef KGDB
+int com_kgdb_attach(bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t);
+#endif
 int com_is_console(bus_space_tag_t, bus_addr_t, bus_space_handle_t *);
 
 /* Hardware flag masks */
@@ -151,7 +155,7 @@ struct com_softc {
 int 	comprobe1 (bus_space_tag_t, bus_space_handle_t);
 int 	comintr (void *);
 void 	com_attach_subr (struct com_softc *);
-int 	cominit (bus_space_tag_t, int, int, int, tcflag_t, bus_space_handle_t *);
+int 	cominit (bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t, bus_space_handle_t *);
 int 	com_detach (struct device *, int);
 int 	com_activate (struct device *, enum devact);
 

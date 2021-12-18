@@ -606,7 +606,7 @@ filt_uhidrdetach(struct knote *kn)
 	int s;
 
 	s = splusb();
-	SLIST_REMOVE(&sc->sc_rsel.sel_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&sc->sc_rsel.si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -639,12 +639,12 @@ uhidkqfilter(dev_t dev, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &sc->sc_rsel.sel_klist;
+		klist = &sc->sc_rsel.si_klist;
 		kn->kn_fop = &uhidread_filtops;
 		break;
 
 	case EVFILT_WRITE:
-		klist = &sc->sc_rsel.sel_klist;
+		klist = &sc->sc_rsel.si_klist;
 		kn->kn_fop = &uhid_seltrue_filtops;
 		break;
 
@@ -655,7 +655,7 @@ uhidkqfilter(dev_t dev, struct knote *kn)
 	kn->kn_hook = sc;
 
 	s = splusb();
-	SLIST_INSERT_HEAD(klist, kn, kn_selnext);
+	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
 	splx(s);
 
 	return (0);

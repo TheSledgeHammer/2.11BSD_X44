@@ -212,7 +212,7 @@ suser()
 int
 _suser(cred, acflag)
 	register struct ucred 	*cred;
-	short 				*acflag;
+	short 					*acflag;
 {
 	if (cred->cr_uid == 0) {
 		if (acflag) {

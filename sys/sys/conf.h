@@ -31,7 +31,7 @@ struct bdevsw {
 	int			(*d_dump)(dev_t dev);
 	daddr_t		(*d_psize)(dev_t dev);
 	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
-	int			(*d_type);
+	int			d_type;
 };
 
 #ifdef KERNEL
@@ -56,7 +56,7 @@ struct cdevsw {
 	int			(*d_strategy)(struct buf *bp);
 	int			(*d_kqfilter)(dev_t, struct knote *);
 	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
-	int			(*d_type);
+	int			d_type;
 };
 #ifdef KERNEL
 extern struct cdevsw cdevsw[];

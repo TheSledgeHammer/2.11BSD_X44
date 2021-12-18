@@ -19,8 +19,8 @@
 
 struct cblock *cfreelist = 0;
 int cfreecount = 0;
-static int ctotcount;
-char	cwaiting;
+static int 	ctotcount;
+char		cwaiting;
 
 /*
  * Initialize clist by freeing all character blocks, then count
@@ -356,6 +356,7 @@ out:
 
 int
 putc(c, p)
+	int c;
 	register struct clist *p;
 {
 	register struct cblock *bp;
@@ -537,6 +538,7 @@ unputc(p)
 			bp->c_next = cfreelist;
 			cfreelist = bp;
 			cfreecount += CBSIZE;
+			cblock_free(bp);
 			obp->c_next = NULL;
 		}
 	}

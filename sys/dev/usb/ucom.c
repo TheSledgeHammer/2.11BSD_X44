@@ -437,9 +437,6 @@ ucomopen(dev_t dev, int flag, int mode, struct proc *p)
 	wakeup(&sc->sc_opening);
 	splx(s);
 
-	error = ttyopen(tp, UCOMDIALOUT(dev), ISSET(flag, O_NONBLOCK));
-	if (error)
-		goto bad;
 	error = (linesw[tp->t_line].l_open)(dev, tp);
 	if (error)
 		goto bad;

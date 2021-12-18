@@ -28,6 +28,8 @@ struct ttychars {
 	char	tc_flushc;	/* flush output (toggles) */
 	char	tc_werasc;	/* word erase */
 	char	tc_lnextc;	/* literal next character */
+	char	tc_min;
+	char 	tc_ctime;
 };
 
 /* Control Character Defaults */

@@ -76,8 +76,8 @@ struct tty {
 	struct	clist 			t_outq;											/* Device output queue. */
 	struct	callout 		t_rstrt_ch;										/* for delayed output start */
 	long					t_outcc;										/* Output queue statistics. */
-	struct	proc 			*t_rsel;										/* Tty read/oob select. */
-	struct	proc 			*t_wsel;										/* Tty write select. */
+	struct	proc 			*t_rsel;										/* proc Tty read/oob select. */
+	struct	proc 			*t_wsel;										/* proc Tty write select. */
 	caddr_t					T_LINEP;										/* ### */
 	caddr_t					t_addr;											/* ??? */
 	dev_t					t_dev;											/* device */
@@ -97,6 +97,9 @@ struct tty {
 	int						(*t_param) (struct tty *, struct termios *);	/* Set hardware state. */
 
 	int						(*t_hwiflow)(struct tty *, int);				/* Set hardware flow control. */
+
+	struct	selinfo 		t_srsel;		/* Tty read/oob select. */
+	struct	selinfo 		t_swsel;		/* Tty write select. */
 
 
 /* be careful of tchars & co. */
@@ -161,6 +164,7 @@ extern	struct ttychars 	ttydefaults;
 #define	TS_RCOLL	0x000800L	/* collision in read select */
 #define	TS_WCOLL	0x001000L	/* collision in write select */
 #define	TS_ASYNC	0x004000L	/* tty in async i/o mode */
+#define	TS_DIALOUT	0x008000L	/* Tty used for dialout. */
 
 /* state for intra-line fancy editing work */
 #define	TS_BKSL		0x008000L	/* State for lowercase \ work. */
@@ -206,7 +210,7 @@ struct speedtab {
 	(isctty((p), (tp)) && (p)->p_pgrp != (tp)->t_pgrp)
 
 #ifdef KERNEL
-extern	struct ttychars ttydefaults;
+//extern	struct ttychars ttydefaults;
 
 /* Symbolic sleep message strings. */
 extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
@@ -278,5 +282,9 @@ int	sypoll(dev_t dev, int events);
 int	sykqfilter(dev_t dev, struct knote *kn);
 int	syselect(dev_t dev, int flag);
 
+/* tty slock */
+#define tty_lock_init(tp)		(simple_lock_init((tp)->t_slock, "tty_slock"))
+#define TTY_LOCK(tp)			(simple_lock((tp)->t_slock))
+#define TTY_UNLOCK(tp) 			(simple_unlock((tp)->t_slock))
 #endif
 #endif /* !_SYS_TTY_H_ */

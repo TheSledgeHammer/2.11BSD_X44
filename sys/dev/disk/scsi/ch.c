@@ -494,7 +494,7 @@ filt_chdetach(struct knote *kn)
 {
 	struct ch_softc *sc = kn->kn_hook;
 
-	SLIST_REMOVE(&sc->sc_selq.sel_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&sc->sc_selq.si_klist, kn, knote, kn_selnext);
 }
 
 static int
@@ -522,12 +522,12 @@ chkqfilter(dev_t dev, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &sc->sc_selq.sel_klist;
+		klist = &sc->sc_selq.si_klist;
 		kn->kn_fop = &chread_filtops;
 		break;
 
 	case EVFILT_WRITE:
-		klist = &sc->sc_selq.sel_klist;
+		klist = &sc->sc_selq.si_klist;
 		kn->kn_fop = &chwrite_filtops;
 		break;
 
@@ -537,7 +537,7 @@ chkqfilter(dev_t dev, struct knote *kn)
 
 	kn->kn_hook = sc;
 
-	SLIST_INSERT_HEAD(klist, kn, kn_selnext);
+	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
 
 	return (0);
 }

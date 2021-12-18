@@ -28,8 +28,8 @@ file	dev/core/isa/com_multi.c		com_multi
 
 # PC-style parallel ports: ISA bus attachment (XXX what chip?)
 # XXX chip driver should be defined elsewhere
-attach	lpt at isa with lpt_isa
-file	dev/core/isa/lpt_isa.c			lpt_isa & !ppbus
+#attach	lpt at isa with lpt_isa
+#file	dev/core/isa/lpt_isa.c			lpt_isa & !ppbus
 
 #
 # Other ISA disk controllers

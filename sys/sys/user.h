@@ -170,7 +170,6 @@ struct user {
 };
 
 #ifdef KERNEL
-extern struct user 		u;
+extern struct user 		u;						/* extern needed? */
 #endif
 #endif /* _SYS_USER_H_ */
-
