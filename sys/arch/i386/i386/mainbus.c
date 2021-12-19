@@ -43,8 +43,8 @@
 
 #include <machine/bus.h>
 
-#include <i386/isa/isa_machdep.h>
-#include <i386/eisa/eisa_machdep.h>
+#include <machine/eisa/eisa_machdep.h>
+#include <machine/isa/isa_machdep.h>
 
 int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);

@@ -59,11 +59,11 @@
 
 /* exported lookup results */
 struct bios32_SDentry		PCIbios;
-
+static struct PnPBIOS_table	*PnPBIOStable;
 static u_int				bios32_SDCI;
 
 /* start fairly early */
-static void					bios32_init(); /* init'ed in autoconf.c */
+static void					bios32_init(void); /* init'ed in autoconf.c */
 
 /*
  * bios32_init
@@ -117,6 +117,36 @@ bios32_init()
 				freeenv(p);
 		} else {
 			printf("bios32: Bad BIOS32 Service Directory\n");
+		}
+	}
+
+    /*
+     * PnP BIOS
+     *
+     * Allow user override of PnP BIOS search
+     */
+	if ((((p = kern_getenv("machdep.bios.pnp")) == NULL) || strcmp(p, "disable"))
+			&& ((sigaddr = bios_sigsearch(0, "$PnP", 4, 16, 0)) != 0)) {
+		/* get a virtual pointer to the structure */
+		pt = (struct PnPBIOS_table*) (uintptr_t) BIOS_PADDRTOVADDR(sigaddr);
+		for (cv = (u_int8_t*) pt, ck = 0, i = 0; i < pt->len; i++) {
+			ck += cv[i];
+		}
+		/* If checksum is OK, enable use of the entrypoint */
+		if (ck == 0) {
+			PnPBIOStable = pt;
+			if (bootverbose) {
+				printf("pnpbios: Found PnP BIOS data at %p\n", pt);
+				printf("pnpbios: Entry = %x:%x  Rev = %d.%d\n", pt->pmentrybase,
+						pt->pmentryoffset, pt->version >> 4, pt->version & 0xf);
+				if ((pt->control & 0x3) == 0x01)
+					printf("pnpbios: Event flag at %x\n", pt->evflagaddr);
+				if (pt->oemdevid != 0)
+					printf("pnpbios: OEM ID %x\n", pt->oemdevid);
+
+			}
+		} else {
+			printf("pnpbios: Bad PnP BIOS data checksum\n");
 		}
 	}
 
@@ -222,16 +252,10 @@ union {
 void
 set_bios_selectors(struct bios_segments *seg, int flags)
 {
-    struct soft_segment_descriptor ssd = {
-    		0, 				/* segment base address (overwritten) */
-			0, 				/* length (overwritten) */
-			SDT_MEMERA, 	/* segment type (overwritten) */
-			0, 				/* priority level */
-			1, 				/* descriptor present */
-			0, 0, 1, 		/* descriptor size (overwritten) */
-			0 				/* granularity == byte units */
-	};
+    struct soft_segment_descriptor ssd;
     union descriptor *p_gdt;
+
+    setup_descriptor_table(&ssd, 0, 0, SDT_MEMERA, 0, 1, 0, 0, 1, 0);
 
 #ifdef SMP
     p_gdt = &gdt[PCPU_GET(cpuid) * NGDT];

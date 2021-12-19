@@ -51,7 +51,7 @@
 
 #include <dev/core/ic/i8253reg.h>
 
-#include <i386/isa/isa_machdep.h>
+#include <machine/isa/isa_machdep.h>
 
 #include <machine/bus.h>
 #include <machine/cpu.h>

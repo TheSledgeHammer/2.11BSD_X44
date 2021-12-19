@@ -51,7 +51,7 @@
 
 #include <dev/core/isa/isareg.h>
 
-#include <i386/isa/isa_machdep.h>
+#include <machine/isa/isa_machdep.h>
 
 #include <i386/include/bus.h>
 #include <machine/pmap.h>

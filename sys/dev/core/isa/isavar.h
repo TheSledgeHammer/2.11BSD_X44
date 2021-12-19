@@ -88,12 +88,7 @@
  */
 struct isabus_attach_args;
 
-#if (i386 != 1)
-//ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
-#endif
-#if i386
-#include <i386/isa/isa_machdep.h>
-#endif
+#include <machine/isa/isa_machdep.h>
 
 /*
  * ISA bus attach arguments

@@ -42,12 +42,7 @@
  */
 struct isapnp_softc;
 
-#if (i386 != 1)
-/*ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.*/
-#endif
-#if i386
-#include <i386/isa/isapnp_machdep.h>
-#endif
+#include <machine/isa/isapnp_machdep.h>
 
 #ifndef _KERNEL
 

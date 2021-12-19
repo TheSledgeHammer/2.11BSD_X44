@@ -64,7 +64,7 @@ include <machine/signal.h>
 include <machine/vmparam.h>
 
 if NIOAPIC > 0
-include <i386/include/apic/ioapicvar.h>
+include <machine/apic/ioapicvar.h>
 endif
 
 define I386_CR3PAT 			I386_CR3PAT

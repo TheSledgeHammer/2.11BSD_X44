@@ -45,6 +45,9 @@ char ttybg[]	= "ttybg";
 char ttyin[]	= "ttyin";
 char ttyout[]	= "ttyout";
 
+#define	CONNECTED(tp)	(ISSET(tp->t_state, TS_CARR_ON) ||	\
+			 ISSET(tp->t_cflag, CLOCAL | MDMBUF))
+
 /*
  * These were moved here from tty.h so that they could be easily modified
  * and/or patched instead of recompiling the kernel.  There is only 1 other
@@ -156,7 +159,7 @@ ttychars(tp)
 	struct tty *tp;
 {
 	tp->t_chars = &ttydefaults;
-	memcpy(tp->t_cc, ttydefchars, sizeof(ttydefchars));
+	//memcpy(tp->t_cc, ttydefchars, sizeof(ttydefchars));
 }
 
 /*
@@ -327,8 +330,13 @@ void
 ttrstrt(tp)
 	register struct tty *tp;
 {
+	int		s;
+	s = spltty();
+	TTY_LOCK(tp);
 	tp->t_state &= ~TS_TIMEOUT;
 	ttstart(tp);
+	TTY_UNLOCK(tp);
+	splx(s);
 }
 
 /*
@@ -850,7 +858,7 @@ ttpoll(tp, events, p)
 
 	revents = 0;
 	s = spltty();
-
+	TTY_LOCK(tp);
 	if (events & (POLLIN | POLLRDNORM))
 		if (ttnread(tp) > 0)
 			revents |= events & (POLLIN | POLLRDNORM);
@@ -870,7 +878,7 @@ ttpoll(tp, events, p)
 		if (events & (POLLOUT | POLLWRNORM))
 			selrecord(p, &tp->t_wsel);
 	}
-
+	TTY_LOCK(tp);
 	splx(s);
 	return (revents);
 }
@@ -886,7 +894,6 @@ filt_ttyrdetach(struct knote *kn)
 	SIMPLEQ_REMOVE(tp->t_srsel.si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
-
 
 static int
 filt_ttyread(struct knote *kn, long hint)
@@ -1086,6 +1093,7 @@ ttylclose(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
+	int s;
 
 /*
  * 4.4 has IO_NDELAY but I think that is a mistake because the upper level
@@ -1093,9 +1101,13 @@ ttylclose(tp, flag)
  * printf here - the F* flags are received rather than the IO_* flags!
 */
 
-	if (flag & IO_NDELAY)
+	if (flag & (IO_NDELAY | FNONBLOCK)) {
+		s = spltty();
+		TTY_LOCK(tp);
 		ttyflush(tp, FREAD|FWRITE);
-	else
+		TTY_UNLOCK(tp);
+		splx(s);
+	} else
 		ttywflush(tp);
 	tp->t_line = 0;
 }
@@ -1123,6 +1135,7 @@ ttymodem(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
+	int s;
 
 	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_flags & MDMBUF)) {
 		/*
@@ -1139,12 +1152,20 @@ ttymodem(tp, flag)
 		/*
 		 * Lost carrier.
 		 */
+
+		s = spltty();
+		TTY_LOCK(tp);
 		tp->t_state &= ~TS_CARR_ON;
 		if (tp->t_state & TS_ISOPEN) {
 			if ((tp->t_flags & NOHANG) == 0) {
+				if (tp->t_session && tp->t_session->s_leader) {
+					psignal(tp->t_session->s_leader, SIGHUP);
+				}
 				gsignal(tp->t_pgrp, SIGHUP);
 				gsignal(tp->t_pgrp, SIGCONT);
 				ttyflush(tp, FREAD|FWRITE);
+				TTY_UNLOCK(tp);
+				splx(s);
 				return (0);
 			}
 		}
@@ -1155,6 +1176,8 @@ ttymodem(tp, flag)
 		tp->t_state |= TS_CARR_ON;
 		wakeup((caddr_t)&tp->t_rawq);
 	}
+	TTY_UNLOCK(tp);
+	splx(s);
 	return (1);
 }
 
@@ -1167,11 +1190,16 @@ nullmodem(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
-	
+	int s;
+
+	s = spltty();
+	TTY_LOCK(tp);
 	if (flag)
 		tp->t_state |= TS_CARR_ON;
 	else
 		tp->t_state &= ~TS_CARR_ON;
+	TTY_UNLOCK(tp);
+	splx(s);
 	return (flag);
 }
 
@@ -1204,13 +1232,12 @@ ttypend(tp)
  * appropriate tty structure.
  */
 void
-ttyinput(c, tp)
+ttyinput_wlock(c, tp)
 	register int c;
 	register struct tty *tp;
 {
 	long t_flags = tp->t_flags;
 	int i;
-
 	/*
 	 * If input is pending take it first.
 	 */
@@ -1278,7 +1305,7 @@ ttyinput(c, tp)
 	if (tp->t_line == NTTYDISC) {
 		if (CCEQ(tp->t_lnextc,c)) {
 			if (t_flags&ECHO)
-				ttyout("^\b", tp);
+				ttyout1("^\b", tp);
 			tp->t_state |= TS_LNCH;
 			goto endcase;
 		}
@@ -1451,6 +1478,19 @@ startoutput:
 	ttstart(tp);
 }
 
+void
+ttyinput(c, tp)
+	int c;
+	struct tty *tp;
+{
+	int s;
+	s = spltty();
+	TTY_LOCK(tp);
+	ttyinput_wlock(c, tp);
+	TTY_UNLOCK(tp);
+	splx(s);
+}
+
 /*
  * Put character on TTY output queue, adding delays,
  * expanding tabs, and handling the CR/NL bit.
@@ -1553,24 +1593,32 @@ ttread(tp, uio, flag)
 	int s, first, error = 0, carrier;
 
 loop:
+
 	/*
 	 * Take any pending input first.
 	 */
 	s = spltty();
-	if (tp->t_flags&PENDIN)
+	TTY_LOCK(tp);
+	if (tp->t_flags & PENDIN)
 		ttypend(tp);
-	splx(s);
+
 
 	/*
 	 * Hang process if it's in the background.
 	 */
 	if (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
-		if ((u->u_procp->p_sigignore & sigmask(SIGTTIN)) ||
-		   (u->u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-		    (u->u_procp->p_flag&P_SVFORK))
+		if ((u->u_procp->p_sigignore & sigmask(SIGTTIN))
+				|| (u->u_procp->p_sigmask & sigmask(SIGTTIN))
+				|| (u->u_procp->p_flag & P_SVFORK))
+			TTY_UNLOCK(tp);
+			splx(s);
 			return (EIO);
 		gsignal(u->u_procp->p_pgrp, SIGTTIN);
-		sleep((caddr_t)&lbolt, TTIPRI);
+		//sleep((caddr_t) & lbolt, TTIPRI);
+		error = ttysleep(tp, &lbolt, TTIPRI | PCATCH, ttybg, 0);
+		splx(s);
+		if (error)
+			return (error);
 		goto loop;
 	}
 	t_flags = tp->t_flags;
@@ -1580,27 +1628,30 @@ loop:
 	 * raw queue w/o processing.  Interlock against
 	 * device interrupts when interrogating rawq.
 	 */
-	if (t_flags&RAW) {
+	if (t_flags & RAW) {
 		s = spltty();
+		TTY_LOCK(tp);
 		if (tp->t_rawq.c_cc <= 0) {
 			carrier = ISSET(tp->t_state, TS_CARR_ON);
-			if (!carrier && ISSET(tp->t_state, TS_ISOPEN))
-				{
+			if (!carrier && ISSET(tp->t_state, TS_ISOPEN)) {
+				TTY_UNLOCK(tp);
 				splx(s);
-				return(0);	/* EOF */
-				}
-			if (flag & IO_NDELAY)
-				{
+				return (0); /* EOF */
+			}
+			if (flag & IO_NDELAY) {
+				TTY_UNLOCK(tp);
 				splx(s);
-				return(EWOULDBLOCK);
-				}
-			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+				return (EWOULDBLOCK);
+			}
+			sleep((caddr_t) & tp->t_rawq, TTIPRI);
+			TTY_UNLOCK(tp);
 			splx(s);
 			goto loop;
 		}
+		TTY_UNLOCK(tp);
 		splx(s);
- 		while (!error && tp->t_rawq.c_cc && uio->uio_resid)
- 			error = ureadc(getc(&tp->t_rawq), uio);
+		while (!error && tp->t_rawq.c_cc && uio->uio_resid)
+			error = ureadc(getc(&tp->t_rawq), uio);
 		goto checktandem;
 	}
 
@@ -1608,29 +1659,32 @@ loop:
 	 * In cbreak mode use the rawq, otherwise
 	 * take characters from the canonicalized q.
 	 */
-	qp = t_flags&CBREAK ? &tp->t_rawq : &tp->t_canq;
+	qp = t_flags & CBREAK ? &tp->t_rawq : &tp->t_canq;
 
 	/*
 	 * No input, sleep on rawq awaiting hardware
 	 * receipt and notification.
 	 */
 	s = spltty();
+	TTY_LOCK(tp);
 	if (qp->c_cc <= 0) {
 		carrier = ISSET(tp->t_state, TS_CARR_ON);
-		if (!carrier && ISSET(tp->t_state,TS_ISOPEN))
-			{
+		if (!carrier && ISSET(tp->t_state, TS_ISOPEN)) {
+			TTY_UNLOCK(tp);
 			splx(s);
-			return(0);	/* EOF */
-			}
-		if (flag & IO_NDELAY)
-			{
+			return (0); /* EOF */
+		}
+		if (flag & IO_NDELAY) {
+			TTY_UNLOCK(tp);
 			splx(s);
-			return(EWOULDBLOCK);
-			}
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			return (EWOULDBLOCK);
+		}
+		sleep((caddr_t) & tp->t_rawq, TTIPRI);
+		TTY_UNLOCK(tp);
 		splx(s);
 		goto loop;
 	}
+	TTY_UNLOCK(tp);
 	splx(s);
 
 	/*
@@ -1639,15 +1693,21 @@ loop:
 	 */
 	first = 1;
 	while ((c = getc(qp)) >= 0) {
-		if ((t_flags&CRMOD) && c == '\r')
+		if ((t_flags & CRMOD) && c == '\r')
 			c = '\n';
 		/*
 		 * Check for delayed suspend character.
 		 */
-		if (tp->t_line == NTTYDISC && CCEQ(tp->t_dsuspc,c)) {
+		if (tp->t_line == NTTYDISC && CCEQ(tp->t_dsuspc, c)) {
 			gsignal(tp->t_pgrp, SIGTSTP);
 			if (first) {
-				sleep((caddr_t)&lbolt, TTIPRI);
+				s = spltty();
+				TTY_LOCK(tp);
+				//sleep((caddr_t) & lbolt, TTIPRI);
+				error = ttysleep(tp, &lbolt, TTIPRI | PCATCH, ttybg, 0);
+				splx(s);
+				if (error)
+					break;
 				goto loop;
 			}
 			break;
@@ -1655,21 +1715,21 @@ loop:
 		/*
 		 * Interpret EOF only in cooked mode.
 		 */
-		if (CCEQ(tp->t_eofc,c) && (t_flags&CBREAK) == 0)
+		if (CCEQ(tp->t_eofc,c) && (t_flags & CBREAK) == 0)
 			break;
 		/*
 		 * Give user character.
 		 */
- 		error = ureadc(t_flags&PASS8 ? c : c & 0177, uio);
+		error = ureadc(t_flags & PASS8 ? c : c & 0177, uio);
 		if (error)
 			break;
- 		if (uio->uio_resid == 0)
+		if (uio->uio_resid == 0)
 			break;
 		/*
 		 * In cooked mode check for a "break character"
 		 * marking the end of a "line of input".
 		 */
-		if ((t_flags&CBREAK) == 0 && ttbreakc(c, tp))
+		if ((t_flags & CBREAK) == 0 && ttbreakc(c, tp))
 			break;
 		first = 0;
 	}
@@ -1680,10 +1740,12 @@ checktandem:
 	 * the input queue has gone down.
 	 */
 	s = spltty();
-	if	(ISSET(tp->t_state,TS_TBLOCK) && tp->t_rawq.c_cc < TTYUNBLOCK)
+	TTY_LOCK(tp);
+	if (ISSET(tp->t_state,TS_TBLOCK) && tp->t_rawq.c_cc < TTYUNBLOCK)
 		ttyunblock(tp);
+	TTY_UNLOCK(tp);
 	splx(s);
-	return(error);
+	return (error);
 }
 
 /*
@@ -1695,7 +1757,7 @@ checktandem:
  * if new signals come in.
  */
 int
-ttycheckoutq(tp, wait)
+ttycheckoutq_wlock(tp, wait)
 	register struct tty *tp;
 	int wait;
 {
@@ -1719,6 +1781,21 @@ ttycheckoutq(tp, wait)
 	return(1);
 }
 
+int
+ttycheckoutq(tp, wait)
+	register struct tty *tp;
+	int wait;
+{
+	int	r, s;
+
+	s = spltty();
+	TTY_LOCK(tp);
+	r = ttycheckoutq_wlock(tp, wait);
+	TTY_UNLOCK(tp);
+	splx(s);
+	return (r);
+}
+
 /*
  * Called from the device's write routine after it has
  * calculated the tty-structure given as argument.
@@ -1740,30 +1817,43 @@ ttwrite(tp, uio, flag)
 	cc = 0;
 loop:
 	s = spltty();
+	TTY_LOCK(tp);
 	if (!(tp->t_state&TS_CARR_ON)) {
 		if (tp->t_state & TS_ISOPEN) {
+			TTY_UNLOCK(tp);
 			splx(s);
 			return(EIO);
 		} else if (flag & IO_NDELAY) {
+			TTY_UNLOCK(tp);
 			splx(s);
 			error = EWOULDBLOCK;
 			goto out;
 		} else {
 			/* Sleep awaiting carrier. */
-			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			//sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			error = ttysleep(tp, &tp->t_rawq, TTIPRI | PCATCH, ttopen, 0);
+			if (error)
+				goto out;
 			goto loop;
 		}
 	}
+	TTY_UNLOCK(tp);
 	splx(s);
 	/*
 	 * Hang the process if it's in the background.
 	 */
-	if (u->u_procp->p_pgrp != tp->t_pgrp && tp == u->u_ttyp &&
-	    (tp->t_flags&TOSTOP) && (u->u_procp->p_flag&P_SVFORK)==0 &&
-	    !(u->u_procp->p_sigignore & sigmask(SIGTTOU)) &&
-	    !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
+	if (u->u_procp->p_pgrp != tp->t_pgrp && tp == u->u_ttyp
+			&& (tp->t_flags & TOSTOP) && (u->u_procp->p_flag & P_SVFORK) == 0
+			&& !(u->u_procp->p_sigignore & sigmask(SIGTTOU))
+			&& !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
 		gsignal(u->u_procp->p_pgrp, SIGTTOU);
-		sleep((caddr_t)&lbolt, TTIPRI);
+		s = spltty();
+		TTY_LOCK(tp);
+		//	sleep((caddr_t) &lbolt, TTIPRI);
+		error = ttysleep(tp, &lbolt, TTIPRI | PCATCH, ttybg, 0);
+		splx(s);
+		if (error)
+			goto out;
 		goto loop;
 	}
 
@@ -1776,6 +1866,7 @@ loop:
 	 */
 	while (uio->uio_resid || cc > 0) {
 		if (tp->t_flags&FLUSHO) {
+			TTY_UNLOCK(tp);
 			uio->uio_resid = 0;
 			return(0);
 		}
@@ -1803,6 +1894,8 @@ loop:
 		 * a hunk of data, look for FLUSHO so ^O's will take effect
 		 * immediately.
 		 */
+		s = spltty();
+		TTY_LOCK(tp);
 		while (cc > 0) {
 			if (tp->t_flags & (RAW|LITOUT))
 				ce = cc;
@@ -1818,11 +1911,14 @@ loop:
 					    /* no c-lists, wait a bit */
 					    ttstart(tp);
 					    sleep((caddr_t)&lbolt, TTOPRI);
+						TTY_UNLOCK(tp);
+						splx(s);
 					    goto loop;
 					}
 					cp++, cc--;
-					if ((tp->t_flags&FLUSHO) ||
-					    tp->t_outq.c_cc > hiwat)
+					if ((tp->t_flags & FLUSHO) || tp->t_outq.c_cc > hiwat)
+						TTY_UNLOCK(tp);
+						splx(s);
 						goto ovhiwat;
 					continue;
 				}
@@ -1845,11 +1941,15 @@ loop:
 				/* out of c-lists, wait a bit */
 				ttstart(tp);
 				sleep((caddr_t)&lbolt, TTOPRI);
+				TTY_UNLOCK(tp);
+				splx(s);
 				goto loop;
 			}
 			if ((tp->t_flags&FLUSHO) || tp->t_outq.c_cc > hiwat)
 				break;
 		}	/* while (cc > 0) */
+		TTY_UNLOCK(tp);
+		splx(s);
 		ttstart(tp);
 	}	/* while (uio->uio_resid || cc > 0) */
 out:
@@ -1863,23 +1963,29 @@ out:
 
 ovhiwat:
 	s = spltty();
+	TTY_LOCK(tp);
 	/*
 	 * This can only occur if FLUSHO is also set in t_flags,
 	 * or if ttstart/oproc is synchronous (or very fast).
 	 */
 	if (tp->t_outq.c_cc <= hiwat) {
+		TTY_UNLOCK(tp);
 		splx(s);
 		goto loop;
 	}
 	ttstart(tp);
 	if (flag & IO_NDELAY) {
+		TTY_UNLOCK(tp);
 		splx(s);
 		uio->uio_resid += cc;
 		return (uio->uio_resid == cnt ? EWOULDBLOCK : 0);
 	}
 	tp->t_state |= TS_ASLEEP;
-	sleep((caddr_t)&tp->t_outq, TTOPRI);
+	//sleep((caddr_t)&tp->t_outq, TTOPRI);
+	error = ttysleep(tp, &tp->t_outq, TTOPRI | PCATCH, ttyout, 0);
 	splx(s);
+	if (error)
+		goto out;
 	goto loop;
 }
 
@@ -2057,7 +2163,7 @@ ttbreakc(c, tp)
  * send string cp to tp
  */
 void
-ttyout(cp, tp)
+ttyout1(cp, tp)
 	register char *cp;
 	register struct tty *tp;
 {
@@ -2115,7 +2221,7 @@ ttspeedtab(speed, table)
 	register struct speedtab *table;
 {
 
-	for ( ; table->sp_speed != -1; table++)
+	for (; table->sp_speed != -1; table++)
 		if (table->sp_speed == speed)
 			return (table->sp_code);
 	return (-1);
@@ -2134,14 +2240,14 @@ ttsetwater(tp)
 {
 	register int cps, x;
 
-	#define CLAMP(x, h, l)	((x) > h ? h : ((x) < l) ? l : (x))
+#define CLAMP(x, h, l)	((x) > h ? h : ((x) < l) ? l : (x))
 
-		cps = tp->t_ospeed / 10;
-		tp->t_lowat = x = CLAMP(cps / 2, TTMAXLOWAT, TTMINLOWAT);
-		x += cps;
-		x = CLAMP(x, TTMAXHIWAT, TTMINHIWAT);
-		tp->t_hiwat = roundup(x, CBSIZE);
-	#undef	CLAMP
+	cps = tp->t_ospeed / 10;
+	tp->t_lowat = x = CLAMP(cps / 2, TTMAXLOWAT, TTMINLOWAT);
+	x += cps;
+	x = CLAMP(x, TTMAXHIWAT, TTMINHIWAT);
+	tp->t_hiwat = roundup(x, CBSIZE);
+#undef	CLAMP
 }
 
 /*
@@ -2152,56 +2258,53 @@ ttyinfo(tp)
 	register struct tty *tp;
 {
 	register struct proc *p, *pick;
-		struct timeval utime, stime;
-		int tmp;
+	struct timeval utime, stime;
+	int tmp;
 
-		if (ttycheckoutq(tp,0) == 0)
-			return;
+	if (ttycheckoutq(tp, 0) == 0)
+		return;
 
-		/* Print load average. */
-		tmp = (averunnable.ldavg[0] * 100 + FSCALE / 2) >> FSHIFT;
-		ttyprintf(tp, "load: %d.%02d ", tmp / 100, tmp % 100);
+	/* Print load average. */
+	tmp = (averunnable.ldavg[0] * 100 + FSCALE / 2) >> FSHIFT;
+	ttyprintf(tp, "load: %d.%02d ", tmp / 100, tmp % 100);
 
-		if (tp->t_session == NULL)
-			ttyprintf(tp, "not a controlling terminal\n");
-		else if (tp->t_pgrp == NULL)
-			ttyprintf(tp, "no foreground process group\n");
-		else if ((p = tp->t_pgrp->pg_mem) == NULL)
-			ttyprintf(tp, "empty foreground process group\n");
-		else {
-			/* Pick interesting process. */
-			for (pick = NULL; p != NULL; p = p->p_pgrpnxt)
-				if (proc_compare(pick, p))
-					pick = p;
+	if (tp->t_session == NULL)
+		ttyprintf(tp, "not a controlling terminal\n");
+	else if (tp->t_pgrp == NULL)
+		ttyprintf(tp, "no foreground process group\n");
+	else if ((p = tp->t_pgrp->pg_mem) == NULL)
+		ttyprintf(tp, "empty foreground process group\n");
+	else {
+		/* Pick interesting process. */
+		for (pick = NULL; p != NULL; p = p->p_pgrpnxt)
+			if (proc_compare(pick, p))
+				pick = p;
 
-			ttyprintf(tp, " cmd: %s %d [%s] ", pick->p_comm, pick->p_pid,
-			    pick->p_stat == SRUN ? "running" :
-			    pick->p_wmesg ? pick->p_wmesg : "iowait");
+		ttyprintf(tp, " cmd: %s %d [%s] ", pick->p_comm, pick->p_pid,
+				pick->p_stat == SRUN ? "running" :
+				pick->p_wmesg ? pick->p_wmesg : "iowait");
 
-			calcru(pick, &utime, &stime, NULL);
+		calcru(pick, &utime, &stime, NULL);
 
-			/* Print user time. */
-			ttyprintf(tp, "%d.%02du ",
-			    utime.tv_sec, utime.tv_usec / 10000);
+		/* Print user time. */
+		ttyprintf(tp, "%d.%02du ", utime.tv_sec, utime.tv_usec / 10000);
 
-			/* Print system time. */
-			ttyprintf(tp, "%d.%02ds ",
-			    stime.tv_sec, stime.tv_usec / 10000);
+		/* Print system time. */
+		ttyprintf(tp, "%d.%02ds ", stime.tv_sec, stime.tv_usec / 10000);
 
-	#define	pgtok(a)	(((a) * NBPG) / 1024)
-			/* Print percentage cpu, resident set size. */
-			tmp = (pick->p_pctcpu * 10000 + FSCALE / 2) >> FSHIFT;
-			ttyprintf(tp, "%d%% %dk\n",
-			    tmp / 100,
-			    pick->p_stat == SIDL || pick->p_stat == SZOMB ? 0 :
-	#ifdef pmap_resident_count
-				pgtok(pmap_resident_count(&pick->p_vmspace->vm_pmap))
-	#else
-				pgtok(pick->p_vmspace->vm_rssize)
-	#endif
-				);
-		}
-		tp->t_rocount = 0;	/* so pending input will be retyped if BS */
+#define	pgtok(a)	(((a) * NBPG) / 1024)
+		/* Print percentage cpu, resident set size. */
+		tmp = (pick->p_pctcpu * 10000 + FSCALE / 2) >> FSHIFT;
+		ttyprintf(tp, "%d%% %dk\n", tmp / 100,
+				pick->p_stat == SIDL || pick->p_stat == SZOMB ? 0 :
+#ifdef pmap_resident_count
+						pgtok(pmap_resident_count(&pick->p_vmspace->vm_pmap))
+#else
+						pgtok(pick->p_vmspace->vm_rssize)
+#endif
+						);
+	}
+	tp->t_rocount = 0; /* so pending input will be retyped if BS */
 }
 
 
@@ -2227,7 +2330,6 @@ tputchar(c, tp)
 	splx(s);
 	return (0);
 }
-
 
 int
 ttysleep(tp, chan, pri, wmesg, timo)

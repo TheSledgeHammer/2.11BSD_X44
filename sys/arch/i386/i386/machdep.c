@@ -82,7 +82,7 @@
 #include <machine/specialreg.h>
 #include <machine/vm86.h>
 
-#include <i386/isa/isa_machdep.h>
+#include <machine/isa/isa_machdep.h>
 
 #include "npx.h"
 #if NNPX > 0

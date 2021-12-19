@@ -10,11 +10,20 @@ INCS=		ansi.h aout_machdep.h asm.h atomic.h bios.h bootinfo.h bus.h 			\
 			pmap_tlb.h proc.h profile.h psl.h pte.h reg.h reloc.h segments.h 		\
 			setjmp.h signal.h specialreg.h stdarg.h sysarch.h trap.h tss.h types.h 	\
 			vm86.h vmparam.h xcoff_machdep.h
+# MATH EMU
 INCS+=		math_emu.h
 # MP/SMP
 INCS+=		mpbiosreg.h mpbiosvar.h mpconfig.h percpu.h smp.h
 # APIC
 INCS+= 		apic/apic.h apic/ioapicreg.h apic/ioapicvar.h apic/lapicreg.h 			\
 			apic/lapicvar.h
-	
+			
+# machdeps needed outside of machine arch
+# EISA
+INCS+=		eisa/eisa_machdep.h
+# ISA
+INCS+=		isa/isa_machdep.h isa/isapnp_machdep.h 
+# PCI
+INCS+=		pci/pci_machdep.h
+
 .include <bsd.kinc.mk>

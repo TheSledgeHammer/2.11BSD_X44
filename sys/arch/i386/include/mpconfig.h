@@ -13,7 +13,7 @@
 #include <dev/core/pci/pcivar.h>
 
 #include <machine/bus.h>
-#include <arch/i386/pci/pci_machdep.h>
+#include <machine/pci/pci_machdep.h>
 
 /*
  * Interrupt typess

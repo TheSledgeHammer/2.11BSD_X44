@@ -32,7 +32,7 @@
 #ifndef _I386_PC_BIOS_H_
 #define _I386_PC_BIOS_H_
 
-#include <machine/vmparam.h>
+//#include <machine/vmparam.h>
 
 /*
  * Signature structure for the BIOS32 Service Directory header
@@ -46,6 +46,26 @@ struct bios32_SDheader
     u_int8_t	cksum;
     u_int8_t	pad[5];
 };
+
+/*
+ * PnP BIOS presence structure
+ */
+struct PnPBIOS_table
+{
+    u_int8_t	sig[4];			/* "$PnP */
+    u_int8_t	version;		/* should be 0x10 */
+    u_int8_t	len;    		/* total structure length */
+    u_int16_t	control;		/* BIOS feature flags */
+    u_int8_t	cksum;			/* checksum */
+    u_int32_t	evflagaddr;		/* address of event notificaton flag */
+    u_int16_t	rmentryoffset;	/* real-mode entry offset */
+    u_int16_t	rmentryseg;		/*                 segment */
+    u_int16_t	pmentryoffset;	/* protected-mode entry offset */
+    u_int32_t	pmentrybase;	/*                segment base */
+    u_int32_t	oemdevid;		/* motherboard EISA ID */
+    u_int16_t	rmbiosseg;		/* real-mode BIOS segment */
+    u_int32_t	pmdataseg;		/* protected-mode data segment */
+} __packed;
 
 /*
  * PCI BIOS functions
@@ -180,8 +200,8 @@ struct bios_oem_signature {
 } __packed;
 
 struct bios_oem_range {
-	u_int from;		/* shouldn't be below 0xe0000 */
-	u_int to;		/* shouldn't be above 0xfffff */
+	u_int from;			/* shouldn't be below 0xe0000 */
+	u_int to;			/* shouldn't be above 0xfffff */
 } __packed;
 
 struct bios_oem {

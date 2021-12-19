@@ -83,7 +83,7 @@
 
 #include <vm/include/vm_extern.h>
 
-#include <i386/isa/isa_machdep.h> 			/* XXX intrhand */
+#include <machine/isa/isa_machdep.h> 			/* XXX intrhand */
 
 #include <machine/bus.h>
 #include <machine/pio.h>

@@ -54,15 +54,7 @@ struct eisabus_attach_args;
 /*
  * Machine-dependent definitions.
  */
-#if (alpha + i386 != 1)
-/* ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE. */
-#endif
-#if alpha
-#include <alpha/eisa/eisa_machdep.h>
-#endif
-#if i386
-#include <i386/eisa/eisa_machdep.h>
-#endif
+#include <machine/eisa/eisa_machdep.h>
 
 typedef int	eisa_slot_t;		/* really only needs to be 4 bits */
 

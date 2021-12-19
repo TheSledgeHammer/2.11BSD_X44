@@ -4,21 +4,41 @@
 
 2.11BSD_X44 is 2.11BSD that continues with that tradition. Replacing the 4.3BSD styled vmspace and inodes with 4.4BSD's vmspace and vnodes. While retaining 2.11BSD's kernel and user space. 2.11BSD_X44 adopts the 4.4BSD & later BSD's (i.e. FreeBSD, NetBSD, OpenBSD & DragonflyBSD) approach of having a clearly defined architecture dependent code and architecture independent code, allowing for easier portability.
 
-## Project Goals
+## Source Roadmap:
+---------------
+| Directory | Description |
+| --------- | ----------- |
+| bin | System/user commands. |
+| contrib | Packages contributed by 3rd parties. |
+| etc | Template files for /etc. |
+| include | System include files. |
+| lib | System libraries. |
+| libexec | System daemons. |
+| sbin | System commands. |
+| share | Shared resources. |
+| sys | Kernel sources. |
+| sys/arch/`arch`/conf | Kernel configuration files. GENERIC.'arch' is the configuration used in release builds. |
+| sys/stand | Boot loader sources. |
+| tools | Utilities for toolchain & cross-compiling. |
+| usr.bin | User commands. |
+| usr.lib | System User libraries for /lib. |
+| usr.sbin | System administration commands. |
 
-- Maintain a coding style in keeping with 2.11BSD's
-- Innovate new ways to improve the OS while following the above point.
-- Small Footprint: Ideally less than 200 system calls.
-- Clean code
-
-## Architecture Support
+## Architecture Support:
 
 - i386/x86 (In Development): 90% Complete
 - AMD64 (Planned)
 - Arm 	(32-Bit/64-Bit) (Planned)
 - Riscv (32-Bit/64-Bit) (Planned)
 
-## Current Project Aims
+## Project Goals:
+
+- Maintain a coding style in keeping with 2.11BSD's
+- Innovate new ways to improve the OS while following the above point.
+- Small Footprint: Ideally less than 200 system calls.
+- Clean code
+
+## Project Aims:
 
 - Improve 2.11BSD's Dual Control (Proc & User)
 - Instruction & Data (I&D) Seperation (See devel folder)
@@ -53,7 +73,7 @@
   - UDF
   - PUFFS or FUSE
 
-## Development
+## Development:
 
 - Please read the TODO for an in-depth list.
 Or
@@ -62,7 +82,7 @@ Or
 - Top Priority:
   - Compiling for i386/x86 platform
 
-## Porting
+## Porting:
 
 2.11BSD_X44 is open to being ported to different architectures.
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
@@ -91,27 +111,7 @@ Please read the following NetBSD guide for more information:
 
 <https://www.netbsd.org/docs/guide/en/chap-build.html>
 
-Source Roadmap:
----------------
-| Directory | Description |
-| --------- | ----------- |
-| bin | System/user commands. |
-| contrib | Packages contributed by 3rd parties. |
-| etc | Template files for /etc. |
-| include | System include files. |
-| lib | System libraries. |
-| libexec | System daemons. |
-| sbin | System commands. |
-| share | Shared resources. |
-| sys | Kernel sources. |
-| sys/arch/`arch`/conf | Kernel configuration files. GENERIC.'arch' is the configuration used in release builds. |
-| sys/stand | Boot loader sources. |
-| tools | Utilities for toolchain & cross-compiling. |
-| usr.bin | User commands. |
-| usr.lib | System User libraries for /lib. |
-| usr.sbin | System administration commands. |
-
-## Contribution
+## Contribution:
 
 - Anyone is welcome to contribute.
 - Your code should ideally fit the following guidelines & rules below

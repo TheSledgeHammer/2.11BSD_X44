@@ -396,7 +396,7 @@ vm86_initialize(void)
 	struct vm86_layout *vml = (struct vm86_layout *)vm86paddr;
 	struct pcb *pcb;
 	struct soft_segment_descriptor ssd;
-	setup_descriptor_table(ssd, 0, 0, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+	setup_descriptor_table(&ssd, 0, 0, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
 
 	/*
 	 * this should be a compile time error, but cpp doesn't grok sizeof().

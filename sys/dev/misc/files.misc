@@ -6,5 +6,6 @@ include 	"dev/misc/pccons/files.pccons"
 include 	"dev/misc/wscons/files.wscons"
 include 	"dev/misc/wsfont/files.wsfont"
 
+file		dev/misc/cnmagic/cnmagic.c
 file		dev/misc/kobj/kobj.c
 file		dev/misc/ksym/ksyms.c		ksyms		needs-flag

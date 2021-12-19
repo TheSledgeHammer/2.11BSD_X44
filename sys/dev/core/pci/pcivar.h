@@ -59,7 +59,7 @@ struct pci_softc;
 /*
  * Machine-dependent definitions.
  */
-#include <machine/pci_machdep.h>
+#include <machine/pci/pci_machdep.h>
 #endif
 
 /*

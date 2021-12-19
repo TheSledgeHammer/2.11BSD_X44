@@ -98,6 +98,7 @@
 #include <machine/intr.h>
 #include <machine/bus.h>
 
+#include <dev/misc/cnmagic/cnmagic.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/ic/ns16550reg.h>
@@ -200,7 +201,7 @@ static bus_space_handle_t 	comconsioh;
 static int					comconsattached;
 static int 					comconsrate;
 static tcflag_t 			comconscflag;
-//static struct cnm_state com_cnm_state;
+static struct cnm_state 	com_cnm_state;
 
 #ifndef __GENERIC_SOFT_INTERRUPTS
 #ifdef __NO_SOFT_SERIAL_INTERRUPT
@@ -2194,7 +2195,7 @@ com_common_getc(dev, iot, ioh)
 		extern int db_active;
 		if (!db_active)
 #endif
-		//	cn_check_magic(dev, c, com_cnm_state);
+			cn_check_magic(dev, c, com_cnm_state);
 	}
 	splx(s);
 	return (c);
@@ -2215,7 +2216,7 @@ com_common_putc(dev, iot, ioh, c)
 		int cn_trapped = 0;
 		cin = bus_space_read_1(iot, ioh, com_data);
 		stat = bus_space_read_1(iot, ioh, com_iir);
-	//	cn_check_magic(dev, cin, com_cnm_state);
+		cn_check_magic(dev, cin, com_cnm_state);
 		com_readahead[com_readaheadcount++] = cin;
 	}
 
@@ -2290,8 +2291,8 @@ comcnattach(iot, iobase, rate, frequency, type, cflag)
 		return (res);
 
 	cn_tab = &comcons;
-//	cn_init_magic(&com_cnm_state);
-//	cn_set_magic("\047\001"); /* default magic is BREAK */
+	cn_init_magic(&com_cnm_state);
+	cn_set_magic("\047\001"); /* default magic is BREAK */
 
 	comconstag = iot;
 	comconsaddr = iobase;
@@ -2353,8 +2354,8 @@ com_kgdb_attach(iot, iobase, rate, frequency, type, cflag)
 		 * XXXfvdl this shouldn't be needed, but the cn_magic goo
 		 * expects this to be initialized
 		 */
-//		cn_init_magic(&com_cnm_state);
-//		cn_set_magic("\047\001");
+		cn_init_magic(&com_cnm_state);
+		cn_set_magic("\047\001");
 	}
 
 	kgdb_attach(com_kgdb_getc, com_kgdb_putc, NULL);
