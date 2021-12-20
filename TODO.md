@@ -63,7 +63,7 @@ A General todo list. Don't hesitate to add to this list. :)
 			- add com
 		- MCA: to add
 		- PCI:
-			- add agp, pciide
+			- add agp
 		- PCMCIA:
 			- add com
 	- Disk:
