@@ -41,8 +41,8 @@
  * provided by pci_machdep.h.
  */
 #include <sys/device.h>
-#include <machine/bus.h>
 #include <dev/core/pci/pcireg.h>
+#include <machine/bus.h>
 
 /*
  * Structures and definitions needed by the machine-dependent header.
@@ -51,16 +51,11 @@ typedef u_int32_t pcireg_t;		/* configuration space register XXX */
 struct pcibus_attach_args;
 struct pci_softc;
 
-/*
- * Machine-dependent definitions.
- */
-
 #ifdef _KERNEL
 /*
  * Machine-dependent definitions.
  */
 #include <machine/pci/pci_machdep.h>
-#endif
 
 /*
  * PCI bus attach arguments.

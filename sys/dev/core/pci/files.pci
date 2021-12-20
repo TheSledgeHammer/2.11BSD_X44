@@ -12,6 +12,16 @@ file	dev/core/pci/pci.c		pci 				needs-flag
 file	dev/core/pci/pci_map.c		pci
 file	dev/core/pci/pci_subr.c		pci
 
+
+# PCI IDE controllers
+define pciide_common
+file 	dev/core/pci/pciide_common.c 	pciide_common
+
+device	pciide {[channel = -1]}: ata, pciide_common
+attach	pciide at pci
+file	dev/core/pci/pciide.c		pciide
+
+# PCI USB controllers
 # UHCI USB controller
 attach	uhci at pci with uhci_pci
 file	dev/core/pci/uhci_pci.c		uhci_pci
