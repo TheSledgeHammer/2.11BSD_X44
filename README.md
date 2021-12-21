@@ -1,8 +1,8 @@
 # 2.11BSD_X44 (TBA)
 
-2.11BSD is unique in BSD's history, still receiving patches to it's codebase up until the last 10 years. As well as being the only BSD to receive patches that were backported from numerous versions of 4BSD.
+2.11BSD is unique in BSD's history, still receiving patches to it's codebase up until the present. As well as being the only BSD to receive patches that were backported from numerous versions of 4BSD.
 
-2.11BSD_X44 is 2.11BSD that continues with that tradition. Replacing the 4.3BSD styled vmspace and inodes with 4.4BSD's vmspace and vnodes. While retaining 2.11BSD's kernel and user space. 2.11BSD_X44 adopts the 4.4BSD & later BSD's (i.e. FreeBSD, NetBSD, OpenBSD & DragonflyBSD) approach of having a clearly defined architecture dependent code and architecture independent code, allowing for easier portability.
+2.11BSD_X44 is 2.11BSD that continues with that tradition. Replacing the 4BSD (4.1BSD to 4.3BSD) styled vmspace and inodes with 4.4BSD's vmspace and vnodes. While retaining 2.11BSD's kernel and user space. 2.11BSD_X44 adopts the 4.4BSD & later BSD's (i.e. FreeBSD, NetBSD, OpenBSD & DragonflyBSD) approach of having a clearly defined architecture dependent code and architecture independent code, allowing for easier portability.
 
 ## Source Roadmap:
 ---------------
@@ -87,7 +87,7 @@ Or
 2.11BSD_X44 is open to being ported to different architectures.
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
-## Building: (Work in Progress)
+## Building:
 You can cross-build 211BSD_X44 from most UNIX-like operating systems. To build for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 -O ~/obj release
@@ -103,7 +103,7 @@ Compiler Success:
 
 GCC: i386(tools = yes; kernel = fix compilation errors)
 
-Clang: No, missing needed components in the bsd mk files.
+Clang: No, missing c++ library and needed components in the bsd mk files. 
 
 PCC: No, compiler issues.
 
@@ -115,13 +115,16 @@ Please read the following NetBSD guide for more information:
 
 - Anyone is welcome to contribute.
 - Your code should ideally fit the following guidelines & rules below
-- Licensing: 3-Clause BSD license preferable:
-  - Externally Maintained code should be placed in one of the following:
-  	1) BSD licensed code: 		 contrib/"project name"
+- Licensing: 
+  - 3-Clause BSD license preferable: Unless following the below point.
+    - Exceptions can be made.
+  - Externally Maintained code user libraries should be placed in one of the following:
+  	1) Any licensed code: 		 contrib/"project name"
   	2) OS Compatability code:  contrib/oscompat/"os name"
 - These rules in place to make it pleasant & easier for everyone.
   - It is highly recommended that you adhere to the following Contribution Guidelines & Rules.
-  - Failing to follow the Contribution Guidelines & Rules will prevent your code from being accepted.
+  - Failing to follow the Contribution Guidelines & Rules will likely prevent your code from being accepted.
+  Depending on the circumstances.
 
 ### Contribution Guidelines
 
