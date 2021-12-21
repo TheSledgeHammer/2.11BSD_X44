@@ -84,7 +84,6 @@ file	arch/i386/isa/npx.c		        	npx 					  needs-flag
 file	arch/i386/eisa/eisa_machdep.c	    eisa
 
 # MCA-only drivers
-device	mca {[slot = -1]} : bioscall
 file	arch/i386/mca/mca_machdep.c		mca
 
 # ISA Plug 'n Play devices
