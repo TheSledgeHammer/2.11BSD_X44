@@ -1,6 +1,6 @@
 #	$211BSD: Makefile,v 1.0 2021/10/28 23:59:27 Exp $
 
-SUBDIR=  eisa isa isapnp pci pcmcia
+SUBDIR=  eisa isa isapnp mca pci pcmcia
 
 INCSDIR= /usr/include/dev/core
 
