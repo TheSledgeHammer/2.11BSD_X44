@@ -54,13 +54,13 @@ __KERNEL_RCSID(0, "$NetBSD: mca_machdep.c,v 1.22 2003/12/15 08:38:01 jdolecek Ex
 #include <sys/time.h>
 #include <sys/kernel.h>
 
-#include <machine/bioscall.h>
+//#include <machine/bioscall.h>
 #include <machine/psl.h>
 
 #define _I386_BUS_DMA_PRIVATE
 #include <machine/bus.h>
 
-#include <mca/mca_machdep.h>
+#include <machine/mca/mca_machdep.h>
 #include <i386/isa/icu.h>
 
 #include <dev/core/isa/isavar.h>
