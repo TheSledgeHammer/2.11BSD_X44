@@ -102,7 +102,7 @@ defparam PCIC_ISA_ALLOC_IOBASE
 defparam PCIC_ISA_ALLOC_IOSIZE
 defparam PCIC_ISA_INTR_ALLOC_MASK
 
-device	pcic {[controller = -1], [socket = -1]}
+device	pcic: pcmciabus
 file	dev/core/ic/i82365.c			   pcic
 
 # PCIC pcmcia controller on ISA bus.
