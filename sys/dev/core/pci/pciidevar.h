@@ -39,7 +39,7 @@
 #include <dev/disk/ata/atavar.h>
 #include <dev/core/ic/wdcreg.h>
 #include <dev/core/ic/wdcvar.h>
-#include "opt_pciide.h"
+//#include "opt_pciide.h"
 
 /* options passed via the 'flags' config keyword */
 #define	PCIIDE_OPTIONS_DMA	0x01
