@@ -136,7 +136,7 @@ isa0			at pceb?
 isa0			at pcib?
 
 # PCMCIA bus support
-#pcmcia* 		at pcic? controller ? socket ?
+pcmcia* 		at pcic? controller ? socket ?
 
 # MCA bus support
 mca0			at mainbus?
@@ -165,7 +165,7 @@ wsmouse*		at pms? mux 0
 wsmouse*		at wsmousedev?
 
 pcppi0			at isa?
-#sysbeep0		at pcppi?
+sysbeep0		at pcppi?
 
 # Serial Devices
 
