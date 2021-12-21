@@ -11,8 +11,8 @@
  * $FreeBSD: src/sys/sys/timetc.h,v 1.58 2003/08/16 08:23:52 phk Exp $
  */
 
-#ifndef _SYS_TIMECOUNTER_H_
-#define _SYS_TIMECOUNTER_H_
+#ifndef _SYS_TIMETC_H_
+#define _SYS_TIMETC_H_
 
 #if !defined(_KERNEL) && !defined(_KMEMUSER)
 #error "no user-serviceable parts inside"
@@ -77,4 +77,4 @@ void		cpu_tick_calibration(void);
 SYSCTL_DECL(_kern_timecounter);
 #endif
 
-#endif /* _SYS_TIMECOUNTER_H_ */
+#endif /* _SYS_TIMETC_H_ */

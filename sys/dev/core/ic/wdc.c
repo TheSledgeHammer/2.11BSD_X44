@@ -112,6 +112,12 @@ __KERNEL_RCSID(0, "$NetBSD: wdc.c,v 1.172.2.7.2.10 2005/08/23 13:35:55 tron Exp 
 #include <dev/disk/ata/ata_raidvar.h>
 #endif
 
+#define cn_trap()				\
+	do {						\
+		console_debugger();		\
+		cn_trapped = 1;			\
+	} while (/* CONSTCOND */ 0)
+
 #define WDCDELAY  100 /* 100 microseconds */
 #define WDCNDELAY_RST (WDC_RESET_WAIT * 1000 / WDCDELAY)
 #if 0
@@ -783,7 +789,7 @@ wdcattach(struct wdc_channel *chp)
 		return;
 
 	/* initialise global data */
-	simple_lock_init(&atabus_interlock);
+	simple_lock_init(&atabus_interlock, "atabus_interlock");
 	callout_init(&chp->ch_callout);
 	if (wdc->drv_probe == NULL)
 		wdc->drv_probe = wdc_drvprobe;
@@ -791,7 +797,7 @@ wdcattach(struct wdc_channel *chp)
 		wdc->reset = wdc_do_reset;
 	if (inited == 0) {
 		/* Initialize the ata_xfer pool. */
-		&wdc_xfer_pool = malloc(sizeof(struct ata_xfer), M_DEVBUF, M_WAITOK | M_NOWAIT);
+		&wdc_xfer_pool = (struct ata_xfer *)malloc(sizeof(struct ata_xfer), M_DEVBUF, M_WAITOK | M_NOWAIT);
 		inited++;
 	}
 	TAILQ_INIT(&chp->ch_queue->queue_xfer);

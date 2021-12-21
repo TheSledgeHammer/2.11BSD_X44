@@ -87,7 +87,6 @@ struct	gate_descriptor	{
 	unsigned gd_p:1 ;			/* segment descriptor present */
 	unsigned gd_hioffset:16 ;	/* gate offset (msb) */
 } ;
-#define	d_type	gd.gd_type
 
 /*
  * Generic descriptor
@@ -96,6 +95,7 @@ union descriptor	{
 	struct	segment_descriptor 	sd;
 	struct	gate_descriptor 	gd;
 };
+//#define	d_type	gd.gd_type
 
 /* system segments and gate types */
 #define	SDT_SYSNULL	 	 0	/* system null */

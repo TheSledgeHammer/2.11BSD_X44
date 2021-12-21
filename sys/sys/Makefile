@@ -20,10 +20,10 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h buf.h 	\
 			scanio.h scsiio.h select.h signal.h signalvar.h socket.h 			\
 			socketvar.h stat.h stdarg.h	stdbool.h stddef.h stdint.h syscall.h 	\
 			syscallargs.h sysctl.h syslimits.h	syslog.h systm.h tablet.h 		\
-			termios.h time.h timeb.h times.h trace.h tree.h tty.h ttychars.h 	\
-			ttydefaults.h ttydev.h types.h ucred.h	uio.h un.h unistd.h unpcb.h \
-			user.h utsname.h uuid.h vcmd.h videoio.h vlimit.h vmmeter.h vnode.h \
-			wait.h			
+			termios.h time.h timeb.h timepps.h times.h trace.h tree.h tty.h 	\
+			ttychars.h ttydefaults.h ttydev.h types.h ucred.h uio.h un.h 		\
+			unistd.h unpcb.h user.h utsname.h uuid.h vcmd.h videoio.h vlimit.h 	\
+			vmmeter.h vnode.h wait.h			
 
 INCSYMLINKS=									\
 		sys/exec_elf.h 	/usr/include/elf.h 		\

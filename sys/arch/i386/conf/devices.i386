@@ -7,7 +7,7 @@
 # System bus types
 #
 define mainbus {[apid = -1]}
-device	mainbus: isabus, eisabus, pcibus, mainbus
+device	mainbus: isabus, eisabus, mcabus, pcibus, mainbus
 attach	mainbus at root
 file	arch/i386/i386/mainbus.c	    	mainbus
 
@@ -41,6 +41,9 @@ device	mms: wsmousedev
 attach	mms at isa
 file	arch/i386/isa/mms.c					mms 						needs-flag
 
+device	sysbeep
+attach	sysbeep at pcppi
+
 # PCI-only drivers
 file	arch/i386/pci/pci_machdep.c	    	pci
 file	arch/i386/pci/pcic_pci_machdep.c	pcic_pci
@@ -60,6 +63,11 @@ device	pcib: isabus
 attach	pcib at pci
 file	arch/i386/pci/pcib.c		    	pcib
 
+# PCI-MCA bridges
+device	pcmb: mcabus
+attach	pcmb at pci
+file	arch/i386/pci/pcmb.c			pcmb
+
 # ISA and mixed ISA+EISA or ISA+PCI drivers
 
 file	arch/i386/isa/isa_machdep.c	    	isabus
@@ -74,6 +82,10 @@ file	arch/i386/isa/npx.c		        	npx 					  needs-flag
 
 # EISA-only drivers
 file	arch/i386/eisa/eisa_machdep.c	    eisa
+
+# MCA-only drivers
+device	mca {[slot = -1]} : bioscall
+file	arch/i386/mca/mca_machdep.c		mca
 
 # ISA Plug 'n Play devices
 file	arch/i386/isa/isapnp_machdep.c	    isapnp

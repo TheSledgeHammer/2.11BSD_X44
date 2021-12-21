@@ -31,8 +31,8 @@
  */
 
 #include <sys/callout.h>
-#include <sys/timepps.h>
 #include <sys/lock.h>
+#include <sys/timepps.h>
 
 int comcnattach(bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t);
 #ifdef KGDB
@@ -68,8 +68,6 @@ int com_is_console(bus_space_tag_t, bus_addr_t, bus_space_handle_t *);
 
 #define	COM_IBUFSIZE			(32 * 512)
 #define	COM_IHIGHWATER			((3 * COM_IBUFSIZE) / 4)
-
-int com_is_console (bus_space_tag_t, int, bus_space_handle_t *);
 
 struct com_softc {
 	struct device 		sc_dev;
@@ -139,18 +137,16 @@ struct com_softc {
 	u_char				sc_ppsmask;			/* pps signal mask */
 	u_char				sc_ppsassert;		/* pps leading edge */
 	u_char				sc_ppsclear;		/* pps trailing edge */
-	//pps_info_t 		ppsinfo;
-	//pps_params_t 		ppsparam;
+	pps_info_t 			sc_ppsinfo;
+	pps_params_t 		sc_ppsparam;
 
-	//u_char 				*sc_ibuf, *sc_ibufp, *sc_ibufhigh, *sc_ibufend;
-	//u_char 				sc_ibufs[2][COM_IBUFSIZE];
 	struct lock_object	sc_lock;
 };
 
 /* Macros to clear/set/test flags. */
-#define SET(t, f)	(t) |= (f)
-#define CLR(t, f)	(t) &= ~(f)
-#define ISSET(t, f)	((t) & (f))
+//#define SET(t, f)	(t) |= (f)
+//#define CLR(t, f)	(t) &= ~(f)
+//#define ISSET(t, f)	((t) & (f))
 
 int 	comprobe1 (bus_space_tag_t, bus_space_handle_t);
 int 	comintr (void *);

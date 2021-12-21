@@ -198,6 +198,7 @@ struct ttysize {
 #define	TIOCGWINSZ			_IOR(t, 104, struct winsize)	/* get window size */
 #define	TIOCSWINSZ			_IOW(t, 103, struct winsize)	/* set window size */
 #define	TIOCUCNTL			_IOW(t, 102, int)				/* pty: set/clr usr cntl mode */
+#define	TIOCSTAT			_IOW('t', 101, int)				/* generate status message */
 #define	UIOCCMD(n)			_IO(u, n)						/* usr cntl op "n" */
 #define	TIOCGSID			_IOR('t', 99, int)				/* get sid of tty */
 #define	TIOCCONS			_IOW('t', 98, int)				/* become virtual console */
@@ -213,6 +214,7 @@ struct ttysize {
 #define TIOCDSIMICROCODE 	_IO('t', 88)					/* Download microcode to DSI Softmodem */
 #define	TIOCGFLAGS			_IOR('t', 87, int)				/* get device flags */
 #define	TIOCSFLAGS			_IOW('t', 86, int)				/* set device flags */
+#define	TIOCDCDTIMESTAMP 	_IOR('t', 85, struct timeval) 	/* get timestamp of last Cd rise, stamp next rise */
 #define	TIOCFLAG_SOFTCAR	0x080							/* ignore hardware carrier */
 #define	TIOCFLAG_CLOCAL		0x100							/* set clocal on open */
 #define	TIOCFLAG_CRTSCTS	0x120							/* set crtscts on open */

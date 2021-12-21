@@ -22,7 +22,9 @@ INCS+= 		apic/apic.h apic/ioapicreg.h apic/ioapicvar.h apic/lapicreg.h 			\
 # EISA
 INCS+=		eisa/eisa_machdep.h
 # ISA
-INCS+=		isa/isa_machdep.h isa/isapnp_machdep.h 
+INCS+=		isa/isa_machdep.h isa/isapnp_machdep.h
+# MCA
+INCS+=		mca/mca_machdep.h
 # PCI
 INCS+=		pci/pci_machdep.h
 

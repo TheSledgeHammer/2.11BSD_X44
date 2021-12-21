@@ -47,6 +47,7 @@
 vm_extent_t		kmap_extent, kentry_extent, vmspace_extent;
 vm_map_t 		kmapex;
 vm_map_entry_t 	kentryex;
+struct vmspace	vmspacex;
 
 long 			vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
 long 			kmap_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_t))];
@@ -58,7 +59,7 @@ vm_map_startup1()
 	vm_exbootinit(kmap_extent, "KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_FAST);
 	vm_exbootinit(kentry_extent, "KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_FAST);
 
-	vm_exbootinit(vmspace_extent, "VMSPACE", min, max, M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_FAST);
+	vm_exbootinit(vmspace_extent, "VMSPACE", 1, sizeof(), M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_FAST);
 
 	struct vmspace *vm = (struct vmspace *)vm_exalloc(vmspace_extent);
 }
@@ -84,7 +85,7 @@ vm_exinit(name, start, end, mtype, storage, storagesize, flags)
 
 	ex->ve_extent = extent_create(name, start, end, mtype, storage, storagesize, flags);
 	if(vm_exalloc_region(ex->ve_extent, start, (end - start), flags) != 0) {
-		vm_exfree(ex, start, ex->ve_size1, flags);
+		vm_exfree(ex, start, ex->ve_size, flags);
 		return (NULL);
 	}
 	vm_extent_lock_init(ex);
@@ -153,7 +154,7 @@ vm_exalloc_region(ex, start, size, flags)
 	ext = ex->ve_extent;
 	vm_extent_lock(ex);
 	if (extent_alloc_region(ext, start, size, flags)) {
-		ex->ve_size1 = size;
+		ex->ve_size = size;
 		LIST_INSERT_HEAD(&exlist, ex, ve_exnode);
 		vm_extent_unlock(ex);
 		return (0);
@@ -164,7 +165,7 @@ vm_exalloc_region(ex, start, size, flags)
 }
 
 int
-vm_exalloc_subregion(ex, size, alignment, boundary, flags, result)
+vm_exalloc_region(ex, size, alignment, boundary, flags, result)
 	vm_extent_t ex;
 	u_long 		size, alignment, boundary;
 	int 		flags;
@@ -179,7 +180,7 @@ vm_exalloc_subregion(ex, size, alignment, boundary, flags, result)
 	ext = ex->ve_extent;
 	vm_extent_lock(ex);
 	if(extent_alloc(ex, size, alignment, boundary, flags, result)) {
-		ex->ve_size2 = size;
+		ex->ve_subsize = size;
 		ex->ve_result = result;
 		LIST_INSERT_HEAD(&exlist, ex, ve_exnode);
 		vm_extent_unlock(ex);
@@ -197,6 +198,7 @@ vm_exfree(ex, start, size, flags)
 	int 		flags;
 {
 	register struct extent *ext;
+	int error;
 
 	ext = ex->ve_extent;
 	vm_extent_lock(ex);

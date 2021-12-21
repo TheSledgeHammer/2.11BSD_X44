@@ -115,7 +115,6 @@
 int comprobeHAYESP (bus_space_handle_t hayespioh, struct com_softc *sc);
 #endif
 
-
  static void com_enable_debugport(struct com_softc *);
 
  void	com_config(struct com_softc *);
@@ -202,6 +201,12 @@ static int					comconsattached;
 static int 					comconsrate;
 static tcflag_t 			comconscflag;
 static struct cnm_state 	com_cnm_state;
+
+static int ppscap =
+	PPS_TSFMT_TSPEC |
+	PPS_CAPTUREASSERT |
+	PPS_CAPTURECLEAR |
+	PPS_OFFSETASSERT | PPS_OFFSETCLEAR;
 
 #ifndef __GENERIC_SOFT_INTERRUPTS
 #ifdef __NO_SOFT_SERIAL_INTERRUPT
@@ -413,7 +418,7 @@ com_attach_subr(sc)
 	const char *fifo_msg = NULL;
 
 	callout_init(&sc->sc_diag_callout);
-	simple_lock_init(&sc->sc_lock);
+	simple_lock_init(&sc->sc_lock, "com_lock");
 
 	/* Disable interrupts before configuring the device. */
 
@@ -736,7 +741,7 @@ com_shutdown(sc)
 
 	/* Turn off PPS capture on last close. */
 	sc->sc_ppsmask = 0;
-	//sc->ppsparam.mode = 0;
+	sc->sc_ppsparam.mode = 0;
 
 	/*
 	 * Hang up if necessary.  Wait a bit, so the other side has time to
@@ -853,7 +858,7 @@ comopen(dev, flag, mode, p)
 
 		/* Clear PPS capture state on first open. */
 		sc->sc_ppsmask = 0;
-		//sc->ppsparam.mode = 0;
+		sc->sc_ppsparam.mode = 0;
 
 		COM_UNLOCK(sc);
 		splx(s2);
@@ -1083,6 +1088,119 @@ comioctl(dev, cmd, data, flag, p)
 
 	case TIOCMGET:
 		*(int*) data = com_to_tiocm(sc);
+		break;
+
+	case PPS_IOC_CREATE:
+		break;
+
+	case PPS_IOC_DESTROY:
+		break;
+
+	case PPS_IOC_GETPARAMS: {
+		pps_params_t *pp;
+		pp = (pps_params_t*) data;
+		*pp = sc->sc_ppsparam;
+		break;
+	}
+
+	case PPS_IOC_SETPARAMS: {
+		pps_params_t *pp;
+		int mode;
+		pp = (pps_params_t*) data;
+		if (pp->mode & ~ppscap) {
+			error = EINVAL;
+			break;
+		}
+		sc->sc_ppsparam = *pp;
+		/*
+		 * Compute msr masks from user-specified timestamp state.
+		 */
+		mode = sc->sc_ppsparam.mode;
+		switch (mode & PPS_CAPTUREBOTH) {
+		case 0:
+			sc->sc_ppsmask = 0;
+			break;
+
+		case PPS_CAPTUREASSERT:
+			sc->sc_ppsmask = MSR_DCD;
+			sc->sc_ppsassert = MSR_DCD;
+			sc->sc_ppsclear = -1;
+			break;
+
+		case PPS_CAPTURECLEAR:
+			sc->sc_ppsmask = MSR_DCD;
+			sc->sc_ppsassert = -1;
+			sc->sc_ppsclear = 0;
+			break;
+
+		case PPS_CAPTUREBOTH:
+			sc->sc_ppsmask = MSR_DCD;
+			sc->sc_ppsassert = MSR_DCD;
+			sc->sc_ppsclear = 0;
+			break;
+
+		default:
+			error = EINVAL;
+			break;
+		}
+		break;
+	}
+
+	case PPS_IOC_GETCAP:
+		*(int*) data = ppscap;
+		break;
+
+	case PPS_IOC_FETCH: {
+		pps_info_t *pi;
+		pi = (pps_info_t*) data;
+		*pi = sc->sc_ppsinfo;
+		break;
+	}
+
+#ifdef PPS_SYNC
+	case PPS_IOC_KCBIND: {
+		int edge = (*(int*) data) & PPS_CAPTUREBOTH;
+
+		if (edge == 0) {
+			/*
+			 * remove binding for this source; ignore
+			 * the request if this is not the current
+			 * hardpps source
+			 */
+			if (pps_kc_hardpps_source == sc) {
+				pps_kc_hardpps_source = NULL;
+				pps_kc_hardpps_mode = 0;
+			}
+		} else {
+			/*
+			 * bind hardpps to this source, replacing any
+			 * previously specified source or edges
+			 */
+			pps_kc_hardpps_source = sc;
+			pps_kc_hardpps_mode = edge;
+		}
+		break;
+	}
+#endif /* PPS_SYNC */
+
+	case TIOCDCDTIMESTAMP: /* XXX old, overloaded  API used by xntpd v3 */
+		/*
+		 * Some GPS clocks models use the falling rather than
+		 * rising edge as the on-the-second signal.
+		 * The old API has no way to specify PPS polarity.
+		 */
+		sc->sc_ppsmask = MSR_DCD;
+#ifndef PPS_TRAILING_EDGE
+		sc->sc_ppsassert = MSR_DCD;
+		sc->sc_ppsclear = -1;
+		TIMESPEC_TO_TIMEVAL((struct timeval*) data,
+				&sc->sc_ppsinfo.assert_timestamp);
+#else
+		sc->sc_ppsassert = -1;
+		sc->sc_ppsclear = 0;
+		TIMESPEC_TO_TIMEVAL((struct timeval*) data,
+				&sc->sc_ppsinfo.clear_timestamp);
+#endif
 		break;
 
 	default:
@@ -2046,6 +2164,52 @@ again:	do {
 		msr = bus_space_read_1(iot, ioh, com_msr);
 		delta = msr ^ sc->sc_msr;
 		sc->sc_msr = msr;
+
+		/*
+		 * Pulse-per-second (PSS) signals on edge of DCD?
+		 * Process these even if line discipline is ignoring DCD.
+		 */
+		if (delta & sc->sc_ppsmask) {
+			struct timeval tv;
+			if ((msr & sc->sc_ppsmask) == sc->sc_ppsassert) {
+				/* XXX nanotime() */
+				microtime(&tv);
+				TIMEVAL_TO_TIMESPEC(&tv, &sc->sc_ppsinfo.assert_timestamp);
+				if (sc->sc_ppsparam.mode & PPS_OFFSETASSERT) {
+					timespecadd(&sc->sc_ppsinfo.assert_timestamp,
+							&sc->sc_ppsparam.assert_offset,
+							&sc->sc_ppsinfo.assert_timestamp);
+				}
+
+#ifdef PPS_SYNC
+				if (pps_kc_hardpps_source == sc
+						&& (pps_kc_hardpps_mode & PPS_CAPTUREASSERT)) {
+					hardpps(&tv, tv.tv_usec);
+				}
+#endif
+				sc->sc_ppsinfo.assert_sequence++;
+				sc->sc_ppsinfo.current_mode = sc->sc_ppsparam.mode;
+
+			} else if ((msr & sc->sc_ppsmask) == sc->sc_ppsclear) {
+				/* XXX nanotime() */
+				microtime(&tv);
+				TIMEVAL_TO_TIMESPEC(&tv, &sc->sc_ppsinfo.clear_timestamp);
+				if (sc->sc_ppsparam.mode & PPS_OFFSETCLEAR) {
+					timespecadd(&sc->sc_ppsinfo.clear_timestamp,
+							&sc->sc_ppsparam.clear_offset,
+							&sc->sc_ppsinfo.clear_timestamp);
+				}
+
+#ifdef PPS_SYNC
+				if (pps_kc_hardpps_source == sc
+						&& (pps_kc_hardpps_mode & PPS_CAPTURECLEAR)) {
+					hardpps(&tv, tv.tv_usec);
+				}
+#endif
+				sc->sc_ppsinfo.clear_sequence++;
+				sc->sc_ppsinfo.current_mode = sc->sc_ppsparam.mode;
+			}
+		}
 
 		/*
 		 * Process normal status changes

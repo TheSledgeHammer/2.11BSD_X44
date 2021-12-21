@@ -40,7 +40,7 @@
 #include <sys/stdint.h>
 #include <sys/types.h>
 
-#include <devel/sys/timecounter.h>
+#include <devel/sys/timetc.h>
 #include <arch/i386/include/cpu.h>
 
 #include <arch/i386/include/cpu.h>
@@ -49,7 +49,7 @@
 #include <arch/i386/include/specialreg.h>
 
 #include <arch/i386/include/ansi.h>
-#include "../../../../arch/i386/include/machtypes.h"
+#include "arch/i386/include/types.h"
 
 u_int64_t	tsc_freq;
 int			tsc_is_invariant;
@@ -80,7 +80,7 @@ static struct timecounter tsc_timecounter = {
  * an improvement over the parsing of the CPU model name in
  * tsc_freq_intel(), when available.
  */
-static bool
+static bool_t
 tsc_freq_cpuid(u_int64_t *res)
 {
 	u_int regs[4];
