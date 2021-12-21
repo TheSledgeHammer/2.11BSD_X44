@@ -35,7 +35,7 @@
  */
 #include <sys/cdefs.h>
 
-#include "opt_pciverbose.h"
+//#include "opt_pciverbose.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
