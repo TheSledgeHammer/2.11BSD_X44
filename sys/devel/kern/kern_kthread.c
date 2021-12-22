@@ -294,7 +294,7 @@ kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
 int
 kthread_lock_init(lkp, kt)
     struct lock *lkp;
-    kthread_t kt;
+    kthread_t 	kt;
 {
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
@@ -309,8 +309,8 @@ kthread_lock_init(lkp, kt)
 int
 kthread_lockmgr(lkp, flags, kt)
 	struct lock *lkp;
-	u_int flags;
-    kthread_t kt;
+	u_int 		flags;
+    kthread_t 	kt;
 {
     pid_t pid;
     if (kt) {
@@ -347,9 +347,9 @@ kthread_rwlockmgr(rwl, flags, kt)
 	if (kt) {
 		pid = kt->kt_tid;
 	} else {
-		pid = LK_KERNPROC;
+		pid = RW_KERNPROC;
 	}
-	return rwlockmgr(rwl, flags, pid);
+	return rwlockmgr(rwl, flags, rwl->rwl_lnterlock, pid);
 }
 
 /*

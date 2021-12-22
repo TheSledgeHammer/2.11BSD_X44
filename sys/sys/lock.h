@@ -198,20 +198,18 @@ typedef struct lock       	*lock_t;
 //#define LOCKHOLDER_KTHREAD(h) 	((struct kthread *)LOCKHOLDER_DATA(h))
 //#define LOCKHOLDER_UTHREAD(h) 	((struct uthread *)LOCKHOLDER_DATA(h))
 
-struct proc;
-
-#ifdef _KERNEL
-extern struct lock_holder 		*kernel_lockholder;
-#endif
+struct pgrp;
 
 void			lockinit(lock_t, int, char *, int, int);
 int				lockmgr(__volatile lock_t, u_int, struct lock_object *, pid_t);
 int				lockstatus(lock_t);
+
 void			simple_lock_init(struct lock_object *, const char *);
 void 			simple_lock(struct lock_object *);
 void 			simple_unlock(struct lock_object *);
 int				simple_lock_try(struct lock_object *);
-void			lockholder_init(struct proc *);
+
+void			lockholder_init(struct lock_holder *);
 void			lockholder_set(struct lock_holder *, void *, pid_t, struct pgrp *);
 void			*lockholder_get(struct lock_holder *, void *, pid_t);
 

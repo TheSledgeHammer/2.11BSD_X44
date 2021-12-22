@@ -49,9 +49,6 @@
 
 void	lock_pause(struct lock *, int);
 void	lock_acquire(struct lock *, int, int, int);
-void	count(struct lock *, short);
-
-struct lock_holder *kernel_lockholder;
 
 #if NCPUS > 1
 #define PAUSE(lkp, wanted)						\
@@ -62,13 +59,6 @@ struct lock_holder *kernel_lockholder;
 
 #define ACQUIRE(lkp, error, extflags, wanted)	\
 		lock_acquire(lkp, error, extflags, wanted);
-
-#ifdef DEBUG
-#define COUNT(p, x) 							\
-		count(p, x);
-#else
-#define COUNT(p, x)
-#endif
 
 /*
  * Locking primitives implementation.
@@ -92,7 +82,7 @@ lockinit(lkp, prio, wmesg, timo, flags)
 	lkp->lk_wmesg = wmesg;
 
 	/* lock holder */
-	lockholder_init(lkp->lk_lockholder, LK_NOPROC, NULL);
+	lockholder_init(lkp->lk_lockholder);
 }
 
 /* Determine the status of a lock. */
@@ -132,8 +122,8 @@ lockmgr(lkp, flags, interlkp, pid)
 
 	if (!pid) {
 		pid = LK_KERNPROC;
-		LOCKHOLDER_PID(lkp->lk_lockholder) = LK_KERNPROC;
 	}
+	LOCKHOLDER_PID(lkp->lk_lockholder) = pid;
 	lkp_lock(&lkp);
 	if (flags & LK_INTERLOCK) {
 		lkp_unlock(&lkp);
@@ -184,7 +174,6 @@ lockmgr(lkp, flags, interlkp, pid)
 			if (error)
 				break;
 			lkp->lk_sharecount++;
-			COUNT(lkp, 1);
 			break;
 		}
 		/*
@@ -192,7 +181,6 @@ lockmgr(lkp, flags, interlkp, pid)
 		 * An alternative would be to fail with EDEADLK.
 		 */
 		lkp->lk_sharecount++;
-		COUNT(lkp, 1);
 		/* fall into downgrade */
 		break;
 
@@ -215,7 +203,6 @@ lockmgr(lkp, flags, interlkp, pid)
 		 */
 		if (lkp->lk_flags & LK_WANT_UPGRADE) {
 			lkp->lk_sharecount--;
-			COUNT(lkp, -1);
 			error = EBUSY;
 			break;
 		}
@@ -234,7 +221,6 @@ lockmgr(lkp, flags, interlkp, pid)
 		if (LOCKHOLDER_PID(lkp->lk_lockholder) == pid || lkp->lk_sharecount <= 0)
 			panic("lockmgr: upgrade exclusive lock");
 		lkp->lk_sharecount--;
-		COUNT(lkp, -1);
 		/*
 		 * If we are just polling, check to see if we will block.
 		 */
@@ -260,7 +246,6 @@ lockmgr(lkp, flags, interlkp, pid)
 			if (lkp->lk_exclusivecount != 0)
 				panic("lockmgr: non-zero exclusive count");
 			lkp->lk_exclusivecount = 1;
-			COUNT(lkp, 1);
 			break;
 		}
 		/*
@@ -281,7 +266,6 @@ lockmgr(lkp, flags, interlkp, pid)
 			if ((extflags & LK_CANRECURSE) == 0)
 				panic("lockmgr: locking against myself");
 			lkp->lk_exclusivecount++;
-			COUNT(lkp, 1);
 			break;
 		}
 		/*
@@ -314,7 +298,6 @@ lockmgr(lkp, flags, interlkp, pid)
 		if (lkp->lk_exclusivecount != 0)
 			panic("lockmgr: non-zero exclusive count");
 		lkp->lk_exclusivecount = 1;
-		COUNT(lkp, 1);
 		break;
 
 	case LK_RELEASE:
@@ -324,14 +307,12 @@ lockmgr(lkp, flags, interlkp, pid)
 				    pid, "exclusive lock holder",
 					LOCKHOLDER_PID(lkp->lk_lockholder));
 			lkp->lk_exclusivecount--;
-			COUNT(pid, -1);
 			if (lkp->lk_exclusivecount == 0) {
 				lkp->lk_flags &= ~LK_HAVE_EXCL;
 				LOCKHOLDER_PID(lkp->lk_lockholder) = LK_NOPROC;
 			}
 		} else if (lkp->lk_sharecount != 0) {
 			lkp->lk_sharecount--;
-			COUNT(lkp, -1);
 		}
 		if (lkp->lk_waitcount)
 			wakeup((void *)lkp);
@@ -373,7 +354,6 @@ lockmgr(lkp, flags, interlkp, pid)
 		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
 		LOCKHOLDER_PID(lkp->lk_lockholder) = pid;
 		lkp->lk_exclusivecount = 1;
-		COUNT(lkp, 1);
 		break;
 
 	default:
@@ -452,21 +432,7 @@ lock_acquire(lkp, error, extflags, wanted)
 	}
 }
 
-/* TODO: make applicable for threads  */
-void
-count(lkp, x)
-	struct lock	*lkp;
-	short x;
-{
-	struct lock_holder *holder;
-
-	holder = lkp->lk_lockholder;
-	if(lockholder_get(holder, LOCKHOLDER_PROC(holder), LOCKHOLDER_PROC(holder)->p_pid)) {
-		LOCKHOLDER_PROC(holder)->p_locks += x;
-		return;
-	}
-}
-
+/* internal lock interface */
 void
 lkp_lock(lkp)
 	__volatile lock_t lkp;
@@ -609,18 +575,19 @@ lock_object_try(lock)
 /*
  * Lock Holder:
  */
+
+/* init lockholder with empty parameters */
 void
-lockholder_init(holder, pid, pgrp)
+lockholder_init(holder)
 	struct lock_holder 	*holder;
-	pid_t 				pid;
-	struct pgrp 		*pgrp;
 {
-	holder = &kernel_lockholder;
 	memset(holder, 0, sizeof(struct lock_holder));
-	holder->lh_pid = pid;
-	holder->lh_pgrp = pgrp;
+	holder->lh_data = NULL;
+	holder->lh_pid = LK_NOPROC;
+	holder->lh_pgrp = NULL;
 }
 
+/* set lockholder parameters */
 void
 lockholder_set(holder, data, pid, pgrp)
 	struct lock_holder 	*holder;
@@ -628,22 +595,23 @@ lockholder_set(holder, data, pid, pgrp)
 	pid_t 				pid;
 	struct pgrp 		*pgrp;
 {
-	if(holder == NULL) {
-		holder = &kernel_lockholder;
-		memset(holder, 0, sizeof(struct lock_holder));
+	if(holder != NULL) {
+		holder->lh_data = data;
+		holder->lh_pid = pid;
+		holder->lh_pgrp = pgrp;
+	} else {
+		lockholder_init(holder);
 	}
-	holder->lh_data = data;
-	holder->lh_pid = pid;
-	holder->lh_pgrp = pgrp;
 }
 
+/* get lockholder data */
 void *
 lockholder_get(holder, data, pid)
 	struct lock_holder 	*holder;
 	void 				*data;
 	pid_t 				pid;
 {
-	if((holder->lh_data == data) && (holder->lh_pid == pid)) {
+	if((holder != NULL) && (holder->lh_data == data) && (holder->lh_pid == pid)) {
 		return (data);
 	}
 	return (NULL);

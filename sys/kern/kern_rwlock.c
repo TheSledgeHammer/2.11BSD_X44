@@ -38,8 +38,6 @@
 void		rwlock_pause(rwlock_t, int);
 void		rwlock_acquire(rwlock_t, int, int, int);
 
-struct lock_holder *kernel_lockholder;
-
 #if NCPUS > 1
 #define PAUSE(rwl, wanted)						\
 		rwlock_pause(rwl, wanted);
@@ -67,7 +65,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	rwl->rwl_wmesg = wmesg;
 
 	/* lock holder */
-	lockholder_init(rwl->rwl_lockholder, RW_NOPROC, NULL);
+	lockholder_init(rwl->rwl_lockholder);
 }
 
 int
@@ -98,8 +96,8 @@ rwlockmgr(rwl, flags, interlkp, pid)
 
 	if (!pid) {
 		pid = RW_KERNPROC;
-		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_KERNPROC;
 	}
+	LOCKHOLDER_PID(rwl->rwl_lockholder) = pid;
 	rwlock_lock(&rwl);
 	if (flags & RW_INTERLOCK) {
 		rwlock_unlock(&rwl);

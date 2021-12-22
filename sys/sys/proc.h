@@ -148,6 +148,8 @@ struct	proc {
 
 	//union vm_pseudo_segment *p_psegp;
 	//struct vm_text		*p_textp;		/* text */
+
+	//struct mtx				*p_mtx;
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
