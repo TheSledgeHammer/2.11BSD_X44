@@ -27,51 +27,66 @@
  */
 
 struct mtx {
-	struct lock_object	*mtx_lock;
-	struct lock_holder 	*mtx_holder;
-	char 				*mtx_name;
+	__volatile struct lock_object	*mtx_lock;
+	struct lock_holder 				*mtx_holder;
+	char 							*mtx_name;
 };
 
 void
-mtx_init(mtx, name)
-	struct mtx 	*mtx;
-	char 		*name;
+mtx_init(mtx, holder, name, data, pid, pgrp)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+	char 				*name;
+	void 				*data;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
 {
 	memset(mtx, 0, sizeof(struct mtx));
+	simple_lock_init(mtx->mtx_lock, name);
 	mtx->mtx_name = name;
-	lockholder_init(mtx->mtx_holder);
-	simple_lock_init(mtx->mtx_lock, mtx->mtx_name);
+	holder = lockholder_create(data, pid, pgrp);
 }
 
 void
-mtx_lock(mtx)
-	struct mtx *mtx;
+mtx_lock(mtx, holder)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
 {
+	mtx->mtx_holder = holder;
 	simple_lock(mtx->mtx_lock);
 }
 
 void
-mtx_unlock(mtx)
-	struct mtx *mtx;
+mtx_unlock(mtx, holder)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
 {
-	simple_unlock(mtx->mtx_lock);
+	if(mtx->mtx_holder == holder) {
+		//KASSERT(mtx->mtx_holder == holder);
+		simple_unlock(mtx->mtx_lock);
+	}
+}
+
+struct lock_holder 		proclock;
+
+void
+proc_init(p)
+	struct proc *p;
+{
+	mtx_init(p->p_mtx, &proclock, "proc lock", (struct proc *)p, p->p_pid, p->p_pgrp);
 }
 
 void
 proc_lock(p)
 	struct proc *p;
 {
-	mtx_lock(p->p_mtx);
-	lockholder_set(p->p_mtx->mtx_holder, (struct proc *)p, p->p_pid, p->p_pgrp);
+	mtx_lock(p->p_mtx, &proclock);
 }
 
 void
 proc_unlock(p)
 	struct proc *p;
 {
-	if (lockholder_get(p->p_mtx->mtx_holder, (struct proc *)p, p->p_pid)) {
-		mtx_unlock(p->p_mtx);
-	} else {
-		//wait
-	}
+	KASSERT(p == LOCKHOLDER_PROC(&proclock));
+	mtx_unlock(p->p_mtx, &proclock);
 }

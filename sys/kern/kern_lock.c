@@ -575,7 +575,6 @@ lock_object_try(lock)
 /*
  * Lock Holder:
  */
-
 /* init lockholder with empty parameters */
 void
 lockholder_init(holder)
@@ -585,6 +584,23 @@ lockholder_init(holder)
 	holder->lh_data = NULL;
 	holder->lh_pid = LK_NOPROC;
 	holder->lh_pgrp = NULL;
+}
+
+/* create a new lockholder */
+struct lock_holder 	*
+lockholder_create(data, pid, pgrp)
+	void 				*data;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
+{
+	struct lock_holder 	*holder;
+
+	memset(holder, 0, sizeof(struct lock_holder));
+	holder->lh_data = data;
+	holder->lh_pid = pid;
+	holder->lh_pgrp = pgrp;
+
+	return (holder);
 }
 
 /* set lockholder parameters */
@@ -604,15 +620,13 @@ lockholder_set(holder, data, pid, pgrp)
 	}
 }
 
-/* get lockholder data */
-void *
-lockholder_get(holder, data, pid)
+/* get lockholder */
+struct lock_holder *
+lockholder_get(holder)
 	struct lock_holder 	*holder;
-	void 				*data;
-	pid_t 				pid;
 {
-	if((holder != NULL) && (holder->lh_data == data) && (holder->lh_pid == pid)) {
-		return (data);
+	if(holder != NULL) {
+		return (holder);
 	}
 	return (NULL);
 }
