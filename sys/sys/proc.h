@@ -31,6 +31,7 @@ struct	proc {
     struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
 	struct	proc 		*p_back;
 
+	struct mtx			*p_mtx;			/* proc structure mutex */
     int	    			p_flag;			/* P_* flags. */
 	char				p_stat;			/* S* process status. */
 	char				p_lock;			/* Process lock count. */
@@ -146,8 +147,6 @@ struct	proc {
 
 	//union vm_pseudo_segment *p_psegp;
 	//struct vm_text		*p_textp;		/* text */
-
-	struct mtx			*p_mtx;			/* proc structure mutex */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
@@ -245,6 +244,10 @@ struct emul {
 #define	S_STACK		1
 
 #ifdef KERNEL
+struct lock_holder 			proc_loholder;
+#define PROC_LOCK(p)		(mtx_lock(&(p)->p_mtx, &proc_loholder))
+#define PROC_UNLOCK(p)		(mtx_unlock(&(p)->p_mtx, &proc_loholder))
+
 #define	PID_MAX		30000
 #define	NO_PID		30001
 
@@ -300,6 +303,7 @@ void		wakeup (void *);
 void		reschedule (struct proc *);
 
 void		procinit (void);
+void		proc_init (struct proc *);
 int 		chgproccnt (uid_t, int);
 int			acct_process (struct proc *);
 int			leavepgrp (struct proc *);

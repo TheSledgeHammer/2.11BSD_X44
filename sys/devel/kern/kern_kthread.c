@@ -34,9 +34,9 @@
 #include <sys/rwlock.h>
 #include <sys/wait.h>
 #include <sys/queue.h>
+#include <sys/mutex.h>
 
 #include <devel/sys/kthread.h>
-#include <devel/sys/mutex.h>
 #include <devel/sys/threadpool.h>
 
 #include <vm/include/vm_param.h>

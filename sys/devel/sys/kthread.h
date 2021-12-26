@@ -30,7 +30,7 @@
 #define SYS_KTHREADS_H_
 
 #include <sys/proc.h>
-#include <devel/sys/mutex.h>
+#include "../../sys/mutex.h"
 
 /* kernel threads */
 typedef struct kthread 	*kthread_t;

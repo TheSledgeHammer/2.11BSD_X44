@@ -53,18 +53,17 @@ struct consdev {
 
 /* values for cn_pri - reflect our policy for console selection */
 #define	CN_DEAD		0	/* device doesn't exist */
-#define CN_NORMAL	1	/* device exists but is nothing special */
-#define CN_INTERNAL	2	/* "internal" bit-mapped display */
-#define CN_REMOTE	3	/* serial interface with remote bit set */
+#define CN_NULL		1	/* noop console */
+#define CN_NORMAL	2	/* device exists but is nothing special */
+#define CN_INTERNAL	3	/* "internal" bit-mapped display */
+#define CN_REMOTE	4	/* serial interface with remote bit set */
 
 /* XXX */
 #define	CONSMAJOR	0
 
 #ifdef KERNEL
-extern	struct consdev 	constab[];
-extern	struct consdev 	*cn_tab;
-extern	struct tty 		*cn_tty;
-extern	struct vnode 	*cn_devvp;
+extern	struct consdev constab[];
+extern	struct consdev *cn_tab;
 
 void	cninit(void);
 int		cnopen(dev_t, int, int, struct proc *);
@@ -73,6 +72,7 @@ int		cnread(dev_t, struct uio *, int);
 int		cnwrite(dev_t, struct uio *, int);
 int		cnioctl(dev_t, u_long, caddr_t, int, struct proc *);
 int		cnpoll(dev_t, int, struct proc *);
+int		cnkqfilter(dev_t, struct knote *);
 void	cnbell(u_int, u_int, u_int);
 void	cnflush(void);
 int		cngetc(void);

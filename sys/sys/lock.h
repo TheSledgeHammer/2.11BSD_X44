@@ -210,10 +210,7 @@ void 				simple_unlock(struct lock_object *);
 int					simple_lock_try(struct lock_object *);
 
 void				lockholder_init(struct lock_holder *);
-struct lock_holder 	*lockholder_create( void *, pid_t, struct pgrp *);
+struct lock_holder 	*lockholder_create(void *, pid_t, struct pgrp *);
 void				lockholder_set(struct lock_holder *, void *, pid_t, struct pgrp *);
 struct lock_holder	*lockholder_get(struct lock_holder *);
-
-
-
 #endif /* !_SYS_LOCK_H_ */

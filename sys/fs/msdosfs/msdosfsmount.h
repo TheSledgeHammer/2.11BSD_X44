@@ -90,7 +90,7 @@ struct msdosfs_args {
     "b\00shortname\0b\01longname\0b\02nowin95\0b\03gemdosfs\0b\04mntversioned\0" \
     "b\037ronly\0b\036waitonfat\0b\035fatmirror\0"
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 /*
  * Layout of the mount control block for a msdos filesystem.
  */

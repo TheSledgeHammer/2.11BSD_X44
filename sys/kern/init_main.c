@@ -135,6 +135,7 @@ main(framep)
 	 */
 	p = &proc0;
 	curproc = p;
+
 	/*
 	 * Attempt to find console and initialize
 	 * in case of early panic or other messages.
@@ -159,6 +160,7 @@ main(framep)
 	 * Initialize process and pgrp structures.
 	 */
 	procinit();
+	proc_init(p);
 
 	/*
 	 * Initialize device switch tables & kernel environment

@@ -137,8 +137,8 @@ struct com_softc {
 	u_char				sc_ppsmask;			/* pps signal mask */
 	u_char				sc_ppsassert;		/* pps leading edge */
 	u_char				sc_ppsclear;		/* pps trailing edge */
-	pps_info_t 			sc_ppsinfo;
-	pps_params_t 		sc_ppsparam;
+	pps_info_t 			ppsinfo;
+	pps_params_t 		ppsparam;
 
 	struct lock_object	sc_lock;
 };

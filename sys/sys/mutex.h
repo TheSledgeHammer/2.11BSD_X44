@@ -72,10 +72,4 @@ mtx_unlock(mtx, holder)
 	}
 }
 #endif	/* _KERNEL */
-
-struct lock_holder 			proc_loholder;
-#define PROC_LOCK(p)		(mtx_lock(&(p)->p_mtx, &proc_loholder))
-#define PROC_UNLOCK(p)		(mtx_unlock(&(p)->p_mtx, &proc_loholder))
-
-//#endif	/* _KERNEL */
 #endif /* _SYS_MUTEX_H_ */
