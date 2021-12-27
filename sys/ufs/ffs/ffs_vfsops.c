@@ -99,7 +99,7 @@ ffs_mountroot()
 		printf("ffs_mountroot: can't setup bdevvp's");
 		return (error);
 	}
-	if (error == vfs_rootmountalloc("ufs", "root_device", &mp))
+	if (error == vfs_rootmountalloc(MOUNT_FFS, "root_device", &mp))
 		return (error);
 	if (error == ffs_mountfs(rootvp, mp, p)) {
 		mp->mnt_vfc->vfc_refcount--;
@@ -228,7 +228,7 @@ ffs_mount(mp, path, data, ndp, p)
 		error = ffs_mountfs(devvp, mp, p);
 	else {
 		if (devvp != ump->um_devvp)
-			error = EINVAL;	/* needs translation */
+			error = EINVAL; /* needs translation */
 		else
 			vrele(devvp);
 	}

@@ -61,7 +61,7 @@ typedef int		db_strategy_t;	/* search strategy */
 #define DB_STGY_XTRN	1			/* only external symbols */
 #define DB_STGY_PROC	2			/* only procedures */
 
-extern boolean_t	db_qualify_ambiguous_names;
+extern bool_t	db_qualify_ambiguous_names;
 					/* if TRUE, check across symbol tables
 					 * for multiple occurrences of a name.
 					 * Might slow down quite a bit */
@@ -75,7 +75,7 @@ int db_add_symbol_table (char *, char *, char *, char *);
 void db_del_symbol_table (char *);
 					/* remove a symbol table from list */
 
-boolean_t db_eqname (char *, char *, int);
+bool_t db_eqname (char *, char *, int);
 					/* strcmp, modulo leading char */
 
 int db_value_of_name (char *, db_expr_t *);
@@ -83,7 +83,7 @@ int db_value_of_name (char *, db_expr_t *);
 
 db_sym_t db_lookup (char *);
 
-boolean_t db_symbol_is_ambiguous (db_sym_t);
+bool_t db_symbol_is_ambiguous (db_sym_t);
 
 db_sym_t db_search_symbol (db_addr_t, db_strategy_t, db_expr_t *);
 					/* find symbol given value */
@@ -102,6 +102,6 @@ void db_symbol_values (db_sym_t, char **, db_expr_t *);
 void db_printsym (db_expr_t, db_strategy_t);
 					/* print closest symbol to a value */
 
-boolean_t db_line_at_pc (db_sym_t, char **, int *, db_expr_t);
+bool_t db_line_at_pc (db_sym_t, char **, int *, db_expr_t);
 
 int db_sym_numargs (db_sym_t, int *, char **);

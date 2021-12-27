@@ -231,6 +231,7 @@ struct {																\
 #define	LIST_END(head)			NULL
 #define	LIST_EMPTY(head)		((head)->lh_first == LIST_END(head))
 #define	LIST_NEXT(elm, field)	((elm)->field.le_next)
+#define	LIST_PREV(elm, field)	((elm)->field.le_prev)
 
 /*
  * Simple queue definitions.

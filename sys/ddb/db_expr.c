@@ -42,7 +42,7 @@
 #include <ddb/db_extern.h>
 #include <ddb/db_variables.h>
 
-boolean_t
+bool_t
 db_term(valuep)
 	db_expr_t *valuep;
 {
@@ -97,7 +97,7 @@ db_term(valuep)
 	return (FALSE);
 }
 
-boolean_t
+bool_t
 db_unary(valuep)
 	db_expr_t *valuep;
 {
@@ -125,7 +125,7 @@ db_unary(valuep)
 	return (db_term(valuep));
 }
 
-boolean_t
+bool_t
 db_mult_expr(valuep)
 	db_expr_t *valuep;
 {
@@ -162,7 +162,7 @@ db_mult_expr(valuep)
 	return (TRUE);
 }
 
-boolean_t
+bool_t
 db_add_expr(valuep)
 	db_expr_t *valuep;
 {
@@ -189,7 +189,7 @@ db_add_expr(valuep)
 	return (TRUE);
 }
 
-boolean_t
+bool_t
 db_shift_expr(valuep)
 	db_expr_t *valuep;
 {

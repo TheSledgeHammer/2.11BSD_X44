@@ -134,7 +134,7 @@ db_qualify(sym, symtabname)
 }
 
 
-boolean_t
+bool_t
 db_eqname(src, dst, c)
 	char *src;
 	char *dst;
@@ -147,7 +147,7 @@ db_eqname(src, dst, c)
 	return (FALSE);
 }
 
-boolean_t
+bool_t
 db_value_of_name(name, valuep)
 	char		*name;
 	db_expr_t	*valuep;
@@ -219,16 +219,16 @@ db_lookup(symstr)
  * Does this symbol name appear in more than one symbol table?
  * Used by db_symbol_values to decide whether to qualify a symbol.
  */
-boolean_t db_qualify_ambiguous_names = FALSE;
+bool_t db_qualify_ambiguous_names = FALSE;
 
-boolean_t
+bool_t
 db_symbol_is_ambiguous(sym)
 	db_sym_t	sym;
 {
 	char		*sym_name;
 	register int	i;
 	register
-	boolean_t	found_once = FALSE;
+	bool_t	found_once = FALSE;
 
 	if (!db_qualify_ambiguous_names)
 		return FALSE;
@@ -356,7 +356,7 @@ db_printsym(off, strategy)
 }
 
 
-boolean_t
+bool_t
 db_line_at_pc( sym, filename, linenum, pc)
 	db_sym_t	sym;
 	char		**filename;

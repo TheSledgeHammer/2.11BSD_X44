@@ -133,7 +133,7 @@ advvm_get_storage_pool(pool)
 }
 
 /* internal use only */
-boolean_t
+bool_t
 advvm_extent_check(pool)
 	advvm_storage_t *pool;
 {

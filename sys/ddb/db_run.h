@@ -39,8 +39,8 @@ int		db_inst_count;
 int		db_load_count;
 int		db_store_count;
 
-boolean_t db_stop_at_pc (db_regs_t *, boolean_t *);
-void db_restart_at_pc (db_regs_t *, boolean_t);
+bool_t db_stop_at_pc (db_regs_t *, bool_t *);
+void db_restart_at_pc (db_regs_t *, bool_t);
 void db_single_step (db_regs_t *);
 #ifndef db_set_single_step
 void db_set_single_step (db_regs_t *);

@@ -101,7 +101,7 @@ mfs_mountroot()
 		printf("mfs_mountroot: can't setup bdevvp's");
 		return (error);
 	}
-	if (error == vfs_rootmountalloc("mfs", "mfs_root", &mp))
+	if (error == vfs_rootmountalloc(MOUNT_MFS, "mfs_root", &mp))
 		return (error);
 	mfsp = malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
 	rootvp->v_data = mfsp;

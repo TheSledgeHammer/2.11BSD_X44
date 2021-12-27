@@ -89,7 +89,7 @@ void
 softpic_check(spic, irq, isapic, pictemplate)
     struct softpic  *spic;
     int             irq, pictemplate;
-    boolean_t 		isapic;
+    bool_t 		isapic;
 {
     int apicid = APIC_IRQ_APIC(irq);
     int pin = APIC_IRQ_PIN(irq);
@@ -164,7 +164,7 @@ void
 softpic_pic_hwmask(spic, pin, isapic, pictemplate)
 	struct softpic *spic;
 	int pin, pictemplate;
-	boolean_t isapic;
+	bool_t isapic;
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
@@ -179,7 +179,7 @@ void
 softpic_pic_hwunmask(spic, pin, isapic, pictemplate)
 	struct softpic *spic;
 	int pin, pictemplate;
-	boolean_t 	isapic;
+	bool_t 	isapic;
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
@@ -195,7 +195,7 @@ softpic_pic_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	struct softpic *spic;
 	struct cpu_info *ci;
 	int pin, idtvec, type, pictemplate;
-	boolean_t  isapic;
+	bool_t  isapic;
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
@@ -211,7 +211,7 @@ softpic_pic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	struct softpic *spic;
 	struct cpu_info *ci;
 	int pin, idtvec, type, pictemplate;
-	boolean_t isapic;
+	bool_t isapic;
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
@@ -225,7 +225,7 @@ softpic_pic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 struct softpic *
 softpic_intr_handler(spic, irq, type, isapic, pictemplate)
 	struct softpic *spic;
-	boolean_t isapic;
+	bool_t isapic;
 	int irq, type, pictemplate;
 {
 	struct intrhand *ih;

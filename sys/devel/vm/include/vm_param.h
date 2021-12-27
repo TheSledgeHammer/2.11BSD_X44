@@ -72,14 +72,6 @@
 #include <machine/vmparam.h>
 
 /*
- * This belongs in types.h, but breaks too many existing programs.
- */
-typedef int	boolean_t;
-typedef boolean_t 	bool;
-#define	TRUE		1
-#define	FALSE		0
-
-/*
  *	The machine independent segments are referred to as SEGMENTS.
  *	Note: All Segment information presented here is derived from 4.4BSD-Lite2 HP300.
  */

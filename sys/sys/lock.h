@@ -42,9 +42,9 @@
 
 #include <machine/param.h>
 
-/* A Not so Simple_Lock */
 /*
- * lock object: array_based queuing lock (ABQL)
+ * common lock object:
+ * array_based queuing lock (ABQL)
  */
 struct lock_object_cpu {
 	volatile u_int				loc_my_ticket;
@@ -65,11 +65,11 @@ struct lock_type {
 	const char					*lt_name;
 };
 
-/* lock holder */
+/* lock holder of current lock */
 struct lock_holder {
-	pid_t						lh_pid;
-	struct pgrp 				*lh_pgrp;
-	void						*lh_data;			/* data of the current lockholder */
+	pid_t						lh_pid;				/* pid of current lock holder */
+	struct pgrp 				*lh_pgrp;			/* pgrp of current lock holder */
+	void						*lh_data;			/* data of the current lock holder */
 };
 
 /*
@@ -213,5 +213,7 @@ void				lockholder_init(struct lock_holder *);
 struct lock_holder 	*lockholder_create( void *, pid_t, struct pgrp *);
 void				lockholder_set(struct lock_holder *, void *, pid_t, struct pgrp *);
 struct lock_holder	*lockholder_get(struct lock_holder *);
+
+
 
 #endif /* !_SYS_LOCK_H_ */

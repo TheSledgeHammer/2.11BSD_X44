@@ -97,20 +97,20 @@ void        pmap_release(pmap_t);
 void        pmap_reference(pmap_t);
 void        pmap_remove(pmap_t, vm_offset_t, vm_offset_t);
 void        pmap_protect(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t);
-void        pmap_enter(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t);
+void        pmap_enter(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
 void        pmap_page_protect(vm_offset_t, vm_prot_t);
-void        pmap_change_wiring(pmap_t, vm_offset_t, boolean_t);
+void        pmap_change_wiring(pmap_t, vm_offset_t, bool_t);
 vm_offset_t pmap_extract(pmap_t, vm_offset_t);
 void        pmap_copy(pmap_t, pmap_t, vm_offset_t, vm_size_t, vm_offset_t);
 void        pmap_update(void);
 void        pmap_collect(pmap_t);
 void        pmap_zero_page(vm_offset_t);
 void        pmap_copy_page(vm_offset_t, vm_offset_t);
-void        pmap_pageable(pmap_t, vm_offset_t, vm_offset_t, boolean_t);
+void        pmap_pageable(pmap_t, vm_offset_t, vm_offset_t, bool_t);
 void        pmap_clear_modify(vm_offset_t);
 void        pmap_clear_reference(vm_offset_t);
-boolean_t   pmap_is_referenced(vm_offset_t);
-boolean_t   pmap_is_modified(vm_offset_t);
+bool_t   	pmap_is_referenced(vm_offset_t);
+bool_t   	pmap_is_modified(vm_offset_t);
 vm_offset_t pmap_phys_address(int);
 
 __END_DECLS

@@ -174,7 +174,7 @@ ovl_object_setpager(object, pager, paging_offset, read_only)
 	ovl_object_t 	object;
 	vm_pager_t		pager;
 	vm_offset_t		paging_offset;
-	boolean_t		read_only;
+	bool_t			read_only;
 {
 	ovl_object_lock(object);
 	object->ovo_pager = pager;

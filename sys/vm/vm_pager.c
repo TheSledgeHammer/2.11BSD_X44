@@ -119,7 +119,7 @@ struct pagerops *dfltpagerops = NULL;	/* default pager */
 #define PAGER_MAP_SIZE	(4 * 1024 * 1024)
 
 vm_map_t pager_map;
-boolean_t pager_map_wanted;
+bool_t pager_map_wanted;
 vm_offset_t pager_sva, pager_eva;
 
 void
@@ -178,7 +178,7 @@ vm_pager_get_pages(pager, mlist, npages, sync)
 	vm_pager_t	pager;
 	vm_page_t	*mlist;
 	int			npages;
-	boolean_t	sync;
+	bool_t	sync;
 {
 	int rv;
 
@@ -202,7 +202,7 @@ vm_pager_put_pages(pager, mlist, npages, sync)
 	vm_pager_t	pager;
 	vm_page_t	*mlist;
 	int			npages;
-	boolean_t	sync;
+	bool_t	sync;
 {
 	if (pager == NULL)
 		panic("vm_pager_put_pages: null pager");
@@ -214,7 +214,7 @@ int
 vm_pager_get(pager, m, sync)
 	vm_pager_t	pager;
 	vm_page_t	m;
-	boolean_t	sync;
+	bool_t	sync;
 {
 	return vm_pager_get_pages(pager, &m, 1, sync);
 }
@@ -224,12 +224,12 @@ int
 vm_pager_put(pager, m, sync)
 	vm_pager_t	pager;
 	vm_page_t	m;
-	boolean_t	sync;
+	bool_t	sync;
 {
 	return vm_pager_put_pages(pager, &m, 1, sync);
 }
 
-boolean_t
+bool_t
 vm_pager_has_page(pager, offset)
 	vm_pager_t	pager;
 	vm_offset_t	offset;
@@ -279,7 +279,7 @@ vm_offset_t
 vm_pager_map_pages(mlist, npages, canwait)
 	vm_page_t	*mlist;
 	int			npages;
-	boolean_t	canwait;
+	bool_t	canwait;
 {
 	vm_offset_t kva, va;
 	vm_size_t size;
@@ -384,7 +384,7 @@ vm_pager_lookup(pglist, handle)
 int
 pager_cache(object, should_cache)
 	vm_object_t	object;
-	boolean_t	should_cache;
+	bool_t	should_cache;
 {
 	if (object == NULL)
 		return (KERN_INVALID_ARGUMENT);

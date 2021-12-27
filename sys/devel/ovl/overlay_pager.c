@@ -104,7 +104,7 @@ struct pagerlst 	overlay_pager_list;
 
 static void			overlay_pager_init(void);
 static vm_pager_t	overlay_pager_alloc(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
-static boolean_t	overlay_pager_dealloc(vm_pager_t);
+static bool_t		overlay_pager_dealloc(vm_pager_t);
 
 struct pagerops overlaypagerops = {
 		overlay_pager_init,
@@ -204,7 +204,7 @@ overlay_pager_getpage(pager, mlist, npages, sync)
 	vm_pager_t	pager;
 	vm_page_t	*mlist;
 	int			npages;
-	boolean_t	sync;
+	bool_t	sync;
 {
 	ovl_pager_t ovl = (ovl_pager_t) pager->pg_data;
 	vm_page_t 	vm_page = *mlist;
@@ -217,7 +217,7 @@ overlay_pager_putpage(pager, mlist, npages, sync)
 	vm_pager_t	pager;
 	vm_page_t	*mlist;
 	int			npages;
-	boolean_t	sync;
+	bool_t	sync;
 {
 	ovl_pager_t ovl = (ovl_pager_t) pager->pg_data;
 	vm_page_t 	vm_page = *mlist;
@@ -225,7 +225,7 @@ overlay_pager_putpage(pager, mlist, npages, sync)
 	return (overlay_pager_io(ovl, vm_page, npages, OVL_PGR_PUT));
 }
 
-static boolean_t
+static bool_t
 overlay_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;

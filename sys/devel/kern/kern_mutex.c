@@ -26,67 +26,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct mtx {
-	__volatile struct lock_object	*mtx_lock;
-	struct lock_holder 				*mtx_holder;
-	char 							*mtx_name;
-};
+#include <devel/sys/mutex.h>
 
-void
-mtx_init(mtx, holder, name, data, pid, pgrp)
-	struct mtx 			*mtx;
-	struct lock_holder 	*holder;
-	char 				*name;
-	void 				*data;
-	pid_t 				pid;
-	struct pgrp 		*pgrp;
-{
-	memset(mtx, 0, sizeof(struct mtx));
-	simple_lock_init(mtx->mtx_lock, name);
-	mtx->mtx_name = name;
-	holder = lockholder_create(data, pid, pgrp);
-}
-
-void
-mtx_lock(mtx, holder)
-	struct mtx 			*mtx;
-	struct lock_holder 	*holder;
-{
-	mtx->mtx_holder = holder;
-	simple_lock(mtx->mtx_lock);
-}
-
-void
-mtx_unlock(mtx, holder)
-	struct mtx 			*mtx;
-	struct lock_holder 	*holder;
-{
-	if(mtx->mtx_holder == holder) {
-		//KASSERT(mtx->mtx_holder == holder);
-		simple_unlock(mtx->mtx_lock);
-	}
-}
-
-struct lock_holder 		proclock;
-
+/* init the mutex lock */
 void
 proc_init(p)
 	struct proc *p;
 {
-	mtx_init(p->p_mtx, &proclock, "proc lock", (struct proc *)p, p->p_pid, p->p_pgrp);
-}
-
-void
-proc_lock(p)
-	struct proc *p;
-{
-	mtx_lock(p->p_mtx, &proclock);
-}
-
-void
-proc_unlock(p)
-	struct proc *p;
-{
-	KASSERT(p == LOCKHOLDER_PROC(&proclock));
-	mtx_unlock(p->p_mtx, &proclock);
+	mtx_init(p->p_mtx, &proc_loholder, "proc mutex", (struct proc *)p, p->p_pid, p->p_pgrp);
 }

@@ -291,7 +291,7 @@ swapoff(p, uap, retval)
 int
 swalloc(index, lessok)
 	int index;
-	boolean_t 	lessok;
+	bool_t 	lessok;
 {
 	register struct swdevt 	*sp;
 	int npages, error;

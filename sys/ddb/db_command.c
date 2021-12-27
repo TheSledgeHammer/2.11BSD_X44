@@ -52,7 +52,7 @@
 /*
  * Exported global variables
  */
-boolean_t	db_cmd_loop_done;
+bool_t	db_cmd_loop_done;
 label_t		*db_recover;
 
 /*
@@ -60,7 +60,7 @@ label_t		*db_recover;
  * and '+' points to next line.
  * Otherwise: 'dot' points to next item, '..' points to last.
  */
-boolean_t	db_ed_style = TRUE;
+bool_t	db_ed_style = TRUE;
 
 /*
  * Utility routine - discard tokens through end-of-line.
@@ -154,7 +154,7 @@ db_command(last_cmdp, cmd_table)
 	int t;
 	char modif[TOK_STRING_SIZE];
 	db_expr_t addr, count;
-	boolean_t have_addr = FALSE;
+	bool_t have_addr = FALSE;
 	int result;
 
 	t = db_read_token();
@@ -282,7 +282,7 @@ db_map_print_cmd(addr, have_addr, count, modif)
 	db_expr_t	count;
 	char *		modif;
 {
-	boolean_t full = FALSE;
+	bool_t full = FALSE;
 
 	if (modif[0] == 'f')
 		full = TRUE;
@@ -298,7 +298,7 @@ db_object_print_cmd(addr, have_addr, count, modif)
 	db_expr_t	count;
 	char *		modif;
 {
-	boolean_t full = FALSE;
+	bool_t full = FALSE;
 
 	if (modif[0] == 'f')
 		full = TRUE;

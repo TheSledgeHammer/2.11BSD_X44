@@ -2414,7 +2414,7 @@ cominit(iot, iobase, rate, frequency, type, cflag, iohp)
 	bus_space_write_1(iot, ioh, com_lcr, LCR_EERS);
 	bus_space_write_1(iot, ioh, com_efr, 0);
 	bus_space_write_1(iot, ioh, com_lcr, LCR_DLAB);
-	rate = comspeed(rate, frequency);
+	rate = comspeed((long)rate, (long)frequency);
 	bus_space_write_1(iot, ioh, com_dlbl, rate);
 	bus_space_write_1(iot, ioh, com_dlbh, rate >> 8);
 	bus_space_write_1(iot, ioh, com_lcr, cflag2lcr(cflag));
@@ -2471,7 +2471,7 @@ comcngetc(dev)
 	dev_t dev;
 {
 
-	return (com_common_getc(dev, comconstag, comconsioh));
+	return (com_common_getc(dev, comconstag, &comconsioh));
 }
 
 /*
@@ -2482,7 +2482,7 @@ comcnputc(dev, c)
 	dev_t dev;
 	int c;
 {
-	com_common_putc(dev, comconstag, comconsioh, c);
+	com_common_putc(dev, comconstag, &comconsioh, c);
 }
 
 void

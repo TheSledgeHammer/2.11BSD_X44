@@ -87,8 +87,8 @@ db_regs_t				ddb_regs;	/* register state */
 	 ((user) && (addr) < VM_MAX_ADDRESS))
 
 #if 0
-boolean_t 	db_check_access (vm_offset_t, int, task_t);
-boolean_t	db_phys_eq (task_t, vm_offset_t, task_t, vm_offset_t);
+bool_t 	db_check_access (vm_offset_t, int, task_t);
+bool_t	db_phys_eq (task_t, vm_offset_t, task_t, vm_offset_t);
 #endif
 
 /* macros for printing OS server dependent task name */

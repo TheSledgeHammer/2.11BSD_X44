@@ -63,8 +63,8 @@ void db_list_breakpoints (void);
 void db_delete_cmd (db_expr_t, int, db_expr_t, char *);
 void db_breakpoint_cmd (db_expr_t, int, db_expr_t, char *);
 void db_listbreak_cmd (db_expr_t, int, db_expr_t, char *);
-boolean_t db_map_equal (vm_map_t, vm_map_t);
-boolean_t db_map_current (vm_map_t);
+bool_t db_map_equal (vm_map_t, vm_map_t);
+bool_t db_map_current (vm_map_t);
 vm_map_t db_map_addr (vm_offset_t);
 
 #endif	/* _DDB_DB_BREAK_H_ */

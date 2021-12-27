@@ -52,6 +52,6 @@ void db_watchpoint_cmd (db_expr_t, int, db_expr_t, char *);
 void db_listwatch_cmd (db_expr_t, int, db_expr_t, char *);
 void db_set_watchpoints (void);
 void db_clear_watchpoints (void);
-boolean_t db_find_watchpoint (vm_map_t, db_addr_t, db_regs_t *);
+bool_t db_find_watchpoint (vm_map_t, db_addr_t, db_regs_t *);
 
 #endif	_DDB_DB_WATCH_

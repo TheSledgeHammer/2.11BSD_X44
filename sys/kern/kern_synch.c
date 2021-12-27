@@ -483,11 +483,6 @@ swtch()
 	struct proc *pp, *pq;
 	int s;
 
-#ifdef DEBUG
-	if (p->p_simple_locks)
-		panic("sleep: holding simple lock");
-#endif
-
 	cnt.v_swtch++;
 
 	/* If not the idle process, resume the idle process. */

@@ -73,7 +73,9 @@ A General todo list. Don't hesitate to add to this list. :)
 		- update existing drivers
 
 ## fs:
-
+- msdosfs:
+	- needs revising: bugs abound 
+	- vops/vfsops out of sync with kernel vfs
 
 ## lib:
 - libsa:

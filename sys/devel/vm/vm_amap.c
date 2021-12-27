@@ -547,7 +547,7 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 	vm_map_t map;
 	vm_map_entry_t entry;
 	int waitf;
-	boolean_t canchunk;
+	bool_t canchunk;
 	vaddr_t startva, endva;
 {
 	vm_amap_t amap, srcamap;

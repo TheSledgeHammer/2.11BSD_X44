@@ -227,7 +227,7 @@ kmem_suballoc(parent, min, max, size, pageable)
 	register vm_map_t	parent;
 	vm_offset_t			*min, *max;
 	register vm_size_t	size;
-	boolean_t			pageable;
+	bool_t			pageable;
 {
 	register int	ret;
 	vm_map_t		result;
@@ -270,7 +270,7 @@ vm_offset_t
 kmem_malloc(map, size, canwait)
 	register vm_map_t	map;
 	register vm_size_t	size;
-	boolean_t			canwait;
+	bool_t				canwait;
 {
 	register vm_offset_t	offset, i;
 	vm_map_entry_t			entry;

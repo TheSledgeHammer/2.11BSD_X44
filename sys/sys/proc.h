@@ -129,8 +129,6 @@ struct	proc {
     struct k_itimerval 	p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short 			p_acflag;	    /* Accounting flags. */
 
-	short				p_locks;		/* DEBUG: lockmgr count of held locks */
-	short				p_simple_locks;	/* DEBUG: count of held simple locks */
 	long				p_spare[2];		/* pad to 256, avoid shifting eproc. */
 
 	caddr_t  			p_psstrp;		/* :: address of process's ps_strings */
@@ -149,7 +147,7 @@ struct	proc {
 	//union vm_pseudo_segment *p_psegp;
 	//struct vm_text		*p_textp;		/* text */
 
-	//struct mtx				*p_mtx;
+	struct mtx			*p_mtx;			/* proc structure mutex */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
@@ -314,5 +312,4 @@ int			inferior (struct proc *);
 		ltsleep(chan, pri, wmesg, timo, NULL)
 
 #endif 	/* KERNEL */
-
 #endif	/* !_SYS_PROC_H_ */

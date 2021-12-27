@@ -60,7 +60,7 @@ struct xhci_ring {
 	u_int 						xr_ntrb;		/* number of elements for above */
 	u_int 						xr_ep;			/* enqueue pointer */
 	u_int 						xr_cs;			/* cycle state */
-	boolean_t					is_halted;
+	bool_t					is_halted;
 };
 
 struct xhci_slot {
@@ -122,9 +122,9 @@ struct xhci_softc {
 	//kcondvar_t 					sc_command_cv;
 	bus_addr_t 					sc_command_addr;
 	struct xhci_soft_trb 		sc_result_trb;
-	boolean_t 					sc_resultpending;
+	bool_t 					sc_resultpending;
 
-	boolean_t 					sc_dying;
+	bool_t 					sc_dying;
 
 	void 						(*sc_vendor_init)(struct xhci_softc *);
 	int 						(*sc_vendor_port_status)(struct xhci_softc *, uint32_t, int);
@@ -142,9 +142,9 @@ int			xhci_intr(void *);
 int			xhci_detach(struct xhci_softc *, int);
 int			xhci_activate(struct device *, enum devact);
 void		xhci_childdet(struct device *, struct device *);
-boolean_t	xhci_suspend(struct device *, const pmf_qual_t *);
-boolean_t	xhci_resume(struct device *, const pmf_qual_t *);
-boolean_t	xhci_shutdown(struct device *, int);
+bool_t		xhci_suspend(struct device *, const pmf_qual_t *);
+bool_t		xhci_resume(struct device *, const pmf_qual_t *);
+bool_t		xhci_shutdown(struct device *, int);
 
 #define XHCI_TRANSFER_RING_TRBS 256
 

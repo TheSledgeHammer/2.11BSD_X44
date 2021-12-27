@@ -34,8 +34,10 @@
 #include <sys/rwlock.h>
 #include <sys/wait.h>
 #include <sys/queue.h>
-#include "devel/sys/kthread.h"
-#include "devel/sys/threadpool.h"
+
+#include <devel/sys/kthread.h>
+#include <devel/sys/mutex.h>
+#include <devel/sys/threadpool.h>
 
 #include <vm/include/vm_param.h>
 
@@ -69,8 +71,7 @@ kthread_init(p, kt)
 	crhold(kt->kt_ucred);
 
     /* setup kthread locks */
-    kthread_lock_init(kthread_lkp, kt);
-    kthread_rwlock_init(kthread_rwl, kt);
+    mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid, kt->kt_pgrp);
 
     /* initialize kthreadpools */
     kthreadpool_init();
@@ -288,68 +289,6 @@ kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
 
 	/* update job pool */
 	itpc_verify_kthreadpool(itpc, pid);
-}
-
-/* Initialize a lock on a kthread */
-int
-kthread_lock_init(lkp, kt)
-    struct lock *lkp;
-    kthread_t 	kt;
-{
-    int error = 0;
-    lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-    lockholder_set(lkp->lk_lockholder, kt, kt->kt_tid, kt->kt_pgrp);
-    if(lockholder_get(lkp->lk_lockholder, kt, kt->kt_tid) == NULL) {
-    	panic("kthread lock unavailable");
-    	error = EBUSY;
-    }
-    return (error);
-}
-
-int
-kthread_lockmgr(lkp, flags, kt)
-	struct lock *lkp;
-	u_int 		flags;
-    kthread_t 	kt;
-{
-    pid_t pid;
-    if (kt) {
-        pid = kt->kt_tid;
-    } else {
-        pid = LK_KERNPROC;
-    }
-    return lockmgr(lkp, flags, lkp->lk_lnterlock, pid);
-}
-
-/* Initialize a rwlock on a kthread */
-int
-kthread_rwlock_init(rwl, kt)
-	rwlock_t rwl;
-	kthread_t kt;
-{
-	int error = 0;
-	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
-	lockholder_set(rwl->rwl_lockholder, kt, kt->kt_tid, kt->kt_pgrp);
-    if(lockholder_get(rwl->rwl_lockholder, kt, kt->kt_tid) == NULL) {
-    	panic("kthread rwlock unavailable");
-    	error = EBUSY;
-    }
-	return (error);
-}
-
-int
-kthread_rwlockmgr(rwl, flags, kt)
-	rwlock_t rwl;
-	u_int flags;
-	kthread_t kt;
-{
-	pid_t pid;
-	if (kt) {
-		pid = kt->kt_tid;
-	} else {
-		pid = RW_KERNPROC;
-	}
-	return rwlockmgr(rwl, flags, rwl->rwl_lnterlock, pid);
 }
 
 /*

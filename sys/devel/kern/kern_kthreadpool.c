@@ -72,7 +72,7 @@
 #include <devel/sys/malloctypes.h>
 
 struct kthreadpool_thread 				ktpool_thread;
-struct lock	 							*kthreadpools_lock;
+struct lock_object						*kthreadpools_lock;
 struct threadpool_itpc 					itpc;
 
 struct kthreadpool_unbound {
@@ -150,12 +150,11 @@ kthreadpool_init(void)
 	MALLOC(&ktpool_thread, struct kthreadpool_thread *, sizeof(struct kthreadpool_thread *), M_KTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_kthreadpools);
 	LIST_INIT(&percpu_kthreadpools);
-	kthread_lock_init(&kthreadpools_lock, &ktpool_thread->ktpt_kthread);
+	simple_lock_init(&kthreadpools_lock, "kthreadpools_lock");
 	//itpc_threadpool_init();
 }
 
 /* KThread pool creation */
-
 static int
 kthreadpool_create(struct kthreadpool *ktpool, pid_t pri)
 {
@@ -419,13 +418,12 @@ kthreadpool_thread(void *arg)
 		struct threadpool_job *const job = kthread->ktpt_job;
 		KASSERT(job != NULL);
 
-
 		/* Set our proc name to reflect what job we're doing.  */
-		//proc_lock(curproc);
+		PROC_LOCK(curproc);
 		char *const proc_name = curproc->p_name;
 		kthread->ktpt_kthread_savedname = curproc->p_name;
 		curproc->p_name = job->job_name;
-		//proc_unlock(curproc);
+		PROC_UNLOCK(curproc);
 
 		simple_unlock(&ktpool->ktp_lock);
 
@@ -525,9 +523,9 @@ kthreadpool_job_done(struct threadpool_job *job)
 	 * we call the job work function, and we are only preserving it
 	 * to use here; no one cares if it contains junk afterward.
 	 */
-	//proc_lock(curproc);
+	PROC_LOCK(curproc);
 	curproc->p_name = job->job_ktp_thread->ktpt_kthread_savedname;
-	//proc_unlock(curproc);
+	PROC_UNLOCK(curproc);
 
 	/*
 	 * Inline the work of threadpool_job_rele(); the job is already
@@ -629,7 +627,7 @@ kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
 	struct kthreadpool_percpu *ktpool_percpu, *tmp = NULL;
 	int error;
 	ktpool_percpu = kthreadpool_lookup_percpu(pri);
-	simple_lock(&kthreadpools_lock);
+	simple_lock(&);
 	if(ktpool_percpu == NULL) {
 		simple_unlock(&kthreadpools_lock);
 		error = kthreadpool_percpu_create(&tmp, pri);

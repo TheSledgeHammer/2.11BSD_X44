@@ -205,7 +205,7 @@ lapic_enable_x2apic(void)
 	wrmsr(MSR_APICBASE, apicbase);
 }
 
-boolean_t
+bool_t
 lapic_is_x2apic(void)
 {
 	uint64_t apicbase;

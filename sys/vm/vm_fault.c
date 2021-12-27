@@ -96,7 +96,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_map_t	map;
 	vm_offset_t	vaddr;
 	vm_prot_t	fault_type;
-	boolean_t	change_wiring;
+	bool_t	change_wiring;
 {
 	vm_object_t		first_object;
 	vm_offset_t		first_offset;
@@ -107,10 +107,10 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_page_t		first_m;
 	vm_prot_t		prot;
 	int			result;
-	boolean_t		wired;
-	boolean_t		su;
-	boolean_t		lookup_still_valid;
-	boolean_t		page_exists;
+	bool_t		wired;
+	bool_t		su;
+	bool_t		lookup_still_valid;
+	bool_t		page_exists;
 	vm_page_t		old_m;
 	vm_object_t		next_object;
 

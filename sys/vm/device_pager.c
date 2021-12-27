@@ -66,10 +66,10 @@ int	dpagerdebug = 0;
 
 static vm_pager_t	dev_pager_alloc (caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
 static void		 	dev_pager_dealloc (vm_pager_t);
-static int		 	dev_pager_getpage (vm_pager_t, vm_page_t *, int, boolean_t);
-static boolean_t	dev_pager_haspage (vm_pager_t, vm_offset_t);
+static int		 	dev_pager_getpage (vm_pager_t, vm_page_t *, int, bool_t);
+static bool_t		dev_pager_haspage (vm_pager_t, vm_offset_t);
 static void		 	dev_pager_init (void);
-static int		 	dev_pager_putpage (vm_pager_t, vm_page_t *, int, boolean_t);
+static int		 	dev_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
 static vm_page_t	dev_pager_getfake (vm_offset_t);
 static void		 	dev_pager_putfake (vm_page_t);
 
@@ -249,7 +249,7 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
 	int npages;
-	boolean_t sync;
+	bool_t sync;
 {
 	register vm_object_t object;
 	vm_offset_t offset, paddr;
@@ -306,7 +306,7 @@ dev_pager_putpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
 	int npages;
-	boolean_t sync;
+	bool_t sync;
 {
 #ifdef DEBUG
 	if (dpagerdebug & DDB_FOLLOW)
@@ -318,7 +318,7 @@ dev_pager_putpage(pager, mlist, npages, sync)
 	panic("dev_pager_putpage called");
 }
 
-static boolean_t
+static bool_t
 dev_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;

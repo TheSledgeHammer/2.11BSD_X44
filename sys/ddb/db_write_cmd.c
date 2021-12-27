@@ -49,7 +49,7 @@
 void
 db_write_cmd(address, have_addr, count, modif)
 	db_expr_t	address;
-	boolean_t	have_addr;
+	bool_t	have_addr;
 	db_expr_t	count;
 	char *		modif;
 {
@@ -59,7 +59,7 @@ db_write_cmd(address, have_addr, count, modif)
 	db_expr_t	old_value;
 	db_expr_t	new_value;
 	register int	size;
-	boolean_t	wrote_one = FALSE;
+	bool_t	wrote_one = FALSE;
 
 	addr = (db_addr_t) address;
 

@@ -78,7 +78,7 @@ ovl_allocate(map, addr, size, anywhere)
 	register ovl_map_t		map;
 	register vm_offset_t	*addr;
 	register vm_size_t		size;
-	boolean_t				anywhere;
+	bool_t				anywhere;
 {
 	int	result;
 
@@ -120,10 +120,10 @@ ovl_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 	register ovl_map_t		map;
 	register vm_offset_t	*addr;
 	register vm_size_t		size;
-	boolean_t				anywhere;
+	bool_t					anywhere;
 	vm_pager_t				pager;
 	vm_offset_t				poffset;
-	boolean_t				internal;
+	bool_t					internal;
 {
 	register ovl_object_t	object;
 	register int			result;

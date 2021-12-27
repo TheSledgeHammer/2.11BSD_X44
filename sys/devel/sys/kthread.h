@@ -30,6 +30,7 @@
 #define SYS_KTHREADS_H_
 
 #include <sys/proc.h>
+#include <devel/sys/mutex.h>
 
 /* kernel threads */
 typedef struct kthread 	*kthread_t;
@@ -40,6 +41,7 @@ struct kthread {
 	struct kthread 		*kt_forw;				/* Doubly-linked run/sleep queue. */
 	struct kthread 		*kt_back;
 
+    struct mtx			*kt_mtx;				/* kthread structure mutex */
 	int	 				kt_flag;				/* T_* flags. */
 	char 				kt_stat;				/* TS* thread status. */
 	char 				kt_lock;				/* Thread lock count. */
@@ -103,9 +105,6 @@ struct kthread {
 	struct kthread 		*kt_link;				/* linked list of running kthreads */
 
     u_short 			kt_acflag;	    		/* Accounting flags. */
-
-    short               kt_locks;
-    short               kt_simple_locks;
 
 	char				*kt_name;				/* (: name, optional */
 
@@ -177,10 +176,10 @@ struct kthreadpool {
 
     /* Inter Threadpool Communication */
     struct threadpool_itpc				ktp_itpc;			/* threadpool ipc ptr */
-    boolean_t							ktp_issender;		/* is itpc sender */
-    boolean_t							ktp_isreciever;		/* is itpc reciever */
+    bool_t								ktp_issender;		/* is itpc sender */
+    bool_t								ktp_isreciever;		/* is itpc reciever */
     int									ktp_retcnt;			/* retry count in itpc pool */
-    boolean_t							ktp_initcq;			/* check if in itpc queue */
+    bool_t								ktp_initcq;			/* check if in itpc queue */
 };
 
 #define	TIDHSZ							16
@@ -228,9 +227,7 @@ void 			itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
 void 			itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
 
 /* KThread Lock */
-int 			kthread_lock_init (lock_t, kthread_t);
-int 			kthread_lockmgr (lock_t, u_int, kthread_t);
-int 			kthread_rwlock_init (rwlock_t, kthread_t);
-int 			kthread_rwlockmgr (rwlock_t, u_int, kthread_t);
-
+struct lock_holder 			kthread_loholder;
+#define KTHREAD_LOCK(kt)	(mtx_lock(&(kt)->kt_mtx, &kthread_loholder))
+#define KTHREAD_UNLOCK(kt) 	(mtx_unlock(&(kt)->kt_mtx, &kthread_loholder))
 #endif /* SYS_KTHREADS_H_ */

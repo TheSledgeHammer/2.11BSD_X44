@@ -37,7 +37,7 @@
 
 #ifdef _KERNEL
 extern volatile u_int32_t  	local_apic_va;
-extern boolean_t 			x2apic_mode;
+extern bool_t 			x2apic_mode;
 #endif
 
 /*
@@ -95,14 +95,14 @@ struct cpu_info;
 extern void 			lapic_boot_init(caddr_t);
 extern void 			lapic_set_lvt(void);
 extern void 			lapic_enable(void);
-extern void 			lapic_calibrate_timer(boolean_t);
+extern void 			lapic_calibrate_timer(bool_t);
 extern void 			lapic_reset(void);
 
 extern uint32_t 		lapic_read(u_int);
 extern void 			lapic_write(u_int, uint32_t);
 extern void 			lapic_write_tpri(uint32_t);
 extern uint32_t 		lapic_cpu_number(void);
-extern boolean_t 		lapic_is_x2apic(void);
+extern bool_t 			lapic_is_x2apic(void);
 
 static int				i82489_ipi_init(int);
 static int				i82489_ipi_startup(int, int);

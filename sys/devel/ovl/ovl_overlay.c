@@ -132,7 +132,7 @@ vm_offset_t
 omem_malloc(map, size, canwait)
 	register ovl_map_t		map;
 	register vm_size_t		size;
-	boolean_t				canwait;
+	bool_t					canwait;
 {
 	register vm_offset_t	offset, i;
 	ovl_map_entry_t			entry;

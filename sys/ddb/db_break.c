@@ -149,7 +149,7 @@ db_find_breakpoint_here(addr)
     return db_find_breakpoint(db_map_addr(addr), addr);
 }
 
-boolean_t	db_breakpoints_inserted = TRUE;
+bool_t	db_breakpoints_inserted = TRUE;
 
 void
 db_set_breakpoints()
@@ -295,7 +295,7 @@ db_listbreak_cmd(addr, have_addr, count, modif)
  *	(or both) may be null.
  */
 
-boolean_t
+bool_t
 db_map_equal(map1, map2)
 	vm_map_t	map1, map2;
 {
@@ -304,7 +304,7 @@ db_map_equal(map1, map2)
 		((map1 == kernel_map) && (map2 == NULL)));
 }
 
-boolean_t
+bool_t
 db_map_current(map)
 	vm_map_t	map;
 {

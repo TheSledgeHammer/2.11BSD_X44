@@ -609,19 +609,19 @@ sysctl_bool(oldp, oldlenp, newp, newlen, valp)
 	size_t *oldlenp;
 	void *newp;
 	size_t newlen;
-	boolean_t *valp;
+	bool_t *valp;
 {
 	int error = 0;
 
-	if (oldp && *oldlenp < sizeof(boolean_t))
+	if (oldp && *oldlenp < sizeof(bool_t))
 		return (ENOMEM);
-	if (newp && newlen != sizeof(boolean_t))
+	if (newp && newlen != sizeof(bool_t))
 		return (EINVAL);
-	*oldlenp = sizeof(boolean_t);
+	*oldlenp = sizeof(bool_t);
 	if (oldp)
-		error = copyout(valp, oldp, sizeof(boolean_t));
+		error = copyout(valp, oldp, sizeof(bool_t));
 	if (error == 0 && newp)
-		error = copyin(newp, valp, sizeof(boolean_t));
+		error = copyin(newp, valp, sizeof(bool_t));
 	return (error);
 }
 
@@ -633,17 +633,17 @@ sysctl_rdbool(oldp, oldlenp, newp, val)
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
-	boolean_t *val;
+	bool_t *val;
 {
 	int error = 0;
 
-	if (oldp && *oldlenp < sizeof(boolean_t))
+	if (oldp && *oldlenp < sizeof(bool_t))
 		return (ENOMEM);
 	if (newp)
 		return (EPERM);
-	*oldlenp = sizeof(boolean_t);
+	*oldlenp = sizeof(bool_t);
 	if (oldp)
-		error = copyout((caddr_t) &val, oldp, sizeof(boolean_t));
+		error = copyout((caddr_t) &val, oldp, sizeof(bool_t));
 	return (error);
 }
 

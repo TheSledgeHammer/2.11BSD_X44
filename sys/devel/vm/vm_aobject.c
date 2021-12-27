@@ -124,7 +124,7 @@ vm_aobject_detach(obj)
 	vm_aobject_t aobj = (struct vm_aobject *)obj;
 	vm_segment_t sg;
 	vm_page_t 	pg;
-	boolean_t busybody;
+	bool_t busybody;
 
 	/*
  	 * detaching from kernel_object is a noop.
@@ -296,7 +296,7 @@ static struct uao_swhash_elt *
 vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	vm_aobject_t	aobject;
 	int pageidx;
-	boolean_t create;
+	bool_t create;
 {
 	struct aobjectswhash *swhash;
 	struct uao_swhash_elt *elt;
@@ -451,7 +451,7 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 /*
  * vm_aobject_flush (uao_flush): uh, yea, sure it's flushed.  really!
  */
-boolean_t
+bool_t
 vm_aobject_flush(obj, start, end, flags)
 	vm_object_t obj;
 	vaddr_t start, end;

@@ -1,4 +1,4 @@
-/*	$NetBSD: msdosfs_fat.c,v 1.30.6.1 1999/08/20 05:39:30 cgd Exp $	*/
+/*	$NetBSD: msdosfs_fat.c,v 1.2 2003/10/22 03:51:12 briggs Exp $	*/
 
 /*-
  * Copyright (C) 1994, 1995, 1997 Wolfgang Solfrank.
@@ -46,7 +46,8 @@
  *
  * October 1992
  */
-
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: msdosfs_fat.c,v 1.2 2003/10/22 03:51:12 briggs Exp $");
 /*
  * kernel include files.
  */
@@ -73,13 +74,11 @@
  * Fat cache stats.
  */
 int fc_fileextends;		/* # of file extends			 */
-int fc_lfcempty;		/* # of time last file cluster cache entry
-				 * was empty */
+int fc_lfcempty;		/* # of time last file cluster cache entry was empty */
 int fc_bmapcalls;		/* # of times pcbmap was called		 */
 
 #define	LMMAX	20
-int fc_lmdistance[LMMAX];	/* counters for how far off the last
-				 * cluster mapped entry was. */
+int fc_lmdistance[LMMAX];	/* counters for how far off the last cluster mapped entry was. */
 int fc_largedistance;		/* off by more than LMMAX		 */
 
 static void fatblock (struct msdosfsmount *, u_long, u_long *, u_long *, u_long *);
@@ -137,7 +136,7 @@ pcbmap(dep, findcn, bnp, cnp, sp)
 	u_long findcn;		/* file relative cluster to get		 */
 	daddr_t *bnp;		/* returned filesys relative blk number	 */
 	u_long *cnp;		/* returned cluster number		 */
-	int *sp;		/* returned block size			 */
+	int *sp;			/* returned block size			 */
 {
 	int error;
 	u_long i;
@@ -336,18 +335,17 @@ updatefats(pmp, bp, fatbn)
 		u_long cn = pmp->pm_nxtfree;
 
 		if (pmp->pm_freeclustercount
-		    && (pmp->pm_inusemap[cn / N_INUSEBITS]
-			& (1 << (cn % N_INUSEBITS)))) {
+				&& (pmp->pm_inusemap[cn / N_INUSEBITS]
+						& (1 << (cn % N_INUSEBITS)))) {
 			/*
 			 * The cluster indicated in FSInfo isn't free
 			 * any longer.  Got get a new free one.
 			 */
 			for (cn = 0; cn < pmp->pm_maxcluster; cn++)
-				if (pmp->pm_inusemap[cn / N_INUSEBITS] != (u_int)-1)
+				if (pmp->pm_inusemap[cn / N_INUSEBITS] != (u_int) -1)
 					break;
 			pmp->pm_nxtfree = cn
-				+ ffs(pmp->pm_inusemap[cn / N_INUSEBITS]
-				      ^ (u_int)-1) - 1;
+					+ ffs(pmp->pm_inusemap[cn / N_INUSEBITS] ^ (u_int) -1) - 1;
 		}
 		if (bread(pmp->pm_devvp, pmp->pm_fsinfo, 1024, NOCRED, &bpn) != 0) {
 			/*
@@ -356,7 +354,7 @@ updatefats(pmp, bp, fatbn)
 			pmp->pm_fsinfo = 0;
 			brelse(bpn);
 		} else {
-			struct fsinfo *fp = (struct fsinfo *)bpn->b_data;
+			struct fsinfo *fp = (struct fsinfo*) bpn->b_data;
 
 			putulong(fp->fsinfree, pmp->pm_freeclustercount);
 			putulong(fp->fsinxtfree, pmp->pm_nxtfree);
@@ -748,17 +746,17 @@ chainalloc(pmp, start, count, fillwith, retcluster, got)
  * got	      - how many clusters were actually allocated.
  */
 int
-clusteralloc(pmp, start, count, fillwith, retcluster, got)
+clusteralloc(pmp, start, count, retcluster, got)
 	struct msdosfsmount *pmp;
 	u_long start;
 	u_long count;
-	u_long fillwith;
 	u_long *retcluster;
 	u_long *got;
 {
 	u_long idx;
 	u_long len, newst, foundl, cn, l;
 	u_long foundcn = 0; /* XXX: foundcn could be used unititialized */
+	u_long fillwith = CLUST_EOFE;
 	u_int map;
 
 #ifdef MSDOSFS_DEBUG
@@ -806,8 +804,8 @@ clusteralloc(pmp, start, count, fillwith, retcluster, got)
 		idx = cn / N_INUSEBITS;
 		map = pmp->pm_inusemap[idx];
 		map |= (1 << (cn % N_INUSEBITS)) - 1;
-		if (map != (u_int)-1) {
-			cn = idx * N_INUSEBITS + ffs(map^(u_int)-1) - 1;
+		if (map != (u_int) -1) {
+			cn = idx * N_INUSEBITS + ffs(map ^ (u_int) -1) - 1;
 			if ((l = chainlength(pmp, cn, count)) >= count)
 				return (chainalloc(pmp, cn, count, fillwith, retcluster, got));
 			if (l > foundl) {
@@ -883,7 +881,7 @@ freeclusterchain(pmp, cluster)
 		case FAT32_MASK:
 			cluster = getulong(&bp->b_data[bo]);
 			putulong(&bp->b_data[bo],
-				 (MSDOSFSFREE & FAT32_MASK) | (cluster & ~FAT32_MASK));
+					(MSDOSFSFREE & FAT32_MASK) | (cluster & ~FAT32_MASK));
 			break;
 		}
 		cluster &= pmp->pm_fatmask;
@@ -972,7 +970,7 @@ extendfile(dep, count, bpp, ncp, flags)
 	int flags;
 {
 	int error;
-	u_long frcn;
+	u_long frcn = 0;
 	u_long cn, got;
 	struct msdosfsmount *pmp = dep->de_pmp;
 	struct buf *bp;
@@ -1010,11 +1008,12 @@ extendfile(dep, count, bpp, ncp, flags)
 		 * dir is the only file with a startcluster of 0 that has
 		 * blocks allocated (sort of).
 		 */
+
 		if (dep->de_StartCluster == 0)
 			cn = 0;
 		else
 			cn = dep->de_fc[FC_LASTFC].fc_fsrcn + 1;
-		error = clusteralloc(pmp, cn, count, CLUST_EOFE, &cn, &got);
+		error = clusteralloc(pmp, cn, count, &cn, &got);
 		if (error)
 			return (error);
 
@@ -1048,34 +1047,18 @@ extendfile(dep, count, bpp, ncp, flags)
 		 * cache.
 		 */
 		fc_setcache(dep, FC_LASTFC, frcn + got - 1, cn + got - 1);
-
-		if (flags & DE_CLEAR) {
+		if ((flags & DE_CLEAR) &&
+		    (dep->de_Attributes & ATTR_DIRECTORY)) {
 			while (got-- > 0) {
-				/*
-				 * Get the buf header for the new block of the file.
-				 */
-				if (dep->de_Attributes & ATTR_DIRECTORY)
-					bp = getblk(pmp->pm_devvp, cntobn(pmp, cn++),
-						    pmp->pm_bpcluster, 0, 0);
-				else {
-					bp = getblk(DETOV(dep), de_cn2bn(pmp, frcn++),
+				bp = getblk(pmp->pm_devvp, cntobn(pmp, cn++),
 					    pmp->pm_bpcluster, 0, 0);
-					/*
-					 * Do the bmap now, as in msdosfs_write
-					 */
-					if (pcbmap(dep,
-					    de_bn2cn(pmp, bp->b_lblkno),
-					    &bp->b_blkno, 0, 0))
-						bp->b_blkno = -1;
-					if (bp->b_blkno == -1)
-						panic("extendfile: pcbmap");
-				}
 				clrbuf(bp);
 				if (bpp) {
 					*bpp = bp;
-					bpp = NULL;
-				} else
+						bpp = NULL;
+				} else {
 					bdwrite(bp);
+				}
 			}
 		}
 	}

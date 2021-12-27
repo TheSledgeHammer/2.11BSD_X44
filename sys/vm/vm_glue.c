@@ -85,7 +85,7 @@ kernacc(addr, len, rw)
 	caddr_t addr;
 	int len, rw;
 {
-	boolean_t rv;
+	bool_t rv;
 	vm_offset_t saddr, eaddr;
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
@@ -111,7 +111,7 @@ useracc(addr, len, rw)
 	caddr_t addr;
 	int len, rw;
 {
-	boolean_t rv;
+	bool_t rv;
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map, trunc_page(addr), round_page(addr+len), prot);
@@ -527,7 +527,7 @@ swapout(p)
 void
 assert_wait(event, ruptible)
 	void *event;
-	boolean_t ruptible;
+	bool_t ruptible;
 {
 #ifdef lint
 	ruptible++;
@@ -550,7 +550,7 @@ void
 thread_sleep(event, lock, ruptible)
 	void *event;
 	simple_lock_t lock;
-	boolean_t ruptible;
+	bool_t ruptible;
 {
 	int s = splhigh();
 

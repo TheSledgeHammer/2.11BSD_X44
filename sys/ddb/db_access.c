@@ -53,7 +53,7 @@ db_expr_t
 db_get_value(addr, size, is_signed)
 	db_addr_t addr;
 	register size_t size;
-	boolean_t is_signed;
+	bool_t is_signed;
 {
 	char data[sizeof(db_expr_t)];
 	register db_expr_t value;

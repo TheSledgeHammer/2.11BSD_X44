@@ -74,11 +74,11 @@ int	vpagerdebug = 0x00;
 static vm_pager_t	vnode_pager_alloc (caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
 static void		 	vnode_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 static void		 	vnode_pager_dealloc (vm_pager_t);
-static int		 	vnode_pager_getpage (vm_pager_t, vm_page_t *, int, boolean_t);
-static boolean_t	vnode_pager_haspage (vm_pager_t, vm_offset_t);
+static int		 	vnode_pager_getpage (vm_pager_t, vm_page_t *, int, bool_t);
+static bool_t		vnode_pager_haspage (vm_pager_t, vm_offset_t);
 static void		 	vnode_pager_init (void);
-static int		 	vnode_pager_io (vn_pager_t, vm_page_t *, int, boolean_t, enum uio_rw);
-static boolean_t	vnode_pager_putpage (vm_pager_t, vm_page_t *, int, boolean_t);
+static int		 	vnode_pager_io (vn_pager_t, vm_page_t *, int, bool_t, enum uio_rw);
+static bool_t		vnode_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
 
 struct pagerops vnodepagerops = {
 	vnode_pager_init,
@@ -223,7 +223,7 @@ vnode_pager_getpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
 	int npages;
-	boolean_t sync;
+	bool_t sync;
 {
 
 #ifdef DEBUG
@@ -235,12 +235,12 @@ vnode_pager_getpage(pager, mlist, npages, sync)
 			      mlist, npages, sync, UIO_READ));
 }
 
-static boolean_t
+static bool_t
 vnode_pager_putpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
 	int npages;
-	boolean_t sync;
+	bool_t sync;
 {
 	int err;
 
@@ -266,7 +266,7 @@ vnode_pager_putpage(pager, mlist, npages, sync)
 	return(err);
 }
 
-static boolean_t
+static bool_t
 vnode_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;
@@ -444,13 +444,13 @@ vnode_pager_umount(mp)
  * destruction which may initiate paging activity which may necessitate
  * re-locking the vnode.
  */
-boolean_t
+bool_t
 vnode_pager_uncache(vp)
 	register struct vnode *vp;
 {
 	struct proc *p = curproc;	/* XXX */
 	vm_object_t object;
-	boolean_t uncached;
+	bool_t uncached;
 	vm_pager_t pager;
 
 	/*
@@ -486,7 +486,7 @@ vnode_pager_io(vnp, mlist, npages, sync, rw)
 	register vn_pager_t vnp;
 	vm_page_t *mlist;
 	int npages;
-	boolean_t sync;
+	bool_t sync;
 	enum uio_rw rw;
 {
 	struct uio auio;

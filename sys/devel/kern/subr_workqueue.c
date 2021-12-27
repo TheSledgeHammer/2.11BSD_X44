@@ -127,7 +127,7 @@ workqueue_run(struct workqueue *wq)
 				panic("%s: %s error=%d", __func__, wq->wq_name, error);
 			}
 		}
-		tmp.sqh_first = q->q_queue.sqh_first; /* XXX */
+		tmp.sqh_first = SIMPLEQ_FIRST(q->q_queue); /* XXX */
 		SIMPLEQ_INIT(&q->q_queue);
 		workqueue_unlock(wq, q);
 
@@ -247,7 +247,7 @@ void
 workqueue_enqueue(struct workqueue *wq, struct work *wk)
 {
 	struct workqueue_queue *q = &wq->wq_queue;
-	boolean_t wasempty;
+	bool_t wasempty;
 
 	workqueue_lock(wq, q);
 	wasempty = SIMPLEQ_EMPTY(&q->q_queue);

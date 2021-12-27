@@ -42,7 +42,7 @@ int					vm_segment_bucket_count = 0;	/* How big is array? */
 int					vm_segment_hash_mask;			/* Mask for hash function */
 simple_lock_data_t	segment_bucket_lock;			/* lock for all segment buckets XXX */
 
-boolean_t 			vm_segment_startup_initialized;
+bool_t 				vm_segment_startup_initialized;
 
 struct seglist		vm_segment_list;
 struct seglist		vm_segment_list_active;
@@ -416,7 +416,7 @@ vm_segment_activate(segment)
  *	Same as vm_page_zero_fill, but includes a
  *	segment check.
  */
-boolean_t
+bool_t
 vm_segment_zero_fill(s, p, o)
     vm_segment_t 	s;
 	vm_page_t 		p;
@@ -446,7 +446,7 @@ vm_segment_zero_fill(s, p, o)
 /* check alignment of segment size to page size */
 #define npages_per_segment (SEGMENT_SIZE/ PAGE_SIZE)
 
-boolean_t
+bool_t
 vm_segment_sanity_check(pgs, segs)
     vm_size_t pgs, segs;
 {

@@ -35,7 +35,7 @@
 void db_stack_trace_cmd (db_expr_t, int, db_expr_t, char *);
 
 /* arch/<arch>/<arch>/db_disasm.c */
-db_addr_t db_disasm (db_addr_t, boolean_t);
+db_addr_t db_disasm (db_addr_t, bool_t);
 
 /* kern/kern_proc.c */
 void db_kill_proc (db_expr_t, int, db_expr_t, char *);

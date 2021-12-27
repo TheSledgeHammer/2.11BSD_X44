@@ -1043,7 +1043,7 @@ db_disasm_esc(loc, inst, short_addr, size, seg)
 db_addr_t
 db_disasm(loc, altfmt)
 	db_addr_t	loc;
-	boolean_t	altfmt;
+	bool_t	altfmt;
 {
 	int	inst;
 	int	size;
@@ -1054,7 +1054,7 @@ db_disasm(loc, altfmt)
 	int	i_size;
 	int	i_mode;
 	int	regmodrm = 0;
-	boolean_t	first;
+	bool_t	first;
 	int	displ;
 	int	prefix;
 	int	imm;

@@ -75,11 +75,11 @@ struct pagerops {
 	/* Deallocate pager. */
 	void		(*pgo_dealloc)(vm_pager_t);
 	/* Get (read) page. */
-	int			(*pgo_getpages)(vm_pager_t, vm_page_t *, int, boolean_t);
+	int			(*pgo_getpages)(vm_pager_t, vm_page_t *, int, bool_t);
 	/* Put (write) page. */
-	int			(*pgo_putpages)(vm_pager_t, vm_page_t *, int, boolean_t);
+	int			(*pgo_putpages)(vm_pager_t, vm_page_t *, int, bool_t);
 	/* Does pager have page? */
-	boolean_t  	(*pgo_haspage)(vm_pager_t, vm_offset_t);
+	bool_t  	(*pgo_haspage)(vm_pager_t, vm_offset_t);
 	/* Return range of cluster. */
 	void		(*pgo_cluster)(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 };
@@ -108,12 +108,12 @@ vm_page_t	 vm_pager_atop (vm_offset_t);
 void		 vm_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 void		 vm_pager_clusternull (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 void		 vm_pager_deallocate (vm_pager_t);
-int		 	 vm_pager_get_pages (vm_pager_t, vm_page_t *, int, boolean_t);
-boolean_t	 vm_pager_has_page (vm_pager_t, vm_offset_t);
+int		 	 vm_pager_get_pages (vm_pager_t, vm_page_t *, int, bool_t);
+bool_t	 	 vm_pager_has_page (vm_pager_t, vm_offset_t);
 void		 vm_pager_init (void);
 vm_pager_t	 vm_pager_lookup (struct pagerlst *, caddr_t);
-vm_offset_t	 vm_pager_map_pages (vm_page_t *, int, boolean_t);
-int		 	 vm_pager_put_pages	(vm_pager_t, vm_page_t *, int, boolean_t);
+vm_offset_t	 vm_pager_map_pages (vm_page_t *, int, bool_t);
+int		 	 vm_pager_put_pages	(vm_pager_t, vm_page_t *, int, bool_t);
 void		 vm_pager_sync (void);
 void		 vm_pager_unmap_pages (vm_offset_t, int);
 
@@ -122,8 +122,8 @@ void		 vm_pager_unmap_pages (vm_offset_t, int);
 /*
  * XXX compat with old interface
  */
-int		 	 vm_pager_get (vm_pager_t, vm_page_t, boolean_t);
-int		 	 vm_pager_put (vm_pager_t, vm_page_t, boolean_t);
+int		 	 vm_pager_get (vm_pager_t, vm_page_t, bool_t);
+int		 	 vm_pager_put (vm_pager_t, vm_page_t, bool_t);
 #endif
 
 #endif	/* _VM_PAGER_ */

@@ -55,14 +55,14 @@ int	db_run_mode;
 #define STEP_INVISIBLE	5
 #define	STEP_COUNT		6
 
-boolean_t	db_sstep_print;
+bool_t	db_sstep_print;
 int			db_loop_count;
 int			db_call_depth;
 
-boolean_t
+bool_t
 db_stop_at_pc(regs, is_breakpoint)
 	db_regs_t *regs;
-	boolean_t	*is_breakpoint;
+	bool_t	*is_breakpoint;
 {
 	register db_addr_t	pc;
 	register db_breakpoint_t bkpt;
@@ -161,7 +161,7 @@ db_stop_at_pc(regs, is_breakpoint)
 void
 db_restart_at_pc(regs, watchpt)
 	db_regs_t *regs;
-	boolean_t watchpt;
+	bool_t watchpt;
 {
 	register db_addr_t pc = PC_REGS(regs);
 
@@ -232,18 +232,18 @@ db_single_step(regs)
  *	Just define the above conditional and provide
  *	the functions/macros defined below.
  *
- * boolean_t inst_branch(int inst)
- * boolean_t inst_call(int inst)
+ * bool_t inst_branch(int inst)
+ * bool_t inst_call(int inst)
  *	returns TRUE if the instruction might branch
  *
- * boolean_t inst_unconditional_flow_transfer(int inst)
+ * bool_t inst_unconditional_flow_transfer(int inst)
  *	returns TRUE if the instruction is an unconditional
  *	transter of flow (i.e. unconditional branch)
  *
  * db_addr_t branch_taken(int inst, db_addr_t pc, db_regs_t *regs)
  *	returns the target address of the branch
  *
- * db_addr_t next_instr_address(db_addr_t pc, boolean_t bd)
+ * db_addr_t next_instr_address(db_addr_t pc, bool_t bd)
  *	returns the address of the first instruction following the
  *	one at "pc", which is either in the taken path of the branch
  *	(bd == TRUE) or not.  This is for machines (e.g. mips) with
@@ -263,7 +263,7 @@ db_set_single_step(regs)
 	register db_regs_t *regs;
 {
 	db_addr_t pc = PC_REGS(regs), brpc;
-	boolean_t unconditional;
+	bool_t unconditional;
 	unsigned int inst;
 
 	/*
@@ -334,7 +334,7 @@ db_single_step_cmd(addr, have_addr, count, modif)
 	db_expr_t	count;
 	char *		modif;
 {
-	boolean_t	print = FALSE;
+	bool_t	print = FALSE;
 
 	if (count == -1)
 	    count = 1;
@@ -361,7 +361,7 @@ db_trace_until_call_cmd(addr, have_addr, count, modif)
 	db_expr_t	count;
 	char *		modif;
 {
-	boolean_t	print = FALSE;
+	bool_t	print = FALSE;
 
 	if (modif[0] == 'p')
 	    print = TRUE;
@@ -383,7 +383,7 @@ db_trace_until_matching_cmd(addr, have_addr, count, modif)
 	db_expr_t	count;
 	char *		modif;
 {
-	boolean_t	print = FALSE;
+	bool_t	print = FALSE;
 
 	if (modif[0] == 'p')
 	    print = TRUE;

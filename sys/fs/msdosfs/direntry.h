@@ -1,4 +1,4 @@
-/*	$NetBSD: direntry.h,v 1.14 1997/11/17 15:36:32 ws Exp $	*/
+/*	$NetBSD: direntry.h,v 1.2 2003/09/07 22:09:11 itojun Exp $	*/
 
 /*-
  * Copyright (C) 1994, 1995, 1997 Wolfgang Solfrank.
@@ -94,13 +94,7 @@ struct winentry {
 	u_int16_t		weReserved2;
 	u_int8_t		wePart3[4];
 };
-#define	WIN_CHARS	13	/* Number of chars per winentry */
-
-/*
- * Maximum filename length in Win95
- * Note: Must be < sizeof(dirent.d_name)
- */
-#define	WIN_MAXLEN	255
+#define	WIN_CHARS			13	/* Number of chars per winentry */
 
 /*
  * This is the format of the contents of the deTime field in the direntry
@@ -127,8 +121,8 @@ struct winentry {
 #define DD_YEAR_SHIFT		9
 
 #ifdef _KERNEL
-void	unix2dostime (struct timespec *tsp, u_int16_t *ddp, u_int16_t *dtp, u_int8_t *dhp);
-void	dos2unixtime (u_int dd, u_int dt, u_int dh, struct timespec *tsp);
+void	unix2dostime (struct timespec *tsp, int gmtoff, u_int16_t *ddp, u_int16_t *dtp, u_int8_t *dhp);
+void	dos2unixtime (u_int dd, u_int dt, u_int dh, int gmtoff, struct timespec *tsp);
 int		dos2unixfn (u_char dn[11], u_char *un, int lower);
 int		unix2dosfn (const u_char *un, u_char dn[12], int unlen, u_int gen);
 int		unix2winfn (const u_char *un, int unlen, struct winentry *wep, int cnt, int chksum);

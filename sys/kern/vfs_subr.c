@@ -86,13 +86,13 @@ int	vttoif_tab[9] = {
 	(bp)->b_vnbufs.le_next = NOLIST;							\
 }
 
-TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* vnode free list */
-struct mntlist mountlist;					/* mounted filesystem list */
-struct lock_object mountlist_slock;
-static struct lock_object mntid_slock;
-struct lock_object mntvnode_slock;
-struct lock_object vnode_free_list_slock;
-static struct lock_object spechash_slock;
+TAILQ_HEAD(freelst, vnode) 	vnode_free_list;	/* vnode free list */
+struct mntlist 				mountlist;			/* mounted filesystem list */
+struct lock_object 			mountlist_slock;
+static struct lock_object 	mntid_slock;
+struct lock_object 			mntvnode_slock;
+struct lock_object 			vnode_free_list_slock;
+static struct lock_object 	spechash_slock;
 
 /*
  * Initialize the vnode management data structures.
@@ -117,7 +117,7 @@ int
 vfs_busy(mp, flags, interlkp, p)
 	struct mount *mp;
 	int flags;
-	struct simplelock *interlkp;
+	struct lock_object *interlkp;
 	struct proc *p;
 {
 	int lkflags;

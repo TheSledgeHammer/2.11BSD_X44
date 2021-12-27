@@ -236,7 +236,7 @@ swaplist_insert(sdp, newspp, priority)
 struct swapdev *
 swaplist_find(vp, remove)
 	struct vnode *vp;
-	boolean_t remove;
+	bool_t remove;
 {
 	struct swapdev *sdp;
 	struct swappri *spp;
@@ -1139,7 +1139,7 @@ int
 vm_swap_alloc(swp, nslots, lessok)
 	struct swdevt	*swp;
 	int 			*nslots;	/* IN/OUT */
-	boolean_t 		lessok;
+	bool_t 			lessok;
 {
 	struct swapdev 	*sdp;
 	struct swappri 	*spp;

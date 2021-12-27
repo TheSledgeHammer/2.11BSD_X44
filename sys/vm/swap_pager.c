@@ -132,11 +132,11 @@ static void			swap_pager_clean_check (vm_page_t *, int, int);
 #endif
 static void			swap_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 static void			swap_pager_dealloc (vm_pager_t);
-static int			swap_pager_getpage (vm_pager_t, vm_page_t *, int, boolean_t);
-static boolean_t	swap_pager_haspage (vm_pager_t, vm_offset_t);
+static int			swap_pager_getpage (vm_pager_t, vm_page_t *, int, bool_t);
+static bool_t		swap_pager_haspage (vm_pager_t, vm_offset_t);
 static int			swap_pager_io (sw_pager_t, vm_page_t *, int, int);
 static void			swap_pager_iodone (struct buf *);
-static int			swap_pager_putpage (vm_pager_t, vm_page_t *, int, boolean_t);
+static int			swap_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
 
 struct pagerops swappagerops = {
 	swap_pager_init,
@@ -407,7 +407,7 @@ swap_pager_getpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
 	int npages;
-	boolean_t sync;
+	bool_t sync;
 {
 #ifdef DEBUG
 	if (swpagerdebug & SDB_FOLLOW)
@@ -422,7 +422,7 @@ swap_pager_putpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
 	int npages;
-	boolean_t sync;
+	bool_t sync;
 {
 	int flags;
 
@@ -441,7 +441,7 @@ swap_pager_putpage(pager, mlist, npages, sync)
 	return(swap_pager_io((sw_pager_t)pager->pg_data, mlist, npages, flags));
 }
 
-static boolean_t
+static bool_t
 swap_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;
@@ -532,7 +532,7 @@ swap_pager_io(swp, mlist, npages, flags)
 	register sw_blk_t swb;
 	register int s;
 	int ix, mask;
-	boolean_t rv;
+	bool_t rv;
 	vm_offset_t kva, off;
 	swp_clean_t spc;
 	vm_page_t m;
@@ -912,7 +912,7 @@ swap_pager_clean_check(mlist, npages, rw)
 	int rw;
 {
 	register swp_clean_t spc;
-	boolean_t bad;
+	bool_t bad;
 	int i, j, s;
 	vm_page_t m;
 

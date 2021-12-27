@@ -51,7 +51,7 @@ struct softpic {
     int                     sp_pin;
     int                     sp_apicid;
     int						sp_type;
-    boolean_t               sp_isapic;
+    bool_t               	sp_isapic;
     struct mp_intr_map 		*sp_map;
 };
 
@@ -124,14 +124,14 @@ extern struct softpic		*intrspic;
 void			softpic_pic_init(void *);
 int				softpic_register_pic(struct pic *);
 struct pic 		*softpic_handle_pic(struct softpic *);
-void			softpic_pic_hwmask(struct softpic *, int, boolean_t, int);
-void			softpic_pic_hwunmask(struct softpic *, int, boolean_t, int);
-void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
-void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
-struct softpic 	*softpic_intr_handler(struct softpic *, int, int, boolean_t, int);
+void			softpic_pic_hwmask(struct softpic *, int, bool_t, int);
+void			softpic_pic_hwunmask(struct softpic *, int, bool_t, int);
+void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
+void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
+struct softpic 	*softpic_intr_handler(struct softpic *, int, int, bool_t, int);
 
 /* intr.c */
-void 			*intr_establish(boolean_t, int, int, int, int, int (*)(void *), void *);
+void 			*intr_establish(bool_t, int, int, int, int, int (*)(void *), void *);
 void			intr_disestablish(struct intrhand *);
 int				fakeintr(void *);
 

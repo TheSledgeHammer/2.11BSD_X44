@@ -251,7 +251,7 @@ vm_offset_t		vm_first_phys;		/* PA of first managed page */
 vm_offset_t		vm_last_phys;		/* PA just past last managed page */
 
 int				i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
-boolean_t		pmap_initialized = FALSE;	/* Has pmap_init completed? */
+bool_t		pmap_initialized = FALSE;	/* Has pmap_init completed? */
 char			*pmap_attributes;	/* reference and modify bits */
 
 pd_entry_t 		*IdlePTD;			/* phys addr of kernel PTD */
@@ -304,7 +304,7 @@ pmap_cold_mapident(pa, cnt)
 
 static void
 pmap_remap_lower(enable)
-	boolean_t enable;
+	bool_t enable;
 {
 	int i;
 
@@ -543,7 +543,7 @@ pmap_bootstrap_alloc(size)
 {
 	vm_offset_t val;
 	int i;
-	extern boolean_t vm_page_startup_initialized;
+	extern bool_t vm_page_startup_initialized;
 
 	if (vm_page_startup_initialized)
 		panic("pmap_bootstrap_alloc: called after startup initialized");
@@ -948,8 +948,8 @@ pmap_remove(pmap, sva, eva)
 	register int ix;
 	pmap_t ptpmap;
 	int *pde, s, bits;
-	boolean_t firstpage = TRUE;
-	boolean_t flushcache = FALSE;
+	bool_t firstpage = TRUE;
+	bool_t flushcache = FALSE;
 #ifdef DEBUG
 	pt_entry_t opte;
 
@@ -1143,7 +1143,7 @@ pmap_protect(pmap, sva, eva, prot)
 	register vm_offset_t va;
 	register int ix;
 	int i386prot;
-	boolean_t firstpage = TRUE;
+	bool_t firstpage = TRUE;
 
 #ifdef DEBUG
 	if (pmapdebug & (PDB_FOLLOW|PDB_PROTECT))
@@ -1213,13 +1213,13 @@ pmap_enter(pmap, va, pa, prot, wired)
 	vm_offset_t va;
 	register vm_offset_t pa;
 	vm_prot_t prot;
-	boolean_t wired;
+	bool_t wired;
 {
 	register pt_entry_t *pte;
 	register int npte, ix;
 	vm_offset_t opa;
-	boolean_t cacheable = TRUE;
-	boolean_t checkpv = TRUE;
+	bool_t cacheable = TRUE;
+	bool_t checkpv = TRUE;
 
 #ifdef DEBUG
 	if (pmapdebug & (PDB_FOLLOW|PDB_ENTER))
@@ -1435,7 +1435,7 @@ void
 pmap_change_wiring(pmap, va, wired)
 	register pmap_t	pmap;
 	vm_offset_t	va;
-	boolean_t	wired;
+	bool_t	wired;
 {
 	register pt_entry_t *pte;
 	register int ix;
@@ -1762,7 +1762,7 @@ void
 pmap_pageable(pmap, sva, eva, pageable)
 	pmap_t		pmap;
 	vm_offset_t	sva, eva;
-	boolean_t	pageable;
+	bool_t	pageable;
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
@@ -1847,13 +1847,13 @@ void pmap_clear_reference(pa)
  *	by any physical maps.
  */
 
-boolean_t
+bool_t
 pmap_is_referenced(pa)
 	vm_offset_t	pa;
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW) {
-		boolean_t rv = pmap_testbit(pa, PG_U);
+		bool_t rv = pmap_testbit(pa, PG_U);
 		printf("pmap_is_referenced(%x) -> %c", pa, "FT"[rv]);
 		return(rv);
 	}
@@ -1868,13 +1868,13 @@ pmap_is_referenced(pa)
  *	by any physical maps.
  */
 
-boolean_t
+bool_t
 pmap_is_modified(pa)
 	vm_offset_t	pa;
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW) {
-		boolean_t rv = pmap_testbit(pa, PG_M);
+		bool_t rv = pmap_testbit(pa, PG_M);
 		printf("pmap_is_modified(%x) -> %c", pa, "FT"[rv]);
 		return(rv);
 	}
@@ -1958,7 +1958,7 @@ i386_protection_init(void)
 	}
 }
 
-boolean_t
+bool_t
 pmap_testbit(pa, bit)
 	register vm_offset_t pa;
 	int bit;
@@ -2003,13 +2003,13 @@ void
 pmap_changebit(pa, bit, setem)
 	register vm_offset_t pa;
 	int bit;
-	boolean_t setem;
+	bool_t setem;
 {
 	register pv_entry_t pv;
 	register int *pte, npte, ix;
 	vm_offset_t va;
 	int s;
-	boolean_t firstpage = TRUE;
+	bool_t firstpage = TRUE;
 
 	struct proc *p;
 

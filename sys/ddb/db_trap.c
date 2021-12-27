@@ -48,8 +48,8 @@ void
 db_trap(type, code)
 	int	type, code;
 {
-	boolean_t	bkpt;
-	boolean_t	watchpt;
+	bool_t	bkpt;
+	bool_t	watchpt;
 
 	bkpt = IS_BREAKPOINT_TRAP(type, code);
 	watchpt = IS_WATCHPOINT_TRAP(type, code);

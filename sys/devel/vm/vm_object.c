@@ -405,18 +405,18 @@ vm_object_terminate(object)
  *	somewhere.  We attempt to clean (and dequeue) all pages regardless
  *	of where an error occurs.
  */
-boolean_t
+bool_t
 vm_object_page_clean(object, start, end, syncio, de_queue)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	boolean_t				syncio;
-	boolean_t				de_queue;
+	bool_t				syncio;
+	bool_t				de_queue;
 {
 	register vm_segment_t	segment;
 	register vm_page_t		page;
 	int onqueue;
-	boolean_t noerror = TRUE;
+	bool_t noerror = TRUE;
 
 	if (object == NULL)
 		return (TRUE);
@@ -856,7 +856,7 @@ vm_object_cache_clear()
 	vm_object_cache_unlock();
 }
 
-boolean_t	vm_object_collapse_allowed = TRUE;
+bool_t	vm_object_collapse_allowed = TRUE;
 /*
  *	vm_object_collapse:
  *
@@ -1225,7 +1225,7 @@ vm_object_segment_remove(object, start, end)
  *	Conditions:
  *	The object must *not* be locked.
  */
-boolean_t
+bool_t
 vm_object_coalesce(prev_object, next_object, prev_offset, next_offset, prev_size, next_size)
 
 	register vm_object_t	prev_object;

@@ -144,8 +144,8 @@ ufs_ihashrem(ip)
 	simple_lock(&ufs_ihash_slock);
 	LIST_REMOVE(ip, i_hash);
 #ifdef DIAGNOSTIC
-	ip->i_hash.le_next = NULL;
-	ip->i_hash.le_prev = NULL;
+	LIST_NEXT(ip, i_hash) = NULL;
+	LIST_PREV(ip, i_hash) = NULL;
 #endif
 	simple_unlock(&ufs_ihash_slock);
 }

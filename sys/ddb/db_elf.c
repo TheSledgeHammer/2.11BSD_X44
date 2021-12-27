@@ -336,7 +336,7 @@ X_db_symbol_values(symtab, sym, namep, valuep)
  * Return the file and line number of the current program counter
  * if we can find the appropriate debugging symbol.
  */
-boolean_t
+bool_t
 X_db_line_at_pc(symtab, cursym, filename, linenum, off)
 	db_symtab_t *symtab;
 	db_sym_t cursym;
@@ -355,7 +355,7 @@ X_db_line_at_pc(symtab, cursym, filename, linenum, off)
  * Returns the number of arguments to a function and their
  * names if we can find the appropriate debugging symbol.
  */
-boolean_t
+bool_t
 X_db_sym_numargs(symtab, cursym, nargp, argnamep)
 	db_symtab_t *symtab;
 	db_sym_t cursym;

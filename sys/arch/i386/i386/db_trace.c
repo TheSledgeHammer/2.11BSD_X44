@@ -79,7 +79,7 @@ struct i386_frame {
 db_addr_t	db_trap_symbol_value = 0;
 db_addr_t	db_syscall_symbol_value = 0;
 db_addr_t	db_kdintr_symbol_value = 0;
-boolean_t	db_trace_symbols_found = FALSE;
+bool_t	db_trace_symbols_found = FALSE;
 
 void db_find_trace_symbols __P((void));
 int db_numargs __P((struct i386_frame *));
@@ -178,7 +178,7 @@ db_nextframe(fp, ip, argp, is_trap)
 void
 db_stack_trace_cmd(addr, have_addr, count, modif)
 	db_expr_t	addr;
-	boolean_t	have_addr;
+	bool_t	have_addr;
 	db_expr_t	count;
 	char		*modif;
 {
@@ -186,8 +186,8 @@ db_stack_trace_cmd(addr, have_addr, count, modif)
 	int		*argp;
 	db_addr_t	callpc;
 	int		is_trap = 0;
-	boolean_t	kernel_only = TRUE;
-	boolean_t	trace_thread = FALSE;
+	bool_t	kernel_only = TRUE;
+	bool_t	trace_thread = FALSE;
 
 #if 0
 	if (!db_trace_symbols_found)

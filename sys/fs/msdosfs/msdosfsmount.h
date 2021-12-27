@@ -1,4 +1,4 @@
-/*	$NetBSD: msdosfsmount.h,v 1.17 1997/11/17 15:37:07 ws Exp $	*/
+/*	$NetBSD: msdosfsmount.h,v 1.5.2.2 2004/05/23 10:46:11 tron Exp $	*/
 
 /*-
  * Copyright (C) 1994, 1995, 1997 Wolfgang Solfrank.
@@ -51,45 +51,88 @@
 #define	_MSDOSFS_MSDOSFSMOUNT_H_
 
 /*
+ *  Arguments to mount MSDOS filesystems.
+ */
+struct msdosfs_args {
+	char				*fspec;		/* blocks special holding the fs to mount */
+	struct	export_args export;	/* network export information */
+	uid_t				uid;		/* uid that owns msdosfs files */
+	gid_t				gid;		/* gid that owns msdosfs files */
+	mode_t 		 		mask;		/* mask to be applied for msdosfs perms */
+	int					flags;		/* see below */
+
+	/* Following items added after versioning support */
+	int					version;	/* version of the struct */
+#define MSDOSFSMNT_VERSION	3
+	mode_t  			dirmask;	/* v2: mask to be applied for msdosfs perms */
+	int					gmtoff;		/* v3: offset from UTC in seconds */
+};
+
+/*
+ * Msdosfs mount options:
+ */
+#define	MSDOSFSMNT_SHORTNAME	1	/* Force old DOS short names only */
+#define	MSDOSFSMNT_LONGNAME		2	/* Force Win'95 long names */
+#define	MSDOSFSMNT_NOWIN95		4	/* Completely ignore Win95 entries */
+#define	MSDOSFSMNT_GEMDOSFS		8	/* This is a gemdos-flavour */
+#define MSDOSFSMNT_VERSIONED	16	/* Struct is versioned */
+
+/* All flags above: */
+#define	MSDOSFSMNT_MNTOPT \
+	(MSDOSFSMNT_SHORTNAME|MSDOSFSMNT_LONGNAME|MSDOSFSMNT_NOWIN95 \
+	 |MSDOSFSMNT_GEMDOSFS|MSDOSFSMNT_VERSIONED)
+
+#define	MSDOSFSMNT_RONLY		0x80000000	/* mounted read-only	*/
+#define	MSDOSFSMNT_WAITONFAT	0x40000000	/* mounted synchronous	*/
+#define	MSDOSFS_FATMIRROR		0x20000000	/* FAT is mirrored */
+
+#define MSDOSFSMNT_BITS "\177\20" \
+    "b\00shortname\0b\01longname\0b\02nowin95\0b\03gemdosfs\0b\04mntversioned\0" \
+    "b\037ronly\0b\036waitonfat\0b\035fatmirror\0"
+
+//#ifdef _KERNEL
+/*
  * Layout of the mount control block for a msdos filesystem.
  */
 struct msdosfsmount {
-	struct mount 	*pm_mountp;		/* vfs mount struct for this fs */
-	dev_t 			pm_dev;			/* block special device mounted */
-	uid_t 			pm_uid;			/* uid to set as owner of the files */
-	gid_t 			pm_gid;			/* gid to set as owner of the files */
-	mode_t 			pm_mask;		/* mask to and with file protection bits */
-	struct vnode 	*pm_devvp;		/* vnode for block device mntd */
-	struct bpb50 	pm_bpb;			/* BIOS parameter blk for this fs */
-	u_long 			pm_FATsecs;		/* actual number of fat sectors */
-	u_long 			pm_fatblk;		/* block # of first FAT */
-	u_long 			pm_rootdirblk;	/* block # (cluster # for FAT32) of root directory number */
-	u_long 			pm_rootdirsize;	/* size in blocks (not clusters) */
-	u_long 			pm_firstcluster;	/* block number of first cluster */
-	u_long 			pm_nmbrofclusters;	/* # of clusters in filesystem */
-	u_long 			pm_maxcluster;	/* maximum cluster number */
-	u_long 			pm_freeclustercount;	/* number of free clusters */
-	u_long 			pm_cnshift;		/* shift file offset right this amount to get a cluster number */
-	u_long 			pm_crbomask;	/* and a file offset with this mask to get cluster rel offset */
-	u_long 			pm_bnshift;		/* shift file offset right this amount to get a block number */
-	u_long 			pm_bpcluster;	/* bytes per cluster */
-	u_long 			pm_fmod;		/* ~0 if fs is modified, this can rollover to 0	*/
-	u_long 			pm_fatblocksize;/* size of fat blocks in bytes */
-	u_long 			pm_fatblocksec;	/* size of fat blocks in sectors */
-	u_long 			pm_fatsize;		/* size of fat in bytes */
-	u_long 			pm_fatmask;		/* mask to use for fat numbers */
-	u_long 			pm_fsinfo;		/* fsinfo block number */
-	u_long 			pm_nxtfree;		/* next free cluster in fsinfo block */
-	u_int 			pm_fatmult;		/* these 2 values are used in fat */
-	u_int 			pm_fatdiv;		/*	offset computation */
-	u_int 			pm_curfat;		/* current fat for FAT32 (0 otherwise) */
-	u_int 			*pm_inusemap;	/* ptr to bitmap of in-use clusters */
-	u_int 			pm_flags;		/* see below */
-	struct netexport pm_export;		/* export information */
+	struct mount 		*pm_mountp;/* vfs mount struct for this fs */
+	dev_t 				pm_dev;		/* block special device mounted */
+	uid_t 				pm_uid;		/* uid to set as owner of the files */
+	gid_t 				pm_gid;		/* gid to set as owner of the files */
+	mode_t 				pm_mask;		/* mask to and with file protection bits for files */
+	mode_t 				pm_dirmask;	/* mask to and with file protection bits for directories */
+	int 				pm_gmtoff;		/* offset from UTC in seconds */
+	struct vnode 		*pm_devvp;	/* vnode for block device mntd */
+	struct bpb50	 	pm_bpb;	/* BIOS parameter blk for this fs */
+	u_long 				pm_FATsecs;	/* actual number of fat sectors */
+	u_long 				pm_fatblk;	/* block # of first FAT */
+	u_long 				pm_rootdirblk;	/* block # (cluster # for FAT32) of root directory number */
+	u_long 				pm_rootdirsize;	/* size in blocks (not clusters) */
+	u_long 				pm_firstcluster;	/* block number of first cluster */
+	u_long 				pm_nmbrofclusters;	/* # of clusters in filesystem */
+	u_long 				pm_maxcluster;	/* maximum cluster number */
+	u_long 				pm_freeclustercount;	/* number of free clusters */
+	u_long 				pm_cnshift;	/* shift file offset right this amount to get a cluster number */
+	u_long 				pm_crbomask;	/* and a file offset with this mask to get cluster rel offset */
+	u_long 				pm_bnshift;	/* shift file offset right this amount to get a block number */
+	u_long 				pm_bpcluster;	/* bytes per cluster */
+	u_long 				pm_fmod;		/* ~0 if fs is modified, this can rollover to 0	*/
+	u_long 				pm_fatblocksize;	/* size of fat blocks in bytes */
+	u_long 				pm_fatblocksec;	/* size of fat blocks in sectors */
+	u_long 				pm_fatsize;	/* size of fat in bytes */
+	u_long 				pm_fatmask;	/* mask to use for fat numbers */
+	u_long 				pm_fsinfo;	/* fsinfo block number */
+	u_long 				pm_nxtfree;	/* next free cluster in fsinfo block */
+	u_int 				pm_fatmult;	/* these 2 values are used in fat */
+	u_int 				pm_fatdiv;	/*	offset computation */
+	u_int 				pm_curfat;	/* current fat for FAT32 (0 otherwise) */
+	u_int	 			*pm_inusemap;	/* ptr to bitmap of in-use clusters */
+	u_int 				pm_flags;		/* see below */
+	struct netexport 	pm_export;	/* export information */
 };
-/* Byte offset in FAT on filesystem pmp, cluster cn */
-#define	FATOFS(pmp, cn)		((cn) * (pmp)->pm_fatmult / (pmp)->pm_fatdiv)
 
+/* Byte offset in FAT on filesystem pmp, cluster cn */
+#define	FATOFS(pmp, cn)	((cn) * (pmp)->pm_fatmult / (pmp)->pm_fatdiv)
 
 #define	VFSTOMSDOSFS(mp)	((struct msdosfsmount *)mp->mnt_data)
 
@@ -182,15 +225,8 @@ struct msdosfsmount {
 /*
  * Prototypes for MSDOSFS virtual filesystem operations
  */
-int msdosfs_mount (struct mount *, const char *, void *, struct nameidata *, struct proc *);
-int msdosfs_start (struct mount *, int, struct proc *);
-int msdosfs_unmount (struct mount *, int, struct proc *);
-int msdosfs_root (struct mount *, struct vnode **);
-int msdosfs_quotactl (struct mount *, int, uid_t, caddr_t, struct proc *);
-int msdosfs_statfs (struct mount *, struct statfs *, struct proc *);
-int msdosfs_sync (struct mount *, int, struct ucred *, struct proc *);
-int msdosfs_fhtovp (struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
-int msdosfs_vptofh (struct vnode *, struct fid *);
 void msdosfs_init (void);
-
+void msdosfs_reinit (void);
+//void msdosfs_done (void);
+#endif /* _KERNEL */
 #endif /* !_MSDOSFS_MSDOSFSMOUNT_H_ */

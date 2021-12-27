@@ -95,7 +95,7 @@ lfs_mountroot()
 		printf("lfs_mountroot: can't setup bdevvp's");
 		return (error);
 	}
-	if (error == vfs_rootmountalloc("lfs", "root_device", &mp))
+	if (error == vfs_rootmountalloc(MOUNT_LFS, "root_device", &mp))
 		return (error);
 	if (error == lfs_mountfs(rootvp, mp, p)) {
 		mp->mnt_vfc->vfc_refcount--;

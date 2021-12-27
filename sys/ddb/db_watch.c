@@ -48,7 +48,7 @@
  * Watchpoints.
  */
 
-boolean_t	db_watchpoints_inserted = TRUE;
+bool_t	db_watchpoints_inserted = TRUE;
 
 #define	NWATCHPOINTS	100
 struct db_watchpoint	db_watch_table[NWATCHPOINTS];
@@ -237,7 +237,7 @@ db_clear_watchpoints()
 	db_watchpoints_inserted = FALSE;
 }
 
-boolean_t
+bool_t
 db_find_watchpoint(map, addr, regs)
 	vm_map_t	map;
 	db_addr_t	addr;

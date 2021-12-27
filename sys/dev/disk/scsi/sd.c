@@ -704,7 +704,7 @@ sdstrategy(bp)
 	struct disklabel *lp;
 	daddr_t blkno;
 	int s;
-	boolean_t sector_aligned;
+	bool_t sector_aligned;
 
 	SC_DEBUG(sd->sc_periph, SCSIPI_DB2, ("sdstrategy "));
 	SC_DEBUG(sd->sc_periph, SCSIPI_DB1,

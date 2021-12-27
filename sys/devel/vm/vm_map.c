@@ -441,7 +441,7 @@ vm_map_t
 vm_map_create(pmap, min, max, pageable)
 	pmap_t		pmap;
 	vm_offset_t	min, max;
-	boolean_t	pageable;
+	bool_t	pageable;
 {
 	register vm_map_t	result;
 	extern vm_map_t		kmem_map;
@@ -469,7 +469,7 @@ void
 vm_map_init(map, min, max, pageable)
 	register struct vm_map *map;
 	vm_offset_t	min, max;
-	boolean_t	pageable;
+	bool_t	pageable;
 {
 	CIRCLEQ_INIT(&map->cl_header);
 	RB_INIT(&map->rb_root);
@@ -501,7 +501,7 @@ vm_map_entry_create(map)
 	vm_map_entry_t	entry;
 #ifdef DEBUG
 	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
-	boolean_t			isspecial;
+	bool_t			isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
 	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable)
@@ -531,7 +531,7 @@ vm_map_entry_dispose(map, entry)
 {
 #ifdef DEBUG
 	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
-	boolean_t			isspecial;
+	bool_t			isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
 	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable)
@@ -793,7 +793,7 @@ vm_map_insert(map, object, offset, start, end)
  *	result indicates whether the address is
  *	actually contained in the map.
  */
-boolean_t
+bool_t
 vm_map_lookup_entry(map, address, entry)
 	register vm_map_t		map;
 	register vm_offset_t	address;
@@ -801,7 +801,7 @@ vm_map_lookup_entry(map, address, entry)
 {
 	register vm_map_entry_t		cur;
 	register vm_map_entry_t		last;
-    boolean_t use_tree = FALSE;
+    bool_t use_tree = FALSE;
 
 	/*
 	 *	Start looking either from the head or tail of the
@@ -868,7 +868,7 @@ failed:
     return (FALSE);
 }
 
-static boolean_t
+static bool_t
 vm_map_search_next_entry(map, address, entry)
     register vm_map_t	    map;
     register vm_offset_t	address;
@@ -891,7 +891,7 @@ vm_map_search_next_entry(map, address, entry)
     return (FALSE);
 }
 
-static boolean_t
+static bool_t
 vm_map_search_prev_entry(map, address, entry)
     register vm_map_t	    map;
     register vm_offset_t	address;
@@ -991,7 +991,7 @@ vm_map_find(map, object, offset, addr, length, find_space)
 	vm_offset_t	offset;
 	vm_offset_t	*addr;		/* IN/OUT */
 	vm_size_t	length;
-	boolean_t	find_space;
+	bool_t	find_space;
 {
 	register vm_offset_t	start;
 	int			result;
@@ -1308,7 +1308,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 	register vm_prot_t		new_prot;
-	register boolean_t		set_max;
+	register bool_t		set_max;
 {
 	register vm_map_entry_t		current;
 	vm_map_entry_t				entry;
@@ -1571,7 +1571,7 @@ vm_map_pageable(map, start, end, new_pageable)
 	register vm_map_t		map;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	register boolean_t		new_pageable;
+	register bool_t		new_pageable;
 {
 	register vm_map_entry_t	entry;
 	vm_map_entry_t			start_entry;
@@ -1793,8 +1793,8 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	vm_map_t	map;
 	vm_offset_t	start;
 	vm_offset_t	end;
-	boolean_t	syncio;
-	boolean_t	invalidate;
+	bool_t	syncio;
+	bool_t	invalidate;
 {
 	register vm_map_entry_t current;
 	vm_map_entry_t 			entry;
@@ -2061,7 +2061,7 @@ vm_map_remove(map, start, end)
  *	privilege on the entire address region given.
  *	The entire region must be allocated.
  */
-boolean_t
+bool_t
 vm_map_check_protection(map, start, end, protection)
 	register vm_map_t		map;
 	register vm_offset_t	start;
@@ -2151,7 +2151,7 @@ vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
 
 	if (src_entry->wired_count == 0) {
 
-		boolean_t	src_needs_copy;
+		bool_t	src_needs_copy;
 
 		/*
 		 *	If the source entry is marked needs_copy,
@@ -2159,7 +2159,7 @@ vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
 		 */
 		if (!src_entry->needs_copy) {
 
-			boolean_t	su;
+			bool_t	su;
 
 			/*
 			 *	If the source entry has only one mapping,
@@ -2259,8 +2259,8 @@ vm_map_copy(dst_map, src_map,
 	vm_offset_t	dst_addr;
 	vm_size_t	len;
 	vm_offset_t	src_addr;
-	boolean_t	dst_alloc;
-	boolean_t	src_destroy;
+	bool_t	dst_alloc;
+	bool_t	src_destroy;
 {
 	register
 	vm_map_entry_t	src_entry;
@@ -2274,7 +2274,7 @@ vm_map_copy(dst_map, src_map,
 	vm_offset_t	src_clip;
 	vm_offset_t	dst_clip;
 	int		result;
-	boolean_t	old_src_destroy;
+	bool_t	old_src_destroy;
 
 	/*
 	 *	XXX While we figure out why src_destroy screws up,
@@ -2742,15 +2742,15 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 	vm_object_t				*object;		/* OUT */
 	vm_offset_t				*offset;		/* OUT */
 	vm_prot_t				*out_prot;		/* OUT */
-	boolean_t				*wired;			/* OUT */
-	boolean_t				*single_use;	/* OUT */
+	bool_t				*wired;			/* OUT */
+	bool_t				*single_use;	/* OUT */
 {
 	vm_map_t				share_map;
 	vm_offset_t				share_offset;
 	register vm_map_entry_t	entry;
 	register vm_map_t		map = *var_map;
 	register vm_prot_t		prot;
-	register boolean_t		su;
+	register bool_t		su;
 
 	RetryLookup: ;
 
@@ -3034,7 +3034,7 @@ vm_map_simplify(map, start)
 void
 vm_map_print(map, full)
 	register vm_map_t	map;
-	boolean_t			full;
+	bool_t			full;
 {
 	register vm_map_entry_t	entry;
 	extern int indent;

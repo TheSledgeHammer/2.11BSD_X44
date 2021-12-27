@@ -100,7 +100,7 @@ cd9660_mountroot()
 		return (error);
 	}
 
-	if (error == vfs_rootmountalloc("cd9660", "root_device", &mp))
+	if (error == vfs_rootmountalloc(MOUNT_CD9660, "root_device", &mp))
 		return (error);
 	args.flags = ISOFSMNT_ROOT;
 	if (error == iso_mountfs(rootvp, mp, p, &args)) {

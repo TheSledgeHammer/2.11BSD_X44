@@ -83,7 +83,7 @@ struct svm_allocate_args {
 	vm_map_t map;
 	vm_offset_t *addr;
 	vm_size_t size;
-	boolean_t anywhere;
+	bool_t anywhere;
 };
 /* ARGSUSED */
 int
@@ -151,7 +151,7 @@ struct svm_protect_args {
 	vm_map_t map;
 	vm_offset_t addr;
 	vm_size_t size;
-	boolean_t setmax;
+	bool_t setmax;
 	vm_prot_t prot;
 };
 /* ARGSUSED */
@@ -195,7 +195,7 @@ vm_protect(map, start, size, set_maximum, new_protection)
 	register vm_map_t	map;
 	vm_offset_t		start;
 	vm_size_t		size;
-	boolean_t		set_maximum;
+	bool_t		set_maximum;
 	vm_prot_t		new_protection;
 {
 	if (map == NULL)
@@ -214,7 +214,7 @@ vm_allocate(map, addr, size, anywhere)
 	register vm_map_t	map;
 	register vm_offset_t	*addr;
 	register vm_size_t	size;
-	boolean_t		anywhere;
+	bool_t		anywhere;
 {
 	int	result;
 
@@ -263,10 +263,10 @@ vm_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 	register vm_map_t		map;
 	register vm_offset_t	*addr;
 	register vm_size_t		size;
-	boolean_t				anywhere;
+	bool_t					anywhere;
 	vm_pager_t				pager;
 	vm_offset_t				poffset;
-	boolean_t				internal;
+	bool_t					internal;
 {
 	register vm_object_t	object;
 	register int			result;

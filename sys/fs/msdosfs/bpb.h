@@ -1,4 +1,4 @@
-/*	$NetBSD: bpb.h,v 1.7 1997/11/17 15:36:24 ws Exp $	*/
+/*	$NetBSD: bpb.h,v 1.2 2003/10/08 04:11:43 lukem Exp $	*/
 
 /*
  * Written by Paul Popelka (paulp@uts.amdahl.com)
@@ -80,6 +80,28 @@ struct bpb710 {
 	/* There is a 12 byte filler here, but we ignore it */
 };
 
+#ifdef	atari
+/*
+ * BPB for gemdos filesystems. Atari leaves the obsolete stuff undefined.
+ * Currently there is no need for a separate BPB structure.
+ */
+#if 0
+struct bpb_a {
+	u_int16_t	bpbBytesPerSec;	/* bytes per sector		*/
+	u_int8_t	bpbSecPerClust;	/* sectors per cluster		*/
+	u_int16_t	bpbResSectors;	/* number of reserved sectors	*/
+	u_int8_t	bpbFATs;	/* number of FATs		*/
+	u_int16_t	bpbRootDirEnts;	/* number of root directory entries */
+	u_int16_t	bpbSectors;	/* total number of sectors	*/
+	u_int8_t	bpbUseless1;	/* meaningless on gemdos fs	*/
+	u_int16_t	bpbFATsecs;	/* number of sectors per FAT	*/
+	u_int16_t	bpbUseless2;	/* meaningless for harddisk fs	*/
+	u_int16_t	bpbUseless3;	/* meaningless for harddisk fs	*/
+	u_int16_t	bpbHiddenSecs;	/* the TOS-BIOS ignores this	*/
+};
+#endif
+#endif	/* atari */
+
 /*
  * The following structures represent how the bpb's look on disk.  shorts
  * and longs are just character arrays of the appropriate length.  This is
@@ -92,11 +114,6 @@ struct bpb710 {
  */
 
 #include <machine/endian.h>
-
-#ifdef __i386__
-#define	UNLALIGNED_ACCESS
-#endif
-
 #if (BYTE_ORDER == LITTLE_ENDIAN) && defined(UNALIGNED_ACCESS)
 #define	getushort(x)	*((u_int16_t *)(x))
 #define	getulong(x)		*((u_int32_t *)(x))
@@ -105,14 +122,14 @@ struct bpb710 {
 #else
 #define getushort(x)	(((u_int8_t *)(x))[0] + (((u_int8_t *)(x))[1] << 8))
 #define getulong(x)		(((u_int8_t *)(x))[0] + (((u_int8_t *)(x))[1] << 8) \
-			 + (((u_int8_t *)(x))[2] << 16)	\
-			 + (((u_int8_t *)(x))[3] << 24))
+						+ (((u_int8_t *)(x))[2] << 16)	\
+						+ (((u_int8_t *)(x))[3] << 24))
 #define putushort(p, v)	(((u_int8_t *)(p))[0] = (v),	\
-			 ((u_int8_t *)(p))[1] = (v) >> 8)
+			 	 	 	 ((u_int8_t *)(p))[1] = (v) >> 8)
 #define putulong(p, v)	(((u_int8_t *)(p))[0] = (v),	\
-			 ((u_int8_t *)(p))[1] = (v) >> 8, \
-			 ((u_int8_t *)(p))[2] = (v) >> 16,\
-			 ((u_int8_t *)(p))[3] = (v) >> 24)
+			 	 	 	 ((u_int8_t *)(p))[1] = (v) >> 8, \
+						 ((u_int8_t *)(p))[2] = (v) >> 16,\
+						 ((u_int8_t *)(p))[3] = (v) >> 24)
 #endif
 
 /*
@@ -173,7 +190,7 @@ struct byte_bpb710 {
 	u_int8_t bpbRootClust[4];	/* start cluster for root directory */
 	u_int8_t bpbFSInfo[2];		/* filesystem info structure sector */
 	u_int8_t bpbBackup[2];		/* backup boot sector */
-	/* There is a 12 byte filler here, but we ignore it */
+	u_int8_t bpbReserved[12];	/* Reserved for future expansion */
 };
 
 /*

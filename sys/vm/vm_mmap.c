@@ -315,7 +315,7 @@ msync(p, uap, retval)
 	vm_size_t size;
 	vm_map_t map;
 	int rv;
-	boolean_t syncio, invalidate;
+	bool_t syncio, invalidate;
 
 #ifdef DEBUG
 	if (mmapdebug & (MDB_FOLLOW|MDB_SYNC))
@@ -663,7 +663,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	vm_offset_t foff;
 {
 	register vm_pager_t pager;
-	boolean_t fitit;
+	bool_t fitit;
 	vm_object_t object;
 	struct vnode *vp = NULL;
 	int type;
@@ -838,7 +838,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 				vm_object_t tobject;
 				vm_offset_t toffset;
 				vm_prot_t tprot;
-				boolean_t twired, tsu;
+				bool_t twired, tsu;
 
 				tmap = map;
 				vm_map_lookup(&tmap, *addr, VM_PROT_WRITE,

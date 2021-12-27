@@ -1,4 +1,4 @@
-/*	$NetBSD: fat.h,v 1.12 1997/11/17 15:36:36 ws Exp $	*/
+/*	$NetBSD: fat.h,v 1.1 2002/12/26 12:31:33 jdolecek Exp $	*/
 
 /*-
  * Copyright (C) 1994, 1997 Wolfgang Solfrank.
@@ -58,6 +58,7 @@
 #define	CLUST_BAD	0xfffffff7	/* a cluster with a defect */
 #define	CLUST_EOFS	0xfffffff8	/* start of eof cluster range */
 #define	CLUST_EOFE	0xffffffff	/* end of eof cluster range */
+#define	CLUST_END	CLUST_EOFE	/* bigger than any valid cluster */
 
 #define	FAT12_MASK	0x00000fff	/* mask for 12 bit cluster numbers */
 #define	FAT16_MASK	0x0000ffff	/* mask for 16 bit cluster numbers */
@@ -75,7 +76,7 @@
 #define	FAT16(pmp)	(pmp->pm_fatmask == FAT16_MASK)
 #define	FAT32(pmp)	(pmp->pm_fatmask == FAT32_MASK)
 
-#define	MSDOSFSEOF(pmp, cn)	((((cn) | ~(pmp)->pm_fatmask) & CLUST_EOFS) == CLUST_EOFS)
+#define	MSDOSFSEOF(cn, fatmask)	(((cn) & CLUST_EOFS) == (CLUST_EOFS & (fatmask)))
 
 #ifdef _KERNEL
 /*
@@ -91,12 +92,13 @@
  */
 #define	DE_CLEAR	1	/* Zero out the blocks allocated */
 
-int pcbmap(struct denode *dep, u_long findcn, daddr_t *bnp, u_long *cnp, int* sp);
-int clusterfree(struct msdosfsmount *pmp, u_long cn, u_long *oldcnp);
-int clusteralloc(struct msdosfsmount *pmp, u_long start, u_long count, u_long fillwith, u_long *retcluster, u_long *got);
-int fatentry(int function, struct msdosfsmount *pmp, u_long cluster, u_long *oldcontents, u_long newcontents);
-int freeclusterchain(struct msdosfsmount *pmp, u_long startchain);
-int extendfile(struct denode *dep, u_long count, struct buf **bpp, u_long *ncp, int flags);
-void fc_purge(struct denode *dep, u_int frcn);
-
+int pcbmap (struct denode *, u_long, daddr_t *, u_long *, int *);
+int clusterfree (struct msdosfsmount *, u_long, u_long *);
+int clusteralloc (struct msdosfsmount *, u_long, u_long, u_long *, u_long *);
+int extendfile (struct denode *, u_long, struct buf **, u_long *, int);
+int fatentry (int, struct msdosfsmount *, u_long, u_long *, u_long);
+void fc_purge (struct denode *, u_int);
+void fc_lookup (struct denode *, u_long, u_long *, u_long *);
+int fillinusemap (struct msdosfsmount *);
+int freeclusterchain (struct msdosfsmount *, u_long);
 #endif	/* _KERNEL */

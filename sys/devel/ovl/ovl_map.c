@@ -619,14 +619,14 @@ ovl_map_insert(map, object, offset, start, end)
 		(map)->ovl_hint = (value); 				\
 		simple_unlock(&(map)->ovl_hint_lock);
 
-boolean_t
+bool_t
 ovl_map_lookup_entry(map, address, entry)
     register ovl_map_t	    map;
     register vm_offset_t	address;
     ovl_map_entry_t		    *entry;		/* OUT */
 {
     register ovl_map_entry_t cur;
-    boolean_t use_tree = FALSE;
+    bool_t use_tree = FALSE;
 
 	simple_lock(&map->ovl_hint_lock);
 	cur = map->ovl_hint;
@@ -689,7 +689,7 @@ failed:
     return (FALSE);
 }
 
-static boolean_t
+static bool_t
 ovl_map_search_next_entry(map, address, entry)
     register ovl_map_t	    map;
     register vm_offset_t	address;
@@ -712,7 +712,7 @@ ovl_map_search_next_entry(map, address, entry)
     return (FALSE);
 }
 
-static boolean_t
+static bool_t
 ovl_map_search_prev_entry(map, address, entry)
     register ovl_map_t	    map;
     register vm_offset_t	address;
@@ -802,7 +802,7 @@ ovl_map_find(map, object, offset, addr, length, find_space)
 	vm_offset_t	offset;
 	vm_offset_t	*addr;		/* IN/OUT */
 	vm_size_t	length;
-	boolean_t	find_space;
+	bool_t	find_space;
 {
 	register vm_offset_t	start;
 	int						result;

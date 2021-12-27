@@ -84,7 +84,7 @@ struct pmap {
 	uint32_t				*pm_pdir;		/* KVA of page directory */
 	uint32_t				*pm_ptab;		/* KVA of page table */
 #endif
-	boolean_t				pm_pdchanged;	/* pdir changed */
+	bool_t					pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
 	short					pm_count;		/* pmap reference count */
 	simple_lock_data_t		pm_lock;		/* lock on pmap */
@@ -141,7 +141,7 @@ struct pcb;
 void        pmap_activate(pmap_t, struct pcb *);
 void        pmap_kenter(vm_offset_t, vm_offset_t);
 void		pmap_kremove(vm_offset_t);
-void        pmap_changebit(vm_offset_t, int, boolean_t);
+void        pmap_changebit(vm_offset_t, int, bool_t);
 void        pmap_bios16_enter(void);
 void        pmap_bios16_leave(void *);
 /* SMP */

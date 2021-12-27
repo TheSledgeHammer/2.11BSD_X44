@@ -1194,7 +1194,7 @@ identifycyrix(void)
 }
 #endif
 
-boolean_t
+bool_t
 fix_cpuid(void)
 {
 	uint64_t msr;

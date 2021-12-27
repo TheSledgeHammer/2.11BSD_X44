@@ -56,6 +56,22 @@ struct statfs {
 };
 
 /*
+ * File system types.
+ */
+#define	MOUNT_FFS		"ffs"		/* UNIX "Fast" Filesystem */
+#define	MOUNT_UFS		"ufs"		/* for compatibility */
+#define	MOUNT_NFS		"nfs"		/* Network Filesystem */
+#define	MOUNT_MFS		"mfs"		/* Memory Filesystem */
+#define	MOUNT_MSDOS		"msdos"		/* MSDOS Filesystem */
+#define	MOUNT_LFS		"lfs"		/* Log-based Filesystem */
+#define	MOUNT_FDESC		"fdesc"		/* File Descriptor Filesystem */
+#define	MOUNT_CD9660	"cd9660"	/* ISO9660 (aka CDROM) Filesystem */
+#define	MOUNT_LOFS		"lofs"		/* Loopback Filesystem */
+#define	MOUNT_UNION		"union"		/* Union (translucent) Filesystem */
+#define	MOUNT_UFS211	"ufs211"	/* 2.11BSD UFS Filesystem */
+#define	MOUNT_UFML		"ufml"		/* UFML Filesystem */
+
+/*
  * Mount structure.
  * One allocated on every mount.
  * Used to find the super block.
@@ -110,7 +126,7 @@ struct	xmount {
  * Flags set by internal operations.
  */
 #define	MNT_LOCAL			0x00001000	/* filesystem is stored locally */
-/*					0x00002000 */
+/*							0x00002000 */
 #define	MNT_ROOTFS			0x00004000	/* identifies the root filesystem */
 
 /*
@@ -207,7 +223,7 @@ struct vfsconf {
 	struct	vfsconf 		*vfc_next;					/* next in list */
 };
 
-//#ifdef KERNEL
+#ifdef KERNEL
 
 extern int 					maxvfsconf;		/* highest defined filesystem type */
 extern struct vfsconf 		*vfsconf;		/* head of list of filesystem types */
@@ -215,22 +231,20 @@ extern struct vfsconf 		*vfsconf;		/* head of list of filesystem types */
 /*
  * Operations supported on mounted file system.
  */
-#ifdef __STDC__
 struct nameidata;
 struct mbuf;
-#endif
 
 struct vfsops {
-	int	(*vfs_mount) (struct mount *mp, char *path, caddr_t data, struct nameidata *ndp, struct proc *p);
-	int	(*vfs_start) (struct mount *mp, int flags, struct proc *p);
-	int	(*vfs_unmount) (struct mount *mp, int mntflags, struct proc *p);
-	int	(*vfs_root) (struct mount *mp, struct vnode **vpp);
-	int	(*vfs_quotactl) (struct mount *mp, int cmds, uid_t uid, caddr_t arg, struct proc *p);
-	int	(*vfs_statfs) (struct mount *mp, struct statfs *sbp, struct proc *p);
-	int	(*vfs_sync)	(struct mount *mp, int waitfor, struct ucred *cred, struct proc *p);
-	int	(*vfs_vget) (struct mount *mp, ino_t ino, struct vnode **vpp);
-	int	(*vfs_fhtovp) (struct mount *mp, struct fid *fhp, struct mbuf *nam, struct vnode **vpp, int *exflagsp, struct ucred **credanonp);
-	int	(*vfs_vptofh) (struct vnode *vp, struct fid *fhp);
+	int	(*vfs_mount) (struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
+	int	(*vfs_start) (struct mount *, int, struct proc *);
+	int	(*vfs_unmount) (struct mount *, int, struct proc *);
+	int	(*vfs_root) (struct mount *, struct vnode **);
+	int	(*vfs_quotactl) (struct mount *, int, uid_t, caddr_t, struct proc *);
+	int	(*vfs_statfs) (struct mount *, struct statfs *, struct proc *);
+	int	(*vfs_sync)	(struct mount *, int, struct ucred *, struct proc *);
+	int	(*vfs_vget) (struct mount *, ino_t, struct vnode **);
+	int	(*vfs_fhtovp) (struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
+	int	(*vfs_vptofh) (struct vnode *, struct fid *);
 	int	(*vfs_init) (struct vfsconf *);
 	int	(*vfs_sysctl) (int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 };
@@ -268,21 +282,19 @@ struct netexport {
 /*
  * exported vnode operations
  */
-int		dounmount (struct mount *, int, struct proc *);
-struct	mount *getvfs (fsid_t *);      													/* return vfs given fsid */
-int		vflush (struct mount *mp, struct vnode *skipvp, int flags);
-int		vfs_export (struct mount *, struct netexport *, struct export_args *); 			/* process mount export info */
-struct	netcred *vfs_export_lookup (struct mount *, struct netexport *, struct mbuf *); /* lookup host in fs export list */
-int		vfs_lock (struct mount *);         												/* lock a vfs */
-int		vfs_mountedon (struct vnode *);    												/* is a vfs mounted on vp */
-void	vfs_unlock (struct mount *);       												/* unlock a vfs */
-int		vfs_busy (struct mount *);         												/* mark a vfs  busy */
-void	vfs_unbusy (struct mount *);       												/* mark a vfs not busy */
-int		vfs_rootmountalloc (char *, char *, struct mount **);
-int		vfs_mountroot (void);
-void	vfs_getnewfsid (struct mount *);
-void	vfs_timestamp(struct timespec *tsp);
-void	vfs_unmountall (void);
+int				dounmount (struct mount *, int, struct proc *);
+struct	mount 	*vfs_getvfs (fsid_t *);														/* return vfs given fsid */
+int				vflush (struct mount *mp, struct vnode *skipvp, int flags);
+int				vfs_export (struct mount *, struct netexport *, struct export_args *); 		/* process mount export info */
+struct	netcred *vfs_export_lookup (struct mount *, struct netexport *, struct mbuf *); 	/* lookup host in fs export list */
+int				vfs_mountedon (struct vnode *);    											/* is a vfs mounted on vp */
+int				vfs_busy (struct mount *, int, struct lock_object *, struct proc *);  		/* mark a vfs  busy */
+void			vfs_unbusy (struct mount *, struct proc *);       							/* mark a vfs not busy */
+int				vfs_rootmountalloc (char *, char *, struct mount **);
+int				vfs_mountroot (void);
+void			vfs_getnewfsid (struct mount *);
+void			vfs_timestamp (struct timespec *tsp);
+void			vfs_unmountall (void);
 extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;											/* mounted filesystem list */
 extern	struct lock_object mountlist_slock;
 extern	struct vfsops *vfssw[];															/* filesystem type table */

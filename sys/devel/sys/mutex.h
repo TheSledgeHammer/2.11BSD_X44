@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 2021 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,34 +26,56 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct buf;
-struct proc;
-struct ovlspace;
-struct vmtotal;
-struct mount;
-struct vnode;
+#ifndef _SYS_MUTEX_H_
+#define _SYS_MUTEX_H_
 
-#ifdef KERNEL
-void			ovl_mem_init(void);
-vm_offset_t		omem_alloc(ovl_map_t, vm_size_t);
-void			omem_free(ovl_map_t, vm_offset_t, vm_size_t);
-void			omem_init(vm_offset_t , vm_offset_t );
-ovl_map_t		omem_suballoc(ovl_map_t, vm_offset_t, vm_offset_t, vm_size_t);
-vm_offset_t		omem_malloc(ovl_map_t, vm_size_t, bool_t);
-vm_offset_t		omem_alloc_wait(ovl_map_t, vm_size_t);
-void			omem_free_wakeup(ovl_map_t, vm_offset_t, vm_size_t);
-int 			ovl_allocate(ovl_map_t, vm_offset_t, vm_size_t, bool_t);
-int 			ovl_deallocate(ovl_map_t, vm_offset_t, vm_size_t);
-int				ovl_allocate_with_pager(ovl_map_t, vm_offset_t *, vm_size_t, bool_t, vm_pager_t, bool_t);
-struct ovlspace *ovlspace_alloc(vm_offset_t, vm_offset_t, bool_t);
-struct ovlspace *ovlspace_free(struct ovlspace *);
-void			ovl_object_enter_vm_object (ovl_object_t, vm_object_t);
-vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);
-void			ovl_object_remove_vm_object (ovl_object_t, vm_object_t);
-void			ovl_segment_insert_vm_segment(ovl_segment_t, vm_segment_t);
-vm_segment_t	ovl_segment_lookup_vm_segment(ovl_segment_t);
-void			ovl_segment_remove_vm_segment(vm_segment_t);
-void			ovl_page_insert_vm_page(ovl_page_t, vm_page_t);
-vm_page_t		ovl_page_lookup_vm_page(ovl_page_t);
-void			ovl_page_remove_vm_page(vm_page_t);
-#endif
+#include <sys/lock.h>
+
+#ifdef _KERNEL
+struct mtx {
+	__volatile struct lock_object	*mtx_lock;
+	struct lock_holder 				*mtx_holder;
+	char 							*mtx_name;
+};
+
+inline void
+mtx_init(mtx, holder, name, data, pid, pgrp)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+	char 				*name;
+	void 				*data;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
+{
+	memset(mtx, 0, sizeof(struct mtx));
+	simple_lock_init(mtx->mtx_lock, name);
+	mtx->mtx_name = name;
+	holder = lockholder_create(data, pid, pgrp);
+}
+
+inline void
+mtx_lock(mtx, holder)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+{
+	mtx->mtx_holder = holder;
+	simple_lock(mtx->mtx_lock);
+}
+
+inline void
+mtx_unlock(mtx, holder)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+{
+	if(mtx->mtx_holder == holder) {
+		simple_unlock(mtx->mtx_lock);
+	}
+}
+#endif	/* _KERNEL */
+
+struct lock_holder 			proc_loholder;
+#define PROC_LOCK(p)		(mtx_lock(&(p)->p_mtx, &proc_loholder))
+#define PROC_UNLOCK(p)		(mtx_unlock(&(p)->p_mtx, &proc_loholder))
+
+//#endif	/* _KERNEL */
+#endif /* _SYS_MUTEX_H_ */

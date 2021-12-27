@@ -50,8 +50,8 @@ struct ovl_map_entry {
   union ovl_map_object			   		ovle_object;		/* object I point to */
   vm_offset_t				          	ovle_offset;		/* offset into object */
 
-  boolean_t								ovle_is_a_map;		/* Is "object" a map? */
-  boolean_t								ovle_is_sub_map;	/* Is "object" a submap? */
+  bool_t								ovle_is_a_map;		/* Is "object" a map? */
+  bool_t								ovle_is_sub_map;	/* Is "object" a submap? */
 
   vm_prot_t								ovle_protection;	/* protection code */
   vm_prot_t								ovle_max_protection;/* maximum protection */
@@ -68,7 +68,7 @@ struct ovl_map {
     int			                        ovl_nentries;	    /* Number of entries */
     vm_size_t		                    ovl_size;		    /* virtual size */
 
-    boolean_t							ovl_is_main_map;	/* Am I a main map? */
+    bool_t								ovl_is_main_map;	/* Am I a main map? */
 
     int			                        ovl_ref_count;	    /* Reference count */
 	simple_lock_data_t	                ovl_ref_lock;	    /* Lock for ref_count field */
@@ -121,18 +121,18 @@ struct ovl_map {
 
 #ifdef _KERNEL
 struct pmap;
-vm_map_t		ovl_map_create (struct pmap *, vm_offset_t, vm_offset_t, boolean_t);
+vm_map_t		ovl_map_create (struct pmap *, vm_offset_t, vm_offset_t, bool_t);
 void			ovl_map_deallocate (ovl_map_t);
 int		 		ovl_map_delete (ovl_map_t, vm_offset_t, vm_offset_t);
 vm_map_entry_t	ovl_map_entry_create (ovl_map_t);
 void			ovl_map_entry_delete (ovl_map_t, ovl_map_entry_t);
 void			ovl_map_entry_dispose (ovl_map_t, ovl_map_entry_t);
-int		 		ovl_map_find (ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t *, vm_size_t, boolean_t);
+int		 		ovl_map_find (ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
 int		 		ovl_map_findspace (ovl_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
-void			ovl_map_init (ovl_map_t, vm_offset_t, vm_offset_t, boolean_t);
+void			ovl_map_init (ovl_map_t, vm_offset_t, vm_offset_t, bool_t);
 int				ovl_map_insert (ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
-boolean_t		ovl_map_lookup_entry (ovl_map_t, vm_offset_t, ovl_map_entry_t *);
-//void			ovl_map_print (ovl_map_t, boolean_t);
+bool_t			ovl_map_lookup_entry (ovl_map_t, vm_offset_t, ovl_map_entry_t *);
+//void			ovl_map_print (ovl_map_t, bool_t);
 void			ovl_map_reference (ovl_map_t);
 int		 		ovl_map_remove (ovl_map_t, vm_offset_t, vm_offset_t);
 void			ovl_map_startup (void);

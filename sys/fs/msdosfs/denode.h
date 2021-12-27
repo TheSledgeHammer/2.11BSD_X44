@@ -1,4 +1,4 @@
-/*	$NetBSD: denode.h,v 1.25 1997/11/17 15:36:28 ws Exp $	*/
+/*	$NetBSD: denode.h,v 1.4.6.1 2005/09/06 16:12:00 riz Exp $	*/
 
 /*-
  * Copyright (C) 1994, 1995, 1997 Wolfgang Solfrank.
@@ -134,8 +134,7 @@ struct fatcache {
  * contained within a vnode.
  */
 struct denode {
-	struct denode 		*de_next;		/* Hash chain forward */
-	struct denode 		**de_prev; 		/* Hash chain back */
+	LIST_ENTRY(denode) 	de_hash;
 	struct vnode 		*de_vnode;		/* addr of vnode we are part of */
 	struct vnode 		*de_devvp;		/* vnode of blk dev we live on */
 	u_long				de_flag;		/* flag bits */
@@ -172,6 +171,14 @@ struct denode {
 #define	DE_MODIFIED	0x0008	/* Denode has been modified. */
 #define	DE_RENAME	0x0010	/* Denode is in the process of being renamed */
 
+/*
+ * Maximum filename length in Win95
+ * Note: Must be < sizeof(dirent.d_name)
+ */
+#define	WIN_MAXLEN	255
+
+/* Maximum size of a file on a FAT filesystem */
+#define MSDOSFS_FILESIZE_MAX	0xFFFFFFFFLL
 
 /*
  * Transfer directory entries between internal and external form.
@@ -181,9 +188,8 @@ struct denode {
 #define DE_INTERNALIZE32(dep, dp)			\
 	 ((dep)->de_StartCluster |= getushort((dp)->deHighClust) << 16)
 #define DE_INTERNALIZE(dep, dp)				\
-	(bcopy((dp)->deName, (dep)->de_Name, 11),	\
+	(memcpy((dep)->de_Name, (dp)->deName, 11),	\
 	 (dep)->de_Attributes = (dp)->deAttributes,	\
-	 (dep)->de_LowerCase = (dp)->deLowerCase,	\
 	 (dep)->de_CHun = (dp)->deCHundredth,		\
 	 (dep)->de_CTime = getushort((dp)->deCTime),	\
 	 (dep)->de_CDate = getushort((dp)->deCDate),	\
@@ -194,10 +200,11 @@ struct denode {
 	 (dep)->de_FileSize = getulong((dp)->deFileSize), \
 	 (FAT32((dep)->de_pmp) ? DE_INTERNALIZE32((dep), (dp)) : 0))
 
+#define DE_EXTERNALIZE32(dp, dep)			\
+	 putushort((dp)->deHighClust, (dep)->de_StartCluster >> 16)
 #define DE_EXTERNALIZE(dp, dep)				\
-	(bcopy((dep)->de_Name, (dp)->deName, 11),	\
+	(memcpy((dp)->deName, (dep)->de_Name, 11),	\
 	 (dp)->deAttributes = (dep)->de_Attributes,	\
-	 (dp)->deLowerCase = (dep)->de_LowerCase,	\
 	 (dp)->deCHundredth = (dep)->de_CHun,		\
 	 putushort((dp)->deCTime, (dep)->de_CTime),	\
 	 putushort((dp)->deCDate, (dep)->de_CDate),	\
@@ -207,7 +214,7 @@ struct denode {
 	 putushort((dp)->deStartCluster, (dep)->de_StartCluster), \
 	 putulong((dp)->deFileSize,			\
 	     ((dep)->de_Attributes & ATTR_DIRECTORY) ? 0 : (dep)->de_FileSize), \
-	 putushort((dp)->deHighClust, (dep)->de_StartCluster >> 16))
+	 (FAT32((dep)->de_pmp) ? DE_EXTERNALIZE32((dp), (dep)) : 0))
 
 #define	de_forw		de_chain[0]
 #define	de_back		de_chain[1]
@@ -217,45 +224,34 @@ struct denode {
 #define	VTODE(vp)	((struct denode *)(vp)->v_data)
 #define	DETOV(de)	((de)->de_vnode)
 
-#define	DETIMES(dep, acc, mod, cre) do {				\
-	if ((dep)->de_flag & DE_UPDATE) { 				\
-		(dep)->de_flag |= DE_MODIFIED;				\
-		unix2dostime((mod), &(dep)->de_MDate, &(dep)->de_MTime,	\
-		    NULL);						\
-		(dep)->de_Attributes |= ATTR_ARCHIVE; 			\
-	}								\
-	if ((dep)->de_pmp->pm_flags & MSDOSFSMNT_NOWIN95) {		\
-		(dep)->de_flag &= ~(DE_UPDATE | DE_CREATE | DE_ACCESS);	\
-		break;							\
-	}								\
-	if ((dep)->de_flag & DE_ACCESS) {				\
-	    	u_int16_t adate;					\
-									\
-		unix2dostime((acc), &adate, NULL, NULL);		\
-		if (adate != (dep)->de_ADate) {				\
-			(dep)->de_flag |= DE_MODIFIED;			\
-			(dep)->de_ADate = adate;			\
-		}							\
-	}								\
-	if ((dep)->de_flag & DE_CREATE) {				\
-		unix2dostime((cre), &(dep)->de_CDate, &(dep)->de_CTime,	\
-		    &(dep)->de_CHun);					\
-		    (dep)->de_flag |= DE_MODIFIED;			\
-	}								\
-	(dep)->de_flag &= ~(DE_UPDATE | DE_CREATE | DE_ACCESS);		\
-} while (0);
+#define	DETIMES(dep, acc, mod, cre, gmtoff) \
+	if ((dep)->de_flag & (DE_UPDATE | DE_CREATE | DE_ACCESS)) { \
+		(dep)->de_flag |= DE_MODIFIED; \
+		if ((dep)->de_flag & DE_UPDATE) { \
+			unix2dostime((mod), gmtoff, &(dep)->de_MDate, &(dep)->de_MTime, NULL); \
+			(dep)->de_Attributes |= ATTR_ARCHIVE; \
+		} \
+		if (!((dep)->de_pmp->pm_flags & MSDOSFSMNT_NOWIN95)) { \
+			if ((dep)->de_flag & DE_ACCESS) \
+				unix2dostime((acc), gmtoff, &(dep)->de_ADate, NULL, NULL); \
+			if ((dep)->de_flag & DE_CREATE) \
+				unix2dostime((cre), gmtoff, &(dep)->de_CDate, &(dep)->de_CTime, &(dep)->de_CHun); \
+		} \
+		(dep)->de_flag &= ~(DE_UPDATE | DE_CREATE | DE_ACCESS); \
+	}
+
 
 /*
  * This overlays the fid structure (see mount.h)
  */
 struct defid {
-	u_short defid_len;	/* length of structure */
-	u_short defid_pad;	/* force long alignment */
+	u_int16_t defid_len;	/* length of structure */
+	u_int16_t defid_pad;	/* force 4-byte alignment */
 
-	u_long defid_dirclust;	/* cluster this dir entry came from */
-	u_long defid_dirofs;	/* offset of entry within the cluster */
+	u_int32_t defid_dirclust; /* cluster this dir entry came from */
+	u_int32_t defid_dirofs;	/* offset of entry within the cluster */
 #if 0
-	u_long	defid_gen;	/* generation number */
+	u_int32_t defid_gen;	/* generation number */
 #endif
 };
 
@@ -272,13 +268,7 @@ int	msdosfs_getattr		(void *);
 int	msdosfs_setattr		(void *);
 int	msdosfs_read		(void *);
 int	msdosfs_write		(void *);
-#define	msdosfs_lease_check	genfs_lease_check
-#define	msdosfs_ioctl		genfs_enoioctl
-#define	msdosfs_poll		genfs_poll
-#define	msdosfs_revoke		genfs_revoke
 int	msdosfs_mmap		(void *);
-#define	msdosfs_fsync		genfs_fsync
-#define	msdosfs_seek		genfs_seek
 int	msdosfs_remove		(void *);
 int	msdosfs_link		(void *);
 int	msdosfs_rename		(void *);
@@ -287,7 +277,6 @@ int	msdosfs_rmdir		(void *);
 int	msdosfs_symlink		(void *);
 int	msdosfs_readdir		(void *);
 int	msdosfs_readlink	(void *);
-#define	msdosfs_abortop		genfs_abortop
 int	msdosfs_inactive	(void *);
 int	msdosfs_reclaim		(void *);
 int	msdosfs_lock		(void *);

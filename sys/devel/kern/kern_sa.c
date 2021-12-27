@@ -463,7 +463,7 @@ sa_increaseconcurrency(struct lwp *l, int concurrency)
 	struct lwp *l2;
 	struct sadata *sa;
 	vaddr_t uaddr;
-	boolean_t inmem;
+	bool_t inmem;
 	int addedconcurrency, error, s;
 
 	p = l->l_proc;
@@ -1086,7 +1086,7 @@ sa_newcachelwp(struct lwp *l)
 	struct proc *p;
 	struct lwp *l2;
 	vaddr_t uaddr;
-	boolean_t inmem;
+	bool_t inmem;
 	int s;
 
 	p = l->l_proc;

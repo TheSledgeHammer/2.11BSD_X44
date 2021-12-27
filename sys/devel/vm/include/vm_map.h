@@ -108,10 +108,10 @@ struct vm_map_entry {
 	caddr_t						space;			/* space in subtree */
 	union vm_map_object			object;			/* object I point to */
 	vm_offset_t					offset;			/* offset into object */
-	boolean_t					is_a_map;		/* Is "object" a map? */
-	boolean_t					is_sub_map;		/* Is "object" a submap? Only in sharing maps: */
-	boolean_t					copy_on_write;	/* is data copy-on-write */
-	boolean_t					needs_copy;		/* does object need to be copied Only in task maps: */
+	bool_t					is_a_map;		/* Is "object" a map? */
+	bool_t					is_sub_map;		/* Is "object" a submap? Only in sharing maps: */
+	bool_t					copy_on_write;	/* is data copy-on-write */
+	bool_t					needs_copy;		/* does object need to be copied Only in task maps: */
 	vm_prot_t					protection;		/* protection code */
 	vm_prot_t					max_protection;	/* maximum protection */
 	vm_inherit_t				inheritance;	/* inheritance */
@@ -138,13 +138,13 @@ struct vm_map {
 	lock_data_t					lock;				/* Lock for map data */
 	int							nentries;			/* Number of entries */
 	vm_size_t					size;				/* virtual size */
-	boolean_t					is_main_map;		/* Am I a main map? */
+	bool_t					is_main_map;		/* Am I a main map? */
 	int							ref_count;			/* Reference count */
 	simple_lock_data_t			ref_lock;			/* Lock for ref_count field */
 	vm_map_entry_t				hint;				/* hint for quick lookups */
 	simple_lock_data_t			hint_lock;			/* lock for hint storage */
 	vm_map_entry_t				first_free;			/* First free space hint */
-	boolean_t					entries_pageable; 	/* map entries pageable?? */
+	bool_t					entries_pageable; 	/* map entries pageable?? */
 	unsigned int				timestamp;			/* Version number */
 #define	min_offset				cl_header.cqh_first->start
 #define max_offset				cl_header.cqh_first->end
@@ -219,29 +219,29 @@ typedef struct {
 #define	MAX_KMAPENT	500
 
 #ifdef KERNEL
-boolean_t	vm_map_check_protection (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t);
-int		 	vm_map_copy (vm_map_t, vm_map_t, vm_offset_t, vm_size_t, vm_offset_t, boolean_t, boolean_t);
+bool_t		vm_map_check_protection (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t);
+int		 	vm_map_copy (vm_map_t, vm_map_t, vm_offset_t, vm_size_t, vm_offset_t, bool_t, bool_t);
 void		vm_map_copy_entry (vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t);
 struct pmap;
-vm_map_t	vm_map_create (struct pmap *, vm_offset_t, vm_offset_t, boolean_t);
+vm_map_t	vm_map_create (struct pmap *, vm_offset_t, vm_offset_t, bool_t);
 void		vm_map_deallocate (vm_map_t);
 int		 	vm_map_delete (vm_map_t, vm_offset_t, vm_offset_t);
 vm_map_entry_t	 vm_map_entry_create (vm_map_t);
 void		vm_map_entry_delete (vm_map_t, vm_map_entry_t);
 void		vm_map_entry_dispose (vm_map_t, vm_map_entry_t);
 void		vm_map_entry_unwire (vm_map_t, vm_map_entry_t);
-int		 	vm_map_find (vm_map_t, vm_object_t, vm_offset_t, vm_offset_t *, vm_size_t, boolean_t);
+int		 	vm_map_find (vm_map_t, vm_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
 int		 	vm_map_findspace (vm_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
 int		 	vm_map_inherit (vm_map_t, vm_offset_t, vm_offset_t, vm_inherit_t);
-void		vm_map_init (struct vm_map *, vm_offset_t, vm_offset_t, boolean_t);
+void		vm_map_init (struct vm_map *, vm_offset_t, vm_offset_t, bool_t);
 int			vm_map_insert (vm_map_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
-int		 	vm_map_lookup (vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *, boolean_t *, boolean_t *);
+int		 	vm_map_lookup (vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *, bool_t *, bool_t *);
 void		vm_map_lookup_done (vm_map_t, vm_map_entry_t);
-boolean_t	vm_map_lookup_entry (vm_map_t, vm_offset_t, vm_map_entry_t *);
-int		 	vm_map_pageable (vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
-int		 	vm_map_clean (vm_map_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
-void		vm_map_print (vm_map_t, boolean_t);
-int		 	vm_map_protect (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t);
+bool_t		vm_map_lookup_entry (vm_map_t, vm_offset_t, vm_map_entry_t *);
+int		 	vm_map_pageable (vm_map_t, vm_offset_t, vm_offset_t, bool_t);
+int		 	vm_map_clean (vm_map_t, vm_offset_t, vm_offset_t, bool_t, bool_t);
+void		vm_map_print (vm_map_t, bool_t);
+int		 	vm_map_protect (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
 void		vm_map_reference (vm_map_t);
 int		 	vm_map_remove (vm_map_t, vm_offset_t, vm_offset_t);
 void		vm_map_simplify (vm_map_t, vm_offset_t);

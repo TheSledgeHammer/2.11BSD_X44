@@ -92,7 +92,7 @@ simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
 
 /* has physical page allocation been initialized? */
-boolean_t 			vm_page_startup_initialized;
+bool_t 			vm_page_startup_initialized;
 
 vm_page_t			vm_page_array;
 long				vm_page_array_size;
@@ -683,7 +683,7 @@ vm_page_activate(m)
  *	be used by the zero-fill object.
  */
 
-boolean_t
+bool_t
 vm_page_zero_fill(m)
 	vm_page_t	m;
 {

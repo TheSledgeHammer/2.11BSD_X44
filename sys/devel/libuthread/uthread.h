@@ -42,6 +42,7 @@ struct uthread {
 	struct uthread 		*ut_forw;				/* Doubly-linked run/sleep queue. */
 	struct uthread 		*ut_back;
 
+    struct mtx			*ut_mtx;				/* uthread structure mutex */
 	int	 				ut_flag;				/* T_* flags. */
 	char 				ut_stat;				/* TS* thread status. */
 	char 				ut_lock;				/* Thread lock count. */
@@ -82,10 +83,6 @@ struct uthread {
 #define ut_endcopy
 
 	struct uthread 		*ut_link;				/* linked list of running uthreads */
-
-    short               ut_locks;
-    short               ut_simple_locks;
-
     char				*ut_name;				/* (: name, optional */
 };
 #define	ut_session		ut_pgrp->pg_session
@@ -146,10 +143,10 @@ struct uthreadpool {
 
     /* Inter Threadpool Communication */
     struct threadpool_itpc				utp_itpc;			/* threadpool ipc ptr */
-    boolean_t							utp_issender;		/* is itc sender */
-    boolean_t							utp_isreciever;		/* is itc reciever */
+    bool_t								utp_issender;		/* is itc sender */
+    bool_t								utp_isreciever;		/* is itc reciever */
     int									utp_retcnt;			/* retry count in itc pool */
-    boolean_t							utp_initcq;			/* check if in itc queue */
+    bool_t								utp_initcq;			/* check if in itc queue */
 };
 
 struct uthread 							*uthreadNUTHREAD;	/* the uthread table itself */
@@ -184,9 +181,8 @@ void 			itpc_check_uthreadpool(struct threadpool_itpc *, pid_t);
 void 			itpc_verify_uthreadpool(struct threadpool_itpc *, pid_t);
 
 /* UThread Lock */
-int 			uthread_lock_init(lock_t, uthread_t);
-int 			uthread_lockmgr(lock_t, u_int, uthread_t);
-int 			uthread_rwlock_init(rwlock_t, uthread_t);
-int 			uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
+struct lock_holder 			uthread_loholder;
+#define UTHREAD_LOCK(ut)	(mtx_lock(&(ut)->ut_mtx, &uthread_loholder))
+#define UTHREAD_UNLOCK(ut) 	(mtx_unlock(&(ut)->ut_mtx, &uthread_loholder))
 
 #endif /* SYS_UTHREADS_H_ */

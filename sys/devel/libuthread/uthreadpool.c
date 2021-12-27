@@ -69,7 +69,7 @@
 #include <devel/libuthread/uthread.h>
 
 struct uthreadpool_thread 				utpool_thread;
-lock_t	 								uthreadpools_lock;
+struct lock_object	 					uthreadpools_lock;
 
 struct uthreadpool_unbound {
 	struct uthreadpool					utpu_pool;
@@ -146,7 +146,7 @@ uthreadpool_init(void)
 	MALLOC(&utpool_thread, struct uthreadpool_thread *, sizeof(struct uthreadpool_thread *), M_UTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_uthreadpools);
 	LIST_INIT(&percpu_uthreadpools);
-	uthread_lock_init(&uthreadpools_lock, &utpool_thread->utpt_uthread);
+	simple_lock_init(&uthreadpools_lock, "uthreadpools_lock");
 }
 
 /* Thread pool creation */
@@ -412,13 +412,12 @@ uthreadpool_thread(void *arg)
 		struct threadpool_job *const job = uthread->utpt_job;
 		KASSERT(job != NULL);
 
-
 		/* Set our lwp name to reflect what job we're doing.  */
-		//kthread_lock(curkthread);
+		KTHREAD_LOCK(curkthread);
 		char *const kthread_name = curkthread->kt_name;
 		uthread->utpt_uthread_savedname = curkthread->kt_name;
 		curkthread->kt_name = job->job_name;
-		//kthread_unlock(curkthread);
+		KTHREAD_UNLOCK(curkthread);
 
 		simple_unlock(&utpool->utp_lock);
 
@@ -518,9 +517,9 @@ uthreadpool_job_done(struct threadpool_job *job)
 	 * we call the job work function, and we are only preserving it
 	 * to use here; no one cares if it contains junk afterward.
 	 */
-	//proc_lock(curproc);
+	KTHREAD_LOCK(curkthread);
 	curkthread->kt_name = job->job_utp_thread->utpt_uthread_savedname;
-	//proc_unlock(curproc);
+	KTHREAD_UNLOCK(curkthread);
 
 	/*
 	 * Inline the work of threadpool_job_rele(); the job is already

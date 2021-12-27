@@ -37,7 +37,7 @@ db_sym_t X_db_lookup (db_symtab_t *, char *);
 db_sym_t X_db_search_symbol (db_symtab_t *, db_addr_t, db_strategy_t, db_expr_t *);
 void X_db_symbol_values (db_symtab_t *, db_sym_t, char **, db_expr_t *);
 void db_printsym (db_expr_t, db_strategy_t);
-boolean_t X_db_line_at_pc (db_symtab_t *, db_sym_t, char **, int *, db_expr_t);
+bool_t X_db_line_at_pc (db_symtab_t *, db_sym_t, char **, int *, db_expr_t);
 int X_db_sym_numargs (db_symtab_t *, db_sym_t, int *, char **);
 #ifdef DB_ELF_SYMBOLS	/* XXX */
 void ddb_init (void *, void *);
@@ -51,15 +51,15 @@ void db_examine (db_addr_t, char *, int);
 void db_print_cmd (db_expr_t, int, db_expr_t, char *);
 void db_print_loc_and_inst (db_addr_t);
 void db_strcpy (char *, char *);
-void db_search_cmd (db_expr_t, boolean_t, db_expr_t, char *);
+void db_search_cmd (db_expr_t, bool_t, db_expr_t, char *);
 void db_search (db_addr_t, int, db_expr_t, db_expr_t, unsigned int);
 
 /* db_expr.c */
-boolean_t db_term (db_expr_t *);
-boolean_t db_unary (db_expr_t *);
-boolean_t db_mult_expr (db_expr_t *);
-boolean_t db_add_expr (db_expr_t *);
-boolean_t db_shift_expr (db_expr_t *);
+bool_t db_term (db_expr_t *);
+bool_t db_unary (db_expr_t *);
+bool_t db_mult_expr (db_expr_t *);
+bool_t db_add_expr (db_expr_t *);
+bool_t db_shift_expr (db_expr_t *);
 int db_expression (db_expr_t *);
 
 /* db_input.c */
@@ -71,12 +71,12 @@ int db_readline (char *, int);
 void db_check_interrupt (void);
 
 /* db_print.c */
-void db_show_regs (db_expr_t, boolean_t, db_expr_t, char *);
+void db_show_regs (db_expr_t, bool_t, db_expr_t, char *);
 
 /* db_trap.c */
 void db_trap(int, int);
 
 /* db_write_cmd.c */
-void db_write_cmd (db_expr_t, boolean_t, db_expr_t, char *);
+void db_write_cmd (db_expr_t, bool_t, db_expr_t, char *);
 
 #endif /* _DDB_DB_EXTERN_H_ */

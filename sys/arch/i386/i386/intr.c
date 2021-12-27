@@ -353,7 +353,7 @@ fakeintr(arg)
 
 void *
 intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
-	boolean_t isapic;
+	bool_t isapic;
 	int irq, type, level, pictemplate;
 	int (*ih_fun)(void *);
 	void *ih_arg;

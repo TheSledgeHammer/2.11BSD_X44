@@ -69,8 +69,7 @@ uthread_init(kt, ut)
 	crhold(ut->ut_ucred);
 
     /* setup uthread locks */
-    uthread_lock_init(uthread_lkp, ut);
-    uthread_rwlock_init(uthread_rwl, ut);
+	mtx_init(ut->ut_mtx, &uthread_loholder, "uthread mutex", (struct uthread *)ut, ut->ut_tid, ut->ut_pgrp);
 
 	/* initialize uthreadpools  */
 	uthreadpool_init();
@@ -238,70 +237,6 @@ uthreadpool_itpc_recieve(itpc, utpool, pid, cmd)
 
 	/* update job pool */
 	itpc_verify_uthreadpool(itpc, pid);
-}
-
-/* Initialize a Mutex on a kthread
- * Setup up Error flags */
-int
-uthread_lock_init(lkp, ut)
-    struct lock *lkp;
-    uthread_t ut;
-{
-    int error = 0;
-    lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-    lockholder_set(lkp->lk_lockholder, ut, ut->ut_tid, ut->ut_pgrp);
-    if(lockholder_get(lkp->lk_lockholder, ut, ut->ut_tid) == NULL) {
-    	panic("uthread lock unavailable");
-    	error = EBUSY;
-    }
-    return (error);
-}
-
-int
-uthread_lockmgr(lkp, flags, ut)
-	struct lock *lkp;
-	u_int flags;
-	uthread_t ut;
-{
-    pid_t pid;
-    if (ut) {
-        pid = ut->ut_tid;
-    } else {
-        pid = LK_KERNPROC;
-    }
-    return lockmgr(lkp, flags, lkp->lk_lnterlock, pid);
-}
-
-/* Initialize a rwlock on a uthread
- * Setup up Error flags */
-int
-uthread_rwlock_init(rwl, ut)
-	rwlock_t rwl;
-	uthread_t ut;
-{
-	int error = 0;
-	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
-	lockholder_set(rwl->rwl_lockholder, ut, ut->ut_tid, ut->ut_pgrp);
-    if(lockholder_get(rwl->rwl_lockholder, ut, ut->ut_tid) == NULL) {
-    	panic("uthread rwlock unavailable");
-    	error = EBUSY;
-    }
-	return (error);
-}
-
-int
-uthread_rwlockmgr(rwl, flags, ut)
-	rwlock_t rwl;
-	u_int flags;
-	uthread_t ut;
-{
-	pid_t pid;
-	if (ut) {
-		pid = ut->ut_tid;
-	} else {
-		pid = LK_KERNPROC;
-	}
-	return rwlockmgr(rwl, flags, pid);
 }
 
 /*

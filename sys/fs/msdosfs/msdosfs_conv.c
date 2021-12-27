@@ -1,4 +1,4 @@
-/*	$NetBSD: msdosfs_conv.c,v 1.27 1999/03/28 11:05:43 tron Exp $	*/
+/*	$NetBSD: msdosfs_conv.c,v 1.2 2003/09/07 22:09:11 itojun Exp $	*/
 
 /*-
  * Copyright (C) 1995, 1997 Wolfgang Solfrank.
@@ -47,13 +47,16 @@
  * October 1992
  */
 
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: msdosfs_conv.c,v 1.2 2003/09/07 22:09:11 itojun Exp $");
+
 /*
  * System include files.
  */
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/time.h>
-#include <sys/kernel.h>		/* defines tz XXX */
+#include <sys/kernel.h>
 #include <sys/dirent.h>
 #include <sys/vnode.h>
 
@@ -66,7 +69,7 @@
 /*
  * Days in each month in a regular year.
  */
-u_short regyear[] = {
+u_short const regyear[] = {
 	31, 28, 31, 30, 31, 30,
 	31, 31, 30, 31, 30, 31
 };
@@ -74,7 +77,7 @@ u_short regyear[] = {
 /*
  * Days in each month in a leap year.
  */
-u_short leapyear[] = {
+u_short const leapyear[] = {
 	31, 29, 31, 30, 31, 30,
 	31, 31, 30, 31, 30, 31
 };
@@ -93,8 +96,9 @@ u_short lastdtime;
  * file timestamps. The passed in unix time is assumed to be in GMT.
  */
 void
-unix2dostime(tsp, ddp, dtp, dhp)
+unix2dostime(tsp, gmtoff, ddp, dtp, dhp)
 	struct timespec *tsp;
+	int gmtoff;
 	u_int16_t *ddp;
 	u_int16_t *dtp;
 	u_int8_t *dhp;
@@ -104,21 +108,19 @@ unix2dostime(tsp, ddp, dtp, dhp)
 	u_long inc;
 	u_long year;
 	u_long month;
-	u_short *months;
+	const u_short *months;
 
 	/*
 	 * If the time from the last conversion is the same as now, then
 	 * skip the computations and use the saved result.
 	 */
-	/* XXX NOTE: Removed tz, which is obsolete. Must replace!!! */
-	t = tsp->tv_sec /* - (tz.tz_minuteswest * 60) */
-	     /* +- daylight savings time correction */ ;
+	t = tsp->tv_sec + gmtoff; /* time zone correction */
 	t &= ~1;
 	if (lasttime != t) {
 		lasttime = t;
 		lastdtime = (((t / 2) % 30) << DT_2SECONDS_SHIFT)
-		    + (((t / 60) % 60) << DT_MINUTES_SHIFT)
-		    + (((t / 3600) % 24) << DT_HOURS_SHIFT);
+				+ (((t / 60) % 60) << DT_MINUTES_SHIFT)
+				+ (((t / 3600) % 24) << DT_HOURS_SHIFT);
 
 		/*
 		 * If the number of days since 1970 is the same as the last
@@ -141,7 +143,7 @@ unix2dostime(tsp, ddp, dtp, dhp)
 				days -= months[month];
 			}
 			lastddate = ((days + 1) << DD_DAY_SHIFT)
-			    + ((month + 1) << DD_MONTH_SHIFT);
+					+ ((month + 1) << DD_MONTH_SHIFT);
 			/*
 			 * Remember dos's idea of time is relative to 1980.
 			 * unix's is relative to 1970.  If somehow we get a
@@ -175,17 +177,18 @@ u_long lastseconds;
  * not be too efficient.
  */
 void
-dos2unixtime(dd, dt, dh, tsp)
+dos2unixtime(dd, dt, dh, gmtoff, tsp)
 	u_int dd;
 	u_int dt;
 	u_int dh;
+	int gmtoff;
 	struct timespec *tsp;
 {
 	u_long seconds;
 	u_long m, month;
 	u_long y, year;
 	u_long days;
-	u_short *months;
+	const u_short *months;
 
 	if (dd == 0) {
 		/*
@@ -196,9 +199,8 @@ dos2unixtime(dd, dt, dh, tsp)
 		return;
 	}
 	seconds = ((dt & DT_2SECONDS_MASK) >> DT_2SECONDS_SHIFT) * 2
-	    + ((dt & DT_MINUTES_MASK) >> DT_MINUTES_SHIFT) * 60
-	    + ((dt & DT_HOURS_MASK) >> DT_HOURS_SHIFT) * 3600
-	    + dh / 100;
+			+ ((dt & DT_MINUTES_MASK) >> DT_MINUTES_SHIFT) * 60
+			+ ((dt & DT_HOURS_MASK) >> DT_HOURS_SHIFT) * 3600 + dh / 100;
 	/*
 	 * If the year, month, and day from the last conversion are the
 	 * same then use the saved value.
@@ -216,8 +218,7 @@ dos2unixtime(dd, dt, dh, tsp)
 		 */
 		month = (dd & DD_MONTH_MASK) >> DD_MONTH_SHIFT;
 		if (month == 0) {
-			printf("dos2unixtime(): month value out of range (%ld)\n",
-			    month);
+			printf("dos2unixtime(): month value out of range (%ld)\n", month);
 			month = 1;
 		}
 		for (m = 0; m < month - 1; m++)
@@ -225,30 +226,29 @@ dos2unixtime(dd, dt, dh, tsp)
 		days += ((dd & DD_DAY_MASK) >> DD_DAY_SHIFT) - 1;
 		lastseconds = (days * 24 * 60 * 60) + SECONDSTO1980;
 	}
-	/* XXX NOTE: Removed tz, which is obsolete. Must replace!!! */
-	tsp->tv_sec = seconds + lastseconds /* + (tz.tz_minuteswest * 60) */
-	     /* -+ daylight savings time correction */ ;
+	tsp->tv_sec = seconds + lastseconds;
+	tsp->tv_sec -= gmtoff; /* time zone correction */
 	tsp->tv_nsec = (dh % 100) * 10000000;
 }
 
-static u_char
+static const u_char
 unix2dos[256] = {
 	0,    0,    0,    0,    0,    0,    0,    0,	/* 00-07 */
 	0,    0,    0,    0,    0,    0,    0,    0,	/* 08-0f */
 	0,    0,    0,    0,    0,    0,    0,    0,	/* 10-17 */
 	0,    0,    0,    0,    0,    0,    0,    0,	/* 18-1f */
-	0,    0x21, 0,    0x23, 0x24, 0x25, 0x26, 0x27,	/* 20-27 */
-	0x28, 0x29, 0,    0x2b, 0,    0x2d, 0,    0,	/* 28-2f */
-	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,	/* 30-37 */
-	0x38, 0x39, 0,    0,    0,    0,    0,    0,	/* 38-3f */
-	0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,	/* 40-47 */
-	0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,	/* 48-4f */
-	0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,	/* 50-57 */
-	0x58, 0x59, 0x5a, 0,    0,    0,    0x5e, 0x5f,	/* 58-5f */
-	0x60, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,	/* 60-67 */
-	0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,	/* 68-6f */
-	0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,	/* 70-77 */
-	0x58, 0x59, 0x5a, 0x7b, 0,    0x7d, 0x7e, 0,	/* 78-7f */
+	0,    '!',  0,    '#',  '$',  '%',  '&',  '\'',	/* 20-27 */
+	'(',  ')',  0,    '+',  0,    '-',  0,    0,	/* 28-2f */
+	'0',  '1',  '2',  '3',  '4',  '5',  '6',  '7',	/* 30-37 */
+	'8',  '9',  0,    0,    0,    0,    0,    0,	/* 38-3f */
+	'@',  'A',  'B',  'C',  'D',  'E',  'F',  'G',	/* 40-47 */
+	'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O',	/* 48-4f */
+	'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',	/* 50-57 */
+	'X',  'Y',  'Z',  0,    0,    0,    '^',  '_',	/* 58-5f */
+	'`',  'A',  'B',  'C',  'D',  'E',  'F',  'G',	/* 60-67 */
+	'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O',	/* 68-6f */
+	'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',	/* 70-77 */
+	'X',  'Y',  'Z',  '{',  0,    '}',  '~',  0,	/* 78-7f */
 	0,    0,    0,    0,    0,    0,    0,    0,	/* 80-87 */
 	0,    0,    0,    0,    0,    0,    0,    0,	/* 88-8f */
 	0,    0,    0,    0,    0,    0,    0,    0,	/* 90-97 */
@@ -267,60 +267,60 @@ unix2dos[256] = {
 	0x9d, 0xeb, 0xe9, 0xea, 0x9a, 0xed, 0xe8, 0x98,	/* f8-ff */
 };
 
-static u_char
+static const u_char
 dos2unix[256] = {
-	0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f,	/* 00-07 */
-	0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f,	/* 08-0f */
-	0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f,	/* 10-17 */
-	0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f,	/* 18-1f */
-	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,	/* 20-27 */
-	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,	/* 28-2f */
-	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,	/* 30-37 */
-	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,	/* 38-3f */
-	0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,	/* 40-47 */
-	0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,	/* 48-4f */
-	0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,	/* 50-57 */
-	0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,	/* 58-5f */
-	0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,	/* 60-67 */
-	0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,	/* 68-6f */
-	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,	/* 70-77 */
-	0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,	/* 78-7f */
+	 '?',  '?',  '?',  '?',  '?',  '?',  '?',  '?',	/* 00-07 */
+	 '?',  '?',  '?',  '?',  '?',  '?',  '?',  '?',	/* 08-0f */
+	 '?',  '?',  '?',  '?',  '?',  '?',  '?',  '?',	/* 10-17 */
+	 '?',  '?',  '?',  '?',  '?',  '?',  '?',  '?',	/* 18-1f */
+	 ' ',  '!',  '"',  '#',  '$',  '%',  '&', '\'',	/* 20-27 */
+	 '(',  ')',  '*',  '+',  ',',  '-',  '.',  '/',	/* 28-2f */
+	 '0',  '1',  '2',  '3',  '4',  '5',  '6',  '7',	/* 30-37 */
+	 '8',  '9',  ':',  ';',  '<',  '=',  '>',  '?',	/* 38-3f */
+	 '@',  'A',  'B',  'C',  'D',  'E',  'F',  'G',	/* 40-47 */
+	 'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O',	/* 48-4f */
+	 'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',	/* 50-57 */
+	 'X',  'Y',  'Z',  '[', '\\',  ']',  '^',  '_',	/* 58-5f */
+	 '`',  'a',  'b',  'c',  'd',  'e',  'f',  'g',	/* 60-67 */
+	 'h',  'i',  'j',  'k',  'l',  'm',  'n',  'o',	/* 68-6f */
+	 'p',  'q',  'r',  's',  't',  'u',  'v',  'w',	/* 70-77 */
+	 'x',  'y',  'z',  '{',  '|',  '}',  '~', 0x7f,	/* 78-7f */
 	0xc7, 0xfc, 0xe9, 0xe2, 0xe4, 0xe0, 0xe5, 0xe7,	/* 80-87 */
 	0xea, 0xeb, 0xe8, 0xef, 0xee, 0xec, 0xc4, 0xc5,	/* 88-8f */
 	0xc9, 0xe6, 0xc6, 0xf4, 0xf6, 0xf2, 0xfb, 0xf9,	/* 90-97 */
-	0xff, 0xd6, 0xdc, 0xf8, 0xa3, 0xd8, 0xd7, 0x3f,	/* 98-9f */
+	0xff, 0xd6, 0xdc, 0xf8, 0xa3, 0xd8, 0xd7,  '?',	/* 98-9f */
 	0xe1, 0xed, 0xf3, 0xfa, 0xf1, 0xd1, 0xaa, 0xba,	/* a0-a7 */
 	0xbf, 0xae, 0xac, 0xbd, 0xbc, 0xa1, 0xab, 0xbb,	/* a8-af */
-	0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0xc1, 0xc2, 0xc0,	/* b0-b7 */
-	0xa9, 0x3f, 0x3f, 0x3f, 0x3f, 0xa2, 0xa5, 0x3f,	/* b8-bf */
-	0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0xe3, 0xc3,	/* c0-c7 */
-	0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0xa4,	/* c8-cf */
-	0xf0, 0xd0, 0xca, 0xcb, 0xc8, 0x3f, 0xcd, 0xce,	/* d0-d7 */
-	0xcf, 0x3f, 0x3f, 0x3f, 0x3f, 0xa6, 0xcc, 0x3f,	/* d8-df */
+	 '?',  '?',  '?',  '?',  '?', 0xc1, 0xc2, 0xc0,	/* b0-b7 */
+	0xa9,  '?',  '?',  '?',  '?', 0xa2, 0xa5,  '?',	/* b8-bf */
+	 '?',  '?',  '?',  '?',  '?',  '?', 0xe3, 0xc3,	/* c0-c7 */
+	 '?',  '?',  '?',  '?',  '?',  '?',  '?', 0xa4,	/* c8-cf */
+	0xf0, 0xd0, 0xca, 0xcb, 0xc8,  '?', 0xcd, 0xce,	/* d0-d7 */
+	0xcf,  '?',  '?',  '?',  '?', 0xa6, 0xcc,  '?',	/* d8-df */
 	0xd3, 0xdf, 0xd4, 0xd2, 0xf5, 0xd5, 0xb5, 0xfe,	/* e0-e7 */
 	0xde, 0xda, 0xdb, 0xd9, 0xfd, 0xdd, 0xaf, 0x3f,	/* e8-ef */
-	0xad, 0xb1, 0x3f, 0xbe, 0xb6, 0xa7, 0xf7, 0xb8,	/* f0-f7 */
-	0xb0, 0xa8, 0xb7, 0xb9, 0xb3, 0xb2, 0x3f, 0x3f,	/* f8-ff */
+	0xad, 0xb1,  '?', 0xbe, 0xb6, 0xa7, 0xf7, 0xb8,	/* f0-f7 */
+	0xb0, 0xa8, 0xb7, 0xb9, 0xb3, 0xb2,  '?',  '?',	/* f8-ff */
 };
 
-static u_char
+static const u_char
 u2l[256] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, /* 00-07 */
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, /* 08-0f */
 	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, /* 10-17 */
 	0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, /* 18-1f */
-	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, /* 20-27 */
-	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, /* 28-2f */
-	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, /* 30-37 */
-	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, /* 38-3f */
-	0x40, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, /* 40-47 */
-	0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, /* 48-4f */
-	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, /* 50-57 */
-	0x78, 0x79, 0x7a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, /* 58-5f */
-	0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, /* 60-67 */
-	0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, /* 68-6f */
-	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, /* 70-77 */
-	0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, /* 78-7f */
+	 ' ',  '!',  '"',  '#',  '$',  '%',  '&', '\'', /* 20-27 */
+	 '(',  ')',  '*',  '+',  ',',  '-',  '.',  '/', /* 28-2f */
+	 '0',  '1',  '2',  '3',  '4',  '5',  '6',  '7', /* 30-37 */
+	 '8',  '9',  ':',  ';',  '<',  '=',  '>',  '?', /* 38-3f */
+	 '@',  'a',  'b',  'c',  'd',  'e',  'f',  'g', /* 40-47 */
+	 'h',  'i',  'j',  'k',  'l',  'm',  'n',  'o', /* 48-4f */
+	 'p',  'q',  'r',  's',  't',  'u',  'v',  'w', /* 50-57 */
+	 'x',  'y',  'z',  '[', '\\',  ']',  '^',  '_', /* 58-5f */
+	 '`',  'a',  'b',  'c',  'd',  'e',  'f',  'g', /* 60-67 */
+	 'h',  'i',  'j',  'k',  'l',  'm',  'n',  'o', /* 68-6f */
+	 'p',  'q',  'r',  's',  't',  'u',  'v',  'w', /* 70-77 */
+	 'x',  'y',  'z',  '{',  '|',  '}',  '~', 0x7f, /* 78-7f */
 	0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, /* 80-87 */
 	0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, /* 88-8f */
 	0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, /* 90-97 */
@@ -378,7 +378,7 @@ dos2unixfn(dn, un, lower)
 	 * trailing blanks.
 	 */
 
-	for (j=7; (j >= 0) && (dn[j] == ' '); j--)
+	for (j = 7; (j >= 0) && (dn[j] == ' '); j--)
 		;
 
 	for (i = 1; i <= j; i++) {
@@ -387,7 +387,7 @@ dos2unixfn(dn, un, lower)
 		thislong++;
 	}
 	dn += 8;
-	
+
 	/*
 	 * Now, if there is an extension then put in a period and copy in
 	 * the extension.
@@ -492,8 +492,7 @@ unix2dosfn(un, dn, unlen, gen)
 		else
 			l = unlen - (dp - un);
 		for (i = 0, j = 8; i < l && j < 11; i++, j++) {
-			if (dp[i] != (dn[j] = unix2dos[dp[i]])
-			    && conv != 3)
+			if (dp[i] != (dn[j] = unix2dos[dp[i]]) && conv != 3)
 				conv = 2;
 			if (!dn[j]) {
 				conv = 3;
@@ -504,7 +503,8 @@ unix2dosfn(un, dn, unlen, gen)
 			conv = 3;
 		dp--;
 	} else {
-		for (dp = cp; *--dp == ' ' || *dp == '.';);
+		for (dp = cp; *--dp == ' ' || *dp == '.';)
+			;
 		dp++;
 	}
 
@@ -518,8 +518,7 @@ unix2dosfn(un, dn, unlen, gen)
 			dn[j] = ' ';
 		else
 			dn[j] = unix2dos[*un];
-		if ((*un != dn[j])
-		    && conv != 3)
+		if ((*un != dn[j]) && conv != 3)
 			conv = 2;
 		if (!dn[j]) {
 			conv = 3;
@@ -559,7 +558,8 @@ unix2dosfn(un, dn, unlen, gen)
 		*--wcp = gen % 10 + '0';
 	if (gen)
 		return 0;
-	for (i = 8; dn[--i] == ' ';);
+	for (i = 8; dn[--i] == ' ';)
+		;
 	i++;
 	if (gentext + sizeof(gentext) - wcp + 1 > 8 - i)
 		i = 8 - (gentext + sizeof(gentext) - wcp + 1);
@@ -589,7 +589,8 @@ unix2winfn(un, unlen, wep, cnt, chksum)
 	/*
 	 * Drop trailing blanks and dots
 	 */
-	for (cp = un + unlen; *--cp == ' ' || *cp == '.'; unlen--);
+	for (cp = un + unlen; *--cp == ' ' || *cp == '.'; unlen--)
+		;
 
 	un += (cnt - 1) * WIN_CHARS;
 	unlen -= (cnt - 1) * WIN_CHARS;
@@ -597,7 +598,8 @@ unix2winfn(un, unlen, wep, cnt, chksum)
 	/*
 	 * Initialize winentry to some useful default
 	 */
-	for (wcp = (u_int8_t *)wep, i = sizeof(*wep); --i >= 0; *wcp++ = 0xff);
+	for (wcp = (u_int8_t*) wep, i = sizeof(*wep); --i >= 0; *wcp++ = 0xff)
+		;
 	wep->weCnt = cnt;
 	wep->weAttributes = ATTR_WIN95;
 	wep->weReserved1 = 0;
@@ -607,19 +609,19 @@ unix2winfn(un, unlen, wep, cnt, chksum)
 	/*
 	 * Now convert the filename parts
 	 */
-	for (wcp = wep->wePart1, i = sizeof(wep->wePart1)/2; --i >= 0;) {
+	for (wcp = wep->wePart1, i = sizeof(wep->wePart1) / 2; --i >= 0;) {
 		if (--unlen < 0)
 			goto done;
 		*wcp++ = *un++;
 		*wcp++ = 0;
 	}
-	for (wcp = wep->wePart2, i = sizeof(wep->wePart2)/2; --i >= 0;) {
+	for (wcp = wep->wePart2, i = sizeof(wep->wePart2) / 2; --i >= 0;) {
 		if (--unlen < 0)
 			goto done;
 		*wcp++ = *un++;
 		*wcp++ = 0;
 	}
-	for (wcp = wep->wePart3, i = sizeof(wep->wePart3)/2; --i >= 0;) {
+	for (wcp = wep->wePart3, i = sizeof(wep->wePart3) / 2; --i >= 0;) {
 		if (--unlen < 0)
 			goto done;
 		*wcp++ = *un++;
@@ -629,8 +631,7 @@ unix2winfn(un, unlen, wep, cnt, chksum)
 		wep->weCnt |= WIN_LAST;
 	return unlen;
 
-done:
-	*wcp++ = 0;
+	done: *wcp++ = 0;
 	*wcp++ = 0;
 	wep->weCnt |= WIN_LAST;
 	return 0;
@@ -653,7 +654,7 @@ winChkName(un, unlen, wep, chksum)
 	/*
 	 * First compare checksums
 	 */
-	if (wep->weCnt&WIN_LAST)
+	if (wep->weCnt & WIN_LAST)
 		chksum = wep->weChksum;
 	else if (chksum != wep->weChksum)
 		chksum = -1;
@@ -663,17 +664,30 @@ winChkName(un, unlen, wep, chksum)
 	/*
 	 * Offset of this entry
 	 */
-	i = ((wep->weCnt&WIN_CNT) - 1) * WIN_CHARS;
+	i = ((wep->weCnt & WIN_CNT) - 1) * WIN_CHARS;
 	un += i;
-	if ((unlen -= i) <= 0)
+	if ((unlen -= i) < 0)
 		return -1;
-	if ((wep->weCnt&WIN_LAST) && unlen > WIN_CHARS)
+
+	/*
+	 * Ignore redundant winentries (those with only \0\0 on start in them).
+	 * An appearance of such entry is a bug; unknown if in NetBSD msdosfs
+	 * or MS Windows.
+	 */
+	if (unlen == 0) {
+		if (wep->wePart1[0] == '\0' && wep->wePart1[1] == '\0')
+			return chksum;
+		else
+			return -1;
+	}
+
+	if ((wep->weCnt & WIN_LAST) && unlen > WIN_CHARS)
 		return -1;
 
 	/*
 	 * Compare the name parts
 	 */
-	for (cp = wep->wePart1, i = sizeof(wep->wePart1)/2; --i >= 0;) {
+	for (cp = wep->wePart1, i = sizeof(wep->wePart1) / 2; --i >= 0;) {
 		if (--unlen < 0) {
 			if (!*cp++ && !*cp)
 				return chksum;
@@ -682,7 +696,7 @@ winChkName(un, unlen, wep, chksum)
 		if (u2l[*cp++] != u2l[*un++] || *cp++)
 			return -1;
 	}
-	for (cp = wep->wePart2, i = sizeof(wep->wePart2)/2; --i >= 0;) {
+	for (cp = wep->wePart2, i = sizeof(wep->wePart2) / 2; --i >= 0;) {
 		if (--unlen < 0) {
 			if (!*cp++ && !*cp)
 				return chksum;
@@ -691,7 +705,7 @@ winChkName(un, unlen, wep, chksum)
 		if (u2l[*cp++] != u2l[*un++] || *cp++)
 			return -1;
 	}
-	for (cp = wep->wePart3, i = sizeof(wep->wePart3)/2; --i >= 0;) {
+	for (cp = wep->wePart3, i = sizeof(wep->wePart3) / 2; --i >= 0;) {
 		if (--unlen < 0) {
 			if (!*cp++ && !*cp)
 				return chksum;
@@ -714,22 +728,22 @@ win2unixfn(wep, dp, chksum)
 	int chksum;
 {
 	u_int8_t *cp;
-	u_int8_t *np, *ep = dp->d_name + WIN_MAXLEN;
+	u_int8_t * np, *ep = dp->d_name + WIN_MAXLEN;
 	int i;
 
-	if ((wep->weCnt&WIN_CNT) > howmany(WIN_MAXLEN, WIN_CHARS)
-	    || !(wep->weCnt&WIN_CNT))
+	if ((wep->weCnt & WIN_CNT) > howmany(WIN_MAXLEN, WIN_CHARS)
+			|| !(wep->weCnt & WIN_CNT))
 		return -1;
 
 	/*
 	 * First compare checksums
 	 */
-	if (wep->weCnt&WIN_LAST) {
+	if (wep->weCnt & WIN_LAST) {
 		chksum = wep->weChksum;
 		/*
 		 * This works even though d_namlen is one byte!
 		 */
-		dp->d_namlen = (wep->weCnt&WIN_CNT) * WIN_CHARS;
+		dp->d_namlen = (wep->weCnt & WIN_CNT) * WIN_CHARS;
 	} else if (chksum != wep->weChksum)
 		chksum = -1;
 	if (chksum == -1)
@@ -738,17 +752,17 @@ win2unixfn(wep, dp, chksum)
 	/*
 	 * Offset of this entry
 	 */
-	i = ((wep->weCnt&WIN_CNT) - 1) * WIN_CHARS;
-	np = (u_int8_t *)dp->d_name + i;
+	i = ((wep->weCnt & WIN_CNT) - 1) * WIN_CHARS;
+	np = (u_int8_t*) dp->d_name + i;
 
 	/*
 	 * Convert the name parts
 	 */
-	for (cp = wep->wePart1, i = sizeof(wep->wePart1)/2; --i >= 0;) {
+	for (cp = wep->wePart1, i = sizeof(wep->wePart1) / 2; --i >= 0;) {
 		switch (*np++ = *cp++) {
 		case 0:
-			dp->d_namlen -= sizeof(wep->wePart2)/2
-			    + sizeof(wep->wePart3)/2 + i + 1;
+			dp->d_namlen -= sizeof(wep->wePart2) / 2 + sizeof(wep->wePart3) / 2
+					+ i + 1;
 			return chksum;
 		case '/':
 			np[-1] = 0;
@@ -758,18 +772,17 @@ win2unixfn(wep, dp, chksum)
 		 * The size comparison should result in the compiler
 		 * optimizing the whole if away
 		 */
-		if (WIN_MAXLEN % WIN_CHARS < sizeof(wep->wePart1) / 2
-		    && np > ep) {
+		if (WIN_MAXLEN % WIN_CHARS < sizeof(wep->wePart1) / 2 && np > ep) {
 			np[-1] = 0;
 			return -1;
 		}
 		if (*cp++)
 			return -1;
 	}
-	for (cp = wep->wePart2, i = sizeof(wep->wePart2)/2; --i >= 0;) {
+	for (cp = wep->wePart2, i = sizeof(wep->wePart2) / 2; --i >= 0;) {
 		switch (*np++ = *cp++) {
 		case 0:
-			dp->d_namlen -= sizeof(wep->wePart3)/2 + i + 1;
+			dp->d_namlen -= sizeof(wep->wePart3) / 2 + i + 1;
 			return chksum;
 		case '/':
 			np[-1] = 0;
@@ -779,15 +792,16 @@ win2unixfn(wep, dp, chksum)
 		 * The size comparisons should be optimized away
 		 */
 		if (WIN_MAXLEN % WIN_CHARS >= sizeof(wep->wePart1) / 2
-		    && WIN_MAXLEN % WIN_CHARS < (sizeof(wep->wePart1) + sizeof(wep->wePart2)) / 2
-		    && np > ep) {
+				&& WIN_MAXLEN % WIN_CHARS
+						< (sizeof(wep->wePart1) + sizeof(wep->wePart2)) / 2
+				&& np > ep) {
 			np[-1] = 0;
 			return -1;
 		}
 		if (*cp++)
 			return -1;
 	}
-	for (cp = wep->wePart3, i = sizeof(wep->wePart3)/2; --i >= 0;) {
+	for (cp = wep->wePart3, i = sizeof(wep->wePart3) / 2; --i >= 0;) {
 		switch (*np++ = *cp++) {
 		case 0:
 			dp->d_namlen -= i + 1;
@@ -799,8 +813,9 @@ win2unixfn(wep, dp, chksum)
 		/*
 		 * See above
 		 */
-		if (WIN_MAXLEN % WIN_CHARS >= (sizeof(wep->wePart1) + sizeof(wep->wePart2)) / 2
-		    && np > ep) {
+		if (WIN_MAXLEN % WIN_CHARS
+				>= (sizeof(wep->wePart1) + sizeof(wep->wePart2)) / 2
+				&& np > ep) {
 			np[-1] = 0;
 			return -1;
 		}
@@ -821,7 +836,7 @@ winChksum(name)
 	u_int8_t s;
 
 	for (s = 0, i = 11; --i >= 0; s += *name++)
-		s = (s << 7)|(s >> 1);
+		s = (s << 7) | (s >> 1);
 	return s;
 }
 
