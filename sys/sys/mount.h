@@ -314,3 +314,4 @@ int		unmount (const char *, int);
 __END_DECLS
 
 #endif /* KERNEL */
+#endif
