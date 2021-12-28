@@ -159,7 +159,6 @@ ttychars(tp)
 	struct tty *tp;
 {
 	tp->t_chars = &ttydefaults;
-	//memcpy(tp->t_cc, ttydefchars, sizeof(ttydefchars));
 }
 
 /*

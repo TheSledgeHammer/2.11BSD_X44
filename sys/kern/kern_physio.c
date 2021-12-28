@@ -276,7 +276,6 @@ rawread(dev, uio)
 	struct uio *uio;
 {
 	return (rawrw(dev, uio, B_READ));
-	//return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_READ, minphys, uio));
 }
 
 /*
@@ -288,5 +287,4 @@ rawwrite(dev, uio)
 	struct uio *uio;
 {
 	return (rawrw(dev, uio, B_WRITE));
-	//return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_WRITE, minphys, uio));
 }

@@ -82,17 +82,6 @@ __KERNEL_RCSID(0, "$NetBSD: com.c,v 1.224.2.2 2004/07/05 21:57:45 he Exp $");
 #include "opt_multiprocessor.h"
 #include "opt_ntp.h"
 */
-/*
- * Override cnmagic(9) macro before including <sys/systm.h>.
- * We need to know if cn_check_magic triggered debugger, so set a flag.
- * Callers of cn_check_magic must declare int cn_trapped = 0;
- * XXX: this is *ugly*!
- */
-#define cn_trap()				\
-	do {						\
-		console_debugger();		\
-		cn_trapped = 1;			\
-	} while (/* CONSTCOND */ 0)
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -527,10 +516,10 @@ com_attach_subr(struct com_softc *sc)
 	 * printing it until now.
 	 */
 	delay(10);
-	aprint_normal(": %s\n", fifo_msg);
+	printf(": %s\n", fifo_msg);
 	if (ISSET(sc->sc_hwflags, COM_HW_TXFIFO_DISABLE)) {
 		sc->sc_fifolen = 1;
-		aprint_normal("%s: txfifo disabled\n", sc->sc_dev.dv_xname);
+		printf("%s: txfifo disabled\n", sc->sc_dev.dv_xname);
 	}
 #ifdef COM_HAYESP
 	}
@@ -546,13 +535,14 @@ com_attach_subr(struct com_softc *sc)
 	sc->sc_rbput = sc->sc_rbget = sc->sc_rbuf;
 	sc->sc_rbavail = com_rbuf_size;
 	if (sc->sc_rbuf == NULL) {
-		aprint_error("%s: unable to allocate ring buffer\n",
+		printf("%s: unable to allocate ring buffer\n",
 		    sc->sc_dev.dv_xname);
 		return;
 	}
 	sc->sc_ebuf = sc->sc_rbuf + (com_rbuf_size << 1);
 
-	tty_attach(tp);
+	//tty_attach(tp);
+	tty_init_console(tp, 0);
 
 	if (!ISSET(sc->sc_hwflags, COM_HW_NOIEN))
 		SET(sc->sc_mcr, MCR_IENABLE);
@@ -565,7 +555,7 @@ com_attach_subr(struct com_softc *sc)
 
 		tp->t_dev = cn_tab->cn_dev = makedev(maj, sc->sc_dev.dv_unit);
 
-		aprint_normal("%s: console\n", sc->sc_dev.dv_xname);
+		printf("%s: console\n", sc->sc_dev.dv_xname);
 	}
 
 #ifdef KGDB
@@ -581,7 +571,7 @@ com_attach_subr(struct com_softc *sc)
 
 			SET(sc->sc_hwflags, COM_HW_KGDB);
 		}
-		aprint_normal("%s: kgdb\n", sc->sc_dev.dv_xname);
+		printf("%s: kgdb\n", sc->sc_dev.dv_xname);
 	}
 #endif
 
@@ -686,7 +676,7 @@ com_detach(struct device *self, int flags)
 	free(sc->sc_rbuf, M_DEVBUF);
 
 	/* Detach and free the tty. */
-	tty_detach(sc->sc_tty);
+	//tty_detach(sc->sc_tty);
 	ttyfree(sc->sc_tty);
 
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
@@ -1710,7 +1700,7 @@ comstart(struct tty *tp)
 			CLR(tp->t_state, TS_ASLEEP);
 			wakeup(&tp->t_outq);
 		}
-		selwakeup(&tp->t_wsel);
+		selwakeup1(&tp->t_swsel);
 		if (tp->t_outq.c_cc == 0)
 			goto out;
 	}
@@ -2054,7 +2044,8 @@ comintr(void *arg)
 	put = sc->sc_rbput;
 	cc = sc->sc_rbavail;
 
-again:	do {
+again:
+	do {
 		u_char	msr, delta;
 
 		lsr = bus_space_read_1(iot, ioh, com_lsr);
@@ -2415,7 +2406,6 @@ comcnattach(bus_space_tag_t iot, bus_addr_t iobase, int rate, int frequency,
 	res = cominit(iot, iobase, rate, frequency, type, cflag, &comconsioh);
 	if (res)
 		return (res);
-
 	cn_tab = &comcons;
 	cn_init_magic(&com_cnm_state);
 	cn_set_magic("\047\001"); /* default magic is BREAK */

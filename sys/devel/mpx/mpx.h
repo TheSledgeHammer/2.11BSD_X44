@@ -82,21 +82,18 @@ struct mpx_chan {
 	char							mpc_oline;
 };
 
-struct mpx_schan {
-	LIST_ENTRY(mpx_schan)			mps_entry;
-	char 							mps_index;
-	int 							mps_flags;
-	struct mpx_group				*mps_group;
+struct mpx_port {
+	char 							mpt_index;
+	int 							mpt_flags;
+	struct mpx_group				*mpt_group;
 
-	struct	clist					mps_ctlx;
+	struct	clist					mpt_ctlx;
 };
 
-struct chan_list;
-LIST_HEAD(chan_list, mpx_schan);
 struct mpx {
-	struct chan_list 				mpx_head;
 	struct mpxpair					*mpx_pair;
 	struct mpx_chan 				*mpx_chan;
+
 	int 							mpx_state;
 	ino_t							mpx_ino;
 	struct file						*mpx_pgid;
@@ -153,7 +150,6 @@ struct mpx_object {
 	pid_t							mo_pid;		/* proc id */
 };
 typedef struct mpx_object 			*mpx_object_t;
-
 
 /*
  * flags

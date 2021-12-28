@@ -112,12 +112,6 @@ __KERNEL_RCSID(0, "$NetBSD: wdc.c,v 1.172.2.7.2.10 2005/08/23 13:35:55 tron Exp 
 #include <dev/disk/ata/ata_raidvar.h>
 #endif
 
-#define cn_trap()				\
-	do {						\
-		console_debugger();		\
-		cn_trapped = 1;			\
-	} while (/* CONSTCOND */ 0)
-
 #define WDCDELAY  100 /* 100 microseconds */
 #define WDCNDELAY_RST (WDC_RESET_WAIT * 1000 / WDCDELAY)
 #if 0

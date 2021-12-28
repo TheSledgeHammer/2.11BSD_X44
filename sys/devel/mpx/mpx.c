@@ -58,7 +58,7 @@ struct fileops mpxops = {
 };
 
 struct	mpx_chan	chans[NCHANS];
-struct	mpx_schan	schans[NPORTS];
+struct	mpx_port	schans[NPORTS];
 struct	mpx_group	*groups[NGROUPS];
 int					mpxline;
 dev_t 				mpxdev;
@@ -66,7 +66,7 @@ dev_t 				mpxdev;
 char				mcdebugs[NDEBUGS];
 
 #define	MIN(a,b)	((a<b)?a:b)
-short	cmask[16]	={
+short	cmask[16]	= {
 	01,	02,	04,
 	010,	020,	040,
 	0100,	0200,	0400,
@@ -158,10 +158,9 @@ mpx_init()
 {
 	struct mpx *mpx;
 	MALLOC(mpx, struct mpx *, sizeof(struct mpx *), M_MPX, M_WAITOK);
-	LIST_INIT(mpx->mpx_head);
+	//LIST_INIT(mpx->mpx_head);
 	simple_lock_init(mpx->mpx_pair, "mpx_lock");
 }
-
 
 struct mpx_group *
 mpx_get_group(dev)
@@ -258,10 +257,11 @@ mpxchan()
 	struct	mpx_group	*gp, *ngp;
 	struct	mpx_args	vec;
 
-	struct a {
-		int	cmd;
-		int	*argvec;
+	register struct a {
+		syscallarg(int)		cmd;
+		syscallarg(int *) 	argvec;
 	} *uap = (struct a *)u->u_ap;
+
 	dev_t	dev;
 	register int i;
 

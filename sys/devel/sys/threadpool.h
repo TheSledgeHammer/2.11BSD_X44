@@ -55,21 +55,27 @@
  */
 
 /* Threadpool Jobs */
+struct kthreadpool;
+struct threadpool_job;
+struct kthreadpool_percpu;
+struct kthreadpool_thread;
+
 TAILQ_HEAD(job_head, threadpool_job);
 typedef void threadpool_job_fn_t(struct threadpool_job *);
 struct threadpool_job  {
 	TAILQ_ENTRY(threadpool_job)			job_entry;
-	struct wqueue						job_wqueue;
 	threadpool_job_fn_t					*job_func;
 	const char							*job_name;
 	lock_t								*job_lock;
 	volatile unsigned int				job_refcnt;
 
+	//struct kthreadpool_thread			*job_kthread;
+	//struct uthreadpool_thread			*job_uthread;
 	struct threadpool_itpc				*job_itpc;
 #define job_ktpool						job_itpc->itpc_ktpool
 #define job_utpool						job_itpc->itpc_utpool
-#define	job_ktp_thread					job_ktpool.ktp_overseer
-#define	job_utp_thread					job_utpool.utp_overseer
+#define	job_kthread						job_ktpool.ktp_overseer
+#define	job_uthread						job_utpool.utp_overseer
 };
 
 /* Inter-Threadpool Communication (ITPC) */

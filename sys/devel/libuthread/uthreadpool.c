@@ -357,7 +357,7 @@ uthreadpool_overseer_thread(void *arg)
 
 		simple_lock(job->job_lock);
 		/* If the job was cancelled, we'll no longer be its thread.  */
-		if (__predict_true(job->job_utp_thread == overseer)) {
+		if (__predict_true(job->job_uthread == overseer)) {
 			simple_lock(&utpool->utp_lock);
 			if (__predict_false(TAILQ_EMPTY(&utpool->utp_idle_threads))) {
 				/*
@@ -375,7 +375,7 @@ uthreadpool_overseer_thread(void *arg)
 				KASSERT(thread->utpt_job == NULL);
 				TAILQ_REMOVE(&utpool->utp_idle_threads, thread, utpt_entry);
 				thread->utpt_job = job;
-				job->job_ktp_thread = thread;
+				job->job_kthread = thread;
 			}
 			simple_unlock(&utpool->utp_lock);
 		}
@@ -471,9 +471,9 @@ uthreadpool_job_dead(struct threadpool_job *job)
 void
 uthreadpool_job_destroy(struct threadpool_job *job)
 {
-	KASSERTMSG((job->job_utp_thread == NULL), "job %p still running", job);
+	KASSERTMSG((job->job_uthread == NULL), "job %p still running", job);
 	job->job_lock = NULL;
-	KASSERT(job->job_utp_thread == NULL);
+	KASSERT(job->job_uthread == NULL);
 	KASSERT(job->job_refcnt == 0);
 	job->job_func = uthreadpool_job_dead;
 	(void) strlcpy(job->job_name, "deadjob", sizeof(job->job_name));
@@ -509,8 +509,8 @@ uthreadpool_job_rele(struct threadpool_job *job)
 void
 uthreadpool_job_done(struct threadpool_job *job)
 {
-	KASSERT(job->job_utp_thread != NULL);
-	KASSERT(job->job_utp_thread->utpt_kthread == curkthread);
+	KASSERT(job->job_uthread != NULL);
+	KASSERT(job->job_uthread->utpt_kthread == curkthread);
 
 	/*
 	 * We can safely read this field; it's only modified right before
@@ -518,7 +518,7 @@ uthreadpool_job_done(struct threadpool_job *job)
 	 * to use here; no one cares if it contains junk afterward.
 	 */
 	KTHREAD_LOCK(curkthread);
-	curkthread->kt_name = job->job_utp_thread->utpt_uthread_savedname;
+	curkthread->kt_name = job->job_uthread->utpt_uthread_savedname;
 	KTHREAD_UNLOCK(curkthread);
 
 	/*
@@ -531,13 +531,13 @@ uthreadpool_job_done(struct threadpool_job *job)
 	KASSERT(0 < job->job_refcnt);
 	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
-	job->job_utp_thread = NULL;
+	job->job_uthread = NULL;
 }
 
 void
 uthreadpool_schedule_job(struct uthreadpool *utpool, struct threadpool_job *job)
 {
-	if (__predict_true(job->job_utp_thread != NULL)) {
+	if (__predict_true(job->job_uthread != NULL)) {
 		return;
 	}
 
@@ -545,16 +545,16 @@ uthreadpool_schedule_job(struct uthreadpool *utpool, struct threadpool_job *job)
 
 	simple_lock(&utpool->utp_lock);
 	if (__predict_false(TAILQ_EMPTY(&utpool->utp_idle_threads))) {
-		job->job_utp_thread = &utpool->utp_overseer;
+		job->job_uthread = &utpool->utp_overseer;
 		TAILQ_INSERT_TAIL(&utpool->utp_jobs, job, job_entry);
 	} else {
 		/* Assign it to the first idle thread.  */
-		job->job_utp_thread = TAILQ_FIRST(&utpool->utp_idle_threads);
-		job->job_utp_thread->utpt_job = job;
+		job->job_uthread = TAILQ_FIRST(&utpool->utp_idle_threads);
+		job->job_uthread->utpt_job = job;
 	}
 
 	/* Notify whomever we gave it to, overseer or idle thread.  */
-	KASSERT(job->job_utp_thread != NULL);
+	KASSERT(job->job_uthread != NULL);
 	simple_unlock(&utpool->utp_lock);
 }
 
@@ -582,12 +582,12 @@ uthreadpool_cancel_job_async(struct uthreadpool *utpool, struct threadpool_job *
 	 * proceed as if it had been already running.
 	 */
 
-	if (job->job_utp_thread == NULL) {
+	if (job->job_uthread == NULL) {
 		/* Nothing to do.  Guaranteed not running.  */
 		return TRUE;
-	} else if (job->job_utp_thread == &utpool->utp_overseer) {
+	} else if (job->job_uthread == &utpool->utp_overseer) {
 		/* Take it off the list to guarantee it won't run.  */
-		job->job_utp_thread = NULL;
+		job->job_uthread = NULL;
 		simple_lock(&utpool->utp_lock);
 
 		TAILQ_REMOVE(&utpool->utp_jobs, job, job_entry);

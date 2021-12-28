@@ -216,7 +216,8 @@ void	vref (struct vnode *);
 #define	VATTR_NULL(vap)	(*(vap) = va_null)	/* initialize a vattr */
 #define	HOLDRELE(vp)	holdrele(vp)		/* decrease buf or page ref */
 
-static __inline holdrele(vp)
+static __inline
+holdrele(vp)
 	struct vnode *vp;
 {
 	simple_lock(&vp->v_interlock);
@@ -224,7 +225,8 @@ static __inline holdrele(vp)
 	simple_unlock(&vp->v_interlock);
 }
 #define	VHOLD(vp)	vhold(vp)				/* increase buf or page ref */
-static __inline vhold(vp)
+static __inline
+vhold(vp)
 	struct vnode *vp;
 {
 	simple_lock(&vp->v_interlock);
@@ -232,7 +234,8 @@ static __inline vhold(vp)
 	simple_unlock(&vp->v_interlock);
 }
 #define	VREF(vp)	vref(vp)				/* increase reference */
-static __inline vref(vp)
+static __inline
+vref(vp)
 	struct vnode *vp;
 {
 	simple_lock(&vp->v_interlock);

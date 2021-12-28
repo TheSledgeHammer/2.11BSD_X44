@@ -37,6 +37,9 @@
 
 #ifndef _DEV_CNMAGIC_H_
 #define _DEV_CNMAGIC_H_
+
+#include <dev/misc/cons/cons.h>
+
 /*
  * Stuff to handle debugger magic key sequences.
  */
@@ -51,10 +54,10 @@ typedef struct cnm_state {
 } cnm_state_t;
 
 /* Override db_console() in MD headers */
-/* Override db_console() in MD headers */
-#ifndef cn_trap
-#define cn_trap()	console_debugger()
-#endif
+#define cn_trap() 				\
+	do {						\
+		cn_trapped = 1;			\
+	} while (/* CONSTCOND */ 0)
 #ifndef cn_isconsole
 #define cn_isconsole(d)	(cn_tab != NULL && (d) == cn_tab->cn_dev)
 #endif
@@ -63,6 +66,7 @@ void 	cn_init_magic(cnm_state_t *);
 void	cn_destroy_magic(cnm_state_t *);
 int 	cn_set_magic(const char *);
 int 	cn_get_magic(char *, size_t);
+
 /* This should be called for each byte read */
 #ifndef cn_check_magic
 #define cn_check_magic(d, k, s)						\

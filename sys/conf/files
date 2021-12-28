@@ -8,5 +8,4 @@ include 									"conf/kernel.conf"
 include 									"conf/vm.conf"
 
 # Other Kernel Conf File
-include 									"dev/files.dev"
 include 									"ddb/files.ddb"

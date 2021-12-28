@@ -12,12 +12,11 @@
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
-//#include <devel/mpx/mpx.h>
-
 #ifdef KERNEL
 struct proc;
 struct uio;
 struct knote;
+
 /*
  * Descriptor table entry.
  * One for each kernel object.
@@ -33,7 +32,6 @@ struct file {
 	union {
 		void			*f_Data;
 		struct socket 	*f_Socket;
-		//struct mpx		*f_Mpx;
 	} f_un;
 
 	off_t				f_offset;
@@ -55,7 +53,6 @@ struct fileops {
 
 #define f_data		f_un.f_Data
 #define f_socket	f_un.f_Socket
-//#define f_mpx		f_un.f_Mpx
 
 extern struct file 	*filehead;	/* head of list of open files */
 extern int 			maxfiles;	/* kernel limit on number of open files */

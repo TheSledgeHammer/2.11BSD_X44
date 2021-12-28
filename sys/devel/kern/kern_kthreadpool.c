@@ -361,7 +361,7 @@ kthreadpool_overseer_thread(void *arg)
 
 		simple_lock(job->job_lock);
 		/* If the job was cancelled, we'll no longer be its thread. */
-		if (__predict_true(job->job_ktp_thread == overseer)) {
+		if (__predict_true(job->job_kthread == overseer)) {
 			simple_lock(&ktpool->ktp_lock);
 			if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_idle_threads))) {
 				/*
@@ -381,7 +381,7 @@ kthreadpool_overseer_thread(void *arg)
 				KASSERT(thread->ktpt_job == NULL);
 				TAILQ_REMOVE(&ktpool->ktp_idle_threads, thread, ktpt_entry);
 				thread->ktpt_job = job;
-				job->job_ktp_thread = thread;
+				job->job_kthread = thread;
 			}
 			simple_unlock(&ktpool->ktp_lock);
 		}
@@ -477,9 +477,9 @@ threadpool_job_dead(struct threadpool_job *job)
 void
 threadpool_job_destroy(struct threadpool_job *job)
 {
-	KASSERTMSG((job->job_ktp_thread == NULL), "job %p still running", job);
+	KASSERTMSG((job->job_kthread == NULL), "job %p still running", job);
 	job->job_lock = NULL;
-	KASSERT(job->job_ktp_thread == NULL);
+	KASSERT(job->job_kthread == NULL);
 	KASSERT(job->job_refcnt == 0);
 	job->job_func = threadpool_job_dead;
 	(void) strlcpy(job->job_name, "deadjob", sizeof(job->job_name));
@@ -515,8 +515,8 @@ threadpool_job_rele(struct threadpool_job *job)
 void
 kthreadpool_job_done(struct threadpool_job *job)
 {
-	KASSERT(job->job_ktp_thread != NULL);
-	KASSERT(job->job_ktp_thread->ktpt_proc == curproc);
+	KASSERT(job->job_kthread != NULL);
+	KASSERT(job->job_kthread->ktpt_proc == curproc);
 
 	/*
 	 * We can safely read this field; it's only modified right before
@@ -524,7 +524,7 @@ kthreadpool_job_done(struct threadpool_job *job)
 	 * to use here; no one cares if it contains junk afterward.
 	 */
 	PROC_LOCK(curproc);
-	curproc->p_name = job->job_ktp_thread->ktpt_kthread_savedname;
+	curproc->p_name = job->job_kthread->ktpt_kthread_savedname;
 	PROC_UNLOCK(curproc);
 
 	/*
@@ -537,13 +537,13 @@ kthreadpool_job_done(struct threadpool_job *job)
 	KASSERT(0 < job->job_refcnt);
 	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
-	job->job_ktp_thread = NULL;
+	job->job_kthread = NULL;
 }
 
 void
 kthreadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 {
-	if (__predict_true(job->job_ktp_thread != NULL)) {
+	if (__predict_true(job->job_kthread != NULL)) {
 		return;
 	}
 
@@ -551,16 +551,16 @@ kthreadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 
 	simple_lock(&ktpool->ktp_lock);
 	if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_idle_threads))) {
-		job->job_ktp_thread = &ktpool->ktp_overseer;
+		job->job_kthread = &ktpool->ktp_overseer;
 		TAILQ_INSERT_TAIL(&ktpool->ktp_jobs, job, job_entry);
 	} else {
 		/* Assign it to the first idle thread.  */
-		job->job_ktp_thread = TAILQ_FIRST(&ktpool->ktp_idle_threads);
-		job->job_ktp_thread->ktpt_job = job;
+		job->job_kthread = TAILQ_FIRST(&ktpool->ktp_idle_threads);
+		job->job_kthread->ktpt_job = job;
 	}
 
 	/* Notify whomever we gave it to, overseer or idle thread.  */
-	KASSERT(job->job_ktp_thread != NULL);
+	KASSERT(job->job_kthread != NULL);
 	simple_unlock(&ktpool->ktp_lock);
 }
 
@@ -588,12 +588,12 @@ kthreadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *
 	 * proceed as if it had been already running.
 	 */
 
-	if (job->job_ktp_thread == NULL) {
+	if (job->job_kthread == NULL) {
 		/* Nothing to do.  Guaranteed not running.  */
 		return TRUE;
-	} else if (job->job_ktp_thread == &ktpool->ktp_overseer) {
+	} else if (job->job_kthread == &ktpool->ktp_overseer) {
 		/* Take it off the list to guarantee it won't run.  */
-		job->job_ktp_thread = NULL;
+		job->job_kthread = NULL;
 		simple_lock(&ktpool->ktp_lock);
 
 		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
@@ -627,7 +627,7 @@ kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
 	struct kthreadpool_percpu *ktpool_percpu, *tmp = NULL;
 	int error;
 	ktpool_percpu = kthreadpool_lookup_percpu(pri);
-	simple_lock(&);
+	simple_lock(&kthreadpools_lock);
 	if(ktpool_percpu == NULL) {
 		simple_unlock(&kthreadpools_lock);
 		error = kthreadpool_percpu_create(&tmp, pri);

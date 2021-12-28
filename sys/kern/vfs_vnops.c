@@ -55,7 +55,7 @@
 #include <vm/include/vm.h>
 
 struct fileops vnops =
-	{ vn_read, vn_write, vn_ioctl, vn_select, vn_poll, vn_closefile, vn_kqfilter };
+	{ vn_rw, vn_read, vn_write, vn_ioctl, vn_select, vn_poll, vn_closefile, vn_kqfilter };
 
 /*
  * Common code for vnode open operations.
@@ -232,6 +232,26 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 			error = EIO;
 	if ((ioflg & IO_NODELOCKED) == 0)
 		VOP_UNLOCK(vp, 0, p);
+	return (error);
+}
+
+/*
+ * File table vnode read/write routine.
+ */
+int
+vn_rw(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+	enum uio_rw rw = uio->uio_rw;
+	int error;
+
+	if (rw == UIO_READ) {
+		error = vn_read(fp, uio, cred);
+	} else {
+		error = vn_write(fp, uio, cred);
+	}
 	return (error);
 }
 

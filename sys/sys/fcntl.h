@@ -164,7 +164,6 @@ struct flock {
 	short	l_whence;	/* type of l_start */
 };
 
-
 #ifndef _POSIX_SOURCE
 /* lock operations for flock(2) */
 #define	LOCK_SH		0x01		/* shared file lock */
@@ -172,7 +171,6 @@ struct flock {
 #define	LOCK_NB		0x04		/* don't block when locking */
 #define	LOCK_UN		0x08		/* unlock file */
 #endif
-
 
 #ifndef KERNEL
 #include <sys/cdefs.h>
