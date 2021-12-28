@@ -90,6 +90,14 @@ typedef struct vm_anon 			*vm_anon_t;
 struct vm_aref;
 typedef struct vm_aref 			*vm_aref_t;
 
+/*
+ *	MACH VM locking type mappings to kernel types
+ */
+typedef struct lock_object		simple_lock_data_t;
+typedef struct lock_object		*simple_lock_t;
+typedef struct lock				lock_data_t;
+typedef struct lock				*lock_t;
+
 #include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
@@ -117,14 +125,6 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <devel/vm/include/vm_anon.h>			/* Work in Progress */
 
 #include <devel/ovl/include/ovl.h>
-
-/*
- *	MACH VM locking type mappings to kernel types
- */
-typedef struct lock_object	simple_lock_data_t;
-typedef struct lock_object	*simple_lock_t;
-typedef struct lock			lock_data_t;
-typedef struct lock			*lock_t;
 
 /*
  * Shareable process virtual address space.

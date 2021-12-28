@@ -351,7 +351,7 @@ swapctl(p, uap, retval)
 	/*
 	 * ensure serialized syscall access by grabbing the swap_syscall_lock
 	 */
-	lockmgr(&swap_syscall_lock, LK_EXCLUSIVE, NULL);
+	lockmgr(&swap_syscall_lock, LK_EXCLUSIVE, (void *)0, p->p_pid);
 
 	/*
 	 * we handle the non-priv NSWAP and STATS request first.

@@ -89,7 +89,7 @@ swapinit()
 	}
 
 	/*
-	 * Initialize swapdev drum
+	 * Initialize swapdrum dev
 	 */
 	swapdrum_init(swp);
 
@@ -193,115 +193,36 @@ sw_swapdev(index)
 	return (NULL);
 }
 
-/*
- * System call swapon(name) enables swapping on device name,
- * which must be in the swdevsw.  Return EBUSY
- * if already swapping on this device.
- */
-struct swapon_args {
-	syscallarg(char)	*name;
-};
-
-/* ARGSUSED */
+/* enable swapping on device via swapdrum_on */
 int
-swapon(p, uap, retval)
-	struct proc *p;
-	struct swapon_args *uap;
-	int *retval;
+swapon(p, swp)
+	struct proc 	*p;
+	struct swdevt 	*swp;
 {
-	register struct vnode *vp;
-	register struct swdevt *sp;
-	dev_t 	dev;
-	int 	error;
-	struct nameidata nd;
-
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
-	if (error == namei(&nd)) {
-		return (error);
-	}
-	vp = nd.ni_vp;
-	if (vp->v_type != VBLK) {
-		vrele(vp);
-		return (ENOTBLK);
-	}
-	dev = (dev_t)vp->v_rdev;
-	if (major(dev) >= nblkdev) {
-		vrele(vp);
-		return (ENXIO);
-	}
-	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++) {
-		if (sp->sw_dev == dev) {
-			if (sp->sw_flags & SW_FREED) {
-				vrele(vp);
-				return (EBUSY);
-			}
-			sp->sw_vp = vp;
-			if (error == swfree(p, sp - swdevt)) {
-				vrele(vp);
-				return (error);
-			}
-			if(error == swapdrum_on(p, sp)) {
-				vrele(vp);
-				return (error);
-			}
-			return (0);
-		}
-	}
-	vrele(vp);
-	return (EINVAL);
+	return (swapdrum_on(p, swp));
 }
 
-/*
- * System call swapoff(name) disables swapping on device name,
- * which must be in the swdevsw.  Return EBUSY
- * if already swapping on this device.
- */
-struct swapoff_args {
-	syscallarg(char) *name;
-};
-
+/* disable swapping on device via swapdrum_off */
 int
-swapoff(p, uap, retval)
-	struct proc *p;
-	struct swapoff_args *uap;
-	int *retval;
+swapoff(p, swp)
+	struct proc 	*p;
+	struct swdevt 	*swp;
 {
-	register struct vnode *vp;
-	register struct swdevt *sp;
-	dev_t 	dev;
-	int 	error;
-	struct nameidata nd;
-
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
-	if (error == namei(&nd)) {
-		return (error);
-	}
-	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++) {
-		if (sp->sw_dev == dev) {
-			if(error == swapdrum_off(p, sp)) {
-				return (error);
-			}
-			return (0);
-		}
-	}
-
-	return (0);
+	return (swapdrum_off(p, swp));
 }
 
 int
 swalloc(index, lessok)
-	int index;
+	int 	index;
 	bool_t 	lessok;
 {
-	register struct swdevt 	*sp;
-	int npages, error;
+	register struct swdevt 	*swp;
+	int npages;
 
-	sp = &swdevt[index];
+	swp = &swdevt[index];
 	npages = MAXPHYS >> PAGE_SHIFT;
 
-	error = vm_swap_alloc(sp, &npages, lessok);
-
-	return (error);
+	return (vm_swap_alloc(swp, &npages, lessok));
 }
 
 void
@@ -309,8 +230,15 @@ swfree(startslot, nslots)
 	int startslot;
 	int nslots;
 {
+	/*
+	 * use below method combined with original swfree(p, indx).
+	 * free swapextents then free swapmap if needed.
+	 * (in a similar vein to swap startup. 1st swapmap, 2nd swapextents)
+	 */
 	vm_swap_free(startslot, nslots);
 }
+
+/* to be placed machine autoconf.c */
 
 struct swdevt swdevt[] = {
 		/* dev, flags, nblks, inuse */

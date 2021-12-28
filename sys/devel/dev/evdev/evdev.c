@@ -95,33 +95,15 @@ evdev_attach(struct device *parent, struct device *self, void *aux)
 {
 	struct evdev_softc *sc = (struct evdev_softc *)self;
 	struct evdev_dev *evdev = aux;
+	int ret;
 
 	/* Initialize internal structures */
 	sc->sc_evdev = evdev;
 	evdev->ev_softc = sc;
 
-	if (evdev_event_supported(evdev, EV_REP)
-			&& bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
-		/* Initialize callout */
-		callout_init(&evdev->ev_rep_callout);
-		if (evdev->ev_rep[REP_DELAY] == 0 && evdev->ev_rep[REP_PERIOD] == 0) {
-			/* Supply default values */
-			evdev->ev_rep[REP_DELAY] = 250;
-			evdev->ev_rep[REP_PERIOD] = 33;
-		}
-	}
-	/* Initialize multitouch protocol type B states */
-	if (bit_test(evdev->ev_abs_flags, ABS_MT_SLOT) && evdev->ev_absinfo != NULL
-			&& MAXIMAL_MT_SLOT(evdev) > 0) {
-		evdev_mt_init(evdev);
-	}
-
-	/* Estimate maximum report size */
-	if (evdev->ev_report_size == 0) {
-		ret = evdev_set_report_size(evdev, evdev_estimate_report_size(evdev));
-		if (ret != 0) {
-			printf("evdev_attach: evdev_set_report_size error", ret);
-		}
+	ret = evdev_register(evdev);
+	if (ret != 0) {
+		printf("evdev_attach: evdev_register error", ret);
 	}
 }
 
@@ -161,13 +143,11 @@ evdev_detach(struct device *self, int flags)
 	}
 
 	/*
-	 * For some devices, e.g. keyboards, ev_absinfo and ev_mt
-	 * may be NULL, so check before freeing them.
+	 * unregister any devices from evdev
 	 */
-	if (evdev->ev_absinfo != NULL)
-	    evdev_free_absinfo(evdev->ev_absinfo);
-	if (evdev->ev_mt != NULL)
-	    evdev_mt_free(evdev);
+	if (evdev_unregister(evdev, sc)) {
+		continue;
+	}
 
 	/* locate the major number */
 	maj = cdevsw_lookup_major(&evdev_cdevsw);
@@ -239,7 +219,7 @@ evdev_open(dev, flags, fmt, p)
 	error = evdevdoopen(sc, evdev, evar);
 	if (error) {
 		DPRINTF(("evdevopen: %s open failed\n", sc->sc_base.me_dv.dv_xname));
-		evdev_deregister_wsevent(sc);
+		evdev_unregister_wsevent(sc);
 	}
 	return (error);
 }
@@ -260,7 +240,58 @@ evdev_read(dev, uio, flags)
 	struct uio *uio;
 	int flags;
 {
+	struct evdev_softc *sc;
+	struct wseventvar *evar;
+	struct input_event *head;
+	union {
+		struct input_event t;
+	} event;
+	size_t evsize, buffer_size;
+	int ret = 0;
+	int unit, remaining;
 
+	unit = minor(dev);
+	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+
+	if (evar->revoked)
+		return (ENODEV);
+
+	evsize = sizeof(struct input_event);
+
+	/* Zero-sized reads are allowed for error checking */
+	if (uio->uio_resid != 0 && uio->uio_resid < evsize)
+		return (EINVAL);
+
+	remaining = uio->uio_resid / evsize;
+
+	EVDEV_CLIENT_LOCKQ(sc);
+
+	if (EVDEV_CLIENT_EMPTYQ(sc)) {
+		if (flags & O_NONBLOCK)
+			ret = EWOULDBLOCK;
+		else {
+			if (remaining != 0) {
+				evar->blocked = TRUE;
+				//ret = mtx_sleep(sc, &client->ec_buffer_mtx, PCATCH, "evread", 0);
+				if (ret == 0 && evar->revoked)
+					ret = ENODEV;
+			}
+		}
+	}
+
+	while (ret == 0 && !EVDEV_CLIENT_EMPTYQ(sc) && remaining > 0) {
+		head = sc->sc_buffer + sc->sc_buffer_head;
+		bcopy(head, &event.t, evsize);
+		sc->sc_buffer_head = (sc->sc_buffer_head + 1) % sc->sc_buffer_size;
+		remaining--;
+
+		EVDEV_CLIENT_UNLOCKQ(sc);
+		ret = uiomove(&event, evsize, uio);
+		EVDEV_CLIENT_LOCKQ(sc);
+	}
+
+	EVDEV_CLIENT_UNLOCKQ(sc);
+	return (ret);
 }
 
 int
@@ -653,7 +684,6 @@ evdev_set_keycode(struct evdev_dev *evdev, struct input_keymap_entry *ike)
 static void
 evdev_get_keycode(struct evdev_dev *evdev, struct input_keymap_entry *ike)
 {
-
 	evdev_get_keycode_sc(evdev->ev_softc, evdev, ike);
 }
 
@@ -667,6 +697,31 @@ static void
 evdev_get_keycode_sc(struct evdev_softc *sc, struct evdev_dev *evdev, struct input_keymap_entry *ike)
 {
 	sc->sc_get_keycode(evdev, ike);
+}
+
+void
+evdev_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
+{
+	evdev_event_sc(evdev->ev_softc, evdev, type, code, value);
+}
+
+static void
+evdev_event_sc(struct evdev_softc *sc, struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
+{
+	sc->sc_event(evdev, type, code, value);
+	evdev_set_wscons_event(sc->sc_base->me_evp, type, code, value);
+}
+
+static void
+evdev_set_wscons_event(we, type, code, value)
+	struct wscons_event *we;
+	uint16_t			type;
+	uint16_t			code;
+	int32_t				value;
+{
+	we->type = type;
+	we->code = code;
+	we->value = value;
 }
 
 struct wseventvar *
@@ -687,7 +742,7 @@ evdev_register_wsevent(struct evdev_softc *sc, struct proc *p)
 }
 
 void
-evdev_deregister_wsevent(struct evdev_softc *sc)
+evdev_unregister_wsevent(struct evdev_softc *sc)
 {
 	struct wseventvar *evar;
 
@@ -717,19 +772,20 @@ evdev_notify_event(struct evdev_softc *sc)
 	evar = &sc->sc_base.me_evar;
 
 	if (evar->blocked) {
-		evar->blocked = false;
-		wakeup(client);
+		evar->blocked = FALSE;
+		WSEVENT_WAKEUP(evar);
 	}
 	if (evar->selected) {
-		evar->selected = false;
-		wakeup(&client->kqinfo);
+		evar->selected = FALSE;
+		WSEVENT_WAKEUP(evar);
 	}
 
-	KNOTE(&client->kqinfo.ki_note, 0);
-
+	KNOTE(&evar->sel.si_klist, 0);
+/*
 	if (evar->async && client->ec_sigio != NULL) {
 		pgsigio(client->ec_sigio, SIGIO, 0);
 	}
+	*/
 	sc->sc_base.me_evp = evar;
 }
 
@@ -738,7 +794,7 @@ evdev_client_filter_queue(struct evdev_softc *sc, uint16_t type)
 {
 	struct input_event *event;
 	size_t head, tail, count, i;
-	bool_t last_was_syn = false;
+	bool_t last_was_syn = FALSE;
 
 	i = head = sc->sc_buffer_head;
 	tail = sc->sc_buffer_tail;
@@ -771,18 +827,4 @@ evdev_client_filter_queue(struct evdev_softc *sc, uint16_t type)
 
 	sc->sc_buffer_head = i;
 	sc->sc_buffer_tail = tail;
-}
-
-void
-evdev_set_wsevent(ie, timo, type, code, value)
-	struct input_event 	*ie;
-	struct timeval 		*timo;
-	uint16_t			type;
-	uint16_t			code;
-	int32_t				value;
-{
-	timo = ie->time;
-	type = ie->type;
-	code = ie->code;
-	value = ie->value;
 }

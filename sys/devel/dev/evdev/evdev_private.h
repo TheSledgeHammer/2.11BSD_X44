@@ -49,7 +49,7 @@
  */
 _Static_assert(sizeof(bitstr_t) == sizeof(unsigned long), "bitstr_t size mismatch");
 
-struct evdev_client;
+struct evdev_softc;
 struct evdev_mt;
 
 #define	CURRENT_MT_SLOT(evdev)	((evdev)->ev_absinfo[ABS_MT_SLOT].value)
@@ -111,7 +111,7 @@ struct evdev_dev {
 
 	struct input_id				ev_id;
 
-//	struct evdev_client 		*ev_grabber;						/* (s) */
+	struct evdev_softc 			*ev_grabber;						/* (s) */
 
 	size_t						ev_report_size;
 
@@ -139,6 +139,10 @@ struct evdev_dev {
 	bitstr_t					bit_decl(ev_snd_states, SND_CNT); 	/* (s) */
 	bitstr_t					bit_decl(ev_sw_states, SW_CNT);		/* (s) */
 	bool_t						ev_report_opened;					/* (s) */
+
+	/* KDB state: */
+	bool_t						ev_kdb_active;
+	bitstr_t					bit_decl(ev_kdb_led_states, LED_CNT);
 
 	/* Multitouch protocol type B state: */
 	struct evdev_mt 			*ev_mt;								/* (s) */
@@ -170,8 +174,10 @@ struct evdev_softc {
 	int							sc_refcnt;
 	u_char						sc_dying;			/* device is being detached */
 
+	/* evdev methods */
 	evdev_keycode_t				*sc_set_keycode;
 	evdev_keycode_t 			*sc_get_keycode;
+	evdev_event_t				*sc_event;
 
 	struct input_event			sc_buffer[];
 };
@@ -188,23 +194,21 @@ struct evdev_softc {
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 int 	evdev_inject_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
-int 	evdev_cdev_create(struct evdev_dev *);
-int 	evdev_cdev_destroy(struct evdev_dev *);
+//int 	evdev_cdev_create(struct evdev_dev *);
+//int 	evdev_cdev_destroy(struct evdev_dev *);
 bool_t 	evdev_event_supported(struct evdev_dev *, uint16_t);
 void 	evdev_set_abs_bit(struct evdev_dev *, uint16_t);
 void 	evdev_set_absinfo(struct evdev_dev *, uint16_t, struct input_absinfo *);
 void 	evdev_restore_after_kdb(struct evdev_dev *);
 
 /* Client interface: */
-/*
-int 	evdev_register_client(struct evdev_dev *, struct evdev_client *);
-void 	evdev_dispose_client(struct evdev_dev *, struct evdev_client *);
-int 	evdev_grab_client(struct evdev_dev *, struct evdev_client *);
-int 	evdev_release_client(struct evdev_dev *, struct evdev_client *);
-void 	evdev_client_push(struct evdev_client *, uint16_t, uint16_t, int32_t);
-void 	evdev_notify_event(struct evdev_client *);
-void 	evdev_revoke_client(struct evdev_client *);
-*/
+int 	evdev_register_client(struct evdev_dev *, struct evdev_softc *);
+void 	evdev_dispose_client(struct evdev_dev *, struct evdev_softc *);
+int 	evdev_grab_client(struct evdev_dev *, struct evdev_softc *);
+int 	evdev_release_client(struct evdev_dev *, struct evdev_softc *);
+void 	evdev_client_push(struct evdev_softc *, uint16_t, uint16_t, int32_t);
+void 	evdev_notify_event(struct evdev_softc *);
+void 	evdev_revoke_client(struct evdev_softc *);
 
 /* Multitouch related functions: */
 void 	evdev_mt_init(struct evdev_dev *);

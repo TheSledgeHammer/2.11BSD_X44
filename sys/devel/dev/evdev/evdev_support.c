@@ -1,9 +1,40 @@
-/*
- * evdev.c
+/*-
+ * Copyright (c) 2014 Jakub Wojciech Klama <jceel@FreeBSD.org>
+ * Copyright (c) 2015-2016 Vladimir Kondratyev <wulf@FreeBSD.org>
+ * All rights reserved.
  *
- *  Created on: 11 Dec 2021
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
+
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/sysctl.h>
+#include <sys/systm.h>
+
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/evdev_private.h>
 #include <dev/evdev/input.h>
@@ -15,6 +46,17 @@
 #define	debugf(evdev, fmt, args...)
 #endif
 
+enum evdev_sparse_result {
+	EV_SKIP_EVENT,		/* Event value not changed */
+	EV_REPORT_EVENT,	/* Event value changed */
+	EV_REPORT_MT_SLOT,	/* Event value and MT slot number changed */
+};
+
+
+static void evdev_start_repeat(struct evdev_dev *, uint16_t);
+static void evdev_stop_repeat(struct evdev_dev *);
+static int evdev_check_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
+
 static inline void
 bit_change(bitstr_t *bitstr, int bit, int value)
 {
@@ -24,6 +66,7 @@ bit_change(bitstr_t *bitstr, int bit, int value)
 		bit_clear(bitstr, bit);
 }
 
+/*
 struct evdev_dev *
 evdev_alloc(void)
 {
@@ -39,6 +82,7 @@ evdev_free(struct evdev_dev *evdev)
 		free(evdev, M_EVDEV);
 	}
 }
+*/
 
 static struct input_absinfo *
 evdev_alloc_absinfo(void)
@@ -129,8 +173,6 @@ int
 evdev_register(struct evdev_dev *evdev)
 {
 	/* Initialize internal structures */
-	//LIST_INIT(&evdev->ev_clients);
-
 	if (evdev_event_supported(evdev, EV_REP)
 			&& bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
 		/* Initialize callout */
@@ -159,22 +201,17 @@ evdev_register(struct evdev_dev *evdev)
 }
 
 int
-evdev_unregister(struct evdev_dev *evdev)
+evdev_unregister(struct evdev_dev *evdev, struct evdev_softc *softc)
 {
-	struct evdev_client *client;
-	int ret;
-	debugf(evdev, "%s: unregistered evdev provider: %s\n",
-			evdev->ev_shortname, evdev->ev_name);
+	debugf(evdev, "%s: unregistered evdev provider: %s\n", evdev->ev_shortname, evdev->ev_name);
 
 	EVDEV_LOCK(evdev);
 	/* Wake up sleepers */
-	LIST_FOREACH(client, &evdev->ev_clients, ec_link) {
-		evdev_revoke_client(client);
-		evdev_dispose_client(evdev, client);
-		EVDEV_CLIENT_LOCKQ(client);
-		evdev_notify_event(client);
-		EVDEV_CLIENT_UNLOCKQ(client);
-	}
+	evdev_revoke_client(softc);
+	evdev_dispose_client(evdev, softc);
+	EVDEV_CLIENT_LOCKQ(softc);
+	evdev_notify_event(softc);
+	EVDEV_CLIENT_UNLOCKQ(softc);
 	EVDEV_UNLOCK(evdev);
 
 	/*
@@ -186,7 +223,7 @@ evdev_unregister(struct evdev_dev *evdev)
 	if (evdev->ev_mt != NULL)
 	    evdev_mt_free(evdev);
 
-	return (ret);
+	return (0);
 }
 
 inline void
@@ -219,13 +256,6 @@ evdev_set_serial(struct evdev_dev *evdev, const char *serial)
 {
 
 	snprintf(evdev->ev_serial, NAMELEN, "%s", serial);
-}
-
-inline void
-evdev_set_methods(struct evdev_dev *evdev, void *softc, const struct evdev_methods *methods)
-{
-	evdev->ev_methods = methods;
-	evdev->ev_softc = softc;
 }
 
 inline void
@@ -561,7 +591,7 @@ evdev_sparse_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 			evdev_set_mt_value(evdev, last_mt_slot, code, value);
 			if (last_mt_slot != CURRENT_MT_SLOT(evdev)) {
 				CURRENT_MT_SLOT (evdev) = last_mt_slot;
-				evdev->ev_report_opened = true;
+				evdev->ev_report_opened = TRUE;
 				return (EV_REPORT_MT_SLOT);
 			}
 			break;
@@ -580,42 +610,39 @@ evdev_sparse_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 			/* Skip empty reports */
 			if (!evdev->ev_report_opened)
 				return (EV_SKIP_EVENT);
-			evdev->ev_report_opened = false;
+			evdev->ev_report_opened = FALSE;
 			return (EV_REPORT_EVENT);
 		}
 		break;
 	}
 
-	evdev->ev_report_opened = true;
+	evdev->ev_report_opened = TRUE;
 	return (EV_REPORT_EVENT);
 }
 
 static void
 evdev_propagate_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
-	struct evdev_client *client;
+	struct evdev_softc *client;
 
 	debugf(evdev, "%s pushed event %d/%d/%d",
 			evdev->ev_shortname, type, code, value);
 
 	/* Propagate event through all clients */
-	LIST_FOREACH(client, &evdev->ev_clients, ec_link) {
-		if (evdev->ev_grabber != NULL && evdev->ev_grabber != client)
-			continue;
-
-		EVDEV_CLIENT_LOCKQ(client);
-		evdev_client_push(client, type, code, value);
-		if (type == EV_SYN && code == SYN_REPORT)
-			evdev_notify_event(client);
-		EVDEV_CLIENT_UNLOCKQ(client);
-	}
+	client = evdev->ev_softc;
+	if (evdev->ev_grabber != NULL && evdev->ev_grabber != client)
+		continue;
+	EVDEV_CLIENT_LOCKQ(client);
+	evdev_client_push(client, type, code, value);
+	if (type == EV_SYN && code == SYN_REPORT)
+		evdev_notify_event(client);
+	EVDEV_CLIENT_UNLOCKQ(client);
 
 	evdev->ev_event_count++;
 }
 
 void
-evdev_send_event(struct evdev_dev *evdev, uint16_t type, uint16_t code,
-    int32_t value)
+evdev_send_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
 	enum evdev_sparse_result sparse;
 
@@ -623,8 +650,7 @@ evdev_send_event(struct evdev_dev *evdev, uint16_t type, uint16_t code,
 	switch (sparse) {
 	case EV_REPORT_MT_SLOT:
 		/* report postponed ABS_MT_SLOT */
-		evdev_propagate_event(evdev, EV_ABS, ABS_MT_SLOT,
-				CURRENT_MT_SLOT(evdev));
+		evdev_propagate_event(evdev, EV_ABS, ABS_MT_SLOT, CURRENT_MT_SLOT(evdev));
 		/* FALLTHROUGH */
 	case EV_REPORT_EVENT:
 		evdev_propagate_event(evdev, type, code, value);
@@ -632,6 +658,25 @@ evdev_send_event(struct evdev_dev *evdev, uint16_t type, uint16_t code,
 	case EV_SKIP_EVENT:
 		break;
 	}
+}
+
+void
+evdev_restore_after_kdb(struct evdev_dev *evdev)
+{
+	int code;
+
+	EVDEV_LOCK_ASSERT(evdev);
+
+	/* Report postponed leds */
+	bit_foreach(evdev->ev_kdb_led_states, LED_CNT, code);
+	evdev_send_event(evdev, EV_LED, code, !bit_test(evdev->ev_led_states, code));
+	bit_nclear(evdev->ev_kdb_led_states, 0, LED_MAX);
+
+	/* Release stuck keys (CTRL + ALT + ESC) */
+	evdev_stop_repeat(evdev);
+	bit_foreach(evdev->ev_key_states, KEY_CNT, code)
+	evdev_send_event(evdev, EV_KEY, code, KEY_EVENT_UP);
+	evdev_send_event(evdev, EV_SYN, SYN_REPORT, 1);
 }
 
 int
@@ -672,9 +717,8 @@ evdev_inject_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 	case EV_MSC:
 	case EV_SND:
 	case EV_FF:
-		if (evdev->ev_methods != NULL && evdev->ev_methods->ev_event != NULL)
-			evdev->ev_methods->ev_event(evdev, evdev->ev_softc, type, code,
-					value);
+		if (evdev->ev_softc != NULL && evdev->ev_softc->sc_event != NULL)
+			evdev_event(evdev, type, code, value);
 		/*
 		 * Leds and driver repeats should be reported in ev_event
 		 * method body to interoperate with kbdmux states and rates
@@ -736,10 +780,10 @@ evdev_grab_client(struct evdev_dev *evdev, struct evdev_softc *sc)
 {
 	KASSERT(evdev);
 
-	if (evdev->ev_softc != NULL) {
+	if (evdev->ev_grabber != NULL) {
 		return (EBUSY);
 	}
-	evdev->ev_softc = sc;
+	evdev->ev_grabber = sc;
 	return (0);
 }
 
@@ -748,10 +792,10 @@ evdev_release_client(struct evdev_dev *evdev, struct evdev_softc *sc)
 {
 	KASSERT(evdev);
 
-	if (evdev->ev_softc != sc) {
+	if (evdev->ev_grabber != sc) {
 		return (EINVAL);
 	}
-	evdev->ev_softc = NULL;
+	evdev->ev_grabber = NULL;
 	return (0);
 }
 

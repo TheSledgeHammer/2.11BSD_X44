@@ -192,9 +192,9 @@ main(framep)
 	/* Create credentials. */
 	cred0.p_refcnt = 1;
 	p->p_cred = &cred0;
-	u->u_cred = crget();
-	u->u_cred->cr_ngroups = 1; /* group 0 */
-	p->p_ucred = u->u_cred;
+	u->u_ucred = crget();
+	u->u_ucred->cr_ngroups = 1; /* group 0 */
+	p->p_ucred = u->u_ucred;
 
 	callout_init(&p->p_tsleep_ch);
 

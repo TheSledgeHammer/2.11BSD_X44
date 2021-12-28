@@ -26,6 +26,7 @@
 #include <sys/map.h>
 #include <sys/user.h>
 
+#include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_text.h>
 
 /*
