@@ -279,10 +279,13 @@ wsmouse_detach(struct device *self, int flags)
 	if (evar != NULL && evar->io != NULL) {
 		s = spltty();
 		if (--sc->sc_refcnt >= 0) {
+			struct wscons_event event;
+
 			/* Wake everyone by generating a dummy event. */
-			if (++evar->put >= WSEVENT_QSIZE)
-				evar->put = 0;
-			WSEVENT_WAKEUP(evar);
+			event.type = 0;
+			event.value = 0;
+			if (wsevent_inject(evar, &event, 1) != 0)
+				wsevent_wakeup(evar);
 			/* Wait for processes to go away. */
 			if (tsleep(sc, PZERO, "wsmdet", hz * 60))
 				printf("wsmouse_detach: %s didn't detach\n",
@@ -444,10 +447,11 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 		KASSERT(ev->value >= 0);
 
 		d = 1 << ev->value;
-		ev->type =
-		    (mb & d) ? WSCONS_EVENT_MOUSE_DOWN : WSCONS_EVENT_MOUSE_UP;
-		TIMESTAMP;
-		ADVANCE;
+		ev->type = (mb & d) ? WSCONS_EVENT_MOUSE_DOWN : WSCONS_EVENT_MOUSE_UP;
+		TIMESTAMP
+		;
+		ADVANCE
+		;
 		ub ^= d;
 	}
 
@@ -455,7 +459,7 @@ out:
 	if (any) {
 		sc->sc_ub = ub;
 		sc->sc_events.put = put;
-		WSEVENT_WAKEUP(&sc->sc_events);
+		wsevent_wakeup(&sc->sc_events);
 #if NWSMUX > 0
 		DPRINTFN(5,("wsmouse_input: %s wakeup evar=%p\n",
 			    sc->sc_base.me_dv.dv_xname, evar));

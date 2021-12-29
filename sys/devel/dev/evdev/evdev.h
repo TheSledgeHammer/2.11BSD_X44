@@ -72,6 +72,7 @@ extern int evdev_sysmouse_t_axis;
 #define	ABS_IS_MT(x)			((x) >= ABS_MT_FIRST && (x) <= ABS_MT_LAST)
 #define	ABS_MT_INDEX(x)			((x) - ABS_MT_FIRST)
 #define	MT_CNT					(ABS_MT_INDEX(ABS_MT_LAST) + 1)
+
 /* Multitouch protocol type A */
 #define	MAX_MT_REPORTS			5
 /* Multitouch protocol type B interface */
@@ -88,15 +89,15 @@ extern int evdev_sysmouse_t_axis;
 #define	EVDEV_FLAG_CNT			(EVDEV_FLAG_MAX + 1)
 
 /* Input device interface: */
-struct evdev_dev *evdev_alloc(void);
-void evdev_free(struct evdev_dev *);
+//struct evdev_dev *evdev_alloc(void);
+//void evdev_free(struct evdev_dev *);
 void evdev_set_name(struct evdev_dev *, const char *);
 void evdev_set_id(struct evdev_dev *, uint16_t, uint16_t, uint16_t, uint16_t);
 void evdev_set_phys(struct evdev_dev *, const char *);
 void evdev_set_serial(struct evdev_dev *, const char *);
-void evdev_set_methods(struct evdev_dev *, void *, const struct evdev_methods *);
+//void evdev_set_methods(struct evdev_dev *, void *, const struct evdev_methods *);
 int evdev_register(struct evdev_dev *);
-int evdev_register_mtx(struct evdev_dev *, struct mtx *);
+//int evdev_register_mtx(struct evdev_dev *, struct mtx *);
 int evdev_unregister(struct evdev_dev *);
 int evdev_push_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 void evdev_support_prop(struct evdev_dev *, uint16_t);
@@ -111,7 +112,7 @@ void evdev_support_sw(struct evdev_dev *, uint16_t);
 void evdev_set_repeat_params(struct evdev_dev *, uint16_t, int);
 int evdev_set_report_size(struct evdev_dev *, size_t);
 void evdev_set_flag(struct evdev_dev *, uint16_t);
-void *evdev_get_softc(struct evdev_dev *);
+//void *evdev_get_softc(struct evdev_dev *);
 
 /* Multitouch related functions: */
 int32_t evdev_get_mt_slot_by_tracking_id(struct evdev_dev *, int32_t);

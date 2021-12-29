@@ -41,10 +41,12 @@
 #include <sys/systm.h>
 #include <sys/uio.h>
 
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wseventvar.h>
+
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/evdev_private.h>
 #include <dev/evdev/input.h>
-#include <dev/misc/wscons/wsconsio.h>
 #include "freebsd-bitstring.h"
 
 #ifdef EVDEV_DEBUG
@@ -134,7 +136,7 @@ evdev_detach(struct device *self, int flags)
 			if (++evar->put >= WSEVENT_QSIZE) {
 				evar->put = 0;
 			}
-			WSEVENT_WAKEUP(evar);
+			wsevent_wakeup(evar);
 			/* Wait for processes to go away. */
 			if (tsleep(sc, PZERO, "evdevdet", hz * 60)) {
 				printf("evdev_detach: %s didn't detach\n", sc->sc_base.me_dv.dv_xname);
@@ -177,7 +179,7 @@ evdevdoopen(sc, evdev, evp)
 	sc->sc_buffer_ready = 0;
 
 	sc->sc_evdev = evdev;
-	//lockinit(&sc->sc_buffer_lock, "evclient", 0, LK_CANRECURSE);
+	lockinit(&sc->sc_buffer_lock, "evdevsoftc", 0, LK_CANRECURSE);
 
 	//return (*sc->sc_accessops->enable)(sc->sc_accesscookie);
 }
@@ -189,8 +191,8 @@ evdev_open(dev, flags, fmt, p)
 	int fmt;
 	struct proc *p;
 {
-	struct evdev_softc 	*sc;
 	struct evdev_dev 	*evdev;
+	struct evdev_softc 	*sc;
 	struct wseventvar 	*evar;
 	size_t buffer_size;
 	int error, ret, unit;
@@ -294,13 +296,85 @@ evdev_read(dev, uio, flags)
 	return (ret);
 }
 
+static int
+evdev_doread(evdev, evar, uio)
+	struct evdev_dev 	*evdev;
+	struct wseventvar 	*evar;
+	struct uio 			*uio;
+{
+	union {
+		struct input_event ie;
+		struct wscons_event we;
+	} event;
+	int ret = 0;
+	int remaining;
+
+	remaining = uio->uio_resid / sizeof(struct input_event);
+
+	while (ret == 0 && !EVDEV_CLIENT_EMPTYQ(sc) && remaining > 0) {
+
+		bcopy(head, &event.ie, sizeof(struct input_event));
+	}
+
+	wsevent_read(evar, uio, );
+
+}
+
+
 int
 evdev_write(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
 	int flags;
 {
+	struct evdev_dev 	*evdev;
+	struct evdev_softc 	*sc;
+	struct wseventvar 	*evar;
+	int unit, error;
 
+	unit = minor(dev);
+	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	evdev = sc->sc_evdev;
+	evar = sc->sc_base.me_evp;
+
+	if (evar->revoked || evdev == NULL) {
+		return (ENODEV);
+	}
+
+	if (uio->uio_resid % sizeof(struct input_event) != 0) {
+		debugf(sc, "write size not multiple of input_event size");
+		return (EINVAL);
+	}
+
+	error = evdev_dowrite(evdev, evar, uio);
+
+	return (error);
+}
+
+static int
+evdev_dowrite(evdev, evar, uio)
+	struct evdev_dev 	*evdev;
+	struct wseventvar 	*evar;
+	struct uio 			*uio;
+{
+	union {
+		struct input_event 	ie;
+		struct wscons_event we;
+	} event;
+
+	int ret = 0;
+
+	while (uio->uio_resid > 0 && ret == 0) {
+		ret = uiomove(&event, sizeof(struct input_event), uio);
+		if (ret == 0) {
+			ret = evdev_inject_event(evdev, event.ie.type, event.ie.code, event.ie.value);
+			event.we.type = event.ie.type;
+			event.we.code = event.ie.code;
+			event.we.value = event.ie.value;
+		}
+	}
+	ret = wsevent_inject(evar, &event.we, 1);
+	return (ret);
 }
 
 int
@@ -309,35 +383,32 @@ evdev_poll(dev, events, p)
 	int events;
 	struct proc *p;
 {
+	struct evdev_softc *sc = evdev_cd.cd_devs[minor(dev)];
+	int ret;
 
+	if (sc->sc_base.me_evp == NULL)
+		return (EINVAL);
+
+	EVDEV_CLIENT_LOCKQ(sc);
+	if(!EVDEV_CLIENT_EMPTYQ(sc)) {
+		ret = wsevent_poll(sc->sc_base.me_evp, events & (POLLIN | POLLRDNORM), p);
+	} else {
+		ret = wsevent_poll(sc->sc_base.me_evp, events, p);
+	}
+	EVDEV_CLIENT_UNLOCKQ(sc);
+	return (ret);
 }
-
-static void
-filt_evdevdetach(kn)
-	struct knote *kn;
-{
-
-}
-
-static int
-filt_evdevread(kn, hint)
-	struct knote *kn;
-	long hint;
-{
-
-
-	return (1);
-}
-
-static const struct filterops evdev_filtops =
-	{ 1, NULL, filt_evdevdetach, filt_evdevread };
 
 int
-evdev_kqfilter(sc, kn)
-	struct evdev_softc *sc;
+evdev_kqfilter(dev, kn)
+	dev_t dev;
 	struct knote *kn;
 {
-	return (0);
+	struct evdev_softc *sc = evdev_cd.cd_devs[minor(dev)];
+
+	if (sc->sc_base.me_evp == NULL)
+		return (EINVAL);
+	return (wsevent_kqfilter(sc->sc_base.me_evp, kn));
 }
 
 int
@@ -709,19 +780,6 @@ static void
 evdev_event_sc(struct evdev_softc *sc, struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
 	sc->sc_event(evdev, type, code, value);
-	evdev_set_wscons_event(sc->sc_base->me_evp, type, code, value);
-}
-
-static void
-evdev_set_wscons_event(we, type, code, value)
-	struct wscons_event *we;
-	uint16_t			type;
-	uint16_t			code;
-	int32_t				value;
-{
-	we->type = type;
-	we->code = code;
-	we->value = value;
 }
 
 struct wseventvar *
@@ -773,19 +831,18 @@ evdev_notify_event(struct evdev_softc *sc)
 
 	if (evar->blocked) {
 		evar->blocked = FALSE;
-		WSEVENT_WAKEUP(evar);
+		wsevent_wakeup(evar);
 	}
 	if (evar->selected) {
 		evar->selected = FALSE;
-		WSEVENT_WAKEUP(evar);
+		wsevent_wakeup(evar);
 	}
 
 	KNOTE(&evar->sel.si_klist, 0);
-/*
-	if (evar->async && client->ec_sigio != NULL) {
-		pgsigio(client->ec_sigio, SIGIO, 0);
+
+	if (evar->async) {
+		psignal(evar->io, SIGIO);
 	}
-	*/
 	sc->sc_base.me_evp = evar;
 }
 

@@ -452,7 +452,7 @@ wsmux_do_ioctl(struct device *dv, u_long cmd, caddr_t data, int flag,
 		microtime(&thistime);
 		TIMEVAL_TO_TIMESPEC(&thistime, &ev->time);
 		evar->put = put;
-		WSEVENT_WAKEUP(evar);
+		wsevent_wakeup(evar);
 		splx(s);
 		return (0);
 	case WSMUXIO_ADD_DEVICE:

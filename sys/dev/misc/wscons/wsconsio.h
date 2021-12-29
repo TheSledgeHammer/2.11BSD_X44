@@ -201,7 +201,6 @@ struct wskbd_scroll_data {
 #define	WSMOUSE_RES_DEFAULT			75
 #define	WSMOUSE_RES_MAX				100
 
-
 /* Set scale factor (num / den).  Not applicable to all mouse types. */
 #define	WSMOUSEIO_SSCALE			_IOW('W', 34, u_int[2])
 
@@ -215,13 +214,12 @@ struct wskbd_scroll_data {
 #define	WSMOUSE_CALIBCOORDS_MAX		16
 #define	WSMOUSE_CALIBCOORDS_RESET	-1
 struct wsmouse_calibcoords {
-	int minx, miny;		/* minimum value of X/Y */
-	int maxx, maxy;		/* maximum value of X/Y */
-	int samplelen;		/* number of samples available or
-				   WSMOUSE_CALIBCOORDS_RESET for raw mode */
+	int minx, miny;						/* minimum value of X/Y */
+	int maxx, maxy;						/* maximum value of X/Y */
+	int samplelen;						/* number of samples available or WSMOUSE_CALIBCOORDS_RESET for raw mode */
 	struct wsmouse_calibcoord {
-		int rawx, rawy;	/* raw coordinate */
-		int x, y;	/* translated coordinate */
+		int rawx, rawy;					/* raw coordinate */
+		int x, y;						/* translated coordinate */
 	} samples[WSMOUSE_CALIBCOORDS_MAX];	/* sample coordinates */
 };
 #define	WSMOUSEIO_SCALIBCOORDS		_IOW('W', 36, struct wsmouse_calibcoords)

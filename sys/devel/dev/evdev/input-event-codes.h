@@ -95,7 +95,7 @@
 #define	KEY_5						6
 #define	KEY_6						7
 #define	KEY_7						8
-#define	KEY_8				9
+#define	KEY_8			9
 #define	KEY_9			10
 #define	KEY_0			11
 #define	KEY_MINUS		12
@@ -112,10 +112,10 @@
 #define	KEY_I			23
 #define	KEY_O			24
 #define	KEY_P			25
-#define	KEY_LEFTBRACE		26
-#define	KEY_RIGHTBRACE		27
+#define	KEY_LEFTBRACE	26
+#define	KEY_RIGHTBRACE	27
 #define	KEY_ENTER		28
-#define	KEY_LEFTCTRL		29
+#define	KEY_LEFTCTRL	29
 #define	KEY_A			30
 #define	KEY_S			31
 #define	KEY_D			32
@@ -909,11 +909,11 @@
  */
 
 #define	MSC_SERIAL		0x00
-#define	MSC_PULSELED		0x01
+#define	MSC_PULSELED	0x01
 #define	MSC_GESTURE		0x02
 #define	MSC_RAW			0x03
 #define	MSC_SCAN		0x04
-#define	MSC_TIMESTAMP		0x05
+#define	MSC_TIMESTAMP	0x05
 #define	MSC_MAX			0x07
 #define	MSC_CNT			(MSC_MAX+1)
 
@@ -931,7 +931,7 @@
 #define	LED_MUTE		0x07
 #define	LED_MISC		0x08
 #define	LED_MAIL		0x09
-#define	LED_CHARGING		0x0a
+#define	LED_CHARGING	0x0a
 #define	LED_MAX			0x0f
 #define	LED_CNT			(LED_MAX+1)
 

@@ -52,7 +52,6 @@ enum evdev_sparse_result {
 	EV_REPORT_MT_SLOT,	/* Event value and MT slot number changed */
 };
 
-
 static void evdev_start_repeat(struct evdev_dev *, uint16_t);
 static void evdev_stop_repeat(struct evdev_dev *);
 static int evdev_check_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
@@ -169,9 +168,14 @@ evdev_estimate_report_size(struct evdev_dev *evdev)
 	return (size);
 }
 
-int
-evdev_register(struct evdev_dev *evdev)
+static int
+evdev_register_common(struct evdev_dev *evdev)
 {
+	int ret;
+
+	debugf(evdev, "%s: registered evdev provider: %s <%s>\n",
+			evdev->ev_shortname, evdev->ev_name, evdev->ev_serial);
+
 	/* Initialize internal structures */
 	if (evdev_event_supported(evdev, EV_REP)
 			&& bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
@@ -198,6 +202,27 @@ evdev_register(struct evdev_dev *evdev)
 	}
 
 	return (0);
+}
+
+int
+evdev_register(struct evdev_dev *evdev)
+{
+	int ret;
+
+	evdev->ev_lock_type = EV_LOCK_INTERNAL;
+	evdev->ev_lock->lk_lnterlock = &evdev->ev_mtx;
+	simple_lock_init(&evdev->ev_mtx, "evmtx");
+
+	ret = evdev_register_common(evdev);
+	return (ret);
+}
+
+int
+evdev_register_mtx(struct evdev_dev *evdev, struct lock *mtx)
+{
+	evdev->ev_lock_type = EV_LOCK_MTX;
+	evdev->ev_lock = mtx;
+	return (evdev_register_common(evdev));
 }
 
 int

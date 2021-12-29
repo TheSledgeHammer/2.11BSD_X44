@@ -130,9 +130,9 @@ struct wskbd_internal {
 	int								t_composelen;		/* remaining entries in t_composebuf */
 	keysym_t 						t_composebuf[2];
 	int 							t_flags;
-#define WSKFL_METAESC 		1
+#define WSKFL_METAESC 				1
 
-#define MAXKEYSYMSPERKEY 	2 /* ESC <key> at max */
+#define MAXKEYSYMSPERKEY 			2 /* ESC <key> at max */
 	keysym_t 						t_symbols[MAXKEYSYMSPERKEY];
 
 	struct wskbd_softc 				*t_sc;				/* back pointer */
@@ -432,8 +432,7 @@ wskbd_attach(parent, self, aux)
 	sc->sc_translating = 1;
 	sc->sc_ledstate = -1; /* force update */
 
-	if (wskbd_load_keymap(sc->id->t_keymap,
-			      &sc->sc_map, &sc->sc_maplen) != 0)
+	if (wskbd_load_keymap(sc->id->t_keymap, &sc->sc_map, &sc->sc_maplen) != 0)
 		panic("cannot load keymap");
 
 	sc->sc_layout = sc->id->t_keymap->layout;
@@ -582,10 +581,13 @@ wskbd_detach(self, flags)
 	if (evar != NULL && evar->io != NULL) {
 		s = spltty();
 		if (--sc->sc_refcnt >= 0) {
+			struct wscons_event event;
+
 			/* Wake everyone by generating a dummy event. */
-			if (++evar->put >= WSEVENT_QSIZE)
-				evar->put = 0;
-			WSEVENT_WAKEUP(evar);
+			event.type = 0;
+			event.value = 0;
+			if (wsevent_inject(evar, &event, 1) != 0)
+				wsevent_wakeup(evar);
 			/* Wait for processes to go away. */
 			if (tsleep(sc, PZERO, "wskdet", hz * 60))
 				printf("wskbd_detach: %s didn't detach\n",
@@ -660,7 +662,6 @@ wskbd_input(dev, type, value)
 	 * keystroke is lost (sorry!).
 	 */
 
-
 	evar = sc->sc_base.me_evp;
 	if (evar == NULL) {
 		DPRINTF(("wskbd_input: not open\n"));
@@ -687,7 +688,7 @@ wskbd_input(dev, type, value)
 	microtime(&thistime);
 	TIMEVAL_TO_TIMESPEC(&thistime, &ev->time);
 	evar->put = put;
-	WSEVENT_WAKEUP(evar);
+	wsevent_wakeup(evar);
 }
 
 #ifdef WSDISPLAY_COMPAT_RAWKBD

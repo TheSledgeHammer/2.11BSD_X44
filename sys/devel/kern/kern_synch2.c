@@ -37,7 +37,7 @@
 #include <sys/queue.h>
 
 #include <sys/time.h>
-#include "../../sys/gsched.h"
+#include <sys/gsched.h>
 
 /*
  * General preemption call.  Puts the current process back on its run queue

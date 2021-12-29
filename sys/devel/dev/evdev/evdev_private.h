@@ -95,7 +95,6 @@ enum evdev_clock_id
 enum evdev_lock_type {
 	EV_LOCK_INTERNAL = 0,	/* Internal epoch */
 	EV_LOCK_MTX,			/* Driver`s mutex */
-	EV_LOCK_EXT_EPOCH,		/* External epoch */
 };
 
 struct evdev_dev {
@@ -105,14 +104,10 @@ struct evdev_dev {
 	int							ev_unit;
 
 	enum evdev_lock_type		ev_lock_type;
-	//struct lock_object			*ev_lock;		/* State lock */
 	struct lock					ev_lock;			/* Internal state lock */
-	struct lock_object			ev_list_lock;	/* Client list lock */
-
+	struct lock_object			ev_mtx;
 	struct input_id				ev_id;
-
 	struct evdev_softc 			*ev_grabber;						/* (s) */
-
 	size_t						ev_report_size;
 
 	/* Supported features: */
@@ -155,15 +150,25 @@ struct evdev_dev {
 	struct evdev_softc 			*ev_softc; 			/* softc callback */
 };
 
-#define	EVDEV_LOCK(evdev)			simple_lock((evdev)->ev_lock)
-#define	EVDEV_UNLOCK(evdev)			simple_unlock((evdev)->ev_lock)
+#define	EVDEV_LOCK(evdev)			lockmgr((evdev)->ev_lock, LK_EXCLUSIVE, NULL)  //simple_lock((evdev)->ev_lock)
+#define	EVDEV_UNLOCK(evdev)			lockmgr((evdev)->ev_lock, LK_RELEASE, NULL) //simple_unlock((evdev)->ev_lock)
 #define	EVDEV_LOCK_ASSERT(evdev) 	KASSERT(lockstatus((evdev)->ev_lock) != 0)
+#define	EVDEV_ENTER(evdev)  do {					\
+	if ((evdev)->ev_lock_type == EV_LOCK_INTERNAL)	\
+		EVDEV_LOCK(evdev);							\
+	else											\
+		EVDEV_LOCK_ASSERT(evdev);					\
+} while (0)
+#define	EVDEV_EXIT(evdev)  do {						\
+	if ((evdev)->ev_lock_type == EV_LOCK_INTERNAL)	\
+		EVDEV_UNLOCK(evdev);						\
+} while (0)
 
 struct evdev_softc {
 	struct evdev_dev 			*sc_evdev;			/* evdev pointer */
 	struct wsevsrc				sc_base;			/* evdev to wscons events */
 
-	struct lock_object			sc_buffer_lock;
+	struct lock					sc_buffer_lock;
 	size_t						sc_buffer_size;
 	size_t						sc_buffer_head;		/* (q) */
 	size_t						sc_buffer_tail;		/* (q) */
@@ -174,17 +179,17 @@ struct evdev_softc {
 	int							sc_refcnt;
 	u_char						sc_dying;			/* device is being detached */
 
+	struct input_event			sc_buffer[];
+
 	/* evdev methods */
 	evdev_keycode_t				*sc_set_keycode;
 	evdev_keycode_t 			*sc_get_keycode;
 	evdev_event_t				*sc_event;
-
-	struct input_event			sc_buffer[];
 };
 
-#define	EVDEV_CLIENT_LOCKQ(client)		simple_lock(&(client)->sc_buffer_lock)
-#define	EVDEV_CLIENT_UNLOCKQ(client)	simple_unlock(&(client)->sc_buffer_lock)
-
+#define	EVDEV_CLIENT_LOCKQ(client)			lockmgr((client)->sc_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL)
+#define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr((client)->sc_buffer_lock, LK_RELEASE, NULL)
+#define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus((client)->sc_buffer_lock) != 0)
 #define	EVDEV_CLIENT_EMPTYQ(client) 							\
     ((client)->sc_buffer_head == (client)->sc_buffer_ready)
 #define	EVDEV_CLIENT_SIZEQ(client) 								\

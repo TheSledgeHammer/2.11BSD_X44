@@ -94,7 +94,6 @@ void
 wsevent_init(ev)
 	struct wseventvar *ev;
 {
-
 	if (ev->q != NULL) {
 #ifdef DIAGNOSTIC
 		printf("wsevent_init: already init\n");
@@ -190,10 +189,15 @@ wsevent_poll(ev, events, p)
 	int revents = 0;
 	int s = splwsevent();
 
+	if(ev->revoked) {
+		return (POLLHUP);
+	}
+
 	if (events & (POLLIN | POLLRDNORM)) {
 		if (ev->get != ev->put)
 			revents |= events & (POLLIN | POLLRDNORM);
 		else
+			ev->selected = TRUE;
 			selrecord(p, &ev->sel);
 	}
 
@@ -226,8 +230,7 @@ filt_wseventread(kn, hint)
 	if (ev->get < ev->put)
 		kn->kn_data = ev->put - ev->get;
 	else
-		kn->kn_data = (WSEVENT_QSIZE - ev->get) +
-		    ev->put;
+		kn->kn_data = (WSEVENT_QSIZE - ev->get) + ev->put;
 
 	kn->kn_data *= sizeof(struct wscons_event);
 
@@ -244,6 +247,10 @@ wsevent_kqfilter(ev, kn)
 {
 	struct klist *klist;
 	int s;
+
+	if(ev->revoked) {
+		return (ENODEV);
+	}
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
@@ -262,4 +269,73 @@ wsevent_kqfilter(ev, kn)
 	splx(s);
 
 	return (0);
+}
+
+/*
+ * Wakes up all listener of the 'ev' queue.
+ */
+void
+wsevent_wakeup(struct wseventvar *ev)
+{
+	selnotify(&ev->sel, 0);
+	if (ev->wanted) {
+		ev->wanted = 0;
+		wakeup((caddr_t)ev);
+	}
+	if (ev->async) {
+		psignal(ev->io, SIGIO);
+	}
+}
+
+#define EVARRAY(ev, idx) (&(ev)->q[(idx)])
+
+int
+wsevent_inject(ev, events, nevents)
+	struct wseventvar *ev;
+	struct wscons_event *events;
+    size_t nevents;
+{
+	size_t avail, i;
+	struct timeval tv;
+	struct timespec ts;
+
+	avail = wsevent_avail(ev);
+
+	/* Fail if there is all events will not fit in the queue. */
+	if (avail < nevents) {
+		return (ENOSPC);
+	}
+
+	/* Use the current time for all events. */
+	microtime(&tv);
+	TIMEVAL_TO_TIMESPEC(&tv, &ts);
+
+	/* Inject the events. */
+	for (i = 0; i < nevents; i++) {
+		struct wscons_event *we;
+
+		we = EVARRAY(ev, ev->put);
+		we->type = events[i].type;
+		we->value = events[i].value;
+		we->time = ts;
+
+		ev->put = (ev->put + 1) % WSEVENT_QSIZE;
+	}
+	wsevent_wakeup(ev);
+	return (0);
+}
+
+/* Calculate number of free slots in the queue. */
+int
+wsevent_avail(ev)
+	struct wseventvar *ev;
+{
+	size_t avail;
+	if (WSEVENT_EMPTYQ(ev)) {
+		avail = ev->get - ev->put;
+	} else {
+		avail = WSEVENT_QSIZE - (ev->put - ev->get);
+	}
+	KASSERT(avail <= WSEVENT_QSIZE);
+	return (avail);
 }

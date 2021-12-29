@@ -37,6 +37,7 @@
 #include <sys/lock.h>
 #include <sys/systm.h>
 
+#include <dev/misc/wscons/wsconsio.h>
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/input.h>
 
@@ -106,24 +107,24 @@ static uint16_t evdev_usb_scancodes[256] = {
 	/* 0xe0 - 0xff */
 	KEY_LEFTCTRL,	KEY_LEFTSHIFT,	KEY_LEFTALT,	KEY_LEFTMETA,
 	KEY_RIGHTCTRL,	KEY_RIGHTSHIFT,	KEY_RIGHTALT,	KEY_RIGHTMETA,
-	KEY_PLAYPAUSE,	KEY_STOPCD,	KEY_PREVIOUSSONG,KEY_NEXTSONG,
+	KEY_PLAYPAUSE,	KEY_STOPCD,		KEY_PREVIOUSSONG,KEY_NEXTSONG,
 	KEY_EJECTCD,	KEY_VOLUMEUP,	KEY_VOLUMEDOWN,	KEY_MUTE,
-	KEY_WWW,	KEY_BACK,	KEY_FORWARD,	KEY_STOP,
-	KEY_FIND,	KEY_SCROLLUP,	KEY_SCROLLDOWN,	KEY_EDIT,
-	KEY_SLEEP,	KEY_COFFEE,	KEY_REFRESH,	KEY_CALC,
-	NONE,		NONE,		NONE,		NONE,
+	KEY_WWW,		KEY_BACK,		KEY_FORWARD,	KEY_STOP,
+	KEY_FIND,		KEY_SCROLLUP,	KEY_SCROLLDOWN,	KEY_EDIT,
+	KEY_SLEEP,		KEY_COFFEE,		KEY_REFRESH,	KEY_CALC,
+	NONE,			NONE,			NONE,		NONE,
 
 };
 
 static uint16_t evdev_at_set1_scancodes[] = {
 	/* 0x00 - 0x1f */
-	NONE,		KEY_ESC,	KEY_1,		KEY_2,
-	KEY_3,		KEY_4,		KEY_5,		KEY_6,
-	KEY_7,		KEY_8,		KEY_9,		KEY_0,
-	KEY_MINUS,	KEY_EQUAL,	KEY_BACKSPACE,	KEY_TAB,
-	KEY_Q,		KEY_W,		KEY_E,		KEY_R,
-	KEY_T,		KEY_Y,		KEY_U,		KEY_I,
-	KEY_O,		KEY_P,		KEY_LEFTBRACE,	KEY_RIGHTBRACE,
+	NONE,		KEY_ESC,		KEY_1,		KEY_2,
+	KEY_3,		KEY_4,			KEY_5,		KEY_6,
+	KEY_7,		KEY_8,			KEY_9,		KEY_0,
+	KEY_MINUS,	KEY_EQUAL,		KEY_BACKSPACE,	KEY_TAB,
+	KEY_Q,		KEY_W,			KEY_E,			KEY_R,
+	KEY_T,		KEY_Y,			KEY_U,			KEY_I,
+	KEY_O,		KEY_P,			KEY_LEFTBRACE,	KEY_RIGHTBRACE,
 	KEY_ENTER,	KEY_LEFTCTRL,	KEY_A,		KEY_S,
 	/* 0x20 - 0x3f */
 	KEY_D,		KEY_F,		KEY_G,		KEY_H,
@@ -298,6 +299,47 @@ evdev_push_repeats(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd)
 	if (evdev == NULL)
 		return;
 
-	evdev_push_event(evdev, EV_REP, REP_DELAY, kbd->del1);
-	evdev_push_event(evdev, EV_REP, REP_PERIOD, kbd->delN);
+	switch(kbd->which) {
+	case WSKBD_KEYREPEAT_DODEL1:
+		evdev_push_event(evdev, EV_REP, REP_DELAY, kbd->del1);
+		break;
+	case WSKBD_KEYREPEAT_DODELN:
+		evdev_push_event(evdev, EV_REP, REP_PERIOD, kbd->delN);
+		break;
+	case WSKBD_KEYREPEAT_DOALL:
+		evdev_push_event(evdev, EV_REP, REP_DELAY, kbd->del1);
+		evdev_push_event(evdev, EV_REP, REP_PERIOD, kbd->delN);
+		break;
+	}
+}
+
+void
+evdev_ev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
+{
+	struct wskbd_keyrepeat_data *kbd = (struct wskbd_keyrepeat_data *)softc;
+	int delay[2], leds, oleds;
+	size_t i;
+
+	if (type == EV_LED) {
+		///leds = oleds = KBD_LED_VAL(kbd);
+		for (i = 0; i < nitems(evdev_led_codes); i++) {
+			if (evdev_led_codes[i] == code) {
+				if (value)
+					leds |= 1 << i;
+				else
+					leds &= ~(1 << i);
+				if (leds != oleds)
+					//kbd_ioctl(kbd, KDSETLED, (caddr_t) & leds);
+				break;
+			}
+		}
+	} else if (type == EV_REP && code == REP_DELAY) {
+		delay[0] = value;
+		delay[1] = kbd->delN;
+		//kbd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
+	} else if (type == EV_REP && code == REP_PERIOD) {
+		delay[0] = kbd->del1;
+		delay[1] = value;
+		//kbd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
+	}
 }
