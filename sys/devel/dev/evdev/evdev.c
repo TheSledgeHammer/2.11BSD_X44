@@ -138,7 +138,7 @@ evdev_detach(struct device *self, int flags)
 			}
 			wsevent_wakeup(evar);
 			/* Wait for processes to go away. */
-			if (tsleep(sc, PZERO, "evdevdet", hz * 60)) {
+			if (tsleep(sc, PZERO, "evdet", hz * 60)) {
 				printf("evdev_detach: %s didn't detach\n", sc->sc_base.me_dv.dv_xname);
 			}
 		}
@@ -159,29 +159,6 @@ evdev_detach(struct device *self, int flags)
 	vdevgone(maj, mn, mn, VCHR);
 
 	return (0);
-}
-
-int
-evdevdoopen(sc, evdev, evp)
-	struct evdev_softc 	*sc;
-	struct evdev_dev 	*evdev;
-	struct wseventvar 	*evp;
-{
-	size_t buffer_size;
-	sc->sc_base.me_evp = evp;
-
-	buffer_size = evdev->ev_report_size * DEF_RING_REPORTS;
-
-	/* Initialize ring buffer */
-	sc->sc_buffer_size = buffer_size;
-	sc->sc_buffer_head = 0;
-	sc->sc_buffer_tail = 0;
-	sc->sc_buffer_ready = 0;
-
-	sc->sc_evdev = evdev;
-	lockinit(&sc->sc_buffer_lock, "evdevsoftc", 0, LK_CANRECURSE);
-
-	//return (*sc->sc_accessops->enable)(sc->sc_accesscookie);
 }
 
 int
@@ -219,11 +196,39 @@ evdev_open(dev, flags, fmt, p)
 	}
 
 	error = evdevdoopen(sc, evdev, evar);
-	if (error) {
+	if (error != 0) {
 		DPRINTF(("evdevopen: %s open failed\n", sc->sc_base.me_dv.dv_xname));
 		evdev_unregister_wsevent(sc);
 	}
 	return (error);
+}
+
+static int
+evdevdoopen(sc, evdev, evp)
+	struct evdev_softc 	*sc;
+	struct evdev_dev 	*evdev;
+	struct wseventvar 	*evp;
+{
+	size_t buffer_size;
+	sc->sc_base.me_evp = evp;
+
+	buffer_size = evdev->ev_report_size * DEF_RING_REPORTS;
+
+	/* check event buffer */
+	if(buffer_size > wsevent_avail(evp)) {
+		return (EINVAL);
+	}
+
+	/* Initialize ring buffer */
+	sc->sc_buffer_size = buffer_size;
+	//sc->sc_buffer_head = 0;
+	//sc->sc_buffer_tail = 0;
+	sc->sc_buffer_ready = 0;
+
+	sc->sc_evdev = evdev;
+	lockinit(&sc->sc_buffer_lock, "evdevsoftc", 0, LK_CANRECURSE);
+
+	return (0);
 }
 
 int
@@ -233,7 +238,7 @@ evdev_close(dev, flags, fmt, p)
 	int fmt;
 	struct proc *p;
 {
-
+	return (ENODEV);
 }
 
 int
@@ -243,83 +248,67 @@ evdev_read(dev, uio, flags)
 	int flags;
 {
 	struct evdev_softc *sc;
-	struct wseventvar *evar;
-	struct input_event *head;
-	union {
-		struct input_event t;
-	} event;
-	size_t evsize, buffer_size;
-	int ret = 0;
-	int unit, remaining;
+	struct wseventvar *evp;
+	int ret;
+	int unit;
 
 	unit = minor(dev);
 	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	evp = sc->sc_base.me_evp;
 
-	if (evar->revoked)
+	if (evp->revoked)
 		return (ENODEV);
 
-	evsize = sizeof(struct input_event);
-
 	/* Zero-sized reads are allowed for error checking */
-	if (uio->uio_resid != 0 && uio->uio_resid < evsize)
+	if (uio->uio_resid != 0 && uio->uio_resid < sizeof(struct input_event)) {
 		return (EINVAL);
-
-	remaining = uio->uio_resid / evsize;
-
-	EVDEV_CLIENT_LOCKQ(sc);
-
-	if (EVDEV_CLIENT_EMPTYQ(sc)) {
-		if (flags & O_NONBLOCK)
-			ret = EWOULDBLOCK;
-		else {
-			if (remaining != 0) {
-				evar->blocked = TRUE;
-				//ret = mtx_sleep(sc, &client->ec_buffer_mtx, PCATCH, "evread", 0);
-				if (ret == 0 && evar->revoked)
-					ret = ENODEV;
-			}
-		}
 	}
 
-	while (ret == 0 && !EVDEV_CLIENT_EMPTYQ(sc) && remaining > 0) {
-		head = sc->sc_buffer + sc->sc_buffer_head;
-		bcopy(head, &event.t, evsize);
-		sc->sc_buffer_head = (sc->sc_buffer_head + 1) % sc->sc_buffer_size;
-		remaining--;
+	ret = evdev_doread(sc, evp, uio, flags);
 
-		EVDEV_CLIENT_UNLOCKQ(sc);
-		ret = uiomove(&event, evsize, uio);
-		EVDEV_CLIENT_LOCKQ(sc);
-	}
-
-	EVDEV_CLIENT_UNLOCKQ(sc);
 	return (ret);
 }
 
 static int
-evdev_doread(evdev, evar, uio)
-	struct evdev_dev 	*evdev;
-	struct wseventvar 	*evar;
+evdev_doread(sc, evp, uio, flags)
+	struct evdev_softc *sc;
+	struct wseventvar 	*evp;
 	struct uio 			*uio;
+	int 				flags;
 {
-	union {
-		struct input_event ie;
-		struct wscons_event we;
-	} event;
+	struct wscons_event *we;
 	int ret = 0;
 	int remaining;
 
 	remaining = uio->uio_resid / sizeof(struct input_event);
 
-	while (ret == 0 && !EVDEV_CLIENT_EMPTYQ(sc) && remaining > 0) {
-
-		bcopy(head, &event.ie, sizeof(struct input_event));
+	EVDEV_CLIENT_LOCKQ(sc);
+	if (EVDEV_CLIENT_EMPTYQ(sc)) {
+		if (flags & O_NONBLOCK) {
+			ret = EWOULDBLOCK;
+		} else {
+			if (remaining != 0) {
+				evp->blocked = TRUE;
+				tsleep(sc, &sc->sc_buffer_lock, PCATCH, "evread", 0);
+				if (ret == 0 && evp->revoked) {
+					ret = ENODEV;
+				}
+			}
+		}
 	}
 
-	wsevent_read(evar, uio, );
+	while (ret == 0 && !EVDEV_CLIENT_EMPTYQ(sc) && remaining > 0) {
+		memcpy(&we, &sc->sc_buffer[evp->put], sizeof(struct input_event));
+		evp->put = (evp->put + 1) % WSEVENT_QSIZE;
+		remaining--;
 
+		EVDEV_CLIENT_UNLOCKQ(sc);
+		ret = wsevent_read(evar, uio, flags);
+		EVDEV_CLIENT_LOCKQ(sc);
+	}
+	EVDEV_CLIENT_UNLOCKQ(sc);
+	return (ret);
 }
-
 
 int
 evdev_write(dev, uio, flags)
@@ -330,6 +319,7 @@ evdev_write(dev, uio, flags)
 	struct evdev_dev 	*evdev;
 	struct evdev_softc 	*sc;
 	struct wseventvar 	*evar;
+	struct input_event 	event;
 	int unit, error;
 
 	unit = minor(dev);
@@ -346,34 +336,28 @@ evdev_write(dev, uio, flags)
 		return (EINVAL);
 	}
 
-	error = evdev_dowrite(evdev, evar, uio);
-
-	return (error);
-}
-
-static int
-evdev_dowrite(evdev, evar, uio)
-	struct evdev_dev 	*evdev;
-	struct wseventvar 	*evar;
-	struct uio 			*uio;
-{
-	union {
-		struct input_event 	ie;
-		struct wscons_event we;
-	} event;
-
-	int ret = 0;
-
 	while (uio->uio_resid > 0 && ret == 0) {
 		ret = uiomove(&event, sizeof(struct input_event), uio);
 		if (ret == 0) {
-			ret = evdev_inject_event(evdev, event.ie.type, event.ie.code, event.ie.value);
-			event.we.type = event.ie.type;
-			event.we.code = event.ie.code;
-			event.we.value = event.ie.value;
+			ret = evdev_dowrite(evdev, event);
 		}
 	}
-	ret = wsevent_inject(evar, &event.we, 1);
+
+	return (ret);
+}
+
+static int
+evdev_dowrite(evdev, event)
+	struct evdev_dev 	*evdev;
+	struct input_event 	event;
+{
+	int ret;
+
+	ret = evdev_inject_event(evdev, event.type, event.code, event.value);
+	if (ret == 0) {
+		ret = evdev_wsevent_inject(evar, &event, 1);
+	}
+
 	return (ret);
 }
 
@@ -431,13 +415,14 @@ evdev_do_ioctl(sc, cmd, data, fflag, p)
 	struct proc *p;
 {
 	struct evdev_dev *evdev;
-	struct wseventvar 	*evar;
 	struct input_keymap_entry *ke;
 	int ret, len, limit, type_num;
 	uint32_t code;
 	size_t nvalues;
 
 	evdev = sc->sc_evdev;
+
+	wsevent_put(sc->sc_base->me_evp, sizeof(struct input_event));
 
 	if (sc->sc_base->me_evp->revoked || evdev == NULL) {
 		return (ENODEV);
@@ -809,6 +794,44 @@ evdev_unregister_wsevent(struct evdev_softc *sc)
 	wsevent_fini(evar);
 }
 
+int
+evdev_wsevent_inject(struct wseventvar *ev, struct input_event *events, size_t nevents)
+{
+#define EVARRAY(ev, idx) (&(ev)->q[(idx)])
+	struct timeval tv;
+	struct timespec ts;
+	size_t avail, i;
+
+	avail = wsevent_avail(ev);
+
+	/* Fail if there is all events will not fit in the queue. */
+	if (avail < nevents) {
+		return (ENOSPC);
+	}
+
+	/* Use the current time for all events. */
+	if (events->time != NULL) {
+		TIMEVAL_TO_TIMESPEC(events->time, ts);
+	} else {
+		microtime(&tv);
+		TIMEVAL_TO_TIMESPEC(&tv, &ts);
+	}
+
+	/* Inject the events. */
+	for (i = 0; i < nevents; i++) {
+		struct wscons_event *we;
+	    we = EVARRAY(ev, ev->put);
+	    we->type = events[i].type;
+	    we->code = events[i].code;
+	    we->value = events[i].value;
+	    we->time = ts;
+
+	    ev->put = (ev->put + 1) % WSEVENT_QSIZE;
+	}
+	wsevent_wakeup(ev);
+	return (0);
+}
+
 void
 evdev_revoke_client(struct evdev_softc *sc)
 {
@@ -849,39 +872,47 @@ evdev_notify_event(struct evdev_softc *sc)
 static void
 evdev_client_filter_queue(struct evdev_softc *sc, uint16_t type)
 {
-	struct input_event *event;
+	struct input_event 	*event;
+	struct wseventvar 	*ev;
 	size_t head, tail, count, i;
 	bool_t last_was_syn = FALSE;
 
-	i = head = sc->sc_buffer_head;
-	tail = sc->sc_buffer_tail;
-	count = sc->sc_buffer_size;
-	sc->sc_buffer_ready = sc->sc_buffer_tail;
+	ev = sc->sc_base.me_evp;
 
-	while (i != sc->sc_buffer_tail) {
-		event = &sc->sc_buffer[i];
+	i = head = ev->put;
+	tail = ev->get;
+	if(head < tail) {
+		count = WSEVENT_QSIZE - ev->get;
+	} else {
+		count = ev->put - ev->get;
+	}
+	sc->sc_buffer_ready = ev->get;
+
+	while (i != ev->get) {
+		event = &sc->sc_buffer[ev->q[i]];
 		i = (i + 1) % count;
 
 		/* Skip event of given type */
-		if (event->type == type)
+		if (event->type == type) {
 			continue;
+		}
 
 		/* Remove empty SYN_REPORT events */
 		if (event->type == EV_SYN && event->code == SYN_REPORT) {
-			if (last_was_syn)
+			if (last_was_syn) {
 				continue;
-			else
+			} else {
 				sc->sc_buffer_ready = (tail + 1) % count;
+			}
 		}
 
 		/* Rewrite entry */
-		memcpy(&sc->sc_buffer[tail], event, sizeof(struct input_event));
+		memcpy(ev->q[tail], event, sizeof(struct input_event));
 
 		last_was_syn = (event->type == EV_SYN && event->code == SYN_REPORT);
 
 		tail = (tail + 1) % count;
 	}
-
-	sc->sc_buffer_head = i;
-	sc->sc_buffer_tail = tail;
+	 ev->put = i;
+	 ev->get = tail;
 }

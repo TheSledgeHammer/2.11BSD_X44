@@ -155,26 +155,31 @@ wsevent_read(ev, uio, flags)
 	 * Move wscons_event from tail end of queue (there is at least one
 	 * there).
 	 */
-	if (ev->put < ev->get)
+	if (ev->put < ev->get) {
 		cnt = WSEVENT_QSIZE - ev->get; /* events in [get..QSIZE) */
-	else
+	} else {
 		cnt = ev->put - ev->get; /* events in [get..put) */
+	}
 	splx(s);
 	n = howmany(uio->uio_resid, sizeof(struct wscons_event));
-	if (cnt > n)
+	if (cnt > n) {
 		cnt = n;
+	}
 	error = uiomove(&ev->q[ev->get], cnt * sizeof(struct wscons_event), uio);
 	n -= cnt;
+
 	/*
 	 * If we do not wrap to 0, used up all our space, or had an error,
 	 * stop.  Otherwise move from front of queue to put index, if there
 	 * is anything there to move.
 	 */
 	if ((ev->get = (ev->get + cnt) % WSEVENT_QSIZE) != 0 || n == 0 || error
-			|| (cnt = ev->put) == 0)
+			|| (cnt = ev->put) == 0) {
 		return (error);
-	if (cnt > n)
+	}
+	if (cnt > n) {
 		cnt = n;
+	}
 	error = uiomove(&ev->q[0], cnt * sizeof(struct wscons_event), uio);
 	ev->get = cnt;
 	return (error);
@@ -319,14 +324,14 @@ wsevent_inject(ev, events, nevents)
 		we->value = events[i].value;
 		we->time = ts;
 
-		ev->put = (ev->put + 1) % WSEVENT_QSIZE;
+		ev = wsevent_put(ev, 1);
 	}
 	wsevent_wakeup(ev);
 	return (0);
 }
 
 /* Calculate number of free slots in the queue. */
-int
+size_t
 wsevent_avail(ev)
 	struct wseventvar *ev;
 {
@@ -338,4 +343,22 @@ wsevent_avail(ev)
 	}
 	KASSERT(avail <= WSEVENT_QSIZE);
 	return (avail);
+}
+
+struct wseventvar *
+wsevent_put(ev, size)
+	struct wseventvar *ev;
+	size_t size;
+{
+	ev->put = (ev->put + size) % WSEVENT_QSIZE;
+	return (ev);
+}
+
+struct wseventvar *
+wsevent_get(ev, cnt)
+	struct wseventvar *ev;
+	size_t cnt;
+{
+	ev->get = (ev->get + cnt) % WSEVENT_QSIZE;
+	return (ev);
 }

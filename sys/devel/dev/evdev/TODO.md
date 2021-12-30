@@ -7,7 +7,9 @@ FreeBSD Evdev API's:
 - freebsd_bitstring.h
 
 TODO:
-- replace evdev client buffer with the wsevent buffer
+- replace evdev client buffer with the wsevent buffer: 
+	- fix EVDEV_CLIENT_SIZEQ
+	- evdev client buffer_size: not accounted for
 - open, close, read, write: should be fixed once above is in place.
 - input_events to wscon_events: handled on the fly (hopefully! if all goes well)
 - keyboard & mouse: evdev input mapping to wscons mapping 

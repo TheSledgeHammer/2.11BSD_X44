@@ -36,6 +36,7 @@
 #include <sys/queue.h>
 #include <sys/sysctl.h>
 
+#include <dev/misc/wscons/wseventvar.h>
 #include <dev/evdev/evdev.h>
 #include <dev/evdev/input.h>
 #include "freebsd-bitstring.h"
@@ -170,8 +171,8 @@ struct evdev_softc {
 
 	struct lock					sc_buffer_lock;
 	size_t						sc_buffer_size;
-	size_t						sc_buffer_head;		/* (q) */
-	size_t						sc_buffer_tail;		/* (q) */
+	//size_t						sc_buffer_head;		/* (q) */
+	//size_t						sc_buffer_tail;		/* (q) */
 	size_t						sc_buffer_ready;	/* (q) */
 
 	enum evdev_clock_id			sc_clock_id;
@@ -190,12 +191,16 @@ struct evdev_softc {
 #define	EVDEV_CLIENT_LOCKQ(client)			lockmgr((client)->sc_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL)
 #define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr((client)->sc_buffer_lock, LK_RELEASE, NULL)
 #define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus((client)->sc_buffer_lock) != 0)
+#define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->sc_base.me_evp)
+//#define	EVDEV_CLIENT_SIZEQ(client) 			\
+	((client)->sc_buffer_ready + (client)->sc_buffer_size
+/*
 #define	EVDEV_CLIENT_EMPTYQ(client) 							\
     ((client)->sc_buffer_head == (client)->sc_buffer_ready)
 #define	EVDEV_CLIENT_SIZEQ(client) 								\
     (((client)->sc_buffer_ready + (client)->sc_buffer_size - 	\
       (client)->sc_buffer_head) % (client)->sc_buffer_size)
-
+*/
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 int 	evdev_inject_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
