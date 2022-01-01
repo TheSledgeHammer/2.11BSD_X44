@@ -580,8 +580,8 @@ struct usb_device_info {
 #define USB_SPEED_LOW  1
 #define USB_SPEED_FULL 2
 #define USB_SPEED_HIGH 3
-	int		udi_power;	/* power consumption in mA, 0 if selfpowered */
-	int		udi_nports;
+	int			udi_power;	/* power consumption in mA, 0 if selfpowered */
+	int			udi_nports;
 	char		udi_devnames[USB_MAX_DEVNAMES][USB_MAX_DEVNAMELEN];
 	u_int8_t	udi_ports[16];/* hub only: addresses of devices on ports */
 #define USB_PORT_ENABLED 0xff
@@ -591,7 +591,7 @@ struct usb_device_info {
 };
 
 struct usb_ctl_report {
-	int	ucr_report;
+	int		ucr_report;
 	u_char	ucr_data[1024];	/* filled data size will vary */
 };
 
@@ -601,16 +601,16 @@ struct usb_device_stats {
 
 /* Events that can be read from /dev/usb */
 struct usb_event {
-	int			ue_type;
-#define USB_EVENT_CTRLR_ATTACH 1
-#define USB_EVENT_CTRLR_DETACH 2
+	int							ue_type;
+#define USB_EVENT_CTRLR_ATTACH 	1
+#define USB_EVENT_CTRLR_DETACH 	2
 #define USB_EVENT_DEVICE_ATTACH 3
 #define USB_EVENT_DEVICE_DETACH 4
 #define USB_EVENT_DRIVER_ATTACH 5
 #define USB_EVENT_DRIVER_DETACH 6
 #define USB_EVENT_IS_ATTACH(n) ((n) == USB_EVENT_CTRLR_ATTACH || (n) == USB_EVENT_DEVICE_ATTACH || (n) == USB_EVENT_DRIVER_ATTACH)
 #define USB_EVENT_IS_DETACH(n) ((n) == USB_EVENT_CTRLR_DETACH || (n) == USB_EVENT_DEVICE_DETACH || (n) == USB_EVENT_DRIVER_DETACH)
-	struct timespec		ue_time;
+	struct timespec				ue_time;
 	union {
 		struct {
 			int					ue_bus;

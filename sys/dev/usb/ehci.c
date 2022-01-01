@@ -386,8 +386,8 @@ ehci_init(ehci_softc_t *sc)
 	sc->sc_bus.methods = &ehci_bus_methods;
 	sc->sc_bus.pipe_size = sizeof(struct ehci_pipe);
 
-//	sc->sc_powerhook = powerhook_establish(ehci_power, sc);
-//	sc->sc_shutdownhook = shutdownhook_establish(ehci_shutdown, sc);
+	sc->sc_powerhook = powerhook_establish(ehci_power, sc);
+	sc->sc_shutdownhook = shutdownhook_establish(ehci_shutdown, sc);
 
 	sc->sc_eintrs = EHCI_NORMAL_INTRS;
 
@@ -533,7 +533,7 @@ ehci_intr1(ehci_softc_t *sc)
 		 */
 		ehci_pcd_able(sc, 0);
 		/* Do not allow RHSC interrupts > 1 per second */
-                usb_callout(sc->sc_tmo_pcd, hz, ehci_pcd_enable, sc);
+		usb_callout(sc->sc_tmo_pcd, hz, ehci_pcd_enable, sc);
 		eintrs &= ~EHCI_STS_PCD;
 	}
 
@@ -846,14 +846,11 @@ ehci_detach(struct ehci_softc *sc, int flags)
 		return (rv);
 
 	usb_uncallout(sc->sc_tmo_pcd, ehci_pcd_enable, sc);
-/*
-#if defined(__NetBSD__) || defined(__OpenBSD__)
+
 	if (sc->sc_powerhook != NULL)
 		powerhook_disestablish(sc->sc_powerhook);
 	if (sc->sc_shutdownhook != NULL)
 		shutdownhook_disestablish(sc->sc_shutdownhook);
-#endif
-	*/
 
 	usb_delay_ms(&sc->sc_bus, 300); /* XXX let stray task complete */
 

@@ -203,8 +203,8 @@ static uint16_t evdev_mouse_button_codes[] = {
 };
 
 static uint16_t evdev_led_codes[] = {
-	LED_CAPSL,	/* CLKED */
-	LED_NUML,	/* NLKED */
+	LED_CAPSL,		/* CLKED */
+	LED_NUML,		/* NLKED */
 	LED_SCROLLL,	/* SLKED */
 };
 

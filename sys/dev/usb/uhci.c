@@ -502,13 +502,9 @@ uhci_init(uhci_softc_t *sc)
 	sc->sc_bus.methods = &uhci_bus_methods;
 	sc->sc_bus.pipe_size = sizeof(struct uhci_pipe);
 
-	/*
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	sc->sc_suspend = PWR_RESUME;
 	sc->sc_powerhook = powerhook_establish(uhci_power, sc);
 	sc->sc_shutdownhook = shutdownhook_establish(uhci_shutdown, sc);
-#endif
-	*/
 
 	DPRINTFN(1,("uhci_init: enabling\n"));
 	UWRITE2(sc, UHCI_INTR, UHCI_INTR_TOCRCIE | UHCI_INTR_RIE |
@@ -548,12 +544,10 @@ uhci_detach(struct uhci_softc *sc, int flags)
 
 	if (rv != 0)
 		return (rv);
-/*
-#if defined(__NetBSD__) || defined(__OpenBSD__)
+
 	powerhook_disestablish(sc->sc_powerhook);
 	shutdownhook_disestablish(sc->sc_shutdownhook);
-#endif
-*/
+
 	/* Free all xfers associated with this HC. */
 	for (;;) {
 		xfer = SIMPLEQ_FIRST(&sc->sc_free_xfers);

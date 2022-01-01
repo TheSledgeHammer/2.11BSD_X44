@@ -953,16 +953,16 @@ usbd_new_device(parent, bus, depth, lowspeed, port, up)
 	dev->quirks = &usbd_no_quirk;
 	dev->address = USB_START_ADDR;
 	dev->ddesc.bMaxPacketSize = 0;
-	dev->lowspeed = lowspeed;
+	dev->speed = lowspeed;
 	dev->depth = depth;
 	dev->powersrc = up;
 	dev->langid = USBD_NOLANG;
 	dev->myhub = up->parent;
-	for (hub = up->parent; hub != NULL && hub->lowspeed != USB_SPEED_HIGH; hub =
+	for (hub = up->parent; hub != NULL && hub->speed != USB_SPEED_HIGH; hub =
 			hub->myhub)
 		;
 	dev->myhighhub = hub;
-	dev->lowspeed = lowspeed;
+	dev->speed = lowspeed;
 	dev->langid = USBD_NOLANG;
 	//dev->cookie.cookie = ++usb_cookie_no;
 
@@ -1195,7 +1195,7 @@ usbd_fill_deviceinfo(dev, di, usedev)
 	di->udi_protocol = dev->ddesc.bDeviceProtocol;
 	di->udi_config = dev->config;
 	di->udi_power = dev->self_powered ? 0 : dev->power;
-	di->udi_speed = dev->lowspeed;
+	di->udi_speed = dev->speed;
 
 	if (dev->subdevs != NULL) {
 		for (i = 0; dev->subdevs[i] && i < USB_MAX_DEVNAMES; i++) {
@@ -1287,7 +1287,7 @@ usb_disconnect_port(struct usbd_port *up, struct device *parent)
 		}
 	}
 
-	//usbd_add_dev_event(USB_EVENT_DEVICE_DETACH, dev);
+	usbd_add_dev_event(USB_EVENT_DEVICE_DETACH, dev);
 	dev->bus->devices[dev->address] = NULL;
 	up->device = NULL;
 	usb_free_device(dev);

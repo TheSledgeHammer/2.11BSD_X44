@@ -7,5 +7,8 @@ include 									"conf/network.conf"
 include 									"conf/kernel.conf"
 include 									"conf/vm.conf"
 
-# Other Kernel Conf File
+#
+# Device Config Files
+#
 include 									"ddb/files.ddb"
+include 									"dev/files.dev"

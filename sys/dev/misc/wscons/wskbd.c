@@ -606,7 +606,6 @@ wskbd_detach(self, flags)
 	return (0);
 }
 
-
 void
 wskbd_input(dev, type, value)
 	struct device *dev;

@@ -140,11 +140,11 @@
 #define	KEY_COMMA		51
 #define	KEY_DOT			52
 #define	KEY_SLASH		53
-#define	KEY_RIGHTSHIFT		54
-#define	KEY_KPASTERISK		55
+#define	KEY_RIGHTSHIFT	54
+#define	KEY_KPASTERISK	55
 #define	KEY_LEFTALT		56
 #define	KEY_SPACE		57
-#define	KEY_CAPSLOCK		58
+#define	KEY_CAPSLOCK	58
 #define	KEY_F1			59
 #define	KEY_F2			60
 #define	KEY_F3			61
@@ -172,66 +172,66 @@
 #define	KEY_KPDOT		83
 
 #define	KEY_ZENKAKUHANKAKU	85
-#define	KEY_102ND		86
-#define	KEY_F11			87
-#define	KEY_F12			88
-#define	KEY_RO			89
+#define	KEY_102ND			86
+#define	KEY_F11				87
+#define	KEY_F12				88
+#define	KEY_RO				89
 #define	KEY_KATAKANA		90
 #define	KEY_HIRAGANA		91
-#define	KEY_HENKAN		92
+#define	KEY_HENKAN			92
 #define	KEY_KATAKANAHIRAGANA	93
 #define	KEY_MUHENKAN		94
 #define	KEY_KPJPCOMMA		95
-#define	KEY_KPENTER		96
+#define	KEY_KPENTER			96
 #define	KEY_RIGHTCTRL		97
-#define	KEY_KPSLASH		98
-#define	KEY_SYSRQ		99
+#define	KEY_KPSLASH			98
+#define	KEY_SYSRQ			99
 #define	KEY_RIGHTALT		100
 #define	KEY_LINEFEED		101
-#define	KEY_HOME		102
-#define	KEY_UP			103
-#define	KEY_PAGEUP		104
-#define	KEY_LEFT		105
-#define	KEY_RIGHT		106
-#define	KEY_END			107
-#define	KEY_DOWN		108
+#define	KEY_HOME			102
+#define	KEY_UP				103
+#define	KEY_PAGEUP			104
+#define	KEY_LEFT			105
+#define	KEY_RIGHT			106
+#define	KEY_END				107
+#define	KEY_DOWN			108
 #define	KEY_PAGEDOWN		109
-#define	KEY_INSERT		110
-#define	KEY_DELETE		111
-#define	KEY_MACRO		112
-#define	KEY_MUTE		113
+#define	KEY_INSERT			110
+#define	KEY_DELETE			111
+#define	KEY_MACRO			112
+#define	KEY_MUTE			113
 #define	KEY_VOLUMEDOWN		114
 #define	KEY_VOLUMEUP		115
-#define	KEY_POWER		116	/* SC System Power Down */
-#define	KEY_KPEQUAL		117
+#define	KEY_POWER			116	/* SC System Power Down */
+#define	KEY_KPEQUAL			117
 #define	KEY_KPPLUSMINUS		118
-#define	KEY_PAUSE		119
-#define	KEY_SCALE		120	/* AL Compiz Scale (Expose) */
+#define	KEY_PAUSE			119
+#define	KEY_SCALE			120	/* AL Compiz Scale (Expose) */
 
-#define	KEY_KPCOMMA		121
-#define	KEY_HANGEUL		122
-#define	KEY_HANGUEL		KEY_HANGEUL
-#define	KEY_HANJA		123
-#define	KEY_YEN			124
+#define	KEY_KPCOMMA			121
+#define	KEY_HANGEUL			122
+#define	KEY_HANGUEL			KEY_HANGEUL
+#define	KEY_HANJA			123
+#define	KEY_YEN				124
 #define	KEY_LEFTMETA		125
 #define	KEY_RIGHTMETA		126
-#define	KEY_COMPOSE		127
+#define	KEY_COMPOSE			127
 
-#define	KEY_STOP		128	/* AC Stop */
-#define	KEY_AGAIN		129
-#define	KEY_PROPS		130	/* AC Properties */
-#define	KEY_UNDO		131	/* AC Undo */
-#define	KEY_FRONT		132
-#define	KEY_COPY		133	/* AC Copy */
-#define	KEY_OPEN		134	/* AC Open */
-#define	KEY_PASTE		135	/* AC Paste */
-#define	KEY_FIND		136	/* AC Search */
-#define	KEY_CUT			137	/* AC Cut */
-#define	KEY_HELP		138	/* AL Integrated Help Center */
-#define	KEY_MENU		139	/* Menu (show menu) */
-#define	KEY_CALC		140	/* AL Calculator */
-#define	KEY_SETUP		141
-#define	KEY_SLEEP		142	/* SC System Sleep */
+#define	KEY_STOP			128	/* AC Stop */
+#define	KEY_AGAIN			129
+#define	KEY_PROPS			130	/* AC Properties */
+#define	KEY_UNDO			131	/* AC Undo */
+#define	KEY_FRONT			132
+#define	KEY_COPY			133	/* AC Copy */
+#define	KEY_OPEN			134	/* AC Open */
+#define	KEY_PASTE			135	/* AC Paste */
+#define	KEY_FIND			136	/* AC Search */
+#define	KEY_CUT				137	/* AC Cut */
+#define	KEY_HELP			138	/* AL Integrated Help Center */
+#define	KEY_MENU			139	/* Menu (show menu) */
+#define	KEY_CALC			140	/* AL Calculator */
+#define	KEY_SETUP			141
+#define	KEY_SLEEP			142	/* SC System Sleep */
 #define	KEY_WAKEUP			143	/* System Wake Up */
 #define	KEY_FILE			144	/* AL Local Machine Browser */
 #define	KEY_SENDFILE		145
@@ -376,42 +376,42 @@
 #define	BTN_TASK		0x117
 
 #define	BTN_JOYSTICK		0x120
-#define	BTN_TRIGGER		0x120
-#define	BTN_THUMB		0x121
-#define	BTN_THUMB2		0x122
-#define	BTN_TOP			0x123
-#define	BTN_TOP2		0x124
-#define	BTN_PINKIE		0x125
-#define	BTN_BASE		0x126
-#define	BTN_BASE2		0x127
-#define	BTN_BASE3		0x128
-#define	BTN_BASE4		0x129
-#define	BTN_BASE5		0x12a
-#define	BTN_BASE6		0x12b
-#define	BTN_DEAD		0x12f
+#define	BTN_TRIGGER			0x120
+#define	BTN_THUMB			0x121
+#define	BTN_THUMB2			0x122
+#define	BTN_TOP				0x123
+#define	BTN_TOP2			0x124
+#define	BTN_PINKIE			0x125
+#define	BTN_BASE			0x126
+#define	BTN_BASE2			0x127
+#define	BTN_BASE3			0x128
+#define	BTN_BASE4			0x129
+#define	BTN_BASE5			0x12a
+#define	BTN_BASE6			0x12b
+#define	BTN_DEAD			0x12f
 
-#define	BTN_GAMEPAD		0x130
-#define	BTN_SOUTH		0x130
-#define	BTN_A			BTN_SOUTH
-#define	BTN_EAST		0x131
-#define	BTN_B			BTN_EAST
-#define	BTN_C			0x132
-#define	BTN_NORTH		0x133
-#define	BTN_X			BTN_NORTH
-#define	BTN_WEST		0x134
-#define	BTN_Y			BTN_WEST
-#define	BTN_Z			0x135
-#define	BTN_TL			0x136
-#define	BTN_TR			0x137
-#define	BTN_TL2			0x138
-#define	BTN_TR2			0x139
-#define	BTN_SELECT		0x13a
-#define	BTN_START		0x13b
-#define	BTN_MODE		0x13c
-#define	BTN_THUMBL		0x13d
-#define	BTN_THUMBR		0x13e
+#define	BTN_GAMEPAD			0x130
+#define	BTN_SOUTH			0x130
+#define	BTN_A				BTN_SOUTH
+#define	BTN_EAST			0x131
+#define	BTN_B				BTN_EAST
+#define	BTN_C				0x132
+#define	BTN_NORTH			0x133
+#define	BTN_X				BTN_NORTH
+#define	BTN_WEST			0x134
+#define	BTN_Y				BTN_WEST
+#define	BTN_Z				0x135
+#define	BTN_TL				0x136
+#define	BTN_TR				0x137
+#define	BTN_TL2				0x138
+#define	BTN_TR2				0x139
+#define	BTN_SELECT			0x13a
+#define	BTN_START			0x13b
+#define	BTN_MODE			0x13c
+#define	BTN_THUMBL			0x13d
+#define	BTN_THUMBR			0x13e
 
-#define	BTN_DIGI		0x140
+#define	BTN_DIGI			0x140
 #define	BTN_TOOL_PEN		0x140
 #define	BTN_TOOL_RUBBER		0x141
 #define	BTN_TOOL_BRUSH		0x142

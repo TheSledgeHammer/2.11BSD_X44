@@ -45,15 +45,16 @@
 #include <sys/lock.h>
 
 #include <machine/bus.h>
+DECLARE_USB_DMA_T;
 
 struct usbd_xfer;
 struct usbd_pipe;
 
 struct usbd_endpoint {
 	usb_endpoint_descriptor_t 		*edesc;
-	usbd_endpoint_state				state;
+	//usbd_endpoint_state				state;
 	int								refcnt;
-	int								toggle;	/* XXX */
+	//int								toggle;	/* XXX */
 };
 
 struct usbd_bus_methods {
@@ -125,28 +126,28 @@ struct usbd_bus {
 };
 
 struct usbd_device {
-	struct usbd_bus	       			*bus;
-	usbd_device_state				state;
-	struct usbd_pipe       			*default_pipe;
-	u_int8_t						address;
-	u_int8_t						depth;
-	u_int8_t						lowspeed;
-	u_int16_t						power;
-	u_int8_t						self_powered;
-	int								config;
-	int								langid;			/* language to use for strings */
+	struct usbd_bus	       			*bus;     		/* our controller */
+	struct usbd_pipe       			*default_pipe; /* pipe 0 */
+	u_int8_t						address;       /* device addess */
+	u_int8_t						config;	       /* current configuration # */
+	u_int8_t						depth;         /* distance from root hub */
+	u_int8_t						speed;         /* low/full/high speed */
+	u_int8_t						self_powered;  /* flag for self powered */
+	u_int16_t						power;         /* mA the device uses */
+	int16_t							langid;	       /* language for strings */
 #define USBD_NOLANG 				(-1)
-	struct usbd_port       			*powersrc;
+	usb_event_cookie_t				cookie;	       /* unique connection id */
+	struct usbd_port       			*powersrc;   	/* upstream hub port, or 0 */
 	struct usbd_device     			*myhub; 	    /* upstream hub */
 	struct usbd_device     			*myhighhub;     /* closest high speed hub */
 	struct usbd_endpoint			def_ep;			/* for pipe 0 */
 	usb_endpoint_descriptor_t 		def_ep_desc; 	/* for pipe 0 */
-	struct usbd_interface  			*ifaces;
-	usb_device_descriptor_t 		ddesc;
+	struct usbd_interface  			*ifaces;		/* array of all interfaces */
+	usb_device_descriptor_t 		ddesc;			/* device descriptor */
 	usb_config_descriptor_t 		*cdesc;			/* full config descr */
 	struct usbd_quirks     			*quirks;
 	struct usbd_hub	       			*hub; 			/* only if this is a hub */
-	void		       				*softc;			/* device softc if attached */
+//	void		       				*softc;			/* device softc if attached */
 	struct device					*subdevs;		/* sub-devices, 0 terminated */
 };
 
@@ -263,6 +264,8 @@ void		usb_schedsoftintr(struct usbd_bus *);
 #else
 #define SPLUSBCHECK
 #endif
+
+#include "locators.h"
 
 #define UHUBCF_PORT_DEFAULT 			-1
 #define UHUBCF_CONFIGURATION_DEFAULT 	-1

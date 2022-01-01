@@ -57,14 +57,13 @@
 
 #define	DEF_RING_REPORTS	8
 
-
 CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
 CFOPS_DECL(evdev, evdev_match, evdev_attach, evdev_detach, evdev_activate);
 
 extern struct cfdriver evdev_cd;
 
 dev_type_open(evdev_open);
-dev_type_close(evdev_close);
+//dev_type_close(evdev_close);
 dev_type_read(evdev_read);
 dev_type_write(evdev_write);
 dev_type_ioctl(evdev_ioctl);
@@ -195,7 +194,7 @@ evdev_open(dev, flags, fmt, p)
 		evdev_revoke_client(sc);
 	}
 
-	error = evdevdoopen(sc, evdev, evar);
+	error = evdev_doopen(sc, evdev, evar);
 	if (error != 0) {
 		DPRINTF(("evdevopen: %s open failed\n", sc->sc_base.me_dv.dv_xname));
 		evdev_unregister_wsevent(sc);
@@ -204,7 +203,7 @@ evdev_open(dev, flags, fmt, p)
 }
 
 static int
-evdevdoopen(sc, evdev, evp)
+evdev_doopen(sc, evdev, evp)
 	struct evdev_softc 	*sc;
 	struct evdev_dev 	*evdev;
 	struct wseventvar 	*evp;
@@ -221,8 +220,6 @@ evdevdoopen(sc, evdev, evp)
 
 	/* Initialize ring buffer */
 	sc->sc_buffer_size = buffer_size;
-	//sc->sc_buffer_head = 0;
-	//sc->sc_buffer_tail = 0;
 	sc->sc_buffer_ready = 0;
 
 	sc->sc_evdev = evdev;
@@ -303,7 +300,7 @@ evdev_doread(sc, evp, uio, flags)
 		remaining--;
 
 		EVDEV_CLIENT_UNLOCKQ(sc);
-		ret = wsevent_read(evar, uio, flags);
+		ret = wsevent_read(evp, uio, flags);
 		EVDEV_CLIENT_LOCKQ(sc);
 	}
 	EVDEV_CLIENT_UNLOCKQ(sc);
@@ -339,7 +336,7 @@ evdev_write(dev, uio, flags)
 	while (uio->uio_resid > 0 && ret == 0) {
 		ret = uiomove(&event, sizeof(struct input_event), uio);
 		if (ret == 0) {
-			ret = evdev_dowrite(evdev, event);
+			ret = evdev_dowrite(evdev, evar, event);
 		}
 	}
 
@@ -347,8 +344,9 @@ evdev_write(dev, uio, flags)
 }
 
 static int
-evdev_dowrite(evdev, event)
+evdev_dowrite(evdev, evar, event)
 	struct evdev_dev 	*evdev;
+	struct wseventvar 	*evar;
 	struct input_event 	event;
 {
 	int ret;
@@ -421,8 +419,6 @@ evdev_do_ioctl(sc, cmd, data, fflag, p)
 	size_t nvalues;
 
 	evdev = sc->sc_evdev;
-
-	wsevent_put(sc->sc_base->me_evp, sizeof(struct input_event));
 
 	if (sc->sc_base->me_evp->revoked || evdev == NULL) {
 		return (ENODEV);
