@@ -48,6 +48,7 @@ struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
 char *kmembase, *kmemlimit;
 char *memname[] = INITKMEMNAMES;
+struct lock_object malloc_slock;
 
 /* [internal use only] */
 caddr_t	kmalloc(unsigned long, int);
@@ -105,6 +106,7 @@ malloc(size, type, flags)
 	indx = BUCKETINDX(size);
     kbp = &bucket[indx];
     s = splimp();
+    simple_lock(&malloc_slock);
 #ifdef KMEMSTATS
     while (ksp->ks_memuse >= ksp->ks_limit) {
     	if (flags & M_NOWAIT) {
@@ -133,6 +135,7 @@ malloc(size, type, flags)
 			va = kmalloc(size, flags);
 		}
 		*/
+    	simple_unlock(&malloc_slock);
     	va = kmalloc(size, flags);
 
         if (va == NULL) {
@@ -143,6 +146,7 @@ malloc(size, type, flags)
 #endif
         	return ((void *) NULL);
         }
+        simple_lock(&malloc_slock);
 #ifdef KMEMSTATS
 		kbp->kb_total += kbp->kb_elmpercl;
 #endif
@@ -231,6 +235,7 @@ out:
 #else
 out:
 #endif
+	simple_unlock(&malloc_slock);
 	splx(s);
 	if ((flags & M_ZERO) && va != NULL)
 		memset(va, 0, size);
@@ -259,6 +264,7 @@ free(addr, type)
 	size = 1 << kup->ku_indx;
 	kbp = &bucket[kup->ku_indx];
 	s = splimp();
+	simple_lock(&malloc_slock);
 #ifdef DIAGNOSTIC
 	if (size > NBPG * CLSIZE)
 		alloc = addrmask[BUCKETINDX(NBPG * CLSIZE)];
@@ -287,6 +293,7 @@ free(addr, type)
 		ksp->ks_inuse--;
 		kbp->kb_total -= 1;
 #endif
+		simple_unlock(&malloc_slock);
 		splx(s);
 		return;
 	}
@@ -327,6 +334,7 @@ free(addr, type)
 		((struct freelist*) kbp->kb_last)->next = addr;
 	freep->next = NULL;
 	kbp->kb_last = addr;
+	simple_unlock(&malloc_slock);
 	splx(s);
 }
 
@@ -420,6 +428,8 @@ kmeminit()
 {
 	register long indx;
 	int npg;
+
+	simple_lock_init(&malloc_slock, "malloc_slock");
 #if	((MAXALLOCSAVE & (MAXALLOCSAVE - 1)) != 0)
 		ERROR!_kmeminit:_MAXALLOCSAVE_not_power_of_2
 #endif

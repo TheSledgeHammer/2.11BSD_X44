@@ -92,7 +92,7 @@ simple_lock_data_t		slab_lock;
 struct kmemstats 		kmemstats[M_LAST];
 struct kmemusage 		*kmemusage;
 char *kmembase, 		*kmemlimit;
-char *memname[] = INITKMEMNAMES;
+char *memname[] = 		INITKMEMNAMES;
 
 /* [internal use only] */
 caddr_t	kmalloc(unsigned long, int);

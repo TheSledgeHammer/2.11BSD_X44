@@ -137,6 +137,13 @@ int								devsw_io_isdisk(dev_t, int);
 dev_t							devsw_io_chrtoblk(dev_t);
 dev_t							devsw_io_blktochr(dev_t);
 
+dev_t							bdevsw_lookup_major(const struct bdevsw *);
+dev_t							cdevsw_lookup_major(const struct cdevsw *);
+dev_t							linesw_lookup_major(const struct linesw *);
+const struct bdevsw 			*bdevsw_lookup(dev_t);
+const struct cdevsw 			*cdevsw_lookup(dev_t);
+const struct linesw 			*linesw_lookup(dev_t);
+
 #define iskmemdev(dev)			devsw_io_iskmemdev(dev)
 #define iszerodev(dev)			devsw_io_iszerodev(dev)
 #define isdisk(dev, type)		devsw_io_isdisk(dev, type)

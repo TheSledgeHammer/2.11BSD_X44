@@ -34,7 +34,7 @@ struct bdevsw {
 	int			d_type;
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct bdevsw bdevsw[];
 #endif
 
@@ -58,7 +58,7 @@ struct cdevsw {
 	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
 	int			d_type;
 };
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct cdevsw cdevsw[];
 
 /* symbolic sleep message strings */
@@ -82,7 +82,7 @@ struct linesw {
 	int			(*l_modem)(struct tty *tp, int flag);
 	int			(*l_poll)(struct tty *tp, int flag, struct proc *p);
 };
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct 	linesw linesw[];
 #endif
 
@@ -103,7 +103,7 @@ struct swdevt {
 #define	SW_SEQUENTIAL	0x02
 #define sw_freed		sw_flags	/* XXX compat */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct swdevt swdevt[];
 #endif
 

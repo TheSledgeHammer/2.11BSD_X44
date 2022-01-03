@@ -61,7 +61,7 @@ struct consdev {
 /* XXX */
 #define	CONSMAJOR	0
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern	struct consdev constab[];
 extern	struct consdev *cn_tab;
 

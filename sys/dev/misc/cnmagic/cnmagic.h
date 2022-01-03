@@ -40,6 +40,8 @@
 
 #include <dev/misc/cons/cons.h>
 
+struct consdev *cn_tab;
+
 /*
  * Stuff to handle debugger magic key sequences.
  */

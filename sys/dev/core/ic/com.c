@@ -97,7 +97,7 @@ __KERNEL_RCSID(0, "$NetBSD: com.c,v 1.224.2.2 2004/07/05 21:57:45 he Exp $");
 #include <sys/syslog.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
-#include <sys/timepps.h>
+#include <sys/time.h>
 #include <sys/vnode.h>
 
 #include <machine/intr.h>
@@ -112,6 +112,7 @@ __KERNEL_RCSID(0, "$NetBSD: com.c,v 1.224.2.2 2004/07/05 21:57:45 he Exp $");
 #endif
 #define	com_lcr	com_cfcr
 #include <dev/misc/cons/cons.h>
+#include <dev/misc/cnmagic/cnmagic.h>
 
 #ifdef COM_HAYESP
 int comprobeHAYESP(bus_space_handle_t hayespioh, struct com_softc *sc);
@@ -155,11 +156,11 @@ void 	comsoft(void *);
 static struct callout comsoft_callout = CALLOUT_INITIALIZER;
 #endif
 #endif
-integrate void com_rxsoft(struct com_softc *, struct tty *);
-integrate void com_txsoft(struct com_softc *, struct tty *);
-integrate void com_stsoft(struct com_softc *, struct tty *);
-integrate void com_schedrx(struct com_softc *);
-void	comdiag(void *);
+integrate void 	com_rxsoft(struct com_softc *, struct tty *);
+integrate void 	com_txsoft(struct com_softc *, struct tty *);
+integrate void 	com_stsoft(struct com_softc *, struct tty *);
+integrate void 	com_schedrx(struct com_softc *);
+void			comdiag(void *);
 
 extern struct cfdriver com_cd;
 
@@ -173,17 +174,30 @@ dev_type_tty(comtty);
 dev_type_poll(compoll);
 
 const struct cdevsw com_cdevsw = {
-	.d_open = comopen,
-	.d_close = comclose,
-	.d_read = comread,
-	.d_write = comwrite,
-	.d_ioctl = comioctl,
-	.d_stop = comstop,
-	.d_tty = comtty,
-	.d_poll = compoll,
-	.d_mmap = nommap,
-	.d_kqfilter = ttykqfilter,
-	.d_type = D_TTY
+		.d_open = comopen,
+		.d_close = comclose,
+		.d_read = comread,
+		.d_write = comwrite,
+		.d_ioctl = comioctl,
+		.d_stop = comstop,
+		.d_tty = comtty,
+		.d_poll = compoll,
+		.d_mmap = nommap,
+		.d_kqfilter = ttykqfilter,
+		.d_type = D_TTY
+};
+
+static struct consdev comcons = {
+		.cn_probe = NULL,
+		.cn_init = NULL,
+		.cn_getc = comcngetc,
+		.cn_putc = comcnputc,
+		.cn_pollc = comcnpollc,
+		.cn_bell = NULL,
+		.cn_flush = NULL,
+		.cn_tp = NULL,
+		.cn_dev = NODEV,
+		.cn_pri = CN_NORMAL
 };
 
 /*
@@ -196,13 +210,13 @@ u_int com_rbuf_size = COM_RING_SIZE;
 u_int com_rbuf_hiwat = (COM_RING_SIZE * 1) / 4;
 u_int com_rbuf_lowat = (COM_RING_SIZE * 3) / 4;
 
-static bus_addr_t	comconsaddr;
-static bus_space_tag_t comconstag;
-static bus_space_handle_t comconsioh;
-static int	comconsattached;
-static int comconsrate;
-static tcflag_t comconscflag;
-static struct cnm_state com_cnm_state;
+static bus_addr_t			comconsaddr;
+static bus_space_tag_t 		comconstag;
+static bus_space_handle_t 	comconsioh;
+static int					comconsattached;
+static int 					comconsrate;
+static tcflag_t 			comconscflag;
+static struct cnm_state 	com_cnm_state;
 
 static int ppscap =
 	PPS_TSFMT_TSPEC |
@@ -219,12 +233,12 @@ volatile int	com_softintr_scheduled;
 #ifdef KGDB
 #include <sys/kgdb.h>
 
-static bus_addr_t com_kgdb_addr;
-static bus_space_tag_t com_kgdb_iot;
-static bus_space_handle_t com_kgdb_ioh;
-static int com_kgdb_attached;
+static bus_addr_t 			com_kgdb_addr;
+static bus_space_tag_t 		com_kgdb_iot;
+static bus_space_handle_t 	com_kgdb_ioh;
+static int 					com_kgdb_attached;
 
-int	com_kgdb_getc(void *);
+int		com_kgdb_getc(void *);
 void	com_kgdb_putc(void *, int);
 #endif /* KGDB */
 
@@ -1751,7 +1765,7 @@ out:
 /*
  * Stop output on a line.
  */
-void
+int
 comstop(struct tty *tp, int flag)
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(tp->t_dev)];
@@ -1768,6 +1782,7 @@ comstop(struct tty *tp, int flag)
 	}
 	COM_UNLOCK(sc);	
 	splx(s);
+	return (0);
 }
 
 void
@@ -2391,11 +2406,6 @@ cominit(bus_space_tag_t iot, bus_addr_t iobase, int rate, int frequency,
 /*
  * Following are all routines needed for COM to act as console
  */
-struct consdev comcons = {
-	NULL, NULL, comcngetc, comcnputc, comcnpollc, NULL, NULL, NULL,
-	NODEV, CN_NORMAL
-};
-
 
 int
 comcnattach(bus_space_tag_t iot, bus_addr_t iobase, int rate, int frequency,

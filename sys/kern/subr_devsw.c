@@ -295,7 +295,7 @@ bdevsw_lookup_major(bdev)
 	return (NODEVMAJOR);
 }
 
-struct bdevsw *
+const struct bdevsw *
 bdevsw_lookup(dev)
 	dev_t 	dev;
 {
@@ -424,7 +424,7 @@ cdevsw_lookup_major(cdev)
 	return (NODEVMAJOR);
 }
 
-struct cdevsw *
+const struct cdevsw *
 cdevsw_lookup(dev)
 	dev_t 	dev;
 {
@@ -547,7 +547,7 @@ linesw_lookup_major(line)
 	return (NODEVMAJOR);
 }
 
-struct linesw *
+const struct linesw *
 linesw_lookup(dev)
 	dev_t 	dev;
 {
@@ -1288,15 +1288,35 @@ line_rint(int c, struct tty *tp)
 
 /*
 int
-line_rend()
+line_rend(void)
 {
+	const struct linesw *l;
+	int rv, error;
 
+	error = devsw_io_lookup(NULL, l, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_rend)();
+
+	return (rv);
 }
 
 int
-line_meta()
+line_meta(void)
 {
+	const struct linesw *l;
+	int rv, error;
 
+	error = devsw_io_lookup(NULL, l, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_meta)();
+
+	return (rv);
 }
 */
 

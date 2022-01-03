@@ -31,7 +31,6 @@
 
 #include <sys/malloc.h>
 #include <sys/queue.h>
-#include <devel/vm/include/vm.h>
 
 /* Hold metadata on a slab */
 struct slab_metadata {

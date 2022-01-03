@@ -303,7 +303,7 @@ out:
  */
 ndflush(q, cc)
 	register struct clist *q;
-	register cc;
+	register int cc;
 {
 	register struct cblock *bp;
 	char *end;

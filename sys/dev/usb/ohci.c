@@ -59,6 +59,7 @@
 #endif
 #include <sys/proc.h>
 #include <sys/queue.h>
+#include <sys/power.h>
 
 #include <machine/bus.h>
 #include <machine/endian.h>
