@@ -136,6 +136,36 @@ static struct lock_object callout_slock;
 } while (/*CONSTCOND*/0)
 
 /*
+ * Circular queue definitions.
+ */
+#define CIRCQ_INIT(list) do {										\
+    (list)->cq_next_l = (list);										\
+    (list)->cq_prev_l = (list);										\
+} while (/*CONSTCOND*/0)
+
+#define CIRCQ_INSERT(elem, list) do {								\
+	(elem)->cq_prev_e = (list)->cq_prev_e;							\
+    (elem)->cq_next_l = (list);										\
+    (list)->cq_prev_l->cq_next_l = (elem);							\
+    (list)->cq_prev_l = (elem);										\
+} while (/*CONSTCOND*/0)
+
+#define CIRCQ_APPEND(fst, snd) do {									\
+	if (!CIRCQ_EMPTY(snd)) {										\
+		(fst)->cq_prev_l->cq_next_l = (snd)->cq_next_l;				\
+        (snd)->cq_next_l->cq_prev_l = (fst)->cq_prev_l;				\
+        (snd)->cq_prev_l->cq_next_l = (fst);						\
+        (fst)->cq_prev_l = (snd)->cq_prev_l;						\
+        CIRCQ_INIT(snd);											\
+    }																\
+} while (/*CONSTCOND*/0)
+
+#define CIRCQ_REMOVE(elem) do {										\
+	(elem)->cq_next_l->cq_prev_e = (elem)->cq_prev_e;				\
+    (elem)->cq_prev_l->cq_next_e = (elem)->cq_next_e;				\
+} while (/*CONSTCOND*/0)
+
+/*
  * callout_startup:
  *
  *	Initialize the callout facility, called at system startup time.

@@ -11,7 +11,7 @@
 
 #include <sys/termios.h>
 #include <sys/select.h>
-#include <sys/ttydefaults.h>
+//#include <sys/ttydefaults.h>
 #include <sys/lock.h>
 #include <sys/callout.h>
 
@@ -23,8 +23,8 @@
  */
 struct clist {
 	int						c_cc;			/* character count */
-	char					*c_cf;			/* pointer to first char */
-	char					*c_cl;			/* pointer to last char */
+	u_char					*c_cf;			/* pointer to first char */
+	u_char					*c_cl;			/* pointer to last char */
 
 	u_char					*c_cs;			/* start of ring buffer */
 	u_char					*c_ce;			/* c_ce + c_len */
@@ -101,7 +101,6 @@ struct tty {
 	struct	selinfo 		t_srsel;		/* Tty read/oob select. */
 	struct	selinfo 		t_swsel;		/* Tty write select. */
 
-
 /* be careful of tchars & co. */
 #define	t_erase				t_chars.tc_erase
 #define	t_kill				t_chars.tc_kill
@@ -129,14 +128,14 @@ struct tty {
 #define	t_ospeed			t_termios.c_ospeed
 #define	t_time				t_termios.c_time
 
-#define	TTIPRI		28	/* Sleep priority for tty reads. */
-#define	TTOPRI		29	/* Sleep priority for tty writes. */
+#define	TTIPRI				28	/* Sleep priority for tty reads. */
+#define	TTOPRI				29	/* Sleep priority for tty writes. */
 
 /* limits */
-#define	NSPEEDS		16
-#define	TTMASK		15
-#define	OBUFSIZ		100
-#define	TTYHOG		1024
+#define	NSPEEDS				16
+#define	TTMASK				15
+#define	OBUFSIZ				100
+#define	TTYHOG				1024
 
 #ifdef KERNEL
 short						tthiwat[NSPEEDS], ttlowat[NSPEEDS];
@@ -146,7 +145,6 @@ short						tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTMINHIWAT			roundup(100, CBSIZE)
 #define TTMAXLOWAT 			256
 #define TTMINLOWAT 			32
-extern	struct ttychars 	ttydefaults;
 #endif
 
 /* internal state bits */
@@ -210,77 +208,77 @@ struct speedtab {
 	(isctty((p), (tp)) && (p)->p_pgrp != (tp)->t_pgrp)
 
 #ifdef KERNEL
-//extern	struct ttychars ttydefaults;
+extern struct ttychars  ttydefaults;
 
 /* Symbolic sleep message strings. */
-extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
+extern char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 
-extern void	ctty_init(struct devswtable *);
-extern void pty_init(struct devswtable *);
-extern void tty_conf_init(struct devswtable *);
+extern void	ctty_init (struct devswtable *);
+extern void pty_init (struct devswtable *);
+extern void tty_conf_init (struct devswtable *);
 
-void clist_alloc_cblocks (struct clist *q, int ccmax, int ccres);
-void clist_free_cblocks (struct clist *q);
+void clist_alloc_cblocks (struct clist *, int, int);
+void clist_free_cblocks (struct clist *);
 
-int	 b_to_q (char *cp, int cc, struct clist *q);
-void catq (struct clist *from, struct clist *to);
-int	 getc (struct clist *q);
-void ndflush (struct clist *q, int cc);
-int	 ndqb (struct clist *q, int flag);
-char *nextc (struct clist *q, char *cp, int *c);
-int	 putc (int c, struct clist *q);
-int	 q_to_b (struct clist *q, char *cp, int cc);
-int	 unputc (struct clist *q);
+int	 b_to_q (char *, int, struct clist *);
+void catq (struct clist *, struct clist *);
+int	 getc (struct clist *);
+void ndflush (struct clist *, int);
+int	 ndqb (struct clist *, int);
+char *nextc (struct clist *, char *, int *);
+int	 putc (int, struct clist *);
+int	 q_to_b (struct clist *, char *, int);
+int	 unputc (struct clist *);
 
-int	 nullmodem (struct tty *tp, int flag));
-int	 tputchar (int c, struct tty *tp));
-int	 ttioctl (struct tty *tp, int com, void *data, int flag));
-int	 ttread (struct tty *tp, struct uio *uio, int flag));
-void ttrstrt (void *tp));
-int	 ttselect (dev_t device, int rw, struct proc *p));
-void ttsetwater (struct tty *tp));
-int	 ttspeedtab (int speed, struct speedtab *table));
-int	 ttstart (struct tty *tp));
-void ttwakeup (struct tty *tp));
-void ttwwakeup (struct tty *tp));
-int	 ttwrite (struct tty *tp, struct uio *uio, int flag));
-void ttychars (struct tty *tp));
-int	 ttycheckoutq (struct tty *tp, int wait));
-int	 ttyclose (struct tty *tp));
-void ttyflush (struct tty *tp, int rw));
-void ttyinfo (struct tty *tp));
-int	 ttyinput (int c, struct tty *tp));
-int	 ttylclose (struct tty *tp, int flag));
-int	 ttymodem (struct tty *tp, int flag));
-int	 ttyopen (dev_t device, struct tty *tp));
-int	 ttyoutput (int c, struct tty *tp));
-void ttypend (struct tty *tp));
-void ttyretype (struct tty *tp));
-void ttyrub (int c, struct tty *tp));
-int	 ttysleep (struct tty *tp, void *chan, int pri, char *wmesg, int timeout);
-int	 ttywait (struct tty *tp);
-int	 ttywflush (struct tty *tp);
-struct tty *ttymalloc (void);
-void ttyfree (struct tty *tp);
-void tty_init_console(struct tty *tp, speed_t speed);
+int	 nullmodem (struct tty *, int);
+int	 tputchar (int, struct tty *);
+int	 ttioctl (struct tty *, int, void *, int);
+int	 ttread (struct tty *, struct uio *, int);
+void ttrstrt (void *);
+int	 ttselect (dev_t, int, struct proc *);
+void ttsetwater (struct tty *);
+int	 ttspeedtab (int, struct speedtab *);
+int	 ttstart (struct tty *);
+void ttwakeup (struct tty *);
+void ttwwakeup (struct tty *);
+int	 ttwrite (struct tty *, struct uio *, int);
+void ttychars (struct tty *);
+int	 ttycheckoutq (struct tty *, int);
+int	 ttyclose (struct tty *);
+void ttyflush (struct tty *, int);
+void ttyinfo (struct tty *);
+int	 ttyinput (int, struct tty *);
+int	 ttylclose (struct tty *, int);
+int	 ttymodem (struct tty *, int);
+int	 ttyopen (dev_t, struct tty *);
+int	 ttyoutput (int, struct tty *);
+void ttypend (struct tty *);
+void ttyretype (struct tty *);
+void ttyrub (int, struct tty *);
+int	 ttysleep (struct tty *, void *, int, char *, int);
+int	 ttywait (struct tty *);
+int	 ttywflush (struct tty *);
+struct tty 	*ttymalloc (void);
+void ttyfree (struct tty *);
+void tty_init_console (struct tty *, speed_t);
 
 /* From tty_ctty.c. */
-int	cttyioctl (dev_t dev, int cmd, caddr_t addr, int flag, struct proc *p);
-int	cttyopen (dev_t dev, int flag, int mode, struct proc *p);
-int	cttyread (dev_t dev, struct uio *uio, int flag);
-int cttywrite(dev_t dev, struct uio *uio, int flag);
-int cttypoll(dev_t dev, int events, struct proc *p);
-int	cttykqfilter(dev_t dev, struct knote *kn);
-int	cttyselect (dev_t dev, int flag, struct proc *p);
+int	cttyioctl (dev_t, int, caddr_t, int, struct proc *);
+int	cttyopen (dev_t, int, int, struct proc *);
+int	cttyread (dev_t, struct uio *, int);
+int cttywrite (dev_t, struct uio *, int);
+int cttypoll (dev_t, int, struct proc *);
+int	cttykqfilter (dev_t, struct knote *);
+int	cttyselect (dev_t, int, struct proc *);
 
 /* From tty_tty.c. */
-int	syopen(dev_t dev, int flag, int type);
-int	syread(dev_t dev, struct uio *uio, int flag);
-int	sywrite(dev_t dev, struct uio *uio, int flag);
-int syioctl(dev_t dev, u_int cmd, caddr_t addr, int flag);
-int	sypoll(dev_t dev, int events);
-int	sykqfilter(dev_t dev, struct knote *kn);
-int	syselect(dev_t dev, int flag);
+int	syopen (dev_t, int, int);
+int	syread (dev_t, struct uio *, int);
+int	sywrite (dev_t, struct uio *, int);
+int syioctl (dev_t, u_int cmd, caddr_t, int);
+int	sypoll (dev_t, int);
+int	sykqfilter (dev_t, struct knote *);
+int	syselect (dev_t, int);
 
 /* tty slock */
 #define tty_lock_init(tp)		(simple_lock_init((tp)->t_slock, "tty_slock"))

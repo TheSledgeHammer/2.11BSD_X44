@@ -159,10 +159,11 @@ updatepri(p)
 */
 
 int
-tsleep(ident, priority, timo)
+tsleep(ident, priority, wmesg, timo)
 	void *ident;
 	int	priority;
 	u_short	timo;
+	const char	*wmesg;
 {
 	register struct proc *p = u->u_procp;
 	register struct proc **qp;

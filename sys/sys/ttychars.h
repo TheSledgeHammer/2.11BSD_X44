@@ -33,9 +33,9 @@ struct ttychars {
 };
 
 /* Control Character Defaults */
-#define	CTRL(c)		('c'&037)
+#define	CTRL(c)			('c'&037)
 #define	_POSIX_VDISABLE	((unsigned char)'\377')
-#define	CCEQ(val,c)	(c == val ? val != _POSIX_VDISABLE : 0)
+#define	CCEQ(val,c)		(c == val ? val != _POSIX_VDISABLE : 0)
 
 /* default special characters */
 #define	CERASE		0177

@@ -97,7 +97,7 @@ __KERNEL_RCSID(0, "$NetBSD: com.c,v 1.224.2.2 2004/07/05 21:57:45 he Exp $");
 #include <sys/syslog.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
-#include <sys/time.h>
+#include <sys/timepps.h>
 #include <sys/vnode.h>
 
 #include <machine/intr.h>
@@ -426,9 +426,9 @@ com_attach_subr(struct com_softc *sc)
 	const char *fifo_msg = NULL;
 
 	callout_init(&sc->sc_diag_callout);
-#if (defined(MULTIPROCESSOR) || defined(LOCKDEBUG)) && defined(COM_MPLOCK)
+//#if (defined(MULTIPROCESSOR) || defined(LOCKDEBUG)) && defined(COM_MPLOCK)
 	simple_lock_init(&sc->sc_lock);
-#endif
+//#endif
 
 	/* Disable interrupts before configuring the device. */
 #ifdef COM_PXA2X0

@@ -44,7 +44,7 @@
 #ifndef SYS_TTYDEFAULTS_H_
 #define SYS_TTYDEFAULTS_H_
 
-#include <sys/termios.h>
+//#include <sys/termios.h>
 
 /*
  * Defaults on "first" open.

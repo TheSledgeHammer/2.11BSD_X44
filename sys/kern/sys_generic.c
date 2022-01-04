@@ -419,7 +419,7 @@ retry:
 		u->u_psflags |= SAS_OLDMASK;
 		u->u_procp->p_sigmask = sigmsk;
 	}
-	error = tsleep(&selwait, PSOCK | PCATCH, timo);
+	error = tsleep(&selwait, PSOCK | PCATCH, "select1", timo);
 	if (uap->maskp)
 		u->u_procp->p_sigmask = u->u_oldmask;
 	splx(s);

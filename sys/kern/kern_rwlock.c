@@ -265,7 +265,7 @@ rwlock_acquire(rwl, error, extflags, wanted)
 	for (error = 0; wanted; ) {
 		rwl->rwl_waitcount++;
 		rwlock_unlock(&rwl);
-		error = tsleep((void *)rwl, rwl->rwl_prio, rwl->rwl_timo);
+		error = tsleep((void *)rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo);
 		rwlock_lock(&rwl);
 		rwl->rwl_waitcount--;
 		if (error) {

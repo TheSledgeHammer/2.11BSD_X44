@@ -15,7 +15,7 @@
 #include <sys/buf.h>
 #include <sys/map.h>
 #include <sys/malloc.h>
-#include <sys/user.h>
+//#include <sys/user.h>
 
 struct cblock *cfreelist = 0;
 int cfreecount = 0;
@@ -301,6 +301,7 @@ out:
 /*
  * Flush cc bytes from q.
  */
+void
 ndflush(q, cc)
 	register struct clist *q;
 	register int cc;
@@ -312,7 +313,7 @@ ndflush(q, cc)
 	s = spltty();
 	if (q->c_cc <= 0)
 		goto out;
-	while (cc>0 && q->c_cc) {
+	while (cc > 0 && q->c_cc) {
 		bp = (struct cblock *)((int)q->c_cf & ~CROUND);
 		if ((int)bp == (((int)q->c_cl-1) & ~CROUND)) {
 			end = q->c_cl;
