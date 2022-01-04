@@ -11,5 +11,5 @@ file	dev/core/mca/mca.c			mca			needs-flag
 file	dev/core/mca/mca_subr.c		mca
 
 # serial port devices
-attach	com at mca with com_mca
-file	dev/core/mca/com_mca.c		com_mca
+#attach	com at mca with com_mca
+#file	dev/core/mca/com_mca.c		com_mca

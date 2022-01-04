@@ -91,7 +91,7 @@ extern int	ehcidebug;
 
 struct usb_softc {
 	struct device		sc_dev;			/* base device */
-	usbd_bus_handle 	sc_bus;			/* USB controller */
+	struct usbd_bus 	*sc_bus;	/* USB controller */
 	struct usbd_port 	sc_port;		/* dummy port for root hub */
 
 	int		 			sc_speed;

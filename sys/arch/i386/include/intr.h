@@ -37,6 +37,7 @@
 #define	IPL_SOFTCLOCK	8	/* timeouts */
 #define	IPL_SOFTNET		7	/* protocol stacks */
 #define	IPL_BIO			6	/* block I/O */
+#define	IPL_SOFTBIO		IPL_BIO	/* block I/O passdown */
 #define	IPL_NET			5	/* network */
 #define	IPL_SOFTSERIAL	4	/* serial */
 #define	IPL_TTY			3	/* terminal */
@@ -46,7 +47,10 @@
 #define	IPL_HIGH		1	/* everything */
 #define	IPL_SERIAL		0	/* serial */
 #define IPL_IPI			0	/* inter-processor interrupts */
-#define	NIPL			16
+#define	NIPL			10
+
+//#define	IPL_VM			6	/* low I/O, memory allocation */
+//#define IPL_SCHED		7	/* medium I/O, scheduler, clock */
 
 /* Interrupt sharing types. */
 #define	IST_NONE		0	/* none */
@@ -58,13 +62,14 @@
  * Local APIC masks and software interrupt masks, in order
  * of priority.  Must not conflict with SIR_* below.
  */
-#define LIR_IPI			33
-#define LIR_TIMER		32
+#define LIR_IPI			31
+#define LIR_TIMER		30
 
 /* Soft interrupt masks. */
-#define	SIR_CLOCK		31
-#define	SIR_NET			30
-#define	SIR_SERIAL		29
+#define	SIR_CLOCK		29
+#define	SIR_NET			28
+#define	SIR_SERIAL		27
+#define	SIR_BIO			26
 
 #define IREENT_MAGIC	0x18041969
 

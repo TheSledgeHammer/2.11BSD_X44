@@ -20,7 +20,7 @@ include		"dev/audio/files.audio"
 include		"dev/disk/files.disk"
 include 	"dev/misc/files.misc"
 include 	"dev/power/files.power"
-include		"dev/usb/files.usb"
+#include		"dev/usb/files.usb"
 include		"dev/video/files.video"
 
 #

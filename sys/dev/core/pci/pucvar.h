@@ -44,10 +44,10 @@ struct puc_device_description {
 	pcireg_t		rval[4];
 	pcireg_t		rmask[4];
 	struct {
-		int	type;
-		int	bar;
-		int	offset;
-		int	flags;
+		int		type;
+		int		bar;
+		int		offset;
+		int		flags;
 	}			ports[PUC_MAX_PORTS];
 };
 

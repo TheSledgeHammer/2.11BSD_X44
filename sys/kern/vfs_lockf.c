@@ -134,7 +134,7 @@ lf_alloc(int allowfail)
 
 	uip->ui_lockcnt++;
 
-	lock = (struct lock *)malloc(sizeof(struct lockf), lockf_cache, M_WAITOK);
+	lock = (struct lock *)malloc(sizeof(struct lockf), M_LOCKF, M_WAITOK);
 	lock->lf_uid = uid;
 	return (lock);
 }
@@ -148,6 +148,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 	struct flock *fl = ap->a_fl;
 	struct lockf *lock = NULL;
 	struct lockf *sparelock;
+	struct lock_object *interlock = &ap->a_vp->v_interlock;
 	off_t start, end;
 	int error = 0;
 
@@ -241,7 +242,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 		goto quit;
 	}
 
-	//mutex_enter(interlock);
+	simple_lock(interlock);
 
 	/*
 	 * Avoid the common case of unlocking when inode has no locks.
@@ -293,7 +294,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 	}
 
 quit_unlock:
-	//mutex_exit(interlock);
+	simple_unlock(interlock);
 quit:
 	if (lock)
 		lf_free(lock);
@@ -340,10 +341,11 @@ lf_getlock(lock, fl)
 /*
  * Set a byte-range lock.
  */
-int
-lf_setlock(lock, sparelock)
+static int
+lf_setlock(lock, sparelock, interlock)
 	register struct lockf *lock;
 	struct lockf **sparelock;
+	struct lock_object *interlock;
 {
 	register struct lockf *block;
 	struct lockf **head = lock->lf_head;
@@ -587,7 +589,7 @@ lf_setlock(lock, sparelock)
  * Generally, find the lock (or an overlap to that lock)
  * and remove it (or shrink it), then wakeup anyone we can.
  */
-int
+static int
 lf_clearlock(unlock, sparelock)
 	register struct lockf *unlock;
 	struct lockf **sparelock;
@@ -685,7 +687,7 @@ lf_getblock(struct lockf *lock)
  * NOTE: this returns only the FIRST overlapping lock.  There
  *	 may be more than one.
  */
-int
+static int
 lf_findoverlap(lf, lock, type, prev, overlap)
 	register struct lockf *lf;
 	struct lockf *lock;
@@ -795,10 +797,11 @@ lf_findoverlap(lf, lock, type, prev, overlap)
  * Split a lock and a contained region into
  * two or three locks as necessary.
  */
-void
-lf_split(lock1, lock2)
+static void
+lf_split(lock1, lock2, sparelock)
 	register struct lockf *lock1;
 	register struct lockf *lock2;
+	struct lockf **sparelock;
 {
 	register struct lockf *splitlock;
 
@@ -826,8 +829,9 @@ lf_split(lock1, lock2)
 	 * Make a new lock consisting of the last part of
 	 * the encompassing lock
 	 */
-	MALLOC(splitlock, struct lockf *, sizeof *splitlock, M_LOCKF, M_WAITOK);
-	memcpy((caddr_t)lock1, (caddr_t)splitlock, sizeof *splitlock);
+	splitlock = *sparelock;
+	*sparelock = NULL;
+	memcpy(splitlock, lock1, sizeof(*splitlock));
 	splitlock->lf_start = lock2->lf_end + 1;
 	TAILQ_INIT(&splitlock->lf_blkhd);
 	lock1->lf_end = lock2->lf_start - 1;
@@ -842,7 +846,7 @@ lf_split(lock1, lock2)
 /*
  * Wakeup a blocklist
  */
-void
+static void
 lf_wakelock(listhead)
 	struct lockf *listhead;
 {
@@ -863,6 +867,7 @@ lf_wakelock(listhead)
 /*
  * Print out a lock.
  */
+static void
 lf_print(tag, lock)
 	char *tag;
 	register struct lockf *lock;
@@ -887,6 +892,7 @@ lf_print(tag, lock)
 		printf("\n");
 }
 
+static void
 lf_printlist(tag, lock)
 	char *tag;
 	struct lockf *lock;

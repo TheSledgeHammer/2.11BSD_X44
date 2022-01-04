@@ -37,7 +37,14 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <machine/pic.h>
+#include <include/pic.h>
+#include <include/intr.h>
+
+#include <vm/include/vm_extern.h>
+
+/*
+ * Generic software interrupt support.
+ */
 
 struct pic softintr_template = {
 		.pic_type = PIC_SOFT,
@@ -78,3 +85,69 @@ softintr_register_pic()
 {
 	softpic_register_pic(&softintr_template);
 }
+
+/* XXX: incomplete */
+#if defined(__HAVE_FAST_SOFTINTS)
+struct intrhand fake_softclock_intrhand;
+struct intrhand fake_softnet_intrhand;
+struct intrhand fake_softserial_intrhand;
+struct intrhand fake_softbio_intrhand;
+
+void
+softint_init_md(struct proc *p, u_int level, uintptr_t *machdep)
+{
+	struct softpic *spic;
+	struct intrsource *isp;
+	struct cpu_info *ci;
+	u_int sir;
+
+	//ci = p->p_cpuinfo;
+
+	spic = &intrspic;
+	//isp->is_recurse = Xsoftintr;
+	//isp->is_resume = Xsoftintr;
+	isp = &spic->sp_intsrc;
+	isp->is_pic = &softintr_template;
+
+	switch (level) {
+	case SOFTINT_BIO:
+		sir = SIR_BIO;
+		fake_softbio_intrhand->ih_pic = &softintr_template;
+		fake_softbio_intrhand->ih_level = IPL_SOFTBIO;
+		isp->is_handlers = &fake_softbio_intrhand;
+		break;
+
+	case SOFTINT_NET:
+		sir = SIR_NET;
+		fake_softnet_intrhand->ih_pic = &softintr_template;
+		fake_softnet_intrhand->ih_level = IPL_SOFTNET;
+		isp->is_handlers = &fake_softnet_intrhand;
+		break;
+
+	case SOFTINT_SERIAL:
+		sir = SIR_SERIAL;
+		fake_softserial_intrhand->ih_pic = &softintr_template;
+		fake_softserial_intrhand->ih_level = IPL_SOFTSERIAL;
+		isp->is_handlers = &fake_softserial_intrhand;
+		break;
+
+	case SOFTINT_CLOCK:
+		sir = SIR_CLOCK;
+		fake_softclock_intrhand->ih_pic = &softintr_template;
+		fake_softclock_intrhand->ih_level = IPL_SOFTCLOCK;
+		isp->is_handlers = &fake_softclock_intrhand;
+		break;
+
+	default:
+		panic("softint_init_md");
+	}
+
+	KASSERT(spic->sp_intsrc[sir] == NULL);
+
+	*machdep = (1 << sir);
+	spic->sp_intsrc[sir] = isp;
+	spic->sp_cpu = ci;
+
+	intr_calculatemasks();
+}
+#endif /* __HAVE_FAST_SOFTINTS */

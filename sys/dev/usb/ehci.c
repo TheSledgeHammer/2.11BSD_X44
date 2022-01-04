@@ -90,6 +90,7 @@
 #include <dev/usb/ehcivar.h>
 
 #include <sys/power.h>
+#include <sys/callout.h>
 
 #ifdef EHCI_DEBUG
 #define DPRINTF(x)					if (ehcidebug) printf x

@@ -170,19 +170,19 @@ sysbeep0		at pcppi?
 # Serial Devices
 
 # PCI serial interfaces
-com*			at puc? port ?				# 16x50s on "universal" comm boards
+#com*			at puc? port ?				# 16x50s on "universal" comm boards
 
 # PCMCIA serial interfaces
 #com*			at pcmcia? function ?		# Modems and serial cards
 
 # ISA serial interfaces
 #options 		COM_HAYESP					# adds Hayes ESP serial board support
-com0			at isa? port 0x3f8 irq 4	# Standard PC serial ports
-com1			at isa? port 0x2f8 irq 3
-com2			at isa? port 0x3e8 irq 5
+#com0			at isa? port 0x3f8 irq 4	# Standard PC serial ports
+#com1			at isa? port 0x2f8 irq 3
+#com2			at isa? port 0x3e8 irq 5
 
 # MCA serial interfaces
-com*			at mca? slot ?			# 16x50s on comm boards
+#com*			at mca? slot ?			# 16x50s on comm boards
 
 # Parallel Printer Interfaces
 
@@ -267,15 +267,15 @@ uk*				at atapibus? drive ? flags 0x0000	# ATAPI unknown
 # USB Controller and Devices
 
 # PCI USB controllers
-ehci*			at pci?	dev ? function ?	# Enhanced Host Controller
-ohci*			at pci?	dev ? function ?	# Open Host Controller
-uhci*			at pci?	dev ? function ?	# Universal Host Controller (Intel)
+#ehci*			at pci?	dev ? function ?	# Enhanced Host Controller
+#ohci*			at pci?	dev ? function ?	# Open Host Controller
+#uhci*			at pci?	dev ? function ?	# Universal Host Controller (Intel)
 #xhci*			at pci?	dev ? function ?	# eXtensible Host Controller
 
 # USB bus support
-usb*			at ehci?
-usb*			at ohci?
-usb*			at uhci?
+#usb*			at ehci?
+#usb*			at ohci?
+#usb*			at uhci?
 #usb*			at xhci?
 
 # Pseudo-Devices

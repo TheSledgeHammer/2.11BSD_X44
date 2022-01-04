@@ -242,10 +242,10 @@ int		com_kgdb_getc(void *);
 void	com_kgdb_putc(void *, int);
 #endif /* KGDB */
 
-#define	COMUNIT_MASK	0x7ffff
-#define	COMDIALOUT_MASK	0x80000
+#define	COMUNIT_MASK	0x7f
+#define	COMDIALOUT_MASK	0x80
 
-#define	COMUNIT(x)	(minor(x) & COMUNIT_MASK)
+#define	COMUNIT(x)		(minor(x) & COMUNIT_MASK)
 #define	COMDIALOUT(x)	(minor(x) & COMDIALOUT_MASK)
 
 #define	COM_ISALIVE(sc)	((sc)->enabled != 0 && \
@@ -288,7 +288,6 @@ comspeed(long speed, long frequency, int type)
 #ifdef COM_DEBUG
 int	com_debug = 0;
 
-void comstatus(struct com_softc *, char *);
 void
 comstatus(struct com_softc *sc, char *str)
 {

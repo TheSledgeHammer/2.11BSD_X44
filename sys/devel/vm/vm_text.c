@@ -286,3 +286,63 @@ vm_xrele(vp)
 		vm_xuntext(vp->v_text);
 	}
 }
+
+/*
+ * Get text structures.  This is a 2.11BSD extension.  sysctl() is supposed
+ * to be extensible...
+ */
+int
+sysctl_text(where, sizep)
+	char *where;
+	size_t *sizep;
+{
+	int buflen, error;
+	register struct vm_text *xp;
+	struct vm_text *xpp;
+	char *start = where;
+	register int i;
+
+	buflen = *sizep;
+	if (where == NULL) {
+		xlock(&vm_text_lock);
+		for (i = 0, xp = TAILQ_FIRST(&vm_text_list); xp != NULL; xp = TAILQ_NEXT(xp, psx_list)) {
+			if (xp->psx_count) {
+				i++;
+			}
+#define	TPTRSZ	sizeof(struct vm_text *)
+#define	TEXTSZ	sizeof(struct vm_text)
+		/*
+		 * overestimate by 3 text structures
+		 */
+		*sizep = (i + 3) * (TEXTSZ + TPTRSZ);
+		}
+		xunlock(&vm_text_lock);
+		return (0);
+	}
+
+	/*
+	 * array of extended file structures: first the address then the
+	 * file structure.
+	 */
+	xlock(&vm_text_lock);
+	TAILQ_FOREACH(xp, &vm_text_list, psx_list) {
+		if (xp->psx_count == 0) {
+			continue;
+		}
+		if (buflen < (TPTRSZ + TEXTSZ)) {
+			*sizep = where - start;
+			return (ENOMEM);
+		}
+		xpp = xp;
+		if ((error = copyout(&xpp, where, TPTRSZ))
+				|| (error = copyout(xp, where + TPTRSZ, TEXTSZ))) {
+			xunlock(&vm_text_lock);
+			return (error);
+		}
+		buflen -= (TPTRSZ + TEXTSZ);
+		where += (TPTRSZ + TEXTSZ);
+	}
+	*sizep = where - start;
+	xunlock(&vm_text_lock);
+	return (0);
+}

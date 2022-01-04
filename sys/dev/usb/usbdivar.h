@@ -43,18 +43,24 @@
 
 #include <sys/callout.h>
 #include <sys/lock.h>
-
 #include <machine/bus.h>
-DECLARE_USB_DMA_T;
+
+/* From usb_mem.h */
+struct usb_dma_block;
+typedef struct {
+	struct usb_dma_block *udma_block;
+	u_int 				 udma_offs;
+} usb_dma_t;
 
 struct usbd_xfer;
 struct usbd_pipe;
+struct usbd_port;
 
 struct usbd_endpoint {
 	usb_endpoint_descriptor_t 		*edesc;
 	//usbd_endpoint_state				state;
 	int								refcnt;
-	//int								toggle;	/* XXX */
+	int								toggle;
 };
 
 struct usbd_bus_methods {
@@ -76,14 +82,21 @@ struct usbd_pipe_methods {
 	void		     	 			(*done)(usbd_xfer_handle xfer);
 };
 
+
+struct usbd_tt {
+	struct usbd_hub	      	 		*hub;
+};
+
 struct usbd_port {
 	usb_port_status_t				status;
-	u_int16_t						power;	/* mA of current on port */
+	u_int16_t						power;		/* mA of current on port */
 	u_int8_t						portno;
 	u_int8_t						restartcnt;
 #define USBD_RESTART_MAX 			5
+	uint8_t							reattach;
 	struct usbd_device  			*device;
 	struct usbd_device  			*parent;	/* The ports hub */
+	struct usbd_tt	       			*tt;		/* Transaction translator (if any) */
 };
 
 struct usbd_hub {
@@ -93,9 +106,10 @@ struct usbd_hub {
 	struct usbd_port        		ports[1];
 };
 
-struct usb_softc;
-
 /*****/
+/* 0, root, and 1->127 */
+#define USB_ROOTHUB_INDEX	1
+#define USB_TOTAL_DEVICES	(USB_MAX_DEVICES + 1)
 
 struct usbd_bus {
 	/* Filled by HC driver */

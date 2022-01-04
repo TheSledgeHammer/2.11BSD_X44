@@ -46,9 +46,10 @@
 struct usb_dma_block  {
 	bus_dma_tag_t 				tag;
 	bus_dmamap_t 				map;
-    caddr_t 					kaddr;
+	void 						*kaddr;
     bus_dma_segment_t 			segs[1];
     int 						nsegs;
+	int 						nsegs_alloc;
     size_t 						size;
     size_t 						align;
     int 						flags;
@@ -57,12 +58,6 @@ struct usb_dma_block  {
 	LIST_ENTRY(usb_dma_block) 	next;
 };
 typedef struct usb_dma_block 	usb_dma_block_t;
-
-struct usb_dma {
-	usb_dma_block_t 			*block;
-	u_int 						offs;
-};
-typedef struct usb_dma			usb_dma_t;
 
 #define DMAADDR(dma, o) 		((dma)->block->map->dm_segs[0].ds_addr + (dma)->offs + (o))
 #define KERNADDR(dma, o) 		((void *)((char *)((dma)->block->kaddr + (dma)->offs) + (o)))

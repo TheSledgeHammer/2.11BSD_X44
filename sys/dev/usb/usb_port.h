@@ -42,6 +42,8 @@
 #ifndef _USB_PORT_H
 #define _USB_PORT_H
 
+#include <sys/callout.h>
+
 #define USB_USE_SOFTINTR
 
 #ifdef USB_DEBUG

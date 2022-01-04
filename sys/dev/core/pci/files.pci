@@ -35,9 +35,9 @@ attach	puc at pci
 file	dev/core/pci/puc.c		puc
 file	dev/core/pci/pucdata.c		puc
 
-attach	com at puc with com_puc
-file	dev/core/pci/com_puc.c		com_puc
-file	dev/core/pci/cyber.c		com_puc
+#attach	com at puc with com_puc
+#file	dev/core/pci/com_puc.c		com_puc
+#file	dev/core/pci/cyber.c		com_puc
 
 #attach	lpt at puc with lpt_puc
 #file	dev/core/pci/lpt_puc.c		lpt_puc & !ppbus
@@ -47,15 +47,15 @@ file	dev/core/pci/puccn.c		puccn
 
 # PCI USB controllers
 # UHCI USB controller
-attach	uhci at pci with uhci_pci
-file	dev/core/pci/uhci_pci.c		uhci_pci
+#attach	uhci at pci with uhci_pci
+#file	dev/core/pci/uhci_pci.c		uhci_pci
 
 # OHCI USB controller
-attach	ohci at pci with ohci_pci
-file	dev/core/pci/ohci_pci.c		ohci_pci
+#attach	ohci at pci with ohci_pci
+#file	dev/core/pci/ohci_pci.c		ohci_pci
 
 # EHCI USB controller
-attach	ehci at pci with ehci_pci
-file	dev/core/pci/ehci_pci.c		ehci_pci
+#attach	ehci at pci with ehci_pci
+#file	dev/core/pci/ehci_pci.c		ehci_pci
 
-file	dev/core/pci/usb_pci.c		ehci_pci | ehci_cardbus
+#file	dev/core/pci/usb_pci.c		ehci_pci | ehci_cardbus

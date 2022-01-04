@@ -366,11 +366,9 @@ bwrite(bp)
 
 
 int
-vn_bwrite(v)
-	void *v;
+vn_bwrite(ap)
+	struct vop_bwrite_args *ap;
 {
-	struct vop_bwrite_args *ap = v;
-
 	return (bwrite(ap->a_bp));
 }
 
