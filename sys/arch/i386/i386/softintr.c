@@ -37,8 +37,8 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <include/pic.h>
-#include <include/intr.h>
+#include <machine/pic.h>
+#include <machine/intr.h>
 
 #include <vm/include/vm_extern.h>
 
