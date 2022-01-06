@@ -107,6 +107,33 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 
+#include "mca.h"
+#if NMCA > 0
+#include <machine/mca_machdep.h>	/* for MCA_system */
+#endif
+
+#include "pcppi.h"
+#if (NPCPPI > 0)
+#include <dev/audio/speaker/pcppivar.h>
+
+#ifdef CLOCKDEBUG
+int clock_debug = 0;
+#define DPRINTF(arg) if (clock_debug) printf arg
+#else
+#define DPRINTF(arg)
+#endif
+
+int sysbeepmatch(struct device *, struct cfdata *, void *);
+void sysbeepattach(struct device *, struct device *, void *);
+
+CFDRIVER_DECL(NULL, sysbeep, &sysbeep_cops, DV_DULL, sizeof(struct device));
+CFOPS_DECL(sysbeep, sysbeepmatch, sysbeepattach, NULL, NULL);
+
+static int 			ppi_attached;
+static pcppi_tag_t 	ppicookie;
+static int 			beeping;
+#endif /* PCPPI */
+
 void		findcpuspeed (void);
 int			clockintr (void *);
 int			gettick (void);
@@ -343,7 +370,27 @@ delay(n)
 	}
 }
 
-static int beeping;
+#if (NPCPPI > 0)
+int
+sysbeepmatch(parent, match, aux)
+	struct device *parent;
+	struct cfdata *match;
+	void *aux;
+{
+	return (!ppi_attached);
+}
+
+void
+sysbeepattach(parent, self, aux)
+	struct device *parent, *self;
+	void *aux;
+{
+	printf("\n");
+
+	ppicookie = ((struct pcppi_attach_args *)aux)->pa_cookie;
+	ppi_attached = 1;
+}
+#endif
 
 void
 sysbeepstop(arg)
@@ -409,7 +456,7 @@ findcpuspeed()
 }
 
 void
-cpu_initclocks()
+i8254_initclocks()
 {
 
 	/*

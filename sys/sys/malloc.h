@@ -36,6 +36,8 @@
 #ifndef _SYS_MALLOC_H_
 #define	_SYS_MALLOC_H_
 
+#include <sys/queue.h>
+
 #ifndef KMEMSTATS
 #define KMEMSTATS
 #endif
@@ -251,6 +253,47 @@ struct kmembuckets {
 	long				kb_couldfree;	/* over high water mark and could free */
 };
 
+/* Per-Slab Metadata */
+struct kmemmeta {
+	int                 		ksm_bslots;     /* bucket slots available */
+	int							ksm_aslots;		/* bucket slots to be allocated */
+	int                 		ksm_fslots;     /* bucket slots free */
+	u_long 						ksm_bsize; 		/* bucket size */
+	u_long 						ksm_bindx;	 	/* bucket index */
+	u_long 						ksm_min;		/* bucket minimum boundary */
+	u_long 						ksm_max;		/* bucket maximum boundary */
+};
+
+/* A Slab for each set of buckets */
+struct kmemslabs {
+	CIRCLEQ_ENTRY(kmemslabs)     ksl_list;
+    struct kmembuckets			*ksl_bucket;	/* slab kmembucket */
+    struct kmemmeta             ksl_meta;       /* slab metadata */
+
+    u_long                      ksl_size;		/* slab size */
+    int							ksl_mtype;      /* malloc type */
+    int                         ksl_stype;      /* slab type: see below */
+
+    int							ksl_flags;		/* slab flags */
+    int                         ksl_refcount;
+    int                         ksl_usecount;   /* usage counter for slab caching */
+};
+
+/* Slab Cache */
+struct kmemslabs_cache {
+	CIRCLEQ_HEAD(, kmemslabs) 	ksc_head;
+	struct kmemslabs			ksc_link;
+};
+
+/* slab flags */
+#define SLAB_FULL               0x01        	/* slab full */
+#define SLAB_PARTIAL            0x02        	/* slab partially full */
+#define SLAB_EMPTY              0x04        	/* slab empty */
+
+/* slab object types */
+#define SLAB_SMALL              0x08        	/* slab contains small objects */
+#define SLAB_LARGE              0x16        	/* slab contains large objects */
+
 #ifdef KERNEL
 #define BUCKETSIZE(indx)	(powertwo(indx))
 #define	MINALLOCSIZE		(1 << MINBUCKET)
@@ -291,6 +334,15 @@ struct kmembuckets {
 #define btokmemx(addr)	(((char)(addr) - kmembase) / NBPG)
 #define btokup(addr)	(&kmemusage[((char)(addr) - kmembase) >> CLSHIFT])
 
+/* slab object macros */
+#define SMALL_OBJECT(s)        	(BUCKETINDX((s)) < 10)
+#define LARGE_OBJECT(s)        	(BUCKETINDX((s)) >= 10)
+
+/* slot macros */
+#define BUCKET_SLOTS(bsize)     ((bsize)/BUCKETINDX(bsize))       				/* Number of slots in a bucket */
+#define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size)/BUCKETINDX(size))			/* Number slots taken by space to be allocated */
+#define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
+
 #if defined(KMEMSTATS) || defined(DIAGNOSTIC)
 #define	MALLOC(space, cast, size, type, flags) 						\
 	(space) = (cast)malloc((u_long)(size), type, flags)
@@ -298,7 +350,7 @@ struct kmembuckets {
 
 #else /* do not collect statistics */
 #define	MALLOC(space, cast, size, type, flags) { 					\
-	register struct kmembuckets *kbp = &bucket[BUCKETINDX(size)]; 	\
+	register struct kmembuckets *kbp = &slab[BUCKETINDX(size)].ksl_bucket; 	\
 	long s = splimp(); 												\
 	if (kbp->kb_next == NULL) { 									\
 		(space) = (cast)malloc((u_long)(size), type, flags); 		\
@@ -316,7 +368,7 @@ struct kmembuckets {
 	if (1 << kup->ku_indx > MAXALLOCSAVE) { 						\
 		free((caddr_t)(addr), type); 								\
 	} else { 														\
-		kbp = &bucket[kup->ku_indx]; 								\
+		kbp = &slab[kup->ku_indx].ksl_bucket;; 						\
 		if (kbp->kb_next == NULL) 									\
 			kbp->kb_next = (caddr_t)(addr); 						\
 		else 														\
@@ -328,12 +380,15 @@ struct kmembuckets {
 }
 #endif /* do not collect statistics */
 
-extern struct kmembuckets bucket[];
-extern struct kmemusage *kmemusage;
-extern char *kmembase;
+extern struct kmemslabs_cache   *slabCache;
+extern struct kmemslabs			slab[];
+extern struct kmemusage 		*kmemusage;
+extern char 					*kmembase;
+extern int			        	kmemslab_count;    /* number of items in slablist */
 
-extern void *malloc (unsigned long size, int type, int flags);
-extern void free (void *addr, int type);
-extern void *realloc (void *newaddr, unsigned long newsize, int type, int flags);
+extern void *malloc(unsigned long, int, int);
+extern void free(void *, int);
+extern void *realloc(void *, unsigned long, int, int);
 #endif /* KERNEL */
+
 #endif /* !_SYS_MALLOC_H_ */

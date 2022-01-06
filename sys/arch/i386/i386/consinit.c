@@ -68,7 +68,7 @@
 #include <dev/core/ic/comvar.h>
 #endif
 
-#include "ukbd.h"
+//#include "ukbd.h"
 #if (NUKBD > 0)
 #include <dev/usb/ukbdvar.h>
 #endif

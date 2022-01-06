@@ -84,16 +84,7 @@
 #define _I386_ISA_MACHDEP_H_
 
 #include <sys/queue.h>
-
 #include <machine/bus.h>
-
-/*
- * XXX THIS FILE IS A MESS.  copyright: berkeley's probably.
- * contents from isavar.h and isareg.h, mostly the latter.
- * perhaps charles's?
- *
- * copyright from berkeley's isa.h which is now dev/isa/isareg.h.
- */
 
 /*
  * Types provided to machine-independent ISA code.
@@ -110,8 +101,6 @@ void	isa_attach_hook (struct device *, struct device *, struct isabus_attach_arg
 int		isa_intr_alloc (isa_chipset_tag_t, int, int, int *);
 void	*isa_intr_establish (isa_chipset_tag_t ic, int irq, int type, int level, int (*ih_fun)(void *), void *ih_arg);
 void	isa_intr_disestablish (isa_chipset_tag_t ic, void *handler);
-int		isa_mem_alloc (bus_space_tag_t, bus_size_t, bus_size_t, bus_addr_t, int, bus_addr_t *, bus_space_handle_t *);
-void	isa_mem_free (bus_space_tag_t, bus_space_handle_t, bus_size_t);
 
 /*
  * ALL OF THE FOLLOWING ARE MACHINE-DEPENDENT, AND SHOULD NOT BE USED

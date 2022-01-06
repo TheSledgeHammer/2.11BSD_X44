@@ -228,4 +228,25 @@
 #define	FSHIFT	11		/* bits to right of fixed binary point */
 #define FSCALE	(1<<FSHIFT)
 
+#ifdef _KERNEL
+/*
+ * macro to convert from milliseconds to hz without integer overflow
+ * Default version using only 32bits arithmetics.
+ * 64bit port can define 64bit version in their <machine/param.h>
+ * 0x20000 is safe for hz < 20000
+ */
+#ifndef mstohz
+# ifdef _LP64
+#  define mstohz(ms) ((unsigned int)((ms + 0ul) * hz / 1000ul))
+# else
+static __inline unsigned int
+mstohz(unsigned int ms)
+{
+	return __predict_false(ms >= 0x20000u) ?
+	    (ms / 1000u) * hz : (ms * hz) / 1000u;
+}
+# endif
+#endif
+#endif /* _KERNEL */
+
 #endif /* _SYS_PARAM_H_ */

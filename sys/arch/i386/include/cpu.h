@@ -47,6 +47,7 @@
 #include <machine/frame.h>
 #include <machine/segments.h>
 #include <machine/cpuinfo.h>
+#include <machine/tss.h>
 
 struct pmap;
 /*
@@ -97,52 +98,60 @@ extern void	cpu_need_proftick(struct proc *p);
 #define	want_resched(p)				((p)->p_md.md_want_resched = 1) /* resched() was called */
 
 #ifdef _KERNEL
+
+/*
+ * We need a machine-independent name for this.
+ */
+extern void (*delay_func)(int);
+extern void (*initclocks_func)(void);
+struct timeval;
+extern void (*microtime_func)(struct timeval *);
+
+#define	DELAY(x)			(*delay_func)(x)
+#define delay(x)			(*delay_func)(x)
+#define microtime(tv)		(*microtime_func)(tv)
+#define cpu_initclocks()	(*initclocks_func)(void)
+
 extern char		btext[];
 extern char		etext[];
 
 /* machdep.c */
 void	cpu_halt(void);
+void	cpu_reset(void);
 
 /* locore.s */
 struct 	pcb;
-void	savectx (struct pcb *);
+void	savectx(struct pcb *);
 
 /* clock.c */
-
 extern u_int tsc_freq;
-
 void	startrtclock(void);
-int		clockintr(void *);
+void	i8254_initclocks(void);
+void	i8254_delay(int);
 int		gettick(void);
-void	delay(int);
-void	sysbeepstop(void);
-int		sysbeep(int, int);
-void	findcpuspeed(void);
-void	cpu_initclocks(void);
-void	rtcinit(void);
-int		rtcget(u_int *);
-void	rtcput(u_int *);
-int 	yeartoday (int);
-int		bcdtobin(int);
-int		bintobcd(int);
 void 	inittodr(time_t);
 void	resettodr(void);
 void	setstatclockrate(int);
 
 /* autoconf.c */
-void	configure (void);
+void	configure(void);
 
 /* vm_machdep.c */
-int		cpu_fork (struct proc *, struct proc *);
+int		cpu_fork(struct proc *, struct proc *);
 
 #ifdef USER_LDT
 /* sys_machdep.h */
-int		i386_get_ldt (struct proc *, char *, register_t *);
-int		i386_set_ldt (struct proc *, char *, register_t *);
+int		i386_get_ldt(struct proc *, char *, register_t *);
+int		i386_set_ldt(struct proc *, char *, register_t *);
 #endif
 
 /* isa_machdep.c */
-int		isa_nmi (void);
+int		isa_nmi(void);
+
+#ifdef MATH_EMULATE
+/* math_emulate.c */
+int		math_emulate(struct trapframe *);
+#endif
 #endif /* _KERNEL */
 
 /*

@@ -43,6 +43,14 @@
  * Machine dependent constants for Intel 386.
  */
 
+#ifdef _KERNEL
+#ifdef _LOCORE
+#include <machine/psl.h>
+#else
+#include <machine/cpu.h>
+#endif
+#endif
+
 #ifndef MACHINE
 #define MACHINE			"i386"
 #endif
@@ -200,10 +208,4 @@
 #define i386_dtob(x)		((unsigned)(x) << PDRSHIFT)
 #define i386_btop(x)		((unsigned)(x) >> PGSHIFT)
 #define i386_ptob(x)		((unsigned)(x) << PGSHIFT)
-
-#ifndef KERNEL
-/* DELAY is in locore.S for the kernel */
-#define	DELAY(n)			{ register int N = (n); while (--N > 0); }
-#endif
-
 #endif /* _I386_PARAM_H_ */

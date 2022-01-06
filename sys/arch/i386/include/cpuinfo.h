@@ -116,11 +116,6 @@ extern struct cpu_ops 		cpu_ops;
 #define	CPUF_PAUSE			0x4000		/* CPU is paused in DDB */
 #define	CPUF_GO				0x8000		/* CPU should start running */
 
-extern void (*delay_func)(int);
-extern void (*initclock_func)(void);
-
-struct cpu_info;
-
 #ifndef CPU_INFO_ITERATOR
 #define	CPU_INFO_ITERATOR			int
 #define	CPU_INFO_FOREACH(cii, ci)	\
