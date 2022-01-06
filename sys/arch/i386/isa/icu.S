@@ -142,10 +142,12 @@ IDTVEC(doreti)
 IDTVEC(softserial)
 		movl	_C_LABEL(imask) + IPL_SOFTSERIAL * 4,%eax
 		movl	%eax,_C_LABEL(cpl)
+/*
 #include "com.h"
 #if NCOM > 0
 		call	_C_LABEL(comsoft)
 #endif
+*/
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		%esi
 

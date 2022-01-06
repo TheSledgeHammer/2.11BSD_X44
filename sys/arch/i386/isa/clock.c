@@ -107,11 +107,6 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 
-#include "mca.h"
-#if NMCA > 0
-#include <machine/mca_machdep.h>	/* for MCA_system */
-#endif
-
 #include "pcppi.h"
 #if (NPCPPI > 0)
 #include <dev/audio/speaker/pcppivar.h>

@@ -208,7 +208,7 @@ int 					cfhint_count; 				/* hint count */
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search(cfmatch_t, struct device *, void *);
 struct cfdata 	*config_rootsearch(cfmatch_t, char *, void *);
-int 			config_found(struct device *, void *, cfprint_t);
+struct device 	*config_found(struct device *, void *, cfprint_t);
 struct device 	*config_found_sm(struct device *, void *, cfprint_t, cfmatch_t);
 int 			config_rootfound(char *, void *);
 void 			config_attach(struct device *, struct cfdata *, void *, cfprint_t);
@@ -224,18 +224,18 @@ int     		config_hint_disabled(struct device *);
 void 			evcnt_attach(struct device *, const char *, struct evcnt *);
 
 /* Access functions for device resources. */
-int				resource_int_value(const char *name, int unit, const char *resname, int *result);
-int				resource_long_value(const char *name, int unit, const char *resname, long *result);
-int				resource_string_value(const char *name, int unit, const char *resname, const char **result);
-int     		resource_enabled(const char *name, int unit);
-int     		resource_disabled(const char *name, int unit);
-int				resource_query_string(int i, const char *resname, const char *value);
-char			*resource_query_name(int i);
-int				resource_query_unit(int i);
-int				resource_locate(int i, const char *resname);
-int				resource_set_int(const char *name, int unit, const char *resname, int value);
-int				resource_set_long(const char *name, int unit, const char *resname, long value);
-int				resource_set_string(const char *name, int unit, const char *resname, const char *value);
+int				resource_int_value(const char *, int, const char *, int *);
+int				resource_long_value(const char *, int, const char *, long *);
+int				resource_string_value(const char *, int, const char *, const char **);
+int     		resource_enabled(const char *, int);
+int     		resource_disabled(const char *, int);
+int				resource_query_string(int, const char *, const char *);
+char			*resource_query_name(int);
+int				resource_query_unit(int);
+int				resource_locate(int, const char *);
+int				resource_set_int(const char *, int, const char *, int);
+int				resource_set_long(const char *, int, const char *, long);
+int				resource_set_string(const char *, int, const char *, const char *);
 int				resource_count(void);
 void			resource_init(void);
 

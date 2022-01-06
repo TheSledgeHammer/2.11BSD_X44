@@ -230,6 +230,7 @@ static char *msgs[3] = { "", " not configured\n", " unsupported\n" };
  * driver function) and attach it, and return true.  If the device was
  * not configured, call the given `print' function and return 0.
  */
+/*
 int
 config_found(parent, aux, print)
 	struct device *parent;
@@ -244,6 +245,16 @@ config_found(parent, aux, print)
 	}
 	printf(msgs[(*print)(aux, parent->dv_xname)]);
 	return (0);
+}
+*/
+
+struct device *
+config_found(parent, aux, print)
+	struct device *parent;
+	void *aux;
+	cfprint_t print;
+{
+	return (config_found_sm(parent, aux, print, NULL));
 }
 
 struct device *
