@@ -368,7 +368,7 @@ struct kmemslabs_cache {
 	if (1 << kup->ku_indx > MAXALLOCSAVE) { 						\
 		free((caddr_t)(addr), type); 								\
 	} else { 														\
-		kbp = &slab[kup->ku_indx].ksl_bucket;; 						\
+		kbp = &slab[kup->ku_indx].ksl_bucket; 						\
 		if (kbp->kb_next == NULL) 									\
 			kbp->kb_next = (caddr_t)(addr); 						\
 		else 														\

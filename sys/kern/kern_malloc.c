@@ -58,7 +58,7 @@
 #include <vm/include/vm.h>
 
 struct kmemslabs_cache  *slabCache;
-struct kmemslabs		slab[MINBUCKET + 16];
+struct kmemslabs		slabbucket[MINBUCKET + 16];
 struct kmemstats 		kmemstats[M_LAST];
 struct kmemusage 		*kmemusage;
 int			        	kmemslab_count;
@@ -157,7 +157,7 @@ slab_get_by_size(cache, size, mtype)
 {
     register struct kmemslabs *slab;
 
-    slab = &slab[BUCKETINDX(size)];
+    slab = &slabbucket[BUCKETINDX(size)];
     simple_lock(&malloc_slock);
 	for(slab = slab_object_by_size(cache, size); slab != NULL; slab = CIRCLEQ_NEXT(slab, ksl_list)) {
 		if(slab->ksl_size == size && slab->ksl_mtype == mtype) {
@@ -172,7 +172,7 @@ slab_get_by_size(cache, size, mtype)
 static struct kmemslabs *
 slab_object_by_index(cache, index)
 	struct kmemslabs_cache 	*cache;
-    long    		index;
+    u_long    		index;
 {
     register struct kmemslabs *slab;
     if(index >= 10) {
@@ -191,7 +191,7 @@ slab_get_by_index(cache, index, mtype)
 {
     register struct kmemslabs *slab;
 
-    slab = &slab[index];
+    slab = &slabbucket[index];
     simple_lock(&malloc_slock);
 	for(slab = slab_object_by_index(cache, index); slab != NULL; slab = CIRCLEQ_NEXT(slab, ksl_list)) {
 		if(slab->ksl_size == BUCKETSIZE(index) && slab->ksl_mtype == mtype) {
@@ -222,7 +222,7 @@ slab_create(cache, size, mtype)
     simple_lock(&malloc_slock);
 	if (indx < 10) {
 		slab->ksl_stype = SLAB_SMALL;
-		  CIRCLEQ_INSERT_HEAD(cache->ksc_head, slab, ksl_list);
+		CIRCLEQ_INSERT_HEAD(cache->ksc_head, slab, ksl_list);
 	} else {
 		slab->ksl_stype = SLAB_LARGE;
 		CIRCLEQ_INSERT_TAIL(cache->ksc_head, slab, ksl_list);
@@ -241,7 +241,7 @@ slab_destroy(cache, size)
 {
 	struct kmemslabs *slab;
 
-	slab = &slab[BUCKETINDX(size)];
+	slab = &slabbucket[BUCKETINDX(size)];
 	simple_lock(&malloc_slock);
 	CIRCLEQ_REMOVE(cache->ksc_head, slab, ksl_list);
 	simple_unlock(&malloc_slock);
@@ -277,7 +277,7 @@ kmembucket_search(cache, meta, size, mtype)
 	long indx, bsize;
 	int bslots, aslots, fslots;
 
-	slab = slab_get(cache, size, mtype);
+	slab = slab_get_by_size(cache, size, mtype);
 
 	indx = BUCKETINDX(size);
 	bsize = BUCKETSIZE(indx);
@@ -703,11 +703,11 @@ kmeminit()
 #ifdef KMEMSTATS
 		for(indx = 0; indx < MINBUCKET + 16; indx++) {
 			if (1 << indx >= CLBYTES) {
-				slab[indx].ksl_bucket->kb_elmpercl = 1;
+				slabbucket[indx].ksl_bucket->kb_elmpercl = 1;
 			} else {
-				slab[indx].ksl_bucket->kb_elmpercl = CLBYTES / (1 << indx);
+				slabbucket[indx].ksl_bucket->kb_elmpercl = CLBYTES / (1 << indx);
 			}
-			slab[indx].ksl_bucket->kb_highwat = 5 * slab[indx].ksl_bucket->kb_elmpercl;
+			slabbucket[indx].ksl_bucket->kb_highwat = 5 * slabbucket[indx].ksl_bucket->kb_elmpercl;
 		}
 		for (indx = 0; indx < M_LAST; indx++) {
 			kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
