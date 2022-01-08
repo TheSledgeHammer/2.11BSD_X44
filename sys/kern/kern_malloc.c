@@ -216,7 +216,7 @@ slab_create(cache, size, mtype)
 	slab->ksl_size = size;
 	slab->ksl_mtype = mtype;
 
-    slab = &slab[indx];
+    slab = &slabbucket[indx];
     cache->ksc_link = slab;
 
     simple_lock(&malloc_slock);
