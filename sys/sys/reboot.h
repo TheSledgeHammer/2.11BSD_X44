@@ -48,20 +48,20 @@
  * number", each mask applies to the shifted value.
  * Format:
  *
- * 	FreeBSD:
+ * 	Slices:
  *	 (4)   (8)   (4)  (8)     (8)
  *	--------------------------------
  *	|MA | SLICE | UN| PART  | TYPE |
  *	--------------------------------
  *
- *	NetBSD:
+ *	Traditional:
  *	 (4) (4) (4) (4)  (8)     (8)
  *	--------------------------------
  *	|MA | AD| CT| UN| PART  | TYPE |
  *	--------------------------------
  */
 
-/* NetBSD Adaptor & Controller */
+/* Traditional: Adaptor & Controller */
 #define	B_ADAPTORSHIFT		24
 #define	B_ADAPTORMASK		0x0f
 #define	B_ADAPTOR(val)		(((val) >> B_ADAPTORSHIFT) & B_ADAPTORMASK)
@@ -69,11 +69,12 @@
 #define B_CONTROLLERMASK	0xf
 #define	B_CONTROLLER(val)	(((val)>>B_CONTROLLERSHIFT) & B_CONTROLLERMASK)
 
-/* FreeBSD Slices */
+/* Slices: */
 #define B_SLICESHIFT		20
 #define B_SLICEMASK			0xff
 #define B_SLICE(val)		(((val)>>B_SLICESHIFT) & B_SLICEMASK)
 
+/* Common: */
 #define B_UNITSHIFT			16
 #define B_UNITMASK			0xf
 #define	B_UNIT(val)			(((val) >> B_UNITSHIFT) & B_UNITMASK)
@@ -93,7 +94,7 @@
 	((controller) << B_CONTROLLERSHIFT) | ((unit) << B_UNITSHIFT) | \
 	((partition) << B_PARTITIONSHIFT) | B_DEVMAGIC)
 
-/* New FreeBSD's boot style (with slices) */
+/* Slices boot style (with slices) */
 #define	MAKEBOOTDEV2(type, slice, unit, partition) 					\
 	(((type) << B_TYPESHIFT) | ((slice) << B_SLICESHIFT) | 			\
 	((unit) << B_UNITSHIFT) | ((partition) << B_PARTITIONSHIFT) | 	\

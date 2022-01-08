@@ -1,3 +1,4 @@
+/*	$OpenBSD: uuid.h,v 1.3 2014/08/31 09:36:39 miod Exp $	*/
 /*	$NetBSD: uuid.h,v 1.5 2008/11/18 14:01:03 joerg Exp $	*/
 
 /*
@@ -54,6 +55,16 @@ struct uuid {
 };
 
 #ifdef _KERNEL
+
+#define	UUID_NODE_LEN	_UUID_NODE_LEN
+#define	UUID_BUF_LEN	_UUID_BUF_LEN
+
+int snprintf_uuid(char *, size_t, struct uuid *);
+int printf_uuid(struct uuid *);
+void be_uuid_dec(void const *, struct uuid *);
+void be_uuid_enc(void *, struct uuid const *);
+void le_uuid_dec(void const *, struct uuid *);
+void le_uuid_enc(void *, struct uuid const *);
 
 #else	/* _KERNEL */
 typedef struct uuid uuid_t;

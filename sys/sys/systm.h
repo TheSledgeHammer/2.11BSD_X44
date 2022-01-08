@@ -89,68 +89,63 @@ extern void startup();
 struct clockframe;
 struct timeval;
 
-int 	nodev (void);
-int 	nulldev (void);
-int 	nullop (void);
-int 	enodev (void);
-int 	enoioctl (void);
-int 	enxio (void);
-int 	eopnotsupp (void);
-int 	einval (void);
-int 	nonet (void);
+int 	nodev(void);
+int 	nulldev(void);
+int 	nullop(void);
+int 	enodev(void);
+int 	enoioctl(void);
+int 	enxio(void);
+int 	eopnotsupp(void);
+int 	einval(void);
+int 	nonet(void);
 
-void 	*hashinit (int, int, u_long *);
+void 	*hashinit(int, int, u_long *);
+void 	*hashfree(void *, int, int, u_long *);
 
-#ifdef __GNUC__
-volatile void panic (const char *, ...);
-#else
-void 	panic (const char *, ...);
-#endif
-void	tablefull (const char *);
-void	addlog (const char *, ...);
-void	log (int, const char *, ...);
+void 	panic(const char *, ...);
+void	tablefull(const char *);
+void	addlog(const char *, ...);
+void	log(int, const char *, ...);
 
 /* subr_prf.c */
-void	printf (const char *, ...);
-int		sprintf (char *buf, const char *, ...);
-int		snprintf (char *, size_t, const char *, ...);
-void	vprintf (const char *, _BSD_VA_LIST_);
-int		vsprintf (char *, const char *, _BSD_VA_LIST_);
-int		vsnprintf (char *, size_t, const char *, _BSD_VA_LIST_);
+void	printf(const char *, ...);
+int		sprintf(char *buf, const char *, ...);
+int		snprintf(char *, size_t, const char *, ...);
+void	vprintf(const char *, _BSD_VA_LIST_);
+int		vsprintf(char *, const char *, _BSD_VA_LIST_);
+int		vsnprintf(char *, size_t, const char *, _BSD_VA_LIST_);
 
-void	ttyprintf (struct tty *, const char *, ...);
-void	uprintf (const char *, ...);
+void	ttyprintf(struct tty *, const char *, ...);
+void	uprintf(const char *, ...);
 char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
-void 	bcopy (const void *, void *, u_int);
-void 	ovbcopy (const void *, void *, u_int);
-void 	bzero (void *, u_int);
+void 	bcopy(const void *, void *, u_int);
+void 	ovbcopy(const void *, void *, u_int);
+void 	bzero(void *, u_int);
 
-int		copystr (void *, void *, u_int, u_int *);
-int		copyinstr (void *, void *, u_int, u_int *);
-int		copyoutstr (void *, void *, u_int, u_int *);
-int		copyin (void *, void *, u_int);
-int		copyout (void *, void *, u_int);
+int		copystr(void *, void *, u_int, u_int *);
+int		copyinstr(void *, void *, u_int, u_int *);
+int		copyoutstr(void *, void *, u_int, u_int *);
+int		copyin(void *, void *, u_int);
+int		copyout(void *, void *, u_int);
 
-int		fubyte (void *);
-#ifdef notdef
-int		fuibyte (void *);
-#endif
-int		subyte (void *, int);
-int		suibyte (void *, int);
-int		fuword (void *);
-int		fuiword (void *);
-int		suword (void *, int);
-int		suiword (void *, int);
+int		fubyte(void *);
+int		fuibyte(void *);
+int		fuword(void *);
+int		fuiword(void *);
+int		subyte(void *, int);
+int		suibyte(void *, int);
+int		suword(void *, int);
+int		suiword(void *, int);
 
-int		hzto (struct timeval *tv);
-void 	timeout (void (*func)(void *), void *, int);
-void 	untimeout (void (*func)(void *), void *);
-void	realitexpire (void *);
+int		hzto(struct timeval *tv);
+void 	timeout(void (*func)(void *), void *, int);
+void 	untimeout(void (*func)(void *), void *);
+void	realitexpire(void *);
 
-void 	hardclock (struct clockframe *, caddr_t);
-void 	softclock (struct clockframe *, caddr_t);
-void	initclocks (void);
+void 	hardclock(struct clockframe *, caddr_t);
+void 	softclock(struct clockframe *, caddr_t);
+void	initclocks(void);
 
 /* kern_environment.c / kenv.h */
 char	*kern_getenv(const char *);
@@ -171,7 +166,9 @@ int		getenv_array(const char *, void *, int, int *, int, bool);
 #define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
 #define	GETENV_SIGNED	true	/* negative numbers allowed */
 
+#ifdef _KERNEL
 #include <lib/libkern/libkern.h>
+#endif
 
 /* casts to keep lint happy */
 #ifdef lint

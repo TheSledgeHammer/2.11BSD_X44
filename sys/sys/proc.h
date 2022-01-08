@@ -15,6 +15,7 @@
 #include <sys/callout.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <sys/lock.h>
 
 /*
  * One structure allocated per active
@@ -298,8 +299,9 @@ struct proc getrq (struct proc *);
 void		swtch ();
 void		sleep (void *, int);
 int			tsleep (void *, int, char *, int);
+int 		ltsleep(void *, int, char *, int, __volatile struct lock_object *);
 void		unsleep (struct proc *);
-void		wakeup (void *);
+void		wakeup (const void *);
 void		reschedule (struct proc *);
 
 void		procinit (void);
@@ -311,9 +313,6 @@ int			enterpgrp (struct proc *, pid_t, int);
 void		fixjobc (struct proc *, struct pgrp *, int);
 int			inferior (struct proc *);
 
-/* Compatibility with old, non-interlocked tsleep call */
-#define	tsleep(chan, pri, wmesg, timo)					\
-		ltsleep(chan, pri, wmesg, timo, NULL)
-
 #endif 	/* KERNEL */
+
 #endif	/* !_SYS_PROC_H_ */

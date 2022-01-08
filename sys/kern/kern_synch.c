@@ -177,48 +177,48 @@ tsleep(ident, priority, wmesg, timo)
 #endif
 	s = splhigh();
 	if (panicstr) {
-/*
- * After a panic just give interrupts a chance then just return.  Don't
- * run any other procs (or panic again below) in case this is the idle
- * process and already asleep.  The splnet should be spl0 if the network
- * was being used but for now avoid network interrupts that might cause
- * another panic.
-*/
+		/*
+		 * After a panic just give interrupts a chance then just return.  Don't
+		 * run any other procs (or panic again below) in case this is the idle
+		 * process and already asleep.  The splnet should be spl0 if the network
+		 * was being used but for now avoid network interrupts that might cause
+		 * another panic.
+		 */
 		(void) _splnet();
 		noop();
 		splx(s);
 		return (0);
 	}
 #ifdef	DIAGNOSTIC
-	if	(ident == NULL || p->p_stat != SRUN)
+	if (ident == NULL || p->p_stat != SRUN)
 		panic("tsleep");
 #endif
-	p->p_wchan = (caddr_t)ident;
+	p->p_wchan = (caddr_t) ident;
 	p->p_wmesg = wmesg;
 	p->p_slptime = 0;
 	p->p_pri = priority & PRIMASK;
 	qp = &slpque[HASH(ident)];
 	p->p_link = *qp;
-	*qp =p;
-	if	(timo)
-		timeout(endtsleep, (caddr_t)p, timo);
-/*
- * We put outselves on the sleep queue and start the timeout before calling
- * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
- * occur while we were stopped.  A SIGCONT would cause us to be marked SSLEEP
- * without resuming us thus we must be ready for sleep when CURSIG is called.
- * If the wakeup happens while we're stopped p->p_wchan will be 0 upon
- * return from CURSIG.
-*/
-	if	(catch)	{
+	*qp = p;
+	if (timo)
+		timeout(endtsleep, (caddr_t) p, timo);
+	/*
+	 * We put outselves on the sleep queue and start the timeout before calling
+	 * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
+	 * occur while we were stopped.  A SIGCONT would cause us to be marked SSLEEP
+	 * without resuming us thus we must be ready for sleep when CURSIG is called.
+	 * If the wakeup happens while we're stopped p->p_wchan will be 0 upon
+	 * return from CURSIG.
+	 */
+	if ( catch) {
 		p->p_flag |= P_SINTR;
-		if	(sig == CURSIG(p)) {
-			if	(p->p_wchan)
+		if (sig == CURSIG(p)) {
+			if (p->p_wchan)
 				unsleep(p);
 			p->p_stat = SRUN;
 			goto resume;
 		}
-		if	(p->p_wchan == 0) {
+		if (p->p_wchan == 0) {
 			catch = 0;
 			goto resume;
 		}
@@ -231,31 +231,42 @@ resume:
 	curpri = p->p_usrpri;
 	splx(s);
 	p->p_flag &= ~P_SINTR;
-	if	(p->p_flag & P_TIMEOUT) {
+	if (p->p_flag & P_TIMEOUT) {
 		p->p_flag &= ~P_TIMEOUT;
-		if	(sig == 0) {
+		if (sig == 0) {
 #ifdef KTRACE
 			if (KTRPOINT(p, KTR_CSW))
 				ktrcsw(p->p_tracep, 0, 0);
 #endif
-			return(EWOULDBLOCK);
+			return (EWOULDBLOCK);
 		}
 	} else if (timo)
-		untimeout(endtsleep, (caddr_t)p);
-	if	(catch && (sig != 0 || (sig = CURSIG(p)))) {
+		untimeout(endtsleep, (caddr_t) p);
+	if ( catch && (sig != 0 || (sig = CURSIG(p)))) {
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_CSW))
 			ktrcsw(p->p_tracep, 0, 0);
 #endif
-		if	(u->u_sigintr & sigmask(sig))
-			return(EINTR);
-		return(ERESTART);
+		if (u->u_sigintr & sigmask(sig))
+			return (EINTR);
+		return (ERESTART);
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
 		ktrcsw(p->p_tracep, 0, 0);
 #endif
-	return(0);
+	return (0);
+}
+
+int
+ltsleep(ident, priority, wmesg, timo, interlock)
+	void 		*ident;
+	int			priority;
+	u_short		timo;
+	const char	*wmesg;
+	__volatile struct lock_object *interlock;
+{
+	return (tsleep(ident, priority, wmesg, timo));
 }
 
 /*

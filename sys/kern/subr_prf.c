@@ -325,12 +325,12 @@ printn(n, b, flags, ttyp)
  * sync the disks as this often leads to recursive panics.
  */
 void
-panic(s)
-	char *s;
+panic(const char *s, ...)
 {
-	int bootopt = RB_AUTOBOOT|RB_DUMP;
+	int bootopt;
 	va_list ap;
 
+	bootopt = RB_AUTOBOOT|RB_DUMP;
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
 	else {

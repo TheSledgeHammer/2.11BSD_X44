@@ -33,6 +33,7 @@
 
 #include <sys/types.h>
 #include <sys/systm.h>
+#include <sys/null.h>
 
 #ifdef _STANDALONE
 #include <lib/libkern/libkern.h>
@@ -44,9 +45,9 @@ __assert(func, file, line, expression)
 	int line;
 {
 	if (func == NULL) {
-		panic("Assertion failed: (%s), file %s, line %d.", expression, file, line);
+		panic("Kernel assertion failed: (%s), file %s, line %d.", expression, file, line);
 	} else {
-		panic("Assertion failed: (%s), function %s, file %s, line %d.", expression, func, file, line);
+		panic("Kernel assertion failed: (%s), function %s, file %s, line %d.", expression, func, file, line);
 	}
 }
 

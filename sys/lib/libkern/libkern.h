@@ -153,7 +153,7 @@ int	 		strncasecmp (const char *, const char *, size_t);
 u_long	 	strtoul (const char *, char **, int);
 void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 
-#define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
+#define __KASSERTSTR  "Kernel assertion failed: (%s), function %s, file %s, line %d."
 
 #ifdef __COVERITY__
 #ifndef DIAGNOSTIC

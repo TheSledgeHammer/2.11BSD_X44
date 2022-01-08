@@ -116,15 +116,13 @@ Please read the following NetBSD guide for more information:
 - Anyone is welcome to contribute.
 - Your code should ideally fit the following guidelines & rules below
 - Licensing: 
-  - 3-Clause BSD license preferable: Unless following the below point.
-    - Exceptions can be made.
-  - Externally Maintained code user libraries should be placed in one of the following:
-  	1) Any licensed code: 		 contrib/"project name"
-  	2) OS Compatability code:  contrib/oscompat/"os name"
+  - The 3-Clause BSD license preferred.
+  - Externally Maintained code for user libraries should be placed in one of the following:
+  	1) Any licensed code: 		contrib/"project name"
+  	2) OS Compatability code:  	contrib/oscompat/"os name"
 - These rules in place to make it pleasant & easier for everyone.
   - It is highly recommended that you adhere to the following Contribution Guidelines & Rules.
   - Failing to follow the Contribution Guidelines & Rules will likely prevent your code from being accepted.
-  Depending on the circumstances.
 
 ### Contribution Guidelines
 
