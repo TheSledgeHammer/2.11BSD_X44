@@ -129,7 +129,7 @@ u_int16_t	bswap16(u_int16_t);
 u_int32_t	bswap32(u_int32_t);
 u_int64_t	bswap64(u_int64_t);
 
-void	 	__assert (const char *, const char *, int, const char *) __attribute__((__noreturn__));
+//void	 	__assert (const char *, const char *, int, const char *) __attribute__((__noreturn__));
 void		kern_assert (const char *, ...);
 u_int32_t 	inet_addr (const char *);
 int	 		locc (int, char *, u_int);
@@ -176,10 +176,10 @@ void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 #else
 #ifdef __STDC__
 #define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert("", __FILE__, __LINE__, #e))
+			    __assert("diagnostic ", __FILE__, __LINE__, #e))
 #else
 #define	assert(e)	(__predict_true((e)) ? (void)0 :		   	 	\
-			    __assert("", __FILE__, __LINE__, "e"))
+			    __assert("diagnostic ", __FILE__, __LINE__, "e"))
 #endif
 #endif
 
@@ -211,10 +211,10 @@ void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 #endif /* lint */
 #else
 #define	KASSERTMSG(e, msg, ...)	(__predict_true((e)) ? (void)0 :	\
-			    __assert(__KASSERTSTR msg, "debugging  ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
+			    __assert(__KASSERTSTR msg, "debugging ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
 
 #define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert(__KASSERTSTR, "debugging  ", #e, __FILE__, __LINE__))
+			    __assert(__KASSERTSTR, "debugging ", #e, __FILE__, __LINE__))
 #endif
 
 
