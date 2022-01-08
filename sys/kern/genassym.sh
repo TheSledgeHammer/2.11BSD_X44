@@ -61,7 +61,7 @@ trap "rm -f /tmp/$$.c /tmp/genassym.$$" 0 1 2 3 15
 
 $awk '
 BEGIN {
-	printf("#ifndef _KERNEL\n#define _KERNEL\n#endif\n");
+	printf("#ifndef _KERNEL\n#define _KERNEL\n#define KERNEL _KERNEL\n#endif\n");
 	printf("#define	offsetof(type, member) ((size_t)(&((type *)0)->member))\n");
 	defining = 0;
 	type = "long";
