@@ -44,11 +44,7 @@ __assert(func, file, line, expression)
 	const char *func, *file, *expression;
 	int line;
 {
-	if (func == NULL) {
-		panic("Kernel assertion failed: (%s), file %s, line %d.", expression, file, line);
-	} else {
-		panic("Kernel assertion failed: (%s), function %s, file %s, line %d.", expression, func, file, line);
-	}
+	panic("Kernel assertion failed: (%s), function %s, file %s, line %d.", expression, func, file, line);
 }
 
 /* coverity[+kill] */
