@@ -29,8 +29,8 @@
 #ifndef UFS_UFML_META_H_
 #define UFS_UFML_META_H_
 
-#include <sys/ufs/ufs/inode.h>
-#include <sys/ufs/mfs/mfsnode.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/mfs/mfsnode.h>
 
 struct ufml_metadata {
 	struct ufml_node	*ufml_node;

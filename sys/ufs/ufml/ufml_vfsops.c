@@ -39,6 +39,7 @@
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -49,7 +50,8 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include "../../ufs/ufml/ufml.h"
+
+#include <ufs/ufml/ufml.h>
 
 /*
  * Mount ufml layer

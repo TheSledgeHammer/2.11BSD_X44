@@ -27,14 +27,14 @@
  */
 
 /* To Be moved into MFS when ready */
-
+#include <sys/cdefs.h>
 #include <sys/user.h>
-#include <sys/ufs/mfs/mfsnode.h>
 
-#include "../../../ufs/ufml/ufml.h"
-#include "../../../ufs/ufml/ufml_extern.h"
-#include "../../../ufs/ufml/ufml_meta.h"
-#include "../../../ufs/ufml/ufml_ops.h"
+#include <ufs/mfs/mfsnode.h>
+#include <ufs/ufml/ufml.h>
+#include <ufs/ufml/ufml_extern.h>
+#include <ufs/ufml/ufml_meta.h>
+#include <ufs/ufml/ufml_ops.h>
 
 /* MFS's UFML-based vector operations */
 int

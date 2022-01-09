@@ -171,7 +171,7 @@
  * is that vnodes arguments must be manualy mapped.
  *
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -184,7 +184,7 @@
 #include <sys/malloc.h>
 #include <sys/buf.h>
 
-#include "../../ufs/ufml/ufml.h"
+#include <ufs/ufml/ufml.h>
 
 /*
  * Basic strategy: as usual, do as little work as possible.

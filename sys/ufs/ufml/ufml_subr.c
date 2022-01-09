@@ -38,6 +38,7 @@
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -49,10 +50,10 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 
-#include "../../ufs/ufml/ufml.h"
-#include "../../ufs/ufml/ufml_extern.h"
-#include "../../ufs/ufml/ufml_meta.h"
-#include "../../ufs/ufml/ufml_ops.h"
+#include <ufs/ufml/ufml.h>
+#include <ufs/ufml/ufml_extern.h>
+#include <ufs/ufml/ufml_meta.h>
+#include <ufs/ufml/ufml_ops.h>
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
 #define	NUFMLNODECACHE 16
@@ -65,8 +66,7 @@
  * alias is removed the lower vnode is vrele'd.
  */
 
-#define	UFML_NHASH(vp) \
-	(&ufml_node_hashtbl[(((u_long)vp)>>LOG2_SIZEVNODE) & ufml_node_hash])
+#define	UFML_NHASH(vp) (&ufml_node_hashtbl[(((u_long)vp)>>LOG2_SIZEVNODE) & ufml_node_hash])
 LIST_HEAD(ufml_node_hashhead, ufml_node) *ufml_node_hashtbl;
 u_long ufml_node_hash;
 

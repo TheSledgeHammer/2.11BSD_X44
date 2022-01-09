@@ -28,13 +28,14 @@
 
 /* To Be moved into LFS when ready */
 
+#include <sys/cdefs.h>
 #include <sys/user.h>
-#include <sys/ufs/ufs/inode.h>
 
-#include "../../../ufs/ufml/ufml.h"
-#include "../../../ufs/ufml/ufml_extern.h"
-#include "../../../ufs/ufml/ufml_meta.h"
-#include "../../../ufs/ufml/ufml_ops.h"
+#include <ufs/ufs/inode.h>
+#include <ufs/ufml/ufml.h>
+#include <ufs/ufml/ufml_extern.h>
+#include <ufs/ufml/ufml_meta.h>
+#include <ufs/ufml/ufml_ops.h>
 
 /* LFS's UFML-based vector operations */
 int

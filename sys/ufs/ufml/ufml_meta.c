@@ -26,8 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../../ufs/ufml/ufml_meta.h"
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -40,9 +39,10 @@
 #include <sys/malloc.h>
 #include <sys/buf.h>
 
-#include "../../ufs/ufml/ufml.h"
-#include "../../ufs/ufml/ufml_extern.h"
-#include "../../ufs/ufml/ufml_ops.h"
+#include <ufs/ufml/ufml.h>
+#include <ufs/ufml/ufml_extern.h>
+#include <ufs/ufml/ufml_meta.h>
+#include <ufs/ufml/ufml_ops.h>
 
 void
 ufml_meta_itimes(vp)
