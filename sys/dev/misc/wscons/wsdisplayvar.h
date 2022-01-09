@@ -113,8 +113,8 @@ struct wsdisplay_char;
  * with these functions, which is passed to them when they are invoked.
  */
 struct wsdisplay_accessops {
-	int		(*ioctl) (void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
-	int		(*mmap) (void *v, off_t off, int prot);
+	int		(*ioctl)(void *, u_long, caddr_t, int, struct proc *);
+	int		(*mmap)(void *, off_t, int);
 	int		(*alloc_screen)(void *, const struct wsscreen_descr *, void **, int *, int *, long *);
 	void	(*free_screen)(void *, void *);
 	int		(*show_screen)(void *, void *, int, void (*) (void *, int, int), void *);

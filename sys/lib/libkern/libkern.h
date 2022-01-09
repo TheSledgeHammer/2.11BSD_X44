@@ -34,6 +34,10 @@
  *	@(#)libkern.h	8.1 (Berkeley) 6/10/93
  * 	$Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
  */
+
+#ifndef _LIB_LIBKERN_LIBKERN_H_
+#define _LIB_LIBKERN_LIBKERN_H_
+
 #include <sys/types.h>
 #include <sys/stddef.h>
 #include <sys/inttypes.h>
@@ -68,16 +72,67 @@ int 	isxdigit(int);
 int 	toupper(int);
 int 	tolower(int);
 
-/* hash Functions */
-uint32_t 	prospector32(uint32_t);
-uint32_t 	lowbias32(uint32_t);
-uint32_t 	lowbias32_r(uint32_t);
-uint32_t 	triple32(uint32_t);
-uint32_t 	triple32_r(uint32_t);
-uint32_t 	hash32(uint32_t);
-uint32_t 	murmurhash32_mix32(uint32_t);
-uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
-uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
+#define __KASSERTSTR  "Kernel assertion failed: (%s), function %s, file %s, line %d."
+
+#ifdef NDEBUG					/* tradition! */
+#define	assert(e)				((void)0)
+#else
+#ifdef __STDC__
+#define	assert(e)				(__predict_true((e)) ? (void)0 :		    \
+		__assert("", __FILE__, __LINE__, #e))
+#else
+#define	assert(e)				(__predict_true((e)) ? (void)0 :		   	\
+		__assert("", __FILE__, __LINE__, "e"))
+#endif
+#endif
+
+#ifndef DIAGNOSTIC
+#define _DIAGASSERT(a)			(void)0
+#ifdef lint
+#define	KASSERTMSG(e, msg, ...)	/* NOTHING */
+#define	KASSERT(e)				/* NOTHING */
+#else /* !lint */
+#define	KASSERTMSG(e, msg, ...)	((void)0)
+#define	KASSERT(e)				((void)0)
+#endif /* !lint */
+#else  /* DIAGNOSTIC */
+#define _DIAGASSERT(a)			assert(a)
+#define	KASSERTMSG(e, msg, ...)	(__predict_true((e)) ? (void)0 :			\
+		kern_assert(__KASSERTSTR msg, "diagnostic ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
+#define	KASSERT(e)				(__predict_true((e)) ? (void)0 :		    \
+		__assert("diagnostic ", __FILE__, __LINE__, #e))
+#endif
+
+#ifndef DEBUG
+#ifdef lint
+#define	KDASSERTMSG(e, msg, ...)/* NOTHING */
+#define	KDASSERT(e)				/* NOTHING */
+#else /* lint */
+#define	KDASSERTMSG(e, msg, ...)((void)0)
+#define	KDASSERT(e)				((void)0)
+#endif /* lint */
+#else
+#define	KASSERTMSG(e, msg, ...)	(__predict_true((e)) ? (void)0 :			\
+		kern_assert(__KASSERTSTR msg, "debugging ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
+#define	KDASSERT(e)				(__predict_true((e)) ? (void)0 :		    \
+		__assert("debugging ", __FILE__, __LINE__, #e))
+#endif
+
+#ifdef __COVERITY__
+#ifndef DIAGNOSTIC
+#define DIAGNOSTIC
+#endif
+#endif
+
+#ifndef	CTASSERT
+#define	CTASSERT(x)				__CTASSERT(x)
+#endif
+#ifndef	CTASSERT_SIGNED
+#define	CTASSERT_SIGNED(x)		__CTASSERT(((typeof(x))-1) < 0)
+#endif
+#ifndef	CTASSERT_UNSIGNED
+#define	CTASSERT_UNSIGNED(x)	__CTASSERT(((typeof(x))-1) >= 0)
+#endif
 
 /* Prototypes for non-quad routines. */
 /* XXX notyet #ifdef _STANDALONE */
@@ -105,7 +160,7 @@ size_t	 	strlen (const char *);
 
 /* Functions for which we always use built-ins. */
 #ifdef __GNUC__
-#define	alloca(s)		__builtin_alloca(s)
+#define	alloca(s)			__builtin_alloca(s)
 #endif
 
 /* These exist in GCC 3.x, but we don't bother. */
@@ -121,7 +176,7 @@ char		*strstr (const char *, const char *);
  */
 int	 		ffs(int);
 #if __GNUC_PREREQ__(2, 95) && (!defined(__vax__) || __GNUC_PREREQ__(4,1))
-#define	ffs(x)	__builtin_ffs(x)
+#define	ffs(x)				__builtin_ffs(x)
 #endif
 int	 		ffsl(long);
 
@@ -129,95 +184,42 @@ u_int16_t	bswap16(u_int16_t);
 u_int32_t	bswap32(u_int32_t);
 u_int64_t	bswap64(u_int64_t);
 
-//void	 	__assert (const char *, const char *, int, const char *) __attribute__((__noreturn__));
-void		kern_assert (const char *, ...);
-u_int32_t 	inet_addr (const char *);
-int	 		locc (int, char *, u_int);
-char		*intoa (u_int32_t);
+void	 	__assert(const char *, const char *, int, const char *) __attribute__((__noreturn__));
+void		kern_assert(const char *, ...);
+u_int32_t 	inet_addr(const char *);
+int	 		locc(int, char *, u_int);
+char		*intoa(u_int32_t);
 #define inet_ntoa(a) intoa((a).s_addr)
-void		*memchr (const void *, int, size_t);
-void		*memmove (void *, const void *, size_t);
-int	 		pmatch (const char *, const char *, const char **);
-u_int32_t 	arc4random (void);
-void	 	arc4randbytes (void *, size_t);
+void		*memchr(const void *, int, size_t);
+void		*memmove(void *, const void *, size_t);
+int	 		pmatch(const char *, const char *, const char **);
+u_int32_t 	arc4random(void);
+void	 	arc4randbytes(void *, size_t);
 void		qsort(void *, size_t, size_t, int (*)(const void *, const void *));
 void		qsort_r(void *, size_t, size_t, void *, int (*)(void *, const void *, const void *));
-u_long	 	random (void);
-char		*rindex (const char *, int);
-int	 		scanc (u_int, const u_char *, const u_char *, int);
-int	 		skpc (int, size_t, u_char *);
-int	 		strcasecmp (const char *, const char *);
-size_t	 	strlcpy (char *, const char *, size_t);
-size_t	 	strlcat (char *, const char *, size_t);
-int	 		strncasecmp (const char *, const char *, size_t);
-u_long	 	strtoul (const char *, char **, int);
+u_long	 	random(void);
+char		*rindex(const char *, int);
+int	 		scanc(u_int, const u_char *, const u_char *, int);
+int	 		skpc(int, size_t, u_char *);
+int	 		strcasecmp(const char *, const char *);
+size_t	 	strlcpy(char *, const char *, size_t);
+size_t	 	strlcat(char *, const char *, size_t);
+int	 		strncasecmp(const char *, const char *, size_t);
+u_long	 	strtoul(const char *, char **, int);
 void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 
-#define __KASSERTSTR  "Kernel assertion failed: (%s), function %s, file %s, line %d."
+/* hash Functions */
+uint32_t 	prospector32(uint32_t);
+uint32_t 	lowbias32(uint32_t);
+uint32_t 	lowbias32_r(uint32_t);
+uint32_t 	triple32(uint32_t);
+uint32_t 	triple32_r(uint32_t);
+uint32_t 	hash32(uint32_t);
+uint32_t 	murmurhash32_mix32(uint32_t);
+uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
+uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
 
-#ifdef __COVERITY__
-#ifndef DIAGNOSTIC
-#define DIAGNOSTIC
-#endif
-#endif
-
-#ifndef	CTASSERT
-#define	CTASSERT(x)				__CTASSERT(x)
-#endif
-#ifndef	CTASSERT_SIGNED
-#define	CTASSERT_SIGNED(x)		__CTASSERT(((typeof(x))-1) < 0)
-#endif
-#ifndef	CTASSERT_UNSIGNED
-#define	CTASSERT_UNSIGNED(x)	__CTASSERT(((typeof(x))-1) >= 0)
-#endif
-
-#ifdef NDEBUG						/* tradition! */
-#define	assert(e)	((void)0)
-#else
-#ifdef __STDC__
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert("diagnostic ", __FILE__, __LINE__, #e))
-#else
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		   	 	\
-			    __assert("diagnostic ", __FILE__, __LINE__, "e"))
-#endif
-#endif
-
-#ifndef DIAGNOSTIC
-#define _DIAGASSERT(a)			(void)0
-#ifdef lint
-#define	KASSERTMSG(e, msg, ...)	/* NOTHING */
-#define	KASSERT(e)				/* NOTHING */
-#else /* !lint */
-#define	KASSERTMSG(e, msg, ...)	((void)0)
-#define	KASSERT(e)				((void)0)
-#endif /* !lint */
-#else /* DIAGNOSTIC */
-#define _DIAGASSERT(a)			assert(a)
-#define	KASSERTMSG(e, msg, ...)	(__predict_true((e)) ? (void)0 :	\
-			    __assert(__KASSERTSTR msg, "diagnostic ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
-
-#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert(__KASSERTSTR, "diagnostic ", #e, __FILE__, __LINE__))
-#endif
-
-#ifndef DEBUG
-#ifdef lint
-#define	KDASSERTMSG(e,msg, ...)	/* NOTHING */
-#define	KDASSERT(e)				/* NOTHING */
-#else /* lint */
-#define	KDASSERTMSG(e,msg, ...)	((void)0)
-#define	KDASSERT(e)				((void)0)
-#endif /* lint */
-#else
-#define	KASSERTMSG(e, msg, ...)	(__predict_true((e)) ? (void)0 :	\
-			    __assert(__KASSERTSTR msg, "debugging ", #e, __FILE__, __LINE__, ## __VA_ARGS__))
-
-#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert(__KASSERTSTR, "debugging ", #e, __FILE__, __LINE__))
-#endif
-
-
+#endif /* _LIB_LIBKERN_LIBKERN_H_ */
 /*
 static __inline int 	imax (int, int) __attribute__ ((unused));
 static __inline int 	imin (int, int) __attribute__ ((unused));
