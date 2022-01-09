@@ -29,6 +29,8 @@
 
 #include <sys/callout.h>
 
+//#include "opt_vga.h"
+
 struct vga_handle {
 	struct pcdisplay_handle 		vh_ph;
 	bus_space_handle_t 				vh_ioh_vga, vh_allmemh;
@@ -158,21 +160,31 @@ _vga_gdc_write(struct vga_handle *vh, int reg, u_int8_t val)
 	bus_space_write_1(vh->vh_iot, vh->vh_ioh_vga, VGA_GDC_DATA, val);
 }
 
-#define vga_attr_read(vh, reg) 			_vga_attr_read(vh, offsetof(struct reg_vgaattr, reg))
-#define vga_attr_write(vh, reg, val)	_vga_attr_write(vh, offsetof(struct reg_vgaattr, reg), val)
-#define vga_ts_read(vh, reg) 			_vga_ts_read(vh, offsetof(struct reg_vgats, reg))
-#define vga_ts_write(vh, reg, val) 		_vga_ts_write(vh, offsetof(struct reg_vgats, reg), val)
-#define vga_gdc_read(vh, reg) 			_vga_gdc_read(vh, offsetof(struct reg_vgagdc, reg))
-#define vga_gdc_write(vh, reg, val) 	_vga_gdc_write(vh, offsetof(struct reg_vgagdc, reg), val)
+#define vga_attr_read(vh, reg) 			\
+	_vga_attr_read(vh, offsetof(struct reg_vgaattr, reg))
+#define vga_attr_write(vh, reg, val)	\
+	_vga_attr_write(vh, offsetof(struct reg_vgaattr, reg), val)
+#define vga_ts_read(vh, reg) 			\
+	_vga_ts_read(vh, offsetof(struct reg_vgats, reg))
+#define vga_ts_write(vh, reg, val) 		\
+	_vga_ts_write(vh, offsetof(struct reg_vgats, reg), val)
+#define vga_gdc_read(vh, reg) 			\
+	_vga_gdc_read(vh, offsetof(struct reg_vgagdc, reg))
+#define vga_gdc_write(vh, reg, val) 	\
+	_vga_gdc_write(vh, offsetof(struct reg_vgagdc, reg), val)
 
-#define vga_6845_read(vh, reg) 			pcdisplay_6845_read(&(vh)->vh_ph, reg)
-#define vga_6845_write(vh, reg, val) 	pcdisplay_6845_write(&(vh)->vh_ph, reg, val)
-#define _vga_6845_read(vh, reg) 		_pcdisplay_6845_read(&(vh)->vh_ph, reg)
-#define _vga_6845_write(vh, reg, val) 	_pcdisplay_6845_write(&(vh)->vh_ph, reg, val)
+#define vga_6845_read(vh, reg) 			\
+	pcdisplay_6845_read(&(vh)->vh_ph, reg)
+#define vga_6845_write(vh, reg, val) 	\
+	pcdisplay_6845_write(&(vh)->vh_ph, reg, val)
+#define _vga_6845_read(vh, reg) 		\
+	_pcdisplay_6845_read(&(vh)->vh_ph, reg)
+#define _vga_6845_write(vh, reg, val) 	\
+	_pcdisplay_6845_write(&(vh)->vh_ph, reg, val)
 
 int		vga_common_probe(bus_space_tag_t, bus_space_tag_t);
 void	vga_common_attach(struct vga_softc *, bus_space_tag_t, bus_space_tag_t, int, int, const struct vga_funcs *);
-#define VGA_QUIRK_ONEFONT	0x01
+#define VGA_QUIRK_ONEFONT		0x01
 #define VGA_QUIRK_NOFASTSCROLL	0x02
 int		vga_is_console(bus_space_tag_t, int);
 

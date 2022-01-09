@@ -33,7 +33,7 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/queue.h>
-#include <sys/user.h>
+//#include <sys/user.h>
 
 #include <machine/bus.h>
 
@@ -57,16 +57,16 @@ fontram(struct vga_handle *vh)
 
 	/* program sequencer to access character generator */
 
-	vga_ts_write(vh, syncreset, 0x01);	/* synchronous reset */
-	vga_ts_write(vh, wrplmask, 0x04);	/* write to map 2 */
-	vga_ts_write(vh, memmode, 0x07);	/* sequential addressing */
-	vga_ts_write(vh, syncreset, 0x03);	/* clear synchronous reset */
+	vga_ts_write(vh, syncreset, 0x01);		/* synchronous reset */
+	vga_ts_write(vh, wrplmask, 0x04);		/* write to map 2 */
+	vga_ts_write(vh, memmode, 0x07);		/* sequential addressing */
+	vga_ts_write(vh, syncreset, 0x03);		/* clear synchronous reset */
 
 	/* program graphics controller to access character generator */
 
 	vga_gdc_write(vh, rdplanesel, 0x02);	/* select map 2 for CPU reads */
-	vga_gdc_write(vh, mode, 0x00);	/* disable odd-even addressing */
-	vga_gdc_write(vh, misc, 0x04);	/* map starts at 0xA000 */
+	vga_gdc_write(vh, mode, 0x00);			/* disable odd-even addressing */
+	vga_gdc_write(vh, misc, 0x04);			/* map starts at 0xA000 */
 }
 
 static void
@@ -75,15 +75,15 @@ textram(struct vga_handle *vh)
 
 	/* program sequencer to access video ram */
 
-	vga_ts_write(vh, syncreset, 0x01);	/* synchronous reset */
-	vga_ts_write(vh, wrplmask, 0x03);	/* write to map 0 & 1 */
-	vga_ts_write(vh, memmode, 0x03);	/* odd-even addressing */
-	vga_ts_write(vh, syncreset, 0x03);	/* clear synchronous reset */
+	vga_ts_write(vh, syncreset, 0x01);		/* synchronous reset */
+	vga_ts_write(vh, wrplmask, 0x03);		/* write to map 0 & 1 */
+	vga_ts_write(vh, memmode, 0x03);		/* odd-even addressing */
+	vga_ts_write(vh, syncreset, 0x03);		/* clear synchronous reset */
 
 	/* program graphics controller for text mode */
 
 	vga_gdc_write(vh, rdplanesel, 0x00);	/* select map 0 for CPU reads */
-	vga_gdc_write(vh, mode, 0x10);		/* enable odd-even addressing */
+	vga_gdc_write(vh, mode, 0x10);			/* enable odd-even addressing */
 	/* map starts at 0xb800 or 0xb000 (mono) */
 	vga_gdc_write(vh, misc, (vh->vh_mono ? 0x0a : 0x0e));
 }

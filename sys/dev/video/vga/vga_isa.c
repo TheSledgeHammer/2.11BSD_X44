@@ -39,12 +39,11 @@
 
 #include <dev/core/isa/isavar.h>
 #include <dev/core/ic/mc6845reg.h>
-
+#include <dev/misc/pccons/pcdisplayvar.h>
 #include <dev/video/vga/vgareg.h>
 #include <dev/video/vga/vgavar.h>
 #include <dev/video/vga/vga_isavar.h>
 
-#include <dev/misc/pccons/pcdisplayvar.h>
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsdisplayvar.h>
 

@@ -17,8 +17,10 @@ net/			2.11BSD
 ns/				2.11BSD
 quad/			4.4BSD-Lite2
 regex/			NetBSD
+ssp/			NetBSD
 stdio/			2.11BSD/4.4BSD-lite2/NetBSD
 stdlib/			2.11BSD/4.4BSD-lite2/NetBSD
 string/			2.11BSD/4.4BSD-lite2/NetBSD
+sys/			4.4BSD-lite2
 termios/		NetBSD
 time/			NetBSD

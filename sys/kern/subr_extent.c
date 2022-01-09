@@ -77,6 +77,7 @@ static	void extent_free_region_descriptor (struct extent *, struct extent_region
 #define EXTENT_ALIGN(_start, _align)			\
 	(((_start) + ((_align) - 1)) & (-(_align)))
 
+
 /*
  * Allocate and initialize an extent map.
  */
@@ -871,9 +872,8 @@ extent_alloc_region_descriptor(ex, flags)
 	}
 
 alloc:
-	rp = (struct extent_region *)
-	    malloc(sizeof(struct extent_region), ex->ex_mtype,
-	    (flags & EX_WAITOK) ? M_WAITOK : M_NOWAIT);
+	rp = (struct extent_region*) malloc(sizeof(struct extent_region),
+			ex->ex_mtype, (flags & EX_WAITOK) ? M_WAITOK : M_NOWAIT);
 
 	if (rp != NULL)
 		rp->er_flags = ER_ALLOC;

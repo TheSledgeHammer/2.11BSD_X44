@@ -244,7 +244,7 @@ struct emul {
 #define	S_DATA		0			/* specified segment */
 #define	S_STACK		1
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct lock_holder 			proc_loholder;
 #define PROC_LOCK(p)		(mtx_lock(&(p)->p_mtx, &proc_loholder))
 #define PROC_UNLOCK(p)		(mtx_unlock(&(p)->p_mtx, &proc_loholder))

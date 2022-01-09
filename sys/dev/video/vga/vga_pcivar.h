@@ -33,4 +33,4 @@
 	     (PCI_CLASS(class) == PCI_CLASS_PREHISTORIC &&			\
 	      PCI_SUBCLASS(class) == PCI_SUBCLASS_PREHISTORIC_VGA)) ? 1 : 0)
 
-int vga_pci_cnattach (bus_space_tag_t, bus_space_tag_t, pci_chipset_tag_t, int, int, int);
+int vga_pci_cnattach(bus_space_tag_t, bus_space_tag_t, pci_chipset_tag_t, int, int, int);

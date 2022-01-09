@@ -35,7 +35,6 @@
 /* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
-#include <sys/disklabel.h>
 #include <sys/stat.h>
 
 #if HAVE_NBTOOL_CONFIG_H
@@ -54,7 +53,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <fstab.h>
-
 #include <util.h>
 
 #define MBRSIZE         512     /* master boot record size */

@@ -58,7 +58,7 @@
 #include <miscfs/fifofs/fifo.h> /* XXX */
 
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/cd9660/cd9660_extern.h>
+#include <fs/isofs/cd9660/cd9660_extern.h>
 
 /*
  * Get one character out of an iso filename

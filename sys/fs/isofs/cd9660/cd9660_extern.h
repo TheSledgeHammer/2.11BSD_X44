@@ -91,10 +91,10 @@ int cd9660_init(struct vfsconf *);
 int cd9660_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 int cd9660_mountroot(void);
 
-extern struct cd9660_vnodeops;
-extern struct cd9660_specops;
+extern struct vnodeops cd9660_vnodeops;
+extern struct vnodeops cd9660_specops;
 #ifdef FIFO
-extern struct cd9660_fifoops;
+extern struct vnodeops cd9660_fifoops;
 #endif
 
 int isochar(const u_char *, const u_char *, int, u_char *);

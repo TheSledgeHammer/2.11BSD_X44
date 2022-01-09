@@ -129,9 +129,10 @@
 #define M_BITLIST		76	/* bitlist structure */
 #define M_PERCPU		77	/* percpu structure */
 #define M_UFS211		78	/* UFS211 bufmap */
-#define M_GSCHED		79	/* global scheduler structures */
-#define	M_TEMP			80	/* misc temporary data buffers */
-#define	M_LAST			81	/* Must be last type + 1 */
+#define M_UFMLOPS		79	/* UFML uop structure */
+#define M_GSCHED		80	/* global scheduler structures */
+#define	M_TEMP			81	/* misc temporary data buffers */
+#define	M_LAST			82	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -213,8 +214,9 @@
 	"bitmap",		/* 76 M_BITMAP */		\
 	"percpu",		/* 77 M_PERCPU */		\
 	"ufs211 buf",	/* 78 M_UFS211 */		\
-	"gscheduler",	/* 79 M_GSCHED */		\
-	"temp",			/* 80 M_TEMP */ 		\
+	"ufml uops",	/* 79 M_UFMLOPS */		\
+	"gscheduler",	/* 80 M_GSCHED */		\
+	"temp",			/* 81 M_TEMP */ 		\
 }
 
 struct kmemstats {
@@ -266,7 +268,7 @@ struct kmemmeta {
 
 /* A Slab for each set of buckets */
 struct kmemslabs {
-	CIRCLEQ_ENTRY(kmemslabs)     ksl_list;
+	CIRCLEQ_ENTRY(kmemslabs)    ksl_list;
     struct kmembuckets			*ksl_bucket;	/* slab kmembucket */
     struct kmemmeta             ksl_meta;       /* slab metadata */
 
@@ -294,7 +296,7 @@ struct kmemslabs_cache {
 #define SLAB_SMALL              0x08        	/* slab contains small objects */
 #define SLAB_LARGE              0x16        	/* slab contains large objects */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 #define BUCKETSIZE(indx)	(powertwo(indx))
 #define	MINALLOCSIZE		(1 << MINBUCKET)
 #define BUCKETINDX(size) 							\

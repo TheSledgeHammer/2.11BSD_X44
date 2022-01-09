@@ -33,7 +33,6 @@
 
 #include <sys/types.h>
 #include <sys/systm.h>
-#include <sys/null.h>
 
 #ifdef _STANDALONE
 #include <lib/libkern/libkern.h>

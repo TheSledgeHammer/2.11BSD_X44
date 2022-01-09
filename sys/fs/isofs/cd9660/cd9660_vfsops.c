@@ -59,8 +59,8 @@
 #include <miscfs/specfs/specdev.h>
 
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/cd9660/cd9660_extern.h>
-#include <fs/cd9660/iso_rrip.h>
+#include <fs/isofs/cd9660/cd9660_extern.h>
+#include <fs/isofs/cd9660/iso_rrip.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 #include <fs/isofs/cd9660/cd9660_mount.h>
 

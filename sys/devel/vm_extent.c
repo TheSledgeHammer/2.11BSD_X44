@@ -43,11 +43,13 @@
 #include <devel/vm/include/vm.h>
 #include <devel/vm_extent.h>
 
+#define M_VMEXTENT 90
+
 /* example vm_map startup using extents */
 vm_extent_t		kmap_extent, kentry_extent, vmspace_extent;
 vm_map_t 		kmapex;
 vm_map_entry_t 	kentryex;
-struct vmspace	vmspacex;
+struct vmspace	vmspaceex;
 
 long 			vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
 long 			kmap_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_t))];
@@ -59,9 +61,14 @@ vm_map_startup1()
 	vm_exbootinit(kmap_extent, "KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_FAST);
 	vm_exbootinit(kentry_extent, "KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_FAST);
 
-	vm_exbootinit(vmspace_extent, "VMSPACE", 1, sizeof(), M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_FAST);
+	vm_exbootinit(vmspace_extent, "VMSPACE", 0, sizeof(vmspaceex), M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_FAST);
 
 	struct vmspace *vm = (struct vmspace *)vm_exalloc(vmspace_extent);
+}
+
+vm_map_init()
+{
+
 }
 
 LIST_HEAD(exlist, vm_extent) exlist = LIST_HEAD_INITIALIZER(exlist);
@@ -78,16 +85,15 @@ vm_exinit(name, start, end, mtype, storage, storagesize, flags)
 	register vm_extent_t ex;
 
 	ex = (vm_extent_t)malloc(sizeof(vm_extent_t), M_VMEXTENT, M_WAITOK);
-
 	if(ex == NULL) {
 		return (NULL);
 	}
 
 	ex->ve_extent = extent_create(name, start, end, mtype, storage, storagesize, flags);
-	if(vm_exalloc_region(ex->ve_extent, start, (end - start), flags) != 0) {
-		vm_exfree(ex, start, ex->ve_size, flags);
+	if(ex->ve_extent == NULL) {
 		return (NULL);
 	}
+
 	vm_extent_lock_init(ex);
 	return (ex);
 }
@@ -96,14 +102,29 @@ vm_exinit(name, start, end, mtype, storage, storagesize, flags)
 void
 vm_exbootinit(ex, name, start, end, mtype, storage, storagesize, flags)
 	vm_extent_t	ex;
-	char 	*name;
-	u_long 	start, end;
-	int 	mtype;
-	caddr_t storage;
-	size_t 	storagesize;
-	int 	flags;
+	char 		*name;
+	u_long 		start, end;
+	int 		mtype;
+	caddr_t 	storage;
+	size_t 		storagesize;
+	int 		flags;
 {
 	ex = vm_exinit(name, start, end, mtype, storage, storagesize, flags);
+
+	if (vm_exalloc_region(ex->ve_extent, start, (end - start), flags) != 0) {
+		vm_exfree(ex, start, ex->ve_size, flags);
+	}
+}
+
+void
+vm_exbootinita(ex, size, alignment, boundary, flags)
+	vm_extent_t ex;
+	u_long 		size, alignment, boundary;
+	int 		flags;
+{
+	if (vm_exalloc_subregion(ex->ve_extent, size, alignment, boundary, flags, ex->ve_result) != 0) {
+		vm_exfree(ex, ex->ve_extent->ex_start, size, flags);
+	}
 }
 
 void *
@@ -165,7 +186,7 @@ vm_exalloc_region(ex, start, size, flags)
 }
 
 int
-vm_exalloc_region(ex, size, alignment, boundary, flags, result)
+vm_exalloc_subregion(ex, size, alignment, boundary, flags, result)
 	vm_extent_t ex;
 	u_long 		size, alignment, boundary;
 	int 		flags;

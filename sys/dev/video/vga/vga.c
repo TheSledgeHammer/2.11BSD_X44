@@ -42,16 +42,15 @@
 #include <machine/bus.h>
 
 #include <dev/core/ic/mc6845reg.h>
-
+#include <dev/misc/pccons/pcdisplayvar.h>
 #include <dev/video/vga/vgareg.h>
 #include <dev/video/vga/vgavar.h>
 
 #include <dev/misc/wscons/wsdisplayvar.h>
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/unicode.h>
-//#include <dev/misc/wsfont/wsfont.h>
+#include <dev/misc/wsfont/wsfont.h>
 
-#include <dev/misc/pccons/pcdisplayvar.h>
 #include <dev/misc/pccons/pcdisplay.h>
 
 /* for WSCONS_SUPPORT_PCVTFONTS and WSDISPLAY_CHARFUNCS */

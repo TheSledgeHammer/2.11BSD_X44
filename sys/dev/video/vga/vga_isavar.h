@@ -27,4 +27,4 @@
  * rights to redistribute these changes.
  */
 
-int	vga_isa_cnattach (bus_space_tag_t, bus_space_tag_t);
+int	vga_isa_cnattach(bus_space_tag_t, bus_space_tag_t);
