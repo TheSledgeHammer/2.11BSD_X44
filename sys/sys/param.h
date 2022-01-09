@@ -229,6 +229,8 @@
 #define FSCALE	(1<<FSHIFT)
 
 #ifdef _KERNEL
+extern int hz;
+
 /*
  * macro to convert from milliseconds to hz without integer overflow
  * Default version using only 32bits arithmetics.

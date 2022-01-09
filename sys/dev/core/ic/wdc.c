@@ -132,7 +132,7 @@ __KERNEL_RCSID(0, "$NetBSD: wdc.c,v 1.172.2.7.2.10 2005/08/23 13:35:55 tron Exp 
  */
 #define WDC_PROBE_WAIT	5
 
-struct ata_xfer wdc_xfer_pool;
+struct ata_xfer *wdc_xfer_pool;
 
 #if NWD > 0
 extern const struct ata_bustype wdc_ata_bustype; /* in ata_wdc.c */
@@ -791,7 +791,7 @@ wdcattach(struct wdc_channel *chp)
 		wdc->reset = wdc_do_reset;
 	if (inited == 0) {
 		/* Initialize the ata_xfer pool. */
-		&wdc_xfer_pool = (struct ata_xfer *)malloc(sizeof(struct ata_xfer), M_DEVBUF, M_WAITOK | M_NOWAIT);
+		wdc_xfer_pool = (struct ata_xfer *)malloc(sizeof(struct ata_xfer), M_DEVBUF, M_WAITOK | M_NOWAIT);
 		inited++;
 	}
 	TAILQ_INIT(&chp->ch_queue->queue_xfer);
@@ -922,7 +922,6 @@ wdcrestart(void *v)
 	splx(s);
 }
 	
-
 /*
  * Interrupt routine for the controller.  Acknowledge the interrupt, check for
  * errors on the current operation, mark it done if necessary, and start the
@@ -2107,7 +2106,7 @@ wdc_get_xfer(int flags)
 	int s;
 
 	s = splbio();
-	xfer = &wdc_xfer_pool;
+	xfer = wdc_xfer_pool;
 	splx(s);
 	if (xfer != NULL) {
 		memset(xfer, 0, sizeof(struct ata_xfer));
