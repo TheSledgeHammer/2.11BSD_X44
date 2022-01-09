@@ -98,6 +98,7 @@ int	doclusterraz = 0;
  *	rbp is the read-ahead block.
  *	If either is NULL, then you don't have to do the I/O.
  */
+int
 cluster_read(vp, filesize, lblkno, size, cred, bpp)
 	struct vnode *vp;
 	u_quad_t filesize;

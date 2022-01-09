@@ -38,6 +38,7 @@
  *	@(#)cd9660_util.c	8.3 (Berkeley) 12/5/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/namei.h>
@@ -51,27 +52,60 @@
 #include <sys/malloc.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
+#include <sys/dirent.h>
+
 #include <miscfs/specfs/specdev.h> /* XXX */
 #include <miscfs/fifofs/fifo.h> /* XXX */
 
 #include <fs/isofs/cd9660/iso.h>
+#include <fs/cd9660/cd9660_extern.h>
+
+/*
+ * Get one character out of an iso filename
+ * Return number of bytes consumed
+ */
+int
+isochar(isofn, isoend, joliet_level, c)
+	const u_char *isofn;
+	const u_char *isoend;
+	int joliet_level;
+	u_char *c;
+{
+	*c = *isofn++;
+	if (joliet_level == 0 || isofn == isoend)
+		/* (00) and (01) are one byte in Joliet, too */
+		return 1;
+
+	/* No Unicode support yet :-( */
+	switch (*c) {
+	default:
+		*c = '?';
+		break;
+	case '\0':
+		*c = *isofn;
+		break;
+	}
+	return 2;
+}
 
 /*
  * translate and compare a filename
  * Note: Version number plus ';' may be omitted.
  */
 int
-isofncmp(fn, fnlen, isofn, isolen)
-	u_char *fn, *isofn;
-	int fnlen, isolen;
+isofncmp(fn, fnlen, isofn, isolen, joliet_level)
+	const u_char *fn, *isofn;
+	int fnlen, isolen, joliet_level;
 {
 	int i, j;
 	char c;
-	
+	const u_char *isoend = isofn + isolen;
+
 	while (--fnlen >= 0) {
-		if (--isolen < 0)
+		if (isofn == isoend)
 			return *fn;
-		if ((c = *isofn++) == ';') {
+		isofn += isochar(isofn, isoend, joliet_level, &c);
+		if (c == ';') {
 			switch (*fn++) {
 			default:
 				return *--fn;
@@ -85,10 +119,11 @@ isofncmp(fn, fnlen, isofn, isolen)
 					return -1;
 				}
 			}
-			for (j = 0; --isolen >= 0; j = j * 10 + *isofn++ - '0');
+			for (j = 0; isofn != isoend; j = j * 10 + c - '0')
+				isofn += isochar(isofn, isoend, joliet_level, &c);
 			return i - j;
 		}
-		if (c != *fn) {
+		if (((u_char) c) != *fn) {
 			if (c >= 'A' && c <= 'Z') {
 				if (c + ('a' - 'A') != *fn) {
 					if (*fn >= 'a' && *fn <= 'z')
@@ -101,13 +136,18 @@ isofncmp(fn, fnlen, isofn, isolen)
 		}
 		fn++;
 	}
-	if (isolen > 0) {
-		switch (*isofn) {
+	if (isofn != isoend) {
+		isofn += isochar(isofn, isoend, joliet_level, &c);
+		switch (c) {
 		default:
 			return -1;
 		case '.':
-			if (isofn[1] != ';')
-				return -1;
+			if (isofn != isoend) {
+				isochar(isofn, isoend, joliet_level, &c);
+				if (c == ';')
+					return 0;
+			}
+			return -1;
 		case ';':
 			return 0;
 		}
@@ -119,30 +159,34 @@ isofncmp(fn, fnlen, isofn, isolen)
  * translate a filename
  */
 void
-isofntrans(infn, infnlen, outfn, outfnlen, original, assoc)
+isofntrans(infn, infnlen, outfn, outfnlen, original, casetrans, assoc, joliet_level)
 	u_char *infn, *outfn;
 	int infnlen;
 	u_short *outfnlen;
 	int original;
+	int casetrans;
 	int assoc;
+	int joliet_level;
 {
 	int fnidx = 0;
-	
+	u_char *infnend = infn + infnlen;
+
 	if (assoc) {
 		*outfn++ = ASSOCCHAR;
 		fnidx++;
-		infnlen++;
 	}
-	for (; fnidx < infnlen; fnidx++) {
-		char c = *infn++;
-		
-		if (!original && c >= 'A' && c <= 'Z')
+	for (; infn != infnend; fnidx++) {
+		char c;
+
+		infn += isochar(infn, infnend, joliet_level, &c);
+
+		if (casetrans && joliet_level == 0 && c >= 'A' && c <= 'Z')
 			*outfn++ = c + ('a' - 'A');
-		else if (!original && c == '.' && *infn == ';')
+		else if (!original && c == ';') {
+			if (fnidx > 0 && outfn[-1] == '.')
+				fnidx--;
 			break;
-		else if (!original && c == ';')
-			break;
-		else
+		} else
 			*outfn++ = c;
 	}
 	*outfnlen = fnidx;

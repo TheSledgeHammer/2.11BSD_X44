@@ -436,5 +436,5 @@ ufs211_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1)
 		return (ENOTDIR); /* overloaded */
-	return (0);
+	return (EOPNOTSUPP);
 }

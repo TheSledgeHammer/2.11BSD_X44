@@ -184,7 +184,7 @@
 #include <sys/malloc.h>
 #include <sys/buf.h>
 
-#include "ufml/ufml.h"
+#include "../../ufs/ufml/ufml.h"
 
 /*
  * Basic strategy: as usual, do as little work as possible.

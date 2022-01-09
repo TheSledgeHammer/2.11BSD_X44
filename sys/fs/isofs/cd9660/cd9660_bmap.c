@@ -38,15 +38,17 @@
  *	@(#)cd9660_bmap.c	8.4 (Berkeley) 12/5/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/namei.h>
 #include <sys/buf.h>
 #include <sys/file.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
-#include <sys/user.h>
+//#include <sys/user.h>
 
 #include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 
 /*

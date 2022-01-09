@@ -79,7 +79,7 @@ LIST_HEAD(nchashhead, namecache) *nchashtbl;	/* Hash Table */
 u_long	nchash;									/* size of hash table - 1 */
 long	numcache;								/* number of cache entries allocated */
 TAILQ_HEAD(, namecache) nclruhead;				/* LRU chain */
-struct	nchstats nchstats;						/* cache effectiveness statistics */
+struct nchstats nchstats;						/* cache effectiveness statistics */
 
 int doingcache = 1;								/* 1 => enable the cache */
 
@@ -140,11 +140,11 @@ cache_lookup(dvp, vpp, cnp)
 	}
 
 	ncpp = NCHHASH(dvp, cnp);
-	for (ncp = ncpp->lh_first; ncp != 0; ncp = nnp) {
-		nnp = ncp->nc_hash.le_next;
+	for (ncp = LIST_FIRST(ncpp); ncp != 0; ncp = nnp) {
+		nnp = LIST_NEXT(ncp, nc_hash);
 		/* If one of the vp's went stale, don't bother anymore. */
-		if ((ncp->nc_dvpid != ncp->nc_dvp->v_id) ||
-		    (ncp->nc_vp && ncp->nc_vpid != ncp->nc_vp->v_id)) {
+		if ((ncp->nc_dvpid != ncp->nc_dvp->v_id)
+				|| (ncp->nc_vp && ncp->nc_vpid != ncp->nc_vp->v_id)) {
 			nchstats.ncs_falsehits++;
 			PURGE(ncp);
 			continue;
@@ -219,20 +219,18 @@ cache_enter(dvp, vp, cnp)
 	 * allowed and the one at the front of the LRU list is in use.
 	 * Otherwise we use the one at the front of the LRU list.
 	 */
-	if (numcache < desiredvnodes &&
-	    ((ncp = nclruhead.tqh_first) == NULL ||
-	    ncp->nc_hash.le_prev != 0)) {
+	if (numcache < desiredvnodes
+			&& ((ncp = TAILQ_FIRST(nclruhead)) == NULL || LIST_PREV(ncp, nc_hash) != 0)) {
 		/* Add one more entry */
-		ncp = (struct namecache *)
-			malloc((u_long)sizeof *ncp, M_CACHE, M_WAITOK);
-		bzero((char *)ncp, sizeof *ncp);
+		ncp = (struct namecache*) malloc((u_long) sizeof *ncp, M_CACHE, M_WAITOK);
+		bzero((char*) ncp, sizeof *ncp);
 		numcache++;
-	} else if (ncp == nclruhead.tqh_first) {
+	} else if (ncp == TAILQ_FIRST(nclruhead)) {
 		/* reuse an old entry */
 		TAILQ_REMOVE(&nclruhead, ncp, nc_lru);
 		if (ncp->nc_hash.le_prev != 0) {
 			LIST_REMOVE(ncp, nc_hash);
-			ncp->nc_hash.le_prev = 0;
+			LIST_PREV(ncp, nc_hash) = 0;
 		}
 	} else {
 		/* give up */
@@ -289,8 +287,9 @@ cache_purge(vp)
 	if (nextvnodeid != 0)
 		return;
 	for (ncpp = &nchashtbl[nchash]; ncpp >= nchashtbl; ncpp--) {
-		while (ncp == ncpp->lh_first)
+		while (ncp == LIST_FIRST(ncpp)) {
 			PURGE(ncp);
+		}
 	}
 	vp->v_id = ++nextvnodeid;
 }
@@ -310,11 +309,11 @@ cache_purgevfs(mp)
 
 	/* Scan hash tables for applicable entries */
 	for (ncpp = &nchashtbl[nchash]; ncpp >= nchashtbl; ncpp--) {
-		for (ncp = ncpp->lh_first; ncp != 0; ncp = nnp) {
-			nnp = ncp->nc_hash.le_next;
-			if (ncp->nc_dvpid != ncp->nc_dvp->v_id ||
-			    (ncp->nc_vp && ncp->nc_vpid != ncp->nc_vp->v_id) ||
-			    ncp->nc_dvp->v_mount == mp) {
+		for (ncp = LIST_FIRST(ncpp); ncp != 0; ncp = nnp) {
+			nnp = LIST_NEXT(ncp, nc_hash);
+			if (ncp->nc_dvpid != ncp->nc_dvp->v_id
+					|| (ncp->nc_vp && ncp->nc_vpid != ncp->nc_vp->v_id)
+					|| ncp->nc_dvp->v_mount == mp) {
 				PURGE(ncp);
 			}
 		}

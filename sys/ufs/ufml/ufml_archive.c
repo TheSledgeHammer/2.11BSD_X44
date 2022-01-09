@@ -26,15 +26,14 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include "devel/ufml/ufml.h"
-#include "devel/ufml/ufml_meta.h"
-#include "devel/ufml/ufml_extern.h"
-#include "devel/ufml/ufml_ops.h"
+#include "../../ufs/ufml/ufml.h"
+#include "../../ufs/ufml/ufml_extern.h"
+#include "../../ufs/ufml/ufml_meta.h"
+#include "../../ufs/ufml/ufml_ops.h"
 
 int
-ufml_encrypt(ap)
-	struct uop_encrypt_args *ap;
+ufml_archive(ap)
+	struct uop_archive_args *ap;
 {
 	struct ufml_node *ip = ap->a_up;
 	struct ufml_metadata *meta = ip->ufml_meta;
@@ -42,19 +41,19 @@ ufml_encrypt(ap)
 
 	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_encryption(meta, meta->ufml_encrypt) > 0) {
-			type = meta->ufml_encrypt;
-			return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
+		if (ufml_check_archive(meta, meta->ufml_archive) > 0) {
+			type = meta->ufml_archive;
+			return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, type));
 		}
-		return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
 	return (ENIVAL);
 }
 
 int
-ufml_decrypt(ap)
-	struct uop_decrypt_args *ap;
+ufml_extract(ap)
+	struct uop_extract_args *ap;
 {
 	struct ufml_node *ip = ap->a_up;
 	struct ufml_metadata *meta = ip->ufml_meta;
@@ -62,11 +61,11 @@ ufml_decrypt(ap)
 
 	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
 		fs = meta->ufml_filesystem;
-		if (ufml_check_encryption(meta, meta->ufml_encrypt) > 0) {
-			type = meta->ufml_encrypt;
-			return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
+		if (ufml_check_archive(meta, meta->ufml_archive) > 0) {
+			type = meta->ufml_archive;
+			return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, type));
 		}
-		return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
+		return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
 	return (ENIVAL);

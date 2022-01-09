@@ -164,10 +164,11 @@ namei(ndp)
 			error = ELOOP;
 			break;
 		}
-		if (ndp->ni_pathlen > 1)
+		if (ndp->ni_pathlen > 1) {
 			MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
-		else
+		} else {
 			cp = cnp->cn_pnbuf;
+		}
 		aiov.iov_base = cp;
 		aiov.iov_len = MAXPATHLEN;
 		auio.uio_iov = &aiov;

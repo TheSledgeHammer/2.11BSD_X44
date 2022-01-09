@@ -49,7 +49,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include "devel/ufml/ufml.h"
+#include "../../ufs/ufml/ufml.h"
 
 /*
  * Mount ufml layer

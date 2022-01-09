@@ -213,7 +213,7 @@ struct export_args {
  * mount time to identify the requested filesystem.
  */
 struct vfsconf {
-	const struct vfsops 	*vfc_vfsops; /* filesystem operations vector */
+	const struct vfsops 	*vfc_vfsops; 				/* filesystem operations vector */
 	char 					vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
 	int 					vfc_index;
 	int						vfc_typenum;				/* historic filesystem type number */
@@ -235,18 +235,18 @@ struct nameidata;
 struct mbuf;
 
 struct vfsops {
-	int	(*vfs_mount) (struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
-	int	(*vfs_start) (struct mount *, int, struct proc *);
-	int	(*vfs_unmount) (struct mount *, int, struct proc *);
-	int	(*vfs_root) (struct mount *, struct vnode **);
-	int	(*vfs_quotactl) (struct mount *, int, uid_t, caddr_t, struct proc *);
-	int	(*vfs_statfs) (struct mount *, struct statfs *, struct proc *);
-	int	(*vfs_sync)	(struct mount *, int, struct ucred *, struct proc *);
-	int	(*vfs_vget) (struct mount *, ino_t, struct vnode **);
-	int	(*vfs_fhtovp) (struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
-	int	(*vfs_vptofh) (struct vnode *, struct fid *);
-	int	(*vfs_init) (struct vfsconf *);
-	int	(*vfs_sysctl) (int *, u_int, void *, size_t *, void *, size_t, struct proc *);
+	int	(*vfs_mount)(struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
+	int	(*vfs_start)(struct mount *, int, struct proc *);
+	int	(*vfs_unmount)(struct mount *, int, struct proc *);
+	int	(*vfs_root)(struct mount *, struct vnode **);
+	int	(*vfs_quotactl)(struct mount *, int, uid_t, caddr_t, struct proc *);
+	int	(*vfs_statfs)(struct mount *, struct statfs *, struct proc *);
+	int	(*vfs_sync)(struct mount *, int, struct ucred *, struct proc *);
+	int	(*vfs_vget)(struct mount *, ino_t, struct vnode **);
+	int	(*vfs_fhtovp)(struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
+	int	(*vfs_vptofh)(struct vnode *, struct fid *);
+	int	(*vfs_init)(struct vfsconf *);
+	int	(*vfs_sysctl)(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP, P) \
@@ -267,6 +267,7 @@ struct vfsops {
  */
 struct netcred {
 	struct	radix_node 		netc_rnodes[2];
+	int						netc_refcnt;
 	int						netc_exflags;
 	struct	ucred 			netc_anon;
 };
@@ -295,22 +296,23 @@ int				vfs_mountroot (void);
 void			vfs_getnewfsid (struct mount *);
 void			vfs_timestamp (struct timespec *tsp);
 void			vfs_unmountall (void);
-extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;											/* mounted filesystem list */
-extern	struct lock_object mountlist_slock;
-extern	struct vfsops *vfssw[];															/* filesystem type table */
+
+extern CIRCLEQ_HEAD(mntlist, mount) mountlist;											/* mounted filesystem list */
+extern struct lock_object 			 mountlist_slock;
+extern struct vfsops *vfssw[];															/* filesystem type table */
 
 #else /* KERNEL */
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int		fstatfs (int, struct statfs *);
-int		getfh (const char *, fhandle_t *);
-int		getfsstat (struct statfs *, long, int);
-int		getmntinfo (struct statfs **, int);
-int		mount (int, const char *, int, void *);
-int		statfs (const char *, struct statfs *);
-int		unmount (const char *, int);
+int		fstatfs(int, struct statfs *);
+int		getfh(const char *, fhandle_t *);
+int		getfsstat(struct statfs *, long, int);
+int		getmntinfo(struct statfs **, int);
+int		mount(int, const char *, int, void *);
+int		statfs(const char *, struct statfs *);
+int		unmount(const char *, int);
 __END_DECLS
 
 #endif /* KERNEL */

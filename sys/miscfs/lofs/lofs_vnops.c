@@ -43,6 +43,7 @@
  * Loopback Filesystem
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -53,6 +54,7 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
+
 #include <miscfs/lofs/lofs.h>
 
 /*
@@ -413,6 +415,7 @@ lofs_fsync(ap)
 		struct vnode *a_vp;
 		struct ucred *a_cred;
 		int  a_waitfor;
+		int a_flags;
 		struct proc *a_p;
 	} */ *ap;
 {
@@ -421,7 +424,7 @@ lofs_fsync(ap)
 	printf("lofs_fsync(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
 
-	return VOP_FSYNC(LOFSVP(ap->a_vp), ap->a_cred, ap->a_waitfor, ap->a_p);
+	return VOP_FSYNC(LOFSVP(ap->a_vp), ap->a_cred, ap->a_waitfor, ap->a_flags, ap->a_p);
 }
 
 int
@@ -1097,7 +1100,7 @@ lofs_truncate(ap)
 {
 
 	/* Use lofs_setattr */
-	printf("lofs_truncate: need to implement!!");
+	//printf("lofs_truncate: need to implement!!");
 	return (VOP_TRUNCATE(LOFSVP(ap->a_vp), ap->a_length, ap->a_flags, ap->a_cred, ap->a_p));
 }
 
@@ -1115,7 +1118,7 @@ lofs_update(ap)
 {
 
 	/* Use lofs_setattr */
-	printf("lofs_update: need to implement!!");
+	//printf("lofs_update: need to implement!!");
 	return (VOP_UPDATE(LOFSVP(ap->a_vp), ap->a_access, ap->a_modify, ap->a_waitfor));
 }
 

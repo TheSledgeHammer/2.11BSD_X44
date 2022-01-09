@@ -50,19 +50,17 @@ struct lofsmount {
 	struct vnode		*rootvp;	/* Reference to root lofsnode */
 };
 
-#ifdef KERNEL
+//#ifdef KERNEL
 /*
  * A cache of vnode references
  */
 struct lofsnode {
-	struct lofsnode		*a_forw;	/* Hash chain */
-	struct lofsnode		*a_back;
+	LIST_ENTRY(lofsnode) a_hash;	/* Hash chain */
 	struct vnode		*a_lofsvp;	/* Aliased vnode - VREFed once */
 	struct vnode		*a_vnode;	/* Back pointer to vnode/lofsnode */
 };
 
-extern int make_lofs (struct mount *mp, struct vnode **vpp);
-extern int lofs_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);
+extern int make_lofs(struct mount *mp, struct vnode **vpp);
 
 #define	VFSTOLOFS(mp) 	((struct lofsmount *)((mp)->mnt_data))
 #define	LOFSP(vp) 		((struct lofsnode *)(vp)->v_data)

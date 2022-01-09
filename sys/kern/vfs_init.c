@@ -46,6 +46,7 @@
 #include <sys/malloc.h>
 
 struct vattr va_null;
+
 /*
  * Initialize the vnode structures and initialize each file system type.
  */

@@ -49,10 +49,10 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 
-#include <devel/ufml/ufml.h>
-#include "devel/ufml/ufml_meta.h"
-#include "devel/ufml/ufml_extern.h"
-#include "devel/ufml/ufml_ops.h"
+#include "../../ufs/ufml/ufml.h"
+#include "../../ufs/ufml/ufml_extern.h"
+#include "../../ufs/ufml/ufml_meta.h"
+#include "../../ufs/ufml/ufml_ops.h"
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
 #define	NUFMLNODECACHE 16
@@ -127,7 +127,7 @@ loop:
 
 /*
  * Make a new null_node node.
- * Vp is the alias vnode, lofsvp is the lower vnode.
+ * Vp is the alias vnode, ufmlvp is the lower vnode.
  * Maintain a reference to (lowervp).
  */
 static int

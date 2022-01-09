@@ -26,10 +26,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "devel/ufml/ufml.h"
-#include "devel/ufml/ufml_meta.h"
-#include "devel/ufml/ufml_extern.h"
-#include "devel/ufml/ufml_ops.h"
+#include "../../ufs/ufml/ufml.h"
+#include "../../ufs/ufml/ufml_extern.h"
+#include "../../ufs/ufml/ufml_meta.h"
+#include "../../ufs/ufml/ufml_ops.h"
 
 int
 ufml_compress(ap)

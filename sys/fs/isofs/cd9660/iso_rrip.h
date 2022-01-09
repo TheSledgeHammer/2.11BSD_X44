@@ -71,7 +71,7 @@ typedef struct {
 	int				cont;		/* continuation of above */
 } ISO_RRIP_ANALYZE;
 
-int cd9660_rrip_analyze (struct iso_directory_record *isodir, struct iso_node *inop, struct iso_mnt *imp);
-int cd9660_rrip_getname (struct iso_directory_record *isodir, char *outbuf, u_short *outlen, ino_t *inump, struct iso_mnt *imp);
-int cd9660_rrip_getsymname (struct iso_directory_record *isodir, char *outbuf, u_short *outlen, struct iso_mnt *imp);
-int cd9660_rrip_offset (struct iso_directory_record *isodir, struct iso_mnt *imp);
+int cd9660_rrip_analyze(struct iso_directory_record *, struct iso_node *, struct iso_mnt *);
+int cd9660_rrip_getname(struct iso_directory_record *, char *, u_short *, ino_t *, struct iso_mnt *);
+int cd9660_rrip_getsymname(struct iso_directory_record *, char *, u_short *, struct iso_mnt *);
+int cd9660_rrip_offset(struct iso_directory_record *, struct iso_mnt *);

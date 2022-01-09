@@ -176,11 +176,14 @@ vfs_rootmountalloc(fstypename, devname, mpp)
 	struct vfsconf *vfsp;
 	struct mount *mp;
 
-	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
-		if (!strcmp(vfsp->vfc_name, fstypename))
+	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next) {
+		if (!strcmp(vfsp->vfc_name, fstypename)) {
 			break;
-	if (vfsp == NULL)
+		}
+	}
+	if (vfsp == NULL) {
 		return (ENODEV);
+	}
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
 	lockinit(&mp->mnt_lock, PVFS, "vfslock", 0, 0);
@@ -235,8 +238,8 @@ vfs_getvfs(fsid)
 	register struct mount *mp;
 
 	simple_lock(&mountlist_slock);
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist;
-	     mp = mp->mnt_list.cqe_next) {
+	for (mp = CIRCLEQ_FIRST(mountlist); mp != (void *)&mountlist;
+	     mp = CIRCLEQ_NEXT(mp, mnt_list)) {
 		if (mp->mnt_stat.f_fsid.val[0] == fsid->val[0] &&
 		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1]) {
 			simple_unlock(&mountlist_slock);
@@ -254,7 +257,7 @@ void
 vfs_getnewfsid(mp)
 	struct mount *mp;
 {
-static u_short xxxfs_mntid;
+	static u_short xxxfs_mntid;
 
 	fsid_t tfsid;
 	int mtype;
@@ -267,7 +270,7 @@ static u_short xxxfs_mntid;
 		++xxxfs_mntid;
 	tfsid.val[0] = makedev(nblkdev + mtype, xxxfs_mntid);
 	tfsid.val[1] = mtype;
-	if (mountlist.cqh_first != (void *)&mountlist) {
+	if (CIRCLEQ_FIRST(mountlist) != (void *)&mountlist) {
 		while (vfs_getvfs(&tfsid)) {
 			tfsid.val[0]++;
 			xxxfs_mntid++;
@@ -358,16 +361,15 @@ getnewvnode(tag, mp, vops, vpp)
 
 top:
 	simple_lock(&vnode_free_list_slock);
-	if ((vnode_free_list.tqh_first == NULL &&
-	     numvnodes < 2 * desiredvnodes) ||
-	    numvnodes < desiredvnodes) {
+	if ((TAILQ_FIRST(vnode_free_list) == NULL && numvnodes < 2 * desiredvnodes)
+			|| numvnodes < desiredvnodes) {
 		simple_unlock(&vnode_free_list_slock);
-		vp = (struct vnode *)malloc((u_long)sizeof *vp, M_VNODE, M_WAITOK);
-		bzero((char *)vp, sizeof *vp);
+		vp = (struct vnode*) malloc((u_long) sizeof *vp, M_VNODE, M_WAITOK);
+		bzero((char*) vp, sizeof *vp);
 		numvnodes++;
 	} else {
-		for (vp = vnode_free_list.tqh_first;
-				vp != NULLVP; vp = vp->v_freelist.tqe_next) {
+		for (vp = TAILQ_FIRST(vnode_free_list); vp != NULLVP;
+				vp = TAILQ_NEXT(vp, v_freelist)) {
 			if (simple_lock_try(&vp->v_interlock))
 				break;
 		}
@@ -386,7 +388,7 @@ top:
 			panic("free vnode isn't");
 		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
 		/* see comment on why 0xdeadb is set at end of vgone (below) */
-		vp->v_freelist.tqe_prev = (struct vnode **)0xdeadb;
+		TAILQ_PREV(vp, freelst, v_freelist) = (struct vnode**) 0xdeadb;
 		simple_unlock(&vnode_free_list_slock);
 		vp->v_lease = NULL;
 		if (vp->v_type != VBAD)
@@ -486,22 +488,22 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 	if (flags & V_SAVE) {
 		if (error == VOP_FSYNC(vp, cred, MNT_WAIT, V_SAVE, p))
 			return (error);
-		if (vp->v_dirtyblkhd.lh_first != NULL)
+		if (LIST_FIRST(vp->v_dirtyblkhd) != NULL)
 			panic("vinvalbuf: dirty bufs");
 	}
 	for (;;) {
-		if ((blist = vp->v_cleanblkhd.lh_first) && (flags & V_SAVEMETA))
+		if ((blist = LIST_FIRST(vp->v_cleanblkhd)) && (flags & V_SAVEMETA))
 			while (blist && blist->b_lblkno < 0)
-				blist = blist->b_vnbufs.le_next;
-		if (!blist && (blist = vp->v_dirtyblkhd.lh_first) &&
+				blist = LIST_NEXT(blist, b_vnbufs);
+		if (!blist && (blist = LIST_FIRST(vp->v_dirtyblkhd)) &&
 		    (flags & V_SAVEMETA))
 			while (blist && blist->b_lblkno < 0)
-				blist = blist->b_vnbufs.le_next;
+				blist = LIST_NEXT(blist, b_vnbufs);
 		if (!blist)
 			break;
 
 		for (bp = blist; bp; bp = nbp) {
-			nbp = bp->b_vnbufs.le_next;
+			nbp = LIST_NEXT(bp, b_vnbufs);
 			if (flags && V_SAVEMETA && bp->b_lblkno < 0)
 				continue;
 			s = splbio();
@@ -532,7 +534,7 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 		}
 	}
 	if (!(flags & V_SAVEMETA) &&
-	    (vp->v_dirtyblkhd.lh_first || vp->v_cleanblkhd.lh_first))
+	    (LIST_FIRST(vp->v_dirtyblkhd) || LIST_FIRST(vp->v_cleanblkhd)))
 		panic("vinvalbuf: flush failed");
 	return (0);
 }
@@ -574,10 +576,10 @@ brelvp(bp)
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
-	if (bp->b_vnbufs.le_next != NOLIST)
+	if (LIST_NEXT(bp, b_vnbufs) != NOLIST)
 		bufremvn(bp);
 	vp = bp->b_vp;
-	bp->b_vp = (struct vnode *) 0;
+	bp->b_vp = (struct vnode*) 0;
 	HOLDRELE(vp);
 }
 
@@ -600,7 +602,7 @@ reassignbuf(bp, newvp)
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
-	if (bp->b_vnbufs.le_next != NOLIST)
+	if (LIST_NEXT(bp, b_vnbufs) != NOLIST)
 		bufremvn(bp);
 	/*
 	 * If dirty, put on list of dirty buffers;
@@ -1004,10 +1006,10 @@ vflush(mp, skipvp, flags)
 
 	simple_lock(&mntvnode_slock);
 loop:
-	for (vp = mp->mnt_vnodelist.lh_first; vp; vp = nvp) {
+	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp; vp = nvp) {
 		if (vp->v_mount != mp)
 			goto loop;
-		nvp = vp->v_mntvnodes.le_next;
+		nvp = LIST_NEXT(vp, v_mntvnodes);
 		/*
 		 * Skip over a selected vnode.
 		 */
@@ -1305,8 +1307,7 @@ vgonel(vp, p)
 		if (vp->v_flag & VALIASED) {
 			vx = NULL;
 			for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
-				if (vq->v_rdev != vp->v_rdev ||
-				    vq->v_type != vp->v_type)
+				if (vq->v_rdev != vp->v_rdev || vq->v_type != vp->v_type)
 					continue;
 				if (vx)
 					break;
@@ -1335,10 +1336,11 @@ vgonel(vp, p)
 	 * getnewvnode after removing it from the freelist to ensure
 	 * that we do not try to move it here.
 	 */
+
 	if (vp->v_usecount == 0) {
 		simple_lock(&vnode_free_list_slock);
-		if ((vp->v_freelist.tqe_prev != (struct vnode **)0xdeadb) &&
-		    vnode_free_list.tqh_first != vp) {
+		if ((TAILQ_PREV(vp, freelst, v_freelist) != (struct vnode**) 0xdeadb) &&
+		TAILQ_FIRST(vnode_free_list) != vp) {
 			TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
 			TAILQ_INSERT_HEAD(&vnode_free_list, vp, v_freelist);
 		}
@@ -1475,19 +1477,18 @@ printlockedvnodes()
 
 	printf("Locked vnodes\n");
 	simple_lock(&mountlist_slock);
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+	for (mp = CIRCLEQ_FIRST(mountlist); mp != (void*) &mountlist; mp = nmp) {
 		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
-			nmp = mp->mnt_list.cqe_next;
+			nmp = CIRCLEQ_NEXT(mp, mnt_list);
 			continue;
 		}
-		for (vp = mp->mnt_vnodelist.lh_first;
-		     vp != NULL;
-		     vp = vp->v_mntvnodes.le_next) {
+		for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL;
+				vp = LIST_NEXT(vp, v_mntvnodes)) {
 			if (VOP_ISLOCKED(vp))
-				vprint((char *)0, vp);
+				vprint((char*) 0, vp);
 		}
 		simple_lock(&mountlist_slock);
-		nmp = mp->mnt_list.cqe_next;
+		nmp = CIRCLEQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp, p);
 	}
 	simple_unlock(&mountlist_slock);
@@ -1568,15 +1569,15 @@ sysctl_vnode(where, sizep, p)
 	ewhere = where + *sizep;
 		
 	simple_lock(&mountlist_slock);
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+	for (mp = CIRCLEQ_FIRST(mountlist); mp != (void *)&mountlist; mp = nmp) {
 		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
-			nmp = mp->mnt_list.cqe_next;
+			nmp = CIRCLEQ_NEXT(mp, mnt_list);
 			continue;
 		}
 		savebp = bp;
 again:
 		simple_lock(&mntvnode_slock);
-		for (vp = mp->mnt_vnodelist.lh_first;
+		for (vp = LIST_FIRST(mp->mnt_vnodelist);
 		     vp != NULL;
 		     vp = nvp) {
 			/*
@@ -1591,22 +1592,22 @@ again:
 				bp = savebp;
 				goto again;
 			}
-			nvp = vp->v_mntvnodes.le_next;
+			nvp = LIST_NEXT(vp, v_mntvnodes);
 			if (bp + VPTRSZ + VNODESZ > ewhere) {
 				simple_unlock(&mntvnode_slock);
 				*sizep = bp - where;
 				return (ENOMEM);
 			}
 			simple_unlock(&mntvnode_slock);
-			if ((error = copyout((caddr_t)&vp, bp, VPTRSZ)) ||
-			   (error = copyout((caddr_t)vp, bp + VPTRSZ, VNODESZ)))
+			if ((error = copyout((caddr_t) & vp, bp, VPTRSZ)) || (error =
+					copyout((caddr_t) vp, bp + VPTRSZ, VNODESZ)))
 				return (error);
 			bp += VPTRSZ + VNODESZ;
 			simple_lock(&mntvnode_slock);
 		}
 		simple_unlock(&mntvnode_slock);
 		simple_lock(&mountlist_slock);
-		nmp = mp->mnt_list.cqe_next;
+		nmp = CIRCLEQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp, p);
 	}
 	simple_unlock(&mountlist_slock);
@@ -1656,8 +1657,8 @@ vfs_unmountall()
 	/*
 	 * Since this only runs when rebooting, it is not interlocked.
 	 */
-	for (mp = mountlist.cqh_last; mp != (void *)&mountlist; mp = nmp) {
-		nmp = mp->mnt_list.cqe_prev;
+	for (mp = CIRCLEQ_LAST(mountlist); mp != (void *)&mountlist; mp = nmp) {
+		nmp = CIRCLEQ_PREV(mp, mnt_list);
 		(void) dounmount(mp, MNT_FORCE, p);
 	}
 }
@@ -1734,10 +1735,10 @@ vfs_hang_addrlist(mp, nep, argp)
 		 */
 		free(np, M_NETADDR);
 		rn = (*rnh->rnh_matchaddr)((caddr_t)saddr, rnh);
-		if (rn != 0 && (rn->rn_flags & RNF_ROOT) == 0 &&
-		    ((struct netcred *)rn)->netc_exflags == argp->ex_flags &&
-		    !bcmp((caddr_t)&((struct netcred *)rn)->netc_anon,
-			    (caddr_t)&argp->ex_anon, sizeof(struct ucred)))
+		if (rn != 0 && (rn->rn_flags & RNF_ROOT) == 0
+				&& ((struct netcred*) rn)->netc_exflags == argp->ex_flags
+				&& !bcmp((caddr_t) & ((struct netcred*) rn)->netc_anon,
+						(caddr_t) & argp->ex_anon, sizeof(struct ucred)))
 			return (0);
 		return (EPERM);
 	}
@@ -1775,9 +1776,8 @@ vfs_free_addrlist(nep)
 
 	for (i = 0; i <= AF_MAX; i++)
 		if (rnh == nep->ne_rtable[i]) {
-			(*rnh->rnh_walktree)(rnh, vfs_free_netcred,
-			    (caddr_t)rnh);
-			free((caddr_t)rnh, M_RTABLE);
+			(*rnh->rnh_walktree)(rnh, vfs_free_netcred, (caddr_t) rnh);
+			free((caddr_t) rnh, M_RTABLE);
 			nep->ne_rtable[i] = 0;
 		}
 }
@@ -1818,12 +1818,11 @@ vfs_export_lookup(mp, nep, nam)
 		 * Lookup in the export list first.
 		 */
 		if (nam != NULL) {
-			saddr = mtod(nam, struct sockaddr *);
+			saddr = mtod(nam, struct sockaddr*);
 			rnh = nep->ne_rtable[saddr->sa_family];
 			if (rnh != NULL) {
-				np = (struct netcred *)
-					(*rnh->rnh_matchaddr)((caddr_t)saddr,
-							      rnh);
+				np = (struct netcred*) (*rnh->rnh_matchaddr)((caddr_t) saddr,
+						rnh);
 				if (np && (np->netc_rnodes->rn_flags & RNF_ROOT))
 					np = NULL;
 			}

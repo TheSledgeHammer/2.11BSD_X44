@@ -239,7 +239,8 @@ struct ttysize {
 #define	FIOASYNC			_IOW(f, 125, int)				/* set/clear async i/o */
 #define	FIOSETOWN			_IOW(f, 124, int)				/* set owner */
 #define	FIOGETOWN			_IOR(f, 123, int)				/* get owner */
-
+#define	FIODTYPE			_IOR(f, 122, int)				/* get d_flags type part */
+#define	FIOGETLBA			_IOR(f, 121, int)				/* get start blk # */
 /* Socket ioctl's. */
 #define	SIOCSHIWAT			_IOW(s,  0, int)				/* set high watermark */
 #define	SIOCGHIWAT			_IOR(s,  1, int)				/* get high watermark */

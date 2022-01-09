@@ -19,6 +19,7 @@
  * Structure per communications domain.
  */
 struct	mbuf;
+
 struct	domain {
 	int		dom_family;							/* AF_xxx */
 	char	*dom_name;

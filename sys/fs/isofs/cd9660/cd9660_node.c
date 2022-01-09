@@ -38,6 +38,7 @@
  *	@(#)cd9660_node.c	8.8 (Berkeley) 5/22/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mount.h>
@@ -51,6 +52,7 @@
 #include <sys/user.h>
 
 #include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 #include <fs/isofs/cd9660/cd9660_mount.h>
 #include <fs/isofs/cd9660/iso_rrip.h>
@@ -58,13 +60,13 @@
 /*
  * Structures associated with iso_node caching.
  */
-struct iso_node **isohashtbl;
+LIST_HEAD(ihashhead, iso_node) *isohashtbl;
 u_long isohash;
 #define	INOHASH(device, inum)	(((device) + ((inum)>>12)) & isohash)
-struct simplelock cd9660_ihash_slock;
+struct lock_object cd9660_ihash_slock;
 
 #ifdef ISODEVMAP
-struct iso_node **idvhashtbl;
+LIST_HEAD(idvhashhead, iso_dnode) *idvhashtbl;
 u_long idvhash;
 #define	DNOHASH(device, inum)	(((device) + ((inum)>>12)) & idvhash)
 #endif
@@ -95,28 +97,26 @@ iso_dmap(device, inum, create)
 	ino_t	inum;
 	int	create;
 {
-	register struct iso_dnode **dpp, *dp, *dq;
+	struct iso_dnode *dp;
+	struct idvhashhead *dpp;
 
 	dpp = &idvhashtbl[DNOHASH(device, inum)];
-	for (dp = *dpp;; dp = dp->d_next) {
-		if (dp == NULL)
+	LIST_FOREACH(dp, dpp, d_hash) {
+		if (dp == NULL) {
 			return (NULL);
-		if (inum == dp->i_number && device == dp->i_dev)
+		}
+		if (inum == dp->i_number && device == dp->i_dev) {
 			return (dp);
+		}
+	}
 
 	if (!create)
 		return (NULL);
 
-	MALLOC(dp, struct iso_dnode *, sizeof(struct iso_dnode), M_CACHE,
-	       M_WAITOK);
-	dp->i_dev = dev;
-	dp->i_number = ino;
-
-	if (dq == *dpp)
-		dq->d_prev = dp->d_next;
-	dp->d_next = dq;
-	dp->d_prev = dpp;
-	*dpp = dp;
+	MALLOC(dp, struct iso_dnode *, sizeof(struct iso_dnode), M_CACHE, M_WAITOK);
+	dp->i_dev = device;
+	dp->i_number = inum;
+	LIST_INSERT_HEAD(dpp, dp, d_hash);
 
 	return (dp);
 }
@@ -125,15 +125,14 @@ void
 iso_dunmap(device)
 	dev_t device;
 {
-	struct iso_dnode **dpp, *dp, *dq;
+	struct idvhashhead *dpp;
+	struct iso_dnode *dp, *dq;
 	
 	for (dpp = idvhashtbl; dpp <= idvhashtbl + idvhash; dpp++) {
-		for (dp = *dpp; dp != NULL; dp = dq)
-			dq = dp->d_next;
+		for (dp = LIST_FIRST(dpp); dp != NULL; dp = dq) {
+			dq = LIST_NEXT(dp, d_hash);
 			if (device == dp->i_dev) {
-				if (dq)
-					dq->d_prev = dp->d_prev;
-				*dp->d_prev = dq;
+				LIST_REMOVE(dp, d_hash);
 				FREE(dp, M_CACHE);
 			}
 		}
@@ -156,7 +155,7 @@ cd9660_ihashget(dev, inum)
 
 loop:
 	simple_lock(&cd9660_ihash_slock);
-	for (ip = isohashtbl[INOHASH(dev, inum)]; ip; ip = ip->i_next) {
+	LIST_FOREACH(ip, &isohashtbl[INOHASH(dev, inum)], i_hash) {
 		if (inum == ip->i_number && dev == ip->i_dev) {
 			vp = ITOV(ip);
 			simple_lock(&vp->v_interlock);
@@ -178,18 +177,14 @@ cd9660_ihashins(ip)
 	struct iso_node *ip;
 {
 	struct proc *p = curproc;		/* XXX */
-	struct iso_node **ipp, *iq;
+	struct ihashhead *ipp;
 
 	simple_lock(&cd9660_ihash_slock);
 	ipp = &isohashtbl[INOHASH(ip->i_dev, ip->i_number)];
-	if (iq == *ipp)
-		iq->i_prev = &ip->i_next;
-	ip->i_next = iq;
-	ip->i_prev = ipp;
-	*ipp = ip;
+	LIST_INSERT_HEAD(ipp, ip, i_hash);
 	simple_unlock(&cd9660_ihash_slock);
 
-	lockmgr(&ip->i_lock, LK_EXCLUSIVE, (struct simplelock *)0, p->p_pid);
+	lockmgr(&ip->i_lock, LK_EXCLUSIVE, (struct lock_object *)0, p->p_pid);
 }
 
 /*
@@ -202,13 +197,7 @@ cd9660_ihashrem(ip)
 	register struct iso_node *iq;
 
 	simple_lock(&cd9660_ihash_slock);
-	if (iq == ip->i_next)
-		iq->i_prev = ip->i_prev;
-	*ip->i_prev = iq;
-#ifdef DIAGNOSTIC
-	ip->i_next = NULL;
-	ip->i_prev = NULL;
-#endif
+	LIST_REMOVE(ip, i_hash);
 	simple_unlock(&cd9660_ihash_slock);
 }
 
@@ -289,7 +278,7 @@ cd9660_defattr(isodir, inop, bp)
 	struct iso_extended_attributes *ap = NULL;
 	int off;
 	
-	if (isonum_711(isodir->flags)&2) {
+	if (isonum_711(isodir->flags) & 2) {
 		inop->inode.iso_mode = S_IFDIR;
 		/*
 		 * If we return 2, fts() will assume there are no subdirectories
@@ -300,28 +289,26 @@ cd9660_defattr(isodir, inop, bp)
 		inop->inode.iso_mode = S_IFREG;
 		inop->inode.iso_links = 1;
 	}
-	if (!bp
-	    && ((imp = inop->i_mnt)->im_flags & ISOFSMNT_EXTATT)
-	    && (off = isonum_711(isodir->ext_attr_length))) {
-		VOP_BLKATOFF(ITOV(inop), (off_t)-(off << imp->im_bshift), NULL,
-			     &bp2);
+	if (!bp && ((imp = inop->i_mnt)->im_flags & ISOFSMNT_EXTATT) && (off =
+			isonum_711(isodir->ext_attr_length))) {
+		VOP_BLKATOFF(ITOV(inop), (off_t )-(off << imp->im_bshift), NULL, &bp2);
 		bp = bp2;
 	}
 	if (bp) {
-		ap = (struct iso_extended_attributes *)bp->b_data;
-		
+		ap = (struct iso_extended_attributes*) bp->b_data;
+
 		if (isonum_711(ap->version) == 1) {
-			if (!(ap->perm[0]&0x40))
+			if (!(ap->perm[0] & 0x40))
 				inop->inode.iso_mode |= VEXEC >> 6;
-			if (!(ap->perm[0]&0x10))
+			if (!(ap->perm[0] & 0x10))
 				inop->inode.iso_mode |= VREAD >> 6;
-			if (!(ap->perm[0]&4))
+			if (!(ap->perm[0] & 4))
 				inop->inode.iso_mode |= VEXEC >> 3;
-			if (!(ap->perm[0]&1))
+			if (!(ap->perm[0] & 1))
 				inop->inode.iso_mode |= VREAD >> 3;
-			if (!(ap->perm[1]&0x40))
+			if (!(ap->perm[1] & 0x40))
 				inop->inode.iso_mode |= VEXEC;
-			if (!(ap->perm[1]&0x10))
+			if (!(ap->perm[1] & 0x10))
 				inop->inode.iso_mode |= VREAD;
 			inop->inode.iso_uid = isonum_723(ap->owner); /* what about 0? */
 			inop->inode.iso_gid = isonum_723(ap->group); /* what about 0? */
@@ -329,9 +316,10 @@ cd9660_defattr(isodir, inop, bp)
 			ap = NULL;
 	}
 	if (!ap) {
-		inop->inode.iso_mode |= VREAD|VEXEC|(VREAD|VEXEC)>>3|(VREAD|VEXEC)>>6;
-		inop->inode.iso_uid = (uid_t)0;
-		inop->inode.iso_gid = (gid_t)0;
+		inop->inode.iso_mode |= VREAD | VEXEC | (VREAD | VEXEC) >> 3
+				| (VREAD | VEXEC) >> 6;
+		inop->inode.iso_uid = (uid_t) 0;
+		inop->inode.iso_gid = (gid_t) 0;
 	}
 	if (bp2)
 		brelse(bp2);
@@ -351,28 +339,26 @@ cd9660_deftstamp(isodir,inop,bp)
 	struct iso_extended_attributes *ap = NULL;
 	int off;
 	
-	if (!bp
-	    && ((imp = inop->i_mnt)->im_flags & ISOFSMNT_EXTATT)
-	    && (off = isonum_711(isodir->ext_attr_length))) {
-		VOP_BLKATOFF(ITOV(inop), (off_t)-(off << imp->im_bshift), NULL,
-			     &bp2);
+	if (!bp && ((imp = inop->i_mnt)->im_flags & ISOFSMNT_EXTATT) && (off =
+			isonum_711(isodir->ext_attr_length))) {
+		VOP_BLKATOFF(ITOV(inop), (off_t )-(off << imp->im_bshift), NULL, &bp2);
 		bp = bp2;
 	}
 	if (bp) {
-		ap = (struct iso_extended_attributes *)bp->b_data;
-		
+		ap = (struct iso_extended_attributes*) bp->b_data;
+
 		if (isonum_711(ap->version) == 1) {
-			if (!cd9660_tstamp_conv17(ap->ftime,&inop->inode.iso_atime))
-				cd9660_tstamp_conv17(ap->ctime,&inop->inode.iso_atime);
-			if (!cd9660_tstamp_conv17(ap->ctime,&inop->inode.iso_ctime))
+			if (!cd9660_tstamp_conv17(ap->ftime, &inop->inode.iso_atime))
+				cd9660_tstamp_conv17(ap->ctime, &inop->inode.iso_atime);
+			if (!cd9660_tstamp_conv17(ap->ctime, &inop->inode.iso_ctime))
 				inop->inode.iso_ctime = inop->inode.iso_atime;
-			if (!cd9660_tstamp_conv17(ap->mtime,&inop->inode.iso_mtime))
+			if (!cd9660_tstamp_conv17(ap->mtime, &inop->inode.iso_mtime))
 				inop->inode.iso_mtime = inop->inode.iso_ctime;
 		} else
 			ap = NULL;
 	}
 	if (!ap) {
-		cd9660_tstamp_conv7(isodir->date,&inop->inode.iso_ctime);
+		cd9660_tstamp_conv7(isodir->date, &inop->inode.iso_ctime);
 		inop->inode.iso_atime = inop->inode.iso_ctime;
 		inop->inode.iso_mtime = inop->inode.iso_ctime;
 	}
@@ -398,7 +384,7 @@ cd9660_tstamp_conv7(pi,pu)
 	tz = pi[6];
 	
 	if (y < 1970) {
-		pu->tv_sec  = 0;
+		pu->tv_sec = 0;
 		pu->tv_nsec = 0;
 		return 0;
 	} else {
@@ -411,15 +397,17 @@ cd9660_tstamp_conv7(pi,pu)
 		 * Changed :-) to make it relative to Jan. 1st, 1970
 		 * and to disambiguate negative division
 		 */
-		days = 367*(y-1960)-7*(y+(m+9)/12)/4-3*((y+(m+9)/12-1)/100+1)/4+275*m/9+d-239;
+		days = 367 * (y - 1960) - 7 * (y + (m + 9) / 12) / 4
+				- 3 * ((y + (m + 9) / 12 - 1) / 100 + 1) / 4 + 275 * m / 9 + d
+				- 239;
 #endif
 		crtime = ((((days * 24) + hour) * 60 + minute) * 60) + second;
-		
+
 		/* timezone offset is unreliable on some disks */
 		if (-48 <= tz && tz <= 52)
 			crtime -= tz * 15 * 60;
 	}
-	pu->tv_sec  = crtime;
+	pu->tv_sec = crtime;
 	pu->tv_nsec = 0;
 	return 1;
 }

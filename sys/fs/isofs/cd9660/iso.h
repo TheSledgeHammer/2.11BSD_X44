@@ -127,63 +127,7 @@ struct iso_extended_attributes {
 	u_char len_au			[ISODCL (247, 250)]; /* 723 */
 };
 
-/* CD-ROM Format type */
-enum ISO_FTYPE  { ISO_FTYPE_DEFAULT, ISO_FTYPE_9660, ISO_FTYPE_RRIP, ISO_FTYPE_ECMA };
 
-#ifndef	ISOFSMNT_ROOT
-#define	ISOFSMNT_ROOT	0
-#endif
-
-struct iso_mnt {
-	int im_flags;
-
-	struct mount *im_mountp;
-	dev_t im_dev;
-	struct vnode *im_devvp;
-
-	int logical_block_size;
-	int im_bshift;
-	int im_bmask;
-	
-	int volume_space_size;
-	struct netexport im_export;
-	
-	char root[ISODCL (157, 190)];
-	int root_extent;
-	int root_size;
-	enum ISO_FTYPE  iso_ftype;
-	
-	int rr_skip;
-	int rr_skip0;
-};
-
-#define VFSTOISOFS(mp)			((struct iso_mnt *)((mp)->mnt_data))
-
-#define blkoff(imp, loc)		((loc) & (imp)->im_bmask)
-#define lblktosize(imp, blk)	((blk) << (imp)->im_bshift)
-#define lblkno(imp, loc)		((loc) >> (imp)->im_bshift)
-#define blksize(imp, ip, lbn)	((imp)->logical_block_size)
-
-int cd9660_mount (struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
-int cd9660_start (struct mount *, int, struct proc *);
-int cd9660_unmount (struct mount *, int, struct proc *);
-int cd9660_root (struct mount *, struct vnode **);
-int cd9660_quotactl (struct mount *, int, uid_t, caddr_t, struct proc *);
-int cd9660_statfs (struct mount *, struct statfs *, struct proc *);
-int cd9660_sync (struct mount *, int, struct ucred *, struct proc *);
-int cd9660_vget (struct mount *, ino_t, struct vnode **);
-int cd9660_fhtovp (struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
-int cd9660_vptofh (struct vnode *, struct fid *);
-int cd9660_init (struct vfsconf *);
-#define cd9660_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
-
-int cd9660_mountroot __P((void)); 
-
-extern struct cd9660_vnodeops;
-extern struct cd9660_specops;
-#ifdef FIFO
-extern struct cd9660_fifoops;
-#endif
 
 static __inline int
 isonum_711(p)
@@ -254,10 +198,6 @@ isonum_733(p)
 #endif
 
 #endif /* UNALIGNED_ACCESS */
-
-int isofncmp (u_char *, int, u_char *, int);
-void isofntrans (u_char *, int, u_char *, u_short *, int, int);
-ino_t isodirino (struct iso_directory_record *, struct iso_mnt *);
 
 /*
  * Associated files have a leading '='.

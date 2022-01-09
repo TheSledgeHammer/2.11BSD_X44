@@ -39,6 +39,7 @@
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/time.h>
@@ -51,7 +52,7 @@
 
 #define LOG2_SIZEVNODE 	7		/* log2(sizeof struct vnode) */
 #define	NLOFSCACHE 		16
-#define	LOFS_NHASH(vp) ((((u_long)vp)>>LOG2_SIZEVNODE) & (NLOFSCACHE-1))
+#define	LOFS_NHASH(vp) 	((((u_long)vp)>>LOG2_SIZEVNODE) & (NLOFSCACHE-1))
 
 /*
  * Loopback cache:
@@ -64,11 +65,8 @@
 /*
  * Cache head
  */
-struct lofscache {
-	struct lofsnode	*ac_forw;
-	struct lofsnode	*ac_back;
-};
-static struct lofscache lofscache[NLOFSCACHE];
+struct lofscache;
+static LIST_HEAD(lofscache, lofsnode) lofscache[NLOFSCACHE];
 
 /*
  * Initialise cache headers
@@ -81,8 +79,10 @@ lofs_init()
 	printf("lofs_init\n");		/* printed during system boot */
 #endif
 
-	for (ac = lofscache; ac < lofscache + NLOFSCACHE; ac++)
-		ac->ac_forw = ac->ac_back = (struct lofsnode *) ac;
+	int i;
+	for(i = 0; i < NLOFSCACHE; i++) {
+		LIST_INIT(&lofscache[i]);
+	}
 }
 
 /*
@@ -94,7 +94,9 @@ lofs_hash(targetvp)
 {
 	struct lofscache *locache;
 
-	return (&lofscache[LOFS_NHASH(targetvp)]);
+	locache = &lofscache[LOFS_NHASH(targetvp)];
+
+	return (locache);
 }
 
 /*
@@ -116,16 +118,17 @@ lofs_alloc(vp, targetvp)
 
 	MALLOC(a, struct lofsnode *, sizeof(struct lofsnode), M_TEMP, M_WAITOK);
 	a->a_vnode = vp;
+	vp->v_type = targetvp->v_type;
 	vp->v_data = a;
 	VREF(targetvp);
 	a->a_lofsvp = targetvp;
 	hd = lofs_hash(targetvp);
-	insque(a, hd);
 
 #ifdef LOFS_DIAGNOSTIC
 	vprint("alloc vp", vp);
 	vprint("alloc targetvp", targetvp);
 #endif
+	LIST_INSERT_HEAD(hd, a, a_hash);
 }
 
 #ifdef LOFS_DIAGNOSTIC
@@ -133,17 +136,16 @@ void
 lofs_flushmp(mp)
 	struct mount *mp;
 {
-	struct lofscache *ac;
 	int i = 0;
-	struct lofsnode *roota;
+	struct lofsnode *ac, *roota;
 
 	printf("lofs_flushmp(%x)\n", mp);
 
 	roota = LOFSP(VFSTOLOFS(mp)->rootvp);
 
-	for (ac = lofscache; ac < lofscache + NLOFSCACHE; ac++) {
-		struct lofsnode *a = ac->ac_forw;
-		while (a != (struct lofsnode *) ac) {
+	LIST_FOREACH(ac, &lofscache, a_hash) {
+		struct lofsnode *a = LIST_NEXT(ac, a_hash);
+		while(a != ac) {
 			if (a != roota && a->a_vnode->v_mount == mp) {
 				struct vnode *vp = a->a_lofsvp;
 				if (vp) {
@@ -153,9 +155,10 @@ lofs_flushmp(mp)
 					i++;
 				}
 			}
-			a = a->a_forw;
+			a = LIST_NEXT(a, a_hash);
 		}
 	}
+
 	if (i > 0)
 		printf("lofsnode: vrele'd %d aliases\n", i);
 }
@@ -184,7 +187,7 @@ lofs_find(mp, targetvp)
 	 */
 	hd = lofs_hash(targetvp);
 
-	for (a = hd->ac_forw; a != (struct lofsnode *) hd; a = a->a_forw) {
+	for (a = LIST_FIRST(hd); a != (struct lofsnode *) hd; a = LIST_NEXT(a, a_hash)) {
 		if (a->a_lofsvp == targetvp && a->a_vnode->v_mount == mp) {
 #ifdef LOFS_DIAGNOSTIC
 			printf("lofs_find(%x): found (%x,%x)->%x\n",

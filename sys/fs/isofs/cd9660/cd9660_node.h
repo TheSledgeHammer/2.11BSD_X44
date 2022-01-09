@@ -63,7 +63,7 @@ typedef	struct	{
  * FOr device# (major,minor) translation table
  */
 struct iso_dnode {
-	struct iso_dnode 	*d_next, **d_prev;	/* hash chain */
+	LIST_ENTRY(iso_dnode) d_hash;	/* hash chain */
 	dev_t				i_dev;		/* device where dnode resides */
 	ino_t				i_number;	/* the identity of the inode */
 	dev_t				d_dev;		/* device # for translation */
@@ -71,7 +71,7 @@ struct iso_dnode {
 #endif
 
 struct iso_node {
-	struct	iso_node 	*i_next, **i_prev;	/* hash chain */
+	LIST_ENTRY(iso_node) i_hash;			/* hash chain */
 	struct	vnode 		*i_vnode;			/* vnode associated with this inode */
 	struct	vnode 		*i_devvp;			/* vnode for block I/O */
 	u_long				i_flag;				/* see below */
@@ -93,8 +93,8 @@ struct iso_node {
 	ISO_RRIP_INODE  	inode;
 };
 
-#define	i_forw		i_chain[0]
-#define	i_back		i_chain[1]
+#define	i_forw			i_chain[0]
+#define	i_back			i_chain[1]
 
 /* flags */
 #define	IN_ACCESS	0x0020		/* inode access time to be updated */
@@ -105,39 +105,38 @@ struct iso_node {
 /*
  * Prototypes for ISOFS vnode operations
  */
-int cd9660_lookup (struct vop_lookup_args *);
-int cd9660_open (struct vop_open_args *);
-int cd9660_close (struct vop_close_args *);
-int cd9660_access (struct vop_access_args *);
-int cd9660_getattr (struct vop_getattr_args *);
-int cd9660_read (struct vop_read_args *);
-int cd9660_ioctl (struct vop_ioctl_args *);
-int cd9660_select (struct vop_select_args *);
-int cd9660_mmap (struct vop_mmap_args *);
-int cd9660_seek (struct vop_seek_args *);
-int cd9660_readdir (struct vop_readdir_args *);
-int cd9660_abortop (struct vop_abortop_args *);
-int cd9660_inactive (struct vop_inactive_args *);
-int cd9660_reclaim (struct vop_reclaim_args *);
-int cd9660_bmap (struct vop_bmap_args *);
-int cd9660_lock (struct vop_lock_args *);
-int cd9660_unlock (struct vop_unlock_args *);
-int cd9660_strategy (struct vop_strategy_args *);
-int cd9660_print (struct vop_print_args *);
-int cd9660_islocked (struct vop_islocked_args *);
-int cd9660_pathconf (struct vop_pathconf_args *);
-int cd9660_blkatoff (struct vop_blkatoff_args *);
+int cd9660_lookup(struct vop_lookup_args *);
+int cd9660_open(struct vop_open_args *);
+int cd9660_close(struct vop_close_args *);
+int cd9660_access(struct vop_access_args *);
+int cd9660_getattr(struct vop_getattr_args *);
+int cd9660_read(struct vop_read_args *);
+int cd9660_ioctl(struct vop_ioctl_args *);
+int cd9660_select(struct vop_select_args *);
+int cd9660_mmap(struct vop_mmap_args *);
+int cd9660_seek(struct vop_seek_args *);
+int cd9660_readdir(struct vop_readdir_args *);
+int cd9660_abortop(struct vop_abortop_args *);
+int cd9660_inactive(struct vop_inactive_args *);
+int cd9660_reclaim(struct vop_reclaim_args *);
+int cd9660_bmap(struct vop_bmap_args *);
+int cd9660_lock(struct vop_lock_args *);
+int cd9660_unlock(struct vop_unlock_args *);
+int cd9660_strategy(struct vop_strategy_args *);
+int cd9660_print(struct vop_print_args *);
+int cd9660_islocked(struct vop_islocked_args *);
+int cd9660_pathconf(struct vop_pathconf_args *);
+int cd9660_blkatoff(struct vop_blkatoff_args *);
 #define cd9660_revoke vop_revoke
 
-void cd9660_defattr (struct iso_directory_record *, struct iso_node *, struct buf *);
-void cd9660_deftstamp (struct iso_directory_record *, struct iso_node *, struct buf *);
-struct vnode *cd9660_ihashget (dev_t, ino_t);
-void cd9660_ihashins (struct iso_node *);
-void cd9660_ihashrem (struct iso_node *);
-int cd9660_tstamp_conv7 (u_char *, struct timespec *);
-int cd9660_tstamp_conv17 (u_char *, struct timespec *);
-ino_t isodirino (struct iso_directory_record *, struct iso_mnt *);
+void cd9660_defattr(struct iso_directory_record *, struct iso_node *, struct buf *);
+void cd9660_deftstamp(struct iso_directory_record *, struct iso_node *, struct buf *);
+struct vnode *cd9660_ihashget(dev_t, ino_t);
+void cd9660_ihashins(struct iso_node *);
+void cd9660_ihashrem(struct iso_node *);
+int cd9660_tstamp_conv7(u_char *, struct timespec *);
+int cd9660_tstamp_conv17(u_char *, struct timespec *);
 #ifdef	ISODEVMAP
-struct iso_dnode *iso_dmap (dev_t, ino_t, int);
-void iso_dunmap (dev_t);
+struct iso_dnode *iso_dmap(dev_t, ino_t, int);
+void  iso_dunmap(dev_t);
 #endif

@@ -42,7 +42,7 @@
 /*
  * Loopback Filesystem
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/time.h>
@@ -51,6 +51,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
+
 #include <miscfs/lofs/lofs.h>
 
 /*
@@ -285,10 +286,8 @@ lofs_statfs(mp, sbp, p)
 	struct statfs mstat;
 
 #ifdef LOFS_DIAGNOSTIC
-	printf("lofs_statfs(mp = %x, vp = %x->%x)\n", mp,
-			VFSTOLOFS(mp)->rootvp,
-			LOFSVP(VFSTOLOFS(mp)->rootvp)
-			);
+	printf("lofs_statfs(mp = %x, vp = %x->%x)\n", mp, VFSTOLOFS(mp)->rootvp,
+			LOFSVP(VFSTOLOFS(mp)->rootvp));
 #endif
 
 	bzero(&mstat, sizeof(mstat));
@@ -358,7 +357,7 @@ lofs_vptofh(vp, fhp)
 	return VFS_VPTOFH(LOFSVP(vp), fhp);
 }
 
-int lofs_init (void);
+int lofs_init(void);
 
 struct vfsops lofs_vfsops = {
 	lofs_mount,

@@ -70,7 +70,7 @@ typedef struct {
 	u_char clen				[ISODCL (  2,    2)];
 	u_char name				[1];			/* XXX */
 } ISO_RRIP_SLINK_COMPONENT;
-#define	ISO_RRIP_SLSIZ	2
+#define	ISO_RRIP_SLSIZ		2
 
 typedef struct {
 	ISO_SUSP_HEADER			h;

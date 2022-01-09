@@ -10,6 +10,7 @@
 #define	_SYS_NAMEI_H_
 
 #include <sys/queue.h>
+#include <sys/uio.h>
 
 /*
  * Encapsulation of namei parameters.
@@ -62,7 +63,6 @@ struct nameidata {
 #define	RENAME		3		/* setup for file renaming */
 #define	OPMASK		3		/* mask for operation */
 
-
 #define	LOCKLEAF	0x0004	/* lock inode on return */
 #define	LOCKPARENT	0x0008	/* want parent vnode returned locked */
 #define	WANTPARENT	0x0010	/* want parent vnode returned unlocked */
@@ -104,6 +104,7 @@ struct nameidata {
 	(ndp)->ni_segflg = segflg; 						\
 	(ndp)->ni_dirp = namep; 						\
 	(ndp)->ni_cnd.cn_proc = p; 						\
+	(ndp)->ni_cnd.cn_cred = p->p_ucred; 			\
 }
 #endif
 
@@ -135,9 +136,14 @@ struct	namecache {
 #ifdef KERNEL
 u_long	nextvnodeid;
 struct namecache 	*namecache;
-int	namei (struct nameidata *ndp);
-int	lookup (struct nameidata *ndp);
-int	relookup (struct vnode *dvp, struct vnode **vpp, struct componentname *cnp);
+int	namei(struct nameidata *);
+int	lookup(struct nameidata *);
+int	relookup(struct vnode *, struct vnode **, struct componentname *);
+int  cache_lookup(struct vnode *, struct vnode **, struct componentname *);
+void cache_enter(struct vnode *, struct vnode *, struct componentname *);
+void cache_purge(struct vnode *);
+void cache_purgevfs(struct mount *);
+void nchinit(void);
 #endif
 
 /*
@@ -145,6 +151,7 @@ int	relookup (struct vnode *dvp, struct vnode **vpp, struct componentname *cnp);
  */
 struct	nchstats {
 	long	ncs_goodhits;		/* hits that we can reall use */
+	long	ncs_neghits;		/* negative hits that we can use */
 	long	ncs_badhits;		/* hits we must drop */
 	long	ncs_falsehits;		/* hits with id mismatch */
 	long	ncs_miss;			/* misses */
@@ -152,4 +159,8 @@ struct	nchstats {
 	long	ncs_pass2;			/* names found with passes == 2 */
 	long	ncs_2passes;		/* number of times we attempt it */
 };
+
+#ifdef _KERNEL
+extern struct nchstats nchstats;
+#endif
 #endif /* _SYS_NAMEI_H_ */
