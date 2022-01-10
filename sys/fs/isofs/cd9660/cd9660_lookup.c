@@ -160,7 +160,7 @@ cd9660_lookup(ap)
 
 		if (error == ENOENT)
 			return (error);
-//#ifdef PARANOID
+#ifdef PARANOID
 		if ((vdp->v_flag & VROOT) && (flags & ISDOTDOT))
 			panic("cd9660_lookup: .. through root");
 #endif
