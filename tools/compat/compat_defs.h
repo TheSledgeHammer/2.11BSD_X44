@@ -188,7 +188,6 @@ struct group;
 #endif
 
 /* Type substitutes. */
-
 #if !HAVE_DECL_ID_T
 typedef unsigned int id_t;
 #endif
@@ -229,14 +228,14 @@ typedef unsigned int uint_t;
 typedef unsigned long ulong_t;
 #endif
 
-#if !HAVE_DECL_ENUM_UIO_RW
+#if !HAVE_ENUM_UIO_RW
 enum uio_rw {
 	UIO_READ,
 	UIO_WRITE
 };
 #endif
 
-#if !HAVE_DECL_ENUM_UIO_SEG
+#if !HAVE_ENUM_UIO_SEG
 enum uio_seg {
 	UIO_USERSPACE,		/* from user data space */
 	UIO_SYSSPACE,		/* from system space */
@@ -388,7 +387,7 @@ ssize_t getline(char **, size_t *, FILE *);
 int issetugid(void);
 #endif
 
-#if !HAVE_ISBHAVE_DECL_ISBLANK && !defined(isblank)
+#if !HAVE_DECL_ISBLANK && !defined(isblank)
 #define isblank(x) ((x) == ' ' || (x) == '\t')
 #endif
 
