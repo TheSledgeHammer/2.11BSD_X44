@@ -9,8 +9,8 @@
 #ifndef	_SYS_ERRNO_H_
 #define	_SYS_ERRNO_H_
 
-#ifndef	KERNEL
-extern	int	errno;				/* global error number */
+#ifndef	_KERNEL
+extern int				errno;	/* global error number */
 #endif
 
 #define	EPERM			1		/* Not owner */
@@ -119,11 +119,12 @@ extern	int	errno;				/* global error number */
 #define	ENEEDAUTH		81		/* Need authenticator */
 #define	ELAST			81		/* Must be equal largest errno */
 
-#ifdef	KERNEL
+#ifdef	_KERNEL
 /* pseudo-errors returned inside kernel to modify return back to user mode */
 #define	ERESTART		-1		/* restart syscall */
 #define	EJUSTRETURN		-2		/* don't modify regs, just return */
 #define	ENOIOCTL		-3		/* ioctl not handled by this layer (aka EPASSTHROUGH) */
+#define EPASSTHROUGH	ENOIOCTL
 #endif
 
 #endif /* _SYS_ERRNO_H_ */

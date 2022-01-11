@@ -30,71 +30,6 @@
 #define __USE_ISOC99 1
 #endif	/* __linux__ && HAVE_FEATURES_H */
 
-/*
- * Type substitutes.
- * These are controlled via HAVE_TYPE protections and some of them are needed
- * in other header files (in the build tree not in the host). This is because
- * we are mixing the header files (which don't need them) with extensions
- * such as the Solaris headers which depend on types defined by the native
- * system headers, and might be missing in the build host.
- */
-
-#if !HAVE_ID_T
-typedef unsigned int id_t;
-#endif
-
-#if !HAVE_SOCKLEN_T
-/*
- * This is defined as int for compatibility with legacy systems (and not
- * unsigned int), since universally it was int in most systems that did not
- * define it.
- */
-typedef int socklen_t;
-#endif
-
-#if !HAVE_ENUM_UIO_RW
-enum uio_rw { UIO_READ, UIO_WRITE };
-#endif
-
-#if !HAVE_ENUM_UIO_SEG
-enum uio_seg {
-	UIO_USERSPACE,		/* from user data space */
-	UIO_SYSSPACE		/* from system space */
-};
-#endif
-
-#if !HAVE_U_LONG
-typedef unsigned long u_long;
-#endif
-
-#if !HAVE_U_CHAR
-typedef unsigned char u_char;
-#endif
-
-#if !HAVE_U_INT
-typedef unsigned int u_int;
-#endif
-
-#if !HAVE_U_SHORT
-typedef unsigned short u_short;
-#endif
-
-#if !HAVE_UCHAR_T
-typedef unsigned char uchar_t;
-#endif
-
-#if !HAVE_USHORT_T
-typedef unsigned short ushort_t;
-#endif
-
-#if !HAVE_UINT_T
-typedef unsigned int uint_t;
-#endif
-
-#if !HAVE_ULONG_T
-typedef unsigned long ulong_t;
-#endif
-
 /* System headers needed for (re)definitions below. */
 
 #include <sys/types.h>
@@ -252,7 +187,68 @@ struct group;
 # endif
 #endif
 
+/* Type substitutes. */
+
+#if !HAVE_DECL_ID_T
+typedef unsigned int id_t;
+#endif
+
+#if !HAVE_DECL_SOCKLEN_T
+typedef int socklen_t;
+#endif
+
+#if !HAVE_DECL_U_LONG
+typedef unsigned long u_long;
+#endif
+
+#if !HAVE_DECL_U_CHAR
+typedef unsigned char u_char;
+#endif
+
+#if !HAVE_DECL_U_INT
+typedef unsigned int u_int;
+#endif
+
+#if !HAVE_DECL_U_SHORT
+typedef unsigned short u_short;
+#endif
+
+#if !HAVE_DECL_UCHAR_T
+typedef unsigned char uchar_t;
+#endif
+
+#if !HAVE_DECL_USHORT_T
+typedef unsigned short ushort_t;
+#endif
+
+#if !HAVE_DECL_UINT_T
+typedef unsigned int uint_t;
+#endif
+
+#if !HAVE_DECL_ULONG_T
+typedef unsigned long ulong_t;
+#endif
+
+#if !HAVE_DECL_ENUM_UIO_RW
+enum uio_rw {
+	UIO_READ,
+	UIO_WRITE
+};
+#endif
+
+#if !HAVE_DECL_ENUM_UIO_SEG
+enum uio_seg {
+	UIO_USERSPACE,		/* from user data space */
+	UIO_SYSSPACE,		/* from system space */
+	UIO_USERISPACE		/* from user I space */
+};
+#endif
+
 /* Prototypes for replacement functions. */
+
+#if !HAVE_DECL_ATOLL
+long long int atoll(const char *);
+#endif
 
 #if !HAVE_DECL_ASPRINTF
 int asprintf(char **, const char *, ...);
@@ -392,21 +388,19 @@ ssize_t getline(char **, size_t *, FILE *);
 int issetugid(void);
 #endif
 
-/*
 #if !HAVE_ISBHAVE_DECL_ISBLANK && !defined(isblank)
 #define isblank(x) ((x) == ' ' || (x) == '\t')
 #endif
-*/
 
 #define __nbcompat_bswap16(x)	((((x) << 8) & 0xff00) | (((x) >> 8) & 0x00ff))
 
-#define __nbcompat_bswap32(x)	((((x) << 24) & 0xff000000) | \
-				 (((x) <<  8) & 0x00ff0000) | \
-				 (((x) >>  8) & 0x0000ff00) | \
-				 (((x) >> 24) & 0x000000ff))
+#define __nbcompat_bswap32(x)	((((x) << 24) & 0xff000000) | 		\
+								(((x) <<  8) & 0x00ff0000)  | 		\
+								(((x) >>  8) & 0x0000ff00)  | 		\
+								(((x) >> 24) & 0x000000ff))
 
-#define __nbcompat_bswap64(x)	(((u_int64_t)bswap32((x)) << 32) | \
-				 ((u_int64_t)bswap32((x) >> 32)))
+#define __nbcompat_bswap64(x)	(((u_int64_t)bswap32((x)) << 32) | 	\
+				 	 	 	 	((u_int64_t)bswap32((x) >> 32)))
 
 #if ! HAVE_DECL_BSWAP16
 #ifdef bswap16

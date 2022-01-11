@@ -33,9 +33,9 @@ _ARCH_INCS!=	${TOOL_SED} -e 's/^\#.*//' ${.CURDIR}/../headerlist
 
 _INCS=		disktab.h
 _SYSINCS=	boot.h 		\
-			disklabel.h diskapm.h diskgpt.h diskmbr.h \
+			disklabel.h diskslice.h diskapm.h diskgpt.h diskmbr.h \
 			dkbad.h 	\
-			exec_elf.h exec_ecoff.h
+			exec_elf.h exec_ecoff.h exec_xcoff.h
 
 HOST_CPPFLAGS+=	-I${TOOLDIR}/include -I${TOOLDIR}/include/nbinclude
 

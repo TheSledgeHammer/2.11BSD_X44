@@ -36,6 +36,8 @@
 #ifndef _SYS_ENDIAN_H_
 #define	_SYS_ENDIAN_H_
 
+#include <lib/libkern/libkern.h>
+
 /*
  * Definitions for byte order, according to byte significance from low
  * address to high.
@@ -249,7 +251,5 @@ le64enc(void *pp, uint64_t u)
 	le32enc(p, (uint32_t)(u & 0xffffffffU));
 	le32enc(p + 4, (uint32_t)(u >> 32));
 }
-
-#include <lib/libkern/libkern.h>
 
 #endif /* !_SYS_ENDIAN_H_ */

@@ -33,7 +33,7 @@
 #define __LDPGSZ	4096
 
 /* Relocation format. */
-struct relocation_info_i386 {
+struct relocation_info {
 	int r_address;						/* offset in text or data segment */
 	unsigned int r_symbolnum 	: 24,	/* ordinal number of add symbol */
 			 	 	 r_pcrel 	:  1,	/* 1 if value should be pc-relative */
@@ -44,6 +44,6 @@ struct relocation_info_i386 {
 					 r_relative :  1,	/* load address relative */
 					 r_copy 	:  1;	/* run time copy */
 };
-#define relocation_info	relocation_info_i386
+#define relocation_info_i386 relocation_info
 
 #endif  /* _I386_AOUT_MACHDEP_H_ */

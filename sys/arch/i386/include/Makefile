@@ -7,9 +7,9 @@ INCS=		ansi.h aout_machdep.h asm.h atomic.h bios.h bootinfo.h bus.h 			\
 			db_machdep.h dbg.h ecoff_machdep.h elf_machdep.h endian.h exec.h 		\
 			float.h frame.h gdt.h intr.h limits.h loadfile_machdep.h 				\
 			macho_machdep.h npx.h param.h pcb.h pic.h pio.h pmap.h pmap_reg.h 		\
-			pmap_tlb.h proc.h profile.h psl.h pte.h reg.h reloc.h segments.h 		\
-			setjmp.h signal.h specialreg.h stdarg.h sysarch.h trap.h tss.h types.h 	\
-			vm86.h vmparam.h xcoff_machdep.h
+			pmap_tlb.h proc.h profile.h psl.h pte.h reg.h segments.h setjmp.h 		\
+			signal.h specialreg.h stdarg.h sysarch.h trap.h tss.h types.h vm86.h 	\
+			vmparam.h xcoff_machdep.h
 # MATH EMU
 INCS+=		math_emu.h
 # MP/SMP

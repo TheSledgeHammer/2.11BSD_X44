@@ -108,10 +108,10 @@ struct vm_map_entry {
 	caddr_t						space;			/* space in subtree */
 	union vm_map_object			object;			/* object I point to */
 	vm_offset_t					offset;			/* offset into object */
-	bool_t					is_a_map;		/* Is "object" a map? */
-	bool_t					is_sub_map;		/* Is "object" a submap? Only in sharing maps: */
-	bool_t					copy_on_write;	/* is data copy-on-write */
-	bool_t					needs_copy;		/* does object need to be copied Only in task maps: */
+	bool_t						is_a_map;		/* Is "object" a map? */
+	bool_t						is_sub_map;		/* Is "object" a submap? Only in sharing maps: */
+	bool_t						copy_on_write;	/* is data copy-on-write */
+	bool_t						needs_copy;		/* does object need to be copied Only in task maps: */
 	vm_prot_t					protection;		/* protection code */
 	vm_prot_t					max_protection;	/* maximum protection */
 	vm_inherit_t				inheritance;	/* inheritance */
@@ -138,13 +138,13 @@ struct vm_map {
 	lock_data_t					lock;				/* Lock for map data */
 	int							nentries;			/* Number of entries */
 	vm_size_t					size;				/* virtual size */
-	bool_t					is_main_map;		/* Am I a main map? */
+	bool_t						is_main_map;		/* Am I a main map? */
 	int							ref_count;			/* Reference count */
 	simple_lock_data_t			ref_lock;			/* Lock for ref_count field */
 	vm_map_entry_t				hint;				/* hint for quick lookups */
 	simple_lock_data_t			hint_lock;			/* lock for hint storage */
 	vm_map_entry_t				first_free;			/* First free space hint */
-	bool_t					entries_pageable; 	/* map entries pageable?? */
+	bool_t						entries_pageable; 	/* map entries pageable?? */
 	unsigned int				timestamp;			/* Version number */
 #define	min_offset				cl_header.cqh_first->start
 #define max_offset				cl_header.cqh_first->end
