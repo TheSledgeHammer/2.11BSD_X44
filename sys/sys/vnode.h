@@ -180,7 +180,7 @@ struct vattr {
  */
 #define	VNOVAL	(-1)
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * Convert between vnode types and inode formats (since POSIX.1
  * defines mode word of stat structure in terms of inode formats).
@@ -208,14 +208,14 @@ extern int						vttoif_tab[];
 #define	VHOLD(vp)		vhold(vp)
 #define	VREF(vp)		vref(vp)
 
-void	holdrele (struct vnode *);
-void	vattr_null (struct vattr *);
-void	vhold (struct vnode *);
-void	vref (struct vnode *);
+void	holdrele(struct vnode *);
+void	vattr_null(struct vattr *);
+void	vhold(struct vnode *);
+void	vref(struct vnode *);
 #else
 #define	VATTR_NULL(vap)	(*(vap) = va_null)	/* initialize a vattr */
-#define	HOLDRELE(vp)	holdrele(vp)		/* decrease buf or page ref */
 
+#define	HOLDRELE(vp)	holdrele(vp)		/* decrease buf or page ref */
 static __inline
 holdrele(vp)
 	struct vnode *vp;
@@ -224,7 +224,7 @@ holdrele(vp)
 	vp->v_holdcnt--;
 	simple_unlock(&vp->v_interlock);
 }
-#define	VHOLD(vp)	vhold(vp)				/* increase buf or page ref */
+#define	VHOLD(vp)		vhold(vp)				/* increase buf or page ref */
 static __inline
 vhold(vp)
 	struct vnode *vp;
@@ -233,7 +233,7 @@ vhold(vp)
 	vp->v_holdcnt++;
 	simple_unlock(&vp->v_interlock);
 }
-#define	VREF(vp)	vref(vp)				/* increase reference */
+#define	VREF(vp)		vref(vp)				/* increase reference */
 static __inline
 vref(vp)
 	struct vnode *vp;

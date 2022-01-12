@@ -46,10 +46,10 @@
 #include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
+#include <sys/namei.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/stat.h>
-#include <sys/user.h>
 
 #include <fs/isofs/cd9660/iso.h>
 #include <fs/isofs/cd9660/cd9660_extern.h>
@@ -81,10 +81,10 @@ cd9660_init(vfsp)
 {
 
 	isohashtbl = hashinit(desiredvnodes, M_ISOFSMNT, &isohash);
-	simple_lock_init(&cd9660_ihash_slock, "cd9660_ihash_slock");
 #ifdef ISODEVMAP
 	idvhashtbl = hashinit(desiredvnodes / 8, M_ISOFSMNT, &idvhash);
 #endif
+	simple_lock_init(&cd9660_ihash_slock, "cd9660_ihash_slock");
 }
 
 #ifdef ISODEVMAP
@@ -149,13 +149,16 @@ cd9660_ihashget(dev, inum)
 	dev_t dev;
 	ino_t inum;
 {
-	struct proc *p = curproc;		/* XXX */
 	struct iso_node *ip;
 	struct vnode *vp;
+	struct proc *p;
+
+	p = curproc;
 
 loop:
 	simple_lock(&cd9660_ihash_slock);
 	LIST_FOREACH(ip, &isohashtbl[INOHASH(dev, inum)], i_hash) {
+		//p = ip->i_devvp->v_proc;
 		if (inum == ip->i_number && dev == ip->i_dev) {
 			vp = ITOV(ip);
 			simple_lock(&vp->v_interlock);
@@ -176,11 +179,14 @@ void
 cd9660_ihashins(ip)
 	struct iso_node *ip;
 {
-	struct proc *p = curproc;		/* XXX */
+	struct proc *p;
 	struct ihashhead *ipp;
+
+	p = curproc;
 
 	simple_lock(&cd9660_ihash_slock);
 	ipp = &isohashtbl[INOHASH(ip->i_dev, ip->i_number)];
+	//p = ip->i_devvp->v_proc;
 	LIST_INSERT_HEAD(ipp, ip, i_hash);
 	simple_unlock(&cd9660_ihash_slock);
 
@@ -227,7 +233,7 @@ cd9660_inactive(ap)
 	 * so that it can be reused immediately.
 	 */
 	if (ip->inode.iso_mode == 0)
-		vrecycle(vp, (struct simplelock *)0, p);
+		vrecycle(vp, (struct lock_object *)0, p);
 	return error;
 }
 

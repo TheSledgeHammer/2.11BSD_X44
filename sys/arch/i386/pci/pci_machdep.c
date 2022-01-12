@@ -183,7 +183,6 @@ pci_bus_maxdevs(pc, busno)
 	pci_chipset_tag_t pc;
 	int busno;
 {
-
 	/*
 	 * Bus number is irrelevant.  If Configuration Mechanism 2 is in
 	 * use, can only have devices 0-15 on any bus.  If Configuration
@@ -368,7 +367,6 @@ mode2:
 int
 pci_mode_detect()
 {
-
 #ifdef PCI_CONF_MODE
 #if (PCI_CONF_MODE == 1) || (PCI_CONF_MODE == 2)
 	return (pci_mode = PCI_CONF_MODE);

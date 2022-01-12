@@ -80,6 +80,7 @@
 #include <sys/stat.h>
 #include <sys/lock.h>
 #include <sys/lockf.h>
+#include <sys/stddef.h>
 #include <sys/fnv_hash.h>
 #include <sys/signalvar.h>
 #include <sys/time.h>
@@ -914,7 +915,7 @@ htbc_bmapext(struct vnode *vp, int32_t bn, int64_t *bnp, int *runp, int *runb)
 		ep = path.ep_ext;
 		*bnp = htbc_fsbtodb(fs,
 				lbn - ep->e_blk
-						+ (ep->e_start_lo | (daddr_t) ep->e_start_hi << 32));
+						+ (ep->e_start_lo | (daddr_t ) ep->e_start_hi << 32));
 
 		if (*bnp == 0)
 			*bnp = -1;

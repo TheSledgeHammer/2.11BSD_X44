@@ -53,7 +53,7 @@ struct nameidata {
 	} ni_cnd;
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * namei operations and modifiers, stored in ni_cnd.flags
  */
@@ -133,7 +133,7 @@ struct	namecache {
 	char					nc_name[NCHNAMLEN];	/* segment name */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 u_long	nextvnodeid;
 struct namecache 	*namecache;
 int	namei(struct nameidata *);

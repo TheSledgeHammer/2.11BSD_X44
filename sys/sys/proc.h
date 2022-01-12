@@ -268,6 +268,13 @@ u_long pid_hash;
 extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
 extern u_long pgrphash;
 
+#if !defined(curproc)
+#if defined(SMP)
+#define curproc		curcpu()->cpu_curproc;
+#else
+extern struct proc *curproc;			/* current running proc */
+#endif
+
 extern int pidhashmask;					/* In param.c. */
 extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
@@ -314,5 +321,4 @@ void		fixjobc (struct proc *, struct pgrp *, int);
 int			inferior (struct proc *);
 
 #endif 	/* KERNEL */
-
 #endif	/* !_SYS_PROC_H_ */

@@ -65,7 +65,7 @@ struct PnPBIOS_table
     u_int32_t	oemdevid;		/* motherboard EISA ID */
     u_int16_t	rmbiosseg;		/* real-mode BIOS segment */
     u_int32_t	pmdataseg;		/* protected-mode data segment */
-} __packed;
+} __attribute__((__packed__));
 
 /*
  * PCI BIOS functions
@@ -90,24 +90,24 @@ struct PnPBIOS_table
  */
 struct PIR_header
 {
-    int8_t		ph_signature[4];
-    u_int16_t	ph_version;
-    u_int16_t	ph_length;
-    u_int8_t	ph_router_bus;
-    u_int8_t	ph_router_dev_fn;
-    u_int16_t	ph_pci_irqs;
-    u_int16_t	ph_router_vendor;
-    u_int16_t	ph_router_device;
-    u_int32_t	ph_miniport;
-    u_int8_t	ph_res[11];
-    u_int8_t	ph_checksum;
-} __packed;
+    int8_t				ph_signature[4];
+    u_int16_t			ph_version;
+    u_int16_t			ph_length;
+    u_int8_t			ph_router_bus;
+    u_int8_t			ph_router_dev_fn;
+    u_int16_t			ph_pci_irqs;
+    u_int16_t			ph_router_vendor;
+    u_int16_t			ph_router_device;
+    u_int32_t			ph_miniport;
+    u_int8_t			ph_res[11];
+    u_int8_t			ph_checksum;
+} __attribute__((__packed__));
 
 struct PIR_intpin
 {
-    u_int8_t	link;
-    u_int16_t	irqs;
-} __packed;
+    u_int8_t			link;
+    u_int16_t			irqs;
+} __attribute__((__packed__));
 
 struct PIR_entry
 {
@@ -117,13 +117,13 @@ struct PIR_entry
     struct PIR_intpin	pe_intpin[4];
     u_int8_t			pe_slot;
     u_int8_t			pe_res3;
-} __packed;
+} __attribute__((__packed__));
 
 struct PIR_table
 {
     struct PIR_header	pt_header;
     struct PIR_entry	pt_entry[0];
-} __packed;
+} __attribute__((__packed__));
 
 /*
  * Int 15:E820 'SMAP' structure
@@ -147,7 +147,7 @@ struct bios_smap {
     u_int64_t	base;
     u_int64_t	length;
     u_int32_t	type;
-} __packed;
+} __attribute__((__packed__));
 
 /* Structure extended to include extended attribute field in ACPI 3.0. */
 struct bios_smap_xattr {
@@ -155,7 +155,7 @@ struct bios_smap_xattr {
     u_int64_t	length;
     u_int32_t	type;
     u_int32_t	xattr;
-} __packed;
+} __attribute__((__packed__));
 
 /*
  * System Management BIOS
@@ -197,17 +197,17 @@ struct bios_oem_signature {
 	char * anchor;		/* search anchor string in BIOS memory */
 	size_t offset;		/* offset from anchor (may be negative) */
 	size_t totlen;		/* total length of BIOS string to copy */
-} __packed;
+} __attribute__((__packed__));
 
 struct bios_oem_range {
 	u_int from;			/* shouldn't be below 0xe0000 */
 	u_int to;			/* shouldn't be above 0xfffff */
-} __packed;
+} __attribute__((__packed__));
 
 struct bios_oem {
 	struct bios_oem_range range;
 	struct bios_oem_signature signature[];
-} __packed;
+} __attribute__((__packed__));
 
 struct segment_info {
 	u_int	base;
@@ -262,7 +262,7 @@ struct bios32_SDentry {
  */
 extern struct bios32_SDentry	PCIbios;
 
-void 		bios32_init (void);
+void 		bios32_init(void);
 int			bios_oem_strings(struct bios_oem *oem, u_char *buffer, size_t maxlen);
 uint32_t	bios_sigsearch(uint32_t start, u_char *sig, int siglen, int paralen, int sigofs);
 int			bios16(struct bios_args *, char *, ...);

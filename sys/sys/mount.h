@@ -223,7 +223,7 @@ struct vfsconf {
 	struct	vfsconf 		*vfc_next;					/* next in list */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 
 extern int 					maxvfsconf;		/* highest defined filesystem type */
 extern struct vfsconf 		*vfsconf;		/* head of list of filesystem types */

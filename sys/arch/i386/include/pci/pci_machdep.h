@@ -78,7 +78,7 @@ typedef int 	pci_intr_handle_t;
  * NOT TO BE USED DIRECTLY BY MACHINE INDEPENDENT CODE.
  */
 extern int pci_mode;
-int			pci_mode_detect (void);
+int	pci_mode_detect (void);
 
 
 /*

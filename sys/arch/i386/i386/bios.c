@@ -71,7 +71,7 @@ static void					bios32_init(void); /* init'ed in autoconf.c */
  * Locate various bios32 entities.
  */
 static void
-bios32_init()
+bios32_init(void)
 {
     u_long					sigaddr;
     struct bios32_SDheader	*sdh;
@@ -192,13 +192,13 @@ bios32_SDlookup(struct bios32_SDentry *ent)
  * Search some or all of the BIOS region for a signature string.
  *
  * (start)	Optional offset returned from this function
- *		(for searching for multiple matches), or NULL
- *		to start the search from the base of the BIOS.
- *		Note that this will be a _physical_ address in
- *		the range 0xe0000 - 0xfffff.
+ *			(for searching for multiple matches), or NULL
+ *			to start the search from the base of the BIOS.
+ *			Note that this will be a _physical_ address in
+ *			the range 0xe0000 - 0xfffff.
  * (sig)	is a pointer to the byte(s) of the signature.
  * (siglen)	number of bytes in the signature.
- * (paralen)	signature paragraph (alignment) size.
+ * (paralen)signature paragraph (alignment) size.
  * (sigofs)	offset of the signature within the paragraph.
  *
  * Returns the _physical_ address of the found signature, 0 if the

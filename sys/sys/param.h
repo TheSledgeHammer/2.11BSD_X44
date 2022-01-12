@@ -147,8 +147,8 @@
  *
  * The file system is made out of blocks of most MAXBSIZE units.
  */
-#define	MAXBSIZE	MAXPHYS
-#define MAXFRAG 	8
+#define	MAXBSIZE		MAXPHYS
+#define MAXFRAG 		8
 
 /*
  * MAXPATHLEN defines the longest permissable path length

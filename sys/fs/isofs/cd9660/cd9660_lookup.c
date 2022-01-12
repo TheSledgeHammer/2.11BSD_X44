@@ -55,7 +55,7 @@
 #include <fs/isofs/cd9660/iso_rrip.h>
 #include <fs/isofs/cd9660/cd9660_rrip.h>
 
-struct	nchstats iso_nchstats;
+struct nchstats iso_nchstats;
 
 /*
  * Convert a component of a pathname into a pointer to a locked inode.

@@ -44,7 +44,7 @@
 
 /*
  * common lock object:
- * array_based queuing lock (ABQL)
+ * array based queuing lock (ABQL)
  */
 struct lock_object_cpu {
 	volatile u_int				loc_my_ticket;
@@ -184,8 +184,8 @@ typedef struct lock       	*lock_t;
 /*
  * Indicator that no process holds exclusive lock
  */
-#define LK_KERNPROC 	((pid_t) -2)
-#define LK_NOPROC 		((pid_t) -1)
+#define LK_KERNPROC 			((pid_t) -2)
+#define LK_NOPROC 				((pid_t) -1)
 
 /*
  * lock holder macros
