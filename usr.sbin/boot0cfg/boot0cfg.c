@@ -196,7 +196,7 @@ main(int argc, char *argv[])
 	argv += optind;
 	if (argc != 1)
 		usage();
-	disk = getdevpath(*argv);
+	disk = getdevpath(*argv, 0);
 	if (disk == NULL)
 		err(1, "cannot open disk %s", disk);
 
