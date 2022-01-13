@@ -90,13 +90,12 @@ setdisktab(const char *name)
 struct disklabel *
 getdiskbyname(const char *name)
 {
-	static struct	disklabel disk;
-	struct	disklabel *dp = &disk;
+	static struct disklabel disk;
+	struct disklabel *dp = &disk;
 	struct partition *pp;
-	char	*buf;
-	char	*cp, *cq;	/* can't be */
-	char	p, max, psize[3], pbsize[3],
-		pfsize[3], poffset[3], ptype[3];
+	char *buf;
+	char *cp, *cq; /* can't be */
+	char p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
 	u_int32_t *dx;
 	long f;
 
@@ -111,8 +110,8 @@ getdiskbyname(const char *name)
 	 */
 	cq = dp->d_typename;
 	cp = buf;
-	while (cq < dp->d_typename + sizeof(dp->d_typename) - 1 &&
-	    (*cq = *cp) && *cq != '|' && *cq != ':')
+	while (cq < dp->d_typename + sizeof(dp->d_typename) - 1 && (*cq = *cp)
+			&& *cq != '|' && *cq != ':')
 		cq++, cp++;
 	*cq = '\0';
 	/*
@@ -132,7 +131,7 @@ getdiskbyname(const char *name)
 		dp->d_flags |= D_BADSECT;
 
 #define getnumdflt(field, dname, dflt) \
-    (field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t) f)
+	(field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t) f)
 #define	getnum(field, dname) \
 	if (cgetnum(buf, dname, &f) != -1) field = (u_int32_t)f
 
@@ -156,11 +155,11 @@ getdiskbyname(const char *name)
 	getnumdflt(dp->d_trkseek, "ts", 0);
 	getnumdflt(dp->d_bbsize, "bs", BBSIZE);
 	getnumdflt(dp->d_sbsize, "sb", SBSIZE);
-	strcpy(psize, "px");	/* XXX: strcpy is safe */
-	strcpy(pbsize, "bx");	/* XXX: strcpy is safe */
-	strcpy(pfsize, "fx");	/* XXX: strcpy is safe */
-	strcpy(poffset, "ox");	/* XXX: strcpy is safe */
-	strcpy(ptype, "tx");	/* XXX: strcpy is safe */
+	strcpy(psize, "px"); /* XXX: strcpy is safe */
+	strcpy(pbsize, "bx"); /* XXX: strcpy is safe */
+	strcpy(pfsize, "fx"); /* XXX: strcpy is safe */
+	strcpy(poffset, "ox"); /* XXX: strcpy is safe */
+	strcpy(ptype, "tx"); /* XXX: strcpy is safe */
 	max = 'a' - 1;
 	pp = &dp->d_partitions[0];
 	for (p = 'a'; p < 'a' + MAXPARTITIONS; p++, pp++) {
@@ -170,7 +169,7 @@ getdiskbyname(const char *name)
 		if (cgetnum(buf, psize, &ff) == -1)
 			pp->p_size = 0;
 		else {
-			pp->p_size = (u_int32_t)ff;
+			pp->p_size = (u_int32_t) ff;
 			getnum(pp->p_offset, poffset);
 			getnumdflt(pp->p_fsize, pfsize, 0);
 			if (pp->p_fsize) {
@@ -179,8 +178,7 @@ getdiskbyname(const char *name)
 				if (cgetnum(buf, pbsize, &bsize) == -1)
 					pp->p_frag = 8;
 				else
-					pp->p_frag =
-					    (u_int8_t)(bsize / pp->p_fsize);
+					pp->p_frag = (u_int8_t)(bsize / pp->p_fsize);
 			}
 			getnumdflt(pp->p_fstype, ptype, 0);
 			if (pp->p_fstype == 0)
@@ -192,7 +190,7 @@ getdiskbyname(const char *name)
 		}
 	}
 	dp->d_npartitions = max + 1 - 'a';
-	strcpy(psize, "dx");	/* XXX: strcpy is safe */
+	strcpy(psize, "dx"); /* XXX: strcpy is safe */
 	dx = dp->d_drivedata;
 	for (p = '0'; p < '0' + NDDATA; p++, dx++) {
 		psize[1] = p;

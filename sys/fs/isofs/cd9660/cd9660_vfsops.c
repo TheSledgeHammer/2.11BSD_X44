@@ -120,7 +120,7 @@ cd9660_mountroot()
 	simple_lock(&mountlist_slock);
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 	simple_unlock(&mountlist_slock);
-	(void)cd9660_statfs(mp, &mp->mnt_stat, p);
+	(void) cd9660_statfs(mp, &mp->mnt_stat, p);
 	vfs_unbusy(mp, p);
 	inittodr(0);
 	return (0);

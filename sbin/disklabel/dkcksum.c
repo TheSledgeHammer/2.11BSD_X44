@@ -54,8 +54,8 @@ dkcksum(lp)
 	register u_short *start, *end;
 	register u_short sum = 0;
 
-	start = (u_short *)lp;
-	end = (u_short *)&lp->d_partitions[lp->d_npartitions];
+	start = (u_short*) lp;
+	end = (u_short*) &lp->d_partitions[lp->d_npartitions];
 	while (start < end)
 		sum ^= *start++;
 	return (sum);

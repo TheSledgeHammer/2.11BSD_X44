@@ -135,15 +135,15 @@ struct	namecache {
 
 #ifdef _KERNEL
 u_long	nextvnodeid;
-struct namecache 	*namecache;
-int	namei(struct nameidata *);
-int	lookup(struct nameidata *);
-int	relookup(struct vnode *, struct vnode **, struct componentname *);
-int  cache_lookup(struct vnode *, struct vnode **, struct componentname *);
-void cache_enter(struct vnode *, struct vnode *, struct componentname *);
-void cache_purge(struct vnode *);
-void cache_purgevfs(struct mount *);
-void nchinit(void);
+struct namecache *namecache;
+int		namei(struct nameidata *);
+int		lookup(struct nameidata *);
+int		relookup(struct vnode *, struct vnode **, struct componentname *);
+int  	cache_lookup(struct vnode *, struct vnode **, struct componentname *);
+void 	cache_enter(struct vnode *, struct vnode *, struct componentname *);
+void 	cache_purge(struct vnode *);
+void 	cache_purgevfs(struct mount *);
+void 	nchinit(void);
 #endif
 
 /*

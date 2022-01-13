@@ -701,7 +701,6 @@ void *setmode(const char *);
 #endif
 
 /* <stdlib.h> */
-
 #ifndef __GNUC__
 # if HAVE_ALLOCA_H
 #  include <alloca.h>
@@ -736,7 +735,6 @@ int	 	cgetstr(char *, const char *, char **);
 int	 	cgetustr(char *, const char *, char **);
 
 /* <sys/endian.h> */
-
 #if WORDS_BIGENDIAN
 #if !HAVE_DECL_HTOBE16
 #define htobe16(x)	(x)
@@ -794,10 +792,10 @@ int	 	cgetustr(char *, const char *, char **);
 #if !HAVE_DECL_LE64TOH
 #define le64toh(x)	htole64(x)
 #endif
-#define __GEN_ENDIAN_ENC(bits, endian) 			\
-static void 						\
+#define __GEN_ENDIAN_ENC(bits, endian) 		\
+static void 								\
 endian ## bits ## enc(void *dst, u_int ## bits ## _t u) \
-{ 							\
+{ 											\
 	u = hto ## endian ## bits (u); 			\
 	memcpy(dst, &u, sizeof(u)); 			\
 }
@@ -821,13 +819,13 @@ __GEN_ENDIAN_ENC(64, le)
 #endif
 #undef __GEN_ENDIAN_ENC
 
-#define __GEN_ENDIAN_DEC(bits, endian) 			\
+#define __GEN_ENDIAN_DEC(bits, endian) 	\
 static u_int ## bits ## _t 				\
-endian ## bits ## dec(const void *buf) 			\
-{ 							\
+endian ## bits ## dec(const void *buf) 	\
+{ 										\
 	u_int ## bits ## _t u; 				\
-	memcpy(&u, buf, sizeof(u)); 			\
-	return endian ## bits ## toh (u); 		\
+	memcpy(&u, buf, sizeof(u)); 		\
+	return endian ## bits ## toh (u); 	\
 }
 #if !HAVE_DECL_BE16DEC
 __GEN_ENDIAN_DEC(16, be)

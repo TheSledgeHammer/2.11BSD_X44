@@ -48,8 +48,8 @@ struct iso_volume_descriptor {
 };
 
 /* volume descriptor types */
-#define ISO_VD_PRIMARY 1
-#define ISO_VD_END 255
+#define ISO_VD_PRIMARY 	1
+#define ISO_VD_END 		255
 
 #define ISO_STANDARD_ID "CD001"
 #define ISO_ECMA_ID     "CDW01"
@@ -128,76 +128,76 @@ struct iso_extended_attributes {
 };
 
 
-
+/* 7.1.1: unsigned char */
 static __inline int
 isonum_711(p)
-	u_char *p;
+	const u_char *p;
 {
 	return *p;
 }
 
+/* 7.1.2: signed char */
 static __inline int
 isonum_712(p)
-	char *p;
+	const char *p;
 {
-	return *p;
+	return (signed char) *p;
 }
 
-#ifndef UNALIGNED_ACCESS
+/* 7.2.1: unsigned little-endian 16-bit value.  NOT USED IN KERNEL. */
+static __inline uint16_t
+isonum_721(p)
+	const u_char *p;
+{
+	return le16dec(p);
+}
 
-static __inline int
+/* 7.2.2: unsigned big-endian 16-bit value.  NOT USED IN KERNEL. */
+static __inline uint16_t
+isonum_722(p)
+	const u_char *p;
+{
+	return be16dec(p);
+}
+
+static __inline uint16_t
 isonum_723(p)
-	u_char *p;
+	const u_char *p;
 {
-	return *p|(p[1] << 8);
-}
-
-static __inline int
-isonum_733(p)
-	u_char *p;
-{
-	return *p|(p[1] << 8)|(p[2] << 16)|(p[3] << 24);
-}
-
-#else /* UNALIGNED_ACCESS */
-
-#if BYTE_ORDER == LITTLE_ENDIAN
-
-static __inline int
-isonum_723(p)
-	u_char *p
-{
-	return *(u_int16t *)p;
-}
-
-static __inline int
-isonum_733(p)
-	u_char *p;
-{
-	return *(u_int32t *)p;
-}
-
-#endif
-
 #if BYTE_ORDER == BIG_ENDIAN
-
-static __inline int
-isonum_723(p)
-	u_char *p
-{
-	return *(u_int16t *)(p + 2);
-}
-
-static __inline int
-isonum_733(p)
-	u_char *p;
-{
-	return *(u_int32t *)(p + 4);
-}
-
+	return be16dec(p + 2);
+#else
+	return le16dec(p);
 #endif
+}
 
-#endif /* UNALIGNED_ACCESS */
+/* 7.3.1: unsigned little-endian 32-bit value.  NOT USED IN KERNEL. */
+static __inline uint32_t
+isonum_731(p)
+	const u_char *p;
+{
+	return le32dec(p);
+}
+
+/* 7.3.2: unsigned big-endian 32-bit value.  NOT USED IN KERNEL. */
+static __inline uint32_t
+isonum_732(p)
+	const u_char *p;
+{
+	return be32dec(p);
+}
+
+/* 7.3.3: unsigned both-endian (little, then big) 32-bit value */
+static __inline uint32_t
+isonum_733(p)
+	const u_char *p;
+{
+#if BYTE_ORDER == BIG_ENDIAN
+	return be32dec(p + 4);
+#else
+	return le32dec(p);
+#endif
+}
 
 /*
  * Associated files have a leading '='.

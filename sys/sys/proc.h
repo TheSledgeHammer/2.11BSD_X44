@@ -274,6 +274,7 @@ extern u_long pgrphash;
 #else
 extern struct proc *curproc;			/* current running proc */
 #endif
+#endif
 
 extern int pidhashmask;					/* In param.c. */
 extern struct proc proc0;				/* Process slot for swapper. */

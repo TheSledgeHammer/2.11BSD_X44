@@ -231,8 +231,9 @@ extern struct vfsconf 		*vfsconf;		/* head of list of filesystem types */
 /*
  * Operations supported on mounted file system.
  */
-struct nameidata;
 struct mbuf;
+struct mount;
+struct nameidata;
 
 struct vfsops {
 	int	(*vfs_mount)(struct mount *, char *, caddr_t, struct nameidata *, struct proc *);

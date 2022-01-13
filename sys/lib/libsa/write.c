@@ -73,13 +73,13 @@ write(fd, dest, bcount)
 	register struct open_file *f = &files[fd];
 	u_int resid;
 
-	if ((unsigned)fd >= SOPEN_MAX || !(f->f_flags & F_WRITE)) {
+	if ((unsigned) fd >= SOPEN_MAX || !(f->f_flags & F_WRITE)) {
 		errno = EBADF;
 		return (-1);
 	}
 	if (f->f_flags & F_RAW) {
-		errno = (f->f_dev->dv_strategy)(f->f_devdata, F_WRITE,
-			(daddr_t)0, bcount, dest, &resid);
+		errno = (f->f_dev->dv_strategy)(f->f_devdata, F_WRITE, (daddr_t) 0,
+				bcount, dest, &resid);
 		if (errno)
 			return (-1);
 		return (resid);

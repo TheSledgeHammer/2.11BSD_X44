@@ -37,7 +37,8 @@
 #include <unistd.h>
 
 ssize_t
-pwrite(int d, const void *buf, size_t nbytes, off_t offset) {
+pwrite(int d, const void *buf, size_t nbytes, off_t offset)
+{
 	off_t oldoff = lseek(d, offset, SEEK_SET);
 	int olderrno;
 	ssize_t nw;

@@ -108,14 +108,14 @@ static const char fmt0[] = "#   flag     start chs   type"
 static const char fmt1[] = "%d   0x%02x   %4u:%3u:%2u   0x%02x"
     "   %4u:%3u:%2u   %10u   %10u\n";
 
-static int read_mbr(const char *, u_int8_t **, int);
+static int 	read_mbr(const char *, u_int8_t **, int);
 static void write_mbr(const char *, int, u_int8_t *, int, int);
 static void display_mbr(u_int8_t *);
-static int boot0version(const u_int8_t *);
-static int boot0bs(const u_int8_t *);
+static int 	boot0version(const u_int8_t *);
+static int 	boot0bs(const u_int8_t *);
 static void stropt(const char *, int *, int *);
-static int argtoi(const char *, int, int, int);
-static int set_bell(u_int8_t *, int, int);
+static int 	argtoi(const char *, int, int, int);
+static int 	set_bell(u_int8_t *, int, int);
 static void usage(void);
 
 static unsigned vol_id[5];	/* 4 plus 1 for flag */
