@@ -6,6 +6,9 @@
  *	@(#)fstab.h	5.1 (Berkeley) 5/30/85
  */
 
+#ifndef _FSTAB_H_
+#define _FSTAB_H_
+
 /*
  * File system table, see fstab (5)
  *
@@ -44,6 +47,7 @@ struct	fstab{
 
 #include <sys/cdefs.h>
 
+__BEGIN_DECLS
 struct	fstab 	*getfsent(void);
 struct	fstab 	*getfsspec(char *name);
 struct	fstab 	*getfsfile(char *name);
@@ -51,3 +55,6 @@ struct	fstab 	*getfstype(void);
 int				setfsent(void);
 int				endfsent(void);
 char			*getdevpath(const char *devname, int flags);
+__END_DECLS
+
+#endif /* !_FSTAB_H_ */
