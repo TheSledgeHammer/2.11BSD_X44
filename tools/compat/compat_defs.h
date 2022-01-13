@@ -192,7 +192,7 @@ struct group;
 typedef unsigned int id_t;
 #endif
 
-#if !HAVE_DECL_SOCKLEN_T
+#if !HAVE_SOCKLEN_T
 typedef int socklen_t;
 #endif
 
