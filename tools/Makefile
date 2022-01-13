@@ -94,9 +94,9 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		file lint1 																\
 		sortinfo 																\
 		.WAIT menuc mknod msgc 													\
-		.WAIT disklabel 														\
+		.WAIT 														\
 		.WAIT 																	\
-		.WAIT fdisk																\
+		.WAIT 																\
 		.WAIT boot0cfg															\
 		pwd_mkdb vgrind												
 														
