@@ -48,9 +48,9 @@ struct specinfo {
 /*
  * Exported shorthand
  */
-#define v_rdev v_specinfo->si_rdev
+#define v_rdev 		v_specinfo->si_rdev
 #define v_hashchain v_specinfo->si_hashchain
-#define v_specnext v_specinfo->si_specnext
+#define v_specnext 	v_specinfo->si_specnext
 #define v_specflags v_specinfo->si_flags
 #define v_speclockf	v_specinfo->si_lockf
 
@@ -74,7 +74,7 @@ struct vnode *speclisth[SPECHSZ];
 /*
  * Prototypes for special file operations on vnodes.
  */
-extern	struct spec_vnodeops;
+extern struct vnodeops spec_vnodeops;
 struct	nameidata;
 struct	componentname;
 struct	ucred;
@@ -82,50 +82,48 @@ struct	flock;
 struct	buf;
 struct	uio;
 
-int	spec_badop(),
-	spec_ebadf();
+int	spec_badop(), spec_ebadf();
 
 int	spec_lookup (struct vop_lookup_args *);
-#define spec_create ((int (*) (struct  vop_create_args *))spec_badop)
-#define spec_mknod ((int (*) (struct  vop_mknod_args *))spec_badop)
 int	spec_open (struct vop_open_args *);
 int	spec_close (struct vop_close_args *);
-#define spec_access ((int (*) (struct  vop_access_args *))spec_ebadf)
-#define spec_getattr ((int (*) (struct  vop_getattr_args *))spec_ebadf)
-#define spec_setattr ((int (*) (struct  vop_setattr_args *))spec_ebadf)
 int	spec_read (struct vop_read_args *);
 int	spec_write (struct vop_write_args *);
-#define	spec_lease_check ((int (*) (struct  vop_lease_args *))nullop)
 int	spec_ioctl (struct vop_ioctl_args *);
 int	spec_select (struct vop_select_args *);
-#define	spec_revoke vop_revoke
-#define spec_mmap ((int (*) (struct  vop_mmap_args *))spec_badop)
 int	spec_fsync (struct  vop_fsync_args *);
-#define spec_seek ((int (*) (struct  vop_seek_args *))spec_badop)
-#define spec_remove ((int (*) (struct  vop_remove_args *))spec_badop)
-#define spec_link ((int (*) (struct  vop_link_args *))spec_badop)
-#define spec_rename ((int (*) (struct  vop_rename_args *))spec_badop)
-#define spec_mkdir ((int (*) (struct  vop_mkdir_args *))spec_badop)
-#define spec_rmdir ((int (*) (struct  vop_rmdir_args *))spec_badop)
-#define spec_symlink ((int (*) (struct  vop_symlink_args *))spec_badop)
-#define spec_readdir ((int (*) (struct  vop_readdir_args *))spec_badop)
-#define spec_readlink ((int (*) (struct  vop_readlink_args *))spec_badop)
-#define spec_abortop ((int (*) (struct  vop_abortop_args *))spec_badop)
 int	spec_inactive (struct  vop_inactive_args *);
-#define spec_reclaim ((int (*) (struct  vop_reclaim_args *))nullop)
-#define spec_lock ((int (*) (struct  vop_lock_args *))vop_nolock)
-#define spec_unlock ((int (*) (struct  vop_unlock_args *))vop_nounlock)
 int	spec_bmap (struct vop_bmap_args *);
 int	spec_strategy (struct vop_strategy_args *);
 int	spec_print (struct vop_print_args *);
-#define spec_islocked ((int(*) (struct vop_islocked_args *))vop_noislocked)
 int	spec_pathconf (struct vop_pathconf_args *);
 int	spec_advlock (struct vop_advlock_args *);
-#define spec_blkatoff ((int (*) (struct  vop_blkatoff_args *))spec_badop)
-#define spec_valloc ((int (*) (struct  vop_valloc_args *))spec_badop)
-#define spec_reallocblks \
-	((int (*) (struct  vop_reallocblks_args *))spec_badop)
-#define spec_vfree ((int (*) (struct  vop_vfree_args *))spec_badop)
-#define spec_truncate ((int (*) (struct  vop_truncate_args *))nullop)
-#define spec_update ((int (*) (struct  vop_update_args *))nullop)
-#define spec_bwrite ((int (*) (struct  vop_bwrite_args *))nullop)
+#define spec_create 	 ((int (*) (struct  vop_create_args *))spec_badop)
+#define spec_mknod 		 ((int (*) (struct  vop_mknod_args *))spec_badop)
+#define spec_access 	 ((int (*) (struct  vop_access_args *))spec_ebadf)
+#define spec_getattr	 ((int (*) (struct  vop_getattr_args *))spec_ebadf)
+#define spec_setattr 	 ((int (*) (struct  vop_setattr_args *))spec_ebadf)
+#define	spec_lease_check ((int (*) (struct  vop_lease_args *))nullop)
+#define	spec_revoke 	 vop_revoke
+#define spec_mmap 		 ((int (*) (struct  vop_mmap_args *))spec_badop)
+#define spec_seek 		 ((int (*) (struct  vop_seek_args *))spec_badop)
+#define spec_remove 	 ((int (*) (struct  vop_remove_args *))spec_badop)
+#define spec_link 		 ((int (*) (struct  vop_link_args *))spec_badop)
+#define spec_rename 	 ((int (*) (struct  vop_rename_args *))spec_badop)
+#define spec_mkdir 		 ((int (*) (struct  vop_mkdir_args *))spec_badop)
+#define spec_rmdir 		 ((int (*) (struct  vop_rmdir_args *))spec_badop)
+#define spec_symlink 	 ((int (*) (struct  vop_symlink_args *))spec_badop)
+#define spec_readdir 	 ((int (*) (struct  vop_readdir_args *))spec_badop)
+#define spec_readlink	 ((int (*) (struct  vop_readlink_args *))spec_badop)
+#define spec_abortop 	 ((int (*) (struct  vop_abortop_args *))spec_badop)
+#define spec_reclaim 	 ((int (*) (struct  vop_reclaim_args *))nullop)
+#define spec_lock 		 ((int (*) (struct  vop_lock_args *))vop_nolock)
+#define spec_unlock 	 ((int (*) (struct  vop_unlock_args *))vop_nounlock)
+#define spec_islocked 	 ((int (*) (struct  vop_islocked_args *))vop_noislocked)
+#define spec_blkatoff 	 ((int (*) (struct  vop_blkatoff_args *))spec_badop)
+#define spec_valloc 	 ((int (*) (struct  vop_valloc_args *))spec_badop)
+#define spec_reallocblks ((int (*) (struct  vop_reallocblks_args *))spec_badop)
+#define spec_vfree 		 ((int (*) (struct  vop_vfree_args *))spec_badop)
+#define spec_truncate 	 ((int (*) (struct  vop_truncate_args *))nullop)
+#define spec_update 	 ((int (*) (struct  vop_update_args *))nullop)
+#define spec_bwrite 	 ((int (*) (struct  vop_bwrite_args *))nullop)

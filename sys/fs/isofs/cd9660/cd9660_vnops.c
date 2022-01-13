@@ -58,7 +58,6 @@
 #include <miscfs/fifofs/fifo.h>
 
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 #include <fs/isofs/cd9660/iso_rrip.h>
 #include <fs/isofs/cd9660/cd9660_mount.h>
@@ -1071,22 +1070,28 @@ cd9660_pathconf(ap)
 /*
  * Global vfs data structures for cd9660
  */
-#define	cd9660_create		eopnotsupp
-#define	cd9660_mknod		eopnotsupp
-#define	cd9660_write		eopnotsupp
-#define	cd9660_lease_check	nullop //lease_check
-#define	cd9660_fsync		nullop
-#define	cd9660_remove		eopnotsupp
-#define	cd9660_rename		eopnotsupp
-#define	cd9660_mkdir		eopnotsupp
-#define	cd9660_rmdir		eopnotsupp
-#define	cd9660_advlock		einval
-#define	cd9660_valloc		eopnotsupp
-#define	cd9660_vfree		nullop
-#define	cd9660_truncate		eopnotsupp
-#define	cd9660_update		nullop
-#define	cd9660_bwrite		eopnotsupp
-#define cd9660_revoke		revoke
+#define cd9660_create 	((int (*) (struct  vop_create_args *))eopnotsupp)
+#define cd9660_mknod 	((int (*) (struct  vop_mknod_args *))eopnotsupp)
+#define cd9660_write 	((int (*) (struct  vop_write_args *))eopnotsupp)
+#ifdef NFS
+int	 lease_check (struct vop_lease_args *);
+#define	cd9660_lease_check lease_check
+#else
+#define	cd9660_lease_check ((int (*) (struct vop_lease_args *))nullop)
+#endif
+#define cd9660_fsync 	((int (*) (struct  vop_fsync_args *))nullop)
+#define cd9660_remove 	((int (*) (struct  vop_remove_args *))eopnotsupp)
+#define cd9660_link 	((int (*) (struct  vop_link_args *))eopnotsupp)
+#define cd9660_rename 	((int (*) (struct  vop_rename_args *))eopnotsupp)
+#define cd9660_mkdir 	((int (*) (struct  vop_mkdir_args *))eopnotsupp)
+#define cd9660_rmdir 	((int (*) (struct  vop_rmdir_args *))eopnotsupp)
+#define cd9660_symlink 	((int (*) (struct vop_symlink_args *))eopnotsupp)
+#define cd9660_advlock 	((int (*) (struct vop_advlock_args *))eopnotsupp)
+#define cd9660_valloc 	((int (*) (struct vop_valloc_args *))eopnotsupp)
+#define cd9660_vfree 	((int (*) (struct  vop_vfree_args *))eopnotsupp)
+#define cd9660_truncate ((int (*) (struct  vop_truncate_args *))eopnotsupp)
+#define cd9660_update 	((int (*) (struct  vop_update_args *))eopnotsupp)
+#define cd9660_bwrite 	((int (*) (struct  vop_bwrite_args *))eopnotsupp)
 
 struct vnodeops cd9660_vnodeops = {
 		.vop_lookup = cd9660_lookup,			/* lookup */
@@ -1183,7 +1188,7 @@ struct vnodeops cd9660_specops = {
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
-#ifdef FIFO
+//#ifdef FIFO
 struct vnodeops cd9660_fifoops = {
 		.vop_lookup = fifo_lookup, 				/* lookup */
 		.vop_create = fifo_create, 				/* create */

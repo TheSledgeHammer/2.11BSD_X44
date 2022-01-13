@@ -65,20 +65,20 @@ struct stat {
 #define st_ctimensec	st_ctime.tv_nsec
 #define st_birthtimensec st_atime.tv_nsec
 
-#define	S_IFMT	 0170000		/* type of file */
-#define	S_IFDIR	 0040000		/* directory */
-#define	S_IFMPC	 0030000		/* multiplexed char special */
-#define	S_IFCHR	 0020000		/* character special */
-#define	S_IFBLK	 0060000		/* block special */
-#define	S_IFREG	 0100000		/* regular */
-#define	S_IFLNK	 0120000		/* symbolic link */
-#define	S_IFSOCK 0140000		/* socket */
-#define	S_ISUID	 0004000		/* set user id on execution */
-#define	S_ISGID	 0002000		/* set group id on execution */
-#define	S_ISVTX	 0001000		/* save swapped text even after use */
-#define	S_IREAD	 0000400		/* read permission, owner */
-#define	S_IWRITE 0000200		/* write permission, owner */
-#define	S_IEXEC	 0000100		/* execute/search permission, owner */
+#define	S_IFMT	 0170000	/* type of file */
+#define	S_IFDIR	 0040000	/* directory */
+#define	S_IFMPC	 0030000	/* multiplexed char special */
+#define	S_IFCHR	 0020000	/* character special */
+#define	S_IFBLK	 0060000	/* block special */
+#define	S_IFREG	 0100000	/* regular */
+#define	S_IFLNK	 0120000	/* symbolic link */
+#define	S_IFSOCK 0140000	/* socket */
+#define	S_ISUID	 0004000	/* set user id on execution */
+#define	S_ISGID	 0002000	/* set group id on execution */
+#define	S_ISVTX	 0001000	/* save swapped text even after use */
+#define	S_IREAD	 0000400	/* read permission, owner */
+#define	S_IWRITE 0000200	/* write permission, owner */
+#define	S_IEXEC	 0000100	/* execute/search permission, owner */
 
 /*
  * Definitions of flags in mode that are 4.4 compatible.
@@ -129,7 +129,7 @@ struct stat {
 #define	SF_IMMUTABLE	0x0200		/* file may not be changed */
 #define	SF_APPEND		0x0400		/* writes to file may only append */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * Shorthand abbreviations of above.
  */
@@ -137,7 +137,7 @@ struct stat {
 #define	IMMUTABLE		(UF_IMMUTABLE | SF_IMMUTABLE)
 #endif
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS

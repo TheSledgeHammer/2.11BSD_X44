@@ -47,7 +47,6 @@
 #include <sys/mount.h>
 
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 
 /*

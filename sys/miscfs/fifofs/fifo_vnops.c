@@ -33,6 +33,7 @@
  *	@(#)fifo_vnops.c	8.10 (Berkeley) 5/27/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -109,6 +110,7 @@ struct vnodeops fifo_vnodeops = {
  * Trivial lookup routine that always fails.
  */
 /* ARGSUSED */
+int
 fifo_lookup(ap)
 	struct vop_lookup_args /* {
 		struct vnode * a_dvp;
@@ -126,6 +128,7 @@ fifo_lookup(ap)
  * to find an active instance of a fifo.
  */
 /* ARGSUSED */
+int
 fifo_open(ap)
 	struct vop_open_args /* {
 		struct vnode *a_vp;
@@ -222,6 +225,7 @@ bad:
  * Vnode op for read
  */
 /* ARGSUSED */
+int
 fifo_read(ap)
 	struct vop_read_args /* {
 		struct vnode *a_vp;
@@ -262,6 +266,7 @@ fifo_read(ap)
  * Vnode op for write
  */
 /* ARGSUSED */
+int
 fifo_write(ap)
 	struct vop_write_args /* {
 		struct vnode *a_vp;
@@ -292,6 +297,7 @@ fifo_write(ap)
  * Device ioctl operation.
  */
 /* ARGSUSED */
+int
 fifo_ioctl(ap)
 	struct vop_ioctl_args /* {
 		struct vnode *a_vp;
@@ -323,6 +329,7 @@ fifo_ioctl(ap)
 }
 
 /* ARGSUSED */
+int
 fifo_select(ap)
 	struct vop_select_args /* {
 		struct vnode *a_vp;
@@ -365,6 +372,7 @@ fifo_inactive(ap)
 /*
  * This is a noop, simply returning what one has been given.
  */
+int
 fifo_bmap(ap)
 	struct vop_bmap_args /* {
 		struct vnode *a_vp;
@@ -388,6 +396,7 @@ fifo_bmap(ap)
  * Device close routine
  */
 /* ARGSUSED */
+int
 fifo_close(ap)
 	struct vop_close_args /* {
 		struct vnode *a_vp;
@@ -424,6 +433,7 @@ fifo_close(ap)
 /*
  * Print out the contents of a fifo vnode.
  */
+int
 fifo_print(ap)
 	struct vop_print_args /* {
 		struct vnode *a_vp;
@@ -438,6 +448,7 @@ fifo_print(ap)
 /*
  * Print out internal contents of a fifo vnode.
  */
+int
 fifo_printinfo(vp)
 	struct vnode *vp;
 {
@@ -450,6 +461,7 @@ fifo_printinfo(vp)
 /*
  * Return POSIX pathconf information applicable to fifo's.
  */
+int
 fifo_pathconf(ap)
 	struct vop_pathconf_args /* {
 		struct vnode *a_vp;
@@ -477,6 +489,7 @@ fifo_pathconf(ap)
 /*
  * Fifo failed operation
  */
+int
 fifo_ebadf()
 {
 
@@ -487,6 +500,7 @@ fifo_ebadf()
  * Fifo advisory byte-level locks.
  */
 /* ARGSUSED */
+int
 fifo_advlock(ap)
 	struct vop_advlock_args /* {
 		struct vnode *a_vp;

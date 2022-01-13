@@ -127,13 +127,70 @@ struct iso_extended_attributes {
 	u_char len_au			[ISODCL (247, 250)]; /* 723 */
 };
 
+/* CD-ROM Format type */
+enum ISO_FTYPE  { ISO_FTYPE_DEFAULT, ISO_FTYPE_9660, ISO_FTYPE_RRIP, ISO_FTYPE_ECMA };
+
+#ifndef	ISOFSMNT_ROOT
+#define	ISOFSMNT_ROOT	0
+#endif
+
+struct iso_mnt {
+	int im_flags;
+	int im_joliet_level;
+
+	struct mount *im_mountp;
+	dev_t im_dev;
+	struct vnode *im_devvp;
+
+	int logical_block_size;
+	int im_bshift;
+	int im_bmask;
+
+	int volume_space_size;
+	struct netexport im_export;
+
+	char root[ISODCL (157, 190)];
+	int root_extent;
+	int root_size;
+	enum ISO_FTYPE  iso_ftype;
+
+	int rr_skip;
+	int rr_skip0;
+};
+
+#define VFSTOISOFS(mp)			((struct iso_mnt *)((mp)->mnt_data))
+
+#define blkoff(imp, loc)		((loc) & (imp)->im_bmask)
+#define lblktosize(imp, blk)	((blk) << (imp)->im_bshift)
+#define lblkno(imp, loc)		((loc) >> (imp)->im_bshift)
+#define blksize(imp, ip, lbn)	((imp)->logical_block_size)
+
+int cd9660_mount(struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
+int cd9660_start(struct mount *, int, struct proc *);
+int cd9660_unmount(struct mount *, int, struct proc *);
+int cd9660_root(struct mount *, struct vnode **);
+int cd9660_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
+int cd9660_statfs(struct mount *, struct statfs *, struct proc *);
+int cd9660_sync(struct mount *, int, struct ucred *, struct proc *);
+int cd9660_vget(struct mount *, ino_t, struct vnode **);
+int cd9660_fhtovp(struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
+int cd9660_vptofh(struct vnode *, struct fid *);
+int cd9660_init(struct vfsconf *);
+int cd9660_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
+int cd9660_mountroot(void);
+
+extern struct vnodeops cd9660_vnodeops;
+extern struct vnodeops cd9660_specops;
+#ifdef FIFO
+extern struct vnodeops cd9660_fifoops;
+#endif
 
 /* 7.1.1: unsigned char */
 static __inline int
 isonum_711(p)
 	const u_char *p;
 {
-	return *p;
+	return (p[0]);
 }
 
 /* 7.1.2: signed char */
@@ -141,7 +198,7 @@ static __inline int
 isonum_712(p)
 	const char *p;
 {
-	return (signed char) *p;
+	return ((signed char)p[0]);
 }
 
 /* 7.2.1: unsigned little-endian 16-bit value.  NOT USED IN KERNEL. */
@@ -149,7 +206,7 @@ static __inline uint16_t
 isonum_721(p)
 	const u_char *p;
 {
-	return le16dec(p);
+	return (p[0] | p[1] << 8);
 }
 
 /* 7.2.2: unsigned big-endian 16-bit value.  NOT USED IN KERNEL. */
@@ -157,18 +214,14 @@ static __inline uint16_t
 isonum_722(p)
 	const u_char *p;
 {
-	return be16dec(p);
+	return (p[1] | p[0] << 8);
 }
 
 static __inline uint16_t
 isonum_723(p)
 	const u_char *p;
 {
-#if BYTE_ORDER == BIG_ENDIAN
-	return be16dec(p + 2);
-#else
-	return le16dec(p);
-#endif
+	return (p[0] | p[1] << 8);
 }
 
 /* 7.3.1: unsigned little-endian 32-bit value.  NOT USED IN KERNEL. */
@@ -176,7 +229,7 @@ static __inline uint32_t
 isonum_731(p)
 	const u_char *p;
 {
-	return le32dec(p);
+	return (p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24);
 }
 
 /* 7.3.2: unsigned big-endian 32-bit value.  NOT USED IN KERNEL. */
@@ -184,7 +237,7 @@ static __inline uint32_t
 isonum_732(p)
 	const u_char *p;
 {
-	return be32dec(p);
+	return (p[3] | p[2] << 8 | p[1] << 16 | p[0] << 24);
 }
 
 /* 7.3.3: unsigned both-endian (little, then big) 32-bit value */
@@ -192,12 +245,13 @@ static __inline uint32_t
 isonum_733(p)
 	const u_char *p;
 {
-#if BYTE_ORDER == BIG_ENDIAN
-	return be32dec(p + 4);
-#else
-	return le32dec(p);
-#endif
+	return (p[0] |(p[1] << 8)|(p[2] << 16)|(p[3] << 24));
 }
+
+int isochar(const u_char *, const u_char *, int, u_char *);
+int isofncmp(const u_char *, int, const u_char *, int, int);
+void isofntrans(u_char *, int, u_char *, u_short *, int, int, int, int);
+ino_t isodirino(struct iso_directory_record *, struct iso_mnt *);
 
 /*
  * Associated files have a leading '='.

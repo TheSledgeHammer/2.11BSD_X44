@@ -59,7 +59,6 @@
 #include <miscfs/specfs/specdev.h>
 
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/iso_rrip.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 #include <fs/isofs/cd9660/cd9660_mount.h>
@@ -82,8 +81,6 @@ struct vfsops cd9660_vfsops = {
 /*
  * Called by vfs_mountroot when iso is going to be mounted as root.
  */
-
-//static int iso_makemp __P((struct iso_mnt *isomp, struct buf *bp, int *ea_len));
 static int iso_mountfs(struct vnode *devvp, struct mount *mp, struct proc *p, struct iso_args *argp);
 
 int
@@ -277,7 +274,7 @@ iso_mountfs(devvp, mp, p, argp)
 		error = EINVAL;
 		goto out;
 	}
-	
+
 	pri = (struct iso_primary_descriptor*) vdp;
 
 	logical_block_size = isonum_723(pri->logical_block_size);
@@ -287,7 +284,7 @@ iso_mountfs(devvp, mp, p, argp)
 		error = EINVAL;
 		goto out;
 	}
-	
+
 	rootp = (struct iso_directory_record*) pri->root_directory_record;
 
 	isomp = malloc(sizeof *isomp, M_ISOFSMNT, M_WAITOK);
@@ -317,7 +314,7 @@ iso_mountfs(devvp, mp, p, argp)
 	isomp->im_devvp = devvp;
 
 	devvp->v_specflags |= SI_MOUNTEDON;
-	
+
 	/* Check the Rock Ridge Extention support */
 	if (!(argp->flags & ISOFSMNT_NORRIP)) {
 		if (error

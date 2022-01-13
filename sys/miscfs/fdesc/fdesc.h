@@ -38,7 +38,7 @@
  * $Id: fdesc.h,v 1.8 1993/04/06 15:28:33 jsp Exp $
  */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct fdescmount {
 	struct vnode	*f_root;	/* Root node */
 };
@@ -53,29 +53,29 @@ struct fdescmount {
 #define FD_MAX		12
 
 typedef enum {
-	Froot,
-	Fdevfd,
-	Fdesc,
-	Flink,
-	Fctty
+	FROOT,
+	FDEVFD,
+	FDESC,
+	FLINK,
+	FCTTY
 } fdntype;
 
 struct fdescnode {
-	LIST_ENTRY(fdescnode) fd_hash;	/* Hash list */
-	struct vnode	*fd_vnode;	/* Back ptr to vnode */
-	fdntype		fd_type;	/* Type of this node */
-	unsigned	fd_fd;		/* Fd to be dup'ed */
-	char		*fd_link;	/* Link to fd/n */
-	int		fd_ix;		/* filesystem index */
+	LIST_ENTRY(fdescnode) 	fd_hash;	/* Hash list */
+	struct vnode			*fd_vnode;	/* Back ptr to vnode */
+	fdntype					fd_type;	/* Type of this node */
+	unsigned				fd_fd;		/* Fd to be dup'ed */
+	char					*fd_link;	/* Link to fd/n */
+	int						fd_ix;		/* filesystem index */
 };
 
 #define VFSTOFDESC(mp)	((struct fdescmount *)((mp)->mnt_data))
-#define	VTOFDESC(vp) ((struct fdescnode *)(vp)->v_data)
+#define	VTOFDESC(vp) 	((struct fdescnode *)(vp)->v_data)
 
 extern dev_t devctty;
 extern int fdesc_init (struct vfsconf *);
 extern int fdesc_root (struct mount *, struct vnode **);
 extern int fdesc_allocvp (fdntype, int, struct mount *, struct vnode **);
-extern struct fdesc_vnodeops;
+extern struct vnodeops fdesc_vnodeops;
 extern struct vfsops fdesc_vfsops;
 #endif /* KERNEL */

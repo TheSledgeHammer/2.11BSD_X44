@@ -344,7 +344,7 @@ cd9660_deftstamp(isodir,inop,bp)
 	struct iso_mnt *imp;
 	struct iso_extended_attributes *ap = NULL;
 	int off;
-	
+
 	if (!bp && ((imp = inop->i_mnt)->im_flags & ISOFSMNT_EXTATT) && (off =
 			isonum_711(isodir->ext_attr_length))) {
 		VOP_BLKATOFF(ITOV(inop), (off_t )-(off << imp->im_bshift), NULL, &bp2);

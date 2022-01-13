@@ -33,6 +33,7 @@
  *	@(#)spec_vnops.c	8.14 (Berkeley) 5/21/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -125,6 +126,7 @@ spec_lookup(ap)
  * Open a special file.
  */
 /* ARGSUSED */
+int
 spec_open(ap)
 	struct vop_open_args /* {
 		struct vnode *a_vp;
@@ -497,6 +499,7 @@ spec_inactive(ap)
 /*
  * Just call the device strategy routine
  */
+int
 spec_strategy(ap)
 	struct vop_strategy_args /* {
 		struct buf *a_bp;
@@ -510,6 +513,7 @@ spec_strategy(ap)
 /*
  * This is a noop, simply returning what one has been given.
  */
+int
 spec_bmap(ap)
 	struct vop_bmap_args /* {
 		struct vnode *a_vp;
@@ -533,6 +537,7 @@ spec_bmap(ap)
  * Device close routine
  */
 /* ARGSUSED */
+int
 spec_close(ap)
 	struct vop_close_args /* {
 		struct vnode *a_vp;
@@ -607,6 +612,7 @@ spec_close(ap)
 /*
  * Print out the contents of a special device vnode.
  */
+int
 spec_print(ap)
 	struct vop_print_args /* {
 		struct vnode *a_vp;
@@ -620,6 +626,7 @@ spec_print(ap)
 /*
  * Return POSIX pathconf information applicable to special devices.
  */
+int
 spec_pathconf(ap)
 	struct vop_pathconf_args /* {
 		struct vnode *a_vp;
@@ -657,6 +664,7 @@ spec_pathconf(ap)
  * Special device advisory byte-level locks.
  */
 /* ARGSUSED */
+int
 spec_advlock(ap)
 	struct vop_advlock_args /* {
 		struct vnode *a_vp;
@@ -674,6 +682,7 @@ spec_advlock(ap)
 /*
  * Special device failed operation
  */
+int
 spec_ebadf()
 {
 

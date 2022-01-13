@@ -51,15 +51,16 @@
 #include <sys/time.h>
 
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 #include <fs/isofs/cd9660/cd9660_rrip.h>
 #include <fs/isofs/cd9660/iso_rrip.h>
 
+typedef int	rrt_func_t(void *, ISO_RRIP_ANALYZE *);
+
 typedef struct {
 	char type[2];
-	int (*func)(void *, ISO_RRIP_ANALYZE *);
-	void (*func2)(void *, ISO_RRIP_ANALYZE *);
+	rrt_func_t *func;
+	void (*func2)(struct iso_directory_record *, ISO_RRIP_ANALYZE *);
 	int result;
 } RRIP_TABLE;
 
@@ -566,13 +567,14 @@ cd9660_rrip_loop(isodir, ana, table)
 /*
  * Get Attributes.
  */
+#define	BC	(rrt_func_t *)
 static RRIP_TABLE rrip_table_analyze[] = {
-	{ "PX", cd9660_rrip_attr,		cd9660_rrip_defattr,	ISO_SUSP_ATTR },
-	{ "TF", cd9660_rrip_tstamp,		cd9660_rrip_deftstamp,	ISO_SUSP_TSTAMP },
-	{ "PN", cd9660_rrip_device,		0,						ISO_SUSP_DEVICE },
-	{ "RR", cd9660_rrip_idflag,		0,						ISO_SUSP_IDFLAG },
-	{ "CE", cd9660_rrip_cont,		0,						ISO_SUSP_CONT },
-	{ "ST", cd9660_rrip_stop,		0,						ISO_SUSP_STOP },
+	{ "PX", BC cd9660_rrip_attr,	cd9660_rrip_defattr,	ISO_SUSP_ATTR },
+	{ "TF", BC cd9660_rrip_tstamp,	cd9660_rrip_deftstamp,	ISO_SUSP_TSTAMP },
+	{ "PN", BC cd9660_rrip_device,	0,						ISO_SUSP_DEVICE },
+	{ "RR", BC cd9660_rrip_idflag,	0,						ISO_SUSP_IDFLAG },
+	{ "CE", BC cd9660_rrip_cont,	0,						ISO_SUSP_CONT },
+	{ "ST", BC cd9660_rrip_stop,	0,						ISO_SUSP_STOP },
 	{ "",	0,						0,						0 }
 };
 
@@ -595,13 +597,13 @@ cd9660_rrip_analyze(isodir, inop, imp)
  * Get Alternate Name.
  */
 static RRIP_TABLE rrip_table_getname[] = {
-	{ "NM", cd9660_rrip_altname,	cd9660_rrip_defname,	ISO_SUSP_ALTNAME },
-	{ "CL", cd9660_rrip_pclink,		0,						ISO_SUSP_CLINK|ISO_SUSP_PLINK },
-	{ "PL", cd9660_rrip_pclink,		0,						ISO_SUSP_CLINK|ISO_SUSP_PLINK },
-	{ "RE", cd9660_rrip_reldir,		0,						ISO_SUSP_RELDIR },
-	{ "RR", cd9660_rrip_idflag,		0,						ISO_SUSP_IDFLAG },
-	{ "CE", cd9660_rrip_cont,		0,						ISO_SUSP_CONT },
-	{ "ST", cd9660_rrip_stop,		0,						ISO_SUSP_STOP },
+	{ "NM", BC cd9660_rrip_altname,	cd9660_rrip_defname,	ISO_SUSP_ALTNAME },
+	{ "CL", BC cd9660_rrip_pclink,	0,						ISO_SUSP_CLINK|ISO_SUSP_PLINK },
+	{ "PL", BC cd9660_rrip_pclink,	0,						ISO_SUSP_CLINK|ISO_SUSP_PLINK },
+	{ "RE", BC cd9660_rrip_reldir,	0,						ISO_SUSP_RELDIR },
+	{ "RR", BC cd9660_rrip_idflag,	0,						ISO_SUSP_IDFLAG },
+	{ "CE", BC cd9660_rrip_cont,	0,						ISO_SUSP_CONT },
+	{ "ST", BC cd9660_rrip_stop,	0,						ISO_SUSP_STOP },
 	{ "",	0,						0,						0 }
 };
 
@@ -640,11 +642,11 @@ cd9660_rrip_getname(isodir, outbuf, outlen, inump, imp)
  * Get Symbolic Link.
  */
 static RRIP_TABLE rrip_table_getsymname[] = {
-	{ "SL", cd9660_rrip_slink,	0,			ISO_SUSP_SLINK },
-	{ "RR", cd9660_rrip_idflag,	0,			ISO_SUSP_IDFLAG },
-	{ "CE", cd9660_rrip_cont,	0,			ISO_SUSP_CONT },
-	{ "ST", cd9660_rrip_stop,	0,			ISO_SUSP_STOP },
-	{ "",	0,					0,			0 }
+	{ "SL", BC cd9660_rrip_slink,	0,			ISO_SUSP_SLINK },
+	{ "RR", BC cd9660_rrip_idflag,	0,			ISO_SUSP_IDFLAG },
+	{ "CE", BC cd9660_rrip_cont,	0,			ISO_SUSP_CONT },
+	{ "ST", BC cd9660_rrip_stop,	0,			ISO_SUSP_STOP },
+	{ "",	0,						0,			0 }
 };
 
 int
@@ -669,10 +671,10 @@ cd9660_rrip_getsymname(isodir, outbuf, outlen, imp)
 }
 
 static RRIP_TABLE rrip_table_extref[] = {
-	{ "ER", cd9660_rrip_extref,	0,			ISO_SUSP_EXTREF },
-	{ "CE", cd9660_rrip_cont,	0,			ISO_SUSP_CONT },
-	{ "ST", cd9660_rrip_stop,	0,			ISO_SUSP_STOP },
-	{ "",	0,					0,			0 }
+	{ "ER", BC cd9660_rrip_extref,	0,			ISO_SUSP_EXTREF },
+	{ "CE", BC cd9660_rrip_cont,	0,			ISO_SUSP_CONT },
+	{ "ST", BC cd9660_rrip_stop,	0,			ISO_SUSP_STOP },
+	{ "",	0,						0,			0 }
 };
 
 /*
