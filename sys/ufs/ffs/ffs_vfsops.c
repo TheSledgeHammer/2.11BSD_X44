@@ -62,18 +62,18 @@
 int ffs_sbupdate (struct ufsmount *, int);
 
 struct vfsops ufs_vfsops = {
-	ffs_mount,
-	ufs_start,
-	ffs_unmount,
-	ufs_root,
-	ufs_quotactl,
-	ffs_statfs,
-	ffs_sync,
-	ffs_vget,
-	ffs_fhtovp,
-	ffs_vptofh,
-	ffs_init,
-	ffs_sysctl,
+		.vfs_mount = ffs_mount,
+		.vfs_start = ufs_start,
+		.vfs_unmount = ffs_unmount,
+		.vfs_root = ufs_root,
+		.vfs_quotactl = ufs_quotactl,
+		.vfs_statfs = ffs_statfs,
+		.vfs_sync = ffs_sync,
+		.vfs_vget = ffs_vget,
+		.vfs_fhtovp = ffs_fhtovp,
+		.vfs_vptofh = ffs_vptofh,
+		.vfs_init = ffs_init,
+		.vfs_sysctl = ffs_sysctl,
 };
 
 extern u_long nextgennumber;
@@ -81,6 +81,7 @@ extern u_long nextgennumber;
 /*
  * Called by main() when ufs is going to be mounted as root.
  */
+int
 ffs_mountroot()
 {
 	extern struct vnode *rootvp;
@@ -99,7 +100,7 @@ ffs_mountroot()
 		printf("ffs_mountroot: can't setup bdevvp's");
 		return (error);
 	}
-	if (error == vfs_rootmountalloc(MOUNT_FFS, "root_device", &mp))
+	if (error == vfs_rootmountalloc(MOUNT_UFS, "root_device", &mp))
 		return (error);
 	if (error == ffs_mountfs(rootvp, mp, p)) {
 		mp->mnt_vfc->vfc_refcount--;
@@ -513,6 +514,7 @@ out:
  *
  * XXX - goes away some day.
  */
+int
 ffs_oldfscompat(fs)
 	struct fs *fs;
 {
@@ -576,6 +578,7 @@ ffs_unmount(mp, mntflags, p)
 /*
  * Flush out all the files in a filesystem.
  */
+int
 ffs_flushfiles(mp, flags, p)
 	register struct mount *mp;
 	int flags;
@@ -870,6 +873,7 @@ ffs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
  * Vnode pointer to File handle
  */
 /* ARGSUSED */
+int
 ffs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;

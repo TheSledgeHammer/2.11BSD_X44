@@ -60,7 +60,6 @@
 #include <sys/namei.h>
 #include <sys/buf.h>
 #include <sys/dirent.h>
-//#include <sys/queue.h>
 
 #include <miscfs/fdesc/fdesc.h>
 
@@ -801,6 +800,7 @@ fdesc_reclaim(ap)
 /*
  * Return POSIX pathconf information applicable to special devices.
  */
+int
 fdesc_pathconf(ap)
 	struct vop_pathconf_args /* {
 		struct vnode *a_vp;
@@ -943,5 +943,4 @@ struct vnodeops fdesc_vnodeops = {
 		.vop_truncate = fdesc_truncate,	/* truncate */
 		.vop_update = fdesc_update,		/* update */
 		.vop_bwrite = fdesc_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };

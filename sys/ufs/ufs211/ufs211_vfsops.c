@@ -48,18 +48,18 @@
 #include <ufs/ufs211/ufs211_quota.h>
 
 struct vfsops ufs211_vfsops = {
-		ufs211_mount,
-		ufs211_start,
-		ufs211_unmount,
-		ufs211_root,
-		ufs211_quotactl,
-		ufs211_statfs,
-		ufs211_sync,
-		ufs211_vget,
-		ufs211_fhtovp,
-		ufs211_vptofh,
-		ufs211_init,
-		ufs211_sysctl,
+		.vfs_mount = ufs211_mount,
+		.vfs_start = ufs211_start,
+		.vfs_unmount = ufs211_unmount,
+		.vfs_root = ufs211_root,
+		.vfs_quotactl = ufs211_quotactl,
+		.vfs_statfs = ufs211_statfs,
+		.vfs_sync = ufs211_sync,
+		.vfs_vget = ufs211_vget,
+		.vfs_fhtovp = ufs211_fhtovp,
+		.vfs_vptofh = ufs211_vptofh,
+		.vfs_init = ufs211_init,
+		.vfs_sysctl = ufs211_sysctl,
 };
 
 /*
@@ -412,7 +412,7 @@ ufs211_init(vfsp)
 		return (0);
 	done = 1;
 
-	bufmap_init();
+	ufs211_bufmap_init();
 	ufs211_ihinit();
 #ifdef QUOTA
 //	dqinit();

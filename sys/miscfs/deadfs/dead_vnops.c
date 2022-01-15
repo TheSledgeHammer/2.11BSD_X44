@@ -64,6 +64,8 @@ int	dead_print (struct vop_print_args *);
 #define dead_getattr 	((int (*) (struct  vop_getattr_args *))dead_ebadf)
 #define dead_setattr 	((int (*) (struct  vop_setattr_args *))dead_ebadf)
 #define dead_mmap 		((int (*) (struct  vop_mmap_args *))dead_badop)
+#define	dead_lease_check ((int (*) (struct  vop_lease_args *))nullop)
+#define	dead_revoke 	vop_revoke
 #define dead_fsync 		((int (*) (struct  vop_fsync_args *))nullop)
 #define dead_seek 		((int (*) (struct  vop_seek_args *))nullop)
 #define dead_remove 	((int (*) (struct  vop_remove_args *))dead_badop)
@@ -88,6 +90,9 @@ int	dead_print (struct vop_print_args *);
 #define dead_update 	((int (*) (struct  vop_update_args *))nullop)
 #define dead_bwrite 	((int (*) (struct  vop_bwrite_args *))nullop)
 
+/*
+ * Global vfs data structures for dead
+ */
 struct vnodeops dead_vnodeops = {
 		.vop_lookup = dead_lookup,		/* lookup */
 		.vop_create = dead_create,		/* create */
@@ -131,7 +136,6 @@ struct vnodeops dead_vnodeops = {
 		.vop_truncate = dead_truncate,	/* truncate */
 		.vop_update = dead_update,		/* update */
 		.vop_bwrite = dead_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 /*

@@ -64,18 +64,18 @@
 #include <fs/isofs/cd9660/cd9660_mount.h>
 
 struct vfsops cd9660_vfsops = {
-	cd9660_mount,
-	cd9660_start,
-	cd9660_unmount,
-	cd9660_root,
-	cd9660_quotactl,
-	cd9660_statfs,
-	cd9660_sync,
-	cd9660_vget,
-	cd9660_fhtovp,
-	cd9660_vptofh,
-	cd9660_init,
-	cd9660_sysctl
+		.vfs_mount = cd9660_mount,
+		.vfs_start = cd9660_start,
+		.vfs_unmount = cd9660_unmount,
+		.vfs_root = cd9660_root,
+		.vfs_quotactl = cd9660_quotactl,
+		.vfs_statfs = cd9660_statfs,
+		.vfs_sync = cd9660_sync,
+		.vfs_vget = cd9660_vget,
+		.vfs_fhtovp = cd9660_fhtovp,
+		.vfs_vptofh = cd9660_vptofh,
+		.vfs_init = cd9660_init,
+		.vfs_sysctl = cd9660_sysctl,
 };
 
 /*

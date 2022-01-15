@@ -232,16 +232,16 @@ fdesc_sync(mp, waitfor)
 #define fdesc_vptofh 	((int (*) (struct vnode *, struct fid *))eopnotsupp)
 
 struct vfsops fdesc_vfsops = {
-	fdesc_mount,
-	fdesc_start,
-	fdesc_unmount,
-	fdesc_root,
-	fdesc_quotactl,
-	fdesc_statfs,
-	fdesc_sync,
-	fdesc_vget,
-	fdesc_fhtovp,
-	fdesc_vptofh,
-	fdesc_init,
-	fdesc_sysctl,
+		.vfs_mount = fdesc_mount,
+		.vfs_start = fdesc_start,
+		.vfs_unmount = fdesc_unmount,
+		.vfs_root = fdesc_root,
+		.vfs_quotactl = fdesc_quotactl,
+		.vfs_statfs = fdesc_statfs,
+		.vfs_sync = fdesc_sync,
+		.vfs_vget = fdesc_vget,
+		.vfs_fhtovp = fdesc_fhtovp,
+		.vfs_vptofh = fdesc_vptofh,
+		.vfs_init = fdesc_init,
+		.vfs_sysctl = fdesc_sysctl,
 };

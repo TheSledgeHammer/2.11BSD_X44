@@ -40,7 +40,14 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-
+- vfs_init.c & vfs_conf.c
+	- vfsconf initialisation not initialising.
+- vnodes: Of intrest: vnode_desc
+	- re-implementing vnode_desc.
+	- Could relatively easily be reworked back into existing
+	vnode infrastructure. With little to no changes to code 
+	that depends on it.
+	
 ## arch:
 - i386/x86: (Merged under i386)
 	- pcibios & pnpbios: both supported in i386/bios.c but not elsewhere
@@ -64,6 +71,7 @@ A General todo list. Don't hesitate to add to this list. :)
 			- add agp
 		- PCMCIA:
 			- add com
+		- SDCards: to add
 	- Disk:
 		- Add: ahci & floppy
 	- USB:
@@ -71,9 +79,6 @@ A General todo list. Don't hesitate to add to this list. :)
 		- update existing drivers
 
 ## fs:
-- msdosfs:
-	- needs revising: bugs abound 
-	- vops/vfsops out of sync with kernel vfs
 
 ## lib:
 - libsa:
@@ -82,7 +87,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - x86emu:
 
 ## miscfs:
-
 
 ## net / netimp / netinet / netns:
 Of Interest Todo:
@@ -100,7 +104,11 @@ Of Interest Todo:
 	- fdt:
 	- uboot:
 		- missing fdt support libraries
+		
 ## ufs:
+- ufs:
+	- journaling
+	- dirhash
 - ufs211:
    	- add Extended Attributes
 	- add UFML Support

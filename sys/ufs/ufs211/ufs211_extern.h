@@ -40,6 +40,12 @@ struct ufs211_args {
 	struct vnode 	    *ufs211_rootvp;	    /* block device mounted vnode */
 };
 
+/* see ufs211_bufmap.c */
+struct ufs211_bufmap {
+	void 				*bm_data;			/* data */
+	long				bm_size;			/* sizeof data */
+};
+
 #define	DEV_BSHIFT		10					/* log2(DEV_BSIZE) */
 #define	DEV_BMASK		(DEV_BSIZE - 1)
 
@@ -74,6 +80,7 @@ int ufs211_dirempty(struct ufs211_inode *, ino_t);
 int ufs211_checkpath(struct ufs211_inode *, struct ufs211_inode *);
 void blkflush(struct vnode *, daddr_t);
 int ufs211_init(struct vfsconf *);
+void ufs211_buffmap_init(void);
 void ufs211_mapin(struct buf *);
 void ufs211_mapout(struct buf *);
 

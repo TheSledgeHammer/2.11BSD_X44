@@ -51,9 +51,7 @@
 #include <ufs/mfs/mfs_extern.h>
 #include <miscfs/specfs/specdev.h>
 
-/*
- * mfs vnode operations.
- */
+/* Global vfs data structures for mfs. */
 struct vnodeops mfs_vnodeops = {
 		.vop_lookup = mfs_lookup,		/* lookup */
 		.vop_create = mfs_create,		/* create */
@@ -96,7 +94,6 @@ struct vnodeops mfs_vnodeops = {
 		.vop_truncate = mfs_truncate,	/* truncate */
 		.vop_update = mfs_update,		/* update */
 		.vop_bwrite = mfs_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 /*
@@ -340,9 +337,10 @@ mfs_badop()
 /*
  * Memory based filesystem initialization.
  */
+int
 mfs_init(vfsp)
 	struct vfsconf *vfsp;
 {
 
-	return;
+	return (0);
 }

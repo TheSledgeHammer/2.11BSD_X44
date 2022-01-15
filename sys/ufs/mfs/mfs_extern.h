@@ -59,3 +59,5 @@ int		mfs_start (struct mount *mp, int flags, struct proc *p);
 int		mfs_statfs (struct mount *mp, struct statfs *sbp, struct proc *p);
 int		mfs_strategy (struct vop_strategy_args *); /* XXX */
 __END_DECLS
+
+extern struct mfs_vnodeops;

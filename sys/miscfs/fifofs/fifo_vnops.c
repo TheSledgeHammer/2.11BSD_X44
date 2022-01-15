@@ -60,6 +60,9 @@ struct fifoinfo {
 	long			fi_writers;
 };
 
+/*
+ * Global vfs data structures for fifo
+ */
 struct vnodeops fifo_vnodeops = {
 		.vop_lookup = fifo_lookup,		/* lookup */
 		.vop_create = fifo_create,		/* create */
@@ -103,7 +106,6 @@ struct vnodeops fifo_vnodeops = {
 		.vop_truncate = fifo_truncate,	/* truncate */
 		.vop_update = fifo_update,		/* update */
 		.vop_bwrite = fifo_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 /*

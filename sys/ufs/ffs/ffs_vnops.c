@@ -59,7 +59,7 @@
 #include <miscfs/fifofs/fifo.h>
 #include <miscfs/specfs/specdev.h>
 
-/* Global vfs data structures for ufs. */
+/* Global vfs data structures for ufs/ffs. */
 struct vnodeops ffs_vnodeops = {
 		.vop_lookup = ufs_lookup,		/* lookup */
 		.vop_create = ufs_create,		/* create */
@@ -104,7 +104,6 @@ struct vnodeops ffs_vnodeops = {
 		.vop_truncate = ffs_truncate,	/* truncate */
 		.vop_update = ffs_update,		/* update */
 		.vop_bwrite = vn_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 struct vnodeops ffs_specops = {
@@ -151,7 +150,6 @@ struct vnodeops ffs_specops = {
 		.vop_truncate = spec_truncate,	/* truncate */
 		.vop_update = ffs_update,		/* update */
 		.vop_bwrite = vn_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 #ifdef FIFO
@@ -199,7 +197,6 @@ struct vnodeops ffs_fifoops = {
 		.vop_truncate = fifo_truncate,	/* truncate */
 		.vop_update = ffs_update,		/* update */
 		.vop_bwrite = vn_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 #endif /* FIFO */
 

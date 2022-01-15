@@ -357,18 +357,19 @@ lofs_vptofh(vp, fhp)
 	return VFS_VPTOFH(LOFSVP(vp), fhp);
 }
 
-int lofs_init(void);
+#define lofs_sysctl 	((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
 
 struct vfsops lofs_vfsops = {
-	lofs_mount,
-	lofs_start,
-	lofs_unmount,
-	lofs_root,
-	lofs_quotactl,
-	lofs_statfs,
-	lofs_sync,
-	lofs_vget,
-	lofs_fhtovp,
-	lofs_vptofh,
-	lofs_init,
+		.vfs_mount = lofs_mount,
+		.vfs_start = lofs_start,
+		.vfs_unmount = lofs_unmount,
+		.vfs_root = lofs_root,
+		.vfs_quotactl = lofs_quotactl,
+		.vfs_statfs = lofs_statfs,
+		.vfs_sync = lofs_sync,
+		.vfs_vget = lofs_vget,
+		.vfs_fhtovp = lofs_fhtovp,
+		.vfs_vptofh = lofs_vptofh,
+		.vfs_init = lofs_init,
+		.vfs_sysctl = lofs_sysctl,
 };

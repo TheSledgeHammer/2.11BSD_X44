@@ -79,8 +79,6 @@ int	 lfs_segwrite (struct mount *, int);
 int	 lfs_statfs (struct mount *, struct statfs *, struct proc *);
 int	 lfs_symlink (struct vop_symlink_args *);
 int	 lfs_sync (struct mount *, int, struct ucred *, struct proc *);
-#define	 lfs_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, \
-                                    size_t, struct proc *)))eopnotsupp)
 int	 lfs_truncate (struct vop_truncate_args *);
 int	 lfs_unmount (struct mount *, int, struct proc *);
 int	 lfs_update (struct vop_update_args *);
@@ -95,16 +93,13 @@ void lfs_vunref (struct vnode *);
 int	 lfs_write (struct vop_write_args *);
 
 #ifdef DEBUG
-void	lfs_dump_dinode (struct ufs1_dinode *);
-void	lfs_dump_super (struct lfs *);
+void lfs_dump_dinode (struct ufs1_dinode *);
+void lfs_dump_super (struct lfs *);
 #endif
 __END_DECLS
 extern int lfs_mount_type;
-extern struct lfs_vnodeops;
-extern struct lfs_specops;
+extern struct vnodeops lfs_vnodeops;
+extern struct vnodeops lfs_specops;
 #ifdef FIFO
-extern struct lfs_fifoops;
-#define LFS_FIFOOPS lfs_fifoop_p
-#else
-#define LFS_FIFOOPS NULL
+extern struct vnodeops lfs_fifoops;
 #endif

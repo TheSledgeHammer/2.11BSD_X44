@@ -1177,5 +1177,4 @@ struct vnodeops lofs_vnodeops = {
 		.vop_truncate = lofs_truncate,	/* truncate */
 		.vop_update = lofs_update,		/* update */
 		.vop_bwrite = lofs_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };

@@ -28,16 +28,17 @@
  * @(#)ufs211_bufmap.c	1.00
  */
 
+#include <sys/cdefs.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
 #include <sys/user.h>
 
-#include <ufs/ufs211/ufs211_fs.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
 struct ufs211_bufmap *ufs211buf;
 
 void
-bufmap_init(void *)
+ufs211_bufmap_init(void)
 {
 	MALLOC(&ufs211buf, struct ufs211_bufmap, sizeof(struct ufs211_bufmap *), M_UFS211, M_WAITOK);
 }

@@ -1085,9 +1085,9 @@ int	 lease_check (struct vop_lease_args *);
 #define cd9660_rename 	((int (*) (struct  vop_rename_args *))eopnotsupp)
 #define cd9660_mkdir 	((int (*) (struct  vop_mkdir_args *))eopnotsupp)
 #define cd9660_rmdir 	((int (*) (struct  vop_rmdir_args *))eopnotsupp)
-#define cd9660_symlink 	((int (*) (struct vop_symlink_args *))eopnotsupp)
-#define cd9660_advlock 	((int (*) (struct vop_advlock_args *))eopnotsupp)
-#define cd9660_valloc 	((int (*) (struct vop_valloc_args *))eopnotsupp)
+#define cd9660_symlink 	((int (*) (struct  vop_symlink_args *))eopnotsupp)
+#define cd9660_advlock 	((int (*) (struct  vop_advlock_args *))eopnotsupp)
+#define cd9660_valloc 	((int (*) (struct  vop_valloc_args *))eopnotsupp)
 #define cd9660_vfree 	((int (*) (struct  vop_vfree_args *))eopnotsupp)
 #define cd9660_truncate ((int (*) (struct  vop_truncate_args *))eopnotsupp)
 #define cd9660_update 	((int (*) (struct  vop_update_args *))eopnotsupp)
@@ -1136,7 +1136,6 @@ struct vnodeops cd9660_vnodeops = {
 		.vop_truncate = cd9660_truncate,		/* truncate */
 		.vop_update = cd9660_update,			/* update */
 		.vop_bwrite = vn_bwrite,				/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 /*
@@ -1185,7 +1184,6 @@ struct vnodeops cd9660_specops = {
 		.vop_truncate = spec_truncate,			/* truncate */
 		.vop_update = cd9660_update,			/* update */
 		.vop_bwrite = vn_bwrite,				/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 #ifdef FIFO
@@ -1232,6 +1230,5 @@ struct vnodeops cd9660_fifoops = {
 		.vop_truncate = fifo_truncate, 			/* truncate */
 		.vop_update = cd9660_update, 			/* update */
 		.vop_bwrite = vn_bwrite,
-		(struct vnodeops*) NULL = (int (*)()) NULL
 };
 #endif /* FIFO */

@@ -67,12 +67,6 @@ struct ufs211_fblk {
 	daddr_t			df_free[UFS211_NICFREE];/* free block list */
 };
 
-/* see ufs211_bufmap.c */
-struct ufs211_bufmap {
-	void 			*bm_data;				/* data */
-	long			bm_size;				/* sizeof data */
-};
-
 #define FS_UFS211_MAGIC 0x90335 			/* magic number identical to UFS1 */
 
 /*

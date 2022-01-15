@@ -961,16 +961,19 @@ msdosfs_vget(mp, ino, vpp)
 	return (EOPNOTSUPP);
 }
 
+#define msdosfs_sysctl 	((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
+
 struct vfsops msdosfs_vfsops = {
-	msdosfs_mount,
-	msdosfs_start,
-	msdosfs_unmount,
-	msdosfs_root,
-	msdosfs_quotactl,
-	msdosfs_statfs,
-	msdosfs_sync,
-	msdosfs_vget,
-	msdosfs_fhtovp,
-	msdosfs_vptofh,
-	msdosfs_init
+		.vfs_mount = msdosfs_mount,
+		.vfs_start = msdosfs_start,
+		.vfs_unmount = msdosfs_unmount,
+		.vfs_root = msdosfs_root,
+		.vfs_quotactl = msdosfs_quotactl,
+		.vfs_statfs = msdosfs_statfs,
+		.vfs_sync = msdosfs_sync,
+		.vfs_vget = msdosfs_vget,
+		.vfs_fhtovp = msdosfs_fhtovp,
+		.vfs_vptofh = msdosfs_vptofh,
+		.vfs_init = msdosfs_init,
+		.vfs_sysctl = msdosfs_sysctl,
 };

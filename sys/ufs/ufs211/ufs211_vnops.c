@@ -55,6 +55,7 @@
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
 
+/* Global vfs data structures for ufs211. */
 struct vnodeops ufs211_vnodeops = {
 		.vop_lookup = ufs211_lookup,		/* lookup */
 		.vop_create = ufs211_create,		/* create */
@@ -99,7 +100,6 @@ struct vnodeops ufs211_vnodeops = {
 		.vop_truncate = ufs211_truncate,	/* truncate */
 		.vop_update = ufs211_update,		/* update */
 		.vop_bwrite = vn_bwrite,			/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 struct vnodeops ufs211_specops = {
@@ -145,7 +145,6 @@ struct vnodeops ufs211_specops = {
 		.vop_truncate = spec_truncate,		/* truncate */
 		.vop_update = ufs211_update,		/* update */
 		.vop_bwrite = vn_bwrite,			/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 #ifdef FIFO
@@ -192,7 +191,6 @@ struct vnodeops ufs211_fifoops = {
 		.vop_truncate = fifo_truncate,		/* truncate */
 		.vop_update = ufs211_update,		/* update */
 		.vop_bwrite = vn_bwrite,			/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 #endif /* FIFO */
 

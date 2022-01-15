@@ -60,24 +60,22 @@ u_long	mfs_rootsize;	/* size of mini-root in bytes */
 
 static	int mfs_minor;	/* used for building internal dev_t */
 
-extern struct mfs_vnodeops;
-
 /*
  * mfs vfs operations.
  */
 struct vfsops mfs_vfsops = {
-	mfs_mount,
-	mfs_start,
-	ffs_unmount,
-	ufs_root,
-	ufs_quotactl,
-	mfs_statfs,
-	ffs_sync,
-	ffs_vget,
-	ffs_fhtovp,
-	ffs_vptofh,
-	mfs_init,
-	ffs_sysctl,
+		.vfs_mount = mfs_mount,
+		.vfs_start = mfs_start,
+		.vfs_unmount = ffs_unmount,
+		.vfs_root = ufs_root,
+		.vfs_quotactl = ufs_quotactl,
+		.vfs_statfs = mfs_statfs,
+		.vfs_sync = ffs_sync,
+		.vfs_vget = ffs_vget,
+		.vfs_fhtovp = ffs_fhtovp,
+		.vfs_vptofh = ffs_vptofh,
+		.vfs_init = mfs_init,
+		.vfs_sysctl = ffs_sysctl,
 };
 
 /*

@@ -60,25 +60,27 @@
 #include <miscfs/specfs/specdev.h>
 
 int lfs_mountfs (struct vnode *, struct mount *, struct proc *);
+#define	 lfs_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
 
 struct vfsops lfs_vfsops = {
-		lfs_mount,
-		ufs_start,
-		lfs_unmount,
-		ufs_root,
-		ufs_quotactl,
-		lfs_statfs,
-		lfs_sync,
-		lfs_vget,
-		lfs_fhtovp,
-		lfs_vptofh,
-		lfs_init,
-		lfs_sysctl,
+		.vfs_mount = lfs_mount,
+		.vfs_start = ufs_start,
+		.vfs_unmount = lfs_unmount,
+		.vfs_root = ufs_root,
+		.vfs_quotactl = ufs_quotactl,
+		.vfs_statfs = lfs_statfs,
+		.vfs_sync = lfs_sync,
+		.vfs_vget = lfs_vget,
+		.vfs_fhtovp = lfs_fhtovp,
+		.vfs_vptofh = lfs_vptofh,
+		.vfs_init = lfs_init,
+		.vfs_sysctl = lfs_sysctl,
 };
 
 /*
  * Called by main() when ufs is going to be mounted as root.
  */
+int
 lfs_mountroot()
 {
 	extern struct vnode *rootvp;
@@ -116,6 +118,7 @@ lfs_mountroot()
  *
  * mount system call
  */
+int
 lfs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
@@ -368,6 +371,7 @@ out:
 /*
  * unmount system call
  */
+int
 lfs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
@@ -424,6 +428,7 @@ lfs_unmount(mp, mntflags, p)
 /*
  * Get file system statistics.
  */
+int
 lfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
@@ -468,6 +473,7 @@ lfs_statfs(mp, sbp, p)
  *
  * Note: we are always called with the filesystem marked `MPBUSY'.
  */
+int
 lfs_sync(mp, waitfor, cred, p)
 	struct mount *mp;
 	int waitfor;
@@ -616,6 +622,7 @@ lfs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
  * Vnode pointer to File handle
  */
 /* ARGSUSED */
+int
 lfs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
