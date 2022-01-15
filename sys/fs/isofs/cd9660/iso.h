@@ -173,6 +173,7 @@ int cd9660_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
 int cd9660_statfs(struct mount *, struct statfs *, struct proc *);
 int cd9660_sync(struct mount *, int, struct ucred *, struct proc *);
 int cd9660_vget(struct mount *, ino_t, struct vnode **);
+int cd9660_vget_internal(struct mount *, ino_t, struct vnode **, int, struct iso_directory_record *);
 int cd9660_fhtovp(struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
 int cd9660_vptofh(struct vnode *, struct fid *);
 int cd9660_init(struct vfsconf *);
