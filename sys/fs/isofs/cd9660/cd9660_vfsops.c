@@ -459,6 +459,7 @@ cd9660_quotactl(mp, cmd, uid, arg, p)
 /*
  * Get file system statistics.
  */
+int
 cd9660_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
@@ -582,7 +583,7 @@ cd9660_vget(mp, ino, vpp)
 #else
 	    0,
 #endif
-	    (struct iso_directory_entry *)0));
+	    NULL));
 }
 
 int
@@ -607,7 +608,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		return (0);
 
 	/* Allocate a new vnode/iso_node. */
-	if (error == getnewvnode(VT_ISOFS, mp, cd9660_vnodeops, &vp)) {
+	if (error == getnewvnode(VT_ISOFS, mp, &cd9660_vnodeops, &vp)) {
 		*vpp = NULLVP;
 		return (error);
 	}
@@ -737,7 +738,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 	switch (vp->v_type = IFTOVT(ip->inode.iso_mode)) {
 	case VFIFO:
 #ifdef	FIFO
-		vp->v_op = cd9660_fifoops;
+		vp->v_op = &cd9660_fifoops;
 		break;
 #else
 		vput(vp);
@@ -752,7 +753,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		if (dp = iso_dmap(dev, ino, 0))
 			ip->inode.iso_rdev = dp->d_dev;
 #endif
-		vp->v_op = cd9660_specops;
+		vp->v_op = &cd9660_specops;
 		if (nvp == checkalias(vp, ip->inode.iso_rdev, mp)) {
 			/*
 			 * Discard unneeded vnode, but save its iso_node.
@@ -761,7 +762,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 			 */
 			nvp->v_data = vp->v_data;
 			vp->v_data = NULL;
-			vp->v_op = spec_vnodeops;
+			vp->v_op = &spec_vnodeops;
 			vrele(vp);
 			vgone(vp);
 			/*
