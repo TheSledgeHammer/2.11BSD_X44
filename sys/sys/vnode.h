@@ -746,6 +746,7 @@ extern struct vnodeops vops;
  * Public vnode manipulation functions.
  */
 struct file;
+struct flock;
 struct mount;
 struct nameidata;
 struct ostat;
