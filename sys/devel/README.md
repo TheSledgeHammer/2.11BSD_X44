@@ -13,7 +13,7 @@ an offical release is made.)
 	- threading: ucontext & mcontext
 
 - Dev: Device code to be included
-	- Floppy
+	- Evdev
 	- USB
 
 - ADVVM (AdvVM): Logical Volume Manager
@@ -36,29 +36,10 @@ an offical release is made.)
 - Kern & Sys:
   - Malloc: A Tertiary Buddy System Allocator (Needs a home!). (subr_tbree.c & tbtree.h)
     - Designed to work with the existing kern_malloc.c
-    - Example of potential implementation in "/devel/kern/kern_malloc2.c"
-  - Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler (kern_synch.c).
-    - Global Scheduler: Interface/API for other schedulers
-    - Hybrid EDF/CFS Scheduler
   - Threading (Hybrid N:M Model): kernel & user threads
     - Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
     - For User Threads, goto: (devel/libuthread)
       - implement pthreads
-
-- UFML: A Fossil + Venti inspired filesystem layer
-  - LOFS based, intended to support to UFS, FFS, MFS & LFS.
-  - Planned Features:
-    - Snapshots
-    - Versioning
-    - Archive
-    - Compression
-    - Encryption
-
-- UFS211: A port of 2.11BSD's UFS Filesystem. (See: "/ufs/ufs211")
-  - Vnode integration
-  - Planned:
-    - UFML Support
-    - Extended Attributes
 
 - VM: Updates & Changes (See: "/devel/vm")
 	- Planned:

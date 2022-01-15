@@ -266,7 +266,7 @@ struct cluster_save {
 	struct buf 	**bs_children;			/* List of associated buffers. */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern int		nbuf;				/* number of buffer headers */
 extern struct	buf *buf;			/* the buffer pool itself */
 extern char		*buffers;			/* The buffer contents. */

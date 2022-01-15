@@ -134,6 +134,7 @@ struct	namecache {
 };
 
 #ifdef _KERNEL
+struct mount;
 u_long	nextvnodeid;
 struct namecache *namecache;
 int		namei(struct nameidata *);

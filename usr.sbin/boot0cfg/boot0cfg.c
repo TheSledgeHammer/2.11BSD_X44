@@ -85,8 +85,8 @@ static int b0_ver;	/* boot block version set by boot0bs */
 #define OFF_FLAGS   (b0_ofs[b0_ver].flags)	/* option flags */
 #define OFF_TICKS   (b0_ofs[b0_ver].ticks)	/* clock ticks */
 
-
-#define cv2(p)  ((p)[0] | (p)[1] << 010)
+#define cv2(p)  	((p)[0] | (p)[1] << 010)
+#define NELEM(x)	(sizeof(x)/sizeof((x)[0]))
 
 #define mk2(p, x)                               \
     (p)[0] = (u_int8_t)(x),                     \
@@ -100,7 +100,7 @@ static const struct {
     {"update", 1},
     {"setdrv", 0}
 };
-static const int nopt = nitems(opttbl);
+static const int nopt = NELEM(opttbl);
 
 static const char fmt0[] = "#   flag     start chs   type"
     "       end chs       offset         size\n";

@@ -78,7 +78,7 @@ static int cd9660_rrip_idflag(ISO_RRIP_IDFLAG *, ISO_RRIP_ANALYZE *);
 static int cd9660_rrip_cont(ISO_RRIP_CONT *, ISO_RRIP_ANALYZE *);
 static int cd9660_rrip_stop(ISO_SUSP_HEADER *, ISO_RRIP_ANALYZE *);
 static int cd9660_rrip_extref(ISO_RRIP_EXTREF *, ISO_RRIP_ANALYZE *);
-static int cd9660_rrip_loop(struct iso_directory_record *, ISO_RRIP_ANALYZE *, const RRIP_TABLE *);
+static int cd9660_rrip_loop(struct iso_directory_record *, ISO_RRIP_ANALYZE *, RRIP_TABLE *);
 
 /*
  * POSIX file attribute
@@ -291,7 +291,7 @@ cd9660_rrip_defname(isodir, ana)
 	switch (*isodir->name) {
 	default:
 		isofntrans(isodir->name, isonum_711(isodir->name_len), ana->outbuf,
-				ana->outlen, 1, isonum_711(isodir->flags) & 4);
+				ana->outlen, 1, isonum_711(isodir->flags) & 4, ana->imp->im_joliet_level);
 		break;
 	case 0:
 		*ana->outlen = 1;
@@ -426,7 +426,7 @@ cd9660_rrip_idflag(p, ana)
 	ana->fields &= isonum_711(p->flags) | ~0xff; /* don't touch high bits */
 	/* special handling of RE field */
 	if (ana->fields & ISO_SUSP_RELDIR)
-		return cd9660_rrip_reldir(p, ana);
+		return cd9660_rrip_reldir((ISO_RRIP_RELDIR *)p, ana);
 
 	return ISO_SUSP_IDFLAG;
 }

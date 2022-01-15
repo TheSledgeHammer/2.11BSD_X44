@@ -52,7 +52,6 @@
 #include <sys/stat.h>
 
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 #include <fs/isofs/cd9660/cd9660_mount.h>
 #include <fs/isofs/cd9660/iso_rrip.h>
@@ -76,6 +75,7 @@ int prtactive;	/* 1 => print out reclaim of active vnodes */
 /*
  * Initialize hash links for inodes and dnodes.
  */
+int
 cd9660_init(vfsp)
 	struct vfsconf *vfsp;
 {
@@ -85,6 +85,8 @@ cd9660_init(vfsp)
 	idvhashtbl = hashinit(desiredvnodes / 8, M_ISOFSMNT, &idvhash);
 #endif
 	simple_lock_init(&cd9660_ihash_slock, "cd9660_ihash_slock");
+
+	return (0);
 }
 
 #ifdef ISODEVMAP

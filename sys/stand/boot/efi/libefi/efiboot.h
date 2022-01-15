@@ -44,6 +44,8 @@ struct efi_devdesc {
 	union {
 		struct {
 			int		unit;
+			int		adaptor;
+			int		controller;
 			int		slice;
 			int		partition;
 		} efidisk;

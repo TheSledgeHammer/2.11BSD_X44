@@ -84,10 +84,10 @@ static int fd;
 
 #define ACTIVE 0x80
 
-static uint dos_cyls;
-static uint dos_heads;
-static uint dos_sectors;
-static uint dos_cylsecs;
+static u_int dos_cyls;
+static u_int dos_heads;
+static u_int dos_sectors;
+static u_int dos_cylsecs;
 
 #define DOSSECT(s,c) ((s & 0x3f) | ((c >> 2) & 0xc0))
 #define DOSCYL(c)	(c & 0xff)
@@ -101,8 +101,8 @@ static int	part_processed = 0;
 static int	active_processed = 0;
 
 typedef struct cmd {
-    char		cmd;
-    int			n_args;
+    char	cmd;
+    int		n_args;
     struct arg {
 	char	argtype;
 	int		arg_val;
@@ -374,12 +374,11 @@ main(int argc, char *argv[])
 	if (I_flag) {
 		read_s0();
 		reset_boot();
-		partp = (struct dos_partition *) (&mboot.parts[0]);
+		partp = (struct dos_partition*) (&mboot.parts[0]);
 		partp->dp_typ = DOSPTYP_386BSD;
 		partp->dp_flag = ACTIVE;
 		partp->dp_start = dos_sectors;
-		partp->dp_size = (disksecs / dos_cylsecs) * dos_cylsecs -
-		    dos_sectors;
+		partp->dp_size = (disksecs / dos_cylsecs) * dos_cylsecs - dos_sectors;
 		dos(partp);
 		if (v_flag)
 			print_s0(-1);
@@ -388,51 +387,51 @@ main(int argc, char *argv[])
 		exit(0);
 	}
 	if (f_flag) {
-	    if (read_s0() || i_flag)
-		reset_boot();
-	    if (!read_config(f_flag))
-		exit(1);
-	    if (v_flag)
-		print_s0(-1);
-	    if (!t_flag)
-		write_s0();
-	} else {
-	    if(u_flag)
-		get_params_to_use();
-	    else
-		print_params();
-
-	    if (read_s0())
-		init_sector0(dos_sectors);
-
-	    printf("Media sector size is %d\n", secsize);
-	    printf("Warning: BIOS sector numbering starts with sector 1\n");
-	    printf("Information from DOS bootblock is:\n");
-	    if (partition == -1)
-		for (i = 1; i <= NDOSPART; i++)
-		    change_part(i);
-	    else
-		change_part(partition);
-
-	    if (u_flag || a_flag)
-		change_active(partition);
-
-	    if (B_flag)
-		change_code();
-
-	    if (u_flag || a_flag || B_flag) {
-		if (!t_flag) {
-		    printf("\nWe haven't changed the partition table yet.  ");
-		    printf("This is your last chance.\n");
-		}
-		print_s0(-1);
-		if (!t_flag) {
-		    if (ok("Should we write new partition table?"))
+		if (read_s0() || i_flag)
+			reset_boot();
+		if (!read_config(f_flag))
+			exit(1);
+		if (v_flag)
+			print_s0(-1);
+		if (!t_flag)
 			write_s0();
-		} else {
-		    printf("\n-t flag specified -- partition table not written.\n");
+	} else {
+		if (u_flag)
+			get_params_to_use();
+		else
+			print_params();
+
+		if (read_s0())
+			init_sector0(dos_sectors);
+
+		printf("Media sector size is %d\n", secsize);
+		printf("Warning: BIOS sector numbering starts with sector 1\n");
+		printf("Information from DOS bootblock is:\n");
+		if (partition == -1)
+			for (i = 1; i <= NDOSPART; i++)
+				change_part(i);
+		else
+			change_part(partition);
+
+		if (u_flag || a_flag)
+			change_active(partition);
+
+		if (B_flag)
+			change_code();
+
+		if (u_flag || a_flag || B_flag) {
+			if (!t_flag) {
+				printf("\nWe haven't changed the partition table yet.  ");
+				printf("This is your last chance.\n");
+			}
+			print_s0(-1);
+			if (!t_flag) {
+				if (ok("Should we write new partition table?"))
+					write_s0();
+			} else {
+				printf("\n-t flag specified -- partition table not written.\n");
+			}
 		}
-	    }
 	}
 
 	exit(0);

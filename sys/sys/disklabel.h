@@ -139,7 +139,7 @@ struct disklabel {
 	 * as found in /mdec.  This is returned when using
 	 * getdiskbyname(3) to retrieve the values from /etc/disktab.
 	 */
-#if defined(KERNEL) || defined(STANDALONE)
+#if defined(_KERNEL) || defined(STANDALONE)
 	char			d_packname[16];		/* pack identifier */
 #else
 	union {

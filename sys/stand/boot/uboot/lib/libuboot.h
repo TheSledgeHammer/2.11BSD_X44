@@ -40,12 +40,12 @@ struct uboot_devdesc {
 	struct devdesc      dd;
 	union {
 		struct {
-			int			unit;
-			int			adaptor;
-			int			controller;
-			int			slice;
-			int			partition;
-			uint64_t	offset;
+			int			d_unit;
+			int			d_adaptor;
+			int			d_controller;
+			int			d_slice;
+			int			d_partition;
+			uint64_t	d_offset;
 		} d_stor;
 	} d_kind;
 };

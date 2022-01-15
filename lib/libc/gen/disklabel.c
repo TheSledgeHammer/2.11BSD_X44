@@ -75,6 +75,11 @@ static void	error(int);
 #endif
 static int	gettype(char *, const char *const *);
 
+#define getnumdflt(field, dname, dflt) 	\
+	(field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t) f)
+#define	getnum(field, dname) 			\
+	if (cgetnum(buf, dname, &f) != -1) field = (u_int32_t)f
+
 static const char *db_array[2] = { _PATH_DISKTAB, 0 };
 
 int
@@ -130,11 +135,6 @@ getdiskbyname(const char *name)
 	if (cgetcap(buf, "sf", ':') != NULL)
 		dp->d_flags |= D_BADSECT;
 
-#define getnumdflt(field, dname, dflt) \
-	(field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t) f)
-#define	getnum(field, dname) \
-	if (cgetnum(buf, dname, &f) != -1) field = (u_int32_t)f
-
 	getnumdflt(dp->d_secsize, "se", DEV_BSIZE);
 	getnum(dp->d_ntracks, "nt");
 	getnum(dp->d_nsectors, "ns");
@@ -155,11 +155,11 @@ getdiskbyname(const char *name)
 	getnumdflt(dp->d_trkseek, "ts", 0);
 	getnumdflt(dp->d_bbsize, "bs", BBSIZE);
 	getnumdflt(dp->d_sbsize, "sb", SBSIZE);
-	strcpy(psize, "px"); /* XXX: strcpy is safe */
-	strcpy(pbsize, "bx"); /* XXX: strcpy is safe */
-	strcpy(pfsize, "fx"); /* XXX: strcpy is safe */
-	strcpy(poffset, "ox"); /* XXX: strcpy is safe */
-	strcpy(ptype, "tx"); /* XXX: strcpy is safe */
+	strcpy(psize, "px"); 	/* XXX: strcpy is safe */
+	strcpy(pbsize, "bx"); 	/* XXX: strcpy is safe */
+	strcpy(pfsize, "fx"); 	/* XXX: strcpy is safe */
+	strcpy(poffset, "ox"); 	/* XXX: strcpy is safe */
+	strcpy(ptype, "tx"); 	/* XXX: strcpy is safe */
 	max = 'a' - 1;
 	pp = &dp->d_partitions[0];
 	for (p = 'a'; p < 'a' + MAXPARTITIONS; p++, pp++) {

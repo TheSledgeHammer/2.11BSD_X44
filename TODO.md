@@ -8,8 +8,6 @@ A General todo list. Don't hesitate to add to this list. :)
 		- mklocale
 		- disklabel
 		- fdisk
-		- boot0cfg
-	- btxld
 	- zic
 - Unimplemented:
 	- rpcgen
@@ -96,16 +94,20 @@ Of Interest Todo:
 
 ## stand:
 - boot:
-	- efi: For common efi code.
+	- efi:
 		- Makfiles:
 			- Adjust makefiles.
-		- loader:
-			- efiserialio.c
-			- missing efi commands
-	- commands: needs work
-	- install: not present
-
+	- fdt:
+	- uboot:
+		- missing fdt support libraries
 ## ufs:
+- ufs211:
+   	- add Extended Attributes
+	- add UFML Support
+- ufml:
+	- adds User libs
+	- improve fs support
+	- add fs-based routines
 
 ## vm:
 

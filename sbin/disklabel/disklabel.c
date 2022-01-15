@@ -131,15 +131,15 @@ char	bootarea[BBSIZE];
 
 #if NUMBOOT > 0
 int		installboot;	/* non-zero if we should install a boot program */
-char	*bootbuf;	/* pointer to buffer with remainder of boot prog */
-int		bootsize;	/* size of remaining boot program */
-char	*xxboot;	/* primary boot */
-char	*bootxx;	/* secondary boot */
+char	*bootbuf;		/* pointer to buffer with remainder of boot prog */
+int		bootsize;		/* size of remaining boot program */
+char	*xxboot;		/* primary boot */
+char	*bootxx;		/* secondary boot */
 char	boot0[MAXPATHLEN];
 char	boot1[MAXPATHLEN];
 #endif
 
-enum	{
+enum {
 	UNSPEC, EDIT, NOWRITE, READ, RESTORE, WRITE, WRITEABLE, WRITEBOOT
 } op = UNSPEC;
 

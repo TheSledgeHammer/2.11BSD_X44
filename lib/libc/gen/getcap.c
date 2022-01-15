@@ -89,9 +89,9 @@ static char		*toprec;	/* Additional record specified by cgetset() */
 static int		gottoprec;	/* Flag indicating retrieval of toprecord */
 static int	 	expandtc = 1;	/* flag to expand tc= or not */
 
-static int	cdbget (DB *, char **, const char *);
+static int	cdbget(DB *, char **, const char *);
 static int 	getent(char **, size_t *, const char * const *, int, const char *, int, char *);
-static int	nfcmp (char *, char *);
+static int	nfcmp(char *, char *);
 
 /*
  * Cgetset() allows the addition of a user specified buffer to be added
@@ -1219,7 +1219,7 @@ nfcmp(nf, rec)
 	_DIAGASSERT(rec != NULL);
 
 	for (cp = rec; *cp != ':'; cp++)
-		;
+		continue;
 	
 	tmp = *(cp + 1);
 	*(cp + 1) = '\0';

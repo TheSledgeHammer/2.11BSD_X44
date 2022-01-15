@@ -73,10 +73,17 @@
 /****************************************************************/
 /* HTBC Blockchain Layout */
 
+enum {
+	HTBC_HC_HEADER = 0x5741424c,	/* "HTBC", struct htbc_hchain */
+	HTBC_HC_INODES,					/* struct htbc_hc_inodelist */
+	HTBC_HC_REVOCATIONS,			/* struct htbc_hc_blocklist */
+	HTBC_HC_BLOCKS,					/* struct htbc_hc_blocklist */
+};
+
 struct htbc_hchain {
 	CIRCLEQ_ENTRY(htbc_hchain)	hc_entry;			/* a list of chain entries */
 	struct htree_root			*hc_hroot;			/* htree root per block */
-	struct ht_transaction		*hc_trans;			/* pointer to transaction info */
+	struct htbc_htransaction	*hc_trans;			/* pointer to transaction info */
 
 	const char					*hc_name;			/* name of chain entry */
 	int							hc_len;
@@ -84,6 +91,14 @@ struct htbc_hchain {
 	struct lock_object			hc_lock;			/* lock on chain */
 	int							hc_flags;			/* flags */
 	int							hc_refcnt;			/* number of entries in this chain */
+	/* Hash Tree Info */
+	uint32_t					hc_type;			/* HTBC_HC_HEADER log magic number */
+	size_t 						hc_circ_size; 		/* Number of bytes in buffer of log */
+	size_t 						hc_circ_off;		/* Number of bytes reserved at start */
+	int							hc_fs_dev_bshift;
+	int							hc_fs_dev_bmask;
+	int							hc_log_dev_bshift;
+	int							hc_log_dev_bmask;
 };
 
 struct htbc_htransaction {
@@ -108,8 +123,6 @@ struct htbc_htransaction {
 		mode_t					u_imode;
 	} ht_ino;
 	int							ht_inocnt;
-	int							ht_dev_bshift;
-	int							ht_dev_bmask;
 };
 
 #define HASH_VERSION			HTREE_HALF_MD4					/* make configurable */

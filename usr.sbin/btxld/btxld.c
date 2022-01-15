@@ -36,6 +36,7 @@
 
 /* XXX make this work as an i386/amd64 cross-tool */
 #include <machine/exec.h>
+
 #undef __LDPGSZ
 #define __LDPGSZ	4096
 
@@ -115,20 +116,20 @@ static int verbose;				/* Display information */
 static const char *tname;		/* Temporary output file */
 static const char *fname;		/* Current input file */
 
-static void cleanup(void);
-static void btxld(const char *);
-static void getbtx(int, struct btx_hdr *);
-static void gethdr(int, struct hdr *);
-static void puthdr(int, struct hdr *);
-static void copy(int, int, size_t, off_t);
-static size_t readx(int, void *, size_t, off_t);
-static void writex(int, const void *, size_t);
-static void seekx(int, off_t);
+static void 	cleanup(void);
+static void 	btxld(const char *);
+static void 	getbtx(int, struct btx_hdr *);
+static void 	gethdr(int, struct hdr *);
+static void 	puthdr(int, struct hdr *);
+static void 	copy(int, int, size_t, off_t);
+static size_t 	readx(int, void *, size_t, off_t);
+static void 	writex(int, const void *, size_t);
+static void 	seekx(int, off_t);
 static unsigned int optfmt(const char *);
 static uint32_t optaddr(const char *);
-static int optpage(const char *, int);
-static void Warn(const char *, const char *, ...);
-static void usage(void);
+static int 		optpage(const char *, int);
+static void 	Warn(const char *, const char *, ...);
+static void 	usage(void);
 
 /*
  * A link editor for BTX clients.

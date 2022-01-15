@@ -335,7 +335,7 @@ uboot_ioctl(struct uboot_devdesc *dev, u_long cmd, void *data)
 		*(u_int *)data = od->sectorsize;
 		break;
 	case DIOCGMEDIASIZE:
-		if (dev->d_kind.d_stor.offset == 0)
+		if (dev->d_kind.d_stor.d_offset == 0)
 			*(uint64_t *)data = od->mediasize;
 		else
 			*(uint64_t *)data = od->entrysize * od->sectorsize;
@@ -375,16 +375,16 @@ disk_open(struct uboot_devdesc *dev, uint64_t mediasize, u_int sectorsize)
 	 * to the start of the disk
 	 */
 	memcpy(&partdev, dev, sizeof(partdev));
-	partdev.d_offset = 0;
-	partdev.d_slice = D_SLICENONE;
-	partdev.d_partition = D_PARTNONE;
+	partdev.d_kind.d_stor.d_offset = 0;
+	partdev.d_kind.d_stor.d_slice = D_SLICENONE;
+	partdev.d_kind.d_stor.d_partition = D_PARTNONE;
 
-	dev->d_offset = 0;
+	dev->d_kind.d_stor.d_offset = 0;
 	table = NULL;
-	slice = dev->d_slice;
-	partition = dev->d_partition;
+	slice = dev->d_kind.d_stor.d_slice;
+	partition = dev->d_kind.d_stor.d_partition;
 
-	DPRINTF("%s unit %d, slice %d, partition %d => %p", disk_fmtdev(dev), dev->dd.d_unit, dev->d_slice, dev->d_partition, od);
+	DPRINTF("%s unit %d, slice %d, partition %d => %p", disk_fmtdev(dev), dev->dd.d_unit, dev->d_kind.d_stor.d_slice, dev->d_kind.d_stor.d_partition, od);
 
 	/* Determine disk layout. */
 	od->table = ptable_open(&partdev, mediasize / sectorsize, sectorsize, ptblread);

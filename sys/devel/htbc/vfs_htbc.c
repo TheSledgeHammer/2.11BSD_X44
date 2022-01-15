@@ -119,6 +119,7 @@ struct htbc {
 	daddr_t 									ht_pbn;				/* Physical block number of start */
 	int 										ht_fs_dev_bshift;	/* logarithm of device block size of filesystem device */
 	int 										ht_fs_dev_bsize;	/* logarithm of device block size of filesystem device */
+	int 										ht_log_dev_bshift;
 
 	size_t 										ht_circ_size; 		/* Number of bytes in buffer of log */
 	size_t 										ht_circ_off;		/* Number of bytes reserved at start */
@@ -251,6 +252,21 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	ht->ht_dealloclens = htbc_alloc(sizeof(*ht->ht_dealloclens) * ht->ht_dealloclim);
 
 	htbc_inodetrk_init(ht, HTBC_INODETRK_SIZE);
+
+	/* Initialize the blockchain header */
+	{
+		struct htbc_hchain *hc;
+		size_t len = 1 << ht->ht_log_dev_bshift;
+		hc = htbc_calloc(1, len);
+		hc->hc_type = HTBC_HC_HEADER;
+		hc->hc_len = len;
+		hc->hc_circ_off = ht->ht_circ_off;
+		hc->hc_circ_size = ht->ht_circ_size;
+		hc->hc_log_dev_bshift = ht->ht_log_dev_bshift;
+		hc->hc_fs_dev_bshift = ht->ht_fs_dev_bshift;
+		CIRCLEQ_FIRST(&ht->ht_hashchain) = hc;
+		ht->ht_hc_scratch = htbc_malloc(len);
+	}
 
 	return (0);
 
@@ -779,7 +795,7 @@ htbc_transaction_inodes_len(ht)
 		return (NOTRANSACTION);
 	}
 
-	blocklen = 1 << trans->ht_dev_bshift;
+	blocklen = 1 << ht->ht_log_dev_bshift;
 
 	/* Calculate number of inodes described in a inodelist header */
 	iph = (blocklen - offsetof(struct htbc_hc_inodelist, hc_inodes)) / sizeof(((struct htbc_hc_inodelist *)0)->hc_inodes[0]);
@@ -804,7 +820,7 @@ htbc_transaction_len(ht)
 		return (NOTRANSACTION);
 	}
 
-	blocklen = 1 << trans->ht_dev_bshift;
+	blocklen = 1 << ht->ht_log_dev_bshift;
 
 	/* Calculate number of blocks described in a blocklist header */
 	bph = (blocklen - offsetof(struct htbc_hc_blocklist, hc_blocks)) / sizeof(((struct htbc_hc_blocklist*) 0)->hc_blocks[0]);

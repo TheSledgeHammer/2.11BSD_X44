@@ -52,7 +52,7 @@ const struct elfh elfhdr = {
 	0,					    				/* e_flags */
 	sizeof(elfhdr.e),			    		/* e_ehsize */
 	sizeof(elfhdr.p[0]),			    	/* e_phentsize */
-	sizeof(elfhdr.p) / sizeof(elfhdr.p[0]),     /* e_phnum */
+	sizeof(elfhdr.p) / sizeof(elfhdr.p[0]), /* e_phnum */
 	sizeof(elfhdr.sh[0]),			    	/* e_shentsize */
 	sizeof(elfhdr.sh) / sizeof(elfhdr.sh[0]),   /* e_shnum */
 	1					    				/* e_shstrndx */

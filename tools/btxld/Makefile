@@ -3,4 +3,5 @@
 HOSTPROGNAME=	${_TOOL_PREFIX}btxld
 HOST_SRCDIR=	usr.sbin/btxld
 
+.include "${.CURDIR}/../Makefile.nbincludes"
 .include "${.CURDIR}/../Makefile.host"
