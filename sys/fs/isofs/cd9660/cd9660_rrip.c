@@ -291,7 +291,7 @@ cd9660_rrip_defname(isodir, ana)
 	switch (*isodir->name) {
 	default:
 		isofntrans(isodir->name, isonum_711(isodir->name_len), ana->outbuf,
-				ana->outlen, 1, isonum_711(isodir->flags) & 4, ana->imp->im_joliet_level);
+				ana->outlen, 1, 0, isonum_711(isodir->flags) & 4, ana->imp->im_joliet_level);
 		break;
 	case 0:
 		*ana->outlen = 1;
