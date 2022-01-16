@@ -66,7 +66,6 @@ struct	proc {
 	struct	proc 		*p_cptr;	 	/* Pointer to youngest living child. */
 
     pid_t				p_oppid;	    /* Save parent pid during ptrace. XXX */
-    int					p_dupfd;		/* Sideways return value from fdopen. XXX */
 
     /* scheduling */
     u_int				p_estcpu;	 	/* Time averaged value of p_cpticks. */

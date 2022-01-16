@@ -529,19 +529,17 @@ union_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	return (EOPNOTSUPP);
 }
 
-int union_init (struct vfsconf *);
-
 struct vfsops union_vfsops = {
-	union_mount,
-	union_start,
-	union_unmount,
-	union_root,
-	union_quotactl,
-	union_statfs,
-	union_sync,
-	union_vget,
-	union_fhtovp,
-	union_vptofh,
-	union_init,
-	union_sysctl,
+		.vfs_mount = union_mount,
+		.vfs_start = union_start,
+		.vfs_unmount = union_unmount,
+		.vfs_root = union_root,
+		.vfs_quotactl = union_quotactl,
+		.vfs_statfs = union_statfs,
+		.vfs_sync = union_sync,
+		.vfs_vget = union_vget,
+		.vfs_fhtovp = union_fhtovp,
+		.vfs_vptofh = union_vptofh,
+		.vfs_init = union_init,
+		.vfs_sysctl = union_sysctl,
 };

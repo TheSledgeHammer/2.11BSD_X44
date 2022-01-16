@@ -312,7 +312,7 @@ fdesc_open(ap)
 		 * take the actions in dupfdopen.  Other callers of vn_open or
 		 * VOP_OPEN will simply report the error.
 		 */
-		ap->a_p->p_dupfd = VTOFDESC(vp)->fd_fd;	/* XXX */
+		ap->a_p->p_addr->u_dupfd = VTOFDESC(vp)->fd_fd;	/* XXX */
 		error = ENODEV;
 		break;
 

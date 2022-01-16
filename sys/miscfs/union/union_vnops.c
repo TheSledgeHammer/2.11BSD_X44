@@ -1600,8 +1600,15 @@ union_strategy(ap)
 }
 
 /*
- * Global vfs data structures
+ * Global vfs data structures for union
  */
+#define union_blkatoff 	((int (*) (struct  vop_blkatoff_args *))eopnotsupp)
+#define union_vfree 	((int (*) (struct  vop_vfree_args *))eopnotsupp)
+#define union_valloc 	((int (*) (struct  vop_valloc_args *))eopnotsupp)
+#define union_truncate 	((int (*) (struct  vop_truncate_args *))eopnotsupp)
+#define union_update 	((int (*) (struct  vop_update_args *))eopnotsupp)
+#define union_bwrite 	((int (*) (struct  vop_bwrite_args *))eopnotsupp)
+
 struct vnodeops union_vnodeops = {
 		.vop_lookup = union_lookup,		/* lookup */
 		.vop_create = union_create,		/* create */
@@ -1636,13 +1643,10 @@ struct vnodeops union_vnodeops = {
 		.vop_print = union_print,		/* print */
 		.vop_islocked = union_islocked,	/* islocked */
 		.vop_advlock = union_advlock,	/* advlock */
-#ifdef notdef
 		.vop_blkatoff = union_blkatoff,	/* blkatoff */
 		.vop_valloc = union_valloc,		/* valloc */
 		.vop_vfree = union_vfree,		/* vfree */
 		.vop_truncate = union_truncate,	/* truncate */
 		.vop_update = union_update,		/* update */
 		.vop_bwrite = union_bwrite,		/* bwrite */
-#endif
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
