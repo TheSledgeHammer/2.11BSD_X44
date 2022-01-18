@@ -70,7 +70,7 @@
  *	Exported data structures.
  */
 
-extern int	vm_pages_needed;	/* should be some "event" structure */
+extern int			vm_pages_needed;	/* should be some "event" structure */
 simple_lock_data_t	vm_pages_needed_lock;
 
 /*
@@ -81,15 +81,15 @@ simple_lock_data_t	vm_pages_needed_lock;
  *	Signal pageout-daemon and wait for it.
  */
 
-#define	VM_WAIT		{ 							\
-			simple_lock(&vm_pages_needed_lock); \
-			thread_wakeup(&vm_pages_needed); 	\
-			thread_sleep(&cnt.v_free_count, 	\
-				&vm_pages_needed_lock, FALSE); 	\
+#define	VM_WAIT		{ 					\
+	simple_lock(&vm_pages_needed_lock); \
+	thread_wakeup(&vm_pages_needed); 	\
+	thread_sleep(&cnt.v_free_count, 	\
+	&vm_pages_needed_lock, FALSE); 		\
 }
 #ifdef KERNEL
-void		 vm_pageout (void);
-void		 vm_pageout_scan (void);
-void		 vm_pageout_page (vm_page_t, vm_object_t);
-void		 vm_pageout_cluster (vm_page_t, vm_object_t);
+void	vm_pageout(void);
+void	vm_pageout_scan(void);
+void	vm_pageout_page(vm_page_t, vm_object_t);
+void	vm_pageout_cluster(vm_page_t, vm_object_t);
 #endif

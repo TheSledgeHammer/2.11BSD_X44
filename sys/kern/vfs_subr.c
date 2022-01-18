@@ -62,7 +62,6 @@
 #include <sys/malloc.h>
 #include <sys/domain.h>
 #include <sys/mbuf.h>
-
 #include <sys/sysctl.h>
 
 #include <vm/include/vm.h>
@@ -84,7 +83,7 @@ int	vttoif_tab[9] = {
 #define	bufinsvn(bp, dp)	LIST_INSERT_HEAD(dp, bp, b_vnbufs)
 #define	bufremvn(bp) {											\
 	LIST_REMOVE(bp, b_vnbufs);									\
-	(bp)->b_vnbufs.le_next = NOLIST;							\
+	LIST_NEXT(bp, b_vnbufs) = NOLIST;							\
 }
 
 TAILQ_HEAD(freelst, vnode) 	vnode_free_list;	/* vnode free list */
@@ -99,9 +98,8 @@ static struct lock_object 	spechash_slock;
  * Initialize the vnode management data structures.
  */
 void
-vntblinit()
+vntblinit(void)
 {
-
 	simple_lock_init(&mntvnode_slock, "mntvnode_slock");
 	simple_lock_init(&mntid_slock, "mntid_slock");
 	simple_lock_init(&spechash_slock, "spechash_slock");
@@ -338,9 +336,9 @@ vattr_null(vap)
 /*
  * Routines having to do with the management of the vnode table.
  */
-extern struct dead_vnodeops;
-static void vclean (struct vnode *vp, int flag, struct proc *p);
-extern void vgonel (struct vnode *vp, struct proc *p);
+extern struct vnodeops dead_vnodeops;
+static void vclean(struct vnode *vp, int flag, struct proc *p);
+extern void vgonel(struct vnode *vp, struct proc *p);
 long numvnodes;
 extern struct vattr va_null;
 

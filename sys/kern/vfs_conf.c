@@ -132,24 +132,3 @@ static struct vfsconf vfsconflist[] = {
  */
 int maxvfsconf = sizeof(vfsconflist) / sizeof (struct vfsconf);
 struct vfsconf *vfsconf = vfsconflist;
-
-void
-vfsconf_init(vfsconf)
-	struct vfsconf *vfsconf;
-{
-	(*vfsconf->vfc_vfsops->vfs_init)(vfsconf);
-}
-
-#define add(vfsp, vfsconf)						\
-	(vfsp)->vfc_next = (vfsconf)->vfc_next;		\
-	(vfsconf)->vfc_next = (vfsp);
-
-vfsconf_add(vfsconf)
-	struct vfsconf *vfsconf;
-{
-	struct vfsconf *vfsp;
-
-	for(vfsp = vfsconf; vfsp != NULL; vfsp++) {
-		vfsp->vfc_next = vfsp;
-	}
-}

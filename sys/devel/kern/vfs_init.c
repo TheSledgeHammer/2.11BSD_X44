@@ -38,6 +38,12 @@
  *	@(#)vfs_init.c	8.5 (Berkeley) 5/11/95
  */
 
+/*
+ * TODO: change following to work with list
+ * - vfs_syscalls.c: mount
+ * - vfs_subr.c: vfs_rootmountalloc, vfs_mountroot, vfs_sysctl
+ */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -45,52 +51,74 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 
-struct vattr va_null;
+LIST_HEAD(, vfsconf) vfslist = LIST_HEAD_INITIALIZER(vfslist);
 
-/*
- * Initialize the vnode structures and initialize each file system type.
- */
 void
-vfsinit()
-{
+vfsconfops_init(vfsp)
 	struct vfsconf *vfsp;
+{
+	(*vfsp->vfc_vfsops->vfs_init)(vfsp);
+}
+
+void
+vfsconf_init(vfsp)
+	struct vfsconf *vfsp;
+{
 	int i, maxtypenum;
 
-	/*
-	 * Initialize the vnode table
-	 */
-	vntblinit();
-
-	/*
-	 * Initialize the vnode name cache
-	 */
-	nchinit();
-
-	/*
-	 * Initialize the vnode operation vectors.
-	 */
-	vop_init();
-
-	/*
-	 * Initialize each file system type.
-	 */
-	//vfsp = vfsconf;
-	vattr_null(&va_null);
 	maxtypenum = 0;
-	for (vfsp = vfsconf, i = 1; i <= maxvfsconf; i++, vfsp++) {
-		if (i < maxvfsconf) {
-			vfsp->vfc_next = vfsp + 1;
+	for(i = 0; i < maxvfsconf; i++) {
+		vfsconf_attach(&vfsp[i]);
+		if (maxtypenum <= &vfsp[i].vfc_typenum) {
+			maxtypenum = &vfsp[i].vfc_typenum + 1;
 		}
-		if (maxtypenum <= vfsp->vfc_typenum) {
-			maxtypenum = vfsp->vfc_typenum + 1;
-		}
-		(*vfsp->vfc_vfsops->vfs_init)(vfsp);
+		vfsops_init(&vfsp[i]);
 	}
+
 	/* next vfc_typenum to be used */
 	maxvfsconf = maxtypenum;
+}
 
-	/*
-	 * Initialize the vnode advisory lock vfs_lockf.c
-	 */
-	lf_init();
+void
+vfsconf_attach(vfsp)
+	struct vfsconf *vfsp;
+{
+	if (vfsp != NULL) {
+		LIST_INSERT_HEAD(&vfslist, vfsp, vfc_entry);
+	}
+}
+
+void
+vfsconf_detach(vfsp)
+	struct vfsconf *vfsp;
+{
+	if(vfsp != NULL) {
+		LIST_REMOVE(vfsp, vfc_entry);
+	}
+}
+
+struct vfsconf *
+vfsconf_find_by_name(name)
+	const char *name;
+{
+	struct vfsconf *vfsp;
+	LIST_FOREACH(vfsp, &vfslist, vfc_entry) {
+		if (strcmp(name, vfsp->vfc_name) == 0) {
+			break;
+		}
+	}
+	return (vfsp);
+}
+
+struct vfsconf *
+vfsconf_find_by_typenum(typenum)
+	int typenum;
+{
+	struct vfsconf *vfsp;
+
+	LIST_FOREACH(vfsp, &vfslist, vfc_entry) {
+		if (typenum == vfsp->vfc_typenum)
+			break;
+	}
+	return (vfsp);
 }

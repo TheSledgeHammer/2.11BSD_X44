@@ -221,6 +221,7 @@ struct vfsconf {
 	int 					vfc_flags;					/* permanent flags */
 	int						(*vfc_mountroot)(void);		/* if != NULL, routine to mount root */
 	struct	vfsconf 		*vfc_next;					/* next in list */
+	//LIST_ENTRY(vfsconf)		vfc_entry;					/* next in list */
 };
 
 #ifdef _KERNEL
@@ -284,23 +285,26 @@ struct netexport {
 /*
  * exported vnode operations
  */
-int				dounmount (struct mount *, int, struct proc *);
-struct	mount 	*vfs_getvfs (fsid_t *);														/* return vfs given fsid */
-int				vflush (struct mount *mp, struct vnode *skipvp, int flags);
-int				vfs_export (struct mount *, struct netexport *, struct export_args *); 		/* process mount export info */
-struct	netcred *vfs_export_lookup (struct mount *, struct netexport *, struct mbuf *); 	/* lookup host in fs export list */
-int				vfs_mountedon (struct vnode *);    											/* is a vfs mounted on vp */
-int				vfs_busy (struct mount *, int, struct lock_object *, struct proc *);  		/* mark a vfs  busy */
-void			vfs_unbusy (struct mount *, struct proc *);       							/* mark a vfs not busy */
-int				vfs_rootmountalloc (char *, char *, struct mount **);
-int				vfs_mountroot (void);
-void			vfs_getnewfsid (struct mount *);
-void			vfs_timestamp (struct timespec *tsp);
-void			vfs_unmountall (void);
+int				dounmount(struct mount *, int, struct proc *);
+struct	mount 	*vfs_getvfs(fsid_t *);														/* return vfs given fsid */
+int				vflush(struct mount *mp, struct vnode *skipvp, int flags);
+int				vfs_export(struct mount *, struct netexport *, struct export_args *); 		/* process mount export info */
+struct	netcred *vfs_export_lookup(struct mount *, struct netexport *, struct mbuf *); 	/* lookup host in fs export list */
+int				vfs_mountedon(struct vnode *);    											/* is a vfs mounted on vp */
+int				vfs_busy(struct mount *, int, struct lock_object *, struct proc *);  		/* mark a vfs  busy */
+void			vfs_unbusy(struct mount *, struct proc *);       							/* mark a vfs not busy */
+int				vfs_rootmountalloc(char *, char *, struct mount **);
+int				vfs_mountroot(void);
+void			vfs_getnewfsid(struct mount *);
+void			vfs_timestamp(struct timespec *tsp);
+void			vfs_unmountall(void);
 
-extern CIRCLEQ_HEAD(mntlist, mount) mountlist;											/* mounted filesystem list */
+//struct vfsconf 	*vfsconf_find_by_name(const char *);
+//struct vfsconf 	*vfsconf_find_by_typenum(int);
+
+extern CIRCLEQ_HEAD(mntlist, mount) mountlist;												/* mounted filesystem list */
 extern struct lock_object mountlist_slock;
-extern struct vfsops *vfssw[];														/* filesystem type table */
+//extern struct vfsops *vfssw[];														/* filesystem type table */
 
 #else /* KERNEL */
 

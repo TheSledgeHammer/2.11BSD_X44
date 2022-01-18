@@ -37,6 +37,7 @@
 #include <sys/vnode.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
+#include <sys/stddef.h>
 
 struct vnodeops vops;
 
@@ -73,6 +74,7 @@ vop_lookup(dvp, vpp, cnp)
 	int error;
 
 	a.a_head.a_ops = &vops;
+//	a.a_head.a_desc = &vop_lookup_desc;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
