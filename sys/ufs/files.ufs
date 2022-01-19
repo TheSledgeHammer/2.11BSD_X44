@@ -1,0 +1,65 @@
+#	$NetBSD: files.ufs,v 1.2 2002/09/28 20:11:08 dbj Exp $
+
+deffs						FFS
+deffs	fs_mfs.h			MFS		# XXX
+deffs	fs_lfs.h			LFS		# XXX
+deffs						UFS211
+deffs						UFML
+
+# FFS Sources
+file	ufs/ffs/ffs_alloc.c					ffs | mfs
+file	ufs/ffs/ffs_balloc.c				ffs | mfs
+file	ufs/ffs/ffs_inode.c					ffs | mfs
+file	ufs/ffs/ffs_subr.c					ffs | mfs
+file	ufs/ffs/ffs_tables.c				ffs | mfs
+file	ufs/ffs/ffs_vfsops.c				ffs | mfs
+file	ufs/ffs/ffs_vnops.c					ffs | mfs
+
+# LFS Sources
+file	ufs/lfs/lfs_alloc.c	    			lfs
+file	ufs/lfs/lfs_bio.c	    			lfs
+file	ufs/lfs/lfs_balloc.c				lfs
+file	ufs/lfs/lfs_cksum.c	    			lfs
+file	ufs/lfs/lfs_debug.c	    			lfs
+file	ufs/lfs/lfs_inode.c	    			lfs
+file	ufs/lfs/lfs_segment.c				lfs
+file	ufs/lfs/lfs_subr.c	    			lfs
+file	ufs/lfs/lfs_syscalls.c				lfs
+file	ufs/lfs/lfs_vfsops.c				lfs
+file	ufs/lfs/lfs_vnops.c	    			lfs
+
+# MFS Sources
+file	ufs/mfs/mfs_vfsops.c				mfs
+file	ufs/mfs/mfs_vnops.c					mfs
+
+# UFS Sources
+file	ufs/ufs/ufs_bmap.c					ffs | lfs | mfs
+file	ufs/ufs/ufs_ihash.c					ffs | lfs | mfs
+file	ufs/ufs/ufs_inode.c					ffs | lfs | mfs
+file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs
+file	ufs/ufs/ufs_quota.c					quota & (ffs | lfs | mfs)
+file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs
+file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
+
+# UFS211 Sources
+file	ufs/ufs211/ufs211_alloc.c			ufs211
+file	ufs/ufs211/ufs211_bmap.c			ufs211
+file	ufs/ufs211/ufs211_bufmap.c			ufs211
+file	ufs/ufs211/ufs211_ihash.c			ufs211
+file	ufs/ufs211/ufs211_inode.c			ufs211
+file	ufs/ufs211/ufs211_lookup.c			ufs211
+file	ufs/ufs211/ufs211_quota.c			quota & ufs211
+file	ufs/ufs211/ufs211_subr.c			ufs211
+file	ufs/ufs211/ufs211_vfsops.c			ufs211
+file	ufs/ufs211/ufs211_vnops.c			ufs211
+
+# UFML Sources
+file	ufs/ufml/ufml_archive.c				ufml
+file	ufs/ufml/ufml_compress.c			ufml
+file	ufs/ufml/ufml_encrypt.c				ufml
+file	ufs/ufml/ufml_meta.c				ufml
+file	ufs/ufml/ufml_snapshot.c			ufml
+file	ufs/ufml/ufml_subr.c				ufml
+file	ufs/ufml/ufml_uops.c				ufml
+file	ufs/ufml/ufml_vfsops.c				ufml
+file	ufs/ufml/ufml_vnops.c				ufml

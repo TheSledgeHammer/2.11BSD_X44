@@ -1,0 +1,10 @@
+#	$NetBSD: files.msdosfs,v 1.4 2021/10/23 07:41:37 hannken Exp $
+
+deffs	MSDOSFS
+
+file	fs/msdosfs/msdosfs_conv.c		msdosfs
+file	fs/msdosfs/msdosfs_denode.c		msdosfs
+file	fs/msdosfs/msdosfs_fat.c		msdosfs
+file	fs/msdosfs/msdosfs_lookup.c		msdosfs
+file	fs/msdosfs/msdosfs_vfsops.c		msdosfs
+file	fs/msdosfs/msdosfs_vnops.c		msdosfs

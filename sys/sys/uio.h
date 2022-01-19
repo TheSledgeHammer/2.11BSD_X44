@@ -61,7 +61,7 @@ enum uio_seg {
 	UIO_USERISPACE		/* from user I space */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct uio {
 	struct	iovec 	*uio_iov;
 	int				uio_iovcnt;
@@ -77,16 +77,16 @@ struct uio {
  */
 #define UIO_MAXIOV		1024	/* max 1K of iov's */
 #define UIO_SMALLIOV	8		/* 8 on stack, else rmalloc */
-#endif /* KERNEL */
+#endif /* _KERNEL */
 
-#ifndef KERNEL
+#ifndef _KERNEL
 int	uiomove(caddr_t, u_int, struct uio *);
-#else /* !KERNEL */
+#else /* !_KERNEL */
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
 ssize_t	readv(int, const struct iovec *, int);
 ssize_t	writev(int, const struct iovec *, int);
 __END_DECLS
-#endif /* KERNEL */
+#endif /* _KERNEL */
 #endif /* !_SYS_UIO_H_ */
