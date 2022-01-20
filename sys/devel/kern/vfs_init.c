@@ -50,6 +50,8 @@
 #include <sys/vnode.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
+#include <sys/queue.h>
+#include <devel/sys/vfs_vdesc.h>
 
 LIST_HEAD(, vfsconf) vfslist = LIST_HEAD_INITIALIZER(vfslist);
 
@@ -121,4 +123,67 @@ vfsconf_find_by_typenum(typenum)
 			break;
 	}
 	return (vfsp);
+}
+
+struct vnodeopv_desc_list vfs_opv_descs = LIST_HEAD_INITIALIZER(vfs_opv_descs);
+
+VNODEOPV_DESC_STRUCT(ffs, vnodeops);
+VNODEOPV_DESC_STRUCT(ffs, specops);
+VNODEOPV_DESC_STRUCT(ffs, fifoops);
+
+void
+vfs_opv_init()
+{
+	vnodeopv_desc_init(&ffs_vnodeops_opv_desc, "ffs", D_VNODEOPS, &ffs_vnodeops);
+	vnodeopv_desc_init(&ffs_specops_opv_desc, "ffs", D_SPECOPS, &ffs_specops);
+	vnodeopv_desc_init(&ffs_fifoops_opv_desc, "ffs", D_FIFOOPS, &ffs_fifoops);
+}
+
+void
+vnodeopv_desc_init(opv, fsname, voptype, vops, op)
+	struct vnodeopv_desc    *opv;
+    const char              *fsname;
+    int                     voptype;
+    struct vnodeops         *vops;
+    struct vnodeop_desc 	*op;
+{
+    opv->opv_fsname = fsname;
+    opv->opv_voptype = voptype;
+    opv->opv_desc_ops.opve_vops = vops;
+    opv->opv_desc_ops.opve_op = op;
+    LIST_INSERT_HEAD(&vfs_opv_descs, opv, opv_entry);
+}
+
+struct vnodeopv_desc *
+vnodeopv_desc_lookup(fsname, voptype)
+	const char *fsname;
+    int voptype;
+{
+    struct vnodeopv_desc *opv;
+    LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
+    	if ((strcmp(opv->opv_fsname, fsname) == 0) && (opv->opv_voptype == voptype)) {
+    		return (opv);
+    	}
+    }
+    return (NULL);
+}
+
+struct vnodeops *
+vnodeopv_desc_get_vnodeops(fsname, voptype)
+	const char *fsname;
+	int voptype;
+{
+	struct vnodeops *v;
+	v = vnodeopv_desc_lookup(fsname, voptype)->opv_desc_ops.opve_vops;
+	return (v);
+}
+
+struct vnodeop_desc *
+vnodeopv_desc_get_vnodeop_desc(fsname, voptype)
+	const char *fsname;
+	int voptype;
+{
+	struct vnodeop_desc *v;
+	v = vnodeopv_desc_lookup(fsname, voptype)->opv_desc_ops.opve_op;
+	return (v);
 }

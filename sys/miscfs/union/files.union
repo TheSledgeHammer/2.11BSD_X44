@@ -4,4 +4,4 @@ deffs	fs_union.h			UNION
 
 file	miscfs/union/union_subr.c		union
 file	miscfs/union/union_vfsops.c		union
-file	miscfs/fs/union/union_vnops.c	union
+file	miscfs/union/union_vnops.c		union
