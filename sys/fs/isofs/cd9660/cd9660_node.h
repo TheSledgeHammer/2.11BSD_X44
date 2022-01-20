@@ -105,6 +105,9 @@ struct iso_node {
 /*
  * Prototypes for ISOFS vnode operations
  */
+struct flock;
+struct uio;
+
 int cd9660_lookup(struct vop_lookup_args *);
 int cd9660_open(struct vop_open_args *);
 int cd9660_close(struct vop_close_args *);

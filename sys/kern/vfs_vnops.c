@@ -87,8 +87,7 @@ vn_open(ndp, fmode, cmode)
 			if (fmode & O_EXCL)
 				vap->va_vaflags |= VA_EXCLUSIVE;
 			VOP_LEASE(ndp->ni_dvp, p, cred, LEASE_WRITE);
-			if (error == VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp,
-			    &ndp->ni_cnd, vap))
+			if (error == VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, vap))
 				return (error);
 			fmode &= ~O_TRUNC;
 			vp = ndp->ni_vp;
@@ -127,15 +126,15 @@ vn_open(ndp, fmode, cmode)
 				error = EISDIR;
 				goto bad;
 			}
-			if ((error = vn_writechk(vp)) ||
-			    (error = VOP_ACCESS(vp, VWRITE, cred, p)))
+			if ((error = vn_writechk(vp))
+					|| (error = VOP_ACCESS(vp, VWRITE, cred, p)))
 				goto bad;
 		}
 	}
 	if (fmode & O_TRUNC) {
-		VOP_UNLOCK(vp, 0, p);				/* XXX */
+		VOP_UNLOCK(vp, 0, p); /* XXX */
 		VOP_LEASE(vp, p, cred, LEASE_WRITE);
-		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);	/* XXX */
+		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p); /* XXX */
 		VATTR_NULL(vap);
 		vap->va_size = 0;
 		if (error == VOP_SETATTR(vp, vap, cred, p))

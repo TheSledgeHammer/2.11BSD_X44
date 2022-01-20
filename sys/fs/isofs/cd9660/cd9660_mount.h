@@ -46,6 +46,9 @@ struct iso_args {
 	struct	export_args export;		/* network export info */
 	int					flags;		/* mounting flags, see below */
 };
-#define	ISOFSMNT_NORRIP	0x00000001	/* disable Rock Ridge Ext.*/
-#define	ISOFSMNT_GENS	0x00000002	/* enable generation numbers */
-#define	ISOFSMNT_EXTATT	0x00000004	/* enable extended attributes */
+#define	ISOFSMNT_NORRIP			0x00000001	/* disable Rock Ridge Ext.*/
+#define	ISOFSMNT_GENS			0x00000002	/* enable generation numbers */
+#define	ISOFSMNT_EXTATT			0x00000004	/* enable extended attributes */
+#define	ISOFSMNT_NOJOLIET		0x00000008 	/* disable Joliet extensions */
+#define	ISOFSMNT_NOCASETRANS	0x00000010 	/* do not make names lower case */
+#define	ISOFSMNT_RRCASEINS		0x00000020 	/* case insensitive Rock Ridge */
