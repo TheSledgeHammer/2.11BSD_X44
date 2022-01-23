@@ -447,8 +447,8 @@ pmap_set_nx(void)
 }
 
 void
-pmap_bootstrap(firstaddr, loadaddr)
-	vm_offset_t firstaddr, loadaddr;
+pmap_bootstrap(firstaddr)
+	vm_offset_t firstaddr;
 {
 	vm_offset_t va;
 	pt_entry_t *pte, *unused;

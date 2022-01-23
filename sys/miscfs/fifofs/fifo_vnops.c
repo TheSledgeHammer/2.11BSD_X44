@@ -489,16 +489,6 @@ fifo_pathconf(ap)
 }
 
 /*
- * Fifo failed operation
- */
-int
-fifo_ebadf()
-{
-
-	return (EBADF);
-}
-
-/*
  * Fifo advisory byte-level locks.
  */
 /* ARGSUSED */
@@ -514,6 +504,16 @@ fifo_advlock(ap)
 {
 
 	return (EOPNOTSUPP);
+}
+
+/*
+ * Fifo failed operation
+ */
+int
+fifo_ebadf()
+{
+
+	return (EBADF);
 }
 
 /*

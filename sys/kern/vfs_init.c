@@ -69,12 +69,11 @@ vfsinit()
 	/*
 	 * Initialize the vnode operation vectors.
 	 */
-	vop_init();
+	//vop_init();
 
 	/*
 	 * Initialize each file system type.
 	 */
-	//vfsp = vfsconf;
 	vattr_null(&va_null);
 	maxtypenum = 0;
 	for (vfsp = vfsconf, i = 1; i <= maxvfsconf; i++, vfsp++) {

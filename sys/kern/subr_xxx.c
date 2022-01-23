@@ -51,7 +51,7 @@
  * Routine placed in illegal entries in the bdevsw and cdevsw tables.
  */
 int
-nodev() /* aka enodev */
+nodev(void) /* aka enodev */
 {
 
 	return (ENODEV);
@@ -63,14 +63,14 @@ nodev() /* aka enodev */
  * in the bdevsw and cdevsw tables.
  */
 int
-nulldev() /* aka nullop */
+nulldev(void *v) /* aka nullop */
 {
 
 	return (0);
 }
 
 int
-enodev()
+enodev(void)
 {
 
 	return (nodev());
@@ -80,7 +80,7 @@ enodev()
  * Unconfigured device function; driver not configured.
  */
 int
-enxio()
+enxio(void)
 {
 
 	return (ENXIO);
@@ -90,7 +90,7 @@ enxio()
  * Unsupported ioctl function.
  */
 int
-enoioctl()
+enoioctl(void)
 {
 
 	return (ENOTTY);
@@ -102,7 +102,7 @@ enoioctl()
  * that is not supported by the current system binary.
  */
 int
-enosys()
+enosys(void)
 {
 
 	return (ENOSYS);
@@ -113,7 +113,7 @@ enosys()
  * on a specific object or file type.
  */
 int
-eopnotsupp()
+eopnotsupp(void *v)
 {
 
 	return (EOPNOTSUPP);
@@ -124,7 +124,7 @@ eopnotsupp()
  * on a specific object or file type.
  */
 int
-einval()
+einval(void)
 {
 
 	return (EINVAL);
@@ -134,20 +134,21 @@ einval()
  * Generic null operation, always returns success.
  */
 int
-nullop()
+nullop(void *v)
 {
 
-	return (nulldev());
+	return (nulldev(v));
 }
 
 /*
  * socket(2) and socketpair(2) if networking not available.
  */
 #ifndef INET
-nonet()
+int
+nonet(void)
 {
 
 	u->u_error = EPROTONOSUPPORT;
-	return(EPROTONOSUPPORT);
+	return (EPROTONOSUPPORT);
 }
 #endif

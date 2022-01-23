@@ -83,19 +83,19 @@ extern int nsysent;
 int	noproc;							/* no one is running just now */
 
 /* Initialize the world */
-extern void startup();
+extern void startup(int);
 
 /* General Function Declarations */
 struct clockframe;
 struct timeval;
 
 int 	nodev(void);
-int 	nulldev(void);
-int 	nullop(void);
+int 	nulldev(void *);
+int 	nullop(void *);
 int 	enodev(void);
 int 	enoioctl(void);
 int 	enxio(void);
-int 	eopnotsupp(void);
+int 	eopnotsupp(void *);
 int 	einval(void);
 int 	nonet(void);
 
@@ -109,11 +109,11 @@ void	log(int, const char *, ...);
 
 /* subr_prf.c */
 void	printf(const char *, ...);
-int		sprintf(char *buf, const char *, ...);
+int		sprintf(char *, const char *, ...);
 int		snprintf(char *, size_t, const char *, ...);
-void	vprintf(const char *, _BSD_VA_LIST_);
-int		vsprintf(char *, const char *, _BSD_VA_LIST_);
-int		vsnprintf(char *, size_t, const char *, _BSD_VA_LIST_);
+void	vprintf(const char *, va_list);
+int		vsprintf(char *, const char *, va_list);
+int		vsnprintf(char *, size_t, const char *, va_list);
 
 void	ttyprintf(struct tty *, const char *, ...);
 void	uprintf(const char *, ...);
@@ -152,7 +152,7 @@ char	*kern_getenv(const char *);
 void	freeenv(char *);
 int		getenv_int(const char *, int *);
 int		getenv_uint(const char *, unsigned int *);
-int		getenv_long(const char *, long *data);
+int		getenv_long(const char *, long *);
 int		getenv_ulong(const char *, unsigned long *);
 int		getenv_string(const char *, char *, int );
 int		getenv_int64(const char *, int64_t *);

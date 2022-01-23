@@ -40,13 +40,18 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- vfs_init.c & vfs_conf.c
-	- vfsconf initialisation not initialising.
 - vnodes: Of intrest: vnode_desc
 	- re-implementing vnode_desc.
 	- Could relatively easily be reworked back into existing
-	vnode infrastructure. With little to no changes to code 
-	that depends on it.
+	  vnode infrastructure. With little to no changes to code 
+	  that depends on it.
+- vfs (in general): 
+	- DragonflyBSD, FreeBSD & OpenBSD implement default routines 		for the below issues and other vfs operations.
+- vfs_subr.c
+	- vop_revoke(revoke_args)
+		- conflicts with vfs_vops.c: vop_revoke(vp, flags).
+	- vop/vn_kqfilter: 
+		- return (eopnotsupp), with no default routine.
 	
 ## arch:
 - i386/x86: (Merged under i386)
@@ -58,6 +63,9 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
+- com (Disabled): Has several comiler errors.
+- usb (Disabled): Has several compiler errors that need fixing.
+
 - Essential Driver Support:
 	- Audio:
 		- Check that all audio devices available are also configured	
@@ -71,12 +79,11 @@ A General todo list. Don't hesitate to add to this list. :)
 			- add agp
 		- PCMCIA:
 			- add com
-		- SDCards: to add
+		- SDMMC: to add
 	- Disk:
 		- Add: ahci & floppy
 	- USB:
 		- add: vhci, xhci
-		- update existing drivers
 
 ## fs:
 

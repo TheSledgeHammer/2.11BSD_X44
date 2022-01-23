@@ -794,8 +794,7 @@ vop_nolock(ap)
 	if (vp->v_vnlock == NULL) {
 		if ((flags & LK_TYPE_MASK) == LK_DRAIN)
 			return (0);
-		MALLOC(vp->v_vnlock, struct lock *, sizeof(struct lock),
-		    M_VNODE, M_WAITOK);
+		MALLOC(vp->v_vnlock, struct lock *, sizeof(struct lock), M_VNODE, M_WAITOK);
 		lockinit(vp->v_vnlock, PVFS, "vnlock", 0, 0);
 	}
 	switch (flags & LK_TYPE_MASK) {
@@ -816,7 +815,7 @@ vop_nolock(ap)
 	}
 	if (flags & LK_INTERLOCK)
 		vnflags |= LK_INTERLOCK;
-	return(lockmgr(vp->v_vnlock, vnflags, &vp->v_interlock, ap->a_p->p_pid));
+	return (lockmgr(vp->v_vnlock, vnflags, &vp->v_interlock, ap->a_p->p_pid));
 #else /* for now */
 	/*
 	 * Since we are not using the lock manager, we must clear
@@ -1203,8 +1202,9 @@ vop_revoke(ap)
 				vgone(vq);
 				break;
 			}
-			if (vq == NULLVP)
+			if (vq == NULLVP) {
 				simple_unlock(&spechash_slock);
+			}
 		}
 		/*
 		 * Remove the lock so that vgone below will

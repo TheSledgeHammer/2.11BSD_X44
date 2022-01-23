@@ -63,8 +63,7 @@ int	 lfs_link (struct vop_link_args *);
 int	 lfs_makeinode (int, struct nameidata *, struct inode **);
 int	 lfs_mkdir (struct vop_mkdir_args *);
 int	 lfs_mknod (struct vop_mknod_args *);
-int	 lfs_mount (struct mount *,
-	    char *, caddr_t, struct nameidata *, struct proc *);
+int	 lfs_mount (struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
 int	 lfs_mountroot (void);
 struct buf *
 	 lfs_newbuf (struct vnode *, ufs1_daddr_t, size_t);

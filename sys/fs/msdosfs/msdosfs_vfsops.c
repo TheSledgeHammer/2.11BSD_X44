@@ -974,6 +974,6 @@ struct vfsops msdosfs_vfsops = {
 		.vfs_vget = msdosfs_vget,
 		.vfs_fhtovp = msdosfs_fhtovp,
 		.vfs_vptofh = msdosfs_vptofh,
-		.vfs_init = msdosfs_init,
+		.vfs_init 	= msdosfs_init,
 		.vfs_sysctl = msdosfs_sysctl,
 };

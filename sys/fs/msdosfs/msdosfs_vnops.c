@@ -1853,13 +1853,13 @@ msdosfs_pathconf(ap)
 }
 
 /* Global vfs data structures for msdosfs */
-#define	msdosfs_lease_check 	((int (*) (struct  vop_lease_args *))nullop)
+#define	msdosfs_lease_check 	nullop //((int (*) (struct  vop_lease_args *))nullop)
 #define	msdosfs_revoke 			vop_revoke
-#define msdosfs_blkatoff 		((int (*) (struct  vop_blkatoff_args *))eopnotsupp)
-#define msdosfs_vfree 			((int (*) (struct  vop_free_args *))eopnotsupp)
-#define msdosfs_valloc 			((int (*) (struct  vop_valloc_args *))eopnotsupp)
-#define msdosfs_truncate 		((int (*) (struct  vop_truncate_args *))eopnotsupp)
-#define msdosfs_update 			((int (*) (struct  vop_update_args *))eopnotsupp)
+#define msdosfs_blkatoff 		eopnotsupp //((int (*) (struct  vop_blkatoff_args *))eopnotsupp)
+#define msdosfs_vfree 			eopnotsupp //((int (*) (struct  vop_free_args *))eopnotsupp)
+#define msdosfs_valloc 			eopnotsupp //((int (*) (struct  vop_valloc_args *))eopnotsupp)
+#define msdosfs_truncate 		eopnotsupp //((int (*) (struct  vop_truncate_args *))eopnotsupp)
+#define msdosfs_update 			eopnotsupp //((int (*) (struct  vop_update_args *))eopnotsupp)
 
 struct vnodeops msdosfs_vnodeops = {
 		.vop_lookup = msdosfs_lookup,		/* lookup */

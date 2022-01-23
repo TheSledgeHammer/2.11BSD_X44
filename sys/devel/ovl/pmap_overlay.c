@@ -44,7 +44,7 @@ pmap_overlay(firstaddr)
 	overlay_avail = (vm_offset_t)firstaddr;
 	overlay_end = 	OVL_MAX_ADDRESS;
 	virtual_avail = (vm_offset_t)overlay_end;
-	virtual_end = VM_MAX_KERNEL_ADDRESS;
+	virtual_end = 	VM_MAX_KERNEL_ADDRESS;
 }
 
 void *

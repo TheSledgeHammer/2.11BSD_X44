@@ -824,8 +824,8 @@ swstrategy(bp)
 	 * convert drum page number to block number on this swapdev.
 	 */
 
-	pageno -= sdp->swd_drumoffset;	/* page # on swapdev */
-	bn = btodb((u_int64_t)pageno << PAGE_SHIFT); /* convert to diskblock */
+	pageno -= sdp->swd_drumoffset;					/* page # on swapdev */
+	bn = btodb((u_int64_t)pageno << PAGE_SHIFT); 	/* convert to diskblock */
 
 	/*
 	 * for block devices we finish up here.
@@ -912,7 +912,7 @@ sw_reg_strategy(swp, bp, bn)
 	 */
 	error = 0;
 	bp->b_resid = bp->b_bcount;	/* nothing transfered yet! */
-	addr = bp->b_data;		/* current position in buffer */
+	addr = bp->b_data;			/* current position in buffer */
 	byteoff = dbtob((u_int64_t)bn);
 
 	for (resid = bp->b_resid; resid; resid -= sz) {

@@ -195,19 +195,25 @@ sw_swapdev(index)
 
 /* enable swapping on device via swapdrum_on */
 int
-swapon(p, swp)
-	struct proc 	*p;
-	struct swdevt 	*swp;
+swapon(p, index)
+	struct proc *p;
+	int 	index;
 {
+	register struct swdevt 	*swp;
+
+	swp = &swdevt[index];
 	return (swapdrum_on(p, swp));
 }
 
 /* disable swapping on device via swapdrum_off */
 int
-swapoff(p, swp)
-	struct proc 	*p;
-	struct swdevt 	*swp;
+swapoff(p, index)
+	struct proc *p;
+	int 	index;
 {
+	register struct swdevt 	*swp;
+
+	swp = &swdevt[index];
 	return (swapdrum_off(p, swp));
 }
 
@@ -225,17 +231,139 @@ swalloc(index, lessok)
 	return (vm_swap_alloc(swp, &npages, lessok));
 }
 
-void
-swfree(startslot, nslots)
-	int startslot;
-	int nslots;
+int
+swfree(p, index)
+	struct proc *p;
+	int index;
 {
+	register struct swdevt 	*swp;
+	register struct swapdev *sdp;
+	register struct vnode 	*vp;
+	dev_t dev;
+	register swblk_t 		vsbase;
+	register long 	 		blk;
+	register swblk_t 		dvbase;
+	register int 			nblks;
+	register int 			startslot;
+	register int 			nslots;
+	int perdev;
+	int 					error;
+
+	swp = &swdevt[index];
+	sdp = swp->sw_swapdev;
+	vp = swp->sw_vp;
+	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p)) {
+		return (error);
+	}
+	swp->sw_flags |= SW_FREED;
+	nblks = swp->sw_nblks;
+	if (nblks <= 0) {
+		dev = swp->sw_dev;
+		if (bdevsw[major(dev)].d_psize == 0
+				|| (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
+			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+			swp->sw_flags &= ~SW_FREED;
+			return (ENXIO);
+		}
+		perdev = nswap / nswdev;
+		if (nblks > perdev) {
+			nblks = perdev;
+		}
+
+		swp->sw_nblks = nblks;
+	}
+
 	/*
 	 * use below method combined with original swfree(p, indx).
 	 * free swapextents then free swapmap if needed.
 	 * (in a similar vein to swap startup. 1st swapmap, 2nd swapextents)
 	 */
 	vm_swap_free(startslot, nslots);
+}
+
+swap_search(sdp, index)
+	struct swapdev 	*sdp;
+	int 			index;
+{
+	struct swdevt 	*swp;
+	struct swapdev 	*sdwp;
+	int 			pageno, npages, nblks;
+	int startblk;
+
+	swp = &swdevt[index];
+	sdwp = swp->sw_swapdev;
+
+	nblks = swp->sw_nblks;
+	npages = dbtob(nblks) >> PAGE_SHIFT;
+	//pageno = btodb(npages << PAGE_SHIFT);
+
+	for(pageno = 1; pageno <= npages; pageno++) {
+		/* sanity check pageno and nblks are equal */
+		if(btodb(pageno << PAGE_SHIFT) == swap_block(nblks)) {
+
+		}
+		if(pageno == sdp->swd_drumoffset) {
+
+		}
+	}
+
+	/* sanity check pageno and nblks are equal */
+	if(swap_page(btodb(npages << PAGE_SHIFT)) == swap_block(nblks)) {
+
+	}
+
+	startblk = btodb(startslot << PAGE_SHIFT);
+}
+
+int
+swap_sanity(nblks, npages)
+	int nblks, npages;
+{
+	long blk;
+	swblk_t dvbase;
+	int i, page;
+	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+		blk = nblks - dvbase;
+		break;
+		//return (blk);
+	}
+    for(i = 0; i <= npages; i++) {
+        if(i != 0) {
+            page = i;
+            break;
+        }
+    }
+    if(btodb(page << PAGE_SHIFT) == blk) {
+    	return (0);
+    }
+    return (1);
+}
+
+int
+swap_block(nblks)
+	int nblks;
+{
+	long blk;
+	swblk_t dvbase;
+	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+		blk = nblks - dvbase;
+		return (blk);
+	}
+	return (-1);
+}
+
+int
+swap_page(npages)
+   int npages;
+{
+    int i, page;
+    for(i = 0; i <= npages; i++) {
+        if(i != 0) {
+            page = i;
+            break;
+        }
+    }
+    return (page);
 }
 
 /* to be placed machine autoconf.c */

@@ -991,7 +991,7 @@ init386(first)
 	vm_set_page_size();
 
 	/* call pmap initialization to make new kernel address space */
-	pmap_bootstrap(first, 0);
+	pmap_bootstrap(first);
 	/* now running on new page tables, configured,and u/iom is accessible */
 
 	/* make a call gate to reenter kernel with */

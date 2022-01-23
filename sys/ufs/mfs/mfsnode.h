@@ -75,7 +75,7 @@ struct mfsnode {
 #define mfs_abortop 	((int (*) (struct  vop_abortop_args *))mfs_badop)
 #define mfs_lock 		((int (*) (struct  vop_lock_args *))vop_nolock)
 #define mfs_unlock 		((int (*) (struct  vop_unlock_args *))vop_nounlock)
-#define mfs_islocked 	((int(*) (struct vop_islocked_args *))vop_noislocked)
+#define mfs_islocked 	((int (*) (struct  vop_islocked_args *))vop_noislocked)
 #define mfs_pathconf 	((int (*) (struct  vop_pathconf_args *))mfs_badop)
 #define mfs_advlock 	((int (*) (struct  vop_advlock_args *))mfs_badop)
 #define mfs_blkatoff	((int (*) (struct  vop_blkatoff_args *))mfs_badop)

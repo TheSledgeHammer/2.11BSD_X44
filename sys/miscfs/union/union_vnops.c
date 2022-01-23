@@ -1602,12 +1602,12 @@ union_strategy(ap)
 /*
  * Global vfs data structures for union
  */
-#define union_blkatoff 	((int (*) (struct  vop_blkatoff_args *))eopnotsupp)
-#define union_vfree 	((int (*) (struct  vop_vfree_args *))eopnotsupp)
-#define union_valloc 	((int (*) (struct  vop_valloc_args *))eopnotsupp)
-#define union_truncate 	((int (*) (struct  vop_truncate_args *))eopnotsupp)
-#define union_update 	((int (*) (struct  vop_update_args *))eopnotsupp)
-#define union_bwrite 	((int (*) (struct  vop_bwrite_args *))eopnotsupp)
+#define union_blkatoff 	eopnotsupp //((int (*) (struct  vop_blkatoff_args *))eopnotsupp)
+#define union_vfree 	eopnotsupp //((int (*) (struct  vop_vfree_args *))eopnotsupp)
+#define union_valloc 	eopnotsupp //((int (*) (struct  vop_valloc_args *))eopnotsupp)
+#define union_truncate 	eopnotsupp //((int (*) (struct  vop_truncate_args *))eopnotsupp)
+#define union_update 	eopnotsupp //((int (*) (struct  vop_update_args *))eopnotsupp)
+#define union_bwrite 	eopnotsupp //((int (*) (struct  vop_bwrite_args *))eopnotsupp)
 
 struct vnodeops union_vnodeops = {
 		.vop_lookup = union_lookup,		/* lookup */

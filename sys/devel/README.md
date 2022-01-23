@@ -45,16 +45,10 @@ an offical release is made.)
 	- Planned:
   		- Ovl and Vm interactions
     		- Allowing vm to make use of the ovl
-  		- Anonymous virtual memory support: (see: "devel/vm/uvm")
     	- Ports the anonymous virtual memory from NetBSD's UVM
       		- uvm_anon: aka vm_anon: working as is. Minor changes needed
       		- uvm_amap: aka vm_amap: working as is. Minor changes needed
-      		- uvm_aobj: aka vm_aobject: following changes needed:
-       	 	- uao_pager: seperate to uao_pager
-        	- remove duplicate vm_object references: e.g. uao_reference
-        	- uao_create: deprecated.
-         		- vm object is already created.  
-          		- Only needed for initializing an aobject (as is), which invokes the point below with swap.
+      		- uvm_aobj: aka vm_aobject: following changes needed:.
         	- Interactions with swap.
           		- Either:
        				a) modify swap to make use of these changes.
@@ -66,7 +60,7 @@ an offical release is made.)
       	- Optional support for seperate Instruction & Data space
       	- Optional support for psuedo-segments (stack, code, text)
 
-- OVL: Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/vm/ovl")
+- OVL: Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/ovl")
   - OVLSpace: A portion of physical memory with vm-like features
   - Supports vm objects, pages & segments.
   - Planned:
