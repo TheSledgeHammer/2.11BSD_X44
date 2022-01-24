@@ -55,8 +55,10 @@
 
 LIST_HEAD(, vfsconf) vfslist = LIST_HEAD_INITIALIZER(vfslist);
 
+
+
 void
-vfsconfops_init(vfsp)
+vfsops_init(vfsp)
 	struct vfsconf *vfsp;
 {
 	(*vfsp->vfc_vfsops->vfs_init)(vfsp);
@@ -134,13 +136,13 @@ VNODEOPV_DESC_STRUCT(ffs, fifoops);
 void
 vfs_opv_init()
 {
-	vnodeopv_desc_init(&ffs_vnodeops_opv_desc, "ffs", D_VNODEOPS, &ffs_vnodeops);
-	vnodeopv_desc_init(&ffs_specops_opv_desc, "ffs", D_SPECOPS, &ffs_specops);
-	vnodeopv_desc_init(&ffs_fifoops_opv_desc, "ffs", D_FIFOOPS, &ffs_fifoops);
+	vnodeopv_desc_create(&ffs_vnodeops_opv_desc, "ffs", D_VNODEOPS, &ffs_vnodeops);
+	vnodeopv_desc_create(&ffs_specops_opv_desc, "ffs", D_SPECOPS, &ffs_specops);
+	vnodeopv_desc_create(&ffs_fifoops_opv_desc, "ffs", D_FIFOOPS, &ffs_fifoops);
 }
 
 void
-vnodeopv_desc_init(opv, fsname, voptype, vops, op)
+vnodeopv_desc_create(opv, fsname, voptype, vops, op)
 	struct vnodeopv_desc    *opv;
     const char              *fsname;
     int                     voptype;

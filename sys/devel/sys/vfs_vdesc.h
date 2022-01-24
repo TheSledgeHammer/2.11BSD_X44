@@ -36,6 +36,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)vnode.h	8.17 (Berkeley) 5/20/95
+ *	@(#)vnode.h	7.39 (Berkeley) 6/27/91
  */
 
 #ifndef _SYS_VFS_VDESC_H_
@@ -50,7 +51,34 @@ struct vnodeop_desc {
 	int							vdesc_offset;
 	char    					*vdesc_name;
 	int							vdesc_flags;		/* VDESC_* flags */
+
+	/*
+	 * These ops are used by bypass routines to map and locate arguments.
+	 * Creds and procs are not needed in bypass routines, but sometimes
+	 * they are useful to (for example) transport layers.
+	 * Nameidata is useful because it has a cred in it.
+	 */
+	int							*vdesc_vp_offsets;			/* list ended by VDESC_NO_OFFSET */
+	int							vdesc_vpp_offset;			/* return vpp location */
+	int							vdesc_cred_offset;			/* cred location, if any */
+	int							vdesc_proc_offset;			/* proc location, if any */
+	int							vdesc_componentname_offset; /* if any */
 };
+
+
+/*
+ * This macro is very helpful in defining those offsets in the vdesc struct.
+ *
+ * This is stolen from X11R4.  I ingored all the fancy stuff for
+ * Crays, so if you decide to port this to such a serious machine,
+ * you might want to consult Intrisics.h's XtOffset{,Of,To}.
+ */
+#define VOPARG_OFFSET(p_type, field) 				\
+	((int) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
+#define VOPARG_OFFSETOF(s_type, field) 				\
+	VOPARG_OFFSET(s_type*,field)
+#define VOPARG_OFFSETTO(S_TYPE, S_OFFSET, STRUCT_P) \
+	((S_TYPE)(((char*)(STRUCT_P))+(S_OFFSET)))
 
 union vnodeopv_entry_desc {
 	struct vnodeops				**opve_vops;			/* vnode operations */
@@ -70,6 +98,21 @@ struct vnodeopv_desc {
 #define D_VNODEOPS  0   /* vops vnodeops */
 #define D_SPECOPS   1   /* vops specops */
 #define D_FIFOOPS   2   /* vops fifoops */
+
+
+/*
+ * VOCALL calls an op given an ops vector.  We break it out because BSD's
+ * vclean changes the ops vector and then wants to call ops with the old
+ * vector.
+ */
+#define VOCALL(OPSV,OFF,AP) (( *((OPSV)[(OFF)])) (AP))
+
+/*
+ * This call works for vnodes in the kernel.
+ */
+#define VCALL(VP,OFF,AP) 	VOCALL((VP)->v_op,(OFF),(AP))
+#define VDESC(OP) 			(& __CONCAT(OP,_desc))
+#define VOFFSET(OP) 		(VDESC(OP)->vdesc_offset)
 
 void vnodeopv_desc_init(struct vnodeopv_desc *, const char *, int, struct vnodeops *, struct vnodeop_desc *);
 struct vnodeopv_desc 	*vnodeopv_desc_lookup(const char *, int);

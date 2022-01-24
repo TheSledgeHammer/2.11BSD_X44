@@ -31,7 +31,9 @@
  * SUCH DAMAGE.
  *
  *	@(#)vnode.h	8.17 (Berkeley) 5/20/95
+ *	@(#)vnode.h	7.39 (Berkeley) 6/27/91
  */
+
 #ifndef _SYS_VNODE_H_
 #define	_SYS_VNODE_H_
 
@@ -264,52 +266,52 @@ struct cluster_save;
 struct componentname;
 
 struct vnodeops {
-	int	(*vop_lookup)		(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp);
-	int	(*vop_create)		(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp, struct vattr *vap);
-	int (*vop_whiteout)		(struct vnode *dvp, struct componentname *cnp, int flags);
-	int	(*vop_mknod)		(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp, struct vattr *vap);
-	int	(*vop_open)	    	(struct vnode *vp, int mode, struct ucred *cred, struct proc *p);
-	int	(*vop_close)		(struct vnode *vp, int fflag, struct ucred *cred, struct proc *p);
-	int	(*vop_access)		(struct vnode *vp, int mode, struct ucred *cred, struct proc *p);
-	int	(*vop_getattr)		(struct vnode *vp, struct vattr *vap, struct ucred *cred, struct proc *p);
-	int	(*vop_setattr)		(struct vnode *vp, struct vattr *vap, struct ucred *cred, struct proc *p);
-	int	(*vop_read)	    	(struct vnode *vp, struct uio *uio, int ioflag, struct ucred *cred);
-	int	(*vop_write)		(struct vnode *vp, struct uio *uio, int ioflag, struct ucred *cred);
-	int (*vop_lease)		(struct vnode *vp, struct proc *p, struct ucred *cred, int flag);
-	int	(*vop_ioctl)		(struct vnode *vp, u_long command, caddr_t data, int fflag, struct ucred *cred, struct proc *p);
-	int	(*vop_select)		(struct vnode *vp, int which, int fflags, struct ucred *cred, struct proc *p);
-	int	(*vop_poll)			(struct vnode *vp, int fflags, int events, struct proc *p);
-	int (*vop_kqfilter)		(struct vnode *vp, struct knote *kn);
-	int (*vop_revoke)		(struct vnode *vp, int flags);
-	int	(*vop_mmap)	    	(struct vnode *vp, int fflags, struct ucred *cred, struct proc *p);
-	int	(*vop_fsync)		(struct vnode *vp, int fflags, struct ucred *cred, int waitfor, int flag, struct proc *p);
-	int	(*vop_seek)	    	(struct vnode *vp, off_t oldoff, off_t newoff, struct ucred *cred);
-	int	(*vop_remove)		(struct vnode *dvp, struct vnode *vp, struct componentname *cnp);
-	int	(*vop_link)	    	(struct vnode *vp, struct vnode *tdvp, struct componentname *cnp);
-	int	(*vop_rename)		(struct vnode *fdvp, struct vnode *fvp, struct componentname *fcnp, struct vnode *tdvp, struct vnode *tvp, struct componentname *tcnp);
-	int	(*vop_mkdir)		(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp, struct vattr *vap);
-	int	(*vop_rmdir)		(struct vnode *dvp, struct vnode *vp, struct componentname *cnp);
-	int	(*vop_symlink)		(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp, struct vattr *vap, char *target);
-	int	(*vop_readdir)		(struct vnode *vp, struct uio *uio, struct ucred *cred, int *eofflag, int *ncookies, u_long **cookies);
-	int	(*vop_readlink)		(struct vnode *vp, struct uio *uio, struct ucred *cred);
-	int	(*vop_abortop)		(struct vnode *dvp, struct componentname *cnp);
-	int	(*vop_inactive)		(struct vnode *vp, struct proc *p);
-	int	(*vop_reclaim)		(struct vnode *vp, struct proc *p);
-	int	(*vop_lock)	    	(struct vnode *vp, int flags, struct proc *p);
-	int	(*vop_unlock)		(struct vnode *vp, int flags, struct proc *p);
-	int	(*vop_bmap)	    	(struct vnode *vp, daddr_t bn, struct vnode **vpp, daddr_t *bnp, int *runp);
-	int	(*vop_print)		(struct vnode *vp);
-	int	(*vop_islocked)		(struct vnode *vp);
-	int (*vop_pathconf)		(struct vnode *vp, int name, register_t *retval);
-	int	(*vop_advlock)		(struct vnode *vp, caddr_t id, int op, struct flock *fl, int flags);
-	int (*vop_blkatoff)		(struct vnode *vp, off_t offset, char **res, struct buf **bpp);
-	int (*vop_valloc)		(struct vnode *pvp, int mode, struct ucred *cred, struct vnode **vpp);
-	int (*vop_reallocblks)	(struct vnode *vp, struct cluster_save *buflist);
-	int (*vop_vfree)		(struct vnode *pvp, ino_t ino, int mode);
-	int (*vop_truncate)		(struct vnode *vp, off_t length, int flags, struct ucred *cred, struct proc *p);
-	int (*vop_update)		(struct vnode *vp, struct timeval *access, struct timeval *modify, int waitfo);
-	int	(*vop_strategy)		(struct buf *bp);
-	int (*vop_bwrite)		(struct buf *bp);
+	int	(*vop_lookup)		(struct vnode *, struct vnode **, struct componentname *);
+	int	(*vop_create)		(struct vnode *, struct vnode **, struct componentname *, struct vattr *);
+	int (*vop_whiteout)		(struct vnode *, struct componentname *, int);
+	int	(*vop_mknod)		(struct vnode *, struct vnode **, struct componentname *, struct vattr *);
+	int	(*vop_open)	    	(struct vnode *, int, struct ucred *, struct proc *);
+	int	(*vop_close)		(struct vnode *, int, struct ucred *, struct proc *);
+	int	(*vop_access)		(struct vnode *, int, struct ucred *, struct proc *);
+	int	(*vop_getattr)		(struct vnode *, struct vattr *, struct ucred *, struct proc *);
+	int	(*vop_setattr)		(struct vnode *, struct vattr *, struct ucred *, struct proc *);
+	int	(*vop_read)	    	(struct vnode *, struct uio *, int, struct ucred *);
+	int	(*vop_write)		(struct vnode *, struct uio *, int, struct ucred *);
+	int (*vop_lease)		(struct vnode *, struct proc *, struct ucred *, int);
+	int	(*vop_ioctl)		(struct vnode *, u_long, caddr_t, int, struct ucred *, struct proc *);
+	int	(*vop_select)		(struct vnode *, int, int, struct ucred *, struct proc *);
+	int	(*vop_poll)			(struct vnode *, int, int, struct proc *);
+	int (*vop_kqfilter)		(struct vnode *, struct knote *);
+	int (*vop_revoke)		(struct vnode *, int);
+	int	(*vop_mmap)	    	(struct vnode *, int, struct ucred *, struct proc *);
+	int	(*vop_fsync)		(struct vnode *, int, struct ucred *, int, int, struct proc *);
+	int	(*vop_seek)	    	(struct vnode *, off_t, off_t, struct ucred *);
+	int	(*vop_remove)		(struct vnode *, struct vnode *, struct componentname *);
+	int	(*vop_link)	    	(struct vnode *, struct vnode *, struct componentname *);
+	int	(*vop_rename)		(struct vnode *, struct vnode *, struct componentname *, struct vnode *, struct vnode *, struct componentname *);
+	int	(*vop_mkdir)		(struct vnode *, struct vnode **, struct componentname *, struct vattr *);
+	int	(*vop_rmdir)		(struct vnode *, struct vnode *, struct componentname *);
+	int	(*vop_symlink)		(struct vnode *, struct vnode **, struct componentname *, struct vattr *, char *);
+	int	(*vop_readdir)		(struct vnode *, struct uio *, struct ucred *, int *, int *, u_long **);
+	int	(*vop_readlink)		(struct vnode *, struct uio *, struct ucred *);
+	int	(*vop_abortop)		(struct vnode *, struct componentname *);
+	int	(*vop_inactive)		(struct vnode *, struct proc *);
+	int	(*vop_reclaim)		(struct vnode *, struct proc *);
+	int	(*vop_lock)	    	(struct vnode *, int, struct proc *);
+	int	(*vop_unlock)		(struct vnode *, int, struct proc *);
+	int	(*vop_bmap)	    	(struct vnode *, daddr_t, struct vnode **, daddr_t *, int *);
+	int	(*vop_print)		(struct vnode *);
+	int	(*vop_islocked)		(struct vnode *);
+	int (*vop_pathconf)		(struct vnode *, int, register_t *);
+	int	(*vop_advlock)		(struct vnode *, caddr_t, int, struct flock *, int);
+	int (*vop_blkatoff)		(struct vnode *, off_t, char **, struct buf **);
+	int (*vop_valloc)		(struct vnode *, int, struct ucred *, struct vnode **);
+	int (*vop_reallocblks)	(struct vnode *, struct cluster_save *);
+	int (*vop_vfree)		(struct vnode *, ino_t, int);
+	int (*vop_truncate)		(struct vnode *, off_t, int, struct ucred *, struct proc *);
+	int (*vop_update)		(struct vnode *, struct timeval *, struct timeval *, int);
+	int	(*vop_strategy)		(struct buf *);
+	int (*vop_bwrite)		(struct buf *);
 };
 
 /* Macros to call vnodeops */

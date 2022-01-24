@@ -258,52 +258,52 @@ struct defid {
 /*
  * Prototypes for MSDOSFS vnode operations
  */
-int	msdosfs_lookup		(void *);
-int	msdosfs_create		(void *);
-int	msdosfs_mknod		(void *);
-int	msdosfs_open		(void *);
-int	msdosfs_close		(void *);
-int	msdosfs_access		(void *);
-int	msdosfs_getattr		(void *);
-int	msdosfs_setattr		(void *);
-int	msdosfs_read		(void *);
-int	msdosfs_write		(void *);
-int	msdosfs_mmap		(void *);
-int	msdosfs_remove		(void *);
-int	msdosfs_link		(void *);
-int	msdosfs_rename		(void *);
-int	msdosfs_mkdir		(void *);
-int	msdosfs_rmdir		(void *);
-int	msdosfs_symlink		(void *);
-int	msdosfs_readdir		(void *);
-int	msdosfs_readlink	(void *);
-int	msdosfs_inactive	(void *);
-int	msdosfs_reclaim		(void *);
-int	msdosfs_lock		(void *);
-int	msdosfs_unlock		(void *);
-int	msdosfs_bmap		(void *);
-int	msdosfs_strategy	(void *);
-int	msdosfs_print		(void *);
-int	msdosfs_islocked	(void *);
-int	msdosfs_advlock		(void *);
-int	msdosfs_reallocblks	(void *);
-int	msdosfs_pathconf	(void *);
-int	msdosfs_update		(void *);
+int	msdosfs_lookup(struct vop_lookup_args *);
+int	msdosfs_create(struct vop_create_args *);
+int	msdosfs_mknod(struct vop_mknod_args *);
+int	msdosfs_open(struct vop_open_args *);
+int	msdosfs_close(struct vop_close_args *);
+int	msdosfs_access(struct vop_access_args *);
+int	msdosfs_getattr(struct vop_getattr_args *);
+int	msdosfs_setattr(struct vop_setattr_args *);
+int	msdosfs_read(struct vop_read_args *);
+int	msdosfs_write(struct vop_write_args *);
+int	msdosfs_mmap(struct vop_mmap_args *);
+int	msdosfs_remove(struct vop_remove_args *);
+int	msdosfs_link(struct vop_link_args *);
+int	msdosfs_rename(struct vop_rename_args *);
+int	msdosfs_mkdir(struct vop_mkdir_args *);
+int	msdosfs_rmdir(struct vop_rmdir_args *);
+int	msdosfs_symlink(struct vop_symlink_args *);
+int	msdosfs_readdir(struct vop_readdir_args *);
+int	msdosfs_readlink(struct vop_readlink_args *);
+int	msdosfs_inactive(struct vop_inactive_args *);
+int	msdosfs_reclaim(struct vop_reclaim_args *);
+int	msdosfs_lock(struct vop_lock_args *);
+int	msdosfs_unlock(struct vop_unlock_args *);
+int	msdosfs_bmap(struct vop_bmap_args *);
+int	msdosfs_strategy(struct vop_strategy_args *);
+int	msdosfs_print(struct vop_print_args *);
+int	msdosfs_islocked(struct vop_islocked_args *);
+int	msdosfs_advlock(struct vop_advlock_args *);
+int	msdosfs_reallocblks(struct vop_reallocblks_args *);
+int	msdosfs_pathconf(struct vop_pathconf_args *);
+int	msdosfs_update(struct vop_update_args *);
 
 /*
  * Internal service routine prototypes.
  */
-int createde (struct denode *, struct denode *, struct denode **, struct componentname *);
-int deextend (struct denode *, u_long, struct ucred *);
-int deget (struct msdosfsmount *, u_long, u_long, struct denode **);
-int detrunc (struct denode *, u_long, int, struct ucred *, struct proc *);
-int deupdat (struct denode *, int);
-int doscheckpath (struct denode *, struct denode *);
-int dosdirempty (struct denode *);
-int readde (struct denode *, struct buf **, struct direntry **);
-int readep (struct msdosfsmount *, u_long, u_long, struct buf **, struct direntry **);
-void reinsert (struct denode *);
-int removede (struct denode *, struct denode *);
-int uniqdosname (struct denode *, struct componentname *, u_char *);
-int findwin95 (struct denode *);
+int createde(struct denode *, struct denode *, struct denode **, struct componentname *);
+int deextend(struct denode *, u_long, struct ucred *);
+int deget(struct msdosfsmount *, u_long, u_long, struct denode **);
+int detrunc(struct denode *, u_long, int, struct ucred *, struct proc *);
+int deupdat(struct denode *, int);
+int doscheckpath(struct denode *, struct denode *);
+int dosdirempty(struct denode *);
+int readde(struct denode *, struct buf **, struct direntry **);
+int readep(struct msdosfsmount *, u_long, u_long, struct buf **, struct direntry **);
+void reinsert(struct denode *);
+int removede(struct denode *, struct denode *);
+int uniqdosname(struct denode *, struct componentname *, u_char *);
+int findwin95(struct denode *);
 #endif	/* _KERNEL */
