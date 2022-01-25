@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#)vfs_vops.c	1.00
+ * @(#)vfs_vops.c	1.1
  */
 
 #include <sys/cdefs.h>
@@ -44,6 +44,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/time.h>
+#include <sys/vnode.h>
 #include <sys/vnodeops.h>
 #include <sys/ucred.h>
 #include <sys/malloc.h>
@@ -54,13 +55,72 @@
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
 
+struct vnodeops default_vnodeops = {
+		.vop_lookup = vop_lookup,			/* lookup */
+		.vop_create = vop_create,			/* create */
+		.vop_mknod = vop_mknod,				/* mknod */
+		.vop_open = vop_open,				/* open */
+		.vop_close = vop_close,				/* close */
+		.vop_access = vop_access,			/* access */
+		.vop_getattr = vop_getattr,			/* getattr */
+		.vop_setattr = vop_setattr,			/* setattr */
+		.vop_read = vop_read,				/* read */
+		.vop_write = vop_write,				/* write */
+		.vop_lease = vop_lease,				/* lease */
+		.vop_ioctl = vop_ioctl,				/* ioctl */
+		.vop_select = vop_select,			/* select */
+		.vop_revoke = vop_revoke,			/* revoke */
+		.vop_mmap = vop_mmap,				/* mmap */
+		.vop_fsync = vop_fsync,				/* fsync */
+		.vop_seek = vop_seek,				/* seek */
+		.vop_remove = vop_remove,			/* remove */
+		.vop_link = vop_link,				/* link */
+		.vop_rename = vop_rename,			/* rename */
+		.vop_mkdir = vop_mkdir,				/* mkdir */
+		.vop_rmdir = vop_rmdir,				/* rmdir */
+		.vop_symlink = vop_symlink,			/* symlink */
+		.vop_readdir = vop_readdir,			/* readdir */
+		.vop_readlink = vop_readlink,		/* readlink */
+		.vop_abortop = vop_abortop,			/* abortop */
+		.vop_inactive = vop_inactive,		/* inactive */
+		.vop_reclaim = vop_reclaim,			/* reclaim */
+		.vop_lock = vop_lock,				/* lock */
+		.vop_unlock = vop_unlock,			/* unlock */
+		.vop_bmap = vop_bmap,				/* bmap */
+		.vop_strategy = vop_strategy,		/* strategy */
+		.vop_print = vop_print,				/* print */
+		.vop_islocked = vop_islocked,		/* islocked */
+		.vop_pathconf = vop_pathconf,		/* pathconf */
+		.vop_advlock = vop_advlock,			/* advlock */
+		.vop_blkatoff = vop_blkatoff,		/* blkatoff */
+		.vop_valloc = vop_valloc,			/* valloc */
+		.vop_reallocblks = vop_reallocblks,	/* reallocblks */
+		.vop_vfree = vop_vfree,				/* vfree */
+		.vop_truncate = vop_truncate,		/* truncate */
+		.vop_update = vop_update,			/* update */
+		.vop_bwrite = vop_bwrite,			/* bwrite */
+};
 
+#define VNOP(vp, vop_field)	((vp)->v_op->vop_field)
 #define DO_OPS(ops, error, ap, vop_field)	\
 	error = ops->vop_field(ap)
 
 int
-vop_lookup(ops, dvp, vpp, cnp)
-	struct vnodeops *ops;
+vop_badop(void *v)
+{
+	panic("_badop called %s", __func__);
+
+	return (1);
+}
+
+int
+vop_ebadf(void)
+{
+	return (EBADF);
+}
+
+int
+vop_lookup(dvp, vpp, cnp)
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
@@ -68,20 +128,1164 @@ vop_lookup(ops, dvp, vpp, cnp)
 	struct vop_lookup_args a;
 	int error;
 
-	a.a_head.a_ops = ops;
-//	a.a_head.a_desc = &vop_lookup_desc;
+	//a.a_head.a_ops = &vops;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
 
-	if(ops->vop_lookup == NULL) {
+	if (VNOP(dvp, vop_lookup) == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	DO_OPS(ops, error, &a, vop_lookup);
-	error = ops->vop_lookup(dvp, vpp, cnp);
+	DO_OPS(dvp->v_op, error, &a, vop_lookup);
 
 	return (error);
+}
+
+int
+vop_create(dvp, vpp, cnp, vap)
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
+	struct vattr *vap;
+{
+	struct vop_create_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_vpp = vpp;
+	a.a_cnp = cnp;
+	a.a_vap = vap;
+
+	if(VNOP(dvp, vop_create) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(dvp->v_op, error, &a, vop_create);
+
+	return (error);
+}
+
+int
+vop_whiteout(dvp, cnp, flags)
+	struct vnode *dvp;
+	struct componentname *cnp;
+	int flags;
+{
+	struct vop_whiteout_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_cnp = cnp;
+	a.a_flags = flags;
+
+	if(VNOP(dvp, vop_whiteout) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(dvp->v_op, error, &a, vop_whiteout);
+
+	return (error);
+}
+
+int
+vop_mknod(dvp, vpp, cnp, vap)
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
+	struct vattr *vap;
+{
+	struct vop_mknod_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_vpp = vpp;
+	a.a_cnp = cnp;
+	a.a_vap = vap;
+
+	if(VNOP(dvp, vop_mknod) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(dvp->v_op, error, &a, vop_mknod);
+
+	return (error);
+}
+
+int
+vop_open(vp, mode, cred, p)
+	struct vnode *vp;
+	int mode;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_open_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_mode = mode;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_open) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_open);
+
+	return (error);
+}
+
+int
+vop_close(vp, fflag, cred, p)
+	struct vnode *vp;
+	int fflag;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_close_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_fflag = fflag;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_close) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_close);
+
+	return (error);
+}
+
+int
+vop_access(vp, mode, cred, p)
+	struct vnode *vp;
+	int mode;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_access_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_mode = mode;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_access) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_access);
+
+	return (error);
+}
+
+int
+vop_getattr(vp, vap, cred, p)
+	struct vnode *vp;
+	struct vattr *vap;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_getattr_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_vap = vap;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_getattr) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_getattr);
+
+	return (error);
+}
+
+int
+vop_setattr(vp, vap, cred, p)
+	struct vnode *vp;
+	struct vattr *vap;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_setattr_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_vap = vap;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_setattr) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_setattr);
+
+	return (error);
+}
+
+int
+vop_read(vp, uio, ioflag, cred)
+	struct vnode *vp;
+	struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+	struct vop_read_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_uio = uio;
+	a.a_ioflag = ioflag;
+	a.a_cred = cred;
+
+	if(VNOP(vp, vop_read) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_read);
+
+	return (error);
+}
+
+int
+vop_write(vp, uio, ioflag, cred)
+	struct vnode *vp;
+	struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+	struct vop_write_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_uio = uio;
+	a.a_ioflag = ioflag;
+	a.a_cred = cred;
+
+	if(VNOP(vp, vop_write) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_write);
+
+	return (error);
+}
+
+int
+vop_lease(vp, p, cred, flag)
+	struct vnode *vp;
+	struct proc *p;
+	struct ucred *cred;
+	int flag;
+{
+	struct vop_lease_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_p = p;
+	a.a_cred = cred;
+	a.a_flag = flag;
+
+	if(VNOP(vp, vop_lease) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_lease);
+
+	return (error);
+}
+
+int
+vop_ioctl(vp, command, data, fflag, cred, p)
+	struct vnode *vp;
+	u_long command;
+	caddr_t data;
+	int fflag;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_ioctl_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_command = command;
+	a.a_data = data;
+	a.a_fflag = fflag;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_ioctl) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_ioctl);
+
+	return (error);
+}
+
+int
+vop_select(vp, which, fflags, cred, p)
+	struct vnode *vp;
+	int which;
+	int fflags;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_select_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_which = which;
+	a.a_fflags = fflags;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_select) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_select);
+
+	return (error);
+}
+
+int
+vop_poll(vp, fflags, events, p)
+	struct vnode *vp;
+	int fflags;
+	int events;
+	struct proc *p;
+{
+	struct vop_poll_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_fflags = fflags;
+	a.a_events = events;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_poll) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_poll);
+
+	return (error);
+}
+
+int
+vop_kqfilter(vp, kn)
+	struct vnode *vp;
+	struct knote *kn;
+{
+	struct vop_kqfilter_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_kn = kn;
+
+	if(VNOP(vp, vop_kqfilter) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_kqfilter);
+
+	return (error);
+}
+
+int
+vop_revoke(vp, flags)
+	struct vnode *vp;
+	int flags;
+{
+	struct vop_revoke_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_flags = flags;
+
+	if(VNOP(vp, vop_revoke) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_revoke);
+
+	return (error);
+}
+
+int
+vop_mmap(vp, fflags, cred, p)
+	struct vnode *vp;
+	int fflags;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_mmap_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_fflags = fflags;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_mmap) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_mmap);
+
+	return (error);
+}
+
+int
+vop_fsync(vp, cred, waitfor, flag, p)
+	struct vnode *vp;
+	struct ucred *cred;
+	int waitfor, flag;
+	struct proc *p;
+{
+	struct vop_fsync_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_cred = cred;
+	a.a_waitfor = waitfor;
+	a.a_flags = flag;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_fsync) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_fsync);
+
+	return (error);
+}
+
+int
+vop_seek(vp, oldoff, newoff, cred)
+	struct vnode *vp;
+	off_t oldoff;
+	off_t newoff;
+	struct ucred *cred;
+{
+	struct vop_seek_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_oldoff = oldoff;
+	a.a_newoff = newoff;
+	a.a_cred = cred;
+
+	if(VNOP(vp, vop_seek) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_seek);
+
+	return (error);
+}
+
+int
+vop_remove(dvp, vp, cnp)
+	struct vnode *dvp;
+	struct vnode *vp;
+	struct componentname *cnp;
+{
+	struct vop_remove_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_vp = vp;
+	a.a_cnp = cnp;
+
+	if(VNOP(dvp, vop_remove) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_remove);
+
+	return (error);
+}
+
+int
+vop_link(vp, tdvp, cnp)
+	struct vnode *vp;
+	struct vnode *tdvp;
+	struct componentname *cnp;
+{
+	struct vop_link_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_tdvp = tdvp;
+	a.a_cnp = cnp;
+
+	if(VNOP(vp, vop_link) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_link);
+
+	return (error);
+}
+
+int
+vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
+	struct vnode *fdvp;
+	struct vnode *fvp;
+	struct componentname *fcnp;
+	struct vnode *tdvp;
+	struct vnode *tvp;
+	struct componentname *tcnp;
+{
+	struct vop_rename_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_fdvp = fdvp;
+	a.a_fvp = fvp;
+	a.a_fcnp = fcnp;
+	a.a_tdvp = tdvp;
+	a.a_tvp = tvp;
+	a.a_tcnp = tcnp;
+
+	if(VNOP(fdvp, vop_rename) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(fdvp->v_op, error, &a, vop_rename);
+
+	return (error);
+}
+
+int
+vop_mkdir(dvp, vpp, cnp, vap)
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
+	struct vattr *vap;
+{
+	struct vop_mkdir_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_vpp = vpp;
+	a.a_cnp = cnp;
+	a.a_vap = vap;
+
+	if(VNOP(dvp, vop_mkdir) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(dvp->v_op, error, &a, vop_mkdir);
+
+	return (error);
+}
+
+int
+vop_rmdir(dvp, vp, cnp)
+	struct vnode *dvp;
+	struct vnode *vp;
+	struct componentname *cnp;
+{
+	struct vop_rmdir_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_vp = vp;
+	a.a_cnp = cnp;
+
+	if(VNOP(dvp, vop_rmdir) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_rmdir);
+
+	return (error);
+}
+
+int
+vop_symlink(dvp, vpp, cnp, vap, target)
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
+	struct vattr *vap;
+	char *target;
+{
+	struct vop_symlink_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_vpp = vpp;
+	a.a_cnp = cnp;
+	a.a_vap = vap;
+	a.a_target = target;
+
+	if(VNOP(dvp, vop_symlink) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(dvp->v_op, error, &a, vop_symlink);
+
+	return (error);
+}
+
+int
+vop_readdir(vp, uio, cred, eofflag, ncookies, cookies)
+	struct vnode *vp;
+	struct uio *uio;
+	struct ucred *cred;
+	int *eofflag;
+	int *ncookies;
+	u_long **cookies;
+{
+	struct vop_readdir_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_uio = uio;
+	a.a_cred = cred;
+	a.a_eofflag = eofflag;
+	a.a_ncookies = ncookies;
+	a.a_cookies = cookies;
+
+	if(VNOP(vp, vop_readdir) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_readdir);
+
+	return (error);
+}
+
+int
+vop_readlink(vp, uio, cred)
+	struct vnode *vp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+	struct vop_readlink_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_uio = uio;
+	a.a_cred = cred;
+
+	if(VNOP(vp, vop_readlink) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_readlink);
+
+	return (error);
+}
+
+int
+vop_abortop(dvp, cnp)
+	struct vnode *dvp;
+	struct componentname *cnp;
+{
+	struct vop_abortop_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_dvp = dvp;
+	a.a_cnp = cnp;
+
+	if(VNOP(dvp, vop_abortop) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(dvp->v_op, error, &a, vop_abortop);
+
+	return (error);
+}
+
+int
+vop_inactive(vp, p)
+	struct vnode *vp;
+	struct proc *p;
+{
+	struct vop_inactive_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_inactive) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_inactive);
+
+	return (error);
+}
+
+int
+vop_reclaim(vp, p)
+	struct vnode *vp;
+	struct proc *p;
+{
+	struct vop_reclaim_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_reclaim) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_reclaim);
+
+	return (error);
+}
+
+int
+vop_lock(vp, flags, p)
+	struct vnode *vp;
+	int flags;
+	struct proc *p;
+{
+	struct vop_lock_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_flags = flags;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_lock) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_lock);
+
+	return (error);
+}
+
+int
+vop_unlock(vp, flags, p)
+	struct vnode *vp;
+	int flags;
+	struct proc *p;
+{
+	struct vop_unlock_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_flags = flags;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_unlock) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_unlock);
+
+	return (error);
+}
+
+int
+vop_bmap(vp, bn, vpp, bnp, runp)
+	struct vnode *vp;
+	daddr_t bn;
+	struct vnode **vpp;
+	daddr_t *bnp;
+	int *runp;
+{
+	struct vop_bmap_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_bn = bn;
+	a.a_vpp = vpp;
+	a.a_bnp = bnp;
+	a.a_runp = runp;
+
+	if(VNOP(vp, vop_bmap) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_bmap);
+
+	return (error);
+}
+
+int
+vop_print(vp)
+	struct vnode *vp;
+{
+	struct vop_print_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+
+	if(VNOP(vp, vop_print) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_print);
+
+	return (error);
+}
+
+int
+vop_islocked(vp)
+	struct vnode *vp;
+{
+	struct vop_islocked_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+
+	if(VNOP(vp, vop_islocked) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_islocked);
+
+	return (error);
+}
+
+int
+vop_pathconf(vp, name, retval)
+	struct vnode *vp;
+	int name;
+	register_t *retval;
+{
+	struct vop_pathconf_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_name = name;
+	a.a_retval = retval;
+
+	if(VNOP(vp, vop_pathconf) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_pathconf);
+
+	return (error);
+}
+
+int
+vop_advlock(vp, id, op, fl, flags)
+	struct vnode *vp;
+	caddr_t id;
+	int op;
+	struct flock *fl;
+	int flags;
+{
+	struct vop_advlock_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_id = id;
+	a.a_op = op;
+	a.a_fl = fl;
+	a.a_flags = flags;
+
+	if(VNOP(vp, vop_advlock) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_advlock);
+
+	return (error);
+}
+
+int
+vop_blkatoff(vp, offset, res, bpp)
+	struct vnode *vp;
+	off_t offset;
+	char **res;
+	struct buf **bpp;
+{
+	struct vop_blkatoff_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_offset = offset;
+	a.a_res = res;
+	a.a_bpp = bpp;
+
+	if(VNOP(vp, vop_blkatoff) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_blkatoff);
+
+	return (error);
+}
+
+int
+vop_valloc(pvp, mode, cred, vpp)
+	struct vnode *pvp;
+	int mode;
+	struct ucred *cred;
+	struct vnode **vpp;
+{
+	struct vop_valloc_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_pvp = pvp;
+	a.a_mode = mode;
+	a.a_cred = cred;
+	a.a_vpp = vpp;
+
+	if(VNOP(pvp, vop_valloc) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(pvp->v_op, error, &a, vop_valloc);
+
+	return (error);
+}
+
+int
+vop_reallocblks(vp, buflist)
+	struct vnode *vp;
+	struct cluster_save *buflist;
+{
+	struct vop_reallocblks_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_buflist = buflist;
+
+	if(VNOP(vp, vop_reallocblks) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_reallocblks);
+
+	return (error);
+}
+
+int
+vop_vfree(pvp, ino, mode)
+	struct vnode *pvp;
+	ino_t ino;
+	int mode;
+{
+	struct vop_vfree_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_pvp = pvp;
+	a.a_ino = ino;
+	a.a_mode = mode;
+
+	if(VNOP(pvp, vop_vfree) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(pvp->v_op, error, &a, vop_vfree);
+
+	return (error);
+}
+
+int
+vop_truncate(vp, length, flags, cred, p)
+	struct vnode *vp;
+	off_t length;
+	int flags;
+	struct ucred *cred;
+	struct proc *p;
+{
+	struct vop_truncate_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_length = length;
+	a.a_flags = flags;
+	a.a_cred = cred;
+	a.a_p = p;
+
+	if(VNOP(vp, vop_truncate) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_truncate);
+
+	return (error);
+}
+
+int
+vop_update(vp, access, modify, waitfor)
+	struct vnode *vp;
+	struct timeval *access;
+	struct timeval *modify;
+	int waitfor;
+{
+	struct vop_update_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_access = access;
+	a.a_modify = modify;
+	a.a_waitfor = waitfor;
+
+	if(VNOP(vp, vop_update) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_update);
+
+	return (error);
+}
+
+/* Special cases: */
+
+int
+vop_strategy(bp)
+	struct buf *bp;
+{
+	struct vop_strategy_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_bp = bp;
+
+	if(VNOP(bp->b_vp, vop_strategy) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(bp->b_vp->v_op, error, &a, vop_strategy);
+
+	return (error);
+}
+
+int
+vop_bwrite(bp)
+	struct buf *bp;
+{
+	struct vop_bwrite_args a;
+	int error;
+
+	//a.a_head.a_ops = &vops;
+	a.a_bp = bp;
+
+	if(VNOP(bp->b_vp, vop_bwrite) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(bp->b_vp->v_op, error, &a, vop_bwrite);
+
+	return (error);
+}
+
+/* End of special cases. */
+
+/*
+ * non/standard vnodeops
+ */
+/*
+ * vnodeop kqfilter methods
+ */
+
+#define FILTEROP_ISFD 0	/* XXX: change to correct value */
+
+const struct filterops generic_filtops = {
+	.f_flags	= FILTEROP_ISFD,
+	.f_attach	= NULL,
+	.f_detach	= filt_generic_detach,
+	.f_event	= filt_generic_readwrite,
+};
+
+int
+vop_generic_kqfilter(ap)
+	struct vop_kqfilter_args *ap;
+{
+	struct knote *kn = ap->a_kn;
+
+	switch (kn->kn_filter) {
+	case EVFILT_READ:
+	case EVFILT_WRITE:
+		kn->kn_fop = &generic_filtops;
+		break;
+	default:
+		return (EINVAL);
+	}
+
+	return (0);
+}
+
+void
+filt_generic_detach(kn)
+	struct knote *kn;
+{
+
+}
+
+int
+filt_generic_readwrite(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	/*
+	 * filesystem is gone, so set the EOF flag and schedule
+	 * the knote for deletion.
+	 */
+	if (hint == NOTE_REVOKE) {
+		kn->kn_flags |= (EV_EOF | EV_ONESHOT);
+		return (1);
+	}
+
+	kn->kn_data = 0;
+
+	return (1);
 }
 
 /*

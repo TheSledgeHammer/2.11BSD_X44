@@ -58,27 +58,12 @@ struct vnodeop_desc {
 	 * they are useful to (for example) transport layers.
 	 * Nameidata is useful because it has a cred in it.
 	 */
-	int							*vdesc_vp_offsets;			/* list ended by VDESC_NO_OFFSET */
-	int							vdesc_vpp_offset;			/* return vpp location */
-	int							vdesc_cred_offset;			/* cred location, if any */
-	int							vdesc_proc_offset;			/* proc location, if any */
-	int							vdesc_componentname_offset; /* if any */
+	//int							*vdesc_vp_offsets;			/* list ended by VDESC_NO_OFFSET */
+	//int							vdesc_vpp_offset;			/* return vpp location */
+	//int							vdesc_cred_offset;			/* cred location, if any */
+	//int							vdesc_proc_offset;			/* proc location, if any */
+	//int							vdesc_componentname_offset; /* if any */
 };
-
-
-/*
- * This macro is very helpful in defining those offsets in the vdesc struct.
- *
- * This is stolen from X11R4.  I ingored all the fancy stuff for
- * Crays, so if you decide to port this to such a serious machine,
- * you might want to consult Intrisics.h's XtOffset{,Of,To}.
- */
-#define VOPARG_OFFSET(p_type, field) 				\
-	((int) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
-#define VOPARG_OFFSETOF(s_type, field) 				\
-	VOPARG_OFFSET(s_type*,field)
-#define VOPARG_OFFSETTO(S_TYPE, S_OFFSET, STRUCT_P) \
-	((S_TYPE)(((char*)(STRUCT_P))+(S_OFFSET)))
 
 union vnodeopv_entry_desc {
 	struct vnodeops				**opve_vops;			/* vnode operations */
@@ -91,7 +76,7 @@ struct vnodeopv_desc {
 	LIST_ENTRY(vnodeopv_desc)	opv_entry;
     const char                  *opv_fsname;
     int                         opv_voptype;
-    union vnodeopv_entry_desc 	opv_desc_ops;   	/* null terminated list */
+    union vnodeopv_entry_desc 	opv_desc_ops;   		/* null terminated list */
 };
 
 /* vnodeops voptype */
@@ -99,22 +84,7 @@ struct vnodeopv_desc {
 #define D_SPECOPS   1   /* vops specops */
 #define D_FIFOOPS   2   /* vops fifoops */
 
-
-/*
- * VOCALL calls an op given an ops vector.  We break it out because BSD's
- * vclean changes the ops vector and then wants to call ops with the old
- * vector.
- */
-#define VOCALL(OPSV,OFF,AP) (( *((OPSV)[(OFF)])) (AP))
-
-/*
- * This call works for vnodes in the kernel.
- */
-#define VCALL(VP,OFF,AP) 	VOCALL((VP)->v_op,(OFF),(AP))
-#define VDESC(OP) 			(& __CONCAT(OP,_desc))
-#define VOFFSET(OP) 		(VDESC(OP)->vdesc_offset)
-
-void vnodeopv_desc_init(struct vnodeopv_desc *, const char *, int, struct vnodeops *, struct vnodeop_desc *);
+void 					vnodeopv_desc_create(struct vnodeopv_desc *, const char *, int, struct vnodeops *, struct vnodeop_desc *);
 struct vnodeopv_desc 	*vnodeopv_desc_lookup(const char *, int);
 struct vnodeops 		*vnodeopv_desc_get_vnodeops(const char *, int);
 struct vnodeop_desc 	*vnodeopv_desc_get_vnodeop_desc(const char *, int);
@@ -179,5 +149,17 @@ extern struct vnodeop_desc vop_bwrite_desc;
 	{ __offsetof(struct vnodeops, vop_##name), #name }
 
 */
+
+/* 4.4BSD-Lite2 */
+#define VOCALL(OPSV,OFF,AP) ((*((OPSV)[(OFF)]))(AP))
+#define VCALL(VP,OFF,AP) 	VOCALL((VP)->v_op,(OFF),(AP))
+#define VDESC(OP) 			(& __CONCAT(OP, _desc))
+#define VOFFSET(OP) 		(VDESC(OP)->vdesc_offset)
+
+/* DragonflyBSD */
+typedef int (*vocall_func_t)(struct vop_generic_args *);
+#define VOCALL1(vops, ap)		\
+	(*(vocall_func_t *)((char *)(vops)+((ap)->a_desc->vdesc_offset)))(ap)
+#define VCALL1(VP,AP) 		VOCALL1((VP)->v_op, (AP))
 
 #endif /* _SYS_VFS_VDESC_H_ */

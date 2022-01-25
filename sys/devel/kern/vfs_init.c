@@ -55,8 +55,6 @@
 
 LIST_HEAD(, vfsconf) vfslist = LIST_HEAD_INITIALIZER(vfslist);
 
-
-
 void
 vfsops_init(vfsp)
 	struct vfsconf *vfsp;
@@ -132,6 +130,15 @@ struct vnodeopv_desc_list vfs_opv_descs = LIST_HEAD_INITIALIZER(vfs_opv_descs);
 VNODEOPV_DESC_STRUCT(ffs, vnodeops);
 VNODEOPV_DESC_STRUCT(ffs, specops);
 VNODEOPV_DESC_STRUCT(ffs, fifoops);
+VNODEOPV_DESC_STRUCT(lfs, vnodeops);
+VNODEOPV_DESC_STRUCT(lfs, specops);
+VNODEOPV_DESC_STRUCT(lfs, fifoops);
+VNODEOPV_DESC_STRUCT(mfs, vnodeops);
+VNODEOPV_DESC_STRUCT(mfs, specops);
+VNODEOPV_DESC_STRUCT(mfs, fifoops);
+VNODEOPV_DESC_STRUCT(ufs211, vnodeops);
+VNODEOPV_DESC_STRUCT(ufs211, specops);
+VNODEOPV_DESC_STRUCT(ufs211, fifoops);
 
 void
 vfs_opv_init()
@@ -139,6 +146,18 @@ vfs_opv_init()
 	vnodeopv_desc_create(&ffs_vnodeops_opv_desc, "ffs", D_VNODEOPS, &ffs_vnodeops);
 	vnodeopv_desc_create(&ffs_specops_opv_desc, "ffs", D_SPECOPS, &ffs_specops);
 	vnodeopv_desc_create(&ffs_fifoops_opv_desc, "ffs", D_FIFOOPS, &ffs_fifoops);
+
+	vnodeopv_desc_create(&lfs_vnodeops_opv_desc, "lfs", D_VNODEOPS, &lfs_vnodeops);
+	vnodeopv_desc_create(&lfs_specops_opv_desc, "lfs", D_SPECOPS, &lfs_specops);
+	vnodeopv_desc_create(&lfs_fifoops_opv_desc, "lfs", D_FIFOOPS, &lfs_fifoops);
+
+	vnodeopv_desc_create(&mfs_vnodeops_opv_desc, "mfs", D_VNODEOPS, &mfs_vnodeops);
+	vnodeopv_desc_create(&mfs_specops_opv_desc, "mfs", D_SPECOPS, &mfs_specops);
+	vnodeopv_desc_create(&mfs_fifoops_opv_desc, "mfs", D_FIFOOPS, &mfs_fifoops);
+
+	vnodeopv_desc_create(&ufs211_vnodeops_opv_desc, "ufs211", D_VNODEOPS, &ufs211_vnodeops);
+	vnodeopv_desc_create(&ufs211_specops_opv_desc, "ufs211", D_SPECOPS, &ufs211_specops);
+	vnodeopv_desc_create(&ufs211_fifoops_opv_desc, "ufs211", D_FIFOOPS, &ufs211_fifoops);
 }
 
 void

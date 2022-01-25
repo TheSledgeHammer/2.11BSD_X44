@@ -39,7 +39,7 @@
 #include <sys/malloc.h>
 #include <sys/stddef.h>
 
-struct vnodeops vops;
+struct vnodeops vops; /* aka default vnodeops */
 
 /* initilize vnodeops */
 void

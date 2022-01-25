@@ -369,7 +369,7 @@ struct vnodeops {
  */
 struct vop_generic_args {
 	struct vnodeops 		*a_ops;
-	//struct vnodeop_desc		*a_desc;
+	struct vnodeop_desc		*a_desc;
 };
 
 struct vop_lookup_args {
