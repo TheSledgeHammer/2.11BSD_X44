@@ -1134,6 +1134,8 @@ lofs_bwrite(ap)
 	return (VOP_BWRITE(ap->a_bp));
 }
 
+#define	lofs_revoke 	((int (*) (struct  vop_revoke_args *))vop_norevoke)
+
 /*
  * Global vfs data structures for lofs
  */
@@ -1150,6 +1152,7 @@ struct vnodeops lofs_vnodeops = {
 		.vop_write = lofs_write,		/* write */
 		.vop_ioctl = lofs_ioctl,		/* ioctl */
 		.vop_select = lofs_select,		/* select */
+		.vop_revoke = lofs_revoke,		/* revoke */
 		.vop_mmap = lofs_mmap,			/* mmap */
 		.vop_fsync = lofs_fsync,		/* fsync */
 		.vop_seek = lofs_seek,			/* seek */

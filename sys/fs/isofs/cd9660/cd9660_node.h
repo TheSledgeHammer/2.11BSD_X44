@@ -130,7 +130,6 @@ int cd9660_print(struct vop_print_args *);
 int cd9660_islocked(struct vop_islocked_args *);
 int cd9660_pathconf(struct vop_pathconf_args *);
 int cd9660_blkatoff(struct vop_blkatoff_args *);
-#define cd9660_revoke vop_revoke
 
 void cd9660_defattr(struct iso_directory_record *, struct iso_node *, struct buf *);
 void cd9660_deftstamp(struct iso_directory_record *, struct iso_node *, struct buf *);

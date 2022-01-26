@@ -55,6 +55,7 @@
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
 
+#define ufs211_reallocblks	((int (*) (struct  vop_reallocblks_args *))eopnotsupp)
 /* Global vfs data structures for ufs211. */
 struct vnodeops ufs211_vnodeops = {
 		.vop_lookup = ufs211_lookup,		/* lookup */
@@ -96,6 +97,7 @@ struct vnodeops ufs211_vnodeops = {
 		.vop_advlock = ufs211_advlock,		/* advlock */
 		.vop_blkatoff = ufs211_blkatoff,	/* blkatoff */
 		.vop_valloc = ufs211_valloc,		/* valloc */
+		.vop_reallocblks = ufs211_reallocblks,/* reallocblks */
 		.vop_vfree = ufs211_vfree,			/* vfree */
 		.vop_truncate = ufs211_truncate,	/* truncate */
 		.vop_update = ufs211_update,		/* update */
@@ -141,6 +143,7 @@ struct vnodeops ufs211_specops = {
 		.vop_advlock = spec_advlock,		/* advlock */
 		.vop_blkatoff = spec_blkatoff,		/* blkatoff */
 		.vop_valloc = spec_valloc,			/* valloc */
+		.vop_reallocblks = spec_reallocblks,/* reallocblks */
 		.vop_vfree = ufs211_vfree,			/* vfree */
 		.vop_truncate = spec_truncate,		/* truncate */
 		.vop_update = ufs211_update,		/* update */
@@ -187,6 +190,7 @@ struct vnodeops ufs211_fifoops = {
 		.vop_advlock = fifo_advlock,		/* advlock */
 		.vop_blkatoff = fifo_blkatoff,		/* blkatoff */
 		.vop_valloc = fifo_valloc,			/* valloc */
+		.vop_reallocblks = fifo_reallocblks,/* reallocblks */
 		.vop_vfree = ufs211_vfree,			/* vfree */
 		.vop_truncate = fifo_truncate,		/* truncate */
 		.vop_update = ufs211_update,		/* update */

@@ -1070,29 +1070,96 @@ ufml_bwrite(ap)
 }
 
 /*
+ * Fifo failed operation
+ */
+int
+ufml_ebadf(void)
+{
+
+	return (EBADF);
+}
+
+/*
+ * Fifo bad operation
+ */
+int
+ufml_badop(v)
+	void *v;
+{
+
+	panic("ufml_badop called");
+	/* NOTREACHED */
+}
+
+#define ufml_open 			((int (*) (struct  vop_open_args *))eopnotsupp)
+#define ufml_close 			((int (*) (struct  vop_close_args *))eopnotsupp)
+#define ufml_read 			((int (*) (struct  vop_read_args *))ufml_badop)
+#define ufml_write 			((int (*) (struct  vop_write_args *))ufml_badop)
+#define ufml_lease_check 	((int (*) (struct  vop_lease_args *))nullop)
+#define ufml_ioctl			((int (*) (struct  vop_ioctl_args *))ufml_badop)
+#define ufml_select 		((int (*) (struct  vop_select_args *))ufml_badop)
+#define	ufml_revoke 		((int (*) (struct  vop_revoke_args *))vop_norevoke)
+#define ufml_mmap 			((int (*) (struct  vop_mmap_args *))ufml_badop)
+#define ufml_fsync 			((int (*) (struct  vop_fsync_args *))nullop)
+#define ufml_seek 			((int (*) (struct  vop_seek_args *))ufml_badop)
+#define ufml_remove 		((int (*) (struct  vop_remove_args *))ufml_badop)
+#define ufml_readdir 		((int (*) (struct  vop_readdir_args *))ufml_badop)
+#define ufml_readlink 		((int (*) (struct  vop_readlink_args *))ufml_badop)
+#define ufml_bmap			((int (*) (struct  vop_bmap_args *))ufml_badop)
+#define ufml_pathconf 		((int (*) (struct  vop_pathconf_args *))ufml_badop)
+#define ufml_advlock 		((int (*) (struct  vop_advlock_args *))ufml_badop)
+#define ufml_blkatoff 		((int (*) (struct  vop_blkatoff_args *))ufml_badop)
+#define ufml_valloc 		((int (*) (struct  vop_valloc_args *))ufml_badop)
+#define ufml_reallocblks	((int (*) (struct  vop_reallocblks_args *))ufml_badop)
+#define ufml_vfree 			((int (*) (struct  vop_vfree_args *))ufml_badop)
+#define ufml_truncate 		((int (*) (struct  vop_truncate_args *))nullop)
+#define ufml_update 		((int (*) (struct  vop_update_args *))nullop)
+
+/*
  * Global vfs data structures ufml
  */
 struct vnodeops ufml_vnodeops = {
-		.vop_lookup = 	ufml_lookup,		/* lookup */
-		.vop_create = 	ufml_create,		/* create */
-		.vop_mknod = 	ufml_mknod,			/* mknod */
-		.vop_access = 	ufml_access,		/* access */
-		.vop_getattr = 	ufml_getattr,		/* getattr */
-		.vop_setattr = 	ufml_setattr,		/* setattr */
-		.vop_remove = 	ufml_remove,		/* remove */
-		.vop_link = 	ufml_link,			/* link */
-		.vop_rename =	ufml_rename,		/* rename */
-		.vop_mkdir = 	ufml_mkdir,			/* mkdir */
-		.vop_rmdir = 	ufml_rmdir,			/* rmdir */
-		.vop_symlink = 	ufml_symlink,		/* symlink */
-		.vop_abortop = 	ufml_abortop,		/* abortop */
-		.vop_inactive = ufml_inactive,		/* inactive */
-		.vop_reclaim = 	ufml_reclaim,		/* reclaim */
-		.vop_lock = 	ufml_lock,			/* lock */
-		.vop_unlock = 	ufml_unlock,		/* unlock */
-		.vop_strategy = ufml_strategy,		/* strategy */
-		.vop_print = 	ufml_print,			/* print */
-		.vop_islocked = ufml_islocked,		/* islocked */
-		.vop_bwrite = 	ufml_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
+		.vop_lookup = ufml_lookup,		/* lookup */
+		.vop_create = ufml_create,		/* create */
+		.vop_mknod = ufml_mknod,		/* mknod */
+		.vop_open = ufml_open,			/* open */
+		.vop_close = ufml_close,		/* close */
+		.vop_access = ufml_access,		/* access */
+		.vop_getattr = ufml_getattr,	/* getattr */
+		.vop_setattr = ufml_setattr,	/* setattr */
+		.vop_read = ufml_read,			/* read */
+		.vop_write = ufml_write,		/* write */
+		.vop_lease = ufml_lease_check,	/* lease */
+		.vop_ioctl = ufml_ioctl,		/* ioctl */
+		.vop_select = ufml_select,		/* select */
+		.vop_revoke = ufml_revoke,		/* revoke */
+		.vop_mmap = ufml_mmap,			/* mmap */
+		.vop_fsync = ufml_fsync,		/* fsync */
+		.vop_seek = ufml_seek,			/* seek */
+		.vop_remove = ufml_remove,		/* remove */
+		.vop_link = ufml_link,			/* link */
+		.vop_rename = ufml_rename,		/* rename */
+		.vop_mkdir = ufml_mkdir,		/* mkdir */
+		.vop_rmdir = ufml_rmdir,		/* rmdir */
+		.vop_symlink = ufml_symlink,	/* symlink */
+		.vop_readdir = ufml_readdir,	/* readdir */
+		.vop_readlink = ufml_readlink,	/* readlink */
+		.vop_abortop = ufml_abortop,	/* abortop */
+		.vop_inactive = ufml_inactive,	/* inactive */
+		.vop_reclaim = ufml_reclaim,	/* reclaim */
+		.vop_lock = ufml_lock,			/* lock */
+		.vop_unlock = ufml_unlock,		/* unlock */
+		.vop_bmap = ufml_bmap,			/* bmap */
+		.vop_strategy = ufml_strategy,	/* strategy */
+		.vop_print = ufml_print,		/* print */
+		.vop_islocked = ufml_islocked,	/* islocked */
+		.vop_pathconf = ufml_pathconf,	/* pathconf */
+		.vop_advlock = ufml_advlock,	/* advlock */
+		.vop_blkatoff = ufml_blkatoff,	/* blkatoff */
+		.vop_valloc = ufml_valloc,		/* valloc */
+		.vop_reallocblks = ufml_reallocblks,/* reallocblks */
+		.vop_vfree = ufml_vfree,		/* vfree */
+		.vop_truncate = ufml_truncate,	/* truncate */
+		.vop_update = ufml_update,		/* update */
+		.vop_bwrite = ufml_bwrite,		/* bwrite */
 };

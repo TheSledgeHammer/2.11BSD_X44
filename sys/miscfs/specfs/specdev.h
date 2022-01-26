@@ -82,21 +82,21 @@ struct	flock;
 struct	buf;
 struct	uio;
 
-int	spec_badop(), spec_ebadf();
-
-int	spec_lookup (struct vop_lookup_args *);
-int	spec_open (struct vop_open_args *);
-int	spec_close (struct vop_close_args *);
-int	spec_read (struct vop_read_args *);
-int	spec_write (struct vop_write_args *);
-int	spec_ioctl (struct vop_ioctl_args *);
-int	spec_select (struct vop_select_args *);
-int	spec_fsync (struct  vop_fsync_args *);
-int	spec_inactive (struct  vop_inactive_args *);
-int	spec_bmap (struct vop_bmap_args *);
-int	spec_strategy (struct vop_strategy_args *);
-int	spec_print (struct vop_print_args *);
-int	spec_pathconf (struct vop_pathconf_args *);
+int	spec_badop(void *);
+int spec_ebadf(void);
+int	spec_lookup(struct vop_lookup_args *);
+int	spec_open(struct vop_open_args *);
+int	spec_close(struct vop_close_args *);
+int	spec_read(struct vop_read_args *);
+int	spec_write(struct vop_write_args *);
+int	spec_ioctl(struct vop_ioctl_args *);
+int	spec_select(struct vop_select_args *);
+int	spec_fsync(struct  vop_fsync_args *);
+int	spec_inactive(struct  vop_inactive_args *);
+int	spec_bmap(struct vop_bmap_args *);
+int	spec_strategy(struct vop_strategy_args *);
+int	spec_print(struct vop_print_args *);
+int	spec_pathconf(struct vop_pathconf_args *);
 int	spec_advlock (struct vop_advlock_args *);
 #define spec_create 	 ((int (*) (struct  vop_create_args *))spec_badop)
 #define spec_mknod 		 ((int (*) (struct  vop_mknod_args *))spec_badop)
@@ -104,7 +104,7 @@ int	spec_advlock (struct vop_advlock_args *);
 #define spec_getattr	 ((int (*) (struct  vop_getattr_args *))spec_ebadf)
 #define spec_setattr 	 ((int (*) (struct  vop_setattr_args *))spec_ebadf)
 #define	spec_lease_check ((int (*) (struct  vop_lease_args *))nullop)
-#define	spec_revoke 	 vop_revoke
+#define	spec_revoke 	 ((int (*) (struct  vop_revoke_args *))vop_norevoke)
 #define spec_mmap 		 ((int (*) (struct  vop_mmap_args *))spec_badop)
 #define spec_seek 		 ((int (*) (struct  vop_seek_args *))spec_badop)
 #define spec_remove 	 ((int (*) (struct  vop_remove_args *))spec_badop)

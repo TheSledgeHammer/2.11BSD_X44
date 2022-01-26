@@ -104,7 +104,6 @@ struct vnodeops lfs_vnodeops = {
 		.vop_truncate = lfs_truncate,	/* truncate */
 		.vop_update = lfs_update,		/* update */
 		.vop_bwrite = lfs_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 struct vnodeops lfs_specops = {
@@ -150,7 +149,6 @@ struct vnodeops lfs_specops = {
 		.vop_truncate = spec_truncate,	/* truncate */
 		.vop_update = lfs_update,		/* update */
 		.vop_bwrite = lfs_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 #ifdef FIFO
@@ -197,7 +195,6 @@ struct vnodeops lfs_fifoops = {
 		.vop_truncate = fifo_truncate,	/* truncate */
 		.vop_update = lfs_update,		/* update */
 		.vop_bwrite = lfs_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 #endif /* FIFO */
 

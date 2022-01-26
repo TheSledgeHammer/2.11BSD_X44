@@ -41,9 +41,13 @@
 #ifndef _SYS_VNODEOPS_H_
 #define _SYS_VNODEOPS_H_
 
+/*
+ * A generic structure.
+ * This can be used by bypass routines to identify generic arguments.
+ */
 struct vop_generic_args {
 	struct vnodeops 		*a_ops;
-	//struct vnodeop_desc		*a_desc;
+	struct vnodeop_desc		*a_desc;
 };
 
 struct vop_lookup_args {
@@ -444,7 +448,6 @@ struct vnodeops {
 };
 
 #ifdef _KERNEL
-extern struct vnodeops 		default_vnodeops;
 
 /* proto types */
 int vop_badop(void *);

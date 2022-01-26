@@ -29,6 +29,30 @@
 #ifndef UFS_UFML_EXTERN_H_
 #define UFS_UFML_EXTERN_H_
 
+int	ufml_badop(void *);
+int ufml_ebadf(void);
+int	ufml_lookup(struct vop_lookup_args *);
+int	ufml_create(struct vop_create_args *);
+int	ufml_mknod(struct vop_mknod_args *);
+int	ufml_access(struct vop_access_args *);
+int	ufml_getattr(struct vop_getattr_args *);
+int	ufml_getattr(struct vop_setattr_args *);
+int	ufml_remove(struct vop_remove_args *);
+int	ufml_link(struct vop_link_args *);
+int	ufml_rename(struct vop_rename_args *);
+int	ufml_mkdir(struct vop_mkdir_args *);
+int	ufml_rmdir(struct vop_rmdir_args *);
+int	ufml_symlink(struct vop_symlink_args *);
+int	ufml_abortop(struct vop_abortop_args *);
+int	ufml_inactive(struct vop_inactive_args *);
+int	ufml_reclaim(struct vop_reclaim_args *);
+int	ufml_lock(struct vop_lock_args *);
+int	ufml_unlock(struct vop_unlock_args *);
+int	ufml_strategy(struct vop_strategy_args *);
+int	ufml_print(struct vop_print_args *);
+int	ufml_islocked(struct vop_islocked_args *);
+int	ufml_bwrite(struct vop_bwrite_args *);
+
 /* ufml_meta.c */
 int ufml_check_filesystem(struct ufml_metadata *, int);
 int ufml_check_archive(struct ufml_metadata *, int);

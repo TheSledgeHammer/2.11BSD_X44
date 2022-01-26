@@ -92,7 +92,7 @@ struct lock_object 			mountlist_slock;
 static struct lock_object 	mntid_slock;
 struct lock_object 			mntvnode_slock;
 struct lock_object 			vnode_free_list_slock;
-static struct lock_object 	spechash_slock;
+struct lock_object 			spechash_slock;
 
 /*
  * Initialize the vnode management data structures.
@@ -760,108 +760,6 @@ vget(vp, flags, p)
 }
 
 /*
- * Stubs to use when there is no locking to be done on the underlying object.
- * A minimal shared lock is necessary to ensure that the underlying object
- * is not revoked while an operation is in progress. So, an active shared
- * count is maintained in an auxillary vnode lock structure.
- */
-int
-vop_nolock(ap)
-	struct vop_lock_args /* {
-		struct vnode *a_vp;
-		int a_flags;
-		struct proc *a_p;
-	} */ *ap;
-{
-#ifdef notyet
-	/*
-	 * This code cannot be used until all the non-locking filesystems
-	 * (notably NFS) are converted to properly lock and release nodes.
-	 * Also, certain vnode operations change the locking state within
-	 * the operation (create, mknod, remove, link, rename, mkdir, rmdir,
-	 * and symlink). Ideally these operations should not change the
-	 * lock state, but should be changed to let the caller of the
-	 * function unlock them. Otherwise all intermediate vnode layers
-	 * (such as union, umapfs, etc) must catch these functions to do
-	 * the necessary locking at their layer. Note that the inactive
-	 * and lookup operations also change their lock state, but this 
-	 * cannot be avoided, so these two operations will always need
-	 * to be handled in intermediate layers.
-	 */
-	struct vnode *vp = ap->a_vp;
-	int vnflags, flags = ap->a_flags;
-
-	if (vp->v_vnlock == NULL) {
-		if ((flags & LK_TYPE_MASK) == LK_DRAIN)
-			return (0);
-		MALLOC(vp->v_vnlock, struct lock *, sizeof(struct lock), M_VNODE, M_WAITOK);
-		lockinit(vp->v_vnlock, PVFS, "vnlock", 0, 0);
-	}
-	switch (flags & LK_TYPE_MASK) {
-	case LK_DRAIN:
-		vnflags = LK_DRAIN;
-		break;
-	case LK_EXCLUSIVE:
-	case LK_SHARED:
-		vnflags = LK_SHARED;
-		break;
-	case LK_UPGRADE:
-	case LK_EXCLUPGRADE:
-	case LK_DOWNGRADE:
-		return (0);
-	case LK_RELEASE:
-	default:
-		panic("vop_nolock: bad operation %d", flags & LK_TYPE_MASK);
-	}
-	if (flags & LK_INTERLOCK)
-		vnflags |= LK_INTERLOCK;
-	return (lockmgr(vp->v_vnlock, vnflags, &vp->v_interlock, ap->a_p->p_pid));
-#else /* for now */
-	/*
-	 * Since we are not using the lock manager, we must clear
-	 * the interlock here.
-	 */
-	if (ap->a_flags & LK_INTERLOCK)
-		simple_unlock(&ap->a_vp->v_interlock);
-	return (0);
-#endif
-}
-
-/*
- * Decrement the active use count.
- */
-int
-vop_nounlock(ap)
-	struct vop_unlock_args /* {
-		struct vnode *a_vp;
-		int a_flags;
-		struct proc *a_p;
-	} */ *ap;
-{
-	struct vnode *vp = ap->a_vp;
-
-	if (vp->v_vnlock == NULL)
-		return (0);
-	return (lockmgr(vp->v_vnlock, LK_RELEASE, NULL, ap->a_p->p_pid));
-}
-
-/*
- * Return whether or not the node is in use.
- */
-int
-vop_noislocked(ap)
-	struct vop_islocked_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
-{
-	struct vnode *vp = ap->a_vp;
-
-	if (vp->v_vnlock == NULL)
-		return (0);
-	return (lockstatus(vp->v_vnlock));
-}
-
-/*
  * Vnode reference.
  */
 void
@@ -1151,71 +1049,6 @@ vclean(vp, flags, p)
 		vp->v_flag &= ~VXWANT;
 		wakeup((caddr_t)vp);
 	}
-}
-
-/*
- * Eliminate all activity associated with  the requested vnode
- * and with all vnodes aliased to the requested vnode.
- */
-int
-vop_revoke(ap)
-	struct vop_revoke_args /* {
-		struct vnode *a_vp;
-		int a_flags;
-	} */ *ap;
-{
-	struct vnode *vp, *vq;
-	struct proc *p = curproc;	/* XXX */
-
-#ifdef DIAGNOSTIC
-	if ((ap->a_flags & REVOKEALL) == 0)
-		panic("vop_revoke");
-#endif
-
-	vp = ap->a_vp;
-	simple_lock(&vp->v_interlock);
-
-	if (vp->v_flag & VALIASED) {
-		/*
-		 * If a vgone (or vclean) is already in progress,
-		 * wait until it is done and return.
-		 */
-		if (vp->v_flag & VXLOCK) {
-			vp->v_flag |= VXWANT;
-			simple_unlock(&vp->v_interlock);
-			tsleep((caddr_t)vp, PINOD, "vop_revokeall", 0);
-			return (0);
-		}
-		/*
-		 * Ensure that vp will not be vgone'd while we
-		 * are eliminating its aliases.
-		 */
-		vp->v_flag |= VXLOCK;
-		simple_unlock(&vp->v_interlock);
-		while (vp->v_flag & VALIASED) {
-			simple_lock(&spechash_slock);
-			for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
-				if (vq->v_rdev != vp->v_rdev ||
-				    vq->v_type != vp->v_type || vp == vq)
-					continue;
-				simple_unlock(&spechash_slock);
-				vgone(vq);
-				break;
-			}
-			if (vq == NULLVP) {
-				simple_unlock(&spechash_slock);
-			}
-		}
-		/*
-		 * Remove the lock so that vgone below will
-		 * really eliminate the vnode after which time
-		 * vgone will awaken any sleepers.
-		 */
-		simple_lock(&vp->v_interlock);
-		vp->v_flag &= ~VXLOCK;
-	}
-	vgonel(vp, p);
-	return (0);
 }
 
 /*

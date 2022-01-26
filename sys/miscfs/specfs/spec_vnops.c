@@ -683,7 +683,7 @@ spec_advlock(ap)
  * Special device failed operation
  */
 int
-spec_ebadf()
+spec_ebadf(void)
 {
 
 	return (EBADF);
@@ -692,7 +692,8 @@ spec_ebadf()
 /*
  * Special device bad operation
  */
-spec_badop()
+spec_badop(v)
+	void *v;
 {
 
 	panic("spec_badop called");

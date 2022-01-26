@@ -510,7 +510,7 @@ fifo_advlock(ap)
  * Fifo failed operation
  */
 int
-fifo_ebadf()
+fifo_ebadf(void)
 {
 
 	return (EBADF);
@@ -519,7 +519,9 @@ fifo_ebadf()
 /*
  * Fifo bad operation
  */
-fifo_badop()
+int
+fifo_badop(v)
+	void *v;
 {
 
 	panic("fifo_badop called");

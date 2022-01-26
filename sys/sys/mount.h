@@ -304,6 +304,7 @@ void			vfs_unmountall(void);
 
 extern CIRCLEQ_HEAD(mntlist, mount) mountlist;												/* mounted filesystem list */
 extern struct lock_object mountlist_slock;
+extern struct lock_object spechash_slock;
 //extern struct vfsops *vfssw[];														/* filesystem type table */
 
 #else /* KERNEL */

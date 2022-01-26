@@ -37,50 +37,49 @@
 /*
  * Prototypes for fifo operations on vnodes.
  */
-int	fifo_badop(), fifo_ebadf();
-
-int	fifo_lookup (struct vop_lookup_args *);
-int	fifo_open (struct vop_open_args *);
-int	fifo_close (struct vop_close_args *);
-int	fifo_read (struct vop_read_args *);
-int	fifo_write (struct vop_write_args *);
-int	fifo_ioctl (struct vop_ioctl_args *);
-int	fifo_select (struct vop_select_args *);
-int	fifo_inactive (struct  vop_inactive_args *);
-int	fifo_bmap (struct vop_bmap_args *);
-int	fifo_print (struct vop_print_args *);
-int	fifo_pathconf (struct vop_pathconf_args *);
-int	fifo_advlock (struct vop_advlock_args *);
-#define fifo_create 		fifo_badop //((int (*) (struct  vop_create_args *))fifo_badop)
-#define fifo_mknod 			fifo_badop //((int (*) (struct  vop_mknod_args *))fifo_badop)
-#define fifo_access 		fifo_ebadf //((int (*) (struct  vop_access_args *))fifo_ebadf)
-#define fifo_getattr 		fifo_ebadf //((int (*) (struct  vop_getattr_args *))fifo_ebadf)
-#define fifo_setattr 		fifo_ebadf //((int (*) (struct  vop_setattr_args *))fifo_ebadf)
-#define fifo_lease_check 	nullop //((int (*) (struct  vop_lease_args *))nullop)
-#define	fifo_revoke 		vop_revoke
-#define fifo_mmap 			fifo_badop //((int (*) (struct  vop_mmap_args *))fifo_badop)
-#define fifo_fsync 			nullop //((int (*) (struct  vop_fsync_args *))nullop)
-#define fifo_seek 			fifo_badop //((int (*) (struct  vop_seek_args *))fifo_badop)
-#define fifo_remove 		fifo_badop //((int (*) (struct  vop_remove_args *))fifo_badop)
-#define fifo_link 			fifo_badop //((int (*) (struct  vop_link_args *))fifo_badop)
-#define fifo_rename 		fifo_badop //((int (*) (struct  vop_rename_args *))fifo_badop)
-#define fifo_mkdir 			fifo_badop //((int (*) (struct  vop_mkdir_args *))fifo_badop)
-#define fifo_rmdir 			fifo_badop //((int (*) (struct  vop_rmdir_args *))fifo_badop)
-#define fifo_symlink 		fifo_badop //((int (*) (struct  vop_symlink_args *))fifo_badop)
-#define fifo_readdir 		fifo_badop //((int (*) (struct  vop_readdir_args *))fifo_badop)
-#define fifo_readlink 		fifo_badop //((int (*) (struct  vop_readlink_args *))fifo_badop)
-#define fifo_abortop 		fifo_badop //((int (*) (struct  vop_abortop_args *))fifo_badop)
-
-#define fifo_reclaim 		nullop //((int (*) (struct  vop_reclaim_args *))nullop)
+int	fifo_badop(void *);
+int fifo_ebadf(void);
+int	fifo_lookup(struct vop_lookup_args *);
+int	fifo_open(struct vop_open_args *);
+int	fifo_close(struct vop_close_args *);
+int	fifo_read(struct vop_read_args *);
+int	fifo_write(struct vop_write_args *);
+int	fifo_ioctl(struct vop_ioctl_args *);
+int	fifo_select(struct vop_select_args *);
+int	fifo_inactive(struct  vop_inactive_args *);
+int	fifo_bmap(struct vop_bmap_args *);
+int	fifo_print(struct vop_print_args *);
+int	fifo_pathconf(struct vop_pathconf_args *);
+int	fifo_advlock(struct vop_advlock_args *);
+#define fifo_create 		((int (*) (struct  vop_create_args *))fifo_badop)
+#define fifo_mknod 			((int (*) (struct  vop_mknod_args *))fifo_badop)
+#define fifo_access 		((int (*) (struct  vop_access_args *))fifo_ebadf)
+#define fifo_getattr 		((int (*) (struct  vop_getattr_args *))fifo_ebadf)
+#define fifo_setattr 		((int (*) (struct  vop_setattr_args *))fifo_ebadf)
+#define fifo_lease_check 	((int (*) (struct  vop_lease_args *))nullop)
+#define	fifo_revoke 		((int (*) (struct  vop_revoke_args *))vop_norevoke)
+#define fifo_mmap 			((int (*) (struct  vop_mmap_args *))fifo_badop)
+#define fifo_fsync 			((int (*) (struct  vop_fsync_args *))nullop)
+#define fifo_seek 			((int (*) (struct  vop_seek_args *))fifo_badop)
+#define fifo_remove 		((int (*) (struct  vop_remove_args *))fifo_badop)
+#define fifo_link 			((int (*) (struct  vop_link_args *))fifo_badop)
+#define fifo_rename 		((int (*) (struct  vop_rename_args *))fifo_badop)
+#define fifo_mkdir 			((int (*) (struct  vop_mkdir_args *))fifo_badop)
+#define fifo_rmdir 			((int (*) (struct  vop_rmdir_args *))fifo_badop)
+#define fifo_symlink 		((int (*) (struct  vop_symlink_args *))fifo_badop)
+#define fifo_readdir 		((int (*) (struct  vop_readdir_args *))fifo_badop)
+#define fifo_readlink 		((int (*) (struct  vop_readlink_args *))fifo_badop)
+#define fifo_abortop 		((int (*) (struct  vop_abortop_args *))fifo_badop)
+#define fifo_reclaim 		((int (*) (struct  vop_reclaim_args *))nullop)
 #define fifo_lock 			((int (*) (struct  vop_lock_args *))vop_nolock)
 #define fifo_unlock 		((int (*) (struct  vop_unlock_args *))vop_nounlock)
-#define fifo_strategy 		fifo_badop //((int (*) (struct  vop_strategy_args *))fifo_badop)
+#define fifo_strategy 		((int (*) (struct  vop_strategy_args *))fifo_badop)
 #define fifo_islocked 		((int (*) (struct  vop_islocked_args *))vop_noislocked)
-#define fifo_blkatoff 		fifo_badop //((int (*) (struct  vop_blkatoff_args *))fifo_badop)
-#define fifo_valloc 		fifo_badop //((int (*) (struct  vop_valloc_args *))fifo_badop)
-#define fifo_reallocblks	fifo_badop //((int (*) (struct  vop_reallocblks_args *))fifo_badop)
-#define fifo_vfree 			fifo_badop //((int (*) (struct  vop_vfree_args *))fifo_badop)
-#define fifo_truncate 		nullop //((int (*) (struct  vop_truncate_args *))nullop)
-#define fifo_update 		nullop //((int (*) (struct  vop_update_args *))nullop)
-#define fifo_bwrite 		nullop //((int (*) (struct  vop_bwrite_args *))nullop)
+#define fifo_blkatoff 		((int (*) (struct  vop_blkatoff_args *))fifo_badop)
+#define fifo_valloc 		((int (*) (struct  vop_valloc_args *))fifo_badop)
+#define fifo_reallocblks	((int (*) (struct  vop_reallocblks_args *))fifo_badop)
+#define fifo_vfree 			((int (*) (struct  vop_vfree_args *))fifo_badop)
+#define fifo_truncate 		((int (*) (struct  vop_truncate_args *))nullop)
+#define fifo_update 		((int (*) (struct  vop_update_args *))nullop)
+#define fifo_bwrite 		((int (*) (struct  vop_bwrite_args *))nullop)
 #endif /* FIFO */
