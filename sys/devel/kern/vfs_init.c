@@ -208,3 +208,4 @@ vnodeopv_desc_get_vnodeop_desc(fsname, voptype)
 	v = vnodeopv_desc_lookup(fsname, voptype)->opv_desc_ops.opve_op;
 	return (v);
 }
+

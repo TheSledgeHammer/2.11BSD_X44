@@ -7,6 +7,9 @@
  */
 #ifndef	_SYS_SYSTEM_H_
 #define	_SYS_SYSTEM_H_
+
+#include <sys/stdarg.h>
+
 /*
  * The `securelevel' variable controls the security level of the system.
  * It can only be decreased by process 1 (/sbin/init).

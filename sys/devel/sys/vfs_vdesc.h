@@ -50,7 +50,7 @@
 struct vnodeop_desc {
 	int							vdesc_offset;
 	char    					*vdesc_name;
-	int							vdesc_flags;		/* VDESC_* flags */
+	int							vdesc_flags;				/* VDESC_* flags */
 
 	/*
 	 * These ops are used by bypass routines to map and locate arguments.
@@ -58,16 +58,18 @@ struct vnodeop_desc {
 	 * they are useful to (for example) transport layers.
 	 * Nameidata is useful because it has a cred in it.
 	 */
-	//int							*vdesc_vp_offsets;			/* list ended by VDESC_NO_OFFSET */
-	//int							vdesc_vpp_offset;			/* return vpp location */
-	//int							vdesc_cred_offset;			/* cred location, if any */
-	//int							vdesc_proc_offset;			/* proc location, if any */
-	//int							vdesc_componentname_offset; /* if any */
+	int							*vdesc_vp_offsets;			/* list ended by VDESC_NO_OFFSET */
+	int							vdesc_vpp_offset;			/* return vpp location */
+	int							vdesc_cred_offset;			/* cred location, if any */
+	int							vdesc_proc_offset;			/* proc location, if any */
+	int							vdesc_componentname_offset; /* if any */
 };
 
 union vnodeopv_entry_desc {
 	struct vnodeops				**opve_vops;			/* vnode operations */
 	struct vnodeop_desc 		**opve_op;  			/* which operation this is */
+
+	int (*opve_impl)();
 };
 
 struct vnodeopv_desc_list;
@@ -77,6 +79,8 @@ struct vnodeopv_desc {
     const char                  *opv_fsname;
     int                         opv_voptype;
     union vnodeopv_entry_desc 	opv_desc_ops;   		/* null terminated list */
+
+    int (***opv_desc_vector_p)();
 };
 
 /* vnodeops voptype */
@@ -95,8 +99,8 @@ struct vnodeop_desc 	*vnodeopv_desc_get_vnodeop_desc(const char *, int);
 
 extern struct vnodeopv_desc_list vfs_opv_descs;
 
+
 /*
-extern struct vnodeop_desc vop_lookup_desc;
 extern struct vnodeop_desc vop_create_desc;
 extern struct vnodeop_desc vop_whiteout_desc;
 extern struct vnodeop_desc vop_mknod_desc;
@@ -142,24 +146,41 @@ extern struct vnodeop_desc vop_truncate_desc;
 extern struct vnodeop_desc vop_update_desc;
 extern struct vnodeop_desc vop_strategy_desc;
 extern struct vnodeop_desc vop_bwrite_desc;
+*/
 
 #define VDESCNAME(name)	 (vop_##name_desc)
 #define VNODEOP_DESC_INIT(name)	 						\
 	struct vnodeop_desc VDESCNAME(name) = 				\
 	{ __offsetof(struct vnodeops, vop_##name), #name }
 
-*/
 
 /* 4.4BSD-Lite2 */
+/*
+ * VDESC_NO_OFFSET is used to identify the end of the offset list
+ * and in places where no such field exists.
+ */
+#define VDESC_NO_OFFSET -1
+
+#define VOPARG_OFFSET(p_type,field) \
+        ((int) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
+#define VOPARG_OFFSETOF(s_type,field) \
+	VOPARG_OFFSET(s_type*,field)
+#define VOPARG_OFFSETTO(S_TYPE,S_OFFSET,STRUCT_P) \
+	((S_TYPE)(((char*)(STRUCT_P))+(S_OFFSET)))
 #define VOCALL(OPSV,OFF,AP) ((*((OPSV)[(OFF)]))(AP))
 #define VCALL(VP,OFF,AP) 	VOCALL((VP)->v_op,(OFF),(AP))
 #define VDESC(OP) 			(& __CONCAT(OP, _desc))
 #define VOFFSET(OP) 		(VDESC(OP)->vdesc_offset)
 
+#define VCALL2(vp, ap) 		VOCALL((vp)->v_op, (ap)->a_head->a_desc->vdesc_offset, (ap))
 /* DragonflyBSD */
 typedef int (*vocall_func_t)(struct vop_generic_args *);
-#define VOCALL1(vops, ap)		\
-	(*(vocall_func_t *)((char *)(vops)+((ap)->a_desc->vdesc_offset)))(ap)
-#define VCALL1(VP,AP) 		VOCALL1((VP)->v_op, (AP))
+#define VOCALL1(vops, ap)	(*(vocall_func_t *)((char *)(vops)+((ap)->a_desc->vdesc_offset)))(ap)
+#define VCALL1(vp, ap) 		VOCALL1((VP)->v_op, (AP))
+
+#define VOCALL(OPSV,OFF,AP) ((*((OPSV)[(OFF)]))(AP))
+#define VCALL(VP,OFF,AP) 	VOCALL((VP)->v_op,(OFF),(AP))
+#define VDESC(OP) 			(& __CONCAT(OP, _desc))
+#define VOFFSET(OP) 		(VDESC(OP)->vdesc_offset)
 
 #endif /* _SYS_VFS_VDESC_H_ */

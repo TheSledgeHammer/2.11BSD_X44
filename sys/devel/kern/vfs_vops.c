@@ -55,6 +55,10 @@
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
 
+#define VNOP(vp, vop_field)	((vp)->v_op->vop_field)
+#define DO_OPS(ops, error, ap, vop_field)	\
+	error = ops->vop_field(ap)
+
 struct vnodeops default_vnodeops = {
 		.vop_lookup = vop_lookup,			/* lookup */
 		.vop_create = vop_create,			/* create */
@@ -101,14 +105,10 @@ struct vnodeops default_vnodeops = {
 		.vop_bwrite = vop_bwrite,			/* bwrite */
 };
 
-#define VNOP(vp, vop_field)	((vp)->v_op->vop_field)
-#define DO_OPS(ops, error, ap, vop_field)	\
-	error = ops->vop_field(ap)
-
 int
 vop_badop(void *v)
 {
-	panic("_badop called %s", __func__);
+	panic("vop_badop called %s", __func__);
 
 	return (1);
 }
@@ -128,7 +128,7 @@ vop_lookup(dvp, vpp, cnp)
 	struct vop_lookup_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -152,7 +152,7 @@ vop_create(dvp, vpp, cnp, vap)
 	struct vop_create_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -176,7 +176,7 @@ vop_whiteout(dvp, cnp, flags)
 	struct vop_whiteout_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_cnp = cnp;
 	a.a_flags = flags;
@@ -200,7 +200,7 @@ vop_mknod(dvp, vpp, cnp, vap)
 	struct vop_mknod_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -225,7 +225,7 @@ vop_open(vp, mode, cred, p)
 	struct vop_open_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_mode = mode;
 	a.a_cred = cred;
@@ -250,7 +250,7 @@ vop_close(vp, fflag, cred, p)
 	struct vop_close_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_fflag = fflag;
 	a.a_cred = cred;
@@ -275,7 +275,7 @@ vop_access(vp, mode, cred, p)
 	struct vop_access_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_mode = mode;
 	a.a_cred = cred;
@@ -300,7 +300,7 @@ vop_getattr(vp, vap, cred, p)
 	struct vop_getattr_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_vap = vap;
 	a.a_cred = cred;
@@ -325,7 +325,7 @@ vop_setattr(vp, vap, cred, p)
 	struct vop_setattr_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_vap = vap;
 	a.a_cred = cred;
@@ -350,7 +350,7 @@ vop_read(vp, uio, ioflag, cred)
 	struct vop_read_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_ioflag = ioflag;
@@ -375,7 +375,7 @@ vop_write(vp, uio, ioflag, cred)
 	struct vop_write_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_ioflag = ioflag;
@@ -400,7 +400,7 @@ vop_lease(vp, p, cred, flag)
 	struct vop_lease_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_p = p;
 	a.a_cred = cred;
@@ -427,7 +427,7 @@ vop_ioctl(vp, command, data, fflag, cred, p)
 	struct vop_ioctl_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_command = command;
 	a.a_data = data;
@@ -455,7 +455,7 @@ vop_select(vp, which, fflags, cred, p)
 	struct vop_select_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_which = which;
 	a.a_fflags = fflags;
@@ -481,7 +481,7 @@ vop_poll(vp, fflags, events, p)
 	struct vop_poll_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_fflags = fflags;
 	a.a_events = events;
@@ -504,7 +504,7 @@ vop_kqfilter(vp, kn)
 	struct vop_kqfilter_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_kn = kn;
 
@@ -525,7 +525,7 @@ vop_revoke(vp, flags)
 	struct vop_revoke_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_flags = flags;
 
@@ -548,7 +548,7 @@ vop_mmap(vp, fflags, cred, p)
 	struct vop_mmap_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_fflags = fflags;
 	a.a_cred = cred;
@@ -573,7 +573,7 @@ vop_fsync(vp, cred, waitfor, flag, p)
 	struct vop_fsync_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_cred = cred;
 	a.a_waitfor = waitfor;
@@ -599,7 +599,7 @@ vop_seek(vp, oldoff, newoff, cred)
 	struct vop_seek_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_oldoff = oldoff;
 	a.a_newoff = newoff;
@@ -623,7 +623,7 @@ vop_remove(dvp, vp, cnp)
 	struct vop_remove_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_vp = vp;
 	a.a_cnp = cnp;
@@ -646,7 +646,7 @@ vop_link(vp, tdvp, cnp)
 	struct vop_link_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_tdvp = tdvp;
 	a.a_cnp = cnp;
@@ -672,7 +672,7 @@ vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 	struct vop_rename_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_fdvp = fdvp;
 	a.a_fvp = fvp;
 	a.a_fcnp = fcnp;
@@ -699,7 +699,7 @@ vop_mkdir(dvp, vpp, cnp, vap)
 	struct vop_mkdir_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -723,7 +723,7 @@ vop_rmdir(dvp, vp, cnp)
 	struct vop_rmdir_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_vp = vp;
 	a.a_cnp = cnp;
@@ -748,7 +748,7 @@ vop_symlink(dvp, vpp, cnp, vap, target)
 	struct vop_symlink_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -776,7 +776,7 @@ vop_readdir(vp, uio, cred, eofflag, ncookies, cookies)
 	struct vop_readdir_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_cred = cred;
@@ -802,7 +802,7 @@ vop_readlink(vp, uio, cred)
 	struct vop_readlink_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_cred = cred;
@@ -824,7 +824,7 @@ vop_abortop(dvp, cnp)
 	struct vop_abortop_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = dvp->v_op;
 	a.a_dvp = dvp;
 	a.a_cnp = cnp;
 
@@ -845,7 +845,7 @@ vop_inactive(vp, p)
 	struct vop_inactive_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_p = p;
 
@@ -866,7 +866,7 @@ vop_reclaim(vp, p)
 	struct vop_reclaim_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_p = p;
 
@@ -888,7 +888,7 @@ vop_lock(vp, flags, p)
 	struct vop_lock_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_flags = flags;
 	a.a_p = p;
@@ -911,7 +911,7 @@ vop_unlock(vp, flags, p)
 	struct vop_unlock_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_flags = flags;
 	a.a_p = p;
@@ -936,7 +936,7 @@ vop_bmap(vp, bn, vpp, bnp, runp)
 	struct vop_bmap_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_bn = bn;
 	a.a_vpp = vpp;
@@ -959,7 +959,7 @@ vop_print(vp)
 	struct vop_print_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 
 	if(VNOP(vp, vop_print) == NULL) {
@@ -978,7 +978,7 @@ vop_islocked(vp)
 	struct vop_islocked_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 
 	if(VNOP(vp, vop_islocked) == NULL) {
@@ -999,7 +999,7 @@ vop_pathconf(vp, name, retval)
 	struct vop_pathconf_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_name = name;
 	a.a_retval = retval;
@@ -1024,7 +1024,7 @@ vop_advlock(vp, id, op, fl, flags)
 	struct vop_advlock_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_id = id;
 	a.a_op = op;
@@ -1050,7 +1050,7 @@ vop_blkatoff(vp, offset, res, bpp)
 	struct vop_blkatoff_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_offset = offset;
 	a.a_res = res;
@@ -1075,7 +1075,7 @@ vop_valloc(pvp, mode, cred, vpp)
 	struct vop_valloc_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = pvp->v_op;
 	a.a_pvp = pvp;
 	a.a_mode = mode;
 	a.a_cred = cred;
@@ -1098,7 +1098,7 @@ vop_reallocblks(vp, buflist)
 	struct vop_reallocblks_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_buflist = buflist;
 
@@ -1120,7 +1120,7 @@ vop_vfree(pvp, ino, mode)
 	struct vop_vfree_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = pvp->v_op;
 	a.a_pvp = pvp;
 	a.a_ino = ino;
 	a.a_mode = mode;
@@ -1145,7 +1145,7 @@ vop_truncate(vp, length, flags, cred, p)
 	struct vop_truncate_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_length = length;
 	a.a_flags = flags;
@@ -1171,7 +1171,7 @@ vop_update(vp, access, modify, waitfor)
 	struct vop_update_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = vp->v_op;
 	a.a_vp = vp;
 	a.a_access = access;
 	a.a_modify = modify;
@@ -1195,7 +1195,7 @@ vop_strategy(bp)
 	struct vop_strategy_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = bp->b_vp->v_op;
 	a.a_bp = bp;
 
 	if(VNOP(bp->b_vp, vop_strategy) == NULL) {
@@ -1214,7 +1214,7 @@ vop_bwrite(bp)
 	struct vop_bwrite_args a;
 	int error;
 
-	//a.a_head.a_ops = &vops;
+	a.a_head.a_ops = bp->b_vp->v_op;
 	a.a_bp = bp;
 
 	if(VNOP(bp->b_vp, vop_bwrite) == NULL) {
@@ -1234,18 +1234,17 @@ vop_bwrite(bp)
 /*
  * vnodeop kqfilter methods
  */
-
 #define FILTEROP_ISFD 0	/* XXX: change to correct value */
 
 const struct filterops generic_filtops = {
 	.f_flags	= FILTEROP_ISFD,
 	.f_attach	= NULL,
-	.f_detach	= filt_generic_detach,
-	.f_event	= filt_generic_readwrite,
+	.f_detach	= filt_nodetach,
+	.f_event	= filt_noreadwrite,
 };
 
 int
-vop_generic_kqfilter(ap)
+vop_nokqfilter(ap)
 	struct vop_kqfilter_args *ap;
 {
 	struct knote *kn = ap->a_kn;
@@ -1263,14 +1262,14 @@ vop_generic_kqfilter(ap)
 }
 
 void
-filt_generic_detach(kn)
+filt_nodetach(kn)
 	struct knote *kn;
 {
 
 }
 
 int
-filt_generic_readwrite(kn, hint)
+filt_noreadwrite(kn, hint)
 	struct knote *kn;
 	long hint;
 {
@@ -1293,11 +1292,7 @@ filt_generic_readwrite(kn, hint)
  */
 int
 vop_nounlock(ap)
-	struct vop_unlock_args /* {
-		struct vnode *a_vp;
-		int a_flags;
-		struct proc *a_p;
-	} */ *ap;
+	struct vop_unlock_args *ap;
 {
 	struct vnode *vp = ap->a_vp;
 
@@ -1311,9 +1306,7 @@ vop_nounlock(ap)
  */
 int
 vop_noislocked(ap)
-	struct vop_islocked_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
+	struct vop_islocked_args *ap;
 {
 	struct vnode *vp = ap->a_vp;
 
@@ -1324,10 +1317,7 @@ vop_noislocked(ap)
 
 int
 vop_norevoke(ap)
-	struct vop_revoke_args /* {
-		struct vnode *a_vp;
-		int a_flags;
-	} */ *ap;
+	struct vop_revoke_args *ap;
 {
 	struct vnode *vp, *vq;
 	struct proc *p = curproc;	/* XXX */
