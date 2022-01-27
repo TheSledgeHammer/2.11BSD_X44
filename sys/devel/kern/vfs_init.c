@@ -51,78 +51,53 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
+
 #include <devel/sys/vfs_vdesc.h>
 
-LIST_HEAD(, vfsconf) vfslist = LIST_HEAD_INITIALIZER(vfslist);
+struct vattr va_null;
 
+/*
+ * Initialize the vnode structures and initialize each file system type.
+ */
 void
-vfsops_init(vfsp)
-	struct vfsconf *vfsp;
+vfsinit()
 {
-	(*vfsp->vfc_vfsops->vfs_init)(vfsp);
-}
-
-void
-vfsconf_init(vfsp)
 	struct vfsconf *vfsp;
-{
-	int i, maxtypenum;
+	int maxtypenum;
 
+	/*
+	 * Initialize the vnode table
+	 */
+	vntblinit();
+
+	/*
+	 * Initialize the vnode name cache
+	 */
+	nchinit();
+
+	/*
+	 * Initialize filesystem table
+	 */
+	vfsconf_fs_init();
+
+	/*
+	 * Initialize each file system type.
+	 */
+	vattr_null(&va_null);
 	maxtypenum = 0;
-	for(i = 0; i < maxvfsconf; i++) {
-		vfsconf_attach(&vfsp[i]);
-		if (maxtypenum <= &vfsp[i].vfc_typenum) {
-			maxtypenum = &vfsp[i].vfc_typenum + 1;
+	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
+		if (maxtypenum <= vfsp->vfc_typenum) {
+			maxtypenum = vfsp->vfc_typenum + 1;
 		}
-		vfsops_init(&vfsp[i]);
+		(*vfsp->vfc_vfsops->vfs_init)(vfsp);
 	}
-
 	/* next vfc_typenum to be used */
 	maxvfsconf = maxtypenum;
-}
 
-void
-vfsconf_attach(vfsp)
-	struct vfsconf *vfsp;
-{
-	if (vfsp != NULL) {
-		LIST_INSERT_HEAD(&vfslist, vfsp, vfc_entry);
-	}
-}
-
-void
-vfsconf_detach(vfsp)
-	struct vfsconf *vfsp;
-{
-	if(vfsp != NULL) {
-		LIST_REMOVE(vfsp, vfc_entry);
-	}
-}
-
-struct vfsconf *
-vfsconf_find_by_name(name)
-	const char *name;
-{
-	struct vfsconf *vfsp;
-	LIST_FOREACH(vfsp, &vfslist, vfc_entry) {
-		if (strcmp(name, vfsp->vfc_name) == 0) {
-			break;
-		}
-	}
-	return (vfsp);
-}
-
-struct vfsconf *
-vfsconf_find_by_typenum(typenum)
-	int typenum;
-{
-	struct vfsconf *vfsp;
-
-	LIST_FOREACH(vfsp, &vfslist, vfc_entry) {
-		if (typenum == vfsp->vfc_typenum)
-			break;
-	}
-	return (vfsp);
+	/*
+	 * Initialize the vnode advisory lock vfs_lockf.c
+	 */
+	lf_init();
 }
 
 struct vnodeopv_desc_list vfs_opv_descs = LIST_HEAD_INITIALIZER(vfs_opv_descs);

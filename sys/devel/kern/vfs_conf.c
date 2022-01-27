@@ -37,6 +37,8 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
+#include <sys/queue.h>
+#include <sys/null.h>
 #include <sys/user.h>
 
 /*
@@ -65,70 +67,126 @@ extern	int nfs_mountroot();
 extern	struct vfsops ufml_vfsops;
 extern	struct vfsops union_vfsops;
 
-/*
- * Set up the filesystem operations for vnodes.
- */
-static struct vfsconf vfsconflist[] = {
-
+void
+vfsconf_fs_init(void)
+{
 	/* Fast Filesystem */
 #ifdef FFS
-	{ &ufs_vfsops, "ufs", VT_UFS, 0, MNT_LOCAL, ffs_mountroot, NULL },
+    vfsconf_fs_create(&ufs_vfsops, "ufs", VT_UFS, 0, MNT_LOCAL, ffs_mountroot, NULL);
 #endif
-
 	/* Log-based Filesystem */
 #ifdef LFS
-	{ &lfs_vfsops, "lfs", VT_LFS, 0, MNT_LOCAL, lfs_mountroot, NULL },
+    vfsconf_fs_create(&lfs_vfsops, "lfs", VT_LFS, 0, MNT_LOCAL, lfs_mountroot, NULL);
 #endif
 
 	/* Memory-based Filesystem */
 #ifdef MFS
-	{ &mfs_vfsops, "mfs", VT_MFS, 0, MNT_LOCAL, mfs_mountroot, NULL },
+    vfsconf_fs_create(&mfs_vfsops, "mfs", VT_MFS, 0, MNT_LOCAL, mfs_mountroot, NULL);
 #endif
 
 	/* 2.11BSD UFS Filesystem  */
 #ifdef UFS211
-	{ &ufs211_vfsops, "ufs211", VT_UFS211, 0, MNT_LOCAL, NULL, NULL }
+	vfsconf_fs_create(&ufs211_vfsops, "ufs211", VT_UFS211, 0, MNT_LOCAL, NULL, NULL);
 #endif
 
 	/* ISO9660 (aka CDROM) Filesystem */
 #ifdef CD9660
-	{ &cd9660_vfsops, "cd9660", VT_ISOFS, 0, MNT_LOCAL, cd9660_mountroot, NULL },
+    vfsconf_fs_create(&cd9660_vfsops, "cd9660", VT_ISOFS, 0, MNT_LOCAL, cd9660_mountroot, NULL);
 #endif
 
 	/* MSDOS Filesystem */
 #ifdef MSDOS
-	{ &msdosfs_vfsops, "msdos", VT_MSDOSFS, 0, MNT_LOCAL, NULL, NULL },
+	vfsconf_fs_create(&msdosfs_vfsops, "msdos", VT_MSDOSFS, 0, MNT_LOCAL, NULL, NULL);
 #endif
 
 	/* Loopback Filesystem */
 #ifdef LOFS
-	{ &lofs_vfsops, "loopback", VT_LOFS, 0, 0, NULL, NULL },
+	vfsconf_fs_create(&lofs_vfsops, "loopback", VT_LOFS, 0, 0, NULL, NULL);
 #endif
 
 	/* File Descriptor Filesystem */
 #ifdef FDESC
-	{ &fdesc_vfsops, "fdesc", VT_FDESC, 0, 0, NULL, NULL },
+	vfsconf_fs_create(&fdesc_vfsops, "fdesc", VT_FDESC, 0, 0, NULL, NULL);
 #endif
 
 	/* Sun-compatible Network Filesystem */
 #ifdef NFS
-	{ &nfs_vfsops, "nfs", VT_NFS, 0, 0, nfs_mountroot, NULL },
+	vfsconf_fs_create(&nfs_vfsops, "nfs", VT_NFS, 0, 0, nfs_mountroot, NULL);
 #endif
 
 	/* UFML Filesystem  */
 #ifdef UFML
-	{ &ufml_vfsops, "ufml", VT_UFML, 0, 0, NULL, NULL }
+	vfsconf_fs_create(&ufml_vfsops, "ufml", VT_UFML, 0, 0, NULL, NULL);
 #endif
 
 	/* Union (translucent) Filesystem */
 #ifdef UNION
-	{ &union_vfsops, "union", VT_UNION, 0, 0, NULL, NULL },
+	vfsconf_fs_create(&union_vfsops, "union", VT_UNION, 0, 0, NULL, NULL);
 #endif
-};
+}
 
-/*
- * Initially the size of the list, vfs_init will set maxvfsconf
- * to the highest defined type number.
- */
-int maxvfsconf = sizeof(vfsconflist) / sizeof (struct vfsconf);
-struct vfsconf *vfsconf = vfsconflist;
+struct vfs_list vfsconflist = LIST_HEAD_INITIALIZER(vfsconflist);
+int maxvfsconf = 0;
+
+void
+vfsconf_fs_create(vfsp, name, index, typenum, flags, mountroot, next)
+    struct vfsconf *vfsp;
+    char *name;
+    int index, typenum, flags;
+    mountroot_t mountroot;
+    struct vfsconf *next;
+{
+    vfsp->vfc_name =  name;
+    vfsp->vfc_index = index;
+    vfsp->vfc_typenum = typenum;
+    vfsp->vfc_flags = flags;
+    vfsp->vfc_mountroot = mountroot;
+    vfsp->vfc_next = next; /* XXX: not necessary */
+
+    vfsconf_attach(vfsp);
+    maxvfsconf++;
+}
+
+struct vfsconf *
+vfsconf_find_by_name(name)
+	const char *name;
+{
+	struct vfsconf *vfsp;
+	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
+		if (strcmp(name, vfsp->vfc_name) == 0) {
+			break;
+		}
+	}
+	return (vfsp);
+}
+
+struct vfsconf *
+vfsconf_find_by_typenum(typenum)
+	int typenum;
+{
+	struct vfsconf *vfsp;
+
+	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
+		if (typenum == vfsp->vfc_typenum)
+			break;
+	}
+	return (vfsp);
+}
+
+void
+vfsconf_attach(vfsp)
+	struct vfsconf *vfsp;
+{
+	if (vfsp != NULL) {
+		LIST_INSERT_HEAD(&vfsconflist, vfsp, vfc_next);
+	}
+}
+
+void
+vfsconf_detach(vfsp)
+	struct vfsconf *vfsp;
+{
+	if(vfsp != NULL) {
+		LIST_REMOVE(vfsp, vfc_next);
+	}
+}

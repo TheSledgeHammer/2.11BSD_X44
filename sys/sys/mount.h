@@ -212,6 +212,10 @@ struct export_args {
  * type of filesystem supported by the kernel. These are searched at
  * mount time to identify the requested filesystem.
  */
+typedef int (*mountroot_t)(void);
+
+//struct vfs_list;
+//LIST_HEAD(vfs_list, vfsconf);
 struct vfsconf {
 	const struct vfsops 	*vfc_vfsops; 				/* filesystem operations vector */
 	char 					vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
@@ -221,13 +225,14 @@ struct vfsconf {
 	int 					vfc_flags;					/* permanent flags */
 	int						(*vfc_mountroot)(void);		/* if != NULL, routine to mount root */
 	struct	vfsconf 		*vfc_next;					/* next in list */
-	//LIST_ENTRY(vfsconf)		vfc_entry;					/* next in list */
+	//LIST_ENTRY(vfsconf)		vfc_next;					/* next in list */
 };
 
 #ifdef _KERNEL
 
 extern int 					maxvfsconf;		/* highest defined filesystem type */
 extern struct vfsconf 		*vfsconf;		/* head of list of filesystem types */
+//extern struct vfs_list		vfsconflist;
 
 /*
  * Operations supported on mounted file system.
@@ -299,8 +304,14 @@ void			vfs_getnewfsid(struct mount *);
 void			vfs_timestamp(struct timespec *tsp);
 void			vfs_unmountall(void);
 
-//struct vfsconf 	*vfsconf_find_by_name(const char *);
-//struct vfsconf 	*vfsconf_find_by_typenum(int);
+/*
+void			vfsconf_fs_init(void);
+void			vfsconf_fs_create(struct vfsconf *, char *, int, int, int, mountroot_t, struct vfsconf *);
+struct vfsconf 	*vfsconf_find_by_name(const char *);
+struct vfsconf 	*vfsconf_find_by_typenum(int);
+void			vfsconf_attach(struct vfsconf *);
+void			vfsconf_detach(struct vfsconf *);
+*/
 
 extern CIRCLEQ_HEAD(mntlist, mount) mountlist;												/* mounted filesystem list */
 extern struct lock_object mountlist_slock;
