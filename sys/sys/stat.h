@@ -105,7 +105,20 @@ struct stat {
 #define	S_ISCHR(m)	((m & 0170000) == 0020000)	/* char special */
 #define	S_ISBLK(m)	((m & 0170000) == 0060000)	/* block special */
 #define	S_ISREG(m)	((m & 0170000) == 0100000)	/* regular file */
+#define	S_ISFIFO(m)	((m & 0170000) == 0010000 || \
+			 	 	 (m & 0170000) == 0140000)	/* fifo or socket */
+#ifndef _POSIX_SOURCE
+#define	S_ISLNK(m)	((m & 0170000) == 0120000)	/* symbolic link */
+#define	S_ISSOCK(m)	((m & 0170000) == 0010000 || \
+					(m & 0170000) == 0140000)	/* fifo or socket */
+#define	S_ISWHT(m)	((m & 0170000) == 0160000)	/* whiteout */
+#endif
 
+#ifndef _POSIX_SOURCE
+#define	ACCESSPERMS	(S_IRWXU|S_IRWXG|S_IRWXO)	/* 0777 */
+												/* 7777 */
+#define	ALLPERMS	(S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO)
+												/* 0666 */
 #define	DEFFILEMODE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
 #define S_BLKSIZE	512		/* block size used in the stat struct */
 
@@ -121,6 +134,7 @@ struct stat {
 #define	UF_NODUMP		0x0001		/* do not dump file */
 #define	UF_IMMUTABLE	0x0002		/* file may not be changed */
 #define	UF_APPEND		0x0004		/* writes to file may only append */
+#define UF_OPAQUE		0x0008		/* directory is opaque wrt. union */
 /*
  * Super-user changeable flags.
  */
@@ -133,25 +147,26 @@ struct stat {
 /*
  * Shorthand abbreviations of above.
  */
+#define	OPAQUE			(UF_OPAQUE)
 #define	APPEND			(UF_APPEND | SF_APPEND)
 #define	IMMUTABLE		(UF_IMMUTABLE | SF_IMMUTABLE)
 #endif
-
+#endif
 #ifndef _KERNEL
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int		chmod (const char *, mode_t);
-int		fstat (int, struct stat *);
-int		mkdir (const char *, mode_t);
-int		mkfifo (const char *, mode_t);
-int		stat (const char *, struct stat *);
-mode_t	umask (mode_t);
+int		chmod(const char *, mode_t);
+int		fstat(int, struct stat *);
+int		mkdir(const char *, mode_t);
+int		mkfifo(const char *, mode_t);
+int		stat(const char *, struct stat *);
+mode_t	umask(mode_t);
 #ifndef _POSIX_SOURCE
-int		chflags (const char *, u_long);
-int		fchflags (int, u_long);
-int		fchmod (int, mode_t);
-int		lstat (const char *, struct stat *);
+int		chflags(const char *, u_long);
+int		fchflags(int, u_long);
+int		fchmod(int, mode_t);
+int		lstat(const char *, struct stat *);
 #endif
 __END_DECLS
 #endif

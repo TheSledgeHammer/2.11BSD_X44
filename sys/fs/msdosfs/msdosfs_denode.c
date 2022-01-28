@@ -61,6 +61,7 @@
 #include <sys/namei.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_extern.h>
 
 #include <fs/msdosfs/bpb.h>
 #include <fs/msdosfs/msdosfsmount.h>
@@ -332,7 +333,6 @@ deget(pmp, dirclust, diroffset, depp)
 	*depp = ldep;
 	return (0);
 }
-#include <sys/vnode.h>
 
 int
 deupdat(dep, waitfor)

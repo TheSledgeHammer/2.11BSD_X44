@@ -64,6 +64,9 @@ __KERNEL_RCSID(0, "$NetBSD: msdosfs_lookup.c,v 1.3 2003/06/29 22:31:09 fvdl Exp 
 #include <fs/msdosfs/msdosfsmount.h>
 #include <fs/msdosfs/fat.h>
 
+/* Doesn't really belong here. This is only file that uses it */
+#define PDIRUNLOCK	0x200000      /* vfs_lookup() unlocked parent dir */
+
 /*
  * When we search a directory the blocks containing directory entries are
  * read and examined.  The directory entries contain information that would

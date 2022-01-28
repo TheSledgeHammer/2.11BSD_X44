@@ -197,13 +197,17 @@ extern int						vttoif_tab[];
 /*
  * Flags to various vnode functions.
  */
-#define	SKIPSYSTEM	0x0001		/* vflush: skip vnodes marked VSYSTEM */
-#define	FORCECLOSE	0x0002		/* vflush: force file closeure */
-#define	WRITECLOSE	0x0004		/* vflush: only close writeable files */
-#define	DOCLOSE		0x0008		/* vclean: close active files */
-#define	V_SAVE		0x0001		/* vinvalbuf: sync file first */
-#define	V_SAVEMETA	0x0002		/* vinvalbuf: leave indirect blocks */
-#define	REVOKEALL	0x0001		/* vop_revoke: revoke all aliases */
+#define	SKIPSYSTEM		0x0001		/* vflush: skip vnodes marked VSYSTEM */
+#define	FORCECLOSE		0x0002		/* vflush: force file closeure */
+#define	WRITECLOSE		0x0004		/* vflush: only close writeable files */
+#define	DOCLOSE			0x0008		/* vclean: close active files */
+#define	V_SAVE			0x0001		/* vinvalbuf: sync file first */
+#define	V_SAVEMETA		0x0002		/* vinvalbuf: leave indirect blocks */
+#define	REVOKEALL		0x0001		/* vop_revoke: revoke all aliases */
+
+#define	UPDATE_WAIT		0x0001		/* update: wait for completion */
+#define	UPDATE_DIROP	0x0002		/* update: hint to fs to wait or not */
+#define	UPDATE_CLOSE	0x0004		/* update: clean up on close */
 
 #ifdef DIAGNOSTIC
 #define	HOLDRELE(vp)	holdrele(vp)
@@ -344,12 +348,5 @@ struct 	vnode *checkalias(struct vnode *, dev_t, struct mount *);
 void 	vput(struct vnode *);
 void 	vref(struct vnode *);
 void 	vrele(struct vnode *);
-/*
-int		vop_noislocked(struct vop_islocked_args *);
-int		vop_nolock(struct vop_lock_args *);
-int		vop_nounlock(struct vop_unlock_args *);
-int		vop_revoke(struct vop_revoke_args *);
-*/
-
 #endif /* KERNEL */
 #endif /* !_SYS_VNODE_H_ */
