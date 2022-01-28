@@ -190,7 +190,6 @@ deget(pmp, dirclust, diroffset, depp)
 	struct denode **depp;		/* returns the addr of the gotten denode */
 {
 	int error;
-	extern struct msdosfs_vnodeops msdosfs_vnodeops;
 	struct direntry *direntptr;
 	struct denode *ldep;
 	struct vnode *nvp;
@@ -231,7 +230,7 @@ deget(pmp, dirclust, diroffset, depp)
 	 * copy it from the passed disk buffer.
 	 */
 	/* getnewvnode() does a VREF() on the vnode */
-	error = getnewvnode(VT_MSDOSFS, pmp->pm_mountp, msdosfs_vnodeops, &nvp);
+	error = getnewvnode(VT_MSDOSFS, pmp->pm_mountp, &msdosfs_vnodeops, &nvp);
 	if (error) {
 		*depp = 0;
 		return (error);

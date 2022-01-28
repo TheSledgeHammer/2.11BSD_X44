@@ -93,8 +93,8 @@ struct iso_node {
 	ISO_RRIP_INODE  	inode;
 };
 
-#define	i_forw			i_chain[0]
-#define	i_back			i_chain[1]
+//#define	i_forw			i_chain[0]
+//#define	i_back			i_chain[1]
 
 /* flags */
 #define	IN_ACCESS	0x0020		/* inode access time to be updated */
@@ -119,6 +119,7 @@ int cd9660_select(struct vop_select_args *);
 int cd9660_mmap(struct vop_mmap_args *);
 int cd9660_seek(struct vop_seek_args *);
 int cd9660_readdir(struct vop_readdir_args *);
+int cd9660_readlink(struct vop_readlink_args *);
 int cd9660_abortop(struct vop_abortop_args *);
 int cd9660_inactive(struct vop_inactive_args *);
 int cd9660_reclaim(struct vop_reclaim_args *);

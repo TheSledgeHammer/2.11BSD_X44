@@ -116,8 +116,6 @@ msdosfs_lookup(ap)
 	int chksum = -1, chksum_ok;
 	int olddos = 1;
 
-	cnp->cn_flags &= ~PDIRUNLOCK; /* XXX why this ?? */
-
 #ifdef MSDOSFS_DEBUG
 	printf("msdosfs_lookup(): looking for %s\n", cnp->cn_nameptr);
 #endif

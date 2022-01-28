@@ -413,7 +413,7 @@ cd9660_read(ap)
 			return (error);
 		}
 
-		error = uiomove(bp->b_data + on, (int) n, uio);
+		error = uiomove(bp->b_data + on, (int)n, uio);
 		if (n + on == imp->logical_block_size
 				|| uio->uio_offset == (off_t) ip->i_size)
 			bp->b_flags |= B_AGE;
@@ -649,7 +649,7 @@ cd9660_readdir(ap)
 		 * Guess the number of cookies needed.
 		 */
 		ncookies = uio->uio_resid / 16;
-		MALLOC(cookies, u_int *, ncookies * sizeof(u_int), M_TEMP, M_WAITOK);
+		cookies = malloc(ncookies * sizeof(*cookies), M_TEMP, M_WAITOK);
 		idp->cookies = cookies;
 		idp->ncookies = ncookies;
 	}

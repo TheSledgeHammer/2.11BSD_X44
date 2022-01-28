@@ -15,8 +15,8 @@
 
 int
 uiomove(cp, n, uio)
-	caddr_t cp;
-	u_int n;
+	register void *cp;
+	register u_int n;
 	register struct uio *uio;
 {
 	register struct iovec *iov;

@@ -79,7 +79,6 @@ int
 cd9660_init(vfsp)
 	struct vfsconf *vfsp;
 {
-
 	isohashtbl = hashinit(desiredvnodes, M_ISOFSMNT, &isohash);
 #ifdef ISODEVMAP
 	idvhashtbl = hashinit(desiredvnodes / 8, M_ISOFSMNT, &idvhash);

@@ -255,6 +255,8 @@ struct defid {
 #endif
 };
 
+extern struct vnodeops msdosfs_vnodeops;
+
 /*
  * Prototypes for MSDOSFS vnode operations
  */

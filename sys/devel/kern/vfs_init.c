@@ -52,7 +52,7 @@
 #include <sys/malloc.h>
 #include <sys/queue.h>
 
-#include <devel/sys/vfs_vdesc.h>
+#include <devel/sys/vnode_if.h>
 
 struct vattr va_null;
 
@@ -98,88 +98,4 @@ vfsinit()
 	 * Initialize the vnode advisory lock vfs_lockf.c
 	 */
 	lf_init();
-}
-
-struct vnodeopv_desc_list vfs_opv_descs = LIST_HEAD_INITIALIZER(vfs_opv_descs);
-
-VNODEOPV_DESC_STRUCT(ffs, vnodeops);
-VNODEOPV_DESC_STRUCT(ffs, specops);
-VNODEOPV_DESC_STRUCT(ffs, fifoops);
-VNODEOPV_DESC_STRUCT(lfs, vnodeops);
-VNODEOPV_DESC_STRUCT(lfs, specops);
-VNODEOPV_DESC_STRUCT(lfs, fifoops);
-VNODEOPV_DESC_STRUCT(mfs, vnodeops);
-VNODEOPV_DESC_STRUCT(mfs, specops);
-VNODEOPV_DESC_STRUCT(mfs, fifoops);
-VNODEOPV_DESC_STRUCT(ufs211, vnodeops);
-VNODEOPV_DESC_STRUCT(ufs211, specops);
-VNODEOPV_DESC_STRUCT(ufs211, fifoops);
-
-void
-vfs_opv_init()
-{
-	vnodeopv_desc_create(&ffs_vnodeops_opv_desc, "ffs", D_VNODEOPS, &ffs_vnodeops);
-	vnodeopv_desc_create(&ffs_specops_opv_desc, "ffs", D_SPECOPS, &ffs_specops);
-	vnodeopv_desc_create(&ffs_fifoops_opv_desc, "ffs", D_FIFOOPS, &ffs_fifoops);
-
-	vnodeopv_desc_create(&lfs_vnodeops_opv_desc, "lfs", D_VNODEOPS, &lfs_vnodeops);
-	vnodeopv_desc_create(&lfs_specops_opv_desc, "lfs", D_SPECOPS, &lfs_specops);
-	vnodeopv_desc_create(&lfs_fifoops_opv_desc, "lfs", D_FIFOOPS, &lfs_fifoops);
-
-	vnodeopv_desc_create(&mfs_vnodeops_opv_desc, "mfs", D_VNODEOPS, &mfs_vnodeops);
-	vnodeopv_desc_create(&mfs_specops_opv_desc, "mfs", D_SPECOPS, &mfs_specops);
-	vnodeopv_desc_create(&mfs_fifoops_opv_desc, "mfs", D_FIFOOPS, &mfs_fifoops);
-
-	vnodeopv_desc_create(&ufs211_vnodeops_opv_desc, "ufs211", D_VNODEOPS, &ufs211_vnodeops);
-	vnodeopv_desc_create(&ufs211_specops_opv_desc, "ufs211", D_SPECOPS, &ufs211_specops);
-	vnodeopv_desc_create(&ufs211_fifoops_opv_desc, "ufs211", D_FIFOOPS, &ufs211_fifoops);
-}
-
-void
-vnodeopv_desc_create(opv, fsname, voptype, vops, op)
-	struct vnodeopv_desc    *opv;
-    const char              *fsname;
-    int                     voptype;
-    struct vnodeops         *vops;
-    struct vnodeop_desc 	*op;
-{
-    opv->opv_fsname = fsname;
-    opv->opv_voptype = voptype;
-    opv->opv_desc_ops.opve_vops = vops;
-    opv->opv_desc_ops.opve_op = op;
-    LIST_INSERT_HEAD(&vfs_opv_descs, opv, opv_entry);
-}
-
-struct vnodeopv_desc *
-vnodeopv_desc_lookup(fsname, voptype)
-	const char *fsname;
-    int voptype;
-{
-    struct vnodeopv_desc *opv;
-    LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
-    	if ((strcmp(opv->opv_fsname, fsname) == 0) && (opv->opv_voptype == voptype)) {
-    		return (opv);
-    	}
-    }
-    return (NULL);
-}
-
-struct vnodeops *
-vnodeopv_desc_get_vnodeops(fsname, voptype)
-	const char *fsname;
-	int voptype;
-{
-	struct vnodeops *v;
-	v = vnodeopv_desc_lookup(fsname, voptype)->opv_desc_ops.opve_vops;
-	return (v);
-}
-
-struct vnodeop_desc *
-vnodeopv_desc_get_vnodeop_desc(fsname, voptype)
-	const char *fsname;
-	int voptype;
-{
-	struct vnodeop_desc *v;
-	v = vnodeopv_desc_lookup(fsname, voptype)->opv_desc_ops.opve_op;
-	return (v);
 }
