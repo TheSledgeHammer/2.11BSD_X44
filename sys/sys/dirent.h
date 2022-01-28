@@ -82,4 +82,14 @@ struct dirent {
 #define	IFTODT(mode)	(((mode) & 0170000) >> 12)
 #define	DTTOIF(dirtype)	((dirtype) << 12)
 
+/*
+ * The DIRSIZ macro gives the minimum record length which will hold
+ * the directory entry.  This requires the amount of space in struct direct
+ * without the d_name field, plus enough space for the name with a terminating
+ * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
+ */
+#undef DIRSIZ
+#define DIRSIZ(dp) \
+    ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
+
 #endif /* _SYS_DIRENT_H_ */
