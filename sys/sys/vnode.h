@@ -104,6 +104,7 @@ struct vnode {
 	long				v_spare[5];		/* round to 128 bytes */
 	enum vtagtype 		v_tag;			/* type of underlying data */
 	void 				*v_data;		/* private data for fs */
+	struct selinfo		v_sel;			/* identity of poller(s) */
 };
 
 #define	v_mountedhere	v_un.vu_mountedhere

@@ -50,6 +50,7 @@
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 #include <sys/sysctl.h>
+#include <sys/event.h>
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
@@ -1233,13 +1234,25 @@ vop_bwrite(bp)
 /*
  * vnodeop kqfilter methods
  */
-#define FILTEROP_ISFD 0	/* XXX: change to correct value */
+static int	filt_vfsread(struct knote *kn, long hint);
+static int	filt_vfswrite(struct knote *kn, long hint);
+static int	filt_vfsvnode(struct knote *kn, long hint);
+static void	filt_vfsdetach(struct knote *kn);
 
-const struct filterops generic_filtops = {
-	.f_flags	= FILTEROP_ISFD,
-	.f_attach	= NULL,
-	.f_detach	= filt_nodetach,
-	.f_event	= filt_noreadwrite,
+static struct filterops vfsread_filtops = {
+		.f_isfd = 1,
+		.f_detach = filt_vfsdetach,
+		.f_event = filt_vfsread
+};
+static struct filterops vfswrite_filtops = {
+		.f_isfd = 1,
+		.f_detach = filt_vfsdetach,
+		.f_event = filt_vfswrite
+};
+static struct filterops vfsvnode_filtops = {
+		.f_isfd = 1,
+		.f_detach = filt_vfsdetach,
+		.f_event = filt_vfsvnode
 };
 
 int
@@ -1247,43 +1260,121 @@ vop_nokqfilter(ap)
 	struct vop_kqfilter_args *ap;
 {
 	struct knote *kn = ap->a_kn;
+	struct vnode *vp = ap->a_vp;
+	struct klist *klist;
 
+	KASSERT(vp->v_type != VFIFO || (kn->kn_filter != EVFILT_READ &&
+		    kn->kn_filter != EVFILT_WRITE),
+		    ("READ/WRITE filter on a FIFO leaked through"));
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
+		kn->kn_fop = &vfsread_filtops;
+		break;
 	case EVFILT_WRITE:
-		kn->kn_fop = &generic_filtops;
+		kn->kn_fop = &vfswrite_filtops;
+		break;
+	case EVFILT_VNODE:
+		kn->kn_fop = &vfsvnode_filtops;
 		break;
 	default:
 		return (EINVAL);
 	}
 
+	kn->kn_hook = (caddr_t)vp;
+
+	klist = &vp->v_sel.si_klist;
+	VHOLD(vp);
+	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
+
 	return (0);
 }
 
-void
-filt_nodetach(kn)
+/*
+ * Detach knote from vnode
+ */
+static void
+filt_vfsdetach(kn)
 	struct knote *kn;
 {
+	struct vnode *vp = (struct vnode *)kn->kn_hook;
 
+	KASSERT(vp->v_sel != NULL, ("Missing v_sel"));
+	SIMPLEQ_REMOVE_HEAD(&vp->v_sel.si_klist, kn);
+	//vdrop(vp);
 }
 
-int
-filt_noreadwrite(kn, hint)
+/*ARGSUSED*/
+static int
+filt_vfsread(kn, hint)
 	struct knote *kn;
 	long hint;
 {
+	struct vnode *vp = (struct vnode *)kn->kn_hook;
+	struct vattr va;
+	int res;
+
 	/*
 	 * filesystem is gone, so set the EOF flag and schedule
 	 * the knote for deletion.
 	 */
-	if (hint == NOTE_REVOKE) {
+	if (hint == NOTE_REVOKE || (hint == 0 && vp->v_type == VBAD)) {
+		//VI_LOCK(vp);
 		kn->kn_flags |= (EV_EOF | EV_ONESHOT);
+		//VI_UNLOCK(vp);
 		return (1);
 	}
 
-	kn->kn_data = 0;
+	if (VOP_GETATTR(vp, &va, u->u_ucred, curproc))
+		return (0);
 
+	//VI_LOCK(vp);
+	kn->kn_data = va.va_size - kn->kn_fp->f_offset;
+	res = (kn->kn_sfflags & NOTE_FILE_POLL) != 0 || kn->kn_data != 0;
+	//VI_UNLOCK(vp);
+	return (res);
+}
+
+/*ARGSUSED*/
+static int
+filt_vfswrite(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	struct vnode *vp = (struct vnode *)kn->kn_hook;
+
+	//VI_LOCK(vp);
+
+	/*
+	 * filesystem is gone, so set the EOF flag and schedule
+	 * the knote for deletion.
+	 */
+	if (hint == NOTE_REVOKE || (hint == 0 && vp->v_type == VBAD))
+		kn->kn_flags |= (EV_EOF | EV_ONESHOT);
+
+	kn->kn_data = 0;
+	//VI_UNLOCK(vp);
 	return (1);
+}
+
+static int
+filt_vfsvnode(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	struct vnode *vp = (struct vnode *)kn->kn_hook;
+	int res;
+
+	//VI_LOCK(vp);
+	if (kn->kn_sfflags & hint)
+		kn->kn_fflags |= hint;
+	if (hint == NOTE_REVOKE || (hint == 0 && vp->v_type == VBAD)) {
+		kn->kn_flags |= EV_EOF;
+		//VI_UNLOCK(vp);
+		return (1);
+	}
+	res = (kn->kn_fflags != 0);
+	//VI_UNLOCK(vp);
+	return (res);
 }
 
 /*
