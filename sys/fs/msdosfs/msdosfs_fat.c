@@ -81,13 +81,13 @@ int fc_bmapcalls;		/* # of times pcbmap was called		 */
 int fc_lmdistance[LMMAX];	/* counters for how far off the last cluster mapped entry was. */
 int fc_largedistance;		/* off by more than LMMAX		 */
 
-static void fatblock (struct msdosfsmount *, u_long, u_long *, u_long *, u_long *);
-void updatefats (struct msdosfsmount *, struct buf *, u_long);
-static __inline void usemap_free (struct msdosfsmount *, u_long);
-static __inline void usemap_alloc (struct msdosfsmount *, u_long);
-static int fatchain (struct msdosfsmount *, u_long, u_long, u_long);
-int chainlength (struct msdosfsmount *, u_long, u_long);
-int chainalloc (struct msdosfsmount *, u_long, u_long, u_long, u_long *, u_long *);
+static void fatblock(struct msdosfsmount *, u_long, u_long *, u_long *, u_long *);
+void updatefats(struct msdosfsmount *, struct buf *, u_long);
+static __inline void usemap_free(struct msdosfsmount *, u_long);
+static __inline void usemap_alloc(struct msdosfsmount *, u_long);
+static int fatchain(struct msdosfsmount *, u_long, u_long, u_long);
+int chainlength(struct msdosfsmount *, u_long, u_long);
+int chainalloc(struct msdosfsmount *, u_long, u_long, u_long, u_long *, u_long *);
 
 static void
 fatblock(pmp, ofs, bnp, sizep, bop)
@@ -237,7 +237,7 @@ pcbmap(dep, findcn, bnp, cnp, sp)
 		cn &= pmp->pm_fatmask;
 	}
 
-	if (!MSDOSFSEOF(pmp, cn)) {
+	if (!MSDOSFSEOF(cn, pmp->pm_fatmask)) {
 		if (bp)
 			brelse(bp);
 		if (bnp)

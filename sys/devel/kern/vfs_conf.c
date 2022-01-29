@@ -245,9 +245,9 @@ vfs_opv_init()
 	/* File Descriptor Filesystem */
 	vnodeopv_desc_create(&fdesc_vnodeops_opv_desc, "fdesc", D_VNODEOPS, &fdesc_vnodeops);
 	/* Sun-compatible Network Filesystem */
-	vnodeopv_desc_create(&nfs_vnodeops_opv_desc, "cd9660", D_VNODEOPS, &nfs_vnodeops);
-	vnodeopv_desc_create(&nfs_specops_opv_desc, "cd9660", D_SPECOPS, &nfs_specops);
-	vnodeopv_desc_create(&nfs_fifoops_opv_desc, "cd9660", D_FIFOOPS, &nfs_fifoops);
+	vnodeopv_desc_create(&nfs_vnodeops_opv_desc, "nfs", D_VNODEOPS, &nfs_vnodeops);
+	vnodeopv_desc_create(&nfs_specops_opv_desc, "nfs", D_SPECOPS, &nfs_specops);
+	vnodeopv_desc_create(&nfs_fifoops_opv_desc, "nfs", D_FIFOOPS, &nfs_fifoops);
 	/* UFML Filesystem  */
 	vnodeopv_desc_create(&ufml_vnodeops_opv_desc, "ufml", D_VNODEOPS, &ufml_vnodeops);
 	/* Union (translucent) Filesystem */

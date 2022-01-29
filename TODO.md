@@ -47,11 +47,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	  that depends on it.
 - vfs (in general): 
 	- DragonflyBSD, FreeBSD & OpenBSD implement default routines 		for the below issues and other vfs operations.
-- vfs_subr.c
-	- vop_revoke(revoke_args)
-		- conflicts with vfs_vops.c: vop_revoke(vp, flags).
-	- vop/vn_kqfilter: 
-		- return (eopnotsupp), with no default routine.
 	
 ## arch:
 - i386/x86: (Merged under i386)

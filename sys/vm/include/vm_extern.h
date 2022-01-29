@@ -45,7 +45,7 @@ struct vnode;
 void		 	chgkprot (caddr_t, int, int);
 #endif
 
-#ifdef KERNEL
+#ifdef _KERNEL
 #ifdef TYPEDEF_FOR_UAP
 int		 		compat_43_getpagesize (struct proc *p, void *, int *);
 int		 		madvise (struct proc *, void *, int *);

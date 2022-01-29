@@ -40,8 +40,7 @@
 
 /*
  * TODO: change following to work with list
- * - vfs_syscalls.c: mount
- * - vfs_subr.c: vfs_rootmountalloc, vfs_mountroot, vfs_sysctl
+ * - config/mkioconf.c: specifies vfs_list_initial[]
  */
 
 #include <sys/cdefs.h>
@@ -54,7 +53,95 @@
 
 #include <devel/sys/vnode_if.h>
 
+struct vnodeop_desc *vfs_op_descs[] = {
+		//&vop_default_desc,	/* MUST BE FIRST */
+		&vop_strategy_desc,		/* XXX: SPECIAL CASE */
+		&vop_bwrite_desc,		/* XXX: SPECIAL CASE */
+
+		&vop_lookup_desc,
+		&vop_create_desc,
+		&vop_whiteout_desc,
+		&vop_mknod_desc,
+		&vop_open_desc,
+		&vop_close_desc,
+		&vop_access_desc,
+		&vop_getattr_desc,
+		&vop_setattr_desc,
+		&vop_read_desc,
+		&vop_write_desc,
+		&vop_lease_desc,
+		&vop_ioctl_desc,
+		&vop_select_desc,
+		&vop_revoke_desc,
+		&vop_mmap_desc,
+		&vop_fsync_desc,
+		&vop_seek_desc,
+		&vop_remove_desc,
+		&vop_link_desc,
+		&vop_rename_desc,
+		&vop_mkdir_desc,
+		&vop_rmdir_desc,
+		&vop_symlink_desc,
+		&vop_readdir_desc,
+		&vop_readlink_desc,
+		&vop_abortop_desc,
+		&vop_inactive_desc,
+		&vop_reclaim_desc,
+		&vop_lock_desc,
+		&vop_unlock_desc,
+		&vop_bmap_desc,
+		&vop_print_desc,
+		&vop_islocked_desc,
+		&vop_pathconf_desc,
+		&vop_advlock_desc,
+		&vop_blkatoff_desc,
+		&vop_valloc_desc,
+		&vop_reallocblks_desc,
+		&vop_vfree_desc,
+		&vop_truncate_desc,
+		&vop_update_desc,
+};
+
+struct vnodeopv_desc_list vfs_opv_descs;
 struct vattr va_null;
+
+int vfs_opv_numops = sizeof(vfs_op_descs) / sizeof(vfs_op_descs[0]);
+
+void
+vfs_opv_init()
+{
+	struct vnodeopv_desc    	*opv;
+	struct vnodeop_desc 		*opv_desc;
+	union vnodeopv_entry_desc 	*opve_descp;
+
+	LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
+		opv_desc = vnodeopv_entry_desc_get_vnodeop_desc(opv, NULL, D_NOOPS);
+		if(opv_desc == NULL) {
+			MALLOC(*opv_desc, struct vnodeop_desc *, vfs_opv_numops * sizeof(struct vnodeop_desc *), M_VNODE, M_WAITOK);
+			bzero(*opv_desc, vfs_opv_numops * sizeof(struct vnodeop_desc *));
+		}
+
+		opve_descp = vnodeopv_entry_desc(opv, NULL, D_NOOPS);
+
+		if (opve_descp->opve_op->vdesc_offset == 0 && opve_descp->opve_op->vdesc_offset != VOFFSET(vop_default)) {
+			printf("operation %s not listed in %s.\n", opve_descp->opve_op->vdesc_name, "vfs_op_descs");
+			panic ("vfs_opv_init: bad operation");
+		}
+	}
+}
+
+void
+vfs_op_init()
+{
+	int i;
+	LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
+
+	}
+	for (vfs_opv_numops = 0, i = 0; vfs_op_descs[i]; i++) {
+		vfs_op_descs[i].vdesc_offset = vfs_opv_numops;
+		vfs_opv_numops++;
+	}
+}
 
 /*
  * Initialize the vnode structures and initialize each file system type.
