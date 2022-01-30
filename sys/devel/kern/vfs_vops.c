@@ -44,7 +44,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/time.h>
-#include <sys/vnode.h>
+#include <devel/sys/vnode.h>
 #include <sys/ucred.h>
 #include <sys/malloc.h>
 #include <sys/domain.h>
@@ -60,6 +60,7 @@
 	error = ops->vop_field(ap)
 
 struct vnodeops default_vnodeops = {
+		.vop_default = vop_default_error,	/* default */
 		.vop_lookup = vop_lookup,			/* lookup */
 		.vop_create = vop_create,			/* create */
 		.vop_mknod = vop_mknod,				/* mknod */
@@ -105,8 +106,20 @@ struct vnodeops default_vnodeops = {
 		.vop_bwrite = vop_bwrite,			/* bwrite */
 };
 
+/*
+ * A miscellaneous routine.
+ * A generic "default" routine that just returns an error.
+ */
 int
-vop_badop(void *v)
+vop_default_error(ap)
+	struct vop_generic_args *ap;
+{
+	return (EOPNOTSUPP);
+}
+
+int
+vop_badop(v)
+	void *v;
 {
 	panic("vop_badop called %s", __func__);
 
@@ -129,6 +142,7 @@ vop_lookup(dvp, vpp, cnp)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_lookup);
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -153,6 +167,7 @@ vop_create(dvp, vpp, cnp, vap)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_create);
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -177,6 +192,7 @@ vop_whiteout(dvp, cnp, flags)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_whiteout);
 	a.a_dvp = dvp;
 	a.a_cnp = cnp;
 	a.a_flags = flags;
@@ -201,6 +217,7 @@ vop_mknod(dvp, vpp, cnp, vap)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_mknod);
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -226,6 +243,7 @@ vop_open(vp, mode, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_open);
 	a.a_vp = vp;
 	a.a_mode = mode;
 	a.a_cred = cred;
@@ -251,6 +269,7 @@ vop_close(vp, fflag, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_close);
 	a.a_vp = vp;
 	a.a_fflag = fflag;
 	a.a_cred = cred;
@@ -276,6 +295,7 @@ vop_access(vp, mode, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_access);
 	a.a_vp = vp;
 	a.a_mode = mode;
 	a.a_cred = cred;
@@ -301,6 +321,7 @@ vop_getattr(vp, vap, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_getattr);
 	a.a_vp = vp;
 	a.a_vap = vap;
 	a.a_cred = cred;
@@ -326,6 +347,7 @@ vop_setattr(vp, vap, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_setattr);
 	a.a_vp = vp;
 	a.a_vap = vap;
 	a.a_cred = cred;
@@ -351,6 +373,7 @@ vop_read(vp, uio, ioflag, cred)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_read);
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_ioflag = ioflag;
@@ -376,6 +399,7 @@ vop_write(vp, uio, ioflag, cred)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_write);
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_ioflag = ioflag;
@@ -401,6 +425,7 @@ vop_lease(vp, p, cred, flag)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_lease);
 	a.a_vp = vp;
 	a.a_p = p;
 	a.a_cred = cred;
@@ -428,6 +453,7 @@ vop_ioctl(vp, command, data, fflag, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_ioctl);
 	a.a_vp = vp;
 	a.a_command = command;
 	a.a_data = data;
@@ -456,6 +482,7 @@ vop_select(vp, which, fflags, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_select);
 	a.a_vp = vp;
 	a.a_which = which;
 	a.a_fflags = fflags;
@@ -482,6 +509,7 @@ vop_poll(vp, fflags, events, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_poll);
 	a.a_vp = vp;
 	a.a_fflags = fflags;
 	a.a_events = events;
@@ -505,6 +533,7 @@ vop_kqfilter(vp, kn)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_kqfilter);
 	a.a_vp = vp;
 	a.a_kn = kn;
 
@@ -526,6 +555,7 @@ vop_revoke(vp, flags)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_revoke);
 	a.a_vp = vp;
 	a.a_flags = flags;
 
@@ -549,6 +579,7 @@ vop_mmap(vp, fflags, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_mmap);
 	a.a_vp = vp;
 	a.a_fflags = fflags;
 	a.a_cred = cred;
@@ -574,6 +605,7 @@ vop_fsync(vp, cred, waitfor, flag, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_fsync);
 	a.a_vp = vp;
 	a.a_cred = cred;
 	a.a_waitfor = waitfor;
@@ -600,6 +632,7 @@ vop_seek(vp, oldoff, newoff, cred)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_seek);
 	a.a_vp = vp;
 	a.a_oldoff = oldoff;
 	a.a_newoff = newoff;
@@ -624,6 +657,7 @@ vop_remove(dvp, vp, cnp)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_remove);
 	a.a_dvp = dvp;
 	a.a_vp = vp;
 	a.a_cnp = cnp;
@@ -647,6 +681,7 @@ vop_link(vp, tdvp, cnp)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_link);
 	a.a_vp = vp;
 	a.a_tdvp = tdvp;
 	a.a_cnp = cnp;
@@ -673,6 +708,7 @@ vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 	int error;
 
 	a.a_head.a_ops = fdvp->v_op;
+	a.a_head.a_desc = VDESC(vop_rename);
 	a.a_fdvp = fdvp;
 	a.a_fvp = fvp;
 	a.a_fcnp = fcnp;
@@ -700,6 +736,7 @@ vop_mkdir(dvp, vpp, cnp, vap)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_mkdir);
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -724,6 +761,7 @@ vop_rmdir(dvp, vp, cnp)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_rmdir);
 	a.a_dvp = dvp;
 	a.a_vp = vp;
 	a.a_cnp = cnp;
@@ -749,6 +787,7 @@ vop_symlink(dvp, vpp, cnp, vap, target)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_symlink);
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -777,6 +816,7 @@ vop_readdir(vp, uio, cred, eofflag, ncookies, cookies)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_readdir);
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_cred = cred;
@@ -803,6 +843,7 @@ vop_readlink(vp, uio, cred)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_readlink);
 	a.a_vp = vp;
 	a.a_uio = uio;
 	a.a_cred = cred;
@@ -825,6 +866,7 @@ vop_abortop(dvp, cnp)
 	int error;
 
 	a.a_head.a_ops = dvp->v_op;
+	a.a_head.a_desc = VDESC(vop_abortop);
 	a.a_dvp = dvp;
 	a.a_cnp = cnp;
 
@@ -846,6 +888,7 @@ vop_inactive(vp, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_inactive);
 	a.a_vp = vp;
 	a.a_p = p;
 
@@ -867,6 +910,7 @@ vop_reclaim(vp, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_reclaim);
 	a.a_vp = vp;
 	a.a_p = p;
 
@@ -889,6 +933,7 @@ vop_lock(vp, flags, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_lock);
 	a.a_vp = vp;
 	a.a_flags = flags;
 	a.a_p = p;
@@ -912,6 +957,7 @@ vop_unlock(vp, flags, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_unlock);
 	a.a_vp = vp;
 	a.a_flags = flags;
 	a.a_p = p;
@@ -937,6 +983,7 @@ vop_bmap(vp, bn, vpp, bnp, runp)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_bmap);
 	a.a_vp = vp;
 	a.a_bn = bn;
 	a.a_vpp = vpp;
@@ -960,6 +1007,7 @@ vop_print(vp)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_print);
 	a.a_vp = vp;
 
 	if(VNOP(vp, vop_print) == NULL) {
@@ -979,6 +1027,7 @@ vop_islocked(vp)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_islocked);
 	a.a_vp = vp;
 
 	if(VNOP(vp, vop_islocked) == NULL) {
@@ -1000,6 +1049,7 @@ vop_pathconf(vp, name, retval)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_pathconf);
 	a.a_vp = vp;
 	a.a_name = name;
 	a.a_retval = retval;
@@ -1025,6 +1075,7 @@ vop_advlock(vp, id, op, fl, flags)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_advlock);
 	a.a_vp = vp;
 	a.a_id = id;
 	a.a_op = op;
@@ -1051,6 +1102,7 @@ vop_blkatoff(vp, offset, res, bpp)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_blkatoff);
 	a.a_vp = vp;
 	a.a_offset = offset;
 	a.a_res = res;
@@ -1076,6 +1128,7 @@ vop_valloc(pvp, mode, cred, vpp)
 	int error;
 
 	a.a_head.a_ops = pvp->v_op;
+	a.a_head.a_desc = VDESC(vop_valloc);
 	a.a_pvp = pvp;
 	a.a_mode = mode;
 	a.a_cred = cred;
@@ -1099,6 +1152,7 @@ vop_reallocblks(vp, buflist)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_reallocblks);
 	a.a_vp = vp;
 	a.a_buflist = buflist;
 
@@ -1121,6 +1175,7 @@ vop_vfree(pvp, ino, mode)
 	int error;
 
 	a.a_head.a_ops = pvp->v_op;
+	a.a_head.a_desc = VDESC(vop_vfree);
 	a.a_pvp = pvp;
 	a.a_ino = ino;
 	a.a_mode = mode;
@@ -1146,6 +1201,7 @@ vop_truncate(vp, length, flags, cred, p)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_truncate);
 	a.a_vp = vp;
 	a.a_length = length;
 	a.a_flags = flags;
@@ -1172,6 +1228,7 @@ vop_update(vp, access, modify, waitfor)
 	int error;
 
 	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_update);
 	a.a_vp = vp;
 	a.a_access = access;
 	a.a_modify = modify;
@@ -1196,6 +1253,7 @@ vop_strategy(bp)
 	int error;
 
 	a.a_head.a_ops = bp->b_vp->v_op;
+	a.a_head.a_desc = VDESC(vop_strategy);
 	a.a_bp = bp;
 
 	if(VNOP(bp->b_vp, vop_strategy) == NULL) {
@@ -1215,6 +1273,7 @@ vop_bwrite(bp)
 	int error;
 
 	a.a_head.a_ops = bp->b_vp->v_op;
+	a.a_head.a_desc = VDESC(vop_bwrite);
 	a.a_bp = bp;
 
 	if(VNOP(bp->b_vp, vop_bwrite) == NULL) {

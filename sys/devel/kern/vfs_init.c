@@ -50,23 +50,12 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
-
-#include <devel/sys/vnode_if.h>
-
-/*
- * A miscellaneous routine.
- * A generic "default" routine that just returns an error.
- */
-int
-vn_default_error(void)
-{
-	return (EOPNOTSUPP);
-}
+#include <devel/sys/vnode.h>
 
 struct vnodeopv_desc_list vfs_opv_descs;
 struct vattr va_null;
 
-int vfs_opv_numops = sizeof(vfs_op_descs) / sizeof(vfs_op_descs[0]);
+int vfs_opv_numops;// = sizeof(vfs_op_descs) / sizeof(vfs_op_descs[0]);
 
 void
 vfs_opv_init()
@@ -91,13 +80,13 @@ vfs_opv_init()
 	}
 }
 
+extern struct vnodeop_desc *vfs_op_descs[]; /* and the operations they perform */
+
 void
 vfs_op_init()
 {
 	int i;
-	LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
 
-	}
 	for (vfs_opv_numops = 0, i = 0; vfs_op_descs[i]; i++) {
 		vfs_op_descs[i].vdesc_offset = vfs_opv_numops;
 		vfs_opv_numops++;

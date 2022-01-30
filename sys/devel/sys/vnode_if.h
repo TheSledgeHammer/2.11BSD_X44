@@ -49,27 +49,6 @@
  */
 //#include <sys/vnode.h>
 
-/*
- * This structure describes the vnode operation taking place.
- */
-struct vnodeop_desc {
-	int							vdesc_offset;
-	char    					*vdesc_name;
-	int							vdesc_flags;				/* VDESC_* flags */
-
-	/*
-	 * These ops are used by bypass routines to map and locate arguments.
-	 * Creds and procs are not needed in bypass routines, but sometimes
-	 * they are useful to (for example) transport layers.
-	 * Nameidata is useful because it has a cred in it.
-	 */
-	int							*vdesc_vp_offsets;			/* list ended by VDESC_NO_OFFSET */
-	int							vdesc_vpp_offset;			/* return vpp location */
-	int							vdesc_cred_offset;			/* cred location, if any */
-	int							vdesc_proc_offset;			/* proc location, if any */
-	int							vdesc_componentname_offset; /* if any */
-};
-
 typedef int (*opve_impl_t)(void *);
 
 union vnodeopv_entry_desc {
@@ -104,39 +83,6 @@ struct vnodeop_desc 		*vnodeopv_entry_desc_get_vnodeop_desc(struct vnodeopv_desc
 		struct vnodeopv_desc VNODEOPV_DESC_NAME(name, voptype);
 
 extern struct vnodeopv_desc_list vfs_opv_descs;
-
-
-/* 4.4BSD-Lite2 */
-/*
- * Flags for vdesc_flags:
- */
-#define	VDESC_MAX_VPS		16
-/* Low order 16 flag bits are reserved for willrele flags for vp arguments. */
-#define VDESC_VP0_WILLRELE	0x0001
-#define VDESC_VP1_WILLRELE	0x0002
-#define VDESC_VP2_WILLRELE	0x0004
-#define VDESC_VP3_WILLRELE	0x0008
-#define VDESC_NOMAP_VPP		0x0100
-#define VDESC_VPP_WILLRELE	0x0200
-
-/*
- * VDESC_NO_OFFSET is used to identify the end of the offset list
- * and in places where no such field exists.
- */
-#define VDESC_NO_OFFSET 	-1
-
-#define VOPARG_OFFSET(p_type, field) 				\
-	((int) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
-
-#define VOPARG_OFFSETOF(s_type, field) 				VOPARG_OFFSET(s_type*, field)
-//#define	VOPARG_OFFSETOF(s_type, field)	            offsetof((s_type)*, field)
-#define VOPARG_OFFSETTO(S_TYPE, S_OFFSET, STRUCT_P) ((S_TYPE)(((char*)(STRUCT_P))+(S_OFFSET)))
-
-#define VOCALL(OPSV, OFF, AP) 		((*((OPSV)[(OFF)]))(AP))
-#define VCALL(VP, OFF, AP) 			VOCALL((VP)->v_op,(OFF),(AP))
-#define VCALL1(ERR, VP, OFF, AP) 	((ERR) = VOCALL((VP)->v_op,(OFF),(AP))) /* includes error */
-#define VDESC(OP) 					(&(OP##_desc))
-#define VOFFSET(OP) 				(VDESC(OP)->vdesc_offset)
 
 /*
  * A generic structure.
@@ -398,7 +344,7 @@ struct vop_readlink_args {
 	struct ucred 			*a_cred;
 };
 
-extern struct vnodeop_desc 	vop_aborttop_desc;
+extern struct vnodeop_desc 	vop_abortop_desc;
 struct vop_abortop_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -541,7 +487,10 @@ struct vop_bwrite_args {
 };
 /* End of special cases. */
 
+struct cluster_save;
+struct componentname;
 struct vnodeops {
+	int	(*vop_default)		(struct vop_generic_args *);
 	int	(*vop_lookup)		(struct vop_lookup_args *);
 	int	(*vop_create)		(struct vop_create_args *);
 	int (*vop_whiteout)		(struct vop_whiteout_args *);
@@ -593,6 +542,10 @@ struct vnodeops {
 #ifdef _KERNEL
 
 /* proto types */
+/*
+ * A default routine which just returns an error.
+ */
+int vop_default_error(struct vop_generic_args *);
 int vop_badop(void *);
 int	vop_ebadf(void);
 int	vop_lookup(struct vnode *, struct vnode **, struct componentname *);
