@@ -267,12 +267,18 @@ extern	struct vattr va_null;		/* predefined null vattr structure */
 #define	LEASE_WRITE	0x2		/* Check lease for modifiers */
 
 #endif /* KERNEL */
-struct cluster_save;
-struct componentname;
 
 #include <sys/vnodeops.h>
-
 #ifdef _KERNEL
+/*
+ * Interlock for scanning list of vnodes attached to a mountpoint
+ */
+struct lock_object mntvnode_slock;
+
+/*
+ * The default set of vnode operations.
+ */
+extern struct vnodeops 	default_vnodeops;
 
 #define VARGVOPS(ap) 		((ap)->a_head.a_ops)
 #define VOPARGS(ap, vop_field) 									\
@@ -285,16 +291,6 @@ struct componentname;
 		(vops).vop_field;										\
 	}															\
 }																\
-
-/*
- * Interlock for scanning list of vnodes attached to a mountpoint
- */
-struct lock_object mntvnode_slock;
-
-/*
- * Finally, include the default set of vnode operations.
- */
-extern struct vnodeops 	default_vnodeops;
 
 /*
  * Public vnode manipulation functions.

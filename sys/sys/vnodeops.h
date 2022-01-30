@@ -398,7 +398,10 @@ struct vop_bwrite_args {
 };
 /* End of special cases. */
 
+struct cluster_save;
+struct componentname;
 struct vnodeops {
+//	int	(*vop_default)		(struct vop_generic_args *);
 	int	(*vop_lookup)		(struct vop_lookup_args *);
 	int	(*vop_create)		(struct vop_create_args *);
 	int (*vop_whiteout)		(struct vop_whiteout_args *);

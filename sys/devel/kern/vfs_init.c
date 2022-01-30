@@ -53,54 +53,15 @@
 
 #include <devel/sys/vnode_if.h>
 
-struct vnodeop_desc *vfs_op_descs[] = {
-		//&vop_default_desc,	/* MUST BE FIRST */
-		&vop_strategy_desc,		/* XXX: SPECIAL CASE */
-		&vop_bwrite_desc,		/* XXX: SPECIAL CASE */
-
-		&vop_lookup_desc,
-		&vop_create_desc,
-		&vop_whiteout_desc,
-		&vop_mknod_desc,
-		&vop_open_desc,
-		&vop_close_desc,
-		&vop_access_desc,
-		&vop_getattr_desc,
-		&vop_setattr_desc,
-		&vop_read_desc,
-		&vop_write_desc,
-		&vop_lease_desc,
-		&vop_ioctl_desc,
-		&vop_select_desc,
-		&vop_revoke_desc,
-		&vop_mmap_desc,
-		&vop_fsync_desc,
-		&vop_seek_desc,
-		&vop_remove_desc,
-		&vop_link_desc,
-		&vop_rename_desc,
-		&vop_mkdir_desc,
-		&vop_rmdir_desc,
-		&vop_symlink_desc,
-		&vop_readdir_desc,
-		&vop_readlink_desc,
-		&vop_abortop_desc,
-		&vop_inactive_desc,
-		&vop_reclaim_desc,
-		&vop_lock_desc,
-		&vop_unlock_desc,
-		&vop_bmap_desc,
-		&vop_print_desc,
-		&vop_islocked_desc,
-		&vop_pathconf_desc,
-		&vop_advlock_desc,
-		&vop_blkatoff_desc,
-		&vop_valloc_desc,
-		&vop_reallocblks_desc,
-		&vop_vfree_desc,
-		&vop_truncate_desc,
-		&vop_update_desc,
-};
+/*
+ * A miscellaneous routine.
+ * A generic "default" routine that just returns an error.
+ */
+int
+vn_default_error(void)
+{
+	return (EOPNOTSUPP);
+}
 
 struct vnodeopv_desc_list vfs_opv_descs;
 struct vattr va_null;
