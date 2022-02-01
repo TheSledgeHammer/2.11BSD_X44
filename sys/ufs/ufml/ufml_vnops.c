@@ -1119,6 +1119,7 @@ ufml_badop(v)
  * Global vfs data structures ufml
  */
 struct vnodeops ufml_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = ufml_lookup,		/* lookup */
 		.vop_create = ufml_create,		/* create */
 		.vop_mknod = ufml_mknod,		/* mknod */

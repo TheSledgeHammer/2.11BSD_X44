@@ -37,6 +37,7 @@
  *
  *	@(#)vfs_syscalls.c	8.41 (Berkeley) 6/15/95
  */
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -52,10 +53,9 @@
 #include <sys/uio.h>
 #include <sys/malloc.h>
 #include <sys/dirent.h>
-
 #include <sys/syscallargs.h>
-
 #include <sys/sysctl.h>
+
 #include <vm/include/vm.h>
 
 static int change_dir (struct nameidata *ndp, struct proc *p);
@@ -176,9 +176,11 @@ mount(p, uap, retval)
 	 */
 	fstypenum = (u_long)SCARG(uap, type);
 	if (fstypenum < maxvfsconf) {
-		for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
-			if (vfsp->vfc_typenum == fstypenum)
+		LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
+			if (vfsp->vfc_typenum == fstypenum) {
 				break;
+			}
+		}
 		if (vfsp == NULL) {
 			vput(vp);
 			return (ENODEV);
@@ -190,9 +192,11 @@ mount(p, uap, retval)
 		vput(vp);
 		return (error);
 	}
-	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
-		if (!strcmp(vfsp->vfc_name, fstypename))
+	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
+		if (!strcmp(vfsp->vfc_name, fstypename)) {
 			break;
+		}
+	}
 	if (vfsp == NULL) {
 		vput(vp);
 		return (ENODEV);
@@ -397,7 +401,7 @@ dounmount(mp, flags, p)
 		vrele(coveredvp);
 	}
 	mp->mnt_vfc->vfc_refcount--;
-	if (mp->mnt_vnodelist.lh_first != NULL)
+	if (LIST_FIRST(mp->mnt_vnodelist) != NULL)
 		panic("unmount: dangling vnode");
 	lockmgr(&mp->mnt_lock, LK_RELEASE | LK_INTERLOCK, &mountlist_slock, p->p_pid);
 	if (mp->mnt_flag & MNT_MWAIT)
@@ -425,9 +429,9 @@ sync(p, uap, retval)
 	int asyncflag;
 
 	simple_lock(&mountlist_slock);
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+	for (mp = CIRCLEQ_FIRST(mountlist); mp != (void *)&mountlist; mp = nmp) {
 		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
-			nmp = mp->mnt_list.cqe_next;
+			nmp = CIRCLEQ_NEXT(mp, mnt_list);
 			continue;
 		}
 		if ((mp->mnt_flag & MNT_RDONLY) == 0) {
@@ -438,7 +442,7 @@ sync(p, uap, retval)
 				mp->mnt_flag |= MNT_ASYNC;
 		}
 		simple_lock(&mountlist_slock);
-		nmp = mp->mnt_list.cqe_next;
+		nmp = CIRCLEQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp, p);
 	}
 	simple_unlock(&mountlist_slock);
@@ -557,9 +561,9 @@ getfsstat(p, uap, retval)
 	sfsp = (caddr_t)SCARG(uap, buf);
 	count = 0;
 	simple_lock(&mountlist_slock);
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+	for (mp = CIRCLEQ_FIRST(mountlist); mp != (void *)&mountlist; mp = nmp) {
 		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
-			nmp = mp->mnt_list.cqe_next;
+			nmp = CIRCLEQ_NEXT(mp, mnt_list);
 			continue;
 		}
 		if (sfsp && count < maxcount) {
@@ -572,7 +576,7 @@ getfsstat(p, uap, retval)
 			    (SCARG(uap, flags) & MNT_WAIT)) &&
 			    (error = VFS_STATFS(mp, sp, p))) {
 				simple_lock(&mountlist_slock);
-				nmp = mp->mnt_list.cqe_next;
+				nmp = CIRCLEQ_NEXT(mp, mnt_list);
 				vfs_unbusy(mp, p);
 				continue;
 			}
@@ -583,7 +587,7 @@ getfsstat(p, uap, retval)
 		}
 		count++;
 		simple_lock(&mountlist_slock);
-		nmp = mp->mnt_list.cqe_next;
+		nmp = CIRCLEQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp, p);
 	}
 	simple_unlock(&mountlist_slock);
@@ -2101,7 +2105,7 @@ compat_43_getdirentries(p, uap, retval)
 	int error, eofflag, readcnt;
 	long loff;
 
-	if (error = getvnode(p->p_fd, SCARG(uap, fd), &fp))
+	if (error == getvnode(p->p_fd, SCARG(uap, fd), &fp))
 		return (error);
 	if ((fp->f_flag & FREAD) == 0)
 		return (EBADF);
@@ -2119,13 +2123,13 @@ unionread:
 	auio.uio_resid = SCARG(uap, count);
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	loff = auio.uio_offset = fp->f_offset;
-#	if (BYTE_ORDER != LITTLE_ENDIAN)
+#if (BYTE_ORDER != LITTLE_ENDIAN)
 		if (vp->v_mount->mnt_maxsymlinklen <= 0) {
 			error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
 			    (int *)0, (u_long *)0);
 			fp->f_offset = auio.uio_offset;
 		} else
-#	endif
+#endif
 	{
 		kuio = auio;
 		kuio.uio_iov = &kiov;
@@ -2140,7 +2144,7 @@ unionread:
 			readcnt = SCARG(uap, count) - kuio.uio_resid;
 			edp = (struct dirent *)&dirbuf[readcnt];
 			for (dp = (struct dirent *)dirbuf; dp < edp; ) {
-#				if (BYTE_ORDER == LITTLE_ENDIAN)
+#if (BYTE_ORDER == LITTLE_ENDIAN)
 					/*
 					 * The expected low byte of
 					 * dp->d_namlen is our dp->d_type.
@@ -2149,14 +2153,14 @@ unionread:
 					 */
 					dp->d_type = dp->d_namlen;
 					dp->d_namlen = 0;
-#				else
+#else
 					/*
 					 * The dp->d_type is the high byte
 					 * of the expected dp->d_namlen,
 					 * so must be zero'ed.
 					 */
 					dp->d_type = 0;
-#				endif
+#endif
 				if (dp->d_reclen > 0) {
 					dp = (struct dirent *)
 					    ((char *)dp + dp->d_reclen);
@@ -2176,11 +2180,11 @@ unionread:
 
 #ifdef UNION
 {
-	extern int (**union_vnodeop_p)();
+	extern struct vnodeops *union_vnodeops;
 	extern struct vnode *union_dircache (struct vnode*, struct proc*);
 
 	if ((SCARG(uap, count) == auio.uio_resid) &&
-	    (vp->v_op == union_vnodeop_p)) {
+	    (vp->v_op == union_vnodeops)) {
 		struct vnode *lvp;
 
 		lvp = union_dircache(vp, p);
@@ -2283,11 +2287,11 @@ unionread:
 
 #ifdef UNION
 {
-	extern int (**union_vnodeop_p)();
+	extern struct vnodeops *union_vnodeops;
 	extern struct vnode *union_dircache (struct vnode*, struct proc*);
 
 	if ((SCARG(uap, count) == auio.uio_resid) &&
-	    (vp->v_op == union_vnodeop_p)) {
+	    (vp->v_op == union_vnodeops)) {
 		struct vnode *lvp;
 
 		lvp = union_dircache(vp, p);

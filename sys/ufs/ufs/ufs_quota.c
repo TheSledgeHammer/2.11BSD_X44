@@ -406,8 +406,8 @@ quotaon(p, mp, type, fname)
 	 * NB: only need to add dquot's for inodes being modified.
 	 */
 again:
-	for (vp = mp->mnt_vnodelist.lh_first; vp != NULL; vp = nextvp) {
-		nextvp = vp->v_mntvnodes.le_next;
+	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
+		nextvp = LIST_NEXT(vp, v_mntvnodes);
 		if (vp->v_writecount == 0)
 			continue;
 		if (vget(vp, LK_EXCLUSIVE, p))
@@ -417,7 +417,7 @@ again:
 			break;
 		}
 		vput(vp);
-		if (vp->v_mntvnodes.le_next != nextvp || vp->v_mount != mp)
+		if (LIST_NEXT(vp, v_mntvnodes) != nextvp || vp->v_mount != mp)
 			goto again;
 	}
 	ump->um_qflags[type] &= ~QTF_OPENING;
@@ -450,8 +450,8 @@ quotaoff(p, mp, type)
 	 * deleting any references to quota file being closed.
 	 */
 again:
-	for (vp = mp->mnt_vnodelist.lh_first; vp != NULL; vp = nextvp) {
-		nextvp = vp->v_mntvnodes.le_next;
+	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
+		nextvp = LIST_NEXT(vp, v_mntvnodes);
 		if (vget(vp, LK_EXCLUSIVE, p))
 			goto again;
 		ip = VTOI(vp);
@@ -459,7 +459,7 @@ again:
 		ip->i_dquot[type] = NODQUOT;
 		dqrele(vp, dq);
 		vput(vp);
-		if (vp->v_mntvnodes.le_next != nextvp || vp->v_mount != mp)
+		if (LIST_NEXT(vp, v_mntvnodes) != nextvp || vp->v_mount != mp)
 			goto again;
 	}
 	dqflush(qvp);
@@ -630,10 +630,10 @@ qsync(mp)
 	 */
 	simple_lock(&mntvnode_slock);
 again:
-	for (vp = mp->mnt_vnodelist.lh_first; vp != NULL; vp = nextvp) {
+	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
 		if (vp->v_mount != mp)
 			goto again;
-		nextvp = vp->v_mntvnodes.le_next;
+		nextvp = LIST_NEXT(vp, v_mntvnodes);
 		simple_lock(&vp->v_interlock);
 		simple_unlock(&mntvnode_slock);
 		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK, p);
@@ -650,7 +650,7 @@ again:
 		}
 		vput(vp);
 		simple_lock(&mntvnode_slock);
-		if (vp->v_mntvnodes.le_next != nextvp)
+		if (LIST_NEXT(vp, v_mntvnodes) != nextvp)
 			goto again;
 	}
 	simple_unlock(&mntvnode_slock);
@@ -711,7 +711,7 @@ dqget(vp, id, ump, type, dqp)
 	 * Check the cache first.
 	 */
 	dqh = DQHASH(dqvp, id);
-	for (dq = dqh->lh_first; dq; dq = dq->dq_hash.le_next) {
+	for (dq = LIST_FIRST(dqh); dq; dq = LIST_NEXT(dq, dq_hash)) {
 		if (dq->dq_id != id ||
 		    dq->dq_ump->um_quotas[dq->dq_type] != dqvp)
 			continue;
@@ -728,7 +728,7 @@ dqget(vp, id, ump, type, dqp)
 	/*
 	 * Not in cache, allocate a new one.
 	 */
-	if (dqfreelist.tqh_first == NODQUOT &&
+	if (TAILQ_FIRST(dqfreelist) == NODQUOT &&
 	    numdquot < MAXQUOTAS * desiredvnodes)
 		desireddquot += DQUOTINC;
 	if (numdquot < desireddquot) {
@@ -736,7 +736,7 @@ dqget(vp, id, ump, type, dqp)
 		bzero((char *)dq, sizeof *dq);
 		numdquot++;
 	} else {
-		if ((dq = dqfreelist.tqh_first) == NULL) {
+		if ((dq = TAILQ_FIRST(dqfreelist)) == NULL) {
 			tablefull("dquot");
 			*dqp = NODQUOT;
 			return (EUSERS);
@@ -902,8 +902,8 @@ dqflush(vp)
 	 * fall off the head of the free list and be re-used).
 	 */
 	for (dqh = &dqhashtbl[dqhash]; dqh >= dqhashtbl; dqh--) {
-		for (dq = dqh->lh_first; dq; dq = nextdq) {
-			nextdq = dq->dq_hash.le_next;
+		for (dq = LIST_FIRST(dqh); dq; dq = nextdq) {
+			nextdq = LIST_NEXT(dq, dq_hash);
 			if (dq->dq_ump->um_quotas[dq->dq_type] != vp)
 				continue;
 			if (dq->dq_cnt)

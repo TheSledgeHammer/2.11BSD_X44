@@ -64,6 +64,7 @@ struct fifoinfo {
  * Global vfs data structures for fifo
  */
 struct vnodeops fifo_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = fifo_lookup,		/* lookup */
 		.vop_create = fifo_create,		/* create */
 		.vop_mknod = fifo_mknod,		/* mknod */

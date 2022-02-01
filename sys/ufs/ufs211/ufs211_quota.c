@@ -75,7 +75,7 @@ inoquota(ip)
 		if (*dqq != NODQUOT)
 			(*dqq)->dq_own = q;
 		if (q->q_flags & Q_WANT)
-			wakeup((caddr_t)q);
+			wakeup((caddr_t) q);
 		q->q_flags &= ~(Q_LOCK | Q_WANT);
 	}
 	if (*dqq != NODQUOT)
@@ -86,6 +86,7 @@ inoquota(ip)
 /*
  * Update disc usage, and take corrective action.
  */
+int
 chkdq(ip, change, force)
 	register struct ufs211_inode *ip;
 	long change;
@@ -176,6 +177,7 @@ chkdq(ip, change, force)
 /*
  * Check the inode limit, applying corrective action.
  */
+int
 chkiq(dev, ip, uid, force)
 	dev_t dev;
 	uid_t uid;
@@ -185,13 +187,13 @@ chkiq(dev, ip, uid, force)
 	register struct ufs211_dquot *dq;
 	register struct ufs211_quota *q;
 
-	if (ip == NULL)	{		/* allocation */
+	if (ip == NULL) { /* allocation */
 		q = qfind(uid);
 		if (q != NOQUOTA)
 			dq = dqp(q, dev);
 		else
 			dq = discquota(uid, mount[getfsx(dev)].m_qinod);
-	} else {			/* free */
+	} else { /* free */
 #ifdef pdp11
 		dq = ix_dquot[ip - inode];
 #else
@@ -207,7 +209,7 @@ chkiq(dev, ip, uid, force)
 		return (0);
 	}
 	dq->dq_flags |= DQ_MOD;
-	if (ip) {			/* a free */
+	if (ip) { /* a free */
 		if (dq->dq_curinodes)
 			dq->dq_curinodes--;
 		dq->dq_flags &= ~DQ_INODS;
@@ -220,31 +222,29 @@ chkiq(dev, ip, uid, force)
 	 * then dq == NODQUOT & we wouldn't get here at all, but
 	 * then again, its not going to harm anything ...
 	 */
-	if (u->u_uid == 0)		/* su's musn't be stopped */
+	if (u->u_uid == 0) /* su's musn't be stopped */
 		force = 1;
 	if (!force && dq->dq_iwarn == 0) {
 		if ((dq->dq_flags & DQ_INODS) == 0 && dq->dq_own == u->u_quota) {
 			uprintf("\nOVER FILE QUOTA - NO MORE FILES (%s)\n",
-			    getfs(dq->dq_dev)->fs_fsmnt);
+					getfs(dq->dq_dev)->fs_fsmnt);
 			dq->dq_flags |= DQ_INODS;
 		}
 		dqrele(dq);
 		return (EDQUOT);
 	}
 	if (dq->dq_curinodes < dq->dq_isoftlimit) {
-		if (++dq->dq_curinodes >= dq->dq_isoftlimit &&
-		    dq->dq_own == u->u_quota)
+		if (++dq->dq_curinodes >= dq->dq_isoftlimit && dq->dq_own == u->u_quota)
 			uprintf("\nWARNING - too many files (%s)\n",
-			    getfs(dq->dq_dev)->fs_fsmnt);
+					getfs(dq->dq_dev)->fs_fsmnt);
 		dqrele(dq);
 		return (0);
 	}
-	if (!force && dq->dq_ihardlimit &&
-	    dq->dq_curinodes + 1 >= dq->dq_ihardlimit) {
+	if (!force && dq->dq_ihardlimit && dq->dq_curinodes + 1 >= dq->dq_ihardlimit) {
 		if ((dq->dq_flags & DQ_INODS) == 0 && dq->dq_own == u->u_quota) {
-		     uprintf("\nFILE LIMIT REACHED - CREATE FAILED (%s)\n",
-			getfs(dq->dq_dev)->fs_fsmnt);
-		     dq->dq_flags |= DQ_INODS;
+			uprintf("\nFILE LIMIT REACHED - CREATE FAILED (%s)\n",
+					getfs(dq->dq_dev)->fs_fsmnt);
+			dq->dq_flags |= DQ_INODS;
 		}
 		dqrele(dq);
 		return (EDQUOT);

@@ -1,45 +1,43 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1992, 1993, 1994, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
- * This code is derived from software contributed
- * to Berkeley by John Heidemann of the UCLA Ficus project.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#	This product includes software developed by the University of
+#	California, Berkeley and its contributors.
+# 4. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
  *
- * Source: * @(#)i405_init.c 2.10 92/04/27 UCLA Ficus project
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)vnode.h	8.17 (Berkeley) 5/20/95
+ * from: NetBSD: vnode_if.sh,v 1.7 1994/08/25 03:04:28 cgd Exp $
  */
 
-#ifndef _SYS_VNODEOPS_H_
-#define _SYS_VNODEOPS_H_
+#ifndef _SYS_VNODE_IF_H_
+#define _SYS_VNODE_IF_H_
+
+#include <sys/buf.h>
+#include <sys/stddef.h>
 
 /*
  * A generic structure.
@@ -47,9 +45,10 @@
  */
 struct vop_generic_args {
 	struct vnodeops 		*a_ops;
-	//struct vnodeop_desc		*a_desc;
+	struct vnodeop_desc		*a_desc;
 };
 
+extern struct vnodeop_desc 	vop_lookup_desc;
 struct vop_lookup_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -57,6 +56,7 @@ struct vop_lookup_args {
 	struct componentname 	*a_cnp;
 };
 
+extern struct vnodeop_desc 	vop_create_desc;
 struct vop_create_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -65,6 +65,7 @@ struct vop_create_args {
 	struct vattr 			*a_vap;
 };
 
+extern struct vnodeop_desc 	vop_whiteout_desc;
 struct vop_whiteout_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -72,6 +73,7 @@ struct vop_whiteout_args {
 	int 					a_flags;
 };
 
+extern struct vnodeop_desc 	vop_mknod_desc;
 struct vop_mknod_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -80,6 +82,7 @@ struct vop_mknod_args {
 	struct vattr 			*a_vap;
 };
 
+extern struct vnodeop_desc 	vop_open_desc;
 struct vop_open_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -88,6 +91,7 @@ struct vop_open_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_close_desc;
 struct vop_close_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -96,6 +100,7 @@ struct vop_close_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc vop_access_desc;
 struct vop_access_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -104,6 +109,7 @@ struct vop_access_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_getattr_desc;
 struct vop_getattr_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -112,6 +118,7 @@ struct vop_getattr_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_setattr_desc;
 struct vop_setattr_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -120,6 +127,7 @@ struct vop_setattr_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_read_desc;
 struct vop_read_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -128,6 +136,7 @@ struct vop_read_args {
 	struct ucred 			*a_cred;
 };
 
+extern struct vnodeop_desc 	vop_write_desc;
 struct vop_write_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -136,6 +145,7 @@ struct vop_write_args {
 	struct ucred 			*a_cred;
 };
 
+extern struct vnodeop_desc 	vop_lease_desc;
 struct vop_lease_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -144,6 +154,7 @@ struct vop_lease_args {
 	int 					a_flag;
 };
 
+extern struct vnodeop_desc 	vop_ioctl_desc;
 struct vop_ioctl_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -154,6 +165,7 @@ struct vop_ioctl_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_select_desc;
 struct vop_select_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -163,6 +175,7 @@ struct vop_select_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_poll_desc;
 struct vop_poll_args {
 	struct vop_generic_args a_head;
 	struct vnode 			*a_vp;
@@ -171,18 +184,21 @@ struct vop_poll_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_kqfilter_desc;
 struct vop_kqfilter_args {
 	struct vop_generic_args a_head;
 	struct vnode 			*a_vp;
 	struct knote			*a_kn;
 };
 
+extern struct vnodeop_desc 	vop_revoke_desc;
 struct vop_revoke_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
 	int 					a_flags;
 };
 
+extern struct vnodeop_desc 	vop_mmap_desc;
 struct vop_mmap_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -191,6 +207,7 @@ struct vop_mmap_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_fsync_desc;
 struct vop_fsync_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -200,6 +217,7 @@ struct vop_fsync_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_seek_desc;
 struct vop_seek_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -208,6 +226,7 @@ struct vop_seek_args {
 	struct ucred 			*a_cred;
 };
 
+extern struct vnodeop_desc 	vop_remove_desc;
 struct vop_remove_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -215,6 +234,7 @@ struct vop_remove_args {
 	struct componentname 	*a_cnp;
 };
 
+extern struct vnodeop_desc 	vop_link_desc;
 struct vop_link_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -222,6 +242,7 @@ struct vop_link_args {
 	struct componentname 	*a_cnp;
 };
 
+extern struct vnodeop_desc 	vop_rename_desc;
 struct vop_rename_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_fdvp;
@@ -232,6 +253,7 @@ struct vop_rename_args {
 	struct componentname 	*a_tcnp;
 };
 
+extern struct vnodeop_desc 	vop_mkdir_desc;
 struct vop_mkdir_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -240,6 +262,7 @@ struct vop_mkdir_args {
 	struct vattr 			*a_vap;
 };
 
+extern struct vnodeop_desc 	vop_rmdir_desc;
 struct vop_rmdir_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -247,6 +270,7 @@ struct vop_rmdir_args {
 	struct componentname 	*a_cnp;
 };
 
+extern struct vnodeop_desc 	vop_symlink_desc;
 struct vop_symlink_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
@@ -256,6 +280,7 @@ struct vop_symlink_args {
 	char 					*a_target;
 };
 
+extern struct vnodeop_desc 	vop_readdir_desc;
 struct vop_readdir_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -266,6 +291,7 @@ struct vop_readdir_args {
 	u_long 					**a_cookies;
 };
 
+extern struct vnodeop_desc 	vop_readlink_desc;
 struct vop_readlink_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -273,24 +299,28 @@ struct vop_readlink_args {
 	struct ucred 			*a_cred;
 };
 
+extern struct vnodeop_desc 	vop_abortop_desc;
 struct vop_abortop_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_dvp;
 	struct componentname	*a_cnp;
 };
 
+extern struct vnodeop_desc 	vop_inactive_desc;
 struct vop_inactive_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_reclaim_desc;
 struct vop_reclaim_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_lock_desc;
 struct vop_lock_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -298,6 +328,7 @@ struct vop_lock_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_unlock_desc;
 struct vop_unlock_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -305,6 +336,7 @@ struct vop_unlock_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_bmap_desc;
 struct vop_bmap_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -314,16 +346,19 @@ struct vop_bmap_args {
 	int 					*a_runp;
 };
 
+extern struct vnodeop_desc 	vop_print_desc;
 struct vop_print_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
 };
 
+extern struct vnodeop_desc 	vop_islocked_desc;
 struct vop_islocked_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
 };
 
+extern struct vnodeop_desc 	vop_pathconf_desc;
 struct vop_pathconf_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -331,6 +366,7 @@ struct vop_pathconf_args {
 	register_t 				*a_retval;
 };
 
+extern struct vnodeop_desc 	vop_advlock_desc;
 struct vop_advlock_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -340,6 +376,7 @@ struct vop_advlock_args {
 	int 					a_flags;
 };
 
+extern struct vnodeop_desc 	vop_blkatoff_desc;
 struct vop_blkatoff_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -348,6 +385,7 @@ struct vop_blkatoff_args {
 	struct buf 				**a_bpp;
 };
 
+extern struct vnodeop_desc 	vop_valloc_desc;
 struct vop_valloc_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_pvp;
@@ -356,12 +394,14 @@ struct vop_valloc_args {
 	struct vnode 			**a_vpp;
 };
 
+extern struct vnodeop_desc 	vop_reallocblks_desc;
 struct vop_reallocblks_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
 	struct cluster_save 	*a_buflist;
 };
 
+extern struct vnodeop_desc 	vop_vfree_desc;
 struct vop_vfree_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_pvp;
@@ -369,6 +409,7 @@ struct vop_vfree_args {
 	int 					a_mode;
 };
 
+extern struct vnodeop_desc 	vop_truncate_desc;
 struct vop_truncate_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -378,6 +419,7 @@ struct vop_truncate_args {
 	struct proc 			*a_p;
 };
 
+extern struct vnodeop_desc 	vop_update_desc;
 struct vop_update_args {
 	struct vop_generic_args	a_head;
 	struct vnode 			*a_vp;
@@ -387,11 +429,13 @@ struct vop_update_args {
 };
 
 /* Special cases: */
+extern struct vnodeop_desc 	vop_strategy_desc;
 struct vop_strategy_args {
 	struct vop_generic_args	a_head;
 	struct buf 				*a_bp;
 };
 
+extern struct vnodeop_desc 	vop_bwrite_desc;
 struct vop_bwrite_args {
 	struct vop_generic_args	a_head;
 	struct buf 				*a_bp;
@@ -401,6 +445,7 @@ struct vop_bwrite_args {
 struct cluster_save;
 struct componentname;
 struct vnodeops {
+	int	(*vop_default)		(struct vop_generic_args *);
 	int	(*vop_lookup)		(struct vop_lookup_args *);
 	int	(*vop_create)		(struct vop_create_args *);
 	int (*vop_whiteout)		(struct vop_whiteout_args *);
@@ -452,6 +497,10 @@ struct vnodeops {
 #ifdef _KERNEL
 
 /* proto types */
+/*
+ * A default routine which just returns an error.
+ */
+int vop_default_error(struct vop_generic_args *);
 int vop_badop(void *);
 int	vop_ebadf(void);
 int	vop_lookup(struct vnode *, struct vnode **, struct componentname *);
@@ -557,4 +606,4 @@ int	vop_norevoke(struct vop_revoke_args *);
 #define	VOP_STRATEGY(bp)										vop_strategy(bp)
 #define VOP_BWRITE(bp)											vop_bwrite(bp)
 
-#endif /* _SYS_VNODEOPS_H_ */
+#endif /* _SYS_VNODE_IF_H_ */

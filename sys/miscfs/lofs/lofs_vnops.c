@@ -1140,6 +1140,7 @@ lofs_bwrite(ap)
  * Global vfs data structures for lofs
  */
 struct vnodeops lofs_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = lofs_lookup,		/* lookup */
 		.vop_create = lofs_create,		/* create */
 		.vop_mknod = lofs_mknod,		/* mknod */

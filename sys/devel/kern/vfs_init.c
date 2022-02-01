@@ -38,11 +38,6 @@
  *	@(#)vfs_init.c	8.5 (Berkeley) 5/11/95
  */
 
-/*
- * TODO: change following to work with list
- * - config/mkioconf.c: specifies vfs_list_initial[]
- */
-
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -50,7 +45,8 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
-#include <devel/sys/vnode.h>
+#include <sys/vnode.h>
+#include <devel/sys/vnodeopv.h>
 
 struct vnodeopv_desc_list vfs_opv_descs;
 struct vattr va_null;
@@ -78,61 +74,4 @@ vfs_opv_init()
 			panic ("vfs_opv_init: bad operation");
 		}
 	}
-}
-
-extern struct vnodeop_desc *vfs_op_descs[]; /* and the operations they perform */
-
-void
-vfs_op_init()
-{
-	int i;
-
-	for (vfs_opv_numops = 0, i = 0; vfs_op_descs[i]; i++) {
-		vfs_op_descs[i].vdesc_offset = vfs_opv_numops;
-		vfs_opv_numops++;
-	}
-}
-
-/*
- * Initialize the vnode structures and initialize each file system type.
- */
-void
-vfsinit()
-{
-	struct vfsconf *vfsp;
-	int maxtypenum;
-
-	/*
-	 * Initialize the vnode table
-	 */
-	vntblinit();
-
-	/*
-	 * Initialize the vnode name cache
-	 */
-	nchinit();
-
-	/*
-	 * Initialize filesystem table
-	 */
-	vfsconf_fs_init();
-
-	/*
-	 * Initialize each file system type.
-	 */
-	vattr_null(&va_null);
-	maxtypenum = 0;
-	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
-		if (maxtypenum <= vfsp->vfc_typenum) {
-			maxtypenum = vfsp->vfc_typenum + 1;
-		}
-		(*vfsp->vfc_vfsops->vfs_init)(vfsp);
-	}
-	/* next vfc_typenum to be used */
-	maxvfsconf = maxtypenum;
-
-	/*
-	 * Initialize the vnode advisory lock vfs_lockf.c
-	 */
-	lf_init();
 }

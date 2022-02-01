@@ -541,12 +541,12 @@ foundroot:;
 		VOP_UNLOCK(pdp, 0, cnp->cn_proc); /* race to get the inode */
 		cnp->cn_flags |= PDIRUNLOCK;
 		if ((error = deget(pmp, cluster, blkoff, &tdp)) != 0) {
-			if (vn_lock(pdp, LK_EXCLUSIVE | LK_RETRY) == 0)
+			if (vn_lock(pdp, LK_EXCLUSIVE | LK_RETRY, cnp->cn_proc) == 0)
 				cnp->cn_flags &= ~PDIRUNLOCK;
 			return (error);
 		}
 		if (lockparent && (flags & ISLASTCN)) {
-			if ((error = vn_lock(pdp, LK_EXCLUSIVE))) {
+			if ((error = vn_lock(pdp, LK_EXCLUSIVE, cnp->cn_proc))) {
 				vput(DETOV(tdp));
 				return (error);
 			}

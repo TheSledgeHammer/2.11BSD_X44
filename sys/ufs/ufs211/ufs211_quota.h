@@ -116,7 +116,7 @@ struct ufs211_dquot {
 
 #if defined(KERNEL) && defined(QUOTA)
 struct	dquot *dquot, *dquotNDQUOT;
-int	ndquot;
+int		ndquot;
 struct	dquot *discquota(), *inoquota(), *dqalloc(), *dqp();
 #endif
 
@@ -160,16 +160,25 @@ struct	ufs211_dqhead {
 	struct	ufs211_dqhead *dqh_back;
 };
 
-#define	QUOTAMAP()	    rmalloc(quotreg, quotdesc)
-#define	QUOTAUNMAP()	rmfree()
-
-ufs211_size_t		quotreg;
-u_short				quotdesc;
-struct	ufs211_dquot **ix_dquot;
+ufs211_size_t			quotreg;
+u_short					quotdesc;
+struct ufs211_dquot 	**ix_dquot;
 
 #define	UFS211_NQHASH		16	/* small power of 2 */
 #define	UFS211_NDQHASH		37	/* 4.3bsd used 51 which isn't even prime */
 #define	UFS211_NQUOTA		40
 #define	UFS211_NDQUOT		150
+#define UFS211_NINODE 		((NPROC + 16 + MAXUSERS) + 22) /* 2.11BSD param.c */
+
+#define	QUOTAMAP()	    bufmap_alloc(quotreg, quotdesc)
+#define	QUOTAUNMAP()	bufmap_free(quotreg) //,quotreg, quotdes
+
+struct BigQ {
+	struct	quota xquota[UFS211_NQUOTA];		/* the quotas themselves */
+	struct	dquot *ixdquot[UFS211_NINODE];		/* 2.11 equiv of i_dquot */
+	struct	dquot xdquot[UFS211_NDQUOT];		/* the dquots themselves */
+	struct	qhash xqhash[UFS211_NQHASH];
+	struct	dqhead xdqhash[UFS211_NDQHASH];
+};
 
 #endif

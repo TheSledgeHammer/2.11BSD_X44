@@ -900,7 +900,7 @@ abortit:
 	}
 
 	/* */
-	if ((error = vn_lock(fvp, LK_EXCLUSIVE)) != 0)
+	if ((error = vn_lock(fvp, LK_EXCLUSIVE, fvp->v_proc)) != 0)
 		goto abortit;
 	dp = VTODE(fdvp);
 	ip = VTODE(fvp);
@@ -1862,6 +1862,7 @@ msdosfs_pathconf(ap)
 #define msdosfs_update 			((int (*) (struct  vop_update_args *))eopnotsupp)
 
 struct vnodeops msdosfs_vnodeops = {
+		.vop_default = vop_default_error,	/* default */
 		.vop_lookup = msdosfs_lookup,		/* lookup */
 		.vop_create = msdosfs_create,		/* create */
 		.vop_mknod = msdosfs_mknod,			/* mknod */

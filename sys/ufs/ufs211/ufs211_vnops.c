@@ -58,6 +58,7 @@
 #define ufs211_reallocblks	((int (*) (struct  vop_reallocblks_args *))eopnotsupp)
 /* Global vfs data structures for ufs211. */
 struct vnodeops ufs211_vnodeops = {
+		.vop_default = vop_default_error,	/* default */
 		.vop_lookup = ufs211_lookup,		/* lookup */
 		.vop_create = ufs211_create,		/* create */
 		.vop_whiteout = ufs211_whiteout,	/* whiteout */
@@ -105,6 +106,7 @@ struct vnodeops ufs211_vnodeops = {
 };
 
 struct vnodeops ufs211_specops = {
+		.vop_default = vop_default_error,	/* default */
 		.vop_lookup = spec_lookup,			/* lookup */
 		.vop_create = spec_create,			/* create */
 		.vop_mknod = spec_mknod,			/* mknod */
@@ -152,6 +154,7 @@ struct vnodeops ufs211_specops = {
 
 #ifdef FIFO
 struct vnodeops ufs211_fifoops = {
+		.vop_default = vop_default_error,	/* default */
 		.vop_lookup = fifo_lookup,			/* lookup */
 		.vop_create = fifo_create,			/* create */
 		.vop_mknod = fifo_mknod,			/* mknod */

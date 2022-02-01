@@ -45,6 +45,7 @@
 /*
  * Prototypes for dead operations on vnodes.
  */
+int dead_default_error(struct vop_generic_args *);
 int	dead_badop(void *);
 int dead_ebadf(void);
 int	dead_lookup(struct vop_lookup_args *);
@@ -95,6 +96,7 @@ int	dead_print(struct vop_print_args *);
  * Global vfs data structures for dead
  */
 struct vnodeops dead_vnodeops = {
+		.vop_default = dead_default_error,/* default */
 		.vop_lookup = dead_lookup,		/* lookup */
 		.vop_create = dead_create,		/* create */
 		.vop_mknod = dead_mknod,		/* mknod */
@@ -327,6 +329,13 @@ dead_print(ap)
 {
 
 	printf("tag VT_NON, dead vnode\n");
+}
+
+int
+dead_default_error(ap)
+	struct vop_generic_args *ap;
+{
+	return (EBADF);
 }
 
 /*

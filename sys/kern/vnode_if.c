@@ -36,7 +36,7 @@
 
 #include <sys/param.h>
 #include <sys/mount.h>
-#include <devel/sys/vnode.h>
+#include <sys/vnode.h>
 
 struct vnodeop_desc vop_default_desc = {
 	0,

@@ -1610,6 +1610,7 @@ union_strategy(ap)
 #define union_bwrite 	((int (*) (struct  vop_bwrite_args *))eopnotsupp)
 
 struct vnodeops union_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = union_lookup,		/* lookup */
 		.vop_create = union_create,		/* create */
 		.vop_mknod = union_mknod,		/* mknod */

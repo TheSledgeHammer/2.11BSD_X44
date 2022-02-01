@@ -255,7 +255,7 @@ msdosfs_mount(mp, path, data, ndp, p)
 			 */
 			if (p->p_ucred->cr_uid != 0) {
 				devvp = pmp->pm_devvp;
-				vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY);
+				vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
 				error = VOP_ACCESS(devvp, VREAD | VWRITE,
 						   p->p_ucred, p);
 				VOP_UNLOCK(devvp, 0, p);
@@ -305,7 +305,7 @@ msdosfs_mount(mp, path, data, ndp, p)
 		accessmode = VREAD;
 		if ((mp->mnt_flag & MNT_RDONLY) == 0)
 			accessmode |= VWRITE;
-		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY);
+		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
 		error = VOP_ACCESS(devvp, accessmode, p->p_ucred, p);
 		VOP_UNLOCK(devvp, 0, p);
 		if (error) {
@@ -702,7 +702,7 @@ msdosfs_mountfs(devvp, mp, p, argp)
 error_exit:;
 	if (bp)
 		brelse(bp);
-	vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY);
+	vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
 	(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD | FWRITE, NOCRED, p);
 	VOP_UNLOCK(devvp, 0, p);
 	if (pmp) {
@@ -762,7 +762,7 @@ msdosfs_unmount(mp, mntflags, p)
 				vp->v_tag, ((u_int*) vp->v_data)[0], ((u_int*) vp->v_data)[1]);
 	}
 #endif
-	vn_lock(pmp->pm_devvp, LK_EXCLUSIVE | LK_RETRY);
+	vn_lock(pmp->pm_devvp, LK_EXCLUSIVE | LK_RETRY, p);
 	error = VOP_CLOSE(pmp->pm_devvp,
 			pmp->pm_flags & MSDOSFSMNT_RONLY ? FREAD : FREAD|FWRITE, NOCRED, p);
 	vput(pmp->pm_devvp);

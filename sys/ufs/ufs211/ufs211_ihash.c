@@ -142,8 +142,8 @@ ufs211_ihashrem(ip)
 	simple_lock(&ufs211_ihash);
 	LIST_REMOVE(ip, i_chain);
 #ifdef DIAGNOSTIC
-	ip->i_chain.le_next = NULL;
-	ip->i_chain.le_prev = NULL;
+	LIST_NEXT(ip, i_chain) = NULL;
+	LIST_PREV(ip, i_chain) = NULL;
 #endif
 	simple_unlock(&ufs211_ihash);
 }

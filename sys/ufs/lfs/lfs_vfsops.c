@@ -408,7 +408,7 @@ lfs_unmount(mp, mntflags, p)
 	fs->lfs_clean = 1;
 	if (error == VFS_SYNC(mp, 1, p->p_ucred, p))
 		return (error);
-	if (fs->lfs_ivnode->v_dirtyblkhd.lh_first)
+	if (LIST_FIRST(fs->lfs_ivnode->v_dirtyblkhd))
 		panic("lfs_unmount: still dirty blocks on ifile vnode\n");
 	vrele(fs->lfs_ivnode);
 	vgone(fs->lfs_ivnode);
@@ -572,7 +572,7 @@ lfs_vget(mp, ino, vpp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, lfs_specops, LFS_FIFOOPS, &vp)) {
+	if (error == ufs_vinit(mp, lfs_specops, lfs_fifoops, &vp)) {
 		vput(vp);
 		*vpp = NULL;
 		return (error);

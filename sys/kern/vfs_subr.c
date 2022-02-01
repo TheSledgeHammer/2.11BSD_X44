@@ -174,7 +174,7 @@ vfs_rootmountalloc(fstypename, devname, mpp)
 	struct vfsconf *vfsp;
 	struct mount *mp;
 
-	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next) {
+	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
 		if (!strcmp(vfsp->vfc_name, fstypename)) {
 			break;
 		}
@@ -216,7 +216,7 @@ vfs_mountroot()
 
 	if (mountroot != NULL)
 		return ((*mountroot)());
-	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next) {
+	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
 		if (vfsp->vfc_mountroot == NULL)
 			continue;
 		if ((error = (*vfsp->vfc_mountroot)()) == 0)
@@ -1346,9 +1346,11 @@ vfs_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	if (namelen < 2)
 		return (ENOTDIR);		/* overloaded */
 	if (name[0] != VFS_GENERIC) {
-		for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
-			if (vfsp->vfc_typenum == name[0])
+		LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
+			if (vfsp->vfc_typenum == name[0]) {
 				break;
+			}
+		}
 		if (vfsp == NULL)
 			return (EOPNOTSUPP);
 		return ((*vfsp->vfc_vfsops->vfs_sysctl)(&name[1], namelen - 1,
@@ -1360,9 +1362,11 @@ vfs_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	case VFS_CONF:
 		if (namelen < 3)
 			return (ENOTDIR);	/* overloaded */
-		for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
-			if (vfsp->vfc_typenum == name[2])
+		LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
+			if (vfsp->vfc_typenum == name[2]) {
 				break;
+			}
+		}
 		if (vfsp == NULL)
 			return (EOPNOTSUPP);
 		return (sysctl_rdstruct(oldp, oldlenp, newp, vfsp,

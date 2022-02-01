@@ -61,6 +61,7 @@
 
 /* Global vfs data structures for ufs/ffs. */
 struct vnodeops ffs_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = ufs_lookup,		/* lookup */
 		.vop_create = ufs_create,		/* create */
 		.vop_mknod = ufs_mknod,			/* mknod */
@@ -107,6 +108,7 @@ struct vnodeops ffs_vnodeops = {
 };
 
 struct vnodeops ffs_specops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = spec_lookup,		/* lookup */
 		.vop_create = spec_create,		/* create */
 		.vop_mknod = spec_mknod,		/* mknod */
@@ -154,6 +156,7 @@ struct vnodeops ffs_specops = {
 
 #ifdef FIFO
 struct vnodeops ffs_fifoops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = fifo_lookup,		/* lookup */
 		.vop_create = fifo_create,		/* create */
 		.vop_mknod = fifo_mknod,		/* mknod */
@@ -232,8 +235,8 @@ ffs_fsync(ap)
 	 */
 loop:
 	s = splbio();
-	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = nbp) {
-		nbp = bp->b_vnbufs.le_next;
+	for (bp = LIST_FIRST(vp->v_dirtyblkhd); bp; bp = nbp) {
+		nbp = LIST_NEXT(bp, b_vnbufs);
 		if ((bp->b_flags & B_BUSY))
 			continue;
 		if ((bp->b_flags & B_DELWRI) == 0)

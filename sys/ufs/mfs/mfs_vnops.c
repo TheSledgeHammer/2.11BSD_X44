@@ -53,6 +53,7 @@
 
 /* Global vfs data structures for mfs. */
 struct vnodeops mfs_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = mfs_lookup,		/* lookup */
 		.vop_create = mfs_create,		/* create */
 		.vop_mknod = mfs_mknod,			/* mknod */

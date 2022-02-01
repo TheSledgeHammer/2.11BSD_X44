@@ -62,6 +62,7 @@
 
 /* Global vfs data structures for lfs. */
 struct vnodeops lfs_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = ufs_lookup,		/* lookup */
 		.vop_create = ufs_create,		/* create */
 		.vop_mknod = ufs_mknod,			/* mknod */
@@ -107,6 +108,7 @@ struct vnodeops lfs_vnodeops = {
 };
 
 struct vnodeops lfs_specops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = spec_lookup,		/* lookup */
 		.vop_create = spec_create,		/* create */
 		.vop_mknod = spec_mknod,		/* mknod */
@@ -153,6 +155,7 @@ struct vnodeops lfs_specops = {
 
 #ifdef FIFO
 struct vnodeops lfs_fifoops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = fifo_lookup,		/* lookup */
 		.vop_create = fifo_create,		/* create */
 		.vop_mknod = fifo_mknod,		/* mknod */

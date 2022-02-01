@@ -68,6 +68,14 @@ struct vfsconf;
 struct vnode;
 
 __BEGIN_DECLS
+/* ufs211 bufmap */
+void ufs211_buffmap_init(void);
+void ufs211_mapin(struct buf *);		 	/* allocate to the buffer (* buffer only) */
+void ufs211_mapout(struct buf *); 			/* free from the buffer (* buffer only) */
+static void *bufmap_alloc(void *, long);	/* allocate to dedicated ufs211 space (generic) */
+static void *bufmap_free(void *);			/* free from the dedicated ufs211 space (generic) */
+
+/* ufs211 */
 int	ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
 int ufs211_bmap1(struct ufs211_inode *, daddr_t, int, int);
 void ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
@@ -80,9 +88,6 @@ int ufs211_dirempty(struct ufs211_inode *, ino_t);
 int ufs211_checkpath(struct ufs211_inode *, struct ufs211_inode *);
 void blkflush(struct vnode *, daddr_t);
 int ufs211_init(struct vfsconf *);
-void ufs211_buffmap_init(void);
-void ufs211_mapin(struct buf *);
-void ufs211_mapout(struct buf *);
 
 int ufs211_lookup(struct vop_lookup_args *);
 int ufs211_create(struct vop_create_args *);

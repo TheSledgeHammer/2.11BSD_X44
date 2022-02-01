@@ -905,6 +905,7 @@ fdesc_badop(v)
  * Global vfs data structures for fdesc
  */
 struct vnodeops fdesc_vnodeops = {
+		.vop_default = vop_default_error,/* default */
 		.vop_lookup = fdesc_lookup,		/* lookup */
 		.vop_create = fdesc_create,		/* create */
 		.vop_mknod = fdesc_mknod,		/* mknod */

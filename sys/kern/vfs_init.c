@@ -45,6 +45,39 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 
+#if 0
+#define DODEBUG(A) A
+#else
+#define DODEBUG(A)
+#endif
+
+extern struct vnodeop_desc *vfs_op_descs[]; /* and the operations they perform */
+int vfs_opv_numops;
+
+/*
+ * Initialize known vnode operations vectors.
+ */
+void
+vfs_op_init()
+{
+	int i;
+
+	DODEBUG(printf("Vnode_interface_init.\n"));
+
+	/*
+	 * Figure out how many ops there are by counting the table,
+	 * and assign each its offset.
+	 */
+	for (vfs_opv_numops = 0, i = 0; vfs_op_descs[i]; i++) {
+		vfs_op_descs[i].vdesc_offset = vfs_opv_numops;
+		vfs_opv_numops++;
+	}
+	DODEBUG(printf ("vfs_opv_numops=%d\n", vfs_opv_numops));
+}
+
+/*
+ * Routines having to do with the management of the vnode table.
+ */
 struct vattr va_null;
 
 /*
@@ -60,26 +93,24 @@ vfsinit()
 	 * Initialize the vnode table
 	 */
 	vntblinit();
-
 	/*
 	 * Initialize the vnode name cache
 	 */
 	nchinit();
-
 	/*
-	 * Initialize the vnode operation vectors.
+	 * Set up the filesystem operations for vnodes.
 	 */
-	//vop_init();
-
+	vfsconf_fs_init();
+	/*
+	 * Build vnode operation vectors.
+	 */
+	vfs_op_init();
 	/*
 	 * Initialize each file system type.
 	 */
 	vattr_null(&va_null);
 	maxtypenum = 0;
-	for (vfsp = vfsconf, i = 1; i <= maxvfsconf; i++, vfsp++) {
-		if (i < maxvfsconf) {
-			vfsp->vfc_next = vfsp + 1;
-		}
+	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
 		if (maxtypenum <= vfsp->vfc_typenum) {
 			maxtypenum = vfsp->vfc_typenum + 1;
 		}
@@ -87,7 +118,6 @@ vfsinit()
 	}
 	/* next vfc_typenum to be used */
 	maxvfsconf = maxtypenum;
-
 	/*
 	 * Initialize the vnode advisory lock vfs_lockf.c
 	 */

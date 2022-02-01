@@ -170,7 +170,7 @@ blkflush(vp, blkno)
 	blkno = fsbtodb(blkno);
 loop:
 	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
-		if (ep->b_blkno != blkno || ep->b_vp != vp || (ep->b_flags&B_INVAL))
+		if (ep->b_blkno != blkno || ep->b_vp != vp || (ep->b_flags & B_INVAL))
 			continue;
 		s = splbio();
 		if (ep->b_flags&B_BUSY) {

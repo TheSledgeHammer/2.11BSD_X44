@@ -91,8 +91,8 @@ mkioconf(void)
 	}
 	v = emithdr(fp);
 	if (v != 0 || emitexterns(fp) || emitloc(fp) || emitpv(fp) ||
-	    emitcfdata(fp) || emitroots(fp) || emitpseudo(fp) ||
-	    emitvfslist(fp) /* || emitname2blk(fp) */) {
+	    emitcfdata(fp) || emitroots(fp) || emitpseudo(fp)  /*||
+	    emitvfslist(fp) || emitname2blk(fp) */) {
 		if (v >= 0)
 			(void)fprintf(stderr,
 			    "config: error writing ioconf.c: %s\n",
