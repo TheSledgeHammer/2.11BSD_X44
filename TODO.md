@@ -20,6 +20,10 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/ (User & OS Libraries):
 ## lib:
+- libc:
+	- locale:
+		- update: collate, monetary, messages & numeric
+		- add: time
 
 ## libexec:
 

@@ -63,7 +63,6 @@ static const struct mntopt mopts[] = {
 	MOPT_ASYNC,
 	MOPT_SYNC,
 	MOPT_UPDATE,
-	MOPT_GETARGS,
 	{ NULL }
 };
 
@@ -195,13 +194,6 @@ mount_msdos(argc, argv)
 
 	if (mount(MOUNT_MSDOS, dir, mntflags, &args) < 0)
 		err(1, "%s on %s", dev, dir);
-
-	if (mntflags & MNT_GETARGS) {
-		char buf[1024];
-		(void)snprintb(buf, sizeof(buf), MSDOSFSMNT_BITS, args.flags);
-		printf("uid=%d, gid=%d, mask=0%o, dirmask=0%o, flags=%s\n",
-		    args.uid, args.gid, args.mask, args.dirmask, buf);
-	}
 
 	exit (0);
 }

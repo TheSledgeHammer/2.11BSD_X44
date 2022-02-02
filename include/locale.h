@@ -67,8 +67,9 @@ struct lconv {
 #define	LC_MONETARY	3
 #define	LC_NUMERIC	4
 #define	LC_TIME		5
+#define	LC_MESSAGES	6
 
-#define	_LC_LAST	6		/* marks end */
+#define	_LC_LAST	7		/* marks end */
 
 #include <sys/cdefs.h>
 
@@ -90,14 +91,16 @@ struct _locale {
 	_locale_part_t 					part_impl[_LC_LAST];
 };
 
+extern char *PathLocale;
+
 __BEGIN_DECLS
 struct lconv	*localeconv (void);
 #ifdef __SETLOCALE_SOURCE__
-char			*setlocale (int, const char *);
-char			*__setlocale_mb_len_max_32 (int, const char *);
-char			*__setlocale (int, const char *);
+char			*setlocale(int, const char *);
+char			*__setlocale_mb_len_max_32(int, const char *);
+char			*__setlocale(int, const char *);
 #else /* !__SETLOCALE_SOURCE__ */
-char			*setlocale (int, const char *);
+char			*setlocale(int, const char *);
 #endif /* !__SETLOCALE_SOURCE__ */
 __END_DECLS
 

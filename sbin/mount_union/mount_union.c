@@ -62,7 +62,6 @@ __RCSID("$NetBSD: mount_union.c,v 1.12 2003/08/07 10:04:33 agc Exp $");
 
 static const struct mntopt mopts[] = {
 	MOPT_STDOPTS,
-	MOPT_GETARGS,
 	{ NULL }
 };
 
@@ -127,11 +126,6 @@ mount_union(argc, argv)
 
 	if (mount(MOUNT_UNION, argv[1], mntflags, &args))
 		err(1, "%s on %s", target, argv[1]);
-	if (mntflags & MNT_GETARGS) {
-		char buf[1024];
-		(void)snprintb(buf, sizeof(buf), UNMNT_BITS, args.mntflags);
-		printf("flags=%s\n", buf);
-	}
 	exit(0);
 }
 

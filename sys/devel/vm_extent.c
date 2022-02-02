@@ -66,11 +66,6 @@ vm_map_startup1()
 	struct vmspace *vm = (struct vmspace *)vm_exalloc(vmspace_extent);
 }
 
-vm_map_init()
-{
-
-}
-
 LIST_HEAD(exlist, vm_extent) exlist = LIST_HEAD_INITIALIZER(exlist);
 
 vm_extent_t
@@ -112,7 +107,7 @@ vm_exbootinit(ex, name, start, end, mtype, storage, storagesize, flags)
 	ex = vm_exinit(name, start, end, mtype, storage, storagesize, flags);
 
 	if (vm_exalloc_region(ex->ve_extent, start, (end - start), flags) != 0) {
-		vm_exfree(ex, start, ex->ve_size, flags);
+		vm_exfree(ex, start, (end - start), flags);
 	}
 }
 
@@ -141,17 +136,15 @@ vm_exalloc(ex)
 }
 
 vm_extent_t
-vm_exget(name, start, end)
-	char 		*name;
+vm_exget(start, end)
 	u_long 		start, end;
 {
 	register vm_extent_t ex;
 	register struct extent *ext;
 
 	vm_extent_lock(ex);
-	for(ex = LIST_FIRST(&exlist); ex != NULL; ex = LIST_NEXT(ex, ve_exnode)) {
-		ext = ex->ve_extent;
-		if((ext->ex_name == name) && (ext->ex_start == start) && (ext->ex_end == end)) {
+	LIST_FOREACH(ex, &exlist, ve_exnode) {
+		if((ext->ex_start == start) && (ext->ex_end == end)) {
 			vm_extent_unlock(ex);
 			return (ex);
 		}
@@ -174,9 +167,8 @@ vm_exalloc_region(ex, start, size, flags)
 
 	ext = ex->ve_extent;
 	vm_extent_lock(ex);
+
 	if (extent_alloc_region(ext, start, size, flags)) {
-		ex->ve_size = size;
-		LIST_INSERT_HEAD(&exlist, ex, ve_exnode);
 		vm_extent_unlock(ex);
 		return (0);
 	}
@@ -201,9 +193,7 @@ vm_exalloc_subregion(ex, size, alignment, boundary, flags, result)
 	ext = ex->ve_extent;
 	vm_extent_lock(ex);
 	if(extent_alloc(ex, size, alignment, boundary, flags, result)) {
-		ex->ve_subsize = size;
 		ex->ve_result = result;
-		LIST_INSERT_HEAD(&exlist, ex, ve_exnode);
 		vm_extent_unlock(ex);
 		return (0);
 	}

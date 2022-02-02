@@ -69,11 +69,11 @@ struct radix_node {
 };
 
 #define rn_dupedkey rn_u.rn_leaf.rn_Dupedkey
-#define rn_key rn_u.rn_leaf.rn_Key
-#define rn_mask rn_u.rn_leaf.rn_Mask
-#define rn_off rn_u.rn_node.rn_Off
-#define rn_l rn_u.rn_node.rn_L
-#define rn_r rn_u.rn_node.rn_R
+#define rn_key 		rn_u.rn_leaf.rn_Key
+#define rn_mask 	rn_u.rn_leaf.rn_Mask
+#define rn_off 		rn_u.rn_node.rn_Off
+#define rn_l 		rn_u.rn_node.rn_L
+#define rn_r 		rn_u.rn_node.rn_R
 
 /*
  * Annotations to tree concerning potential routes applying to subtrees.
@@ -94,12 +94,12 @@ extern struct radix_mask {
 #define rm_mask rm_rmu.rmu_mask
 #define rm_leaf rm_rmu.rmu_leaf			/* extra field would make 32 bytes */
 
-#define MKGet(m) {\
-	if (rn_mkfreelist) {\
-		m = rn_mkfreelist; \
-		rn_mkfreelist = (m)->rm_mklist; \
-	} else \
-		R_Malloc(m, struct radix_mask *, sizeof (*(m))); }\
+#define MKGet(m) {											\
+	if (rn_mkfreelist) {									\
+		m = rn_mkfreelist; 									\
+		rn_mkfreelist = (m)->rm_mklist; 					\
+	} else 													\
+		R_Malloc(m, struct radix_mask *, sizeof (*(m))); }	\
 
 #define MKFree(m) { (m)->rm_mklist = rn_mkfreelist; rn_mkfreelist = (m);}
 
@@ -136,11 +136,11 @@ struct radix_node_head {
 #define R_Malloc(p, t, n) (p = (t) malloc((unsigned int)(n)))
 #define Free(p) free((char *)p);
 #else
-#define Bcmp(a, b, n) bcmp(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
-#define Bcopy(a, b, n) bcopy(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
-#define Bzero(p, n) bzero((caddr_t)(p), (unsigned)(n));
+#define Bcmp(a, b, n) 	bcmp(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
+#define Bcopy(a, b, n) 	bcopy(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
+#define Bzero(p, n) 	bzero((caddr_t)(p), (unsigned)(n));
 #define R_Malloc(p, t, n) (p = (t) malloc((unsigned long)(n), M_RTABLE, M_DONTWAIT))
-#define Free(p) free((caddr_t)p, M_RTABLE);
+#define Free(p) 					free((caddr_t)p, M_RTABLE);
 #endif /*KERNEL*/
 
 void rn_init (void);

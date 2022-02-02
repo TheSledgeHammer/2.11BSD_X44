@@ -41,6 +41,7 @@
 #include <sys/namei.h>
 #include <sys/buf.h>
 #include <sys/null.h>
+#include <sys/poll.h>
 
 /*
  * Prototypes for dead operations on vnodes.
@@ -110,6 +111,7 @@ struct vnodeops dead_vnodeops = {
 		.vop_lease = dead_lease_check,	/* lease */
 		.vop_ioctl = dead_ioctl,		/* ioctl */
 		.vop_select = dead_select,		/* select */
+		.vop_poll = dead_poll,			/* poll */
 		.vop_revoke = dead_revoke,		/* revoke */
 		.vop_mmap = dead_mmap,			/* mmap */
 		.vop_fsync = dead_fsync,		/* fsync */
@@ -254,6 +256,21 @@ dead_select(ap)
 	 * Let the user find out that the descriptor is gone.
 	 */
 	return (1);
+}
+
+int
+dead_poll(ap)
+	struct vop_poll_args *ap;
+{
+
+	if (ap->a_events & ~POLLSTANDARD)
+		return (POLLNVAL);
+
+	/*
+	 * Let the user find out that the descriptor is gone.
+	 */
+	return (POLLHUP | ((POLLIN | POLLRDNORM) & ap->a_events));
+
 }
 
 /*

@@ -17,11 +17,11 @@
 #if defined(KERNEL)
 int	freemem = cnt.v_free_count;	/* remaining clicks of free memory */
 
-int	avefree;			/* moving average of remaining free clicks */
-int	avefree30;			/* 30 sec (avefree is 5 sec) moving average */
+int	avefree;					/* moving average of remaining free clicks */
+int	avefree30;					/* 30 sec (avefree is 5 sec) moving average */
 
 /* writable copies of tunables */
-int	maxslp;				/* max sleep time before very swappable */
+int	maxslp;						/* max sleep time before very swappable */
 #endif
 
 struct forkstat {

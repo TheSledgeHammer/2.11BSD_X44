@@ -381,7 +381,8 @@ resolve:
 	return(a[2]);
 }
 
-/* 2.11BSD kmem rmap fail-safe initialization:
+/*
+ * 2.11BSD kmem rmap fail-safe initialization:
  * Allocates coremap & swapmap in the event one or both were not allocated properly during startup.
  */
 void

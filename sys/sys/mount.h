@@ -87,7 +87,7 @@ struct	mount {
 	int						mnt_flag;					/* flags */
 	int						mnt_maxsymlinklen;			/* max size of short symlink */
 	struct statfs			mnt_stat;					/* cache of filesystem stats */
-	qaddr_t					mnt_data;					/* private data */
+	void 					*mnt_data;					/* private data */
 
 	dev_t					mnt_dev;					/* device mounted */
 	memaddr					mnt_extern;					/* click address of mount table extension */
@@ -184,6 +184,7 @@ struct	xmount {
 */
 #define	MNT_WAIT			1
 #define	MNT_NOWAIT			2
+#define MNT_LAZY			3
 
 /*
  * Generic file handle
@@ -230,7 +231,6 @@ struct vfsconf {
 #ifdef _KERNEL
 
 extern int 					maxvfsconf;		/* highest defined filesystem type */
-//extern struct vfsconf 		*vfsconf;		/* head of list of filesystem types */
 extern struct vfs_list		vfsconflist;	/* head of list of filesystem types */
 
 /*
@@ -291,7 +291,7 @@ struct netexport {
  */
 int				dounmount(struct mount *, int, struct proc *);
 struct	mount 	*vfs_getvfs(fsid_t *);														/* return vfs given fsid */
-int				vflush(struct mount *mp, struct vnode *skipvp, int flags);
+int				vflush(struct mount *, struct vnode *, int);
 int				vfs_export(struct mount *, struct netexport *, struct export_args *); 		/* process mount export info */
 struct	netcred *vfs_export_lookup(struct mount *, struct netexport *, struct mbuf *); 		/* lookup host in fs export list */
 int				vfs_mountedon(struct vnode *);    											/* is a vfs mounted on vp */
@@ -300,7 +300,7 @@ void			vfs_unbusy(struct mount *, struct proc *);       							/* mark a vfs not
 int				vfs_rootmountalloc(char *, char *, struct mount **);
 int				vfs_mountroot(void);
 void			vfs_getnewfsid(struct mount *);
-void			vfs_timestamp(struct timespec *tsp);
+void			vfs_timestamp(struct timespec *);
 void			vfs_unmountall(void);
 
 /* vfsconf */

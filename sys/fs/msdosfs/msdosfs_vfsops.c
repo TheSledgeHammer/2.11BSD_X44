@@ -63,6 +63,7 @@ __KERNEL_RCSID(0, "$NetBSD: msdosfs_vfsops.c,v 1.13.2.2 2004/06/27 13:53:13 he E
 #include <sys/ioctl.h>
 #include <sys/malloc.h>
 #include <sys/dirent.h>
+#include <sys/conf.h>
 
 #include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
 
@@ -73,19 +74,19 @@ __KERNEL_RCSID(0, "$NetBSD: msdosfs_vfsops.c,v 1.13.2.2 2004/06/27 13:53:13 he E
 #include <fs/msdosfs/msdosfsmount.h>
 #include <fs/msdosfs/fat.h>
 
-int msdosfs_mount (struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
-int msdosfs_start (struct mount *, int, struct proc *);
-int msdosfs_unmount (struct mount *, int, struct proc *);
-int msdosfs_root (struct mount *, struct vnode **);
-int msdosfs_quotactl (struct mount *, int, uid_t, caddr_t, struct proc *);
-int msdosfs_statfs (struct mount *, struct statfs *, struct proc *);
-int msdosfs_sync (struct mount *, int, struct ucred *, struct proc *);
-int msdosfs_vget (struct mount *, ino_t, struct vnode **);
-int msdosfs_fhtovp (struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
-int msdosfs_vptofh (struct vnode *, struct fid *);
-int msdosfs_mountfs (struct vnode *, struct mount *, struct proc *, struct msdosfs_args *);
+int msdosfs_mount(struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
+int msdosfs_start(struct mount *, int, struct proc *);
+int msdosfs_unmount(struct mount *, int, struct proc *);
+int msdosfs_root(struct mount *, struct vnode **);
+int msdosfs_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
+int msdosfs_statfs(struct mount *, struct statfs *, struct proc *);
+int msdosfs_sync(struct mount *, int, struct ucred *, struct proc *);
+int msdosfs_vget(struct mount *, ino_t, struct vnode **);
+int msdosfs_fhtovp(struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
+int msdosfs_vptofh(struct vnode *, struct fid *);
+int msdosfs_mountfs(struct vnode *, struct mount *, struct proc *, struct msdosfs_args *);
 
-static int update_mp (struct mount *, struct msdosfs_args *);
+static int update_mp(struct mount *, struct msdosfs_args *);
 
 static int
 update_mp(mp, argp)
@@ -127,7 +128,7 @@ update_mp(mp, argp)
 			vput(rootvp);
 		}
 	}
-	return 0;
+	return (0);
 }
 
 int
@@ -201,7 +202,7 @@ msdosfs_mount(mp, path, data, ndp, p)
 	int error, flags;
 	mode_t accessmode;
 
-	if (mp->mnt_flag & MNT_GETARGS) {
+	if (mp->mnt_flag & MNT_UPDATE) {
 		pmp = VFSTOMSDOSFS(mp);
 		if (pmp == NULL)
 			return EIO;
@@ -213,7 +214,6 @@ msdosfs_mount(mp, path, data, ndp, p)
 		args.version = MSDOSFSMNT_VERSION;
 		args.dirmask = pmp->pm_dirmask;
 		args.gmtoff = pmp->pm_gmtoff;
-		vfs_showexport(mp, &args.export, &pmp->pm_export);
 		return copyout(&args, data, sizeof(args));
 	}
 
@@ -679,9 +679,9 @@ msdosfs_mountfs(devvp, mp, p, argp)
 		pmp->pm_flags |= MSDOSFSMNT_RONLY;
 	else
 		pmp->pm_fmod = 1;
+
 	mp->mnt_data = pmp;
-	mp->mnt_stat.f_fsid.val[0] = (long) dev;
-	mp->mnt_stat.f_fsid.val[1] = makefstype(MOUNT_MSDOS);
+	vfs_getnewfsid(mp);
 	mp->mnt_flag |= MNT_LOCAL;
 	//mp->mnt_dev_bshift = pmp->pm_bnshift;
 	//mp->mnt_fs_bshift = pmp->pm_cnshift;
@@ -883,14 +883,14 @@ loop:
 			continue;
 		}
 		simple_unlock(&mntvnode_slock);
-		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK);
+		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK, p);
 		if (error) {
 			simple_lock(&mntvnode_slock);
 			if (error == ENOENT)
 				goto loop;
 			continue;
 		}
-		if ((error = VOP_FSYNC(vp, cred, waitfor == MNT_WAIT ? FSYNC_WAIT : 0, 0, p)) != 0)
+		if ((error = VOP_FSYNC(vp, cred, (waitfor == MNT_WAIT ? : 0), 0, p)) != 0)
 			allerror = error;
 		vput(vp);
 		simple_lock(&mntvnode_slock);
@@ -898,9 +898,10 @@ loop:
 	/*
 	 * Force stale file system control information to be flushed.
 	 */
-	if ((error = VOP_FSYNC(pmp->pm_devvp, cred, waitfor == MNT_WAIT ? FSYNC_WAIT : 0, 0, p)) != 0)
+	if ((error = VOP_FSYNC(pmp->pm_devvp, cred, (waitfor == MNT_WAIT ? : 0), 0, p)) != 0)
 		allerror = error;
 #ifdef QUOTA
+
 #endif
 	return (allerror);
 }

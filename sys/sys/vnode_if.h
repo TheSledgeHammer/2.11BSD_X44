@@ -521,7 +521,7 @@ int	vop_poll(struct vnode *, int, int, struct proc *);
 int vop_kqfilter(struct vnode *, struct knote *);
 int vop_revoke(struct vnode *, int);
 int	vop_mmap(struct vnode *, int, struct ucred *, struct proc *);
-int	vop_fsync(struct vnode *, int, struct ucred *, int, int, struct proc *);
+int	vop_fsync(struct vnode *, struct ucred *, int, int, struct proc *);
 int	vop_seek(struct vnode *, off_t, off_t, struct ucred *);
 int	vop_remove(struct vnode *, struct vnode *, struct componentname *);
 int	vop_link(struct vnode *, struct vnode *, struct componentname *);

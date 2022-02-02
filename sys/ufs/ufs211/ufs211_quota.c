@@ -12,6 +12,7 @@
  * Routines used in checking limits on file system usage.
  */
 
+#include <sys/cdefs.h>
 #include <sys/errno.h>
 #include <sys/user.h>
 #include <sys/param.h>

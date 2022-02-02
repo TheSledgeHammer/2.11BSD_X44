@@ -32,9 +32,7 @@
 struct vm_extent {
 	LIST_ENTRY(vm_extent) 	ve_exnode;		/* extent entry */
 	struct extent 			*ve_extent;
-	u_long 					ve_size;		/* extent region */
-	u_long 					ve_subsize;		/* extent subregion */
-	u_long 					*ve_result;
+	u_long 					*ve_result;		/* extent result */
 	struct lock_object		*ve_lock;
 };
 typedef struct vm_extent	*vm_extent_t;

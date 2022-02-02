@@ -230,8 +230,9 @@ msdosfs_access(ap)
 		case VDIR:
 		case VLNK:
 		case VREG:
-			if (vp->v_mount->mnt_flag & MNT_RDONLY)
+			if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 				return (EROFS);
+			}
 		default:
 			break;
 		}
@@ -302,8 +303,14 @@ msdosfs_getattr(ap)
 		vap->va_ctime = vap->va_mtime;
 	}
 	vap->va_flags = 0;
-	if ((dep->de_Attributes & ATTR_ARCHIVE) == 0)
-		vap->va_mode |= S_ARCH1;
+	if (dep->de_Attributes & ATTR_ARCHIVE)
+		vap->va_flags |= UF_ARCHIVE;
+	if (dep->de_Attributes & ATTR_HIDDEN)
+		vap->va_flags |= UF_HIDDEN;
+	if (dep->de_Attributes & ATTR_READONLY)
+		vap->va_flags |= UF_READONLY;
+	if (dep->de_Attributes & ATTR_SYSTEM)
+		vap->va_flags |= UF_SYSTEM;
 	vap->va_gen = 0;
 	vap->va_blocksize = pmp->pm_bpcluster;
 	vap->va_bytes = (dep->de_FileSize + pmp->pm_crbomask) & ~pmp->pm_crbomask;
@@ -1856,7 +1863,7 @@ msdosfs_pathconf(ap)
 #define	msdosfs_lease_check 	((int (*) (struct  vop_lease_args *))nullop)
 #define	msdosfs_revoke 			((int (*) (struct  vop_revoke_args *))vop_norevoke)
 #define msdosfs_blkatoff 		((int (*) (struct  vop_blkatoff_args *))eopnotsupp)
-#define msdosfs_vfree 			((int (*) (struct  vop_free_args *))eopnotsupp)
+#define msdosfs_vfree 			((int (*) (struct  vop_vfree_args *))eopnotsupp)
 #define msdosfs_valloc 			((int (*) (struct  vop_valloc_args *))eopnotsupp)
 #define msdosfs_truncate 		((int (*) (struct  vop_truncate_args *))eopnotsupp)
 #define msdosfs_update 			((int (*) (struct  vop_update_args *))eopnotsupp)
