@@ -1802,8 +1802,7 @@ msdosfs_advlock(ap)
 {
 	register struct denode *dep = VTODE(ap->a_vp);
 
-	return (lf_advlock(&dep->de_lockf, dep->de_FileSize, ap->a_id, ap->a_op,
-	    ap->a_fl, ap->a_flags));
+	return (lf_advlock(ap, &dep->de_lockf, dep->de_FileSize);
 }
 
 int
