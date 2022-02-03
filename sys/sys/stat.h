@@ -34,31 +34,31 @@ struct ostat {
 #endif /* !_POSIX_SOURCE */
 
 struct stat {
-	dev_t				st_dev;			/* inode's device */
-	ino_t				st_ino;			/* inode's number */
-	mode_t	 			st_mode;		/* inode protection mode */
-	nlink_t				st_nlink;		/* number of hard links */
-	uid_t				st_uid;			/* user ID of the file's owner */
-	gid_t				st_gid;			/* group ID of the file's group */
-	dev_t				st_rdev;		/* device type */
-	off_t				st_size;		/* file size, in bytes */
+	dev_t			st_dev;			/* inode's device */
+	ino_t			st_ino;			/* inode's number */
+	mode_t	 		st_mode;		/* inode protection mode */
+	nlink_t			st_nlink;		/* number of hard links */
+	uid_t			st_uid;			/* user ID of the file's owner */
+	gid_t			st_gid;			/* group ID of the file's group */
+	dev_t			st_rdev;		/* device type */
+	off_t			st_size;		/* file size, in bytes */
 	struct	timespec	st_atime;		/* time of last access */
 	struct	timespec	st_mtime;		/* time of last data modification */
 	struct	timespec 	st_ctime;		/* time of last file status change */
-	struct	timespec  	st_birthtime;	/* time of creation */
+	struct	timespec  	st_birthtime;		/* time of creation */
 	unsigned long		st_blksize;		/* optimal blocksize for I/O */
-	quad_t				st_blocks;		/* blocks allocated for file */
+	quad_t			st_blocks;		/* blocks allocated for file */
 	unsigned long		st_flags;		/* user defined flags for file */
 	unsigned long		st_gen;			/* file generation number */
-	int					st_spare1;
-	int					st_spare2;
-	long				st_spare3;
-	quad_t				st_spare4[3];
+	int			st_spare1;
+	int			st_spare2;
+	long			st_spare3;
+	quad_t			st_spare4[3];
 };
 
-#define st_atim 		st_atime.tv_sec
-#define st_mtim 		st_mtime.tv_sec
-#define st_ctim 		st_ctime.tv_sec
+#define st_atim 	st_atime.tv_sec
+#define st_mtim 	st_mtime.tv_sec
+#define st_ctim 	st_ctime.tv_sec
 
 #define st_atimensec	st_atime.tv_nsec
 #define st_mtimensec	st_mtime.tv_nsec
@@ -79,6 +79,7 @@ struct stat {
 #define	S_IREAD	 0000400	/* read permission, owner */
 #define	S_IWRITE 0000200	/* write permission, owner */
 #define	S_IEXEC	 0000100	/* execute/search permission, owner */
+#define	S_ISTXT	 0010000	/* sticky bit */
 
 /*
  * Definitions of flags in mode that are 4.4 compatible.
@@ -128,7 +129,7 @@ struct stat {
  */
 #define	UF_SETTABLE		0x00ff		/* mask of owner changeable flags */
 #define	UF_NODUMP		0x0001		/* do not dump file */
-#define	UF_IMMUTABLE	0x0002		/* file may not be changed */
+#define	UF_IMMUTABLE		0x0002		/* file may not be changed */
 #define	UF_APPEND		0x0004		/* writes to file may only append */
 #define UF_OPAQUE		0x0008		/* directory is opaque wrt. union */
 
@@ -138,6 +139,8 @@ struct stat {
 #define	UF_REPARSE		0x0400		/* Windows reparse point file bit */
 #define	UF_ARCHIVE		0x0800		/* file needs to be archived */
 #define	UF_READONLY		0x1000		/* Windows readonly file bit */
+/* This is the same as the MacOS X definition of UF_HIDDEN. */
+#define	UF_HIDDEN		0x8000		/* file is hidden */
 
 /*
  * Super-user changeable flags.
