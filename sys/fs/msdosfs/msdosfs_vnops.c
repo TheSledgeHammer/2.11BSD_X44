@@ -1778,7 +1778,7 @@ msdosfs_strategy(ap)
 	 */
 	vp = dep->de_devvp;
 	bp->b_dev = vp->v_rdev;
-	VOCALL(vp->v_op, vop_strategy, ap);
+	VOP_STRATEGY(bp);
 	return (0);
 }
 
