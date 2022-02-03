@@ -1423,7 +1423,7 @@ msdosfs_readdir(ap)
 	struct direntry *dentp;
 	struct dirent dirbuf;
 	struct uio *uio = ap->a_uio;
-	off_t *cookies = NULL;
+	u_long *cookies = NULL;
 	int ncookies = 0, nc = 0;
 	off_t offset, off;
 	int chksum = -1;
@@ -1501,7 +1501,7 @@ msdosfs_readdir(ap)
 					strlcpy(dirbuf.d_name, "..", sizeof(dirbuf.d_name));
 					break;
 				}
-				dirbuf.d_reclen = DIRENT_SIZE(&dirbuf);
+				dirbuf.d_reclen = DIRSIZ(&dirbuf);
 				if (uio->uio_resid < dirbuf.d_reclen)
 					goto out;
 				error = uiomove((caddr_t) & dirbuf, dirbuf.d_reclen, uio);
@@ -1611,7 +1611,7 @@ msdosfs_readdir(ap)
 			else
 				dirbuf.d_name[dirbuf.d_namlen] = 0;
 			chksum = -1;
-			dirbuf.d_reclen = DIRENT_SIZE(&dirbuf);
+			dirbuf.d_reclen = DIRSIZ(&dirbuf);
 			if (uio->uio_resid < dirbuf.d_reclen) {
 				brelse(bp);
 				goto out;
@@ -1635,7 +1635,7 @@ msdosfs_readdir(ap)
 	}
 
 out:
- uio->uio_offset = uio_off;
+ uio->uio_offset = off;
 	uio->uio_resid += lost;
 	if (dep->de_FileSize - (offset - bias) <= 0)
 		*ap->a_eofflag = 1;
