@@ -1621,7 +1621,7 @@ msdosfs_readdir(ap)
 				brelse(bp);
 				goto out;
 			}
-			uio_off = offset + sizeof(struct direntry);
+			off = offset + sizeof(struct direntry);
 			if (cookies) {
 				*cookies++ = offset + sizeof(struct direntry);
 				ncookies++;
