@@ -1729,9 +1729,6 @@ msdosfs_bmap(ap)
 		 */
 		*ap->a_runp = 0;
 	}
-	if (ap->a_runb) {
-		*ap->a_runb = 0;
-	}
 
 	return (pcbmap(dep, de_bn2cn(pmp, ap->a_bn), ap->a_bnp, 0, 0));
 }
