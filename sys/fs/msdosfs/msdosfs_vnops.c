@@ -289,8 +289,8 @@ msdosfs_getattr(ap)
 	vap->va_uid = pmp->pm_uid;
 	vap->va_gid = pmp->pm_gid;
 	vap->va_nlink = 1;
-	vap->va_rdev = 0;
-	vap->va_size = ap->a_vp->v_size;
+	vap->va_rdev = NODEV;
+	vap->va_size = dep->de_FileSize;
 	dos2unixtime(dep->de_MDate, dep->de_MTime, 0, pmp->pm_gmtoff,
 			&vap->va_mtime);
 	if (dep->de_pmp->pm_flags & MSDOSFSMNT_LONGNAME) {
