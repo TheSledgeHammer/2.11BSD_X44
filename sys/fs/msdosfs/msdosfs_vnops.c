@@ -438,6 +438,7 @@ msdosfs_read(ap)
 	long n;
 	long on;
 	daddr_t lbn;
+	daddr_t rablock;
 	int rasize;
 	int seqcount;
 	int isadir;
@@ -1458,7 +1459,7 @@ msdosfs_readdir(ap)
 		return (EINVAL);
 	lost = uio->uio_resid - count;
 	uio->uio_resid = count;
-	uio_off = uio->uio_offset;
+	off = uio->uio_offset;
 
 	if (ap->a_ncookies) {
 		nc = uio->uio_resid / 16;
