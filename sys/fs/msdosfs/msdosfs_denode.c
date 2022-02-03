@@ -83,12 +83,13 @@ static struct denode *msdosfs_hashget (dev_t, u_long, u_long);
 static void msdosfs_hashins (struct denode *);
 static void msdosfs_hashrem (struct denode *);
 
-void
+int
 msdosfs_init(vfsp)
 	struct vfsconf *vfsp;
 {
 	dehashtbl = hashinit(desiredvnodes/2, M_MSDOSFSMNT, &dehash);
 	simple_lock_init(&msdosfs_ihash_slock, "msdosfs_ihash_slock");
+	return (0);
 }
 
 /*
