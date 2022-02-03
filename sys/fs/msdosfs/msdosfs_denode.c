@@ -59,6 +59,7 @@
 #include <sys/kernel.h>		/* defines "time" */
 #include <sys/dirent.h>
 #include <sys/namei.h>
+#include <sys/lock.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_extern.h>
