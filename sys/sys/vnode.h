@@ -175,8 +175,10 @@ struct vattr {
 #define	VSGID			02000		/* set group id on execution */
 #define	VSVTX			01000		/* save swapped text even after use */
 #define	VREAD			00400		/* read, write, execute permissions */
-#define	VWRITE			00200
-#define	VEXEC			00100
+#define	VWRITE			00200		/* write permission */
+#define	VEXEC			00100		/* execute/search permission */
+#define	VADMIN			10000 		/* being the file owner */
+#define	VAPPEND			40000 		/* permission to write/append */
 
 /*
  * Token indicating no attribute value yet assigned.
@@ -381,6 +383,7 @@ struct vnode;
 struct vop_bwrite_args;
 
 int 	bdevvp(dev_t dev, struct vnode **);
+int		cdevvp(dev_t dev, struct vnode **);
 void	cvtstat(struct stat *, struct ostat *);
 int 	getnewvnode(enum vtagtype, struct mount *, const struct vnodeops *, struct vnode **);
 void	insmntque(struct vnode *, struct mount *);
@@ -393,6 +396,7 @@ int 	vget(struct vnode *, int, struct proc *);
 int		vrecycle(struct vnode *, struct lock_object *, struct proc *);
 void 	vgone(struct vnode *);
 void	vgonel(struct vnode *, struct proc *);
+int		vaccess(enum vtype, mode_t, uid_t, gid_t, int, struct ucred *);
 int		vinvalbuf(struct vnode *, int, struct ucred *, struct proc *, int, int);
 void	vprint(char *, struct vnode *);
 int		vn_bwrite(struct vop_bwrite_args *);

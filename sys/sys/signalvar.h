@@ -145,24 +145,24 @@ char sigprop[NSIG + 1] = {
 			 sigmask(SIGTTIN) | sigmask(SIGTTOU))
 #define	sigcantmask	(sigmask(SIGKILL) | sigmask(SIGSTOP))
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * Machine-independent functions:
  */
-int		coredump (struct proc *p);
-void	execsigs (struct proc *p);
-void	gsignal (int pgid, int sig);
-int		issig (struct proc *p);
-void	pgsignal (struct pgrp *pgrp, int sig, int checkctty);
-void	postsig (int sig);
-int		issignal (struct proc *p);
-void	psignal (struct proc *p, int sig);
-void	siginit (struct proc *p);
-void	trapsignal (struct proc *p, int sig, unsigned code);
+int		coredump(struct proc *);
+void	execsigs(struct proc *);
+void	gsignal(int, int);
+int		issig(struct proc *);
+void	pgsignal(struct pgrp *, int, int);
+void	postsig(int);
+int		issignal(struct proc *);
+void	psignal(struct proc *, int);
+void	siginit(struct proc *);
+void	trapsignal(struct proc *, int, u_long);
 
 /*
  * Machine-dependent functions:
  */
-void	sendsig (sig_t action, int sig, int returnmask, unsigned code);
+void	sendsig(sig_t, int, int, u_long);
 #endif	/* KERNEL */
 #endif	/* !_SYS_SIGNALVAR_H_ */

@@ -144,7 +144,7 @@ struct osigcontext {
 #define sigfillset(set)         (*(set) = ~(sigset_t)0, (int)0)
 #define sigismember(set, signo) ((*(set) & (1L << ((signo) - 1))) != 0)
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/cdefs.h>
 extern long	sigblock(int);
 extern long	sigsetmask(int);

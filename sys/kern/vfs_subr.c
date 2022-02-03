@@ -647,6 +647,37 @@ bdevvp(dev, vpp)
 }
 
 /*
+ * Create a vnode for a character device.
+ */
+int
+cdevvp(dev, vpp)
+	dev_t dev;
+	struct vnode **vpp;
+{
+	register struct vnode *vp;
+	struct vnode *nvp;
+	int error;
+
+	if (dev == NODEV) {
+		*vpp = NULLVP;
+		return (ENODEV);
+	}
+	error = getnewvnode(VT_NON, (struct mount*) 0, spec_vnodeops, &nvp);
+	if (error) {
+		*vpp = NULLVP;
+		return (error);
+	}
+	vp = nvp;
+	vp->v_type = VCHR;
+	if (nvp == checkalias(vp, dev, (struct mount *)0)) {
+		vput(vp);
+		vp = nvp;
+	}
+	*vpp = vp;
+	return (0);
+}
+
+/*
  * Check to see if the new vnode represents a special device
  * for which we already have a vnode (either because of
  * bdevvp() or because of a different vnode representing
@@ -1178,6 +1209,80 @@ vgonel(vp, p)
 		simple_unlock(&vnode_free_list_slock);
 	}
 	vp->v_type = VBAD;
+}
+
+/*
+ * Common filesystem object access control check routine.  Accepts a
+ * vnode's type, "mode", uid and gid, requested access mode, and credentials.
+ * Returns 0 on success, or an errno on failure.
+ */
+int
+vaccess(type, file_mode, file_uid, file_gid, accmode, cred)
+	enum vtype type;
+	mode_t file_mode;
+	uid_t file_uid;
+	gid_t file_gid;
+    int accmode;
+    struct ucred *cred;
+{
+    int dac_granted;
+    int priv_granted;
+
+    KASSERT((accmode & ~(VEXEC | VWRITE | VREAD | VADMIN | VAPPEND)) == 0,
+			("invalid bit in accmode"));
+	KASSERT((accmode & VAPPEND) == 0 || (accmode & VWRITE),
+			("VAPPEND without VWRITE"));
+
+	/*
+	 * Look for a normal, non-privileged way to access the file/directory
+	 * as requested.  If it exists, go with that.
+	 */
+
+    dac_granted = 0;
+
+	/* Check the owner. */
+	if (cred->cr_uid == file_uid) {
+		dac_granted |= VADMIN;
+		if (file_mode & S_IXUSR)
+			dac_granted |= VEXEC;
+		if (file_mode & S_IRUSR)
+			dac_granted |= VREAD;
+		if (file_mode & S_IWUSR)
+			dac_granted |= (VWRITE | VAPPEND);
+
+		if ((accmode & dac_granted) == accmode)
+			return (0);
+
+		return ((accmode & VADMIN) ? EPERM : EACCES);
+	}
+
+	/* Otherwise, check the groups (first match) */
+	if (groupmember1(file_gid, cred)) {
+		if (file_mode & S_IXGRP)
+			dac_granted |= VEXEC;
+		if (file_mode & S_IRGRP)
+			dac_granted |= VREAD;
+		if (file_mode & S_IWGRP)
+			dac_granted |= (VWRITE | VAPPEND);
+
+		if ((accmode & dac_granted) == accmode)
+			return (0);
+
+		return ((accmode & VADMIN) ? EPERM : EACCES);
+	}
+
+	/* Otherwise, check everyone else. */
+	if (file_mode & S_IXOTH)
+		dac_granted |= VEXEC;
+	if (file_mode & S_IROTH)
+		dac_granted |= VREAD;
+	if (file_mode & S_IWOTH)
+		dac_granted |= (VWRITE | VAPPEND);
+
+	if ((accmode & dac_granted) == accmode)
+		return (0);
+
+	return ((accmode & VADMIN) ? EPERM : EACCES);
 }
 
 /*

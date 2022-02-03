@@ -225,8 +225,8 @@ struct msdosfsmount {
 /*
  * Prototypes for MSDOSFS virtual filesystem operations
  */
-void msdosfs_init (void);
-void msdosfs_reinit (void);
+void msdosfs_init(struct vfsconf *);
+void msdosfs_reinit(void);
 //void msdosfs_done (void);
 #endif /* _KERNEL */
 #endif /* !_MSDOSFS_MSDOSFSMOUNT_H_ */

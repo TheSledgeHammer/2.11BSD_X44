@@ -1448,7 +1448,6 @@ int
 vop_nolock(ap)
 	struct vop_lock_args *ap;
 {
-#ifdef notyet
 	/*
 	 * This code cannot be used until all the non-locking filesystems
 	 * (notably NFS) are converted to properly lock and release nodes.
@@ -1491,15 +1490,6 @@ vop_nolock(ap)
 	if (flags & LK_INTERLOCK)
 		vnflags |= LK_INTERLOCK;
 	return (lockmgr(vp->v_vnlock, vnflags, &vp->v_interlock, ap->a_p->p_pid));
-#else /* for now */
-	/*
-	 * Since we are not using the lock manager, we must clear
-	 * the interlock here.
-	 */
-	if (ap->a_flags & LK_INTERLOCK)
-		simple_unlock(&ap->a_vp->v_interlock);
-	return (0);
-#endif
 }
 
 /*
@@ -1513,7 +1503,7 @@ vop_nounlock(ap)
 
 	if (vp->v_vnlock == NULL)
 		return (0);
-	return (lockmgr(vp->v_vnlock, LK_RELEASE, NULL, ap->a_p->p_pid));
+	return (lockmgr(vp->v_vnlock, LK_RELEASE, &vp->v_interlock, ap->a_p->p_pid));
 }
 
 /*

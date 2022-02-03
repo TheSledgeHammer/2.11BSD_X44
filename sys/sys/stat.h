@@ -131,6 +131,14 @@ struct stat {
 #define	UF_IMMUTABLE	0x0002		/* file may not be changed */
 #define	UF_APPEND		0x0004		/* writes to file may only append */
 #define UF_OPAQUE		0x0008		/* directory is opaque wrt. union */
+
+#define	UF_SYSTEM		0x0080		/* Windows system file bit */
+#define	UF_SPARSE		0x0100		/* sparse file */
+#define	UF_OFFLINE		0x0200		/* file is offline */
+#define	UF_REPARSE		0x0400		/* Windows reparse point file bit */
+#define	UF_ARCHIVE		0x0800		/* file needs to be archived */
+#define	UF_READONLY		0x1000		/* Windows readonly file bit */
+
 /*
  * Super-user changeable flags.
  */

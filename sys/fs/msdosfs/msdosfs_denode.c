@@ -96,7 +96,7 @@ msdosfs_init(vfsp)
  */
 
 void
-msdosfs_reinit()
+msdosfs_reinit(void)
 {
 	struct denode *dep;
 	struct ihashhead *oldhash, *hash;
