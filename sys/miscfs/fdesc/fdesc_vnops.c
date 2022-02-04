@@ -60,6 +60,7 @@
 #include <sys/namei.h>
 #include <sys/buf.h>
 #include <sys/dirent.h>
+#include <sys/tty.h>
 
 #include <miscfs/fdesc/fdesc.h>
 
@@ -84,13 +85,13 @@ u_long fdhash;
 /*
  * Initialise cache headers
  */
-void
+int
 fdesc_init(vfsp)
 	struct vfsconf *vfsp;
 {
-
 	devctty = makedev(nchrdev, 0);
 	fdhashtbl = hashinit(NFDCACHE, M_CACHE, &fdhash);
+	return (0);
 }
 
 int
@@ -127,7 +128,7 @@ loop:
 	}
 	fdcache_lock |= FDL_LOCKED;
 
-	error = getnewvnode(VT_FDESC, mp, fdesc_vnodeops, vpp);
+	error = getnewvnode(VT_FDESC, mp, &fdesc_vnodeops, vpp);
 	if (error)
 		goto out;
 	MALLOC(fd, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
@@ -275,7 +276,7 @@ fdesc_lookup(ap)
 			goto bad;
 		}
 
-		error = fdesc_allocvp(Fdesc, FD_DESC+fd, dvp->v_mount, &fvp);
+		error = fdesc_allocvp(FDESC, FD_DESC+fd, dvp->v_mount, &fvp);
 		if (error)
 			goto bad;
 		VTOFDESC(fvp)->fd_fd = fd;
