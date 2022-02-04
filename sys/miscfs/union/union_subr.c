@@ -454,7 +454,7 @@ loop:
 			goto loop;
 	}
 
-	error = getnewvnode(VT_UNION, mp, union_vnodeop_p, vpp);
+	error = getnewvnode(VT_UNION, mp, &union_vnodeops, vpp);
 	if (error) {
 		if (uppervp) {
 			if (dvp == uppervp)
