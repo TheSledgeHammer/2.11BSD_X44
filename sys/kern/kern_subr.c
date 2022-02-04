@@ -15,13 +15,13 @@
 
 int
 uiomove(cp, n, uio)
-	register void *cp;
-	register u_int n;
+	void *cp;
+	size_t n;
 	register struct uio *uio;
 {
 	register struct iovec *iov;
 	int error = 0;
-	register u_int cnt;
+	size_t cnt;
 
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ && uio->uio_rw != UIO_WRITE)
@@ -45,9 +45,9 @@ uiomove(cp, n, uio)
 		case UIO_USERSPACE:
 		case UIO_USERISPACE:
 			if (uio->uio_rw == UIO_READ)
-				error = copyiout(cp, iov->iov_base, cnt);
+				error = copyout(cp, iov->iov_base, cnt);
 			else
-				error = copyiin(iov->iov_base, cp, cnt);
+				error = copyin(iov->iov_base, cp, cnt);
 			if (error)
 				return (error);
 			break;

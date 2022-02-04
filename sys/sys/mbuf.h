@@ -78,9 +78,9 @@ struct	pkthdr {
 
 /* description of external storage mapped into mbuf, valid if M_EXT set */
 struct m_ext {
-	caddr_t				ext_buf;		/* start of buffer */
-	void				(*ext_free)(void);		/* free routine if not the usual */
-	u_int				ext_size;		/* size of buffer, for ext_free */
+	caddr_t				ext_buf;			/* start of buffer */
+	void				(*ext_free)(void);	/* free routine if not the usual */
+	u_int				ext_size;			/* size of buffer, for ext_free */
 };
 
 /* Contents of mbuf: */
@@ -289,19 +289,19 @@ struct	mbuf *mfree, *mclfree;
 char	mclrefcnt[NMBCLUSTERS + 1];
 int		m_want;
 
-struct	mbuf 	*m_copym (struct mbuf *, int, int, int);
-struct	mbuf 	*m_free (struct mbuf *);
-struct	mbuf 	*m_get (int, int);
-struct	mbuf 	*m_getclr (int, int);
-struct	mbuf 	*m_gethdr (int, int);
-struct	mbuf 	*m_prepend (struct mbuf *, int, int);
-struct	mbuf 	*m_pullup (struct mbuf *, int);
-struct	mbuf 	*m_retry (int, int);
-struct	mbuf 	*m_retryhdr (int, int);
-void			m_adj (struct mbuf *, int);
-caddr_t			m_clalloc (int, int);
-void			m_copyback (struct mbuf *, int, int, caddr_t);
-void			m_freem (struct mbuf *);
-void			m_reclaim (void);
+struct	mbuf 	*m_copym(struct mbuf *, int, int, int);
+struct	mbuf 	*m_free(struct mbuf *);
+struct	mbuf 	*m_get(int, int);
+struct	mbuf 	*m_getclr(int, int);
+struct	mbuf 	*m_gethdr(int, int);
+struct	mbuf 	*m_prepend(struct mbuf *, int, int);
+struct	mbuf 	*m_pullup(struct mbuf *, int);
+struct	mbuf 	*m_retry(int, int);
+struct	mbuf 	*m_retryhdr(int, int);
+void			m_adj(struct mbuf *, int);
+caddr_t			m_clalloc(int, int);
+void			m_copyback(struct mbuf *, int, int, caddr_t);
+void			m_freem(struct mbuf *);
+void			m_reclaim(void);
 
 #endif /* _SYS_MBUF_H_ */

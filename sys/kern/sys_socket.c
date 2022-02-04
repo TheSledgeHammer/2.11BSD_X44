@@ -29,7 +29,7 @@
 #include <net/route.h>
 
 struct fileops socketops =
-    { soo_read, soo_write, soo_ioctl, soo_select, soo_poll, soo_close };
+    { soo_rw, soo_read, soo_write, soo_ioctl, soo_select, soo_poll, soo_close, soo_kqfilter };
 
 /*ARGSUSED*/
 int
@@ -83,13 +83,13 @@ soo_ioctl(fp, cmd, data, p)
 	 * interface and routing ioctls should have a
 	 * different entry since a socket's unnecessary
 	 */
-#define	cmdbyte(x)	(((x) >> 8) & 0xff) /* IOCGROUP */
 
 	if (IOCGROUP(cmd) == 'i')
 		return (u->u_error = ifioctl(so, cmd, data));
 	if (IOCGROUP(cmd) == 'r')
 		return (u->u_error = rtioctl(cmd, data));
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
+
 }
 
 int
@@ -155,6 +155,23 @@ soo_stat(so, ub)
 	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0));
 }
 
+int
+soo_rw(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+	enum uio_rw rw = uio->uio_rw;
+	int error;
+	if (rw == UIO_READ) {
+		error = soo_read(fp, uio, cred);
+	} else {
+		error = soo_write(fp, uio, cred);
+	}
+
+	return (error);
+}
+
 /* ARGSUSED */
 int
 soo_read(fp, uio, cred)
@@ -187,4 +204,12 @@ soo_close(fp, p)
 		error = soclose((struct socket*) fp->f_data);
 	fp->f_data = 0;
 	return (error);
+}
+
+int
+soo_kqfilter(fp, kn)
+	struct file *fp;
+	struct knote *kn;
+{
+	return (0);
 }

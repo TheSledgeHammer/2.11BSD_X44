@@ -509,7 +509,7 @@ msdosfs_read(ap)
 		diff = dep->de_FileSize - uio->uio_offset;
 		if (diff < n)
 			n = (long) diff;
-		error = uiomove(bp->b_data + on, (int) n, uio);
+		error = uiomove(bp->b_data + on, n, uio);
 		brelse(bp);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (!isadir && (error == 0 || uio->uio_resid != orig_resid)

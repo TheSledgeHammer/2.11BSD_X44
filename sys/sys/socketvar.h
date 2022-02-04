@@ -43,9 +43,9 @@ struct socket {
  * We allow connections to queue up based on current queue lengths
  * and limit on number of queued connections for this socket.
  */
-	struct	socket *so_head;	/* back pointer to accept socket */
-	struct	socket *so_q0;		/* queue of partial connections */
-	struct	socket *so_q;		/* queue of incoming connections */
+	struct	socket *so_head;/* back pointer to accept socket */
+	struct	socket *so_q0;	/* queue of partial connections */
+	struct	socket *so_q;	/* queue of incoming connections */
 	short	so_q0len;		/* partials on so_q0 */
 	short	so_qlen;		/* number of connections on so_q */
 	short	so_qlimit;		/* max number queued connections */
@@ -56,7 +56,7 @@ struct socket {
 /*
  * Variables for socket buffering.
  */
-	struct	sockbuf {
+	struct sockbuf {
 		u_short	sb_cc;			/* actual chars in buffer */
 		u_short	sb_hiwat;		/* max actual char count */
 		u_short	sb_mbcnt;		/* chars of mbufs used */
@@ -103,59 +103,88 @@ struct socket {
  */
 
 /* how much space is there in a socket buffer (so->so_snd or so->so_rcv) */
-#define	sbspace(sb) 											\
-    (MIN((int)((sb)->sb_hiwat - (sb)->sb_cc),					\
-	 (int)((sb)->sb_mbmax - (sb)->sb_mbcnt)))
+static __inline u_long
+sbspace(sb)
+	struct sockbuf *sb;
+{
+	return (MIN((int)(sb->sb_hiwat - sb->sb_cc), (int)(sb->sb_mbmax - sb->sb_mbcnt)));
+}
 
 /* do we have to send all at once on a socket? */
-#define	sosendallatonce(so) 									\
-    ((so)->so_proto->pr_flags & PR_ATOMIC)
+static __inline int
+sosendallatonce(so)
+	struct socket *so;
+{
+	return (so->so_proto->pr_flags & PR_ATOMIC);
+}
 
 /* can we read something from so? */
-#define	soreadable(so) 											\
-    ((so)->so_rcv.sb_cc || ((so)->so_state & SS_CANTRCVMORE) || \
-	(so)->so_qlen || (so)->so_error)
+static __inline int
+soreadable(so)
+	struct socket *so;
+{
+	 return (so->so_rcv.sb_cc || (so->so_state & SS_CANTRCVMORE) || so->so_qlen || so->so_error);
+}
 
 /* can we write something to so? */
-#define	sowriteable(so) 										\
-	(sbspace(&(so)->so_snd) > 0 && 								\
-	(((so)->so_state & SS_ISCONNECTED) || 						\
-	 ((so)->so_proto->pr_flags & PR_CONNREQUIRED)==0) || 		\
-     ((so)->so_state & SS_CANTSENDMORE) ||						\
-     (so)->so_error)
+static __inline int
+sowriteable(so)
+	struct socket *so;
+{
+	int check = (sbspace(&so->so_snd) > 0 || sbspace(&so->so_snd) >= so->so_snd.sb_lowat);
+	return ((check && ((so->so_state & SS_ISCONNECTED) ||
+			(so->so_proto->pr_flags & PR_CONNREQUIRED)==0)) ||
+			(so->so_state & SS_CANTSENDMORE) || so->so_error);
+}
 
 /* adjust counters in sb reflecting allocation of m */
-#define	sballoc(sb, m) { 										\
-	(sb)->sb_cc += (m)->m_len; 									\
-	(sb)->sb_mbcnt += MSIZE; 									\
-	if ((m)->m_off > MMAXOFF) 									\
-		(sb)->sb_mbcnt += CLBYTES; 								\
+static __inline void
+sballoc(sb, m)
+	struct sockbuf *sb;
+	struct mbuf *m;
+{
+	sb->sb_cc += m->m_len;
+	sb->sb_mbcnt += MSIZE;
+	if (m->m_off > MMAXOFF | M_EXT) {
+		sb->sb_mbcnt += CLBYTES;
+	}
 }
 
 /* adjust counters in sb reflecting freeing of m */
-#define	sbfree(sb, m) { 										\
-	(sb)->sb_cc -= (m)->m_len; 									\
-	(sb)->sb_mbcnt -= MSIZE; 									\
-	if ((m)->m_off > MMAXOFF) 									\
-		(sb)->sb_mbcnt -= CLBYTES; 								\
+static __inline void
+sbfree(sb, m)
+	struct sockbuf *sb;
+	struct mbuf *m;
+{
+	sb->sb_cc -= m->m_len;
+	sb->sb_mbcnt -= MSIZE;
+	if (m->m_off > MMAXOFF | M_EXT) {
+		sb->sb_mbcnt -= CLBYTES;
+	}
 }
 
 /* set lock on sockbuf sb */
-#define sblock(sb) { 											\
-	while ((sb)->sb_flags & SB_LOCK) { 							\
-		(sb)->sb_flags |= SB_WANT; 								\
-		SLEEP((caddr_t) & (sb)->sb_flags, PZERO+1); 			\
-	} 															\
-	(sb)->sb_flags |= SB_LOCK; 									\
+static __inline void
+sblock(sb)
+	struct sockbuf *sb;
+{
+	while (sb->sb_flags & SB_LOCK) {
+		sb->sb_flags |= SB_WANT;
+		sleep((caddr_t) & sb->sb_flags, PZERO+1);
+	}
+	sb->sb_flags |= SB_LOCK;
 }
 
 /* release lock on sockbuf sb */
-#define	sbunlock(sb) { 											\
-	(sb)->sb_flags &= ~SB_LOCK; 								\
-	if ((sb)->sb_flags & SB_WANT) { 							\
-		(sb)->sb_flags &= ~SB_WANT; 							\
-		WAKEUP((caddr_t) & (sb)->sb_flags); 					\
-	} 															\
+static __inline void
+sbunlock(sb)
+	struct sockbuf *sb;
+{
+	sb->sb_flags &= ~SB_LOCK;
+	if (sb->sb_flags & SB_WANT) {
+		sb->sb_flags &= ~SB_WANT;
+		wakeup((caddr_t) & sb->sb_flags);
+	}
 }
 
 #define	sorwakeup(so)	sowakeup((so), &(so)->so_rcv)
@@ -173,13 +202,15 @@ struct	socket *sonewconn1 (struct socket *head, int connstatus);
 extern	char netio[], netcon[], netcls[];
 
 /* File Operations on sockets */
-int	soo_ioctl (struct file *fp, int com, caddr_t data, struct proc *p);
-int	soo_select (struct file *fp, int which, struct proc *p);
-int	soo_stat (struct socket *, struct stat *);
-int	soo_read (struct file *fp, struct uio *uio, struct ucred *cred);
-int	soo_write (struct file *fp, struct uio *uio, struct ucred *cred);
-int soo_close (struct file *fp, struct proc *p);
-int	soo_poll(struct file *fp, int events, struct proc *p);
+int	soo_ioctl(struct file *, int, caddr_t, struct proc *);
+int	soo_select(struct file *, int, struct proc *);
+int	soo_stat(struct socket *, struct stat *);
+int	soo_rw(struct file *, struct uio *, struct ucred *);
+int	soo_read(struct file *, struct uio *, struct ucred *);
+int	soo_write(struct file *, struct uio *, struct ucred *);
+int soo_close(struct file *, struct proc *);
+int	soo_poll(struct file *, int, struct proc *);
+int	soo_kqfilter(file_t *, struct knote *);
 
 /* From uipc_socket and friends */
 

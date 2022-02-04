@@ -567,13 +567,13 @@ union_access(ap)
 	if ((vp = un->un_lowervp) != NULLVP) {
 		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 		ap->a_vp = vp;
-		error = VOCALL(vops, ap, vop_access);
+		error = VOCALL(&union_vnodeops, ap, vop_access);
 		if (error == 0) {
 			struct union_mount *um = MOUNTTOUNIONMOUNT(vp->v_mount);
 
 			if (um->um_op == UNMNT_BELOW) {
 				ap->a_cred = um->um_cred;
-				error = VOCALL(vops, ap, vop_access);
+				error = VOCALL(&union_vnodeops, ap, vop_access);
 			}
 		}
 		VOP_UNLOCK(vp, 0, p);
@@ -1247,7 +1247,7 @@ union_readdir(ap)
 
 	FIXUP(un, p);
 	ap->a_vp = uvp;
-	return (VOCALL(vops, ap, vop_readdir));
+	return (VOCALL(&union_vnodeops, ap, vop_readdir));
 }
 
 int
@@ -1269,7 +1269,7 @@ union_readlink(ap)
 	else
 		FIXUP(VTOUNION(ap->a_vp), p);
 	ap->a_vp = vp;
-	error = VOCALL(vops, ap, vop_readlink);
+	error = VOCALL(&union_vnodeops, ap, vop_readlink);
 	if (dolock)
 		VOP_UNLOCK(vp, 0, p);
 
@@ -1298,7 +1298,7 @@ union_abortop(ap)
 			FIXUP(VTOUNION(ap->a_dvp), p);
 	}
 	ap->a_dvp = vp;
-	error = VOCALL(vops, ap, vop_abortop);
+	error = VOCALL(&union_vnodeops, ap, vop_abortop);
 	if (islocked && dolock)
 		VOP_UNLOCK(vp, 0, p);
 

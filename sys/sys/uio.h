@@ -80,7 +80,7 @@ struct uio {
 #endif /* _KERNEL */
 
 #ifndef _KERNEL
-int	uiomove(void *, u_int, struct uio *);
+int	uiomove(void *, size_t, struct uio *);
 #else /* !_KERNEL */
 #include <sys/cdefs.h>
 
