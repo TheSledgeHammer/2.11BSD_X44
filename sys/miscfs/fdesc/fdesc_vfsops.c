@@ -79,11 +79,11 @@ fdesc_mount(mp, path, data, ndp, p)
 	if (mp->mnt_flag & MNT_UPDATE)
 		return (EOPNOTSUPP);
 
-	error = fdesc_allocvp(Froot, FD_ROOT, mp, &rvp);
+	error = fdesc_allocvp(FROOT, FD_ROOT, mp, &rvp);
 	if (error)
 		return (error);
 
-	MALLOC(fmp, struct fdescmount *, sizeof(struct fdescmount),	M_UFSMNT, M_WAITOK);	/* XXX */
+	MALLOC(fmp, struct fdescmount *, sizeof(struct fdescmount), M_UFSMNT, M_WAITOK);	/* XXX */
 	rvp->v_type = VDIR;
 	rvp->v_flag |= VROOT;
 	fmp->f_root = rvp;
