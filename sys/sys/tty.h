@@ -207,7 +207,7 @@ struct speedtab {
 #define	isbackground(p, tp)						\
 	(isctty((p), (tp)) && (p)->p_pgrp != (tp)->t_pgrp)
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct ttychars  ttydefaults;
 
 /* Symbolic sleep message strings. */
@@ -266,8 +266,8 @@ void tty_init_console (struct tty *, speed_t);
 int	cttyioctl (dev_t, int, caddr_t, int, struct proc *);
 int	cttyopen (dev_t, int, int, struct proc *);
 int	cttyread (dev_t, struct uio *, int);
-int cttywrite (dev_t, struct uio *, int);
-int cttypoll (dev_t, int, struct proc *);
+int 	cttywrite (dev_t, struct uio *, int);
+int 	cttypoll (dev_t, int, struct proc *);
 int	cttykqfilter (dev_t, struct knote *);
 int	cttyselect (dev_t, int, struct proc *);
 
@@ -275,7 +275,7 @@ int	cttyselect (dev_t, int, struct proc *);
 int	syopen (dev_t, int, int);
 int	syread (dev_t, struct uio *, int);
 int	sywrite (dev_t, struct uio *, int);
-int syioctl (dev_t, u_int cmd, caddr_t, int);
+int 	syioctl (dev_t, u_int cmd, caddr_t, int);
 int	sypoll (dev_t, int);
 int	sykqfilter (dev_t, struct knote *);
 int	syselect (dev_t, int);
