@@ -44,13 +44,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- vnodes: Of intrest: vnode_desc
-	- re-implementing vnode_desc.
-	- Could relatively easily be reworked back into existing
-	  vnode infrastructure. With little to no changes to code 
-	  that depends on it.
-- vfs (in general): 
-	- DragonflyBSD, FreeBSD & OpenBSD implement default routines 		for the below issues and other vfs operations.
+- kern_descrip.c:
+	- change: fdcopy, fdfree, fdrelease, fdunshare & fdcloseexec 
+		- from using proc to user
+kern_exec
 	
 ## arch:
 - i386/x86: (Merged under i386)

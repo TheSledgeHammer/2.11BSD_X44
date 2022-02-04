@@ -629,7 +629,6 @@ fdcloseexec(p)
 			(void) fdrelease(p, fd);
 }
 
-
 /*
  * Duplicate the specified descriptor to a free descriptor.
  */

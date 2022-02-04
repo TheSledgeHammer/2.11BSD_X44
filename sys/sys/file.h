@@ -12,7 +12,7 @@
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct proc;
 struct uio;
 struct knote;

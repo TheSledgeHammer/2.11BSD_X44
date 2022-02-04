@@ -66,9 +66,9 @@ struct user {
 	int					*u_ap;					/* pointer to arglist */
 	label_t				u_qsave;				/* for non-local gotos on interrupts */
 	union {										/* syscall return values */
-		struct	{
-			int			R_val1;
-			int			R_val2;
+		struct	{/* consider changing to register_t */
+			int			R_val1;					/* retval[0] */
+			int			R_val2;					/* retval[1] */
 		} u_rv;
 #define	r_val1			u_rv.R_val1
 #define	r_val2			u_rv.R_val2
@@ -122,9 +122,9 @@ struct user {
 	struct file 		*u_ofile[NOFILE];		/* file structures for open files */
 	char				u_pofile[NOFILE];		/* per-process flags of open files */
 	int					u_lastfile;				/* high-water mark of u_ofile */
-	struct filedesc		*u_fd;					/* Ptr to open files structure. */
-#define	UF_EXCLOSE 		0x1						/* auto-close on exec */
-#define	UF_MAPPED 		0x2						/* mapped from device */
+	struct filedesc		*u_fd;					/* Ptr to open file descriptor structure. */
+//#define	UF_EXCLOSE 		0x1						/* auto-close on exec */
+//#define	UF_MAPPED 		0x2						/* mapped from device */
 #define u_cdir 			u_nd->ni_cdir			/* current directory */
 #define u_rdir 			u_nd->ni_rdir			/* root directory of current process */
 	struct tty 			*u_ttyp;				/* controlling tty pointer */

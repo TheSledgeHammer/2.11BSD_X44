@@ -52,7 +52,6 @@ fork1(isvfork)
 	register struct proc *p1, *p2;
 	register uid_t uid;
 	int count;
-	register_t *retval;
 
 	a = 0;
 	if (u->u_uid != 0) {
@@ -116,7 +115,6 @@ newproc(isvfork)
 	register struct proc *rip, *rpp;
 	struct proc *newproc;
 	static int mpid, pidchecked = 0;
-	register_t *retval;
 
 	mpid++;
 retry:
@@ -278,8 +276,8 @@ again:
 	 * may be invalid after vm_fork returns in the child process.
 	 */
 
-	retval[0] = rip->p_pid;
-	retval[1] = 1;
+	u->u_r.r_val1 = rip->p_pid;
+	u->u_r.r_val2 = 1;
 	if(vm_fork(rip, rpp, isvfork)) {
 		/*
 		 * Child process.  Set start time and get to work.
@@ -317,8 +315,9 @@ again:
 	 * Return child pid to parent process,
 	 * marking us as parent via retval[1].
 	 */
-	retval[0] = rpp->p_pid;
-	retval[1] = 0;
+	u->u_r.r_val1 = rpp->p_pid;
+	u->u_r.r_val2 = 0;
+
 	return (0);
 }
 

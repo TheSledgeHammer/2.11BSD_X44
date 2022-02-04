@@ -97,18 +97,18 @@ struct filedesc0 {
  */
 #define OFILESIZE (sizeof(struct file *) + sizeof(char))
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * Kernel global variables and routines.
  */
-int		fdalloc (struct proc *p, int want, int *result);
-int		fdavail (struct proc *p, int n);
-int		falloc (struct proc *p, struct file **resultfp, int *resultfd);
-void	ffree (struct file *);
-struct	filedesc *fdcopy (struct proc *p);
-void	fdfree (struct proc *p);
-int		closef (struct file *fp,struct proc *p);
-void	fdcloseexec (struct proc *p);
+int		fdalloc(struct proc *, int, int *);
+int		fdavail(struct proc *, int);
+int		falloc(struct proc *, struct file **, int *);
+void	ffree(struct file *);
+struct	filedesc *fdcopy(struct proc *);
+void	fdfree(struct proc *);
+int		closef(struct file *, struct proc *);
+void	fdcloseexec(struct proc *);
 #endif
 
 #endif
