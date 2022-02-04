@@ -1023,7 +1023,7 @@ union_rename(ap)
 	struct vnode *tdvp = ap->a_tdvp;
 	struct vnode *tvp = ap->a_tvp;
 
-	if (fdvp->v_op == union_vnodeop_p) {	/* always true */
+	if (fdvp->v_op == &union_vnodeops) {	/* always true */
 		struct union_node *un = VTOUNION(fdvp);
 		if (un->un_uppervp == NULLVP) {
 			/*
