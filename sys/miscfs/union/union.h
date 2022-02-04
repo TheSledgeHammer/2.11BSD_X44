@@ -65,7 +65,7 @@ struct union_mount {
 #define VRWXMODE 	(VREAD|VWRITE|VEXEC)
 #define VRWMODE 	(VREAD|VWRITE)
 #define UN_DIRMODE 	((VRWXMODE)|(VRWXMODE>>3)|(VRWXMODE>>6))
-#define UN_FILEMODE ((VRWMODE)|(VRWMODE>>3)|(VRWMODE>>6))
+#define UN_FILEMODE 	((VRWMODE)|(VRWMODE>>3)|(VRWMODE>>6))
 
 /*
  * A cache of vnode references	(hangs off v_data)
@@ -95,19 +95,19 @@ struct union_node {
 #define UN_KLOCK	0x08		/* Keep upper node locked on vput */
 #define UN_CACHED	0x10		/* In union cache */
 
-extern int union_allocvp (struct vnode **, struct mount *, struct vnode *, struct vnode *, struct componentname *, struct vnode *,	struct vnode *, int);
-extern int union_copyfile (struct vnode *, struct vnode *, struct ucred *, struct proc *);
-extern int union_copyup (struct union_node *, int, struct ucred *, struct proc *);
-extern int union_dowhiteout (struct union_node *, struct ucred *, struct proc *);
-extern int union_mkshadow (struct union_mount *, struct vnode *, struct componentname *, struct vnode **);
-extern int union_mkwhiteout (struct union_mount *, struct vnode *, struct componentname *, char *);
-extern int union_vn_create (struct vnode **, struct union_node *, struct proc *);
-extern int union_cn_close (struct vnode *, int, struct ucred *, struct proc *);
-extern void union_removed_upper (struct union_node *un);
-extern struct vnode *union_lowervp (struct vnode *);
-extern void union_newlower (struct union_node *, struct vnode *);
-extern void union_newupper (struct union_node *, struct vnode *);
-extern void union_newsize (struct vnode *, off_t, off_t);
+extern int union_allocvp(struct vnode **, struct mount *, struct vnode *, struct vnode *, struct componentname *, struct vnode *, struct vnode *, int);
+extern int union_copyfile(struct vnode *, struct vnode *, struct ucred *, struct proc *);
+extern int union_copyup(struct union_node *, int, struct ucred *, struct proc *);
+extern int union_dowhiteout(struct union_node *, struct ucred *, struct proc *);
+extern int union_mkshadow(struct union_mount *, struct vnode *, struct componentname *, struct vnode **);
+extern int union_mkwhiteout(struct union_mount *, struct vnode *, struct componentname *, char *);
+extern int union_vn_create(struct vnode **, struct union_node *, struct proc *);
+extern int union_vn_close(struct vnode *, int, struct ucred *, struct proc *);
+extern void union_removed_upper (struct union_node *);
+extern struct vnode *union_lowervp(struct vnode *);
+extern void union_newlower(struct union_node *, struct vnode *);
+extern void union_newupper(struct union_node *, struct vnode *);
+extern void union_newsize(struct vnode *, off_t, off_t);
 
 #define	MOUNTTOUNIONMOUNT(mp) 	((struct union_mount *)((mp)->mnt_data))
 #define	VTOUNION(vp) 			((struct union_node *)(vp)->v_data)
@@ -119,8 +119,8 @@ extern void union_newsize (struct vnode *, off_t, off_t);
 #define UDEBUG(x)				if (uniondebug) printf x
 #define UDEBUG_ENABLED			1
 
-extern struct vnodeops 			*union_vnodeops;
+extern struct vnodeops 			union_vnodeops;
 extern struct vfsops 			union_vfsops;
-extern int 						uniondebug;
+extern int 				uniondebug;
 
 #endif /* _KERNEL */
