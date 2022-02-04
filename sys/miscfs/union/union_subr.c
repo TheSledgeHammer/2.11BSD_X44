@@ -1011,7 +1011,7 @@ union_dircache_r(vp, vppp, cntp)
 {
 	struct union_node *un;
 
-	if (vp->v_op != union_vnodeop_p) {
+	if (vp->v_op != &union_vnodeops) {
 		if (vppp) {
 			VREF(vp);
 			*(*vppp)++ = vp;
