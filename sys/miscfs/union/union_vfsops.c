@@ -40,7 +40,7 @@
 /*
  * Union Layer
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/time.h>
@@ -53,6 +53,8 @@
 #include <sys/filedesc.h>
 #include <sys/queue.h>
 #include <miscfs/union/union.h>
+
+int union_root(struct mount *, struct vnode **);
 
 /*
  * Mount union filesystem
