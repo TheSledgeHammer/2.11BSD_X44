@@ -10,6 +10,7 @@
 #define	_SYS_FILE_H_
 
 #include <sys/fcntl.h>
+#include <sys/lock.h>
 #include <sys/unistd.h>
 
 #ifdef _KERNEL
