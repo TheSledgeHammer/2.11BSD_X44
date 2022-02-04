@@ -25,8 +25,8 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
-//#include <net/if.h>
-//#include <net/route.h>
+#include <net/if.h>
+#include <net/route.h>
 
 struct fileops socketops =
     { soo_read, soo_write, soo_ioctl, soo_select, soo_poll, soo_close };
@@ -85,12 +85,11 @@ soo_ioctl(fp, cmd, data, p)
 	 */
 #define	cmdbyte(x)	(((x) >> 8) & 0xff) /* IOCGROUP */
 
-	if (cmdbyte(cmd) == 'i')
-		return(u->u_error = ifioctl(so, cmd, data));
-	if (cmdbyte(cmd) == 'r')
-		return(u->u_error = rtioctl(cmd, data));
-	return(u->u_error = (*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
-	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
+	if (IOCGROUP(cmd) == 'i')
+		return (u->u_error = ifioctl(so, cmd, data));
+	if (IOCGROUP(cmd) == 'r')
+		return (u->u_error = rtioctl(cmd, data));
+	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
 }
 
 int
@@ -152,6 +151,7 @@ soo_stat(so, ub)
 	register struct stat *ub;
 {
 	bzero((caddr_t) ub, sizeof(*ub));
+	ub->st_mode = S_IFSOCK;
 	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0));
 }
 
@@ -182,6 +182,7 @@ soo_close(fp, p)
 	struct proc *p;
 {
 	int error = 0;
+	
 	if (fp->f_data)
 		error = soclose((struct socket*) fp->f_data);
 	fp->f_data = 0;
