@@ -465,69 +465,13 @@ union_statfs(mp, sbp, p)
 /*
  * XXX - Assumes no data cached at union layer.
  */
-
-int
-union_sync(mp, waitfor, cred, p)
-	struct mount *mp;
-	int waitfor;
-	struct ucred *cred;
-	struct proc *p;
-{
-	return (nullop);
-}
-
-int
-union_quotactl(mp, cmd, uid, arg, p)
-	struct mount *mp;
-	int cmd;
-	uid_t uid;
-	caddr_t arg;
-	struct proc *p;
-{
-	return (EOPNOTSUPP);
-}
-
-int
-union_vget(mp, ino, vpp)
-	struct mount *mp;
-	ino_t ino;
-	struct vnode **vpp;
-{
-	return (EOPNOTSUPP);
-}
-
-int
-union_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
-	register struct mount *mp;
-	struct fid *fhp;
-	struct mbuf *nam;
-	struct vnode **vpp;
-	int *exflagsp;
-	struct ucred **credanonp;
-{
-	return (EOPNOTSUPP);
-}
-
-int
-union_vptofh(vp, fhp)
-	struct vnode *vp;
-	struct fid *fhp;
-{
-	return (EOPNOTSUPP);
-}
-
-int
-union_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
-	int *name;
-	u_int namelen;
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-	struct proc *p;
-{
-	return (EOPNOTSUPP);
-}
+#define union_sync ((int (*) (struct mount *, int, struct ucred *, struct proc *))nullop)
+#define union_fhtovp ((int (*) (struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **))eopnotsupp)
+int union_init (struct vfsconf *);
+#define union_quotactl ((int (*) (struct mount *, int, uid_t, caddr_t, struct proc *))eopnotsupp)
+#define union_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
+#define union_vget ((int (*) (struct mount *, ino_t, struct vnode **))eopnotsupp)
+#define union_vptofh ((int (*) (struct vnode *, struct fid *))eopnotsupp)
 
 struct vfsops union_vfsops = {
 		.vfs_mount = union_mount,
