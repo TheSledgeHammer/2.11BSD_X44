@@ -47,7 +47,7 @@
  * related kernel definitions.
  */
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/types.h>
 #endif
 
@@ -87,7 +87,7 @@
 #define	O_CREAT		0x0200		/* create if nonexistant */
 #define	O_TRUNC		0x0400		/* truncate to zero length */
 #define	O_EXCL		0x0800		/* error if already exists */
-#ifdef KERNEL
+#ifdef _KERNEL
 #define	FMARK		0x1000		/* mark during gc() */
 #define	FDEFER		0x2000		/* defer for next gc pass */
 #define	FHASLOCK	0x4000		/* descriptor holds advisory lock */
@@ -96,7 +96,7 @@
 /* defined by POSIX 1003.1; BSD default, so no bit required */
 #define	O_NOCTTY	0		/* don't assign controlling terminal */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /* convert from open() flags to/from fflags; convert O_RD/WR to FREAD/FWRITE */
 #define	FFLAGS(oflags)	((oflags) + 1)
 #define	OFLAGS(fflags)	((fflags) - 1)
@@ -146,7 +146,7 @@
 #define	F_RDLCK		1		/* shared or read lock */
 #define	F_UNLCK		2		/* unlock */
 #define	F_WRLCK		3		/* exclusive or write lock */
-#ifdef KERNEL
+#ifdef _KERNEL
 #define	F_WAIT		0x010	/* Wait until lock is granted */
 #define	F_FLOCK		0x020	/* Use flock(2) semantics for lock */
 #define	F_POSIX		0x040	/* Use POSIX semantics for lock */
@@ -172,7 +172,7 @@ struct flock {
 #define	LOCK_UN		0x08		/* unlock file */
 #endif
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
