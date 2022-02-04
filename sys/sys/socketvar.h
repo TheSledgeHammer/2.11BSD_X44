@@ -161,7 +161,7 @@ struct socket {
 #define	sorwakeup(so)	sowakeup((so), &(so)->so_rcv)
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct	socket *sonewconn();
 
 /* to catch callers missing new second argument to sonewconn: */
