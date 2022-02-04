@@ -55,11 +55,8 @@ struct fileops {
 #define f_socket	f_un.f_Socket
 
 extern struct file 	*filehead;	/* head of list of open files */
-extern int 			maxfiles;	/* kernel limit on number of open files */
-extern int 			nfiles;		/* actual number of open files */
-
-struct	file 		*getf();
-struct	file 		*falloc();
+extern int 		maxfiles;	/* kernel limit on number of open files */
+extern int 		nfiles;		/* actual number of open files */
 
 /*
  * Access call.
@@ -69,12 +66,15 @@ struct	file 		*falloc();
 #define	W_OK		2	/* writable by caller */
 #define	R_OK		4	/* readable by caller */
 
+#ifndef _POSIX_SOURCE
+/* whence values for lseek(2); renamed by POSIX 1003.1 */
 /*
  * Lseek call.
  */
 #define	L_SET		0	/* absolute offset */
 #define	L_INCR		1	/* relative to current offset */
 #define	L_XTND		2	/* relative to end of file */
+#endif
 
 #define	GETF(fp, fd) { 													\
 	if ((unsigned)(fd) >= NOFILE || ((fp) = u->u_ofile[fd]) == NULL) { 	\
