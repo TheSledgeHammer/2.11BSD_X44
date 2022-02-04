@@ -208,6 +208,7 @@ struct speedtab {
 	(isctty((p), (tp)) && (p)->p_pgrp != (tp)->t_pgrp)
 
 #ifdef _KERNEL
+struct devswtable;
 extern struct ttychars  ttydefaults;
 
 /* Symbolic sleep message strings. */
