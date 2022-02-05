@@ -210,7 +210,7 @@ int	soo_read(struct file *, struct uio *, struct ucred *);
 int	soo_write(struct file *, struct uio *, struct ucred *);
 int soo_close(struct file *, struct proc *);
 int	soo_poll(struct file *, int, struct proc *);
-int	soo_kqfilter(file_t *, struct knote *);
+int	soo_kqfilter(struct file *, struct knote *);
 
 /* From uipc_socket and friends */
 

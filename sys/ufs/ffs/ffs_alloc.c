@@ -44,23 +44,24 @@
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
 
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
 #include <vm/include/vm.h>
 
 extern u_long 			nextgennumber;
-typedef
+typedef ufs2_daddr_t 	allocfcn_t(struct inode *ip, int cg, ufs2_daddr_t bpref, int size);
 
-static ufs2_daddr_t 	ffs_alloccg (struct inode *, int, ufs2_daddr_t, int);
-static ufs2_daddr_t 	ffs_alloccgblk (struct fs *, struct cg *, ufs2_daddr_t);
-static ufs2_daddr_t 	ffs_clusteralloc (struct inode *, int, ufs2_daddr_t, int);
-static ino_t			ffs_dirpref (struct fs *);
-static ufs2_daddr_t 	ffs_fragextend (struct inode *, int, long, int, int);
-static void				ffs_fserr (struct fs *, u_int, char *);
-static u_long			ffs_hashalloc (struct inode *, int, long, int, u_int32_t (*)());
-static ino_t			ffs_nodealloccg (struct inode *, int, ufs2_daddr_t, int);
-static ufs1_daddr_t 	ffs_mapsearch (struct fs *, struct cg *, ufs2_daddr_t, int);
+static ufs2_daddr_t 	ffs_alloccg(struct inode *, int, ufs2_daddr_t, int);
+static ufs2_daddr_t 	ffs_alloccgblk(struct fs *, struct cg *, ufs2_daddr_t);
+static ufs2_daddr_t 	ffs_clusteralloc(struct inode *, int, ufs2_daddr_t, int);
+static ino_t			ffs_dirpref(struct fs *);
+static ufs2_daddr_t 	ffs_fragextend(struct inode *, int, long, int, int);
+static void				ffs_fserr(struct fs *, u_int, char *);
+static ufs2_daddr_t		ffs_hashalloc(struct inode *, int, ufs2_daddr_t, int, allocfcn_t *);
+static ino_t			ffs_nodealloccg(struct inode *, int, ufs2_daddr_t, int);
+static ufs1_daddr_t 	ffs_mapsearch(struct fs *, struct cg *, ufs2_daddr_t, int);
 
 static int				ffs_reallocblks_ufs1(struct vop_reallocblks_args *);
 static int				ffs_reallocblks_ufs2(struct vop_reallocblks_args *);
@@ -84,6 +85,7 @@ static int				ffs_reallocblks_ufs2(struct vop_reallocblks_args *);
  *   2) quadradically rehash into other cylinder groups, until an
  *      available block is located.
  */
+int
 ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	register struct inode *ip;
 	ufs2_daddr_t lbn, bpref;
@@ -120,7 +122,7 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 		cg = ino_to_cg(fs, ip->i_number);
 	else
 		cg = dtog(fs, bpref);
-	bno = ffs_hashalloc(ip, cg, (long)bpref, size, ffs_alloccg);
+	bno = ffs_hashalloc(ip, cg, bpref, size, ffs_alloccg);
 	if (bno > 0) {
 		DIP(ip, blocks) += btodb(size);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
@@ -147,6 +149,7 @@ nospace:
  * the original block. Failing that, the regular block allocator is
  * invoked to get an appropriate block.
  */
+int
 ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	register struct inode *ip;
 	ufs2_daddr_t lbprev;
@@ -155,13 +158,16 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	struct ucred *cred;
 	struct buf **bpp;
 {
+	struct vnode *vp;
 	register struct fs *fs;
 	struct buf *bp;
 	int cg, request, error;
 	ufs2_daddr_t bprev, bno;
 	
+	vp = ITOV(ip);
 	*bpp = 0;
 	fs = ip->i_fs;
+	bp = NULL;
 #ifdef DIAGNOSTIC
 	if ((u_int)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
 	    (u_int)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0) {
@@ -185,7 +191,7 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	/*
 	 * Allocate the extra space in the buffer.
 	 */
-	error = bread(ITOV(ip), lbprev, osize, NOCRED, &bp);
+	error = bread(vp, lbprev, osize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (error);
@@ -260,10 +266,10 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		panic("ffs_realloccg: bad optim");
 		/* NOTREACHED */
 	}
-	bno = ffs_hashalloc(ip, cg, (long)bpref, request, ffs_alloccg);
+	bno = ffs_hashalloc(ip, cg, bpref, request, ffs_alloccg);
 	if (bno > 0) {
 		bp->b_blkno = fsbtodb(fs, bno);
-		(void) vnode_pager_uncache(ITOV(ip));
+		(void) vnode_pager_uncache(vp);
 		ffs_blkfree(ip, bprev, (long)osize);
 		if (nsize < request)
 			ffs_blkfree(ip, bno + numfrags(fs, nsize), (long)(request - nsize));
@@ -316,12 +322,17 @@ ffs_reallocblks(ap)
 		struct cluster_save *a_buflist;
 	} */ *ap;
 {
+	struct ufsmount *ump;
+	int error;
+
+	//ump = ap->a_vp->v_mount->mnt_data;
+	ump = VTOI(ap->a_vp)->i_ump;
 
 	if (doreallocblks == 0)
 		return (ENOSPC);
-	if (VTOI(ap->a_vp)->i_ump->um_fstype == UFS1)
-		return (ffs_reallocblks_ufs1(ap));
-	return (ffs_reallocblks_ufs2(ap));
+
+	error = ump->um_fstype == UFS1 ? ffs_reallocblks_ufs1(ap) : ffs_reallocblks_ufs2(ap);
+	return (error);
 }
 
 int
@@ -740,7 +751,7 @@ ffs_valloc(ap)
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
 	cg = ino_to_cg(fs, ipref);
-	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, ffs_nodealloccg);
+	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, (allocfcn_t *)ffs_nodealloccg);
 	if (ino == 0)
 		goto noinodes;
 	error = VFS_VGET(pvp->v_mount, ino, ap->a_vpp);
@@ -826,7 +837,7 @@ ffs_dirpref(fs)
 ufs1_daddr_t
 ffs_blkpref_ufs1(ip, lbn, indx, bap)
 	struct inode *ip;
-	ufs1_daddr_t lbn;
+	ufs_lbn_t lbn;
 	int indx;
 	ufs1_daddr_t *bap;
 {
@@ -889,7 +900,7 @@ ffs_blkpref_ufs1(ip, lbn, indx, bap)
 ufs2_daddr_t
 ffs_blkpref_ufs2(ip, lbn, indx, bap)
 	struct inode *ip;
-	ufs2_daddr_t lbn;
+	ufs_lbn_t lbn;
 	int indx;
 	ufs2_daddr_t *bap;
 {
@@ -960,16 +971,16 @@ ffs_blkpref_ufs2(ip, lbn, indx, bap)
  *   3) brute force search for a free block.
  */
 /*VARARGS5*/
-static u_long
+static ufs2_daddr_t
 ffs_hashalloc(ip, cg, pref, size, allocator)
 	struct inode *ip;
 	int cg;
-	long pref;
+	ufs2_daddr_t pref;
 	int size;	/* size for data blocks, mode for inodes */
-	u_int32_t (*allocator)();
+	allocfcn_t *allocator;
 {
 	register struct fs *fs;
-	long result;
+	ufs2_daddr_t result;
 	int i, icg = cg;
 
 	fs = ip->i_fs;

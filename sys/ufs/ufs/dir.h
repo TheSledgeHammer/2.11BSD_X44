@@ -78,7 +78,7 @@
 #define DIRBLKSIZ	DEV_BSIZE
 #define	MAXNAMLEN	255
 
-struct	direct {
+struct direct {
 	u_int32_t d_ino;				/* inode number of entry */
 	u_int16_t d_reclen;				/* length of this record */
 	u_int8_t  d_type; 				/* file type, see below */

@@ -46,6 +46,8 @@
  *
  * October 1992
  */
+#ifndef _FS_MSDOSFS_DENODE_H_
+#define	_FS_MSDOSFS_DENODE_H_
 
 /*
  * This is the pc filesystem specific portion of the vnode structure.
@@ -309,3 +311,4 @@ int removede(struct denode *, struct denode *);
 int uniqdosname(struct denode *, struct componentname *, u_char *);
 int findwin95(struct denode *);
 #endif	/* _KERNEL */
+#endif	/* !_FS_MSDOSFS_DENODE_H_ */

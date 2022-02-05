@@ -56,7 +56,7 @@ struct mfs_args {
 };
 #endif /* MFS */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 
 struct buf;
 struct inode;
@@ -101,8 +101,8 @@ struct ufsmount {
 /*
  * Filesystem types
  */
-#define UFS1  1
-#define UFS2  2
+#define UFS1  	1
+#define UFS2  	2
 
 /*
  * Flags describing the state of quotas.

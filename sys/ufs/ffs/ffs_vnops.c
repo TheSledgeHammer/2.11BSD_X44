@@ -59,6 +59,14 @@
 #include <miscfs/fifofs/fifo.h>
 #include <miscfs/specfs/specdev.h>
 
+#ifdef NFS
+int	 lease_check (struct vop_lease_args *);
+#define	 ufs_lease_check lease_check
+#else
+#define	 ufs_lease_check ((int (*) (struct vop_lease_args *))nullop)
+#endif
+#define	 ufs_revoke ((int (*) (struct vop_revoke_args *))vop_norevoke)
+
 /* Global vfs data structures for ufs/ffs. */
 struct vnodeops ffs_vnodeops = {
 		.vop_default = vop_default_error,/* default */

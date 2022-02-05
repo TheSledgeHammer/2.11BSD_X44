@@ -164,7 +164,6 @@ bio_doread(vp, blkno, size, cred, async)
 	return (bp);
 }
 
-
 /*
  * Read a disk block.
  * This algorithm described in Bach (p.54).
@@ -196,7 +195,6 @@ bread(vp, blkno, size, cred, bpp)
 	 */
 	return (biowait(bp));
 }
-
 
 /*
  * Read-ahead multiple disk blocks. The first is sync, the rest async.

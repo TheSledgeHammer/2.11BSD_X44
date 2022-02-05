@@ -528,7 +528,7 @@ iso_uiodir(idp,dp,off)
 	int error;
 
 	dp->d_name[dp->d_namlen] = 0;
-	dp->d_reclen = DIRSIZ(dp);
+	dp->d_reclen = GENERIC_DIRSIZ(dp);
 
 	if (idp->uio->uio_resid < dp->d_reclen) {
 		idp->eofflag = 0;
@@ -588,7 +588,7 @@ iso_shipdir(idp)
 			}
 		}
 	}
-	idp->current.d_reclen = DIRSIZ(&idp->current);
+	idp->current.d_reclen = GENERIC_DIRSIZ(&idp->current);
 	if (assoc) {
 		idp->assocoff = idp->curroff;
 		bcopy(&idp->current, &idp->assocent, idp->current.d_reclen);

@@ -32,6 +32,8 @@
  *
  *	@(#)fs.h	8.13 (Berkeley) 3/21/95
  */
+#ifndef _UFS_FFS_FS_H_
+#define	_UFS_FFS_FS_H_
 
 /*
  * Each disk drive contains some number of file systems.
@@ -517,3 +519,5 @@ struct ocg {
 
 extern int inside[], around[];
 extern u_char *fragtbl[];
+
+#endif

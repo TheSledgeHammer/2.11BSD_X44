@@ -80,11 +80,9 @@ struct uio {
 #endif /* _KERNEL */
 
 #ifndef _KERNEL
-int	uiomove(void *, size_t, struct uio *);
-#else /* !_KERNEL */
 #include <sys/cdefs.h>
-
 __BEGIN_DECLS
+int		uiomove(void *, size_t, struct uio *);
 ssize_t	readv(int, const struct iovec *, int);
 ssize_t	writev(int, const struct iovec *, int);
 __END_DECLS

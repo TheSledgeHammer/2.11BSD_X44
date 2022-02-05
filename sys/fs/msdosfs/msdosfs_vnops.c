@@ -1501,7 +1501,7 @@ msdosfs_readdir(ap)
 					strlcpy(dirbuf.d_name, "..", sizeof(dirbuf.d_name));
 					break;
 				}
-				dirbuf.d_reclen = DIRSIZ(&dirbuf);
+				dirbuf.d_reclen = GENERIC_DIRSIZ(&dirbuf);
 				if (uio->uio_resid < dirbuf.d_reclen)
 					goto out;
 				error = uiomove((caddr_t) & dirbuf, dirbuf.d_reclen, uio);
@@ -1611,7 +1611,7 @@ msdosfs_readdir(ap)
 			else
 				dirbuf.d_name[dirbuf.d_namlen] = 0;
 			chksum = -1;
-			dirbuf.d_reclen = DIRSIZ(&dirbuf);
+			dirbuf.d_reclen = GENERIC_DIRSIZ(&dirbuf);
 			if (uio->uio_resid < dirbuf.d_reclen) {
 				brelse(bp);
 				goto out;

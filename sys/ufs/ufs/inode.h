@@ -168,7 +168,7 @@ struct inode {
 #define	IN_LAZYMOD			0x0100		/* Modified, but don't write yet. */
 #define IN_NOCOPYWRITE		0x0200		/* Special NOCOPY write */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * The DIP macro is used to access fields in the dinode that are
  * not cached in the inode itself.
