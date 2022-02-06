@@ -6,6 +6,8 @@
  *	@(#)vm_text.c	1.2 (2.11BSD GTE) 11/26/94
  */
 
+#include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
@@ -201,6 +203,23 @@ vm_xccdec(xp)
 		xp->psx_caddr = NULL;
 	}
 	xunlock(&vm_text_lock);
+}
+
+/*
+ * Free the swap image of all unused saved-text text segments which are from
+ * device dev (used by umount system call).  If dev is NODEV, do all devices
+ * (used when rebooting or malloc of swapmap failed).
+ */
+void
+vm_xumount(dev)
+	dev_t dev;
+{
+	register vm_text_t xp;
+	TAILQ_FOREACH(xp, &vm_text_list, psx_list) {
+		if(xp->psx_vptr != NULL && (dev == xp->psx_vptr->v_mount->mnt_dev || dev == NODEV)) {
+			vm_xuntext(xp);
+		}
+	}
 }
 
 /*

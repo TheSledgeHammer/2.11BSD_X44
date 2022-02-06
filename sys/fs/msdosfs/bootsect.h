@@ -96,6 +96,5 @@ union bootsector {
 #define	bsHiddenSecs	bsBPB.bpbHiddenSecs
 #define	bsHugeSectors	bsBPB.bpbHugeSectors
 #endif
-#endif
 
 #endif /* !_FS_MSDOSFS_BOOTSECT_H_ */

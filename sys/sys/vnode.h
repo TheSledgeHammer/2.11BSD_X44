@@ -307,7 +307,8 @@ struct vnodeop_desc {
 	int		vdesc_cred_offset;			/* cred location, if any */
 	int		vdesc_proc_offset;			/* proc location, if any */
 	int		vdesc_componentname_offset; /* if any */
-	caddr_t	*vdesc_transports;
+	/* Support to manage this list is not yet part of BSD. */
+	caddr_t	*vdesc_transports;			/* a list private data (about each operation) for each transport layer. */
 };
 
 #ifdef _KERNEL
@@ -328,32 +329,20 @@ struct lock_object mntvnode_slock;
  * Crays, so if you decide to port this to such a serious machine,
  * you might want to consult Intrisics.h's XtOffset{,Of,To}.
  */
-#define VOPARG_OFFSET(p_type,field) 							\
+#define VOPARG_OFFSET(p_type, field) 							\
 	((int) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
-#define VOPARG_OFFSETOF(s_type,field) 							\
-	VOPARG_OFFSET(s_type*,field)
+#define VOPARG_OFFSETOF(s_type, field) 		VOPARG_OFFSET(s_type*, field)
 //#define	VOPARG_OFFSETOF(s_type, field)	            offsetof((s_type)*, field)
-#define VOPARG_OFFSETTO(S_TYPE,S_OFFSET,STRUCT_P) 				\
+#define VOPARG_OFFSETTO(S_TYPE, S_OFFSET, STRUCT_P) 				\
 	((S_TYPE)(((char*)(STRUCT_P))+(S_OFFSET)))
 
+struct vop_generic_args;
+typedef int (*vocall_func_t)(struct vop_generic_args *);
 
-#define VARGVOPS(ap) 		((ap)->a_head.a_ops)
-#define VOPARGS(ap, vop_field) 									\
-	VARGVOPS(ap)->vop_field
-
-#define VOCALL(vops, ap, vop_field) { 							\
-	if(VOPARGS(ap, vop_field) == (vops).vop_field) {			\
-		VOPARGS(ap, vop_field);									\
-	} else {													\
-		(vops).vop_field;										\
-	}															\
-}
-
-//#define VOCALL(OPSV, OFF, AP) 		((*((OPSV)[(OFF)]))(AP))
-//#define VCALL(VP, OFF, AP) 			VOCALL((VP)->v_op,(OFF),(AP))
-#define VDESC(OP) 					(&(OP##_desc))
-#define VOFFSET(OP) 				(VDESC(OP)->vdesc_offset)
-
+#define VOCALL(VOPS, AP)	(*(vocall_func_t *)((char *)(VOPS)+((AP)->a_desc->vdesc_offset)))(AP)
+#define VCALL(VP, AP) 		(VOCALL((VP)->v_op,(AP)))
+#define VDESC(OP) 			(&(OP##_desc))
+#define VOFFSET(OP) 		(VDESC(OP)->vdesc_offset)
 /*
  * Finally, include the default set of vnode operations.
  */

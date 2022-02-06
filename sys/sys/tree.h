@@ -119,7 +119,7 @@ struct type *name##_SPLAY_INSERT(struct name *, struct type *);			\
 struct type *name##_SPLAY_REMOVE(struct name *, struct type *);			\
 																		\
 /* Finds the node with the same key as elm */							\
-static __inline struct type *											\
+__inline struct type *													\
 name##_SPLAY_FIND(struct name *head, struct type *elm)					\
 {																		\
 	if (SPLAY_EMPTY(head))												\
@@ -130,7 +130,7 @@ name##_SPLAY_FIND(struct name *head, struct type *elm)					\
 	return (NULL);														\
 }																		\
 																		\
-static __inline struct type *											\
+__inline struct type *													\
 name##_SPLAY_NEXT(struct name *head, struct type *elm)					\
 {																		\
 	name##_SPLAY(head, elm);											\
@@ -144,7 +144,7 @@ name##_SPLAY_NEXT(struct name *head, struct type *elm)					\
 	return (elm);														\
 }																		\
 																		\
-static __inline struct type *											\
+__inline struct type *													\
 name##_SPLAY_MIN_MAX(struct name *head, int val)						\
 {																		\
 	name##_SPLAY_MINMAX(head, val);										\
@@ -238,7 +238,8 @@ name##_SPLAY(struct name *head, struct type *elm)						\
 /* Splay with either the minimum or the maximum element
  * Used to find minimum or maximum element in tree.
  */																		\
-void name##_SPLAY_MINMAX(struct name *head, int __comp) 				\
+void 																	\
+name##_SPLAY_MINMAX(struct name *head, int __comp) 						\
 {																		\
 	struct type __node, *__left, *__right, *__tmp;						\
 																		\
@@ -627,7 +628,7 @@ name##_RB_FIND(struct name *head, struct type *elm)						\
 }																		\
 																		\
 /* ARGSUSED */															\
-struct type *															\
+__inline struct type *													\
 name##_RB_NEXT(struct type *elm)										\
 {																		\
 	if (RB_RIGHT(elm, field)) {											\

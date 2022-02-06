@@ -490,8 +490,9 @@ ufs211_chmod1(vp, mode)
 	register struct vnode *vp;
 	register int mode;
 {
-	register struct ufs211_inode *ip = UFS211_VTOI(vp);
+	register struct ufs211_inode *ip;
 
+	ip = UFS211_VTOI(vp);
 	if (u->u_uid != ip->i_uid && !suser())
 		return (u->u_error);
 	if (u->u_uid) {
@@ -611,9 +612,9 @@ ufs211_read(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(spec_vnodeops, vop_read, ap);
-
 	ip = UFS211_VTOI(ap->a_vp);
+
+	error = VOCALL(ap->a_vp->v_op, &ap->a_head);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
 		ip->i_flag |= IN_ACCESS;
 	}
@@ -633,11 +634,11 @@ ufs211_write(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(spec_vnodeops, vop_write, ap);
-
 	ip = UFS211_VTOI(ap->a_vp);
+
+	error = VOCALL(ap->a_vp->v_op, &ap->a_head);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
-		UFS211_VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
 	return (error);
 }
@@ -687,7 +688,7 @@ ufs211_fsync(ap)
 
 	syncip(UFS211_VTOI(vp));
 
-	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
+	return (VOP_UPDATE(vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
 }
 
 int
@@ -1355,7 +1356,7 @@ ufs211_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	VOPARGS(ap, vop_strategy);
+	VOCALL(vp->v_op, &ap->a_head);
 	return (0);
 }
 
@@ -1910,7 +1911,7 @@ ufs211spec_read(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(spec_vnodeops, vop_read, ap);
+	error = VOCALL(&spec_vnodeops, &ap->a_head);
 
 	ip = UFS211_VTOI(ap->a_vp);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
@@ -1940,7 +1941,7 @@ ufs211spec_write(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(spec_vnodeops, vop_write, ap);
+	error = VOCALL(&spec_vnodeops, &ap->a_head);
 
 	ip = UFS211_VTOI(ap->a_vp);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
@@ -1969,7 +1970,7 @@ ufs211spec_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ufs211_itimes(vp);
 	simple_unlock(&vp->v_interlock);
-	return (VOCALL(spec_vnodeops, ap, vop_close));
+	return (VOCALL(&spec_vnodeops, &ap->a_head));
 }
 
 #ifdef FIFO
@@ -1984,7 +1985,7 @@ ufs211fifo_read(ap)
 	 */
 	UFS211_VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
 
-	return (VOPARGS(ap, vop_read));
+	return (VOCALL(&fifo_vnodeops, &ap->a_head));
 }
 
 int
@@ -1998,7 +1999,7 @@ ufs211fifo_write(ap)
 	 */
 	UFS211_VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
 
-	return (VOPARGS(ap, vop_write));
+	return (VOCALL(&fifo_vnodeops, &ap->a_head));
 }
 
 int
@@ -2013,7 +2014,7 @@ ufs211fifo_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ufs211_itimes(vp);
 	simple_unlock(&vp->v_interlock);
-	return (VOPARGS(ap, vop_close));
+	return (VOCALL(&fifo_vnodeops, &ap->a_head));
 }
 #endif /* FIFO */
 

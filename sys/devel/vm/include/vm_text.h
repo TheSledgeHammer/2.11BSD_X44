@@ -222,6 +222,7 @@ void	vm_xalloc(struct vnode *, u_long, off_t);
 void	vm_xfree(void);
 void	vm_xexpand(struct proc *, vm_text_t);
 void	vm_xccdec(vm_text_t);
+void	vm_xumount(dev_t);
 void	vm_xuntext(vm_text_t);
 void	vm_xuncore(size_t);
 int		vm_xpurge(void);

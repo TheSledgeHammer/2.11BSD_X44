@@ -51,10 +51,13 @@
 #include <vm/include/vm.h>
 
 extern u_long 			nextgennumber;
-typedef ufs2_daddr_t 	allocfcn_t(struct inode *ip, int cg, ufs2_daddr_t bpref, int size);
+typedef ufs2_daddr_t 	allocfcn_t(struct inode *, int, ufs2_daddr_t, int);
 
 static ufs2_daddr_t 	ffs_alloccg(struct inode *, int, ufs2_daddr_t, int);
 static ufs2_daddr_t 	ffs_alloccgblk(struct fs *, struct cg *, ufs2_daddr_t);
+#ifdef DIAGNOSTIC
+static int				ffs_checkblk(struct inode *, ufs2_daddr_t, long);
+#endif
 static ufs2_daddr_t 	ffs_clusteralloc(struct inode *, int, ufs2_daddr_t, int);
 static ino_t			ffs_dirpref(struct fs *);
 static ufs2_daddr_t 	ffs_fragextend(struct inode *, int, long, int, int);
@@ -62,9 +65,9 @@ static void				ffs_fserr(struct fs *, u_int, char *);
 static ufs2_daddr_t		ffs_hashalloc(struct inode *, int, ufs2_daddr_t, int, allocfcn_t *);
 static ino_t			ffs_nodealloccg(struct inode *, int, ufs2_daddr_t, int);
 static ufs1_daddr_t 	ffs_mapsearch(struct fs *, struct cg *, ufs2_daddr_t, int);
-
 static int				ffs_reallocblks_ufs1(struct vop_reallocblks_args *);
 static int				ffs_reallocblks_ufs2(struct vop_reallocblks_args *);
+void					ffs_clusteracct(struct fs *, struct cg *, ufs1_daddr_t, int);
 
 /*
  * Allocate a block in the file system.
@@ -96,6 +99,7 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	register struct fs *fs;
 	ufs2_daddr_t bno;
 	int cg, error;
+	int64_t delta;
 	
 	*bnp = 0;
 	fs = ip->i_fs;
@@ -124,7 +128,8 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 		cg = dtog(fs, bpref);
 	bno = ffs_hashalloc(ip, cg, bpref, size, ffs_alloccg);
 	if (bno > 0) {
-		DIP(ip, blocks) += btodb(size);
+		delta += btodb(size);
+		DIP(ip, blocks) = delta;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		*bnp = bno;
 		return (0);
@@ -163,6 +168,7 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	struct buf *bp;
 	int cg, request, error;
 	ufs2_daddr_t bprev, bno;
+	int64_t delta;
 	
 	vp = ITOV(ip);
 	*bpp = 0;
@@ -210,8 +216,8 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	if (bno) {
 		if (bp->b_blkno != fsbtodb(fs, bno))
 			panic("bad blockno");
-
-		DIP(ip, blocks) += btodb(nsize - osize);
+		delta += btodb(nsize - osize);
+		DIP(ip, blocks) = delta;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
@@ -273,7 +279,8 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		ffs_blkfree(ip, bprev, (long)osize);
 		if (nsize < request)
 			ffs_blkfree(ip, bno + numfrags(fs, nsize), (long)(request - nsize));
-		DIP(ip, blocks) += btodb(nsize - osize);
+		delta += btodb(nsize - osize);
+		DIP(ip, blocks) = delta;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
@@ -426,7 +433,7 @@ ffs_reallocblks_ufs1(ap)
 	/*
 	 * Search the block map looking for an allocation of the desired size.
 	 */
-	if ((newblk = ffs_hashalloc(ip, dtog(fs, pref), (long)pref, len, (u_int32_t (*)())ffs_clusteralloc)) == 0)
+	if ((newblk = ffs_hashalloc(ip, dtog(fs, pref), (long)pref, len, ffs_clusteralloc)) == 0)
 		goto fail;
 	/*
 	 * We have found a new contiguous block.
@@ -479,7 +486,7 @@ ffs_reallocblks_ufs1(ap)
 	} else {
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		if (!doasyncfree)
-			VOP_UPDATE(vp, &time, &time, MNT_WAIT);
+			VOP_UPDATE(vp, NULL, NULL, 1);
 	}
 	if (ssize < len)
 		if (doasyncfree)
@@ -665,7 +672,7 @@ ffs_reallocblks_ufs2(ap)
 	} else {
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		if (!doasyncfree)
-			VOP_UPDATE(vp, &time, &time, MNT_WAIT);
+			VOP_UPDATE(vp, NULL, NULL, 1);
 	}
 	if (ssize < len)
 		if (doasyncfree)
@@ -1024,7 +1031,7 @@ ffs_hashalloc(ip, cg, pref, size, allocator)
  * Check to see if the necessary fragments are available, and 
  * if they are, allocate them.
  */
-static ufs1_daddr_t
+static ufs2_daddr_t
 ffs_fragextend(ip, cg, bprev, osize, nsize)
 	struct inode *ip;
 	int cg;
@@ -1505,6 +1512,7 @@ gotit:
  * free map. If a fragment is deallocated, a possible 
  * block reassembly is checked.
  */
+void
 ffs_blkfree(ip, bno, size)
 	register struct inode *ip;
 	ufs2_daddr_t bno;

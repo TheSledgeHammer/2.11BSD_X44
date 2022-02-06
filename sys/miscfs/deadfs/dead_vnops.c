@@ -237,7 +237,7 @@ dead_ioctl(ap)
 {
 	if (!chkvnlock(ap->a_vp))
 		return (EBADF);
-	return (VOPARGS(ap, vop_ioctl));
+	return (VCALL(ap->a_vp, &ap->a_head));
 }
 
 /* ARGSUSED */
@@ -313,7 +313,7 @@ dead_lock(ap)
 	}
 	if (!chkvnlock(vp))
 		return (0);
-	return (VOPARGS(ap, vop_lock));
+	return (VCALL(vp, &ap->a_head));
 }
 
 /*

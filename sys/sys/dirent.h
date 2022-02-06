@@ -51,7 +51,9 @@
 /*
  * Backwards compatibility.
  */
+#ifndef direct
 #define direct		dirent
+#endif
 
 #define	MAXNAMLEN	255
 
@@ -88,7 +90,6 @@ struct dirent {
  * without the d_name field, plus enough space for the name with a terminating
  * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
  */
-//#undef DIRSIZ
 #define GENERIC_DIRSIZ(dp) \
     ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 

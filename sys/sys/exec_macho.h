@@ -263,7 +263,7 @@ int 	exec_macho_load_file(struct exec_linker *, const char *, u_long *, int, int
 int 	exec_macho_load_vnode(struct exec_linker *, struct vnode *, struct exec_macho_fat_header *, u_long *, int, int, int);
 
 u_long	exec_macho_thread_entry(struct exec_macho_thread_command *);
-int		exec_macho_linker(struct lwp *, struct exec_linker *);
+int		exec_macho_linker(struct exec_linker *);
 int		macho_copyargs(struct exec_linker *, struct ps_strings *, char **, void *);
 #endif /* _KERNEL */
 

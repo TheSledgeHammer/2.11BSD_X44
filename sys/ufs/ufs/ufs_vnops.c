@@ -1781,7 +1781,7 @@ ufs_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	VOPARGS(ap, vop_strategy);
+	VOCALL(vp->v_op, &ap->a_head);
 	return (0);
 }
 
@@ -1829,7 +1829,7 @@ ufsspec_read(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(spec_vnodeops, vop_read, ap);
+	error = VOCALL(&spec_vnodeops, &ap->a_head);
 
 	ip = VTOI(ap->a_vp);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
@@ -1859,7 +1859,7 @@ ufsspec_write(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(spec_vnodeops, vop_write, ap);
+	error = VOCALL(&spec_vnodeops, &ap->a_head);
 
 	ip = VTOI(ap->a_vp);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
@@ -1888,7 +1888,7 @@ ufsspec_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ufs_itimes(vp);
 	simple_unlock(&vp->v_interlock);
-	return (VOCALL(spec_vnodeops, ap, vop_close));
+	return (VOCALL(&spec_vnodeops, &ap->a_head));
 }
 
 #ifdef FIFO
@@ -1913,7 +1913,7 @@ ufsfifo_read(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(fifo_vnodeops, vop_read, ap);
+	error = VOCALL(&fifo_vnodeops, &ap->a_head);
 
 	ip = VTOI(ap->a_vp);
 	if ((ap->a_vp->v_mount->mnt_flag & MNT_NOATIME) == 0 && ip != NULL
@@ -1944,7 +1944,7 @@ ufsfifo_write(ap)
 
 	uio = ap->a_uio;
 	resid = uio->uio_resid;
-	error = VOCALL(fifo_vnodeops, vop_write, ap);
+	error = VOCALL(&fifo_vnodeops, &ap->a_head);
 
 	ip = VTOI(ap->a_vp);
 	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
@@ -1974,7 +1974,7 @@ ufsfifo_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ufs_itimes(vp);
 	simple_unlock(&vp->v_interlock);
-	return (VOCALL(fifo_vnodeops, vop_close, ap));
+	return (VOCALL(&fifo_vnodeops, &ap->a_head));
 }
 #endif /* FIFO */
 

@@ -26,26 +26,40 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_EXTENT_H_
-#define _VM_EXTENT_H_
+#ifndef _VM_HAT_H_
+#define _VM_HAT_H_
 
-struct vm_extent {
-	LIST_ENTRY(vm_extent) 	ve_exnode;		/* extent entry */
-	struct extent 			*ve_extent;
-	u_long 					*ve_result;		/* extent result */
-	struct lock_object		*ve_lock;
+struct hatspl;
+SPLAY_HEAD(hatspl, vm_hat);
+struct vm_hat {
+	SPLAY_ENTRY(vm_hat)		vh_node;
+	char 					*vh_name;
+	int 					vh_type;
+	void					*vh_item;
+	int 					vh_nitems;
+	struct lock_object		vh_lock;
 };
-typedef struct vm_extent	*vm_extent_t;
 
-#define vm_extent_lock_init(ex) (simple_lock_init((ex)->ve_lock, "vm_extent_lock"))
-#define vm_extent_lock(ex) 		(simple_lock((ex)->ve_lock))
-#define vm_extent_unlock(ex) 	(simple_unlock((ex)->ve_lock))
+typedef struct vm_hat	*vm_hat_t;
 
-void		vm_exbootinit(vm_extent_t, char *, u_long, u_long, int, caddr_t, size_t, int);
-vm_extent_t	vm_exinit(char *, u_long, u_long, int, caddr_t, size_t, int);
-void		vm_exalloc_region(vm_extent_t, u_long, u_long, flags);
-void		vm_exalloc_subregion(vm_extent_t, u_long, u_long, u_long, int, u_long);
-void		vm_exfree(vm_extent_t, u_long, u_long, int);
-void		vm_exdestroy(vm_extent_t);
+#define HAT_VM 	0x01
+#define HAT_OVL 0x02
 
-#endif /* _VM_EXTENT_H_ */
+#define vm_hat_lock_init(hat) 	(simple_lock_init((hat)->vh_lock, "vm_hat_lock"))
+#define vm_hat_lock(hat) 		(simple_lock((hat)->vh_lock))
+#define vm_hat_unlock(hat) 		(simple_unlock((hat)->vh_lock))
+
+/* vm_hat */
+void		vm_hat_bootstrap(vm_hat_t);
+vm_hat_t	vm_hat_alloc(vm_hat_t, char *, int, int);
+void		vm_hat_free(vm_hat_t, char *, int);
+void 		*vm_hat_lookup(char *, int);
+void		vm_hat_add(vm_hat_t, char *, int, void *, int);
+void		vm_hat_remove(vm_hat_t, char *, int, int);
+
+/* vm_extent */
+void		vm_exbootinit(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
+void		vm_exbootinita(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
+void		vm_exboot(struct extent *, u_long, u_long, int);
+void		vm_exfree(struct extent *, u_long, u_long, int);
+#endif /* _VM_HAT_H_ */
