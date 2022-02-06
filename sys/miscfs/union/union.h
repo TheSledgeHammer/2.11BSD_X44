@@ -96,6 +96,7 @@ struct union_node {
 #define UN_CACHED	0x10		/* In union cache */
 
 extern int union_allocvp(struct vnode **, struct mount *, struct vnode *, struct vnode *, struct componentname *, struct vnode *, struct vnode *, int);
+extern int union_freevp(struct vnode *);
 extern int union_copyfile(struct vnode *, struct vnode *, struct ucred *, struct proc *);
 extern int union_copyup(struct union_node *, int, struct ucred *, struct proc *);
 extern int union_dowhiteout(struct union_node *, struct ucred *, struct proc *);
