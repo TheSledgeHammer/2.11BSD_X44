@@ -619,7 +619,7 @@ ffs_reallocblks_ufs2(ap)
 	/*
 	 * Search the block map looking for an allocation of the desired size.
 	 */
-	if ((newblk = ffs_hashalloc(ip, dtog(fs, pref), (long)pref, len, (u_int32_t (*)())ffs_clusteralloc)) == 0)
+	if ((newblk = ffs_hashalloc(ip, dtog(fs, pref), (long)pref, len, ffs_clusteralloc)) == 0)
 		goto fail;
 	/*
 	 * We have found a new contiguous block.
