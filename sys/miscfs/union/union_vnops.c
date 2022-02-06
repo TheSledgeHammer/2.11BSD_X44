@@ -1042,7 +1042,7 @@ union_rename(ap)
 		vrele(ap->a_fdvp);
 	}
 
-	if (fvp->v_op == union_vnodeop_p) {	/* always true */
+	if (fvp->v_op == &union_vnodeops) {	/* always true */
 		struct union_node *un = VTOUNION(fvp);
 		if (un->un_uppervp == NULLVP) {
 			/* XXX: should do a copyup */
@@ -1077,7 +1077,7 @@ union_rename(ap)
 		vput(ap->a_tdvp);
 	}
 
-	if (tvp != NULLVP && tvp->v_op == union_vnodeop_p) {
+	if (tvp != NULLVP && tvp->v_op == &union_vnodeops) {
 		struct union_node *un = VTOUNION(tvp);
 
 		tvp = un->un_uppervp;
