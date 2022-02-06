@@ -26,7 +26,7 @@
 
 ## Architecture Support:
 
-- i386/x86 (In Development): 90% Complete
+- i386/x86 (In Development)
 - AMD64 (Planned)
 - Arm 	(32-Bit/64-Bit) (Planned)
 - Riscv (32-Bit/64-Bit) (Planned)
@@ -41,16 +41,17 @@
 ## Project Aims:
 
 - Improve 2.11BSD's Dual Control (Proc & User)
-- Instruction & Data (I&D) Seperation (See devel folder)
-- Pseudo Segmentation (See devel folder)
+- Instruction & Data (I&D) Seperation (See devel/vm folder)
+- Pseudo Segmentation (See devel/vm folder)
 - Threading (Hybrid N/M):  
-  - Kernel Threads: (85% Complete)
-    - Machine-Dependent Code
+  - Kernel Threads:
+    - mcontext & ucontext
     - Bug Testing
-  - User Threads/Fibres: Work in Progress (70% Complete)
+  - User Threads/Fibres:
     - PThreads Support
     - IPC Improvements
-- Scheduler: (95% Complete)
+- Scheduler:
+  - Implement Preemptive capabilities
   - Bug Testing
 - Networking:
   - Firewall/ Packet Filter: NPF, PF & IPFilter
@@ -61,8 +62,8 @@
       - LFS2: 64-bit support via UFS/FFS2
       - LFS1: 32-bit support via UFS/FFS1
     - UFS1/UFS2:
-      - Journaling:
-      - Dirhash: Work in Progress
+      - Journaling
+      - Dirhash
 - Filesystems to Add:
   - EXT2/3/4
   - NTFS
@@ -75,12 +76,16 @@
 
 ## Development:
 
+### Started:
 - Please read the TODO for an in-depth list.
-Or
+
+OR
+
 - Read the README.md in "devel" for in-development concepts planned
 
-- Top Priority:
-  - Compiling for i386/x86 platform
+### To Start:
+- Package Manager: Port FreeBSD's
+- BSD Installer: Port DragonflyBSD's
 
 ## Porting:
 
