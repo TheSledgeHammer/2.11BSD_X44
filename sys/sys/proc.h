@@ -126,7 +126,7 @@ struct	proc {
     caddr_t				p_daddr;		/* virtual address of data area */
     caddr_t				p_saddr;		/* virtual address of stack area */
     caddr_t				p_taddr;		/* virtual address of text area */
-	size_t				p_dsize;		/* size of data area (clicks) */
+	size_t				p_dsize;		/* size of data segment (clicks) */
 	size_t				p_ssize;		/* size of stack segment (clicks) */
 	size_t				p_tsize;		/* size of text segment (clicks) */
 

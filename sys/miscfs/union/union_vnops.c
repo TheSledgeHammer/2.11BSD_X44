@@ -53,10 +53,10 @@
 #include <sys/lock.h>
 #include <miscfs/union/union.h>
 
-#define FIXUP(un, p) { \
+#define FIXUP(un, p) { 						\
 	if (((un)->un_flags & UN_ULOCK) == 0) { \
-		union_fixup(un, p); \
-	} \
+		union_fixup(un, p); 				\
+	} 										\
 }
 
 static void

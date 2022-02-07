@@ -6,24 +6,24 @@ INCSDIR= 	/usr/include/sys
 
 INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h buf.h 	\
 			bufq.h callout.h cdefs_aout.h cdefs_elf.h cdefs.h cdio.h chio.h 	\
-			clist.h conf.h cputopo.h device.h devsw.h dirent.h disk.h diskapm.h \
-			diskgpt.h disklabel.h diskmbr.h diskslice.h dk.h dkbad.h dmap.h 	\
-			domain.h dvdio.h endian.h errno.h event.h eventvar.h exec_aout.h 	\
-			exec_coff.h exec_ecoff.h exec_elf.h exec_linker.h exec_macho.h 		\
-			exec_pecoff.h exec_script.h exec_xcoff.h exec.h extent.h fcntl.h 	\
-			fdio.h file.h filedesc.h fnv_hash.h fperr.h gmon.h gsched_cfs.h		\
-			gsched_edf.h gsched.h inttypes.h ioccom.h ioctl_compat.h ioctl.h 	\
-			kenv.h kernel.h ksyms.h ktrace.h lock.h lockf.h malloc.h map.h 		\
-			mbuf.h memrange.h midiio.h mman.h mount.h msgbuf.h mtio.h mutex.h	\
-			namei.h null.h param.h percpu.h	poll.h power.h prf.h proc.h 		\
-			protosw.h ptrace.h pty.h queue.h reboot.h resource.h resourcevar.h 	\
-			rwlock.h scanio.h scsiio.h select.h signal.h signalvar.h socket.h 	\
-			socketvar.h stat.h stdarg.h	stdbool.h stddef.h stdint.h syscall.h 	\
-			syscallargs.h sysctl.h syslimits.h	syslog.h systm.h tablet.h 		\
-			termios.h time.h timeb.h timepps.h times.h trace.h tree.h tty.h 	\
-			ttychars.h ttydefaults.h ttydev.h types.h ucred.h uio.h un.h 		\
-			unistd.h unpcb.h user.h utsname.h uuid.h vcmd.h videoio.h vlimit.h 	\
-			vmmeter.h vnode_if.h vnode.h wait.h			
+			clist.h conf.h cputopo.h device.h devsw.h dir.h dirent.h disk.h 	\
+			diskapm.h diskgpt.h disklabel.h diskmbr.h diskslice.h dk.h dkbad.h 	\
+			dmap.h domain.h dvdio.h endian.h errno.h event.h eventvar.h 		\
+			exec_aout.h exec_coff.h exec_ecoff.h exec_elf.h exec_linker.h 		\
+			exec_macho.h exec_pecoff.h exec_script.h exec_xcoff.h exec.h 		\
+			extent.h fcntl.h fdio.h file.h filedesc.h fnv_hash.h fperr.h gmon.h \
+			gsched_cfs.h gsched_edf.h gsched.h inttypes.h ioccom.h 				\
+			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h lock.h 		\
+			lockf.h malloc.h map.h mbuf.h memrange.h midiio.h mman.h mount.h 	\
+			msgbuf.h mtio.h mutex.h	namei.h null.h param.h percpu.h	poll.h 		\
+			power.h prf.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h 		\
+			resource.h resourcevar.h rwlock.h scanio.h scsiio.h select.h 		\
+			signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h stdbool.h \
+			stddef.h stdint.h syscall.h syscallargs.h sysctl.h syslimits.h		\
+			syslog.h systm.h tablet.h termios.h time.h timeb.h timepps.h 		\
+			times.h trace.h tree.h tty.h ttychars.h ttydefaults.h ttydev.h 		\
+			types.h ucred.h uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h \
+			vcmd.h videoio.h vlimit.h vmmeter.h vnode_if.h vnode.h wait.h			
 
 INCSYMLINKS=									\
 		sys/exec_elf.h 	/usr/include/elf.h 		\

@@ -44,8 +44,8 @@
 #define FFS_ASYNCFREE		4	/* asynchronous block freeing enabled */
 #define	FFS_MAXID			5	/* number of valid ffs ids */
 
-#define FFS_NAMES { \
-	{ 0, 0 }, \
+#define FFS_NAMES { 					\
+	{ 0, 0 }, 							\
 	{ "doclusterread", CTLTYPE_INT }, 	\
 	{ "doclusterwrite", CTLTYPE_INT }, 	\
 	{ "doreallocblks", CTLTYPE_INT }, 	\
@@ -81,7 +81,7 @@ int			ffs_vfree(struct vop_vfree_args *);
 int			ffs_write(struct vop_write_args *);
 int			ffs_alloc(struct inode *, ufs2_daddr_t, ufs2_daddr_t, int, struct ucred *, ufs2_daddr_t *);
 int			ffs_balloc(struct inode *, ufs_lbn_t, int, struct ucred *, struct buf **, int);
-int			ffs_blkfree(struct inode *, ufs2_daddr_t, long);
+void		ffs_blkfree(struct inode *, ufs2_daddr_t, long);
 ufs1_daddr_t ffs_blkpref_ufs1(struct inode *, ufs_lbn_t, int, ufs1_daddr_t *);
 ufs2_daddr_t ffs_blkpref_ufs2(struct inode *, ufs_lbn_t, int, ufs2_daddr_t *);
 void		ffs_clrblock(struct fs *, u_char *, ufs1_daddr_t);

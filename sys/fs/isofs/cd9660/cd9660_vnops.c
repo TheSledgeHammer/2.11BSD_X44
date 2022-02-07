@@ -53,6 +53,7 @@
 #include <sys/dirent.h>
 #include <sys/malloc.h>
 #include <sys/uio.h>
+#include <sys/dir.h>
 
 #include <miscfs/specfs/specdev.h>
 #include <miscfs/fifofs/fifo.h>

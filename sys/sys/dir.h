@@ -1,5 +1,5 @@
-/*-
- * Copyright (c) 1989, 1993
+/*
+ * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,62 +30,23 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dirent.h	8.1 (Berkeley) 6/2/93
- * $Id: dirent.h,v 1.2 1994/08/02 07:52:47 davidg Exp $
+ *	@(#)dir.h	8.2 (Berkeley) 1/4/94
  */
-
-#ifndef _SYS_DIRENT_H_
-#define _SYS_DIRENT_H_
-
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <sys/stddef.h>
 
 /*
- * The dirent structure defines the format of directory entries returned by 
- * the getdirentries(2) system call.
- *
- * A directory entry has a struct dirent at the front of it, containing its
- * inode number, the length of the entry, and the length of the name
- * contained in the entry.  These are followed by the name padded to a 4
- * byte boundary with null bytes.  All names are guaranteed null terminated.
- * The maximum length of a name in a directory is MAXNAMLEN.
+ * The information in this file should be obtained from <dirent.h>
+ * and is provided solely (and temporarily) for backward compatibility.
  */
-#if __BSD_VISIBLE
-#define	MAXNAMLEN	255
+
+#ifndef _SYS_DIR_H_
+#define _SYS_DIR_H_
+
+/*
+ * Backwards compatibility.
+ */
+#ifndef direct
+#define direct		dirent
 #endif
-
-struct dirent {
-	unsigned long	d_fileno;				/* file number of entry */
-	unsigned short	d_reclen;				/* length of this record */
-	unsigned char	d_type; 				/* file type, see below */
-	unsigned char	d_namlen;				/* length of string in d_name */
-#if __BSD_VISIBLE
-	char			d_name[MAXNAMLEN + 1];	/* name must be no longer than this */
-#else
-	char			d_name[255 + 1];		/* name must be no longer than this */
-#endif
-};
-
-#if __BSD_VISIBLE
-/*
- * File types
- */
-#define	DT_UNKNOWN	 0
-#define	DT_FIFO		 1
-#define	DT_CHR		 2
-#define	DT_DIR		 4
-#define	DT_BLK		 6
-#define	DT_REG		 8
-#define	DT_LNK		10
-#define	DT_SOCK		12
-#define	DT_WHT		14
-
-/*
- * Convert between stat structure types and directory types.
- */
-#define	IFTODT(mode)	(((mode) & 0170000) >> 12)
-#define	DTTOIF(dirtype)	((dirtype) << 12)
 
 /*
  * The DIRSIZ macro gives the minimum record length which will hold
@@ -93,13 +54,8 @@ struct dirent {
  * without the d_name field, plus enough space for the name with a terminating
  * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
  */
-#define	_GENERIC_DIRLEN(namlen)	\
-	((offsetof(struct dirent, d_name) + (namlen) + 1 + 7) & ~7)
-#define	_GENERIC_DIRSIZ(dp)	\
-	_GENERIC_DIRLEN((dp)->d_namlen)
-#endif /* __BSD_VISIBLE */
+#undef DIRSIZ
+#define DIRSIZ(dp) \
+    ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 
-#ifdef _KERNEL
-#define	GENERIC_DIRSIZ(dp)	_GENERIC_DIRSIZ(dp)
-#endif
-#endif /* !_SYS_DIRENT_H_ */
+#endif /* !_SYS_DIR_H_ */

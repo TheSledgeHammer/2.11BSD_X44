@@ -44,6 +44,7 @@
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufs_extern.h>
 #include <ufs/ufs/ufsmount.h>
 
 #include <ufs/ffs/fs.h>
@@ -414,7 +415,7 @@ ffs_reallocblks_ufs1(ap)
 	/*
 	 * Find the preferred location for the cluster.
 	 */
-	pref = ffs_blkpref(ip, start_lbn, soff, sbap);
+	pref = ffs_blkpref_ufs1(ip, start_lbn, soff, sbap);
 	/*
 	 * If the block range spans two block maps, get the second map.
 	 */
@@ -600,7 +601,7 @@ ffs_reallocblks_ufs2(ap)
 	/*
 	 * Find the preferred location for the cluster.
 	 */
-	pref = ffs_blkpref(ip, start_lbn, soff, sbap);
+	pref = ffs_blkpref_ufs2(ip, start_lbn, soff, sbap);
 	/*
 	 * If the block range spans two block maps, get the second map.
 	 */
@@ -729,6 +730,7 @@ fail:
  *   2) quadradically rehash into other cylinder groups, until an
  *      available inode is located.
  */
+int
 ffs_valloc(ap)
 	struct vop_valloc_args /* {
 		struct vnode *a_pvp;

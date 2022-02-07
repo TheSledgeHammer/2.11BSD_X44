@@ -122,6 +122,6 @@ extern void union_newsize(struct vnode *, off_t, off_t);
 
 extern struct vnodeops 			union_vnodeops;
 extern struct vfsops 			union_vfsops;
-extern int 				uniondebug;
+extern int 						uniondebug;
 
 #endif /* _KERNEL */

@@ -64,9 +64,9 @@ vm_map_startup1()
 void
 vm_map_boot()
 {
-	vm_exboot(kmap_extent, kmap_extent->ex_start, sizeof(vm_map_t));
-	vm_exboot(kentry_extent, kentry_extent->ex_start, sizeof(vm_map_entry_t));
-	vm_exboot(vmspace_extent, vmspace_extent->ex_start, sizeof(struct vmspace *));
+	vm_exboot(kmap_extent, kmap_extent->ex_start, sizeof(vm_map_t), EX_FAST);
+	vm_exboot(kentry_extent, kentry_extent->ex_start, sizeof(vm_map_entry_t), EX_FAST);
+	vm_exboot(vmspace_extent, vmspace_extent->ex_start, sizeof(struct vmspace *), EX_FAST);
 }
 
 struct extent *
