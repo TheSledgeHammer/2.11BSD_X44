@@ -59,7 +59,7 @@
  * The first boot and super blocks are given in absolute disk addresses.
  * The byte-offset forms are preferred, as they don't imply a sector size.
  */
-#define	DEV_BSIZE		512
+//#define	DEV_BSIZE		512
 
 #define BBSIZE			8192
 #define SBSIZE			8192

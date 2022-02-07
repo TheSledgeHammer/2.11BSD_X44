@@ -99,18 +99,6 @@ static struct swapbuf 			*swapbuf_pool;
 LIST_HEAD(swap_priority, swappri);
 static struct swap_priority 	swap_priority;
 
-struct swapdev *
-swapdrum_create(swp)
-	struct swdevt *swp;
-{
-	register struct swapdev *sdp;
-
-	sdp = (struct swapdev *)rmalloc(&swapmap, sizeof(struct swapdev *));
-	swp->sw_swapdev = sdp;
-
-	return (sdp);
-}
-
 void
 swapdrum_init(swp)
 	struct swdevt *swp;

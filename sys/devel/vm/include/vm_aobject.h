@@ -149,9 +149,9 @@ static simple_lock_data_t 		aobject_list_lock; 		/* lock for aobject lists */
 void 							vm_aobject_init(vm_size_t, vm_object_t, int);
 void 							vm_aobject_allocate(vm_size_t, vm_object_t, int);
 void							vm_aobject_swhash_allocate(vm_aobject_t, int, int);
-int 							vm_aobject_set_swslot (vm_object_t, int, int);
-static struct uao_swhash_elt	*vm_aobject_find_swhash_elt (vm_aobject_t, int, bool_t);
-static int			 			vm_aobject_find_swslot (vm_aobject_t, int);
-static void	 					vm_aobject_free (vm_aobject_t);
+int 							vm_aobject_set_swslot(vm_object_t, int, int);
+static struct uao_swhash_elt	*vm_aobject_find_swhash_elt(vm_aobject_t, int, bool_t);
+static int			 			vm_aobject_find_swslot(vm_aobject_t, int);
+static void	 					vm_aobject_free(vm_aobject_t);
 
 #endif /* _VM_AOBJECT_H_ */

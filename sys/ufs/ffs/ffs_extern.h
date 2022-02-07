@@ -100,6 +100,7 @@ int			ffs_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 int			ffs_unmount(struct mount *, int, struct proc *);
 int			ffs_vget(struct mount *, ino_t, struct vnode **);
 int			ffs_vptofh(struct vnode *, struct fid *);
+int			ffs_flushfiles(struct mount *, int, struct proc *);
 int			bwrite(struct buf *);		/* FFS needs a bwrite routine.  XXX */
 
 #ifdef DIAGNOSTIC

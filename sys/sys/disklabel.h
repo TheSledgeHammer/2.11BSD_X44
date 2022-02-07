@@ -96,8 +96,9 @@
 #endif
 
 /* Size of bootblock area in sector-size neutral bytes */
+#ifdef notyet
 #define BBSIZE				BSD_BOOTBLOCK_SIZE
-
+#endif
 #define	LABEL_PART			BSD_PART_RAW
 #define	RAW_PART			BSD_PART_RAW
 #define	SWAP_PART			BSD_PART_SWAP

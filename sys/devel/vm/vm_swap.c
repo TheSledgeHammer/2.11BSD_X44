@@ -269,9 +269,10 @@ swfree(p, index)
 		if (nblks > perdev) {
 			nblks = perdev;
 		}
-
 		swp->sw_nblks = nblks;
 	}
+	startslot = swap_search(swp, sdp);
+	/* find nslots */
 
 	/*
 	 * use below method combined with original swfree(p, indx).
@@ -281,40 +282,36 @@ swfree(p, index)
 	vm_swap_free(startslot, nslots);
 }
 
-swap_search(sdp, index)
-	struct swapdev 	*sdp;
-	int 			index;
-{
+/* find startslot for /dev/drum */
+int
+swap_search(swp, sdp)
 	struct swdevt 	*swp;
-	struct swapdev 	*sdwp;
-	int 			pageno, npages, nblks;
-	int startblk;
-
-	swp = &swdevt[index];
-	sdwp = swp->sw_swapdev;
+	struct swapdev 	*sdp;
+{
+	int pageno, npages, nblks, startslot;
 
 	nblks = swp->sw_nblks;
 	npages = dbtob(nblks) >> PAGE_SHIFT;
-	//pageno = btodb(npages << PAGE_SHIFT);
-
-	for(pageno = 1; pageno <= npages; pageno++) {
-		/* sanity check pageno and nblks are equal */
-		if(btodb(pageno << PAGE_SHIFT) == swap_block(nblks)) {
-
-		}
-		if(pageno == sdp->swd_drumoffset) {
-
+	if(swap_sanity(nblks, npages) == 0) {
+		pageno = btodb(npages << PAGE_SHIFT);
+		if (pageno == 0) {
+			for(pageno = 1; pageno <= npages; pageno++) {
+				if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
+					startslot = sdp->swd_drumoffset;
+					break;
+				}
+			}
+		} else {
+			if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
+				startslot = sdp->swd_drumoffset;
+				break;
+			}
 		}
 	}
-
-	/* sanity check pageno and nblks are equal */
-	if(swap_page(btodb(npages << PAGE_SHIFT)) == swap_block(nblks)) {
-
-	}
-
-	startblk = btodb(startslot << PAGE_SHIFT);
+	return (startslot);
 }
 
+/* sanity check npages and nblks align */
 int
 swap_sanity(nblks, npages)
 	int nblks, npages;
@@ -325,7 +322,6 @@ swap_sanity(nblks, npages)
 	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
 		blk = nblks - dvbase;
 		break;
-		//return (blk);
 	}
     for(i = 0; i <= npages; i++) {
         if(i != 0) {
@@ -337,33 +333,6 @@ swap_sanity(nblks, npages)
     	return (0);
     }
     return (1);
-}
-
-int
-swap_block(nblks)
-	int nblks;
-{
-	long blk;
-	swblk_t dvbase;
-	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
-		blk = nblks - dvbase;
-		return (blk);
-	}
-	return (-1);
-}
-
-int
-swap_page(npages)
-   int npages;
-{
-    int i, page;
-    for(i = 0; i <= npages; i++) {
-        if(i != 0) {
-            page = i;
-            break;
-        }
-    }
-    return (page);
 }
 
 /* to be placed machine autoconf.c */

@@ -59,7 +59,9 @@
 #include <ufs/ffs/ffs_extern.h>
 #include <miscfs/specfs/specdev.h>
 
-int ffs_sbupdate (struct ufsmount *, int);
+int	ffs_reload(struct mount *, struct ucred *, struct proc *);
+int	ffs_oldfscompat(struct fs *);
+int ffs_sbupdate(struct ufsmount *, int);
 
 struct vfsops ufs_vfsops = {
 		.vfs_mount = ffs_mount,
@@ -249,6 +251,55 @@ ffs_mount(mp, path, data, ndp, p)
 }
 
 /*
+ * Load up the contents of an inode and copy the appropriate pieces
+ * to the incore copy.
+ */
+static int
+ffs_load_inode(bp, ip, fs, ino)
+	struct buf *bp;
+	struct inode *ip;
+	struct fs *fs;
+	ino_t ino;
+{
+	struct ufs1_dinode *dip1;
+	struct ufs2_dinode *dip2;
+	int error;
+
+	if (I_IS_UFS1(ip)) {
+		dip1 = ip->i_din.ffs1_din;
+		*dip1 = *((struct ufs1_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
+		ip->i_mode = dip1->di_mode;
+		ip->i_nlink = dip1->di_nlink;
+		ip->i_effnlink = dip1->di_nlink;
+		ip->i_size = dip1->di_size;
+		ip->i_flags = dip1->di_flags;
+		ip->i_gen = dip1->di_gen;
+		ip->i_uid = dip1->di_uid;
+		ip->i_gid = dip1->di_gid;
+		return (0);
+	}
+	dip2 = ((struct ufs2_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
+	/*
+	if ((error = ffs_verify_dinode_ckhash(fs, dip2)) != 0 &&
+	    !ffs_fsfail_cleanup(ITOUMP(ip), error)) {
+		printf("%s: inode %jd: check-hash failed\n", fs->fs_fsmnt, (intmax_t)ino);
+		return (error);
+	}
+	*/
+	*ip->i_din.ffs2_din = *dip2;
+	dip2 = ip->i_din.ffs2_din;
+	ip->i_mode = dip2->di_mode;
+	ip->i_nlink = dip2->di_nlink;
+	ip->i_effnlink = dip2->di_nlink;
+	ip->i_size = dip2->di_size;
+	ip->i_flags = dip2->di_flags;
+	ip->i_gen = dip2->di_gen;
+	ip->i_uid = dip2->di_uid;
+	ip->i_gid = dip2->di_gid;
+	return (0);
+}
+
+/*
  * Reload all incore data for a filesystem (used after running fsck on
  * the root filesystem and finding things to fix). The filesystem must
  * be mounted read-only.
@@ -261,6 +312,7 @@ ffs_mount(mp, path, data, ndp, p)
  *	5) invalidate all cached file data.
  *	6) re-read inode data for all active vnodes.
  */
+int
 ffs_reload(mountp, cred, p)
 	register struct mount *mountp;
 	struct ucred *cred;
@@ -281,23 +333,28 @@ ffs_reload(mountp, cred, p)
 	 * Step 1: invalidate all cached meta-data.
 	 */
 	devvp = VFSTOUFS(mountp)->um_devvp;
+	vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY);
 	if (vinvalbuf(devvp, 0, cred, p, 0, 0))
 		panic("ffs_reload: dirty1");
 	/*
 	 * Step 2: re-read superblock from disk.
 	 */
-	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0)
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0) {
 		size = DEV_BSIZE;
-	else
+	} else {
 		size = dpart.disklab->d_secsize;
-	if (error == bread(devvp, btodb(fs->fs_sblockloc), SBSIZE, NOCRED, &bp))
+	}
+	if (error == bread(devvp, btodb(fs->fs_sblockloc), SBSIZE, NOCRED, &bp)) {
 		return (error);
+	}
 	newfs = (struct fs*) bp->b_data;
-	if (newfs->fs_magic != FS_MAGIC || newfs->fs_bsize > MAXBSIZE
+	if ((newfs->fs_magic != FS_UFS1_MAGIC && newfs->fs_magic != FS_UFS2_MAGIC)
+			|| newfs->fs_bsize > MAXBSIZE
 			|| newfs->fs_bsize < sizeof(struct fs)) {
 		brelse(bp);
 		return (EIO); /* XXX needs translation */
 	}
+
 	fs = VFSTOUFS(mountp)->um_fs;
 	/*
 	 * Copy pointer fields back into superblock before copying in	XXX
@@ -334,15 +391,20 @@ ffs_reload(mountp, cred, p)
 		lp = fs->fs_maxcluster;
 		for (i = 0; i < fs->fs_ncg; i++)
 			*lp++ = fs->fs_contigsumsize;
+		space = lp;
 	}
+	size = fs->fs_ncg * sizeof(u_int8_t);
+//	fs->fs_contigdirs = (u_int8_t *)space;
+//	bzero(fs->fs_contigdirs, size);
 
-	loop: simple_lock(&mntvnode_slock);
-	for (vp = mountp->mnt_vnodelist.lh_first; vp != NULL; vp = nvp) {
+loop:
+	simple_lock(&mntvnode_slock);
+	for (vp = LIST_FIRST(&mountp->mnt_vnodelist); vp != NULL; vp = nvp) {
 		if (vp->v_mount != mountp) {
 			simple_unlock(&mntvnode_slock);
 			goto loop;
 		}
-		nvp = vp->v_mntvnodes.le_next;
+		nvp = LIST_NEXT(vp, v_mntvnodes);
 		/*
 		 * Step 4: invalidate all inactive vnodes.
 		 */
@@ -362,14 +424,16 @@ ffs_reload(mountp, cred, p)
 		 * Step 6: re-read inode data for all active vnodes.
 		 */
 		ip = VTOI(vp);
-		if (error
-				== bread(devvp, fsbtodb(fs, ino_to_fsba(fs, ip->i_number)),
-						(int) fs->fs_bsize, NOCRED, &bp)) {
+		if (error == bread(devvp, fsbtodb(fs, ino_to_fsba(fs, ip->i_number)), (int) fs->fs_bsize, NOCRED, &bp)) {
 			vput(vp);
 			return (error);
 		}
-		ip->i_din = *((struct dinode*) bp->b_data
-				+ ino_to_fsbo(fs, ip->i_number));
+		if ((error = ffs_load_inode(bp, ip, fs, ip->i_number)) != 0) {
+			brelse(bp);
+			vput(vp);
+			return (0);
+		}
+		ip->i_effnlink = ip->i_nlink;
 		brelse(bp);
 		vput(vp);
 		simple_lock(&mntvnode_slock);
@@ -524,7 +588,7 @@ ffs_oldfscompat(fs)
 	fs->fs_interleave = max(fs->fs_interleave, 1);		/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)			/* XXX */
 		fs->fs_nrpos = 8;								/* XXX */
-	if (fs->fs_inodefmt < FS_44INODEFMT) {				/* XXX */
+	if (fs->fs_old_inodefmt < FS_44INODEFMT) {			/* XXX */
 		u_int64_t sizepb = fs->fs_bsize;				/* XXX */
 								/* XXX */
 		fs->fs_maxfilesize = fs->fs_bsize * NDADDR - 1;	/* XXX */
@@ -672,7 +736,7 @@ ffs_sync(mp, waitfor, cred, p)
 	 */
 	simple_lock(&mntvnode_slock);
 loop:
-	for (vp = mp->mnt_vnodelist.lh_first;
+	for (vp = LIST_FIRST(&mp->mnt_vnodelist);
 	     vp != NULL;
 	     vp = nvp) {
 		/*
@@ -682,7 +746,7 @@ loop:
 		if (vp->v_mount != mp)
 			goto loop;
 		simple_lock(&vp->v_interlock);
-		nvp = vp->v_mntvnodes.le_next;
+		nvp = LIST_NEXT(vp, v_mntvnodes);
 		ip = VTOI(vp);
 		if ((ip->i_flag &
 		    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) == 0 &&
@@ -752,7 +816,7 @@ ffs_vget(mp, ino, vpp)
 		return (0);
 
 	/* Allocate a new vnode/inode. */
-	if (error == getnewvnode(VT_UFS, mp, ffs_vnodeops, &vp)) {
+	if (error == getnewvnode(VT_UFS, mp, &ffs_vnodeops, &vp)) {
 		*vpp = NULL;
 		return (error);
 	}
@@ -792,9 +856,9 @@ ffs_vget(mp, ino, vpp)
 		return (error);
 	}
 	if (ip->i_ump->um_fstype == UFS1) {
-		ip->i_din.ffs1_din = *((struct ufs1_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
+		ip->i_din.ffs1_din = ((struct ufs1_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
 	} else {
-		ip->i_din.ffs2_din = *((struct ufs2_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
+		ip->i_din.ffs2_din = ((struct ufs2_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
 	}
 	brelse(bp);
 
@@ -830,7 +894,7 @@ ffs_vget(mp, ino, vpp)
 	 * Ensure that uid and gid are correct. This is a temporary
 	 * fix until fsck has been changed to do the update.
 	 */
-	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
+	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_old_inodefmt < FS_44INODEFMT) {		/* XXX */
 		ip->i_uid = ip->i_din.ffs1_din->di_ouid;								/* XXX */
 		ip->i_gid = ip->i_din.ffs1_din->di_ogid;								/* XXX */
 	}																			/* XXX */
@@ -903,6 +967,7 @@ ffs_init(vfsp)
 /*
  * fast filesystem related variables.
  */
+int
 ffs_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
@@ -971,22 +1036,27 @@ ffs_sbupdate(mp, waitfor)
 	 */
 	if (allerror)
 		return (allerror);
-	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_sblockloc != SBLOCK_UFS1 && (fs->fs_flags & FS_FLAGS_UPDATED) == 0) {
-		printf("%s: correcting fs_sblockloc from %jd to %d\n", fs->fs_fsmnt, fs->fs_sblockloc, SBLOCK_UFS1);
-				fs->fs_sblockloc = SBLOCK_UFS1;
+	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_sblockloc != SBLOCK_UFS1
+			&& (fs->fs_flags & FS_FLAGS_UPDATED) == 0) {
+		printf("%s: correcting fs_sblockloc from %jd to %d\n", fs->fs_fsmnt,
+				fs->fs_sblockloc, SBLOCK_UFS1);
+		fs->fs_sblockloc = SBLOCK_UFS1;
 	}
-	if (fs->fs_magic == FS_UFS2_MAGIC && fs->fs_sblockloc != SBLOCK_UFS2 && (fs->fs_flags & FS_FLAGS_UPDATED) == 0) {
-		printf("%s: correcting fs_sblockloc from %jd to %d\n", fs->fs_fsmnt, fs->fs_sblockloc, SBLOCK_UFS2);
+	if (fs->fs_magic == FS_UFS2_MAGIC && fs->fs_sblockloc != SBLOCK_UFS2
+			&& (fs->fs_flags & FS_FLAGS_UPDATED) == 0) {
+		printf("%s: correcting fs_sblockloc from %jd to %d\n", fs->fs_fsmnt,
+				fs->fs_sblockloc, SBLOCK_UFS2);
 		fs->fs_sblockloc = SBLOCK_UFS2;
 	}
-	bp = getblk(mp->um_devvp, btodb(fs->fs_sblockloc), (int) fs->fs_sbsize, 0, 0);
+	bp = getblk(mp->um_devvp, btodb(fs->fs_sblockloc), (int) fs->fs_sbsize, 0,
+			0);
 	fs->fs_fmod = 0;
 	bcopy((caddr_t) fs, bp->b_data, (u_int) fs->fs_sbsize);
 	/* Restore compatibility to old file systems.	   XXX */
 	dfs = (struct fs*) bp->b_data; 					/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT) 		/* XXX */
 		dfs->fs_nrpos = -1; /* XXX */
-	if (fs->fs_inodefmt < FS_44INODEFMT) { 			/* XXX */
+	if (fs->fs_old_inodefmt < FS_44INODEFMT) { 		/* XXX */
 		int32_t *lp, tmp; /* XXX */
 		/* XXX */
 		lp = (int32_t*) &dfs->fs_qbmask; 			/* XXX */
