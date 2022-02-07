@@ -82,7 +82,7 @@
 							/* in specified number of hz */
 #define	VTR_STAMP	4		/* user specified stamp */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 #ifdef TRACE
 struct	proc *traceproc;
 u_long tracewhich, tracebuf[TRCSIZ];
