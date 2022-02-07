@@ -67,7 +67,6 @@ struct dirent {
 #endif
 };
 
-#if __BSD_VISIBLE
 /*
  * File types
  */
@@ -97,7 +96,6 @@ struct dirent {
 	((offsetof(struct dirent, d_name) + (namlen) + 1 + 7) & ~7)
 #define	_GENERIC_DIRSIZ(dp)	\
 	_GENERIC_DIRLEN((dp)->d_namlen)
-#endif /* __BSD_VISIBLE */
 
 #ifdef _KERNEL
 #define	GENERIC_DIRSIZ(dp)	_GENERIC_DIRSIZ(dp)
