@@ -56,12 +56,14 @@ struct vfsconf;
 struct vnode;
 
 __BEGIN_DECLS
+/*
 void 	diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
 void 	disksort(struct buf *, struct buf *);
 u_int 	dkcksum(struct disklabel *);
 char 	*readdisklabel(dev_t, int (*)(), struct disklabel *);
 int 	setdisklabel(struct disklabel *, struct disklabel *, u_long);
 int 	writedisklabel(dev_t, int (*)(), struct disklabel *);
+*/
 int		ufs_check_export(struct mount *, struct ufid *, struct mbuf *, struct vnode **, int *, struct ucred **);
 int		ufs_checkpath(struct inode *, struct inode *, struct ucred *);
 void	ufs_dirbad(struct inode *, doff_t, char *);

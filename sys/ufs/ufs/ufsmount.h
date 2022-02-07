@@ -36,6 +36,9 @@
 #ifndef _UFS_UFS_MOUNT_H_
 #define	_UFS_UFS_MOUNT_H_
 
+#include <sys/mount.h>
+//struct export_args;
+
 /*
  * Arguments to mount UFS-based filesystems
  */
