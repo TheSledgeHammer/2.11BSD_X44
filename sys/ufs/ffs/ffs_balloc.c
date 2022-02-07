@@ -95,7 +95,8 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 	struct buf *bp, *nbp;
 	struct vnode *vp;
 	struct indir indirs[NIADDR + 2];
-	ufs1_daddr_t newb, *bap, pref;
+	ufs2_daddr_t newb;
+	ufs1_daddr_t *bap, pref;
 	int deallocated, osize, nsize, num, i, error;
 	ufs1_daddr_t *allocib, *blkp, *allocblk, allociblk[NIADDR + 1];
 
@@ -328,7 +329,6 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 		ip->i_ffs1_blocks -= btodb(deallocated);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
-	(void) VOP_FSYNC(vp, cred, MNT_WAIT, flags, vp->v_proc);
 	return (error);
 }
 
@@ -582,6 +582,5 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 		dp->di_blocks -= btodb(deallocated);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
-	(void) VOP_FSYNC(vp, cred, MNT_WAIT, flags, vp->v_proc);
 	return (error);
 }

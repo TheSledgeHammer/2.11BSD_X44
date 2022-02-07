@@ -77,6 +77,7 @@ ffs_update(ap)
 	register struct fs *fs;
 	struct buf *bp;
 	struct inode *ip;
+	void *cp;
 	int error;
 
 	ip = VTOI(ap->a_vp);
@@ -125,8 +126,13 @@ ffs_update(ap)
 		brelse(bp);
 		return (error);
 	}
-	*((struct dinode *)bp->b_data +
-	    ino_to_fsbo(fs, ip->i_number)) = ip->i_din;
+	if (fs->fs_magic == FS_UFS1_MAGIC) {
+		cp = (char *)bp->b_data + (ino_to_fsbo(fs, ip->i_number) * sizeof(struct ufs1_dinode));
+		memcpy(cp, ip->i_din.ffs1_din, sizeof(struct ufs1_dinode));
+	} else {
+		cp = (char *)bp->b_data + (ino_to_fsbo(fs, ip->i_number) * sizeof(struct ufs2_dinode));
+		memcpy(cp, ip->i_din.ffs2_din, sizeof(struct ufs2_dinode));
+	}
 	if (ap->a_waitfor && (ap->a_vp->v_mount->mnt_flag & MNT_ASYNC) == 0)
 		return (bwrite(bp));
 	else {
@@ -142,6 +148,7 @@ ffs_update(ap)
  * Truncate the inode oip to at most length size, freeing the
  * disk blocks.
  */
+int
 ffs_truncate(ap)
 	struct vop_truncate_args /* {
 		struct vnode *a_vp;
@@ -176,7 +183,7 @@ ffs_truncate(ap)
 		if (length != 0)
 			panic("ffs_truncate: partial truncate of symlink");
 #endif
-		bzero((char *)&SHORTLINK(oip), (u_int)oip->i_size);
+		bzero((char *)SHORTLINK(oip), (u_int)oip->i_size);
 		oip->i_size = 0;
 		oip->i_flag |= IN_CHANGE | IN_UPDATE;
 		return (VOP_UPDATE(ovp, &tv, &tv, 1));
@@ -263,14 +270,16 @@ ffs_truncate(ap)
 	 * will be returned to the free list.  lastiblock values are also
 	 * normalized to -1 for calls to ffs_indirtrunc below.
 	 */
-	bcopy((caddr_t)&DIP(oip, db[0]), (caddr_t)oldblks, sizeof oldblks);
-	for (level = TRIPLE; level >= SINGLE; level--)
+	 
+	for (level = TRIPLE; level >= SINGLE; level--) {
 		if (lastiblock[level] < 0) {
-			DIP(oip, ib[level]) = 0;
+			DIP_SET(oip, ib[level], 0);
 			lastiblock[level] = -1;
 		}
-	for (i = NDADDR - 1; i > lastblock; i--)
-		DIP(oip, db[i]) = 0;
+	}
+	for (i = NDADDR - 1; i > lastblock; i--) {
+		DIP_SET(oip, db[i], 0);
+	}
 	oip->i_flag |= IN_CHANGE | IN_UPDATE;
 	if (error == VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT))
 		allerror = error;
@@ -280,9 +289,16 @@ ffs_truncate(ap)
 	 * Note that we save the new block configuration so we can check it
 	 * when we are done.
 	 */
-	bcopy((caddr_t)&DIP(oip, db[0]), (caddr_t)newblks, sizeof newblks);
-	bcopy((caddr_t)oldblks, (caddr_t)&DIP(oip, db[0]), sizeof oldblks);
+	for(i = 0; i < NDADDR; i++) {
+		newblks[i] = DIP(oip, db[i]);
+		DIP_SET(oip, db[i], oldblks[i]);
+	}
+	for (i = 0; i < NIADDR; i++) {
+		newblks[NDADDR + i] = DIP(oip, ib[i]);
+		DIP_SET(oip, ib[i], oldblks[NDADDR + i]);
+	}
 	oip->i_size = osize;
+	DIP_SET(oip, size, osize);
 	vflags = ((length > 0) ? V_SAVE : 0) | V_SAVEMETA;
 	allerror = vinvalbuf(ovp, vflags, ap->a_cred, ap->a_p, 0, 0);
 
@@ -301,7 +317,7 @@ ffs_truncate(ap)
 				allerror = error;
 			blocksreleased += count;
 			if (lastiblock[level] < 0) {
-				DIP(oip, ib[level]) = 0;
+				DIP_SET(oip, ib[level], 0);
 				ffs_blkfree(oip, bn, fs->fs_bsize);
 				blocksreleased += nblocks;
 			}
@@ -319,7 +335,7 @@ ffs_truncate(ap)
 		bn = DIP(oip, db[i]);
 		if (bn == 0)
 			continue;
-		DIP(oip, db[i]) = 0;
+		DIP_SET(oip, db[i], 0);
 		bsize = blksize(fs, oip, i);
 		ffs_blkfree(oip, bn, bsize);
 		blocksreleased += btodb(bsize);
@@ -341,6 +357,7 @@ ffs_truncate(ap)
 		 */
 		oldspace = blksize(fs, oip, lastblock);
 		oip->i_size = length;
+		DIP_SET(oip, size, length);
 		newspace = blksize(fs, oip, lastblock);
 		if (newspace == 0)
 			panic("itrunc: newspace");
@@ -364,16 +381,17 @@ done:
 		if (newblks[i] != DIP(oip, db[i]))
 			panic("itrunc2");
 	if (length == 0 &&
-	    (ovp->v_dirtyblkhd.lh_first || ovp->v_cleanblkhd.lh_first))
+	    (LIST_FIRST(&ovp->v_dirtyblkhd) || LIST_FIRST(&ovp->v_cleanblkhd)))
 		panic("itrunc3");
 #endif /* DIAGNOSTIC */
 	/*
 	 * Put back the real size.
 	 */
 	oip->i_size = length;
-	DIP(oip, blocks) -= blocksreleased;
+	DIP_SET(oip, size, length);
+	DIP_SET(oip, size, DIP(oip, blocks) - blocksreleased);
 	if (DIP(oip, blocks) < 0)			/* sanity */
-		DIP(oip, blocks) = 0;
+		DIP_SET(oip, blocks, 0);
 	oip->i_flag |= IN_CHANGE;
 #ifdef QUOTA
 	(void) chkdq(oip, -blocksreleased, NOCRED, 0);
@@ -409,7 +427,7 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 	long blkcount, factor;
 	int nblocks, blocksreleased = 0;
 	int error = 0, allerror = 0;
-#define BAP(ip, i) (((ip)->i_ump->um_fstype == UFS1) ? bap1[i] : bap2[i])
+#define BAP(ip, i) (I_IS_UFS1(ip) ? bap1[i] : bap2[i])
 
 	/*
 	 * Calculate index in current block of last
@@ -452,7 +470,8 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		return (error);
 	}
 
-	if (ip->i_ump->um_fstype == UFS1) {
+
+	if (I_IS_UFS1(ip)) {
 		bap1 = (ufs1_daddr_t *)bp->b_data;
 	} else {
 		bap2 = (ufs2_daddr_t *)bp->b_data;
@@ -462,13 +481,16 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		MALLOC(copy, caddr_t, fs->fs_bsize, M_TEMP, M_WAITOK);
 		bcopy((caddr_t)bp->b_data, copy, (u_int)fs->fs_bsize);
 		for (i = last + 1; i < NINDIR(fs); i++) {
-			BAP(ip, i) = 0;
+			if (I_IS_UFS1(ip))
+				bap1[i] = 0;
+			else
+				bap2[i] = 0;
 		}
 		error = bwrite(bp);
 		if (error) {
 			allerror = error;
 		}
-		if (ip->i_ump->um_fstype == UFS1) {
+		if (I_IS_UFS1(ip)) {
 			bap1 = (ufs1_daddr_t *)bp->b_data;
 		} else {
 			bap2 = (ufs2_daddr_t *)bp->b_data;

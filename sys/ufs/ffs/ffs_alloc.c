@@ -129,8 +129,8 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 		cg = dtog(fs, bpref);
 	bno = ffs_hashalloc(ip, cg, bpref, size, ffs_alloccg);
 	if (bno > 0) {
-		delta += btodb(size);
-		DIP(ip, blocks) = delta;
+		delta = btodb(size);
+		DIP_SET(ip, blocks, DIP(ip, blocks) + delta);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		*bnp = bno;
 		return (0);
@@ -217,8 +217,8 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	if (bno) {
 		if (bp->b_blkno != fsbtodb(fs, bno))
 			panic("bad blockno");
-		delta += btodb(nsize - osize);
-		DIP(ip, blocks) = delta;
+		delta = btodb(nsize - osize);
+		DIP_SET(ip, blocks, DIP(ip, blocks) + delta);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
@@ -280,8 +280,8 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		ffs_blkfree(ip, bprev, (long)osize);
 		if (nsize < request)
 			ffs_blkfree(ip, bno + numfrags(fs, nsize), (long)(request - nsize));
-		delta += btodb(nsize - osize);
-		DIP(ip, blocks) = delta;
+		delta = btodb(nsize - osize);
+		DIP_SET(ip, blocks, DIP(ip, blocks) + delta);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
@@ -401,7 +401,7 @@ ffs_reallocblks_ufs1(ap)
 	 * Get the starting offset and block map for the first block.
 	 */
 	if (start_lvl == 0) {
-		sbap = DIP(ip, db[0]);
+		sbap = &ip->i_ffs1_db[0];
 		soff = start_lbn;
 	} else {
 		idp = &start_ap[start_lvl - 1];
@@ -479,7 +479,7 @@ ffs_reallocblks_ufs1(ap)
 	 * We can then check below to see if it is set, and do the
 	 * synchronous write only when it has been cleared.
 	 */
-	if (sbap != DIP(ip, db[0])) {
+	if (sbap != &ip->i_ffs1_db[0]) {
 		if (doasyncfree)
 			bdwrite(sbp);
 		else
@@ -524,7 +524,7 @@ ffs_reallocblks_ufs1(ap)
 fail:
 	if (ssize < len)
 		brelse(ebp);
-	if (sbap != DIP(ip, db[0]))
+	if (sbap != &ip->i_ffs1_db[0])
 		brelse(sbp);
 	return (ENOSPC);
 }
@@ -587,7 +587,7 @@ ffs_reallocblks_ufs2(ap)
 	 * Get the starting offset and block map for the first block.
 	 */
 	if (start_lvl == 0) {
-		sbap = DIP(ip, db[0]);
+		sbap = &ip->i_ffs2_db[0];
 		soff = start_lbn;
 	} else {
 		idp = &start_ap[start_lvl - 1];
@@ -615,7 +615,7 @@ ffs_reallocblks_ufs2(ap)
 		ssize = len - (idp->in_off + 1);
 		if (bread(vp, idp->in_lbn, (int)fs->fs_bsize, NOCRED, &ebp))
 			goto fail;
-		ebap = (ufs1_daddr_t *)ebp->b_data;
+		ebap = (ufs2_daddr_t *)ebp->b_data;
 	}
 	/*
 	 * Search the block map looking for an allocation of the desired size.
@@ -665,7 +665,7 @@ ffs_reallocblks_ufs2(ap)
 	 * We can then check below to see if it is set, and do the
 	 * synchronous write only when it has been cleared.
 	 */
-	if (sbap != DIP(ip, db[0])) {
+	if (sbap != &ip->i_ffs2_db[0]) {
 		if (doasyncfree)
 			bdwrite(sbp);
 		else
@@ -710,7 +710,7 @@ ffs_reallocblks_ufs2(ap)
 fail:
 	if (ssize < len)
 		brelse(ebp);
-	if (sbap != DIP(ip, db[0]))
+	if (sbap != &ip->i_ffs2_db[0])
 		brelse(sbp);
 	return (ENOSPC);
 }
@@ -776,15 +776,17 @@ ffs_valloc(ap)
 	}
 	if (DIP(ip, blocks)) {				/* XXX */
 		printf("free inode %s/%d had %d blocks\n", fs->fs_fsmnt, ino, DIP(ip, blocks));
-		DIP(ip, blocks) = 0;
+		DIP_SET(ip, blocks, 0);
 	}
 	ip->i_flags = 0;
+	DIP_SET(ip, flags, 0);
 	/*
 	 * Set up a new generation number for this inode.
 	 */
 	if (++nextgennumber < (u_long)time.tv_sec)
 		nextgennumber = time.tv_sec;
 	ip->i_gen = nextgennumber;
+	DIP_SET(ip, gen, 0);
 	return (0);
 noinodes:
 	ffs_fserr(fs, ap->a_cred->cr_uid, "out of inodes");
