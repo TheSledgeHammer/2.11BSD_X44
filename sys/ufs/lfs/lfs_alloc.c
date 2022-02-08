@@ -34,6 +34,7 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
@@ -157,7 +158,6 @@ lfs_vcreate(mp, ino, vpp)
 	ino_t ino;
 	struct vnode **vpp;
 {
-	extern struct lfs_vnodeops;
 	struct inode *ip;
 	struct ufsmount *ump;
 	int error, i;

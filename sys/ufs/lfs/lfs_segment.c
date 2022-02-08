@@ -124,12 +124,12 @@ lfs_vflush(vp)
 
 
 	ip = VTOI(vp);
-	if (vp->v_dirtyblkhd.lh_first == NULL)
+	if (LIST_FIRST(&vp->v_dirtyblkhd) == NULL)
 		lfs_writevnodes(fs, vp->v_mount, sp, VN_EMPTY);
 
 	do {
 		do {
-			if (vp->v_dirtyblkhd.lh_first != NULL)
+			if (LIST_FIRST(&vp->v_dirtyblkhd) != NULL)
 				lfs_writefile(fs, sp, vp);
 		} while (lfs_writeinode(fs, sp, ip));
 
@@ -162,9 +162,10 @@ lfs_writevnodes(fs, mp, sp, op)
 #define	BEG_OF_VLIST	((struct vnode *)(((void *)&mp->mnt_vnodelist.lh_first) - VN_OFFSET))
 
 /* Find last vnode. */
-loop:   for (vp = mp->mnt_vnodelist.lh_first;
-	     vp && vp->v_mntvnodes.le_next != NULL;
-	     vp = vp->v_mntvnodes.le_next);
+loop:   
+	for (vp = LIST_FIRST(&mp->mnt_vnodelist);
+	     vp && LIST_NEXT(vp, v_mntvnodes) != NULL;
+	     vp = LIST_NEXT(vp, v_mntvnodes));
 	for (; vp && vp != BEG_OF_VLIST; vp = BACK_VP(vp)) {
 /* END HACK */
 /*
@@ -186,7 +187,7 @@ loop:
 			continue;
 		*/
 
-		if (op == VN_EMPTY && vp->v_dirtyblkhd.lh_first)
+		if (op == VN_EMPTY && LIST_FIRST(&vp->v_dirtyblkhd))
 			continue;
 
 		if (vp->v_type == VNON)
@@ -202,9 +203,9 @@ loop:
 		ip = VTOI(vp);
 		if (((ip->i_flag &
 		    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) ||
-		    vp->v_dirtyblkhd.lh_first != NULL) &&
+		    LIST_FIRST(&vp->v_dirtyblkhd) != NULL) &&
 		    ip->i_number != LFS_IFILE_INUM) {
-			if (vp->v_dirtyblkhd.lh_first != NULL)
+			if (LIST_FIRST(&vp->v_dirtyblkhd) != NULL)
 				lfs_writefile(fs, sp, vp);
 			(void) lfs_writeinode(fs, sp, ip);
 		}
@@ -428,7 +429,8 @@ lfs_writeinode(fs, sp, ip)
 	ITIMES(ip, &time, &time);
 	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE);
 	bp = sp->ibp;
-	((struct ufs1_dinode *)bp->b_data)[sp->ninodes % INOPB(fs)] = ip->i_din;
+	((struct ufs1_dinode *)bp->b_data)[sp->ninodes % INOPB(fs)] = ip->i_din.ffs1_din;
+	
 	/* Increment inode count in segment summary block. */
 	++((SEGSUM *)(sp->segsum))->ss_ninos;
 
@@ -580,7 +582,7 @@ lfs_updatemeta(sp)
 	struct vnode *vp;
 	struct indir a[NIADDR + 2], *ap;
 	struct inode *ip;
-	ufs1_daddr_t daddr, lbn, off;
+	daddr_t daddr, lbn, off;
 	int error, i, nblocks, num;
 
 	vp = sp->vp;
@@ -733,7 +735,7 @@ lfs_initseg(fs)
 	sp->seg_bytes_left -= LFS_SUMMARY_SIZE;
 	sp->sum_bytes_left = LFS_SUMMARY_SIZE - sizeof(SEGSUM);
 
-	return(repeat);
+	return (repeat);
 }
 
 /*
@@ -787,15 +789,18 @@ lfs_writeseg(fs, sp)
 {
 	extern int locked_queue_count;
 	struct buf **bpp, *bp, *cbp;
+	struct vnode *vp;
 	SEGUSE *sup;
 	SEGSUM *ssp;
 	dev_t i_dev;
 	u_long *datap, *dp;
 	int do_again, i, nblocks, s;
 	int (*strategy)(struct vop_strategy_args *);
-	struct vop_strategy_args vop_strategy_a;
+	struct vop_strategy_args ap;
 	u_short ninos;
 	char *p;
+	
+	vp = fs->lfs_ivnode;
 
 	/*
 	 * If there are no buffers other than the segment summary to write
@@ -849,9 +854,9 @@ lfs_writeseg(fs, sp)
 #endif
 	fs->lfs_bfree -= (fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE);
 
-	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
-	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op->vop_strategy(bp);//[VOFFSET(vop_strategy)];
-
+	i_dev = VTOI(vp)->i_dev;
+	strategy = VCALL(vp, &ap.a_head);
+	
 	/*
 	 * When we simply write the blocks we lose a rotation for every block
 	 * written.  To avoid this problem, we allocate memory in chunks, copy
@@ -868,8 +873,7 @@ lfs_writeseg(fs, sp)
 	 * fast enough.
 	 */
 	for (bpp = sp->bpp, i = nblocks; i;) {
-		cbp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp,
-		    (*bpp)->b_blkno, MAXPHYS);
+		cbp = lfs_newbuf(VTOI(vp)->i_devvp, (*bpp)->b_blkno, MAXPHYS);
 		cbp->b_dev = i_dev;
 		cbp->b_flags |= B_ASYNC | B_BUSY;
 		cbp->b_bcount = 0;
@@ -924,9 +928,9 @@ lfs_writeseg(fs, sp)
 		 * the buffer (yuk).
 		 */
 		cbp->b_saveaddr = (caddr_t)fs;
-		//vop_strategy_a.a_desc = VDESC(vop_strategy);
-		vop_strategy_a.a_bp = cbp;
-		(strategy)(&vop_strategy_a);
+		&ap.a_head->a_desc = VDESC(vop_strategy);
+		&ap->a_bp = cbp;
+		(strategy)(&ap);
 	}
 	/*
 	 * XXX
@@ -955,17 +959,19 @@ lfs_writesuper(fs)
 	struct lfs *fs;
 {
 	struct buf *bp;
+	struct vnode *vp;
 	dev_t i_dev;
 	int (*strategy) (struct vop_strategy_args *);
 	int s;
-	struct vop_strategy_args vop_strategy_a;
+	struct vop_strategy_args ap;
 
-	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
-	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op->vop_strategy(bp);//[VOFFSET(vop_strategy)];
+	vp = fs->lfs_ivnode;
+	i_dev = VTOI(vp)->i_dev;
+	strategy = VCALL(vp, &ap.a_head);//VTOI(vp)->i_devvp->v_op->vop_strategy(bp);//[VOFFSET(vop_strategy)];
 
 	/* Checksum the superblock and copy it into a buffer. */
 	fs->lfs_cksum = cksum(fs, sizeof(struct lfs) - sizeof(fs->lfs_cksum));
-	bp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp, fs->lfs_sboffs[0],
+	bp = lfs_newbuf(VTOI(vp)->i_devvp, fs->lfs_sboffs[0],
 	    LFS_SBPAD);
 	*(struct lfs *)bp->b_data = *fs;
 
@@ -974,12 +980,12 @@ lfs_writesuper(fs)
 	bp->b_flags |= B_BUSY | B_CALL | B_ASYNC;
 	bp->b_flags &= ~(B_DONE | B_ERROR | B_READ | B_DELWRI);
 	bp->b_iodone = lfs_supercallback;
-	//vop_strategy_a.a_desc = VDESC(vop_strategy);
-	vop_strategy_a.a_bp = bp;
+	&ap.a_head->a_desc = VDESC(vop_strategy);
+	&ap->a_bp = bp;
 	s = splbio();
 	++bp->b_vp->v_numoutput;
 	splx(s);
-	(strategy)(&vop_strategy_a);
+	(strategy)(&ap);
 }
 
 /*
@@ -1126,6 +1132,7 @@ lfs_shellsort(bp_array, lb_array, nmemb)
 /*
  * Check VXLOCK.  Return 1 if the vnode is locked.  Otherwise, vget it.
  */
+int
 lfs_vref(vp)
 	register struct vnode *vp;
 {

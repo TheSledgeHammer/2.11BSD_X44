@@ -45,7 +45,7 @@ struct mbuf;
 
 __BEGIN_DECLS
 u_long	 cksum (void *, size_t);				/* XXX */
-int	 lfs_balloc (struct vnode *, int, u_long, ufs1_daddr_t, struct buf **);
+int	 lfs_balloc (struct vnode *, int, u_long, daddr_t, struct buf **);
 int	 lfs_blkatoff (struct vop_blkatoff_args *);
 int	 lfs_bwrite (struct vop_bwrite_args *);
 int	 lfs_check (struct vnode *, ufs1_daddr_t);
@@ -99,6 +99,4 @@ __END_DECLS
 extern int lfs_mount_type;
 extern struct vnodeops lfs_vnodeops;
 extern struct vnodeops lfs_specops;
-#ifdef FIFO
 extern struct vnodeops lfs_fifoops;
-#endif

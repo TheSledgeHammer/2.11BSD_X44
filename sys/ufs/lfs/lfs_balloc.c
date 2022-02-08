@@ -36,6 +36,7 @@
 #include <sys/buf.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
+#include <sys/systm.h>
 #include <sys/mount.h>
 #include <sys/resourcevar.h>
 #include <sys/trace.h>
@@ -43,25 +44,28 @@
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufs_extern.h>
 #include <ufs/ufs/ufsmount.h>
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
 #include <miscfs/specfs/specdev.h>
 
+int	lfs_fragextend(struct vnode *, int, int, daddr_t, struct buf **);
+
 int
 lfs_balloc(vp, offset, iosize, lbn, bpp)
 	struct vnode *vp;
 	int offset;
 	u_long iosize;
-	ufs1_daddr_t lbn;
+	daddr_t lbn;
 	struct buf **bpp;
 {
 	struct buf *ibp, *bp;
 	struct inode *ip;
 	struct lfs *fs;
 	struct indir indirs[NIADDR+2];
-	ufs1_daddr_t	daddr, lastblock;
+	daddr_t	daddr, lastblock;
  	int bb;		/* number of disk blocks in a block disk blocks */
  	int error, frags, i, nsize, osize, num;
 
@@ -82,7 +86,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 	 */
 
 	*bpp = NULL;
-	if (error == ufs_bmaparray(vp, lbn, &daddr, &indirs[0], &num, NULL ))
+	if (error == ufs_bmaparray(vp, lbn, &daddr, &indirs[0], &num, NULL))
 		return (error);
 
 	/* Check for block beyond end of file and fragment extension needed. */
@@ -90,8 +94,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 	if (lastblock < NDADDR && lastblock < lbn) {
 		osize = blksize(fs, ip, lastblock);
 		if (osize < fs->lfs_bsize && osize > 0) {
-			if (error == lfs_fragextend(vp, osize, fs->lfs_bsize,
-			    lastblock, &bp))
+			if (error == lfs_fragextend(vp, osize, fs->lfs_bsize, lastblock, &bp))
 				return(error);
 			ip->i_size = (lastblock + 1) * fs->lfs_bsize;
 			vnode_pager_setsize(vp, (u_long)ip->i_size);
@@ -189,6 +192,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 	return (0);
 }
 
+int
 lfs_fragextend(vp, osize, nsize, lbn, bpp)
 	struct vnode *vp;
 	int osize;

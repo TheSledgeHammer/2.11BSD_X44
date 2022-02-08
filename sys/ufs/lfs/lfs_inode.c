@@ -161,7 +161,8 @@ lfs_truncate(ap)
 	struct lfs *fs;
 	struct indir a[NIADDR + 2], a_end[NIADDR + 2];
 	SEGUSE *sup;
-  	ufs1_daddr_t daddr, lastblock, lbn, olastblock;
+	daddr_t lbn, daddr;
+  	ufs1_daddr_t lastblock, olastblock;
 	ufs1_daddr_t oldsize_lastblock, oldsize_newlast, newsize;
 	long off, a_released, fragsreleased, i_released;
 	int e1, e2, depth, lastseg, num, offset, seg, freesize;
@@ -173,7 +174,7 @@ lfs_truncate(ap)
 		if (length != 0)
 			panic("lfs_truncate: partial truncate of symlink");
 #endif
-		bzero((char *)&SHORTLINK(ip), (u_int)ip->i_size);
+		bzero((char *)SHORTLINK(ip), (u_int)ip->i_size);
 		ip->i_size = 0;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		return (VOP_UPDATE(vp, &tv, &tv, 0));
@@ -312,13 +313,14 @@ lfs_truncate(ap)
 	}
 
 #ifdef DIAGNOSTIC
-	if (ip->i_blocks < fragstodb(fs, fragsreleased)) {
+	if (DIP(ip, blocks) < fragstodb(fs, fragsreleased)) {
 		printf("lfs_truncate: frag count < 0\n");
 		fragsreleased = dbtofrags(fs, DIP(ip, blocks));
 		panic("lfs_truncate: frag count < 0\n");
 	}
 #endif
-	ip->i_ffs1_blocks -= fragstodb(fs, fragsreleased);
+	DIP_SET(ip, blocks, DIP(ip, blocks) - fragstodb(fs, fragsreleased));
+//	ip->i_ffs1_blocks -= fragstodb(fs, fragsreleased);
 	fs->lfs_bfree +=  fragstodb(fs, fragsreleased);
 	ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	/*
