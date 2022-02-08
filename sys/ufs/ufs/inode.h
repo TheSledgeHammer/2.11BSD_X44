@@ -224,16 +224,18 @@ struct indir {
 	if ((ip)->i_flag & (IN_ACCESS | IN_CHANGE | IN_UPDATE)) {	\
 		(ip)->i_flag |= IN_MODIFIED;							\
 		if ((ip)->i_flag & IN_ACCESS)							\
-			DIP((ip), atime) = (t1)->tv_sec;					\
+			DIP_SET((ip), atime, (t1)->tv_sec);					\
 		if ((ip)->i_flag & IN_UPDATE) {							\
-			DIP((ip), mtime) = (t2)->tv_sec;					\
-			DIP((ip), modrev++);								\
+			DIP_SET((ip), mtime, (t2)->tv_sec);					\
+			ip->i_modrev++;								\
 		}														\
 		if ((ip)->i_flag & IN_CHANGE)							\
-			DIP((ip), ctime) = time.tv_sec;						\
+			DIP_SET((ip), ctime, time.tv_sec);						\
 		(ip)->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);	\
 	}															\
 }
+
+
 
 /* This overlays the fid structure (see mount.h). */
 struct ufid {

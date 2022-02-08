@@ -97,8 +97,8 @@ ufs_bmap(ap)
 int
 ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	struct vnode *vp;
-	ufs2_daddr_t bn;
-	ufs2_daddr_t *bnp;
+	daddr_t bn;
+	daddr_t *bnp;
 	struct indir *ap;
 	int *nump;
 	int *runp;
@@ -109,7 +109,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	struct mount *mp;
 	struct vnode *devvp;
 	struct indir a[NIADDR], *xap;
-	ufs2_daddr_t daddr;
+	daddr_t daddr;
 	ufs_lbn_t  metalbn;
 	int error, maxrun, num;
 	u_long is_seq;

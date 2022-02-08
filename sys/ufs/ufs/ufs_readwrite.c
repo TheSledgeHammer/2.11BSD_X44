@@ -59,6 +59,7 @@
  * Vnode op for reading.
  */
 /* ARGSUSED */
+int
 READ(ap)
 	struct vop_read_args /* {
 		struct vnode *a_vp;
@@ -72,7 +73,7 @@ READ(ap)
 	register struct uio *uio;
 	register FS *fs;
 	struct buf *bp;
-	ufs2_daddr_t lbn, nextlbn;
+	daddr_t lbn, nextlbn;
 	off_t bytesinfile;
 	long size, xfersize, blkoffset;
 	int error;
@@ -121,8 +122,7 @@ READ(ap)
 			    ip->i_size, lbn, size, NOCRED, &bp);
 		else if (lbn - 1 == vp->v_lastr) {
 			int nextsize = BLKSIZE(fs, ip, nextlbn);
-			error = breadn(vp, lbn,
-			    size, &nextlbn, &nextsize, 1, NOCRED, &bp);
+			error = breadn(vp, lbn, (int)size, &nextlbn, &nextsize, 1, NOCRED, &bp);
 		} else
 			error = bread(vp, lbn, size, NOCRED, &bp);
 #endif
@@ -161,6 +161,7 @@ READ(ap)
 /*
  * Vnode op for writing.
  */
+int
 WRITE(ap)
 	struct vop_write_args /* {
 		struct vnode *a_vp;
@@ -294,6 +295,6 @@ WRITE(ap)
 			uio->uio_resid = resid;
 		}
 	} else if (resid > uio->uio_resid && (ioflag & IO_SYNC))
-		error = VOP_UPDATE(vp, &time, &time, 1);
+		error = VOP_UPDATE(vp, NULL, NULL, UPDATE_WAIT);
 	return (error);
 }
