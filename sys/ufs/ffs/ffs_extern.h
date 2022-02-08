@@ -110,7 +110,5 @@ __END_DECLS
 
 extern struct vnodeops ffs_vnodeops;
 extern struct vnodeops ffs_specops;
-#ifdef FIFO
 extern struct vnodeops ffs_fifoops;
-#endif
 #endif /* !_UFS_FFS_EXTERN_H */

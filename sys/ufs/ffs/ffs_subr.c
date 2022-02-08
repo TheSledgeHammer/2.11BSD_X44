@@ -34,7 +34,7 @@
  */
 
 #include <sys/param.h>
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #include <sys/user.h>

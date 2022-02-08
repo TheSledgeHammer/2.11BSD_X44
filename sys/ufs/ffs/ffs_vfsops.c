@@ -61,7 +61,7 @@
 
 int	ffs_reload(struct mount *, struct ucred *, struct proc *);
 int	ffs_oldfscompat(struct fs *);
-int ffs_sbupdate(struct ufsmount *, int);
+int 	ffs_sbupdate(struct ufsmount *, int);
 
 struct vfsops ufs_vfsops = {
 		.vfs_mount = ffs_mount,
@@ -333,7 +333,7 @@ ffs_reload(mountp, cred, p)
 	 * Step 1: invalidate all cached meta-data.
 	 */
 	devvp = VFSTOUFS(mountp)->um_devvp;
-	vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY);
+	vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (vinvalbuf(devvp, 0, cred, p, 0, 0))
 		panic("ffs_reload: dirty1");
 	/*
@@ -391,7 +391,7 @@ ffs_reload(mountp, cred, p)
 		lp = fs->fs_maxcluster;
 		for (i = 0; i < fs->fs_ncg; i++)
 			*lp++ = fs->fs_contigsumsize;
-		space = lp;
+//		space = lp;
 	}
 	size = fs->fs_ncg * sizeof(u_int8_t);
 //	fs->fs_contigdirs = (u_int8_t *)space;

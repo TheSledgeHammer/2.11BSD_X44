@@ -243,7 +243,7 @@ ffs_fsync(ap)
 	 */
 loop:
 	s = splbio();
-	for (bp = LIST_FIRST(vp->v_dirtyblkhd); bp; bp = nbp) {
+	for (bp = LIST_FIRST(&vp->v_dirtyblkhd); bp; bp = nbp) {
 		nbp = LIST_NEXT(bp, b_vnbufs);
 		if ((bp->b_flags & B_BUSY))
 			continue;
@@ -268,7 +268,7 @@ loop:
 			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
 		}
 #ifdef DIAGNOSTIC
-		if (LIST_FIRST(vp->v_dirtyblkhd)) {
+		if (LIST_FIRST(&vp->v_dirtyblkhd)) {
 			vprint("ffs_fsync: dirty", vp);
 			goto loop;
 		}
