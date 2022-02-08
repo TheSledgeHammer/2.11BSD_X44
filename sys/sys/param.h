@@ -64,7 +64,7 @@
 #define	NOGROUP			65535		/* marker for empty group set member */
 
 /* More types and definitions used throughout the kernel. */
-#ifdef KERNEL
+#ifdef _KERNEL
 #include <sys/cdefs.h>
 #include <sys/errno.h>
 #include <sys/time.h>

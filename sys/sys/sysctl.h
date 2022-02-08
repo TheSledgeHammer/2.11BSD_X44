@@ -42,7 +42,7 @@
 /*
  * These are for the eproc, etext, einode, efile and map structures.
  */
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/file.h>
@@ -190,6 +190,8 @@ struct ctlname {
 #define	KERN_PROC_UID		5	/* by effective uid */
 #define	KERN_PROC_RUID		6	/* by real uid */
 
+#include <sys/proc.h>
+struct proc;
 struct vmspace;
 
 /* 
@@ -318,7 +320,7 @@ struct kinfo_proc {
 #define	CTL_DEBUG_VALUE		1	/* int: variable value */
 #define	CTL_DEBUG_MAXID		20
 
-#ifdef	KERNEL
+#ifdef	_KERNEL
 #if	defined(DEBUG) || defined(DIAGNOSTIC)
 /*
  * CTL_DEBUG variables.
