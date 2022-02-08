@@ -224,10 +224,29 @@ mpxspace(flags)
 	}
 }
 
+mpx_connect()
+{
+
+}
+
+mpx_disconnect()
+{
+
+}
+
+mpx_join()
+{
+
+}
+
+mpx_leave()
+{
+
+}
+
 /*
  * Other Routines to consider:
- * mpx_connect, mpx_disconnect
- * mpx_join, mpx_attach, mpx_detach
+ * mpx_attach, mpx_detach
  */
 
 int

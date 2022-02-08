@@ -428,6 +428,30 @@ struct vop_update_args {
 	int 					a_waitfor;
 };
 
+/*
+extern struct vnodeop_desc 	vop_getpages_desc;
+struct vop_getpages_args {
+	struct vop_generic_args a_head;
+	struct vnode 			*a_vp;
+	off_t 					a_offset;
+	struct vm_page 			**a_m;
+	int 					*a_count;
+	int 					a_centeridx;
+	int 					a_access_type;
+	int 					a_advice;
+	int 					a_flags;
+};
+
+extern struct vnodeop_desc 	vop_putpages_desc;
+struct vop_putpages_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	off_t 					a_offlo;
+	off_t 					a_offhi;
+	int 					a_flags;
+};
+*/
+
 /* Special cases: */
 extern struct vnodeop_desc 	vop_strategy_desc;
 struct vop_strategy_args {
@@ -493,6 +517,8 @@ struct vnodeops {
 	int	(*vop_strategy)		(struct vop_strategy_args *);
 	int (*vop_bwrite)		(struct vop_bwrite_args *);
 };
+//int (*vop_getpages)		(struct vop_getpages_args *);
+//int (*vop_putpages)		(struct vop_putpages_args *);
 
 #ifdef _KERNEL
 
@@ -547,6 +573,8 @@ int vop_reallocblks(struct vnode *, struct cluster_save *);
 int vop_vfree(struct vnode *, ino_t, int);
 int vop_truncate(struct vnode *, off_t, int, struct ucred *, struct proc *);
 int vop_update(struct vnode *, struct timeval *, struct timeval *, int);
+//int	vop_getpages(struct vnode *, off_t, struct vm_page **, int *, int, int, int, int);
+//int	vop_putpages(struct vnode *, off_t, off_t, int);
 int	vop_strategy(struct buf *);
 int vop_bwrite(struct buf *);
 

@@ -66,7 +66,7 @@
  *	Resident memory system definitions.
  */
 
-//#ifndef	_VM_PAGE_
+#ifndef	_VM_PAGE_
 #define	_VM_PAGE_
 
 #include <devel/vm/include/vm.h>
@@ -154,7 +154,7 @@ struct vm_page {
 #define	VM_PAGE_CHECK(mem)
 #endif /* VM_PAGE_DEBUG */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *
@@ -247,7 +247,7 @@ void		 vm_page_rename (vm_page_t, vm_segment_t, vm_offset_t);
 void		 vm_page_startup (vm_offset_t *, vm_offset_t *);
 void		 vm_page_unwire (vm_page_t);
 void		 vm_page_wire (vm_page_t);
-bool_t	 	vm_page_zero_fill (vm_page_t);
+bool_t	 	 vm_page_zero_fill (vm_page_t);
 
 #endif /* KERNEL */
 #endif /* !_VM_PAGE_ */

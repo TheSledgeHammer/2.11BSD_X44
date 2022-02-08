@@ -268,7 +268,7 @@ loop:
 			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
 		}
 #ifdef DIAGNOSTIC
-		if (vp->v_dirtyblkhd.lh_first) {
+		if (LIST_FIRST(vp->v_dirtyblkhd)) {
 			vprint("ffs_fsync: dirty", vp);
 			goto loop;
 		}

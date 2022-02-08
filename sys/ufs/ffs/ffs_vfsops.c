@@ -887,7 +887,7 @@ ffs_vget(mp, ino, vpp)
 		ip->i_gen = nextgennumber;
 		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 			ip->i_flag |= IN_MODIFIED;
-			DIP(ip, gen) = ip->i_gen;
+			DIP_SET(ip, gen, ip->i_gen);
 		}
 	}
 	/*

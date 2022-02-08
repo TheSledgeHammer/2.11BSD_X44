@@ -91,7 +91,7 @@ extern struct chanlist      mpx_chans[];
 void                		mpx_init(void);
 void                		mpx_create_group(struct mpx_group *, int);
 struct mpx_group    		*mpx_get_group(int);
-void                		mpx_create_channel(struct mpx_chan *, int, int);
+void                		mpx_create_channel(struct mpx_chan *, struct mpx_group *, int, int);
 struct mpx_chan     		*mpx_get_channel(int);
 
 #endif /* SYS_MPX_H_ */

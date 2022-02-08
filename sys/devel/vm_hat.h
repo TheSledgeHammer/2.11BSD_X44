@@ -40,7 +40,7 @@ struct vm_hat {
 	struct lock_object		vh_lock;
 };
 
-typedef struct vm_hat	*vm_hat_t;
+typedef struct vm_hat		*vm_hat_t;
 
 #define HAT_VM 	0x01
 #define HAT_OVL 0x02
@@ -61,5 +61,7 @@ void		vm_hat_remove(vm_hat_t, char *, int, int);
 void		vm_exbootinit(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
 void		vm_exbootinita(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
 void		vm_exboot(struct extent *, u_long, u_long, int);
+int			vm_exalloc_region(struct extent *, u_long, u_long, int);
+int			vm_exalloc_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
 void		vm_exfree(struct extent *, u_long, u_long, int);
 #endif /* _VM_HAT_H_ */

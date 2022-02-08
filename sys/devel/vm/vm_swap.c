@@ -258,13 +258,6 @@ swfree(p, index)
 	swp->sw_flags |= SW_FREED;
 	nblks = swp->sw_nblks;
 	if (nblks <= 0) {
-		dev = swp->sw_dev;
-		if (bdevsw[major(dev)].d_psize == 0
-				|| (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
-			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
-			swp->sw_flags &= ~SW_FREED;
-			return (ENXIO);
-		}
 		perdev = nswap / nswdev;
 		if (nblks > perdev) {
 			nblks = perdev;

@@ -1830,7 +1830,8 @@ pmap_clear_modify(pa)
  *	Clear the reference bit on the specified physical page.
  */
 
-void pmap_clear_reference(pa)
+void
+pmap_clear_reference(pa)
 	vm_offset_t	pa;
 {
 #ifdef DEBUG

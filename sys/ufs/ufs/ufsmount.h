@@ -37,7 +37,6 @@
 #define	_UFS_UFS_MOUNT_H_
 
 #include <sys/mount.h>
-//struct export_args;
 
 /*
  * Arguments to mount UFS-based filesystems
@@ -95,10 +94,10 @@ struct ufsmount {
 	struct netexport			um_export;				/* export information */
 	int64_t						um_savedmaxfilesize;	/* XXX - limit maxfilesize */
 
-	TAILQ_HEAD(inodelst, inode) um_snapshots; 			/* list of active snapshots */
-	daddr_t						*um_snapblklist;		/* snapshot block hints list */
-	int							um_maxsymlinklen;
-	int							um_dirblksiz;
+//	TAILQ_HEAD(inodelst, inode) um_snapshots; 			/* list of active snapshots */
+//	daddr_t						*um_snapblklist;		/* snapshot block hints list */
+//	int							um_maxsymlinklen;
+//	int							um_dirblksiz;
 };
 
 /*

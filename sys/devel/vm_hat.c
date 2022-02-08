@@ -57,7 +57,7 @@ void
 vm_hat_bootstrap(hat)
 	vm_hat_t hat;
 {
-	hat = (vm_hat_t)pmap_bootstrap(sizeof(vm_hat_t));
+	hat = (vm_hat_t)pmap_bootstrap_alloc(sizeof(vm_hat_t));
 	vm_hat_lock_init(hat);
 }
 

@@ -280,6 +280,12 @@ struct fs {
  */
 #define FS_42POSTBLFMT		-1	/* 4.2BSD rotational table format */
 #define FS_DYNAMICPOSTBLFMT	1	/* dynamic rotational table format */
+
+/*
+ * Filesystem flags.
+ */
+#define	FS_FLAGS_UPDATED 	0x0000080 /* flags have been moved to new location */
+
 /*
  * Macros for access to superblock array structures
  */

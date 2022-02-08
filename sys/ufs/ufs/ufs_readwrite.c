@@ -37,22 +37,22 @@
 
 #ifdef LFS_READWRITE
 #define	BLKSIZE(a, b, c)	blksize(a, b, c)
-#define	FS			struct lfs
-#define	I_FS			i_lfs
-#define	READ			lfs_read
-#define	READ_S			"lfs_read"
-#define	WRITE			lfs_write
-#define	WRITE_S			"lfs_write"
-#define	fs_bsize		lfs_bsize
+#define	FS					struct lfs
+#define	I_FS				i_lfs
+#define	READ				lfs_read
+#define	READ_S				"lfs_read"
+#define	WRITE				lfs_write
+#define	WRITE_S				"lfs_write"
+#define	fs_bsize			lfs_bsize
 #define	fs_maxfilesize		lfs_maxfilesize
 #else
 #define	BLKSIZE(a, b, c)	blksize(a, b, c)
-#define	FS			struct fs
-#define	I_FS			i_fs
-#define	READ			ffs_read
-#define	READ_S			"ffs_read"
-#define	WRITE			ffs_write
-#define	WRITE_S			"ffs_write"
+#define	FS					struct fs
+#define	I_FS				i_fs
+#define	READ				ffs_read
+#define	READ_S				"ffs_read"
+#define	WRITE				ffs_write
+#define	WRITE_S				"ffs_write"
 #endif
 
 /*

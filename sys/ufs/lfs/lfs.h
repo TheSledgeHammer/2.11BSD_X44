@@ -236,9 +236,9 @@ struct segsum {
 /* INOPB is the number of inodes in a secondary storage block. */
 #define	INOPB(fs)	((fs)->lfs_inopb)
 
-#define blksize(fs, ip, lbn) \
+#define blksize(fs, ip, lbn) 													\
 	(((lbn) >= NDADDR || (ip)->i_size >= ((lbn) + 1) << (fs)->lfs_bshift) 		\
-	    ? (fs)->lfs_bsize \
+	    ? (fs)->lfs_bsize 														\
 	    : (fragroundup(fs, blkoff(fs, (ip)->i_size))))
 #define	blkoff(fs, loc)		((int)((loc) & (fs)->lfs_bmask))
 #define fragoff(fs, loc)	/* calculates (loc % fs->lfs_fsize) */ 				\
