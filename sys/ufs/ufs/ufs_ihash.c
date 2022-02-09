@@ -74,7 +74,7 @@ ufs_ihashlookup(dev, inum)
 	struct inode *ip;
 
 	simple_lock(&ufs_ihash_slock);
-	for (ip = INOHASH(dev, inum)->lh_first; ip; ip = ip->i_hash.le_next)
+	for (ip = LIST_FIRST(INOHASH(dev, inum)); ip; ip = LIST_NEXT(ip, i_hash))
 		if (inum == ip->i_number && dev == ip->i_dev)
 			break;
 	simple_unlock(&ufs_ihash_slock);
@@ -99,7 +99,7 @@ ufs_ihashget(dev, inum)
 
 loop:
 	simple_lock(&ufs_ihash_slock);
-	for (ip = INOHASH(dev, inum)->lh_first; ip; ip = ip->i_hash.le_next) {
+	for (ip = LIST_FIRST(INOHASH(dev, inum)); ip; ip = LIST_NEXT(ip, i_hash)) {
 		if (inum == ip->i_number && dev == ip->i_dev) {
 			vp = ITOV(ip);
 			simple_lock(&vp->v_interlock);
@@ -124,7 +124,7 @@ ufs_ihashins(ip)
 	struct ihashhead *ipp;
 
 	/* lock the inode, then put it on the appropriate hash list */
-	lockmgr(&ip->i_lock, LK_EXCLUSIVE, (struct simplelock *)0, p->p_pid);
+	lockmgr(&ip->i_lock, LK_EXCLUSIVE, (struct lock_object *)0, p->p_pid);
 
 	simple_lock(&ufs_ihash_slock);
 	ipp = INOHASH(ip->i_dev, ip->i_number);

@@ -44,6 +44,7 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
+#include <sys/namei.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
@@ -91,10 +92,10 @@ ufs_inactive(ap)
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
 		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, p);
-		DIP(ip, rdev) = 0;
+		DIP_SET(ip, rdev, 0);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
-		DIP(ip, mode) = 0;
+		DIP_SET(ip, mode, 0);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		VOP_VFREE(vp, ip->i_number, mode);
 	}
@@ -109,7 +110,7 @@ out:
 	 * so that it can be reused immediately.
 	 */
 	if (imode == 0)
-		vrecycle(vp, (struct simplelock *)0, p);
+		vrecycle(vp, (struct lock_object *)0, p);
 	return (error);
 }
 

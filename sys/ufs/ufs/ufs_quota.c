@@ -406,7 +406,7 @@ quotaon(p, mp, type, fname)
 	 * NB: only need to add dquot's for inodes being modified.
 	 */
 again:
-	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
+	for (vp = LIST_FIRST(&mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
 		nextvp = LIST_NEXT(vp, v_mntvnodes);
 		if (vp->v_writecount == 0)
 			continue;
@@ -450,7 +450,7 @@ quotaoff(p, mp, type)
 	 * deleting any references to quota file being closed.
 	 */
 again:
-	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
+	for (vp = LIST_FIRST(&mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
 		nextvp = LIST_NEXT(vp, v_mntvnodes);
 		if (vget(vp, LK_EXCLUSIVE, p))
 			goto again;
@@ -630,7 +630,7 @@ qsync(mp)
 	 */
 	simple_lock(&mntvnode_slock);
 again:
-	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
+	for (vp = LIST_FIRST(&mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
 		if (vp->v_mount != mp)
 			goto again;
 		nextvp = LIST_NEXT(vp, v_mntvnodes);
@@ -728,7 +728,7 @@ dqget(vp, id, ump, type, dqp)
 	/*
 	 * Not in cache, allocate a new one.
 	 */
-	if (TAILQ_FIRST(dqfreelist) == NODQUOT &&
+	if (TAILQ_FIRST(&dqfreelist) == NODQUOT &&
 	    numdquot < MAXQUOTAS * desiredvnodes)
 		desireddquot += DQUOTINC;
 	if (numdquot < desireddquot) {
@@ -736,7 +736,7 @@ dqget(vp, id, ump, type, dqp)
 		bzero((char *)dq, sizeof *dq);
 		numdquot++;
 	} else {
-		if ((dq = TAILQ_FIRST(dqfreelist)) == NULL) {
+		if ((dq = TAILQ_FIRST(&dqfreelist)) == NULL) {
 			tablefull("dquot");
 			*dqp = NODQUOT;
 			return (EUSERS);

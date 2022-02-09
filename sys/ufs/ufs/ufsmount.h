@@ -46,7 +46,6 @@ struct ufs_args {
 	struct	export_args export;	/* network export information */
 };
 
-#ifdef MFS
 /*
  * Arguments to mount MFS
  */
@@ -56,7 +55,6 @@ struct mfs_args {
 	caddr_t	base;				/* base of file system in memory */
 	u_long	size;				/* size of file system */
 };
-#endif /* MFS */
 
 #ifdef _KERNEL
 

@@ -38,7 +38,9 @@
  *	@(#)ufs_lookup.c	8.15 (Berkeley) 6/16/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/namei.h>
 #include <sys/buf.h>
 #include <sys/file.h>
@@ -814,7 +816,8 @@ ufs_direnter2(dvp, dirp, cr, p)
  * the space of the now empty record by adding the record size
  * to the size of the previous entry.
  */
-int ufs_dirremove(dvp, cnp)
+int 
+ufs_dirremove(dvp, cnp)
 	struct vnode *dvp;
 	struct componentname *cnp;
 {
