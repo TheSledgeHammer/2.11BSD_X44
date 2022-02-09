@@ -81,6 +81,7 @@ struct vfsops mfs_vfsops = {
 /*
  * Called by main() when mfs is going to be mounted as root.
  */
+int
 mfs_mountroot()
 {
 	extern struct vnode *rootvp;
@@ -103,7 +104,7 @@ mfs_mountroot()
 		return (error);
 	mfsp = malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
 	rootvp->v_data = mfsp;
-	rootvp->v_op = mfs_vnodeops;
+	rootvp->v_op = &mfs_vnodeops;
 	rootvp->v_tag = VT_MFS;
 	mfsp->mfs_baseoff = mfs_rootbase;
 	mfsp->mfs_size = mfs_rootsize;
@@ -133,6 +134,7 @@ mfs_mountroot()
  * This is called early in boot to set the base address and size
  * of the mini-root.
  */
+int
 mfs_initminiroot(base)
 	caddr_t base;
 {
@@ -197,7 +199,7 @@ mfs_mount(mp, path, data, ndp, p)
 #endif
 		return (0);
 	}
-	error = getnewvnode(VT_MFS, (struct mount *)0, mfs_vnodeops, &devvp);
+	error = getnewvnode(VT_MFS, (struct mount *)0, &mfs_vnodeops, &devvp);
 	if (error)
 		return (error);
 	devvp->v_type = VBLK;
@@ -219,10 +221,8 @@ mfs_mount(mp, path, data, ndp, p)
 	fs = ump->um_fs;
 	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
-		MNAMELEN);
-	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
-		&size);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname, MNAMELEN);
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void) mfs_statfs(mp, &mp->mnt_stat, p);
 	return (0);
@@ -273,6 +273,7 @@ mfs_start(mp, flags, p)
 /*
  * Get file system statistics.
  */
+int
 mfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;
