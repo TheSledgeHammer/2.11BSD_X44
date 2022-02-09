@@ -137,10 +137,10 @@ struct osigcontext {
  * Macro for converting signal number to a mask suitable for
  * sigblock().
  */
-#define sigmask(m)				(1L << ((m)-1))
+#define sigmask(m)		(1L << ((m)-1))
 #define sigaddset(set, signo)	(*(set) |= 1L << ((signo) - 1), 0)
 #define sigdelset(set, signo)	(*(set) &= ~(1L << ((signo) - 1)), 0)
-#define sigemptyset(set)		(*(set) = (sigset_t)0, (int)0)
+#define sigemptyset(set)	(*(set) = (sigset_t)0, (int)0)
 #define sigfillset(set)         (*(set) = ~(sigset_t)0, (int)0)
 #define sigismember(set, signo) ((*(set) & (1L << ((signo) - 1))) != 0)
 

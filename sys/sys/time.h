@@ -136,11 +136,11 @@ struct clockinfo {
 	int	profhz;		/* profiling clock frequency */
 };
 
-#ifdef KERNEL  /*|| STANDALONE*/
+#ifdef _KERNEL  /*|| STANDALONE*/
 extern volatile time_t	time_second;
 #endif
 
-#ifdef KERNEL
+#ifdef _KERNEL
 int		itimerdecr (struct itimerval *itp,int usec);
 int		itimerfix (struct timeval *);
 void	microtime (struct timeval *);
