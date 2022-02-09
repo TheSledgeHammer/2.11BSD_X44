@@ -231,12 +231,12 @@ lfs_fsync(ap)
 #define	SET_DIROP(fs) {							\
 	if ((fs)->lfs_writer)						\
 		tsleep(&(fs)->lfs_dirops, PRIBIO + 1, "lfs_dirop", 0);	\
-	++(fs)->lfs_dirops;						\
+	++(fs)->lfs_dirops;							\
 	(fs)->lfs_doifile = 1;						\
 }
 
 #define	SET_ENDOP(fs) {							\
-	--(fs)->lfs_dirops;						\
+	--(fs)->lfs_dirops;							\
 	if (!(fs)->lfs_dirops)						\
 		wakeup(&(fs)->lfs_writer);				\
 }

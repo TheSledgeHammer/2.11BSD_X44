@@ -775,6 +775,38 @@ struct vnodeop_desc vop_update_desc = {
 	NULL,
 };
 
+int vop_getpages_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_getpages_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_getpages_desc = {
+	0,
+	"vop_getpages",
+	0,
+	vop_getpages_vp_offsets,
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
+int vop_putpages_vp_offsets[] = {
+	VOPARG_OFFSETOF(struct vop_putpages_args, a_vp),
+	VDESC_NO_OFFSET
+};
+struct vnodeop_desc vop_putpages_desc = {
+	0,
+	"vop_putpages",
+	0,
+	vop_putpages_vp_offsets,
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	VDESC_NO_OFFSET,
+	NULL,
+};
+
 int vop_bwrite_vp_offsets[] = {
 	VDESC_NO_OFFSET
 };
@@ -863,7 +895,6 @@ struct vnodeop_desc *vfs_op_descs[] = {
 	&vop_lock_desc,
 	&vop_unlock_desc,
 	&vop_bmap_desc,
-	&vop_strategy_desc,
 	&vop_print_desc,
 	&vop_islocked_desc,
 	&vop_pathconf_desc,
@@ -874,6 +905,7 @@ struct vnodeop_desc *vfs_op_descs[] = {
 	&vop_vfree_desc,
 	&vop_truncate_desc,
 	&vop_update_desc,
-	&vop_bwrite_desc,
+	&vop_getpages_desc,
+	&vop_putpages_desc,
 	NULL
 };

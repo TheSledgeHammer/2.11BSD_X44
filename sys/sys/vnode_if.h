@@ -428,7 +428,6 @@ struct vop_update_args {
 	int 					a_waitfor;
 };
 
-/*
 extern struct vnodeop_desc 	vop_getpages_desc;
 struct vop_getpages_args {
 	struct vop_generic_args a_head;
@@ -437,7 +436,7 @@ struct vop_getpages_args {
 	struct vm_page 			**a_m;
 	int 					*a_count;
 	int 					a_centeridx;
-	int 					a_access_type;
+	vm_prot_t				a_access_type;
 	int 					a_advice;
 	int 					a_flags;
 };
@@ -450,7 +449,6 @@ struct vop_putpages_args {
 	off_t 					a_offhi;
 	int 					a_flags;
 };
-*/
 
 /* Special cases: */
 extern struct vnodeop_desc 	vop_strategy_desc;
@@ -514,11 +512,11 @@ struct vnodeops {
 	int (*vop_vfree)		(struct vop_vfree_args *);
 	int (*vop_truncate)		(struct vop_truncate_args *);
 	int (*vop_update)		(struct vop_update_args *);
+	int (*vop_getpages)		(struct vop_getpages_args *);
+	int (*vop_putpages)		(struct vop_putpages_args *);
 	int	(*vop_strategy)		(struct vop_strategy_args *);
 	int (*vop_bwrite)		(struct vop_bwrite_args *);
 };
-//int (*vop_getpages)		(struct vop_getpages_args *);
-//int (*vop_putpages)		(struct vop_putpages_args *);
 
 #ifdef _KERNEL
 
@@ -573,8 +571,8 @@ int vop_reallocblks(struct vnode *, struct cluster_save *);
 int vop_vfree(struct vnode *, ino_t, int);
 int vop_truncate(struct vnode *, off_t, int, struct ucred *, struct proc *);
 int vop_update(struct vnode *, struct timeval *, struct timeval *, int);
-//int	vop_getpages(struct vnode *, off_t, struct vm_page **, int *, int, int, int, int);
-//int	vop_putpages(struct vnode *, off_t, off_t, int);
+int	vop_getpages(struct vnode *, off_t, struct vm_page **, int *, int, vm_prot_t, int, int);
+int	vop_putpages(struct vnode *, off_t, off_t, int);
 int	vop_strategy(struct buf *);
 int vop_bwrite(struct buf *);
 
@@ -587,51 +585,101 @@ int	vop_norevoke(struct vop_revoke_args *);
 #endif /* _KERNEL */
 
 /* Macros to call vnodeops */
-#define	VOP_LOOKUP(dvp, vpp, cnp)	    						vop_lookup(dvp, vpp, cnp)
-#define	VOP_CREATE(dvp, vpp, cnp, vap)	    					vop_create(dvp, vpp, cnp, vap)
-#define VOP_WHITEOUT(dvp, cnp, flags)							vop_whiteout(dvp, cnp, flags)
-#define	VOP_MKNOD(dvp, vpp, cnp, vap)	    					vop_mknod(dvp, vpp, cnp, vap)
-#define	VOP_OPEN(vp, mode, cred, p)	    						vop_open(vp, mode, cred, p)
-#define	VOP_CLOSE(vp, fflag, cred, p)	    					vop_close(vp, fflag, cred, p)
-#define	VOP_ACCESS(vp, mode, cred, p)	    					vop_access(vp, mode, cred, p)
-#define	VOP_GETATTR(vp, vap, cred, p)							vop_getattr(vp, vap, cred, p)
-#define	VOP_SETATTR(vp, vap, cred, p)							vop_setattr(vp, vap, cred, p)
-#define	VOP_READ(vp, uio, ioflag, cred)	    					vop_read(vp, uio, ioflag, cred)
-#define	VOP_WRITE(vp, uio, ioflag, cred)						vop_write(vp, uio, ioflag, cred)
-#define VOP_LEASE(vp, p, cred, flag)							vop_lease(vp, p, cred, flag)
-#define	VOP_IOCTL(vp, command, data, fflag, cred, p)			vop_ioctl(vp, command, data, fflag, cred, p)
-#define	VOP_SELECT(vp, which, fflags, cred, p)					vop_select(vp, which, fflags, cred, p)
-#define VOP_POLL(vp, fflag, events, p)							vop_poll(vp, fflag, events, p)
-#define VOP_KQFILTER(vp, kn)									vop_kqfilter(vp, kn)
-#define VOP_REVOKE(vp, flags)									vop_revoke(vp, flags)
-#define	VOP_MMAP(vp, fflags, cred, p)		    				vop_mmap(vp, fflags, cred, p)
-#define	VOP_FSYNC(vp, cred, waitfor, flag, p)					vop_fsync(vp, cred, waitfor, flag, p)
-#define	VOP_SEEK(vp, oldoff, newoff, cred)	    				vop_seek(vp, oldoff, newoff, cred)
-#define	VOP_REMOVE(dvp, vp, cnp)		    					vop_remove(dvp, vp, cnp)
-#define	VOP_LINK(vp, tdvp, cnp)		    						vop_link(vp, tdvp, cnp)
-#define	VOP_RENAME(fdvp, fvp, fcnp, tdvp, tvp, tcnp)			vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
-#define	VOP_MKDIR(dvp, vpp, cnp, vap)	   						vop_mkdir(dvp, vpp, cnp, vap)
-#define	VOP_RMDIR(dvp, vp, cnp)		    						vop_rmdir(dvp, vp, cnp)
-#define	VOP_SYMLINK(dvp, vpp, cnp, vap, target)					vop_symlink(dvp, vpp, cnp, vap, target)
-#define	VOP_READDIR(vp, uio, cred, eofflag, ncookies, cookies)	vop_readdir(vp, uio, cred, eofflag, ncookies, cookies)
-#define	VOP_READLINK(vp, uio, cred)	    						vop_readlink(vp, uio, cred)
-#define	VOP_ABORTOP(dvp, cnp)		    						vop_abortop(dvp, cnp)
-#define	VOP_INACTIVE(vp, p)	    								vop_inactive(vp, p)
-#define	VOP_RECLAIM(vp, p)		    							vop_reclaim(vp, p)
-#define	VOP_LOCK(vp, flags, p)		        					vop_lock(vp, flags, p)
-#define	VOP_UNLOCK(vp, flags, p)		    					vop_unlock(vp, flags, p)
-#define	VOP_BMAP(vp, bn, vpp, bnp, runp)	    				vop_bmap(vp, bn, vpp, bnp, runp)
-#define	VOP_PRINT(vp)		    								vop_print(vp)
-#define	VOP_ISLOCKED(vp)		    							vop_islocked(vp)
-#define VOP_PATHCONF(vp, name, retval)							vop_pathconf(vp, name, retval)
-#define	VOP_ADVLOCK(vp, id, op, fl, flags)						vop_advlock(vp, id, op, fl, flags)
-#define VOP_BLKATOFF(vp, offset, res, bpp)						vop_blkatoff(vp, offset, res, bpp)
-#define VOP_VALLOC(pvp, mode, cred, vpp)						vop_valloc(pvp, mode, cred, vpp)
-#define VOP_REALLOCBLKS(vp, buflist)							vop_reallocblks(vp, buflist)
-#define VOP_VFREE(pvp, ino, mode)								vop_vfree(pvp, ino, mode)
-#define VOP_TRUNCATE(vp, length, flags, cred, p)				vop_truncate(vp, length, flags, cred, p)
-#define VOP_UPDATE(vp, access, modify, waitfor)					vop_update(vp, access, modify, waitfor)
-#define	VOP_STRATEGY(bp)										vop_strategy(bp)
-#define VOP_BWRITE(bp)											vop_bwrite(bp)
+#define	VOP_LOOKUP(dvp, vpp, cnp)	    											\
+	vop_lookup(dvp, vpp, cnp)
+#define	VOP_CREATE(dvp, vpp, cnp, vap)	    										\
+	vop_create(dvp, vpp, cnp, vap)
+#define VOP_WHITEOUT(dvp, cnp, flags)												\
+	vop_whiteout(dvp, cnp, flags)
+#define	VOP_MKNOD(dvp, vpp, cnp, vap)	    										\
+	vop_mknod(dvp, vpp, cnp, vap)
+#define	VOP_OPEN(vp, mode, cred, p)	    											\
+	vop_open(vp, mode, cred, p)
+#define	VOP_CLOSE(vp, fflag, cred, p)	    										\
+	vop_close(vp, fflag, cred, p)
+#define	VOP_ACCESS(vp, mode, cred, p)	    										\
+	vop_access(vp, mode, cred, p)
+#define	VOP_GETATTR(vp, vap, cred, p)												\
+	vop_getattr(vp, vap, cred, p)
+#define	VOP_SETATTR(vp, vap, cred, p)												\
+	vop_setattr(vp, vap, cred, p)
+#define	VOP_READ(vp, uio, ioflag, cred)	    										\
+	vop_read(vp, uio, ioflag, cred)
+#define	VOP_WRITE(vp, uio, ioflag, cred)											\
+	vop_write(vp, uio, ioflag, cred)
+#define VOP_LEASE(vp, p, cred, flag)												\
+	vop_lease(vp, p, cred, flag)
+#define	VOP_IOCTL(vp, command, data, fflag, cred, p)								\
+	vop_ioctl(vp, command, data, fflag, cred, p)
+#define	VOP_SELECT(vp, which, fflags, cred, p)										\
+	vop_select(vp, which, fflags, cred, p)
+#define VOP_POLL(vp, fflag, events, p)												\
+	vop_poll(vp, fflag, events, p)
+#define VOP_KQFILTER(vp, kn)														\
+	vop_kqfilter(vp, kn)
+#define VOP_REVOKE(vp, flags)														\
+	vop_revoke(vp, flags)
+#define	VOP_MMAP(vp, fflags, cred, p)		    									\
+	vop_mmap(vp, fflags, cred, p)
+#define	VOP_FSYNC(vp, cred, waitfor, flag, p)										\
+	vop_fsync(vp, cred, waitfor, flag, p)
+#define	VOP_SEEK(vp, oldoff, newoff, cred)	    									\
+	vop_seek(vp, oldoff, newoff, cred)
+#define	VOP_REMOVE(dvp, vp, cnp)		    										\
+	vop_remove(dvp, vp, cnp)
+#define	VOP_LINK(vp, tdvp, cnp)		    											\
+	vop_link(vp, tdvp, cnp)
+#define	VOP_RENAME(fdvp, fvp, fcnp, tdvp, tvp, tcnp)								\
+	vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
+#define	VOP_MKDIR(dvp, vpp, cnp, vap)	   											\
+	vop_mkdir(dvp, vpp, cnp, vap)
+#define	VOP_RMDIR(dvp, vp, cnp)		    											\
+	vop_rmdir(dvp, vp, cnp)
+#define	VOP_SYMLINK(dvp, vpp, cnp, vap, target)										\
+	vop_symlink(dvp, vpp, cnp, vap, target)
+#define	VOP_READDIR(vp, uio, cred, eofflag, ncookies, cookies)						\
+	vop_readdir(vp, uio, cred, eofflag, ncookies, cookies)
+#define	VOP_READLINK(vp, uio, cred)	    											\
+	vop_readlink(vp, uio, cred)
+#define	VOP_ABORTOP(dvp, cnp)		    											\
+	vop_abortop(dvp, cnp)
+#define	VOP_INACTIVE(vp, p)	    													\
+	vop_inactive(vp, p)
+#define	VOP_RECLAIM(vp, p)		    												\
+	vop_reclaim(vp, p)
+#define	VOP_LOCK(vp, flags, p)		        										\
+	vop_lock(vp, flags, p)
+#define	VOP_UNLOCK(vp, flags, p)		    										\
+	vop_unlock(vp, flags, p)
+#define	VOP_BMAP(vp, bn, vpp, bnp, runp)	    									\
+	vop_bmap(vp, bn, vpp, bnp, runp)
+#define	VOP_PRINT(vp)		    													\
+	vop_print(vp)
+#define	VOP_ISLOCKED(vp)		    												\
+	vop_islocked(vp)
+#define VOP_PATHCONF(vp, name, retval)												\
+	vop_pathconf(vp, name, retval)
+#define	VOP_ADVLOCK(vp, id, op, fl, flags)											\
+	vop_advlock(vp, id, op, fl, flags)
+#define VOP_BLKATOFF(vp, offset, res, bpp)											\
+	vop_blkatoff(vp, offset, res, bpp)
+#define VOP_VALLOC(pvp, mode, cred, vpp)											\
+	vop_valloc(pvp, mode, cred, vpp)
+#define VOP_REALLOCBLKS(vp, buflist)												\
+	vop_reallocblks(vp, buflist)
+#define VOP_VFREE(pvp, ino, mode)													\
+	vop_vfree(pvp, ino, mode)
+#define VOP_TRUNCATE(vp, length, flags, cred, p)									\
+	vop_truncate(vp, length, flags, cred, p)
+#define VOP_UPDATE(vp, access, modify, waitfor)										\
+	vop_update(vp, access, modify, waitfor)
+#define VOP_GETPAGES(vp, offset, m, count, centeridx, access_type, advice, flags) 	\
+	vop_getpages(vp, offset, m, count, centeridx, access_type, advice, flags)
+#define VOP_PUTPAGES(vp, offlo, offhi, flags)										\
+	vop_putpages(vp, offlo, offhi, flags)
+#define	VOP_STRATEGY(bp)															\
+	vop_strategy(bp)
+#define VOP_BWRITE(bp)																\
+	vop_bwrite(bp)
 
 #endif /* _SYS_VNODE_IF_H_ */

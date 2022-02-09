@@ -1245,6 +1245,65 @@ vop_update(vp, access, modify, waitfor)
 	return (error);
 }
 
+int
+vop_getpages(vp, offset, m, count, centeridx, access_type, advice, flags)
+	struct vnode *vp;
+	off_t offset;
+	struct vm_page **m;
+	int *count;
+	int centeridx;
+	vm_prot_t access_type;
+	int advice;
+	int flags;
+{
+	struct vop_getpages_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_getpages);
+	a.a_vp = vp;
+	a.a_offset = offset;
+	a.a_m = m;
+	a.a_count = count;
+	a.a_centeridx = centeridx;
+	a.a_access_type = access_type;
+	a.a_flags = flags;
+
+	if(VNOP(vp, vop_getpages) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_getpages);
+
+	return (error);
+}
+
+int
+vop_putpages(vp, offlo, offhi, flags)
+	struct vnode *vp;
+	off_t offlo;
+	off_t offhi;
+	int flags;
+{
+	struct vop_putpages_args a;
+	int error;
+
+	a.a_head.a_ops = vp->v_op;
+	a.a_head.a_desc = VDESC(vop_putpages);
+	a.a_vp = vp;
+	a.a_offlo = offlo;
+	a.a_offhi = offhi;
+	a.a_flags = flags;
+
+	if(VNOP(vp, vop_putpages) == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	DO_OPS(vp->v_op, error, &a, vop_putpages);
+
+	return (error);
+}
+
 /* Special cases: */
 
 int

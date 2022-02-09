@@ -795,8 +795,6 @@ lfs_writeseg(fs, sp)
 	dev_t i_dev;
 	u_long *datap, *dp;
 	int do_again, i, nblocks, s;
-	int (*strategy)(struct vop_strategy_args *);
-	struct vop_strategy_args ap;
 	u_short ninos;
 	char *p;
 	
@@ -827,6 +825,7 @@ lfs_writeseg(fs, sp)
 	++sup->su_nsums;
 	do_again = !(bp->b_flags & B_GATHERED);
 	(void)VOP_BWRITE(bp);
+
 	/*
 	 * Compute checksum across data and then across summary; the first
 	 * block (the summary block) is skipped.  Set the create time here
@@ -840,13 +839,13 @@ lfs_writeseg(fs, sp)
 		if ((*++bpp)->b_flags & B_INVAL) {
 			if (copyin((*bpp)->b_saveaddr, dp++, sizeof(u_long)))
 				panic("lfs_writeseg: copyin failed");
-		} else
+		} else {
 			*dp++ = ((u_long *)(*bpp)->b_data)[0];
+		}
 	}
 	ssp->ss_create = time.tv_sec;
 	ssp->ss_datasum = cksum(datap, (nblocks - 1) * sizeof(u_long));
-	ssp->ss_sumsum =
-	    cksum(&ssp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_sumsum));
+	ssp->ss_sumsum = cksum(&ssp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_sumsum));
 	free(datap, M_SEGMENT);
 #ifdef DIAGNOSTIC
 	if (fs->lfs_bfree < fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE)
@@ -855,8 +854,8 @@ lfs_writeseg(fs, sp)
 	fs->lfs_bfree -= (fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE);
 
 	i_dev = VTOI(vp)->i_dev;
-	strategy = VCALL(vp, &ap.a_head);
-	
+	VOP_STRATEGY(bp);
+
 	/*
 	 * When we simply write the blocks we lose a rotation for every block
 	 * written.  To avoid this problem, we allocate memory in chunks, copy
@@ -928,9 +927,7 @@ lfs_writeseg(fs, sp)
 		 * the buffer (yuk).
 		 */
 		cbp->b_saveaddr = (caddr_t)fs;
-		&ap.a_head->a_desc = VDESC(vop_strategy);
-		&ap->a_bp = cbp;
-		(strategy)(&ap);
+		VOP_STRATEGY(cbp);
 	}
 	/*
 	 * XXX
@@ -961,13 +958,11 @@ lfs_writesuper(fs)
 	struct buf *bp;
 	struct vnode *vp;
 	dev_t i_dev;
-	int (*strategy) (struct vop_strategy_args *);
 	int s;
-	struct vop_strategy_args ap;
 
 	vp = fs->lfs_ivnode;
 	i_dev = VTOI(vp)->i_dev;
-	strategy = VCALL(vp, &ap.a_head);//VTOI(vp)->i_devvp->v_op->vop_strategy(bp);//[VOFFSET(vop_strategy)];
+	VOP_STRATEGY(bp);
 
 	/* Checksum the superblock and copy it into a buffer. */
 	fs->lfs_cksum = cksum(fs, sizeof(struct lfs) - sizeof(fs->lfs_cksum));
@@ -980,12 +975,10 @@ lfs_writesuper(fs)
 	bp->b_flags |= B_BUSY | B_CALL | B_ASYNC;
 	bp->b_flags &= ~(B_DONE | B_ERROR | B_READ | B_DELWRI);
 	bp->b_iodone = lfs_supercallback;
-	&ap.a_head->a_desc = VDESC(vop_strategy);
-	&ap->a_bp = bp;
 	s = splbio();
 	++bp->b_vp->v_numoutput;
 	splx(s);
-	(strategy)(&ap);
+	VOP_STRATEGY(bp);
 }
 
 /*
