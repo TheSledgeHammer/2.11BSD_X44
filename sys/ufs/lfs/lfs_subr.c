@@ -32,8 +32,9 @@
  *
  *	@(#)lfs_subr.c	8.4 (Berkeley) 5/8/95
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/namei.h>
 #include <sys/vnode.h>
 #include <sys/buf.h>

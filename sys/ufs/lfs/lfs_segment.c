@@ -72,7 +72,6 @@ extern int count_lock_queue (void);
 
 void	lfs_callback (struct buf *);
 void	lfs_gather (struct lfs *, struct segment *, struct vnode *, int (*) (struct lfs *, struct buf *));
-int	 	lfs_gatherblock (struct segment *, struct buf *, int *);
 void	lfs_iset (struct inode *, ufs1_daddr_t, time_t);
 int	 	lfs_match_data (struct lfs *, struct buf *);
 int	 	lfs_match_dindir (struct lfs *, struct buf *);
@@ -81,13 +80,9 @@ int	 	lfs_match_tindir (struct lfs *, struct buf *);
 void	lfs_newseg (struct lfs *);
 void	lfs_shellsort (struct buf **, ufs1_daddr_t *, register int);
 void	lfs_supercallback (struct buf *);
-void	lfs_updatemeta (struct segment *);
 int	 	lfs_vref (struct vnode *);
 void	lfs_vunref (struct vnode *);
 void	lfs_writefile (struct lfs *, struct segment *, struct vnode *);
-int	 	lfs_writeinode (struct lfs *, struct segment *, struct inode *);
-int	 	lfs_writeseg (struct lfs *, struct segment *);
-void	lfs_writesuper (struct lfs *);
 void	lfs_writevnodes (struct lfs *fs, struct mount *mp, struct segment *sp, int dirops);
 
 int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
@@ -387,6 +382,7 @@ lfs_writeinode(fs, sp, ip)
 	struct inode *ip;
 {
 	struct buf *bp, *ibp;
+	struct ufs1_dinode *cdp;
 	IFILE *ifp;
 	SEGUSE *sup;
 	ufs1_daddr_t daddr;
@@ -429,7 +425,8 @@ lfs_writeinode(fs, sp, ip)
 	ITIMES(ip, &time, &time);
 	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE);
 	bp = sp->ibp;
-	((struct ufs1_dinode *)bp->b_data)[sp->ninodes % INOPB(fs)] = ip->i_din.ffs1_din;
+	cdp = ((struct ufs1_dinode *)bp->b_data) + (sp->ninodes % INOPB(fs));
+	*cdp = *ip->i_din.ffs1_din;
 	
 	/* Increment inode count in segment summary block. */
 	++((SEGSUM *)(sp->segsum))->ss_ninos;

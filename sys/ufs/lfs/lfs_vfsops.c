@@ -408,7 +408,7 @@ lfs_unmount(mp, mntflags, p)
 	fs->lfs_clean = 1;
 	if (error == VFS_SYNC(mp, 1, p->p_ucred, p))
 		return (error);
-	if (LIST_FIRST(fs->lfs_ivnode->v_dirtyblkhd))
+	if (LIST_FIRST(&fs->lfs_ivnode->v_dirtyblkhd))
 		panic("lfs_unmount: still dirty blocks on ifile vnode\n");
 	vrele(fs->lfs_ivnode);
 	vgone(fs->lfs_ivnode);
@@ -502,6 +502,7 @@ lfs_vget(mp, ino, vpp)
 	struct vnode **vpp;
 {
 	register struct lfs *fs;
+	struct ufs1_dinode *dip;
 	register struct inode *ip;
 	struct buf *bp;
 	struct ifile *ifp;
@@ -509,7 +510,7 @@ lfs_vget(mp, ino, vpp)
 	struct ufsmount *ump;
 	ufs1_daddr_t daddr;
 	dev_t dev;
-	int error;
+	int error, retries;
 
 	ump = VFSTOUFS(mp);
 	dev = ump->um_dev;
@@ -552,8 +553,9 @@ lfs_vget(mp, ino, vpp)
 	ip->i_lfs = ump->um_lfs;
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	if (error ==
-	    bread(ump->um_devvp, daddr, (int)fs->lfs_bsize, NOCRED, &bp)) {
+	retries = 0;
+again:
+	if (error == bread(ump->um_devvp, daddr, (int)fs->lfs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
 		 * be misleading to leave it on its hash chain. With mode
@@ -565,7 +567,43 @@ lfs_vget(mp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	ip->i_din.ffs1_din = *lfs_ifind(fs, ino, bp);
+	dip = lfs_ifind(fs, ino, bp);
+	if (dip == NULL) {
+		/* Assume write has not completed yet; try again */
+		bp->b_flags |= B_INVAL;
+		brelse(bp);
+		++retries;
+		if (retries > LFS_IFIND_RETRIES) {
+#ifdef DEBUG
+			/* If the seglock is held look at the bpp to see
+			   what is there anyway */
+			if (fs->lfs_seglock > 0) {
+				struct buf **bpp;
+				struct ufs1_dinode *dp;
+				int i;
+
+				for (bpp = fs->lfs_sp->bpp; bpp != fs->lfs_sp->cbpp; ++bpp) {
+					if ((*bpp)->b_vp == fs->lfs_ivnode && bpp != fs->lfs_sp->bpp) {
+						/* Inode block */
+						printf("block 0x%" PRIx64 ": ", (*bpp)->b_blkno);
+						dp = (struct ufs1_dinode *)(*bpp)->b_data;
+						for (i = 0; i < INOPB(fs); i++) {
+							if (dp[i].di_u.inumber) {
+								printf("%d ", dp[i].di_u.inumber);
+							}
+						}
+						printf("\n");
+					}
+				}
+			}
+#endif
+			panic("lfs_vget: dinode not found");
+		}
+		printf("lfs_vget: dinode %d not found, retrying...\n", ino);
+		(void)tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs ifind", 1);
+		goto again;
+	}
+	*ip->i_din.ffs1_din = *dip;
 	brelse(bp);
 
 	/*

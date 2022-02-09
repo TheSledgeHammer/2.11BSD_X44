@@ -33,8 +33,16 @@
  *	@(#)lfs.h	8.9 (Berkeley) 5/8/95
  */
 
+/*
+ * Compile-time options for LFS.
+ */
+#define LFS_IFIND_RETRIES  	16
+
+/*
+ * Fixed filesystem layout parameters
+ */
 #define	LFS_LABELPAD		8192		/* LFS label size */
-#define	LFS_SBPAD			8192		/* LFS superblock size */
+#define	LFS_SBPAD		8192		/* LFS superblock size */
 
 /*
  * XXX

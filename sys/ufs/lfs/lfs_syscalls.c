@@ -33,14 +33,16 @@
  *	@(#)lfs_syscalls.c	8.10 (Berkeley) 5/14/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
-#include <sys/user.h>
+//#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -60,12 +62,13 @@
  * Before committing to add something to a segment summary, make sure there
  * is enough room.  S is the bytes added to the summary.
  */
-#define	CHECK_SEG(s)				\
-if (sp->sum_bytes_left < (s)) {		\
-	(void) lfs_writeseg(fs, sp);	\
+#define	CHECK_SEG(sp, s)				\
+ if ((sp)->sum_bytes_left < (s)) {		\
+	(void) lfs_writeseg((sp)->fs, sp);	\
 }
 
 struct buf *lfs_fakebuf (struct vnode *, int, size_t, caddr_t);
+int	lfs_fastvget(struct mount *, ino_t, ufs1_daddr_t, struct vnode **, struct ufs1_dinode *);
 
 int debug_cleaner = 0;
 int clean_vnlocked = 0;
@@ -106,7 +109,7 @@ lfs_markv(p, uap, retval)
 	fsid_t fsid;
 	void *start;
 	ino_t lastino;
-	ufs1_daddr_t b_daddr, v_daddr;
+	daddr_t b_daddr, v_daddr;
 	u_long bsize;
 	int cnt, error;
 
@@ -153,7 +156,7 @@ lfs_markv(p, uap, retval)
 			}
 
 			/* Start a new file */
-			CHECK_SEG(sizeof(FINFO));
+			CHECK_SEG(sp, sizeof(FINFO));
 			sp->sum_bytes_left -= sizeof(FINFO) - sizeof(ufs1_daddr_t);
 			INC_FINFO(sp);
 			sp->start_lbp = &sp->fip->fi_blocks[0];
@@ -279,7 +282,7 @@ lfs_bmapv(p, uap, retval)
 	struct vnode *vp;
 	fsid_t fsid;
 	void *start;
-	ufs1_daddr_t daddr;
+	daddr_t daddr;
 	int cnt, error, step;
 
 	if (error == suser1(p->p_ucred, &p->p_acflag))
@@ -463,14 +466,16 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	struct ufs1_dinode *dinp;
 {
 	register struct inode *ip;
+	struct ufs1_dinode *dip;
 	struct vnode *vp;
 	struct ufsmount *ump;
 	struct buf *bp;
 	dev_t dev;
-	int error;
+	int error, retries;
 
 	ump = VFSTOUFS(mp);
 	dev = ump->um_dev;
+	
 	/*
 	 * This is playing fast and loose.  Someone may have the inode
 	 * locked, in which case they are going to be distinctly unhappy
@@ -513,10 +518,13 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	ip->i_lfs = ump->um_lfs;
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	if (dinp)
-		if (error == copyin(dinp, ip->i_din.ffs1_din, sizeof(struct ufs1_dinode)))
+	if (dinp) {
+		if (error == copyin(dinp, ip->i_din.ffs1_din, sizeof(struct ufs1_dinode))) {
 			return (error);
-	else {
+		}
+	} else {
+		retries = 0;
+	again:
 		if (error == bread(ump->um_devvp, daddr,
 		    (int)ump->um_lfs->lfs_bsize, NOCRED, &bp)) {
 			/*
@@ -532,7 +540,18 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 			*vpp = NULL;
 			return (error);
 		}
-		ip->i_din.ffs1_din = *lfs_ifind(ump->um_lfs, ino, bp);
+		dip = lfs_ifind(ump->um_lfs, ino, bp);
+		if(dip == NULL) {
+			/* Assume write has not completed yet; try again */
+			bp->b_flags |= B_INVAL;
+			brelse(bp);
+			++retries;
+			if (retries > LFS_IFIND_RETRIES)
+				panic("lfs_fastvget: dinode not found");
+			printf("lfs_fastvget: dinode not found, retrying...\n");
+			goto again;
+		}
+		*ip->i_din.ffs1_din = *dip;
 		brelse(bp);
 	}
 
@@ -540,7 +559,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, lfs_specops, LFS_FIFOOPS, &vp)) {
+	if (error == ufs_vinit(mp, &lfs_specops, &lfs_fifoops, &vp)) {
 		lfs_vunref(vp);
 		*vpp = NULL;
 		return (error);
