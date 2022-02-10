@@ -55,10 +55,12 @@ int	dead_read(struct vop_read_args *);
 int	dead_write(struct vop_write_args *);
 int	dead_ioctl(struct vop_ioctl_args *);
 int	dead_select(struct vop_select_args *);
+int	dead_poll(struct vop_poll_args *);
 int	dead_lock(struct vop_lock_args *);
 int	dead_bmap(struct vop_bmap_args *);
 int	dead_strategy(struct vop_strategy_args *);
 int	dead_print(struct vop_print_args *);
+int	chkvnlock(struct vnode *);
 
 #define dead_create 		((int (*) (struct  vop_create_args *))dead_badop)
 #define dead_mknod 			((int (*) (struct  vop_mknod_args *))dead_badop)
