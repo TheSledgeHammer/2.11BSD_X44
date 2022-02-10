@@ -67,7 +67,13 @@ struct ufs211_fblk {
 	daddr_t			df_free[UFS211_NICFREE];/* free block list */
 };
 
-#define FS_UFS211_MAGIC 0x90335 			/* magic number identical to UFS1 */
+/*
+ * Same FS Magic Number:
+ * UFS1 = 32-Bit; UFS211 = 16-Bit
+ * Needs clarification. Would this be an issue,
+ * If ever mounted at the same time?
+ */
+#define FS_UFS211_MAGIC 0x011954  			/* alternative 0x90335 */
 
 /*
  * Turn file system block numbers into disk block addresses.

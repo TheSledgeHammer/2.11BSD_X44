@@ -22,28 +22,10 @@
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
 
+int	ufs211_direnter2(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
+
 int	dirchk = 0;
 struct	nchstats nchstats;				/* cache effectiveness statistics */
-
-/*
- * Structures associated with name cacheing.
- */
-#define	NCHHASH		16	/* size of hash table */
-
-#if	((NCHHASH)&((NCHHASH)-1)) != 0
-#define	NHASH(h, i, d)	((unsigned)((h) + (i) + 13 * (int)(d)) % (NCHHASH))
-#else
-#define	NHASH(h, i, d)	((unsigned)((h) + (i) + 13 * (int)(d)) & ((NCHHASH)-1))
-#endif
-
-union nchash {
-	union	nchash 		*nch_head[2];
-	struct	namecache 	*nch_chain[2];
-} nchash[NCHHASH];
-#define	nch_forw	nch_chain[0]
-#define	nch_back	nch_chain[1]
-
-struct	namecache *nchhead, **nchtail;	/* LRU chain pointers */
 
 int
 ufs211_lookup(ap)
@@ -194,7 +176,8 @@ ufs211_lookup(ap)
 	endsearch = roundup(dp->i_size, DIRBLKSIZ);
 	enduseful = 0;
 
-	searchloop: while (dp->i_offset < endsearch) {
+searchloop:
+	while (dp->i_offset < endsearch) {
 		/*
 		 * If necessary, get the next directory block.
 		 */
@@ -221,7 +204,7 @@ ufs211_lookup(ap)
 		 * "dirchk" to be true.
 		 */
 		ep = (struct direct*) ((char*) bp->b_data + entryoffsetinblock);
-		if (ep->d_reclen == 0 || (dirchk && ufs_dirbadentry(vdp, ep, entryoffsetinblock))) {
+		if (ep->d_reclen == 0 || (dirchk && ufs211_dirbadentry(vdp, ep, entryoffsetinblock))) {
 			int i;
 
 			ufs211_dirbad(dp, dp->i_offset, "mangled entry");
@@ -526,7 +509,8 @@ ufs211_dirbad(ip, offset, how)
 {
 	struct mount *mp;
 	mp = UFS211_ITOV(ip)->v_mount;
-	printf("%s: bad dir I=%u off %ld: %s\n", ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
+	printf("%s: bad dir I=%u off %ld: %s\n", ip->i_fs->fs_fsmnt, ip->i_number,
+			offset, how);
 	if ((mp->mnt_stat.f_flags & MNT_RDONLY) == 0)
 		panic("bad dir");
 }
@@ -547,9 +531,9 @@ ufs211_dirbadentry(ep, entryoffsetinblock)
 	register int i;
 	int namlen;
 
-	if ((ep->d_reclen & 0x3) != 0 ||
-	    ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1)) ||
-	    ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
+	if ((ep->d_reclen & 0x3) != 0
+			|| ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1))
+			|| ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
 		return (1);
 	for (i = 0; i < ep->d_namlen; i++)
 		if (ep->d_name[i] == '\0')
@@ -565,7 +549,6 @@ ufs211_dirbadentry(ep, entryoffsetinblock)
  * namei.  Remaining parameters (ndp->ni_offset, ndp->ni_count) indicate
  * how the space for the new entry is to be gotten.
  */
-
 int
 ufs211_direnter(ip, dvp, cnp)
 	struct ufs211_inode *ip;
@@ -621,19 +604,19 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 		panic("direnter: missing name");
 #endif
 	dp = UFS211_VTOI(dvp);
-	newentrysize = DIRSIZ(ep);
+	newentrysize = GENERIC_DIRSIZ(ep);
 
 	ep->d_ino = ip->i_number;
 	ep->d_namlen = cnp->cn_namelen;
-	bcopy(cnp->cn_nameptr, ep->d_name, (unsigned)cnp->cn_namelen + 1);
-	if (dvp->v_mount->mnt_maxsymlinklen > 0)
-			ep->d_type = IFTODT(ip->i_mode);
-	else {
-#		if (BYTE_ORDER == LITTLE_ENDIAN)
+	bcopy(cnp->cn_nameptr, ep->d_name, (unsigned) cnp->cn_namelen + 1);
+	if (dvp->v_mount->mnt_maxsymlinklen > 0) {
+		ep->d_type = IFTODT(ip->i_mode);
+	} else {
+#if (BYTE_ORDER == LITTLE_ENDIAN)
 			{ u_char tmp = ep->d_namlen;
 			ep->d_namlen = ep->d_type;
 			ep->d_type = tmp; }
-#		endif
+#endif
 	}
 
 	if(dp->i_count == 0) {
@@ -658,10 +641,10 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 		auio.uio_procp = (struct proc *)0;
 		error = VOP_WRITE(dvp, &auio, IO_SYNC, cnp->cn_cred);
 
-		if (DIRBLKSIZ > VFSTOUFS211(dvp->v_mount)->m_mountp->mnt_stat.f_bsize)
+		if (UFS211_DIRBLKSIZ > VFSTOUFS211(dvp->v_mount)->m_mountp->mnt_stat.f_bsize) {
 			/* XXX should grow with balloc() */
 			panic("ufs_direnter: frag size");
-		else if (!error) {
+		} else if (!error) {
 			dp->i_size = roundup(dp->i_size, UFS211_DIRBLKSIZ);
 			dp->i_flag |= IN_CHANGE;
 		}
@@ -703,20 +686,20 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	ep = (struct direct *)dirbuf;
 	dsize = DIRSIZ(ep);
 	spacefree = ep->d_reclen - dsize;
-	for (loc = ep->d_reclen; loc < dp->i_count; ) {
-		nep = (struct direct *)(dirbuf + loc);
+	for (loc = ep->d_reclen; loc < dp->i_count;) {
+		nep = (struct direct*) (dirbuf + loc);
 		if (ep->d_ino) {
 			/* trim the existing slot */
 			ep->d_reclen = dsize;
-			ep = (struct direct *)((char *)ep + dsize);
+			ep = (struct direct*) ((char*) ep + dsize);
 		} else {
 			/* overwrite; nothing there; header is ours */
-			spacefree += dsize;	
+			spacefree += dsize;
 		}
 		dsize = DIRSIZ(nep);
 		spacefree += nep->d_reclen - dsize;
 		loc += nep->d_reclen;
-		bcopy((caddr_t)nep, (caddr_t)ep, dsize);
+		bcopy((caddr_t) nep, (caddr_t) ep, dsize);
 	}
 	/*
 	 * Update the pointer fields in the previous entry (if any),
@@ -904,14 +887,13 @@ ufs211_checkpath(source, target)
 			error = ENOTDIR;
 			break;
 		}
-		error = vn_rdwr(UIO_READ, vp, (caddr_t) &dirbuf,
+		error = vn_rdwr(UIO_READ, vp, (caddr_t) & dirbuf,
 				sizeof(struct ufs211_dirtemplate), (off_t) 0, UIO_SYSSPACE,
 				IO_NODELOCKED, u->u_ucred, (int*) 0, (struct proc*) 0);
 		if (error != 0)
 			break;
-		if (dirbuf.dotdot_namlen != 2 ||
-		    dirbuf.dotdot_name[0] != '.' ||
-		    dirbuf.dotdot_name[1] != '.') {
+		if (dirbuf.dotdot_namlen != 2 || dirbuf.dotdot_name[0] != '.'
+				|| dirbuf.dotdot_name[1] != '.') {
 			error = ENOTDIR;
 			break;
 		}

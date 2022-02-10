@@ -48,7 +48,7 @@ file	ufs/ufs211/ufs211_bufmap.c			ufs211
 file	ufs/ufs211/ufs211_ihash.c			ufs211
 file	ufs/ufs211/ufs211_inode.c			ufs211
 file	ufs/ufs211/ufs211_lookup.c			ufs211
-file	ufs/ufs211/ufs211_quota.c			quota & ufs211
+#file	ufs/ufs211/ufs211_quota.c			quota & ufs211
 file	ufs/ufs211/ufs211_subr.c			ufs211
 file	ufs/ufs211/ufs211_vfsops.c			ufs211
 file	ufs/ufs211/ufs211_vnops.c			ufs211

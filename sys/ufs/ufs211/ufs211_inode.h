@@ -6,8 +6,6 @@
  *	@(#)inode.h	1.4 (2.11BSD GTE) 1995/12/24
  */
 
-#include <ufs/ufs211/ufs211_dir.h>
-
 /*
  * The I node is the focus of all file activity in UNIX.
  * There is a unique inode allocated for each active file,
@@ -18,6 +16,12 @@
 
 #ifndef _UFS211_INODE_H_
 #define	_UFS211_INODE_H_
+
+#include <ufs/ufs211/ufs211_dir.h>
+
+/* 2.11BSD bit-length for UFS */
+typedef	u_int	 		ufs211_size_t;
+typedef	u_int	 		ufs211_doff_t;
 
 /*
  * 28 of the di_addr address bytes are used; 7 addresses of 4

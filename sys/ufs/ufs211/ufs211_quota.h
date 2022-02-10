@@ -26,6 +26,9 @@
 //#define	UFS211_NMOUNT	6							/* number of mountable file systems */
 
 struct ufs211_quota {
+	LIST_ENTRY(ufs211_quota) 	q_hash;				/* hash chain, MUST be first */
+	TAILQ_ENTRY(ufs211_quota) 	q_freelist;				/* free list */
+
 	struct	ufs211_quota    *q_forw;   				/* hash chain, MUST be first */
     struct	ufs211_quota    *q_back;
 	short	                q_cnt;					/* ref count (# processes) */
@@ -37,10 +40,11 @@ struct ufs211_quota {
 #define	Q_NDQ	            0x08					/* account has NO disc quota */
 	struct	ufs211_quota    *q_freef;
     struct	ufs211_quota    **q_freeb;
+
 	struct	ufs211_dquot    *q_dq[NMOUNT];			/* disc quotas for mounted filesys's */
 };
 
-#define	NOQUOTA	((struct quota *) 0)
+#define	NOQUOTA	((struct ufs211_quota *) 0)
 
 /*
  * The following structure defines the format of the disc quota file
@@ -77,13 +81,15 @@ struct ufs211_dqblk {
  * for the current user. A cache is kept of other recently used entries.
  */
 struct ufs211_dquot {
+	LIST_ENTRY(ufs211_dquot) 			dq_list;	 /* MUST be first entry */
 	struct	ufs211_dquot *dq_forw;
     struct	ufs211_dquot *dq_back;      /* MUST be first entry */
 	union	{
-		struct	ufs211_quota *Dq_own;	/* the quota that points to this */
+		struct	ufs211_quota 			*Dq_own;	/* the quota that points to this */
 		struct {		                /* free list */
-			struct	ufs211_dquot *Dq_freef;
-            struct	ufs211_dquot **Dq_freeb;
+			TAILQ_ENTRY(ufs211_dquot) 	Dq_freelist;
+			struct	ufs211_dquot 	*Dq_freef;
+            struct	ufs211_dquot 	**Dq_freeb;
 		} dq_f;
 	} dq_u;
 	short				dq_flags;
@@ -100,6 +106,7 @@ struct ufs211_dquot {
 };
 
 #define	dq_own		    dq_u.Dq_own
+#define	dq_freelist    	dq_u.dq_f.Dq_freelist
 #define	dq_freef	    dq_u.dq_f.Dq_freef
 #define	dq_freeb	    dq_u.dq_f.Dq_freeb
 #define	dq_bhardlimit	dq_dqb.dqb_bhardlimit
@@ -111,8 +118,8 @@ struct ufs211_dquot {
 #define	dq_bwarn	    dq_dqb.dqb_bwarn
 #define	dq_iwarn	    dq_dqb.dqb_iwarn
 
-#define	NODQUOT		((struct dquot *) 0)
-#define	LOSTDQUOT	((struct dquot *) 1)
+#define	NODQUOT		((struct ufs211_dquot *) 0)
+#define	LOSTDQUOT	((struct ufs211_dquot *) 1)
 
 #if defined(KERNEL) && defined(QUOTA)
 struct	dquot *dquot, *dquotNDQUOT;

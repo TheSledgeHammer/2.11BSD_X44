@@ -114,7 +114,7 @@ bufinit()
 		bp->b_dev = NODEV;
 		bp->b_rcred = NOCRED;
 		bp->b_wcred = NOCRED;
-		bp->b_vnbufs.le_next = NOLIST;
+		LIST_NEXT(bp, b_vnbufs) = NOLIST;
 		bp->b_data = buffers + i * MAXBSIZE;
 		if (i < residual) {
 			bp->b_bufsize = (base + 1) * CLBYTES;
@@ -242,6 +242,7 @@ breadn(vp, blkno, size, rablks, rasizes, nrablks, cred, bpp)
 }
 
 /*
+ * Modified 2.11BSD breada
  * Read in the block, like bread, but also start I/O on the
  * read-ahead block (which is not allocated to the caller)
  */
@@ -877,6 +878,100 @@ biodone(bp)
 		CLR(bp->b_flags, B_WANTED);
 		wakeup(bp);
 	}
+}
+
+/*
+ * Modified 2.11BSD blkflush
+ * Insure that no part of a specified block is in an incore buffer.
+ */
+void
+blkflush(vp, blkno, dev)
+	struct vnode 	*vp;
+	daddr_t 		blkno;
+	dev_t 			dev;
+{
+	struct bufhashhdr	*bhash;
+	struct buf 			*ep;
+	struct buf 			*dp;
+	int s;
+
+	bhash = BUFHASH(vp, blkno);
+	dp = LIST_FIRST(bhash);
+
+loop:
+	for (ep = dp; ep != dp; ep = LIST_NEXT(ep, b_hash)) {
+		if (ep->b_blkno != blkno || ep->b_vp != vp || ep->b_dev != dev || (ep->b_flags & B_INVAL)) {
+			continue;
+		}
+		s = splbio();
+		if (ep->b_flags & B_BUSY) {
+			ep->b_flags |= B_WANTED;
+			sleep((caddr_t) ep, PRIBIO + 1);
+			splx(s);
+			goto loop;
+		}
+		if (ep->b_flags & B_DELWRI) {
+			splx(s);
+			notavail(ep, bhash, b_hash); 	/* XXX: may not work properly!!! */
+			bwrite(ep);
+			goto loop;
+		}
+		splx(s);
+	}
+}
+
+/*
+ * Modified 2.11BSD bflush
+ * Make sure all write-behind blocks on dev are flushed out.
+ * (from umount and sync)
+ */
+void
+bflush(vp, blkno, dev)
+	struct vnode 	*vp;
+	daddr_t 		blkno;
+	dev_t 			dev;
+{
+	struct bufhashhdr	*bhash;
+	struct buf 			*bp;
+	struct buf 			*flist;
+	int 				s;
+
+loop:
+	s = splbio();
+	for (flist = TAILQ_FIRST(&bufqueues[BQUEUES]); flist < TAILQ_LAST(&bufqueues[BQ_EMPTY], bqueues); flist = TAILQ_NEXT(flist, b_freelist)) {
+		if (flist->b_vp == vp && flist->b_blkno == blkno) {
+			bhash = BUFHASH(flist->b_vp, flist->b_blkno);
+			for (bp = LIST_FIRST(bhash); bp != flist; bp = LIST_NEXT(bp, b_hash)) {
+				if ((bp->b_flags & B_DELWRI) == 0)
+					continue;
+				if (dev == bp->b_dev) {
+					bp->b_flags |= B_ASYNC;
+					notavail(bp, bhash, b_hash);
+					bwrite(bp);
+					splx(s);
+					goto loop;
+				}
+			}
+		}
+	}
+	splx(s);
+}
+
+/*
+ * 2.11BSD geterror
+ * Pick up the device's error number and pass it to the user;
+ * if there is an error but the number is 0 set a generalized code.
+ */
+int
+geterror(bp)
+	register struct buf *bp;
+{
+	register int error = 0;
+
+	if (bp->b_flags & B_ERROR)
+		if ((error = bp->b_error) == 0)
+			return (EIO);
+	return (error);
 }
 
 /*

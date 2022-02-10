@@ -682,13 +682,9 @@ int
 ufs211_fsync(ap)
 	struct vop_fsync_args *ap;
 {
-	struct vnode *vp = ap->a_vp;
-	//struct filedesc *fdp = ap->a_p->p_fd;
-	//struct file *fpp = fdp->fd_ofiles;
-
-	syncip(UFS211_VTOI(vp));
-
-	return (VOP_UPDATE(vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
+	ufs211_syncip(ap->a_vp);
+	tv = time;
+	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
 }
 
 int
@@ -942,9 +938,8 @@ abortit:
 		 * to it. Also, ensure source and target are compatible
 		 * (both directories, or both not directories).
 		 */
-		if ((xp->i_mode&IFMT) == IFDIR) {
-			if (!ufs211_dirempty(xp, dp->i_number) ||
-			    xp->i_nlink > 2) {
+		if ((xp->i_mode & IFMT) == IFDIR) {
+			if (!ufs211_dirempty(xp, dp->i_number) || xp->i_nlink > 2) {
 				error = ENOTEMPTY;
 				goto bad;
 			}
@@ -1266,7 +1261,7 @@ ufs211_reclaim(ap)
 	 * Remove the inode from its hash chain.
 	 */
 	ip = UFS211_VTOI(vp);
-//	ufs211_ihashrem(ip);
+	ufs211_ihashrem(ip);
 	/*
 	 * Purge old data structures associated with the inode.
 	 */
@@ -1625,8 +1620,7 @@ ufs211_mkdir(ap)
 	ip->i_uid = cnp->cn_cred->cr_uid;
 	ip->i_gid = dp->i_gid;
 #ifdef QUOTA
-	if ((error = getinoquota(ip)) ||
-	    (error = chkiq(ip, 1, cnp->cn_cred, 0))) {
+	if ((error = getinoquota(ip)) || (error = chkiq(ip, 1, cnp->cn_cred, 0))) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		VOP_VFREE(tvp, ip->i_number, dmode);
 		vput(tvp);

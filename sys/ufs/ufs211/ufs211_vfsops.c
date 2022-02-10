@@ -236,9 +236,9 @@ ufs211_statfs(mp, sbp, p)
 	if (sbp != &mp->mnt_stat) {
 		sbp->f_type = mp->mnt_vfc->vfc_typenum;
 		bcopy((caddr_t) mp->mnt_stat.f_mntonname,
-				(caddr_t) &sbp->f_mntonname[0], MNAMELEN);
+				(caddr_t) & sbp->f_mntonname[0], MNAMELEN);
 		bcopy((caddr_t) mp->mnt_stat.f_mntfromname,
-				(caddr_t) &sbp->f_mntfromname[0], MNAMELEN);
+				(caddr_t) & sbp->f_mntfromname[0], MNAMELEN);
 	}
 	return (0);
 }
@@ -249,20 +249,73 @@ ufs211_statfs(mp, sbp, p)
  * sync _every_ filesystem when unmounting just one filesystem.
 */
 int
-ufs211_sync(mp)
-	register struct ufs211_mount *mp;
+ufs211_sync(mp, waitfor, cred, p)
+	struct mount *mp;
+	int waitfor;
+	struct ucred *cred;
+	struct proc *p;
 {
-	register struct ufs211_fs *fs;
+	struct vnode *nvp, *vp;
+	struct ufs211_inode *ip;
+	struct ufs211_mount *ump;
+	struct ufs211_fs *fs;
 	struct buf *bp;
-	int error = 0;
+	int error, allerror = 0;
 
-	fs = &mp->m_filsys;
-	if (fs->fs_fmod && (mp->m_flags & MNT_RDONLY)) {
+	ump = VFSTOUFS211(mp);
+
+	fs = &ump->m_filsys;
+	if (fs->fs_fmod != 0 && fs->fs_ronly != 0) {
 		printf("fs = %s\n", fs->fs_fsmnt);
 		panic("sync: rofs");
 	}
-	syncinodes(fs); 		/* sync the inodes for this filesystem */
-	bflush(mp->m_dev); 		/* flush dirty data blocks */
+
+	/*
+	 * Write back each (modified) inode.
+	 */
+	simple_lock(&mntvnode_slock);
+loop:
+	for (vp = LIST_FIRST(&mp->mnt_vnodelist); vp != NULL; vp = nvp) {
+		/*
+		 * If the vnode that we are about to sync is no longer
+		 * associated with this mount point, start over.
+		 */
+		if (vp->v_mount != mp)
+			goto loop;
+		simple_lock(&vp->v_interlock);
+		nvp = LIST_NEXT(vp, v_mntvnodes);
+		ip = VTOI(vp);
+		if ((ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE))
+				== 0 && vp->v_dirtyblkhd.lh_first == NULL) {
+			simple_unlock(&vp->v_interlock);
+			continue;
+		}
+		simple_unlock(&mntvnode_slock);
+		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK, p);
+		if (error) {
+			simple_lock(&mntvnode_slock);
+			if (error == ENOENT)
+				goto loop;
+			continue;
+		}
+		if (error == VOP_FSYNC(vp, cred, waitfor, 0, p))
+			allerror = error;
+		VOP_UNLOCK(vp, 0, p);
+		vrele(vp);
+		simple_lock(&mntvnode_slock);
+	}
+	simple_unlock(&mntvnode_slock);
+	/*
+	 * Force stale file system control information to be flushed.
+	 */
+	if (error == VOP_FSYNC(ump->m_devvp, cred, waitfor, 0, p)) {
+		allerror = error;
+	}
+
+	bp = getblk(ump->m_dev, UFS211_SUPERB, fs->fs_fsize, 0, 0);
+	if(bp) {
+		bflush(ump->m_devvp, bp->b_blkno, ump->m_dev); 		/* flush dirty data blocks */
+	}
 #ifdef	QUOTA
 	qsync(mp->m_dev);		/* sync the quotas */
 #endif
@@ -273,15 +326,16 @@ ufs211_sync(mp)
 	 * of each file system is still in the buffer cache.
 	 */
 	if (fs->fs_fmod) {
-		bp = getblk(mp->m_dev, UFS211_SUPERB, fs->fs_fsize, 0, 0);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
 		bcopy(fs, bp, sizeof(struct ufs211_fs));
 		ufs211_mapout(bp);
 		bwrite(bp);
-		error = geterror(bp);
+		if(error == ufs211_geterror(bp)) {
+			allerror = error;
+		}
 	}
-	return (error);
+	return (allerror);
 }
 
 int
@@ -306,7 +360,7 @@ ufs211_vget(mp, ino, vpp)
 	}
 
 	/* Allocate a new vnode/inode. */
-	if (error == getnewvnode(VT_UFS211, mp, ufs211_vnodeops, &vp)) {
+	if (error == getnewvnode(VT_UFS211, mp, &ufs211_vnodeops, &vp)) {
 		*vpp = NULL;
 		return (error);
 	}

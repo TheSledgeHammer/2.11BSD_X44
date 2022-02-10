@@ -24,6 +24,40 @@
 #include <ufs/ufs211/ufs211_quota.h>
 
 #ifdef QUOTA
+//#define	QHASH(id)	((unsigned)(uid) & (NQHASH-1))
+#define QHASH(qvp, id)	\
+	(&qhashtbl[((((int)(qvp)) >> 8) + id) & UFS211_NQHASH])
+LIST_HEAD(qhash, ufs211_quota) *qhashtbl;
+
+#define	QUOTINC	5	/* minimum free quots desired */
+TAILQ_HEAD(qfreelist, ufs211_quota) qfreelist;
+long numdquot, desiredquot = QUOTINC;
+
+
+//#define	DQHASH(uid, dev) ((unsigned)(((int)(dev) * 4) + (uid)) % NDQHASH)
+#define	DQHASH(dev, id) \
+	(&dqhashtbl[((((int)(dev)) >> 8) + id) & UFS211_NDQHASH])
+LIST_HEAD(dqhash, ufs211_dquot) *dqhashtbl;
+TAILQ_HEAD(dqfreelist, ufs211_dquot) dqfreelist;
+
+void
+quotainit()
+{
+	register struct ufs211_quota *q;
+	register int i;
+
+	/* ufs211 quota */
+	for(i = 0; i < UFS211_NQHASH; i++) {
+		LIST_INIT(&qhashtbl[i]);
+	}
+	TAILQ_INIT(&qfreelist);
+
+	/* ufs211 dquota */
+	for(i = 0; i < UFS211_NDQHASH; i++) {
+		LIST_INIT(&dqhashtbl[i]);
+	}
+	TAILQ_INIT(&dqfreelist);
+}
 
 /*
  * Find the dquot structure that should

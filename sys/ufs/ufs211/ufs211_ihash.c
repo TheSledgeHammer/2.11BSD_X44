@@ -42,10 +42,10 @@
 #include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_inode.h>
 
-LIST_HEAD(ufs211_ihashhead, ufs211_inode) *ihashtbl;	/* inode LRU cache, stolen */
-u_long	ihash;											/* size of hash table - 1 */
 #define	INOHSZ				16							/* must be power of two */
 #define	INOHASH(dev,ino)	(&ihashtbl[((dev) + (ino)) & ihash & (INOHSZ * (dev + ihash) - 1)])
+LIST_HEAD(ufs211_ihashhead, ufs211_inode) *ihashtbl;	/* inode LRU cache, stolen */
+u_long	ihash;											/* size of hash table - 1 */
 struct lock_object			ufs211_ihash;
 
 /*
@@ -137,8 +137,6 @@ void
 ufs211_ihashrem(ip)
 	struct ufs211_inode *ip;
 {
-	struct ufs211_inode *iq;
-
 	simple_lock(&ufs211_ihash);
 	LIST_REMOVE(ip, i_chain);
 #ifdef DIAGNOSTIC

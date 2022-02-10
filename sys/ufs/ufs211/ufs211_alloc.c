@@ -6,16 +6,18 @@
  *	@(#)ufs_alloc.c	1.3 (2.11BSD GTE) 1996/9/19
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/mount.h>
 #include <sys/kernel.h>
+#include <sys/systm.h>
 #include <sys/buf.h>
 
 #include <ufs/ufs211/ufs211_dir.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
-#include <ufs/ufs211/ufs211_quota.h>
+//#include <ufs/ufs211/ufs211_quota.h>
 
 typedef	struct ufs211_fblk *FBLKP;
 
@@ -28,13 +30,13 @@ typedef	struct ufs211_fblk *FBLKP;
  * obtain NICFREE more...
  */
 struct buf *
-balloc(ip, flags)
+ufs211_balloc(ip, flags)
 	struct ufs211_inode *ip;
 	int flags;
 {
 	register struct ufs211_fs *fs;
 	register struct buf *bp;
-	int async;
+	int async, error;
 	daddr_t bno;
 
 	fs = ip->i_fs;
@@ -46,13 +48,13 @@ balloc(ip, flags)
 		if (fs->fs_nfree <= 0)
 			goto nospace;
 		if (fs->fs_nfree > UFS211_NICFREE) {
-			fserr(fs, "bad free count");
+			ufs211_fserr(fs, "bad free count");
 			goto nospace;
 		}
 		bno = fs->fs_free[--fs->fs_nfree];
 		if (bno == 0)
 			goto nospace;
-	} while (badblock(fs, bno));
+	} while (ufs211_badblock(fs, bno));
 	if (fs->fs_nfree <= 0) {
 		fs->fs_flock++;
 		error = bread(ip->i_devvp, bno, (int)fs->fs_fsize, u->u_ucred, &bp);
@@ -105,7 +107,7 @@ balloc(ip, flags)
 nospace:
 	fs->fs_nfree = 0;
 	fs->fs_tfree = 0;
-	fserr(fs, "file system full");
+	ufs211_fserr(fs, "file system full");
 	/*
 	 * THIS IS A KLUDGE...
 	 * SHOULD RATHER SEND A SIGNAL AND SUSPEND THE PROCESS IN A
@@ -128,7 +130,8 @@ nospace:
  * Place the specified disk block back on the free list of the
  * specified device.
  */
-free(ip, bno)
+void
+ufs211_bfree(ip, bno)
 	struct ufs211_inode *ip;
 	daddr_t bno;
 {
@@ -137,7 +140,7 @@ free(ip, bno)
 	struct ufs211_fblk *fbp;
 
 	fs = ip->i_fs;
-	if (badblock(fs, bno)) {
+	if (ufs211_badblock(fs, bno)) {
 		printf("bad block %D, ino %d\n", bno, ip->i_number);
 		return;
 	}
@@ -174,7 +177,7 @@ free(ip, bno)
  *	fs: error message
  */
 void
-fserr(fp, cp)
+ufs211_fserr(fp, cp)
 	struct ufs211_fs *fp;
 	char *cp;
 {

@@ -54,7 +54,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 		i = bn;
 		nb = ip->i_addr[i];
 		if (nb == 0) {
-			if (rwflg == B_READ || (bp = balloc(ip, flags)) == NULL)
+			if (rwflg == B_READ || (bp = ufs211_balloc(ip, flags)) == NULL)
 				return ((daddr_t) -1);
 			nb = dbtofsb(bp->b_blkno);
 			/*
@@ -100,8 +100,8 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	 */
 	nb = ip->i_addr[NADDR - j];
 	if (nb == 0) {
-		if (rwflg == B_READ || (bp = balloc(ip, flags | B_CLRBUF)) == NULL)
-			return ((daddr_t) -1);
+		if (rwflg == B_READ || (bp = ufs211_balloc(ip, flags | B_CLRBUF)) == NULL)
+			return ((daddr_t) - 1);
 		nb = dbtofsb(bp->b_blkno);
 		/*
 		 * Write synchronously if requested so that indirect blocks
@@ -136,9 +136,9 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 			ra = bap[i + 1];
 		ufs211_mapout(bp);
 		if (nb == 0) {
-			if (rwflg == B_READ || (nbp = balloc(ip, flags | B_CLRBUF)) == NULL) {
+			if (rwflg == B_READ || (nbp = ufs211_balloc(ip, flags | B_CLRBUF)) == NULL) {
 				brelse(bp);
-				return ((daddr_t) -1);
+				return ((daddr_t) - 1);
 			}
 			nb = dbtofsb(nbp->b_blkno);
 			/*
@@ -152,7 +152,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 			else
 				bdwrite(nbp);
 			ufs211_mapin(bp);
-			bap = (daddr_t *) bp;
+			bap = (daddr_t*) bp;
 			bap[i] = nb;
 			ufs211_mapout(bp);
 			bdwrite(bp);

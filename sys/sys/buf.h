@@ -202,6 +202,17 @@ extern struct bqueues 	bufqueues[];
 	TAILQ_INSERT_TAIL(dp, bp, b_freelist);	\
 }
 
+#define	notavail(bp, dp, field) { 			\
+	KASSERT(LIST_FIRST(dp) != NULL); 		\
+	KASSERT(LIST_PREV(bp, field) != NULL); 	\
+	KASSERT(LIST_FIRST(dp) != (bp)); 		\
+	KASSERT(LIST_PREV(bp, field) != (bp)); 	\
+	bremfree(bp);							\
+	(bp)->b_flags |= B_BUSY; 				\
+	LIST_FIRST(dp) = NULL;					\
+	LIST_PREV(bp, field) = NULL;			\
+}
+
 /*
  * 2.11BSD Insq/Remq for the buffer hash lists.
  */
@@ -242,7 +253,7 @@ extern struct bqueues 	bufqueues[];
  * Take a buffer off the free list it's on and
  * mark it as being use (B_BUSY) by a device.
  */
-#define	notavail(bp) { 						\
+#define	_notavail(bp) { 					\
 	KASSERT((bp)->av_forw != NULL); 		\
 	KASSERT((bp)->av_back != NULL); 		\
 	KASSERT((bp)->av_forw != (bp)); 		\
@@ -294,6 +305,9 @@ struct 	buf *geteblk (int);
 void		allocbuf (struct buf *, int);
 int			biowait (struct buf *);
 void		biodone (struct buf *);
+void		blkflush (struct vnode *, daddr_t, dev_t);
+void		bflush (struct vnode *, daddr_t, dev_t);
+int			geterror (struct buf *);
 
 void		cluster_callback (struct buf *);
 int			cluster_read (struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);

@@ -19,7 +19,7 @@
 #include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
-#include <ufs/ufs211/ufs211_quota.h>
+//#include <ufs/ufs211/ufs211_quota.h>
 
 #define	SINGLE				0	/* index of single indirect block */
 #define	DOUBLE				1	/* index of double indirect block */
@@ -48,11 +48,13 @@ ufs211_updat(ip, ta, tm, waitfor)
 #endif
 	register struct ufs211_inode *tip = ip;
 
-	if ((tip->i_flag & (UFS211_IUPD|UFS211_IACC|UFS211_ICHG|UFS211_IMOD)) == 0)
+	if ((tip->i_flag & (UFS211_IUPD | UFS211_IACC | UFS211_ICHG | UFS211_IMOD))
+			== 0)
 		return;
 	if (tip->i_fs->fs_ronly)
 		return;
-	if (bread(tip->i_devvp, itod(tip->i_number), tip->i_fs->fs_fsize, u->u_cred, &bp)) {
+	if (bread(tip->i_devvp, itod(tip->i_number), tip->i_fs->fs_fsize, u->u_cred,
+			&bp)) {
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return;
@@ -68,16 +70,16 @@ ufs211_updat(ip, ta, tm, waitfor)
 		xicp2->ic_ctime = time.tv_sec;
 	xic2 = *xicp2;
 #else
-	if (tip->i_flag&UFS211_IACC)
+	if (tip->i_flag & UFS211_IACC)
 		tip->i_atime = ta->tv_sec;
-	if (tip->i_flag&UFS211_IUPD)
+	if (tip->i_flag & UFS211_IUPD)
 		tip->i_mtime = tm->tv_sec;
-	if (tip->i_flag&UFS211_ICHG)
+	if (tip->i_flag & UFS211_ICHG)
 		tip->i_ctime = time.tv_sec;
 #endif
-	tip->i_flag &= ~(UFS211_IUPD|UFS211_IACC|UFS211_ICHG|UFS211_IMOD);
+	tip->i_flag &= ~(UFS211_IUPD | UFS211_IACC | UFS211_ICHG | UFS211_IMOD);
 	ufs211_mapin(bp);
-	dp = (struct ufs211_dinode *) bp + itoo(tip->i_number);
+	dp = (struct ufs211_dinode*) bp + itoo(tip->i_number);
 	dp->di_icom1 = tip->i_ic1;
 	dp->di_flag = tip->i_flags;
 #ifdef EXTERNALITIMES
@@ -85,7 +87,7 @@ ufs211_updat(ip, ta, tm, waitfor)
 #else
 	dp->di_icom2 = tip->i_ic2;
 #endif
-	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (daddr_t));
+	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof(daddr_t));
 	ufs211_mapout(bp);
 	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0)) {
 		bwrite(bp);
@@ -352,8 +354,8 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 			nb = *bstart;
 			if (nb) {
 				ufs211_mapout(bp);
-				ufs211_indirtrunc(ip,nb,(daddr_t)-1, level-1, aflags);
-				free(ip, nb);
+				ufs211_indirtrunc(ip, nb, (daddr_t) - 1, level - 1, aflags);
+				ufs211_bfree(ip, nb);
 				ufs211_mapin(bp);
 			}
 		}
@@ -392,8 +394,7 @@ ufs211_trsingle(ip, bp,last, aflags)
 	bstop = &blarray[last];
 	for (; bstart > bstop; --bstart) {
 		if (*bstart) {
-			free(ip, *bstart); {
-			}
+			ufs211_bfree(ip, *bstart);
 		}
 	}
 }

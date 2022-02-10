@@ -6,45 +6,11 @@
  *	@(#)dir.h	1.2 (2.11BSD GTE) 11/4/94
  */
 
-#ifndef	_UFS211_DIR_
-#define	_UFS211_DIR_
+#ifndef	_UFS211_DIR_H_
+#define	_UFS211_DIR_H_
 
-#define UFS211_MAXNAMLEN	63
-#define UFS211_DIRBLKSIZ	512
-
-/*
- * inode numbers are ino_t rather than u_long now.  before, when v7direct
- * was used for the kernel, inode numbers were u_short/ino_t anyways, and since
- * everything had to be recompiled when the fs structure was changed it seemed
- * like a good idea to change the "real direct structure".  SMS
-*/
-
-//struct ufs211_direct {
-	//ino_t				d_ino;						/* inode number of entry */
-	//u_short			d_reclen;					/* length of this record */
-	//u_int8_t  		d_type; 					/* file type, see below */
-	//u_short			d_namlen;					/* length of string in d_name */
-	//char				d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
-//};
-
-/*
- * File types
- */
-#define	DT_UNKNOWN	 0
-#define	DT_FIFO		 1
-#define	DT_CHR		 2
-#define	DT_DIR		 4
-#define	DT_BLK		 6
-#define	DT_REG		 8
-#define	DT_LNK		10
-#define	DT_SOCK		12
-#define	DT_WHT		14
-
-/*
- * Convert between stat structure types and directory types.
- */
-#define	IFTODT(mode)	(((mode) & 0170000) >> 12)
-#define	DTTOIF(dirtype)	((dirtype) << 12)
+#define UFS211_DIRBLKSIZ	DEV_BSIZE
+#define UFS211_MAXNAMLEN	255
 
 /*
  * A directory consists of some number of blocks of DIRBLKSIZ
@@ -72,9 +38,39 @@
  * dp->d_ino set to 0.
  */
 
-#undef DIRSIZ
-#define DIRSIZ(dp) \
-    ((((sizeof (struct direct) - (UFS211_MAXNAMLEN + 1)) + (dp)->d_namlen+1) + 3) &~ 3)
+/*
+ * inode numbers are ino_t rather than u_long now.  before, when v7direct
+ * was used for the kernel, inode numbers were u_short/ino_t anyways, and since
+ * everything had to be recompiled when the fs structure was changed it seemed
+ * like a good idea to change the "real direct structure".  SMS
+*/
+
+struct direct {
+	ino_t					d_ino;						/* inode number of entry */
+	u_short					d_reclen;					/* length of this record */
+	u_int8_t  				d_type; 					/* file type, see below */
+	u_short					d_namlen;					/* length of string in d_name */
+	char					d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
+};
+
+/*
+ * File types
+ */
+#define	DT_UNKNOWN	 0
+#define	DT_FIFO		 1
+#define	DT_CHR		 2
+#define	DT_DIR		 4
+#define	DT_BLK		 6
+#define	DT_REG		 8
+#define	DT_LNK		10
+#define	DT_SOCK		12
+#define	DT_WHT		14
+
+/*
+ * Convert between stat structure types and directory types.
+ */
+#define	IFTODT(mode)	(((mode) & 0170000) >> 12)
+#define	DTTOIF(dirtype)	((dirtype) << 12)
 
 /*
  * Definitions for library routines operating on directories.
@@ -84,8 +80,8 @@ struct ufs211_dirdesc {
 	long					dd_loc;
 	long					dd_size;
 	char					dd_buf[UFS211_DIRBLKSIZ];
-	struct 	direct			dd_cur;
-};// DIR;
+	struct direct			dd_cur;
+};
 
 /*
  * Template for manipulating directories.
@@ -122,4 +118,4 @@ struct ufs211_odirtemplate {
 	u_int16_t				dotdot_namlen;
 	char					dotdot_name[4];	/* ditto */
 };
-#endif	_UFS211_DIR_
+#endif	/* !_UFS211_DIR_H_ */
