@@ -18,14 +18,19 @@
 #include <sys/socket.h>
 #include <sys/protosw.h>
 #include <sys/domain.h>
+#include <sys/mbuf.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/errno.h>
+#include <sys/sysctl.h>
 
-#define	ADDDOMAIN(x)	{ 				\
-	extern struct domain x/**/domain; 	\
-	x/**/domain.dom_next = domains; 	\
-	domains = &x/**/domain; 			\
+void	pffasttimo(void *);
+void	pfslowtimo(void *);
+
+#define	ADDDOMAIN(x)  {                 \
+    extern struct domain  x##domain;    \
+    x##domain.dom_next = domains;       \
+    domains = &x##domain;               \
 }
 
 void
@@ -55,9 +60,16 @@ domaininit()
 			if (pr->pr_init)
 				(*pr->pr_init)();
 	}
+
+	if (max_linkhdr < 64) {
+		max_linkhdr = 64;
+	}
+
+	max_hdr = max_linkhdr + max_protohdr;
 	null_init();
-	pffasttimo();
-	pfslowtimo();
+
+	timeout(pffasttimo, NULL, 1);
+	timeout(pfslowtimo, NULL, 1);
 }
 
 struct protosw *
@@ -104,6 +116,7 @@ found:
 	return (maybe);
 }
 
+int
 net_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
@@ -140,6 +153,7 @@ found:
 	return (ENOPROTOOPT);
 }
 
+void
 pfctlinput(cmd, sa)
 	int cmd;
 	struct sockaddr *sa;
@@ -153,9 +167,9 @@ pfctlinput(cmd, sa)
 				(*pr->pr_ctlinput)(cmd, sa);
 }
 
-extern int hz;
-
-pfslowtimo()
+void
+pfslowtimo(arg)
+	void *arg;
 {
 	register struct domain *dp;
 	register struct protosw *pr;
@@ -164,10 +178,12 @@ pfslowtimo()
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_slowtimo)
 				(*pr->pr_slowtimo)();
-	TIMEOUT(pfslowtimo, (caddr_t)0, hz/PR_SLOWHZ);
+	timeout(pfslowtimo, (caddr_t) 0, hz / PR_SLOWHZ);
 }
 
-pffasttimo()
+void
+pffasttimo(arg)
+	void *arg;
 {
 	register struct domain *dp;
 	register struct protosw *pr;
@@ -176,6 +192,6 @@ pffasttimo()
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_fasttimo)
 				(*pr->pr_fasttimo)();
-	TIMEOUT(pffasttimo, (caddr_t)0, hz/PR_FASTHZ);
+	timeout(pffasttimo, (caddr_t) 0, hz / PR_FASTHZ);
 }
 #endif

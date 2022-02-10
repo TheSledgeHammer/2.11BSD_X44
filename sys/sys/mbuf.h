@@ -176,7 +176,7 @@ struct mbuf_cont {
 
 #define	MGET(m, i, t) {						\
 	int ms = splimp(); 						\
-	if ((m)=mfree) {						\
+	if ((m) == mfree) {						\
 		if ((m)->m_type != MT_FREE) { 		\
 			panic("mget"); 					\
 			(m)->m_type = t;				\
@@ -206,7 +206,7 @@ struct mbuf_cont {
 	  if (mclfree == 0) {					\
 		(void)m_clalloc((i), MPG_CLUSTERS, M_DONTWAIT); \
 	  } 									\
-	  if ((m)=mclfree) { 					\
+	  if ((m) = mclfree) { 					\
 	     ++mclrefcnt[mtocl(m)];				\
 	     mbstat.m_clfree--;					\
 	     mclfree = (m)->m_next;				\
@@ -216,7 +216,7 @@ struct mbuf_cont {
 #else
 #define	MCLALLOC(m, i) {					\
 	  int ms = splimp(); 					\
-	  if ((m)=mclfree) {					\
+	  if ((m) = mclfree) {					\
 		  ++mclrefcnt[mtocl(m)];			\
 		  mbstat.m_clfree--;				\
 		  mclfree = (m)->m_next;			\
@@ -289,6 +289,10 @@ struct	mbuf *mfree, *mclfree;
 char	mclrefcnt[NMBCLUSTERS + 1];
 int		m_want;
 
+extern	int max_linkhdr;		/* largest link-level header */
+extern	int max_protohdr;		/* largest protocol header */
+extern	int max_hdr;			/* largest link+protocol header */
+
 struct	mbuf 	*m_copym(struct mbuf *, int, int, int);
 struct	mbuf 	*m_free(struct mbuf *);
 struct	mbuf 	*m_get(int, int);
@@ -298,8 +302,9 @@ struct	mbuf 	*m_prepend(struct mbuf *, int, int);
 struct	mbuf 	*m_pullup(struct mbuf *, int);
 struct	mbuf 	*m_retry(int, int);
 struct	mbuf 	*m_retryhdr(int, int);
+void			m_cat(struct mbuf *, struct mbuf *);
 void			m_adj(struct mbuf *, int);
-caddr_t			m_clalloc(int, int);
+//caddr_t			m_clalloc(int, int);
 void			m_copyback(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);

@@ -11,20 +11,22 @@
 #ifdef INET
 #include <sys/user.h>
 #include <sys/mbuf.h>
+#include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
+#include <sys/types.h>
 
 struct mbuf *mbuf, *mbutl, xmbuf[NMBUFS + 1];
 struct mbuf xmbutl[(NMBCLUSTERS*CLBYTES/sizeof (struct mbuf))+7];
 memaddr miobase;			/* click address of dma region */
-					/* this is altered during allocation */
+							/* this is altered during allocation */
 memaddr miostart;			/* click address of dma region */
-					/* this stays unchanged */
+							/* this stays unchanged */
 ubadr_t	mioumr;				/* base UNIBUS virtual address */
-					/* miostart and mioumr stay 0 for */
-					/* non-UNIBUS machines */
-u_short miosize = 16384;		/* two umr's worth */
+							/* miostart and mioumr stay 0 for */
+							/* non-UNIBUS machines */
+u_short miosize = 16384;	/* two umr's worth */
 
 void
 mbinit()
@@ -83,6 +85,54 @@ mbinit2(mem, how, num)
 }
 
 /*
+ * When MGET failes, ask protocols to free space when short of memory,
+ * then re-attempt to allocate an mbuf.
+ */
+struct mbuf *
+m_retry(i, t)
+	int i, t;
+{
+	register struct mbuf *m;
+
+	m_reclaim();
+#define m_retry(i, t)	(struct mbuf *)0
+	MGET(m, i, t);
+#undef m_retry
+	return (m);
+}
+
+/*
+ * As above; retry an MGETHDR.
+ */
+struct mbuf *
+m_retryhdr(i, t)
+	int i, t;
+{
+	register struct mbuf *m;
+
+	m_reclaim();
+#define m_retryhdr(i, t) (struct mbuf *)0
+	MGETHDR(m, i, t);
+#undef m_retryhdr
+	return (m);
+}
+
+void
+m_reclaim()
+{
+	register struct domain *dp;
+	register struct protosw *pr;
+	int s = splimp();
+
+	for (dp = domains; dp; dp = dp->dom_next)
+		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
+			if (pr->pr_drain)
+				(*pr->pr_drain)();
+	splx(s);
+	mbstat.m_drain++;
+}
+
+/*
  * Allocate a contiguous buffer for DMA IO.  Called from if_ubainit().
  * TODO: fix net device drivers to handle scatter/gather to mbufs
  * on their own; thus avoiding the copy to/from this area.
@@ -108,6 +158,7 @@ m_ioget(size)
 /*
  * Must be called at splimp.
  */
+void
 m_expand(canwait)
 	int canwait;
 {
@@ -203,6 +254,7 @@ m_more(canwait, type)
 	return (m);
 }
 
+void
 m_freem(m)
 	register struct mbuf *m;
 {
@@ -280,6 +332,7 @@ nospace:
 	return (0);
 }
 
+void
 m_cat(m, n)
 	register struct mbuf *m, *n;
 {
@@ -300,6 +353,7 @@ m_cat(m, n)
 	}
 }
 
+void
 m_adj(mp, len)
 	struct mbuf *mp;
 	register int len;

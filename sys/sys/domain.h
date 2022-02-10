@@ -33,7 +33,7 @@ struct	domain {
 	int		dom_maxrtkey;						/* for routing layer */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct	domain *domains;
 #endif
 #endif	/* !_SYS_DOMAIN_H_ */

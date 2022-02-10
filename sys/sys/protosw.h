@@ -37,28 +37,48 @@
  * The userreq routine interfaces protocols to the system and is
  * described below.
  */
+
+struct mbuf;
+struct sockaddr;
+struct socket;
+struct domain;
+struct proc;
+
 struct protosw {
-	short	pr_type;			/* socket type used for */
-	struct	domain *pr_domain;	/* domain protocol a member of */
-	short	pr_protocol;		/* protocol number */
-	short	pr_flags;			/* see below */
-/* protocol-protocol hooks */
-	int	(*pr_input)();			/* input to protocol (from below) */
-	int	(*pr_output)();			/* output to protocol (from above) */
-	int	(*pr_ctlinput)();		/* control input (from below) */
-	int	(*pr_ctloutput)();		/* control output (from above) */
-/* user-protocol hook */
-	int	(*pr_usrreq)();			/* user request: see list below */
-/* utility hooks */
-	int	(*pr_init)();			/* initialization hook */
-	int	(*pr_fasttimo)();		/* fast timeout (200ms) */
-	int	(*pr_slowtimo)();		/* slow timeout (500ms) */
-	int	(*pr_drain)();			/* flush any excess space possible */
-	int	(*pr_sysctl)();			/* sysctl for protocol */
+	short			pr_type;			/* socket type used for */
+	struct	domain 	*pr_domain;			/* domain protocol a member of */
+	short			pr_protocol;		/* protocol number */
+	short			pr_flags;			/* see below */
+	/* protocol-protocol hooks */
+	/* input to protocol (from below) */
+	int				(*pr_input)(struct mbuf **, int *, int, int);
+	/* output to protocol (from above) */
+	int				(*pr_output)(struct mbuf *, struct socket *, struct sockaddr *, struct mbuf *);
+	/* control input (from below) */
+	int				(*pr_ctlinput)(int, struct sockaddr *, u_int, void *);
+	/* control output (from above) */
+	int				(*pr_ctloutput)(int, struct socket *, int, int, struct mbuf *);
+	/* user-protocol hook */
+	/* user request: see list below */
+	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
+
+	int				(*pr_attach)(struct socket *, int);
+	int				(*pr_detach)(struct socket *);
+	/* utility hooks */
+	/* initialization hook */
+	int				(*pr_init)(void);
+	/* fast timeout (200ms) */
+	int				(*pr_fasttimo)(void);
+	/* slow timeout (500ms) */
+	int				(*pr_slowtimo)(void);
+	/* flush any excess space possible */
+	int				(*pr_drain)();
+	/* sysctl for protocol */
+	int				(*pr_sysctl)(int *, u_int, void *, size_t *, void *, size_t);
 };
 
-#define	PR_SLOWHZ	2			/* 2 slow timeouts per second */
-#define	PR_FASTHZ	5			/* 5 fast timeouts per second */
+#define	PR_SLOWHZ		2			/* 2 slow timeouts per second */
+#define	PR_FASTHZ		5			/* 5 fast timeouts per second */
 
 /*
  * Values for pr_flags
@@ -176,7 +196,6 @@ char	*prcrequests[] = {
  */
 #define	PRCO_GETOPT	0
 #define	PRCO_SETOPT	1
-
 #define	PRCO_NCMDS	2
 
 #ifdef PRCOREQUESTS
@@ -185,7 +204,7 @@ char	*prcorequests[] = {
 };
 #endif
 
-#ifdef KERNEL
-extern	struct protosw *pffindproto(), *pffindtype();
+#ifdef _KERNEL
+extern	struct protosw *pffindproto(int, int, int), *pffindtype(int, int);
 #endif
 #endif /* _SYS_PROTOSW_H_ */

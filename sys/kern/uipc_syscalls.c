@@ -381,6 +381,7 @@ sendmsg()
 	sendit(uap->s, &msg, uap->flags);
 }
 
+void
 sendit(s, mp, flags)
 	int s;
 	register struct msghdr *mp;
@@ -402,45 +403,41 @@ sendit(s, mp, flags)
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
-	auio.uio_offset = 0;				/* XXX */
+	auio.uio_offset = 0; /* XXX */
 	auio.uio_resid = 0;
 	auio.uio_rw = UIO_WRITE;
 	iov = mp->msg_iov;
-	for	(i = 0; i < mp->msg_iovlen; i++, iov++)
-		{
-		if	(iov->iov_len == 0)
+	for (i = 0; i < mp->msg_iovlen; i++, iov++) {
+		if (iov->iov_len == 0)
 			continue;
 		auio.uio_resid += iov->iov_len;
-		}
+	}
 	if (mp->msg_name) {
-		to = (struct mbuf *)sabuf;
+		to = (struct mbuf*) sabuf;
 		MBZAP(to, mp->msg_namelen, MT_SONAME);
-		u->u_error =
-		    copyin(mp->msg_name, mtod(to, caddr_t), mp->msg_namelen);
+		u->u_error = copyin(mp->msg_name, mtod(to, caddr_t), mp->msg_namelen);
 		if (u->u_error)
 			return;
 	} else
 		to = 0;
 	if (mp->msg_accrights) {
-		rights = (struct mbuf *)ribuf;
+		rights = (struct mbuf*) ribuf;
 		MBZAP(rights, mp->msg_accrightslen, MT_RIGHTS);
 		if (mp->msg_accrightslen > MLEN)
-			return(u->u_error = EINVAL);
-		u->u_error = copyin(mp->msg_accrights, mtod(rights, caddr_t),
-				mp->msg_accrightslen);
+			u->u_error = EINVAL;
+			return;
+		u->u_error = copyin(mp->msg_accrights, mtod(rights, caddr_t), mp->msg_accrightslen);
 		if (u->u_error)
 			return;
 	} else
 		rights = 0;
 	len = auio.uio_resid;
-	if	(setjmp(&u->u_qsave))
-		{
+	if (setjmp(&u->u_qsave)) {
 		if (auio.uio_resid == len)
 			return;
 		else
 			u->u_error = 0;
-		}
-	else
+	} else
 		u->u_error = SOSEND(fp->f_socket, to, &auio, flags, rights);
 	u->u_r.r_val1 = len - auio.uio_resid;
 }
@@ -498,7 +495,7 @@ recv()
 	recvit(uap->s, &msg, uap->flags, (caddr_t)0, (caddr_t)0);
 }
 
-void
+
 recvmsg()
 {
 	register struct a {
@@ -547,28 +544,25 @@ recvit(s, mp, flags, namelenp, rightslenp)
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
-	auio.uio_offset = 0;				/* XXX */
+	auio.uio_offset = 0; /* XXX */
 	auio.uio_resid = 0;
 	auio.uio_rw = UIO_READ;
 	iov = mp->msg_iov;
-	for	(i = 0; i < mp->msg_iovlen; i++, iov++)
-		{
-		if	(iov->iov_len == 0)
+	for (i = 0; i < mp->msg_iovlen; i++, iov++) {
+		if (iov->iov_len == 0)
 			continue;
 		auio.uio_resid += iov->iov_len;
-		}
+	}
 	len = auio.uio_resid;
-	if	(setjmp(&u->u_qsave))
-		{
-		if	(auio.uio_resid == len)
+	if (setjmp(&u->u_qsave)) {
+		if (auio.uio_resid == len)
 			return;
 		else
 			u->u_error = 0;
-		}
-	else
-		u->u_error = SORECEIVE((struct socket *)fp->f_data,
-					&from, &auio,flags, &rights);
-	if	(u->u_error)
+	} else
+		u->u_error = SORECEIVE((struct socket*) fp->f_data, &from, &auio, flags,
+				&rights);
+	if (u->u_error)
 		return;
 	u->u_r.r_val1 = len - auio.uio_resid;
 	if (mp->msg_name) {
@@ -577,7 +571,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 			len = 0;
 		else
 			(void) NETCOPYOUT(from, mp->msg_name, &len);
-		(void) copyout((caddr_t)&len, namelenp, sizeof(int));
+		(void) copyout((caddr_t) & len, namelenp, sizeof(int));
 	}
 	if (mp->msg_accrights) {
 		len = mp->msg_accrightslen;
@@ -585,13 +579,14 @@ recvit(s, mp, flags, namelenp, rightslenp)
 			len = 0;
 		else
 			(void) NETCOPYOUT(rights, mp->msg_accrights, &len);
-		(void) copyout((caddr_t)&len, rightslenp, sizeof(int));
+		(void) copyout((caddr_t) & len, rightslenp, sizeof(int));
 	}
 	if (rights)
 		M_FREEM(rights);
 	if (from)
 		M_FREEM(from);
 }
+
 
 shutdown()
 {

@@ -18,37 +18,81 @@
 #include <sys/protosw.h>
 #include <sys/domain.h>
 #include <sys/mbuf.h>
+#include <sys/null.h>
 
 /*
  * Definitions of protocols supported in the UNIX domain.
  */
 
-int	uipc_usrreq();
-int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
+int uipc_usrreq();
+int raw_init(), raw_usrreq(), raw_input(), raw_ctlinput();
 extern	struct domain unixdomain;		/* or at least forward */
 
 struct protosw unixsw[] = {
-		{ SOCK_STREAM,	&unixdomain,	0,	PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
-				0,		0,		0,		0,
-				uipc_usrreq,
-				0,		0,		0,		0,
+		{
+				.pr_type		= SOCK_STREAM,
+				.pr_domain		= &unixdomain,
+				.pr_protocol	= PF_UNIX,
+				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
+				.pr_input 		= 0,
+				.pr_output 		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput 	= 0,
+				.pr_usrreq		= uipc_usrreq,
+				.pr_attach		= uipc_attach,
+				.pr_detach		= uipc_detach,
+				.pr_init 		= 0,
+				.pr_fasttimo 	= 0,
+				.pr_slowtimo 	= 0,
+				.pr_drain 		= 0,
+				.pr_sysctl 		= 0,
 		},
-
-		{ SOCK_DGRAM,	&unixdomain,	0,		PR_ATOMIC|PR_ADDR|PR_RIGHTS,
-				0,		0,		0,		0,
-				uipc_usrreq,
-				0,		0,		0,		0,
+		{
+				.pr_type		= SOCK_DGRAM,
+				.pr_domain		= &unixdomain,
+				.pr_protocol	= PF_UNIX,
+				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_RIGHTS,
+				.pr_input 		= 0,
+				.pr_output 		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput 	= 0,
+				.pr_usrreq		= uipc_usrreq,
+				.pr_attach		= uipc_attach,
+				.pr_detach		= uipc_detach,
+				.pr_init 		= 0,
+				.pr_fasttimo 	= 0,
+				.pr_slowtimo 	= 0,
+				.pr_drain 		= 0,
+				.pr_sysctl 		= 0,
 		},
-
-		{ 0,		0,		0,		0,
-				raw_input,	0,		raw_ctlinput,	0,
-				raw_usrreq,
-				raw_init,	0,		0,		0,
-		}
+		{
+				.pr_type		= 0,
+				.pr_domain		= 0,
+				.pr_protocol	= 0,
+				.pr_flags		= 0,
+				.pr_input 		= raw_input,
+				.pr_output 		= 0,
+				.pr_ctlinput 	= raw_ctlinput,
+				.pr_ctloutput 	= 0,
+				.pr_usrreq		= raw_usrreq,
+				.pr_attach		= raw_attach,
+				.pr_detach		= raw_detach,
+				.pr_init 		= raw_init,
+				.pr_fasttimo 	= 0,
+				.pr_slowtimo 	= 0,
+				.pr_drain 		= 0,
+				.pr_sysctl 		= 0,
+		},
 };
 
 int	unp_externalize(), unp_dispose();
 
-struct domain unixdomain =
-    { AF_UNIX, "unix", 0, unp_externalize, unp_dispose,
-      unixsw, &unixsw[sizeof(unixsw)/sizeof(unixsw[0])] };
+struct domain unixdomain = {
+  .dom_family = AF_UNIX,
+  .dom_name = "unix",
+  .dom_init = 0,
+  .dom_externalize = unp_externalize,
+  .dom_dispose = unp_dispose,
+  .dom_protosw = unixsw,
+  .dom_protoswNPROTOSW = &unixsw[sizeof(unixsw)/sizeof(unixsw[0])]
+};

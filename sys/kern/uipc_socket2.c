@@ -20,6 +20,7 @@
 #include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/mbuf.h>
+#include <sys/malloc.h>
 #include <sys/protosw.h>
 #include <sys/poll.h>
 #include <sys/socket.h>

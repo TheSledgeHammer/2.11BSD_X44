@@ -17,24 +17,24 @@
  * to tie a socket to the generic raw interface.
  */
 struct rawcb {
-	struct	rawcb *rcb_next;	/* doubly linked list */
-	struct	rawcb *rcb_prev;
-	struct	socket *rcb_socket;	/* back pointer to socket */
-	struct	sockaddr rcb_faddr;	/* destination address */
-	struct	sockaddr rcb_laddr;	/* socket's address */
-	struct	sockproto rcb_proto;/* protocol family, protocol */
-	caddr_t	rcb_pcb;			/* protocol specific stuff */
-	struct	mbuf *rcb_options;	/* protocol specific options */
-	struct	route rcb_route;	/* routing information */
-	short	rcb_flags;
+	struct	rawcb 		*rcb_next;		/* doubly linked list */
+	struct	rawcb 		*rcb_prev;
+	struct	socket 		*rcb_socket;	/* back pointer to socket */
+	struct	sockaddr 	rcb_faddr;		/* destination address */
+	struct	sockaddr 	rcb_laddr;		/* socket's address */
+	struct	sockproto 	rcb_proto;		/* protocol family, protocol */
+	caddr_t				rcb_pcb;		/* protocol specific stuff */
+	struct	mbuf 		*rcb_options;	/* protocol specific options */
+	struct	route 		rcb_route;		/* routing information */
+	short				rcb_flags;
 };
 
 /*
  * Since we can't interpret canonical addresses,
  * we mark an address present in the flags field.
  */
-#define	RAW_LADDR	01
-#define	RAW_FADDR	02
+#define	RAW_LADDR		01
+#define	RAW_FADDR		02
 #define	RAW_DONTROUTE	04		/* no routing, default */
 
 #define	sotorawcb(so)		((struct rawcb *)(so)->so_pcb)

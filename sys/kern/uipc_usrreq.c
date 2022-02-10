@@ -29,12 +29,13 @@
  *	need a proper out-of-band
  */
 struct sockaddr sun_noname = { AF_UNIX };
-ino_t 			unp_ino;			/* prototype for fake inode numbers */
+ino_t 			unp_ino;					/* prototype for fake inode numbers */
 
 extern void unpdisc(), unpgc1();
 extern int fadjust();
 
 /*ARGSUSED*/
+int
 uipc_usrreq(so, req, m, nam, rights)
 	struct socket *so;
 	int req;
@@ -247,8 +248,8 @@ uipc_usrreq(so, req, m, nam, rights)
 	case PRU_PEERADDR:
 		if (unp->unp_conn && unp->unp_conn->unp_addr) {
 			nam->m_len = unp->unp_conn->unp_addr->m_len;
-			bcopy(mtod(unp->unp_conn->unp_addr, caddr_t),
-			    mtod(nam, caddr_t), (unsigned)nam->m_len);
+			bcopy(mtod(unp->unp_conn->unp_addr, caddr_t), mtod(nam, caddr_t),
+					(unsigned) nam->m_len);
 		}
 		break;
 
@@ -272,14 +273,89 @@ release:
  * and don't really want to reserve the sendspace.  Their recvspace should
  * be large enough for at least one max-size datagram plus address.
  */
-#define	PIPSIZ	4096
+#define	PIPSIZ	8192
 int	unpst_sendspace = PIPSIZ;
 int	unpst_recvspace = PIPSIZ;
+int	unpsq_sendspace = PIPSIZ;
+int	unpsq_recvspace = PIPSIZ;
 int	unpdg_sendspace = 2*1024;	/* really max datagram size */
 int	unpdg_recvspace = 4*1024;
 
-int	unp_rights;			/* file descriptors in flight */
+int	unp_rights;					/* file descriptors in flight */
 
+int
+uipc_attach(struct socket *so, int proto)
+{
+	struct unpcb *unp;
+	int error;
+
+	if (so->so_pcb)
+		return EISCONN;
+	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
+		switch (so->so_type) {
+
+		case SOCK_STREAM:
+			error = soreserve(so, unpst_sendspace, unpst_recvspace);
+			break;
+
+		case SOCK_SEQPACKET:
+			error = soreserve(so, unpsq_sendspace, unpsq_recvspace);
+			break;
+
+		case SOCK_DGRAM:
+			error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
+			break;
+
+		default:
+			panic("unp_attach");
+		}
+		if (error)
+			return (error);
+	}
+//	unp = pool_get(&unpcb_pool, PR_NOWAIT|PR_ZERO);
+	if (unp == NULL)
+		return (ENOBUFS);
+	unp->unp_socket = so;
+	so->so_pcb = unp;
+	//getnanotime(&unp->unp_ctime);
+
+	/*
+	 * Enforce `unp_gc_lock' -> `solock()' lock order.
+	 */
+	/*
+	 * We also release the lock on listening socket and on our peer
+	 * socket when called from unp_connect(). This is safe. The
+	 * listening socket protected by vnode(9) lock. The peer socket
+	 * has 'UNP_CONNECTING' flag set.
+	 */
+//	sounlock(so, SL_LOCKED);
+//	solock(so);
+	return (0);
+}
+
+int
+uipc_detach(so)
+	struct socket *so;
+{
+	struct unpcb *unp = sotounpcb(so);
+
+	if (unp == NULL)
+		return (EINVAL);
+
+	unp_detach(unp);
+
+	return (0);
+}
+
+/*
+int
+uipc_sysctl()
+{
+
+}
+*/
+
+int
 unp_attach(so)
 	struct socket *so;
 {
@@ -308,6 +384,7 @@ unp_attach(so)
 	return (0);
 }
 
+void
 unp_detach(unp)
 	register struct unpcb *unp;
 {
@@ -328,6 +405,7 @@ unp_detach(unp)
 		unp_gc();
 }
 
+int
 unp_bind(unp, nam)
 	struct unpcb *unp;
 	struct mbuf *nam;
@@ -349,6 +427,7 @@ unp_bind(unp, nam)
 	return (0);
 }
 
+int
 unp_connect(so, nam)
 	struct socket *so;
 	struct mbuf *nam;
@@ -382,6 +461,7 @@ bad:
 	return (error);
 }
 
+int
 unp_connect2(so, so2)
 	register struct socket *so;
 	register struct socket *so2;
@@ -413,6 +493,7 @@ unp_connect2(so, so2)
 	return (0);
 }
 
+void
 unp_disconnect(unp)
 	struct unpcb *unp;
 {
@@ -465,6 +546,7 @@ unp_usrclosed(unp)
 
 }
 
+void
 unp_drop(unp, errno)
 	struct unpcb *unp;
 	int errno;
@@ -488,6 +570,7 @@ unp_drain()
 }
 #endif
 
+int
 unp_externalize(rights)
 	struct mbuf *rights;
 {
@@ -521,6 +604,7 @@ unp_externalize(rights)
 	return (0);
 }
 
+int
 unp_internalize(rights)
 	struct mbuf *rights;
 {
@@ -553,6 +637,7 @@ extern	struct domain unixdomain;
  * What I did to the next routine isn't pretty, feel free to redo it, but
  * I doubt it'd be worth it since this isn't used very much.  SMS
  */
+void
 unp_gc()
 {
 	register struct file *fp;
@@ -584,8 +669,8 @@ restart:
 			if (xf->f_type != DTYPE_SOCKET)
 				continue;
 			so = xf->f_socket;
-			if (so->so_proto->pr_domain != &unixdomain ||
-			    (so->so_proto->pr_flags&PR_RIGHTS) == 0)
+			if (so->so_proto->pr_domain != &unixdomain
+					|| (so->so_proto->pr_flags & PR_RIGHTS) == 0)
 				continue;
 			if (so->so_rcv.sb_flags & SB_LOCK) {
 				sbwait(&so->so_rcv);
@@ -604,18 +689,19 @@ restart:
 	unp_gcing = 0;
 }
 
+void
 unp_dispose(m)
 	struct mbuf *m;
 {
-	int unp_discard();
 
 	if (m)
 		unp_scan(m, unp_discard);
 }
 
+void
 unp_scan(m0, op)
 	register struct mbuf *m0;
-	int (*op)();
+	void (*op)(struct file *);
 {
 	register struct mbuf *m;
 	register struct file **rp;
@@ -625,16 +711,17 @@ unp_scan(m0, op)
 	while (m0) {
 		for (m = m0; m; m = m->m_next)
 			if (m->m_type == MT_RIGHTS && m->m_len) {
-				qfds = m->m_len / sizeof (struct file *);
-				rp = mtod(m, struct file **);
+				qfds = m->m_len / sizeof(struct file*);
+				rp = mtod(m, struct file**);
 				for (i = 0; i < qfds; i++)
 					(*op)(*rp++);
-				break;		/* XXX, but saves time */
+				break; /* XXX, but saves time */
 			}
 		m0 = m0->m_act;
 	}
 }
 
+void
 unp_mark(fp)
 	struct file *fp;
 {
@@ -647,6 +734,7 @@ unp_mark(fp)
 	FPFLAGS(fp, FMARK|FDEFER, 0);
 }
 
+void
 unp_discard(fp)
 	struct file *fp;
 {

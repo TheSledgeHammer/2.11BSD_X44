@@ -88,10 +88,10 @@ typedef	unsigned short		u_short;
 typedef	unsigned int		u_int;
 typedef	unsigned long		u_long;
 
-typedef unsigned char		unchar;		/* Sys V compatibility */
-typedef	unsigned short		ushort;		/* Sys V compatibility */
-typedef	unsigned int		uint;		/* Sys V compatibility */
-typedef unsigned long		ulong;		/* Sys V compatibility */
+typedef unsigned char		unchar;		/* Sys III/V compatibility */
+typedef	unsigned short		ushort;		/* Sys III/V compatibility */
+typedef	unsigned int		uint;		/* Sys III/V compatibility */
+typedef unsigned long		ulong;		/* Sys III/V compatibility */
 #endif /* _POSIX_SOURCE */
 
 typedef	uint64_t	 		u_quad_t; 	/* quads */
