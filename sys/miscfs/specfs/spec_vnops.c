@@ -104,7 +104,6 @@ struct vnodeops spec_vnodeops = {
 		.vop_truncate = spec_truncate,	/* truncate */
 		.vop_update = spec_update,		/* update */
 		.vop_bwrite = spec_bwrite,		/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 /*
