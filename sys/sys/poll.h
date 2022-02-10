@@ -58,6 +58,9 @@ struct pollfd {
 #define	POLLHUP		0x0010
 #define	POLLNVAL	0x0020
 
+#define	POLLSTANDARD	(POLLIN|POLLPRI|POLLOUT|POLLRDNORM|POLLRDBAND|\
+			 POLLWRBAND|POLLERR|POLLHUP|POLLNVAL)
+
 /*
  * Infinite timeout value.
  */
