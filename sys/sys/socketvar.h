@@ -17,6 +17,8 @@
 
 #include <sys/stat.h>			/* for struct stat */
 #include <sys/filedesc.h>		/* for struct filedesc */
+#include <sys/mbuf.h>			/* for struct mbuf */
+#include <sys/protosw.h>		/* for struct protosw */
 #include <sys/select.h>			/* for struct selinfo */
 
 /*
@@ -191,12 +193,11 @@ sbunlock(sb)
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
 #ifdef _KERNEL
-struct	socket *sonewconn();
 
 /* to catch callers missing new second argument to sonewconn: */
 u_long	sb_max;
-#define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
-struct	socket *sonewconn1 (struct socket *head, int connstatus);
+//#define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
+//struct	socket *sonewconn1(struct socket *, int);
 
 /* strings for sleep message: */
 extern	char netio[], netcon[], netcls[];
@@ -208,12 +209,57 @@ int	soo_stat(struct socket *, struct stat *);
 int	soo_rw(struct file *, struct uio *, struct ucred *);
 int	soo_read(struct file *, struct uio *, struct ucred *);
 int	soo_write(struct file *, struct uio *, struct ucred *);
-int soo_close(struct file *, struct proc *);
+int 	soo_close(struct file *, struct proc *);
 int	soo_poll(struct file *, int, struct proc *);
 int	soo_kqfilter(struct file *, struct knote *);
 
-/* From uipc_socket and friends */
-
+int	socreate(int, struct socket **, int, int);
+int	sobind(struct socket *, struct mbuf *);
+int	solisten(struct socket *, int);
+void	sofree(struct socket *);
+int	soclose(struct socket *);
+int	soabort(struct socket *);
+int	soaccept(struct socket *, struct mbuf *);
+int	soconnect2(struct socket *, struct socket *);
+int	sodisconnect(struct socket *);
+int	sosend(struct socket *, struct mbuf *, struct uio *, int, struct mbuf *);
+int	soreceive(struct socket *, struct mbuf **, struct uio *, int, struct mbuf **);
+int	soshutdown(struct socket *, int);
+void	sorflush(struct socket *);
+int	sosetopt(struct socket *, int, int, struct mbuf *);
+int	sogetopt(struct socket *, int, int, struct mbuf **);
+void	sohasoutofband(struct socket *);
+int	soacc1(struct socket *);
+struct socket *asoqremque(struct socket *, int);
+int	connwhile(struct socket *);
+int	sogetnam(struct socket *, struct mbuf *);
+int	sogetpeer(struct socket *, struct mbuf *);
+void	soisconnecting(struct socket *);
+void	soisconnected(struct socket *);
+void	soisdisconnecting(struct socket *);
+void	soisdisconnected(struct socket *);
+struct socket *sonewconn(struct socket *);
+void	soqinsque(struct socket *, struct socket *, int);
+int	soqremque(struct socket *, int);
+void	socantsendmore(struct socket *);
+void	socantrcvmore(struct socket *);
+int	sopoll(struct socket *, int);
+void	sbselqueue(struct sockbuf *);
+void	sbwait(struct sockbuf *);
+void	sbwakeup(struct sockbuf *);
+void	sowakeup(struct socket *, struct sockbuf *);
+int	soreserve(struct socket *, int, int);
+int	sbreserve(struct sockbuf *, u_long);
+void	sbrelease(struct sockbuf *);
+void	sbappend(struct sockbuf *, struct mbuf *);
+void	sbappendrecord(struct sockbuf *, struct mbuf *);
+int	sbappendaddr(struct sockbuf *, struct sockaddr *, struct mbuf *, struct mbuf *);
+int	sbappendrights(struct sockbuf *, struct mbuf *, struct mbuf *);
+void	sbcompress(struct sockbuf *, struct mbuf *, struct mbuf *);
+void	sbflush(struct sockbuf *);
+void	sbdrop(struct sockbuf *, int);
+void	sbdroprecord(struct sockbuf *);
+int	unp_connect2(struct socket *, struct socket *);
 #endif
 
 #endif /* _SYS_SOCKETVAR_H_ */

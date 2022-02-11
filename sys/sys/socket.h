@@ -71,6 +71,7 @@ struct	linger {
  */
 #define	AF_UNSPEC		0		/* unspecified */
 #define	AF_UNIX			1		/* local to host (pipes, portals) */
+#define	AF_LOCAL		AF_UNIX		/* draft POSIX compatibility */
 #define	AF_INET			2		/* internetwork: UDP, TCP, etc. */
 #define	AF_IMPLINK		3		/* arpanet imp addresses */
 #define	AF_PUP			4		/* pup protocols: e.g. BSP */
@@ -85,7 +86,7 @@ struct	linger {
 #define AF_DLI			13		/* Direct data link interface */
 #define AF_LAT			14		/* LAT */
 #define	AF_HYLINK		15		/* NSC Hyperchannel */
-#define	AF_APPLETALK	16		/* Apple Talk */
+#define	AF_APPLETALK		16		/* Apple Talk */
 
 #define	AF_MAX			17
 
@@ -127,7 +128,7 @@ struct sockproto {
 #define PF_DLI			AF_DLI
 #define PF_LAT			AF_LAT
 #define	PF_HYLINK		AF_HYLINK
-#define	PF_APPLETALK	AF_APPLETALK
+#define	PF_APPLETALK		AF_APPLETALK
 
 #define	PF_MAX			AF_MAX
 
