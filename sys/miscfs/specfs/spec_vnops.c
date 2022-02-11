@@ -40,6 +40,7 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
+#include <sys/lockf.h>
 #include <sys/buf.h>
 #include <sys/mount.h>
 #include <sys/namei.h>
@@ -505,8 +506,10 @@ spec_strategy(ap)
 		struct buf *a_bp;
 	} */ *ap;
 {
+	struct buf *bp = ap->a_bp;
+	int maj = major(bp->b_dev);
 
-	(*bdevsw[major(ap->a_bp->b_dev)].d_strategy)(ap->a_bp);
+	(*bdevsw[maj].d_strategy)(bp);
 	return (0);
 }
 
@@ -548,6 +551,7 @@ spec_close(ap)
 {
 	register struct vnode *vp = ap->a_vp;
 	dev_t dev = vp->v_rdev;
+	int maj = major(dev);
 	int (*devclose) (dev_t, int, int, struct proc *);
 	int mode, error;
 
@@ -598,7 +602,7 @@ spec_close(ap)
 		 */
 		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
-		devclose = bdevsw[major(dev)].d_close;
+		devclose = bdevsw[maj].d_close;
 		mode = S_IFBLK;
 		break;
 
@@ -692,6 +696,7 @@ spec_ebadf(void)
 /*
  * Special device bad operation
  */
+int
 spec_badop(v)
 	void *v;
 {
