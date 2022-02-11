@@ -3,7 +3,7 @@
 # Common Kernel Conf Files
 include										"conf/devices.conf"
 include 									"conf/filesystems.conf"
-include 									"conf/network.conf"
+#include 									"conf/network.conf"
 include 									"conf/kernel.conf"
 include 									"conf/vm.conf"
 
