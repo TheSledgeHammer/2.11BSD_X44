@@ -867,7 +867,7 @@ bdev_close(dev_t dev, int fflag, int devtype, struct proc *p)
 }
 
 int
-bdev_strategy(dev_t dev, int fflag, int devtype, struct proc *p)
+bdev_strategy(struct buf *bp)
 {
 	const struct bdevsw *d;
 	int rv, error;
@@ -877,7 +877,7 @@ bdev_strategy(dev_t dev, int fflag, int devtype, struct proc *p)
 		return (error);
 	}
 
-	rv = (*d->d_strategy)(dev, fflag, devtype, p);
+	rv = (*d->d_strategy)(bp);
 
 	return (rv);
 }
