@@ -252,8 +252,7 @@ fifo_read(ap)
 		rso->so_state |= SS_NBIO;
 	startresid = uio->uio_resid;
 	VOP_UNLOCK(ap->a_vp, 0, p);
-	error = soreceive(rso, (struct mbuf **)0, uio, (struct mbuf **)0,
-	    (struct mbuf **)0, (int *)0);
+	error = soreceive(rso, (struct mbuf **)0, uio, 0, (struct mbuf **)0);
 	vn_lock(ap->a_vp, LK_EXCLUSIVE | LK_RETRY, p);
 	/*
 	 * Clear EOF indication after first such return.
@@ -289,7 +288,7 @@ fifo_write(ap)
 	if (ap->a_ioflag & IO_NDELAY)
 		wso->so_state |= SS_NBIO;
 	VOP_UNLOCK(ap->a_vp, 0, p);
-	error = sosend(wso, (struct mbuf *)0, ap->a_uio, 0, (struct mbuf *)0, 0);
+	error = sosend(wso, (struct mbuf *)0, ap->a_uio, 0, (struct mbuf *)0);
 	vn_lock(ap->a_vp, LK_EXCLUSIVE | LK_RETRY, p);
 	if (ap->a_ioflag & IO_NDELAY)
 		wso->so_state &= ~SS_NBIO;
