@@ -914,6 +914,11 @@ typedef struct {
 } Elf32_Versym;
 typedef Elf32_Versym	Elf64_Versym;
 
+#define ELF32_HDR_SIZE	(sizeof(Elf32_Ehdr))
+#define ELF32_AUXSIZE  	(howmany(ELF_AUX_ENTRIES * sizeof(Aux32Info), sizeof (Elf32_Addr)))
+#define ELF64_HDR_SIZE	(sizeof(Elf64_Ehdr))
+#define ELF64_AUXSIZE 	(howmany(ELF_AUX_ENTRIES * sizeof(Aux64Info), sizeof (Elf64_Addr)))
+
 #ifdef _KERNEL
 
 /*
@@ -964,9 +969,9 @@ struct elf_args {
 struct ps_strings;
 struct exec_linker;
 
-int		exec_elf_linker (struct exec_linker *);
-int		elf_copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
-int		elf_check_header (Elf_Ehdr *, int);
+int		exec_elf_linker(struct exec_linker *);
+int		elf_copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
+int		elf_check_header(Elf_Ehdr *, int);
 int		elf_load_file(struct exec_linker *, char *, struct exec_vmcmd_set *, u_long *, struct elf_args *, Elf_Addr *);
 void	elf_load_psection(struct exec_vmcmd_set *, struct vnode *, const Elf_Phdr *, Elf_Addr *, u_long *, int *, int);
 int		twoelevenbsd_elf_signature(struct exec_linker *, Elf_Ehdr *);

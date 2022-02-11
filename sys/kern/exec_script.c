@@ -45,7 +45,6 @@
 #include <sys/exec_script.h>
 #include <sys/exec_elf.h>
 
-
 int
 exec_script_linker(elp)
 	struct exec_linker *elp;

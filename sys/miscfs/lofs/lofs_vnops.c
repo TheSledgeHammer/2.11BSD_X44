@@ -1134,7 +1134,32 @@ lofs_bwrite(ap)
 	return (VOP_BWRITE(ap->a_bp));
 }
 
-#define	lofs_revoke 	((int (*) (struct  vop_revoke_args *))vop_norevoke)
+/*
+ * LOFS failed operation
+ */
+int
+lofs_ebadf(void)
+{
+
+	return (EBADF);
+}
+
+/*
+ * LOFS bad operation
+ */
+int
+lofs_badop(v)
+	void *v;
+{
+
+	panic("lofs_badop called");
+	/* NOTREACHED */
+}
+
+#define lofs_lease_check 	((int (*) (struct  vop_lease_args *))nullop)
+#define	lofs_revoke 		((int (*) (struct  vop_revoke_args *))vop_norevoke)
+#define lofs_pathconf 		((int (*) (struct  vop_pathconf_args *))lofs_badop)
+#define lofs_reallocblks	((int (*) (struct  vop_reallocblks_args *))lofs_badop)
 
 /*
  * Global vfs data structures for lofs
@@ -1151,6 +1176,7 @@ struct vnodeops lofs_vnodeops = {
 		.vop_setattr = lofs_setattr,	/* setattr */
 		.vop_read = lofs_read,			/* read */
 		.vop_write = lofs_write,		/* write */
+		.vop_lease = lofs_lease_check,	/* lease */
 		.vop_ioctl = lofs_ioctl,		/* ioctl */
 		.vop_select = lofs_select,		/* select */
 		.vop_revoke = lofs_revoke,		/* revoke */
@@ -1174,9 +1200,11 @@ struct vnodeops lofs_vnodeops = {
 		.vop_strategy = lofs_strategy,	/* strategy */
 		.vop_print = lofs_print,		/* print */
 		.vop_islocked = lofs_islocked,	/* islocked */
+		.vop_pathconf = lofs_pathconf,	/* pathconf */
 		.vop_advlock = lofs_advlock,	/* advlock */
 		.vop_blkatoff = lofs_blkatoff,	/* blkatoff */
 		.vop_valloc = lofs_valloc,		/* valloc */
+		.vop_reallocblks = lofs_reallocblks,/* reallocblks */
 		.vop_vfree = lofs_vfree,		/* vfree */
 		.vop_truncate = lofs_truncate,	/* truncate */
 		.vop_update = lofs_update,		/* update */

@@ -29,6 +29,8 @@
 #ifndef _VM_HAT_H_
 #define _VM_HAT_H_
 
+/* pmap to vm/ovl address translation */
+
 struct hatspl;
 SPLAY_HEAD(hatspl, vm_hat);
 struct vm_hat {

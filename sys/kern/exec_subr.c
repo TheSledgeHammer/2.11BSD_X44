@@ -48,8 +48,14 @@
 #include <vm/include/vm_pager.h>
 
 void
-new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
-		u_long size, u_long addr, u_int  prot, u_int  maxprot, int flags, struct vnode *vnode, u_long offset)
+new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
+	struct exec_vmcmd_set *evsp;
+	int (*proc)(struct proc * p, struct exec_vmcmd *);
+	u_long size, addr;
+	u_int prot, maxprot;
+	int flags;
+	struct vnode *vnode;
+	u_long offset;
 {
 	struct exec_linker *elp;
 	struct exec_vmcmd *vcp;

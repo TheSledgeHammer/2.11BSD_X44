@@ -39,7 +39,6 @@
  * 0140000; contains the system stack (and possibly network stack) per
  * user; is cross referenced with the proc structure for the same process.
  */
-//#define	MAXCOMLEN		MAXNAMLEN				/* <= MAXNAMLEN, >= sizeof(ac_comm) */
 #define USIZE 			UPAGES					/* pdp11 equivalent of UPAGES */
 
 struct upcb {									/* fake pcb structure */
@@ -123,8 +122,6 @@ struct user {
 	char				u_pofile[NOFILE];		/* per-process flags of open files */
 	int					u_lastfile;				/* high-water mark of u_ofile */
 	struct filedesc		*u_fd;					/* Ptr to open file descriptor structure. */
-//#define	UF_EXCLOSE 		0x1						/* auto-close on exec */
-//#define	UF_MAPPED 		0x2						/* mapped from device */
 #define u_cdir 			u_nd->ni_cdir			/* current directory */
 #define u_rdir 			u_nd->ni_rdir			/* root directory of current process */
 	struct tty 			*u_ttyp;				/* controlling tty pointer */

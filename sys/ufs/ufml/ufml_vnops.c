@@ -453,6 +453,39 @@ ufml_getattr(ap)
 	return (0);
 }
 
+
+int
+ufml_open(ap)
+	struct vop_open_args /* {
+		struct vnode *a_vp;
+		int  a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+#ifdef LOFS_DIAGNOSTIC
+	printf("ufml_open(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_OPEN(UFMLVPTOLOWERVP(ap->a_vp), ap->a_mode, ap->a_cred, ap->a_p);
+}
+
+int
+ufml_close(ap)
+	struct vop_close_args /* {
+		struct vnode *a_vp;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+#ifdef LOFS_DIAGNOSTIC
+	printf("ufml_close(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_CLOSE(UFMLVPTOLOWERVP(ap->a_vp), ap->a_fflag, ap->a_cred, ap->a_p);
+}
+
 int
 ufml_access(ap)
 	struct vop_access_args /* {
@@ -466,7 +499,7 @@ ufml_access(ap)
 	mode_t mode = ap->a_mode;
 	int error;
 #ifdef UFMLFS_DIAGNOSTIC
-	printf("ufml_access(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
+	printf("ufml_access(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
 #endif
 
 	/*
@@ -494,6 +527,129 @@ ufml_access(ap)
 }
 
 int
+ufml_read(ap)
+	struct vop_read_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_read(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_READ(UFMLVPTOLOWERVP(ap->a_vp), ap->a_uio, ap->a_ioflag, ap->a_cred);
+}
+
+int
+ufml_write(ap)
+	struct vop_write_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_write(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_WRITE(UFMLVPTOLOWERVP(ap->a_vp), ap->a_uio, ap->a_ioflag, ap->a_cred);
+}
+
+int
+ufml_ioctl(ap)
+	struct vop_ioctl_args /* {
+		struct vnode *a_vp;
+		int  a_command;
+		caddr_t  a_data;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_ioctl(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_IOCTL(UFMLVPTOLOWERVP(ap->a_vp), ap->a_command, ap->a_data, ap->a_fflag, ap->a_cred, ap->a_p);
+}
+
+int
+ufml_select(ap)
+	struct vop_select_args /* {
+		struct vnode *a_vp;
+		int  a_which;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_select(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_SELECT(UFMLVPTOLOWERVP(ap->a_vp), ap->a_which, ap->a_fflags, ap->a_cred, ap->a_p);
+}
+
+int
+ufml_mmap(ap)
+	struct vop_mmap_args /* {
+		struct vnode *a_vp;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_mmap(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_MMAP(UFMLVPTOLOWERVP(ap->a_vp), ap->a_fflags, ap->a_cred, ap->a_p);
+}
+
+int
+ufml_fsync(ap)
+	struct vop_fsync_args /* {
+		struct vnode *a_vp;
+		struct ucred *a_cred;
+		int  a_waitfor;
+		int a_flags;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_fsync(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_FSYNC(UFMLVPTOLOWERVP(ap->a_vp), ap->a_cred, ap->a_waitfor, ap->a_flags, ap->a_p);
+}
+
+int
+ufml_seek(ap)
+	struct vop_seek_args /* {
+		struct vnode *a_vp;
+		off_t  a_oldoff;
+		off_t  a_newoff;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_seek(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_SEEK(UFMLVPTOLOWERVP(ap->a_vp), ap->a_oldoff, ap->a_newoff, ap->a_cred);
+}
+
+int
 ufml_remove(ap)
 	struct vop_remove_args /* {
 		struct vnode *a_dvp;
@@ -503,7 +659,7 @@ ufml_remove(ap)
 {
 	int error;
 
-#ifdef LOFS_DIAGNOSTIC
+#ifdef UFMLFS_DIAGNOSTIC
 	printf("ufml_remove(ap->a_vp = %x->%x)\n", ap->a_dvp, UFMLVPTOLOWERVP(ap->a_dvp));
 #endif
 
@@ -658,12 +814,13 @@ ufml_rename(ap)
 #endif
 
 #ifdef UFMLFS_DIAGNOSTIC
-	printf("ufml_rename - VOP_RENAME(%x, %x, %x, %x)\n",
-		ap->a_fdvp, ap->a_fvp, ap->a_tdvp, ap->a_tvp);
+	printf("ufml_rename - VOP_RENAME(%x, %x, %x, %x)\n", ap->a_fdvp, ap->a_fvp,
+			ap->a_tdvp, ap->a_tvp);
 	vprint("ap->a_fdvp", ap->a_fdvp);
 	vprint("ap->a_fvp", ap->a_fvp);
 	vprint("ap->a_tdvp", ap->a_tdvp);
-	if (ap->a_tvp) vprint("ap->a_tvp", ap->a_tvp);
+	if (ap->a_tvp)
+		vprint("ap->a_tvp", ap->a_tvp);
 	DELAY(16000000);
 #endif
 
@@ -785,6 +942,7 @@ ufml_mkdir(ap)
  * ni_dvp is the locked parent.
  * ni_vp is the entry to be removed.
  */
+int
 ufml_rmdir(ap)
 	struct vop_rmdir_args /* {
 		struct vnode *a_dvp;
@@ -847,6 +1005,41 @@ ufml_symlink(ap)
 	return (error);
 }
 
+int
+ufml_readdir(ap)
+	struct vop_readdir_args /* {
+		struct vnode 			*a_vp;
+		struct uio 				*a_uio;
+		struct ucred 			*a_cred;
+		int 					*a_eofflag;
+		int 					*a_ncookies;
+		u_long 					**a_cookies;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_readdir(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return (VOP_READDIR(UFMLVPTOLOWERVP(ap->a_vp), ap->a_uio, ap->a_cred, ap->a_eofflag, ap->a_ncookies, ap->a_cookies));
+}
+
+int
+ufml_readlink(ap)
+	struct vop_readlink_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_readlink(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return (VOP_READLINK(UFMLVPTOLOWERVP(ap->a_vp), ap->a_uio, ap->a_cred));
+}
+
 /*
  * We need to process our own vnode lock and then clear the
  * interlock flag as it applies only to our vnode, not the
@@ -864,11 +1057,11 @@ ufml_lock(ap)
 	struct vnode *targetvp = UFMLVPTOLOWERVP(ap->a_vp);
 #ifdef UFMLFS_DIAGNOSTIC
 	printf("ufml_lock(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
-	/*vprint("lofs_lock ap->a_vp", ap->a_vp);
+	/*vprint("ufml_lock ap->a_vp", ap->a_vp);
 	if (targetvp)
-		vprint("lofs_lock ->ap->a_vp", targetvp);
+		vprint("ufml_lock ->ap->a_vp", targetvp);
 	else
-		printf("lofs_lock ->ap->a_vp = NIL\n");*/
+		printf("ufml_lock ->ap->a_vp = NIL\n");*/
 #endif
 
 	vop_nolock(ap);
@@ -1011,6 +1204,24 @@ ufml_print(ap)
 	return (0);
 }
 
+int
+ufml_bmap(ap)
+	struct vop_bmap_args /* {
+		struct vnode 	*a_vp;
+		daddr_t  		a_bn;
+		struct vnode 	**a_vpp;
+		daddr_t 		*a_bnp;
+		int				a_runp;
+	} */ *ap;
+{
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_bmap(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return (VOP_BMAP(UFMLVPTOLOWERVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp));
+}
+
+
 /*
  * XXX - vop_strategy must be hand coded because it has no
  * vnode in its arguments.
@@ -1026,7 +1237,7 @@ ufml_strategy(ap)
 	int error;
 	struct vnode *savedvp;
 
-#ifdef LOFS_DIAGNOSTIC
+#ifdef UFMLFS_DIAGNOSTIC
 	printf("ufml_strategy(vp = %x->%x)\n", ap->a_bp->b_vp, UFMLVPTOLOWERVP(ap->a_bp->b_vp));
 #endif
 
@@ -1042,6 +1253,108 @@ ufml_strategy(ap)
 	bp->b_vp = savedvp;
 
 	return (error);
+}
+
+int
+ufml_advlock(ap)
+	struct vop_advlock_args /* {
+		struct vnode *a_vp;
+		caddr_t  a_id;
+		int  a_op;
+		struct flock *a_fl;
+		int  a_flags;
+	} */ *ap;
+{
+
+	return (VOP_ADVLOCK(UFMLVPTOLOWERVP(ap->a_vp), ap->a_id, ap->a_op, ap->a_fl, ap->a_flags));
+}
+
+/*
+ * UFML directory offset lookup.
+ * Currently unsupported.
+ */
+int
+ufml_blkatoff(ap)
+	struct vop_blkatoff_args /* {
+		struct vnode *a_vp;
+		off_t a_offset;
+		char **a_res;
+		struct buf **a_bpp;
+	} */ *ap;
+{
+
+	return (VOP_BLKATOFF(UFMLVPTOLOWERVP(ap->a_vp), ap->a_offset, ap->a_res, ap->a_bpp));
+}
+
+/*
+ * UFML flat namespace allocation.
+ * Currently unsupported.
+ */
+int
+ufml_valloc(ap)
+	struct vop_valloc_args /* {
+		struct vnode *a_pvp;
+		int a_mode;
+		struct ucred *a_cred;
+		struct vnode **a_vpp;
+	} */ *ap;
+{
+
+	return (VOP_VALLOC(UFMLVPTOLOWERVP(ap->a_pvp), ap->a_mode, ap->a_cred, ap->a_vpp));
+}
+
+/*
+ * UFML flat namespace free.
+ * Currently unsupported.
+ */
+/*void*/
+int
+ufml_vfree(ap)
+	struct vop_vfree_args /* {
+		struct vnode *a_pvp;
+		ino_t a_ino;
+		int a_mode;
+	} */ *ap;
+{
+
+	return (VOP_VFREE(UFMLVPTOLOWERVP(ap->a_pvp), ap->a_ino, ap->a_mode));
+}
+
+/*
+ * UFML file truncation.
+ */
+int
+ufml_truncate(ap)
+	struct vop_truncate_args /* {
+		struct vnode *a_vp;
+		off_t a_length;
+		int a_flags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	/* Use lofs_setattr */
+	//printf("lofs_truncate: need to implement!!");
+	return (VOP_TRUNCATE(UFMLVPTOLOWERVP(ap->a_vp), ap->a_length, ap->a_flags, ap->a_cred, ap->a_p));
+}
+
+/*
+ * UFML update.
+ */
+int
+ufml_update(ap)
+	struct vop_update_args /* {
+		struct vnode *a_vp;
+		struct timeval *a_access;
+		struct timeval *a_modify;
+		int a_waitfor;
+	} */ *ap;
+{
+
+	/* Use lofs_setattr */
+	//printf("lofs_update: need to implement!!");
+	return (VOP_UPDATE(UFMLVPTOLOWERVP(ap->a_vp), ap->a_access, ap->a_modify, ap->a_waitfor));
 }
 
 /*
@@ -1070,7 +1383,7 @@ ufml_bwrite(ap)
 }
 
 /*
- * Fifo failed operation
+ * UFML failed operation
  */
 int
 ufml_ebadf(void)
@@ -1080,7 +1393,7 @@ ufml_ebadf(void)
 }
 
 /*
- * Fifo bad operation
+ * UFML bad operation
  */
 int
 ufml_badop(v)
@@ -1091,29 +1404,10 @@ ufml_badop(v)
 	/* NOTREACHED */
 }
 
-#define ufml_open 			((int (*) (struct  vop_open_args *))eopnotsupp)
-#define ufml_close 			((int (*) (struct  vop_close_args *))eopnotsupp)
-#define ufml_read 			((int (*) (struct  vop_read_args *))ufml_badop)
-#define ufml_write 			((int (*) (struct  vop_write_args *))ufml_badop)
 #define ufml_lease_check 	((int (*) (struct  vop_lease_args *))nullop)
-#define ufml_ioctl			((int (*) (struct  vop_ioctl_args *))ufml_badop)
-#define ufml_select 		((int (*) (struct  vop_select_args *))ufml_badop)
 #define	ufml_revoke 		((int (*) (struct  vop_revoke_args *))vop_norevoke)
-#define ufml_mmap 			((int (*) (struct  vop_mmap_args *))ufml_badop)
-#define ufml_fsync 			((int (*) (struct  vop_fsync_args *))nullop)
-#define ufml_seek 			((int (*) (struct  vop_seek_args *))ufml_badop)
-#define ufml_remove 		((int (*) (struct  vop_remove_args *))ufml_badop)
-#define ufml_readdir 		((int (*) (struct  vop_readdir_args *))ufml_badop)
-#define ufml_readlink 		((int (*) (struct  vop_readlink_args *))ufml_badop)
-#define ufml_bmap			((int (*) (struct  vop_bmap_args *))ufml_badop)
 #define ufml_pathconf 		((int (*) (struct  vop_pathconf_args *))ufml_badop)
-#define ufml_advlock 		((int (*) (struct  vop_advlock_args *))ufml_badop)
-#define ufml_blkatoff 		((int (*) (struct  vop_blkatoff_args *))ufml_badop)
-#define ufml_valloc 		((int (*) (struct  vop_valloc_args *))ufml_badop)
 #define ufml_reallocblks	((int (*) (struct  vop_reallocblks_args *))ufml_badop)
-#define ufml_vfree 			((int (*) (struct  vop_vfree_args *))ufml_badop)
-#define ufml_truncate 		((int (*) (struct  vop_truncate_args *))nullop)
-#define ufml_update 		((int (*) (struct  vop_update_args *))nullop)
 
 /*
  * Global vfs data structures ufml

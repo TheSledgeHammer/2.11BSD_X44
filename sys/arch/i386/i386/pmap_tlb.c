@@ -292,7 +292,7 @@ pmap_do_tlb_shootdown(pmap, self)
 	splx(s);
 }
 
-/*s
+/*
  * pmap_tlb_shootdown_q_drain:
  *
  *	Drain a processor's TLB shootdown queue.  We do not perform

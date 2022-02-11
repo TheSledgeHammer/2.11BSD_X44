@@ -249,6 +249,9 @@ struct exec_macho_emul_arg {
 	int 					dynamic;
 };
 
+#define MACHO_HDR_SIZE	(sizeof(struct exec_macho_fat_header))
+#define MACHO_AUXSIZE 	(MAXPATHLEN + 1)
+
 #ifdef _KERNEL
 #ifdef DEBUG_MACHO
 #define DPRINTF(a)      printf a

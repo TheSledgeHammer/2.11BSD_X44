@@ -132,39 +132,39 @@ struct execsw_entry {
 #ifdef _KERNEL
 extern struct lock 	exec_lock;
 
-void 	kill_vmcmd (struct exec_vmcmd **);
-void 	vmcmdset_extend (struct exec_vmcmd_set *);
-void 	kill_vmcmds (struct exec_vmcmd_set *);
-int		exec_makecmds (struct proc *, struct exec_linker *);
-int		exec_runcmds (struct proc *, struct exec_linker *);
-int 	vmcmd_map_pagedvn (struct exec_linker *);
-int 	vmcmd_map_readvn (struct exec_linker *);
-int 	vmcmd_readvn (struct exec_linker *);
-int		vmcmd_map_zero (struct exec_linker *);
-int 	vmcmd_create_vmspace (struct exec_linker *);
+void 	kill_vmcmd(struct exec_vmcmd **);
+void 	vmcmdset_extend(struct exec_vmcmd_set *);
+void 	kill_vmcmds(struct exec_vmcmd_set *);
+int		exec_makecmds(struct proc *, struct exec_linker *);
+int		exec_runcmds(struct proc *, struct exec_linker *);
+int 	vmcmd_map_pagedvn(struct exec_linker *);
+int 	vmcmd_map_readvn(struct exec_linker *);
+int 	vmcmd_readvn(struct exec_linker *);
+int		vmcmd_map_zero(struct exec_linker *);
+int 	vmcmd_create_vmspace(struct exec_linker *);
 
-void 	*copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
-int 	exec_extract_strings (struct exec_linker *, char *, char * const *);
-int 	*exec_copyout_strings (struct exec_linker *, struct ps_strings *);
+void 	*copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
+int 	exec_extract_strings(struct exec_linker *, char *, char * const *);
+int 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *);
 
-void 	setregs (struct proc *, struct exec_linker *, u_long);
+void 	setregs(struct proc *, struct exec_linker *, u_long);
 
-int		check_exec (struct exec_linker *);
-int		exec_init (void);
-int		exec_read_from (struct proc *, struct vnode *, u_long off, void *, size_t);
+int		check_exec(struct exec_linker *);
+int		exec_init(void);
+int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
 
-int 	exec_setup_stack (struct exec_linker *);
+int 	exec_setup_stack(struct exec_linker *);
 
-void 	new_vmcmd (struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
-		u_long size, u_long addr, u_int prot, u_int maxprot,
-		int flags, struct vnode *vp, u_long offset);
+void 	new_vmcmd(struct exec_vmcmd_set *, int (*proc)(struct proc *, struct exec_vmcmd *), u_long, u_long, u_int, u_int, int, struct vnode *, u_long);
 
-#define	NEW_VMCMD(evsp,elp,size,addr,prot,maxprot,vp,offset) \
-	new_vmcmd(evsp,elp,size,addr,prot,maxprot,0,vp,offset)
-#define	NEW_VMCMD2(evsp,elp,size,addr,prot,maxprot,flags,vp,offset) \
-	new_vmcmd(evsp,elp,size,addr,prot,maxprot,flags,vp,offset)
+#define	NEW_VMCMD(evsp, elp, size, addr, prot, maxprot, vp, offset) 		\
+	new_vmcmd(evsp, elp, size, addr, prot, maxprot, 0, vp, offset)
+#define	NEW_VMCMD2(evsp, elp, size, addr, prot, maxprot, flags, vp, offset) \
+	new_vmcmd(evsp, elp, size, addr, prot, maxprot, flags, vp, offset)
 
 int	exec_maxhdrsz;
 #endif 	/* _KERNEL */
+
 #include <sys/exec_aout.h>
+
 #endif  /* _SYS_EXEC_LINKER_H_ */

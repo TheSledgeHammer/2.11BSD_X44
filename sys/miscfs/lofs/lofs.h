@@ -50,7 +50,7 @@ struct lofsmount {
 	struct vnode		*rootvp;	/* Reference to root lofsnode */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * A cache of vnode references
  */

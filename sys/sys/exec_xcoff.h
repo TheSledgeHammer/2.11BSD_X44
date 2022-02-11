@@ -36,7 +36,7 @@
 #include <machine/types.h>
 #include <machine/xcoff_machdep.h>
 
-typedef struct {
+typedef struct xcoff32_filehdr {
 	uint16_t 	f_magic;			/* magic number */
 	uint16_t 	f_nscns;			/* # of sections */
 	uint32_t   	f_timdat;			/* time and date stamp */
@@ -46,7 +46,7 @@ typedef struct {
 	uint16_t 	f_flags;			/* flags??? */
 } xcoff32_filehdr;
 
-typedef struct {
+typedef struct xcoff64_filehdr {
 	uint16_t 	f_magic;			/* magic number */
 	uint16_t 	f_nscns;			/* # of sections */
 	uint32_t   	f_timdat;			/* time and date stamp */
@@ -77,7 +77,7 @@ typedef struct {
 #define XCOFF_F_LOADONLY 	0x4000
 			/* Reserved: 	0x8000 */
 
-typedef struct {
+typedef struct xcoff32_aouthdr {
 	uint16_t	mflag;			/* flags */
 	uint16_t 	vstamp;			/* version */
 	uint32_t  	tsize;			/* text size in bytes */
@@ -110,7 +110,7 @@ typedef struct {
 	uint16_t 	sntbss;			/* section number for .tbss */
 } xcoff32_aouthdr;
 
-typedef struct {
+typedef struct xcoff64_aouthdr {
 	uint16_t	mflag;			/* flags */
 	uint16_t 	vstamp;			/* version */
 	uint64_t  	tsize;			/* text size in bytes */
@@ -153,7 +153,7 @@ typedef struct {
 #define XCOFF_O_64_AOUT_FORK_POLICY 0x4000
 #define XCOFF_O_64_AOUT_SHR_SYMTAB 	0x8000
 
-typedef struct {
+typedef struct xcoff32_scnhdr {
 	char		s_name[8];		/* name */
 	uint32_t  	s_paddr;		/* physical addr? for ROMing?*/
 	uint32_t  	s_vaddr;		/* virtual addr? */
@@ -166,7 +166,7 @@ typedef struct {
 	uint16_t   	s_flags;		/* flags */
 } xcoff32_scnhdr;
 
-typedef struct {
+typedef struct xcoff64_scnhdr {
 	char		s_name[8];		/* name */
 	uint64_t  	s_paddr;		/* physical addr? for ROMing?*/
 	uint64_t  	s_vaddr;		/* virtual addr? */
@@ -194,25 +194,25 @@ typedef struct {
 #define XCOFF_S_TYPCHK 		0x4000
 #define XCOFF_S_OVRFLO 		0x8000
 
-typedef struct {
-	struct xcoff32_filehdr f;
-	struct xcoff32_aouthdr a;
+typedef struct xcoff32_exechdr {
+	xcoff32_filehdr f;
+	xcoff32_aouthdr a;
 } xcoff32_exechdr;
 
-typedef struct {
-	struct xcoff64_filehdr f;
-	struct xcoff64_aouthdr a;
+typedef struct xcoff64_exechdr {
+	xcoff64_filehdr f;
+	xcoff64_aouthdr a;
 } xcoff64_exechdr;
 
 /* XCOFF relocation entry */
-typedef struct {
+typedef struct xcoff32_reloc {
 	uint32_t	r_vaddr;		/* virtual address (position) in section to be relocated */
 	uint32_t	r_symndx;		/* symbol table index of item that is referenced */
 	uint8_t		r_rsize;		/* relocation size and information */
 	uint8_t		r_rtype;		/* relocation type */
 } xcoff32_reloc;
 
-typedef struct {
+typedef struct xcoff64_reloc {
 	uint64_t	r_vaddr;		/* virtual address (position) in section to be relocated */
 	uint32_t	r_symndx;		/* symbol table index of item that is referenced */
 	uint8_t		r_rsize;		/* relocation size and information */
@@ -245,7 +245,7 @@ typedef struct {
 #define XCOFF_RTYPE_TOCL			0x31
 
 /* XCOFF symbol entries */
-typedef struct {
+typedef struct xcoff32_syms {
 	char		n_name[8];		/* symbol name (occupies the same 8 bytes as n_zeroes and n_offset) */
 	int32_t 	n_zeroes;		/* zero, indicating name in string table or .debug section (overlays first 4 bytes of n_name) */
 	int32_t 	n_offset;		/* offset of the name in string table or .debug section (In XCOFF32: overlays last 4 bytes of n_name) */
@@ -258,7 +258,7 @@ typedef struct {
 	int8_t 		n_numaux;		/* number of auxiliary entries */
 } xcoff32_syms;
 
-typedef struct {
+typedef struct xcoff64_syms {
 	char		n_name[8];		/* symbol name (occupies the same 8 bytes as n_zeroes and n_offset) */
 	int32_t 	n_zeroes;		/* zero, indicating name in string table or .debug section (overlays first 4 bytes of n_name) */
 	int32_t 	n_offset;		/* offset of the name in string table or .debug section (In XCOFF32: overlays last 4 bytes of n_name) */
@@ -301,7 +301,7 @@ enum strclass {
 };
 
 /* XCOFF loader header */
-struct xcoff32_ldrhdr {
+typedef struct xcoff32_ldrhdr {
 	int32_t 	l_version;		/* loader section version number */
 	int32_t		l_nsyms;		/* # of symbol table entries */
 	int32_t		l_nreloc;		/* # of relocation table entries */
@@ -312,9 +312,9 @@ struct xcoff32_ldrhdr {
 	uint32_t 	l_stoff;		/* offset to start of string table */
 	uint32_t	l_symoff;		/* offset to start of symbol table */
 	uint16_t 	l_rldoff;		/* offset to start of relocation entries */
-};
+} xcoff32_ldrhdr;
 
-struct xcoff64_ldrhdr {
+typedef struct xcoff64_ldrhdr {
 	int32_t 	l_version;		/* loader section version number */
 	int32_t		l_nsyms;		/* # of symbol table entries */
 	int32_t		l_nreloc;		/* # of relocation table entries */
@@ -325,10 +325,10 @@ struct xcoff64_ldrhdr {
 	uint64_t 	l_stoff;		/* offset to start of string table */
 	uint64_t	l_symoff;		/* offset to start of symbol table */
 	uint16_t 	l_rldoff;		/* offset to start of relocation entries */
-};
+} xcoff64_ldrhdr;
 
 /* XCOFF loader symbol */
-struct xcoff32_ldrsyms {
+typedef struct xcoff32_ldrsyms {
 	char		l_name[8];		/* symbol name or byte offset into string table */
 	int32_t		l_zeroes;		/* zero indicates symbol name is referenced from l_offset */
 	int32_t		l_offset;		/* byte offset into string table of symbol name */
@@ -338,9 +338,9 @@ struct xcoff32_ldrsyms {
 	int8_t 		l_smclas;		/* symbol storage class */
 	int32_t 	l_ifile;		/* import file ID; ordinal of import file IDs */
 	int32_t 	l_parm;			/* parameter type-check field */
-};
+} xcoff32_ldrsyms;
 
-struct xcoff64_ldrsyms {
+typedef struct xcoff64_ldrsyms {
 	char		l_name[8];		/* symbol name or byte offset into string table */
 	int32_t		l_zeroes;		/* zero indicates symbol name is referenced from l_offset */
 	int32_t		l_offset;		/* byte offset into string table of symbol name */
@@ -350,10 +350,10 @@ struct xcoff64_ldrsyms {
 	int8_t 		l_smclas;		/* symbol storage class */
 	int32_t 	l_ifile;		/* import file ID; ordinal of import file IDs */
 	int32_t 	l_parm;			/* parameter type-check field */
-};
+} xcoff64_ldrsyms;
 
-#define XCOFF32_HDR_SIZE (sizeof(struct xcoff32_exechdr))
-#define XCOFF64_HDR_SIZE (sizeof(struct xcoff64_exechdr))
+#define XCOFF32_HDR_SIZE (sizeof(xcoff32_exechdr))
+#define XCOFF64_HDR_SIZE (sizeof(xcoff64_exechdr))
 
 #if !defined(XCOFFSIZE)
 # if !defined(_KERNEL)
@@ -421,10 +421,12 @@ struct xcoff64_ldrsyms {
          XCOFF_SEGMENT_ALIGNMENT(ep))))
 
 #ifdef _KERNEL
-int	 exec_xcoff_linker (struct exec_linker *));
-int	 exec_xcoff_prep_zmagic (struct exec_linker *, struct xcoff_exechdr *, struct vnode *);
-int	 exec_xcoff_prep_nmagic (struct exec_linker *, struct xcoff_exechdr *, struct vnode *);
-int	 exec_xcoff_prep_omagic (struct exec_linker *, struct xcoff_exechdr *, struct vnode *);
+struct exec_linker;
+
+int	 exec_xcoff_linker(struct exec_linker *);
+int	 exec_xcoff_prep_zmagic(struct exec_linker *, xcoff_exechdr *, struct vnode *);
+int	 exec_xcoff_prep_nmagic(struct exec_linker *, xcoff_exechdr *, struct vnode *);
+int	 exec_xcoff_prep_omagic(struct exec_linker *, xcoff_exechdr *, struct vnode *);
 #endif /* _KERNEL */
 
 #endif /* _SYS_EXEC_XCOFF_H_ */

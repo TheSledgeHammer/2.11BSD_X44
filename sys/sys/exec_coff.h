@@ -142,9 +142,9 @@ struct coff_exechdr {
          COFF_SEGMENT_ALIGNMENT(fp, ap))))
 
 #ifdef _KERNEL
-int	exec_coff_linker (struct exec_linker *);
-int	exec_coff_prep_zmagic (struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
-int	exec_coff_prep_nmagic (struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
-int	exec_coff_prep_omagic (struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
+int	exec_coff_linker(struct exec_linker *);
+int	exec_coff_prep_zmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
+int	exec_coff_prep_nmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
+int	exec_coff_prep_omagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *);
 #endif /* _KERNEL */
 #endif /* _SYS_EXEC_COFF_H_ */

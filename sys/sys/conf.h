@@ -25,7 +25,6 @@
 struct bdevsw {
 	int			(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
 	int			(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
-//	int			(*d_strategy)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int			(*d_strategy)(struct buf *bp);
 	int			(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
 	int			(*d_root)(void);		/* parameters vary by architecture */

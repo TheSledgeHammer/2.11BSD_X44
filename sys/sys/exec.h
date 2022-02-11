@@ -81,7 +81,7 @@ struct execa {
 };
 
 struct exec_linker;
-typedef int (*exec_makecmds_fcn)(struct proc *, struct exec_linker *);
+typedef int (*exec_makecmds_fcn)(struct exec_linker *);
 
 struct execsw {
 	u_int				ex_hdrsz;		/* size of header for this format */
@@ -91,7 +91,7 @@ struct execsw {
 	int					ex_prio;		/* entry priority */
 	int					ex_arglen;		/* Extra argument size in words */
 										/* Copy arguments on the new stack */
-	int					(*ex_copyargs)(struct proc *, struct exec_linker *, struct ps_strings *, void *, void *);
+	int					(*ex_copyargs)(struct exec_linker *, struct ps_strings *, void *, void *);
 	int					(*ex_setup_stack)(struct exec_linker *);
 };
 
@@ -99,11 +99,12 @@ struct execsw {
 #define EXECSW_PRIO_FIRST	0x001	/* this should be among first */
 #define EXECSW_PRIO_LAST	0x002	/* this should be among last */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern const struct execsw 	**execsw;
 extern struct execsw 		execsw[];
 extern int					nexecs;
 #endif
 
 #include <machine/exec.h>
+
 #endif /* _SYS_EXEC_H_ */

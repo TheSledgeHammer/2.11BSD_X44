@@ -87,12 +87,13 @@ struct pecoff_opthdr {
 
 
 /* s_flags for PE */
-#define COFF_STYP_DISCARD	0x2000000
-#define COFF_STYP_EXEC		0x20000000
-#define COFF_STYP_READ		0x40000000
-#define COFF_STYP_WRITE		0x80000000
+#define COFF_STYP_DISCARD		0x2000000
+#define COFF_STYP_EXEC			0x20000000
+#define COFF_STYP_READ			0x40000000
+#define COFF_STYP_WRITE			0x80000000
 
-#define PECOFF_HDR_SIZE (COFF_HDR_SIZE + sizeof(struct pecoff_opthdr))
+#define PECOFF_HDR_SIZE 		(COFF_HDR_SIZE + sizeof(struct pecoff_opthdr))
+#define PECOFF_AUXSIZE 			(howmany(sizeof(struct pecoff_args), sizeof(char *)))
 
 #define NETBSDPE_ABI_VERSION	0x00000002
 
@@ -123,13 +124,13 @@ struct pecoff_args {
 #define DPRINTF(a)
 #endif
 
-int pecoff_signature (struct vnode *vp, struct pecoff_dos_filehdr *pecoff_dos);
-int pecoff_load_file (struct exec_linker *elp, const char *path, struct exec_vmcmd_set *vcset, u_long *entry, struct pecoff_args *pecoff_arg);
-int exec_pecoff_linker (struct exec_linker *);
-int exec_pecoff_coff_linker (struct exec_linker *elp, struct coff_filehdr *coff_fp, int peofs);
-int exec_pecoff_prep_omagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
-int exec_pecoff_prep_mmagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
-int exec_pecoff_prep_zmagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
-int	pecoff_copyargs (struct exec_linker *, struct ps_strings *, char **, void *);
+int pecoff_signature(struct vnode *, struct pecoff_dos_filehdr *);
+int pecoff_load_file(struct exec_linker *, const char *, struct exec_vmcmd_set *, u_long *, struct pecoff_args *);
+int exec_pecoff_linker(struct exec_linker *);
+int exec_pecoff_coff_linker(struct exec_linker *, struct coff_filehdr *, int);
+int exec_pecoff_prep_omagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
+int exec_pecoff_prep_mmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
+int exec_pecoff_prep_zmagic(struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *, int);
+int	pecoff_copyargs(struct exec_linker *, struct ps_strings *, char **, void *);
 #endif /* KERNEL */
 #endif /* SYS_PECOFF_EXEC_H_ */

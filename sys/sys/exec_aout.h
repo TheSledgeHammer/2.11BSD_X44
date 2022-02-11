@@ -162,11 +162,18 @@ struct	xexec {
 #define EX_DYNAMIC	0x20	/* contains run-time link-edit info */
 #define EX_DPMASK	0x30	/* mask for the above */
 
-#ifdef KERNEL
+#include <machine/aout_machdep.h>
+
+#ifdef _KERNEL
 /* the "a.out" format's entry in the exec switch */
-int	exec_aout_linker (struct exec_linker *);
-int	exec_aout_prep_zmagic (struct exec_linker *);
-int	exec_aout_prep_nmagic (struct exec_linker *);
-int	exec_aout_prep_omagic (struct exec_linker *);
+int	exec_aout_linker(struct exec_linker *);
+int	exec_aout_prep_zmagic(struct exec_linker *);
+int	exec_aout_prep_nmagic(struct exec_linker *);
+int	exec_aout_prep_omagic(struct exec_linker *);
+
+/*
+ * MD portion
+ */
+int cpu_exec_aout_linker(struct exec_linker *);
 #endif /* KERNEL */
 #endif /*_SYS_EXEC_AOUT_H_ */

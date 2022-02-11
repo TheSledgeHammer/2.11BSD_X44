@@ -55,7 +55,8 @@
 
 #ifdef DEBUG_MACHO
 static void
-exec_macho_print_segment_command(struct exec_macho_segment_command *ls)
+exec_macho_print_segment_command(ls)
+	struct exec_macho_segment_command *ls;
 {
 	printf("ls.cmd 0x%lx\n", ls->cmd);
 	printf("ls.cmdsize 0x%ld\n", ls->cmdsize);
@@ -71,14 +72,16 @@ exec_macho_print_segment_command(struct exec_macho_segment_command *ls)
 }
 
 static void
-exec_macho_print_fat_header(struct exec_macho_fat_header *fat)
+exec_macho_print_fat_header(fat)
+	struct exec_macho_fat_header *fat;
 {
 	printf("fat.magic 0x%x\n", be32toh(fat->magic));
 	printf("fat.nfat_arch %d\n", be32toh(fat->nfat_arch));
 }
 
 static void
-exec_macho_print_fat_arch(struct exec_macho_fat_arch *arch)
+exec_macho_print_fat_arch(arch)
+	struct exec_macho_fat_arch *arch;
 {
 	printf("arch.cputype %x\n", be32toh(arch->cputype));
 	printf("arch.cpusubtype %d\n", be32toh(arch->cpusubtype));
@@ -88,7 +91,8 @@ exec_macho_print_fat_arch(struct exec_macho_fat_arch *arch)
 }
 
 static void
-exec_macho_print_object_header(struct exec_macho_object_header *hdr)
+exec_macho_print_object_header(hdr)
+	struct exec_macho_object_header *hdr;
 {
 	printf("hdr.magic 0x%lx\n", hdr->magic);
 	printf("hdr.cputype %x\n", hdr->cputype);
@@ -100,14 +104,16 @@ exec_macho_print_object_header(struct exec_macho_object_header *hdr)
 }
 
 static void
-exec_macho_print_load_command(struct exec_macho_load_command *lc)
+exec_macho_print_load_command(lc)
+	struct exec_macho_load_command *lc;
 {
 	printf("lc.cmd %lx\n", lc->cmd);
 	printf("lc.cmdsize %ld\n", lc->cmdsize);
 }
 
 static void
-exec_macho_print_dylinker_command(struct exec_macho_dylinker_command *dy)
+exec_macho_print_dylinker_command(dy)
+	struct exec_macho_dylinker_command *dy;
 {
 	printf("dy.cmd %lx\n", dy->cmd);
 	printf("dy.cmdsize %ld\n", dy->cmdsize);
@@ -116,7 +122,8 @@ exec_macho_print_dylinker_command(struct exec_macho_dylinker_command *dy)
 }
 
 static void
-exec_macho_print_dylib_command(struct exec_macho_dylib_command *dy)
+exec_macho_print_dylib_command(dy)
+	struct exec_macho_dylib_command *dy;
 {
 	printf("dy.cmd %lx\n", dy->cmd);
 	printf("dy.cmdsize %ld\n", dy->cmdsize);
@@ -129,7 +136,8 @@ exec_macho_print_dylib_command(struct exec_macho_dylib_command *dy)
 }
 
 static void
-exec_macho_print_thread_command(struct exec_macho_thread_command *th)
+exec_macho_print_thread_command(th)
+	struct exec_macho_thread_command *th;
 {
 	printf("th.cmd %lx\n", th->cmd);
 	printf("th.cmdsize %ld\n", th->cmdsize);
@@ -265,7 +273,8 @@ exec_macho_load_dylib(elp, dy, depth)
 }
 
 static u_long
-exec_macho_load_thread(struct exec_macho_thread_command *th)
+exec_macho_load_thread(th)
+	struct exec_macho_thread_command *th;
 {
 #ifdef DEBUG_MACHO
 	exec_macho_print_thread_command(th);
@@ -618,7 +627,9 @@ bad2:
 }
 
 int
-exec_macho_probe(struct exec_linker *elp, const char **path)
+exec_macho_probe(elp, path)
+	struct exec_linker *elp;
+	const char **path;
 {
 	struct emul *emul = elp->el_esch->ex_emul;
 
@@ -627,7 +638,11 @@ exec_macho_probe(struct exec_linker *elp, const char **path)
 }
 
 int
-macho_copyargs(struct exec_linker *elp, struct ps_strings *arginfo, char **stackp, void *argp)
+macho_copyargs(elp, arginfo, stackp, argp)
+	struct exec_linker *elp;
+	struct ps_strings *arginfo;
+	char **stackp;
+	void *argp;
 {
 	struct exec_macho_emul_arg *emea;
 	struct exec_macho_object_header *macho_hdr;
