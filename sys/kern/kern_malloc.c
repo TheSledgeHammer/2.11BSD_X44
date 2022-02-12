@@ -716,7 +716,6 @@ kmeminit()
 {
 	register long indx;
 	int npg;
-	void *addr;
 
 	simple_lock_init(&malloc_slock, "malloc_slock");
 
