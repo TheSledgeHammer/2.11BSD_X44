@@ -674,12 +674,49 @@ realloc(curaddr, newsize, type, flags)
 	return (newaddr);
 }
 
+/* Allocate a block of contiguous memory */
+void *
+calloc(nitems, size, type, flags)
+	unsigned long size;
+	int nitems, type, flags;
+{
+	void 			*addr;
+	unsigned long 	newsize;
+	int 		  	i;
+
+	/*
+	 * calloc() with zero nitems is the same as malloc()
+	 */
+	if (nitems == 0) {
+		return (malloc(size, type, flags));
+	}
+
+	/*
+	 * Find out how much contiguous space is needed
+	 */
+	for (i = 0; i <= nitems; i++) {
+		newsize = (size * nitems);
+	}
+
+	/*
+	 * allocate newsize of contiguous space
+	 */
+	addr = malloc(newsize, type, flags);
+
+	/*
+	 * clear contents
+	 */
+	memset(addr, 0, newsize);
+	return (addr);
+}
+
 /* Initialize the kernel memory allocator */
 void
 kmeminit()
 {
 	register long indx;
 	int npg;
+	void *addr;
 
 	simple_lock_init(&malloc_slock, "malloc_slock");
 
@@ -760,9 +797,7 @@ omalloc(size, flags)
 		allocsize = 1 << indx;
 	}
 	npg = clrnd(btoc(allocsize));
-	if(!(flags & (M_NOWAIT | M_CANFAIL))) {
-		va = (caddr_t)omem_malloc(omem_map, (vm_size_t)ctob(npg), (flags & M_OVERLAY));
-	}
+	va = (caddr_t)omem_malloc(omem_map, (vm_size_t)ctob(npg), (M_OVERLAY & !(flags & (M_NOWAIT | M_CANFAIL))));
 	return (va);
 }
 */

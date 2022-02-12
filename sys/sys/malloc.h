@@ -391,6 +391,7 @@ extern int			        	kmemslab_count;    /* number of items in slablist */
 extern void *malloc(unsigned long, int, int);
 extern void free(void *, int);
 extern void *realloc(void *, unsigned long, int, int);
+extern void *calloc(int, unsigned long, int, int);
 #endif /* KERNEL */
 
 #endif /* !_SYS_MALLOC_H_ */
