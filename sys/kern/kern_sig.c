@@ -60,10 +60,10 @@ cansignal(q, signum)
 void
 sigstack()
 {
-	register struct a {
+	register struct sigstack_args {
 		syscallarg(struct sigstack *) nss;
 		syscallarg(struct sigstack *) oss;
-	} *uap = (struct a*) u->u_ap;
+	} *uap = (struct sigstack_args *) u->u_ap;
 	struct sigstack ss;
 	register int error = 0;
 
@@ -87,10 +87,10 @@ out:
 void
 kill()
 {
-	register struct a {
+	register struct kill_args {
 		syscallarg(int)	pid;
 		syscallarg(int)	signo;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct kill_args *)u->u_ap;
 	register struct proc *p;
 	register int error = 0;
 
@@ -138,10 +138,10 @@ out:
 void
 killpg()
 {
-	register struct a {
+	register struct killpg_args {
 		syscallarg(int)	pgrp;
 		syscallarg(int)	signo;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct killpg_args *)u->u_ap;
 	register int error = 0;
 
 	if (uap->signo < 0 || uap->signo >= NSIG) {

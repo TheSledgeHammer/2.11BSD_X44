@@ -86,12 +86,12 @@ kenv_init()
 int
 kenv()
 {
-	register struct a {
+	register struct kenv_args {
 		syscallarg(int) 		what;
 		syscallarg(const char *) name;
 		syscallarg(char *) 		value;
 		syscallarg(int) 		len;
-	} *uap = (struct a*)u->u_ap;
+	} *uap = (struct kenv_args *)u->u_ap;
 
 	char *name, *value, *buffer = NULL;
 	size_t len, done, needed, buflen;

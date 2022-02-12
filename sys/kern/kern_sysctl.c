@@ -75,19 +75,18 @@ static struct sysctl_lock {
 	int	sl_locked;
 } memlock;
 
-struct sysctl_args {
-	syscallarg(int *) name;
-	syscallarg(u_int) namelen;
-	syscallarg(void	*) old;
-	syscallarg(size_t *) oldlenp;
-	syscallarg(void	*) new;
-	syscallarg(size_t) newlen;
-};
-
 int
 __sysctl()
 {
-	register struct sysctl_args *uap = (struct sysctl_args *)u->u_ap;
+	register struct sysctl_args {
+		syscallarg(int *) name;
+		syscallarg(u_int) namelen;
+		syscallarg(void	*) old;
+		syscallarg(size_t *) oldlenp;
+		syscallarg(void	*) new;
+		syscallarg(size_t) newlen;
+	} *uap = (struct sysctl_args *)u->u_ap;
+
 	struct proc *p;
 	int error;
 	u_int savelen, oldlen = 0;

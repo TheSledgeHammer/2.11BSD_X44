@@ -49,9 +49,9 @@
 int
 setuid()
 {
-	struct a {
+	struct setuid_args {
 		syscallarg(uid_t) uid;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct setuid_args *)u->u_ap;
 
 	return(_setuid(uap->uid));
 }
@@ -78,9 +78,9 @@ _setuid(uid)
 int
 seteuid()
 {
-	struct a {
+	struct seteuid_args {
 		syscallarg(uid_t) euid;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct seteuid_args *)u->u_ap;
 
 	return(_seteuid(uap->euid));
 }
@@ -103,9 +103,9 @@ _seteuid(euid)
 int
 setgid()
 {
-	struct a {
+	struct setgid_args {
 		syscallarg(gid_t) gid;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct setgid_args *)u->u_ap;
 	
 	return(_setgid(uap->gid));
 }
@@ -126,9 +126,9 @@ _setgid(gid)
 int
 setegid()
 {
-	struct a {
+	struct setegid_args {
 		syscallarg(gid_t) egid;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct setegid_args *)u->u_ap;
 
 	return(_setegid(uap->egid));
 }
@@ -145,17 +145,17 @@ _setegid(egid)
 }
 
 int
-_setsid()
+setsid()
 {
-	register struct a {
+	register struct setsid_args {
 		syscallarg(pid_t) pid;
-	}*uap = (struct a *) u->u_ap;
+	}*uap = (struct setsid_args *) u->u_ap;
 
 	return(_setsid(uap->pid));
 }
 
 int
-setsid(pid)
+_setsid(pid)
 	register pid_t pid;
 {
 	register struct proc *p;

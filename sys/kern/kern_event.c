@@ -656,14 +656,14 @@ kevent()
 	register struct proc *p;
 	register register_t *retval;
 
-	struct a {
+	struct kevent_args {
 		syscallarg(int) 					fd;
 		syscallarg(const struct kevent *) 	changelist;
 		syscallarg(size_t) 					nchanges;
 		syscallarg(struct kevent *) 		eventlist;
 		syscallarg(size_t) 					nevents;
 		syscallarg(const struct timespec *) timeout;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct kevent_args *)u->u_ap;
 
 	struct kevent	*kevp;
 	struct kqueue	*kq;

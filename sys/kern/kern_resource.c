@@ -20,10 +20,10 @@
 void
 getpriority()
 {
-	register struct a {
+	register struct getpriority_args {
 		syscallarg(int)	which;
 		syscallarg(int)	who;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct getpriority_args *)u->u_ap;
 	register struct proc *p;
 	register int low = PRIO_MAX + 1;
 
@@ -73,11 +73,11 @@ getpriority()
 void
 setpriority()
 {
-	register struct a {
+	register struct setpriority_args {
 		syscallarg(int)	which;
 		syscallarg(int)	who;
 		syscallarg(int)	prio;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct setpriority_args *)u->u_ap;
 	register struct proc *p;
 	register int found = 0;
 
@@ -146,10 +146,10 @@ donice(p, n)
 void
 setrlimit()
 {
-	register struct a {
+	register struct setrlimit_args {
 		syscallarg(u_int) which;
 		syscallarg(struct rlimit *) lim;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct setrlimit_args *)u->u_ap;
 	struct rlimit alim;
 	register struct rlimit *alimp;
 	extern unsigned maxdmap;
@@ -186,10 +186,10 @@ setrlimit()
 void
 getrlimit()
 {
-	register struct a {
+	register struct getrlimit_args {
 		syscallarg(u_int) 			which;
 		syscallarg(struct rlimit *) rlp;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct getrlimit_args *)u->u_ap;
 
 	if (uap->which >= RLIM_NLIMITS) {
 		u->u_error = EINVAL;
@@ -213,10 +213,10 @@ getrlimit()
 void
 getrusage()
 {
-	register struct a {
+	register struct getrusage_args {
 		syscallarg(int) who;
 		syscallarg(struct rusage *) rusage;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct getrusage_args *)u->u_ap;
 	register struct k_rusage *rup;
 	struct rusage ru;
 

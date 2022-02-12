@@ -80,48 +80,52 @@ getdtablesize()
 void
 dup()
 {
-	register struct a {
-		syscallarg(int)	i;
-	} *uap = (struct a *) u->u_ap;
+	register struct dup_args {
+		syscallarg(int)	fd;
+	} *uap = (struct dup_args *) u->u_ap;
 	register struct file *fp;
-	register int j, fd, error;
+	int j, fd, error;
 
-	if (uap->i &~ 077) { uap->i &= 077; dup2(); return; }	/* XXX */
-
-	if ((unsigned)uap->i >= NOFILE || (fp = u->u_ofile[uap->i]) == NULL)
-		u->u_error = EBADF;
+	if (uap->fd & ~077) {
+		uap->fd &= 077;
+		dup2();
 		return;
+	}
+
+	if ((unsigned)uap->fd >= NOFILE || (fp = u->u_ofile[uap->fd]) == NULL)
+		u->u_error = EBADF;
 	if (error == ufalloc(0, &fd))
 		u->u_error = error;
-		return;
 	j = ufalloc(0);
-	if (j < 0)
+	if (j < 0) {
 		return;
-	dupit(j, fp, u->u_pofile[uap->i] &~ UF_EXCLOSE);
+	}
+	dupit(j, fp, u->u_pofile[uap->fd] &~ UF_EXCLOSE);
 }
 
 void
 dup2()
 {
-	register struct a {
-		syscallarg(int)	i, j;
-	} *uap = (struct a *) u->u_ap;
+	register struct dup2_args {
+		syscallarg(int)	from;
+		syscallarg(int) to;
+	} *uap = (struct dup2_args *) u->u_ap;
 	register struct file *fp;
 
-	GETF(fp, uap->i);
-	if (uap->j < 0 || uap->j >= NOFILE) {
+	GETF(fp, uap->from);
+	if (uap->to < 0 || uap->to >= NOFILE) {
 		u->u_error = EBADF;
 		return;
 	}
-	u->u_r.r_val1 = uap->j;
-	if (uap->i == uap->j)
+	u->u_r.r_val1 = uap->to;
+	if (uap->from == uap->to)
 		return;
-	if (u->u_ofile[uap->j])
+	if (u->u_ofile[uap->to])
 		/*
 		 * dup2 must succeed even if the close has an error.
 		 */
-		(void) closef(u->u_ofile[uap->j]);
-	dupit(uap->j, fp, u->u_pofile[uap->i] &~ UF_EXCLOSE);
+		(void) closef(u->u_ofile[uap->to]);
+	dupit(uap->to, fp, u->u_pofile[uap->from] &~ UF_EXCLOSE);
 }
 
 void
@@ -145,15 +149,14 @@ void
 fcntl()
 {
 	register struct file *fp;
-	register struct a {
+	register struct fcntl_args {
 		syscallarg(int)	fdes;
 		syscallarg(int)	cmd;
 		syscallarg(int)	arg;
-	} *uap;
+	} *uap = (struct fcntl_args *)u->u_ap;
 	register i;
 	register char *pop;
 
-	uap = (struct a *)u->u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
 	pop = &u->u_pofile[uap->fdes];
@@ -265,13 +268,13 @@ register struct file *fp;
 void
 close()
 {
-	register struct a {
-		syscallarg(int)	i;
-	} *uap = (struct a *)u->u_ap;
+	register struct close_args {
+		syscallarg(int)	fd;
+	} *uap = (struct close_args *)u->u_ap;
 	register struct file *fp;
 
-	GETF(fp, uap->i);
-	u->u_ofile[uap->i] = NULL;
+	GETF(fp, uap->fd);
+	u->u_ofile[uap->fd] = NULL;
 	while (u->u_lastfile >= 0 && u->u_ofile[u->u_lastfile] == NULL)
 		u->u_lastfile--;
 	u->u_error = closef(fp);
@@ -282,13 +285,12 @@ void
 fstat()
 {
 	register struct file *fp;
-	register struct a {
+	register struct fstat_args {
 		syscallarg(int)	fdes;
 		syscallarg(struct stat *) sb;
-	} *uap;
+	} *uap = (struct fstat_args *)u->u_ap;
 	struct stat ub;
 
-	uap = (struct a *)u->u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
 	switch (fp->f_type) {
@@ -415,10 +417,10 @@ closef(fp)
 void
 flock()
 {
-	register struct a {
+	register struct flock_args {
 		syscallarg(int)	fd;
 		syscallarg(int)	how;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct flock_args *)u->u_ap;
 
 	register struct file *fp;
 	int error;

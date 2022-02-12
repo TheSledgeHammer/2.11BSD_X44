@@ -64,12 +64,12 @@
 int
 sigaction()
 {
-	register struct a {
+	register struct sigaction_args {
 		syscallarg(int)					(*sigtramp)();
 		syscallarg(int)					signum;
 		syscallarg(struct sigaction *) 	nsa;
 		syscallarg(struct sigaction *)	osa;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct sigaction_args *)u->u_ap;
 
 	struct sigaction vec;
 	register struct sigaction *sa;
@@ -211,11 +211,11 @@ siginit(p)
 int
 sigprocmask()
 {
-	register struct a {
+	register struct sigprocmask_args {
 		syscallarg(int) how;
 		syscallarg(sigset_t *) set;
 		syscallarg(sigset_t *) oset;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct sigprocmask_args *)u->u_ap;
 
 	int error = 0;
 	sigset_t oldmask, newmask;
@@ -257,9 +257,9 @@ out:
 int
 sigpending()
 {
-	register struct a {
+	register struct sigpending_args {
 		syscallarg(struct sigset_t *) set;
-	} *uap = (struct a*) u->u_ap;
+	} *uap = (struct sigpending_args *) u->u_ap;
 
 	register int error = 0;
 	struct proc *p = u->u_procp;
@@ -280,9 +280,9 @@ sigpending()
 int
 sigsuspend()
 {
-	register struct a {
+	register struct sigsuspend_args {
 		syscallarg(struct sigset_t *) set;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct sigsuspend_args *)u->u_ap;
 
 	sigset_t nmask;
 	struct proc *p = u->u_procp;
@@ -307,10 +307,10 @@ sigsuspend()
 int
 sigaltstack()
 {
-	register struct a {
+	register struct sigaltstack_args {
 		syscallarg(struct sigaltstack *) nss;
 		syscallarg(struct sigaltstack *) oss;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct sigaltstack_args *)u->u_ap;
 
 	struct sigaltstack ss;
 	int error = 0;
@@ -348,12 +348,11 @@ out:
 int
 sigwait()
 {
-	struct sigset s;
-	register struct a {
+
+	register struct sigwait_args {
 		syscallarg(sigset_t *) set;
 		syscallarg(int *) sig;
-	} *uap = (struct a *)u->u_ap;
-
+	} *uap = (struct sigwait_args *)u->u_ap;
 	sigset_t wanted, sigsavail;
 	register struct proc *p = u->u_procp;
 	int signo, error;
@@ -378,7 +377,7 @@ sigwait()
 	p->p_sigacts &= ~sigmask(signo);
 	error = copyout(&signo, uap->sig, sizeof(int));
 out:
-	return(u->u_error = error);
+	return (u->u_error = error);
 }
 
 /*
@@ -389,9 +388,9 @@ out:
  */
 fetchi()
 {
-	struct a {
+	struct fetchi_args {
 		syscallarg(caddr_t) iaddr;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct fetchi_args *)u->u_ap;
 
 #ifdef NONSEPARATE
 	u->u_error = EINVAL;
@@ -415,7 +414,8 @@ fperr()
 }
 
 static int
-filt_sigattach(struct knote *kn)
+filt_sigattach(kn)
+	struct knote *kn;
 {
 	struct proc *p = curproc;
 
@@ -428,7 +428,8 @@ filt_sigattach(struct knote *kn)
 }
 
 static void
-filt_sigdetach(struct knote *kn)
+filt_sigdetach(kn)
+	struct knote *kn;
 {
 	struct proc *p = kn->kn_obj;
 
@@ -442,7 +443,9 @@ filt_sigdetach(struct knote *kn)
  * isn't worth the trouble.
  */
 static int
-filt_signal(struct knote *kn, long hint)
+filt_signal(kn, hint)
+	struct knote *kn;
+	long hint;
 {
 
 	if (hint & NOTE_SIGNAL) {

@@ -53,10 +53,10 @@ int	acctchkfreq = 15;	/* frequency (in seconds) to check space */
 int
 acct()
 {
-	register struct a {
+	register struct acct_args {
 		syscallarg(char	*) path;
 		syscallarg(int)	pid;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct acct_args *)u->u_ap;
 
 	struct proc *p;
 	struct nameidata nd;

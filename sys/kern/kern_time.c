@@ -25,10 +25,10 @@ register struct timeval *time;
 void
 gettimeofday()
 {
-	register struct a {
+	register struct gettimeofday_args {
 		syscallarg(struct timeval *) tp;
 		syscallarg(struct timezone *) tzp;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct gettimeofday_args *)u->u_ap;
 	struct timeval atv;
 
 	int s;
@@ -54,10 +54,10 @@ gettimeofday()
 void
 settimeofday()
 {
-	register struct a {
+	register struct settimeofday_args {
 		syscallarg(struct timeval *) tv;
 		syscallarg(struct timezone *) tzp;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct settimeofday_args *)u->u_ap;
 	struct timeval atv;
 	struct timezone atz;
 
@@ -119,10 +119,10 @@ setthetime(tv)
 void
 adjtime()
 {
-	register struct a {
+	register struct adjtime_args {
 		syscallarg(struct timeval *) delta;
 		syscallarg(struct timeval *) olddelta;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct adjtime_args *)u->u_ap;
 	struct timeval atv;
 	register int s;
 	long adjust;
@@ -163,10 +163,10 @@ adjtime()
 void
 getitimer()
 {
-	register struct a {
+	register struct getitimer_args {
 		syscallarg(u_int) which;
 		syscallarg(struct itimerval *) itv;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct getitimer_args *)u->u_ap;
 
 	register struct itimerval *aitv;
 	register int s;
@@ -199,11 +199,11 @@ getitimer()
 void
 setitimer()
 {
-	register struct a {
+	register struct setitimer_args {
 		syscallarg(u_int) which;
 		syscallarg(struct itimerval *) itv;
 		syscallarg(struct itimerval *) oitv;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct setitimer_args *)u->u_ap;
 
 	struct itimerval aitv;
 	register struct itimerval *aitvp;

@@ -85,7 +85,7 @@ exec_aout_linker(elp)
 		}
 	}
 	if (error)
-		kill_vmcmds(&elp->el_vmcmds);
+		kill_vmcmd(&elp->el_vmcmds);
 	return (error);
 }
 

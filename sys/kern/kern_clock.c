@@ -341,12 +341,12 @@ untimeout(fun, arg)
 void
 profil()
 {
-	register struct a {
-		syscallarg(short *) bufbase;
-		syscallarg(unsigned) bufsize;
-		syscallarg(unsigned) pcoffset;
-		syscallarg(unsigned) pcscale;
-	} *uap = (struct a *)u->u_ap;
+	register struct profil_args {
+		syscallarg(caddr_t) bufbase;
+		syscallarg(u_int) bufsize;
+		syscallarg(u_int) pcoffset;
+		syscallarg(u_int) pcscale;
+	} *uap = (struct profil_args *)u->u_ap;
 	register struct uprof *upp = &u->u_prof;
 
 	upp->pr_base = uap->bufbase;

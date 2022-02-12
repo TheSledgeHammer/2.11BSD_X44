@@ -162,6 +162,8 @@ struct	xexec {
 #define EX_DYNAMIC	0x20	/* contains run-time link-edit info */
 #define EX_DPMASK	0x30	/* mask for the above */
 
+#define AOUT_HDR_SIZE	(sizeof(struct exec))
+
 #include <machine/aout_machdep.h>
 
 #ifdef _KERNEL

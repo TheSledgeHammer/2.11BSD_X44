@@ -59,7 +59,7 @@ struct execsw execsw[] = {
 		{ SCRIPT_HDR_SIZE, exec_script_linker, NULL, EXECSW_PRIO_ANY, 0, NULL, exec_setup_stack },
 
 		/* a.out binaries */
-		{ sizeof(struct exec), exec_aout_linker, &emul_211bsd, EXECSW_PRIO_FIRST, 0, copyargs, exec_setup_stack },
+		{ AOUT_HDR_SIZE, exec_aout_linker, &emul_211bsd, EXECSW_PRIO_FIRST, 0, copyargs, exec_setup_stack },
 
 		/* coff binaries */
 		{ COFF_HDR_SIZE, exec_coff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },

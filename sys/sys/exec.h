@@ -95,9 +95,9 @@ struct execsw {
 	int					(*ex_setup_stack)(struct exec_linker *);
 };
 
-#define EXECSW_PRIO_ANY		0x000	/* default, no preference */
-#define EXECSW_PRIO_FIRST	0x001	/* this should be among first */
-#define EXECSW_PRIO_LAST	0x002	/* this should be among last */
+#define EXECSW_PRIO_ANY		0	/* default, no preference */
+#define EXECSW_PRIO_FIRST	1	/* this should be among first */
+#define EXECSW_PRIO_LAST	2	/* this should be among last */
 
 #ifdef _KERNEL
 extern const struct execsw 	**execsw;

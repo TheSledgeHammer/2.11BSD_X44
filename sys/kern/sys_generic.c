@@ -35,11 +35,11 @@ struct	fileops	socketops = { sorw, soctl, sosel, socls };
 void
 read()
 {
-	register struct a {
+	register struct read_args {
 		syscallarg(int)	fdes;
 		syscallarg(char	*) cbuf;
 		syscallarg(unsigned) count;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct read_args *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov;
 
@@ -54,11 +54,11 @@ read()
 void
 readv()
 {
-	register struct a {
+	register struct readv_args {
 		syscallarg(int) fdes;
 		syscallarg(struct iovec *) iovp;
 		syscallarg(unsigned) iovcnt;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct readv_args *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
@@ -82,11 +82,11 @@ readv()
 void
 write()
 {
-	register struct a {
+	register struct write_args {
 		syscallarg(int) fdes;
 		syscallarg(char	*) cbuf;
 		syscallarg(unsigned) count;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct write_args *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov;
 
@@ -101,11 +101,11 @@ write()
 void
 writev()
 {
-	register struct a {
+	register struct writev_args {
 		syscallarg(int)	fdes;
 		syscallarg(struct iovec *) iovp;
 		syscallarg(unsigned) iovcnt;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct writev_args *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
@@ -127,15 +127,15 @@ static void
 rwuio(uio)
 	register struct uio *uio;
 {
-	struct a {
+	struct rwuio_args {
 		syscallarg(int)	fdes;
-	};
+	} *uap = (struct rwuio_args *)u->u_ap;;
 	register struct file *fp;
 	register struct iovec *iov;
 	u_int i, count;
 	off_t	total;
 
-	GETF(fp, ((struct a *)u->u_ap)->fdes);
+	GETF(fp, uap->fdes);
 	if ((fp->f_flag & (uio->uio_rw == UIO_READ ? FREAD : FWRITE)) == 0) {
 		u->u_error = EBADF;
 		return;
@@ -151,21 +151,19 @@ rwuio(uio)
 		(u->u_error = EINVAL);
 
 	count = uio->uio_resid;
-	if	(setjmp(&u->u_qsave))
-		{
-/*
- * The ONLY way we can get here is via the longjump in sleep.  Thus signals
- * have been checked and u_error set accordingly.  If no bytes have been 
- * transferred then all that needs to be done now is 'return'; the system 
- * call will either be restarted or reported as interrupted.  If bytes have 
- * been transferred then we need to calculate the number of bytes transferred.
-*/
-		if	(uio->uio_resid == count)
+	if (setjmp(&u->u_qsave)) {
+		/*
+		 * The ONLY way we can get here is via the longjump in sleep.  Thus signals
+		 * have been checked and u_error set accordingly.  If no bytes have been
+		 * transferred then all that needs to be done now is 'return'; the system
+		 * call will either be restarted or reported as interrupted.  If bytes have
+		 * been transferred then we need to calculate the number of bytes transferred.
+		 */
+		if (uio->uio_resid == count)
 			return;
 		else
 			u->u_error = 0;
-		}
-	else
+	} else
 		u->u_error = (*fp->f_ops->fo_rw)(fp, uio);
 	u->u_r.r_val1 = count - uio->uio_resid;
 }
@@ -176,18 +174,18 @@ rwuio(uio)
 void
 ioctl()
 {
-	register struct file *fp;
-	register struct a {
+
+	register struct ioctl_args {
 		syscallarg(int)	fdes;
 		syscallarg(long) cmd;
 		syscallarg(caddr_t)	cmarg;
-	} *uap;
+	} *uap = (struct ioctl_args *)u->u_ap;
+	register struct file *fp;
 	long com;
 	u_int k_com;
 	register u_int size;
 	char data[IOCPARM_MASK+1];
 
-	uap = (struct a *)u->u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
@@ -286,13 +284,13 @@ struct pselect_args {
 int
 select()
 {
-	struct uap {
-		syscallarg(int)	nd;
+	register struct select_args {
+		syscallarg(int)		nd;
 		syscallarg(fd_set *) in;
 		syscallarg(fd_set *) ou;
 		syscallarg(fd_set *) ex;
 		syscallarg(struct timeval *) tv;
-	} *uap = (struct uap *)u->u_ap;
+	} *uap = (struct select_args *)u->u_ap;
 
 	register struct pselect_args *pselargs = (struct pselect_args *)uap;
 
@@ -301,7 +299,7 @@ select()
 	 * number of parameters!
 	*/
 	pselargs->maskp = 0;
-	return(u->u_error = select1(pselargs, 0));
+	return (u->u_error = select1(pselargs, 0));
 }
 
 /*
@@ -313,9 +311,10 @@ select()
 int
 pselect()
 {
-	register struct	pselect_args *uap = (struct pselect_args *)u->u_ap;
+	register struct pselect_args *uap;
+	uap = (struct pselect_args *)u->u_ap;
 
-	return(u->u_error = select1(uap, 1));
+	return (u->u_error = select1(uap, 1));
 }
 
 /*

@@ -26,9 +26,9 @@
 void
 rexit()
 {
-	register struct a {
+	register struct exit_args {
 		syscallarg(int)	rval;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct exit_args *)u->u_ap;
 
 	exit(W_EXITCODE(uap->rval, 0));
 	/* NOTREACHED */
@@ -203,13 +203,13 @@ again:
 void
 wait4()
 {
-	register struct a {
+	register struct wait4_args {
 		syscallarg(int)	pid;
 		syscallarg(int *) status;
 		syscallarg(int) options;
 		syscallarg(struct rusage *) rusage;
 		syscallarg(int) compat;
-	} *uap = (struct a *)u->u_ap;
+	} *uap = (struct wait4_args *)u->u_ap;
 
 	int retval[2];
 
