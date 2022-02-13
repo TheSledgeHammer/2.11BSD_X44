@@ -200,23 +200,27 @@ again:
 	/* NOTREACHED */
 }
 
-void
-wait4()
-{
-	register struct wait4_args {
+struct wait_args {
 		syscallarg(int)	pid;
 		syscallarg(int *) status;
 		syscallarg(int) options;
 		syscallarg(struct rusage *) rusage;
 		syscallarg(int) compat;
-	} *uap = (struct wait4_args *)u->u_ap;
+};
+
+int
+wait4()
+{
+	register struct wait_args *uap = (struct wait_args *)u->u_ap;
 
 	int retval[2];
 
 	uap->compat = 0;
 	u->u_error = wait1(u->u_procp, uap, retval);
-	if (!u->u_error)
+	if (!u->u_error) {
 		u->u_r.r_val1 = retval[0];
+	}
+	return (u->u_error);
 }
 
 /*
@@ -228,7 +232,7 @@ wait4()
 static int
 wait1(q, uap, retval)
 	struct proc *q;
-	register struct args *uap;
+	register struct wait_args *uap;
 	int retval[];
 {
 	int nfound, status;
@@ -259,11 +263,11 @@ loop:
 		retval[1] = p->p_xstat;
 		if (uap->status && (error = copyout(&p->p_xstat, uap->status,
 						sizeof (uap->status))))
-			return(error);
+			return (error);
 		if (uap->rusage) {
 			rucvt(&ru, &p->p_ru);
 			if (error == copyout(&ru, uap->rusage, sizeof (ru)))
-				return(error);
+				return (error);
 		}
 		ruadd(&u->u_cru, &p->p_ru);
 		(void)chgproccnt(p->p_cred->p_ruid, -1);
@@ -340,9 +344,9 @@ loop:
 		return (0);
 	}
 	error = tsleep(q, PWAIT | PCATCH, "wait", 0);
-	if	(error == 0)
+	if (error == 0)
 		goto loop;
-	return(error);
+	return (error);
 }
 
 /*

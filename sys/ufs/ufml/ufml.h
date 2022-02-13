@@ -50,7 +50,7 @@ struct ufml_mount {
 	struct vnode				*ufmlm_rootvp;	/* Reference to root ufml_node */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * A cache of vnode references
  */

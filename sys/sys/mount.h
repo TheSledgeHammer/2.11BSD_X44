@@ -90,7 +90,7 @@ struct	mount {
 	void 					*mnt_data;					/* private data */
 
 	dev_t					mnt_dev;					/* device mounted */
-	memaddr					mnt_extern;					/* click address of mount table extension */
+	memaddr_t				mnt_extern;					/* click address of mount table extension */
 };
 
 struct	xmount {

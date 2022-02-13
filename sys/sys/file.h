@@ -10,10 +10,11 @@
 #define	_SYS_FILE_H_
 
 #include <sys/fcntl.h>
-#include <sys/lock.h>
 #include <sys/unistd.h>
+#include <sys/lock.h>
 
 #ifdef _KERNEL
+#include <sys/queue.h>
 struct proc;
 struct uio;
 struct knote;
@@ -23,6 +24,7 @@ struct knote;
  * One for each kernel object.
  */
 struct file {
+	//LIST_ENTRY(file) 	f_list;/* list of active files */
 	struct file 		*f_filef;		/* list of active files */
 	struct file 		**f_fileb;		/* list of active files */
 	int					f_flag;			/* see below */
@@ -34,30 +36,26 @@ struct file {
 		void			*f_Data;
 		struct socket 	*f_Socket;
 	} f_un;
-
+	struct fileops {
+		int	(*fo_rw)		(struct file *, struct uio *, struct ucred *);
+		int (*fo_read)		(struct file *, struct uio *, struct ucred *);
+		int (*fo_write)		(struct file *, struct uio *, struct ucred *);
+		int	(*fo_ioctl)		(struct file *, int, caddr_t, struct proc *);
+		int	(*fo_select) 	(struct file *, int, struct proc *);
+		int	(*fo_poll)		(struct file *, int, struct proc *);
+		int	(*fo_close)		(struct file *, struct proc *);
+		int (*fo_kqfilter)	(struct file *, struct knote *);
+	} *f_ops;
 	off_t				f_offset;
 	struct ucred 		*f_cred;		/* credentials associated with descriptor */
-	struct fileops 		*f_ops;
 	struct lock_object 	f_slock;
-};
-
-struct fileops {
-	int	(*fo_rw)		(struct file *fp, struct uio *uio, struct ucred *cred);
-	int (*fo_read)		(struct file *fp, struct uio *uio, struct ucred *cred);
-	int (*fo_write)		(struct file *fp, struct uio *uio, struct ucred *cred);
-	int	(*fo_ioctl)		(struct file *fp, int com, caddr_t data, struct proc *p);
-	int	(*fo_select) 	(struct file *fp, int which, struct proc *p);
-	int	(*fo_poll)		(struct file *fp, int event, struct proc *p);
-	int	(*fo_close)		(struct file *fp, struct proc *p);
-	int (*fo_kqfilter)	(struct file *fp, struct knote *kn);
-} *f_ops;
-
 #define f_data		f_un.f_Data
 #define f_socket	f_un.f_Socket
+};
 
 extern struct file 	*filehead;	/* head of list of open files */
-extern int 		maxfiles;	/* kernel limit on number of open files */
-extern int 		nfiles;		/* actual number of open files */
+extern int 			maxfiles;	/* kernel limit on number of open files */
+extern int 			nfiles;		/* actual number of open files */
 
 /*
  * Access call.
@@ -80,7 +78,7 @@ extern int 		nfiles;		/* actual number of open files */
 #define	GETF(fp, fd) { 													\
 	if ((unsigned)(fd) >= NOFILE || ((fp) = u->u_ofile[fd]) == NULL) { 	\
 		u->u_error = EBADF; 											\
-		return; 														\
+		return (u->u_error);											\
 	} 																	\
 }
 

@@ -343,7 +343,7 @@ ufmlfs_vptofh(vp, fhp)
 	return VFS_VPTOFH(UFMLVPTOLOWERVP(vp), fhp);
 }
 
-int ufmlfs_init (struct vfsconf *);
+int ufmlfs_init(struct vfsconf *);
 
 #define ufmlfs_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
 

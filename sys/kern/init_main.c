@@ -361,7 +361,7 @@ start_init(p, framep)
 	void *framep;
 {
 	vm_offset_t addr;
-	struct execa args;
+	struct execa_args args;
 	int options, i, error;
 	register_t retval[2];
 	char flags[4] = "-", *flagsp;
@@ -472,7 +472,7 @@ bhinit()
 		bp->b_forw = bp->b_back = (struct buf *)bp;
 }
 
-memaddr	bpaddr;		/* physical click-address of buffers */
+memaddr_t	bpaddr;		/* physical click-address of buffers */
 
 /*
  * Initialize the buffer I/O system by freeing

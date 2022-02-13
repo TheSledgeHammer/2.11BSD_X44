@@ -27,6 +27,11 @@
  */
 
 #include <sys/cdefs.h>
+
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/errno.h>
+
 #include <ufs/ufml/ufml.h>
 #include <ufs/ufml/ufml_extern.h>
 #include <ufs/ufml/ufml_meta.h>
@@ -43,7 +48,7 @@ ufml_snapshot_write(ap)
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_WRITE(ip, ap->a_vp, ap->a_mp, fs));
 	}
-	return (ENIVAL);
+	return (EINVAL);
 }
 
 int
@@ -58,7 +63,7 @@ ufml_read_snapshot_read(ap)
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_READ(ip, ap->a_vp, ap->a_mp, fs));
 	}
-	return (ENIVAL);
+	return (EINVAL);
 }
 
 int
@@ -73,7 +78,7 @@ ufml_snapshot_delete(ap)
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_DELETE(ip, ap->a_vp, ap->a_mp, fs));
 	}
-	return (ENIVAL);
+	return (EINVAL);
 }
 
 int
@@ -88,5 +93,5 @@ ufml_snapshot_commit(ap)
 		fs = meta->ufml_filesystem;
 		return (UOP_SNAPSHOT_COMMIT(ip, ap->a_vp, ap->a_mp, fs));
 	}
-	return (ENIVAL);
+	return (EINVAL);
 }

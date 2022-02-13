@@ -29,30 +29,6 @@
 #ifndef _UFS_UFML_OPS_H_
 #define _UFS_UFML_OPS_H_
 
-struct ufmlops {
-	int (*uop_archive)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype, int type);
-	int (*uop_extract)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype, int type);
-	int (*uop_compress)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype, int type);
-	int (*uop_decompress)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype, int type);
-	int (*uop_encrypt)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype, int type);
-	int (*uop_decrypt)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype, int type);
-	int (*uop_snapshot_write)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype);
-	int (*uop_snapshot_read)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype);
-	int (*uop_snapshot_delete)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype);
-	int (*uop_snapshot_commit)(struct ufml_node *up, struct vnode *vp, struct mount *mp, int fstype);
-};
-
-#define UOP_ARCHIVE(up, vp, mp, fstype, type)		(*((up)->ufml_op->uop_archive))(up, vp, mp, fstype, type)
-#define UOP_EXTRACT(up, vp, mp, fstype, type)		(*((up)->ufml_op->uop_extract))(up, vp, mp, fstype, type)
-#define UOP_COMPRESS(up, vp, mp, fstype, type)		(*((up)->ufml_op->uop_compress))(up, vp, mp, fstype, type)
-#define UOP_DECOMPRESS(up, vp, mp, fstype, type)	(*((up)->ufml_op->uop_decompress))(up, vp, mp, fstype, type)
-#define UOP_ENCRYPT(up, vp, mp, fstype, type)		(*((up)->ufml_op->uop_encrypt))(up, vp, mp, fstype, type)
-#define UOP_DECRYPT(up, vp, mp, fstype, type)		(*((up)->ufml_op->uop_decrypt))(up, vp, mp, fstype, type)
-#define UOP_SNAPSHOT_WRITE(up, vp, mp, fstype)		(*((up)->ufml_op->uop_snapshot_write))(up, vp, mp, fstype)
-#define UOP_SNAPSHOT_READ(up, vp, mp, fstype)		(*((up)->ufml_op->uop_snapshot_read))(up, vp, mp, fstype)
-#define UOP_SNAPSHOT_DELETE(up, vp, mp, fstype)		(*((up)->ufml_op->uop_snapshot_delete))(up, vp, mp, fstype)
-#define UOP_SNAPSHOT_COMMIT(up, vp, mp, fstype)		(*((up)->ufml_op->uop_snapshot_commit))(up, vp, mp, fstype)
-
 struct uop_generic_args {
 	struct ufmlops 				*a_ops;
 };
@@ -143,6 +119,49 @@ struct uop_snapshot_commit_args {
 	int							a_fstype;
 };
 
-extern struct ufmlops uops;
+struct ufmlops {
+		int (*uop_archive)(struct uop_archive_args *);
+		int (*uop_extract)(struct uop_extract_args *);
+		int (*uop_compress)(struct uop_compress_args *);
+		int (*uop_decompress)(struct uop_decompress_args *);
+		int (*uop_encrypt)(struct uop_encrypt_args *);
+		int (*uop_decrypt)(struct uop_decrypt_args *);
+		int (*uop_snapshot_write)(struct uop_snapshot_write_args *);
+		int (*uop_snapshot_read)(struct uop_snapshot_read_args *);
+		int (*uop_snapshot_delete)(struct uop_snapshot_delete_args *);
+		int (*uop_snapshot_commit)(struct uop_snapshot_commit_args *);
+};
+
+int uop_archive(struct ufml_node *, struct vnode *, struct mount *, int, int);
+int uop_extract(struct ufml_node *, struct vnode *, struct mount *, int, int);
+int uop_compress(struct ufml_node *, struct vnode *, struct mount *, int, int);
+int uop_decompress(struct ufml_node *, struct vnode *, struct mount *, int, int);
+int uop_encrypt(struct ufml_node *, struct vnode *, struct mount *, int, int);
+int uop_decrypt(struct ufml_node *, struct vnode *, struct mount *, int, int);
+int uop_snapshot_write(struct ufml_node *, struct vnode *, struct mount *, int);
+int uop_snapshot_read(struct ufml_node *, struct vnode *, struct mount *, int);
+int uop_snapshot_delete(struct ufml_node *, struct vnode *, struct mount *, int);
+int uop_snapshot_commit(struct ufml_node *, struct vnode *, struct mount *, int);
+
+#define UOP_ARCHIVE(up, vp, mp, fstype, type)		\
+	uop_archive(up, vp, mp, fstype, type)
+#define UOP_EXTRACT(up, vp, mp, fstype, type)		\
+	uop_extract(up, vp, mp, fstype, type)
+#define UOP_COMPRESS(up, vp, mp, fstype, type)		\
+	uop_compress(up, vp, mp, fstype, type)
+#define UOP_DECOMPRESS(up, vp, mp, fstype, type)	\
+	uop_decompress(up, vp, mp, fstype, type)
+#define UOP_ENCRYPT(up, vp, mp, fstype, type)		\
+	uop_encrypt(up, vp, mp, fstype, type)
+#define UOP_DECRYPT(up, vp, mp, fstype, type)		\
+	uop_decrypt(up, vp, mp, fstype, type)
+#define UOP_SNAPSHOT_WRITE(up, vp, mp, fstype)		\
+	uop_snapshot_write(up, vp, mp, fstype)
+#define UOP_SNAPSHOT_READ(up, vp, mp, fstype)		\
+	uop_snapshot_read(up, vp, mp, fstype)
+#define UOP_SNAPSHOT_DELETE(up, vp, mp, fstype)		\
+	uop_snapshot_delete(up, vp, mp, fstype)
+#define UOP_SNAPSHOT_COMMIT(up, vp, mp, fstype)		\
+	uop_snapshot_commit(up, vp, mp, fstype)
 
 #endif /* _UFS_UFML_OPS_H_ */

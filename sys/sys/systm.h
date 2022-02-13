@@ -74,6 +74,15 @@ extern char	curpri;					/* more scheduling */
 #define	SCARG(p,k)		((p)->k.datum)	/* get arg from args pointer */
 
 /*
+ * exec system call, with and without environments.
+ */
+struct execa_args {
+	syscallarg(char	*) fname;
+	syscallarg(char	**) argp;
+	syscallarg(char	**) envp;
+};
+
+/*
  * Structure of the system-entry table
  */
 extern struct sysent {

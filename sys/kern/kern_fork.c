@@ -26,25 +26,25 @@
  * fork --
  *	fork system call
  */
-void
+int
 fork()
 {
-	fork1(0);
+	return (fork1(0));
 }
 
 /*
  * vfork --
  *	vfork system call, fast version of fork
  */
-void
+int
 vfork()
 {
-	fork1(1);
+	return (fork1(1));
 }
 
 int	nproc = 1;		/* process 0 */
 
-static void
+int
 fork1(isvfork)
 	int isvfork;
 {
@@ -77,11 +77,11 @@ fork1(isvfork)
 	}
 	count = chgproccnt(u->u_uid, 1);
 	if (u->u_uid != 0 && count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur) {
-		(void)chgproccnt(u->u_uid, -1);
+		(void) chgproccnt(u->u_uid, -1);
 		u->u_error = EAGAIN;
 		goto out;
 	}
-	if (p2==NULL || (u->u_uid!=0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
+	if (p2 == NULL || (u->u_uid != 0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
 		u->u_error = EAGAIN;
 		goto out;
 	}
@@ -95,12 +95,15 @@ fork1(isvfork)
 		u->u_acflag = AFORK | (u->u_acflag & ASUGID);
 		bzero(&u->u_ru, sizeof(u->u_ru));
 		bzero(&u->u_cru, sizeof(u->u_cru));
-		return;
+		return (0);
 	}
 
 	u->u_r.r_val1 = p2->p_pid;
+	return (0);
+
 out:
 	u->u_r.r_val2 = 0;
+	return (u->u_error);
 }
 
 /*

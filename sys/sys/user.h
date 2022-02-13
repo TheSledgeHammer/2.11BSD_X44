@@ -26,6 +26,8 @@
 #include <sys/types.h>
 #include <sys/ucred.h>
 #include <sys/dirent.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
 
 #include <vm/include/vm.h>			/* XXX */
 
@@ -121,7 +123,7 @@ struct user {
 	struct file 		*u_ofile[NOFILE];		/* file structures for open files */
 	char				u_pofile[NOFILE];		/* per-process flags of open files */
 	int					u_lastfile;				/* high-water mark of u_ofile */
-	struct filedesc		*u_fd;					/* Ptr to open file descriptor structure. */
+	struct filedesc		*u_fd;					/* file descriptor structure. */
 #define u_cdir 			u_nd->ni_cdir			/* current directory */
 #define u_rdir 			u_nd->ni_rdir			/* root directory of current process */
 	struct tty 			*u_ttyp;				/* controlling tty pointer */
@@ -167,6 +169,6 @@ struct user {
 };
 
 #ifdef KERNEL
-extern struct user 		u;						/* extern needed? */
+extern struct user 		u;
 #endif
 #endif /* _SYS_USER_H_ */

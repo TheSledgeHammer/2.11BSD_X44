@@ -414,8 +414,7 @@ wdattach(struct device *parent, struct device *self, void *aux)
 		printf("%s: WARNING: unable to establish shutdown hook\n",
 		    wd->sc_dev.dv_xname);
 #if NRND > 0
-	rnd_attach_source(&wd->rnd_source, wd->sc_dev.dv_xname,
-			  RND_TYPE_DISK, 0);
+	rnd_attach_source(&wd->rnd_source, wd->sc_dev.dv_xname, RND_TYPE_DISK, 0);
 #endif
 }
 

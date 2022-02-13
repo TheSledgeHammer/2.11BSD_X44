@@ -71,15 +71,6 @@ struct ps_strings {
  */
 #define	STACKGAPLEN	(2*1024)	/* plenty enough for now */
 
-/*
- * exec system call, with and without environments.
- */
-struct execa {
-	char	*fname;
-	char	**argp;
-	char	**envp;
-};
-
 struct exec_linker;
 typedef int (*exec_makecmds_fcn)(struct exec_linker *);
 

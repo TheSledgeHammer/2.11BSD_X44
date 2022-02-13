@@ -45,10 +45,10 @@ struct ufml_metadata {
 	struct timespec		ufml_ctime;			/* time file changed */
 	int32_t				ufml_ctimensec;		/* Last inode change time. */
 	uint64_t	    	ufml_modrev;	    /* modrev for NFSv4 */
-	enum ufml_fstype 	ufml_filesystem; 	/* Supported fs types (for create) */
-	enum ufml_archtype 	ufml_archive;		/* archive types (for create) */
-	enum ufml_comptype 	ufml_compress;		/* compression types (for create) */
-	enum ufml_enctype 	ufml_encrypt;		/* encryption types (for create) */
+	enum ufml_fstype 	ufml_filesystem; 	/* Supported fs types */
+	enum ufml_archtype 	ufml_archive;		/* archive types */
+	enum ufml_comptype 	ufml_compress;		/* compression types */
+	enum ufml_enctype 	ufml_encrypt;		/* encryption types */
 };
 
 /* These flags are kept in ufml_flag. */
@@ -79,7 +79,5 @@ enum ufml_enctype { UFML_TWOFISH };
 #define UFMLTOFFS(vp)		(VTOI(vp)->i_fs)	/* FFS */
 #define UFMLTOMFS(vp)		(VTOMFS(vp))		/* MFS */
 #define UFMLTOLFS(vp)		(VTOI(vp)->i_lfs)	/* LFS */
-
-#define UFMLTOUFS211(vp) 	(UFS211_VTOI(vp))	/* UFS211 */
 
 #endif /* UFS_UFML_META_H_ */

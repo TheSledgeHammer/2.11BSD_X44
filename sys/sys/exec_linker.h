@@ -53,7 +53,7 @@
 struct exec_linker {
 	const char 				*el_name;				/* file's name */
 	struct 	proc 		    *el_proc;			    /* our process struct */
-	struct 	execa 		    *el_uap; 			    /* syscall arguments */
+	struct 	execa_args	    *el_uap; 			    /* syscall arguments */
 	const struct execsw 	*el_esch;				/* execsw arguments */
 
 	struct	vnode 		    *el_vnodep;			    /* executable's vnode */

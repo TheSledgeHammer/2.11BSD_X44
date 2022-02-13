@@ -176,11 +176,11 @@ struct flock {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	open (const char *, int, ...);
-int	creat (const char *, mode_t);
-int	fcntl (int, int, ...);
+int	open(const char *, int, ...);
+int	creat(const char *, mode_t);
+int	fcntl(int, int, ...);
 #ifndef _POSIX_SOURCE
-int	flock (int, int);
+int	flock(int, int);
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
 #endif

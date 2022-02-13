@@ -114,7 +114,7 @@ typedef	u_long				gid_t;		/* group id */
 typedef	u_char	    		pid_t;		/* process id */
 typedef	u_short				mode_t;		/* permissions */
 typedef char				bool_t;		/* boolean */
-typedef long				memaddr;	/* core or swap address */
+typedef long				memaddr_t;	/* core or swap address */
 
 #include <sys/select.h>
 

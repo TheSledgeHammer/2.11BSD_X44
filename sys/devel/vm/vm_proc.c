@@ -309,7 +309,7 @@ swapout_seg(p, freecore, odata, ostack)
 	int freecore;
 	register u_int odata, ostack;
 {
-	memaddr a[3];
+	memaddr_t a[3];
 
 	if (odata == X_OLDSIZE) {
 		odata = p->p_dsize;

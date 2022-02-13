@@ -27,6 +27,11 @@
  */
 
 #include <sys/cdefs.h>
+
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/errno.h>
+
 #include <ufs/ufml/ufml.h>
 #include <ufs/ufml/ufml_extern.h>
 #include <ufs/ufml/ufml_meta.h>
@@ -49,7 +54,7 @@ ufml_encrypt(ap)
 		return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
-	return (ENIVAL);
+	return (EINVAL);
 }
 
 int
@@ -69,5 +74,5 @@ ufml_decrypt(ap)
 		return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
-	return (ENIVAL);
+	return (EINVAL);
 }

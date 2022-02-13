@@ -74,25 +74,22 @@ const struct emul emul_211bsd = {
 		.e_syscall		= syscall
 };
 
-void
-execv(p, uap, retval)
-	struct proc *p;
-	struct execa *uap;
-	int *retval;
+int
+execv()
 {
-
-	uap = (struct execa *)u->u_ap;
+	struct execa_args *uap = (struct execa_args *)u->u_ap;
 	uap->envp = NULL;
-	execve(p, uap, retval);
+
+	return (execve(u->u_procp, uap, u->u_r->r_val1));
 }
 
 int
 execve(p, uap, retval)
 	struct proc *p;
-	struct execa *uap;
+	struct execa_args *uap;
 	int *retval;
 {
-	uap = (struct execa*) u->u_ap;
+	uap = (struct execa_args*) u->u_ap;
 
 	struct nameidata nd, *ndp;
 	int error, i, szsigcode, len;

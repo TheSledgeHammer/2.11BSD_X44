@@ -19,9 +19,9 @@
 
 struct mbuf *mbuf, *mbutl, xmbuf[NMBUFS + 1];
 struct mbuf xmbutl[(NMBCLUSTERS*CLBYTES/sizeof (struct mbuf))+7];
-memaddr miobase;			/* click address of dma region */
+memaddr_t miobase;			/* click address of dma region */
 							/* this is altered during allocation */
-memaddr miostart;			/* click address of dma region */
+memaddr_t miostart;			/* click address of dma region */
 							/* this stays unchanged */
 ubadr_t	mioumr;				/* base UNIBUS virtual address */
 							/* miostart and mioumr stay 0 for */
@@ -141,7 +141,7 @@ u_int
 m_ioget(size)
 	u_int size;		/* Number of bytes to allocate */
 {
-	memaddr base;
+	memaddr_t base;
 	u_int csize;
 
 	csize = btoc(size);		/* size in clicks */

@@ -125,10 +125,10 @@ slabmeta(slab, size)
 	meta->ksm_max = percent(meta->ksm_bslots, 95);  	/* upper bucket boundary */
 
 	/* test if free bucket slots is greater than 0 and less or equal to 95% */
-	if((meta->ksm_fslots > meta->ksm_min) && (meta->ksm_fslots <= meta->ksm_max)) {
+	if((meta->ksm_fslots > meta->ksm_min) && (meta->ksm_fslots < meta->ksm_max)) {
 		slab->ksl_flags |= SLAB_PARTIAL;
 	/* test if free bucket slots is greater than 95% */
-	} else if(meta->ksm_fslots > meta->ksm_max) {
+	} else if(meta->ksm_fslots >= meta->ksm_max) {
 		slab->ksl_flags |= SLAB_FULL;
 	} else {
 		slab->ksl_flags |= SLAB_EMPTY;
@@ -694,8 +694,8 @@ calloc(nitems, size, type, flags)
 	/*
 	 * Find out how much contiguous space is needed
 	 */
-	for (i = 0; i <= nitems; i++) {
-		newsize = (size * nitems);
+	for (i = 1; i <= nitems; i++) {
+		newsize = (size * i);
 	}
 
 	/*

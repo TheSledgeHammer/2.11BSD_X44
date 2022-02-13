@@ -28,7 +28,10 @@
 
 /* To Be moved into UFS when ready */
 #include <sys/cdefs.h>
-#include <sys/user.h>
+
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/errno.h>
 
 #include <ufs/ufs/inode.h>
 #include <ufs/ufml/ufml.h>
@@ -138,5 +141,4 @@ struct ufmlops ufsuops = {
 	.uop_snapshot_read 		= 	ufs_snapshot_read,		/* snapshot_read */
 	.uop_snapshot_delete 	= 	ufs_snapshot_delete,	/* snapshot_delete */
 	.uop_snapshot_commit 	= 	ufs_snapshot_commit,	/* snapshot_commit */
-	(struct ufmlops *)NULL 	= 	(int(*)())NULL
 };

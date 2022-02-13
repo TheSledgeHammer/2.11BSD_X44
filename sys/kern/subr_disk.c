@@ -486,8 +486,8 @@ bufq_free(bufq)
 
 void
 bufq_put(bufq, bp)
-	struct bufq_state *bufq;
-	struct buf *bp;
+	struct bufq_state 	*bufq;
+	struct buf 			*bp;
 {
 	register struct bufq *bfq;
 

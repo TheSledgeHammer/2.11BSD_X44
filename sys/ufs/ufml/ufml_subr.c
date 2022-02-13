@@ -73,16 +73,17 @@ u_long ufml_node_hash;
 /*
  * Initialise cache headers
  */
-ufmlfs_init()
+int
+ufmlfs_init(vfsp)
+	struct vfsconf *vfsp;
 {
 #ifdef UFMLFS_DIAGNOSTIC
 	printf("ufmlfs_init\n");		/* printed during system boot */
 #endif
+
 	ufml_node_hashtbl = hashinit(NUFMLNODECACHE, M_CACHE, &ufml_node_hash);
-	uops_init(); 					/* start ufml vector operations */
-#ifdef UFMLFS_DIAGNOSTIC
-	printf("ufmlfs_uops_init\n");	/* printed during system boot */
-#endif
+
+	return (0);
 }
 
 /*

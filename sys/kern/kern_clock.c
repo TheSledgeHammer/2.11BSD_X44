@@ -338,7 +338,7 @@ untimeout(fun, arg)
 	splx(s);
 }
 
-void
+int
 profil()
 {
 	register struct profil_args {
@@ -347,12 +347,15 @@ profil()
 		syscallarg(u_int) pcoffset;
 		syscallarg(u_int) pcscale;
 	} *uap = (struct profil_args *)u->u_ap;
+
 	register struct uprof *upp = &u->u_prof;
 
 	upp->pr_base = uap->bufbase;
 	upp->pr_size = uap->bufsize;
 	upp->pr_off = uap->pcoffset;
 	upp->pr_scale = uap->pcscale;
+
+	return (0);
 }
 
 /*

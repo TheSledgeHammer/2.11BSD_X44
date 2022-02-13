@@ -38,7 +38,7 @@ struct map {
 
 struct mapent {
 	size_t 				m_size;		/* size of this segment of the map */
-	memaddr				m_addr;		/* resource-space addr of start of segment */
+	memaddr_t			m_addr;		/* resource-space addr of start of segment */
 };
 
 /* vm_kern.h: for memory definitions */
@@ -71,9 +71,9 @@ struct map *coremap[1];																	/* space for core allocation */
 struct map *swapmap[1];																	/* space for swap allocation */
 int	nswapmap;
 
-long 	rmalloc (struct map *mp, long size); 											/* Allocate units from the given map. */
-void 	rmfree (struct map *mp, long size, long addr); 									/* Free the previously allocated units at addr into the specified map.*/
-long 	rmalloc3 (struct map *mp, long d_size, long s_size, long u_size, long a[3]);	/* Allocate resources for the three segments of a process.*/
-void	rminit (struct map *mp, long size, long addr, char *name, int mapsize);			/* Initialized resource malloc */
+long 	rmalloc(struct map *mp, long size); 											/* Allocate units from the given map. */
+void 	rmfree(struct map *mp, long size, long addr); 									/* Free the previously allocated units at addr into the specified map.*/
+long 	rmalloc3(struct map *mp, long d_size, long s_size, long u_size, long a[3]);		/* Allocate resources for the three segments of a process.*/
+void	rminit(struct map *mp, long size, long addr, char *name, int mapsize);			/* Initialized resource malloc */
 #endif
 #endif /* _SYS_MAP_H_ */

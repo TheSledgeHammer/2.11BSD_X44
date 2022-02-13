@@ -479,7 +479,7 @@ bhinit()
 		bp->b_forw = bp->b_back = (struct buf *)bp;
 }
 
-memaddr	bpaddr;		/* physical click-address of buffers */
+memaddr_t bpaddr;		/* physical click-address of buffers */
 
 /*
  * Initialize the buffer I/O system by freeing

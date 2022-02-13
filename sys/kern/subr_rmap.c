@@ -102,7 +102,7 @@ struct map swapmap[1] = {
 void
 rminit(mp, size, addr, name, mtype, mapsize)
 	register struct map *mp;
-	memaddr addr;
+	memaddr_t addr;
 	size_t size;
 	char *name;
 	int mtype, mapsize;
@@ -128,14 +128,14 @@ rminit(mp, size, addr, name, mtype, mapsize)
 	}
 }
 
-memaddr
+memaddr_t
 rmalloc(mp, size)
 	struct map *mp;
 	size_t  size;
 {
 	register struct mapent *ep = (struct mapent *)(mp+1);
 	register struct mapent *bp;
-	register memaddr addr;
+	register memaddr_t addr;
 	int retry;
 	swblk_t first, rest;
 
@@ -200,7 +200,7 @@ void
 rmfree(mp, size, addr)
 	struct map *mp;
 	size_t size;
-	register memaddr addr;
+	register memaddr_t addr;
 {
 	register struct mapent *bp, *ep;
 	struct mapent *start;
@@ -289,18 +289,18 @@ rmfree(mp, size, addr)
  * to be in decreasing order; generally, data, stack, then u. will be
  * best.  Returns NULL on failure, address of u. on success.
  */
-memaddr
+memaddr_t
 rmalloc3(mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
-	memaddr a[3];
+	memaddr_t a[3];
 {
 	register struct mapent *bp, *remap;
 	register int next;
 	struct mapent *madd[3];
 	size_t sizes[3];
 	int found, retry;
-	register memaddr addr;
+	register memaddr_t addr;
 	swblk_t first, rest;
 
 	sizes[0] = d_size; sizes[1] = s_size; sizes[2] = u_size;

@@ -614,17 +614,17 @@ seltrue_kqfilter(dev_t dev, struct knote *kn)
  * kqueue(2) system call.
  */
 int
-kqueue(struct proc *p, void *v, register_t *retval)
+kqueue()
 {
-	p = u->u_procp;
-
+	struct proc 	*p;
 	struct filedesc	*fdp;
 	struct kqueue	*kq;
 	struct file		*fp;
 	int				fd, error;
 
 	error = 0;
-	fdp = p->p_fd;
+	p = u->u_procp;
+	fdp = u->u_fd;
 	fp = falloc(); /* setup a new file descriptor */
 	if (fp == NULL) {
 		error = ENFILE;
@@ -638,7 +638,7 @@ kqueue(struct proc *p, void *v, register_t *retval)
 	simple_lock_init(&kq->kq_lock, "kqueue lock");
 	TAILQ_INIT(&kq->kq_head);
 	fp->f_un->f_Data = (caddr_t) kq; 	/* store the kqueue with the fp */
-	*retval = fd;
+	u->u_r->r_val1 = fd;
 	if (fdp->fd_knlistsize < 0)
 		fdp->fd_knlistsize = 0; 		/* this process has a kq */
 	kq->kq_fdp = fdp;
@@ -653,9 +653,6 @@ kqueue(struct proc *p, void *v, register_t *retval)
 int
 kevent()
 {
-	register struct proc *p;
-	register register_t *retval;
-
 	struct kevent_args {
 		syscallarg(int) 					fd;
 		syscallarg(const struct kevent *) 	changelist;
@@ -665,6 +662,8 @@ kevent()
 		syscallarg(const struct timespec *) timeout;
 	} *uap = (struct kevent_args *)u->u_ap;
 
+	register struct proc *p;
+	register register_t *retval;
 	struct kevent	*kevp;
 	struct kqueue	*kq;
 	struct file		*fp;
