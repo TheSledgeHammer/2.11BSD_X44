@@ -9,7 +9,8 @@ SA_ENABLE_BIENDIAN?= no		# Biendian support
 # stand routines
 SRCS+=	alloc.c bcopy.c bzero.c errno.c exit.c getfile.c \ 
 		gets.c memcmp.c memcpy.c memmove.c memset.c panic.c \
-		printf.c snprintf.c strdup.c strspn.c strtol.c twiddle.c
+		printf.c snprintf.c strdup.c strspn.c strtol.c twiddle.c \
+		zalloc_malloc.c zalloc.c
 
 # io routines
 SRCS+=	close.c dev.c disklabel.c ls.c \

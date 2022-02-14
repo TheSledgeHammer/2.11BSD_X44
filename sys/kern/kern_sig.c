@@ -69,12 +69,10 @@ sigstack()
 
 	ss.ss_sp = u->u_sigstk.ss_base;
 	ss.ss_onstack = u->u_sigstk.ss_flags & SA_ONSTACK;
-	if (uap->oss
-			&& (error = copyout((caddr_t) &ss, (caddr_t) uap->oss, sizeof(ss))))
+	if (uap->oss && (error = copyout((caddr_t) &ss, (caddr_t) uap->oss, sizeof(ss)))) {
 		goto out;
-	if (uap->nss
-			&& (error = copyin((caddr_t) uap->nss, (caddr_t) &ss, sizeof(ss)))
-					== 0) {
+	}
+	if (uap->nss && (error = copyin((caddr_t) uap->nss, (caddr_t) &ss, sizeof(ss)))	== 0) {
 		u->u_sigstk.ss_base = ss.ss_sp;
 		u->u_sigstk.ss_size = 0;
 		u->u_sigstk.ss_flags |= (ss.ss_onstack & SA_ONSTACK);
@@ -84,7 +82,7 @@ out:
 	return;
 }
 
-void
+int
 kill()
 {
 	register struct kill_args {
@@ -135,7 +133,7 @@ out:
 	u->u_error = error;
 }
 
-void
+int
 killpg()
 {
 	register struct killpg_args {
@@ -145,12 +143,10 @@ killpg()
 	register int error = 0;
 
 	if (uap->signo < 0 || uap->signo >= NSIG) {
-		error = EINVAL;
-		goto out;
+		return (EINVAL);
 	}
 	error = killpg1(uap->signo, uap->pgrp, 0);
-out:
-	return;
+	return (error);
 }
 
 static int
@@ -178,8 +174,9 @@ killpg1(signo, pgrp, all)
 			continue;
 		}
 		f++;
-		if (signo)
+		if (signo) {
 			psignal(p, signo);
+		}
 	}
 	return (error ? error : (f == 0 ? ESRCH : 0));
 }
@@ -606,9 +603,11 @@ void
 postsig(sig)
 	int sig;
 {
-	register struct proc *p = u->u_procp;
+	register struct proc *p;
 	long mask = sigmask(sig), returnmask;
 	register int (*action)();
+
+	p = u->u_procp;
 
 	if (u->u_fpsaved == 0) {
 		savfp(&u->u_fps);
@@ -623,7 +622,7 @@ postsig(sig)
 		if (action == SIG_IGN || (p->p_sigmask & mask))
 			panic("postsig action");
 #endif
-		u->u_error = 0;	/* XXX - why? */
+		u->u_error = 0; /* XXX - why? */
 		/*
 		 * Set the new mask value and also defer further
 		 * occurences of this signal.
@@ -646,12 +645,11 @@ postsig(sig)
 		return;
 	}
 	u->u_acflag |= AXSIG;
-	if	(sigprop[sig] & SA_CORE)
-		{
+	if (sigprop[sig] & SA_CORE) {
 		u->u_arg[0] = sig;
-		if	(core())
+		if (core())
 			sig |= 0200;
-		}
+	}
 	exit(sig);
 }
 

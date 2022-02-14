@@ -45,7 +45,7 @@ netpfind(pid)
 	register struct proc *p;
 
 	p = pfind(pid);
-	return(p);
+	return (p);
 }
 
 void
@@ -71,7 +71,7 @@ fpfetch(fp, fpp)
 	struct file *fp, *fpp;
 {
 	*fpp = *fp;
-	return(fp->f_count);
+	return (fp->f_count);
 }
 
 void
@@ -107,17 +107,17 @@ unpbind(path, len, vpp, unpsock)
 	vp = namei(ndp);
 	if (vp) {
 		vput(vp);
-		return(EADDRINUSE);
+		return (EADDRINUSE);
 	}
 	if (u->u_error || !(vp = MAKEIMODE(S_IFSOCK | 0777, ndp))) {
 		error = u->u_error;
 		u->u_error = 0;
-		return(error);
+		return (error);
 	}
 	*vpp = vp;
 	vp->v_socket = unpsock;
 	vrele(vp);
-	return(0);
+	return (0);
 }
 
 int
@@ -138,7 +138,7 @@ unpconn(path, len, so2, vpp)
 
 	bcopy(path, pth, len);
 	if (!len)
-		return(EINVAL);		/* paranoia */
+		return (EINVAL); /* paranoia */
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_SYSSPACE, pth);
 	ndp->ni_dirp[len - 2] = 0;
 	vp = namei(ndp);
@@ -146,15 +146,15 @@ unpconn(path, len, so2, vpp)
 	if (!vp || access(vp, S_IWRITE)) {
 		error = u->u_error;
 		u->u_error = 0;
-		return(error);
+		return (error);
 	}
 
 	if ((vp->v_socket & S_IFMT) != S_IFSOCK)
-		return(ENOTSOCK);
+		return (ENOTSOCK);
 	*so2 = vp->v_socket;
 	if (*so2 == 0)
-		return(ECONNREFUSED);
-	return(0);
+		return (ECONNREFUSED);
+	return (0);
 }
 
 void
@@ -173,5 +173,5 @@ unpdisc(fp)
 	struct file *fp;
 {
 	--fp->f_msgcount;
-	return(closef(fp));
+	return (closef(fp));
 }

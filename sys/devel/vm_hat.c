@@ -38,6 +38,14 @@
 
 struct hatspl hat_splay = SPLAY_INITIALIZER(hat_splay);
 
+void
+vm_hat_bootstrap(hat)
+	vm_hat_t hat;
+{
+	hat = (vm_hat_t)pmap_bootstrap_alloc(sizeof(vm_hat_t));
+	vm_hat_lock_init(hat);
+}
+
 int
 vm_hat_compare(hat1, hat2)
 	struct vm_hat *hat1, *hat2;
@@ -53,77 +61,39 @@ vm_hat_compare(hat1, hat2)
 SPLAY_PROTOTYPE(hatspl, vm_hat, vh_node, vm_hat_compare);
 SPLAY_GENERATE(hatspl, vm_hat, vh_node, vm_hat_compare);
 
-void
-vm_hat_bootstrap(hat)
-	vm_hat_t hat;
-{
-	hat = (vm_hat_t)pmap_bootstrap_alloc(sizeof(vm_hat_t));
-	vm_hat_lock_init(hat);
-}
-
-vm_hat_t
-vm_hat_alloc(hat, name, type, item)
-	vm_hat_t 		hat;
-	char 			*name;
-	int 			type;
-	void 			*item;
-{
-	if(hat != NULL) {
-		vm_hat_add(hat, name, type, item, 0);
-		return (hat);
-	}
-	return (NULL);
-}
-
-void
-vm_hat_free(hat, name, type)
-	vm_hat_t 		hat;
-	char 			*name;
-	int 			type;
-{
-	if(hat != NULL) {
-		vm_hat_remove(hat, name, type, 0);
-	}
-}
-
 /* add multiple items to the splay tree */
 void
-vm_hat_add(hat, name, type, item, nitems)
+vm_hat_add(hat, name, type, item, size)
 	vm_hat_t hat;
 	char 	*name;
 	int 	type;
 	void 	*item;
-	int 	nitems;
+	u_long 	size;
 {
-	int i;
-
 	hat->vh_name = name;
 	hat->vh_type = type;
 	hat->vh_item = item;
+	hat->vh_size = size;
 
 	vm_hat_lock(hat);
-	for(i = 0; i <= nitems; i++) {
-		SPLAY_INSERT(hatspl, hat, item);
-		hat->vh_nitems++;
-		vm_hat_unlock(hat);
-	}
+	SPLAY_INSERT(hatspl, &hat_splay, item);
+	vm_hat_unlock(hat);
 }
 
 /* remove multiple items from the splay tree */
 void
-vm_hat_remove(hat, name, type, nitems)
-	vm_hat_t hat;
+vm_hat_remove(name, type)
 	char *name;
-	int type, nitems;
+	int type;
 {
-	int i;
+	vm_hat_t hat;
+	void 	*item;
 
 	vm_hat_lock(hat);
-	for(i = 0; i <= nitems; i++) {
+	SPLAY_FOREACH(hat, hatspl, hat_splay) {
+		item = hat->vh_item;
 		if(hat->vh_name == name && hat->vh_type == type) {
-			hat->vh_item = NULL;
-			SPLAY_REMOVE(hatspl, hat, hat->vh_item);
-			hat->vh_nitems--;
+			SPLAY_REMOVE(hatspl, &hat_splay, item);
 			vm_hat_unlock(hat);
 		}
 	}
@@ -135,11 +105,14 @@ vm_hat_lookup(name, type)
 	int type;
 {
 	vm_hat_t hat;
+	void 	*item;
+
 	vm_hat_lock(hat);
 	SPLAY_FOREACH(hat, hatspl, hat_splay) {
-		if(hat->vh_name == name && hat->vh_type == type) {
+		item = hat->vh_item;
+		if (hat->vh_name == name && hat->vh_type == type) {
 			vm_hat_unlock(hat);
-			return (SPLAY_FIND(hatspl, hat, hat->vh_item));
+			return (SPLAY_FIND(hatspl, hat, item));
 		}
 	}
 	vm_hat_unlock(hat);

@@ -232,7 +232,7 @@ extern void				ngets(char *, int);
 /* getopt.c */
 extern char				*optarg;			/* getopt(3) external variables */
 extern int				optind, opterr, optopt, optreset;
-extern int				getopt(int, char * const [], const char *);
+extern int				getopt(int, char * const[], const char *);
 
 /* pager.c */
 extern void				pager_open(void);
@@ -251,5 +251,6 @@ extern size_t 			strspn(const char *, const char *);
 
 /* strtol.c */
 extern long				strtol(const char *, char **, int);
+
 
 #endif	/* _LIBSA_STAND_H */

@@ -17,7 +17,7 @@
 /*
  * Resource controls and accounting.
  */
-void
+int
 getpriority()
 {
 	register struct getpriority_args {
@@ -61,16 +61,17 @@ getpriority()
 
 	default:
 		u->u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	if (low == PRIO_MAX + 1) {
 		u->u_error = ESRCH;
-		return;
+		return (ESRCH);
 	}
 	u->u_r.r_val1 = low;
+	return (0);
 }
 
-void
+int
 setpriority()
 {
 	register struct setpriority_args {
@@ -116,10 +117,13 @@ setpriority()
 
 	default:
 		u->u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	if (found == 0)
 		u->u_error = ESRCH;
+		return (ESRCH);
+
+	return (u->u_error);
 }
 
 static void
@@ -143,7 +147,7 @@ donice(p, n)
 	p->p_nice = n;
 }
 
-void
+int
 setrlimit()
 {
 	register struct setrlimit_args {
@@ -152,17 +156,16 @@ setrlimit()
 	} *uap = (struct setrlimit_args *)u->u_ap;
 	struct rlimit alim;
 	register struct rlimit *alimp;
-	extern unsigned maxdmap;
+	extern unsigned int maxdmap;
 
 	if (uap->which >= RLIM_NLIMITS) {
 		u->u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	alimp = &u->u_rlimit[uap->which];
-	u->u_error = copyin((caddr_t)uap->lim, (caddr_t)&alim,
-		sizeof (struct rlimit));
+	u->u_error = copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit));
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	if (uap->which == RLIMIT_CPU) {
 		/*
 		 * 2.11 stores RLIMIT_CPU as ticks to keep from making
@@ -177,13 +180,79 @@ setrlimit()
 		else
 			alim.rlim_max = alim.rlim_max * hz;
 	}
-	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max)
-		if (!suser())
-			return;
-	*alimp = alim;
+	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max) {
+		if (u->u_error == suser()) {
+			return (u->u_error);
+		}
+	}
+
+	//*alimp = alim;
+	return (dosetrlimit(u->u_procp, uap->which, alim, alimp));
 }
 
-void
+int
+dosetrlimit(p, which, limp, alimp)
+	struct proc *p;
+	u_int which;
+	struct rlimit *limp, *alimp;
+{
+	switch (which) {
+	case RLIMIT_DATA:
+		if (limp->rlim_cur > maxdmap)
+			limp->rlim_cur = maxdmap;
+		if (limp->rlim_max > maxdmap)
+			limp->rlim_max = maxdmap;
+		break;
+
+	case RLIMIT_STACK:
+		if (limp->rlim_cur > maxdmap)
+			limp->rlim_cur = maxdmap;
+		if (limp->rlim_max > maxdmap)
+			limp->rlim_max = maxdmap;
+		/*
+		 * Stack is allocated to the max at exec time with only
+		 * "rlim_cur" bytes accessible.  If stack limit is going
+		 * up make more accessible, if going down make inaccessible.
+		 */
+		if (limp->rlim_cur != alimp->rlim_cur) {
+			vm_offset_t addr;
+			vm_size_t size;
+			vm_prot_t prot;
+
+			if (limp->rlim_cur > alimp->rlim_cur) {
+				prot = VM_PROT_ALL;
+				size = limp->rlim_cur - alimp->rlim_cur;
+				addr = USRSTACK - limp->rlim_cur;
+			} else {
+				prot = VM_PROT_NONE;
+				size = alimp->rlim_cur - limp->rlim_cur;
+				addr = USRSTACK - alimp->rlim_cur;
+			}
+			addr = trunc_page(addr);
+			size = round_page(size);
+			(void) vm_map_protect(&p->p_vmspace->vm_map, addr, addr + size, prot, FALSE);
+		}
+		break;
+
+	case RLIMIT_NOFILE:
+		if (limp->rlim_cur > maxfiles)
+			limp->rlim_cur = maxfiles;
+		if (limp->rlim_max > maxfiles)
+			limp->rlim_max = maxfiles;
+		break;
+
+	case RLIMIT_NPROC:
+		if (limp->rlim_cur > maxproc)
+			limp->rlim_cur = maxproc;
+		if (limp->rlim_max > maxproc)
+			limp->rlim_max = maxproc;
+		break;
+	}
+	*alimp = *limp;
+	return (0);
+}
+
+int
 getrlimit()
 {
 	register struct getrlimit_args {
@@ -193,7 +262,7 @@ getrlimit()
 
 	if (uap->which >= RLIM_NLIMITS) {
 		u->u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	if (uap->which == RLIMIT_CPU) {
 		struct rlimit alim;
@@ -203,14 +272,16 @@ getrlimit()
 			alim.rlim_cur = alim.rlim_cur / hz;
 		if (alim.rlim_max != RLIM_INFINITY)
 			alim.rlim_max = alim.rlim_max / hz;
-		u->u_error = copyout((caddr_t)&alim,
-		    (caddr_t)uap->rlp,sizeof (struct rlimit));
-	}
-	else u->u_error = copyout((caddr_t)&u->u_rlimit[uap->which],
-	    (caddr_t)uap->rlp,sizeof (struct rlimit));
+		u->u_error = copyout((caddr_t) & alim, (caddr_t) uap->rlp,
+				sizeof(struct rlimit));
+	} else
+		u->u_error = copyout((caddr_t) & u->u_rlimit[uap->which],
+				(caddr_t) uap->rlp, sizeof(struct rlimit));
+
+	return (u->u_error);
 }
 
-void
+int
 getrusage()
 {
 	register struct getrusage_args {
@@ -232,11 +303,11 @@ getrusage()
 
 	default:
 		u->u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	rucvt(&ru,rup);
-	u->u_error = copyout((caddr_t)&ru, (caddr_t)uap->rusage,
-		sizeof (struct rusage));
+	u->u_error = copyout((caddr_t)&ru, (caddr_t)uap->rusage, sizeof (struct rusage));
+	return (u->u_error);
 }
 
 void

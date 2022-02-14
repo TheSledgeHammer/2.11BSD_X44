@@ -94,10 +94,10 @@ i386_bus_space_init(void)
 
 	ioport_ex = extent_create("ioport", 0x0, 0xffff, M_DEVBUF,
 		    (caddr_t)ioport_ex_storage, sizeof(ioport_ex_storage),
-		    EX_NOCOALESCE|EX_NOWAIT);
+		    EX_NOCOALESCE | EX_NOWAIT);
 	iomem_ex = extent_create("iomem", 0x0, 0xffffffff, M_DEVBUF,
 		    (caddr_t)iomem_ex_storage, sizeof(iomem_ex_storage),
-		    EX_NOCOALESCE|EX_NOWAIT);
+		    EX_NOCOALESCE | EX_NOWAIT);
 }
 
 void

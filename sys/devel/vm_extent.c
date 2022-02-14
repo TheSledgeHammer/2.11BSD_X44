@@ -44,33 +44,27 @@
 #include <devel/vm_hat.h>
 
 /* example vm_map startup using extents */
-struct extent 	*kmap_extent, *kentry_extent, *vmspace_extent;
+struct extent 	*kmap_extent, *kentry_extent;//, *vmspace_extent;
 vm_map_t 		kmapex;
 vm_map_entry_t 	kentryex;
-struct vmspace	vmspaceex;
+//struct vmspace	vmspaceex;
 
-long 			vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
+//long 			vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
 long 			kmap_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_t))];
 long			kentry_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_entry_t))];
 
 void
 vm_map_startup1()
 {
-	vm_exbootinit(kmap_extent, "KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_FAST);
-	vm_exbootinit(kentry_extent, "KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_FAST);
-	vm_exbootinit(vmspace_extent, "VMSPACE", 0, sizeof(vmspaceex), M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_FAST);
+	kmap_extent = vm_exinit("KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_NOWAIT);
+	kentry_extent = vm_exinit("KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_NOWAIT);
 }
 
 void
 vm_map_boot()
 {
-	kmap_extent = vm_exinit("KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_FAST);
-	kentry_extent = vm_exinit("KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_FAST);
-	vmspace_extent = vm_exinit("VMSPACE", 0, sizeof(vmspaceex), M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_FAST);
-
-	vm_exboot_region(kmap_extent, sizeof(vm_map_t), EX_FAST);
-	vm_exboot_region(kentry_extent, sizeof(vm_map_entry_t), EX_FAST);
-	vm_exboot_region(vmspace_extent, sizeof(struct vmspace *), EX_FAST);
+	vm_exboot_region(kmap_extent, sizeof(vm_map_t), EX_MALLOCOK);
+	vm_exboot_region(kentry_extent, sizeof(vm_map_entry_t), EX_MALLOCOK);
 }
 
 struct extent *

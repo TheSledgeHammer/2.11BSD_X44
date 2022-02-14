@@ -80,16 +80,14 @@ sigaction()
 	u->u_pcb.pcb_sigc = uap->sigtramp;	/* save trampoline address */
 
 	signum = uap->signum;
-	if (signum <= 0 || signum >= NSIG)
-		{
+	if (signum <= 0 || signum >= NSIG) {
 		error = EINVAL;
 		goto out;
-		}
-	if (uap->nsa && (signum == SIGKILL || signum == SIGSTOP))
-		{
+	}
+	if (uap->nsa && (signum == SIGKILL || signum == SIGSTOP)) {
 		error = EINVAL;
 		goto out;
-		}
+	}
 	sa = &vec;
 	if (uap->osa) {
 		sa->sa_handler = u->u_signal[signum];
@@ -111,7 +109,7 @@ sigaction()
 		setsigvec(signum, sa);
 	}
 out:
-	return(u->u_error = error);
+	return (u->u_error = error);
 }
 
 void
@@ -265,8 +263,7 @@ sigpending()
 	struct proc *p = u->u_procp;
 
 	if (uap->set)
-		error = copyout((caddr_t) &p->p_sigacts, (caddr_t) uap->set,
-				sizeof(p->p_sigacts));
+		error = copyout((caddr_t) & p->p_sigacts, (caddr_t) uap->set, sizeof(p->p_sigacts));
 	else
 		error = EINVAL;
 	return (u->u_error = error);
@@ -301,7 +298,7 @@ sigsuspend()
 	while (tsleep((caddr_t) &u, PPAUSE | PCATCH, "pause", 0) == 0)
 		;
 	/* always return EINTR rather than ERESTART */
-	return(u->u_error = EINTR);
+	return (u->u_error = EINTR);
 }
 
 int
@@ -317,28 +314,25 @@ sigaltstack()
 
 	if ((u->u_psflags & SAS_ALTSTACK) == 0)
 		u->u_sigstk.ss_flags |= SA_DISABLE;
-	if (uap->oss && (error = copyout((caddr_t)&u->u_sigstk,
-	    (caddr_t)uap->oss, sizeof (struct sigaltstack))))
+	if (uap->oss && (error = copyout((caddr_t) & u->u_sigstk, (caddr_t) uap->oss, sizeof(struct sigaltstack))))
 		goto out;
 	if (uap->nss == 0)
 		goto out;
 	if ((error = copyin(uap->nss, &ss, sizeof(ss))) != 0)
 		goto out;
 	if (ss.ss_flags & SA_DISABLE) {
-		if (u->u_sigstk.ss_flags & SA_ONSTACK)
-			{
+		if (u->u_sigstk.ss_flags & SA_ONSTACK) {
 			error = EINVAL;
 			goto out;
-			}
+		}
 		u->u_psflags &= ~SAS_ALTSTACK;
 		u->u_sigstk.ss_flags = ss.ss_flags;
 		goto out;
 	}
-	if (ss.ss_size < MINSIGSTKSZ)
-		{
+	if (ss.ss_size < MINSIGSTKSZ) {
 		error = ENOMEM;
 		goto out;
-		}
+	}
 	u->u_psflags |= SAS_ALTSTACK;
 	u->u_sigstk = ss;
 out:
@@ -348,7 +342,6 @@ out:
 int
 sigwait()
 {
-
 	register struct sigwait_args {
 		syscallarg(sigset_t *) set;
 		syscallarg(int *) sig;
@@ -386,6 +379,7 @@ out:
  * instruction reads from D-space if the current and previous modes
  * in the program status word are both user.
  */
+int
 fetchi()
 {
 	struct fetchi_args {
@@ -397,7 +391,7 @@ fetchi()
 #else !NONSEPARATE
 	u->u_error = copyin(uap, u->u_r.r_val1, NBPW);
 #endif NONSEPARATE
-//	return (u->u_error);
+	return (u->u_error);
 }
 
 /*
@@ -406,11 +400,12 @@ fetchi()
  * Required because the error registers may have been changed so the
  * system saves them at the time of the exception.
  */
+int
 fperr()
 {
 	u->u_r.r_val1 = (int)u->u_fperr.f_fec;
 	u->u_r.r_val2 = (int)u->u_fperr.f_fea;
-//	return (u->u_error);
+	return (0);
 }
 
 static int

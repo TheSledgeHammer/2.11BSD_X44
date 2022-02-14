@@ -442,7 +442,7 @@ vm_map_t
 vm_map_create(pmap, min, max, pageable)
 	pmap_t		pmap;
 	vm_offset_t	min, max;
-	bool_t	pageable;
+	bool_t		pageable;
 {
 	register vm_map_t	result;
 	extern vm_map_t		kmem_map;
@@ -458,7 +458,7 @@ vm_map_create(pmap, min, max, pageable)
 
 	vm_map_init(result, min, max, pageable);
 	result->pmap = pmap;
-	return(result);
+	return (result);
 }
 
 /*
@@ -502,7 +502,7 @@ vm_map_entry_create(map)
 	vm_map_entry_t	entry;
 #ifdef DEBUG
 	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
-	bool_t			isspecial;
+	bool_t				isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
 	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable)
@@ -517,7 +517,7 @@ vm_map_entry_create(map)
 	if (entry == NULL)
 		panic("vm_map_entry_create: out of map entries");
 
-	return(entry);
+	return (entry);
 }
 
 /*
@@ -532,7 +532,7 @@ vm_map_entry_dispose(map, entry)
 {
 #ifdef DEBUG
 	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
-	bool_t			isspecial;
+	bool_t				isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
 	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable)
@@ -714,7 +714,7 @@ vm_map_insert(map, object, offset, start, end)
 				 */
 				map->size += (end - prev_entry->end);
 				prev_entry->end = end;
-				return(KERN_SUCCESS);
+				return (KERN_SUCCESS);
 			}
 		}
 	}
@@ -756,7 +756,7 @@ vm_map_insert(map, object, offset, start, end)
 	if ((map->first_free == prev_entry) && (prev_entry->end >= new_entry->start))
 		map->first_free = new_entry;
 
-	return(KERN_SUCCESS);
+	return (KERN_SUCCESS);
 }
 
 /*

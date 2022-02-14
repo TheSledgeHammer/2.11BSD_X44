@@ -28,7 +28,7 @@
 /*
  * Priority for tracing
  */
-#define	IPCPRI	PZERO
+//#define	IPCPRI	PZERO
 
 /*
  * Tracing variables.
@@ -38,8 +38,7 @@
  * shared and is locked
  * per user.
  */
-struct
-{
+struct {
 	int	ip_lock;
 	int	ip_req;
 	int	*ip_addr;

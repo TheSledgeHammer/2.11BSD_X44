@@ -16,13 +16,14 @@
 #include <sys/times.h>
 
 register struct timeval *time;
+
 /* 
  * Time of day and interval timer support.
  *
  * These routines provide the kernel entry points to get and set
  * the time-of-day.
  */
-void
+int
 gettimeofday()
 {
 	register struct gettimeofday_args {
@@ -41,17 +42,16 @@ gettimeofday()
 		 */
 		s = splhigh(); atv = time; ms = lbolt; splx(s);
 		atv.tv_usec = (long)ms * mshz;
-		u->u_error = copyout((caddr_t)&atv, (caddr_t)(uap->tp),
-			sizeof(atv));
+		u->u_error = copyout((caddr_t)&atv, (caddr_t)(uap->tp), sizeof(atv));
 		if (u->u_error)
-			return;
+			return (u->u_error);
 	}
 	if (uap->tzp)
-		u->u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp,
- 			sizeof (tz));
+		u->u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp, sizeof (tz));
+	return (u->u_error);
 }
 
-void
+int
 settimeofday()
 {
 	register struct settimeofday_args {
@@ -62,20 +62,23 @@ settimeofday()
 	struct timezone atz;
 
 	if (uap->tv) {
-		u->u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
-			sizeof (struct timeval));
+		u->u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof(struct timeval));
 		if (u->u_error)
-			return;
+			return (u->u_error);
 		setthetime(&atv);
 		if	(u->u_error)
-			return;
+			return (u->u_error);
 	}
 	if (uap->tzp && suser()) {
-		u->u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
-			sizeof (atz));
-		if (u->u_error == 0)
+		u->u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz, sizeof(atz));
+		if (u->u_error == 0) {
 			tz = atz;
+		} else {
+			return (u->u_error);
+		}
 	}
+
+	return (0);
 }
 
 static void
@@ -87,26 +90,27 @@ setthetime(tv)
 	if (!suser())
 		return;
 #ifdef	NOTNOW
-/*
- * If the system is secure, we do not allow the time to be set to an
- * earlier value.  The time may be slowed (using adjtime) but not set back.
- *
- * NOTE:  Can not do this until ntpd is updated to deal with the coarse (50, 60
- *	  hz) clocks.  Ntpd wants to adjust time system clock a few microseconds
- *	  at a time (which gets rounded to 0 in adjtime below). If that fails 
- *	  ntpd uses settimeofday to step the time backwards which obviously 
- *	  will fail if the next 'if' is enabled - all that does is fill up the
- *	  logfiles with "can't set time" messages and the time keeps drifting.
-*/
-	if	(securelevel > 0 && timercmp(tv, &time, <))	{
-		u.u_error = EPERM;	/* XXX */
+	/*
+	 * If the system is secure, we do not allow the time to be set to an
+	 * earlier value.  The time may be slowed (using adjtime) but not set back.
+	 *
+	 * NOTE:  Can not do this until ntpd is updated to deal with the coarse (50, 60
+	 *	  hz) clocks.  Ntpd wants to adjust time system clock a few microseconds
+	 *	  at a time (which gets rounded to 0 in adjtime below). If that fails
+	 *	  ntpd uses settimeofday to step the time backwards which obviously
+	 *	  will fail if the next 'if' is enabled - all that does is fill up the
+	 *	  logfiles with "can't set time" messages and the time keeps drifting.
+	 */
+	if (securelevel > 0 && timercmp(tv, &time, <)) {
+		u.u_error = EPERM; /* XXX */
 		return;
 	}
 #endif
-/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
+	/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv->tv_sec - time->tv_sec;
 	s = splhigh();
-	time = *tv; lbolt = time->tv_usec / mshz;
+	time = *tv;
+	lbolt = time->tv_usec / mshz;
 	splx(s);
 #ifdef	notyet
 	/*
@@ -116,7 +120,7 @@ setthetime(tv)
 #endif
 }
 
-void
+int
 adjtime()
 {
 	register struct adjtime_args {
@@ -127,12 +131,12 @@ adjtime()
 	register int s;
 	long adjust;
 
-	if (!suser())
-		return;
-	u->u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv,
-		sizeof (struct timeval));
+	if (u->u_error == suser()) {
+		return (u->u_error);
+	}
+	u->u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv, sizeof(struct timeval));
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	adjust = (atv.tv_sec * hz) + (atv.tv_usec / mshz);
 	/* if unstoreable values, just set the clock */
 	if (adjust > 0x7fff || adjust < 0x8000) {
@@ -145,22 +149,22 @@ adjtime()
 		}
 		splx(s);
 		if (!uap->olddelta) 
-			return;
+			return (0);
 		atv.tv_sec = atv.tv_usec = 0;
 	} else {
 		if (!uap->olddelta) {
 			adjdelta = adjust;
-			return;
+			return (0);
 		}
 		atv.tv_sec = adjdelta / hz;
 		atv.tv_usec = (adjdelta % hz) * mshz;
 		adjdelta = adjust;
 	}
-	(void) copyout((caddr_t)&atv, (caddr_t)uap->olddelta,
-	    sizeof (struct timeval));
+	(void) copyout((caddr_t)&atv, (caddr_t)uap->olddelta, sizeof(struct timeval));
+	return (0);
 }
 
-void
+int
 getitimer()
 {
 	register struct getitimer_args {
@@ -184,19 +188,18 @@ getitimer()
 
 		aitv.it_interval.tv_sec = p->p_realtimer.it_interval;
 		aitv.it_value.tv_sec = p->p_realtimer.it_value;
-	}
-	else {
+	} else {
 		register struct k_itimerval *t = &u->u_timer[uap->which - 1];
 
 		aitv.it_interval.tv_sec = t->it_interval / hz;
 		aitv.it_value.tv_sec = t->it_value / hz;
 	}
 	splx(s);
-	u->u_error = copyout((caddr_t)&aitv, (caddr_t)uap->itv,
-	    sizeof (struct itimerval));
+	u->u_error = copyout((caddr_t)&aitv, (caddr_t)uap->itv, sizeof(struct itimerval));
+	return (u->u_error);
 }
 
-void
+int
 setitimer()
 {
 	register struct setitimer_args {
@@ -211,7 +214,7 @@ setitimer()
 
 	if (uap->which > ITIMER_PROF) {
 		u->u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	aitvp = uap->itv;
 	if (uap->oitv) {
@@ -219,11 +222,10 @@ setitimer()
 		getitimer();
 	}
 	if (aitvp == 0)
-		return;
-	u->u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv,
-	    sizeof (struct itimerval));
+		return (0);
+	u->u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv, sizeof(struct itimerval));
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	s = splclock();
 	if (uap->which == ITIMER_REAL) {
 		register struct proc *p = u->u_procp;
@@ -234,8 +236,7 @@ setitimer()
 		p->p_realtimer.it_interval = aitv.it_interval.tv_sec;
 		if (aitv.it_interval.tv_usec)
 			++p->p_realtimer.it_interval;
-	}
-	else {
+	} else {
 		register struct k_itimerval *t = &u->u_timer[uap->which - 1];
 
 		t->it_value = aitv.it_value.tv_sec * hz;
@@ -246,6 +247,7 @@ setitimer()
 			t->it_interval += hz;
 	}
 	splx(s);
+	return (0);
 }
 
 /*
@@ -258,7 +260,6 @@ int
 itimerfix(tv)
 	struct timeval *tv;
 {
-
 	if (tv->tv_sec < 0 || tv->tv_sec > 100000000L ||
 	    tv->tv_usec < 0 || tv->tv_usec >= 1000000L)
 		return (EINVAL);
@@ -267,7 +268,6 @@ itimerfix(tv)
 	return (0);
 }
 
-#ifdef NOT_CURRENTLY_IN_USE
 /*
  * Decrement an interval timer by a specified number
  * of microseconds, which must be less than a second,
@@ -278,11 +278,11 @@ itimerfix(tv)
  * that it is called in a context where the timers
  * on which it is operating cannot change in value.
  */
+int
 itimerdecr(itp, usec)
 	register struct itimerval *itp;
 	int usec;
 {
-
 	if (itp->it_value.tv_usec < usec) {
 		if (itp->it_value.tv_sec == 0) {
 			/* expired, and already in next interval */
@@ -309,9 +309,6 @@ expire:
 		itp->it_value.tv_usec = 0;		/* sec is already 0 */
 	return (0);
 }
-#endif /* NOT_CURRENTLY_IN_USE */
-
-#define	timevalfix	tvfix
 
 /*
  * Add and subtract routines for timevals.
@@ -330,7 +327,6 @@ timevaladd(t1, t2)
 	timevalfix(t1);
 }
 
-#ifdef NOT_CURRENTLY_IN_USE
 void
 timevalsub(t1, t2)
 	struct timeval *t1, *t2;
@@ -340,7 +336,6 @@ timevalsub(t1, t2)
 	t1->tv_usec -= t2->tv_usec;
 	timevalfix(t1);
 }
-#endif
 
 static void
 timevalfix(t1)

@@ -38,7 +38,7 @@ struct vm_hat {
 	char 					*vh_name;
 	int 					vh_type;
 	void					*vh_item;
-	int 					vh_nitems;
+	u_long 					vh_size;
 	struct lock_object		vh_lock;
 };
 
@@ -53,11 +53,9 @@ typedef struct vm_hat		*vm_hat_t;
 
 /* vm_hat */
 void		vm_hat_bootstrap(vm_hat_t);
-vm_hat_t	vm_hat_alloc(vm_hat_t, char *, int, int);
-void		vm_hat_free(vm_hat_t, char *, int);
 void 		*vm_hat_lookup(char *, int);
-void		vm_hat_add(vm_hat_t, char *, int, void *, int);
-void		vm_hat_remove(vm_hat_t, char *, int, int);
+void		vm_hat_add(vm_hat_t, char *, int, void *, u_long);
+void		vm_hat_remove(char *, int);
 
 /* vm_extent */
 void		vm_exbootinit(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);

@@ -38,8 +38,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef __SYS_LIBNETBOOT_IODESC_H
-#define __SYS_LIBNETBOOT_IODESC_H
+#ifndef _LIBSA_IODESC_H_
+#define _LIBSA_IODESC_H_
 
 struct iodesc {
 	struct	in_addr destip;		/* dest. ip addr, net order */
@@ -55,4 +55,4 @@ struct iodesc	*socktodesc (int);
 ssize_t			netif_get (struct iodesc *, void *, size_t, time_t);
 ssize_t			netif_put (struct iodesc *, void *, size_t);
 
-#endif /* __SYS_LIBNETBOOT_IODESC_H */
+#endif /* !_LIBSA_IODESC_H_ */

@@ -17,13 +17,17 @@
 #include <sys/sysctl.h>
 #include <sys/proc.h>
 
-void
+int
 reboot()
 {
 	register struct reboot_args {
 		syscallarg(int)	opt;
 	} *uap = (struct reboot_args *)u->u_ap;
+	int error;
 
-	if (suser())
-		boot(rootdev, uap->opt);
+	if (error == suser()) {
+		return (error);
+	}
+	boot(rootdev, uap->opt);
+	return (0);
 }
