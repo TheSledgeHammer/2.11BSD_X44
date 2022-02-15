@@ -24,6 +24,8 @@
  * SUCH DAMAGE.
  */
 
+/* TODO: libc: uuid_equal */
+
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
@@ -49,7 +51,7 @@ __FBSDID("$FreeBSD$");
 #define	DPRINTF(fmt, args...)	((void)0)
 #endif
 
-//#ifdef LOADER_GPT_SUPPORT
+#ifdef LOADER_GPT_SUPPORT
 #define	MAXTBLSZ	64
 static const uuid_t gpt_uuid_unused = GPT_ENT_TYPE_UNUSED;
 static const uuid_t gpt_uuid_ms_basic_data = GPT_ENT_TYPE_MS_BASIC_DATA;
