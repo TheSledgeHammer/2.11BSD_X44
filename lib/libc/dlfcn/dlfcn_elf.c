@@ -217,4 +217,5 @@ void ___dl_cxa_refcount(void *, ssize_t);
 void
 ___dl_cxa_refcount(void *dso_symbol, ssize_t delta)
 {
+
 }

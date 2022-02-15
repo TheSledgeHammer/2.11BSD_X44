@@ -69,17 +69,15 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: pcibios.c,v 1.14.2.1 2004/04/28 05:19:13 jmc Exp $");
 
+#include <sys/extent.h>
+#include <sys/queue.h>
+
 #include <dev/core/pci/pcidevs.h>
 #include <dev/core/pci/pcireg.h>
 #include <include/pci/pci_machdep.h>
 
-/*
- * FreeBSD uint32_t value = NetBSD pcireg_t
- */
-/*
- * intr = pci_conf_read(pc, tag, PCI_INTERRUPT_REG);
- * pin = PCI_INTERRUPT_PIN(intr);
- */
+#include <devel/arch/i386/include/pci_cfgreg.h>
+#include <devel/arch/i386/include/pcibios.h>
 
 typedef void (*func_t)(pci_chipset_tag_t, pcitag_t, void *);
 
@@ -133,6 +131,7 @@ pci_device_foreach_min(pc, minbus, maxbus, func, context)
 				 */
 				if (PCI_VENDOR(id) == 0)
 					continue;
+
 				(*func)(pc, tag, context);
 			}
 		}
@@ -191,14 +190,140 @@ pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device, int pin)
 	return (PCI_INVALID_IRQ);
 }
 
-static void
-pci_pir_initial_irqs(pci_chipset_tag_t pc, struct PIR_entry *entry, struct PIR_intpin *intpin, void *arg)
-{
-	struct pci_link *pci_link;
-	uint8_t irq, pin;
-	int bus, device, maxdevs;
 
-	pin = intpin - entry->pe_intpin;
-	pci_link = pci_pir_find_link(intpin->link);
-	irq = pci_pir_search_irq(pc, entry->pe_bus, entry->pe_device, pin);
+struct pci_function {
+	pci_chipset_tag_t 	pc;
+	pcitag_t 			tag;
+	pcireg_t			id;
+	int					bus;
+	int					device;
+	void 				*context;
+
+};
+struct pci_function pcifunc;
+
+void
+pci_device_bus(func, pc, maxbus)
+	struct pci_function *func;
+	pci_chipset_tag_t 	pc;
+	int 				maxbus;
+{
+	pcireg_t id, bhlcr;
+	pcitag_t tag;
+	int bus, maxdevs, device, function, nfuncs;
+
+	func->pc = pc;
+	for (bus = 0; bus <= maxbus; bus++) {
+		func->bus = bus;
+		maxdevs = pci_bus_maxdevs(pc, bus);
+		for (device = 0; device < maxdevs; device++) {
+			func->device = device;
+			tag = pci_make_tag(pc, bus, device, 0);
+			id = pci_conf_read(pc, tag, PCI_ID_REG);
+
+			/* Invalid vendor ID value? */
+			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+				continue;
+			/* XXX Not invalid, but we've done this ~forever. */
+			if (PCI_VENDOR(id) == 0)
+				continue;
+
+			bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
+			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
+				nfuncs = 8;
+			} else {
+				nfuncs = 1;
+			}
+			for (function = 0; function < nfuncs; function++) {
+				tag = pci_make_tag(pc, bus, device, function);
+				id = pci_conf_read(pc, tag, PCI_ID_REG);
+
+				/* Invalid vendor ID value? */
+				if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+					continue;
+				/*
+				 * XXX Not invalid, but we've done this
+				 * ~forever.
+				 */
+				if (PCI_VENDOR(id) == 0)
+					continue;
+
+				func->tag = tag;
+				func->id = id;
+			}
+		}
+	}
+}
+
+#define PCIADDR_MEM_START		0x0
+#define PCIADDR_MEM_END			0xffffffff
+#define PCIADDR_PORT_START		0x0
+#define PCIADDR_PORT_END		0xffff
+
+/* for ISA devices */
+#define PCIADDR_ISAPORT_RESERVE	0x5800 /* empirical value */
+#define PCIADDR_ISAMEM_RESERVE	(16 * 1024 * 1024)
+
+struct pciaddr {
+	struct extent 	*extent_mem;
+	struct extent 	*extent_port;
+	bus_addr_t 		mem_alloc_start;
+	bus_addr_t 		port_alloc_start;
+	int 			nbogus;
+};
+
+extern struct pciaddr pciaddr;
+
+int
+pci_alloc_mem(int type, bus_addr_t *addr, bus_size_t size)
+{
+	struct pciaddr *pciaddrmap;
+	struct extent *ex;
+	bus_addr_t start;
+	int error;
+
+	ex = (type == PCI_MAPREG_TYPE_MEM ? pciaddrmap->extent_mem : pciaddrmap->extent_port);
+
+	start = (type == PCI_MAPREG_TYPE_MEM ? pciaddrmap->mem_alloc_start : pciaddrmap->port_alloc_start);
+	if (start < ex->ex_start || start + size - 1 >= ex->ex_end) {
+		printf("No available resources.\n");
+		return (1);
+	}
+
+	pciaddr.extent_mem = extent_create("PCI I/O memory space",
+			PCIADDR_MEM_START, PCIADDR_MEM_END, 0, 0, EX_NOWAIT);
+	KASSERT(pciaddr.extent_mem);
+
+	pciaddr.extent_port = extent_create("PCI I/O port space",
+	PCIADDR_PORT_START, PCIADDR_PORT_END, 0, 0, EX_NOWAIT);
+	KASSERT(pciaddr.extent_port);
+
+	error = extent_alloc_region(ex, *addr, size, EX_NOWAIT| EX_MALLOCOK);
+	if (error) {
+		printf("No available resources.\n");
+		return (1);
+	}
+
+	error = extent_alloc_subregion(ex, start, ex->ex_end, size, size, 0,
+	EX_FAST | EX_NOWAIT | EX_MALLOCOK, (u_long*) addr);
+	if (error) {
+		printf("Resource conflict.\n");
+		return (1);
+	}
+	return (0);
+}
+
+void
+pci_alloc_isa_mem()
+{
+	extern vm_offset_t avail_end;
+	bus_addr_t start;
+
+	start = i386_round_page(avail_end + 1);
+	if (start < PCIADDR_ISAMEM_RESERVE)
+		start = PCIADDR_ISAMEM_RESERVE;
+	pciaddr.mem_alloc_start = (start + 0x100000 + 1) & ~(0x100000 - 1);
+	pciaddr.port_alloc_start = PCIADDR_ISAPORT_RESERVE;
+	printf(" Physical memory end: 0x%08x\n PCI memory mapped I/O "
+			"space start: 0x%08x\n", (unsigned) avail_end, (unsigned) pciaddr.mem_alloc_start);
 }

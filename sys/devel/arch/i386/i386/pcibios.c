@@ -36,17 +36,16 @@
 #include <sys/kernel.h>
 #include <sys/param.h>
 #include <sys/malloc.h>
+
 #include <vm/include/vm.h>
 #include <vm/include/pmap.h>
 
 #include <arch/i386/include/bios.h>
 
-#define	NUM_ISA_INTERRUPTS		16
-#define	PCI_INVALID_IRQ			255
-#define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ)
+#include <devel/arch/i386/include/pci_cfgreg.h>
+#include <devel/arch/i386/include/pcibios.h>
 
-#define	PCIR_INTLINE			0x3c
-#define	PCIR_INTPIN				0x3d
+#define	NUM_ISA_INTERRUPTS		16
 
 /*
  * A link device.  Loosely based on the ACPI PCI link device.  This doesn't
@@ -304,5 +303,6 @@ pci_pir_biosroute(int bus, int device, int func, int pin, int irq)
 	args.eax = PCIBIOS_ROUTE_INTERRUPT;
 	args.ebx = (bus << 8) | (device << 3) | func;
 	args.ecx = (irq << 8) | (0xa + pin);
+
 	return (bios32(&args, PCIbios.ventry, GSEL(GCODE_SEL, SEL_KPL)));
 }

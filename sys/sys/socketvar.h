@@ -209,7 +209,7 @@ int	soo_stat(struct socket *, struct stat *);
 int	soo_rw(struct file *, struct uio *, struct ucred *);
 int	soo_read(struct file *, struct uio *, struct ucred *);
 int	soo_write(struct file *, struct uio *, struct ucred *);
-int 	soo_close(struct file *, struct proc *);
+int soo_close(struct file *, struct proc *);
 int	soo_poll(struct file *, int, struct proc *);
 int	soo_kqfilter(struct file *, struct knote *);
 

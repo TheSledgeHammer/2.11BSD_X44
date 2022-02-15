@@ -14,5 +14,5 @@ MAN+=	i386_get_fsbase.2 i386_get_gsbase.2 i386_get_ldt.2 i386_get_ioperm.2 \
 		
 MLINKS+=i386_get_fsbase.2 i386_set_fsbase.2 \
 		i386_get_gsbase.2 i386_set_gsbase.2	\
-		i386_get_ldt.2 i386_set_ldt.2 \
+		i386_get_ldt.2 i386_set_ldt.2 		\
 		i386_get_ioperm.2 i386_set_ioperm.2 \

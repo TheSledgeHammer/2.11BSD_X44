@@ -49,30 +49,28 @@ struct {
 /*
  * sys-trace system call.
  */
-void
+int
 ptrace()
 {
-	register struct proc *p;
-	register struct a {
+	register struct ptrace_args {
 		syscallarg(int) req;
 		syscallarg(pid_t) pid;
 		syscallarg(caddr_t) addr;
 		syscallarg(int) data;
-	} *uap;
+	} *uap = (struct ptrace_args *)u->u_ap;
+	register struct proc *p;
 
-	uap = (struct a *)u->u_ap;
 	if (uap->req <= 0) {
 		u->u_procp->p_flag |= P_TRACED;
-		return;
+		return (0);
 	}
 	p = pfind(uap->pid);
-	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != u->u_procp->p_pid ||
-	    !(p->p_flag & P_TRACED)) {
+	if (p == NULL || p->p_stat != SSTOP || p->p_ppid != u->u_procp->p_pid || !(p->p_flag & P_TRACED)) {
 		u->u_error = ESRCH;
-		return;
+		return (ESRCH);
 	}
 	while (ipc.ip_lock)
-		sleep((caddr_t)&ipc, PZERO);
+		sleep((caddr_t) &ipc, PZERO);
 	ipc.ip_lock = p->p_pid;
 	ipc.ip_data = uap->data;
 	ipc.ip_addr = uap->addr;
@@ -80,12 +78,15 @@ ptrace()
 	p->p_flag &= ~P_WAITED;
 	setrun(p);
 	while (ipc.ip_req > 0)
-		sleep((caddr_t)&ipc, PZERO);
-	u->u_r.r_val1 = (short)ipc.ip_data;
+		sleep((caddr_t) & ipc, PZERO);
+	u->u_r.r_val1 = (short) ipc.ip_data;
 	if (ipc.ip_req < 0)
 		u->u_error = EIO;
+		return (EIO);
 	ipc.ip_lock = 0;
-	wakeup((caddr_t)&ipc);
+	wakeup((caddr_t) & ipc);
+
+	return (0);
 }
 
 #define	PHYSOFF(p, o) 	((caddr_t)(p) + (o))
@@ -99,7 +100,7 @@ procxmt(p)
 	extern char kstack[];
 
 	if (ipc.ip_lock != u->u_procp->p_pid)
-		return(0);
+		return (0);
 	u->u_procp->p_slptime = 0;
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
@@ -225,7 +226,7 @@ procxmt(p)
 				proc_reparent(p, pp);
 		}
 		p->p_oppid = 0;
-		wakeup((caddr_t) &ipc);
+		wakeup((caddr_t) & ipc);
 		return (1);
 
 	default:

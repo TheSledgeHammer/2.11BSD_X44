@@ -20,19 +20,10 @@
 #include <sys/systm.h>
 #include <sys/poll.h>
 
-/* 
- * this is consolidated here rather than being scattered all over the
- * place.  the socketops table has to be in kernel space, but since
- * networking might not be defined an appropriate error has to be set
-*/
-
-int	sorw(), soctl(), sosel(), socls();
-struct	fileops	socketops = { sorw, soctl, sosel, socls };
-
 /*
  * Read system call.
  */
-void
+int
 read()
 {
 	register struct read_args {
@@ -48,10 +39,12 @@ read()
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
 	auio.uio_rw = UIO_READ;
-	rwuio(&auio);
+	auio.uio_procp = u->u_procp;
+
+	return (rwuio(&auio, &aiov));
 }
 
-void
+int
 readv()
 {
 	register struct readv_args {
@@ -64,22 +57,23 @@ readv()
 
 	if (uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
 		u->u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_READ;
-	u->u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
-	    uap->iovcnt * sizeof (struct iovec));
+	auio.uio_procp = u->u_procp;
+	u->u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov, uap->iovcnt * sizeof (struct iovec));
 	if (u->u_error)
-		return;
-	rwuio(&auio);
+		return (u->u_error);
+
+	return (rwuio(&auio, NULL));
 }
 
 /*
  * Write system call
  */
-void
+int
 write()
 {
 	register struct write_args {
@@ -95,10 +89,11 @@ write()
 	auio.uio_rw = UIO_WRITE;
 	aiov.iov_base = uap->cbuf;
 	aiov.iov_len = uap->count;
-	rwuio(&auio);
+
+	return (rwuio(&auio, &aiov));
 }
 
-void
+int
 writev()
 {
 	register struct writev_args {
@@ -116,16 +111,16 @@ writev()
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_WRITE;
-	u->u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
-	    uap->iovcnt * sizeof (struct iovec));
+	u->u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov, uap->iovcnt * sizeof (struct iovec));
 	if (u->u_error)
-		return;
-	rwuio(&auio);
+		return (u->u_error);
+	return (rwuio(&auio, NULL));
 }
 
-static void
-rwuio(uio)
+static int
+rwuio(uio, aiov)
 	register struct uio *uio;
+	register struct iovec *aiov;
 {
 	struct rwuio_args {
 		syscallarg(int)	fdes;
@@ -134,11 +129,30 @@ rwuio(uio)
 	register struct iovec *iov;
 	u_int i, count;
 	off_t	total;
+#ifdef KTRACE
+	struct iovec *ktriov;
+
+	if (aiov == NULL) {
+		ktriov = NULL;
+	}
+
+	/*
+	 * if tracing, save a copy of iovec
+	 */
+	if(aiov == NULL) {
+		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
+		bcopy((caddr_t)auio.uio_iov, (caddr_t)ktriov, iovlen);
+	} else {
+		if (KTRPOINT(u->u_procp, KTR_GENIO)) {
+			ktriov = aiov;
+		}
+	}
+#endif
 
 	GETF(fp, uap->fdes);
 	if ((fp->f_flag & (uio->uio_rw == UIO_READ ? FREAD : FWRITE)) == 0) {
 		u->u_error = EBADF;
-		return;
+		return (EBADF);
 	}
 	total =(off_t)0;
 	uio->uio_resid = 0;
@@ -147,8 +161,9 @@ rwuio(uio)
 		total += iov->iov_len;
 
 	uio->uio_resid = total;
-	if	(uio->uio_resid != total)	/* check wraparound */
-		(u->u_error = EINVAL);
+	if (uio->uio_resid != total) /* check wraparound */
+		u->u_error = EINVAL;
+		return (EINVAL);
 
 	count = uio->uio_resid;
 	if (setjmp(&u->u_qsave)) {
@@ -159,51 +174,62 @@ rwuio(uio)
 		 * call will either be restarted or reported as interrupted.  If bytes have
 		 * been transferred then we need to calculate the number of bytes transferred.
 		 */
-		if (uio->uio_resid == count)
-			return;
-		else
+		if (uio->uio_resid == count) {
+			return (u->u_error);
+		} else {
 			u->u_error = 0;
-	} else
+		}
+	} else {
 		u->u_error = (*fp->f_ops->fo_rw)(fp, uio);
+	}
+#ifdef KTRACE
+	if(aiov == NULL) {
+		if (ktriov != NULL) {
+			if (u->u_error == 0) {
+				ktrgenio(u->u_procp->p_tracep, uap->fdes, UIO_READ, ktriov, count, u->u_error);
+			}
+			FREE(ktriov, M_TEMP);
+		}
+	} else {
+		if (KTRPOINT(u->u_procp, KTR_GENIO) && u->u_error == 0) {
+			ktrgenio(u->u_procp->p_tracep, uap->fdes, UIO_READ, ktriov, count, u->u_error);
+		}
+	}
+#endif
 	u->u_r.r_val1 = count - uio->uio_resid;
+	return (u->u_error);
 }
 
 /*
  * Ioctl system call
  */
-void
+int
 ioctl()
 {
-
 	register struct ioctl_args {
-		syscallarg(int)	fdes;
-		syscallarg(long) cmd;
-		syscallarg(caddr_t)	cmarg;
+		syscallarg(int)	fdes;		/* fd */
+		syscallarg(long) cmd; 		/* com */
+		syscallarg(caddr_t)	cmarg; 	/* data */
 	} *uap = (struct ioctl_args *)u->u_ap;
 	register struct file *fp;
 	long com;
-	u_int k_com;
 	register u_int size;
 	char data[IOCPARM_MASK+1];
 
 	if ((fp = getf(uap->fdes)) == NULL)
-		return;
-	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
+		return (EBADF);
+	if ((fp->f_flag & (FREAD | FWRITE)) == 0) {
 		u->u_error = EBADF;
-		return;
+		return (EBADF);
 	}
-	com = uap->cmd;
 
-	/* THE 2.11 KERNEL STILL THINKS THAT IOCTL COMMANDS ARE 16 BITS */
-	k_com = (u_int)com;
-
-	if (k_com == FIOCLEX) {
+	switch (com = uap->cmd) {
+	case FIONCLEX:
 		u->u_pofile[uap->fdes] |= UF_EXCLOSE;
-		return;
-	}
-	if (k_com == FIONCLEX) {
+		return (0);
+	case FIOCLEX:
 		u->u_pofile[uap->fdes] &= ~UF_EXCLOSE;
-		return;
+		return (0);
 	}
 
 	/*
@@ -211,60 +237,61 @@ ioctl()
 	 * amount of data to be copied to/from the
 	 * user's address space.
 	 */
-	size = (com &~ (IOC_INOUT|IOC_VOID)) >> 16;
-	if (size > sizeof (data)) {
-		u->u_error = EFAULT;
-		return;
+	size = IOCPARM_LEN(com);
+	if (size > sizeof(data)) {
+		u->u_error = EFAULT | ENOTTY;
+		return (u->u_error);
 	}
-	if (com&IOC_IN) {
+	if (com & IOC_IN) {
 		if (size) {
-			if (((u_int)uap->cmarg|size)&1)
-			    u->u_error =
-				vcopyin(uap->cmarg, (caddr_t)data, size);
+			if (((u_int) uap->cmarg | size) & 1)
+				u->u_error = copyin(uap->cmarg, (caddr_t) data, size);
 			else
-			    u->u_error =
-				copyin(uap->cmarg, (caddr_t)data, size);
+				u->u_error = copyin(uap->cmarg, (caddr_t) data, size);
 			if (u->u_error)
-				return;
+				return (u->u_error);
 		} else
-			*(caddr_t *)data = uap->cmarg;
-	} else if ((com&IOC_OUT) && size)
+			*(caddr_t*) data = uap->cmarg;
+	} else if ((com & IOC_OUT) && size)
 		/*
 		 * Zero the buffer on the stack so the user
 		 * always gets back something deterministic.
 		 */
-		bzero((caddr_t)data, size);
-	else if (com&IOC_VOID)
-		*(caddr_t *)data = uap->cmarg;
+		bzero((caddr_t) data, size);
+	else if (com & IOC_VOID)
+		*(caddr_t*) data = uap->cmarg;
 
-	switch (k_com) {
+	switch (com) {
 
 	case FIONBIO:
-		u->u_error = fset(fp, FNONBLOCK, *(int *)data);
-		return;
+		u->u_error = fset(fp, FNONBLOCK, *(int*) data);
+		break;
 
 	case FIOASYNC:
-		u->u_error = fset(fp, FASYNC, *(int *)data);
-		return;
+		u->u_error = fset(fp, FASYNC, *(int*) data);
+		break;
 
 	case FIOSETOWN:
-		u->u_error = fsetown(fp, *(int *)data);
-		return;
+		u->u_error = fsetown(fp, *(int*) data);
+		break;
 
 	case FIOGETOWN:
-		u->u_error = fgetown(fp, (int *)data);
-		return;
+		u->u_error = fgetown(fp, (int*) data);
+		break;
+
+	default:
+		u->u_error = (*fp->f_ops->fo_ioctl)(fp, com, data, u->u_procp);
+		/*
+		 * Copy any data to user, size was
+		 * already set and checked above.
+		 */
+		if (u->u_error == 0 && (com & IOC_OUT) && size)
+			if (((u_int) uap->cmarg | size) & 1)
+				u->u_error = copyout(data, uap->cmarg, size);
+		break;
 	}
-	u->u_error = (*fp->f_ops->fo_ioctl)(fp, k_com, data);
-	/*
-	 * Copy any data to user, size was
-	 * already set and checked above.
-	 */
-	if (u->u_error == 0 && (com&IOC_OUT) && size)
-		if (((u_int)uap->cmarg|size)&1)
-			u->u_error = vcopyout(data, uap->cmarg, size);
-		else
-			u->u_error = copyout(data, uap->cmarg, size);
+
+	return (u->u_error);
 }
 
 int	nselcoll;
@@ -299,7 +326,8 @@ select()
 	 * number of parameters!
 	*/
 	pselargs->maskp = 0;
-	return (u->u_error = select1(pselargs, 0));
+	u->u_error = select1(pselargs, 0);
+	return (select1(pselargs, 0));
 }
 
 /*
@@ -314,7 +342,8 @@ pselect()
 	register struct pselect_args *uap;
 	uap = (struct pselect_args *)u->u_ap;
 
-	return (u->u_error = select1(uap, 1));
+	u->u_error = select1(uap, 1);
+	return (select1(uap, 1));
 }
 
 /*
@@ -576,57 +605,3 @@ selnotify(sip, knhint)
 	KNOTE(&sip->si_klist, knhint);
 }
 
-int
-sorw(fp, uio)
-	register struct file *fp;
-	register struct uio *uio;
-{
-#ifdef	INET
-	if (uio->uio_rw == UIO_READ)
-		return(SORECEIVE((struct socket *)fp->f_socket, 0, uio, 0, 0));
-	return(SOSEND((struct socket *)fp->f_socket, 0, uio, 0, 0));
-#else
-	return (EOPNOTSUPP);
-#endif
-}
-
-int
-soctl(fp, com, data)
-	struct file *fp;
-	u_int	com;
-	char	*data;
-	{
-#ifdef	INET
-	return (SOO_IOCTL(fp, com, data));
-#else
-	return (EOPNOTSUPP);
-#endif
-}
-
-int
-sosel(fp, flag)
-	struct file *fp;
-	int	flag;
-{
-#ifdef	INET
-	return (SOO_SELECT(fp, flag));
-#else
-	return (EOPNOTSUPP);
-#endif
-}
-
-int
-socls(fp)
-	register struct file *fp;
-{
-	register int error = 0;
-
-#ifdef	INET
-	if	(fp->f_data)
-		error = SOCLOSE((struct socket *)fp->f_data);
-	fp->f_data = 0;
-#else
-	error = EOPNOTSUPP;
-#endif
-	return(error);
-}

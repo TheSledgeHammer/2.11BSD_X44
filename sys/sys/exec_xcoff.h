@@ -26,7 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* NOTE: The Following Contents of exec_xcoff.h is derived from IBM Knowledge Center:
+/*
+ * NOTE: The Following Contents of exec_xcoff.h is derived from IBM Knowledge Center:
  * https://www.ibm.com/support/knowledgecenter/ssw_aix_72/filesreference/XCOFF.html
  */
 
