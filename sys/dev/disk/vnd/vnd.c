@@ -116,7 +116,7 @@ struct vnd_softc {
 	struct vnode		*sc_vp;			/* vnode */
 	struct ucred		*sc_cred;		/* credentials */
 	int		 			sc_maxactive;	/* max # of active requests */
-	struct bufq_state 	sc_tab;			/* transfer queue */
+	struct buf 		sc_tab;			/* transfer queue */
 	char		 		sc_xname[8];	/* XXX external name */
 	struct dkdevice		sc_dkdev;		/* generic disk device info */
 };
@@ -215,7 +215,7 @@ vndopen(dev, flags, mode, p)
 	int unit = vndunit(dev);
 	struct vnd_softc *sc;
 	int error = 0, part, pmask;
-	struct disklabel *lp;
+//	struct disklabel *lp;
 	/*
 	 * XXX Should support disklabels.
 	 */
