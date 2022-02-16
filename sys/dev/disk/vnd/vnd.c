@@ -68,6 +68,7 @@
 #include <sys/proc.h>
 #include <sys/errno.h>
 #include <sys/buf.h>
+#include <sys/bufq.h>
 #include <sys/malloc.h>
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
@@ -98,6 +99,7 @@ int vnddebug = 0x00;
 #define	vndunit(x)	DISKUNIT(x)
 
 struct vndbuf {
+	struct bufq_state sc_tab;	/* transfer queue */
 	struct buf	vb_buf;
 	struct buf	*vb_obp;
 };
@@ -108,14 +110,15 @@ struct vndbuf {
 	free((caddr_t)(vbp), M_DEVBUF)
 
 struct vnd_softc {
-	int			 	sc_flags;		/* flags */
-	size_t		 	sc_size;		/* size of vnd */
-	struct vnode	*sc_vp;			/* vnode */
-	struct ucred	*sc_cred;		/* credentials */
-	int		 		sc_maxactive;	/* max # of active requests */
-	struct buf	 	sc_tab;			/* transfer queue */
-	char		 	sc_xname[8];	/* XXX external name */
-	struct dkdevice	sc_dkdev;		/* generic disk device info */
+	int		 			sc_unit;	/* logical unit number */
+	int			 		sc_flags;		/* flags */
+	size_t		 		sc_size;		/* size of vnd */
+	struct vnode		*sc_vp;			/* vnode */
+	struct ucred		*sc_cred;		/* credentials */
+	int		 			sc_maxactive;	/* max # of active requests */
+	struct bufq_state 	sc_tab;			/* transfer queue */
+	char		 		sc_xname[8];	/* XXX external name */
+	struct dkdevice		sc_dkdev;		/* generic disk device info */
 };
 
 /* sc_flags */
@@ -128,17 +131,17 @@ struct vnd_softc *vnd_softc;
 int numvnd = 0;
 
 /* called by main() at boot time */
-void	vndattach (int);
+void	vndattach(int);
 
-void	vndclear (struct vnd_softc *);
-void	vndstart (struct vnd_softc *);
-int		vndsetcred (struct vnd_softc *, struct ucred *);
-void	vndthrottle (struct vnd_softc *, struct vnode *);
-void	vndiodone (struct buf *);
-void	vndshutdown (void);
+void	vndclear(struct vnd_softc *);
+void	vndstart(struct vnd_softc *);
+int		vndsetcred(struct vnd_softc *, struct ucred *);
+void	vndthrottle(struct vnd_softc *, struct vnode *);
+void	vndiodone(struct buf *);
+void	vndshutdown(void);
 
-static	int vndlock (struct vnd_softc *);
-static	void vndunlock (struct vnd_softc *);
+static	int vndlock(struct vnd_softc *);
+static	void vndunlock(struct vnd_softc *);
 
 static dev_type_open(vndopen);
 static dev_type_close(vndclose);
@@ -180,6 +183,7 @@ void
 vndattach(num)
 	int num;
 {
+	int i;
 	char *mem;
 	register u_long size;
 
@@ -194,6 +198,12 @@ vndattach(num)
 	bzero(mem, size);
 	vnd_softc = (struct vnd_softc *)mem;
 	numvnd = num;
+/*
+	for (i = 0; i < numvnd; i++) {
+		vnd_softc[i].sc_unit = i;
+		bufq_alloc(&vnd_softc[i].sc_tab, BUFQ_DISKSORT|BUFQ_SORT_RAWBLOCK);
+	}
+*/
 }
 
 int
@@ -205,7 +215,7 @@ vndopen(dev, flags, mode, p)
 	int unit = vndunit(dev);
 	struct vnd_softc *sc;
 	int error = 0, part, pmask;
-
+	struct disklabel *lp;
 	/*
 	 * XXX Should support disklabels.
 	 */
@@ -275,8 +285,7 @@ vndclose(dev, flags, mode, p)
 		sc->sc_dkdev.dk_bopenmask &= ~(1 << part);
 		break;
 	}
-	sc->sc_dkdev.dk_openmask =
-	    sc->sc_dkdev.dk_copenmask | sc->sc_dkdev.dk_bopenmask;
+	sc->sc_dkdev.dk_openmask = sc->sc_dkdev.dk_copenmask | sc->sc_dkdev.dk_bopenmask;
 
 	vndunlock(sc);
 	return (0);

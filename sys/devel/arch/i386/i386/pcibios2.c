@@ -70,6 +70,7 @@
 __KERNEL_RCSID(0, "$NetBSD: pcibios.c,v 1.14.2.1 2004/04/28 05:19:13 jmc Exp $");
 
 #include <sys/extent.h>
+#include <sys/malloc.h>
 #include <sys/queue.h>
 
 #include <dev/core/pci/pcidevs.h>
@@ -141,6 +142,7 @@ pci_device_foreach_min(pc, minbus, maxbus, func, context)
 static uint8_t
 pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device, int pin)
 {
+	struct pci_cfg *pcfg;
 	uint8_t function, nfuncs;
 	int maxdevs;
 	pcireg_t id, bhlcr;
@@ -190,69 +192,113 @@ pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device, int pin)
 	return (PCI_INVALID_IRQ);
 }
 
-
-struct pci_function {
+struct pci_cfg {
 	pci_chipset_tag_t 	pc;
 	pcitag_t 			tag;
 	pcireg_t			id;
 	int					bus;
+	int 				minbus;
+	int					maxbus;
 	int					device;
-	void 				*context;
-
+	int					maxdevs;
+	int					function;
+	int					nfuncs;
 };
-struct pci_function pcifunc;
+
+struct pci_cfg pci_cfg;
 
 void
-pci_device_bus(func, pc, maxbus)
-	struct pci_function *func;
+pci_cfg_init(elem, pc, minbus, maxbus)
+	struct pci_cfg 		*elem;
 	pci_chipset_tag_t 	pc;
-	int 				maxbus;
+	uint8_t 			minbus, maxbus;
 {
-	pcireg_t id, bhlcr;
-	pcitag_t tag;
-	int bus, maxdevs, device, function, nfuncs;
+	int bus;
 
-	func->pc = pc;
-	for (bus = 0; bus <= maxbus; bus++) {
-		func->bus = bus;
-		maxdevs = pci_bus_maxdevs(pc, bus);
-		for (device = 0; device < maxdevs; device++) {
-			func->device = device;
-			tag = pci_make_tag(pc, bus, device, 0);
-			id = pci_conf_read(pc, tag, PCI_ID_REG);
+	elem = (struct pci_cfg *)malloc(sizeof(struct pcie_cfg *), M_DEVBUF, M_NOWAIT);
+	elem->pc = pc;
+	elem->minbus = minbus;
+	elem->maxbus = maxbus;
+
+	for (bus = minbus; bus <= maxbus; bus++) {
+		elem->bus = bus;
+		elem->maxdevs = pci_bus_maxdevs(pc, bus);
+	}
+}
+
+void
+pci_cfg_foreach(elem)
+	struct pci_cfg 	*elem;
+{
+	pcireg_t bhlcr;
+	int bus, device, function, nfuncs;
+
+	for (bus = elem->minbus; bus <= elem->maxbus; bus++) {
+		elem->bus = bus;
+		elem->maxdevs = pci_bus_maxdevs(elem->pc, bus);
+		for (elem->device = 0; elem->device < elem->maxdevs; device++) {
+			elem->device = device;
+			elem->tag = pci_make_tag(elem->pc, bus, device, 0);
+			elem->id = pci_conf_read(elem->pc, elem->tag, PCI_ID_REG);
 
 			/* Invalid vendor ID value? */
-			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+			if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID) {
 				continue;
+			}
 			/* XXX Not invalid, but we've done this ~forever. */
-			if (PCI_VENDOR(id) == 0)
+			if (PCI_VENDOR(elem->id) == 0)
 				continue;
 
-			bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
+			bhlcr = pci_conf_read(elem->pc, elem->tag, PCI_BHLC_REG);
 			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
 				nfuncs = 8;
 			} else {
 				nfuncs = 1;
 			}
+			elem->nfuncs = nfuncs;
 			for (function = 0; function < nfuncs; function++) {
-				tag = pci_make_tag(pc, bus, device, function);
-				id = pci_conf_read(pc, tag, PCI_ID_REG);
+				elem->function = function;
+				elem->tag = pci_make_tag(elem->pc, bus, device, function);
+				elem->id = pci_conf_read(elem->pc, elem->tag, PCI_ID_REG);
 
 				/* Invalid vendor ID value? */
-				if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+				if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID)
 					continue;
 				/*
 				 * XXX Not invalid, but we've done this
 				 * ~forever.
 				 */
-				if (PCI_VENDOR(id) == 0)
+				if (PCI_VENDOR(elem->id) == 0)
 					continue;
-
-				func->tag = tag;
-				func->id = id;
 			}
 		}
 	}
+}
+
+int
+pci_cfg_lookup_bus(elem, bus)
+	struct pcie_cfg_elem 	*elem;
+	int 					bus;
+{
+	for (bus = elem->minbus; bus <= elem->maxbus; bus++) {
+		if(elem->bus == bus) {
+			return (elem->bus);
+		}
+	}
+	return (-1);
+}
+
+int
+pci_cfg_lookup_device(elem, device)
+	struct pcie_cfg_elem 	*elem;
+	int	device;
+{
+	for (device = 0; device < elem->maxdevs; device++) {
+		if (elem->device == device) {
+			return (elem->device);
+		}
+	}
+	return (-1);
 }
 
 #define PCIADDR_MEM_START		0x0

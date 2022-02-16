@@ -49,8 +49,8 @@ struct file {
 	off_t				f_offset;
 	struct ucred 		*f_cred;		/* credentials associated with descriptor */
 	struct lock_object 	f_slock;
-#define f_data		f_un.f_Data
-#define f_socket	f_un.f_Socket
+#define f_data			f_un.f_Data
+#define f_socket		f_un.f_Socket
 };
 
 extern struct file 	*filehead;	/* head of list of open files */

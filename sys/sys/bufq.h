@@ -78,26 +78,23 @@
 
 #include <sys/queue.h>
 
+struct buf;
+
 /*
  * Device driver buffer queue.
  */
-struct bufq;
-TAILQ_HEAD(bufq, bufq_state);
 struct bufq_state {
-	TAILQ_ENTRY(bufq_state) bq_entry;
 	void 					(*bq_put)(struct bufq_state *, struct buf *);
 	struct buf 				*(*bq_get)(struct bufq_state *, int);
 	void 					*bq_private;
 	int 					bq_flags;			/* Flags from bufq_alloc() */
 };
 
-extern struct bufq 			bufq_list;			/* bufq queue */
-
 /*
  * Flags for bufq_alloc.
  */
 #define BUFQ_SORT_RAWBLOCK	0x0001	/* Sort by b_rawblkno */
-#define BUFQ_SORT_CYLINDER	0x0002	/* Sort by b_cylinder, b_rawblkno */
+#define BUFQ_SORT_CYLINDER	0x0002	/* Sort by b_cylin, b_rawblkno */
 
 #define BUFQ_FCFS			0x0010	/* First-come first-serve */
 #define BUFQ_DISKSORT		0x0020	/* Min seek sort */
@@ -108,13 +105,23 @@ extern struct bufq 			bufq_list;			/* bufq queue */
 #define BUFQ_METHOD_MASK	0x00f0
 
 #ifdef _KERNEL
-
+extern int bufq_disk_default_strat;
+#define	BUFQ_DISK_DEFAULT_STRAT()	bufq_disk_default_strat
 void	bufq_alloc(struct bufq_state *, int);
 void	bufq_free(struct bufq_state *);
 
-#define BUFQ_PUT(bufq, bp) 	(*(bufq)->bq_put)((bufq), (bp))	/* Put buffer in queue */
-#define BUFQ_GET(bufq) 		(*(bufq)->bq_get)((bufq), 1)	/* Get and remove buffer from queue */
-#define BUFQ_PEEK(bufq) 	(*(bufq)->bq_get)((bufq), 0)	/* Get buffer from queue */
+#define BUFQ_PUT(bufq, bp) 		(*(bufq)->bq_put)((bufq), (bp))	/* Put buffer in queue */
+#define BUFQ_GET(bufq) 			(*(bufq)->bq_get)((bufq), 1)	/* Get and remove buffer from queue */
+#define BUFQ_PEEK(bufq) 		(*(bufq)->bq_get)((bufq), 0)	/* Get buffer from queue */
 
+#define	BIO_GETPRIO(bp)			((bp)->b_prio)
+#define	BIO_SETPRIO(bp, prio)	(bp)->b_prio = (prio)
+#define	BIO_COPYPRIO(bp1, bp2)	BIO_SETPRIO(bp1, BIO_GETPRIO(bp2))
+
+#define	BPRIO_NPRIO				3
+#define	BPRIO_TIMECRITICAL		2
+#define	BPRIO_TIMELIMITED		1
+#define	BPRIO_TIMENONCRITICAL	0
+#define	BPRIO_DEFAULT			BPRIO_TIMELIMITED
 #endif /* _KERNEL */
 #endif /* _SYS_BUFQ_H_ */

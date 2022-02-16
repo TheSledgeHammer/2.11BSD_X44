@@ -45,13 +45,14 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## kern:
 - kern_descrip.c:
+	- Needs Work
 	- Needs better 4.4BSD Lite2 & later compatability.
 		- Later BSD versions use struct filedesc. While 2.11BSD has this infrastructure,
 		2.11BSD uses the struct user & file primarily for these syscalls.
 		- The main problem is updating the filedesc structure and maintaining that 		compatability.
 	
 - uipc_syscalls.c:
-	- High probability will not compile without changes.
+	- Improved but needs work.
 	
 ## arch:
 - i386/x86: (Merged under i386)

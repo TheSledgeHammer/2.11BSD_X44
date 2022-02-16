@@ -427,7 +427,7 @@ pcie_cfgregopen(uint64_t base, uint8_t minbus, uint8_t maxbus)
 	struct pcie_cfg_list *pcielist;
 	struct pcie_cfg_elem *pcie_array, *elem;
 #ifdef SMP
-	struct pcpu *pc;
+	struct percpu *pc;
 #endif
 	vm_offset_t va;
 	uint32_t val1, val2;

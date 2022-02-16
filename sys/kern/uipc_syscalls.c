@@ -56,15 +56,19 @@ socket()
 	register struct file *fp;
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	if ((fp = falloc()) == NULL)
 		return (u->u_error);
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
+	fp->f_ops = &socketops;
 	u->u_error = socreate(uap->domain, &so, uap->type, uap->protocol);
-	if (u->u_error)
+	if (u->u_error) {
 		goto bad;
-	fp->f_socket = so;
+	} else {
+		fp->f_data = (caddr_t)so;
+		fp->f_socket = so;
+	}
 	return (u->u_error);
 bad:
 	u->u_ofile[u->u_r.r_val1] = 0;
@@ -83,20 +87,25 @@ bind()
 	register struct file *fp;
 	register struct mbuf *nam;
 	char sabuf[MSIZE];
+	//nam = (struct mbuf *)sabuf;
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	fp = gtsockf(uap->s);
 	if (fp == 0)
 		return (u->u_error);
-	nam = (struct mbuf *)sabuf;
-	MBZAP(nam, uap->namelen, MT_SONAME);
+	//MBZAP(nam, uap->namelen, MT_SONAME);
+	u->u_error = sockargs(nam, uap->name, uap->namelen, MT_SONAME);
+	if (u->u_error) {
+		return (u->u_error);
+	}
 	if (uap->namelen > MLEN)
 		return (u->u_error = EINVAL);
 	u->u_error = copyin(uap->name, mtod(nam, caddr_t), uap->namelen);
 	if (u->u_error)
 		return (u->u_error);
 	u->u_error = sobind((struct socket *)fp->f_socket, nam);
+	m_free(nam);
 	return (u->u_error);
 }
 
@@ -604,6 +613,7 @@ shutdown()
 	u->u_error = SOSHUTDOWN(fp->f_socket, uap->how);
 }
 
+int
 setsockopt()
 {
 	register struct setsockopt_args {
@@ -637,6 +647,7 @@ setsockopt()
 	u->u_error = SOSETOPT(fp->f_socket, uap->level, uap->name, m);
 }
 
+int
 getsockopt()
 {
 	register struct getsockopt_args {
@@ -647,7 +658,7 @@ getsockopt()
 		syscallarg(int *) avalsize;
 	} *uap = (struct getsockopt_args *)u->u_ap;
 	register struct file *fp;
-	struct mbuf *m = NULL, *m_free();
+	struct mbuf *m = NULL;
 	int valsize;
 
 	if (netoff)
@@ -681,7 +692,7 @@ bad:
 /*
  * Get socket name.
  */
-void
+int
 getsockname()
 {
 	register struct getsockname_args {
@@ -696,30 +707,32 @@ getsockname()
 
 	if (netoff)
 		u->u_error = ENETDOWN;
-		return;
+	return (u->u_error);
 	fp = gtsockf(uap->fdes);
 	if (fp == 0)
-		return;
+		return (u->u_error);
 	u->u_error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len));
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	m = (struct mbuf *)sabuf;
 	MBZAP(m, 0, MT_SONAME);
 	u->u_error = SOGETNAM(fp->f_socket, m);
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	if (len > m->m_len)
 		len = m->m_len;
 	u->u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	u->u_error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
+
+	return (u->u_error);
 }
 
 /*
  * Get name of peer for connected socket.
  */
-
+int
 getpeername()
 {
 	register struct getpeername_args {
@@ -736,21 +749,23 @@ getpeername()
 		return (u->u_error = ENETDOWN);
 	fp = gtsockf(uap->fdes);
 	if (fp == 0)
-		return;
-	m = (struct mbuf *)sabuf;
+		return (u->u_error);
+	m = (struct mbuf*) sabuf;
 	MBZAP(m, 0, MT_SONAME);
-	u->u_error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len));
+	u->u_error = copyin((caddr_t) uap->alen, (caddr_t) & len, sizeof(len));
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	u->u_error = SOGETPEER(fp->f_socket, m);
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	if (len > m->m_len)
 		len = m->m_len;
-	u->u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
+	u->u_error = copyout(mtod(m, caddr_t), (caddr_t) uap->asa, (u_int) len);
 	if (u->u_error)
-		return;
-	u->u_error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
+		return (u->u_error);
+	u->u_error = copyout((caddr_t) & len, (caddr_t) uap->alen, sizeof(len));
+
+	return (u->u_error);
 }
 
 int
@@ -759,9 +774,9 @@ sockargs(aname, name, namelen, type)
 	caddr_t name;
 	int namelen, type;
 {
+	register struct sockaddr *sa;
 	register struct mbuf *m;
 	int error;
-	struct mbuf *m_free();
 
 	if (namelen > MLEN)
 		return (EINVAL);
@@ -770,10 +785,16 @@ sockargs(aname, name, namelen, type)
 		return (ENOBUFS);
 	m->m_len = namelen;
 	error = copyin(name, mtod(m, caddr_t), (u_int)namelen);
-	if (error)
+	if (error) {
 		(void) m_free(m);
-	else
+		return (error);
+	} else {
 		*aname = m;
+	}
+	if (type == MT_SONAME) {
+		sa = mtod(m, struct sockaddr *);
+		sa->sa_len = namelen;
+	}
 	return (error);
 }
 

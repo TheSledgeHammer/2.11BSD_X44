@@ -33,7 +33,9 @@
 #ifndef _SYS_BUF_H_
 #define	_SYS_BUF_H_
 
+#include <sys/bufq.h>
 #include <sys/queue.h>
+#include <sys/tree.h>
 
 #define NOLIST ((struct buf *)0x87654321)
 
@@ -61,19 +63,25 @@ struct bufhd {
  * The buffer header describes an I/O operation in the kernel.
  */
 struct buf {
-	/* 2.11BSD Orig */
+	/* 2.11BSD Orig (Deprecated) */
 	struct	buf 		*b_forw, *b_back;	/* hash chain (2 way street) */
 	struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
+	struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
 
 	/* 2.11BSD New */
+	union {
+		TAILQ_ENTRY(buf) u_actq;			/* Device driver queue when active. */
+		RB_ENTRY(buf)	u_rbnode;			/* Cyclical scan (CSCAN) */
+	} b_u;
+#define	b_actq			b_u.u_actq
+#define	b_rbnode		b_u.u_rbnode
 	LIST_ENTRY(buf) 	b_hash;				/* Hash chain. */
 	LIST_ENTRY(buf) 	b_vnbufs;			/* Buffer's associated vnode. */
 	TAILQ_ENTRY(buf) 	b_freelist;			/* Free list position if not active. */
-
-	struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
 	struct  proc 		*b_proc;			/* Associated proc; NULL if kernel. */
 	volatile long		b_flags;			/* B_* flags. */
 	int					b_qindex;			/* buffer queue index */
+	int					b_prio;				/* Hint for buffer queue discipline. */
 	int					b_error;			/* returned after I/O */
 	long				b_bufsize;			/* Allocated buffer size. */
 	long				b_bcount;			/* transfer count */
@@ -85,8 +93,9 @@ struct buf {
 	} b_un;
 	void				*b_saveaddr;		/* Original b_addr for physio. */
 	daddr_t				b_lblkno;			/* Logical block number. */
-	daddr_t				b_blkno;			/* Underlying physical block number. */
+	daddr_t				b_blkno;			/* Underlying physical block number. (partition relative) */
 	daddr_t				b_pblkno;           /* physical block number */
+	daddr_t				b_rawblkno;			/* Raw underlying physical block number. (not partition relative) */
 
 	void				(*b_iodone)(struct buf *);
 	struct	iodone_chain *b_iodone_chain;
@@ -98,7 +107,6 @@ struct buf {
 	struct	ucred 		*b_wcred;			/* Write credentials reference. */
 	int					b_validoff;			/* Offset in buffer of valid region. */
 	int					b_validend;			/* Offset of end of valid region. */
-
 	//void				*b_fsdata;			/* fs private data */
 };
 
@@ -288,39 +296,39 @@ struct	buf 	bswlist;			/* Head of swap I/O buffer headers free list. */
 struct	buf 	*bclnlist;			/* Head of cleaned page list. */
 
 __BEGIN_DECLS
-void		bufinit (void);
-void		bremfree (struct buf *);
+void		bufinit(void);
+void		bremfree(struct buf *);
 int			bread(struct vnode *, daddr_t, int, struct ucred *, struct buf **);
 int			breadn(struct vnode *, daddr_t, int, daddr_t *, int *, int, struct ucred *, struct buf **);
 int			breada(struct vnode *, daddr_t, daddr_t, int, struct ucred *);
-int			bwrite (struct buf *);
-void		bdwrite (struct buf *);
-void		bawrite (struct buf *);
-void		brelse (struct buf *);
-struct 	buf *getnewbuf (int slpflag, int slptimeo);
-struct 	buf *getpbuf (void);
-struct 	buf *incore (struct vnode *, daddr_t);
-struct 	buf *getblk (struct vnode *, daddr_t, int, int, int);
-struct 	buf *geteblk (int);
-void		allocbuf (struct buf *, int);
-int			biowait (struct buf *);
-void		biodone (struct buf *);
-void		blkflush (struct vnode *, daddr_t, dev_t);
-void		bflush (struct vnode *, daddr_t, dev_t);
-int			geterror (struct buf *);
+int			bwrite(struct buf *);
+void		bdwrite(struct buf *);
+void		bawrite(struct buf *);
+void		brelse(struct buf *);
+struct 	buf *getnewbuf(int slpflag, int slptimeo);
+struct 	buf *getpbuf(void);
+struct 	buf *incore(struct vnode *, daddr_t);
+struct 	buf *getblk(struct vnode *, daddr_t, int, int, int);
+struct 	buf *geteblk(int);
+void		allocbuf(struct buf *, int);
+int			biowait(struct buf *);
+void		biodone(struct buf *);
+void		blkflush(struct vnode *, daddr_t, dev_t);
+void		bflush(struct vnode *, daddr_t, dev_t);
+int			geterror(struct buf *);
 
-void		cluster_callback (struct buf *);
-int			cluster_read (struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
-void		cluster_write (struct buf *, u_quad_t);
-u_int		minphys (struct buf *);
+void		cluster_callback(struct buf *);
+int			cluster_read(struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
+void		cluster_write(struct buf *, u_quad_t);
+u_int		minphys(struct buf *);
 
-void		vwakeup (struct buf *);
-void		vmapbuf (struct buf *);
-void		vunmapbuf (struct buf *);
-void		relpbuf (struct buf *);
-void		brelvp (struct buf *);
-void		bgetvp (struct vnode *, struct buf *);
-void		reassignbuf (struct buf *, struct vnode *);
+void		vwakeup(struct buf *);
+void		vmapbuf(struct buf *);
+void		vunmapbuf(struct buf *);
+void		relpbuf(struct buf *);
+void		brelvp(struct buf *);
+void		bgetvp(struct vnode *, struct buf *);
+void		reassignbuf(struct buf *, struct vnode *);
 __END_DECLS
 #endif
 

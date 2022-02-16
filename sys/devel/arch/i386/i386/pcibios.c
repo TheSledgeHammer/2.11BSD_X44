@@ -233,7 +233,10 @@ pci_pir_create_links(struct PIR_entry *entry, struct PIR_intpin *intpin, void *a
 static uint8_t
 pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device, int pin)
 {
+	uint32_t value;
+	uint8_t func, maxfunc;
 
+	value =
 	return (PCI_INVALID_IRQ);
 }
 
