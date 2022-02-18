@@ -187,7 +187,9 @@ struct mbuf_cont {
 			(m)->m_off = MMINOFF; 			\
 		} 									\
 	} else { 								\
-		(m) = m_more((((ms&0340) <= 0100) && (i==M_DONTWAIT)) ? M_DONTWAITLONG : i, t); \
+		(m) = m_more((((ms&0340) <= 0100) 	\
+				&& (i==M_DONTWAIT)) ? 		\
+					M_DONTWAITLONG : i, t); \
 	} 										\
 	splx(ms); 								\
 }
@@ -200,7 +202,7 @@ struct mbuf_cont {
  * m->m_len is set to MCLBYTES upon success, and to MLEN on failure.
  * MCLFREE frees clusters allocated by MCLALLOC.
  */
-#ifndef	pdp11
+//#ifndef	pdp11
 #define	MCLALLOC(m, i) {					\
 	  int ms = splimp(); 					\
 	  if (mclfree == 0) {					\
@@ -213,6 +215,7 @@ struct mbuf_cont {
 	  } 									\
 	  splx(ms); 							\
 }
+/*
 #else
 #define	MCLALLOC(m, i) {					\
 	  int ms = splimp(); 					\
@@ -224,6 +227,7 @@ struct mbuf_cont {
 	  splx(ms);								\
 }
 #endif
+*/
 #define	M_HASCL(m)	((m)->m_off >= MSIZE)
 #define	MTOCL(m)	((struct mbuf *)(mtod((m), int) &~ MCLOFSET))
 
@@ -264,7 +268,7 @@ struct mbuf_cont {
 	  splx(ms); 							\
 	  if (m_want) { 						\
 		  m_want = 0; 						\
-		  WAKEUP((caddr_t)&mfree); 			\
+		  wakeup((caddr_t)&mfree); 			\
 	  } 									\
 }
 
@@ -304,7 +308,7 @@ struct	mbuf 	*m_retry(int, int);
 struct	mbuf 	*m_retryhdr(int, int);
 void			m_cat(struct mbuf *, struct mbuf *);
 void			m_adj(struct mbuf *, int);
-//caddr_t			m_clalloc(int, int);
+caddr_t			m_clalloc(int, int);
 void			m_copyback(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);

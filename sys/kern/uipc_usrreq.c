@@ -31,9 +31,6 @@
 struct sockaddr sun_noname = { AF_UNIX };
 ino_t 			unp_ino;					/* prototype for fake inode numbers */
 
-extern void unpdisc(), unpgc1();
-extern int fadjust();
-
 /*ARGSUSED*/
 int
 uipc_usrreq(so, req, m, nam, rights)
@@ -284,7 +281,9 @@ int	unpdg_recvspace = 4*1024;
 int	unp_rights;					/* file descriptors in flight */
 
 int
-uipc_attach(struct socket *so, int proto)
+uipc_attach(so, proto)
+	struct socket *so;
+	int proto;
 {
 	struct unpcb *unp;
 	int error;
@@ -417,7 +416,7 @@ unp_bind(unp, nam)
 	if (unp->unp_vnode != NULL || nam->m_len >= MLEN)
 		return (EINVAL);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
-	error = UNPBIND(soun->sun_path, nam->m_len, &vp, unp->unp_socket);
+	error = unpbind(soun->sun_path, nam->m_len, &vp, unp->unp_socket);
 	if (error)
 		return(error);
 	if (!vp)
@@ -630,8 +629,6 @@ unp_internalize(rights)
 }
 
 int	unp_defer, unp_gcing;
-int	unp_mark();
-extern	struct domain unixdomain;
 
 /*
  * What I did to the next routine isn't pretty, feel free to redo it, but
@@ -654,10 +651,10 @@ restart:
 	do {
 		for (fp = file; fp < fileNFILE; fp++) {
 			/* get file table entry, the return value is f_count */
-			if (FPFETCH(fp, &xf) == 0)
+			if (fpfetch(fp, &xf) == 0)
 				continue;
 			if (xf->f_flag & FDEFER) {
-				FPFLAGS(fp, 0, FDEFER);
+				fpflags(fp, 0, FDEFER);
 				unp_defer--;
 			} else {
 				if (xf->f_flag & FMARK)
@@ -680,10 +677,10 @@ restart:
 		}
 	} while (unp_defer);
 	for (fp = file; fp < fileNFILE; fp++) {
-		if (FPFETCH(fp, &xf) == 0)
+		if (fpfetch(fp, &xf) == 0)
 			continue;
 		if (xf->f_count == xf->f_msgcount && (xf->f_flag & FMARK) == 0)
-			while (FPFETCH(fp, &xf) && xf->f_msgcount)
+			while (fpfetch(fp, &xf) && xf->f_msgcount)
 				unp_discard(fp);
 	}
 	unp_gcing = 0;
@@ -727,11 +724,11 @@ unp_mark(fp)
 {
 	struct file xf;
 
-	FPFETCH(fp, &xf);
+	fpfetch(fp, &xf);
 	if (xf->f_flag & FMARK)
 		return;
 	unp_defer++;
-	FPFLAGS(fp, FMARK|FDEFER, 0);
+	fpflags(fp, FMARK|FDEFER, 0);
 }
 
 void

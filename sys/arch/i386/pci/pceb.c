@@ -43,6 +43,7 @@ __KERNEL_RCSID(0, "$NetBSD: pceb.c,v 1.12 2003/02/26 22:23:07 fvdl Exp $");
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/null.h>
 
 #include <machine/bus.h>
 

@@ -73,11 +73,11 @@ static struct lock_object pcicfg_lock;
 static int mcfg_enable = 1;
 
 static uint32_t	pci_docfgregread(int bus, int slot, int func, int reg, int bytes);
-static int	pcireg_cfgread(int bus, int slot, int func, int reg, int bytes);
-static void	pcireg_cfgwrite(int bus, int slot, int func, int reg, int data, int bytes);
-static int	pcireg_cfgopen(void);
-static int	pciereg_cfgread(int bus, unsigned slot, unsigned func, unsigned reg, unsigned bytes);
-static void	pciereg_cfgwrite(int bus, unsigned slot, unsigned func, unsigned reg, int data, unsigned bytes);
+static int		pcireg_cfgread(int bus, int slot, int func, int reg, int bytes);
+static void		pcireg_cfgwrite(int bus, int slot, int func, int reg, int data, int bytes);
+static int		pcireg_cfgopen(void);
+static int		pciereg_cfgread(int bus, unsigned slot, unsigned func, unsigned reg, unsigned bytes);
+static void		pciereg_cfgwrite(int bus, unsigned slot, unsigned func, unsigned reg, int data, unsigned bytes);
 
 /*
  * Some BIOS writers seem to want to ignore the spec and put

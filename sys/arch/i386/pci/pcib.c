@@ -40,7 +40,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
-#include <sys/user.h>
+#include <sys/null.h>
 
 #include <machine/bus.h>
 
@@ -50,7 +50,7 @@
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
 
-int		pcibmatch (struct device *, void *, void *);
+int		pcibmatch (struct device *, struct cfdata *, void *);
 void	pcibattach (struct device *, struct device *, void *);
 
 CFDRIVER_DECL(NULL, pcib, &pcib_cops, DV_DULL, sizeof(struct device));
@@ -62,7 +62,8 @@ int		pcib_print (void *, const char *);
 int
 pcibmatch(parent, match, aux)
 	struct device *parent;
-	void *match, *aux;
+	struct cfdata *match;
+	void /**match,*/ *aux;
 {
 	struct pci_attach_args *pa = aux;
 

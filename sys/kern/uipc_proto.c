@@ -23,9 +23,6 @@
 /*
  * Definitions of protocols supported in the UNIX domain.
  */
-
-int uipc_usrreq();
-int raw_init(), raw_usrreq(), raw_input(), raw_ctlinput();
 extern	struct domain unixdomain;		/* or at least forward */
 
 struct protosw unixsw[] = {
@@ -34,6 +31,24 @@ struct protosw unixsw[] = {
 				.pr_domain		= &unixdomain,
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
+				.pr_input 		= 0,
+				.pr_output 		= 0,
+				.pr_ctlinput 	= 0,
+				.pr_ctloutput 	= 0,
+				.pr_usrreq		= uipc_usrreq,
+				.pr_attach		= uipc_attach,
+				.pr_detach		= uipc_detach,
+				.pr_init 		= 0,
+				.pr_fasttimo 	= 0,
+				.pr_slowtimo 	= 0,
+				.pr_drain 		= 0,
+				.pr_sysctl 		= 0,
+		},
+		{
+				.pr_type		= SOCK_SEQPACKET,
+				.pr_domain		= &unixdomain,
+				.pr_protocol	= PF_UNIX,
+				.pr_flags		= PR_ATOMIC|PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
 				.pr_input 		= 0,
 				.pr_output 		= 0,
 				.pr_ctlinput 	= 0,
@@ -84,8 +99,6 @@ struct protosw unixsw[] = {
 				.pr_sysctl 		= 0,
 		},
 };
-
-int	unp_externalize(), unp_dispose();
 
 struct domain unixdomain = {
   .dom_family = AF_UNIX,

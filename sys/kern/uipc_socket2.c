@@ -66,7 +66,7 @@ soisconnecting(so)
 
 	so->so_state &= ~(SS_ISCONNECTED|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTING;
-	WAKEUP((caddr_t)&so->so_timeo);
+	wakeup((caddr_t)&so->so_timeo);
 }
 
 void
@@ -80,11 +80,11 @@ soisconnected(so)
 			panic("soisconnected");
 		soqinsque(head, so, 1);
 		sorwakeup(head);
-		WAKEUP((caddr_t)&head->so_timeo);
+		wakeup((caddr_t)&head->so_timeo);
 	}
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTED;
-	WAKEUP((caddr_t)&so->so_timeo);
+	wakeup((caddr_t)&so->so_timeo);
 	sorwakeup(so);
 	sowwakeup(so);
 }
@@ -96,7 +96,7 @@ soisdisconnecting(so)
 
 	so->so_state &= ~SS_ISCONNECTING;
 	so->so_state |= (SS_ISDISCONNECTING|SS_CANTRCVMORE|SS_CANTSENDMORE);
-	WAKEUP((caddr_t)&so->so_timeo);
+	wakeup((caddr_t)&so->so_timeo);
 	sowwakeup(so);
 	sorwakeup(so);
 }
@@ -108,7 +108,7 @@ soisdisconnected(so)
 
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISCONNECTED|SS_ISDISCONNECTING);
 	so->so_state |= (SS_CANTRCVMORE|SS_CANTSENDMORE);
-	WAKEUP((caddr_t)&so->so_timeo);
+	wakeup((caddr_t)&so->so_timeo);
 	sowwakeup(so);
 	sorwakeup(so);
 }
@@ -240,7 +240,7 @@ sbselqueue(sb)
 	register struct proc *p;
 	extern int selwait;
 
-	if ((p = sb->sb_sel) && (caddr_t)mfkd(&p->p_wchan) == (caddr_t)&selwait)
+	if ((p = sb->sb_sel) && ((caddr_t)mfkd(&p->p_wchan) == (caddr_t)&selwait))
 		sb->sb_flags |= SB_COLL;
 	else
 		sb->sb_sel = u->u_procp;
@@ -255,7 +255,7 @@ sbwait(sb)
 {
 
 	sb->sb_flags |= SB_WAIT;
-	SLEEP((caddr_t)&sb->sb_cc, PZERO+1);
+	sleep((caddr_t)&sb->sb_cc, PZERO+1);
 }
 
 /*
@@ -267,13 +267,13 @@ sbwakeup(sb)
 {
 
 	if (sb->sb_sel) {
-		SELWAKEUP(sb->sb_sel, (long)(sb->sb_flags & SB_COLL));
+		selwakeup(sb->sb_sel, (long)(sb->sb_flags & SB_COLL));
 		sb->sb_sel = 0;
 		sb->sb_flags &= ~SB_COLL;
 	}
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
-		WAKEUP((caddr_t)&sb->sb_cc);
+		wakeup((caddr_t)&sb->sb_cc);
 	}
 }
 
@@ -292,10 +292,10 @@ sowakeup(so, sb)
 	sbwakeup(sb);
 	if (so->so_state & SS_ASYNC) {
 		if (so->so_pgrp < 0)
-			GSIGNAL(-so->so_pgrp, SIGIO);
+			gsignal(-so->so_pgrp, SIGIO);
 		else if (so->so_pgrp > 0 &&
 		    (p = (struct proc *)NETPFIND(so->so_pgrp)) != 0)
-			NETPSIGNAL(p, SIGIO);
+			netpsignal(p, SIGIO);
 	}
 }
 

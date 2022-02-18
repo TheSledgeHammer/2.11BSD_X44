@@ -39,6 +39,7 @@ __KERNEL_RCSID(0, "$NetBSD: pcic_pci_machdep.c,v 1.2 2001/11/15 07:03:35 lukem E
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/null.h>
 
 #include <dev/core/pcmcia/pcmciachip.h>
 #include <dev/core/ic/i82365reg.h>

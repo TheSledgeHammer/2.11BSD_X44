@@ -139,59 +139,6 @@ pci_device_foreach_min(pc, minbus, maxbus, func, context)
 	}
 }
 
-static uint8_t
-pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device, int pin)
-{
-	struct pci_cfg *pcfg;
-	uint8_t function, nfuncs;
-	int maxdevs;
-	pcireg_t id, bhlcr;
-	pcitag_t tag;
-	func_t fun;
-
-	tag = pci_make_tag(pc, bus, device, 0);
-	id = pci_conf_read(pc, tag, PCI_ID_REG);
-
-	/* Invalid vendor ID value? */
-	if (PCI_VENDOR(id) == PCI_VENDOR_INVALID) {
-		continue;
-	}
-	/* XXX Not invalid, but we've done this ~forever. */
-	if (PCI_VENDOR(id) == 0) {
-		continue;
-	}
-
-	bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
-	if((bhlcr & PCI_HDRTYPE(bhlcr)) > 2) {
-		return (PCI_INVALID_IRQ);
-	}
-	if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
-		nfuncs = 8;
-	} else {
-		nfuncs = 1;
-	}
-
-	for (function = 0; function < nfuncs; function++) {
-		tag = pci_make_tag(pc, bus, device, function);
-		id = pci_conf_read(pc, tag, PCI_ID_REG);
-
-		/* Invalid vendor ID value? */
-		if (PCI_VENDOR(id) == PCI_VENDOR_INVALID) {
-			continue;
-		}
-
-		/*
-		 * XXX Not invalid, but we've done this
-		 * ~forever.
-		 */
-		if (PCI_VENDOR(id) == 0) {
-			continue;
-		}
-		return (id);
-	}
-	return (PCI_INVALID_IRQ);
-}
-
 struct pci_cfg {
 	pci_chipset_tag_t 	pc;
 	pcitag_t 			tag;
@@ -208,47 +155,52 @@ struct pci_cfg {
 struct pci_cfg pci_cfg;
 
 void
-pci_cfg_init(elem, pc, minbus, maxbus)
+pci_cfg_init(elem)
+	struct pci_cfg 		*elem;
+{
+	elem = (struct pci_cfg *)malloc(sizeof(struct pci_cfg *), M_DEVBUF, M_NOWAIT);
+}
+
+void
+pci_cfg_foreach(elem, pc, maxbus)
+	struct pci_cfg 		*elem;
+	pci_chipset_tag_t 	pc;
+	uint8_t 			maxbus;
+{
+	pci_cfg_foreach_min(elem, pc, 0, maxbus);
+}
+
+void
+pci_cfg_foreach_min(elem, pc, minbus, maxbus)
 	struct pci_cfg 		*elem;
 	pci_chipset_tag_t 	pc;
 	uint8_t 			minbus, maxbus;
 {
-	int bus;
+	pcireg_t bhlcr;
+	int bus, device, function, nfuncs;
 
-	elem = (struct pci_cfg *)malloc(sizeof(struct pcie_cfg *), M_DEVBUF, M_NOWAIT);
 	elem->pc = pc;
 	elem->minbus = minbus;
 	elem->maxbus = maxbus;
 
 	for (bus = minbus; bus <= maxbus; bus++) {
 		elem->bus = bus;
-		elem->maxdevs = pci_bus_maxdevs(pc, bus);
-	}
-}
-
-void
-pci_cfg_foreach(elem)
-	struct pci_cfg 	*elem;
-{
-	pcireg_t bhlcr;
-	int bus, device, function, nfuncs;
-
-	for (bus = elem->minbus; bus <= elem->maxbus; bus++) {
-		elem->bus = bus;
-		elem->maxdevs = pci_bus_maxdevs(elem->pc, bus);
+		elem->maxdevs = pci_bus_maxdevs(elem->pc, elem->bus);
 		for (elem->device = 0; elem->device < elem->maxdevs; device++) {
 			elem->device = device;
-			elem->tag = pci_make_tag(elem->pc, bus, device, 0);
+			elem->tag = pci_make_tag(elem->pc, elem->bus, elem->device, 0);
 			elem->id = pci_conf_read(elem->pc, elem->tag, PCI_ID_REG);
 
 			/* Invalid vendor ID value? */
 			if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID) {
 				continue;
+				//return (PCI_VENDOR_INVALID);
 			}
 			/* XXX Not invalid, but we've done this ~forever. */
-			if (PCI_VENDOR(elem->id) == 0)
+			if (PCI_VENDOR(elem->id) == 0) {
 				continue;
-
+				//return (elem->id);
+			}
 			bhlcr = pci_conf_read(elem->pc, elem->tag, PCI_BHLC_REG);
 			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
 				nfuncs = 8;
@@ -258,26 +210,31 @@ pci_cfg_foreach(elem)
 			elem->nfuncs = nfuncs;
 			for (function = 0; function < nfuncs; function++) {
 				elem->function = function;
-				elem->tag = pci_make_tag(elem->pc, bus, device, function);
+				elem->tag = pci_make_tag(elem->pc, elem->bus, elem->device, elem->function);
 				elem->id = pci_conf_read(elem->pc, elem->tag, PCI_ID_REG);
 
 				/* Invalid vendor ID value? */
-				if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID)
+				if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID) {
 					continue;
+					//return (PCI_VENDOR_INVALID);
+				}
 				/*
 				 * XXX Not invalid, but we've done this
 				 * ~forever.
 				 */
-				if (PCI_VENDOR(elem->id) == 0)
+				if (PCI_VENDOR(elem->id) == 0) {
 					continue;
+					//return (elem->id);
+				}
 			}
 		}
 	}
+	//return (PCI_VENDOR_INVALID);
 }
 
 int
 pci_cfg_lookup_bus(elem, bus)
-	struct pcie_cfg_elem 	*elem;
+	struct pci_cfg 	*elem;
 	int 					bus;
 {
 	for (bus = elem->minbus; bus <= elem->maxbus; bus++) {
@@ -290,12 +247,25 @@ pci_cfg_lookup_bus(elem, bus)
 
 int
 pci_cfg_lookup_device(elem, device)
-	struct pcie_cfg_elem 	*elem;
+	struct pci_cfg 	*elem;
 	int	device;
 {
 	for (device = 0; device < elem->maxdevs; device++) {
 		if (elem->device == device) {
 			return (elem->device);
+		}
+	}
+	return (-1);
+}
+
+int
+pci_cfg_lookup_function(elem, function)
+	struct pci_cfg 	*elem;
+	int function;
+{
+	for(function = 0; function < elem->nfuncs; function++) {
+		if (elem->function == function) {
+			return (elem->function);
 		}
 	}
 	return (-1);
