@@ -60,7 +60,7 @@ struct vm_segment {
 
 	int							sg_resident_page_count;	/* number of resident pages */
 
-	caddr_t						sg_laddr;				/* segment logical address */
+	vm_offset_t					sg_laddr;				/* segment logical address */
 
 	vm_psegment_t				sg_psegment;			/* pointer to pseudo segment register */
 };
@@ -115,6 +115,8 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 	(seg)->sg_flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 	\
 	vm_segment_insert((seg), (object), (offset)); 		\
 }
+
+#define VM_SEGMENT_TO_PHYS(entry)	((entry)->sg_laddr)
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
 		(&vm_segment_array[atos(pa) - first_segment])

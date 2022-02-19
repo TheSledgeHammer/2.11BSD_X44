@@ -125,7 +125,7 @@ vm_segment_startup(start, end)
 	 *	of a segment structure per segment.
 	 */
 	first_segment = *start;
-	first_segment += nsegments*sizeof(struct vm_segment);
+	first_segment += nsegments * sizeof(struct vm_segment);
 	first_segment = atos(round_segment(first_segment));
 	last_segment = first_segment + nsegments - 1;
 
@@ -142,6 +142,7 @@ vm_segment_startup(start, end)
 	while (nsegments--) {
 		seg->sg_flags = 0;
 		seg->sg_object = NULL;
+		seg->sg_laddr = la;
 		seg++;
 		la += SEGMENT_SIZE;
 	}

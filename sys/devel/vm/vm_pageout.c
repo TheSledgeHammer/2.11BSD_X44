@@ -68,6 +68,10 @@
 
 /*
  * TODO: Areas to be improved.
+ * - Allow segments to access the inactive and active page queues.
+ * OR
+ * - Modify vm_page_active & inactive to run both segment and page
+ *
  * Pageout Daemon Specific
  * - Page clustering with segments
  * - Better utilization of segments
@@ -84,7 +88,7 @@
 
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_page.h>
-#include <vm/include/vm_pageout.h>
+//#include <vm/include/vm_pageout.h>
 #include <devel/vm/include/vm.h>
 
 /*
@@ -100,12 +104,186 @@ vm_pageout_scan()
 	int					free;
 	vm_object_t			object;
 
+	pages_freed = 0;
+	vm_pageout_scan_segment(object, pages_freed);
+
+}
+
+/* Scan segments */
+static void
+vm_pageout_scan_segment(object, freed)
+	vm_object_t		object;
+	int 			freed;
+{
+	register vm_segment_t		segment, next;
+	register struct pglist 		*pglst;
+
+	/* scan segment inactive list */
+	for (segment =  CIRCLEQ_FIRST(vm_segment_list_inactive); segment != NULL; segment = next) {
+
+		next = CIRCLEQ_NEXT(segment, sg_list);
+
+		/*
+		 * If segments pglist equals the inactive pages.
+		 * Run through inactive queues
+		 */
+		pglst = segment->sg_memq;
+		if (pglst == &vm_page_queue_inactive) {
+			/* Scan top-down on a per segment basis. */
+			vm_pageout_scan_page(pglst, segment, object, freed);
+		} else {
+			/* Scan bottom-up on a per page basis. */
+			pglst = &vm_page_queue_inactive;
+			vm_pageout_scan_page(pglst, NULL, object, freed);
+		}
+		if (next && (next->sg_flags & SEG_INACTIVE) == 0) {
+			next = CIRCLEQ_FIRST(vm_segment_list_inactive);
+		}
+	}
+}
+
+/* Scan pages */
+static void
+vm_pageout_scan_page(pglst, segment, object, freed)
+	struct pglist 	*pglst;
+	vm_segment_t	segment;
+	vm_object_t		object;
+	int 			freed;
+{
+	register vm_page_t	page, next;
+
+	for (page = TAILQ_FIRST(pglst); page != NULL; page = next) {
+		simple_lock(&vm_page_queue_free_lock);
+		free = cnt.v_free_count;
+		simple_unlock(&vm_page_queue_free_lock);
+		if (free >= cnt.v_free_target) {
+			break;
+		}
+
+		cnt.v_scan++;
+		next = TAILQ_NEXT(page, pageq);
+
+		if (segment == NULL || segment != page->segment) {
+			segment = page->segment;
+		}
+		vm_pageout_inactive_scanner(page, segment, object, freed);
+		/*
+		 * Former next page may no longer even be on the inactive
+		 * queue (due to potential blocking in the pager with the
+		 * queues unlocked).  If it isn't, we just start over.
+		 */
+		if (next && (next->flags & PG_INACTIVE) == 0) {
+			next = TAILQ_FIRST(pglst);
+		}
+	}
+}
+
+/* Common routine for scanning inactive segments & pages */
+static void
+vm_pageout_inactive_scanner(page, segment, object, freed)
+	vm_page_t 		page;
+	vm_segment_t 	segment;
+	vm_object_t		object;
+	int				freed;
+{
+	vm_offset_t phys;
+	vm_anon_t	anon;
+
+	/*
+	 * If the segment & page has been referenced, move them back to the
+	 * active queue.
+	 */
+	if(ptoa(VM_SEGMENT_TO_PHYS(segment)) == VM_PAGE_TO_PHYS(page) &&
+			VM_SEGMENT_TO_PHYS(segment) == stoa(VM_PAGE_TO_PHYS(page))) {
+		phys = VM_PAGE_TO_PHYS(page);
+		if(pmap_is_referenced(phys)) {
+			vm_page_active(page);
+			vm_segment_active(segment);
+			cnt.v_reactivated++;
+			continue;
+		}
+	}
+	anon = page->anon;
+	object = segment->sg_object;
+
+	/*
+	 * set PQ_ANON if it isn't set already.
+	 */
+	if ((page->flags & PG_ANON) == 0)
+		page->flags |= PG_ANON;
+
+	/*
+	 * If the segment & page is clean, free it up.
+	 */
+	if ((segment->sg_flags & SEG_CLEAN) && (page->flags & PG_CLEAN)) {
+		if (vm_object_lock_try(object)) {
+			if (phys != NULL) {
+				pmap_page_protect(phys, VM_PROT_NONE);
+				if (pmap_clear_modify(phys)) {
+					page->flags &= ~(PG_CLEAN);
+					segment->sg_flags &= ~(SEG_CLEAN);
+					continue;
+				}
+				vm_page_free(page);
+				vm_segment_free(object, segment);
+				freed++;
+				cnt.v_dfree++;
+
+				/*
+				 * for anons, we need to remove the page
+				 * from the anon ourselves.  for aobjs,
+				 * pagefree did that for us.
+				 */
+				if (anon) {
+					KASSERT(anon->an_swslot != 0);
+					anon->u.an_page = NULL;
+				}
+				vm_object_unlock(object);
+			}
+		}
+		continue;
+	}
+
+	/*
+	 * If the page is dirty but already being washed, skip it.
+	 */
+	if ((page->flags & PG_LAUNDRY) == 0)
+		continue;
+
+	/*
+	 * free any swap space allocated to the page since
+	 * we'll have to write it again with its new data.
+	 */
+	if ((page->flags & PG_ANON) && anon->an_swslot) {
+		vm_swap_free(anon->an_swslot, 1);
+		anon->an_swslot = 0;
+	} else if (page->flags & PG_AOBJ) {
+		vm_aobject_dropswap(object, page->offset >> PAGE_SHIFT);
+	}
+
+	/*
+	 * Otherwise the page is dirty and still in the laundry,
+	 * so we start the cleaning operation and remove it from
+	 * the laundry.
+	 */
+	if (!vm_object_lock_try(object)) {
+		continue;
+	}
+	cnt.v_pageouts++;
+#ifdef CLUSTERED_PAGEOUT
+	if (object->pager && vm_pager_cancluster(object->pager, PG_CLUSTERPUT))
+		vm_pageout_cluster(page, segment, object);
+	else
+#endif
+	vm_pageout_page(page, segment, object);
+	thread_wakeup(object);
+	vm_object_unlock(object);
 }
 
 /*
  * Called with object and page queues locked.
  * If reactivate is TRUE, a pager error causes the page to be
- * put back on the active queue, ow it is left on the inactive queue.
+ * put back on the active queue, or it is left on the inactive queue.
  */
 void
 vm_pageout_page(page, segment, object)
@@ -252,7 +430,7 @@ vm_pageout_cluster(page, segment, object)
 	 */
 	vm_pager_cluster(object->pager, page->offset, &loff, &hoff);
 	if (hoff - loff == PAGE_SIZE) {
-		vm_pageout_segment(page, segment, object);
+		vm_pageout_page(page, segment, object);
 		return;
 	}
 
