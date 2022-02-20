@@ -88,7 +88,7 @@
 
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_page.h>
-//#include <vm/include/vm_pageout.h>
+#include <vm/include/vm_pageout.h>
 #include <devel/vm/include/vm.h>
 
 /*
@@ -97,23 +97,56 @@
 void
 vm_pageout_scan()
 {
-	register vm_page_t	m, next;
-	register int		page_shortage;
-	register int		s;
-	register int		pages_freed;
-	int					free;
-	vm_object_t			object;
+	vm_object_t		object;
+	register int		s, page_shortage, pages_freed;
+	int				free;
 
+	/*
+	 *	Only continue when we want more pages to be "free"
+	 */
+	cnt.v_rev++;
+
+	s = splimp();
+	simple_lock(&vm_page_queue_free_lock);
+	free = cnt.v_free_count;
+	simple_unlock(&vm_page_queue_free_lock);
+	splx(s);
+
+	if (free < cnt.v_free_target) {
+		swapout_threads();
+
+		/*
+		 *	Be sure the pmap system is updated so
+		 *	we can scan the inactive queue.
+		 */
+
+		pmap_update();
+	}
+
+	/*
+	 *	Acquire the resident page system lock,
+	 *	as we may be changing what's resident quite a bit.
+	 */
+	vm_segment_lock_lists();
+	vm_page_lock_queues();
+
+	/*
+	 *	Start scanning the inactive queue for pages we can free.
+	 *	We keep scanning until we have enough free pages or
+	 *	we have scanned through the entire queue.  If we
+	 *	encounter dirty pages, we start cleaning them.
+	 */
 	pages_freed = 0;
-	vm_pageout_scan_segment(object, pages_freed);
-
+	vm_pageout_scan_segment(object, free, pages_freed);
+	vm_page_unlock_queues();
+	vm_segment_unlock_lists();
 }
 
 /* Scan segments */
 static void
-vm_pageout_scan_segment(object, freed)
+vm_pageout_scan_segment(object, free, pages_freed)
 	vm_object_t		object;
-	int 			freed;
+	int 			free, pages_freed;
 {
 	register vm_segment_t		segment, next;
 	register struct pglist 		*pglst;
@@ -130,11 +163,11 @@ vm_pageout_scan_segment(object, freed)
 		pglst = segment->sg_memq;
 		if (pglst == &vm_page_queue_inactive) {
 			/* Scan top-down on a per segment basis. */
-			vm_pageout_scan_page(pglst, segment, object, freed);
+			vm_pageout_scan_page(pglst, segment, object, free, pages_freed);
 		} else {
 			/* Scan bottom-up on a per page basis. */
 			pglst = &vm_page_queue_inactive;
-			vm_pageout_scan_page(pglst, NULL, object, freed);
+			vm_pageout_scan_page(pglst, NULL, object, free, pages_freed);
 		}
 		if (next && (next->sg_flags & SEG_INACTIVE) == 0) {
 			next = CIRCLEQ_FIRST(vm_segment_list_inactive);
@@ -144,13 +177,14 @@ vm_pageout_scan_segment(object, freed)
 
 /* Scan pages */
 static void
-vm_pageout_scan_page(pglst, segment, object, freed)
+vm_pageout_scan_page(pglst, segment, object, free, pages_freed)
 	struct pglist 	*pglst;
 	vm_segment_t	segment;
 	vm_object_t		object;
-	int 			freed;
+	int 			free, pages_freed;
 {
 	register vm_page_t	page, next;
+	register int		page_shortage;
 
 	for (page = TAILQ_FIRST(pglst); page != NULL; page = next) {
 		simple_lock(&vm_page_queue_free_lock);
@@ -166,7 +200,7 @@ vm_pageout_scan_page(pglst, segment, object, freed)
 		if (segment == NULL || segment != page->segment) {
 			segment = page->segment;
 		}
-		vm_pageout_inactive_scanner(page, segment, object, freed);
+		vm_pageout_inactive_scanner(page, segment, object, pages_freed);
 		/*
 		 * Former next page may no longer even be on the inactive
 		 * queue (due to potential blocking in the pager with the
@@ -175,6 +209,27 @@ vm_pageout_scan_page(pglst, segment, object, freed)
 		if (next && (next->flags & PG_INACTIVE) == 0) {
 			next = TAILQ_FIRST(pglst);
 		}
+	}
+
+	/*
+	 *	Compute the page shortage.  If we are still very low on memory
+	 *	be sure that we will move a minimal amount of pages from active
+	 *	to inactive.
+	 */
+	page_shortage = cnt.v_inactive_target - cnt.v_page_inactive_count;
+	if (page_shortage <= 0 && pages_freed == 0)
+		page_shortage = 1;
+
+	while (page_shortage > 0) {
+		/*
+		 *	Move some more pages from active to inactive.
+		 */
+
+		if ((page = TAILQ_FIRST(vm_page_queue_active)) == NULL)
+			break;
+		vm_page_deactivate(page);
+		vm_segment_deactivate(segment);
+		page_shortage--;
 	}
 }
 
@@ -280,6 +335,7 @@ vm_pageout_inactive_scanner(page, segment, object, freed)
 	vm_object_unlock(object);
 }
 
+/* Fix Up Below */
 /*
  * Called with object and page queues locked.
  * If reactivate is TRUE, a pager error causes the page to be
@@ -384,6 +440,7 @@ vm_pageout_page(page, segment, object)
 		 * (We will try paging out it again later).
 		 */
 		vm_page_activate(page);
+		vm_segment_activate(segment);
 		cnt.v_reactivated++;
 		break;
 	}

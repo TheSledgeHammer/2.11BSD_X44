@@ -194,12 +194,10 @@ pci_cfg_foreach_min(elem, pc, minbus, maxbus)
 			/* Invalid vendor ID value? */
 			if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID) {
 				continue;
-				//return (PCI_VENDOR_INVALID);
 			}
 			/* XXX Not invalid, but we've done this ~forever. */
 			if (PCI_VENDOR(elem->id) == 0) {
 				continue;
-				//return (elem->id);
 			}
 			bhlcr = pci_conf_read(elem->pc, elem->tag, PCI_BHLC_REG);
 			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
@@ -216,7 +214,6 @@ pci_cfg_foreach_min(elem, pc, minbus, maxbus)
 				/* Invalid vendor ID value? */
 				if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID) {
 					continue;
-					//return (PCI_VENDOR_INVALID);
 				}
 				/*
 				 * XXX Not invalid, but we've done this
@@ -224,12 +221,10 @@ pci_cfg_foreach_min(elem, pc, minbus, maxbus)
 				 */
 				if (PCI_VENDOR(elem->id) == 0) {
 					continue;
-					//return (elem->id);
 				}
 			}
 		}
 	}
-	//return (PCI_VENDOR_INVALID);
 }
 
 int

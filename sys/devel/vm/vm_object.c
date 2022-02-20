@@ -179,7 +179,7 @@ vm_object_allocate(size)
 
 	_vm_object_allocate(size, result);
 
-	return(result);
+	return (result);
 }
 
 static void

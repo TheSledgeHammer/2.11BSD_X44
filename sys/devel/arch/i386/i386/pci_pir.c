@@ -239,7 +239,7 @@ static pci_chipset_tag_t pci_pc;
  * have an interrupt routed to intpin 'pin' by the BIOS.
  */
 static uint8_t
-pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device, int pin)
+pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device/*, int pin*/)
 {
 	pcitag_t tag;
 	pcireg_t id, bhlcr, value;
@@ -272,7 +272,7 @@ pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device, int pin)
 
 			/* Invalid vendor ID value? */
 			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID) {
-				return (PCI_VENDOR_INVALID);
+				continue;
 			}
 			/*
 			 * XXX Not invalid, but we've done this
@@ -302,11 +302,55 @@ pci_pir_initial_irqs(struct PIR_entry *entry, struct PIR_intpin *intpin, void *a
 
 	pin = intpin - entry->pe_intpin;
 	pci_link = pci_pir_find_link(intpin->link);
-	irq = pci_pir_search_irq(&pci_pc, entry->pe_bus, entry->pe_device, pin);
+	irq = pci_pir_search_irq(&pci_pc, entry->pe_bus, entry->pe_device);
 
 	if (irq == PCI_INVALID_IRQ || irq == pci_link->pl_irq) {
 		return;
 	}
+	if (irq >= NUM_ISA_INTERRUPTS) {
+		printf(
+				"$PIR: Ignoring invalid BIOS IRQ %d from %d.%d.INT%c for link %#x\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A', pci_link->pl_id);
+		return;
+	}
+
+	/*
+	 * If we don't have an IRQ for this link yet, then we trust the
+	 * BIOS, even if it seems invalid from the $PIR entries.
+	 */
+	if (pci_link->pl_irq == PCI_INVALID_IRQ) {
+		if (!pci_pir_valid_irq(pci_link, irq))
+			printf(
+					"$PIR: Using invalid BIOS IRQ %d from %d.%d.INT%c for link %#x\n",
+					irq, entry->pe_bus, entry->pe_device, pin + 'A', pci_link->pl_id);
+		pci_link->pl_irq = irq;
+		pci_link->pl_routed = 1;
+		return;
+	}
+
+	/*
+	 * We have an IRQ and it doesn't match the current IRQ for this
+	 * link.  If the new IRQ is invalid, then warn about it and ignore
+	 * it.  If the old IRQ is invalid and the new IRQ is valid, then
+	 * prefer the new IRQ instead.  If both IRQs are valid, then just
+	 * use the first one.  Note that if we ever get into this situation
+	 * we are having to guess which setting the BIOS actually routed.
+	 * Perhaps we should just give up instead.
+	 */
+	if (!pci_pir_valid_irq(pci_link, irq)) {
+		printf("$PIR: BIOS IRQ %d for %d.%d.INT%c is not valid for link %#x\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A', pci_link->pl_id);
+	} else if (!pci_pir_valid_irq(pci_link, pci_link->pl_irq)) {
+		printf(
+				"$PIR: Preferring valid BIOS IRQ %d from %d.%d.INT%c for link %#x to IRQ %d\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A', pci_link->pl_id, pci_link->pl_irq);
+		pci_link->pl_irq = irq;
+		pci_link->pl_routed = 1;
+	} else
+		printf(
+				"$PIR: BIOS IRQ %d for %d.%d.INT%c does not match link %#x irq %d\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A',
+				pci_link->pl_id, pci_link->pl_irq);
 }
 
 /*
@@ -443,8 +487,7 @@ pci_pir_route_interrupt(bus, device, func, pin)
 	lookup.pci_link_ptr = &pci_link;
 	pci_pir_walk_table(pci_pir_find_link_handler, &lookup);
 	if (pci_link == NULL) {
-		printf("$PIR: No matching entry for %d.%d.INT%c\n", bus, device,
-				pin - 1 + 'A');
+		printf("$PIR: No matching entry for %d.%d.INT%c\n", bus, device, pin - 1 + 'A');
 		return (PCI_INVALID_IRQ);
 	}
 
@@ -461,8 +504,7 @@ pci_pir_route_interrupt(bus, device, func, pin)
 		if (pci_link->pl_irqmask != 0 && powerof2(pci_link->pl_irqmask))
 			irq = ffs(pci_link->pl_irqmask) - 1;
 		else
-			irq = pci_pir_choose_irq(pci_link,
-					pci_route_table->pt_header.ph_pci_irqs);
+			irq = pci_pir_choose_irq(pci_link, pci_route_table->pt_header.ph_pci_irqs);
 		if (!PCI_INTERRUPT_VALID(irq))
 			irq = pci_pir_choose_irq(pci_link, pir_bios_irqs);
 		if (!PCI_INTERRUPT_VALID(irq))
@@ -520,8 +562,7 @@ pci_pir_choose_irq(struct pci_link *pci_link, int irqmask)
 			irq = i;
 	}
 	if (bootverbose && PCI_INTERRUPT_VALID(irq)) {
-		printf("$PIR: Found IRQ %d for link %#x from ", irq,
-		    pci_link->pl_id);
+		printf("$PIR: Found IRQ %d for link %#x from ", irq, pci_link->pl_id);
 		pci_print_irqmask(realmask);
 		printf("\n");
 	}
@@ -582,35 +623,4 @@ pci_pir_probe(int bus, int require_parse)
 		if (pci_route_table->pt_entry[i].pe_bus == bus)
 			return (1);
 	return (0);
-}
-
-struct pci_pir_softc {
-	struct device 		sc_dev;
-	struct PIR_table 	*sc_pir;
-	char 				*sc_name;
-	int					sc_bus;
-	int					sc_parse;
-};
-
-int
-pci_pir_probe(parent, match, aux)
-	struct device *parent;
-	struct cfdata *match;
-	void *aux;
-{
-	struct PIR_table *pci_route_table;
-	int i;
-	u_int8_t bus;
-
-	pci_pir_probe();
-
-	return (0);
-}
-
-void
-pci_pir_attach(parent, self, aux)
-	struct device *parent, *self;
-	void *aux;
-{
-
 }

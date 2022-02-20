@@ -108,7 +108,6 @@ struct vm_page {
 	vm_offset_t				offset;		/* offset into segment (O,(S,P)) */
 
 	vm_anon_t				anon;		/* anon (O,(S,P)) */
-	u_short					pqflags;	/* page queue flags [P] */
 
 	u_short					wire_count;	/* wired down maps refs (P) */
 	u_short					flags;		/* see below */

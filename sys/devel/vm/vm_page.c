@@ -145,7 +145,6 @@ vm_page_startup(start, end)
 	extern	vm_offset_t		kentry_data;
 	extern	vm_size_t		kentry_data_size;
 
-
 	/*
 	 *	Initialize the locks
 	 */
@@ -250,7 +249,7 @@ vm_page_startup(start, end)
 	pa = first_phys_addr;
 	while (npages--) {
 		m->flags = 0;
-		m->object = NULL;
+		m->segment = NULL;
 		m->phys_addr = pa;
 #ifdef i386
 		if (pmap_isvalidphys(m->phys_addr)) {
@@ -464,7 +463,7 @@ vm_page_alloc(segment, offset)
 		return(NULL);
 	}
 
-	mem = vm_page_queue_free.tqh_first;
+	mem = TAILQ_FIRST(vm_page_queue_free);
 	TAILQ_REMOVE(&vm_page_queue_free, mem, pageq);
 
 	cnt.v_free_count--;
@@ -526,6 +525,9 @@ vm_page_free(mem)
 		cnt.v_free_count++;
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(spl);
+	} else if (mem->flags & PG_ANON) {
+		mem->flags &= ~PG_ANON;
+		mem->anon = NULL;
 	}
 }
 

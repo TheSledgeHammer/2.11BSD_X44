@@ -570,7 +570,7 @@ pciereg_cfgread(int bus, unsigned slot, unsigned func, unsigned reg, unsigned by
 	    func > PCI_FUNCMAX || reg > PCIE_REGMAX)
 		return (-1);
 
-	critical_enter();
+	//critical_enter();
 	va = pciereg_findaddr(bus, slot, func, reg);
 
 	switch (bytes) {
@@ -588,13 +588,12 @@ pciereg_cfgread(int bus, unsigned slot, unsigned func, unsigned reg, unsigned by
 		break;
 	}
 
-	critical_exit();
+	//critical_exit();
 	return (data);
 }
 
 static void
-pciereg_cfgwrite(int bus, unsigned slot, unsigned func, unsigned reg, int data,
-    unsigned bytes)
+pciereg_cfgwrite(int bus, unsigned slot, unsigned func, unsigned reg, int data, unsigned bytes)
 {
 	vm_offset_t va;
 
@@ -602,7 +601,7 @@ pciereg_cfgwrite(int bus, unsigned slot, unsigned func, unsigned reg, int data,
 	    func > PCI_FUNCMAX || reg > PCIE_REGMAX)
 		return;
 
-	critical_enter();
+	//critical_enter();
 	va = pciereg_findaddr(bus, slot, func, reg);
 
 	switch (bytes) {
@@ -620,5 +619,5 @@ pciereg_cfgwrite(int bus, unsigned slot, unsigned func, unsigned reg, int data,
 		break;
 	}
 
-	critical_exit();
+	//critical_exit();
 }
