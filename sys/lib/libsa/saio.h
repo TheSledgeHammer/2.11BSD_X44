@@ -35,21 +35,21 @@
 
 /* I/O block */
 struct iob {
-	int		i_flgs;		/* flags (see F_*) */
-	int		i_adapt;	/* adapter or bus */
-	int		i_ctlr;		/* controller */
-	int		i_unit;		/* pseudo device unit */
-	int		i_part;		/* disk partition */
-	daddr_t	i_boff;		/* block offset on device */
-	daddr_t	i_cyloff;	/* cylinder offset on device */
-	off_t	i_offset;	/* seek offset in file */
-	dev_t	i_dev;		/* associated device */
-	daddr_t	i_bn;		/* 1st block # of next read */
-	char	*i_ma;		/* memory address of I/O buffer */
-	int		i_cc;		/* character count of transfer */
-	int		i_error;	/* error # return */
-	int		i_errcnt;	/* error count for driver retries */
-	int		i_errblk;	/* block # in error for error reporting */
+	int		i_flgs;			/* flags (see F_*) */
+	int		i_adapt;		/* adapter or bus */
+	int		i_ctlr;			/* controller */
+	int		i_unit;			/* pseudo device unit */
+	int		i_part;			/* disk partition */
+	daddr_t	i_boff;			/* block offset on device */
+	daddr_t	i_cyloff;		/* cylinder offset on device */
+	off_t	i_offset;		/* seek offset in file */
+	dev_t	i_dev;			/* associated device */
+	daddr_t	i_bn;			/* 1st block # of next read */
+	char	*i_ma;			/* memory address of I/O buffer */
+	int		i_cc;			/* character count of transfer */
+	int		i_error;		/* error # return */
+	int		i_errcnt;		/* error count for driver retries */
+	int		i_errblk;		/* block # in error for error reporting */
 };
 
 /* Codes for sector header word 1 */

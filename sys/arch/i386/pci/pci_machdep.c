@@ -142,6 +142,11 @@ struct {
 #undef _id
 #undef _qe
 
+struct pci_bridge_hook_arg {
+	void (*func)(pci_chipset_tag_t, pcitag_t, void *);
+	void *arg;
+};
+
 /*
  * PCI doesn't have any special needs; just use the generic versions
  * of these functions.
@@ -364,6 +369,14 @@ mode2:
 #endif
 }
 
+void
+pci_mode_set(int mode)
+{
+	KASSERT(pci_mode == -1 || pci_mode == mode);
+
+	pci_mode = mode;
+}
+
 int
 pci_mode_detect()
 {
@@ -449,6 +462,99 @@ not2:
 
 	return (pci_mode = 0);
 #endif
+}
+
+void
+pci_device_foreach(pc, maxbus, func, context)
+	pci_chipset_tag_t pc;
+	int maxbus;
+	func_t func;
+	void *context;
+{
+	pci_device_foreach_min(pc, 0, maxbus, func, context);
+}
+
+void
+pci_device_foreach_min(pc, minbus, maxbus, func, context)
+	pci_chipset_tag_t pc;
+	int minbus, maxbus;
+	func_t func;
+	void *context;
+{
+	int bus, device, function, maxdevs, nfuncs;
+	pcireg_t id, bhlcr;
+	pcitag_t tag;
+
+	for (bus = minbus; bus <= maxbus; bus++) {
+		maxdevs = pci_bus_maxdevs(pc, bus);
+		for (device = 0; device < maxdevs; device++) {
+			tag = pci_make_tag(pc, bus, device, 0);
+			id = pci_conf_read(pc, tag, PCI_ID_REG);
+
+			/* Invalid vendor ID value? */
+			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+				continue;
+			/* XXX Not invalid, but we've done this ~forever. */
+			if (PCI_VENDOR(id) == 0)
+				continue;
+
+			bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
+			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
+				nfuncs = 8;
+			} else {
+				nfuncs = 1;
+			}
+
+			for (function = 0; function < nfuncs; function++) {
+				tag = pci_make_tag(pc, bus, device, function);
+				id = pci_conf_read(pc, tag, PCI_ID_REG);
+
+				/* Invalid vendor ID value? */
+				if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+					continue;
+				/*
+				 * XXX Not invalid, but we've done this
+				 * ~forever.
+				 */
+				if (PCI_VENDOR(id) == 0)
+					continue;
+
+				(*func)(pc, tag, context);
+			}
+		}
+	}
+}
+
+void
+pci_bridge_foreach(pc, minbus, maxbus, func, ctx)
+	pci_chipset_tag_t pc;
+	int minbus, maxbus;
+	func_t func;
+	void *ctx;
+{
+	struct pci_bridge_hook_arg bridge_hook;
+
+	bridge_hook.func = func;
+	bridge_hook.arg = ctx;
+
+	pci_device_foreach_min(pc, minbus, maxbus, pci_bridge_hook, &bridge_hook);
+}
+
+static void
+pci_bridge_hook(pc, tag, ctx)
+	pci_chipset_tag_t pc;
+	pcitag_t tag;
+	void *ctx;
+{
+	struct pci_bridge_hook_arg *bridge_hook = (void *)ctx;
+	pcireg_t reg;
+
+	reg = pci_conf_read(pc, tag, PCI_CLASS_REG);
+	if (PCI_CLASS(reg) == PCI_CLASS_BRIDGE &&
+	    (PCI_SUBCLASS(reg) == PCI_SUBCLASS_BRIDGE_PCI ||
+		PCI_SUBCLASS(reg) == PCI_SUBCLASS_BRIDGE_CARDBUS)) {
+		(*bridge_hook->func)(pc, tag, bridge_hook->arg);
+	}
 }
 
 int

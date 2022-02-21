@@ -134,6 +134,9 @@ vm_segment_startup(start, end)
 
 	seg = vm_segment_array = (vm_segment_t)pmap_bootstrap_alloc(nsegments * sizeof(struct vm_segment));
 
+	/* Allocate and initialize pseudo-segments */
+	vm_psegment_init(seg, start, end);
+
 	/*
 	 *	Allocate and clear the mem entry structures.
 	 */
@@ -148,7 +151,6 @@ vm_segment_startup(start, end)
 	}
 
 	seg->sg_resident_page_count = 0;
-
 	vm_segment_startup_initialized = TRUE;
 }
 

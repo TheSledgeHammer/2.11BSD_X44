@@ -29,9 +29,9 @@
 
 #include <stand.h>
 #include <machine/elf_machdep.h>
-#include "../btx/lib/btxv86.h"
+#include <btxv86.h>
 
-#include "../../common/bootstrap.h"
+#include <bootstrap.h>
 
 uint32_t __base;
 struct __v86 __v86;

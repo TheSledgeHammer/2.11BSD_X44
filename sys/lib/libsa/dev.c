@@ -33,6 +33,8 @@
  *	@(#)dev.c	8.1 (Berkeley) 6/11/93
  */
 
+#include <sys/param.h>
+#include <sys/reboot.h>
 #include <lib/libsa/stand.h>
 
 /* ARGSUSED */
@@ -41,6 +43,12 @@ nodev(io)
 	struct iob *io;
 {
 	return (ENXIO);
+}
+
+void
+nullsys(void)
+{
+
 }
 
 /* ARGSUSED */

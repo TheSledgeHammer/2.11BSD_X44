@@ -413,6 +413,7 @@ vm_pageout_page(page, segment, object)
 		 */
 		page->flags &= ~PG_LAUNDRY;
 		page->flags |= PG_CLEAN;
+		segment->sg_flags |= SEG_CLEAN;
 		pmap_clear_modify(VM_PAGE_TO_PHYS(page));
 		break;
 	case VM_PAGER_AGAIN: {
@@ -560,6 +561,7 @@ again:
 	} else if (postatus == VM_PAGER_BAD)
 		panic("vm_pageout_cluster: VM_PAGER_BAD");
 	vm_object_lock(object);
+	vm_segment_lock_lists();
 	vm_page_lock_queues();
 
 	/*
@@ -581,8 +583,9 @@ again:
 			 * doesn't clog the inactive list.  Other pages are
 			 * left as they are.
 			 */
-			if (p == page) {
+			if (p == page && p->segment == segment) {
 				vm_page_activate(p);
+				vm_segment_activate(segment);
 				cnt.v_reactivated++;
 			}
 			break;
@@ -595,7 +598,6 @@ again:
 		if (postatus != VM_PAGER_PEND) {
 			p->flags &= ~PG_BUSY;
 			PAGE_WAKEUP(p);
-
 		}
 	}
 	/*

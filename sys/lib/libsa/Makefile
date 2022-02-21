@@ -11,10 +11,12 @@ SRCS+=	alloc.c bcopy.c bzero.c errno.c exit.c getfile.c \
 		gets.c memcmp.c memcpy.c memmove.c memset.c panic.c \
 		printf.c snprintf.c strdup.c strspn.c strtol.c twiddle.c \
 		zalloc_malloc.c zalloc.c
+		
+#SRCS+= 	uuid_from_string.c uuid_to_string.c 
 
 # io routines
-SRCS+=	close.c dev.c disklabel.c ls.c \
-		lseek.c open.c read.c stat.c write.c
+SRCS+=	close.c closeall.c dev.c ls.c lseek.c open.c read.c stat.c \
+		write.c
 
 .if (${SA_USE_LOADFILE} == "yes")
 SRCS+=	loadfile.c loadfile_ecoff.c loadfile_elf32.c loadfile_elf64.c lookup_elf32.c loadfile_xcoff32.c loadfile_xcoff64.c

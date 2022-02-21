@@ -80,190 +80,38 @@ __KERNEL_RCSID(0, "$NetBSD: pcibios.c,v 1.14.2.1 2004/04/28 05:19:13 jmc Exp $")
 #include <devel/arch/i386/include/pci_cfgreg.h>
 #include <devel/arch/i386/include/pcibios.h>
 
-typedef void (*func_t)(pci_chipset_tag_t, pcitag_t, void *);
+static struct lock_object pcicfg_lock;
 
 void
-pci_device_foreach(pci_chipset_tag_t pc, int maxbus, func_t func, void *context)
+pcibios_init(void)
 {
-	pci_device_foreach_min(pc, 0, maxbus, func, context);
-}
+	uint32_t sigaddr;
+	uint16_t v;
+	static int opened = 0;
 
-void
-pci_device_foreach_min(pc, minbus, maxbus, func, context)
-	pci_chipset_tag_t pc;
-	int minbus, maxbus;
-	func_t func;
-	void *context;
-{
-	int bus, device, function, maxdevs, nfuncs;
-	pcireg_t id, bhlcr;
-	pcitag_t tag;
+	sigaddr = bios_sigsearch(0, "$PCI", 4, 16, 0);
+	if (sigaddr == 0)
+		sigaddr = bios_sigsearch(0, "_PCI", 4, 16, 0);
+	if (sigaddr == 0)
+		return;
 
-	for (bus = minbus; bus <= maxbus; bus++) {
-		maxdevs = pci_bus_maxdevs(pc, bus);
-		for (device = 0; device < maxdevs; device++) {
-			tag = pci_make_tag(pc, bus, device, 0);
-			id = pci_conf_read(pc, tag, PCI_ID_REG);
-
-			/* Invalid vendor ID value? */
-			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
-				continue;
-			/* XXX Not invalid, but we've done this ~forever. */
-			if (PCI_VENDOR(id) == 0)
-				continue;
-
-			bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
-			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
-				nfuncs = 8;
-			} else {
-				nfuncs = 1;
-			}
-
-			for (function = 0; function < nfuncs; function++) {
-				tag = pci_make_tag(pc, bus, device, function);
-				id = pci_conf_read(pc, tag, PCI_ID_REG);
-
-				/* Invalid vendor ID value? */
-				if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
-					continue;
-				/*
-				 * XXX Not invalid, but we've done this
-				 * ~forever.
-				 */
-				if (PCI_VENDOR(id) == 0)
-					continue;
-
-				(*func)(pc, tag, context);
-			}
-		}
+	if (cfgmech == CFGMECH_NONE && pcireg_cfgopen() == 0) {
+		pci_mode_set(cfgmech ? 1 : 2);
+	} else {
+		pci_mode_set(cfgmech ? 1 : 2);
 	}
-}
 
-struct pci_cfg {
-	pci_chipset_tag_t 	pc;
-	pcitag_t 			tag;
-	pcireg_t			id;
-	int					bus;
-	int 				minbus;
-	int					maxbus;
-	int					device;
-	int					maxdevs;
-	int					function;
-	int					nfuncs;
-};
-
-struct pci_cfg pci_cfg;
-
-void
-pci_cfg_init(elem)
-	struct pci_cfg 		*elem;
-{
-	elem = (struct pci_cfg *)malloc(sizeof(struct pci_cfg *), M_DEVBUF, M_NOWAIT);
-}
-
-void
-pci_cfg_foreach(elem, pc, maxbus)
-	struct pci_cfg 		*elem;
-	pci_chipset_tag_t 	pc;
-	uint8_t 			maxbus;
-{
-	pci_cfg_foreach_min(elem, pc, 0, maxbus);
-}
-
-void
-pci_cfg_foreach_min(elem, pc, minbus, maxbus)
-	struct pci_cfg 		*elem;
-	pci_chipset_tag_t 	pc;
-	uint8_t 			minbus, maxbus;
-{
-	pcireg_t bhlcr;
-	int bus, device, function, nfuncs;
-
-	elem->pc = pc;
-	elem->minbus = minbus;
-	elem->maxbus = maxbus;
-
-	for (bus = minbus; bus <= maxbus; bus++) {
-		elem->bus = bus;
-		elem->maxdevs = pci_bus_maxdevs(elem->pc, elem->bus);
-		for (elem->device = 0; elem->device < elem->maxdevs; device++) {
-			elem->device = device;
-			elem->tag = pci_make_tag(elem->pc, elem->bus, elem->device, 0);
-			elem->id = pci_conf_read(elem->pc, elem->tag, PCI_ID_REG);
-
-			/* Invalid vendor ID value? */
-			if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID) {
-				continue;
-			}
-			/* XXX Not invalid, but we've done this ~forever. */
-			if (PCI_VENDOR(elem->id) == 0) {
-				continue;
-			}
-			bhlcr = pci_conf_read(elem->pc, elem->tag, PCI_BHLC_REG);
-			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
-				nfuncs = 8;
-			} else {
-				nfuncs = 1;
-			}
-			elem->nfuncs = nfuncs;
-			for (function = 0; function < nfuncs; function++) {
-				elem->function = function;
-				elem->tag = pci_make_tag(elem->pc, elem->bus, elem->device, elem->function);
-				elem->id = pci_conf_read(elem->pc, elem->tag, PCI_ID_REG);
-
-				/* Invalid vendor ID value? */
-				if (PCI_VENDOR(elem->id) == PCI_VENDOR_INVALID) {
-					continue;
-				}
-				/*
-				 * XXX Not invalid, but we've done this
-				 * ~forever.
-				 */
-				if (PCI_VENDOR(elem->id) == 0) {
-					continue;
-				}
-			}
-		}
+	v = pcibios_get_version();
+	if (v > 0) {
+		PRVERB(("pcibios: BIOS version %x.%02x\n", (v & 0xff00) >> 8, v & 0xff));
 	}
-}
+	simple_lock_init(&pcicfg_lock, "pcicfg_lock");
+	opened = 1;
 
-int
-pci_cfg_lookup_bus(elem, bus)
-	struct pci_cfg 	*elem;
-	int 					bus;
-{
-	for (bus = elem->minbus; bus <= elem->maxbus; bus++) {
-		if(elem->bus == bus) {
-			return (elem->bus);
-		}
+	/* $PIR requires PCI BIOS 2.10 or greater. */
+	if (v >= 0x0210) {
+		pcibios_pir_init();
 	}
-	return (-1);
-}
-
-int
-pci_cfg_lookup_device(elem, device)
-	struct pci_cfg 	*elem;
-	int	device;
-{
-	for (device = 0; device < elem->maxdevs; device++) {
-		if (elem->device == device) {
-			return (elem->device);
-		}
-	}
-	return (-1);
-}
-
-int
-pci_cfg_lookup_function(elem, function)
-	struct pci_cfg 	*elem;
-	int function;
-{
-	for(function = 0; function < elem->nfuncs; function++) {
-		if (elem->function == function) {
-			return (elem->function);
-		}
-	}
-	return (-1);
 }
 
 #define PCIADDR_MEM_START		0x0

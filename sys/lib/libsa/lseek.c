@@ -78,8 +78,9 @@ lseek(fd, offset, where)
 	}
 
 	/* seek is not supported on raw devices */
-	if (f->f_flags & F_RAW)
+	if (f->f_flags & F_RAW) {
 		return ((off_t)-1);
+	}
 
 	return (f->f_ops->seek)(f, offset, where);
 }

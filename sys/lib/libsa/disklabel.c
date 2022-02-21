@@ -32,7 +32,7 @@
  *
  *	@(#)disklabel.c	8.1 (Berkeley) 6/11/93
  */
-
+#ifdef notyet
 #include <sys/param.h>
 #include <sys/disklabel.h>
 
@@ -79,3 +79,4 @@ dkcksum(lp)
 		sum ^= *start++;
 	return (sum);
 }
+#endif

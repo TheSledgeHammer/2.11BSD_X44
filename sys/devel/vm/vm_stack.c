@@ -146,6 +146,7 @@ vm_psegment_shrink(pseg, newsize, newaddr, type)
 void
 vm_psegment_extent_create(pseg, name, start, end, mtype, storage, storagesize, flags)
 	vm_psegment_t *pseg;
+	char *name;
 	u_long start, end;
 	caddr_t storage;
 	size_t storagesize;

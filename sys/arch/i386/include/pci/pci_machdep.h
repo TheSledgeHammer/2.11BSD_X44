@@ -70,16 +70,17 @@ extern struct i386_bus_dma_tag pci_bus_dma_tag;
  * Types provided to machine-independent PCI code
  */
 typedef void 	*pci_chipset_tag_t;
-typedef union i386_pci_tag_u pcitag_t;
+typedef union 	i386_pci_tag_u pcitag_t;
 typedef int 	pci_intr_handle_t;
+typedef void 	(*func_t)(pci_chipset_tag_t, pcitag_t, void *);
 
 /*
  * i386-specific PCI variables and functions.
  * NOT TO BE USED DIRECTLY BY MACHINE INDEPENDENT CODE.
  */
 extern int pci_mode;
-int	pci_mode_detect (void);
-
+int		pci_mode_detect(void);
+void	pci_mode_set(int);
 
 /*
  * Section 6.2.4, `Miscellaneous Functions' of the PCI Specification,
@@ -91,23 +92,24 @@ int	pci_mode_detect (void);
 /*
  * Functions provided to machine-independent PCI code.
  */
-void		pci_attach_hook (struct device *, struct device *, struct pcibus_attach_args *);
-int			pci_bus_maxdevs (pci_chipset_tag_t, int);
-pcitag_t	pci_make_tag (pci_chipset_tag_t, int, int, int);
-void		pci_decompose_tag (pci_chipset_tag_t, pcitag_t, int *, int *, int *);
-pcireg_t	pci_conf_read (pci_chipset_tag_t, pcitag_t, int);
-void		pci_conf_write (pci_chipset_tag_t, pcitag_t, int, pcireg_t);
-int			pci_intr_map (pci_chipset_tag_t, pcitag_t, int, int, pci_intr_handle_t *);
-const char	*pci_intr_string (pci_chipset_tag_t, pci_intr_handle_t);
-void		*pci_intr_establish (pci_chipset_tag_t, pci_intr_handle_t, int, int (*)(void *), void *);
-void		pci_intr_disestablish (pci_chipset_tag_t, void *);
-
+void		pci_attach_hook(struct device *, struct device *, struct pcibus_attach_args *);
+int			pci_bus_maxdevs(pci_chipset_tag_t, int);
+pcitag_t	pci_make_tag(pci_chipset_tag_t, int, int, int);
+void		pci_decompose_tag(pci_chipset_tag_t, pcitag_t, int *, int *, int *);
+pcireg_t	pci_conf_read(pci_chipset_tag_t, pcitag_t, int);
+void		pci_conf_write(pci_chipset_tag_t, pcitag_t, int, pcireg_t);
+int			pci_intr_map(pci_chipset_tag_t, pcitag_t, int, int, pci_intr_handle_t *);
+const char	*pci_intr_string(pci_chipset_tag_t, pci_intr_handle_t);
+void		*pci_intr_establish(pci_chipset_tag_t, pci_intr_handle_t, int, int (*)(void *), void *);
+void		pci_intr_disestablish(pci_chipset_tag_t, void *);
+void		pci_device_foreach(pci_chipset_tag_t, int, func_t, void *);
+void		pci_device_foreach_min(pci_chipset_tag_t, int, int, func_t, void *);
 /*
  * Compatibility functions, to map the old i386 PCI functions to the new ones.
  * NOT TO BE USED BY NEW CODE.
  */
-void		*pci_map_int (pcitag_t, int, int (*)(void *), void *);
-int			pci_map_io (pcitag_t, int, int *);
-int			pci_map_mem (pcitag_t, int, vm_offset_t *, vm_offset_t *);
+void		*pci_map_int(pcitag_t, int, int (*)(void *), void *);
+int			pci_map_io(pcitag_t, int, int *);
+int			pci_map_mem(pcitag_t, int, vm_offset_t *, vm_offset_t *);
 
 #endif /* _I386_PCI_MACHDEP_H_ */

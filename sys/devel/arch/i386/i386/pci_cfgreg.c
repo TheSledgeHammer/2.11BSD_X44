@@ -352,8 +352,7 @@ pcireg_cfgopen(void)
 	oldval1 = inl(CONF1_ADDR_PORT);
 
 	if (bootverbose) {
-		printf("pci_open(1):\tmode 1 addr port (0x0cf8) is 0x%08x\n",
-		    oldval1);
+		printf("pci_open(1):\tmode 1 addr port (0x0cf8) is 0x%08x\n", oldval1);
 	}
 
 	cfgmech = CFGMECH_1;
