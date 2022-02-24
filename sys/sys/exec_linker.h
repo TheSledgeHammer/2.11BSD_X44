@@ -108,10 +108,8 @@ struct exec_vmcmd_set {
 #define	EXEC_32			0x0020		/* 32-bit binary emulation */
 #define	EXEC_HASES		0x0040		/* don't update exec switch pointer */
 
-typedef int (*ev_proc_t)(struct exec_vmcmd *);
-
 struct exec_vmcmd {
-	ev_proc_t			ev_proc;
+	int					(*ev_proc)(struct exec_vmcmd *);
 	u_long         		ev_addr;
     u_long	           	ev_size;
     u_int	 			ev_prot;
@@ -153,12 +151,12 @@ int		check_exec(struct exec_linker *);
 int		exec_init(void);
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
 int 	exec_setup_stack(struct exec_linker *);
-void 	new_vmcmd(struct exec_vmcmd_set *, ev_proc_t, u_long, u_long, u_int, u_int, int, struct vnode *, u_long);
+void 	new_vmcmd(struct exec_vmcmd_set *, int (*proc)(struct exec_vmcmd *), u_long, u_long, u_int, u_int, int, struct vnode *, u_long);
 
-#define	NEW_VMCMD(evsp, elp, size, addr, prot, maxprot, vp, offset) 		\
-	new_vmcmd(evsp, elp, size, addr, prot, maxprot, 0, vp, offset)
-#define	NEW_VMCMD2(evsp, elp, size, addr, prot, maxprot, flags, vp, offset) \
-	new_vmcmd(evsp, elp, size, addr, prot, maxprot, flags, vp, offset)
+#define	NEW_VMCMD(evsp, proc, size, addr, prot, maxprot, vp, offset) 		\
+	new_vmcmd(evsp, proc, size, addr, prot, maxprot, 0, vp, offset)
+#define	NEW_VMCMD2(evsp, proc, size, addr, prot, maxprot, flags, vp, offset) \
+	new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vp, offset)
 #endif 	/* _KERNEL */
 
 #include <sys/exec_aout.h>

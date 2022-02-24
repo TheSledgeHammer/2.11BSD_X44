@@ -42,6 +42,8 @@
 #include <sys/exec_aout.h>
 #include <sys/resourcevar.h>
 
+#include <vm/include/vm_extern.h>
+
 int
 exec_aout_linker(elp)
 	struct exec_linker *elp;
@@ -50,7 +52,7 @@ exec_aout_linker(elp)
 	int error;
 
 	if (elp->el_hdrvalid < sizeof(struct exec)) {
-		return ENOEXEC;
+		return (ENOEXEC);
 	}
 
 	/*
@@ -85,7 +87,7 @@ exec_aout_linker(elp)
 		}
 	}
 	if (error)
-		kill_vmcmd(&elp->el_vmcmds);
+		kill_vmcmd(elp->el_vmcmds);
 	return (error);
 }
 
@@ -102,7 +104,7 @@ int
 exec_aout_prep_zmagic(elp)
 	struct exec_linker *elp;
 {
-	struct exec *a_out = (struct exec *) elp->el_image_hdr;
+	struct exec *a_out = (struct exec *)elp->el_image_hdr;
 
 	elp->el_taddr = USRTEXT;
 	elp->el_tsize = a_out->a_text;
@@ -111,18 +113,20 @@ exec_aout_prep_zmagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text */
-	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_text), elp->el_taddr,
-			(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
-			elp->el_vnodep, 0);
+	NEW_VMCMD(elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_text),
+			elp->el_taddr, (VM_PROT_READ | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_EXECUTE), elp->el_vnodep, 0);
 
 	/* set up for data segment */
-	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_data),
+	NEW_VMCMD(elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_data),
 			elp->el_daddr, (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), elp->el_vnodep, a_out->a_text);
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), elp->el_vnodep,
+			a_out->a_text);
 
 	/* set up for bss segment */
 	if (a_out->a_bss > 0) {
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, a_out->a_bss, elp->el_daddr + a_out->a_data,
+		NEW_VMCMD(elp->el_vmcmds, vmcmd_map_zero, a_out->a_bss,
+				elp->el_daddr + a_out->a_data,
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}
@@ -142,26 +146,27 @@ exec_aout_prep_nmagic(elp)
 
 	elp->el_taddr = USRTEXT;
 	elp->el_tsize = a_out->a_text;
-	elp->el_daddr = roundup((u_long)elp->el_taddr + a_out->a_text, (u_long)__LDPGSZ);
+	elp->el_daddr = roundup((u_long) elp->el_taddr + a_out->a_text,
+			(u_long) __LDPGSZ);
 	elp->el_dsize = a_out->a_data + a_out->a_bss;
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text */
-	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, a_out->a_text, elp->el_taddr,
+	NEW_VMCMD(elp->el_vmcmds, vmcmd_map_readvn, a_out->a_text, elp->el_taddr,
 			(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
 			elp->el_vnodep, sizeof(struct exec));
 
 	/* set up for data segment */
-	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, a_out->a_data, elp->el_daddr,
+	NEW_VMCMD(elp->el_vmcmds, vmcmd_map_readvn, a_out->a_data, elp->el_daddr,
 			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-			elp->el_vnodep, a_out->a_text + sizeof(struct exec));
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), elp->el_vnodep,
+			a_out->a_text + sizeof(struct exec));
 
 	/* set up for bss segment */
 	baddr = roundup(elp->el_daddr + a_out->a_data, NBPG);
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, bsize, baddr,
+		NEW_VMCMD(elp->el_vmcmds, vmcmd_map_zero, bsize, baddr,
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}
@@ -185,16 +190,16 @@ exec_aout_prep_omagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text and data segment */
-	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, a_out->a_text + a_out->a_data,
+	NEW_VMCMD(elp->el_vmcmds, vmcmd_map_readvn, a_out->a_text + a_out->a_data,
 			elp->el_taddr, (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-			elp->el_vnodep, sizeof(struct exec));
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), elp->el_vnodep,
+			sizeof(struct exec));
 
 	/* set up for bss segment */
-	baddr = roundup((u_long)elp->el_daddr + a_out->a_data, (u_long)NBPG);
+	baddr = roundup((u_long) elp->el_daddr + a_out->a_data, (u_long) NBPG);
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, bsize, baddr,
+		NEW_VMCMD(elp->el_vmcmds, vmcmd_map_zero, bsize, baddr,
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}

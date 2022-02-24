@@ -41,16 +41,18 @@
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/mman.h>
+#include <sys/stdbool.h>
 #include <sys/resourcevar.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_object.h>
 #include <vm/include/vm_pager.h>
+#include <vm/include/vm_param.h>
 
 void
 new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 	struct exec_vmcmd_set *evsp;
-	ev_proc_t proc;
+	int (*proc)(struct exec_vmcmd *);
 	u_long size, addr;
 	u_int prot, maxprot;
 	int flags;
