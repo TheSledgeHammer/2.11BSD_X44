@@ -273,7 +273,7 @@ typedef struct xcoff64_syms {
 } xcoff64_syms;
 
 /* XCOFF storage class constants */
-enum strclass {
+enum xcoff_strclass {
 	scC_EXT,
 	scC_WEAKEST,
 	scC_HIDEXT,

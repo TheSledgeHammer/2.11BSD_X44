@@ -51,6 +51,13 @@
 #include <vm/include/vm.h>
 
 #ifdef _KERNEL
+/* exec vmspace-creation command set; see below */
+struct exec_vmcmd_set {
+    u_int				    evs_cnt;
+	u_int			        evs_used;
+	struct exec_vmcmd     	*evs_cmds;
+};
+
 struct exec_linker {
 	const char 				*el_name;				/* file's name */
 	struct 	proc 		    *el_proc;			    /* our process struct */
@@ -59,7 +66,7 @@ struct exec_linker {
 
 	struct	vnode 		    *el_vnodep;			    /* executable's vnode */
 	struct	vattr 		    *el_attr;			    /* executable's attributes */
-	struct 	exec_vmcmd_set  *el_vmcmds;			    /* executable's vmcmd_set */
+	struct 	exec_vmcmd_set      el_vmcmds;			    /* executable's vmcmd_set */
 
 	struct 	nameidata		el_ndp;					/* executable's nameidata */
 
@@ -73,13 +80,13 @@ struct exec_linker {
 	segsz_t				    el_tsize;				/* size of process's text */
 	segsz_t				    el_dsize;				/* size of process's data(+bss) */
 	segsz_t				    el_ssize;				/* size of process's stack */
-	caddr_t				    el_taddr;				/* process's text address */
-	caddr_t				    el_daddr;				/* process's data(+bss) address */
+	u_long				    el_taddr;				/* process's text address */
+	u_long				    el_daddr;				/* process's data(+bss) address */
 	caddr_t				    el_maxsaddr;			/* proc's max stack addr ("top") */
 	caddr_t				    el_minsaddr;			/* proc's min stack addr ("bottom") */
-	caddr_t 			    el_entry;				/* process's entry point */
+	u_long	 			    el_entry;				/* process's entry point */
 	caddr_t				    el_entryoffset;			/* offset to entry point */
-	caddr_t			        el_vm_minaddr;			/* bottom of process address space */
+	caddr_t			            el_vm_minaddr;			/* bottom of process address space */
 	caddr_t				    el_vm_maxaddr;			/* top of process address space */
 	u_int				    el_flags;				/* flags */
 	int						el_fd;					/* a file descriptor we're holding */
@@ -90,13 +97,6 @@ struct exec_linker {
 	int 				    el_stringspace;			/* space left in tmp string storage area */
 	int 				    el_argc;				/* count of environment strings */
 	int						el_envc;				/* count of argument strings */
-};
-
-/* exec vmspace-creation command set; see below */
-struct exec_vmcmd_set {
-    u_int				    evs_cnt;
-	u_int			        evs_used;
-	struct exec_vmcmd     	*evs_cmds;
 };
 
 #define	EXEC_DEFAULT_VMCMD_SETSIZE	9	/* # of cmds in set to start */
@@ -149,12 +149,12 @@ int 	exec_setup_stack(struct exec_linker *);
 void 	*copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 void 	setregs(struct proc *, struct exec_linker *, u_long);
 int		check_exec(struct exec_linker *);
-int		exec_init(void);
+void	exec_init(void);
 void 	new_vmcmd(struct exec_vmcmd_set *, int (*)(struct proc *, struct exec_vmcmd *), u_long, u_long, u_int, u_int, int, struct vnode *, u_long);
 
 #define	NEW_VMCMD(evsp, proc, size, addr, prot, maxprot, vp, offset) 		\
 	new_vmcmd(evsp, proc, size, addr, prot, maxprot, 0, vp, offset)
-#define	NEW_VMCMD2(evsp, elp, size, addr, prot, maxprot, flags, vp, offset) \
+#define	NEW_VMCMD2(evsp, proc, size, addr, prot, maxprot, flags, vp, offset) \
 	new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vp, offset)
 #endif 	/* _KERNEL */
 

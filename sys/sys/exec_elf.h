@@ -753,10 +753,6 @@ typedef struct {
 #define	ELF_R_TYPE	ELF32_R_TYPE
 #define	ELFCLASS	ELFCLASS32
 
-#define	ELF_ST_BIND	ELF32_ST_BIND
-#define	ELF_ST_TYPE	ELF32_ST_TYPE
-#define	ELF_ST_INFO	ELF32_ST_INFO
-
 #define	AuxInfo		Aux32Info
 #elif defined(ELFSIZE) && (ELFSIZE == 64)
 #define	Elf_Ehdr	Elf64_Ehdr

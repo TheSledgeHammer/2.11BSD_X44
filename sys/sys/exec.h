@@ -82,7 +82,7 @@ struct execsw {
 	int					ex_prio;		/* entry priority */
 	int					ex_arglen;		/* Extra argument size in words */
 										/* Copy arguments on the new stack */
-	int					(*ex_copyargs)(struct exec_linker *, struct ps_strings *, void *, void *);
+	void					*(*ex_copyargs)(struct exec_linker *, struct ps_strings *, void *, void *);
 	int					(*ex_setup_stack)(struct exec_linker *);
 };
 

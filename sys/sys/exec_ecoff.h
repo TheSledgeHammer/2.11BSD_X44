@@ -118,7 +118,7 @@ struct ecoff_lsym {
 
 /* ECOFF external symbol entry */
 struct ecoff_esym {
-	struct	ecoff_lsyms es_lsym;		/* local symbol entry pointer */
+	struct	ecoff_lsym 		es_lsym;		/* local symbol entry pointer */
 	int32_t				es_value;		/* symbol address for most defined symbols */
 	int32_t				es_iss;			/* byte offset in external string table to symbol name. -1 if no name for symbol */
 	uint				es_type:6;		/* symbol type */
