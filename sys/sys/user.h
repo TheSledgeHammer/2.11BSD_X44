@@ -168,7 +168,7 @@ struct user {
 	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct user 		u;
 #endif
 #endif /* _SYS_USER_H_ */

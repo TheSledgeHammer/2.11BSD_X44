@@ -142,7 +142,7 @@ exec_aout_prep_nmagic(elp)
 
 	elp->el_taddr = USRTEXT;
 	elp->el_tsize = a_out->a_text;
-	elp->el_daddr = roundup(elp->el_taddr + a_out->a_text, __LDPGSZ);
+	elp->el_daddr = roundup((u_long)elp->el_taddr + a_out->a_text, (u_long)__LDPGSZ);
 	elp->el_dsize = a_out->a_data + a_out->a_bss;
 	elp->el_entry = a_out->a_entry;
 
@@ -191,7 +191,7 @@ exec_aout_prep_omagic(elp)
 			elp->el_vnodep, sizeof(struct exec));
 
 	/* set up for bss segment */
-	baddr = roundup(elp->el_daddr + a_out->a_data, NBPG);
+	baddr = roundup((u_long)elp->el_daddr + a_out->a_data, (u_long)NBPG);
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
 		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, bsize, baddr,

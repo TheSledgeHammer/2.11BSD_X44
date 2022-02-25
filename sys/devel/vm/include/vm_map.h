@@ -66,7 +66,7 @@
  *	Virtual memory map module definitions.
  */
 
-//#ifndef	_VM_MAP_
+#ifndef	_VM_MAP_
 #define	_VM_MAP_
 
 struct vm_map_clist;
@@ -218,7 +218,7 @@ typedef struct {
 #define MAX_KMAP	10
 #define	MAX_KMAPENT	500
 
-#ifdef KERNEL
+#ifdef _KERNEL
 bool_t		vm_map_check_protection (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t);
 int		 	vm_map_copy (vm_map_t, vm_map_t, vm_offset_t, vm_size_t, vm_offset_t, bool_t, bool_t);
 void		vm_map_copy_entry (vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t);

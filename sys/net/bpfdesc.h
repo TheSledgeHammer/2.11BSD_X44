@@ -93,6 +93,6 @@ struct bpf_if {
 	struct ifnet *bif_ifp;		/* correspoding interface */
 };
 
-#ifdef KERNEL
-int	 bpf_setf __P((struct bpf_d *, struct bpf_program *));
+#ifdef _KERNEL
+int	 bpf_setf(struct bpf_d *, struct bpf_program *);
 #endif

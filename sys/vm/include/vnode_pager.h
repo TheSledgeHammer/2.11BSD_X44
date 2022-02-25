@@ -38,8 +38,8 @@
  *	@(#)vnode_pager.h	8.1 (Berkeley) 6/11/93
  */
 
-#ifndef	_VNODE_PAGER_
-#define	_VNODE_PAGER_	1
+#ifndef	_VNODE_PAGER_H_
+#define	_VNODE_PAGER_H_	1
 
 /*
  * VNODE pager private data.
@@ -56,4 +56,4 @@ typedef struct vnpager	*vn_pager_t;
 #define	VNP_PAGING		0x01		/* vnode used for pageout */
 #define VNP_CACHED		0x02		/* vnode is cached */
 
-#endif	/* _VNODE_PAGER_ */
+#endif	/* _VNODE_PAGER_H_ */

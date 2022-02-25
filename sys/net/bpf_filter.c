@@ -57,7 +57,7 @@
 #define EXTRACT_SHORT(p)	be16dec(p)
 #define EXTRACT_LONG(p)		be32dec(p)
 
-#ifdef KERNEL
+#ifdef _KERNEL
 #include <sys/mbuf.h>
 #define MINDEX(m, k) 				\
 { 									\
@@ -182,7 +182,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		switch (pc->code) {
 
 		default:
-#ifdef KERNEL
+#ifdef _KERNEL
 			return 0;
 #else
 			abort();
@@ -197,7 +197,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		case BPF_LD|BPF_W|BPF_ABS:
 			k = pc->k;
 			if (k + sizeof(long) > buflen) {
-#ifdef KERNEL
+#ifdef _KERNEL
 				int merr;
 
 				if (buflen != 0)
@@ -221,7 +221,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		case BPF_LD|BPF_H|BPF_ABS:
 			k = pc->k;
 			if (k + sizeof(short) > buflen) {
-#ifdef KERNEL
+#ifdef _KERNEL
 				int merr;
 
 				if (buflen != 0)
@@ -238,7 +238,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		case BPF_LD|BPF_B|BPF_ABS:
 			k = pc->k;
 			if (k >= buflen) {
-#ifdef KERNEL
+#ifdef _KERNEL
 				register struct mbuf *m;
 
 				if (buflen != 0)
@@ -265,7 +265,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		case BPF_LD|BPF_W|BPF_IND:
 			k = X + pc->k;
 			if (k + sizeof(long) > buflen) {
-#ifdef KERNEL
+#ifdef _KERNEL
 				int merr;
 
 				if (buflen != 0)
@@ -289,7 +289,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		case BPF_LD|BPF_H|BPF_IND:
 			k = X + pc->k;
 			if (k + sizeof(short) > buflen) {
-#ifdef KERNEL
+#ifdef _KERNEL
 				int merr;
 
 				if (buflen != 0)
@@ -308,7 +308,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		case BPF_LD|BPF_B|BPF_IND:
 			k = X + pc->k;
 			if (k >= buflen) {
-#ifdef KERNEL
+#ifdef _KERNEL
 				register struct mbuf *m;
 
 				if (buflen != 0)
@@ -327,7 +327,7 @@ bpf_filter(pc, p, wirelen, buflen)
 		case BPF_LDX|BPF_MSH|BPF_B:
 			k = pc->k;
 			if (k >= buflen) {
-#ifdef KERNEL
+#ifdef _KERNEL
 				register struct mbuf *m;
 
 				if (buflen != 0)
@@ -484,7 +484,7 @@ bpf_filter(pc, p, wirelen, buflen)
 	}
 }
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * Return true if the 'fcode' is a valid filter program.
  * The constraints are that each jump be forward and to a valid

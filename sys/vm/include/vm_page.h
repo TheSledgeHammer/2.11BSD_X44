@@ -66,8 +66,8 @@
  *	Resident memory system definitions.
  */
 
-#ifndef	_VM_PAGE_
-#define	_VM_PAGE_
+#ifndef	_VM_PAGE_H_
+#define	_VM_PAGE_H_
 
 #include <sys/queue.h>
 
@@ -145,7 +145,7 @@ struct vm_page {
 #define	VM_PAGE_CHECK(mem)
 #endif /* VM_PAGE_DEBUG */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *
@@ -246,4 +246,4 @@ int		 	 vm_page_alloc_memory (vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, 
 void		 vm_page_free_memory (struct pglist *);
 
 #endif /* KERNEL */
-#endif /* !_VM_PAGE_ */
+#endif /* !_VM_PAGE_H_ */

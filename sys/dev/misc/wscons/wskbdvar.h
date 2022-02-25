@@ -43,7 +43,7 @@
 struct wskbd_accessops {
 	int		(*enable) (void *, int);
 	void    (*set_leds) (void *, int);
-	int     (*ioctl) (void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
+	int     (*ioctl) (void *, u_long, caddr_t, int, struct proc *);
 };
 
 /*
@@ -83,20 +83,20 @@ struct wskbddev_attach_args {
 /*
  * Autoconfiguration helper functions.
  */
-void	wskbd_cnattach (const struct wskbd_consops *, void *, const struct wskbd_mapdata *);
+void	wskbd_cnattach(const struct wskbd_consops *, void *, const struct wskbd_mapdata *);
 void	wskbd_cndetach(void);
-int		wskbddevprint (void *, const char *);
+int		wskbddevprint(void *, const char *);
 
 /*
  * Callbacks from the keyboard driver to the wskbd interface driver.
  */
-void	wskbd_input (struct device *kbddev, u_int type, int value);
+void	wskbd_input (struct device *, u_int, int);
 /* for WSDISPLAY_COMPAT_RAWKBD */
 void	wskbd_rawinput (struct device *, char *, int);
 
 /*
  * Console interface.
  */
-int		wskbd_cngetc (dev_t dev);
-void	wskbd_cnpollc (dev_t dev, int poll);
+int		wskbd_cngetc (dev_t);
+void	wskbd_cnpollc (dev_t, int);
 void	wskbd_cnbell (dev_t, u_int, u_int, u_int);

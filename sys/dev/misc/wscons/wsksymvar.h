@@ -71,10 +71,10 @@ struct wskbd_mapdata {
 /*
  * Utility functions.
  */
-void 		wskbd_get_mapentry (const struct wskbd_mapdata *, int, struct wscons_keymap *);
-void 		wskbd_init_keymap (int, struct wscons_keymap **, int *);
-int			wskbd_load_keymap (const struct wskbd_mapdata *, struct wscons_keymap **, int *);
-keysym_t 	wskbd_compose_value (keysym_t *);
+void 		wskbd_get_mapentry(const struct wskbd_mapdata *, int, struct wscons_keymap *);
+void 		wskbd_init_keymap(int, struct wscons_keymap **, int *);
+int			wskbd_load_keymap(const struct wskbd_mapdata *, struct wscons_keymap **, int *);
+keysym_t 	wskbd_compose_value(keysym_t *);
 
 #endif
 

@@ -58,8 +58,8 @@
 
 #include <vm/include/vm.h>
 
-static int change_dir (struct nameidata *ndp, struct proc *p);
-static void checkdirs (struct vnode *olddp);
+static int change_dir(struct nameidata *ndp, struct proc *p);
+static void checkdirs(struct vnode *olddp);
 
 /*
  * Virtual File System System Calls

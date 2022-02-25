@@ -66,8 +66,8 @@
  *	Machine independent virtual memory parameters.
  */
 
-#ifndef	_VM_PARAM_
-#define	_VM_PARAM_
+#ifndef	_VM_PARAM_H_
+#define	_VM_PARAM_H_
 
 #ifdef _KERNEL
 #include <sys/resourcevar.h>
@@ -90,7 +90,7 @@
 #define	PAGE_SIZE	cnt.v_page_size		/* size of page */
 #define	PAGE_MASK	page_mask			/* size of page - 1 */
 #define	PAGE_SHIFT	page_shift			/* bits to shift for pages */
-#ifdef KERNEL
+#ifdef _KERNEL
 extern vm_size_t	page_mask;
 extern int			page_shift;
 #endif
@@ -160,4 +160,4 @@ extern vm_offset_t	last_addr;	/* last physical page */
 
 #endif /* KERNEL */
 #endif /* ASSEMBLER */
-#endif /* _VM_PARAM_ */
+#endif /* _VM_PARAM_H_ */

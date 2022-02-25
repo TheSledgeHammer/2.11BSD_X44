@@ -66,8 +66,8 @@
  *	Virtual memory map inheritance definitions.
  */
 
-#ifndef	_VM_INHERIT_
-#define	_VM_INHERIT_
+#ifndef	_VM_INHERIT_H_
+#define	_VM_INHERIT_H_
 
 /*
  *	Enumeration of valid values for vm_inherit_t.
@@ -80,4 +80,4 @@
 
 #define VM_INHERIT_DEFAULT		VM_INHERIT_COPY
 
-#endif /* _VM_INHERIT_ */
+#endif /* _VM_INHERIT_H_ */

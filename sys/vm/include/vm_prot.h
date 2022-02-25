@@ -66,8 +66,8 @@
  *	Virtual memory protection definitions.
  */
 
-#ifndef	_VM_PROT_
-#define	_VM_PROT_
+#ifndef	_VM_PROT_H_
+#define	_VM_PROT_H_
 
 /*
  *	Types defined:
@@ -99,4 +99,4 @@ typedef int		vm_prot_t;
 
 #define VM_PROT_ALL		(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE)
 
-#endif /* _VM_PROT_ */
+#endif /* _VM_PROT_H_ */

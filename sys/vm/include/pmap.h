@@ -67,8 +67,8 @@
  *	section.  [For machine-dependent section, see "machine/pmap.h".]
  */
 
-#ifndef	_PMAP_VM_
-#define	_PMAP_VM_
+#ifndef	_PMAP_VM_H_
+#define	_PMAP_VM_H_
 
 /*
  * Each machine dependent implementation is expected to
@@ -84,7 +84,7 @@ typedef struct pmap_statistics	*pmap_statistics_t;
 
 #include <machine/pmap.h>
 
-#ifdef KERNEL
+#ifdef _KERNEL
 __BEGIN_DECLS
 void        pmap_bootstrap(/* machine dependent */);
 void        *pmap_bootstrap_alloc(u_long);
@@ -115,4 +115,4 @@ vm_offset_t pmap_phys_address(int);
 
 __END_DECLS
 #endif
-#endif /* _PMAP_VM_ */
+#endif /* _PMAP_VM_H_ */

@@ -68,7 +68,7 @@
 #ifndef _OVL_OBJECT_H_
 #define _OVL_OBJECT_H_
 
-#include <devel/vm/ovl/ovl.h>
+#include <devel/ovl/include/ovl.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
 
@@ -113,7 +113,7 @@ struct ovl_object_hash_entry {
 };
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct object_t				ovl_object_tree;				/* list of allocated objects */
 long						ovl_object_count;				/* count of all objects */
 simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
@@ -132,7 +132,7 @@ simple_lock_data_t			ovl_vobject_hash_lock;
 #define	ovl_object_lock(object)			simple_lock(&(object)->ovo_lock)
 #define	ovl_object_unlock(object)		simple_unlock(&(object)->ovo_lock)
 
-#ifdef KERNEL
+#ifdef _KERNEL
 ovl_object_t	ovl_object_allocate (vm_size_t);
 void		 	ovl_object_enter (ovl_object_t, vm_pager_t);
 void		 	ovl_object_init (vm_size_t);

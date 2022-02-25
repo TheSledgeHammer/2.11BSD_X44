@@ -50,7 +50,7 @@
 void
 new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 	struct exec_vmcmd_set *evsp;
-	int (*proc)(struct proc * p, struct exec_vmcmd *);
+	ev_proc_t proc;
 	u_long size, addr;
 	u_int prot, maxprot;
 	int flags;
@@ -59,20 +59,20 @@ new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 {
 	struct exec_linker *elp;
 	struct exec_vmcmd *vcp;
+
 	if (evsp->evs_used >= evsp->evs_cnt) {
 		vmcmdset_extend(evsp);
 	}
 	vcp = evsp->evs_cmds[evsp->evs_used++];
-	vcp->ev_proc = elp->el_proc;
+	vcp->ev_proc = proc;
 	vcp->ev_size = size;
 	vcp->ev_addr = addr;
 	vcp->ev_prot = prot;
 	vcp->ev_maxprot = maxprot;
 	vcp->ev_flags = flags;
 	if ((vcp->ev_vnodep = vnode) != NULL)
-		vrele(vcp->ev_vnodep);
+		vref(vnode);
 	vcp->ev_offset = offset;
-
 	elp->el_vmcmds = vcp;
 }
 
@@ -82,10 +82,10 @@ vmcmd_extend(evsp)
 {
 	struct exec_vmcmd *nvcp;
 	u_int ocnt;
-
+#ifdef DIAGNOSTIC
 	if (evsp->evs_used < evsp->evs_cnt)
 		panic("vmcmdset_extend: not necessary");
-
+#endif
 	ocnt = evsp->evs_cnt;
 	if ((ocnt = evsp->evs_cnt) != 0) {
 		evsp->evs_cnt += ocnt;
@@ -121,9 +121,9 @@ int
 vmcmd_map_pagedvn(elp)
 	struct exec_linker *elp;
 {
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
-	struct exec_vmcmd *cmd = elp->el_vmcmds->evs_cmds;
-	struct vnode *vp = elp->el_vnodep;
+	struct vmspace *vmspace;
+	struct exec_vmcmd *cmd;
+	struct vnode *vp;
 	struct pager_struct *vpgr;
 	struct vm_object *vobj;
 	int error;
@@ -132,6 +132,9 @@ vmcmd_map_pagedvn(elp)
 	/*
 	 * map the vnode in using vm_mmap.
 	 */
+	vmspace = elp->el_proc->p_vmspace;
+	cmd = elp->el_vmcmds->evs_cmds;
+	vp = elp->el_vnodep;
 
 	/* checks imported from vm_mmap, needed? */
 	if (cmd->ev_size == 0)
@@ -180,14 +183,17 @@ int
 vmcmd_map_readvn(elp)
 	struct exec_linker *elp;
 {
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
-	struct exec_vmcmd *cmd = elp->el_vmcmds->evs_cmds;
+	struct vmspace *vmspace;
+	struct exec_vmcmd *cmd;
 
 	int error;
 	long diff;
 
+	vmspace = elp->el_proc->p_vmspace;
+	cmd = elp->el_vmcmds->evs_cmds;
+
 	if (cmd->ev_size == 0)
-		return (0);
+		return (KERN_SUCCESS);
 
 	diff = cmd->ev_addr - trunc_page(cmd->ev_addr);
 	cmd->ev_addr -= diff;
@@ -197,27 +203,30 @@ vmcmd_map_readvn(elp)
 	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
 
 	if (error)
-		return error;
+		return (error);
 
-	return vmcmd_readvn(elp);
+	return (vmcmd_readvn(elp));
 }
 
 int
 vmcmd_readvn(elp)
 	struct exec_linker *elp;
 {
-	struct proc *p = elp->el_proc;
-	struct vmspace *vmspace = p->p_vmspace;
-	struct exec_vmcmd *cmd = elp->el_vmcmds->evs_cmds;
+	struct proc *p;
+	struct vmspace *vmspace;
+	struct exec_vmcmd *cmd;
 
 	int error;
 	vm_prot_t prot, maxprot;
 
+	p = elp->el_proc;
+	vmspace = p->p_vmspace;
+	cmd = elp->el_vmcmds->evs_cmds;
 	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t) cmd->ev_addr,
 			cmd->ev_size, cmd->ev_offset, UIO_USERSPACE, IO_UNIT, p->p_ucred,
 			NULL, p);
 	if (error)
-		return error;
+		return (error);
 
 	prot = cmd->ev_prot;
 	maxprot = VM_PROT_ALL;
@@ -226,14 +235,14 @@ vmcmd_readvn(elp)
 		error = vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr),
 				round_page(cmd->ev_addr + cmd->ev_size), maxprot, TRUE);
 		if (error)
-			return error;
+			return (error);
 	}
 
 	if (prot != maxprot) {
 		error = vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr),
 				round_page(cmd->ev_addr + cmd->ev_size), prot, FALSE);
 		if (error)
-			return error;
+			return (error);
 	}
 	return (0);
 }
@@ -247,13 +256,15 @@ int
 vmcmd_map_zero(elp)
 	struct exec_linker *elp;
 {
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
-	struct exec_vmcmd *cmd = elp->el_vmcmds->evs_cmds;
+	struct vmspace *vmspace;
+	struct exec_vmcmd *cmd;
 
 	int error;
 	long diff;
 	vm_prot_t prot, maxprot;
 
+	vmspace = elp->el_proc->p_vmspace;
+	cmd = elp->el_vmcmds->evs_cmds;
 	diff = cmd->ev_addr - trunc_page(cmd->ev_addr);
 	cmd->ev_addr -= diff; /* required by vm_map */
 	cmd->ev_size += diff;
@@ -263,7 +274,7 @@ vmcmd_map_zero(elp)
 
 	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
 
-	return error;
+	return (error);
 }
 
 /*
@@ -276,10 +287,14 @@ int
 vmcmd_create_vmspace(elp)
 	struct exec_linker *elp;
 {
-	struct proc *p = elp->el_proc;
-	struct vmspace *vmspace = p->p_vmspace;
-	struct exec_vmcmd *base_vcp = NULL;
+	struct proc *p;
+	struct vmspace *vmspace;
+	struct exec_vmcmd *base_vcp;
 	int error, i;
+
+	p = elp->el_proc;
+	vmspace = p->p_vmspace;
+	base_vcp = NULL;
 
 	/*  Now map address space */
 	vmspace->vm_tsize = btoc(elp->el_tsize);
@@ -326,7 +341,7 @@ vmcmd_create_vmspace(elp)
 	/* free the vmspace-creation commands, and release their references */
 	kill_vmcmds(&elp->el_vmcmds);
 	if (error) {
-		return error;
+		return (error);
 	} else {
 		return (0);
 	}
@@ -344,13 +359,13 @@ exec_read_from(p, vp, off, bf, size)
 	size_t resid;
 
 	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_cred, &resid, NULL)) != 0)
-		return error;
+		return (error);
 	/*
 	 * See if we got all of it
 	 */
 	if (resid != 0)
-		return ENOEXEC;
-	return 0;
+		return (ENOEXEC);
+	return (0);
 }
 
 /*

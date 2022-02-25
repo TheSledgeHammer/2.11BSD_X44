@@ -40,8 +40,8 @@
  *	@(#)vm.h	8.5 (Berkeley) 5/11/95
  */
 
-#ifndef VM_H
-#define VM_H
+#ifndef _VM_H_
+#define _VM_H_
 
 typedef char 				vm_inherit_t;		/* XXX: inheritance codes */
 
@@ -112,4 +112,4 @@ struct vmspace {
 	caddr_t 		vm_maxsaddr;	/* user VA at max stack growth */
 };
 
-#endif /* VM_H */
+#endif /* _VM_H_ */

@@ -43,8 +43,8 @@
  * For BSD we use a cleaner version of the internal pager interface.
  */
 
-#ifndef	_VM_PAGER_
-#define	_VM_PAGER_
+#ifndef	_VM_PAGER_H_
+#define	_VM_PAGER_H_
 
 TAILQ_HEAD(pagerlst, pager_struct);
 
@@ -100,7 +100,7 @@ struct pagerops {
 #define	VM_PAGER_ERROR	4
 #define VM_PAGER_AGAIN	5
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct pagerops *dfltpagerops;
 
 vm_pager_t	 vm_pager_allocate (int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
@@ -126,4 +126,4 @@ int		 	 vm_pager_get (vm_pager_t, vm_page_t, bool_t);
 int		 	 vm_pager_put (vm_pager_t, vm_page_t, bool_t);
 #endif
 
-#endif	/* _VM_PAGER_ */
+#endif	/* _VM_PAGER_H_ */

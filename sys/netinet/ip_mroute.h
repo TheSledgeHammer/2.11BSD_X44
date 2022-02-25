@@ -114,7 +114,7 @@ struct mrtctl {
 };
 
 
-#ifdef KERNEL
+#ifdef _KERNEL
 
 /*
  * The kernel's virtual-interface structure.

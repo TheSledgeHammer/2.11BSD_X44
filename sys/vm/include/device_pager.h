@@ -38,8 +38,8 @@
  *	@(#)device_pager.h	8.3 (Berkeley) 12/13/93
  */
 
-#ifndef	_DEVICE_PAGER_
-#define	_DEVICE_PAGER_	1
+#ifndef	_DEVICE_PAGER_H_
+#define	_DEVICE_PAGER_H_	1
 
 /*
  * Device pager private data.
@@ -50,4 +50,4 @@ struct devpager {
 };
 typedef struct devpager	*dev_pager_t;
 
-#endif	/* _DEVICE_PAGER_ */
+#endif	/* _DEVICE_PAGER_H_ */

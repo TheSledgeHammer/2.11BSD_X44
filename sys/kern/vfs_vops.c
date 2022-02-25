@@ -105,8 +105,8 @@ struct vnodeops default_vnodeops = {
 		.vop_vfree = vop_vfree,				/* vfree */
 		.vop_truncate = vop_truncate,		/* truncate */
 		.vop_update = vop_update,			/* update */
-		.vop_getpages = vop_getpages,			/* getpages */
-		.vop_putpages = vop_putpages,			/* putpages */
+		.vop_getpages = vop_getpages,		/* getpages */
+		.vop_putpages = vop_putpages,		/* putpages */
 		.vop_bwrite = vop_bwrite,			/* bwrite */
 };
 

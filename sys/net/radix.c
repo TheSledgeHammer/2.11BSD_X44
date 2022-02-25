@@ -38,7 +38,7 @@
  */
 #ifndef _RADIX_H_
 #include <sys/param.h>
-#ifdef	KERNEL
+#ifdef	_KERNEL
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #define	M_DONTWAIT M_NOWAIT
@@ -885,7 +885,7 @@ void
 rn_init()
 {
 	char *cp, *cplim;
-#ifdef KERNEL
+#ifdef _KERNEL
 	struct domain *dom;
 
 	for (dom = domains; dom; dom = dom->dom_next)

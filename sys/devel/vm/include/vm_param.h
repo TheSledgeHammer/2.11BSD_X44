@@ -66,8 +66,8 @@
  *	Machine independent virtual memory parameters.
  */
 
-#ifndef	_VM_PARAM_
-#define	_VM_PARAM_
+#ifndef	_VM_PARAM_H_
+#define	_VM_PARAM_H_
 
 #include <machine/vmparam.h>
 
@@ -80,7 +80,7 @@
 #define SEGMENT_SIZE 			cnt.v_segment_size		/* size of segment */
 #define SEGMENT_MASK			segment_mask			/* size of segment - 1 */
 #define	SEGMENT_SHIFT			segment_shift			/* bits to shift for segments */
-#ifdef KERNEL
+#ifdef _KERNEL
 extern vm_size_t				segment_mask;
 extern int						segment_shift;
 #endif
@@ -100,7 +100,7 @@ extern int						segment_shift;
 #define	PAGE_SIZE				cnt.v_page_size			/* size of page */
 #define	PAGE_MASK				page_mask				/* size of page - 1 */
 #define	PAGE_SHIFT				page_shift				/* bits to shift for pages */
-#ifdef KERNEL
+#ifdef _KERNEL_H_
 extern vm_size_t				page_mask;
 extern int						page_shift;
 #endif
@@ -137,7 +137,7 @@ extern int						page_shift;
 #define	KERN_NO_ACCESS			8
 
 #ifndef ASSEMBLER
-#ifdef KERNEL
+#ifdef _KERNEL
 
 /*
  *	Convert addresses to segments & pages and vice versa.

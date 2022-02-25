@@ -138,7 +138,7 @@ struct bpf_hdr {
  * will insist on inserting padding; hence, sizeof(struct bpf_hdr) won't work.
  * Only the kernel needs to know about it; applications use bh_hdrlen.
  */
-#ifdef KERNEL
+#ifdef _KERNEL
 #define SIZEOF_BPF_HDR 18
 #endif
 
@@ -230,23 +230,22 @@ struct bpf_insn {
 #define BPF_STMT(code, k) { (u_short)(code), 0, 0, k }
 #define BPF_JUMP(code, k, jt, jf) { (u_short)(code), jt, jf, k }
 
-#ifdef KERNEL
-int	 bpf_validate (struct bpf_insn *, int);
-int	 bpfopen (dev_t, int);
-int	 bpfclose (dev_t, int);
-int	 bpfread (dev_t, struct uio *);
-int	 bpfwrite (dev_t, struct uio *);
-int	 bpfioctl (dev_t, u_long, caddr_t, int);
-int	 bpf_select (dev_t, int, struct proc *);
-void	 bpf_tap (caddr_t, u_char *, u_int);
-void	 bpf_mtap (caddr_t, struct mbuf *);
-void	 bpfattach (caddr_t *, struct ifnet *, u_int, u_int);
-void	 bpfilterattach (int);
-u_int	 bpf_filter (struct bpf_insn *, u_char *, u_int, u_int);
+#ifdef _KERNEL
+int	 	bpf_validate (struct bpf_insn *, int);
+int	 	bpfopen (dev_t, int);
+int	 	bpfclose (dev_t, int);
+int	 	bpfread (dev_t, struct uio *);
+int	 	bpfwrite (dev_t, struct uio *);
+int	 	bpfioctl (dev_t, u_long, caddr_t, int);
+int		bpf_select (dev_t, int, struct proc *);
+void	bpf_tap (caddr_t, u_char *, u_int);
+void	bpf_mtap (caddr_t, struct mbuf *);
+void	bpfattach (caddr_t *, struct ifnet *, u_int, u_int);
+void	bpfilterattach (int);
+u_int	bpf_filter (struct bpf_insn *, u_char *, u_int, u_int);
 #endif
 
 /*
  * Number of scratch memory words (for BPF_LD|BPF_MEM and BPF_ST).
  */
 #define BPF_MEMWORDS 16
-

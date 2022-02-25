@@ -33,7 +33,7 @@ struct vmtotal;
 struct mount;
 struct vnode;
 
-#ifdef KERNEL
+#ifdef _KERNEL
 void			ovl_mem_init(void);
 vm_offset_t		omem_alloc(ovl_map_t, vm_size_t);
 void			omem_free(ovl_map_t, vm_offset_t, vm_size_t);

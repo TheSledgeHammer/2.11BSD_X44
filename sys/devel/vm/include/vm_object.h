@@ -66,8 +66,8 @@
  *	Virtual memory object module definitions.
  */
 
-#ifndef	VM_OBJECT_
-#define	VM_OBJECT_
+#ifndef	VM_OBJECT_H_
+#define	VM_OBJECT_H_
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
@@ -112,7 +112,7 @@ struct vm_object_hash_entry {
 };
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
-//#ifdef	KERNEL
+#ifdef	_KERNEL
 struct objectrbt;
 RB_HEAD(objectrbt, vm_object);
 //struct objectspt;
@@ -143,7 +143,7 @@ vm_object_t			kmem_object;
 #define	vm_object_sleep(event, object, interruptible) \
 			thread_sleep((event), &(object)->Lock, (interruptible))
 
-#ifdef KERNEL
+#ifdef _KERNEL
 vm_object_t	 vm_object_allocate (vm_size_t);
 void		 vm_object_cache_clear (void);
 void		 vm_object_cache_trim (void);
@@ -169,10 +169,8 @@ void		 vm_object_shadow (vm_object_t *, vm_offset_t *, vm_size_t);
 void		 vm_object_terminate (vm_object_t);
 
 
-/* XXX INTEREST: NetBSD: uvm_loan:
- * XXX
- */
+/* XXX INTEREST: NetBSD: uvm_loan: XXX */
 void		vm_object_copy_to_overlay();
 void		vm_object_copy_from_overlay();
 #endif
-#endif /* _VM_OBJECT_ */
+#endif /* _VM_OBJECT_H_ */

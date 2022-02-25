@@ -38,8 +38,8 @@
  *	@(#)swap_pager.h	8.1 (Berkeley) 6/11/93
  */
 
-#ifndef	_SWAP_PAGER_
-#define	_SWAP_PAGER_	1
+#ifndef	_SWAP_PAGER_H_
+#define	_SWAP_PAGER_H_	1
 
 /*
  * In the swap pager, the backing store for an object is organized as an
@@ -87,4 +87,4 @@ typedef struct swpager	*sw_pager_t;
 #define	SW_WANTED	0x01
 #define SW_NAMED	0x02
 
-#endif	/* _SWAP_PAGER_ */
+#endif	/* _SWAP_PAGER_H_ */

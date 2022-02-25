@@ -308,7 +308,7 @@ vm_amap_extend(entry, addsize)
 	amap_lock(amap); /* lock! */
 
 	AMAP_B2SLOT(slotmapped, entry->end - entry->start); /* slots mapped */
-	AMAP_B2SLOT(slotadd, addsize); /* slots to add */
+	AMAP_B2SLOT(slotadd, addsize); 						/* slots to add */
 	slotneed = slotoff + slotmapped + slotadd;
 
 	/*
