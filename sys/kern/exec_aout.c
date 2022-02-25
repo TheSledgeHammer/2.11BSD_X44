@@ -108,12 +108,12 @@ exec_aout_prep_zmagic(elp)
 
 	elp->el_taddr = USRTEXT;
 	elp->el_tsize = a_out->a_text;
-	elp->el_daddr = elp->el_taddr + a_out->a_text;
+	elp->el_daddr = elp->el_taddr + (caddr_t)a_out->a_text;
 	elp->el_dsize = a_out->a_data + a_out->a_bss;
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text */
-	NEW_VMCMD(elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_text),
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_text),
 			elp->el_taddr, (VM_PROT_READ | VM_PROT_EXECUTE),
 			(VM_PROT_READ | VM_PROT_EXECUTE), elp->el_vnodep, 0);
 

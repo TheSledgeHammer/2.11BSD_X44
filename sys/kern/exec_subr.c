@@ -52,14 +52,13 @@
 void
 new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 	struct exec_vmcmd_set *evsp;
-	int (*proc)(struct exec_vmcmd *);
+	int (*proc)(struct proc *, struct exec_vmcmd *);
 	u_long size, addr;
 	u_int prot, maxprot;
 	int flags;
 	struct vnode *vnode;
 	u_long offset;
 {
-	struct exec_linker *elp;
 	struct exec_vmcmd *vcp;
 
 	if (evsp->evs_used >= evsp->evs_cnt) {
@@ -75,7 +74,6 @@ new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 	if ((vcp->ev_vnodep = vnode) != NULL)
 		vref(vnode);
 	vcp->ev_offset = offset;
-	elp->el_vmcmds = vcp;
 }
 
 void
@@ -120,23 +118,22 @@ kill_vmcmd(evsp)
 }
 
 int
-vmcmd_map_pagedvn(elp)
-	struct exec_linker *elp;
+vmcmd_map_pagedvn(p, cmd)
+	struct proc *p;
+	struct exec_vmcmd *cmd;
 {
 	struct vmspace *vmspace;
-	struct exec_vmcmd *cmd;
 	struct vnode *vp;
-	struct pager_struct *vpgr;
 	struct vm_object *vobj;
+	struct pager_struct *vpgr;
 	int error;
 	vm_prot_t prot, maxprot;
 
 	/*
 	 * map the vnode in using vm_mmap.
 	 */
-	vmspace = elp->el_proc->p_vmspace;
-	cmd = elp->el_vmcmds->evs_cmds;
-	vp = elp->el_vnodep;
+	vmspace = p->p_vmspace;
+	vp = cmd->ev_vnodep;
 
 	/* checks imported from vm_mmap, needed? */
 	if (cmd->ev_size == 0)
@@ -164,7 +161,7 @@ vmcmd_map_pagedvn(elp)
 		vm_object_lock(vobj);
 		//vp->v_flag |= VMAPPED;
 		vm_object_unlock(vobj);
-		VOP_UNLOCK(vp, 0, elp->el_proc);
+		VOP_UNLOCK(vp, 0, p);
 	}
 
 	prot = cmd->ev_prot;
@@ -173,7 +170,7 @@ vmcmd_map_pagedvn(elp)
 	/*
 	 * do the map
 	 */
-	error = vm_mmap(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot, cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
+	error = vm_map(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot, cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
 	if (error) {
 		vobj->pager->pg_ops->pgo_dealloc(vpgr);
 	}
@@ -182,17 +179,15 @@ vmcmd_map_pagedvn(elp)
 }
 
 int
-vmcmd_map_readvn(elp)
-	struct exec_linker *elp;
+vmcmd_map_readvn(p, cmd)
+	struct proc *p;
+	struct exec_vmcmd *cmd;
 {
 	struct vmspace *vmspace;
-	struct exec_vmcmd *cmd;
-
 	int error;
 	long diff;
 
-	vmspace = elp->el_proc->p_vmspace;
-	cmd = elp->el_vmcmds->evs_cmds;
+	vmspace = p->p_vmspace;
 
 	if (cmd->ev_size == 0)
 		return (KERN_SUCCESS);
@@ -207,23 +202,20 @@ vmcmd_map_readvn(elp)
 	if (error)
 		return (error);
 
-	return (vmcmd_readvn(elp));
+	return (vmcmd_readvn(p, cmd));
 }
 
 int
-vmcmd_readvn(elp)
-	struct exec_linker *elp;
-{
+vmcmd_readvn(p, cmd)
 	struct proc *p;
-	struct vmspace *vmspace;
 	struct exec_vmcmd *cmd;
+{
+	struct vmspace *vmspace;
 
 	int error;
 	vm_prot_t prot, maxprot;
 
-	p = elp->el_proc;
 	vmspace = p->p_vmspace;
-	cmd = elp->el_vmcmds->evs_cmds;
 	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t) cmd->ev_addr,
 			cmd->ev_size, cmd->ev_offset, UIO_USERSPACE, IO_UNIT, p->p_ucred,
 			NULL, p);
@@ -255,18 +247,17 @@ vmcmd_readvn(elp)
  *	address range must be first allocated, then protected appropriately.
  */
 int
-vmcmd_map_zero(elp)
-	struct exec_linker *elp;
+vmcmd_map_zero(p, cmd)
+	struct proc *p;
+	struct exec_vmcmd *cmd;
 {
 	struct vmspace *vmspace;
-	struct exec_vmcmd *cmd;
 
 	int error;
 	long diff;
 	vm_prot_t prot, maxprot;
 
-	vmspace = elp->el_proc->p_vmspace;
-	cmd = elp->el_vmcmds->evs_cmds;
+	vmspace = p->p_vmspace;
 	diff = cmd->ev_addr - trunc_page(cmd->ev_addr);
 	cmd->ev_addr -= diff; /* required by vm_map */
 	cmd->ev_size += diff;
@@ -451,7 +442,7 @@ exec_extract_strings(elp, dp)
  * new arg and env vector tables. Return a pointer to the base
  * so that it can be used as the initial stack pointer.
  */
-int*
+int *
 exec_copyout_strings(elp, arginfo)
 	struct exec_linker *elp;
 	struct ps_strings *arginfo;
@@ -531,12 +522,13 @@ exec_setup_stack(elp)
 	noaccess_size = max_stack_size - access_size;
 
 	if (noaccess_size > 0) {
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, noaccess_size, noaccess_linear_min,
-				VM_PROT_NONE, VM_PROT_NONE, NULL, 0);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, noaccess_size,
+				noaccess_linear_min, VM_PROT_NONE, VM_PROT_NONE, NULL, 0);
 	}
 
 	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, access_size, noaccess_linear_min,
-			(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
+			(VM_PROT_READ | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 
 	return (0);
 }
