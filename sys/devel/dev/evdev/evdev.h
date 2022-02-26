@@ -37,6 +37,8 @@
 
 struct evdev_dev;
 
+//typedef int	 (evdev_open_t)();
+//typedef int	 (evdev_close_t)();
 typedef void (evdev_event_t)(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 typedef void (evdev_keycode_t)(struct evdev_dev *, struct input_keymap_entry *);
 
@@ -88,16 +90,24 @@ extern int evdev_sysmouse_t_axis;
 #define	EVDEV_FLAG_MAX			0x1F
 #define	EVDEV_FLAG_CNT			(EVDEV_FLAG_MAX + 1)
 
+struct evdev_methods {
+	//evdev_open_t				*ev_open;
+	//evdev_close_t				*ev_close;
+	evdev_event_t				*ev_event;
+	evdev_keycode_t				*ev_set_keycode;
+	evdev_keycode_t 			*ev_get_keycode;
+};
+
 /* Input device interface: */
-//struct evdev_dev *evdev_alloc(void);
-//void evdev_free(struct evdev_dev *);
+struct evdev_dev *evdev_alloc(void);
+void evdev_free(struct evdev_dev *);
 void evdev_set_name(struct evdev_dev *, const char *);
 void evdev_set_id(struct evdev_dev *, uint16_t, uint16_t, uint16_t, uint16_t);
 void evdev_set_phys(struct evdev_dev *, const char *);
 void evdev_set_serial(struct evdev_dev *, const char *);
-//void evdev_set_methods(struct evdev_dev *, void *, const struct evdev_methods *);
+void evdev_set_methods(struct evdev_dev *, void *, const struct evdev_methods *);
 int evdev_register(struct evdev_dev *);
-//int evdev_register_mtx(struct evdev_dev *, struct mtx *);
+int evdev_register_mtx(struct evdev_dev *, struct lock *);
 int evdev_unregister(struct evdev_dev *);
 int evdev_push_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 void evdev_support_prop(struct evdev_dev *, uint16_t);
@@ -112,7 +122,6 @@ void evdev_support_sw(struct evdev_dev *, uint16_t);
 void evdev_set_repeat_params(struct evdev_dev *, uint16_t, int);
 int evdev_set_report_size(struct evdev_dev *, size_t);
 void evdev_set_flag(struct evdev_dev *, uint16_t);
-//void *evdev_get_softc(struct evdev_dev *);
 
 /* Multitouch related functions: */
 int32_t evdev_get_mt_slot_by_tracking_id(struct evdev_dev *, int32_t);
@@ -189,7 +198,6 @@ evdev_push_snd(struct evdev_dev *evdev, uint16_t code, int32_t value)
 static __inline int
 evdev_push_sw(struct evdev_dev *evdev, uint16_t code, int32_t value)
 {
-
 	return (evdev_push_event(evdev, EV_SW, code, value != 0));
 }
 

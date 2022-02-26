@@ -275,11 +275,11 @@ ksym_upcase(ksym)
 	if (ksym >= KS_f1 && ksym <= KS_f20)
 		return(KS_F1 - KS_f1 + ksym);
 
-	if (KS_GROUP(ksym) == KS_GROUP_Ascii && ksym <= 0xff &&
-	    latin1_to_upper[ksym] != 0x00)
-		return(latin1_to_upper[ksym]);
+	if (KS_GROUP(ksym) == KS_GROUP_Ascii && ksym <= 0xff
+			&& latin1_to_upper[ksym] != 0x00)
+		return (latin1_to_upper[ksym]);
 
-	return(ksym);
+	return (ksym);
 }
 
 static void
@@ -472,5 +472,5 @@ wskbd_load_keymap(mapdata, map, maplen)
 		}
 	}
 
-	return(0);
+	return (0);
 }

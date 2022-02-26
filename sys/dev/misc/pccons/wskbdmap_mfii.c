@@ -507,7 +507,7 @@ static const keysym_t pckbd_keydesc_iopener[] = {
     KC(67),  KS_Cmd_Screen7,	KS_f8,
     KC(68),  KS_Cmd_Screen8,	KS_f9,
     KC(87),  KS_Cmd_Screen9,	KS_f10,
-    KC(88), 			KS_f11,
+    KC(88), 					KS_f11,
 };
 
 #define KBD_MAP(name, base, map) \
@@ -548,10 +548,8 @@ const struct wscons_keydesc pckbd_keydesctab[] = {
 	KBD_NULLMAP(KB_DE | KB_MACHDEP,	KB_DE),
 	KBD_NULLMAP(KB_FR | KB_MACHDEP,	KB_FR),
 	KBD_NULLMAP(KB_JP | KB_MACHDEP,	KB_JP),
-	KBD_NULLMAP(KB_US | KB_MACHDEP | KB_SWAPCTRLCAPS,
-		    KB_US | KB_SWAPCTRLCAPS),
-	KBD_NULLMAP(KB_JP | KB_MACHDEP | KB_SWAPCTRLCAPS,
-		    KB_JP | KB_SWAPCTRLCAPS),
+	KBD_NULLMAP(KB_US | KB_MACHDEP | KB_SWAPCTRLCAPS, KB_US | KB_SWAPCTRLCAPS),
+	KBD_NULLMAP(KB_JP | KB_MACHDEP | KB_SWAPCTRLCAPS, KB_JP | KB_SWAPCTRLCAPS),
 
 	{0, 0, 0, 0}
 };

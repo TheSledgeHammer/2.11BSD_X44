@@ -57,7 +57,7 @@
 
 #define	DEF_RING_REPORTS	8
 
-CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
+CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_client));
 CFOPS_DECL(evdev, evdev_match, evdev_attach, evdev_detach, evdev_activate);
 
 extern struct cfdriver evdev_cd;
@@ -94,13 +94,13 @@ evdev_match(struct device *parent, struct cfdata *match, void *aux)
 void
 evdev_attach(struct device *parent, struct device *self, void *aux)
 {
-	struct evdev_softc *sc = (struct evdev_softc *)self;
+	struct evdev_client *sc = (struct evdev_client *)self;
 	struct evdev_dev *evdev = aux;
 	int ret;
 
 	/* Initialize internal structures */
 	sc->sc_evdev = evdev;
-	evdev->ev_softc = sc;
+	evdev->ev_client = sc;
 
 	ret = evdev_register(evdev);
 	if (ret != 0) {
@@ -111,7 +111,7 @@ evdev_attach(struct device *parent, struct device *self, void *aux)
 int
 evdev_activate(struct device *self, enum devact act)
 {
-	struct evdev_softc *sc = (struct evdev_softc *)self;
+	struct evdev_client *sc = (struct evdev_client *)self;
 	if (act == DVACT_DEACTIVATE)
 		sc->sc_dying = 1;
 	return (0);
@@ -120,7 +120,7 @@ evdev_activate(struct device *self, enum devact act)
 int
 evdev_detach(struct device *self, int flags)
 {
-	struct evdev_softc *sc = (struct evdev_softc *)self;
+	struct evdev_client *sc = (struct evdev_client *)self;
 	struct evdev_dev *evdev;
 	struct wseventvar *evar;
 	int maj, mn;
@@ -168,13 +168,13 @@ evdev_open(dev, flags, fmt, p)
 	struct proc *p;
 {
 	struct evdev_dev 	*evdev;
-	struct evdev_softc 	*sc;
+	struct evdev_client 	*sc;
 	struct wseventvar 	*evar;
 	size_t buffer_size;
 	int error, ret, unit;
 
 	unit = minor(dev);
-	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	sc = (struct evdev_client*) evdev_cd.cd_devs[unit];
 
 	if(unit >= evdev_cd.cd_devs || sc == NULL) {
 		return (ENXIO);
@@ -204,7 +204,7 @@ evdev_open(dev, flags, fmt, p)
 
 static int
 evdev_doopen(sc, evdev, evp)
-	struct evdev_softc 	*sc;
+	struct evdev_client 	*sc;
 	struct evdev_dev 	*evdev;
 	struct wseventvar 	*evp;
 {
@@ -244,13 +244,13 @@ evdev_read(dev, uio, flags)
 	struct uio *uio;
 	int flags;
 {
-	struct evdev_softc *sc;
+	struct evdev_client *sc;
 	struct wseventvar *evp;
 	int ret;
 	int unit;
 
 	unit = minor(dev);
-	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	sc = (struct evdev_client*) evdev_cd.cd_devs[unit];
 	evp = sc->sc_base.me_evp;
 
 	if (evp->revoked)
@@ -268,7 +268,7 @@ evdev_read(dev, uio, flags)
 
 static int
 evdev_doread(sc, evp, uio, flags)
-	struct evdev_softc *sc;
+	struct evdev_client *sc;
 	struct wseventvar 	*evp;
 	struct uio 			*uio;
 	int 				flags;
@@ -314,13 +314,13 @@ evdev_write(dev, uio, flags)
 	int flags;
 {
 	struct evdev_dev 	*evdev;
-	struct evdev_softc 	*sc;
+	struct evdev_client 	*sc;
 	struct wseventvar 	*evar;
 	struct input_event 	event;
 	int unit, error;
 
 	unit = minor(dev);
-	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	sc = (struct evdev_client*) evdev_cd.cd_devs[unit];
 	evdev = sc->sc_evdev;
 	evar = sc->sc_base.me_evp;
 
@@ -365,7 +365,7 @@ evdev_poll(dev, events, p)
 	int events;
 	struct proc *p;
 {
-	struct evdev_softc *sc = evdev_cd.cd_devs[minor(dev)];
+	struct evdev_client *sc = evdev_cd.cd_devs[minor(dev)];
 	int ret;
 
 	if (sc->sc_base.me_evp == NULL)
@@ -386,7 +386,7 @@ evdev_kqfilter(dev, kn)
 	dev_t dev;
 	struct knote *kn;
 {
-	struct evdev_softc *sc = evdev_cd.cd_devs[minor(dev)];
+	struct evdev_client *sc = evdev_cd.cd_devs[minor(dev)];
 
 	if (sc->sc_base.me_evp == NULL)
 		return (EINVAL);
@@ -406,7 +406,7 @@ evdev_ioctl(dev, cmd, data, fflag, p)
 
 static int
 evdev_do_ioctl(sc, cmd, data, fflag, p)
-	struct evdev_softc *sc;
+	struct evdev_client *sc;
 	int cmd;
 	caddr_t data;
 	int fflag;
@@ -495,7 +495,7 @@ evdev_do_ioctl(sc, cmd, data, fflag, p)
 		return (0);
 
 	case EVIOCGKEYCODE_V2:
-		if((evdev->ev_softc != sc || evdev->ev_softc == NULL) && sc->sc_get_keycode  == NULL) {
+		if((evdev->ev_client != sc || evdev->ev_client == NULL) && sc->sc_get_keycode  == NULL) {
 			return (ENOTSUP);
 		}
 		ke = (struct input_keymap_entry*) data;
@@ -507,7 +507,7 @@ evdev_do_ioctl(sc, cmd, data, fflag, p)
 		return (0);
 
 	case EVIOCSKEYCODE_V2:
-		if ((evdev->ev_softc != sc || evdev->ev_softc == NULL) && sc->sc_set_keycode == NULL) {
+		if ((evdev->ev_client != sc || evdev->ev_client == NULL) && sc->sc_set_keycode == NULL) {
 			return (ENOTSUP);
 		}
 		ke = (struct input_keymap_entry*) data;
@@ -730,41 +730,41 @@ evdev_ioctl_eviocgbit(evdev, type, len, data, p)
 static void
 evdev_set_keycode(struct evdev_dev *evdev, struct input_keymap_entry *ike)
 {
-	evdev_set_keycode_sc(evdev->ev_softc, evdev, ike);
+	evdev_set_keycode_sc(evdev->ev_client, evdev, ike);
 }
 
 static void
 evdev_get_keycode(struct evdev_dev *evdev, struct input_keymap_entry *ike)
 {
-	evdev_get_keycode_sc(evdev->ev_softc, evdev, ike);
+	evdev_get_keycode_sc(evdev->ev_client, evdev, ike);
 }
 
 static void
-evdev_set_keycode_sc(struct evdev_softc *sc, struct evdev_dev *evdev, struct input_keymap_entry *ike)
+evdev_set_keycode_sc(struct evdev_client *sc, struct evdev_dev *evdev, struct input_keymap_entry *ike)
 {
-	sc->sc_set_keycode(evdev, ike);
+	sc->sc_methods->ev_set_keycode(evdev, ike);
 }
 
 static void
-evdev_get_keycode_sc(struct evdev_softc *sc, struct evdev_dev *evdev, struct input_keymap_entry *ike)
+evdev_get_keycode_sc(struct evdev_client *sc, struct evdev_dev *evdev, struct input_keymap_entry *ike)
 {
-	sc->sc_get_keycode(evdev, ike);
+	sc->sc_methods->ev_get_keycode(evdev, ike);
 }
 
 void
 evdev_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
-	evdev_event_sc(evdev->ev_softc, evdev, type, code, value);
+	evdev_event_sc(evdev->ev_client, evdev, type, code, value);
 }
 
 static void
-evdev_event_sc(struct evdev_softc *sc, struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
+evdev_event_sc(struct evdev_client *sc, struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
-	sc->sc_event(evdev, type, code, value);
+	sc->sc_methods->ev_event(evdev, type, code, value);
 }
 
 struct wseventvar *
-evdev_register_wsevent(struct evdev_softc *sc, struct proc *p)
+evdev_register_wsevent(struct evdev_client *sc, struct proc *p)
 {
 	struct wseventvar *evar;
 
@@ -781,7 +781,7 @@ evdev_register_wsevent(struct evdev_softc *sc, struct proc *p)
 }
 
 void
-evdev_unregister_wsevent(struct evdev_softc *sc)
+evdev_unregister_wsevent(struct evdev_client *sc)
 {
 	struct wseventvar *evar;
 
@@ -829,7 +829,7 @@ evdev_wsevent_inject(struct wseventvar *ev, struct input_event *events, size_t n
 }
 
 void
-evdev_revoke_client(struct evdev_softc *sc)
+evdev_revoke_client(struct evdev_client *sc)
 {
 	struct wseventvar *evar;
 
@@ -841,7 +841,7 @@ evdev_revoke_client(struct evdev_softc *sc)
 }
 
 void
-evdev_notify_event(struct evdev_softc *sc)
+evdev_notify_event(struct evdev_client *sc)
 {
 	struct wseventvar *evar;
 
@@ -866,7 +866,7 @@ evdev_notify_event(struct evdev_softc *sc)
 }
 
 static void
-evdev_client_filter_queue(struct evdev_softc *sc, uint16_t type)
+evdev_client_filter_queue(struct evdev_client *sc, uint16_t type)
 {
 	struct input_event 	*event;
 	struct wseventvar 	*ev;

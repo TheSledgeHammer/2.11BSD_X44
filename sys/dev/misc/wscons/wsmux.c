@@ -150,6 +150,7 @@ struct wssrcops wsmux_srcops = {
 void
 wsmuxattach(int n)
 {
+
 }
 
 /* Keep track of all muxes that have been allocated */

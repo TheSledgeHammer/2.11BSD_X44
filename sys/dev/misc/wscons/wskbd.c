@@ -131,8 +131,7 @@ struct wskbd_internal {
 	keysym_t 						t_composebuf[2];
 	int 							t_flags;
 #define WSKFL_METAESC 				1
-
-#define MAXKEYSYMSPERKEY 			2 /* ESC <key> at max */
+#define MAXKEYSYMSPERKEY 			2 					/* ESC <key> at max */
 	keysym_t 						t_symbols[MAXKEYSYMSPERKEY];
 
 	struct wskbd_softc 				*t_sc;				/* back pointer */

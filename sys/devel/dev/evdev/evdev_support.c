@@ -65,7 +65,7 @@ bit_change(bitstr_t *bitstr, int bit, int value)
 		bit_clear(bitstr, bit);
 }
 
-/*
+
 struct evdev_dev *
 evdev_alloc(void)
 {
@@ -75,20 +75,20 @@ evdev_alloc(void)
 void
 evdev_free(struct evdev_dev *evdev)
 {
+	struct evdev_client *client;
 	if (evdev) {
-		if (evdev->ev_cdev != NULL && evdev->ev_cdev->si_drv1 != NULL)
-			evdev_unregister(evdev);
+		client = evdev->ev_client;
+		if (client != NULL && client->sc_base.me_dv != NULL)
+			evdev_unregister(evdev, client);
 		free(evdev, M_EVDEV);
 	}
 }
-*/
 
 static struct input_absinfo *
 evdev_alloc_absinfo(void)
 {
 	return (malloc(sizeof(struct input_absinfo) * ABS_CNT, M_EVDEV, M_WAITOK | M_ZERO));
 }
-
 
 static void
 evdev_free_absinfo(struct input_absinfo *absinfo)
@@ -226,7 +226,7 @@ evdev_register_mtx(struct evdev_dev *evdev, struct lock *mtx)
 }
 
 int
-evdev_unregister(struct evdev_dev *evdev, struct evdev_softc *softc)
+evdev_unregister(struct evdev_dev *evdev, struct evdev_client *softc)
 {
 	debugf(evdev, "%s: unregistered evdev provider: %s\n", evdev->ev_shortname, evdev->ev_name);
 
@@ -281,6 +281,17 @@ evdev_set_serial(struct evdev_dev *evdev, const char *serial)
 {
 
 	snprintf(evdev->ev_serial, NAMELEN, "%s", serial);
+}
+
+inline void
+evdev_set_methods(struct evdev_dev *evdev, void *softc, const struct evdev_methods *methods)
+{
+	struct evdev_client *client;
+
+	client = (struct evdev_client *)softc;
+	client->sc_methods = methods;
+	client->sc_evdev = evdev;
+	evdev->ev_client = client;
 }
 
 inline void
@@ -648,13 +659,13 @@ evdev_sparse_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 static void
 evdev_propagate_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_t value)
 {
-	struct evdev_softc *client;
+	struct evdev_client *client;
 
 	debugf(evdev, "%s pushed event %d/%d/%d",
 			evdev->ev_shortname, type, code, value);
 
 	/* Propagate event through all clients */
-	client = evdev->ev_softc;
+	client = evdev->ev_client;
 	if (evdev->ev_grabber != NULL && evdev->ev_grabber != client)
 		continue;
 	EVDEV_CLIENT_LOCKQ(client);
@@ -742,7 +753,7 @@ evdev_inject_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 	case EV_MSC:
 	case EV_SND:
 	case EV_FF:
-		if (evdev->ev_softc != NULL && evdev->ev_softc->sc_event != NULL)
+		if (evdev->ev_client != NULL && evdev->ev_client->sc_event != NULL)
 			evdev_event(evdev, type, code, value);
 		/*
 		 * Leds and driver repeats should be reported in ev_event
@@ -770,7 +781,7 @@ push:
 }
 
 int
-evdev_register_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+evdev_register_client(struct evdev_dev *evdev, struct evdev_client *sc)
 {
 	int ret = 0;
 
@@ -778,8 +789,8 @@ evdev_register_client(struct evdev_dev *evdev, struct evdev_softc *sc)
 
 	evdev = sc->sc_evdev;
 	KASSERT(evdev);
-	evdev->ev_softc = sc;
-	if(evdev->ev_softc != NULL) {
+	evdev->ev_client = sc;
+	if(evdev->ev_client != NULL) {
 		debugf(evdev, "calling ev_open() on device %s", evdev->ev_shortname);
 		return (0);
 	}
@@ -788,7 +799,7 @@ evdev_register_client(struct evdev_dev *evdev, struct evdev_softc *sc)
 }
 
 void
-evdev_dispose_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+evdev_dispose_client(struct evdev_dev *evdev, struct evdev_client *sc)
 {
 	debugf(evdev, "removing client for device %s", evdev->ev_shortname);
 
@@ -801,7 +812,7 @@ evdev_dispose_client(struct evdev_dev *evdev, struct evdev_softc *sc)
 }
 
 int
-evdev_grab_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+evdev_grab_client(struct evdev_dev *evdev, struct evdev_client *sc)
 {
 	KASSERT(evdev);
 
@@ -813,7 +824,7 @@ evdev_grab_client(struct evdev_dev *evdev, struct evdev_softc *sc)
 }
 
 int
-evdev_release_client(struct evdev_dev *evdev, struct evdev_softc *sc)
+evdev_release_client(struct evdev_dev *evdev, struct evdev_client *sc)
 {
 	KASSERT(evdev);
 

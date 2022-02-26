@@ -41,9 +41,9 @@
  * with these functions, which is passed to them when they are invoked.
  */
 struct wskbd_accessops {
-	int		(*enable) (void *, int);
-	void    (*set_leds) (void *, int);
-	int     (*ioctl) (void *, u_long, caddr_t, int, struct proc *);
+	int		(*enable)(void *, int);
+	void    (*set_leds)(void *, int);
+	int     (*ioctl)(void *, u_long, caddr_t, int, struct proc *);
 };
 
 /*
@@ -53,8 +53,8 @@ struct wskbd_accessops {
  * with these functions, which is passed to them when they are invoked.
  */
 struct wskbd_consops {
-	void    (*getc) (void *, u_int *, int *);
-	void    (*pollc) (void *, int);
+	void    (*getc)(void *, u_int *, int *);
+	void    (*pollc)(void *, int);
 	void	(*bell)(void *, u_int, u_int, u_int);
 };
 

@@ -50,7 +50,7 @@
  */
 _Static_assert(sizeof(bitstr_t) == sizeof(unsigned long), "bitstr_t size mismatch");
 
-struct evdev_softc;
+struct evdev_client;
 struct evdev_mt;
 
 #define	CURRENT_MT_SLOT(evdev)	((evdev)->ev_absinfo[ABS_MT_SLOT].value)
@@ -108,7 +108,7 @@ struct evdev_dev {
 	struct lock					ev_lock;			/* Internal state lock */
 	struct lock_object			ev_mtx;
 	struct input_id				ev_id;
-	struct evdev_softc 			*ev_grabber;						/* (s) */
+	struct evdev_client 		*ev_grabber;						/* (s) */
 	size_t						ev_report_size;
 
 	/* Supported features: */
@@ -148,7 +148,7 @@ struct evdev_dev {
 	uint64_t					ev_report_count;					/* (s) */
 
 	/* Parent driver callbacks: */
-	struct evdev_softc 			*ev_softc; 			/* softc callback */
+	struct evdev_client 		*ev_client; 			/* client callback */
 };
 
 #define	EVDEV_LOCK(evdev)			lockmgr((evdev)->ev_lock, LK_EXCLUSIVE, NULL)  //simple_lock((evdev)->ev_lock)
@@ -165,14 +165,12 @@ struct evdev_dev {
 		EVDEV_UNLOCK(evdev);						\
 } while (0)
 
-struct evdev_softc {
+struct evdev_client {
 	struct evdev_dev 			*sc_evdev;			/* evdev pointer */
 	struct wsevsrc				sc_base;			/* evdev to wscons events */
 
 	struct lock					sc_buffer_lock;
 	size_t						sc_buffer_size;
-	//size_t						sc_buffer_head;		/* (q) */
-	//size_t						sc_buffer_tail;		/* (q) */
 	size_t						sc_buffer_ready;	/* (q) */
 
 	enum evdev_clock_id			sc_clock_id;
@@ -183,42 +181,30 @@ struct evdev_softc {
 	struct input_event			sc_buffer[];
 
 	/* evdev methods */
-	evdev_keycode_t				*sc_set_keycode;
-	evdev_keycode_t 			*sc_get_keycode;
-	evdev_event_t				*sc_event;
+	const struct evdev_methods	*sc_methods;
 };
 
 #define	EVDEV_CLIENT_LOCKQ(client)			lockmgr((client)->sc_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL)
 #define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr((client)->sc_buffer_lock, LK_RELEASE, NULL)
 #define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus((client)->sc_buffer_lock) != 0)
 #define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->sc_base.me_evp)
-//#define	EVDEV_CLIENT_SIZEQ(client) 			\
-	((client)->sc_buffer_ready + (client)->sc_buffer_size
-/*
-#define	EVDEV_CLIENT_EMPTYQ(client) 							\
-    ((client)->sc_buffer_head == (client)->sc_buffer_ready)
-#define	EVDEV_CLIENT_SIZEQ(client) 								\
-    (((client)->sc_buffer_ready + (client)->sc_buffer_size - 	\
-      (client)->sc_buffer_head) % (client)->sc_buffer_size)
-*/
+
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 int 	evdev_inject_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
-//int 	evdev_cdev_create(struct evdev_dev *);
-//int 	evdev_cdev_destroy(struct evdev_dev *);
 bool_t 	evdev_event_supported(struct evdev_dev *, uint16_t);
 void 	evdev_set_abs_bit(struct evdev_dev *, uint16_t);
 void 	evdev_set_absinfo(struct evdev_dev *, uint16_t, struct input_absinfo *);
 void 	evdev_restore_after_kdb(struct evdev_dev *);
 
 /* Client interface: */
-int 	evdev_register_client(struct evdev_dev *, struct evdev_softc *);
-void 	evdev_dispose_client(struct evdev_dev *, struct evdev_softc *);
-int 	evdev_grab_client(struct evdev_dev *, struct evdev_softc *);
-int 	evdev_release_client(struct evdev_dev *, struct evdev_softc *);
-void 	evdev_client_push(struct evdev_softc *, uint16_t, uint16_t, int32_t);
-void 	evdev_notify_event(struct evdev_softc *);
-void 	evdev_revoke_client(struct evdev_softc *);
+int 	evdev_register_client(struct evdev_dev *, struct evdev_client *);
+void 	evdev_dispose_client(struct evdev_dev *, struct evdev_client *);
+int 	evdev_grab_client(struct evdev_dev *, struct evdev_client *);
+int 	evdev_release_client(struct evdev_dev *, struct evdev_client *);
+void 	evdev_client_push(struct evdev_client *, uint16_t, uint16_t, int32_t);
+void 	evdev_notify_event(struct evdev_client *);
+void 	evdev_revoke_client(struct evdev_client *);
 
 /* Multitouch related functions: */
 void 	evdev_mt_init(struct evdev_dev *);
