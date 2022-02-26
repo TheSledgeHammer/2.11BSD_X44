@@ -303,19 +303,19 @@ active:
 		}
 		if (object->ref_count > 1) {
 			/* shared object */
-			totalp->t_vmshr += num_pages(object->size);
-			totalp->t_rmshr += object->resident_page_count;
+			totalp->t_vmtxt += num_pages(object->size);
+			totalp->t_rmtxt += object->resident_page_count;
 			if (object->flags & OBJ_ACTIVE) {
-				totalp->t_avmshr += num_pages(object->size);
-				totalp->t_armshr += object->resident_page_count;
+				totalp->t_avmtxt += num_pages(object->size);
+				totalp->t_armtxt += object->resident_page_count;
 			}
 		}
 	}
 	simple_unlock(&vm_object_list_lock);
 
-	totalp->t_vm += totalp->t_vmshr;
-	totalp->t_avm += totalp->t_avmshr;
-	totalp->t_rm += totalp->t_rmshr;
-	totalp->t_arm += totalp->t_armshr;
+	totalp->t_vm += totalp->t_vmtxt;
+	totalp->t_avm += totalp->t_avmtxt;
+	totalp->t_rm += totalp->t_rmtxt;
+	totalp->t_arm += totalp->t_armtxt;
 	totalp->t_free = freemem;
 }

@@ -62,11 +62,11 @@ struct vmrate {
 	unsigned 	v_page_inactive_count;  	/* number of pages inactive */
 
 	/* Distribution of segment usages */
-//	unsigned 	v_segment_size;				/* segment size in bytes */
-//	unsigned 	v_kernel_segments;			/* total number of segments in system */
-//	unsigned 	v_segment_count;			/* number of segments */
-//	unsigned 	v_segment_active_count;		/* number of segments active */
-//	unsigned 	v_segment_inactive_count;  	/* number of segments inactive */
+	unsigned 	v_segment_size;				/* segment size in bytes */
+	unsigned 	v_kernel_segments;			/* total number of segments in system */
+	unsigned 	v_segment_count;			/* number of segments */
+	unsigned 	v_segment_active_count;		/* number of segments active */
+	unsigned 	v_segment_inactive_count;  	/* number of segments inactive */
 
 	/* Distribution of swap usages */
 	unsigned	v_nswapdev;					/* number of configured swap devices in system */
@@ -77,8 +77,8 @@ struct vmrate {
 	unsigned 	v_nswget;					/* number of times fault calls uvm_swap_get() */
 
 	/* Distribution of anon usages. */
-//	unsigned	v_kernel_anons;				/* total number of anons in system */
-//	unsigned	v_anfree_count;				/* number of anons free */
+	unsigned	v_kernel_anons;				/* total number of anons in system */
+	unsigned	v_anfree_count;				/* number of anons free */
 };
 
 struct vmsum {
@@ -109,10 +109,10 @@ struct vmtotal {
 	long		t_avm;						/* active virtual memory, clicks */
 	long		t_rm;						/* total real memory, clicks */
 	long		t_arm;						/* active real memory, clicks */
-	long		t_vmshr;					/* virtual memory used by text, clicks */
-	long		t_avmshr;					/* active virtual memory used by text, clicks */
-	long		t_rmshr;					/* real memory used by text, clicks */
-	long		t_armshr;					/* active real memory used by text, clicks */
+	long		t_vmtxt;					/* virtual memory used by text, clicks */
+	long		t_avmtxt;					/* active virtual memory used by text, clicks */
+	long		t_rmtxt;					/* real memory used by text, clicks */
+	long		t_armtxt;					/* active real memory used by text, clicks */
 	long		t_free;						/* free memory pages, kb */
 };
 

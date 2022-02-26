@@ -26,6 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/malloc.h>
 #include <dev/misc/wscons/wsksymdef.h>
 #include <dev/misc/wscons/wsksymvar.h>
 
@@ -36,23 +37,20 @@ static const struct evdev_methods kbdmux_evdev_methods = {
 		.ev_event = evdev_ev_kbd_event,
 };
 
-struct wskbd_softc {
-	struct evdev_dev *	ks_evdev;
-	int			 		ks_evdev_state;
-};
+//static struct evdev_dev	*wskbd_evdev;
 
-static int
-evdev_kbd_init()
+void
+evdev_wskbd_init(sc)
+	struct wskbd_softc *sc;
 {
 	keyboard_t			*kbd = NULL;
-	struct wskbd_softc *state = NULL;
 	struct evdev_dev 	*evdev;
 	char		 		phys_loc[NAMELEN];
 
 	/* register as evdev provider */
 	evdev = evdev_alloc();
 	evdev_set_name(evdev, "System keyboard multiplexer");
-	ksnprintf(phys_loc, NAMELEN, KEYBOARD_NAME"%d", unit);
+	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME"%d", unit);
 
 	evdev_set_phys(evdev, phys_loc);
 	evdev_set_id(evdev, BUS_VIRTUAL, 0, 0, 0);
@@ -69,48 +67,110 @@ evdev_kbd_init()
 	if (evdev_register(evdev)) {
 		evdev_free(evdev);
 	} else {
-		state->ks_evdev = evdev;
+		sc->sc_evdev = evdev;
 	}
-	state->ks_evdev_state = 0;
-
-	return (0);
+	sc->sc_evdev_state = 0;
 }
 
-static u_int
-wskbd_read_char()
+static struct evdev_dev	*wsmouse_evdev;
+
+void
+evdev_wsmouse_init(void)
 {
-	struct wskbd_softc *state;
+	int i;
+
+	wsmouse_evdev = evdev_alloc();
+	evdev_set_name(wsmouse_evdev, "wscons mouse");
+	evdev_set_phys(wsmouse_evdev, "wsmouse");
+	evdev_set_id(wsmouse_evdev, BUS_VIRTUAL, 0, 0, 0);
+	evdev_support_prop(wsmouse_evdev, INPUT_PROP_POINTER);
+	evdev_support_event(wsmouse_evdev, EV_SYN);
+	evdev_support_event(wsmouse_evdev, EV_REL);
+	evdev_support_event(wsmouse_evdev, EV_KEY);
+	evdev_support_rel(wsmouse_evdev, REL_X);
+	evdev_support_rel(wsmouse_evdev, REL_Y);
+	evdev_support_rel(wsmouse_evdev, REL_WHEEL);
+	evdev_support_rel(wsmouse_evdev, REL_HWHEEL);
+	for (i = 0; i < 8; i++)
+		evdev_support_key(wsmouse_evdev, BTN_MOUSE + i);
+	if (evdev_register(wsmouse_evdev)) {
+		evdev_free(wsmouse_evdev);
+		wsmouse_evdev = NULL;
+	}
+}
+
+void
+evdev_wsmouse_write(int x, int y, int z, int buttons)
+{
+
+	if (wsmouse_evdev == NULL || !(evdev_rcpt_mask & EVDEV_RCPT_SYSMOUSE))
+		return;
+
+	evdev_push_event(wsmouse_evdev, EV_REL, REL_X, x);
+	evdev_push_event(wsmouse_evdev, EV_REL, REL_Y, y);
+	switch (evdev_sysmouse_t_axis) {
+	case EVDEV_SYSMOUSE_T_AXIS_PSM:
+		switch (z) {
+		case 1:
+		case -1:
+			evdev_push_rel(wsmouse_evdev, REL_WHEEL, -z);
+			break;
+		case 2:
+		case -2:
+			evdev_push_rel(wsmouse_evdev, REL_HWHEEL, z / 2);
+			break;
+		}
+		break;
+	case EVDEV_SYSMOUSE_T_AXIS_UMS:
+		if (buttons & (1 << 6))
+			evdev_push_rel(wsmouse_evdev, REL_HWHEEL, 1);
+		else if (buttons & (1 << 5))
+			evdev_push_rel(wsmouse_evdev, REL_HWHEEL, -1);
+		buttons &= ~((1 << 5) | (1 << 6));
+		/* PASSTHROUGH */
+	case EVDEV_SYSMOUSE_T_AXIS_NONE:
+	default:
+		evdev_push_rel(wsmouse_evdev, REL_WHEEL, -z);
+	}
+	evdev_push_mouse_btn(wsmouse_evdev, buttons);
+	evdev_sync(wsmouse_evdev);
+}
+
+void
+wskbd_read_char(sc)
+	struct wskbd_softc *sc;
+{
 	u_int		 action;
 	int		 scancode, keycode;
 #ifdef EVDEV_SUPPORT
 	/* push evdev event */
-	if ((evdev_rcpt_mask & EVDEV_RCPT_KBDMUX) && state->ks_evdev != NULL) {
-		uint16_t key = evdev_scancode2key(&state->ks_evdev_state, scancode);
+	if ((evdev_rcpt_mask & EVDEV_RCPT_KBDMUX) && sc->sc_evdev != NULL) {
+		uint16_t key = evdev_scancode2key(&sc->sc_evdev_state, scancode);
 
 		if (key != KEY_RESERVED) {
-			evdev_push_event(state->ks_evdev, EV_KEY, key, scancode & 0x80 ? 0 : 1);
-			evdev_sync(state->ks_evdev);
+			evdev_push_event(sc->sc_evdev, EV_KEY, key, scancode & 0x80 ? 0 : 1);
+			evdev_sync(sc->sc_evdev);
 		}
 	}
 #endif
-	return (action);
 }
 
 int
 wskbd_ioctl(u_long cmd)
 {
-	struct wskbd_softc *state;
+	struct wskbd_softc *sc;
 	switch (cmd) {
-	case KDSETLED:		 /* set keyboard LED */
-//#ifdef EVDEV_SUPPORT
-		if (state->ks_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_KBDMUX))
-			evdev_push_leds(state->ks_evdev, *(int*) arg);
+	case WSKBDIO_SETLED:		 /* set keyboard LED */
+#ifdef EVDEV_SUPPORT
+		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_KBDMUX)) {
+			evdev_push_leds(sc->sc_evdev, *(int*) arg);
+		}
 #endif
 		break;
-	case KDSETREPEAT: /* set keyboard repeat rate (new interface) */
-		if (state->ks_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_KBDMUX))
-			evdev_push_repeats(state->ks_evdev, kbd);
-		break;
-
-	}
+	case WSKBDIO_SETKEYREPEAT:
+#ifdef EVDEV_SUPPORT
+		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_KBDMUX)) {
+			evdev_push_repeats(sc->sc_evdev, ukdp);
+		}
+#endif
 }

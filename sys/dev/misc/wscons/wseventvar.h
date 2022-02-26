@@ -87,13 +87,9 @@ struct wseventvar {
 	int					wanted;	/* wake up on input ready */
 	int					async;	/* send SIGIO on input ready */
 	struct wscons_event *q;		/* circular buffer (queue) of events */
-
-/* evdev device support */
-//#ifdef NEVDEV > 0
 	bool_t				revoked;
 	bool_t				blocked;
 	bool_t				selected;
-//#endif
 };
 
 #define	splwsevent()	spltty()

@@ -148,7 +148,11 @@ struct evdev_dev {
 	uint64_t					ev_report_count;					/* (s) */
 
 	/* Parent driver callbacks: */
-	struct evdev_client 		*ev_client; 			/* client callback */
+	const struct evdev_methods 	*ev_methods;
+	void 						*ev_softc;
+
+	LIST_ENTRY(evdev_dev) 		ev_link;
+	LIST_HEAD(, evdev_client) 	ev_clients;
 };
 
 #define	EVDEV_LOCK(evdev)			lockmgr((evdev)->ev_lock, LK_EXCLUSIVE, NULL)  //simple_lock((evdev)->ev_lock)
@@ -166,28 +170,26 @@ struct evdev_dev {
 } while (0)
 
 struct evdev_client {
-	struct evdev_dev 			*sc_evdev;			/* evdev pointer */
-	struct wsevsrc				sc_base;			/* evdev to wscons events */
+	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
 
-	struct lock					sc_buffer_lock;
-	size_t						sc_buffer_size;
-	size_t						sc_buffer_ready;	/* (q) */
+	struct lock					ec_buffer_lock;
+	size_t						ec_buffer_size;
+	size_t						ec_buffer_ready;	/* (q) */
 
-	enum evdev_clock_id			sc_clock_id;
+	enum evdev_clock_id			ec_clock_id;
 
-	int							sc_refcnt;
-	u_char						sc_dying;			/* device is being detached */
+	int							ec_refcnt;
+	u_char						ec_dying;			/* device is being detached */
 
-	struct input_event			sc_buffer[];
-
-	/* evdev methods */
-	const struct evdev_methods	*sc_methods;
+	LIST_ENTRY(evdev_client) 	ec_link;
+	struct input_event			ec_buffer[];
+	struct wsevsrc				ec_base;			/* input event to wscons event */
 };
 
-#define	EVDEV_CLIENT_LOCKQ(client)			lockmgr((client)->sc_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL)
-#define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr((client)->sc_buffer_lock, LK_RELEASE, NULL)
-#define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus((client)->sc_buffer_lock) != 0)
-#define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->sc_base.me_evp)
+#define	EVDEV_CLIENT_LOCKQ(client)			lockmgr((client)->ec_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL)
+#define	EVDEV_CLIENT_UNLOCKQ(client)		lockmgr((client)->ec_buffer_lock, LK_RELEASE, NULL)
+#define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus((client)->ec_buffer_lock) != 0)
+#define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->ec_base.me_evp)
 
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);

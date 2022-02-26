@@ -321,7 +321,7 @@ evdev_ev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t
 	size_t i;
 
 	if (type == EV_LED) {
-		///leds = oleds = KBD_LED_VAL(kbd);
+		//leds = oleds = KBD_LED_VAL(kbd);
 		for (i = 0; i < nitems(evdev_led_codes); i++) {
 			if (evdev_led_codes[i] == code) {
 				if (value)

@@ -169,6 +169,10 @@ struct wskbd_softc {
 
 	int								sc_refcnt;
 	u_char							sc_dying;			/* device is being detached */
+#ifdef EVDEV_SUPPORT
+	struct evdev_dev 				*sc_evdev;
+	int			 					sc_evdev_state;
+#endif
 };
 
 #define MOD_SHIFT_L				(1 << 0)
