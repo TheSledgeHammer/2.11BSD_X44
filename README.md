@@ -18,7 +18,7 @@
 | share | Shared resources. |
 | sys | Kernel sources. |
 | sys/arch/`arch`/conf | Kernel configuration files. GENERIC.'arch' is the configuration used in release builds. |
-| sys/stand | Boot loader sources. |
+| stand | Boot loader sources. |
 | tools | Utilities for toolchain & cross-compiling. |
 | usr.bin | User commands. |
 | usr.lib | System User libraries for /lib. |

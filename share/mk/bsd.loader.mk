@@ -7,8 +7,8 @@ _BSD_LOADER_MK_=1
 .include <bsd.own.mk>
 
 # Directories
-BOOTSTAND?=					${KERNSRCDIR}/stand
-BOOTSRC?=					${KERNSRCDIR}/stand/boot
+BOOTSTAND?=					/stand
+BOOTSRC?=					/stand/boot
 LIBKERN?= 					${KERNSRCDIR}/lib/libkern
 LIBSA?=						${KERNSRCDIR}/lib/libsa
 

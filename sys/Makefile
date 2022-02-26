@@ -6,8 +6,4 @@ SUBDIR=	arch dev fs miscfs 		\
 	net netimp netinet netns 	\
 	sys ufs vm
 
-.if make(obj) || make(cleandir) || ${MKBOOT} != "no"
-SUBDIR+= stand
-.endif
-
 .include <bsd.kinc.mk>
