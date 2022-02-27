@@ -132,10 +132,14 @@ struct wsmouse_softc {
 
 	int								sc_refcnt;
 	u_char							sc_dying;	/* device is being detached */
+#ifdef EVDEV_SUPPORT
+	struct evdev_dev 				*sc_evdev;
+	int			 					sc_evdev_state;
+#endif
 };
 
-int			wsmouse_match (struct device *, struct cfdata *, void *);
-void		wsmouse_attach (struct device *, struct device *, void *);
+int			wsmouse_match(struct device *, struct cfdata *, void *);
+void		wsmouse_attach(struct device *, struct device *, void *);
 int  		wsmouse_detach(struct device *, int);
 int  		wsmouse_activate(struct device *, enum devact);
 

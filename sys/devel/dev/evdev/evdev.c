@@ -39,6 +39,7 @@
 #include <sys/poll.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
+#include <sys/stddef.h>
 #include <sys/uio.h>
 
 #include <dev/misc/wscons/wsconsio.h>
@@ -57,8 +58,9 @@
 
 #define	DEF_RING_REPORTS	8
 
-CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_client));
-CFOPS_DECL(evdev, evdev_match, evdev_attach, evdev_detach, NULL);
+/*
+CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
+CFOPS_DECL(evdev, evdev_match, evdev_attach, NULL, NULL);
 
 extern struct cfdriver evdev_cd;
 
@@ -84,22 +86,30 @@ const struct cdevsw evdev_cdevsw = {
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
 };
+*/
 
 int
-evdev_match(struct device *parent, struct cfdata *match, void *aux)
+evdev_match(parent, match, aux)
+	struct device *parent;
+	struct cfdata *match;
+	void *aux;
 {
 	return (1);
 }
 
 void
-evdev_attach(sc)
-	struct wskbd_softc *sc;
+evdev_attach(parent, self, aux)
+	struct device *parent, *self;
+	void *aux;
 {
+	struct evdev_softc *wsc = (struct evdev_softc *)self;
+	struct evdev_client *sc = (struct evdev_client *)aux;
 	struct evdev_dev *evdev;
 	int ret;
 
 	/* Initialize internal structures */
-	evdev = sc->sc_evdev;
+	evdev = wsc->sc_evdev;
+	sc->ec_evdev = evdev;
 
 	ret = evdev_register(evdev);
 	if (ret != 0) {
@@ -108,69 +118,21 @@ evdev_attach(sc)
 }
 
 int
-evdev_detach(struct device *self, int flags)
-{
-	struct evdev_client *sc = (struct evdev_client *)self;
-	struct evdev_dev *evdev;
-	struct wseventvar *evar;
-	int maj, mn;
-
-	/* If we're open ... */
-	evdev = sc->ec_evdev;
-	evar = sc->ec_base.me_evp;
-	/* Wake up sleepers */
-	if (evar != NULL && evar->io != NULL) {
-		if (--sc->ec_refcnt >= 0) {
-			/* Wake everyone by generating a dummy event. */
-			if (++evar->put >= WSEVENT_QSIZE) {
-				evar->put = 0;
-			}
-			wsevent_wakeup(evar);
-			/* Wait for processes to go away. */
-			if (tsleep(sc, PZERO, "evdet", hz * 60)) {
-				printf("evdev_detach: %s didn't detach\n", sc->ec_base.me_dv.dv_xname);
-			}
-		}
-	}
-
-	/*
-	 * unregister any devices from evdev
-	 */
-	if (evdev_unregister(evdev)) {
-		continue;
-	}
-
-	/* locate the major number */
-	maj = cdevsw_lookup_major(&evdev_cdevsw);
-
-	/* Nuke the vnodes for any open instances (calls close). */
-	mn = self->dv_unit;
-	vdevgone(maj, mn, mn, VCHR);
-
-	return (0);
-}
-
-int
-evdev_open(dev, flags, fmt, p)
-	dev_t dev;
-	int flags;
-	int fmt;
-	struct proc *p;
-{
+evdev_open(evdev, softc)
 	struct evdev_dev 	*evdev;
+	void 				*softc;
+{
+	struct proc 		*p;
 	struct evdev_client *client;
 	struct wseventvar 	*evar;
 	size_t buffer_size;
 	int error, ret;
 
-	buffer_size = evdev->ev_report_size * DEF_RING_REPORTS;
-	//client = malloc(offsetof(struct evdev_client, ec_buffer) +
-		//	sizeof(struct input_event) * buffer_size, M_EVDEV, M_WAITOK | M_ZERO);
+	p = (struct proc *)softc;
+	evdev->ev_softc = p;
 
-	/* check event buffer */
-	if(buffer_size > wsevent_avail(evar)) {
-		return (EINVAL);
-	}
+	buffer_size = evdev->ev_report_size * DEF_RING_REPORTS;
+	client = evdev_client_alloc(evdev, buffer_size);
 
 	/* Initialize ring buffer */
 	client->ec_buffer_size = buffer_size;
@@ -181,6 +143,11 @@ evdev_open(dev, flags, fmt, p)
 
 	EVDEV_LOCK(evdev);
 	evar = evdev_register_wsevent(client, p);
+
+	/* check event buffer */
+	if(buffer_size > wsevent_avail(evar)) {
+		return (EINVAL);
+	}
 	ret = evdev_register_client(evdev, client);
 
 	if(ret != 0) {
@@ -194,32 +161,34 @@ evdev_open(dev, flags, fmt, p)
 }
 
 int
-evdev_close(dev, flags, fmt, p)
-	dev_t dev;
-	int flags;
-	int fmt;
-	struct proc *p;
+evdev_close(evdev, softc)
+	struct evdev_dev 	*evdev;
+	void 				*softc;
 {
+	struct proc 		*p;
+
+	p = (struct proc *)softc;
+	evdev->ev_softc = p;
+
 	return (ENODEV);
 }
 
 int
-evdev_read(dev, uio, flags)
-	dev_t dev;
+evdev_read(evdev, evar, uio, flags)
+	struct evdev_dev 	*evdev;
+	struct wseventvar 	*evar;
 	struct uio *uio;
 	int flags;
 {
 	struct evdev_client *client;
 	struct wscons_event *we;
-	struct wseventvar *evp;
-	int ret, unit, remaining;
+	int ret, remaining;
 
+	client = evdev->ev_client;
+	evar = client->ec_base.me_evp;
 	ret = 0;
-	unit = minor(dev);
-	client = (struct evdev_client*) evdev_cd.cd_devs[unit];
-	evp = client->ec_base.me_evp;
 
-	if (evp->revoked)
+	if (evar->revoked)
 		return (ENODEV);
 
 	/* Zero-sized reads are allowed for error checking */
@@ -235,9 +204,9 @@ evdev_read(dev, uio, flags)
 			ret = EWOULDBLOCK;
 		} else {
 			if (remaining != 0) {
-				evp->blocked = TRUE;
+				evar->blocked = TRUE;
 				tsleep(client, &client->ec_buffer_lock, PCATCH, "evread", 0);
-				if (ret == 0 && evp->revoked) {
+				if (ret == 0 && evar->revoked) {
 					ret = ENODEV;
 				}
 			}
@@ -245,12 +214,12 @@ evdev_read(dev, uio, flags)
 	}
 
 	while (ret == 0 && !EVDEV_CLIENT_EMPTYQ(client) && remaining > 0) {
-		memcpy(&we, &client->ec_buffer[evp->put], sizeof(struct input_event));
-		evp->put = (evp->put + 1) % WSEVENT_QSIZE;
+		memcpy(&we, &client->ec_buffer[evar->put], sizeof(struct input_event));
+		evar->put = (evar->put + 1) % WSEVENT_QSIZE;
 		remaining--;
 
 		EVDEV_CLIENT_UNLOCKQ(client);
-		ret = wsevent_read(evp, uio, flags);
+		ret = wsevent_read(evar, uio, flags);
 		EVDEV_CLIENT_LOCKQ(client);
 	}
 	EVDEV_CLIENT_UNLOCKQ(client);
@@ -258,21 +227,14 @@ evdev_read(dev, uio, flags)
 }
 
 int
-evdev_write(dev, uio, flags)
-	dev_t dev;
-	struct uio *uio;
-	int flags;
-{
+evdev_write(evdev, evar, uio, flags)
 	struct evdev_dev 	*evdev;
-	struct evdev_client *client;
 	struct wseventvar 	*evar;
+	struct uio 			*uio;
+	int 				flags;
+{
 	struct input_event 	event;
-	int unit, error;
-
-	unit = minor(dev);
-	sc = (struct evdev_client*) evdev_cd.cd_devs[unit];
-	evdev = client->ec_evdev;
-	evar = client->ec_base.me_evp;
+	int error;
 
 	if (evar->revoked || evdev == NULL) {
 		return (ENODEV);
@@ -297,12 +259,12 @@ evdev_write(dev, uio, flags)
 }
 
 int
-evdev_poll(dev, events, p)
-	dev_t dev;
+evdev_poll(evdev, events, p)
+	struct evdev_dev 	*evdev;
 	int events;
 	struct proc *p;
 {
-	struct evdev_client *client;// = evdev_cd.cd_devs[minor(dev)];
+	struct evdev_client *client = evdev->ev_client;
 	int ret;
 
 	if (client->ec_base.me_evp == NULL)
@@ -319,11 +281,11 @@ evdev_poll(dev, events, p)
 }
 
 int
-evdev_kqfilter(dev, kn)
-	dev_t dev;
+evdev_kqfilter(evdev, kn)
+	struct evdev_dev 	*evdev;
 	struct knote *kn;
 {
-	struct evdev_client *client;// = evdev_cd.cd_devs[minor(dev)];
+	struct evdev_client *client = evdev->ev_client;
 
 	if (client->ec_base.me_evp == NULL)
 		return (EINVAL);
@@ -331,19 +293,9 @@ evdev_kqfilter(dev, kn)
 }
 
 int
-evdev_ioctl(dev, cmd, data, fflag, p)
-	dev_t dev;
-	int cmd;
-	caddr_t data;
-	int fflag;
-	struct proc *p;
-{
-	return (evdev_do_ioctl([minor(dev)], cmd, data, fflag, p));
-}
-
-int
-evdev_do_ioctl(evdev, cmd, data, fflag, p)
+evdev_do_ioctl(evdev, dev, cmd, data, fflag, p)
 	struct evdev_dev *evdev;
+	dev_t dev;
 	int cmd;
 	caddr_t data;
 	int fflag;
@@ -354,6 +306,8 @@ evdev_do_ioctl(evdev, cmd, data, fflag, p)
 	int ret, len, limit, type_num;
 	uint32_t code;
 	size_t nvalues;
+
+	client = evdev->ev_client;
 
 	if (client->ec_base->me_evp->revoked || evdev == NULL) {
 		return (ENODEV);
@@ -493,7 +447,7 @@ evdev_do_ioctl(evdev, cmd, data, fflag, p)
 			return (EINVAL);
 
 		EVDEV_LIST_LOCK(evdev);
-		if (dv != NULL && !client->ec_base.me_evp->revoked) {
+		if (client->ec_base.me_dv != NULL && !client->ec_base.me_evp->revoked) {
 			evdev_dispose_client(evdev, client);
 			evdev_revoke_client(client);
 		}

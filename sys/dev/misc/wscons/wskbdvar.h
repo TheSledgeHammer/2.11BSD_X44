@@ -90,13 +90,13 @@ int		wskbddevprint(void *, const char *);
 /*
  * Callbacks from the keyboard driver to the wskbd interface driver.
  */
-void	wskbd_input (struct device *, u_int, int);
+void	wskbd_input(struct device *, u_int, int);
 /* for WSDISPLAY_COMPAT_RAWKBD */
-void	wskbd_rawinput (struct device *, char *, int);
+void	wskbd_rawinput(struct device *, char *, int);
 
 /*
  * Console interface.
  */
-int		wskbd_cngetc (dev_t);
-void	wskbd_cnpollc (dev_t, int);
-void	wskbd_cnbell (dev_t, u_int, u_int, u_int);
+int		wskbd_cngetc(dev_t);
+void	wskbd_cnpollc(dev_t, int);
+void	wskbd_cnbell(dev_t, u_int, u_int, u_int);

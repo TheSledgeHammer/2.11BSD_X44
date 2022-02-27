@@ -33,7 +33,9 @@
 #include <devel/dev/evdev/evdev.h>
 #include <devel/dev/evdev/evdev_private.h>
 
-static const struct evdev_methods kbdmux_evdev_methods = {
+static const struct evdev_methods wskbd_evdev_methods = {
+		.ev_open = evdev_open,
+		.ev_close = evdev_close,
 		.ev_event = evdev_ev_kbd_event,
 };
 
@@ -49,12 +51,12 @@ evdev_wskbd_init(sc)
 
 	/* register as evdev provider */
 	evdev = evdev_alloc();
-	evdev_set_name(evdev, "System keyboard multiplexer");
+	evdev_set_name(evdev, "wskbd evdev");
 	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME"%d", unit);
 
 	evdev_set_phys(evdev, phys_loc);
 	evdev_set_id(evdev, BUS_VIRTUAL, 0, 0, 0);
-	evdev_set_methods(evdev, kbd, &kbdmux_evdev_methods);
+	evdev_set_methods(evdev, kbd, &wskbd_evdev_methods);
 	evdev_support_event(evdev, EV_SYN);
 	evdev_support_event(evdev, EV_KEY);
 	evdev_support_event(evdev, EV_LED);
@@ -80,7 +82,7 @@ evdev_wsmouse_init(void)
 	int i;
 
 	wsmouse_evdev = evdev_alloc();
-	evdev_set_name(wsmouse_evdev, "wscons mouse");
+	evdev_set_name(wsmouse_evdev, "wsmouse evdev");
 	evdev_set_phys(wsmouse_evdev, "wsmouse");
 	evdev_set_id(wsmouse_evdev, BUS_VIRTUAL, 0, 0, 0);
 	evdev_support_prop(wsmouse_evdev, INPUT_PROP_POINTER);
@@ -100,9 +102,9 @@ evdev_wsmouse_init(void)
 }
 
 void
-evdev_wsmouse_write(int x, int y, int z, int buttons)
+evdev_wsmouse_write(x, y, z, buttons)
+	int x, y, z, buttons;
 {
-
 	if (wsmouse_evdev == NULL || !(evdev_rcpt_mask & EVDEV_RCPT_SYSMOUSE))
 		return;
 
@@ -153,6 +155,28 @@ wskbd_read_char(sc)
 		}
 	}
 #endif
+}
+
+int
+wskbd_do_ioctl(dv, cmd, data, flag, p)
+	struct device *dv;
+	u_long cmd;
+	caddr_t data;
+	int 	flag;
+	struct proc *p;
+{
+	struct wskbd_softc *sc = (struct wskbd_softc*) dv;
+	int error;
+
+	sc->sc_refcnt++;
+#ifdef EVDEV_SUPPORT
+	error = evdev_do_ioctl(sc->sc_evdev, cmd, data, fflag, p);
+#else
+	error = wskbd_do_ioctl_sc(sc, cmd, data, flag, p);
+#endif
+	if (--sc->sc_refcnt < 0)
+		wakeup(sc);
+	return (error);
 }
 
 int

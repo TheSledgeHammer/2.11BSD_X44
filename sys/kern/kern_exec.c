@@ -455,43 +455,63 @@ bad1:
 	return error;
 }
 
-void *
+int
 copyargs(elp, arginfo, stack, argp)
 	struct exec_linker *elp;
 	struct ps_strings *arginfo;
 	void *stack;
 	void *argp;
 {
-	char **cpp = stack;
+	char **cpp;
 	char *dp, *sp;
 	size_t len;
-	void *nullp = NULL;
-	long argc = arginfo->ps_nargvstr;
-	long envc = arginfo->ps_nenvstr;
+	void *nullp;
+	long argc, envc;
+	int error;
 
-	dp = (char *) (cpp + argc + envc + 2 + elp->el_emul->e_arglen);
+	cpp = (char **)*stack;
+	nullp = NULL;
+	argc = arginfo->ps_nargvstr;
+	envc = arginfo->ps_nenvstr;
+
+	dp = (char *) (cpp +  1 + argc + 1+ envc) + elp->el_emul->e_arglen;
 	sp = argp;
+
+	if ((error = copyout(&argc, cpp++, sizeof(argc))) != 0) {
+		return (error);
+	}
 
 	/* XXX don't copy them out, remap them! */
 	arginfo->ps_argvstr = cpp; /* remember location of argv for later */
 
-	for (; --argc >= 0; sp += len, dp += len)
-		if (copyout(&dp, cpp++, sizeof(dp)) ||
-		    copyoutstr(sp, dp, ARG_MAX, &len))
-			return NULL;
+	for (; --argc >= 0; sp += len, dp += len) {
+		if (copyout(&dp, cpp++, sizeof(dp)) != 0) {
+			return (error);
+		}
+		if (copyoutstr(sp, dp, ARG_MAX, &len) != 0) {
+			return (error);
+		}
+	}
 
-	if (copyout(&nullp, cpp++, sizeof(nullp)))
-		return NULL;
+	if ((error = copyout(&nullp, cpp++, sizeof(nullp))) != 0) {
+		return (error);
+	}
 
 	arginfo->ps_envstr = cpp; /* remember location of envp for later */
 
-	for (; --envc >= 0; sp += len, dp += len)
-		if (copyout(&dp, cpp++, sizeof(dp)) ||
-		    copyoutstr(sp, dp, ARG_MAX, &len))
-			return NULL;
+	for (; --envc >= 0; sp += len, dp += len) {
+		if (copyout(&dp, cpp++, sizeof(dp)) != 0) {
+			return (error);
+		}
+		if (copyoutstr(sp, dp, ARG_MAX, &len) != 0) {
+			return (error);
+		}
+	}
 
-	if (copyout(&nullp, cpp++, sizeof(nullp)))
-		return NULL;
+	if ((error = copyout(&nullp, cpp++, sizeof(nullp))) != 0) {
+		return (error);
+	}
 
-	return cpp;
+	*stack = (char *)cpp;
+	return (0);
 }

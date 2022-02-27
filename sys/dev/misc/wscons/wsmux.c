@@ -280,8 +280,7 @@ wsmux_do_open(struct wsmux_softc *sc, struct wseventvar *evar)
 	sc->sc_base.me_evp = evar; /* remember event variable, mark as open */
 
 	/* Open all children. */
-	CIRCLEQ_FOREACH(me, &sc->sc_cld, me_next)
-	{
+	CIRCLEQ_FOREACH(me, &sc->sc_cld, me_next) {
 		DPRINTF(("wsmuxopen: %s: m=%p dev=%s\n",
 						sc->sc_base.me_dv.dv_xname, me, me->me_dv.dv_xname));
 #ifdef DIAGNOSTIC

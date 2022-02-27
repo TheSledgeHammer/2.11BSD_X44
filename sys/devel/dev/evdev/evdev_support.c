@@ -70,19 +70,34 @@ bit_change(bitstr_t *bitstr, int bit, int value)
 struct evdev_dev *
 evdev_alloc(void)
 {
-	return malloc(sizeof(struct evdev_dev), M_EVDEV, M_WAITOK | M_ZERO);
+	return (malloc(sizeof(struct evdev_dev), M_EVDEV, M_WAITOK | M_ZERO));
 }
 
 void
 evdev_free(struct evdev_dev *evdev)
 {
-	struct evdev_client *client;
-	if (evdev) {
-		client = evdev->ev_client;
-		if (client != NULL && client->ec_base.me_dv != NULL)
-			evdev_unregister(evdev, client);
-		free(evdev, M_EVDEV);
+
+	if(evdev != NULL) {
+		evdev_unregister(evdev);
 	}
+	free(evdev, M_EVDEV);
+}
+
+struct evdev_client *
+evdev_client_alloc(evdev, buffer_size)
+	struct evdev_dev 	*evdev;
+	size_t 				buffer_size;
+{
+	evdev->ev_client = (struct evdev_client *)malloc(offsetof(struct evdev_client, ec_buffer) + sizeof(struct input_event) * buffer_size, M_EVDEV, M_WAITOK | M_ZERO));
+
+	return (evdev->ev_client);
+}
+
+void
+evdev_client_free(evdev)
+	struct evdev_dev 	*evdev;
+{
+	free(evdev->ev_client, M_EVDEV);
 }
 
 static struct input_absinfo *
@@ -229,19 +244,18 @@ evdev_register_mtx(struct evdev_dev *evdev, struct lock *mtx)
 int
 evdev_unregister(struct evdev_dev *evdev)
 {
-	struct evdev_client *client
+	struct evdev_client *client;
 
 	debugf(evdev, "%s: unregistered evdev provider: %s\n", evdev->ev_shortname, evdev->ev_name);
 
 	EVDEV_LOCK(evdev);
 	/* Wake up sleepers */
-	LIST_FOREACH(client, &evdev->ev_clients, ec_link) {
-		evdev_revoke_client(client);
-		evdev_dispose_client(evdev, client);
-		EVDEV_CLIENT_LOCKQ(client);
-		evdev_notify_event(client);
-		EVDEV_CLIENT_UNLOCKQ(client);
-	}
+	client = evdev->ev_client;
+	evdev_revoke_client(client);
+	evdev_dispose_client(evdev, client);
+	EVDEV_CLIENT_LOCKQ(client);
+	evdev_notify_event(client);
+	EVDEV_CLIENT_UNLOCKQ(client);
 	EVDEV_UNLOCK(evdev);
 
 	/*
@@ -291,6 +305,7 @@ evdev_set_serial(struct evdev_dev *evdev, const char *serial)
 inline void
 evdev_set_methods(struct evdev_dev *evdev, void *softc, const struct evdev_methods *methods)
 {
+
 	evdev->ev_methods = methods;
 	evdev->ev_softc = softc;
 }
@@ -670,16 +685,15 @@ evdev_propagate_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int
 	EVDEV_LOCK_ASSERT(evdev);
 
 	/* Propagate event through all clients */
-	LIST_FOREACH(client, &evdev->ev_clients, ec_link) {
-		if (evdev->ev_grabber != NULL && evdev->ev_grabber != client)
-			continue;
+	client = evdev->ev_client;
+	if (evdev->ev_grabber != NULL && evdev->ev_grabber != client)
+		continue;
 
-		EVDEV_CLIENT_LOCKQ(client);
-		evdev_client_push(client, type, code, value);
-		if (type == EV_SYN && code == SYN_REPORT)
-			evdev_notify_event(client);
-		EVDEV_CLIENT_UNLOCKQ(client);
-	}
+	EVDEV_CLIENT_LOCKQ(client);
+	evdev_client_push(client, type, code, value);
+	if (type == EV_SYN && code == SYN_REPORT)
+		evdev_notify_event(client);
+	EVDEV_CLIENT_UNLOCKQ(client);
 
 	evdev->ev_event_count++;
 }
@@ -796,14 +810,14 @@ evdev_register_client(struct evdev_dev *evdev, struct evdev_client *client)
 	debugf(evdev, "adding new client for device %s", evdev->ev_shortname);
 
 	EVDEV_LOCK_ASSERT(evdev);
-	if (LIST_EMPTY(&evdev->ev_clients) && evdev->ev_methods != NULL &&
-	evdev->ev_methods->ev_open != NULL) {
+	if (evdev->ev_client && evdev->ev_methods != NULL
+			&& evdev->ev_methods->ev_open != NULL) {
 		debugf(evdev, "calling ev_open() on device %s", evdev->ev_shortname);
 		ret = evdev->ev_methods->ev_open(evdev, evdev->ev_softc);
 	}
 
 	if (ret == 0) {
-		LIST_INSERT_HEAD(&evdev->ev_clients, client, ec_link);
+		client = evdev->ev_client;
 	}
 
 	return (1);
@@ -815,14 +829,15 @@ evdev_dispose_client(struct evdev_dev *evdev, struct evdev_client *client)
 	debugf(evdev, "removing client for device %s", evdev->ev_shortname);
 
 	KASSERT(evdev);
-
-	LIST_REMOVE(client, ec_link);
-	if (LIST_EMPTY(&evdev->ev_clients)) {
-		if (evdev->ev_methods != NULL && evdev->ev_methods->ev_close != NULL)
+	client = NULL;
+	evdev->ev_client = client;
+	if(evdev->ev_client == NULL) {
+		if (evdev->ev_methods != NULL && evdev->ev_methods->ev_close != NULL) {
 			evdev->ev_methods->ev_close(evdev, evdev->ev_softc);
-		if (evdev_event_supported(evdev, EV_REP)
-				&& bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT))
+		}
+		if (evdev_event_supported(evdev, EV_REP) && bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
 			evdev_stop_repeat(evdev);
+		}
 	}
 	evdev_release_client(evdev, client);
 }

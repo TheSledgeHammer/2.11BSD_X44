@@ -768,9 +768,9 @@ wskbdopen(dev, flags, mode, p)
 	int flags, mode;
 	struct proc *p;
 {
-		struct wskbd_softc *sc;
-		struct wseventvar *evar;
-		int unit, error;
+	struct wskbd_softc *sc;
+	struct wseventvar *evar;
+	int unit, error;
 
 	unit = minor(dev);
 	if (unit >= wskbd_cd.cd_ndevs || /* make sure it was attached */

@@ -151,8 +151,15 @@ struct evdev_dev {
 	const struct evdev_methods 	*ev_methods;
 	void 						*ev_softc;
 
-	LIST_ENTRY(evdev_dev) 		ev_link;
-	LIST_HEAD(, evdev_client) 	ev_clients;
+	struct evdev_client 		*ev_client;				/* client callback:
+														 * we use wsmux for
+														 * multiplexing
+														 */
+	//LIST_ENTRY(evdev_dev)		ev_link;
+	//LIST_HEAD(, evdev_client) ev_clients;
+
+	//CIRCLEQ_ENTRY(evdev_dev) 	ev_link;
+	//struct wsmux_softc 		*ev_mux;
 };
 
 #define	EVDEV_LOCK(evdev)			lockmgr((evdev)->ev_lock, LK_EXCLUSIVE, NULL)  //simple_lock((evdev)->ev_lock)
@@ -171,6 +178,7 @@ struct evdev_dev {
 
 struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
+	struct wsevsrc				ec_base;			/* input event to wscons event */
 
 	struct lock					ec_buffer_lock;
 	size_t						ec_buffer_size;
@@ -181,9 +189,7 @@ struct evdev_client {
 	int							ec_refcnt;
 	u_char						ec_dying;			/* device is being detached */
 
-	LIST_ENTRY(evdev_client) 	ec_link;
 	struct input_event			ec_buffer[];
-	struct wsevsrc				ec_base;			/* input event to wscons event */
 };
 
 #define	EVDEV_CLIENT_LOCKQ(client)			lockmgr((client)->ec_buffer_lock, LK_EXCLUSIVE|LK_CANRECURSE, NULL)
@@ -200,6 +206,8 @@ void 	evdev_set_absinfo(struct evdev_dev *, uint16_t, struct input_absinfo *);
 void 	evdev_restore_after_kdb(struct evdev_dev *);
 
 /* Client interface: */
+void	evdev_client_alloc(struct evdev_dev *, size_t);
+void	evdev_client_free(struct evdev_dev *);
 int 	evdev_register_client(struct evdev_dev *, struct evdev_client *);
 void 	evdev_dispose_client(struct evdev_dev *, struct evdev_client *);
 int 	evdev_grab_client(struct evdev_dev *, struct evdev_client *);

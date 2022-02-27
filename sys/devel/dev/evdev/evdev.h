@@ -198,6 +198,7 @@ evdev_push_snd(struct evdev_dev *evdev, uint16_t code, int32_t value)
 static __inline int
 evdev_push_sw(struct evdev_dev *evdev, uint16_t code, int32_t value)
 {
+
 	return (evdev_push_event(evdev, EV_SW, code, value != 0));
 }
 

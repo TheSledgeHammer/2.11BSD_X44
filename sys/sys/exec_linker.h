@@ -86,7 +86,7 @@ struct exec_linker {
 	caddr_t				    el_minsaddr;			/* proc's min stack addr ("bottom") */
 	u_long	 			    el_entry;				/* process's entry point */
 	caddr_t				    el_entryoffset;			/* offset to entry point */
-	caddr_t			            el_vm_minaddr;			/* bottom of process address space */
+	caddr_t			        el_vm_minaddr;			/* bottom of process address space */
 	caddr_t				    el_vm_maxaddr;			/* top of process address space */
 	u_int				    el_flags;				/* flags */
 	int						el_fd;					/* a file descriptor we're holding */
