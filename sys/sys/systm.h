@@ -135,11 +135,11 @@ void 	bcopy(const void *, void *, u_int);
 void 	ovbcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
 
-int		copystr(void *, void *, u_int, u_int *);
-int		copyinstr(void *, void *, u_int, u_int *);
-int		copyoutstr(void *, void *, u_int, u_int *);
-int		copyin(void *, void *, u_int);
-int		copyout(void *, void *, u_int);
+int		copystr(const void *, void *, size_t, size_t *);
+int		copyinstr(const void *, void *, size_t, size_t *);
+int		copyoutstr(const void *, void *, size_t, size_t *);
+int		copyin(const void *, void *, size_t);
+int		copyout(const void *, void *, size_t);
 
 int		fubyte(void *);
 int		fuibyte(void *);

@@ -700,7 +700,7 @@ done:
 }
 
 int
-user_page_fault (p, map, addr, ftype, type)
+user_page_fault(p, map, addr, ftype, type)
 	struct proc *p;
 	vm_map_t map;
 	caddr_t addr;

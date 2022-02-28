@@ -7,13 +7,9 @@ FreeBSD Evdev API's:
 - freebsd_bitstring.h
 
 TODO:
-- Changes:
-- Will No longer be a seperate character device.
-	- evdev routines are sub-routines to the keyboard & mouse
-	when configured.
-- Evdev is a config option like FreeBSD & DragonFlyBSD (option EVDEV_SUPPORTED)
-- Removes need for seperate keyboard & mouse mapping
-- Removes duplicate methods between wscons and the evdev.
+- fix: evdev_ev_kbd_event: kbd_ioctl
+- fix: wskbd ioctls missing led cmd
+- add: wsmux device for evdev kbd and mouse
 	
 
 		

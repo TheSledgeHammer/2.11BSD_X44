@@ -67,7 +67,7 @@ exec_script_linker(elp)
 	if ((elp->el_flags & EXEC_INDIR) != 0 ||
 			elp->el_hdrvalid < EXEC_SCRIPT_MAGICLEN ||
 			strncmp(hdrstr, EXEC_SCRIPT_MAGIC, EXEC_SCRIPT_MAGICLEN))
-		return ENOEXEC;
+		return (ENOEXEC);
 
 	/*
 	 * check that the shell spec is terminated by a newline,
@@ -84,13 +84,13 @@ exec_script_linker(elp)
 		}
 	}
 	if (cp >= hdrstr + hdrlinelen)
-		return ENOEXEC;
+		return (ENOEXEC);
 
 	/*
 	 * If the script has an ELF header, don't exec it.
 	 */
 	if (elp->el_hdrvalid >= sizeof(ELFMAG)-1 && memcmp(hdrstr, ELFMAG, sizeof(ELFMAG)-1) == 0)
-		return ENOEXEC;
+		return (ENOEXEC);
 
 	shellname = NULL;
 	shellarg = NULL;
@@ -181,8 +181,8 @@ check_shell:
 #endif
 
 	/* set up the parameters for the recursive check_exec() call */
-	elp->el_ndp->ni_dirp = shellname;
-	elp->el_ndp->ni_segflg = UIO_SYSSPACE;
+	elp->el_ndp.ni_dirp = shellname;
+	elp->el_ndp.ni_segflg = UIO_SYSSPACE;
 	elp->el_flags |= EXEC_INDIR;
 
 	/* and set up the fake args list, for later */
@@ -212,8 +212,7 @@ check_shell:
 			 * convenience, not a security issue, we are
 			 * safe to do this.
 			 */
-			error = copystr(elp->el_name, *tmpsap++, MAXPATHLEN,
-					NULL);
+			error = copystr(elp->el_name, *tmpsap++, MAXPATHLEN, NULL);
 		}
 #else
 		error = copyinstr(elp->el_name, *tmpsap++, MAXPATHLEN, (size_t *)0);
@@ -223,8 +222,9 @@ check_shell:
 			panic("exec_script: copyinstr couldn't fail");
 #endif
 #ifdef FDSCRIPTS
-	} else
+	} else {
 		snprintf(*tmpsap++, MAXPATHLEN, "/dev/fd/%d", elp->el_fd);
+	}
 #endif
 	*tmpsap = NULL;
 
@@ -239,7 +239,7 @@ check_shell:
 	 * them if check_exec() fails.
 	 */
 	scriptvp = elp->el_vnodep;
-	oldpnbuf = elp->el_ndp->ni_cnd.cn_pnbuf;
+	oldpnbuf = elp->el_ndp.ni_cnd.cn_pnbuf;
 
 	if ((error = check_exec(elp)) == 0) {
 		/* note that we've clobbered the header */
@@ -252,7 +252,7 @@ check_shell:
 		 * list will be used.
 		 */
 		if ((elp->el_flags & EXEC_HASFD) == 0) {
-			vn_lock(scriptvp, LK_EXCLUSIVE | LK_RETRY);
+			vn_lock(scriptvp, LK_EXCLUSIVE | LK_RETRY, p);
 			VOP_CLOSE(scriptvp, FREAD, p->p_cred, p);
 			vput(scriptvp);
 		}
@@ -288,7 +288,7 @@ fail:
     	elp->el_flags &= ~EXEC_HASFD;
         (void) fdrelease(p, elp->el_fd);
     } else if (scriptvp) {
-    	vn_lock(scriptvp, LK_EXCLUSIVE | LK_RETRY);
+    	vn_lock(scriptvp, LK_EXCLUSIVE | LK_RETRY, p);
         VOP_CLOSE(scriptvp, FREAD, p->p_cred, p);
         vput(scriptvp);
     }

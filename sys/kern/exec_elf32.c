@@ -336,11 +336,11 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 		error = EACCES;
 		goto badunlock;
 	}
-	if ((error = VOP_ACCESS(vp, VEXEC, p->p_cred, p)) != 0)
+	if ((error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p)) != 0)
 		goto badunlock;
 
 	/* get attributes */
-	if ((error = VOP_GETATTR(vp, &attr, p->p_cred, p)) != 0)
+	if ((error = VOP_GETATTR(vp, &attr, p->p_ucred, p)) != 0)
 		goto badunlock;
 
 	/*
@@ -566,11 +566,12 @@ exec_elf_linker(elp)
 		if (pp->p_type == PT_INTERP) {
 			if (pp->p_filesz >= MAXPATHLEN)
 				goto bad;
-				interp = PNBUF_GET();
-				interp[0] = '\0';
-				if ((error = exec_read_from(p, elp->el_vnodep, pp->p_offset, interp, pp->p_filesz)) != 0)
-					goto bad;
-				break;
+			interp = (char *)malloc(sizeof(interp[MAXPATHLEN]), M_TEMP, M_WAITOK);
+			interp[0] = '\0';
+			if ((error = exec_read_from(p, elp->el_vnodep, pp->p_offset, interp,
+					pp->p_filesz)) != 0)
+				goto bad;
+			break;
 		}
 	}
 
@@ -635,7 +636,7 @@ exec_elf_linker(elp)
 	 */
 	if (interp) {
 		struct elf_args *ap;
-		int j = elp->el_vmcmds->evs_used;
+		int j = elp->el_vmcmds.evs_used;
 		u_long interp_offset;
 
 		MALLOC(ap, struct elf_args *, sizeof(struct elf_args), M_TEMP, M_WAITOK);
@@ -643,7 +644,7 @@ exec_elf_linker(elp)
 			FREE(ap, M_TEMP);
 			goto bad;
 		}
-		ap->arg_interp = elp->el_vmcmds->evs_cmds[j].ev_addr;
+		ap->arg_interp = elp->el_vmcmds.evs_cmds[j].ev_addr;
 		elp->el_entry = ap->arg_interp + interp_offset;
 		ap->arg_phaddr = phdr;
 

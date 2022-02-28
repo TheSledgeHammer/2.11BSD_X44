@@ -313,6 +313,8 @@ evdev_push_repeats(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd)
 	}
 }
 
+#define WSKBD_LED_VAL(k)		((k)->sc_ledstate)
+
 void
 evdev_ev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
 {
@@ -321,7 +323,7 @@ evdev_ev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t
 	size_t i;
 
 	if (type == EV_LED) {
-		//leds = oleds = KBD_LED_VAL(kbd);
+		leds = oleds = WSKBD_LED_VAL(kbd);
 		for (i = 0; i < nitems(evdev_led_codes); i++) {
 			if (evdev_led_codes[i] == code) {
 				if (value)

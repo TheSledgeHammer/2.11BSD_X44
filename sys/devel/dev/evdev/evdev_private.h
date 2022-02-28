@@ -151,15 +151,8 @@ struct evdev_dev {
 	const struct evdev_methods 	*ev_methods;
 	void 						*ev_softc;
 
-	struct evdev_client 		*ev_client;				/* client callback:
-														 * we use wsmux for
-														 * multiplexing
-														 */
-	//LIST_ENTRY(evdev_dev)		ev_link;
-	//LIST_HEAD(, evdev_client) ev_clients;
-
-	//CIRCLEQ_ENTRY(evdev_dev) 	ev_link;
-	//struct wsmux_softc 		*ev_mux;
+	/* client callback: we use wsmux for multiplexing */
+	struct evdev_client 		*ev_client;
 };
 
 #define	EVDEV_LOCK(evdev)			lockmgr((evdev)->ev_lock, LK_EXCLUSIVE, NULL)  //simple_lock((evdev)->ev_lock)
@@ -186,9 +179,6 @@ struct evdev_client {
 
 	enum evdev_clock_id			ec_clock_id;
 
-	int							ec_refcnt;
-	u_char						ec_dying;			/* device is being detached */
-
 	struct input_event			ec_buffer[];
 };
 
@@ -207,7 +197,7 @@ void 	evdev_restore_after_kdb(struct evdev_dev *);
 
 /* Client interface: */
 void	evdev_client_alloc(struct evdev_dev *, size_t);
-void	evdev_client_free(struct evdev_dev *);
+void	evdev_client_free(struct evdev_client *);
 int 	evdev_register_client(struct evdev_dev *, struct evdev_client *);
 void 	evdev_dispose_client(struct evdev_dev *, struct evdev_client *);
 int 	evdev_grab_client(struct evdev_dev *, struct evdev_client *);

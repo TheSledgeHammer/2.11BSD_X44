@@ -94,10 +94,10 @@ evdev_client_alloc(evdev, buffer_size)
 }
 
 void
-evdev_client_free(evdev)
-	struct evdev_dev 	*evdev;
+evdev_client_free(client)
+	struct evdev_client 	*client;
 {
-	free(evdev->ev_client, M_EVDEV);
+	free(client, M_EVDEV);
 }
 
 static struct input_absinfo *
@@ -305,7 +305,6 @@ evdev_set_serial(struct evdev_dev *evdev, const char *serial)
 inline void
 evdev_set_methods(struct evdev_dev *evdev, void *softc, const struct evdev_methods *methods)
 {
-
 	evdev->ev_methods = methods;
 	evdev->ev_softc = softc;
 }
@@ -774,9 +773,10 @@ evdev_inject_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 	case EV_MSC:
 	case EV_SND:
 	case EV_FF:
+		/*
 		if (evdev->ev_methods != NULL && evdev->ev_methods->ev_event != NULL)
-			evdev->ev_methods->ev_event(evdev, evdev->ev_softc, type, code,
-					value);
+			evdev->ev_methods->ev_event(evdev, evdev->ev_softc, type, code, value);
+		*/
 		/*
 		 * Leds and driver repeats should be reported in ev_event
 		 * method body to interoperate with kbdmux states and rates

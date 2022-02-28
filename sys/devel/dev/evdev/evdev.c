@@ -51,7 +51,7 @@
 #include "freebsd-bitstring.h"
 
 #ifdef EVDEV_DEBUG
-#define	debugf(client, fmt, args...)	printf("evdev cdev: "fmt"\n", ##args)
+#define	debugf(client, fmt, args...)	printf("evdev: "fmt"\n", ##args)
 #else
 #define	debugf(client, fmt, args...)
 #endif
@@ -98,48 +98,43 @@ evdev_match(parent, match, aux)
 }
 
 void
-evdev_attach(parent, self, aux)
-	struct device *parent, *self;
-	void *aux;
+evdev_attach(evdev)
+	struct evdev_dev 	*evdev;
 {
-	struct evdev_softc *wsc = (struct evdev_softc *)self;
-	struct evdev_client *sc = (struct evdev_client *)aux;
-	struct evdev_dev *evdev;
-	int ret;
+	struct evdev_client *client;
+	size_t buffer_size;
 
 	/* Initialize internal structures */
-	evdev = wsc->sc_evdev;
-	sc->ec_evdev = evdev;
-
 	ret = evdev_register(evdev);
 	if (ret != 0) {
 		printf("evdev_attach: evdev_register error", ret);
 	}
-}
 
-int
-evdev_open(evdev, softc)
-	struct evdev_dev 	*evdev;
-	void 				*softc;
-{
-	struct proc 		*p;
-	struct evdev_client *client;
-	struct wseventvar 	*evar;
-	size_t buffer_size;
-	int error, ret;
-
-	p = (struct proc *)softc;
-	evdev->ev_softc = p;
-
+	/* Initialize ring buffer */
 	buffer_size = evdev->ev_report_size * DEF_RING_REPORTS;
 	client = evdev_client_alloc(evdev, buffer_size);
 
-	/* Initialize ring buffer */
 	client->ec_buffer_size = buffer_size;
 	client->ec_buffer_ready = 0;
 
 	client->ec_evdev = evdev;
 	lockinit(&client->ec_buffer_lock, "evclient", 0, LK_CANRECURSE);
+}
+
+int
+evdev_open(evdev, p)
+	struct evdev_dev 	*evdev;
+	struct proc 		*p;
+{
+	struct evdev_client *client;
+	struct wseventvar 	*evar;
+	size_t buffer_size;
+	int error, ret;
+
+	client = evdev->ev_client;
+	if (client == NULL) {
+		client = evdev_client_alloc(evdev, (evdev->ev_report_size * DEF_RING_REPORTS));
+	}
 
 	EVDEV_LOCK(evdev);
 	evar = evdev_register_wsevent(client, p);
@@ -161,16 +156,24 @@ evdev_open(evdev, softc)
 }
 
 int
-evdev_close(evdev, softc)
+evdev_close(evdev, p)
 	struct evdev_dev 	*evdev;
-	void 				*softc;
-{
 	struct proc 		*p;
+{
+	struct evdev_client *client;
 
-	p = (struct proc *)softc;
-	evdev->ev_softc = p;
+	client = evdev->ev_client;
 
-	return (ENODEV);
+	EVDEV_LOCK(evdev);
+	if (client != NULL) {
+		evdev_revoke_client(client);
+		evdev_unregister_wsevent(client);
+		/* free client */
+		evdev_client_free(client);
+		evdev->ev_client = client;
+	}
+	EVDEV_UNLOCK(evdev);
+	return (0);
 }
 
 int
@@ -389,7 +392,7 @@ evdev_do_ioctl(evdev, dev, cmd, data, fflag, p)
 					return (ENOTSUP);
 
 		ke = (struct input_keymap_entry*) data;
-		evdev_get_keycode(evdev, ke);
+		evdev->ev_methods->ev_get_keycode(evdev, ke);
 		return (0);
 
 	case EVIOCSKEYCODE:
@@ -402,7 +405,7 @@ evdev_do_ioctl(evdev, dev, cmd, data, fflag, p)
 			return (ENOTSUP);
 
 		ke = (struct input_keymap_entry*) data;
-		evdev_set_keycode(evdev, ke);
+		evdev->ev_methods->ev_set_keycode(evdev, ke);
 		return (0);
 
 	case EVIOCGABS(0) ... EVIOCGABS(ABS_MAX):
@@ -615,31 +618,6 @@ evdev_ioctl_eviocgbit(evdev, type, len, data, p)
 	len = MIN(limit, len);
 	memcpy(data, bitmap, len);
 	return (0);
-}
-
-static void
-evdev_set_keycode(evdev, ike)
-	struct evdev_dev *evdev;
-	struct input_keymap_entry *ike;
-{
-	evdev->ev_methods->ev_set_keycode(evdev, ike);
-}
-
-static void
-evdev_get_keycode(evdev, ike)
-	struct evdev_dev *evdev;
-	struct input_keymap_entry *ike;
-{
-	evdev->ev_methods->ev_get_keycode(evdev, ike);
-}
-
-void
-evdev_event(evdev, type, code, value)
-	struct evdev_dev *evdev;
-	uint16_t type, code;
-	int32_t value;
-{
-	evdev->ev_methods->ev_event(evdev, type, code, value);
 }
 
 struct wseventvar *
