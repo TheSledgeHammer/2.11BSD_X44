@@ -8,7 +8,9 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/proc.h>
 #include <sys/user.h>
+#include <sys/filedesc.h>
 #include <sys/mbuf.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
@@ -594,9 +596,7 @@ unp_externalize(rights)
 			panic("unp_externalize");
 		fp = *rp;
 		u->u_ofile[f] = fp;
-		/* -1 added to msgcount, 0 to count */
-		SKcall(fadjust, sizeof(fp) + sizeof(int) + sizeof(int),
-		    fp, -1, 0);
+		fp->f_msgcount--;
 		unp_rights--;
 		*(int *)rp++ = f;
 	}
@@ -620,9 +620,8 @@ unp_internalize(rights)
 	for (i = 0; i < oldfds; i++) {
 		GETF(fp, *(int *)rp);
 		*rp++ = fp;
-		/* bump both the message count and reference count of fp */
-		SKcall(fadjust, sizeof(fp) + sizeof(int) + sizeof(int),
-		    fp, 1, 1);
+		fp->f_count++;
+		fp->f_msgcount++;
 		unp_rights++;
 	}
 	return (0);
@@ -647,7 +646,9 @@ unp_gc()
 restart:
 	unp_defer = 0;
 	/* get limits AND clear FMARK|FDEFER in all file table entries */
-	SKcall(unpgc1, sizeof(file) + sizeof(fileNFILE), &file, &fileNFILE);
+	for (fp = file; fp < fileNFILE; fp++) {
+		fp->f_flag &= ~(FMARK|FDEFER);
+	}
 	do {
 		for (fp = file; fp < fileNFILE; fp++) {
 			/* get file table entry, the return value is f_count */
@@ -736,5 +737,5 @@ unp_discard(fp)
 	struct file *fp;
 {
 	unp_rights--;
-	SKcall(unpdisc, sizeof(fp), fp);
+	(void)unpdisc(fp);
 }

@@ -71,7 +71,7 @@ struct buf {
 	/* 2.11BSD New */
 	union {
 		TAILQ_ENTRY(buf) u_actq;			/* Device driver queue when active. */
-		RB_ENTRY(buf)	u_rbnode;			/* Cyclical scan (CSCAN) */
+		RB_ENTRY(buf)	 u_rbnode;			/* Cyclical scan (CSCAN) */
 	} b_u;
 #define	b_actq			b_u.u_actq
 #define	b_rbnode		b_u.u_rbnode

@@ -11,10 +11,11 @@
 
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
-#include <sys/lock.h>
 
 #ifdef _KERNEL
 #include <sys/queue.h>
+#include <sys/lock.h>
+
 struct proc;
 struct uio;
 struct knote;
@@ -36,21 +37,23 @@ struct file {
 		void			*f_Data;
 		struct socket 	*f_Socket;
 	} f_un;
-	struct fileops {
-		int	(*fo_rw)		(struct file *, struct uio *, struct ucred *);
-		int (*fo_read)		(struct file *, struct uio *, struct ucred *);
-		int (*fo_write)		(struct file *, struct uio *, struct ucred *);
-		int	(*fo_ioctl)		(struct file *, int, caddr_t, struct proc *);
-		int	(*fo_select) 	(struct file *, int, struct proc *);
-		int	(*fo_poll)		(struct file *, int, struct proc *);
-		int	(*fo_close)		(struct file *, struct proc *);
-		int (*fo_kqfilter)	(struct file *, struct knote *);
-	} *f_ops;
+	struct fileops		*f_ops;
 	off_t				f_offset;
 	struct ucred 		*f_cred;		/* credentials associated with descriptor */
 	struct lock_object 	f_slock;
 #define f_data			f_un.f_Data
 #define f_socket		f_un.f_Socket
+};
+
+struct fileops {
+	int	(*fo_rw)		(struct file *, struct uio *, struct ucred *);
+	int (*fo_read)		(struct file *, struct uio *, struct ucred *);
+	int (*fo_write)		(struct file *, struct uio *, struct ucred *);
+	int	(*fo_ioctl)		(struct file *, int, caddr_t, struct proc *);
+	int	(*fo_select) 	(struct file *, int, struct proc *);
+	int	(*fo_poll)		(struct file *, int, struct proc *);
+	int	(*fo_close)		(struct file *, struct proc *);
+	int (*fo_kqfilter)	(struct file *, struct knote *);
 };
 
 extern struct file 	*filehead;	/* head of list of open files */
