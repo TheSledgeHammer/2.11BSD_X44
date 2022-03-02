@@ -187,6 +187,16 @@ struct evdev_client {
 #define	EVDEV_CLIENT_LOCKQ_ASSERT(client) 	KASSERT(lockstatus((client)->ec_buffer_lock) != 0)
 #define	EVDEV_CLIENT_EMPTYQ(client) 		WSEVENT_EMPTYQ((client)->ec_base.me_evp)
 
+/* softc */
+struct evdev_softc {
+	struct device 		sc_dv;
+	struct evdev_dev 	*sc_evdev;
+	int			 		sc_evdev_state;
+
+	int					sc_refcnt;
+	u_char				sc_dying;
+};
+
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 int 	evdev_inject_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);

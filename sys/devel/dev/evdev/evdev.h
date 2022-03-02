@@ -36,7 +36,8 @@
 #define	NAMELEN		80
 
 struct evdev_dev;
-
+//typedef int	 (evdev_open_t)(dev_t, int, int, struct proc *p);
+//typedef int	 (evdev_close_t)(dev_t, int, int, struct proc *p);
 typedef int	 (evdev_open_t)(struct evdev_dev *, void *);
 typedef void (evdev_close_t)(struct evdev_dev *, void *);
 typedef void (evdev_event_t)(struct evdev_dev *, uint16_t, uint16_t, int32_t);
@@ -48,8 +49,8 @@ typedef void (evdev_keycode_t)(struct evdev_dev *, struct input_keymap_entry *);
  * that are able to send events through both evdev and sysmouse/kbdmux
  * interfaces so user can choose prefered one to not receive one event twice.
  */
-#define	EVDEV_RCPT_SYSMOUSE	(1<<0)
-#define	EVDEV_RCPT_KBDMUX	(1<<1)
+#define	EVDEV_RCPT_WSMOUSE	(1<<0)
+#define	EVDEV_RCPT_WSKBD	(1<<1)
 #define	EVDEV_RCPT_HW_MOUSE	(1<<2)
 #define	EVDEV_RCPT_HW_KBD	(1<<3)
 extern int evdev_rcpt_mask;

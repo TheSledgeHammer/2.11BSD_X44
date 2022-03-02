@@ -313,17 +313,17 @@ evdev_push_repeats(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd)
 	}
 }
 
-#define WSKBD_LED_VAL(k)		((k)->sc_ledstate)
-
 void
-evdev_ev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
+evdev_ev_kbd_led_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
 {
-	struct wskbd_keyrepeat_data *kbd = (struct wskbd_keyrepeat_data *)softc;
+	struct wskbd_softc *kbd = (struct wskbd_softc *)softc;
+	struct wskbd_keyrepeat_data *rdat = kbd->sc_keyrepeat_data;
 	int delay[2], leds, oleds;
 	size_t i;
 
 	if (type == EV_LED) {
-		leds = oleds = WSKBD_LED_VAL(kbd);
+		leds = oleds = kbd->sc_ledstate;
+		update_leds(kbd->id);
 		for (i = 0; i < nitems(evdev_led_codes); i++) {
 			if (evdev_led_codes[i] == code) {
 				if (value)
@@ -331,17 +331,39 @@ evdev_ev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t
 				else
 					leds &= ~(1 << i);
 				if (leds != oleds)
-					//kbd_ioctl(kbd, KDSETLED, (caddr_t) & leds);
+					evdev_wskbd_ioctl(kbd, WSKBDIO_SETLEDS, (caddr_t)&leds);
 				break;
 			}
 		}
 	} else if (type == EV_REP && code == REP_DELAY) {
 		delay[0] = value;
-		delay[1] = kbd->delN;
-		//kbd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
-	} else if (type == EV_REP && code == REP_PERIOD) {
-		delay[0] = kbd->del1;
+		delay[1] = rdat->delN;
+		evdev_wskbd_ioctl(kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
+	}  else if (type == EV_REP && code == REP_PERIOD) {
+		delay[0] = rdat->del1;
 		delay[1] = value;
-		//kbd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
+		evdev_wskbd_ioctl(kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
 	}
+}
+
+int
+evdev_wskbd_ioctl(kbd, cmd, data)
+	struct wskbd_softc 	*kbd;
+	u_long 				cmd;
+	caddr_t 			data;
+{
+	struct evdev_softc *sc = kbd->sc_evsc;
+	switch(cmd) {
+	case WSKBDIO_SETKEYREPEAT:
+		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_WSKBD)) {
+			evdev_push_repeats(sc->sc_evdev, kbd->sc_keyrepeat_data);
+		}
+		return (0);
+	case WSKBDIO_SETLEDS:
+		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_WSKBD)) {
+			evdev_push_leds(sc->sc_evdev, *(int*)data);
+		}
+		return (0);
+	}
+	return (ENIVAL);
 }

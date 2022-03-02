@@ -31,6 +31,7 @@
 
 #include <sys/param.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/device.h>
 #include <sys/fcntl.h>
 #include <sys/kernel.h>
@@ -56,24 +57,20 @@
 #define	debugf(client, fmt, args...)
 #endif
 
-#define	DEF_RING_REPORTS	8
-
-/*
 CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
 CFOPS_DECL(evdev, evdev_match, evdev_attach, NULL, NULL);
 
-extern struct cfdriver evdev_cd;
+#define	DEF_RING_REPORTS	8
 
-dev_type_open(evdev_open);
-//dev_type_close(evdev_close);
 dev_type_read(evdev_read);
 dev_type_write(evdev_write);
 dev_type_ioctl(evdev_ioctl);
 dev_type_poll(evdev_poll);
 dev_type_kqfilter(evdev_kqfilter);
 
+//extern struct cdevsw evdev_cdevsw;
 const struct cdevsw evdev_cdevsw = {
-	.d_open = evdev_open,
+	.d_open = noopen,
 	.d_close = noclose,
 	.d_read = evdev_read,
 	.d_write = evdev_write,
@@ -86,7 +83,15 @@ const struct cdevsw evdev_cdevsw = {
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
 };
-*/
+
+size_t
+evdev_buffer_size(evdev)
+	struct evdev_dev *evdev;
+{
+	size_t buffer_size = evdev->ev_report_size * DEF_RING_REPORTS;
+
+	return (buffer_size);
+}
 
 int
 evdev_match(parent, match, aux)
@@ -98,9 +103,12 @@ evdev_match(parent, match, aux)
 }
 
 void
-evdev_attach(evdev)
-	struct evdev_dev 	*evdev;
+evdev_attach(parent, self, aux)
+	struct device *parent, *self;
+	void *aux;
 {
+	struct evdev_softc *sc = (struct evdev_softc *)self;
+	struct evdev_dev *evdev = (struct evdev_dev *)aux;
 	struct evdev_client *client;
 	size_t buffer_size;
 
@@ -111,7 +119,7 @@ evdev_attach(evdev)
 	}
 
 	/* Initialize ring buffer */
-	buffer_size = evdev->ev_report_size * DEF_RING_REPORTS;
+	buffer_size = evdev_buffer_size(evdev);
 	client = evdev_client_alloc(evdev, buffer_size);
 
 	client->ec_buffer_size = buffer_size;
@@ -129,9 +137,10 @@ evdev_open(evdev, p)
 	struct evdev_client *client;
 	struct wseventvar 	*evar;
 	size_t buffer_size;
-	int error, ret;
+	int ret;
 
 	client = evdev->ev_client;
+
 	if (client == NULL) {
 		client = evdev_client_alloc(evdev, (evdev->ev_report_size * DEF_RING_REPORTS));
 	}
@@ -177,20 +186,32 @@ evdev_close(evdev, p)
 }
 
 int
-evdev_read(evdev, evar, uio, flags)
-	struct evdev_dev 	*evdev;
-	struct wseventvar 	*evar;
+evdev_read(dev, uio, flags)
+	dev_t dev;
 	struct uio *uio;
 	int flags;
 {
+	struct evdev_softc *sc;
+	struct evdev_dev 	*evdev;
 	struct evdev_client *client;
+	struct wseventvar 	*evar;
 	struct wscons_event *we;
-	int ret, remaining;
+	int unit, error, remaining;
 
+	unit = minor(dev);
+	sc = (struct evdev_softc *)evdev_cd.cd_devs[unit];
+
+	if(sc == NULL) {
+		return (ENXIO);
+	}
+
+	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 	evar = client->ec_base.me_evp;
-	ret = 0;
 
+	if (sc->sc_dying) {
+		return (EIO);
+	}
 	if (evar->revoked)
 		return (ENODEV);
 
@@ -204,101 +225,169 @@ evdev_read(evdev, evar, uio, flags)
 	EVDEV_CLIENT_LOCKQ(client);
 	if (EVDEV_CLIENT_EMPTYQ(client)) {
 		if (flags & O_NONBLOCK) {
-			ret = EWOULDBLOCK;
+			error = EWOULDBLOCK;
 		} else {
 			if (remaining != 0) {
 				evar->blocked = TRUE;
 				tsleep(client, &client->ec_buffer_lock, PCATCH, "evread", 0);
-				if (ret == 0 && evar->revoked) {
-					ret = ENODEV;
+				if (error == 0 && evar->revoked) {
+					error = ENODEV;
 				}
 			}
 		}
 	}
-
-	while (ret == 0 && !EVDEV_CLIENT_EMPTYQ(client) && remaining > 0) {
+	while (error == 0 && !EVDEV_CLIENT_EMPTYQ(client) && remaining > 0) {
 		memcpy(&we, &client->ec_buffer[evar->put], sizeof(struct input_event));
-		evar->put = (evar->put + 1) % WSEVENT_QSIZE;
+		wsevent_put(evar, 1);
 		remaining--;
 
 		EVDEV_CLIENT_UNLOCKQ(client);
-		ret = wsevent_read(evar, uio, flags);
+		sc->sc_refcnt++;
+		error = wsevent_read(evar, uio, flags);
+		if (--sc->sc_refcnt < 0) {
+			wakeup(sc);
+			error = EIO;
+		}
 		EVDEV_CLIENT_LOCKQ(client);
 	}
 	EVDEV_CLIENT_UNLOCKQ(client);
-	return (ret);
+	return (error);
 }
 
 int
-evdev_write(evdev, evar, uio, flags)
-	struct evdev_dev 	*evdev;
-	struct wseventvar 	*evar;
-	struct uio 			*uio;
-	int 				flags;
+evdev_write(dev, uio, flags)
+	dev_t dev;
+	struct uio *uio;
+	int flags;
 {
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
+	struct wseventvar 	*evar;
 	struct input_event 	event;
-	int error;
+	int unit, error, remaining;
+
+	unit = minor(dev);
+	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+
+	if (sc == NULL) {
+		return (ENXIO);
+	}
+
+	evdev = sc->sc_evdev;
+	client = evdev->ev_client;
+	evar = client->ec_base.me_evp;
 
 	if (evar->revoked || evdev == NULL) {
 		return (ENODEV);
 	}
-
 	if (uio->uio_resid % sizeof(struct input_event) != 0) {
 		debugf(sc, "write size not multiple of input_event size");
 		return (EINVAL);
 	}
 
 	while (uio->uio_resid > 0 && ret == 0) {
-		ret = uiomove(&event, sizeof(struct input_event), uio);
-		if (ret == 0) {
-			ret = evdev_inject_event(evdev, event.type, event.code, event.value);
-			if (ret == 0) {
-				ret = evdev_wsevent_inject(evar, &event, 1);
+		error = uiomove(&event, sizeof(struct input_event), uio);
+		if (error == 0) {
+			error = evdev_inject_event(evdev, event.type, event.code, event.value);
+			if (error == 0) {
+				error = evdev_wsevent_inject(evar, &event, 1);
 			}
 		}
 	}
-
-	return (ret);
+	return (error);
 }
 
 int
-evdev_poll(evdev, events, p)
-	struct evdev_dev 	*evdev;
+evdev_poll(dev, events, p)
+	dev_t dev;
 	int events;
 	struct proc *p;
 {
-	struct evdev_client *client = evdev->ev_client;
-	int ret;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
+	int unit, error;
+
+	unit = minor(dev);
+	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+
+	if (sc == NULL) {
+		return (ENXIO);
+	}
+	evdev = sc->sc_evdev;
+	client = evdev->ev_client;
 
 	if (client->ec_base.me_evp == NULL)
 		return (EINVAL);
 
 	EVDEV_CLIENT_LOCKQ(client);
 	if(!EVDEV_CLIENT_EMPTYQ(client)) {
-		ret = wsevent_poll(client->ec_base.me_evp, events & (POLLIN | POLLRDNORM), p);
+		error = wsevent_poll(client->ec_base.me_evp, events & (POLLIN | POLLRDNORM), p);
 	} else {
-		ret = wsevent_poll(client->ec_base.me_evp, events, p);
+		error = wsevent_poll(client->ec_base.me_evp, events, p);
 	}
 	EVDEV_CLIENT_UNLOCKQ(client);
-	return (ret);
+	return (error);
 }
 
 int
-evdev_kqfilter(evdev, kn)
-	struct evdev_dev 	*evdev;
+evdev_kqfilter(dev, kn)
+	dev_t dev;
 	struct knote *kn;
 {
-	struct evdev_client *client = evdev->ev_client;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
+	int unit, error;
 
+	unit = minor(dev);
+	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	if (sc == NULL) {
+		return (ENXIO);
+	}
+	evdev = sc->sc_evdev;
+	client = evdev->ev_client;
 	if (client->ec_base.me_evp == NULL)
 		return (EINVAL);
 	return (wsevent_kqfilter(client->ec_base.me_evp, kn));
 }
 
 int
-evdev_do_ioctl(evdev, dev, cmd, data, fflag, p)
-	struct evdev_dev *evdev;
+evdev_ioctl(dev, cmd, data, flag, p)
 	dev_t dev;
+	int cmd;
+	caddr_t data;
+	int flag;
+	struct proc *p;
+{
+	return (evdev_do_ioctl(evdev_cd.cd_devs[minor(dev)], cmd, data, flag, p));
+}
+
+int
+evdev_do_ioctl(dv, cmd, data, fflag, p)
+	struct device *dv;
+	int cmd;
+	caddr_t data;
+	int fflag;
+	struct proc *p;
+{
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	int error;
+
+	sc = (struct evdev_softc*) dv;
+	evdev = sc->sc_dv;
+	sc->sc_refcnt++;
+	error = evdev_do_ioctl_sc(evdev, cmd, data, fflag, p);
+	if (--sc->sc_refcnt < 0)
+		wakeup(sc);
+	return (error);
+}
+
+int
+evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
+	struct evdev_dev *evdev;
 	int cmd;
 	caddr_t data;
 	int fflag;
@@ -685,7 +774,7 @@ evdev_wsevent_inject(ev, events, nevents)
 	    we->value = events[i].value;
 	    we->time = ts;
 
-	    ev->put = (ev->put + 1) % WSEVENT_QSIZE;
+	    wsevent_put(ev, 1);
 	}
 	wsevent_wakeup(ev);
 	return (0);
@@ -776,6 +865,6 @@ evdev_client_filter_queue(client, type)
 
 		tail = (tail + 1) % count;
 	}
-	 ev->put = i;
-	 ev->get = tail;
+	wsevent_put(ev, i);
+	wsevent_get(ev, tail);
 }

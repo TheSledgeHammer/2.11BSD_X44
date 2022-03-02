@@ -33,17 +33,17 @@
 #include <devel/dev/evdev/evdev.h>
 #include <devel/dev/evdev/evdev_private.h>
 
-static const struct evdev_methods default_evdev_methods = {
+static const struct evdev_methods wskbd_evdev_methods = {
 		.ev_open = evdev_open,
 		.ev_close = evdev_close,
-		.ev_event = NULL,
+		.ev_event = evdev_ev_kbd_led_event,
 };
 
 //static struct evdev_dev	*wskbd_evdev;
 
 void
 wskbd_evdev_init(sc)
-	struct wskbd_softc *sc;
+	struct evdev_softc *sc;
 {
 	keyboard_t			*kbd = NULL;
 	struct evdev_dev 	*evdev;
@@ -53,10 +53,9 @@ wskbd_evdev_init(sc)
 	evdev = evdev_alloc();
 	evdev_set_name(evdev, "wskbd evdev");
 	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME"%d", unit);
-
 	evdev_set_phys(evdev, phys_loc);
 	evdev_set_id(evdev, BUS_VIRTUAL, 0, 0, 0);
-	evdev_set_methods(evdev, kbd, &wskbd_evdev_methods);
+	evdev_set_methods(evdev, sc, &wskbd_evdev_methods);
 	evdev_support_event(evdev, EV_SYN);
 	evdev_support_event(evdev, EV_KEY);
 	evdev_support_event(evdev, EV_LED);
@@ -105,7 +104,7 @@ void
 evdev_wsmouse_write(x, y, z, buttons)
 	int x, y, z, buttons;
 {
-	if (wsmouse_evdev == NULL || !(evdev_rcpt_mask & EVDEV_RCPT_SYSMOUSE))
+	if (wsmouse_evdev == NULL || !(evdev_rcpt_mask & EVDEV_RCPT_WSMOUSE))
 		return;
 
 	evdev_push_event(wsmouse_evdev, EV_REL, REL_X, x);
@@ -136,65 +135,4 @@ evdev_wsmouse_write(x, y, z, buttons)
 	}
 	evdev_push_mouse_btn(wsmouse_evdev, buttons);
 	evdev_sync(wsmouse_evdev);
-}
-
-void
-wskbd_read_char(sc)
-	struct wskbd_softc *sc;
-{
-	u_int		 action;
-	int		 scancode, keycode;
-#ifdef EVDEV_SUPPORT
-	/* push evdev event */
-	if ((evdev_rcpt_mask & EVDEV_RCPT_KBDMUX) && sc->sc_evdev != NULL) {
-		uint16_t key = evdev_scancode2key(&sc->sc_evdev_state, scancode);
-
-		if (key != KEY_RESERVED) {
-			evdev_push_event(sc->sc_evdev, EV_KEY, key, scancode & 0x80 ? 0 : 1);
-			evdev_sync(sc->sc_evdev);
-		}
-	}
-#endif
-}
-
-int
-wskbd_do_ioctl(dv, cmd, data, flag, p)
-	struct device *dv;
-	u_long cmd;
-	caddr_t data;
-	int 	flag;
-	struct proc *p;
-{
-	struct wskbd_softc *sc = (struct wskbd_softc*) dv;
-	int error;
-
-	sc->sc_refcnt++;
-#ifdef EVDEV_SUPPORT
-	error = evdev_do_ioctl(sc->sc_evdev, cmd, data, fflag, p);
-#else
-	error = wskbd_do_ioctl_sc(sc, cmd, data, flag, p);
-#endif
-	if (--sc->sc_refcnt < 0)
-		wakeup(sc);
-	return (error);
-}
-
-void
-wskbd_ioctl(u_long cmd)
-{
-	struct wskbd_softc *sc;
-	switch (cmd) {
-	case WSKBDIO_SETLED:		 /* set keyboard LED */
-#ifdef EVDEV_SUPPORT
-		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_KBDMUX)) {
-			evdev_push_leds(sc->sc_evdev, *(int*) arg);
-		}
-#endif
-		break;
-	case WSKBDIO_SETKEYREPEAT:
-#ifdef EVDEV_SUPPORT
-		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_KBDMUX)) {
-			evdev_push_repeats(sc->sc_evdev, ukdp);
-		}
-#endif
 }

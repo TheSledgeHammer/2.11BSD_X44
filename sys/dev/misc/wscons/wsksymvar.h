@@ -75,7 +75,7 @@ void 		wskbd_get_mapentry(const struct wskbd_mapdata *, int, struct wscons_keyma
 void 		wskbd_init_keymap(int, struct wscons_keymap **, int *);
 int			wskbd_load_keymap(const struct wskbd_mapdata *, struct wscons_keymap **, int *);
 keysym_t 	wskbd_compose_value(keysym_t *);
-
+keysym_t 	wskbd_ksym_scancode(keysym_t);
 #endif
 
 #endif /* !_DEV_WSCONS_WSKSYMVAR_H_ */

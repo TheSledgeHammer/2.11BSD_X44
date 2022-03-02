@@ -97,14 +97,16 @@ struct wseventvar {
 #define WSEVENT_EMPTYQ(ev)			((ev)->put < (ev)->get)
 #define WSEVENT_CLIENT_QSIZE(ev)	((ev)->put = ((ev)->put + 1) % WSEVENT_QSIZE);
 
-void	wsevent_init (struct wseventvar *);
-void	wsevent_fini (struct wseventvar *);
-int		wsevent_read (struct wseventvar *, struct uio *, int);
-int		wsevent_poll (struct wseventvar *, int, struct proc *);
+void	wsevent_init(struct wseventvar *);
+void	wsevent_fini(struct wseventvar *);
+int		wsevent_read(struct wseventvar *, struct uio *, int);
+int		wsevent_poll(struct wseventvar *, int, struct proc *);
 int		wsevent_kqfilter(struct wseventvar *, struct knote *);
 void	wsevent_wakeup(struct wseventvar *);
 int		wsevent_inject(struct wseventvar *, struct wscons_event *, size_t);
 int		wsevent_avail(struct wseventvar *);
+void	wsevent_put(struct wseventvar *, size_t);
+void	wsevent_get(struct wseventvar *, size_t);
 
 /*
  * PWSEVENT is set just above PSOCK, which is just above TTIPRI, on the

@@ -324,7 +324,7 @@ wsevent_inject(ev, events, nevents)
 		we->value = events[i].value;
 		we->time = ts;
 
-		ev = wsevent_put(ev, 1);
+		wsevent_put(ev, 1);
 	}
 	wsevent_wakeup(ev);
 	return (0);
@@ -345,20 +345,18 @@ wsevent_avail(ev)
 	return (avail);
 }
 
-struct wseventvar *
+void
 wsevent_put(ev, size)
 	struct wseventvar *ev;
 	size_t size;
 {
 	ev->put = (ev->put + size) % WSEVENT_QSIZE;
-	return (ev);
 }
 
-struct wseventvar *
+void
 wsevent_get(ev, cnt)
 	struct wseventvar *ev;
 	size_t cnt;
 {
 	ev->get = (ev->get + cnt) % WSEVENT_QSIZE;
-	return (ev);
 }

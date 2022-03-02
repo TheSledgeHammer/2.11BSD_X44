@@ -327,6 +327,17 @@ fillmapentry(kp, len, mapentry)
 	}
 }
 
+//#define SCANCODE_TO_KEYCODE(ks) ((ks) & 0x07F)
+
+keysym_t
+wskbd_ksym_scancode(ksym)
+	keysym_t ksym;
+{
+	keysym_t key;
+	key = KS_VALUE(KS_KEYCODE(ksym));
+	return (key);
+}
+
 void
 wskbd_get_mapentry(mapdata, kc, mapentry)
 	const struct wskbd_mapdata *mapdata;

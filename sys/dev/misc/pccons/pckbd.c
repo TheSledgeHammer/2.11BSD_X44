@@ -551,8 +551,7 @@ pckbd_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 		cmd[0] = KBC_MODEIND;
 		cmd[1] = pckbd_led_encode(*(int *)data);
 		sc->sc_ledstate = cmd[1];
-		res = pckbport_enqueue_cmd(sc->id->t_kbctag, sc->id->t_kbcslot,
-					cmd, 2, 0, 1, 0);
+		res = pckbport_enqueue_cmd(sc->id->t_kbctag, sc->id->t_kbcslot, cmd, 2, 0, 1, 0);
 		return res;
 	}
 	case WSKBDIO_GETLEDS:

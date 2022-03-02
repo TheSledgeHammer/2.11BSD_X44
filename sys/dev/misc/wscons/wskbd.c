@@ -170,8 +170,7 @@ struct wskbd_softc {
 	int								sc_refcnt;
 	u_char							sc_dying;			/* device is being detached */
 #ifdef EVDEV_SUPPORT
-	struct evdev_dev 				*sc_evdev;
-	int			 					sc_evdev_state;
+	struct evdev_softc				*sc_evsc;			/* pointer to evdev softc */
 #endif
 };
 
@@ -315,8 +314,11 @@ struct wskbd_keyrepeat_data wskbd_default_keyrepeat_data = {
 #if NWSDISPLAY > 0 || NWSMUX > 0
 struct wssrcops wskbd_srcops = {
 	WSMUX_KBD,
-	wskbd_mux_open, wskbd_mux_close, wskbd_do_ioctl,
-	wskbd_displayioctl, wskbd_set_display
+	wskbd_mux_open,
+	wskbd_mux_close,
+	wskbd_do_ioctl,
+	wskbd_displayioctl,
+	wskbd_set_display
 };
 #endif
 
@@ -1104,7 +1106,7 @@ getkeyrepeat:
 #else
 	case WSKBDIO_GETSCROLL:
 	case WSKBDIO_SETSCROLL:
-		return ENODEV;
+		return (ENODEV);
 #endif
 
 #undef SETKEYREPEAT
@@ -1709,6 +1711,21 @@ wskbd_translate(id, type, value)
 
 	switch (KS_GROUP(ksym)) {
 	case KS_GROUP_Ascii:
+		/* right place ??? */
+#ifdef EVDEV_SUPPORT
+		struct evdev_softc *evsc = sc->sc_evsc;
+		if ((evdev_rcpt_mask & EVDEV_RCPT_WSKBD) && evsc->sc_evdev != NULL) {
+			keysym_t scancode = wskbd_ksym_scanode(ksym);
+			res = evdev_scancode2key(&evsc->sc_evdev_state, scancode);
+			if(res != KEY_RESERVED) {
+				evdev_push_event(evsc->sc_evdev, EV_KEY, key, scancode & 0x80 ? 0 : 1);
+				evdev_sync(evsc->sc_evdev);
+				update_modifier(id, 1, 0, MOD_COMPOSE);
+				return (0);
+			}
+		}
+		break;
+#endif
 	case KS_GROUP_Keypad:
 	case KS_GROUP_Function:
 		res = ksym;

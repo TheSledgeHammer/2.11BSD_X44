@@ -52,7 +52,7 @@ enum evdev_sparse_result {
 	EV_REPORT_MT_SLOT,	/* Event value and MT slot number changed */
 };
 
-int evdev_rcpt_mask = EVDEV_RCPT_SYSMOUSE | EVDEV_RCPT_KBDMUX;
+int evdev_rcpt_mask = EVDEV_RCPT_WSMOUSE | EVDEV_RCPT_WSKBD;
 
 static void evdev_start_repeat(struct evdev_dev *, uint16_t);
 static void evdev_stop_repeat(struct evdev_dev *);
@@ -773,10 +773,9 @@ evdev_inject_event(struct evdev_dev *evdev, uint16_t type, uint16_t code, int32_
 	case EV_MSC:
 	case EV_SND:
 	case EV_FF:
-		/*
+
 		if (evdev->ev_methods != NULL && evdev->ev_methods->ev_event != NULL)
 			evdev->ev_methods->ev_event(evdev, evdev->ev_softc, type, code, value);
-		*/
 		/*
 		 * Leds and driver repeats should be reported in ev_event
 		 * method body to interoperate with kbdmux states and rates
