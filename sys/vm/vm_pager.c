@@ -279,7 +279,7 @@ vm_offset_t
 vm_pager_map_pages(mlist, npages, canwait)
 	vm_page_t	*mlist;
 	int			npages;
-	bool_t	canwait;
+	bool_t		canwait;
 {
 	vm_offset_t kva, va;
 	vm_size_t size;

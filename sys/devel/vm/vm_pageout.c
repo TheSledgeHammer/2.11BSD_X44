@@ -79,7 +79,7 @@
  *
  * Pageout Daemon Related
  * - Pager: Most tie into the above.
- * - Clustering with segments (Mach/PureDarwin VM implements pager clustering)
+ * - Clustering with segments (Mach/PureDarwin VM implements read/write pager clustering)
  * - Per Segment Load Balancing of Pages
  * 	 - Improves page utilization and distribution
  */
@@ -88,7 +88,7 @@
 
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_page.h>
-#include <vm/include/vm_pageout.h>
+#include <devel/vm/include/vm_pageout.h>
 #include <devel/vm/include/vm.h>
 
 /*
@@ -143,7 +143,7 @@ vm_pageout_scan()
 }
 
 /* Scan segments */
-static void
+void
 vm_pageout_scan_segment(object, free, pages_freed)
 	vm_object_t		object;
 	int 			free, pages_freed;
@@ -176,7 +176,7 @@ vm_pageout_scan_segment(object, free, pages_freed)
 }
 
 /* Scan pages */
-static void
+void
 vm_pageout_scan_page(pglst, segment, object, free, pages_freed)
 	struct pglist 	*pglst;
 	vm_segment_t	segment;
@@ -233,8 +233,27 @@ vm_pageout_scan_page(pglst, segment, object, free, pages_freed)
 	}
 }
 
+/*
+ * vm_pageout_phys return the physical address of a segment and
+ * page if they are the same.
+ */
+vm_offset_t
+vm_pageout_phys(page, segment)
+	vm_page_t 		page;
+	vm_segment_t 	segment;
+{
+	vm_offset_t phys;
+
+	if(ptoa(VM_SEGMENT_TO_PHYS(segment)) == VM_PAGE_TO_PHYS(page) &&
+			VM_SEGMENT_TO_PHYS(segment) == stoa(VM_PAGE_TO_PHYS(page))) {
+		phys = VM_PAGE_TO_PHYS(page);
+		return (phys);
+	}
+	return (NULL);
+}
+
 /* Common routine for scanning inactive segments & pages */
-static void
+void
 vm_pageout_inactive_scanner(page, segment, object, freed)
 	vm_page_t 		page;
 	vm_segment_t 	segment;
@@ -248,15 +267,12 @@ vm_pageout_inactive_scanner(page, segment, object, freed)
 	 * If the segment & page has been referenced, move them back to the
 	 * active queue.
 	 */
-	if(ptoa(VM_SEGMENT_TO_PHYS(segment)) == VM_PAGE_TO_PHYS(page) &&
-			VM_SEGMENT_TO_PHYS(segment) == stoa(VM_PAGE_TO_PHYS(page))) {
-		phys = VM_PAGE_TO_PHYS(page);
-		if(pmap_is_referenced(phys)) {
-			vm_page_active(page);
-			vm_segment_active(segment);
-			cnt.v_reactivated++;
-			continue;
-		}
+	phys = vm_pageout_phys(segment, page);
+	if (pmap_is_referenced(phys)) {
+		vm_page_active(page);
+		vm_segment_active(segment);
+		cnt.v_reactivated++;
+		continue;
 	}
 	anon = page->anon;
 	object = segment->sg_object;
@@ -330,24 +346,24 @@ vm_pageout_inactive_scanner(page, segment, object, freed)
 		vm_pageout_cluster(page, segment, object);
 	else
 #endif
-	vm_pageout_page(page, segment, object);
+	vm_pageout_active(page, segment, object);
 	thread_wakeup(object);
 	vm_object_unlock(object);
 }
 
-/* Fix Up Below */
 /*
  * Called with object and page queues locked.
  * If reactivate is TRUE, a pager error causes the page to be
  * put back on the active queue, or it is left on the inactive queue.
  */
 void
-vm_pageout_page(page, segment, object)
+vm_pageout_active(page, segment, object)
 	vm_page_t 		page;
 	vm_segment_t 	segment;
 	vm_object_t 	object;
 {
 	vm_pager_t pager;
+	vm_offset_t phys;
 	int pageout_status;
 
 	/*
@@ -359,7 +375,8 @@ vm_pageout_page(page, segment, object)
 	 * page won't move from the inactive queue.  (However, any
 	 * other page on the inactive queue may move!)
 	 */
-	pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+	phys = vm_pageout_phys(segment, page);
+	pmap_page_protect(phys, VM_PROT_NONE);
 	page->flags |= PG_BUSY;
 
 	/*
@@ -367,10 +384,9 @@ vm_pageout_page(page, segment, object)
 	 * We must unlock the page queues first.
 	 */
 	vm_page_unlock_queues();
-	vm_segment_unlock_lists();
-	if (object->pager == NULL)
+	if (object->pager == NULL) {
 		vm_object_collapse(object);
-
+	}
 	object->paging_in_progress++;
 	vm_object_unlock(object);
 
@@ -404,21 +420,13 @@ vm_pageout_page(page, segment, object)
 		page->flags &= ~PG_LAUNDRY;
 		break;
 	case VM_PAGER_BAD:
-		/*
-		 * Page outside of range of object.  Right now we
-		 * essentially lose the changes by pretending it
-		 * worked.
-		 *
-		 * XXX dubious, what should we do?
-		 */
 		page->flags &= ~PG_LAUNDRY;
 		page->flags |= PG_CLEAN;
 		segment->sg_flags |= SEG_CLEAN;
-		pmap_clear_modify(VM_PAGE_TO_PHYS(page));
+		pmap_clear_modify(phys);
 		break;
-	case VM_PAGER_AGAIN: {
+	case VM_PAGER_AGAIN:
 		extern int lbolt;
-
 		/*
 		 * FAIL on a write is interpreted to mean a resource
 		 * shortage, so we put pause for awhile and try again.
@@ -432,7 +440,6 @@ vm_pageout_page(page, segment, object)
 		vm_segment_lock_lists();
 		vm_page_lock_queues();
 		break;
-	}
 	case VM_PAGER_FAIL:
 	case VM_PAGER_ERROR:
 		/*
@@ -446,7 +453,7 @@ vm_pageout_page(page, segment, object)
 		break;
 	}
 
-	pmap_clear_reference(VM_PAGE_TO_PHYS(page));
+	pmap_clear_reference(phys);
 
 	/*
 	 * If the operation is still going, leave the page busy
@@ -456,15 +463,32 @@ vm_pageout_page(page, segment, object)
 	 */
 	if (pageout_status != VM_PAGER_PEND) {
 		page->flags &= ~PG_BUSY;
+		segment->sg_flags &= ~SEG_BUSY;
 		PAGE_WAKEUP(page);
 		object->paging_in_progress--;
 	}
 }
 
-#define PAGEOUTABLE(p) \
-	((((p)->flags & (PG_INACTIVE|PG_CLEAN|PG_LAUNDRY)) == \
-	  (PG_INACTIVE|PG_LAUNDRY)) && !pmap_is_referenced(VM_PAGE_TO_PHYS(p)))
+bool_t
+pageouttable(p, s)
+	vm_page_t  p;
+	vm_segment_t s;
+{
+	vm_offset_t phys;
+	bool_t pflags, sflags;
 
+	phys = vm_pageout_phys(p, s);
+	pflags = (p->flags & (PG_INACTIVE|PG_CLEAN|PG_LAUNDRY) == (PG_INACTIVE|PG_LAUNDRY));
+	sflags = (s->sg_flags & (SEG_INACTIVE|SEG_CLEAN) == SEG_INACTIVE);
+
+	return (pflags && sflags && !pmap_is_referenced(phys));
+}
+
+/* Improvements to be made:
+ * - segment addresses:
+ * - segment lists
+ * - segment flags
+ */
 /*
  * Attempt to pageout as many contiguous (to ``m'') dirty pages as possible
  * from ``object''.  Using information returned from the pager, we assemble
@@ -478,8 +502,9 @@ vm_pageout_cluster(page, segment, object)
 	vm_segment_t segment;
 	vm_object_t object;
 {
-	vm_offset_t offset, loff, hoff;
+	vm_offset_t phys, offset, loff, hoff;
 	vm_page_t plist[MAXPOCLUSTER], *plistp, p;
+	int postatus, ix, count;
 
 	/*
 	 * Determine the range of pages that can be part of a cluster
@@ -488,7 +513,7 @@ vm_pageout_cluster(page, segment, object)
 	 */
 	vm_pager_cluster(object->pager, page->offset, &loff, &hoff);
 	if (hoff - loff == PAGE_SIZE) {
-		vm_pageout_page(page, segment, object);
+		vm_pageout_active(page, segment, object);
 		return;
 	}
 
@@ -497,8 +522,10 @@ vm_pageout_cluster(page, segment, object)
 	/*
 	 * Target page is always part of the cluster.
 	 */
-	pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+	phys = vm_pageout_phys(page, segment);
+	pmap_page_protect(phys, VM_PROT_NONE);
 	page->flags |= PG_BUSY;
+	segment->sg_flags |= SEG_BUSY;
 	plistp[atop(page->offset - loff)] = page;
 	count = 1;
 
@@ -512,10 +539,12 @@ vm_pageout_cluster(page, segment, object)
 	offset = page->offset;
 	while (offset > loff && count < MAXPOCLUSTER - 1) {
 		p = vm_page_lookup(segment, offset - PAGE_SIZE);
-		if (p == NULL || !PAGEOUTABLE(p))
+		if (p == NULL || !pageouttable(p, segment)) {
 			break;
-		pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
+		}
+		pmap_page_protect(phys, VM_PROT_NONE);
 		p->flags |= PG_BUSY;
+		segment->sg_flags |= SEG_BUSY;
 		plistp[--ix] = p;
 		offset -= PAGE_SIZE;
 		count++;
@@ -530,10 +559,11 @@ vm_pageout_cluster(page, segment, object)
 	offset = page->offset + PAGE_SIZE;
 	while (offset < hoff && count < MAXPOCLUSTER) {
 		p = vm_page_lookup(segment, offset);
-		if (p == NULL || !PAGEOUTABLE(p))
+		if (p == NULL || !pageouttable(p, segment))
 			break;
-		pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
+		pmap_page_protect(phys, VM_PROT_NONE);
 		p->flags |= PG_BUSY;
+		segment->sg_flags |= SEG_BUSY;
 		plistp[ix++] = p;
 		offset += PAGE_SIZE;
 		count++;
@@ -549,17 +579,17 @@ vm_pageout_cluster(page, segment, object)
 	vm_segment_unlock_lists();
 	object->paging_in_progress++;
 	vm_object_unlock(object);
+
 again:
 	thread_wakeup(&cnt.v_free_count);
 	postatus = vm_pager_put_pages(object->pager, plistp, count, FALSE);
-
 	if (postatus == VM_PAGER_AGAIN) {
 		extern int lbolt;
-
 		(void) tsleep((caddr_t) & lbolt, PZERO | PCATCH, "pageout", 0);
 		goto again;
-	} else if (postatus == VM_PAGER_BAD)
+	} else if (postatus == VM_PAGER_BAD) {
 		panic("vm_pageout_cluster: VM_PAGER_BAD");
+	}
 	vm_object_lock(object);
 	vm_segment_lock_lists();
 	vm_page_lock_queues();
@@ -590,13 +620,14 @@ again:
 			}
 			break;
 		}
-		pmap_clear_reference(VM_PAGE_TO_PHYS(p));
+		pmap_clear_reference(phys);
 		/*
 		 * If the operation is still going, leave the page busy
 		 * to block all other accesses.
 		 */
 		if (postatus != VM_PAGER_PEND) {
 			p->flags &= ~PG_BUSY;
+			segment->sg_flags &= ~SEG_BUSY;
 			PAGE_WAKEUP(p);
 		}
 	}
@@ -604,6 +635,7 @@ again:
 	 * If the operation is still going, leave the paging in progress
 	 * indicator set so that we don't attempt an object collapse.
 	 */
-	if (postatus != VM_PAGER_PEND)
+	if (postatus != VM_PAGER_PEND) {
 		object->paging_in_progress--;
+	}
 }

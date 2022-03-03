@@ -40,6 +40,8 @@ struct vm_hat {
 	void					*vh_item;
 	u_long 					vh_size;
 	struct lock_object		vh_lock;
+
+	struct pmap				*vh_pmap;
 };
 
 typedef struct vm_hat		*vm_hat_t;
