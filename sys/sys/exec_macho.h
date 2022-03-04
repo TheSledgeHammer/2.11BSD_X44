@@ -267,7 +267,7 @@ int 	exec_macho_load_vnode(struct exec_linker *, struct vnode *, struct exec_mac
 
 u_long	exec_macho_thread_entry(struct exec_macho_thread_command *);
 int		exec_macho_linker(struct exec_linker *);
-int		macho_copyargs(struct exec_linker *, struct ps_strings *, char **, void *);
+int		macho_copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 #endif /* _KERNEL */
 
 #endif /* !_SYS_EXEC_MACHO_H_ */
