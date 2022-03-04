@@ -641,7 +641,7 @@ int
 macho_copyargs(elp, arginfo, stackp, argp)
 	struct exec_linker *elp;
 	struct ps_strings *arginfo;
-	char **stackp;
+	void *stackp;
 	void *argp;
 {
 	struct exec_macho_emul_arg *emea;
@@ -654,21 +654,21 @@ macho_copyargs(elp, arginfo, stackp, argp)
 
 	emea = (struct exec_macho_emul_arg*) elp->el_emul_arg;
 	macho_hdr = (struct exec_macho_object_header*) emea->macho_hdr;
-	if ((error = copyout(&macho_hdr, *stackp, sizeof(macho_hdr))) != 0)
+	if ((error = copyout(&macho_hdr, stackp, sizeof(macho_hdr))) != 0)
 		return error;
 
-	*stackp += sizeof(macho_hdr);
+	stackp += sizeof(macho_hdr);
 
 	if ((error = copyargs(elp, arginfo, stackp, argp)) != 0) {
 		DPRINTF(("mach: copyargs failed\n"));
 		return error;
 	}
 
-	if ((error = copyout(&zero, *stackp, sizeof(zero))) != 0)
+	if ((error = copyout(&zero, stackp, sizeof(zero))) != 0)
 		return error;
-	*stackp += sizeof(zero);
+	stackp += sizeof(zero);
 
-	if ((error = copyoutstr(emea->filename, *stackp, MAXPATHLEN, &len)) != 0) {
+	if ((error = copyoutstr(emea->filename, stackp, MAXPATHLEN, &len)) != 0) {
 		DPRINTF(("mach: copyout path failed\n"));
 		return error;
 	}
@@ -680,14 +680,14 @@ macho_copyargs(elp, arginfo, stackp, argp)
 
 	len = len % sizeof(zero);
 	if (len) {
-		if ((error = copyout(&zero, *stackp, len)) != 0)
+		if ((error = copyout(&zero, stackp, len)) != 0)
 			return error;
 		*stackp += len;
 	}
 
-	if ((error = copyout(&zero, *stackp, sizeof(zero))) != 0)
+	if ((error = copyout(&zero, stackp, sizeof(zero))) != 0)
 		return error;
-	*stackp += sizeof(zero);
+	stackp += sizeof(zero);
 
 	return 0;
 }

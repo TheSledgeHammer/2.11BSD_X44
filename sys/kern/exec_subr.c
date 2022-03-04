@@ -64,7 +64,7 @@ new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 	if (evsp->evs_used >= evsp->evs_cnt) {
 		vmcmdset_extend(evsp);
 	}
-	vcp = evsp->evs_cmds[evsp->evs_used++];
+	vcp = &evsp->evs_cmds[evsp->evs_used++];
 	vcp->ev_proc = proc;
 	vcp->ev_size = size;
 	vcp->ev_addr = addr;

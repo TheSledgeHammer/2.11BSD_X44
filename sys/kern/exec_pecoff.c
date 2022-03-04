@@ -63,7 +63,7 @@ int
 pecoff_copyargs(elp, arginfo, stackp, argp)
 	struct exec_linker *elp;
 	struct ps_strings *arginfo;
-	char **stackp;
+	void *stackp;
 	void *argp;
 {
 	int len = sizeof(struct pecoff_args);
@@ -74,7 +74,7 @@ pecoff_copyargs(elp, arginfo, stackp, argp)
 		return error;
 
 	pecoff_arg = (struct pecoff_args *)elp->el_emul_arg;
-	if ((error = copyout(pecoff_arg, *stackp, len)) != 0)
+	if ((error = copyout(pecoff_arg, stackp, len)) != 0)
 		return error;
 
 #if 0 /*  kern_exec.c? */
@@ -82,7 +82,7 @@ pecoff_copyargs(elp, arginfo, stackp, argp)
 	elp->el_emul_arg = 0;
 #endif
 
-	*stackp += len;
+	stackp += len;
 	return error;
 }
 
