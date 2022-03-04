@@ -83,7 +83,7 @@ struct gsched_cfs {
 };
 
 unsigned int 	cfs_decay(struct proc *, u_char);
-unsigned int 	cfs_update(struct proc *, u_char);
+void 			cfs_update(struct proc *, u_char);
 int				cfs_schedcpu(struct proc *);
 
 #endif /* _SYS_GSCHED_CFS_H */

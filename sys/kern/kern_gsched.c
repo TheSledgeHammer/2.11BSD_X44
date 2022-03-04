@@ -133,19 +133,25 @@ gsched_cfs(gsd)
 	return (gsd->gsc_cfs);
 }
 
-/* Return difference between time and estcpu */
-u_char
-gsched_timediff(timo, estcpu)
-	u_char timo;
-	u_int estcpu;
+/* Compare estcpu */
+void
+gsched_estcpu(estcpu1, estcpu2)
+	u_int estcpu1, estcpu2;
 {
-	u_char diff;
-	if (timo > estcpu) {
-		diff = timo - estcpu;
-	} else {
-		diff = estcpu - timo;
+	u_int diff;
+	if(estcpu1 != estcpu2) {
+		if(estcpu1 > estcpu2) {
+			diff = estcpu1 - estcpu2;
+			if(diff >= 3) {
+				estcpu1 = estcpu2;
+			}
+		} else if(estcpu1 < estcpu2) {
+			diff = estcpu2 - estcpu1;
+			if(diff >= 3) {
+				estcpu2 = estcpu1;
+			}
+		}
 	}
-	return (diff);
 }
 
 /* compare cpu ticks (deadline) of cur proc and the next proc in run-queue */

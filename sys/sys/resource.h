@@ -100,7 +100,7 @@ struct loadavg {
 };
 
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct loadavg averunnable;
 
 #else

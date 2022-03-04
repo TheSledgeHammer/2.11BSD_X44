@@ -219,20 +219,8 @@ cfs_schedcpu(p)
 
 	/* add to cfs queue */
 	cfs->cfs_estcpu = cfs_decay(p, cfs->cfs_priweight);
-	if(cfs->cfs_estcpu != p->p_estcpu) {
-		if(cfs->cfs_estcpu > p->p_estcpu) {
-			u_int diff = cfs->cfs_estcpu - p->p_estcpu;
-			if(diff >= 3) {
-				cfs->cfs_estcpu = p->p_estcpu;
-			}
-		} else if (cfs->cfs_estcpu < p->p_estcpu){
-			u_int diff = p->p_estcpu - cfs->cfs_estcpu;
-			if(diff >= 3) {
-				p->p_estcpu = cfs->cfs_estcpu;
-			}
-		}
-	}
-	RB_INSERT(gsched_cfs_rbtree, cfs->cfs_parent, p);
+	gsched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
+	RB_INSERT(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
 	/* add to run-queue */
 	setrq(p);
 
@@ -240,47 +228,37 @@ cfs_schedcpu(p)
 	cfs_compute(cfs, slack);
 
 	/* run-through red-black tree */
-	struct proc *nxt;
-	struct proc *left;
-
-	for (p = RB_FIRST(gsched_cfs_rbtree, cfs)->cfs_proc; p != NULL; p = nxt) {
-		nxt = RB_NEXT(gsched_cfs_rbtree, cfs, p)->cfs_proc;
-		left = RB_LEFT(cfs, cfs_entry)->cfs_proc;
-		/* found proc on left-side of tree */
-		if (p == left) {
-			/* sort run queue */
-			gsched_sort(p, nxt);
-			/* start deadline counter */
-			while (cpticks < cfs->cfs_cpticks) {
-				cpticks++;
-				/* Test if deadline was reached before end of scheduling period */
-				if (cfs->cfs_cpticks == cpticks) {
-					/* test if time doesn't equal the base scheduling period */
-					if (cfs->cfs_time != cfs->cfs_bsched) {
-						goto runout;
-						break;
-					} else {
-						goto out;
-						break;
-					}
-				} else if (cfs->cfs_cpticks != cpticks) {
-					/* test if time equals the base scheduling period */
-					if (cfs->cfs_time == cfs->cfs_bsched) {
-						goto runout;
-						break;
-					} else {
-						goto out;
-						break;
-					}
+	for (p = RB_FIRST(gsched_cfs_rbtree, &cfs->cfs_parent)->cfs_proc; p != NULL; p = RB_LEFT(cfs, cfs_entry)->cfs_proc) {
+		/* sort run queue */
+		//gsched_sort(p, nxt);
+		/* start deadline counter */
+		while (cpticks < cfs->cfs_cpticks) {
+			cpticks++;
+			/* Test if deadline was reached before end of scheduling period */
+			if (cfs->cfs_cpticks == cpticks) {
+				/* test if time doesn't equal the base scheduling period */
+				if (cfs->cfs_time != cfs->cfs_bsched) {
+					goto runout;
+					break;
 				} else {
-					/* SHOULD NEVER REACH THIS POINT!! */
-					/* panic?? */
 					goto out;
 					break;
 				}
+			} else if (cfs->cfs_cpticks != cpticks) {
+				/* test if time equals the base scheduling period */
+				if (cfs->cfs_time == cfs->cfs_bsched) {
+					goto runout;
+					break;
+				} else {
+					goto out;
+					break;
+				}
+			} else {
+				/* SHOULD NEVER REACH THIS POINT!! */
+				/* panic?? */
+				goto out;
+				break;
 			}
-		} else {
-			goto out;
 		}
 	}
 

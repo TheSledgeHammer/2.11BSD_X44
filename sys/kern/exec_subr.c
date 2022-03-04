@@ -171,9 +171,8 @@ vmcmd_map_pagedvn(p, cmd)
 	 * do the map
 	 */
 	error = vm_map_insert(&vmspace->vm_map, vobj, cmd->ev_offset, cmd->ev_addr, cmd->ev_size);
-//	error = vm_map(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot, cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
 	if (error) {
-		vobj->pager->pg_ops->pgo_dealloc(vpgr);
+		vm_pager_deallocate(vpgr);
 	}
 
 	return (error);
@@ -200,8 +199,9 @@ vmcmd_map_readvn(p, cmd)
 
 	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
 
-	if (error)
+	if (error) {
 		return (error);
+	}
 
 	return (vmcmd_readvn(p, cmd));
 }
