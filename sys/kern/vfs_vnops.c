@@ -495,3 +495,19 @@ vn_closefile(fp, p)
 {
 	return (vn_close(((struct vnode *)fp->f_data), fp->f_flag, fp->f_cred, p));
 }
+
+/*
+ * Mark a vnode as being the text of a process.
+ * Fail if the vnode is currently writable.
+ */
+int
+vn_marktext(vp)
+	struct vnode *vp;
+{
+	if (vp->v_writecount != 0) {
+		KASSERT((vp->v_flag & VTEXT) == 0);
+		return (ETXTBSY);
+	}
+	vp->v_flag |= VTEXT;
+	return (0);
+}

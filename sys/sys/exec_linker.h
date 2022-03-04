@@ -66,7 +66,7 @@ struct exec_linker {
 
 	struct	vnode 		    *el_vnodep;			    /* executable's vnode */
 	struct	vattr 		    *el_attr;			    /* executable's attributes */
-	struct 	exec_vmcmd_set      el_vmcmds;			    /* executable's vmcmd_set */
+	struct 	exec_vmcmd_set  el_vmcmds;			    /* executable's vmcmd_set */
 
 	struct 	nameidata		el_ndp;					/* executable's nameidata */
 

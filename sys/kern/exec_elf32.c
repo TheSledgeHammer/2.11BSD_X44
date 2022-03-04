@@ -110,7 +110,7 @@ elf_copyargs(elp, arginfo, stackp, argp)
 	int error;
 
 	if ((error = copyargs(elp, arginfo, stackp, argp)) != 0) {
-		return error;
+		return (error);
 	}
 
 	a = ai;
@@ -158,10 +158,10 @@ elf_copyargs(elp, arginfo, stackp, argp)
 	a++;
 
 	len = (a - ai) * sizeof(AuxInfo);
-	if ((error = copyout(ai, *stackp, len)) != 0)
-		return error;
-	*stackp += len;
-	return 0;
+	if ((error = copyout(ai, stackp, len)) != 0)
+		return (error);
+	stackp = (caddr_t)stackp + len;
+	return (0);
 }
 
 /*
@@ -316,7 +316,7 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 	Elf_Addr addr = *last;
 	struct proc *p;
 
-	struct proc *p = elp->el_proc;
+	p = elp->el_proc;
 
 	/*
 	 * 1. open file
@@ -354,10 +354,6 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 	}
 	if (vp->v_mount->mnt_flag & MNT_NOSUID)
 		elp->el_attr->va_mode &= ~(S_ISUID | S_ISGID);
-
-#ifdef notyet /* XXX cgd 960926 */
-	XXX cgd 960926: (maybe) VOP_OPEN it (and VOP_CLOSE in copyargs?)
-#endif
 
 	error = vn_marktext(vp);
 	if (error)
@@ -511,9 +507,6 @@ badunlock:
 bad:
 	if (ph != NULL)
 		free(ph, M_TEMP);
-#ifdef notyet /* XXX cgd 960926 */
-	(maybe) VOP_CLOSE it
-#endif
 	vrele(vp);
 	return error;
 }
@@ -561,14 +554,14 @@ exec_elf_linker(elp)
 	elp->el_taddr = elp->el_tsize = ELF_NO_ADDR;
 	elp->el_daddr = elp->el_dsize = ELF_NO_ADDR;
 
+	interp[0] = '\0';
+
 	for (i = 0; i < eh->e_phnum; i++) {
 		pp = &ph[i];
 		if (pp->p_type == PT_INTERP) {
 			if (pp->p_filesz >= MAXPATHLEN)
 				goto bad;
-			interp = (char *)malloc(sizeof(interp[MAXPATHLEN]), M_TEMP, M_WAITOK);
-			interp[0] = '\0';
-			if ((error = exec_read_from(p, elp->el_vnodep, pp->p_offset, interp,
+			if ((error = exec_read_from(p, elp->el_vnodep, pp->p_offset, (caddr_t)interp,
 					pp->p_filesz)) != 0)
 				goto bad;
 			break;
@@ -661,7 +654,7 @@ exec_elf_linker(elp)
 
 bad:
 	free(ph, M_TEMP);
-	kill_vmcmds(&elp->el_vmcmds);
+	kill_vmcmd(&elp->el_vmcmds);
 	return ENOEXEC;
 }
 

@@ -253,7 +253,7 @@ check_shell:
 		 */
 		if ((elp->el_flags & EXEC_HASFD) == 0) {
 			vn_lock(scriptvp, LK_EXCLUSIVE | LK_RETRY, p);
-			VOP_CLOSE(scriptvp, FREAD, p->p_cred, p);
+			VOP_CLOSE(scriptvp, FREAD, p->p_ucred, p);
 			vput(scriptvp);
 		}
 
@@ -276,7 +276,7 @@ check_shell:
 	}
 
 	/* XXX oldpnbuf not set for "goto fail" path */
-	elp->el_ndp->ni_cnd.cn_pnbuf = oldpnbuf;
+	elp->el_ndp.ni_cnd.cn_pnbuf = oldpnbuf;
 #ifdef FDSCRIPTS
 fail:
 #endif
@@ -289,7 +289,7 @@ fail:
         (void) fdrelease(p, elp->el_fd);
     } else if (scriptvp) {
     	vn_lock(scriptvp, LK_EXCLUSIVE | LK_RETRY, p);
-        VOP_CLOSE(scriptvp, FREAD, p->p_cred, p);
+        VOP_CLOSE(scriptvp, FREAD, p->p_ucred, p);
         vput(scriptvp);
     }
 
@@ -306,7 +306,7 @@ fail:
      * free any vmspace-creation commands,
      * and release their references
      */
-    kill_vmcmds(&elp->el_vmcmds);
+    kill_vmcmd(&elp->el_vmcmds);
 
 	return (error);
 }

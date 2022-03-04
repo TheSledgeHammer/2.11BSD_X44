@@ -308,5 +308,5 @@ vm_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 		vm_object_deallocate(object);
 	else if (pager != NULL)
 		vm_object_setpager(object, pager, (vm_offset_t) 0, TRUE);
-	return(result);
+	return (result);
 }
