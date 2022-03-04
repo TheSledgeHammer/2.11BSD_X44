@@ -145,7 +145,7 @@ vmcmd_map_pagedvn(p, cmd)
 	if (cmd->ev_size & PAGE_MASK)
 		return (EINVAL);
 
-	vpgr = vnode_pager_alloc(cmd->ev_vnodep, cmd->ev_size, VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
+	vpgr = vm_pager_allocate(PG_VNODE, (caddr_t)vp, cmd->ev_size, VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
 	if(vpgr == NULL) {
 		return (ENOMEM);
 	}
@@ -157,7 +157,7 @@ vmcmd_map_pagedvn(p, cmd)
 	VREF(vp);
 
 	if (vp->v_flag == 0) {
-		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
+		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 		vm_object_lock(vobj);
 		//vp->v_flag |= VMAPPED;
 		vm_object_unlock(vobj);
@@ -170,7 +170,8 @@ vmcmd_map_pagedvn(p, cmd)
 	/*
 	 * do the map
 	 */
-	error = vm_map(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot, cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
+	error = vm_map_insert(&vmspace->vm_map, vobj, cmd->ev_offset, cmd->ev_addr, cmd->ev_size);
+//	error = vm_map(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot, cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
 	if (error) {
 		vobj->pager->pg_ops->pgo_dealloc(vpgr);
 	}
@@ -300,13 +301,13 @@ vmcmd_create_vmspace(elp)
 
 	/* create the new process's VM space by running the vmcmds */
 #ifdef DIAGNOSTIC
-	if(elp->el_vmcmds->evs_used == 0)
+	if(elp->el_vmcmds.evs_used == 0)
 		panic("execve: no vmcmds");
 #endif
-	for (i = 0; i < elp->el_vmcmds->evs_used && !error; i++) {
+	for (i = 0; i < elp->el_vmcmds.evs_used && !error; i++) {
 		struct exec_vmcmd *vcp;
 
-		vcp = elp->el_vmcmds->evs_cmds[i];
+		vcp = &elp->el_vmcmds.evs_cmds[i];
 		if (vcp->ev_flags & VMCMD_RELATIVE) {
 #ifdef DIAGNOSTIC
 			if (base_vcp == NULL)
@@ -332,7 +333,7 @@ vmcmd_create_vmspace(elp)
 	}
 
 	/* free the vmspace-creation commands, and release their references */
-	kill_vmcmds(&elp->el_vmcmds);
+	kill_vmcmd(&elp->el_vmcmds);
 	if (error) {
 		return (error);
 	} else {
@@ -351,7 +352,7 @@ exec_read_from(p, vp, off, bf, size)
 	int error;
 	size_t resid;
 
-	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_cred, &resid, NULL)) != 0)
+	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_ucred, &resid, NULL)) != 0)
 		return (error);
 	/*
 	 * See if we got all of it
@@ -375,8 +376,8 @@ exec_extract_strings(elp, dp)
 	int error, length;
 
 #ifdef DIAGNOSTIC
-		if (argp == (u_long) 0)
-			panic("execve: argp == NULL");
+	if (argp == (u_long) 0)
+	  panic("execve: argp == NULL");
 #endif
 	dp = argp;
 	if (elp->el_flags & EXEC_HASARGL) {
@@ -398,13 +399,12 @@ exec_extract_strings(elp, dp)
 	}
 
 	/* extract arguments first */
-	argv = elp->el_uap->argp;
+	argv = SCARG(elp->el_uap, argp);
 	if (argv) {
 		while ((argp = (caddr_t) fuword(argv++))) {
 			if (argp == (caddr_t) -1)
 				return (EFAULT);
-			if ((error = copyinstr(argp, elp->el_stringp, elp->el_stringspace,
-					&length))) {
+			if ((error = copyinstr(argp, elp->el_stringp, elp->el_stringspace, &length))) {
 				if (error == ENAMETOOLONG)
 					return (E2BIG);
 				return (error);
@@ -416,13 +416,12 @@ exec_extract_strings(elp, dp)
 	}
 
 	/* extract environment strings */
-	envv = elp->el_uap->envp;
+	envv = SCARG(elp->el_uap, argp);
 	if (envv) {
 		while ((envp = (caddr_t) fuword(envv++))) {
 			if (envp == (caddr_t) -1)
 				return (EFAULT);
-			if ((error = copyinstr(envp, elp->el_stringp, elp->el_stringspace,
-					&length))) {
+			if ((error = copyinstr(envp, elp->el_stringp, elp->el_stringspace, &length))) {
 				if (error == ENAMETOOLONG)
 					return (E2BIG);
 				return (error);
@@ -509,10 +508,10 @@ exec_setup_stack(elp)
 	u_long noaccess_linear_min, noaccess_size;
 
 	max_stack_size = MAXSSIZ;
-	elp->el_minsaddr = USRSTACK;
+	elp->el_minsaddr = (caddr_t)USRSTACK;
 	elp->el_maxsaddr = elp->el_minsaddr + max_stack_size;
 
-	elp->el_ssize = u->u_rlimit[RLIMIT_STACK].rlim_cur;
+	elp->el_ssize = u.u_rlimit[RLIMIT_STACK].rlim_cur;
 
 	access_size = elp->el_ssize;
 	access_linear_min = (u_long) (elp->el_minsaddr - access_size);
