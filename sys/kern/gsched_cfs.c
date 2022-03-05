@@ -171,9 +171,6 @@ cfs_update(p, priweight)
 	}
 }
 
-RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
-RB_GENERATE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
-
 int
 cfs_rb_compare(a, b)
 	struct gsched_cfs *a, *b;
@@ -185,6 +182,9 @@ cfs_rb_compare(a, b)
 	}
 	return (0);
 }
+
+RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
+RB_GENERATE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
 
 /*
  * calculate base scheduling period
@@ -266,7 +266,7 @@ out:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
-	RB_REMOVE(gsched_cfs_rbtree, cfs->cfs_parent, p);
+	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
 	/* remove from run-queue */
 	remrq(p);
 	/* deadline reached before completion, reschedule */
@@ -278,7 +278,7 @@ runout:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */
-	RB_REMOVE(gsched_cfs_rbtree, cfs->cfs_parent, p);
+	RB_REMOVE(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
 	/* remove from run-queue */
 	remrq(p);
 
