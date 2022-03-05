@@ -64,7 +64,7 @@ void		vm_exbootinit(struct extent *, char *, u_long, u_long, int, caddr_t, size_
 void		vm_exbootinita(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
 void		vm_exboot_region(struct extent *, u_long, u_long, int);
 void		vm_exboot_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
-int			vm_exalloc_region(struct extent *, u_long, u_long, int);
-int			vm_exalloc_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
+int		vm_exalloc_region(struct extent *, u_long, u_long, int);
+int		vm_exalloc_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
 void		vm_exfree(struct extent *, u_long, u_long, int);
 #endif /* _VM_HAT_H_ */
