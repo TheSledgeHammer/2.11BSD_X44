@@ -649,7 +649,7 @@ done:
  * to be empty.
  */
 void
-rqinit()
+rqinit(void)
 {
 	register int i;
 

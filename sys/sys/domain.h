@@ -35,5 +35,6 @@ struct	domain {
 
 #ifdef _KERNEL
 struct	domain *domains;
+void 	domaininit(void);
 #endif
 #endif	/* !_SYS_DOMAIN_H_ */

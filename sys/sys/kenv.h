@@ -55,7 +55,7 @@ extern char static_hints[];	/* by config for now */
 
 extern char **kenvp;
 
-void	init_kenv();
+void	kenv_init(void);
 #endif /* _KERNEL */
 
 #endif /* !_SYS_KENV_H_ */

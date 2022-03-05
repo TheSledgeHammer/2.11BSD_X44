@@ -38,6 +38,7 @@
 
 #include <sys/ioccom.h>
 #include <sys/queue.h>
+#include <sys/stdint.h>
 
 struct ksyms_symtab {
 	TAILQ_ENTRY(ksyms_symtab) 	sd_queue; 		/* All active tables */

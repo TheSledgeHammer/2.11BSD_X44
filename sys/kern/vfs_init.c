@@ -84,7 +84,7 @@ struct vattr va_null;
  * Initialize the vnode structures and initialize each file system type.
  */
 void
-vfsinit()
+vfsinit(void)
 {
 	struct vfsconf *vfsp;
 	int i, maxtypenum;

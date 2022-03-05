@@ -333,7 +333,7 @@ swapin(p)
  *	   clear some space.
  */
 void
-scheduler()
+scheduler(void)
 {
 	register struct proc *p;
 	register int pri;

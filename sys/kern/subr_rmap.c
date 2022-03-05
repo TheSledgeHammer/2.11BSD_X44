@@ -386,7 +386,7 @@ resolve:
  * Allocates coremap & swapmap in the event one or both were not allocated properly during startup.
  */
 void
-rmapinit()
+rmapinit(void)
 {
 	struct mapent __coremap[0] = &_coremap[0];
 	struct mapent __swapmap[0] = &_swapmap[0];

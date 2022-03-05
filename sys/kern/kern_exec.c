@@ -55,7 +55,7 @@
 
 extern char	sigcode[], esigcode[];
 
-const struct emul emul_211bsd = {
+struct emul emul_211bsd = {
 		.e_name 		= "211bsd",
 		.e_path 		= NULL,				/* emulation path */
 		.e_sendsig		= sendsig,

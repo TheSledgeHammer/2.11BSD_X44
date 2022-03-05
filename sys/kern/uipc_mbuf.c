@@ -8,7 +8,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
-#ifdef INET
+//#ifdef INET
 #include <sys/user.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
@@ -29,7 +29,7 @@ ubadr_t	mioumr;				/* base UNIBUS virtual address */
 u_short miosize = 16384;	/* two umr's worth */
 
 void
-mbinit()
+mbinit(void)
 {
 	register int s;
 
@@ -465,4 +465,4 @@ bad:
 	m_freem(n);
 	return (0);
 }
-#endif
+//#endif

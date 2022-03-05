@@ -14,7 +14,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
-#ifdef INET
+//#ifdef INET
 #include <sys/socket.h>
 #include <sys/protosw.h>
 #include <sys/domain.h>
@@ -34,7 +34,7 @@ void	pfslowtimo(void *);
 }
 
 void
-domaininit()
+domaininit(void)
 {
 	register struct domain *dp;
 	register struct protosw *pr;
@@ -194,4 +194,4 @@ pffasttimo(arg)
 				(*pr->pr_fasttimo)();
 	timeout(pffasttimo, (caddr_t) 0, hz / PR_FASTHZ);
 }
-#endif
+//#endif

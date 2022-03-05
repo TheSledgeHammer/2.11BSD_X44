@@ -92,7 +92,7 @@ struct execsw {
 
 #ifdef _KERNEL
 //extern const struct execsw 	**execsw;
-extern struct execsw 		execsw[];
+extern const struct execsw 	execsw[];
 extern int					nexecs;
 #endif
 

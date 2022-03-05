@@ -166,7 +166,8 @@ chgproccnt(uid, diff)
 		register struct uidinfo *uip, *uiq;
 		register struct uihashhead *uipp;
 		uipp = UIHASH(uid);
-		for (uip = uipp->lh_first; uip != 0; uip = uip->ui_hash.le_next) {
+
+		for (uip = LIST_FIRST(uipp); uip != 0; uip = LIST_NEXT(uip, ui_hash)) {
 			if (uip->ui_uid == uid) {
 				break;
 			}
@@ -204,7 +205,7 @@ pgfind(pgid)
 	register pid_t pgid;
 {
 	register struct pgrp *pgrp;
-	for (pgrp = pgrphash[PIDHASH(pgid)]; pgrp != NULL; pgrp = pgrp->pg_hforw) {
+	for (pgrp = pgrphash[PIDHASH(pgid)]; pgrp != NULL; pgrp = LIST_NEXT(pgrp, pg_hash)) {
 		if (pgrp->pg_id == pgid) {
 			return (pgrp);
 		}
@@ -244,21 +245,10 @@ void
 pgdelete(pgrp)
 	register struct pgrp *pgrp;
 {
-	register struct pgrp **pgp = &pgrphash[PIDHASH(pgrp->pg_id)];
-
-	if (pgrp->pg_session->s_ttyp != NULL &&
-	    pgrp->pg_session->s_ttyp->t_pgrp == pgrp)
+	if (pgrp->pg_session->s_ttyp != NULL
+			&& pgrp->pg_session->s_ttyp->t_pgrp == pgrp)
 		pgrp->pg_session->s_ttyp->t_pgrp = NULL;
-	for (; *pgp; pgp = &(*pgp)->pg_hforw) {
-		if (*pgp == pgrp) {
-			*pgp = pgrp->pg_hforw;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pgp == NULL)
-		panic("pgdelete: can't find pgrp on hash chain");
-#endif
+	LIST_REMOVE(pgrp, pg_hash);
 	if (--pgrp->pg_session->s_count == 0)
 		FREE(pgrp, M_PGRP);
 	FREE(pgrp, M_PGRP);
@@ -318,8 +308,7 @@ enterpgrp(p, pgid, mksess)
 			pgrp->pg_session->s_count++;
 		}
 		pgrp->pg_id = pgid;
-		pgrp->pg_hforw = pgrphash[n = PIDHASH(pgid)];
-		pgrphash[n] = pgrp;
+		LIST_INSERT_HEAD(PGRPHASH(pgid), pgrp, pg_hash);
 		pgrp->pg_jobc = 0;
 		pgrp->pg_mem = NULL;
 	} else if (pgrp == p->p_pgrp)
@@ -439,7 +428,7 @@ pgrpdump()
 	for (i = 0; i <= pgrphash; i++) {
 		if (pgrp == pgrphashtbl[i]) {
 			printf("\tindx %d\n", i);
-			for (; pgrp != 0; pgrp = pgrp->pg_hforw) {
+			for (; pgrp != 0; pgrp = LIST_NEXT(pgrp, pg_hash)) {
 				printf("\tpgrp %x, pgid %d, sess %x, sesscnt %d, mem %x\n",
 						pgrp, pgrp->pg_id, pgrp->pg_session,
 					    pgrp->pg_session->s_count,

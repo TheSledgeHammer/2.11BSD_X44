@@ -168,7 +168,7 @@ struct disksort_stats {
 #define dkpart(dev)			(minor(dev) & 07)
 #define dkminor(unit, part)	(((unit) << 3) | (part))
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern	int 		disk_count;			/* number of disks in global disklist */
 
 void				disk_init (void);

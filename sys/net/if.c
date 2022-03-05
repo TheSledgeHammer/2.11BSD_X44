@@ -36,7 +36,8 @@ int	ifqmaxlen = IFQ_MAXLEN;
  * parameters.
  */
 
-ifinit()
+void
+ifinit(void)
 {
 	register struct ifnet *ifp;
 

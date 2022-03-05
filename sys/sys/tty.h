@@ -218,9 +218,9 @@ extern void	ctty_init (struct devswtable *);
 extern void pty_init (struct devswtable *);
 extern void tty_conf_init (struct devswtable *);
 
+void cinit (void);
 void clist_alloc_cblocks (struct clist *, int, int);
 void clist_free_cblocks (struct clist *);
-
 int	 b_to_q (char *, int, struct clist *);
 void catq (struct clist *, struct clist *);
 int	 getc (struct clist *);

@@ -95,7 +95,8 @@ extern int nsysent;
 int	noproc;							/* no one is running just now */
 
 /* Initialize the world */
-extern void startup(int);
+extern void startup(void);			/* cpu startup */
+extern void consinit(void);			/* console startup */
 
 /* General Function Declarations */
 struct clockframe;

@@ -78,7 +78,7 @@ bool						dynamic_kenv;
 
 
 void
-kenv_init()
+kenv_init(void)
 {
 	init_dynamic_kenv();
 }

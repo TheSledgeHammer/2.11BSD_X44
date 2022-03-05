@@ -74,7 +74,7 @@ vm_map_t	 	kmem_suballoc (vm_map_t, vm_offset_t *, vm_offset_t *, vm_size_t, boo
 void		 	loadav (struct loadavg *);
 void		 	munmapfd (struct proc *, int);
 int		 		pager_cache (vm_object_t, bool_t);
-void			sched (void);
+void			scheduler (void);
 int		 		svm_allocate (struct proc *, void *, int *);
 int		 		svm_deallocate (struct proc *, void *, int *);
 int		 		svm_inherit (struct proc *, void *, int *);

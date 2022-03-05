@@ -18,7 +18,7 @@ struct cblock {
 	char			c_info[CBSIZE];		/* characters */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern struct cblock *cfree, *cfreelist;
 extern int cfreecount, nclist;
 #endif

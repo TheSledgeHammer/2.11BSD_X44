@@ -27,7 +27,7 @@ char		cwaiting;
  * number of character devices. (Once-only routine)
  */
 void
-cinit()
+cinit(void)
 {
 	register int ccp;
 	register struct cblock *cp;

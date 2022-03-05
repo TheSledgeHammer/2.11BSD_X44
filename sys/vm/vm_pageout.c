@@ -510,7 +510,7 @@ again:
  */
 
 void
-vm_pageout()
+vm_pageout(void)
 {
 	(void) spl0();
 

@@ -87,6 +87,7 @@ gsched_edf_setup(gsd, p)
 	}
 
 	edf->edf_proc = p;
+	edf->edf_cpticks = p->p_cpticks;
 	edf->edf_pri = p->p_pri;
 	edf->edf_cpu = p->p_cpu;
 	edf->edf_time = p->p_time;
@@ -106,6 +107,7 @@ gsched_cfs_setup(gsd, p)
 
 	RB_INIT(cfs->cfs_parent);
 	cfs->cfs_proc = p;
+	cfs->cfs_cpticks = p->p_cpticks;
 	cfs->cfs_pri = p->p_pri;
 	cfs->cfs_cpu = p->p_cpu;
 	cfs->cfs_time = p->p_time;
@@ -133,7 +135,7 @@ gsched_cfs(gsd)
 	return (gsd->gsc_cfs);
 }
 
-/* Compare estcpu */
+/* set estcpu */
 void
 gsched_estcpu(estcpu1, estcpu2)
 	u_int estcpu1, estcpu2;
@@ -151,6 +153,16 @@ gsched_estcpu(estcpu1, estcpu2)
 				estcpu2 = estcpu1;
 			}
 		}
+	}
+}
+
+/* set cpticks */
+void
+gsched_cpticks(cpticks1, cpticks2)
+	int cpticks1, cpticks2;
+{
+	if(cpticks1 != cpticks2) {
+		cpticks1 = cpticks2;
 	}
 }
 

@@ -59,7 +59,7 @@
 
 #define	LOG_PRIMASK	0x07	/* mask to extract priority part (internal) */
 							/* extract priority */
-#define	LOG_PRI(p)	((p) & LOG_PRIMASK)
+#define	LOG_PRI(p)				((p) & LOG_PRIMASK)
 #define	LOG_MAKEPRI(fac, pri)	(((fac) << 3) | (pri))
 
 #ifdef SYSLOG_NAMES
@@ -96,7 +96,7 @@ CODE prioritynames[] = {
 #define	LOG_NEWS	(7<<3)	/* network news subsystem */
 #define	LOG_UUCP	(8<<3)	/* UUCP subsystem */
 #define	LOG_CRON	(9<<3)	/* clock daemon */
-#define	LOG_AUTHPRIV	(10<<3)	/* security/authorization messages (private) */
+#define	LOG_AUTHPRIV(10<<3)	/* security/authorization messages (private) */
 #define	LOG_FTP		(11<<3)	/* ftp daemon */
 
 	/* other codes through 15 reserved for system use */
@@ -164,7 +164,7 @@ CODE facilitynames[] = {
 #define	LOG_NOWAIT	0x10	/* don't wait for console forks: DEPRECATED */
 #define	LOG_PERROR	0x20	/* log to stderr as well */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 
 #else /* not KERNEL */
 

@@ -334,7 +334,7 @@ out:	splx(s);
 }
 
 void
-loginit()
+loginit(void)
 {
 	register struct msgbuf *mp;
 	long new_bufs;

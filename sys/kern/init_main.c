@@ -69,6 +69,9 @@
 #include <sys/user.h>
 #include <sys/gsched.h>
 #include <sys/ksyms.h>
+#include <sys/msgbuf.h>
+#include <sys/prf.h>
+
 #include <vm/include/vm.h>
 
 #include <machine/cpu.h>
@@ -99,9 +102,7 @@ struct	timeval runtime;
 #endif
 int	bootverbose = 	BOOTVERBOSE;
 
-extern const struct emul emul_211bsd; 					/* defined in kern_exec.c */
-
-static void start_init (struct proc *p, void *framep);
+static void start_init(struct proc *p, void *framep);
 /*
  * Initialization code.
  * Called from cold start routine as
@@ -145,9 +146,7 @@ main(framep)
 
 	vm_mem_init();
 	kmeminit();
-
 	startup();
-
 	rmapinit();
 
 	ksyms_init();
@@ -179,22 +178,22 @@ main(framep)
 	allproc = (struct proc *)p;
 	p->p_prev = (struct proc **)&allproc;
 	p->p_pgrp = &pgrp0;
-	pgrphash[0] = &pgrp0;
+	LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
 
 	p->p_stat = SRUN;
 	p->p_flag |= P_SLOAD|P_SSYS;
 	p->p_nice = NZERO;
 	p->p_emul = &emul_211bsd;
 
-	u->u_procp = p;
+	u.u_procp = p;
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
 
 	/* Create credentials. */
 	cred0.p_refcnt = 1;
 	p->p_cred = &cred0;
-	u->u_ucred = crget();
-	u->u_ucred->cr_ngroups = 1; /* group 0 */
-	p->p_ucred = u->u_ucred;
+	u.u_ucred = crget();
+	u.u_ucred->cr_ngroups = 1; /* group 0 */
+	p->p_ucred = u.u_ucred;
 
 	callout_init(&p->p_tsleep_ch);
 
@@ -209,20 +208,20 @@ main(framep)
 
 	/* Create the limits structures. */
 	p->p_limit = &limit0;
-	for (i = 0; i < sizeof(u->u_rlimit)/sizeof(u->u_rlimit[0]); i++) {
-		u->u_rlimit[i]->rlim_cur = u->u_rlimit[i].rlim_max = RLIM_INFINITY;
+	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++) {
+		u.u_rlimit[i]->rlim_cur = u.u_rlimit[i].rlim_max = RLIM_INFINITY;
 	}
-	u->u_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
-	u->u_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
+	u.u_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
+	u.u_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
 	i = ptoa(cnt.v_free_count);
-	u->u_rlimit[RLIMIT_RSS].rlim_max = i;
-	u->u_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
-	u->u_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
+	u.u_rlimit[RLIMIT_RSS].rlim_max = i;
+	u.u_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
+	u.u_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
 
-	limit0->pl_rlimit = u->u_rlimit;
+	limit0->pl_rlimit = u.u_rlimit;
 	limit0.p_refcnt = 1;
 
-	bcopy("root", u->u_login, sizeof ("root"));
+	bcopy("root", u.u_login, sizeof ("root"));
 
 	/* Allocate a prototype map so we have something to fork. */
 	p->p_vmspace = &vmspace0;
@@ -236,8 +235,8 @@ main(framep)
 	 * We continue to place resource usage info and signal
 	 * actions in the user struct so they're pageable.
 	*/
-	p->p_stats = &u->u_stats;
-	p->p_sigacts = &u->u_sigacts;
+	p->p_stats = &u.u_stats;
+	p->p_sigacts = &u.u_sigacts;
 
 	/*
 	 * Initialize per uid information structure and charge
@@ -279,7 +278,7 @@ main(framep)
 	 * until everything is ready.
 	 */
 	s = splimp();
-	ifinit();
+	//ifinit();
 	domaininit();
 	splx(s);
 

@@ -168,9 +168,9 @@ init386_bootinfo(void)
 }
 
 void
-startup(firstaddr)
-	int firstaddr;
+startup(void)
 {
+	int firstaddr;
 	register int unixsize;
 	register unsigned i;
 	int mapaddr, j;

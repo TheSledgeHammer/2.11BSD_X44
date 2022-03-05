@@ -107,7 +107,7 @@ struct bootinfo_console default_consinfo = {
  * it shouldn't be called from init386 either.
  */
 void
-consinit()
+consinit(void)
 {
 	struct bootinfo_console *consinfo;
 	static int initted;

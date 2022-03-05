@@ -229,8 +229,8 @@ cfs_schedcpu(p)
 
 	/* run-through red-black tree */
 	for (p = RB_FIRST(gsched_cfs_rbtree, &cfs->cfs_parent)->cfs_proc; p != NULL; p = RB_LEFT(cfs, cfs_entry)->cfs_proc) {
-		/* sort run queue */
-		//gsched_sort(p, nxt);
+		/* set cpticks */
+		gsched_cpticks(cfs->cfs_cpticks, p->p_cpticks);
 		/* start deadline counter */
 		while (cpticks < cfs->cfs_cpticks) {
 			cpticks++;

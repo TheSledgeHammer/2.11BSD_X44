@@ -88,7 +88,7 @@ struct	proc {
     struct	vnode 	    *p_tracep;		/* Trace to vnode. */
     struct	vnode 	    *p_textvp;		/* Vnode of executable. */
     
-    int				p_siglist;		/* Signals arrived but not delivered. */
+    int					p_siglist;		/* Signals arrived but not delivered. */
 
     struct	emul		*p_emul;		/* Emulation information */
     const struct execsw *p_execsw;		/* Exec package information */
@@ -165,7 +165,7 @@ struct session {
 };
 
 struct pgrp {
-	struct	pgrp 		*pg_hforw;		/* Forward link in hash bucket. */
+	LIST_ENTRY(pgrp)    pg_hash;	    /* Hash chain. */
 	struct	proc 		*pg_mem;		/* Pointer to pgrp members. */
 	struct	session 	*pg_session;	/* Pointer to session. */
 	pid_t				pg_id;			/* Pgrp id. */
@@ -298,32 +298,34 @@ struct	prochd {
 	struct	proc *ph_rlink;
 } qs[NQS];
 
-extern struct emul emul_211bsd;			/* emulation struct */
+struct emul emul_211bsd;				/* emulation struct */
 
 struct 	proc *pfind (pid_t);			/* Find process by id. */
 struct 	pgrp *pgfind (pid_t);			/* Find process group by id. */
 
-int			setpri (struct proc *);
-void		setrun (struct proc *);
-void		setrq (struct proc *);
-void		remrq (struct proc *);
-struct proc getrq (struct proc *);
-void		swtch ();
-void		sleep (void *, int);
-int			tsleep (void *, int, char *, int);
+int			setpri(struct proc *);
+void		setrun(struct proc *);
+void		setrq(struct proc *);
+void		remrq(struct proc *);
+struct proc getrq(struct proc *);
+void		swtch();
+void		sleep(void *, int);
+int			tsleep(void *, int, char *, int);
 int 		ltsleep(void *, int, char *, int, __volatile struct lock_object *);
-void		unsleep (struct proc *);
-void		wakeup (const void *);
-void		reschedule (struct proc *);
+void		unsleep(struct proc *);
+void		wakeup(const void *);
+void		reschedule(struct proc *);
 
-void		procinit (void);
-void		proc_init (struct proc *);
-int 		chgproccnt (uid_t, int);
-int			acct_process (struct proc *);
-int			leavepgrp (struct proc *);
-int			enterpgrp (struct proc *, pid_t, int);
-void		fixjobc (struct proc *, struct pgrp *, int);
-int			inferior (struct proc *);
+void		procinit(void);
+void		proc_init(struct proc *);
+void		rqinit(void);
 
+int 		chgproccnt(uid_t, int);
+int			acct_process(struct proc *);
+int			leavepgrp(struct proc *);
+int			enterpgrp(struct proc *, pid_t, int);
+void		fixjobc(struct proc *, struct pgrp *, int);
+int			inferior(struct proc *);
+int			newproc(int);
 #endif 	/* KERNEL */
 #endif	/* !_SYS_PROC_H_ */
