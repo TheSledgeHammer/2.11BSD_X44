@@ -91,7 +91,6 @@ struct execsw {
 #define EXECSW_PRIO_LAST	2	/* this should be among last */
 
 #ifdef _KERNEL
-//extern const struct execsw 	**execsw;
 extern const struct execsw 	execsw[];
 extern int					nexecs;
 #endif

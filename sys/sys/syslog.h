@@ -96,7 +96,7 @@ CODE prioritynames[] = {
 #define	LOG_NEWS	(7<<3)	/* network news subsystem */
 #define	LOG_UUCP	(8<<3)	/* UUCP subsystem */
 #define	LOG_CRON	(9<<3)	/* clock daemon */
-#define	LOG_AUTHPRIV(10<<3)	/* security/authorization messages (private) */
+#define	LOG_AUTHPRIV (10<<3)	/* security/authorization messages (private) */
 #define	LOG_FTP		(11<<3)	/* ftp daemon */
 
 	/* other codes through 15 reserved for system use */
@@ -141,7 +141,7 @@ CODE facilitynames[] = {
 };
 #endif
 
-#ifdef KERNEL
+#ifdef _KERNEL
 #define	LOG_PRINTF		-1	/* pseudo-priority to indicate use of printf */
 #endif
 

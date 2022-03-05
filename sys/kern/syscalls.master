@@ -41,8 +41,7 @@
 ; redistributions should be placed in the reserved range at the end
 ; of the current calls.
 
-;0	INDIR		{ int syscall(); }
-0   STD     	{ int indir(); }
+0   STD     	{ int nosys(); } syscall
 1   STD     	{ int exit(); }
 2   STD     	{ int fork(); }
 3   STD     	{ int read(); }
@@ -61,7 +60,7 @@
 16  STD     	{ int chown(); }
 17  STD     	{ int chflags(); }
 18  STD     	{ int fchflags(); }
-19	STD			{ int lseek(); }
+19  STD		{ int lseek(); }
 20  STD     	{ int getpid(); }
 21  STD     	{ int mount(); }
 22  STD     	{ int unmount(); }
@@ -80,9 +79,9 @@
 35  STD     	{ int sigaltstack(); }
 36  STD     	{ int sync(); }
 37  STD     	{ int kill(); }
-38	STD			{ int stat(); }
+38  STD		{ int stat(); }
 39  STD     	{ int getlogin(); }
-40	STD			{ int lstat(); }
+40  STD		{ int lstat(); }
 41  STD     	{ int dup(); }
 42  STD     	{ int pipe(); }     	
 43  STD     	{ int setlogin(); }

@@ -6,7 +6,7 @@
  */
 
 char *syscallnames[] = {
-	"indir",			/* 0 = indir */
+	"syscall",			/* 0 = syscall */
 	"exit",			/* 1 = exit */
 	"fork",			/* 2 = fork */
 	"read",			/* 3 = read */
@@ -171,6 +171,15 @@ char *syscallnames[] = {
 	"kevent",			/* 162 = kevent */
 	"kqueue",			/* 163 = kqueue */
 	"swapon",			/* 164 = swapon */
-	"#165 (unimplemented { int swapoff ( ) ; })",		/* 165 = unimplemented { int swapoff ( ) ; } */
-	"#166 (unimplemented { int swapctl ( ) ; })",		/* 166 = unimplemented { int swapctl ( ) ; } */
+	"#165 (unimplemented { int swapctl ( ) ; })",		/* 165 = unimplemented { int swapctl ( ) ; } */
+#ifdef KTRACE
+	"ktrace",			/* 166 = ktrace */
+#else 
+	"#166 (unimplemented ktrace)",		/* 166 = unimplemented ktrace */
+#endif
+#ifdef TRACE
+	"vtrace",			/* 167 = vtrace */
+#else
+	"#167 (unimplemented vtrace)",		/* 167 = unimplemented vtrace */
+#endif
 };

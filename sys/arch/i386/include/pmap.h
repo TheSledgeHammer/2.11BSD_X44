@@ -157,7 +157,6 @@ void        pmap_do_tlb_shootdown(pmap_t, struct cpu_info *);
 void		clearseg(int);
 void		copyseg(int, int);
 void		physcopyseg(int, int);
-//int			copyout(const void *, void *, size_t);
 #endif	/* KERNEL */
 #endif 	/* !LOCORE */
 #endif 	/* _I386_PMAP_H_ */

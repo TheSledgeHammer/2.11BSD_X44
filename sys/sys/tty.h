@@ -137,7 +137,7 @@ struct tty {
 #define	OBUFSIZ				100
 #define	TTYHOG				1024
 
-#ifdef KERNEL
+#ifdef _KERNEL
 short						tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)			tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTMLOWAT(tp)		ttlowat[(tp)->t_ospeed&TTMASK]
@@ -218,7 +218,6 @@ extern void	ctty_init (struct devswtable *);
 extern void pty_init (struct devswtable *);
 extern void tty_conf_init (struct devswtable *);
 
-void cinit (void);
 void clist_alloc_cblocks (struct clist *, int, int);
 void clist_free_cblocks (struct clist *);
 int	 b_to_q (char *, int, struct clist *);
@@ -267,8 +266,8 @@ void tty_init_console (struct tty *, speed_t);
 int	cttyioctl (dev_t, int, caddr_t, int, struct proc *);
 int	cttyopen (dev_t, int, int, struct proc *);
 int	cttyread (dev_t, struct uio *, int);
-int 	cttywrite (dev_t, struct uio *, int);
-int 	cttypoll (dev_t, int, struct proc *);
+int cttywrite (dev_t, struct uio *, int);
+int cttypoll (dev_t, int, struct proc *);
 int	cttykqfilter (dev_t, struct knote *);
 int	cttyselect (dev_t, int, struct proc *);
 

@@ -97,6 +97,12 @@ int	noproc;							/* no one is running just now */
 /* Initialize the world */
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
+extern void cinit(void);			/* clist startup */
+extern void kmstartup(void);		/* gprof startup */
+extern void kmeminit(void);			/* kmem startup (malloc) */
+extern void mbinit(void);			/* mbuf startup */
+extern void rmapinit(void);			/* rmap startup (map) */
+extern void vfsinit(void);			/* vfs startup */
 
 /* General Function Declarations */
 struct clockframe;
@@ -111,6 +117,7 @@ int 	enxio(void);
 int 	eopnotsupp(void *);
 int 	einval(void);
 int 	nonet(void);
+int 	nosys();
 
 void 	*hashinit(int, int, u_long *);
 void 	*hashfree(void *, int, int, u_long *);

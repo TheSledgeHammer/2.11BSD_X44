@@ -16,12 +16,12 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h buf.h 	\
 			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h lock.h 		\
 			lockf.h malloc.h map.h mbuf.h memrange.h midiio.h mman.h mount.h 	\
 			msgbuf.h mtio.h mutex.h	namei.h null.h param.h percpu.h	poll.h 		\
-			power.h prf.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h 		\
-			resource.h resourcevar.h rwlock.h scanio.h scsiio.h select.h 		\
-			signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h stdbool.h \
-			stddef.h stdint.h syscall.h syscallargs.h sysctl.h syslimits.h		\
-			syslog.h systm.h tablet.h termios.h time.h timeb.h timepps.h 		\
-			times.h trace.h tree.h tty.h ttychars.h ttydefaults.h ttydev.h 		\
+			power.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h resource.h \
+			resourcevar.h rwlock.h scanio.h scsiio.h select.h signal.h 			\
+			signalvar.h socket.h socketvar.h stat.h stdarg.h stdbool.h stddef.h \
+			stdint.h syscall.h syscallargs.h sysctl.h syslimits.h syslog.h 		\
+			systm.h tablet.h termios.h time.h timeb.h timepps.h times.h 		\
+			tprintf.h trace.h tree.h tty.h ttychars.h ttydefaults.h ttydev.h 	\
 			types.h ucred.h uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h \
 			vcmd.h videoio.h vlimit.h vmmeter.h vnode_if.h vnode.h wait.h			
 

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1986, 1988, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -31,10 +30,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * @(#)tprintf.h	8.1 (Berkeley) 6/2/93
  */
 
-#ifndef _SYS_PRF_H_
-#define _SYS_PRF_H_
+#ifndef _SYS_TPRINTF_H_
+#define _SYS_TPRINTF_H_
 
 #include <sys/lock.h>
 
@@ -73,4 +74,4 @@ int		kprintf (const char *, int, void *, char *, _BSD_VA_LIST_);
 void	tprintf (tpr_t, const char *fmt, ...);
 tpr_t	tprintf_open (struct proc *);
 void	tprintf_close (tpr_t);
-#endif /* _SYS_PRF_H_ */
+#endif /* !_SYS_TPRINTF_H_ */

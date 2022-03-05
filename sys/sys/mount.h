@@ -304,7 +304,6 @@ void			vfs_timestamp(struct timespec *);
 void			vfs_unmountall(void);
 
 /* vfsconf */
-void			vfsinit(void)
 void			vfsconf_fs_init(void);
 void			vfsconf_fs_create(struct vfsconf *, char *, int, int, int, mountroot_t);
 struct vfsconf 	*vfsconf_find_by_name(const char *);

@@ -56,7 +56,7 @@ struct gmonparam _gmonparam = { GMON_PROF_OFF };
 extern char etext[];
 
 void
-kmstartup()
+kmstartup(void)
 {
 	char *cp;
 	struct gmonparam *p = &_gmonparam;

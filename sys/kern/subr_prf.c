@@ -60,7 +60,7 @@
 #include <sys/stdarg.h>
 #include <sys/vnode.h>
 #include <sys/file.h>
-#include <sys/prf.h>
+#include <sys/tprintf.h>
 
 #include <dev/misc/cons/cons.h>
 

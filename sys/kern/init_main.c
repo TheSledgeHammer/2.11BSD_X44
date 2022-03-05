@@ -70,7 +70,7 @@
 #include <sys/gsched.h>
 #include <sys/ksyms.h>
 #include <sys/msgbuf.h>
-#include <sys/prf.h>
+#include <sys/tprintf.h>
 
 #include <vm/include/vm.h>
 
@@ -127,8 +127,8 @@ main(framep)
 	int s;
 	register_t rval[2];
 	extern struct pdevinit pdevinit[];
-	extern void roundrobin (void *);
-	extern void schedcpu (void *);
+	extern void roundrobin(void *);
+	extern void schedcpu(void *);
 
 	/*
 	 * Initialize the current process pointer (curproc) before
@@ -209,7 +209,7 @@ main(framep)
 	/* Create the limits structures. */
 	p->p_limit = &limit0;
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++) {
-		u.u_rlimit[i]->rlim_cur = u.u_rlimit[i].rlim_max = RLIM_INFINITY;
+		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = RLIM_INFINITY;
 	}
 	u.u_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
 	u.u_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
@@ -218,7 +218,7 @@ main(framep)
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
 
-	limit0->pl_rlimit = u.u_rlimit;
+	limit0.pl_rlimit = u.u_rlimit;
 	limit0.p_refcnt = 1;
 
 	bcopy("root", u.u_login, sizeof ("root"));
@@ -263,8 +263,6 @@ main(framep)
 
 	/* Initialize clists, tables, protocols. */
 	cinit();
-	//bhinit();
-	//binit();
 
 	/* Initialize the log device. */
 	loginit();
@@ -456,44 +454,4 @@ start_init(p, framep)
 	free(free_initpaths, M_TEMP);
 	printf("init: not found\n");
 	panic("no init");
-}
-
-/*
- * Initialize hash links for buffers.
- */
-static void
-bhinit()
-{
-	register int i;
-	register struct bufhd *bp;
-
-	for (bp = bufhash, i = 0; i < BUFHSZ; i++, bp++)
-		bp->b_forw = bp->b_back = (struct buf *)bp;
-}
-
-memaddr_t	bpaddr;		/* physical click-address of buffers */
-
-/*
- * Initialize the buffer I/O system by freeing
- * all buffers and setting all device buffer lists to empty.
- */
-static void
-binit()
-{
-	register struct buf *bp;
-	register int i;
-	long paddr;
-
-	for (bp = bufqueues; bp < &bufqueues[BQUEUES]; bp++)
-		bp->b_forw = bp->b_back = bp->av_forw = bp->av_back = bp;
-	paddr = ((long)bpaddr) << 6;
-	for (i = 0; i < nbuf; i++, paddr += MAXBSIZE) {
-		bp = &buf[i];
-		bp->b_dev = NODEV;
-		bp->b_bcount = 0;
-		_binsheadfree(bp, TAILQ_FIRST(&bufqueues));
-		_binshash(bp, TAILQ_FIRST(&bufqueues));
-		bp->b_flags = B_BUSY|B_INVAL;
-		brelse(bp);
-	}
 }

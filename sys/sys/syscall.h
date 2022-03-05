@@ -5,7 +5,7 @@
  * created from;	@(#)syscalls.master	8.6 (Berkeley) 3/30/95
  */
 
-#define	SYS_indir	0
+#define	SYS_syscall	0
 #define	SYS_exit	1
 #define	SYS_fork	2
 #define	SYS_read	3
@@ -170,4 +170,6 @@
 #define	SYS_kevent	162
 #define	SYS_kqueue	163
 #define	SYS_swapon	164
-#define	SYS_MAXSYSCALL	167
+#define	SYS_ktrace	166
+#define	SYS_vtrace	167
+#define	SYS_MAXSYSCALL	168

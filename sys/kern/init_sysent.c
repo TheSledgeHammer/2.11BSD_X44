@@ -11,7 +11,7 @@
 #include <sys/systm.h>
 #include <sys/signal.h>
 #include <sys/mount.h>
-int	indir();
+int	nosys();
 int	exit();
 int	fork();
 int	read();
@@ -155,6 +155,14 @@ int	kenv();
 int	kevent();
 int	kqueue();
 int	swapon();
+#ifdef KTRACE
+int	ktrace();
+#else 
+#endif
+#ifdef TRACE
+int	vtrace();
+#else
+#endif
 
 #ifdef COMPAT_43
 #define COMPAT_43(func) __CONCAT(COMPAT_43_,func)
@@ -169,6 +177,12 @@ int	COMPAT_43(sigstack)();
 int	COMPAT_43(truncate)();
 int	COMPAT_43(ftruncate)();
 int	COMPAT_43(getdirentries)();
+#ifdef KTRACE
+#else 
+#endif
+#ifdef TRACE
+#else
+#endif
 
 #else /* COMPAT_43 */
 #define COMPAT_43(func) nosys
@@ -178,7 +192,7 @@ int	COMPAT_43(getdirentries)();
 
 struct sysent sysent[] = {
 	{ 0, 0,
-	    indir },				/* 0 = indir */
+	    nosys },				/* 0 = syscall */
 	{ 0, 0,
 	    exit },				/* 1 = exit */
 	{ 0, 0,
@@ -508,9 +522,21 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    swapon },				/* 164 = swapon */
 	{ 0, 0,
-	    nosys },				/* 165 = unimplemented { int swapoff ( ) ; } */
+	    nosys },				/* 165 = unimplemented { int swapctl ( ) ; } */
+#ifdef KTRACE
 	{ 0, 0,
-	    nosys },				/* 166 = unimplemented { int swapctl ( ) ; } */
+	    ktrace },				/* 166 = ktrace */
+#else 
+	{ 0, 0,
+	    nosys },				/* 166 = unimplemented ktrace */
+#endif
+#ifdef TRACE
+	{ 0, 0,
+	    vtrace },				/* 167 = vtrace */
+#else
+	{ 0, 0,
+	    nosys },				/* 167 = unimplemented vtrace */
+#endif
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);
