@@ -64,8 +64,8 @@ u_char 	edf_slack(char, u_char, char);
 int 	edf_utilization(char, char);
 int 	edf_demand(char, char, char, char);
 int 	edf_workload(char, char, char);
-void 	edf_test(struct proc *);
-int		edf_schedcpu(struct proc *);
+int 	edf_test(struct gsched_edf *);
+int	edf_schedcpu(struct proc *);
 
 
 /* Basic Concept */

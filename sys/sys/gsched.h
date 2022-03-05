@@ -107,18 +107,19 @@ struct gsched {
 
 /* Scheduler Domains: Hyperthreading, multi-cpu */
 /* Not Implemented */
-union gsched_group {
-	CIRCLEQ_ENTRY(gsd_group) gsg_entry;
+struct gsched_group {
+	CIRCLEQ_ENTRY(gsched_group) gsg_entry;
 };
 
 /* Not Implemented */
 struct gsched_grphead;
 CIRCLEQ_HEAD(gsched_grphead, gsched_group);
 struct gsched_domain {
-	struct gsched_grphead	 *gsd_header;
-	int 					 gsd_nentries;
-	int 					 gsd_refcnt;
+	struct gsched_grphead	 gsd_header;
+	int 			gsd_nentries;
+	int 			gsd_refcnt;
 };
+
 
 /* Priority Weighting Factors */
 #define	PW_PRIORITY 		25 	 			/* Current Processes Priority */
