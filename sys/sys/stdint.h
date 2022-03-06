@@ -75,15 +75,15 @@ typedef	__uint64_t			uint64_t;
 #define	_BSD_UINT64_T_
 #endif
 
-#ifndef	_BSD_INTPTR_T_
+//#ifndef	_BSD_INTPTR_T_
 typedef	__intptr_t			intptr_t;
-#define	_BSD_INTPTR_T_
-#endif
+//#define	_BSD_INTPTR_T_
+//#endif
 
-#ifndef	_BSD_UINTPTR_T_
+//#ifndef	_BSD_UINTPTR_T_
 typedef	__uintptr_t			uintptr_t;
-#define	_BSD_UINTPTR_T_
-#endif
+//#define	_BSD_UINTPTR_T_
+//#endif
 
 #ifndef _BSD_REGISTER_T_
 typedef	__register_t 		register_t;
