@@ -44,15 +44,17 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- kern_descrip.c:
-	- Needs Work
-	- Needs better 4.4BSD Lite2 & later compatability.
-		- Later BSD versions use struct filedesc. While 2.11BSD has this infrastructure,
-		2.11BSD uses the struct user & file primarily for these syscalls.
-		- The main problem is updating the filedesc structure and maintaining that 		compatability.
-	
-- uipc_syscalls.c:
-	- Improved but needs work.
+- Core API Double-ups:
+	- Filedescriptor Table (Major Issue)
+		- 4.4BSD-Lite2 & 2.11BSD conflict.
+		- Potential de-sync between any parts of the kernel using
+		4.4BSD-Lite2 filedesc's and parts using 2.11BSD user to
+		access the descriptor table.
+		- The easy solution would be to have the filedesc's accessed
+			via the user for any core parts of the kernel.
+	- RLimit (Minor Issue)
+		- 4.4BSD-Lite2 & 2.11BSD conflict.
+		- init_main.c: plimit pointer to rlimit and user pointer to rlimit
 	
 ## arch:
 - i386/x86: (Merged under i386)

@@ -61,7 +61,7 @@ struct pstats {
 	} p_prof;
 
 #define	pstat_endcopy	p_start
-	struct	timeval 	*p_start;	/* starting time */
+	struct	timeval 	p_start;	/* starting time */
 };
 
 /*

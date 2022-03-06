@@ -47,6 +47,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/filedesc.h>
 #include <sys/errno.h>
 #include <sys/exec.h>
@@ -58,7 +59,6 @@
 #include <sys/proc.h>
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
-#include <sys/systm.h>
 #include <sys/vnode.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
@@ -69,8 +69,10 @@
 #include <sys/user.h>
 #include <sys/gsched.h>
 #include <sys/ksyms.h>
+#include <sys/kenv.h>
 #include <sys/msgbuf.h>
 #include <sys/tprintf.h>
+#include <sys/stdint.h>
 
 #include <vm/include/vm.h>
 
@@ -199,7 +201,7 @@ main(framep)
 
 	/* Create the file descriptor table. */
 	fdp = &filedesc0;
-	p->p_fd = &fdp->fd_fd;
+	p->p_fd = u.u_fd = &fdp->fd_fd;
 	fdp->fd_fd.fd_refcnt = 1;
 	fdp->fd_fd.fd_cmask = cmask;
 	fdp->fd_fd.fd_ofiles = fdp->fd_dfiles;
@@ -217,8 +219,6 @@ main(framep)
 	u.u_rlimit[RLIMIT_RSS].rlim_max = i;
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
-
-	limit0.pl_rlimit = u.u_rlimit;
 	limit0.p_refcnt = 1;
 
 	bcopy("root", u.u_login, sizeof ("root"));
@@ -302,8 +302,9 @@ main(framep)
 		panic("cannot find root vnode");
 	fdp->fd_fd.fd_cdir = rootvnode;
 	VREF(fdp->fd_fd.fd_cdir);
+	fdp->fd_fd.fd_rdir = rootvnode;
+	VREF(fdp->fd_fd.fd_rdir);
 	VOP_UNLOCK(rootvnode, 0, p);
-	fdp->fd_fd.fd_rdir = NULL;
 	swapinit();
 
 	p->p_stats->p_start = runtime = mono_time = boottime = time;
@@ -359,11 +360,9 @@ start_init(p, framep)
 {
 	vm_offset_t addr;
 	struct execa_args args;
-	int options, i, error;
-	register_t retval[2];
-	char flags[4] = "-", *flagsp;
-	char **pathp, *path, *ucp, **uap, *arg0, *arg1, *var;
-	char *free_initpaths, *tmp_initpaths;
+	int options, error;
+	char *var, *path, *next, *s;
+	char *ucp, **uap, *arg0, *arg1;
 
 	initproc = p;
 
@@ -379,79 +378,87 @@ start_init(p, framep)
 	/*
 	 * Need just enough stack to hold the faked-up "execve()" arguments.
 	 */
-	addr = trunc_page(VM_MAX_ADDRESS - PAGE_SIZE);
-	if (vm_allocate(&p->p_vmspace->vm_map, &addr, PAGE_SIZE, FALSE) != 0)
+	if (vm_map_find(&p->p_vmspace->vm_map, NULL, 0, &addr, PAGE_SIZE, FALSE) != 0) {
 		panic("init: couldn't allocate argument space");
-	p->p_vmspace->vm_maxsaddr = (caddr_t) addr;
+	}
+	p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
+	p->p_vmspace->vm_ssize = 1;
 
 	if ((var = kern_getenv("init_path")) != NULL) {
 		strlcpy(initpaths, var, sizeof(initpaths));
 		freeenv(var);
 	}
-	free_initpaths = tmp_initpaths = strdup(initpaths, M_TEMP);
 
-	for (pathp = &initpaths[0]; (path = *pathp) != NULL; pathp++) {
+	for (path = &initpaths; *path != '\0'; path = next) {
+		while (*path == ':')
+			path++;
+		if (*path == '\0')
+			break;
+		for (next = path; *next != '\0' && *next != ':'; next++)
+			/* nothing */;
+		if (bootverbose)
+			printf("start_init: trying %.*s\n", (int) (next - path), path);
+
 		/*
-		 * Construct the boot flag argument.
+		 * Move out the boot flag argument.
 		 */
 		options = 0;
-		flagsp = flags + 1;
 		ucp = (char*) USRSTACK;
+		(void) subyte(--ucp, 0); /* trailing zero */
 		if (boothowto & RB_SINGLE) {
-			*flagsp++ = 's';
+			(void) subyte(--ucp, 's');
 			options = 1;
 		}
 #ifdef notyet
 		if (boothowto & RB_FASTBOOT) {
-			*flagsp++ = 'f';
+			(void) subyte(--ucp, 'f');
 			options = 1;
 		}
 #endif
-		/*
-		 * Move out the flags (arg 1), if necessary.
-		 */
-		if (options != 0) {
-			*flagsp++ = '\0';
-			i = flagsp - flags;
-			(void) copyout((caddr_t) flags, (caddr_t) (ucp -= i), i);
-			arg1 = ucp;
-		}
+
+#ifdef BOOTCDROM
+		(void) subyte(--ucp, 'C');
+		options = 1;
+#endif
+		if (options == 0)
+			(void) subyte(--ucp, '-');
+		(void) subyte(--ucp, '-'); /* leading hyphen */
+		arg1 = ucp;
 
 		/*
 		 * Move out the file name (also arg 0).
 		 */
-		i = strlen(path) + 1;
-		(void) copyout((caddr_t) path, (caddr_t) (ucp -= i), i);
+		(void) subyte(--ucp, 0);
+		for (s = next - 1; s >= path; s--)
+			(void) subyte(--ucp, *s);
 		arg0 = ucp;
 
 		/*
 		 * Move out the arg pointers.
 		 */
-		uap = (char**) ((long) ucp & ~ALIGNBYTES);
-		(void) suword((caddr_t) --uap, 0); 				/* terminator */
-		if (options != 0)
-			(void) suword((caddr_t) --uap, (long) arg1);
-		(void) suword((caddr_t) --uap, (long) arg0);
+		uap = (char **)((intptr_t)ucp & ~(sizeof(intptr_t)-1));
+		(void) suword((caddr_t) --uap, (long) 0); /* terminator */
+		(void) suword((caddr_t) --uap, (long) (intptr_t) arg1);
+		(void) suword((caddr_t) --uap, (long) (intptr_t) arg0);
 
 		/*
 		 * Point at the arguments.
 		 */
-		&args->fname = arg0;
-		&args->argp = uap;
-		&args->envp = NULL;
+		args.fname = arg0;
+		args.argp = uap;
+		args.envp = NULL;
 
 		/*
 		 * Now try to exec the program.  If can't for any reason
 		 * other than it doesn't exist, complain.
 		 */
-		error = execve(p, &args, retval);
-		if (error == 0 || error == EJUSTRETURN)
-			free(free_initpaths, M_TEMP);
+		if((error = execve(p, &args, retval)) == 0) {
 			return;
-		if (error != ENOENT)
-			printf("exec %s: error %d\n", path, error);
+		}
+		if (error != ENOENT) {
+			printf("exec %.*s: error %d\n", (int) (next - path), path, error);
+		}
 	}
-	free(free_initpaths, M_TEMP);
 	printf("init: not found\n");
 	panic("no init");
 }
