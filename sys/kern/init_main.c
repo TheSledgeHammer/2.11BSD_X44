@@ -378,6 +378,7 @@ start_init(p, framep)
 	/*
 	 * Need just enough stack to hold the faked-up "execve()" arguments.
 	 */
+	addr = trunc_page(VM_MAX_ADDRESS - PAGE_SIZE);
 	if (vm_map_find(&p->p_vmspace->vm_map, NULL, 0, &addr, PAGE_SIZE, FALSE) != 0) {
 		panic("init: couldn't allocate argument space");
 	}
