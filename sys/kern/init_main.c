@@ -73,6 +73,8 @@
 #include <sys/msgbuf.h>
 #include <sys/tprintf.h>
 #include <sys/stdint.h>
+#include <sys/null.h>
+#include <sys/domain.h>
 
 #include <vm/include/vm.h>
 
@@ -360,6 +362,7 @@ start_init(p, framep)
 {
 	vm_offset_t addr;
 	struct execa_args args;
+	register_t retval[2];
 	int options, error;
 	char *var, *path, *next, *s;
 	char *ucp, **uap, *arg0, *arg1;
@@ -385,12 +388,12 @@ start_init(p, framep)
 	p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
 	p->p_vmspace->vm_ssize = 1;
 
-	if ((var = kern_getenv("init_path")) != NULL) {
+	if ((var = kern_getenv("initpaths")) != NULL) {
 		strlcpy(initpaths, var, sizeof(initpaths));
 		freeenv(var);
 	}
 
-	for (path = &initpaths; *path != '\0'; path = next) {
+	for (path = initpaths; *path != '\0'; path = next) {
 		while (*path == ':')
 			path++;
 		if (*path == '\0')
@@ -445,9 +448,12 @@ start_init(p, framep)
 		/*
 		 * Point at the arguments.
 		 */
-		args.fname = arg0;
-		args.argp = uap;
-		args.envp = NULL;
+//		&args.fname = arg0;
+//		&args.argp = uap;
+//		&args.envp = NULL;
+		SCARG(&args, fname) = arg0;
+		SCARG(&args, argp) = uap;
+		SCARG(&args, envp) = NULL;
 
 		/*
 		 * Now try to exec the program.  If can't for any reason
