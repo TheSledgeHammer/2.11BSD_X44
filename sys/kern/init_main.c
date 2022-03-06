@@ -344,12 +344,16 @@ main(framep)
 /*
  * List of paths to try when searching for "init".
  */
+static char initpaths[MAXPATHLEN] = "/sbin/init:/sbin/oinit:/sbin/init.bak";
+
+/*
 static const  char * const initpaths[] = {
 	"/sbin/init",
 	"/sbin/oinit",
 	"/sbin/init.bak",
 	NULL,
 };
+*/
 
 /*
  * Start the initial user process; try exec'ing each pathname in "initpaths".
@@ -388,7 +392,7 @@ start_init(p, framep)
 	p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
 	p->p_vmspace->vm_ssize = 1;
 
-	if ((var = kern_getenv("initpaths")) != NULL) {
+	if ((var = kern_getenv("init_path")) != NULL) {
 		strlcpy(initpaths, var, sizeof(initpaths));
 		freeenv(var);
 	}
@@ -448,9 +452,6 @@ start_init(p, framep)
 		/*
 		 * Point at the arguments.
 		 */
-//		&args.fname = arg0;
-//		&args.argp = uap;
-//		&args.envp = NULL;
 		SCARG(&args, fname) = arg0;
 		SCARG(&args, argp) = uap;
 		SCARG(&args, envp) = NULL;
@@ -459,7 +460,8 @@ start_init(p, framep)
 		 * Now try to exec the program.  If can't for any reason
 		 * other than it doesn't exist, complain.
 		 */
-		if((error = execve(p, &args, retval)) == 0) {
+		error = execve(p, &args, retval);
+		if(error == 0) {
 			return;
 		}
 		if (error != ENOENT) {

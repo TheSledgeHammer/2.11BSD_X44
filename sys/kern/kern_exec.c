@@ -80,17 +80,15 @@ execv()
 	struct execa_args *uap = (struct execa_args *)u->u_ap;
 	uap->envp = NULL;
 
-	return (execve(u->u_procp, uap, u->u_r->r_val1));
+	return (execve());
 }
 
 int
-execve(p, uap, retval)
+execve()
+{
 	struct proc *p;
 	struct execa_args *uap;
-	int *retval;
-{
-	uap = (struct execa_args*) u->u_ap;
-
+	register_t *retval;
 	struct nameidata nd, *ndp;
 	int error, i, szsigcode, len;
 	char *stack, *stack_base;
@@ -103,11 +101,16 @@ execve(p, uap, retval)
 	char **tmpfap;
 	struct exec_vmcmd *base_vcp = NULL;
 
+	uap = (struct execa_args *) u->u_ap;
+	p = u->u_procp;
+
 	if (exec_maxhdrsz == 0) {
-		for (i = 0; i < nexecs; i++)
+		for (i = 0; i < nexecs; i++) {
 			if (execsw[i]->ex_makecmds != NULL
-					&& execsw[i]->ex_hdrsz > exec_maxhdrsz)
+					&& execsw[i]->ex_hdrsz > exec_maxhdrsz) {
 				exec_maxhdrsz = execsw[i]->ex_hdrsz;
+			}
+		}
 	}
 
 	/* Initialize a few constants in the common area */

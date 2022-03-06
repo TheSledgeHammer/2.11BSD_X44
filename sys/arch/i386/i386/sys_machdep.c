@@ -451,9 +451,9 @@ i386_get_sdbase(p, arg, which)
 
 int
 sysarch(p, uap, retval)
-	struct proc *p;
+	struct proc 		*p;
 	struct sysarch_args *uap;
-	register_t *retval;
+	register_t 			*retval;
 {
 	int error = 0;
 
