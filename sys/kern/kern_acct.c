@@ -188,7 +188,7 @@ acct_process(p)
 	/*
 	 * Now, just write the accounting information to the file.
 	 */
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
 	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) &acct, sizeof(acct), (off_t) 0,
 			UIO_SYSSPACE, IO_APPEND | IO_UNIT, p->p_ucred, (int*) 0, p));
 }

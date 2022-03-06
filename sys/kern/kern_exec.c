@@ -95,7 +95,6 @@ execve()
 	struct ps_strings *arginfo;
 	struct exec_linker elp;
 	struct vmspace *vm;
-	struct vnode *vnodep;
 	struct vattr attr;
 	char *dp, *sp;
 	char **tmpfap;
@@ -126,7 +125,6 @@ execve()
 	elp->el_emul_arg = NULL;
 	elp->el_vmcmds->evs_cnt = 0;
 	elp->el_vmcmds->evs_used = 0;
-	elp->el_vnodep = NULL;
 	elp->el_flags = 0;
 	elp->el_emul = &emul_211bsd;
 
@@ -169,9 +167,10 @@ execve()
 
 	len = ALIGN(len); /* make the stack "safely" aligned */
 
-	if (len > elp.el_ssize)
+	if (len > elp.el_ssize) {
 		error = ENOMEM;
-	goto bad;
+		goto bad;
+	}
 
 	/* adjust "active stack depth" for process VSZ */
 	elp.el_ssize = len;
@@ -282,7 +281,7 @@ bad:
 freehdr:
 	p->p_flag &= ~P_INEXEC;
 	FREE(elp.el_image_hdr, M_EXEC);
-	return error;
+	return (error);
 
 exec_abort:
 	p->p_flag &= ~P_INEXEC;

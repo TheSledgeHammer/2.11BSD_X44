@@ -269,7 +269,6 @@ extern	struct vattr va_null;		/* predefined null vattr structure */
  */
 #define	LEASE_READ	0x1		/* Check lease for readers */
 #define	LEASE_WRITE	0x2		/* Check lease for modifiers */
-
 #endif /* KERNEL */
 
 /*
