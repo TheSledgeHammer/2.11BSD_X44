@@ -103,6 +103,7 @@ extern void kmeminit(void);			/* kmem startup (malloc) */
 extern void mbinit(void);			/* mbuf startup */
 extern void rmapinit(void);			/* rmap startup (map) */
 extern void vfsinit(void);			/* vfs startup */
+int execve();
 
 /* General Function Declarations */
 struct clockframe;
