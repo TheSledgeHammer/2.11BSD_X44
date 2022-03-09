@@ -83,7 +83,7 @@ int
 execa(args)
 	struct execa_args *args;
 {
-	if((args == execa_args_get()) != NULL) {
+	if((args == execa_get()) != NULL) {
 		return (execve());
 	}
 	return (ENOMEM);
@@ -93,7 +93,7 @@ execa(args)
  * set user args pointer to execa_args
  */
 void
-execa_args_set(args, fname, argp, envp)
+execa_set(args, fname, argp, envp)
 	struct execa_args 	*args;
 	char				*fname;
 	char				**argp;
@@ -108,7 +108,7 @@ execa_args_set(args, fname, argp, envp)
 
 /* return execa_args if user args pointer is not null */
 struct execa_args 	*
-execa_args_get(void)
+execa_get(void)
 {
     struct execa_args *args = (struct execa_args *)u.u_ap;
     if(args != NULL) {
@@ -120,7 +120,7 @@ execa_args_get(void)
 int
 execv()
 {
-	struct execa_args *uap = (struct execa_args *)u->u_ap;
+	struct execa_args *uap = (struct execa_args *)u.u_ap;
 	uap->envp = NULL;
 
 	return (execve());
@@ -133,17 +133,18 @@ execve()
 	struct execa_args *uap;
 	register_t *retval;
 	struct nameidata nd, *ndp;
-	int error, i, szsigcode, len;
-	char *stack, *stack_base;
 	struct ps_strings *arginfo;
 	struct exec_linker elp;
 	struct vmspace *vm;
 	struct vattr attr;
+	struct exec_vmcmd *base_vcp;
+	int error, i, szsigcode, len;
+	char *stack, *stack_base;
 	char *dp, *sp;
 	char **tmpfap;
-	struct exec_vmcmd *base_vcp = NULL;
 
 	uap = (struct execa_args *) u.u_ap;
+	base_vcp = NULL;
 	p = u->u_procp;
 
 	if (exec_maxhdrsz == 0) {
@@ -308,7 +309,7 @@ execve()
 bad:
 	p->p_flag &= ~P_INEXEC;
 	/* free the vmspace-creation commands, and release their references */
-	kill_vmcmds(&elp.el_vmcmds);
+	kill_vmcmd(&elp.el_vmcmds);
 	/* kill any opened file descriptor, if necessary */
 	if (elp.el_flags & EXEC_HASFD) {
 		elp.el_flags &= ~EXEC_HASFD;
@@ -340,7 +341,13 @@ exec_abort:
 
 	return (0);
 }
+/*
+int
+fexecve()
+{
 
+}
+*/
 /*
  * Reset signals for an exec of the specified process.  In 4.4 this function
  * was in kern_sig.c but since in 2.11 kern_sig and kern_exec will likely be
@@ -478,7 +485,7 @@ check_exec(elp)
 	 * free any vmspace-creation commands,
 	 * and release their references
 	 */
-	kill_vmcmds(&elp->el_vmcmds);
+	kill_vmcmd(&elp->el_vmcmds);
 
 bad2:
 	/*

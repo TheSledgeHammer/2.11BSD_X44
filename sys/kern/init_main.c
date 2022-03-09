@@ -452,12 +452,7 @@ start_init(p, framep)
 		/*
 		 * Point at the arguments.
 		 */
-		/*
-		SCARG(&args, fname) = arg0;
-		SCARG(&args, argp) = uap;
-		SCARG(&args, envp) = NULL;
-		*/
-		execa_args_set(&args, arg0, uap, NULL);
+		execa_set(&args, arg0, uap, NULL);
 
 		/*
 		 * Now try to exec the program.  If can't for any reason

@@ -77,7 +77,7 @@ extern char	curpri;					/* more scheduling */
  * exec system call, with and without environments.
  */
 struct execa_args {
-	syscallarg(char	*) fname;
+	syscallarg(char	*) 	fname;
 	syscallarg(char	**) argp;
 	syscallarg(char	**) envp;
 };
@@ -96,8 +96,8 @@ int	noproc;							/* no one is running just now */
 
 /* Initialize the world */
 int 				execa(struct execa_args *);
-void				execa_args_set(struct execa_args *, char *, char **, char **);
-struct execa_args 	*execa_args_get(void);
+void				execa_set(struct execa_args *, char *, char **, char **);
+struct execa_args 	*execa_get(void);
 
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
