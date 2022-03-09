@@ -64,6 +64,7 @@
 
 #include <dev/disk/ccd/ccdvar.h>
 
+#include "ioconf.h"
 
 #ifdef DEBUG
 int cddebug = 0x00;

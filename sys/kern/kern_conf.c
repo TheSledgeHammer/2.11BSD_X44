@@ -33,7 +33,7 @@
 #include <sys/conf.h>
 #include <sys/devsw.h>
 #include <sys/tty.h>
-#include <sys/user.h>
+#include <sys/null.h>
 
 /*
  * Configure MI (Machine-Independent) Devices

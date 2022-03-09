@@ -95,6 +95,10 @@ extern int nsysent;
 int	noproc;							/* no one is running just now */
 
 /* Initialize the world */
+int 				execa(struct execa_args *);
+void				execa_args_set(struct execa_args *, char *, char **, char **);
+struct execa_args 	*execa_args_get(void);
+
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
 extern void cinit(void);			/* clist startup */
@@ -103,7 +107,6 @@ extern void kmeminit(void);			/* kmem startup (malloc) */
 extern void mbinit(void);			/* mbuf startup */
 extern void rmapinit(void);			/* rmap startup (map) */
 extern void vfsinit(void);			/* vfs startup */
-int execve();
 
 /* General Function Declarations */
 struct clockframe;

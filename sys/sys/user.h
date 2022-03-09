@@ -64,7 +64,7 @@ struct user {
 
 /* syscall parameters, results and catches */
 	int					u_arg[6];				/* arguments to current system call */
-	int					*u_ap;					/* pointer to arglist */
+	void				*u_ap;					/* pointer to arglist */
 	label_t				u_qsave;				/* for non-local gotos on interrupts */
 	union {										/* syscall return values */
 		struct	{/* consider changing to register_t */

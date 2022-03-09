@@ -31,8 +31,8 @@
  * The former's operation is described in Leffler, et al., and the latter
  * was provided by UCB with the 4.4BSD-Lite release
  */
-comp_t	encode_comp_t (u_long, u_long);
-void	acctwatch (void *);
+comp_t	encode_comp_t(u_long, u_long);
+void	acctwatch(void *);
 
 /* Accounting vnode pointer, and saved vnode pointer. */
 struct vnode *acctp;
@@ -56,18 +56,18 @@ acct()
 	register struct acct_args {
 		syscallarg(char	*) path;
 		syscallarg(int)	pid;
-	} *uap = (struct acct_args *)u->u_ap;
+	} *uap = (struct acct_args *)u.u_ap;
 
 	struct proc *p;
 	struct nameidata nd;
 	int error;
 
 	if(uap->pid == 0) {
-		uap->pid = u->u_procp->p_pid;
+		uap->pid = u.u_procp->p_pid;
 	}
 	p = pfind(uap->pid);
 	if(p == 0) {
-		return (u->u_error = ESRCH);
+		return (u.u_error = ESRCH);
 	}
 
 	/* Make sure that the caller is root. */
@@ -151,12 +151,12 @@ acct_process(p)
 	acct.ac_stime = encode_comp_t(st.tv_sec, st.tv_usec);
 
 	/* (3) The elapsed time the commmand ran (and its starting time) */
-	acct.ac_btime = u->u_start.tv_sec;
+	acct.ac_btime = u.u_start.tv_sec;
 
 	s = splclock();
 	tmp = time;
 	splx(s);
-	timevalsub(&tmp, &u->u_start);
+	timevalsub(&tmp, &u.u_start);
 	acct.ac_etime = encode_comp_t(tmp.tv_sec, tmp.tv_usec);
 
 	/* (4) The average amount of memory used */
@@ -183,7 +183,7 @@ acct_process(p)
 		acct.ac_tty = NODEV;
 
 	/* (8) The boolean flags that tell how the process terminated, etc. */
-	acct.ac_flag = u->u_acflag;
+	acct.ac_flag = u.u_acflag;
 
 	/*
 	 * Now, just write the accounting information to the file.
@@ -193,8 +193,8 @@ acct_process(p)
 			UIO_SYSSPACE, IO_APPEND | IO_UNIT, p->p_ucred, (int*) 0, p));
 }
 
-#define	MANTSIZE	13			/* 13 bit mantissa. */
-#define	EXPSIZE		3			/* Base 8 (3 bit) exponent. */
+#define	MANTSIZE	13						/* 13 bit mantissa. */
+#define	EXPSIZE		3						/* Base 8 (3 bit) exponent. */
 #define	MAXFRACT	((1 << MANTSIZE) - 1)	/* Maximum fractional value. */
 
 comp_t

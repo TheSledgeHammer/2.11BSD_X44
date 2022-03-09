@@ -92,26 +92,26 @@ hardclock(frame, pc)
 	 * one tick.
 	 */
 	if (CLKF_USERMODE(frame)) {
-		if (u->u_prof.pr_scale)
+		if (u.u_prof.pr_scale)
 			needsoft = 1;
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
 		 * interval timer.
 		 */
-		u->u_ru.ru_utime++;
-		if (u->u_timer[ITIMER_VIRTUAL - 1].it_value &&
-		    !--u->u_timer[ITIMER_VIRTUAL - 1].it_value) {
-			psignal(u->u_procp, SIGVTALRM);
-			u->u_timer[ITIMER_VIRTUAL - 1].it_value =
-			    u->u_timer[ITIMER_VIRTUAL - 1].it_interval;
+		u.u_ru.ru_utime++;
+		if (u.u_timer[ITIMER_VIRTUAL - 1].it_value &&
+		    !--u.u_timer[ITIMER_VIRTUAL - 1].it_value) {
+			psignal(u.u_procp, SIGVTALRM);
+			u.u_timer[ITIMER_VIRTUAL - 1].it_value =
+			    u.u_timer[ITIMER_VIRTUAL - 1].it_interval;
 		}
 	} else {
 		/*
 		 * CPU was in system state.
 		 */
 		if (!noproc)
-			u->u_ru.ru_stime++;
+			u.u_ru.ru_stime++;
 	}
 
 	/*
@@ -123,21 +123,21 @@ hardclock(frame, pc)
 	 * the entire last tick.
 	 */
 	if (noproc == 0) {
-		p = u->u_procp;
+		p = u.u_procp;
 		if (++p->p_cpu == 0)
 			p->p_cpu--;
-		if ((u->u_ru.ru_utime+u->u_ru.ru_stime+1) >
-		    u->u_rlimit[RLIMIT_CPU].rlim_cur) {
+		if ((u.u_ru.ru_utime+u.u_ru.ru_stime+1) >
+		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
 			psignal(p, SIGXCPU);
-			if (u->u_rlimit[RLIMIT_CPU].rlim_cur <
-			    u->u_rlimit[RLIMIT_CPU].rlim_max)
-				u->u_rlimit[RLIMIT_CPU].rlim_cur += 5 * hz;
+			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
+			    u.u_rlimit[RLIMIT_CPU].rlim_max)
+				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5 * hz;
 		}
-		if (u->u_timer[ITIMER_PROF - 1].it_value &&
-		    !--u->u_timer[ITIMER_PROF - 1].it_value) {
+		if (u.u_timer[ITIMER_PROF - 1].it_value &&
+		    !--u.u_timer[ITIMER_PROF - 1].it_value) {
 			psignal(p, SIGPROF);
-			u->u_timer[ITIMER_PROF - 1].it_value =
-			    u->u_timer[ITIMER_PROF - 1].it_interval;
+			u.u_timer[ITIMER_PROF - 1].it_value =
+			    u.u_timer[ITIMER_PROF - 1].it_interval;
 		}
 	}
 
@@ -189,7 +189,7 @@ gatherstats(frame)
 		/*
 		 * CPU was in user state.
 		 */
-		if (u->u_procp->p_nice > NZERO)
+		if (u.u_procp->p_nice > NZERO)
 			cpstate = CP_NICE;
 		else
 			cpstate = CP_USER;
@@ -259,29 +259,31 @@ softclock(frame, pc)
 	 * a profiling tick.
 	 */
 	if (CLKF_USERMODE(frame)) {
-		register struct proc *p = u->u_procp;
+		register struct proc *p = u.u_procp;
 
-		if (u->u_prof.pr_scale)
-			addupc_intru(pc, &u->u_prof, 1);
+		if (u.u_prof.pr_scale)
+			addupc_intru(pc, &u.u_prof, 1);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so
 		 * reduce priority to give others a chance.
 		 */
 
-		if (p->p_uid && p->p_nice == NZERO && u->u_ru.ru_utime > 10L * 60L * hz) {
+		if (p->p_uid && p->p_nice == NZERO && u.u_ru.ru_utime > 10L * 60L * hz) {
 			p->p_nice = NZERO + 4;
 			(void) setpri(p);
 		}
 	}
 }
 
+typedef void (*fun_t)(void *);
 /*
  * Arrange that (*fun)(arg) is called in t/hz seconds.
  */
 void
 timeout(fun, arg, t)
-	void (*fun)(void *);
+	//void (*fun)(void *);
+	fun_t fun;
 	void *arg;
 	register int t;
 {
@@ -317,7 +319,8 @@ timeout(fun, arg, t)
  */
 void
 untimeout(fun, arg)
-	void (*fun)(void *);
+	//void (*fun)(void *);
+	fun_t fun;
 	void *arg;
 {
 	register struct callout *p1, *p2;
@@ -346,9 +349,9 @@ profil()
 		syscallarg(u_int) bufsize;
 		syscallarg(u_int) pcoffset;
 		syscallarg(u_int) pcscale;
-	} *uap = (struct profil_args *)u->u_ap;
+	} *uap = (struct profil_args *)u.u_ap;
 
-	register struct uprof *upp = &u->u_prof;
+	register struct uprof *upp = &u.u_prof;
 
 	upp->pr_base = uap->bufbase;
 	upp->pr_size = uap->bufsize;

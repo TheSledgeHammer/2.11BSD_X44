@@ -276,11 +276,11 @@ struct ttysize {
 #define	SIOCADDMULTI		_IOW('i', 49, struct ifreq)		/* add m'cast addr */
 #define	SIOCDELMULTI	 	_IOW('i', 50, struct ifreq)		/* del m'cast addr */
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-//int	ioctl (int, unsigned long, ...);
+int	ioctl(/*int, unsigned long, ...*/);
 __END_DECLS
 #endif /* !KERNEL */
 #endif /* !_SYS_IOCTL_H_ */

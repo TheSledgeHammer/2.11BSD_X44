@@ -74,6 +74,49 @@ struct emul emul_211bsd = {
 		.e_syscall		= syscall
 };
 
+/*
+ * Execa: (on startup only)
+ * Serves a special purpose during startup of loading
+ * the execa_args from the user args pointer.
+ */
+int
+execa(args)
+	struct execa_args *args;
+{
+	if((args == execa_args_get()) != NULL) {
+		return (execve());
+	}
+	return (ENOMEM);
+}
+
+/* setup execa_args.
+ * set user args pointer to execa_args
+ */
+void
+execa_args_set(args, fname, argp, envp)
+	struct execa_args 	*args;
+	char				*fname;
+	char				**argp;
+	char				**envp;
+{
+	SCARG(args, fname) = fname;
+	SCARG(args, argp) = argp;
+	SCARG(args, envp) = envp;
+
+	u.u_ap = args;
+}
+
+/* return execa_args if user args pointer is not null */
+struct execa_args 	*
+execa_args_get(void)
+{
+    struct execa_args *args = (struct execa_args *)u.u_ap;
+    if(args != NULL) {
+        return (args);
+    }
+    return (NULL);
+}
+
 int
 execv()
 {
@@ -100,7 +143,7 @@ execve()
 	char **tmpfap;
 	struct exec_vmcmd *base_vcp = NULL;
 
-	uap = (struct execa_args *) u->u_ap;
+	uap = (struct execa_args *) u.u_ap;
 	p = u->u_procp;
 
 	if (exec_maxhdrsz == 0) {
@@ -129,8 +172,7 @@ execve()
 	elp->el_emul = &emul_211bsd;
 
 	/* Allocate temporary demand zeroed space for argument and environment strings */
-	error = vm_allocate(kernel_map, (vm_offset_t*) &elp->el_stringbase, ARG_MAX,
-			TRUE);
+	error = vm_allocate(kernel_map, (vm_offset_t*) &elp->el_stringbase, ARG_MAX, TRUE);
 
 	if (error) {
 		log(LOG_WARNING, "execve: failed to allocate string space\n");
@@ -199,7 +241,7 @@ execve()
 		goto exec_abort;
 
 	fdcloseexec(p); /* handle close on exec */
-	execsigs(p); /* reset catched signals */
+	execsigs(p); 	/* reset catched signals */
 
 	/* set command name & other accounting info */
 	len = min(ndp->ni_cnd.cn_namelen, MAXCOMLEN);
