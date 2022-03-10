@@ -83,7 +83,7 @@ struct plimit {
 #define	ADDUPROF(p)							\
 	addupc_task((p), (p)->p_stats->p_prof.pr_addr, (p)->p_stats->p_prof.pr_ticks)
 
-#ifdef KERNEL
+#ifdef _KERNEL
 void	addupc_intr (struct proc *p, u_long pc, u_int ticks);
 void	addupc_task (struct proc *p, u_long pc, u_int ticks);
 void	addupc_intru (u_long pc, struct uprof *up, u_int ticks);
@@ -92,5 +92,4 @@ void	calcru (struct proc *p, struct timeval *up, struct timeval *sp, struct time
 struct plimit *limcopy (struct plimit *lim);
 void	ruadd (struct rusage *ru, struct rusage *ru2);
 #endif
-
 #endif	/* !_SYS_RESOURCEVAR_H_ */

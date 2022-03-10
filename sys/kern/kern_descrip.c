@@ -73,7 +73,7 @@
 void
 getdtablesize()
 {
-	u->u_r.r_val1 = NOFILE;
+	u.u_r.r_val1 = NOFILE;
 }
 
 /*

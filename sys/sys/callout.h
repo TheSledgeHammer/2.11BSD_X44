@@ -91,6 +91,8 @@
 #ifndef _SYS_CALLOUT_H_
 #define	_SYS_CALLOUT_H_
 
+#include <sys/types.h>
+
 struct callout;
 struct callout_circq {
 	/* next element */

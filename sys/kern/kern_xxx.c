@@ -22,7 +22,7 @@ reboot()
 {
 	register struct reboot_args {
 		syscallarg(int)	opt;
-	} *uap = (struct reboot_args *)u->u_ap;
+	} *uap = (struct reboot_args *)u.u_ap;
 	int error;
 
 	if (error == suser()) {

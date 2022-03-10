@@ -55,14 +55,14 @@ acct()
 {
 	register struct acct_args {
 		syscallarg(char	*) path;
-		syscallarg(int)	pid;
+		syscallarg(pid_t)	pid;
 	} *uap = (struct acct_args *)u.u_ap;
 
 	struct proc *p;
 	struct nameidata nd;
 	int error;
 
-	if(uap->pid == 0) {
+	if(SCARG(uap, pid) == 0) {
 		uap->pid = u.u_procp->p_pid;
 	}
 	p = pfind(uap->pid);
@@ -80,8 +80,8 @@ acct()
 	 * If accounting is to be started to a file, open that file for
 	 * writing and make sure it's a 'normal'.
 	 */
-	if (uap->path != NULL) {
-		NDINIT(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->path, p);
+	if (SCARG(uap, path) != NULL) {
+		NDINIT(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE, SCARG(uap, path), p);
 		error = vn_open(&nd, FWRITE, 0);
 		if (error) {
 			return (error);
@@ -102,7 +102,7 @@ acct()
 		error = vn_close((acctp != NULLVP ? acctp : savacctp), FWRITE, p->p_ucred, p);
 		acctp = savacctp = NULLVP;
 	}
-	if (uap->path == NULL) {
+	if (SCARG(uap, path) == NULL) {
 		return (error);
 	}
 
@@ -160,7 +160,7 @@ acct_process(p)
 	acct.ac_etime = encode_comp_t(tmp.tv_sec, tmp.tv_usec);
 
 	/* (4) The average amount of memory used */
-	r = &p->p_stats->p_ksru;
+	r = &p->p_stats->p_ru;
 	tmp = ut;
 	timevaladd(&tmp, &st);
 	t = tmp.tv_sec * hz + tmp.tv_usec / tick;
@@ -189,7 +189,7 @@ acct_process(p)
 	 * Now, just write the accounting information to the file.
 	 */
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) &acct, sizeof(acct), (off_t) 0,
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) & acct, sizeof(acct), (off_t) 0,
 			UIO_SYSSPACE, IO_APPEND | IO_UNIT, p->p_ucred, (int*) 0, p));
 }
 
@@ -206,11 +206,11 @@ encode_comp_t(s, us)
 	exp = 0;
 	rnd = 0;
 	s *= AHZ;
-	s += us / (1000000 / AHZ);	/* Maximize precision. */
+	s += us / (1000000 / AHZ);		/* Maximize precision. */
 
 	while (s > MAXFRACT) {
 	rnd = s & (1 << (EXPSIZE - 1));	/* Round up? */
-		s >>= EXPSIZE;		/* Base 8 exponent == 3 bit shift. */
+		s >>= EXPSIZE;				/* Base 8 exponent == 3 bit shift. */
 		exp++;
 	}
 
@@ -221,8 +221,8 @@ encode_comp_t(s, us)
 	}
 
 	/* Clean it up and polish it off. */
-	exp <<= MANTSIZE;		/* Shift the exponent into place */
-	exp += s;			/* and add on the mantissa. */
+	exp <<= MANTSIZE;				/* Shift the exponent into place */
+	exp += s;						/* and add on the mantissa. */
 	return (exp);
 }
 
