@@ -139,7 +139,7 @@ struct user {
 	char				u_dupfd;				/* XXX - see kern_descrip.c/fdopen */
 
 	struct pstats 		u_stats;				/* p_stats points here (use it!) */
-#define u_prof			u_stats->p_prof			/* profile arguments */
+#define u_prof			u_stats.p_prof			/* profile arguments */
 
 /* 1.6 - resource controls */
 	struct	rlimit 		u_rlimit[RLIM_NLIMITS];

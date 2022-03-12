@@ -75,14 +75,14 @@ hardclock(frame, pc)
 	 * Decrementing just the first of these serves to decrement the time
 	 * to all events.
 	 */
-	p1 = CIRCQ_NEXT(calltodo->c_list);
+	p1 = CIRCQ_NEXT(&calltodo->c_list);
 	while (p1) {
 		if (--p1->c_time > 0)
 			break;
 		needsoft = 1;
 		if (p1->c_time == 0)
 			break;
-		p1 = CIRCQ_NEXT(p1->c_list);
+		p1 = CIRCQ_NEXT(&p1->c_list);
 	}
 
 	/*
@@ -239,15 +239,15 @@ softclock(frame, pc)
 			register int a, s;
 
 			s = splhigh();
-			if ((p1 = CIRCQ_NEXT(calltodo->c_list)) == 0 || p1->c_time > 0) {
+			if ((p1 = CIRCQ_NEXT(&calltodo->c_list)) == 0 || p1->c_time > 0) {
 				splx(s);
 				break;
 			}
 			arg = p1->c_arg;
 			func = p1->c_func;
 			a = p1->c_time;
-			CIRCQ_NEXT(calltodo->c_list) = CIRCQ_NEXT(p1->c_list);
-			CIRCQ_NEXT(p1->c_list) = callfree;
+			CIRCQ_NEXT(&calltodo->c_list) = CIRCQ_NEXT(&p1->c_list);
+			CIRCQ_NEXT(&p1->c_list) = callfree;
 			callfree = p1;
 			splx(s);
 			CLKF_PC(frame)(*func)(arg, a);
@@ -297,16 +297,16 @@ timeout(fun, arg, t)
 	if (pnew == NULL) {
 		panic("timeout table overflow");
 	}
-	callfree = CIRCQ_NEXT(pnew->c_list);
+	callfree = CIRCQ_NEXT(&pnew->c_list);
 	pnew->c_arg = arg;
 	pnew->c_func = fun;
-	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(p1->c_list)) && p2->c_time < t; p1 = p2) {
+	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(&p1->c_list)) && p2->c_time < t; p1 = p2) {
 		if (p2->c_time > 0) {
 			t -= p2->c_time;
 		}
 	}
-	CIRCQ_NEXT(p1->c_list) = pnew;
-	CIRCQ_NEXT(pnew->c_list) = p2;
+	CIRCQ_NEXT(&p1->c_list) = pnew;
+	CIRCQ_NEXT(&pnew->c_list) = p2;
 	pnew->c_time = t;
 	if (p2)
 		p2->c_time -= t;
@@ -327,13 +327,13 @@ untimeout(fun, arg)
 	register int s;
 
 	s = splclock();
-	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(p1->c_list)) != 0; p1 = p2) {
+	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(&p1->c_list)) != 0; p1 = p2) {
 		if (p2->c_func == fun && p2->c_arg == arg) {
-			if (CIRCQ_NEXT(p2->c_list) && p2->c_time > 0) {
-				CIRCQ_NEXT(p2->c_list)->c_time += p2->c_time;
+			if (CIRCQ_NEXT(&p2->c_list) && p2->c_time > 0) {
+				CIRCQ_NEXT(&p2->c_list)->c_time += p2->c_time;
 			}
-			CIRCQ_NEXT(p1->c_list) = CIRCQ_NEXT(p2->c_list);
-			CIRCQ_NEXT(p2->c_list) = callfree;
+			CIRCQ_NEXT(&p1->c_list) = CIRCQ_NEXT(&p2->c_list);
+			CIRCQ_NEXT(&p2->c_list) = callfree;
 			callfree = p2;
 			break;
 		}
@@ -353,10 +353,10 @@ profil()
 
 	register struct uprof *upp = &u.u_prof;
 
-	upp->pr_base = uap->bufbase;
-	upp->pr_size = uap->bufsize;
-	upp->pr_off = uap->pcoffset;
-	upp->pr_scale = uap->pcscale;
+	upp->pr_base = SCARG(uap, bufbase);
+	upp->pr_size = SCARG(uap, bufsize);
+	upp->pr_off = SCARG(uap, pcoffset);
+	upp->pr_scale = SCARG(uap, pcscale);
 
 	return (0);
 }
@@ -386,7 +386,7 @@ hzto(tv)
 	 * Maximum value for any timeout in 10ms ticks is 250 days.
 	 */
 
-	sec = tv->tv_sec - time->tv_sec;
+	sec = tv->tv_sec - time.tv_sec;
 	if (sec <= 0x7fffffff / 1000 - 1000)
 		ticks = ((tv->tv_sec - time.tv_sec) * 1000 +
 			(tv->tv_usec - time.tv_usec) / 1000) / (1000/hz);

@@ -131,7 +131,7 @@ struct callout {
 
 #define CIRCQ_FIRST(list)		((list)->cq_next_e)
 #define CIRCQ_NEXT(elem)		((elem)->cq_next_e)
-#define CIRCQ_LAST(elem,list)	((elem)->cq_next_l == (list))
+#define CIRCQ_LAST(elem, list)	((elem)->cq_next_l == (list))
 #define CIRCQ_EMPTY(list)		((list)->cq_next_l == (list))
 
 #ifdef _KERNEL

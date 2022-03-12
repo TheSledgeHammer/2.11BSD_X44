@@ -167,9 +167,10 @@ void 	timeout(void (*func)(void *), void *, int);
 void 	untimeout(void (*func)(void *), void *);
 void	realitexpire(void *);
 
+void	initclocks(void);
 void 	hardclock(struct clockframe *, caddr_t);
 void 	softclock(struct clockframe *, caddr_t);
-void	initclocks(void);
+void	gatherstats(struct clockframe *);
 
 /* kern_environment.c / kenv.h */
 char	*kern_getenv(const char *);

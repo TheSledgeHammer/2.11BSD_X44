@@ -25,7 +25,7 @@
 #define	DK_NDRIVE	10
 #define DK_NAMELEN	8
 
-#ifdef KERNEL
+#ifdef _KERNEL
 extern long	cp_time[CPUSTATES];		/* number of ticks spent in each cpu state */
 extern int	dk_ndrive;				/* number of drives being monitored */
 extern int	dk_busy;				/* bit array of drive busy flags */
