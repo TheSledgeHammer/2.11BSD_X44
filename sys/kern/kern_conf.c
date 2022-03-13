@@ -56,6 +56,10 @@ mi_device_init(devsw)
 }
 
 /* Add audio driver configuration */
+#include "audio.h"
+#include "midi.h"
+#include "spkr.h"
+
 void
 audio_init(devsw)
 	struct devswtable *devsw;
@@ -76,6 +80,9 @@ console_init(devsw)
 }
 
 /* Add core driver configuration */
+#include "com.h"
+#include "lpt.h"
+
 void
 core_init(devsw)
 	struct devswtable *devsw;
@@ -85,6 +92,14 @@ core_init(devsw)
 }
 
 /* Add disk driver configuration */
+#include "wd.h"
+#include "sd.h"
+#include "st.h"
+#include "cd.h"
+#include "uk.h"
+#include "vnd.h"
+#include "ccd.h"
+
 void
 disk_init(devsw)
 	struct devswtable *devsw;
@@ -106,6 +121,8 @@ disk_init(devsw)
 }
 
 /* Add miscellaneous driver configuration */
+#include "ksyms.h"
+
 void
 misc_init(devsw)
 	struct devswtable *devsw;
@@ -114,6 +131,8 @@ misc_init(devsw)
 }
 
 /* Add network driver configuration */
+#include "bpfilter.h"
+
 void
 network_init(devsw)
 	struct devswtable *devsw;
@@ -141,6 +160,11 @@ tty_init(devsw)
 }
 
 /* Add usb driver configuration */
+#include "usb.h"
+#include "uhid.h"
+#include "ugen.h"
+#include "ucom.h"
+
 void
 usb_init(devsw)
 	struct devswtable *devsw;
@@ -152,6 +176,8 @@ usb_init(devsw)
 }
 
 /* Add video driver configuration */
+#include "video.h"
+
 void
 video_init(devsw)
 	struct devswtable *devsw;
@@ -160,6 +186,12 @@ video_init(devsw)
 }
 
 /* Add wscon driver configuration */
+#include "wsdisplay.h"
+#include "wskbd.h"
+#include "wsmouse.h"
+#include "wsmux.h"
+#include "wsfont.h"
+
 void
 wscons_init(devsw)
 	struct devswtable *devsw;
