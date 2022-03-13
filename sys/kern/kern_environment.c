@@ -76,6 +76,7 @@ bool						dynamic_kenv;
 	}												\
 } while(0)
 
+static void init_dynamic_kenv(void/* *data */);
 
 void
 kenv_init(void)
@@ -91,7 +92,7 @@ kenv()
 		syscallarg(const char *) name;
 		syscallarg(char *) 		value;
 		syscallarg(int) 		len;
-	} *uap = (struct kenv_args *)u->u_ap;
+	} *uap = (struct kenv_args *)u.u_ap;
 
 	char *name, *value, *buffer = NULL;
 	size_t len, done, needed, buflen;
@@ -515,7 +516,7 @@ sanitize:
  * Setup the dynamic kernel environment.
  */
 static void
-init_dynamic_kenv(void *data)
+init_dynamic_kenv(void /* *data */)
 {
 	int dynamic_envpos;
 	int size;

@@ -63,9 +63,9 @@ acct()
 	int error;
 
 	if(SCARG(uap, pid) == 0) {
-		uap->pid = u.u_procp->p_pid;
+		SCARG(uap, pid) = u.u_procp->p_pid;
 	}
-	p = pfind(uap->pid);
+	p = pfind(SCARG(uap, pid));
 	if(p == 0) {
 		return (u.u_error = ESRCH);
 	}

@@ -250,7 +250,7 @@ softclock(frame, pc)
 			CIRCQ_NEXT(&p1->c_list) = callfree;
 			callfree = p1;
 			splx(s);
-			CLKF_PC(frame)(*func)(arg, a);
+			//CLKF_PC(frame)(*func)(arg, a);
 		}
 	}
 

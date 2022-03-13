@@ -100,8 +100,7 @@ configure()
 	/*
 	 * Configure device structures
 	 */
-	mi_device_init(&sys_devsw);
-	md_device_init(&sys_devsw);
+	device_init(&sys_devsw);
 
 	/*
 	 * Configure swap area and related system
@@ -116,17 +115,6 @@ configure()
 #endif
 
 	cold = 0;
-}
-
-/*
- * Configure MD (Machine-Dependent) Devices
- */
-void
-md_device_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);			/* CMOS Interface */
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &apm_cdevsw, NULL);				/* Power Management (APM) Interface */
 }
 
 /*
