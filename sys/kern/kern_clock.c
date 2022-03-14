@@ -262,7 +262,7 @@ softclock(frame, pc)
 		register struct proc *p = u.u_procp;
 
 		if (u.u_prof.pr_scale)
-			addupc_intru(pc, &u.u_prof, 1);
+			addupc_intru((u_long)pc, &u.u_prof, 1);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so
@@ -300,7 +300,7 @@ timeout(fun, arg, t)
 	callfree = CIRCQ_NEXT(&pnew->c_list);
 	pnew->c_arg = arg;
 	pnew->c_func = fun;
-	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(&p1->c_list)) && p2->c_time < t; p1 = p2) {
+	for (p1 = calltodo; (p2 = CIRCQ_NEXT(&p1->c_list)) && p2->c_time < t; p1 = p2) {
 		if (p2->c_time > 0) {
 			t -= p2->c_time;
 		}
@@ -327,7 +327,7 @@ untimeout(fun, arg)
 	register int s;
 
 	s = splclock();
-	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(&p1->c_list)) != 0; p1 = p2) {
+	for (p1 = calltodo; (p2 = CIRCQ_NEXT(&p1->c_list)) != 0; p1 = p2) {
 		if (p2->c_func == fun && p2->c_arg == arg) {
 			if (CIRCQ_NEXT(&p2->c_list) && p2->c_time > 0) {
 				CIRCQ_NEXT(&p2->c_list)->c_time += p2->c_time;

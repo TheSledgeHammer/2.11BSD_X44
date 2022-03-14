@@ -89,7 +89,7 @@ dup()
 	int j, fd, error;
 
 	if (SCARG(uap, fd) & ~077) {
-		uap->fd &= 077;
+		SCARG(uap, fd) &= 077;
 		return (dup2());
 	}
 
@@ -111,7 +111,7 @@ dup2()
 	register struct file *fp;
 
 	GETF(fp, SCARG(uap, from));
-	if (uap->to < 0 || SCARG(uap, to) >= NOFILE) {
+	if (SCARG(uap, to) < 0 || SCARG(uap, to) >= NOFILE) {
 		u.u_error = EBADF;
 		return (EBADF);
 	}
@@ -161,7 +161,7 @@ fcntl()
 	register char *pop;
 	u_int newmin;
 
-	if ((fp = getf(SCARG(uap, fdes))) == NULL)
+	if ((fp = GETF(SCARG(uap, fdes))) == NULL)
 		return (EBADF);
 	pop = &u.u_pofile[SCARG(uap, fdes)];
 	switch(SCARG(uap, cmd)) {
@@ -238,7 +238,7 @@ fset(fp, bit, value)
 		fp->f_flag |= bit;
 	else
 		fp->f_flag &= ~bit;
-	return (fioctl(fp, (u_int)(bit == FNONBLOCK ? FIONBIO : FIOASYNC), (caddr_t)&value));
+	return (fioctl(fp, (u_int)(bit == FNONBLOCK ? FIONBIO : FIOASYNC), (caddr_t)&value, u.u_procp));
 }
 
 int
@@ -252,7 +252,7 @@ fgetown(fp, valuep)
 		*valuep = mfsd(&fp->f_socket->so_pgrp);
 		return (0);
 	}
-	error = fioctl(fp, (u_int)TIOCGPGRP, (caddr_t)valuep);
+	error = fioctl(fp, (u_int)TIOCGPGRP, (caddr_t)valuep, u.u_procp);
 	*valuep = -*valuep;
 	return (error);
 }
@@ -274,7 +274,7 @@ fsetown(fp, value)
 	} else {
 		value = -value;
 	}
-	return (fioctl(fp, (u_int)TIOCSPGRP, (caddr_t)&value));
+	return (fioctl(fp, (u_int)TIOCSPGRP, (caddr_t)&value, u.u_procp));
 }
 
 int
@@ -349,12 +349,13 @@ fsetlk(fp, value, flags)
 }
 
 int
-fioctl(fp, cmd, value)
+fioctl(fp, cmd, data, value, p)
 	register struct file *fp;
 	u_int cmd;
 	caddr_t value;
+	struct proc *p;
 {
-	return ((*fp->f_ops->fo_ioctl)(fp, cmd, value));
+	return ((*fp->f_ops->fo_ioctl)(fp, cmd, value, p));
 }
 
 int
@@ -366,7 +367,7 @@ close()
 	register struct file *fp;
 
 	GETF(fp, SCARG(uap, fd));
-	u.u_ofile[uap->fd] = NULL;
+	u.u_ofile[SCARG(uap, fd)] = NULL;
 	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
 		u.u_lastfile--;
 	/* WHAT IF u.u_error ? */
@@ -383,7 +384,7 @@ fstat()
 	register struct file *fp;
 	struct stat ub;
 
-	if ((fp = getf(SCARG(uap, fdes))) == NULL)
+	if ((fp = GETF(SCARG(uap, fdes))) == NULL)
 		return (EBADF);
 	switch (fp->f_type) {
 
@@ -466,6 +467,7 @@ slot:
  * Critical paths should use the GETF macro unless code size is a 
  * consideration.
  */
+/*
 struct file *
 getf(f)
 	register int f;
@@ -478,6 +480,7 @@ getf(f)
 	}
 	return (fp);
 }
+*/
 
 /*
  * Internal form of close.
@@ -520,7 +523,7 @@ flock()
 	struct flock lf;
 	int error;
 
-	if ((fp = getf(SCARG(uap, fd))) == NULL)
+	if ((fp = GETF(SCARG(uap, fd))) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE) {
 		return (EOPNOTSUPP);
@@ -536,7 +539,7 @@ flock()
 	}
 	if (SCARG(uap, how) & LOCK_EX) {
 		lf.l_type = F_WRLCK;
-	} else if (uap->how & LOCK_SH) {
+	} else if (SCARG(uap, how) & LOCK_SH) {
 		lf.l_type = F_RDLCK;
 	} else {
 		return (EBADF);

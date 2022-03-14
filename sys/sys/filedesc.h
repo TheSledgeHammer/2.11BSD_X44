@@ -101,17 +101,19 @@ struct filedesc0 {
 /*
  * Kernel global variables and routines.
  */
-int		falloc(struct proc *, struct file **, int *);
-void	ffree(struct file *);
-int		closef(struct file *, struct proc *);
+static int	ufalloc(int);
+int			falloc(/* struct proc *, struct file **, int * */);
+int			closef(struct file *);
+int			fdopen(dev_t, int, int);
+struct		filedesc *fdcopy(struct proc *);
+void		fdfree(struct proc *);
+void		fdremove(struct proc *, int);
+int			fdrelease(struct proc *, int);
+void		fdunshare(struct proc *);
+void		fdcloseexec(struct proc *);
+
+//void		ffree(struct file *);
 //int		fdalloc(struct proc *, int, int *);
 //int		fdavail(struct proc *, int);
-int		fdopen(dev_t, int, int);
-struct	filedesc *fdcopy(struct proc *);
-void	fdfree(struct proc *);
-void	fdremove(struct proc *, int);
-int		fdrelease(struct proc *, int);
-void	fdunshare(struct proc *);
-void	fdcloseexec(struct proc *);
 #endif
 #endif

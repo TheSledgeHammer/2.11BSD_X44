@@ -76,13 +76,10 @@ bool						dynamic_kenv;
 	}												\
 } while(0)
 
-static void init_dynamic_kenv(void/* *data */);
-
-void
-kenv_init(void)
-{
-	init_dynamic_kenv();
-}
+static char *_getenv_static(const char *);
+static char *_getenv_dynamic(const char *, int *);
+static char *getenv_string_buffer(const char *);
+static int	setenv_static(const char, const char);
 
 int
 kenv()
@@ -98,15 +95,15 @@ kenv()
 	size_t len, done, needed, buflen;
 	int error, i;
 
-	KASSERTMSG(dynamic_kenv, ("kenv: dynamic_kenv = false"));
+	KASSERT(dynamic_kenv ("kenv: dynamic_kenv = false"));
 
 	error = 0;
-	if (uap->what == KENV_DUMP) {
+	if (SCARG(uap, what) == KENV_DUMP) {
 		done = needed = 0;
-		buflen = uap->len;
+		buflen = SCARG(uap, len);
 		if (buflen > KENV_SIZE * (KENV_MNAMELEN + kenv_mvallen + 2))
 			buflen = KENV_SIZE * (KENV_MNAMELEN + kenv_mvallen + 2);
-		if (uap->len > 0 && uap->value != NULL)
+		if (SCARG(uap, len) > 0 && SCARG(uap, value) != NULL)
 			buffer = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
 		simple_lock(&kenv_lock->lk_lnterlock);
 		for (i = 0; kenvp[i] != NULL; i++) {
@@ -117,30 +114,30 @@ kenv()
 			 * If called with a NULL or insufficiently large
 			 * buffer, just keep computing the required size.
 			 */
-			if (uap->value != NULL && buffer != NULL && len > 0) {
+			if (SCARG(uap, value) != NULL && buffer != NULL && len > 0) {
 				bcopy(kenvp[i], buffer + done, len);
 				done += len;
 			}
 		}
 		simple_unlock(&kenv_lock->lk_lnterlock);
 		if (buffer != NULL) {
-			error = copyout(buffer, uap->value, done);
+			error = copyout(buffer, SCARG(uap, value), done);
 			free(buffer, M_TEMP);
 		}
-		u->u_r.r_val1 = ((done == needed) ? 0 : needed);
+		u.u_r.r_val1 = ((done == needed) ? 0 : needed);
 		return (error);
 	}
-	switch (uap->what) {
+	switch (SCARG(uap, what)) {
 	case KENV_SET:
 	case KENV_UNSET:
 	}
 	name = malloc(KENV_MNAMELEN + 1, M_TEMP, M_WAITOK);
 
-	error = copyinstr(uap->name, name, KENV_MNAMELEN + 1, NULL);
+	error = copyinstr(SCARG(uap, name), name, KENV_MNAMELEN + 1, NULL);
 	if (error)
 		goto done;
 
-	switch (uap->what) {
+	switch (SCARG(uap, what)) {
 	case KENV_GET:
 		value = kern_getenv(name);
 		if (value == NULL) {
@@ -148,17 +145,17 @@ kenv()
 			goto done;
 		}
 		len = strlen(value) + 1;
-		if (len > uap->len)
-			len = uap->len;
-		error = copyout(value, uap->value, len);
+		if (len > SCARG(uap, len))
+			len = SCARG(uap, len);
+		error = copyout(value, SCARG(uap, value), len);
 		freeenv(value);
 		if (error)
 			goto done;
-		u->u_r.r_val1 = len;
+		u.u_r.r_val1 = len;
 		break;
 
 	case KENV_SET:
-		len = uap->len;
+		len = SCARG(uap, len);
 		if (len < 1) {
 			error = EINVAL;
 			goto done;
@@ -166,7 +163,7 @@ kenv()
 		if (len > kenv_mvallen + 1)
 			len = kenv_mvallen + 1;
 		value = malloc(len, M_TEMP, M_WAITOK);
-		error = copyinstr(uap->value, value, len, NULL);
+		error = copyinstr(SCARG(uap, value), value, len, NULL);
 		if (error) {
 			free(value, M_TEMP);
 			goto done;
@@ -215,7 +212,7 @@ kern_getenv(const char *name)
 	if (dynamic_kenv) {
 		ret = getenv_string_buffer(name);
 		if (ret == NULL) {
-			lockstatus(&kenv_lock);
+			lockstatus(kenv_lock);
 		}
 	} else
 		ret = _getenv_static(name);
@@ -394,16 +391,16 @@ init_static_kenv(char *buf, size_t len)
 {
 	char *eval;
 
-	KASSERTMSG(!dynamic_kenv, "kenv: dynamic_kenv already initialized");
-	KASSERTMSG(!dynamic_kenv, ("kenv: dynamic_kenv already initialized"));
+	KASSERT(!dynamic_kenv "kenv: dynamic_kenv already initialized");
+	KASSERT(!dynamic_kenv ("kenv: dynamic_kenv already initialized"));
 	/*
 	 * Suitably sized means it must be able to hold at least one empty
 	 * variable, otherwise things go belly up if a kern_getenv call is
 	 * made without a prior call to kern_setenv as we have a malformed
 	 * environment.
 	 */
-	KASSERTMSG(len == 0 || len >= 2, ("kenv: static env must be initialized or suitably sized"));
-	KASSERTMSG(len == 0 || (*buf == '\0' && *(buf + 1) == '\0'), ("kenv: sized buffer must be initially empty"));
+	KASSERT(len == 0 || len >= 2 ("kenv: static env must be initialized or suitably sized"));
+	KASSERT(len == 0 || (*buf == '\0' && *(buf + 1) == '\0') ("kenv: sized buffer must be initially empty"));
 
 	/*
 	 * We may be called twice, with the second call needed to relocate
@@ -532,6 +529,12 @@ init_dynamic_kenv(void /* *data */)
 	kenvp[dynamic_envpos] = NULL;
 	lockinit(&kenv_lock, PLOCK, "kernel environment", 0, 0);
 	dynamic_kenv = true;
+}
+
+void
+kenv_init(void)
+{
+	init_dynamic_kenv();
 }
 
 /*
