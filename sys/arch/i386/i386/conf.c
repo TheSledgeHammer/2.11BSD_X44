@@ -35,7 +35,7 @@
 #include <sys/tty.h>
 #include <sys/null.h>
 
-#include "sequencer.h"
+//#include "sequencer.h"
 #include "spkr.h"
 
 #include "wd.h"
