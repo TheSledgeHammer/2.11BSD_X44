@@ -8,7 +8,7 @@ A General todo list. Don't hesitate to add to this list. :)
 		- mklocale
 		- disklabel
 		- fdisk
-	- zic
+	- zic /* 2.11BSD's implemented in share */
 - Unimplemented:
 	- rpcgen
 			
@@ -44,6 +44,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
+- syscall proto-type declarations:
+	- For when syscalls are used internally.
+	- example: dup2, execve, syscall(machine), etc...
 - Core API Double-ups:
 	- Filedescriptor Table (Major Issue)
 		- 4.4BSD-Lite2 & 2.11BSD conflict.

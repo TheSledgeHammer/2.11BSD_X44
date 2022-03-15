@@ -42,6 +42,14 @@
  *	@(#)kern_descrip.c	8.8 (Berkeley) 2/14/95
  */
 
+/*
+ * TODO:
+ * - fd_unused: not-implemented
+ * 	  - required for fdrelease
+ * 	  	- required for fdcloseexec
+ * 	  		- required for execve
+ */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
@@ -66,6 +74,13 @@
 /*
  * Descriptor management.
  */
+int dup2(); /* syscall */
+int dupit(int, struct file *, int);
+int fset(struct file *, int, int);
+int fgetown(struct file *, int *);
+int fsetown(struct file *, int);
+int fgetlk(struct file *, int);
+int fsetlk(struct file *, int, int);
 
 /*
  * System calls on descriptors.
@@ -73,7 +88,8 @@
 void
 getdtablesize()
 {
-	u.u_r.r_val1 = NOFILE;
+	//u.u_r.r_val1 = NOFILE;
+	u.u_r.r_val1 = min((int)u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
 }
 
 /*
@@ -161,7 +177,7 @@ fcntl()
 	register char *pop;
 	u_int newmin;
 
-	if ((fp = GETF(SCARG(uap, fdes))) == NULL)
+	if ((fp = getf(SCARG(uap, fdes))) == NULL)
 		return (EBADF);
 	pop = &u.u_pofile[SCARG(uap, fdes)];
 	switch(SCARG(uap, cmd)) {
@@ -307,8 +323,7 @@ fgetlk(fp, value)
 int
 fsetlk(fp, value, flags)
 	register struct file *fp;
-	int value;
-	int flags;
+	int value, flags;
 {
 	struct proc *p;
 	struct vnode *vp;
@@ -349,9 +364,9 @@ fsetlk(fp, value, flags)
 }
 
 int
-fioctl(fp, cmd, data, value, p)
+fioctl(fp, cmd, value, p)
 	register struct file *fp;
-	u_int cmd;
+	int cmd;
 	caddr_t value;
 	struct proc *p;
 {
@@ -384,7 +399,7 @@ fstat()
 	register struct file *fp;
 	struct stat ub;
 
-	if ((fp = GETF(SCARG(uap, fdes))) == NULL)
+	if ((fp = getf(SCARG(uap, fdes))) == NULL)
 		return (EBADF);
 	switch (fp->f_type) {
 
@@ -467,7 +482,7 @@ slot:
  * Critical paths should use the GETF macro unless code size is a 
  * consideration.
  */
-/*
+
 struct file *
 getf(f)
 	register int f;
@@ -480,7 +495,6 @@ getf(f)
 	}
 	return (fp);
 }
-*/
 
 /*
  * Internal form of close.
@@ -502,7 +516,7 @@ closef(fp)
 	if (fp->f_count < 1) {
 		panic("closef: count < 1");
 	}
-	error = (*fp->f_ops->fo_close)(fp);
+	error = (*fp->f_ops->fo_close)(fp, u.u_procp);
 	fp->f_count = 0;
 	return(error);
 }
@@ -523,7 +537,7 @@ flock()
 	struct flock lf;
 	int error;
 
-	if ((fp = GETF(SCARG(uap, fd))) == NULL)
+	if ((fp = getf(SCARG(uap, fd))) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE) {
 		return (EOPNOTSUPP);
@@ -588,7 +602,7 @@ dupfdopen(fdp, indx, dfd, mode, error)
 	int mode;
 	int error;
 {
-	register register struct file *wfp;
+	register struct file *wfp;
 	struct file *fp;
 	
 	/*
@@ -666,10 +680,11 @@ struct filedesc *
 fdcopy(p)
 	struct proc *p;
 {
-	register struct filedesc *newfdp, *fdp = p->p_fd;
+	register struct filedesc *newfdp, *fdp;
 	register struct file **fpp;
 	register int i;
 
+	fdp = p->p_fd;
 	MALLOC(newfdp, struct filedesc *, sizeof(struct filedesc0), M_FILEDESC, M_WAITOK);
 	bcopy(fdp, newfdp, sizeof(struct filedesc));
 	VREF(newfdp->fd_cdir);
@@ -714,10 +729,11 @@ void
 fdfree(p)
 	struct proc *p;
 {
-	register struct filedesc *fdp = p->p_fd;
+	register struct filedesc *fdp;
 	struct file **fpp;
 	register int i;
 
+	fdp = p->p_fd;
 	if (--fdp->fd_refcnt > 0)
 		return;
 	fpp = fdp->fd_ofiles;

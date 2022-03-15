@@ -28,6 +28,7 @@ struct file {
 	//LIST_ENTRY(file) 	f_list;/* list of active files */
 	struct file 		*f_filef;		/* list of active files */
 	struct file 		**f_fileb;		/* list of active files */
+	int					f_iflags;		/* internal flags */
 	int					f_flag;			/* see below */
 	short				f_type;			/* descriptor type */
 	short				f_count;		/* reference count */
@@ -37,6 +38,7 @@ struct file {
 		void			*f_Data;
 		struct socket 	*f_Socket;
 	} f_un;
+
 	struct fileops		*f_ops;
 	off_t				f_offset;
 	struct ucred 		*f_cred;		/* credentials associated with descriptor */
@@ -79,14 +81,18 @@ extern int 			nfiles;		/* actual number of open files */
 #endif
 
 #define	GETF(fp, fd) { 													\
-	if ((unsigned)(fd) >= NOFILE || ((fp) = u->u_ofile[fd]) == NULL) { 	\
-		u->u_error = EBADF; 											\
-		return (u->u_error);											\
+	if ((unsigned)(fd) >= NOFILE || ((fp) = u.u_ofile[fd]) == NULL) { 	\
+		u.u_error = EBADF; 												\
+		return (u.u_error);												\
 	} 																	\
 }
 
 #define	FIF_WANTCLOSE	0x01	/* a close is waiting for usecount */
 #define	FIF_LARVAL		0x02	/* not fully constructed; don't use */
+
+
+#define	FILE_IS_USABLE(fp)	(((fp)->f_iflags &			\
+		(FIF_WANTCLOSE|FIF_LARVAL)) == 0)
 
 #ifdef DIAGNOSTIC
 #define	FILE_USE_CHECK(fp, str) do {									\

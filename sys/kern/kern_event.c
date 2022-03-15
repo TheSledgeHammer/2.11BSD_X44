@@ -62,9 +62,8 @@ static int	kqueue_poll(struct file *fp, int events, struct proc *p);
 static int	kqueue_kqfilter(struct file *fp, struct knote *kn);
 static int	kqueue_close(struct file *fp, struct proc *p);
 
-static struct fileops kqueueops = {
-		kqueue_read, kqueue_write, kqueue_ioctl, kqueue_poll, kqueue_close, kqueue_kqfilter
-};
+static struct fileops kqueueops =
+			{ kqueue_read, kqueue_write, kqueue_ioctl, kqueue_poll, kqueue_close, kqueue_kqfilter };
 
 static void	knote_attach(struct knote *kn, struct filedesc *fdp);
 static void	knote_drop(struct knote *kn, struct proc *p, struct filedesc *fdp);
@@ -660,7 +659,7 @@ kevent()
 		syscallarg(struct kevent *) 		eventlist;
 		syscallarg(size_t) 					nevents;
 		syscallarg(const struct timespec *) timeout;
-	} *uap = (struct kevent_args *)u->u_ap;
+	} *uap = (struct kevent_args *)u.u_ap;
 
 	register struct proc *p;
 	register register_t *retval;
@@ -1042,6 +1041,12 @@ kqueue_scan(struct file *fp, size_t maxevents, struct kevent *ulistp,
 	*retval = maxevents - count;
 
 	return (error);
+}
+
+int
+kqueue_rw()
+{
+	return (ENXIO);
 }
 
 /*

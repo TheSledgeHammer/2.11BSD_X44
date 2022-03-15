@@ -67,8 +67,7 @@ static int					md_env_pos;
 /* dynamic environment variables */
 char						**kenvp;
 struct lock					*kenv_lock;
-
-bool						dynamic_kenv;
+bool_t						dynamic_kenv;
 
 #define KENV_CHECK do { 							\
 	if (!dynamic_kenv) {							\
@@ -79,7 +78,7 @@ bool						dynamic_kenv;
 static char *_getenv_static(const char *);
 static char *_getenv_dynamic(const char *, int *);
 static char *getenv_string_buffer(const char *);
-static int	setenv_static(const char, const char);
+static int	setenv_static(const char *, const char *);
 
 int
 kenv()
@@ -392,7 +391,7 @@ init_static_kenv(char *buf, size_t len)
 	char *eval;
 
 	KASSERT(!dynamic_kenv "kenv: dynamic_kenv already initialized");
-	KASSERT(!dynamic_kenv ("kenv: dynamic_kenv already initialized"));
+	//KASSERT(!dynamic_kenv ("kenv: dynamic_kenv already initialized"));
 	/*
 	 * Suitably sized means it must be able to hold at least one empty
 	 * variable, otherwise things go belly up if a kern_getenv call is

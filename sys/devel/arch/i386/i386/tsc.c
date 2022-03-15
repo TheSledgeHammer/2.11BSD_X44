@@ -30,7 +30,6 @@
 /* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
-#include <sys/bus.h>
 #include <sys/malloc.h>
 #include <sys/systm.h>
 #include <sys/sysctl.h>
@@ -41,15 +40,15 @@
 #include <sys/types.h>
 
 #include <devel/sys/timetc.h>
-#include <arch/i386/include/cpu.h>
 
+#include <arch/i386/include/bus.h>
 #include <arch/i386/include/cpu.h>
 #include <arch/i386/include/cpufunc.h>
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/specialreg.h>
 
 #include <arch/i386/include/ansi.h>
-#include "arch/i386/include/types.h"
+#include <arch/i386/include/types.h>
 
 u_int64_t	tsc_freq;
 int			tsc_is_invariant;
