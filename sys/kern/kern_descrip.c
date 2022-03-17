@@ -430,7 +430,7 @@ static int
 ufalloc(i)
 	register int i;
 {
-	for (; i < NOFILE; i++)
+	for (; i < NOFILE; i++) {
 		if (u.u_ofile[i] == NULL) {
 			u.u_r.r_val1 = i;
 			u.u_pofile[i] = 0;
@@ -438,6 +438,7 @@ ufalloc(i)
 				u.u_lastfile = i;
 			return (i);
 		}
+	}
 	u.u_error = EMFILE;
 	return (-1);
 }
@@ -512,7 +513,7 @@ closef(fp)
 		return(0);
 	if (fp->f_count > 1) {
 		fp->f_count--;
-		return(0);
+		return (0);
 	}
 
 	if (fp->f_count < 1) {
@@ -520,7 +521,7 @@ closef(fp)
 	}
 	error = (*fp->f_ops->fo_close)(fp, u.u_procp);
 	fp->f_count = 0;
-	return(error);
+	return (error);
 }
 
 /*

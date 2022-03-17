@@ -52,19 +52,11 @@
 #include <sys/event.h>
 #include <sys/eventvar.h>
 
+struct fileops kqueueops =
+			{ kqueue_rw, kqueue_read, kqueue_write, kqueue_ioctl, kqueue_poll, kqueue_close, kqueue_kqfilter };
+
 static int	kqueue_scan(struct file *fp, size_t maxevents, struct kevent *ulistp, const struct timespec *timeout, struct proc *p, register_t *retval);
 static void	kqueue_wakeup(struct kqueue *kq);
-
-static int	kqueue_read(struct file *fp, off_t *offset, struct uio *uio, struct ucred *cred, int flags);
-static int	kqueue_write(struct file *fp, off_t *offset, struct uio *uio, struct ucred *cred, int flags);
-static int	kqueue_ioctl(struct file *fp, u_long com, void *data, struct proc *p);
-static int	kqueue_poll(struct file *fp, int events, struct proc *p);
-static int	kqueue_kqfilter(struct file *fp, struct knote *kn);
-static int	kqueue_close(struct file *fp, struct proc *p);
-
-static struct fileops kqueueops =
-			{ kqueue_read, kqueue_write, kqueue_ioctl, kqueue_poll, kqueue_close, kqueue_kqfilter };
-
 static void	knote_attach(struct knote *kn, struct filedesc *fdp);
 static void	knote_drop(struct knote *kn, struct proc *p, struct filedesc *fdp);
 static void	knote_enqueue(struct knote *kn);
@@ -180,7 +172,8 @@ kqueue_init(void)
  * Find kfilter entry by name, or NULL if not found.
  */
 static const struct kfilter *
-kfilter_byname_sys(const char *name)
+kfilter_byname_sys(name)
+	const char *name;
 {
 	int i;
 
@@ -192,7 +185,8 @@ kfilter_byname_sys(const char *name)
 }
 
 static struct kfilter *
-kfilter_byname_user(const char *name)
+kfilter_byname_user(name)
+	const char *name;
 {
 	int i;
 
@@ -208,7 +202,8 @@ kfilter_byname_user(const char *name)
 }
 
 static const struct kfilter *
-kfilter_byname(const char *name)
+kfilter_byname(name)
+	const char *name;
 {
 	const struct kfilter *kfilter;
 
@@ -223,7 +218,8 @@ kfilter_byname(const char *name)
  * Assumes entries are indexed in filter id order, for speed.
  */
 static const struct kfilter *
-kfilter_byfilter(uint32_t filter)
+kfilter_byfilter(filter)
+	uint32_t filter;
 {
 	const struct kfilter *kfilter;
 
@@ -244,8 +240,10 @@ kfilter_byfilter(uint32_t filter)
  * If retfilter != NULL, the new filterid is returned in it.
  */
 int
-kfilter_register(const char *name, const struct filterops *filtops,
-    int *retfilter)
+kfilter_register(name, filtops, retfilter)
+	const char *name;
+	const struct filterops *filtops;
+    int *retfilter;
 {
 	struct kfilter *kfilter;
 	void *space;
@@ -305,7 +303,8 @@ kfilter_register(const char *name, const struct filterops *filtops,
  * Returns 0 if operation succeeded, or an appropriate errno(2) otherwise.
  */
 int
-kfilter_unregister(const char *name)
+kfilter_unregister(name)
+	const char *name;
 {
 	struct kfilter *kfilter;
 
@@ -333,7 +332,8 @@ kfilter_unregister(const char *name)
 }
 
 int
-filt_fileattach(struct knote *kn)
+filt_fileattach(kn)
+	struct knote *kn;
 {
 	struct file *fp = kn->kn_fp;
 
@@ -344,7 +344,8 @@ filt_fileattach(struct knote *kn)
  * Filter detach method for EVFILT_READ on kqueue descriptor.
  */
 static void
-filt_kqdetach(struct knote *kn)
+filt_kqdetach(kn)
+	struct knote *kn;
 {
 	struct kqueue *kq;
 
@@ -357,7 +358,9 @@ filt_kqdetach(struct knote *kn)
  */
 /*ARGSUSED*/
 static int
-filt_kqueue(struct knote *kn, long hint)
+filt_kqueue(kn, hint)
+	struct knote *kn;
+	long hint;
 {
 	struct kqueue *kq;
 
@@ -370,7 +373,8 @@ filt_kqueue(struct knote *kn, long hint)
  * Filter attach method for EVFILT_PROC.
  */
 static int
-filt_procattach(struct knote *kn)
+filt_procattach(kn)
+	struct knote *kn;
 {
 	struct proc *p;
 
@@ -415,7 +419,8 @@ filt_procattach(struct knote *kn)
  * a detach, because the original process might not exist any more.
  */
 static void
-filt_procdetach(struct knote *kn)
+filt_procdetach(kn)
+	struct knote *kn;
 {
 	struct proc *p;
 
@@ -433,7 +438,9 @@ filt_procdetach(struct knote *kn)
  * Filter event method for EVFILT_PROC.
  */
 static int
-filt_proc(struct knote *kn, long hint)
+filt_proc(kn, hint)
+	struct knote *kn;
+	long hint;
 {
 	u_int event;
 
@@ -496,7 +503,8 @@ filt_proc(struct knote *kn, long hint)
 }
 
 static void
-filt_timerexpire(void *knx)
+filt_timerexpire(knx)
+	void *knx;
 {
 	struct knote *kn = knx;
 	int tticks;
@@ -514,7 +522,8 @@ filt_timerexpire(void *knx)
  * data contains amount of time to sleep, in milliseconds
  */
 static int
-filt_timerattach(struct knote *kn)
+filt_timerattach(kn)
+	struct knote *kn;
 {
 	struct callout *calloutp;
 	int tticks;
@@ -542,7 +551,8 @@ filt_timerattach(struct knote *kn)
 }
 
 static void
-filt_timerdetach(struct knote *kn)
+filt_timerdetach(kn)
+	struct knote *kn;
 {
 	struct callout *calloutp;
 
@@ -553,7 +563,9 @@ filt_timerdetach(struct knote *kn)
 }
 
 static int
-filt_timer(struct knote *kn, long hint)
+filt_timer(kn, hint)
+	struct knote *kn;
+	long hint;
 {
 	return (kn->kn_data != 0);
 }
@@ -564,7 +576,9 @@ filt_timer(struct knote *kn, long hint)
  *	This filter "event" routine simulates seltrue().
  */
 int
-filt_seltrue(struct knote *kn, long hint)
+filt_seltrue(kn, hint)
+	struct knote *kn;
+	long hint;
 {
 
 	/*
@@ -581,7 +595,8 @@ filt_seltrue(struct knote *kn, long hint)
  * has same effect as filter using filt_seltrue() as filter method.
  */
 static void
-filt_seltruedetach(struct knote *kn)
+filt_seltruedetach(kn)
+	struct knote *kn;
 {
 	/* Nothing to do */
 }
@@ -594,7 +609,9 @@ static const struct filterops seltrue_filtops = {
 };
 
 int
-seltrue_kqfilter(dev_t dev, struct knote *kn)
+seltrue_kqfilter(dev, kn)
+	dev_t dev;
+	struct knote *kn;
 {
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
@@ -742,7 +759,10 @@ done:
  * Register a given kevent kev onto the kqueue
  */
 int
-kqueue_register(struct kqueue *kq, struct kevent *kev, struct proc *p)
+kqueue_register(kq, kev, p)
+	struct kqueue *kq;
+	struct kevent *kev;
+	struct proc *p;
 {
 	const struct kfilter *kfilter;
 	struct filedesc	*fdp;
@@ -883,8 +903,13 @@ kqueue_register(struct kqueue *kq, struct kevent *kev, struct proc *p)
  * as appropriate.
  */
 static int
-kqueue_scan(struct file *fp, size_t maxevents, struct kevent *ulistp,
-	const struct timespec *tsp, struct proc *p, register_t *retval)
+kqueue_scan(fp, maxevents, ulistp, tsp, p, retval)
+	struct file *fp;
+	size_t maxevents;
+	struct kevent *ulistp;
+	const struct timespec *tsp;
+	struct proc *p;
+	register_t *retval;
 {
 	struct kqueue	*kq;
 	struct kevent	*kevp;
@@ -1044,9 +1069,20 @@ kqueue_scan(struct file *fp, size_t maxevents, struct kevent *ulistp,
 }
 
 int
-kqueue_rw()
+kqueue_rw(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
 {
-	return (ENXIO);
+	enum uio_rw rw = uio->uio_rw;
+	int error;
+
+	if (rw == UIO_READ) {
+		error = kqueue_read(fp, uio, cred);
+	} else {
+		error = kqueue_write(fp, uio, cred);
+	}
+	return (error);
 }
 
 /*
@@ -1055,9 +1091,11 @@ kqueue_rw()
  * XXX: This could be expanded to call kqueue_scan, if desired.
  */
 /*ARGSUSED*/
-static int
-kqueue_read(struct file *fp, off_t *offset, struct uio *uio,
-	struct ucred *cred, int flags)
+int
+kqueue_read(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
 {
 
 	return (ENXIO);
@@ -1068,9 +1106,11 @@ kqueue_read(struct file *fp, off_t *offset, struct uio *uio,
  * Not implemented.
  */
 /*ARGSUSED*/
-static int
-kqueue_write(struct file *fp, off_t *offset, struct uio *uio,
-	struct ucred *cred, int flags)
+int
+kqueue_write(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
 {
 
 	return (ENXIO);
@@ -1086,7 +1126,11 @@ kqueue_write(struct file *fp, off_t *offset, struct uio *uio,
  */
 /*ARGSUSED*/
 static int
-kqueue_ioctl(struct file *fp, u_long com, void *data, struct proc *p)
+kqueue_ioctl(fp, com, data, p)
+	struct file *fp;
+	u_long com;
+	void *data;
+	struct proc *p;
 {
 	struct kfilter_mapping	*km;
 	const struct kfilter	*kfilter;
@@ -1208,7 +1252,8 @@ kqueue_close(struct file *fp, struct proc *p)
  * wakeup a kqueue
  */
 static void
-kqueue_wakeup(struct kqueue *kq)
+kqueue_wakeup(kq)
+	struct kqueue *kq;
 {
 	int s;
 
@@ -1231,7 +1276,9 @@ kqueue_wakeup(struct kqueue *kq)
  */
 /*ARGSUSED*/
 static int
-kqueue_kqfilter(struct file *fp, struct knote *kn)
+kqueue_kqfilter(fp, kn)
+	struct file *fp;
+	struct knote *kn;
 {
 	struct kqueue *kq;
 
@@ -1248,7 +1295,9 @@ kqueue_kqfilter(struct file *fp, struct knote *kn)
  * Walk down a list of knotes, activating them if their event has triggered.
  */
 void
-knote(struct klist *list, long hint)
+knote(list, hint)
+	struct klist *list;
+	long hint;
 {
 	struct knote *kn;
 
@@ -1261,7 +1310,9 @@ knote(struct klist *list, long hint)
  * Remove all knotes from a specified klist
  */
 void
-knote_remove(struct proc *p, struct klist *list)
+knote_remove(p, list)
+	struct proc *p;
+	struct klist *list;
 {
 	struct knote *kn;
 
@@ -1275,7 +1326,9 @@ knote_remove(struct proc *p, struct klist *list)
  * Remove all knotes referencing a specified fd
  */
 void
-knote_fdclose(struct proc *p, int fd)
+knote_fdclose(p, fd)
+	struct proc *p;
+	int fd;
 {
 	struct filedesc	*fdp;
 	struct klist	*list;
@@ -1289,7 +1342,9 @@ knote_fdclose(struct proc *p, int fd)
  * Attach a new knote to a file descriptor
  */
 static void
-knote_attach(struct knote *kn, struct filedesc *fdp)
+knote_attach(kn, fdp)
+	struct knote *kn;
+	struct filedesc *fdp;
 {
 	struct klist	*list;
 	int				size;
@@ -1345,7 +1400,10 @@ knote_attach(struct knote *kn, struct filedesc *fdp)
  * while calling FILE_UNUSE and free.
  */
 static void
-knote_drop(struct knote *kn, struct proc *p, struct filedesc *fdp)
+knote_drop(kn, p, fdp)
+	struct knote *kn;
+	struct proc *p;
+	struct filedesc *fdp;
 {
 	struct klist	*list;
 
@@ -1366,7 +1424,8 @@ knote_drop(struct knote *kn, struct proc *p, struct filedesc *fdp)
  * Queue new event for knote.
  */
 static void
-knote_enqueue(struct knote *kn)
+knote_enqueue(kn)
+	struct knote *kn;
 {
 	struct kqueue	*kq;
 	int		s;
@@ -1388,7 +1447,8 @@ knote_enqueue(struct knote *kn)
  * Dequeue event for knote.
  */
 static void
-knote_dequeue(struct knote *kn)
+knote_dequeue(kn)
+	struct knote *kn;
 {
 	struct kqueue	*kq;
 	int		s;

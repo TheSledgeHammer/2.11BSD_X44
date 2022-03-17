@@ -58,6 +58,8 @@ struct fileops {
 	int (*fo_kqfilter)	(struct file *, struct knote *);
 };
 
+//LIST_HEAD(filelist, file);
+//extern struct filelist filehead;/* head of list of open files */
 extern struct file 	*filehead;	/* head of list of open files */
 extern int 			maxfiles;	/* kernel limit on number of open files */
 extern int 			nfiles;		/* actual number of open files */
@@ -90,8 +92,7 @@ extern int 			nfiles;		/* actual number of open files */
 #define	FIF_WANTCLOSE	0x01	/* a close is waiting for usecount */
 #define	FIF_LARVAL		0x02	/* not fully constructed; don't use */
 
-
-#define	FILE_IS_USABLE(fp)	(((fp)->f_iflags &			\
+#define	FILE_IS_USABLE(fp)	(((fp)->f_iflags &							\
 		(FIF_WANTCLOSE|FIF_LARVAL)) == 0)
 
 #ifdef DIAGNOSTIC

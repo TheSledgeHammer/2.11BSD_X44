@@ -186,7 +186,7 @@ int		getenv_quad(const char *, quad_t *);
 int		kern_setenv(const char *, const char *);
 int		kern_unsetenv(const char *);
 int		testenv(const char *);
-int		getenv_array(const char *, void *, int, int *, int, bool);
+int		getenv_array(const char *, void *, int, int *, int, bool_t);
 
 #define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
 #define	GETENV_SIGNED	true	/* negative numbers allowed */

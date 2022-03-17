@@ -50,6 +50,9 @@ struct ucred {
 #define NOCRED 		((struct ucred *)-1)	/* no credential available */
 #define FSCRED 		((struct ucred *)-2)	/* filesystem credential */
 
+/* for priv_check_cred() */
+#define	NULL_CRED_OKAY	0x2
+
 #ifdef _KERNEL
 struct ucred 		*crget(void);
 struct ucred 		*crcopy(struct ucred *);
@@ -60,6 +63,8 @@ int 			suser();
 int 			_suser(struct ucred *, short *);
 int			groupmember(gid_t);
 int			_groupmember(gid_t, struct ucred *);
+int			priv_check(int);
+int			priv_check_cred(struct ucred *, int, int);
 
 /* 4.4BSD compat */
 #define suser1(cred, acflag) 	\

@@ -49,9 +49,10 @@
 #include <sys/stdbool.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <lib/libkern/libkern.h>
 #include <sys/kenv.h>
 #include <sys/device.h>
+
+#include <lib/libkern/libkern.h>
 
 #define KENV_SIZE			512	/* Maximum number of environment strings */
 static int	kenv_mvallen = 	KENV_MVALLEN;
@@ -133,7 +134,7 @@ kenv()
 		if (error)
 			return (error);
 		break;
-		
+
 	case KENV_UNSET:
 		error = priv_check(PRIV_KENV_UNSET);
 		if (error)
@@ -199,7 +200,8 @@ done:
 }
 
 void
-freeenv(char *env)
+freeenv(env)
+	char *env;
 {
 	if (dynamic_kenv && env != NULL) {
 		bzero(env, strlen(env));
@@ -214,7 +216,8 @@ freeenv(char *env)
  * after use.
  */
 char *
-kern_getenv(const char *name)
+kern_getenv(name)
+	const char *name;
 {
 	char *ret;
 
@@ -233,7 +236,8 @@ kern_getenv(const char *name)
  * Set an environment variable by name.
  */
 int
-kern_setenv(const char *name, const char *value)
+kern_setenv(name, value)
+	const char *name, *value;
 {
 	char *buf, *cp, *oldenv;
 	int namelen, vallen, i;
@@ -283,7 +287,8 @@ kern_setenv(const char *name, const char *value)
  * Unset an environment variable string.
  */
 int
-kern_unsetenv(const char *name)
+kern_unsetenv(name)
+	const char *name;
 {
 	char *cp, *oldenv;
 	int i, j;
@@ -313,7 +318,8 @@ kern_unsetenv(const char *name)
  * pointer to its start or NULL if there are no more.
  */
 static char *
-kernenv_next(char *cp)
+kernenv_next(cp)
+	char *cp;
 {
 
 	if (cp != NULL) {
@@ -330,7 +336,8 @@ kernenv_next(char *cp)
  * Test if an environment variable is defined.
  */
 int
-testenv(const char *name)
+testenv(name)
+	const char *name;
 {
 	char *cp;
 
@@ -351,7 +358,9 @@ testenv(const char *name)
  * generally include space for extra variables.
  */
 static int
-setenv_static(const char *name, const char *value)
+setenv_static(name, value)
+	const char *name;
+	const char *value;
 {
 	int len;
 
@@ -396,7 +405,9 @@ setenv_static(const char *name, const char *value)
  * a panic.
  */
 void
-init_static_kenv(char *buf, size_t len)
+init_static_kenv(buf, len)
+	char *buf;
+	size_t len;
 {
 	char *eval;
 
@@ -465,7 +476,9 @@ init_static_kenv(char *buf, size_t len)
 }
 
 static void
-init_dynamic_kenv_from(char *init_env, int *curpos)
+init_dynamic_kenv_from(init_env, curpos)
+	char *init_env;
+	int *curpos;
 {
 	char *cp, *cpnext, *eqpos, *found;
 	size_t len;
@@ -550,7 +563,9 @@ kenv_init(void)
  * Internal functions for string lookup.
  */
 static char *
-_getenv_dynamic_locked(const char *name, int *idx)
+_getenv_dynamic_locked(name, idx)
+	const char *name;
+	int *idx;
 {
 	char *cp;
 	int len, i;
@@ -568,13 +583,17 @@ _getenv_dynamic_locked(const char *name, int *idx)
 }
 
 static char *
-_getenv_dynamic(const char *name, int *idx)
+_getenv_dynamic(name, idx)
+	const char *name;
+	int *idx;
 {
 	return (_getenv_dynamic_locked(name, idx));
 }
 
 static char *
-_getenv_static_from(char *chkenv, const char *name)
+_getenv_static_from(chkenv, name)
+	char *chkenv;
+	const char *name;
 {
 	char *cp, *ep;
 	int len;
@@ -593,7 +612,8 @@ _getenv_static_from(char *chkenv, const char *name)
 }
 
 static char *
-_getenv_static(const char *name)
+_getenv_static(name)
+	const char *name;
 {
 	char *val;
 
@@ -610,7 +630,8 @@ _getenv_static(const char *name)
  * Return a buffer containing the string value from an environment variable
  */
 static char *
-getenv_string_buffer(const char *name)
+getenv_string_buffer(name)
+	const char *name;
 {
 	char *cp, *ret;
 	int len;
@@ -637,7 +658,10 @@ getenv_string_buffer(const char *name)
  * Return a string value from an environment variable.
  */
 int
-getenv_string(const char *name, char *data, int size)
+getenv_string(name, data, size)
+	const char *name;
+	char *data;
+	int size;
 {
 	char *cp;
 
@@ -659,8 +683,13 @@ getenv_string(const char *name, char *data, int size)
  * Return an array of integers at the given type size and signedness.
  */
 int
-getenv_array(const char *name, void *pdata, int size, int *psize,
-    int type_size, bool allow_signed)
+getenv_array(name, pdata, size, psize, type_size, allow_signed)
+	const char *name;
+	void *pdata;
+	int size;
+	int *psize;
+	int type_size;
+	bool_t allow_signed;
 {
 	uint8_t shift;
 	int64_t value;
@@ -798,7 +827,9 @@ error:
  * Return an integer value from an environment variable.
  */
 int
-getenv_int(const char *name, int *data)
+getenv_int(name, data)
+	const char *name;
+	int *data;
 {
 	quad_t tmp;
 	int rval;
@@ -813,7 +844,9 @@ getenv_int(const char *name, int *data)
  * Return an unsigned integer value from an environment variable.
  */
 int
-getenv_uint(const char *name, unsigned int *data)
+getenv_uint(name, data)
+	const char *name;
+	unsigned int *data;
 {
 	quad_t tmp;
 	int rval;
@@ -828,7 +861,9 @@ getenv_uint(const char *name, unsigned int *data)
  * Return an int64_t value from an environment variable.
  */
 int
-getenv_int64(const char *name, int64_t *data)
+getenv_int64(name, data)
+	const char *name;
+	int64_t *data;
 {
 	quad_t tmp;
 	int64_t rval;
@@ -843,7 +878,9 @@ getenv_int64(const char *name, int64_t *data)
  * Return an uint64_t value from an environment variable.
  */
 int
-getenv_uint64(const char *name, uint64_t *data)
+getenv_uint64(name, data)
+	const char *name;
+	uint64_t *data;
 {
 	quad_t tmp;
 	uint64_t rval;
@@ -858,7 +895,9 @@ getenv_uint64(const char *name, uint64_t *data)
  * Return a long value from an environment variable.
  */
 int
-getenv_long(const char *name, long *data)
+getenv_long(name, data)
+	const char *name;
+	long *data;
 {
 	quad_t tmp;
 	int rval;
@@ -873,7 +912,9 @@ getenv_long(const char *name, long *data)
  * Return an unsigned long value from an environment variable.
  */
 int
-getenv_ulong(const char *name, unsigned long *data)
+getenv_ulong(name, data)
+	const char *name;
+	unsigned long *data;
 {
 	quad_t tmp;
 	int rval;
@@ -888,7 +929,9 @@ getenv_ulong(const char *name, unsigned long *data)
  * Return a quad_t value from an environment variable.
  */
 int
-getenv_quad(const char *name, quad_t *data)
+getenv_quad(name, data)
+	const char *name;
+	quad_t *data;
 {
 	char	*value, *vtp;
 	quad_t	iv;

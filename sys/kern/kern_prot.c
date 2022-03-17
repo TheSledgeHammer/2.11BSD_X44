@@ -382,7 +382,6 @@ setlogin()
 	return (u->u_error = error);
 }
 
-
 /*
  * Test whether the specified credentials have the privilege
  * in question.

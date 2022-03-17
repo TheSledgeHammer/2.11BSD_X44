@@ -268,7 +268,7 @@ int		seltrue_kqfilter(dev_t, struct knote *);
 
 __BEGIN_DECLS
 int     kqueue(void);
-int     kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents, const struct timespec *timeout);
+int     kevent(int, const struct kevent *, int, struct kevent *, int, const struct timespec *);
 __END_DECLS
 
 #endif /* !_KERNEL */

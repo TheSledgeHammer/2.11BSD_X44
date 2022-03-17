@@ -120,15 +120,16 @@ struct user {
 	struct sigacts 		u_sigacts;				/* p_sigacts points here (use it!) */
 
 /* 1.4 - descriptor management */
+	struct filedesc		*u_fd;					/* file descriptor structure. */
 	struct file 		*u_ofile[NOFILE];		/* file structures for open files */
 	char				u_pofile[NOFILE];		/* per-process flags of open files */
 	int					u_lastfile;				/* high-water mark of u_ofile */
-	struct filedesc		*u_fd;					/* file descriptor structure. */
-#define u_cdir 			u_nd->ni_cdir			/* current directory */
-#define u_rdir 			u_nd->ni_rdir			/* root directory of current process */
+	struct vnode 		*u_cdir;				/* current directory */
+	struct vnode 		*u_rdir;				/* root directory of current process */
+	short				u_cmask;				/* mask for file creation */
+
 	struct tty 			*u_ttyp;				/* controlling tty pointer */
 	dev_t				u_ttyd;					/* controlling tty dev */
-	short				u_cmask;				/* mask for file creation */
 
 /* 1.5 - timing and statistics */
 	struct k_rusage 	u_ru;					/* stats for this proc */
@@ -145,11 +146,10 @@ struct user {
 	struct	rlimit 		u_rlimit[RLIM_NLIMITS];
 	struct	quota 		*u_quota;				/* user's quota structure */
 
-#define u_cmpn 			u_nd->ni_cnd			/* namei component name */
-#define u_cred 			u_cmpn->cn_cred			/* namei component name credentials */
-
 	/* namei & co. */
 	struct 	nameidata 	*u_nd;
+#define u_cmpn 			u_nd->ni_cnd			/* namei component name  (deprecated) */
+#define u_cred 			u_cmpn->cn_cred			/* namei component name credentials (deprecated) */
 
 	short				u_xxxx[2];				/* spare */
 	char				u_login[MAXLOGNAME];	/* setlogin/getlogin */

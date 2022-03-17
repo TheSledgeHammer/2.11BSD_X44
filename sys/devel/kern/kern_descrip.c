@@ -62,6 +62,49 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
+#include <sys/null.h>
+
+struct filelist filehead = LIST_HEAD_INITIALIZER(filehead);	/* head of list of open files */
+int 			nfiles;		/* actual number of open files */
+
+static int
+ufalloc(i)
+{
+
+}
+
+/*
+ * Allocate a user file descriptor
+ * and a file structure.
+ * Initialize the descriptor
+ * to point at the file structure.
+ */
+//struct file *
+void
+falloc()
+{
+	register struct file *fp, *fq;
+	register int i;
+
+	i = ufalloc(0);
+
+
+	nfiles++;
+	MALLOC(fp, struct file *, sizeof(struct file), M_FILE, M_WAITOK);
+	bzero(fp, sizeof(struct file));
+	if (fq == u.u_ofile[0]) {
+		LIST_INSERT_AFTER(fq, fp, f_list);
+	} else {
+		LIST_INSERT_HEAD(&filehead, fp, f_list);
+	}
+
+	u.u_ofile[i] = fp;
+	fp->f_count = 1;
+	fp->f_data = 0;
+	fp->f_offset = 0;
+	fp->f_cred = u->u_ucred;
+	crhold(fp->f_cred);
+}
 
 /*
  * Return pathconf information about a file descriptor.
@@ -103,9 +146,56 @@ fpathconf()
 	return (0);
 }
 
+static int
+ufalloc(first, last)
+	register int first, last;
+{
+	int i = first;
+	for (; i < last; i++) {
+
+	}
+}
+
 /*
  * Allocate a file descriptor for the process.
  */
+int
+fdalloc(want, result)
+	int want;
+	int *result;
+{
+	register struct filedesc *fdp;
+	register int i, f;
+	int lim, last, nfiles;
+	struct file **newofile;
+	char *newofileflags;
+
+	fdp = u.u_fd;
+	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+	for (;;) {
+		last = min(fdp->fd_nfiles, lim);
+		if ((i = want) < fdp->fd_freefile) {
+			i = fdp->fd_freefile;
+		}
+		/* same as ufalloc */
+		for (; i < last; i++) {
+			k = ufalloc(i);
+			if (u.u_ofile[i] == NULL) {
+				u.u_r.r_val1 = i;
+				u.u_pofile[i] = 0;
+				if (i > u.u_lastfile) {
+					u.u_lastfile = i;
+				}
+				if (want <= fdp->fd_freefile) {
+					fdp->fd_freefile = i;
+				}
+				*result = i;
+				return (0);
+			}
+		}
+	}
+}
+
 int fdexpand;
 
 int
@@ -178,16 +268,15 @@ fdalloc(p, want, result)
  * are available to the process p.
  */
 int
-fdavail(p, n)
-	struct proc *p;
+fdavail(n)
 	register int n;
 {
 	register struct filedesc *fdp;
 	register struct file **fpp;
 	register int i, lim;
 
-	fdp = p->p_fd;
-	lim = min((int) p->p_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+	fdp = u.u_fd;
+	lim = min((int)u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
 	if ((i = lim - fdp->fd_nfiles) > 0 && (n -= i) <= 0)
 		return (1);
 	fpp = &fdp->fd_ofiles[fdp->fd_freefile];
