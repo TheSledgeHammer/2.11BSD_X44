@@ -52,11 +52,12 @@
  * that will fit in a power-of-two sized piece of memory.
  */
 #define NDFILE			20
-#define NDEXTENT		50		/* 250 bytes in 256-byte alloc. */
+#define NDEXTENT		50					/* 250 bytes in 256-byte alloc. */
 
 struct filedesc {
 	struct	file 		**fd_ofiles;		/* file structures for open files */
 	char				*fd_ofileflags;		/* per-process open file flags */
+	//char				*fd_pofile;			/* per-process open file flags */
 	struct	vnode 		*fd_cdir;			/* current directory */
 	struct	vnode 		*fd_rdir;			/* root directory */
 	int					fd_nfiles;			/* number of open files allocated */

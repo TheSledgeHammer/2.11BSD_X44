@@ -63,48 +63,17 @@
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
 #include <sys/null.h>
+//#include <sys/queue.h>
 
-struct filelist filehead = LIST_HEAD_INITIALIZER(filehead);	/* head of list of open files */
-int 			nfiles;		/* actual number of open files */
+struct filelists filehead;	/* head of list of open files */
+int 			 nfiles;		/* actual number of open files */
 
-static int
-ufalloc(i)
-{
-
-}
-
-/*
- * Allocate a user file descriptor
- * and a file structure.
- * Initialize the descriptor
- * to point at the file structure.
- */
-//struct file *
 void
-falloc()
+finit()
 {
-	register struct file *fp, *fq;
-	register int i;
-
-	i = ufalloc(0);
-
-
-	nfiles++;
-	MALLOC(fp, struct file *, sizeof(struct file), M_FILE, M_WAITOK);
-	bzero(fp, sizeof(struct file));
-	if (fq == u.u_ofile[0]) {
-		LIST_INSERT_AFTER(fq, fp, f_list);
-	} else {
-		LIST_INSERT_HEAD(&filehead, fp, f_list);
-	}
-
-	u.u_ofile[i] = fp;
-	fp->f_count = 1;
-	fp->f_data = 0;
-	fp->f_offset = 0;
-	fp->f_cred = u->u_ucred;
-	crhold(fp->f_cred);
+	LIST_INIT(&filehead);
 }
+
 
 /*
  * Return pathconf information about a file descriptor.
@@ -120,10 +89,11 @@ fpathconf()
 	register_t *retval;
 
 	int fd = SCARG(uap, fd);
-	struct filedesc *fdp = u->u_fd;
+	struct filedesc *fdp;
 	struct file *fp;
 	struct vnode *vp;
 
+	fdp = u.u_fd;
 	if ((u_int)fd >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[fd]) == NULL)
 		return (EBADF);
@@ -147,120 +117,128 @@ fpathconf()
 }
 
 static int
-ufalloc(first, last)
-	register int first, last;
+ufalloc(i, want)
+	register int i, want;
 {
-	int i = first;
-	for (; i < last; i++) {
-
+	if ((i = want) < u.u_freefile) {
+		i = u.u_freefile;
 	}
-}
-
-/*
- * Allocate a file descriptor for the process.
- */
-int
-fdalloc(want, result)
-	int want;
-	int *result;
-{
-	register struct filedesc *fdp;
-	register int i, f;
-	int lim, last, nfiles;
-	struct file **newofile;
-	char *newofileflags;
-
-	fdp = u.u_fd;
-	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
-	for (;;) {
-		last = min(fdp->fd_nfiles, lim);
-		if ((i = want) < fdp->fd_freefile) {
-			i = fdp->fd_freefile;
-		}
-		/* same as ufalloc */
-		for (; i < last; i++) {
-			k = ufalloc(i);
-			if (u.u_ofile[i] == NULL) {
-				u.u_r.r_val1 = i;
-				u.u_pofile[i] = 0;
-				if (i > u.u_lastfile) {
-					u.u_lastfile = i;
-				}
-				if (want <= fdp->fd_freefile) {
-					fdp->fd_freefile = i;
-				}
-				*result = i;
-				return (0);
+	for (; i < NOFILE; i++) {
+		if (u.u_ofile[i] == NULL) {
+			u.u_r.r_val1 = i;
+			u.u_pofile[i] = 0;
+			if (i > u.u_lastfile) {
+				u.u_lastfile = i;
 			}
+			if (want <= u.u_freefile) {
+				u.u_freefile = i;
+			}
+			return (i);
 		}
 	}
+
+	u.u_error = EMFILE;
+	return (-1);
 }
 
 int fdexpand;
 
-int
-fdalloc(p, want, result)
-	struct proc *p;
+static int
+ufdalloc(want, result)
 	int want;
 	int *result;
 {
-	register struct filedesc *fdp;
 	register int i;
 	int lim, last, nfiles;
 	struct file **newofile;
 	char *newofileflags;
 
-	fdp = p->p_fd;
-	/*
-	 * Search for a free descriptor starting at the higher
-	 * of want or fd_freefile.  If that fails, consider
-	 * expanding the ofile array.
-	 */
-	lim = min((int) p->p_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
 	for (;;) {
-		last = min(fdp->fd_nfiles, lim);
-		if ((i = want) < fdp->fd_freefile)
-			i = fdp->fd_freefile;
-		for (; i < last; i++) {
-			if (fdp->fd_ofiles[i] == NULL) {
-				fdp->fd_ofileflags[i] = 0;
-				if (i > fdp->fd_lastfile)
-					fdp->fd_lastfile = i;
-				if (want <= fdp->fd_freefile)
-					fdp->fd_freefile = i;
-				*result = i;
-				return (0);
-			}
+		last = min(u.u_nfiles, lim);
+		if (ufalloc(i, want)) {
+			*result = i;
+			return (0);
 		}
-
 		/*
 		 * No space in current array.  Expand?
 		 */
-		if (fdp->fd_nfiles >= lim)
-			return (EMFILE);
-		if (fdp->fd_nfiles < NDEXTENT)
-			nfiles = NDEXTENT;
-		else
-			nfiles = 2 * fdp->fd_nfiles;
+	    if (u.u_nfiles >= lim) {
+	        return (EMFILE);
+	    }
+	    if (u.u_nfiles >= NDEXTENT) {
+	        nfiles = NDEXTENT;
+	    } else {
+	        nfiles = 2 * u.u_nfiles;
+	    }
 		MALLOC(newofile, struct file **, nfiles * OFILESIZE, M_FILEDESC, M_WAITOK);
-		newofileflags = (char*) &newofile[nfiles];
+		newofileflags = (char *) &newofile[nfiles];
 		/*
 		 * Copy the existing ofile and ofileflags arrays
 		 * and zero the new portion of each array.
 		 */
-		bcopy(fdp->fd_ofiles, newofile,
-				(i = sizeof(struct file*) * fdp->fd_nfiles));
-		bzero((char*) newofile + i, nfiles * sizeof(struct file*) - i);
-		bcopy(fdp->fd_ofileflags, newofileflags,
-				(i = sizeof(char) * fdp->fd_nfiles));
-		bzero(newofileflags + i, nfiles * sizeof(char) - i);
-		if (fdp->fd_nfiles > NDFILE)
-			FREE(fdp->fd_ofiles, M_FILEDESC);
-		fdp->fd_ofiles = newofile;
-		fdp->fd_ofileflags = newofileflags;
-		fdp->fd_nfiles = nfiles;
-		fdexpand++;
+	    bcopy(u.u_ofile, newofile, (i = sizeof(struct file *) * u.u_nfiles));
+	    bzero((char *)newofile + i, nfiles * sizeof(struct file *) - i);
+	    bcopy(u.u_pofile, newofileflags,(i = sizeof(char) * u.u_nfiles));
+	    bzero(newofileflags + i, nfiles * sizeof(char) - i);
+	    if (u.u_nfiles > NDFILE) {
+	        FREE(u.u_ofile, M_FILEDESC);
+	    }
+	    u.u_ofile = newofile;
+	    u.u_pofile = newofileflags;
+	    u.u_nfiles = nfiles;
+	    fdexpand++;
 	}
+	return (0);
+}
+
+/*
+ * Allocate a file descriptor for the process.
+ */
+struct filedesc *
+fdalloc(result)
+	int *result;
+{
+	register struct filedesc *fdp;
+	int error, i;
+
+	error = ufdalloc(0, result);
+	if (error) {
+		fdp = u.u_fd;
+		return (fdp);
+	}
+	return (NULL);
+}
+
+/*
+ * Allocate a user file descriptor
+ * and a file structure.
+ * Initialize the descriptor
+ * to point at the file structure.
+ */
+struct file *
+falloc()
+{
+	register struct file *fp, *fq;
+	register int i;
+
+	i = ufalloc(0);
+
+	nfiles++;
+	MALLOC(fp, struct file *, sizeof(struct file), M_FILE, M_WAITOK);
+	bzero(fp, sizeof(struct file));
+	if (fq == u.u_ofile[0]) {
+		LIST_INSERT_AFTER(fq, fp, f_list);
+	} else {
+		LIST_INSERT_HEAD(&filehead, fp, f_list);
+	}
+
+	u.u_ofile[i] = fp;
+	fp->f_count = 1;
+	fp->f_data = 0;
+	fp->f_offset = 0;
+	fp->f_cred = u->u_ucred;
+	crhold(fp->f_cred);
 }
 
 /*

@@ -436,6 +436,12 @@ ufalloc(i)
 			u.u_pofile[i] = 0;
 			if (i > u.u_lastfile)
 				u.u_lastfile = i;
+
+			/*
+			 * if (want <= u.u_freefile) {
+				u.u_freefile = i;
+			}
+			*/
 			return (i);
 		}
 	}
@@ -470,6 +476,7 @@ falloc()
 	tablefull("file");
 	u.u_error = ENFILE;
 	return (NULL);
+
 slot:
 	u.u_ofile[i] = fp;
 	fp->f_count = 1;
@@ -649,26 +656,27 @@ dupfdopen(fdp, indx, dfd, mode, error)
 		if (indx > u.u_lastfile)
 			u.u_lastfile = indx;
 		return (0);
+
 	case ENXIO:
 		/*
 		 * Steal away the file pointer from dfd, and stuff it into indx.
 		 */
-		fdp->fd_ofiles[indx] = fdp->fd_ofiles[dfd];
-		fdp->fd_ofiles[dfd] = NULL;
-		fdp->fd_ofileflags[indx] = fdp->fd_ofileflags[dfd];
-		fdp->fd_ofileflags[dfd] = 0;
+		u.u_ofile[indx] = u.u_ofile[dfd];
+		u.u_ofile[dfd] = NULL;
+		u.u_pofile[indx] = u.u_pofile[dfd];
+		u.u_pofile[dfd] = 0;
 		/*
 		 * Complete the clean up of the filedesc structure by
 		 * recomputing the various hints.
 		 */
-		if (indx > fdp->fd_lastfile)
-			fdp->fd_lastfile = indx;
+		if (indx > u.u_lastfile)
+			u.u_lastfile = indx;
 		else
-			while (fdp->fd_lastfile > 0
-					&& fdp->fd_ofiles[fdp->fd_lastfile] == NULL)
-				fdp->fd_lastfile--;
-		if (dfd < fdp->fd_freefile)
-			fdp->fd_freefile = dfd;
+			while (u.u_lastfile > 0
+					&& u.u_ofile[u.u_lastfile] == NULL)
+				u.u_lastfile--;
+		if (dfd < u.u_freefile)
+			u.u_freefile = dfd;
 		return (0);
 	default:
 		return (error);
