@@ -66,7 +66,7 @@ static int					md_env_pos;
 
 /* dynamic environment variables */
 char						**kenvp;
-struct lock					*kenv_lock;
+struct lock					kenv_lock;
 bool_t						dynamic_kenv;
 
 #define KENV_CHECK do { 							\
@@ -77,6 +77,7 @@ bool_t						dynamic_kenv;
 
 static char *_getenv_static(const char *);
 static char *_getenv_dynamic(const char *, int *);
+static char *_getenv_dynamic_locked(const char *, int *);
 static char *getenv_string_buffer(const char *);
 static int	setenv_static(const char *, const char *);
 
@@ -94,7 +95,7 @@ kenv()
 	size_t len, done, needed, buflen;
 	int error, i;
 
-	KASSERT(dynamic_kenv ("kenv: dynamic_kenv = false"));
+	//KASSERT(dynamic_kenv ("kenv: dynamic_kenv = false"));
 
 	error = 0;
 	if (SCARG(uap, what) == KENV_DUMP) {
@@ -104,7 +105,7 @@ kenv()
 			buflen = KENV_SIZE * (KENV_MNAMELEN + kenv_mvallen + 2);
 		if (SCARG(uap, len) > 0 && SCARG(uap, value) != NULL)
 			buffer = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
-		simple_lock(&kenv_lock->lk_lnterlock);
+		simple_lock(&kenv_lock.lk_lnterlock);
 		for (i = 0; kenvp[i] != NULL; i++) {
 			len = strlen(kenvp[i]) + 1;
 			needed += len;
@@ -118,7 +119,7 @@ kenv()
 				done += len;
 			}
 		}
-		simple_unlock(&kenv_lock->lk_lnterlock);
+		simple_unlock(&kenv_lock.lk_lnterlock);
 		if (buffer != NULL) {
 			error = copyout(buffer, SCARG(uap, value), done);
 			free(buffer, M_TEMP);
@@ -128,7 +129,16 @@ kenv()
 	}
 	switch (SCARG(uap, what)) {
 	case KENV_SET:
+		error = priv_check(PRIV_KENV_SET);
+		if (error)
+			return (error);
+		break;
+		
 	case KENV_UNSET:
+		error = priv_check(PRIV_KENV_UNSET);
+		if (error)
+			return (error);
+		break;
 	}
 	name = malloc(KENV_MNAMELEN + 1, M_TEMP, M_WAITOK);
 
@@ -211,7 +221,7 @@ kern_getenv(const char *name)
 	if (dynamic_kenv) {
 		ret = getenv_string_buffer(name);
 		if (ret == NULL) {
-			lockstatus(kenv_lock);
+			lockstatus(&kenv_lock);
 		}
 	} else
 		ret = _getenv_static(name);
@@ -242,12 +252,12 @@ kern_setenv(const char *name, const char *value)
 	buf = malloc(namelen + vallen, M_KENV, M_WAITOK);
 	sprintf(buf, "%s=%s", name, value);
 
-	simple_lock(&kenv_lock->lk_lnterlock);
+	simple_lock(&kenv_lock.lk_lnterlock);
 	cp = _getenv_dynamic(name, &i);
 	if (cp != NULL) {
 		oldenv = kenvp[i];
 		kenvp[i] = buf;
-		simple_unlock(&kenv_lock->lk_lnterlock);
+		simple_unlock(&kenv_lock.lk_lnterlock);
 		free(oldenv, M_KENV);
 	} else {
 		/* We add the option if it wasn't found */
@@ -257,13 +267,13 @@ kern_setenv(const char *name, const char *value)
 		/* Bounds checking */
 		if (i < 0 || i >= KENV_SIZE) {
 			free(buf, M_KENV);
-			simple_unlock(&kenv_lock->lk_lnterlock);
+			simple_unlock(&kenv_lock.lk_lnterlock);
 			return (-1);
 		}
 
 		kenvp[i] = buf;
 		kenvp[i + 1] = NULL;
-		simple_unlock(&kenv_lock->lk_lnterlock);
+		simple_unlock(&kenv_lock.lk_lnterlock);
 	}
 
 	return (0);
@@ -280,7 +290,7 @@ kern_unsetenv(const char *name)
 
 	KENV_CHECK;
 
-	simple_lock(&kenv_lock->lk_lnterlock);
+	simple_lock(&kenv_lock.lk_lnterlock);
 
 	cp = _getenv_dynamic(name, &i);
 	if (cp != NULL) {
@@ -288,12 +298,12 @@ kern_unsetenv(const char *name)
 		for (j = i + 1; kenvp[j] != NULL; j++)
 			kenvp[i++] = kenvp[j];
 		kenvp[i] = NULL;
-		simple_unlock(&kenv_lock->lk_lnterlock);
+		simple_unlock(&kenv_lock.lk_lnterlock);
 		bzero(oldenv, strlen(oldenv));
 		free(oldenv, M_KENV);
 		return (0);
 	}
-	simple_unlock(&kenv_lock->lk_lnterlock);
+	simple_unlock(&kenv_lock.lk_lnterlock);
 
 	return (-1);
 }
@@ -325,9 +335,9 @@ testenv(const char *name)
 	char *cp;
 
 	if (dynamic_kenv) {
-		simple_lock(&kenv_lock->lk_lnterlock);
+		simple_lock(&kenv_lock.lk_lnterlock);
 		cp = _getenv_dynamic(name, NULL);
-		simple_unlock(&kenv_lock->lk_lnterlock);
+		simple_unlock(&kenv_lock.lk_lnterlock);
 	} else
 		cp = _getenv_static(name);
 	if (cp != NULL)
@@ -390,7 +400,7 @@ init_static_kenv(char *buf, size_t len)
 {
 	char *eval;
 
-	KASSERT(!dynamic_kenv "kenv: dynamic_kenv already initialized");
+    //KASSERT(!dynamic_kenv "kenv: dynamic_kenv already initialized");
 	//KASSERT(!dynamic_kenv ("kenv: dynamic_kenv already initialized"));
 	/*
 	 * Suitably sized means it must be able to hold at least one empty
@@ -398,8 +408,8 @@ init_static_kenv(char *buf, size_t len)
 	 * made without a prior call to kern_setenv as we have a malformed
 	 * environment.
 	 */
-	KASSERT(len == 0 || len >= 2 ("kenv: static env must be initialized or suitably sized"));
-	KASSERT(len == 0 || (*buf == '\0' && *(buf + 1) == '\0') ("kenv: sized buffer must be initially empty"));
+	//KASSERT(len == 0 || len >= 2 ("kenv: static env must be initialized or suitably sized"));
+	//KASSERT(len == 0 || (*buf == '\0' && *(buf + 1) == '\0') ("kenv: sized buffer must be initially empty"));
 
 	/*
 	 * We may be called twice, with the second call needed to relocate
@@ -608,11 +618,11 @@ getenv_string_buffer(const char *name)
 	if (dynamic_kenv) {
 		len = KENV_MNAMELEN + 1 + kenv_mvallen + 1;
 		ret = malloc(sizeof(char *), M_KENV, M_WAITOK | M_ZERO);
-		simple_lock(&kenv_lock);
+		simple_lock(&kenv_lock.lk_lnterlock);
 		cp = _getenv_dynamic(name, NULL);
 		if (cp != NULL)
 			strlcpy(ret, cp, len);
-		simple_unlock(&kenv_lock);
+		simple_unlock(&kenv_lock.lk_lnterlock);
 		if (cp == NULL) {
 			free(ret, M_KENV);
 			ret = NULL;
@@ -632,11 +642,11 @@ getenv_string(const char *name, char *data, int size)
 	char *cp;
 
 	if (dynamic_kenv) {
-		simple_lock(&kenv_lock->lk_lnterlock);
+		simple_lock(&kenv_lock.lk_lnterlock);
 		cp = _getenv_dynamic(name, NULL);
 		if (cp != NULL)
 			strlcpy(data, cp, size);
-		simple_unlock(&kenv_lock->lk_lnterlock);
+		simple_unlock(&kenv_lock.lk_lnterlock);
 	} else {
 		cp = _getenv_static(name);
 		if (cp != NULL)

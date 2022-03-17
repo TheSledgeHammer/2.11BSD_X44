@@ -377,9 +377,57 @@ setlogin()
 
 	bzero(newname, sizeof (newname));
 	error = copyinstr(uap->namebuf, newname, sizeof(newname), NULL);
-	if	(error == 0)
+	if (error == 0)
 		bcopy(newname, u->u_login, sizeof (u->u_login));
 	return (u->u_error = error);
+}
+
+
+/*
+ * Test whether the specified credentials have the privilege
+ * in question.
+ */
+int
+priv_check(priv)
+  int priv;
+{
+   	if (u.u_procp != NULL) {
+   		return (priv_check_cred(u.u_ucred, priv, 0));
+   	}
+   	return (0);
+}
+
+/*
+ * Check a credential for privilege.
+ *
+ * A non-null credential is expected unless NULL_CRED_OKAY is set.
+ */
+int
+priv_check_cred(cred, priv, flags)
+	struct ucred *cred;
+	int priv, flags;
+{
+	int error;
+	
+	KASSERT(PRIV_VALID(priv), ("priv_check_cred: invalid privilege"));
+
+	KASSERT(cred != NULL || (flags & NULL_CRED_OKAY), ("priv_check_cred: NULL cred!"));
+		
+	if (cred == NULL) {
+		if (flags & NULL_CRED_OKAY)
+			return (0);
+		else
+			return (EPERM);
+	}
+	if (cred->cr_uid != 0) 
+		return (EPERM);
+/*
+	error = prison_priv_check(cred, priv);
+	if (error)
+		return (error);
+*/
+	/* NOTE: accounting for suser access (p_acflag/ASU) removed */
+	return (0);
 }
 
 /*

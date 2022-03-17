@@ -81,6 +81,7 @@ int fgetown(struct file *, int *);
 int fsetown(struct file *, int);
 int fgetlk(struct file *, int);
 int fsetlk(struct file *, int, int);
+int fioctl(struct file *, int, caddr_t, struct proc *);
 
 /*
  * System calls on descriptors.
@@ -88,8 +89,8 @@ int fsetlk(struct file *, int, int);
 void
 getdtablesize()
 {
-	//u.u_r.r_val1 = NOFILE;
-	u.u_r.r_val1 = min((int)u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+	u.u_r.r_val1 = NOFILE;
+	//u.u_r.r_val1 = min((int)u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
 }
 
 /*
@@ -265,7 +266,8 @@ fgetown(fp, valuep)
 	register int error;
 
 	if (fp->f_type == DTYPE_SOCKET) {
-		*valuep = mfsd(&fp->f_socket->so_pgrp);
+//		*valuep = mfsd(&fp->f_socket->so_pgrp);
+		*valuep = ((struct socket *)fp->f_data)->so_pgid;
 		return (0);
 	}
 	error = fioctl(fp, (u_int)TIOCGPGRP, (caddr_t)valuep, u.u_procp);
@@ -279,7 +281,7 @@ fsetown(fp, value)
 	int value;
 {
 	if (fp->f_type == DTYPE_SOCKET) {
-		mtsd(&fp->f_socket->so_pgrp, value);
+//		mtsd(&fp->f_socket->so_pgrp, value);
 		return (0);
 	}
 	if (value > 0) {
@@ -451,13 +453,13 @@ struct file *
 falloc()
 {
 	register struct file *fp;
-	register i;
+	register int i;
 
 	i = ufalloc(0);
 	if (i < 0)
 		return (NULL);
 	if (lastf == 0)
-		lastf = file;
+		lastf = fp;
 	for (fp = lastf; fp < fileNFILE; fp++)
 		if (fp->f_count == 0)
 			goto slot;
