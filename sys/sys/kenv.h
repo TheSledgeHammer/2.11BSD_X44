@@ -46,7 +46,7 @@
 /*
  * Most of these variables should be const.
  */
-extern bool dynamic_kenv;
+extern bool_t dynamic_kenv;
 extern struct lock 	*lock;
 extern char *kern_envp;
 extern char *md_envp;

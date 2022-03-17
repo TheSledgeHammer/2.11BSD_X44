@@ -102,7 +102,7 @@ struct filedesc0 {
  * Kernel global variables and routines.
  */
 static int		ufalloc(int);
-int				falloc(/* struct proc *, struct file **, int * */);
+struct file 	*falloc(/* struct proc *, struct file **, int * */);
 struct file 	*getf(int);
 int				closef(struct file *);
 int				fdopen(dev_t, int, int);
