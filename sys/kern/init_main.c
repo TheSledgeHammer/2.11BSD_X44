@@ -347,15 +347,6 @@ main(framep)
 static char initpaths[MAXPATHLEN] = "/sbin/init:/sbin/oinit:/sbin/init.bak";
 
 /*
-static const  char * const initpaths[] = {
-	"/sbin/init",
-	"/sbin/oinit",
-	"/sbin/init.bak",
-	NULL,
-};
-*/
-
-/*
  * Start the initial user process; try exec'ing each pathname in "initpaths".
  * The program is invoked with one argument containing the boot flags.
  */

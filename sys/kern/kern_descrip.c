@@ -422,6 +422,44 @@ fstat()
 	return (u.u_error);
 }
 
+/*
+ * Return pathconf information about a file descriptor.
+ */
+/* ARGSUSED */
+int
+fpathconf()
+{
+	register struct fpathconf_args {
+		syscallarg(int)	fd;
+		syscallarg(int)	name;
+	} *uap = (struct fpathconf_args *)u.u_ap;
+	struct file *fp;
+	struct vnode *vp;
+	int fd;
+
+	fd = SCARG(uap, fd);
+	if ((u_int)fd >= u.u_nfiles ||
+	    (fp = u.u_ofile[fd]) == NULL)
+		return (EBADF);
+	switch (fp->f_type) {
+
+	case DTYPE_SOCKET:
+		if (SCARG(uap, name) != _PC_PIPE_BUF)
+			return (EINVAL);
+		*retval = PIPE_BUF;
+		return (0);
+
+	case DTYPE_VNODE:
+		vp = (struct vnode *)fp->f_data;
+		return (VOP_PATHCONF(vp, SCARG(uap, name), u.u_r.r_val1));
+
+	default:
+		panic("fpathconf");
+	}
+	/*NOTREACHED*/
+	return (0);
+}
+
 /* copied, for supervisory networking, to sys_net.c */
 /*
  * Allocate a user file descriptor.
@@ -541,7 +579,6 @@ flock()
 		syscallarg(int)	fd;
 		syscallarg(int)	how;
 	} *uap = (struct flock_args *)u.u_ap;
-	register struct filedesc *fdp = u.u_fd;
 	register struct file *fp;
 	struct vnode *vp;
 	struct flock lf;
@@ -787,9 +824,9 @@ fdrelease(p, fd)
 	if (fp == NULL)
 		goto badf;
 
-	simple_lock(&fp->f_slock);
+	simple_lock(&fdp->f_slock);
 	if (!FILE_IS_USABLE(fp)) {
-		simple_unlock(&fp->f_slock);
+		simple_unlock(&fdp->f_slock);
 		goto badf;
 	}
 

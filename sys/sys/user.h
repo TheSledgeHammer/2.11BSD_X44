@@ -123,12 +123,12 @@ struct user {
 	struct filedesc		*u_fd;					/* file descriptor structure. */
 	struct file 		*u_ofile[NOFILE];		/* file structures for open files */
 	char				u_pofile[NOFILE];		/* per-process flags of open files */
-	 int                u_nfiles;               /* number of open files allocated */
+	int                	u_nfiles;               /* number of open files allocated */
 	int					u_lastfile;				/* high-water mark of u_ofile */
 	int					u_freefile;				/* approx. next free file */
-	struct vnode 		*u_cdir;				/* current directory */
-	struct vnode 		*u_rdir;				/* root directory of current process */
-	short				u_cmask;				/* mask for file creation */
+	//struct vnode 		*u_cdir;				/* current directory */
+	//struct vnode 		*u_rdir;				/* root directory of current process */
+	//short				u_cmask;				/* mask for file creation */
 
 	struct tty 			*u_ttyp;				/* controlling tty pointer */
 	dev_t				u_ttyd;					/* controlling tty dev */
