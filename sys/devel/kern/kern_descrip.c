@@ -76,12 +76,13 @@ void			fdesc_init(struct proc *, struct filedesc0 *);
 int				ufalloc(int, int *);
 struct file		*falloc();
 void			fdexpand(int);
-int  			ufdalloc(int *);
-struct filedesc *fdalloc(int *);
+int  			ufdalloc(struct file *);
+struct filedesc *fdalloc(struct file *);
 int 			fdavail(int);
 void			ffree(struct file *);
 void 			ufdsync(struct filedesc *);
 void 			fdsync(struct filedesc *);
+void			fdfree(struct filedesc *);
 */
 struct filelists filehead;	/* head of list of open files */
 int 			 nfiles;		/* actual number of open files */
@@ -106,6 +107,87 @@ fdesc_init(p, fdp)
 
 	LIST_INIT(&filehead);
 	simple_lock_init(&fdp->fd_fd.fd_slock, "filedesc_slock");
+}
+
+/*
+ * System calls on descriptors.
+ */
+void
+getdtablesize()
+{
+	//u.u_r.r_val1 = NOFILE;
+	u.u_r.r_val1 = min((int)u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+}
+
+/*
+ * Duplicate a file descriptor.
+ */
+int
+dup()
+{
+	register struct dup_args {
+		syscallarg(int)	fd;
+	} *uap = (struct dup_args *) u.u_ap;
+	register struct file *fp;
+	int j, fd, error;
+
+	fp = falloc();
+	if (SCARG(uap, fd) & ~077) {
+		SCARG(uap, fd) &= 077;
+		return (dup2());
+	}
+
+	GETF(fp, SCARG(uap, fd));
+	j = ufdalloc(fp);
+	if (j < 0) {
+		return (j);
+	}
+	return (dupit(j, fp, u.u_pofile[SCARG(uap, fd)] &~ UF_EXCLOSE));
+}
+
+int
+dup2()
+{
+	register struct dup2_args {
+		syscallarg(int)	from;
+		syscallarg(int) to;
+	} *uap = (struct dup2_args *) u.u_ap;
+	register struct file *fp;
+
+
+	GETF(fp, SCARG(uap, from));
+	if (SCARG(uap, to) < 0 || SCARG(uap, to) >= NOFILE) {
+		u.u_error = EBADF;
+		return (EBADF);
+	}
+	u.u_r.r_val1 = SCARG(uap, to);
+	if (SCARG(uap, from) == SCARG(uap, to))
+		return (0);
+	if (u.u_ofile[SCARG(uap, to)])
+		/*
+		 * dup2 must succeed even if the close has an error.
+		 */
+		(void) closef(u.u_ofile[SCARG(uap, to)]);
+
+	return (dupit(SCARG(uap, to), fp, u.u_pofile[SCARG(uap, from)] & ~ UF_EXCLOSE));
+}
+
+int
+dupit(fd, fp, flags)
+	register int fd;
+	register struct file *fp;
+	int flags;
+{
+	register struct filedesc *fdp;
+
+	u.u_ofile[fd] = fp;
+	u.u_pofile[fd] = flags;
+	fp->f_count++;
+	if (fd > u.u_lastfile) {
+		u.u_lastfile = fd;
+	}
+	u.u_r.r_val1 = fd;
+	return (0);
 }
 
 static int
@@ -209,42 +291,41 @@ fdexpand(lim)
     u.u_ofile = newofile;
     u.u_pofile = newofileflags;
     u.u_nfiles = nfiles;
-    fdsync(u.u_fd);
 }
 
 static int
-ufdalloc(result)
-	int *result;
+ufdalloc(fp)
+	struct file *fp;
 {
-	struct file **newofile;
-	char *newofileflags;
-	int error, lim;
+	int lim;
 
 	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
-	error = ufalloc(0, result);
-	if (error != 0) {
-		/*
-		 * No space in current array.  Expand?
-		 */
-		fdexpand(lim);
-	    return (0);
+	if (fp == NULL) {
+		u.u_error = ENFILE;
+		return (-1);
 	}
-	return (error);
+
+	/*
+	 * No space in current array.  Expand?
+	 */
+	fdexpand(lim);
+	return (0);
 }
 
 /*
  * Allocate a file descriptor for the process.
  */
 struct filedesc *
-fdalloc(result)
-	int *result;
+fdalloc(fp)
+	struct file *fp;
 {
 	register struct filedesc *fdp;
 	int error, i;
 
-	error = ufdalloc(0, result);
+	error = ufdalloc(fp);
 	if (error) {
 		fdp = u.u_fd;
+		fdsync(fdp);
 		return (fdp);
 	}
 	return (NULL);
