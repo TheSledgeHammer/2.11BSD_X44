@@ -53,7 +53,7 @@ struct socket {
 	short	so_qlimit;		/* max number queued connections */
 	short	so_timeo;		/* connection timeout */
 	u_short	so_error;		/* error affecting connection */
-	short	so_pgrp;		/* pgrp for signals */
+	pid_t	so_pgrp;		/* pgrp for signals */
 	u_short	so_oobmark;		/* chars to oob mark */
 /*
  * Variables for socket buffering.
