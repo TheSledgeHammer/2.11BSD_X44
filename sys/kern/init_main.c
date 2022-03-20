@@ -203,7 +203,14 @@ main(framep)
 
 	/* Create the file descriptor table. */
 	fdp = &filedesc0;
-	fdesc_init(p, fdp);
+	u.u_fd = &fdp->fd_fd;
+	p->p_fd = u.u_fd;
+	fdp->fd_fd.fd_refcnt = 1;
+	fdp->fd_fd.fd_cmask = cmask;
+	fdp->fd_fd.fd_ofiles = fdp->fd_dfiles;
+	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
+	fdp->fd_fd.fd_nfiles = NDFILE;
+	finit();
 
 	/* Create the limits structures. */
 	p->p_limit = &limit0;

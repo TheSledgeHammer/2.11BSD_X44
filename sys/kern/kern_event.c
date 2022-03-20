@@ -52,8 +52,16 @@
 #include <sys/event.h>
 #include <sys/eventvar.h>
 
+int     kqueue_rw(struct file *, struct uio *, struct ucred *);
+int     kqueue_read(struct file *, struct uio *, struct ucred *);
+int     kqueue_write(struct file *, struct uio *, struct ucred *);
+int     kqueue_ioctl(struct file *, int, caddr_t, struct proc *);
+int     kqueue_poll(struct file *, int, struct proc *);
+int     kqueue_close(struct file *, struct proc *);
+int     kqueue_kqfilter(struct file *, struct knote *);
+
 struct fileops kqueueops =
-			{ kqueue_rw, kqueue_read, kqueue_write, kqueue_ioctl, kqueue_poll, kqueue_close, kqueue_kqfilter };
+			{ kqueue_rw, kqueue_read, kqueue_write, kqueue_ioctl, NULL, kqueue_poll, kqueue_close, kqueue_kqfilter };
 
 static int	kqueue_scan(struct file *fp, size_t maxevents, struct kevent *ulistp, const struct timespec *timeout, struct proc *p, register_t *retval);
 static void	kqueue_wakeup(struct kqueue *kq);
@@ -1125,11 +1133,11 @@ kqueue_write(fp, uio, cred)
  *	KFILTER_BYFILTER	find filter for name. len is ignored.
  */
 /*ARGSUSED*/
-static int
+int
 kqueue_ioctl(fp, com, data, p)
 	struct file *fp;
-	u_long com;
-	void *data;
+	int com;
+	caddr_t data;
 	struct proc *p;
 {
 	struct kfilter_mapping	*km;
@@ -1176,8 +1184,11 @@ kqueue_ioctl(fp, com, data, p)
  * struct fileops poll method for a kqueue descriptor.
  * Determine if kqueue has events pending.
  */
-static int
-kqueue_poll(struct file *fp, int events, struct proc *p)
+int
+kqueue_poll(fp, events, p)
+    struct file *fp;
+    int events;
+    struct proc *p;
 {
 	struct kqueue *kq;
 	int revents;
@@ -1198,8 +1209,10 @@ kqueue_poll(struct file *fp, int events, struct proc *p)
  * struct fileops close method for a kqueue descriptor.
  * Cleans up kqueue.
  */
-static int
-kqueue_close(struct file *fp, struct proc *p)
+int
+kqueue_close(fp, p)
+    struct file *fp;
+    struct proc *p;
 {
 	struct kqueue	*kq;
 	struct filedesc	*fdp;
@@ -1275,7 +1288,7 @@ kqueue_wakeup(kq)
  * Event triggered when monitored kqueue changes.
  */
 /*ARGSUSED*/
-static int
+int
 kqueue_kqfilter(fp, kn)
 	struct file *fp;
 	struct knote *kn;

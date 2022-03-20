@@ -76,6 +76,12 @@
 struct filelists filehead;		/* head of list of open files */
 int 			 nfiles;		/* actual number of open files */
 
+struct fcntl_args {
+		syscallarg(int)	fdes;
+		syscallarg(int)	cmd;
+		syscallarg(int)	arg;
+};
+
 /*
  * Descriptor management.
  */
@@ -94,10 +100,9 @@ int fioctl(struct file *, int, caddr_t, struct proc *);
 
 /* init filedesc tables */
 void
-fdesc_init(p, fdp)
-	struct proc 	 *p;
-	struct filedesc0 *fdp;
+finit(void)
 {
+    /*
 	u.u_fd = &fdp->fd_fd;
 	p->p_fd = u.u_fd;
 	fdp->fd_fd.fd_refcnt = 1;
@@ -105,6 +110,7 @@ fdesc_init(p, fdp)
 	fdp->fd_fd.fd_ofiles = fdp->fd_dfiles;
 	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
 	fdp->fd_fd.fd_nfiles = NDFILE;
+	*/
 
 	LIST_INIT(&filehead);
 	//simple_lock_init(&fdp->fd_fd.fd_slock, "filedesc_slock");
@@ -163,7 +169,7 @@ dup2()
 	u.u_r.r_val1 = SCARG(uap, to);
 	if (SCARG(uap, from) == SCARG(uap, to))
 		return (0);
-	if (u.u_ofile[SCARG(uap, to)] >= u.u_nfiles) {
+	if (SCARG(uap, to) >= u.u_nfiles) {
 		error = ufdalloc(fp);
 		if (error) {
 			return (error);
@@ -204,12 +210,6 @@ dupit(fd, fp, flags)
 /*
  * The file control system call.
  */
-struct fcntl_args {
-		syscallarg(int)	fdes;
-		syscallarg(int)	cmd;
-		syscallarg(int)	arg;
-};
-
 int
 fcntl()
 {
@@ -498,12 +498,12 @@ fpathconf()
 	case DTYPE_SOCKET:
 		if (SCARG(uap, name) != _PC_PIPE_BUF)
 			return (EINVAL);
-		*retval = PIPE_BUF;
+		u.u_r.r_val1 = PIPE_BUF;
 		return (0);
 
 	case DTYPE_VNODE:
 		vp = (struct vnode *)fp->f_data;
-		return (VOP_PATHCONF(vp, SCARG(uap, name), u.u_r.r_val1));
+		return (VOP_PATHCONF(vp, SCARG(uap, name), (register_t *)u.u_r.r_val1));
 
 	default:
 		panic("fpathconf");
@@ -558,7 +558,7 @@ struct file *
 falloc()
 {
 	register struct file *fp, *fq;
-	register int i, error;
+	int i, error;
 
 	error = ufalloc(0, &i);
 	if (error != 0) {
@@ -597,7 +597,7 @@ fdexpand(lim)
 	int nfiles;
 
 	if (u.u_nfiles >= lim) {
-		return (EMFILE);
+	    u.u_error = EMFILE;
 	}
 	if (u.u_nfiles >= NDEXTENT) {
 		nfiles = NDEXTENT;
@@ -634,6 +634,9 @@ ufdalloc(fp)
 	int lim;
 
 	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+	if (u.u_error == EMFILE) {
+    	return (-1);
+	}
 	if (fp == NULL) {
 		u.u_error = ENFILE;
 		return (-1);
@@ -1009,11 +1012,18 @@ void
 fdsync(fdp)
 	struct filedesc *fdp;
 {
+    fdp->fd_ofiles = u.u_ofile;
+    fdp->fd_ofileflags = u.u_pofile;
+    fdp->fd_nfiles = u.u_nfiles;
+    fdp->fd_lastfile = u.u_lastfile;
+    fdp->fd_freefile = u.u_freefile;
+    /*
 	memcpy(fdp->fd_ofiles, u.u_ofile, sizeof(struct file **));
 	memcpy(fdp->fd_ofileflags, u.u_pofile, sizeof(char *));
 	memcpy(fdp->fd_nfiles, u.u_nfiles, sizeof(int));
 	memcpy(fdp->fd_lastfile, u.u_lastfile, sizeof(int));
 	memcpy(fdp->fd_freefile, u.u_freefile, sizeof(int));
+	*/
 }
 
 /* sync to user from filedesc  */
@@ -1021,11 +1031,18 @@ void
 ufdsync(fdp)
 	struct filedesc *fdp;
 {
+    u.u_ofile = fdp->fd_ofiles;
+    u.u_pofile = fdp->fd_ofileflags;
+    u.u_nfiles = fdp->fd_nfiles;
+    u.u_lastfile = fdp->fd_lastfile;
+    u.u_freefile = fdp->fd_freefile;
+    /*
 	memcpy(u.u_ofile, fdp->fd_ofiles, sizeof(struct file **));
 	memcpy(u.u_pofile, fdp->fd_ofileflags, sizeof(char *));
 	memcpy(u.u_nfiles, fdp->fd_nfiles, sizeof(int));
 	memcpy(u.u_lastfile, fdp->fd_lastfile, sizeof(int));
 	memcpy(u.u_freefile, fdp->fd_freefile, sizeof(int));
+	*/
 }
 
 static __inline void
