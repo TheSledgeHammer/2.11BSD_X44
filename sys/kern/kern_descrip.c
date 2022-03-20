@@ -76,12 +76,6 @@
 struct filelists filehead;		/* head of list of open files */
 int 			 nfiles;		/* actual number of open files */
 
-struct fcntl_args {
-		syscallarg(int)	fdes;
-		syscallarg(int)	cmd;
-		syscallarg(int)	arg;
-};
-
 /*
  * Descriptor management.
  */
@@ -92,7 +86,7 @@ int dup2(); /* syscall */
 int dupit(int, struct file *, int);
 int fset(struct file *, int, int);
 int fgetown(struct file *, int *);
-int fsetown(struct fcntl_args *, struct file *, int);
+int fsetown(void *, struct file *, int);
 int fgetlk(struct file *, int);
 int fsetlk(struct file *, int, int);
 int fioctl(struct file *, int, caddr_t, struct proc *);
@@ -204,7 +198,11 @@ dupit(fd, fp, flags)
 int
 fcntl()
 {
-	register struct fcntl_args *uap = (struct fcntl_args *)u.u_ap;
+	register struct fcntl_args {
+		syscallarg(int)	fdes;
+		syscallarg(int)	cmd;
+		syscallarg(int)	arg;
+	}*uap = (struct fcntl_args *)u.u_ap;
 	register struct file *fp;
 	register int i, error, flg;// = F_POSIX;
 	register char *pop;
@@ -256,7 +254,7 @@ fcntl()
 		return (u.u_error);
 
 	case F_SETOWN:
-		u.u_error = fsetown(uap, fp, SCARG(uap, arg));
+		u.u_error = fsetown((long)SCARG(uap, arg), fp, SCARG(uap, arg));
 		return (u.u_error);
 
 	case F_SETLKW:
@@ -309,13 +307,13 @@ fgetown(fp, valuep)
 }
 
 int
-fsetown(uap, fp, value)
-	register struct fcntl_args *uap;
+fsetown(args, fp, value)
+	void *args;
 	register struct file *fp;
 	int value;
 {
 	if (fp->f_type == DTYPE_SOCKET) {
-		((struct socket*) fp->f_socket)->so_pgrp = (long)SCARG(uap, arg);
+		((struct socket*) fp->f_socket)->so_pgrp = (long)args;
 		//((struct socket*) fp->f_data)->so_pgrp = (long)SCARG(uap, arg);
 		return (0);
 	}
