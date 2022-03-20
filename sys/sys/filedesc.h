@@ -61,8 +61,8 @@ struct filedesc {
 	struct	vnode 		*fd_cdir;			/* current directory */
 	struct	vnode 		*fd_rdir;			/* root directory */
 	int					fd_nfiles;			/* number of open files allocated */
-	u_short				fd_lastfile;		/* high-water mark of fd_ofiles */
-	u_short				fd_freefile;		/* approx. next free file */
+	int				    fd_lastfile;		/* high-water mark of fd_ofiles */
+	int				    fd_freefile;		/* approx. next free file */
 	u_short				fd_cmask;			/* mask for file creation */
 	u_short				fd_refcnt;			/* reference count */
 	struct lock_object 	fd_slock;
@@ -102,7 +102,7 @@ struct filedesc0 {
 /*
  * Kernel global variables and routines.
  */
-void				fdesc_init(struct proc *, struct filedesc0 *);
+void				finit(void);
 static int			ufalloc(int, int *);
 static struct file	*falloc();
 void				fdexpand(int);

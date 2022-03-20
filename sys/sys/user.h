@@ -121,8 +121,8 @@ struct user {
 
 /* 1.4 - descriptor management */
 	struct filedesc		*u_fd;					/* file descriptor structure. */
-	struct file 		*u_ofile[NOFILE];		/* file structures for open files */
-	char				u_pofile[NOFILE];		/* per-process flags of open files */
+	struct file 		**u_ofile;		        /* file structures for open files */
+	char				*u_pofile;		        /* per-process flags of open files */
 	int                	u_nfiles;               /* number of open files allocated */
 	int					u_lastfile;				/* high-water mark of u_ofile */
 	int					u_freefile;				/* approx. next free file */
