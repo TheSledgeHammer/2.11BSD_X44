@@ -25,9 +25,9 @@ struct knote;
  * One for each kernel object.
  */
 struct file {
-	//LIST_ENTRY(file) 	f_list;			/* list of active files */
-	struct file 		*f_filef;		/* list of active files */
-	struct file 		**f_fileb;		/* list of active files */
+	LIST_ENTRY(file) 	f_list;			/* list of active files */
+	//struct file 		*f_filef;		/* list of active files */
+	//struct file 		**f_fileb;		/* list of active files */
 	int					f_iflags;		/* internal flags */
 	int					f_flag;			/* see below */
 	short				f_type;			/* descriptor type */
@@ -58,12 +58,12 @@ struct fileops {
 	int (*fo_kqfilter)	(struct file *, struct knote *);
 };
 
-//struct filelists;
-//LIST_HEAD(filelists, file);
-//extern struct filelists filehead;/* head of list of open files */
-extern struct file 	*filehead;	/* head of list of open files */
-extern int 			maxfiles;	/* kernel limit on number of open files */
-extern int 			nfiles;		/* actual number of open files */
+struct filelists;
+LIST_HEAD(filelists, file);
+extern struct filelists filehead;	/* head of list of open files */
+//extern struct file 	*filehead;		/* head of list of open files */
+extern int 				maxfiles;	/* kernel limit on number of open files */
+extern int 				nfiles;		/* actual number of open files */
 
 /*
  * Access call.

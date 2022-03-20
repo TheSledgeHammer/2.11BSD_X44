@@ -84,6 +84,7 @@ OR
 - Read the README.md in "devel" for in-development concepts planned
 
 ### To Start:
+- DEC VT220 style: amber coloured terminal font
 - Package Manager: Port FreeBSD's
 - BSD Installer: Port DragonflyBSD's
 

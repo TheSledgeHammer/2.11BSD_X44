@@ -46,6 +46,7 @@ struct	proc {
     /* Substructures: */
 	struct	pcred 	 	*p_cred;		/* Process owner's identity. */
 	struct	filedesc 	*p_fd;			/* Ptr to open files structure. */
+//#define p_fd			p_addr->u_fd
 	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct	plimit 	 	*p_limit;		/* Process limits. */
 	struct	vmspace  	*p_vmspace;		/* Address space. */
