@@ -634,7 +634,7 @@ ufdalloc(fp)
 	int lim;
 
 	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
-	if (fp == NULL || u.u_error == EMFILE) {
+	if (fp == NULL) {
 		u.u_error = ENFILE;
 		return (-1);
 	}
@@ -643,6 +643,9 @@ ufdalloc(fp)
 	 * No space in current array.  Expand?
 	 */
 	fdexpand(lim);
+	if (u.u_error == EMFILE) {
+		return (-1);
+	}
 	return (0);
 }
 
