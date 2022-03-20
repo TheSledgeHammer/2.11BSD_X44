@@ -203,7 +203,7 @@ kfilter_byname_user(name)
 		return (NULL);
 
 	for (i = 0; user_kfilters[i].name != NULL; i++) {
-		if (user_kfilters[i].name != '\0' && strcmp(name, user_kfilters[i].name) == 0)
+		if (strcmp(user_kfilters[i].name,'\0') != 0 && strcmp(name, user_kfilters[i].name) == 0)
 			return (&user_kfilters[i]);
 	}
 	return (NULL);
@@ -357,7 +357,7 @@ filt_kqdetach(kn)
 {
 	struct kqueue *kq;
 
-	kq = (struct kqueue *)kn->kn_fp->f_un->f_Data;
+	kq = (struct kqueue *)kn->kn_fp->f_data;
 	SIMPLEQ_REMOVE(&kq->kq_sel.si_klist, kn, knote, kn_selnext);
 }
 
@@ -372,7 +372,7 @@ filt_kqueue(kn, hint)
 {
 	struct kqueue *kq;
 
-	kq = (struct kqueue *)kn->kn_fp->f_un->f_Data;
+	kq = (struct kqueue *)kn->kn_fp->f_data;
 	kn->kn_data = kq->kq_count;
 	return (kn->kn_data > 0);
 }
@@ -647,8 +647,8 @@ kqueue()
 	int				fd, error;
 
 	error = 0;
-	p = u->u_procp;
-	fdp = u->u_fd;
+	p = u.u_procp;
+	fdp = u.u_fd;
 	fp = falloc(); /* setup a new file descriptor */
 	if (fp == NULL) {
 		error = ENFILE;
@@ -661,8 +661,8 @@ kqueue()
 	memset((char*) kq, 0, sizeof(struct kqueue));
 	simple_lock_init(&kq->kq_lock, "kqueue lock");
 	TAILQ_INIT(&kq->kq_head);
-	fp->f_un->f_Data = (caddr_t) kq; 	/* store the kqueue with the fp */
-	u->u_r->r_val1 = fd;
+	fp->f_data = (caddr_t) kq; 	/* store the kqueue with the fp */
+	u.u_r.r_val1 = fd;
 	if (fdp->fd_knlistsize < 0)
 		fdp->fd_knlistsize = 0; 		/* this process has a kq */
 	kq->kq_fdp = fdp;
@@ -695,7 +695,7 @@ kevent()
 	size_t			i, n;
 	int				nerrors, error;
 
-	p = u->u_procp;
+	p = u.u_procp;
 	/* check that we're dealing with a kq */
 	fp = fd_getfile(p->p_fd, SCARG(uap, fd));
 	if (fp == NULL)
@@ -714,7 +714,7 @@ kevent()
 		SCARG(uap, timeout) = &ts;
 	}
 
-	kq = (struct kqueue*) fp->f_un->f_Data;
+	kq = (struct kqueue*) fp->f_data;
 	nerrors = 0;
 
 	/* traverse list of events to register */
@@ -926,7 +926,7 @@ kqueue_scan(fp, maxevents, ulistp, tsp, p, retval)
 	size_t			count, nkev;
 	int				s, timeout, error;
 
-	kq = (struct kqueue*) fp->f_un->f_Data;
+	kq = (struct kqueue*) fp->f_data;
 	count = maxevents;
 	nkev = error = 0;
 	if (count == 0)
@@ -1219,7 +1219,7 @@ kqueue_close(fp, p)
 	struct knote	**knp, *kn, *kn0;
 	int		i;
 
-	kq = (struct kqueue *)fp->f_un->f_Data;
+	kq = (struct kqueue *)fp->f_data;
 	fdp = p->p_fd;
 	for (i = 0; i < fdp->fd_knlistsize; i++) {
 		knp = &SIMPLEQ_FIRST(&fdp->fd_knlist[i]);
@@ -1256,7 +1256,7 @@ kqueue_close(fp, p)
 		}
 	}
 	kq = &kern_kqueue;
-	fp->f_un->f_Data = NULL;
+	fp->f_data = NULL;
 
 	return (0);
 }
@@ -1296,7 +1296,7 @@ kqueue_kqfilter(fp, kn)
 	struct kqueue *kq;
 
 	KASSERT(fp == kn->kn_fp);
-	kq = (struct kqueue *)kn->kn_fp->f_un->f_Data;
+	kq = (struct kqueue *)kn->kn_fp->f_data;
 	if (kn->kn_filter != EVFILT_READ)
 		return (1);
 	kn->kn_fop = &kqread_filtops;

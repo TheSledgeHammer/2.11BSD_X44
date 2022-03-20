@@ -100,20 +100,11 @@ int fioctl(struct file *, int, caddr_t, struct proc *);
 
 /* init filedesc tables */
 void
-finit(void)
+finit(fdp)
+	struct filedesc *fdp;
 {
-    /*
-	u.u_fd = &fdp->fd_fd;
-	p->p_fd = u.u_fd;
-	fdp->fd_fd.fd_refcnt = 1;
-	fdp->fd_fd.fd_cmask = cmask;
-	fdp->fd_fd.fd_ofiles = fdp->fd_dfiles;
-	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
-	fdp->fd_fd.fd_nfiles = NDFILE;
-	*/
-
 	LIST_INIT(&filehead);
-	//simple_lock_init(&fdp->fd_fd.fd_slock, "filedesc_slock");
+	simple_lock_init(&fdp->fd_slock, "filedesc_slock");
 }
 
 /*
@@ -578,6 +569,7 @@ falloc()
 		LIST_INSERT_HEAD(&filehead, fp, f_list);
 	}
 	u.u_ofile[i] = fp;
+	simple_lock_init(&fp->f_slock, "file_slock");
 	fp->f_count = 1;
 	fp->f_data = 0;
 	fp->f_offset = 0;
@@ -606,7 +598,6 @@ fdexpand(lim)
 	}
 	newofile = (struct file **)calloc(nfiles, OFILESIZE, M_FILEDESC, M_WAITOK);
 	newofileflags = (char *) &newofile[nfiles];
-
 	/*
 	 * Copy the existing ofile and ofileflags arrays
 	 * and zero the new portion of each array.
@@ -1017,13 +1008,6 @@ fdsync(fdp)
     fdp->fd_nfiles = u.u_nfiles;
     fdp->fd_lastfile = u.u_lastfile;
     fdp->fd_freefile = u.u_freefile;
-    /*
-	memcpy(fdp->fd_ofiles, u.u_ofile, sizeof(struct file **));
-	memcpy(fdp->fd_ofileflags, u.u_pofile, sizeof(char *));
-	memcpy(fdp->fd_nfiles, u.u_nfiles, sizeof(int));
-	memcpy(fdp->fd_lastfile, u.u_lastfile, sizeof(int));
-	memcpy(fdp->fd_freefile, u.u_freefile, sizeof(int));
-	*/
 }
 
 /* sync to user from filedesc  */
@@ -1036,13 +1020,6 @@ ufdsync(fdp)
     u.u_nfiles = fdp->fd_nfiles;
     u.u_lastfile = fdp->fd_lastfile;
     u.u_freefile = fdp->fd_freefile;
-    /*
-	memcpy(u.u_ofile, fdp->fd_ofiles, sizeof(struct file **));
-	memcpy(u.u_pofile, fdp->fd_ofileflags, sizeof(char *));
-	memcpy(u.u_nfiles, fdp->fd_nfiles, sizeof(int));
-	memcpy(u.u_lastfile, fdp->fd_lastfile, sizeof(int));
-	memcpy(u.u_freefile, fdp->fd_freefile, sizeof(int));
-	*/
 }
 
 static __inline void
@@ -1066,4 +1043,94 @@ fd_unused(fd)
 	if (fd > u.u_lastfile)
 		panic("fd_unused: fd_lastfile inconsistent");
 #endif
+}
+
+struct file *
+fd_getfile(fd)
+	int fd;
+{
+	struct file *fp;
+
+	if ((u_int) fd >= u.u_nfiles || (fp = u.u_ofile[fd]) == NULL) {
+		return (NULL);
+	}
+
+	simple_lock(&fp->f_slock);
+	if (FILE_IS_USABLE(fp) == 0) {
+		simple_unlock(&fp->f_slock);
+		return (NULL);
+	}
+	return (fp);
+}
+
+/*
+ * Make this process not share its filedesc structure, maintaining
+ * all file descriptor state.
+ */
+void
+fdunshare(void)
+{
+	struct filedesc *newfd;
+
+	if (u.u_fd->fd_refcnt == 1) {
+		return;
+	}
+
+	newfd = fdcopy(u.u_fd);
+	fdfree(u.u_fd);
+	u.u_fd = newfd;
+}
+
+void
+fdremove(fd)
+	int fd;
+{
+	u.u_ofile[fd] = NULL;
+	fd_unused(fd);
+}
+
+int
+fdrelease(fd)
+	int fd;
+{
+	struct filedesc	*fdp;
+	struct file	**fpp, *fp;
+
+	fdp = u.u_fd;
+	fpp = &u.u_ofile[fd];
+	fp = *fpp;
+	if (fp == NULL) {
+		return (EBADF);
+	}
+
+	simple_lock(&fp->f_slock);
+	if (!FILE_IS_USABLE(fp)) {
+		simple_unlock(&fp->f_slock);
+		return (EBADF);
+	}
+
+	FILE_USE(fp);
+
+	*fpp = NULL;
+	fdp->fd_ofileflags[fd] = 0;
+	if (fd < fdp->fd_knlistsize)
+		knote_fdclose(u.u_procp, fd);
+	fd_unused(fd);
+	return (closef(fp));
+}
+
+/*
+ * Close any files on exec?
+ */
+void
+fdcloseexec(void)
+{
+	int	fd;
+
+	fdunshare();
+	for (fd = 0; fd <= u.u_lastfile; fd++) {
+		if (u.u_ofile[fd] & UF_EXCLOSE) {
+			(void) fdrelease(fd);
+		}
+	}
 }
