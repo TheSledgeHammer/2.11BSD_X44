@@ -634,10 +634,7 @@ ufdalloc(fp)
 	int lim;
 
 	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
-	if (u.u_error == EMFILE) {
-    	return (-1);
-	}
-	if (fp == NULL) {
+	if (fp == NULL || u.u_error == EMFILE) {
 		u.u_error = ENFILE;
 		return (-1);
 	}
