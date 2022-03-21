@@ -210,7 +210,7 @@ main(framep)
 	fdp->fd_fd.fd_ofiles = fdp->fd_dfiles;
 	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
 	fdp->fd_fd.fd_nfiles = NDFILE;
-	finit(fdp->fd_fd);
+	finit(&fdp->fd_fd);
 
 	/* Create the limits structures. */
 	p->p_limit = &limit0;

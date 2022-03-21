@@ -86,7 +86,7 @@ int dup2(); /* syscall */
 int dupit(int, struct file *, int);
 int fset(struct file *, int, int);
 int fgetown(struct file *, int *);
-int fsetown(void *, struct file *, int);
+int fsetown(long, struct file *, int);
 int fgetlk(struct file *, int);
 int fsetlk(struct file *, int, int);
 int fioctl(struct file *, int, caddr_t, struct proc *);
@@ -308,12 +308,12 @@ fgetown(fp, valuep)
 
 int
 fsetown(args, fp, value)
-	void *args;
+	long args;
 	register struct file *fp;
 	int value;
 {
 	if (fp->f_type == DTYPE_SOCKET) {
-		((struct socket*) fp->f_socket)->so_pgrp = (long)args;
+		((struct socket*) fp->f_socket)->so_pgrp = args;
 		//((struct socket*) fp->f_data)->so_pgrp = (long)SCARG(uap, arg);
 		return (0);
 	}
@@ -1127,7 +1127,7 @@ fdcloseexec(void)
 
 	fdunshare();
 	for (fd = 0; fd <= u.u_lastfile; fd++) {
-		if (u.u_ofile[fd] & UF_EXCLOSE) {
+		if (u.u_pofile[fd] & UF_EXCLOSE) {
 			(void) fdrelease(fd);
 		}
 	}

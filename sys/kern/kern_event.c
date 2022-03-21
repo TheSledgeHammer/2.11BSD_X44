@@ -697,7 +697,7 @@ kevent()
 
 	p = u.u_procp;
 	/* check that we're dealing with a kq */
-	fp = fd_getfile(p->p_fd, SCARG(uap, fd));
+	fp = fd_getfile(SCARG(uap, fd));
 	if (fp == NULL)
 		return (EBADF);
 
@@ -791,7 +791,7 @@ kqueue_register(kq, kev, p)
 	/* search if knote already exists */
 	if (kfilter->filtops->f_isfd) {
 		/* monitoring a file descriptor */
-		if ((fp = fd_getfile(fdp, kev->ident)) == NULL)
+		if ((fp = fd_getfile(kev->ident)) == NULL)
 			return (EBADF); /* validate descriptor */
 		FILE_USE(fp);
 
@@ -974,8 +974,7 @@ kqueue_scan(fp, maxevents, ulistp, tsp, p, retval)
 			simple_unlock(&kq->kq_lock);
 		} else {
 			kq->kq_state |= KQ_SLEEP;
-			error = tsleep(kq, PSOCK | PCATCH, "kqread", timeout,
-					&kq->kq_lock);
+			error = ltsleep(kq, PSOCK | PCATCH, "kqread", timeout, &kq->kq_lock);
 		}
 		splx(s);
 		if (error == 0)
@@ -1193,7 +1192,7 @@ kqueue_poll(fp, events, p)
 	struct kqueue *kq;
 	int revents;
 
-	kq = (struct kqueue*) fp->f_un->f_Data;
+	kq = (struct kqueue*) fp->f_data;
 	revents = 0;
 	if (events & (POLLIN | POLLRDNORM)) {
 		if (kq->kq_count) {
@@ -1430,7 +1429,7 @@ knote_drop(kn, p, fdp)
 		knote_dequeue(kn);
 	if (kn->kn_fop->f_isfd)
 		FILE_UNUSE(kn->kn_fp, p);
-	&kern_knote = kn;
+	kern_knote = *kn;
 }
 
 /*

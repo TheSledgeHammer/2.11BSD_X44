@@ -286,7 +286,7 @@ fail:
 	/* kill the opened file descriptor, else close the file */
     if (elp->el_flags & EXEC_HASFD) {
     	elp->el_flags &= ~EXEC_HASFD;
-        (void) fdrelease(p, elp->el_fd);
+        (void) fdrelease(elp->el_fd);
     } else if (scriptvp) {
     	vn_lock(scriptvp, LK_EXCLUSIVE | LK_RETRY, p);
         VOP_CLOSE(scriptvp, FREAD, p->p_ucred, p);

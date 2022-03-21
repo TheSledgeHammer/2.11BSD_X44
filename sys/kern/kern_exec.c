@@ -54,6 +54,7 @@
 #include <machine/reg.h>
 
 extern char	sigcode[], esigcode[];
+int execve(); /* syscall */
 
 struct emul emul_211bsd = {
 		.e_name 		= "211bsd",
@@ -145,7 +146,7 @@ execve()
 
 	uap = (struct execa_args *) u.u_ap;
 	base_vcp = NULL;
-	p = u->u_procp;
+	p = u.u_procp;
 
 	if (exec_maxhdrsz == 0) {
 		for (i = 0; i < nexecs; i++) {
@@ -177,7 +178,7 @@ execve()
 
 	if (error) {
 		log(LOG_WARNING, "execve: failed to allocate string space\n");
-		return (u->u_error);
+		return (u.u_error);
 	}
 
 	if (!elp->el_stringbase) {
@@ -202,11 +203,11 @@ execve()
 	if (elp->el_flags & EXEC_32)
 		len = ((elp.el_argc + elp->el_envc + 2 + elp.el_emul->e_arglen)
 				* sizeof(int) + sizeof(int) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - uap->argp;
+				+ sizeof(struct ps_strings)) - SCARG(uap, argp);
 	else
 		len = ((elp.el_argc + elp->el_envc + 2 + elp.el_emul->e_arglen)
 				* sizeof(char*) + sizeof(int) + dp + STACKGAPLEN + szsigcode
-				+ sizeof(struct ps_strings)) - uap->argp;
+				+ sizeof(struct ps_strings)) - SCARG(uap, argp);
 
 	len = ALIGN(len); /* make the stack "safely" aligned */
 
@@ -241,7 +242,7 @@ execve()
 	if (copyout(&arginfo, (char*) PS_STRINGS, sizeof(arginfo)))
 		goto exec_abort;
 
-	fdcloseexec(p); /* handle close on exec */
+	fdcloseexec(); /* handle close on exec */
 	execsigs(p); 	/* reset catched signals */
 
 	/* set command name & other accounting info */
@@ -287,7 +288,7 @@ execve()
 		panic("execve: string buffer dealloc failed (1)");
 	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
 	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
-	VOP_CLOSE(elp.el_vnodep, FREAD, p->p_cred, p);
+	VOP_CLOSE(elp.el_vnodep, FREAD, p->p_ucred, p);
 	vput(elp.el_vnodep);
 
 	/* setup new registers and do misc. setup. */
@@ -313,7 +314,7 @@ bad:
 	/* kill any opened file descriptor, if necessary */
 	if (elp.el_flags & EXEC_HASFD) {
 		elp.el_flags &= ~EXEC_HASFD;
-		(void) fdrelease(p, elp.el_fd);
+		(void) fdrelease(elp.el_fd);
 	}
 	/* close and put the exec'd file */
 	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
