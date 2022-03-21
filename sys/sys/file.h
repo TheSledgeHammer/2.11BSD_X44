@@ -121,7 +121,7 @@ extern int 				nfiles;		/* actual number of open files */
 	if ((fp)->f_iflags & FIF_WANTCLOSE) {								\
 		simple_unlock(&(fp)->f_slock);									\
 		/* Will drop usecount */										\
-		(void) closef((fp), (p));										\
+		(void) closef((fp));										\
 		break;															\
 	} else {															\
 		(fp)->f_usecount--;												\

@@ -104,7 +104,7 @@ struct filedesc0 {
  */
 void				finit(struct filedesc *);
 static int			ufalloc(int, int *);
-static struct file	*falloc();
+struct file	        *falloc();
 void				fdexpand(int);
 static int  		ufdalloc(struct file *);
 struct filedesc 	*fdalloc(struct file *);
@@ -117,11 +117,10 @@ void				fdfree(struct filedesc *);
 struct filedesc 	*fdcopy(struct filedesc *);
 void 				ufdsync(struct filedesc *);
 void 				fdsync(struct filedesc *);
-struct file 		*fd_getfile(int)
+struct file 		*fd_getfile(int);
 void				fdremove(int);
 int					fdrelease(int);
 void				fdunshare(void);
 void				fdcloseexec(void);
-*/
 #endif
 #endif
