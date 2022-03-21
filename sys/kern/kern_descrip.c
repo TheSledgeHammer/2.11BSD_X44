@@ -45,10 +45,6 @@
 /*
  * TODO:
  * - management of filedesc cdir, rdir & cmask
- * - fd_unused: not-implemented
- * 	  - required for fdrelease
- * 	  	- required for fdcloseexec
- * 	  		- required for execve
  */
 
 #include <sys/cdefs.h>
@@ -79,8 +75,8 @@ int 			 nfiles;		/* actual number of open files */
 /*
  * Descriptor management.
  */
-static __inline void	fd_used(int);
-static __inline void	fd_unused(int);
+static __inline void fd_used(int);
+static __inline void fd_unused(int);
 
 int dup2(); /* syscall */
 int dupit(int, struct file *, int);
@@ -297,8 +293,6 @@ fgetown(fp, valuep)
 
 	if (fp->f_type == DTYPE_SOCKET) {
 		*valuep = ((struct socket *)fp->f_socket)->so_pgrp;
-		//fp->f_data = valuep;
-		//*valuep = ((struct socket *)fp->f_data)->so_pgrp;
 		return (0);
 	}
 	error = fioctl(fp, (u_int)TIOCGPGRP, (caddr_t)valuep, u.u_procp);
@@ -314,7 +308,6 @@ fsetown(args, fp, value)
 {
 	if (fp->f_type == DTYPE_SOCKET) {
 		((struct socket*) fp->f_socket)->so_pgrp = args;
-		//((struct socket*) fp->f_data)->so_pgrp = (long)SCARG(uap, arg);
 		return (0);
 	}
 	if (value > 0) {

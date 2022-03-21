@@ -50,6 +50,7 @@
 #include <sys/buf.h>
 #include <sys/trace.h>
 #include <sys/malloc.h>
+#include <sys/user.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/pmap.h>
@@ -76,49 +77,49 @@ static int i386_set_sdbase	(struct proc *, void *, char);
 static int i386_get_sdbase	(struct proc *, void *, char);
 
 #ifdef TRACE
-int	nvualarm;
+int		nvualarm;
+void 	vdoualarm(int);
 
-struct vtrace_args {
-	int	request;
-	int	value;
-};
-vtrace(p, uap, retval)
-	struct proc *p;
-	register struct args *uap;
-	int *retval;
+int
+vtrace()
 {
-	int vdoualarm();
+	register struct vtrace_args {
+		syscallarg(int) request;
+		syscallarg(int) value;
+	} *uap = (struct vtrace_args *)u.u_ap;
+	struct proc *p;
 
-	switch (uap->request) {
-
+	p = u.u_procp;
+	switch (SCARG(uap, request)) {
 	case VTR_DISABLE:		/* disable a trace point */
 	case VTR_ENABLE:		/* enable a trace point */
-		if (uap->value < 0 || uap->value >= TR_NFLAGS)
+		if (SCARG(uap, value) < 0 || SCARG(uap, value) >= TR_NFLAGS)
 			return (EINVAL);
-		*retval = traceflags[uap->value];
-		traceflags[uap->value] = uap->request;
+		u.u_r.r_val1 = traceflags[SCARG(uap, value)];
+		traceflags[SCARG(uap, value)] = SCARG(uap, request);
 		break;
 
 	case VTR_VALUE:		/* return a trace point setting */
-		if (uap->value < 0 || uap->value >= TR_NFLAGS)
+		if (SCARG(uap, value) < 0 || SCARG(uap, value) >= TR_NFLAGS)
 			return (EINVAL);
-		*retval = traceflags[uap->value];
+		u.u_r.r_val1 = traceflags[SCARG(uap, value)];
 		break;
 
 	case VTR_UALARM:	/* set a real-time ualarm, less than 1 min */
-		if (uap->value <= 0 || uap->value > 60 * hz || nvualarm > 5)
+		if (SCARG(uap, value) <= 0 || SCARG(uap, value) > 60 * hz || nvualarm > 5)
 			return (EINVAL);
 		nvualarm++;
-		timeout(vdoualarm, (caddr_t)p->p_pid, uap->value);
+		timeout(vdoualarm, (caddr_t)p->p_pid, SCARG(uap, value));
 		break;
 
 	case VTR_STAMP:
-		trace(TR_STAMP, uap->value, p->p_pid);
+		trace(TR_STAMP, SCARG(uap, value), p->p_pid);
 		break;
 	}
 	return (0);
 }
 
+void
 vdoualarm(arg)
 	int arg;
 {
@@ -450,31 +451,34 @@ i386_get_sdbase(p, arg, which)
 }
 
 int
-sysarch(p, uap, retval)
-	struct proc 		*p;
-	struct sysarch_args *uap;
-	register_t 			*retval;
+sysarch()
 {
-	int error = 0;
+	struct sysarch_args *uap;
+	struct proc 		*p;
+	int error;
 
-	switch (uap->op) {
+	uap = (struct sysarch_args *) u.u_ap;
+	p = u.u_procp;
+	error = 0;
+
+	switch (SCARG(uap, op)) {
 #ifdef	USER_LDT
 	case I386_GET_LDT:
-		error = i386_get_ldt(p, SCARG(uap, parms), retval);
+		error = i386_get_ldt(p, SCARG(uap, parms), u.u_r.r_val1);
 		break;
 	case I386_SET_LDT:
-		error = i386_set_ldt(p, SCARG(uap, parms), retval);
+		error = i386_set_ldt(p, SCARG(uap, parms), u.u_r.r_val1);
 		break;
 #endif
 	case I386_GET_IOPERM:
-		error = i386_get_ioperm(p, SCARG(uap, parms), retval);
+		error = i386_get_ioperm(p, SCARG(uap, parms), u.u_r.r_val1);
 		break;
 	case I386_SET_IOPERM:
-		error = i386_set_ioperm(p, SCARG(uap, parms), retval);
+		error = i386_set_ioperm(p, SCARG(uap, parms), u.u_r.r_val1);
 		break;
 #ifdef VM86
 	case I386_VM86:
-		error = vm86_sysarch(p, SCARG(uap, parms), retval);
+		error = vm86_sysarch(p, SCARG(uap, parms), u.u_r.r_val1);
 		break;
 #endif
 	case I386_GET_GSBASE:

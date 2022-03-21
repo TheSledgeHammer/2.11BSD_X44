@@ -10,6 +10,7 @@
 #define	_SYS_PROC_H_
 
 #include <machine/proc.h>		/* Machine-dependent proc substruct. */
+#include <machine/frame.h>
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/queue.h>
 #include <sys/callout.h>
@@ -190,7 +191,7 @@ struct emul {
 	const char			*e_name[8];			/* Symbolic name */
 	const char			*e_path;			/* Extra emulation path (NULL if none)*/
 											/* Signal sending function */
-	void				(*e_sendsig) (sig_t, int, sigset_t *, u_long);
+	void				(*e_sendsig)(sig_t, int, int, u_long);
 	int					e_nosys;			/* Offset of the nosys() syscall */
 	int					e_nsysent;			/* Number of system call entries */
 
@@ -198,12 +199,12 @@ struct emul {
 	const char * const 	*e_syscallnames; 	/* System call name array */
 	int					e_arglen;			/* Extra argument size in words */
 											/* Copy arguments on the stack */
-	void				*(*e_copyargs) (struct exec_linker *, struct ps_strings *, void *, void *);
-	void				(*e_setregs) (struct proc *, struct exec_linker *, u_long);
+	void				*(*e_copyargs)(struct exec_linker *, struct ps_strings *, void *, void *);
+	void				(*e_setregs)(struct proc *, struct exec_linker *, u_long);
 	char				*e_sigcode;			/* Start of sigcode */
 	char				*e_esigcode;		/* End of sigcode */
 
-	void				(*e_syscall)(void);
+	void				(*e_syscall)(struct trapframe *);
 };
 
 /* stat codes */

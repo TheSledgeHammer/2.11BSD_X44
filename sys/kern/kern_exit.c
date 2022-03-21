@@ -28,9 +28,9 @@ rexit()
 {
 	register struct exit_args {
 		syscallarg(int)	rval;
-	} *uap = (struct exit_args *)u->u_ap;
+	} *uap = (struct exit_args *)u.u_ap;
 
-	exit(W_EXITCODE(uap->rval, 0));
+	exit(W_EXITCODE(SCARG(uap, rval), 0));
 	/* NOTREACHED */
 }
 
@@ -59,24 +59,24 @@ exit(rv)
 	 * If parent is waiting for us to exit or exec,
 	 * P_PPWAIT is set; we will wakeup the parent below.
 	 */
-	p = u->u_procp;
+	p = u.u_procp;
 	p->p_flag &= ~(P_TRACED | P_PPWAIT | P_SULOCK);
 	p->p_sigignore = ~0;
 	p->p_sigacts = 0;
 	untimeout(realitexpire, (caddr_t)p);
 
-	fdfree(p);
+	fdfree(u.u_fd);
 	/*
 	 * 2.11 doesn't need to do this and it gets overwritten anyway.
 	 * p->p_realtimer.it_value = 0;
 	 */
-	for (i = 0; i <= u->u_lastfile; i++) {
+	for (i = 0; i <= u.u_lastfile; i++) {
 		register struct file *f;
 
-		f = u->u_ofile[i];
-		u->u_ofile[i] = NULL;
-		u->u_pofile[i] = 0;
-		(void) closef(f);
+		f = u.u_ofile[i];
+		u.u_ofile[i] = NULL;
+		u.u_pofile[i] = 0;
+		(void)closef(f);
 	}
 	vm = p->p_vmspace;
 	if (vm->vm_refcnt == 1) {
@@ -103,7 +103,7 @@ exit(rv)
 
 	fixjobc(p, p->p_pgrp, 0);
 
-	u->u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
+	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	(void)acct_process(p);
 
 	/*
@@ -160,9 +160,9 @@ exit(rv)
 	 * important left!
 	 */
 	p->p_xstat = rv;
-	p->p_ru = u->u_ru;
+	p->p_ru = u.u_ru;
 	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL); /* missing fix */
-	ruadd(&p->p_ru, &u->u_cru);
+	ruadd(&p->p_ru, &u.u_cru);
 	{
 		register struct proc *q;
 		int doingzomb = 0;
@@ -211,16 +211,16 @@ struct wait_args {
 int
 wait4()
 {
-	register struct wait_args *uap = (struct wait_args *)u->u_ap;
+	register struct wait_args *uap = (struct wait_args *)u.u_ap;
 
 	int retval[2];
 
 	uap->compat = 0;
-	u->u_error = wait1(u->u_procp, uap, retval);
-	if (!u->u_error) {
-		u->u_r.r_val1 = retval[0];
+	u.u_error = wait1(u.u_procp, uap, retval);
+	if (!u.u_error) {
+		u.u_r.r_val1 = retval[0];
 	}
-	return (u->u_error);
+	return (u.u_error);
 }
 
 /*

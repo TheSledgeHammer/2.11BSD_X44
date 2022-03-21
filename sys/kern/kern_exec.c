@@ -150,9 +150,9 @@ execve()
 
 	if (exec_maxhdrsz == 0) {
 		for (i = 0; i < nexecs; i++) {
-			if (execsw[i]->ex_makecmds != NULL
-					&& execsw[i]->ex_hdrsz > exec_maxhdrsz) {
-				exec_maxhdrsz = execsw[i]->ex_hdrsz;
+			if (execsw[i].ex_makecmds != NULL
+					&& execsw[i].ex_hdrsz > exec_maxhdrsz) {
+				exec_maxhdrsz = execsw[i].ex_hdrsz;
 			}
 		}
 	}
@@ -230,11 +230,11 @@ execve()
 	stack = (char*) (vm->vm_minsaddr - len);
 	if (stack == stack_base) {
 		/* Now copy argc, args & environ to new stack */
-		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack, elp.el_uap->argp))
+		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack, SCARG(elp.el_uap, argp)))
 			goto exec_abort;
 	} else {
 		/* Now copy argc, args & environ to stack_base */
-		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack_base, elp.el_uap->argp))
+		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack_base, SCARG(elp.el_uap, argp)))
 			goto exec_abort;
 	}
 
@@ -242,7 +242,7 @@ execve()
 	if (copyout(&arginfo, (char*) PS_STRINGS, sizeof(arginfo)))
 		goto exec_abort;
 
-	fdcloseexec(); /* handle close on exec */
+	fdcloseexec(); 	/* handle close on exec */
 	execsigs(p); 	/* reset catched signals */
 
 	/* set command name & other accounting info */
@@ -287,15 +287,15 @@ execve()
 	if (vm_deallocate(kernel_map, (vm_offset_t) elp->el_stringbase, ARG_MAX))
 		panic("execve: string buffer dealloc failed (1)");
 	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
-	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
+	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
 	VOP_CLOSE(elp.el_vnodep, FREAD, p->p_ucred, p);
 	vput(elp.el_vnodep);
 
 	/* setup new registers and do misc. setup. */
 	if (stack == stack_base) {
-		(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack);
+		(*elp.el_emul->e_setregs)(p, &elp, (u_long)stack);
 	} else {
-		(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack_base);
+		(*elp.el_emul->e_setregs)(p, &elp, (u_long)stack_base);
 	}
 
 	if (p->p_flag & P_TRACED)
@@ -317,8 +317,8 @@ bad:
 		(void) fdrelease(elp.el_fd);
 	}
 	/* close and put the exec'd file */
-	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
-	VOP_CLOSE(elp.el_vnodep, FREAD, p->p_cred, p);
+	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
+	VOP_CLOSE(elp.el_vnodep, FREAD, p->p_ucred, p);
 	vput(elp.el_vnodep);
 	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
 
@@ -333,8 +333,8 @@ exec_abort:
 	if (elp->el_emul_arg)
 		FREE(elp->el_emul_arg, M_TEMP);
 	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
-	vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY);
-	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_cred, p);
+	vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY, p);
+	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_ucred, p);
 	vput(elp->el_vnodep);
 	FREE(elp->el_image_hdr, M_EXEC);
 	exit(W_EXITCODE(0, SIGABRT));
@@ -376,15 +376,15 @@ execsigs(p)
 				p->p_sigignore |= mask;
 			p->p_sigacts &= ~mask;
 		}
-		u->u_signal[nc] = SIG_DFL;
+		u.u_signal[nc] = SIG_DFL;
 	}
 	/*
 	 * Reset stack state to the user stack (disable the alternate stack).
 	 */
-	u->u_sigstk.ss_flags = SA_DISABLE;
-	u->u_sigstk.ss_size = 0;
-	u->u_sigstk.ss_base = 0;
-	u->u_psflags = 0;
+	u.u_sigstk.ss_flags = SA_DISABLE;
+	u.u_sigstk.ss_size = 0;
+	u.u_sigstk.ss_base = 0;
+	u.u_psflags = 0;
 }
 
 int
@@ -395,10 +395,10 @@ check_exec(elp)
 	struct vnode		*vp;
 	struct nameidata 	*ndp;
 	size_t				resid;
+	struct proc 		*p;
 
-	struct proc *p = elp->el_proc;
+	p = elp->el_proc;
 	ndp = elp->el_ndp;
-
 	ndp->ni_cnd.cn_nameiop = LOOKUP;
 	ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF | SAVENAME;
 	/* first get the vnode */
@@ -411,11 +411,11 @@ check_exec(elp)
 		error = EACCES;
 		goto bad1;
 	}
-	if ((error = VOP_ACCESS(vp, VEXEC, p->p_cred, p)) != 0)
+	if ((error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p)) != 0)
 		goto bad1;
 
 	/* get attributes */
-	if ((error = VOP_GETATTR(vp, elp->el_vnodep, p->p_cred, p)) != 0)
+	if ((error = VOP_GETATTR(vp, elp->el_vnodep, p->p_ucred, p)) != 0)
 		goto bad1;
 
 	/* Check mount point */
@@ -427,14 +427,14 @@ check_exec(elp)
 		elp->el_attr->va_mode &= ~(S_ISUID | S_ISGID);
 
 	/* try to open it */
-	if ((error = VOP_OPEN(vp, FREAD, p->p_cred, p)) != 0)
+	if ((error = VOP_OPEN(vp, FREAD, p->p_ucred, p)) != 0)
 		goto bad1;
 
 	/* unlock vp, since we need it unlocked from here on out. */
 	VOP_UNLOCK(vp, 0, p);
 
 	error = vn_rdwr(UIO_READ, vp, elp->el_image_hdr, elp->el_hdrlen, 0,
-				UIO_SYSSPACE, 0, p->p_cred, &resid, NULL);
+				UIO_SYSSPACE, 0, p->p_ucred, &resid, NULL);
 
 	if (error)
 		goto bad2;
@@ -457,7 +457,7 @@ check_exec(elp)
 		int newerror;
 
 		elp->el_esch = execsw[i];
-		newerror = (*execsw[i]->ex_makecmds)(p, elp);
+		newerror = (*execsw[i].ex_makecmds)(p, elp);
 		/* make sure the first "interesting" error code is saved. */
 		if (!newerror || error == ENOEXEC)
 			error = newerror;
@@ -494,7 +494,7 @@ bad2:
 	 * pathname buf, and punt.
 	 */
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
-	VOP_CLOSE(vp, FREAD, p->p_cred, p);
+	VOP_CLOSE(vp, FREAD, p->p_ucred, p);
 	vput(vp);
 	return error;
 
