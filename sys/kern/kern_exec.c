@@ -73,7 +73,6 @@ struct emul emul_211bsd = {
 #endif
 		.e_arglen 		= 0,
 		.e_sendsig		= sendsig,
-//		.e_copyargs 	= copyargs,
 		.e_setregs 		= setregs,
 		.e_sigcode 		= sigcode,
 		.e_esigcode 	= esigcode,
@@ -215,15 +214,15 @@ execve()
 	char *argp = *SCARG(uap, argp);
 	
 	/* Now check if args & environ fit into new stack */
-	if (elp.el_flags & EXEC_32)
-
+	if (elp.el_flags & EXEC_32) {
 		len = ((argc + envc + 2 + elp.el_es->ex_arglen)
 				* sizeof(int) + sizeof(int) + dp + STACKGAPLEN + szsigcode
 				+ sizeof(struct ps_strings)) - argp;
-	else
+	} else {
 		len = ((argc + envc + 2 + elp.el_es->ex_arglen)
 				* sizeof(char *) + sizeof(int) + dp + STACKGAPLEN + szsigcode
 				+ sizeof(struct ps_strings)) - argp;
+	}
 
 	len = ALIGN(len); /* make the stack "safely" aligned */
 
@@ -241,9 +240,8 @@ execve()
 		goto exec_abort;
 	}
 
-	/* From to line 149 may change */
-	stack_base = (char*) exec_copyout_strings(&elp, arginfo);
-	stack = (char*) (vm->vm_minsaddr - len);
+	stack_base = (char *)exec_copyout_strings(&elp, arginfo);
+	stack = (char *)(vm->vm_minsaddr - len);
 	if (stack == stack_base) {
 		/* Now copy argc, args & environ to new stack */
 		if (!(*elp.el_es->ex_copyargs)(&elp, arginfo, stack, SCARG(elp.el_uap, argp)))
@@ -320,7 +318,7 @@ execve()
 	
 	/* update p_emul, the old value is no longer needed */
 	p->p_emul = elp.el_es->ex_emul;
-		/* ...and the same for p_execsw */
+	/* ...and the same for p_execsw */
 	p->p_execsw = elp.el_es;
 	FREE(elp.el_image_hdr, M_EXEC);
 
@@ -362,6 +360,7 @@ exec_abort:
 
 	return (0);
 }
+
 /*
 int
 fexecve()
@@ -369,12 +368,16 @@ fexecve()
 
 }
 */
+
 /*
  * Reset signals for an exec of the specified process.  In 4.4 this function
  * was in kern_sig.c but since in 2.11 kern_sig and kern_exec will likely be
  * in different overlays placing this here potentially saves a kernel overlay
  * switch.
  */
+
+extern char sigprop[NSIG + 1];
+
 void
 execsigs(p)
 	register struct proc *p;
@@ -399,7 +402,6 @@ execsigs(p)
 			}
 			p->p_siglist &= ~mask;
 		}
-		//ps->ps_sigact[nc] = SIG_DFL;
         u.u_signal[nc] = SIG_DFL;
 	}
 	/*

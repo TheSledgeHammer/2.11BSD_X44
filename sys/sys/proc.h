@@ -197,12 +197,10 @@ struct emul {
 	const char * const 	*e_syscallnames; 	/* System call name array */
 	int					e_arglen;			/* Extra argument size in words */
 	
-	void				(*e_sendsig)(sig_t, int, int, u_long); /* Signal sending function */									
-	//void				*(*e_copyargs)(struct exec_linker *, struct ps_strings *, void *, void *); 	/* Copy arguments on the stack */
+	void				(*e_sendsig)(sig_t, int, int, u_long); /* Signal sending function */
 	void				(*e_setregs)(struct proc *, struct exec_linker *, u_long);
 	char				*e_sigcode;			/* Start of sigcode */
 	char				*e_esigcode;		/* End of sigcode */
-
 	void				(*e_syscall)(void *);
 };
 

@@ -71,7 +71,6 @@ struct exec_linker {
 
 	struct 	nameidata		el_ndp;					/* executable's nameidata */
 
-//	struct  emul 			*el_emul;				/* os emulation */
 	void					*el_emul_arg;			/* emulation argument */
 
 	void				    *el_image_hdr;			/* file's exec header */

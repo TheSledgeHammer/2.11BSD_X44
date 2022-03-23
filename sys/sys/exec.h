@@ -78,7 +78,7 @@ struct execsw {
 	u_int				ex_hdrsz;		/* size of header for this format */
 	exec_makecmds_fcn	ex_makecmds;	/* function to setup vmcmds */
 
-	struct  emul 		*ex_emul;		/* os emulation */
+	struct emul 		*ex_emul;		/* os emulation */
 	int					ex_prio;		/* entry priority */
 	int					ex_arglen;		/* Extra argument size in words */
 										/* Copy arguments on the new stack */
