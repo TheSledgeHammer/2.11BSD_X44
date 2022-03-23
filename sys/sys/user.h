@@ -107,7 +107,7 @@ struct user {
 	} u_ovdata;
 
 /* 1.3 - signal management */
-	int					u_signal[NSIG];			/* disposition of signals */
+	sig_t				u_signal[NSIG];	        /* disposition of signals */
 	long				u_sigmask[NSIG];		/* signals to be blocked */
 	long				u_sigonstack;			/* signals to take on sigstack */
 	long				u_sigintr;				/* signals that interrupt syscalls */

@@ -6,7 +6,7 @@
  */
 
 #define	SYS_syscall	0
-#define	SYS_exit	1
+#define	SYS_rexit	1
 #define	SYS_fork	2
 #define	SYS_read	3
 #define	SYS_write	4

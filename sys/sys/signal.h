@@ -53,12 +53,12 @@
 #define	SIG_DFL		((void (*) (int))  0)
 #define	SIG_IGN		((void (*) (int))  1)
 
-typedef u_long 		sigset_t;
+typedef unsigned long 	sigset_t;
 
 /*
  * Signal vector "template" used in sigaction call.
  */
-struct	sigaction {
+struct sigaction {
 	int				(*sa_handler)(int);	/* signal handler */
 	sigset_t 		sa_mask;			/* signal mask to apply */
 	int				sa_flags;			/* see signal options below */
@@ -72,19 +72,19 @@ struct	sigaction {
 /*
  * Flags for sigprocmask:
  */
-#define	SIG_BLOCK	1		/* block specified signal set */
-#define	SIG_UNBLOCK	2		/* unblock specified signal set */
-#define	SIG_SETMASK	3		/* set specified signal set */
+#define	SIG_BLOCK	1		            /* block specified signal set */
+#define	SIG_UNBLOCK	2		            /* unblock specified signal set */
+#define	SIG_SETMASK	3		            /* set specified signal set */
 
-typedef	int (*sig_t)(void);		/* type of signal function */
+typedef	void (*sig_t)(int);		        /* type of signal function */
 
 /*
  * Structure used in sigaltstack call.
  */
 struct	sigaltstack {
-	char			*ss_base;		/* signal stack base */
-	int				ss_size;		/* signal stack length */
-	int				ss_flags;		/* SA_DISABLE and/or SA_ONSTACK */
+	char			*ss_base;		    /* signal stack base */
+	int				ss_size;		    /* signal stack length */
+	int				ss_flags;		    /* SA_DISABLE and/or SA_ONSTACK */
 };
 #define	MINSIGSTKSZ	128					/* minimum allowable stack */
 #define	SIGSTKSZ	(MINSIGSTKSZ + 384)	/* recommended stack size */
@@ -93,7 +93,7 @@ struct	sigaltstack {
  * 4.3 compatibility:
  * Signal vector "template" used in sigvec call.
  */
-struct	sigvec {
+struct sigvec {
 	int				(*sv_handler)(int);	/* signal handler */
 	long 			sv_mask;			/* signal mask to apply */
 	int				sv_flags;			/* see signal options below */
@@ -110,8 +110,8 @@ struct	sigstack {
 	char			*ss_sp;			/* signal stack pointer */
 	int				ss_onstack;		/* current status */
 };
-#define SS_ONSTACK	0x0001	/* take signals on alternate stack */
-#define SS_DISABLE	0x0004	/* disable taking signals on alternate stack */
+#define SS_ONSTACK	0x0001	        /* take signals on alternate stack */
+#define SS_DISABLE	0x0004	        /* disable taking signals on alternate stack */
 
 /*
  * Information pushed on stack when a signal is delivered.

@@ -141,13 +141,13 @@ char sigprop[NSIG + 1] = {
 };
 #endif /* SIGPROP */
 
-
 #define	contsigmask	(sigmask(SIGCONT))
 #define	stopsigmask	(sigmask(SIGSTOP) | sigmask(SIGTSTP) | \
 			 sigmask(SIGTTIN) | sigmask(SIGTTOU))
 #define	sigcantmask	(sigmask(SIGKILL) | sigmask(SIGSTOP))
 
 #ifdef _KERNEL
+char sigprop[NSIG + 1];
 /*
  * Machine-independent functions:
  */

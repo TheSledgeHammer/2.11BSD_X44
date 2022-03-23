@@ -62,7 +62,8 @@ struct exec_linker {
 	const char 				*el_name;				/* file's name */
 	struct 	proc 		    *el_proc;			    /* our process struct */
 	struct 	execa_args	    *el_uap; 			    /* syscall arguments */
-	const struct execsw 	*el_esch;				/* execsw arguments */
+	const struct execsw     *el_es;	                /* appropriate execsw entry */
+	const struct execsw 	*el_esch;				/* checked execsw entry  */
 
 	struct	vnode 		    *el_vnodep;			    /* executable's vnode */
 	struct	vattr 		    *el_attr;			    /* executable's attributes */
@@ -70,7 +71,7 @@ struct exec_linker {
 
 	struct 	nameidata		el_ndp;					/* executable's nameidata */
 
-	struct  emul 			*el_emul;				/* os emulation */
+//	struct  emul 			*el_emul;				/* os emulation */
 	void					*el_emul_arg;			/* emulation argument */
 
 	void				    *el_image_hdr;			/* file's exec header */
@@ -95,8 +96,8 @@ struct exec_linker {
 	char 				    *el_stringbase;			/* base address of tmp string storage */
 	char 				    *el_stringp;			/* current 'end' pointer of tmp strings */
 	int 				    el_stringspace;			/* space left in tmp string storage area */
-	int 				    el_argc;				/* count of environment strings */
-	int						el_envc;				/* count of argument strings */
+	long 				    el_argc;				/* count of environment strings */
+	long					el_envc;				/* count of argument strings */
 };
 
 #define	EXEC_DEFAULT_VMCMD_SETSIZE	9	/* # of cmds in set to start */
@@ -132,7 +133,7 @@ struct execsw_entry {
 };
 
 extern struct lock 	exec_lock;
-int					exec_maxhdrsz;
+int				exec_maxhdrsz;
 
 void 	vmcmdset_extend(struct exec_vmcmd_set *);
 void 	kill_vmcmd(struct exec_vmcmd_set *);
