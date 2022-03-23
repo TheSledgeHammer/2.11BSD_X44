@@ -7,7 +7,7 @@
 
 char *syscallnames[] = {
 	"syscall",			/* 0 = syscall */
-	"exit",			/* 1 = exit */
+	"rexit",			/* 1 = rexit */
 	"fork",			/* 2 = fork */
 	"read",			/* 3 = read */
 	"write",			/* 4 = write */

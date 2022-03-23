@@ -42,7 +42,7 @@
 ; of the current calls.
 
 0   STD     	{ int nosys(); } syscall
-1   STD     	{ int exit(); }
+1   STD     	{ int rexit(); }
 2   STD     	{ int fork(); }
 3   STD     	{ int read(); }
 4   STD     	{ int write(); }

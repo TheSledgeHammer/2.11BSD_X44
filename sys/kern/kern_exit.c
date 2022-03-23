@@ -23,7 +23,7 @@
 /*
  * exit system call: pass back caller's arg
  */
-void
+int
 rexit()
 {
 	register struct exit_args {

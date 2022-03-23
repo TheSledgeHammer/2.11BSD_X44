@@ -1,4 +1,4 @@
-/* $211BSD$ */
+/* \$211BSD\$ */
 
 /*
  * System call switch table.
@@ -12,7 +12,7 @@
 #include <sys/signal.h>
 #include <sys/mount.h>
 int	nosys();
-int	exit();
+int	rexit();
 int	fork();
 int	read();
 int	write();
@@ -194,7 +194,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    nosys },				/* 0 = syscall */
 	{ 0, 0,
-	    exit },				/* 1 = exit */
+	    rexit },				/* 1 = rexit */
 	{ 0, 0,
 	    fork },				/* 2 = fork */
 	{ 0, 0,
