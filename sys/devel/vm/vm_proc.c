@@ -129,8 +129,8 @@ sbrk(p, uap, retval)
 	register segsz_t n, d;
 
 	n = btoc(uap->size);
-	if (!uap->sep) {
-		uap->sep = PSEG_NOSEP;
+	if (!SCARG(uap, sep)) {
+		SCARG(uap, sep) = PSEG_NOSEP;
 	} else {
 		n -= ctos(p->p_tsize) * stoc(1);
 	}
@@ -138,7 +138,7 @@ sbrk(p, uap, retval)
 		n = 0;
 	}
 	p->p_tsize;
-	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, uap->sep, SEG_RO)) {
+	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
 		return (0);
 	}
 	vm_segment_expand(p, p->p_psegp, n, S_DATA);
@@ -221,9 +221,9 @@ sureg()
 {
 	int taddr, daddr, saddr;
 
-	taddr = u->u_procp->p_daddr;
-	daddr = u->u_procp->p_daddr;
-	saddr = u->u_procp->p_saddr;
+	taddr = u.u_procp->p_daddr;
+	daddr = u.u_procp->p_daddr;
+	saddr = u.u_procp->p_saddr;
 }
 
 /*
@@ -296,7 +296,7 @@ swkill(p, rout)
 	register struct proc *p;
 	char *rout;
 {
-	tprintf(u->u_ttyp, "sorry, pid %d killed in %s: no swap space\n", p->p_pid, rout);
+	tprintf(u.u_ttyp, "sorry, pid %d killed in %s: no swap space\n", p->p_pid, rout);
 }
 
 /*
@@ -339,9 +339,9 @@ swapout_seg(p, freecore, odata, ostack)
 	if (freecore == X_FREECORE) {
 		rmfree(coremap, USIZE, p->p_addr);
 	}
-	p->p_daddr 	= a[0];
-	p->p_saddr 	= a[1];
-	p->p_addr 	= a[2];
+	p->p_daddr = a[0];
+	p->p_saddr = a[1];
+	p->p_addr = a[2];
 	p->p_flag &= ~(P_SLOAD | P_SLOCK);
 	p->p_time = 0;
 
