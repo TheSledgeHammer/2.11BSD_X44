@@ -54,13 +54,17 @@ fork1(isvfork)
 	int count;
 
 	a = 0;
-	if (u->u_uid != 0) {
-		for (p1 = allproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u->u_uid)
+	if (u.u_uid != 0) {
+		for (p1 = LIST_FIRST(&allproc); p1; p1 = LIST_NEXT(p1, p_list)) {
+			if (p1->p_uid == u.u_uid) {
 				a++;
-		for (p1 = zombproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u->u_uid)
+			}
+		}
+		for (p1 = LIST_FIRST(&zombproc); p1; p1 = LIST_NEXT(p1, p_list)) {
+			if (p1->p_uid == u.u_uid) {
 				a++;
+			}
+		}
 	}
 	/*
 	 * Disallow if
@@ -68,42 +72,45 @@ fork1(isvfork)
 	 *  not su and too many procs owned; or
 	 *  not su and would take last slot.
 	 */
-	p2 = freeproc;
+	//p2 = freeproc;
 	uid = p1->p_cred->p_ruid;
 	if (p2 == NULL || (nproc >= maxproc - 1 && uid != 0) || nproc >= maxproc) {
 		tablefull("proc");
-		u->u_error = EAGAIN;
+		u.u_error = EAGAIN;
 		goto out;
 	}
-	count = chgproccnt(u->u_uid, 1);
-	if (u->u_uid != 0 && count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur) {
-		(void) chgproccnt(u->u_uid, -1);
-		u->u_error = EAGAIN;
+	count = chgproccnt(u.u_uid, 1);
+	if (u.u_uid != 0 && count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur) {
+		(void) chgproccnt(u.u_uid, -1);
+		u.u_error = EAGAIN;
 		goto out;
 	}
-	if (p2 == NULL || (u->u_uid != 0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
-		u->u_error = EAGAIN;
+
+	/* Allocate new proc. */
+	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
+	if (p2 == NULL || (u.u_uid != 0 && (LIST_NEXT(p2, p_list) == NULL || a > MAXUPRC))) {
+		u.u_error = EAGAIN;
 		goto out;
 	}
-	p1 = u->u_procp;
+	p1 = u.u_procp;
 	if (newproc(isvfork)) {
-		u->u_r.r_val1 = p1->p_pid;
-		u->u_r.r_val2 = 1;  				/* child */
-		u->u_start = p1->p_rtime->tv_sec;
+		u.u_r.r_val1 = p1->p_pid;
+		u.u_r.r_val2 = 1;  				/* child */
+		u.u_start = p1->p_rtime->tv_sec;
 
 		/* set forked but preserve suid/gid state */
-		u->u_acflag = AFORK | (u->u_acflag & ASUGID);
-		bzero(&u->u_ru, sizeof(u->u_ru));
-		bzero(&u->u_cru, sizeof(u->u_cru));
+		u.u_acflag = AFORK | (u.u_acflag & ASUGID);
+		bzero(&u.u_ru, sizeof(u.u_ru));
+		bzero(&u.u_cru, sizeof(u.u_cru));
 		return (0);
 	}
 
-	u->u_r.r_val1 = p2->p_pid;
+	u.u_r.r_val1 = p2->p_pid;
 	return (0);
 
 out:
-	u->u_r.r_val2 = 0;
-	return (u->u_error);
+	u.u_r.r_val2 = 0;
+	return (u.u_error);
 }
 
 /*
@@ -130,9 +137,9 @@ retry:
 
 		pidchecked = PID_MAX;
 
-		rpp = allproc;
+		rpp = LIST_FIRST(&allproc);
 again:
-		for (; rpp != NULL; rpp = rpp->p_nxt) {
+		for (; rpp != NULL; rpp = LIST_NEXT(rpp, p_list)) {
 			while (rpp->p_pid == mpid || rpp->p_pgrp->pg_id == mpid) {
 				mpid++;
 				if (mpid >= pidchecked)
@@ -149,16 +156,17 @@ again:
 			goto again;
 		}
 	}
+	/*
 	if ((rpp = freeproc) == NULL)
 			panic("no procs");
-
-	freeproc = rpp->p_nxt;				/* off freeproc */
+	 */
+	//freeproc = rpp->p_nxt;				/* off freeproc */
 
 	/*
 	 * Make a proc table entry for the new process.
 	 */
 	nproc++;
-	rip = u->u_procp;
+	rip = u.u_procp;
 	rpp->p_stat = SIDL;
 	rpp->p_pid = mpid;
 	rpp->p_realtimer.it_value = 0;
@@ -184,12 +192,10 @@ again:
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
 
+	/* onto allproc */
+	LIST_INSERT_HEAD(&allproc, rpp, p_list); 	/* (allproc is never NULL) */
+	rpp->p_forw = rpp->p_back = NULL;			/* shouldn't be necessary */
 	LIST_INSERT_HEAD(PIDHASH(rpp->p_pid), rpp, p_hash);
-
-	rpp->p_nxt = allproc;				/* onto allproc */
-	rpp->p_nxt->p_prev = &rpp->p_nxt;	/* (allproc is never NULL) */
-	rpp->p_prev = &allproc;
-	allproc = rpp;
 
 	/*
 	 * Make a proc table entry for the new process.
@@ -200,6 +206,9 @@ again:
 	bzero(&rip->p_startzero, (unsigned) ((caddr_t)&rpp->p_endzero - (caddr_t)&rpp->p_startzero));
 
 	rpp->p_flag = P_INMEM;
+	if (rip->p_flag & P_PROFIL) {
+		startprofclock(rip);
+	}
 	MALLOC(rpp->p_cred, struct pcred *, sizeof(struct pcred), M_SUBPROC, M_WAITOK);
 	bcopy(rip->p_cred, rpp->p_cred, sizeof(*rpp->p_cred));
 	rpp->p_cred->p_refcnt = 1;
@@ -210,7 +219,7 @@ again:
 	if(rpp->p_textvp)
 		VREF(rpp->p_textvp);
 
-	rpp->p_fd = fdcopy(rip);
+	rpp->p_fd = fdcopy(rip->p_fd);
 
 	/*
 	 * If p_limit is still copy-on-write, bump refcnt,
@@ -231,13 +240,10 @@ again:
 	if (isvfork)
 		rpp->p_flag |= P_PPWAIT;
 
-	rpp->p_pgrpnxt = rip->p_pgrpnxt;
-	rip->p_pgrpnxt = rpp;
+	LIST_INSERT_AFTER(rip, rpp, p_pglist);
 	rpp->p_pptr = rip;
-	rpp->p_osptr = rip->p_cptr;
-	if (rip->p_cptr)
-		rip->p_cptr->p_ysptr = rpp;
-	rip->p_cptr = rpp;
+	LIST_INSERT_HEAD(&rip->p_children, rpp, p_sibling);
+	LIST_INIT(&rpp->p_children);
 
 	rpp->p_dsize = rip->p_dsize;
 	rpp->p_ssize = rip->p_ssize;
@@ -248,7 +254,7 @@ again:
      * Partially simulate the environment of the new process so that
      * when it is actually created (by copying) it will look right.
      */
-	u->u_procp = rpp;
+	u.u_procp = rpp;
 
 	/*
 	 * set priority of child to be that of parent
@@ -279,8 +285,8 @@ again:
 	 * may be invalid after vm_fork returns in the child process.
 	 */
 
-	u->u_r.r_val1 = rip->p_pid;
-	u->u_r.r_val2 = 1;
+	u.u_r.r_val1 = rip->p_pid;
+	u.u_r.r_val2 = 1;
 	if(vm_fork(rip, rpp, isvfork)) {
 		/*
 		 * Child process.  Set start time and get to work.
@@ -318,8 +324,8 @@ again:
 	 * Return child pid to parent process,
 	 * marking us as parent via retval[1].
 	 */
-	u->u_r.r_val1 = rpp->p_pid;
-	u->u_r.r_val2 = 0;
+	u.u_r.r_val1 = rpp->p_pid;
+	u.u_r.r_val2 = 0;
 
 	return (0);
 }

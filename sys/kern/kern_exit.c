@@ -18,6 +18,7 @@
 #include <sys/file.h>
 #include <sys/wait.h>
 #include <sys/kernel.h>
+
 #include <vm/include/vm.h>
 
 /*
@@ -46,14 +47,8 @@ exit(rv)
 {
 	register int i;
 	register struct proc *p;
-	register struct proc *q, *nq;
-	register struct	proc **pp;
+	struct proc 		**pp;
 	register struct vmspace *vm;
-
-	if (p->p_pid == 1)
-		panic("init died (signal %d, exit %d)", WTERMSIG(rv), WEXITSTATUS(rv));
-
-	MALLOC(p->p_ru, struct rusage *, sizeof(struct rusage), M_ZOMBIE, M_WAITOK);
 
 	/*
 	 * If parent is waiting for us to exit or exec,
@@ -64,6 +59,14 @@ exit(rv)
 	p->p_sigignore = ~0;
 	p->p_sigacts = 0;
 	untimeout(realitexpire, (caddr_t)p);
+
+	if (p->p_pid == 1) {
+		panic("init died (signal %d, exit %d)", WTERMSIG(rv), WEXITSTATUS(rv));
+	}
+
+	if (p->p_flag & P_PROFIL) {
+		stopprofclock(p);
+	}
 
 	fdfree(u.u_fd);
 	/*
@@ -102,9 +105,16 @@ exit(rv)
 	}
 
 	fixjobc(p, p->p_pgrp, 0);
-
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	(void)acct_process(p);
+#ifdef KTRACE
+	/*
+	 * release trace file
+	 */
+	p->p_traceflag = 0;	/* don't trace the vrele() */
+	if (p->p_tracep)
+		vrele(p->p_tracep);
+#endif
 
 	/*
 	 * Freeing the user structure and kernel stack
@@ -119,62 +129,50 @@ exit(rv)
 	}
 	rmfree(coremap, USIZE, p->p_addr);
 
-	if (p->p_pid == 1)
+	if (p->p_pid == 1) {
 		panic("init died");
-	if (*p->p_prev == p->p_nxt)		/* off allproc queue */
-		p->p_nxt->p_prev = p->p_prev;
-	if (p->p_nxt == zombproc)		/* onto zombproc */
-		p->p_nxt->p_prev = &p->p_nxt;
-	p->p_prev = &zombproc;
-	zombproc = p;
+	}
+	LIST_REMOVE(p, p_list); 				/* off allproc queue */
+	LIST_INSERT_HEAD(&zombproc, p, p_list);	/* onto zombproc */
 	p->p_stat = SZOMB;
 
-	LIST_REMOVE(p, p_hash);
-
-	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
-		wakeup((caddr_t) initproc);
-	for (q = p->p_cptr; q != NULL; q = nq) {
-		nq = q->p_osptr;
-		if (nq != NULL)
-			nq->p_ysptr = NULL;
-		if (initproc->p_cptr)
-			initproc->p_cptr->p_ysptr = q;
-		q->p_osptr = initproc->p_cptr;
-		q->p_ysptr = NULL;
-		initproc->p_cptr = q;
-
-		q->p_pptr = initproc;
-		/*
-		 * Traced processes are killed
-		 * since their existence means someone is screwing up.
-		 */
-		if (q->p_flag & P_TRACED) {
-			q->p_flag &= ~P_TRACED;
-			psignal(q, SIGKILL);
+	noproc = 1;
+	for (pp = PIDHASH(p->p_pid); *pp; pp = LIST_NEXT(*pp, p_hash)) {
+		if (*pp == p) {
+			*pp = p->p_hash;
+			goto done;
 		}
 	}
-	p->p_cptr = NULL;
+	panic("exit");
 
+done:
 	/*
-	 * Overwrite p_alive substructure of proc - better not be anything
-	 * important left!
-	 */
+ 	 * Overwrite p_alive substructure of proc - better not be anything
+ 	 * important left!
+ 	 */
+	LIST_REMOVE(p, p_hash);
 	p->p_xstat = rv;
 	p->p_ru = u.u_ru;
-	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL); /* missing fix */
+	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
 	ruadd(&p->p_ru, &u.u_cru);
 	{
-		register struct proc *q;
+		register struct proc *q, *nq;
 		int doingzomb = 0;
 
-		q = allproc;
+		q = LIST_FIRST(p->p_children);
 again:
-		for(; q; q = q->p_nxt)
+		if (q) {								/* only need this if any child is S_ZOMB */
+			wakeup((caddr_t) initproc);
+		}
+		for ( ; q != NULL; q = nq) {
+			nq = LIST_NEXT(q, p_sibling);
 			if (q->p_pptr == p) {
-				q->p_pptr = &proc[1];
+				LIST_REMOVE(q, p_sibling);
+				LIST_INSERT_HEAD(&initproc->p_children, q, p_sibling);
+				q->p_pptr = initproc;
 				q->p_ppid = 1;
-				wakeup((caddr_t)&proc[1]);
-				if (q->p_flag& P_TRACED) {
+				wakeup((caddr_t)initproc);
+				if (q->p_flag & P_TRACED) {
 					q->p_flag &= ~P_TRACED;
 					psignal(q, SIGKILL);
 				} else if (q->p_stat == SSTOP) {
@@ -182,9 +180,10 @@ again:
 					psignal(q, SIGCONT);
 				}
 			}
+		}
 		if (!doingzomb) {
 			doingzomb = 1;
-			q = zombproc;
+			q = LIST_FIRST(&zombproc);
 			goto again;
 		}
 	}
@@ -193,19 +192,21 @@ again:
 	wakeup((caddr_t)p->p_pptr);
 
 	curproc = NULL;
-	if (--p->p_limit->p_refcnt == 0)
+	if (--p->p_limit->p_refcnt == 0) {
 		FREE(p->p_limit, M_SUBPROC);
+	}
 
-	swtch();
+	//swtch();
+	cpu_exit(p);
 	/* NOTREACHED */
 }
 
 struct wait_args {
-		syscallarg(int)	pid;
-		syscallarg(int *) status;
-		syscallarg(int) options;
-		syscallarg(struct rusage *) rusage;
-		syscallarg(int) compat;
+	syscallarg(int)	pid;
+	syscallarg(int *) status;
+	syscallarg(int) options;
+	syscallarg(struct rusage *) rusage;
+	syscallarg(int) compat;
 };
 
 int
@@ -215,7 +216,7 @@ wait4()
 
 	int retval[2];
 
-	uap->compat = 0;
+	SCARG(uap, compat) = 0;
 	u.u_error = wait1(u.u_procp, uap, retval);
 	if (!u.u_error) {
 		u.u_r.r_val1 = retval[0];
@@ -237,14 +238,13 @@ wait1(q, uap, retval)
 {
 	int nfound, status;
 	struct rusage ru;			/* used for local conversion */
-	register struct proc *p;
+	register struct proc *p, *t;
 	register int error;
 
-	if (uap->pid == WAIT_MYPGRP)		/* == 0 */
-		uap->pid = -q->p_pgrp;
+	if (SCARG(uap, pid) == WAIT_MYPGRP)		/* == 0 */
+		SCARG(uap, pid) = -q->p_pgrp;
 loop:
 	nfound = 0;
-
 	/*
 	 * 4.X has child links in the proc structure, so they consolidate
 	 * these two tests into one loop.  We only have the zombie chain
@@ -253,24 +253,44 @@ loop:
 	 * because they are more common, and, as the list is typically small,
 	 * a faster check.
 	 */
-	for (p = zombproc; p;p = p->p_nxt) {
-		if (p->p_pptr != q)	/* are we the parent of this process? */
+	for (p = LIST_FIRST(&zombproc); p; p = LIST_NEXT(p, p_sibling)) {
+		if (p->p_pptr != q) {
 			continue;
-		if (uap->pid != WAIT_ANY &&
-		    p->p_pid != uap->pid && p->p_pgrp != -uap->pid)
+		}
+		if (SCARG(uap, pid) != WAIT_ANY && p->p_pid != SCARG(uap, pid)
+				&& p->p_pgrp != -SCARG(uap, pid)) {
 			continue;
+		}
 		retval[0] = p->p_pid;
 		retval[1] = p->p_xstat;
-		if (uap->status && (error = copyout(&p->p_xstat, uap->status,
-						sizeof (uap->status))))
+		if (SCARG(uap, status)
+				&& (error = copyout(&p->p_xstat, SCARG(uap, status),
+						sizeof(SCARG(uap, status))))) {
 			return (error);
-		if (uap->rusage) {
-			rucvt(&ru, &p->p_ru);
-			if (error == copyout(&ru, uap->rusage, sizeof (ru)))
-				return (error);
 		}
+		if (SCARG(uap, rusage)) {
+			rucvt(&ru, &p->p_ru);
+			if (error == copyout(&ru, SCARG(uap, rusage), sizeof(ru))) {
+				return (error);
+			}
+		}
+
+		if (p->p_oppid && (t = pfind(p->p_oppid))) {
+			p->p_oppid = 0;
+			proc_reparent(p, t);
+			psignal(t, SIGCHLD);
+			wakeup((caddr_t)t);
+			return (0);
+		}
+
 		ruadd(&u->u_cru, &p->p_ru);
-		(void)chgproccnt(p->p_cred->p_ruid, -1);
+		(void) chgproccnt(p->p_cred->p_ruid, -1);
+		FREE(p->p_ru, M_ZOMBIE);
+
+		p->p_xstat = 0;
+		p->p_stat = NULL;
+		p->p_pid = 0;
+		p->p_ppid = 0;
 
 		/* Free up credentials. */
 		if (--p->p_cred->p_refcnt == 0) {
@@ -278,26 +298,14 @@ loop:
 			FREE(p->p_cred, M_SUBPROC);
 		}
 
-		p->p_xstat = 0;
-		p->p_stat = NULL;
-		p->p_pid = 0;
-		p->p_ppid = 0;
-
 		/* Release reference to text vnode */
 		if (p->p_textvp)
 			vrele(p->p_textvp);
 
 		leavepgrp(p);
-		if (*p->p_prev == p->p_nxt)	/* off zombproc */
-			p->p_nxt->p_prev = p->p_prev;
-		if ((q = p->p_ysptr))
-			q->p_osptr = p->p_osptr;
-		if ((q = p->p_osptr))
-			q->p_ysptr = p->p_ysptr;
-		if ((q = p->p_pptr)->p_cptr == p)
-			q->p_cptr = p->p_osptr;
-		p->p_nxt = freeproc;		/* onto freeproc */
-		freeproc = p;
+		LIST_REMOVE(p, p_list);					/* off zombproc */
+		LIST_REMOVE(p, p_sibling);
+		//LIST_INSERT_HEAD(&freeproc, p, p_list);/* onto freeproc */
 		p->p_pptr = 0;
 		p->p_sigacts = 0;
 		p->p_sigcatch = 0;
@@ -312,34 +320,37 @@ loop:
 		return (0);
 	}
 
-	for (p = allproc; p;p = p->p_nxt) {
-		if (p->p_pptr != q)
+	for (p = LIST_FIRST(&allproc); p; p = LIST_NEXT(p, p_sibling)) {
+		if (p->p_pptr != q) {
 			continue;
-		if (uap->pid != WAIT_ANY &&
-		    p->p_pid != uap->pid && p->p_pgrp != -uap->pid)
+		}
+		if (SCARG(uap, pid) != WAIT_ANY && p->p_pid != SCARG(uap, pid)
+				&& p->p_pgrp != -SCARG(uap, pid)) {
 			continue;
+		}
 		++nfound;
-		if ((p->p_stat == SSTOP || p->p_stat == SZOMB) && (p->p_flag& P_WAITED)==0 &&
-		    ((p->p_flag&P_TRACED) || (uap->options&WUNTRACED))) {
+		if ((p->p_stat == SSTOP || p->p_stat == SZOMB)
+				&& (p->p_flag & P_WAITED) == 0
+				&& ((p->p_flag & P_TRACED) || (SCARG(uap, options) & WUNTRACED))) {
 			p->p_flag |= P_WAITED;
 			if (curproc->p_pid != 1) {
-				curproc->p_estcpu = min(curproc->p_estcpu + p->p_estcpu, UCHAR_MAX);
+				curproc->p_estcpu = min(curproc->p_estcpu + p->p_estcpu,
+				UCHAR_MAX);
 			}
 			retval[0] = p->p_pid;
 			error = 0;
-			if (uap->compat)
+			if (SCARG(uap, compat))
 				retval[1] = W_STOPCODE(p->p_ptracesig);
-			else if (uap->status) {
+			else if (SCARG(uap, status)) {
 				status = W_STOPCODE(p->p_ptracesig);
-				error = copyout(&status, uap->status,
-						sizeof (status));
+				error = copyout(&status, SCARG(uap, status), sizeof(status));
 			}
 			return (error);
 		}
 	}
 	if (nfound == 0)
 		return (ECHILD);
-	if (uap->options&WNOHANG) {
+	if (SCARG(uap, options) & WNOHANG) {
 		retval[0] = 0;
 		return (0);
 	}
@@ -359,7 +370,7 @@ endvfork()
 {
 	register struct proc *rip, *rpp;
 
-	rpp = u->u_procp;
+	rpp = u.u_procp;
 	rip = rpp->p_pptr;
 	rpp->p_flag &= ~P_SVFORK;
 	rpp->p_flag |= P_SLOCK;
@@ -369,8 +380,8 @@ endvfork()
 	/*
 	 * The parent has taken back our data+stack, set our sizes to 0.
 	 */
-	u->u_dsize = rpp->p_dsize = 0;
-	u->u_ssize = rpp->p_ssize = 0;
+	u.u_dsize = rpp->p_dsize = 0;
+	u.u_ssize = rpp->p_ssize = 0;
 	rpp->p_flag &= ~(P_SVFDONE | P_SLOCK);
 }
 
@@ -380,34 +391,11 @@ proc_reparent(child, parent)
 	register struct proc *child;
 	register struct proc *parent;
 {
-	register struct proc *o;
-	register struct proc *y;
-
 	if (child->p_pptr == parent) {
 		return;
 	}
 
-	/* fix up the child linkage for the old parent */
-	o = child->p_osptr;
-	y = child->p_ysptr;
-	if (y) {
-		y->p_osptr = o;
-	}
-
-	if (o) {
-		o->p_ysptr = y;
-	}
-	if (child->p_pptr->p_cptr == child) {
-		child->p_pptr->p_cptr = o;
-	}
-
-	/* fix up child linkage for new parent */
-	o = parent->p_cptr;
-	if (o) {
-		o->p_ysptr = child;
-	}
-	child->p_osptr = o;
-	child->p_ysptr = NULL;
-	parent->p_cptr = child;
+	LIST_REMOVE(child, p_sibling);
+	LIST_INSERT_HEAD(&parent->p_children, child, p_sibling);
 	child->p_pptr = parent;
 }

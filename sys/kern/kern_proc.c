@@ -77,9 +77,13 @@ LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
 u_long	uihash;					/* size of hash table - 1 */
 
 struct pidhashhead *pidhashtbl;
-u_long pidhash;
+u_long 				pidhash;
 struct pgrphashhead *pgrphashtbl;
-u_long pgrphash;
+u_long 				pgrphash;
+
+struct proclist 	allproc;
+struct proclist 	zombproc;
+//struct proclist 	freeproc;
 
 void
 procinit()
@@ -104,26 +108,31 @@ proc_init(p)
 void
 pqinit()
 {
-	register struct proc *p;
+	//register struct proc *p;
+
+	LIST_INIT(&allproc);
+	LIST_INIT(&zombproc);
+	//LIST_INIT(&freeproc);
 
 	/*
 	 * most procs are initially on freequeue
 	 *	nb: we place them there in their "natural" order.
 	 */
-	//procNPROC = proc + nproc;
+/*
 	freeproc = NULL;
 	for (p = procNPROC; --p > proc0; freeproc = p)
 		p->p_nxt = freeproc;
-
+*/
 	/*
 	 * but proc0 is special ...
 	 */
-
+	/*
 	allproc = p;
 	p->p_nxt = NULL;
-	p->p_prev = &allproc;
+	p->p_prev = allproc;
 
 	zombproc = NULL;
+	*/
 }
 
 /*
@@ -133,7 +142,7 @@ int
 inferior(p)
 	register struct proc *p;
 {
-	for (; p != u->u_procp || p != curproc; p = p->p_pptr)
+	for (; (p != u.u_procp || p != curproc); p = p->p_pptr)
 		if (p->p_ppid == 0)
 			return (0);
 	return (1);
@@ -220,20 +229,10 @@ int
 leavepgrp(p)
 	register struct proc *p;
 {
-	register struct proc **pp = &p->p_pgrp->pg_mem;
-
-	for (; *pp; pp = &(*pp)->p_pgrpnxt) {
-		if (*pp == p) {
-			*pp = p->p_pgrpnxt;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pp == NULL)
-		panic("leavepgrp: can't find p in pgrp");
-#endif
-	if (!p->p_pgrp->pg_mem)
+	LIST_REMOVE(p, p_pglist);
+	if(LIST_FIRST(p->p_pgrp->pg_mem) == 0) {
 		pgdelete(p->p_pgrp);
+	}
 	p->p_pgrp = 0;
 	return (0);
 }
@@ -263,9 +262,11 @@ enterpgrp(p, pgid, mksess)
 	pid_t pgid;
 	int mksess;
 {
-	register struct pgrp *pgrp = pgfind(pgid);
+	register struct pgrp *pgrp;
 	register struct proc **pp;
 	int n;
+
+	pgrp = pgfind(pgid);
 #ifdef DIAGNOSTIC
 	if (pgrp != NULL && mksess)	/* firewalls */
 		panic("enterpgrp: setsid into non-empty pgrp");
@@ -308,11 +309,13 @@ enterpgrp(p, pgid, mksess)
 			pgrp->pg_session->s_count++;
 		}
 		pgrp->pg_id = pgid;
+		LIST_INIT(&pgrp->pg_mem);
 		LIST_INSERT_HEAD(PGRPHASH(pgid), pgrp, pg_hash);
 		pgrp->pg_jobc = 0;
 		pgrp->pg_mem = NULL;
-	} else if (pgrp == p->p_pgrp)
+	} else if (pgrp == p->p_pgrp) {
 		return (0);
+	}
 
 	/*
 	 * Adjust eligibility of affected pgrps to participate in job control.
@@ -325,16 +328,8 @@ enterpgrp(p, pgid, mksess)
 	/*
 	 * unlink p from old process group
 	 */
-	for (pp = &p->p_pgrp->pg_mem; *pp; pp = &(*pp)->p_pgrpnxt) {
-		if (*pp == p) {
-			*pp = p->p_pgrpnxt;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pp == NULL)
-		panic("enterpgrp: can't find p on old pgrp");
-#endif
+	LIST_REMOVE(p, p_pglist);
+
 	/*
 	 * delete old if empty
 	 */
@@ -344,8 +339,7 @@ enterpgrp(p, pgid, mksess)
 	 * link into new one
 	 */
 	p->p_pgrp = pgrp;
-	p->p_pgrpnxt = pgrp->pg_mem;
-	pgrp->pg_mem = p;
+	LIST_INSERT_HEAD(&pgrp->pg_mem, p, p_pglist);
 	return (0);
 }
 
@@ -386,14 +380,15 @@ fixjobc(p, pgrp, entering)
 	 * their process groups; if so, adjust counts for children's
 	 * process groups.
 	 */
-	for (p = p->p_cptr; p; p = p->p_osptr)
-		if ((hispgrp = p->p_pgrp) != pgrp &&
-		    hispgrp->pg_session == mysession &&
-		    p->p_stat != SZOMB)
+	for (p = LIST_FIRST(p->p_children); p; p = LIST_NEXT(p, p_sibling)) {
+		if ((hispgrp = p->p_pgrp) != pgrp&&
+		hispgrp->pg_session == mysession &&
+		p->p_stat != SZOMB)
 			if (entering)
 				hispgrp->pg_jobc++;
 			else if (--hispgrp->pg_jobc == 0)
 				orphanpg(hispgrp);
+	}
 }
 
 /*
@@ -407,9 +402,9 @@ orphanpg(pg)
 {
 	register struct proc *p;
 
-	for (p = pg->pg_mem; p; p = p->p_pgrpnxt) {
+	for (p = LIST_FIRST(pg->pg_mem); p; p = LIST_NEXT(p, p_pglist)) {
 		if (p->p_stat == SSTOP) {
-			for (p = pg->pg_mem; p; p = p->p_pgrpnxt) {
+			for (p = LIST_FIRST(pg->pg_mem); p; p = LIST_NEXT(p, p_pglist)) {
 				psignal(p, SIGHUP);
 				psignal(p, SIGCONT);
 			}
@@ -426,16 +421,16 @@ pgrpdump()
 	register i;
 
 	for (i = 0; i <= pgrphash; i++) {
-		if (pgrp == pgrphashtbl[i]) {
+		if (pgrp == LIST_FIRST(pgrphashtbl[i])) {
 			printf("\tindx %d\n", i);
 			for (; pgrp != 0; pgrp = LIST_NEXT(pgrp, pg_hash)) {
 				printf("\tpgrp %x, pgid %d, sess %x, sesscnt %d, mem %x\n",
 						pgrp, pgrp->pg_id, pgrp->pg_session,
-					    pgrp->pg_session->s_count,
-						pgrp->pg_mem);
-				for(p = pgrp->pg_mem; p != 0; p = p->p_nxt) {
-					printf("\t\tpid %d addr %x pgrp %x\n",
-										    p->p_pid, p, p->p_pgrp);
+						pgrp->pg_session->s_count, pgrp->pg_mem);
+				for (p = LIST_FIRST(pgrp->pg_mem); p != 0;
+						p = LIST_NEXT(p, p_pglist)) {
+					printf("\t\tpid %d addr %x pgrp %x\n", p->p_pid, p,
+							p->p_pgrp);
 				}
 			}
 		}

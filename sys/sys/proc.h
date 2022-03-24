@@ -27,8 +27,11 @@
  * is swapped with the process.
  */
 struct	proc {
-    struct	proc 		*p_nxt;			/* linked list of allocated proc slots */
-	struct	proc 		**p_prev;		/* also zombies, and free proc's */
+    //struct	proc 		*p_nxt;			/* linked list of allocated proc slots */
+	//struct	proc 		**p_prev;		/* also zombies, and free proc's */
+
+	LIST_ENTRY(proc) 	p_list;			/* List of all processes.
+										 linked list of allocated proc slots */
 
     struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
 	struct	proc 		*p_back;
@@ -46,7 +49,7 @@ struct	proc {
 
     /* Substructures: */
 	struct	pcred 	 	*p_cred;		/* Process owner's identity. */
-	struct	filedesc 	*p_fd;			/* Ptr to open files structure. */
+	struct	filedesc 	*p_fd;			/* pointer to open files structure. */
 //#define p_fd			p_addr->u_fd
 	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct	plimit 	 	*p_limit;		/* Process limits. */
@@ -56,16 +59,20 @@ struct	proc {
 #define	p_ucred			p_cred->pc_ucred
 #define	p_rlimit		p_limit->pl_rlimit
 
-	LIST_ENTRY(proc)    p_hash;	        /* Hash chain. */
-    struct	proc    	*p_pgrpnxt;	    /* Pointer to next process in process group. */
+	LIST_ENTRY(proc) 	p_pglist;		/* List of processes in pgrp. */
     struct	proc        *p_pptr;		/* pointer to process structure of parent */
-    struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
+	LIST_ENTRY(proc) 	p_sibling;		/* List of sibling processes. */
+	LIST_HEAD(, proc) 	p_children;		/* Pointer to list of children. */
+	LIST_ENTRY(proc)    p_hash;	        /* Hash chain. */
+
+	/* old proc lists for siblings pgrps */
+    //struct	proc    	*p_pgrpnxt;	    /* Pointer to next process in process group. */
+    //struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
+	//struct	proc 		*p_ysptr;	 	/* Pointer to younger siblings. */
+	//struct	proc 		*p_cptr;	 	/* Pointer to youngest living child. */
 
 /* The following fields are all zeroed upon creation in fork. */
-#define	p_startzero		p_ysptr
-
-	struct	proc 		*p_ysptr;	 	/* Pointer to younger siblings. */
-	struct	proc 		*p_cptr;	 	/* Pointer to youngest living child. */
+#define	p_startzero		p_oppid
 
     pid_t				p_oppid;	    /* Save parent pid during ptrace. XXX */
 
@@ -168,7 +175,8 @@ struct session {
 
 struct pgrp {
 	LIST_ENTRY(pgrp)    pg_hash;	    /* Hash chain. */
-	struct	proc 		*pg_mem;		/* Pointer to pgrp members. */
+	LIST_HEAD(, proc) 	pg_mem;			/* Pointer to pgrp members. */
+	//struct	proc 		*pg_mem;		/* Pointer to pgrp members. */
 	struct	session 	*pg_session;	/* Pointer to session. */
 	pid_t				pg_id;			/* Pgrp id. */
 	int					pg_jobc;		/* # procs qualifying pgrp for job control */
@@ -283,12 +291,18 @@ extern int pidhashmask;					/* In param.c. */
 extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
 
-struct proc *procNPROC;					/* the proc table itself */
-
-struct proc *allproc;					/* List of active procs. */
-struct proc *freeproc;					/* List of free procs. */
-struct proc *zombproc;					/* List of zombie procs. */
+LIST_HEAD(proclist, proc);
+extern struct proclist allproc;			/* List of active procs. */
+extern struct proclist zombproc;		/* List of zombie procs. */
+//extern struct proclist freeproc;		/* List of free procs. */
 struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
+
+//struct proc *procNPROC;				/* the proc table itself */
+
+//struct proc *allproc;					/* List of active procs. */
+//struct proc *freeproc;				/* List of free procs. */
+//struct proc *zombproc;				/* List of zombie procs. */
+//struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
 
 #define	NQS	32							/* 32 run queues. */
 extern int	whichqs;					/* Bit mask summary of non-empty Q's. */
