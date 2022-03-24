@@ -73,6 +73,8 @@ fork1(isvfork)
 	 *  not su and would take last slot.
 	 */
 	//p2 = freeproc;
+	/* Allocate new proc. */
+	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
 	uid = p1->p_cred->p_ruid;
 	if (p2 == NULL || (nproc >= maxproc - 1 && uid != 0) || nproc >= maxproc) {
 		tablefull("proc");
@@ -86,8 +88,6 @@ fork1(isvfork)
 		goto out;
 	}
 
-	/* Allocate new proc. */
-	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
 	if (p2 == NULL || (u.u_uid != 0 && (LIST_NEXT(p2, p_list) == NULL || a > MAXUPRC))) {
 		u.u_error = EAGAIN;
 		goto out;

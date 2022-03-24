@@ -16,6 +16,7 @@
  */
 #ifndef _SYS_WAIT_H_
 #define _SYS_WAIT_H_
+
 /*
  * Structure of the information in the first word returned by both
  * wait and wait3.  If w_stopval==WSTOPPED, then the second structure
@@ -47,7 +48,7 @@ union wait	{
 #define w_stopval	w_S.w_Stopval
 #define w_stopsig	w_S.w_Stopsig
 
-#define	WSTOPPED	0177	/* value of s.stopval if process is stopped */
+#define	WSTOPPED	0177				/* value of s.stopval if process is stopped */
 
 /*
  * Option bits for the second argument of wait3.  WNOHANG causes the
@@ -73,7 +74,7 @@ union wait	{
 #define	WAIT_ANY			(-1)
 #define	WAIT_MYPGRP			0
 
-#ifndef KERNEL
+#ifndef _KERNEL
 #include <sys/types.h>
 #include <sys/cdefs.h>
 

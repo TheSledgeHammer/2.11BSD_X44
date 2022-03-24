@@ -27,15 +27,12 @@
  * is swapped with the process.
  */
 struct	proc {
-    //struct	proc 		*p_nxt;			/* linked list of allocated proc slots */
-	//struct	proc 		**p_prev;		/* also zombies, and free proc's */
-
-	LIST_ENTRY(proc) 	p_list;			/* List of all processes.
-										 linked list of allocated proc slots */
-
     struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
 	struct	proc 		*p_back;
 
+	LIST_ENTRY(proc) 	p_list;			/* List of all processes */
+	 	 	 	 	 	 	 	 	 	/* linked list of allocated proc slots */
+										/* also zombies, and free proc's */
 	struct mtx			*p_mtx;			/* proc structure mutex */
     int	    			p_flag;			/* P_* flags. */
 	char				p_stat;			/* S* process status. */
@@ -64,12 +61,6 @@ struct	proc {
 	LIST_ENTRY(proc) 	p_sibling;		/* List of sibling processes. */
 	LIST_HEAD(, proc) 	p_children;		/* Pointer to list of children. */
 	LIST_ENTRY(proc)    p_hash;	        /* Hash chain. */
-
-	/* old proc lists for siblings pgrps */
-    //struct	proc    	*p_pgrpnxt;	    /* Pointer to next process in process group. */
-    //struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
-	//struct	proc 		*p_ysptr;	 	/* Pointer to younger siblings. */
-	//struct	proc 		*p_cptr;	 	/* Pointer to youngest living child. */
 
 /* The following fields are all zeroed upon creation in fork. */
 #define	p_startzero		p_oppid
@@ -297,13 +288,6 @@ extern struct proclist zombproc;		/* List of zombie procs. */
 //extern struct proclist freeproc;		/* List of free procs. */
 struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
 
-//struct proc *procNPROC;				/* the proc table itself */
-
-//struct proc *allproc;					/* List of active procs. */
-//struct proc *freeproc;				/* List of free procs. */
-//struct proc *zombproc;				/* List of zombie procs. */
-//struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
-
 #define	NQS	32							/* 32 run queues. */
 extern int	whichqs;					/* Bit mask summary of non-empty Q's. */
 struct	prochd {
@@ -340,5 +324,6 @@ int			enterpgrp(struct proc *, pid_t, int);
 void		fixjobc(struct proc *, struct pgrp *, int);
 int			inferior(struct proc *);
 int			newproc(int);
+void		proc_reparent(struct proc *, struct proc *);
 #endif 	/* KERNEL */
 #endif	/* !_SYS_PROC_H_ */

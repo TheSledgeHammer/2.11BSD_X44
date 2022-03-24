@@ -41,6 +41,8 @@ struct kthread {
 	struct kthread 		*kt_forw;				/* Doubly-linked run/sleep queue. */
 	struct kthread 		*kt_back;
 
+	LIST_ENTRY(kthread)	kt_list;				/* List of all kernel threads */
+
     struct mtx			*kt_mtx;				/* kthread structure mutex */
 	int	 				kt_flag;				/* T_* flags. */
 	char 				kt_stat;				/* TS* thread status. */
@@ -196,6 +198,10 @@ struct kthread 							*kthreadNKTHREAD;		/* the kthread table itself */
 struct kthread 							*allkthread;			/* List of active kthreads. */
 struct kthread 							*freekthread;			/* List of free kthreads. */
 struct kthread 							*zombkthread;			/* List of zombie kthreads. */
+
+//LIST_HEAD(kthreadlist, kthread);
+//extern struct kthreadlist				allkthread;				/* List of active kthreads. */
+//extern struct kthreadlist				zombkthread;			/* List of zombie kthreads. */
 
 lock_t 									kthread_lkp; 			/* lock */
 rwlock_t								kthread_rwl;			/* reader-writers lock */

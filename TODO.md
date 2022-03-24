@@ -44,17 +44,12 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
+- setup: a new freeproc list. 
+	- To manage proc's that are not active or zombie's.
+	- Mimic 2.11BSD's original freeproc list.
 - syscall proto-type declarations:
 	- For when syscalls are used internally.
 	- example: dup2, execve, syscall(machine), etc...
-- Core API Double-ups:
-	- Filedescriptor Table (Major Issue)
-		- 4.4BSD-Lite2 & 2.11BSD conflict.
-		- Potential de-sync between any parts of the kernel using
-		4.4BSD-Lite2 filedesc's and parts using 2.11BSD user to
-		access the descriptor table.
-		- The easy solution would be to have the filedesc's accessed
-			via the user for any core parts of the kernel.
 	- RLimit (Minor Issue)
 		- 4.4BSD-Lite2 & 2.11BSD conflict.
 		- init_main.c: plimit pointer to rlimit and user pointer to rlimit
