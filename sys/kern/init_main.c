@@ -179,10 +179,15 @@ main(framep)
 	/*
 	 * set up system process 0 (swapper)
 	 */
-	allproc = (struct proc *)p;
-	p->p_prev = (struct proc **)&allproc;
+    LIST_INSERT_HEAD(&allproc, p, p_list);
 	p->p_pgrp = &pgrp0;
 	LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
+	LIST_INIT(&pgrp0.pg_mem);
+	LIST_INSERT_HEAD(&pgrp0.pg_mem, p, p_pglist);
+	
+	pgrp0.pg_session = &session0;
+	session0.s_count = 1;
+	session0.s_leader = p;
 
 	p->p_stat = SRUN;
 	p->p_flag |= P_SLOAD|P_SSYS;

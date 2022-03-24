@@ -152,14 +152,14 @@ done:
  	 */
 	LIST_REMOVE(p, p_hash);
 	p->p_xstat = rv;
-	p->p_ru = u.u_ru;
+	p->p_ru = &u.u_ru;
 	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
-	ruadd(&p->p_ru, &u.u_cru);
+	ruadd(&p->p_kru, &u.u_cru);
 	{
 		register struct proc *q, *nq;
 		int doingzomb = 0;
 
-		q = LIST_FIRST(p->p_children);
+		q = LIST_FIRST(&p->p_children);
 again:
 		if (q) {								/* only need this if any child is S_ZOMB */
 			wakeup((caddr_t) initproc);
