@@ -11,7 +11,6 @@
 
 #include <sys/termios.h>
 #include <sys/select.h>
-//#include <sys/ttydefaults.h>
 #include <sys/lock.h>
 #include <sys/callout.h>
 
@@ -69,7 +68,7 @@ struct tty {
 	struct	pgrp 			*t_pgrp;										/* Foreground process group. */
 	struct	session 		*t_session;										/* Enclosing session. */
 	struct	termios 		t_termios;										/* Termios state. */
-	struct	lock_object		t_slock;										/* mutex for all access to this tty */
+	struct	lock_object		*t_slock;										/* mutex for all access to this tty */
 	int						t_hiwat;										/* High water mark. */
 	int						t_lowat;										/* Low water mark. */
 	int						t_gen;											/* Generation number. */

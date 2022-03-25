@@ -167,7 +167,6 @@ struct session {
 struct pgrp {
 	LIST_ENTRY(pgrp)    pg_hash;	    /* Hash chain. */
 	LIST_HEAD(, proc) 	pg_mem;			/* Pointer to pgrp members. */
-	//struct	proc 		*pg_mem;		/* Pointer to pgrp members. */
 	struct	session 	*pg_session;	/* Pointer to session. */
 	pid_t				pg_id;			/* Pgrp id. */
 	int					pg_jobc;		/* # procs qualifying pgrp for job control */

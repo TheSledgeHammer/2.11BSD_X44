@@ -144,7 +144,7 @@ struct gsched_edf 	*gsched_edf(struct gsched *);
 struct gsched_cfs 	*gsched_cfs(struct gsched *);
 void				gsched_estcpu(u_int, u_int);
 void				gsched_cpticks(int, int);
-int					gsched_compare(struct proc *, struct proc *);
-void				gsched_sort(struct proc *, struct proc *);
+int					gsched_compare(const void *, const void *);
+void				gsched_sort(struct proc *);
 
 #endif /* _SYS_GSCHED_H */
