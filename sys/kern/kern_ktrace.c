@@ -50,7 +50,7 @@
 
 int		ktrops(struct proc *, struct proc *, int, int, struct vnode *);
 int		ktrsetchildren(struct proc *, struct proc *, int, int, struct vnode *);
-void 	*ktrwrite(struct vnode *, struct ktr_header *);
+void 	ktrwrite(struct vnode *, register struct ktr_header *);
 int		ktrcanset(struct proc *, struct proc *);
 
 struct ktr_header *
@@ -60,7 +60,7 @@ ktrgetheader(type)
 	register struct ktr_header *kth;
 	struct proc *p = curproc;	/* XXX */
 
-	MALLOC(kth, struct ktr_header *, sizeof (struct ktr_header), M_TEMP, M_WAITOK);
+	MALLOC(kth, struct ktr_header *, sizeof(struct ktr_header), M_TEMP, M_WAITOK);
 	kth->ktr_type = type;
 	microtime(&kth->ktr_time);
 	kth->ktr_pid = p->p_pid;
@@ -76,7 +76,7 @@ ktrsyscall(vp, code, argsize, args)
 {
 	struct	ktr_header *kth;
 	struct	ktr_syscall *ktp;
-	register len = sizeof(struct ktr_syscall) + argsize;
+	register long len = sizeof(struct ktr_syscall) + argsize;
 	struct proc *p = curproc;	/* XXX */
 	register_t *argp;
 	int i;
@@ -407,7 +407,7 @@ ktrsetchildren(curp, top, ops, facs, vp)
 	/*NOTREACHED*/
 }
 
-void *
+void
 ktrwrite(vp, kth)
 	struct vnode *vp;
 	register struct ktr_header *kth;
@@ -439,6 +439,7 @@ ktrwrite(vp, kth)
 	VOP_UNLOCK(vp, 0, p);
 	if (!error)
 		return;
+		
 	/*
 	 * If error encountered, give up tracing on this vnode.
 	 */

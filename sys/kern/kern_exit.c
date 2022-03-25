@@ -18,6 +18,7 @@
 #include <sys/file.h>
 #include <sys/wait.h>
 #include <sys/kernel.h>
+#include <sys/lock.h>
 #include <sys/tty.h>
 
 #include <vm/include/vm.h>
@@ -138,12 +139,13 @@ exit(rv)
 	 */
 	if (p->p_flag & P_SVFORK)
 		endvfork();
+	/*	XXX: Fix me
 	else {
-		rmfree(&coremap, p->p_dsize, (long)p->p_daddr);
-		rmfree(&coremap, p->p_ssize, (long)p->p_saddr);
+		rmfree(coremap, p->p_dsize, (long)p->p_daddr);
+		rmfree(coremap, p->p_ssize, (long)p->p_saddr);
 	}
-	rmfree(&coremap, USIZE, (long)p->p_addr);
-
+	rmfree(coremap, USIZE, (long)p->p_addr);
+    */
 	if (p->p_pid == 1) {
 		panic("init died");
 	}
@@ -153,9 +155,9 @@ exit(rv)
 
 	noproc = 1;
 
-	for (pp = PIDHASH(p->p_pid); pp; pp = LIST_NEXT(pp, p_hash)) {
+	for (pp = LIST_FIRST(PIDHASH(p->p_pid)); pp; pp = LIST_NEXT(pp, p_hash)) {
 		if (pp == p) {
-			pp = p->p_hash;
+			pp = LIST_NEXT(p, p_hash);
 			goto done;
 		}
 	}
@@ -168,9 +170,9 @@ done:
  	 */
 	LIST_REMOVE(p, p_hash);
 	p->p_xstat = rv;
-	p->p_ru = &u.u_ru;
+	p->p_kru = u.u_ru;
 	calcru(p, &p->p_ru.ru_utime, &p->p_ru.ru_stime, NULL);
-	ruadd(p->p_kru, u.u_cru);
+	ruadd(&p->p_kru, &u.u_cru);
 	{
 		register struct proc *q, *nq;
 		int doingzomb = 0;
@@ -224,6 +226,8 @@ struct wait_args {
 	syscallarg(struct rusage *) rusage;
 	syscallarg(int) compat;
 };
+
+static int wait1(struct proc *, struct wait_args *, int *);
 
 int
 wait4()
@@ -285,7 +289,7 @@ loop:
 			return (error);
 		}
 		if (SCARG(uap, rusage)) {
-			rucvt(&ru, &p->p_ru);
+			rucvt(&ru, &p->p_kru);
 			if (error == copyout(&ru, SCARG(uap, rusage), sizeof(ru))) {
 				return (error);
 			}
@@ -299,9 +303,10 @@ loop:
 			return (0);
 		}
 
-		ruadd(&u.u_cru, p->p_ru);
+		ruadd(&u.u_cru, &p->p_kru);
+//		&q->p_stats->p_cru = u.u_cru;
 		(void) chgproccnt(p->p_cred->p_ruid, -1);
-		FREE(p->p_ru, M_ZOMBIE);
+		FREE(&p->p_kru, M_ZOMBIE);
 
 		p->p_xstat = 0;
 		p->p_stat = NULL;
@@ -341,7 +346,7 @@ loop:
 			continue;
 		}
 		if (SCARG(uap, pid) != WAIT_ANY && p->p_pid != SCARG(uap, pid)
-				&& p->p_pgrp != -SCARG(uap, pid)) {
+				&& p->p_pgid != -SCARG(uap, pid)) {
 			continue;
 		}
 		++nfound;

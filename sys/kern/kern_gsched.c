@@ -47,21 +47,21 @@
 
 #include <vm/include/vm.h>
 
-static struct gsched 	*gsched_setup(struct proc *);
-static void				gsched_edf_setup(struct gsched *, struct proc *);
-static void				gsched_cfs_setup(struct gsched *, struct proc *);
-static int 				gsched_compare(struct proc *, struct proc *);
+struct gsched 	*gsched_setup(struct proc *);
+static void		gsched_edf_setup(struct gsched *, struct proc *);
+static void		gsched_cfs_setup(struct gsched *, struct proc *);
 
 void
 gsched_init(p)
 	struct proc *p;
 {
-	struct gsched *gsd = gsched_setup(p);
+	struct gsched *gsd;
+	gsd = gsched_setup(p);
 	gsched_edf_setup(gsd, p);
 	gsched_cfs_setup(gsd, p);
 }
 
-static struct gsched *
+struct gsched *
 gsched_setup(p)
 	struct proc *p;
 {
@@ -105,7 +105,7 @@ gsched_cfs_setup(gsd, p)
 		MALLOC(cfs, struct gsched_cfs *, sizeof(struct gsched_cfs *), M_GSCHED, M_WAITOK);
 	}
 
-	RB_INIT(cfs->cfs_parent);
+	RB_INIT(&cfs->cfs_parent);
 	cfs->cfs_proc = p;
 	cfs->cfs_cpticks = p->p_cpticks;
 	cfs->cfs_pri = p->p_pri;
@@ -167,10 +167,14 @@ gsched_cpticks(cpticks1, cpticks2)
 }
 
 /* compare cpu ticks (deadline) of cur proc and the next proc in run-queue */
-static int
-gsched_compare(p1, p2)
-    struct proc *p1, *p2;
+int
+gsched_compare(a1, a2)
+   const void *a1, *a2;
 {
+    struct proc *p1, *p2;
+    p1 = (struct proc *)a1;
+    p2 = (struct proc *)a2;
+    
     if(p1->p_cpticks < p2->p_cpticks) {
         return (-1);
     } else if(p1->p_cpticks > p2->p_cpticks) {
@@ -181,24 +185,14 @@ gsched_compare(p1, p2)
 
 /* Initial sort of run-queue (lowest first): using gsched_compare; see above */
 void
-gsched_sort(cur, nxt)
-    struct proc *cur;
-    struct proc *nxt;
+gsched_sort(cur)
+    struct proc *cur;  
 {
-    struct proc *tmp;
-
-    if(gsched_compare(cur, nxt) > 0) {
-        tmp = cur;
-        cur = nxt;
-        nxt = tmp;
-
-        if(cur->p_nxt != nxt) {
-            cur->p_nxt = nxt;
+    struct proc *nxt;
+    nxt = LIST_NEXT(cur, p_list); 
+    LIST_FOREACH(cur, &allproc, p_list) {
+        if(gsched_compare(cur, nxt) > 0) {
+            qsort(cur, NQS, sizeof(struct proc), gsched_compare);
         }
     }
-
-/*
- * struct proc *rq = getrq(cur);
- * qsort(rq, NQS, sizeof(struct proc), gsched_compare);
- */
 }

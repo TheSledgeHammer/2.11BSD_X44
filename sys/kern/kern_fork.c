@@ -22,6 +22,8 @@
 
 #include <vm/include/vm_systm.h>
 
+static int fork1(int);
+
 /*
  * fork --
  *	fork system call
@@ -75,6 +77,7 @@ fork1(isvfork)
 	//p2 = freeproc;
 	/* Allocate new proc. */
 	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
+	
 	uid = p1->p_cred->p_ruid;
 	if (p2 == NULL || (nproc >= maxproc - 1 && uid != 0) || nproc >= maxproc) {
 		tablefull("proc");
@@ -96,7 +99,7 @@ fork1(isvfork)
 	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
 		u.u_r.r_val2 = 1;  				/* child */
-		u.u_start = time.tv_sec;
+//        u.u_start = time.tv_sec;        /* XXX: TODO Fix me */
 
 		/* set forked but preserve suid/gid state */
 		u.u_acflag = AFORK | (u.u_acflag & ASUGID);
@@ -123,7 +126,6 @@ newproc(isvfork)
 	int isvfork;
 {
 	register struct proc *rip, *rpp;
-	struct proc *newproc;
 	static int mpid, pidchecked = 0;
 
 	mpid++;
@@ -169,7 +171,7 @@ again:
 	rip = u.u_procp;
 	rpp->p_stat = SIDL;
 	rpp->p_pid = mpid;
-	rpp->p_realtimer.it_value = NULL;
+	rpp->p_realtimer.it_value = *(struct timeval *)NULL;
 	rpp->p_flag = P_SLOAD;
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
