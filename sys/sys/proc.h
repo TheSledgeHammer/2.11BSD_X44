@@ -324,6 +324,10 @@ int			enterpgrp(struct proc *, pid_t, int);
 void		fixjobc(struct proc *, struct pgrp *, int);
 int			inferior(struct proc *);
 int			newproc(int);
+
+/* kern_exit */
+void    	exit(int);
+void		endvfork();
 void		proc_reparent(struct proc *, struct proc *);
 #endif 	/* KERNEL */
 #endif	/* !_SYS_PROC_H_ */

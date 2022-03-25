@@ -146,12 +146,12 @@ struct ktr_csw {
 #define KTRFAC_INHERIT	0x40000000	/* pass trace flags to children */
 #define KTRFAC_ACTIVE	0x20000000	/* ktrace logging in progress, ignore */
 
-#ifndef	KERNEL
+#ifndef	_KERNEL
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	ktrace (const char *, int, int, pid_t);
+int	ktrace(); /* syscall */
 __END_DECLS
 
 #endif	/* !KERNEL */

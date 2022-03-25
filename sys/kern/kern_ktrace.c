@@ -48,6 +48,11 @@
 #include <sys/user.h>
 #include <sys/mount.h>
 
+int		ktrops(struct proc *, struct proc *, int, int, struct vnode *);
+int		ktrsetchildren(struct proc *, struct proc *, int, int, struct vnode *);
+void 	*ktrwrite(struct vnode *, struct ktr_header *);
+int		ktrcanset(struct proc *, struct proc *);
+
 struct ktr_header *
 ktrgetheader(type)
 	int type;
@@ -205,7 +210,7 @@ ktrcsw(vp, out, user)
 	int out, user;
 {
 	struct ktr_header *kth;
-	struct	ktr_csw kc;
+	struct ktr_csw kc;
 	struct proc *p = curproc;	/* XXX */
 
 	p->p_traceflag |= KTRFAC_ACTIVE;
@@ -227,19 +232,19 @@ ktrcsw(vp, out, user)
  */
 /* ARGSUSED */
 int
-ktrace(curp, uap, retval)
-	struct proc *curp;
-	register struct ktrace_args /* {
+ktrace()
+ {
+	register struct ktrace_args {
 		syscallarg(char *) fname;
 		syscallarg(int) ops;
 		syscallarg(int) facs;
 		syscallarg(int) pid;
-	} */ *uap;
-	register_t *retval;
-{
+	 } *uap = (struct ktrace_args *)u.u_ap;
+
 	register struct vnode *vp = NULL;
-	register struct proc *p;
+	register struct proc *curp, *p;
 	struct pgrp *pg;
+	register_t *retval;
 	int facs = SCARG(uap, facs) & ~KTRFAC_ROOT;
 	int ops = KTROP(SCARG(uap, ops));
 	int descend = SCARG(uap, ops) & KTRFLAG_DESCEND;
@@ -247,6 +252,7 @@ ktrace(curp, uap, retval)
 	int error = 0;
 	struct nameidata nd;
 
+	curp = u.u_procp;
 	curp->p_traceflag |= KTRFAC_ACTIVE;
 	if (ops != KTROP_CLEAR) {
 		/*
@@ -270,7 +276,7 @@ ktrace(curp, uap, retval)
 	 * Clear all uses of the tracefile
 	 */
 	if (ops == KTROP_CLEARFILE) {
-		for (p = (struct proc *)allproc; p != 0; p = p->p_nxt) {
+		for (p = LIST_FIRST(&allproc); p != 0; p = LIST_NEXT(p, p_list)) {
 			if (p->p_tracep == vp) {
 				if (ktrcanset(curp, p)) {
 					p->p_tracep = NULL;
@@ -302,7 +308,7 @@ ktrace(curp, uap, retval)
 			error = ESRCH;
 			goto done;
 		}
-		for (p = pg->pg_mem; p != 0; p = p->p_pgrpnxt)
+		for (p = LIST_FIRST(&pg->pg_mem); p != 0; p = LIST_NEXT(p, p_pglist))
 			if (descend)
 				ret |= ktrsetchildren(curp, p, ops, facs, vp);
 			else
@@ -385,22 +391,18 @@ ktrsetchildren(curp, top, ops, facs, vp)
 		 * otherwise do any siblings, and if done with this level,
 		 * follow back up the tree (but not past top).
 		 */
-		if (p->p_cptr)
-			p = p->p_cptr;
-		else if (p == top)
-			return (ret);
-		else if (p->p_osptr)
-			p = p->p_osptr;
-		else
-			for (;;) {
-				p = p->p_pptr;
-				if (p == top)
-					return (ret);
-				if (p->p_osptr) {
-					p = p->p_osptr;
-					break;
-				}
+		if (LIST_FIRST(&p->p_children))
+			p = LIST_FIRST(&p->p_children);
+		else for (;;) {
+			if (p == top) {
+				return (ret);
 			}
+			if(LIST_NEXT(p, p_sibling)) {
+				p = LIST_NEXT(p, p_sibling);
+				break;
+			}
+			p = p->p_pptr;
+		}
 	}
 	/*NOTREACHED*/
 }
@@ -442,7 +444,7 @@ ktrwrite(vp, kth)
 	 */
 	log(LOG_NOTICE, "ktrace write failed, errno %d, tracing stopped\n",
 	    error);
-	for (p = (struct proc *) allproc; p != 0; p = p->p_nxt) {
+	for (p = LIST_FIRST(&allproc); p != 0; p = LIST_NEXT(p, p_list)) {
 		if (p->p_tracep == vp) {
 			p->p_tracep = NULL;
 			p->p_traceflag = 0;

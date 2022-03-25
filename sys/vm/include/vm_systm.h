@@ -14,7 +14,7 @@
 /*
  * Miscellaneous virtual memory subsystem variables and structures.
  */
-#if defined(KERNEL)
+#ifdef _KERNEL
 int	freemem = cnt.v_free_count;	/* remaining clicks of free memory */
 
 int	avefree;					/* moving average of remaining free clicks */
@@ -31,7 +31,7 @@ struct forkstat {
 	long	sizvfork;
 };
 
-#if defined(KERNEL)
+#ifdef _KERNEL
 struct forkstat forkstat;
 #endif
 #endif /* _VM_SYSTM_H_ */

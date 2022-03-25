@@ -44,7 +44,7 @@ vfork()
 
 int	nproc = 1;		/* process 0 */
 
-int
+static int
 fork1(isvfork)
 	int isvfork;
 {
@@ -96,7 +96,7 @@ fork1(isvfork)
 	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
 		u.u_r.r_val2 = 1;  				/* child */
-		u.u_start = p1->p_rtime->tv_sec;
+		u.u_start = time.tv_sec;
 
 		/* set forked but preserve suid/gid state */
 		u.u_acflag = AFORK | (u.u_acflag & ASUGID);
@@ -152,7 +152,7 @@ again:
 		}
 		if (!doingzomb) {
 			doingzomb = 1;
-			rpp = zombproc;
+			rpp = LIST_FIRST(&zombproc);
 			goto again;
 		}
 	}
@@ -169,14 +169,14 @@ again:
 	rip = u.u_procp;
 	rpp->p_stat = SIDL;
 	rpp->p_pid = mpid;
-	rpp->p_realtimer.it_value = 0;
+	rpp->p_realtimer.it_value = NULL;
 	rpp->p_flag = P_SLOAD;
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
 	rpp->p_nice = rip->p_nice;
 	rpp->p_ppid = rip->p_pid;
 	rpp->p_pptr = rip;
-	rpp->p_rtime = 0;
+	rpp->p_time = 0;
 	rpp->p_cpu = 0;
 	rpp->p_sigmask = rip->p_sigmask;
 	rpp->p_sigcatch = rip->p_sigcatch;
@@ -327,110 +327,5 @@ again:
 	u.u_r.r_val1 = rpp->p_pid;
 	u.u_r.r_val2 = 0;
 
-	return (0);
-}
-
-
-/* 2.11BSD Modified Original newproc */
-int
-copyproc(rip, rpp, isvfork)
-	register struct proc *rpp, *rip;
-	int isvfork;
-{
-	register int n;
-	struct file *fp;
-	int a1, s;
-	size_t a[3];
-
-	/*
-	 * Increase reference counts on shared objects.
-	 */
-	for (n = 0; n <= u->u_lastfile; n++) {
-		fp = u->u_ofile[n];
-		if (fp == NULL)
-			continue;
-		fp->f_count++;
-	}
-
-	rpp->p_dsize = rip->p_dsize;
-	rpp->p_ssize = rip->p_ssize;
-	rpp->p_daddr = rip->p_daddr;
-	rpp->p_saddr = rip->p_saddr;
-	a1 = rip->p_addr;
-	if (isvfork) {
-		a[2] = rmalloc(coremap, USIZE);
-	} else {
-		a[2] = rmalloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
-	}
-
-	/*
-	 * Partially simulate the environment of the new process so that
-	 * when it is actually created (by copying) it will look right.
-	 */
-	u->u_procp = rpp;
-
-	/*
-	 * If there is not enough core for the new process, swap out the
-	 * current process to generate the copy.
-	 */
-	if (a[2] == NULL) {
-		rip->p_stat = SIDL;
-		rpp->p_addr = a1;
-		rpp->p_stat = SRUN;
-		swapout(rpp);
-		rip->p_stat = SRUN;
-		u->u_procp = rip;
-	} else {
-		/*
-		 * There is core, so just copy.
-		 */
-		rpp->p_addr = a[2];
-		copy(a1, rpp->p_addr, USIZE);
-		u->u_procp = rip;
-		if (isvfork == 0) {
-			rpp->p_daddr = a[0];
-			copy(rip->p_daddr, rpp->p_daddr, rpp->p_dsize);
-			rpp->p_saddr = a[1];
-			copy(rip->p_saddr, rpp->p_saddr, rpp->p_ssize);
-		}
-		s = splhigh();
-		rpp->p_stat = SRUN;
-		setrq(rpp);
-		splx(s);
-		splhigh();
-	}
-	rpp->p_flag |= P_SSWAP;
-
-	if (isvfork) {
-		/*
-		 *  Set the parent's sizes to 0, since the child now
-		 *  has the data and stack.
-		 *  (If we had to swap, just free parent resources.)
-		 *  Then wait for the child to finish with it.
-		 */
-		rip->p_dsize = 0;
-		rip->p_ssize = 0;
-		rip->p_textvp = NULL;
-		rpp->p_flag |= P_SVFORK;
-		rip->p_flag |= P_SVFPRNT;
-		if (a[2] == NULL) {
-			mfree(coremap, rip->p_dsize, rip->p_daddr);
-			mfree(coremap, rip->p_ssize, rip->p_saddr);
-		}
-		while (rpp->p_flag & P_SVFORK)
-			sleep((caddr_t)rpp, PSWP + 1);
-		if ((rpp->p_flag & P_SLOAD) == 0)
-			panic("newproc vfork");
-		u->u_dsize = rip->p_dsize = rpp->p_dsize;
-		rip->p_daddr = rpp->p_daddr;
-		rpp->p_dsize = 0;
-		u->u_ssize = rip->p_ssize = rpp->p_ssize;
-		rip->p_saddr = rpp->p_saddr;
-		rpp->p_ssize = 0;
-		rpp->p_flag |= P_SVFDONE;
-		wakeup((caddr_t)rip);
-
-		rip->p_flag &= ~P_SVFPRNT;
-	}
 	return (0);
 }

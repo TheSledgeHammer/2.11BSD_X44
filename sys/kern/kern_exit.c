@@ -18,8 +18,11 @@
 #include <sys/file.h>
 #include <sys/wait.h>
 #include <sys/kernel.h>
+#include <sys/tty.h>
 
 #include <vm/include/vm.h>
+
+#include <machine/cpu.h>
 
 /*
  * exit system call: pass back caller's arg
@@ -33,6 +36,7 @@ rexit()
 
 	exit(W_EXITCODE(SCARG(uap, rval), 0));
 	/* NOTREACHED */
+	return (0);
 }
 
 /*
@@ -46,8 +50,8 @@ exit(rv)
 	int rv;
 {
 	register int i;
-	register struct proc *p;
-	struct proc 		**pp;
+	register struct proc 	*p;
+	struct proc 			*pp;
 	register struct vmspace *vm;
 
 	/*
@@ -59,10 +63,6 @@ exit(rv)
 	p->p_sigignore = ~0;
 	p->p_sigacts = 0;
 	untimeout(realitexpire, (caddr_t)p);
-
-	if (p->p_pid == 1) {
-		panic("init died (signal %d, exit %d)", WTERMSIG(rv), WEXITSTATUS(rv));
-	}
 
 	if (p->p_flag & P_PROFIL) {
 		stopprofclock(p);
@@ -88,14 +88,29 @@ exit(rv)
 
 	if(SESS_LEADER(p)) {
 		register struct session *sp = p->p_session;
-		if (sp->s_ttyvp) {
-			if (sp->s_ttyp->t_session == sp) {
-				if (sp->s_ttyp->t_pgrp)
-					pgsignal(sp->s_ttyp->t_pgrp, SIGHUP, 1);
-				(void) ttywait(sp->s_ttyp);
+		struct tty *tp;
 
+		if (sp->s_ttyvp) {
+			tp = sp->s_ttyp;
+			TTY_LOCK(tp);
+			if (tp->t_session == sp) {
+				if (tp->t_pgrp) {
+					pgsignal(tp->t_pgrp, SIGHUP, 1);
+				}
+				/* we can't guarantee the revoke will do this */
+				tp->t_pgrp = NULL;
+				tp->t_session = NULL;
+				TTY_UNLOCK(tp);
+				SESSRELE(sp);
+				(void) ttywait(tp);
+				/*
+				 * The tty could have been revoked
+				 * if we blocked.
+				 */
 				if (sp->s_ttyvp)
-					vgoneall(sp->s_ttyvp);
+					VOP_REVOKE(sp->s_ttyvp, REVOKEALL);
+			} else {
+				TTY_UNLOCK(tp);
 			}
 			if (sp->s_ttyvp)
 				vrele(sp->s_ttyvp);
@@ -103,10 +118,10 @@ exit(rv)
 		}
 		sp->s_leader = NULL;
 	}
-
 	fixjobc(p, p->p_pgrp, 0);
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	(void)acct_process(p);
+
 #ifdef KTRACE
 	/*
 	 * release trace file
@@ -124,10 +139,10 @@ exit(rv)
 	if (p->p_flag & P_SVFORK)
 		endvfork();
 	else {
-		rmfree(coremap, p->p_dsize, p->p_daddr);
-		rmfree(coremap, p->p_ssize, p->p_saddr);
+		rmfree(&coremap, p->p_dsize, (long)p->p_daddr);
+		rmfree(&coremap, p->p_ssize, (long)p->p_saddr);
 	}
-	rmfree(coremap, USIZE, p->p_addr);
+	rmfree(&coremap, USIZE, (long)p->p_addr);
 
 	if (p->p_pid == 1) {
 		panic("init died");
@@ -137,9 +152,10 @@ exit(rv)
 	p->p_stat = SZOMB;
 
 	noproc = 1;
-	for (pp = PIDHASH(p->p_pid); *pp; pp = LIST_NEXT(*pp, p_hash)) {
-		if (*pp == p) {
-			*pp = p->p_hash;
+
+	for (pp = PIDHASH(p->p_pid); pp; pp = LIST_NEXT(pp, p_hash)) {
+		if (pp == p) {
+			pp = p->p_hash;
 			goto done;
 		}
 	}
@@ -153,8 +169,8 @@ done:
 	LIST_REMOVE(p, p_hash);
 	p->p_xstat = rv;
 	p->p_ru = &u.u_ru;
-	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
-	ruadd(&p->p_kru, &u.u_cru);
+	calcru(p, &p->p_ru.ru_utime, &p->p_ru.ru_stime, NULL);
+	ruadd(p->p_kru, u.u_cru);
 	{
 		register struct proc *q, *nq;
 		int doingzomb = 0;
@@ -242,7 +258,7 @@ wait1(q, uap, retval)
 	register int error;
 
 	if (SCARG(uap, pid) == WAIT_MYPGRP)		/* == 0 */
-		SCARG(uap, pid) = -q->p_pgrp;
+		SCARG(uap, pid) = -q->p_pgid;
 loop:
 	nfound = 0;
 	/*
@@ -258,7 +274,7 @@ loop:
 			continue;
 		}
 		if (SCARG(uap, pid) != WAIT_ANY && p->p_pid != SCARG(uap, pid)
-				&& p->p_pgrp != -SCARG(uap, pid)) {
+				&& p->p_pgid != -SCARG(uap, pid)) {
 			continue;
 		}
 		retval[0] = p->p_pid;
@@ -283,7 +299,7 @@ loop:
 			return (0);
 		}
 
-		ruadd(&u->u_cru, &p->p_ru);
+		ruadd(&u.u_cru, p->p_ru);
 		(void) chgproccnt(p->p_cred->p_ruid, -1);
 		FREE(p->p_ru, M_ZOMBIE);
 

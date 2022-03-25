@@ -17,6 +17,16 @@
  *	@(#)subr_rmap.c	8.2 (Berkeley) 01/21/94
  */
 
+/* rmap revamp: Objective
+ * Usage:
+ * - Primarily for coremap & swapmap memory management
+ * - Secondary as a generic.
+ * Layout:
+ * - Act like a client-server design or dual layer.
+ * - e.g. the devel/vm_swap & vm_swapdrum.
+ * 	- swapmap is allocated and expanded using swapextents
+ */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>

@@ -138,6 +138,11 @@ void	configure(void);
 
 /* vm_machdep.c */
 int		cpu_fork(struct proc *, struct proc *);
+void	cpu_exit(struct proc *);
+void	cpu_wait(struct proc *);
+int		cpu_coredump(struct proc *, struct vnode *, struct ucred *);
+void	vmapbuf(struct buf *);
+void	vunmapbuf(struct buf *);
 
 #ifdef USER_LDT
 /* sys_machdep.h */

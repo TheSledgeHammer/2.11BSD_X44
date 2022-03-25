@@ -174,7 +174,7 @@ cpu_exit(p)
 
 void
 cpu_wait(p)
-struct proc *p;
+	struct proc *p;
 {
 
 	/* drop per-process resources */

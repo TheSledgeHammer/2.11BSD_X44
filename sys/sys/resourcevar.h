@@ -91,5 +91,6 @@ void	addupc_tasku (u_long pc, struct uprof *up, u_int ticks);
 void	calcru (struct proc *p, struct timeval *up, struct timeval *sp, struct timeval *ip);
 struct plimit *limcopy (struct plimit *lim);
 void	ruadd (struct rusage *ru, struct rusage *ru2);
+void	rucvt(struct rusage *, struct k_rusage *);
 #endif
 #endif	/* !_SYS_RESOURCEVAR_H_ */
