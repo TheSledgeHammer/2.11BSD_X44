@@ -95,9 +95,9 @@ uthreadpool_lookup_unbound(u_char pri)
 	struct uthreadpool_unbound *utpu;
 	LIST_FOREACH(utpu, &unbound_uthreadpools, utpu_link) {
 		if (utpu->utpu_pool.utp_pri == pri)
-			return utpu;
+			return (utpu);
 	}
-	return NULL;
+	return (NULL);
 }
 
 static void
@@ -584,7 +584,7 @@ uthreadpool_cancel_job_async(struct uthreadpool *utpool, struct threadpool_job *
 
 	if (job->job_uthread == NULL) {
 		/* Nothing to do.  Guaranteed not running.  */
-		return TRUE;
+		return (TRUE);
 	} else if (job->job_uthread == &utpool->utp_overseer) {
 		/* Take it off the list to guarantee it won't run.  */
 		job->job_uthread = NULL;
@@ -593,10 +593,10 @@ uthreadpool_cancel_job_async(struct uthreadpool *utpool, struct threadpool_job *
 		TAILQ_REMOVE(&utpool->utp_jobs, job, job_entry);
 		simple_unlock(&utpool->utp_lock);
 		threadpool_job_rele(job);
-		return TRUE;
+		return (TRUE);
 	} else {
 		/* Too late -- already running.  */
-		return FALSE;
+		return (FALSE);
 	}
 }
 

@@ -74,14 +74,14 @@ extern size_t 					__mb_len_max_runtime;
 #define __MB_LEN_MAX_RUNTIME	__mb_len_max_runtime
 
 __BEGIN_DECLS
-char	*mbrune (const char *, rune_t);
-char	*mbrrune (const char *, rune_t);
-char	*mbmb (const char *, char *);
-long	fgetrune (FILE *);
-int	 	fputrune (rune_t, FILE *);
-int	 	fungetrune (rune_t, FILE *);
-int	 	setrunelocale (char *);
-void	setinvalidrune (rune_t);
+char	*mbrune(const char *, rune_t);
+char	*mbrrune(const char *, rune_t);
+char	*mbmb(const char *, char *);
+long	fgetrune(FILE *);
+int	 	fputrune(rune_t, FILE *);
+int	 	fungetrune(rune_t, FILE *);
+int	 	setrunelocale(char *);
+void	setinvalidrune(rune_t);
 __END_DECLS
 
 #endif	/*! _RUNE_H_ */

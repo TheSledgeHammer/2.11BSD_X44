@@ -93,7 +93,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cksum db																\
 		file lint1 																\
 		sortinfo 																\
-		.WAIT menuc mknod msgc 													\
+		.WAIT menuc mklocale mknod msgc 													\
 		.WAIT 														\
 		.WAIT 																	\
 		.WAIT 																\

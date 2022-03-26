@@ -35,48 +35,56 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
+#include <sys/cdefs.h>
 #ifndef lint
 static char sccsid[] = "@(#)lex.l	8.1 (Berkeley) 6/6/93";
 #endif /* not lint */
 
+#include <runetype.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "ldef.h"
-#include "y.tab.h"
+#include "yacc.h"
+
+int 	yylex(void);
 %}
 
 ODIGIT	[0-7]
 DIGIT	[0-9]
 XDIGIT	[0-9a-fA-F]
-W	[\t\n\r ]
+W		[\t\n\r ]
 
 %%
 \'.\'				{ yylval.rune = yytext[1];
-				  return(RUNE); }
+				  		return(RUNE); }
 
 '\\a'				{ yylval.rune = '\a';
-				  return(RUNE); }
+				  		return(RUNE); }
 '\\b'				{ yylval.rune = '\b';
-				  return(RUNE); }
+				  		return(RUNE); }
 '\\f'				{ yylval.rune = '\f';
-				  return(RUNE); }
+				  		return(RUNE); }
 '\\n'				{ yylval.rune = '\n';
-				  return(RUNE); }
+				  		return(RUNE); }
 '\\r'				{ yylval.rune = '\r';
-				  return(RUNE); }
+				  		return(RUNE); }
 '\\t'				{ yylval.rune = '\t';
-				  return(RUNE); }
+				  		return(RUNE); }
 '\\v'				{ yylval.rune = '\v';
-				  return(RUNE); }
+				  		return(RUNE); }
 
 0x{XDIGIT}+			{ yylval.rune = strtol(yytext, 0, 16);
-				  return(RUNE); }
+				  		return(RUNE); }
 0{ODIGIT}+			{ yylval.rune = strtol(yytext, 0, 8);
-				  return(RUNE); }
+				  		return(RUNE); }
 {DIGIT}+			{ yylval.rune = strtol(yytext, 0, 10);
-				  return(RUNE); }
+				  		return(RUNE); }
 
 
 MAPLOWER			{ return(MAPLOWER); }
@@ -84,64 +92,84 @@ MAPUPPER			{ return(MAPUPPER); }
 TODIGIT				{ return(DIGITMAP); }
 INVALID				{ return(INVALID); }
 
-ALPHA				{ yylval.i = _A|_R|_G; return(LIST); }
-CONTROL				{ yylval.i = _C; return(LIST); }
-DIGIT				{ yylval.i = _D|_R|_G; return(LIST); }
-GRAPH				{ yylval.i = _G|_R; return(LIST); }
-LOWER				{ yylval.i = _L|_R|_G; return(LIST); }
-PUNCT				{ yylval.i = _P|_R|_G; return(LIST); }
-SPACE				{ yylval.i = _S; return(LIST); }
-UPPER				{ yylval.i = _U|_R|_G; return(LIST); }
-XDIGIT				{ yylval.i = _X|_R|_G; return(LIST); }
-BLANK				{ yylval.i = _B; return(LIST); }
-PRINT				{ yylval.i = _R; return(LIST); }
-IDEOGRAM			{ yylval.i = _I|_R|_G; return(LIST); }
-SPECIAL				{ yylval.i = _T|_R|_G; return(LIST); }
-PHONOGRAM			{ yylval.i = _Q|_R|_G; return(LIST); }
+ALPHA				{ yylval.i = _CTYPE_A|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+CONTROL				{ yylval.i = _CTYPE_C;
+				  		return(LIST); }
+DIGIT				{ yylval.i = _CTYPE_D|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+GRAPH				{ yylval.i = _CTYPE_G|_CTYPE_R;
+				  		return(LIST); }
+LOWER				{ yylval.i = _CTYPE_L|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+PUNCT				{ yylval.i = _CTYPE_P|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+SPACE				{ yylval.i = _CTYPE_S;
+				  		return(LIST); }
+UPPER				{ yylval.i = _CTYPE_U|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+XDIGIT				{ yylval.i = _CTYPE_X|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+BLANK				{ yylval.i = _CTYPE_B;
+				 	 	return(LIST); }
+PRINT				{ yylval.i = _CTYPE_R;
+				  		return(LIST); }
+IDEOGRAM			{ yylval.i = _CTYPE_I|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+SPECIAL				{ yylval.i = _CTYPE_T|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+PHONOGRAM			{ yylval.i = _CTYPE_Q|_CTYPE_R|_CTYPE_G;
+				  		return(LIST); }
+SWIDTH0				{ yylval.i = _CTYPE_SW0; return(LIST); }
+SWIDTH1				{ yylval.i = _CTYPE_SW1; return(LIST); }
+SWIDTH2				{ yylval.i = _CTYPE_SW2; return(LIST); }
+SWIDTH3				{ yylval.i = _CTYPE_SW3; return(LIST); }
 
-VARIABLE[\t ]			{ static char vbuf[1024];
-				  char *v = vbuf;
-				  while ((*v = input()) && *v != '\n')
-					++v;
-                                  if (*v) {
-					unput(*v);
-					*v = 0;
-				  }
-				  yylval.str = vbuf;
-				  return(VARIABLE);
-				}
+VARIABLE[\t ]		{ static char vbuf[1024];
+				  	 char *v = vbuf;
+				  	 while ((*v = input()) && *v != '\n')
+						++v;
+                     if (*v) {
+						unput(*v);
+						*v = 0;
+				  	}
+				  	yylval.str = vbuf;
+				  	return(VARIABLE);
+					}
+
+CHARSET				{ return(CHARSET); }
 
 ENCODING			{ return(ENCODING); }
 
 \".*\"				{ char *e = yytext + 1;
-				  yylval.str = e;
-				  while (*e && *e != '"')
-					++e;
-				  *e = 0;
-				  return(STRING); }
+				  	  yylval.str = e;
+				  	  while (*e && *e != '"')
+							++e;
+				 	  *e = 0;
+				  	  return(STRING); }
 
 \<|\(|\[			{ return(LBRK); }
 
 \>|\)|\]			{ return(RBRK); }
 
-\-				{ return(THRU); }
+\-					{ return(THRU); }
 \.\.\.				{ return(THRU); }
 
-\:				{ return(':'); }
+\:					{ return(':'); }
 
 {W}+				;
 
 ^\#.*\n				;
 \/\*				{ char lc = 0;
-				  do {
-				    while ((lc) != '*')
-					if ((lc = input()) == 0)
-					    break;
-				  } while((lc = input()) != '/');
-				}
+				  		do {
+				    		while ((lc) != '*')
+								if ((lc = input()) == 0)
+					    			break;
+				  		} while((lc = input()) != '/');
+					}
 
-\\$				;
-.				{ printf("Lex is skipping '%s'\n", yytext); }
+\\$					;
+.					{ printf("Lex is skipping '%s'\n", yytext); }
 %%
 
 #if	!defined(yywrap)

@@ -40,14 +40,14 @@
  * This should look a LOT like a _RuneEntry
  */
 typedef struct rune_list {
-    rune_t		min;
-    rune_t 		max;
-    rune_t 		map;
-    u_long		*types;
+    rune_t				min;
+    rune_t 				max;
+    rune_t 				map;
+    u_long				*types;
     struct rune_list	*next;
 } rune_list;
 
 typedef struct rune_map {
-    u_long		map[_CACHED_RUNES];
-    rune_list	*root;
+    u_long				map[_CACHED_RUNES];
+    rune_list			*root;
 } rune_map;

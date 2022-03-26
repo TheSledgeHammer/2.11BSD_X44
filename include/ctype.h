@@ -170,10 +170,10 @@ __tolower(_BSD_RUNE_T_ c)
 
 #else
 __BEGIN_DECLS
-int				__istype (_BSD_RUNE_T_, unsigned long);
-int				__isctype (_BSD_RUNE_T_, unsigned long);
-_BSD_RUNE_T_	_toupper (_BSD_RUNE_T_);
-_BSD_RUNE_T_	_tolower (_BSD_RUNE_T_);
+int				__istype(_BSD_RUNE_T_, unsigned long);
+int				__isctype(_BSD_RUNE_T_, unsigned long);
+_BSD_RUNE_T_	_toupper(_BSD_RUNE_T_);
+_BSD_RUNE_T_	_tolower(_BSD_RUNE_T_);
 __END_DECLS
 #endif /* _USE_CTYPE_INLINE_ */
 #endif

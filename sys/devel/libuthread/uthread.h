@@ -36,6 +36,7 @@
 /* user threads */
 typedef struct uthread 	*uthread_t;
 struct uthread {
+	LIST_ENTRY(uthread)	ut_list;
 	struct uthread		*ut_nxt;				/* linked list of allocated thread slots */
 	struct uthread		**ut_prev;
 
@@ -149,11 +150,16 @@ struct uthreadpool {
     bool_t								utp_initcq;			/* check if in itc queue */
 };
 
-struct uthread 							*uthreadNUTHREAD;	/* the uthread table itself */
+LIST_HEAD(uthreadlist, uthread);
+extern struct uthreadlist				alluthread;			/* List of active uthreads. */
+extern struct uthreadlist				zombuthread;		/* List of zombie uthreads. */
+//extern struct uthreadlist 				freeuthread;		/* List of free uthreads. */
 
-struct uthread 							*alluthread;		/* List of active uthreads. */
-struct uthread 							*freeuthread;		/* List of free uthreads. */
-struct uthread 							*zombuthread;		/* List of zombie uthreads. */
+//struct uthread 							*uthreadNUTHREAD;	/* the uthread table itself */
+
+//struct uthread 							*alluthread;		/* List of active uthreads. */
+//struct uthread 							*freeuthread;		/* List of free uthreads. */
+//struct uthread 							*zombuthread;		/* List of zombie uthreads. */
 
 lock_t									uthread_lkp;		/* lock */
 rwlock_t								uthread_rwl;		/* reader-writers lock */
@@ -163,9 +169,9 @@ extern struct uthreadpool_thread 		utpool_thread;
 extern lock_t 							uthreadpool_lock;
 
 /* UThread */
-void 			uthread_init (struct kthread *, struct uthread *);
+void 			uthread_init(struct kthread *, struct uthread *);
 int	 			uthread_create(void (*)(void *), void *, struct kthread **, const char *);
-int 			uthread_exit (int);
+int 			uthread_exit(int);
 void			uthread_create_deferred(void (*)(void *), void *);
 void			uthread_run_deferred_queue(void);
 
