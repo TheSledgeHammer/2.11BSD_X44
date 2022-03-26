@@ -62,6 +62,8 @@ CFOPS_DECL(evdev, evdev_match, evdev_attach, NULL, NULL);
 
 #define	DEF_RING_REPORTS	8
 
+dev_type_open(evdev_open);
+dev_type_close(evdev_close);
 dev_type_read(evdev_read);
 dev_type_write(evdev_write);
 dev_type_ioctl(evdev_ioctl);
@@ -70,8 +72,8 @@ dev_type_kqfilter(evdev_kqfilter);
 
 //extern struct cdevsw evdev_cdevsw;
 const struct cdevsw evdev_cdevsw = {
-	.d_open = noopen,
-	.d_close = noclose,
+	.d_open = evdev_open,
+	.d_close = evdev_close,
 	.d_read = evdev_read,
 	.d_write = evdev_write,
 	.d_ioctl = evdev_ioctl,
@@ -117,6 +119,7 @@ evdev_attach(parent, self, aux)
 	if (ret != 0) {
 		printf("evdev_attach: evdev_register error", ret);
 	}
+	sc->sc_evdev = evdev;
 
 	/* Initialize ring buffer */
 	buffer_size = evdev_buffer_size(evdev);
@@ -130,7 +133,28 @@ evdev_attach(parent, self, aux)
 }
 
 int
-evdev_open(evdev, p)
+evdev_open(dev, flags, mode, p)
+	dev_t dev;
+	int flags, mode;
+	struct proc *p;
+{
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	int unit;
+
+	unit = minor(dev);
+	sc = (struct evdev_softc *)evdev_cd.cd_devs[unit];
+	evdev = sc->sc_evdev;
+
+	if(sc == NULL) {
+		return (ENXIO);
+	}
+
+	return (evdev_doopen(evdev, p));
+}
+
+int
+evdev_doopen(evdev, p)
 	struct evdev_dev 	*evdev;
 	struct proc 		*p;
 {
@@ -165,7 +189,28 @@ evdev_open(evdev, p)
 }
 
 int
-evdev_close(evdev, p)
+evdev_close(dev, flags, mode, p)
+	dev_t dev;
+	int flags, mode;
+	struct proc *p;
+{
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	int unit;
+
+	unit = minor(dev);
+	sc = (struct evdev_softc *)evdev_cd.cd_devs[unit];
+	evdev = sc->sc_evdev;
+
+	if(sc == NULL) {
+		return (ENXIO);
+	}
+
+	return (evdev_doclose(evdev, p));
+}
+
+int
+evdev_doclose(evdev, p)
 	struct evdev_dev 	*evdev;
 	struct proc 		*p;
 {
@@ -212,6 +257,7 @@ evdev_read(dev, uio, flags)
 	if (sc->sc_dying) {
 		return (EIO);
 	}
+
 	if (evar->revoked)
 		return (ENODEV);
 
@@ -376,8 +422,8 @@ evdev_do_ioctl(dv, cmd, data, fflag, p)
 	struct evdev_dev *evdev;
 	int error;
 
-	sc = (struct evdev_softc*) dv;
-	evdev = sc->sc_dv;
+	sc = (struct evdev_softc*)dv;
+	evdev = (struct evdev_dev *)sc->sc_dv;
 	sc->sc_refcnt++;
 	error = evdev_do_ioctl_sc(evdev, cmd, data, fflag, p);
 	if (--sc->sc_refcnt < 0)

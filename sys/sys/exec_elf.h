@@ -964,6 +964,7 @@ struct elf_args {
 
 struct ps_strings;
 struct exec_linker;
+struct exec_vmcmd_set;
 
 int		exec_elf_linker(struct exec_linker *);
 int		elf_copyargs(struct exec_linker *, struct ps_strings *, void *, void *);

@@ -228,5 +228,4 @@ void 	evdev_send_mt_autorel(struct evdev_dev *);
 
 /* Utility functions: */
 void 	evdev_client_dumpqueue(struct evdev_client *);
-
 #endif	/* _DEV_EVDEV_EVDEV_PRIVATE_H */

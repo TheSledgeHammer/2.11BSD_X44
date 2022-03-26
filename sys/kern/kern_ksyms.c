@@ -104,7 +104,7 @@
 #ifdef KDTRACE_HOOKS
 static uint32_t ksyms_nmap[KSYMS_MAX_ID];	/* sorted symbol table map */
 #else
-static uint32_t *ksyms_nmap = NULL;
+uint32_t *ksyms_nmap = NULL;
 #endif
 
 #ifdef KSYMS_DEBUG

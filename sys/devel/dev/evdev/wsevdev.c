@@ -34,8 +34,7 @@
 #include <devel/dev/evdev/evdev_private.h>
 
 static const struct evdev_methods wskbd_evdev_methods = {
-		.ev_open = evdev_open,
-		.ev_close = evdev_close,
+		.ev_cdev = &evdev_cdevsw,
 		.ev_event = evdev_ev_kbd_led_event,
 };
 

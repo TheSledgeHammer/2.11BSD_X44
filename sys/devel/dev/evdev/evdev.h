@@ -36,10 +36,8 @@
 #define	NAMELEN		80
 
 struct evdev_dev;
-//typedef int	 (evdev_open_t)(dev_t, int, int, struct proc *p);
-//typedef int	 (evdev_close_t)(dev_t, int, int, struct proc *p);
-typedef int	 (evdev_open_t)(struct evdev_dev *, void *);
-typedef void (evdev_close_t)(struct evdev_dev *, void *);
+struct cdevsw;
+typedef const struct cdevsw  evdev_cdev_t;
 typedef void (evdev_event_t)(struct evdev_dev *, uint16_t, uint16_t, int32_t);
 typedef void (evdev_keycode_t)(struct evdev_dev *, struct input_keymap_entry *);
 
@@ -92,12 +90,13 @@ extern int evdev_sysmouse_t_axis;
 #define	EVDEV_FLAG_CNT			(EVDEV_FLAG_MAX + 1)
 
 struct evdev_methods {
-	evdev_open_t				*ev_open;
-	evdev_close_t				*ev_close;
+	evdev_cdev_t				*ev_cdev;
 	evdev_event_t				*ev_event;
 	evdev_keycode_t				*ev_set_keycode;
 	evdev_keycode_t 			*ev_get_keycode;
 };
+
+extern const struct cdevsw evdev_cdevsw;
 
 /* Input device interface: */
 struct evdev_dev *evdev_alloc(void);

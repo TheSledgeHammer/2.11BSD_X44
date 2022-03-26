@@ -111,7 +111,7 @@ slabmeta(slab, size)
 	bsize = BUCKETSIZE(indx);
 
 	/* slab metadata */
-	meta = slab->ksl_meta;
+	meta = &slab->ksl_meta;
 	meta->ksm_bsize = bsize;
 	meta->ksm_bindx = indx;
 	meta->ksm_bslots = BUCKET_SLOTS(meta->ksm_bsize);
@@ -217,15 +217,15 @@ slab_create(cache, size, mtype)
 	slab->ksl_mtype = mtype;
 
     slab = &slabbucket[indx];
-    cache->ksc_link = slab;
+    cache->ksc_link = &slab;
 
     simple_lock(&malloc_slock);
 	if (indx < 10) {
 		slab->ksl_stype = SLAB_SMALL;
-		CIRCLEQ_INSERT_HEAD(cache->ksc_head, slab, ksl_list);
+		CIRCLEQ_INSERT_HEAD(&cache->ksc_head, slab, ksl_list);
 	} else {
 		slab->ksl_stype = SLAB_LARGE;
-		CIRCLEQ_INSERT_TAIL(cache->ksc_head, slab, ksl_list);
+		CIRCLEQ_INSERT_TAIL(&cache->ksc_head, slab, ksl_list);
 	}
 	simple_unlock(&malloc_slock);
 	kmemslab_count++;
@@ -243,7 +243,7 @@ slab_destroy(cache, size)
 
 	slab = &slabbucket[BUCKETINDX(size)];
 	simple_lock(&malloc_slock);
-	CIRCLEQ_REMOVE(cache->ksc_head, slab, ksl_list);
+	CIRCLEQ_REMOVE(&cache->ksc_head, slab, ksl_list);
 	simple_unlock(&malloc_slock);
 	kmemslab_count--;
 
@@ -272,7 +272,7 @@ kmembucket_search(cache, meta, size, mtype)
 	long size;
 	int mtype;
 {
-	register struct kmemslabs *slab, next;
+	register struct kmemslabs *slab, *next;
 	register struct kmembuckets *kbp;
 	long indx, bsize;
 	int bslots, aslots, fslots;

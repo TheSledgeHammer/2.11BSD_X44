@@ -806,33 +806,33 @@ evdev_register_client(struct evdev_dev *evdev, struct evdev_client *client)
 {
 	int ret = 0;
 
-	debugf(evdev, "adding new client for device %s", evdev->ev_shortname);
-
 	EVDEV_LOCK_ASSERT(evdev);
-	if (evdev->ev_client && evdev->ev_methods != NULL
-			&& evdev->ev_methods->ev_open != NULL) {
-		debugf(evdev, "calling ev_open() on device %s", evdev->ev_shortname);
-		ret = evdev->ev_methods->ev_open(evdev, evdev->ev_softc);
+	if (evdev->ev_client && evdev->ev_methods != NULL) {
+		debugf(evdev, "adding new client for device %s", evdev->ev_shortname);
+		ret = evdev_doopen(evdev, evdev->ev_softc);
 	}
-
 	if (ret == 0) {
 		client = evdev->ev_client;
 	}
-
 	return (1);
 }
 
 void
 evdev_dispose_client(struct evdev_dev *evdev, struct evdev_client *client)
 {
+	int ret;
+
 	debugf(evdev, "removing client for device %s", evdev->ev_shortname);
 
 	KASSERT(evdev);
 	client = NULL;
 	evdev->ev_client = client;
 	if(evdev->ev_client == NULL) {
-		if (evdev->ev_methods != NULL && evdev->ev_methods->ev_close != NULL) {
-			evdev->ev_methods->ev_close(evdev, evdev->ev_softc);
+		if (evdev->ev_methods != NULL) {
+			ret = evdev_doclose(evdev, evdev->ev_softc);
+			if(ret == 0) {
+				continue;
+			}
 		}
 		if (evdev_event_supported(evdev, EV_REP) && bit_test(evdev->ev_flags, EVDEV_FLAG_SOFTREPEAT)) {
 			evdev_stop_repeat(evdev);
