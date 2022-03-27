@@ -200,18 +200,18 @@ typedef struct lock       	*lock_t;
 
 struct pgrp;
 
-void				lockinit(lock_t, int, char *, int, int);
-int					lockmgr(__volatile lock_t, u_int, struct lock_object *, pid_t);
-int					lockstatus(lock_t);
-void				lockmgr_printinfo(lock_t);
+void				lockinit(struct lock *, int, char *, int, int);
+int				lockmgr(__volatile struct lock *, u_int, struct lock_object *, pid_t);
+int				lockstatus(struct lock *);
+void				lockmgr_printinfo(struct lock *);
 
 void				simple_lock_init(struct lock_object *, const char *);
-void 				simple_lock(struct lock_object *);
-void 				simple_unlock(struct lock_object *);
-int					simple_lock_try(struct lock_object *);
+void 				simple_lock(__volatile struct lock_object *);
+void 				simple_unlock(__volatile struct lock_object *);
+int				simple_lock_try(__volatile struct lock_object *);
 
 void				lockholder_init(struct lock_holder *);
-struct lock_holder 	*lockholder_create(void *, pid_t, struct pgrp *);
+struct lock_holder 		*lockholder_create(void *, pid_t, struct pgrp *);
 void				lockholder_set(struct lock_holder *, void *, pid_t, struct pgrp *);
-struct lock_holder	*lockholder_get(struct lock_holder *);
+struct lock_holder		*lockholder_get(struct lock_holder *);
 #endif /* !_SYS_LOCK_H_ */
