@@ -39,6 +39,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/atomic.h>
 #include <sys/lock.h>
@@ -46,9 +47,14 @@
 #include <sys/user.h>
 
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
 
 void	lock_pause(struct lock *, int);
 void	lock_acquire(struct lock *, int, int, int);
+void	lock_object_init(struct lock_object *, const struct lock_type *, const char *, u_int);
+void	lock_object_acquire(struct lock_object *);
+void	lock_object_release(struct lock_object *);
+int	lock_object_try(struct lock_object *);
 
 #if NCPUS > 1
 #define PAUSE(lkp, wanted)						\
@@ -58,11 +64,28 @@ void	lock_acquire(struct lock *, int, int, int);
 #endif /* NCPUS == 1 */
 
 #define ACQUIRE(lkp, error, extflags, wanted)	\
-		lock_acquire(lkp, error, extflags, wanted);
+		lock_acquire((struct lock *)lkp, error, extflags, wanted);
 
-#define lkp_lock(lkp)		(simple_lock(&lkp->lk_lnterlock))
-#define lkp_unlock(lkp)		(simple_unlock(&lkp->lk_lnterlock))
-#define lkp_lock_try(lkp)	(simple_lock_try(&lkp->lk_lnterlock))
+void
+lkp_lock(lkp)
+	struct lock *lkp;
+{
+	simple_lock(&lkp->lk_lnterlock);
+}
+
+void
+lkp_unlock(lkp)
+	struct lock *lkp;
+{
+	simple_unlock(&lkp->lk_lnterlock);
+}
+
+int
+lkp_lock_try(lkp)
+	struct lock *lkp;
+{
+	return (simple_lock_try(&lkp->lk_lnterlock));
+}
 
 /*
  * Locking primitives implementation.
@@ -157,7 +180,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			lkp->lk_flags |= LK_DRAINED;
 		}
 	}
-#endif DIAGNOSTIC
+#endif /* DIAGNOSTIC */
 
 	switch (flags & LK_TYPE_MASK) {
 
@@ -241,7 +264,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			 * drop to zero, then take exclusive lock.
 			 */
 			lkp->lk_flags |= LK_WANT_UPGRADE;
-			ACQUIRE(&lkp, error, extflags, lkp->lk_sharecount);
+			ACQUIRE(lkp, error, extflags, lkp->lk_sharecount);
 			lkp->lk_flags &= ~LK_WANT_UPGRADE;
 			if (error)
 				break;
@@ -388,7 +411,7 @@ lockmgr_printinfo(lkp)
 		    lkp->lk_sharecount);
 	else if (lkp->lk_flags & LK_HAVE_EXCL)
 		printf(" lock type %s: EXCL (count %d) by pid %d",
-		    lkp->lk_wmesg, lkp->lk_exclusivecount, lkp->lk_lockholder->lh_pid);
+		    lkp->lk_wmesg, lkp->lk_exclusivecount, LOCKHOLDER_PID(&lkp->lk_lockholder));
 	if (lkp->lk_waitcount > 0)
 		printf(" with %d pending", lkp->lk_waitcount);
 }
@@ -409,9 +432,11 @@ lock_pause(lkp, wanted)
 		}
 		lkp_lock(lkp);
 	}
+	/*
 	if (!(wanted)) {
 		break;
 	}
+	*/
 }
 
 void
@@ -459,7 +484,7 @@ void
 simple_lock(lock)
 	__volatile struct lock_object 	*lock;
 {
-	lock_object_acquire(&lock);
+	lock_object_acquire((struct lock_object *) lock);
 }
 
 /*
@@ -470,7 +495,7 @@ void
 simple_unlock(lock)
 	__volatile struct lock_object 	*lock;
 {
-	lock_object_release(&lock);
+	lock_object_release((struct lock_object *) lock);
 }
 
 /* simple_lock_try */
@@ -478,7 +503,7 @@ int
 simple_lock_try(lock)
 	__volatile struct lock_object 	*lock;
 {
-	return (lock_object_try(&lock));
+	return (lock_object_try((struct lock_object *) lock));
 }
 
 /*
@@ -519,8 +544,8 @@ lock_object_acquire(lock)
 	unsigned long s;
 
 	s = intr_disable();
-	cpu->loc_my_ticket = atomic_inc_int_nv(lock->lo_nxt_ticket);
-	while(lock->lo_can_serve[&cpu->loc_my_ticket] != 1);
+	cpu->loc_my_ticket = atomic_inc_int_nv(&lock->lo_nxt_ticket);
+	while(lock->lo_can_serve[cpu->loc_my_ticket] != 1);
 	intr_restore(s);
 }
 
@@ -536,8 +561,8 @@ lock_object_release(lock)
 	unsigned long s;
 
 	s = intr_disable();
-	lock->lo_can_serve[&cpu->loc_my_ticket + 1] = 1;
-	lock->lo_can_serve[&cpu->loc_my_ticket] = 0;
+	lock->lo_can_serve[cpu->loc_my_ticket + 1] = 1;
+	lock->lo_can_serve[cpu->loc_my_ticket] = 0;
 	intr_restore(s);
 }
 
@@ -551,7 +576,7 @@ lock_object_try(lock)
 {
 	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 
-	return (!lock->lo_can_serve[&cpu->loc_my_ticket]);
+	return (!lock->lo_can_serve[cpu->loc_my_ticket]);
 }
 
 /*

@@ -91,22 +91,23 @@
 #include <sys/exec_elf.h>
 
 #include <lib/libkern/libkern.h>
-
+/*
 #ifdef DDB
 #include <ddb/db_output.h>
 #endif
-
+*/
 #if NKSYMS > 0
 #include "ioconf.h"
 #endif
 
 #define KSYMS_MAX_ID	98304
-#ifdef KDTRACE_HOOKS
-static uint32_t ksyms_nmap[KSYMS_MAX_ID];	/* sorted symbol table map */
-#else
-uint32_t *ksyms_nmap = NULL;
-#endif
 
+//#ifdef KDTRACE_HOOKS
+static uint32_t ksyms_nmap[KSYMS_MAX_ID];	/* sorted symbol table map */
+/*#else
+static uint32_t *ksyms_nmap;// = NULL;
+#endif
+*/
 #ifdef KSYMS_DEBUG
 #define	FOLLOW_CALLS		1
 #define	FOLLOW_MORE_CALLS	2
@@ -129,6 +130,8 @@ int 						ksyms_symsz;
 int 						ksyms_strsz;
 int 						ksyms_ctfsz;	/* this is not currently used by savecore(8) */
 TAILQ_HEAD(, ksyms_symtab) 	ksyms_symtabs;
+
+static void ksyms_hdr_init(const void *hdraddr);
 
 static int
 ksyms_verify(const void *symstart, const void *strstart)
@@ -335,7 +338,8 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 	tab->sd_nglob = nglob;
 
 	addsymtab_strstart = str;
-	if (qsort(nsym, n, sizeof(Elf_Sym), addsymtab_compar, &ts) != 0)
+	qsort(nsym, n, sizeof(Elf_Sym), addsymtab_compar);
+	if (nsym != 0)
 		panic("addsymtab");
 
 	/* ksymsread() is unlocked, so membar. */
@@ -359,7 +363,7 @@ ksyms_delsymtab()
 		if (st->sd_gone) {
 			TAILQ_REMOVE(&ksyms_symtabs, st, sd_queue);
 			free(st->sd_nmap, M_DEVBUF);
-			free(st->sd_nmapsize * sizeof(uint32_t), M_DEVBUF);
+			//free(st->sd_nmapsize, M_DEVBUF);
 			free(st, M_DEVBUF);
 			resize = TRUE;
 		}
