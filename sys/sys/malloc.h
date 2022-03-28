@@ -333,8 +333,8 @@ struct kmemslabs_cache {
 					: (MINBUCKET + 15))
 
 #define kmemxtob(alloc)	(kmembase + (alloc) * NBPG)
-#define btokmemx(addr)	(((char)(addr) - kmembase) / NBPG)
-#define btokup(addr)	(&kmemusage[((char)(addr) - kmembase) >> CLSHIFT])
+#define btokmemx(addr)	(((caddr_t)(addr) - kmembase) / NBPG)
+#define btokup(addr)	(&kmemusage[((caddr_t)(addr) - kmembase) >> CLSHIFT])
 
 /* slab object macros */
 #define SMALL_OBJECT(s)        	(BUCKETINDX((s)) < 10)

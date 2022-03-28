@@ -320,8 +320,8 @@ swap_pager_alloc(handle, size, prot, foff)
 		vm_object_setpager(object, pager, 0, FALSE);
 	} else {
 		swp->sw_flags = 0;
-		pager->pg_list.tqe_next = NULL;
-		pager->pg_list.tqe_prev = NULL;
+		TAILQ_NEXT(pager, pg_list) = NULL;
+		TAILQ_PREV(pager, pagerlst, pg_list) = NULL;
 	}
 	pager->pg_handle = handle;
 	pager->pg_ops = &swappagerops;
@@ -600,7 +600,7 @@ swap_pager_io(swp, mlist, npages, flags)
 		if (swpagerdebug & SDB_PARANOIA)
 			swap_pager_clean_check(mlist, npages, B_WRITE);
 #endif
-		if (swap_pager_free.tqh_first == NULL) {
+		if (TAILQ_FIRST(&swap_pager_free) == NULL) {
 #ifdef DEBUG
 			if (swpagerdebug & SDB_FAIL)
 				printf("%s: no available io headers\n",
@@ -628,7 +628,7 @@ swap_pager_io(swp, mlist, npages, flags)
 			 * trying again (the pageout daemon's current response
 			 * to AGAIN) so we just return FAIL.
 			 */
-			return(VM_PAGER_FAIL);
+			return (VM_PAGER_FAIL);
 		}
 #ifdef DEBUG
 		if (swpagerdebug & (SDB_FULL|SDB_ALLOCBLK))
@@ -648,7 +648,7 @@ swap_pager_io(swp, mlist, npages, flags)
 			printf("%s: no KVA space to map pages\n",
 			       "swap_pager_io");
 #endif
-		return(VM_PAGER_AGAIN);
+		return (VM_PAGER_AGAIN);
 	}
 
 	/*
@@ -711,10 +711,10 @@ swap_pager_io(swp, mlist, npages, flags)
 	 */
 	if ((flags & (B_READ|B_ASYNC)) == B_ASYNC) {
 #ifdef DEBUG
-		if (swap_pager_free.tqh_first == NULL)
+		if (TAILQ_FIRST(&swap_pager_free) == NULL)
 			panic("swpg_io: lost spc");
 #endif
-		spc = swap_pager_free.tqh_first;
+		spc = TAILQ_FIRST(&swap_pager_free);
 		TAILQ_REMOVE(&swap_pager_free, spc, spc_list);
 #ifdef DEBUG
 		if (spc->spc_flags != SPC_FREE)
@@ -822,9 +822,9 @@ swap_pager_clean(rw)
 		 * at splbio() to avoid conflicts with swap_pager_iodone.
 		 */
 		s = splbio();
-		for (spc = swap_pager_inuse.tqh_first;
+		for (spc = TAILQ_FIRST(&swap_pager_inuse);
 		     spc != NULL;
-		     spc = spc->spc_list.tqe_next) {
+		     spc = TAILQ_NEXT(spc, spc_list)) {
 			/*
 			 * If the operation is done, remove it from the
 			 * list and process it.
@@ -921,9 +921,9 @@ swap_pager_clean_check(mlist, npages, rw)
 
 	bad = FALSE;
 	s = splbio();
-	for (spc = swap_pager_inuse.tqh_first;
+	for (spc = TAILQ_FIRST(&swap_pager_inuse);
 	     spc != NULL;
-	     spc = spc->spc_list.tqe_next) {
+	     spc = TAILQ_NEXT(spc, spc_list)) {
 		for (j = 0; j < spc->spc_npages; j++) {
 			m = vm_pager_atop(spc->spc_kva + ptoa(j));
 			for (i = 0; i < npages; i++)
@@ -958,9 +958,9 @@ swap_pager_iodone(bp)
 		printf("swpg_iodone(%x)\n", bp);
 #endif
 	s = splbio();
-	for (spc = swap_pager_inuse.tqh_first;
+	for (spc = TAILQ_FIRST(&swap_pager_inuse);
 	     spc != NULL;
-	     spc = spc->spc_list.tqe_next)
+	     spc = TAILQ_NEXT(spc, spc_list))
 		if (spc->spc_bp == bp)
 			break;
 #ifdef DEBUG

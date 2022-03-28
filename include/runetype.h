@@ -77,8 +77,8 @@ typedef	_BSD_WCTYPE_T_	wctype_t;
 #define	WEOF 			((wint_t)-1)
 #endif
 
-typedef uint64_t		_runepad_t;
 typedef uint32_t 		_RuneType;
+typedef uint64_t		_runepad_t;
 
 #define	_CACHED_RUNES			(1 << 8 )	/* Must be a power of 2 */
 #define _RUNE_ISCACHED(c)		((c) >= 0 && (c) < _CACHED_RUNES)

@@ -64,8 +64,8 @@ struct bufhd {
  */
 struct buf {
 	/* 2.11BSD Orig (Deprecated) */
-	struct	buf 		*b_forw, *b_back;	/* hash chain (2 way street) */
-	struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
+	//struct	buf 		*b_forw, *b_back;	/* hash chain (2 way street) */
+	//struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
 	struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
 
 	/* 2.11BSD New */
@@ -188,6 +188,13 @@ extern struct bqueues 	bufqueues[];
 #define	B_VFLUSH		0x10000000		/* Buffer is being synced. */
 #define	B_XXX			0x20000000		/* Debugging flag. */
 
+
+#define	BUF_INIT(bp) do {					\
+	simple_lock_init(&(bp)->b_interlock);	\
+	(bp)->b_dev = NODEV;					\
+	BIO_SETPRIO((bp), BPRIO_DEFAULT);		\
+} while (/*CONSTCOND*/0)
+
 /*
  * Insq/Remq for the buffer hash lists.
  */
@@ -292,8 +299,9 @@ extern char		*buffers;			/* The buffer contents. */
 extern int		bufpages;			/* Number of memory pages in the buffer pool. */
 extern struct	buf *swbuf;			/* Swap I/O buffer headers. */
 extern int		nswbuf;				/* Number of swap I/O buffer headers. */
-struct	buf 	bswlist;			/* Head of swap I/O buffer headers free list. */
+TAILQ_HEAD(swqueue, buf)  bswlist;	/* Head of swap I/O buffer headers free list. */
 struct	buf 	*bclnlist;			/* Head of cleaned page list. */
+
 
 __BEGIN_DECLS
 void		bufinit(void);

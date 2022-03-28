@@ -95,10 +95,13 @@ void
 swapinit()
 {
 	register int i;
-	register struct buf *sp = swbuf;
-	register struct proc *p = &proc0;	/* XXX */
+	register struct buf *sp;
+	register struct proc *p;
 	struct swdevt *swp;
 	int error;
+
+	sp = swbuf;
+	p = &proc0;	/* XXX */
 
 	/*
 	 * Count swap devices, and adjust total swap space available.
@@ -170,15 +173,15 @@ swapinit()
 	/*
 	 * Now set up swap buffer headers.
 	 */
-	bswlist.b_actf = sp;
+	TAILQ_INSERT_HEAD(&bswlist, sp, b_actq);
 	for (i = 0; i < nswbuf - 1; i++, sp++) {
-		sp->b_actf = sp + 1;
+		TAILQ_INSERT_HEAD(&bswlist, sp, b_freelist);
 		sp->b_rcred = sp->b_wcred = p->p_ucred;
 		LIST_NEXT(sp, b_vnbufs) = NOLIST;
 	}
 	sp->b_rcred = sp->b_wcred = p->p_ucred;
 	LIST_NEXT(sp, b_vnbufs) = NOLIST;
-	sp->b_actf = NULL;
+	TAILQ_REMOVE(&bswlist, sp, b_actq);
 }
 
 void

@@ -24,6 +24,8 @@ A General todo list. Don't hesitate to add to this list. :)
 	- locale:
 		- update: collate, monetary, messages & numeric
 		- add: time
+		- ctype.h rune.h & runetype.h: Need tweaking for mklocale to compile
+			- various parts from the above headers need to be moved into lib/libc/locale
 
 ## libexec:
 

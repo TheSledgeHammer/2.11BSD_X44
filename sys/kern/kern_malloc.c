@@ -50,6 +50,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
+#include <sys/systm.h>
 #include <sys/map.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
@@ -217,7 +218,7 @@ slab_create(cache, size, mtype)
 	slab->ksl_mtype = mtype;
 
     slab = &slabbucket[indx];
-    cache->ksc_link = &slab;
+    cache->ksc_link = *slab;
 
     simple_lock(&malloc_slock);
 	if (indx < 10) {

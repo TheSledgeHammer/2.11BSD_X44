@@ -29,11 +29,11 @@
 #ifndef _RUNE_LOCAL_H_
 #define _RUNE_LOCAL_H_
 
-/* rune.c */
-unsigned long		___runetype(rune_t);
-extern rune_t 		___toupper(rune_t);
-extern rune_t 		___tolower(rune_t);
-
-/* __runetype_mb.c */
-extern _RuneType 	___runetype_mb(wint_t);
+-/* rune.c */
+-unsigned long		___runetype(rune_t);
+-extern rune_t 		___toupper(rune_t);
+-extern rune_t 		___tolower(rune_t);
+ 
+-/* __runetype_mb.c */
+-extern _RuneType 	___runetype_mb(wint_t);
 #endif

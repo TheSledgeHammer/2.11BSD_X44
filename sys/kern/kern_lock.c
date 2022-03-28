@@ -51,10 +51,9 @@
 
 void	lock_pause(struct lock *, int);
 void	lock_acquire(struct lock *, int, int, int);
-void	lock_object_init(struct lock_object *, const struct lock_type *, const char *, u_int);
-void	lock_object_acquire(struct lock_object *);
-void	lock_object_release(struct lock_object *);
-int	lock_object_try(struct lock_object *);
+void	lkp_lock(struct lock *);
+void	lkp_unlock(struct lock *);
+int		lkp_lock_try(struct lock *);
 
 #if NCPUS > 1
 #define PAUSE(lkp, wanted)						\
@@ -65,27 +64,6 @@ int	lock_object_try(struct lock_object *);
 
 #define ACQUIRE(lkp, error, extflags, wanted)	\
 		lock_acquire((struct lock *)lkp, error, extflags, wanted);
-
-void
-lkp_lock(lkp)
-	struct lock *lkp;
-{
-	simple_lock(&lkp->lk_lnterlock);
-}
-
-void
-lkp_unlock(lkp)
-	struct lock *lkp;
-{
-	simple_unlock(&lkp->lk_lnterlock);
-}
-
-int
-lkp_lock_try(lkp)
-	struct lock *lkp;
-{
-	return (simple_lock_try(&lkp->lk_lnterlock));
-}
 
 /*
  * Locking primitives implementation.
@@ -462,51 +440,6 @@ lock_acquire(lkp, error, extflags, wanted)
 }
 
 /*
- * Simple lock Interface:
- * Compatibility with existing lock infrastructure.
- * Provides a common lock object.
- */
-
-/* simple_lock_init */
-void
-simple_lock_init(lock, name)
-	struct lock_object 		*lock;
-	const char				*name;
-{
-	lock_object_init(lock, NULL, name, NULL);
-}
-
-/*
- * simple_lock
- * lock_object lock interface
- */
-void
-simple_lock(lock)
-	__volatile struct lock_object 	*lock;
-{
-	lock_object_acquire((struct lock_object *) lock);
-}
-
-/*
- * simple_unlock
- * lock_object unlock interface
- */
-void
-simple_unlock(lock)
-	__volatile struct lock_object 	*lock;
-{
-	lock_object_release((struct lock_object *) lock);
-}
-
-/* simple_lock_try */
-int
-simple_lock_try(lock)
-	__volatile struct lock_object 	*lock;
-{
-	return (lock_object_try((struct lock_object *) lock));
-}
-
-/*
  * Lock-Object Implementation: Array-Based-Queuing-Lock.
  */
 /*
@@ -577,6 +510,72 @@ lock_object_try(lock)
 	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 
 	return (!lock->lo_can_serve[cpu->loc_my_ticket]);
+}
+
+/*
+ * Simple lock Interface:
+ * Compatibility with existing lock infrastructure.
+ */
+
+/* simple_lock_init */
+void
+simple_lock_init(lock, name)
+	struct lock_object 		*lock;
+	const char				*name;
+{
+	lock_object_init(lock, NULL, name, NULL);
+}
+
+/*
+ * simple_lock
+ * lock_object lock interface
+ */
+void
+simple_lock(lock)
+	__volatile struct lock_object 	*lock;
+{
+	lock_object_acquire((struct lock_object *) lock);
+}
+
+/*
+ * simple_unlock
+ * lock_object unlock interface
+ */
+void
+simple_unlock(lock)
+	__volatile struct lock_object 	*lock;
+{
+	lock_object_release((struct lock_object *) lock);
+}
+
+/* simple_lock_try */
+int
+simple_lock_try(lock)
+	__volatile struct lock_object 	*lock;
+{
+	return (lock_object_try((struct lock_object *) lock));
+}
+
+/* internal simple_lock */
+void
+lkp_lock(lkp)
+	struct lock *lkp;
+{
+	simple_lock(&lkp->lk_lnterlock);
+}
+
+void
+lkp_unlock(lkp)
+	struct lock *lkp;
+{
+	simple_unlock(&lkp->lk_lnterlock);
+}
+
+int
+lkp_lock_try(lkp)
+	struct lock *lkp;
+{
+	return (simple_lock_try(&lkp->lk_lnterlock));
 }
 
 /*

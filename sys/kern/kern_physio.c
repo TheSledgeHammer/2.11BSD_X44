@@ -42,9 +42,13 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
+#include <sys/malloc.h>
 #include <sys/conf.h>
 #include <sys/proc.h>
 #include <sys/user.h>
+
+struct buf *getphysbuf(void);
+void putphysbuf(struct buf *bp);
 
 /*
  * Do "physical I/O" on behalf of a user.  "Physical I/O" is I/O directly
@@ -62,9 +66,10 @@ physio(strategy, bp, dev, flags, minphys, uio)
 	struct uio *uio;
 {
 	struct iovec *iovp;
-	struct proc *p = curproc;
+	struct proc *p;
 	int error, done, i, nobuf, s, todo;
 
+	p = curproc;
 	error = 0;
 	flags &= B_READ | B_WRITE;
 	/*
@@ -80,25 +85,28 @@ physio(strategy, bp, dev, flags, minphys, uio)
 				return (EFAULT);
 
 	/* Make sure we have a buffer, creating one if necessary. */
-	if ((nobuf = (bp == NULL)) != 0)
+	if ((nobuf = (bp == NULL)) != 0) {
 		bp = getphysbuf();
+		/* bp was just malloc'd so can't already be busy */
+		bp->b_flags |= B_BUSY;
+	} else {
+		/* [raise the processor priority level to splbio;] */
+		s = splbio();
 
-	/* [raise the processor priority level to splbio;] */
-	s = splbio();
+		/* [while the buffer is marked busy] */
+		while (bp->b_flags & B_BUSY) {
+			/* [mark the buffer wanted] */
+			bp->b_flags |= B_WANTED;
+			/* [wait until the buffer is available] */
+			tsleep((caddr_t) bp, PRIBIO + 1, "physbuf", 0);
+		}
 
-	/* [while the buffer is marked busy] */
-	while (bp->b_flags & B_BUSY) {
-		/* [mark the buffer wanted] */
-		bp->b_flags |= B_WANTED;
-		/* [wait until the buffer is available] */
-		tsleep((caddr_t) bp, PRIBIO + 1, "physbuf", 0);
+		/* Mark it busy, so nobody else will use it. */
+		bp->b_flags |= B_BUSY;
+
+		/* [lower the priority level] */
+		splx(s);
 	}
-
-	/* Mark it busy, so nobody else will use it. */
-	bp->b_flags |= B_BUSY;
-
-	/* [lower the priority level] */
-	splx(s);
 
 	/* [set up the fixed part of the buffer for a transfer] */
 	bp->b_dev = dev;
@@ -150,7 +158,8 @@ physio(strategy, bp, dev, flags, minphys, uio)
 			 */
 			PHOLD(p);
 			vslock(bp->b_data, todo);
-			vmapbuf(bp, todo);
+			vmapbuf(bp);
+			BIO_SETPRIO(bp, BPRIO_TIMECRITICAL);
 
 			/* [call strategy to start the transfer] */
 			(*strategy)(bp);
@@ -179,7 +188,7 @@ physio(strategy, bp, dev, flags, minphys, uio)
 			 * [unlock the part of the address space previously
 			 *    locked]
 			 */
-			vunmapbuf(bp, todo);
+			vunmapbuf(bp);
 			vsunlock(bp->b_data, todo);
 			PRELE(p);
 
@@ -192,14 +201,11 @@ physio(strategy, bp, dev, flags, minphys, uio)
 			 *    of data to transfer]
 			 */
 			done = bp->b_bcount - bp->b_resid;
-#ifdef DIAGNOSTIC
-			if (done < 0)
-				panic("done < 0; strategy broken");
-			if (done > todo)
-				panic("done > todo; strategy broken");
-#endif
+			KASSERT(done >= 0);
+			KASSERT(done <= todo);
+
 			iovp->iov_len -= done;
-			iovp->iov_base += done;
+			iovp->iov_base = (caddr_t)iovp->iov_base + done;;
 			uio->uio_offset += done;
 			uio->uio_resid -= done;
 
@@ -212,7 +218,7 @@ physio(strategy, bp, dev, flags, minphys, uio)
 		}
 	}
 
-	done:
+done:
 	/*
 	 * [clean up the state of the buffer]
 	 * Remember if somebody wants it, so we can wake them up below.
@@ -236,6 +242,57 @@ physio(strategy, bp, dev, flags, minphys, uio)
 
 	return (error);
 }
+
+/*
+ * allocate a buffer structure for use in physical I/O.
+ */
+struct buf *
+getphysbuf(void)
+{
+	struct buf *bp;
+	int s;
+
+	s = splbio();
+	while((bp = TAILQ_FIRST(&bswlist)) == NULL) {
+		bp->b_flags |= B_WANTED;
+		sleep((caddr_t)&bp, BPRIO_DEFAULT);
+	}
+	TAILQ_REMOVE(&bswlist, bp, b_freelist);
+	splx(s);
+
+	bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_WAITOK);
+	memset(bp, 0, sizeof(*bp));
+	BUF_INIT(bp);
+
+	bp->b_rcred = bp->b_wcred = NOCRED;
+	LIST_NEXT(bp, b_vnbufs) = NOLIST;
+
+	return (bp);
+}
+
+/*
+ * get rid of a swap buffer structure which has been used in physical I/O.
+ */
+void
+putphysbuf(bp)
+	struct buf *bp;
+{
+	int s;
+
+	s = splbio();
+	if (bp->b_vp) {
+		brelvp(bp);
+	}
+	if (bp->b_flags & B_WANTED) {
+		bp->b_flags &= ~B_WANTED;
+		wakeup((caddr_t)bp);
+		//wakeup((caddr_t)pageproc);
+	}
+	TAILQ_INSERT_HEAD(&bswlist, bp, b_freelist);
+	free(bp, M_TEMP);
+	splx(s);
+}
+
 
 /*
  * Leffler, et al., says on p. 231:
