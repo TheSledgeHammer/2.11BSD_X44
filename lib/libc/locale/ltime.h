@@ -1,8 +1,13 @@
-/*	$NetBSD: rune_local.h,v 1.7 2003/03/02 22:18:15 tshiozak Exp $	*/
-
 /*-
- * Copyright (c) 2000 Citrus Project,
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
+ * Copyright (c) 1997-2002 FreeBSD Project.
  * All rights reserved.
+ *
+ * Copyright (c) 2011 The FreeBSD Foundation
+ * All rights reserved.
+ * Portions of this software were developed by David Chisnall
+ * under sponsorship from the FreeBSD Foundation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,16 +29,30 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
-#ifndef _RUNE_LOCAL_H_
-#define _RUNE_LOCAL_H_
+#ifndef _LTIME_H_
+#define _LTIME_H_
 
--/* rune.c */
--unsigned long		___runetype(rune_t);
--extern rune_t 		___toupper(rune_t);
--extern rune_t 		___tolower(rune_t);
- 
--/* __runetype_mb.c */
--extern _RuneType 	___runetype_mb(wint_t);
-#endif
+struct lc_time_T {
+	const char	*mon[12];
+	const char	*month[12];
+	const char	*wday[7];
+	const char	*weekday[7];
+	const char	*X_fmt;
+	const char	*x_fmt;
+	const char	*c_fmt;
+	const char	*am;
+	const char	*pm;
+	const char	*date_fmt;
+	const char	*alt_month[12];
+	const char	*md_order;
+	const char	*ampm_fmt;
+};
+
+struct lc_time_T *__get_current_time_locale(void);
+int	__time_load_locale(const char *);
+
+#endif /* !_LTIME_H_ */

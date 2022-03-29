@@ -60,6 +60,12 @@ typedef union _RuneState {
 
 /* */
 
+static __inline _citrus_ctype_t
+_to_cur_ctype(void)
+{
+	return (_CurrentRuneLocale->citrus);
+}
+
 static __inline _RuneState *
 _ps_to_runestate(mbstate_t *ps)
 {
@@ -87,6 +93,17 @@ _ps_to_ctype(mbstate_t const *ps, locale_t loc)
 	_DIAGASSERT(_ps_to_runelocale(ps) != NULL);
 
 	return _ps_to_runelocale(ps)->citrus;
+}
+
+static __inline _RuneLocale *
+_ps_to_ctype(mbstate_t const *ps, locale_t loc)
+{
+	if (!ps)
+		return _RUNE_LOCALE(loc);
+
+	_DIAGASSERT(_ps_to_runelocale(ps) != NULL);
+
+	return _ps_to_runelocale(ps);
 }
 
 static __inline void *

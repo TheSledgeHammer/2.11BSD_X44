@@ -34,5 +34,6 @@
 #define _LDP_CACHE  1
 
 int	__part_load_locale(const char *, int*, char **, const char *, int, int, const char **);
+const char *__fix_locale_grouping_str(const char *);
 
 #endif /* !_LDPART_H_ */

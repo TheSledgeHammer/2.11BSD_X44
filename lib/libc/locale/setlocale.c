@@ -39,7 +39,6 @@
 static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #endif /* LIBC_SCCS and not lint */
 
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -49,11 +48,13 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "lmonetary.h"	/* for __monetary_load_locale() */
 #include "lnumeric.h"	/* for __numeric_load_locale() */
 #include "lmessages.h"	/* for __messages_load_locale() */
+#include "ltime.h"		/* for __time_load_locale() */
 #include "ldpart.h"
-
+#include "setlocale.h"
 /*
  * Category names for getenv()
  */
@@ -86,7 +87,6 @@ static char current_categories[_LC_LAST][32] = {
 static char new_categories[_LC_LAST][32];
 
 static char current_locale_string[_LC_LAST * 33];
-//char *PathLocale;
 
 static char	*currentlocale(void);
 static char	*loadlocale(int);
@@ -254,7 +254,8 @@ loadlocale(category)
 		func = __messages_load_locale;
 		break;
 	case LC_TIME:
-		return (NULL);
+		func = __time_load_locale;
+		break;
 	}
 
 	return (NULL);

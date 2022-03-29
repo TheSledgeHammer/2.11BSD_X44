@@ -10,7 +10,7 @@ SRCS+=	ansi.c citrus_ctype.c ctype.c euc.c frune.c isctype.c lconv.c 	\
 SRCS+=	multibyte.c _wctrans.c iswctype.c
 SRCS+=	multibyte_sb.c iswctype_sb.c
 SRC+=	setlocale32.c
-SRCS+=	collate.c ldpart.c lmessages.c lmonetary.c lnumeric.c
+SRCS+=	collate.c ldpart.c lmessages.c lmonetary.c lnumeric.c ltime.c
 
 MAN+=	ctype.3 isalnum.3 isalpha.3 isascii.3 isblank.3 iscntrl.3 		\
 		isdigit.3 isgraph.3 islower.3 isprint.3 ispunct.3 isspace.3 	\

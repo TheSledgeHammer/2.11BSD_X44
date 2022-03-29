@@ -49,7 +49,6 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #include <rune.h>
 #include <runetype.h>
 
-#include "rune_local.h"
 #include "_wctrans_local.h"
 
 #ifdef lint

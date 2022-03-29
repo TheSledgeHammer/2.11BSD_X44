@@ -30,7 +30,6 @@
 #define _WCTRANS_LOCAL_H_
 
 #include <rune.h>
-#include "rune_local.h"
 
 wint_t	_towctrans_ext(wint_t, _WCTransEntry *);
 

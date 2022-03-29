@@ -47,7 +47,7 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 #include <wchar.h>
 #include <rune.h>
 #include <runetype.h>
-#include "rune_local.h"
+
 #include "citrus_ctype.h"
 
 extern rune_t	_none_sgetrune (const char *, size_t, char const **);

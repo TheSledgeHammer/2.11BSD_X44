@@ -1,5 +1,3 @@
-/*	$NetBSD: setlocale32.c,v 1.2 2003/03/11 17:23:07 tshiozak Exp $	*/
-
 /*-
  * Copyright (c)1999 Citrus Project,
  * All rights reserved.
@@ -26,24 +24,15 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: setlocale32.c,v 1.2 2003/03/11 17:23:07 tshiozak Exp $");
-#endif /* LIBC_SCCS and not lint */
+#ifndef _SETLOCALE_H_
+#define	_SETLOCALE_H_
 
-#include "namespace.h"
-#define __SETLOCALE_SOURCE__
-#include "setlocale.h"
-#include "rune.h"
+extern char *PathLocale;
 
-char *
-__setlocale_mb_len_max_32(category, locale)
-	int category;
-	const char *locale;
-{
+#ifdef __SETLOCALE_SOURCE__
+char	*setlocale(int, const char *);
+char	*__setlocale_mb_len_max_32(int, const char *);
+char	*__setlocale(int, const char *);
+#endif /* !__SETLOCALE_SOURCE__ */
 
-	/* locale may be NULL */
-
-	__mb_len_max_runtime = 32;
-	return setlocale(category, locale);
-}
+#endif /* !_SETLOCALE_H_ */

@@ -45,7 +45,7 @@ static char sccsid[] = "@(#)utf2.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "locale/citrus_ctype.h"
+#include "citrus_ctype.h"
 
 typedef _Encoding_Info				_UTF2EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF2CTypeInfo;

@@ -174,7 +174,6 @@ wctomb(char *s, wchar_t wc)
 	return ret;
 }
 
-
 size_t
 wcrtomb(char *s, wchar_t wc, mbstate_t *ps)
 {

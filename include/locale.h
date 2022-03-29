@@ -36,7 +36,7 @@
 #ifndef _LOCALE_H_
 #define _LOCALE_H_
 
-#include <sys/queue.h>
+#include <sys/null.h>
 
 struct lconv {
 	char	*decimal_point;
@@ -59,8 +59,6 @@ struct lconv {
 	char	n_sign_posn;
 };
 
-#include <sys/null.h>
-
 #define	LC_ALL		0
 #define	LC_COLLATE	1
 #define	LC_CTYPE	2
@@ -73,35 +71,14 @@ struct lconv {
 
 #include <sys/cdefs.h>
 
-#define _LOCALENAME_LEN_MAX 33
-
 typedef void *_locale_part_t;
-
-struct _locale_cache_t {
-	SLIST_ENTRY(_locale_cache_t) 	cache_link;
-	const char 						*monetary_name;
-	const char 						*numeric_name;
-	struct lconv 					ldata;
-};
-
-struct _locale {
-	const struct _locale_cache_t 	*cache;
-	char 							query[_LOCALENAME_LEN_MAX * (_LC_LAST - 1)];
-	const char 						*part_name[_LC_LAST];
+typedef struct _locale {
 	_locale_part_t 					part_impl[_LC_LAST];
-};
-
-extern char *PathLocale;
+} locale_t;
 
 __BEGIN_DECLS
-struct lconv	*localeconv (void);
-#ifdef __SETLOCALE_SOURCE__
+struct lconv	*localeconv(void);
 char			*setlocale(int, const char *);
-char			*__setlocale_mb_len_max_32(int, const char *);
-char			*__setlocale(int, const char *);
-#else /* !__SETLOCALE_SOURCE__ */
-char			*setlocale(int, const char *);
-#endif /* !__SETLOCALE_SOURCE__ */
 __END_DECLS
 
 #endif /* _LOCALE_H_ */

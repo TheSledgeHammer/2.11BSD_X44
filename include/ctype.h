@@ -131,9 +131,10 @@ extern	char			_ctype_[];
 
 /* See comments in <machine/ansi.h> about _BSD_RUNE_T_. */
 __BEGIN_DECLS
-unsigned long	___runetype(_BSD_RUNE_T_);
-_BSD_RUNE_T_	___tolower(_BSD_RUNE_T_);
-_BSD_RUNE_T_	___toupper(_BSD_RUNE_T_);
+unsigned long	___runetype(rune_t);
+_RuneType 		___runetype_mb(wint_t);
+rune_t			___tolower(rune_t);
+rune_t			___toupper(rune_t);
 __END_DECLS
 
 /*
@@ -141,39 +142,46 @@ __END_DECLS
  * #define _USE_CTYPE_INLINE_.  Otherwise, use the C library
  * functions.
  */
-#if !defined(_USE_CTYPE_CLIBRARY_) && \
-	defined(_USE_CTYPE_INLINE_) || defined(__GNUC__) || defined(__cplusplus)
 
+#if !defined(_USE_CTYPE_CLIBRARY_) && defined(__GNUC__) || defined(__cplusplus)
+#define	_USE_CTYPE_INLINE_	1
+#endif
+
+#if defined(_USE_CTYPE_INLINE_)
 static __inline int
-__istype(_BSD_RUNE_T_ c, unsigned long f)
+__istype(rune_t c, unsigned long f)
 {
 	return((((_RUNE_ISCACHED(c)) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
 }
 
 static __inline int
-__isctype(_BSD_RUNE_T_ c, unsigned long f)
+__isctype(rune_t c, unsigned long f)
 {
 	return((((_RUNE_ISCACHED(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
-static __inline _BSD_RUNE_T_
-__toupper(_BSD_RUNE_T_ c)
+/* _ANSI_LIBRARY is defined by lib/libc/locale/isctype.c. */
+#if !defined(_ANSI_LIBRARY)
+static __inline rune_t
+__toupper(rune_t c)
 {
 	return((_RUNE_ISCACHED(c)) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
-static __inline _BSD_RUNE_T_
-__tolower(_BSD_RUNE_T_ c)
+static __inline rune_t
+__tolower(rune_t c)
 {
 	return((_RUNE_ISCACHED(c)) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
+#endif /* !_ANSI_LIBRARY */
 
-#else
+#else /* !_USE_CTYPE_INLINE_ */
+
 __BEGIN_DECLS
-int				__istype(_BSD_RUNE_T_, unsigned long);
-int				__isctype(_BSD_RUNE_T_, unsigned long);
-_BSD_RUNE_T_	_toupper(_BSD_RUNE_T_);
-_BSD_RUNE_T_	_tolower(_BSD_RUNE_T_);
+int			__istype(rune_t, unsigned long);
+int			__isctype(rune_t, unsigned long);
+rune_t		toupper(rune_t);
+rune_t		tolower(rune_t);
 __END_DECLS
 #endif /* _USE_CTYPE_INLINE_ */
 #endif

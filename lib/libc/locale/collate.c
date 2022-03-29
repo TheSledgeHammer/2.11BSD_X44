@@ -40,6 +40,7 @@ __FBSDID("$FreeBSD$");
 
 #include "collate.h"
 #include "ldpart.h"
+#include "setlocale.h"
 
 int __collate_load_error = 1;
 int __collate_substitute_nontrivial;

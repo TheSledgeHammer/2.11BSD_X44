@@ -50,6 +50,8 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "setlocale.h"
+
 extern int			_none_init (_RuneLocale *);
 extern int			_UTF2_init (_RuneLocale *);
 extern int			_UTF8_init (_RuneLocale *);
@@ -345,3 +347,45 @@ ___tolower(c)
 	}
 	return(c);
 }
+
+#if !defined(_USE_CTYPE_INLINE_) && !defined(_USE_CTYPE_MACROS_)
+/*
+ * See comments in <machine/ansi.h>
+ */
+int
+__istype(c, f)
+	rune_t c;
+	unsigned long f;
+{
+	return (((
+			(_RUNE_ISCACHED(c)) ?
+					___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ?
+			1 : 0);
+}
+
+int
+__isctype(c, f)
+	rune_t c;
+	unsigned long f;
+{
+	return ((((_RUNE_ISCACHED(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ?
+			1 : 0);
+}
+
+rune_t
+toupper(c)
+	rune_t c;
+{
+	return ((_RUNE_ISCACHED(c)) ?
+			___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+}
+
+rune_t
+tolower(c)
+	rune_t c;
+{
+	return ((_RUNE_ISCACHED(c)) ?
+			___tolower(c) : _CurrentRuneLocale->maplower[c]);
+}
+
+#endif
