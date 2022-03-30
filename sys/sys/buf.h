@@ -188,9 +188,9 @@ extern struct bqueues 	bufqueues[];
 #define	B_VFLUSH		0x10000000		/* Buffer is being synced. */
 #define	B_XXX			0x20000000		/* Debugging flag. */
 
+//simple_lock_init(&(bp)->b_interlock);	\
 
 #define	BUF_INIT(bp) do {					\
-	simple_lock_init(&(bp)->b_interlock);	\
 	(bp)->b_dev = NODEV;					\
 	BIO_SETPRIO((bp), BPRIO_DEFAULT);		\
 } while (/*CONSTCOND*/0)
@@ -328,7 +328,7 @@ int			geterror(struct buf *);
 void		cluster_callback(struct buf *);
 int			cluster_read(struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
 void		cluster_write(struct buf *, u_quad_t);
-u_int		minphys(struct buf *);
+void		minphys(struct buf *);
 
 void		vwakeup(struct buf *);
 void		vmapbuf(struct buf *);
