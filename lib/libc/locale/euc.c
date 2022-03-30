@@ -122,13 +122,15 @@ _EUC_init(rl)
 	_EUCEncodingInfo *ei;
 	int x;
 	char *v, *e;
-
+	/*
 	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
 	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
 
 	rl->citrus->cc_ops->co_sgetrune = _EUC_sgetrune;
 	rl->citrus->cc_ops->co_sputrune = _EUC_sputrune;
-
+	*/
+	rl->ops->ro_sgetrune = _EUC_sgetrune;
+	rl->ops->ro_sputrune = _EUC_sputrune;
 	if (!rl->variable) {
 		free(rl);
 		return (EFTYPE);
