@@ -41,7 +41,7 @@
 
 #include <runetype.h>
 #include <stdio.h>
-
+/*
 struct _citrus_ctype_ops {
   rune_t					(*co_sgetrune) (const char *, unsigned int, char const **);
   int						(*co_sputrune) (rune_t, char *, unsigned int, char **);
@@ -54,7 +54,7 @@ struct _citrus_ctype {
 
 typedef struct _citrus_ctype_ops	_citrus_ctype_ops_t;
 typedef struct _citrus_ctype		_citrus_ctype_t;
-
+*/
 #define	_PATH_LOCALE			"/usr/share/locale"
 
 #define _INVALID_RUNE   		_CurrentRuneLocale->invalid_rune
@@ -68,9 +68,9 @@ typedef struct _citrus_ctype		_citrus_ctype_t;
 /*
  * Other namespace conversion.
  */
-#define _DEFAULT_INVALID_RUNE	_INVALID_RUNE
+//#define _DEFAULT_INVALID_RUNE	_INVALID_RUNE
 
-extern size_t 					__mb_len_max_runtime;
+extern size_t 				__mb_len_max_runtime;
 #define __MB_LEN_MAX_RUNTIME	__mb_len_max_runtime
 
 __BEGIN_DECLS
