@@ -50,7 +50,7 @@ static char sccsid[] = "@(#)yacc.y	8.1 (Berkeley) 6/6/93";
 //#include <err.h>
 //#include <locale.h>
 #include <ctype.h>
-#include "locale/rune.h"
+#include "locale/runefile.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
