@@ -51,9 +51,9 @@
 
 void	lock_pause(struct lock *, int);
 void	lock_acquire(struct lock *, int, int, int);
-void	lkp_lock(struct lock *);
-void	lkp_unlock(struct lock *);
-int		lkp_lock_try(struct lock *);
+void	lkp_lock(__volatile struct lock *);
+void	lkp_unlock(__volatile struct lock *);
+int	lkp_lock_try(__volatile struct lock *);
 
 #if NCPUS > 1
 #define PAUSE(lkp, wanted)						\
@@ -129,9 +129,9 @@ lockmgr(lkp, flags, interlkp, pid)
 		pid = LK_KERNPROC;
 	}
 	LOCKHOLDER_PID(&lkp->lk_lockholder) = pid;
-	lkp_lock(&lkp);
+	lkp_lock(lkp);
 	if (flags & LK_INTERLOCK) {
-		lkp_unlock(&lkp);
+		lkp_unlock(lkp);
 	}
 	extflags = (flags | lkp->lk_flags) & LK_EXTFLG_MASK;
 #ifdef DIAGNOSTIC
@@ -348,13 +348,13 @@ lockmgr(lkp, flags, interlkp, pid)
 		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
 		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0); ) {
 			lkp->lk_flags |= LK_WAITDRAIN;
-			lkp_unlock(&lkp);
+			lkp_unlock(lkp);
 			if (error == tsleep((void *)&lkp->lk_flags, lkp->lk_prio,
 			    lkp->lk_wmesg, lkp->lk_timo))
 				return (error);
 			if ((extflags) & LK_SLEEPFAIL)
 				return (ENOLCK);
-			lkp_lock(&lkp);
+			lkp_lock(lkp);
 		}
 		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
 		LOCKHOLDER_PID(&lkp->lk_lockholder) = pid;
@@ -362,7 +362,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		break;
 
 	default:
-		lkp_unlock(&lkp);
+		lkp_unlock(lkp);
 		panic("lockmgr: unknown locktype request %d", flags & LK_TYPE_MASK);
 		/* NOTREACHED */
 	}
@@ -372,7 +372,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		lkp->lk_flags &= ~LK_WAITDRAIN;
 		wakeup((void *)&lkp->lk_flags);
 	}
-	lkp_unlock(&lkp);
+	lkp_unlock(lkp);
 	return (error);
 }
 
@@ -534,7 +534,7 @@ void
 simple_lock(lock)
 	__volatile struct lock_object 	*lock;
 {
-	lock_object_acquire((struct lock_object *) lock);
+	lock_object_acquire(lock);
 }
 
 /*
@@ -545,7 +545,7 @@ void
 simple_unlock(lock)
 	__volatile struct lock_object 	*lock;
 {
-	lock_object_release((struct lock_object *) lock);
+	lock_object_release(lock);
 }
 
 /* simple_lock_try */
@@ -553,27 +553,27 @@ int
 simple_lock_try(lock)
 	__volatile struct lock_object 	*lock;
 {
-	return (lock_object_try((struct lock_object *) lock));
+	return (lock_object_try(lock));
 }
 
 /* internal simple_lock */
 void
 lkp_lock(lkp)
-	struct lock *lkp;
+	__volatile struct lock *lkp;
 {
 	simple_lock(&lkp->lk_lnterlock);
 }
 
 void
 lkp_unlock(lkp)
-	struct lock *lkp;
+	__volatile struct lock *lkp;
 {
 	simple_unlock(&lkp->lk_lnterlock);
 }
 
 int
 lkp_lock_try(lkp)
-	struct lock *lkp;
+	__volatile struct lock *lkp;
 {
 	return (simple_lock_try(&lkp->lk_lnterlock));
 }
