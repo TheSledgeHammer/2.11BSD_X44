@@ -88,14 +88,14 @@ setrunelocale(encoding)
 	_RuneLocale *rl;
 
 	if (!encoding)
-	    return(EFAULT);
+		return (EFAULT);
 
 	/*
 	 * The "C" and "POSIX" locale are always here.
 	 */
 	if (!strcmp(encoding, "C") || !strcmp(encoding, "POSIX")) {
 		_CurrentRuneLocale = &_DefaultRuneLocale;
-		return(0);
+		return (0);
 	}
 
 	if (!PathLocale && !(PathLocale = getenv("PATH_LOCALE")))
@@ -104,7 +104,7 @@ setrunelocale(encoding)
 	sprintf(name, "%s/%s/LC_CTYPE", PathLocale, encoding);
 
 	if ((fp = fopen(name, "r")) == NULL)
-		return(ENOENT);
+		return (ENOENT);
 
 	if ((rl = _Read_RuneMagi(fp)) == 0) {
 		fclose(fp);
@@ -147,29 +147,29 @@ _Read_RuneMagi(fp)
 	int x;
 
 	if (fstat(fileno(fp), &sb) < 0)
-		return(0);
+		return (0);
 
 	if (sb.st_size < sizeof(_RuneLocale))
-		return(0);
+		return (0);
 
 	if ((data = malloc(sb.st_size)) == NULL)
-		return(0);
+		return (0);
 
 	rewind(fp); /* Someone might have read the magic number once already */
 
 	if (fread(data, sb.st_size, 1, fp) != 1) {
 		free(data);
-		return(0);
+		return (0);
 	}
 
-	rl = (_RuneLocale *)data;
+	rl = (_RuneLocale*) data;
 	lastp = data + sb.st_size;
 
 	rl->variable = rl + 1;
 
 	if (memcmp(rl->magic, _RUNE_MAGIC_1, sizeof(rl->magic))) {
 		free(data);
-		return(0);
+		return (0);
 	}
 
 	rl->invalid_rune = ntohl(rl->invalid_rune);
@@ -184,25 +184,25 @@ _Read_RuneMagi(fp)
 		rl->mapupper[x] = ntohl(rl->mapupper[x]);
 	}
 
-	rl->runetype_ext.ranges = (_RuneEntry *)rl->variable;
+	rl->runetype_ext.ranges = (_RuneEntry*) rl->variable;
 	rl->variable = rl->runetype_ext.ranges + rl->runetype_ext.nranges;
 	if (rl->variable > lastp) {
 		free(data);
-		return(0);
+		return (0);
 	}
 
-	rl->maplower_ext.ranges = (_RuneEntry *)rl->variable;
+	rl->maplower_ext.ranges = (_RuneEntry*) rl->variable;
 	rl->variable = rl->maplower_ext.ranges + rl->maplower_ext.nranges;
 	if (rl->variable > lastp) {
 		free(data);
-		return(0);
+		return (0);
 	}
 
-	rl->mapupper_ext.ranges = (_RuneEntry *)rl->variable;
+	rl->mapupper_ext.ranges = (_RuneEntry*) rl->variable;
 	rl->variable = rl->mapupper_ext.ranges + rl->mapupper_ext.nranges;
 	if (rl->variable > lastp) {
 		free(data);
-		return(0);
+		return (0);
 	}
 
 	for (x = 0; x < rl->runetype_ext.nranges; ++x) {
@@ -216,7 +216,7 @@ _Read_RuneMagi(fp)
 			rl->variable = rr[x].types + len;
 			if (rl->variable > lastp) {
 				free(data);
-				return(0);
+				return (0);
 			}
 			while (len-- > 0)
 				rr[x].types[len] = ntohl(rr[x].types[len]);
@@ -239,9 +239,9 @@ _Read_RuneMagi(fp)
 		rr[x].max = ntohl(rr[x].max);
 		rr[x].map = ntohl(rr[x].map);
 	}
-	if (((char *)rl->variable) + rl->variable_len > (char *)lastp) {
+	if (((char*) rl->variable) + rl->variable_len > (char*) lastp) {
 		free(data);
-		return(0);
+		return (0);
 	}
 
 	/*
@@ -258,8 +258,8 @@ _Read_RuneMagi(fp)
 
 	if (!rl->mapupper_ext.nranges)
 		rl->mapupper_ext.ranges = 0;
-	    
-	return(rl);
+
+	return (rl);
 }
 
 unsigned long
@@ -271,18 +271,18 @@ ___runetype(c)
 	_RuneEntry *re = rr->ranges;
 
 	if (c == EOF)
-		return(0);
+		return (0);
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
-			return(0L);
+			return (0L);
 		if (c <= re->max) {
 			if (re->types)
-			    return(re->types[c - re->min]);
+				return (re->types[c - re->min]);
 			else
-			    return(re->map);
+				return (re->map);
 		}
 	}
-	return(0L);
+	return (0L);
 }
 
 _RuneType
@@ -294,20 +294,20 @@ ___runetype_mb(c)
 	_RuneEntry *re = rr->ranges;
 
 	if (c == WEOF)
-		return(0U);
+		return (0U);
 
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		/* XXX assumes wchar_t = int */
-		if ((rune_t)c < re->min)
-			return(0U);
-		if ((rune_t)c <= re->max) {
+		if ((rune_t) c < re->min)
+			return (0U);
+		if ((rune_t) c <= re->max) {
 			if (re->types)
-				return(re->types[(rune_t)c - re->min]);
+				return (re->types[(rune_t) c - re->min]);
 			else
-				return(re->map);
+				return (re->map);
 		}
 	}
-	return(0U);
+	return (0U);
 }
 
 rune_t
@@ -319,14 +319,14 @@ ___toupper(c)
 	_RuneEntry *re = rr->ranges;
 
 	if (c == EOF)
-		return(EOF);
+		return (EOF);
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
-			return(c);
+			return (c);
 		if (c <= re->max)
-			return(re->map + c - re->min);
+			return (re->map + c - re->min);
 	}
-	return(c);
+	return (c);
 }
 
 rune_t
@@ -338,14 +338,14 @@ ___tolower(c)
 	_RuneEntry *re = rr->ranges;
 
 	if (c == EOF)
-		return(EOF);
+		return (EOF);
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		if (c < re->min)
-			return(c);
+			return (c);
 		if (c <= re->max)
-			return(re->map + c - re->min);
+			return (re->map + c - re->min);
 	}
-	return(c);
+	return (c);
 }
 
 #if !defined(_USE_CTYPE_INLINE_) && !defined(_USE_CTYPE_MACROS_)

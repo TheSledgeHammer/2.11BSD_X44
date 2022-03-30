@@ -47,8 +47,8 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #include <errno.h>
 #include <string.h>
 #include <rune.h>
-#include <runetype.h>
 
+#include "runefile.h"
 #include "_wctrans_local.h"
 
 #ifdef lint
@@ -259,7 +259,6 @@ wctype(const char *property)
 int
 iswctype(wint_t c, wctype_t charclass)
 {
-
 	/*
 	 * SUSv3: If charclass is 0, iswctype() shall return 0.
 	 */

@@ -32,7 +32,7 @@
 #define	_WCTYPE_H_
 
 #include <sys/cdefs.h>
-#include <machine/ansi.h>
+#include <sys/ansi.h>
 
 #ifdef	_BSD_WINT_T_
 typedef	_BSD_WINT_T_    wint_t;

@@ -59,8 +59,8 @@ typedef struct _citrus_ctype		_citrus_ctype_t;
 
 #define _INVALID_RUNE   		_CurrentRuneLocale->invalid_rune
 
-#define __sgetrune      		_CurrentRuneLocale->citrus->cc_ops->co_sgetrune
-#define __sputrune     		 	_CurrentRuneLocale->citrus->cc_ops->co_sputrune
+#define __sgetrune      		_CurrentRuneLocale->ops->ro_sgetrune
+#define __sputrune     		 	_CurrentRuneLocale->ops->ro_sputrune
 
 #define sgetrune(s, n, r)       (*__sgetrune)((s), (n), (r))
 #define sputrune(c, s, n, r)    (*__sputrune)((c), (s), (n), (r))

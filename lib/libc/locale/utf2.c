@@ -51,11 +51,11 @@ typedef _Encoding_Info				_UTF2EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF2CTypeInfo;
 typedef _Encoding_State				_UTF2State;
 
-#define _FUNCNAME(m)				_UTF2_citrus_type_##m
+#define _FUNCNAME(m)				_UTF2_citrus_ctype_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	3
 
-rune_t	_UTF2_sgetrune (const char *, size_t, char const **);
-int		_UTF2_sputrune (rune_t, char *, size_t, char **);
+rune_t	_UTF2_sgetrune(const char *, size_t, char const **);
+int		_UTF2_sputrune(rune_t, char *, size_t, char **);
 
 static _utf_count[16] = {
 	1, 1, 1, 1, 1, 1, 1, 1,
@@ -66,11 +66,12 @@ int
 _UTF2_init(rl)
 	_RuneLocale *rl;
 {
+/*
 	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
 	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
-
-	rl->citrus->cc_ops->co_sgetrune = _UTF2_sgetrune;
-	rl->citrus->cc_ops->co_sputrune = _UTF2_sputrune;
+*/
+	rl->ops->ro_sgetrune = _UTF2_sgetrune;
+	rl->ops->ro_sputrune = _UTF2_sputrune;
 
 	_CurrentRuneLocale = rl;
 

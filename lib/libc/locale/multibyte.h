@@ -53,46 +53,30 @@ typedef union _RuneState {
 } _RuneState;
 
 #define _RUNE_LOCALE(loc) \
-	((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))
+	((_RuneLocale *)((loc)[(size_t)LC_CTYPE]))
 
-#define _CITRUS_CTYPE(loc) \
-	(((_RuneLocale *)((loc)->part_impl[(size_t)LC_CTYPE]))->citrus)
-
-/* */
-
-static __inline _citrus_ctype_t
+static __inline _RuneLocale *
 _to_cur_ctype(void)
 {
-	return (_CurrentRuneLocale->citrus);
+	return (_CurrentRuneLocale);
 }
 
 static __inline _RuneState *
 _ps_to_runestate(mbstate_t *ps)
 {
-	return (_RuneState *)(void *)ps;
+	return ((_RuneState *)(void *)ps);
 }
 
 static __inline _RuneState const *
 _ps_to_runestate_const(mbstate_t const *ps)
 {
-	return (_RuneState const *)(void const *)ps;
+	return ((_RuneState const *)(void const *)ps);
 }
 
 static __inline _RuneLocale *
 _ps_to_runelocale(mbstate_t const *ps)
 {
-	return _ps_to_runestate_const(ps)->rs_runelocale;
-}
-
-static __inline _citrus_ctype_t
-_ps_to_ctype(mbstate_t const *ps, locale_t loc)
-{
-	if (!ps)
-		return _CITRUS_CTYPE(loc);
-
-	_DIAGASSERT(_ps_to_runelocale(ps) != NULL);
-
-	return _ps_to_runelocale(ps)->citrus;
+	return (_ps_to_runestate_const(ps)->rs_runelocale);
 }
 
 static __inline _RuneLocale *
@@ -111,7 +95,7 @@ _ps_to_private(mbstate_t *ps)
 {
 	if (ps == NULL)
 		return NULL;
-	return _ps_to_runestate(ps)->rs_private;
+	return (_ps_to_runestate(ps)->rs_private);
 }
 
 static __inline void const *
@@ -127,7 +111,7 @@ _init_ps(_RuneLocale *rl, mbstate_t *ps)
 {
 	size_t dum;
 	_ps_to_runestate(ps)->rs_runelocale = rl;
-	_citrus_ctype_mbrtowc(rl->citrus, NULL, NULL, 0, _ps_to_private(ps), &dum);
+	_citrus_ctype_mbrtowc(_ps_to_runestate(ps)->rs_runelocale, NULL, NULL, 0, _ps_to_private(ps), &dum);
 }
 
 static __inline void

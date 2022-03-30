@@ -79,7 +79,6 @@ struct __tag_wctrans_t;
 #define	_BSD_INTPTR_T_		int				/* intptr_t */
 #define	_BSD_UINTPTR_T_		unsigned int	/* uintptr_t */
 
-
 /*
  * Runes (wchar_t) is declared to be an ``int'' instead of the more natural
  * ``unsigned long'' or ``long''.  Two things are happening here.  It is not

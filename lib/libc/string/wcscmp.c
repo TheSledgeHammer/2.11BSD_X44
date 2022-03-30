@@ -43,7 +43,7 @@ __RCSID("$NetBSD: wcscmp.c,v 1.5 2003/08/07 16:43:54 agc Exp $");
 
 #include <assert.h>
 #include <wchar.h>
-#include "locale/runetype.h"
+#include "locale/runefile.h"
 
 /*
  * Compare strings.

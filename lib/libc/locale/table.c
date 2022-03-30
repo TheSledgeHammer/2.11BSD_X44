@@ -46,20 +46,20 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 #include <assert.h>
 #include <wchar.h>
 #include <rune.h>
-#include <runetype.h>
 
+#include "runefile.h"
 #include "citrus_ctype.h"
 
 extern rune_t	_none_sgetrune (const char *, size_t, char const **);
 extern int		_none_sputrune (rune_t, char *, size_t, char **);
-
+/*
 _citrus_ctype_t _citrus_ctype_default = {
 		.cc_ops = {
 				.co_sgetrune = _none_sgetrune,
 				.co_sputrune = _none_sputrune,
 		}
 };
-
+*/
 _RuneLocale _DefaultRuneLocale = {
     _RUNE_MAGIC_1,
     "none",
@@ -264,7 +264,11 @@ _RuneLocale _DefaultRuneLocale = {
 	{ 0, NULL },
 	NULL, 0,
 	"646",
-	&_citrus_ctype_default,
+	{
+			_none_sgetrune,
+			_none_sputrune
+	},
+	//&_citrus_ctype_default,
     {
     		{   "towlower",
     				__UNCONST(&_DefaultRuneLocale.maplower[0]),

@@ -109,11 +109,11 @@ typedef _Encoding_Info				_EUCEncodingInfo;
 typedef _Encoding_TypeInfo 			_EUCCTypeInfo;
 typedef _Encoding_State				_EUCState;
 
-#define _FUNCNAME(m)				_EUC_citrus_type_##m
+#define _FUNCNAME(m)				_EUC_citrus_ctype_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	3
 
-rune_t	_EUC_sgetrune (const char *, size_t, char const **);
-int		_EUC_sputrune (rune_t, char *, size_t, char **);
+rune_t	_EUC_sgetrune(const char *, size_t, char const **);
+int		_EUC_sputrune(rune_t, char *, size_t, char **);
 
 int
 _EUC_init(rl)

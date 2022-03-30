@@ -70,11 +70,14 @@ struct lconv {
 #define	_LC_LAST	7		/* marks end */
 
 #include <sys/cdefs.h>
-
+/*
 typedef void *_locale_part_t;
 typedef struct _locale {
 	_locale_part_t 					part_impl[_LC_LAST];
 } locale_t;
+*/
+
+typedef void *_locale_t;
 
 __BEGIN_DECLS
 struct lconv	*localeconv(void);

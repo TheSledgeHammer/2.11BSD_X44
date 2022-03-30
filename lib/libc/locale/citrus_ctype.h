@@ -123,8 +123,8 @@ int 		_citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t w
 int 		_citrus_ctype_wcsrtombs(void * __restrict cl, char * __restrict s, const wchar_t ** __restrict pwcs, size_t n, void * __restrict pspriv, size_t * __restrict nresult);
 int 		_citrus_ctype_wcstombs(void * __restrict cl, char * __restrict s, const wchar_t * __restrict pwcs, size_t n, size_t * __restrict nresult);
 int 		_citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int * __restrict nresult);
-int 		_citrus_ctype_btowc(_citrus_ctype_t * __restrict cc, int c, wint_t * __restrict wcresult);
-int 		_citrus_ctype_wctob(_citrus_ctype_t * __restrict cc, wint_t wc, int * __restrict cresult);
+int 		_citrus_ctype_btowc(void * __restrict cl, int c, wint_t * __restrict wcresult);
+int 		_citrus_ctype_wctob(void * __restrict cl, wint_t wc, int * __restrict cresult);
 __END_DECLS
 #endif /* _CITRUS_CTYPE_H_ */
 

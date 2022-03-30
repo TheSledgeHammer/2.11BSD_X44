@@ -35,7 +35,7 @@ __RCSID("$NetBSD: wmemcmp.c,v 1.3 2003/04/06 18:33:23 tshiozak Exp $");
 
 #include <assert.h>
 #include <wchar.h>
-#include "locale/runetype.h"
+#include "locale/runefile.h"
 
 int
 wmemcmp(s1, s2, n)

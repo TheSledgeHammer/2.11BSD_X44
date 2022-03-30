@@ -74,21 +74,22 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 
 #include "citrus_ctype.h"
 
-#define _FUNCNAME(m)				_none_citrus_type_##m
+#define _FUNCNAME(m)				_none_citrus_ctype_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	1
 
-rune_t	_none_sgetrune (const char *, size_t, char const **);
-int		_none_sputrune (rune_t, char *, size_t, char **);
+rune_t	_none_sgetrune(const char *, size_t, char const **);
+int		_none_sputrune(rune_t, char *, size_t, char **);
 
 int
 _none_init(rl)
 	_RuneLocale *rl;
 {
+	/*
 	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
 	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
-
-	rl->citrus->cc_ops->co_sgetrune = _none_sgetrune;
-	rl->citrus->cc_ops->co_sputrune = _none_sputrune;
+	 */
+	rl->ops->ro_sgetrune = _none_sgetrune;
+	rl->ops->ro_sputrune = _none_sputrune;
 
 	_CurrentRuneLocale = rl;
 

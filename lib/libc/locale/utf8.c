@@ -97,7 +97,7 @@ typedef _Encoding_Info				_UTF8EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF8CTypeInfo;
 typedef _Encoding_State				_UTF8State;
 
-#define _FUNCNAME(m)				_UTF8_citrus_type_##m
+#define _FUNCNAME(m)				_UTF8_citrus_ctype_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	6
 
 rune_t	_UTF8_sgetrune(const char *, size_t, char const **);
@@ -106,11 +106,12 @@ int		_UTF8_sputrune(rune_t, char *, size_t, char **);
 int
 _UTF8_init(_RuneLocale *rl)
 {
+/*
 	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
 	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
-
-	rl->citrus->cc_ops->co_sgetrune = _UTF8_sgetrune;
-	rl->citrus->cc_ops->co_sputrune = _UTF8_sputrune;
+*/
+	rl->ops->ro_sgetrune = _UTF8_sgetrune;
+	rl->ops->ro_sputrune = _UTF8_sputrune;
 
 	_CurrentRuneLocale = rl;
 
