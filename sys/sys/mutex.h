@@ -33,9 +33,9 @@
 
 #ifdef _KERNEL
 struct mtx {
-	__volatile struct lock_object	*mtx_lock;
-	struct lock_holder 				*mtx_holder;
-	char 							*mtx_name;
+	struct lock_object	*mtx_lock;
+	struct lock_holder 	*mtx_holder;
+	char 				*mtx_name;
 };
 
 inline void

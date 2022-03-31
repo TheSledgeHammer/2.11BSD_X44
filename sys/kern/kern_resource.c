@@ -23,51 +23,49 @@ getpriority()
 	register struct getpriority_args {
 		syscallarg(int)	which;
 		syscallarg(int)	who;
-	} *uap = (struct getpriority_args *)u->u_ap;
+	} *uap = (struct getpriority_args *)u.u_ap;
 	register struct proc *p;
 	register int low = PRIO_MAX + 1;
 
-	switch (uap->which) {
+	switch (SCARG(uap, which)) {
 
 	case PRIO_PROCESS:
-		if (uap->who == 0)
-			p = u->u_procp;
+		if (SCARG(uap, who) == 0)
+			p = u.u_procp;
 		else
-			p = pfind(uap->who);
+			p = pfind(SCARG(uap, who));
 		if (p == 0)
 			break;
 		low = p->p_nice;
 		break;
 
 	case PRIO_PGRP:
-		if (uap->who == 0)
-			uap->who = u->u_procp->p_pgrp;
+		if (SCARG(uap, who) == 0)
+			SCARG(uap, who) = u.u_procp->p_pgrp;
 		for (p = allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_pgrp == uap->who &&
-			    p->p_nice < low)
+			if (p->p_pgrp == SCARG(uap, who) && p->p_nice < low)
 				low = p->p_nice;
 		}
 		break;
 
 	case PRIO_USER:
-		if (uap->who == 0)
-			uap->who = u->u_uid;
+		if (SCARG(uap, who) == 0)
+			SCARG(uap, who) = u.u_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_uid == uap->who &&
-			    p->p_nice < low)
+			if (p->p_uid == SCARG(uap, who) && p->p_nice < low)
 				low = p->p_nice;
 		}
 		break;
 
 	default:
-		u->u_error = EINVAL;
+		u.u_error = EINVAL;
 		return (EINVAL);
 	}
 	if (low == PRIO_MAX + 1) {
-		u->u_error = ESRCH;
+		u.u_error = ESRCH;
 		return (ESRCH);
 	}
-	u->u_r.r_val1 = low;
+	u.u_r.r_val1 = low;
 	return (0);
 }
 
@@ -78,52 +76,52 @@ setpriority()
 		syscallarg(int)	which;
 		syscallarg(int)	who;
 		syscallarg(int)	prio;
-	} *uap = (struct setpriority_args *)u->u_ap;
+	} *uap = (struct setpriority_args *)u.u_ap;
 	register struct proc *p;
 	register int found = 0;
 
-	switch (uap->which) {
+	switch (SCARG(uap, which)) {
 
 	case PRIO_PROCESS:
-		if (uap->who == 0)
-			p = u->u_procp;
+		if (SCARG(uap, who) == 0)
+			p = u.u_procp;
 		else
-			p = pfind(uap->who);
+			p = pfind(SCARG(uap, who));
 		if (p == 0)
 			break;
-		donice(p, uap->prio);
+		donice(p, SCARG(uap, prio));
 		found++;
 		break;
 
 	case PRIO_PGRP:
-		if (uap->who == 0)
-			uap->who = u->u_procp->p_pgrp;
+		if (SCARG(uap, who) == 0)
+			SCARG(uap, who) = u.u_procp->p_pgrp;
 		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_pgrp == uap->who) {
-				donice(p, uap->prio);
+			if (p->p_pgrp == SCARG(uap, who)) {
+				donice(p, SCARG(uap, prio));
 				found++;
 			}
 		break;
 
 	case PRIO_USER:
-		if (uap->who == 0)
-			uap->who = u->u_uid;
+		if (SCARG(uap, who) == 0)
+			SCARG(uap, who) = u.u_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_uid == uap->who) {
-				donice(p, uap->prio);
+			if (p->p_uid == SCARG(uap, who)) {
+				donice(p, SCARG(uap, prio));
 				found++;
 			}
 		break;
 
 	default:
-		u->u_error = EINVAL;
+		u.u_error = EINVAL;
 		return (EINVAL);
 	}
 	if (found == 0)
-		u->u_error = ESRCH;
+		u.u_error = ESRCH;
 		return (ESRCH);
 
-	return (u->u_error);
+	return (u.u_error);
 }
 
 static void
@@ -131,9 +129,9 @@ donice(p, n)
 	register struct proc *p;
 	register int n;
 {
-	if (u->u_uid && u->u_pcred->p_ruid &&
-	    u->u_uid != p->p_uid && u->u_pcred->p_ruid != p->p_uid) {
-		u->u_error = EPERM;
+	if (u.u_uid && u.u_pcred->p_ruid &&
+	    u.u_uid != p->p_uid && u.u_pcred->p_ruid != p->p_uid) {
+		u.u_error = EPERM;
 		return;
 	}
 	if (n > PRIO_MAX)
@@ -141,7 +139,7 @@ donice(p, n)
 	if (n < PRIO_MIN)
 		n = PRIO_MIN;
 	if (n < p->p_nice && !suser()) {
-		u->u_error = EACCES;
+		u.u_error = EACCES;
 		return;
 	}
 	p->p_nice = n;
@@ -153,20 +151,20 @@ setrlimit()
 	register struct setrlimit_args {
 		syscallarg(u_int) which;
 		syscallarg(struct rlimit *) lim;
-	} *uap = (struct setrlimit_args *)u->u_ap;
+	} *uap = (struct setrlimit_args *)u.u_ap;
 	struct rlimit alim;
 	register struct rlimit *alimp;
 	extern unsigned int maxdmap;
 
-	if (uap->which >= RLIM_NLIMITS) {
-		u->u_error = EINVAL;
+	if (SCARG(uap, which) >= RLIM_NLIMITS) {
+		u.u_error = EINVAL;
 		return (EINVAL);
 	}
-	alimp = &u->u_rlimit[uap->which];
-	u->u_error = copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit));
-	if (u->u_error)
-		return (u->u_error);
-	if (uap->which == RLIMIT_CPU) {
+	alimp = &u.u_rlimit[SCARG(uap, which)];
+	u.u_error = copyin((caddr_t)SCARG(uap, lim), (caddr_t)&alim, sizeof (struct rlimit));
+	if (u.u_error)
+		return (u.u_error);
+	if (SCARG(uap, which) == RLIMIT_CPU) {
 		/*
 		 * 2.11 stores RLIMIT_CPU as ticks to keep from making
 		 * hardclock() do long multiplication/division.
@@ -181,13 +179,13 @@ setrlimit()
 			alim.rlim_max = alim.rlim_max * hz;
 	}
 	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max) {
-		if (u->u_error == suser()) {
-			return (u->u_error);
+		if (u.u_error == suser()) {
+			return (u.u_error);
 		}
 	}
 
 	//*alimp = alim;
-	return (dosetrlimit(u->u_procp, uap->which, alim, alimp));
+	return (dosetrlimit(u.u_procp, SCARG(uap, which), alim, alimp));
 }
 
 int
@@ -258,27 +256,27 @@ getrlimit()
 	register struct getrlimit_args {
 		syscallarg(u_int) 			which;
 		syscallarg(struct rlimit *) rlp;
-	} *uap = (struct getrlimit_args *)u->u_ap;
+	} *uap = (struct getrlimit_args *)u.u_ap;
 
-	if (uap->which >= RLIM_NLIMITS) {
-		u->u_error = EINVAL;
+	if (SCARG(uap, which) >= RLIM_NLIMITS) {
+		u.u_error = EINVAL;
 		return (EINVAL);
 	}
-	if (uap->which == RLIMIT_CPU) {
+	if (SCARG(uap, which) == RLIMIT_CPU) {
 		struct rlimit alim;
 
-		alim = u->u_rlimit[uap->which];
+		alim = u.u_rlimit[SCARG(uap, which)];
 		if (alim.rlim_cur != RLIM_INFINITY)
 			alim.rlim_cur = alim.rlim_cur / hz;
 		if (alim.rlim_max != RLIM_INFINITY)
 			alim.rlim_max = alim.rlim_max / hz;
-		u->u_error = copyout((caddr_t) & alim, (caddr_t) uap->rlp,
+		u.u_error = copyout((caddr_t) & alim, (caddr_t) SCARG(uap, rlp),
 				sizeof(struct rlimit));
 	} else
-		u->u_error = copyout((caddr_t) & u->u_rlimit[uap->which],
-				(caddr_t) uap->rlp, sizeof(struct rlimit));
+		u.u_error = copyout((caddr_t) & u.u_rlimit[SCARG(uap, which)],
+				(caddr_t) SCARG(uap, rlp), sizeof(struct rlimit));
 
-	return (u->u_error);
+	return (u.u_error);
 }
 
 int
@@ -287,27 +285,27 @@ getrusage()
 	register struct getrusage_args {
 		syscallarg(int) who;
 		syscallarg(struct rusage *) rusage;
-	} *uap = (struct getrusage_args *)u->u_ap;
+	} *uap = (struct getrusage_args *)u.u_ap;
 	register struct k_rusage *rup;
 	struct rusage ru;
 
-	switch (uap->who) {
+	switch (SCARG(uap, who)) {
 
 	case RUSAGE_SELF:
-		rup = &u->u_ru;
+		rup = &u.u_ru;
 		break;
 
 	case RUSAGE_CHILDREN:
-		rup = &u->u_cru;
+		rup = &u.u_cru;
 		break;
 
 	default:
-		u->u_error = EINVAL;
+		u.u_error = EINVAL;
 		return (EINVAL);
 	}
 	rucvt(&ru,rup);
-	u->u_error = copyout((caddr_t)&ru, (caddr_t)uap->rusage, sizeof (struct rusage));
-	return (u->u_error);
+	u.u_error = copyout((caddr_t)&ru, (caddr_t)SCARG(uap, rusage), sizeof (struct rusage));
+	return (u.u_error);
 }
 
 void

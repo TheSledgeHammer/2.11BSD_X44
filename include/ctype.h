@@ -134,7 +134,9 @@ __BEGIN_DECLS
 unsigned long	___runetype(rune_t);
 _RuneType 		___runetype_mb(wint_t);
 rune_t			___tolower(rune_t);
+wint_t			___tolower_mb(wint_t);
 rune_t			___toupper(rune_t);
+wint_t			___toupper_mb(wint_t);
 __END_DECLS
 
 /*
@@ -173,6 +175,18 @@ __tolower(rune_t c)
 {
 	return((_RUNE_ISCACHED(c)) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
+
+static __inline wint_t
+__toupper_mb(wint_t c)
+{
+	return((_RUNE_ISCACHED(c)) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
+}
+
+static __inline wint_t
+__tolower_mb(wint_t c)
+{
+	return((_RUNE_ISCACHED(c)) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
+}
 #endif /* !_ANSI_LIBRARY */
 
 #else /* !_USE_CTYPE_INLINE_ */
@@ -182,6 +196,8 @@ int			__istype(rune_t, unsigned long);
 int			__isctype(rune_t, unsigned long);
 rune_t		toupper(rune_t);
 rune_t		tolower(rune_t);
+wint_t		toupper_mb(wint_t);
+wint_t		tolower_mb(wint_t);
 __END_DECLS
 #endif /* _USE_CTYPE_INLINE_ */
 #endif

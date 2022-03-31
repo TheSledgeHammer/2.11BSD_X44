@@ -79,7 +79,7 @@ typedef	_BSD_WCTYPE_T_	wctype_t;
 #define	WEOF 			((wint_t)-1)
 #endif
 
-typedef uint32_t 		rune_t;
+//typedef uint32_t 		rune_t;
 typedef uint32_t 		_RuneType;
 typedef uint64_t		_runepad_t;
 
@@ -180,7 +180,6 @@ typedef struct {
 	/*
 	 * the following portion is generated on the fly
 	 */
-	//_citrus_ctype_t				*citrus;
 	_RuneOps					*ops;
 	_WCTransEntry				wctrans[_WCTRANS_NINDEXES];
 	_WCTypeEntry				wctype[_WCTYPE_NINDEXES];

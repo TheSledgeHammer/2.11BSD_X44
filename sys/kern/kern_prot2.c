@@ -51,9 +51,9 @@ setuid()
 {
 	struct setuid_args {
 		syscallarg(uid_t) uid;
-	} *uap = (struct setuid_args *)u->u_ap;
+	} *uap = (struct setuid_args *)u.u_ap;
 
-	return(_setuid(uap->uid));
+	return(_setuid(SCARG(uap, uid)));
 }
 
 /*
@@ -65,14 +65,14 @@ int
 _setuid(uid)
 	register uid_t uid;
 {
-	if (uid != u->u_pcred->p_ruid && !suser())
-		return(u->u_error);
-	u->u_procp->p_uid = uid;
-	u->u_ucred->cr_uid = uid;
-	u->u_pcred->p_ruid = uid;
-	u->u_pcred->p_svuid = uid;
+	if (uid != u.u_pcred->p_ruid && !suser())
+		return(u.u_error);
+	u.u_procp->p_uid = uid;
+	u.u_ucred->cr_uid = uid;
+	u.u_pcred->p_ruid = uid;
+	u.u_pcred->p_svuid = uid;
 	//u.u_acflag |= ASUGID;
-	return (u->u_error = 0);
+	return (u.u_error = 0);
 }
 
 int
@@ -80,9 +80,9 @@ seteuid()
 {
 	struct seteuid_args {
 		syscallarg(uid_t) euid;
-	} *uap = (struct seteuid_args *)u->u_ap;
+	} *uap = (struct seteuid_args *)u.u_ap;
 
-	return(_seteuid(uap->euid));
+	return(_seteuid(SCARG(uap, euid)));
 }
 
 int
@@ -90,14 +90,14 @@ _seteuid(euid)
 	register uid_t euid;
 {
 
-	if (euid != u->u_pcred->p_ruid && euid != u->u_pcred->p_svuid && !suser())
-		return (u->u_error);
+	if (euid != u.u_pcred->p_ruid && euid != u.u_pcred->p_svuid && !suser())
+		return (u.u_error);
 	/*
 	 * Everything's okay, do it.
 	 */
-	u->u_ucred->cr_uid = euid;
-	u->u_acflag |= ASUGID;
-	return (u->u_error = 0);
+	u.u_ucred->cr_uid = euid;
+	u.u_acflag |= ASUGID;
+	return (u.u_error = 0);
 }
 
 int
@@ -105,22 +105,22 @@ setgid()
 {
 	struct setgid_args {
 		syscallarg(gid_t) gid;
-	} *uap = (struct setgid_args *)u->u_ap;
+	} *uap = (struct setgid_args *)u.u_ap;
 	
-	return(_setgid(uap->gid));
+	return(_setgid(SCARG(uap, gid)));
 }
 
 int 
 _setgid(gid)
 	register gid_t gid;
 {
-	if (gid != u->u_pcred->p_rgid && !suser())
-		return (u->u_error);	/* XXX */
-	u->u_ucred->cr_groups[0] = gid;		/* effective gid is u_groups[0] */
-	u->u_pcred->p_rgid = gid;
-	u->u_pcred->p_svgid = gid;
+	if (gid != u.u_pcred->p_rgid && !suser())
+		return (u.u_error);	/* XXX */
+	u.u_ucred->cr_groups[0] = gid;		/* effective gid is u_groups[0] */
+	u.u_pcred->p_rgid = gid;
+	u.u_pcred->p_svgid = gid;
 	//u.u_acflag |= ASUGID;
-	return (u->u_error = 0);
+	return (u.u_error = 0);
 }
 
 int
@@ -128,20 +128,20 @@ setegid()
 {
 	struct setegid_args {
 		syscallarg(gid_t) egid;
-	} *uap = (struct setegid_args *)u->u_ap;
+	} *uap = (struct setegid_args *)u.u_ap;
 
-	return(_setegid(uap->egid));
+	return(_setegid(SCARG(uap, egid)));
 }
 
 int
 _setegid(egid)
 	register gid_t egid;
 {
-	if (egid != u->u_pcred->p_rgid && egid != u->u_pcred->p_svgid && !suser())
-		return (u->u_error);
-	u->u_ucred->cr_groups[0] = egid;
-	u->u_acflag |= ASUGID;
-	return (u->u_error = 0);
+	if (egid != u.u_pcred->p_rgid && egid != u.u_pcred->p_svgid && !suser())
+		return (u.u_error);
+	u.u_ucred->cr_groups[0] = egid;
+	u.u_acflag |= ASUGID;
+	return (u.u_error = 0);
 }
 
 int
@@ -149,9 +149,9 @@ setsid()
 {
 	register struct setsid_args {
 		syscallarg(pid_t) pid;
-	}*uap = (struct setsid_args *) u->u_ap;
+	}*uap = (struct setsid_args *) u.u_ap;
 
-	return(_setsid(uap->pid));
+	return(_setsid(SCARG(uap, pid)));
 }
 
 int
@@ -160,18 +160,18 @@ _setsid(pid)
 {
 	register struct proc *p;
 
-	if(u->u_procp == pfind(pid)) {
-		u->u_procp->p_pid = pid;
-		p = u->u_procp;
+	if(u.u_procp == pfind(pid)) {
+		u.u_procp->p_pid = pid;
+		p = u.u_procp;
 
 		if(p->p_pgid == p->p_pid || pgfind(p->p_pid)) {
-			return (u->u_error = EPERM);
+			return (u.u_error = EPERM);
 		} else {
 			(void)enterpgrp(p, p->p_pid, 1);
-			return (u->u_error = 0);
+			return (u.u_error = 0);
 		}
 	} else {
-		return (u->u_error = EPERM);
+		return (u.u_error = EPERM);
 	}
 }
 
@@ -182,7 +182,7 @@ int
 groupmember(gid)
 	gid_t gid;
 {
-	return (_groupmember(gid, u->u_ucred));
+	return (_groupmember(gid, u.u_ucred));
 }
 
 int
@@ -203,10 +203,10 @@ _groupmember(gid, cred)
 int
 suser()
 {
-	if(_suser(u->u_ucred, u->u_acflag) == EPERM) {
-		u->u_error = EPERM;
+	if(_suser(u.u_ucred, u.u_acflag) == EPERM) {
+		u.u_error = EPERM;
 	}
-	return (_suser(u->u_ucred, u->u_acflag));
+	return (_suser(u.u_ucred, u.u_acflag));
 }
 
 int

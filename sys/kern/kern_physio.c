@@ -156,7 +156,6 @@ physio(strategy, bp, dev, flags, minphys, uio)
 			 * saves it in b_saveaddr.  However, vunmapbuf()
 			 * restores it.
 			 */
-//			PHOLD(p);
 			vslock(bp->b_data, todo);
 			vmapbuf(bp);
 			BIO_SETPRIO(bp, BPRIO_TIMECRITICAL);
@@ -190,7 +189,6 @@ physio(strategy, bp, dev, flags, minphys, uio)
 			 */
 			vunmapbuf(bp);
 			vsunlock(bp->b_data, todo, 0);
-//			PRELE(p);
 
 			/* remember error value (save a splbio/splx pair) */
 			if (bp->b_flags & B_ERROR)
@@ -260,7 +258,9 @@ getphysbuf(void)
 	TAILQ_REMOVE(&bswlist, bp, b_freelist);
 	splx(s);
 
-	bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_WAITOK);
+	if (bp == NULL) {
+		bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_WAITOK);
+	}
 	memset(bp, 0, sizeof(*bp));
 	BUF_INIT(bp);
 
@@ -292,7 +292,6 @@ putphysbuf(bp)
 	free(bp, M_TEMP);
 	splx(s);
 }
-
 
 /*
  * Leffler, et al., says on p. 231:

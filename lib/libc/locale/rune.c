@@ -329,6 +329,26 @@ ___toupper(c)
 	return (c);
 }
 
+wint_t
+___toupper_mb(c)
+	wint_t c;
+{
+	int x;
+	_RuneRange *rr = &_CurrentRuneLocale->mapupper_ext;
+	_RuneEntry *re = rr->ranges;
+
+	if (c < 0 || c == EOF)
+		return(c);
+
+	for (x = 0; x < rr->nranges; ++x, ++re) {
+		if (c < re->min)
+			return(c);
+		if (c <= re->max)
+			return(re->map + c - re->min);
+	}
+	return(c);
+}
+
 rune_t
 ___tolower(c)
 	rune_t c;
@@ -346,6 +366,26 @@ ___tolower(c)
 			return (re->map + c - re->min);
 	}
 	return (c);
+}
+
+wint_t
+___tolower_mb(c)
+	wint_t c;
+{
+	int x;
+	_RuneRange *rr = &_CurrentRuneLocale->maplower_ext;
+	_RuneEntry *re = rr->ranges;
+
+	if (c < 0 || c == EOF)
+		return(c);
+
+	for (x = 0; x < rr->nranges; ++x, ++re) {
+		if (c < re->min)
+			return(c);
+		if (c <= re->max)
+			return(re->map + c - re->min);
+	}
+	return(c);
 }
 
 #if !defined(_USE_CTYPE_INLINE_) && !defined(_USE_CTYPE_MACROS_)
@@ -388,4 +428,19 @@ tolower(c)
 			___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
 
+wint_t
+toupper_mb(c)
+	wint_t c;
+{
+	return ((_RUNE_ISCACHED(c)) ?
+			___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
+}
+
+wint_t
+tolower_mb(c)
+	wint_t c;
+{
+	return ((_RUNE_ISCACHED(c)) ?
+			___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
+}
 #endif

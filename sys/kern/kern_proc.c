@@ -85,6 +85,8 @@ struct proclist 	allproc;
 struct proclist 	zombproc;
 //struct proclist 	freeproc;
 
+void	pqinit(void);
+
 void
 procinit()
 {
@@ -99,14 +101,14 @@ void
 proc_init(p)
 	struct proc *p;
 {
-	mtx_init(p->p_mtx, &proc_loholder, "proc mutex", (struct proc *)p, p->p_pid, p->p_pgrp);
+	mtx_init(&p->p_mtx, &proc_loholder, "proc mutex", (struct proc *)p, p->p_pid, p->p_pgrp);
 }
 
 /*
  * init the process queues
  */
 void
-pqinit()
+pqinit(void)
 {
 	//register struct proc *p;
 
@@ -153,7 +155,7 @@ inferior(p)
  */
 struct proc *
 pfind(pid)
-	register int pid;
+	register pid_t pid;
 {
 	register struct proc *p;
 	for (p = PIDHASH(pid); p != 0; p = LIST_NEXT(p, p_hash))
@@ -214,7 +216,7 @@ pgfind(pgid)
 	register pid_t pgid;
 {
 	register struct pgrp *pgrp;
-	for (pgrp = pgrphash[PIDHASH(pgid)]; pgrp != NULL; pgrp = LIST_NEXT(pgrp, pg_hash)) {
+	for (pgrp = &pgrphash[PIDHASH(pgid)]; pgrp != NULL; pgrp = LIST_NEXT(pgrp, pg_hash)) {
 		if (pgrp->pg_id == pgid) {
 			return (pgrp);
 		}
@@ -230,7 +232,7 @@ leavepgrp(p)
 	register struct proc *p;
 {
 	LIST_REMOVE(p, p_pglist);
-	if(LIST_FIRST(p->p_pgrp->pg_mem) == 0) {
+	if(LIST_FIRST(&p->p_pgrp->pg_mem) == 0) {
 		pgdelete(p->p_pgrp);
 	}
 	p->p_pgrp = 0;
@@ -333,7 +335,7 @@ enterpgrp(p, pgid, mksess)
 	/*
 	 * delete old if empty
 	 */
-	if (p->p_pgrp->pg_mem == 0)
+	if (LIST_EMPTY(&p->p_pgrp->pg_mem))
 		pgdelete(p->p_pgrp);
 	/*
 	 * link into new one
@@ -380,7 +382,7 @@ fixjobc(p, pgrp, entering)
 	 * their process groups; if so, adjust counts for children's
 	 * process groups.
 	 */
-	for (p = LIST_FIRST(p->p_children); p; p = LIST_NEXT(p, p_sibling)) {
+	for (p = LIST_FIRST(&p->p_children); p; p = LIST_NEXT(p, p_sibling)) {
 		if ((hispgrp = p->p_pgrp) != pgrp&&
 		hispgrp->pg_session == mysession &&
 		p->p_stat != SZOMB)
@@ -402,9 +404,9 @@ orphanpg(pg)
 {
 	register struct proc *p;
 
-	for (p = LIST_FIRST(pg->pg_mem); p; p = LIST_NEXT(p, p_pglist)) {
+	for (p = LIST_FIRST(&pg->pg_mem); p; p = LIST_NEXT(p, p_pglist)) {
 		if (p->p_stat == SSTOP) {
-			for (p = LIST_FIRST(pg->pg_mem); p; p = LIST_NEXT(p, p_pglist)) {
+			for (p = LIST_FIRST(&pg->pg_mem); p; p = LIST_NEXT(p, p_pglist)) {
 				psignal(p, SIGHUP);
 				psignal(p, SIGCONT);
 			}
@@ -421,13 +423,13 @@ pgrpdump()
 	register i;
 
 	for (i = 0; i <= pgrphash; i++) {
-		if (pgrp == LIST_FIRST(pgrphashtbl[i])) {
+		if (pgrp == LIST_FIRST(&pgrphashtbl[i])) {
 			printf("\tindx %d\n", i);
 			for (; pgrp != 0; pgrp = LIST_NEXT(pgrp, pg_hash)) {
 				printf("\tpgrp %x, pgid %d, sess %x, sesscnt %d, mem %x\n",
 						pgrp, pgrp->pg_id, pgrp->pg_session,
 						pgrp->pg_session->s_count, pgrp->pg_mem);
-				for (p = LIST_FIRST(pgrp->pg_mem); p != 0;
+				for (p = LIST_FIRST(&pgrp->pg_mem); p != 0;
 						p = LIST_NEXT(p, p_pglist)) {
 					printf("\t\tpid %d addr %x pgrp %x\n", p->p_pid, p,
 							p->p_pgrp);

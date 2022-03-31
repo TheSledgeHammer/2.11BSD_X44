@@ -34,6 +34,7 @@
 #include <sys/rwlock.h>
 
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
 
 void		rwlock_pause(rwlock_t, int);
 void		rwlock_acquire(rwlock_t, int, int, int);

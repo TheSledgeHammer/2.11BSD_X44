@@ -32,8 +32,8 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-#include <ctype.h>
 #include <stdio.h>
+#include <ctype.h>
 
 typedef uint32_t  		__nbrune_t; /* temp solution */
 

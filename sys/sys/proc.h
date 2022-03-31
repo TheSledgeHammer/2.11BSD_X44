@@ -318,6 +318,7 @@ void		rqinit(void);
 
 int 		chgproccnt(uid_t, int);
 int			acct_process(struct proc *);
+void		pgdelete(struct pgrp *);
 int			leavepgrp(struct proc *);
 int			enterpgrp(struct proc *, pid_t, int);
 void		fixjobc(struct proc *, struct pgrp *, int);

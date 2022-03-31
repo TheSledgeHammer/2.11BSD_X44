@@ -20,11 +20,11 @@
 int
 getpid()
 {
-	u->u_r.r_val1 = u->u_procp->p_pid;
-	u->u_r.r_val2 = u->u_procp->p_ppid;	/* XXX - compatibility */
+	u.u_r.r_val1 = u.u_procp->p_pid;
+	u.u_r.r_val2 = u.u_procp->p_ppid;	/* XXX - compatibility */
 
 #if defined(COMPAT_43)
-	u->u_r.r_val2 = u->u_procp->p_pptr->p_pid;
+	u.u_r.r_val2 = u.u_procp->p_pptr->p_pid;
 #endif
 	return (0);
 }
@@ -32,7 +32,7 @@ getpid()
 int
 getppid()
 {
-	u->u_r.r_val1 = u->u_procp->p_ppid;
+	u.u_r.r_val1 = u.u_procp->p_ppid;
 	return (0);
 }
 
@@ -40,64 +40,63 @@ int
 getpgrp()
 {
 	register struct getpgrp_args {
-		syscallarg(int)
-		pid;
-	} *uap = (struct getpgrp_args*) u->u_ap;
+		syscallarg(int) pid;
+	} *uap = (struct getpgrp_args*) u.u_ap;
 	register struct proc *p;
 
-	if (uap->pid == 0) {
-		uap->pid = u->u_procp->p_pid;
+	if (SCARG(uap, pid) == 0) {
+		SCARG(uap, pid) = u.u_procp->p_pid;
 	}
-	p = pfind(uap->pid);
+	p = pfind(SCARG(uap, pid));
 	if (p == 0) {
-		u->u_error = ESRCH;
+		u.u_error = ESRCH;
 		goto retry;
 	} else {
 		goto out;
 	}
 
 retry:
-	uap->pid = u->u_procp->p_pgrp->pg_id;
-	p = pfind(uap->pid);
+	SCARG(uap, pid) = u.u_procp->p_pgrp->pg_id;
+	p = pfind(SCARG(uap, pid));
 	if (p == 0) {
-		u->u_error = ESRCH;
-		return (u->u_error);
+		u.u_error = ESRCH;
+		return (u.u_error);
 	} else {
 		goto out;
 	}
 
 out:
-	u->u_r.r_val1 = p->p_pgrp;
+	u.u_r.r_val1 = p->p_pgrp;
 	return (0);
 }
 
 int
 getuid()
 {
-	u->u_r.r_val1 = u->u_pcred->p_ruid;
-	u->u_r.r_val2 = u->u_ucred->cr_uid;		/* XXX */
+	u.u_r.r_val1 = u.u_pcred->p_ruid;
+	u.u_r.r_val2 = u.u_ucred->cr_uid;		/* XXX */
 	return (0);
 }
 
 int
 geteuid()
 {
-	u->u_r.r_val1 = u->u_ucred->cr_uid;
+	u.u_r.r_val1 = u.u_ucred->cr_uid;
 	return (0);
 }
 
 int
 getgid()
 {
-	u->u_r.r_val1 = u->u_pcred->p_ruid;
-	u->u_r.r_val2 = u->u_ucred->cr_groups[0];		/* XXX */
+	u.u_r.r_val1 = u.u_pcred->p_ruid;
+	u.u_r.r_val2 = u.u_ucred->cr_groups[0];		/* XXX */
 	return (0);
 }
 
 int
 getegid()
 {
-	u->u_r.r_val1 = u->u_ucred->cr_groups[0];
+	u.u_r.r_val1 = u.u_ucred->cr_groups[0];
 	return (0);
 }
 
@@ -111,24 +110,24 @@ getgroups()
 	register struct getgroups_args {
 		syscallarg(u_int) gidsetsize;
 		syscallarg(int *) gidset;
-	} *uap = (struct getgroups_args*) u->u_ap;
+	} *uap = (struct getgroups_args*) u.u_ap;
 	register gid_t *gp;
 
-	for(gp = u->u_ucred->cr_groups[NGROUPS]; gp > u->u_ucred->cr_groups; gp--) {
+	for(gp = u.u_ucred->cr_groups[NGROUPS]; gp > u.u_ucred->cr_groups; gp--) {
 		if (gp[-1] != NOGROUP) {
 			break;
 		}
 	}
-	if (uap->gidsetsize < gp - u->u_ucred->cr_groups) {
-		u->u_error = EINVAL;
-		return (u->u_error);
+	if (uap->gidsetsize < gp - u.u_ucred->cr_groups) {
+		u.u_error = EINVAL;
+		return (u.u_error);
 	}
-	uap->gidsetsize = gp - u->u_ucred->cr_groups;
-	u->u_error = copyout((caddr_t)u->u_ucred->cr_groups, (caddr_t)uap->gidset, uap->gidsetsize * sizeof(u->u_ucred->cr_groups[0]));
-	if (u->u_error) {
-		return (u->u_error);
+	uap->gidsetsize = gp - u.u_ucred->cr_groups;
+	u.u_error = copyout((caddr_t)u.u_ucred->cr_groups, (caddr_t)SCARG(uap, gidset), SCARG(uap, gidsetsize) * sizeof(u.u_ucred->cr_groups[0]));
+	if (u.u_error) {
+		return (u.u_error);
 	}
-	u->u_r.r_val1 = uap->gidsetsize;
+	u.u_r.r_val1 = uap->gidsetsize;
 	return (0);
 }
 
@@ -139,21 +138,21 @@ setpgrp()
 	register struct setpgrp_args {
 		syscallarg(int)	pid;
 		syscallarg(int)	pgrp;
-	} *uap = (struct setpgrp_args *)u->u_ap;
+	} *uap = (struct setpgrp_args *)u.u_ap;
 
-	if (uap->pid == 0)		/* silly... */
-		uap->pid = u->u_procp->p_pid;
-	p = pfind(uap->pid);
+	if (SCARG(uap, pid) == 0)		/* silly... */
+		SCARG(uap, pid) = u.u_procp->p_pid;
+	p = pfind(SCARG(uap, pid));
 	if (p == 0) {
-		u->u_error = ESRCH;
-		return (u->u_error);
+		u.u_error = ESRCH;
+		return (u.u_error);
 	}
 /* need better control mechanisms for process groups */
-	if (p->p_uid != u->u_ucred->cr_uid && u->u_ucred->cr_uid && !inferior(p)) {
-		u->u_error = EPERM;
-		return (u->u_error);
+	if (p->p_uid != u.u_ucred->cr_uid && u.u_ucred->cr_uid && !inferior(p)) {
+		u.u_error = EPERM;
+		return (u.u_error);
 	}
-	p->p_pgrp = uap->pgrp;
+	p->p_pgrp = SCARG(uap, pgrp);
 	return (0);
 }
 
@@ -163,36 +162,36 @@ setpgid()
 	register struct setpgid_args {
 		syscallarg(pid_t) pid;
 		syscallarg(pid_t) pgid;
-	}*uap = (struct setpgid_args *) u->u_ap;
+	}*uap = (struct setpgid_args *) u.u_ap;
 
 	register struct proc *targp;		/* target process */
 	register struct pgrp *pgrp;			/* target pgrp */
 
-	if(uap->pid != 0 && uap->pid != u->u_procp->p_pid) {
-		if((targp = pfind(uap->pid)) == 0 || !inferior(targp)) {
-			return (u->u_error = ESRCH);
+	if(SCARG(uap, pid) != 0 && SCARG(uap, pid) != u.u_procp->p_pid) {
+		if((targp = pfind(SCARG(uap, pid))) == 0 || !inferior(targp)) {
+			return (u.u_error = ESRCH);
 		}
-		if(targp->p_session != u->u_procp->p_session) {
-			return (u->u_error = EPERM);
+		if(targp->p_session != u.u_procp->p_session) {
+			return (u.u_error = EPERM);
 		}
 		if (targp->p_flag & P_EXEC) {
 
-			return (u->u_error = EACCES);
+			return (u.u_error = EACCES);
 		}
 	} else {
-		targp = u->u_procp;
+		targp = u.u_procp;
 	}
 	if(SESS_LEADER(targp)) {
-		return (u->u_error = EPERM);
+		return (u.u_error = EPERM);
 	}
-	if(uap->pgid == 0) {
-		uap->pgid = targp->p_pid;
-	} else if(uap->pgid != targp->p_pid) {
-		if((pgrp = pgfind(uap->pgid)) == 0 || pgrp->pg_session != u->u_procp->p_session) {
-			return (u->u_error = EPERM);
+	if(SCARG(uap, pgid) == 0) {
+		SCARG(uap, pgid) = targp->p_pid;
+	} else if(SCARG(uap, pgid) != targp->p_pid) {
+		if((pgrp = pgfind(SCARG(uap, pgid))) == 0 || pgrp->pg_session != u.u_procp->p_session) {
+			return (u.u_error = EPERM);
 		}
 	}
-	return (u->u_error = enterpgrp(targp, uap->pgid, 0));
+	return (u.u_error = enterpgrp(targp, SCARG(uap, pgid), 0));
 }
 
 int
@@ -201,29 +200,29 @@ setreuid()
 	struct setreuid_args {
 		syscallarg(int)	ruid;
 		syscallarg(int)	euid;
-	} *uap = (struct setreuid_args *)u->u_ap;
+	} *uap = (struct setreuid_args *)u.u_ap;
 
 	register int ruid, euid;
-	ruid = uap->ruid;
+	ruid = SCARG(uap, ruid);
 
 	if (ruid == -1) {
-		ruid = u->u_pcred->p_ruid;
+		ruid = u.u_pcred->p_ruid;
 	}
-	if (u->u_pcred->p_ruid != ruid && u->u_ucred->cr_uid != ruid && !suser()) {
+	if (u.u_pcred->p_ruid != ruid && u.u_ucred->cr_uid != ruid && !suser()) {
 		return (setuid());
 	}
-	euid = uap->euid;
+	euid = SCARG(uap, euid);
 	if (euid == -1) {
-		euid = u->u_ucred->cr_uid;
+		euid = u.u_ucred->cr_uid;
 		return (0);
 	}
-	if (u->u_pcred->p_ruid != euid && u->u_ucred->cr_uid != euid && !suser()) {
+	if (u.u_pcred->p_ruid != euid && u.u_ucred->cr_uid != euid && !suser()) {
 		return (EPERM);
 	}
 
-	u->u_procp->p_uid = ruid;
-	u->u_pcred->p_ruid = ruid;
-	u->u_ucred->cr_uid = euid;
+	u.u_procp->p_uid = ruid;
+	u.u_pcred->p_ruid = ruid;
+	u.u_ucred->cr_uid = euid;
 
 	return (seteuid());
 }
@@ -234,30 +233,30 @@ setregid()
 	register struct setregid_args {
 		syscallarg(int) rgid;
 		syscallarg(int) egid;
-	} *uap = (struct setregid_args *) u->u_ap;
+	} *uap = (struct setregid_args *) u.u_ap;
 	register int rgid, egid;
 
-	rgid = uap->rgid;
+	rgid = SCARG(uap, rgid);
 	if (rgid == -1) {
-		rgid = u->u_pcred->p_rgid;
+		rgid = u.u_pcred->p_rgid;
 	}
-	if (u->u_pcred->p_rgid != rgid && u->u_ucred->cr_gid != rgid && !suser()) {
+	if (u.u_pcred->p_rgid != rgid && u.u_ucred->cr_gid != rgid && !suser()) {
 		return (setgid());
 	}
-	egid = uap->egid;
+	egid = SCARG(uap, egid);
 	if (egid == -1) {
-		egid = u->u_ucred->cr_gid;
+		egid = u.u_ucred->cr_gid;
 		return (0);
 	}
-	if (u->u_pcred->p_rgid != egid && u->u_ucred->cr_gid != egid && !suser()) {
+	if (u.u_pcred->p_rgid != egid && u.u_ucred->cr_gid != egid && !suser()) {
 		return (EPERM);
 	}
-	if (u->u_pcred->p_rgid != rgid) {
-		leavegroup(u->u_pcred->p_rgid);
+	if (u.u_pcred->p_rgid != rgid) {
+		leavegroup(u.u_pcred->p_rgid);
 		(void) entergroup(rgid);
-		u->u_pcred->p_rgid = rgid;
+		u.u_pcred->p_rgid = rgid;
 	}
-	u->u_ucred->cr_gid = egid;
+	u.u_ucred->cr_gid = egid;
 	return (setegid());
 }
 
@@ -267,21 +266,21 @@ setgroups()
 	register struct	setgroups_args {
 		syscallarg(u_int) gidsetsize;
 		syscallarg(int)	  *gidset;
-	} *uap = (struct setgroups_args *)u->u_ap;
+	} *uap = (struct setgroups_args *)u.u_ap;
 
 	register gid_t *gp;
 	int error;
 
-	if (u->u_error == suser() || !suser())
-		return (u->u_error);
-	if (uap->gidsetsize > sizeof (u->u_ucred->cr_groups) / sizeof (u->u_ucred->cr_groups[0])) {
-		u->u_error = EINVAL;
-		return (u->u_error);
+	if (u.u_error == suser() || !suser())
+		return (u.u_error);
+	if (SCARG(uap, gidsetsize) > sizeof (u.u_ucred->cr_groups) / sizeof (u.u_ucred->cr_groups[0])) {
+		u.u_error = EINVAL;
+		return (u.u_error);
 	}
-	u->u_error = copyin((caddr_t)uap->gidset, (caddr_t)u->u_ucred->cr_groups, uap->gidsetsize * sizeof (u->u_ucred->cr_groups[0]));
-	if (u->u_error)
-		return (u->u_error);
-	for (gp = &u->u_ucred->cr_groups[uap->gidsetsize]; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
+	u.u_error = copyin((caddr_t)SCARG(uap, gidset), (caddr_t)u.u_ucred->cr_groups, SCARG(uap, gidsetsize) * sizeof (u.u_ucred->cr_groups[0]));
+	if (u.u_error)
+		return (u.u_error);
+	for (gp = &u.u_ucred->cr_groups[uap->gidsetsize]; gp < &u.u_ucred->cr_groups[NGROUPS]; gp++) {
 		*gp = NOGROUP;
 	}
 	return (0);
@@ -296,7 +295,7 @@ leavegroup(gid)
 {
 	register gid_t *gp;
 
-	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
+	for (gp = u.u_ucred->cr_groups; gp < &u.u_ucred->cr_groups[NGROUPS]; gp++) {
 		if (*gp == gid) {
 			goto found;
 		}
@@ -304,7 +303,7 @@ leavegroup(gid)
 	return;
 
 found:
-	for (; gp < &u->u_ucred->cr_groups[NGROUPS - 1]; gp++) {
+	for (; gp < &u.u_ucred->cr_groups[NGROUPS - 1]; gp++) {
 		*gp = *(gp + 1);
 	}
 	*gp = NOGROUP;
@@ -319,7 +318,7 @@ entergroup(gid)
 {
 	register gid_t *gp;
 
-	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
+	for (gp = u.u_ucred->cr_groups; gp < &u.u_ucred->cr_groups[NGROUPS]; gp++) {
 		if (*gp == gid) {
 			return (0);
 		}
@@ -340,13 +339,13 @@ getlogin()
 	register struct getlogin_args {
 		syscallarg(char *) namebuf;
 		syscallarg(u_int) namelen;
-	} *uap = (struct getlogin_args *)u->u_ap;
+	} *uap = (struct getlogin_args *)u.u_ap;
 
 	register int error;
-	if	(uap->namelen > sizeof (u->u_login))
-		uap->namelen = sizeof (u->u_login);
-	error = copyout(u->u_login, uap->namebuf, uap->namelen);
-	return (u->u_error = error);
+	if	(SCARG(uap, namelen) > sizeof (u.u_login))
+		SCARG(uap, namelen) = sizeof (u.u_login);
+	error = copyout(u.u_login, SCARG(uap, namebuf), SCARG(uap, namelen));
+	return (u.u_error = error);
 }
 
 /*
@@ -362,13 +361,13 @@ setlogin()
 {
 	register struct setlogin_args {
 		syscallarg(char *) namebuf;
-	} *uap = (struct setlogin_args *)u->u_ap;
+	} *uap = (struct setlogin_args *)u.u_ap;
 
 	register int error;
 	char	newname[MAXLOGNAME + 1];
 
 	if (!suser())
-		return (u->u_error); /* XXX - suser should be changed! */
+		return (u.u_error); /* XXX - suser should be changed! */
 	/*
 	 * copinstr() wants to copy a string including a nul but u_login is not
 	 * necessarily nul-terminated.  Copy into a temp that is one character
@@ -376,10 +375,10 @@ setlogin()
 	 */
 
 	bzero(newname, sizeof (newname));
-	error = copyinstr(uap->namebuf, newname, sizeof(newname), NULL);
+	error = copyinstr(SCARG(uap, namebuf), newname, sizeof(newname), NULL);
 	if (error == 0)
-		bcopy(newname, u->u_login, sizeof (u->u_login));
-	return (u->u_error = error);
+		bcopy(newname, u.u_login, sizeof (u.u_login));
+	return (u.u_error = error);
 }
 
 /*
