@@ -48,6 +48,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/sysdecl.h>
 #include <sys/filedesc.h>
 #include <sys/errno.h>
 #include <sys/exec.h>

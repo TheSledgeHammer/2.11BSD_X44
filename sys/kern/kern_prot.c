@@ -407,9 +407,9 @@ priv_check_cred(cred, priv, flags)
 {
 	int error;
 	
-	KASSERT(PRIV_VALID(priv), ("priv_check_cred: invalid privilege"));
+	KASSERT(PRIV_VALID(priv));
 
-	KASSERT(cred != NULL || (flags & NULL_CRED_OKAY), ("priv_check_cred: NULL cred!"));
+	KASSERT(cred != NULL || (flags & NULL_CRED_OKAY));
 		
 	if (cred == NULL) {
 		if (flags & NULL_CRED_OKAY)

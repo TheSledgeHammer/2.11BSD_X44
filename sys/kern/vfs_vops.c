@@ -1420,7 +1420,7 @@ filt_vfsdetach(kn)
 {
 	struct vnode *vp = (struct vnode *)kn->kn_hook;
 
-	KASSERT(vp->v_sel != NULL, ("Missing v_sel"));
+	KASSERT(vp->v_sel != NULL);
 	SIMPLEQ_REMOVE_HEAD(&vp->v_sel.si_klist, kn);
 	//vdrop(vp);
 }

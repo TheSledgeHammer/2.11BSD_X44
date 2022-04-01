@@ -137,6 +137,7 @@ uint16_t evdev_scancode2key(int *, int);
 void evdev_push_mouse_btn(struct evdev_dev *, int);
 void evdev_push_leds(struct evdev_dev *, int);
 void evdev_push_repeats(struct evdev_dev *, struct wskbd_keyrepeat_data *);
+void evdev_ev_kbd_event(struct evdev_dev *, void *, uint16_t, uint16_t, int32_t);
 
 /* Event reporting shortcuts: */
 static __inline int

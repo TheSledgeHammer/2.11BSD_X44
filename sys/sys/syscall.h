@@ -1,3 +1,5 @@
+/* $211BSD$ */
+
 /*
  * System call numbers.
  *
@@ -13,7 +15,7 @@
 #define	SYS_open	5
 #define	SYS_close	6
 #define	SYS_wait4	7
-				/* 8 is COMPAT_43 creat */
+				/* 8 is compat_43 creat */
 #define	SYS_link	9
 #define	SYS_unlink	10
 #define	SYS_execv	11
@@ -69,11 +71,11 @@
 #define	SYS_chroot	61
 #define	SYS_fstat	62
 #define	SYS_undelete	63
-				/* 64 is COMPAT_43 getpagesize */
+				/* 64 is compat_43 getpagesize */
 #define	SYS_pselect	65
 #define	SYS_vfork	66
-				/* 67 is COMPAT_43 lseek */
-				/* 68 is COMPAT_43 mmap */
+				/* 67 is compat_43 lseek */
+				/* 68 is compat_43 mmap */
 #define	SYS_sbrk	69
 #define	SYS_sstk	70
 #define	SYS_mmap	71
@@ -89,14 +91,14 @@
 #define	SYS_getpgrp	81
 #define	SYS_setpgrp	82
 #define	SYS_setitimer	83
-				/* 84 is COMPAT_43 lstat */
+				/* 84 is compat_43 lstat */
 #define	SYS_pathconf	85
 #define	SYS_getitimer	86
 #define	SYS_setsid	87
 #define	SYS_setpgid	88
 #define	SYS_getdtablesize	89
 #define	SYS_dup2	90
-				/* 91 is COMPAT_43 stat */
+				/* 91 is compat_43 stat */
 #define	SYS_fcntl	92
 #define	SYS_select	93
 #define	SYS_mkfifo	94
@@ -117,7 +119,7 @@
 				/* 109 is obsolete old sigblock */
 				/* 110 is obsolete old sigsetmask */
 				/* 111 is obsolete old sigpause */
-				/* 112 is COMPAT_43 sigstack */
+				/* 112 is compat_43 sigstack */
 #define	SYS_recvmsg	113
 #define	SYS_sendmsg	114
 #define	SYS_revoke	115
@@ -137,14 +139,14 @@
 #define	SYS_truncate	129
 #define	SYS_ftruncate	130
 #define	SYS_flock	131
-				/* 132 is COMPAT_43 truncate */
+				/* 132 is compat_43 truncate */
 #define	SYS_sendto	133
 #define	SYS_shutdown	134
 #define	SYS_socketpair	135
 #define	SYS_mkdir	136
 #define	SYS_rmdir	137
 #define	SYS_utimes	138
-				/* 139 is COMPAT_43 ftruncate */
+				/* 139 is compat_43 ftruncate */
 #define	SYS_adjtime	140
 #define	SYS_getpeername	141
 				/* 142 is obsolete old gethostid */
@@ -156,7 +158,7 @@
 				/* 148 is obsolete old setquota */
 #define	SYS_quota	149
 #define	SYS_getsockname	150
-				/* 151 is COMPAT_43 getdirentries */
+				/* 151 is compat_43 getdirentries */
 				/* 152 is obsolete old nostk */
 				/* 153 is obsolete old fetchi */
 				/* 154 is obsolete old ucall */

@@ -66,7 +66,7 @@ percpu_init(pc, ci, size)
 	size_t 				size;
 {
 	bzero(pc, size);
-	KASSERT(ci->cpu_cpuid >= 0 && ci->cpu_cpuid < NCPUS ("percpu_init: invalid cpuid %d", ci->cpu_cpuid));
+	KASSERT(ci->cpu_cpuid >= 0 && ci->cpu_cpuid < NCPUS);
 
 	pc->pc_cpuid = cpu_cpuid(ci);
 	pc->pc_cpumask = cpu_cpumask(ci);

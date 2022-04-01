@@ -35,48 +35,45 @@
 
 static const struct evdev_methods wskbd_evdev_methods = {
 		.ev_cdev = &evdev_cdevsw,
-		.ev_event = evdev_ev_kbd_led_event,
+		.ev_event = evdev_ev_kbd_event,
 };
-
-//static struct evdev_dev	*wskbd_evdev;
 
 void
 wskbd_evdev_init(sc)
 	struct evdev_softc *sc;
 {
-	keyboard_t			*kbd = NULL;
-	struct evdev_dev 	*evdev;
+	struct evdev_dev 	*wskbd_evdev;
 	char		 		phys_loc[NAMELEN];
 
 	/* register as evdev provider */
-	evdev = evdev_alloc();
-	evdev_set_name(evdev, "wskbd evdev");
+	wskbd_evdev = evdev_alloc();
+	evdev_set_name(wskbd_evdev, "wskbd evdev");
 	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME"%d", unit);
-	evdev_set_phys(evdev, phys_loc);
-	evdev_set_id(evdev, BUS_VIRTUAL, 0, 0, 0);
-	evdev_set_methods(evdev, sc, &wskbd_evdev_methods);
-	evdev_support_event(evdev, EV_SYN);
-	evdev_support_event(evdev, EV_KEY);
-	evdev_support_event(evdev, EV_LED);
-	evdev_support_event(evdev, EV_REP);
-	evdev_support_all_known_keys(evdev);
-	evdev_support_led(evdev, LED_NUML);
-	evdev_support_led(evdev, LED_CAPSL);
-	evdev_support_led(evdev, LED_SCROLLL);
+	evdev_set_phys(wskbd_evdev, phys_loc);
+	evdev_set_id(wskbd_evdev, BUS_VIRTUAL, 0, 0, 0);
+	evdev_set_methods(wskbd_evdev, sc, &wskbd_evdev_methods);
+	evdev_support_event(wskbd_evdev, EV_SYN);
+	evdev_support_event(wskbd_evdev, EV_KEY);
+	evdev_support_event(wskbd_evdev, EV_LED);
+	evdev_support_event(wskbd_evdev, EV_REP);
+	evdev_support_all_known_keys(wskbd_evdev);
+	evdev_support_led(wskbd_evdev, LED_NUML);
+	evdev_support_led(wskbd_evdev, LED_CAPSL);
+	evdev_support_led(wskbd_evdev, LED_SCROLLL);
 
-	if (evdev_register(evdev)) {
-		evdev_free(evdev);
+	if (evdev_register(wskbd_evdev)) {
+		evdev_free(wskbd_evdev);
 	} else {
-		sc->sc_evdev = evdev;
+		sc->sc_evdev = wskbd_evdev;
 	}
 	sc->sc_evdev_state = 0;
 }
 
-static struct evdev_dev	*wsmouse_evdev;
-
 void
-evdev_wsmouse_init(void)
+evdev_wsmouse_init(sc)
+	struct evdev_softc *sc;
 {
+	struct evdev_dev	*wsmouse_evdev;
 	int i;
 
 	wsmouse_evdev = evdev_alloc();
@@ -96,13 +93,23 @@ evdev_wsmouse_init(void)
 	if (evdev_register(wsmouse_evdev)) {
 		evdev_free(wsmouse_evdev);
 		wsmouse_evdev = NULL;
+	} else {
+		sc->sc_evdev = wskbd_evdev;
 	}
+	sc->sc_evdev_state = 0;
 }
 
 void
-evdev_wsmouse_write(x, y, z, buttons)
+evdev_wsmouse_write(sc, x, y, z, buttons)
+	struct wsmouse_softc *sc;
 	int x, y, z, buttons;
 {
+	struct evdev_softc 	*evsc;
+	struct evdev_dev	*wsmouse_evdev;
+
+	evsc = sc->sc_evsc;
+	wsmouse_evdev = evsc->sc_evdev;
+
 	if (wsmouse_evdev == NULL || !(evdev_rcpt_mask & EVDEV_RCPT_WSMOUSE))
 		return;
 

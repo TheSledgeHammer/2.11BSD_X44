@@ -183,15 +183,15 @@ topo_next_nonchild_node(struct topo_node *top, struct topo_node *node)
 void
 topo_set_pu_id(struct topo_node *node, cpuid_t id)
 {
-	KASSERT(node->type == TOPO_TYPE_PU ("topo_set_pu_id: wrong node type: %u", node->type));
-	KASSERT(CPU_EMPTY(&node->cpuset) && node->cpu_count == 0 ("topo_set_pu_id: cpuset already not empty"));
+	KASSERT(node->type == TOPO_TYPE_PU);
+	KASSERT(CPU_EMPTY(&node->cpuset) && node->cpu_count == 0);
 	node->id = id;
 	CPU_SET(&node->cpuset, id);
 	node->cpu_count = 1;
 	node->subtype = 1;
 
 	while ((node = node->parent) != NULL) {
-		KASSERT(!CPU_ISSET(&node->cpuset, id)("logical ID %u is already set in node %p", id, node));
+		KASSERT(!CPU_ISSET(&node->cpuset, id));
 		CPU_SET(&node->cpuset, id);
 		node->cpu_count++;
 	}
