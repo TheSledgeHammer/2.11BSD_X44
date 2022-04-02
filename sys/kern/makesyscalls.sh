@@ -288,9 +288,9 @@ function putent(nodefs, declfile, compatwrap) {
 
 	# output syscall prototype declarations
 	if (compatwrap == "")
-		printf("int\t%s();\n", funcname) > sysproto
+		printf("extern int\t%s();\n", funcname) > sysproto
 	else
-		printf("int\t%s(%s)();\n", compatwrap, funcname) > sysproto
+		printf("extern int\t%s_%s();\n", compatwrap, funcname) > sysproto
 }
 $2 == "STD" {
 	parseline()
