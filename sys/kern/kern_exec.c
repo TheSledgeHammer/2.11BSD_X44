@@ -59,7 +59,6 @@
 #include <machine/reg.h>
 
 extern char	sigcode[], esigcode[];
-int execve(); /* syscall */
 
 struct emul emul_211bsd = {
 		.e_name 		= "211bsd",
