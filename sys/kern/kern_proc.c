@@ -315,7 +315,6 @@ enterpgrp(p, pgid, mksess)
 		LIST_INIT(&pgrp->pg_mem);
 		LIST_INSERT_HEAD(PGRPHASH(pgid), pgrp, pg_hash);
 		pgrp->pg_jobc = 0;
-		LIST_EMPTY(&pgrp->pg_mem);
 	} else if (pgrp == p->p_pgrp) {
 		return (0);
 	}

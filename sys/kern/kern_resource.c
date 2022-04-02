@@ -43,7 +43,7 @@ getpriority()
 	case PRIO_PGRP:
 		if (SCARG(uap, who) == 0)
 			SCARG(uap, who) = u.u_procp->p_pgrp;
-		for (p = allproc; p != NULL; p = p->p_nxt) {
+		for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 			if (p->p_pgrp == SCARG(uap, who) && p->p_nice < low)
 				low = p->p_nice;
 		}
@@ -52,7 +52,7 @@ getpriority()
 	case PRIO_USER:
 		if (SCARG(uap, who) == 0)
 			SCARG(uap, who) = u.u_uid;
-		for (p = allproc; p != NULL; p = p->p_nxt) {
+		for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 			if (p->p_uid == SCARG(uap, who) && p->p_nice < low)
 				low = p->p_nice;
 		}

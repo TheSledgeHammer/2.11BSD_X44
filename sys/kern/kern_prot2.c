@@ -77,16 +77,6 @@ _setuid(uid)
 }
 
 int
-seteuid()
-{
-	struct seteuid_args {
-		syscallarg(uid_t) euid;
-	} *uap = (struct seteuid_args *)u.u_ap;
-
-	return(_seteuid(SCARG(uap, euid)));
-}
-
-int
 _seteuid(euid)
 	register uid_t euid;
 {
@@ -102,13 +92,13 @@ _seteuid(euid)
 }
 
 int
-setgid()
+seteuid()
 {
-	struct setgid_args {
-		syscallarg(gid_t) gid;
-	} *uap = (struct setgid_args *)u.u_ap;
-	
-	return(_setgid(SCARG(uap, gid)));
+	struct seteuid_args {
+		syscallarg(uid_t) euid;
+	} *uap = (struct seteuid_args *)u.u_ap;
+
+	return(_seteuid(SCARG(uap, euid)));
 }
 
 int 
@@ -125,13 +115,13 @@ _setgid(gid)
 }
 
 int
-setegid()
+setgid()
 {
-	struct setegid_args {
-		syscallarg(gid_t) egid;
-	} *uap = (struct setegid_args *)u.u_ap;
+	struct setgid_args {
+		syscallarg(gid_t) gid;
+	} *uap = (struct setgid_args *)u.u_ap;
 
-	return(_setegid(SCARG(uap, egid)));
+	return(_setgid(SCARG(uap, gid)));
 }
 
 int
@@ -146,13 +136,13 @@ _setegid(egid)
 }
 
 int
-setsid()
+setegid()
 {
-	register struct setsid_args {
-		syscallarg(pid_t) pid;
-	}*uap = (struct setsid_args *) u.u_ap;
+	struct setegid_args {
+		syscallarg(gid_t) egid;
+	} *uap = (struct setegid_args *)u.u_ap;
 
-	return(_setsid(SCARG(uap, pid)));
+	return(_setegid(SCARG(uap, egid)));
 }
 
 int
@@ -176,14 +166,14 @@ _setsid(pid)
 	}
 }
 
-/*
- * Check if gid is a member of the group set.
- */
 int
-groupmember(gid)
-	gid_t gid;
+setsid()
 {
-	return (_groupmember(gid, u.u_ucred));
+	register struct setsid_args {
+		syscallarg(pid_t) pid;
+	}*uap = (struct setsid_args *) u.u_ap;
+
+	return(_setsid(SCARG(uap, pid)));
 }
 
 int
@@ -201,19 +191,20 @@ _groupmember(gid, cred)
 	return (0);
 }
 
+/*
+ * Check if gid is a member of the group set.
+ */
 int
-suser()
+groupmember(gid)
+	gid_t gid;
 {
-	if(_suser(u.u_ucred, u.u_acflag) == EPERM) {
-		u.u_error = EPERM;
-	}
-	return (_suser(u.u_ucred, u.u_acflag));
+	return (_groupmember(gid, u.u_ucred));
 }
 
 int
 _suser(cred, acflag)
 	register struct ucred 	*cred;
-	short 					*acflag;
+	int 					*acflag;
 {
 	if (cred->cr_uid == 0) {
 		if (acflag) {
@@ -222,4 +213,13 @@ _suser(cred, acflag)
 		return (0);
 	}
 	return (EPERM);
+}
+
+int
+suser()
+{
+	if(_suser(u.u_ucred, u.u_acflag) == EPERM) {
+		u.u_error = EPERM;
+	}
+	return (_suser(u.u_ucred, u.u_acflag));
 }

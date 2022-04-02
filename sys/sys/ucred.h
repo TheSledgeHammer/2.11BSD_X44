@@ -53,18 +53,35 @@ struct ucred {
 /* for priv_check_cred() */
 #define	NULL_CRED_OKAY	0x2
 
+/*
+ * Track beginning of privilege list.
+ */
+#define	_PRIV_LOWEST	1
+/*
+ * Track end of privilege list.
+ */
+#define	_PRIV_HIGHEST	682
+
+/*
+ * Validate that a named privilege is known by the privilege system.  Invalid
+ * privileges presented to the privilege system by a priv_check interface
+ * will result in a panic.  This is only approximate due to sparse allocation
+ * of the privilege space.
+ */
+#define	PRIV_VALID(x)	((x) > _PRIV_LOWEST && (x) < _PRIV_HIGHEST)
+
 #ifdef _KERNEL
-struct ucred 		*crget(void);
-struct ucred 		*crcopy(struct ucred *);
-struct ucred 		*crdup(struct ucred *);
-struct ucred 		*crhold(struct ucred *);
-extern void 		crfree(struct ucred *);
+struct ucred 	*crget(void);
+struct ucred 	*crcopy(struct ucred *);
+struct ucred 	*crdup(struct ucred *);
+struct ucred 	*crhold(struct ucred *);
+extern void 	crfree(struct ucred *);
 int 			suser();
 int 			_suser(struct ucred *, short *);
-int			groupmember(gid_t);
-int			_groupmember(gid_t, struct ucred *);
-int			priv_check(int);
-int			priv_check_cred(struct ucred *, int, int);
+int				groupmember(gid_t);
+int				_groupmember(gid_t, struct ucred *);
+int				priv_check(int);
+int				priv_check_cred(struct ucred *, int, int);
 
 /* 4.4BSD compat */
 #define suser1(cred, acflag) 	\

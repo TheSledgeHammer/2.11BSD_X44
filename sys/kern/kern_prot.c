@@ -70,7 +70,7 @@ retry:
 	}
 
 out:
-	u.u_r.r_val1 = p->p_pgrp;
+	u.u_r.r_val1 = p->p_pgrp->pg_id;
 	return (0);
 }
 
@@ -138,11 +138,11 @@ getgroups()
 int
 setpgrp()
 {
-	register struct proc *p;
 	register struct setpgrp_args {
 		syscallarg(int)	pid;
 		syscallarg(int)	pgrp;
 	} *uap = (struct setpgrp_args *)u.u_ap;
+	register struct proc *p;
 
 	if (SCARG(uap, pid) == 0)		/* silly... */
 		SCARG(uap, pid) = u.u_procp->p_pid;
@@ -151,12 +151,12 @@ setpgrp()
 		u.u_error = ESRCH;
 		return (u.u_error);
 	}
-/* need better control mechanisms for process groups */
+	/* need better control mechanisms for process groups */
 	if (p->p_uid != u.u_ucred->cr_uid && u.u_ucred->cr_uid && !inferior(p)) {
 		u.u_error = EPERM;
 		return (u.u_error);
 	}
-	p->p_pgrp = SCARG(uap, pgrp);
+	p->p_pgrp->pg_id = SCARG(uap, pgrp);
 	return (0);
 }
 
@@ -269,7 +269,7 @@ setgroups()
 {
 	register struct	setgroups_args {
 		syscallarg(u_int) gidsetsize;
-		syscallarg(int)	  *gidset;
+		syscallarg(int *) gidset;
 	} *uap = (struct setgroups_args *)u.u_ap;
 
 	register gid_t *gp;
@@ -284,7 +284,7 @@ setgroups()
 	u.u_error = copyin((caddr_t)SCARG(uap, gidset), (caddr_t)u.u_ucred->cr_groups, SCARG(uap, gidsetsize) * sizeof (u.u_ucred->cr_groups[0]));
 	if (u.u_error)
 		return (u.u_error);
-	for (gp = &u.u_ucred->cr_groups[uap->gidsetsize]; gp < &u.u_ucred->cr_groups[NGROUPS]; gp++) {
+	for (gp = &u.u_ucred->cr_groups[SCARG(uap, gidsetsize)]; gp < &u.u_ucred->cr_groups[NGROUPS]; gp++) {
 		*gp = NOGROUP;
 	}
 	return (0);
