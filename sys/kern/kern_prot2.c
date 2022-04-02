@@ -45,6 +45,7 @@
 #include <sys/acct.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
+#include <sys/sysdecl.h>
 
 int
 setuid()

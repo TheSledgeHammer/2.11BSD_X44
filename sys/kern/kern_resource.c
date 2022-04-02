@@ -13,6 +13,7 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <vm/include/vm.h>
+#include <sys/sysdecl.h>
 
 /*
  * Resource controls and accounting.

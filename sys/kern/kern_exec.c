@@ -48,6 +48,7 @@
 #include <sys/acct.h>
 #include <sys/mount.h>
 #include <sys/syscall.h>
+#include <sys/sysdecl.h>
 #include <sys/syslog.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -59,7 +60,6 @@
 #include <machine/reg.h>
 
 extern char	sigcode[], esigcode[];
-int execve(); /* syscall */
 
 struct emul emul_211bsd = {
 		.e_name 		= "211bsd",

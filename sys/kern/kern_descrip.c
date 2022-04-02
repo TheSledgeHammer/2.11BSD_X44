@@ -67,6 +67,7 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
+#include <sys/sysdecl.h>
 #include <sys/null.h>
 
 struct filelists filehead;		/* head of list of open files */
@@ -78,7 +79,6 @@ int 			 nfiles;		/* actual number of open files */
 static __inline void fd_used(int);
 static __inline void fd_unused(int);
 
-int dup2(); /* syscall */
 int dupit(int, struct file *, int);
 int fset(struct file *, int, int);
 int fgetown(struct file *, int *);

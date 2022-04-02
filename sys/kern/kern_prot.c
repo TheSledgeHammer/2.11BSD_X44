@@ -15,6 +15,7 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/user.h>
+#include <sys/sysdecl.h>
 #include <sys/malloc.h>
 
 int
