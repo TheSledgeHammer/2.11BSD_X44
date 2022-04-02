@@ -53,7 +53,7 @@
  * Most of these variables should be const.
  */
 extern bool_t dynamic_kenv;
-extern struct lock 	*lock;
+extern struct lock 	kenv_lock;
 extern char *kern_envp;
 extern char *md_envp;
 extern char static_env[];
