@@ -175,7 +175,7 @@ void    startprofclock(struct proc *);
 void    stopprofclock(struct proc *);
 
 /* internal syscalls related */
-//void    syscall();
+void    syscall();
 
 /* kern_environment.c / kenv.h */
 char	*kern_getenv(const char *);
