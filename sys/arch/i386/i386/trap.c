@@ -76,6 +76,7 @@
 #include <sys/acct.h>
 #include <sys/kernel.h>
 #include <sys/endian.h>
+#include <sys/sysdecl.h>
 #ifdef KTRACE
 #include <sys/ktrace.h>
 #endif
