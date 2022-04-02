@@ -18,6 +18,9 @@
 #include <sys/sysdecl.h>
 #include <sys/malloc.h>
 
+int	entergroup(gid_t);
+void	leavegroup(gid_t);
+
 int
 getpid()
 {
@@ -110,25 +113,25 @@ getgroups()
 {
 	register struct getgroups_args {
 		syscallarg(u_int) gidsetsize;
-		syscallarg(int *) gidset;
+		syscallarg(int *)   gidset;
 	} *uap = (struct getgroups_args*) u.u_ap;
 	register gid_t *gp;
 
-	for(gp = u.u_ucred->cr_groups[NGROUPS]; gp > u.u_ucred->cr_groups; gp--) {
+	for(gp = &u.u_ucred->cr_groups[NGROUPS]; gp > u.u_ucred->cr_groups; gp--) {
 		if (gp[-1] != NOGROUP) {
 			break;
 		}
 	}
-	if (uap->gidsetsize < gp - u.u_ucred->cr_groups) {
+	if (SCARG(uap, gidsetsize) < gp - u.u_ucred->cr_groups) {
 		u.u_error = EINVAL;
 		return (u.u_error);
 	}
-	uap->gidsetsize = gp - u.u_ucred->cr_groups;
+	SCARG(uap, gidsetsize) = gp - u.u_ucred->cr_groups;
 	u.u_error = copyout((caddr_t)u.u_ucred->cr_groups, (caddr_t)SCARG(uap, gidset), SCARG(uap, gidsetsize) * sizeof(u.u_ucred->cr_groups[0]));
 	if (u.u_error) {
 		return (u.u_error);
 	}
-	u.u_r.r_val1 = uap->gidsetsize;
+	u.u_r.r_val1 = SCARG(uap, gidsetsize);
 	return (0);
 }
 

@@ -63,6 +63,7 @@
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/mutex.h>
+#include <sys/null.h>
 
 /*
  * Structure associated with user cacheing.
@@ -158,7 +159,7 @@ pfind(pid)
 	register pid_t pid;
 {
 	register struct proc *p;
-	for (p = PIDHASH(pid); p != 0; p = LIST_NEXT(p, p_hash))
+	for (p = LIST_FIRST(PIDHASH(pid)); p != 0; p = LIST_NEXT(p, p_hash))
 		if (p->p_pid == pid)
 			return (p);
 	return (NULL);
@@ -216,7 +217,7 @@ pgfind(pgid)
 	register pid_t pgid;
 {
 	register struct pgrp *pgrp;
-	for (pgrp = &pgrphash[PIDHASH(pgid)]; pgrp != NULL; pgrp = LIST_NEXT(pgrp, pg_hash)) {
+	for (pgrp = LIST_FIRST(PGRPHASH(pgid)); pgrp != NULL; pgrp = LIST_NEXT(pgrp, pg_hash)) {
 		if (pgrp->pg_id == pgid) {
 			return (pgrp);
 		}
@@ -314,7 +315,7 @@ enterpgrp(p, pgid, mksess)
 		LIST_INIT(&pgrp->pg_mem);
 		LIST_INSERT_HEAD(PGRPHASH(pgid), pgrp, pg_hash);
 		pgrp->pg_jobc = 0;
-		pgrp->pg_mem = NULL;
+		LIST_EMPTY(&pgrp->pg_mem);
 	} else if (pgrp == p->p_pgrp) {
 		return (0);
 	}
