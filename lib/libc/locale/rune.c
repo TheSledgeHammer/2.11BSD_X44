@@ -155,7 +155,7 @@ _Read_RuneMagi(fp)
 	if ((data = malloc(sb.st_size)) == NULL)
 		return (0);
 
-	rewind(fp); /* Someone might have read the magic number once already */
+	rewind(fp);
 
 	if (fread(data, sb.st_size, 1, fp) != 1) {
 		free(data);

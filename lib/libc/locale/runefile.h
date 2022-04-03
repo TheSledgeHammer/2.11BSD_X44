@@ -31,12 +31,13 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-
-#include "rune.h"
 /*
 #include <stdio.h>
 #include <ctype.h>
 */
+
+#include "rune.h"
+
 typedef uint32_t  		__nbrune_t; /* temp solution */
 
 /* for cross host tools on older systems */
@@ -67,27 +68,31 @@ typedef uint32_t  		__nbrune_t; /* temp solution */
 #define	_RUNETYPE_SW2	UINT32_C(0x80000000)	/* 2 width character */
 #define	_RUNETYPE_SW3	UINT32_C(0xc0000000)	/* 3 width character */
 
-/* TODO: Implement below */
-
 typedef struct {
-	int32_t		min;
-	int32_t		max;
-	int32_t		map;
+	int32_t			min;
+	int32_t			max;
+	int32_t			map;
 } _FileRuneEntry;
 
 typedef struct {
-	char		magic[8];
-	char		encoding[32];
+	uint32_t		nranges;		/* Number of ranges stored */
+} _FileRuneRange;
 
-	uint32_t	runetype[_CACHED_RUNES];
-	int32_t		maplower[_CACHED_RUNES];
-	int32_t		mapupper[_CACHED_RUNES];
+typedef struct {
+	char			magic[8];
+	char			encoding[32];
 
-	int32_t		runetype_ext_nranges;
-	int32_t		maplower_ext_nranges;
-	int32_t		mapupper_ext_nranges;
+	int32_t			invalid_rune;
 
-	int32_t		variable_len;
+	_RuneType		runetype[_CACHED_RUNES];
+	int32_t			maplower[_CACHED_RUNES];
+	int32_t			mapupper[_CACHED_RUNES];
+
+	_FileRuneRange	runetype_ext;
+	_FileRuneRange	maplower_ext;
+	_FileRuneRange	mapupper_ext;
+
+	int32_t			variable_len;
 } _FileRuneLocale;
 
 #define	_FILE_RUNE_MAGIC_1	"RuneMag1"

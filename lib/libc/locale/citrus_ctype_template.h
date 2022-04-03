@@ -138,7 +138,7 @@ __BEGIN_DECLS
  *     the return value in the real mbrtowc context.
  *   - return value means "errno" in the real mbrtowc context.
  */
-
+//static int 	_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 
 /*
@@ -153,7 +153,7 @@ static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __res
  *   - caller should ensure that 2nd parameter isn't NULL.
  *     (XXX inconsist with mbrtowc_priv)
  */
-
+//static int _citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 static int 	_FUNCNAME(wcrtomb_priv)(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 __END_DECLS
 

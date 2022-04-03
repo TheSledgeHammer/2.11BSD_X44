@@ -42,18 +42,17 @@
 #include <stdio.h>
 #include "runetype.h"
 
-#define	_PATH_LOCALE			"/usr/share/locale"
+#define	_PATH_LOCALE						"/usr/share/locale"
 
-#define _INVALID_RUNE   		_CurrentRuneLocale->invalid_rune
+#define _INVALID_RUNE   					_CurrentRuneLocale->invalid_rune
 
-#define __sgetrune      		_CurrentRuneLocale->ops->ro_sgetrune
-#define __sputrune     		 	_CurrentRuneLocale->ops->ro_sputrune
-#define __sgetrune_mb      		_CurrentRuneLocale->ops->ro_sgetrune_mb
-#define __sputrune_mb     		_CurrentRuneLocale->ops->ro_sputrune_mb
+#define __sgetrune      					_CurrentRuneLocale->ops->ro_sgetrune
+#define __sputrune     		 				_CurrentRuneLocale->ops->ro_sputrune
+#define __sgetrune_mb      					_CurrentRuneLocale->ops->ro_sgetrune_mb
+#define __sputrune_mb     					_CurrentRuneLocale->ops->ro_sputrune_mb
 
 #define sgetrune(s, n, r)       			(*__sgetrune)((s), (n), (r))
 #define sputrune(c, s, n, r)    			(*__sputrune)((c), (s), (n), (r))
-
 #define sgetrune_mb(ei, wc, s, n, es, r)    (*__sgetrune_mb)((ei), (wc), (s), (n), (es), (r))
 #define sputrune_mb(ei, s, n, wc, es, r)    (*__sputrune_mb)((ei), (s), (n), (wc), (es), (r))
 
@@ -72,14 +71,6 @@ int	 			fputrune(rune_t, FILE *);
 int	 			fungetrune(rune_t, FILE *);
 int	 			setrunelocale(char *);
 void			setinvalidrune(rune_t);
-
-/* See comments in <machine/ansi.h> about _BSD_RUNE_T_. */
-unsigned long	___runetype(rune_t);
-_RuneType 		___runetype_mb(wint_t);
-rune_t			___tolower(rune_t);
-wint_t			___tolower_mb(wint_t);
-rune_t			___toupper(rune_t);
-wint_t			___toupper_mb(wint_t);
 __END_DECLS
 
 /*

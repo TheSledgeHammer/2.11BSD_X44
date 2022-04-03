@@ -40,8 +40,9 @@
 #define	_RUNETYPE_H_
 
 #include <sys/cdefs.h>
-#include <ctype.h>
+#include <sys/types.h>
 
+#include <ctype.h>
 #include "encoding.h"
 
 #ifdef  _BSD_RUNE_T_
@@ -140,7 +141,6 @@ typedef struct _WCTypeEntry {
 #define _WCTYPE_INDEX_XDIGIT	11
 #define _WCTYPE_NINDEXES		12
 
-/* RuneLocale ops: 4.4BSD-Lite2 */
 typedef struct {
 	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
 	int							(*ro_sputrune)(rune_t, char *, size_t, char **);

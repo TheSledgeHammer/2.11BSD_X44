@@ -75,19 +75,19 @@
 #define	_CTYPE_SW3		0xc0000000L		/* 3 width character */
 
 __BEGIN_DECLS
-int	isalnum (int);
-int	isalpha (int);
-int	iscntrl (int);
-int	isdigit (int);
-int	isgraph (int);
-int	islower (int);
-int	isprint (int);
-int	ispunct (int);
-int	isspace (int);
-int	isupper (int);
-int	isxdigit (int);
-int	tolower (int);
-int	toupper (int);
+int	isalnum(int);
+int	isalpha(int);
+int	iscntrl(int);
+int	isdigit(int);
+int	isgraph(int);
+int	islower(int);
+int	isprint(int);
+int	ispunct(int);
+int	isspace(int);
+int	isupper(int);
+int	isxdigit(int);
+int	tolower(int);
+int	toupper(int);
 
 #if __ISO_C_VISIBLE >= 1999
 int	isblank(int);
@@ -134,4 +134,13 @@ extern	char			_ctype_[];
 #define	ishexnumber(c)	__istype((c), _CTYPE_X)
 #endif
 
+/* See comments in <machine/ansi.h> about _BSD_RUNE_T_. */
+__BEGIN_DECLS
+unsigned long	___runetype(rune_t);
+_RuneType 		___runetype_mb(wint_t);
+rune_t			___tolower(rune_t);
+wint_t			___tolower_mb(wint_t);
+rune_t			___toupper(rune_t);
+wint_t			___toupper_mb(wint_t);
+__END_DECLS
 #endif
