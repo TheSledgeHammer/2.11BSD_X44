@@ -47,16 +47,6 @@
 #include <sys/systm.h>
 #include <sys/sysdecl.h>
 
-int
-setuid()
-{
-	struct setuid_args {
-		syscallarg(uid_t) uid;
-	} *uap = (struct setuid_args *)u.u_ap;
-
-	return(_setuid(SCARG(uap, uid)));
-}
-
 /*
  * This is a helper function used by setuid() above and the 4.3BSD 
  * compatibility code.  When the latter goes away this can be joined
@@ -74,6 +64,16 @@ _setuid(uid)
 	u.u_pcred->p_svuid = uid;
 	//u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
+}
+
+int
+setuid()
+{
+	struct setuid_args {
+		syscallarg(uid_t) uid;
+	} *uap = (struct setuid_args *)u.u_ap;
+
+	return(_setuid(SCARG(uap, uid)));
 }
 
 int
@@ -204,11 +204,13 @@ groupmember(gid)
 int
 _suser(cred, acflag)
 	register struct ucred 	*cred;
-	int 					*acflag;
+	short 					*acflag;
 {
+    int flag = *acflag;
+    
 	if (cred->cr_uid == 0) {
-		if (acflag) {
-			acflag |= ASU;
+		if (flag) {
+			flag |= ASU;
 		}
 		return (0);
 	}
@@ -218,8 +220,11 @@ _suser(cred, acflag)
 int
 suser()
 {
-	if(_suser(u.u_ucred, u.u_acflag) == EPERM) {
+    u_short acflag;
+    acflag = u.u_acflag;
+    
+	if(_suser(u.u_ucred, &acflag) == EPERM) {
 		u.u_error = EPERM;
 	}
-	return (_suser(u.u_ucred, u.u_acflag));
+	return (_suser(u.u_ucred, &acflag));
 }

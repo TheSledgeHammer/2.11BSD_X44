@@ -12,8 +12,13 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <vm/include/vm.h>
 #include <sys/sysdecl.h>
+#include <sys/malloc.h>
+
+#include <vm/include/vm.h>
+
+static void donice(struct proc *, int);
+int dosetrlimit(struct proc *, u_int, struct rlimit *, struct rlimit *);
 
 /*
  * Resource controls and accounting.
@@ -26,6 +31,7 @@ getpriority()
 		syscallarg(int)	who;
 	} *uap = (struct getpriority_args *)u.u_ap;
 	register struct proc *p;
+	register struct pgrp *pg;
 	register int low = PRIO_MAX + 1;
 
 	switch (SCARG(uap, which)) {
@@ -41,10 +47,13 @@ getpriority()
 		break;
 
 	case PRIO_PGRP:
-		if (SCARG(uap, who) == 0)
-			SCARG(uap, who) = u.u_procp->p_pgrp;
-		for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
-			if (p->p_pgrp == SCARG(uap, who) && p->p_nice < low)
+		if (SCARG(uap, who) == 0) {
+		    pg = u.u_procp->p_pgrp;
+		} else if ((pg = pgfind(SCARG(uap, who))) == NULL) {
+		    break;
+		}
+		for (p = LIST_FIRST(&pg->pg_mem); p != NULL; p = LIST_NEXT(p, p_pglist)) {
+			if (p->p_nice < low)
 				low = p->p_nice;
 		}
 		break;
@@ -79,6 +88,7 @@ setpriority()
 		syscallarg(int)	prio;
 	} *uap = (struct setpriority_args *)u.u_ap;
 	register struct proc *p;
+	register struct pgrp *pg;
 	register int found = 0;
 
 	switch (SCARG(uap, which)) {
@@ -95,19 +105,21 @@ setpriority()
 		break;
 
 	case PRIO_PGRP:
-		if (SCARG(uap, who) == 0)
-			SCARG(uap, who) = u.u_procp->p_pgrp;
-		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_pgrp == SCARG(uap, who)) {
+	    
+		if (SCARG(uap, who) == 0) {
+			pg = u.u_procp->p_pgrp;
+		} else if ((pg = pgfind(SCARG(uap, who))) == NULL) {
+		    break;
+		}
+		for (p = LIST_FIRST(&pg->pg_mem); p != NULL; p = LIST_NEXT(p, p_pglist))
 				donice(p, SCARG(uap, prio));
 				found++;
-			}
 		break;
 
 	case PRIO_USER:
 		if (SCARG(uap, who) == 0)
 			SCARG(uap, who) = u.u_uid;
-		for (p = allproc; p != NULL; p = p->p_nxt)
+		for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list))
 			if (p->p_uid == SCARG(uap, who)) {
 				donice(p, SCARG(uap, prio));
 				found++;
@@ -186,7 +198,7 @@ setrlimit()
 	}
 
 	//*alimp = alim;
-	return (dosetrlimit(u.u_procp, SCARG(uap, which), alim, alimp));
+	return (dosetrlimit(u.u_procp, SCARG(uap, which), &alim, alimp));
 }
 
 int
@@ -195,6 +207,8 @@ dosetrlimit(p, which, limp, alimp)
 	u_int which;
 	struct rlimit *limp, *alimp;
 {
+    extern unsigned maxdmap;
+    
 	switch (which) {
 	case RLIMIT_DATA:
 		if (limp->rlim_cur > maxdmap)
@@ -321,8 +335,8 @@ ruadd(ru, ru2)
 	 * since the kernel timeval structures are single longs,
 	 * fold them into the loop.
 	 */
-	timevaladd(&ru->ru_utime, &ru2->ru_utime);
-	timevaladd(&ru->ru_stime, &ru2->ru_stime);
+	timevaladd(&kru->ru_utime, &kru2->ru_utime);
+	timevaladd(&kru->ru_stime, &kru2->ru_stime);
 	if (kru->ru_maxrss < kru2->ru_maxrss)
 		kru->ru_maxrss = kru2->ru_maxrss;
 	ip = &ru->k_ru_first; ip2 = &ru2->k_ru_first;
@@ -360,7 +374,7 @@ limcopy(lim)
 {
 	register struct plimit *copy;
 
-	rmalloc(copy, sizeof(struct plimit));
+	MALLOC(copy, struct plimit *, sizeof(struct plimit), M_SUBPROC, M_WAITOK);
 	bcopy(lim->pl_rlimit, copy->pl_rlimit, sizeof(struct rlimit) * RLIM_NLIMITS);
 	copy->p_lflags = 0;
 	copy->p_refcnt = 1;
