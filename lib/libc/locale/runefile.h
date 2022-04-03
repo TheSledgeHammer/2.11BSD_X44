@@ -68,9 +68,6 @@ typedef uint32_t  		__nbrune_t; /* temp solution */
 #define	_RUNETYPE_SW3	UINT32_C(0xc0000000)	/* 3 width character */
 
 /* TODO: Implement below */
-#ifndef _CACHED_RUNES
-#define	_CACHED_RUNES	(1 << 8)
-#endif
 
 typedef struct {
 	int32_t		min;
