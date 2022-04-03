@@ -40,7 +40,6 @@
 #define _RUNE_H_
 
 #include <stdio.h>
-
 #include "runetype.h"
 
 #define	_PATH_LOCALE			"/usr/share/locale"
@@ -96,13 +95,13 @@ __END_DECLS
 static __inline int
 __istype(rune_t c, unsigned long f)
 {
-	return((((_RUNE_ISCACHED(c)) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
+	return((((_RUNE_ISCACHED(c) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
 }
 
 static __inline int
 __isctype(rune_t c, unsigned long f)
 {
-	return((((_RUNE_ISCACHED(c)) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
+	return((((_RUNE_ISCACHED(c) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
 /* _ANSI_LIBRARY is defined by lib/libc/locale/isctype.c. */
@@ -110,25 +109,25 @@ __isctype(rune_t c, unsigned long f)
 static __inline rune_t
 __toupper(rune_t c)
 {
-	return((_RUNE_ISCACHED(c)) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+	return((_RUNE_ISCACHED(c) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 static __inline rune_t
 __tolower(rune_t c)
 {
-	return((_RUNE_ISCACHED(c)) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+	return((_RUNE_ISCACHED(c) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
 
 static __inline wint_t
 __toupper_mb(wint_t c)
 {
-	return((_RUNE_ISCACHED(c)) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
+	return((_RUNE_ISCACHED(c) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 static __inline wint_t
 __tolower_mb(wint_t c)
 {
-	return((_RUNE_ISCACHED(c)) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
+	return((_RUNE_ISCACHED(c) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
 }
 #endif /* !_ANSI_LIBRARY */
 

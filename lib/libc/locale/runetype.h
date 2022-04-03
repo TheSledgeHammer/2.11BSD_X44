@@ -41,7 +41,8 @@
 
 #include <sys/cdefs.h>
 #include <ctype.h>
-#include "citrus_ctype.h"
+
+#include "encoding.h"
 
 #ifdef  _BSD_RUNE_T_
 typedef _BSD_RUNE_T_	rune_t;
@@ -77,7 +78,8 @@ typedef	_BSD_WCTYPE_T_	wctype_t;
 #define	WEOF 			((wint_t)-1)
 #endif
 
-//typedef uint32_t 		rune_t;
+typedef uint32_t 		wint_t;
+typedef uint32_t 		rune_t;
 typedef uint32_t 		_RuneType;
 typedef uint64_t		_runepad_t;
 
@@ -139,11 +141,6 @@ typedef struct _WCTypeEntry {
 #define _WCTYPE_NINDEXES		12
 
 /* RuneLocale ops: 4.4BSD-Lite2 */
-/*
- * multibyte support:
- * - create a generic encoding header for
- * 	  -  EncodingInfo & EncodingState
- */
 typedef struct {
 	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
 	int							(*ro_sputrune)(rune_t, char *, size_t, char **);
