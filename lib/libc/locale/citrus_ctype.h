@@ -30,7 +30,7 @@
 #ifndef _CITRUS_CTYPE_H_
 #define _CITRUS_CTYPE_H_
 
-//#include "encoding.h"
+#include "encoding.h"
 #include "rune.h"
 
 __BEGIN_DECLS

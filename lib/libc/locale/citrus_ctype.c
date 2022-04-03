@@ -61,7 +61,7 @@
 #include <sys/null.h>
 #include <errno.h>
 
-//#include "citrus_ctype.h"
+#include "citrus_ctype.h"
 #include "citrus_ctype_template.h"
 
 /* ----------------------------------------------------------------------

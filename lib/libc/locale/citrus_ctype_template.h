@@ -120,6 +120,7 @@
  *
  */
 
+#include <sys/cdefs.h>
 #include "citrus_ctype.h"
 
 /* prototypes */
@@ -155,7 +156,6 @@ static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __res
 
 static int 	_FUNCNAME(wcrtomb_priv)(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 __END_DECLS
-
 
 /* internal routines */
 static __inline int
