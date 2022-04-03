@@ -68,7 +68,7 @@ __RCSID("$NetBSD: _wctrans.c,v 1.5 2003/08/07 16:43:03 agc Exp $");
 #include <wctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <rune.h>
+#include "rune.h"
 
 #include "_wctrans_local.h"
 

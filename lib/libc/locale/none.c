@@ -68,7 +68,7 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 
 #include <stddef.h>
 #include <stdio.h>
-#include <rune.h>
+#include "rune.h"
 #include <errno.h>
 #include <stdlib.h>
 
@@ -77,19 +77,19 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 #define _FUNCNAME(m)				_none_citrus_ctype_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	1
 
-rune_t	_none_sgetrune(const char *, size_t, char const **);
-int		_none_sputrune(rune_t, char *, size_t, char **);
+rune_t		_none_sgetrune(const char *, size_t, char const **);
+int			_none_sputrune(rune_t, char *, size_t, char **);
+int			_none_sgetrune_mb(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
+int 		_none_sputrune_mb(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
 
 int
 _none_init(rl)
 	_RuneLocale *rl;
 {
-	/*
-	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
-	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
-	 */
 	rl->ops->ro_sgetrune = _none_sgetrune;
 	rl->ops->ro_sputrune = _none_sputrune;
+	rl->ops->ro_sgetrune_mb = _none_sgetrune_mb;
+	rl->ops->ro_sputrune_mb = _none_sputrune_mb;
 
 	_CurrentRuneLocale = rl;
 
@@ -108,7 +108,7 @@ _none_citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t wc
 	return (_none_sputrune_mb(cl, s, wc, pspriv, nresult));
 }
 
-static int
+int
 _none_sgetrune_mb(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if (s == NULL) {
@@ -131,7 +131,7 @@ _none_sgetrune_mb(void * __restrict cl, wchar_t * __restrict pwc, const char * _
 	return (0);
 }
 
-static int
+int
 _none_sputrune_mb(void * __restrict cl, char * __restrict s, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if ((wc & ~0xFFU) != 0) {

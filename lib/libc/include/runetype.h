@@ -40,10 +40,8 @@
 #define	_RUNETYPE_H_
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
-
-#include <sys/ansi.h>
-#include <machine/ansi.h>
+#include <ctype.h>
+#include "citrus_ctype.h"
 
 #ifdef  _BSD_RUNE_T_
 typedef _BSD_RUNE_T_	rune_t;
@@ -149,8 +147,8 @@ typedef struct _WCTypeEntry {
 typedef struct {
 	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
 	int							(*ro_sputrune)(rune_t, char *, size_t, char **);
-	//int 						(*ro_sgetrune_mb)(_EncodingInfo *, wchar_t *, const char **, _EncodingState *, size_t *);
-	//int						(*ro_sputrune_mb)(_EncodingInfo *, char *, size_t, wchar_t, _EncodingState *, size_t *);
+	int 						(*ro_sgetrune_mb)(_Encoding_Info *, wchar_t *, const char **, size_t, _Encoding_State *, size_t *);
+	int							(*ro_sputrune_mb)(_Encoding_Info *, char *, size_t, wchar_t, _Encoding_State *, size_t *);
 } _RuneOps;
 
 /*

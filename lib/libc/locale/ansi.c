@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)ansi.c	8.1 (Berkeley) 6/27/93";
 #include <stdlib.h>
 #include <limits.h>
 #include <stddef.h>
-#include <rune.h>
+#include "rune.h"
 
 int
 mblen(s, n)

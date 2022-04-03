@@ -46,7 +46,7 @@ __RCSID("$NetBSD: iswctype.c,v 1.14 2003/08/07 16:43:04 agc Exp $");
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>
-#include <rune.h>
+#include "rune.h"
 
 #include "runefile.h"
 #include "_wctrans_local.h"

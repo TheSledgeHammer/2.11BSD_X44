@@ -98,7 +98,7 @@ static char sccsid[] = "@(#)euc.c	8.1 (Berkeley) 6/4/93";
 #include <sys/types.h>
 #include <sys/errno.h>
 
-#include <rune.h>
+#include "rune.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,6 +114,8 @@ typedef _Encoding_State				_EUCState;
 
 rune_t	_EUC_sgetrune(const char *, size_t, char const **);
 int		_EUC_sputrune(rune_t, char *, size_t, char **);
+int		_EUC_sgetrune_mb(_EUCEncodingInfo *, wchar_t *, const char **, size_t, _EUCState *, size_t *);
+int 	_EUC_sputrune_mb(_EUCEncodingInfo *, char *, wchar_t, _EUCState *, size_t *);
 
 int
 _EUC_init(rl)
@@ -122,15 +124,12 @@ _EUC_init(rl)
 	_EUCEncodingInfo *ei;
 	int x;
 	char *v, *e;
-	/*
-	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
-	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
 
-	rl->citrus->cc_ops->co_sgetrune = _EUC_sgetrune;
-	rl->citrus->cc_ops->co_sputrune = _EUC_sputrune;
-	*/
 	rl->ops->ro_sgetrune = _EUC_sgetrune;
 	rl->ops->ro_sputrune = _EUC_sputrune;
+	rl->ops->ro_sgetrune_mb = _EUC_sgetrune_mb;
+	rl->ops->ro_sputrune_mb = _EUC_sputrune_mb;
+
 	if (!rl->variable) {
 		free(rl);
 		return (EFTYPE);
@@ -191,7 +190,7 @@ _EUC_citrus_ctype_wcrtomb_priv(_EUCEncodingInfo *ei, char *s, size_t n, wchar_t 
 	return (_EUC_sputrune_mb(ei, s, n, wc, psenc, nresult));
 }
 
-static int
+int
 _EUC_sgetrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
 {
 	wchar_t wchar;
@@ -222,7 +221,7 @@ _EUC_sgetrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, 
 	return (0);
 }
 
-static int
+int
 _EUC_sputrune_mb(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
 {
 	int ret;

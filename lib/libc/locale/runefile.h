@@ -32,9 +32,11 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
+#include "rune.h"
+/*
 #include <stdio.h>
 #include <ctype.h>
-
+*/
 typedef uint32_t  		__nbrune_t; /* temp solution */
 
 /* for cross host tools on older systems */

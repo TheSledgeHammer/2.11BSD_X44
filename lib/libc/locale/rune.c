@@ -46,7 +46,7 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #include <ctype.h>
 #include <limits.h>
 #include <wctype.h>
-#include <rune.h>
+#include "rune.h"
 #include <stdio.h>
 #include <stdlib.h>
 

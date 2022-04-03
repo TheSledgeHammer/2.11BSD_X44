@@ -30,7 +30,7 @@
 #ifndef _CITRUS_CTYPE_H_
 #define _CITRUS_CTYPE_H_
 
-#include <rune.h>
+#include "rune.h"
 
 /* generic encoding structures */
 typedef struct {

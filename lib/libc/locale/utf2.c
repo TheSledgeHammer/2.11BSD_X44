@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)utf2.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
-#include <rune.h>
+#include "rune.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,6 +56,8 @@ typedef _Encoding_State				_UTF2State;
 
 rune_t	_UTF2_sgetrune(const char *, size_t, char const **);
 int		_UTF2_sputrune(rune_t, char *, size_t, char **);
+int		_UTF2_sgetrune_mb(_UTF2EncodingInfo *, wchar_t *, const char **, size_t, _UTF2State *, size_t *);
+int 	_UTF2_sputrune_mb(_UTF2EncodingInfo *, char *, wchar_t, _UTF2State *, size_t *);
 
 static _utf_count[16] = {
 	1, 1, 1, 1, 1, 1, 1, 1,
@@ -66,12 +68,10 @@ int
 _UTF2_init(rl)
 	_RuneLocale *rl;
 {
-/*
-	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
-	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
-*/
 	rl->ops->ro_sgetrune = _UTF2_sgetrune;
 	rl->ops->ro_sputrune = _UTF2_sputrune;
+	rl->ops->ro_sgetrune_mb = _UTF2_sgetrune_mb;
+	rl->ops->ro_sputrune_mb = _UTF2_sputrune_mb;
 
 	_CurrentRuneLocale = rl;
 
@@ -90,7 +90,7 @@ _UTF2_citrus_ctype_wcrtomb_priv(_UTF2EncodingInfo *ei, char *s, size_t n, wchar_
 	return (_UTF2_sputrune_mb(ei, s, n, wc, psenc, nresult));
 }
 
-static int
+int
 _UTF2_sgetrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
 {
 	wchar_t wchar;
@@ -119,7 +119,7 @@ _UTF2_sgetrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n
 	return (0);
 }
 
-static int
+int
 _UTF2_sputrune_mb(_UTF2EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
 {
 	_DIAGASSERT(nresult != 0);

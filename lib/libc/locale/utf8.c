@@ -86,7 +86,7 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD$"); */
 
-#include <rune.h>
+#include "rune.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,16 +102,16 @@ typedef _Encoding_State				_UTF8State;
 
 rune_t	_UTF8_sgetrune(const char *, size_t, char const **);
 int		_UTF8_sputrune(rune_t, char *, size_t, char **);
+int		_UTF8_sgetrune_mb(_UTF8EncodingInfo *, wchar_t *, const char **, size_t, _UTF8State *, size_t *);
+int 	_UTF8_sputrune_mb(_UTF8EncodingInfo *, char *, wchar_t, _UTF8State *, size_t *);
 
 int
 _UTF8_init(_RuneLocale *rl)
 {
-/*
-	rl->citrus = (_citrus_ctype_t *)malloc(sizeof(*rl->citrus));
-	rl->citrus->cc_ops = (_citrus_ctype_ops_t *)malloc(sizeof(*rl->citrus->cc_ops));
-*/
 	rl->ops->ro_sgetrune = _UTF8_sgetrune;
 	rl->ops->ro_sputrune = _UTF8_sputrune;
+	rl->ops->ro_sgetrune_mb = _UTF8_sgetrune_mb;
+	rl->ops->ro_sputrune_mb = _UTF8_sputrune_mb;
 
 	_CurrentRuneLocale = rl;
 
@@ -130,7 +130,7 @@ _UTF8_citrus_ctype_wcrtomb_priv(_UTF8EncodingInfo *ei, char *s, size_t n, wchar_
 	return (_UTF8_sputrune_mb(ei, s, n, wc, psenc, nresult));
 }
 
-static int
+int
 _UTF8_sgetrune_mb(_UTF8EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _UTF8State *psenc, size_t *nresult)
 {
 	wchar_t wchar;
@@ -159,7 +159,7 @@ _UTF8_sgetrune_mb(_UTF8EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n
 	return (0);
 }
 
-static int
+int
 _UTF8_sputrune_mb(_UTF8EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF8State *psenc, size_t *nresult)
 {
 	_DIAGASSERT(nresult != 0);

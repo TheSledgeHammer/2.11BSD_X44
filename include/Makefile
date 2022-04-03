@@ -17,7 +17,7 @@ INCS=		a.out.h ar.h assert.h atomic.h bitstring.h complex.h cpio.h ctype.h \
 			lastlog.h libgen.h limits.h link_aout.h link_elf.h 					\
 			link.h locale.h login_cap.h math.h memory.h mpool.h mtab.h 			\
 			nl_types.h ndbm.h netdb.h nlist.h paths.h pwd.h ranlib.h regex.c 	\
-			regexp.h resolv.h rune.h runetype.h setjmp.h sgtty.h signal.h 		\
+			regexp.h resolv.h setjmp.h sgtty.h signal.h 						\
 			stab.h stdio.h stdlib.h string.h stringlist.h strings.h struct.h 	\
 			sysexits.h tar.h time.h ttyent.h tzfile.h ulimit.h unistd.h util.h 	\
 			utime.h utmp.h varargs.h vfont.h vis.h vmf.h wchar.h wctype.h
@@ -39,3 +39,5 @@ SUBDIR=		rpc
 
 .include <bsd.prog.mk>
 .include <bsd.subdir.mk>
+
+ #rune.h runetype.h 
