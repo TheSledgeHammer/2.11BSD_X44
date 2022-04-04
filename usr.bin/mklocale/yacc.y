@@ -129,8 +129,8 @@ entry		:	ENCODING STRING
 			{ strncpy(new_locale.encoding, $2, sizeof(new_locale.encoding)); }
 		|	VARIABLE
 			{ new_locale.variable_len = strlen($1) + 1;
-			  new_locale.variable = malloc(new_locale.variable_len);
-		  		strcpy((char *)new_locale.variable, $1);
+			  new_locale.variable_len = malloc(new_locale.variable_len);
+		  		strcpy((char *)new_locale.variable_len, $1);
 			}
 		|	CHARSET RUNE
 			{ charsetbits = $2; charsetmask = 0x0000007f; }
@@ -294,7 +294,7 @@ main(ac, av)
 		maplower.map[x] = x;
     }
     new_locale.invalid_rune = _INVALID_RUNE;
-    memcpy(new_locale.magic, _RUNE_MAGIC_1, sizeof(new_locale.magic));
+    memcpy(new_locale.magic, _FILE_RUNE_MAGIC_1, sizeof(new_locale.magic));
 
     yyparse();
     
@@ -633,7 +633,7 @@ dump_tables()
 		new_locale.runetype_ext_nranges++;
 		list = list->next;
     }
-    new_locale.runetype_ext.nranges = htonl(new_locale.runetype_ext_nranges);
+    new_locale.runetype_ext_nranges = htonl(new_locale.runetype_ext_nranges);
 
     list = maplower.root;
 
@@ -641,7 +641,7 @@ dump_tables()
 		new_locale.maplower_ext_nranges++;
 		list = list->next;
     }
-    new_locale.maplower_ext.nranges = htonl(new_locale.maplower_ext_nranges);
+    new_locale.maplower_ext_nranges = htonl(new_locale.maplower_ext_nranges);
 
     list = mapupper.root;
 
@@ -670,7 +670,7 @@ dump_tables()
     list = types.root;
 
     while (list) {
-		_RuneEntry re;
+		_FileRuneEntry re;
 
 		re.min = htonl(list->min);
 		re.max = htonl(list->max);
@@ -689,7 +689,7 @@ dump_tables()
     list = maplower.root;
 
     while (list) {
-		_RuneEntry re;
+		_FileRuneEntry re;
 
 		re.min = htonl(list->min);
 		re.max = htonl(list->max);
@@ -742,7 +742,7 @@ dump_tables()
     /*
      * PART 5: And finally the variable data
      */
-    if (fwrite((char *)new_locale.variable,
+    if (fwrite((char *)new_locale.variable_len,
 	       ntohl(new_locale.variable_len), 1, fp) != 1) {
 		perror(locale_file);
 		exit(1);
@@ -754,8 +754,8 @@ dump_tables()
 
     if (new_locale.encoding[0])
 		fprintf(stderr, "ENCODING	%s\n", new_locale.encoding);
-    if (new_locale.variable)
-		fprintf(stderr, "VARIABLE	%s\n", new_locale.variable);
+    if (new_locale.variable_len)
+		fprintf(stderr, "VARIABLE	%s\n", new_locale.variable_len);
 
     fprintf(stderr, "\nMAPLOWER:\n\n");
 

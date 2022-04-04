@@ -31,14 +31,21 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-/*
+
 #include <stdio.h>
 #include <ctype.h>
-*/
-
-#include "rune.h"
 
 typedef uint32_t  		__nbrune_t; /* temp solution */
+typedef uint32_t 		rune_t;
+typedef uint32_t 		_RuneType;
+
+#ifndef _CACHED_RUNES
+#define	_CACHED_RUNES	(1 << 8)
+#endif
+
+#ifndef _INVALID_RUNE
+#define _INVALID_RUNE   ((rune_t)-3)
+#endif
 
 /* for cross host tools on older systems */
 #ifndef UINT32_C

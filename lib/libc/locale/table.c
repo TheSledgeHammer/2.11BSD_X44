@@ -45,7 +45,7 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 #include <locale.h>
 #include <assert.h>
 #include <wchar.h>
-#include "rune.h"
+#include <rune.h>
 
 #include "runefile.h"
 #include "citrus_ctype.h"

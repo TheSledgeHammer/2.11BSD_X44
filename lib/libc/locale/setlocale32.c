@@ -34,7 +34,7 @@ __RCSID("$NetBSD: setlocale32.c,v 1.2 2003/03/11 17:23:07 tshiozak Exp $");
 #include "namespace.h"
 #define __SETLOCALE_SOURCE__
 #include "setlocale.h"
-#include "rune.h"
+#include <rune.h>
 
 char *
 __setlocale_mb_len_max_32(category, locale)

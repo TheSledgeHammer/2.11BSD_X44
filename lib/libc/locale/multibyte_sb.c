@@ -43,7 +43,7 @@ __RCSID("$NetBSD: multibyte_sb.c,v 1.4 2003/08/07 16:43:04 agc Exp $");
 #include <stdlib.h>
 #include <stddef.h>
 #include <wchar.h>
-#include "rune.h"
+#include <rune.h>
 
 /*
  * Stub multibyte character functions.

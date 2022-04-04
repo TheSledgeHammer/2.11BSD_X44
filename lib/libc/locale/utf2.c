@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)utf2.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
-#include "rune.h"
+#include <rune.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>

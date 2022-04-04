@@ -46,10 +46,11 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #include <ctype.h>
 #include <limits.h>
 #include <wctype.h>
-#include "rune.h"
+#include <rune.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "runefile.h"
 #include "setlocale.h"
 
 extern int			_none_init (_RuneLocale *);
@@ -138,128 +139,188 @@ static _RuneLocale *
 _Read_RuneMagi(fp)
 	FILE *fp;
 {
-	char *data;
-	void *np;
+	char *fdata, *data;
 	void *lastp;
+	_FileRuneLocale *frl;
+	_FileRuneEntry *frr;
 	_RuneLocale *rl;
 	_RuneEntry *rr;
 	struct stat sb;
-	int x;
+	int x, saverr;
+	void *variable;
+	_FileRuneEntry *runetype_ext_ranges;
+	_FileRuneEntry *maplower_ext_ranges;
+	_FileRuneEntry *mapupper_ext_ranges;
+	int runetype_ext_len = 0;
 
-	if (fstat(fileno(fp), &sb) < 0)
-		return (0);
+	if (fstat(fileno(fp), &sb) < 0) {
+		return (NULL);
+	}
 
-	if (sb.st_size < sizeof(_RuneLocale))
-		return (0);
+	if (sb.st_size < sizeof(_FileRuneLocale)) {
+		return (NULL);
+	}
 
-	if ((data = malloc(sb.st_size)) == NULL)
-		return (0);
+	fdata = malloc(sb.st_size);
+	if(fdata == NULL) {
+		return (NULL);
+	}
 
+	/* Someone might have read the magic number once already */
 	rewind(fp);
 
-	if (fread(data, sb.st_size, 1, fp) != 1) {
-		free(data);
-		return (0);
+	if (fread(fdata, sb.st_size, 1, fp) != 1) {
+		free(fdata);
+		return (NULL);
+	}
+
+	frl = (_FileRuneLocale *)(void *)fdata;
+	lastp = fdata + sb.st_size;
+
+	variable = frl + 1;
+
+	if (memcmp(frl->magic, _FILE_RUNE_MAGIC_1, sizeof(frl->magic))) {
+		goto invalid;
+	}
+
+	runetype_ext_ranges = (_FileRuneEntry*) variable;
+	variable = runetype_ext_ranges + frl->runetype_ext_nranges;
+	if (variable > lastp) {
+		goto invalid;
+	}
+
+	maplower_ext_ranges = (_FileRuneEntry*) variable;
+	variable = maplower_ext_ranges + frl->maplower_ext_nranges;
+	if (variable > lastp) {
+		goto invalid;
+	}
+
+	mapupper_ext_ranges = (_FileRuneEntry*) variable;
+	variable = mapupper_ext_ranges + frl->mapupper_ext_nranges;
+	if (variable > lastp) {
+		goto invalid;
+	}
+
+	frr = runetype_ext_ranges;
+	for (x = 0; x < frl->runetype_ext_nranges; ++x) {
+		uint32_t *stypes;
+		if (frr[x].map == 0) {
+			int len = frr[x].max - frr[x].min + 1;
+			stypes = variable;
+			variable = stypes + len;
+			runetype_ext_len += len;
+			if (variable > lastp) {
+				goto invalid;
+			}
+		}
+	}
+
+	if ((char*) variable + frl->variable_len > (char*) lastp) {
+		goto invalid;
+	}
+
+	/*
+	 * Convert from disk format to host format.
+	 */
+	data = malloc(sizeof(_RuneLocale) +
+			(frl->runetype_ext_nranges + frl->maplower_ext_nranges +
+			frl->mapupper_ext_nranges) * sizeof(_RuneEntry)+
+			runetype_ext_len * sizeof(*rr->types) + frl->variable_len);
+	if (data == NULL) {
+		saverr = errno;
+		free(fdata);
+		errno = saverr;
+		return (NULL);
 	}
 
 	rl = (_RuneLocale*) data;
-	lastp = data + sb.st_size;
-
 	rl->variable = rl + 1;
 
-	if (memcmp(rl->magic, _RUNE_MAGIC_1, sizeof(rl->magic))) {
-		free(data);
-		return (0);
-	}
+	memcpy(rl->magic, _RUNE_MAGIC_1, sizeof(rl->magic));
+	memcpy(rl->encoding, frl->encoding, sizeof(rl->encoding));
 
-	rl->invalid_rune = ntohl(rl->invalid_rune);
-	rl->variable_len = ntohl(rl->variable_len);
-	rl->runetype_ext.nranges = ntohl(rl->runetype_ext.nranges);
-	rl->maplower_ext.nranges = ntohl(rl->maplower_ext.nranges);
-	rl->mapupper_ext.nranges = ntohl(rl->mapupper_ext.nranges);
+	rl->invalid_rune = frl->invalid_rune;
+	rl->variable_len = frl->variable_len;
+	rl->runetype_ext.nranges = frl->runetype_ext_nranges;
+	rl->maplower_ext.nranges = frl->maplower_ext_nranges;
+	rl->mapupper_ext.nranges = frl->mapupper_ext_nranges;
 
 	for (x = 0; x < _CACHED_RUNES; ++x) {
-		rl->runetype[x] = ntohl(rl->runetype[x]);
-		rl->maplower[x] = ntohl(rl->maplower[x]);
-		rl->mapupper[x] = ntohl(rl->mapupper[x]);
+		rl->runetype[x] = frl->runetype[x];
+		rl->maplower[x] = frl->maplower[x];
+		rl->mapupper[x] = frl->mapupper[x];
 	}
 
 	rl->runetype_ext.ranges = (_RuneEntry*) rl->variable;
 	rl->variable = rl->runetype_ext.ranges + rl->runetype_ext.nranges;
-	if (rl->variable > lastp) {
-		free(data);
-		return (0);
-	}
 
 	rl->maplower_ext.ranges = (_RuneEntry*) rl->variable;
 	rl->variable = rl->maplower_ext.ranges + rl->maplower_ext.nranges;
-	if (rl->variable > lastp) {
-		free(data);
-		return (0);
-	}
 
 	rl->mapupper_ext.ranges = (_RuneEntry*) rl->variable;
 	rl->variable = rl->mapupper_ext.ranges + rl->mapupper_ext.nranges;
-	if (rl->variable > lastp) {
-		free(data);
-		return (0);
-	}
 
+	variable = mapupper_ext_ranges + frl->mapupper_ext_nranges;
+	frr = runetype_ext_ranges;
+	rr = rl->runetype_ext.ranges;
 	for (x = 0; x < rl->runetype_ext.nranges; ++x) {
-		rr = rl->runetype_ext.ranges;
+		uint32_t *stypes;
 
-		rr[x].min = ntohl(rr[x].min);
-		rr[x].max = ntohl(rr[x].max);
-		if ((rr[x].map = ntohl(rr[x].map)) == 0) {
+		rr[x].min = frr[x].min;
+		rr[x].max = frr[x].max;
+		rr[x].map = frr[x].map;
+		if (rr[x].map == 0) {
 			int len = rr[x].max - rr[x].min + 1;
+			stypes = variable;
+			variable = stypes + len;
 			rr[x].types = rl->variable;
 			rl->variable = rr[x].types + len;
-			if (rl->variable > lastp) {
-				free(data);
-				return (0);
-			}
 			while (len-- > 0)
-				rr[x].types[len] = ntohl(rr[x].types[len]);
+				rr[x].types[len] = stypes[len];
 		} else
-			rr[x].types = 0;
+			rr[x].types = NULL;
 	}
 
+	frr = maplower_ext_ranges;
+	rr = rl->maplower_ext.ranges;
 	for (x = 0; x < rl->maplower_ext.nranges; ++x) {
-		rr = rl->maplower_ext.ranges;
-
-		rr[x].min = ntohl(rr[x].min);
-		rr[x].max = ntohl(rr[x].max);
-		rr[x].map = ntohl(rr[x].map);
+		rr[x].min = frr[x].min;
+		rr[x].max = frr[x].max;
+		rr[x].map = frr[x].map;
 	}
 
+	frr = mapupper_ext_ranges;
+	rr = rl->mapupper_ext.ranges;
 	for (x = 0; x < rl->mapupper_ext.nranges; ++x) {
-		rr = rl->mapupper_ext.ranges;
+		rr[x].min = frr[x].min;
+		rr[x].max = frr[x].max;
+		rr[x].map = frr[x].map;
+	}
 
-		rr[x].min = ntohl(rr[x].min);
-		rr[x].max = ntohl(rr[x].max);
-		rr[x].map = ntohl(rr[x].map);
-	}
-	if (((char*) rl->variable) + rl->variable_len > (char*) lastp) {
-		free(data);
-		return (0);
-	}
+	memcpy(rl->variable, variable, rl->variable_len);
+	free(fdata);
 
 	/*
 	 * Go out and zero pointers that should be zero.
 	 */
 	if (!rl->variable_len)
-		rl->variable = 0;
+		rl->variable = NULL;
 
 	if (!rl->runetype_ext.nranges)
-		rl->runetype_ext.ranges = 0;
+		rl->runetype_ext.ranges = NULL;
 
 	if (!rl->maplower_ext.nranges)
-		rl->maplower_ext.ranges = 0;
+		rl->maplower_ext.ranges = NULL;
 
 	if (!rl->mapupper_ext.nranges)
-		rl->mapupper_ext.ranges = 0;
+		rl->mapupper_ext.ranges = NULL;
 
 	return (rl);
+
+invalid:
+	free(fdata);
+	errno = EINVAL;
+	return (NULL);
 }
 
 unsigned long

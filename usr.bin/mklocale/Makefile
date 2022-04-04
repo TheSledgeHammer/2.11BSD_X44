@@ -11,7 +11,7 @@ CPPFLAGS+=	-I. -I${.CURDIR} 			\
 		-I${NETBSDSRCDIR}/lib/libc
 #		-I${.CURDIR}/../../lib/libc/include \
 #		-DNBCHAR_MAX=127 -DHOSTPROG
-YHEADER=	#1
+YHEADER=	1
 
 .ifndef HOSTPROG
 .include <bsd.prog.mk>

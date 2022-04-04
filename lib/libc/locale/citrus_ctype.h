@@ -30,8 +30,8 @@
 #ifndef _CITRUS_CTYPE_H_
 #define _CITRUS_CTYPE_H_
 
-#include "encoding.h"
-#include "rune.h"
+#include <encoding.h>
+#include <rune.h>
 
 __BEGIN_DECLS
 int 		_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);

@@ -29,7 +29,7 @@
 #ifndef _WCTRANS_LOCAL_H_
 #define _WCTRANS_LOCAL_H_
 
-#include "rune.h"
+#include <rune.h>
 
 wint_t	_towctrans_ext(wint_t, _WCTransEntry *);
 

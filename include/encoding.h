@@ -30,9 +30,8 @@
 #ifndef _ENCODING_H_
 #define _ENCODING_H_
 
-#include "rune.h"
+#include <rune.h>
 
-/* place in locale.h ?? */
 /* generic encoding structures */
 typedef struct {
 	wchar_t				ch[3];

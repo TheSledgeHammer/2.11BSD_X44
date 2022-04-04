@@ -47,9 +47,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.
 	- Mimic 2.11BSD's original freeproc list.
-- syscall proto-type declarations:
-	- For when syscalls are used internally.
-	- example: dup2, execve, syscall(machine), etc...
 	- RLimit (Minor Issue)
 		- 4.4BSD-Lite2 & 2.11BSD conflict.
 		- init_main.c: plimit pointer to rlimit and user pointer to rlimit
@@ -65,7 +62,7 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## dev:
 - com (Disabled): Has several comiler errors.
-- usb (Disabled): Has several compiler errors that need fixing.
+- usb (Disabled): Has several compiler errors.
 
 - Essential Driver Support:
 	- Audio:

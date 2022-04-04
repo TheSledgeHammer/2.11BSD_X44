@@ -46,12 +46,7 @@
 #define _CTYPE_H_
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
-
-#include <sys/ansi.h>
-#include <machine/ansi.h>
-
-//#include <runetype.h>
+#include <runetype.h>
 
 #define	_CTYPE_A		0x00000100L		/* Alpha */
 #define	_CTYPE_C		0x00000200L		/* Control */
@@ -143,4 +138,65 @@ wint_t			___tolower_mb(wint_t);
 rune_t			___toupper(rune_t);
 wint_t			___toupper_mb(wint_t);
 __END_DECLS
+
+/*
+ * If your compiler supports prototypes and inline functions,
+ * #define _USE_CTYPE_INLINE_.  Otherwise, use the C library
+ * functions.
+ */
+#if !defined(_USE_CTYPE_CLIBRARY_) && defined(__GNUC__) || defined(__cplusplus)
+#define	_USE_CTYPE_INLINE_	1
+#endif
+
+#if defined(_USE_CTYPE_INLINE_)
+static __inline int
+__istype(rune_t c, unsigned long f)
+{
+	return((((_RUNE_ISCACHED(c) ? ___runetype(c) : _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
+}
+
+static __inline int
+__isctype(rune_t c, unsigned long f)
+{
+	return((((_RUNE_ISCACHED(c) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
+}
+
+/* _ANSI_LIBRARY is defined by lib/libc/locale/isctype.c. */
+#if !defined(_ANSI_LIBRARY)
+static __inline rune_t
+__toupper(rune_t c)
+{
+	return((_RUNE_ISCACHED(c) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+}
+
+static __inline rune_t
+__tolower(rune_t c)
+{
+	return((_RUNE_ISCACHED(c) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+}
+
+static __inline wint_t
+__toupper_mb(wint_t c)
+{
+	return((_RUNE_ISCACHED(c) ? ___toupper_mb(c) : _CurrentRuneLocale->mapupper[c]);
+}
+
+static __inline wint_t
+__tolower_mb(wint_t c)
+{
+	return((_RUNE_ISCACHED(c) ? ___tolower_mb(c) : _CurrentRuneLocale->maplower[c]);
+}
+#endif /* !_ANSI_LIBRARY */
+
+#else /* !_USE_CTYPE_INLINE_ */
+
+__BEGIN_DECLS
+int			__istype(rune_t, unsigned long);
+int			__isctype(rune_t, unsigned long);
+rune_t		toupper(rune_t);
+rune_t		tolower(rune_t);
+wint_t		toupper_mb(wint_t);
+wint_t		tolower_mb(wint_t);
+__END_DECLS
+#endif /* _USE_CTYPE_INLINE_ */
 #endif

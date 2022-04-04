@@ -42,8 +42,9 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-#include <ctype.h>
-#include "encoding.h"
+#include <sys/ansi.h>
+#include <machine/ansi.h>
+#include <encoding.h>
 
 #ifdef  _BSD_RUNE_T_
 typedef _BSD_RUNE_T_	rune_t;
@@ -79,8 +80,6 @@ typedef	_BSD_WCTYPE_T_	wctype_t;
 #define	WEOF 			((wint_t)-1)
 #endif
 
-typedef uint32_t 		wint_t;
-typedef uint32_t 		rune_t;
 typedef uint32_t 		_RuneType;
 typedef uint64_t		_runepad_t;
 

@@ -44,7 +44,7 @@ static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #include <errno.h>
 #include <limits.h>
 #include <locale.h>
-#include "rune.h"
+#include <rune.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

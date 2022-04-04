@@ -98,7 +98,7 @@ static char sccsid[] = "@(#)euc.c	8.1 (Berkeley) 6/4/93";
 #include <sys/types.h>
 #include <sys/errno.h>
 
-#include "rune.h"
+#include <rune.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
