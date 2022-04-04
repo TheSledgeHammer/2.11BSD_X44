@@ -64,6 +64,19 @@
 #include "citrus_ctype.h"
 #include "citrus_ctype_template.h"
 
+/* internal routines */
+int
+_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
+{
+	return (sgetrune_mb(ei, pwc, s, n, psenc, nresult));
+}
+
+int
+_citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict ei, char * __restrict s, size_t n, wchar_t pwc, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
+{
+	return (sputrune_mb(ei, s, n, pwc, psenc, nresult));
+}
+
 /* ----------------------------------------------------------------------
  * templates for public functions
  */
@@ -144,7 +157,7 @@ _citrus_ctype_mbrlen(void * __restrict cl, const char * __restrict s, size_t n, 
 		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0;
 	} else {
-		err = _FUNCNAME(mbrtowc_priv)(ei, NULL, (const char **)&s, n,
+		err = _citrus_ctype_mbrtowc_priv(ei, NULL, (const char **)&s, n,
 		    (void *)psenc, nresult);
 	}
 	_RESTART_END(mbrlen, _TO_CEI(cl), pspriv, psenc);
@@ -167,7 +180,7 @@ _citrus_ctype_mbrtowc(void * __restrict cl, wchar_t * __restrict pwc, const char
 		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0;
 	} else {
-		err = _FUNCNAME(mbrtowc_priv)(ei, pwc, (const char **)&s, n, (void *)psenc, nresult);
+		err = _citrus_ctype_mbrtowc_priv(ei, pwc, (const char **)&s, n, (void *)psenc, nresult);
 	}
 	_RESTART_END(mbrtowc, _TO_CEI(cl), pspriv, psenc);
 
@@ -281,7 +294,7 @@ _citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t wc, voi
 		sz -= rsz;
 	}
 #endif
-	err = _FUNCNAME(wcrtomb_priv)(_CEI_TO_EI(_TO_CEI(cl)), s, sz, wc, psenc, nresult);
+	err = _citrus_ctype_wcrtomb_priv(_CEI_TO_EI(_TO_CEI(cl)), s, sz, wc, psenc, nresult);
 #if _ENCODING_IS_STATE_DEPENDENT
 	if (err == 0)
 		*nresult += rsz;
@@ -366,7 +379,7 @@ _citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int 
 		sz -= rsz;
 	}
 #endif
-	err = _FUNCNAME(wcrtomb_priv)(ei, s, sz, wc, psenc, &nr);
+	err = _citrus_ctype_wcrtomb_priv(ei, s, sz, wc, psenc, &nr);
 #if _ENCODING_IS_STATE_DEPENDENT
 	if (err == 0)
 		*nresult = (int)(nr + rsz);
@@ -399,7 +412,7 @@ _citrus_ctype_btowc(void * __restrict cl, int c, wint_t * __restrict wcresult)
 	_citrus_ctype_init_state(ei, &state);
 	mb = (char)(unsigned)c;
 	s = &mb;
-	err = _FUNCNAME(mbrtowc_priv)(ei, &wc, &s, 1, &state, &nr);
+	err = _citrus_ctype_mbrtowc_priv(ei, &wc, &s, 1, &state, &nr);
 	if (!err && (nr == 0 || nr == 1))
 		*wcresult = (wint_t)wc;
 	else
@@ -426,7 +439,7 @@ _citrus_ctype_wctob(void * __restrict cl, wint_t wc, int * __restrict cresult)
 	}
 	ei = _CEI_TO_EI(_TO_CEI(cl));
 	_citrus_ctype_init_state(ei, &state);
-	err = _FUNCNAME(wcrtomb_priv)(ei, buf, _ENCODING_MB_CUR_MAX(ei), (wchar_t)wc, &state, &nr);
+	err = _citrus_ctype_wcrtomb_priv(ei, buf, _ENCODING_MB_CUR_MAX(ei), (wchar_t)wc, &state, &nr);
 	if (!err && nr == 1)
 		*cresult = buf[0];
 	else

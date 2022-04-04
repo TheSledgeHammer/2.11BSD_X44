@@ -79,18 +79,6 @@ _UTF2_init(rl)
 }
 
 int
-_UTF2_citrus_ctype_mbrtowc_priv(_UTF2EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
-{
-	return (_UTF2_sgetrune_mb(ei, pwc, s, n, psenc, nresult));
-}
-
-int
-_UTF2_citrus_ctype_wcrtomb_priv(_UTF2EncodingInfo *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
-{
-	return (_UTF2_sputrune_mb(ei, s, n, wc, psenc, nresult));
-}
-
-int
 _UTF2_sgetrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _UTF2State *psenc, size_t *nresult)
 {
 	wchar_t wchar;

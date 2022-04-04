@@ -75,10 +75,6 @@ typedef struct {
 } _FileRuneEntry;
 
 typedef struct {
-	uint32_t		nranges;		/* Number of ranges stored */
-} _FileRuneRange;
-
-typedef struct {
 	char			magic[8];
 	char			encoding[32];
 
@@ -88,11 +84,11 @@ typedef struct {
 	int32_t			maplower[_CACHED_RUNES];
 	int32_t			mapupper[_CACHED_RUNES];
 
-	_FileRuneRange	runetype_ext;
-	_FileRuneRange	maplower_ext;
-	_FileRuneRange	mapupper_ext;
+	uint32_t		runetype_ext_nranges;
+	uint32_t		maplower_ext_nranges;
+	uint32_t		mapupper_ext_nranges;
 
-	int32_t			variable_len;
+	int32_t		    variable_len;
 } _FileRuneLocale;
 
 #define	_FILE_RUNE_MAGIC_1	"RuneMag1"

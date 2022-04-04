@@ -61,11 +61,11 @@ static char sccsid[] = "@(#)yacc.y	8.1 (Berkeley) 6/6/93";
 
 char		*locale_file = "<stdout>";
 
-rune_map	maplower = { 0, };
-rune_map	mapupper = { 0, };
-rune_map	types = { 0, };
+rune_map	maplower = { { 0, }, };
+rune_map	mapupper = { { 0, }, };
+rune_map	types = { { 0, }, };
 
-_RuneLocale	new_locale = { 0, };
+_FileRuneLocale new_locale = { { 0, }, };
 
 rune_t	charsetbits = (rune_t)0x00000000;
 #if 0
@@ -594,6 +594,7 @@ dump_tables()
 {
     int x;
     rune_list *list;
+    FILE *ofile = fp;
 
     /*
      * See if we can compress some of the istype arrays
@@ -629,26 +630,26 @@ dump_tables()
     list = types.root;
 
     while (list) {
-		new_locale.runetype_ext.nranges++;
+		new_locale.runetype_ext_nranges++;
 		list = list->next;
     }
-    new_locale.runetype_ext.nranges = htonl(new_locale.runetype_ext.nranges);
+    new_locale.runetype_ext.nranges = htonl(new_locale.runetype_ext_nranges);
 
     list = maplower.root;
 
     while (list) {
-		new_locale.maplower_ext.nranges++;
+		new_locale.maplower_ext_nranges++;
 		list = list->next;
     }
-    new_locale.maplower_ext.nranges = htonl(new_locale.maplower_ext.nranges);
+    new_locale.maplower_ext.nranges = htonl(new_locale.maplower_ext_nranges);
 
     list = mapupper.root;
 
     while (list) {
-		new_locale.mapupper_ext.nranges++;
+		new_locale.mapupper_ext_nranges++;
 		list = list->next;
     }
-    new_locale.mapupper_ext.nranges = htonl(new_locale.mapupper_ext.nranges);
+    new_locale.mapupper_ext_nranges = htonl(new_locale.mapupper_ext_nranges);
 
     new_locale.variable_len = htonl(new_locale.variable_len);
 
@@ -707,7 +708,7 @@ dump_tables()
     list = mapupper.root;
 
     while (list) {
-		_RuneEntry re;
+		_FileRuneEntry re;
 
 		re.min = htonl(list->min);
 		re.max = htonl(list->max);

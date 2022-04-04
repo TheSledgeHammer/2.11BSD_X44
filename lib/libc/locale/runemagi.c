@@ -49,35 +49,7 @@ __FBSDID("$FreeBSD$");
 
 #include "runefile.h"
 
-/* add encoding to RuneLocale file? */
-void
-citrus_encoding_init(_ENCODING_INFO *ei, _ENCODING_STATE *es)
-{
-	if (ei == NULL) {
-		ei = malloc(sizeof(_ENCODING_INFO *));
-	}
-	if (es == NULL) {
-		es = malloc(sizeof(_ENCODING_STATE *));
-	}
-}
-
-int
-_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
-{
-	return (sgetrune_mb(ei, pwc, s, n, psenc, nresult));
-}
-
-int
-_citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict ei, char * __restrict s, size_t n, wchar_t wc, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
-{
-	return (sputrune_mb(ei, s, n, wc, psenc, nresult));
-}
-
-/* rune.c 
- * Todo: 
- * - update mklocale to use _FileRuneLocale 
- * - fix up other locale files that use _FileRuneLocale
- */
+/* rune.c  */
 _RuneLocale *
 _Read_RuneMagi(fp)
 	FILE *fp;
@@ -127,25 +99,25 @@ _Read_RuneMagi(fp)
 	}
 
 	runetype_ext_ranges = (_FileRuneEntry*) variable;
-	variable = runetype_ext_ranges + frl->runetype_ext.nranges;
+	variable = runetype_ext_ranges + frl->runetype_ext_nranges;
 	if (variable > lastp) {
 		goto invalid;
 	}
 
 	maplower_ext_ranges = (_FileRuneEntry*) variable;
-	variable = maplower_ext_ranges + frl->maplower_ext.nranges;
+	variable = maplower_ext_ranges + frl->maplower_ext_nranges;
 	if (variable > lastp) {
 		goto invalid;
 	}
 
 	mapupper_ext_ranges = (_FileRuneEntry*) variable;
-	variable = mapupper_ext_ranges + frl->mapupper_ext.nranges;
+	variable = mapupper_ext_ranges + frl->mapupper_ext_nranges;
 	if (variable > lastp) {
 		goto invalid;
 	}
 
 	frr = runetype_ext_ranges;
-	for (x = 0; x < frl->runetype_ext.nranges; ++x) {
+	for (x = 0; x < frl->runetype_ext_nranges; ++x) {
 		uint32_t *stypes;
 		if (frr[x].map == 0) {
 			int len = frr[x].max - frr[x].min + 1;
@@ -162,9 +134,12 @@ _Read_RuneMagi(fp)
 		goto invalid;
 	}
 
+	/*
+	 * Convert from disk format to host format.
+	 */
 	data = malloc(sizeof(_RuneLocale) +
-			(frl->runetype_ext.nranges + frl->maplower_ext.nranges +
-			frl->mapupper_ext.nranges) * sizeof(_RuneEntry)+
+			(frl->runetype_ext_nranges + frl->maplower_ext_nranges +
+			frl->mapupper_ext_nranges) * sizeof(_RuneEntry)+
 			runetype_ext_len * sizeof(*rr->types) + frl->variable_len);
 	if (data == NULL) {
 		saverr = errno;
@@ -179,10 +154,11 @@ _Read_RuneMagi(fp)
 	memcpy(rl->magic, _RUNE_MAGIC_1, sizeof(rl->magic));
 	memcpy(rl->encoding, frl->encoding, sizeof(rl->encoding));
 
+	rl->invalid_rune = frl->invalid_rune;
 	rl->variable_len = frl->variable_len;
-	rl->runetype_ext.nranges = frl->runetype_ext.nranges;
-	rl->maplower_ext.nranges = frl->maplower_ext.nranges;
-	rl->mapupper_ext.nranges = frl->mapupper_ext.nranges;
+	rl->runetype_ext.nranges = frl->runetype_ext_nranges;
+	rl->maplower_ext.nranges = frl->maplower_ext_nranges;
+	rl->mapupper_ext.nranges = frl->mapupper_ext_nranges;
 
 	for (x = 0; x < _CACHED_RUNES; ++x) {
 		rl->runetype[x] = frl->runetype[x];
@@ -199,7 +175,7 @@ _Read_RuneMagi(fp)
 	rl->mapupper_ext.ranges = (_RuneEntry*) rl->variable;
 	rl->variable = rl->mapupper_ext.ranges + rl->mapupper_ext.nranges;
 
-	variable = mapupper_ext_ranges + frl->mapupper_ext.nranges;
+	variable = mapupper_ext_ranges + frl->mapupper_ext_nranges;
 	frr = runetype_ext_ranges;
 	rr = rl->runetype_ext.ranges;
 	for (x = 0; x < rl->runetype_ext.nranges; ++x) {

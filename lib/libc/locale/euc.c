@@ -122,24 +122,41 @@ _EUC_init(rl)
 	_RuneLocale *rl;
 {
 	_EUCEncodingInfo *ei;
-	int x;
-	char *v, *e;
+	int err;
 
 	rl->ops->ro_sgetrune = _EUC_sgetrune;
 	rl->ops->ro_sputrune = _EUC_sputrune;
 	rl->ops->ro_sgetrune_mb = _EUC_sgetrune_mb;
 	rl->ops->ro_sputrune_mb = _EUC_sputrune_mb;
 
+	_DIAGASSERT(ei != NULL);
+
+	err = _EUC_parse_variable(rl, ei);
+	if(err != 0) {
+		return (err);
+	}
+
+	_CurrentRuneLocale = rl;
+	return (0);
+}
+
+static int
+_EUC_parse_variable(_RuneLocale *rl, _EUCEncodingInfo *ei)
+{
+	int x;
+	char *v, *e;
+
 	if (!rl->variable) {
 		free(rl);
 		return (EFTYPE);
 	}
-	v = (char *) rl->variable;
+	v = (char*) rl->variable;
 
-	while (*v == ' ' || *v == '\t')
+	while (*v == ' ' || *v == '\t') {
 		++v;
-
-	if ((ei = malloc(sizeof(_EUCEncodingInfo))) == NULL) {
+	}
+	ei = malloc(sizeof(_EUCEncodingInfo));
+	if (ei == NULL) {
 		free(rl);
 		return (ENOMEM);
 	}
@@ -158,10 +175,11 @@ _EUC_init(rl)
 			free(ei);
 			return (EFTYPE);
 		}
-		while (*v == ' ' || *v == '\t')
+		while (*v == ' ' || *v == '\t') {
 			++v;
+		}
 	}
-	ei->mask = (int)strtol(v, &e, 0);
+	ei->mask = (int) strtol(v, &e, 0);
 	if (v == e || !(v = e)) {
 		free(rl);
 		free(ei);
@@ -174,20 +192,7 @@ _EUC_init(rl)
 		rl->variable = &ei;
 	}
 	rl->variable_len = sizeof(_EUCEncodingInfo);
-	_CurrentRuneLocale = rl;
 	return (0);
-}
-
-int
-_EUC_citrus_ctype_mbrtowc_priv(_EUCEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
-{
-	return (_EUC_sgetrune_mb(ei, pwc, s, n, psenc, nresult));
-}
-
-int
-_EUC_citrus_ctype_wcrtomb_priv(_EUCEncodingInfo *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
-{
-	return (_EUC_sputrune_mb(ei, s, n, wc, psenc, nresult));
 }
 
 int

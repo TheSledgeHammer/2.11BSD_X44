@@ -138,8 +138,7 @@ __BEGIN_DECLS
  *     the return value in the real mbrtowc context.
  *   - return value means "errno" in the real mbrtowc context.
  */
-//static int 	_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
-static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+//static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 
 /*
  * standard form of wcrtomb_priv.
@@ -153,8 +152,7 @@ static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __res
  *   - caller should ensure that 2nd parameter isn't NULL.
  *     (XXX inconsist with mbrtowc_priv)
  */
-//static int _citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
-static int 	_FUNCNAME(wcrtomb_priv)(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+//static int 	_FUNCNAME(wcrtomb_priv)(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 __END_DECLS
 
 /* internal routines */
@@ -174,7 +172,7 @@ _FUNCNAME(mbtowc_priv)(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc,
 	}
 
 	state = *psenc;
-	err = _FUNCNAME(mbrtowc_priv)(ei, pwc, (const char **)&s, n, psenc, &nr);
+	err = _citrus_ctype_mbrtowc_priv(ei, pwc, (const char **)&s, n, psenc, &nr);
 	if (err) {
 		*nresult = -1;
 		return (err);
@@ -212,7 +210,7 @@ _FUNCNAME(mbsrtowcs_priv)(_ENCODING_INFO * __restrict ei, wchar_t * __restrict p
 	s0 = *s; /* to keep *s unchanged for now, use copy instead. */
 	mbcurmax = _ENCODING_MB_CUR_MAX(ei);
 	while (n > 0) {
-		err = _FUNCNAME(mbrtowc_priv)(ei, pwcs, &s0, mbcurmax, psenc, &siz);
+		err = _citrus_ctype_mbrtowc_priv(ei, pwcs, &s0, mbcurmax, psenc, &siz);
 		if (siz == (size_t)-2)
 			err = EILSEQ;
 		if (err) {
@@ -264,7 +262,7 @@ _FUNCNAME(wcsrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s, c
 #if _ENCODING_IS_STATE_DEPENDENT
 		state = *psenc;
 #endif
-		err = _FUNCNAME(wcrtomb_priv)(ei, buf, sizeof(buf), *pwcs0, psenc, &siz);
+		err = _citrus_ctype_wcrtomb_priv(ei, buf, sizeof(buf), *pwcs0, psenc, &siz);
 		if (siz == (size_t)-1) {
 			*nresult = siz;
 			return (err);

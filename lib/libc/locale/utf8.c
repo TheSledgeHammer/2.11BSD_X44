@@ -119,18 +119,6 @@ _UTF8_init(_RuneLocale *rl)
 }
 
 int
-_UTF8_citrus_ctype_mbrtowc_priv(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UTF8State *psenc, size_t *nresult)
-{
-	return (_UTF8_sgetrune_mb(ei, pwc, s, n, psenc, nresult));
-}
-
-int
-_UTF8_citrus_ctype_wcrtomb_priv(_UTF8EncodingInfo *ei, char *s, size_t n, wchar_t wc, _UTF8State *psenc, size_t *nresult)
-{
-	return (_UTF8_sputrune_mb(ei, s, n, wc, psenc, nresult));
-}
-
-int
 _UTF8_sgetrune_mb(_UTF8EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _UTF8State *psenc, size_t *nresult)
 {
 	wchar_t wchar;

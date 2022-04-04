@@ -34,6 +34,9 @@
 #include "rune.h"
 
 __BEGIN_DECLS
+int 		_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+int 		_citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+
 void		_citrus_ctype_init_state(_ENCODING_INFO *ei, _ENCODING_STATE *s);
 void		_citrus_ctype_pack_state(_ENCODING_INFO *ei, void *pspriv, const _ENCODING_STATE *s);
 void		_citrus_ctype_unpack_state(_ENCODING_INFO *ei, _ENCODING_STATE *s, const void *pspriv);

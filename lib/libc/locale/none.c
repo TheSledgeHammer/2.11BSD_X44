@@ -97,18 +97,6 @@ _none_init(rl)
 }
 
 int
-_none_citrus_ctype_mbrtowc_priv(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult)
-{
-	return (_none_sgetrune_mb(cl, pwc, s, n, pspriv, nresult));
-}
-
-int
-_none_citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
-{
-	return (_none_sputrune_mb(cl, s, wc, pspriv, nresult));
-}
-
-int
 _none_sgetrune_mb(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if (s == NULL) {
