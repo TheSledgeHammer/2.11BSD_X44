@@ -63,6 +63,8 @@
 #include <sys/eventvar.h>
 #include <sys/sysdecl.h>
 
+void    setsigvec(int, struct sigaction *);
+
 int
 sigaction()
 {
@@ -79,7 +81,7 @@ sigaction()
 	u_long bit;
 	int error = 0;
 
-	u.u_pcb.pcb_sigc = SCARG(uap, sigtramp);	/* save trampoline address */
+	//u.u_pcb.pcb_sigc = SCARG(uap, sigtramp);	/* save trampoline address */
 
 	signum = SCARG(uap, signum);
 	if (signum <= 0 || signum >= NSIG) {
@@ -152,7 +154,7 @@ setsigvec(signum, sa)
 	 */
 	if (sa->sa_handler == SIG_IGN ||
 	    ((sigprop[signum] & SA_IGNORE) && sa->sa_handler == SIG_DFL)) {
-		p->p_sigacts &= ~bit;		/* never to be seen again */
+		p->p_sig &= ~bit;		/* never to be seen again */
 		if (signum != SIGCONT)
 			p->p_sigignore |= bit;	/* easier in psignal */
 		p->p_sigcatch &= ~bit;
@@ -363,7 +365,7 @@ sigwait()
 		goto out;
 
 	wanted |= sigcantmask;
-	while ((sigsavail = (wanted & p->p_sigacts)) == 0)
+	while ((sigsavail = (wanted & p->p_sig)) == 0)
 		tsleep(&u.u_signal[0], PPAUSE | PCATCH, "sigwait", 0);
 
 	if (sigsavail & sigcantmask) {
@@ -372,7 +374,7 @@ sigwait()
 	}
 
 	signo = ffs(sigsavail);
-	p->p_sigacts &= ~sigmask(signo);
+	p->p_sig &= ~sigmask(signo);
 	error = copyout(&signo, SCARG(uap, sig), sizeof(int));
 out:
 	return (u.u_error = error);
@@ -391,11 +393,13 @@ fetchi()
 		syscallarg(caddr_t) iaddr;
 	} *uap = (struct fetchi_args *)u.u_ap;
 
-#ifdef NONSEPARATE
+//#ifdef NONSEPARATE
 	u.u_error = EINVAL;
+/*
 #else !NONSEPARATE
 	u.u_error = copyin(SCARG(uap, iaddr), u.u_r.r_val1, NBPW);
 #endif NONSEPARATE
+*/
 	return (u.u_error);
 }
 

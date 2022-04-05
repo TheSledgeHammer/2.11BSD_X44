@@ -12,6 +12,7 @@
 #include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/uio.h>
+#include <sys/malloc.h>
 
 int
 uiomove(cp, n, uio)
@@ -175,7 +176,7 @@ hashinit(elements, type, hashmask)
 	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
 		continue;
 	hashsize >>= 1;
-	hashtbl = rmalloc(type, (u_long)hashsize * sizeof(*hashtbl));
+    hashtbl = calloc((u_long)hashsize, sizeof(*hashtbl), type, M_WAITOK);
 	for (i = 0; i < hashsize; i++)
 		LIST_INIT(&hashtbl[i]);
 	*hashmask = hashsize - 1;
@@ -198,6 +199,6 @@ hashfree(hashtbl, elements, type, hashmask)
 	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
 			continue;
 	hashsize >>= 1;
-	hashtbl = rmfree(hashtbl, (u_long)hashsize * (hashmask + 1), type);
+    free(hashtbl, type);
 	return (hashtbl);
 }

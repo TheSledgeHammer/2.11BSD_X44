@@ -15,10 +15,13 @@
 #include <sys/acct.h>
 #include <sys/signalvar.h>
 #include <sys/resourcevar.h>
+#include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/sysdecl.h>
 
 extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
+static int      killpg1(int, int, int);
+void            stop(struct proc *);
 
 /*
  * Can the current process send the signal `signum' to process `q'?
@@ -153,7 +156,7 @@ killpg()
 	if (SCARG(uap, signo) < 0 || SCARG(uap, signo) >= NSIG) {
 		return (EINVAL);
 	}
-	error = killpg1(SCARG(uap, signo), uap->pgrp, 0);
+	error = killpg1(SCARG(uap, signo), SCARG(uap, pgrp), 0);
 	return (error);
 }
 
@@ -263,10 +266,13 @@ psignal(p, sig)
 	register int sig;
 {
 	register int s;
-	int (*action)();
+	register sig_t action;
 	int prop;
 	long mask;
 
+    if ((u_int)sig >= NSIG || sig == 0) {
+        panic("psignal signal number");
+    }
 	mask = sigmask(sig);
 	prop = sigprop[sig];
 
@@ -295,7 +301,7 @@ psignal(p, sig)
 		p->p_nice = NZERO;
 
 	if (prop & SA_CONT)
-		p->p_sigacts &= ~stopsigmask;
+		p->p_sig &= ~stopsigmask;
 
 	if (prop & SA_STOP) {
 		/*
@@ -304,12 +310,12 @@ psignal(p, sig)
 		 * here if the action is default; don't stop the process 
 		 * below if sleeping, and don't clear any pending SIGCONT.
 		 */
-		if ((prop & SA_TTYSTOP) && (p->p_pptr == &proc[1]) &&
+		if ((prop & SA_TTYSTOP) && (p->p_pgrp->pg_jobc == 0) &&
 		    action == SIG_DFL)
 			return;
-		p->p_sigacts &= ~contsigmask;
+		p->p_sig &= ~contsigmask;
 	}
-	p->p_sigacts |= mask;
+	p->p_sig |= mask;
 
 	/*
 	 * Defer further processing for signals which are held.
@@ -341,7 +347,7 @@ psignal(p, sig)
 		 * be awakened.
 		 */
 		if ((prop & SA_CONT) && action == SIG_DFL) {
-			p->p_sigacts &= ~mask;
+			p->p_sig &= ~mask;
 			goto out;
 		}
 		/*
@@ -359,7 +365,7 @@ psignal(p, sig)
 			 */
 			if (p->p_flag & P_SVFORK)
 				goto out;
-			p->p_sigacts &= ~mask;
+			p->p_sig &= ~mask;
 			p->p_ptracesig = sig;
 			if ((p->p_pptr->p_flag & P_NOCLDSTOP) == 0)
 				psignal(p->p_pptr, SIGCHLD);
@@ -389,7 +395,7 @@ psignal(p, sig)
 			 * Otherwise, process goes back to sleep state.
 			 */
 			if (action == SIG_DFL)
-				p->p_sigacts &= ~mask;
+				p->p_sig &= ~mask;
 			if (action == SIG_CATCH || p->p_wchan == 0)
 				goto run;
 			p->p_stat = SSLEEP;
@@ -401,7 +407,7 @@ psignal(p, sig)
 			 * Already stopped, don't need to stop again.
 			 * (If we did the shell could get confused.)
 			 */
-			p->p_sigacts &= ~mask;		/* take it away */
+			p->p_sig &= ~mask;		/* take it away */
 			goto out;
 		}
 
@@ -457,7 +463,7 @@ issignal(p)
 	int prop;
 
 	for (;;) {
-		mask = p->p_sigacts & ~p->p_sigmask;
+		mask = p->p_sig & ~p->p_sigmask;
 		if (p->p_flag&P_SVFORK)
 			mask &= ~stopsigmask;
 		if (mask == 0)
@@ -470,7 +476,7 @@ issignal(p)
 		 * only if P_TRACED was on when they were posted.
 		*/
 		if ((mask & p->p_sigignore) && (p->p_flag& P_TRACED) == 0) {
-			p->p_sigacts &= ~mask;
+			p->p_sig &= ~mask;
 			continue;
 		}
 		if ((p->p_flag & P_TRACED) && (p->p_flag & P_SVFORK) == 0) {
@@ -486,7 +492,7 @@ issignal(p)
 			 * would still be blocked on the ipc struct from 
 			 * the initial request.
 			 */
-			p->p_sigacts &= ~mask;
+			p->p_sig &= ~mask;
 			p->p_ptracesig = sig;
 			psignal(p->p_pptr, SIGCHLD);
 			do {
@@ -508,7 +514,7 @@ issignal(p)
 			 * signal is being masked, look for other signals.
 			 */
 			mask = sigmask(sig);
-			p->p_sigacts |= mask;
+			p->p_sig |= mask;
 			if (p->p_sigmask & mask)
 				continue;
 
@@ -522,9 +528,9 @@ issignal(p)
 			prop = sigprop[sig];
 		}
 
-		switch ((int)u.u_signal[sig]) {
+		switch ((long)u.u_signal[sig]) {
 
-		case SIG_DFL:
+		case (long)SIG_DFL:
 			/*
 			 * Don't take default actions on system processes.
 			 */
@@ -548,13 +554,13 @@ issignal(p)
 			 */
 			if (prop & SA_STOP) {
 				if ((p->p_flag & P_TRACED) ||
-		    		    (p->p_pptr == &proc[1] &&
+		    		    (p->p_pgrp->pg_jobc == 0 &&
 				    (prop & SA_TTYSTOP)))
 					break;	/* == ignore */
 				p->p_ptracesig = sig;
+				stop(p);
 				if ((p->p_pptr->p_flag & P_NOCLDSTOP) == 0)
 					psignal(p->p_pptr, SIGCHLD);
-				stop(p);
 				swtch();
 				break;
 			} else if (prop & SA_IGNORE) {
@@ -563,11 +569,12 @@ issignal(p)
 				 * Default action is to ignore; drop it.
 				 */
 				break;		/* == ignore */
-			} else
+			} else {
 				return;
+			}
 			/*NOTREACHED*/
 
-		case SIG_IGN:
+		case (long)SIG_IGN:
 			/*
 			 * Masking above should prevent us
 			 * ever trying to take action on a held
@@ -584,9 +591,21 @@ issignal(p)
 			 */
 			return;
 		}
-		p->p_sigacts &= ~mask;		/* take the signal away! */
+		p->p_sig &= ~mask;		/* take the signal away! */
 	}
 	/* NOTREACHED */
+}
+
+int
+_issignal(p)
+    struct proc *p;
+{
+    issignal(p);
+    
+    if(p->p_sig != 0) {
+        return ((int)p->p_sig);
+    }
+    return (0);
 }
 
 /*
@@ -614,16 +633,17 @@ postsig(sig)
 {
 	register struct proc *p;
 	long mask = sigmask(sig), returnmask;
-	register int (*action)();
+	register sig_t action;
 
 	p = u.u_procp;
-
+/*
 	if (u.u_fpsaved == 0) {
 		savfp(&u.u_fps);
 		u.u_fpsaved = 1;
 	}
+	*/
 
-	p->p_sigacts &= ~mask;
+	p->p_sig &= ~mask;
 	action = u.u_signal[sig];
 
 	if (action != SIG_DFL) {
@@ -641,16 +661,16 @@ postsig(sig)
 		 * mask from before the sigsuspend is what we want restored
 		 * after the signal processing is completed.
 		 */
-		(void) _splhigh();
+		(void) splhigh();
 		if (u.u_psflags & SAS_OLDMASK) {
 			returnmask = u.u_oldmask;
 			u.u_psflags &= ~SAS_OLDMASK;
 		} else
 			returnmask = p->p_sigmask;
 		p->p_sigmask |= u.u_sigmask[sig] | mask;
-		(void) _spl0();
+		(void) spl0();
 		u.u_ru.ru_nsignals++;
-		sendsig(action, sig, returnmask);
+		sendsig(action, sig, returnmask, 0);
 		return;
 	}
 	u.u_acflag |= AXSIG;
@@ -674,8 +694,8 @@ postsig(sig)
  * Updates for using vnodes and vmspace.
  */
 
-static int
-core()
+int
+core(void)
 {
 	register struct vnode *vp;
 	register struct proc *p = u.u_procp;
@@ -720,7 +740,8 @@ core()
 	vattr.va_size = 0;
 	VOP_LEASE(vp, p, cred, LEASE_WRITE);
 	VOP_SETATTR(vp, &vattr, cred, p);
-	p->p_acflag |= ACORE ||	u.u_acflag |= ACORE;
+	p->p_acflag |= ACORE;
+	u.u_acflag |= ACORE;
 	bcopy(p, &p->p_addr->u_kproc.kp_eproc, sizeof(struct proc));
 	fill_eproc(p, &p->p_addr->u_kproc.kp_eproc);
 	u.u_error = error;

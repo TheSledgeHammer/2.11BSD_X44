@@ -38,8 +38,8 @@
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 
-void		rwlock_pause(rwlock_t, int);
-void		rwlock_acquire(rwlock_t, int, int, int);
+void		rwlock_pause(struct rwlock *, int);
+void		rwlock_acquire(struct rwlock *, int, int, int);
 
 #if NCPUS > 1
 #define PAUSE(rwl, wanted)						\
@@ -49,7 +49,7 @@ void		rwlock_acquire(rwlock_t, int, int, int);
 #endif /* NCPUS == 1 */
 
 #define ACQUIRE(rwl, error, extflags, wanted)	\
-		rwlock_acquire(rwl, error, extflags, wanted);
+		rwlock_acquire((struct rwlock *)rwl, error, extflags, wanted);
 
 /* Initialize a rwlock */
 void
@@ -195,7 +195,7 @@ rwlock_read_held(rwl)
 	struct rwlock *rwl;
 {
 	register struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = lock->lo_cpus[cpu_number()];
+	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL) {
 		return (0);
 	}
@@ -218,7 +218,7 @@ rwlock_write_held(rwl)
 	if (rwl == NULL) {
 		return (0);
 	}
-	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC) == (RW_HAVE_WRITE | curproc));
+	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC) == (RW_HAVE_WRITE | (uintptr_t)curproc));
 }
 
 /*

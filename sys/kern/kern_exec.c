@@ -399,7 +399,7 @@ execsigs(p)
 			if (nc != SIGCONT) {
 				p->p_sigignore |= mask;
 			}
-			p->p_siglist &= ~mask;
+			p->p_sig &= ~mask;
 		}
         u.u_signal[nc] = SIG_DFL;
 	}
