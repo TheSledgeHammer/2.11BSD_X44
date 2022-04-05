@@ -88,8 +88,8 @@ struct	proc {
     struct	vnode 	    *p_tracep;		/* Trace to vnode. */
     struct	vnode 	    *p_textvp;		/* Vnode of executable. */
     
-    int					p_siglist;		/* Signals arrived but not delivered. */
-
+    long				p_sig;		    /* Signals pending to this process */
+    
     struct	emul		*p_emul;		/* Emulation information */
     const struct execsw *p_execsw;		/* Exec package information */
     struct klist		p_klist;		/* Knotes attached to this process */
@@ -229,7 +229,7 @@ struct emul {
 #define	P_PPWAIT	0x0008000	/* Parent is waiting for child to exec/exit. */
 #define	P_PROFIL	0x0010000	/* Has started profiling. */
 #define	P_SUGID		0x0020000	/* Had set id privileges since last exec. */
-	/* 0x0040000 */
+#define	P_NOCLDSTOP	0x0040000	/* no SIGCHLD signal to parent */
 #define P_EXEC		0x0080000	/* Process called exec. */
 #define	P_SYSTEM	0x0100000	/* System proc: no sigs, stats or swapping. */
 #define	P_INMEM		0x0200000	/* Loaded into memory. */
@@ -329,5 +329,7 @@ int			newproc(int);
 void    	exit(int);
 void		endvfork();
 void		proc_reparent(struct proc *, struct proc *);
+/* sys_process */
+int         procxmt(struct proc *);
 #endif 	/* KERNEL */
 #endif	/* !_SYS_PROC_H_ */

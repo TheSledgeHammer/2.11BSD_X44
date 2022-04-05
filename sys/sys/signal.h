@@ -59,7 +59,7 @@ typedef unsigned long 	sigset_t;
  * Signal vector "template" used in sigaction call.
  */
 struct sigaction {
-	int				(*sa_handler)(int);	/* signal handler */
+	void			(*sa_handler)(int);	/* signal handler */
 	sigset_t 		sa_mask;			/* signal mask to apply */
 	int				sa_flags;			/* see signal options below */
 };
