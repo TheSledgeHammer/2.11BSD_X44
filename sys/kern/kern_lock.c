@@ -53,7 +53,7 @@ void	lock_pause(struct lock *, int);
 void	lock_acquire(struct lock *, int, int, int);
 void	lkp_lock(__volatile struct lock *);
 void	lkp_unlock(__volatile struct lock *);
-int	lkp_lock_try(__volatile struct lock *);
+int		lkp_lock_try(__volatile struct lock *);
 
 #if NCPUS > 1
 #define PAUSE(lkp, wanted)						\

@@ -146,9 +146,10 @@ _UTF2_sgetrune(string, n, result)
 		if (result)
 			*result = string + 3;
 		return (((string[0] & 0x1F) << 12) | ((string[1] & 0x3F) << 6)
-		    | (string[2] & 0x3F));
+				| (string[2] & 0x3F));
 	default:
-encoding_error:	if (result)
+encoding_error:
+		if (result)
 			*result = string + 1;
 		return (_INVALID_RUNE);
 	}

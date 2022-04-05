@@ -27,7 +27,9 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/lock.h>
@@ -52,7 +54,7 @@ void		rwlock_acquire(rwlock_t, int, int, int);
 /* Initialize a rwlock */
 void
 rwlock_init(rwl, prio, wmesg, timo, flags)
-	rwlock_t rwl;
+	struct rwlock *rwl;
 	char *wmesg;
 	int prio, timo;
 	unsigned int flags;
@@ -71,7 +73,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 
 int
 rwlockstatus(rwl)
-	rwlock_t rwl;
+	struct rwlock *rwl;
 {
     int lock_type = 0;
     rwlock_lock(rwl);
@@ -86,7 +88,7 @@ rwlockstatus(rwl)
 
 int
 rwlockmgr(rwl, flags, interlkp, pid)
-	__volatile rwlock_t rwl;
+	__volatile struct rwlock *rwl;
 	unsigned int 		flags;
 	struct lock_object *interlkp;
 	pid_t 				pid;
@@ -99,9 +101,9 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		pid = RW_KERNPROC;
 	}
 	LOCKHOLDER_PID(rwl->rwl_lockholder) = pid;
-	rwlock_lock(&rwl);
+	rwlock_lock(rwl);
 	if (flags & RW_INTERLOCK) {
-		rwlock_unlock(&rwl);
+		rwlock_unlock(rwl);
 	}
 	extflags = (flags | rwl->rwl_flags) & RW_EXTFLG_MASK;
 
@@ -158,12 +160,12 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		break;
 
 	default:
-		rwlock_unlock(&rwl);
+		rwlock_unlock(rwl);
 		printf("rwlockmgr: unknown locktype request %d", flags & RW_TYPE_MASK); /* panic */
 		break;
 	}
 
-	rwlock_unlock(&rwl);
+	rwlock_unlock(rwl);
 	return (error);
 }
 
@@ -190,13 +192,14 @@ rwlockmgr_printinfo(rwl)
  */
 int
 rwlock_read_held(rwl)
-	__volatile rwlock_t rwl;
+	struct rwlock *rwl;
 {
-	register struct lock_object *lock = rwl->rwl_lnterlock;
+	register struct lock_object *lock = &rwl->rwl_lnterlock;
 	register struct lock_object_cpu *cpu = lock->lo_cpus[cpu_number()];
-	if (rwl == NULL)
-		return 0;
-	return (cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_KERNPROC) != 0;
+	if (rwl == NULL) {
+		return (0);
+	}
+	return ((cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_KERNPROC) != 0);
 }
 
 /*
@@ -208,12 +211,13 @@ rwlock_read_held(rwl)
  */
 int
 rwlock_write_held(rwl)
-	__volatile rwlock_t rwl;
+	struct rwlock *rwl;
 {
-	register struct lock_object *lock = &rwl->rwl_lnterlock;
+	struct lock_object *lock = &rwl->rwl_lnterlock;
 	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
-	if (rwl == NULL)
+	if (rwl == NULL) {
 		return (0);
+	}
 	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC) == (RW_HAVE_WRITE | curproc));
 }
 
@@ -226,13 +230,14 @@ rwlock_write_held(rwl)
  */
 int
 rwlock_lock_held(rwl)
-	__volatile rwlock_t rwl;
+	struct rwlock *rwl;
 {
-	register struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
-	if (rwl == NULL)
-		return 0;
-	return (cpu->loc_my_ticket & RW_KERNPROC) != 0;
+	struct lock_object *lock = &rwl->rwl_lnterlock;
+	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	if (rwl == NULL) {
+		return (0);
+	}
+	return ((cpu->loc_my_ticket & RW_KERNPROC) != 0);
 }
 
 int lock_wait_time = 100;
@@ -244,17 +249,19 @@ rwlock_pause(rwl, wanted)
 {
 	if (lock_wait_time > 0) {
 		int i;
-		rwlock_unlock(&rwl);
+		rwlock_unlock(rwl);
 		for(i = lock_wait_time; i > 0; i--) {
 			if (!(wanted)) {
 				break;
 			}
 		}
-		rwlock_lock(&rwl);
+		rwlock_lock(rwl);
 	}
+	/*
 	if (!(wanted)) {
 		break;
 	}
+	*/
 }
 
 void
@@ -265,9 +272,9 @@ rwlock_acquire(rwl, error, extflags, wanted)
 	rwlock_pause(rwl, wanted);
 	for (error = 0; wanted; ) {
 		rwl->rwl_waitcount++;
-		rwlock_unlock(&rwl);
+		rwlock_unlock(rwl);
 		error = tsleep((void *)rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo);
-		rwlock_lock(&rwl);
+		rwlock_lock(rwl);
 		rwl->rwl_waitcount--;
 		if (error) {
 			break;
@@ -281,14 +288,21 @@ rwlock_acquire(rwl, error, extflags, wanted)
 
 void
 rwlock_lock(rwl)
-    __volatile rwlock_t rwl;
+    __volatile struct rwlock *rwl;
 {
 	simple_lock(&rwl->rwl_lnterlock);
 }
 
 void
 rwlock_unlock(rwl)
-    __volatile rwlock_t rwl;
+    __volatile struct rwlock *rwl;
 {
 	simple_unlock(&rwl->rwl_lnterlock);
+}
+
+int
+rwlock_lock_try(rwl)
+	__volatile struct rwlock *rwl;
+{
+	return (simple_lock_try(&rwl->rwl_lnterlock));
 }

@@ -36,9 +36,15 @@
 typedef struct {
 	wchar_t				ch[3];
 	int 				chlen;
+	int					current_endian;		/* UTF16 & UTF32 needs this */
 } _Encoding_State;
 
 typedef struct {
+	int					preffered_endian; 	/* UTF16 & UTF32 needs this */
+	uint32_t			mode;
+#define _ENDIAN_UNKNOWN	0
+#define _ENDIAN_BIG		1
+#define _ENDIAN_LITTLE	2
 	unsigned			count[4];
 	wchar_t				bits[4];
 	wchar_t				mask;

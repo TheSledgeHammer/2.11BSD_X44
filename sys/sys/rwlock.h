@@ -45,7 +45,6 @@ struct rwlock {
     char					*rwl_wmesg;			/* resource sleeping (for tsleep) */
     int						rwl_timo;			/* maximum sleep time (for tsleep) */
 };
-typedef struct rwlock       *rwlock_t;
 
 #define RW_KERNPROC  		LK_KERNPROC
 #define RW_NOPROC   		LK_NOPROC
@@ -77,15 +76,16 @@ typedef struct rwlock       *rwlock_t;
 #define RW_INTERLOCK		LK_INTERLOCK		/* unlock passed simple lock after getting lk_interlock */
 #define RW_RETRY			LK_RETRY			/* vn_lock: retry until locked */
 
-void 			rwlock_init(rwlock_t, int, char *, int, u_int);
-int 			rwlockmgr(__volatile rwlock_t, u_int, struct lock_object *, pid_t);
-int 			rwlockstatus(rwlock_t);
+void 			rwlock_init(struct rwlock *, int, char *, int, u_int);
+int 			rwlockmgr(__volatile struct rwlock *, u_int, struct lock_object *, pid_t);
+int 			rwlockstatus(struct rwlock *);
 
-void			rwlock_lock(rwlock_t);
-void			rwlock_unlock(rwlock_t);
-int				rwlock_read_held(rwlock_t);
-int				rwlock_write_held(rwlock_t);
-int				rwlock_lock_held(rwlock_t);
+void			rwlock_lock(__volatile struct rwlock *);
+void			rwlock_unlock(__volatile struct rwlock *);
+int				rwlock_lock_try(__volatile struct rwlock *);
+int				rwlock_read_held(struct rwlock *);
+int				rwlock_write_held(struct rwlock *);
+int				rwlock_lock_held(struct rwlock *);
 
 #endif /* SYS_RWLOCK_H_ */
 

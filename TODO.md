@@ -5,10 +5,8 @@ A General todo list. Don't hesitate to add to this list. :)
 ### Tools:
 - Needs Fixing:
 	- Disklabel Associated
-		- mklocale
 		- disklabel
 		- fdisk
-	- zic /* 2.11BSD's implemented in share */
 - Unimplemented:
 	- rpcgen
 			
@@ -20,10 +18,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/ (User & OS Libraries):
 ## lib:
-- libc:
-	- locale:
-		- ctype.h rune.h & runetype.h: Need tweaking for mklocale to compile
-			- various parts from the above headers need to be moved into lib/libc/locale
 
 ## libexec:
 
@@ -47,9 +41,9 @@ A General todo list. Don't hesitate to add to this list. :)
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.
 	- Mimic 2.11BSD's original freeproc list.
-	- RLimit (Minor Issue)
-		- 4.4BSD-Lite2 & 2.11BSD conflict.
-		- init_main.c: plimit pointer to rlimit and user pointer to rlimit
+- RLimit (Minor Issue)
+	- 4.4BSD-Lite2 & 2.11BSD conflict.
+	- init_main.c: plimit pointer to rlimit and user pointer to rlimit
 	
 ## arch:
 - i386/x86: (Merged under i386)
@@ -68,11 +62,9 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Audio:
 		- Check that all audio devices available are also configured	
 	- Core:
-		- add: parallel printer(atppc driver)
 		- CARDBUS: to add
 		- ISAPNP: 
 			- add com
-		- MCA: to add
 		- PCI:
 			- add agp
 		- PCMCIA:

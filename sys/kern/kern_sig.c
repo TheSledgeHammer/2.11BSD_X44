@@ -16,6 +16,7 @@
 #include <sys/signalvar.h>
 #include <sys/resourcevar.h>
 #include <sys/vnode.h>
+#include <sys/sysdecl.h>
 
 extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
 
@@ -40,46 +41,50 @@ cansignal(q, signum)
 	register struct proc *q;
 	int	signum;
 {
-	register struct proc *curp = u->u_procp;
+	register struct proc *curp;
 	uid_t	ruid;
 
-	fill_from_u(q, &ruid, NULL, NULL);	/* XXX */
-	if	(curp->p_uid == 0 ||		/* c effective root */
-		 u->u_pcred->p_ruid == ruid ||		/* c real = t real */
-		 curp->p_uid == ruid ||		/* c effective = t real */
-		 u->u_pcred->p_ruid == q->p_uid ||	/* c real = t effective */
-		 curp->p_uid == q->p_uid ||	/* c effective = t effective */
-		 (signum == SIGCONT && inferior(q)))
-		return(1);
-	return(0);
+	curp = u.u_procp;
+	ruid = q->p_cred->p_ruid;
+	//fill_from_u(q, &ruid, NULL, NULL);		/* XXX */
+	if	(curp->p_uid == 0 ||				/* c effective root */
+		 u.u_pcred->p_ruid == ruid ||		/* c real = t real */
+		 curp->p_uid == ruid ||				/* c effective = t real */
+		 u.u_pcred->p_ruid == q->p_uid ||	/* c real = t effective */
+		 curp->p_uid == q->p_uid ||			/* c effective = t effective */
+		 (signum == SIGCONT && inferior(q) &&
+				 (q)->p_session == (curp)->p_session))
+		return (1);
+	return (0);
 }
 
 /*
  * 4.3 Compatibility
 */
-void
+int
 sigstack()
 {
 	register struct sigstack_args {
 		syscallarg(struct sigstack *) nss;
 		syscallarg(struct sigstack *) oss;
-	} *uap = (struct sigstack_args *) u->u_ap;
+	} *uap = (struct sigstack_args *) u.u_ap;
 	struct sigstack ss;
 	register int error = 0;
 
-	ss.ss_sp = u->u_sigstk.ss_base;
-	ss.ss_onstack = u->u_sigstk.ss_flags & SA_ONSTACK;
-	if (uap->oss && (error = copyout((caddr_t) &ss, (caddr_t) uap->oss, sizeof(ss)))) {
+	ss.ss_sp = u.u_sigstk.ss_base;
+	ss.ss_onstack = u.u_sigstk.ss_flags & SA_ONSTACK;
+	if (SCARG(uap, oss) && (error = copyout((caddr_t) &ss, (caddr_t) SCARG(uap, oss), sizeof(ss)))) {
 		goto out;
 	}
-	if (uap->nss && (error = copyin((caddr_t) uap->nss, (caddr_t) &ss, sizeof(ss)))	== 0) {
-		u->u_sigstk.ss_base = ss.ss_sp;
-		u->u_sigstk.ss_size = 0;
-		u->u_sigstk.ss_flags |= (ss.ss_onstack & SA_ONSTACK);
-		u->u_psflags |= SAS_ALTSTACK;
+	if (SCARG(uap, nss) && (error = copyin((caddr_t) SCARG(uap, nss), (caddr_t) &ss, sizeof(ss)))	== 0) {
+		u.u_sigstk.ss_base = ss.ss_sp;
+		u.u_sigstk.ss_size = 0;
+		u.u_sigstk.ss_flags |= (ss.ss_onstack & SA_ONSTACK);
+		u.u_psflags |= SAS_ALTSTACK;
 	}
+
 out:
-	return;
+	return (error);
 }
 
 int
@@ -88,7 +93,7 @@ kill()
 	register struct kill_args {
 		syscallarg(int)	pid;
 		syscallarg(int)	signo;
-	} *uap = (struct kill_args *)u->u_ap;
+	} *uap = (struct kill_args *)u.u_ap;
 	register struct proc *p;
 	register int error = 0;
 
@@ -101,36 +106,39 @@ kill()
 	 * feel free to clutter up the entire inner kernel with parameter
 	 * checks - start with postsig ...
 	 */
-	if (uap->signo < 0 || uap->signo >= NSIG) {
+	if (SCARG(uap, signo) < 0 || SCARG(uap, signo) >= NSIG) {
 		error = EINVAL;
 		goto out;
 	}
-	if (uap->pid > 0) {
+	if (SCARG(uap, pid) > 0) {
 		/* kill single process */
-		p = pfind(uap->pid);
+		p = pfind(SCARG(uap, pid));
 		if (p == 0) {
 			error = ESRCH;
 			goto out;
 		}
-		if (!cansignal(p, uap->signo))
+		if (!cansignal(p, SCARG(uap, signo)))
 			error = EPERM;
-		else if (uap->signo)
-			psignal(p, uap->signo);
+		else if (SCARG(uap, signo))
+			psignal(p, SCARG(uap, signo));
 		goto out;
 	}
-	switch (uap->pid) {
+	switch (SCARG(uap, pid)) {
 	case -1:		/* broadcast signal */
-		error = killpg1(uap->signo, 0, 1);
+		error = killpg1(SCARG(uap, signo), 0, 1);
 		break;
 	case 0:			/* signal own process group */
-		error = killpg1(uap->signo, 0, 0);
+		error = killpg1(SCARG(uap, signo), 0, 0);
 		break;
 	default:		/* negative explicit process group */
-		error = killpg1(uap->signo, -uap->pid, 0);
+		error = killpg1(SCARG(uap, signo), -SCARG(uap, pid), 0);
 		break;
 	}
+
 out:
-	u->u_error = error;
+	u.u_error = error;
+
+	return (error);
 }
 
 int
@@ -139,13 +147,13 @@ killpg()
 	register struct killpg_args {
 		syscallarg(int)	pgrp;
 		syscallarg(int)	signo;
-	} *uap = (struct killpg_args *)u->u_ap;
+	} *uap = (struct killpg_args *)u.u_ap;
 	register int error = 0;
 
-	if (uap->signo < 0 || uap->signo >= NSIG) {
+	if (SCARG(uap, signo) < 0 || SCARG(uap, signo) >= NSIG) {
 		return (EINVAL);
 	}
-	error = killpg1(uap->signo, uap->pgrp, 0);
+	error = killpg1(SCARG(uap, signo), uap->pgrp, 0);
 	return (error);
 }
 
@@ -160,13 +168,13 @@ killpg1(signo, pgrp, all)
 		/*
 		 * Zero process id means send to my process group.
 		 */
-		pgrp = u->u_procp->p_pgrp;
+		pgrp = u.u_procp->p_pgrp->pg_id;
 		if (pgrp == 0)
 			return (ESRCH);
 	}
-	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
-		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
-		    (p->p_flag&P_SSYS) || (all && p == u->u_procp))
+	for (f = 0, p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
+		if ((p->p_pgrp->pg_id != pgrp && !all) || p->p_ppid == 0 ||
+		    (p->p_flag & P_SSYS) || (all && p == u.u_procp))
 			continue;
 		if (!cansignal(p, signo)) {
 			if (!all)
@@ -209,7 +217,7 @@ pgsignal(pgrp, signum, checkctty)
 	register struct proc *p;
 
 	if (pgrp) {
-		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
+		for (p = LIST_FIRST(&pgrp->pg_mem); p != NULL; p = LIST_NEXT(p, p_pglist)) {
 			if (checkctty == 0 || (p->p_flag & P_CONTROLT)) {
 				psignal(p, signum);
 			}
@@ -228,9 +236,10 @@ trapsignal(p, signum, code)
 	register int signum;
 	u_long code;
 {
-	register struct sigacts *ps = p->p_sigacts;
+	register struct sigacts *ps;
 	int mask;
 
+	ps = p->p_sigacts;
 	mask = sigmask(signum);
 	if ((p->p_flag & P_TRACED) == 0 && (p->p_sigcatch & mask) != 0
 			&& (p->p_sigmask & mask) == 0) {
@@ -513,7 +522,7 @@ issignal(p)
 			prop = sigprop[sig];
 		}
 
-		switch ((int)u->u_signal[sig]) {
+		switch ((int)u.u_signal[sig]) {
 
 		case SIG_DFL:
 			/*
@@ -607,22 +616,22 @@ postsig(sig)
 	long mask = sigmask(sig), returnmask;
 	register int (*action)();
 
-	p = u->u_procp;
+	p = u.u_procp;
 
-	if (u->u_fpsaved == 0) {
-		savfp(&u->u_fps);
-		u->u_fpsaved = 1;
+	if (u.u_fpsaved == 0) {
+		savfp(&u.u_fps);
+		u.u_fpsaved = 1;
 	}
 
 	p->p_sigacts &= ~mask;
-	action = u->u_signal[sig];
+	action = u.u_signal[sig];
 
 	if (action != SIG_DFL) {
 #ifdef DIAGNOSTIC
 		if (action == SIG_IGN || (p->p_sigmask & mask))
 			panic("postsig action");
 #endif
-		u->u_error = 0; /* XXX - why? */
+		u.u_error = 0; /* XXX - why? */
 		/*
 		 * Set the new mask value and also defer further
 		 * occurences of this signal.
@@ -633,20 +642,20 @@ postsig(sig)
 		 * after the signal processing is completed.
 		 */
 		(void) _splhigh();
-		if (u->u_psflags & SAS_OLDMASK) {
-			returnmask = u->u_oldmask;
-			u->u_psflags &= ~SAS_OLDMASK;
+		if (u.u_psflags & SAS_OLDMASK) {
+			returnmask = u.u_oldmask;
+			u.u_psflags &= ~SAS_OLDMASK;
 		} else
 			returnmask = p->p_sigmask;
-		p->p_sigmask |= u->u_sigmask[sig] | mask;
+		p->p_sigmask |= u.u_sigmask[sig] | mask;
 		(void) _spl0();
-		u->u_ru.ru_nsignals++;
+		u.u_ru.ru_nsignals++;
 		sendsig(action, sig, returnmask);
 		return;
 	}
-	u->u_acflag |= AXSIG;
+	u.u_acflag |= AXSIG;
 	if (sigprop[sig] & SA_CORE) {
-		u->u_arg[0] = sig;
+		u.u_arg[0] = sig;
 		if (core())
 			sig |= 0200;
 	}
@@ -669,7 +678,7 @@ static int
 core()
 {
 	register struct vnode *vp;
-	register struct proc *p = u->u_procp;
+	register struct proc *p = u.u_procp;
 	register struct pcred *pcred = p->p_cred;
 	register struct ucred *cred = pcred->pc_ucred;
 	register struct vmspace *vm = p->p_vmspace;
@@ -679,12 +688,12 @@ core()
 	register char *np;
 	char *cp, name[MAXCOMLEN + 6];  	/* progname.core */
 
-	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u->u_acflag & ASUGID) && !suser()))
+	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u.u_acflag & ASUGID) && !suser()))
 			return (EFAULT);
-	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >= p->p_rlimit[RLIMIT_CORE].rlim_cur || ctob(USIZE + u->u_dsize+u->u_ssize) >= u->u_rlimit[RLIMIT_CORE].rlim_cur) {
+	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >= p->p_rlimit[RLIMIT_CORE].rlim_cur || ctob(USIZE + u.u_dsize+u.u_ssize) >= u.u_rlimit[RLIMIT_CORE].rlim_cur) {
 		return (EFAULT);
 	}
-	cp = u->u_comm;
+	cp = u.u_comm;
 	np = name;
 	while	(*np++ == *cp++)
 		;
@@ -692,7 +701,7 @@ core()
 	np--;
 	while	(*np++ == *cp++)
 		;
-	u->u_error = 0;
+	u.u_error = 0;
 	sprintf(name, "%s.core", cp);
 	sprintf(name, "%s.core", p->p_comm);
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, name, p);
@@ -711,10 +720,10 @@ core()
 	vattr.va_size = 0;
 	VOP_LEASE(vp, p, cred, LEASE_WRITE);
 	VOP_SETATTR(vp, &vattr, cred, p);
-	p->p_acflag |= ACORE ||	u->u_acflag |= ACORE;
+	p->p_acflag |= ACORE ||	u.u_acflag |= ACORE;
 	bcopy(p, &p->p_addr->u_kproc.kp_eproc, sizeof(struct proc));
 	fill_eproc(p, &p->p_addr->u_kproc.kp_eproc);
-	u->u_error = error;
+	u.u_error = error;
 	error = cpu_coredump(p, vp, cred);
 	if (error == 0) {
 		error = vn_rdwr(UIO_WRITE, vp, vm->vm_daddr, (int)ctob(vm->vm_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
@@ -742,8 +751,8 @@ out:
 int
 nosys()
 {
-	if (u->u_signal[SIGSYS] == SIG_IGN || u->u_signal[SIGSYS] == SIG_HOLD)
-		u->u_error = EINVAL;
-	psignal(u->u_procp, SIGSYS);
+	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
+		u.u_error = EINVAL;
+	psignal(u.u_procp, SIGSYS);
 	return (ENOSYS);
 }
