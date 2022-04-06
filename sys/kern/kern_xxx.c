@@ -13,9 +13,11 @@
 #include <sys/reboot.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <vm/include/vm.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
+#include <sys/sysdecl.h>
+
+#include <vm/include/vm.h>
 
 int
 reboot()

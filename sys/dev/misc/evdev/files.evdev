@@ -1,6 +1,13 @@
+# $211BSD:
+#
+# Evdev Protocol Support 
 
+defparam opt_evdev.h EVDEV_SUPPORT
 
-file	dev/misc/evdev_mt.c
-file	dev/misc/evdev_support.c
-file	dev/misc/evdev_utils.c
-file	dev/misc/evdev.c
+device	evdev
+#attach	
+
+file	dev/misc/evdev/evdev_mt.c
+file	dev/misc/evdev/evdev_support.c
+file	dev/misc/evdev/evdev_utils.c
+file	dev/misc/evdev/evdev.c

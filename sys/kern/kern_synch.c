@@ -624,6 +624,13 @@ loop:
 		qs = p->p_link;
 	curpri = n;
 	splx(s);
+
+	/*
+	 * Pick a new current process and record its start time.
+	 */
+    cpu_switch(p);
+    microtime(&runtime);
+
 	/*
 	 * the rsave (ssave) contents are interpreted
 	 * in the new address space
@@ -631,9 +638,6 @@ loop:
 	n = p->p_flag & P_SSWAP;
 	p->p_flag &= ~P_SSWAP;
 	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
-
-    cpu_switch(p);
-    microtime(&runtime);
 }
 
 void

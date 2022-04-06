@@ -13,7 +13,7 @@
 # To specify debugging, add the config line: makeoptions DEBUG="-g" 
 # A better way is to specify -g only for a few files.
 #
-#	makeoptions DEBUGLIST="uvm* trap if_*"
+#	makeoptions DEBUGLIST="vm* trap if_*"
 #
 # all ports are expected to include bsd.own.mk for toolchain settings
 

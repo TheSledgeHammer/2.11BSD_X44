@@ -14,6 +14,7 @@
 #include <sys/systm.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <sys/sysdecl.h>
 
 register struct timeval *time;
 
