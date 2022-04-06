@@ -85,7 +85,7 @@ __sysctl()
 		syscallarg(size_t *) oldlenp;
 		syscallarg(void	*) new;
 		syscallarg(size_t) newlen;
-	} *uap = (struct sysctl_args *)u->u_ap;
+	} *uap = (struct sysctl_args *)u.u_ap;
 
 	struct proc *p;
 	int error;
@@ -94,14 +94,14 @@ __sysctl()
 	int name[CTL_MAXNAME];
 
 	if (uap->new != NULL && !suser())
-		return (u->u_error);	/* XXX */
+		return (u.u_error);	/* XXX */
 	/*
 	 * all top-level sysctl names are non-terminal
 	 */
 	if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
-		return (u->u_error = EINVAL);
+		return (u.u_error = EINVAL);
 	if (error == copyin(uap->name, &name, uap->namelen * sizeof(int)))
-		return (u->u_error = error);
+		return (u.u_error = error);
 
 	switch (name[0]) {
 	case CTL_KERN:
@@ -130,12 +130,12 @@ __sysctl()
 		break;
 #endif
 	default:
-		return (u->u_error = EOPNOTSUPP);
+		return (u.u_error = EOPNOTSUPP);
 	}
 
 	if (uap->oldlenp &&
 	    (error = copyin(uap->oldlenp, &oldlen, sizeof(oldlen))))
-		return (u->u_error = error);
+		return (u.u_error = error);
 	if (uap->old != NULL) {
 		while (memlock.sl_lock) {
 			memlock.sl_want = 1;
@@ -155,13 +155,13 @@ __sysctl()
 		}
 	}
 	if (error)
-		return (u->u_error = error);
+		return (u.u_error = error);
 	if (uap->oldlenp) {
 		error = copyout(&oldlen, uap->oldlenp, sizeof(oldlen));
 		if (error)
-			return(u->u_error = error);
+			return(u.u_error = error);
 	}
-	u->u_r.r_val1 = oldlen;
+	u.u_r.r_val1 = oldlen;
 	return (0);
 }
 
@@ -216,7 +216,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		level = securelevel;
 		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) || newp == NULL)
 			return (error);
-		if (level < securelevel && u->u_procp->p_pid != 1)
+		if (level < securelevel && u.u_procp->p_pid != 1)
 			return (EPERM);
 		securelevel = level;
 		return (0);
@@ -678,7 +678,7 @@ sysctl_file(where, sizep)
 	 * array of extended file structures: first the address then the
 	 * file structure.
 	 */
-	for (fp = file; fp < fileNFILE; fp++) {
+	for (fp = LIST_FIRST(&filehead); fp != NULL; fp = LIST_NEXT(fp, f_list)) {
 		if (fp->f_count == 0)
 			continue;
 		if (buflen < (FPTRSZ + FILESZ)) {
@@ -743,10 +743,10 @@ sysctl_doproc(name, namelen, where, sizep)
 
 	if (namelen != 2 && !(namelen == 1 && name[0] == KERN_PROC_ALL))
 		return (EINVAL);
-	p = (struct proc *)allproc;
+	p = LIST_FIRST(&allproc);
 	doingzomb = 0;
 again:
-	for (; p != NULL; p = p->p_nxt) {
+	for (; p != NULL; p = LIST_NEXT(p, p_list)) {
 		/*
 		 * Skip embryonic processes.
 		 */
@@ -766,24 +766,23 @@ again:
 
 		case KERN_PROC_PGRP:
 			/* could do this by traversing pgrp */
-			if (p->p_pgrp != (pid_t)name[1])
+			if (p->p_pgrp->pg_id != (pid_t)name[1])
 				continue;
 			break;
 
 		case KERN_PROC_TTY:
-			fill_from_u(p, &ruid, &ttyp, &ttyd);
-			if (!ttyp || ttyd != (dev_t)name[1])
+			if ((p->p_flag & P_CONTROLT) == 0 || p->p_session->s_ttyp == NULL
+					|| p->p_session->s_ttyp->t_dev != (dev_t) name[1])
 				continue;
 			break;
 
 		case KERN_PROC_UID:
-			if (p->p_uid != (uid_t)name[1])
+			if (p->p_ucred->cr_uid != (uid_t)name[1])
 				continue;
 			break;
 
 		case KERN_PROC_RUID:
-			fill_from_u(p, &ruid, &ttyp, &ttyd);
-			if (ruid != (uid_t)name[1])
+			if (p->p_cred->p_ruid != (uid_t)name[1])
 				continue;
 			break;
 
@@ -806,7 +805,7 @@ again:
 		needed += sizeof(struct kinfo_proc);
 	}
 	if (doingzomb == 0) {
-		p = zombproc;
+		p = LIST_FIRST(&zombproc);
 		doingzomb++;
 		goto again;
 	}
@@ -839,20 +838,20 @@ fill_eproc(p, ep)
 	ep->e_pcred = *p->p_cred;
 	ep->e_ucred = *p->p_ucred;
 	if (p->p_stat == SIDL || p->p_stat == SZOMB) {
-		ep->e_vm.vm_rssize = 0;
-		ep->e_vm.vm_tsize = 0;
-		ep->e_vm.vm_dsize = 0;
-		ep->e_vm.vm_ssize = 0;
+		ep->e_vm->vm_rssize = 0;
+		ep->e_vm->vm_tsize = 0;
+		ep->e_vm->vm_dsize = 0;
+		ep->e_vm->vm_ssize = 0;
 	} else {
 		register struct vmspace *vm = p->p_vmspace;
 #ifdef pmap_resident_count
-		ep->e_vm.vm_rssize = pmap_resident_count(&vm->vm_pmap); /*XXX*/
+		ep->e_vm->vm_rssize = pmap_resident_count(&vm->vm_pmap); /*XXX*/
 #else
-		ep->e_vm.vm_rssize = vm->vm_rssize;
+		ep->e_vm->vm_rssize = vm->vm_rssize;
 #endif
-		ep->e_vm.vm_tsize = vm->vm_tsize;
-		ep->e_vm.vm_dsize = vm->vm_dsize;
-		ep->e_vm.vm_ssize = vm->vm_ssize;
+		ep->e_vm->vm_tsize = vm->vm_tsize;
+		ep->e_vm->vm_dsize = vm->vm_dsize;
+		ep->e_vm->vm_ssize = vm->vm_ssize;
 	}
 	if (p->p_pptr) {
 		ep->e_ppid = p->p_pptr->p_pid;

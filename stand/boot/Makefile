@@ -4,7 +4,5 @@ SUBDIR= 	arch common dloader #efi fdt uboot
 
 INCSDIR= 	/usr/include/stand/boot
 
-INCSYMLINKS= sys/lib/libsa	/usr/include/stand/libsa
-
 .include <bsd.kinc.mk>
 		

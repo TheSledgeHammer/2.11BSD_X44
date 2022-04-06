@@ -247,6 +247,11 @@ again:
 	LIST_INSERT_HEAD(&rip->p_children, rpp, p_sibling);
 	LIST_INIT(&rpp->p_children);
 
+	if (setjmp(&u.u_ssave)) {
+		//sureg();
+		return (1);
+	}
+
 	rpp->p_dsize = rip->p_dsize;
 	rpp->p_ssize = rip->p_ssize;
 	rpp->p_daddr = rip->p_daddr;

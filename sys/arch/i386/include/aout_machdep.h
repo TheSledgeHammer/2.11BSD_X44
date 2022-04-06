@@ -30,7 +30,7 @@
 #ifndef _I386_AOUT_MACHDEP_H_
 #define _I386_AOUT_MACHDEP_H_
 
-#define __LDPGSZ	4096
+#include <machine/exec.h>
 
 /* Relocation format. */
 struct relocation_info {

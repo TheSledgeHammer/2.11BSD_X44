@@ -8,9 +8,7 @@ WARNS?=		2
 PROG=		mklocale
 SRCS=		yacc.y lex.l
 CPPFLAGS+=	-I. -I${.CURDIR} 			\
-		-I${NETBSDSRCDIR}/lib/libc
-#		-I${.CURDIR}/../../lib/libc/include \
-#		-DNBCHAR_MAX=127 -DHOSTPROG
+			-I${NETBSDSRCDIR}/lib/libc
 YHEADER=	1
 
 .ifndef HOSTPROG

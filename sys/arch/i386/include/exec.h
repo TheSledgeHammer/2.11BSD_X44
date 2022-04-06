@@ -35,7 +35,7 @@
  */
 
 #ifndef	_I386_EXEC_H_
-#define	_EXEC_H_
+#define	_I386_EXEC_H_
 
 #define __LDPGSZ	4096
 

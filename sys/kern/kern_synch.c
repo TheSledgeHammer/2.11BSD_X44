@@ -16,9 +16,10 @@
 #include <sys/signal.h>
 #include <sys/signalvar.h>
 #include <sys/gsched.h>
-#include <vm/include/vm.h>
 
 #include <machine/cpu.h>
+
+#include <vm/include/vm.h>
 
 /* decay 95% of `p_pctcpu' in 60 seconds; see CCPU_SHIFT before changing */
 fixpt_t	ccpu = 		0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
@@ -54,7 +55,7 @@ schedcpu(arg)
 	register int a, s;
 
 	wakeup((caddr_t)&lbolt);
-	for (p = allproc; p != NULL; p = p->p_nxt) {
+	for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 		if (p->p_time != 127)
 			p->p_time++;
 		/*
@@ -100,16 +101,21 @@ schedcpu(arg)
 			setpri(p);
 		}
 		if(edf_schedcpu(p)) {
-			if((p != curproc()) && p->p_stat == SRUN && (p->p_flag & P_INMEM) && (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
+			if((p != curproc()) &&
+					p->p_stat == SRUN &&
+					(p->p_flag & P_INMEM) &&
+					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
 				if(cfs_schedcpu(p)) {
 					continue;
 				}
 				p->p_pri = p->p_usrpri;
 				setpri(p);
 			} else {
+				p->p_pri = p->p_usrpri;
 				setpri(p);
 			}
 		}
+		splx(s);
 	}
 
 	vmmeter();
@@ -165,7 +171,7 @@ tsleep(ident, priority, wmesg, timo)
 	u_short	timo;
 	const char	*wmesg;
 {
-	register struct proc *p = u->u_procp;
+	register struct proc *p = u.u_procp;
 	register struct proc **qp;
 	int	s;
 	int	sig, catch = priority & PCATCH;
@@ -225,7 +231,7 @@ tsleep(ident, priority, wmesg, timo)
 	} else
 		sig = 0;
 	p->p_stat = SSLEEP;
-	u->u_ru.ru_nvcsw++;
+	u.u_ru.ru_nvcsw++;
 	swtch();
 resume:
 	curpri = p->p_usrpri;
@@ -247,7 +253,7 @@ resume:
 		if (KTRPOINT(p, KTR_CSW))
 			ktrcsw(p->p_tracep, 0, 0);
 #endif
-		if (u->u_sigintr & sigmask(sig))
+		if (u.u_sigintr & sigmask(sig))
 			return (EINTR);
 		return (ERESTART);
 	}
@@ -315,12 +321,12 @@ sleep(chan, pri)
 		priority |= PCATCH;
 	}
 
-	u->u_error = tsleep(chan, priority, "sleep", 0);
+	u.u_error = tsleep(chan, priority, "sleep", 0);
 /*
  * sleep does not return anything.  If it was a non-interruptible sleep _or_
  * a successful/normal sleep (one for which a wakeup was done) then return.
 */
-	if	((priority & PCATCH) == 0 || (u->u_error == 0)) {
+	if	((priority & PCATCH) == 0 || (u.u_error == 0)) {
 		return;
 	}
 /*
@@ -333,7 +339,7 @@ sleep(chan, pri)
  * EINTR - put into u_error for trap.c to find (interrupted syscall)
  * ERESTART - system call to be restared
 */
-	longjmp(u->u_procp->p_addr, &u->u_qsave);
+	longjmp(u.u_procp->p_addr, &u.u_qsave);
 	/*NOTREACHED*/
 }
 
@@ -479,6 +485,82 @@ setpri(pp)
 	return (p);
 }
 
+/* 4.4BSD-Lite2 mi_switch time counter */
+void
+switch_timer(p)
+    register struct proc *p;
+{
+    register struct rlimit *rlim;
+    register long s, u;
+    struct timeval tv;
+
+	/*
+	 * Compute the amount of time during which the current
+	 * process was running, and add that to its total so far.
+	 */
+    microtime(&tv);
+    u = p->p_rtime.tv_usec + (tv.tv_usec - runtime.tv_usec);
+	s = p->p_rtime.tv_sec + (tv.tv_sec - runtime.tv_sec);
+    	if (u < 0) {
+		u += 1000000;
+		s--;
+	} else if (u >= 1000000) {
+		u -= 1000000;
+		s++;
+	}
+	p->p_rtime.tv_usec = u;
+	p->p_rtime.tv_sec = s;
+
+	/*
+	 * Check if the process exceeds its cpu resource allocation.
+	 * If over max, kill it.  In any case, if it has run for more
+	 * than 10 minutes, reduce priority to give others a chance.
+	 */
+    rlim = &p->p_rlimit[RLIMIT_CPU];
+    if (s >= rlim->rlim_cur) {
+		if (s >= rlim->rlim_max) {
+            psignal(p, SIGKILL);
+        } else {
+            psignal(p, SIGXCPU);
+            if (rlim->rlim_cur < rlim->rlim_max) {
+                rlim->rlim_cur += 5;
+            }
+        }
+    }
+}
+
+/* Check If not the idle process, resume the idle process. */
+void
+idle_check(void)
+{
+    /* If not the idle process, resume the idle process. */
+	//if (u.u_procp != curproc) {
+        if (setjmp(&u.u_rsave)) {
+            //sureg();
+            return;
+        }
+        if (u.u_fpsaved == 0) {
+			//savfp(&u.u_fps);
+			u.u_fpsaved = 1;
+		}
+		longjmp(curproc->p_addr, &u.u_qsave);
+    //}
+    /*
+	 * The first save returns nonzero when proc 0 is resumed
+	 * by another process (above); then the second is not done
+	 * and the process-search loop is entered.
+	 *
+	 * The first save returns 0 when swtch is called in proc 0
+	 * from sched().  The second save returns 0 immediately, so
+	 * in this case too the process-search loop is entered.
+	 * Thus when proc 0 is awakened by being made runnable, it will
+	 * find itself and resume itself at rsave, and return to sched().
+	 */
+    if (setjmp(&u.u_qsave) == 0 && setjmp(&u.u_rsave)) {
+        return;
+    }
+}
+
 /*
  * This routine is called to reschedule the CPU.  If the calling process is
  * not in RUN state, arrangements for it to restart must have been made
@@ -497,31 +579,15 @@ swtch()
 
 	cnt.v_swtch++;
 
-	/* If not the idle process, resume the idle process. */
-	if (u->u_procp != &proc0) {
-		if (setjmp(&u->u_rsave)) {
-			//sureg();
-			return;
-		}
-		if (u->u_fpsaved == 0) {
-			//savfp(&u->u_fps);
-			u->u_fpsaved = 1;
-		}
-		longjmp(proc0.p_addr, &u->u_qsave);
-	}
-	/*
-	 * The first save returns nonzero when proc 0 is resumed
-	 * by another process (above); then the second is not done
-	 * and the process-search loop is entered.
-	 *
-	 * The first save returns 0 when swtch is called in proc 0
-	 * from sched().  The second save returns 0 immediately, so
-	 * in this case too the process-search loop is entered.
-	 * Thus when proc 0 is awakened by being made runnable, it will
-	 * find itself and resume itself at rsave, and return to sched().
-	 */
-	if (setjmp(&u->u_qsave) == 0 && setjmp(&u->u_rsave))
-		return;
+    if (u.u_procp != curproc) {
+        /* check idle process */
+        idle_check();
+    } else {
+        u.u_procp = curproc;
+    }
+
+    cpu_time(u.u_procp);
+
 loop:
 	s = splhigh();
 	noproc = 0;
@@ -565,7 +631,10 @@ loop:
 	 */
 	n = p->p_flag & P_SSWAP;
 	p->p_flag &= ~P_SSWAP;
-	longjmp(p->p_addr, n ? &u->u_ssave: &u->u_rsave);
+	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
+
+    cpu_switch(p);
+    microtime(&runtime);
 }
 
 void

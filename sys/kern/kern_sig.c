@@ -55,7 +55,8 @@ cansignal(q, signum)
 		 curp->p_uid == ruid ||				/* c effective = t real */
 		 u.u_pcred->p_ruid == q->p_uid ||	/* c real = t effective */
 		 curp->p_uid == q->p_uid ||			/* c effective = t effective */
-		 (signum == SIGCONT && inferior(q) &&
+		 (signum == SIGCONT &&
+				 inferior(q) &&
 				 (q)->p_session == (curp)->p_session))
 		return (1);
 	return (0);
@@ -698,16 +699,20 @@ int
 core(void)
 {
 	register struct vnode *vp;
-	register struct proc *p = u.u_procp;
-	register struct pcred *pcred = p->p_cred;
-	register struct ucred *cred = pcred->pc_ucred;
-	register struct vmspace *vm = p->p_vmspace;
+	register struct proc *p;
+	register struct pcred *pcred;
+	register struct ucred *cred;
+	register struct vmspace *vm;
 	struct	nameidata nd;
 	struct vattr vattr;
 	int error, error1;
 	register char *np;
 	char *cp, name[MAXCOMLEN + 6];  	/* progname.core */
 
+	p = u.u_procp;
+	pcred = p->p_cred;
+	cred = u.u_ucred;
+	vm = p->p_vmspace;
 	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u.u_acflag & ASUGID) && !suser()))
 			return (EFAULT);
 	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >= p->p_rlimit[RLIMIT_CORE].rlim_cur || ctob(USIZE + u.u_dsize+u.u_ssize) >= u.u_rlimit[RLIMIT_CORE].rlim_cur) {

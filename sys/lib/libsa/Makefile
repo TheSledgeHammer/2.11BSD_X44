@@ -42,3 +42,8 @@ SRCS+=		byteorder.c
 .endif
 
 .include <bsd.lib.mk>
+
+INCSYMLINKS= 				\
+			sys/lib/libsa	/usr/include/stand/libsa
+
+.include <bsd.kinc.mk>

@@ -45,12 +45,16 @@ CFLAGS+=	-mno-mmx -mno-sse -mno-avx
 ##
 ## (4) local objects, compile rules, and dependencies
 ##
-MD_OBJS=	locore.o apicvector.o legacyvector.o icu.o
+MD_OBJS=	locore.o sched.o apicvector.o legacyvector.o icu.o
 MD_CFILES=
-MD_SFILES=	${I386}/i386/locore.S ${I386}/isa/icu.S \
-		${I386}/apic/apicvector.S ${I386}/apic/legacyvector.S
-
+MD_SFILES=	${I386}/i386/locore.S ${I386}/i386/sched.S 	\
+			${I386}/isa/icu.S ${I386}/apic/apicvector.S \
+			${I386}/apic/legacyvector.S	
+			
 locore.o: ${I386}/i386/locore.S assym.h
+	${NORMAL_S}
+	
+sched.o: ${I386}/i386/sched.S assym.h
 	${NORMAL_S}
 
 icu.o: ${I386}/isa/icu.S assym.h

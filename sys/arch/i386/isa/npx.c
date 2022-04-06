@@ -232,7 +232,7 @@ npxprobe1(bus_space_tag_t iot, bus_space_handle_t ioh, int irq)
 	int status;
 
 	save_eflags = read_eflags();
-	s = disable_intr();
+	disable_intr();
 	save_idt_npxintr = idt[NRSVIDT + irq];
 	save_idt_npxtrap = idt[16];
 	setidt(&idt[irq], probeintr, 0, SDT_SYS386IGT, SEL_KPL);
@@ -771,7 +771,7 @@ npxsave_cpu(ci, save)
 
 	KDASSERT(ci == curcpu());
 
-	p = ci->cpu_npxproc;
+	p = npxproc();
 	if (p == NULL) {
 		return;
 	}

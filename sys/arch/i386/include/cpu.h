@@ -78,14 +78,14 @@ struct clockframe {
  * Preempt the current process if in interrupt from user mode,
  * or after the current trap/syscall if in system mode.
  */
-extern void	need_resched(struct proc *p);
+void	need_resched(struct proc *p);
 
 /*
  * Give a profiling tick to the current process from the softclock
  * interrupt.  On tahoe, request an ast to send us through trap(),
  * marking the proc as needing a profiling tick.
  */
-extern void	cpu_need_proftick(struct proc *p);
+void	cpu_need_proftick(struct proc *p);
 
 /*
  * Notify the current process (p) that it has a signal pending,
@@ -138,10 +138,10 @@ void	configure(void);
 
 /* vm_machdep.c */
 struct vnode;
-int	cpu_fork(struct proc *, struct proc *);
+int		cpu_fork(struct proc *, struct proc *);
 void	cpu_exit(struct proc *);
 void	cpu_wait(struct proc *);
-int	cpu_coredump(struct proc *, struct vnode *, struct ucred *);
+int		cpu_coredump(struct proc *, struct vnode *, struct ucred *);
 
 #ifdef USER_LDT
 /* sys_machdep.h */
