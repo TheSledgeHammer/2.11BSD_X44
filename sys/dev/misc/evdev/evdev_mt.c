@@ -32,9 +32,9 @@
 #include <sys/lock.h>
 #include <sys/systm.h>
 
-#include <dev/evdev/evdev.h>
-#include <dev/evdev/evdev_private.h>
-#include <dev/evdev/input.h>
+#include <dev/misc/evdev/evdev.h>
+#include <dev/misc/evdev/evdev_private.h>
+#include <dev/misc/evdev/input.h>
 
 #ifdef DEBUG
 #define	debugf(fmt, args...)	printf("evdev: " fmt "\n", ##args)

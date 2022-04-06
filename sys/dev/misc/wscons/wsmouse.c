@@ -98,6 +98,11 @@
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wsmuxvar.h>
 
+#ifdef EVDEV_SUPPORT
+#include <dev/misc/evdev/evdev.h>
+#include <dev/misc/evdev/evdev_private.h>
+#endif
+
 #if defined(WSMUX_DEBUG) && NWSMUX > 0
 #define DPRINTF(x)	if (wsmuxdebug) printf x
 #define DPRINTFN(n,x)	if (wsmuxdebug > (n)) printf x
@@ -143,7 +148,10 @@ int  		wsmouse_detach(struct device *, int);
 int  		wsmouse_activate(struct device *, enum devact);
 
 static int  wsmouse_do_ioctl(struct wsmouse_softc *, u_long, caddr_t, int, struct proc *);
-
+#ifdef EVDEV_SUPPORT
+void		evdev_wsmouse_init(struct evdev_softc *);
+void		evdev_wsmouse_write(struct wsmouse_softc *, int, int, int, int);
+#endif
 #if NWSMUX > 0
 static int  wsmouse_mux_open(struct wsevsrc *, struct wseventvar *);
 static int  wsmouse_mux_close(struct wsevsrc *);
@@ -225,6 +233,10 @@ wsmouse_attach(parent, self, aux)
 	sc->sc_accessops = ap->accessops;
 	sc->sc_accesscookie = ap->accesscookie;
 
+#ifdef EVDEV_SUPPORT
+	evdev_wsmouse_init(sc->sc_evsc);
+#endif
+
 #if NWSMUX > 0
 	sc->sc_base.me_ops = &wsmouse_srcops;
 	mux = sc->sc_base.me_dv.dv_cfdata->cf_loc[WSMOUSEDEVCF_MUX];
@@ -241,6 +253,38 @@ wsmouse_attach(parent, self, aux)
 #endif
 	printf("\n");
 }
+
+#ifdef EVDEV_SUPPORT
+void
+evdev_wsmouse_init(sc)
+	struct evdev_softc *sc;
+{
+	struct evdev_dev	*wsmouse_evdev;
+	int i;
+
+	wsmouse_evdev = evdev_alloc();
+	evdev_set_name(wsmouse_evdev, "wsmouse evdev");
+	evdev_set_phys(wsmouse_evdev, "wsmouse");
+	evdev_set_id(wsmouse_evdev, BUS_VIRTUAL, 0, 0, 0);
+	evdev_support_prop(wsmouse_evdev, INPUT_PROP_POINTER);
+	evdev_support_event(wsmouse_evdev, EV_SYN);
+	evdev_support_event(wsmouse_evdev, EV_REL);
+	evdev_support_event(wsmouse_evdev, EV_KEY);
+	evdev_support_rel(wsmouse_evdev, REL_X);
+	evdev_support_rel(wsmouse_evdev, REL_Y);
+	evdev_support_rel(wsmouse_evdev, REL_WHEEL);
+	evdev_support_rel(wsmouse_evdev, REL_HWHEEL);
+	for (i = 0; i < 8; i++)
+		evdev_support_key(wsmouse_evdev, BTN_MOUSE + i);
+	if (evdev_register(wsmouse_evdev)) {
+		evdev_free(wsmouse_evdev);
+		wsmouse_evdev = NULL;
+	} else {
+		sc->sc_evdev = wskbd_evdev;
+	}
+	sc->sc_evdev_state = 0;
+}
+#endif
 
 int
 wsmouse_activate(struct device *self, enum devact act)
@@ -458,6 +502,10 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 		ub ^= d;
 	}
 
+#ifdef EVDEV_SUPPORT
+	evdev_wsmouse_write(sc, x, y, z, btns)
+#endif
+
 out:
 	if (any) {
 		sc->sc_ub = ub;
@@ -469,6 +517,52 @@ out:
 #endif
 	}
 }
+
+#ifdef EVDEV_SUPPORT
+void
+evdev_wsmouse_write(sc, x, y, z, buttons)
+	struct wsmouse_softc *sc;
+	int x, y, z, buttons;
+{
+	struct evdev_softc 	*evsc;
+	struct evdev_dev	*wsmouse_evdev;
+
+	evsc = sc->sc_evsc;
+	wsmouse_evdev = evsc->sc_evdev;
+
+	if (wsmouse_evdev == NULL || !(evdev_rcpt_mask & EVDEV_RCPT_WSMOUSE))
+		return;
+
+	evdev_push_event(wsmouse_evdev, EV_REL, REL_X, x);
+	evdev_push_event(wsmouse_evdev, EV_REL, REL_Y, y);
+	switch (evdev_sysmouse_t_axis) {
+	case EVDEV_SYSMOUSE_T_AXIS_PSM:
+		switch (z) {
+		case 1:
+		case -1:
+			evdev_push_rel(wsmouse_evdev, REL_WHEEL, -z);
+			break;
+		case 2:
+		case -2:
+			evdev_push_rel(wsmouse_evdev, REL_HWHEEL, z / 2);
+			break;
+		}
+		break;
+	case EVDEV_SYSMOUSE_T_AXIS_UMS:
+		if (buttons & (1 << 6))
+			evdev_push_rel(wsmouse_evdev, REL_HWHEEL, 1);
+		else if (buttons & (1 << 5))
+			evdev_push_rel(wsmouse_evdev, REL_HWHEEL, -1);
+		buttons &= ~((1 << 5) | (1 << 6));
+		/* PASSTHROUGH */
+	case EVDEV_SYSMOUSE_T_AXIS_NONE:
+	default:
+		evdev_push_rel(wsmouse_evdev, REL_WHEEL, -z);
+	}
+	evdev_push_mouse_btn(wsmouse_evdev, buttons);
+	evdev_sync(wsmouse_evdev);
+}
+#endif
 
 int
 wsmouseopen(dev, flags, mode, p)

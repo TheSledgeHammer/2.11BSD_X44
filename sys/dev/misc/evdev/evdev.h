@@ -30,7 +30,7 @@
 #define	_DEV_EVDEV_EVDEV_H
 
 #include <sys/types.h>
-#include <dev/evdev/input.h>
+#include <dev/misc/evdev/input.h>
 
 #define M_EVDEV		90
 #define	NAMELEN		80

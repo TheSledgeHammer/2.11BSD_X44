@@ -107,6 +107,10 @@
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wscons_callbacks.h>
 
+#ifdef EVDEV_SUPPORT
+#include <dev/misc/evdev/evdev.h>
+#include <dev/misc/evdev/evdev_private.h>
+#endif
 #ifdef KGDB
 #include <sys/kgdb.h>
 #endif
@@ -174,6 +178,13 @@ struct wskbd_softc {
 #endif
 };
 
+#ifdef EVDEV_SUPPORT
+static const struct evdev_methods wskbd_evdev_methods = {
+		.ev_cdev = &evdev_cdevsw,
+		.ev_event = evdev_ev_kbd_event,
+};
+#endif
+
 #define MOD_SHIFT_L				(1 << 0)
 #define MOD_SHIFT_R				(1 << 1)
 #define MOD_SHIFTLOCK			(1 << 2)
@@ -212,7 +223,9 @@ static int	wskbd_match(struct device *, struct cfdata *, void *);
 static void	wskbd_attach(struct device *, struct device *, void *);
 static int  wskbd_detach(struct device *, int);
 static int  wskbd_activate(struct device *, enum devact);
-
+#ifdef EVDEV_SUPPORT
+void		wskbd_evdev_init(struct evdev_softc *);
+#endif
 static int  wskbd_displayioctl(struct device *, u_long, caddr_t, int, struct proc *);
 #if NWSDISPLAY > 0
 static int  wskbd_set_display(struct device *, struct wsevsrc *);
@@ -418,6 +431,10 @@ wskbd_attach(parent, self, aux)
 		printf(" (mux ignored)");
 #endif
 
+#ifdef EVDEV_SUPPORT
+	wskbd_evdev_init(sc->sc_evsc);
+#endif
+
 	if (ap->console) {
 		sc->id = &wskbd_console_data;
 	} else {
@@ -475,6 +492,39 @@ wskbd_attach(parent, self, aux)
 	}
 #endif
 }
+
+#ifdef EVDEV_SUPPORT
+void
+wskbd_evdev_init(sc)
+	struct evdev_softc *sc;
+{
+	struct evdev_dev 	*wskbd_evdev;
+	char		 		phys_loc[NAMELEN];
+
+	/* register as evdev provider */
+	wskbd_evdev = evdev_alloc();
+	evdev_set_name(wskbd_evdev, "wskbd evdev");
+	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME"%d", unit);
+	evdev_set_phys(wskbd_evdev, phys_loc);
+	evdev_set_id(wskbd_evdev, BUS_VIRTUAL, 0, 0, 0);
+	evdev_set_methods(wskbd_evdev, sc, &wskbd_evdev_methods);
+	evdev_support_event(wskbd_evdev, EV_SYN);
+	evdev_support_event(wskbd_evdev, EV_KEY);
+	evdev_support_event(wskbd_evdev, EV_LED);
+	evdev_support_event(wskbd_evdev, EV_REP);
+	evdev_support_all_known_keys(wskbd_evdev);
+	evdev_support_led(wskbd_evdev, LED_NUML);
+	evdev_support_led(wskbd_evdev, LED_CAPSL);
+	evdev_support_led(wskbd_evdev, LED_SCROLLL);
+
+	if (evdev_register(wskbd_evdev)) {
+		evdev_free(wskbd_evdev);
+	} else {
+		sc->sc_evdev = wskbd_evdev;
+	}
+	sc->sc_evdev_state = 0;
+}
+#endif
 
 void    
 wskbd_cnattach(consops, conscookie, mapdata)

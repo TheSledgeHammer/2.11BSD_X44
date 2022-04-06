@@ -93,14 +93,14 @@ __sysctl()
 	sysctlfn *fn;
 	int name[CTL_MAXNAME];
 
-	if (uap->new != NULL && !suser())
+	if (SCARG(uap, new) != NULL && !suser())
 		return (u.u_error);	/* XXX */
 	/*
 	 * all top-level sysctl names are non-terminal
 	 */
-	if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
+	if (SCARG(uap, namelen) > CTL_MAXNAME || SCARG(uap, namelen) < 2)
 		return (u.u_error = EINVAL);
-	if (error == copyin(uap->name, &name, uap->namelen * sizeof(int)))
+	if (error == copyin(SCARG(uap, name), &name, SCARG(uap, namelen) * sizeof(int)))
 		return (u.u_error = error);
 
 	switch (name[0]) {
@@ -133,10 +133,10 @@ __sysctl()
 		return (u.u_error = EOPNOTSUPP);
 	}
 
-	if (uap->oldlenp &&
-	    (error = copyin(uap->oldlenp, &oldlen, sizeof(oldlen))))
+	if (SCARG(uap, oldlenp) &&
+	    (error = copyin(SCARG(uap, oldlenp), &oldlen, sizeof(oldlen))))
 		return (u.u_error = error);
-	if (uap->old != NULL) {
+	if (SCARG(uap, old) != NULL) {
 		while (memlock.sl_lock) {
 			memlock.sl_want = 1;
 			sleep((caddr_t)&memlock, PRIBIO+1);
@@ -145,9 +145,9 @@ __sysctl()
 		memlock.sl_lock = 1;
 		savelen = oldlen;
 	}
-	error = (*fn)(name + 1, uap->namelen - 1, uap->old, &oldlen,
-	    uap->new, uap->newlen);
-	if (uap->old != NULL) {
+	error = (*fn)(name + 1, SCARG(uap, namelen) - 1, SCARG(uap, old), &oldlen,
+	    SCARG(uap, new), SCARG(uap, newlen));
+	if (SCARG(uap, old) != NULL) {
 		memlock.sl_lock = 0;
 		if (memlock.sl_want) {
 			memlock.sl_want = 0;
@@ -156,8 +156,8 @@ __sysctl()
 	}
 	if (error)
 		return (u.u_error = error);
-	if (uap->oldlenp) {
-		error = copyout(&oldlen, uap->oldlenp, sizeof(oldlen));
+	if (SCARG(uap, oldlenp)) {
+		error = copyout(&oldlen, SCARG(uap, oldlenp), sizeof(oldlen));
 		if (error)
 			return(u.u_error = error);
 	}

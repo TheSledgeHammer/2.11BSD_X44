@@ -28,6 +28,6 @@ reboot()
 	if (error == suser()) {
 		return (error);
 	}
-	boot(rootdev, uap->opt);
+	boot(rootdev, SCARG(uap, opt));
 	return (0);
 }

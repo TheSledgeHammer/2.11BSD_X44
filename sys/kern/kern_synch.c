@@ -40,7 +40,7 @@ void
 roundrobin(arg)
 	void *arg;
 {
-	need_resched();
+	need_resched(curproc);
 	timeout(roundrobin, NULL, hz / 10);
 }
 
@@ -498,10 +498,10 @@ switch_timer(p)
 	 * Compute the amount of time during which the current
 	 * process was running, and add that to its total so far.
 	 */
-    microtime(&tv);
-    u = p->p_rtime.tv_usec + (tv.tv_usec - runtime.tv_usec);
+	microtime(&tv);
+	u = p->p_rtime.tv_usec + (tv.tv_usec - runtime.tv_usec);
 	s = p->p_rtime.tv_sec + (tv.tv_sec - runtime.tv_sec);
-    	if (u < 0) {
+	if (u < 0) {
 		u += 1000000;
 		s--;
 	} else if (u >= 1000000) {
@@ -516,17 +516,17 @@ switch_timer(p)
 	 * If over max, kill it.  In any case, if it has run for more
 	 * than 10 minutes, reduce priority to give others a chance.
 	 */
-    rlim = &p->p_rlimit[RLIMIT_CPU];
-    if (s >= rlim->rlim_cur) {
+	rlim = &p->p_rlimit[RLIMIT_CPU];
+	if (s >= rlim->rlim_cur) {
 		if (s >= rlim->rlim_max) {
-            psignal(p, SIGKILL);
-        } else {
-            psignal(p, SIGXCPU);
-            if (rlim->rlim_cur < rlim->rlim_max) {
-                rlim->rlim_cur += 5;
-            }
-        }
-    }
+			psignal(p, SIGKILL);
+		} else {
+			psignal(p, SIGXCPU);
+			if (rlim->rlim_cur < rlim->rlim_max) {
+				rlim->rlim_cur += 5;
+			}
+		}
+	}
 }
 
 /* Check If not the idle process, resume the idle process. */
@@ -579,14 +579,13 @@ swtch()
 
 	cnt.v_swtch++;
 
-    if (u.u_procp != curproc) {
-        /* check idle process */
-        idle_check();
-    } else {
-        u.u_procp = curproc;
-    }
+	if (u.u_procp != curproc) {
+		idle_check();
+	} else {
+		u.u_procp = curproc;
+	}
 
-    switch_timer(u.u_procp);
+	switch_timer(u.u_procp);
 
 loop:
 	s = splhigh();

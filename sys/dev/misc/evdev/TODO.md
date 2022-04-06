@@ -4,11 +4,10 @@ FreeBSD Evdev API's:
 - uinput.h
 - input.h
 - input-event-codes.h
-- freebsd_bitstring.h
+- freebsd_bitstring.h /* Only needed if using FreeBSD evdev API's */
 
 TODO:
-- fix: evdev_ev_kbd_event: kbd_ioctl
-- fix: wskbd ioctls missing led cmd
+- Check wsmouse & wskbd evdev support is correct
 - add: wsmux device for evdev kbd and mouse
 	
 

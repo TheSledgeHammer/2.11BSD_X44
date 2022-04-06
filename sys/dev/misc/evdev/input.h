@@ -36,7 +36,7 @@
 #include <sys/types.h>
 #endif
 
-#include "input-event-codes.h"
+#include <dev/misc/evdev/input-event-codes.h>
 
 #define	input_event_sec		time.tv_sec
 #define	input_event_usec	time.tv_usec

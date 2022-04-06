@@ -29,26 +29,26 @@ gettimeofday()
 	register struct gettimeofday_args {
 		syscallarg(struct timeval *) tp;
 		syscallarg(struct timezone *) tzp;
-	} *uap = (struct gettimeofday_args *)u->u_ap;
+	} *uap = (struct gettimeofday_args *)u.u_ap;
 	struct timeval atv;
 
 	int s;
 	register u_int	ms;
 
-	if (uap->tp) {
+	if (SCARG(uap, tp)) {
 		/*
 		 * We don't resolve the milliseconds on every clock tick; it's
 		 * easier to do it here.  Long casts are out of paranoia.
 		 */
 		s = splhigh(); atv = time; ms = lbolt; splx(s);
 		atv.tv_usec = (long)ms * mshz;
-		u->u_error = copyout((caddr_t)&atv, (caddr_t)(uap->tp), sizeof(atv));
-		if (u->u_error)
-			return (u->u_error);
+		u.u_error = copyout((caddr_t)&atv, (caddr_t)(SCARG(uap, tp)), sizeof(atv));
+		if (u.u_error)
+			return (u.u_error);
 	}
-	if (uap->tzp)
-		u->u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp, sizeof (tz));
-	return (u->u_error);
+	if (SCARG(uap, tzp))
+		u.u_error = copyout((caddr_t)&tz, (caddr_t)SCARG(uap, tzp), sizeof (tz));
+	return (u.u_error);
 }
 
 int
@@ -57,24 +57,24 @@ settimeofday()
 	register struct settimeofday_args {
 		syscallarg(struct timeval *) tv;
 		syscallarg(struct timezone *) tzp;
-	} *uap = (struct settimeofday_args *)u->u_ap;
+	} *uap = (struct settimeofday_args *)u.u_ap;
 	struct timeval atv;
 	struct timezone atz;
 
-	if (uap->tv) {
-		u->u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof(struct timeval));
-		if (u->u_error)
-			return (u->u_error);
+	if (SCARG(uap, tv)) {
+		u.u_error = copyin((caddr_t)SCARG(uap, tv), (caddr_t)&atv, sizeof(struct timeval));
+		if (u.u_error)
+			return (u.u_error);
 		setthetime(&atv);
-		if	(u->u_error)
-			return (u->u_error);
+		if	(u.u_error)
+			return (u.u_error);
 	}
-	if (uap->tzp && suser()) {
-		u->u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz, sizeof(atz));
-		if (u->u_error == 0) {
+	if (SCARG(uap, tzp) && suser()) {
+		u.u_error = copyin((caddr_t)SCARG(uap, tzp), (caddr_t)&atz, sizeof(atz));
+		if (u.u_error == 0) {
 			tz = atz;
 		} else {
-			return (u->u_error);
+			return (u.u_error);
 		}
 	}
 
@@ -126,17 +126,17 @@ adjtime()
 	register struct adjtime_args {
 		syscallarg(struct timeval *) delta;
 		syscallarg(struct timeval *) olddelta;
-	} *uap = (struct adjtime_args *)u->u_ap;
+	} *uap = (struct adjtime_args *)u.u_ap;
 	struct timeval atv;
 	register int s;
 	long adjust;
 
-	if (u->u_error == suser()) {
-		return (u->u_error);
+	if (u.u_error == suser()) {
+		return (u.u_error);
 	}
-	u->u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv, sizeof(struct timeval));
-	if (u->u_error)
-		return (u->u_error);
+	u.u_error = copyin((caddr_t)SCARG(uap, delta), (caddr_t)&atv, sizeof(struct timeval));
+	if (u.u_error)
+		return (u.u_error);
 	adjust = (atv.tv_sec * hz) + (atv.tv_usec / mshz);
 	/* if unstoreable values, just set the clock */
 	if (adjust > 0x7fff || adjust < 0x8000) {
@@ -148,11 +148,11 @@ adjtime()
 			++time->tv_sec;
 		}
 		splx(s);
-		if (!uap->olddelta) 
+		if (!SCARG(uap, olddelta))
 			return (0);
 		atv.tv_sec = atv.tv_usec = 0;
 	} else {
-		if (!uap->olddelta) {
+		if (!SCARG(uap, olddelta)) {
 			adjdelta = adjust;
 			return (0);
 		}
@@ -160,7 +160,7 @@ adjtime()
 		atv.tv_usec = (adjdelta % hz) * mshz;
 		adjdelta = adjust;
 	}
-	(void) copyout((caddr_t)&atv, (caddr_t)uap->olddelta, sizeof(struct timeval));
+	(void) copyout((caddr_t)&atv, (caddr_t)SCARG(uap, olddelta), sizeof(struct timeval));
 	return (0);
 }
 
@@ -170,33 +170,33 @@ getitimer()
 	register struct getitimer_args {
 		syscallarg(u_int) which;
 		syscallarg(struct itimerval *) itv;
-	} *uap = (struct getitimer_args *)u->u_ap;
+	} *uap = (struct getitimer_args *)u.u_ap;
 
 	register struct itimerval *aitv;
 	register int s;
 
-	if (uap->which > ITIMER_PROF) {
-		u->u_error = EINVAL;
+	if (SCARG(uap, which) > ITIMER_PROF) {
+		u.u_error = EINVAL;
 		return;
 	}
 	aitv->itv_interval;
 	aitv.itv_interval.tv_usec = 0;
 	aitv.it_value.tv_usec = 0;
 	s = splclock();
-	if (uap->which == ITIMER_REAL) {
-		register struct proc *p = u->u_procp;
+	if (SCARG(uap, which) == ITIMER_REAL) {
+		register struct proc *p = u.u_procp;
 
 		aitv.it_interval.tv_sec = p->p_realtimer.it_interval;
 		aitv.it_value.tv_sec = p->p_realtimer.it_value;
 	} else {
-		register struct k_itimerval *t = &u->u_timer[uap->which - 1];
+		register struct k_itimerval *t = &u.u_timer[SCARG(uap, which) - 1];
 
 		aitv.it_interval.tv_sec = t->it_interval / hz;
 		aitv.it_value.tv_sec = t->it_value / hz;
 	}
 	splx(s);
-	u->u_error = copyout((caddr_t)&aitv, (caddr_t)uap->itv, sizeof(struct itimerval));
-	return (u->u_error);
+	u.u_error = copyout((caddr_t)&aitv, (caddr_t)SCARG(uap, itv), sizeof(struct itimerval));
+	return (u.u_error);
 }
 
 int
@@ -206,29 +206,29 @@ setitimer()
 		syscallarg(u_int) which;
 		syscallarg(struct itimerval *) itv;
 		syscallarg(struct itimerval *) oitv;
-	} *uap = (struct setitimer_args *)u->u_ap;
+	} *uap = (struct setitimer_args *)u.u_ap;
 
 	struct itimerval aitv;
 	register struct itimerval *aitvp;
 	int s;
 
-	if (uap->which > ITIMER_PROF) {
-		u->u_error = EINVAL;
+	if (SCARG(uap, which) > ITIMER_PROF) {
+		u.u_error = EINVAL;
 		return (EINVAL);
 	}
-	aitvp = uap->itv;
-	if (uap->oitv) {
-		uap->itv = uap->oitv;
+	aitvp = SCARG(uap, itv);
+	if (SCARG(uap, oitv)) {
+		SCARG(uap, itv) = SCARG(uap, oitv);
 		getitimer();
 	}
 	if (aitvp == 0)
 		return (0);
-	u->u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv, sizeof(struct itimerval));
-	if (u->u_error)
-		return (u->u_error);
+	u.u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv, sizeof(struct itimerval));
+	if (u.u_error)
+		return (u.u_error);
 	s = splclock();
-	if (uap->which == ITIMER_REAL) {
-		register struct proc *p = u->u_procp;
+	if (SCARG(uap, which) == ITIMER_REAL) {
+		register struct proc *p = u.u_procp;
 
 		p->p_realtimer.it_value = aitv.it_value.tv_sec;
 		if (aitv.it_value.tv_usec)
@@ -237,7 +237,7 @@ setitimer()
 		if (aitv.it_interval.tv_usec)
 			++p->p_realtimer.it_interval;
 	} else {
-		register struct k_itimerval *t = &u->u_timer[uap->which - 1];
+		register struct k_itimerval *t = &u.u_timer[SCARG(uap, which) - 1];
 
 		t->it_value = aitv.it_value.tv_sec * hz;
 		if (aitv.it_value.tv_usec)

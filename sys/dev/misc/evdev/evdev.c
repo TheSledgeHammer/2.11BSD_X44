@@ -46,10 +46,10 @@
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wseventvar.h>
 
-#include <dev/evdev/evdev.h>
-#include <dev/evdev/evdev_private.h>
-#include <dev/evdev/input.h>
-#include "freebsd-bitstring.h"
+#include <dev/misc/evdev/evdev.h>
+#include <dev/misc/evdev/evdev_private.h>
+#include <dev/misc/evdev/input.h>
+#include <dev/misc/evdev/freebsd-bitstring.h>
 
 #ifdef EVDEV_DEBUG
 #define	debugf(client, fmt, args...)	printf("evdev: "fmt"\n", ##args)
