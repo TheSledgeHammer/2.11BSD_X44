@@ -586,7 +586,7 @@ swtch()
         u.u_procp = curproc;
     }
 
-    cpu_time(u.u_procp);
+    switch_timer(u.u_procp);
 
 loop:
 	s = splhigh();
