@@ -90,7 +90,7 @@ vfsconf_fs_init(void)
 
 	/* 2.11BSD UFS Filesystem  */
 #ifdef UFS211
-	vfsconf_fs_create(&ufs211_vfsops, "ufs211", VT_UFS211, 0, MNT_LOCAL, NULL);
+    vfsconf_fs_create(&ufs211_vfsops, "ufs211", VT_UFS211, 0, MNT_LOCAL, NULL);
 #endif
 
 	/* ISO9660 (aka CDROM) Filesystem */
@@ -135,8 +135,6 @@ vfsconf_fs_init(void)
  */
 struct vfs_list vfsconflist = LIST_HEAD_INITIALIZER(vfsconflist);
 int maxvfsconf = 0;
-//int maxvfsconf = sizeof(vfsconflist) / sizeof (struct vfsconf);
-//struct vfsconf *vfsconf = vfsconflist;
 
 void
 vfsconf_fs_create(vfsp, name, index, typenum, flags, mountroot)
@@ -152,7 +150,6 @@ vfsconf_fs_create(vfsp, name, index, typenum, flags, mountroot)
     vfsp->vfc_mountroot = mountroot;
 
     vfsconf_attach(vfsp);
-    maxvfsconf++;
 }
 
 struct vfsconf *
@@ -187,6 +184,7 @@ vfsconf_attach(vfsp)
 {
 	if (vfsp != NULL) {
 		LIST_INSERT_HEAD(&vfsconflist, vfsp, vfc_next);
+		maxvfsconf++;
 	}
 }
 
@@ -196,5 +194,6 @@ vfsconf_detach(vfsp)
 {
 	if(vfsp != NULL) {
 		LIST_REMOVE(vfsp, vfc_next);
+		maxvfsconf--;
 	}
 }

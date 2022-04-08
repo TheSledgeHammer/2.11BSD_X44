@@ -51,8 +51,8 @@ wmemcmp(s1, s2, n)
 	for (i = 0; i < n; i++) {
 		if (*s1 != *s2) {
 			/* wchar might be unsigned */
-			return *(const __nbrune_t *)s1 >
-			       *(const __nbrune_t *)s2 ? 1 : -1;
+			return *(const rune_t *)s1 >
+			       *(const rune_t *)s2 ? 1 : -1;
 		}
 		s1++;
 		s2++;

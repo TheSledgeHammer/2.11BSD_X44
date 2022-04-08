@@ -54,6 +54,9 @@ typedef struct vm_map_entry 	*vm_map_entry_t;
 struct vm_map;
 typedef struct vm_map 			*vm_map_t;
 
+struct vm_hat;
+typedef struct vm_hat			*vm_hat_t;
+
 struct vm_object;
 typedef struct vm_object 		*vm_object_t;
 
@@ -112,6 +115,7 @@ typedef struct lock				*lock_t;
 #include <vm/include/vm_prot.h>
 #include <vm/include/vm_systm.h>
 
+#include <devel/vm/include/vm_hat.h>
 #include <devel/vm/include/vm_mac.h>
 #include <devel/vm/include/vm_map.h>
 #include <devel/vm/include/vm_page.h>

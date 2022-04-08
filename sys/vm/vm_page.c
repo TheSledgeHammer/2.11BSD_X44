@@ -92,7 +92,7 @@ simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
 
 /* has physical page allocation been initialized? */
-bool_t 			vm_page_startup_initialized;
+bool_t 				vm_page_startup_initialized;
 
 vm_page_t			vm_page_array;
 long				vm_page_array_size;
@@ -215,7 +215,10 @@ vm_page_startup(start, end)
 	 *	map (they should use their own maps).
 	 */
 
-	kentry_data_size = round_page(MAX_KMAP * sizeof(struct vm_map) +  MAX_KMAPENT * sizeof(struct vm_map_entry));
+	vm_size_t kmap_size = (MAX_KMAP * sizeof(struct vm_map));
+	vm_size_t kentry_size = (MAX_KMAPENT * sizeof(struct vm_map_entry));
+
+	kentry_data_size = round_page(kmap_size + kentry_size);
 	kentry_data = (vm_offset_t) pmap_bootstrap_alloc(kentry_data_size);
 
 	/*

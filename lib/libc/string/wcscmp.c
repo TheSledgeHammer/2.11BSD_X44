@@ -60,5 +60,5 @@ wcscmp(s1, s2)
 		if (*s1++ == 0)
 			return (0);
 	/* XXX assumes wchar_t = int */
-	return (*(const __nbrune_t *)s1 - *(const __nbrune_t *)--s2);
+	return (*(const rune_t *)s1 - *(const rune_t *)--s2);
 }

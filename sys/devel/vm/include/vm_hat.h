@@ -40,11 +40,7 @@ struct vm_hat {
 	void					*vh_item;
 	u_long 					vh_size;
 	struct lock_object		vh_lock;
-
-	struct pmap				*vh_pmap;
 };
-
-typedef struct vm_hat		*vm_hat_t;
 
 #define HAT_VM 	0x01
 #define HAT_OVL 0x02
@@ -54,17 +50,12 @@ typedef struct vm_hat		*vm_hat_t;
 #define vm_hat_unlock(hat) 		(simple_unlock((hat)->vh_lock))
 
 /* vm_hat */
-void	vm_hat_bootstrap(vm_hat_t);
-void 	*vm_hat_lookup(char *, int);
-void	vm_hat_add(vm_hat_t, char *, int, void *, u_long);
-void	vm_hat_remove(char *, int);
-
-/* vm_extent */
-void	vm_exbootinit(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
-void	vm_exbootinita(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
-void	vm_exboot_region(struct extent *, u_long, u_long, int);
-void	vm_exboot_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
-int		vm_exalloc_region(struct extent *, u_long, u_long, int);
-int		vm_exalloc_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
-void	vm_exfree(struct extent *, u_long, u_long, int);
+void 		*vm_halloc(vm_hat_t);
+void		vm_hfree(vm_hat_t);
+void		vm_hbootinit(vm_hat_t, char *, int, void *, int, u_long);
+vm_offset_t	vm_hat_bootstrap_alloc(int, vm_size_t);
+void		vm_hat_bootstrap(vm_hat_t);
+void 		*vm_hat_lookup(char *, int);
+void		vm_hat_add(vm_hat_t, char *, int, void *, u_long);
+void		vm_hat_remove(char *, int);
 #endif /* _VM_HAT_H_ */

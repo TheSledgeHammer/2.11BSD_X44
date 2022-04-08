@@ -200,21 +200,6 @@ vm_page_startup(start, end)
 	*end = trunc_page(*end);
 
 	/*
-	 *	Pre-allocate maps and map entries that cannot be dynamically
-	 *	allocated via malloc().  The maps include the kernel_map and
-	 *	kmem_map which must be initialized before malloc() will
-	 *	work (obviously).  Also could include pager maps which would
-	 *	be allocated before kmeminit.
-	 *
-	 *	Allow some kernel map entries... this should be plenty
-	 *	since people shouldn't be cluttering up the kernel
-	 *	map (they should use their own maps).
-	 */
-
-	kentry_data_size = round_page(MAX_KMAP * sizeof(struct vm_map) + MAX_KMAPENT * sizeof(struct vm_map_entry));
-	kentry_data = (vm_offset_t) pmap_bootstrap_alloc(kentry_data_size);
-
-	/*
  	 *	Compute the number of pages of memory that will be
 	 *	available for use (taking into account the overhead
 	 *	of a page structure per page).

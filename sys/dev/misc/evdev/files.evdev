@@ -4,10 +4,9 @@
 
 defparam opt_evdev.h EVDEV_SUPPORT
 
-device	evdev
-#attach	
+device	evdev: wskbddev, wsmousedev
 
-file	dev/misc/evdev/evdev_mt.c
-file	dev/misc/evdev/evdev_support.c
-file	dev/misc/evdev/evdev_utils.c
-file	dev/misc/evdev/evdev.c
+file	dev/misc/evdev/evdev_mt.c		
+file	dev/misc/evdev/evdev_support.c	evdev
+file	dev/misc/evdev/evdev_utils.c	
+file	dev/misc/evdev/evdev.c			evdev

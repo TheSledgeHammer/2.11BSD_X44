@@ -34,15 +34,79 @@
 #include <sys/null.h>
 #include <sys/tree.h>
 
-#include <devel/vm_hat.h>
+#include <devel/vm/include/vm_hat.h>
 
 struct hatspl hat_splay = SPLAY_INITIALIZER(hat_splay);
 
+void *
+vm_halloc(vm_hat_t h)
+{
+	void *item;
+
+	if (h == NULL) {
+		panic("hat: invalid");
+	}
+	item = vm_hat_lookup(h->vh_name, h->vh_type);
+	h->vh_item = item;
+
+	return (item);
+}
+
+void
+vm_hfree(vm_hat_t h)
+{
+	void *item;
+	item = vm_hat_lookup(h->vh_name, h->vh_type);
+	if(item != NULL) {
+		vm_hat_remove(h->vh_name, h->vh_type);
+	}
+}
+
+/*
+ *	Pre-allocate maps and map entries that cannot be dynamically
+ *	allocated via malloc().  The maps include the kernel_map and
+ *	kmem_map which must be initialized before malloc() will
+ *	work (obviously).  Also could include pager maps which would
+ *	be allocated before kmeminit.
+ *
+ *	Allow some kernel map entries... this should be plenty
+ *	since people shouldn't be cluttering up the kernel
+ *	map (they should use their own maps).
+ */
+void
+vm_hbootinit(vm_hat_t h, char *name, int type, void *item, int nentries, u_long size)
+{
+	vm_offset_t		data;
+	vm_size_t		data_size, totsize;
+
+	data_size = (nentries * size);
+	totsize = round_page(data_size);
+	data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
+	item = (void *)data;
+	vm_hat_add(h, name, type, item, totsize);
+}
+
+/* pre-allocate data that cannot be dynamically allocated via malloc()  */
+vm_offset_t
+vm_hat_bootstrap_alloc(nentries, size)
+	int nentries;
+	vm_size_t size;
+{
+	vm_offset_t		data;
+	vm_size_t		data_size, totsize;
+
+	data_size = (nentries * size);
+	totsize = round_page(data_size);
+	data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
+	return (data);
+}
+
+/* pre-allocate vm_hat */
 void
 vm_hat_bootstrap(hat)
 	vm_hat_t hat;
 {
-	hat = (vm_hat_t)pmap_bootstrap_alloc(sizeof(vm_hat_t));
+	hat = (vm_hat_t)vm_hat_bootstrap_alloc(0, sizeof(vm_hat_t));
 	vm_hat_lock_init(hat);
 }
 
@@ -61,7 +125,7 @@ vm_hat_compare(hat1, hat2)
 SPLAY_PROTOTYPE(hatspl, vm_hat, vh_node, vm_hat_compare);
 SPLAY_GENERATE(hatspl, vm_hat, vh_node, vm_hat_compare);
 
-/* add multiple items to the splay tree */
+/* add items to the splay tree */
 void
 vm_hat_add(hat, name, type, item, size)
 	vm_hat_t hat;
@@ -80,7 +144,7 @@ vm_hat_add(hat, name, type, item, size)
 	vm_hat_unlock(hat);
 }
 
-/* remove multiple items from the splay tree */
+/* remove items from the splay tree */
 void
 vm_hat_remove(name, type)
 	char *name;

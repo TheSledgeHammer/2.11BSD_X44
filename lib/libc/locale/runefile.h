@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <ctype.h>
 
-typedef uint32_t  		__nbrune_t; /* temp solution */
 typedef uint32_t 		rune_t;
 typedef uint32_t 		_RuneType;
 

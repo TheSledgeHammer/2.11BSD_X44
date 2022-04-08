@@ -72,6 +72,7 @@
 #include <sys/mman.h>
 
 #include <devel/vm/include/vm_amap.h>
+#include <devel/vm/include/vm_hat.h>
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm.h>
 
@@ -135,11 +136,10 @@
  *	These restrictions are necessary since malloc() uses the
  *	maps and requires map entries.
  */
-
-vm_offset_t		kentry_data;
-vm_size_t		kentry_data_size;
-vm_map_entry_t	kentry_free;
-vm_map_t		kmap_free;
+static struct vm_hat 	kmap_store, kentry_store;
+static vm_hat_t			kmap_hat, kentry_hat;
+vm_map_t 				kmap_free;
+vm_map_entry_t 			kentry_free;
 
 static void	_vm_map_clip_end (vm_map_t, vm_map_entry_t, vm_offset_t);
 static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
@@ -147,26 +147,12 @@ static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
 void
 vm_map_startup()
 {
-    register int i;
-    register vm_map_entry_t mep;
-    vm_map_t mp;
-
-    kmap_free = mp = (vm_map_t) kentry_data;
-    i = MAX_KMAP;
-
-    while (--i > 0) {
-        CIRCLEQ_NEXT(mep, cl_entry) = (vm_map_entry_t) (mp + 1);
-        mp++;
-    }
-    CIRCLEQ_FIRST(&mp->cl_header)++->cl_entry.cqe_next = NULL;
-
-    kentry_free = mep = (vm_map_entry_t) mp;
-    i = (kentry_data_size - MAX_KMAP * sizeof * mp) / sizeof *mep;
-    while (--i > 0) {
-        CIRCLEQ_NEXT(mep, cl_entry) = mep + 1;
-        mep++;
-    }
-    CIRCLEQ_NEXT(mep, cl_entry) = NULL;
+	kmap_hat = &kmap_store;
+	vm_hbootinit(kmap_hat, "KMAP", HAT_VM, kmap_free, MAX_KMAP,
+			sizeof(struct vm_map));
+	kentry_hat = &kentry_store;
+	vm_hbootinit(kentry_hat, "KENTRY", HAT_VM, kentry_free, MAX_KMAPENT,
+			sizeof(struct vm_map_entry));
 }
 
 /*
@@ -444,20 +430,23 @@ vm_map_create(pmap, min, max, pageable)
 	bool_t	pageable;
 {
 	register vm_map_t	result;
+	vm_map_entry_t 		kentry;
 	extern vm_map_t		kmem_map;
 
 	if (kmem_map == NULL) {
 		result = kmap_free;
-		if (result == NULL)
+		if (result == NULL) {
 			panic("vm_map_create: out of maps");
-		kmap_free = (vm_map_t) CIRCLEQ_FIRST(&result->cl_header)->cl_entry.cqe_next;
+		}
+		kentry = CIRCLEQ_FIRST(&result->cl_header);
+		kmap_free = (vm_map_t)CIRCLEQ_NEXT(kentry, cl_entry);
 	} else {
 		MALLOC(result, struct vm_map, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
 	}
 
 	vm_map_init(result, min, max, pageable);
 	result->pmap = pmap;
-	return(result);
+	return (result);
 }
 
 /*
@@ -500,7 +489,7 @@ vm_map_entry_create(map)
 {
 	vm_map_entry_t	entry;
 #ifdef DEBUG
-	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
+	extern vm_map_t	kernel_map, kmem_map, mb_map, pager_map;
 	bool_t			isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
@@ -510,11 +499,13 @@ vm_map_entry_create(map)
 	if (map->entries_pageable) {
 		MALLOC(entry, struct vm_map_entry, sizeof(struct vm_map_entry), M_VMMAPENT, M_WAITOK);
 	} else {
-		if (entry == kentry_free)
+		if (entry == kentry_free) {
 			kentry_free = CIRCLEQ_NEXT(kentry_free, cl_entry);
+		}
 	}
-	if (entry == NULL)
+	if (entry == NULL) {
 		panic("vm_map_entry_create: out of map entries");
+	}
 
 	return (entry);
 }

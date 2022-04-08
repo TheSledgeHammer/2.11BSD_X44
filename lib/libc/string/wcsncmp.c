@@ -56,8 +56,8 @@ wcsncmp(s1, s2, n)
 	do {
 		if (*s1 != *s2++) {
 			/* XXX assumes wchar_t = int */
-			return (*(const __nbrune_t *)s1 -
-			    *(const __nbrune_t *)--s2);
+			return (*(const rune_t *)s1 -
+			    *(const rune_t *)--s2);
 		}
 		if (*s1++ == 0)
 			break;
