@@ -7,6 +7,10 @@ SUBDIR+=  byacc compiler_rt elftoolchain/common   \
 SUBDIR+= ingres
 .endif
 
+.if (${MKLIBCXX} != "no")
+SUBDIR+= libc++
+.endif
+
 .if (${MKLLVM} != "no" || ${MKLLVMRT} != "no")
 SUBDIR+= llvm
 .endif
