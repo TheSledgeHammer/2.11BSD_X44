@@ -33,7 +33,8 @@
 #include <lib/libsa/stand.h>
 
 #include "api_public.h"
-#include "bootstrap.h"
+#include <bootstrap.h>
+#include <commands.h>
 #include "glue.h"
 #include "libuboot.h"
 
@@ -546,39 +547,27 @@ do_interact:
 	return (0);
 }
 
-void
-ubcmds_init()
-{
-	ubcmds_alloc(&ubcmds);
-}
-
-ubcmds_alloc(ubcmds)
-	struct ubcommand_table ubcmds;
-{
-	ubcmds = malloc(sizeof(struct ubcommand_table));
-}
-
-struct ubcommand_table ubcmds = {
-		.command_heap = 	command_ubheap,
-		.command_reboot = 	command_ubreboot,
-		.command_devinfo = 	command_devinfo,
-		.command_sysinfo = 	command_sysinfo,
-		.command_ubenv = 	command_ubenv,
-		.command_fdt = 		command_fdt
+struct bootblk_command commands[] = {
+		COMMON_COMMANDS,
+		{ "heap", "show heap usage", command_ubheap },
+		{ "reboot", "reboot the system", command_ubreboot },
+		{ "devinfo", "show U-Boot devices", command_devinfo },
+		{ "sysinfo", "show U-Boot system info", command_sysinfo },
+		{ "ubenv", "show or import U-Boot env vars", command_ubenv },
+		{ "fdt", "flattened device tree handling", command_fdt },
+		{ NULL,	NULL, NULL },
 };
 
-COMMAND_SET(heap, "heap", "show heap usage", command_heap);
 static int
 command_ubheap(int argc, char *argv[])
 {
-
 	printf("heap base at %p, top at %p, used %td\n", end, sbrk(0),
 	    sbrk(0) - end);
 
 	return (CMD_OK);
 }
+COMMAND_SET(heap, "heap", "show heap usage", command_ubheap);
 
-COMMAND_SET(reboot, "reboot", "reboot the system", command_reboot);
 static int
 command_ubreboot(int argc, char *argv[])
 {
@@ -590,8 +579,8 @@ command_ubreboot(int argc, char *argv[])
 	while (1);
 	__unreachable();
 }
+COMMAND_SET(reboot, "reboot", "reboot the system", command_ubreboot);
 
-COMMAND_SET(devinfo, "devinfo", "show U-Boot devices", command_devinfo);
 static int
 command_devinfo(int argc, char *argv[])
 {
@@ -609,8 +598,8 @@ command_devinfo(int argc, char *argv[])
 	}
 	return (CMD_OK);
 }
+COMMAND_SET(devinfo, "devinfo", "show U-Boot devices", command_devinfo);
 
-COMMAND_SET(sysinfo, "sysinfo", "show U-Boot system info", command_sysinfo);
 static int
 command_sysinfo(int argc, char *argv[])
 {
@@ -625,7 +614,7 @@ command_sysinfo(int argc, char *argv[])
 	ub_dump_si(si);
 	return (CMD_OK);
 }
-
+COMMAND_SET(sysinfo, "sysinfo", "show U-Boot system info", command_sysinfo);
 enum ubenv_action {
 	UBENV_UNKNOWN,
 	UBENV_SHOW,

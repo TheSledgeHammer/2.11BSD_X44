@@ -220,6 +220,7 @@ void 					file_discard(struct preloaded_file *fp);
 struct file_metadata	*file_findmetadata(struct preloaded_file *fp, int type);
 void 					file_addmetadata(struct preloaded_file *, int, size_t, void *);
 void 					file_removemetadata(struct preloaded_file *fp);
+
 /*
  * The intention of the architecture switch is to provide a convenient
  * encapsulation of the interface between the bootstrap MI and MD code.
@@ -261,9 +262,7 @@ extern struct arch_switch archsw;
 
 /* This must be provided by the MD code, but should it be in the archsw? */
 void	delay(int delay);
-
 void	dev_cleanup(void);
-
 time_t	time(time_t *tloc);
 
 #define AOUT_KERNELTYPE 	"aout kernel"

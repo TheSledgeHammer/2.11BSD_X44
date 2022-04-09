@@ -87,23 +87,3 @@ extern struct file_format uboot_elf;
 void reboot(void);
 
 int uboot_diskgetunit(int type, int type_unit);
-
-struct ubcommand_table {
-	int 	(*command_heap)(int argc, char *argv[]);
-    int 	(*command_reboot)(int argc, char *argv[]);
-    int 	(*command_devinfo)(int argc, char *argv[]);
-    int 	(*command_sysinfo)(int argc, char *argv[]);
-    int 	(*command_ubenv)(int argc, char *argv[]);
-    int 	(*command_fdt)(int argc, char *argv[]);
-};
-extern struct ubcommand_table ubcmds;
-
-#define COMMON_UBCOMMANDS																\
-		{ "heap", "heap", "show heap usage", command_ubheap }							\
-		{ "reboot", "reboot", "reboot the system", command_ubreboot },					\
-		{ "devinfo", "devinfo", "show U-Boot devices", command_devinfo },				\
-		{ "sysinfo", "sysinfo", "show U-Boot system info", command_sysinfo },			\
-		{ "ubenv", "ubenv", "show or import U-Boot env vars", command_ubenv },			\
-		{ "fdt", "fdt", "flattened device tree handling", command_fdt },				\
-
-void ubcmds_init(void);

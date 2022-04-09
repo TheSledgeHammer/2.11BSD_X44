@@ -36,45 +36,7 @@
 #include <lib/libsa/stand.h>
 
 static char command_errbuf[256];
-
 static int page_file(char *filename);
-
-void
-cmds_init()
-{
-	cmds_alloc(&cmds);
-}
-
-void
-cmds_alloc(cmds)
-	struct command_table cmds;
-{
-	cmds = malloc(sizeof(struct command_table));
-}
-
-struct command_table cmds = {
-    .command_help = 		command_help,
-    .command_commandlist = 	command_commandlist,
-    .command_show = 		command_show,
-    .command_set = 			command_set,
-    .command_unset = 		command_unset,
-    .command_echo = 		command_echo,
-    .command_read = 		command_read,
-    .command_more = 		command_more,
-    .command_lsdev =		command_lsdev,
-    .command_quit = 		command_quit,
-    .command_boot = 		command_boot,
-    .command_autoboot = 	command_autoboot,
-    .command_load = 		command_load,
-    .command_unload = 		command_unload,
-    .command_lskern = 		command_lskern,
-    .command_include = 		command_include,
-    .command_ls = 			command_ls,
-    .command_bcache = 		command_bcache,
-    .command_biosmem = 		command_biosmem,
-    .command_reboot = 		command_reboot,
-    .command_heap = 		command_heap
-};
 
 int
 command_seterr(const char *fmt, ...)
@@ -84,13 +46,13 @@ command_seterr(const char *fmt, ...)
 	va_start(ap, fmt);
 	len = vsnprintf(command_errbuf, sizeof(command_errbuf), fmt, ap);
 	va_end(ap);
-	return len;
+	return (len);
 }
 
 const char *
 command_geterr(void)
 {
-	return command_errbuf;
+	return (command_errbuf);
 }
 
 /*
@@ -102,8 +64,6 @@ help
 text
 here
 #
-
-
  * Note that for code simplicity's sake, the above format must be followed
  * exactly.
  *
@@ -263,7 +223,6 @@ command_help(int argc, char *argv[])
 	return (CMD_OK);
 }
 
-
 int
 command_commandlist(int argc, char *argv[])
 {
@@ -296,7 +255,6 @@ command_commandlist(int argc, char *argv[])
  * XXX set/show should become set/echo if we have variable
  * substitution happening.
  */
-
 int
 command_show(int argc, char *argv[])
 {
@@ -329,7 +287,6 @@ command_show(int argc, char *argv[])
 	}
 	return (CMD_OK);
 }
-
 
 int
 command_set(int argc, char *argv[])
@@ -503,7 +460,6 @@ page_file(char *filename)
 /*
  * List all disk-like devices
  */
-
 int
 command_lsdev(int argc, char *argv[])
 {

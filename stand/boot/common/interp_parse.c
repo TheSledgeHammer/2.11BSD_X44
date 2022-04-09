@@ -24,9 +24,9 @@
 #include <lib/libsa/stand.h>
 #include "bootstrap.h"
 
-static void	 clean(void);
-static int	 insert(int *argcp, char *buf);
-static char	*variable_lookup(char *name);
+static void	 	clean(void);
+static int		insert(int *argcp, char *buf);
+static char		*variable_lookup(char *name);
 
 #define PARSE_BUFSIZE	1024	/* maximum size of one element */
 #define MAXARGS			20		/* maximum number of elements */

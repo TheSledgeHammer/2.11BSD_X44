@@ -43,7 +43,24 @@ SRCS+=		byteorder.c
 
 .include <bsd.lib.mk>
 
-#INCSYMLINKS= 				\
-#			sys/lib/libsa	/usr/include/stand/libsa
+# /usr/stand/boot support
+INCSYMLINKS=																	\
+	sys/lib/libsa/bootp.h			/usr/include/stand/libsa/bootp.h 			\
+	sys/lib/libsa/bootparam.h		/usr/include/stand/libsa/bootparam.h 		\
+	sys/lib/libsa/byteorder.h		/usr/include/stand/libsa/byteorder.h 		\				
+	sys/lib/libsa/environment.h		/usr/include/stand/libsa/environment.h 		\
+	sys/lib/libsa/iodesc.h			/usr/include/stand/libsa/iodesc.h 			\ 
+	sys/lib/libsa/loadfile.h		/usr/include/stand/libsa/loadfile.h 		\
+	sys/lib/libsa/net.h				/usr/include/stand/libsa/net.h 				\
+	sys/lib/libsa/rpc.h				/usr/include/stand/libsa/rpc.h 				\ 
+	sys/lib/libsa/rpcv2.h			/usr/include/stand/libsa/rpcv2.h 			\
+	sys/lib/libsa/saerrno.h			/usr/include/stand/libsa/saerrno.h 			\
+	sys/lib/libsa/saio.h			/usr/include/stand/libsa/saio.h 			\
+	sys/lib/libsa/saioctl.h			/usr/include/stand/libsa/saioctl.h 			\
+	sys/lib/libsa/stand.h			/usr/include/stand/libsa/stand.h 			\
+	sys/lib/libsa/ufs.h				/usr/include/stand/libsa/ufs.h 				\
+	sys/lib/libsa/zalloc_defs.h		/usr/include/stand/libsa/zalloc_defs.h 		\
+	sys/lib/libsa/zalloc_mem.h		/usr/include/stand/libsa/zalloc_mem.h 		\
+	sys/lib/libsa/zalloc_protos.h	/usr/include/stand/libsa/zalloc_protos.h 	\
 
-#.include <bsd.kinc.mk>
+.include <bsd.kinc.mk>

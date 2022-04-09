@@ -34,40 +34,31 @@
 
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
-#include <bootstrap.h>
 #include <lib/libsa/stand.h>
+#include <bootstrap.h>
+#include <commands.h>
 #include "dloader.h"
 
 static void menu_display(void);
 static int menu_execute(int);
 
+struct bootblk_command commands[] = {
+		COMMON_COMMANDS,
+		{	"local", "List local variables", command_local },									\
+		{	"lunset", "Unset local variable", command_lunset },									\
+		{	"lunsetif", "Unset local variable if kenv variable is true", command_lunsetif }, 	\
+		{	"loadall", "Load kernel + modules", command_loadall },								\
+		{	"menuclear", "Clear all menus", command_menuclear },								\
+		{	"menuitem", "Add menu bullet", command_menuitem },									\
+		{	"menuadd", "Add script line for bullet", command_menuadd },							\
+		{	"menu", "Run menu system", command_menu },
+		{ NULL,	NULL, NULL },
+};
+
 /*
  * This is called from common and must reference files to bring
  * library modules into common during linking.
  */
-void
-dcmds_init(void)
-{
-	dcmds_alloc(&dcmds);
-}
-
-struct dcommand_table dcmds = {
-		.command_local = 		command_local,
-		.command_lunset = 		command_lunset,
-		.command_lunsetif = 	command_lunsetif,
-		.command_loadall = 		command_loadall,
-		.command_menuclear = 	command_menuclear,
-		.command_menuitem = 	command_menuitem,
-		.command_menuadd = 		command_menuadd,
-		.command_menu = 		command_menu,
-};
-
-void
-dcmds_alloc(dcmds)
-	struct dcommand_table dcmds;
-{
-	dcmds = malloc(sizeof(struct dcommand_table));
-}
 
 static int curitem;
 static int curadd;

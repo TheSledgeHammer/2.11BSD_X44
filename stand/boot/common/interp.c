@@ -1,5 +1,3 @@
-/*	$NetBSD: interp.c,v 1.6 2014/03/25 18:35:32 christos Exp $	*/
-
 /*-
  * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
  * All rights reserved.
@@ -27,65 +25,21 @@
  */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD: src/sys/boot/common/interp.c,v 1.29 2003/08/25 23:30:41 obrien Exp $"); */
+__FBSDID("$FreeBSD$");
 
 /*
  * Simple commandline interpreter, toplevel and misc.
  *
  * XXX may be obsoleted by BootFORTH or some other, better, interpreter.
  */
-
-/*
- * Needs fix-up: minimum "perform" will not work with command_table.
- * Shouldn't be difficult to re-implement.
- */
-
-#include <dloader/dloader.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <lib/libsa/stand.h>
-#include <uboot/lib/libuboot.h>
+#include <string.h>
 #include "bootstrap.h"
+#include "commands.h"
 
 #define	MAXARGS	20			/* maximum number of arguments allowed */
-
-static void	prompt(void);
-
-static int	perform(int argc, char *argv[]);
-
-/*
- * Perform the command
- */
-int
-perform(int argc, char *argv[])
-{
-    int						result;
-    struct bootblk_command	*cmdp;
-    bootblk_cmd_t			*cmd;
-
-    int i;
-    if (argc < 1)
-    	return(CMD_OK);
-
-	/* set return defaults; a successful command will override these */
-	command_seterr("no error message");
-	cmd = NULL;
-	result = CMD_ERROR;
-
-	/* search the command set for the command */
-	for (i = 0, cmdp = commands;
-			(cmdp->c_name != NULL) && (cmdp->c_desc != NULL);
-			i++, cmdp = commands + i) {
-		if ((cmdp->c_name != NULL) && !strcmp(argv[0], cmdp->c_name))
-			cmd = cmdp->c_fn;
-	}
-	if (cmd != NULL) {
-		result = (cmd)(argc, argv);
-	} else {
-		command_seterr("unknown command");
-	}
-	return (result);
-}
 
 /*
  * Interactive mode
@@ -93,31 +47,25 @@ perform(int argc, char *argv[])
 void
 interact(void)
 {
-	char input[256]; /* big enough? */
-    int	 argc;
-    char **argv;
+	static char				input[256];		/* big enough? */
+	const char * volatile	interp_identifier;
 
-    /*
-     * We may be booting from the boot partition, or we may be booting
-     * from the root partition with a /boot sub-directory.  If the latter
-     * chdir into /boot.  Ignore any error.  Only rel_open() uses the chdir
-     * info.
-     */
-    chdir("/boot");
-    setenv("base", DirBase, 1);
-
-    /*
-	 * Read our default configuration
+	/*
+	 * Because interp_identifier is volatile, it cannot be optimized out by
+	 * the compiler as it's considered an externally observable event.  This
+	 * prevents the compiler from optimizing out our carefully placed
+	 * $Interpreter:4th string that userboot may use to determine that
+	 * we need to switch interpreters.
 	 */
-	if (include("dloader.rc") != CMD_OK)
-		include("boot.conf");
+	interp_identifier = bootprog_interp;
+	interp_init();
+
 	printf("\n");
 
-    /*
-     * XXX: Before interacting, we might want to autoboot.
-     */
-	cmds_init();	/* comman cmds */
-	dcmds_init();	/* dloader cmds */
+	/*
+	 * Before interacting, we might want to autoboot.
+	 */
+	autoboot_maybe();
 
 	/*
 	 * Not autobooting, go manual
@@ -171,117 +119,14 @@ command_include(int argc, char *argv[])
 	return (res);
 }
 
-struct includeline {
-    char				*text;
-    int					flags;
-    int					line;
-#define SL_QUIET		(1<<0)
-#define SL_IGNOREERR	(1<<1)
-    struct includeline	*next;
-};
-
-int
-include(const char *filename)
-{
-	struct includeline *script, *se, *sp;
-	char input[256]; /* big enough? */
-	int			argc,res;
-	char		**argv, *cp;
-	int			fd, flags, line;
-
-	if (((fd = open(filename, O_RDONLY)) == -1)) {
-		command_seterr("can't open '%s': %s\n", filename, strerror(errno));
-		return (CMD_ERROR);
-	}
-
-	/*
-	 * Read the script into memory.
-	 */
-	script = se = NULL;
-	line = 0;
-
-	while (fgetstr(input, sizeof(input), fd) >= 0) {
-		line++;
-		flags = 0;
-		/* Discard comments */
-		if (strncmp(input + strspn(input, " "), "\\ ", 2) == 0)
-			continue;
-		cp = input;
-		/* Echo? */
-		if (input[0] == '@') {
-			cp++;
-			flags |= SL_QUIET;
-		}
-		/* Error OK? */
-		if (input[0] == '-') {
-			cp++;
-			flags |= SL_IGNOREERR;
-		}
-		/* Allocate script line structure and copy line, flags */
-		sp = alloc(sizeof(struct includeline) + strlen(cp) + 1);
-		sp->text = (char*) sp + sizeof(struct includeline);
-		strcpy(sp->text, cp);
-		sp->flags = flags;
-		sp->line = line;
-		sp->next = NULL;
-
-		if (script == NULL) {
-			script = sp;
-		} else {
-			se->next = sp;
-		}
-		se = sp;
-	}
-	close(fd);
-
-	/*
-	 * Execute the script
-	 */
-	argv = NULL;
-	res = CMD_OK;
-	for (sp = script; sp != NULL; sp = sp->next) {
-		/* print if not being quiet */
-		if (!(sp->flags & SL_QUIET)) {
-			prompt();
-			printf("%s\n", sp->text);
-		}
-
-		/* Parse the command */
-		if (!parse(&argc, &argv, sp->text)) {
-			if ((argc > 0) && (perform(argc, argv) != 0)) {
-				/* normal command */
-				printf("%s: %s\n", argv[0], command_geterr());
-				if (!(sp->flags & SL_IGNOREERR)) {
-					res = CMD_ERROR;
-					break;
-				}
-			}
-			free(argv);
-			argv = NULL;
-		} else {
-			printf("%s line %d: parse error\n", filename, sp->line);
-			res = CMD_ERROR;
-			break;
-		}
-	}
-	if (argv != NULL)
-		free(argv);
-	while (script != NULL) {
-		se = script;
-		script = script->next;
-		free(se);
-	}
-	return (res);
-}
-
 /*
  * Emit the current prompt; use the same syntax as the parser
- * for embedding environment variables.
+ * for embedding environment variables. Does not accept input.
  */
-static void
-prompt(void)
+void
+interp_emit_prompt(void)
 {
-    char	*pr, *p, *cp, *ev;
+	char		*pr, *p, *cp, *ev;
 
 	if ((cp = getenv("prompt")) == NULL)
 		cp = ">";
@@ -303,4 +148,40 @@ prompt(void)
 	}
 	putchar(' ');
 	free(pr);
+}
+
+/*
+ * Perform a builtin command
+ */
+int
+interp_builtin_cmd(int argc, char *argv[])
+{
+	int						i, result;
+	struct bootblk_command	*cmdp;
+	bootblk_cmd_t			*cmd;
+
+	if (argc < 1) {
+		return (CMD_OK);
+	}
+
+	/* set return defaults; a successful command will override these */
+	command_errmsg = command_errbuf;
+	strcpy(command_errbuf, "no error message");
+	cmd = NULL;
+	result = CMD_ERROR;
+
+	/* search the command set for the command */
+	for (i = 0, cmdp = commands;
+			(cmdp->c_name != NULL) && (cmdp->c_desc != NULL);
+			i++, cmdp = commands + i) {
+		if ((cmdp->c_name != NULL) && !strcmp(argv[0], cmdp->c_name)) {
+			cmd = cmdp->c_fn;
+		}
+	}
+	if (cmd != NULL) {
+		result = (cmd)(argc, argv);
+	} else {
+		command_seterr("unknown command");
+	}
+	return (result);
 }

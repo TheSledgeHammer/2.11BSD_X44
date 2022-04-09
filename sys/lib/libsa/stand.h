@@ -187,6 +187,8 @@ int     				getfile(char *, int);
 
 /* gets.c */
 void    				gets(char *);
+void					ngets(char *buf, int n);
+int						fgetstr(char *buf, int size, int fd);
 
 /* ioctl.c */
 int     				ioctl(int, int, char *);

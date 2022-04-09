@@ -52,11 +52,7 @@ struct bootblk_command {
     bootblk_cmd_t		*c_fn;
 };
 
-/* initilize command_table */
-void cmds_init();
-
 /* Prototypes for the command handlers within stand/common/ */
-
 /*	commands.c		*/
 int command_help(int argc, char *argv[]) ;
 int command_commandlist(int argc, char *argv[]);
@@ -92,56 +88,49 @@ int command_bcache(int argc, char *argv[]);
 /*  biosmem.c	*/
 int command_biosmem(int argc, char *argv[]);
 
-struct command_table {
-    int     (*command_help)(int argc, char *argv[]);
-    int 	(*command_commandlist)(int argc, char *argv[]);
-    int 	(*command_show)(int argc, char *argv[]);
-    int 	(*command_set)(int argc, char *argv[]);
-    int 	(*command_unset)(int argc, char *argv[]);
-    int 	(*command_echo)(int argc, char *argv[]);
-    int 	(*command_read)(int argc, char *argv[]);
-    int 	(*command_more)(int argc, char *argv[]);
-    int 	(*command_lsdev)(int argc, char *argv[]);
-    int 	(*command_quit)(int argc, char *argv[]);
-    int 	(*command_boot)(int argc, char *argv[]);
-    int 	(*command_autoboot)(int argc, char *argv[]);
-    int 	(*command_load)(int argc, char *argv[]);
-    int 	(*command_unload)(int argc, char *argv[]);
-    int 	(*command_lskern)(int argc, char *argv[]);
-    int 	(*command_include)(int argc, char *argv[]);
-    int 	(*command_ls)(int argc, char *argv[]);
-    int		(*command_bcache)(int argc, char *argv[]);
-    int 	(*command_biosmem)(int argc, char *argv[]);
-    int 	(*command_reboot)(int argc, char *argv[]);
-    int 	(*command_heap)(int argc, char *argv[]);
-};
-extern struct command_table cmds;
+/* dloader/cmds.c */
+int	command_local(int argc, char **av);
+int	command_lunset(int argc, char **av);
+int	command_lunsetif(int argc, char **av);
+int	command_loadall(int argc, char **av);
+int	command_menuclear(int argc, char **av);
+int	command_menuitem(int argc, char **av);
+int	command_menuadd(int argc, char **av);
+int	command_menu(int argc, char **av);
 
-#define COMMAND_SET(a, b, c, d) /* Nothing */
+/* uboot/common/main.c */
+int	command_ubheap(int argc, char *argv[]);
+int	command_ubreboot(int argc, char *argv[]);
+int command_devinfo(int argc, char *argv[]);
+int command_sysinfo(int argc, char *argv[]);
+int command_ubenv(int argc, char *argv[]);
+int command_fdt(int argc, char *argv[]);
 
-#define COMMON_COMMANDS																			\
-		{ "help", "detailed help", command_help },												\
-		{ "commandlist", "list commands", command_commandlist },								\
-		{ "show", "show variable(s)", command_show },											\
-		{ "set", "set a variable", command_set },												\
-		{ "unset", "unset a variable", command_unset },											\
-		{ "echo", "echo arguments", command_echo },												\
-		{ "read", "read input from the terminal", command_read },								\
-		{ "more", "show contents of a file", command_more },									\
-		{ "lsdev", "list all devices", command_lsdev },											\
-		{ "quit", "exit the loader", command_quit },											\
-		{ "bcachestat", "get disk block cache stats", command_bcache },							\
-		{ "boot", "boot a file or loaded kernel", command_boot },								\
-		{ "autoboot", "boot automatically after a delay", command_autoboot},					\
-		{ "load", "load a kernel", command_load },												\
-		{ "unload", "unload all modules", command_unload },										\
-		{ "lskern", "list loaded kernel", command_lskern },										\
-		{ "include", "read commands from a file", command_include },							\
-		{ "ls", "list files", command_ls },														\
-		{ "biosmem", "show BIOS memory setup", command_biosmem },								\
-		{ "reboot", "reboot", "reboot the system", command_reboot },							\
+#define COMMON_COMMANDS																	\
+		{ "help", "detailed help", command_help },										\
+		{ "commandlist", "list commands", command_commandlist },						\
+		{ "show", "show variable(s)", command_show },									\
+		{ "set", "set a variable", command_set },										\
+		{ "unset", "unset a variable", command_unset },									\
+		{ "echo", "echo arguments", command_echo },										\
+		{ "read", "read input from the terminal", command_read },						\
+		{ "more", "show contents of a file", command_more },							\
+		{ "lsdev", "list all devices", command_lsdev },									\
+		{ "quit", "exit the loader", command_quit },									\
+		{ "bcachestat", "get disk block cache stats", command_bcache },					\
+		{ "boot", "boot a file or loaded kernel", command_boot },						\
+		{ "autoboot", "boot automatically after a delay", command_autoboot},			\
+		{ "load", "load a kernel", command_load },										\
+		{ "unload", "unload all modules", command_unload },								\
+		{ "lskern", "list loaded kernel", command_lskern },								\
+		{ "include", "read commands from a file", command_include },					\
+		{ "ls", "list files", command_ls },												\
+		{ "biosmem", "show BIOS memory setup", command_biosmem },						\
+		{ "reboot", "reboot", "reboot the system", command_reboot },					\
 		{ "heap", "heap", "show heap usage", command_heap }
 
 extern struct bootblk_command commands[];
+
+#define COMMAND_SET(a, b, c, d) /* Nothing */
 
 #endif /* _COMMANDS_H_ */

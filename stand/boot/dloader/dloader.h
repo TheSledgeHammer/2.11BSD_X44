@@ -53,31 +53,6 @@ dvar_t 	dvar_next(dvar_t var);
 dvar_t 	dvar_copy(dvar_t var);
 void 	dvar_free(dvar_t *lastp);
 
-int 	perform(int ac, char **av);
-
-struct dcommand_table {
-	int (*command_local)(int ac, char **av);
-	int (*command_lunset)(int ac, char **av);
-	int (*command_lunsetif)(int ac, char **av);
-	int (*command_loadall)(int ac, char **av);
-	int (*command_menuclear)(int ac, char **av);
-	int (*command_menuitem)(int ac, char **av);
-	int (*command_menuadd)(int ac, char **av);
-	int (*command_menu)(int ac, char **av);
-};
-extern struct dcommand_table dcmds;
-
-#define COMMON_DCOMMANDS																		\
-		{	"local", "List local variables", command_local },									\
-		{	"lunset", "Unset local variable", command_lunset },									\
-		{	"lunsetif", "Unset local variable if kenv variable is true", command_lunsetif }, 	\
-		{	"loadall", "Load kernel + modules", command_loadall },								\
-		{	"menuclear", "Clear all menus", command_menuclear },								\
-		{	"menuitem", "Add menu bullet", command_menuitem },									\
-		{	"menuadd", "Add script line for bullet", command_menuadd },							\
-		{	"menu", "Run menu system", command_menu },
-
-
 /* Logo Global Functions */
 #define LOGO_LEFT 	0
 #define LOGO_RIGHT 	1
