@@ -36,12 +36,10 @@
 /* user threads */
 typedef struct uthread 	*uthread_t;
 struct uthread {
-	LIST_ENTRY(uthread)	ut_list;
-	struct uthread		*ut_nxt;				/* linked list of allocated thread slots */
-	struct uthread		**ut_prev;
-
 	struct uthread 		*ut_forw;				/* Doubly-linked run/sleep queue. */
 	struct uthread 		*ut_back;
+
+	LIST_ENTRY(uthread)	ut_list;
 
     struct mtx			*ut_mtx;				/* uthread structure mutex */
 	int	 				ut_flag;				/* T_* flags. */
@@ -63,15 +61,15 @@ struct uthread {
 	struct user 		*ut_userp;				/* pointer to user */
 	struct kthread		*ut_kthreadp;			/* pointer to kernel threads */
 
-	LIST_ENTRY(proc)	ut_hash;				/* hashed based on t_tid & p_pid for kill+exit+... */
-	struct uthread    	*ut_pgrpnxt;			/* Pointer to next thread in thread group. */
-    struct uthread      *ut_pptr;				/* pointer to process structure of parent */
-    struct uthread 		*ut_ostptr;	 			/* Pointer to older sibling processes. */
+	LIST_ENTRY(proc) 	ut_pglist;				/* List of uthreads in pgrp. */
+	struct uthread      *ut_pptr;				/* pointer to process structure of parent */
+	LIST_ENTRY(uthread)	ut_sibling;				/* List of sibling uthreads. */
+	LIST_HEAD(, uthread)ut_children;			/* Pointer to list of children. */
+	LIST_ENTRY(proc)	ut_hash;				/* Hash chain. */
 
-#define	ut_startzero	ut_ysptr
+#define	ut_startzero	ut_oppid
 
-	struct uthread 		*ut_ysptr;	 			/* Pointer to younger siblings. */
-	struct uthread 		*ut_cptr;	 			/* Pointer to youngest living child. */
+	 pid_t				ut_oppid;	    		/* Save parent pid during ptrace. XXX */
 
 #define	ut_endzero		ut_startcopy
 #define	ut_startcopy	ut_sigmask
@@ -154,12 +152,6 @@ LIST_HEAD(uthreadlist, uthread);
 extern struct uthreadlist				alluthread;			/* List of active uthreads. */
 extern struct uthreadlist				zombuthread;		/* List of zombie uthreads. */
 //extern struct uthreadlist 				freeuthread;		/* List of free uthreads. */
-
-//struct uthread 							*uthreadNUTHREAD;	/* the uthread table itself */
-
-//struct uthread 							*alluthread;		/* List of active uthreads. */
-//struct uthread 							*freeuthread;		/* List of free uthreads. */
-//struct uthread 							*zombuthread;		/* List of zombie uthreads. */
 
 lock_t									uthread_lkp;		/* lock */
 rwlock_t								uthread_rwl;		/* reader-writers lock */

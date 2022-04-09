@@ -35,9 +35,6 @@
 /* kernel threads */
 typedef struct kthread 	*kthread_t;
 struct kthread {
-	struct kthread		*kt_nxt;				/* linked list of allocated thread slots */
-	struct kthread		**kt_prev;
-
 	struct kthread 		*kt_forw;				/* Doubly-linked run/sleep queue. */
 	struct kthread 		*kt_back;
 
@@ -66,15 +63,15 @@ struct kthread {
 	struct proc 		*kt_procp;				/* pointer to proc */
 	struct uthread		*kt_uthreado;			/* uthread overseer (original uthread)  */
 
-	LIST_ENTRY(proc)	kt_hash;				/* hashed based on t_tid & p_pid for kill+exit+... */
-	struct kthread    	*kt_pgrpnxt;			/* Pointer to next thread in thread group. */
-    struct kthread      *kt_pptr;				/* pointer to process structure of parent */
-    struct kthread 		*kt_ostptr;	 			/* Pointer to older sibling processes. */
+	LIST_ENTRY(proc) 	kt_pglist;				/* List of kthreads in pgrp. */
+	struct kthread      *kt_pptr;				/* pointer to process structure of parent */
+	LIST_ENTRY(kthread)	kt_sibling;				/* List of sibling kthreads. */
+	LIST_HEAD(, kthread)kt_children;			/* Pointer to list of children. */
+	LIST_ENTRY(proc)	kt_hash;				/* Hash chain. */
 
-#define	kt_startzero	kt_ysptr
+#define	kt_startzero	kt_oppid
 
-	struct kthread 		*kt_ysptr;	 			/* Pointer to younger siblings. */
-	struct kthread 		*kt_cptr;	 			/* Pointer to youngest living child. */
+	 pid_t				kt_oppid;	    		/* Save parent pid during ptrace. XXX */
 
     u_int				kt_estcpu;	 			/* Time averaged value of p_cpticks. */
 
@@ -193,15 +190,10 @@ u_long 	tid_hash;
 extern LIST_HEAD(tgrphashhead, pgrp) 	*tgrphashtbl;
 extern u_long tgrphash;
 
-struct kthread 							*kthreadNKTHREAD;		/* the kthread table itself */
-
-struct kthread 							*allkthread;			/* List of active kthreads. */
-struct kthread 							*freekthread;			/* List of free kthreads. */
-struct kthread 							*zombkthread;			/* List of zombie kthreads. */
-
-//LIST_HEAD(kthreadlist, kthread);
-//extern struct kthreadlist				allkthread;				/* List of active kthreads. */
-//extern struct kthreadlist				zombkthread;			/* List of zombie kthreads. */
+LIST_HEAD(kthreadlist, kthread);
+extern struct kthreadlist				allkthread;				/* List of active kthreads. */
+extern struct kthreadlist				zombkthread;			/* List of zombie kthreads. */
+//extern struct kthreadlist 				freekthread;			/* List of free kthreads. */
 
 lock_t 									kthread_lkp; 			/* lock */
 rwlock_t								kthread_rwl;			/* reader-writers lock */

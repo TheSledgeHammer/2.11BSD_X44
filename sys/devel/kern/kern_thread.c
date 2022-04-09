@@ -43,6 +43,9 @@ u_long tgrphash;
 
 int	maxthread;// = NTHREAD;
 
+struct kthreadlist allkthread;
+struct kthreadlist zombkthread;
+
 void
 threadinit()
 {
@@ -58,6 +61,7 @@ threadinit()
 void
 ktqinit()
 {
+	/*
 	register struct kthread *kt;
 
 	freekthread = NULL;
@@ -69,6 +73,9 @@ ktqinit()
 	kt->kt_prev = &allkthread;
 
 	zombkthread = NULL;
+	*/
+	LIST_INIT(&allkthread);
+	LIST_INIT(&zombkthread);
 }
 
 /*
@@ -77,6 +84,7 @@ ktqinit()
 void
 utqinit()
 {
+	/*
 	register struct uthread *ut;
 
 	freeuthread = NULL;
@@ -88,6 +96,9 @@ utqinit()
 	ut->ut_prev = &alluthread;
 
 	zombuthread = NULL;
+	*/
+	LIST_INIT(&alluthread);
+	LIST_INIT(&zombuthread);
 }
 
 /*
@@ -98,38 +109,10 @@ tgfind(pgid)
 	register pid_t pgid;
 {
 	register struct pgrp *tgrp;
-	for (tgrp = tgrphash[TIDHASH(pgid)]; tgrp != NULL; tgrp = tgrp->pg_hforw) {
+	for (tgrp = LIST_FIRST(TGRPHASH(pgid)); tgrp != NULL; tgrp = LIST_NEXT(tgrp, pg_hash)) {
 		if (tgrp->pg_id == pgid) {
 			return (tgrp);
 		}
 	}
 	return (NULL);
-}
-
-/*
- * delete a thread group
- */
-void
-tgdelete(tgrp)
-	register struct pgrp *tgrp;
-{
-	register struct pgrp **tgp = &tgrphash[TIDHASH(tgrp->pg_id)];
-
-	if (tgrp->pg_session->s_ttyp != NULL &&
-		tgrp->pg_session->s_ttyp->t_pgrp == tgrp)
-		tgrp->pg_session->s_ttyp->t_pgrp = NULL;
-	for (; *tgp; tgp = &(*tgp)->pg_hforw) {
-		if (*tgp == tgrp) {
-			*tgp = tgrp->pg_hforw;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pgp == NULL)
-		panic("tgdelete: can't find pgrp on hash chain");
-#endif
-	if (--tgrp->pg_session->s_count == 0) {
-		FREE(tgrp, M_PGRP);
-	}
-	FREE(tgrp, M_PGRP);
 }

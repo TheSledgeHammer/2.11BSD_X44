@@ -84,6 +84,7 @@ vm_hbootinit(vm_hat_t h, char *name, int type, void *item, int nentries, u_long 
 	data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
 	item = (void *)data;
 	vm_hat_add(h, name, type, item, totsize);
+	vm_hat_lock_init(h);
 }
 
 /* pre-allocate data that cannot be dynamically allocated via malloc()  */
@@ -114,9 +115,9 @@ int
 vm_hat_compare(hat1, hat2)
 	struct vm_hat *hat1, *hat2;
 {
-	if (hat1->vh_type < hat2->vh_type) {
+	if ((hat1->vh_type < hat2->vh_type) && (hat1->vh_size < hat2->vh_size)) {
 		return (-1);
-	} else if (hat1->vh_type > hat2->vh_type) {
+	} else if ((hat1->vh_type > hat2->vh_type) && (hat1->vh_size > hat2->vh_size)) {
 		return (1);
 	}
 	return (0);

@@ -59,9 +59,8 @@ uthread_init(kt, ut)
     curuthread = ut;
 
     /* set up uthreads */
-    alluthread = (struct uthread *)ut;
-    ut->ut_prev = (struct uthread **)&alluthread;
-    tgrphash[0] = &pgrp0;
+    LIST_INSERT_HEAD(&alluthread, ut, ut_list);
+    ut->ut_pgrp = &pgrp0;
     kthread0->kt_uthreado = ut;
 
 	/* give the uthread the same creds as the initial kthread */
@@ -84,6 +83,7 @@ uthread_create(func, arg, newkp, name)
 {
 	struct kthread *kt;
 	register_t rval[2];
+	int 		error;
 
 	error = newproc(0);
 	if(__predict_false(error != 0)) {
@@ -244,10 +244,10 @@ uthreadpool_itpc_recieve(itpc, utpool, pid, cmd)
  */
 struct uthread *
 utfind(tid)
-	register int tid;
+	register pid_t tid;
 {
 	register struct uthread *ut;
-	for (ut = TIDHASH(tid); ut != 0; ut = LIST_NEXT(ut, ut_hash)) {
+	for (ut = LIST_FIRST(TIDHASH(tid)); ut != 0; ut = LIST_NEXT(ut, ut_hash)) {
 		if(ut->ut_tid == tid) {
 			return (ut);
 		}
@@ -262,20 +262,10 @@ int
 leaveutgrp(ut)
 	register struct uthread *ut;
 {
-	register struct uthread **utt = &ut->ut_pgrp->pg_mem;
-
-	for (; *utt; utt = &(*utt)->ut_pgrpnxt) {
-		if (*utt == ut) {
-			*utt = ut->ut_pgrpnxt;
-			break;
-		}
+	LIST_REMOVE(ut, ut_pglist);
+	if (LIST_FIRST(&ut->ut_pgrp->pg_mem) == 0) {
+		pgdelete(ut->ut_pgrp);
 	}
-#ifdef DIAGNOSTIC
-	if (utt == NULL)
-		panic("leavetgrp: can't find uthread in tgrp");
-#endif
-	if (!ut->ut_pgrp->pg_mem)
-		tgdelete(ut->ut_pgrp);
 	ut->ut_pgrp = 0;
 	return (0);
 }

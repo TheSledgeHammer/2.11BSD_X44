@@ -43,6 +43,7 @@
 
 extern struct kthread 		 kthread0;
 struct kthread *curkthread = &kthread0;
+
 int	kthread_create_now;
 
 void
@@ -61,9 +62,9 @@ kthread_init(p, kt)
     threadinit();
 
 	/* set up kernel thread */
-    allkthread = (struct kthread *) kt;
-    kt->kt_prev = (struct kthread **)&allkthread;
-	tgrphash[0] = &pgrp0;
+    LIST_INSERT_HEAD(&allkthread, kt, kt_list);
+    kt->kt_pgrp = &pgrp0;
+    LIST_INSERT_HEAD(TGRPHASH(0), &pgrp0, pg_hash);
 	p->p_kthreado = kt;
 
 	/* give the kthread the same creds as the initial thread */
@@ -296,10 +297,10 @@ kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
  */
 struct kthread *
 ktfind(tid)
-	register int tid;
+	register pid_t tid;
 {
 	register struct kthread *kt;
-	for (kt = TIDHASH(tid); kt != 0; kt = LIST_NEXT(kt, kt_hash))
+	for (kt = LIST_FIRST(TIDHASH(tid)); kt != 0; kt = LIST_NEXT(kt, kt_hash))
 		if(kt->kt_tid == tid)
 			return (kt);
 	return (NULL);
@@ -312,20 +313,10 @@ int
 leavektgrp(kt)
 	register struct kthread *kt;
 {
-	register struct kthread **ktt = &kt->kt_pgrp->pg_mem;
-
-	for (; *ktt; ktt = &(*ktt)->kt_pgrpnxt) {
-		if (*ktt == kt) {
-			*ktt = kt->kt_pgrpnxt;
-			break;
-		}
+	LIST_REMOVE(kt, kt_pglist);
+	if (LIST_FIRST(&kt->kt_pgrp->pg_mem) == 0) {
+		pgdelete(kt->kt_pgrp);
 	}
-#ifdef DIAGNOSTIC
-	if (ktt == NULL)
-		panic("leavepgrp: can't find p in pgrp");
-#endif
-	if (!kt->kt_pgrp->pg_mem)
-		tgdelete(kt->kt_pgrp);
 	kt->kt_pgrp = 0;
 	return (0);
 }

@@ -267,7 +267,7 @@ vm_pageout_inactive_scanner(page, segment, object, freed)
 	 * If the segment & page has been referenced, move them back to the
 	 * active queue.
 	 */
-	phys = vm_pageout_phys(segment, page);
+	phys = vm_pageout_phys(page, segment);
 	if (pmap_is_referenced(phys)) {
 		vm_page_active(page);
 		vm_segment_active(segment);
@@ -375,7 +375,7 @@ vm_pageout_active(page, segment, object)
 	 * page won't move from the inactive queue.  (However, any
 	 * other page on the inactive queue may move!)
 	 */
-	phys = vm_pageout_phys(segment, page);
+	phys = vm_pageout_phys(page, segment);
 	pmap_page_protect(phys, VM_PROT_NONE);
 	page->flags |= PG_BUSY;
 
