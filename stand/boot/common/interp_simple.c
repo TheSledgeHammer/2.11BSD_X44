@@ -45,7 +45,7 @@ int
 interp_run(const char *input)
 {
 	int			argc;
-	char			**argv;
+	char		**argv;
 
 	if (parse(&argc, &argv, input)) {
 		printf("parse error\n");
@@ -155,7 +155,7 @@ interp_include(const char *filename)
 		if (!parse(&argc, &argv, sp->text)) {
 			if ((argc > 0) && (interp_builtin_cmd(argc, argv) != 0)) {
 				/* normal command */
-				printf("%s: %s\n", argv[0], command_errmsg);
+				printf("%s: %s\n", argv[0], command_geterr());
 				if (!(sp->flags & SL_IGNOREERR)) {
 					res = CMD_ERROR;
 					break;

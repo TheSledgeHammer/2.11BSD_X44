@@ -165,8 +165,7 @@ interp_builtin_cmd(int argc, char *argv[])
 	}
 
 	/* set return defaults; a successful command will override these */
-	command_errmsg = command_errbuf;
-	strcpy(command_errbuf, "no error message");
+	command_seterr("no error message");
 	cmd = NULL;
 	result = CMD_ERROR;
 

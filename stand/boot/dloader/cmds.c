@@ -42,23 +42,22 @@
 static void menu_display(void);
 static int menu_execute(int);
 
-struct bootblk_command commands[] = {
-		COMMON_COMMANDS,
-		{	"local", "List local variables", command_local },									\
-		{	"lunset", "Unset local variable", command_lunset },									\
-		{	"lunsetif", "Unset local variable if kenv variable is true", command_lunsetif }, 	\
-		{	"loadall", "Load kernel + modules", command_loadall },								\
-		{	"menuclear", "Clear all menus", command_menuclear },								\
-		{	"menuitem", "Add menu bullet", command_menuitem },									\
-		{	"menuadd", "Add script line for bullet", command_menuadd },							\
-		{	"menu", "Run menu system", command_menu },
-		{ NULL,	NULL, NULL },
-};
-
 /*
  * This is called from common and must reference files to bring
  * library modules into common during linking.
  */
+
+/*
+ * "local" intercepts assignments: lines of the form 'a=b'
+ */
+COMMAND_SET(local, "local", "List local variables", command_local);
+COMMAND_SET(lunset, "lunset", "Unset local variable", command_lunset);
+COMMAND_SET(lunsetif, "lunsetif", "Unset local variable if kenv variable is true", command_lunsetif);
+COMMAND_SET(loadall, "loadall", "Load kernel + modules", command_loadall);
+COMMAND_SET(menuclear, "menuclear", "Clear all menus", command_menuclear);
+COMMAND_SET(menuitem, "menuitem", "Add menu bullet", command_menuitem);
+COMMAND_SET(menuadd, "menuadd", "Add script line for bullet", command_menuadd);
+COMMAND_SET(menu, "menu", "Run menu system", command_menu);
 
 static int curitem;
 static int curadd;
@@ -232,7 +231,7 @@ command_loadall(ac, av)
 	int tmp;
 
 	argv[0] = "unload";
-	(void) perform(1, argv);
+	(void) interp_builtin_cmd(1, argv);
 
 	/*
 	 * Load kernel
@@ -242,7 +241,7 @@ command_loadall(ac, av)
 	argv[2] = getenv("kernel_options");
 	if (argv[1] == NULL)
 		argv[1] = strdup("kernel");
-	res = perform((argv[2] == NULL) ? 2 : 3, argv);
+	res = interp_builtin_cmd((argv[2] == NULL) ? 2 : 3, argv);
 	free(argv[1]);
 	if (argv[2])
 		free(argv[2]);
@@ -310,7 +309,7 @@ command_loadall(ac, av)
 			argc = 2;
 			argv[1] = mod_name;
 		}
-		tmp = perform(argc, argv);
+		tmp = interp_builtin_cmd(argc, argv);
 		if (tmp != CMD_OK) {
 			time_t t = time(NULL);
 			printf("Unable to load %s%s\n", DirBase, mod_name);
@@ -532,7 +531,7 @@ menu_execute(c)
 	 * Execute items
 	 */
 	for (dvar = dvar_exec; dvar; dvar = dvar->next) {
-		res = perform(dvar->count, dvar->data);
+		res = interp_builtin_cmd(dvar->count, dvar->data);
 		if (res != CMD_OK) {
 			printf("%s: %s\n", dvar->data[0], command_errmsg);
 			setenv("autoboot_delay", "NO", 1);
