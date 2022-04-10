@@ -57,20 +57,22 @@ struct chanlist  mpx_chans[NCHANS];
 void
 mpx_init(void)
 {
-	struct mpx 	*mpx;
+	struct mpx 			*mpx;
 	register int i, j;
 
 	MALLOC(mpx, struct mpx *, sizeof(struct mpx *), M_MPX, M_WAITOK);
     simple_lock_init(mpx->mpx_pair, "mpx_lock");
 
-    for(i = 0; i < NCHANS; i++) {
-        LIST_INIT(&mpx_chans[i]);
+    for(i = 0; i < NGROUPS; i++) {
+    	LIST_INIT(&mpx_grps[i]);
     }
 
-    for(j = 0; j < NGROUPS; j++) {
-        LIST_INIT(&mpx_grps[j]);
-    }
+	for(j = 0; j < NCHANS; j++) {
+		  LIST_INIT(&mpx_chans[j]);
+	}
 }
+
+
 
 struct mpx_writer *
 mpx_writer(mpx, size, buffer, state)
@@ -119,14 +121,14 @@ mpx_reader(mpx, size, buffer, state)
 }
 
 void
-mpx_create_group(gp, index)
-    struct mpx_group *gp;
+mpx_create_group(index)
     int index;
 {
     struct grplist *group;
+    struct mpx_group *gp;
 
     group = &mpx_grps[index];
-    gp = (struct mpx_group *) malloc(sizeof(struct mpx_group *), M_MPX, M_WAITOK);
+    gp = (struct mpx_group *)calloc(NGROUPS, sizeof(struct mpx_group *), M_MPX, M_WAITOK);
     gp->mpg_index = index;
 
     LIST_INSERT_HEAD(group, gp, mpg_node);
@@ -162,15 +164,15 @@ mpx_group_remove(gp, index)
 }
 
 void
-mpx_create_channel(cp, gp, index, flags)
-    struct mpx_chan *cp;
+mpx_create_channel(gp, index, flags)
 	struct mpx_group *gp;
     int index, flags;
 {
     struct chanlist *chan;
+    struct mpx_chan *cp;
 
     chan = &mpx_chans[index];
-    cp = (struct mpx_chan *) malloc(sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
+    cp = (struct mpx_chan *)calloc(NCHANS, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
     cp->mpc_index = index;
     cp->mpc_flags = flags;
     cp->mpc_group = gp;

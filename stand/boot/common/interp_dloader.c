@@ -40,14 +40,14 @@
 
 struct bootblk_command commands[] = {
 		COMMON_COMMANDS,
-		{	"local", "List local variables", command_local },
-		{	"lunset", "Unset local variable", command_lunset },
-		{	"lunsetif", "Unset local variable if kenv variable is true", command_lunsetif },
-		{	"loadall", "Load kernel + modules", command_loadall },
-		{	"menuclear", "Clear all menus", command_menuclear },
-		{	"menuitem", "Add menu bullet", command_menuitem },
-		{	"menuadd", "Add script line for bullet", command_menuadd },
-		{	"menu", "Run menu system", command_menu },
+		{ "local", "List local variables", command_local },
+		{ "lunset", "Unset local variable", command_lunset },
+		{ "lunsetif", "Unset local variable if kenv variable is true", command_lunsetif },
+		{ "loadall", "Load kernel + modules", command_loadall },
+		{ "menuclear", "Clear all menus", command_menuclear },
+		{ "menuitem", "Add menu bullet", command_menuitem },
+		{ "menuadd", "Add script line for bullet", command_menuadd },
+		{ "menu", "Run menu system", command_menu },
 		{ NULL,	NULL, NULL },
 };
 

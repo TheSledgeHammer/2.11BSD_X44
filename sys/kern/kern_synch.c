@@ -13,25 +13,26 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
+#include <sys/ktrace.h>
 #include <sys/signal.h>
 #include <sys/signalvar.h>
-#include <sys/gsched.h>
+#include <sys/gsched_edf.h>
+#include <sys/gsched_cfs.h>
 
 #include <machine/cpu.h>
 
 #include <vm/include/vm.h>
 
 /* decay 95% of `p_pctcpu' in 60 seconds; see CCPU_SHIFT before changing */
-fixpt_t	ccpu = 		0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
-#define	CCPU_SHIFT	11
+fixpt_t	ccpu = 				0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
+#define	CCPU_SHIFT			11
 
-#define	SQSIZE		16						/* Must be power of 2 */
-#define	HASH(x)		(((int)x >> 5) & (SQSIZE - 1))
-#define	SCHMAG		8/10
-#define	PPQ			(128 / NQS)				/* priorities per queue */
-
-struct proc 		*slpque[SQSIZE];
-int					lbolt;					/* once a second sleep address */
+#define	SQSIZE				128						/* Must be power of 2 */
+#define	HASH(x)				(((long)x >> 5) & (SQSIZE - 1))
+#define	SCHMAG				8/10
+#define	PPQ					(128 / NQS)				/* priorities per queue */
+TAILQ_HEAD(sleepque, proc) 	slpque[SQSIZE];
+int							lbolt;					/* once a second sleep address */
 
 /*
  * Force switch among equal priority processes every 100ms.
@@ -101,7 +102,7 @@ schedcpu(arg)
 			setpri(p);
 		}
 		if(edf_schedcpu(p)) {
-			if((p != curproc()) &&
+			if((p != curproc) &&
 					p->p_stat == SRUN &&
 					(p->p_flag & P_INMEM) &&
 					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
@@ -168,11 +169,11 @@ int
 tsleep(ident, priority, wmesg, timo)
 	void *ident;
 	int	priority;
+	char	*wmesg;
 	u_short	timo;
-	const char	*wmesg;
 {
 	register struct proc *p = u.u_procp;
-	register struct proc **qp;
+	register struct sleepque *qp;
 	int	s;
 	int	sig, catch = priority & PCATCH;
 	void	endtsleep;
@@ -190,7 +191,7 @@ tsleep(ident, priority, wmesg, timo)
 		 * was being used but for now avoid network interrupts that might cause
 		 * another panic.
 		 */
-		(void) _splnet();
+		(void)splnet();
 		noop();
 		splx(s);
 		return (0);
@@ -204,10 +205,10 @@ tsleep(ident, priority, wmesg, timo)
 	p->p_slptime = 0;
 	p->p_pri = priority & PRIMASK;
 	qp = &slpque[HASH(ident)];
-	p->p_link = *qp;
-	*qp = p;
-	if (timo)
-		timeout(endtsleep, (caddr_t) p, timo);
+	TAILQ_INSERT_TAIL(qp, p, p_link);
+	if (timo) {
+		timeout((void*) endtsleep, (caddr_t) p, timo);
+	}
 	/*
 	 * We put outselves on the sleep queue and start the timeout before calling
 	 * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
@@ -216,7 +217,7 @@ tsleep(ident, priority, wmesg, timo)
 	 * If the wakeup happens while we're stopped p->p_wchan will be 0 upon
 	 * return from CURSIG.
 	 */
-	if ( catch) {
+	if (catch) {
 		p->p_flag |= P_SINTR;
 		if (sig == CURSIG(p)) {
 			if (p->p_wchan)
@@ -247,7 +248,7 @@ resume:
 			return (EWOULDBLOCK);
 		}
 	} else if (timo)
-		untimeout(endtsleep, (caddr_t) p);
+		untimeout((void *)endtsleep, (caddr_t) p);
 	if ( catch && (sig != 0 || (sig = CURSIG(p)))) {
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_CSW))
@@ -268,11 +269,17 @@ int
 ltsleep(ident, priority, wmesg, timo, interlock)
 	void 		*ident;
 	int			priority;
+	char		*wmesg;
 	u_short		timo;
-	const char	*wmesg;
 	__volatile struct lock_object *interlock;
 {
-	return (tsleep(ident, priority, wmesg, timo));
+	int error;
+
+	simple_lock(interlock);
+	error = tsleep(ident, priority, wmesg, timo);
+	simple_unlock(interlock);
+
+	return (error);
 }
 
 /*
@@ -312,7 +319,7 @@ endtsleep(p)
  */
 void
 sleep(chan, pri)
-	caddr_t chan;
+	void *chan;
 	int pri;
 {
 	register int priority = pri;
@@ -322,23 +329,23 @@ sleep(chan, pri)
 	}
 
 	u.u_error = tsleep(chan, priority, "sleep", 0);
-/*
- * sleep does not return anything.  If it was a non-interruptible sleep _or_
- * a successful/normal sleep (one for which a wakeup was done) then return.
-*/
-	if	((priority & PCATCH) == 0 || (u.u_error == 0)) {
+	/*
+	 * sleep does not return anything.  If it was a non-interruptible sleep _or_
+	 * a successful/normal sleep (one for which a wakeup was done) then return.
+	 */
+	if ((priority & PCATCH) == 0 || (u.u_error == 0)) {
 		return;
 	}
-/*
- * XXX - compatibility uglyness.
- *
- * The tsleep() above will leave one of the following in u_error:
- *
- * 0 - a wakeup was done, this is handled above
- * EWOULDBLOCK - since no timeout was passed to tsleep we will not see this
- * EINTR - put into u_error for trap.c to find (interrupted syscall)
- * ERESTART - system call to be restared
-*/
+	/*
+	 * XXX - compatibility uglyness.
+	 *
+	 * The tsleep() above will leave one of the following in u_error:
+	 *
+	 * 0 - a wakeup was done, this is handled above
+	 * EWOULDBLOCK - since no timeout was passed to tsleep we will not see this
+	 * EINTR - put into u_error for trap.c to find (interrupted syscall)
+	 * ERESTART - system call to be restared
+	 */
 	longjmp(u.u_procp->p_addr, &u.u_qsave);
 	/*NOTREACHED*/
 }
@@ -350,15 +357,13 @@ void
 unsleep(p)
 	register struct proc *p;
 {
-	register struct proc **hp;
+	register struct sleepque *hp;
 	register int s;
 
 	s = splhigh();
 	if (p->p_wchan) {
 		hp = &slpque[HASH(p->p_wchan)];
-		while (*hp != p)
-			hp = &(*hp)->p_link;
-		*hp = p->p_link;
+		TAILQ_REMOVE(hp, p, p_link);
 		p->p_wchan = 0;
 	}
 	splx(s);
@@ -369,10 +374,10 @@ unsleep(p)
  */
 void
 wakeup(chan)
-	register caddr_t chan;
+	register const void *chan;
 {
-	register struct proc *p, **q;
-	struct proc **qp;
+	register struct proc *p, *q;
+	struct sleepque *qp;
 	int s;
 
 	/*
@@ -382,12 +387,13 @@ wakeup(chan)
 	s = splclock();
 	qp = &slpque[HASH(chan)];
 restart:
-	for (q = qp; p == *q; ) {
-		if (p->p_stat != SSLEEP && p->p_stat != SSTOP)
+	TAILQ_FOREACH(q, qp, p_link) {
+		if (p->p_stat != SSLEEP && p->p_stat != SSTOP) {
 			panic("wakeup");
-		if (p->p_wchan==chan) {
+		}
+		if (p->p_wchan == chan) {
 			p->p_wchan = 0;
-			*q = p->p_link;
+			q = TAILQ_NEXT(p, p_link);
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
 				if (p->p_slptime > 1)
@@ -404,15 +410,16 @@ restart:
 				if ((p->p_flag & SLOAD) == 0) {
 					if (runout != 0) {
 						runout = 0;
-						wakeup((caddr_t)&runout);
+						wakeup((caddr_t) & runout);
 					}
 				}
 				/* END INLINE EXPANSION */
 				goto restart;
 			}
 			p->p_slptime = 0;
-		} else
-			q = &p->p_link;
+		} else {
+			q = TAILQ_NEXT(p, p_link);//&p->p_link;
+		}
 	}
 	splx(s);
 }
@@ -439,7 +446,7 @@ setrun(p)
 		break;
 	case SSTOP:
 	case SSLEEP:
-		unsleep(p);		/* e.g. when sending signals */
+		unsleep(p); /* e.g. when sending signals */
 		break;
 
 	case SIDL:
@@ -456,9 +463,9 @@ setrun(p)
 	if ((p->p_flag & P_SLOAD) == 0) {
 		if (runout != 0) {
 			runout = 0;
-			wakeup((caddr_t)&runout);
+			wakeup((caddr_t) &runout);
 		} else {
-			wakeup((caddr_t)&proc0);
+			wakeup((caddr_t) &proc0);
 		}
 	}
 }
@@ -592,9 +599,11 @@ loop:
 	noproc = 0;
 	runrun = 0;
 #ifdef DIAGNOSTIC
-	for (p = qs; p; p = p->p_link)
-		if (p->p_stat != SRUN)
+	for(p = TAILQ_FIRST(qs); p; p = TAILQ_NEXT(p, p_link)) {
+		if (p->p_stat != SRUN) {
 			panic("swtch SRUN");
+		}
+	}
 #endif
 	pp = NULL;
 	q = NULL;
@@ -602,7 +611,7 @@ loop:
 	/*
 	 * search for highest-priority runnable process
 	 */
-	for (p = qs; p; p = p->p_link) {
+	for (p = TAILQ_FIRST(qs); p; p = TAILQ_NEXT(p, p_link)) {
 		if ((p->p_flag & P_SLOAD) && p->p_pri < n) {
 			pp = p;
 			pq = q;
@@ -618,18 +627,19 @@ loop:
 		idle();
 		goto loop;
 	}
-	if (pq)
-		pq->p_link = p->p_link;
-	else
-		qs = p->p_link;
+	if (pq) {
+		TAILQ_INSERT_AFTER(qs, pq, p, p_link);
+	} else {
+		TAILQ_INSERT_HEAD(qs, p, p_link);
+	}
 	curpri = n;
 	splx(s);
 
 	/*
 	 * Pick a new current process and record its start time.
 	 */
-    cpu_switch(p);
-    microtime(&runtime);
+	cpu_switch(p);
+	microtime(&runtime);
 
 	/*
 	 * the rsave (ssave) contents are interpreted
@@ -637,28 +647,31 @@ loop:
 	 */
 	n = p->p_flag & P_SSWAP;
 	p->p_flag &= ~P_SSWAP;
-	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
+	longjmp(p->p_addr, n ? &u.u_ssave : &u.u_rsave);
 }
 
 void
 setrq(p)
 	register struct proc *p;
 {
-	register struct proc *q;
-	register int s;
+	register int s, which;
 
 	s = splhigh();
+    which = p->p_pri >> 2;
 #ifdef DIAGNOSTIC
-	{			/* see if already on the run queue */
+	{
+		/* see if already on the run queue */
 		register struct proc *q;
 
-		for (q = qs;q != NULL;q = q->p_link)
-			if (q == p)
-				panic("setrq");
+		for (q = TAILQ_FIRST(&qs[which]); q != NULL; q = TAILQ_NEXT(q, p_link)) {
+	        if (q == p) {
+	        	panic("setrq");
+	        }
+		}
 	}
 #endif
-	p->p_link = qs;
-	qs = p;
+    TAILQ_INSERT_HEAD(&qs[which], p, p_link);
+    whichqs |= 1 << which;
 	splx(s);
 }
 
@@ -672,19 +685,26 @@ remrq(p)
 	register struct proc *p;
 {
 	register struct proc *q;
-	register int s;
+	register int s, which;
 
 	s = splhigh();
-	if (p == qs)
-		qs = p->p_link;
-	else {
-		for (q = qs; q; q = q->p_link)
-			if (q->p_link == p) {
-				q->p_link = p->p_link;
-				goto done;
-			}
-			panic("remrq");
-	}
+    which = p->p_pri >> 2;
+    if ((whichqs & (1 << which)) == 0) {
+    	panic("remrq");
+    }
+    if (p == TAILQ_FIRST(&qs[which])) {
+    	TAILQ_REMOVE(&qs[which], p, p_link);
+    } else {
+    	 for (q = TAILQ_FIRST(&qs[which]); q != NULL; q = TAILQ_NEXT(q, p_link)) {
+    		 if (q == p) {
+    			 TAILQ_REMOVE(&qs[which], p, p_link);
+    			 whichqs &= ~(1 << which);
+    			 goto done;
+    		 }
+    		 panic("remrq");
+    	 }
+    }
+
 done:
 	splx(s);
 }
@@ -699,17 +719,18 @@ getrq(p)
 	register int s;
 
 	s = splhigh();
-	if(p == qs) {
-		qs = p->p_link;
+	if (p == TAILQ_FIRST(qs)) {
+		return (p);
 	} else {
-		for (q = qs; q; q = q->p_link) {
-			if (q->p_link == p) {
-				return q->p_link;
-			} else {
-				goto done;
-			}
+		for (q = TAILQ_FIRST(qs); q != NULL; q = TAILQ_NEXT(q, p_link)) {
+            if (q == p) {
+                return (q);
+            }  else {
+                goto done;
+            }
 		}
 	}
+
 done:
 	panic("getrq");
 	splx(s);
@@ -726,7 +747,8 @@ rqinit(void)
 	register int i;
 
 	for (i = 0; i < NQS; i++) {
-		qs[i].ph_link = qs[i].ph_rlink = (struct proc *)&qs[i];
+		TAILQ_INIT(&qs[i]);
+		//qs[i].ph_link = qs[i].ph_rlink = (struct proc *)&qs[i];
 	}
 }
 

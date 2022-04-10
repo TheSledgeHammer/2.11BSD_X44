@@ -89,9 +89,9 @@ extern struct chanlist      mpx_chans[];
 #define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpp_lock)
 
 void                		mpx_init(void);
-void                		mpx_create_group(struct mpx_group *, int);
+void                		mpx_create_group(int);
 struct mpx_group    		*mpx_get_group(int);
-void                		mpx_create_channel(struct mpx_chan *, struct mpx_group *, int, int);
+void                		mpx_create_channel(struct mpx_group *, int, int);
 struct mpx_chan     		*mpx_get_channel(int);
 
 #endif /* SYS_MPX_H_ */

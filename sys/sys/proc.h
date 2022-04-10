@@ -73,7 +73,7 @@ struct	proc {
     fixpt_t				p_pctcpu;	 	/* %cpu for this process during p_swtime */
 
     caddr_t	            p_wchan;		/* event process is awaiting */
-	caddr_t	            p_wmesg;	 	/* Reason for sleep. */
+	caddr_t       		p_wmesg;	 	/* Reason for sleep. */
 	u_int				p_swtime;	 	/* Time swapped in or out. */
 	struct callout 		p_tsleep_ch;	/* callout for tsleep */
 
@@ -121,7 +121,7 @@ struct	proc {
 
     void				*p_thread;		/* Id for this "thread"; Mach glue. XXX */
 
-    struct proc 	    *p_link;		/* linked list of running processes */
+    TAILQ_ENTRY(proc)	p_link;			/* linked list of running processes */
 
     struct user			*p_addr;		/* virtual address of u. area */
 
@@ -289,10 +289,8 @@ struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
 
 #define	NQS	32							/* 32 run queues. */
 extern int	whichqs;					/* Bit mask summary of non-empty Q's. */
-struct	prochd {
-	struct	proc *ph_link;				/* Linked list of running processes. */
-	struct	proc *ph_rlink;
-} qs[NQS];
+TAILQ_HEAD(prochd, proc);
+struct prochd qs[NQS];					/* Linked list of running processes. */
 
 struct emul emul_211bsd;				/* emulation struct */
 
@@ -306,8 +304,8 @@ void		remrq(struct proc *);
 struct proc getrq(struct proc *);
 void		swtch();
 void		sleep(void *, int);
-int			tsleep(void *, int, char *, int);
-int 		ltsleep(void *, int, char *, int, __volatile struct lock_object *);
+int			tsleep(void *, int, char *, u_short);
+int 		ltsleep(void *, int, char *, u_short, __volatile struct lock_object *);
 void		unsleep(struct proc *);
 void		wakeup(const void *);
 void		reschedule(struct proc *);

@@ -115,9 +115,9 @@ struct gsched_group {
 struct gsched_grphead;
 CIRCLEQ_HEAD(gsched_grphead, gsched_group);
 struct gsched_domain {
-	struct gsched_grphead	 gsd_header;
-	int 			gsd_nentries;
-	int 			gsd_refcnt;
+	struct gsched_grphead	gsd_header;
+	int 					gsd_nentries;
+	int 					gsd_refcnt;
 };
 
 
