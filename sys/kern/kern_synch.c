@@ -387,7 +387,7 @@ wakeup(chan)
 	s = splclock();
 	qp = &slpque[HASH(chan)];
 restart:
-	TAILQ_FOREACH(q, qp, p_link) {
+	for(q = TAILQ_FIRST(qp); q != NULL; p = q) {
 		if (p->p_stat != SSLEEP && p->p_stat != SSTOP) {
 			panic("wakeup");
 		}
@@ -418,7 +418,7 @@ restart:
 			}
 			p->p_slptime = 0;
 		} else {
-			q = TAILQ_NEXT(p, p_link);//&p->p_link;
+			q = TAILQ_NEXT(p, p_link);
 		}
 	}
 	splx(s);
@@ -663,10 +663,11 @@ setrq(p)
 		/* see if already on the run queue */
 		register struct proc *q;
 
-		for (q = TAILQ_FIRST(&qs[which]); q != NULL; q = TAILQ_NEXT(q, p_link)) {
-	        if (q == p) {
-	        	panic("setrq");
-	        }
+		for (q = TAILQ_FIRST(&qs[which]); q != NULL;
+				q = TAILQ_NEXT(q, p_link)) {
+			if (q == p) {
+				panic("setrq");
+			}
 		}
 	}
 #endif
@@ -748,7 +749,20 @@ rqinit(void)
 
 	for (i = 0; i < NQS; i++) {
 		TAILQ_INIT(&qs[i]);
-		//qs[i].ph_link = qs[i].ph_rlink = (struct proc *)&qs[i];
+	}
+}
+
+/*
+ * Initialize the (doubly-linked) sleep queues
+ * to be empty.
+ */
+void
+sqinit(void)
+{
+	register int i;
+
+	for (i = 0; i < SQSIZE; i++) {
+		TAILQ_INIT(&slpque[i]);
 	}
 }
 

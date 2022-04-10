@@ -313,6 +313,7 @@ void		reschedule(struct proc *);
 void		procinit(void);
 void		proc_init(struct proc *);
 void		rqinit(void);
+void		sqinit(void);
 
 int 		chgproccnt(uid_t, int);
 int			acct_process(struct proc *);

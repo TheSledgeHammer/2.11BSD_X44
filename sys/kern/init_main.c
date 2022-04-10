@@ -256,6 +256,7 @@ main(framep)
 	(void)chgproccnt(0, 1);
 
 	rqinit();
+	sqinit();
 
 	/* Configure virtual memory system, set vm rlimits. */
 	vm_init_limits(p);
