@@ -5,10 +5,17 @@
 INCSDIR= 	/usr/include/stand/boot/common
 
 SRCS+=		boot.c commands.c console.c devopen.c environment.c 	\
-			fileload.c getopt.c interp_backslash.c interp_dloader.c \
-			interp_parse.c interp_simple.c interp.c load_exec.c 	\
-			load_ksyms.c ls.c misc.c pager.c panic.c readdir.c 		\
-			smbios.c ufsread.c
+			fileload.c getopt.c interp_backslash.c interp_parse.c 	\
+			interp.c load_exec.c load_ksyms.c ls.c misc.c pager.c 	\
+			panic.c readdir.c smbios.c ufsread.c
+			
+.if ${LOADER_INTERP} == "dloader"
+SRCS+=	interp_dloader.c
+.elif ${LOADER_INTERP} == "simp"
+SRCS+=	interp_simple.c
+.else
+.error Unknown interpreter ${LOADER_INTERP}
+.endif
 
 INCS=		boot2.h bootstrap.h commands.h paths.h rbx.h smbios.h
 

@@ -5,6 +5,10 @@ NO_OBJ=t
 .include <bsd.init.mk>
 .include <bsd.loader.mk>
 
+.if ${LOADER_INTERP} == "dloader"
+LOADER_INTERP=	dloader
+.endif
+
 SUBDIR=			boot0 boot2 btx cdboot libi386 loader
 
 # Enable the following.

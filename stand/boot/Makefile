@@ -1,6 +1,20 @@
 # $FreeBSD: src/sys/boot/Makefile,v 1.18 2003/08/16 02:48:20 obrien Exp $
 
-SUBDIR= 	arch common dloader #efi fdt uboot
+.include <bsd.loader.mk>
+
+SUBDIR= 	arch common
+
+.if ${MK_DLOADER} == "yes"
+SUBDIR+=	dloader
+.endif
+
+.if ${MK_EFI} != "no"
+SUBDIR+=	efi
+.endif
+
+.if ${MK_UBOOT} != "no"
+SUBDIR+=	fdt uboot
+.endif
 
 INCSDIR= 	/usr/include/stand/boot
 

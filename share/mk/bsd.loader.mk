@@ -22,12 +22,35 @@ LIBCSRC=					/lib/libc
 
 BOOTOBJ=					${BOOTSTAND}
 
+# Interpreter Support
+MK_DLOADER=					yes
+
+#
+# Have a sensible default
+#
+.if ${MK_DLOADER} == "yes"
+LOADER_DEFAULT_INTERP?= 	dloader
+.else
+LOADER_DEFAULT_INTERP?=		simp
+.endif
+LOADER_INTERP?=	${LOADER_DEFAULT_INTERP}
+
 # BINDIR is where we install
 BINDIR?=					/boot
 
 # Machine support
 LOADER_MACHINE?=			${MACHINE}
 LOADER_MACHINE_ARCH?=		${MACHINE_ARCH}
+
+# Machine Dependent
+MK_EFI=						no	
+MK_UBOOT=					no
+
+.if ${MK_UBOOT} == "yes"
+MK_FDT=						yes
+.else
+MK_FDT=						no
+.endif
 
 # Filesystem support
 LOADER_CD9660_SUPPORT?=		yes

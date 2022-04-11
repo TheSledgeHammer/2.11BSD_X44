@@ -852,11 +852,17 @@ MKSTATICPIE?=	no
 .endif
 
 #
+# bootloader	
+# MKBOOT: to be added to MKVARS.yes once current issues are fixed. see TODO.md 
+#
+
+#
 # MK* options which default to "yes".
 #
 _MKVARS.yes= \
 	MKATF \
 	MKBINUTILS \
+	MKBOOT \
 	MKBSDTAR \
 	MKCOMPLEX MKCVS MKCXX \
 	MKDOC MKDTC \

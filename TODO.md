@@ -12,7 +12,6 @@ A General todo list. Don't hesitate to add to this list. :)
 			
 ### Kernel:
 - Building Kernel/Arch:
-	- Config:
 	- Compile:
 		- numerous compilation errors 
 
@@ -26,6 +25,17 @@ A General todo list. Don't hesitate to add to this list. :)
 ## share:
 
 ## tools:
+
+## stand:
+- boot:
+	- add below to relavent Makefiles
+		- dloader/loader.conf
+		- dloader/dloader.menu
+		- i386/loader/dloader.rc
+	- other files to setup for compiler
+		- common/help.common
+		- common/merge_help.awk
+		- i386/loader/help.i386
 
 ## usr.bin:
 
@@ -57,7 +67,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
-- com (Disabled): Has several comiler errors.
+- com (Disabled): Has several compiler errors.
 - usb (Disabled): Has several compiler errors.
 
 - Essential Driver Support:

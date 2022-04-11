@@ -137,11 +137,14 @@ _SRC_TOP_OBJ_=
 # BUILD_${dir}=no, or that have no ${dir}/Makefile.
 #
 _SUBDIR=	tools .WAIT lib
-#.if ${MKLLVM} != "no"
-#_SUBDIR+=	external/bsd/compiler_rt
-#.endif
-_SUBDIR+=	include external crypto/external bin
-_SUBDIR+=	games libexec sbin usr.bin
+.if ${MKLLVM} != "no"
+_SUBDIR+=	contrib/compiler_rt
+.endif
+_SUBDIR+=	include contrib bin games 
+_SUBDIR+=	libexec sbin usr.bin usr.lib
+.if ${MKBOOT} != "no"
+_SUBDIR+=	stand
+.endif
 _SUBDIR+=	usr.sbin share sys etc tests compat
 _SUBDIR+=	.WAIT rescue .WAIT distrib regress
 

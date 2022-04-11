@@ -2,9 +2,10 @@
 
 .include <bsd.loader.mk>
 
-LOADER?=		loader
+LOADER?=		loader_${LOADER_INTERP}
 PROG=			${LOADER}.sym
-NEWVERSWHAT?=		"bootstrap loader" i386
+INTERNALPROG=
+NEWVERSWHAT?=	"bootstrap loader" i386
 #VERSION_FILE=	${.CURDIR}/../loader/version
 
 .PATH:			${BOOTSRC}/i386/loader
@@ -64,7 +65,10 @@ ${LOADER}: ${LOADER}.bin ${BTXLDR} ${BTXKERN}
 
 ${LOADER}.bin: ${LOADER}.sym
 	${STRIPBIN} -R .comment -R .note -o ${.TARGET} ${.ALLSRC}
-	
+
+.if ${LOADER_INTERP} == ${LOADER_DEFAULT_INTERP}
+LINKS+=		${BINDIR}/${LOADER} ${BINDIR}/loader
+.endif	
 FILES+=	${LOADER}
 FILESMODE_${LOADER}= ${BINMODE} -b
 
