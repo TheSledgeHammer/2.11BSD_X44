@@ -501,7 +501,7 @@ wddetach(struct device *self, int flags)
 void
 wdstrategy(struct buf *bp)
 {
-	struct wd_softc *wd = device_lookup(&wd_cd, WDUNIT(bp->b_dev));
+	struct wd_softc *wd = wd_cd.cd_devs[WDUNIT(bp->b_dev)];
 	struct disklabel *lp = wd->sc_dk.dk_label;
 	daddr_t blkno;
 	int s;
@@ -905,7 +905,7 @@ wdopen(dev_t dev, int flag, int fmt, struct proc *p)
 	int part, error;
 
 	WDCDEBUG_PRINT(("wdopen\n"), DEBUG_FUNCS);
-	wd = device_lookup(&wd_cd, WDUNIT(dev));
+	wd = wd_cd.cd_devs[WDUNIT(dev)];
 	if (wd == NULL)
 		return (ENXIO);
 
@@ -984,7 +984,7 @@ bad4:
 int
 wdclose(dev_t dev, int flag, int fmt, struct proc *p)
 {
-	struct wd_softc *wd = device_lookup(&wd_cd, WDUNIT(dev));
+	struct wd_softc *wd = wd_cd.cd_devs[WDUNIT(dev)];
 	int part = WDPART(dev);
 	int error;
 
@@ -1146,7 +1146,7 @@ wdperror(const struct wd_softc *wd)
 int
 wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 {
-	struct wd_softc *wd = device_lookup(&wd_cd, WDUNIT(dev));
+	struct wd_softc *wd = wd_cd.cd_devs[WDUNIT(dev)];
 	int error = 0;
 #ifdef __HAVE_OLD_DISKLABEL
 	struct disklabel *newlabel = NULL;
@@ -1443,7 +1443,7 @@ wdsize(dev_t dev)
 
 	WDCDEBUG_PRINT(("wdsize\n"), DEBUG_FUNCS);
 
-	wd = device_lookup(&wd_cd, WDUNIT(dev));
+	wd = wd_cd.cd_devs[WDUNIT(dev)];
 	if (wd == NULL)
 		return (-1);
 
@@ -1483,7 +1483,7 @@ wddump(dev_t dev, daddr_t blkno, caddr_t va, size_t size)
 		return EFAULT;
 	wddoingadump = 1;
 
-	wd = device_lookup(&wd_cd, WDUNIT(dev));
+	wd = wd_cd.cd_devs[WDUNIT(dev)];
 	if (wd == NULL)
 		return (ENXIO);
 

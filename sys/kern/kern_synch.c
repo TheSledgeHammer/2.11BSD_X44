@@ -717,13 +717,14 @@ getrq(p)
 	register struct proc *p;
 {
 	register struct proc *q;
-	register int s;
+	register int s, which;
 
 	s = splhigh();
-	if (p == TAILQ_FIRST(qs)) {
+ 	which = p->p_pri >> 2;
+	if (p == TAILQ_FIRST(qs[which])) {
 		return (p);
 	} else {
-		for (q = TAILQ_FIRST(qs); q != NULL; q = TAILQ_NEXT(q, p_link)) {
+		for (q = TAILQ_FIRST(qs[which]); q != NULL; q = TAILQ_NEXT(q, p_link)) {
             if (q == p) {
                 return (q);
             }  else {

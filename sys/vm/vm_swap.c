@@ -100,7 +100,7 @@ swapinit()
 	struct swdevt *swp;
 	int error;
 
-	sp = swbuf;
+	sp = &swbuf;
 	p = &proc0;	/* XXX */
 
 	/*

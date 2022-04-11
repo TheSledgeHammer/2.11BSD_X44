@@ -662,15 +662,13 @@ sysctl_file(where, sizep)
 
 	buflen = *sizep;
 	if (where == NULL) {
-		for (i = 0, fp = file; fp < fileNFILE; fp++)
-			if (fp->f_count) i++;
-
 #define	FPTRSZ	sizeof (struct file *)
 #define	FILESZ	sizeof (struct file)
+#define	FILEHD	sizeof (filehead)
 		/*
 		 * overestimate by 5 files
 		 */
-		*sizep = (i + 5) * (FILESZ + FPTRSZ);
+		*sizep = FILEHD + (nfiles + 10) * (FILESZ + FPTRSZ);
 		return (0);
 	}
 

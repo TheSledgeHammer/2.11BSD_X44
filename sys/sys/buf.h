@@ -66,7 +66,7 @@ struct buf {
 	/* 2.11BSD Orig (Deprecated) */
 	//struct	buf 		*b_forw, *b_back;	/* hash chain (2 way street) */
 	//struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
-	struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
+	//struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
 
 	/* 2.11BSD New */
 	union {
@@ -299,8 +299,8 @@ extern char		*buffers;			/* The buffer contents. */
 extern int		bufpages;			/* Number of memory pages in the buffer pool. */
 extern struct	buf *swbuf;			/* Swap I/O buffer headers. */
 extern int		nswbuf;				/* Number of swap I/O buffer headers. */
-TAILQ_HEAD(swqueue, buf)  bswlist;	/* Head of swap I/O buffer headers free list. */
-struct	buf 	*bclnlist;			/* Head of cleaned page list. */
+TAILQ_HEAD(swqueue, buf) bswlist;	/* Head of swap I/O buffer headers free list. */
+struct buf 		*bclnlist;			/* Head of cleaned page list. */
 
 
 __BEGIN_DECLS

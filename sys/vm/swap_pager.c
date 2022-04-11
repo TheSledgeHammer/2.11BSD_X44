@@ -655,17 +655,17 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * Get a swap buffer header and initialize it.
 	 */
 	s = splbio();
-	while (bswlist.b_actf == NULL) {
+	while (TAILQ_FIRST(&bswlist) == NULL) {
 #ifdef DEBUG
 		if (swpagerdebug & SDB_ANOM)
 			printf("swap_pager_io: wait on swbuf for %x (%d)\n",
 			       m, flags);
 #endif
-		bswlist.b_flags |= B_WANTED;
+		TAILQ_INIT(&bswlist);
+		TAILQ_FIRST(&bswlist)->b_flags |= B_WANTED;
 		tsleep((caddr_t)&bswlist, PSWP+1, "swpgiobuf", 0);
 	}
-	bp = bswlist.b_actf;
-	bswlist.b_actf = bp->b_actf;
+	TAILQ_INSERT_HEAD(&bswlist, bp, b_actq);
 	splx(s);
 	bp->b_flags = B_BUSY | (flags & B_READ);
 	bp->b_proc = &proc0;	/* XXX (but without B_PHYS set this is ok) */
@@ -776,12 +776,11 @@ swap_pager_io(swp, mlist, npages, flags)
 #endif
 	rv = (bp->b_flags & B_ERROR) ? VM_PAGER_ERROR : VM_PAGER_OK;
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	bp->b_actf = bswlist.b_actf;
-	bswlist.b_actf = bp;
+	TAILQ_INSERT_HEAD(&bswlist, bp, b_actq);
 	if (bp->b_vp)
 		brelvp(bp);
-	if (bswlist.b_flags & B_WANTED) {
-		bswlist.b_flags &= ~B_WANTED;
+	if (TAILQ_FIRST(&bswlist)->b_flags & B_WANTED) {
+		TAILQ_FIRST(&bswlist)->b_flags &= ~B_WANTED;
 		wakeup(&bswlist);
 	}
 	if ((flags & B_READ) == 0 && rv == VM_PAGER_OK) {
@@ -990,12 +989,11 @@ swap_pager_iodone(bp)
 	}
 		
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	bp->b_actf = bswlist.b_actf;
-	bswlist.b_actf = bp;
+	TAILQ_INSERT_HEAD(&bswlist, bp, b_actq);
 	if (bp->b_vp)
 		brelvp(bp);
-	if (bswlist.b_flags & B_WANTED) {
-		bswlist.b_flags &= ~B_WANTED;
+	if (TAILQ_FIRST(&bswlist)->b_flags & B_WANTED) {
+		TAILQ_FIRST(&bswlist)->b_flags &= ~B_WANTED;
 		wakeup(&bswlist);
 	}
 	wakeup(&vm_pages_needed);
