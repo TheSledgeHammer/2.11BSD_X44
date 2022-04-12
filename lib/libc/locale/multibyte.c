@@ -111,7 +111,7 @@ mbsinit(const mbstate_t *ps)
 		rl = _ps_to_runelocale(ps);
 
 	/* mbsinit should cause no error... */
-	err0 = _citrus_ctype_mbsinit(rl->citrus, _ps_to_private_const(ps), &ret);
+	err0 = _citrus_ctype_mbsinit(rl, _ps_to_private_const(ps), &ret);
 	if (err0)
 		errno = err0;
 

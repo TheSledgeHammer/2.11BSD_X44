@@ -55,7 +55,6 @@ void
 interp_init(void)
 {
 	setenv("script.lang", "dloader", 1);
-//    setenv("base", DirBase, 1);
 
 	/* Read our default configuration. */
 	 if(interp_include("/boot/loader.rc") != CMD_OK) {

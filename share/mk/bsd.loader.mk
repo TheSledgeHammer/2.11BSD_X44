@@ -11,6 +11,7 @@ BOOTSTAND?=					/stand
 BOOTSRC?=					/stand/boot
 LIBKERN?= 					${KERNSRCDIR}/lib/libkern
 LIBSA?=						${KERNSRCDIR}/lib/libsa
+BOOTARCH?=					${BOOTSRC}/arch
 
 EFISRC=						${BOOTSRC}/efi
 EFIINC=						${EFISRC}/include
@@ -22,8 +23,16 @@ LIBCSRC=					/lib/libc
 
 BOOTOBJ=					${BOOTSTAND}
 
+# Interpreter Files (loader, menu & conf)
+# Accommodates for different naming conventions (i.e. dloader)
+INTERP_CONF=				loader.conf
+INTERP_MENU=				menu.rc
+INTERP_RC=					loader.rc
+
 # Interpreter Support
 MK_DLOADER=					yes
+MK_FORTH=					no
+MK_LUA=						no
 
 #
 # Have a sensible default

@@ -2,7 +2,7 @@
 
 .include <bsd.loader.mk>
 
-LOADER?=		loader_${LOADER_INTERP}
+LOADER?=		loader
 PROG=			${LOADER}.sym
 INTERNALPROG=
 NEWVERSWHAT?=	"bootstrap loader" i386
