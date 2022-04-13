@@ -118,7 +118,7 @@ namei(ndp)
 	ndp->ni_loopcnt = 0;
 #ifdef KTRACE
 	if (KTRPOINT(cnp->cn_proc, KTR_NAMEI))
-		ktrnamei(cnp->cn_proc->p_tracep, cnp->cn_pnbuf);
+		ktrnamei(cnp->cn_proc, cnp->cn_pnbuf);
 #endif
 
 	/*

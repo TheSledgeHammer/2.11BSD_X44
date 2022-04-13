@@ -99,17 +99,17 @@ struct cmdtab {
 };
 
 static const struct cmdtab commands[] = {
-	{ "addr", &fdt_cmd_addr,	0 },
-	{ "alias", &fdt_cmd_nyi,	0 },
-	{ "cd", &fdt_cmd_cd,		CMD_REQUIRES_BLOB },
-	{ "header", &fdt_cmd_hdr,	CMD_REQUIRES_BLOB },
-	{ "ls", &fdt_cmd_ls,		CMD_REQUIRES_BLOB },
+	{ "addr", &fdt_cmd_addr,		0 },
+	{ "alias", &fdt_cmd_nyi,		0 },
+	{ "cd", &fdt_cmd_cd,			CMD_REQUIRES_BLOB },
+	{ "header", &fdt_cmd_hdr,		CMD_REQUIRES_BLOB },
+	{ "ls", &fdt_cmd_ls,			CMD_REQUIRES_BLOB },
 	{ "mknode", &fdt_cmd_mknode,	CMD_REQUIRES_BLOB },
 	{ "mkprop", &fdt_cmd_mkprop,	CMD_REQUIRES_BLOB },
-	{ "mres", &fdt_cmd_mres,	CMD_REQUIRES_BLOB },
-	{ "prop", &fdt_cmd_prop,	CMD_REQUIRES_BLOB },
-	{ "pwd", &fdt_cmd_pwd,		CMD_REQUIRES_BLOB },
-	{ "rm", &fdt_cmd_rm,		CMD_REQUIRES_BLOB },
+	{ "mres", &fdt_cmd_mres,		CMD_REQUIRES_BLOB },
+	{ "prop", &fdt_cmd_prop,		CMD_REQUIRES_BLOB },
+	{ "pwd", &fdt_cmd_pwd,			CMD_REQUIRES_BLOB },
+	{ "rm", &fdt_cmd_rm,			CMD_REQUIRES_BLOB },
 	{ NULL, NULL }
 };
 

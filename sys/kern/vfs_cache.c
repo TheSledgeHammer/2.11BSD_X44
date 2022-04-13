@@ -228,7 +228,7 @@ cache_enter(dvp, vp, cnp)
 	} else if (ncp == TAILQ_FIRST(nclruhead)) {
 		/* reuse an old entry */
 		TAILQ_REMOVE(&nclruhead, ncp, nc_lru);
-		if (ncp->nc_hash.le_prev != 0) {
+		if (LIST_PREV(ncp, nc_hash) != 0) {
 			LIST_REMOVE(ncp, nc_hash);
 			LIST_PREV(ncp, nc_hash) = 0;
 		}

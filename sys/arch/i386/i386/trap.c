@@ -660,14 +660,14 @@ syscall(frame)
 		frame->tf_eflags |= PSL_C;	/* carry bit */
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
-			ktrsyscall(p->p_tracep, code, callp->sy_narg, &args);
+			ktrsyscall(p, code, callp->sy_narg, &args);
 #endif
         goto done;
     }
 
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL))
-		ktrsyscall(p->p_tracep, code, callp->sy_narg, &args);
+		ktrsyscall(p, code, callp->sy_narg, &args);
 #endif
     rval[0] = 0;
 	rval[1] = frame->tf_edx;
@@ -695,7 +695,7 @@ done:
 	userret(p, frame->tf_eip, sticks);
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET)) {
-		ktrsysret(p->p_tracep, code, error, rval[0]);
+		ktrsysret(p, code, error, rval[0]);
 	}
 #endif
 }
@@ -782,6 +782,6 @@ child_return(arg)
 	userret(p, tf->tf_eip, 0);
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET))
-		ktrsysret(p->p_tracep, SYS_fork, 0, 0);
+		ktrsysret(p, SYS_fork, 0, 0);
 #endif
 }

@@ -85,7 +85,7 @@ struct	proc {
 
     char				p_ptracesig;	/* used between parent & traced child */
     int	    			p_traceflag;	/* Kernel trace points. */
-    struct	vnode 	    *p_tracep;		/* Trace to vnode. */
+    struct file 	    *p_tracep;		/* Trace to file. */
     
     struct	vnode 	    *p_textvp;		/* Vnode of executable. */
     
@@ -290,8 +290,8 @@ struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
 
 #define	NQS	32							/* 32 run queues. */
 extern int	whichqs;					/* Bit mask summary of non-empty Q's. */
-TAILQ_HEAD(prochd, proc);
-struct prochd qs[NQS];					/* Linked list of running processes. */
+TAILQ_HEAD(prochd, proc);				/* Linked list of running processes. */
+struct prochd qs[NQS];
 
 struct emul emul_211bsd;				/* emulation struct */
 

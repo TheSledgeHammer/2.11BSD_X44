@@ -173,7 +173,7 @@ swapinit()
 	/*
 	 * Now set up swap buffer headers.
 	 */
-	TAILQ_INSERT_HEAD(&bswlist, sp, b_actq);
+	TAILQ_INIT(&bswlist);
 	for (i = 0; i < nswbuf - 1; i++, sp++) {
 		TAILQ_INSERT_HEAD(&bswlist, sp, b_freelist);
 		sp->b_rcred = sp->b_wcred = p->p_ucred;

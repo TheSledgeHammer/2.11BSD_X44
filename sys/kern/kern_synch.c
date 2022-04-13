@@ -33,7 +33,7 @@ fixpt_t	ccpu = 				0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 #define	PPQ					(128 / NQS)				/* priorities per queue */
 TAILQ_HEAD(sleepque, proc) 	slpque[SQSIZE];
 int							lbolt;					/* once a second sleep address */
-+int                         		whichqs;
+int 						whichqs;
 
 /*
  * Force switch among equal priority processes every 100ms.
@@ -180,7 +180,7 @@ tsleep(ident, priority, wmesg, timo)
 
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
-		ktrcsw(p->p_tracep, 1, 0);
+		ktrcsw(p, 1, 0);
 #endif
 	s = splhigh();
 	if (panicstr) {
@@ -243,7 +243,7 @@ resume:
 		if (sig == 0) {
 #ifdef KTRACE
 			if (KTRPOINT(p, KTR_CSW))
-				ktrcsw(p->p_tracep, 0, 0);
+				ktrcsw(p, 0, 0);
 #endif
 			return (EWOULDBLOCK);
 		}
@@ -252,7 +252,7 @@ resume:
 	if ( catch && (sig != 0 || (sig = CURSIG(p)))) {
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_CSW))
-			ktrcsw(p->p_tracep, 0, 0);
+			ktrcsw(p, 0, 0);
 #endif
 		if (u.u_sigintr & sigmask(sig))
 			return (EINTR);
@@ -260,7 +260,7 @@ resume:
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
-		ktrcsw(p->p_tracep, 0, 0);
+		ktrcsw(p, 0, 0);
 #endif
 	return (0);
 }
@@ -541,16 +541,16 @@ void
 idle_check(void)
 {
     /* If not the idle process, resume the idle process. */
-        if (setjmp(&u.u_rsave)) {
-            //sureg();
-            return;
-        }
-        if (u.u_fpsaved == 0) {
+	if (setjmp(&u.u_rsave)) {
+		//sureg();
+		return;
+	}
+	if (u.u_fpsaved == 0) {
 		//savfp(&u.u_fps);
 		u.u_fpsaved = 1;
 	}
 	longjmp(curproc->p_addr, &u.u_qsave);
-    
+
     /*
 	 * The first save returns nonzero when proc 0 is resumed
 	 * by another process (above); then the second is not done
@@ -598,7 +598,7 @@ loop:
 	noproc = 0;
 	runrun = 0;
 #ifdef DIAGNOSTIC
-	for(p = TAILQ_FIRST(qs); p; p = TAILQ_NEXT(p, p_link)) {
+	for(p = TAILQ_FIRST(&qs); p; p = TAILQ_NEXT(p, p_link)) {
 		if (p->p_stat != SRUN) {
 			panic("swtch SRUN");
 		}
@@ -610,7 +610,7 @@ loop:
 	/*
 	 * search for highest-priority runnable process
 	 */
-	for (p = TAILQ_FIRST(qs); p; p = TAILQ_NEXT(p, p_link)) {
+	for (p = TAILQ_FIRST(&qs); p; p = TAILQ_NEXT(p, p_link)) {
 		if ((p->p_flag & P_SLOAD) && p->p_pri < n) {
 			pp = p;
 			pq = q;

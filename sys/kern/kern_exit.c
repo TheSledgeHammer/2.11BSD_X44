@@ -127,9 +127,7 @@ exit(rv)
 	/*
 	 * release trace file
 	 */
-	p->p_traceflag = 0;	/* don't trace the vrele() */
-	if (p->p_tracep)
-		vrele(p->p_tracep);
+	ktrderef(p);
 #endif
 
 	/*

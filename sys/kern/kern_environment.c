@@ -96,7 +96,7 @@ kenv()
 	size_t len, done, needed, buflen;
 	int error, i;
 
-	//KASSERT(dynamic_kenv ("kenv: dynamic_kenv = false"));
+	KASSERT(dynamic_kenv);
 
 	error = 0;
 	if (SCARG(uap, what) == KENV_DUMP) {

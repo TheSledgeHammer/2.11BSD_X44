@@ -139,6 +139,7 @@ struct ktr_csw {
 #define KTRFAC_GENIO	(1<<KTR_GENIO)
 #define	KTRFAC_PSIG		(1<<KTR_PSIG)
 #define KTRFAC_CSW		(1<<KTR_CSW)
+
 /*
  * trace flags (also in p_traceflags)
  */
@@ -151,8 +152,21 @@ struct ktr_csw {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	ktrace(); /* syscall */
+//int	ktrace(); /* syscall */
+int	ktrace(const char *, int, int, pid_t);
 __END_DECLS
+
+#else
+
+void ktrcsw(struct proc *, int, int);
+void ktrgenio(struct proc *, int, enum uio_rw, struct iovec *, int, int);
+void ktrnamei(struct proc *, char *);
+void ktrpsig(struct proc *, int, sig_t, int, int);
+void ktrsyscall(struct proc *, int, int, register_t []);
+void ktrsysret(struct proc *, int, int, int);
+void ktruser(struct proc *, const char *, void *, size_t, int);
+void ktrderef(struct proc *);
+void ktradref(struct proc *);
 
 #endif	/* !KERNEL */
 #endif /* _SYS_KTRACE_H_ */
