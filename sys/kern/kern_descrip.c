@@ -67,7 +67,7 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
-#include <sys/sysdecl.h>
+//#include <sys/sysdecl.h>
 #include <sys/null.h>
 
 struct filelists filehead;		/* head of list of open files */
