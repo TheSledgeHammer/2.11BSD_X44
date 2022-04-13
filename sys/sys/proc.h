@@ -86,6 +86,7 @@ struct	proc {
     char				p_ptracesig;	/* used between parent & traced child */
     int	    			p_traceflag;	/* Kernel trace points. */
     struct	vnode 	    *p_tracep;		/* Trace to vnode. */
+    
     struct	vnode 	    *p_textvp;		/* Vnode of executable. */
     
     long				p_sig;		    /* Signals pending to this process */
@@ -294,18 +295,19 @@ struct prochd qs[NQS];					/* Linked list of running processes. */
 
 struct emul emul_211bsd;				/* emulation struct */
 
-struct 	proc *pfind (pid_t);			/* Find process by id. */
-struct 	pgrp *pgfind (pid_t);			/* Find process group by id. */
+struct 	proc *pfind(pid_t);			    /* Find process by id. */
+struct 	pgrp *pgfind(pid_t);			/* Find process group by id. */
 
 int			setpri(struct proc *);
 void		setrun(struct proc *);
 void		setrq(struct proc *);
 void		remrq(struct proc *);
-struct proc getrq(struct proc *);
+struct proc *getrq(struct proc *);
 void		swtch();
 void		sleep(void *, int);
 int			tsleep(void *, int, char *, u_short);
 int 		ltsleep(void *, int, char *, u_short, __volatile struct lock_object *);
+void        endtsleep(struct proc *);
 void		unsleep(struct proc *);
 void		wakeup(const void *);
 void		reschedule(struct proc *);
