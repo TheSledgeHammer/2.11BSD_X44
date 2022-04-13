@@ -48,6 +48,7 @@
 #include <sys/acct.h>
 #include <sys/mount.h>
 #include <sys/syscall.h>
+#include <sys/ktrace.h>
 #include <sys/syslog.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -276,14 +277,15 @@ execve()
 		p->p_flag &= ~P_PPWAIT;
 		wakeup((caddr_t) p->p_pptr);
 	}
+	
 
 	/* Turn off kernel tracing for set-id programs, except for root. */
-	if (p->p_tracep && (attr.va_mode & (VSUID | VSGID))
+#ifdef KTRACE
+	if (p->p_tracep && !(p->p_traceflag & KTRFAC_ROOT) && (attr.va_mode & (VSUID | VSGID))
 			&& suser1(p->p_ucred, &p->p_acflag)) {
-		p->p_traceflag = 0;
-		vrele(p->p_tracep);
-		p->p_tracep = 0;
+	    ktrderef(p);
 	}
+#endif
 	if ((attr.va_mode & VSUID) && (p->p_flag & P_TRACED) == 0) {
 		p->p_ucred = crcopy(p->p_ucred);
 		p->p_ucred->cr_uid = attr.va_uid;

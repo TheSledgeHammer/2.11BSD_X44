@@ -50,6 +50,8 @@
 #include <sys/mount.h>
 #include <sys/sysdecl.h>
 
+#include <vm/include/vm_extern.h>
+
 #ifdef KTRACE
 int		ktrace_common(struct proc *, int, int, int, struct file *);
 void	ktrinitheader(struct ktr_header *, struct proc *, int);
@@ -79,7 +81,7 @@ ktrderef(p)
 	if (fp == NULL)
 		return;
 	FILE_USE(fp);
-	closef(fp, NULL);
+	closef(fp);
 
 	p->p_tracep = NULL;
 }
@@ -106,22 +108,6 @@ ktrinitheader(kth, p, type)
 	bcopy(p->p_comm, kth->ktr_comm, MAXCOMLEN);
 }
 
-struct ktr_header *
-ktrgetheader(p, type)
-	struct proc *p;
-	int type;
-{
-	register struct ktr_header *kth;
-
-	//MALLOC(kth, struct ktr_header *, sizeof(struct ktr_header), M_TEMP, M_WAITOK);
-	bzero(kth, sizeof(*kth));
-	kth->ktr_type = type;
-	microtime(&kth->ktr_time);
-	kth->ktr_pid = p->p_pid;
-	bcopy(p->p_comm, kth->ktr_comm, MAXCOMLEN);
-	return (kth);
-}
-
 void
 ktrsyscall(p, code, argsize, args)
 	struct proc *p;
@@ -135,7 +121,7 @@ ktrsyscall(p, code, argsize, args)
 	int i;
 
 	p->p_traceflag |= KTRFAC_ACTIVE;
-	&kth = ktrgetheader(p, KTR_SYSCALL);
+	ktrinitheader(&kth, p, KTR_SYSCALL);
 	MALLOC(ktp, struct ktr_syscall *, len, M_TEMP, M_WAITOK);
 	ktp->ktr_code = code;
 	ktp->ktr_argsize = argsize;
@@ -158,16 +144,15 @@ ktrsysret(p, code, error, retval)
 	struct ktr_sysret ktp;
 
 	p->p_traceflag |= KTRFAC_ACTIVE;
-	&kth = ktrgetheader(p, KTR_SYSRET);
+	ktrinitheader(&kth, p, KTR_SYSRET);
 	ktp.ktr_code = code;
 	ktp.ktr_error = error;
 	ktp.ktr_retval = retval;		/* what about val2 ? */
 
-	kth->ktr_buf = (caddr_t)&ktp;
-	kth->ktr_len = sizeof(struct ktr_sysret);
+	kth.ktr_buf = (caddr_t)&ktp;
+	kth.ktr_len = sizeof(struct ktr_sysret);
 
 	(void) ktrwrite(p, &kth);
-	FREE(kth, M_TEMP);
 	p->p_traceflag &= ~KTRFAC_ACTIVE;
 }
 
@@ -179,9 +164,9 @@ ktrnamei(p, path)
 	struct ktr_header kth;
 
 	p->p_traceflag |= KTRFAC_ACTIVE;
-	&kth = ktrgetheader(p, KTR_NAMEI);
-	kth->ktr_len = strlen(path);
-	kth->ktr_buf = path;
+	ktrinitheader(&kth, p, KTR_NAMEI);
+	kth.ktr_len = strlen(path);
+	kth.ktr_buf = path;
 
 	(void) ktrwrite(p, &kth);
 	p->p_traceflag &= ~KTRFAC_ACTIVE;
@@ -204,8 +189,8 @@ ktrgenio(p, fd, rw, iov, len, error)
 	if (error)
 		return;
 	p->p_traceflag |= KTRFAC_ACTIVE;
-	buflen = min(PAGE_SIZE, len + sizeof(struct ktr_genio));
-	&kth = ktrgetheader(p, KTR_GENIO);
+	buflen = (len + sizeof(struct ktr_genio));
+	ktrinitheader(&kth, p, KTR_GENIO);
 	MALLOC(ktp, struct ktr_genio *, buflen,	M_TEMP, M_WAITOK);
 	ktp->ktr_fd = fd;
 	ktp->ktr_rw = rw;
@@ -249,7 +234,7 @@ ktrpsig(p, sig, action, mask, code)
 	struct ktr_psig	kp;
 
 	p->p_traceflag |= KTRFAC_ACTIVE;
-	&kth = ktrgetheader(p, KTR_PSIG);
+	ktrinitheader(&kth, p, KTR_PSIG);
 	kp.signo = (char)sig;
 	kp.action = action;
 	kp.mask = mask;
@@ -270,7 +255,7 @@ ktrcsw(p, out, user)
 	struct ktr_csw kc;
 
 	p->p_traceflag |= KTRFAC_ACTIVE;
-	&kth = ktrgetheader(p, KTR_PSIG);
+	ktrinitheader(&kth, p, KTR_PSIG);
 	kc.out = out;
 	kc.user = user;
 	kth.ktr_buf = (caddr_t)&kc;
@@ -293,7 +278,7 @@ ktruser(p, id, addr, len, ustr)
 	caddr_t user_dta;
 
 	p->p_traceflag |= KTRFAC_ACTIVE;
-	&kth = ktrgetheader(p, KTR_USER);
+	ktrinitheader(&kth, p, KTR_USER);
 	MALLOC(ktp, struct ktr_user *, sizeof(struct ktr_user) + len, M_TEMP, M_WAITOK);
 	if (ustr) {
 		if (copyinstr(id, ktp->ktr_id, KTR_USER_MAXIDLEN, NULL) != 0)
@@ -352,11 +337,12 @@ ktrace_common(curp, ops, facs, pid, fp)
 	/*
 	 * Mark fp non-blocking, to avoid problems from possible deadlocks.
 	 */
-
+    /*
 	if (fp != NULL) {
 		fp->f_flag |= FNONBLOCK;
 		(*fp->f_ops->fo_ioctl)(fp, FIONBIO, (caddr_t)&one, curp);
 	}
+	*/
 
 	/*
 	 * need something to (un)trace (XXX - why is this here?)
@@ -452,7 +438,7 @@ ktrace()
 		}
 		fp->f_flag = FWRITE|FAPPEND;
 		fp->f_type = DTYPE_VNODE;
-		fp->f_ops = &vnops;
+//		fp->f_ops = &vnops;
 		fp->f_data = (caddr_t)vp;
 		vp = NULL;
 	}

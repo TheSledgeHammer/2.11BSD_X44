@@ -15,11 +15,13 @@
 #include <sys/buf.h>
 #include <sys/ktrace.h>
 #include <sys/signal.h>
+#include <sys/time.h>
 #include <sys/signalvar.h>
 #include <sys/gsched_edf.h>
 #include <sys/gsched_cfs.h>
 
 #include <machine/cpu.h>
+#include <machine/setjmp.h>
 
 #include <vm/include/vm.h>
 
@@ -68,10 +70,12 @@ schedcpu(arg)
 		 * since the kernel never has a timeout of greater than
 		 * around 9 minutes.
 		 */
+		 /*
 		if (p->p_realtimer.it_value && !--p->p_realtimer.it_value) {
 			psignal(p, SIGALRM);
 			p->p_realtimer.it_value = p->p_realtimer.it_interval;
 		}
+		*/
 		p->p_swtime++;
 		if (p->p_stat == SSLEEP || p->p_stat == SSTOP)
 			if (p->p_slptime != 127)
@@ -192,7 +196,7 @@ tsleep(ident, priority, wmesg, timo)
 		 * another panic.
 		 */
 		(void)splnet();
-		noop();
+//		noop(); /* 2.11BSD provide enough time for interrupts */
 		splx(s);
 		return (0);
 	}
@@ -598,7 +602,7 @@ loop:
 	noproc = 0;
 	runrun = 0;
 #ifdef DIAGNOSTIC
-	for(p = TAILQ_FIRST(&qs); p; p = TAILQ_NEXT(p, p_link)) {
+	for(p = TAILQ_FIRST(qs); p; p = TAILQ_NEXT(p, p_link)) {
 		if (p->p_stat != SRUN) {
 			panic("swtch SRUN");
 		}
@@ -610,7 +614,7 @@ loop:
 	/*
 	 * search for highest-priority runnable process
 	 */
-	for (p = TAILQ_FIRST(&qs); p; p = TAILQ_NEXT(p, p_link)) {
+	for (p = TAILQ_FIRST(qs); p; p = TAILQ_NEXT(p, p_link)) {
 		if ((p->p_flag & P_SLOAD) && p->p_pri < n) {
 			pp = p;
 			pq = q;

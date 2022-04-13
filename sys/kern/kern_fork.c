@@ -22,6 +22,8 @@
 
 #include <vm/include/vm_systm.h>
 
+#include <machine/setjmp.h>
+
 static int fork1(int);
 
 /*
@@ -272,7 +274,7 @@ again:
 	if (rip->p_traceflag & KTRFAC_INHERIT) {
 		rpp->p_traceflag = rip->p_traceflag;
 		if ((rpp->p_tracep = rip->p_tracep) != NULL) {
-			VREF(rpp->p_tracep);
+			ktradref(rpp);
 		}
 	}
 #endif

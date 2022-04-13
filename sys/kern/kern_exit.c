@@ -20,6 +20,7 @@
 #include <sys/kernel.h>
 #include <sys/lock.h>
 #include <sys/tty.h>
+#include <sys/ktrace.h>
 
 #include <vm/include/vm.h>
 
