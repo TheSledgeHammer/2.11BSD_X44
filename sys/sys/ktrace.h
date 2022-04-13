@@ -130,6 +130,19 @@ struct ktr_csw {
 };
 
 /*
+ * KTR_USER - user record
+ */
+#define	KTR_USER	        8
+#define KTR_USER_MAXIDLEN	20
+#define KTR_USER_MAXLEN		2048	/* maximum length of passed data */
+struct ktr_user {
+	char 	ktr_id[KTR_USER_MAXIDLEN];	/* string id of caller */
+	/*
+	 * Followed by ktr_len - sizeof(struct ktr_user) of user data.
+	 */
+};
+
+/*
  * kernel trace points (in p_traceflag)
  */
 #define KTRFAC_MASK		0x00ffffff
@@ -139,6 +152,7 @@ struct ktr_csw {
 #define KTRFAC_GENIO	(1<<KTR_GENIO)
 #define	KTRFAC_PSIG		(1<<KTR_PSIG)
 #define KTRFAC_CSW		(1<<KTR_CSW)
+#define	KTRFAC_USER	    (1<<KTR_USER)
 
 /*
  * trace flags (also in p_traceflags)
