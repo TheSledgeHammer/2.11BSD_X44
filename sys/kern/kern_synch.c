@@ -176,7 +176,6 @@ tsleep(ident, priority, wmesg, timo)
 	register struct sleepque *qp;
 	int	s;
 	int	sig, catch = priority & PCATCH;
-	void	endtsleep;
 
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
