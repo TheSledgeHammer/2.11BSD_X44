@@ -123,6 +123,10 @@ void	cpu_reset(void);
 struct 	pcb;
 void	savectx(struct pcb *);
 
+/* sched.S */
+void    idle(void);
+void    cpu_switch(struct proc *);
+
 /* clock.c */
 extern u_int tsc_freq;
 void	startrtclock(void);
