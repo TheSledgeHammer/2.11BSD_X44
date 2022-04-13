@@ -400,14 +400,14 @@ restart:
 					updatepri(p);
 				p->p_slptime = 0;
 				p->p_stat = SRUN;
-				if (p->p_flag & SLOAD)
+				if (p->p_flag & P_SLOAD)
 					setrq(p);
 				/*
 				 * Since curpri is a usrpri,
 				 * p->p_pri is always better than curpri.
 				 */
 				runrun++;
-				if ((p->p_flag & SLOAD) == 0) {
+				if ((p->p_flag & P_SLOAD) == 0) {
 					if (runout != 0) {
 						runout = 0;
 						wakeup((caddr_t) & runout);
@@ -541,17 +541,16 @@ void
 idle_check(void)
 {
     /* If not the idle process, resume the idle process. */
-	//if (u.u_procp != curproc) {
         if (setjmp(&u.u_rsave)) {
             //sureg();
             return;
         }
         if (u.u_fpsaved == 0) {
-			//savfp(&u.u_fps);
-			u.u_fpsaved = 1;
-		}
-		longjmp(curproc->p_addr, &u.u_qsave);
-    //}
+		//savfp(&u.u_fps);
+		u.u_fpsaved = 1;
+	}
+	longjmp(curproc->p_addr, &u.u_qsave);
+    
     /*
 	 * The first save returns nonzero when proc 0 is resumed
 	 * by another process (above); then the second is not done
@@ -721,10 +720,10 @@ getrq(p)
 
 	s = splhigh();
  	which = p->p_pri >> 2;
-	if (p == TAILQ_FIRST(qs[which])) {
+	if (p == TAILQ_FIRST(&qs[which])) {
 		return (p);
 	} else {
-		for (q = TAILQ_FIRST(qs[which]); q != NULL; q = TAILQ_NEXT(q, p_link)) {
+		for (q = TAILQ_FIRST(&qs[which]); q != NULL; q = TAILQ_NEXT(q, p_link)) {
             if (q == p) {
                 return (q);
             }  else {
