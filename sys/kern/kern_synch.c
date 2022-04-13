@@ -33,6 +33,7 @@ fixpt_t	ccpu = 				0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 #define	PPQ					(128 / NQS)				/* priorities per queue */
 TAILQ_HEAD(sleepque, proc) 	slpque[SQSIZE];
 int							lbolt;					/* once a second sleep address */
++int                         		whichqs;
 
 /*
  * Force switch among equal priority processes every 100ms.
