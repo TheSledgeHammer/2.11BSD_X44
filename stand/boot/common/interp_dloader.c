@@ -57,7 +57,7 @@ interp_init(void)
 	setenv("script.lang", "dloader", 1);
 
 	/* Read our default configuration. */
-	 if(interp_include("/boot/loader.rc") != CMD_OK) {
+	 if(interp_include("/boot/dloader.rc") != CMD_OK) {
 		 interp_include("/boot/loader.conf");
 	 }
 }

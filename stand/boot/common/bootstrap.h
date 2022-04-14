@@ -31,7 +31,6 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
-#include "commands.h"
 
 /* interp.c */
 void	interact(void);

@@ -352,7 +352,7 @@ void
 ksyms_delsymtab()
 {
 	struct ksyms_symtab *st, *next;
-	bool resize;
+	bool_t resize;
 
 	/* Discard references to symbol tables. */
 	simple_lock(&ksyms_lock);

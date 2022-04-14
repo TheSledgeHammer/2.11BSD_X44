@@ -146,12 +146,12 @@
 	      ".popsection")
 #endif
 
-#define	__IDSTRING(_n,_s)		__SECTIONSTRING(.ident,_s)
+#define	__IDSTRING(_n,_s)			__SECTIONSTRING(.ident,_s)
 
-#define	__RCSID(_s)			__IDSTRING(rcsid,_s)
+#define	__RCSID(_s)					__IDSTRING(rcsid,_s)
 #define	__SCCSID(_s)
 #define __SCCSID2(_s)
-#define	__COPYRIGHT(_s)			__SECTIONSTRING(.copyright,_s)
+#define	__COPYRIGHT(_s)				__SECTIONSTRING(.copyright,_s)
 
 #define	__KERNEL_RCSID(_n, _s)		__RCSID(_s)
 #define	__KERNEL_SCCSID(_n, _s)
@@ -190,7 +190,6 @@
 
 #define	__link_set_count(set)										\
 	(__link_set_end(set) - __link_set_start(set))
-
 
 #ifdef _KERNEL
 

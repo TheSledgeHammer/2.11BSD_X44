@@ -6,9 +6,9 @@ KERNEL_KO?=		kernel
 KERNEL?=		kernel
 KODIR?=			/boot/${KERNEL}
 
-# To Replace lines 346 to 357 in Makefile.kern.inc where appropriate 
-.if !target(install)
-kernel-install: .PHONY
+install: install-kernel-${MACHINE_NAME}
+.if !target(install-kernel-${MACHINE_NAME})
+install-kernel-${MACHINE_NAME}:
 	@if [ ! -f ${KERNEL_KO} ] ; then \
 		echo "You must build a kernel first." ; \
 		exit 1 ; \

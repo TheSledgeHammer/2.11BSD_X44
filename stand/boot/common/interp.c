@@ -152,6 +152,16 @@ interp_emit_prompt(void)
 	free(pr);
 }
 
+void
+interp_search_set(struct bootblk_command **cmdp, bootblk_cmd_t	*cmd)
+{
+	SET_FOREACH(cmdp, Xcommand_set) {
+		if (((*cmdp)->c_name != NULL) && !strcmp(argv[0], (*cmdp)->c_name)) {
+			cmd = (*cmdp)->c_fn;
+		}
+	}
+}
+
 /*
  * Perform a builtin command
  */
@@ -178,12 +188,6 @@ interp_builtin_cmd(int argc, char *argv[])
 		if ((cmdp->c_name != NULL) && !strcmp(argv[0], cmdp->c_name)) {
 			cmd = cmdp->c_fn;
 		}
-	}
-
-	/* search the command set for the command */
-	SET_FOREACH(cmdp, Xcommand_set)	{
-		if (((*cmdp)->c_name != NULL) && !strcmp(argv[0], (*cmdp)->c_name))
-			cmd = (*cmdp)->c_fn;
 	}
 	if (cmd != NULL) {
 		result = (cmd)(argc, argv);

@@ -1,8 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
- *
  * Copyright (c) 1999 John D. Polstra
- * Copyright (c) 1999,2001 Peter Wemm <peter@FreeBSD.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,81 +23,70 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
+ * $FreeBSD: src/sys/sys/linker_set.h,v 1.4.2.1 2000/08/02 21:52:20 peter Exp $
  */
 
 #ifndef _SYS_CDEFS_LINKER_H_
 #define _SYS_CDEFS_LINKER_H_
 
+#ifndef _SYS_CDEFS_H_
 #include <sys/cdefs.h>
+#endif
+
+/*
+ * GLOBL macro exists to preserve __start_set_* and __stop_set_* sections
+ * of kernel modules which are discarded from binutils 2.17.50+ otherwise.
+ */
+#define	__GLOBL1(sym)	__asm__(".globl " #sym)
+#define	__GLOBL(sym)	__GLOBL1(sym)
 
 /*
  * The following macros are used to declare global sets of objects, which
- * are collected by the linker into a `linker_set' as defined below.
+ * are collected by the linker into a `struct linker_set' as defined below.
  * For ELF, this is done by constructing a separate segment for each set.
- */
-
-#if defined(__powerpc64__) && (!defined(_CALL_ELF) || _CALL_ELF == 1)
-/*
- * ELFv1 pointers to functions are actaully pointers to function
- * descriptors.
  *
- * Move the symbol pointer from ".text" to ".data" segment, to make
- * the GCC compiler happy:
+ * In the __MAKE_SET macros below, the lines:
+ *
+ *   static void const * const __set_##set##_sym_##sym = &sym;
+ *
+ * are present only to prevent the compiler from producing bogus
+ * warnings about unused symbols.
  */
-#define	__MAKE_SET_CONST
-#else
-#define	__MAKE_SET_CONST const
+#ifndef __ELF__
+#error only ELF is supported
 #endif
 
-/*
- * Private macros, not to be used outside this header file.
- */
-#ifdef __GNUCLIKE___SECTION
+#if 0
 
-/*
- * The userspace address sanitizer inserts redzones around global variables,
- * violating the assumption that linker set elements are packed.
- */
-#ifdef _KERNEL
-#define	__NOASAN
-#else
-#define	__NOASAN	__nosanitizeaddress
+#define __MAKE_SET(set, sym)									\
+	static void const * const __set_##set##_sym_##sym = &sym;	\
+	__asm(".section set_" #set ",\"aw\"");						\
+	__asm(".long " #sym);										\
+	__asm(".previous")
+
 #endif
 
-#define __MAKE_SET_QV(set, sym, qv)			\
-	__WEAK(__CONCAT(__start_set_,set));		\
-	__WEAK(__CONCAT(__stop_set_,set));		\
-	static void const * qv				\
-	__NOASAN					\
-	__set_##set##_sym_##sym __section("set_" #set)	\
-	__used = &(sym)
-#define __MAKE_SET(set, sym)	__MAKE_SET_QV(set, sym, __MAKE_SET_CONST)
-#else /* !__GNUCLIKE___SECTION */
-#error this file needs to be ported to your compiler
-#endif /* __GNUCLIKE___SECTION */
+#define __MAKE_SET(set, sym)									\
+	__GLOBL(__start_set_##set);									\
+	__GLOBL(__stop_set_##set);									\
+	static void const * const __set_##set##_sym_##sym			\
+	__section("set_" #set) __used = &(sym)
 
-/*
- * Public macros.
- */
-#define TEXT_SET(set, sym)	__MAKE_SET(set, sym)
+#define TEXT_SET(set, sym) 	__MAKE_SET(set, sym)
 #define DATA_SET(set, sym)	__MAKE_SET(set, sym)
-#define DATA_WSET(set, sym)	__MAKE_SET_QV(set, sym, )
-#define BSS_SET(set, sym)	__MAKE_SET(set, sym)
-#define ABS_SET(set, sym)	__MAKE_SET(set, sym)
-#define SET_ENTRY(set, sym)	__MAKE_SET(set, sym)
+#define BSS_SET(set, sym) 	__MAKE_SET(set, sym)
+#define ABS_SET(set, sym) 	__MAKE_SET(set, sym)
+#define SET_ENTRY(set, sym) __MAKE_SET(set, sym)
 
-/*
- * Initialize before referring to a given linker set.
- */
-#define SET_DECLARE(set, ptype)					\
-	extern ptype __weak_symbol *__CONCAT(__start_set_,set);	\
-	extern ptype __weak_symbol *__CONCAT(__stop_set_,set)
+#define SET_DECLARE(set, ptype)									\
+	extern ptype *(__start_set_##set);							\
+	extern ptype *(__stop_set_##set);
+#define SET_DECLARE_WEAK(set, ptype)							\
+	extern ptype __weak_symbol *(__start_set_##set);			\
+	extern ptype __weak_symbol *(__stop_set_##set)
 
-#define SET_BEGIN(set)							\
-	(&__CONCAT(__start_set_,set))
-#define SET_LIMIT(set)							\
-	(&__CONCAT(__stop_set_,set))
+#define SET_BEGIN(set)		(&__start_set_##set)
+#define SET_LIMIT(set)		(&__stop_set_##set)
 
 /*
  * Iterate over all the elements of a set.
@@ -109,16 +95,16 @@
  * containing those addresses.  Thus is must be declared as "type **pvar",
  * and the address of each set item is obtained inside the loop by "*pvar".
  */
-#define SET_FOREACH(pvar, set)						\
+#define SET_FOREACH(pvar, set)									\
 	for (pvar = SET_BEGIN(set); pvar < SET_LIMIT(set); pvar++)
 
-#define SET_ITEM(set, i)						\
+#define SET_ITEM(set, i)										\
 	((SET_BEGIN(set))[i])
 
 /*
  * Provide a count of the items in a set.
  */
-#define SET_COUNT(set)							\
+#define SET_COUNT(set)											\
 	(SET_LIMIT(set) - SET_BEGIN(set))
 
 #endif	/* _SYS_CDEFS_LINKER_H_ */

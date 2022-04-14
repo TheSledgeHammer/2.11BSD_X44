@@ -125,7 +125,6 @@ int
 ksymsclose(dev_t dev, int flag, int mode, struct proc *p)
 {
 	ksyms_delsymtab();
-
 	return (0);
 }
 

@@ -83,9 +83,9 @@ struct ksyms_hdr {
 };
 
 static int 					ksyms_maxlen;
-static bool 				ksyms_isopen;
-static bool 				ksyms_initted;
-static bool 				ksyms_loaded;
+static bool_t 				ksyms_isopen;
+static bool_t 				ksyms_initted;
+static bool_t 				ksyms_loaded;
 static struct lock_object 	ksyms_lock;
 static struct ksyms_symtab 	kernel_symtab;
 

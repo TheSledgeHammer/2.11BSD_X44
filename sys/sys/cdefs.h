@@ -36,8 +36,8 @@
  *	@(#)cdefs.h	8.8 (Berkeley) 1/9/95
  */
 
-#ifndef	_CDEFS_H_
-#define	_CDEFS_H_
+#ifndef	_SYS_CDEFS_H_
+#define	_SYS_CDEFS_H_
 
 /*
  * Macro to test if we're using a GNU C compiler of a specific vintage
@@ -313,4 +313,4 @@
 #define	_Atomic(T)		struct { T volatile __val; }
 #endif
 #endif
-#endif /* !_CDEFS_H_ */
+#endif /* !_SYS_CDEFS_H_ */

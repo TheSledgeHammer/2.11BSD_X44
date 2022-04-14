@@ -30,10 +30,10 @@
 /* __FBSDID("$FreeBSD: src/sys/boot/common/commands.c,v 1.19 2003/08/25 23:30:41 obrien Exp $"); */
 
 #include <lib/libsa/loadfile.h>
+#include <lib/libsa/stand.h>
 #include <lib/libkern/libkern.h>
 #include "bootstrap.h"
 #include "commands.h"
-#include <lib/libsa/stand.h>
 
 COMMAND_SET(help, "help", "detailed help", command_help);
 COMMAND_SET(commandlist, "?", "list commands", command_commandlist);
@@ -146,7 +146,6 @@ help_emitsummary(char *topic, char *subtopic, char *desc)
 	return (pager_output("\n"));
 }
 
-
 int
 command_help(int argc, char *argv[])
 {
@@ -244,7 +243,6 @@ command_commandlist(int argc, char *argv[])
 	res = 0;
 	pager_open();
 	res = pager_output("Available commands:\n");
-
 	for (i = 0, cmdp = commands;
 			(cmdp->c_name != NULL) && (cmdp->c_desc != NULL);
 			i++, cmdp = commands + i) {
@@ -315,7 +313,6 @@ command_set(int argc, char *argv[])
 	return (CMD_OK);
 }
 
-
 int
 command_unset(int argc, char *argv[])
 {
@@ -332,7 +329,6 @@ command_unset(int argc, char *argv[])
 	}
 	return (CMD_OK);
 }
-
 
 int
 command_echo(int argc, char *argv[])
@@ -370,7 +366,6 @@ command_echo(int argc, char *argv[])
 /*
  * A passable emulation of the sh(1) command of the same name.
  */
-
 int
 command_read(int argc, char *argv[])
 {
@@ -426,7 +421,6 @@ command_read(int argc, char *argv[])
 /*
  * File pager
  */
-
 int
 command_more(int argc, char *argv[])
 {
