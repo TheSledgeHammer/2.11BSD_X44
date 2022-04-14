@@ -1012,8 +1012,6 @@ fdt_copy(vm_offset_t va)
 	return (fdtp_size);
 }
 
-
-
 int
 command_fdt_internal(int argc, char *argv[])
 {

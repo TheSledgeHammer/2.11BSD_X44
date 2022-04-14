@@ -55,9 +55,19 @@ struct bootblk_command {
     bootblk_cmd_t		*c_fn;
 };
 
+//#ifdef BOOT_ELF32 || BOOT_ELF64
+
+#define COMMAND_SET(tag, key, desc, func)									\
+    static bootblk_cmd_t func;												\
+    static struct bootblk_command _cmd_ ## tag = { key, desc, func };		\
+    DATA_SET(Xcommand_set, _cmd_ ## tag)
+
+SET_DECLARE(Xcommand_set, struct bootblk_command);
+
+//#else
+
 /* Prototypes for the command handlers within stand/common/ */
 /*	commands.c		*/
-
 int command_help(int argc, char *argv[]) ;
 int command_commandlist(int argc, char *argv[]);
 int command_show(int argc, char *argv[]);
@@ -66,7 +76,7 @@ int command_unset(int argc, char *argv[]);
 int command_echo(int argc, char *argv[]);
 int command_read(int argc, char *argv[]);
 int command_more(int argc, char *argv[]);
-static int command_lsdev(int argc, char *argv[]);
+int command_lsdev(int argc, char *argv[]);
 
 /*	boot.c		*/
 int command_boot(int argc, char *argv[]);
@@ -133,12 +143,5 @@ int command_fdt(int argc, char *argv[]);
 extern struct bootblk_command commands[];
 
 //#define COMMAND_SET(a, b, c, d) /* Nothing */
-
-#define COMMAND_SET(tag, key, desc, func)									\
-    static bootblk_cmd_t func;												\
-    static struct bootblk_command _cmd_ ## tag = { key, desc, func };		\
-    DATA_SET(Xcommand_set, _cmd_ ## tag)
-
-SET_DECLARE(Xcommand_set, struct bootblk_command);
-
+//#endif
 #endif /* _COMMANDS_H_ */

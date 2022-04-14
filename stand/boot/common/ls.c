@@ -40,22 +40,24 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD: src/sys/boot/common/ls.c,v 1.11 2003/08/25 23:30:41 obrien Exp $"); */
 
-
 #include <sys/param.h>
+#include <sys/dirent.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
-#include <sys/dirent.h>
 
 #include <lib/libsa/loadfile.h>
 #include <lib/libsa/stand.h>
 
 #include "bootstrap.h"
+#include "commands.h"
+
+COMMAND_SET(ls, "ls", "list files", command_ls);
 
 static char typestr[] = "?fc?d?b? ?l?s?w";
 
 static int	ls_getdir(char **pathp);
 
-int
+static int
 command_ls(int argc, char *argv[])
 {
 	int fd;

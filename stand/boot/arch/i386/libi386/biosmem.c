@@ -32,9 +32,11 @@
 #include <lib/libsa/stand.h>
 #include <boot/common/commands.h>
 #include <boot/common/smbios.h>
+
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"
+
 #include <machine/bios.h>
 
 struct bootblk_command commands[] = {
@@ -234,7 +236,7 @@ bios_getmem(void)
 	}
 }
 
-int
+static int
 command_biosmem(int argc, char *argv[])
 {
 	int bq = bios_getquirks();

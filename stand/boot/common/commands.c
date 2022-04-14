@@ -146,7 +146,7 @@ help_emitsummary(char *topic, char *subtopic, char *desc)
 	return (pager_output("\n"));
 }
 
-int
+static int
 command_help(int argc, char *argv[])
 {
     char	buf[81];	/* XXX buffer size? */
@@ -232,7 +232,7 @@ command_help(int argc, char *argv[])
 	return (CMD_OK);
 }
 
-int
+static int
 command_commandlist(int argc, char *argv[])
 {
     struct bootblk_command	*cmdp;
@@ -263,7 +263,7 @@ command_commandlist(int argc, char *argv[])
  * XXX set/show should become set/echo if we have variable
  * substitution happening.
  */
-int
+static int
 command_show(int argc, char *argv[])
 {
     struct env_var	*ev;
@@ -296,7 +296,7 @@ command_show(int argc, char *argv[])
 	return (CMD_OK);
 }
 
-int
+static int
 command_set(int argc, char *argv[])
 {
     int		err;
@@ -313,7 +313,7 @@ command_set(int argc, char *argv[])
 	return (CMD_OK);
 }
 
-int
+static int
 command_unset(int argc, char *argv[])
 {
     int		err;
@@ -330,7 +330,7 @@ command_unset(int argc, char *argv[])
 	return (CMD_OK);
 }
 
-int
+static int
 command_echo(int argc, char *argv[])
 {
     char	*s;
@@ -366,7 +366,7 @@ command_echo(int argc, char *argv[])
 /*
  * A passable emulation of the sh(1) command of the same name.
  */
-int
+static int
 command_read(int argc, char *argv[])
 {
     char	*prompt;
@@ -421,7 +421,7 @@ command_read(int argc, char *argv[])
 /*
  * File pager
  */
-int
+static int
 command_more(int argc, char *argv[])
 {
     int         i;
@@ -464,7 +464,7 @@ page_file(char *filename)
 /*
  * List all disk-like devices
  */
-int
+static int
 command_lsdev(int argc, char *argv[])
 {
     int		verbose, ch, i;

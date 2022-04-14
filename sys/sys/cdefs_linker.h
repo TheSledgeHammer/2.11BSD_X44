@@ -28,10 +28,13 @@
 
 #ifndef _SYS_CDEFS_LINKER_H_
 #define _SYS_CDEFS_LINKER_H_
-
+/*
 #ifndef _SYS_CDEFS_H_
 #include <sys/cdefs.h>
 #endif
+*/
+
+#include <sys/cdefs_elf.h>
 
 /*
  * GLOBL macro exists to preserve __start_set_* and __stop_set_* sections
@@ -52,41 +55,46 @@
  * are present only to prevent the compiler from producing bogus
  * warnings about unused symbols.
  */
-#ifndef __ELF__
-#error only ELF is supported
-#endif
 
-#if 0
+#define __link_make_set(set, sym) 			                	\
+	__GLOBL(__start_link_set_##set);		                	\
+	__GLOBL(__stop_link_set_##set);			                	\
+	static void const * const __link_set_##set##_sym_##sym		\
+   	__section("link_set_" #set) __used = &(sym)
+    	
+#define __link_text_set(set, sym) 	__link_make_set(set, sym)
+#define __link_data_set(set, sym)	__link_make_set(set, sym)
+#define __link_bss_set(set, sym) 	__link_make_set(set, sym)
+#define __link_abs_set(set, sym) 	__link_make_set(set, sym)
+#define __link_set_entry(set, sym)  __link_make_set(set, sym)
+
+#define	__link_set_decl(set, ptype)				        		\
+	extern ptype *(__link_set_start(set));			        	\
+	extern ptype *(__link_set_end(set))
+
+#define __link_set_decl_weak(set, ptype)			        	\
+	extern ptype __weak_symbol *(__link_set_start(set));		\
+	extern ptype __weak_symbol *(__link_set_end(set));	    	\
+	    	
+#define __link_set_foreach(pvar, set)							\
+	for (pvar = __link_set_start(set); pvar < __link_set_end(set); pvar++)
+
+#define __link_set_item(set, i)                             	\
+	((&__link_set_start(set))[i])
 
 #define __MAKE_SET(set, sym)									\
-	static void const * const __set_##set##_sym_##sym = &sym;	\
-	__asm(".section set_" #set ",\"aw\"");						\
-	__asm(".long " #sym);										\
-	__asm(".previous")
+	__link_make_set(set, sym)
 
-#endif
-
-#define __MAKE_SET(set, sym)									\
-	__GLOBL(__start_set_##set);									\
-	__GLOBL(__stop_set_##set);									\
-	static void const * const __set_##set##_sym_##sym			\
-	__section("set_" #set) __used = &(sym)
-
-#define TEXT_SET(set, sym) 	__MAKE_SET(set, sym)
-#define DATA_SET(set, sym)	__MAKE_SET(set, sym)
-#define BSS_SET(set, sym) 	__MAKE_SET(set, sym)
-#define ABS_SET(set, sym) 	__MAKE_SET(set, sym)
-#define SET_ENTRY(set, sym) __MAKE_SET(set, sym)
+#define TEXT_SET(set, sym) 	__link_text_set(set, sym)
+#define DATA_SET(set, sym)	__link_data_set(set, sym)
+#define BSS_SET(set, sym) 	__link_bss_set(set, sym)
+#define ABS_SET(set, sym) 	__link_abs_set(set, sym)
+#define SET_ENTRY(set, sym) __link_set_entry(set, sym)
 
 #define SET_DECLARE(set, ptype)									\
-	extern ptype *(__start_set_##set);							\
-	extern ptype *(__stop_set_##set);
+	__link_set_decl(set, ptype)
 #define SET_DECLARE_WEAK(set, ptype)							\
-	extern ptype __weak_symbol *(__start_set_##set);			\
-	extern ptype __weak_symbol *(__stop_set_##set)
-
-#define SET_BEGIN(set)		(&__start_set_##set)
-#define SET_LIMIT(set)		(&__stop_set_##set)
+	__link_set_decl_weak(set, ptype)
 
 /*
  * Iterate over all the elements of a set.
@@ -96,46 +104,15 @@
  * and the address of each set item is obtained inside the loop by "*pvar".
  */
 #define SET_FOREACH(pvar, set)									\
-	for (pvar = SET_BEGIN(set); pvar < SET_LIMIT(set); pvar++)
+	__link_set_foreach(pvar, set)
 
 #define SET_ITEM(set, i)										\
-	((SET_BEGIN(set))[i])
+	__link_set_item(set, i)
 
 /*
  * Provide a count of the items in a set.
  */
 #define SET_COUNT(set)											\
-	(SET_LIMIT(set) - SET_BEGIN(set))
-
-/* TODO: convert above to FreeBSD compatability */
-/* A netbsd compatible elf linker-set */
-
-#include <sys/cdefs_elf.h>
-
-#define __link_make_set(set, sym) 			                \
-	__GLOBL(__start_link_set_##set);		                \
-	__GLOBL(__stop_link_set_##set);			                \
-	static void const * const __link_set_##set##_sym_##sym		\
-   	__section("link_set_" #set) __used = &(sym)
-    	
-#define __link_text_set(set, sym) 	__link_make_set(set, sym)
-#define __link_data_set(set, sym)	__link_make_set(set, sym)
-#define __link_bss_set(set, sym) 	__link_make_set(set, sym)
-#define __link_abs_set(set, sym) 	__link_make_set(set, sym)
-#define __link_set_entry(set, sym)  	__link_make_set(set, sym)
-
-#define	__link_set_decl(set, ptype)				        \
-	extern ptype *(__link_set_start(set));			        \
-	extern ptype *(__link_set_end(set));			        \
-
-#define __link_set_decl_weak(set, ptype)			        \
-	extern ptype __weak_symbol *(__link_set_start(set));		\
-	extern ptype __weak_symbol *(__link_set_end(set));	    	\
-	    	
-#define __link_set_foreach(pvar, set)					\
-	for (pvar = __link_set_start(set); pvar < __link_set_end(set); pvar++)
-
-#define __link_set_item(set, i)                             		\
-    	((&__link_set_start(set))[i])
+	__link_set_count(set)
 
 #endif	/* _SYS_CDEFS_LINKER_H_ */

@@ -39,6 +39,7 @@
 
 #include <lib/libsa/stand.h>
 #include "bootstrap.h"
+#include "commands.h"
 #include "libi386.h"
 #include "btxv86.h"
 

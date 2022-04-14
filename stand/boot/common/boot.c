@@ -37,6 +37,7 @@
 #include <lib/libkern/libkern.h>
 #include <lib/libsa/stand.h>
 #include "bootstrap.h"
+#include "commands.h"
 
 COMMAND_SET(boot, "boot", "boot a file or loaded kernel", command_boot);
 COMMAND_SET(autoboot, "autoboot", "boot automatically after a delay", command_autoboot);
@@ -49,7 +50,7 @@ static const char *default_bootfiles = "kernel";
 
 static int autoboot_tried;
 
-int
+static int
 command_boot(int argc, char *argv[])
 {
     struct preloaded_file	*fp;
@@ -107,12 +108,10 @@ command_boot(int argc, char *argv[])
 	return (CMD_ERROR);
 }
 
-
 /*
  * Autoboot after a delay
  */
-
-int
+static int
 command_autoboot(int argc, char *argv[])
 {
 	int howlong;

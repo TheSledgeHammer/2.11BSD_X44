@@ -39,7 +39,7 @@
 
 
 #include "bootstrap.h"
-
+#include "commands.h"
 
 /* #define BCACHE_DEBUG */
 
@@ -463,6 +463,7 @@ bcache_invalidate(struct bcache *bc, daddr_t blkno)
 }
 
 #ifndef BOOT2
+COMMAND_SET(bcachestat, "bcachestat", "get disk block cache stats", command_bcache);
 
 int
 command_bcache(int argc, char *argv[])

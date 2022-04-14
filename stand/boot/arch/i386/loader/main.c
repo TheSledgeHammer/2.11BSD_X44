@@ -41,6 +41,7 @@
 #include <boot/common/bootstrap.h>
 #include <boot/common/commands.h>
 #include <boot/common/smbios.h>
+
 #include <boot/arch/i386/common/bootargs.h>
 
 #include <machine/bootinfo.h>
@@ -328,7 +329,7 @@ isa_outb(int port, int value)
 	outb(port, value);
 }
 
-int
+static int
 command_reboot(int argc, char *argv[])
 {
 	int i;
@@ -342,7 +343,7 @@ command_reboot(int argc, char *argv[])
 	__exit(0);
 }
 
-int
+static int
 command_heap(int argc, char *argv[])
 {
     char *base;

@@ -28,14 +28,13 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## stand:
 - boot:
-	- add below to relavent Makefiles
-		- dloader/loader.conf
-		- dloader/dloader.menu
-		- i386/loader/dloader.rc
-	- other files to setup for compiler
-		- common/help.common
-		- common/merge_help.awk
-		- i386/loader/help.i386
+	- setup configuration settings for elf & non-elf based kernels
+	- add gfx_fb
+	- efi:
+		- refactor
+		- add fdt & gptboot directory
+	- uboot:
+		- refactor
 
 ## usr.bin:
 
@@ -104,15 +103,6 @@ Of Interest Todo:
 		- ipv6
 		- firewall/packet filter
 		- plus much more
-
-## stand:
-- boot:
-	- efi:
-		- Makfiles:
-			- Adjust makefiles.
-	- fdt:
-	- uboot:
-		- missing fdt support libraries
 		
 ## ufs:
 - ufs:
