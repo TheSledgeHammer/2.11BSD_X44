@@ -648,9 +648,9 @@ ufs_stat(f, sb)
 	register struct file *fp = (struct file *)f->f_fsdata;
 
 	/* only important stuff */
-	sb->st_mode = DIP(fp->f_ip, mode);//fp->f_di.di_mode;
-	sb->st_uid = DIP(fp->f_ip, uid);//fp->f_di.di_uid;
-	sb->st_gid = DIP(fp->f_ip, gid);//fp->f_di.di_gid;
-	sb->st_size = DIP(fp->f_ip, size);//fp->f_di.di_size;
+	sb->st_mode = DIP(fp->f_ip, mode);
+	sb->st_uid = DIP(fp->f_ip, uid);
+	sb->st_gid = DIP(fp->f_ip, gid);
+	sb->st_size = DIP(fp->f_ip, size);
 	return (0);
 }

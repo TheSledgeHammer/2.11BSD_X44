@@ -37,6 +37,14 @@
 #include "btxv86.h"
 #include <machine/bios.h>
 
+struct bootblk_command commands[] = {
+		COMMON_COMMANDS,
+		{ "biosmem", "show BIOS memory setup", command_biosmem },
+		{ NULL,	NULL, NULL }
+};
+
+COMMAND_SET(biosmem, "biosmem", "show BIOS memory setup", command_biosmem);
+
 vm_offset_t	memtop, memtop_copyin, high_heap_base;
 uint32_t	bios_basemem, bios_extmem, high_heap_size;
 

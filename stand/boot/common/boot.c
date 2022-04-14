@@ -38,6 +38,9 @@
 #include <lib/libsa/stand.h>
 #include "bootstrap.h"
 
+COMMAND_SET(boot, "boot", "boot a file or loaded kernel", command_boot);
+COMMAND_SET(autoboot, "autoboot", "boot automatically after a delay", command_autoboot);
+
 static char	*getbootfile(int try);
 static int	loadakernel(int try, int argc, char* argv[]);
 

@@ -24,3 +24,4 @@ string/			2.11BSD/4.4BSD-lite2/NetBSD
 sys/			4.4BSD-lite2
 termios/		NetBSD
 time/			NetBSD
+uuid/			NetBSD

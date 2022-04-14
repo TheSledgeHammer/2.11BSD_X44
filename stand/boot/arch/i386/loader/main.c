@@ -36,10 +36,12 @@
 #include <sys/reboot.h>
 
 #include <lib/libsa/stand.h>
+#include <lib/libkern/libkern.h>
+
 #include <boot/common/bootstrap.h>
+#include <boot/common/commands.h>
 #include <boot/common/smbios.h>
 #include <boot/arch/i386/common/bootargs.h>
-#include <lib/libkern/libkern.h>
 
 #include <machine/bootinfo.h>
 #include <machine/cpufunc.h>
@@ -47,6 +49,16 @@
 
 #include "libi386/libi386.h"
 #include "btxv86.h"
+
+struct bootblk_command commands[] = {
+		COMMON_COMMANDS,
+		{ "reboot", "reboot the system", command_reboot },
+		{ "heap", "show heap usage", command_heap },
+		{ NULL,	NULL, NULL },
+};
+
+COMMAND_SET(reboot, "reboot", "reboot the system", command_reboot);
+COMMAND_SET(heap, "heap", "show heap usage", command_heap);
 
 /* Arguments passed in from the boot1/boot2 loader */
 static struct bootargs 		*kargs;
@@ -314,4 +326,30 @@ static void
 isa_outb(int port, int value)
 {
 	outb(port, value);
+}
+
+int
+command_reboot(int argc, char *argv[])
+{
+	int i;
+
+	for (i = 0; devsw[i] != NULL; ++i)
+		if (devsw[i]->dv_cleanup != NULL)
+			(devsw[i]->dv_cleanup)();
+
+	printf("Rebooting...\n");
+	delay(1000000);
+	__exit(0);
+}
+
+int
+command_heap(int argc, char *argv[])
+{
+    char *base;
+    size_t bytes;
+
+    base = getheap(&bytes);
+    printf("heap %p-%p (%d)\n", base, base + bytes, (int)bytes);
+    printf("stack at %p\n", &argc);
+    return (CMD_OK);
 }

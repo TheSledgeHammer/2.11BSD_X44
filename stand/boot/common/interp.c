@@ -39,6 +39,8 @@ __FBSDID("$FreeBSD$");
 #include "bootstrap.h"
 #include "commands.h"
 
+COMMAND_SET(include, "include", "read commands from a file", command_include);
+
 #define	MAXARGS	20			/* maximum number of arguments allowed */
 
 /*
@@ -176,6 +178,12 @@ interp_builtin_cmd(int argc, char *argv[])
 		if ((cmdp->c_name != NULL) && !strcmp(argv[0], cmdp->c_name)) {
 			cmd = cmdp->c_fn;
 		}
+	}
+
+	/* search the command set for the command */
+	SET_FOREACH(cmdp, Xcommand_set)	{
+		if (((*cmdp)->c_name != NULL) && !strcmp(argv[0], (*cmdp)->c_name))
+			cmd = (*cmdp)->c_fn;
 	}
 	if (cmd != NULL) {
 		result = (cmd)(argc, argv);

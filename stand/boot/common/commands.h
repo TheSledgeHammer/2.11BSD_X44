@@ -31,6 +31,12 @@
 #ifndef _COMMANDS_H_
 #define _COMMANDS_H_
 
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/cdefs_linker.h>
+
+#include <stdbool.h>
+
 /* Commands and return values; nonzero return sets command_errmsg != NULL */
 #define	COMMAND_ERRBUFSZ	(256)
 extern const char *command_errmsg;
@@ -64,8 +70,6 @@ int command_read(int argc, char *argv[]);
 int command_more(int argc, char *argv[]);
 int command_lsdev(int argc, char *argv[]);
 int command_quit(int argc, char *argv[]);
-int command_reboot(int argc, char *argv[]);
-int command_heap(int argc, char *argv[]);
 
 /*	boot.c		*/
 int command_boot(int argc, char *argv[]);
@@ -85,7 +89,11 @@ int command_ls(int argc, char *argv[]);
 /*  bcache.c	*/
 int command_bcache(int argc, char *argv[]);
 
-/*  biosmem.c	*/
+/* i386/main.c */
+int command_reboot(int argc, char *argv[]);
+int command_heap(int argc, char *argv[]);
+
+/*  i386/libi386/biosmem.c	*/
 int command_biosmem(int argc, char *argv[]);
 
 /* dloader/cmds.c */
@@ -116,7 +124,6 @@ int command_fdt(int argc, char *argv[]);
 		{ "read", "read input from the terminal", command_read },						\
 		{ "more", "show contents of a file", command_more },							\
 		{ "lsdev", "list all devices", command_lsdev },									\
-		{ "quit", "exit the loader", command_quit },									\
 		{ "bcachestat", "get disk block cache stats", command_bcache },					\
 		{ "boot", "boot a file or loaded kernel", command_boot },						\
 		{ "autoboot", "boot automatically after a delay", command_autoboot},			\
@@ -124,13 +131,16 @@ int command_fdt(int argc, char *argv[]);
 		{ "unload", "unload all modules", command_unload },								\
 		{ "lskern", "list loaded kernel", command_lskern },								\
 		{ "include", "read commands from a file", command_include },					\
-		{ "ls", "list files", command_ls },												\
-		{ "biosmem", "show BIOS memory setup", command_biosmem },						\
-		{ "reboot", "reboot", "reboot the system", command_reboot },					\
-		{ "heap", "heap", "show heap usage", command_heap }
+		{ "ls", "list files", command_ls }
 
 extern struct bootblk_command commands[];
 
-#define COMMAND_SET(a, b, c, d) /* Nothing */
+//#define COMMAND_SET(a, b, c, d) /* Nothing */
+#define	COMMAND_SET(tag, key, desc, func)								\
+    static bootblk_cmd_t func;											\
+    static struct bootblk_command _cmd_ ## tag = { key, desc, func };	\
+    DATA_SET(Xcommand_set, _cmd_ ## tag)
+
+SET_DECLARE(Xcommand_set, struct bootblk_command);
 
 #endif /* _COMMANDS_H_ */

@@ -32,6 +32,7 @@
  * Obtain memory configuration information from the BIOS
  */
 #include <sys/param.h>
+#include <sys/queue.h>
 
 #include <machine/bios.h>
 #include <machine/psl.h>
@@ -41,97 +42,127 @@
 #include "libi386.h"
 #include "btxv86.h"
 
-static struct bios_smap smap;
+struct bootblk_command commands[] = {
+		COMMON_COMMANDS,
+		{  "smap", "show BIOS SMAP", command_smap },
+		{ NULL,	NULL, NULL }
+};
 
-static struct bios_smap *smapbase;
-static int smaplen;
-static void	*heapbase;
+COMMAND_SET(smap, "smap", "show BIOS SMAP", command_smap);
+
+struct smap_buf {
+	struct bios_smap		smap;
+	uint32_t				xattr;	/* Extended attribute from ACPI 3.0 */
+	STAILQ_ENTRY(smap_buf)	bufs;
+};
+
+#define	SMAP_BUFSIZE		offsetof(struct smap_buf, bufs)
+
+static struct bios_smap 	*smapbase;
+static uint32_t				*smapattr;
+static u_int				smaplen;
 
 #define	MODINFOMD_SMAP		0x1001
 
 void
 bios_getsmap(void)
 {
-	int n;
+	struct smap_buf		buf;
+	STAILQ_HEAD(smap_head, smap_buf) head =
+	    STAILQ_HEAD_INITIALIZER(head);
+	struct smap_buf		*cur, *next;
+	u_int				n, x;
 
-	heapbase = (void *)(((uintptr_t)base + 15) & ~15);
+	STAILQ_INIT(&head);
 	n = 0;
-	smaplen = 0;
-	/* Count up segments in system memory map */
+	x = 0;
 	v86.ebx = 0;
 	do {
 		v86.ctl = V86_FLAGS;
-		v86.addr = 0x15; /* int 0x15 function 0xe820*/
-		v86.eax = 0xe820;
-		v86.ecx = sizeof(struct bios_smap);
+		v86.addr = 0x15;
+		v86.eax = 0xe820; /* int 0x15 function 0xe820 */
+		v86.ecx = SMAP_BUFSIZE;
 		v86.edx = SMAP_SIG;
-		v86.es = VTOPSEG(&smap);
-		v86.edi = VTOPOFF(&smap);
+		v86.es = VTOPSEG(&buf);
+		v86.edi = VTOPOFF(&buf);
 		v86int();
-		if ((v86.efl & PSL_C) || (v86.eax != SMAP_SIG))
+		if (V86_CY(v86.efl) || v86.eax != SMAP_SIG ||
+		v86.ecx < sizeof(buf.smap) || v86.ecx > SMAP_BUFSIZE)
 			break;
+
+		next = malloc(sizeof(*next));
+		if (next == NULL)
+			break;
+		next->smap = buf.smap;
+		if (v86.ecx == SMAP_BUFSIZE) {
+			next->xattr = buf.xattr;
+			x++;
+		}
+		STAILQ_INSERT_TAIL(&head, next, bufs);
 		n++;
 	} while (v86.ebx != 0);
-	if (n == 0)
-		return;
-	n += 10; /* spare room */
-	smapbase = malloc(n * sizeof(*smapbase));
+	smaplen = n;
 
-	/* Save system memory map */
-	v86.ebx = 0;
-	do {
-		v86.ctl = V86_FLAGS;
-		v86.addr = 0x15; /* int 0x15 function 0xe820*/
-		v86.eax = 0xe820;
-		v86.ecx = sizeof(struct bios_smap);
-		v86.edx = SMAP_SIG;
-		v86.es = VTOPSEG(&smap);
-		v86.edi = VTOPOFF(&smap);
-		v86int();
-
-		/*
-		 * Our heap is now in high memory and must be removed from
-		 * the smap so the kernel does not blow away passed-in
-		 * arguments, smap, kenv, etc.
-		 *
-		 * This wastes a little memory.
-		 */
-		if (smap.type == SMAP_TYPE_MEMORY && smap.base + smap.length > heapbase
-				&& smap.base < memtop) {
-			if (smap.base <= heapbase) {
-				if (heapbase - smap.base) {
-					smapbase[smaplen] = smap;
-					smapbase[smaplen].length = heapbase - smap.base;
-					++smaplen;
-				}
-			}
-			if (smap.base + smap.length >= memtop) {
-				if (smap.base + smap.length - memtop) {
-					smapbase[smaplen] = smap;
-					smapbase[smaplen].base = memtop;
-					smapbase[smaplen].length = smap.base + smap.length - memtop;
-					++smaplen;
-				}
-			}
-		} else {
-			smapbase[smaplen] = smap;
-			++smaplen;
+	if (smaplen > 0) {
+		smapbase = malloc(smaplen * sizeof(*smapbase));
+		if (smapbase != NULL) {
+			n = 0;
+			STAILQ_FOREACH(cur, &head, bufs)
+				smapbase[n++] = cur->smap;
 		}
-		if ((v86.efl & PSL_C) || (v86.eax != SMAP_SIG))
-			break;
-	} while (v86.ebx != 0 && smaplen < n);
+		if (smaplen == x) {
+			smapattr = malloc(smaplen * sizeof(*smapattr));
+			if (smapattr != NULL) {
+				n = 0;
+				STAILQ_FOREACH(cur, &head, bufs)
+					smapattr[n++] = cur->xattr & SMAP_XATTR_MASK;
+			}
+		} else
+			smapattr = NULL;
+		cur = STAILQ_FIRST(&head);
+		while (cur != NULL) {
+			next = STAILQ_NEXT(cur, bufs);
+			free(cur);
+			cur = next;
+		}
+	}
 }
 
 void
 bios_addsmapdata(struct preloaded_file *kfp)
 {
-	int len;
+	size_t	size;
 
 	if (smapbase == NULL || smaplen == 0) {
 		return;
 	}
-	len = smaplen * sizeof(*smapbase);
-	file_addmetadata(kfp, MODINFOMD_SMAP, len, smapbase);
-	/* Temporary compatibility with older development kernels */
-	file_addmetadata(kfp, 0x0009, len, smapbase);
+	size = smaplen * sizeof(*smapbase);
+	file_addmetadata(kfp, MODINFOMD_SMAP, size, smapbase);
+	if (smapattr != NULL) {
+		size = smaplen * sizeof(*smapattr);
+		file_addmetadata(kfp, 0x0009, size, smapattr);
+	}
+}
+
+static int
+command_smap(int argc, char *argv[])
+{
+	u_int			i;
+
+	if (smapbase == NULL || smaplen == 0)
+		return (CMD_ERROR);
+	if (smapattr != NULL)
+		for (i = 0; i < smaplen; i++)
+			printf("SMAP type=%02x base=%016llx len=%016llx attr=%02x\n",
+			    (unsigned int)smapbase[i].type,
+			    (unsigned long long)smapbase[i].base,
+			    (unsigned long long)smapbase[i].length,
+			    (unsigned int)smapattr[i]);
+	else
+		for (i = 0; i < smaplen; i++)
+			printf("SMAP type=%02x base=%016llx len=%016llx\n",
+			    (unsigned int)smapbase[i].type,
+			    (unsigned long long)smapbase[i].base,
+			    (unsigned long long)smapbase[i].length);
+	return (CMD_OK);
 }

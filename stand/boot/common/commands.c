@@ -35,6 +35,16 @@
 #include "commands.h"
 #include <lib/libsa/stand.h>
 
+COMMAND_SET(help, "help", "detailed help", command_help);
+COMMAND_SET(commandlist, "?", "list commands", command_commandlist);
+COMMAND_SET(show, "show", "show variable(s)", command_show);
+COMMAND_SET(set, "set", "set a variable", command_set);
+COMMAND_SET(unset, "unset", "unset a variable", command_unset);
+COMMAND_SET(echo, "echo", "echo arguments", command_echo);
+COMMAND_SET(read, "read", "read input from the terminal", command_read);
+COMMAND_SET(more, "more", "show contents of a file", command_more);
+COMMAND_SET(lsdev, "lsdev", "list all devices", command_lsdev);
+
 static char command_errbuf[256];
 static int page_file(char *filename);
 
@@ -496,37 +506,4 @@ command_lsdev(int argc, char *argv[])
 
 	pager_close();
 	return (CMD_OK);
-}
-
-int
-command_quit(int argc, char *argv[])
-{
-	exit(0);
-	return (CMD_OK);
-}
-
-int
-command_heap(int argc, char *argv[])
-{
-    char *base;
-    size_t bytes;
-
-    base = getheap(&bytes);
-    printf("heap %p-%p (%d)\n", base, base + bytes, (int)bytes);
-    printf("stack at %p\n", &argc);
-    return (CMD_OK);
-}
-
-int
-command_reboot(int argc, char *argv[])
-{
-	int i;
-
-	for (i = 0; devsw[i] != NULL; ++i)
-		if (devsw[i]->dv_cleanup != NULL)
-			(devsw[i]->dv_cleanup)();
-
-	printf("Rebooting...\n");
-	delay(1000000);
-	__exit(0);
 }

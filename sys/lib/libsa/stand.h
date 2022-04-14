@@ -187,8 +187,8 @@ int     				getfile(char *, int);
 
 /* gets.c */
 void    				gets(char *);
-void					ngets(char *buf, int n);
-int						fgetstr(char *buf, int size, int fd);
+void					ngets(char *, int);
+int						fgetstr(char *, int, int );
 
 /* ioctl.c */
 int     				ioctl(int, int, char *);
@@ -227,10 +227,6 @@ void    				twiddle(void);
 /* write.c */
 int     				write(int, char *, u_int);
 
-/* "stand/boot/common" routines: */
-extern int				fgetstr(char *buf, int size, int fd);
-extern void				ngets(char *, int);
-
 /* getopt.c */
 extern char				*optarg;			/* getopt(3) external variables */
 extern int				optind, opterr, optopt, optreset;
@@ -239,8 +235,8 @@ extern int				getopt(int, char * const[], const char *);
 /* pager.c */
 extern void				pager_open(void);
 extern void				pager_close(void);
-extern int				pager_output(const char *lines);
-extern int				pager_file(const char *fname);
+extern int				pager_output(const char *);
+extern int				pager_file(const char *);
 
 /* readdir.c */
 extern struct dirent 	*readdirfd(int);
