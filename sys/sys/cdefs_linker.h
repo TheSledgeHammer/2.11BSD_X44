@@ -115,6 +115,7 @@
 #define __link_make_set(set, sym) 			                \
 	__GLOBL(__start_link_set_##set);		                \
 	__GLOBL(__stop_link_set_##set);			                \
+	static void const * const __link_set_##set##_sym_##sym		\
    	__section("link_set_" #set) __used = &(sym)
     	
 #define __link_text_set(set, sym) 	__link_make_set(set, sym)
