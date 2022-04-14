@@ -349,11 +349,13 @@ lint: ${LOBJS}
 MACHINE_NAME!=  uname -n
 install: install-kernel-${MACHINE_NAME}
 .if !target(install-kernel-${MACHINE_NAME})
-install-kernel-${MACHINE_NAME}:
-	rm -f ${DESTDIR}/onetbsd
-	ln ${DESTDIR}/netbsd ${DESTDIR}/onetbsd
-	cp netbsd ${DESTDIR}/nnetbsd
-	mv ${DESTDIR}/nnetbsd ${DESTDIR}/netbsd
+.include "kern.post.mk"
+
+#install-kernel-${MACHINE_NAME}:
+#	rm -f ${DESTDIR}/onetbsd
+#	ln ${DESTDIR}/netbsd ${DESTDIR}/onetbsd
+#	cp netbsd ${DESTDIR}/nnetbsd
+#	mv ${DESTDIR}/nnetbsd ${DESTDIR}/netbsd
 .endif
 .endif
 
