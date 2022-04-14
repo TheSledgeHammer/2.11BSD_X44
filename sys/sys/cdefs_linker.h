@@ -107,4 +107,34 @@
 #define SET_COUNT(set)											\
 	(SET_LIMIT(set) - SET_BEGIN(set))
 
+/* TODO: convert above to FreeBSD compatability */
+/* A netbsd compatible elf linker-set */
+
+#include <sys/cdefs_elf.h>
+
+#define __link_make_set(set, sym) 			                \
+	__GLOBL(__start_link_set_##set);		                \
+	__GLOBL(__stop_link_set_##set);			                \
+   	__section("link_set_" #set) __used = &(sym)
+    	
+#define __link_text_set(set, sym) 	__link_make_set(set, sym)
+#define __link_data_set(set, sym)	__link_make_set(set, sym)
+#define __link_bss_set(set, sym) 	__link_make_set(set, sym)
+#define __link_abs_set(set, sym) 	__link_make_set(set, sym)
+#define __link_set_entry(set, sym)  	__link_make_set(set, sym)
+
+#define	__link_set_decl(set, ptype)				        \
+	extern ptype *(__link_set_start(set));			        \
+	extern ptype *(__link_set_end(set));			        \
+
+#define __link_set_decl_weak(set, ptype)			        \
+	extern ptype __weak_symbol *(__link_set_start(set));		\
+	extern ptype __weak_symbol *(__link_set_end(set));	    	\
+	    	
+#define __link_set_foreach(pvar, set)					\
+	for (pvar = __link_set_start(set); pvar < __link_set_end(set); pvar++)
+
+#define __link_set_item(set, i)                             		\
+    	((&__link_set_start(set))[i])
+
 #endif	/* _SYS_CDEFS_LINKER_H_ */
