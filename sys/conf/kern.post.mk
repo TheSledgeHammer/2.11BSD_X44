@@ -6,8 +6,6 @@ KERNEL_KO?=		kernel
 KERNEL?=		kernel
 KODIR?=			/boot/${KERNEL}
 
-install: install-kernel-${MACHINE_NAME}
-.if !target(install-kernel-${MACHINE_NAME})
 install-kernel-${MACHINE_NAME}:
 	@if [ ! -f ${KERNEL_KO} ] ; then \
 		echo "You must build a kernel first." ; \
@@ -35,7 +33,7 @@ install-kernel-${MACHINE_NAME}:
 .endif
 	mkdir -p ${DESTDIR}${KODIR}
 	${INSTALL} -p -m 555 -o ${KMODOWN} -g ${KMODGRP} ${KERNEL_KO} ${DESTDIR}${KODIR}/
-.if defined(DEBUG) && !defined(INSTALL_NODEBUG) && ${MK_KERNEL_SYMBOLS} != "no"
-	mkdir -p ${DESTDIR}${KERN_DEBUGDIR}${KODIR}
-	${INSTALL} -p -m 555 -o ${KMODOWN} -g ${KMODGRP} ${KERNEL_KO}.debug ${DESTDIR}${KERN_DEBUGDIR}${KODIR}/
-.endif
+#.if defined(DEBUG) && !defined(INSTALL_NODEBUG) && ${MK_KERNEL_SYMBOLS} != "no"
+#	mkdir -p ${DESTDIR}${KERN_DEBUGDIR}${KODIR}
+#	${INSTALL} -p -m 555 -o ${KMODOWN} -g ${KMODGRP} ${KERNEL_KO}.debug ${DESTDIR}${KERN_DEBUGDIR}${KODIR}/
+#.endif
