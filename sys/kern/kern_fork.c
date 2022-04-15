@@ -173,7 +173,7 @@ again:
 	rip = u.u_procp;
 	rpp->p_stat = SIDL;
 	rpp->p_pid = mpid;
-	rpp->p_realtimer.it_value = *(struct timeval *)NULL;
+	rpp->p_realtimer.it_value = 0;
 	rpp->p_flag = P_SLOAD;
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
