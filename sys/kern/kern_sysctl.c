@@ -177,13 +177,14 @@ char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
  * kernel related system variables.
  */
 int
-kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
 	size_t newlen;
+	struct proc *p;
 {
 	int error, level;
 	u_long longhostid;
@@ -198,7 +199,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case KERN_OSRELEASE:
 			return (sysctl_rdstring(oldp, oldlenp, newp, osrelease));
 	case KERN_OSREV:
-		return (sysctl_rdlong(oldp, oldlenp, newp, osrevision));
+		return (sysctl_rdlong(oldp, oldlenp, newp, *osrevision));
 	case KERN_OSVERSION:
 		return (sysctl_rdstring(oldp, oldlenp, newp, osversion));
 	case KERN_VERSION:
@@ -227,7 +228,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (error);
 	case KERN_HOSTID:
 		longhostid = hostid;
-		error =  sysctl_long(oldp, oldlenp, newp, newlen, longhostid);
+		error =  sysctl_long(oldp, oldlenp, newp, newlen, &longhostid);
 		hostid = longhostid;
 		return (error);
 	case KERN_CLOCKRATE:
@@ -267,20 +268,20 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
  * hardware related system variables.
  */
 int
-hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
 	size_t newlen;
+	struct proc *p;
 {
-	extern char machine, cpu_model;
-	extern	size_t physmem;			/* machdep2.c */
+	extern char machine[], cpu_model[128];
 
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1)
-		return (ENOTDIR);		/* overloaded */
+		return (ENOTDIR);		    /* overloaded */
 
 	switch (name[0]) {
 	case HW_MACHINE:
@@ -288,7 +289,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case HW_MODEL:
 		return (sysctl_rdstring(oldp, oldlenp, newp, cpu_model));
 	case HW_NCPU:
-		return (sysctl_rdint(oldp, oldlenp, newp, 1));	/* XXX */
+		return (sysctl_rdint(oldp, oldlenp, newp, NCPUS));	/* XXX */
 	case HW_BYTEORDER:
 		return (sysctl_rdint(oldp, oldlenp, newp, BYTE_ORDER));
 	case HW_PHYSMEM:

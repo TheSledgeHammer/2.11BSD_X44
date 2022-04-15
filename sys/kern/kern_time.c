@@ -16,8 +16,7 @@
 #include <sys/times.h>
 #include <sys/sysdecl.h>
 
-static void setthetime(struct timeval *);
-static void timevalfix(struct timeval *);
+static void setthetime(struct timeval);
 
 /* 
  * Time of day and interval timer support.
@@ -70,7 +69,7 @@ settimeofday()
 		u.u_error = copyin((caddr_t)SCARG(uap, tv), (caddr_t)&atv, sizeof(struct timeval));
 		if (u.u_error)
 			return (u.u_error);
-		setthetime(&atv);
+		setthetime(atv);
 		if	(u.u_error)
 			return (u.u_error);
 	}
@@ -88,8 +87,9 @@ settimeofday()
 
 static void
 setthetime(tv)
-	register struct timeval *tv;
+	register struct timeval tv;
 {
+    struct timeval delta;
 	int	s;
 
 	if (!suser())
@@ -106,23 +106,23 @@ setthetime(tv)
 	 *	  will fail if the next 'if' is enabled - all that does is fill up the
 	 *	  logfiles with "can't set time" messages and the time keeps drifting.
 	 */
-	if (securelevel > 0 && timercmp(tv, &time, <)) {
+	if (securelevel > 0 && timercmp(&tv, &time, <)) {
 		u.u_error = EPERM; /* XXX */
 		return;
 	}
 #endif
 	/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
-	boottime.tv_sec += tv->tv_sec - time->tv_sec;
-	s = splhigh();
-	time = *tv;
-	lbolt = time->tv_usec / mshz;
+	s = splclock();
+	delta.tv_sec = tv.tv_sec - time.tv_sec;
+	delta.tv_usec = tv.tv_usec - time.tv_usec;
+	time = tv;
+	(void) splsoftclock();
+	timevaladd(&boottime, &delta);
+	timevalfix(&boottime);
+	timevaladd(&runtime, &delta);
+	timevalfix(&runtime);
 	splx(s);
-#ifdef	notyet
-	/*
-	 * if you have a time of day board, use it here
-	 */
 	resettodr();
-#endif
 }
 
 int
@@ -134,7 +134,7 @@ adjtime()
 	} *uap = (struct adjtime_args *)u.u_ap;
 	struct timeval atv;
 	register int s;
-	long adjust;
+	register long adjust;
 
 	if (u.u_error == suser()) {
 		return (u.u_error);
@@ -146,11 +146,11 @@ adjtime()
 	/* if unstoreable values, just set the clock */
 	if (adjust > 0x7fff || adjust < 0x8000) {
 		s = splclock();
-		time->tv_sec += atv.tv_sec;
+		time.tv_sec += atv.tv_sec;
 		lbolt += atv.tv_usec / mshz;
 		while (lbolt >= hz) {
 			lbolt -= hz;
-			++time->tv_sec;
+			++time.tv_sec;
 		}
 		splx(s);
 		if (!SCARG(uap, olddelta))
@@ -176,23 +176,29 @@ getitimer()
 		syscallarg(u_int) which;
 		syscallarg(struct itimerval *) itv;
 	} *uap = (struct getitimer_args *)u.u_ap;
-
-	register struct itimerval aitv;
+    struct itimerval aitv;
 	register int s;
 
 	if (SCARG(uap, which) > ITIMER_PROF) {
 		u.u_error = EINVAL;
 		return (u.u_error);
 	}
-	aitv.itv_interval;
-	aitv.itv_interval.tv_usec = 0;
+	aitv.it_interval.tv_usec = 0;
 	aitv.it_value.tv_usec = 0;
 	s = splclock();
 	if (SCARG(uap, which) == ITIMER_REAL) {
 		register struct proc *p = u.u_procp;
-
+		
 		aitv.it_interval.tv_sec = p->p_realtimer.it_interval;
 		aitv.it_value.tv_sec = p->p_realtimer.it_value;
+
+		if(timerisset(&aitv.it_value)) {
+		    if (timercmp(&aitv.it_value, &time, <)) {
+		        timerclear(&aitv.it_value);
+		    } else {
+		        timevalsub(&aitv.it_value, (struct timeval *)&time);
+		    }
+		} 
 	} else {
 		register struct k_itimerval *t = &u.u_timer[SCARG(uap, which) - 1];
 
@@ -342,7 +348,7 @@ timevalsub(t1, t2)
 	timevalfix(t1);
 }
 
-static void
+void
 timevalfix(t1)
 	struct timeval *t1;
 {
