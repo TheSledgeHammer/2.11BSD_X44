@@ -322,7 +322,7 @@ struct kinfo_proc {
 #define	CTL_DEBUG_MAXID		20
 
 #ifdef	_KERNEL
-#ifdef	DEBUG || DIAGNOSTIC
++#if defined(DEBUG) || defined(DIAGNOSTIC)
 /*
  * CTL_DEBUG variables.
  *
