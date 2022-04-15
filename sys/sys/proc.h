@@ -77,7 +77,7 @@ struct	proc {
 	u_int				p_swtime;	 	/* Time swapped in or out. */
 	struct callout 		p_tsleep_ch;	/* callout for tsleep */
 
-    struct itimerval   	p_realtimer;	/* Alarm timer. */
+    struct k_itimerval 	p_realtimer;	/* Alarm timer. */
     struct timeval     	p_rtime;	    /* Real time. */
     u_quad_t 			p_uticks;		/* Statclock hits in user mode. */
     u_quad_t 			p_sticks;		/* Statclock hits in system mode. */
