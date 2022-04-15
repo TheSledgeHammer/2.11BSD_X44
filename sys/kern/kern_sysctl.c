@@ -465,10 +465,10 @@ sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 		return (EINVAL);
 	if (oldp) {
 		*oldlenp = len;
-		error = vcopyout(str, oldp, len);
+		error = copyout(str, oldp, len);
 	}
 	if (error == 0 && newp) {
-		error = vcopyin(newp, str, newlen);
+		error = copyin(newp, str, newlen);
 		str[newlen] = 0;
 	}
 	return (error);
@@ -493,7 +493,7 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
 		return (EPERM);
 	*oldlenp = len;
 	if (oldp)
-		error = vcopyout(str, oldp, len);
+		error = copyout(str, oldp, len);
 	return (error);
 }
 
