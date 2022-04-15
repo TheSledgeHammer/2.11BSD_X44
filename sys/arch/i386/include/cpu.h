@@ -116,6 +116,7 @@ extern char		btext[];
 extern char		etext[];
 
 /* machdep.c */
+void	boot(int);
 void	cpu_halt(void);
 void	cpu_reset(void);
 
