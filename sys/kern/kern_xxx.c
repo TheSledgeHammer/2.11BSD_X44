@@ -19,6 +19,8 @@
 
 #include <vm/include/vm.h>
 
+#include <machine/cpu.h>
+
 int
 reboot()
 {
@@ -30,6 +32,6 @@ reboot()
 	if (error == suser()) {
 		return (error);
 	}
-	boot(rootdev, SCARG(uap, opt));
+	boot(SCARG(uap, opt));
 	return (0);
 }
