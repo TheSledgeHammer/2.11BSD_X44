@@ -52,8 +52,8 @@
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/map.h>
-
 #include <sys/sysctl.h>
+
 #include <vm/include/vm.h>
 
 sysctlfn 		kern_sysctl;
@@ -115,7 +115,7 @@ __sysctl()
 		break;
 #ifdef	INET
 	case CTL_NET:
-		fn = NET_SYSCTL;
+		fn = net_sysctl;
 		break;
 #endif
 	case CTL_VFS:
@@ -145,8 +145,7 @@ __sysctl()
 		memlock.sl_lock = 1;
 		savelen = oldlen;
 	}
-	error = (*fn)(name + 1, SCARG(uap, namelen) - 1, SCARG(uap, old), &oldlen,
-	    SCARG(uap, new), SCARG(uap, newlen));
+	error = (*fn)(name + 1, SCARG(uap, namelen) - 1, SCARG(uap, old), &oldlen, SCARG(uap, new), SCARG(uap, newlen), u.u_procp);
 	if (SCARG(uap, old) != NULL) {
 		memlock.sl_lock = 0;
 		if (memlock.sl_want) {
@@ -188,8 +187,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 {
 	int error, level;
 	u_long longhostid;
-	char bsd[10];
-	extern char ostype[], osrelease[], version[];
 
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1 && !(name[0] == KERN_PROC || name[0] == KERN_PROF))
@@ -201,15 +198,17 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case KERN_OSRELEASE:
 			return (sysctl_rdstring(oldp, oldlenp, newp, osrelease));
 	case KERN_OSREV:
-		return (sysctl_rdlong(oldp, oldlenp, newp, BSD));
+		return (sysctl_rdlong(oldp, oldlenp, newp, osrevision));
+	case KERN_OSVERSION:
+		return (sysctl_rdstring(oldp, oldlenp, newp, osversion));
 	case KERN_VERSION:
 		return (sysctl_rdstring(oldp, oldlenp, newp, version));
 	case KERN_MAXVNODES:
-		return(sysctl_rdint(oldp, oldlenp, newp, &desiredvnodes));
+		return(sysctl_rdint(oldp, oldlenp, newp, desiredvnodes));
 	case KERN_MAXPROC:
-		return (sysctl_rdint(oldp, oldlenp, newp, &maxproc));
+		return (sysctl_rdint(oldp, oldlenp, newp, maxproc));
 	case KERN_MAXFILES:
-		return (sysctl_rdint(oldp, oldlenp, newp, &maxfiles));
+		return (sysctl_rdint(oldp, oldlenp, newp, maxfiles));
 	case KERN_ARGMAX:
 		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
 	case KERN_SECURELVL:
@@ -228,16 +227,15 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (error);
 	case KERN_HOSTID:
 		longhostid = hostid;
-		error =  sysctl_long(oldp, oldlenp, newp, newlen, &longhostid);
+		error =  sysctl_long(oldp, oldlenp, newp, newlen, longhostid);
 		hostid = longhostid;
 		return (error);
 	case KERN_CLOCKRATE:
 		return (sysctl_clockrate(oldp, oldlenp));
 	case KERN_BOOTTIME:
-		return (sysctl_rdstruct(oldp, oldlenp, newp, &boottime,
-		    sizeof(struct timeval)));
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &boottime, sizeof(struct timeval)));
 	case KERN_VNODE:
-		return (sysctl_vnode(oldp, oldlenp));
+		return (sysctl_vnode(oldp, oldlenp, u.u_procp));
 	case KERN_PROC:
 		return (sysctl_doproc(name + 1, namelen - 1, oldp, oldlenp));
 	case KERN_FILE:
@@ -584,7 +582,7 @@ sysctl_rdquad(oldp, oldlenp, newp, val)
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
-	quad_t *val;
+	quad_t val;
 {
 	int error = 0;
 
@@ -632,7 +630,7 @@ sysctl_rdbool(oldp, oldlenp, newp, val)
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
-	bool_t *val;
+	bool_t val;
 {
 	int error = 0;
 
@@ -713,7 +711,7 @@ sysctl_clockrate(where, sizep)
 	clkinfo.tick = mshz;
 	clkinfo.profhz = 0;
 	clkinfo.stathz = hz;
-	return(sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof (clkinfo)));
+	return (sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof (clkinfo)));
 }
 
 /*

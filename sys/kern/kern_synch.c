@@ -70,12 +70,10 @@ schedcpu(arg)
 		 * since the kernel never has a timeout of greater than
 		 * around 9 minutes.
 		 */
-		 /*
-		if (p->p_realtimer.it_value && !--p->p_realtimer.it_value) {
+		if (p->p_realtimer.it_value /*&& !--p->p_realtimer.it_value*/) {
 			psignal(p, SIGALRM);
 			p->p_realtimer.it_value = p->p_realtimer.it_interval;
 		}
-		*/
 		p->p_swtime++;
 		if (p->p_stat == SSLEEP || p->p_stat == SSTOP)
 			if (p->p_slptime != 127)

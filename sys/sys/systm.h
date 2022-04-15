@@ -40,7 +40,11 @@
 
 extern int securelevel;				/* system security level */
 extern const char *panicstr;		/* panic message */
-extern char version[];				/* system version */
+extern const char version[];		/* system version */
+extern const char ostype[];
+extern const char osversion[];
+extern const char osrelease[];
+extern const char osrevision[];
 
 extern int nblkdev;					/* number of entries in bdevsw */
 extern int nchrdev;					/* number of entries in cdevsw */

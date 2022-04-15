@@ -29,12 +29,19 @@
  *	Date:	8/90
  */
 
+#ifndef _DDB_DB_OUTPUT_H_
+#define _DDB_DB_OUTPUT_H_
+
+#include <sys/stdarg.h>
+
 /*
  * Printing routines for kernel debugger.
  */
-void db_force_whitespace (void);
-void db_putchar (int);
-int db_print_position (void);
-void db_printf (const char *, ...)    __kprintf_attribute__((__format__(__kprintf__,1,2)));
-void kdbprintf (const char *, ...)   __kprintf_attribute__((__format__(__kprintf__,1,2)));
-void db_end_line (void);
+void 	db_force_whitespace(void);
+void 	db_putchar(int);
+int 	db_print_position(void);
+void 	db_printf(const char *, ...)   __attribute__((__format__(__kprintf__,1,2)));
+void 	kdbprintf(const char *, ...)   __attribute__((__format__(__kprintf__,1,2)));
+void 	db_end_line(void);
+
+#endif /* _DDB_DB_OUTPUT_H_ */

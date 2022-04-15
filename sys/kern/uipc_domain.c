@@ -117,13 +117,14 @@ found:
 }
 
 int
-net_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+net_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
 	size_t newlen;
+	struct proc *p;
 {
 	register struct domain *dp;
 	register struct protosw *pr;

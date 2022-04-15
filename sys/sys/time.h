@@ -141,23 +141,27 @@ extern volatile time_t	time_second;
 #endif
 
 #ifdef _KERNEL
-int		itimerdecr (struct itimerval *itp,int usec);
-int		itimerfix (struct timeval *);
-void	microtime (struct timeval *);
-void	timevaladd (struct timeval *, struct timeval *);
-void	timevalfix (struct timeval *);
-void	timevalsub (struct timeval *, struct timeval *);
-#endif /* !KERNEL */
+int		itimerdecr(struct itimerval *itp,int usec);
+int		itimerfix(struct timeval *);
+void	microtime(struct timeval *);
+void	timevaladd(struct timeval *, struct timeval *);
+void	timevalfix(struct timeval *);
+void	timevalsub(struct timeval *, struct timeval *);
+#else /* !KERNEL */
 
+#include <time.h>
+
+#ifndef _POSIX_SOURCE
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	adjtime (const struct timeval *, struct timeval *);
-int	getitimer (int, struct itimerval *);
-int	gettimeofday (struct timeval *, struct timezone *);
-int	setitimer (int, const struct itimerval *, struct itimerval *);
-int	settimeofday (const struct timeval *, const struct timezone *);
-int	utimes (const char *, const struct timeval *);
+int	adjtime(const struct timeval *, struct timeval *);
+int	getitimer(int, struct itimerval *);
+int	gettimeofday(struct timeval *, struct timezone *);
+int	setitimer(int, const struct itimerval *, struct itimerval *);
+int	settimeofday(const struct timeval *, const struct timezone *);
+int	utimes(const char *, const struct timeval *);
 __END_DECLS
-
+#endif /* !POSIX */
+#endif /* !KERNEL */
 #endif	/* !_SYS_TIME_H_ */

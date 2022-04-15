@@ -15,9 +15,9 @@
  */
 struct timeb
 {
-	time_t	time;				/* seconds since the Epoch */
-	unsigned short millitm;		/* + milliseconds since the Epoch */
-	short	timezone;			/* minutes west of CUT */
-	short	dstflag;			/* DST == non-zero */
+	time_t			time;			/* seconds since the Epoch */
+	unsigned short 	millitm;		/* + milliseconds since the Epoch */
+	short			timezone;		/* minutes west of CUT */
+	short			dstflag;		/* DST == non-zero */
 };
 #endif /* _SYS_TIMEB_H_ */

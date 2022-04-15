@@ -118,40 +118,41 @@ struct ctlname {
 #define	KERN_OSTYPE	 		 1	/* string: system version */
 #define	KERN_OSRELEASE		 2	/* string: system release */
 #define	KERN_OSREV	 		 3	/* int: system revision */
-#define	KERN_VERSION		 4	/* string: compile time info */
-#define	KERN_MAXVNODES		 5	/* int: max vnode */
-#define	KERN_MAXPROC		 6	/* int: max processes */
-#define	KERN_MAXFILES		 7	/* int: max open files */
-#define	KERN_ARGMAX	 		 8	/* int: max arguments to exec */
-#define	KERN_SECURELVL		 9	/* int: system security level */
-#define	KERN_HOSTNAME		10	/* string: hostname */
-#define	KERN_HOSTID			11	/* int: host identifier */
-#define	KERN_CLOCKRATE		12	/* struct: struct clockrate */
-#define	KERN_VNODE			13	/* struct: vnode structures */
-#define	KERN_PROC			14	/* struct: process entries */
-#define	KERN_FILE			15	/* struct: file entries */
-#define	KERN_PROF			16	/* node: kernel profiling info */
-#define	KERN_POSIX1			17	/* int: POSIX.1 version */
-#define	KERN_NGROUPS		18	/* int: # of supplemental group ids */
-#define	KERN_JOB_CONTROL	19	/* int: is job control available */
-#define	KERN_SAVED_IDS		20	/* int: saved set-user/group-ID */
-#define	KERN_BOOTTIME		21	/* struct: time kernel was booted */
-#define	KERN_MAXTEXTS		22	/* int: # of text entries */
-#define	KERN_TEXT			23	/* struct: text entries */
-#define	KERN_ACCTTHRESH		24	/* int: accounting daemon threshold */
-#define KERN_DOMAINNAME		22	/* string: YP domain name */
-#define KERN_UPDATEINTERVAL	23	/* int: update process sleep time */
-#define KERN_OSRELDATE		24	/* int: OS release date */
-#define KERN_NTP_PLL		25	/* node: NTP PLL control */
-#define	KERN_BOOTFILE		26	/* string: name of booted kernel */
-#define	KERN_MAXID			27	/* number of valid kern ids */
+#define KERN_OSVERSION		 4	/* string: kernel build version */
+#define	KERN_VERSION		 5	/* string: compile time info */
+#define	KERN_MAXVNODES		 6	/* int: max vnode */
+#define	KERN_MAXPROC		 7	/* int: max processes */
+#define	KERN_MAXFILES		 8	/* int: max open files */
+#define	KERN_ARGMAX	 		 9	/* int: max arguments to exec */
+#define	KERN_SECURELVL		10	/* int: system security level */
+#define	KERN_HOSTNAME		11	/* string: hostname */
+#define	KERN_HOSTID			12	/* int: host identifier */
+#define	KERN_CLOCKRATE		13	/* struct: struct clockrate */
+#define	KERN_VNODE			14	/* struct: vnode structures */
+#define	KERN_PROC			15	/* struct: process entries */
+#define	KERN_FILE			16	/* struct: file entries */
+#define	KERN_PROF			17	/* node: kernel profiling info */
+#define	KERN_POSIX1			18	/* int: POSIX.1 version */
+#define	KERN_NGROUPS		19	/* int: # of supplemental group ids */
+#define	KERN_JOB_CONTROL	20	/* int: is job control available */
+#define	KERN_SAVED_IDS		21	/* int: saved set-user/group-ID */
+#define	KERN_BOOTTIME		22	/* struct: time kernel was booted */
+#define	KERN_MAXTEXTS		23	/* int: # of text entries */
+#define	KERN_TEXT			24	/* struct: text entries */
+#define	KERN_ACCTTHRESH		25	/* int: accounting daemon threshold */
+#define KERN_DOMAINNAME		26	/* string: YP domain name */
+#define KERN_UPDATEINTERVAL	27	/* int: update process sleep time */
+#define KERN_OSRELDATE		28	/* int: OS release date */
+#define KERN_NTP_PLL		29	/* node: NTP PLL control */
+#define	KERN_BOOTFILE		30	/* string: name of booted kernel */
+#define	KERN_MAXID			31	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, 							\
 	{ "ostype", CTLTYPE_STRING }, 		\
 	{ "osrelease", CTLTYPE_STRING }, 	\
 	{ "osrevision", CTLTYPE_LONG }, 	\
-	{ "version", CTLTYPE_STRING }, 		\
+	{ "osversion", CTLTYPE_STRING }, 	\
 	{ "maxvnodes", CTLTYPE_INT }, 		\
 	{ "maxproc", CTLTYPE_INT }, 		\
 	{ "maxfiles", CTLTYPE_INT }, 		\
@@ -321,7 +322,7 @@ struct kinfo_proc {
 #define	CTL_DEBUG_MAXID		20
 
 #ifdef	_KERNEL
-#if	defined(DEBUG) || defined(DIAGNOSTIC)
+#ifdef	DEBUG || DIAGNOSTIC
 /*
  * CTL_DEBUG variables.
  *
@@ -355,18 +356,29 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
  */
 typedef int (sysctlfn)(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 
-int sysctl_int (void *, size_t *, void *, size_t, int *);
-int sysctl_rdint (void *, size_t *, void *, int);
-int sysctl_string (void *, size_t *, void *, size_t, char *, int);
-int sysctl_rdstring (void *, size_t *, void *, char *);
-int sysctl_rdstruct (void *, size_t *, void *, void *, int);
-void fill_eproc (struct proc *, struct eproc *);
+int sysctl_int(void *, size_t *, void *, size_t, int *);
+int sysctl_rdint(void *, size_t *, void *, int);
+int sysctl_long(void *, size_t *, void *, size_t, long *);
+int sysctl_rdlong(void *, size_t *, void *, long);
+int sysctl_string(void *, size_t *, void *, size_t, char *, int);
+int sysctl_rdstring(void *, size_t *, void *, char *);
+int sysctl_rdstruct(void *, size_t *, void *, void *, int);
+int sysctl_quad(void *, size_t *, void *, size_t, quad_t *);
+int sysctl_rdquad(void *, size_t *, void *, quad_t);
+int sysctl_bool(void *, size_t *, void *, size_t, bool_t *);
+int sysctl_rdbool(void *, size_t *, void *, bool_t);
+int sysctl_file(char *, size_t *);
+int	sysctl_clockrate(char *, size_t *);
+int	sysctl_doproc(int *, u_int, char *, size_t *);
+int	sysctl_vnode(char *, size_t *, struct proc *);
 
+void fill_eproc(struct proc *, struct eproc *);
+//int sysctl_text(char *, size_t *);
 #else	/* !KERNEL */
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	sysctl (int *, u_int, void *, size_t *, void *, size_t);
+int	sysctl(int *, u_int, void *, size_t *, void *, size_t);
 __END_DECLS
 #endif	/* KERNEL */
 

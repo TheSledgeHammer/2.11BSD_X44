@@ -16,7 +16,8 @@
 #include <sys/times.h>
 #include <sys/sysdecl.h>
 
-register struct timeval *time;
+static void setthetime(struct timeval *);
+static void timevalfix(struct timeval *);
 
 /* 
  * Time of day and interval timer support.
@@ -41,7 +42,10 @@ gettimeofday()
 		 * We don't resolve the milliseconds on every clock tick; it's
 		 * easier to do it here.  Long casts are out of paranoia.
 		 */
-		s = splhigh(); atv = time; ms = lbolt; splx(s);
+		s = splhigh();
+		atv = time;
+		ms = lbolt;
+		splx(s);
 		atv.tv_usec = (long)ms * mshz;
 		u.u_error = copyout((caddr_t)&atv, (caddr_t)(SCARG(uap, tp)), sizeof(atv));
 		if (u.u_error)
@@ -173,14 +177,14 @@ getitimer()
 		syscallarg(struct itimerval *) itv;
 	} *uap = (struct getitimer_args *)u.u_ap;
 
-	register struct itimerval *aitv;
+	register struct itimerval aitv;
 	register int s;
 
 	if (SCARG(uap, which) > ITIMER_PROF) {
 		u.u_error = EINVAL;
-		return;
+		return (u.u_error);
 	}
-	aitv->itv_interval;
+	aitv.itv_interval;
 	aitv.itv_interval.tv_usec = 0;
 	aitv.it_value.tv_usec = 0;
 	s = splclock();

@@ -293,17 +293,13 @@ kmembucket_search(cache, meta, size, mtype)
 			if(next != slab) {
 				if(next->ksl_flags == SLAB_PARTIAL) {
 					slab = next;
-					if (bsize > meta->ksm_bsize && bslots > meta->ksm_bslots && fslots > meta->ksm_fslots) {
-						kbp = slab_kmembucket(slab);
-						slabmeta(slab, slab->ksl_size);
-						return (kbp);
-					}
+					goto partial;
+					break;
 				}
 				if(next->ksl_flags == SLAB_EMPTY) {
 					slab = next;
-					kbp = slab_kmembucket(slab);
-					slabmeta(slab, slab->ksl_size);
-					return (kbp);
+					goto empty;
+					break;
 				}
 			}
 			return (NULL);
@@ -311,6 +307,7 @@ kmembucket_search(cache, meta, size, mtype)
 		break;
 
 	case SLAB_PARTIAL:
+partial:
 		if (bsize > meta->ksm_bsize && bslots > meta->ksm_bslots && fslots > meta->ksm_fslots) {
 			kbp = slab_kmembucket(slab);
 			slabmeta(slab, slab->ksl_size);
@@ -319,6 +316,7 @@ kmembucket_search(cache, meta, size, mtype)
 		break;
 
 	case SLAB_EMPTY:
+empty:
 		kbp = slab_kmembucket(slab);
 		slabmeta(slab, slab->ksl_size);
 		return (kbp);
