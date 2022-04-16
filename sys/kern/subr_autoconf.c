@@ -47,6 +47,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/kernel.h>
+#include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
@@ -57,7 +58,7 @@ struct deferred_config_head	deferred_config_queue = TAILQ_HEAD_INITIALIZER(defer
 struct deferred_config_head	interrupt_config_queue = TAILQ_HEAD_INITIALIZER(interrupt_config_queue);
 struct evcntlist allevents = TAILQ_HEAD_INITIALIZER(allevents);
 
-static void config_process_deferred(struct deferred_config *, struct device *);
+static void config_process_deferred(struct deferred_config_head *, struct device *);
 
 __volatile int config_pending;		/* semaphore for mountroot */
 
@@ -594,15 +595,15 @@ config_interrupts(dev, func)
  */
 static void
 config_process_deferred(queue, parent)
-	struct deferred_config *queue;
+	struct deferred_config_head *queue;
 	struct device *parent;
 {
 	struct deferred_config *dc, *ndc;
 
-	for (dc = TAILQ_FIRST(&deferred_config_queue); dc != NULL; dc = ndc) {
+	for (dc = TAILQ_FIRST(queue); dc != NULL; dc = ndc) {
 		ndc = TAILQ_NEXT(dc, dc_queue);
 		if (parent == NULL || dc->dc_dev->dv_parent == parent) {
-			TAILQ_REMOVE(&deferred_config_queue, dc, dc_queue);
+			TAILQ_REMOVE(queue, dc, dc_queue);
 			(*dc->dc_func)(dc->dc_dev);
 			free(dc, M_DEVBUF);
 			config_pending_decr();

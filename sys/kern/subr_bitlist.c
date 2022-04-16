@@ -57,7 +57,7 @@ ctop_t 							*ctop;
 #define bitlist_lock(lock) 				(simple_lock(lock))
 #define bitlist_unlock(lock) 			(simple_unlock(lock))
 
-static void	bitlist_init(void);
+void	bitlist_init(void);
 
 void
 ctop_init(void)
@@ -103,7 +103,7 @@ ctop_isset(top, val)
 	return (0);
 }
 
-static void
+void
 bitlist_init(void)
 {
     int i;

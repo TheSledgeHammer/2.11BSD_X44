@@ -400,9 +400,6 @@ struct cscan_queue {
 	daddr_t 		cq_lastrawblkno;	/* b_rawblkno of the last request */
 };
 
-RB_PROTOTYPE(bqhead, buf, b_rbnode, cscan_tree_compare_nodes);
-RB_GENERATE(bqhead, buf, b_rbnode, cscan_tree_compare_nodes);
-
 static int __inline cscan_empty(const struct cscan_queue *);
 static void cscan_put(struct cscan_queue *, struct buf *, int);
 static struct buf *cscan_get(struct cscan_queue *, int);
@@ -446,6 +443,9 @@ cscan_tree_compare_nodes(context, n1, n2)
 	return (0);
 }
 
+RB_PROTOTYPE(bqhead, buf, b_rbnode, cscan_tree_compare_nodes);
+RB_GENERATE(bqhead, buf, b_rbnode, cscan_tree_compare_nodes);
+
 static __inline int
 cscan_empty(q)
 	const struct cscan_queue *q;
@@ -474,7 +474,7 @@ cscan_put(q, bp, sortby)
 
 	bqh = &q->cq_head[idx];
 
-	RB_FOREACH(it, bqh, buf) {
+	RB_FOREACH(&it, bqh, buf) {
 		if (buf_inorder(bp, it, sortby)) {
 			break;
 		}

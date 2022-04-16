@@ -144,7 +144,7 @@ __sysctl()
 		memlock.sl_lock = 1;
 		savelen = oldlen;
 	}
-	error = (*fn)(name + 1, SCARG(uap, namelen) - 1, SCARG(uap, old), &oldlen, SCARG(uap, new), SCARG(uap, newlen), u.u_procp);
+	error = (*fn)(name + 1, SCARG(uap, namelen) - 1, SCARG(uap, old), &oldlen, SCARG(uap, new), SCARG(uap, newlen));
 	if (SCARG(uap, old) != NULL) {
 		memlock.sl_lock = 0;
 		if (memlock.sl_want) {

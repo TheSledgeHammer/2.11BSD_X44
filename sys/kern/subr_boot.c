@@ -52,11 +52,11 @@
 #ifdef _KERNEL
 #define SETENV(k, v)	kern_setenv(k, v)
 #define GETENV(k)	    kern_getenv(k)
-#define FREE(v)		    freeenv(v)
+#define FREEENV(v)	    freeenv(v)
 #else	/* Boot loader */
 #define SETENV(k, v)	setenv(k, v, 1)
 #define GETENV(k)	    getenv(k)
-#define	FREE(v)
+#define	FREEENV(v)
 #endif
 
 static struct
@@ -99,7 +99,7 @@ boot_env_to_howto(void)
 		val = GETENV(howto_names[i].ev);
 		if (val != NULL && strcasecmp(val, "no") != 0)
 			howto |= howto_names[i].mask;
-		FREE(val);
+		FREEENV(val);
 	}
 	return (howto);
 }
