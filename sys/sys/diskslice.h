@@ -32,8 +32,9 @@
 #ifndef _KERNEL
 #include <sys/types.h>
 #include <sys/null.h>
-#include <sys/reboot.h>
 #endif
+
+#include <sys/reboot.h>
 
 struct diskslice {
 	u_long					ds_offset;				/* starting sector */
