@@ -45,6 +45,8 @@
 #ifndef _SYS_DEVICE_H_
 #define	_SYS_DEVICE_H_
 
+#include <sys/queue.h>
+
 /*
  * Minimal device structures.
  * Note that all ``system'' device types are listed here.
@@ -66,10 +68,10 @@ enum devact {
 	DVACT_DEACTIVATE	/* deactivate the device */
 };
 
+TAILQ_HEAD(devicelist, device);
 struct device {
 	enum devclass		dv_class;				/* this device's classification */
-	struct device 		*dv_next;				/* next in list of all */
-	struct device 		*dv_prev;				/* prev in list of all */
+	TAILQ_ENTRY(device) dv_list;				/* entry on list of all devices */
 	struct cfdata		*dv_cfdata;				/* config data that found us */
 	int					dv_unit;				/* device unit number */
 	char				dv_xname[16];			/* external name (name + unit) */
@@ -82,8 +84,9 @@ struct device {
 #define	DVF_ACTIVE		0x0001					/* device is activated */
 
 /* `event' counters (use zero or more per device instance, as needed) */
+TAILQ_HEAD(evcntlist, evcnt);
 struct evcnt {
-	struct evcnt 		*ev_next;				/* linked list */
+	TAILQ_ENTRY(evcnt)	ev_list;				/* linked list */
 	struct device 		*ev_dev;				/* associated device */
 	int					ev_count;				/* how many have occurred */
 	char				ev_name[8];				/* what to call them (systat display) */
@@ -161,11 +164,11 @@ struct pdevinit {
 };
 
 /* deferred config queues */
+TAILQ_HEAD(deferred_config_head, deferred_config);
 struct deferred_config {
-	struct deferred_config	*dc_next;
-	struct deferred_config	*dc_prev;
-	struct device 			*dc_dev;
-	void 					(*dc_func)(struct device *);
+	TAILQ_ENTRY(deferred_config) 	dc_queue;
+	struct device 					*dc_dev;
+	void 							(*dc_func)(struct device *);
 };
 
 /* configure hints */
@@ -198,20 +201,20 @@ struct cfresource {
 #define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
 	struct cfops (name##_cops) = { (#name), (matfn), (attfn), (detfn), (actfn) }
 
-struct device 			*alldevs;					/* head of list of all devices */
-struct deferred_config	*deferred_config_queue; 	/* head of deferred queue */
-struct deferred_config	*interrupt_config_queue; 	/* head of interrupt queue */
-struct evcnt 			*allevents;					/* head of list of all events */
-struct cfhint 			*allhints;					/* head of list of device hints */
-int 					cfhint_count; 				/* hint count */
+extern struct devicelist			alldevs;				/* head of list of all devices */
+extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */
+extern struct deferred_config_head	interrupt_config_queue;	/* head of interrupt queue */
+extern struct evcntlist				allevents;				/* head of list of all events */
+struct cfhint 						*allhints;				/* head of list of device hints */
+int 								cfhint_count; 			/* hint count */
 
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search(cfmatch_t, struct device *, void *);
 struct cfdata 	*config_rootsearch(cfmatch_t, char *, void *);
 struct device 	*config_found(struct device *, void *, cfprint_t);
 struct device 	*config_found_sm(struct device *, void *, cfprint_t, cfmatch_t);
-int 			config_rootfound(char *, void *);
-void 			config_attach(struct device *, struct cfdata *, void *, cfprint_t);
+struct device 	*config_rootfound(char *, void *);
+struct device 	*config_attach(struct device *, struct cfdata *, void *, cfprint_t);
 int				config_detach(struct device *, int);
 int 			config_activate(struct device *);
 int 			config_deactivate(struct device *);
@@ -222,6 +225,7 @@ void 			config_pending_decr(void);
 int     		config_hint_enabled(struct device *);
 int     		config_hint_disabled(struct device *);
 void 			evcnt_attach(struct device *, const char *, struct evcnt *);
+void 			evcnt_detach(struct evcnt *);
 
 /* Access functions for device resources. */
 int				resource_int_value(const char *, int, const char *, int *);

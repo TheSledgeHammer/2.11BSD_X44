@@ -29,6 +29,8 @@
 #ifndef _VM_HAT_H_
 #define _VM_HAT_H_
 
+#include <sys/tree.h>
+
 /* pmap to vm/ovl address translation */
 
 struct hatspl;
@@ -53,8 +55,8 @@ struct vm_hat {
 void 		*vm_halloc(vm_hat_t);
 void		vm_hfree(vm_hat_t);
 void		vm_hbootinit(vm_hat_t, char *, int, void *, int, u_long);
-vm_offset_t	vm_hat_bootstrap_alloc(int, vm_size_t);
-void		vm_hat_bootstrap(vm_hat_t);
+vm_offset_t	vm_hat_bootstrap_alloc(int, int, vm_size_t);
+void		vm_hat_bootstrap(vm_hat_t, int);
 void 		*vm_hat_lookup(char *, int);
 void		vm_hat_add(vm_hat_t, char *, int, void *, u_long);
 void		vm_hat_remove(char *, int);

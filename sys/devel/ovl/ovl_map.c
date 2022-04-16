@@ -93,6 +93,7 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_hat.h>
 
 #include <devel/sys/malloctypes.h>
 #include <devel/ovl/include/ovl.h>
@@ -100,34 +101,20 @@
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
 
-vm_offset_t				oentry_data;
-vm_size_t				oentry_data_size;
+static struct vm_hat 	omap_store, oentry_store;
+static vm_hat_t			omap_hat, oentry_hat;
 ovl_map_entry_t 		oentry_free;
 ovl_map_t 				omap_free;
 
 void
 ovl_map_startup()
 {
-    register int i;
-    register ovl_map_entry_t mep;
-    ovl_map_t mp;
-
-    omap_free = mp = (ovl_map_t) oentry_data;
-    i = MAX_OMAP;
-
-    while (--i > 0) {
-        CIRCLEQ_NEXT(mep, ovl_cl_entry) = (ovl_map_entry_t) (mp + 1);
-        mp++;
-    }
-    CIRCLEQ_FIRST(&mp->ovl_header)++->ovl_cl_entry.cqe_next = NULL;
-
-    oentry_free = mep = (ovl_map_entry_t) mp;
-    i = (oentry_data_size - MAX_OMAP * sizeof * mp) / sizeof *mep;
-    while (--i > 0) {
-        CIRCLEQ_NEXT(mep, ovl_cl_entry) = mep + 1;
-        mep++;
-    }
-    CIRCLEQ_NEXT(mep, ovl_cl_entry) = NULL;
+	omap_hat = &omap_store;
+	vm_hbootinit(omap_hat, "OMAP", HAT_OVL, omap_free, MAX_OMAP,
+			sizeof(struct ovl_map));
+	oentry_hat = &oentry_store;
+	vm_hbootinit(oentry_hat, "OENTRY", HAT_OVL, oentry_free, MAX_OMAPENT,
+			sizeof(struct ovl_map_entry));
 }
 
 /* Allocate ovlspace
@@ -398,17 +385,21 @@ ovl_map_create(pmap, min, max)
 	vm_offset_t	min, max;
 {
 	register ovl_map_t	result;
+	ovl_map_entry_t 	oentry;
 	extern ovl_map_t	omem_map;
+
 	if(omem_map == NULL) {
 		result = omap_free;
 		if (result == NULL) {
 			panic("ovl_map_create: out of maps");
 		}
-		omap_free = (ovl_map_t) CIRCLEQ_FIRST(&result->ovl_header)->ovl_cl_entry.cqe_next;
+		oentry = CIRCLEQ_FIRST(&result->ovl_header);
+		omap_free = (ovl_map_t)CIRCLEQ_NEXT(oentry, ovl_cl_entry);
 	} else {
 		OVERLAY_MALLOC(result, struct ovl_map, sizeof(struct ovl_map), M_OVLMAP, M_WAITOK);
 	}
 
+	ovl_map_init(result, min, max);
 	result->ovl_pmap = pmap;
 	return (result);
 }

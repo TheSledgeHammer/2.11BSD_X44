@@ -32,7 +32,6 @@
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/null.h>
-#include <sys/tree.h>
 
 #include <devel/vm/include/vm_hat.h>
 
@@ -81,7 +80,16 @@ vm_hbootinit(vm_hat_t h, char *name, int type, void *item, int nentries, u_long 
 
 	data_size = (nentries * size);
 	totsize = round_page(data_size);
-	data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
+	if (type == HAT_VM) {
+		data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
+		goto init;
+	}
+	if(type == HAT_OVL) {
+		data = (vm_offset_t)pmap_bootstrap_overlay_alloc(totsize);
+		goto init;
+	}
+
+init:
 	item = (void *)data;
 	vm_hat_add(h, name, type, item, totsize);
 	vm_hat_lock_init(h);
@@ -89,8 +97,8 @@ vm_hbootinit(vm_hat_t h, char *name, int type, void *item, int nentries, u_long 
 
 /* pre-allocate data that cannot be dynamically allocated via malloc()  */
 vm_offset_t
-vm_hat_bootstrap_alloc(nentries, size)
-	int nentries;
+vm_hat_bootstrap_alloc(type, nentries, size)
+	int type, nentries;
 	vm_size_t size;
 {
 	vm_offset_t		data;
@@ -98,16 +106,22 @@ vm_hat_bootstrap_alloc(nentries, size)
 
 	data_size = (nentries * size);
 	totsize = round_page(data_size);
-	data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
+	if (type == HAT_VM) {
+		data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
+	} else if(type == HAT_OVL) {
+		data = (vm_offset_t)pmap_bootstrap_overlay_alloc(totsize);
+	}
+
 	return (data);
 }
 
 /* pre-allocate vm_hat */
 void
-vm_hat_bootstrap(hat)
+vm_hat_bootstrap(hat, type)
 	vm_hat_t hat;
+	int type;
 {
-	hat = (vm_hat_t)vm_hat_bootstrap_alloc(0, sizeof(vm_hat_t));
+	hat = (vm_hat_t)vm_hat_bootstrap_alloc(type, 0, sizeof(vm_hat_t));
 	vm_hat_lock_init(hat);
 }
 

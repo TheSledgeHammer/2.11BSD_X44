@@ -42,7 +42,8 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
-//#include <sys/user.h>
+#include <sys/user.h>
+#include <sys/sysdecl.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -88,16 +89,16 @@ int clean_inlocked = 0;
  * -1/errno is return on error.
  */
 struct lfs_markv_args {
-	fsid_t *fsidp;		/* file system */
-	BLOCK_INFO *blkiov;	/* block array */
-	int blkcnt;		/* count of block array entries */
+	syscallarg(fsid_t *)	fsidp;		/* file system */
+	syscallarg(BLOCK_INFO *)blkiov;		/* block array */
+	syscallarg(int) 		blkcnt;		/* count of block array entries */
 };
 int
-lfs_markv(p, uap, retval)
-	struct proc *p;
-	struct lfs_markv_args *uap;
-	int *retval;
+lfs_markv()
 {
+	register struct proc *p;
+	register struct lfs_markv_args *uap;
+	int *retval;
 	struct segment *sp;
 	BLOCK_INFO *blkp;
 	IFILE *ifp;
@@ -113,17 +114,20 @@ lfs_markv(p, uap, retval)
 	u_long bsize;
 	int cnt, error;
 
+	uap = u.u_ap;
+	p = u.u_procp;
+
 	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 
-	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
+	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		return (EINVAL);
 
-	cnt = uap->blkcnt;
-	start = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
-	if (error == copyin(uap->blkiov, start, cnt * sizeof(BLOCK_INFO)))
+	cnt = SCARG(uap, blkcnt);
+	start = calloc(cnt, sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
+	if (error == copyin(SCARG(uap, blkiov), start, cnt * sizeof(BLOCK_INFO)))
 		goto err1;
 
 	/* Mark blocks/inodes dirty.  */
@@ -266,16 +270,16 @@ err1:
  * -1/errno is return on error.
  */
 struct lfs_bmapv_args {
-	fsid_t *fsidp;		/* file system */
-	BLOCK_INFO *blkiov;	/* block array */
-	int blkcnt;		/* count of block array entries */
+	syscallarg(fsid_t *) 	fsidp;		/* file system */
+	syscallarg(BLOCK_INFO *)blkiov;		/* block array */
+	syscallarg(int) 		blkcnt;		/* count of block array entries */
 };
 int
-lfs_bmapv(p, uap, retval)
-	struct proc *p;
-	struct lfs_bmapv_args *uap;
-	int *retval;
+lfs_bmapv()
 {
+	register struct proc *p;
+	register struct lfs_bmapv_args *uap;
+	int *retval;
 	BLOCK_INFO *blkp;
 	struct mount *mntp;
 	struct ufsmount *ump;
@@ -285,17 +289,20 @@ lfs_bmapv(p, uap, retval)
 	daddr_t daddr;
 	int cnt, error, step;
 
+	uap = u.u_ap;
+	p = u.u_procp;
+
 	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 
-	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
+	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		return (EINVAL);
 
-	cnt = uap->blkcnt;
-	start = blkp = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
-	if (error == copyin(uap->blkiov, blkp, cnt * sizeof(BLOCK_INFO))) {
+	cnt = SCARG(uap, blkcnt);
+	start = blkp = calloc(cnt, sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
+	if (error == copyin(SCARG(uap, blkiov), blkp, cnt * sizeof(BLOCK_INFO))) {
 		free(blkp, M_SEGMENT);
 		return (error);
 	}
@@ -321,7 +328,7 @@ lfs_bmapv(p, uap, retval)
 		}
 		blkp->bi_daddr = daddr;
         }
-	copyout(start, uap->blkiov, cnt * sizeof(BLOCK_INFO));
+	copyout(start, SCARG(uap, blkiov), cnt * sizeof(BLOCK_INFO));
 	free(start, M_SEGMENT);
 	return (0);
 }
@@ -335,15 +342,15 @@ lfs_bmapv(p, uap, retval)
  * -1/errno is return on error.
  */
 struct lfs_segclean_args {
-	fsid_t *fsidp;		/* file system */
-	u_long segment;		/* segment number */
+	syscallarg(fsid_t *) fsidp;		/* file system */
+	syscallarg(u_long) segment;		/* segment number */
 }; 
 int
-lfs_segclean(p, uap, retval)
-	struct proc *p;
-	struct lfs_segclean_args *uap;
-	int *retval;
+lfs_segclean()
 {
+	register struct proc *p;
+	register struct lfs_segclean_args *uap;
+	int *retval;
 	CLEANERINFO *cip;
 	SEGUSE *sup;
 	struct buf *bp;
@@ -352,20 +359,23 @@ lfs_segclean(p, uap, retval)
 	fsid_t fsid;
 	int error;
 
+	uap = u.u_ap;
+	p = u.u_procp;
+
 	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 
-	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
+	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		return (EINVAL);
 
 	fs = VFSTOUFS(mntp)->um_lfs;
 
-	if (datosn(fs, fs->lfs_curseg) == uap->segment)
+	if (datosn(fs, fs->lfs_curseg) == SCARG(uap, segment))
 		return (EBUSY);
 
-	LFS_SEGENTRY(sup, fs, uap->segment, bp);
+	LFS_SEGENTRY(sup, fs, SCARG(uap, segment), bp);
 	if (sup->su_flags & SEGUSE_ACTIVE) {
 		brelse(bp);
 		return (EBUSY);
@@ -396,15 +406,15 @@ lfs_segclean(p, uap, retval)
  * -1/errno is return on error.
  */
 struct lfs_segwait_args {
-	fsid_t 			*fsidp;		/* file system */
-	struct timeval 	*tv;		/* timeout */
+	syscallarg(fsid_t *) 		 fsidp;		/* file system */
+	syscallarg(struct timeval *) tv;		/* timeout */
 };
 int
-lfs_segwait(p, uap, retval)
-	struct proc *p;
-	struct lfs_segwait_args *uap;
-	int *retval;
+lfs_segwait()
 {
+	register struct proc *p;
+	register struct lfs_segwait_args *uap;
+	int *retval;
 	extern int lfs_allclean_wakeup;
 	struct mount *mntp;
 	struct timeval atv;
@@ -413,11 +423,14 @@ lfs_segwait(p, uap, retval)
 	u_long timeout;
 	int error, s;
 
+	uap = u.u_ap;
+	p = u.u_procp;
+
 	if (error == suser1(p->p_ucred, &p->p_acflag)) {
 		return (error);
 }
 #ifdef WHEN_QUADS_WORK
-	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
+	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
 		return (error);
 	if (fsid == (fsid_t)-1)
 		addr = &lfs_allclean_wakeup;
@@ -427,7 +440,7 @@ lfs_segwait(p, uap, retval)
 		addr = &VFSTOUFS(mntp)->um_lfs->lfs_nextseg;
 	}
 #else
-	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
+	if (error == copyin(SCARG(uap, fsidp), &fsid, sizeof(fsid_t)))
 		return (error);
 	if ((mntp = vfs_getvfs(&fsid)) == NULL)
 		addr = &lfs_allclean_wakeup;
@@ -435,8 +448,8 @@ lfs_segwait(p, uap, retval)
 		addr = &VFSTOUFS(mntp)->um_lfs->lfs_nextseg;
 #endif
 
-	if (uap->tv) {
-		if (error == copyin(uap->tv, &atv, sizeof(struct timeval)))
+	if (SCARG(uap, tv)) {
+		if (error == copyin(SCARG(uap, tv), &atv, sizeof(struct timeval)))
 			return (error);
 		if (itimerfix(&atv))
 			return (EINVAL);

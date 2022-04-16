@@ -318,7 +318,6 @@ void		rqinit(void);
 void		sqinit(void);
 
 int 		chgproccnt(uid_t, int);
-int			acct_process(struct proc *);
 void		pgdelete(struct pgrp *);
 int			leavepgrp(struct proc *);
 int			enterpgrp(struct proc *, pid_t, int);
@@ -326,11 +325,8 @@ void		fixjobc(struct proc *, struct pgrp *, int);
 int			inferior(struct proc *);
 int			newproc(int);
 
-/* kern_exit */
+/* kern_exit.c */
 void    	exit(int);
 void		endvfork();
-void		proc_reparent(struct proc *, struct proc *);
-/* sys_process */
-int         procxmt(struct proc *);
 #endif 	/* KERNEL */
 #endif	/* !_SYS_PROC_H_ */

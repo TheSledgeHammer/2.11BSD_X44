@@ -132,9 +132,6 @@ ovl_page_init(start, end)
 	simple_lock_init(&ovl_page_bucket_lock, "ovl_page_bucket_lock");
 
 	*end = trunc_page(*end);
-
-	oentry_data_size = round_page(MAX_OMAP*sizeof(struct ovl_map) + MAX_NOVL*sizeof(struct ovl_map_entry));
-	oentry_data = (vm_offset_t) pmap_bootstrap_overlay_alloc(oentry_data_size);
 }
 
 unsigned long

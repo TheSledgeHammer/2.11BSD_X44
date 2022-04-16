@@ -74,6 +74,7 @@
 #define	HZ 100
 #endif
 int	hz = 			HZ;
+int mshz = 			(1000000L + 60 - 1)/60;
 int	tick = 			1000000 / HZ;
 int	tickadj = 		30000 / (60 * HZ);			/* can adjust 30ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };

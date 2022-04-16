@@ -46,38 +46,16 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/kernel.h>
 #include <sys/device.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include <lib/libkern/libkern.h>
 
-/* device macros */
-/* Insertq/Removeq for device lists */
-#define device_insert(dev, dv) {						\
-	(dev)->dv_next = (dv)->dv_next; 					\
-	(dev)->dv_prev = (dv);								\
-	(dv)->dv_next->dv_prev = (dev);						\
-	(dv)->dv_next = (dev);								\
-}
-
-#define device_remove(dev) {							\
-	(dev)->dv_prev->dv_next = (dev)->dv_next;			\
-	(dev)->dv_next->dv_prev = (dev)->dv_prev;			\
-}
-
-/* deferred config macros */
-/* Insertq/Removeq */
-#define cfdefer_insert(dcf, dc) {						\
-	(dcf)->dc_next = (dc)->dc_next; 					\
-	(dcf)->dc_prev = (dc);								\
-	(dc)->dc_next->dc_prev = (dcf);						\
-	(dc)->dc_next = (dcf);								\
-}
-
-#define cfdefer_remove(dc) {							\
-	(dc)->dc_prev->dc_next = (dc)->dc_next;				\
-	(dc)->dc_next->dc_prev = (dc)->dc_prev;				\
-}
+struct devicelist alldevs = TAILQ_HEAD_INITIALIZER(alldevs);
+struct deferred_config_head	deferred_config_queue = TAILQ_HEAD_INITIALIZER(deferred_config_queue);
+struct deferred_config_head	interrupt_config_queue = TAILQ_HEAD_INITIALIZER(interrupt_config_queue);
+struct evcntlist allevents = TAILQ_HEAD_INITIALIZER(allevents);
 
 static void config_process_deferred(struct deferred_config *, struct device *);
 
@@ -230,24 +208,6 @@ static char *msgs[3] = { "", " not configured\n", " unsupported\n" };
  * driver function) and attach it, and return true.  If the device was
  * not configured, call the given `print' function and return 0.
  */
-/*
-int
-config_found(parent, aux, print)
-	struct device *parent;
-	void *aux;
-	cfprint_t print;
-{
-	struct cfdata *cf;
-
-	if ((cf = config_search((cfmatch_t)NULL, parent, aux)) != NULL) {
-		config_attach(parent, cf, aux, print);
-		return (1);
-	}
-	printf(msgs[(*print)(aux, parent->dv_xname)]);
-	return (0);
-}
-*/
-
 struct device *
 config_found(parent, aux, print)
 	struct device *parent;
@@ -269,14 +229,14 @@ config_found_sm(parent, aux, print, submatch)
 	if ((cf = config_search(submatch, parent, aux)) != NULL) {
 		return (config_attach(parent, cf, aux, print));
 	}
-	printf("%s", msgs[(*print)(aux, parent->dv_xname)]);
+	printf(msgs[(*print)(aux, parent->dv_xname)]);
 	return (NULL);
 }
 
 /*
  * As above, but for root devices.
  */
-int
+struct device *
 config_rootfound(rootname, aux)
 	char *rootname;
 	void *aux;
@@ -284,11 +244,10 @@ config_rootfound(rootname, aux)
 	struct cfdata *cf;
 
 	if ((cf = config_rootsearch((cfmatch_t)NULL, rootname, aux)) != NULL) {
-		config_attach(ROOT, cf, aux, (cfprint_t)NULL);
-		return (1);
+		return (config_attach(ROOT, cf, aux, (cfprint_t)NULL));
 	}
 	printf("root device %s not configured\n", rootname);
-	return (0);
+	return (NULL);
 }
 
 /* just like sprintf(buf, "%d") except that it works from the end */
@@ -310,11 +269,11 @@ number(ep, n)
 /*
  * Attach a found device.  Allocates memory for device variables.
  */
-void
+struct device *
 config_attach(parent, cf, aux, print)
 	register struct device *parent;
 	register struct cfdata *cf;
-	register void *aux;
+	register void 			*aux;
 	cfprint_t 		print;
 {
 	register struct device *dev;
@@ -324,7 +283,6 @@ config_attach(parent, cf, aux, print)
 	register char *xunit;
 	int myunit;
 	char num[10];
-	static struct device **nextp = &alldevs;
 
 	cd = cf->cf_driver;
 	cops = cd->cd_ops;
@@ -346,7 +304,7 @@ config_attach(parent, cf, aux, print)
 	/* get memory for all device vars */
 	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);	/* XXX cannot wait! */
 	bzero(dev, cd->cd_devsize);
-	device_insert(dev, *nextp);	/* link up */
+	TAILQ_INSERT_TAIL(&alldevs, dev, dv_list);	/* link up */
 	dev->dv_class = cd->cd_class;
 	dev->dv_cfdata = cf;
 	dev->dv_unit = myunit;
@@ -396,13 +354,20 @@ config_attach(parent, cf, aux, print)
 	 * Before attaching, clobber any unfound devices that are
 	 * otherwise identical.
 	 */
-	for (cf = cfdata; cf->cf_driver; cf++)
-		if (cf->cf_driver == cd && cf->cf_unit == dev->dv_unit &&
-		    cf->cf_fstate == FSTATE_NOTFOUND)
-			cf->cf_fstate = FSTATE_FOUND;
+	for (cf = cfdata; cf->cf_driver; cf++) {
+		if (cf->cf_driver == cd && cf->cf_unit == dev->dv_unit) {
+			if (cf->cf_fstate == FSTATE_NOTFOUND) {
+				cf->cf_fstate = FSTATE_FOUND;
+			}
+			if (cf->cf_fstate == FSTATE_STAR) {
+				cf->cf_unit++;
+			}
+		}
+	}
 	(*cops->cops_attach)(parent, dev, aux);
 
 	config_process_deferred(&deferred_config_queue, dev);
+	return (dev);
 }
 
 /*
@@ -462,7 +427,7 @@ config_detach(dev, flags)
 	 * after parents, we only need to search the latter part of
 	 * the list.)
 	 */
-	for(d = dev->dv_next; d != NULL; d = dev->dv_next) {
+	for(d = TAILQ_NEXT(dev, dv_list); d != NULL; d = TAILQ_NEXT(dev, dv_list)) {
 		if(d->dv_parent == dev) {
 			panic("config_detach: detached device has children");
 		}
@@ -487,7 +452,7 @@ config_detach(dev, flags)
 	/*
 	 * Unlink from device list.
 	 */
-	device_remove(dev);
+	TAILQ_REMOVE(&alldevs, dev, dv_list);
 
 	/*
 	 * Remove from cfdriver's array, tell the world, and free softc.
@@ -528,11 +493,7 @@ config_activate(dev)
 		return (EOPNOTSUPP);
 	}
 
-	if(config_hint_enabled(dev)) {
-		continue;
-	}
-
-	if ((dev->dv_flags & DVF_ACTIVE) == 0) {
+	if ((dev->dv_flags & DVF_ACTIVE) == 0 || config_hint_enabled(dev)) {
 		dev->dv_flags |= DVF_ACTIVE;
 		rv = (*cops->cops_activate)(dev, DVACT_ACTIVATE);
 		if (rv) {
@@ -551,14 +512,11 @@ config_deactivate(dev)
 	struct cfops *cops	= cd->cd_ops;
 	int rv = 0, oflags = dev->dv_flags;
 
-	if (cops->cops_activate == NULL)
+	if (cops->cops_activate == NULL) {
 		return (EOPNOTSUPP);
-
-	if (config_hint_disabled(dev)) {
-		continue;
 	}
 
-	if ((dev->dv_flags & DVF_ACTIVE)) {
+	if ((dev->dv_flags & DVF_ACTIVE) || config_hint_disabled(dev)) {
 		dev->dv_flags &= ~DVF_ACTIVE;
 		rv = (*cops->cops_activate)(dev, DVACT_DEACTIVATE);
 		if (rv) {
@@ -574,34 +532,25 @@ config_defer(dev, func)
 	void (*func)(struct device *);
 {
 	struct deferred_config *dc;
-	struct deferred_config **dcf = &deferred_config_queue;
 
 	if (dev->dv_parent == NULL) {
 		panic("config_defer: can't defer config of a root device");
 	}
-#ifdef DIAGNOSTIC
-	for(dc = dcf; dc != NULL; dc = dc->dc_next) {
-		if (dc->dc_dev == dev) {
-			panic("config_defer: deferred twice");
-		}
-	}
-#endif
-/*
+
 #ifdef DIAGNOSTIC
 	for (dc = TAILQ_FIRST(&deferred_config_queue); dc != NULL; dc = TAILQ_NEXT(dc, dc_queue)) {
 		if (dc->dc_dev == dev)
 			panic("config_defer: deferred twice");
 	}
 #endif
-*/
+
 	dc = malloc(sizeof(*dc), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
 	if (dc == NULL)
 		panic("config_defer: unable to allocate callback");
 
 	dc->dc_dev = dev;
 	dc->dc_func = func;
-	cfdefer_insert(dc, *dcf);
-//	TAILQ_INSERT_TAIL(&deferred_config_queue, dc, dc_queue);
+	TAILQ_INSERT_TAIL(&deferred_config_queue, dc, dc_queue);
 	config_pending_incr();
 }
 
@@ -615,7 +564,6 @@ config_interrupts(dev, func)
 	void (*func)(struct device *);
 {
 	struct deferred_config *dc;
-	struct deferred_config **dcf = &interrupt_config_queue;
 	/*
 	 * If interrupts are enabled, callback now.
 	 */
@@ -625,28 +573,19 @@ config_interrupts(dev, func)
 	}
 
 #ifdef DIAGNOSTIC
-	for(dc = dcf; dc != NULL; dc = dc->dc_next) {
-		if (dc->dc_dev == dev) {
-			panic("config_defer: deferred twice");
-		}
-	}
-#endif
-/*
-#ifdef DIAGNOSTIC
 	for (dc = TAILQ_FIRST(&interrupt_config_queue); dc != NULL; dc = TAILQ_NEXT(dc, dc_queue)) {
 		if (dc->dc_dev == dev)
 			panic("config_interrupts: deferred twice");
 	}
 #endif
-*/
+
 	dc = malloc(sizeof(*dc), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
 	if (dc == NULL)
 		panic("config_interrupts: unable to allocate callback");
 
 	dc->dc_dev = dev;
 	dc->dc_func = func;
-	cfdefer_insert(dc, *dcf);
-//	TAILQ_INSERT_TAIL(&interrupt_config_queue, dc, dc_queue);
+	TAILQ_INSERT_TAIL(&interrupt_config_queue, dc, dc_queue);
 	config_pending_incr();
 }
 
@@ -660,26 +599,15 @@ config_process_deferred(queue, parent)
 {
 	struct deferred_config *dc, *ndc;
 
-	for(dc = queue; dc != NULL; dc = dc->dc_next) {
-		ndc = dc->dc_next;
-		if (parent == NULL || dc->dc_dev->dv_parent == parent) {
-			cfdefer_remove(dc);
-			(*dc->dc_func)(dc->dc_dev);
-			free(dc, M_DEVBUF);
-			config_pending_decr();
-		}
-	}
-/*
-	for (dc = TAILQ_FIRST(queue); dc != NULL; dc = ndc) {
+	for (dc = TAILQ_FIRST(&deferred_config_queue); dc != NULL; dc = ndc) {
 		ndc = TAILQ_NEXT(dc, dc_queue);
 		if (parent == NULL || dc->dc_dev->dv_parent == parent) {
-			TAILQ_REMOVE(queue, dc, dc_queue);
+			TAILQ_REMOVE(&deferred_config_queue, dc, dc_queue);
 			(*dc->dc_func)(dc->dc_dev);
 			free(dc, M_DEVBUF);
 			config_pending_decr();
 		}
 	}
-	*/
 }
 
 /*
@@ -728,16 +656,19 @@ evcnt_attach(dev, name, ev)
 	const char *name;
 	struct evcnt *ev;
 {
-	static struct evcnt **nextp = &allevents;
-
 #ifdef DIAGNOSTIC
 	if (strlen(name) >= sizeof(ev->ev_name))
 		panic("evcnt_attach");
 #endif
-	/* ev->ev_next = NULL; */
 	ev->ev_dev = dev;
 	/* ev->ev_count = 0; */
 	strcpy(ev->ev_name, name);
-	*nextp = ev;
-	nextp = &ev->ev_next;
+	TAILQ_INSERT_TAIL(&allevents, ev, ev_list);
+}
+
+void
+evcnt_detach(ev)
+	struct evcnt *ev;
+{
+	TAILQ_REMOVE(&allevents, ev, ev_list);
 }

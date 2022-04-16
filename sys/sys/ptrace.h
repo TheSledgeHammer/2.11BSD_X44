@@ -25,14 +25,15 @@
 #define	PT_FIRSTMACH	32	/* for machine-specific requests */
 //#include <machine/ptrace.h>	/* machine-specific requests, if any */
 
-#ifdef KERNEL
-void	proc_reparent (struct proc *child, struct proc *newparent);
+#ifdef _KERNEL
+void	proc_reparent(struct proc *, struct proc *);
+int     procxmt(struct proc *);
 #else /* !KERNEL */
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	ptrace (int _request, pid_t _pid, caddr_t _addr, int _data);
+int	ptrace(int, pid_t, caddr_t, int);
 __END_DECLS
 
 #endif /* !KERNEL */

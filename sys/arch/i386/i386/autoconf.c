@@ -47,6 +47,7 @@
 #include <sys/param.h>
 
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/map.h>
 #include <sys/buf.h>
 #include <sys/dk.h>

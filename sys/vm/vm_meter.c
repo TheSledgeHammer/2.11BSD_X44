@@ -136,14 +136,13 @@ loadav(avg)
  * Attributes associated with virtual memory.
  */
 int
-vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
 	size_t newlen;
-	struct proc *p;
 {
 	struct vmtotal vmtotals;
 

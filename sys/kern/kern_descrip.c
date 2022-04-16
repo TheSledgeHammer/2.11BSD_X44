@@ -68,6 +68,7 @@
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
 #include <sys/null.h>
+#include <sys/sysdecl.h>
 
 struct filelists filehead;		/* head of list of open files */
 int 			 nfiles;		/* actual number of open files */
@@ -78,7 +79,7 @@ int 			 nfiles;		/* actual number of open files */
 static __inline void fd_used(int);
 static __inline void fd_unused(int);
 
-int dup2();
+//int dup2();
 int dupit(int, struct file *, int);
 int fset(struct file *, int, int);
 int fgetown(struct file *, int *);
@@ -100,11 +101,12 @@ finit(fdp)
 /*
  * System calls on descriptors.
  */
-void
+int
 getdtablesize()
 {
 	//u.u_r.r_val1 = NOFILE;
 	u.u_r.r_val1 = min((int)u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+	return (0);
 }
 
 /*

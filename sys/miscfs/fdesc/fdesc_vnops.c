@@ -49,8 +49,9 @@
 #include <sys/time.h>
 #include <sys/proc.h>
 #include <sys/user.h>
-#include <sys/kernel.h>	/* boottime */
+#include <sys/kernel.h>			/* boottime */
 #include <sys/resourcevar.h>
+#include <sys/socketvar.h>		/* soo_stat */
 #include <sys/filedesc.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>

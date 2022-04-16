@@ -11,6 +11,7 @@
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/proc.h>
+#include <sys/ptrace.h>
 #include <sys/namei.h>
 #include <sys/acct.h>
 #include <sys/signalvar.h>

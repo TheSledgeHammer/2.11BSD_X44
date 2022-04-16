@@ -445,13 +445,15 @@ vm_map_create(pmap, min, max, pageable)
 	bool_t		pageable;
 {
 	register vm_map_t	result;
+	vm_map_entry_t 		kentry;
 	extern vm_map_t		kmem_map;
 
 	if (kmem_map == NULL) {
 		result = kmap_free;
 		if (result == NULL)
 			panic("vm_map_create: out of maps");
-		kmap_free = (vm_map_t) CIRCLEQ_FIRST(&result->cl_header)->cl_entry.cqe_next;
+		kentry = CIRCLEQ_FIRST(&result->cl_header);
+		kmap_free = (vm_map_t)CIRCLEQ_NEXT(kentry, cl_entry);
 	} else {
 		MALLOC(result, struct vm_map, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
 	}

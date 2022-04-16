@@ -322,7 +322,7 @@ struct kinfo_proc {
 #define	CTL_DEBUG_MAXID		20
 
 #ifdef	_KERNEL
-+#if defined(DEBUG) || defined(DIAGNOSTIC)
+#if defined(DEBUG) || defined(DIAGNOSTIC)
 /*
  * CTL_DEBUG variables.
  *
@@ -354,7 +354,7 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
  * interpreted.  The namelen parameter is the number of integers in
  * the name.
  */
-typedef int (sysctlfn)(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
+typedef int (sysctlfn)(int *, u_int, void *, size_t *, void *, size_t);
 
 int sysctl_int(void *, size_t *, void *, size_t, int *);
 int sysctl_rdint(void *, size_t *, void *, int);
@@ -371,9 +371,9 @@ int sysctl_file(char *, size_t *);
 int	sysctl_clockrate(char *, size_t *);
 int	sysctl_doproc(int *, u_int, char *, size_t *);
 int	sysctl_vnode(char *, size_t *, struct proc *);
-
-void fill_eproc(struct proc *, struct eproc *);
 //int sysctl_text(char *, size_t *);
+void fill_eproc(struct proc *, struct eproc *);
+
 #else	/* !KERNEL */
 #include <sys/cdefs.h>
 

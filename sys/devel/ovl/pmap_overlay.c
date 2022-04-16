@@ -61,25 +61,10 @@ pmap_bootstrap_overlay_alloc(size)
 		while (!pmap_isvalidphys(avail_start)) {
 			avail_start += PAGE_SIZE;
 		}
-		overlay_avail = pmap_map_overlay(overlay_avail, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
+		overlay_avail = pmap_map(overlay_avail, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
 		avail_start += PAGE_SIZE;
 	}
 
 	bzero ((caddr_t) val, size);
 	return ((void *) val);
-}
-
-vm_offset_t
-pmap_map_overlay(virt, start, end, prot)
-	vm_offset_t	virt;
-	vm_offset_t	start;
-	vm_offset_t	end;
-	int			prot;
-{
-	while (start < end) {
-		pmap_enter(kernel_pmap(), virt, start, prot, FALSE);
-		virt += PAGE_SIZE;
-		start += PAGE_SIZE;
-	}
-	return (virt);
 }

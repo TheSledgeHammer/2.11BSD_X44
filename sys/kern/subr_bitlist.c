@@ -50,16 +50,19 @@
 #define BITHASH_MASK 			256
 struct bitlist_header   		bitset[BITHASH_MASK];
 int 				 			bitlist_counter;
-struct lock_object   			*bitlist_lock;
+struct lock_object   			bitlist_lock;
 ctop_t 							*ctop;
 
-#define bitlist_lock(lock) 		(simple_lock(lock))
-#define bitlist_unlock(lock) 	(simple_unlock(lock))
+#define bitlist_lock_init(lock) 		(simple_lock_init(lock, "bitlist_slock"))
+#define bitlist_lock(lock) 				(simple_lock(lock))
+#define bitlist_unlock(lock) 			(simple_unlock(lock))
+
+static void	bitlist_init(void);
 
 void
 ctop_init(void)
 {
-	ctop = (ctop_t)malloc(sizeof(ctop_t), M_TOPO, M_WAITOK);
+	ctop = (ctop_t *)malloc(sizeof(ctop_t *), M_TOPO, M_WAITOK);
 	bitlist_init();
 }
 
@@ -106,7 +109,7 @@ bitlist_init(void)
     int i;
     bitlist_counter = 0;
 
-    simple_lock_init(&bitlist_lock, "bitlist_lock");
+    bitlist_lock_init(&bitlist_lock);
 
     for(i = 0; i < BITHASH_MASK; i++) {
     	LIST_INIT(&bitset[i]);

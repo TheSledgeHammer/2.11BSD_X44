@@ -87,7 +87,6 @@ __sysctl()
 		syscallarg(size_t) newlen;
 	} *uap = (struct sysctl_args *)u.u_ap;
 
-	struct proc *p;
 	int error;
 	u_int savelen, oldlen = 0;
 	sysctlfn *fn;
@@ -177,14 +176,13 @@ char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
  * kernel related system variables.
  */
 int
-kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
 	size_t newlen;
-	struct proc *p;
 {
 	int error, level;
 	u_long longhostid;
@@ -268,14 +266,13 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
  * hardware related system variables.
  */
 int
-hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
 	size_t newlen;
-	struct proc *p;
 {
 	extern char machine[], cpu_model[128];
 

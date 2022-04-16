@@ -14,12 +14,14 @@
 #include <sys/map.h>
 #include <sys/user.h>
 #include <sys/proc.h>
+#include <sys/acct.h>
 #include <sys/vnode.h>
 #include <sys/file.h>
 #include <sys/wait.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
 #include <sys/tty.h>
+#include <sys/ptrace.h>
 #include <sys/ktrace.h>
 
 #include <vm/include/vm.h>
