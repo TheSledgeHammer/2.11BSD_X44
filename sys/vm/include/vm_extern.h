@@ -103,7 +103,7 @@ void		 	vm_mem_init (void);
 int		 		vm_mmap (vm_map_t, vm_offset_t *, vm_size_t, vm_prot_t, vm_prot_t, int, caddr_t, vm_offset_t);
 int		 		vm_protect (vm_map_t, vm_offset_t, vm_size_t, bool_t, vm_prot_t);
 void		 	vm_set_page_size (void);
-int		 		vm_sysctl (int *, u_int, void *, size_t *, void *, size_t, struct proc *);
+int		 		vm_sysctl (int *, u_int, void *, size_t *, void *, size_t);
 void		 	vmmeter (void);
 void			vm_pageout(void);
 struct vmspace	*vmspace_alloc (vm_offset_t, vm_offset_t, int);
