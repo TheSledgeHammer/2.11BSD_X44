@@ -46,14 +46,14 @@ struct acct {
 #ifndef	_KERNEL
 struct vnode	*acctp;
 
-int	acct_process(struct proc *p);
-
 #define	_PATH_ACCTD		"/usr/libexec/acctd"
 #define	_PATH_ACCTFILE	"/usr/adm/acct"
 #define	_PATH_ACCTDPID 	"/var/run/acctd.pid"
 #define	_PATH_ACCTDCF 	"/etc/acctd.cf"
 #define	_PATH_DEVALOG 	"/dev/acctlog"
-
+#endif
+#ifdef	_KERNEL
+int	acct_process(struct proc *);
 #endif
 
 #endif	/* !_SYS_ACCT_H_ */
