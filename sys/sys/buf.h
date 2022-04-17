@@ -69,12 +69,9 @@ struct buf {
 	struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
 
 	/* 2.11BSD New */
-	union {
-		TAILQ_ENTRY(buf) u_actq;			/* Device driver queue when active. */
-		RB_ENTRY(buf)	 u_rbnode;			/* Cyclical scan (CSCAN) */
-	} b_u;
-#define	b_actq			b_u.u_actq
-#define	b_rbnode		b_u.u_rbnode
+	TAILQ_ENTRY(buf) 	b_actq;				/* Device driver queue when active. */
+	RB_ENTRY(buf)	 	b_rbnode;			/* Cyclical scan (CSCAN) */
+
 	LIST_ENTRY(buf) 	b_hash;				/* Hash chain. */
 	LIST_ENTRY(buf) 	b_vnbufs;			/* Buffer's associated vnode. */
 	TAILQ_ENTRY(buf) 	b_freelist;			/* Free list position if not active. */

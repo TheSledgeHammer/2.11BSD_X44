@@ -75,8 +75,11 @@ extern const struct linesw **linesw, *linesw0[];
 extern const int sys_bdevsws, sys_cdevsws, sys_linesws;
 extern int max_bdevsws, max_cdevsws, max_linesws;
 
-struct devswtable 		*sys_devsw;
-struct lock_object  	*devswtable_lock;
+struct devswtable 					*sys_devsw;
+struct lock_object  				devswtable_lock;
+#define devswtable_lock_init(lock)	(simple_lock_init(lock, "devswtable_lock"))
+#define devswtable_lock(lock)		(simple_lock(lock))
+#define devswtable_unlock(lock)		(simple_unlock(lock))
 
 struct devswtable_head 	devsw_hashtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
 
@@ -96,7 +99,7 @@ devswtable_init()
 
 	devswtable_allocate(&sys_devsw);
 
-	simple_lock_init(&devswtable_lock, "devswtable_lock");
+	devswtable_lock_init(&devswtable_lock);
 }
 
 /* configure devswtable */
@@ -151,11 +154,11 @@ devswtable_lookup(data, major)
 	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
 		devsw = entry->dve_devswtable;
 		if(devsw->dv_data == data && devsw->dv_major == major) {
-			simple_unlock(&devswtable_lock);
+			devswtable_unlock(&devswtable_lock);
 			return (devsw);
 		}
 	}
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 	return (NULL);
 }
 
@@ -175,9 +178,9 @@ devswtable_add(devsw, data, major)
 	entry = (devswtable_entry_t) malloc((u_long) sizeof(*entry), M_DEVSWHASH, M_WAITOK);
 	entry->dve_devswtable = devsw;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 	TAILQ_INSERT_HEAD(bucket, entry, dve_link);
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 }
 
 void
@@ -190,12 +193,12 @@ devswtable_remove(data, major)
 	struct devswtable 			*devsw;
 
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
 		devsw = entry->dve_devswtable;
 		if(devsw->dv_data == data && devsw->dv_major == major) {
 			TAILQ_REMOVE(bucket, entry, dve_link);
-			simple_unlock(&devswtable_lock);
+			devswtable_unlock(&devswtable_lock);
 		}
 	}
 }
@@ -210,7 +213,7 @@ bdevsw_attach(bdev, major)
 	dev_t maj;
 	int i;
 
-	 simple_lock(&devswtable_lock);
+	 devswtable_lock(&devswtable_lock);
 
 	if(bdev == NULL) {
 		return (0);
@@ -228,7 +231,7 @@ bdevsw_attach(bdev, major)
 
 	if(major >= MAXDEVSW) {
 		printf("%s: block majors exhausted", __func__);
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
@@ -236,7 +239,7 @@ bdevsw_attach(bdev, major)
 		KASSERT(bdevsw == bdevsw0);
 		newptr = malloc(MAXDEVSW * BDEVSW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
-			simple_unlock(&devswtable_lock);
+			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
 		}
 		memcpy(newptr, bdevsw, max_bdevsws * BDEVSW_SIZE);
@@ -245,12 +248,12 @@ bdevsw_attach(bdev, major)
 	}
 
 	if (bdevsw[major] != NULL) {
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (EEXIST);
 	}
 
 	bdevsw[major] = bdev;
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -260,7 +263,7 @@ bdevsw_detach(bdev)
 {
 	int i;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 
 	if(bdevsw != NULL) {
 		for (i = 0 ; i < max_bdevsws ; i++) {
@@ -272,7 +275,7 @@ bdevsw_detach(bdev)
 		}
 	}
 
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -339,7 +342,7 @@ cdevsw_attach(cdev, major)
 	dev_t maj;
 	int i;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 
 	if(cdev == NULL) {
 		return (0);
@@ -357,7 +360,7 @@ cdevsw_attach(cdev, major)
 
 	if(major >= MAXDEVSW) {
 		printf("%s: character majors exhausted", __func__);
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
@@ -365,7 +368,7 @@ cdevsw_attach(cdev, major)
 		KASSERT(cdevsw == cdevsw0);
 		newptr = malloc(MAXDEVSW * CDEVSW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
-			simple_unlock(&devswtable_lock);
+			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
 		}
 		memcpy(newptr, cdevsw, max_cdevsws * CDEVSW_SIZE);
@@ -374,12 +377,12 @@ cdevsw_attach(cdev, major)
 	}
 
 	if (cdevsw[major] != NULL) {
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (EEXIST);
 	}
 
 	cdevsw[major] = cdev;
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -389,7 +392,7 @@ cdevsw_detach(cdev)
 {
 	int i;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 
 	if(cdev != NULL) {
 		for (i = 0 ; i < max_cdevsws ; i++) {
@@ -401,7 +404,7 @@ cdevsw_detach(cdev)
 		}
 	}
 
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -468,7 +471,7 @@ linesw_attach(line, major)
 	dev_t maj;
 	int i;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 
 	if(line == NULL) {
 		return (0);
@@ -486,7 +489,7 @@ linesw_attach(line, major)
 
 	if(major >= MAXDEVSW) {
 		printf("%s: line majors exhausted", __func__);
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
@@ -494,7 +497,7 @@ linesw_attach(line, major)
 		KASSERT(linesw == &linesw0);
 		newptr = malloc(MAXDEVSW * LINESW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
-			simple_unlock(&devswtable_lock);
+			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
 		}
 		memcpy(newptr, linesw, max_linesws * LINESW_SIZE);
@@ -503,12 +506,12 @@ linesw_attach(line, major)
 	}
 
 	if (linesw[major] != NULL) {
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (EEXIST);
 	}
 
 	linesw[major] = line;
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -518,7 +521,7 @@ linesw_detach(line)
 {
 	int i;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 
 	if(linesw != NULL) {
 		for (i = 0 ; i < max_linesws ; i++) {
@@ -530,7 +533,7 @@ linesw_detach(line)
 		}
 	}
 
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -789,15 +792,15 @@ devsw_io_chrtoblk(dev)
 	bmajor = NODEVMAJOR;
 	rv = NODEV;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 	if (cmajor < 0 || cmajor >= max_cdevsws || cdevsw[cmajor] == NULL) {
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (NODEV);
 	}
 	if (bmajor >= 0 && bmajor < max_bdevsws && bdevsw[bmajor] != NULL) {
 		rv = makedev(bmajor, minor(dev));
 	}
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 
 	return (rv);
 }
@@ -820,15 +823,15 @@ devsw_io_blktochr(dev)
 	cmajor = NODEVMAJOR;
 	rv = NODEV;
 
-	simple_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 	if (bmajor < 0 || bmajor >= max_bdevsws || bdevsw[bmajor] == NULL) {
-		simple_unlock(&devswtable_lock);
+		devswtable_unlock(&devswtable_lock);
 		return (NODEV);
 	}
 	if (cmajor >= 0 && cmajor < max_cdevsws && cdevsw[cmajor] != NULL) {
 		rv = makedev(cmajor, minor(dev));
 	}
-	simple_unlock(&devswtable_lock);
+	devswtable_unlock(&devswtable_lock);
 
 	return (rv);
 }

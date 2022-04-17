@@ -39,7 +39,7 @@
 
 /* mpx reader/buffer */
 struct mpx_reader {
-    struct mpx_chan 		*mpr_chan;      /* channel */
+    struct mpx_channel 		*mpr_chan;      /* channel */
     int 				    mpr_state;      /* state */
     size_t		            mpr_size;		/* size of buffer */
     caddr_t		            mpr_buffer;		/* kva of buffer */
@@ -47,26 +47,26 @@ struct mpx_reader {
 
 /* mpx writer/buffer */
 struct mpx_writer {
-    struct mpx_chan         *mpw_chan;      /* channel */
+    struct mpx_channel      *mpw_chan;      /* channel */
     int 				    mpw_state;      /* state */
     size_t		            mpw_size;		/* size of buffer */
     caddr_t		            mpw_buffer;		/* kva of buffer */
 };
 
-struct chanlist;
-LIST_HEAD(chanlist, mpx_chan);
-struct mpx_chan {
-    LIST_ENTRY(mpx_chan)    mpc_node;       /* channel node in list */
+struct channellist;
+LIST_HEAD(channellist, mpx_channel);
+struct mpx_channel {
+    LIST_ENTRY(mpx_channel) mpc_node;       /* channel node in list */
     struct mpx_group	    *mpc_group;     /* this channels group */
     int 	                mpc_index;      /* channel index */
     int 			        mpc_flags;      /* channel flags */
 };
 
-struct grplist;
-LIST_HEAD(grplist, mpx_group);
+struct grouplist;
+LIST_HEAD(grouplist, mpx_group);
 struct mpx_group {
     LIST_ENTRY(mpx_group)    mpg_node;     /* group node in list */
-    struct mpx_chan          *mpg_chan;    /* channels in this group */
+    struct mpx_channel      *mpg_channel; /* channels in this group */
     int 					 mpg_index;    /* group index */
 };
 
@@ -78,12 +78,12 @@ union mpxpair {
 
 struct mpx {
     union mpxpair			*mpx_pair;
-    struct mpx_chan 	    *mpx_chan;
+    struct mpx_channel	    *mpx_chan;
     struct file				*mpx_file;
 };
 
-extern struct grplist       mpx_grps[];
-extern struct chanlist      mpx_chans[];
+extern struct grouplist       mpx_groups[];
+extern struct channellist     mpx_channels[];
 
 #define MPX_LOCK(mpx)		simple_lock((mpx)->mpp_lock)
 #define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpp_lock)
@@ -92,6 +92,6 @@ void                		mpx_init(void);
 void                		mpx_create_group(int);
 struct mpx_group    		*mpx_get_group(int);
 void                		mpx_create_channel(struct mpx_group *, int, int);
-struct mpx_chan     		*mpx_get_channel(int);
+struct mpx_channel     		*mpx_get_channel(int);
 
 #endif /* SYS_MPX_H_ */

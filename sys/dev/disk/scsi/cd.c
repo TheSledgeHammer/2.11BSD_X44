@@ -1537,7 +1537,6 @@ bad:
 			return (ENOTTY);
 		return (scsipi_do_ioctl(periph, dev, cmd, addr, flag, p));
 	}
-
 #ifdef DIAGNOSTIC
 	panic("cdioctl: impossible");
 #endif

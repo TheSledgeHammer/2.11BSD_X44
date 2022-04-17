@@ -90,19 +90,21 @@
 
 #include <machine/param.h>
 
-struct disklist_head 	disklist;	/* TAILQ_HEAD */
-int						disk_count;	/* number of drives in global disklist */
+
 
 /*
  * Initialize the disklist.  Called by main() before autoconfiguration.
  */
+struct disklist_head 	disklist = TAILQ_HEAD_INITIALIZER(disklist);	/* TAILQ_HEAD */
+int						disk_count = 0;	/* number of drives in global disklist */
+/*
 void
 disk_init()
 {
 	TAILQ_INIT(&disklist);
 	disk_count = 0;
 }
-
+*/
 /*
  * Searches the disklist for the disk corresponding to the
  * name provided.

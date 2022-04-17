@@ -51,28 +51,26 @@ struct fileops mpxops = {
 		.fo_kqfilter = mpx_kqfilter
 };
 
-struct grplist   mpx_grps[NGROUPS];
-struct chanlist  mpx_chans[NCHANS];
+struct grouplist   	mpx_groups[NGROUPS];
+struct channellist  mpx_channels[NCHANS];
 
 void
 mpx_init(void)
 {
-	struct mpx 			*mpx;
-	register int i, j;
+	struct mpx 		*mpx;
+	register int 	i, j;
 
 	MALLOC(mpx, struct mpx *, sizeof(struct mpx *), M_MPX, M_WAITOK);
     simple_lock_init(mpx->mpx_pair, "mpx_lock");
 
-    for(i = 0; i < NGROUPS; i++) {
-    	LIST_INIT(&mpx_grps[i]);
+    for(i = 0; i <= NGROUPS; i++) {
+    	LIST_INIT(&mpx_groups[i]);
     }
 
-	for(j = 0; j < NCHANS; j++) {
-		  LIST_INIT(&mpx_chans[j]);
+	for(j = 0; j <= NCHANS; j++) {
+		  LIST_INIT(&mpx_channels[j]);
 	}
 }
-
-
 
 struct mpx_writer *
 mpx_writer(mpx, size, buffer, state)
@@ -124,10 +122,10 @@ void
 mpx_create_group(index)
     int index;
 {
-    struct grplist *group;
+    struct grouplist *group;
     struct mpx_group *gp;
 
-    group = &mpx_grps[index];
+    group = &mpx_groups[index];
     gp = (struct mpx_group *)calloc(NGROUPS, sizeof(struct mpx_group *), M_MPX, M_WAITOK);
     gp->mpg_index = index;
 
@@ -138,10 +136,10 @@ struct mpx_group *
 mpx_get_group(index)
     int index;
 {
-    struct grplist *group;
+    struct grouplist *group;
     struct mpx_group *gp;
 
-    group = &mpx_grps[index];
+    group = &mpx_groups[index];
     LIST_FOREACH(gp, group, mpg_node) {
         if(gp->mpg_index == index) {
             return (gp);
@@ -168,11 +166,11 @@ mpx_create_channel(gp, index, flags)
 	struct mpx_group *gp;
     int index, flags;
 {
-    struct chanlist *chan;
-    struct mpx_chan *cp;
+    struct channellist *chan;
+    struct mpx_channel *cp;
 
-    chan = &mpx_chans[index];
-    cp = (struct mpx_chan *)calloc(NCHANS, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
+    chan = &mpx_channels[index];
+    cp = (struct mpx_channel *)calloc(NCHANS, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
     cp->mpc_index = index;
     cp->mpc_flags = flags;
     cp->mpc_group = gp;
@@ -180,14 +178,14 @@ mpx_create_channel(gp, index, flags)
     LIST_INSERT_HEAD(chan, cp, mpc_node);
 }
 
-struct mpx_chan *
+struct mpx_channel *
 mpx_get_channel(index)
     int index;
 {
-    struct chanlist *chan;
-    struct mpx_chan *cp;
+    struct channellist *chan;
+    struct mpx_channel *cp;
 
-    chan = &mpx_chans[index];
+    chan = &mpx_channels[index];
     LIST_FOREACH(cp, chan, mpc_node) {
         if(cp->mpc_index == index) {
             return (cp);
@@ -198,7 +196,7 @@ mpx_get_channel(index)
 
 void
 mpx_remove_channel(cp, index)
-	struct mpx_chan *cp;
+	struct mpx_channel *cp;
 	int index;
 {
 	if (cp->mpc_index == index) {
@@ -209,21 +207,26 @@ mpx_remove_channel(cp, index)
 	}
 }
 
+/*
+ * creates mpxspace.
+ * default: 10 mpx groups with 20 mpx channels per group
+ */
+void
 mpxspace(flags)
 	int flags;
 {
-	struct mpx_group *group;
-	struct mpx_chan *chan;
-	int i, j;
+    register struct mpx_group 	*gp;
+    register int i, j;
 
-	for(i = 0; i < NGROUPS; i++) {
-		mpx_create_group(group, i);
-
-		for(j = 0; j < NCHANS; j++) {
-			mpx_create_channel(group->mpg_chan, group, j, flags);
-			chan = group->mpg_chan;
-		}
-	}
+    for(i = 0; i <= NGROUPS; i++) {
+        mpx_create_group(i);
+        LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
+            for(j = 0; j <= NCHANS; j++) {
+                mpx_create_channel(gp, j, flags);
+                gp->mpg_channel = mpx_get_channel(j);
+            }
+        }
+    }
 }
 
 mpx_connect()
@@ -268,8 +271,8 @@ mpx_read(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
-    struct mpx *mpx;
-    struct mpx_reader *read;
+    struct mpx 			*mpx;
+    struct mpx_reader 	*read;
 
     mpx = fp->f_mpx;
     mpx->mpx_file = fp;
@@ -283,8 +286,8 @@ mpx_write(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
-	struct mpx *mpx;
-	struct mpx_writer *write;
+	struct mpx 			*mpx;
+	struct mpx_writer 	*write;
 
 	mpx = fp->f_mpx;
 	mpx->mpx_file = fp;

@@ -474,16 +474,16 @@ cscan_put(q, bp, sortby)
 
 	bqh = &q->cq_head[idx];
 
-	RB_FOREACH(&it, bqh, buf) {
+	RB_FOREACH(it, bqhead, bqh) {
 		if (buf_inorder(bp, it, sortby)) {
 			break;
 		}
 	}
 
 	if (it != NULL) {
-		RB_INSERT(buf, bqh, it);
+		RB_INSERT(bqhead, bqh, it);
 	} else {
-		RB_INSERT(buf, bqh, bp);
+		RB_INSERT(bqhead, bqh, bp);
 	}
 }
 
@@ -497,20 +497,20 @@ cscan_get(q, remove)
 	struct buf *bp;
 
 	bqh = &q->cq_head[idx];
-	bp = RB_FIRST(buf, bqh);
+	bp = RB_FIRST(bqhead, bqh);
 
 	if (bp == NULL) {
 		/* switch queue */
 		idx = 1 - idx;
 		bqh = &q->cq_head[idx];
-		bp = RB_FIRST(buf, bqh);
+		bp = RB_FIRST(bqhead, bqh);
 	}
 
 	KDASSERT((bp != NULL && !cscan_empty(q)) || (bp == NULL && cscan_empty(q)));
 
 	if (bp != NULL && remove) {
 		q->cq_idx = idx;
-		RB_REMOVE(buf, bqh, bp);
+		RB_REMOVE(bqhead, bqh, bp);
 
 		q->cq_lastcylin = bp->b_cylin;
 		q->cq_lastrawblkno =
@@ -684,7 +684,7 @@ bufq_priocscan_init(bufq)
 	const int sortby;
 	int i;
 
-	sortby = bufq->bq_flags & BUFQ_SORT_MASK;
+	//sortby = bufq->bq_flags & BUFQ_SORT_MASK;
 	bufq->bq_get = bufq_priocscan_get;
 	bufq->bq_put = bufq_priocscan_put;
 	bufq->bq_private = malloc(sizeof(struct bufq_priocscan),
@@ -694,7 +694,7 @@ bufq_priocscan_init(bufq)
 	for (i = 0; i < PRIOCSCAN_NQUEUE; i++) {
 		struct cscan_queue *cq = &q->bq_queue[i].q_queue;
 
-		cscan_init(cq, sortby);
+		cscan_init(cq, bufq->bq_flags & BUFQ_SORT_MASK);
 	}
 }
 

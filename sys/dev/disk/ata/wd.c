@@ -129,7 +129,7 @@ int wdcdebug_wd_mask = 0x0;
 #endif
 
 int	wdprobe(struct device *, struct cfdata *, void *);
-void	wdattach(struct device *, struct device *, void *);
+void wdattach(struct device *, struct device *, void *);
 int	wddetach(struct device *, int);
 int	wdactivate(struct device *, enum devact);
 int	wdprint(void *, char *);
@@ -1162,7 +1162,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 	case DIOCSBAD:
 		if ((flag & FWRITE) == 0)
 			return EBADF;
-		wd->sc_dk.dk_cpulabel->bad = *(struct dkbad *)addr;
+		//wd->sc_dk.dk_cpulabel->bad = *(struct dkbad *)addr;
 		wd->sc_dk.dk_label->d_flags |= D_BADSECT;
 		bad144intern(wd);
 		return 0;
@@ -1208,7 +1208,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 		}
 		dbsi.dbsi_left = missing;
 		dbsi.dbsi_copied = count;
-		*(struct disk_badsecinfo *)addr = dbsi;
+		*(struct disk_badsecinfo*) addr = dbsi;
 		return 0;
 	}
 
@@ -1325,7 +1325,7 @@ bad:
 			return EIO;
 		wdgetdefaultlabel(wd, newlabel);
 		if (newlabel->d_npartitions <= OLDMAXPARTITIONS)
-			memcpy(addr, &newlabel, sizeof (struct olddisklabel));
+			memcpy(addr, &newlabel, sizeof(struct olddisklabel));
 		else
 			error = ENOTTY;
 		free(newlabel, M_TEMP);
@@ -1337,26 +1337,24 @@ bad:
 		if ((flag & FWRITE) == 0)
 			return EBADF;
 		{
-		register struct format_op *fop;
-		struct iovec aiov;
-		struct uio auio;
+			register struct format_op *fop;
+			struct iovec aiov;
+			struct uio auio;
 
-		fop = (struct format_op *)addr;
-		aiov.iov_base = fop->df_buf;
-		aiov.iov_len = fop->df_count;
-		auio.uio_iov = &aiov;
-		auio.uio_iovcnt = 1;
-		auio.uio_resid = fop->df_count;
-		auio.uio_segflg = 0;
-		auio.uio_offset =
-			fop->df_startblk * wd->sc_dk.dk_label->d_secsize;
-		auio.uio_procp = p;
-		error = physio(wdformat, NULL, dev, B_WRITE, minphys,
-		    &auio);
-		fop->df_count -= auio.uio_resid;
-		fop->df_reg[0] = wdc->sc_status;
-		fop->df_reg[1] = wdc->sc_error;
-		return error;
+			fop = (struct format_op*) addr;
+			aiov.iov_base = fop->df_buf;
+			aiov.iov_len = fop->df_count;
+			auio.uio_iov = &aiov;
+			auio.uio_iovcnt = 1;
+			auio.uio_resid = fop->df_count;
+			auio.uio_segflg = 0;
+			auio.uio_offset = fop->df_startblk * wd->sc_dk.dk_label->d_secsize;
+			auio.uio_procp = p;
+			error = physio(wdformat, NULL, dev, B_WRITE, minphys, &auio);
+			fop->df_count -= auio.uio_resid;
+			fop->df_reg[0] = wdc->sc_status;
+			fop->df_reg[1] = wdc->sc_error;
+			return error;
 		}
 #endif
 	case DIOCGCACHE:
@@ -1376,49 +1374,49 @@ bad:
 		    (flag & FWRITE) == 0)
 			return (EBADF);
 		{
-		struct wd_ioctl *wi;
-		atareq_t *atareq = (atareq_t *) addr;
-		int error;
+			struct wd_ioctl *wi;
+			atareq_t *atareq = (atareq_t*) addr;
+			int error;
 
-		wi = wi_get();
-		wi->wi_softc = wd;
-		wi->wi_atareq = *atareq;
+			wi = wi_get();
+			wi->wi_softc = wd;
+			wi->wi_atareq = *atareq;
 
-		if (atareq->datalen && atareq->flags &
-		    (ATACMD_READ | ATACMD_WRITE)) {
-			wi->wi_iov.iov_base = atareq->databuf;
-			wi->wi_iov.iov_len = atareq->datalen;
-			wi->wi_uio.uio_iov = &wi->wi_iov;
-			wi->wi_uio.uio_iovcnt = 1;
-			wi->wi_uio.uio_resid = atareq->datalen;
-			wi->wi_uio.uio_offset = 0;
-			wi->wi_uio.uio_segflg = UIO_USERSPACE;
-			wi->wi_uio.uio_rw =
-			    (atareq->flags & ATACMD_READ) ? B_READ : B_WRITE;
-			wi->wi_uio.uio_procp = p;
-			error = physio(wdioctlstrategy, &wi->wi_bp, dev,
-			    (atareq->flags & ATACMD_READ) ? B_READ : B_WRITE,
-			    minphys, &wi->wi_uio);
-		} else {
-			/* No need to call physio if we don't have any
-			   user data */
-			wi->wi_bp.b_flags = 0;
-			wi->wi_bp.b_data = 0;
-			wi->wi_bp.b_bcount = 0;
-			wi->wi_bp.b_dev = 0;
-			wi->wi_bp.b_proc = p;
-			wdioctlstrategy(&wi->wi_bp);
-			error = wi->wi_bp.b_error;
-		}
-		*atareq = wi->wi_atareq;
-		wi_free(wi);
-		return(error);
+			if (atareq->datalen
+					&& (atareq->flags & (ATACMD_READ | ATACMD_WRITE))) {
+				wi->wi_iov.iov_base = atareq->databuf;
+				wi->wi_iov.iov_len = atareq->datalen;
+				wi->wi_uio.uio_iov = &wi->wi_iov;
+				wi->wi_uio.uio_iovcnt = 1;
+				wi->wi_uio.uio_resid = atareq->datalen;
+				wi->wi_uio.uio_offset = 0;
+				wi->wi_uio.uio_segflg = UIO_USERSPACE;
+				wi->wi_uio.uio_rw =
+						(atareq->flags & ATACMD_READ) ? B_READ : B_WRITE;
+				wi->wi_uio.uio_procp = p;
+				error = physio(wdioctlstrategy, &wi->wi_bp, dev,
+						(atareq->flags & ATACMD_READ) ? B_READ : B_WRITE,
+						minphys, &wi->wi_uio);
+			} else {
+				/* No need to call physio if we don't have any
+				 user data */
+				wi->wi_bp.b_flags = 0;
+				wi->wi_bp.b_data = 0;
+				wi->wi_bp.b_bcount = 0;
+				wi->wi_bp.b_dev = 0;
+				wi->wi_bp.b_proc = p;
+				wdioctlstrategy(&wi->wi_bp);
+				error = wi->wi_bp.b_error;
+			}
+			*atareq = wi->wi_atareq;
+			wi_free(wi);
+			return (error);
 		}
 
 	default:
 		return ENOTTY;
 	}
-
+//	return (disk_ioctl(wd->sc_dk, dev, xfer, addr, flag, p));
 #ifdef DIAGNOSTIC
 	panic("wdioctl: impossible");
 #endif
