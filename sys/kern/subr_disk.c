@@ -97,14 +97,7 @@
  */
 struct disklist_head 	disklist = TAILQ_HEAD_INITIALIZER(disklist);	/* TAILQ_HEAD */
 int						disk_count = 0;	/* number of drives in global disklist */
-/*
-void
-disk_init()
-{
-	TAILQ_INIT(&disklist);
-	disk_count = 0;
-}
-*/
+
 /*
  * Searches the disklist for the disk corresponding to the
  * name provided.
@@ -140,8 +133,8 @@ disk_attach(diskp)
 			panic("disk_attach: can't allocate storage for disklabel");
 	}
 
-	memset(diskp->dk_label, 0, sizeof(struct disklabel));
-	memset(diskp->dk_slices, 0, sizeof(struct diskslices));
+	bzero(diskp->dk_label, sizeof(struct disklabel));
+	bzero(diskp->dk_slices, sizeof(struct diskslices));
 
 	/*
 	 * Set the attached timestamp.
@@ -251,10 +244,6 @@ disk_ioctl(diskp, dev, cmd, data, flag, p)
 		return (ENOIOCTL);
 	}
 
-	if(ssp != NULL) {
-		return (dsioctl(dev, cmd, data, flag, &ssp));
-	}
-
 	switch (cmd) {
 	case DIOCGSECTORSIZE:
 		*(u_int *)data = lp->d_secsize;
@@ -267,6 +256,8 @@ disk_ioctl(diskp, dev, cmd, data, flag, p)
 	default:
 		return (ENOIOCTL);
 	}
+
+	return (dsioctl(dev, cmd, data, flag, &ssp));
 }
 
 /*

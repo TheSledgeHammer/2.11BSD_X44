@@ -110,10 +110,12 @@ mfs_mountroot()
 	mfsp->mfs_size = mfs_rootsize;
 	mfsp->mfs_vnode = rootvp;
 	mfsp->mfs_pid = p->p_pid;
-	mfsp->mfs_buflist = (struct buf *)0;
+	mfsp->mfs_shutdown = 0;
+	bufq_alloc(&mfsp->mfs_buflist, BUFQ_FCFS);
 	if (error == ffs_mountfs(rootvp, mp, p)) {
 		mp->mnt_vfc->vfc_refcount--;
 		vfs_unbusy(mp, p);
+		bufq_free(&mfsp->mfs_buflist);
 		free(mp, M_MOUNT);
 		free(mfsp, M_MFSNODE);
 		return (error);
@@ -211,9 +213,10 @@ mfs_mount(mp, path, data, ndp, p)
 	mfsp->mfs_size = args.size;
 	mfsp->mfs_vnode = devvp;
 	mfsp->mfs_pid = p->p_pid;
-	mfsp->mfs_buflist = (struct buf *)0;
+	mfsp->mfs_shutdown = 0;
+	bufq_alloc(&mfsp->mfs_buflist, BUFQ_FCFS);
 	if (error == ffs_mountfs(devvp, mp, p)) {
-		mfsp->mfs_buflist = (struct buf *)-1;
+		mfsp->mfs_shutdown = 1;
 		vrele(devvp);
 		return (error);
 	}
@@ -251,9 +254,8 @@ mfs_start(mp, flags, p)
 	register caddr_t base;
 
 	base = mfsp->mfs_baseoff;
-	while (mfsp->mfs_buflist != (struct buf *)(-1)) {
-		while (bp == mfsp->mfs_buflist) {
-			mfsp->mfs_buflist = bp->b_actf;
+	while (mfsp->mfs_shutdown != 1) {
+		while ((bp = BUFQ_GET(&mfsp->mfs_buflist)) != NULL) {
 			mfs_doio(bp, base);
 			wakeup((caddr_t)bp);
 		}
@@ -263,10 +265,13 @@ mfs_start(mp, flags, p)
 		 * otherwise we will loop here, as tsleep will always return
 		 * EINTR/ERESTART.
 		 */
-		if (tsleep((caddr_t)vp, mfs_pri, "mfsidl", 0) &&
-		    dounmount(mp, 0, p) != 0)
+		if (tsleep((caddr_t) vp, mfs_pri, "mfsidl", 0)
+				&& dounmount(mp, 0, p) != 0) {
 			CLRSIG(p, CURSIG(p));
+		}
 	}
+	KASSERT(BUFQ_PEEK(&mfsp->mfs_buflist) == NULL);
+	bufq_free(&mfsp->mfs_buflist);
 	return (0);
 }
 

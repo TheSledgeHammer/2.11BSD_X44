@@ -85,9 +85,9 @@ vm_segment_expand(p, pseg, newsize, type)
 	a2 = rmalloc(coremap, newsize);
 	if (a2 == NULL) {
 		if (type == PSEG_DATA) {
-			swapout_seg(p, X_FREECORE, n, X_OLDSIZE);
+			vm_xswapout(p, X_FREECORE, n, X_OLDSIZE);
 		} else {
-			swapout_seg(p, X_FREECORE, X_OLDSIZE, n);
+			vm_xswapout(p, X_FREECORE, X_OLDSIZE, n);
 		}
 	}
 	if (type == PSEG_STACK) {
@@ -112,46 +112,6 @@ vm_segment_expand(p, pseg, newsize, type)
  *
  *	@(#)kern_mman.c	1.3 (2.11BSD) 2000/2/20
  */
-
-int
-sbrk(p, uap, retval)
-	struct proc *p;
-	struct sbrk_args  {
-		syscallarg(int) 	type;
-		syscallarg(segsz_t) size;
-		syscallarg(caddr_t) addr;
-		syscallarg(int) 	sep;
-		syscallarg(int) 	flags;
-		syscallarg(int) 	incr;
-	} *uap;
-	register_t *retval;
-{
-	register segsz_t n, d;
-
-	n = btoc(uap->size);
-	if (!SCARG(uap, sep)) {
-		SCARG(uap, sep) = PSEG_NOSEP;
-	} else {
-		n -= ctos(p->p_tsize) * stoc(1);
-	}
-	if (n < 0) {
-		n = 0;
-	}
-	p->p_tsize;
-	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
-		return (0);
-	}
-	vm_segment_expand(p, p->p_psegp, n, S_DATA);
-	/* set d to (new - old) */
-	d = n - p->p_dsize;
-	if (d > 0) {
-		clear(p->p_daddr + p->p_dsize, d);
-	}
-	p->p_dsize = n;
-	/* Not yet implemented */
-	return (EOPNOTSUPP);
-}
-
 /*
  * Set up software prototype segmentation registers to implement the 3
  * pseudo text, data, stack segment sizes passed as arguments.  The
@@ -297,57 +257,4 @@ swkill(p, rout)
 	char *rout;
 {
 	tprintf(u.u_ttyp, "sorry, pid %d killed in %s: no swap space\n", p->p_pid, rout);
-}
-
-/*
- * Swap out process p if segmented.
- * NOTE: Likely to be run within the current swapout method as needed
- */
-void
-swapout_seg(p, freecore, odata, ostack)
-	struct proc *p;
-	int freecore;
-	register u_int odata, ostack;
-{
-	memaddr_t a[3];
-
-	if (odata == X_OLDSIZE) {
-		odata = p->p_dsize;
-	}
-	if (ostack == X_OLDSIZE) {
-		ostack = p->p_ssize;
-	}
-	if (rmalloc3(swapmap, ctod(p->p_dsize), ctod(p->p_ssize), ctod(USIZE), a) == NULL) {
-		panic("out of swap space");
-	}
-	if (p->p_textp) {
-		vm_xccdec(p->p_textp);
-	}
-	if (odata) {
-		swap(a[0], p->p_daddr, odata, p->p_textvp, B_WRITE);
-		if (freecore == X_FREECORE) {
-			rmfree(coremap, odata, p->p_daddr);
-		}
-	}
-	if (ostack) {
-		swap(a[1], p->p_saddr, ostack, p->p_textvp, B_WRITE);
-		if (freecore == X_FREECORE) {
-			rmfree(coremap, ostack, p->p_saddr);
-		}
-	}
-	swap(a[2], p->p_addr, USIZE, p->p_textvp, B_WRITE);
-	if (freecore == X_FREECORE) {
-		rmfree(coremap, USIZE, p->p_addr);
-	}
-	p->p_daddr = a[0];
-	p->p_saddr = a[1];
-	p->p_addr = a[2];
-	p->p_flag &= ~(P_SLOAD | P_SLOCK);
-	p->p_time = 0;
-
-	cnt.v_swpout++;
-	if (runout) {
-		runout = 0;
-		wakeup((caddr_t) &runout);
-	}
 }

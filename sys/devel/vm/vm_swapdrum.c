@@ -1223,3 +1223,22 @@ vm_swap_free(startslot, nslots)
 #endif
 	simple_unlock(&swap_data_lock);
 }
+
+/*
+ * swap_pager.c
+ */
+
+swap_pager_put()
+{
+
+}
+
+swap_pager_get()
+{
+
+}
+
+swap_pager_io()
+{
+
+}

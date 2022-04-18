@@ -174,7 +174,7 @@ vm_xexpand(p, xp)
 		xp->psx_ccount++;
 		return;
 	}
-	swapout_seg(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
+	vm_xswapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 	xunlock(&vm_text_lock);
 	p->p_flag |= SSWAP;
 	swtch();
@@ -303,6 +303,59 @@ vm_xrele(vp)
 {
 	if (vp->v_flag & VTEXT) {
 		vm_xuntext(vp->v_text);
+	}
+}
+
+/*
+ * Swap out process p if segmented.
+ * NOTE: Likely to be run within the current swapout method as needed
+ */
+void
+vm_xswapout(p, freecore, odata, ostack)
+	struct proc *p;
+	int freecore;
+	register u_int odata, ostack;
+{
+	memaddr_t a[3];
+
+	if (odata == X_OLDSIZE) {
+		odata = p->p_dsize;
+	}
+	if (ostack == X_OLDSIZE) {
+		ostack = p->p_ssize;
+	}
+	if (rmalloc3(swapmap, ctod(p->p_dsize), ctod(p->p_ssize), ctod(USIZE), a) == NULL) {
+		panic("out of swap space");
+	}
+	if (p->p_textp) {
+		vm_xccdec(p->p_textp);
+	}
+	if (odata) {
+		swap(a[0], p->p_daddr, odata, p->p_textvp, B_WRITE);
+		if (freecore == X_FREECORE) {
+			rmfree(coremap, odata, p->p_daddr);
+		}
+	}
+	if (ostack) {
+		swap(a[1], p->p_saddr, ostack, p->p_textvp, B_WRITE);
+		if (freecore == X_FREECORE) {
+			rmfree(coremap, ostack, p->p_saddr);
+		}
+	}
+	swap(a[2], p->p_addr, USIZE, p->p_textvp, B_WRITE);
+	if (freecore == X_FREECORE) {
+		rmfree(coremap, USIZE, p->p_addr);
+	}
+	p->p_daddr = a[0];
+	p->p_saddr = a[1];
+	p->p_addr = a[2];
+	p->p_flag &= ~(P_SLOAD | P_SLOCK);
+	p->p_time = 0;
+
+	cnt.v_swpout++;
+	if (runout) {
+		runout = 0;
+		wakeup((caddr_t) &runout);
 	}
 }
 

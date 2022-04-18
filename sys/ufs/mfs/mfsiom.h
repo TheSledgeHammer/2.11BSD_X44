@@ -33,5 +33,5 @@
  *	@(#)mfsiom.h	8.1 (Berkeley) 6/11/93
  */
 
-#define MFS_MAPREG	(MAXPHYS/NBPG + 2) /* Kernel mapping pte's */
-#define MFS_MAPSIZE	10		   /* Size of alloc map for pte's */
+#define MFS_MAPREG	(MAXPHYS/NBPG + 2) 		/* Kernel mapping pte's */
+#define MFS_MAPSIZE	10		  			 	/* Size of alloc map for pte's */

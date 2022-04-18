@@ -483,7 +483,7 @@ out:
 	simple_unlock(&malloc_slock);
 	splx(s);
 	if ((flags & M_ZERO) && va != NULL)
-		memset(va, 0, size);
+		bzero(va, size);
 	return ((void *) va);
 }
 
@@ -705,7 +705,7 @@ calloc(nitems, size, type, flags)
 	/*
 	 * clear contents
 	 */
-	memset(addr, 0, newsize);
+	bzero(addr, newsize);
 	return (addr);
 }
 

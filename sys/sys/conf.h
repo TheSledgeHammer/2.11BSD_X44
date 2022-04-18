@@ -107,17 +107,19 @@ struct swdevt {
 extern struct swdevt swdevt[];
 #endif
 
+
 /* machine/conf.c */
-extern void device_init(struct devswtable *devsw);
-extern void	audio_init(struct devswtable *devsw);
-extern void	console_init(struct devswtable *devsw);
-extern void	core_init(struct devswtable *devsw);
-extern void	disk_init(struct devswtable *devsw);
-extern void	misc_init(struct devswtable *devsw);
-extern void	network_init(struct devswtable *devsw);
-extern void	swap_init(struct devswtable *devsw);
-extern void	tty_init(struct devswtable *devsw);
-extern void	usb_init(struct devswtable *devsw);
-extern void	video_init(struct devswtable *devsw);
-extern void	wscons_init(struct devswtable *devsw);
+struct devswtable;
+extern void device_init(struct devswtable *);
+extern void	audio_init(struct devswtable *);
+extern void	console_init(struct devswtable *);
+extern void	core_init(struct devswtable *);
+extern void	disk_init(struct devswtable *);
+extern void	misc_init(struct devswtable *);
+extern void	network_init(struct devswtable *);
+extern void	swap_init(struct devswtable *);
+extern void	tty_init(struct devswtable *);
+extern void	usb_init(struct devswtable *);
+extern void	video_init(struct devswtable *);
+extern void	wscons_init(struct devswtable *);
 #endif

@@ -42,7 +42,8 @@ struct mfsnode {
 	caddr_t			mfs_baseoff;	/* base of file system in memory */
 	long			mfs_size;		/* size of memory file system */
 	pid_t			mfs_pid;		/* supporting process pid */
-	struct	buf 	*mfs_buflist;	/* list of I/O requests */
+	struct bufq_state mfs_buflist;	/* list of I/O requests */
+	int				mfs_shutdown;	/* shutdown this mfsnode */
 	long			mfs_spare[4];
 };
 

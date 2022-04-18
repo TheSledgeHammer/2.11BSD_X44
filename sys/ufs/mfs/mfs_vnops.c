@@ -171,8 +171,7 @@ mfs_strategy(ap)
 	} else if (mfsp->mfs_pid == p->p_pid) {
 		mfs_doio(bp, mfsp->mfs_baseoff);
 	} else {
-		bp->b_actf = mfsp->mfs_buflist;
-		mfsp->mfs_buflist = bp;
+		BUFQ_PUT(&mfsp->mfs_buflist, bp);
 		wakeup((caddr_t)vp);
 	}
 	return (0);
@@ -243,8 +242,7 @@ mfs_close(ap)
 	/*
 	 * Finish any pending I/O requests.
 	 */
-	while (bp == mfsp->mfs_buflist) {
-		mfsp->mfs_buflist = bp->b_actf;
+	while ((bp = BUFQ_GET(&mfsp->mfs_buflist)) != NULL) {
 		mfs_doio(bp, mfsp->mfs_baseoff);
 		wakeup((caddr_t)bp);
 	}
@@ -261,12 +259,12 @@ mfs_close(ap)
 	 */
 	if (vp->v_usecount > 1)
 		printf("mfs_close: ref count %d > 1\n", vp->v_usecount);
-	if (vp->v_usecount > 1 || mfsp->mfs_buflist)
+	if (vp->v_usecount > 1 || BUFQ_PEEK(&mfsp->mfs_buflist) != NULL)
 		panic("mfs_close");
 	/*
 	 * Send a request to the filesystem server to exit.
 	 */
-	mfsp->mfs_buflist = (struct buf *)(-1);
+	mfsp->mfs_shutdown = 1;
 	wakeup((caddr_t)vp);
 	return (0);
 }
@@ -285,9 +283,11 @@ mfs_inactive(ap)
 	struct vnode *vp = ap->a_vp;
 	struct mfsnode *mfsp = VTOMFS(vp);
 
-	if (mfsp->mfs_buflist && mfsp->mfs_buflist != (struct buf *)(-1))
-		panic("mfs_inactive: not inactive (mfs_buflist %x)",
-			mfsp->mfs_buflist);
+	if (BUFQ_PEEK(&mfsp->mfs_buflist) != NULL) {
+		panic("mfs_inactive: not inactive (mfs_buflist %p)",
+			BUFQ_PEEK(&mfsp->mfs_buflist));
+	}
+
 	VOP_UNLOCK(vp, 0, ap->a_p);
 	return (0);
 }
