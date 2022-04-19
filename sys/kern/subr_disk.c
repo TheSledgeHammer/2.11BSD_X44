@@ -231,7 +231,7 @@ int
 disk_ioctl(diskp, dev, cmd, data, flag, p)
 	struct dkdevice *diskp;
 	dev_t			dev;
-	int				cmd;
+	u_long			cmd;
 	void 			*data;
 	int				flag;
 	struct proc 	*p;
@@ -389,7 +389,7 @@ disk_driver(disk, dev)
 	return (disk[dkunit(dev)].dk_driver);
 }
 
-struct disklabel
+struct disklabel *
 disk_label(disk, dev)
 	struct dkdevice *disk;
 	dev_t 			dev;
@@ -397,7 +397,7 @@ disk_label(disk, dev)
 	return (disk[dkunit(dev)].dk_label);
 }
 
-struct diskslices
+struct diskslices *
 disk_slices(disk, dev)
 	struct dkdevice *disk;
 	dev_t 			dev;
@@ -405,7 +405,7 @@ disk_slices(disk, dev)
 	return (disk[dkunit(dev)].dk_slices);
 }
 
-struct partition
+struct partition *
 disk_partition(disk, dev)
 	struct dkdevice *disk;
 	dev_t 			dev;
