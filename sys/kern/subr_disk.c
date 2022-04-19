@@ -90,8 +90,6 @@
 
 #include <machine/param.h>
 
-
-
 /*
  * Initialize the disklist.  Called by main() before autoconfiguration.
  */
@@ -127,14 +125,19 @@ disk_attach(diskp)
 	struct dkdevice *diskp;
 {
 	int s;
-	diskp->dk_label = malloc(sizeof(struct disklabel), M_DEVBUF, M_NOWAIT);
-	diskp->dk_slices = malloc(sizeof(struct diskslices), M_DEVBUF, M_NOWAIT);
-	if ((diskp->dk_label == NULL) || (diskp->dk_slices == NULL)) {
-			panic("disk_attach: can't allocate storage for disklabel");
-	}
+	diskp->dk_label = (struct disklabel *)malloc(sizeof(struct disklabel *), M_DEVBUF, M_NOWAIT);
+	diskp->dk_slices = (struct diskslices *)malloc(sizeof(struct diskslices *), M_DEVBUF, M_NOWAIT);
 
-	bzero(diskp->dk_label, sizeof(struct disklabel));
-	bzero(diskp->dk_slices, sizeof(struct diskslices));
+	if (diskp->dk_label == NULL) {
+		panic("disk_attach: can't allocate storage for disklabel");
+	} else {
+		bzero(diskp->dk_label, sizeof(struct disklabel));
+	}
+	if (diskp->dk_slices == NULL) {
+		panic("disk_attach: can't allocate storage for diskslices");
+	} else {
+		bzero(diskp->dk_slices, sizeof(struct diskslices));
+	}
 
 	/*
 	 * Set the attached timestamp.
@@ -343,9 +346,13 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 {
 	int unit = dkunit(bp->b_dev);
 	int	part = dkpart(bp->b_dev);
-	register void (*pr) (const char *, ...);
-	char partname = 'a' + part;
+	register void (*pr)(const char *, ...);
+	char partname;
 	int sn;
+
+	unit = dkunit(bp->b_dev);
+	part = dkpart(bp->b_dev);
+	partname = 'a' + part;
 
 	if (pri != LOG_PRINTF) {
 		log(pri, "");
@@ -363,7 +370,7 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 			(*pr)("%d of ", sn);
 		}
 		(*pr)("%d-%d", bp->b_blkno,
-		    bp->b_blkno + (bp->b_bcount - 1) / DEV_BSIZE);
+				bp->b_blkno + (bp->b_bcount - 1) / DEV_BSIZE);
 	}
 	if (lp && (blkdone >= 0 || bp->b_bcount <= lp->d_secsize)) {
 		sn += lp->d_partitions[part].p_offset;
