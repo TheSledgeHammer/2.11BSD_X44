@@ -40,6 +40,7 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/lockf.h>
 #include <sys/buf.h>
 #include <sys/mount.h>
@@ -553,10 +554,11 @@ spec_strategy(ap)
 		struct buf *a_bp;
 	} */ *ap;
 {
+	const struct bdevsw *bdev;
 	struct buf *bp = ap->a_bp;
-	int maj = major(bp->b_dev);
 
-	(*bdevsw[maj].d_strategy)(bp);
+    bdev = bdevsw_lookup(bp->b_dev);
+	(*bdev->d_strategy)(bp);
 	return (0);
 }
 
