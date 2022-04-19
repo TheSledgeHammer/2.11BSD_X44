@@ -79,17 +79,18 @@ struct devswtable 					sys_devsw;
 struct devswtable_head 				devsw_hashtable[MAXDEVSW];
 struct lock_object  				devswtable_lock;
 
-#define devswtable_lock_init(lock)	(simple_lock_init(lock, "devswtable_lock"))
-#define devswtable_lock(lock)		(simple_lock(lock))
-#define devswtable_unlock(lock)		(simple_unlock(lock))
+#define devswtable_lock_init(lock)	    (simple_lock_init(lock, "devswtable_lock"))
+#define devswtable_lock(lock)		    (simple_lock(lock))
+#define devswtable_unlock(lock)		    (simple_unlock(lock))
 
 #define devswtable_io_init(major, sw)	((major) > 0 ? (sw) : ENXIO)
 
+static void devswtable_allocate(struct devswtable *);
 void devsw_io_add(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
 void devsw_io_remove(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
 int	 devsw_io_attach(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
 void devsw_io_detach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-int  devsw_io_lookup(dev_t, void *, int);
+int  devsw_io_lookup(dev_t, const void *, int);
 
 void
 devswtable_init()
@@ -499,7 +500,7 @@ linesw_attach(line, major)
 	}
 
 	if (major >= max_linesws) {
-		KASSERT(linesw == &linesw0);
+		KASSERT(linesw == linesw0);
 		newptr = calloc(MAXDEVSW, LINESW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
 			devswtable_unlock(&devswtable_lock);
@@ -703,32 +704,36 @@ devsw_io_detach(major, bdev, cdev, line)
 int
 devsw_io_lookup(major, data, type)
 	dev_t 	major;
-	void 	*data;
+	const void 	*data;
 	int		type;
 {
-	struct devswtable *devsw = devswtable_lookup(data, major);
-
+	struct devswtable *devsw;
+	const struct bdevsw *bd;
+    const struct cdevsw *cd;
+    const struct linesw *ld;
+    
+    devsw = devswtable_lookup(data, major);
 	if(devsw == NULL) {
 		return (NODEV);
 	}
 
     switch(type) {
     case BDEVTYPE:
-    	struct bdevsw *bd = bdevsw_lookup(major);
+    	bd = bdevsw_lookup(major);
         if(bd == DTOB(devsw)) {
             return (0);
         }
         break;
 
     case CDEVTYPE:
-        struct cdevsw *cd = cdevsw_lookup(major);
+        cd = cdevsw_lookup(major);
         if(cd == DTOC(devsw)) {
         	return (0);
         }
         break;
 
     case LINETYPE:
-        struct linesw *ld = linesw_lookup(major);
+        ld = linesw_lookup(major);
         if(ld == DTOL(devsw)) {
         	return (0);
         }
@@ -880,7 +885,7 @@ bdev_strategy(struct buf *bp)
 	const struct bdevsw *d;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
+	error = devsw_io_lookup(bp->b_dev, d, BDEVTYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1082,7 +1087,7 @@ cdev_reset(int uban)
 }
 */
 
-struct tty
+struct tty *
 cdev_tty(dev_t dev)
 {
 	const struct cdevsw *c;
@@ -1090,10 +1095,10 @@ cdev_tty(dev_t dev)
 	int error;
 
 	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
-		return (error);
+	if((error != 0) && (c = cdevsw_lookup(dev)) == NULL) {
+		return (NULL);
 	}
-
+	
 	rv = (*c->d_tty)(dev);
 
 	return (rv);
@@ -1140,7 +1145,7 @@ cdev_mmap(dev_t dev, off_t off, int flag)
 
 	error = devsw_io_lookup(dev, c, CDEVTYPE);
 	if(error != 0) {
-		return (error);
+		return ((caddr_t)error);
 	}
 
 	rv = (*c->d_mmap)(dev, off, flag);

@@ -44,6 +44,7 @@
 #include <sys/buf.h>
 #include <sys/malloc.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 
@@ -320,7 +321,7 @@ rawrw(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	struct cdevsw *cdev = cdevsw_lookup(dev);
+	const struct cdevsw *cdev = cdevsw_lookup(dev);
 	return (physio(cdev->d_strategy, (struct buf *)NULL, dev, (uio->uio_rw == UIO_READ ? B_READ : B_WRITE), minphys, uio));
 }
 
