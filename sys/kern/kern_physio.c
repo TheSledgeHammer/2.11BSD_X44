@@ -320,7 +320,8 @@ rawrw(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, (uio->uio_rw == UIO_READ ? B_READ : B_WRITE), minphys, uio));
+	struct cdevsw *cdev = cdevsw_lookup(dev);
+	return (physio(cdev->d_strategy, (struct buf *)NULL, dev, (uio->uio_rw == UIO_READ ? B_READ : B_WRITE), minphys, uio));
 }
 
 /*

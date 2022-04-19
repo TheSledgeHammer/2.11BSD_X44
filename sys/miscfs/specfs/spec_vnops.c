@@ -138,7 +138,9 @@ spec_open(ap)
 {
 	struct proc *p = ap->a_p;
 	struct vnode *bvp, *vp = ap->a_vp;
-	dev_t bdev, dev = (dev_t)vp->v_rdev;
+	const struct cdevsw *cdev;
+	const struct bdevsw *bdev;
+	dev_t blkdev, dev = (dev_t)vp->v_rdev;
 	int maj = major(dev);
 	int error;
 
@@ -151,14 +153,16 @@ spec_open(ap)
 	switch (vp->v_type) {
 
 	case VCHR:
-		if ((u_int)maj >= nchrdev)
+		cdev = cdevsw_lookup(dev);
+
+		if ((u_int)maj >= nchrdev || cdev == NULL)
 			return (ENXIO);
 		if (ap->a_cred != FSCRED && (ap->a_mode & FWRITE)) {
 			/*
 			 * When running in very secure mode, do not allow
 			 * opens for writing of any disk character devices.
 			 */
-			if (securelevel >= 2 && cdevsw[maj].d_type == D_DISK)
+			if (securelevel >= 2 && cdev->d_type == D_DISK)
 				return (EPERM);
 			/*
 			 * When running in secure mode, do not allow opens
@@ -167,8 +171,9 @@ spec_open(ap)
 			 * currently mounted.
 			 */
 			if (securelevel >= 1) {
-				if ((bdev = chrtoblk(dev)) != NODEV &&
-				    vfinddev(bdev, VBLK, &bvp) &&
+				blkdev = chrtoblk(dev);
+				if (blkdev != (dev_t)NODEV &&
+				    vfinddev(blkdev, VBLK, &bvp) &&
 				    bvp->v_usecount > 0 &&
 				    (error = vfs_mountedon(bvp)))
 					return (error);
@@ -176,22 +181,25 @@ spec_open(ap)
 					return (EPERM);
 			}
 		}
-		if (cdevsw[maj].d_type == D_TTY)
+		if (cdev->d_type == D_TTY)
 			vp->v_flag |= VISTTY;
 		VOP_UNLOCK(vp, 0, p);
-		error = (*cdevsw[maj].d_open)(dev, ap->a_mode, S_IFCHR, p);
+		error = (*cdev->d_open)(dev, ap->a_mode, S_IFCHR, p);
 		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
+
 		return (error);
 
 	case VBLK:
-		if ((u_int)maj >= nblkdev)
+		bdev = bdevsw_lookup(dev);
+
+		if ((u_int)maj >= nblkdev || bdev == NULL)
 			return (ENXIO);
 		/*
 		 * When running in very secure mode, do not allow
 		 * opens for writing of any disk block devices.
 		 */
 		if (securelevel >= 2 && ap->a_cred != FSCRED &&
-		    (ap->a_mode & FWRITE) && bdevsw[maj].d_type == D_DISK)
+		    (ap->a_mode & FWRITE) && bdev->d_type == D_DISK)
 			return (EPERM);
 		/*
 		 * Do not allow opens of block devices that are
@@ -199,7 +207,7 @@ spec_open(ap)
 		 */
 		if (error == vfs_mountedon(vp))
 			return (error);
-		return ((*bdevsw[maj].d_open)(dev, ap->a_mode, S_IFBLK, p));
+		return ((*bdev->d_open)(dev, ap->a_mode, S_IFBLK, p));
 	}
 	return (0);
 }
@@ -221,6 +229,8 @@ spec_read(ap)
 	register struct uio *uio = ap->a_uio;
  	struct proc *p = uio->uio_procp;
 	struct buf *bp;
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
 	daddr_t bn, nextbn;
 	long bsize, bscale;
 	struct partinfo dpart;
@@ -241,8 +251,8 @@ spec_read(ap)
 
 	case VCHR:
 		VOP_UNLOCK(vp, 0, p);
-		error = (*cdevsw[major(vp->v_rdev)].d_read)
-			(vp->v_rdev, uio, ap->a_ioflag);
+		cdev = cdevsw_lookup(vp->v_rdev);
+		error = (*cdev->d_read)(vp->v_rdev, uio, ap->a_ioflag);
 		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 		return (error);
 
@@ -250,13 +260,15 @@ spec_read(ap)
 		if (uio->uio_offset < 0)
 			return (EINVAL);
 		bsize = BLKDEV_IOSIZE;
+		bdev = bdevsw_lookup(vp->v_rdev);
 		dev = vp->v_rdev;
 		if ((majordev = major(dev)) < nblkdev &&
-		    (ioctl = bdevsw[majordev].d_ioctl) != NULL &&
-		    (*ioctl)(dev, DIOCGPART, (caddr_t)&dpart, FREAD, p) == 0 &&
-		    dpart.part->p_fstype == FS_BSDFFS &&
-		    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
-			bsize = dpart.part->p_frag * dpart.part->p_fsize;
+				 ((*bdev->d_ioctl)(vp->v_rdev, DIOCGPART, (caddr_t)&dpart, FREAD, p) == 0)) {
+			if (dpart.part->p_fstype == FS_BSDFFS &&
+				    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0) {
+				bsize = dpart.part->p_frag * dpart.part->p_fsize;
+			}
+		}
 		bscale = bsize / DEV_BSIZE;
 		do {
 			bn = (uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
@@ -305,6 +317,8 @@ spec_write(ap)
 	register struct uio *uio = ap->a_uio;
 	struct proc *p = uio->uio_procp;
 	struct buf *bp;
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
 	daddr_t bn;
 	int bsize, blkmask;
 	struct partinfo dpart;
@@ -322,8 +336,8 @@ spec_write(ap)
 
 	case VCHR:
 		VOP_UNLOCK(vp, 0, p);
-		error = (*cdevsw[major(vp->v_rdev)].d_write)
-			(vp->v_rdev, uio, ap->a_ioflag);
+		cdev = cdevsw_lookup(vp->v_rdev);
+		error = (*cdev->d_write)(vp->v_rdev, uio, ap->a_ioflag);
 		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 		return (error);
 
@@ -333,7 +347,8 @@ spec_write(ap)
 		if (uio->uio_offset < 0)
 			return (EINVAL);
 		bsize = BLKDEV_IOSIZE;
-		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
+		bdev = bdevsw_lookup(vp->v_rdev);
+		if ((*bdev->d_ioctl)(vp->v_rdev, DIOCGPART,
 		    (caddr_t)&dpart, FREAD, p) == 0) {
 			if (dpart.part->p_fstype == FS_BSDFFS &&
 			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
@@ -385,22 +400,30 @@ spec_ioctl(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	dev_t dev = ap->a_vp->v_rdev;
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
+	dev_t dev;
 
+	dev = ap->a_vp->v_rdev;
 	switch (ap->a_vp->v_type) {
-
 	case VCHR:
-		return ((*cdevsw[major(dev)].d_ioctl)(dev, ap->a_command, ap->a_data,
-		    ap->a_fflag, ap->a_p));
+		cdev = cdevsw_lookup(dev);
+		if (cdev == NULL)
+			return (ENXIO);
+		return ((*cdev->d_ioctl)(dev, ap->a_command, ap->a_data, ap->a_fflag,
+				ap->a_p));
 
 	case VBLK:
+		bdev = bdevsw_lookup(dev);
+		if (bdev == NULL)
+			return (ENXIO);
 		if (ap->a_command == 0 && (int)ap->a_data == B_TAPE)
-			if (bdevsw[major(dev)].d_type == D_TAPE)
+			if (bdev->d_type == D_TAPE)
 				return (0);
 			else
 				return (1);
-		return ((*bdevsw[major(dev)].d_ioctl)(dev, ap->a_command, ap->a_data,
-		   ap->a_fflag, ap->a_p));
+		return ((*bdev->d_ioctl)(dev, ap->a_command, ap->a_data, ap->a_fflag,
+				ap->a_p));
 
 	default:
 		panic("spec_ioctl");
@@ -420,18 +443,42 @@ spec_select(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
+	const struct cdevsw *cdev;
 	register dev_t dev;
 
 	switch (ap->a_vp->v_type) {
+	case VCHR:
+		dev = ap->a_vp->v_rdev;
+		cdev = cdevsw_lookup(dev);
+		return (*cdev->d_select)(dev, ap->a_which, ap->a_p);
 
 	default:
 		return (1);		/* XXX */
-
-	case VCHR:
-		dev = ap->a_vp->v_rdev;
-		return (*cdevsw[major(dev)].d_select)(dev, ap->a_which, ap->a_p);
 	}
 }
+
+int
+spec_poll(ap)
+	struct vop_poll_args /* {
+		struct vnode *a_vp;
+		int a_events;
+		struct proc *a_p;
+	} */ *ap;
+{
+	const struct cdevsw *cdev;
+	register dev_t dev;
+
+	switch (ap->a_vp->v_type) {
+	case VCHR:
+		dev = ap->a_vp->v_rdev;
+		cdev = cdevsw_lookup(dev);
+		return (*cdev->d_poll)(dev, ap->a_events, ap->a_p);
+
+	default:
+		return (1);		/* XXX */
+	}
+}
+
 /*
  * Synch buffers associated with a block device
  */
@@ -550,8 +597,9 @@ spec_close(ap)
 	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
 	dev_t dev = vp->v_rdev;
-	int maj = major(dev);
 	int (*devclose) (dev_t, int, int, struct proc *);
 	int mode, error;
 
@@ -579,7 +627,8 @@ spec_close(ap)
 		 */
 		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
-		devclose = cdevsw[major(dev)].d_close;
+		cdev = cdevsw_lookup(dev);
+		devclose = cdev->d_close;
 		mode = S_IFCHR;
 		break;
 
@@ -602,7 +651,8 @@ spec_close(ap)
 		 */
 		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
-		devclose = bdevsw[maj].d_close;
+		bdev = bdevsw_lookup(dev);
+		devclose = bdev->d_close;
 		mode = S_IFBLK;
 		break;
 

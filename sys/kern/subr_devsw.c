@@ -75,16 +75,21 @@ extern const struct linesw **linesw, *linesw0[];
 extern const int sys_bdevsws, sys_cdevsws, sys_linesws;
 extern int max_bdevsws, max_cdevsws, max_linesws;
 
-struct devswtable 					*sys_devsw;
+struct devswtable 					sys_devsw;
+struct devswtable_head 				devsw_hashtable[MAXDEVSW];
 struct lock_object  				devswtable_lock;
+
 #define devswtable_lock_init(lock)	(simple_lock_init(lock, "devswtable_lock"))
 #define devswtable_lock(lock)		(simple_lock(lock))
 #define devswtable_unlock(lock)		(simple_unlock(lock))
 
-struct devswtable_head 	devsw_hashtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
-
-/* check device major & switch (see: devswtable_configure for usage) */
 #define devswtable_io_init(major, sw)	((major) > 0 ? (sw) : ENXIO)
+
+void devsw_io_add(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+void devsw_io_remove(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+int	 devsw_io_attach(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+void devsw_io_detach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+int  devsw_io_lookup(dev_t, void *, int);
 
 void
 devswtable_init()
@@ -115,7 +120,7 @@ devswtable_configure(devsw, major, bdev, cdev, line)
 	rv = devsw_io_attach(devsw, major, bdev, cdev, line);
 	error = devswtable_io_init(major, rv);
 	if(error == ENXIO) {
-		devsw_io_detach(devsw, major, bdev, cdev, line);
+		devsw_io_detach(major, bdev, cdev, line);
 		return (ENXIO);
 	}
 
@@ -237,7 +242,7 @@ bdevsw_attach(bdev, major)
 
 	if (major >= max_bdevsws) {
 		KASSERT(bdevsw == bdevsw0);
-		newptr = malloc(MAXDEVSW * BDEVSW_SIZE, M_DEVSW, M_NOWAIT);
+		newptr = calloc(MAXDEVSW, BDEVSW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
 			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
@@ -366,7 +371,7 @@ cdevsw_attach(cdev, major)
 
 	if (major >= max_cdevsws) {
 		KASSERT(cdevsw == cdevsw0);
-		newptr = malloc(MAXDEVSW * CDEVSW_SIZE, M_DEVSW, M_NOWAIT);
+		newptr = calloc(MAXDEVSW, CDEVSW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
 			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
@@ -495,7 +500,7 @@ linesw_attach(line, major)
 
 	if (major >= max_linesws) {
 		KASSERT(linesw == &linesw0);
-		newptr = malloc(MAXDEVSW * LINESW_SIZE, M_DEVSW, M_NOWAIT);
+		newptr = calloc(MAXDEVSW, LINESW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
 			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);

@@ -117,14 +117,6 @@ struct bdevsw;
 struct cdevsw;
 struct linesw;
 
-/*
- * Types for d_type.
- */
-#define	D_TAPE	1
-#define	D_DISK	2
-#define	D_TTY	3
-#define	D_OTHER	4
-
 #ifdef _KERNEL
 /* devswtable & devsw_io */
 extern struct devswtable 		sys_devsw;
@@ -153,100 +145,21 @@ const struct linesw 			*linesw_lookup(dev_t);
 /* macro: machine autoconfiguration */
 #define DEVSWIO_CONFIG_INIT(devsw, major, bdev, cdev, line) 	\
 	(devswtable_configure(devsw, major, bdev, cdev, line))
-
-/* dev types */
-#define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
-#define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)
-#define	dev_type_read(n)		int n(dev_t, struct uio *, int)
-#define	dev_type_write(n)		int n(dev_t, struct uio *, int)
-#define	dev_type_ioctl(n) 		int n(dev_t, u_long, caddr_t, int, struct proc *)
-#define dev_type_start(n)		int n(struct tty *)
-#define	dev_type_stop(n)		int n(struct tty *, int)
-#define	dev_type_tty(n)			struct tty *n(dev_t)
-#define dev_type_select(n)		int n(dev_t, int, struct proc *)
-#define	dev_type_poll(n)		int n(dev_t, int, struct proc *)
-#define	dev_type_mmap(n)		caddr_t n(dev_t, off_t, int)
-#define	dev_type_strategy(n)		int n(struct buf *)
-#define dev_type_modem(n)		int n(struct tty *, int)
-#define dev_type_rint(n)		int n(int, struct tty *)
-#define dev_type_kqfilter(n)		int n(dev_t, struct knote *)
-#define dev_type_discard(n)		int n(dev_t, off_t, off_t)
-#define	dev_type_dump(n)		int n(dev_t)
-#define	dev_type_size(n)		daddr_t n(dev_t)
-
-/* bdevsw-specific types */
-dev_type_open(bdev_open);
-dev_type_close(bdev_close);
-dev_type_strategy(bdev_strategy);
-dev_type_ioctl(bdev_ioctl);
-dev_type_dump(bdev_dump);
-dev_type_size(bdev_size);
-dev_type_discard(bdev_discard);
-
-/* cdevsw-specific types */
-dev_type_open(cdev_open);
-dev_type_close(cdev_close);
-dev_type_read(cdev_read);
-dev_type_write(cdev_write);
-dev_type_ioctl(cdev_ioctl);
-dev_type_stop(cdev_stop);
-dev_type_tty(cdev_tty);
-dev_type_select(cdev_select);
-dev_type_poll(cdev_poll);
-dev_type_mmap(cdev_mmap);
-dev_type_strategy(cdev_strategy);
-dev_type_kqfilter(cdev_kqfilter);
-dev_type_discard(cdev_discard);
-
-/* linesw-specific types */
-dev_type_open(line_open);
-dev_type_close(line_close);
-dev_type_read(line_read);
-dev_type_write(line_write);
-dev_type_ioctl(line_ioctl);
-dev_type_rint(line_rint);
-dev_type_start(line_start);
-dev_type_modem(line_modem);
-dev_type_poll(line_poll);
-
-/* no dev routines */
-#define	noopen				(enodev)
-#define	noclose				(enodev)
-#define	noread				(enodev)
-#define	nowrite				(enodev)
-#define	noioctl				(enodev)
-#define	nostart				(enodev)
-#define	nostop				(enodev)
-#define	notty				(enodev)
-#define	noselect			(enodev)
-#define	nopoll				(enodev)
-#define	nommap				(enodev)
-#define	nostrategy			(enodev)
-#define	nomodem				(enodev)
-#define	norint				(enodev)
-#define	nokqfilter			seltrue_kqfilter
-#define	nodiscard			(enodev)
-#define	nodump				(enodev)
-#define	nosize				(enodev)
-
-/* null dev routines */
-#define	nullopen			(nullop)
-#define	nullclose			(nullop)
-#define	nullread			(nullop)
-#define	nullwrite			(nullop)
-#define	nullioctl			(nullop)
-#define	nullstart			(nullop)
-#define	nullstop			(nullop)
-#define	nulltty				(nullop)
-#define	nullselect			(nullop)
-#define	nullpoll			(nullop)
-#define	nullmmap			(nullop)
-#define	nullstrategy		(nullop)
-#define	nullmodem			(nullop)
-#define	nullrint			(nullop)
-#define	nullkqfilter		(nullop)
-#define	nulldiscard			(nullop)
-#define	nulldump			(nullop)
-#define	nullsize			(nullop)
 #endif /* _KERNEL */
+
+/* machine/conf.c */
+//struct devswtable;
+extern void device_init(struct devswtable *);
+extern void	audio_init(struct devswtable *);
+extern void	console_init(struct devswtable *);
+extern void	core_init(struct devswtable *);
+extern void	disk_init(struct devswtable *);
+extern void	misc_init(struct devswtable *);
+extern void	network_init(struct devswtable *);
+extern void	swap_init(struct devswtable *);
+extern void	tty_init(struct devswtable *);
+extern void	usb_init(struct devswtable *);
+extern void	video_init(struct devswtable *);
+extern void	wscons_init(struct devswtable *);
+
 #endif /* _SYS_DEVSW_H_ */
