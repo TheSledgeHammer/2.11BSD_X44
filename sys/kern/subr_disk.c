@@ -344,8 +344,8 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 	int pri, blkdone;
 	register struct disklabel *lp;
 {
-	int unit = dkunit(bp->b_dev);
-	int	part = dkpart(bp->b_dev);
+	int unit;
+	int part;
 	register void (*pr)(const char *, ...);
 	char partname;
 	int sn;
