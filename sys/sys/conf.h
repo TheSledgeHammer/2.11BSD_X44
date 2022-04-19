@@ -51,7 +51,7 @@ struct cdevsw {
 	int			(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
 	int			(*d_stop)(struct tty *tp, int rw);
 	int			(*d_reset)(int uban);	/* XXX */
-	struct tty 	(*d_tty)(dev_t dev);
+	struct tty 	*(*d_tty)(dev_t dev);
 	int			(*d_select)(dev_t dev, int which, struct proc *p);
 	int			(*d_poll)(dev_t dev, int events, struct proc *p);
 	caddr_t		(*d_mmap)(dev_t dev, off_t off, int flag);
@@ -127,17 +127,17 @@ extern struct swdevt swdevt[];
 dev_type_open(bdev_open);
 dev_type_close(bdev_close);
 dev_type_strategy(bdev_strategy);
-dev_type_ioctl(bdev_ioctl);
+//dev_type_ioctl(bdev_ioctl);
 dev_type_dump(bdev_dump);
 dev_type_size(bdev_size);
-dev_type_discard(bdev_discard);
+//dev_type_discard(bdev_discard);
 
 /* cdevsw-specific types */
 dev_type_open(cdev_open);
 dev_type_close(cdev_close);
 dev_type_read(cdev_read);
 dev_type_write(cdev_write);
-dev_type_ioctl(cdev_ioctl);
+//dev_type_ioctl(cdev_ioctl);
 dev_type_stop(cdev_stop);
 dev_type_tty(cdev_tty);
 dev_type_select(cdev_select);
@@ -145,18 +145,18 @@ dev_type_poll(cdev_poll);
 dev_type_mmap(cdev_mmap);
 dev_type_strategy(cdev_strategy);
 dev_type_kqfilter(cdev_kqfilter);
-dev_type_discard(cdev_discard);
+//dev_type_discard(cdev_discard);
 
 /* linesw-specific types */
-dev_type_open(line_open);
-dev_type_close(line_close);
-dev_type_read(line_read);
-dev_type_write(line_write);
-dev_type_ioctl(line_ioctl);
+//dev_type_open(line_open);
+//dev_type_close(line_close);
+//dev_type_read(line_read);
+//dev_type_write(line_write);
+//dev_type_ioctl(line_ioctl);
 dev_type_rint(line_rint);
 dev_type_start(line_start);
 dev_type_modem(line_modem);
-dev_type_poll(line_poll);
+//dev_type_poll(line_poll);
 
 /* no dev routines */
 #define	noopen				(enodev)

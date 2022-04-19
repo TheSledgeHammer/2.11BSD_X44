@@ -104,9 +104,9 @@ typedef struct devswtable_entry		*devswtable_entry_t;
 #define LINETYPE 		0x04
 
 /* conversion macros */
-#define DTOB(dv)  		((struct bdevsw *)(dv)->dv_data)
-#define DTOC(dv)  		((struct cdevsw *)(dv)->dv_data)
-#define DTOL(dv)  		((struct linesw *)(dv)->dv_data)
+#define DTOB(dv)  		((const struct bdevsw *)(dv)->dv_data)
+#define DTOC(dv)  		((const struct cdevsw *)(dv)->dv_data)
+#define DTOL(dv)  		((const struct linesw *)(dv)->dv_data)
 
 struct buf;
 struct proc;
