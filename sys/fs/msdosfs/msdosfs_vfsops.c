@@ -64,6 +64,7 @@ __KERNEL_RCSID(0, "$NetBSD: msdosfs_vfsops.c,v 1.13.2.2 2004/06/27 13:53:13 he E
 #include <sys/malloc.h>
 #include <sys/dirent.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/stat.h>
 
 #include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
