@@ -60,7 +60,7 @@
 char *
 readdisklabel(dev, strat, lp)
 	dev_t dev;
-	int (*strat)();
+	void (*strat)(struct buf *);
 	register struct disklabel *lp;
 {
 	register struct buf *bp;
@@ -154,7 +154,7 @@ setdisklabel(olp, nlp, openmask)
 int
 writedisklabel(dev, strat, lp)
 	dev_t dev;
-	int (*strat)();
+	void (*strat)(struct buf *);
 	register struct disklabel *lp;
 {
 	struct buf *bp;
@@ -202,7 +202,7 @@ done:
 int
 ioctldisklabel(disk, strat, dev, cmd, data, flag)
 	struct dkdevice *disk;
-	int	(*strat)();
+	void (*strat)(struct buf *);
 	dev_t	dev;
 	int	cmd;
 	void *data;
@@ -365,9 +365,9 @@ partition_check(bp, dk)
 		bp->b_error = EROFS;
 		goto bad;
 	}
-	return(1);		/* success */
+	return (1);		/* success */
 bad:
-	return(-1);
+	return (-1);
 done:
-	return(0);
+	return (0);
 }

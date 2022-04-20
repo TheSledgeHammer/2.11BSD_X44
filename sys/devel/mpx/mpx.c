@@ -149,7 +149,7 @@ mpx_get_group(index)
 }
 
 void
-mpx_group_remove(gp, index)
+mpx_remove_group(gp, index)
 	struct mpx_group *gp;
 	int index;
 {
@@ -227,6 +227,17 @@ mpxspace(flags)
             }
         }
     }
+}
+
+
+mpx_attach()
+{
+
+}
+
+mpx_detach()
+{
+
 }
 
 mpx_connect()

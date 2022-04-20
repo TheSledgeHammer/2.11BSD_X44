@@ -77,6 +77,7 @@ struct vnodeops spec_vnodeops = {
 		.vop_lease = spec_lease_check,	/* lease */
 		.vop_ioctl = spec_ioctl,		/* ioctl */
 		.vop_select = spec_select,		/* select */
+		.vop_poll = spec_poll,			/* poll */
 		.vop_revoke = spec_revoke,		/* revoke */
 		.vop_mmap = spec_mmap,			/* mmap */
 		.vop_fsync = spec_fsync,		/* fsync */

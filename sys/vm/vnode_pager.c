@@ -421,12 +421,12 @@ vnode_pager_umount(mp)
 	vm_pager_t pager, npager;
 	struct vnode *vp;
 
-	for (pager = vnode_pager_list.tqh_first; pager != NULL; pager = npager){
+	for (pager = TAILQ_FIRST(&vnode_pager_list); pager != NULL; pager = npager){
 		/*
 		 * Save the next pointer now since uncaching may
 		 * terminate the object and render pager invalid
 		 */
-		npager = pager->pg_list.tqe_next;
+		npager = TAILQ_NEXT(pager, pg_list);
 		vp = ((vn_pager_t)pager->pg_data)->vnp_vp;
 		if (mp == (struct mount *)0 || vp->v_mount == mp) {
 			vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);

@@ -31,6 +31,7 @@
 
 #include <sys/lock.h>
 #include <sys/queue.h>
+#include <sys/tree.h>
 
 #define	NINDEX		15 	/* comes from ufs inode */
 #define	NGROUPS		10	/* number of group structures */
@@ -66,7 +67,7 @@ struct grouplist;
 LIST_HEAD(grouplist, mpx_group);
 struct mpx_group {
     LIST_ENTRY(mpx_group)    mpg_node;     /* group node in list */
-    struct mpx_channel      *mpg_channel; /* channels in this group */
+    struct mpx_channel      *mpg_channel;  /* channels in this group */
     int 					 mpg_index;    /* group index */
 };
 
@@ -91,7 +92,9 @@ extern struct channellist     mpx_channels[];
 void                		mpx_init(void);
 void                		mpx_create_group(int);
 struct mpx_group    		*mpx_get_group(int);
+void						mpx_remove_group(struct mpx_group *, int);
 void                		mpx_create_channel(struct mpx_group *, int, int);
 struct mpx_channel     		*mpx_get_channel(int);
+void						mpx_remove_channel(struct mpx_channel *, int);
 
 #endif /* SYS_MPX_H_ */

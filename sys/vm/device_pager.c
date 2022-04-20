@@ -236,7 +236,7 @@ dev_pager_dealloc(pager)
 	/*
 	 * Free up our fake pages.
 	 */
-	while ((m = devp->devp_pglist.tqh_first) != NULL) {
+	while ((m = TAILQ_FIRST(devp->devp_pglist)) != NULL) {
 		TAILQ_REMOVE(&devp->devp_pglist, m, pageq);
 		dev_pager_putfake(m);
 	}
@@ -337,14 +337,14 @@ dev_pager_getfake(paddr)
 	vm_page_t m;
 	int i;
 
-	if (dev_pager_fakelist.tqh_first == NULL) {
+	if (TAILQ_FIRST(&dev_pager_fakelist) == NULL) {
 		m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
 		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
 			TAILQ_INSERT_TAIL(&dev_pager_fakelist, m, pageq);
 			m++;
 		}
 	}
-	m = dev_pager_fakelist.tqh_first;
+	m = TAILQ_FIRST(&dev_pager_fakelist);
 	TAILQ_REMOVE(&dev_pager_fakelist, m, pageq);
 	m->flags = PG_BUSY | PG_CLEAN | PG_FAKE | PG_FICTITIOUS;
 	m->phys_addr = paddr;
