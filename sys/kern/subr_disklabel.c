@@ -114,7 +114,7 @@ setdisklabel(olp, nlp, openmask)
 	register struct disklabel *olp, *nlp;
 	u_long openmask;
 {
-	register i;
+	register int i;
 	register struct partition *opp, *npp;
 
 	if (nlp->d_magic != DISKMAGIC || nlp->d_magic2 != DISKMAGIC || dkcksum(nlp) != 0) {

@@ -174,7 +174,7 @@ extent_destroy(ex)
 #endif
 
 	/* Free all region descriptors in extent. */
-	for (rp = LIST_FIRST(ex->ex_regions); rp != NULL; ) {
+	for (rp = LIST_FIRST(&ex->ex_regions); rp != NULL; ) {
 		orp = rp;
 		rp = LIST_NEXT(rp, er_link);
 		LIST_REMOVE(orp, er_link);
@@ -210,12 +210,12 @@ extent_insert_and_optimize(ex, start, size, flags, after, rp)
 		 * descriptor overhead.
 		 */
 		if (((ex->ex_flags & EXF_NOCOALESCE) == 0) &&
-		    (LIST_FIRST(ex->ex_regions) != NULL) &&
-		    ((start + size) == LIST_FIRST(ex->ex_regions)->er_start)) {
+		    (LIST_FIRST(&ex->ex_regions) != NULL) &&
+		    ((start + size) == LIST_FIRST(&ex->ex_regions)->er_start)) {
 			/*
 			 * We can coalesce.  Prepend us to the first region.
 			 */
-			LIST_FIRST(ex->ex_regions)->er_start = start;
+			LIST_FIRST(&ex->ex_regions)->er_start = start;
 			extent_free_region_descriptor(ex, rp);
 			return;
 		}
@@ -368,7 +368,7 @@ alloc_start:
 	 */
 	last = NULL;
 
-	for (rp = LIST_FIRST(ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link)) {
+	for (rp = LIST_FIRST(&ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link)) {
 		if (rp->er_start > end) {
 			/*
 			 * We lie before this region and don't
@@ -542,7 +542,7 @@ alloc_start:
 	 * the subregion start, advancing the "last" pointer along
 	 * the way.
 	 */
-	for (rp = LIST_FIRST(ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link)) {
+	for (rp = LIST_FIRST(&ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link)) {
 		if (rp->er_start >= newstart)
 			break;
 		last = rp;
@@ -759,7 +759,7 @@ extent_free(ex, start, size, flags)
 	 * Cases 2, 3, and 4 require that the EXF_NOCOALESCE flag
 	 * is not set.
 	 */
-	for (rp = LIST_FIRST(ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link)) {
+	for (rp = LIST_FIRST(&ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link)) {
 		/*
 		 * Save ourselves some comparisons; does the current
 		 * region end before chunk to be freed begins?  If so,
@@ -848,7 +848,7 @@ extent_alloc_region_descriptor(ex, flags)
 	if (ex->ex_flags & EXF_FIXED) {
 		struct extent_fixed *fex = (struct extent_fixed *)ex;
 
-		while (LIST_FIRST(fex->fex_freelist) == NULL) {
+		while (LIST_FIRST(&fex->fex_freelist) == NULL) {
 			if (flags & EX_MALLOCOK)
 				goto alloc;
 
@@ -858,7 +858,7 @@ extent_alloc_region_descriptor(ex, flags)
 			if (tsleep(&fex->fex_freelist, PRIBIO | ((flags & EX_CATCH) ? PCATCH : 0), "extnt", 0))
 				return (NULL);
 		}
-		rp = LIST_FIRST(fex->fex_freelist);
+		rp = LIST_FIRST(&fex->fex_freelist);
 		LIST_REMOVE(rp, er_link);
 
 		/*
@@ -935,6 +935,6 @@ extent_print(ex)
 
 	printf("extent `%s' (0x%lx - 0x%lx), flags = 0x%x\n", ex->ex_name, ex->ex_start, ex->ex_end, ex->ex_flags);
 
-	for (rp = LIST_FIRST(ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link))
+	for (rp = LIST_FIRST(&ex->ex_regions); rp != NULL; rp = LIST_NEXT(rp, er_link))
 		printf("     0x%lx - 0x%lx\n", rp->er_start, rp->er_end);
 }

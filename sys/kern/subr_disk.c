@@ -420,3 +420,32 @@ disk_device(disk, dev)
 {
 	return (disk[dkunit(dev)].dk_dev);
 }
+
+struct dkdevice *
+disk_find_by_dev(dev)
+   dev_t dev;
+{
+    struct dkdevice *diskp;
+    
+    for (diskp = TAILQ_FIRST(&disklist); diskp != NULL; diskp = TAILQ_NEXT(diskp, dk_link)) {
+        if(&diskp[dkunit(dev)] == diskp) {
+            return (diskp);
+        }
+    }
+    return (NULL);
+}
+
+struct dkdevice *
+disk_find_by_slice(slicep)
+   struct diskslices *slicep;
+{
+    struct dkdevice *diskp;
+    
+    for (diskp = TAILQ_FIRST(&disklist); diskp != NULL; diskp = TAILQ_NEXT(diskp, dk_link)) {
+        if(diskp->dk_slices == slicep) {
+            return (diskp);
+        }
+    }
+    return (NULL);
+}
+
