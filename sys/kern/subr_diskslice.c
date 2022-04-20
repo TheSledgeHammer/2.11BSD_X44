@@ -51,7 +51,7 @@ static void dsiodone(struct buf *);
 static void free_ds_label(struct diskslices *, int);
 static char *fixlabel(char *, struct diskslice *, struct disklabel *, int);
 static void partition_info(char *, int, struct partition *);	
-static void slice_info(char	*, struct diskslice *);
+static void slice_info(char *, struct diskslice *);
 static void set_ds_label(struct diskslices *, int, struct disklabel *);
 static void set_ds_labeldevs(dev_t, struct diskslices *);
 static void set_ds_wlabel(struct diskslices *, int, int);
