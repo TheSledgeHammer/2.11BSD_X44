@@ -87,14 +87,14 @@ struct buf;
 struct disklabel;
 
 dev_t 				makediskslice(dev_t, int, int, int);
-int					dscheck (struct buf *, struct diskslices *);
-void 				dsclose (dev_t, int, struct diskslices *);
-void 				dsgone (struct diskslices **);
-int					dsioctl (dev_t, u_long, caddr_t, int, struct diskslices **);
+int					dscheck(struct buf *, struct diskslices *);
+void 				dsclose(dev_t, int, struct diskslices *);
+void 				dsgone(struct diskslices **);
+int					dsioctl(dev_t, u_long, caddr_t, int, struct diskslices **);
 int					dsisopen(struct diskslices *);
 struct diskslices 	*dsmakeslicestruct (int, struct disklabel *);
-char				*dsname (dev_t, int, int, int, char *);
-int					dsopen (struct dkdevice *, dev_t, int, u_int, struct disklabel *);
-int					dssize (struct dkdevice *, dev_t);
+char				*dsname(struct dkdevice *, dev_t, int, int, int, char *);
+int					dsopen(struct dkdevice *, dev_t, int, u_int, struct disklabel *);
+int					dssize(struct dkdevice *, dev_t);
 #endif /* _KERNEL */
 #endif /* _SYS_DISKSLICE_H_ */

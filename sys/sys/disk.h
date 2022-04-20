@@ -180,12 +180,14 @@ int			disk_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *);
 void			disk_resetstat(struct dkdevice *);
 struct dkdevice 	*disk_find(char *);
 void			disksort(struct bufq_state *, struct buf *);
-int			diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
+void			diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
 
 struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);
 struct disklabel	*disk_label(struct dkdevice *, dev_t);
 struct diskslices	*disk_slices(struct dkdevice *, dev_t);
 struct partition	*disk_partition(struct dkdevice *, dev_t);
 struct device		disk_device(struct dkdevice *, dev_t);
+struct dkdevice     *disk_find_by_dev(dev_t);
+struct dkdevice     *disk_find_by_slice(struct diskslices *);
 #endif
 #endif /* _SYS_DISK_H_ */

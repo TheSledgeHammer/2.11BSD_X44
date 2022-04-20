@@ -76,6 +76,9 @@
 /* Size of bootblock area in sector-size neutral bytes */
 #define BSD_BOOTBLOCK_SIZE	8192
 
+/* Size of superblock area in sector-size neutral bytes */
+#define BSD_SUPERBLOCK_SIZE 8192
+
 /* partition containing whole disk */
 #define	BSD_PART_RAW		2
 
@@ -98,6 +101,7 @@
 /* Size of bootblock area in sector-size neutral bytes */
 #ifdef notyet
 #define BBSIZE				BSD_BOOTBLOCK_SIZE
+#define SBSIZE				BSD_SUPERBLOCK_SIZE
 #endif
 #define	LABEL_PART			BSD_PART_RAW
 #define	RAW_PART			BSD_PART_RAW
@@ -470,7 +474,7 @@ struct dkdevice;
 char	*readdisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
 int		setdisklabel(struct disklabel *, struct disklabel *, u_long);
 int		writedisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
-int		ioctldisklabel(struct dkdevice *, void (*)(struct buf *), dev_t, int, caddr_t, int);
+int		ioctldisklabel(struct dkdevice *, void (*)(struct buf *), dev_t, int, void *, int);
 int		dkcksum(struct disklabel *);
 int		partition_check(struct buf *, struct dkdevice *);
 int		dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
