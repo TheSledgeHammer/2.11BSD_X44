@@ -148,18 +148,25 @@ const struct linesw 			*linesw_lookup(dev_t);
 #endif /* _KERNEL */
 
 /* machine/conf.c */
-//struct devswtable;
+extern void conf_init(struct devswtable *);
+
+/* kernel */
+extern void kernel_init(struct devswtable *);
+extern void	log_init(struct devswtable *);
+extern void	swap_init(struct devswtable *);
+extern void	tty_init(struct devswtable *);
+
+/* devices */
 extern void device_init(struct devswtable *);
 extern void	audio_init(struct devswtable *);
 extern void	console_init(struct devswtable *);
 extern void	core_init(struct devswtable *);
 extern void	disk_init(struct devswtable *);
 extern void	misc_init(struct devswtable *);
-extern void	network_init(struct devswtable *);
-extern void	swap_init(struct devswtable *);
-extern void	tty_init(struct devswtable *);
 extern void	usb_init(struct devswtable *);
 extern void	video_init(struct devswtable *);
 extern void	wscons_init(struct devswtable *);
 
+/* network */
+extern void	network_init(struct devswtable *);
 #endif /* _SYS_DEVSW_H_ */

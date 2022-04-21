@@ -38,8 +38,6 @@
 #include <sys/conf.h>
 #include <sys/device.h>
 
-//#include <lib/libsa/stand.h>
-
 /*
  * Access functions for device resources.
  */
@@ -50,10 +48,10 @@ extern int cfhint_count; 			/* hint count */
 /* Runtime version */
 struct cfhint *hint = allhints;
 
-static void resource_cfgload(/* void *dummy __unused*/);
+static void resource_cfgload(void);
 
 void
-resource_init()
+resource_init(void)
 {
 	resource_cfgload();
 }
@@ -404,7 +402,7 @@ resource_set_string(const char *name, int unit, const char *resname, const char 
 }
 
 static void
-resource_cfgload(/*void *dummy __unused*/)
+resource_cfgload(void)
 {
 	struct cfresource *res, *cfgres;
 	int i, j;

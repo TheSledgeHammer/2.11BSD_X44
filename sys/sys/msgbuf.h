@@ -26,13 +26,15 @@ struct	msgbuf {
 
 #ifdef _KERNEL
 void	loginit(void);
-int     logopen(dev_t, int);
-int     logclose(dev_t, int);
+int     logopen(dev_t, int, int, struct proc *);
+int     logclose(dev_t, int, int, struct proc *);
 int     logisopen(int);
 int     logread(dev_t, struct uio *, int);
 int     logselect(dev_t, int);
+int     logpoll(dev_t, int, struct proc *);
+int		logkqfilter(dev_t, struct knote *);
 void    logwakeup(int);
-int     logioctl(dev_t, u_int, caddr_t, int);
+int     logioctl(dev_t, u_int, caddr_t, int, struct proc *);
 int     logwrt(char *, int, int);
 #endif
 #endif /* !_SYS_MSGBUF_H_ */

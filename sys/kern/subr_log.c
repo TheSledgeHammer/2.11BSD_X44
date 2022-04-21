@@ -31,7 +31,9 @@
 #include <sys/file.h>
 #include <sys/vnode.h>
 #include <sys/uio.h>
-#include <sys/map.h>
+#include <sys/conf.h>
+#include <sys/poll.h>
+#include <sys/queue.h>
 
 #define	NLOG	3
 int	nlog = NLOG;
@@ -51,18 +53,33 @@ int	Acctopen;
 struct	msgbuf	msgbuf[NLOG];
 static struct logsoftc {
 	int				sc_state;			/* see above for possibilities */
-	struct	proc 	*sc_selp;			/* process waiting on select call */
+	struct selinfo 	*sc_selp;			/* process waiting on select call */
 	int				sc_pgid;			/* process/group for async I/O */
 	int				sc_overrun;			/* full buffer count */
 } logsoftc[NLOG];
 
+dev_type_open(logopen);
+dev_type_close(logclose);
+dev_type_read(logread);
+dev_type_ioctl(logioctl);
+dev_type_poll(logpoll);
+
+const struct cdevsw log_cdevsw = {
+		.d_open = logopen,
+		.d_close = logclose,
+		.d_read = logread,
+		.d_ioctl = logioctl,
+		.d_poll = logpoll
+};
+
 /*ARGSUSED*/
 int
-logopen(dev, mode)
+logopen(dev, flags, mode, p)
 	dev_t dev;
-	int mode;
+	int flags, mode;
+	struct proc *p;
 {
-	register int	unit = minor(dev);
+	register int unit = minor(dev);
 
 	if	(unit >= NLOG)
 		return(ENODEV);
@@ -71,25 +88,26 @@ logopen(dev, mode)
 	if	(msgbuf[unit].msg_click == 0)	/* no buffer allocated */
 		return(ENOMEM);
 	logsoftc[unit].sc_state |= LOG_OPEN;
-	if	(unit == logACCT)
+	if (unit == logACCT)
 		Acctopen = 1;
-	logsoftc[unit].sc_pgid = u.u_procp->p_pid;  /* signal process only */
+	logsoftc[unit].sc_pgid = p->p_pid;  /* signal process only */
 	logsoftc[unit].sc_overrun = 0;
 	return(0);
 }
 
 /*ARGSUSED*/
 int
-logclose(dev, flag)
-	dev_t	dev;
-	int	flag;
+logclose(dev, flags, mode, p)
+	dev_t dev;
+	int flags, mode;
+	struct proc *p;
 {
 	register int unit = minor(dev);
 
 	logsoftc[unit].sc_state = 0;
-	if	(unit == logACCT)
+	if (unit == logACCT)
 		Acctopen = 0;
-	return(0);
+	return (0);
 }
 
 /*
@@ -100,9 +118,9 @@ int
 logisopen(unit)
 	int	unit;
 {
-	if	(logsoftc[unit].sc_state & LOG_OPEN)
-		return(1);
-	return(0);
+	if (logsoftc[unit].sc_state & LOG_OPEN)
+		return (1);
+	return (0);
 }
 
 /*ARGSUSED*/
@@ -116,19 +134,19 @@ logread(dev, uio, flag)
 	register struct logsoftc *lp;
 	register struct msgbuf *mp;
 	int	s, error = 0;
-	char	buf[ctob(2)];
+	char buf[ctob(2)];
 
 	l = minor(dev);
 	lp = &logsoftc[l];
 	mp = &msgbuf[l];
 	s = splhigh();
-	while	(mp->msg_bufr == mp->msg_bufx) {
-		if	(flag & IO_NDELAY) {
+	while (mp->msg_bufr == mp->msg_bufx) {
+		if (flag & IO_NDELAY) {
 			splx(s);
-			return(EWOULDBLOCK);
+			return (EWOULDBLOCK);
 		}
 		lp->sc_state |= LOG_RDWAIT;
-		if (error == tsleep((caddr_t)mp, LOG_RDPRI | PCATCH, "klog", 0)) {
+		if (error == tsleep((caddr_t) mp, LOG_RDPRI | PCATCH, "klog", 0)) {
 			splx(0);
 			return (error);
 		}
@@ -137,28 +155,28 @@ logread(dev, uio, flag)
 	splx(s);
 	lp->sc_state &= ~LOG_RDWAIT;
 
-	while	(uio->uio_resid > 0) {
+	while (uio->uio_resid > 0) {
 		l = mp->msg_bufx - mp->msg_bufr;
-/*
- * If the reader and writer are equal then we have caught up and there
- * is nothing more to transfer.
-*/
-		if	(l == 0)
+		/*
+		 * If the reader and writer are equal then we have caught up and there
+		 * is nothing more to transfer.
+		 */
+		if (l == 0)
 			break;
 
-/*
- * If the write pointer is behind the reader then only consider as
- * available for now the bytes from the read pointer thru the end of 
- * the buffer.
-*/
-		if	(l < 0) {
+		/*
+		 * If the write pointer is behind the reader then only consider as
+		 * available for now the bytes from the read pointer thru the end of
+		 * the buffer.
+		 */
+		if (l < 0) {
 			l = MSG_BSIZE - mp->msg_bufr;
-/*
- * If the reader is exactly at the end of the buffer it is
- * time to wrap it around to the beginning and recalculate the
- * amount of data to transfer.
-*/
-			if	(l == 0) {
+			/*
+			 * If the reader is exactly at the end of the buffer it is
+			 * time to wrap it around to the beginning and recalculate the
+			 * amount of data to transfer.
+			 */
+			if (l == 0) {
 				mp->msg_bufr = 0;
 				continue;
 			}
@@ -167,12 +185,12 @@ logread(dev, uio, flag)
 		l = MIN(l, sizeof buf);
 		bcopy(&mp->msg_bufc[mp->msg_bufr], buf, l);
 		error = uiomove(buf, l, uio);
-		if	(error)
+		if (error)
 			break;
 		mp->msg_bufr += l;
 	}
 	splx(s);
-	return(error);
+	return (error);
 }
 
 /*ARGSUSED*/
@@ -186,15 +204,94 @@ logselect(dev, rw)
 
 	switch	(rw) {
 	case FREAD:
-		if	(msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx) {
+		if (msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx) {
 			splx(s);
-			return(1);
+			return (1);
 		}
 		logsoftc[unit].sc_selp = u.u_procp;
 		break;
 	}
 	splx(s);
-	return(0);
+	return (0);
+}
+
+int
+logpoll(dev, events, p)
+	dev_t dev;
+	int events;
+	struct proc *p;
+{
+	register int s = splhigh();
+	int revents = 0;
+	int	unit = minor(dev);
+	if (events & (POLLIN | POLLRDNORM)) {
+		if (msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx) {
+			revents |= events & (POLLIN | POLLRDNORM);
+		} else {
+			selrecord(p, &logsoftc.sc_selp);
+		}
+	}
+	splx(s);
+	return (revents);
+}
+
+static void
+filt_logrdetach(struct knote *kn)
+{
+	int s;
+
+	s = splhigh();
+	SIMPLEQ_REMOVE(&logsoftc.sc_selp->si_klist, kn, knote, kn_selnext);
+	splx(s);
+}
+
+static int
+filt_logread(struct knote *kn, long hint)
+{
+
+	if (msgbufp->msg_bufr == msgbufp->msg_bufx)
+		return (0);
+
+	if (msgbufp->msg_bufr < msgbufp->msg_bufx)
+		kn->kn_data = msgbufp->msg_bufx - msgbufp->msg_bufr;
+	else
+		kn->kn_data = (msgbufp->msg_click - msgbufp->msg_bufr) +
+		    msgbufp->msg_bufx;
+
+	return (1);
+}
+
+static const struct filterops logread_filtops = {
+		1,
+		NULL,
+		filt_logrdetach,
+		filt_logread
+};
+
+int
+logkqfilter(dev, kn)
+	dev_t dev;
+	struct knote *kn;
+{
+	struct klist *klist;
+	int s;
+
+	switch (kn->kn_filter) {
+	case EVFILT_READ:
+		klist = &logsoftc.sc_selp->si_klist;
+		kn->kn_fop = &logread_filtops;
+		break;
+
+	default:
+		return (1);
+	}
+	kn->kn_hook = NULL;
+
+	s = splhigh();
+	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
+	splx(s);
+
+	return (0);
 }
 
 void
@@ -205,33 +302,34 @@ logwakeup(unit)
 	register struct logsoftc *lp;
 	register struct msgbuf *mp;
 
-	if	(!logisopen(unit))
+	if (!logisopen(unit))
 		return;
 	lp = &logsoftc[unit];
 	mp = &msgbuf[unit];
-	if	(lp->sc_selp) {
+	if (lp->sc_selp) {
 		selwakeup(lp->sc_selp, (long) 0);
 		lp->sc_selp = 0;
 	}
-	if	((lp->sc_state & LOG_ASYNC) && (mp->msg_bufx != mp->msg_bufr)) {
-		if	(lp->sc_pgid < 0)
-			gsignal(-lp->sc_pgid, SIGIO); 
+	if ((lp->sc_state & LOG_ASYNC) && (mp->msg_bufx != mp->msg_bufr)) {
+		if (lp->sc_pgid < 0)
+			gsignal(-lp->sc_pgid, SIGIO);
 		else if (p == pfind(lp->sc_pgid))
 			psignal(p, SIGIO);
-		}
-	if	(lp->sc_state & LOG_RDWAIT) {
-		wakeup((caddr_t)mp);
+	}
+	if (lp->sc_state & LOG_RDWAIT) {
+		wakeup((caddr_t) mp);
 		lp->sc_state &= ~LOG_RDWAIT;
 	}
 }
 
 /*ARGSUSED*/
 int
-logioctl(dev, com, data, flag)
+logioctl(dev, com, data, flag, p)
 	dev_t	dev;
 	u_int	com;
 	caddr_t data;
 	int	flag;
+	struct proc *p;
 {
 	long l;
 	register int s;
@@ -243,33 +341,33 @@ logioctl(dev, com, data, flag)
 	lp = &logsoftc[unit];
 	mp = &msgbuf[unit];
 
-	switch	(com) {
-	case	FIONREAD:
+	switch (com) {
+	case FIONREAD:
 		s = splhigh();
 		l = mp->msg_bufx - mp->msg_bufr;
 		splx(s);
-		if	(l < 0)
+		if (l < 0)
 			l += MSG_BSIZE;
-			*(off_t *)data = l;
+		*(off_t*) data = l;
 		break;
-	case	FIONBIO:
-			break;
-	case	FIOASYNC:
-		if (*(int *)data)
+	case FIONBIO:
+		break;
+	case FIOASYNC:
+		if (*(int*) data)
 			lp->sc_state |= LOG_ASYNC;
 		else
 			lp->sc_state &= ~LOG_ASYNC;
 		break;
-	case	TIOCSPGRP:
-		lp->sc_pgid = *(int *)data;
+	case TIOCSPGRP:
+		lp->sc_pgid = *(int*) data;
 		break;
-	case	TIOCGPGRP:
-		*(int *)data = lp->sc_pgid;
+	case TIOCGPGRP:
+		*(int*) data = lp->sc_pgid;
 		break;
 	default:
-		return(-1);
+		return (-1);
 	}
-	return(0);
+	return (0);
 }
 
 /*
@@ -277,60 +375,61 @@ logioctl(dev, com, data, flag)
  * to be buffered would affect the networking code's use of printf.  
 */
 int
-logwrt(buf,len,log)
-	char	*buf;
+logwrt(buf, len, log)
+	char *buf;
 	int	len;
 	int	log;
 {
 	register struct msgbuf *mp = &msgbuf[log];
-	struct	logsoftc *lp = &logsoftc[log];
-	register int	infront;
-	int  s, n, writer, err = 0;
+	struct logsoftc *lp = &logsoftc[log];
+	register int infront;
+	int s, n, writer, err = 0;
 
-	if	(mp->msg_magic != MSG_MAGIC || (len > MSG_BSIZE))
-		return(-1);
-/*
- * Hate to do this but since this can be called from anywhere in the kernel
- * we have to hold off any interrupt service routines so they don't change
- * things.  This looks like a lot of code but it isn't really.
-*/
+	if (mp->msg_magic != MSG_MAGIC || (len > MSG_BSIZE))
+		return (-1);
+	/*
+	 * Hate to do this but since this can be called from anywhere in the kernel
+	 * we have to hold off any interrupt service routines so they don't change
+	 * things.  This looks like a lot of code but it isn't really.
+	 */
 	s = splhigh();
-	while	(len) {
+	while (len) {
 again:
-	infront = MSG_BSIZE - mp->msg_bufx;
-		if	(infront <= 0) {
+		infront = MSG_BSIZE - mp->msg_bufx;
+		if (infront <= 0) {
 			mp->msg_bufx = 0;
 			infront = MSG_BSIZE - mp->msg_bufr;
 		}
 		n = mp->msg_bufr - mp->msg_bufx;
-		if	(n < 0)		/* bufr < bufx */
+		if (n < 0) /* bufr < bufx */
 			writer = (MSG_BSIZE - mp->msg_bufx) + mp->msg_bufr;
-		else if	(n == 0)
+		else if (n == 0)
 			writer = MSG_BSIZE;
 		else {
 			writer = n;
 			infront = n;
 		}
-		if	(len > writer) {
+		if (len > writer) {
 			/*
 			 * won't fit.  the total number of bytes to be written is
 			 * greater than the number available.  the buffer is full.
 			 * throw away the old data and keep the current data by resetting
 			 * the 'writer' pointer to the current 'reader' position.  Bump the
 			 * overrun counter in case anyone wants to look at it for debugging.
-			*/
+			 */
 			lp->sc_overrun++;
 			mp->msg_bufx = mp->msg_bufr;
-			goto	again;
+			goto again;
 		}
-		if	(infront > len)
+		if (infront > len)
 			infront = len;
 		bcopy(buf, &mp->msg_bufc[mp->msg_bufx], infront);
 		mp->msg_bufx += infront;
 		len -= infront;
 		buf += infront;
 	}
-out:	splx(s);
+out:
+	splx(s);
 	return(err);
 }
 
@@ -346,13 +445,20 @@ loginit(void)
 	}
 
 	new_bufs = MSG_BSIZE - offsetof(struct msgbuf, msg_bufc);
-	for	(mp = &msgbuf[0]; mp < &msgbuf[NLOG]; mp++) {
+	for (mp = &msgbuf[0]; mp < &msgbuf[NLOG]; mp++) {
 		mp->msg_click = btoc(new_bufs);
 		if (!mp->msg_click) {
 			return;
 		}
 		mp->msg_magic = MSG_MAGIC;
-		mp->msg_bufc = (char *)new_bufs;
+		mp->msg_bufc = (char*) new_bufs;
 		mp->msg_bufx = mp->msg_bufr = 0;
 	}
+}
+
+void
+log_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &log_cdevsw, NULL);
 }

@@ -80,7 +80,12 @@ void (*v_flush)(void) = cnflush;	/* start with cnflush (normal cons) */
  * panicstr contains argument to last
  * call to panic.
  */
-char	*panicstr;
+const char	*panicstr;
+
+/* internal methods */
+static void prf(const char *, u_int *, int, struct tty *, va_list);
+static void prf1(const char *, int, struct tty *, va_list);
+static void prf2(const char *, int, va_list);
 
 /*
  * Scaled down version of C Library printf.
@@ -100,14 +105,18 @@ char	*panicstr;
  * would produce output:
  *	reg=3<BITTWO,BITONE>
  */
-
 /*VARARGS1*/
 void
-printf(fmt, x1)
-	const char 	*fmt;
-	unsigned x1;
+printf(const char *fmt, ...)
 {
-	prf(fmt, &x1, TOCONS | TOLOG, (struct tty *)0);
+	va_list ap;
+	int s;
+
+	KPRINTF_MUTEX_ENTER(s);
+	va_start(ap, fmt);
+	prf(fmt, va_arg(ap, unsigned int *), TOCONS | TOLOG, (struct tty *)0, ap);
+	va_end(ap);
+	KPRINTF_MUTEX_EXIT(s);
 }
 
 /*
@@ -122,17 +131,22 @@ printf(fmt, x1)
  */
 /*VARARGS1*/
 void
-uprintf(fmt, x1)
-	const char	*fmt;
-	unsigned x1;
+uprintf(const char *fmt, ...)
 {
 	register struct tty *tp;
+	int s;
+	va_list ap;
 
-	if ((tp = u->u_ttyp) == NULL)
+	if ((tp = u.u_ttyp) == NULL) {
 		return;
-
-	if (ttycheckoutq(tp, 1))
-		prf(fmt, &x1, TOTTY, tp);
+	}
+	if (ttycheckoutq(tp, 1)) {
+		KPRINTF_MUTEX_ENTER(s);
+		va_start(ap, fmt);
+		prf1(fmt, TOTTY, tp, ap);
+		va_end(ap);
+		KPRINTF_MUTEX_EXIT(s);
+	}
 }
 
 /*
@@ -143,15 +157,15 @@ uprintf(fmt, x1)
  */
 /*VARARGS2*/
 void
-tprintf(tp, fmt, x1)
-	register struct tty *tp;
-	const char *fmt;
-	unsigned x1;
+tprintf(struct tty *tp, const char *fmt, ...)
 {
-	struct session *sess = (struct session *)tp->t_session;
-	int flags = TOTTY | TOLOG;
+	struct session *sess;
 	extern struct tty cons;
+	int s, flags;
+	va_list ap;
 
+	sess = (struct session *)tp->t_session;
+	flags = TOTTY | TOLOG;
 	logpri(LOG_INFO);
 	if (tp == (struct tty *)NULL) {
 		tp = &cons;
@@ -163,7 +177,12 @@ tprintf(tp, fmt, x1)
 		flags |= TOTTY;
 		tp = sess->s_ttyp;
 	}
-	prf(fmt, &x1, flags, tp);
+
+	KPRINTF_MUTEX_ENTER(s);
+	va_start(ap, fmt);
+	prf1(fmt, flags, tp, ap);
+	va_end(ap);
+	KPRINTF_MUTEX_EXIT(s);
 	logwakeup(logMSG);
 }
 
@@ -190,8 +209,9 @@ void
 tprintf_close(sess)
 	tpr_t sess;
 {
-	if (sess)
+	if (sess) {
 		SESSRELE((struct session*) sess);
+	}
 }
 
 /*
@@ -205,7 +225,7 @@ ttyprintf(struct tty *tp, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	kprintf(fmt, TOTTY, tp, NULL, ap);
+	prf1(fmt, TOTTY, tp, ap);
 	va_end(ap);
 }
 
@@ -216,18 +236,21 @@ ttyprintf(struct tty *tp, const char *fmt, ...)
  */
 /*VARARGS2*/
 void
-log(level, fmt, x1)
+log(level, fmt, ap)
 	int level;
-	char *fmt;
-	unsigned x1;
+	const char *fmt;
+	va_list ap;
 {
-	register s = splhigh();
+	register int s;
 
+	KPRINTF_MUTEX_ENTER(s);
 	logpri(level);
-	prf(fmt, &x1, TOLOG, (struct tty *)0);
+	prf2(fmt, TOLOG, ap);
 	splx(s);
-	if (!logisopen(logMSG))
-		prf(fmt, &x1, TOCONS, (struct tty *)0);
+	if (!logisopen(logMSG)) {
+		prf2(fmt, TOCONS, ap);
+	}
+	KPRINTF_MUTEX_EXIT(s);
 	logwakeup(logMSG);
 }
 
@@ -246,34 +269,48 @@ addlog(const char *fmt, ...)
 	register int s;
 	va_list ap;
 
-	s = splhigh();
+	KPRINTF_MUTEX_ENTER(s);
+
 	va_start(ap, fmt);
-	printf(fmt, TOLOG, NULL, ap);
-	splx(s);
+	prf2(fmt, TOLOG, ap);
 	va_end(ap);
 	if (!logisopen(logMSG)) {
 		va_start(ap, fmt);
-		prf(fmt, TOCONS, NULL, ap);
+		prf2(fmt, TOCONS, ap);
 		va_end(ap);
 	}
+	KPRINTF_MUTEX_EXIT(s);
 	logwakeup(logMSG);
 }
 
 static void
-prf(fmt, adx, flags, ttyp)
+prf(fmt, adx, flags, ttyp, ap)
 	register const char *fmt;
 	register u_int *adx;
 	int flags;
 	struct tty *ttyp;
-{
 	va_list ap;
-	int s;
-
-	KPRINTF_MUTEX_ENTER(s);
-	va_start(ap, fmt);
+{
 	kprintf(fmt, flags, ttyp, (char *)adx, ap);
-	va_end(ap);
-	KPRINTF_MUTEX_EXIT(s);
+}
+
+static void
+prf1(fmt, flags, ttyp, ap)
+	register const char *fmt;
+	int flags;
+	struct tty *ttyp;
+	va_list ap;
+{
+	prf(fmt, va_arg(ap, unsigned int *), flags, ttyp, ap);
+}
+
+static void
+prf2(fmt, flags, ap)
+	register const char *fmt;
+	int flags;
+	va_list ap;
+{
+   prf1(fmt, flags, (struct tty *)0, ap);
 }
 
 /* kprintf slock init */
@@ -343,7 +380,7 @@ panic(const char *s, ...)
 	printf("\n");
 	va_end(ap);
 
-	boot(rootdev, bootopt);
+	boot(bootopt);
 }
 
 /*
@@ -382,8 +419,9 @@ putchar(c, flags, tp)
 	if (flags & TOTTY) {
 		register int s = spltty();
 
-		if (tp && (tp->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
-			(TS_CARR_ON | TS_ISOPEN)) {
+		if (tp &&
+				(tp->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
+						(TS_CARR_ON | TS_ISOPEN)) {
 			if (c == '\n')
 				(void) ttyoutput('\r', tp);
 			(void) ttyoutput(c, tp);
@@ -409,7 +447,7 @@ vprintf(fmt, ap)
 	int s;
 
 	KPRINTF_MUTEX_ENTER(s);
-	kprintf(fmt, TOCONS | TOLOG, NULL, NULL, ap);
+	prf2(fmt, TOCONS | TOLOG, ap);
 	KPRINTF_MUTEX_EXIT(s);
 	if (!panicstr) {
 		logwakeup(logMSG);
@@ -756,8 +794,10 @@ kprintf(fmt0, oflags, vp, sbuf, ap)
 		prec = -1;
 		sign = '\0';
 
-rflag: ch = *fmt++;
-reswitch: switch (ch) {
+rflag:
+		ch = *fmt++;
+reswitch:
+		switch (ch) {
 		case ' ':
 			/*
 			 * ``If the space and + flags both appear, the space

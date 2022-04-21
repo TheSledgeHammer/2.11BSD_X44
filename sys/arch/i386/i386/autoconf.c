@@ -101,7 +101,7 @@ configure()
 	/*
 	 * Configure device structures
 	 */
-	device_init(&sys_devsw);
+	conf_init(&sys_devsw);
 
 	/*
 	 * Configure swap area and related system

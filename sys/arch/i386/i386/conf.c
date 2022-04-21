@@ -68,23 +68,40 @@
 #include "pci.h"
 
 /*
- * Configure Devices
+ * Configure Initialization
  */
+void
+conf_init(devsw)
+	struct devswtable *devsw;
+{
+	kernel_init(devsw);			/* kernel interfaces */
+	device_init(devsw);			/* device interfaces */
+	network_init(devsw);		/* network interfaces */
+}
+
+/* Add kernel driver configuration */
+void
+kernel_init(devsw)
+	struct devswtable *devsw;
+{
+	log_init(devsw);			/* log interfaces */
+	swap_init(devsw); 			/* swap interfaces */
+	tty_init(devsw);			/* tty interfaces */
+}
+
+/* Add device driver configuration */
 void
 device_init(devsw)
 	struct devswtable *devsw;
 {
 	console_init(devsw);		/* console interfaces */
 	core_init(devsw);			/* core interfaces */
-	swap_init(devsw);			/* swap interfaces */
-	tty_init(devsw);			/* tty interfaces */
 	wscons_init(devsw);			/* wscons & pccons interfaces */
 	video_init(devsw);			/* video interfaces */
 	misc_init(devsw);			/* misc (ksyms) interfaces */
 	disk_init(devsw);			/* disk interfaces */
 	audio_init(devsw);			/* audio interfaces */
 	usb_init(devsw);			/* usb interfaces */
-	network_init(devsw);		/* network interfaces */
 }
 
 /* Add audio driver configuration */

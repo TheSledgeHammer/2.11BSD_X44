@@ -39,6 +39,7 @@
 #include <sys/device.h>
 #include <sys/queue.h>
 #include <sys/power.h>
+#include <sys/null.h>
 
 struct hook_desc {
 	TAILQ_ENTRY(hook_desc) 	hk_list;
@@ -105,11 +106,11 @@ static void
 do_hooks_shutdown(hook_list_t *list, int why)
 {
 	struct hook_desc *hd;
-    while((hd == TAILQ_FIRST(list)) != NULL) {
-        TAILQ_REMOVE(list, hd, hk_list);
+	while ((hd == TAILQ_FIRST(list)) != NULL) {
+		TAILQ_REMOVE(list, hd, hk_list);
 		(*hd->hk_fn)(why, hd->hk_arg);
 		free(hd, M_DEVBUF);
-    }
+	}
 }
 
 static void
@@ -121,24 +122,24 @@ do_hooks_power(hook_list_t *list, int why)
 	why_name = why < __arraycount(pwr_names) ? pwr_names[why] : "???";
 	
 	if (why == PWR_RESUME || why == PWR_SOFTRESUME) {
-			TAILQ_FOREACH_REVERSE(hd, list, hook_head, hk_list) {
-				if (powerhook_debug) {
-					printf("dopowerhooks %s: (%p)\n", why_name, hd);
-				}
-				(*hd->hk_fn)(why, hd->hk_arg);
+		TAILQ_FOREACH_REVERSE(hd, list, hook_head, hk_list) {
+			if (powerhook_debug) {
+				printf("dopowerhooks %s: (%p)\n", why_name, hd);
 			}
-		}  else {
-			TAILQ_FOREACH(hd, list, hk_list) {
-				if (powerhook_debug) {
-					printf("dopowerhooks %s: (%p)\n", why_name, hd);
-				}
-				(*hd->hk_fn)(why, hd->hk_arg);
-			}
+			(*hd->hk_fn)(why, hd->hk_arg);
 		}
+	} else {
+		TAILQ_FOREACH(hd, list, hk_list) {
+			if (powerhook_debug) {
+				printf("dopowerhooks %s: (%p)\n", why_name, hd);
+			}
+			(*hd->hk_fn)(why, hd->hk_arg);
+		}
+	}
 
-		if (powerhook_debug) {
-			printf("dopowerhooks: %s done\n", why_name);
-		}
+	if (powerhook_debug) {
+		printf("dopowerhooks: %s done\n", why_name);
+	}
 }
 
 static void
@@ -147,11 +148,11 @@ do_hooks(hook_list_t *list, int why, int type)
 	struct hook_desc *hd;
 	switch (type) {
 	case HKLIST_SHUTDOWN:
-        do_hooks_shutdown(list, why);
+		do_hooks_shutdown(list, why);
 		return;
 
 	case HKLIST_POWER:
-        do_hooks_power(list, why);
+		do_hooks_power(list, why);
 		return;
 	}
 }

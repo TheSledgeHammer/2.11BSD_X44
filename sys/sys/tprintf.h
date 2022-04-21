@@ -70,8 +70,8 @@ extern struct lock_object kprintf_slock;
 typedef struct session *tpr_t;
 
 void	prf_init(void);
-int		kprintf (const char *, int, void *, char *, _BSD_VA_LIST_);
-void	tprintf (tpr_t, const char *fmt, ...);
-tpr_t	tprintf_open (struct proc *);
-void	tprintf_close (tpr_t);
+int		kprintf(const char *, int, void *, char *, _BSD_VA_LIST_);
+void	tprintf(tpr_t, const char *fmt, ...);
+tpr_t	tprintf_open(struct proc *);
+void	tprintf_close(tpr_t);
 #endif /* !_SYS_TPRINTF_H_ */
