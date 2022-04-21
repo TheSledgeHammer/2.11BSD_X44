@@ -84,9 +84,9 @@ void
 kernel_init(devsw)
 	struct devswtable *devsw;
 {
-	log_init(devsw);			/* log interfaces */
-	swap_init(devsw); 			/* swap interfaces */
-	tty_init(devsw);			/* tty interfaces */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &log_cdevsw, NULL);			        /* log interfaces */
+	DEVSWIO_CONFIG_INIT(devsw, 1, &swap_bdevsw, &swap_cdevsw, NULL);		/* swap interfaces */
+	tty_init(devsw);			                                       /* tty interfaces */
 }
 
 /* Add device driver configuration */
@@ -161,14 +161,6 @@ network_init(devsw)
 	struct devswtable *devsw;
 {
 	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
-}
-
-/* add swap driver configuration */
-void
-swap_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, 1, &swap_bdevsw, &swap_cdevsw, NULL);		/* swap pseudo-device */
 }
 
 /* add tty global driver configuration */
