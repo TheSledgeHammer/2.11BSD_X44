@@ -54,7 +54,7 @@ struct percpu {
 	LIST_ENTRY(percpu) 		pc_entry;
 	//struct kthread			*pc_curkthread;
 
-	size_t					pc_dynamic;			/* Dynamic per-cpu data area */
+	u_long					*pc_dynamic;		/* Dynamic per-cpu data area */
 	size_t					pc_size;			/* Static per-cpu allocation */
 
 	struct extent			*pc_extent;			/* Dynamic storage alloctor */
