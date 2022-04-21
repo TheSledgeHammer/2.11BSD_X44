@@ -145,6 +145,7 @@ int		vsnprintf(char *, size_t, const char *, va_list);
 
 void	ttyprintf(struct tty *, const char *, ...);
 void	uprintf(const char *, ...);
+void    printn(long, u_int, int, struct tty *);
 char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
 void 	bcopy(const void *, void *, u_int);
