@@ -51,6 +51,7 @@ struct hook_list {
 	hook_list_t	 			hl_list;
 };
 
+#define	__arraycount(__x)	(sizeof(__x) / sizeof(__x[0]))
 int	powerhook_debug = 0;
 
 static void *
@@ -101,25 +102,25 @@ hook_destroy(hook_list_t *list)
 }
 
 static void
-do_hooks(hook_list_t *list, int why, int type)
+do_hooks_shutdown(hook_list_t *list, int why)
 {
 	struct hook_desc *hd;
+    while((hd == TAILQ_FIRST(list)) != NULL) {
+        TAILQ_REMOVE(list, hd, hk_list);
+		(*hd->hk_fn)(why, hd->hk_arg);
+		free(hd, M_DEVBUF);
+    }
+}
 
-	switch (type) {
-	case HKLIST_SHUTDOWN:
-		while((hd == TAILQ_FIRST(list)) != NULL) {
-			TAILQ_REMOVE(list, hd, hk_list);
-			(*hd->hk_fn)(why, hd->hk_arg);
-			free(hd, M_DEVBUF);
-		}
-		return;
-
-	case HKLIST_POWER:
-		const char *why_name;
-		static const char * pwr_names[] = {PWR_NAMES};
-		why_name = why < __arraycount(pwr_names) ? pwr_names[why] : "???";
-
-		if (why == PWR_RESUME || why == PWR_SOFTRESUME) {
+static void
+do_hooks_power(hook_list_t *list, int why)
+{
+    struct hook_desc *hd;
+    const char *why_name;
+	static const char * pwr_names[] = {PWR_NAMES};
+	why_name = why < __arraycount(pwr_names) ? pwr_names[why] : "???";
+	
+	if (why == PWR_RESUME || why == PWR_SOFTRESUME) {
 			TAILQ_FOREACH_REVERSE(hd, list, hook_head, hk_list) {
 				if (powerhook_debug) {
 					printf("dopowerhooks %s: (%p)\n", why_name, hd);
@@ -138,6 +139,19 @@ do_hooks(hook_list_t *list, int why, int type)
 		if (powerhook_debug) {
 			printf("dopowerhooks: %s done\n", why_name);
 		}
+}
+
+static void
+do_hooks(hook_list_t *list, int why, int type)
+{
+	struct hook_desc *hd;
+	switch (type) {
+	case HKLIST_SHUTDOWN:
+        do_hooks_shutdown(list, why);
+		return;
+
+	case HKLIST_POWER:
+        do_hooks_power(list, why);
 		return;
 	}
 }

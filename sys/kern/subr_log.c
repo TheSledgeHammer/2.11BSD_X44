@@ -23,6 +23,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/ioctl.h>
@@ -72,7 +73,7 @@ logopen(dev, mode)
 	logsoftc[unit].sc_state |= LOG_OPEN;
 	if	(unit == logACCT)
 		Acctopen = 1;
-	logsoftc[unit].sc_pgid = u->u_procp->p_pid;  /* signal process only */
+	logsoftc[unit].sc_pgid = u.u_procp->p_pid;  /* signal process only */
 	logsoftc[unit].sc_overrun = 0;
 	return(0);
 }
@@ -127,7 +128,7 @@ logread(dev, uio, flag)
 			return(EWOULDBLOCK);
 		}
 		lp->sc_state |= LOG_RDWAIT;
-		if (error == sleep((caddr_t)mp, LOG_RDPRI | PCATCH, "klog", 0)) {
+		if (error == tsleep((caddr_t)mp, LOG_RDPRI | PCATCH, "klog", 0)) {
 			splx(0);
 			return (error);
 		}
@@ -189,7 +190,7 @@ logselect(dev, rw)
 			splx(s);
 			return(1);
 		}
-		logsoftc[unit].sc_selp = u->u_procp;
+		logsoftc[unit].sc_selp = u.u_procp;
 		break;
 	}
 	splx(s);
@@ -346,12 +347,12 @@ loginit(void)
 
 	new_bufs = MSG_BSIZE - offsetof(struct msgbuf, msg_bufc);
 	for	(mp = &msgbuf[0]; mp < &msgbuf[NLOG]; mp++) {
-		mp->msg_click = rmalloc(coremap, btoc(MSG_BSIZE));
+		mp->msg_click = btoc(new_bufs);
 		if (!mp->msg_click) {
 			return;
 		}
 		mp->msg_magic = MSG_MAGIC;
-		mp->msg_bufc = new_bufs;
+		mp->msg_bufc = (char *)new_bufs;
 		mp->msg_bufx = mp->msg_bufr = 0;
 	}
 }

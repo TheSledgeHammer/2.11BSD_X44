@@ -81,9 +81,10 @@ struct percpu *
 percpu_lookup(ci)
 	struct cpu_info *ci;
 {
-	struct percpu *pc;
+	struct percpu *pc, *npci;
 	LIST_FOREACH(pc, &cpuhead, pc_entry) {
-		if(cpu_percpu(ci) == pc) {
+	    npci = &cpu_percpu(ci);
+		if(npci == pc) {
 			return (pc);
 		}
 	}
@@ -162,7 +163,7 @@ percpu_extent_region(pc)
 	}
 	error = extent_alloc_region(ext, pc->pc_start, pc->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 	if (error != 0) {
-		percpu_extent_free(ext, pc->pc_start, pc->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
+		percpu_extent_free(pc, pc->pc_start, pc->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 		panic("percpu_extent_region");
 	} else {
 		printf("percpu_extent_region: successful");
@@ -176,6 +177,7 @@ percpu_extent_subregion(pc, size)
 	size_t 			size;
 {
 	register struct extent *ext;
+	u_long *result;
 	int error;
 
 	ext = pc->pc_extent;
@@ -183,20 +185,22 @@ percpu_extent_subregion(pc, size)
 		panic("percpu_extent_subregion: no extent");
 		return;
 	}
-	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, pc->pc_dynamic);
+	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, result);
 	if (error != 0) {
-		percpu_extent_free(ext, pc->pc_start, pc->pc_end);
+		percpu_extent_free(pc, pc->pc_start, pc->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 		panic("percpu_extent_subregion");
 	}  else {
+	    pc->pc_dynamic = result;
 		printf("percpu_extent_subregion: successful");
 	}
 }
 
 /* free a percpu extent */
 void
-percpu_extent_free(pc, start, end)
+percpu_extent_free(pc, start, end, flags)
 	struct percpu *pc;
 	u_long	start, end;
+	int flags;
 {
 	register struct extent *ext;
 	int error;
@@ -233,7 +237,7 @@ percpu_start(ci, size)
 {
 	struct percpu *pc;
 
-	pc = cpu_percpu(ci);
+	pc = &cpu_percpu(ci);
 	pc->pc_size = size;
 
 	return (pc);

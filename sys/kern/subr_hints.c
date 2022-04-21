@@ -38,6 +38,8 @@
 #include <sys/conf.h>
 #include <sys/device.h>
 
+//#include <lib/libsa/stand.h>
+
 /*
  * Access functions for device resources.
  */
@@ -48,7 +50,7 @@ extern int cfhint_count; 			/* hint count */
 /* Runtime version */
 struct cfhint *hint = allhints;
 
-static void resource_cfgload(void *dummy /*__unused*/);
+static void resource_cfgload(/* void *dummy __unused*/);
 
 void
 resource_init()
@@ -173,7 +175,7 @@ resource_kenv(const char *name, int unit, const char *resname, long *result)
 
 	snprintf(buf, sizeof(buf), "%s%d.%s", name, unit, resname);
 	if ((env = kern_getenv(buf)) != NULL) {
-		*result = strtol(env, NULL, 0);
+		*result = strtoq(env, NULL, 0);
 		return (0);
 	}
 
@@ -182,7 +184,7 @@ resource_kenv(const char *name, int unit, const char *resname, long *result)
 	 */
 	snprintf(buf, sizeof(buf), "hint.%s.%d.%s", name, unit, resname);
 	if ((env = kern_getenv(buf)) != NULL) {
-		*result = strtol(env, NULL, 0);
+		*result = strtoq(env, NULL, 0);
 		return (0);
 	}
 
@@ -402,7 +404,7 @@ resource_set_string(const char *name, int unit, const char *resname, const char 
 }
 
 static void
-resource_cfgload(void *dummy /*__unused*/)
+resource_cfgload(/*void *dummy __unused*/)
 {
 	struct cfresource *res, *cfgres;
 	int i, j;
