@@ -48,7 +48,7 @@ struct cdevsw {
 	int			(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int			(*d_read)(dev_t dev, struct uio *uio, int ioflag);
 	int			(*d_write)(dev_t dev, struct uio *uio, int ioflag);
-	int			(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
+	int			(*d_ioctl)(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p);
 	int			(*d_stop)(struct tty *tp, int rw);
 	int			(*d_reset)(int uban);	/* XXX */
 	struct tty 	*(*d_tty)(dev_t dev);
