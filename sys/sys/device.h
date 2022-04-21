@@ -150,7 +150,7 @@ struct cfops {
  * of the parent device.  The return value is ignored if the device was
  * configured, so most functions can return UNCONF unconditionally.
  */
-typedef int 			(*cfprint_t) (void *, const char *);
+typedef int 			(*cfprint_t)(void *, const char *);
 #define	QUIET			0		/* print nothing */
 #define	UNCONF			1		/* print " not configured\n" */
 #define	UNSUPP			2		/* print " not supported\n" */
@@ -159,7 +159,7 @@ typedef int 			(*cfprint_t) (void *, const char *);
  * Pseudo-device attach information (function + number of pseudo-devs).
  */
 struct pdevinit {
-	void				(*pdev_attach) (int);
+	void				(*pdev_attach)(int);
 	int					pdev_count;
 };
 
@@ -205,8 +205,8 @@ extern struct devicelist			alldevs;				/* head of list of all devices */
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */
 extern struct deferred_config_head	interrupt_config_queue;	/* head of interrupt queue */
 extern struct evcntlist				allevents;				/* head of list of all events */
-struct cfhint 						*allhints;				/* head of list of device hints */
-int 								cfhint_count; 			/* hint count */
+//struct cfhint 						*allhints;				/* head of list of device hints */
+//int 								cfhint_count; 			/* hint count */
 
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search(cfmatch_t, struct device *, void *);

@@ -113,8 +113,6 @@ struct dkdevice {
 	struct disklabel 		*dk_label;				/* label */
 	struct diskslices		*dk_slices;				/* slices */
 	struct partition 		dk_parts[MAXPARTITIONS];/* in-kernel portion */
-	//struct diskslice		dk_slice;				/* slice */
-	//struct cpu_disklabel 		*dk_cpulabel;
 };
 
 struct dkdriver {
@@ -137,7 +135,7 @@ struct dkdriver {
 #define	DKF_WLABEL			0x0020				/* label area is being written */
 #define	DKF_SEEK			0x0040				/* drive is seeking */
 #define	DKF_SWAIT			0x0080				/* waiting for seek to complete */
-#define DKF_RLABEL  			0x0100				/* label being read */
+#define 	DKF_RLABEL  		0x0100				/* label being read */
 #define	DKF_OPEN			0x0200				/* label read, drive open */
 #define	DKF_OPENRAW			0x0400				/* open without label */
 
@@ -171,16 +169,16 @@ struct disksort_stats {
 #ifdef _KERNEL
 extern	int 		disk_count;			/* number of disks in global disklist */
 
-void			disk_init(void);
-void			disk_attach(struct dkdevice *);
-void			disk_detach(struct dkdevice *);
-void			disk_busy(struct dkdevice *);
-void			disk_unbusy(struct dkdevice *, long);
-int			disk_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *);
-void			disk_resetstat(struct dkdevice *);
+void				disk_init(void);
+void				disk_attach(struct dkdevice *);
+void				disk_detach(struct dkdevice *);
+void				disk_busy(struct dkdevice *);
+void				disk_unbusy(struct dkdevice *, long);
+int					disk_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *);
+void				disk_resetstat(struct dkdevice *);
 struct dkdevice 	*disk_find(char *);
-void			disksort(struct bufq_state *, struct buf *);
-void			diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
+void				disksort(struct bufq_state *, struct buf *);
+void				diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
 
 struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);
 struct disklabel	*disk_label(struct dkdevice *, dev_t);

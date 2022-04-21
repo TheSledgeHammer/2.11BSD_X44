@@ -41,12 +41,14 @@
 /*
  * Access functions for device resources.
  */
-
 /* Supplied by config(8) in ioconf.c */
-extern struct cfhint allhints[];
+extern struct cfhint allhints[];	/* head of list of device hints */
+extern int cfhint_count; 			/* hint count */
 
 /* Runtime version */
 struct cfhint *hint = allhints;
+
+static void resource_cfgload(void *dummy /*__unused*/);
 
 void
 resource_init()
@@ -59,7 +61,6 @@ resource_new_name(const char *name, int unit)
 {
 	struct cfhint *new;
 
-	new = &allhints;
 	new = malloc((cfhint_count + 1) * sizeof(*new), M_TEMP, M_WAITOK | M_ZERO);
 	if(hint && cfhint_count > 0) {
 		bcopy(hint, new, cfhint_count * sizeof(*new));
@@ -137,7 +138,7 @@ resource_find(const char *name, int unit, const char *resname, struct cfresource
 			for (j = 0; j < hint[i].ch_rescount; j++, res++) {
 				if (!strcmp(res->cr_name, resname)) {
 					*result = res;
-					return(0);
+					return (0);
 				}
 			}
 		}
@@ -153,7 +154,7 @@ resource_find(const char *name, int unit, const char *resname, struct cfresource
 			for (j = 0; j < hint[i].ch_rescount; j++, res++) {
 				if (!strcmp(res->cr_name, resname)) {
 					*result = res;
-					return(0);
+					return (0);
 				}
 			}
 		}
@@ -173,7 +174,7 @@ resource_kenv(const char *name, int unit, const char *resname, long *result)
 	snprintf(buf, sizeof(buf), "%s%d.%s", name, unit, resname);
 	if ((env = kern_getenv(buf)) != NULL) {
 		*result = strtol(env, NULL, 0);
-		return(0);
+		return (0);
 	}
 
 	/*
