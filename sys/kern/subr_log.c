@@ -32,6 +32,7 @@
 #include <sys/vnode.h>
 #include <sys/uio.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/poll.h>
 #include <sys/queue.h>
 
@@ -63,13 +64,15 @@ dev_type_close(logclose);
 dev_type_read(logread);
 dev_type_ioctl(logioctl);
 dev_type_poll(logpoll);
+dev_type_kqfilter(logkqfilter);
 
 const struct cdevsw log_cdevsw = {
 		.d_open = logopen,
 		.d_close = logclose,
 		.d_read = logread,
 		.d_ioctl = logioctl,
-		.d_poll = logpoll
+		.d_poll = logpoll,
+		.d_kqfilter = logkqfilter
 };
 
 /*ARGSUSED*/
@@ -130,15 +133,16 @@ logread(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	register int l;
 	register struct logsoftc *lp;
 	register struct msgbuf *mp;
-	int	s, error = 0;
-	char buf[ctob(2)];
+	register long l;
+	register int s;
+	int unit, error;
 
-	l = minor(dev);
-	lp = &logsoftc[l];
-	mp = &msgbuf[l];
+    unit = minor(dev);
+    error = 0;
+	lp = &logsoftc[unit];
+	mp = &msgbuf[unit];
 	s = splhigh();
 	while (mp->msg_bufr == mp->msg_bufx) {
 		if (flag & IO_NDELAY) {
@@ -177,14 +181,15 @@ logread(dev, uio, flag)
 			 * amount of data to transfer.
 			 */
 			if (l == 0) {
-				mp->msg_bufr = 0;
+			    if (mp->msg_bufr < 0 || mp->msg_bufr >= MSG_BSIZE) {
+    			    mp->msg_bufr = 0;
+        		}
 				continue;
 			}
 		}
 		l = MIN(l, uio->uio_resid);
 		l = MIN(l, sizeof buf);
-		bcopy(&mp->msg_bufc[mp->msg_bufr], buf, l);
-		error = uiomove(buf, l, uio);
+		error = uiomove((caddr_t)&mp->msg_bufc[mp->msg_bufr], (int)l, uio);
 		if (error)
 			break;
 		mp->msg_bufr += l;
@@ -194,27 +199,6 @@ logread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-int
-logselect(dev, rw)
-	dev_t dev;
-	int rw;
-{
-	register int s = splhigh();
-	int	unit = minor(dev);
-
-	switch	(rw) {
-	case FREAD:
-		if (msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx) {
-			splx(s);
-			return (1);
-		}
-		logsoftc[unit].sc_selp = u.u_procp;
-		break;
-	}
-	splx(s);
-	return (0);
-}
-
 int
 logpoll(dev, events, p)
 	dev_t dev;
@@ -228,7 +212,7 @@ logpoll(dev, events, p)
 		if (msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx) {
 			revents |= events & (POLLIN | POLLRDNORM);
 		} else {
-			selrecord(p, &logsoftc.sc_selp);
+			selrecord(p, logsoftc->sc_selp);
 		}
 	}
 	splx(s);
@@ -241,7 +225,7 @@ filt_logrdetach(struct knote *kn)
 	int s;
 
 	s = splhigh();
-	SIMPLEQ_REMOVE(&logsoftc.sc_selp->si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&logsoftc->sc_selp->si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -249,14 +233,14 @@ static int
 filt_logread(struct knote *kn, long hint)
 {
 
-	if (msgbufp->msg_bufr == msgbufp->msg_bufx)
+	if (msgbuf->msg_bufr == msgbuf->msg_bufx)
 		return (0);
 
-	if (msgbufp->msg_bufr < msgbufp->msg_bufx)
-		kn->kn_data = msgbufp->msg_bufx - msgbufp->msg_bufr;
+	if (msgbuf->msg_bufr < msgbuf->msg_bufx)
+		kn->kn_data = msgbuf->msg_bufx - msgbuf->msg_bufr;
 	else
-		kn->kn_data = (msgbufp->msg_click - msgbufp->msg_bufr) +
-		    msgbufp->msg_bufx;
+		kn->kn_data = (msgbuf->msg_click - msgbuf->msg_bufr) +
+		    msgbuf->msg_bufx;
 
 	return (1);
 }
@@ -278,7 +262,7 @@ logkqfilter(dev, kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &logsoftc.sc_selp->si_klist;
+		klist = &logsoftc->sc_selp->si_klist;
 		kn->kn_fop = &logread_filtops;
 		break;
 
@@ -307,7 +291,7 @@ logwakeup(unit)
 	lp = &logsoftc[unit];
 	mp = &msgbuf[unit];
 	if (lp->sc_selp) {
-		selwakeup(lp->sc_selp, (long) 0);
+		selwakeup(u.u_procp, (long) 0);
 		lp->sc_selp = 0;
 	}
 	if ((lp->sc_state & LOG_ASYNC) && (mp->msg_bufx != mp->msg_bufr)) {
@@ -326,7 +310,7 @@ logwakeup(unit)
 int
 logioctl(dev, com, data, flag, p)
 	dev_t	dev;
-	u_int	com;
+	u_long	com;
 	caddr_t data;
 	int	flag;
 	struct proc *p;
@@ -454,11 +438,4 @@ loginit(void)
 		mp->msg_bufc = (char*) new_bufs;
 		mp->msg_bufx = mp->msg_bufr = 0;
 	}
-}
-
-void
-log_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &log_cdevsw, NULL);
 }

@@ -83,9 +83,11 @@ void (*v_flush)(void) = cnflush;	/* start with cnflush (normal cons) */
 const char	*panicstr;
 
 /* internal methods */
+static void logpri(int);
 static void prf(const char *, u_int *, int, struct tty *, va_list);
 static void prf1(const char *, int, struct tty *, va_list);
 static void prf2(const char *, int, va_list);
+static void putchar(int, int, struct tty *);
 
 /*
  * Scaled down version of C Library printf.
@@ -157,19 +159,17 @@ uprintf(const char *fmt, ...)
  */
 /*VARARGS2*/
 void
-tprintf(struct tty *tp, const char *fmt, ...)
+tprintf(tpr_t tpr, const char *fmt, ...)
 {
 	struct session *sess;
-	extern struct tty cons;
+	struct tty *tp;
 	int s, flags;
 	va_list ap;
 
-	sess = (struct session *)tp->t_session;
+	sess = (struct session *)tpr;
+	tp = NULL;
 	flags = TOTTY | TOLOG;
 	logpri(LOG_INFO);
-	if (tp == (struct tty *)NULL) {
-		tp = &cons;
-	}
 	if (ttycheckoutq(tp, 0) == 0) {
 		flags = TOLOG;
 	}
@@ -236,7 +236,27 @@ ttyprintf(struct tty *tp, const char *fmt, ...)
  */
 /*VARARGS2*/
 void
-log(level, fmt, ap)
+log(int level, const char *fmt, ...)
+{
+    register int s;
+    va_list ap;
+    
+    KPRINTF_MUTEX_ENTER(s);
+	logpri(level);
+	va_start(ap, fmt);
+	prf2(fmt, TOLOG, ap);
+	va_end(ap);
+	if (!logisopen(logMSG)) {
+    	va_start(ap, fmt);
+    	prf2(fmt, TOCONS, ap);
+   		va_end(ap);
+	}
+   	KPRINTF_MUTEX_EXIT(s);
+	logwakeup(logMSG);
+}
+
+void
+vlog(level, fmt, ap)
 	int level;
 	const char *fmt;
 	va_list ap;
@@ -246,7 +266,6 @@ log(level, fmt, ap)
 	KPRINTF_MUTEX_ENTER(s);
 	logpri(level);
 	prf2(fmt, TOLOG, ap);
-	splx(s);
 	if (!logisopen(logMSG)) {
 		prf2(fmt, TOCONS, ap);
 	}
@@ -362,7 +381,7 @@ printn(n, b, flags, ttyp)
  * sync the disks as this often leads to recursive panics.
  */
 void
-panic(const char *s, ...)
+panic(const char *fmt, ...)
 {
 	int bootopt;
 	va_list ap;
@@ -371,7 +390,7 @@ panic(const char *s, ...)
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
 	else {
-		panicstr = s;
+		panicstr = fmt;
 	}
 
 	va_start(ap, fmt);
@@ -388,7 +407,7 @@ panic(const char *s, ...)
  */
 void
 tablefull(tab)
-	char *tab;
+	const char *tab;
 {
 	log(LOG_ERR, "%s: table full\n", tab);
 }
@@ -430,7 +449,7 @@ putchar(c, flags, tp)
 		splx(s);
 	}
 	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177)
-		logwrt(&c, 1, logMSG);
+		logwrt((char *)&c, 1, logMSG);
 	if ((flags & TOCONS) && c != '\0')
 		cnputc(c);
 }

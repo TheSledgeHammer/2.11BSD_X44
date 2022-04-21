@@ -185,7 +185,7 @@ addupc_intr(p, pc, ticks)
 
 void
 addupc_intru(pc, up, ticks)
-	int pc;
+	u_long pc;
 	struct uprof *up;
 	u_int ticks;
 {
@@ -197,7 +197,7 @@ addupc_intru(pc, up, ticks)
 
 	if (ticks == 0)
 		return;
-	p = u->u_procp;
+	p = u.u_procp;
 
 	if (pc < up->pr_off || (i = PC_TO_INDEX(pc, up)) >= up->pr_size) {
 		return; /* out of range; ignore */
@@ -255,7 +255,7 @@ addupc_tasku(pc, up, ticks)
 	register u_int i;
 	u_short v;
 
-	p = u->u_procp;
+	p = u.u_procp;
 	/* Testing P_PROFIL may be unnecessary, but is certainly safe. */
 	if ((p->p_flag & P_PROFIL) == 0 || ticks == 0)
 		return;
