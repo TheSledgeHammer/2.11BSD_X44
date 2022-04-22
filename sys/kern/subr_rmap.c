@@ -37,8 +37,7 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
-extern struct mapent _coremap[];
-extern struct mapent _swapmap[];
+extern	struct	mapent _coremap[];
 
 /*
  * GOAL coremap (Revamped):
@@ -47,34 +46,6 @@ extern struct mapent _swapmap[];
  * (i.e. buffer_map, exec_map, kernel_map, kmem_map, mb_map, & phys_map).
  * This also includes updating rmap to make use of malloc flags & malloc types.
  */
-struct map coremap[1] = {
-		.m_map 		= _coremap,
-		.m_limit 	= &_coremap[cmapsiz],
-		.m_name 	= "coremap",
-		.m_type		= M_COREMAP,
-		/* vm map */
-		.m_vmmap[1] = {
-				{ .m_name = "buffer_map",   .m_vmmap = (vm_map_t) &buffer_map },
-				{ .m_name = "exec_map",     .m_vmmap = (vm_map_t) &exec_map },
-				{ .m_name = "kernel_map",   .m_vmmap = (vm_map_t) &kernel_map },
-				{ .m_name = "kmem_map",     .m_vmmap = (vm_map_t) &kmem_map },
-				{ .m_name = "mb_map",       .m_vmmap = (vm_map_t) &mb_map },
-				{ .m_name = "phys_map",     .m_vmmap = (vm_map_t) &phys_map },
-		},
-		/* ovl map */
-		/*.m_ovlmap[1] = {
-				{ .m_name = "overlay_map",  .m_ovlmap = (ovl_map_t) &overlay_map },
-				{ .m_name = "omem_map",   	.m_ovlmap = (ovl_map_t) &omem_map },
-		},*/
-};
-
-struct map swapmap[1] = {
-		.m_map 		= _swapmap,
-		.m_limit 	= &_swapmap[smapsiz],
-		.m_name 	= "swapmap",
-		.m_type		= M_SWAPMAP,
-};
-
 /*
  * Resource map handling routines.
  *
@@ -110,7 +81,7 @@ struct map swapmap[1] = {
  */
 
 void
-rminit(mp, size, addr, name, mtype, mapsize)
+rminit(mp, addr, size, name, mtype, mapsize)
 	register struct map *mp;
 	memaddr_t addr;
 	size_t size;
@@ -125,7 +96,7 @@ rminit(mp, size, addr, name, mtype, mapsize)
 	}
 	mp->m_name = name;
 	mp->m_type = mtype;
-	mp->m_limit = (struct mapent *)mp[mapsize];
+	mp->m_limit = (struct mapent *)mp + mapsize;
 
 	/* initially the first entry describes all free space */
 	ep = (struct mapent *)(mp + 1);
@@ -141,7 +112,7 @@ rminit(mp, size, addr, name, mtype, mapsize)
 memaddr_t
 rmalloc(mp, size)
 	struct map *mp;
-	size_t  size;
+	size_t      size;
 {
 	register struct mapent *ep = (struct mapent *)(mp+1);
 	register struct mapent *bp;
@@ -179,13 +150,14 @@ again:
 				}
 			}
 			return (addr);
+		} else if ((bp->m_size - first) < size) {
+		    goto retry;
 		}
+		
 	/* no entries big enough */
 	if (!retry++) {
 		if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr % dmmax) < size) {
-			if (bp->m_size - first < size) {
-				continue;
-			}
+retry:
 			addr = bp->m_addr + first;
 			rest = bp->m_size - first - size;
 			bp->m_size = first;
@@ -344,26 +316,28 @@ again:
 		}
 	}
 	if (!retry++) {
-		for (next = 0; next < 3; ++next) {
-			if (mp == swapmap && nswdev > 1	&& (first = dmmax - bp->m_addr % dmmax) < sizes[next]) {
-				if (bp->m_size - first < madd[next] && sizes[next]) {
-					continue;
-				}
-				addr = bp->m_addr + first;
-				rest = bp->m_size - first - sizes[next];
-				bp->m_size = first;
-				if (rest) {
-					printf("short of swap\n");
-					rmfree(swapmap, rest, addr + sizes[next]);
-				}
-				goto again;
-
-			} else if (mp == coremap) {
-				rmfree(mp, sizes[2], addr); /* smallest to largest; */
-				rmfree(mp, sizes[1], addr); /* free up minimum space */
-				rmfree(mp, sizes[0], addr);
-				goto again;
-			}
+	    if(mp == swapmap) {
+	        for (next = 0; next < 3; ++next) {
+	            if(nswdev > 1 && (first = dmmax - bp->m_addr % dmmax) < sizes[next]) {
+	                if (bp->m_size - first < sizes[next]) {
+					    continue;
+				    }
+	                addr = bp->m_addr + first;
+    				rest = bp->m_size - first - sizes[next];
+    				bp->m_size = first;
+    				if (rest) {
+					    printf("short of swap\n");
+					    rmfree(swapmap, rest, addr + sizes[next]);
+				    }
+				    goto again;
+	            }
+	        }
+	    }
+	    if (mp == coremap) {
+	        rmfree(mp, sizes[2], addr); /* smallest to largest; */
+			rmfree(mp, sizes[1], addr); /* free up minimum space */
+			rmfree(mp, sizes[0], addr);
+			goto again;
 		}
 	}
 
@@ -388,28 +362,16 @@ resolve:
 			}
 		}
 	}
-	return(a[2]);
+	return (a[2]);
 }
 
 /*
- * 2.11BSD kmem rmap fail-safe initialization:
- * Allocates coremap & swapmap in the event one or both were not allocated properly during startup.
+ * 2.11BSD kmem rmap info
  */
 void
 rmapinit(void)
 {
-	struct mapent __coremap[0] = &_coremap[0];
-	struct mapent __swapmap[0] = &_swapmap[0];
-
-	if(__coremap[0] == NULL) {
-		MALLOC(__coremap[0], struct mapent, sizeof(struct mapent), M_COREMAP, M_WAITOK);
-	}
-	if(__swapmap[0] == NULL) {
-		MALLOC(__swapmap[0], struct mapent, sizeof(struct mapent), M_SWAPMAP, M_WAITOK);
-	}
-
-
 	printf("phys mem  = %D\n", ctob((long)physmem));
-	printf("avail mem in coremap = %D\n", ctob((long)__coremap[0].m_size));
+	printf("avail mem in coremap = %D\n", ctob((long)_coremap[0].m_size));
 	printf("user mem  = %D\n", ctob((long)MAXMEM));
 }
