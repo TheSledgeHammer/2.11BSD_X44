@@ -76,6 +76,6 @@ void	    rmapinit(void);
 memaddr_t   rmalloc(struct map *, size_t); 											/* Allocate units from the given map. */
 void 	    rmfree(struct map *, size_t, memaddr_t); 									/* Free the previously allocated units at addr into the specified map.*/
 memaddr_t 	rmalloc3(struct map *, size_t, size_t, size_t, memaddr_t *);		/* Allocate resources for the three segments of a process.*/
-void	    rminit(struct map *, memaddr_t, size_t, char *name, int, int);			/* Initialized resource malloc */
+void	    rminit(struct map *, memaddr_t, size_t, char *, int, int);			/* Initialized resource malloc */
 #endif
 #endif /* _SYS_MAP_H_ */
