@@ -109,9 +109,9 @@ unpbind(path, len, vpp, unpsock)
 		vput(vp);
 		return (EADDRINUSE);
 	}
-	if (u->u_error || !(vp = MAKEIMODE(S_IFSOCK | 0777, ndp))) {
-		error = u->u_error;
-		u->u_error = 0;
+	if (u.u_error || !(vp = MAKEIMODE(S_IFSOCK | 0777, ndp))) {
+		error = u.u_error;
+		u.u_error = 0;
 		return (error);
 	}
 	*vpp = vp;
@@ -144,8 +144,8 @@ unpconn(path, len, so2, vpp)
 	vp = namei(ndp);
 	*vpp = vp;
 	if (!vp || access(vp, S_IWRITE)) {
-		error = u->u_error;
-		u->u_error = 0;
+		error = u.u_error;
+		u.u_error = 0;
 		return (error);
 	}
 
@@ -157,6 +157,7 @@ unpconn(path, len, so2, vpp)
 	return (0);
 }
 
+/*
 void
 unpgc1(beginf, endf)
 	struct file **beginf, **endf;
@@ -167,6 +168,7 @@ unpgc1(beginf, endf)
 		fp->f_flag &= ~(FMARK|FDEFER);
 	*endf = fileNFILE;
 }
+*/
 
 int
 unpdisc(fp)

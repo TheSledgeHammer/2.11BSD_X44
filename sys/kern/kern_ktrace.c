@@ -55,7 +55,6 @@
 #ifdef KTRACE
 int		ktrace_common(struct proc *, int, int, int, struct file *);
 void	ktrinitheader(struct ktr_header *, struct proc *, int);
-struct ktr_header *ktrgetheader(struct proc *, int);
 int		ktrops(struct proc *, struct proc *, int, int, struct file *);
 int		ktrsetchildren(struct proc *, struct proc *, int, int, struct file *);
 int 	ktrwrite(struct proc *, struct ktr_header *);

@@ -166,7 +166,6 @@ struct ktr_user {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-//int	ktrace(); /* syscall */
 int	ktrace(const char *, int, int, pid_t);
 __END_DECLS
 

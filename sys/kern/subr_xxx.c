@@ -147,8 +147,7 @@ nullop(void *v)
 int
 nonet(void)
 {
-
-	u->u_error = EPROTONOSUPPORT;
+	u.u_error = EPROTONOSUPPORT;
 	return (EPROTONOSUPPORT);
 }
 #endif

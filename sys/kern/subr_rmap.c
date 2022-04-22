@@ -17,7 +17,8 @@
  *	@(#)subr_rmap.c	8.2 (Berkeley) 01/21/94
  */
 
-/* rmap revamp: Objective
+/*
+ * rmap revamp: Objective
  * Usage:
  * - Primarily for coremap & swapmap memory management
  * - Secondary as a generic.
@@ -39,13 +40,6 @@
 
 extern	struct	mapent _coremap[];
 
-/*
- * GOAL coremap (Revamped):
- * The end goal for a revamped coremap is to place all relevant kernel memory mappings under
- * the coremap array structure. This includes the current contents of vm_kern.h
- * (i.e. buffer_map, exec_map, kernel_map, kmem_map, mb_map, & phys_map).
- * This also includes updating rmap to make use of malloc flags & malloc types.
- */
 /*
  * Resource map handling routines.
  *

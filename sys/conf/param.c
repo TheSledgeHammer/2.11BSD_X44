@@ -135,10 +135,10 @@ struct map coremap[1] = {
 
 struct mapent	    _swapmap[SMAPSIZ];
 struct map swapmap[1] = {
-		.m_map 		  = _swapmap,
-		.m_limit 	  = &_swapmap[smapsiz],
-		.m_name 	  = "swapmap",
-		.m_type		  = M_SWAPMAP,
+		.m_map 		= _swapmap,
+		.m_limit 	= &_swapmap[smapsiz],
+		.m_name 	= "swapmap",
+		.m_type		= M_SWAPMAP,
 		.m_vmmap    = NULL,
 //		.m_ovlmap = NULL
 };

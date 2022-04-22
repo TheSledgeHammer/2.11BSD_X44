@@ -79,7 +79,6 @@ int 			 nfiles;		/* actual number of open files */
 static __inline void fd_used(int);
 static __inline void fd_unused(int);
 
-//int dup2();
 int dupit(int, struct file *, int);
 int fset(struct file *, int, int);
 int fgetown(struct file *, int *);
