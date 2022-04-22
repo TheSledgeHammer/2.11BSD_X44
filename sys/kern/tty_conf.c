@@ -17,11 +17,13 @@
 #include <sys/devsw.h>
 #include <sys/user.h>
 
+/*
 int	nodev();
 int	nulldev();
 
 int	ttyopen(),ttylclose(),ttread(),ttwrite(),nullioctl(),ttstart();
 int	ttymodem(), nullmodem(), ttyinput();
+*/
 
 /* #include "bk.h" */
 #if NBK > 0

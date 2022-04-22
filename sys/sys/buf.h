@@ -66,7 +66,7 @@ struct buf {
 	/* 2.11BSD Orig (Deprecated) */
 	//struct	buf 		*b_forw, *b_back;	/* hash chain (2 way street) */
 	//struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
-	struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
+	//struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
 
 	/* 2.11BSD New */
 	TAILQ_ENTRY(buf) 	b_actq;				/* Device driver queue when active. */

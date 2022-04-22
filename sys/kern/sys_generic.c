@@ -19,6 +19,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/poll.h>
+#include <sys/event.h>
 
 /*
  * Read system call.
@@ -41,7 +42,7 @@ read()
 	auio.uio_rw = UIO_READ;
 	auio.uio_procp = u.u_procp;
 
-	return (rwuio(&auio, &aiov));
+	return (rwuio(&auio, &aiov, SCARG(uap, fdes)));
 }
 
 int
@@ -67,7 +68,7 @@ readv()
 	if (u.u_error)
 		return (u.u_error);
 
-	return (rwuio(&auio, NULL));
+	return (rwuio(&auio, NULL, SCARG(uap, fdes)));
 }
 
 /*
@@ -90,7 +91,7 @@ write()
 	aiov.iov_base = SCARG(uap, cbuf);
 	aiov.iov_len = SCARG(uap, count);
 
-	return (rwuio(&auio, &aiov));
+	return (rwuio(&auio, &aiov, SCARG(uap, fdes)));
 }
 
 int
@@ -114,17 +115,15 @@ writev()
 	u.u_error = copyin((caddr_t)SCARG(uap, iovp), (caddr_t)aiov, SCARG(uap, iovcnt) * sizeof (struct iovec));
 	if (u.u_error)
 		return (u.u_error);
-	return (rwuio(&auio, NULL));
+	return (rwuio(&auio, NULL, SCARG(uap, fdes)));
 }
 
 static int
-rwuio(uio, aiov)
+rwuio(uio, aiov, fdes)
 	register struct uio *uio;
 	register struct iovec *aiov;
+	register int fdes;
 {
-	struct rwuio_args {
-		syscallarg(int)	fdes;
-	} *uap = (struct rwuio_args *)u.u_ap;
 	register struct file *fp;
 	register struct iovec *iov;
 	u_int i, count;
@@ -140,9 +139,9 @@ rwuio(uio, aiov)
 	/*
 	 * if tracing, save a copy of iovec
 	 */
-	if(aiov == NULL) {
+	if (aiov == NULL) {
 		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
-		bcopy((caddr_t)auio.uio_iov, (caddr_t)ktriov, iovlen);
+		bcopy((caddr_t) auio.uio_iov, (caddr_t) ktriov, iovlen);
 	} else {
 		if (KTRPOINT(u.u_procp, KTR_GENIO)) {
 			ktriov = aiov;
@@ -150,7 +149,7 @@ rwuio(uio, aiov)
 	}
 #endif
 
-	GETF(fp, SCARG(uap, fdes));
+	GETF(fp, fdes);
 	if ((fp->f_flag & (uio->uio_rw == UIO_READ ? FREAD : FWRITE)) == 0) {
 		u.u_error = EBADF;
 		return (EBADF);
@@ -158,13 +157,13 @@ rwuio(uio, aiov)
 	total = (off_t) 0;
 	uio->uio_resid = 0;
 	uio->uio_segflg = UIO_USERSPACE;
-	for	(iov = uio->uio_iov, i = 0; i < uio->uio_iovcnt; i++, iov++)
+	for (iov = uio->uio_iov, i = 0; i < uio->uio_iovcnt; i++, iov++)
 		total += iov->iov_len;
 
 	uio->uio_resid = total;
 	if (uio->uio_resid != total) /* check wraparound */
 		u.u_error = EINVAL;
-		return (EINVAL);
+	return (EINVAL);
 
 	count = uio->uio_resid;
 	if (setjmp(&u.u_qsave)) {
@@ -187,13 +186,13 @@ rwuio(uio, aiov)
 	if(aiov == NULL) {
 		if (ktriov != NULL) {
 			if (u.u_error == 0) {
-				ktrgenio(u.u_procp, SCARG(uap, fdes), UIO_READ, ktriov, count, u.u_error);
+				ktrgenio(u.u_procp, fdes, UIO_READ, ktriov, count, u.u_error);
 			}
 			FREE(ktriov, M_TEMP);
 		}
 	} else {
 		if (KTRPOINT(u.u_procp, KTR_GENIO) && u.u_error == 0) {
-			ktrgenio(u.u_procp, SCARG(uap, fdes), UIO_READ, ktriov, count, u.u_error);
+			ktrgenio(u.u_procp, fdes, UIO_READ, ktriov, count, u.u_error);
 		}
 	}
 #endif
@@ -604,4 +603,3 @@ selnotify(sip, knhint)
 	}
 	KNOTE(&sip->si_klist, knhint);
 }
-

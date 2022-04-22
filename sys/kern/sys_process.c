@@ -45,7 +45,6 @@ struct {
 	int	ip_data;
 } ipc;
 
-
 /*
  * sys-trace system call.
  */
@@ -57,31 +56,31 @@ ptrace()
 		syscallarg(pid_t) pid;
 		syscallarg(caddr_t) addr;
 		syscallarg(int) data;
-	} *uap = (struct ptrace_args *)u->u_ap;
+	} *uap = (struct ptrace_args *)u.u_ap;
 	register struct proc *p;
 
-	if (uap->req <= 0) {
-		u->u_procp->p_flag |= P_TRACED;
+	if (SCARG(uap, req) <= 0) {
+		u.u_procp->p_flag |= P_TRACED;
 		return (0);
 	}
-	p = pfind(uap->pid);
-	if (p == NULL || p->p_stat != SSTOP || p->p_ppid != u->u_procp->p_pid || !(p->p_flag & P_TRACED)) {
-		u->u_error = ESRCH;
+	p = pfind(SCARG(uap, pid));
+	if (p == NULL || p->p_stat != SSTOP || p->p_ppid != u.u_procp->p_pid || !(p->p_flag & P_TRACED)) {
+		u.u_error = ESRCH;
 		return (ESRCH);
 	}
 	while (ipc.ip_lock)
 		sleep((caddr_t) &ipc, PZERO);
 	ipc.ip_lock = p->p_pid;
-	ipc.ip_data = uap->data;
-	ipc.ip_addr = uap->addr;
-	ipc.ip_req = uap->req;
+	ipc.ip_data = SCARG(uap, data);
+	ipc.ip_addr = SCARG(uap, addr);
+	ipc.ip_req = SCARG(uap, req);
 	p->p_flag &= ~P_WAITED;
 	setrun(p);
 	while (ipc.ip_req > 0)
 		sleep((caddr_t) & ipc, PZERO);
-	u->u_r.r_val1 = (short) ipc.ip_data;
+	u.u_r.r_val1 = (short) ipc.ip_data;
 	if (ipc.ip_req < 0)
-		u->u_error = EIO;
+		u.u_error = EIO;
 		return (EIO);
 	ipc.ip_lock = 0;
 	wakeup((caddr_t) & ipc);
@@ -99,9 +98,9 @@ procxmt(p)
 	register int i, *poff, *paln;
 	extern char kstack[];
 
-	if (ipc.ip_lock != u->u_procp->p_pid)
+	if (ipc.ip_lock != u.u_procp->p_pid)
 		return (0);
-	u->u_procp->p_slptime = 0;
+	u.u_procp->p_slptime = 0;
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
 	switch (i) {
@@ -144,12 +143,12 @@ procxmt(p)
 					FALSE);
 
 			if (rv == KERN_SUCCESS) {
-				//estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RW);
+				//estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RW);
 				i = suiword((caddr_t) ipc.ip_addr, 0);
 				suiword((caddr_t) ipc.ip_addr, ipc.ip_data);
 				(void) vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
 						VM_PROT_READ | VM_PROT_EXECUTE, FALSE);
-				//estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RO);
+				//estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RO);
 			}
 		}
 		if (i < 0)
@@ -167,13 +166,13 @@ procxmt(p)
 		i = (int) ipc.ip_addr;
 		poff = (int*) PHYSOFF(kstack, i);
 		paln = (int*) PHYSALIGNED(i);
-		if (paln >= (int*) &u->u_fps && paln < (int*) &u->u_fps.u_fpregs[6])
+		if (paln >= (int*) &u.u_fps && paln < (int*) &u.u_fps.u_fpregs[6])
 			goto ok;
 		for (i = 0; i < NIPCREG; i++)
-			if (poff == &u->u_ar0[ipcreg[i]])
+			if (poff == &u.u_ar0[ipcreg[i]])
 				goto ok;
 
-		if (poff == &u->u_ar0[PS]) {
+		if (poff == &u.u_ar0[PS]) {
 			ipc.ip_data |= PSL_USERSET; /* user space */
 			ipc.ip_data &= ~PSL_USERCLR; /* priority 0 */
 			/* overlay was here */
@@ -192,16 +191,16 @@ procxmt(p)
 	/* set signal and continue */
 	/*  one version causes a trace-trap */
 	case PT_STEP:
-		u->u_ar0[PS] |= PSL_T;
+		u.u_ar0[PS] |= PSL_T;
 		break;
 		/* FALL THROUGH TO ... */
 
 	case PT_CONTINUE:
 		if ((int) ipc.ip_addr != 1)
-			u->u_ar0[PC] = (int) ipc.ip_addr;
+			u.u_ar0[PC] = (int) ipc.ip_addr;
 		if (ipc.ip_data > NSIG)
 			goto error;
-		u->u_procp->p_ptracesig = ipc.ip_data; /* see issignal */
+		u.u_procp->p_ptracesig = ipc.ip_data; /* see issignal */
 
 		wakeup((caddr_t) &ipc);
 		return (1);
@@ -209,16 +208,16 @@ procxmt(p)
 		/* force exit */
 	case PT_KILL:
 		wakeup((caddr_t) &ipc);
-		exit(u->u_procp->p_ptracesig);
+		exit(u.u_procp->p_ptracesig);
 		/*NOTREACHED*/
 
 	case PT_DETACH: /* stop tracing the child */
-		u->u_ar0 = (int*) ((short*) u->u_ar0 + 1);
+		u.u_ar0 = (int*) ((short*) u.u_ar0 + 1);
 		if ((unsigned) ipc.ip_data >= NSIG)
 			goto error;
 		if ((int) ipc.ip_addr != 1)
-			u->u_ar0[PC] = (int) ipc.ip_addr;
-		u->u_procp->p_ptracesig = ipc.ip_data; /* see issignal */
+			u.u_ar0[PC] = (int) ipc.ip_addr;
+		u.u_procp->p_ptracesig = ipc.ip_data; /* see issignal */
 		p->p_flag &= ~P_TRACED;
 		if (p->p_oppid != p->p_pptr->p_pid) {
 			register struct proc *pp = pfind(p->p_oppid);
