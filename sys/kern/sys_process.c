@@ -72,7 +72,7 @@ ptrace()
 		sleep((caddr_t) &ipc, PZERO);
 	ipc.ip_lock = p->p_pid;
 	ipc.ip_data = SCARG(uap, data);
-	ipc.ip_addr = SCARG(uap, addr);
+	ipc.ip_addr = (int *)SCARG(uap, addr);
 	ipc.ip_req = SCARG(uap, req);
 	p->p_flag &= ~P_WAITED;
 	setrun(p);
@@ -107,7 +107,6 @@ procxmt(p)
 
 	/* read user I */
 	case PT_READ_I:
-		useracc();
 		if (fuibyte((caddr_t) ipc.ip_addr) == -1
 				|| !useracc((caddr_t) ipc.ip_addr, 4, B_READ))
 			goto error;
