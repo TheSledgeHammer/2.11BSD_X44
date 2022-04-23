@@ -46,7 +46,6 @@
 #include <sys/types.h>
 #include <sys/malloc.h>
 #include <sys/mount.h>
-//#include <sys/syscallargs.h>
 #include <sys/ktrace.h>
 #include <sys/user.h>
 
@@ -119,11 +118,11 @@ sadata_upcall_alloc(int waitok)
 {
 	struct sadata_upcall *sau;
 
-	sau = &saupcall_pool;//(struct sadata_upcall *)malloc(sizeof(struct sadata_upcall), M_SA, waitok ? M_WAITOK : M_NOWAIT);
-	if (sau) {
-		sau->sau_arg = NULL;
-	}
-	return (sau);
+sau = &saupcall_pool; //(struct sadata_upcall *)malloc(sizeof(struct sadata_upcall), M_SA, waitok ? M_WAITOK : M_NOWAIT);
+if (sau) {
+	sau->sau_arg = NULL;
+}
+return (sau);
 }
 
 /*
@@ -186,13 +185,14 @@ sa_newsavp(struct sadata *sa)
 int
 sys_sa_register(struct lwp *l, void *v, register_t *retval)
 {
-	struct sys_sa_register_args /* {
+	struct sa_register_args {
 		syscallarg(sa_upcall_t) new;
 		syscallarg(sa_upcall_t *) old;
 		syscallarg(int) flags;
 		syscallarg(ssize_t) stackinfo_offset;
-	} */ *uap = v;
-	struct proc *p = l->l_proc;
+	} *uap = (struct sa_register_args *)u.u_ap;
+
+	struct proc *p = u.u_procp;
 	struct sadata *sa;
 	sa_upcall_t prev;
 	int error;
@@ -246,8 +246,7 @@ sa_release(struct proc *p)
 	KDASSERT(sa != NULL);
 	KASSERT(p->p_nlwps <= 1);
 
-	for (sast = SPLAY_MIN(sasttree, &sa->sa_stackstree); sast != NULL;
-	     sast = next) {
+	for (sast = SPLAY_MIN(sasttree, &sa->sa_stackstree); sast != NULL; sast = next) {
 		next = SPLAY_NEXT(sasttree, &sa->sa_stackstree, sast);
 		SPLAY_REMOVE(sasttree, &sa->sa_stackstree, sast);
 		pool_put(&sastack_pool, sast);
@@ -266,7 +265,6 @@ sa_release(struct proc *p)
 		l->l_savp = NULL;
 	}
 }
-
 
 static __inline int
 sa_stackused(struct sastack *sast, struct sadata *sa)
@@ -361,10 +359,10 @@ sast_compare(struct sastack *a, struct sastack *b)
 int
 sys_sa_stacks(struct lwp *l, void *v, register_t *retval)
 {
-	struct sys_sa_stacks_args /* {
+	struct sa_stacks_args {
 		syscallarg(int) num;
 		syscallarg(stack_t *) stacks;
-	} */ *uap = v;
+	} *uap = v;
 	struct sadata *sa = l->l_proc->p_sa;
 	struct sastack *sast, newsast;
 	int count, error, f, i;
@@ -532,9 +530,9 @@ sa_increaseconcurrency(struct lwp *l, int concurrency)
 int
 sys_sa_setconcurrency(struct lwp *l, void *v, register_t *retval)
 {
-	struct sys_sa_setconcurrency_args /* {
+	struct sys_sa_setconcurrency_args {
 		syscallarg(int) concurrency;
-	} */ *uap = v;
+	} *uap = v;
 	struct sadata *sa = l->l_proc->p_sa;
 #ifdef MULTIPROCESSOR
 	struct sadata_vp *vp = l->l_savp;

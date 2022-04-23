@@ -29,7 +29,7 @@
 #include <net/route.h>
 
 struct fileops socketops =
-    { soo_rw, soo_read, soo_write, soo_ioctl, soo_select, soo_poll, soo_close, soo_kqfilter };
+    { soo_rw, soo_read, soo_write, soo_ioctl, soo_poll, soo_close, soo_kqfilter };
 
 /*ARGSUSED*/
 int
@@ -75,7 +75,7 @@ soo_ioctl(fp, cmd, data, p)
 		return (0);
 
 	case SIOCATMARK:
-		*(int *)data = (so->so_state&SS_RCVATMARK) != 0;
+		*(int*) data = (so->so_state & SS_RCVATMARK) != 0;
 		return (0);
 	}
 	/*
@@ -83,56 +83,13 @@ soo_ioctl(fp, cmd, data, p)
 	 * interface and routing ioctls should have a
 	 * different entry since a socket's unnecessary
 	 */
-
+	///* TODO: Networking
 	if (IOCGROUP(cmd) == 'i')
 		return (u.u_error = ifioctl(so, cmd, data));
 	if (IOCGROUP(cmd) == 'r')
 		return (u.u_error = rtioctl(cmd, data));
+	//*/
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
-
-}
-
-int
-soo_select(fp, which, p)
-	struct file *fp;
-	int which;
-	struct proc *p;
-{
-	register struct socket *so = (struct socket *)fp->f_data;
-	register int s = splnet();
-
-	switch (which) {
-
-	case FREAD:
-		if (soreadable(so)) {
-			splx(s);
-			return (1);
-		}
-		sbselqueue(&so->so_rcv.sb_sel);
-		so->so_rcv.sb_flags |= SB_SEL;
-		break;
-
-	case FWRITE:
-		if (sowriteable(so)) {
-			splx(s);
-			return (1);
-		}
-		sowriteable(so);
-		sbselqueue(&so->so_snd.sb_sel);
-		so->so_snd.sb_flags |= SB_SEL;
-		break;
-
-	case 0:
-		if (so->so_oobmark || (so->so_state & SS_RCVATMARK)) {
-			splx(s);
-			return (1);
-		}
-		sbselqueue(&so->so_rcv.sb_sel);
-		so->so_rcv.sb_flags |= SB_SEL;
-		break;
-	}
-	splx(s);
-	return (0);
 }
 
 int

@@ -137,14 +137,14 @@ struct ifnet {
 		IF_ADJ(m); \
 	} \
 }
-#define	IF_DEQUEUE(ifq, m) { \
-	(m) = (ifq)->ifq_head; \
-	if (m) { \
-		if (((ifq)->ifq_head = (m)->m_act) == 0) \
-			(ifq)->ifq_tail = 0; \
-		(m)->m_act = 0; \
-		(ifq)->ifq_len--; \
-	} \
+#define	IF_DEQUEUE(ifq, m) { 						\
+	(m) = (ifq)->ifq_head; 							\
+	if (m) { 										\
+		if (((ifq)->ifq_head = (m)->m_act) == 0) 	\
+			(ifq)->ifq_tail = 0; 					\
+		(m)->m_act = 0; 							\
+		(ifq)->ifq_len--; 							\
+	} 												\
 }
 
 #ifdef pdp11
@@ -220,4 +220,6 @@ struct	ifqueue rawintrq;		/* raw packet input queue */
 struct	ifnet 	*ifnet;
 struct	ifaddr 	*ifa_ifwithaddr(), *ifa_ifwithnet();
 struct	ifaddr 	*ifa_ifwithdstaddr();
+
+int 	ifioctl(struct socket *, int, caddr_t);
 #endif /* _KERNEL */

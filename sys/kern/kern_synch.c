@@ -784,3 +784,43 @@ reschedule(p)
 		need_resched(p);
 	}
 }
+
+/*
+ * General yield call.  Puts the current process back on its run queue and
+ * performs a voluntary context switch.  Should only be called when the
+ * current process explicitly requests it (eg sched_yield(2) in compat code).
+ */
+void
+yield(void)
+{
+	struct proc *p;
+	int s;
+
+	p = curproc;
+	p->p_pri = p->p_usrpri;
+	p->p_stat = SRUN;
+	setrq(p);
+	p->p_stats->p_ru.ru_nvcsw++;
+	swtch();
+	splx(s);
+}
+
+/*
+ * General preemption call.  Puts the current process back on its run queue
+ * and performs an involuntary context switch.  If a process is supplied,
+ * we switch to that process.  Otherwise, we use the normal process selection
+ * criteria.
+ */
+void
+preempt(p)
+	struct proc *p;
+{
+	int r, s;
+
+	p->p_pri = p->p_usrpri;
+	p->p_stat = SRUN;
+	setrq(p);
+	p->p_stats->p_ru.ru_nvcsw++;
+	swtch();
+	splx(s);
+}

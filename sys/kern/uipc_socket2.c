@@ -243,7 +243,7 @@ sbselqueue(sb)
 	if ((p = sb->sb_sel) && ((caddr_t)mfkd(&p->p_wchan) == (caddr_t)&selwait))
 		sb->sb_flags |= SB_COLL;
 	else
-		sb->sb_sel = u->u_procp;
+		sb->sb_sel = u.u_procp;
 }
 
 /*
@@ -555,11 +555,11 @@ sbcompress(sb, m, n)
 			m = m_free(m);
 			continue;
 		}
-		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
-		    (n->m_off + n->m_len + m->m_len) <= MMAXOFF &&
-		    n->m_type == m->m_type) {
-			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len, 
-				(unsigned)m->m_len);
+		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF
+				&& (n->m_off + n->m_len + m->m_len) <= MMAXOFF
+				&& n->m_type == m->m_type) {
+			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len,
+					(unsigned) m->m_len);
 			n->m_len += m->m_len;
 			sb->sb_cc += m->m_len;
 			m = m_free(m);

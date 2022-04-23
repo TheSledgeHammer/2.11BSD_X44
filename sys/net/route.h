@@ -65,10 +65,10 @@ struct	rtstat {
 };
 
 #ifdef SUPERVISOR
-#define	RTFREE(rt) \
-	if ((rt)->rt_refcnt == 1) \
-		rtfree(rt); \
-	else \
+#define	RTFREE(rt) 				\
+	if ((rt)->rt_refcnt == 1) 	\
+		rtfree(rt); 			\
+	else 						\
 		(rt)->rt_refcnt--;
 
 #ifdef	GATEWAY
@@ -84,4 +84,8 @@ struct	rtstat {
 struct	mbuf *rthost[RTHASHSIZ];
 struct	mbuf *rtnet[RTHASHSIZ];
 struct	rtstat	rtstat;
+#endif
+
+#ifdef _KERNEL
+int		rtioctl(int, caddr_t);
 #endif

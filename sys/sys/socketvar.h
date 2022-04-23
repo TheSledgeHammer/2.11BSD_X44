@@ -55,9 +55,9 @@ struct socket {
 	u_short	so_error;		/* error affecting connection */
 	pid_t	so_pgrp;		/* pgrp for signals */
 	u_short	so_oobmark;		/* chars to oob mark */
-/*
- * Variables for socket buffering.
- */
+	/*
+	 * Variables for socket buffering.
+	 */
 	struct sockbuf {
 		u_short	sb_cc;			/* actual chars in buffer */
 		u_short	sb_hiwat;		/* max actual char count */
@@ -65,7 +65,7 @@ struct socket {
 		u_short	sb_mbmax;		/* max chars of mbufs to use */
 		u_short	sb_lowat;		/* low water mark (not used yet) */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
-		struct	proc *sb_sel;	/* process selecting read/write */
+		struct selinfo sb_sel;	/* process selecting read/write */
 		short	sb_timeo;		/* timeout (not used yet) */
 		short	sb_flags;		/* flags, see below */
 	} so_rcv, so_snd;

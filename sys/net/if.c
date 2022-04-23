@@ -237,10 +237,10 @@ ifunit(name)
 		if (*cp >= '0' && *cp <= '9')
 			break;
 	if (*cp == '\0' || cp == name + IFNAMSIZ)
-		return ((struct ifnet *)0);
+		return ((struct ifnet*) 0);
 	unit = *cp - '0';
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
-		if (bcmp(ifp->if_name, name, (unsigned)(cp - name)))
+		if (bcmp(ifp->if_name, name, (unsigned) (cp - name)))
 			continue;
 		if (unit == ifp->if_unit)
 			break;
@@ -297,8 +297,8 @@ ifioctl(so, cmd, data)
 			if_down(ifp);
 			splx(s);
 		}
-		ifp->if_flags = (ifp->if_flags & IFF_CANTCHANGE) |
-			(ifr->ifr_flags &~ IFF_CANTCHANGE);
+		ifp->if_flags = (ifp->if_flags & IFF_CANTCHANGE)
+				| (ifr->ifr_flags & ~ IFF_CANTCHANGE);
 		if (ifp->if_ioctl)
 			(void) (*ifp->if_ioctl)(ifp, cmd, data);
 		break;
@@ -312,8 +312,7 @@ ifioctl(so, cmd, data)
 	default:
 		if (so->so_proto == 0)
 			return (EOPNOTSUPP);
-		return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
-			cmd, data, ifp));
+		return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL, cmd, data, ifp));
 	}
 	return (0);
 }
@@ -337,26 +336,27 @@ ifconf(cmd, data)
 	int space = ifc->ifc_len, error = 0;
 
 	ifrp = ifc->ifc_req;
-	ep = ifr.ifr_name + sizeof (ifr.ifr_name) - 2;
-	for (; space > sizeof (ifr) && ifp; ifp = ifp->if_next) {
-		bcopy(ifp->if_name, ifr.ifr_name, sizeof (ifr.ifr_name) - 2);
+	ep = ifr.ifr_name + sizeof(ifr.ifr_name) - 2;
+	for (; space > sizeof(ifr) && ifp; ifp = ifp->if_next) {
+		bcopy(ifp->if_name, ifr.ifr_name, sizeof(ifr.ifr_name) - 2);
 		for (cp = ifr.ifr_name; cp < ep && *cp; cp++)
 			;
-		*cp++ = '0' + ifp->if_unit; *cp = '\0';
+		*cp++ = '0' + ifp->if_unit;
+		*cp = '\0';
 		if ((ifa = ifp->if_addrlist) == 0) {
-			bzero((caddr_t)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
-			error = copyout((caddr_t)&ifr, (caddr_t)ifrp, sizeof (ifr));
+			bzero((caddr_t) & ifr.ifr_addr, sizeof(ifr.ifr_addr));
+			error = copyout((caddr_t) & ifr, (caddr_t) ifrp, sizeof(ifr));
 			if (error)
 				break;
-			space -= sizeof (ifr), ifrp++;
-		} else 
-		    for ( ; space > sizeof (ifr) && ifa; ifa = ifa->ifa_next) {
-			ifr.ifr_addr = ifa->ifa_addr;
-			error = copyout((caddr_t)&ifr, (caddr_t)ifrp, sizeof (ifr));
-			if (error)
-				break;
-			space -= sizeof (ifr), ifrp++;
-		}
+			space -= sizeof(ifr), ifrp++;
+		} else
+			for (; space > sizeof(ifr) && ifa; ifa = ifa->ifa_next) {
+				ifr.ifr_addr = ifa->ifa_addr;
+				error = copyout((caddr_t) & ifr, (caddr_t) ifrp, sizeof(ifr));
+				if (error)
+					break;
+				space -= sizeof(ifr), ifrp++;
+			}
 	}
 	ifc->ifc_len -= space;
 	return (error);
