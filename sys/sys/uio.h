@@ -79,15 +79,15 @@ struct uio {
 #define UIO_SMALLIOV	8		/* 8 on stack, else rmalloc */
 #endif /* _KERNEL */
 
-
-
 __BEGIN_DECLS
-int		uiomove(void *, size_t, struct uio *);
+int	uiomove(void *, size_t, struct uio *);
+
 #ifndef	_KERNEL
 #include <sys/cdefs.h>
 
 ssize_t	readv(int, const struct iovec *, u_int);
 ssize_t	writev(int, const struct iovec *, u_int);
 #endif /* !_KERNEL */
+
 __END_DECLS
 #endif /* !_SYS_UIO_H_ */
