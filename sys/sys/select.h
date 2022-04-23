@@ -72,13 +72,13 @@ struct selinfo {
 };
 #define	SI_COLL		0x0001		/* collision occurred */
 
-#ifndef KERNEL
+#ifdef _KERNEL
 struct proc;
 
 void	selrecord(struct proc *, struct selinfo *);
 void	_selwakeup(struct selinfo *);
 void	selwakeup(struct proc *, long);
-int		selscan(fd_set *, fd_set *, int, int);
+int		selscan(fd_set *, fd_set *, int, int *);
 int		seltrue(dev_t, int );
 void 	selnotify(struct selinfo *, long);
 
@@ -86,5 +86,4 @@ void 	selnotify(struct selinfo *, long);
 #define selwakeup1(sel) \
 	(_selwakeup(sel))
 #endif /* !KERNEL */
-
 #endif /* !_SYS_SELECT_H_ */

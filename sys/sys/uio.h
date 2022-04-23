@@ -77,12 +77,17 @@ struct uio {
  */
 #define UIO_MAXIOV		1024	/* max 1K of iov's */
 #define UIO_SMALLIOV	8		/* 8 on stack, else rmalloc */
+#endif /* _KERNEL */
 
-#include <sys/cdefs.h>
+
+
 __BEGIN_DECLS
 int		uiomove(void *, size_t, struct uio *);
-ssize_t	readv(int, const struct iovec *, int);
-ssize_t	writev(int, const struct iovec *, int);
+#ifndef	_KERNEL
+#include <sys/cdefs.h>
+
+ssize_t	readv(int, const struct iovec *, u_int);
+ssize_t	writev(int, const struct iovec *, u_int);
+#endif /* !_KERNEL */
 __END_DECLS
-#endif /* _KERNEL */
 #endif /* !_SYS_UIO_H_ */

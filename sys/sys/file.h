@@ -135,4 +135,12 @@ extern int 				nfiles;		/* actual number of open files */
 #define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
 #define	DTYPE_KQUEUE	4	/* event queue */
 #endif
+
+#ifdef _KERNEL
+int                 fset(struct file *, int, int);
+int                 fgetown(struct file *, int *);
+int                 fsetown(long, struct file *, int);
+int                 fgetlk(struct file *, int);
+int                 fsetlk(struct file *, int, int);
+#endif /* _KERNEL */
 #endif	/* _SYS_FILE_H_ */

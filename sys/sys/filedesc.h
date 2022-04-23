@@ -101,7 +101,7 @@ struct filedesc0 {
 #ifdef _KERNEL
 /*
  * Kernel global variables and routines.
- */
+ */ 
 void				finit(struct filedesc *);
 static int			ufalloc(int, int *);
 struct file	        *falloc();
