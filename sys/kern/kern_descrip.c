@@ -80,13 +80,7 @@ static __inline void fd_used(int);
 static __inline void fd_unused(int);
 
 int dupit(int, struct file *, int);
-int fset(struct file *, int, int);
-int fgetown(struct file *, int *);
-int fsetown(long, struct file *, int);
-int fgetlk(struct file *, int);
-int fsetlk(struct file *, int, int);
 int fioctl(struct file *, int, caddr_t, struct proc *);
-
 
 /* init filedesc tables */
 void

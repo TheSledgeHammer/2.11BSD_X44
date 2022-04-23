@@ -8,6 +8,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/file.h>
 #include <sys/socketvar.h>
@@ -95,25 +96,38 @@ unpbind(path, len, vpp, unpsock)
 	 * kernel stack so we can modify it.  SMS
 	 */
 	register struct vnode *vp;
+	struct vattr vattr;
 	char pth[MLEN];
 	int error;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
 	bcopy(path, pth, len);
-	NDINIT(ndp, CREATE, FOLLOW, UIO_SYSSPACE, pth);
+	NDINIT(ndp, CREATE, FOLLOW, UIO_SYSSPACE, pth, u.u_procp);
 	ndp->ni_dirp[len - 2] = 0;
 	*vpp = 0;
-	vp = namei(ndp);
-	if (vp) {
-		vput(vp);
+	if (error = namei(ndp)) {
+	    return (error);
+	}
+	vp = ndp->ni_vp;
+	if (vp != NULL) {
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
+		vrele(vp);
 		return (EADDRINUSE);
 	}
-	if (u.u_error || !(vp = MAKEIMODE(S_IFSOCK | 0777, ndp))) {
-		error = u.u_error;
-		u.u_error = 0;
+	VATTR_NULL(&vattr);
+	vattr.va_type = VSOCK;
+	vattr.va_mode = ACCESSPERMS;
+	VOP_LEASE(nd.ni_dvp, u.u_procp, u.u_procp->p_ucred, LEASE_WRITE);
+	if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr)) {
+    	u.u_error = error;
 		return (error);
 	}
+	vp = ndp->ni_vp;
 	*vpp = vp;
 	vp->v_socket = unpsock;
 	vrele(vp);
@@ -134,16 +148,18 @@ unpconn(path, len, so2, vpp)
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	vap = vattr_null(vap);
-
+	VATTR_NULL(vap);
 	bcopy(path, pth, len);
 	if (!len)
 		return (EINVAL); /* paranoia */
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_SYSSPACE, pth);
+	NDINIT(ndp, LOOKUP, FOLLOW, UIO_SYSSPACE, pth, u.u_procp);
 	ndp->ni_dirp[len - 2] = 0;
-	vp = namei(ndp);
+	if (error = namei(ndp)) {
+	    return (error);
+	}
+	vp = ndp->ni_vp;
 	*vpp = vp;
-	if (!vp || access(vp, S_IWRITE)) {
+	if (!vp || vaccess(vp, S_IWRITE)) {
 		error = u.u_error;
 		u.u_error = 0;
 		return (error);

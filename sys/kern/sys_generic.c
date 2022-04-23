@@ -20,6 +20,12 @@
 #include <sys/systm.h>
 #include <sys/poll.h>
 #include <sys/event.h>
+#include <sys/ktrace.h>
+#include <sys/malloc.h>
+
+#include <machine/setjmp.h>
+	
+static int rwuio(struct uio *, struct iovec *, int);
 
 /*
  * Read system call.
@@ -50,11 +56,33 @@ readv()
 {
 	register struct readv_args {
 		syscallarg(int) fdes;
-		syscallarg(struct iovec *) iovp;
+		syscallarg(const struct iovec *) iovp;
 		syscallarg(unsigned) iovcnt;
 	} *uap = (struct readv_args *)u.u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
+	
+#ifdef KTRACE
+	struct iovec *ktriov;
+	u_int iovlen;
+	
+	if (aiov == NULL) {
+		ktriov = NULL;
+	}
+	
+	/*
+	 * if tracing, save a copy of iovec
+	 */
+    iovlen = SCARG(uap, iovcnt) * sizeof(struct iovec);
+    if (aiov == NULL) {
+		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
+		bcopy((caddr_t) auio.uio_iov, (caddr_t) ktriov, iovlen);
+	} else {
+		if (KTRPOINT(u.u_procp, KTR_GENIO)) {
+			ktriov = aiov;
+		}
+	}
+#endif
 
 	if (SCARG(uap, iovcnt) > sizeof(aiov)/sizeof(aiov[0])) {
 		u.u_error = EINVAL;
@@ -99,15 +127,37 @@ writev()
 {
 	register struct writev_args {
 		syscallarg(int)	fdes;
-		syscallarg(struct iovec *) iovp;
+		syscallarg(const struct iovec *) iovp;
 		syscallarg(unsigned) iovcnt;
 	} *uap = (struct writev_args *)u.u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
+	
+#ifdef KTRACE
+	struct iovec *ktriov;
+	u_int iovlen;
+	
+	if (aiov == NULL) {
+		ktriov = NULL;
+	}
+	
+	/*
+	 * if tracing, save a copy of iovec
+	 */
+    iovlen = SCARG(uap, iovcnt) * sizeof(struct iovec);
+    if (aiov == NULL) {
+		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
+		bcopy((caddr_t) auio.uio_iov, (caddr_t) ktriov, iovlen);
+	} else {
+		if (KTRPOINT(u.u_procp, KTR_GENIO)) {
+			ktriov = aiov;
+		}
+	}
+#endif
 
 	if (SCARG(uap, iovcnt) > sizeof(aiov)/sizeof(aiov[0])) {
 		u.u_error = EINVAL;
-		return;
+		return (EINVAL);
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = SCARG(uap, iovcnt);
@@ -128,24 +178,12 @@ rwuio(uio, aiov, fdes)
 	register struct iovec *iov;
 	u_int i, count;
 	off_t	total;
-
+	
 #ifdef KTRACE
-	struct iovec *ktriov;
-
-	if (aiov == NULL) {
+    struct iovec *ktriov;
+    
+    if (aiov == NULL) {
 		ktriov = NULL;
-	}
-
-	/*
-	 * if tracing, save a copy of iovec
-	 */
-	if (aiov == NULL) {
-		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
-		bcopy((caddr_t) auio.uio_iov, (caddr_t) ktriov, iovlen);
-	} else {
-		if (KTRPOINT(u.u_procp, KTR_GENIO)) {
-			ktriov = aiov;
-		}
 	}
 #endif
 
@@ -180,7 +218,7 @@ rwuio(uio, aiov, fdes)
 			u.u_error = 0;
 		}
 	} else {
-		u.u_error = (*fp->f_ops->fo_rw)(fp, uio);
+		u.u_error = (*fp->f_ops->fo_rw)(fp, uio, u.u_ucred);
 	}
 #ifdef KTRACE
 	if(aiov == NULL) {
@@ -272,7 +310,7 @@ ioctl()
 		break;
 
 	case FIOSETOWN:
-		u.u_error = fsetown(fp, *(int*) data);
+		u.u_error = fsetown((long)SCARG(uap, cmarg), fp, *(int*) data);
 		break;
 
 	case FIOGETOWN:
@@ -305,6 +343,8 @@ struct pselect_args {
 	syscallarg(sigset_t *) 			maskp;
 };
 
+static int select1(struct pselect_args *, int);
+
 /*
  * Select system call.
 */
@@ -325,7 +365,7 @@ select()
 	 * Fake the 6th parameter of pselect.  See the comment below about the
 	 * number of parameters!
 	*/
-	pselargs->maskp = 0;
+	SCARG(pselargs, maskp) = 0;
 	u.u_error = select1(pselargs, 0);
 	return (select1(pselargs, 0));
 }
@@ -461,7 +501,7 @@ done:
 	if (error == EWOULDBLOCK)
 		error = 0;
 #define	putbits(name, x) 														\
-	if (uap->name && 															\
+	if (SCARG(uap, name) &&														\
 		(error2 = copyout(&obits[x], SCARG(uap, name),(ni*sizeof(fd_mask))))) 	\
 			error = error2;
 
@@ -508,7 +548,7 @@ selscan(ibits, obits, nfd, retval)
 				fp = u.u_ofile[i + j];
 				if (fp == NULL)
 					return (EBADF);
-				if ((*fp->f_ops->fo_select)(fp, flag)) {
+				if ((*fp->f_ops->fo_poll)(fp, flag, u.u_procp)) {
 					FD_SET(i + j, &obits[which]);
 					n++;
 				}
@@ -585,7 +625,6 @@ _selwakeup(sip)
 	}
 	if (sip->si_flags & SI_COLL) {
 		sip->si_flags &= ~SI_COLL;
-		continue;
 	}
 	p = pfind(sip->si_pid);
 	sip->si_pid = 0;
