@@ -253,8 +253,7 @@ ioctl()
 	register struct file *fp;
 	long com;
 	register u_int size;
-	caddr_t memp;
-	char data[IOCPARM_MASK+1];
+	caddr_t memp, data;
 #define STK_PARAMS	128
 	char stkbuf[STK_PARAMS];
 
