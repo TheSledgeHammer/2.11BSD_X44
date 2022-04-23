@@ -42,7 +42,7 @@
  * Process signal actions and state, needed only within the process
  * (not necessarily resident).
  */
-struct	sigacts {			
+struct sigacts {
 	sig_t	 				ps_sigact[NSIG];	/* disposition of signals */
 	sigset_t 				ps_catchmask[NSIG];	/* signals to be blocked */
 	sigset_t 				ps_sigonstack;		/* signals to take on sigstack */

@@ -14,6 +14,7 @@
 #include <sys/signalvar.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
+#include <sys/ioccom.h>
 #include <sys/conf.h>
 #include <sys/uio.h>
 #include <sys/kernel.h>
@@ -252,7 +253,10 @@ ioctl()
 	register struct file *fp;
 	long com;
 	register u_int size;
+	caddr_t memp;
 	char data[IOCPARM_MASK+1];
+#define STK_PARAMS	128
+	char stkbuf[STK_PARAMS];
 
 	if ((fp = getf(SCARG(uap, fdes))) == NULL)
 		return (EBADF);
@@ -276,9 +280,16 @@ ioctl()
 	 * user's address space.
 	 */
 	size = IOCPARM_LEN(com);
-	if (size > sizeof(data)) {
+	if (size > IOCPARM_MAX) {
 		u.u_error = EFAULT | ENOTTY;
 		return (u.u_error);
+	}
+	memp = NULL;
+	if (size > sizeof (stkbuf)) {
+		memp = (caddr_t)malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
+		data = memp;
+	} else {
+		data = stkbuf;
 	}
 	if (com & IOC_IN) {
 		if (size) {
@@ -287,6 +298,9 @@ ioctl()
 			else
 				u.u_error = copyin(SCARG(uap, cmarg), (caddr_t) data, size);
 			if (u.u_error)
+				if(memp) {
+					free(memp, M_IOCTLOPS);
+				}
 				return (u.u_error);
 		} else
 			*(caddr_t*) data = SCARG(uap, cmarg);
@@ -328,7 +342,8 @@ ioctl()
 				u.u_error = copyout(data, SCARG(uap, cmarg), size);
 		break;
 	}
-
+	if (memp)
+		free(memp, M_IOCTLOPS);
 	return (u.u_error);
 }
 

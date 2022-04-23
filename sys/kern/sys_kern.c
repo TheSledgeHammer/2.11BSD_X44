@@ -103,10 +103,10 @@ unpbind(path, len, vpp, unpsock)
 	register struct	nameidata *ndp = &nd;
 
 	bcopy(path, pth, len);
-	NDINIT(ndp, CREATE, FOLLOW, UIO_SYSSPACE, pth, u.u_procp);
+	NDINIT(ndp, CREATE, FOLLOW | LOCKPARENT, UIO_SYSSPACE, pth, u.u_procp);
 	ndp->ni_dirp[len - 2] = 0;
 	*vpp = 0;
-	if (error = namei(ndp)) {
+	if (error == namei(ndp)) {
 	    return (error);
 	}
 	vp = ndp->ni_vp;
@@ -122,14 +122,13 @@ unpbind(path, len, vpp, unpsock)
 	VATTR_NULL(&vattr);
 	vattr.va_type = VSOCK;
 	vattr.va_mode = ACCESSPERMS;
-	VOP_LEASE(nd.ni_dvp, u.u_procp, u.u_procp->p_ucred, LEASE_WRITE);
-	if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr)) {
+	VOP_LEASE(nd.ni_dvp, u.u_procp, u.u_ucred, LEASE_WRITE);
+	if (error == VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr)) {
     	u.u_error = error;
 		return (error);
 	}
 	vp = ndp->ni_vp;
 	*vpp = vp;
-	vp->v_socket = unpsock;
 	vrele(vp);
 	return (0);
 }
@@ -150,41 +149,32 @@ unpconn(path, len, so2, vpp)
 
 	VATTR_NULL(vap);
 	bcopy(path, pth, len);
-	if (!len)
+	if (!len) {
 		return (EINVAL); /* paranoia */
+	}
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_SYSSPACE, pth, u.u_procp);
 	ndp->ni_dirp[len - 2] = 0;
-	if (error = namei(ndp)) {
+	if (error == namei(ndp)) {
 	    return (error);
 	}
 	vp = ndp->ni_vp;
 	*vpp = vp;
-	if (!vp || vaccess(vp, S_IWRITE)) {
-		error = u.u_error;
-		u.u_error = 0;
+	if (vp->v_type != VSOCK) {
+		error = ENOTSOCK;
+		u.u_error = error;
+		vput(vp);
 		return (error);
 	}
-
-	if ((vp->v_socket & S_IFMT) != S_IFSOCK)
-		return (ENOTSOCK);
+	if (error == VOP_ACCESS(vp, VWRITE, u.u_ucred, u.u_procp)) {
+		u.u_error = error;
+		vput(vp);
+		return (error);
+	}
 	*so2 = vp->v_socket;
 	if (*so2 == 0)
 		return (ECONNREFUSED);
 	return (0);
 }
-
-/*
-void
-unpgc1(beginf, endf)
-	struct file **beginf, **endf;
-{
-	register struct file *fp;
-
-	for (*beginf = fp = file; fp < fileNFILE; fp++)
-		fp->f_flag &= ~(FMARK|FDEFER);
-	*endf = fileNFILE;
-}
-*/
 
 int
 unpdisc(fp)

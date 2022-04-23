@@ -104,7 +104,7 @@ struct	proc {
     sigset_t 			p_sigmask;		/* Current signal mask. */
     sigset_t 			p_sigignore;	/* Signals being ignored */
     sigset_t 			p_sigcatch;		/* Signals being caught by user */
-    struct  sigcontext	p_sigctx;		/* Shared signal state */
+    struct  sigcontext	p_sigctx;		/* refer to p_sigacts (DEPRECATED: DO NOT USE!) */
 
     u_char				p_pri;			/* Process  priority, negative is high */
     u_char				p_cpu;			/* cpu usage for scheduling */

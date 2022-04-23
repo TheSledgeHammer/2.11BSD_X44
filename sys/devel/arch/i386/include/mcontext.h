@@ -72,19 +72,19 @@ typedef struct gregset gregset_t;
 struct fpregset {
 	union {
 		struct {
-			int 	__fp_state[27]; /* Environment and registers */
-			int 	__fp_status; 	/* Software status word */
-		} __fpchip_state;
+			int 	fp_state[27]; 	/* Environment and registers */
+			int 	fp_status; 		/* Software status word */
+		} mc_fpchip_state;
 		struct {
-			char 	__fp_emul[246];
-			char 	__fp_epad[2];
-		} __fp_emul_space;
+			char 	fp_emul[246];
+			char 	fp_epad[2];
+		} mc_fp_emul_space;
 		struct {
-			char 	__fp_xmm[512];
-		} __fp_xmm_state;
-		int 		__fp_fpregs[128];
-	} __fp_reg_set;
-	long 			__fp_wregs[33]; /* Weitek? */
+			char 	fp_xmm[512];
+		} mc_fp_xmm_state;
+		int 		fp_fpregs[128];
+	} mc_fp_reg_set;
+	long 			mc_fp_wregs[33]; /* Weitek? */
 };
 typedef struct fpregset fpregset_t;
 
@@ -102,12 +102,11 @@ typedef struct mcontext mcontext_t;
 
 #define _UC_UCONTEXT_ALIGN			(~0xf)
 
-#ifdef VM86
+
 #define PSL_VM 						0x00020000
 #define _UC_MACHINE_SP(uc) ((uc)->uc_mcontext.mc_gregs.mc_esp + \
 		((uc)->uc_mcontext.mc_gregs.mc_efl & PSL_VM ? 			\
 				((uc)->uc_mcontext.mc_gregs.mc_ss << 4) : 0))
-#endif /* VM86 */
 
 #ifndef _UC_MACHINE_SP
 #define _UC_MACHINE_SP(uc)			((uc)->uc_mcontext.mc_gregs.mc_esp)

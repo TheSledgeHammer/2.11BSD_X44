@@ -423,6 +423,7 @@ unp_bind(unp, nam)
 		return(error);
 	if (!vp)
 		panic("unp_bind");
+	vp->v_socket = unp->unp_socket;
 	unp->unp_vnode = vp;
 	unp->unp_addr = m_copy(nam, 0, M_COPYALL);
 	return (0);

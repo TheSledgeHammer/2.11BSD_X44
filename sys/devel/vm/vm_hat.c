@@ -26,6 +26,17 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Issues:
+ * - pmap_bootstrap_alloc can't be used post vm_page_startup/ vm_segment_startup
+ * - this means kmap & kentry allocation in vm_map_startup is not possible.
+ *
+ * - One solution is to initialize them in vm_page_startup.
+ * 	 - The concern is would this cause problems elsewhere? (where kmap & kentry are used)
+ *
+ * - Second solution is to have them in two stages, similar to the original mach vm for 4.4BSD
+ */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
