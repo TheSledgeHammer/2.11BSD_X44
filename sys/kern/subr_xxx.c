@@ -44,6 +44,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>
+#include <sys/conf.h>
 
 #include <machine/cpu.h>
 
