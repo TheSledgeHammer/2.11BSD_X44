@@ -101,6 +101,7 @@ struct swdevt {
 #define sw_freed		sw_flags	/* XXX compat */
 
 #ifdef _KERNEL
+
 extern struct swdevt swdevt[];
 
 /* dev types */
@@ -121,6 +122,7 @@ typedef int 		dev_type_modem_t(struct tty *, int);
 typedef int 		dev_type_rint_t(int, struct tty *);
 typedef int 		dev_type_rend_t(void);
 typedef int 		dev_type_meta_t(void);
+typedef int 		dev_type_reset_t(int);
 typedef int 		dev_type_kqfilter_t(dev_t, struct knote *);
 typedef int 		dev_type_discard_t(dev_t, off_t, off_t);
 typedef int 		dev_type_dump_t(dev_t);
@@ -150,6 +152,7 @@ typedef int 		dev_type_tty_poll_t(struct tty *, int, struct proc *);
 #define	dev_type_rint(n)        dev_type_rint_t n
 #define	dev_type_rend(n)        dev_type_rend_t n
 #define	dev_type_meta(n)        dev_type_meta_t n
+#define dev_type_reset(n)       dev_type_reset_t n
 #define	dev_type_kqfilter(n)    dev_type_kqfilter_t n
 #define dev_type_discard(n)	    dev_type_discard_t n
 #define	dev_type_dump(n)	    dev_type_dump_t n
@@ -165,7 +168,10 @@ typedef int 		dev_type_tty_poll_t(struct tty *, int, struct proc *);
 /* bdevsw-specific types */
 dev_type_open(bdev_open);
 dev_type_close(bdev_close);
+dev_type_ioctl(bdev_ioctl);
 dev_type_strategy(bdev_strategy);
+//dev_type_discard(bdev_discard);
+dev_type_root(bdev_root);
 dev_type_dump(bdev_dump);
 dev_type_size(bdev_size);
 
@@ -174,17 +180,27 @@ dev_type_open(cdev_open);
 dev_type_close(cdev_close);
 dev_type_read(cdev_read);
 dev_type_write(cdev_write);
+dev_type_ioctl(cdev_ioctl);
 dev_type_stop(cdev_stop);
 dev_type_tty(cdev_tty);
 dev_type_select(cdev_select);
 dev_type_poll(cdev_poll);
 dev_type_mmap(cdev_mmap);
+dev_type_reset(cdev_reset);
 dev_type_strategy(cdev_strategy);
+//dev_type_discard(cdev_discard);
 dev_type_kqfilter(cdev_kqfilter);
 
 /* linesw-specific types */
+dev_type_tty_open(line_open);
+dev_type_tty_close(line_close);
+dev_type_tty_read(line_read);
+dev_type_tty_write(line_write);
+dev_type_tty_ioctl(line_ioctl);
 dev_type_rint(line_rint);
-dev_type_start(line_start);
+dev_type_rend(line_rend);
+dev_type_meta(line_meta);
+//dev_type_start(line_start);
 dev_type_modem(line_modem);
 
 /* no dev routines */
