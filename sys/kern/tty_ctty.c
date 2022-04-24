@@ -77,7 +77,7 @@ ctty_init(devsw)
 }
 
 /*ARGSUSED*/
-static int
+int
 cttyopen(dev, flag, mode, p)
 	dev_t dev;
 	int flag, mode;
@@ -107,7 +107,7 @@ cttyopen(dev, flag, mode, p)
 }
 
 /*ARGSUSED*/
-static int
+int
 cttyread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -125,7 +125,7 @@ cttyread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-static int
+int
 cttywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -143,7 +143,7 @@ cttywrite(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-static int
+int
 cttyioctl(dev, cmd, addr, flag, p)
 	dev_t dev;
 	u_long cmd;
@@ -171,7 +171,7 @@ cttyioctl(dev, cmd, addr, flag, p)
 	return (VOP_IOCTL(ttyvp, cmd, addr, flag, NOCRED, p));
 }
 
-static int
+int
 cttyselect(dev, flag, p)
 	dev_t dev;
 	int flag;
@@ -185,7 +185,7 @@ cttyselect(dev, flag, p)
 }
 
 /*ARGSUSED*/
-static int
+int
 cttypoll(dev, events, p)
 	dev_t dev;
 	int events;
