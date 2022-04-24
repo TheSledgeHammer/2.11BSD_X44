@@ -90,12 +90,10 @@ soo_ioctl(fp, cmd, data, p)
 	 * interface and routing ioctls should have a
 	 * different entry since a socket's unnecessary
 	 */
-	///* TODO: Networking
 	if (IOCGROUP(cmd) == 'i')
 		return (u.u_error = ifioctl(so, cmd, data));
 	if (IOCGROUP(cmd) == 'r')
 		return (u.u_error = rtioctl(cmd, data));
-	//*/
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0, p));
 }
 

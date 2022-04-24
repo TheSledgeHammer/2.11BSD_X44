@@ -101,15 +101,6 @@ const struct cdevsw pts_cdevsw = {
 		.d_type = D_TTY
 };
 
-/* initialize pty/pts structures */
-void
-pty_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);	/* ptc */
-	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &pts_cdevsw, NULL);	/* pts */
-}
-
 /*ARGSUSED*/
 int
 ptsopen(dev, flag)
@@ -128,7 +119,7 @@ ptsopen(dev, flag)
 		ttychars(tp);		/* Set up default chars */
 		tp->t_ispeed = tp->t_ospeed = EXTB;
 		tp->t_flags = 0;	/* No features (nor raw mode) */
-	} else if ((tp->t_state&TS_XCLUDE) && u->u_uid != 0)
+	} else if ((tp->t_state&TS_XCLUDE) && u.u_uid != 0)
 		return (EBUSY);
 	if (tp->t_oproc)			/* Ctrlr still around. */
 		tp->t_state |= TS_CARR_ON;
@@ -167,12 +158,12 @@ ptsread(dev, uio, flag)
 
 again:
 	if (pti->pt_flags & PF_REMOTE) {
-		while (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
-			if ((u->u_procp->p_sigignore & sigmask(SIGTTIN)) ||
-			    (u->u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-			    (u->u_procp->p_flag&P_SVFORK))
+		while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
+			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
+			    (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
+			    (u.u_procp->p_flag&P_SVFORK))
 				return (EIO);
-			gsignal(u->u_procp->p_pgrp, SIGTTIN);
+			gsignal(u.u_procp->p_pgrp, SIGTTIN);
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
 		if (tp->t_canq.c_cc == 0) {
@@ -434,10 +425,10 @@ ptcselect(dev, rw)
 		    (((pti->pt_flags&PF_PKT) && pti->pt_send) ||
 		     ((pti->pt_flags&PF_UCNTL) && pti->pt_ucntl)))
 			return (1);
-		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
+		if ((p = pti->pt_selr) && (p->p_wchan == (caddr_t)&selwait))
 			pti->pt_flags |= PF_RCOLL;
 		else
-			pti->pt_selr = u->u_procp;
+			pti->pt_selr = u.u_procp;
 		break;
 
 
@@ -454,10 +445,10 @@ ptcselect(dev, rw)
 				    return (1);
 			}
 		}
-		if ((p = pti->pt_selw) && p->p_wchan == (caddr_t)&selwait)
+		if ((p = pti->pt_selw) && (p->p_wchan == (caddr_t)&selwait))
 			pti->pt_flags |= PF_WCOLL;
 		else
-			pti->pt_selw = u->u_procp;
+			pti->pt_selw = u.u_procp;
 		break;
 
 	}

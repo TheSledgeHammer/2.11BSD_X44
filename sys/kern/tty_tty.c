@@ -24,11 +24,11 @@ syopen(dev, flag, type)
 	dev_t dev;
 	int flag, type;
 {
-	if (u->u_ttyp == NULL) {
-		u->u_error = ENXIO;
+	if (u.u_ttyp == NULL) {
+		u.u_error = ENXIO;
 		return (ENXIO);
 	}
-	return (cttyopen(u->u_ttyd, flag, type, u->u_procp));
+	return (cttyopen(u.u_ttyd, flag, type, u.u_procp));
 }
 
 /*ARGSUSED*/
@@ -38,11 +38,11 @@ syread(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	if (u->u_ttyp == NULL) {
-		u->u_error = ENXIO;
+	if (u.u_ttyp == NULL) {
+		u.u_error = ENXIO;
 		return (ENXIO);
 	}
-	return (cttyread(u->u_ttyd, uio, flag));
+	return (cttyread(u.u_ttyd, uio, flag));
 }
 
 /*ARGSUSED*/
@@ -52,32 +52,32 @@ sywrite(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	if (u->u_ttyp == NULL) {
-		u->u_error = ENXIO;
+	if (u.u_ttyp == NULL) {
+		u.u_error = ENXIO;
 		return (ENXIO);
 	}
-	return (cttywrite(u->u_ttyd, uio, flag));
+	return (cttywrite(u.u_ttyd, uio, flag));
 }
 
 /*ARGSUSED*/
 int
 syioctl(dev, cmd, addr, flag)
 	dev_t dev;
-	u_int cmd;
+	u_long cmd;
 	caddr_t addr;
 	int flag;
 {
 	if (cmd == TIOCNOTTY) {
-		u->u_ttyp = 0;
-		u->u_ttyd = 0;
-		u->u_procp->p_pgrp = 0;
+		u.u_ttyp = 0;
+		u.u_ttyd = 0;
+		u.u_procp->p_pgrp = 0;
 		return (0);
 	}
-	if (u->u_ttyp == NULL) {
-		u->u_error = ENXIO;
+	if (u.u_ttyp == NULL) {
+		u.u_error = ENXIO;
 		return (ENXIO);
 	}
-	return (cttyioctl(u->u_ttyd, cmd, addr, flag, u->u_procp));
+	return (cttyioctl(u.u_ttyd, cmd, addr, flag, u.u_procp));
 }
 
 /*ARGSUSED*/
@@ -86,11 +86,11 @@ syselect(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	if (u->u_ttyp == NULL) {
-		u->u_error = ENXIO;
+	if (u.u_ttyp == NULL) {
+		u.u_error = ENXIO;
 		return (ENXIO);
 	}
-	return (cttyselect(u->u_ttyd, flag, u->u_procp));
+	return (cttyselect(u.u_ttyd, flag, u.u_procp));
 }
 
 int
@@ -98,11 +98,11 @@ sypoll(dev, events)
 	dev_t dev;
 	int events;
 {
-	if (u->u_ttyp == NULL) {
-		u->u_error = ENXIO;
+	if (u.u_ttyp == NULL) {
+		u.u_error = ENXIO;
 		return (ENXIO);
 	}
-	return (cttypoll(u->u_ttyd, events, u->u_procp));
+	return (cttypoll(u.u_ttyd, events, u.u_procp));
 }
 
 int
@@ -110,8 +110,8 @@ sykqfilter(dev, kn)
 	dev_t dev;
 	struct knote *kn;
 {
-	if (u->u_ttyp == NULL) {
-		u->u_error = ENXIO;
+	if (u.u_ttyp == NULL) {
+		u.u_error = ENXIO;
 		return (ENXIO);
 	}
 	return (cttykqfilter(dev, kn));

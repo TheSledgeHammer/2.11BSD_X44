@@ -86,7 +86,22 @@ kernel_init(devsw)
 {
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &log_cdevsw, NULL);			        /* log interfaces */
 	DEVSWIO_CONFIG_INIT(devsw, 1, &swap_bdevsw, &swap_cdevsw, NULL);		/* swap interfaces */
-	tty_init(devsw);			                                       /* tty interfaces */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ttydisc);					/* 0- TTYDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &nttydisc);					/* 1- NTTYDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);					/* 2- OTTYDISC */
+#if NBK > 0
+	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);					/* 3- NETLDISC */
+#endif
+#if NTB > 0
+	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
+#endif
+#if NSL > 0
+	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
+#endif
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);				/* ctty controlling terminal */
+	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);				/* ptc pseudo-tty slave, pseudo-tty master  */
+	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &pts_cdevsw, NULL);				/* pts pseudo-tty slave, pseudo-tty master  */
 }
 
 /* Add device driver configuration */
@@ -161,16 +176,6 @@ network_init(devsw)
 	struct devswtable *devsw;
 {
 	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
-}
-
-/* add tty global driver configuration */
-void
-tty_init(devsw)
-	struct devswtable *devsw;
-{
-	ctty_init(devsw); 														/* tty_ctty.c: controlling terminal */
-	pty_init(devsw);														/* tty_pty.c: pseudo-tty slave, pseudo-tty master */
-	tty_conf_init(devsw);													/* tty_conf.c: pseudo-tty ptm device */
 }
 
 /* Add usb driver configuration */

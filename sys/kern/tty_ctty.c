@@ -68,14 +68,6 @@ const struct cdevsw ctty_cdevsw = {
 		.d_type = D_TTY
 };
 
-/* initialize ctty structures */
-void
-ctty_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);
-}
-
 /*ARGSUSED*/
 int
 cttyopen(dev, flag, mode, p)

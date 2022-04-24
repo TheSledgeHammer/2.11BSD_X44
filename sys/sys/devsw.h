@@ -152,9 +152,6 @@ extern void conf_init(struct devswtable *);
 
 /* kernel */
 extern void kernel_init(struct devswtable *);
-extern void	log_init(struct devswtable *);
-extern void	swap_init(struct devswtable *);
-extern void	tty_init(struct devswtable *);
 
 /* devices */
 extern void device_init(struct devswtable *);

@@ -22,6 +22,9 @@ int cfreecount = 0;
 static int 	ctotcount;
 char		cwaiting;
 
+static void cblock_alloc_cblocks(int);
+static void cblock_free_cblocks(int);
+
 /*
  * Initialize clist by freeing all character blocks, then count
  * number of character devices. (Once-only routine)
@@ -202,7 +205,7 @@ q_to_b(q, cp, cc)
 {
 	register struct cblock *bp;
 	register nc;
-	int s;
+	int int s;
 	char *acp;
 
 	if (cc <= 0)
@@ -314,11 +317,11 @@ ndflush(q, cc)
 	if (q->c_cc <= 0)
 		goto out;
 	while (cc > 0 && q->c_cc) {
-		bp = (struct cblock *)((int)q->c_cf & ~CROUND);
-		if ((int)bp == (((int)q->c_cl-1) & ~CROUND)) {
+		bp = (struct cblock*) ((int) q->c_cf & ~CROUND);
+		if ((int) bp == (((int) q->c_cl - 1) & ~CROUND)) {
 			end = q->c_cl;
 		} else {
-			end = (char *)((int)bp + sizeof (struct cblock));
+			end = (char*) ((int) bp + sizeof(struct cblock));
 		}
 		rem = end - q->c_cf;
 		if (cc >= rem) {
@@ -362,7 +365,7 @@ putc(c, p)
 {
 	register struct cblock *bp;
 	register char *cp;
-	register s;
+	register int s;
 
 	s = spltty();
 	if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
@@ -405,7 +408,7 @@ b_to_q(cp, cc, q)
 {
 	register char *cq;
 	register struct cblock *bp;
-	register s, nc;
+	register int s, nc;
 	int acc;
 
 	if (cc <= 0)
@@ -556,7 +559,7 @@ catq(from, to)
 	register struct clist *from, *to;
 {
 	char bbuf[CBSIZE*4];
-	register c;
+	register int c;
 	int s;
 
 	s = spltty();
@@ -605,11 +608,11 @@ getw(p)
 #else
 	c = (((u_char *)p->c_cf)[1] << 8) | ((u_char *)p->c_cf)[0];
 #endif
-	p->c_cf += sizeof (word_t);
-	p->c_cc -= sizeof (word_t);
+	p->c_cf += sizeof(word_t);
+	p->c_cc -= sizeof(word_t);
 	if (p->c_cc <= 0) {
-		bp = (struct cblock *)(p->c_cf-1);
-		bp = (struct cblock *)((int)bp & ~CROUND);
+		bp = (struct cblock*) (p->c_cf - 1);
+		bp = (struct cblock*) ((int) bp & ~CROUND);
 		p->c_cf = NULL;
 		p->c_cl = NULL;
 		bp->c_next = cfreelist;
@@ -619,8 +622,8 @@ getw(p)
 			wakeup(&cwaiting);
 			cwaiting = 0;
 		}
-	} else if (((int)p->c_cf & CROUND) == 0) {
-		bp = (struct cblock *)(p->c_cf);
+	} else if (((int) p->c_cf & CROUND) == 0) {
+		bp = (struct cblock*) (p->c_cf);
 		bp--;
 		p->c_cf = bp->c_next->c_info;
 		bp->c_next = cfreelist;
@@ -640,7 +643,7 @@ putw(c, p)
 	register struct clist *p;
 	word_t c;
 {
-	register s;
+	register int s;
 	register struct cblock *bp;
 	register char *cp;
 
@@ -658,7 +661,7 @@ putw(c, p)
 		(void) putc(c, p);
 #endif
 	} else {
-		if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
+		if ((cp = p->c_cl) == NULL || p->c_cc < 0) {
 			if ((bp = cfreelist) == NULL) {
 				splx(s);
 				return (-1);
@@ -667,8 +670,8 @@ putw(c, p)
 			cfreecount -= CBSIZE;
 			bp->c_next = NULL;
 			p->c_cf = cp = bp->c_info;
-		} else if (((int)cp & CROUND) == 0) {
-			bp = (struct cblock *)cp - 1;
+		} else if (((int) cp & CROUND) == 0) {
+			bp = (struct cblock*) cp - 1;
 			if ((bp->c_next = cfreelist) == NULL) {
 				splx(s);
 				return (-1);
@@ -691,4 +694,4 @@ putw(c, p)
 	splx(s);
 	return (0);
 }
-#endif unneeded
+#endif /* unneeded */

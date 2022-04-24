@@ -97,8 +97,8 @@ struct tty {
 
 	int						(*t_hwiflow)(struct tty *, int);				/* Set hardware flow control. */
 
-	struct	selinfo 		t_srsel;		/* Tty read/oob select. */
-	struct	selinfo 		t_swsel;		/* Tty write select. */
+	struct	selinfo 		t_srsel;										/* Tty read/oob select. */
+	struct	selinfo 		t_swsel;										/* Tty write select. */
 
 /* be careful of tchars & co. */
 #define	t_erase				t_chars.tc_erase
@@ -274,7 +274,7 @@ int	cttyselect (dev_t, int, struct proc *);
 int	syopen (dev_t, int, int);
 int	syread (dev_t, struct uio *, int);
 int	sywrite (dev_t, struct uio *, int);
-int 	syioctl (dev_t, u_long, caddr_t, int);
+int syioctl (dev_t, u_long, caddr_t, int);
 int	sypoll (dev_t, int);
 int	sykqfilter (dev_t, struct knote *);
 int	syselect (dev_t, int);

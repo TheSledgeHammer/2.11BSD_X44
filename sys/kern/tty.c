@@ -361,7 +361,7 @@ _ttioctl(tp, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
-	if (p == pfind(u->u_procp->p_pid)) {
+	if (p == pfind(u.u_procp->p_pid)) {
 		return (ttioctl(tp, cmd, data, flag));
 	}
 	return (-1);
@@ -398,11 +398,11 @@ ttioctl(tp, com, data, flag)
 	case TIOCFLUSH:
 	case TIOCSETC:
 	case TIOCSLTC:
-		while (isbackground(curproc, tp) && u->u_procp->p_pgrp->pg_jobc
-				&& (u->u_procp->p_flag & P_PPWAIT) == 0
-				&& (u->u_procp->p_sigignore & sigmask(SIGTTOU)) == 0
-				&& (u->u_procp->p_sigmask & sigmask(SIGTTOU)) == 0) {
-			pgsignal(u->u_procp->p_pgrp, SIGTTOU, 1);
+		while (isbackground(curproc, tp) && u.u_procp->p_pgrp->pg_jobc
+				&& (u.u_procp->p_flag & P_PPWAIT) == 0
+				&& (u.u_procp->p_sigignore & sigmask(SIGTTOU)) == 0
+				&& (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0) {
+			pgsignal(u.u_procp->p_pgrp, SIGTTOU, 1);
 			s = spltty();
 			TTY_LOCK(tp);
 			error = ttysleep(tp, &lbolt, TTOPRI | PCATCH, ttybg, 0);
@@ -418,11 +418,11 @@ ttioctl(tp, com, data, flag)
 	case TIOCLSET:
 	case TIOCSTI:
 	case TIOCSWINSZ:
-		while (tp->t_line == NTTYDISC && u->u_procp->p_pgrp != tp->t_pgrp
-				&& tp == u->u_ttyp && (u->u_procp->p_flag & P_SVFORK) == 0
-				&& !(u->u_procp->p_sigignore & sigmask(SIGTTOU))
-				&& !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
-			gsignal(u->u_procp->p_pgrp, SIGTTOU);
+		while (tp->t_line == NTTYDISC && u.u_procp->p_pgrp != tp->t_pgrp
+				&& tp == u.u_ttyp && (u.u_procp->p_flag & P_SVFORK) == 0
+				&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
+				&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
+			gsignal(u.u_procp->p_pgrp, SIGTTOU);
 			sleep((caddr_t) & lbolt, TTOPRI);
 		}
 		break;
@@ -483,10 +483,10 @@ ttioctl(tp, com, data, flag)
 					&& ISSET(constty->t_state, TS_CARR_ON | TS_ISOPEN)
 							== (TS_CARR_ON | TS_ISOPEN))
 				return (EBUSY);
-			NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_SYSSPACE, "/dev/console", u->u_procp);
+			NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_SYSSPACE, "/dev/console", u.u_procp);
 			if ((error = namei(&nd)) != 0)
 				return error;
-			error = VOP_ACCESS(nd.ni_vp, VREAD, u->u_ucred, u->u_procp);
+			error = VOP_ACCESS(nd.ni_vp, VREAD, u.u_ucred, u.u_procp);
 			vput(nd.ni_vp);
 			if (error)
 				return error;
@@ -532,19 +532,19 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	case FIOGETOWN:
-		if (!isctty(u->u_procp, tp))
+		if (!isctty(u.u_procp, tp))
 			return (ENOTTY);
 		*(int*) data = tp->t_pgrp ? -tp->t_pgrp->pg_id : 0;
 		break;
 
 	case TIOCGPGRP: 		/* get pgrp of tty */
-		if (!isctty(u->u_procp, tp))
+		if (!isctty(u.u_procp, tp))
 			return (ENOTTY);
 		*(int*) data = tp->t_pgrp ? tp->t_pgrp->pg_id : NO_PID;
 		break;
 
 	case TIOCGSID:			/* get sid of tty */
-		if (!isctty(u->u_procp, tp))
+		if (!isctty(u.u_procp, tp))
 			return (ENOTTY);
 		*(int *)data = tp->t_session->s_leader->p_pid;
 		break;
@@ -713,11 +713,11 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	case TIOCSTI: 			/* simulate terminal input */
-		if (u->u_uid && (flag & FREAD) == 0)
+		if (u.u_uid && (flag & FREAD) == 0)
 			return (EPERM);
-		if (u->u_uid && u->u_ttyp != tp)
+		if (u.u_uid && u.u_ttyp != tp)
 			return (EACCES);
-		if(u->u_uid && !isctty(u->u_procp, tp)) {
+		if(u.u_uid && !isctty(u.u_procp, tp)) {
 			return (EACCES);
 		}
 		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
@@ -736,21 +736,21 @@ ttioctl(tp, com, data, flag)
 
 	case TIOCSCTTY: 		/* become controlling tty */
 		/* Session ctty vnode pointer set in vnode layer. */
-		if (!SESS_LEADER(u->u_procp)
-				|| ((u->u_procp->p_session->s_ttyvp || tp->t_session)
-						&& (tp->t_session != u->u_procp->p_session)))
+		if (!SESS_LEADER(u.u_procp)
+				|| ((u.u_procp->p_session->s_ttyvp || tp->t_session)
+						&& (tp->t_session != u.u_procp->p_session)))
 			return (EPERM);
-		tp->t_session = u->u_procp->p_session;
-		tp->t_pgrp = u->u_procp->p_pgrp;
-		u->u_procp->p_session->s_ttyp = tp;
-		u->u_procp->p_flag |= P_CONTROLT;
+		tp->t_session = u.u_procp->p_session;
+		tp->t_pgrp = u.u_procp->p_pgrp;
+		u.u_procp->p_session->s_ttyp = tp;
+		u.u_procp->p_flag |= P_CONTROLT;
 		break;
 
 	case FIOSETOWN: {
 		pid_t pgid = *(int*) data;
 		struct pgrp *pgrp;
 
-		if (!isctty(u->u_procp, tp))
+		if (!isctty(u.u_procp, tp))
 			return (ENOTTY);
 
 		if (pgid < 0)
@@ -764,7 +764,7 @@ ttioctl(tp, com, data, flag)
 
 		if (pgrp == NULL)
 			return (EINVAL);
-		else if (pgrp->pg_session != u->u_procp->p_session)
+		else if (pgrp->pg_session != u.u_procp->p_session)
 			return (EPERM);
 		tp->t_pgrp = pgrp;
 		break;
@@ -773,15 +773,15 @@ ttioctl(tp, com, data, flag)
 	case TIOCSPGRP: { 		/* set pgrp of tty */
 		struct pgrp *pgrp = pgfind(*(int *)data);
 
-		if (!isctty(u->u_procp, tp))
+		if (!isctty(u.u_procp, tp))
 			return (ENOTTY);
 		else if (pgrp == NULL)
 			return (EINVAL);
-		else if (pgrp->pg_session != u->u_procp->p_session)
+		else if (pgrp->pg_session != u.u_procp->p_session)
 			return (EPERM);
-		else if (u->u_procp && u->u_procp->p_pgrp == pgrp && u->u_procp->p_uid != u->u_uid && u->u_uid && !inferior(p))
+		else if (u.u_procp && u.u_procp->p_pgrp == pgrp && u.u_procp->p_uid != u.u_uid && u.u_uid && !inferior(p))
 			return (EPERM);
-		else if (u->u_uid && (flag & FREAD) == 0)
+		else if (u.u_uid && (flag & FREAD) == 0)
 			return (EPERM);
 		tp->t_pgrp = pgrp;
 		break;
@@ -1033,7 +1033,7 @@ ttyselect(tp,rw)
 		if (tp->t_rsel && (tp->t_rsel->p_wchan == (caddr_t) &selwait))
 			tp->t_state |= TS_RCOLL;
 		else
-			tp->t_rsel = u->u_procp;
+			tp->t_rsel = u.u_procp;
 		break;
 
 	case FWRITE:
@@ -1042,7 +1042,7 @@ ttyselect(tp,rw)
 		if (tp->t_wsel && (tp->t_wsel->p_wchan == (caddr_t) &selwait))
 			tp->t_state |= TS_WCOLL;
 		else
-			tp->t_wsel = u->u_procp;
+			tp->t_wsel = u.u_procp;
 		break;
 	}
 	splx(s);
@@ -1065,11 +1065,11 @@ ttyopen(dev, tp)
 {
 	register struct proc *pp;
 
-	pp = u->u_procp;
+	pp = u.u_procp;
 	tp->t_dev = dev;
 	if (pp->p_pgrp == 0) {
-		u->u_ttyp = tp;
-		u->u_ttyd = dev;
+		u.u_ttyp = tp;
+		u.u_ttyd = dev;
 		if (tp->t_pgrp == 0)
 			tp->t_pgrp = pp->p_pid;
 		pp->p_pgrp = tp->t_pgrp;
@@ -1605,14 +1605,14 @@ loop:
 	/*
 	 * Hang process if it's in the background.
 	 */
-	if (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
-		if ((u->u_procp->p_sigignore & sigmask(SIGTTIN))
-				|| (u->u_procp->p_sigmask & sigmask(SIGTTIN))
-				|| (u->u_procp->p_flag & P_SVFORK))
+	if (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
+		if ((u.u_procp->p_sigignore & sigmask(SIGTTIN))
+				|| (u.u_procp->p_sigmask & sigmask(SIGTTIN))
+				|| (u.u_procp->p_flag & P_SVFORK))
 			TTY_UNLOCK(tp);
 			splx(s);
 			return (EIO);
-		gsignal(u->u_procp->p_pgrp, SIGTTIN);
+		gsignal(u.u_procp->p_pgrp, SIGTTIN);
 		//sleep((caddr_t) & lbolt, TTIPRI);
 		error = ttysleep(tp, &lbolt, TTIPRI | PCATCH, ttybg, 0);
 		splx(s);
@@ -1764,11 +1764,11 @@ ttycheckoutq_wlock(tp, wait)
 
 	hiwat = TTHIWAT(tp);
 	s = spltty();
-	oldsig = u->u_procp->p_sigacts;
+	oldsig = u.u_procp->p_sigacts;
 	if (tp->t_outq.c_cc > hiwat + 200)
 	    while (tp->t_outq.c_cc > hiwat) {
 		ttstart(tp);
-		if (wait == 0 || u->u_procp->p_sigacts != oldsig) {
+		if (wait == 0 || u.u_procp->p_sigacts != oldsig) {
 			splx(s);
 			return(0);
 		}
@@ -1841,11 +1841,11 @@ loop:
 	/*
 	 * Hang the process if it's in the background.
 	 */
-	if (u->u_procp->p_pgrp != tp->t_pgrp && tp == u->u_ttyp
-			&& (tp->t_flags & TOSTOP) && (u->u_procp->p_flag & P_SVFORK) == 0
-			&& !(u->u_procp->p_sigignore & sigmask(SIGTTOU))
-			&& !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
-		gsignal(u->u_procp->p_pgrp, SIGTTOU);
+	if (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp
+			&& (tp->t_flags & TOSTOP) && (u.u_procp->p_flag & P_SVFORK) == 0
+			&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
+			&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
+		gsignal(u.u_procp->p_pgrp, SIGTTOU);
 		s = spltty();
 		TTY_LOCK(tp);
 		//	sleep((caddr_t) &lbolt, TTIPRI);

@@ -29,14 +29,14 @@
  * Block device switch
  */
 struct bdevsw {
-	int			(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
-	int			(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
-	int			(*d_strategy)(struct buf *bp);
-	int			(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
+	int			(*d_open)(dev_t, int, int, struct proc *);
+	int			(*d_close)(dev_t, int, int, struct proc *);
+	int			(*d_strategy)(struct buf *);
+	int			(*d_ioctl)(dev_t, u_long, caddr_t, int, struct proc *);
 	int			(*d_root)(void);		/* parameters vary by architecture */
-	int			(*d_dump)(dev_t dev);
-	daddr_t		(*d_psize)(dev_t dev);
-	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
+	int			(*d_dump)(dev_t);
+	daddr_t		(*d_psize)(dev_t);
+	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
 };
 
@@ -44,20 +44,20 @@ struct bdevsw {
  * Character device switch.
  */
 struct cdevsw {
-	int			(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
-	int			(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
-	int			(*d_read)(dev_t dev, struct uio *uio, int ioflag);
-	int			(*d_write)(dev_t dev, struct uio *uio, int ioflag);
-	int			(*d_ioctl)(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p);
-	int			(*d_stop)(struct tty *tp, int rw);
-	int			(*d_reset)(int uban);	/* XXX */
-	struct tty 	*(*d_tty)(dev_t dev);
-	int			(*d_select)(dev_t dev, int which, struct proc *p);
-	int			(*d_poll)(dev_t dev, int events, struct proc *p);
-	caddr_t		(*d_mmap)(dev_t dev, off_t off, int flag);
-	int			(*d_strategy)(struct buf *bp);
+	int			(*d_open)(dev_t, int, int, struct proc *);
+	int			(*d_close)(dev_t, int, int, struct proc *);
+	int			(*d_read)(dev_t, struct uio *, int);
+	int			(*d_write)(dev_t, struct uio *, int);
+	int			(*d_ioctl)(dev_t, u_long, caddr_t, int, struct proc *);
+	int			(*d_stop)(struct tty *, int);
+	int			(*d_reset)(int);	/* XXX */
+	struct tty 	*(*d_tty)(dev_t);
+	int			(*d_select)(dev_t, int, struct proc *);
+	int			(*d_poll)(dev_t, int, struct proc *);
+	caddr_t		(*d_mmap)(dev_t, off_t, int);
+	int			(*d_strategy)(struct buf *);
 	int			(*d_kqfilter)(dev_t, struct knote *);
-	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
+	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
 };
 #ifdef _KERNEL
@@ -70,17 +70,17 @@ extern char devioc[], devcls[];
  * tty line control switch.
  */
 struct linesw {
-	int			(*l_open)(dev_t dev, struct tty *tp);
-	int			(*l_close)(struct tty *tp, int flag);
-	int			(*l_read)(struct tty *tp, struct uio *uio, int flag);
-	int			(*l_write)(struct tty *tp, struct uio *uio, int flag);
-	int			(*l_ioctl)(struct tty *tp, int cmd, caddr_t data, int flag, struct proc *p);
-	int			(*l_rint)(int c, struct tty *tp);
+	int			(*l_open)(dev_t, struct tty *);
+	int			(*l_close)(struct tty *, int);
+	int			(*l_read)(struct tty *, struct uio *, int);
+	int			(*l_write)(struct tty *, struct uio *, int);
+	int			(*l_ioctl)(struct tty *, u_long, caddr_t, int, struct proc *);
+	int			(*l_rint)(int, struct tty *);
 	int			(*l_rend)(void);
 	int			(*l_meta)(void);
-	int			(*l_start)(struct tty *tp);
-	int			(*l_modem)(struct tty *tp, int flag);
-	int			(*l_poll)(struct tty *tp, int flag, struct proc *p);
+	int			(*l_start)(struct tty *);
+	int			(*l_modem)(struct tty *, int);
+	int			(*l_poll)(struct tty *, int, struct proc *);
 };
 
 /*
@@ -104,24 +104,63 @@ struct swdevt {
 extern struct swdevt swdevt[];
 
 /* dev types */
-#define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
-#define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)
-#define	dev_type_read(n)		int n(dev_t, struct uio *, int)
-#define	dev_type_write(n)		int n(dev_t, struct uio *, int)
-#define	dev_type_ioctl(n) 		int n(dev_t, u_long, caddr_t, int, struct proc *)
-#define dev_type_start(n)		int n(struct tty *)
-#define	dev_type_stop(n)		int n(struct tty *, int)
-#define	dev_type_tty(n)			struct tty *n(dev_t)
-#define dev_type_select(n)		int n(dev_t, int, struct proc *)
-#define	dev_type_poll(n)		int n(dev_t, int, struct proc *)
-#define	dev_type_mmap(n)		caddr_t n(dev_t, off_t, int)
-#define	dev_type_strategy(n)	int n(struct buf *)
-#define dev_type_modem(n)		int n(struct tty *, int)
-#define dev_type_rint(n)		int n(int, struct tty *)
-#define dev_type_kqfilter(n)	int n(dev_t, struct knote *)
-#define dev_type_discard(n)		int n(dev_t, off_t, off_t)
-#define	dev_type_dump(n)		int n(dev_t)
-#define	dev_type_size(n)		daddr_t n(dev_t)
+typedef int 		dev_type_open_t(dev_t, int, int, struct proc *);
+typedef int 		dev_type_close_t(dev_t, int, int, struct proc *);
+typedef int 		dev_type_read_t(dev_t, struct uio *, int);
+typedef int 		dev_type_write_t(dev_t, struct uio *, int);
+typedef int 		dev_type_ioctl_t(dev_t, u_long, caddr_t, int, struct proc *);
+typedef int 		dev_type_root_t(void);
+typedef int 		dev_type_start_t(struct tty *);
+typedef int 		dev_type_stop_t(struct tty *, int);
+typedef struct tty 	*dev_type_tty_t(dev_t);
+typedef int 		dev_type_select_t(dev_t, int, struct proc *);
+typedef int 		dev_type_poll_t(dev_t, int, struct proc *);
+typedef caddr_t 	dev_type_mmap_t(dev_t, off_t, int);
+typedef int 		dev_type_strategy_t(struct buf *);
+typedef int 		dev_type_modem_t(struct tty *, int);
+typedef int 		dev_type_rint_t(int, struct tty *);
+typedef int 		dev_type_rend_t(void);
+typedef int 		dev_type_meta_t(void);
+typedef int 		dev_type_kqfilter_t(dev_t, struct knote *);
+typedef int 		dev_type_discard_t(dev_t, off_t, off_t);
+typedef int 		dev_type_dump_t(dev_t);
+typedef daddr_t 	dev_type_size_t(dev_t);
+/* tty specific */
+typedef int 		dev_type_tty_open_t(dev_t, struct tty *);
+typedef int 		dev_type_tty_close_t(struct tty *, int);
+typedef int 		dev_type_tty_read_t(struct tty *, struct uio *, int);
+typedef int 		dev_type_tty_write_t(struct tty *, struct uio *, int);
+typedef int 		dev_type_tty_ioctl_t(struct tty *, u_long, caddr_t, int, struct proc *);
+typedef int 		dev_type_tty_poll_t(struct tty *, int, struct proc *);
+
+#define	dev_type_open(n)	    dev_type_open_t n
+#define	dev_type_close(n)	    dev_type_close_t n
+#define	dev_type_read(n)	    dev_type_read_t n
+#define	dev_type_write(n)	    dev_type_write_t n
+#define	dev_type_ioctl(n)	    dev_type_ioctl_t n
+#define dev_type_root(n)		dev_type_root_t n
+#define	dev_type_start(n)       dev_type_start_t
+#define	dev_type_stop(n)	    dev_type_stop_t n
+#define	dev_type_tty(n)		    dev_type_tty_t n
+#define	dev_type_select(n)      dev_type_select_t n
+#define	dev_type_poll(n)	    dev_type_poll_t n
+#define	dev_type_mmap(n)	    dev_type_mmap_t n
+#define	dev_type_strategy(n)    dev_type_strategy_t n
+#define	dev_type_modem(n)       dev_type_modem_t n
+#define	dev_type_rint(n)        dev_type_rint_t n
+#define	dev_type_rend(n)        dev_type_rend_t n
+#define	dev_type_meta(n)        dev_type_meta_t n
+#define	dev_type_kqfilter(n)    dev_type_kqfilter_t n
+#define dev_type_discard(n)	    dev_type_discard_t n
+#define	dev_type_dump(n)	    dev_type_dump_t n
+#define	dev_type_size(n)	    dev_type_size_t n
+/* tty specific */
+#define	dev_type_tty_open(n)	dev_type_tty_open_t n
+#define	dev_type_tty_close(n)	dev_type_tty_close_t n
+#define	dev_type_tty_read(n)	dev_type_tty_read_t n
+#define	dev_type_tty_write(n)	dev_type_tty_write_t n
+#define	dev_type_tty_ioctl(n)	dev_type_tty_ioctl_t n
+#define	dev_type_tty_poll(n)	dev_type_tty_poll_t n
 
 /* bdevsw-specific types */
 dev_type_open(bdev_open);
@@ -149,42 +188,60 @@ dev_type_start(line_start);
 dev_type_modem(line_modem);
 
 /* no dev routines */
-#define	noopen				(enodev)
-#define	noclose				(enodev)
-#define	noread				(enodev)
-#define	nowrite				(enodev)
-#define	noioctl				(enodev)
-#define	nostart				(enodev)
-#define	nostop				(enodev)
-#define	notty				(enodev)
-#define	noselect			(enodev)
-#define	nopoll				(enodev)
-#define	nommap				(enodev)
-#define	nostrategy			(enodev)
-#define	nomodem				(enodev)
-#define	norint				(enodev)
+#define	noopen				((dev_type_open_t *)enodev)
+#define	noclose				((dev_type_close_t *)enodev)
+#define	noread				((dev_type_read_t *)enodev)
+#define	nowrite				((dev_type_write_t *)enodev)
+#define	noioctl				((dev_type_ioctl_t *)enodev)
+#define	nostart				((dev_type_start_t *)enodev)
+#define	nostop				((dev_type_stop_t *)enodev)
+#define	notty				((dev_type_tty_t *)enodev)
+#define	noselect			((dev_type_select_t *)enodev)
+#define	nopoll				((dev_type_poll_t *)enodev)
+#define	nommap				((dev_type_mmap_t *)enodev)
+#define	nostrategy			((dev_type_strategy_t *)enodev)
+#define	nomodem				((dev_type_modem_t *)enodev)
+#define	norint				((dev_type_rint_t *)enodev)
+#define	norend				((dev_type_rend_t *)enodev)
+#define	nometa				((dev_type_meta_t *)enodev)
 #define	nokqfilter			seltrue_kqfilter
-#define	nodiscard			(enodev)
-#define	nodump				(enodev)
-#define	nosize				(enodev)
+#define	nodiscard			((dev_type_discard_t *)enodev)
+#define	nodump				((dev_type_dump_t *)enodev)
+#define	nosize				((dev_type_size_t *)enodev)
+/* tty specific */
+#define nottyopen           ((dev_type_tty_open_t *)enodev)
+#define nottyclose          ((dev_type_tty_close_t *)enodev)
+#define nottyread           ((dev_type_tty_read_t *)enodev)
+#define nottywrite          ((dev_type_tty_write_t *)enodev)
+#define nottyioctl          ((dev_type_tty_ioctl_t *)enodev)
+#define nottypoll           ((dev_type_tty_poll_t *)enodev)
 
 /* null dev routines */
-#define	nullopen			(nullop)
-#define	nullclose			(nullop)
-#define	nullread			(nullop)
-#define	nullwrite			(nullop)
-#define	nullioctl			(nullop)
-#define	nullstart			(nullop)
-#define	nullstop			(nullop)
-#define	nulltty				(nullop)
-#define	nullselect			(nullop)
-#define	nullpoll			(nullop)
-#define	nullmmap			(nullop)
-#define	nullstrategy		(nullop)
-#define	nullrint			(nullop)
-#define	nullkqfilter		(nullop)
-#define	nulldiscard			(nullop)
-#define	nulldump			(nullop)
-#define	nullsize			(nullop)
+#define	nullopen			((dev_type_open_t *)nullop)
+#define	nullclose			((dev_type_close_t *)nullop)
+#define	nullread			((dev_type_read_t *)nullop)
+#define	nullwrite			((dev_type_write_t *)nullop)
+#define	nullioctl			((dev_type_ioctl_t *)nullop)
+#define	nullstart			((dev_type_start_t *)nullop)
+#define	nullstop			((dev_type_stop_t *)nullop)
+#define	nulltty				((dev_type_tty_t *)nullop)
+#define	nullselect			((dev_type_select_t *)nullop)
+#define	nullpoll			((dev_type_poll_t *)nullop)
+#define	nullmmap			((dev_type_mmap_t *)nullop)
+#define	nullstrategy		((dev_type_strategy_t *)nullop)
+#define	nullrint			((dev_type_rint_t *)nullop)
+#define	nullrend			((dev_type_rend_t *)nullop)
+#define	nullmeta			((dev_type_meta_t *)nullop)
+#define	nullkqfilter		((dev_type_kqfilter_t *)nullop)
+#define	nulldiscard			((dev_type_discard_t *)nullop)
+#define	nulldump			((dev_type_dump_t *)nullop)
+#define	nullsize			((dev_type_size_t *)nullop)
+/* tty specific */
+#define nullttyopen         ((dev_type_tty_open_t *)nullop)
+#define nullttyclose        ((dev_type_tty_close_t *)nullop)
+#define nullttyread         ((dev_type_tty_read_t *)nullop)
+#define nullttywrite        ((dev_type_tty_write_t *)nullop)
+#define nullttyioctl        ((dev_type_tty_ioctl_t *)nullop)
+#define nullttypoll         ((dev_type_tty_poll_t *)nullop)
 #endif
 #endif

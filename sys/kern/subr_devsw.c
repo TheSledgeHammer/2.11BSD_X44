@@ -927,26 +927,11 @@ bdev_dump(dev_t dev)
 	return (rv);
 }
 
-/*
 int
-bdev_root()
+bdev_root(void)
 {
-	const struct bdevsw *d;
-	dev_t dev;
-	int rv;
-
-	int rv, error;
-
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
-	if(error != 0) {
-		return (error);
-	}
-
-	rv = (*d->d_root)();
-
-	return (rv);
+	return (ENXIO);
 }
-*/
 
 daddr_t
 bdev_size(dev_t dev)
@@ -1079,13 +1064,12 @@ cdev_stop(struct tty *tp, int rw)
 
 	return (rv);
 }
-/*
+
 int
 cdev_reset(int uban)
 {
-
+	return (ENXIO);
 }
-*/
 
 struct tty *
 cdev_tty(dev_t dev)
@@ -1299,39 +1283,17 @@ line_rint(int c, struct tty *tp)
 	return (rv);
 }
 
-/*
 int
 line_rend(void)
 {
-	const struct linesw *l;
-	int rv, error;
-
-	error = devsw_io_lookup(NULL, l, LINETYPE);
-	if(error != 0) {
-		return (error);
-	}
-
-	rv = (*l->l_rend)();
-
-	return (rv);
+	return (ENXIO);
 }
 
 int
 line_meta(void)
 {
-	const struct linesw *l;
-	int rv, error;
-
-	error = devsw_io_lookup(NULL, l, LINETYPE);
-	if(error != 0) {
-		return (error);
-	}
-
-	rv = (*l->l_meta)();
-
-	return (rv);
+	return (ENXIO);
 }
-*/
 
 int
 line_start(struct tty *tp)
