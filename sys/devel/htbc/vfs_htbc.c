@@ -251,8 +251,6 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	ht->ht_deallocblks = htbc_alloc(sizeof(*ht->ht_deallocblks) * ht->ht_dealloclim);
 	ht->ht_dealloclens = htbc_alloc(sizeof(*ht->ht_dealloclens) * ht->ht_dealloclim);
 
-	htbc_inodetrk_init(ht, HTBC_INODETRK_SIZE);
-
 	/* Initialize the blockchain header */
 	{
 		struct htbc_hchain *hc;
@@ -266,6 +264,7 @@ htbc_start(htp, mp, vp, off, count, blksize)
 		hc->hc_fs_dev_bshift = ht->ht_fs_dev_bshift;
 		CIRCLEQ_FIRST(&ht->ht_hashchain) = hc;
 		ht->ht_hc_scratch = htbc_malloc(len);
+		htbc_init_transaction(hc);
 	}
 
 	return (0);
@@ -639,6 +638,29 @@ htbc_lookup_htree_root(struct htbc_hchain *chain)
 }
 
 struct htbc_htransaction *
+htbc_alloc_transaction(struct htbc_hchain *chain)
+{
+	register struct htbc_htransaction *result;
+
+	result = (struct htbc_htransaction *) malloc(sizeof(struct htbc_htransaction *), M_HTBC, NULL);
+	result->ht_reclen = (sizeof(*chain) + sizeof(*result));
+	chain->hc_trans = result;
+
+	return (result);
+}
+
+void
+htbc_init_transaction(struct htbc_hchain *chain)
+{
+	struct htbc_htransaction *trans;
+	trans = chain->hc_trans;
+	if(trans == NULL) {
+		trans = htbc_alloc_transaction(chain);
+	}
+	htbc_add_transaction(trans);
+}
+
+struct htbc_htransaction *
 htbc_lookup_transaction(struct htbc_hchain *chain)
 {
 	struct htbc_hchain *look;
@@ -654,15 +676,11 @@ htbc_lookup_transaction(struct htbc_hchain *chain)
 }
 
 void
-htbc_add_transaction(struct htbc_hchain *chain)
+htbc_add_transaction(struct htbc_htransaction *trans)
 {
-	register struct htbc_htransaction *trans;
-	trans = chain->hc_trans;
 	htbc_add_timestamp_transaction(trans);
 	htbc_add_block_transaction(trans);
 	htbc_add_inode_transaction(trans);
-
-	trans->ht_reclen = (sizeof(*chain) + sizeof(*trans));
 }
 
 void
@@ -704,14 +722,13 @@ htbc_add_timestamp_transaction(struct htbc_htransaction *trans)
 void
 htbc_add_block_transaction(struct htbc_htransaction *trans)
 {
-
+	htbc_blocktrk_init(trans, HTBC_BLOCKTRK_SIZE);
 }
 
 void
 htbc_add_inode_transaction(struct htbc_htransaction *trans)
 {
 	htbc_inodetrk_init(trans, HTBC_INODETRK_SIZE);
-
 }
 
 /****************************************************************/

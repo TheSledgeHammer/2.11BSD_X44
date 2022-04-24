@@ -54,8 +54,16 @@
 
 #include <vm/include/vm.h>
 
-struct fileops vnops =
-	{ vn_rw, vn_read, vn_write, vn_ioctl, vn_select, vn_poll, vn_closefile, vn_kqfilter };
+struct fileops vnops = {
+		.fo_rw = vn_rw,
+		.fo_read = vn_read,
+		.fo_write = vn_write,
+		.fo_ioctl = vn_ioctl,
+		.fo_select = vn_select,
+		.fo_poll = vn_poll,
+		.fo_close = vn_closefile,
+		.fo_kqfilter = vn_kqfilter
+};
 
 /*
  * Common code for vnode open operations.

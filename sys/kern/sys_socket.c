@@ -28,8 +28,15 @@
 #include <net/if.h>
 #include <net/route.h>
 
-struct fileops socketops =
-    { soo_rw, soo_read, soo_write, soo_ioctl, soo_poll, soo_close, soo_kqfilter };
+struct fileops socketops = {
+		.fo_rw = soo_rw,
+		.fo_read = soo_read,
+		.fo_write = soo_write,
+		.fo_ioctl = soo_ioctl,
+		.fo_poll = soo_poll,
+		.fo_close = soo_close,
+		.fo_kqfilter = soo_kqfilter
+};
 
 /*ARGSUSED*/
 int
@@ -89,7 +96,7 @@ soo_ioctl(fp, cmd, data, p)
 	if (IOCGROUP(cmd) == 'r')
 		return (u.u_error = rtioctl(cmd, data));
 	//*/
-	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
+	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0, p));
 }
 
 int
@@ -109,7 +116,7 @@ soo_stat(so, ub)
 {
 	bzero((caddr_t) ub, sizeof(*ub));
 	ub->st_mode = S_IFSOCK;
-	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0));
+	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0, u.u_procp));
 }
 
 int
@@ -136,7 +143,12 @@ soo_read(fp, uio, cred)
 	struct uio *uio;
 	struct ucred *cred;
 {
-	return (soreceive((struct socket*) fp->f_data, (struct mbuf**) 0, uio, (struct mbuf**) 0, (struct mbuf**) 0, (int*) 0));
+	struct socket *so;
+	int flags;
+
+	so = (struct socket *)fp->f_data;
+	flags = 0;
+	return (soreceive(so, NULL, uio, flags, NULL));
 }
 
 /* ARGSUSED */
@@ -146,7 +158,12 @@ soo_write(fp, uio, cred)
 	struct uio *uio;
 	struct ucred *cred;
 {
-	return (sosend((struct socket *)fp->f_data, (struct mbuf *)0, uio, (struct mbuf *)0, (struct mbuf *)0, 0));
+	struct socket *so;
+	int flags;
+
+	so = (struct socket *)fp->f_data;
+	flags = 0;
+	return (sosend(so, NULL, uio, flags, NULL));
 }
 
 /* ARGSUSED */
@@ -155,10 +172,14 @@ soo_close(fp, p)
 	struct file *fp;
 	struct proc *p;
 {
-	int error = 0;
+	struct socket *so;
+	int error;
 	
-	if (fp->f_data)
-		error = soclose((struct socket*) fp->f_data);
+	so = (struct socket *)fp->f_data;
+	error = 0;
+	if (fp->f_data) {
+		error = soclose(so);
+	}
 	fp->f_data = 0;
 	return (error);
 }

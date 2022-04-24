@@ -60,8 +60,16 @@ int     kqueue_poll(struct file *, int, struct proc *);
 int     kqueue_close(struct file *, struct proc *);
 int     kqueue_kqfilter(struct file *, struct knote *);
 
-struct fileops kqueueops =
-			{ kqueue_rw, kqueue_read, kqueue_write, kqueue_ioctl, NULL, kqueue_poll, kqueue_close, kqueue_kqfilter };
+
+struct fileops kqueueops = {
+		.fo_rw = kqueue_rw,
+		.fo_read = kqueue_read,
+		.fo_write = kqueue_write,
+		.fo_ioctl = kqueue_ioctl,
+		.fo_poll = kqueue_poll,
+		.fo_close = kqueue_close,
+		.fo_kqfilter = kqueue_kqfilter
+};
 
 static int	kqueue_scan(struct file *fp, size_t maxevents, struct kevent *ulistp, const struct timespec *timeout, struct proc *p, register_t *retval);
 static void	kqueue_wakeup(struct kqueue *kq);
