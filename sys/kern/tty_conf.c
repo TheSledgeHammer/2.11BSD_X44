@@ -8,36 +8,13 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
-
+#include <sys/systm.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/errno.h>
 #include <sys/conf.h>
-#include <sys/devsw.h>
 #include <sys/user.h>
-
-/*
-int	nodev();
-int	nulldev();
-
-int	ttyopen(),ttylclose(),ttread(),ttwrite(),nullioctl(),ttstart();
-int	ttymodem(), nullmodem(), ttyinput();
-*/
-
-/* #include "bk.h" */
-#if NBK > 0
-int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
-#endif
-
-/* #include "tb.h" */
-#if NTB > 0
-int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
-#endif
-/* #include "sl.h" */
-#if NSL > 0
-int	slopen(),slclose(),slinput(),slioctl(),slstart();
-#endif
 
 /* 0- TTYDISC (Termios) */
 const struct linesw ttydisc = {
@@ -47,8 +24,6 @@ const struct linesw ttydisc = {
 	.l_write = ttwrite,
 	.l_ioctl = nullttyioctl,
 	.l_rint = ttyinput,
-	.l_rend = norend,
-	.l_meta = nullmeta,
 	.l_start = ttstart,
 	.l_modem = ttymodem,
 	.l_poll = ttpoll
@@ -84,6 +59,7 @@ const struct linesw ottydisc = {
 	.l_poll = ttpoll
 };
 
+#if NBK > 0
 /* 3- NETLDISC */
 const struct linesw netldisc = {
 	.l_open = bkopen,
@@ -98,7 +74,9 @@ const struct linesw netldisc = {
 	.l_modem = nullmodem,
 	.l_poll = ttpoll
 };
+#endif
 
+#if NTB > 0
 /* 4- TABLDISC */
 const struct linesw tabldisc = {
 	.l_open = tbopen,
@@ -113,7 +91,9 @@ const struct linesw tabldisc = {
 	.l_modem = nullmodem,
 	.l_poll = nottypoll
 };
+#endif
 
+#if NSL > 0
 /* 5- SLIPDISC */
 const struct linesw slipdisc = {
 	.l_open = slopen,
@@ -123,11 +103,12 @@ const struct linesw slipdisc = {
 	.l_ioctl = slioctl,
 	.l_rint = slinput,
 	.l_rend = norend,
-	.l_meta = nometa,
+	.l_meta = nullmeta,
 	.l_start = slstart,
-	.l_modem = nullmodem,
+	.l_modem = nomodem,
 	.l_poll = nottypoll
 };
+#endif
 
 /* 6- PPPDISC */
 const struct linesw pppdisc = {
@@ -151,7 +132,7 @@ const struct linesw pppdisc = {
 /*ARGSUSED*/
 /*
 int
-nullioctl(tp, cmd, data, flags, p)
+nullttyioctl(tp, cmd, data, flags, p)
 	struct tty *tp;
 	u_long cmd;
 	char *data;

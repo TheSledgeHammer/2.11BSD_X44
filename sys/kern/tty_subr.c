@@ -204,8 +204,8 @@ q_to_b(q, cp, cc)
 	int cc;
 {
 	register struct cblock *bp;
-	register nc;
-	int int s;
+	register int nc;
+	int s;
 	char *acp;
 
 	if (cc <= 0)
@@ -323,7 +323,7 @@ ndflush(q, cc)
 		} else {
 			end = (char*) ((int) bp + sizeof(struct cblock));
 		}
-		rem = end - q->c_cf;
+		rem = (u_char *)end - q->c_cf;
 		if (cc >= rem) {
 			cc -= rem;
 			q->c_cc -= rem;
@@ -463,13 +463,13 @@ nextc(p, cp)
 {
 	register char *rcp;
 
-	if (p->c_cc && ++cp != p->c_cl) {
-		if (((int)cp & CROUND) == 0)
+	if (p->c_cc && ++cp != (char *)p->c_cl) {
+		if (((int)cp & CROUND) == 0) {
 			rcp = ((struct cblock *)cp)[-1].c_next->c_info;
-		else
+		} else {
 			rcp = cp;
-	}
-	else
+		}
+	} else
 		rcp = (char *)NULL;
 	return (rcp);
 }

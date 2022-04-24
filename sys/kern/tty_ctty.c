@@ -190,7 +190,7 @@ cttypoll(dev, events, p)
 	return (VOP_POLL(ttyvp, FREAD|FWRITE, events, p));
 }
 
-static int
+int
 cttykqfilter(dev, kn)
 	dev_t dev;
 	struct knote *kn;

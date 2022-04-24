@@ -896,7 +896,7 @@ bdev_strategy(struct buf *bp)
 }
 
 int
-bdev_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
+bdev_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p)
 {
 	const struct bdevsw *d;
 	int rv, error;
@@ -930,7 +930,7 @@ bdev_dump(dev_t dev)
 int
 bdev_root(void)
 {
-	return (ENXIO);
+	return (-1);
 }
 
 daddr_t
@@ -1034,7 +1034,7 @@ cdev_write(dev_t dev, struct uio *uio, int ioflag)
 }
 
 int
-cdev_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
+cdev_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p)
 {
 	const struct cdevsw *c;
 	int rv, error;
@@ -1068,7 +1068,7 @@ cdev_stop(struct tty *tp, int rw)
 int
 cdev_reset(int uban)
 {
-	return (ENXIO);
+	return (-1);
 }
 
 struct tty *
@@ -1252,7 +1252,7 @@ line_write(struct tty *tp, struct uio *uio, int flag)
 }
 
 int
-line_ioctl(struct tty *tp, int cmd, caddr_t data, int flag, struct proc *p)
+line_ioctl(struct tty *tp, u_long cmd, caddr_t data, int flag, struct proc *p)
 {
 	const struct linesw *l;
 	int rv, error;
@@ -1286,13 +1286,13 @@ line_rint(int c, struct tty *tp)
 int
 line_rend(void)
 {
-	return (ENXIO);
+	return (-1);
 }
 
 int
 line_meta(void)
 {
-	return (ENXIO);
+	return (-1);
 }
 
 int
