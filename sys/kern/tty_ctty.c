@@ -194,7 +194,7 @@ cttypoll(dev, events, p)
 	struct vnode *ttyvp = cttyvp(p);
 
 	if (ttyvp == NULL)
-		return (seltrue(dev, events, p));
+		return (seltrue(dev, events));
 	return (VOP_POLL(ttyvp, FREAD|FWRITE, events, p));
 }
 
