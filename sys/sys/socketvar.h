@@ -20,6 +20,9 @@
 #include <sys/mbuf.h>			/* for struct mbuf */
 #include <sys/protosw.h>		/* for struct protosw */
 #include <sys/select.h>			/* for struct selinfo */
+#include <sys/queue.h>
+
+TAILQ_HEAD(soqhead, socket);
 
 /*
  * Kernel structure per socket.
@@ -28,12 +31,12 @@
  * private data and error information.
  */
 struct socket {
-	short	so_type;		/* generic type, see socket.h */
-	short	so_options;		/* from socket call, see socket.h */
-	short	so_linger;		/* time to linger while closing */
-	short	so_state;		/* internal state flags SS_*, below */
-	caddr_t	so_pcb;			/* protocol control block */
-	struct	protosw *so_proto;	/* protocol handle */
+	short				so_type;	/* generic type, see socket.h */
+	short				so_options;	/* from socket call, see socket.h */
+	short				so_linger;	/* time to linger while closing */
+	short				so_state;	/* internal state flags SS_*, below */
+	caddr_t				so_pcb;		/* protocol control block */
+	struct	protosw 	*so_proto;	/* protocol handle */
 /*
  * Variables for connection queueing.
  * Socket where accepts occur is so_head in all subsidiary sockets.
@@ -45,45 +48,50 @@ struct socket {
  * We allow connections to queue up based on current queue lengths
  * and limit on number of queued connections for this socket.
  */
-	struct	socket *so_head;/* back pointer to accept socket */
-	struct	socket *so_q0;	/* queue of partial connections */
-	struct	socket *so_q;	/* queue of incoming connections */
-	short	so_q0len;		/* partials on so_q0 */
-	short	so_qlen;		/* number of connections on so_q */
-	short	so_qlimit;		/* max number queued connections */
-	short	so_timeo;		/* connection timeout */
-	u_short	so_error;		/* error affecting connection */
-	pid_t	so_pgrp;		/* pgrp for signals */
-	u_short	so_oobmark;		/* chars to oob mark */
+	struct	socket 	 	*so_head;	/* back pointer to accept socket */
+	struct	soqhead	 	so_q0;		/* queue of partial connections */
+	struct	soqhead	 	so_q;		/* queue of incoming connections */
+	TAILQ_ENTRY(socket) so_qe;		/* our queue entry (q or q0) */
+	short				so_q0len;	/* partials on so_q0 */
+	short				so_qlen;	/* number of connections on so_q */
+	short				so_qlimit;	/* max number queued connections */
+	short				so_timeo;	/* connection timeout */
+	u_short				so_error;	/* error affecting connection */
+	pid_t				so_pgrp;	/* pgrp for signals */
+	u_short				so_oobmark;	/* chars to oob mark */
 	/*
 	 * Variables for socket buffering.
 	 */
 	struct sockbuf {
-		u_short	sb_cc;			/* actual chars in buffer */
-		u_short	sb_hiwat;		/* max actual char count */
-		u_short	sb_mbcnt;		/* chars of mbufs used */
-		u_short	sb_mbmax;		/* max chars of mbufs to use */
-		u_short	sb_lowat;		/* low water mark (not used yet) */
-		struct	mbuf *sb_mb;	/* the mbuf chain */
-		struct selinfo sb_sel;	/* process selecting read/write */
-		short	sb_timeo;		/* timeout (not used yet) */
-		short	sb_flags;		/* flags, see below */
+		u_short			sb_cc;		/* actual chars in buffer */
+		u_short			sb_hiwat;	/* max actual char count */
+		u_short			sb_mbcnt;	/* chars of mbufs used */
+		u_short			sb_mbmax;	/* max chars of mbufs to use */
+		u_short			sb_lowat;	/* low water mark (not used yet) */
+		struct mbuf 	*sb_mb;		/* the mbuf chain */
+		struct selinfo 	sb_sel;		/* process selecting read/write */
+		short			sb_timeo;	/* timeout (not used yet) */
+		short			sb_flags;	/* flags, see below */
 	} so_rcv, so_snd;
 
-#define	SB_MAX		(256*1024)	/* max chars in sockbuf */
-#define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */
-#define	SB_WANT		0x02		/* someone is waiting to lock */
-#define	SB_WAIT		0x04		/* someone is waiting for data/space */
-#define	SB_SEL		0x08		/* buffer is selected */
-#define	SB_COLL		0x20		/* collision selecting */
-#define	SB_ASYNC	0x10		/* ASYNC I/O, need signals */
-#define	SB_NOTIFY	(SB_WAIT|SB_SEL|SB_ASYNC)
-#define	SB_NOINTR	0x40		/* operations not interruptible */
-
-	caddr_t	so_tpcb;			/* Misc. protocol control block XXX */
-	void	(*so_upcall) (struct socket *so, caddr_t arg, int waitf);
-	caddr_t	so_upcallarg;		/* Arg for above */
+	caddr_t				so_tpcb;	/* Misc. protocol control block XXX */
+	void				(*so_upcall) (struct socket *so, caddr_t arg, int waitf);
+	caddr_t				so_upcallarg;/* Arg for above */
 };
+
+/*
+ * Socket buf bits.
+ */
+#define	SB_MAX			(256*1024)	/* max chars in sockbuf */
+#define	SB_LOCK			0x01		/* lock on data queue (so_rcv only) */
+#define	SB_WANT			0x02		/* someone is waiting to lock */
+#define	SB_WAIT			0x04		/* someone is waiting for data/space */
+#define	SB_SEL			0x08		/* buffer is selected */
+#define	SB_ASYNC		0x10		/* ASYNC I/O, need signals */
+#define	SB_COLL			0x20		/* collision selecting */
+#define	SB_NOTIFY		(SB_WAIT|SB_SEL|SB_ASYNC)
+#define	SB_NOINTR		0x40		/* operations not interruptible */
+#define	SB_KNOTE		0x80		/* kernel note attached */
 
 /*
  * Socket state bits.
@@ -91,14 +99,15 @@ struct socket {
 #define	SS_NOFDREF			0x001	/* no file table ref any more */
 #define	SS_ISCONNECTED		0x002	/* socket connected to a peer */
 #define	SS_ISCONNECTING		0x004	/* in process of connecting to peer */
-#define	SS_ISDISCONNECTING	0x008	/* in process of disconnecting */
-#define	SS_CANTSENDMORE		0x010	/* can't send more data to peer */
-#define	SS_CANTRCVMORE		0x020	/* can't receive more data from peer */
-#define	SS_RCVATMARK		0x040	/* at mark on input */
+#define	SS_ISDISCONNECTED	0x008	/* socket connected to a peer */
+#define	SS_ISDISCONNECTING	0x010	/* in process of disconnecting */
+#define	SS_CANTSENDMORE		0x020	/* can't send more data to peer */
+#define	SS_CANTRCVMORE		0x040	/* can't receive more data from peer */
+#define	SS_RCVATMARK		0x080	/* at mark on input */
 
-#define	SS_PRIV				0x080	/* privileged for broadcast, raw... */
-#define	SS_NBIO				0x100	/* non-blocking ops */
-#define	SS_ASYNC			0x200	/* async i/o notify */
+#define	SS_PRIV				0x100	/* privileged for broadcast, raw... */
+#define	SS_NBIO				0x200	/* non-blocking ops */
+#define	SS_ASYNC			0x400	/* async i/o notify */
 
 /*
  * Macros for sockets and socket buffering.
@@ -244,6 +253,7 @@ int		soqremque(struct socket *, int);
 void	socantsendmore(struct socket *);
 void	socantrcvmore(struct socket *);
 int		sopoll(struct socket *, int);
+int		sokqfilter(struct file *, struct knote *);
 void	sbselqueue(struct sockbuf *);
 void	sbwait(struct sockbuf *);
 void	sbwakeup(struct sockbuf *);

@@ -23,7 +23,7 @@ memaddr_t miobase;			/* click address of dma region */
 							/* this is altered during allocation */
 memaddr_t miostart;			/* click address of dma region */
 							/* this stays unchanged */
-ubadr_t	mioumr;				/* base UNIBUS virtual address */
+//ubadr_t	mioumr;				/* base UNIBUS virtual address */
 							/* miostart and mioumr stay 0 for */
 							/* non-UNIBUS machines */
 u_short miosize = 16384;	/* two umr's worth */
@@ -139,7 +139,7 @@ m_reclaim()
  */
 u_int
 m_ioget(size)
-	u_int size;		/* Number of bytes to allocate */
+	u_int size;				/* Number of bytes to allocate */
 {
 	memaddr_t base;
 	u_int csize;
@@ -172,10 +172,10 @@ m_expand(canwait)
 			return (1);
 #else
 		if (m_clalloc(1, MPG_MBUFS, canwait))
-			return (1);
+			return;// (1);
 #endif
 		if (canwait == M_DONTWAIT || tries++)
-			return (0);
+			return;// (0);
 
 		/* ask protocols to free space */
 		for (dp = domains; dp; dp = dp->dom_next)

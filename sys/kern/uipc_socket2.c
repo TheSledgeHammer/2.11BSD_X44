@@ -21,6 +21,7 @@
 #include <sys/buf.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
+#include <sys/event.h>
 #include <sys/protosw.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
@@ -267,7 +268,7 @@ sbwakeup(sb)
 {
 
 	if (sb->sb_sel) {
-		selwakeup(sb->sb_sel, (long)(sb->sb_flags & SB_COLL));
+		selwakeup1(sb->sb_sel);
 		sb->sb_sel = 0;
 		sb->sb_flags &= ~SB_COLL;
 	}
@@ -294,7 +295,7 @@ sowakeup(so, sb)
 		if (so->so_pgrp < 0)
 			gsignal(-so->so_pgrp, SIGIO);
 		else if (so->so_pgrp > 0 &&
-		    (p = (struct proc *)NETPFIND(so->so_pgrp)) != 0)
+		    (p = (struct proc *)netpfind(so->so_pgrp)) != 0)
 			netpsignal(p, SIGIO);
 	}
 }
@@ -657,7 +658,9 @@ sbdroprecord(sb)
 }
 
 static int
-sodopoll(struct socket *so, int events)
+sodopoll(so, events)
+	struct socket *so;
+	int events;
 {
 	int revents;
 
@@ -679,7 +682,9 @@ sodopoll(struct socket *so, int events)
 }
 
 int
-sopoll(struct socket *so, int events)
+sopoll(so, events)
+	struct socket *so;
+	int events;
 {
 	int revents = 0;
 
@@ -708,4 +713,129 @@ sopoll(struct socket *so, int events)
 	//sounlock(so);
 
 	return revents;
+}
+
+static void
+filt_sordetach(kn)
+	struct knote *kn;
+{
+	struct socket	*so;
+
+	so = (struct socket *)kn->kn_fp->f_data;
+	SIMPLEQ_REMOVE(&so->so_rcv.sb_sel.si_klist, kn, knote, kn_selnext);
+	if (SIMPLEQ_EMPTY(&so->so_rcv.sb_sel.si_klist))
+		so->so_rcv.sb_flags &= ~SB_KNOTE;
+}
+
+/*ARGSUSED*/
+static int
+filt_soread(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	struct socket	*so;
+
+	so = (struct socket*) kn->kn_fp->f_data;
+	kn->kn_data = so->so_rcv.sb_cc;
+	if (so->so_state & SS_CANTRCVMORE) {
+		kn->kn_flags |= EV_EOF;
+		kn->kn_fflags = so->so_error;
+		return (1);
+	}
+	if (so->so_error) /* temporary udp error */
+		return (1);
+	if (kn->kn_sfflags & NOTE_LOWAT)
+		return (kn->kn_data >= kn->kn_sdata);
+	return (kn->kn_data >= so->so_rcv.sb_lowat);
+}
+
+static void
+filt_sowdetach(kn)
+	struct knote *kn;
+{
+	struct socket	*so;
+
+	so = (struct socket*) kn->kn_fp->f_data;
+	SIMPLEQ_REMOVE(&so->so_snd.sb_sel.si_klist, kn, knote, kn_selnext);
+	if (SIMPLEQ_EMPTY(&so->so_snd.sb_sel.si_klist))
+		so->so_snd.sb_flags &= ~SB_KNOTE;
+}
+
+/*ARGSUSED*/
+static int
+filt_sowrite(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	struct socket	*so;
+
+	so = (struct socket*) kn->kn_fp->f_data;
+	kn->kn_data = sbspace(&so->so_snd);
+	if (so->so_state & SS_CANTSENDMORE) {
+		kn->kn_flags |= EV_EOF;
+		kn->kn_fflags = so->so_error;
+		return (1);
+	}
+	if (so->so_error) /* temporary udp error */
+		return (1);
+	if (((so->so_state & SS_ISCONNECTED) == 0)
+			&& (so->so_proto->pr_flags & PR_CONNREQUIRED))
+		return (0);
+	if (kn->kn_sfflags & NOTE_LOWAT)
+		return (kn->kn_data >= kn->kn_sdata);
+	return (kn->kn_data >= so->so_snd.sb_lowat);
+}
+
+/*ARGSUSED*/
+static int
+filt_solisten(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	struct socket	*so;
+
+	so = (struct socket *)kn->kn_fp->f_data;
+
+	/*
+	 * Set kn_data to number of incoming connections, not
+	 * counting partial (incomplete) connections.
+	 */
+	kn->kn_data = so->so_qlen;
+	return (kn->kn_data > 0);
+}
+
+static const struct filterops solisten_filtops =
+	{ 1, NULL, filt_sordetach, filt_solisten };
+static const struct filterops soread_filtops =
+	{ 1, NULL, filt_sordetach, filt_soread };
+static const struct filterops sowrite_filtops =
+	{ 1, NULL, filt_sowdetach, filt_sowrite };
+
+int
+sokqfilter(fp, kn)
+	struct file *fp;
+	struct knote *kn;
+{
+	struct socket	*so;
+	struct sockbuf	*sb;
+
+	so = (struct socket*) kn->kn_fp->f_data;
+	switch (kn->kn_filter) {
+	case EVFILT_READ:
+		if (so->so_options & SO_ACCEPTCONN)
+			kn->kn_fop = &solisten_filtops;
+		else
+			kn->kn_fop = &soread_filtops;
+		sb = &so->so_rcv;
+		break;
+	case EVFILT_WRITE:
+		kn->kn_fop = &sowrite_filtops;
+		sb = &so->so_snd;
+		break;
+	default:
+		return (1);
+	}
+	SIMPLEQ_INSERT_HEAD(&sb->sb_sel.si_klist, kn, kn_selnext);
+	sb->sb_flags |= SB_KNOTE;
+	return (0);
 }

@@ -187,5 +187,5 @@ soo_kqfilter(fp, kn)
 	struct file *fp;
 	struct knote *kn;
 {
-	return (0);
+	return (sokqfilter(fp, kn));
 }

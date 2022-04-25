@@ -74,8 +74,8 @@ void
 conf_init(devsw)
 	struct devswtable *devsw;
 {
-	kernel_init(devsw);			/* kernel interfaces */
 	device_init(devsw);			/* device interfaces */
+	kernel_init(devsw);			/* kernel interfaces */
 	network_init(devsw);		/* network interfaces */
 }
 
@@ -89,15 +89,9 @@ kernel_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ttydisc);					/* 0- TTYDISC */
 	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &nttydisc);					/* 1- NTTYDISC */
 	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);					/* 2- OTTYDISC */
-#if NBK > 0
 	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);					/* 3- NETLDISC */
-#endif
-#if NTB > 0
 	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
-#endif
-#if NSL > 0
 	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
-#endif
 	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);				/* ctty controlling terminal */
 	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);				/* ptc pseudo-tty slave, pseudo-tty master  */

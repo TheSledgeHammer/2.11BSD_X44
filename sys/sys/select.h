@@ -76,8 +76,8 @@ struct selinfo {
 struct proc;
 
 void	selrecord(struct proc *, struct selinfo *);
-void	_selwakeup(struct selinfo *);
 void	selwakeup(struct proc *, long);
+void	_selwakeup(struct selinfo *);
 int		selscan(fd_set *, fd_set *, int, int *);
 int		seltrue(dev_t, int );
 void 	selnotify(struct selinfo *, long);
