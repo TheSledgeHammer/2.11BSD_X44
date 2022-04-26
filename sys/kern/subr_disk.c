@@ -308,13 +308,19 @@ disk_resetstat(diskp)
  * cylinder number has to be maintained in the `b_resid'
  * field.
  */
+/*
+ * bufq: the disk buffer queue.
+ * buf: the buffer to sort.
+ * flags: additional flags to set. BUFQ_DISKSORT is set by default.
+ */
 void
-disksort(bufq, ap)
+disksort(bufq, ap, flags)
 	struct bufq_state   *bufq;
 	struct buf          *ap;
+	int 				flags;
 {
 	if (bufq == NULL) {
-        bufq_alloc(bufq, BUFQ_DISKSORT);
+        bufq_alloc(bufq, (BUFQ_DISKSORT | flags));
     }
     if((ap = BUFQ_PEEK(bufq)) != NULL) {
         printf("buffer already allocated");
@@ -448,4 +454,3 @@ disk_find_by_slice(slicep)
     }
     return (NULL);
 }
-

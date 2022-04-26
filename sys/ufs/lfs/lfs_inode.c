@@ -320,7 +320,6 @@ lfs_truncate(ap)
 	}
 #endif
 	DIP_SET(ip, blocks, DIP(ip, blocks) - fragstodb(fs, fragsreleased));
-//	ip->i_ffs1_blocks -= fragstodb(fs, fragsreleased);
 	fs->lfs_bfree +=  fragstodb(fs, fragsreleased);
 	ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	/*

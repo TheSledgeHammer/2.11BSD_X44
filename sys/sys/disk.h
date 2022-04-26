@@ -177,7 +177,7 @@ void				disk_unbusy(struct dkdevice *, long);
 int					disk_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *);
 void				disk_resetstat(struct dkdevice *);
 struct dkdevice 	*disk_find(char *);
-void				disksort(struct bufq_state *, struct buf *);
+void				disksort(struct bufq_state *, struct buf *, int);
 void				diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
 
 struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);

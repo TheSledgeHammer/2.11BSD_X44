@@ -83,8 +83,8 @@ struct mpx {
     struct file				*mpx_file;
 };
 
-extern struct grouplist       mpx_groups[];
-extern struct channellist     mpx_channels[];
+extern struct grouplist     mpx_groups[];
+extern struct channellist   mpx_channels[];
 
 #define MPX_LOCK(mpx)		simple_lock((mpx)->mpp_lock)
 #define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpp_lock)
@@ -96,5 +96,7 @@ void						mpx_remove_group(struct mpx_group *, int);
 void                		mpx_create_channel(struct mpx_group *, int, int);
 struct mpx_channel     		*mpx_get_channel(int);
 void						mpx_remove_channel(struct mpx_channel *, int);
+void						mpx_attach(struct mpx_channel *, struct mpx_group *);
+void						mpx_detach(struct mpx_channel *, struct mpx_group *);
 
 #endif /* SYS_MPX_H_ */

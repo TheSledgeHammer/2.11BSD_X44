@@ -66,7 +66,7 @@ int	lfs_writing;			/* Set if already kicked off a writer
 */
 #define WAIT_THRESHHOLD         (nbuf - (nbuf >> 2) - 10)
 #define WRITE_THRESHHOLD        ((nbuf >> 1) - 10)
-#define LFS_BUFWAIT	2
+#define LFS_BUFWAIT				2
 
 int
 lfs_bwrite(ap)
@@ -74,11 +74,12 @@ lfs_bwrite(ap)
 		struct buf *a_bp;
 	} */ *ap;
 {
-	register struct buf *bp = ap->a_bp;
+	register struct buf *bp;
 	struct lfs *fs;
 	struct inode *ip;
 	int db, error, s;
 
+	bp = ap->a_bp;
 	/*
 	 * Set the delayed write flag and use reassignbuf to move the buffer
 	 * from the clean list to the dirty one.
@@ -144,9 +145,9 @@ lfs_flush()
 		return;
 	lfs_writing = 1;
 	simple_lock(&mountlist_slock);
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+	for (mp = CIRCLEQ_FIRST(&mountlist); mp != (void *)&mountlist; mp = nmp) {
 		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
-			nmp = mp->mnt_list.cqe_next;
+			nmp = CIRCLEQ_NEXT(mp, mnt_list);
 			continue;
 		}
 		if (mp->mnt_stat.f_type == lfs_mount_type &&
@@ -165,7 +166,7 @@ lfs_flush()
 			lfs_segwrite(mp, 0);
 		}
 		simple_lock(&mountlist_slock);
-		nmp = mp->mnt_list.cqe_next;
+		nmp = CIRCLEQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp, p);
 	}
 	simple_unlock(&mountlist_slock);

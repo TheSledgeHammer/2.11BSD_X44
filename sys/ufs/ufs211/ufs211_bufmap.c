@@ -67,14 +67,17 @@ ufs211_mapout(bp)
  * allocate bufmap data
  */
 static void *
-bufmap_alloc(data, size)
+bufmap_alloc(data, size, flags)
     void  	*data;
 	long 	size;
+	int		flags;
 {
-    struct ufs211_bufmap *bm = &ufs211buf;
+    struct ufs211_bufmap *bm;
+
+    bm = &ufs211buf;
     if(bm) {
-        bm->bm_data = data;
-        bm->bm_size = size;
+    	bm->bm_data = data;
+    	bm->bm_size = size;
         printf("data allocated \n");
     }
     return (bm->bm_data);
@@ -87,8 +90,9 @@ static void *
 bufmap_free(data)
     void  *data;
 {
-    struct ufs211_bufmap *bm = &ufs211buf;
+    struct ufs211_bufmap *bm;
 
+    bm = &ufs211buf;
     if(bm->bm_data == data) {
     	if(bm->bm_data != NULL && bm->bm_size == sizeof(data)) {
     		bm->bm_data = NULL;

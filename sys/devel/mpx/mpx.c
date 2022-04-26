@@ -68,7 +68,7 @@ mpx_init(void)
     }
 
 	for(j = 0; j <= NCHANS; j++) {
-		  LIST_INIT(&mpx_channels[j]);
+		LIST_INIT(&mpx_channels[j]);
 	}
 }
 
@@ -119,29 +119,29 @@ mpx_reader(mpx, size, buffer, state)
 }
 
 void
-mpx_create_group(index)
-    int index;
+mpx_create_group(idx)
+    int idx;
 {
     struct grouplist *group;
     struct mpx_group *gp;
 
-    group = &mpx_groups[index];
+    group = &mpx_groups[idx];
     gp = (struct mpx_group *)calloc(NGROUPS, sizeof(struct mpx_group *), M_MPX, M_WAITOK);
-    gp->mpg_index = index;
+    gp->mpg_index = idx;
 
     LIST_INSERT_HEAD(group, gp, mpg_node);
 }
 
 struct mpx_group *
-mpx_get_group(index)
-    int index;
+mpx_get_group(idx)
+    int idx;
 {
     struct grouplist *group;
     struct mpx_group *gp;
 
-    group = &mpx_groups[index];
+    group = &mpx_groups[idx];
     LIST_FOREACH(gp, group, mpg_node) {
-        if(gp->mpg_index == index) {
+        if(gp->mpg_index == idx) {
             return (gp);
         }
     }
@@ -149,29 +149,29 @@ mpx_get_group(index)
 }
 
 void
-mpx_remove_group(gp, index)
+mpx_remove_group(gp, idx)
 	struct mpx_group *gp;
-	int index;
+	int idx;
 {
-	if(gp->mpg_index == index) {
+	if(gp->mpg_index == idx) {
 		LIST_REMOVE(gp, mpg_node);
 	} else {
-		gp = mpx_get_group(index);
+		gp = mpx_get_group(idx);
 		LIST_REMOVE(gp, mpg_node);
 	}
 }
 
 void
-mpx_create_channel(gp, index, flags)
+mpx_create_channel(gp, idx, flags)
 	struct mpx_group *gp;
-    int index, flags;
+    int idx, flags;
 {
     struct channellist *chan;
     struct mpx_channel *cp;
 
-    chan = &mpx_channels[index];
+    chan = &mpx_channels[idx];
     cp = (struct mpx_channel *)calloc(NCHANS, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
-    cp->mpc_index = index;
+    cp->mpc_index = idx;
     cp->mpc_flags = flags;
     cp->mpc_group = gp;
 
@@ -179,15 +179,15 @@ mpx_create_channel(gp, index, flags)
 }
 
 struct mpx_channel *
-mpx_get_channel(index)
-    int index;
+mpx_get_channel(idx)
+    int idx;
 {
     struct channellist *chan;
     struct mpx_channel *cp;
 
-    chan = &mpx_channels[index];
+    chan = &mpx_channels[idx];
     LIST_FOREACH(cp, chan, mpc_node) {
-        if(cp->mpc_index == index) {
+        if(cp->mpc_index == idx) {
             return (cp);
         }
     }
@@ -195,14 +195,14 @@ mpx_get_channel(index)
 }
 
 void
-mpx_remove_channel(cp, index)
+mpx_remove_channel(cp, idx)
 	struct mpx_channel *cp;
-	int index;
+	int idx;
 {
-	if (cp->mpc_index == index) {
+	if (cp->mpc_index == idx) {
 		LIST_REMOVE(cp, mpc_node);
 	} else {
-		cp = mpx_get_channel(index);
+		cp = mpx_get_channel(idx);
 		LIST_REMOVE(cp, mpc_node);
 	}
 }
@@ -229,15 +229,46 @@ mpxspace(flags)
     }
 }
 
-
-mpx_attach()
+/*
+ * Attach an existing channel to an existing group, if channels are free
+ * within that group.
+ * Note: This does not add a new channel to the channels list.
+ */
+void
+mpx_attach(cp, gp)
+	struct mpx_channel 	*cp;
+	struct mpx_group *gp;
 {
+	register int i;
 
+	KASSERT(cp != NULL);
+	for (i = 0; i <= NGROUPS; i++) {
+		 LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
+			 if (gp->mpg_channel == NULL) {
+				 gp->mpg_channel = cp;
+			 }
+		 }
+	}
 }
 
-mpx_detach()
+/*
+ * Detach an existing channel (if not empty) from an existing group.
+ * Note: This does not remove channel from the channels list.
+ */
+void
+mpx_detach(cp, gp)
+	struct mpx_channel 	*cp;
+	struct mpx_group 	*gp;
 {
+	register int i;
 
+	for (i = 0; i <= NGROUPS; i++) {
+		LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
+			 if (gp->mpg_channel == cp && cp != NULL) {
+				 gp->mpg_channel = NULL;
+			 }
+		}
+	}
 }
 
 mpx_connect()

@@ -42,7 +42,7 @@
  * Fixed filesystem layout parameters
  */
 #define	LFS_LABELPAD		8192		/* LFS label size */
-#define	LFS_SBPAD		8192		/* LFS superblock size */
+#define	LFS_SBPAD			8192		/* LFS superblock size */
 
 /*
  * XXX

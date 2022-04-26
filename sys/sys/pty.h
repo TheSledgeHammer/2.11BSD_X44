@@ -17,7 +17,7 @@
 #define PF_NOSTOP   0x40
 #define PF_UCNTL    0x80        /* user control mode */
 
-#ifdef KERNEL
+#ifdef _KERNEL
 
 #include <sys/uio.h>
 #include <sys/tty.h>

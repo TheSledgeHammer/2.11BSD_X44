@@ -969,7 +969,7 @@ out:
 /****************************************************************/
 /* HTBC Extents & Caching */
 
-static bool
+static bool_t
 htbc_ext_binsearch_index(struct htbc_inode *ip, struct htbc_extent_path *path, daddr_t lbn, daddr_t *first_lbn, daddr_t *last_lbn)
 {
 	struct htbc_extent_header *ehp = path->ep_header;
@@ -1005,9 +1005,10 @@ htbc_ext_binsearch_index(struct htbc_inode *ip, struct htbc_extent_path *path, d
 static void
 htbc_ext_binsearch(struct htbc_inode *ip, struct htbc_extent_path *path, daddr_t lbn, daddr_t first_lbn, daddr_t last_lbn)
 {
-	struct htbc_extent_header *ehp = path->ep_header;
+	struct htbc_extent_header *ehp;
 	struct htbc_extent *first, *l, *r, *m;
 
+	ehp = path->ep_header;
 	if (ehp->eh_ecount == 0)
 		return;
 

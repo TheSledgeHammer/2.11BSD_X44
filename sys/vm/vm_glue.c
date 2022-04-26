@@ -217,9 +217,9 @@ vm_fork(p1, p2, isvfork)
 		panic("vm_fork: no more kernel virtual memory");
 	vm_map_pageable(kernel_map, addr, addr + ctob(UPAGES), FALSE);
 
-/* XXX somehow, on 386, ocassionally pageout removes active, wired down kstack,
-and pagetables, WITHOUT going thru vm_page_unwire! Why this appears to work is
-not yet clear, yet it does... */
+	/* XXX somehow, on 386, ocassionally pageout removes active, wired down kstack,
+	 and pagetables, WITHOUT going thru vm_page_unwire! Why this appears to work is
+	 not yet clear, yet it does... */
 	addr = kmem_alloc(kernel_map, ctob(UPAGES));
 	if (addr == 0) {
 		panic("vm_fork: no more kernel virtual memory");
@@ -350,7 +350,7 @@ loop:
 
 	pp = NULL;
 	ppri = INT_MIN;
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
+	for(p = LIST_FIRST(&allproc); p!= NULL; p = LIST_NEXT(p, p_list)) {
 		if (p->p_stat == SRUN && (p->p_flag & (P_INMEM|P_SWAPPING)) == 0) {
 			pri = p->p_swtime + p->p_slptime - p->p_nice * 8;
 			int mempri = pri > 0 ? pri : 0;
@@ -439,7 +439,7 @@ swapout_threads()
 #endif
 	outp = outp2 = NULL;
 	outpri = outpri2 = 0;
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
+	for(p = LIST_FIRST(&allproc); p!= NULL; p = LIST_NEXT(p, p_list)) {
 		if (!swappable(p))
 			continue;
 		switch (p->p_stat) {

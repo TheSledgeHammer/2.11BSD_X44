@@ -31,6 +31,7 @@
 #include <sys/unistd.h>
 #include <sys/lock.h>
 #include <sys/map.h>
+#include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/poll.h>
 #include <sys/user.h>
@@ -146,19 +147,13 @@ struct ttychars ttydefaults = {
 	CSUSP,	CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT, CMIN, CTIME
 };
 
-/* Macros to clear/set/test flags. */
-#define	SET(t,f)	(t) |= (f)
-#define	CLR(t,f)	(t) &= ~(f)
-#define	ISSET(t,f)	((t) & (f))
-
-extern	char 	*nextc();
-extern	int		wakeup();
+static int ttnread(struct tty *);
 
 void
 ttychars(tp)
 	struct tty *tp;
 {
-	tp->t_chars = &ttydefaults;
+	tp->t_chars = *ttydefaults;
 }
 
 /*
@@ -234,6 +229,7 @@ ttyflush(tp, rw)
 	register struct tty *tp;
 	int rw;
 {
+	const struct cdevsw *cdev;
 	register int s;
 
 	s = spltty();
@@ -248,8 +244,9 @@ ttyflush(tp, rw)
 		ttwakeup(tp);
 	}
 	if (rw & FWRITE) {
+		cdev = cdevsw_lookup(tp->t_dev);
 		tp->t_state &= ~TS_TTSTOP;
-		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
+		(*cdev->d_stop)(tp, rw);
 		wakeup((caddr_t)&tp->t_outq);
 		while (getc(&tp->t_outq) >= 0)
 			;
@@ -271,8 +268,10 @@ void
 ttyblock(tp)
 	register struct tty *tp;
 {
+	const struct cdevsw *cdev;
 	register int total;
 
+	cdev = cdevsw_lookup(tp->t_dev);
 	total = tp->t_rawq.c_cc + tp->t_canq.c_cc;
 	/*
 	 * Block further input iff:
@@ -295,8 +294,7 @@ ttyblock(tp)
 		 * If queue is full, drop RTS to tell modem to stop sending us stuff
 		 */
 		if (ISSET(tp->t_flags, RTSCTS)
-				&& (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev, TIOCMBIC,
-						&rts, 0) == 0) {
+				&& (*cdev->d_ioctl)(tp->t_dev, TIOCMBIC, &rts, 0) == 0) {
 			SET(tp->t_state, TS_TBLOCK);
 		}
 	}
@@ -306,16 +304,18 @@ void
 ttyunblock(tp)
 	register struct tty *tp;
 {
-	register int s = spltty();
+	const struct cdevsw *cdev;
+	register int s;
 
+	s = spltty();
+	cdev = cdevsw_lookup(tp->t_dev);
 	if (ISSET(tp->t_flags, TANDEM) && tp->t_startc != _POSIX_VDISABLE
 			&& putc(tp->t_startc, &tp->t_outq) == 0) {
 		CLR(tp->t_state, TS_TBLOCK);
 		ttstart(tp);
 	}
 	if (ISSET(tp->t_flags, RTSCTS)
-			&& (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev, TIOCMBIS, &rts, 0)
-					== 0) {
+			&& (*cdev->d_ioctl)(tp->t_dev, TIOCMBIS, &rts, 0) == 0) {
 		CLR(tp->t_state, TS_TBLOCK);
 	}
 }
@@ -353,26 +353,12 @@ void ttstart(tp)
 		(*tp->t_oproc)(tp);
 }
 
-int
-_ttioctl(tp, cmd, data, flag, p)
-	register struct tty *tp;
-	u_long cmd;
-	caddr_t data;
-	int flag;
-	struct proc *p;
-{
-	if (p == pfind(u.u_procp->p_pid)) {
-		return (ttioctl(tp, cmd, data, flag));
-	}
-	return (-1);
-}
-
 /*
  * Common code for tty ioctls.
  */
 /*ARGSUSED*/
 int
-ttioctl(tp, com, data, flag)
+ttioctl_sc(tp, com, data, flag)
 	register struct tty *tp;
 	u_long com;
 	caddr_t data;
@@ -381,9 +367,10 @@ ttioctl(tp, com, data, flag)
 	extern struct tty *constty; /* Temporary virtual console. */
 	int s, error;
 	long newflags;
-	int dev = tp->t_dev;
+	int dev;
 	struct nameidata nd;
 
+	dev = tp->t_dev;
 	/*
 	 * If the ioctl involves modification,
 	 * hang if in the background.
@@ -422,7 +409,7 @@ ttioctl(tp, com, data, flag)
 				&& tp == u.u_ttyp && (u.u_procp->p_flag & P_SVFORK) == 0
 				&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
 				&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
-			gsignal(u.u_procp->p_pgrp, SIGTTOU);
+			gsignal(u.u_procp->p_pgrp->pg_id, SIGTTOU);
 			sleep((caddr_t) & lbolt, TTOPRI);
 		}
 		break;
@@ -642,6 +629,7 @@ ttioctl(tp, com, data, flag)
 	}
 
 	case TIOCSETD: { 		/* set line discipline */
+		const struct linesw *line = linesw_lookup(dev);
 		register int t = *(int *)data;
 		int error = 0;
 
@@ -649,10 +637,13 @@ ttioctl(tp, com, data, flag)
 			return (ENXIO);
 		if (t != tp->t_line) {
 			s = spltty();
-			(*linesw[tp->t_line].l_close)(tp, flag);
-			error = (*linesw[t].l_open)(dev, tp);
+			(*line->l_close)(tp, flag);
+			error = (*line->l_open)(dev, tp);
+			//(*linesw[tp->t_line].l_close)(tp, flag);
+			//error = (*linesw[t].l_open)(dev, tp);
 			if (error) {
-				(void) (*linesw[tp->t_line].l_open)(dev, tp);
+				//(void) (*linesw[tp->t_line].l_open)(dev, tp);
+				(void) (*line->l_open)(dev, tp);
 				splx(s);
 				return (error);
 			}
@@ -799,7 +790,7 @@ ttioctl(tp, com, data, flag)
 		if (bcmp((caddr_t)&tp->t_winsize, data,
 		    sizeof (struct winsize))) {
 			tp->t_winsize = *(struct winsize *)data;
-			gsignal(tp->t_pgrp, SIGWINCH);
+			gsignal(tp->t_pgrp->pg_id, SIGWINCH);
 		}
 		break;
 
@@ -845,6 +836,20 @@ ttioctl(tp, com, data, flag)
 	}
 
 	return (0);
+}
+
+int
+ttioctl(tp, cmd, data, flag, p)
+	register struct tty *tp;
+	u_long cmd;
+	caddr_t data;
+	int flag;
+	struct proc *p;
+{
+	if (p == pfind(u.u_procp->p_pid)) {
+		return (ttioctl_sc(tp, cmd, data, flag));
+	}
+	return (-1);
 }
 
 int
@@ -1160,8 +1165,8 @@ ttymodem(tp, flag)
 				if (tp->t_session && tp->t_session->s_leader) {
 					psignal(tp->t_session->s_leader, SIGHUP);
 				}
-				gsignal(tp->t_pgrp, SIGHUP);
-				gsignal(tp->t_pgrp, SIGCONT);
+				gsignal(tp->t_pgrp->pg_id, SIGHUP);
+				gsignal(tp->t_pgrp->pg_id, SIGCONT);
 				ttyflush(tp, FREAD|FWRITE);
 				TTY_UNLOCK(tp);
 				splx(s);
@@ -1324,7 +1329,7 @@ ttyinput_wlock(c, tp)
 			if ((t_flags&NOFLSH) == 0)
 				ttyflush(tp, FREAD);
 			ttyecho(c, tp);
-			gsignal(tp->t_pgrp, SIGTSTP);
+			gsignal(tp->t_pgrp->pg_id, SIGTSTP);
 			goto endcase;
 		}
 	}
@@ -1352,7 +1357,7 @@ ttyinput_wlock(c, tp)
 		if ((t_flags&NOFLSH) == 0)
 			ttyflush(tp, FREAD|FWRITE);
 		ttyecho(c, tp);
-		gsignal(tp->t_pgrp, CCEQ(tp->t_intrc,c) ? SIGINT : SIGQUIT);
+		gsignal(tp->t_pgrp->pg_id, CCEQ(tp->t_intrc,c) ? SIGINT : SIGQUIT);
 		goto endcase;
 	}
 
@@ -1612,7 +1617,7 @@ loop:
 			TTY_UNLOCK(tp);
 			splx(s);
 			return (EIO);
-		gsignal(u.u_procp->p_pgrp, SIGTTIN);
+		gsignal(u.u_procp->p_pgrp->pg_id, SIGTTIN);
 		//sleep((caddr_t) & lbolt, TTIPRI);
 		error = ttysleep(tp, &lbolt, TTIPRI | PCATCH, ttybg, 0);
 		splx(s);
@@ -1698,7 +1703,7 @@ loop:
 		 * Check for delayed suspend character.
 		 */
 		if (tp->t_line == NTTYDISC && CCEQ(tp->t_dsuspc, c)) {
-			gsignal(tp->t_pgrp, SIGTSTP);
+			gsignal(tp->t_pgrp->pg_id, SIGTSTP);
 			if (first) {
 				s = spltty();
 				TTY_LOCK(tp);
@@ -1845,7 +1850,7 @@ loop:
 			&& (tp->t_flags & TOSTOP) && (u.u_procp->p_flag & P_SVFORK) == 0
 			&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
 			&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
-		gsignal(u.u_procp->p_pgrp, SIGTTOU);
+		gsignal(u.u_procp->p_pgrp->pg_id, SIGTTOU);
 		s = spltty();
 		TTY_LOCK(tp);
 		//	sleep((caddr_t) &lbolt, TTIPRI);
@@ -2186,7 +2191,7 @@ ttwakeup(tp)
 		tp->t_rsel = 0;
 	}
 	if (tp->t_state & TS_ASYNC)
-		//gsignal(tp->t_pgrp, SIGIO);
+		//gsignal(tp->t_pgrp->pg_id, SIGIO);
 		pgsignal(tp->t_pgrp, SIGIO, 1);
 	wakeup((caddr_t)&tp->t_rawq);
 }

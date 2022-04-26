@@ -186,7 +186,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 			bp->b_blkno = daddr;
 			bp->b_flags |= B_READ;
 			VOP_STRATEGY(bp);
-			return(biowait(bp));
+			return (biowait(bp));
 		}
 	}
 	return (0);

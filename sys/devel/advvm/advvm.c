@@ -28,7 +28,8 @@
  *	@(#)advvm.c 1.0 	7/01/21
  */
 
-/* AdvVM is a logical volume manager for BSD. That is based on the ideas from Tru64 UNIX's AdvFS,
+/*
+ * AdvVM is a logical volume manager for BSD. That is based on the ideas from Tru64 UNIX's AdvFS,
  * as well as incorporating concepts from Vinum and LVM2.
  */
 
