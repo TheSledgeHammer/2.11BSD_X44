@@ -22,6 +22,7 @@
 #include <sys/uio.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <sys/event.h>
 #include <sys/vnode.h>
 #include <sys/syslog.h>
 #include <sys/signalvar.h>
@@ -147,13 +148,15 @@ struct ttychars ttydefaults = {
 	CSUSP,	CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT, CMIN, CTIME
 };
 
-static int ttnread(struct tty *);
+static int  ttnread(struct tty *);
+static void tty_init_termios(struct tty *);
+static int  proc_compare(struct proc *, struct proc *);
 
 void
 ttychars(tp)
 	struct tty *tp;
 {
-	tp->t_chars = *ttydefaults;
+	tp->t_chars = ttydefaults;
 }
 
 /*
@@ -250,7 +253,7 @@ ttyflush(tp, rw)
 		wakeup((caddr_t)&tp->t_outq);
 		while (getc(&tp->t_outq) >= 0)
 			;
-		selwakeup(&tp->t_wsel, tp->t_state & TS_WCOLL);
+		selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
 		CLR(tp->t_state, TS_WCOLL);
 		tp->t_wsel = 0;
 	}
@@ -259,7 +262,7 @@ ttyflush(tp, rw)
 	splx(s);
 }
 
-static	int	rts = TIOCM_RTS;
+static int	rts = TIOCM_RTS;
 
 /*
  * Send stop character on input overflow.
@@ -294,7 +297,7 @@ ttyblock(tp)
 		 * If queue is full, drop RTS to tell modem to stop sending us stuff
 		 */
 		if (ISSET(tp->t_flags, RTSCTS)
-				&& (*cdev->d_ioctl)(tp->t_dev, TIOCMBIC, &rts, 0) == 0) {
+				&& (*cdev->d_ioctl)(tp->t_dev, TIOCMBIC, (char *)rts, 0, u.u_procp) == 0) {
 			SET(tp->t_state, TS_TBLOCK);
 		}
 	}
@@ -315,7 +318,7 @@ ttyunblock(tp)
 		ttstart(tp);
 	}
 	if (ISSET(tp->t_flags, RTSCTS)
-			&& (*cdev->d_ioctl)(tp->t_dev, TIOCMBIS, &rts, 0) == 0) {
+			&& (*cdev->d_ioctl)(tp->t_dev, TIOCMBIS, (char *)rts, 0, u.u_procp) == 0) {
 		CLR(tp->t_state, TS_TBLOCK);
 	}
 }
@@ -365,11 +368,13 @@ ttioctl_sc(tp, com, data, flag)
 	int flag;
 {
 	extern struct tty *constty; /* Temporary virtual console. */
+	const struct cdevsw *cdev;
+	const struct linesw *line;
+	struct nameidata nd;
 	int s, error;
 	long newflags;
 	int dev;
-	struct nameidata nd;
-
+	
 	dev = tp->t_dev;
 	/*
 	 * If the ioctl involves modification,
@@ -401,8 +406,6 @@ ttioctl_sc(tp, com, data, flag)
 		break;
 	case TIOCSPGRP:
 	case TIOCLBIS:
-	case TIOCLBIC:
-	case TIOCLSET:
 	case TIOCSTI:
 	case TIOCSWINSZ:
 		while (tp->t_line == NTTYDISC && u.u_procp->p_pgrp != tp->t_pgrp
@@ -488,8 +491,11 @@ ttioctl_sc(tp, com, data, flag)
 		break;
 
 	case TIOCDRAIN: 		/* wait till output drained */
-		if (error == ttywait(tp))
+	    ttywait(tp);
+	    /*
+		if (error == (int)ttywait(tp))
 			return (error);
+		*/
 		break;
 
 	case TIOCGETA: { 		/* get termios struct */
@@ -629,20 +635,17 @@ ttioctl_sc(tp, com, data, flag)
 	}
 
 	case TIOCSETD: { 		/* set line discipline */
-		const struct linesw *line = linesw_lookup(dev);
 		register int t = *(int *)data;
 		int error = 0;
-
+		
+		line = linesw_lookup(dev);
 		if ((unsigned) t >= sys_linesws)
 			return (ENXIO);
 		if (t != tp->t_line) {
 			s = spltty();
 			(*line->l_close)(tp, flag);
 			error = (*line->l_open)(dev, tp);
-			//(*linesw[tp->t_line].l_close)(tp, flag);
-			//error = (*linesw[t].l_open)(dev, tp);
 			if (error) {
-				//(void) (*linesw[tp->t_line].l_open)(dev, tp);
 				(void) (*line->l_open)(dev, tp);
 				splx(s);
 				return (error);
@@ -704,6 +707,7 @@ ttioctl_sc(tp, com, data, flag)
 		break;
 
 	case TIOCSTI: 			/* simulate terminal input */
+    	line = linesw_lookup(dev);
 		if (u.u_uid && (flag & FREAD) == 0)
 			return (EPERM);
 		if (u.u_uid && u.u_ttyp != tp)
@@ -711,15 +715,16 @@ ttioctl_sc(tp, com, data, flag)
 		if(u.u_uid && !isctty(u.u_procp, tp)) {
 			return (EACCES);
 		}
-		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
+		(*line->l_rint)(*(char *)data, tp);
 		break;
 
 	case TIOCSTOP: 			/* stop output, like ^S */
 		s = spltty();
+		cdev = cdevsw_lookup(dev);
 		TTY_LOCK(tp);
 		if ((tp->t_state&TS_TTSTOP) == 0) {
 			tp->t_state |= TS_TTSTOP;
-			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
+			(*cdev->d_stop)(tp, 0);
 		}
 		TTY_UNLOCK(tp);
 		splx(s);
@@ -770,7 +775,7 @@ ttioctl_sc(tp, com, data, flag)
 			return (EINVAL);
 		else if (pgrp->pg_session != u.u_procp->p_session)
 			return (EPERM);
-		else if (u.u_procp && u.u_procp->p_pgrp == pgrp && u.u_procp->p_uid != u.u_uid && u.u_uid && !inferior(p))
+		else if (u.u_procp && u.u_procp->p_pgrp == pgrp && u.u_procp->p_uid != u.u_uid && u.u_uid && !inferior(u.u_procp))
 			return (EPERM);
 		else if (u.u_uid && (flag & FREAD) == 0)
 			return (EPERM);
@@ -877,10 +882,10 @@ ttpoll(tp, events, p)
 
 	if (revents == 0) {
 		if (events & (POLLIN | POLLHUP | POLLRDNORM))
-			selrecord(p, &tp->t_rsel);
+			selrecord(p, &tp->t_srsel);
 
 		if (events & (POLLOUT | POLLWRNORM))
-			selrecord(p, &tp->t_wsel);
+			selrecord(p, &tp->t_swsel);
 	}
 	TTY_LOCK(tp);
 	splx(s);
@@ -895,7 +900,7 @@ filt_ttyrdetach(struct knote *kn)
 
 	tp = kn->kn_hook;
 	s = spltty();
-	SIMPLEQ_REMOVE(tp->t_srsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&tp->t_srsel.si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -1016,7 +1021,12 @@ ttselect(dev, rw)
 	register dev_t dev;
 	int rw;
 {
-	struct tty *tp = &cdevsw[major(dev)].d_tty[minor(dev)&0177];
+	struct tty *tp;
+	const struct cdevsw *cdev;
+	
+	cdev = cdev_lookup(dev);
+	tp = (*cdev->d_tty)(minor(dev)&0177);
+	//&cdevsw[major(dev)].d_tty[minor(dev)&0177];
 
 	return (ttyselect(tp,rw));
 }
@@ -1139,8 +1149,10 @@ ttymodem(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
+	const struct cdevsw *cdev;
 	int s;
-
+	
+	cdev = cdev_lookup(tp->t_dev);
 	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_flags & MDMBUF)) {
 		/*
 		 * MDMBUF: do flow control according to carrier flag
@@ -1150,7 +1162,7 @@ ttymodem(tp, flag)
 			ttstart(tp);
 		} else if ((tp->t_state&TS_TTSTOP) == 0) {
 			tp->t_state |= TS_TTSTOP;
-			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
+			(*cdev->d_stop)(tp, 0);
 		}
 	} else if (flag == 0) {
 		/*
