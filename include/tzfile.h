@@ -155,7 +155,7 @@ struct tzhead {
 ** that will probably do.
 */
 
-#define	isleap(y) 		(((y) % 4) == 0 && ((y) % 100) != 0 || ((y) % 400) == 0)
+#define	isleap(y) 		((((y) % 4) == 0 && ((y) % 100) != 0) || (((y) % 400) == 0))
 
 /*
 ** Since everything in isleap is modulo 400 (or a factor of 400), we know that

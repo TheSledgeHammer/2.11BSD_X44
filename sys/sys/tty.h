@@ -75,8 +75,8 @@ struct tty {
 	struct	clist 			t_outq;											/* Device output queue. */
 	struct	callout 		t_rstrt_ch;										/* for delayed output start */
 	long					t_outcc;										/* Output queue statistics. */
-	struct	proc 			*t_rsel;										/* proc Tty read/oob select. */
-	struct	proc 			*t_wsel;										/* proc Tty write select. */
+	struct	selinfo 		t_rsel;											/* proc Tty read/oob select. */
+	struct	selinfo 		t_wsel;											/* proc Tty write select. */
 	caddr_t					T_LINEP;										/* ### */
 	caddr_t					t_addr;											/* ??? */
 	dev_t					t_dev;											/* device */
@@ -94,11 +94,7 @@ struct tty {
 	void					(*t_oproc) (struct tty *);						/* device *//* Start output. */
 	void					(*t_stop) (struct tty *, int);					/* Stop output. */
 	int						(*t_param) (struct tty *, struct termios *);	/* Set hardware state. */
-
 	int						(*t_hwiflow)(struct tty *, int);				/* Set hardware flow control. */
-
-	struct	selinfo 		t_srsel;										/* Tty read/oob select. */
-	struct	selinfo 		t_swsel;										/* Tty write select. */
 
 /* be careful of tchars & co. */
 #define	t_erase				t_chars.tc_erase
@@ -231,7 +227,6 @@ int	 ttioctl(struct tty *, u_long, caddr_t, int, struct proc *);
 int  ttpoll(struct tty *, int, struct proc *);
 int	 ttread(struct tty *, struct uio *, int);
 void ttrstrt(struct tty *);
-int	 ttselect(dev_t, int, struct proc *);
 void ttsetwater(struct tty *);
 int	 ttspeedtab(int, struct speedtab *);
 int	 ttstart(struct tty *);
@@ -254,8 +249,8 @@ void ttypend(struct tty *);
 void ttyretype(struct tty *);
 void ttyrub(int, struct tty *);
 int	 ttysleep(struct tty *, void *, int, char *, int);
-void ttywait(struct tty *);
-void ttywflush(struct tty *);
+int  ttywait(struct tty *);
+int  ttywflush(struct tty *);
 struct tty 	*ttymalloc(void);
 void ttyfree(struct tty *);
 void tty_init_console(struct tty *, speed_t);

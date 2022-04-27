@@ -130,6 +130,8 @@ int 	nosys();
 void 	*hashinit(int, int, u_long *);
 void 	*hashfree(void *, int, int, u_long *);
 
+int		ureadc(int, struct uio *);
+
 void 	panic(const char *, ...);
 void	tablefull(const char *);
 void	addlog(const char *, ...);

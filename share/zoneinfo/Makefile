@@ -29,7 +29,7 @@ TZDSRCS=	zdump.c ialloc.c
 TZDOBJS=	zdump.o ialloc.o
 SOURCES=	zic.c zdump.c scheck.c ialloc.c
 DATA=		asia australasia europe etcetera northamerica \
-		pacificnew systemv
+			pacificnew systemv
 ZICMAN=		zic.0
 ZICMANSRC=	zic.8
 ZDUMAN=		zdump.0
@@ -42,29 +42,29 @@ MANDIR=		${DESTDIR}/usr/man/cat8
 all:		zdump zic ${ZICMAN} ${ZDUMAN}
 
 install:	zic $(DATA) $(MAN)
-		(umask 22; ./zic -d ${SHARDIR} $(DATA))
-		install -c -m 444 -o bin -g bin ${SHARDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
-		install -c -m 444 -o bin -g bin $(ZICMAN) ${MANDIR}/${ZICMAN}
-		install -c -m 444 -o bin -g bin $(ZDUMAN) ${MANDIR}/${ZDUMAN}
-		install -c -s -m 755 -o bin -g bin zic ${DESTDIR}/usr/sbin/zic
+			(umask 22; ./zic -d ${SHARDIR} $(DATA))
+			install -c -m 444 -o bin -g bin ${SHARDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
+			install -c -m 444 -o bin -g bin $(ZICMAN) ${MANDIR}/${ZICMAN}
+			install -c -m 444 -o bin -g bin $(ZDUMAN) ${MANDIR}/${ZDUMAN}
+			install -c -s -m 755 -o bin -g bin zic ${DESTDIR}/usr/sbin/zic
 
 zdump.0:	$(ZDUMANSRC)
-		/usr/man/manroff $(ZDUMANSRC) > $(ZDUMAN)
+			/usr/man/manroff $(ZDUMANSRC) > $(ZDUMAN)
 
 zic.0:		$(ZICMANSRC)
-		/usr/man/manroff $(ZICMANSRC) > $(ZICMAN)
+			/usr/man/manroff $(ZICMANSRC) > $(ZICMAN)
 
 zdump:		$(TZDOBJS)
-		$(CC) $(CFLAGS) $(LFLAGS) $(SEPFLAG) $(TZDOBJS) -o $@
+			$(CC) $(CFLAGS) $(LFLAGS) $(SEPFLAG) $(TZDOBJS) -o $@
 
 zic:		$(TZCOBJS)
-		$(CC) $(CFLAGS) $(LFLAGS) $(SEPFLAG) $(TZCOBJS) -o $@
+			$(CC) $(CFLAGS) $(LFLAGS) $(SEPFLAG) $(TZCOBJS) -o $@
 
 lint:		$(TZCSRCS) $(TZDSRCS)
-		lint $(LINTFLAGS) $(CFLAGS) $(TZCSRCS)
-		lint $(LINTFLAGS) $(CFLAGS) $(TZDSRCS)
+			lint $(LINTFLAGS) $(CFLAGS) $(TZCSRCS)
+			lint $(LINTFLAGS) $(CFLAGS) $(TZDSRCS)
 
 clean:
-		rm -f *.o zdump zic $(ZICMAN) $(ZDUMAN)
+			rm -f *.o zdump zic $(ZICMAN) $(ZDUMAN)
 
 .include <bsd.prog.mk>
