@@ -227,7 +227,7 @@ int	 unputc(struct clist *);
 
 int	 nullmodem(struct tty *, int);
 int	 tputchar(int, struct tty *);
-int	 ttioctl(struct tty *, u_long, caddr_t, int);
+int	 ttioctl(struct tty *, u_long, caddr_t, int, struct proc *);
 int  ttpoll(struct tty *, int, struct proc *);
 int	 ttread(struct tty *, struct uio *, int);
 void ttrstrt(struct tty *);
