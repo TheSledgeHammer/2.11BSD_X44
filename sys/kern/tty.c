@@ -264,7 +264,7 @@ ttyflush(tp, rw)
 		wakeup((caddr_t)&tp->t_outq);
 		selnotify(&tp->t_wsel, NOTE_SUBMIT);
 		CLR(tp->t_state, TS_WCOLL);
-		tp->t_wsel = 0;
+//		tp->t_wsel = 0;
 	}
 	if ((rw & FREAD) && ISSET(tp->t_state, TS_TBLOCK))
 		ttyunblock(tp);
@@ -642,10 +642,11 @@ ttioctl_sc(tp, com, data, flag)
 
 	case TIOCSETD: { 		/* set line discipline */
 		register int t = *(int *)data;
+		int ndisp = devsw_nelems(LINETYPE);
 		int error = 0;
 
 		line = linesw_lookup(dev);
-		if ((unsigned) t >= sys_linesws)
+		if ((unsigned) t >= ndisp)
 			return (ENXIO);
 		if (t != tp->t_line) {
 			s = spltty();
@@ -821,10 +822,15 @@ ttioctl_sc(tp, com, data, flag)
 	case TIOCGLTC:
 		bcopy((caddr_t)&tp->t_suspc, data, sizeof (struct ltchars));
 		break;
+		
+	default:
+		return (-1);
+	}
 
 	/*
 	 * Modify local mode word.
 	 */
+	switch(com) {
 	case TIOCLBIS:
 		tp->t_flags |= (long)*(u_int *)data << 16;
 		break;
@@ -841,9 +847,6 @@ ttioctl_sc(tp, com, data, flag)
 	case TIOCLGET:
 		*(int *)data = tp->t_flags >> 16;
 		break;
-
-	default:
-		return (-1);
 	}
 
 	return (0);
@@ -888,10 +891,10 @@ ttpoll(tp, events, p)
 
 	if (revents == 0) {
 		if (events & (POLLIN | POLLHUP | POLLRDNORM))
-			selrecord(p, &tp->t_srsel);
+			selrecord(p, &tp->t_rsel);
 
 		if (events & (POLLOUT | POLLWRNORM))
-			selrecord(p, &tp->t_swsel);
+			selrecord(p, &tp->t_wsel);
 	}
 	TTY_LOCK(tp);
 	splx(s);
@@ -906,7 +909,7 @@ filt_ttyrdetach(struct knote *kn)
 
 	tp = kn->kn_hook;
 	s = spltty();
-	SIMPLEQ_REMOVE(&tp->t_srsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&tp->t_rsel.si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -936,7 +939,7 @@ filt_ttywdetach(struct knote *kn)
 	tp = kn->kn_hook;
 	s = spltty();
 	TTY_LOCK(tp);
-	SIMPLEQ_REMOVE(&tp->t_swsel.si_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&tp->t_wsel.si_klist, kn, knote, kn_selnext);
 	TTY_UNLOCK(tp);
 	splx(s);
 }
@@ -979,11 +982,11 @@ ttykqfilter(dev_t dev, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &tp->t_srsel.si_klist;
+		klist = &tp->t_rsel.si_klist;
 		kn->kn_fop = &ttyread_filtops;
 		break;
 	case EVFILT_WRITE:
-		klist = &tp->t_swsel.si_klist;
+		klist = &tp->t_wsel.si_klist;
 		kn->kn_fop = &ttywrite_filtops;
 		break;
 	default:
@@ -1025,17 +1028,11 @@ ttyopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
 {
-	register struct proc *pp;
-
-	pp = u.u_procp;
+	int s;
+	
+	s = spltty();	
+	TTY_LOCK(tp);
 	tp->t_dev = dev;
-	if (pp->p_pgrp == 0) {
-		u.u_ttyp = tp;
-		u.u_ttyd = dev;
-		if (tp->t_pgrp == 0)
-			tp->t_pgrp = pp->p_pid;
-		pp->p_pgrp = tp->t_pgrp;
-	}
 	tp->t_state &= ~TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_ISOPEN;
@@ -1043,6 +1040,8 @@ ttyopen(dev, tp)
 		if (tp->t_line != NTTYDISC)
 			ttywflush(tp);
 	}
+	TTY_UNLOCK(tp);
+	splx(s);
 	return (0);
 }
 
@@ -1738,26 +1737,28 @@ checktandem:
  * Sleeps here are not interruptible, but we return prematurely
  * if new signals come in.
  */
+ 
 int
 ttycheckoutq_wlock(tp, wait)
 	register struct tty *tp;
 	int wait;
 {
-	int hiwat, s, oldsig;
+	int hiwat, s, error;
 
 	hiwat = TTHIWAT(tp);
 	s = spltty();
-	oldsig = u.u_procp->p_sigacts;
 	if (tp->t_outq.c_cc > hiwat + 200)
 		while (tp->t_outq.c_cc > hiwat) {
 			ttstart(tp);
-			if (wait == 0 || u.u_procp->p_sigacts != oldsig) {
-				splx(s);
+			if (wait == 0) {
+    			splx(s);
 				return (0);
 			}
-			timeout(wakeup, (caddr_t) &tp->t_outq, hz);
 			tp->t_state |= TS_ASLEEP;
-			sleep((caddr_t) & tp->t_outq, PZERO - 1);
+			error = ttysleep(tp, &tp->t_outq, (PZERO - 1) | PCATCH, "ttckoutq", hz);
+			if (error == EINTR) {
+			    wait = 0;
+			}
 		}
 	splx(s);
 	return (1);
@@ -1812,7 +1813,6 @@ loop:
 			goto out;
 		} else {
 			/* Sleep awaiting carrier. */
-			//sleep((caddr_t)&tp->t_rawq, TTIPRI);
 			error = ttysleep(tp, &tp->t_rawq, TTIPRI | PCATCH, ttopen, 0);
 			if (error)
 				goto out;
@@ -1881,7 +1881,7 @@ loop:
 			if (tp->t_flags & (RAW|LITOUT))
 				ce = cc;
 			else {
-				ce = cc - scanc((unsigned)cc, (caddr_t)cp, (caddr_t *)char_type, CCLASSMASK);
+				ce = cc - scanc((u_int)cc, (u_char *)cp, (u_char *)char_type, CCLASSMASK);
 				/*
 				 * If ce is zero, then we're processing
 				 * a special character through ttyoutput.
@@ -2065,7 +2065,7 @@ ttyrubo(tp, cnt)
 	register char *rubostring = tp->t_flags & CRTERA ? "\b \b" : "\b";
 
 	while (--cnt >= 0)
-		ttyout(rubostring, tp);
+		ttyout1(rubostring, tp);
 }
 
 /*
@@ -2162,10 +2162,9 @@ ttwakeup(tp)
 	register struct tty *tp;
 {
 
-	if (tp->t_rsel) {
+	if (&tp->t_rsel != NULL) {
 		selnotify(&tp->t_rsel, NOTE_SUBMIT);
 		tp->t_state &= ~TS_RCOLL;
-		tp->t_rsel = 0;
 	}
 	if (tp->t_state & TS_ASYNC)
 		pgsignal(tp->t_pgrp, SIGIO, 1);
@@ -2233,11 +2232,11 @@ ttyinfo(tp)
 		ttyprintf(tp, "not a controlling terminal\n");
 	else if (tp->t_pgrp == NULL)
 		ttyprintf(tp, "no foreground process group\n");
-	else if ((p = tp->t_pgrp->pg_mem) == NULL)
+	else if ((p = LIST_FIRST(&tp->t_pgrp->pg_mem)) == NULL)
 		ttyprintf(tp, "empty foreground process group\n");
 	else {
 		/* Pick interesting process. */
-		for (pick = NULL; p != NULL; p = p->p_pgrpnxt)
+		for (pick = NULL; p != NULL; p = LIST_NEXT(p, p_pglist))
 			if (proc_compare(pick, p))
 				pick = p;
 
