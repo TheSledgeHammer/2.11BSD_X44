@@ -152,9 +152,9 @@ lfs_writevnodes(fs, mp, sp, op)
 	struct vnode *vp;
 
 /* BEGIN HACK */
-#define	VN_OFFSET		(((void *)&vp->v_mntvnodes.le_next) - (void *)vp)
-#define	BACK_VP(VP)		((struct vnode *)(((void *)VP->v_mntvnodes.le_prev) - VN_OFFSET))
-#define	BEG_OF_VLIST	((struct vnode *)(((void *)&mp->mnt_vnodelist.lh_first) - VN_OFFSET))
+#define	VN_OFFSET		(((void *)LIST_NEXT(vp, v_mntvnodes)) - (void *)vp)
+#define	BACK_VP(VP)		((struct vnode *)(((void *)LIST_PREV(VP, v_mntvnodes)) - VN_OFFSET))
+#define	BEG_OF_VLIST	((struct vnode *)(((void *)LIST_FIRST(&mp->mnt_vnodelist)) - VN_OFFSET))
 
 /* Find last vnode. */
 loop:   
