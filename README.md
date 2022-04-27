@@ -105,13 +105,12 @@ To build just the tools for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 -O ~/obj tools
 
-Compiler Success:
+Compilers:
 
-GCC: i386(tools = yes; kernel = fix compilation errors)
+Clang: Yes (but fails during llvm support) library very likely needs updating along with the relevent toolchain components.
+PCC: No.
 
-Clang: No, missing c++ library and needed components in the bsd mk files. 
-
-PCC: No, compiler issues.
+GCC: Yes: i386(tools = yes; kernel = fix compilation errors)
 
 Please read the following NetBSD guide for more information:
 
