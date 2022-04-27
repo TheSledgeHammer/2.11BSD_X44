@@ -23,5 +23,5 @@ stdlib/			2.11BSD/4.4BSD-lite2/NetBSD
 string/			2.11BSD/4.4BSD-lite2/NetBSD
 sys/			4.4BSD-lite2
 termios/		NetBSD
-time/			NetBSD
+time/			211BSD
 uuid/			NetBSD
