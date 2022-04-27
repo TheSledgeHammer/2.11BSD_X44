@@ -209,6 +209,28 @@ devswtable_remove(data, major)
 	}
 }
 
+/* return number of item is device switch depending on type */
+u_int
+devsw_nelems(type)
+    int type;
+{
+    u_int nitems = 0;
+    switch(type) {
+    case BDEVTYPE:
+        nitems = (max_bdevsws/sys_bdevsws);
+        return (nitems);
+        
+    case CDEVTYPE:
+        nitems = (max_cdevsws/sys_cdevsws);
+        return (nitems);
+        
+    case LINETYPE:
+        nitems = (max_linesws/sys_linesws);
+        return (nitems);
+    }
+    return (0);
+}
+
 /* BDEVSW */
 int
 bdevsw_attach(bdev, major)
