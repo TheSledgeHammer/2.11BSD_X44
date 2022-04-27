@@ -123,6 +123,7 @@ extern struct devswtable 		sys_devsw;
 
 void							devswtable_init(void);
 int								devswtable_configure(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+u_int                           	devsw_nelems(int);
 int								devsw_io_iskmemdev(dev_t);
 int								devsw_io_iszerodev(dev_t);
 int								devsw_io_isdisk(dev_t, int);
