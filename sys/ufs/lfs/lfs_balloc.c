@@ -202,7 +202,7 @@ lfs_fragextend(vp, osize, nsize, lbn, bpp)
 {
 	struct inode *ip;
 	struct lfs *fs;
-	long bb, b;
+	long bb;
 	int error;
 
 	ip = VTOI(vp);
