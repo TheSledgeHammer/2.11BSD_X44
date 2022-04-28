@@ -170,7 +170,7 @@ struct inode {
 #define IN_NOCOPYWRITE		0x0200		/* Special NOCOPY write */
 #define	IN_UFS2				0x0400		/* UFS2 vs UFS1 */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 static inline bool_t
 I_IS_UFS1(const struct inode *ip)
