@@ -399,7 +399,7 @@ ttioctl_sc(tp, com, data, flag)
 				&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
 				&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
 			gsignal(u.u_procp->p_pgrp->pg_id, SIGTTOU);
-			error = ttysleepsleep(tp, &lbolt, TTOPRI, ttybg, 0);
+			error = ttysleep(tp, &lbolt, TTOPRI, ttybg, 0);
 			if (error) {
 				return (error);
 			}
