@@ -80,7 +80,7 @@ struct htree_root {
 
 struct htree_node {
 	struct htree_direct 		h_fake_dirent;
-	struct htree_htree_entry 	h_entries[0];
+	struct htree_entry 			h_entries[0];
 };
 
 struct htree_lookup_level {

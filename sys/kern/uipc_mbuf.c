@@ -10,6 +10,7 @@
 #include <sys/param.h>
 //#ifdef INET
 #include <sys/user.h>
+#include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
@@ -23,9 +24,6 @@ memaddr_t miobase;			/* click address of dma region */
 							/* this is altered during allocation */
 memaddr_t miostart;			/* click address of dma region */
 							/* this stays unchanged */
-//ubadr_t	mioumr;				/* base UNIBUS virtual address */
-							/* miostart and mioumr stay 0 for */
-							/* non-UNIBUS machines */
 u_short miosize = 16384;	/* two umr's worth */
 
 void
@@ -166,7 +164,7 @@ m_expand(canwait)
 	register struct protosw *pr;
 	register int tries;
 
-	for (tries = 0;; ) {
+	for (tries = 0;;) {
 #ifdef	pdp11
 		if (rmfree)
 			return (1);
@@ -175,12 +173,11 @@ m_expand(canwait)
 			return;// (1);
 #endif
 		if (canwait == M_DONTWAIT || tries++)
-			return;// (0);
+			return; // (0);
 
 		/* ask protocols to free space */
 		for (dp = domains; dp; dp = dp->dom_next)
-			for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW;
-			    pr++)
+			for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 				if (pr->pr_drain)
 					(*pr->pr_drain)();
 		mbstat.m_drain++;
@@ -242,13 +239,13 @@ m_more(canwait, type)
 		if (canwait == M_WAIT) {
 			mbstat.m_wait++;
 			m_want++;
-			SLEEP((caddr_t)&mfree, PZERO - 1);
+			sleep((caddr_t)&mfree, PZERO - 1);
 		} else {
 			mbstat.m_drops++;
 			return (NULL);
 		}
 	}
-#define m_more(x,y) (panic("m_more"), (struct mbuf *)0)
+#define m_more(x,y) ((panic("m_more"), (struct mbuf *)0))
 	MGET(m, canwait, type);
 #undef m_more
 	return (m);
@@ -339,15 +336,13 @@ m_cat(m, n)
 	while (m->m_next)
 		m = m->m_next;
 	while (n) {
-		if (m->m_off >= MMAXOFF ||
-		    m->m_off + m->m_len + n->m_len > MMAXOFF) {
+		if (m->m_off >= MMAXOFF || m->m_off + m->m_len + n->m_len > MMAXOFF) {
 			/* just join the two chains */
 			m->m_next = n;
 			return;
 		}
 		/* splat the data from one into the other */
-		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
-		    (u_int)n->m_len);
+		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, (u_int) n->m_len);
 		m->m_len += n->m_len;
 		n = m_free(n);
 	}
@@ -387,7 +382,7 @@ m_adj(mp, len)
 		count = 0;
 		for (;;) {
 			count += m->m_len;
-			if (m->m_next == (struct mbuf *)0)
+			if (m->m_next == (struct mbuf*) 0)
 				break;
 			m = m->m_next;
 		}
@@ -445,8 +440,7 @@ m_pullup(n, len)
 	space = MMAXOFF - m->m_off;
 	do {
 		count = MIN(MIN(space - m->m_len, len + MPULL_EXTRA), n->m_len);
-		bcopy(mtod(n, caddr_t), mtod(m, caddr_t)+m->m_len,
-		  (unsigned)count);
+		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, (unsigned) count);
 		len -= count;
 		m->m_len += count;
 		n->m_len -= count;

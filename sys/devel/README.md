@@ -13,7 +13,6 @@ an offical release is made.)
 	- threading: ucontext & mcontext
 
 - Dev: Device code to be included
-	- Evdev
 	- USB
 
 - ADVVM (AdvVM): Logical Volume Manager

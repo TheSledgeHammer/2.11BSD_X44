@@ -74,17 +74,23 @@ advvm_vdisk_set_domain(advdsk, adom)
 }
 
 void
-advvm_vdisk_set(advdsk, size, sector, cluster, numcluster)
+advvm_vdisk_set(advdsk, vindex, vsize, vsector, vcluster, vnumcluster)
 	advvm_vdisk_t	*advdsk;
-	u_int 			sector;
-	uint32_t size, cluster, numcluster;
+	u_int 			vsector;
+	uint32_t vindex, vsize, vcluster, vnumcluster;
 {
-	advdsk->avd_vdsize = size;
-	advdsk->avd_vdsector = sector;
-	advdsk->avd_vdcluster = cluster;
-	advdsk->avd_numcluster = numcluster;
+	advvm_vdfree_t 	*advfree;
+	advdsk->avd_vdindex = vindex;
+	advdsk->avd_vdsize = vsize;
+	advdsk->avd_vdsector = vsector;
+	advdsk->avd_vdcluster = vcluster;
+	advdsk->avd_numcluster = vnumcluster;
+
+	advvm_malloc((advvm_vdfree_t *)advfree, sizeof(advvm_vdfree_t *));
+	advvm_vdfree_add(advdsk, advfree, vsector, vcluster, vnumcluster);
 }
 
+void
 advvm_vdisk_insert(advdsk, adom)
 	advvm_vdisk_t	*advdsk;
 	advvm_domain_t 	*adom;
@@ -96,40 +102,48 @@ advvm_vdisk_insert(advdsk, adom)
 }
 
 void
-advvm_vdisk_add_free(advfree, cluster, number)
-	advvm_vdfree_t *advfree;
-	uint32_t cluster;
-	uint32_t number;
+advvm_vdfree_add(advdsk, advfree, cluster, number)
+	advvm_vdisk_t 	*advdsk;
+	advvm_vdfree_t 	*advfree;
+	uint32_t cluster, number;
 {
-	advvm_vdisk_t *advdsk;
+	struct advvm_freelist *freelist;
+	freelist = advdsk->avd_freelist;
+
 	advfree->avd_startcluster = cluster;
 	advfree->avd_numcluster = number;
-	LIST_INSERT_HEAD(advdsk->avd_freelist, advfree, avd_entry);
+
+	LIST_INSERT_HEAD(freelist, advfree, avd_entry);
 }
 
 advvm_vdfree_t *
-advvm_vdisk_lookup_free(advdsk, cluster, number)
+advvm_vdfree_lookup(advdsk, vindex, cluster, number)
 	advvm_vdisk_t *advdsk;
-	uint32_t cluster;
-	uint32_t number;
+	uint32_t vindex, cluster, number;
 {
+	struct advvm_freelist *freelist;
 	advvm_vdfree_t *advfree;
-	for(advfree = LIST_FIRST(advdsk->avd_freelist); advfree != NULL; advfree = LIST_NEXT(advfree, avd_entry)) {
-		if(advfree->avd_startcluster == cluster && advfree->avd_numcluster == number) {
-			return (advfree);
+
+	freelist = advdsk->avd_freelist;
+	for (advfree = LIST_FIRST(freelist); advfree != NULL; advfree = LIST_NEXT(advfree, avd_entry)) {
+		if (advdsk->avd_vdindex == vindex) {
+			if(advfree->avd_startcluster == cluster && advfree->avd_numcluster == number) {
+				return (advfree);
+			}
 		}
 	}
 	return (NULL);
 }
 
 void
-advvm_vdisk_remove_free(advdsk, cluster, number)
+advvm_vdfree_remove(advdsk, vindex, cluster, number)
 	advvm_vdisk_t *advdsk;
-	uint32_t cluster;
-	uint32_t number;
+	uint32_t vindex, cluster, number;
 {
-	advvm_vdfree_t *advfree = advvm_vdisk_lookup_free(advdsk, cluster, number);
-	if (advfree != NULL) {
+	advvm_vdfree_t *advfree;
+
+	advfree = advvm_vdfree_lookup(advdsk, vindex, cluster, number);
+	if(advfree != NULL) {
 		LIST_REMOVE(advfree, avd_entry);
 	}
 }

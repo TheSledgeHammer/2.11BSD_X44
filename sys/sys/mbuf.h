@@ -312,5 +312,5 @@ caddr_t			m_clalloc(int, int);
 void			m_copyback(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
-
+void 			mbinit2(char *, int, int);
 #endif /* _SYS_MBUF_H_ */

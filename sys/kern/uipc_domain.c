@@ -20,6 +20,7 @@
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 #include <sys/time.h>
+#include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/errno.h>
 #include <sys/sysctl.h>
@@ -164,7 +165,7 @@ pfctlinput(cmd, sa)
 	for (dp = domains; dp; dp = dp->dom_next)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_ctlinput)
-				(*pr->pr_ctlinput)(cmd, sa);
+				(*pr->pr_ctlinput)(cmd, sa, 0, NULL);
 }
 
 void
