@@ -69,7 +69,9 @@
 }
 
 struct buf *lfs_fakebuf (struct vnode *, int, size_t, caddr_t);
-int	lfs_fastvget(struct mount *, ino_t, ufs1_daddr_t, struct vnode **, struct ufs1_dinode *);
+//int	lfs_fastvget(struct mount *, ino_t, ufs2_daddr_t, struct vnode **, void *);
+int lfs1_fastvget(struct mount *, ino_t, ufs1_daddr_t, struct vnode **, struct ufs1_dinode *);
+int lfs2_fastvget(struct mount *, ino_t, ufs2_daddr_t, struct vnode **, struct ufs2_dinode *);
 
 int debug_cleaner = 0;
 int clean_vnlocked = 0;
@@ -180,7 +182,7 @@ lfs_markv()
 				continue;
 
 			/* Get the vnode/inode. */
-			if (lfs_fastvget(mntp, blkp->bi_inode, v_daddr, &vp,
+			if (lfs1_fastvget(mntp, blkp->bi_inode, v_daddr, &vp,
 			    blkp->bi_lbn == LFS_UNUSED_LBN ? 
 			    blkp->bi_bp : NULL)) {
 #ifdef DIAGNOSTIC
@@ -247,7 +249,8 @@ lfs_markv()
  * about this.
  */
 
-err2:	lfs_vunref(vp);
+err2:
+	lfs_vunref(vp);
 	/* Free up fakebuffers */
 	for (bpp = --sp->cbpp; bpp >= sp->bpp; --bpp)
 		if ((*bpp)->b_flags & B_CALL) {
@@ -464,6 +467,42 @@ lfs_segwait()
 	return (error == ERESTART ? EINTR : 0);
 }
 
+struct buf *
+lfs_fakebuf(vp, lbn, size, uaddr)
+	struct vnode *vp;
+	int lbn;
+	size_t size;
+	caddr_t uaddr;
+{
+	struct buf *bp;
+
+	bp = lfs_newbuf(vp, lbn, 0);
+	bp->b_saveaddr = uaddr;
+	bp->b_bufsize = size;
+	bp->b_bcount = size;
+	bp->b_flags |= B_INVAL;
+	return (bp);
+}
+
+int
+lfs_fastvget(mp, ino, daddr, vpp, dinp)
+	struct mount *mp;
+	ino_t ino;
+	ufs2_daddr_t daddr;
+	struct vnode **vpp;
+	void *dinp;
+{
+	struct ufs1_dinode *din1;
+	struct ufs2_dinode *din2;
+	if (UFS1) {
+		din1 = (struct ufs1_dinode *)dinp;
+		return (lfs1_fastvget(mp, ino, (ufs1_daddr_t)daddr, vpp, din1));
+	} else {
+		din2 = (struct ufs2_dinode *)dinp;
+		return (lfs2_fastvget(mp, ino, daddr, vpp, din2));
+	}
+}
+
 /*
  * VFS_VGET call specialized for the cleaner.  The cleaner already knows the
  * daddr from the ifile, so don't look it up again.  If the cleaner is
@@ -471,7 +510,7 @@ lfs_segwait()
  * don't go retrieving it again.
  */
 int
-lfs_fastvget(mp, ino, daddr, vpp, dinp)
+lfs1_fastvget(mp, ino, daddr, vpp, dinp)
 	struct mount *mp;
 	ino_t ino;
 	ufs1_daddr_t daddr;
@@ -553,17 +592,18 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 			*vpp = NULL;
 			return (error);
 		}
-		dip = lfs_ifind(ump->um_lfs, ino, bp);
+		dip = lfs1_ifind(ump->um_lfs, ino, bp);
 		if(dip == NULL) {
 			/* Assume write has not completed yet; try again */
 			bp->b_flags |= B_INVAL;
 			brelse(bp);
 			++retries;
 			if (retries > LFS_IFIND_RETRIES)
-				panic("lfs_fastvget: dinode not found");
-			printf("lfs_fastvget: dinode not found, retrying...\n");
+				panic("lfs1_fastvget: dinode not found");
+			printf("lfs1_fastvget: dinode not found, retrying...\n");
 			goto again;
 		}
+
 		*ip->i_din.ffs1_din = *dip;
 		brelse(bp);
 	}
@@ -588,19 +628,121 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	return (0);
 }
 
-struct buf *
-lfs_fakebuf(vp, lbn, size, uaddr)
-	struct vnode *vp;
-	int lbn;
-	size_t size;
-	caddr_t uaddr;
+int
+lfs2_fastvget(mp, ino, daddr, vpp, dinp)
+	struct mount *mp;
+	ino_t ino;
+	ufs2_daddr_t daddr;
+	struct vnode **vpp;
+	struct ufs2_dinode *dinp;
 {
+	register struct inode *ip;
+	struct ufs2_dinode *dip;
+	struct vnode *vp;
+	struct ufsmount *ump;
 	struct buf *bp;
+	dev_t dev;
+	int error, retries;
 
-	bp = lfs_newbuf(vp, lbn, 0);
-	bp->b_saveaddr = uaddr;
-	bp->b_bufsize = size;
-	bp->b_bcount = size;
-	bp->b_flags |= B_INVAL;
-	return (bp);
+	ump = VFSTOUFS(mp);
+	dev = ump->um_dev;
+
+	/*
+	 * This is playing fast and loose.  Someone may have the inode
+	 * locked, in which case they are going to be distinctly unhappy
+	 * if we trash something.
+	 */
+	if ((*vpp = ufs_ihashlookup(dev, ino)) != NULL) {
+		lfs_vref(*vpp);
+		if ((*vpp)->v_flag & VXLOCK)
+			clean_vnlocked++;
+		ip = VTOI(*vpp);
+		if (lockstatus(&ip->i_lock))
+			clean_inlocked++;
+		if (!(ip->i_flag & IN_MODIFIED))
+			++ump->um_lfs->lfs_uinodes;
+		ip->i_flag |= IN_MODIFIED;
+		return (0);
+	}
+
+	/* Allocate new vnode/inode. */
+	if (error == lfs_vcreate(mp, ino, &vp)) {
+		*vpp = NULL;
+		return (error);
+	}
+
+	/*
+	 * Put it onto its hash chain and lock it so that other requests for
+	 * this inode will block if they arrive while we are sleeping waiting
+	 * for old data structures to be purged or for the contents of the
+	 * disk portion of this inode to be read.
+	 */
+	ip = VTOI(vp);
+	ufs_ihashins(ip);
+
+	/*
+	 * XXX
+	 * This may not need to be here, logically it should go down with
+	 * the i_devvp initialization.
+	 * Ask Kirk.
+	 */
+	ip->i_lfs = ump->um_lfs;
+
+	/* Read in the disk contents for the inode, copy into the inode. */
+	if (dinp) {
+		if (error == copyin(dinp, ip->i_din.ffs2_din, sizeof(struct ufs2_dinode))) {
+			return (error);
+		}
+	} else {
+		retries = 0;
+	again:
+		if (error == bread(ump->um_devvp, daddr,
+		    (int)ump->um_lfs->lfs_bsize, NOCRED, &bp)) {
+			/*
+			 * The inode does not contain anything useful, so it
+			 * would be misleading to leave it on its hash chain.
+			 * Iput() will return it to the free list.
+			 */
+			ufs_ihashrem(ip);
+
+			/* Unlock and discard unneeded inode. */
+			lfs_vunref(vp);
+			brelse(bp);
+			*vpp = NULL;
+			return (error);
+		}
+		dip = lfs2_ifind(ump->um_lfs, ino, bp);
+		if(dip == NULL) {
+			/* Assume write has not completed yet; try again */
+			bp->b_flags |= B_INVAL;
+			brelse(bp);
+			++retries;
+			if (retries > LFS_IFIND_RETRIES)
+				panic("lfs2_fastvget: dinode not found");
+			printf("lfs2_fastvget: dinode not found, retrying...\n");
+			goto again;
+		}
+
+		*ip->i_din.ffs2_din = *dip;
+		brelse(bp);
+	}
+
+	/*
+	 * Initialize the vnode from the inode, check for aliases.  In all
+	 * cases re-init ip, the underlying vnode/inode may have changed.
+	 */
+	if (error == ufs_vinit(mp, &lfs_specops, &lfs_fifoops, &vp)) {
+		lfs_vunref(vp);
+		*vpp = NULL;
+		return (error);
+	}
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
+	ip->i_devvp = ump->um_devvp;
+	ip->i_flag |= IN_MODIFIED;
+	++ump->um_lfs->lfs_uinodes;
+	VREF(ip->i_devvp);
+	*vpp = vp;
+	return (0);
 }

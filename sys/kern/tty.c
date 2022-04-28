@@ -162,30 +162,6 @@ ttychars(tp)
 }
 
 /*
- * Wakeup processes waiting on output flow control (TS_ASLEEP).  Normally
- * called from driver start routine (dhvstart, etc) after a transmit done
- * interrupt.  If t_outq.c_cc <= t_lowat then do the wakeup.
-*/
-/*
-void
-ttyowake(tp)
-	register struct tty *tp;
-{
-
-	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
-		if (ISSET(tp->t_state, TS_ASLEEP)) {
-			CLR(tp->t_state, TS_ASLEEP);
-			wakeup((caddr_t) &tp->t_outq);
-		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			CLR(tp->t_state, TS_WCOLL);
-		}
-	}
-}
-*/
-/*
  * Wait for output to drain, then flush input waiting.
  */
 int
@@ -264,7 +240,6 @@ ttyflush(tp, rw)
 		wakeup((caddr_t)&tp->t_outq);
 		selnotify(&tp->t_wsel, NOTE_SUBMIT);
 		CLR(tp->t_state, TS_WCOLL);
-//		tp->t_wsel = 0;
 	}
 	if ((rw & FREAD) && ISSET(tp->t_state, TS_TBLOCK))
 		ttyunblock(tp);
@@ -424,7 +399,10 @@ ttioctl_sc(tp, com, data, flag)
 				&& !(u.u_procp->p_sigignore & sigmask(SIGTTOU))
 				&& !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
 			gsignal(u.u_procp->p_pgrp->pg_id, SIGTTOU);
-			sleep((caddr_t) & lbolt, TTOPRI);
+			error = ttysleepsleep(tp, &lbolt, TTOPRI, ttybg, 0);
+			if (error) {
+				return (error);
+			}
 		}
 		break;
 	}

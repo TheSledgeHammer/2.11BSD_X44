@@ -294,7 +294,7 @@ redo:
 		while (vget(vp, LK_EXCLUSIVE, p))
 			continue;
 		ip = VTOI(vp);
-		if (vp->v_dirtyblkhd.lh_first != NULL)
+		if (LIST_FIRST(&vp->v_dirtyblkhd) != NULL)
 			lfs_writefile(fs, sp, vp);
 		(void)lfs_writeinode(fs, sp, ip);
 		vput(vp);
@@ -536,15 +536,15 @@ lfs_gather(fs, sp, vp, match)
 	s = splbio();
 /* This is a hack to see if ordering the blocks in LFS makes a difference. */
 /* BEGIN HACK */
-#define	BUF_OFFSET		(((void *)&bp->b_vnbufs.le_next) - (void *)bp)
-#define	BACK_BUF(BP)	((struct buf *)(((void *)BP->b_vnbufs.le_prev) - BUF_OFFSET))
-#define	BEG_OF_LIST		((struct buf *)(((void *)&vp->v_dirtyblkhd.lh_first) - BUF_OFFSET))
+#define	BUF_OFFSET		(((void *)LIST_NEXT(bp, b_vnbufs)) - (void *)bp)
+#define	BACK_BUF(BP)	((struct buf *)(((void *)LIST_PREV(BP, b_vnbufs)) - BUF_OFFSET))
+#define	BEG_OF_LIST		((struct buf *)(((void *)LIST_FIRST(&vp->v_dirtyblkhd)) - BUF_OFFSET))
 
 
 /*loop:	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = bp->b_vnbufs.le_next) {*/
 /* Find last buffer. */
-loop:   for (bp = vp->v_dirtyblkhd.lh_first; bp && bp->b_vnbufs.le_next != NULL;
-	    bp = bp->b_vnbufs.le_next);
+loop:   for (bp = LIST_FIRST(&vp->v_dirtyblkhd); bp && LIST_NEXT(bp, b_vnbufs) != NULL;
+	    bp = LIST_NEXT(bp, b_vnbufs));
 	for (; bp && bp != BEG_OF_LIST; bp = BACK_BUF(bp)) {
 /* END HACK */
 		if ((bp->b_flags & B_BUSY) || !match(fs, bp) ||

@@ -176,7 +176,7 @@ lfs_flush()
 int
 lfs_check(vp, blkno)
 	struct vnode *vp;
-	ufs1_daddr_t blkno;
+	ufs2_daddr_t blkno;
 {
 	extern int lfs_allclean_wakeup;
 	int error;

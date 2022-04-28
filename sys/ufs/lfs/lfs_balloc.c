@@ -118,7 +118,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 					brelse(ibp);
 					return(ENOSPC);
 				} else {
-					ip->i_ffs1_blocks += bb;
+					DIP_SET(ip, blocks, DIP(ip, blocks) += bb);//ip->i_ffs1_blocks += bb;
 					ip->i_lfs->lfs_bfree -= bb;
 					clrbuf(ibp);
 					if(error == VOP_BWRITE(ibp))
@@ -170,7 +170,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 				brelse(bp);
 				return(ENOSPC);
 			} else {
-				ip->i_ffs1_blocks += bb;
+				DIP_SET(ip, blocks, DIP(ip, blocks) += bb);//ip->i_ffs1_blocks += bb;
 				ip->i_lfs->lfs_bfree -= bb;
 				if (iosize != fs->lfs_bsize)
 					clrbuf(bp);
@@ -202,7 +202,7 @@ lfs_fragextend(vp, osize, nsize, lbn, bpp)
 {
 	struct inode *ip;
 	struct lfs *fs;
-	long bb;
+	long bb, b;
 	int error;
 
 	ip = VTOI(vp);
@@ -222,7 +222,7 @@ lfs_fragextend(vp, osize, nsize, lbn, bpp)
 		return (error);
 	}
 #endif
-	ip->i_ffs1_blocks += bb;
+	DIP_SET(ip, blocks, DIP(ip, blocks) += bb);//ip->i_ffs1_blocks += bb;
 	ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	fs->lfs_bfree -= fragstodb(fs, numfrags(fs, (nsize - osize)));
 	allocbuf(*bpp, nsize);

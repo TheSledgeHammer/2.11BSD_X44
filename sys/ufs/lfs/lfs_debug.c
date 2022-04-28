@@ -41,6 +41,7 @@
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
 
@@ -112,8 +113,47 @@ lfs_dump_super(lfsp)
 }
 
 void
-lfs_dump_dinode(dip)
+lfs_dump_dinode(v)
+	void *v;
+{
+	if(UFS1) {
+		struct ufs1_dinode *dip;
+		dip = (struct ufs1_dinode *)v;
+		lfs_dump_ufs1_dinode(dip);
+	} else {
+		struct ufs2_dinode *dip;
+		dip = (struct ufs2_dinode *)v;
+		lfs_dump_ufs2_dinode(dip);
+	}
+}
+
+static void
+lfs_dump_ufs1_dinode(dip)
 	struct ufs1_dinode *dip;
+{
+	int i;
+
+	(void)printf("%s%u\t%s%d\t%s%u\t%s%u\t%s%lu\n",
+		"mode  ", dip->di_mode,
+		"nlink ", dip->di_nlink,
+		"uid   ", dip->di_uid,
+		"gid   ", dip->di_gid,
+		"size  ", dip->di_size);
+	(void)printf("inum  %ld\n", dip->di_inumber);
+	(void)printf("Direct Addresses\n");
+	for (i = 0; i < NDADDR; i++) {
+		(void)printf("\t%lx", dip->di_db[i]);
+		if ((i % 6) == 5)
+			(void)printf("\n");
+	}
+	for (i = 0; i < NIADDR; i++)
+		(void)printf("\t%lx", dip->di_ib[i]);
+	(void)printf("\n");
+}
+
+static void
+lfs_dump_ufs2_dinode(dip)
+	struct ufs2_dinode *dip;
 {
 	int i;
 

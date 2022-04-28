@@ -44,6 +44,7 @@ struct ufs211_inode {
 	LIST_ENTRY(ufs211_inode) i_chain;				/* Hash chain. must be first  */
 	struct	vnode 			*i_vnode;				/* Vnode associated with this inode. */
 	struct	vnode  			*i_devvp;				/* Vnode for block I/O. */
+	struct ufs211_mount 	*i_ump;					/* Mount point associated with this inode. */
 	u_short					i_flag;
 	u_short					i_count;				/* reference count */
 	dev_t					i_dev;					/* device where inode resides */

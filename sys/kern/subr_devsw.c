@@ -209,24 +209,20 @@ devswtable_remove(data, major)
 	}
 }
 
-/* return number of item is device switch depending on type */
-u_int
+/* return number of items on the device switch depending on type */
+const int
 devsw_nelems(type)
     int type;
 {
-    u_int nitems = 0;
     switch(type) {
     case BDEVTYPE:
-        nitems = (max_bdevsws/sys_bdevsws);
-        return (nitems);
+        return (sys_bdevsws);
         
     case CDEVTYPE:
-        nitems = (max_cdevsws/sys_cdevsws);
-        return (nitems);
+        return (sys_cdevsws);
         
     case LINETYPE:
-        nitems = (max_linesws/sys_linesws);
-        return (nitems);
+        return (sys_linesws);
     }
     return (0);
 }

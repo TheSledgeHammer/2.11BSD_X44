@@ -58,7 +58,7 @@
   - IPv6
 - Filesystem Updates:
   - UFS/FFS/LFS:
-    - LFS1/LFS2:
+    - LFS1/LFS2: (Work in Progress: See TODO.md for more)
       - LFS2: 64-bit support via UFS/FFS2
       - LFS1: 32-bit support via UFS/FFS1
     - UFS1/UFS2:

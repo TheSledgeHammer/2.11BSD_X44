@@ -105,6 +105,9 @@ Of Interest Todo:
 		- plus much more
 		
 ## ufs:
+- lfs:
+	- update lfs structures for 64-bit.
+	- set up: dip & dip_set in lfs_segment.c, lfs_vfsops.c & lfs_vnops.c
 - ufs:
 	- journaling
 	- dirhash

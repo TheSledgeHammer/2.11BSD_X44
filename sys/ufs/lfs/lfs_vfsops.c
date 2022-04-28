@@ -567,7 +567,7 @@ again:
 		*vpp = NULL;
 		return (error);
 	}
-	dip = lfs_ifind(fs, ino, bp);
+	dip = lfs1_ifind(fs, ino, bp);
 	if (dip == NULL) {
 		/* Assume write has not completed yet; try again */
 		bp->b_flags |= B_INVAL;
@@ -685,7 +685,6 @@ int
 lfs_init(vfsp)
 	struct vfsconf *vfsp;
 {
-
 	lfs_mount_type = vfsp->vfc_typenum;
 	return (ufs_init(vfsp));
 }

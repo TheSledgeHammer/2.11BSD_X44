@@ -124,8 +124,12 @@ lfs_valloc(ap)
 
 	ip = VTOI(vp);
 	/* Zero out the direct and indirect block addresses. */
-	bzero(&ip->i_din.ffs1_din, sizeof(struct ufs1_dinode));
-	ip->i_din.ffs1_din->di_inumber = new_ino;
+	if(I_IS_UFS1(ip)) {
+		bzero(&ip->i_din.ffs1_din, sizeof(struct ufs1_dinode));
+	} else {
+		bzero(&ip->i_din.ffs2_din, sizeof(struct ufs2_dinode));
+	}
+	DIP_SET(ip, inumber, new_ino);
 
 	/* Set a new generation number for this inode. */
 	if (++nextgennumber < (u_long)time.tv_sec)
@@ -179,7 +183,8 @@ lfs_vcreate(mp, ino, vpp)
 	ip->i_devvp = ump->um_devvp;
 	ip->i_flag = IN_MODIFIED;
 	ip->i_dev = ump->um_dev;
-	ip->i_number = ip->i_din.ffs1_din->di_inumber = ino;
+	DIP_SET(ip, inumber, ino);
+	ip->i_number = DIP(ip, inumber);//ip->i_din.ffs1_din->di_inumber = ino;
 	ip->i_lfs = ump->um_lfs;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
@@ -189,7 +194,8 @@ lfs_vcreate(mp, ino, vpp)
 	ip->i_diroff = 0;
 	ip->i_mode = 0;
 	ip->i_size = 0;
-	ip->i_ffs1_blocks = 0;
+	DIP_SET(ip, blocks, 0);
+	//ip->i_ffs1_blocks = 0;
 	++ump->um_lfs->lfs_uinodes;
 	return (0);
 }

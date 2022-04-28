@@ -720,12 +720,6 @@ htbc_add_timestamp_transaction(struct htbc_htransaction *trans)
 }
 
 void
-htbc_add_block_transaction(struct htbc_htransaction *trans)
-{
-	htbc_blocktrk_init(trans, HTBC_BLOCKTRK_SIZE);
-}
-
-void
 htbc_add_inode_transaction(struct htbc_htransaction *trans)
 {
 	htbc_inodetrk_init(trans, HTBC_INODETRK_SIZE);
