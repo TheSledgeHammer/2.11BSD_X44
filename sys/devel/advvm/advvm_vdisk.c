@@ -87,6 +87,7 @@ advvm_vdisk_set(advdsk, vindex, vsize, vsector, vcluster, vnumcluster)
 	advdsk->avd_numcluster = vnumcluster;
 
 	advvm_malloc((advvm_vdfree_t *)advfree, sizeof(advvm_vdfree_t *));
+	/* TODO: Calculate free space before adding to vdfree */
 	advvm_vdfree_add(advdsk, advfree, vsector, vcluster, vnumcluster);
 }
 
@@ -99,6 +100,7 @@ advvm_vdisk_insert(advdsk, adom)
 		advvm_malloc((advvm_vdisk_t *)advdsk, sizeof(advvm_vdisk_t *));
 	}
 	advvm_vdisk_set_domain(advdsk, adom);
+
 }
 
 void

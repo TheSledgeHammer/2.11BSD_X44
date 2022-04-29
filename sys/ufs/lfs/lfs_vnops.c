@@ -254,12 +254,14 @@ lfs_symlink(ap)
 		char *a_target;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_dvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_dvp);
 	ret = ufs_symlink(ap);
-	SET_ENDOP(VTOI(ap->a_dvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 
@@ -272,12 +274,14 @@ lfs_mknod(ap)
 		struct vattr *a_vap;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_dvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_dvp);
 	ret = ufs_mknod(ap);
-	SET_ENDOP(VTOI(ap->a_dvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 
@@ -290,12 +294,14 @@ lfs_create(ap)
 		struct vattr *a_vap;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_dvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_dvp);
 	ret = ufs_create(ap);
-	SET_ENDOP(VTOI(ap->a_dvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 
@@ -308,12 +314,14 @@ lfs_mkdir(ap)
 		struct vattr *a_vap;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_dvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_dvp);
 	ret = ufs_mkdir(ap);
-	SET_ENDOP(VTOI(ap->a_dvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 
@@ -325,13 +333,15 @@ lfs_remove(ap)
 		struct componentname *a_cnp;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_dvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_dvp);
 	MARK_VNODE(ap->a_vp);
 	ret = ufs_remove(ap);
-	SET_ENDOP(VTOI(ap->a_dvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 
@@ -344,13 +354,15 @@ lfs_rmdir(ap)
 		struct componentname *a_cnp;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_dvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_dvp);
 	MARK_VNODE(ap->a_vp);
 	ret = ufs_rmdir(ap);
-	SET_ENDOP(VTOI(ap->a_dvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 
@@ -362,12 +374,14 @@ lfs_link(ap)
 		struct componentname *a_cnp;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_tdvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_tdvp);
 	ret = ufs_link(ap);
-	SET_ENDOP(VTOI(ap->a_tdvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 
@@ -382,13 +396,15 @@ lfs_rename(ap)
 		struct componentname *a_tcnp;
 	} */ *ap;
 {
+	struct inode *ip;
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_fdvp)->i_lfs);
+	ip = VTOI(ap->a_dvp);
+	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_fdvp);
 	MARK_VNODE(ap->a_tdvp);
 	ret = ufs_rename(ap);
-	SET_ENDOP(VTOI(ap->a_fdvp)->i_lfs);
+	SET_ENDOP(ip->i_lfs);
 	return (ret);
 }
 /* XXX hack to avoid calling ITIMES in getattr */

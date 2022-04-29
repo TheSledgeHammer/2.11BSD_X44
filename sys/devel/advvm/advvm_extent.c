@@ -45,7 +45,7 @@ advvm_storage_create(pool, name, start, end, storage, storagesize, flags)
 	char *name;
 	u_long start, end;
 	caddr_t storage;
-	size_t storagesize;
+	size_t 	storagesize;
 	int flags;
 {
 	advvm_malloc((advvm_storage_t *) pool, sizeof(advvm_storage_t *));
@@ -67,7 +67,7 @@ advvm_allocate_region(pool, start, size, flags)
 	int error;
 
 	if(advvm_extent_check(pool)) {
-		if((start >= pool->ads_start) && (start <= pool->ads_end) && (start >= end)) {
+		if((start >= pool->ads_start) && (start <= pool->ads_end) && (start >= pool->ads_end)) {
 			if(size <= (pool->ads_end - pool->ads_start)) {
 				error = extent_alloc_region(pool->ads_extent, start, size, flags);
 			} else {

@@ -26,7 +26,7 @@
 #include <devel/ufs/ufs211/ufs211_quota.h>
 
 #define QHASH(qvp, id)	\
-	(&qhashtbl[((((int)(qvp)) >> 8) + id) & UFS211_NQHASH])
+	(&ufs211_qhashtbl[((((int)(qvp)) >> 8) + id) & UFS211_NQHASH])
 LIST_HEAD(ufs211_qhash, ufs211_quota) *ufs211_qhashtbl;
 u_long ufs211_qhash;
 

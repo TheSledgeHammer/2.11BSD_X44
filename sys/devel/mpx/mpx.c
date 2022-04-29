@@ -271,9 +271,43 @@ mpx_detach(cp, gp)
 	}
 }
 
-mpx_connect()
+/* TODO: add file */
+int
+mpx_connect(cp1, cp2)
+	struct mpx_channel 	*cp1, *cp2;
 {
+	int i, cnt1, cnt2, total;
 
+	/* check channels used */
+	cnt1 = 0;
+	cnt2 = 0;
+	for(i = 0; i <= NCHANS; i++) {
+		cp1 = mpx_get_channel(i);
+		cp2 = mpx_get_channel(i);
+		if(cp1->mpc_index == i && cp1 == NULL) {
+			cnt1++;
+		}
+		if(cp2->mpc_index == i && cp2 == NULL) {
+			cnt2++;
+		}
+	}
+	if(cnt1 < NCHANS && cnt2 < NCHANS) {
+		total = (cnt1 + cnt2);
+		if (total <= NCHANS) {
+			goto pass;
+		} else {
+			goto fail;
+		}
+	}
+
+pass:
+	/* TODO: merge both channels together */
+
+	return (0);
+
+fail:
+	printf("mpx_connect: too many combined channels in use, to complete");
+	return (1);
 }
 
 mpx_disconnect()
