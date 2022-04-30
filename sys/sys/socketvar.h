@@ -272,12 +272,12 @@ void	sbdroprecord(struct sockbuf *);
 
 int		unp_connect2(struct socket *, struct socket *);
 int		unp_externalize(struct mbuf *);
-void	unp_dispose(struct mbuf *);
+int	    unp_dispose(struct mbuf *);
 void	unp_scan(struct mbuf *, void (*)(struct file *));
 void	unp_mark(struct file *);
 void	unp_discard(struct file *);
 
-int 	uipc_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
+int 	uipc_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 int		uipc_attach(struct socket *, int);
 int		uipc_detach(struct socket *);
 

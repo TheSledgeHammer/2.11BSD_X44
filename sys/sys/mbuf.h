@@ -79,9 +79,9 @@ struct	pkthdr {
 
 /* description of external storage mapped into mbuf, valid if M_EXT set */
 struct m_ext {
-	caddr_t				ext_buf;			/* start of buffer */
-	void				(*ext_free)(void);	/* free routine if not the usual */
-	u_int				ext_size;			/* size of buffer, for ext_free */
+	caddr_t				ext_buf;		/* start of buffer */
+	void				(*ext_free)();	/* free routine if not the usual */
+	u_int				ext_size;		/* size of buffer, for ext_free */
 };
 
 /* Contents of mbuf: */
@@ -163,12 +163,13 @@ struct mbuf {
  * prevents a section of code from from being interrupted by network
  * drivers.
  */
+ /*
 #define	MBUFLOCK(code) {	\
 	int ms = splimp(); 		\
-	{ (code) } 				\
+	{ (code); }				\
 	splx(ms); 				\
 }
-
+*/
 /*
  * m_pullup will pull up additional length if convenient;
  * should be enough to hold headers of second-level and higher protocols. 
@@ -182,8 +183,8 @@ struct mbuf {
 			panic("mget");								\
 		}												\
 		(m)->m_type = t;								\
-		MBUFLOCK(mbstat.m_mtypes[MT_FREE]--;)			\
-		MBUFLOCK(mbstat.m_mtypes[t]++;) 				\
+		mbstat.m_mtypes[MT_FREE]--;			            \
+		mbstat.m_mtypes[t]++;				            \
 		mbfree = (m)->m_next; 							\
 		(m)->m_next = (struct mbuf *)NULL; 				\
 		(m)->m_nextpkt = (struct mbuf *)NULL; 			\
@@ -199,10 +200,10 @@ struct mbuf {
 #define	MGETHDR(m, i, t) { 								\
 	int ms = splimp(); 									\
 	MALLOC((m), struct mbuf *, MSIZE, mbtypes[t], (i)); \
-	if (m) == mbfree) { 								\
+	if ((m) == mbfree) { 								\
 		(m)->m_type = (t); 								\
-		MBUFLOCK(mbstat.m_mtypes[MT_FREE]--;)			\
-		MBUFLOCK(mbstat.m_mtypes[t]++;) 				\
+		mbstat.m_mtypes[MT_FREE]--;			            \
+		mbstat.m_mtypes[t]++; 				            \
 		mbfree = (m)->m_next; 							\
 		(m)->m_next = (struct mbuf *)NULL; 				\
 		(m)->m_nextpkt = (struct mbuf *)NULL; 			\
@@ -229,23 +230,21 @@ union mcluster {
 };
 
 #define	MCLALLOC(m, i) {								\
-	MBUFLOCK( 											\
 	  if (mclfree == 0) {								\
-		(void)m_clalloc((i), MPG_CLUSTERS, M_DONTWAIT); \
+		(void)m_clalloc(1, (i));                        \
 	  } 												\
-	  if (((m) = mclfree) != 0) { 						\
+	  if (((m) = (caddr_t)mclfree) != 0) { 				\
 	     ++mclrefcnt[mtocl(m)];							\
 	     mbstat.m_clfree--;								\
 	     mclfree = ((union mcluster *)(m))->mcl_next;	\
 	  } 												\
-	)													\
 }
 
 #define	M_HASCL(m)	((m)->m_off >= MSIZE)
 #define	MTOCL(m)	((struct mbuf *)(mtod((m), int) &~ MCLOFSET))
 
-#define	MCLGET(m) { 									\
-	  MCLALLOC((m)->m_ext.ext_buf, 1);					\
+#define	MCLGET(m, i) { 									\
+	  MCLALLOC((m)->m_ext.ext_buf, i);					\
 	  if ((m)->m_ext.ext_buf != NULL) { 				\
 		  (m)->m_data = (m)->m_ext.ext_buf; 			\
 		  (m)->m_flags |= M_EXT; 						\
@@ -254,13 +253,11 @@ union mcluster {
 }
 
 #define	MCLFREE(m) { 									\
-	MBUFLOCK( 											\
 	if (--mclrefcnt[mtocl(m)] == 0) { 					\
 		((union mcluster *)(m))->mcl_next = mclfree; 	\
 		mclfree = (union mcluster *)(m);				\
 	    mbstat.m_clfree++;								\
 	}													\
-	)													\
 }
 
 #define	MFREE(m, n) {									\
@@ -268,8 +265,8 @@ union mcluster {
 	if ((m)->m_type == MT_FREE) {						\
 		panic("mfree");									\
 	}													\
-	MBUFLOCK(mbstat.m_mtypes[(m)->m_type]--;)			\
-	MBUFLOCK(mbstat.m_mtypes[MT_FREE]++;) 				\
+	mbstat.m_mtypes[(m)->m_type]--;			            \
+	mbstat.m_mtypes[MT_FREE]++; 				        \
 	(m)->m_type = MT_FREE; 								\
 	if (M_HASCL(m)) { 									\
 		(n) = MTOCL(m); 								\
@@ -292,7 +289,7 @@ union mcluster {
 	FREE((m), mbtypes[(m)->m_type]); 					\
 	if (m_want) { 										\
 		m_want = 0; 									\
-		wakeup((caddr_t)&mfree); 						\
+		wakeup((caddr_t)&mbfree); 						\
 	} 													\
 	splx(ms); 											\
 }
@@ -356,7 +353,8 @@ union mcluster {
 
 /* change mbuf to new type */
 #define MCHTYPE(m, t) { 								\
-	MBUFLOCK(mbstat.m_mtypes[(m)->m_type]--; mbstat.m_mtypes[t]++;) \
+	mbstat.m_mtypes[(m)->m_type]--;                     \
+	mbstat.m_mtypes[t]++;                               \
 	(m)->m_type = t;									\
 }
 
@@ -400,11 +398,34 @@ struct	mbuf 	*m_retry(int, int);
 struct	mbuf 	*m_retryhdr(int, int);
 void			m_cat(struct mbuf *, struct mbuf *);
 void			m_adj(struct mbuf *, int);
-caddr_t			m_clalloc(int, int);
+int			    m_clalloc(int, int);
 void			m_copyback(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
 void 			mbinit2(void *, int, int);
 
+#ifdef MBTYPES
+int mbtypes[] = {				/* XXX */
+	M_FREE,		/* MT_FREE	0	   should be on free list */
+	M_MBUF,		/* MT_DATA	1	   dynamic (data) allocation */
+	M_MBUF,		/* MT_HEADER	2	   packet header */
+	M_SOCKET,	/* MT_SOCKET	3	   socket structure */
+	M_PCB,		/* MT_PCB	4	   protocol control block */
+	M_RTABLE,	/* MT_RTABLE	5	   routing tables */
+	M_HTABLE,	/* MT_HTABLE	6	   IMP host tables */
+	0,		/* MT_ATABLE	7	   address resolution tables */
+	M_MBUF,		/* MT_SONAME	8	   socket name */
+	0,		/* 		9 */
+	M_SOOPTS,	/* MT_SOOPTS	10	   socket options */
+	M_FTABLE,	/* MT_FTABLE	11	   fragment reassembly header */
+	M_MBUF,		/* MT_RIGHTS	12	   access rights */
+	M_IFADDR,	/* MT_IFADDR	13	   interface address */
+	M_MBUF,		/* MT_CONTROL	14	   extra-data protocol message */
+	M_MBUF,		/* MT_OOBDATA	15	   expedited data  */
+#ifdef DATAKIT
+	25, 26, 27, 28, 29, 30, 31, 32		/* datakit ugliness */
+#endif
+};
+#endif
 #endif
 #endif /* _SYS_MBUF_H_ */
