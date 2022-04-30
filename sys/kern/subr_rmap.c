@@ -89,7 +89,7 @@ rminit(mp, addr, size, name, mtype, mapsize)
 		panic("rminit %s", name);
 	}
 	mp->m_name = name;
-	mp->m_type = mtype;
+	mp->m_types = mtype;
 	mp->m_limit = (struct mapent *)mp + mapsize;
 
 	/* initially the first entry describes all free space */

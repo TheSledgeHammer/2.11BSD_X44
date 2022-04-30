@@ -66,12 +66,17 @@ socreate(dom, aso, type, proto)
 	so->so_options = 0;
 	so->so_state = 0;
 	so->so_type = type;
-	if (u->u_uid == 0)
+	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
+	so->so_ruid = u.u_ucred->cr_ruid;
+	so->so_euid = u.u_ucred->cr_uid;
+	so->so_rgid = u.u_ucred->cr_rgid;
+	so->so_egid = u.u_ucred->cr_gid;
+	so->so_cpid = u.u_procp->p_p->ps_pid;
 	so->so_proto = prp;
-	if (u.u_procp != 0) {
+/*	if (u.u_procp != 0) {
 		so->so_uid = u.u_ucred->cr_uid;
-	}
+	}*/
 	error = (*prp->pr_usrreq)(so, PRU_ATTACH, (struct mbuf*) 0,
 			(struct mbuf*) (long) proto, (struct mbuf*) 0, u.u_procp);
 	if (error) {
@@ -961,9 +966,9 @@ soacc1(so)
 {
 
 	if ((so->so_options & SO_ACCEPTCONN) == 0)
-		return (u->u_error = EINVAL);
+		return (u.u_error = EINVAL);
 	if ((so->so_state & SS_NBIO) && so->so_qlen == 0)
-		return (u->u_error = EWOULDBLOCK);
+		return (u.u_error = EWOULDBLOCK);
 	while (so->so_qlen == 0 && so->so_error == 0) {
 		if (so->so_state & SS_CANTRCVMORE) {
 			so->so_error = ECONNABORTED;
@@ -972,9 +977,9 @@ soacc1(so)
 		sleep(&so->so_timeo, PZERO + 1);
 	}
 	if (so->so_error) {
-		u->u_error = so->so_error;
+		u.u_error = so->so_error;
 		so->so_error = 0;
-		return (u->u_error);
+		return (u.u_error);
 	}
 	return (0);
 }
@@ -1008,10 +1013,10 @@ connwhile(so)
 
 	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
 		sleep(&so->so_timeo, PZERO + 1);
-	u->u_error = so->so_error;
+	u.u_error = so->so_error;
 	so->so_error = 0;
 	so->so_state &= ~SS_ISCONNECTING;
-	return (u->u_error);
+	return (u.u_error);
 }
 
 int
@@ -1019,7 +1024,7 @@ sogetnam(so, m)
 	register struct	socket	*so;
 	struct	mbuf	*m;
 {
-	return (u->u_error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0, u.u_procp));
+	return (u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0, u.u_procp));
 }
 
 int
@@ -1029,7 +1034,7 @@ sogetpeer(so, m)
 {
 
 	if ((so->so_state & SS_ISCONNECTED) == 0)
-		return (u->u_error = ENOTCONN);
-	return (u->u_error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0, u.u_procp));
+		return (u.u_error = ENOTCONN);
+	return (u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0, u.u_procp));
 }
 //#endif

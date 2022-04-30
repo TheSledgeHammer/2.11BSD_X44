@@ -15,6 +15,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/socketvar.h>
 #include <sys/protosw.h>
 #include <sys/domain.h>
 #include <sys/mbuf.h>
@@ -31,28 +32,15 @@ struct protosw unixsw[] = {
 				.pr_domain		= &unixdomain,
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
-				.pr_input 		= 0,
-				.pr_output 		= 0,
-				.pr_ctlinput 	= 0,
-				.pr_ctloutput 	= 0,
 				.pr_usrreq		= uipc_usrreq,
 				.pr_attach		= uipc_attach,
 				.pr_detach		= uipc_detach,
-				.pr_init 		= 0,
-				.pr_fasttimo 	= 0,
-				.pr_slowtimo 	= 0,
-				.pr_drain 		= 0,
-				.pr_sysctl 		= 0,
 		},
 		{
 				.pr_type		= SOCK_SEQPACKET,
 				.pr_domain		= &unixdomain,
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_ATOMIC|PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
-				.pr_input 		= 0,
-				.pr_output 		= 0,
-				.pr_ctlinput 	= 0,
-				.pr_ctloutput 	= 0,
 				.pr_usrreq		= uipc_usrreq,
 				.pr_attach		= uipc_attach,
 				.pr_detach		= uipc_detach,
@@ -67,36 +55,9 @@ struct protosw unixsw[] = {
 				.pr_domain		= &unixdomain,
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_RIGHTS,
-				.pr_input 		= 0,
-				.pr_output 		= 0,
-				.pr_ctlinput 	= 0,
-				.pr_ctloutput 	= 0,
 				.pr_usrreq		= uipc_usrreq,
 				.pr_attach		= uipc_attach,
 				.pr_detach		= uipc_detach,
-				.pr_init 		= 0,
-				.pr_fasttimo 	= 0,
-				.pr_slowtimo 	= 0,
-				.pr_drain 		= 0,
-				.pr_sysctl 		= 0,
-		},
-		{
-				.pr_type		= 0,
-				.pr_domain		= 0,
-				.pr_protocol	= 0,
-				.pr_flags		= 0,
-				.pr_input 		= raw_input,
-				.pr_output 		= 0,
-				.pr_ctlinput 	= raw_ctlinput,
-				.pr_ctloutput 	= 0,
-				.pr_usrreq		= raw_usrreq,
-				.pr_attach		= raw_attach,
-				.pr_detach		= raw_detach,
-				.pr_init 		= raw_init,
-				.pr_fasttimo 	= 0,
-				.pr_slowtimo 	= 0,
-				.pr_drain 		= 0,
-				.pr_sysctl 		= 0,
 		},
 };
 

@@ -539,7 +539,7 @@ unp_abort(unp)
 
 	unp_detach(unp);
 }
-#endif
+
 
 /*ARGSUSED*/
 unp_usrclosed(unp)
@@ -547,7 +547,7 @@ unp_usrclosed(unp)
 {
 
 }
-
+#endif
 void
 unp_drop(unp, errno)
 	struct unpcb *unp;
@@ -688,13 +688,14 @@ restart:
 	unp_gcing = 0;
 }
 
-void
+int
 unp_dispose(m)
 	struct mbuf *m;
 {
 
 	if (m)
 		unp_scan(m, unp_discard);
+	return (0);
 }
 
 void

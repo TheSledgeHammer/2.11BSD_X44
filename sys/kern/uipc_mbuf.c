@@ -71,8 +71,8 @@ mbinit2(mem, how, num)
 	case MPG_CLUSTERS:
 		for (i = 0; i < num; i++) {
 			m->m_off = 0;
-			m->m_next = mclfree;
-			mclfree = m;
+			((union mcluster *)m)->mcl_next = mclfree;
+			mclfree = (union mcluster *)m;
 			m += NMBPCL;
 			mbstat.m_clfree++;
 		}
@@ -138,7 +138,7 @@ m_retry(i, t)
 	register struct mbuf *m;
 
 	m_reclaim();
-#define m_retry(i, t)	(struct mbuf *)NULL;
+#define m_retry(i, t)	(struct mbuf *)0
 	MGET(m, i, t);
 #undef m_retry
 	return (m);
@@ -187,7 +187,7 @@ m_expand(canwait)
 	register int tries;
 
 	for (tries = 0;;) {
-		if (m_clalloc(1, MPG_MBUFS, canwait))
+		if (m_clalloc(1, canwait))
 			return;// (1);
 		if (canwait == M_DONTWAIT || tries++)
 			return; // (0);
