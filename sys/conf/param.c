@@ -118,7 +118,7 @@ struct map coremap[1] = {
 		.m_map 		= _coremap,
 		.m_limit 	= &_coremap[cmapsiz],
 		.m_name 	= "coremap",
-		.m_type		= M_COREMAP,
+		.m_types	= M_COREMAP,
 		.m_vmmap[1] = {
 				{ .m_name = "buffer_map",   .m_vmmap = (vm_map_t) &buffer_map },
 				{ .m_name = "exec_map",     .m_vmmap = (vm_map_t) &exec_map },
@@ -138,7 +138,7 @@ struct map swapmap[1] = {
 		.m_map 		= _swapmap,
 		.m_limit 	= &_swapmap[smapsiz],
 		.m_name 	= "swapmap",
-		.m_type		= M_SWAPMAP,
+		.m_types	= M_SWAPMAP,
 		.m_vmmap    = NULL,
 //		.m_ovlmap = NULL
 };
