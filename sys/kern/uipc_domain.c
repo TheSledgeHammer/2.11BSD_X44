@@ -67,7 +67,8 @@ domaininit(void)
 	}
 
 	max_hdr = max_linkhdr + max_protohdr;
-	null_init();
+	max_datalen = MHLEN - max_hdr;
+	//null_init();
 
 	timeout(pffasttimo, NULL, 1);
 	timeout(pfslowtimo, NULL, 1);
@@ -179,7 +180,7 @@ pfslowtimo(arg)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_slowtimo)
 				(*pr->pr_slowtimo)();
-	timeout(pfslowtimo, (caddr_t) 0, hz / PR_SLOWHZ);
+	timeout(pfslowtimo, NULL, hz / PR_SLOWHZ);
 }
 
 void
@@ -193,6 +194,6 @@ pffasttimo(arg)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_fasttimo)
 				(*pr->pr_fasttimo)();
-	timeout(pffasttimo, (caddr_t) 0, hz / PR_FASTHZ);
+	timeout(pffasttimo, NULL, hz / PR_FASTHZ);
 }
 //#endif

@@ -15,6 +15,10 @@
 #ifndef	_SYS_MBUF_H_
 #define	_SYS_MBUF_H_
 
+#ifndef M_WAITOK
+#include <sys/malloc.h>
+#endif
+
 /*
  * The default values for NMBUFS and NMBCLUSTERS (160 and 12 respectively)
  * result in approximately 32K bytes of buffer memory being allocated to
@@ -41,13 +45,11 @@
 #define	MMAXOFF		(MSIZE-MTAIL)					/* offset where data ends */
 #define	MLEN		(MSIZE-MMINOFF-MTAIL)			/* mbuf data length */
 #define	MHLEN		(MLEN - sizeof(struct pkthdr))	/* data len w/pkthdr */
-//#define	NMBCLUSTERS	12
 #define	NMBPCL		(CLBYTES/MSIZE)					/* # mbufs per cluster */
 #define	MINCLSIZE	(MHLEN + MLEN)					/* smallest amount to put in cluster */
 /*
  * Macros for type conversion
  */
-
 /* network cluster number to virtual address, and back */
 #define	cltom(x) 	((struct mbuf *)((int)mbutl + ((x) << MCLSHIFT)))
 #define	mtocl(x) 	(((int)x - (int)mbutl) >> MCLSHIFT)
@@ -58,16 +60,15 @@
 /* mbuf head, to typed data */
 #define	mtod(x,t)	((t)((int)(x) + (x)->m_off))
 
-struct mbuf {
-	struct	mbuf 		*m_next;		/* next buffer in chain */
-	struct	mbuf 		*m_nextpkt;		/* next chain in queue/record */
-	struct	mbuf_cont 	*m_cont;		/* next chain in queue/record */
-	u_short				m_off;			/* offset of data */
-	int					m_len;			/* amount of data in this mbuf */
-	short				m_type;			/* mbuf type (0 == free) */
-	caddr_t				m_dat;			/* data storage */
-	short				m_flags;		/* flags; see below */
-	struct	mbuf 		*m_act;			/* link in higher-level mbuf list */
+struct m_hdr {
+	struct	mbuf 		*mh_next;		/* next buffer in chain */
+	struct	mbuf 		*mh_nextpkt;	/* next chain in queue/record */
+	struct	mbuf 		*mh_act;		/* link in higher-level mbuf list */
+	u_short				mh_off;			/* offset of data */
+	int					mh_len;			/* amount of data in this mbuf */
+	short				mh_type;		/* mbuf type (0 == free) */
+	caddr_t				mh_dat;			/* data storage */
+	short				mh_flags;		/* flags; see below */
 };
 
 /* record/packet header in first mbuf of chain; valid if M_PKTHDR set */
@@ -84,8 +85,8 @@ struct m_ext {
 };
 
 /* Contents of mbuf: */
-struct mbuf_cont {
-	struct	mbuf 				mbuf;
+struct mbuf {
+	struct	m_hdr 				mbhdr;
 	union {
 		struct {
 			struct pkthdr 		MH_pkthdr;	/* M_PKTHDR set */
@@ -98,18 +99,18 @@ struct mbuf_cont {
 	} M_dat;
 };
 
-#define	mc_next			mbuf.m_next
-#define	mc_len			mbuf.m_len
-#define	mc_data			mbuf.m_dat
-#define	mc_off			mbuf.m_off
-#define	mc_type			mbuf.m_type
-#define	mc_flags		mbuf.m_flags
-#define	mc_nextpkt		mbuf.m_nextpkt
-#define	mc_act			mbuf.m_act
-#define	mc_pkthdr		M_dat.MH.MH_pkthdr
-#define	mc_ext			M_dat.MH.MH_dat.MH_ext
-#define	mc_pktdat		M_dat.MH.MH_dat.MH_databuf
-#define	mc_dat			M_dat.M_databuf
+#define	m_next			mbhdr.mh_next
+#define	m_len			mbhdr.mh_len
+#define	m_data			mbhdr.mh_dat
+#define	m_off			mbhdr.mh_off
+#define	m_type			mbhdr.mh_type
+#define	m_flags			mbhdr.mh_flags
+#define	m_nextpkt		mbhdr.mh_nextpkt
+#define	m_act			mbhdr.mh_act
+#define	m_pkthdr		M_dat.MH.MH_pkthdr
+#define	m_ext			M_dat.MH.MH_dat.MH_ext
+#define	m_pktdat		M_dat.MH.MH_dat.MH_databuf
+#define	m_dat			M_dat.M_databuf
 
 /* mbuf flags */
 #define	M_EXT			0x0001	/* has associated external storage */
@@ -153,7 +154,7 @@ struct mbuf_cont {
 #define	MPG_SPACE		2		/* don't free; caller wants space */
 
 /* length to m_copy to copy all */
-#define	M_COPYALL		077776
+#define	M_COPYALL		1000000000
 
 /*
  * mbuf utility macros:
@@ -164,7 +165,7 @@ struct mbuf_cont {
  */
 #define	MBUFLOCK(code) {	\
 	int ms = splimp(); 		\
-	{ code } 				\
+	{ (code) } 				\
 	splx(ms); 				\
 }
 
@@ -173,25 +174,44 @@ struct mbuf_cont {
  * should be enough to hold headers of second-level and higher protocols. 
  */
 #define	MPULL_EXTRA	32
+#define	MGET(m, i, t) {									\
+	int ms = splimp(); 									\
+	MALLOC((m), struct mbuf *, MSIZE, mbtypes[t], (i)); \
+	if ((m) == mbfree) {								\
+		if ((m)->m_type != MT_FREE) { 					\
+			panic("mget");								\
+		}												\
+		(m)->m_type = t;								\
+		MBUFLOCK(mbstat.m_mtypes[MT_FREE]--;)			\
+		MBUFLOCK(mbstat.m_mtypes[t]++;) 				\
+		mbfree = (m)->m_next; 							\
+		(m)->m_next = (struct mbuf *)NULL; 				\
+		(m)->m_nextpkt = (struct mbuf *)NULL; 			\
+		(m)->m_data = (m)->m_dat; 						\
+		(m)->m_flags = 0; 								\
+		(m)->m_off = MMINOFF; 							\
+	} else {											\
+		(m) = m_retry((i), (t)); 						\
+	} 													\
+	splx(ms); 											\
+}
 
-#define	MGET(m, i, t) {						\
-	int ms = splimp(); 						\
-	if ((m) == mfree) {						\
-		if ((m)->m_type != MT_FREE) { 		\
-			panic("mget"); 					\
-			(m)->m_type = t;				\
-			mbstat.m_mtypes[MT_FREE]--; 	\
-			mbstat.m_mtypes[t]++; 			\
-			mfree = (m)->m_next; 			\
-			(m)->m_next = 0; 				\
-			(m)->m_off = MMINOFF; 			\
-		} 									\
-	} else { 								\
-		(m) = m_more((((ms&0340) <= 0100) 	\
-				&& (i==M_DONTWAIT)) ? 		\
-					M_DONTWAITLONG : i, t); \
-	} 										\
-	splx(ms); 								\
+#define	MGETHDR(m, i, t) { 								\
+	int ms = splimp(); 									\
+	MALLOC((m), struct mbuf *, MSIZE, mbtypes[t], (i)); \
+	if (m) == mbfree) { 								\
+		(m)->m_type = (t); 								\
+		MBUFLOCK(mbstat.m_mtypes[MT_FREE]--;)			\
+		MBUFLOCK(mbstat.m_mtypes[t]++;) 				\
+		mbfree = (m)->m_next; 							\
+		(m)->m_next = (struct mbuf *)NULL; 				\
+		(m)->m_nextpkt = (struct mbuf *)NULL; 			\
+		(m)->m_data = (m)->m_pktdat; 					\
+		(m)->m_flags = M_PKTHDR; 						\
+	} else { 											\
+		(m) = m_retryhdr((i), (t)); 					\
+	}													\
+	splx(ms); 											\
 }
 
 /*
@@ -202,74 +222,142 @@ struct mbuf_cont {
  * m->m_len is set to MCLBYTES upon success, and to MLEN on failure.
  * MCLFREE frees clusters allocated by MCLALLOC.
  */
-//#ifndef	pdp11
-#define	MCLALLOC(m, i) {					\
-	  int ms = splimp(); 					\
-	  if (mclfree == 0) {					\
+
+union mcluster {
+	union	mcluster *mcl_next;
+	char	mcl_buf[MCLBYTES];
+};
+
+#define	MCLALLOC(m, i) {								\
+	MBUFLOCK( 											\
+	  if (mclfree == 0) {								\
 		(void)m_clalloc((i), MPG_CLUSTERS, M_DONTWAIT); \
-	  } 									\
-	  if ((m) = mclfree) { 					\
-	     ++mclrefcnt[mtocl(m)];				\
-	     mbstat.m_clfree--;					\
-	     mclfree = (m)->m_next;				\
-	  } 									\
-	  splx(ms); 							\
+	  } 												\
+	  if (((m) = mclfree) != 0) { 						\
+	     ++mclrefcnt[mtocl(m)];							\
+	     mbstat.m_clfree--;								\
+	     mclfree = ((union mcluster *)(m))->mcl_next;	\
+	  } 												\
+	)													\
 }
-/*
-#else
-#define	MCLALLOC(m, i) {					\
-	  int ms = splimp(); 					\
-	  if ((m) = mclfree) {					\
-		  ++mclrefcnt[mtocl(m)];			\
-		  mbstat.m_clfree--;				\
-		  mclfree = (m)->m_next;			\
-	  } 									\
-	  splx(ms);								\
-}
-#endif
-*/
+
 #define	M_HASCL(m)	((m)->m_off >= MSIZE)
 #define	MTOCL(m)	((struct mbuf *)(mtod((m), int) &~ MCLOFSET))
 
-#define	MCLGET(m) { 						\
-	  struct mbuf *p; 						\
-	  MCLALLOC(p, 1); 						\
-	  if (p) { 								\
-		(m)->m_off = (int)p - (int)(m); 	\
-		(m)->m_len = MCLBYTES; 				\
-	  } else {								\
-		(m)->m_len = MLEN; 					\
-	  }										\
+#define	MCLGET(m) { 									\
+	  MCLALLOC((m)->m_ext.ext_buf, 1);					\
+	  if ((m)->m_ext.ext_buf != NULL) { 				\
+		  (m)->m_data = (m)->m_ext.ext_buf; 			\
+		  (m)->m_flags |= M_EXT; 						\
+		  (m)->m_ext.ext_size = MCLBYTES;  				\
+	  }													\
 }
-#define	MCLFREE(m) { 						\
-	if (--mclrefcnt[mtocl(m)] == 0) { 		\
-		(m)->m_next = mclfree;				\
-		mclfree = (m);						\
-	    mbstat.m_clfree++;					\
-	} 										\
+
+#define	MCLFREE(m) { 									\
+	MBUFLOCK( 											\
+	if (--mclrefcnt[mtocl(m)] == 0) { 					\
+		((union mcluster *)(m))->mcl_next = mclfree; 	\
+		mclfree = (union mcluster *)(m);				\
+	    mbstat.m_clfree++;								\
+	}													\
+	)													\
 }
-#define	MFREE(m, n) {						\
-	  int ms = splimp(); 					\
-	  if ((m)->m_type == MT_FREE) {			\
-		  panic("mfree"); 					\
-	  }										\
-	  mbstat.m_mtypes[(m)->m_type]--;		\
-	  mbstat.m_mtypes[MT_FREE]++; 			\
-	  (m)->m_type = MT_FREE; 				\
-	  if (M_HASCL(m)) { 					\
-		(n) = MTOCL(m); 					\
-		MCLFREE(n); 						\
-	  } 									\
-	  (n) = (m)->m_next;					\
-	  (m)->m_next = mfree; 					\
-	  (m)->m_off = 0; 						\
-	  (m)->m_act = 0; 						\
-	  mfree = (m); 							\
-	  splx(ms); 							\
-	  if (m_want) { 						\
-		  m_want = 0; 						\
-		  wakeup((caddr_t)&mfree); 			\
-	  } 									\
+
+#define	MFREE(m, n) {									\
+	int ms = splimp(); 									\
+	if ((m)->m_type == MT_FREE) {						\
+		panic("mfree");									\
+	}													\
+	MBUFLOCK(mbstat.m_mtypes[(m)->m_type]--;)			\
+	MBUFLOCK(mbstat.m_mtypes[MT_FREE]++;) 				\
+	(m)->m_type = MT_FREE; 								\
+	if (M_HASCL(m)) { 									\
+		(n) = MTOCL(m); 								\
+		MCLFREE(n); 									\
+	} 													\
+	(n) = (m)->m_next;									\
+	(m)->m_next = mbfree; 								\
+	(m)->m_off = 0; 									\
+	(m)->m_act = 0; 									\
+	mbfree = (m); 										\
+	if((m)->m_flags & M_EXT) {							\
+		if ((m)->m_ext.ext_free) {						\
+			(*((m)->m_ext.ext_free))((m)->m_ext.ext_buf, \
+					(m)->m_ext.ext_size); 				\
+		} else {										\
+			MCLFREE((m)->m_ext.ext_buf); 				\
+		}												\
+	}													\
+	(n) = (m)->m_next; 									\
+	FREE((m), mbtypes[(m)->m_type]); 					\
+	if (m_want) { 										\
+		m_want = 0; 									\
+		wakeup((caddr_t)&mfree); 						\
+	} 													\
+	splx(ms); 											\
+}
+
+/*
+ * Copy mbuf pkthdr from from to to.
+ * from must have M_PKTHDR set, and to must be empty.
+ */
+#define	M_COPY_PKTHDR(to, from) { 						\
+	(to)->m_pkthdr = (from)->m_pkthdr; 					\
+	(to)->m_flags = (from)->m_flags & M_COPYFLAGS; 		\
+	(to)->m_data = (to)->m_pktdat; 						\
+}
+
+/*
+ * Set the m_data pointer of a newly-allocated mbuf (m_get/MGET) to place
+ * an object of the specified size at the end of the mbuf, longword aligned.
+ */
+#define	M_ALIGN(m, len) 								\
+	{ (m)->m_data += (MLEN - (len)) &~ (sizeof(long) - 1); }
+/*
+ * As above, for mbufs allocated with m_gethdr/MGETHDR
+ * or initialized by M_COPY_PKTHDR.
+ */
+#define	MH_ALIGN(m, len) 								\
+	{ (m)->m_data += (MHLEN - (len)) &~ (sizeof(long) - 1); }
+
+/*
+ * Compute the amount of space available
+ * before the current start of data in an mbuf.
+ */
+#define	M_LEADINGSPACE(m) 								\
+	((m)->m_flags & M_EXT ? /* (m)->m_data - (m)->m_ext.ext_buf */ 0 : \
+	    (m)->m_flags & M_PKTHDR ? (m)->m_data - (m)->m_pktdat : \
+	    (m)->m_data - (m)->m_dat)
+
+/*
+ * Compute the amount of space available
+ * after the end of data in an mbuf.
+ */
+#define	M_TRAILINGSPACE(m) 								\
+	((m)->m_flags & M_EXT ? (m)->m_ext.ext_buf + (m)->m_ext.ext_size - \
+	    ((m)->m_data + (m)->m_len) : 					\
+	    &(m)->m_dat[MLEN] - ((m)->m_data + (m)->m_len))
+
+/*
+ * Arrange to prepend space of size plen to mbuf m.
+ * If a new mbuf must be allocated, how specifies whether to wait.
+ * If how is M_DONTWAIT and allocation fails, the original mbuf chain
+ * is freed and m is set to NULL.
+ */
+#define	M_PREPEND(m, plen, how) { 						\
+	if (M_LEADINGSPACE(m) >= (plen)) { 					\
+		(m)->m_data -= (plen); 							\
+		(m)->m_len += (plen); 							\
+	} else 												\
+		(m) = m_prepend((m), (plen), (how)); 			\
+	if ((m) && (m)->m_flags & M_PKTHDR) 				\
+		(m)->m_pkthdr.len += (plen); 					\
+}
+
+/* change mbuf to new type */
+#define MCHTYPE(m, t) { 								\
+	MBUFLOCK(mbstat.m_mtypes[(m)->m_type]--; mbstat.m_mtypes[t]++;) \
+	(m)->m_type = t;									\
 }
 
 /*
@@ -283,19 +371,23 @@ struct mbstat {
 	u_short	m_drops;			/* times failed to find space */
 	u_short m_wait;				/* times waited for space */
 	u_short m_drain;			/* times drained protocols for space */
-	u_short	m_mtypes[NMBTYPES];	/* type specific mbuf allocations */
+	u_short	m_mtypes[256];		/* type specific mbuf allocations */
 };
 
-extern struct mbuf *mbutl;		/* virtual address of net free mem */
-struct	mbstat mbstat;
-int		nmbclusters;
-struct	mbuf *mfree, *mclfree;
-char	mclrefcnt[NMBCLUSTERS + 1];
-int		m_want;
+#ifdef	_KERNEL
 
+extern struct mbuf *mbutl;		/* virtual address of net free mem */
+extern int nmbclusters;
+extern char *mclrefcnt;			/* cluster reference counts */
 extern	int max_linkhdr;		/* largest link-level header */
 extern	int max_protohdr;		/* largest protocol header */
 extern	int max_hdr;			/* largest link+protocol header */
+extern	int	max_datalen;		/* MHLEN - max_hdr */
+
+struct	mbuf *mbfree;
+struct	mbstat mbstat;
+union	mcluster *mclfree;
+int		m_want;
 
 struct	mbuf 	*m_copym(struct mbuf *, int, int, int);
 struct	mbuf 	*m_free(struct mbuf *);
@@ -312,5 +404,7 @@ caddr_t			m_clalloc(int, int);
 void			m_copyback(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
-void 			mbinit2(char *, int, int);
+void 			mbinit2(void *, int, int);
+
+#endif
 #endif /* _SYS_MBUF_H_ */
