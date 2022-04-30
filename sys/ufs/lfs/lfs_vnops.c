@@ -377,7 +377,7 @@ lfs_link(ap)
 	struct inode *ip;
 	int ret;
 
-	ip = VTOI(ap->a_dvp);
+	ip = VTOI(ap->a_tdvp);
 	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_tdvp);
 	ret = ufs_link(ap);
@@ -399,7 +399,7 @@ lfs_rename(ap)
 	struct inode *ip;
 	int ret;
 
-	ip = VTOI(ap->a_dvp);
+	ip = VTOI(ap->a_fdvp);
 	SET_DIROP(ip->i_lfs);
 	MARK_VNODE(ap->a_fdvp);
 	MARK_VNODE(ap->a_tdvp);
