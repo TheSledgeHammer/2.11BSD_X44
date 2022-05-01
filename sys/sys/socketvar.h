@@ -49,6 +49,7 @@ struct socket {
  * and limit on number of queued connections for this socket.
  */
 	struct	socket 	 	*so_head;	/* back pointer to accept socket */
+	struct	soqhead		*so_onq;	/* queue (q or q0) that we're on */
 	struct	soqhead	 	so_q0;		/* queue of partial connections */
 	struct	soqhead	 	so_q;		/* queue of incoming connections */
 	TAILQ_ENTRY(socket) so_qe;		/* our queue entry (q or q0) */
@@ -229,6 +230,7 @@ void	sofree(struct socket *);
 int		soclose(struct socket *);
 int		soabort(struct socket *);
 int		soaccept(struct socket *, struct mbuf *);
+int     soconnect(struct socket *, struct mbuf *);
 int		soconnect2(struct socket *, struct socket *);
 int		sodisconnect(struct socket *);
 int		sosend(struct socket *, struct mbuf *, struct uio *, int, struct mbuf *);
@@ -236,7 +238,7 @@ int		soreceive(struct socket *, struct mbuf **, struct uio *, int, struct mbuf *
 int		soshutdown(struct socket *, int);
 void	sorflush(struct socket *);
 int		sosetopt(struct socket *, int, int, struct mbuf *);
-int		sogetopt(struct socket *, int, int, struct mbuf **);
+int		sogetopt(struct socket *, int, int, struct mbuf *);
 void	sohasoutofband(struct socket *);
 int		soacc1(struct socket *);
 struct socket *asoqremque(struct socket *, int);
@@ -269,6 +271,11 @@ void	sbcompress(struct sockbuf *, struct mbuf *, struct mbuf *);
 void	sbflush(struct sockbuf *);
 void	sbdrop(struct sockbuf *, int);
 void	sbdroprecord(struct sockbuf *);
+int     sendit(int, struct msghdr *, int);
+int     recvit(int, struct msghdr *, int, caddr_t, caddr_t);
+struct file *gtsockf(int);
+int     sockargs(struct mbuf **, caddr_t, int, int);
+int     netcopyout(struct mbuf *, char *, int *);
 
 int		unp_connect2(struct socket *, struct socket *);
 int		unp_externalize(struct mbuf *);

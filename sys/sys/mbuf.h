@@ -376,7 +376,7 @@ struct	mbstat mbstat;
 union	mcluster *mclfree;
 int		m_want;
 
-struct	mbuf 	*m_copy(struct mbuf *, int, int, int);
+struct	mbuf 	*m_copy(struct mbuf *, int, int);
 struct	mbuf 	*m_free(struct mbuf *);
 struct	mbuf 	*m_get(int, int);
 struct	mbuf 	*m_getclr(int, int);
