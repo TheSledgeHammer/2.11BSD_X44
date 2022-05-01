@@ -271,6 +271,7 @@ mpx_detach(cp, gp)
 	}
 }
 
+
 /* TODO: add file */
 int
 mpx_connect(cp1, cp2)
@@ -281,19 +282,19 @@ mpx_connect(cp1, cp2)
 	/* check channels used */
 	cnt1 = 0;
 	cnt2 = 0;
-	for(i = 0; i <= NCHANS; i++) {
+	for(i = 0; i < NCHANS; i++) {
 		cp1 = mpx_get_channel(i);
 		cp2 = mpx_get_channel(i);
-		if(cp1->mpc_index == i && cp1 == NULL) {
+		if(cp1->mpc_index == i && cp1 != NULL) {
 			cnt1++;
 		}
-		if(cp2->mpc_index == i && cp2 == NULL) {
+		if(cp2->mpc_index == i && cp2 != NULL) {
 			cnt2++;
 		}
 	}
 	if(cnt1 < NCHANS && cnt2 < NCHANS) {
 		total = (cnt1 + cnt2);
-		if (total <= NCHANS) {
+		if (total < NCHANS) {
 			goto pass;
 		} else {
 			goto fail;

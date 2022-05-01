@@ -125,22 +125,22 @@ struct mbuf {
 #define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST)
 
 /* mbuf types */
-#define	MT_FREE			0	/* should be on free list */
-#define	MT_DATA			1	/* dynamic (data) allocation */
-#define	MT_HEADER		2	/* packet header */
-#define	MT_SOCKET		3	/* socket structure */
-#define	MT_PCB			4	/* protocol control block */
-#define	MT_RTABLE		5	/* routing tables */
-#define	MT_HTABLE		6	/* IMP host tables */
-#define	MT_ATABLE		7	/* address resolution tables */
-#define	MT_SONAME		8	/* socket name */
-#define	MT_ZOMBIE		9	/* zombie proc status */
-#define	MT_SOOPTS		10	/* socket options */
-#define	MT_FTABLE		11	/* fragment reassembly header */
-#define	MT_RIGHTS		12	/* access rights */
-#define	MT_IFADDR		13	/* interface address */
-#define MT_CONTROL		14	/* extra-data protocol message */
-#define MT_OOBDATA		15	/* expedited data  */
+#define	MT_FREE			M_FREE  	/* 0 should be on free list */
+#define	MT_DATA			M_MBUF		/* 1 dynamic (data) allocation */
+#define	MT_HEADER		M_MBUF		/* 2 packet header */
+#define	MT_SOCKET		M_SOCKET	/* 3 socket structure */
+#define	MT_PCB			M_PCB		/* 4 protocol control block */
+#define	MT_RTABLE		M_RTABLE	/* 5 routing tables */
+#define	MT_HTABLE		M_HTABLE	/* 6 IMP host tables */
+#define	MT_ATABLE		0			/* 7 address resolution tables */
+#define	MT_SONAME		M_MBUF		/* 8 socket name */
+#define	MT_ZOMBIE		0			/* 9 zombie proc status */
+#define	MT_SOOPTS		M_SOOPTS	/* 10 socket options */
+#define	MT_FTABLE		M_FTABLE	/* 11 fragment reassembly header */
+#define	MT_RIGHTS		M_MBUF 		/* 12 access rights */
+#define	MT_IFADDR		M_IFADDR	/* 13 interface address */
+#define MT_CONTROL		M_MBUF 		/* 14 extra-data protocol message */
+#define MT_OOBDATA		M_MBUF		/* 15 expedited data  */
 #define	NMBTYPES		16
 
 /* flags to m_get */
@@ -158,18 +158,8 @@ struct mbuf {
 
 /*
  * mbuf utility macros:
- *
- *	MBUFLOCK(code)
- * prevents a section of code from from being interrupted by network
- * drivers.
  */
- /*
-#define	MBUFLOCK(code) {	\
-	int ms = splimp(); 		\
-	{ (code); }				\
-	splx(ms); 				\
-}
-*/
+
 /*
  * m_pullup will pull up additional length if convenient;
  * should be enough to hold headers of second-level and higher protocols. 
@@ -177,7 +167,7 @@ struct mbuf {
 #define	MPULL_EXTRA	32
 #define	MGET(m, i, t) {									\
 	int ms = splimp(); 									\
-	MALLOC((m), struct mbuf *, MSIZE, mbtypes[t], (i)); \
+	MALLOC((m), struct mbuf *, MSIZE, t, (i)); 			\
 	if ((m) == mbfree) {								\
 		if ((m)->m_type != MT_FREE) { 					\
 			panic("mget");								\
@@ -199,7 +189,7 @@ struct mbuf {
 
 #define	MGETHDR(m, i, t) { 								\
 	int ms = splimp(); 									\
-	MALLOC((m), struct mbuf *, MSIZE, mbtypes[t], (i)); \
+	MALLOC((m), struct mbuf *, MSIZE, t, (i)); 			\
 	if ((m) == mbfree) { 								\
 		(m)->m_type = (t); 								\
 		mbstat.m_mtypes[MT_FREE]--;			            \
@@ -286,7 +276,7 @@ union mcluster {
 		}												\
 	}													\
 	(n) = (m)->m_next; 									\
-	FREE((m), mbtypes[(m)->m_type]); 					\
+	FREE((m), (m)->m_type); 							\
 	if (m_want) { 										\
 		m_want = 0; 									\
 		wakeup((caddr_t)&mbfree); 						\
@@ -373,7 +363,6 @@ struct mbstat {
 };
 
 #ifdef	_KERNEL
-
 extern struct mbuf *mbutl;		/* virtual address of net free mem */
 extern int nmbclusters;
 extern char *mclrefcnt;			/* cluster reference counts */
@@ -406,16 +395,16 @@ void 			mbinit2(void *, int, int);
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */
-	M_FREE,		/* MT_FREE	0	   should be on free list */
-	M_MBUF,		/* MT_DATA	1	   dynamic (data) allocation */
+	M_FREE,		/* MT_FREE		0	   should be on free list */
+	M_MBUF,		/* MT_DATA		1	   dynamic (data) allocation */
 	M_MBUF,		/* MT_HEADER	2	   packet header */
 	M_SOCKET,	/* MT_SOCKET	3	   socket structure */
-	M_PCB,		/* MT_PCB	4	   protocol control block */
+	M_PCB,		/* MT_PCB		4	   protocol control block */
 	M_RTABLE,	/* MT_RTABLE	5	   routing tables */
 	M_HTABLE,	/* MT_HTABLE	6	   IMP host tables */
-	0,		/* MT_ATABLE	7	   address resolution tables */
+	0,			/* MT_ATABLE	7	   address resolution tables */
 	M_MBUF,		/* MT_SONAME	8	   socket name */
-	0,		/* 		9 */
+	0,					/* 		9 */
 	M_SOOPTS,	/* MT_SOOPTS	10	   socket options */
 	M_FTABLE,	/* MT_FTABLE	11	   fragment reassembly header */
 	M_MBUF,		/* MT_RIGHTS	12	   access rights */
@@ -423,7 +412,7 @@ int mbtypes[] = {				/* XXX */
 	M_MBUF,		/* MT_CONTROL	14	   extra-data protocol message */
 	M_MBUF,		/* MT_OOBDATA	15	   expedited data  */
 #ifdef DATAKIT
-	25, 26, 27, 28, 29, 30, 31, 32		/* datakit ugliness */
+	25, 26, 27, 28, 29, 30, 31, 32	/* datakit ugliness */
 #endif
 };
 #endif

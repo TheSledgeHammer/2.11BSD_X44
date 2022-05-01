@@ -64,7 +64,7 @@ socket()
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
 	fp->f_ops = &socketops;
-	u.u_error = socreate(uap->domain, &so, uap->type, uap->protocol);
+	u.u_error = socreate(SCARG(uap, domain), &so, SCARG(uap, type), SCARG(uap, protocol));
 	if (u.u_error) {
 		goto bad;
 	} else {
@@ -96,13 +96,13 @@ bind()
 	fp = gtsockf(uap->s);
 	if (fp == 0)
 		return (u.u_error);
-	u.u_error = sockargs(nam, uap->name, uap->namelen, MT_SONAME);
+	u.u_error = sockargs(nam, SCARG(uap, name), SCARG(uap, namelen), MT_SONAME);
 	if (u.u_error) {
 		return (u.u_error);
 	}
-	if (uap->namelen > MLEN)
+	if (SCARG(uap, namelen) > MLEN)
 		return (u.u_error = EINVAL);
-	u.u_error = copyin(uap->name, mtod(nam, caddr_t), uap->namelen);
+	u.u_error = copyin(SCARG(uap, name), mtod(nam, caddr_t), SCARG(uap, namelen));
 	if (u.u_error)
 		return (u.u_error);
 	u.u_error = sobind((struct socket *)fp->f_socket, nam);
@@ -121,10 +121,10 @@ listen()
 
 	if (netoff)
 		return(u.u_error = ENETDOWN);
-	fp = gtsockf(uap->s);
+	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (u.u_error);
-	u.u_error = solisten((struct socket *)fp->f_socket, uap->backlog);
+	u.u_error = solisten((struct socket *)fp->f_socket, SCARG(uap, backlog));
 	return (u.u_error);
 }
 
@@ -146,19 +146,19 @@ accept()
 
 	if (netoff)
 		return(u.u_error = ENETDOWN);
-	if (uap->name == 0)
+	if (SCARG(uap, name) == 0)
 		goto noname;
-	u.u_error = copyin((caddr_t)uap->anamelen, (caddr_t)&namelen, sizeof(namelen));
+	u.u_error = copyin((caddr_t)SCARG(uap, anamelen), (caddr_t)&namelen, sizeof(namelen));
 	if (u.u_error)
 		return (u.u_error);
 #ifndef pdp11
-	if (useracc((caddr_t)uap->name, (u_int)namelen, B_WRITE) == 0) {
+	if (useracc((caddr_t)SCARG(uap, name), (u_int)namelen, B_WRITE) == 0) {
 		u.u_error = EFAULT;
 		return (u.u_error);
 	}
 #endif
 noname:
-	fp = gtsockf(uap->s);
+	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (u.u_error);
 	s = splnet();
@@ -184,17 +184,17 @@ noname:
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_socket = so;
 	nam = (struct mbuf *)sabuf;
-	u.u_error = MBZAP(nam, uap->name, 0, MT_SONAME);
+	u.u_error = MBZAP(nam, SCARG(uap, name), 0, MT_SONAME);
 	if (u.u_error) {
 		return (u.u_error);
 	}
 	u.u_error = soaccept(so, nam);
-	if (uap->name) {
+	if (SCARG(uap, name)) {
 		if (namelen > nam->m_len)
 			namelen = nam->m_len;
 		/* SHOULD COPY OUT A CHAIN HERE */
-		(void) copyout(mtod(nam, caddr_t), (caddr_t)uap->name, (u_int)namelen);
-		(void) copyout((caddr_t)&namelen, (caddr_t)uap->anamelen, sizeof(*uap->anamelen));
+		(void) copyout(mtod(nam, caddr_t), (caddr_t)SCARG(uap, name), (u_int)namelen);
+		(void) copyout((caddr_t)&namelen, (caddr_t)SCARG(uap, anamelen), sizeof(*SCARG(uap, anamelen)));
 	}
 	splx(s);
 	return (u.u_error);
@@ -217,17 +217,17 @@ connect()
 
 	if (netoff)
 		return(u.u_error = ENETDOWN);
-	fp = gtsockf(uap->s);
+	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (u.u_error);
-	if (uap->namelen > MLEN)
+	if (SCARG(uap, namelen) > MLEN)
 		return (u.u_error = EINVAL);
 	nam = (struct mbuf *)sabuf;
-	u.u_error = MBZAP(nam, uap->name, 0, MT_SONAME);
+	u.u_error = MBZAP(nam, SCARG(uap, name), 0, MT_SONAME);
 	if (u.u_error) {
 		return (u.u_error);
 	}
-	u.u_error = copyin(uap->name, mtod(nam, caddr_t), uap->namelen);
+	u.u_error = copyin(SCARG(uap, name), mtod(nam, caddr_t), SCARG(uap, namelen));
 	if (u.u_error)
 		return (u.u_error);
 	so = fp->f_socket;
@@ -271,10 +271,10 @@ socketpair()
 
 	if	(netoff)
 		return (u.u_error = ENETDOWN);
-	u.u_error = socreate(uap->domain, &so1, uap->type, uap->protocol);
+	u.u_error = socreate(SCARG(uap, domain), &so1, SCARG(uap, type), SCARG(uap, protocol));
 	if	(u.u_error)
 		return (u.u_error);;
-	u.u_error = socreate(uap->domain, &so2, uap->type, uap->protocol);
+	u.u_error = socreate(SCARG(uap, domain), &so2, SCARG(uap, type), SCARG(uap, protocol));
 	if	(u.u_error)
 		goto free;
 	fp1 = falloc();
@@ -294,7 +294,7 @@ socketpair()
 	u.u_error = soconnect2(so1, so2);
 	if (u.u_error)
 		goto free4;
-	if (uap->type == SOCK_DGRAM) {
+	if (SCARG(uap, type) == SOCK_DGRAM) {
 		/*
 		 * Datagram socket connection is asymmetric.
 		 */
@@ -303,7 +303,7 @@ socketpair()
 			goto free4;
 	}
 	u.u_r.r_val1 = 0;
-	(void) copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
+	(void) copyout((caddr_t)sv, (caddr_t)SCARG(uap, rsv), 2 * sizeof (int));
 	return (u.u_error);;
 free4:
 	fp2->f_count = 0;
@@ -332,16 +332,16 @@ sendto()
 	struct msghdr msg;
 	struct iovec aiov;
 
-	msg.msg_name = uap->to;
-	msg.msg_namelen = uap->tolen;
+	msg.msg_name = SCARG(uap, to);
+	msg.msg_namelen = SCARG(uap, tolen);
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
-	aiov.iov_base = uap->buf;
-	aiov.iov_len = uap->len;
+	aiov.iov_base = SCARG(uap, buf);
+	aiov.iov_len = SCARG(uap, len);
 	msg.msg_accrights = 0;
 	msg.msg_accrightslen = 0;
 
-	return (sendit(uap->s, &msg, uap->flags));
+	return (sendit(SCARG(uap, s), &msg, SCARG(uap, flags)));
 }
 
 int
@@ -360,11 +360,11 @@ send()
 	msg.msg_namelen = 0;
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
-	aiov.iov_base = uap->buf;
-	aiov.iov_len = uap->len;
+	aiov.iov_base = SCARG(uap, buf);
+	aiov.iov_len = SCARG(uap, len);
 	msg.msg_accrights = 0;
 	msg.msg_accrightslen = 0;
-	return (sendit(uap->s, &msg, uap->flags));
+	return (sendit(SCARG(uap, s), &msg, SCARG(uap, flags)));
 }
 
 int
@@ -378,7 +378,7 @@ sendmsg()
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
 
-	u.u_error = copyin(uap->msg, (caddr_t)&msg, sizeof (msg));
+	u.u_error = copyin(SCARG(uap, msg), (caddr_t)&msg, sizeof (msg));
 	if (u.u_error)
 		return (u.u_error);
 	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0])) {
@@ -391,7 +391,7 @@ sendmsg()
 	if (u.u_error)
 		return (u.u_error);
 	msg.msg_iov = aiov;
-	return (sendit(uap->s, &msg, uap->flags));
+	return (sendit(SCARG(uap, s), &msg, SCARG(uap, flags)));
 }
 
 int
@@ -466,24 +466,24 @@ recvfrom()
 		syscallarg(int)	len;
 		syscallarg(int)	flags;
 		syscallarg(caddr_t)	from;
-		int	*fromlenaddr;
+		syscallarg(int *) fromlenaddr;
 	} *uap = (struct recvfrom_args *)u.u_ap;
 	struct msghdr msg;
 	struct iovec aiov;
 	int len;
 
-	u.u_error = copyin((caddr_t)uap->fromlenaddr, (caddr_t)&len, sizeof(len));
+	u.u_error = copyin((caddr_t)SCARG(uap, fromlenaddr), (caddr_t)&len, sizeof(len));
 	if (u.u_error)
 		return (u.u_error);
-	msg.msg_name = uap->from;
+	msg.msg_name = SCARG(uap, from);
 	msg.msg_namelen = len;
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
-	aiov.iov_base = uap->buf;
-	aiov.iov_len = uap->len;
+	aiov.iov_base = SCARG(uap, buf);
+	aiov.iov_len = SCARG(uap, len);
 	msg.msg_accrights = 0;
 	msg.msg_accrightslen = 0;
-	return (recvit(uap->s, &msg, uap->flags, (caddr_t)uap->fromlenaddr, (caddr_t)0));
+	return (recvit(uap->s, &msg, SCARG(uap, flags), (caddr_t)SCARG(uap, fromlenaddr), (caddr_t)0));
 }
 
 int
@@ -502,11 +502,11 @@ recv()
 	msg.msg_namelen = 0;
 	msg.msg_iov = &aiov;
 	msg.msg_iovlen = 1;
-	aiov.iov_base = uap->buf;
-	aiov.iov_len = uap->len;
+	aiov.iov_base = SCARG(uap, buf);
+	aiov.iov_len = SCARG(uap, len);
 	msg.msg_accrights = 0;
 	msg.msg_accrightslen = 0;
-	return (recvit(uap->s, &msg, uap->flags, (caddr_t)0, (caddr_t)0));
+	return (recvit(SCARG(uap, s), &msg, SCARG(uap, flags), (caddr_t)0, (caddr_t)0));
 }
 
 int
@@ -520,7 +520,7 @@ recvmsg()
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
 
-	u.u_error = copyin((caddr_t)uap->msg, (caddr_t)&msg, sizeof (msg));
+	u.u_error = copyin((caddr_t)SCARG(uap, msg), (caddr_t)&msg, sizeof (msg));
 	if (u.u_error)
 		return (u.u_error);
 	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0])) {
@@ -530,7 +530,7 @@ recvmsg()
 	u.u_error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov, (unsigned)(msg.msg_iovlen * sizeof(aiov[0])));
 	if (u.u_error)
 		return (u.u_error);
-	return (recvit(uap->s, &msg, uap->flags, (caddr_t) & uap->msg->msg_namelen, (caddr_t) & uap->msg->msg_accrightslen));
+	return (recvit(SCARG(uap, s), &msg, SCARG(uap, flags), (caddr_t) & SCARG(uap, msg)->msg_namelen, (caddr_t) & SCARG(uap, msg)->msg_accrightslen));
 }
 
 int
@@ -609,10 +609,10 @@ shutdown()
 
 	if (netoff)
 		return (u.u_error = ENETDOWN);
-	fp = gtsockf(uap->s);
+	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (0);
-	u.u_error = soshutdown(fp->f_socket, uap->how);
+	u.u_error = soshutdown(fp->f_socket, SCARG(uap, how));
 	return (u.u_error);
 }
 
@@ -632,21 +632,21 @@ setsockopt()
 
 	if (netoff)
 		return (u.u_error = ENETDOWN);
-	fp = gtsockf(uap->s);
+	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (0);
-	if (uap->valsize > MLEN) {
+	if (SCARG(uap, valsize) > MLEN) {
 		u.u_error = EINVAL;
 		return (u.u_error);
 	}
 	if (uap->val) {
 		m = (struct mbuf *)optbuf;
-		MBZAP(m, uap->valsize, MT_SOOPTS);
-		u.u_error = copyin(uap->val, mtod(m, caddr_t), (u_int)uap->valsize);
+		MBZAP(m, SCARG(uap, valsize), MT_SOOPTS);
+		u.u_error = copyin(SCARG(uap, val), mtod(m, caddr_t), (u_int)SCARG(uap, valsize));
 		if (u.u_error)
 			return (u.u_error);
 	}
-	u.u_error = sosetopt(fp->f_socket, uap->level, uap->name, m);
+	u.u_error = sosetopt(fp->f_socket, SCARG(uap, level), SCARG(uap, name), m);
 	return (u.u_error);
 }
 
@@ -666,24 +666,24 @@ getsockopt()
 
 	if (netoff)
 		return (u.u_error = ENETDOWN);
-	fp = gtsockf(uap->s);
+	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (0);
-	if (uap->val) {
-		u.u_error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize, sizeof(valsize));
+	if (SCARG(uap, val)) {
+		u.u_error = copyin((caddr_t)SCARG(uap, avalsize), (caddr_t)&valsize, sizeof(valsize));
 		if (u.u_error)
 			return (u.u_error);
 	} else
 		valsize = 0;
 	u.u_error =
-	    sogetopt(fp->f_socket, uap->level, uap->name, &m);
+	    sogetopt(fp->f_socket, SCARG(uap, level), SCARG(uap, name), &m);
 	if (u.u_error)
 		goto bad;
-	if (uap->val && valsize && m != NULL) {
-		u.u_error = netcopyout(m, uap->val, &valsize);
+	if (SCARG(uap, val) && valsize && m != NULL) {
+		u.u_error = netcopyout(m, SCARG(uap, val), &valsize);
 		if (u.u_error)
 			goto bad;
-		u.u_error = copyout((caddr_t)&valsize, (caddr_t)uap->avalsize, sizeof(valsize));
+		u.u_error = copyout((caddr_t)&valsize, (caddr_t)SCARG(uap, avalsize), sizeof(valsize));
 	}
 bad:
 	if (m != NULL)
@@ -710,10 +710,10 @@ getsockname()
 	if (netoff)
 		u.u_error = ENETDOWN;
 	return (u.u_error);
-	fp = gtsockf(uap->fdes);
+	fp = gtsockf(SCARG(uap, fdes));
 	if (fp == 0)
 		return (u.u_error);
-	u.u_error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len));
+	u.u_error = copyin((caddr_t)SCARG(uap, alen), (caddr_t)&len, sizeof (len));
 	if (u.u_error)
 		return (u.u_error);
 	m = (struct mbuf *)sabuf;
@@ -723,10 +723,10 @@ getsockname()
 		return (u.u_error);
 	if (len > m->m_len)
 		len = m->m_len;
-	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
+	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)SCARG(uap, asa), (u_int)len);
 	if (u.u_error)
 		return (u.u_error);
-	u.u_error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
+	u.u_error = copyout((caddr_t)&len, (caddr_t)SCARG(uap, alen), sizeof (len));
 
 	return (u.u_error);
 }
@@ -749,12 +749,12 @@ getpeername()
 
 	if (netoff)
 		return (u.u_error = ENETDOWN);
-	fp = gtsockf(uap->fdes);
+	fp = gtsockf(SCARG(uap, fdes));
 	if (fp == 0)
 		return (u.u_error);
 	m = (struct mbuf*) sabuf;
 	MBZAP(m, 0, MT_SONAME);
-	u.u_error = copyin((caddr_t) uap->alen, (caddr_t) & len, sizeof(len));
+	u.u_error = copyin((caddr_t) SCARG(uap, alen), (caddr_t) & len, sizeof(len));
 	if (u.u_error)
 		return (u.u_error);
 	u.u_error = sogetpeer(fp->f_socket, m);
@@ -762,10 +762,10 @@ getpeername()
 		return (u.u_error);
 	if (len > m->m_len)
 		len = m->m_len;
-	u.u_error = copyout(mtod(m, caddr_t), (caddr_t) uap->asa, (u_int) len);
+	u.u_error = copyout(mtod(m, caddr_t), (caddr_t) SCARG(uap, asa), (u_int) len);
 	if (u.u_error)
 		return (u.u_error);
-	u.u_error = copyout((caddr_t) & len, (caddr_t) uap->alen, sizeof(len));
+	u.u_error = copyout((caddr_t) & len, (caddr_t) SCARG(uap, alen), sizeof(len));
 
 	return (u.u_error);
 }

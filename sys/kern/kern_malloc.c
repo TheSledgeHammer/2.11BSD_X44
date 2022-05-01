@@ -122,7 +122,7 @@ slabmeta(slab, size)
 		meta->ksm_fslots = 0;
 	}
 
-	meta->ksm_min = percent(meta->ksm_bslots, 0); 	/* lower bucket boundary */
+	meta->ksm_min = percent(meta->ksm_bslots, 0); 		/* lower bucket boundary */
 	meta->ksm_max = percent(meta->ksm_bslots, 95);  	/* upper bucket boundary */
 
 	/* test if free bucket slots is greater than 0 and less or equal to 95% */

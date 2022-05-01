@@ -184,6 +184,7 @@ struct msghdr {
 #define	MSG_OOB			0x1		/* process out-of-band data */
 #define	MSG_PEEK		0x2		/* peek at incoming message */
 #define	MSG_DONTROUTE	0x4		/* send without using routing tables */
+#define	MSG_EOR			0x8		/* data completes record */
 
 #define	MSG_MAXIOVLEN	16
 #endif	/* _SYS_SOCKET_H_ */

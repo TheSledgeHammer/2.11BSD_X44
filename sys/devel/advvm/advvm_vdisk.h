@@ -35,14 +35,6 @@
 
 /* Virtual Disks */
 
-/*
- * stgDescT - Describes a contiguous set of available (free) vd blocks.
- * These structures are used to maintain a list of free disk space.  There
- * is a free list in each vd structure.  The list is ordered by virtual
- * disk block (it could also be ordered by the size of each contiguous
- * set of blocks in the future).
- */
-
 struct advvm_freelist;
 LIST_HEAD(advvm_freelist, advvm_vdfree);
 struct advvm_vdfree {
@@ -52,11 +44,6 @@ struct advvm_vdfree {
 };
 typedef struct advvm_vdfree			advvm_vdfree_t;
 
-/*
- * vd - this structure describes a virtual disk, including accessed
- * bitfile references, its size, i/o queues, name, id, and an
- * access handle for the metadata.
- */
 struct advvm_vdisk {
 	struct advvm_domain 			*avd_domain;		/* domain pointer for ds */
 	struct vnode					*avd_vp;			/* device access (temp vnode *) */

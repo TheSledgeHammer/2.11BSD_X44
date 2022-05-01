@@ -189,10 +189,11 @@ gsched_sort(cur)
     struct proc *cur;  
 {
     struct proc *nxt;
-    nxt = LIST_NEXT(cur, p_list); 
-    LIST_FOREACH(cur, &allproc, p_list) {
-        if(gsched_compare(cur, nxt) > 0) {
-            qsort(cur, NQS, sizeof(struct proc), gsched_compare);
-        }
+    int count = 0;
+
+    for(cur = LIST_FIRST(&allproc); cur != NULL; cur = nxt) {
+    	 nxt = LIST_NEXT(cur, p_list);
+    	 count++;
+    	 qsort(cur, count, sizeof(struct proc), gsched_compare);
     }
 }
