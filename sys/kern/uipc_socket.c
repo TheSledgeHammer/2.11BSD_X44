@@ -15,6 +15,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 //#ifdef INET
 #include <sys/malloc.h>
 #include <sys/user.h>
@@ -474,7 +475,7 @@ nopages:
 			}
 			s = splnet(); /* XXX */
 			error = (*so->so_proto->pr_usrreq)(so,
-					(flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND, top, (caddr_t) nam,
+					(flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND, top, nam,
 					rights, u.u_procp);
 			splx(s);
 			rights = 0;
@@ -790,6 +791,7 @@ sosetopt(so, level, optname, m0)
 		case SO_RCVBUF:
 		case SO_SNDLOWAT:
 		case SO_RCVLOWAT:
+		{
 			int optval;
 
 			if (m == NULL || m->m_len < sizeof(int)) {
@@ -834,6 +836,7 @@ sosetopt(so, level, optname, m0)
 				break;
 			}
 			break;
+		}
 
 		case SO_SNDTIMEO:
 		case SO_RCVTIMEO:
@@ -872,7 +875,7 @@ sosetopt(so, level, optname, m0)
 	}
 
 	if (error == 0 && so->so_proto && so->so_proto->pr_ctloutput) {
-		(void) ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level, optname, &m0));
+		(void) ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level, optname, m0));
 		m = NULL;	/* freed by protocol */
 	}
 
@@ -886,7 +889,7 @@ int
 sogetopt(so, level, optname, mp)
 	register struct socket *so;
 	int level, optname;
-	struct mbuf **mp;
+	struct mbuf *mp;
 {
 	register struct mbuf *m;
 
@@ -963,7 +966,7 @@ sogetopt(so, level, optname, mp)
 			(void)m_free(m);
 			return (ENOPROTOOPT);
 		}
-		*mp = m;
+		mp = m;
 		return (0);
 	}
 }
@@ -979,9 +982,7 @@ sohasoutofband(so)
 	} else if (so->so_pgrp > 0 && (p = (struct proc*) netpfind(so->so_pgrp)) != 0) {
 		netpsignal(p, SIGURG);
 	}
-	if (so->so_rcv.sb_sel) {
-		selwakeup1(so->so_rcv.sb_sel);
-	}
+	selwakeup1(&so->so_rcv.sb_sel);
 }
 
 /*
@@ -1025,7 +1026,7 @@ asoqremque(so, n)
 {
 	register struct	socket	*aso;
 
-	aso = so->so_q;
+	aso = TAILQ_FIRST(&so->so_q);
 	if (soqremque(aso, n) == 0)
 		return (0);
 	return (aso);

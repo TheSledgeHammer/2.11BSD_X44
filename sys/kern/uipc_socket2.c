@@ -234,6 +234,7 @@ socantrcvmore(so)
 /*
  * Queue a process for a select on a socket buffer.
  */
+/*
 void
 sbselqueue(sb)
 	register struct sockbuf *sb;
@@ -241,12 +242,12 @@ sbselqueue(sb)
 	register struct proc *p;
 	extern int selwait;
 
-	if ((p = sb->sb_sel) && ((caddr_t)mfkd(&p->p_wchan) == (caddr_t)&selwait))
+	if ((p = sb->sb_sel) && ((caddr_t)mfkd(&p->p_wchan) == (caddr_t)&selwait)) {
 		sb->sb_flags |= SB_COLL;
-	else
-		sb->sb_sel = u.u_procp;
+	} //else
+		//sb->sb_sel = u.u_procp;
 }
-
+*/
 /*
  * Wait for data to arrive at/drain from a socket buffer.
  */
@@ -267,9 +268,9 @@ sbwakeup(sb)
 	register struct sockbuf *sb;
 {
 
-	if (sb->sb_sel) {
-		selwakeup1(sb->sb_sel);
-		sb->sb_sel = 0;
+	if (sb->sb_sel != NULL) {
+		selwakeup1(&sb->sb_sel);
+		sb->sb_sel = NULL;
 		sb->sb_flags &= ~SB_COLL;
 	}
 	if (sb->sb_flags & SB_WAIT) {
@@ -671,7 +672,7 @@ sodopoll(so, events)
 			revents |= events & (POLLIN | POLLRDNORM);
 
 	if (events & (POLLOUT | POLLWRNORM))
-		if (sowritable(so))
+		if (sowriteable(so))
 			revents |= events & (POLLOUT | POLLWRNORM);
 
 	if (events & (POLLPRI | POLLRDBAND))
