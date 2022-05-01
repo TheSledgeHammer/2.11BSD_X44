@@ -143,7 +143,7 @@ sonewconn(head)
 	so->so_pgrp = head->so_pgrp;
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
-	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
+	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0, u.u_procp)) {
 		(void) soqremque(so, 0);
 		(void) m_free(m);
 		goto bad;
@@ -158,17 +158,17 @@ soqinsque(head, so, q)
 	register struct socket *head, *so;
 	int q;
 {
+	KASSERT(so->so_onq == NULL);
 
 	so->so_head = head;
 	if (q == 0) {
 		head->so_q0len++;
-		so->so_q0 = head->so_q0;
-		head->so_q0 = so;
+		so->so_onq = &head->so_q0;
 	} else {
 		head->so_qlen++;
-		so->so_q = head->so_q;
-		head->so_q = so;
+		so->so_onq = &head->so_q;
 	}
+	TAILQ_INSERT_TAIL(so->so_onq, so, so_qe);
 }
 
 int
@@ -176,27 +176,21 @@ soqremque(so, q)
 	register struct socket *so;
 	int q;
 {
-	register struct socket *head, *prev, *next;
+	register struct socket *head;
 
 	head = so->so_head;
-	prev = head;
-	for (;;) {
-		next = q ? prev->so_q : prev->so_q0;
-		if (next == so)
-			break;
-		if (next == head)
-			return (0);
-		prev = next;
-	}
 	if (q == 0) {
-		prev->so_q0 = next->so_q0;
+		if (so->so_onq != &head->so_q0)
+			return (0);
 		head->so_q0len--;
 	} else {
-		prev->so_q = next->so_q;
+		if (so->so_onq != &head->so_q)
+			return (0);
 		head->so_qlen--;
 	}
-	next->so_q0 = next->so_q = 0;
-	next->so_head = 0;
+	TAILQ_REMOVE(so->so_onq, so, so_qe);
+	so->so_onq = NULL;
+	so->so_head = NULL;
 	return (1);
 }
 
@@ -268,9 +262,8 @@ sbwakeup(sb)
 	register struct sockbuf *sb;
 {
 
-	if (sb->sb_sel != NULL) {
+	if (&sb->sb_sel != NULL) {
 		selwakeup1(&sb->sb_sel);
-		sb->sb_sel = NULL;
 		sb->sb_flags &= ~SB_COLL;
 	}
 	if (sb->sb_flags & SB_WAIT) {

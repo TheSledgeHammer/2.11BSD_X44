@@ -23,7 +23,7 @@
 #include <sys/domain.h>
 #include <sys/mount.h>
 
-int	netcopyout(struct mbuf *, char *, int *);
+#include <machine/setjmp.h>
 
 static int
 MBZAP(m, name, len, type)
@@ -36,7 +36,7 @@ MBZAP(m, name, len, type)
 	m->m_len = len;
 	m->m_type = type;
 	m->m_act = 0;
-
+	
 	return (sockargs(m, name, len, type));
 }
 
@@ -88,15 +88,14 @@ bind()
 	} *uap = (struct bind_args *)u.u_ap;
 	register struct file *fp;
 	register struct mbuf *nam;
-	char sabuf[MSIZE];
-	//nam = (struct mbuf *)sabuf;
+	int error;
 
 	if (netoff)
 		return (u.u_error = ENETDOWN);
-	fp = gtsockf(uap->s);
+	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (u.u_error);
-	u.u_error = sockargs(nam, SCARG(uap, name), SCARG(uap, namelen), MT_SONAME);
+	u.u_error = sockargs(&nam, SCARG(uap, name), SCARG(uap, namelen), MT_SONAME);
 	if (u.u_error) {
 		return (u.u_error);
 	}
@@ -142,7 +141,6 @@ accept()
 	int namelen;
 	int s;
 	register struct socket *so;
-	char sabuf[MSIZE];
 
 	if (netoff)
 		return(u.u_error = ENETDOWN);
@@ -167,10 +165,6 @@ noname:
 		splx(s);
 		return (u.u_error);
 	}
-	if (ufalloc(0) < 0) {
-		splx(s);
-		return (u.u_error);
-	}
 	fp = falloc();
 	if (fp == 0) {
 		u.u_ofile[u.u_r.r_val1] = 0;
@@ -183,7 +177,7 @@ noname:
 	fp->f_type = DTYPE_SOCKET;
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_socket = so;
-	nam = (struct mbuf *)sabuf;
+	nam = m_get(M_WAIT, MT_SONAME);
 	u.u_error = MBZAP(nam, SCARG(uap, name), 0, MT_SONAME);
 	if (u.u_error) {
 		return (u.u_error);
@@ -196,6 +190,7 @@ noname:
 		(void) copyout(mtod(nam, caddr_t), (caddr_t)SCARG(uap, name), (u_int)namelen);
 		(void) copyout((caddr_t)&namelen, (caddr_t)SCARG(uap, anamelen), sizeof(*SCARG(uap, anamelen)));
 	}
+	m_freem(nam);
 	splx(s);
 	return (u.u_error);
 }
@@ -483,7 +478,7 @@ recvfrom()
 	aiov.iov_len = SCARG(uap, len);
 	msg.msg_accrights = 0;
 	msg.msg_accrightslen = 0;
-	return (recvit(uap->s, &msg, SCARG(uap, flags), (caddr_t)SCARG(uap, fromlenaddr), (caddr_t)0));
+	return (recvit(SCARG(uap, s), &msg, SCARG(uap, flags), (caddr_t)SCARG(uap, fromlenaddr), (caddr_t)0));
 }
 
 int
@@ -545,7 +540,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 	register struct iovec *iov;
 	register int i;
 	struct mbuf *from, *rights;
-	int len, m_freem();
+	int len;
 
 	if (netoff)
 		return (u.u_error = ENETDOWN);
@@ -592,9 +587,9 @@ recvit(s, mp, flags, namelenp, rightslenp)
 		(void) copyout((caddr_t) & len, rightslenp, sizeof(int));
 	}
 	if (rights)
-		M_FREEM(rights);
+		m_freem(rights);
 	if (from)
-		M_FREEM(from);
+		m_freem(from);
 	return (u.u_error);
 }
 
@@ -639,7 +634,7 @@ setsockopt()
 		u.u_error = EINVAL;
 		return (u.u_error);
 	}
-	if (uap->val) {
+	if (SCARG(uap, val)) {
 		m = (struct mbuf *)optbuf;
 		MBZAP(m, SCARG(uap, valsize), MT_SOOPTS);
 		u.u_error = copyin(SCARG(uap, val), mtod(m, caddr_t), (u_int)SCARG(uap, valsize));
@@ -676,7 +671,7 @@ getsockopt()
 	} else
 		valsize = 0;
 	u.u_error =
-	    sogetopt(fp->f_socket, SCARG(uap, level), SCARG(uap, name), &m);
+	    sogetopt(fp->f_socket, SCARG(uap, level), SCARG(uap, name), m);
 	if (u.u_error)
 		goto bad;
 	if (SCARG(uap, val) && valsize && m != NULL) {
@@ -687,7 +682,7 @@ getsockopt()
 	}
 bad:
 	if (m != NULL)
-		M_FREE(m);
+		m_free(m);
 	return (u.u_error);
 }
 
