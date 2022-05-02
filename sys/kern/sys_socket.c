@@ -46,7 +46,7 @@ soo_ioctl(fp, cmd, data, p)
 	register caddr_t data;
 	struct proc *p;
 {
-	register struct socket *so = (struct socket *)fp->f_data;
+	register struct socket *so = (struct socket *)fp->f_socket;
 
 	switch (cmd) {
 
@@ -144,7 +144,7 @@ soo_read(fp, uio, cred)
 	struct socket *so;
 	int flags;
 
-	so = (struct socket *)fp->f_data;
+	so = (struct socket *)fp->f_socket;
 	flags = 0;
 	return (soreceive(so, NULL, uio, flags, NULL));
 }
@@ -159,7 +159,7 @@ soo_write(fp, uio, cred)
 	struct socket *so;
 	int flags;
 
-	so = (struct socket *)fp->f_data;
+	so = (struct socket *)fp->f_socket;
 	flags = 0;
 	return (sosend(so, NULL, uio, flags, NULL));
 }
@@ -173,12 +173,12 @@ soo_close(fp, p)
 	struct socket *so;
 	int error;
 	
-	so = (struct socket *)fp->f_data;
+	so = (struct socket *)fp->f_socket;
 	error = 0;
-	if (fp->f_data) {
+	if (fp->f_socket) {
 		error = soclose(so);
 	}
-	fp->f_data = 0;
+	fp->f_socket = 0;
 	return (error);
 }
 

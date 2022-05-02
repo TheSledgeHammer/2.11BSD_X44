@@ -128,7 +128,7 @@ struct sockproto {
 #define PF_DLI			AF_DLI
 #define PF_LAT			AF_LAT
 #define	PF_HYLINK		AF_HYLINK
-#define	PF_APPLETALK		AF_APPLETALK
+#define	PF_APPLETALK	AF_APPLETALK
 
 #define	PF_MAX			AF_MAX
 
@@ -142,25 +142,25 @@ struct sockproto {
  */
 #define NET_MAXID	AF_MAX
 
-#ifndef	KERNEL
-#define CTL_NET_NAMES { \
-	{ 0, 0 }, \
-	{ "unix", CTLTYPE_NODE }, \
-	{ "inet", CTLTYPE_NODE }, \
-	{ "implink", CTLTYPE_NODE }, \
-	{ "pup", CTLTYPE_NODE }, \
-	{ "chaos", CTLTYPE_NODE }, \
-	{ "xerox_ns", CTLTYPE_NODE }, \
-	{ "iso", CTLTYPE_NODE }, \
-	{ "emca", CTLTYPE_NODE }, \
-	{ "datakit", CTLTYPE_NODE }, \
-	{ "ccitt", CTLTYPE_NODE }, \
-	{ "ibm_sna", CTLTYPE_NODE }, \
-	{ "decnet", CTLTYPE_NODE }, \
-	{ "dec_dli", CTLTYPE_NODE }, \
-	{ "lat", CTLTYPE_NODE }, \
-	{ "hylink", CTLTYPE_NODE }, \
-	{ "appletalk", CTLTYPE_NODE }, \
+#ifndef	_KERNEL
+#define CTL_NET_NAMES { 			\
+	{ 0, 0 }, 						\
+	{ "unix", CTLTYPE_NODE }, 		\
+	{ "inet", CTLTYPE_NODE }, 		\
+	{ "implink", CTLTYPE_NODE }, 	\
+	{ "pup", CTLTYPE_NODE }, 		\
+	{ "chaos", CTLTYPE_NODE }, 		\
+	{ "xerox_ns", CTLTYPE_NODE }, 	\
+	{ "iso", CTLTYPE_NODE }, 		\
+	{ "emca", CTLTYPE_NODE }, 		\
+	{ "datakit", CTLTYPE_NODE }, 	\
+	{ "ccitt", CTLTYPE_NODE }, 		\
+	{ "ibm_sna", CTLTYPE_NODE }, 	\
+	{ "decnet", CTLTYPE_NODE }, 	\
+	{ "dec_dli", CTLTYPE_NODE }, 	\
+	{ "lat", CTLTYPE_NODE }, 		\
+	{ "hylink", CTLTYPE_NODE }, 	\
+	{ "appletalk", CTLTYPE_NODE }, 	\
 }
 #endif
 
