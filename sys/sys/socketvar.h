@@ -203,11 +203,10 @@ sbunlock(sb)
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
 #ifdef _KERNEL
+struct msghdr;
 
 /* to catch callers missing new second argument to sonewconn: */
 u_long	sb_max;
-//#define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
-//struct	socket *sonewconn1(struct socket *, int);
 
 /* strings for sleep message: */
 extern	char netio[], netcon[], netcls[];
@@ -274,19 +273,8 @@ void	sbdroprecord(struct sockbuf *);
 int     sendit(int, struct msghdr *, int);
 int     recvit(int, struct msghdr *, int, caddr_t, caddr_t);
 struct file *gtsockf(int);
-int     sockargs(struct mbuf **, caddr_t, int, int);
+int     sockargs(struct mbuf **, caddr_t, u_int, int);
 int     netcopyout(struct mbuf *, char *, int *);
-
-int		unp_connect2(struct socket *, struct socket *);
-int		unp_externalize(struct mbuf *);
-int	    unp_dispose(struct mbuf *);
-void	unp_scan(struct mbuf *, void (*)(struct file *));
-void	unp_mark(struct file *);
-void	unp_discard(struct file *);
-
-int 	uipc_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
-int		uipc_attach(struct socket *, int);
-int		uipc_detach(struct socket *);
 
 /* sys_kern.c */
 void	netcrash();
