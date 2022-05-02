@@ -15,7 +15,7 @@
 #ifndef _SYS_UN_H_
 #define _SYS_UN_H_
 
-#ifdef KERNEL
+#ifdef _KERNEL
 #include <sys/unpcb.h>
 #endif /* KERNEL */
 
@@ -27,20 +27,24 @@ struct	sockaddr_un {
 	char	sun_path[108];		/* path name (gag) */
 };
 
-#ifdef KERNEL
-int		unp_connect2 (struct socket*,struct socket*);
-void    unp_detach (struct unpcb *);
-void    unp_disconnect (struct unpcb *);
-void    unp_shutdown (struct unpcb *);
-void    unp_drop (struct unpcb *, int);
-void    unp_gc (void);
-void    unp_scan (struct mbuf *, void (*)(struct file *));
-void    unp_mark (struct file *);
-void    unp_discard (struct file *);
-int     unp_attach (struct socket *);
-int     unp_bind (struct unpcb *,struct mbuf *, struct proc *);
-int     unp_connect (struct socket *,struct mbuf *, struct proc *);
-int     unp_internalize (struct mbuf *, struct proc *);
+#ifdef _KERNEL
+int     unp_attach(struct socket *);
+void    unp_detach(struct unpcb *);
+int     unp_bind(struct unpcb *,struct mbuf *);
+int     unp_connect(struct socket *, struct mbuf*);
+int	unp_connect2(struct socket*,struct socket*);
+void    unp_disconnect(struct unpcb *);
+void    unp_drop(struct unpcb *, int);
+int	unp_externalize(struct mbuf *);
+int	unp_internalize(struct mbuf *);
+void    unp_gc(void);
+int	unp_dispose(struct mbuf *);
+void	unp_scan(struct mbuf *, void (*)(struct file *));
+void	unp_mark(struct file *);
+void	unp_discard(struct file *);
+
+void    unp_shutdown(struct unpcb *);t proc *);
+
 #else /* KERNEL */
 /* actual length of an initialized sockaddr_un */
 #define SUN_LEN(su) \
