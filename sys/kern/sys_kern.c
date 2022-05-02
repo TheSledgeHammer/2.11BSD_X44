@@ -133,7 +133,6 @@ unpbind(path, len, vpp, unpsock)
 	vp = ndp->ni_vp;
 	vp->v_socket = unp->unp_socket;
 	unp->unp_vnode = vp;
-	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
 	*vpp = vp;
 	vrele(vp);
 	VOP_UNLOCK(vp, 0, u.u_procp);

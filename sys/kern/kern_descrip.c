@@ -492,7 +492,7 @@ fpathconf()
 /*
  * Allocate a user file descriptor.
  */
-static int
+int
 ufalloc(want, result)
 	register int want, *result;
 {

@@ -94,7 +94,7 @@ soo_ioctl(fp, cmd, data, p)
 		return (u.u_error = ifioctl(so, cmd, data));
 	if (IOCGROUP(cmd) == 'r')
 		return (u.u_error = rtioctl(cmd, data));
-	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0, p));
+	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,(struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
 }
 
 int
@@ -114,7 +114,7 @@ soo_stat(so, ub)
 {
 	bzero((caddr_t) ub, sizeof(*ub));
 	ub->st_mode = S_IFSOCK;
-	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0, u.u_procp));
+	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0));
 }
 
 int

@@ -36,11 +36,10 @@ ino_t 			unp_ino;					/* prototype for fake inode numbers */
 
 /*ARGSUSED*/
 int
-uipc_usrreq(so, req, m, nam, rights, p)
+uipc_usrreq(so, req, m, nam, rights)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *rights;
-	struct proc *p;
 {
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
@@ -382,13 +381,14 @@ unp_bind(unp, nam)
 	if(soun == NULL) {
 		soun = malloc(nam->m_len + 1, M_SONAME, M_WAITOK);
 	}
-	m_copydata(nam, 0, nam->m_len, (caddr_t)soun);
+	m_copyback(nam, 0, nam->m_len, (caddr_t)soun);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
 	error = unpbind(soun->sun_path, nam->m_len, &vp, unp->unp_socket);
 	if (error)
 		return (error);
 	if (!vp)
 		panic("unp_bind");
+	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
 	return (0);
 }
 
@@ -417,7 +417,7 @@ unp_connect(so, nam)
 	if(soun == NULL) {
 		soun = malloc(nam->m_len + 1, M_SONAME, M_WAITOK);
 	}
-	m_copydata(nam, 0, nam->m_len, (caddr_t)soun);
+	m_copyback(nam, 0, nam->m_len, (caddr_t)soun);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
 
 	error = unpconn(soun->sun_path, nam->m_len, &so2, &vp);
@@ -591,11 +591,10 @@ unp_externalize(rights)
 		return (EMSGSIZE);
 	}
 	for (i = 0; i < newfds; i++) {
-		f = falloc();
-		if (f < 0)
+		if (ufalloc(0, &f))
 			panic("unp_externalize");
 		fp = *rp;
-		u->u_ofile[f] = fp;
+		u.u_ofile[f] = fp;
 		fp->f_msgcount--;
 		unp_rights--;
 		*(int *)rp++ = f;
@@ -621,7 +620,7 @@ unp_internalize(rights)
 	oldfds = (cm->cmsg_len - sizeof (*cm)) / sizeof (int);
 	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
-		GETF(rp,  *(int *)rp++);
+		GETF(fp,  *(int *)rp++);
 	}
 	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
@@ -664,20 +663,20 @@ restart:
 			if (fpfetch(fp, &xf) == 0) {
 				continue;
 			}
-			if (xf->f_flag & FDEFER) {
+			if (xf.f_flag & FDEFER) {
 				fpflags(fp, 0, FDEFER);
 				unp_defer--;
 			} else {
-				if (xf->f_flag & FMARK)
+				if (xf.f_flag & FMARK)
 					continue;
-				if (xf->f_count == xf->f_msgcount)
+				if (xf.f_count == xf.f_msgcount)
 					continue;
 				fpflags(fp, FMARK, 0);
 			}
-			if (xf->f_type != DTYPE_SOCKET) {
+			if (xf.f_type != DTYPE_SOCKET) {
 				continue;
 			}
-			so = xf->f_socket;
+			so = xf.f_socket;
 			if (so->so_proto->pr_domain != &unixdomain
 					|| (so->so_proto->pr_flags & PR_RIGHTS) == 0) {
 				continue;
@@ -693,8 +692,8 @@ restart:
 		if (fpfetch(fp, &xf) == 0) {
 			continue;
 		}
-		if (xf->f_count == xf->f_msgcount && (xf->f_flag & FMARK) == 0) {
-			while (fpfetch(fp, &xf) && xf->f_msgcount) {
+		if (xf.f_count == xf.f_msgcount && (xf.f_flag & FMARK) == 0) {
+			while (fpfetch(fp, &xf) && xf.f_msgcount) {
 				unp_discard(fp);
 			}
 		}
@@ -747,7 +746,7 @@ unp_mark(fp)
 	struct file xf;
 
 	fpfetch(fp, &xf);
-	if (xf->f_flag & FMARK)
+	if (xf.f_flag & FMARK)
 		return;
 	unp_defer++;
 	fpflags(fp, FMARK|FDEFER, 0);
