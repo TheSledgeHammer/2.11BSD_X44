@@ -9,6 +9,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
+#include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/filedesc.h>
 #include <sys/mbuf.h>
@@ -35,10 +36,11 @@ ino_t 			unp_ino;					/* prototype for fake inode numbers */
 
 /*ARGSUSED*/
 int
-uipc_usrreq(so, req, m, nam, rights)
+uipc_usrreq(so, req, m, nam, rights, p)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *rights;
+	struct proc *p;
 {
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
@@ -548,6 +550,7 @@ unp_usrclosed(unp)
 
 }
 #endif
+
 void
 unp_drop(unp, errno)
 	struct unpcb *unp;
@@ -635,7 +638,7 @@ int	unp_defer, unp_gcing;
  * I doubt it'd be worth it since this isn't used very much.  SMS
  */
 void
-unp_gc()
+unp_gc(void)
 {
 	register struct file *fp;
 	register struct socket *so;

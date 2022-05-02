@@ -20,6 +20,7 @@
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 #include <sys/null.h>
+#include <sys/un.h>
 
 /*
  * Definitions of protocols supported in the UNIX domain.

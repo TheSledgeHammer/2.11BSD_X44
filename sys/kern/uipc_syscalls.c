@@ -22,13 +22,13 @@
 #include <sys/uio.h>
 #include <sys/domain.h>
 #include <sys/mount.h>
+#include <sys/sysdecl.h>
 
 #include <machine/setjmp.h>
 
 static void
-MBZAP(m, name, len, type)
+MBZAP(m, len, type)
 	register struct mbuf *m;
-	caddr_t name;
 	int len, type;
 {
 	m->m_next = NULL;
@@ -69,6 +69,7 @@ socket()
 	fp->f_data = (caddr_t)so;
 	fp->f_socket = so;
 	return (u.u_error);
+	
 bad:
 	u.u_ofile[u.u_r.r_val1] = 0;
 	fp->f_count = 0;
@@ -84,7 +85,7 @@ bind()
 		syscallarg(u_int) namelen;
 	} *uap = (struct bind_args *)u.u_ap;
 	register struct file *fp;
-	register struct mbuf *nam;
+	struct mbuf *nam;
 	int error;
 
 	if (netoff)
@@ -92,10 +93,11 @@ bind()
 	fp = gtsockf(SCARG(uap, s));
 	if (fp == 0)
 		return (u.u_error);
-	u.u_error = sockargs(&nam, SCARG(uap, name), SCARG(uap, namelen), MT_SONAME);
+	error = sockargs(&nam, SCARG(uap, name), SCARG(uap, namelen), MT_SONAME);
 	if (u.u_error) {
 		return (u.u_error);
 	}
+	MBZAP(nam, SCARG(uap, namelen), MT_SONAME);
 	if (SCARG(uap, namelen) > MLEN)
 		return (u.u_error = EINVAL);
 	u.u_error = copyin(SCARG(uap, name), mtod(nam, caddr_t), SCARG(uap, namelen));
@@ -175,7 +177,7 @@ noname:
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_socket = so;
 	nam = m_get(M_WAIT, MT_SONAME);
-	MBZAP(nam, SCARG(uap, name), 0, MT_SONAME);
+	MBZAP(nam, 0, MT_SONAME);
 	u.u_error = soaccept(so, nam);
 	if (SCARG(uap, name)) {
 		if (namelen > nam->m_len)
@@ -206,28 +208,39 @@ connect()
 	if (netoff)
 		return(u.u_error = ENETDOWN);
 	fp = gtsockf(SCARG(uap, s));
-	if (fp == 0)
+	if (fp == 0) {
 		return (u.u_error);
-	if (SCARG(uap, namelen) > MLEN)
+	}
+	if (SCARG(uap, namelen) > MLEN) {
 		return (u.u_error = EINVAL);
-	nam = m_get(M_WAIT, MT_SONAME);
-	MBZAP(nam, SCARG(uap, name), 0, MT_SONAME);
-	u.u_error = sockargs();
+	}
+	so = fp->f_socket;
+	if ((so->so_state & SS_NBIO) && (so->so_state & SS_ISCONNECTING)) {
+	    return (EALREADY);
+	}
+	u.u_error = sockargs(&nam, SCARG(uap, name), SCARG(uap, namelen), MT_SONAME);
 	if (u.u_error) {
 		return (u.u_error);
 	}
+	MBZAP(nam, 0, MT_SONAME);
 	u.u_error = copyin(SCARG(uap, name), mtod(nam, caddr_t), SCARG(uap, namelen));
 	if (u.u_error)
 		return (u.u_error);
-	so = fp->f_socket;
+		
 	/*
 	 * soconnect was modified to clear the isconnecting bit on errors.
 	 * also, it was changed to return the EINPROGRESS error if
 	 * nonblocking, etc.
 	 */
 	u.u_error = soconnect(so, nam);
-	if (u.u_error)
-		return (u.u_error);
+	if (u.u_error) {
+	    goto bad;
+	}
+		
+	if ((so->so_state & SS_NBIO) && (so->so_state & SS_ISCONNECTING)) {
+		m_freem(nam);
+		return (EINPROGRESS);
+	}
 	/*
 	 * i don't think the setjmp stuff works too hot in supervisor mode,
 	 * so what is done instead is do the setjmp here and then go back
@@ -240,6 +253,15 @@ connect()
 		goto bad2;
 	}
 	u.u_error = connwhile(so);
+	splx(s);
+	
+bad:
+    so->so_state &= ~SS_ISCONNECTING;
+	m_freem(nam);
+	if (u.u_error == ERESTART)
+		u.u_error = EINTR;
+	return (u.u_error);
+	
 bad2:
 	splx(s);
 	return (u.u_error);
@@ -726,6 +748,7 @@ getsockname()
 		syscallarg(int *) alen;
 	} *uap = (struct getsockname_args *)u.u_ap;
 	register struct file *fp;
+	register struct socket *so;
 	struct mbuf *m;
 	int len;
 
@@ -809,7 +832,8 @@ int
 sockargs(aname, name, namelen, type)
 	struct mbuf **aname;
 	caddr_t name;
-	int namelen, type;
+	u_int namelen;
+	int type;
 {
 	register struct sockaddr *sa;
 	register struct mbuf *m;
