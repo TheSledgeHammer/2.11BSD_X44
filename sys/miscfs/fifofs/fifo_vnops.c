@@ -47,6 +47,7 @@
 #include <sys/file.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
+#include <sys/un.h>
 #include <miscfs/fifofs/fifo.h>
 
 /*
