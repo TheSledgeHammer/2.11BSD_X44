@@ -103,7 +103,7 @@ struct filedesc0 {
  * Kernel global variables and routines.
  */ 
 void				finit(struct filedesc *);
-static int			ufalloc(int, int *);
+int			        ufalloc(int, int *);
 struct file	        *falloc();
 void				fdexpand(int);
 static int  		ufdalloc(struct file *);

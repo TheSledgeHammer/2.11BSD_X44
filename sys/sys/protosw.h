@@ -60,7 +60,7 @@ struct protosw {
 	int				(*pr_ctloutput)(int, struct socket *, int, int, struct mbuf *);
 	/* user-protocol hook */
 	/* user request: see list below */
-	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
+	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
 
 	int				(*pr_attach)(struct socket *, int);
 	int				(*pr_detach)(struct socket *);
