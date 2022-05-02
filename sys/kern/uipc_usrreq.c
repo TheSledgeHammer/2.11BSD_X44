@@ -109,7 +109,7 @@ uipc_usrreq(so, req, m, nam, rights, p)
 
 	case PRU_SHUTDOWN:
 		socantsendmore(so);
-		unp_usrclosed(unp);
+		unp_shutdown(unp);
 		break;
 
 	case PRU_RCVD:
@@ -162,6 +162,8 @@ uipc_usrreq(so, req, m, nam, rights, p)
 				}
 				error = unp_connect(so, nam);
 				if (error)
+					m_freem(rights);
+					m_freem(m);
 					break;
 			} else {
 				if (unp->unp_conn == 0) {
@@ -171,13 +173,14 @@ uipc_usrreq(so, req, m, nam, rights, p)
 			}
 			so2 = unp->unp_conn->unp_socket;
 			if (unp->unp_addr)
-				from = mtod(unp->unp_addr, struct sockaddr *);
+				from = mtod(unp->unp_addr, struct sockaddr*);
 			else
 				from = &sun_noname;
-			if (sbspace(&so2->so_rcv) > 0 &&
-			    sbappendaddr(&so2->so_rcv, from, m, rights)) {
+			if (sbspace(&so2->so_rcv) > 0
+					&& sbappendaddr(&so2->so_rcv, from, m, rights)) {
 				sorwakeup(so2);
-				m = 0;
+				m_freem(rights);
+				m_freem(m);
 			} else
 				error = ENOBUFS;
 			if (nam)
@@ -200,17 +203,18 @@ uipc_usrreq(so, req, m, nam, rights, p)
 			 * send buffer hiwater marks to maintain backpressure.
 			 * Wake up readers.
 			 */
-			if (rights)
+			if (rights) {
 				(void)sbappendrights(rcv, m, rights);
-			else
+				m_freem(rights);
+			} else {
 				sbappend(rcv, m);
+			}
 			snd->sb_mbmax -=
 			    rcv->sb_mbcnt - unp->unp_conn->unp_mbcnt;
 			unp->unp_conn->unp_mbcnt = rcv->sb_mbcnt;
 			snd->sb_hiwat -= rcv->sb_cc - unp->unp_conn->unp_cc;
 			unp->unp_conn->unp_cc = rcv->sb_cc;
 			sorwakeup(so2);
-			m = 0;
 #undef snd
 #undef rcv
 			break;
@@ -233,6 +237,9 @@ uipc_usrreq(so, req, m, nam, rights, p)
 		((struct stat *) m)->st_dev = NODEV;
 		if (unp->unp_ino == 0)
 			unp->unp_ino = unp_ino++;
+		((struct stat *) m)->st_atime =
+		    ((struct stat *) m)->st_mtime =
+		    ((struct stat *) m)->st_ctime = unp->unp_ctime;
 		((struct stat *) m)->st_ino = unp->unp_ino;
 		return (0);
 
@@ -261,8 +268,12 @@ uipc_usrreq(so, req, m, nam, rights, p)
 		panic("piusrreq");
 	}
 release:
-	if (m)
+	if (rights) {
+		m_freem(rights);
+	}
+	if (m) {
 		m_freem(m);
+	}
 	return (error);
 }
 
@@ -285,11 +296,11 @@ int	unpdg_recvspace = 4*1024;
 int	unp_rights;					/* file descriptors in flight */
 
 int
-uipc_attach(so, proto)
+unp_attach(so)
 	struct socket *so;
-	int proto;
 {
 	struct unpcb *unp;
+	struct timeval tv;
 	int error;
 
 	if (so->so_pcb)
@@ -315,75 +326,15 @@ uipc_attach(so, proto)
 		if (error)
 			return (error);
 	}
-//	unp = pool_get(&unpcb_pool, PR_NOWAIT|PR_ZERO);
-	if (unp == NULL)
+	unp = (struct unpcb *)malloc(sizeof(*unp), M_PCB, M_NOWAIT);
+	if (unp == NULL) {
 		return (ENOBUFS);
-	unp->unp_socket = so;
-	so->so_pcb = unp;
-	//getnanotime(&unp->unp_ctime);
-
-	/*
-	 * Enforce `unp_gc_lock' -> `solock()' lock order.
-	 */
-	/*
-	 * We also release the lock on listening socket and on our peer
-	 * socket when called from unp_connect(). This is safe. The
-	 * listening socket protected by vnode(9) lock. The peer socket
-	 * has 'UNP_CONNECTING' flag set.
-	 */
-//	sounlock(so, SL_LOCKED);
-//	solock(so);
-	return (0);
-}
-
-int
-uipc_detach(so)
-	struct socket *so;
-{
-	struct unpcb *unp = sotounpcb(so);
-
-	if (unp == NULL)
-		return (EINVAL);
-
-	unp_detach(unp);
-
-	return (0);
-}
-
-/*
-int
-uipc_sysctl()
-{
-
-}
-*/
-
-int
-unp_attach(so)
-	struct socket *so;
-{
-	register struct mbuf *m;
-	register struct unpcb *unp;
-	int error;
-	
-	switch (so->so_type) {
-
-	case SOCK_STREAM:
-		error = soreserve(so, unpst_sendspace, unpst_recvspace);
-		break;
-
-	case SOCK_DGRAM:
-		error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
-		break;
 	}
-	if (error)
-		return (error);
-	m = m_getclr(M_DONTWAIT, MT_PCB);
-	if (m == NULL)
-		return (ENOBUFS);
-	unp = mtod(m, struct unpcb *);
+	bzero((caddr_t)unp, sizeof(*unp));
 	so->so_pcb = (caddr_t)unp;
 	unp->unp_socket = so;
+	microtime(&tv);
+	TIMEVAL_TO_TIMESPEC(&tv, &unp->unp_ctime);
 	return (0);
 }
 
@@ -391,9 +342,8 @@ void
 unp_detach(unp)
 	register struct unpcb *unp;
 {
-	
 	if (unp->unp_vnode) {
-		UNPDET(unp->unp_vnode);
+		unpdet(unp->unp_vnode);
 		unp->unp_vnode = 0;
 	}
 	if (unp->unp_conn)
@@ -404,8 +354,10 @@ unp_detach(unp)
 	unp->unp_socket->so_pcb = 0;
 	m_freem(unp->unp_addr);
 	(void) m_free(dtom(unp));
-	if (unp_rights)
+	if (unp_rights) {
+		sorflush(unp->unp_socket);
 		unp_gc();
+	}
 }
 
 int
@@ -413,21 +365,30 @@ unp_bind(unp, nam)
 	struct unpcb *unp;
 	struct mbuf *nam;
 {
-	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
+	struct sockaddr_un *soun;
 	struct vnode *vp;
 	int error;
 
-	if (unp->unp_vnode != NULL || nam->m_len >= MLEN)
+	soun = mtod(nam, struct sockaddr_un *);
+	if (unp->unp_vnode != NULL || nam->m_len >= MLEN) {
 		return (EINVAL);
+	}
+	if (nam->m_len == MLEN) {
+		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
+			return (EINVAL);
+	} else {
+		*(mtod(nam, caddr_t) + nam->m_len) = 0;
+	}
+	if(soun == NULL) {
+		soun = malloc(nam->m_len + 1, M_SONAME, M_WAITOK);
+	}
+	m_copydata(nam, 0, nam->m_len, (caddr_t)soun);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
 	error = unpbind(soun->sun_path, nam->m_len, &vp, unp->unp_socket);
 	if (error)
-		return(error);
+		return (error);
 	if (!vp)
 		panic("unp_bind");
-	vp->v_socket = unp->unp_socket;
-	unp->unp_vnode = vp;
-	unp->unp_addr = m_copy(nam, 0, M_COPYALL);
 	return (0);
 }
 
@@ -436,13 +397,27 @@ unp_connect(so, nam)
 	struct socket *so;
 	struct mbuf *nam;
 {
-	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
+	register struct sockaddr_un *soun;
 	struct vnode *vp;
+	struct socket *so2, *so3;
+	struct unpcb *unp2, *unp3;
 	int error;
-	struct socket *so2;
 
-	if (nam->m_len + (nam->m_off - MMINOFF) == MLEN)
+	soun = mtod(nam, struct sockaddr_un *);
+	if (nam->m_len + (nam->m_off - MMINOFF) == MLEN) {
 		return (EMSGSIZE);
+	}
+	if (nam->m_data + nam->m_len == &nam->m_dat[MLEN]) {	/* XXX */
+		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0) {
+			return (EMSGSIZE);
+		}
+	} else {
+		*(mtod(nam, caddr_t) + nam->m_len) = 0;
+	}
+	if(soun == NULL) {
+		soun = malloc(nam->m_len + 1, M_SONAME, M_WAITOK);
+	}
+	m_copydata(nam, 0, nam->m_len, (caddr_t)soun);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
 
 	error = unpconn(soun->sun_path, nam->m_len, &so2, &vp);
@@ -452,12 +427,21 @@ unp_connect(so, nam)
 		error = EPROTOTYPE;
 		goto bad;
 	}
-	if (so->so_proto->pr_flags && PR_CONNREQUIRED &&
-	    ((so2->so_options&SO_ACCEPTCONN) == 0 ||
-	    (so2 = sonewconn(so2)) == 0)) {
-		error = ECONNREFUSED;
-		goto bad;
+	if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
+		if (((so2->so_options & SO_ACCEPTCONN) == 0
+				|| (so2 = sonewconn(so2)) == 0)) {
+			error = ECONNREFUSED;
+			goto bad;
+		}
+		unp2 = sotounpcb(so2);
+		unp3 = sotounpcb(so3);
+		if (unp2->unp_addr) {
+			unp3->unp_addr = m_copy(unp2->unp_addr, 0, (int)M_COPYALL);
+		}
+		unp3->unp_flags = unp2->unp_flags;
+		so2 = so3;
 	}
+
 	error = unp_connect2(so, so2);
 bad:
 	if (vp)
@@ -552,6 +536,17 @@ unp_usrclosed(unp)
 #endif
 
 void
+unp_shutdown(unp)
+	struct unpcb *unp;
+{
+	struct socket *so;
+
+	if (unp->unp_socket->so_type == SOCK_STREAM && unp->unp_conn
+			&& (so = unp->unp_conn->unp_socket))
+		socantrcvmore(so);
+}
+
+void
 unp_drop(unp, errno)
 	struct unpcb *unp;
 	int errno;
@@ -579,15 +574,16 @@ int
 unp_externalize(rights)
 	struct mbuf *rights;
 {
-	int newfds = rights->m_len / sizeof (int);
 	register int i;
-	register struct file **rp = mtod(rights, struct file **);
+	register struct cmsghdr *cm = mtod(rights, struct cmsghdr *);
+	register struct file **rp = (struct file **)(cm + 1);
 	register struct file *fp;
+	int newfds = (cm->cmsg_len - sizeof(*cm)) / sizeof (int);
 	int f;
 
 	printf("externalize rights");
-	if (newfds > ufavail()) {
-		for (i = 0; i <sys/ newfds; i++) {
+	if (!fdavail(newfds)) {
+		for (i = 0; i < newfds; i++) {
 			fp = *rp;
 			unp_discard(fp);
 			*rp++ = 0;
@@ -595,7 +591,7 @@ unp_externalize(rights)
 		return (EMSGSIZE);
 	}
 	for (i = 0; i < newfds; i++) {
-		f = ufalloc(0);
+		f = falloc();
 		if (f < 0)
 			panic("unp_externalize");
 		fp = *rp;
@@ -611,16 +607,23 @@ int
 unp_internalize(rights)
 	struct mbuf *rights;
 {
+	register struct cmsghdr *cm = mtod(rights, struct cmsghdr *);
 	register struct file **rp;
-	int oldfds = rights->m_len / sizeof (int);
-	register int i;
 	register struct file *fp;
+	register int i;
+	int oldfds;
 
 	printf("unp_internalize");
-	rp = mtod(rights, struct file **);
-	for (i = 0; i < oldfds; i++, rp++)
-		GETF(fp, *(int *)rp);
-	rp = mtod(rights, struct file **);
+	if (cm->cmsg_type != SCM_RIGHTS || cm->cmsg_level != SOL_SOCKET ||
+		    cm->cmsg_len != rights->m_len) {
+		return (EINVAL);
+	}
+	oldfds = (cm->cmsg_len - sizeof (*cm)) / sizeof (int);
+	rp = (struct file **)(cm + 1);
+	for (i = 0; i < oldfds; i++) {
+		GETF(rp,  *(int *)rp++);
+	}
+	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
 		GETF(fp, *(int *)rp);
 		*rp++ = fp;
@@ -632,6 +635,7 @@ unp_internalize(rights)
 }
 
 int	unp_defer, unp_gcing;
+extern	struct domain unixdomain;
 
 /*
  * What I did to the next routine isn't pretty, feel free to redo it, but
@@ -642,22 +646,24 @@ unp_gc(void)
 {
 	register struct file *fp;
 	register struct socket *so;
-	struct file *file, *fileNFILE, xf;
+	struct file *file, xf;
 
 	if (unp_gcing)
 		return;
 	unp_gcing = 1;
+
 restart:
 	unp_defer = 0;
 	/* get limits AND clear FMARK|FDEFER in all file table entries */
-	for (fp = file; fp < fileNFILE; fp++) {
+	LIST_FOREACH(fp, &filehead, f_list) {
 		fp->f_flag &= ~(FMARK|FDEFER);
 	}
 	do {
-		for (fp = file; fp < fileNFILE; fp++) {
+		LIST_FOREACH(fp, &filehead, f_list) {
 			/* get file table entry, the return value is f_count */
-			if (fpfetch(fp, &xf) == 0)
+			if (fpfetch(fp, &xf) == 0) {
 				continue;
+			}
 			if (xf->f_flag & FDEFER) {
 				fpflags(fp, 0, FDEFER);
 				unp_defer--;
@@ -666,14 +672,16 @@ restart:
 					continue;
 				if (xf->f_count == xf->f_msgcount)
 					continue;
-				FPFLAGS(fp, FMARK, 0);
+				fpflags(fp, FMARK, 0);
 			}
-			if (xf->f_type != DTYPE_SOCKET)
+			if (xf->f_type != DTYPE_SOCKET) {
 				continue;
+			}
 			so = xf->f_socket;
 			if (so->so_proto->pr_domain != &unixdomain
-					|| (so->so_proto->pr_flags & PR_RIGHTS) == 0)
+					|| (so->so_proto->pr_flags & PR_RIGHTS) == 0) {
 				continue;
+			}
 			if (so->so_rcv.sb_flags & SB_LOCK) {
 				sbwait(&so->so_rcv);
 				goto restart;
@@ -681,12 +689,15 @@ restart:
 			unp_scan(so->so_rcv.sb_mb, unp_mark);
 		}
 	} while (unp_defer);
-	for (fp = file; fp < fileNFILE; fp++) {
-		if (fpfetch(fp, &xf) == 0)
+	LIST_FOREACH(fp, &filehead, f_list) {
+		if (fpfetch(fp, &xf) == 0) {
 			continue;
-		if (xf->f_count == xf->f_msgcount && (xf->f_flag & FMARK) == 0)
-			while (fpfetch(fp, &xf) && xf->f_msgcount)
+		}
+		if (xf->f_count == xf->f_msgcount && (xf->f_flag & FMARK) == 0) {
+			while (fpfetch(fp, &xf) && xf->f_msgcount) {
 				unp_discard(fp);
+			}
+		}
 	}
 	unp_gcing = 0;
 }
@@ -708,14 +719,19 @@ unp_scan(m0, op)
 {
 	register struct mbuf *m;
 	register struct file **rp;
+	register struct cmsghdr *cm;
 	register int i;
 	int qfds;
 
 	while (m0) {
 		for (m = m0; m; m = m->m_next)
 			if (m->m_type == MT_RIGHTS && m->m_len) {
-				qfds = m->m_len / sizeof(struct file*);
-				rp = mtod(m, struct file**);
+				cm = mtod(m, struct cmsghdr *);
+				if (cm->cmsg_level != SOL_SOCKET || cm->cmsg_type != SCM_RIGHTS) {
+					continue;
+				}
+				qfds = (cm->cmsg_len - sizeof *cm) / sizeof (struct file *);
+				rp = (struct file **)(cm + 1);
 				for (i = 0; i < qfds; i++)
 					(*op)(*rp++);
 				break; /* XXX, but saves time */

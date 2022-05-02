@@ -34,31 +34,31 @@ struct ostat {
 #endif /* !_POSIX_SOURCE */
 
 struct stat {
-	dev_t			st_dev;			/* inode's device */
-	ino_t			st_ino;			/* inode's number */
-	mode_t	 		st_mode;		/* inode protection mode */
-	nlink_t			st_nlink;		/* number of hard links */
-	uid_t			st_uid;			/* user ID of the file's owner */
-	gid_t			st_gid;			/* group ID of the file's group */
-	dev_t			st_rdev;		/* device type */
-	off_t			st_size;		/* file size, in bytes */
+	dev_t				st_dev;			/* inode's device */
+	ino_t				st_ino;			/* inode's number */
+	mode_t	 			st_mode;		/* inode protection mode */
+	nlink_t				st_nlink;		/* number of hard links */
+	uid_t				st_uid;			/* user ID of the file's owner */
+	gid_t				st_gid;			/* group ID of the file's group */
+	dev_t				st_rdev;		/* device type */
+	off_t				st_size;		/* file size, in bytes */
 	struct	timespec	st_atime;		/* time of last access */
 	struct	timespec	st_mtime;		/* time of last data modification */
 	struct	timespec 	st_ctime;		/* time of last file status change */
-	struct	timespec  	st_birthtime;		/* time of creation */
+	struct	timespec  	st_birthtime;	/* time of creation */
 	unsigned long		st_blksize;		/* optimal blocksize for I/O */
-	quad_t			st_blocks;		/* blocks allocated for file */
+	quad_t				st_blocks;		/* blocks allocated for file */
 	unsigned long		st_flags;		/* user defined flags for file */
 	unsigned long		st_gen;			/* file generation number */
-	int			st_spare1;
-	int			st_spare2;
-	long			st_spare3;
-	quad_t			st_spare4[3];
+	int					st_spare1;
+	int					st_spare2;
+	long				st_spare3;
+	quad_t				st_spare4[3];
 };
 
-#define st_atim 	st_atime.tv_sec
-#define st_mtim 	st_mtime.tv_sec
-#define st_ctim 	st_ctime.tv_sec
+#define st_atim 		st_atime.tv_sec
+#define st_mtim 		st_mtime.tv_sec
+#define st_ctim 		st_ctime.tv_sec
 
 #define st_atimensec	st_atime.tv_nsec
 #define st_mtimensec	st_mtime.tv_nsec

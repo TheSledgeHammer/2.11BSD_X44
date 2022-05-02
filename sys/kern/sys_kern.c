@@ -15,6 +15,7 @@
 #include <sys/vnode.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
+#include <sys/unpcb.h>
 #include <sys/mbuf.h>
 #include <sys/map.h>
 #include <sys/stat.h>
@@ -95,6 +96,7 @@ unpbind(path, len, vpp, unpsock)
 	 * a fake mbuf was MBZAP'd in bind().  The inode pointer is in the
 	 * kernel stack so we can modify it.  SMS
 	 */
+	register struct unpcb *unp;
 	register struct vnode *vp;
 	struct vattr vattr;
 	char pth[MLEN];
@@ -102,6 +104,7 @@ unpbind(path, len, vpp, unpsock)
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
+	unp = sotounpcb(unpsock);
 	bcopy(path, pth, len);
 	NDINIT(ndp, CREATE, FOLLOW | LOCKPARENT, UIO_SYSSPACE, pth, u.u_procp);
 	ndp->ni_dirp[len - 2] = 0;
@@ -128,8 +131,12 @@ unpbind(path, len, vpp, unpsock)
 		return (error);
 	}
 	vp = ndp->ni_vp;
+	vp->v_socket = unp->unp_socket;
+	unp->unp_vnode = vp;
+	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
 	*vpp = vp;
 	vrele(vp);
+	VOP_UNLOCK(vp, 0, u.u_procp);
 	return (0);
 }
 
@@ -171,8 +178,9 @@ unpconn(path, len, so2, vpp)
 		return (error);
 	}
 	*so2 = vp->v_socket;
-	if (*so2 == 0)
+	if (*so2 == 0) {
 		return (ECONNREFUSED);
+	}
 	return (0);
 }
 

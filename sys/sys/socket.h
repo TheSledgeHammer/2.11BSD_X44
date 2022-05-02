@@ -175,7 +175,7 @@ struct sockproto {
 struct msghdr {
 	caddr_t			msg_name;			/* optional address */
 	int				msg_namelen;		/* size of address */
-	struct	iovec 	*msg_iov;			/* scatter/gather array */
+	struct iovec 	*msg_iov;			/* scatter/gather array */
 	int				msg_iovlen;			/* # elements in msg_iov */
 	caddr_t			msg_accrights;		/* access rights sent/received */
 	int				msg_accrightslen;
@@ -185,6 +185,38 @@ struct msghdr {
 #define	MSG_PEEK		0x2		/* peek at incoming message */
 #define	MSG_DONTROUTE	0x4		/* send without using routing tables */
 #define	MSG_EOR			0x8		/* data completes record */
+#define	MSG_TRUNC		0x10	/* data discarded before delivery */
+#define	MSG_CTRUNC		0x20	/* control data lost before delivery */
+#define	MSG_WAITALL		0x40	/* wait for full request or error */
+#define	MSG_DONTWAIT	0x80	/* this message should be nonblocking */
 
 #define	MSG_MAXIOVLEN	16
+
+/*
+ * Header for ancillary data objects in msg_control buffer.
+ * Used for additional information with/about a datagram
+ * not expressible by flags.  The format is a sequence
+ * of message elements headed by cmsghdr structures.
+ */
+struct cmsghdr {
+	u_int	cmsg_len;		/* data byte count, including hdr */
+	int		cmsg_level;		/* originating protocol */
+	int		cmsg_type;		/* protocol-specific type */
+	/* followed by	u_char  cmsg_data[]; */
+};
+
+/* given pointer to struct cmsghdr, return pointer to data */
+#define	CMSG_DATA(cmsg)		((u_char *)((cmsg) + 1))
+
+/* given pointer to struct cmsghdr, return pointer to next cmsghdr */
+#define	CMSG_NXTHDR(mhdr, cmsg)										\
+	(((caddr_t)(cmsg) + (cmsg)->cmsg_len + sizeof(struct cmsghdr) > \
+	    (mhdr)->msg_control + (mhdr)->msg_controllen) ? 			\
+	    (struct cmsghdr *)NULL : 									\
+	    (struct cmsghdr *)((caddr_t)(cmsg) + ALIGN((cmsg)->cmsg_len)))
+
+#define	CMSG_FIRSTHDR(mhdr)	((struct cmsghdr *)(mhdr)->msg_control)
+
+/* "Socket"-level control message types: */
+#define	SCM_RIGHTS	0x01		/* access rights (array of int) */
 #endif	/* _SYS_SOCKET_H_ */
