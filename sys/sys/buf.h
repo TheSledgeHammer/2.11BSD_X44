@@ -214,6 +214,10 @@ extern struct bqueues 	bufqueues[];
 	TAILQ_INSERT_TAIL(dp, bp, b_freelist);	\
 }
 
+/*
+ * Take a buffer off the free list it's on and
+ * mark it as being use (B_BUSY) by a device.
+ */
 #define	notavail(bp, dp, field) { 			\
 	KASSERT(LIST_FIRST(dp) != NULL); 		\
 	KASSERT(LIST_PREV(bp, field) != NULL); 	\
