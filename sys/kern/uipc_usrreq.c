@@ -645,7 +645,7 @@ unp_gc(void)
 {
 	register struct file *fp;
 	register struct socket *so;
-	struct file *file, xf;
+	struct file xf;
 
 	if (unp_gcing)
 		return;
@@ -705,7 +705,6 @@ int
 unp_dispose(m)
 	struct mbuf *m;
 {
-
 	if (m)
 		unp_scan(m, unp_discard);
 	return (0);

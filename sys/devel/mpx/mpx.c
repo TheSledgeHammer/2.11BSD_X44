@@ -271,6 +271,30 @@ mpx_detach(cp, gp)
 	}
 }
 
+/* merges two channels into one and removing both original channels */
+struct mpx_channel *
+mpx_merge_channels(cp1, cp2)
+    struct mpx_channel *cp1, *cp2;
+{
+    struct mpx_channel *cp3;
+    int i;
+    for(i = 0; i < NCHANS; i++) {
+        LIST_FOREACH(cp1, &mpx_channels[i], mpc_node) {
+            LIST_FOREACH(cp2, &mpx_channels[i], mpc_node) {
+                if(cp1 != NULL && cp2 != NULL) {
+                    cp3 = mpx_get_channel(i);
+                    mpx_remove_channel(cp1, i);
+                    mpx_remove_channel(cp2, i);
+                }
+            }
+        }
+        if (cp3 != NULL) {
+            LIST_INSERT_HEAD(&mpx_channels[i], cp3, mpc_node);
+            break;
+        }
+    }
+    return (cp3);
+}
 
 /* TODO: add file */
 int
@@ -309,6 +333,37 @@ pass:
 fail:
 	printf("mpx_connect: too many combined channels in use, to complete");
 	return (1);
+}
+
+/*
+ * splits a single channel into two channels, depending on the channel
+ * index specified. Whilst removing the specified channel at index from the original channel.
+ */
+struct mpx_channel *
+mpx_split_channels(cp, idx)
+    struct mpx_channel *cp;
+    int idx;
+{
+    struct mpx_channel *other;
+    int i;
+
+    for(i = 0; i < NCHANS; i++) {
+        LIST_FOREACH(cp, &mpx_channels[i], mpc_node) {
+            if(cp != NULL) {
+                other = mpx_get_channel(i);
+            }
+        }
+        if(other != NULL) {
+            if(idx == i) {
+                LIST_INSERT_HEAD(&mpx_channels[idx], other, mpc_node);
+                mpx_remove_channel(cp, idx);
+            } else {
+                LIST_REMOVE(other, mpc_node);
+            }
+            break;
+        }
+    }
+    return (other);
 }
 
 mpx_disconnect()

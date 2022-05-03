@@ -47,6 +47,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
+- replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.
 	- Mimic 2.11BSD's original freeproc list.
@@ -75,14 +76,16 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Core:
 		- CARDBUS: to add
 		- ISAPNP: 
-			- add com
+			- add: com
 		- PCI:
-			- add agp
+			- add: agp
 		- PCMCIA:
-			- add com
+			- add: com
 		- SDMMC: to add
 	- Disk:
-		- Add: ahci & floppy
+		- add: ahci & floppy
+	- Power:
+		- add: acpi
 	- USB:
 		- add: vhci, xhci
 
