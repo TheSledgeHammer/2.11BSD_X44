@@ -113,8 +113,8 @@ vnodeopv_desc_create(opv, fsname, voptype, vops, op)
 {
     opv->opv_fsname = fsname;
     opv->opv_voptype = voptype;
-    opv->opv_desc_ops.opve_vops = vops;
     opv->opv_desc_ops.opve_op = op;
+    opv->opv_desc_vector_p = vops;
 
     LIST_INSERT_HEAD(&vfs_opv_descs, opv, opv_entry);
 }

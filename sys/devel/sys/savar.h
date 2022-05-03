@@ -86,7 +86,7 @@ struct sastack {
 
 struct sadata_vp {
 	int								savp_id;				/* "virtual processor" identifier */
-	LIST_ENTRY(sadata_vp)			savp_next; 				/* link to next sadata_vp */
+	SLIST_ENTRY(sadata_vp)			savp_next; 				/* link to next sadata_vp */
 	struct lock_object				savp_lock; 				/* lock on these fields */
 	struct proc						*savp_proc;				/* proc on "virtual processor" */
 	struct proc						*savp_blocker;			/* recently blocked proc */
@@ -109,7 +109,7 @@ struct sadata {
 	struct sastack					*sa_stacknext;			/* next free stack */
 	ssize_t							sa_stackinfo_offset;	/* offset from ss_sp to stackinfo data */
 	int								sa_nstacks;				/* number of upcall stacks */
-	LIST_HEAD(, sadata_vp)			sa_vps;					/* list of "virtual processors" */
+	SLIST_HEAD(, sadata_vp)			sa_vps;					/* list of "virtual processors" */
 };
 
 #define SA_FLAG_ALL	SA_FLAG_PREEMPT
@@ -122,7 +122,7 @@ extern struct pool savp_pool;		/* memory pool for sadata_vp structures */
 #define	SA_MAXNUMSTACKS	16			/* Maximum number of upcall stacks per VP. */
 
 struct sadata_upcall *sadata_upcall_alloc(int);
-void		sadata_upcall_free(struct sadata_upcall *);
+void				sadata_upcall_free(struct sadata_upcall *);
 
 void		sa_release(struct proc *);
 void		sa_switch(struct lwp *, int);

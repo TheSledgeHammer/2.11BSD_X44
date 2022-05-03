@@ -43,6 +43,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
+#include <sys/conf.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/trace.h>
@@ -51,6 +52,8 @@
 #include <sys/conf.h>
 
 #include <vm/include/vm.h>
+
+#include <machine/cpu.h>
 
 /*
  * Definitions for the buffer hash lists.
@@ -247,7 +250,7 @@ breadn(vp, blkno, size, rablks, rasizes, nrablks, cred, bpp)
  * read-ahead block (which is not allocated to the caller)
  */
 int
-breada(vp, dev, blkno, rablkno, size, cred)
+breada(vp, blkno, rablkno, size, cred)
 	struct vnode *vp;
 	daddr_t blkno;
 	daddr_t rablkno;
@@ -255,6 +258,7 @@ breada(vp, dev, blkno, rablkno, size, cred)
 	struct ucred *cred;
 {
 	register struct buf *bp, *rabp;
+	const struct bdevsw *bdev;
 
 	bp = NULL;
 	/*
@@ -264,14 +268,16 @@ breada(vp, dev, blkno, rablkno, size, cred)
 	 */
 	if (!incore(vp, blkno)) {
 		bp = bio_doread(vp, blkno, size, cred, 0);
+		bdev = bdevsw_lookup(bp->b_dev);
 		if ((bp->b_flags & (B_DONE | B_DELWRI)) == 0) {
 			bp->b_flags |= B_READ;
 			bp->b_bcount = DEV_BSIZE; /* XXX? KB */
-			(*bdevsw[major(dev)].d_strategy)(bp);
+			(*bdev->d_strategy)(bp);
 			trace(TR_BREADMISS);
 			u->u_ru.ru_inblock++; /* pay for read */
-		} else
+		} else {
 			trace(TR_BREADHIT);
+		}
 	}
 
 	/*
@@ -281,18 +287,20 @@ breada(vp, dev, blkno, rablkno, size, cred)
 	if (rablkno) {
 		if (!incore(vp, rablkno)) {
 			rabp = bio_doread(vp, rablkno, size, cred, 0);
+			bdev = bdevsw_lookup(rabp->b_dev);
 			if (rabp->b_flags & (B_DONE | B_DELWRI)) {
 				brelse(rabp);
 				trace(TR_BREADHITRA);
 			} else {
 				rabp->b_flags |= B_READ | B_ASYNC;
 				rabp->b_bcount = DEV_BSIZE; /* XXX? KB */
-				(*bdevsw[major(dev)].d_strategy)(rabp);
+				(*bdev->d_strategy)(rabp);
 				trace(TR_BREADMISSRA);
 				u->u_ru.ru_inblock++; /* pay in advance */
 			}
-		} else
+		} else {
 			trace(TR_BREADHITRA);
+		}
 	}
 
 	/*
@@ -301,7 +309,7 @@ breada(vp, dev, blkno, rablkno, size, cred)
 	 * above, and just wait for it.
 	 */
 	if (bp == NULL)
-		return (bread(vp, blkno, size, cred, bp));
+		return (bread(vp, blkno, size, cred, &bp));
 	return (biowait(bp));
 }
 
@@ -363,7 +371,6 @@ bwrite(bp)
 	}
 }
 
-
 int
 vn_bwrite(ap)
 	struct vop_bwrite_args *ap;
@@ -390,13 +397,15 @@ bdwrite(bp)
 {
 	int s;
 	struct proc *p = (curproc != NULL ? curproc : &proc0);	/* XXX */
+	const struct bdevsw *bdev;
+	bdev = bdevsw_lookup(bp->b_dev);
 
 	/* If this is a tape block, write the block now. */
 	/* XXX NOTE: the memory filesystem usurpes major device */
 	/* XXX       number 255, which is a bad idea.		*/
 	if (bp->b_dev != NODEV &&
 	    major(bp->b_dev) != 255 &&	/* XXX - MFS buffers! */
-	    bdevsw[major(bp->b_dev)].d_type == D_TAPE) {
+		bdev->d_type == D_TAPE) {
 		bawrite(bp);
 		return;
 	}
@@ -709,7 +718,7 @@ allocbuf(bp, size)
 	 */
 	if (bp->b_bufsize > desired_size) {
 		s = splbio();
-		if ((nbp = TAILQ_FIRST(bufqueues[BQ_EMPTY])) == NULL) {
+		if ((nbp = TAILQ_FIRST(&bufqueues[BQ_EMPTY])) == NULL) {
 			/* No free buffer head */
 			splx(s);
 			goto out;
@@ -897,7 +906,6 @@ blkflush(vp, blkno, dev)
 
 	bhash = BUFHASH(vp, blkno);
 	dp = LIST_FIRST(bhash);
-
 loop:
 	for (ep = dp; ep != dp; ep = LIST_NEXT(ep, b_hash)) {
 		if (ep->b_blkno != blkno || ep->b_vp != vp || ep->b_dev != dev || (ep->b_flags & B_INVAL)) {
@@ -906,7 +914,7 @@ loop:
 		s = splbio();
 		if (ep->b_flags & B_BUSY) {
 			ep->b_flags |= B_WANTED;
-			sleep((caddr_t) ep, PRIBIO + 1);
+			sleep((caddr_t)ep, PRIBIO + 1);
 			splx(s);
 			goto loop;
 		}
@@ -983,7 +991,7 @@ count_lock_queue()
 	register struct buf *bp;
 	register int n = 0;
 
-	for (bp = TAILQ_FIRST(bufqueues[BQ_LOCKED]); bp;
+	for (bp = TAILQ_FIRST(&bufqueues[BQ_LOCKED]); bp;
 	    bp = TAILQ_NEXT(bp, b_freelist))
 		n++;
 	return (n);

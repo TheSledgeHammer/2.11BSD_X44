@@ -333,8 +333,7 @@ struct lock_object mntvnode_slock;
 #define VOPARG_OFFSET(p_type, field) 							\
 	((int) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
 #define VOPARG_OFFSETOF(s_type, field) 		VOPARG_OFFSET(s_type*, field)
-//#define	VOPARG_OFFSETOF(s_type, field)	            offsetof((s_type)*, field)
-#define VOPARG_OFFSETTO(S_TYPE, S_OFFSET, STRUCT_P) 				\
+#define VOPARG_OFFSETTO(S_TYPE, S_OFFSET, STRUCT_P) 			\
 	((S_TYPE)(((char*)(STRUCT_P))+(S_OFFSET)))
 
 struct vop_generic_args;

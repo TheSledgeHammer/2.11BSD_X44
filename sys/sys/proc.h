@@ -47,7 +47,6 @@ struct	proc {
     /* Substructures: */
 	struct	pcred 	 	*p_cred;		/* Process owner's identity. */
 	struct	filedesc 	*p_fd;			/* pointer to open files structure. */
-//#define p_fd			p_addr->u_fd
 	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct	plimit 	 	*p_limit;		/* Process limits. */
 	struct	vmspace  	*p_vmspace;		/* Address space. */
@@ -148,7 +147,8 @@ struct	proc {
 
 	struct gsched		*p_gsched;		/* global scheduler */
 
-	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+
 	char				*p_name;		/* (: name, optional */
 
 	//union vm_pseudo_segment *p_psegp;

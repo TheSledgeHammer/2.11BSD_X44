@@ -117,12 +117,11 @@ struct sadata_upcall *
 sadata_upcall_alloc(int waitok)
 {
 	struct sadata_upcall *sau;
-
-sau = &saupcall_pool; //(struct sadata_upcall *)malloc(sizeof(struct sadata_upcall), M_SA, waitok ? M_WAITOK : M_NOWAIT);
-if (sau) {
-	sau->sau_arg = NULL;
-}
-return (sau);
+	sau = &saupcall_pool; //(struct sadata_upcall *)malloc(sizeof(struct sadata_upcall), M_SA, waitok ? M_WAITOK : M_NOWAIT);
+	if (sau) {
+		sau->sau_arg = NULL;
+	}
+	return (sau);
 }
 
 /*
@@ -163,19 +162,19 @@ sa_newsavp(struct sadata *sa)
 
 	simple_lock(&sa->sa_lock);
 	/* find first free savp_id and add vp to sorted slist */
-	if (LIST_EMPTY(&sa->sa_vps) ||
-	    LIST_FIRST(&sa->sa_vps)->savp_id != 0) {
+	if (SLIST_EMPTY(&sa->sa_vps) ||
+	    SLIST_FIRST(&sa->sa_vps)->savp_id != 0) {
 		vp->savp_id = 0;
-		LIST_INSERT_HEAD(&sa->sa_vps, vp, savp_next);
+		SLIST_INSERT_HEAD(&sa->sa_vps, vp, savp_next);
 	} else {
-		LIST_FOREACH(qvp, &sa->sa_vps, savp_next) {
-			if (LIST_NEXT(qvp, savp_next) == NULL ||
-			    LIST_NEXT(qvp, savp_next)->savp_id !=
+		SLIST_FOREACH(qvp, &sa->sa_vps, savp_next) {
+			if (SLIST_NEXT(qvp, savp_next) == NULL ||
+			    SLIST_NEXT(qvp, savp_next)->savp_id !=
 			    qvp->savp_id + 1)
 				break;
 		}
 		vp->savp_id = qvp->savp_id + 1;
-		LIST_INSERT_AFTER(qvp, vp, savp_next);
+		SLIST_INSERT_AFTER(qvp, vp, savp_next);
 	}
 	simple_unlock(&sa->sa_lock);
 
@@ -193,6 +192,7 @@ sys_sa_register(struct lwp *l, void *v, register_t *retval)
 	} *uap = (struct sa_register_args *)u.u_ap;
 
 	struct proc *p = u.u_procp;
+	struct kthread *kt = p->p_kthreado;
 	struct sadata *sa;
 	sa_upcall_t prev;
 	int error;
@@ -215,10 +215,10 @@ sys_sa_register(struct lwp *l, void *v, register_t *retval)
 		sa->sa_nstacks = 0;
 		SLIST_INIT(&sa->sa_vps);
 		p->p_sa = sa;
-		KASSERT(l->l_savp == NULL);
+		KASSERT(kt->kt_savp == NULL);
 	}
-	if (l->l_savp == NULL) {
-		l->l_savp = sa_newsavp(p->p_sa);
+	if (kt->kt_savp == NULL) {
+		kt->kt_savp = sa_newsavp(p->p_sa);
 		sa_newcachelwp(l);
 	}
 
@@ -240,7 +240,7 @@ sa_release(struct proc *p)
 	struct sadata *sa;
 	struct sastack *sast, *next;
 	struct sadata_vp *vp;
-	struct lwp *l;
+	struct kthread *l;
 
 	sa = p->p_sa;
 	KDASSERT(sa != NULL);
@@ -259,7 +259,7 @@ sa_release(struct proc *p)
 	}
 	pool_put(&sadata_pool, sa);
 	p->p_sa = NULL;
-	l = LIST_FIRST(&p->p_lwps);
+	l = LIST_FIRST(&p->p_ktds);
 	if (l) {
 		KASSERT(LIST_NEXT(l, l_sibling) == NULL);
 		l->l_savp = NULL;

@@ -50,11 +50,11 @@
 //#include <sys/vnode.h>
 
 typedef int (*opve_impl_t)(void *);
+typedef int (***opv_desc_vector_t)(void *);
 
-union vnodeopv_entry_desc {
-	struct vnodeops				*opve_vops;			/* vnode operations */
+struct vnodeopv_entry_desc {
 	struct vnodeop_desc 		*opve_op;  			/* which operation this is */
-	opve_impl_t					opve_impl;
+	opve_impl_t					opve_impl;			/* code implementing this operation */
 };
 
 struct vnodeopv_desc_list;
@@ -63,7 +63,8 @@ struct vnodeopv_desc {
 	LIST_ENTRY(vnodeopv_desc)	opv_entry;
     const char                  *opv_fsname;
     int                         opv_voptype;
-    union vnodeopv_entry_desc 	opv_desc_ops;   		/* null terminated list */
+    opv_desc_vector_t			opv_desc_vector_p;	/* ptr to the ptr to the vector where op should go */
+	struct vnodeopv_entry_desc 	opv_desc_ops;   	/* null terminated list */
 };
 
 /* vnodeops voptype */

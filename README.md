@@ -64,15 +64,20 @@
     - UFS1/UFS2:
       - Journaling
       - Dirhash
-- Filesystems to Add:
-  - EXT2/3/4
-  - NTFS
-  - HPFS
-  - HFS
-  - NFS
-  - SMB/CIFS
-  - UDF
-  - PUFFS or FUSE
+- Filesystems:
+	- Must Include:
+		- NFS
+		- SMB/CIFS
+		- UDF
+		- PUFFS or FUSE
+	- Nice to Include:
+		- EXT2/3/4
+		- NTFS
+		- HFS
+		- HPFS
+	- Heavily Considering:
+		- UMAPFS 
+		- OVERLAY (NetBSD)
 
 ## Development:
 

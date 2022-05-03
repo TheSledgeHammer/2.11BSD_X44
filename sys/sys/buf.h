@@ -190,7 +190,7 @@ extern struct bqueues 	bufqueues[];
 #define	BUF_INIT(bp) do {					\
 	(bp)->b_dev = NODEV;					\
 	BIO_SETPRIO((bp), BPRIO_DEFAULT);		\
-} while (/*CONSTCOND*/0)
+} while (0)
 
 /*
  * Insq/Remq for the buffer hash lists.
@@ -218,61 +218,11 @@ extern struct bqueues 	bufqueues[];
 	KASSERT(LIST_FIRST(dp) != NULL); 		\
 	KASSERT(LIST_PREV(bp, field) != NULL); 	\
 	KASSERT(LIST_FIRST(dp) != (bp)); 		\
-	KASSERT(LIST_PREV(bp, field) != (bp)); 	\
-	bremfree(bp);							\
+	KASSERT(LIST_PREV(bp, field) != &(bp)); \
+	LIST_REMOVE(bp, field);					\
 	(bp)->b_flags |= B_BUSY; 				\
 	LIST_FIRST(dp) = NULL;					\
 	LIST_PREV(bp, field) = NULL;			\
-}
-
-/*
- * 2.11BSD Insq/Remq for the buffer hash lists.
- */
-#define	_bremhash(bp) { 					\
-	(bp)->b_back->b_forw = (bp)->b_forw; 	\
-	(bp)->b_forw->b_back = (bp)->b_back; 	\
-}
-
-#define	_binshash(bp, dp) { 				\
-	(bp)->b_forw = (dp)->b_forw; 			\
-	(bp)->b_back = (dp); 					\
-	(dp)->b_forw->b_back = (bp); 			\
-	(dp)->b_forw = (bp); 					\
-}
-
-/*
- * 2.11BSD Insq/Remq for the buffer free lists.
- */
-#define	_bremfree(bp) { 					\
-	(bp)->av_back->av_forw = (bp)->av_forw; \
-	(bp)->av_forw->av_back = (bp)->av_back; \
-}
-
-#define _binsheadfree(bp, dp) { 			\
-	(dp)->av_forw->av_back = (bp); 			\
-	(bp)->av_forw = (dp)->av_forw; 			\
-	(dp)->av_forw = (bp); 					\
-	(bp)->av_back = (dp); 					\
-
-#define	_binstailfree(bp, dp) { 			\
-	(dp)->av_back->av_forw = (bp); 			\
-	(bp)->av_back = (dp)->av_back; 			\
-	(dp)->av_back = (bp); 					\
-	(bp)->av_forw = (dp); 					\
-}
-
-/*
- * Take a buffer off the free list it's on and
- * mark it as being use (B_BUSY) by a device.
- */
-#define	_notavail(bp) { 					\
-	KASSERT((bp)->av_forw != NULL); 		\
-	KASSERT((bp)->av_back != NULL); 		\
-	KASSERT((bp)->av_forw != (bp)); 		\
-	KASSERT((bp)->av_back != (bp)); 		\
-	_bremfree(bp); 							\
-	(bp)->b_flags |= B_BUSY; 				\
-	(bp)->av_forw = (bp)->av_back = NULL; 	\
 }
 
 /*
@@ -298,7 +248,6 @@ extern struct	buf *swbuf;			/* Swap I/O buffer headers. */
 extern int		nswbuf;				/* Number of swap I/O buffer headers. */
 TAILQ_HEAD(swqueue, buf) bswlist;	/* Head of swap I/O buffer headers free list. */
 struct buf 		*bclnlist;			/* Head of cleaned page list. */
-
 
 __BEGIN_DECLS
 void		bufinit(void);
