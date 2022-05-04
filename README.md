@@ -113,7 +113,9 @@ To build just the tools for i386, in the src directory:
 Compilers:
 
 Clang: Yes (but fails during llvm support) library very likely needs updating along with the relevent toolchain components.
+
 PCC: No.
+
 GCC: Yes: i386(tools = yes; kernel = fix compilation errors)
 
 Please read the following NetBSD guide for more information:
