@@ -43,7 +43,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
-#include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/trace.h>
@@ -257,7 +257,7 @@ breada(vp, blkno, rablkno, size, cred)
 	int size;
 	struct ucred *cred;
 {
-	register struct buf *bp, *rabp;
+	struct buf *bp, *rabp;
 	const struct bdevsw *bdev;
 
 	bp = NULL;
@@ -273,10 +273,10 @@ breada(vp, blkno, rablkno, size, cred)
 			bp->b_flags |= B_READ;
 			bp->b_bcount = DEV_BSIZE; /* XXX? KB */
 			(*bdev->d_strategy)(bp);
-			trace(TR_BREADMISS);
-			u->u_ru.ru_inblock++; /* pay for read */
+			trace1(TR_BREADMISS);
+			u.u_ru.ru_inblock++; /* pay for read */
 		} else {
-			trace(TR_BREADHIT);
+			trace1(TR_BREADHIT);
 		}
 	}
 
@@ -290,16 +290,16 @@ breada(vp, blkno, rablkno, size, cred)
 			bdev = bdevsw_lookup(rabp->b_dev);
 			if (rabp->b_flags & (B_DONE | B_DELWRI)) {
 				brelse(rabp);
-				trace(TR_BREADHITRA);
+				trace1(TR_BREADHITRA);
 			} else {
 				rabp->b_flags |= B_READ | B_ASYNC;
 				rabp->b_bcount = DEV_BSIZE; /* XXX? KB */
 				(*bdev->d_strategy)(rabp);
-				trace(TR_BREADMISSRA);
-				u->u_ru.ru_inblock++; /* pay in advance */
+				trace1(TR_BREADMISSRA);
+				u.u_ru.ru_inblock++; /* pay in advance */
 			}
 		} else {
-			trace(TR_BREADHITRA);
+			trace1(TR_BREADHITRA);
 		}
 	}
 
@@ -756,8 +756,8 @@ getnewbuf(slpflag, slptimeo)
 
 start:
 	s = splbio();
-	if ((bp = TAILQ_FIRST(bufqueues[BQ_AGE])) != NULL ||
-	    (bp = TAILQ_FIRST(bufqueues[BQ_LRU])) != NULL) {
+	if ((bp = TAILQ_FIRST(&bufqueues[BQ_AGE])) != NULL ||
+	    (bp = TAILQ_FIRST(&bufqueues[BQ_LRU])) != NULL) {
 		bremfree(bp);
 	} else {
 		/* wait for a free buffer of any kind */

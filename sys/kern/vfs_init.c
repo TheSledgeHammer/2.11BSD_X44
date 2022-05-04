@@ -43,6 +43,7 @@
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <sys/namei.h>
+#include <sys/lockf.h>
 #include <sys/malloc.h>
 
 #if 0
@@ -69,7 +70,7 @@ vfs_op_init()
 	 * and assign each its offset.
 	 */
 	for (vfs_opv_numops = 0, i = 0; vfs_op_descs[i]; i++) {
-		vfs_op_descs[i].vdesc_offset = vfs_opv_numops;
+		vfs_op_descs[i]->vdesc_offset = vfs_opv_numops;
 		vfs_opv_numops++;
 	}
 	DODEBUG(printf ("vfs_opv_numops=%d\n", vfs_opv_numops));

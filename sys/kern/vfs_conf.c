@@ -139,10 +139,10 @@ int maxvfsconf = 0;
 void
 vfsconf_fs_create(vfsp, name, index, typenum, flags, mountroot)
     struct vfsconf *vfsp;
-    char *name;
+    const char *name;
     int index, typenum, flags;
     mountroot_t mountroot;
-{
+{   
     vfsp->vfc_name =  name;
     vfsp->vfc_index = index;
     vfsp->vfc_typenum = typenum;

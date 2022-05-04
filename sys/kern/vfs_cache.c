@@ -220,12 +220,12 @@ cache_enter(dvp, vp, cnp)
 	 * Otherwise we use the one at the front of the LRU list.
 	 */
 	if (numcache < desiredvnodes
-			&& ((ncp = TAILQ_FIRST(nclruhead)) == NULL || LIST_PREV(ncp, nc_hash) != 0)) {
+			&& ((ncp = TAILQ_FIRST(&nclruhead)) == NULL || LIST_PREV(ncp, nc_hash) != 0)) {
 		/* Add one more entry */
 		ncp = (struct namecache*) malloc((u_long) sizeof *ncp, M_CACHE, M_WAITOK);
 		bzero((char*) ncp, sizeof *ncp);
 		numcache++;
-	} else if (ncp == TAILQ_FIRST(nclruhead)) {
+	} else if (ncp == TAILQ_FIRST(&nclruhead)) {
 		/* reuse an old entry */
 		TAILQ_REMOVE(&nclruhead, ncp, nc_lru);
 		if (LIST_PREV(ncp, nc_hash) != 0) {

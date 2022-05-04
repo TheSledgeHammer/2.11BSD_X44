@@ -49,24 +49,6 @@
 
 #include <sys/lockf.h>
 
-TAILQ_HEAD(locklist, lockf);
-
-struct lockf {
-	short				lf_flags;	/* Lock semantics: F_POSIX, F_FLOCK, F_WAIT */
-	short				lf_type;	/* Lock type: F_RDLCK, F_WRLCK */
-	off_t				lf_start;	/* The byte # of the start of the lock */
-	off_t				lf_end;		/* The byte # of the end of the lock (-1=EOF)*/
-	void				*lf_id;		/* process or file description holding lock */
-	struct	lockf 		**lf_head; 	/* Back pointer to the head of lockf list */
-	struct	lockf 		*lf_next;	/* Next lock on this vnode, or blocking lock */
-	struct  locklist 	lf_blkhd; 	/* List of requests blocked on this lock */
-	TAILQ_ENTRY(lockf) 	lf_block;	/* A request waiting for a lock */
-	uid_t				lf_uid;		/* User ID responsible */
-};
-
-/* Maximum length of sleep chains to traverse to try and detect deadlock. */
-#define MAXDEPTH 50
-
 static struct lockf lockf_cache;
 
 /*
@@ -83,20 +65,36 @@ int	lockf_debug = 0;
 #define SELF	0x1
 #define OTHERS	0x2
 
+static void lf_alloc(struct lockf *, u_long, int);
+static void lf_free(struct lockf *);
+static int lf_clearlock(struct lockf *, struct lockf **);
+static int lf_findoverlap(struct lockf *, struct lockf *, int, struct lockf ***, struct lockf **);
+static struct lockf *lf_getblock(struct lockf *);
+static int lf_getlock(struct lockf *, struct flock *);
+static int lf_setlock(struct lockf *, struct lockf **, struct lock_object *);
+static void lf_split(struct lockf *, struct lockf *, struct lockf **);
+static void lf_wakelock(struct lockf *);
+
+#ifdef LOCKF_DEBUG
+static void lf_print(char *, struct lockf *);
+static void lf_printlist(char *, struct lockf *);
+#endif
 
 /*
- * We enforce a limit on locks by uid, so that a single user cannot
- * run the kernel out of memory.  For now, the limit is pretty coarse.
- * There is no limit on root.
+ * XXX TODO
+ * Misc cleanups: "caddr_t id" should be visible in the API as a
+ * "struct proc *".
+ * (This requires rototilling all VFS's which support advisory locking).
  *
- * Splitting a lock will always succeed, regardless of current allocations.
- * If you're slightly above the limit, we still have to permit an allocation
- * so that the unlock can succeed.  If the unlocking causes too many splits,
- * however, you're totally cutoff.
+ * Use pools for lock allocation.
  */
-int maxlocksperuid = 1024;
 
-
+/*
+ * If there's a lot of lock contention on a single vnode, locking
+ * schemes which allow for more paralleism would be needed.  Given how
+ * infrequently byte-range locks are actually used in typical BSD
+ * code, a more complex approach probably isn't worth it.
+ */
 /*
  * Initialize subsystem.   XXX We use a global lock.  This could be the
  * vnode interlock, but the deadlock detection code may need to inspect
@@ -105,45 +103,33 @@ int maxlocksperuid = 1024;
 void
 lf_init(void)
 {
-	MALLOC(lockf_cache, struct lockf, sizeof(struct lockf), M_LOCKF, NULL);
+	lf_alloc(&lockf_cache, sizeof(struct lockf *), M_WAITOK);
 }
 
-void
-lf_free(struct lockf *lock)
+static void
+lf_alloc(lock, size, flags)
+    struct lockf *lock;
+    u_long size;
+    int flags;
+{
+    MALLOC(lock, struct lockf *, size, M_LOCKF, flags);
+}
+
+static void
+lf_free(lock)
+    struct lockf *lock;
 {
 	FREE(lock, M_LOCKF);
-}
-
-/* Runs in lf_advlock()
- * TODO: uid/ uip
- * 3 options for allowfail.
- * 0 - always allocate.  1 - cutoff at limit.  2 - cutoff at double limit.
- */
-static struct lockf *
-lf_alloc(int allowfail)
-{
-	struct uidinfo *uip;
-	struct lockf *lock;
-
-	const uid_t uid = lockf_cache.lf_uid;
-
-	if (uid && allowfail && uip->ui_lockcnt >
-	(allowfail == 1 ? maxlocksperuid : (maxlocksperuid * 2))) {
-		return (NULL);
-	}
-
-	uip->ui_lockcnt++;
-
-	lock = (struct lock *)malloc(sizeof(struct lockf), M_LOCKF, M_WAITOK);
-	lock->lf_uid = uid;
-	return (lock);
 }
 
 /*
  * Do an advisory lock operation.
  */
 int
-lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
+lf_advlock(ap, head, size)
+    struct vop_advlock_args *ap;
+    struct lockf **head;
+    off_t size;
 {
 	struct flock *fl = ap->a_fl;
 	struct lockf *lock = NULL;
@@ -202,7 +188,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 			/*
 			 * Byte-range lock might need one more lock.
 			 */
-			sparelock = lf_alloc(0);
+			lf_alloc(sparelock, sizeof(*lock), M_WAITOK);
 			if (sparelock == NULL) {
 				error = ENOMEM;
 				goto quit;
@@ -219,24 +205,8 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 	default:
 		return EINVAL;
 	}
-
-	switch (ap->a_op) {
-	case F_SETLK:
-		lock = lf_alloc(1);
-		break;
-	case F_UNLCK:
-		if (start == 0 || end == -1) {
-			/* never split */
-			lock = lf_alloc(0);
-		} else {
-			/* might split */
-			lock = lf_alloc(2);
-		}
-		break;
-	case F_GETLK:
-		lock = lf_alloc(0);
-		break;
-	}
+	
+	lf_alloc(lock, sizeof(*lock), M_WAITOK);
 	if (lock == NULL) {
 		error = ENOMEM;
 		goto quit;
@@ -254,6 +224,12 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 			goto quit_unlock;
 		}
 	}
+	
+	
+	if (fl->l_len == 0)
+		end = -1;
+	else
+		end = start + fl->l_len - 1;
 
 	/*
 	 * Create the lockf structure.
@@ -269,7 +245,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 		KASSERT(curproc == (struct proc *)ap->a_id);
 	}
 	lock->lf_id = ap->a_id;
-
+	
 	/*
 	 * Do the requested operation.
 	 */
@@ -308,7 +284,7 @@ quit:
  * Check whether there is a blocking lock,
  * and if so return its process identifier.
  */
-int
+static int
 lf_getlock(lock, fl)
 	register struct lockf *lock;
 	register struct flock *fl;
@@ -426,7 +402,7 @@ lf_setlock(lock, sparelock, interlock)
 		if ((lock->lf_flags & F_FLOCK) &&
 		    lock->lf_type == F_WRLCK) {
 			lock->lf_type = F_UNLCK;
-			(void) lf_clearlock(lock);
+			(void) lf_clearlock(lock, NULL);
 			lock->lf_type = F_WRLCK;
 		}
 		/*
@@ -506,7 +482,7 @@ lf_setlock(lock, sparelock, interlock)
 			 * Check for common starting point and different types.
 			 */
 			if (overlap->lf_type == lock->lf_type) {
-				free(lock, M_LOCKF);
+				lf_free(lock);
 				lock = overlap; /* for debug output below */
 				break;
 			}
@@ -515,7 +491,7 @@ lf_setlock(lock, sparelock, interlock)
 				lock->lf_next = overlap;
 				overlap->lf_start = lock->lf_end + 1;
 			} else
-				lf_split(overlap, lock);
+				lf_split(overlap, lock, sparelock);
 			lf_wakelock(overlap);
 			break;
 
@@ -626,7 +602,7 @@ lf_clearlock(unlock, sparelock)
 				overlap->lf_start = unlock->lf_end + 1;
 				break;
 			}
-			lf_split(overlap, unlock);
+			lf_split(overlap, unlock, sparelock);
 			overlap->lf_next = unlock->lf_next;
 			break;
 

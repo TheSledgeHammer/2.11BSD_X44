@@ -40,6 +40,7 @@
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/syslimits.h>
 #include <sys/time.h>
 #include <sys/namei.h>
@@ -106,10 +107,10 @@ namei(ndp)
 		MALLOC(cnp->cn_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
 		error = copystr(ndp->ni_dirp, cnp->cn_pnbuf,
-			    MAXPATHLEN, &ndp->ni_pathlen);
+			    MAXPATHLEN, (size_t *)&ndp->ni_pathlen);
 	else
 		error = copyinstr(ndp->ni_dirp, cnp->cn_pnbuf,
-			    MAXPATHLEN, &ndp->ni_pathlen);
+			    MAXPATHLEN, (size_t *)&ndp->ni_pathlen);
 	if (error) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		ndp->ni_vp = NULL;

@@ -36,6 +36,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
+#include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
