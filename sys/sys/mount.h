@@ -219,7 +219,7 @@ struct vfs_list;
 LIST_HEAD(vfs_list, vfsconf);
 struct vfsconf {
 	const struct vfsops 	*vfc_vfsops; 				/* filesystem operations vector */
-	char 					vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
+	const char 				*vfc_name;	                /* filesystem type name */
 	int 					vfc_index;
 	int						vfc_typenum;				/* historic filesystem type number */
 	int 					vfc_refcount;				/* number mounted of this type */
@@ -305,7 +305,7 @@ void			vfs_unmountall(void);
 
 /* vfsconf */
 void			vfsconf_fs_init(void);
-void			vfsconf_fs_create(struct vfsconf *, char *, int, int, int, mountroot_t);
+void			vfsconf_fs_create(struct vfsconf *, const char *, int, int, int, mountroot_t);
 struct vfsconf 	*vfsconf_find_by_name(const char *);
 struct vfsconf 	*vfsconf_find_by_typenum(int);
 void			vfsconf_attach(struct vfsconf *);

@@ -93,10 +93,10 @@ char	traceflags[TR_NFLAGS];
 		if (traceflags[a])						\
 				trace1(a,b,c);					\
 }
-#define	trace2(a)	tracebuf[a]++;
+#define	trace1(a)	tracebuf[a]++;
 #else
 #define	trace(a,b,c)
-#define	trace2(a)
+#define	trace1(a)
 #endif /* TRACE */
 #endif /* KERNEL */
 #endif /* _SYS_TRACE_H_ */
