@@ -116,7 +116,11 @@ Clang: Yes (but fails during llvm support) library very likely needs updating al
 
 PCC: No.
 
-GCC: Yes: i386(tools = yes; kernel = fix compilation errors)
+Cross-Compiler: Successful Builds
+---------------
+| Compiler | Toolchain | Arch's | Kernel | VM |
+| -------- | --------- | ------ | ------ | -- |
+|  GCC	   | 	 Yes   |  i386	|   yes  | no | w/o networking
 
 Please read the following NetBSD guide for more information:
 
