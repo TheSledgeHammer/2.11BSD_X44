@@ -118,7 +118,8 @@ Cross-Compiler: Successful Builds
 ---------------
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
-|  GCC	   | 	 Yes   |  i386	|   yes  | no | w/o networking
+|  GCC  | Yes   |  i386  | yes (without networking) | no | 
+
 
 Clang: Yes (but fails during llvm support) library very likely needs updating along with the relevent toolchain components.
 
