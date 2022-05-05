@@ -73,6 +73,7 @@ struct stat {
 #define	S_IFREG	 0100000	/* regular */
 #define	S_IFLNK	 0120000	/* symbolic link */
 #define	S_IFSOCK 0140000	/* socket */
+#define	S_IFWHT  0160000	/* whiteout */
 #define	S_ISUID	 0004000	/* set user id on execution */
 #define	S_ISGID	 0002000	/* set group id on execution */
 #define	S_ISVTX	 0001000	/* save swapped text even after use */

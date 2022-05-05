@@ -106,13 +106,14 @@ void				finit(struct filedesc *);
 int			        ufalloc(int, int *);
 struct file	        *falloc();
 void				fdexpand(int);
-static int  		ufdalloc(struct file *);
+int  		        ufdalloc(struct file *);
 struct filedesc 	*fdalloc(struct file *);
 int 				fdavail(int);
 void				ffree(struct file *);
 struct file 		*getf(int);
 int					closef(struct file *);
 int					fdopen(dev_t, int, int);
+int                 dupfdopen(struct filedesc *, int, int, int, int);
 void				fdfree(struct filedesc *);
 struct filedesc 	*fdcopy(struct filedesc *);
 void 				ufdsync(struct filedesc *);
@@ -122,6 +123,6 @@ void				fdremove(int);
 int					fdrelease(int);
 void				fdunshare(void);
 void				fdcloseexec(void);
-int					getfiledesc(struct filedesc *, struct file **, int, int);
+int					getfiledesc(struct filedesc *, int, struct file **, int);
 #endif
 #endif
