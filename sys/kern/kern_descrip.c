@@ -698,7 +698,7 @@ getf(f)
 {
 	register struct file *fp;
 
-	if ((unsigned)f >= NOFILE || (fp = u.u_ofile[f]) == NULL) {
+	if ((unsigned)f >= (NOFILE || u.u_nfiles) || (fp = u.u_ofile[f]) == NULL) {
 		u.u_error = EBADF;
 		return (NULL);
 	}
@@ -1119,4 +1119,34 @@ fdcloseexec(void)
 			(void) fdrelease(fd);
 		}
 	}
+}
+
+int
+getfiledesc(fdp, fd, fpp, type)
+	struct filedesc *fdp;
+	struct file **fpp;
+	int fd, type;
+{
+	struct file *fp;
+
+	fp = getf(fd);
+	if (fp != fdp->fd_ofiles[fd]) {
+		/* ignore file "fp"(for now!) and test the user and file descriptor */
+		if((u.u_nfiles == fdp->fd_nfiles) && (u.u_ofile[fd] == fdp->fd_ofiles[fd])) {
+			if ((u_int) fd >= fdp->fd_nfiles || (fp = fdp->fd_ofiles[fd]) == NULL) {
+				return (EBADF);
+			}
+		}
+	} else {
+		/* can assume file "fp" equals the file descriptor file "fdp->fd_ofiles[fd]"  */
+		if ((u_int) fd >= fdp->fd_nfiles || (fp = fdp->fd_ofiles[fd]) == NULL) {
+			return (EBADF);
+		}
+	}
+
+	if (fp->f_type != type) {
+		return (EINVAL);
+	}
+	*fpp = fp;
+	return (0);
 }

@@ -122,5 +122,6 @@ void				fdremove(int);
 int					fdrelease(int);
 void				fdunshare(void);
 void				fdcloseexec(void);
+int					getfiledesc(struct filedesc *, struct file **, int, int);
 #endif
 #endif

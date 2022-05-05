@@ -828,7 +828,7 @@ lf_wakelock(listhead)
 {
 	register struct lockf *wakelock;
 
-	while (wakelock == listhead->lf_blkhd.tqh_first) {
+	while (wakelock == TAILQ_FIRST(&listhead->lf_blkhd)) {
 		TAILQ_REMOVE(&listhead->lf_blkhd, wakelock, lf_block);
 		wakelock->lf_next = NOLOCKF;
 #ifdef LOCKF_DEBUG
@@ -844,26 +844,20 @@ lf_wakelock(listhead)
  * Print out a lock.
  */
 static void
-lf_print(tag, lock)
-	char *tag;
-	register struct lockf *lock;
+lf_print(char *tag, struct lockf *lock)
 {
-
-	printf("%s: lock 0x%lx for ", tag, lock);
+	printf("%s: lock %p for ", tag, lock);
 	if (lock->lf_flags & F_POSIX)
-		printf("proc %d", ((struct proc *)(lock->lf_id))->p_pid);
+		printf("proc %d", ((struct proc *)lock->lf_id)->p_pid);
 	else
-		printf("id 0x%x", lock->lf_id);
-	printf(" in ino %d on dev <%d, %d>, %s, start %d, end %d",
-		lock->lf_inode->i_number,
-		major(lock->lf_inode->i_dev),
-		minor(lock->lf_inode->i_dev),
+		printf("file 0x%p", (struct file *)lock->lf_id);
+	printf(" %s, start %qx, end %qx",
 		lock->lf_type == F_RDLCK ? "shared" :
 		lock->lf_type == F_WRLCK ? "exclusive" :
 		lock->lf_type == F_UNLCK ? "unlock" :
 		"unknown", lock->lf_start, lock->lf_end);
-	if (lock->lf_blkhd.tqh_first)
-		printf(" block 0x%x\n", lock->lf_blkhd.tqh_first);
+	if (TAILQ_FIRST(&lock->lf_blkhd))
+		printf(" block %p\n", TAILQ_FIRST(&lock->lf_blkhd));
 	else
 		printf("\n");
 }
@@ -875,38 +869,35 @@ lf_printlist(tag, lock)
 {
 	register struct lockf *lf, *blk;
 
-	printf("%s: Lock list for ino %d on dev <%d, %d>:\n",
-		tag, lock->lf_inode->i_number,
-		major(lock->lf_inode->i_dev),
-		minor(lock->lf_inode->i_dev));
-	for (lf = lock->lf_inode->i_lockf; lf; lf = lf->lf_next) {
-		printf("\tlock 0x%lx for ", lf);
-		if (lf->lf_flags & F_POSIX)
-			printf("proc %d", ((struct proc *)(lf->lf_id))->p_pid);
-		else
-			printf("id 0x%x", lf->lf_id);
-		printf(", %s, start %d, end %d",
-			lf->lf_type == F_RDLCK ? "shared" :
-			lf->lf_type == F_WRLCK ? "exclusive" :
-			lf->lf_type == F_UNLCK ? "unlock" :
-			"unknown", lf->lf_start, lf->lf_end);
-		for (blk = lf->lf_blkhd.tqh_first; blk;
-		     blk = blk->lf_block.tqe_next) {
-			printf("\n\t\tlock request 0x%lx for ", blk);
-			if (blk->lf_flags & F_POSIX)
-				printf("proc %d",
-				    ((struct proc *)(blk->lf_id))->p_pid);
+	printf("%s: Lock list:\n", tag);
+		for (lf = *lock->lf_head; lf; lf = lf->lf_next) {
+			printf("\tlock %p for ", lf);
+			if (lf->lf_flags & F_POSIX)
+				printf("proc %d", ((struct proc *)lf->lf_id)->p_pid);
 			else
-				printf("id 0x%x", blk->lf_id);
-			printf(", %s, start %d, end %d",
-				blk->lf_type == F_RDLCK ? "shared" :
-				blk->lf_type == F_WRLCK ? "exclusive" :
-				blk->lf_type == F_UNLCK ? "unlock" :
-				"unknown", blk->lf_start, blk->lf_end);
-			if (blk->lf_blkhd.tqh_first)
-				panic("lf_printlist: bad list");
+				printf("file 0x%p", (struct file *)lf->lf_id);
+			printf(", %s, start %qx, end %qx",
+				lf->lf_type == F_RDLCK ? "shared" :
+				lf->lf_type == F_WRLCK ? "exclusive" :
+				lf->lf_type == F_UNLCK ? "unlock" :
+				"unknown", lf->lf_start, lf->lf_end);
+			TAILQ_FOREACH(blk, &lf->lf_blkhd, lf_block) {
+				if (blk->lf_flags & F_POSIX)
+					printf("proc %d",
+					    ((struct proc *)blk->lf_id)->p_pid);
+				else
+					printf("file 0x%p", (struct file *)blk->lf_id);
+				printf(", %s, start %qx, end %qx",
+					blk->lf_type == F_RDLCK ? "shared" :
+					blk->lf_type == F_WRLCK ? "exclusive" :
+					blk->lf_type == F_UNLCK ? "unlock" :
+					"unknown", blk->lf_start, blk->lf_end);
+				if (TAILQ_FIRST(&blk->lf_blkhd))
+					 panic("lf_printlist: bad list");
+			}
+			printf("\n");
 		}
-		printf("\n");
 	}
 }
+
 #endif /* LOCKF_DEBUG */

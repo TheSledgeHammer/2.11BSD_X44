@@ -79,7 +79,7 @@ struct statfs {
 LIST_HEAD(vnodelst, vnode);
 struct	mount {
 	CIRCLEQ_ENTRY(mount) 	mnt_list;					/* mount list */
-	struct vfsops			*mnt_op;					/* operations on fs */
+	const struct vfsops		*mnt_op;					/* operations on fs */
 	struct vfsconf			*mnt_vfc;					/* configuration info */
 	struct vnode			*mnt_vnodecovered;			/* vnode we mounted on */
 	struct vnodelst			mnt_vnodelist;				/* list of vnodes this mount */

@@ -51,7 +51,6 @@
  */
 
 TAILQ_HEAD(locklist, lockf);
-
 struct lockf {
 	short				lf_flags;	/* Lock semantics: F_POSIX, F_FLOCK, F_WAIT */
 	short				lf_type;	/* Lock type: F_RDLCK, F_WRLCK */
@@ -66,7 +65,7 @@ struct lockf {
 };
 
 /* Maximum length of sleep chains to traverse to try and detect deadlock. */
-#define MAXDEPTH 50
+#define MAXDEPTH 		50
 
 #ifdef _KERNEL
 
