@@ -604,7 +604,7 @@ fdexpand(lim)
 	fdsync(u.u_fd);
 }
 
-static int
+int
 ufdalloc(fp)
 	struct file *fp;
 {

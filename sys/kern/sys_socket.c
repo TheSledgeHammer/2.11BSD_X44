@@ -42,7 +42,7 @@ struct fileops socketops = {
 int
 soo_ioctl(fp, cmd, data, p)
 	struct file *fp;
-	int cmd;
+	u_long cmd;
 	register caddr_t data;
 	struct proc *p;
 {

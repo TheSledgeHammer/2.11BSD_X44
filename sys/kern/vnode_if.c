@@ -600,21 +600,6 @@ struct vnodeop_desc vop_bmap_desc = {
 	NULL,
 };
 
-int vop_strategy_vp_offsets[] = {
-	VDESC_NO_OFFSET
-};
-struct vnodeop_desc vop_strategy_desc = {
-	0,
-	"vop_strategy",
-	0,
-	vop_strategy_vp_offsets,
-	VDESC_NO_OFFSET,
-	VDESC_NO_OFFSET,
-	VDESC_NO_OFFSET,
-	VDESC_NO_OFFSET,
-	NULL,
-};
-
 int vop_print_vp_offsets[] = {
 	VOPARG_OFFSETOF(struct vop_print_args, a_vp),
 	VDESC_NO_OFFSET
@@ -800,21 +785,6 @@ struct vnodeop_desc vop_putpages_desc = {
 	"vop_putpages",
 	0,
 	vop_putpages_vp_offsets,
-	VDESC_NO_OFFSET,
-	VDESC_NO_OFFSET,
-	VDESC_NO_OFFSET,
-	VDESC_NO_OFFSET,
-	NULL,
-};
-
-int vop_bwrite_vp_offsets[] = {
-	VDESC_NO_OFFSET
-};
-struct vnodeop_desc vop_bwrite_desc = {
-	0,
-	"vop_bwrite",
-	0,
-	vop_bwrite_vp_offsets,
 	VDESC_NO_OFFSET,
 	VDESC_NO_OFFSET,
 	VDESC_NO_OFFSET,

@@ -60,6 +60,7 @@
 
 static int change_dir(struct nameidata *ndp, struct proc *p);
 static void checkdirs(struct vnode *olddp);
+int getvnode(struct filedesc *, int, struct file **);
 
 /*
  * Virtual File System System Calls
@@ -405,7 +406,7 @@ dounmount(mp, flags, p)
 		vrele(coveredvp);
 	}
 	mp->mnt_vfc->vfc_refcount--;
-	if (LIST_FIRST(mp->mnt_vnodelist) != NULL)
+	if (LIST_FIRST(&mp->mnt_vnodelist) != NULL)
 		panic("unmount: dangling vnode");
 	lockmgr(&mp->mnt_lock, LK_RELEASE | LK_INTERLOCK, &mountlist_slock, p->p_pid);
 	if (mp->mnt_flag & MNT_MWAIT)
@@ -451,7 +452,7 @@ sync()
 		vfs_unbusy(mp, p);
 	}
 	simple_unlock(&mountlist_slock);
-#ifdef DIAGNOSTIC
+#ifdef DEBUG
 	if (syncprt)
 		vfs_bufstats();
 #endif /* DIAGNOSTIC */
@@ -574,7 +575,7 @@ getfsstat()
 	sfsp = (caddr_t)SCARG(uap, buf);
 	count = 0;
 	simple_lock(&mountlist_slock);
-	for (mp = CIRCLEQ_FIRST(mountlist); mp != (void *)&mountlist; mp = nmp) {
+	for (mp = CIRCLEQ_FIRST(&mountlist); mp != (void *)&mountlist; mp = nmp) {
 		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
 			nmp = CIRCLEQ_NEXT(mp, mnt_list);
 			continue;
@@ -745,6 +746,8 @@ change_dir(ndp, p)
 	return (error);
 }
 
+
+
 /*
  * Check permissions, allocate an open file structure,
  * and call the device open routine if any.
@@ -773,8 +776,10 @@ open()
 
 	p = u.u_procp;
 	fdp = p->p_fd;
-	if (error == falloc(p, &nfp, &indx))
-		return (error);
+	nfp = falloc();
+	if(error = ufdalloc(nfp)) {
+	    return (error);
+	}
 	fp = nfp;
 	flags = FFLAGS(SCARG(uap, flags));
 	cmode = ((SCARG(uap, mode) &~ fdp->fd_cmask) & ALLPERMS) &~ S_ISTXT;
@@ -1632,10 +1637,10 @@ utimes()
 	vp = nd.ni_vp;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
-	vattr.va_atime.ts_sec = tv[0].tv_sec;
-	vattr.va_atime.ts_nsec = tv[0].tv_usec * 1000;
-	vattr.va_mtime.ts_sec = tv[1].tv_sec;
-	vattr.va_mtime.ts_nsec = tv[1].tv_usec * 1000;
+	vattr.va_atime.tv_sec = tv[0].tv_sec;
+	vattr.va_atime.tv_nsec = tv[0].tv_usec * 1000;
+	vattr.va_mtime.tv_sec = tv[1].tv_sec;
+	vattr.va_mtime.tv_nsec = tv[1].tv_usec * 1000;
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 	vput(vp);
 	return (error);
@@ -1741,7 +1746,7 @@ fsync()
 		return (error);
 	vp = (struct vnode *)fp->f_data;
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
-	error = VOP_FSYNC(vp, fp->f_cred, MNT_WAIT, p);
+	error = VOP_FSYNC(vp, fp->f_cred, MNT_WAIT, fp->f_flag, p);
 	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
@@ -1974,7 +1979,7 @@ unionread:
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	loff = auio.uio_offset = fp->f_offset;
 	error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
-			    (int *)0, (u_long *)0);
+			    (int *)0, (u_long **)0);
 	fp->f_offset = auio.uio_offset;
 	VOP_UNLOCK(vp, 0, p);
 	if (error)
@@ -2109,6 +2114,7 @@ getvnode(fdp, fd, fpp)
 	return (getfiledesc(fdp, fd, fpp, DTYPE_VNODE));
 }
 
+#ifdef notyet
 #ifdef COMPAT_43
 /*
  * Create a file.
@@ -2177,7 +2183,7 @@ unionread:
 #if (BYTE_ORDER != LITTLE_ENDIAN)
 		if (vp->v_mount->mnt_maxsymlinklen <= 0) {
 			error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
-			    (int *)0, (u_long *)0);
+			    (int *)0, (u_long **)0);
 			fp->f_offset = auio.uio_offset;
 		} else
 #endif
@@ -2189,7 +2195,7 @@ unionread:
 		MALLOC(dirbuf, caddr_t, SCARG(uap, count), M_TEMP, M_WAITOK);
 		kiov.iov_base = dirbuf;
 		error = VOP_READDIR(vp, &kuio, fp->f_cred, &eofflag,
-			    (int *)0, (u_long *)0);
+			    (int *)0, (u_long **)0);
 		fp->f_offset = kuio.uio_offset;
 		if (error == 0) {
 			readcnt = SCARG(uap, count) - kuio.uio_resid;
@@ -2489,3 +2495,5 @@ compat_43_ftruncate(p, uap, retval)
 	return (ftruncate(p, &nuap, retval));
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
+
+#endif

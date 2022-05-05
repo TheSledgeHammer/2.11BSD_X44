@@ -51,6 +51,7 @@
 #include <sys/mbuf.h>
 #include <sys/sysctl.h>
 #include <sys/event.h>
+#include <sys/queue.h>
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
@@ -58,57 +59,6 @@
 #define VNOP(vp, vop_field)	((vp)->v_op->vop_field)
 #define DO_OPS(ops, error, ap, vop_field)	\
 	error = ops->vop_field(ap)
-
-struct vnodeops default_vnodeops = {
-		.vop_default = vop_default_error,	/* default */
-		.vop_lookup = vop_lookup,			/* lookup */
-		.vop_create = vop_create,			/* create */
-		.vop_mknod = vop_mknod,				/* mknod */
-		.vop_open = vop_open,				/* open */
-		.vop_close = vop_close,				/* close */
-		.vop_access = vop_access,			/* access */
-		.vop_getattr = vop_getattr,			/* getattr */
-		.vop_setattr = vop_setattr,			/* setattr */
-		.vop_read = vop_read,				/* read */
-		.vop_write = vop_write,				/* write */
-		.vop_lease = vop_lease,				/* lease */
-		.vop_ioctl = vop_ioctl,				/* ioctl */
-		.vop_select = vop_select,			/* select */
-		.vop_poll = vop_poll,				/* poll */
-		.vop_kqfilter = vop_kqfilter,		/* kqfilter */
-		.vop_revoke = vop_revoke,			/* revoke */
-		.vop_mmap = vop_mmap,				/* mmap */
-		.vop_fsync = vop_fsync,				/* fsync */
-		.vop_seek = vop_seek,				/* seek */
-		.vop_remove = vop_remove,			/* remove */
-		.vop_link = vop_link,				/* link */
-		.vop_rename = vop_rename,			/* rename */
-		.vop_mkdir = vop_mkdir,				/* mkdir */
-		.vop_rmdir = vop_rmdir,				/* rmdir */
-		.vop_symlink = vop_symlink,			/* symlink */
-		.vop_readdir = vop_readdir,			/* readdir */
-		.vop_readlink = vop_readlink,		/* readlink */
-		.vop_abortop = vop_abortop,			/* abortop */
-		.vop_inactive = vop_inactive,		/* inactive */
-		.vop_reclaim = vop_reclaim,			/* reclaim */
-		.vop_lock = vop_lock,				/* lock */
-		.vop_unlock = vop_unlock,			/* unlock */
-		.vop_bmap = vop_bmap,				/* bmap */
-		.vop_strategy = vop_strategy,		/* strategy */
-		.vop_print = vop_print,				/* print */
-		.vop_islocked = vop_islocked,		/* islocked */
-		.vop_pathconf = vop_pathconf,		/* pathconf */
-		.vop_advlock = vop_advlock,			/* advlock */
-		.vop_blkatoff = vop_blkatoff,		/* blkatoff */
-		.vop_valloc = vop_valloc,			/* valloc */
-		.vop_reallocblks = vop_reallocblks,	/* reallocblks */
-		.vop_vfree = vop_vfree,				/* vfree */
-		.vop_truncate = vop_truncate,		/* truncate */
-		.vop_update = vop_update,			/* update */
-		.vop_getpages = vop_getpages,		/* getpages */
-		.vop_putpages = vop_putpages,		/* putpages */
-		.vop_bwrite = vop_bwrite,			/* bwrite */
-};
 
 /*
  * A miscellaneous routine.
@@ -1386,8 +1336,8 @@ vop_nokqfilter(ap)
 	struct klist *klist;
 
 	KASSERT(vp->v_type != VFIFO || (kn->kn_filter != EVFILT_READ &&
-		    kn->kn_filter != EVFILT_WRITE),
-		    ("READ/WRITE filter on a FIFO leaked through"));
+		    kn->kn_filter != EVFILT_WRITE)/*,
+		    ("READ/WRITE filter on a FIFO leaked through")*/);
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
 		kn->kn_fop = &vfsread_filtops;
@@ -1420,8 +1370,8 @@ filt_vfsdetach(kn)
 {
 	struct vnode *vp = (struct vnode *)kn->kn_hook;
 
-	KASSERT(vp->v_sel != NULL);
-	SIMPLEQ_REMOVE_HEAD(&vp->v_sel.si_klist, kn);
+	KASSERT(&vp->v_sel != NULL);
+	SIMPLEQ_REMOVE_HEAD(&vp->v_sel.si_klist, kn_selnext);
 	//vdrop(vp);
 }
 
@@ -1446,7 +1396,7 @@ filt_vfsread(kn, hint)
 		return (1);
 	}
 
-	if (VOP_GETATTR(vp, &va, u->u_ucred, curproc))
+	if (VOP_GETATTR(vp, &va, u.u_ucred, curproc))
 		return (0);
 
 	//VI_LOCK(vp);
