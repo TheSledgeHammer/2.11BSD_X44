@@ -157,8 +157,6 @@ threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t
 	job->job_name = name;
 	job->job_refcnt = 0;
 	job->job_itpc = NULL;
-	//job->job_itpc->itpc_ktpool = NULL;
-	//job->job_itpc->itpc_utpool = NULL;
 	job->job_func = func;
 }
 

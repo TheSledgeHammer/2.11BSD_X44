@@ -103,6 +103,7 @@ dev_pager_alloc(handle, size, prot, foff)
 {
 	dev_t dev;
 	vm_pager_t pager;
+	const struct cdevsw *cdev;
 	int (*mapfunc)();
 	vm_object_t object;
 	dev_pager_t devp;
@@ -125,15 +126,16 @@ dev_pager_alloc(handle, size, prot, foff)
 	 * Make sure this device can be mapped.
 	 */
 	dev = (dev_t)handle;
-	mapfunc = cdevsw[major(dev)].d_mmap;
+	cdev = cdevsw_lookup(dev);
+	mapfunc = cdev->d_mmap;
 	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
-		return(NULL);
+		return (NULL);
 
 	/*
 	 * Offset should be page aligned.
 	 */
 	if (foff & PAGE_MASK)
-		return(NULL);
+		return (NULL);
 
 	/*
 	 * Check that the specified range of the device allows the
@@ -144,7 +146,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	npages = atop(round_page(size));
 	for (off = foff; npages--; off += PAGE_SIZE)
 		if ((*mapfunc)(dev, off, (int)prot) == -1)
-			return(NULL);
+			return (NULL);
 
 	/*
 	 * Look up pager, creating as necessary.
@@ -206,7 +208,7 @@ top:
 			panic("dev_pager_setup: bad object");
 #endif
 	}
-	return(pager);
+	return (pager);
 }
 
 static void
@@ -236,7 +238,7 @@ dev_pager_dealloc(pager)
 	/*
 	 * Free up our fake pages.
 	 */
-	while ((m = TAILQ_FIRST(devp->devp_pglist)) != NULL) {
+	while ((m = TAILQ_FIRST(&devp->devp_pglist)) != NULL) {
 		TAILQ_REMOVE(&devp->devp_pglist, m, pageq);
 		dev_pager_putfake(m);
 	}
@@ -252,6 +254,7 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	bool_t sync;
 {
 	register vm_object_t object;
+	const struct cdevsw *cdev;
 	vm_offset_t offset, paddr;
 	vm_page_t page;
 	dev_t dev;
@@ -272,7 +275,8 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	dev = (dev_t)pager->pg_handle;
 	offset = m->offset + object->paging_offset;
 	prot = PROT_READ;	/* XXX should pass in? */
-	mapfunc = cdevsw[major(dev)].d_mmap;
+	cdev = cdevsw_lookup(dev);
+	mapfunc = cdev->d_mmap;
 #ifdef DIAGNOSTIC
 	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
 		panic("dev_pager_getpage: no map function");
@@ -314,7 +318,7 @@ dev_pager_putpage(pager, mlist, npages, sync)
 		       pager, mlist, npages, sync);
 #endif
 	if (pager == NULL)
-		return;
+		return (0);
 	panic("dev_pager_putpage called");
 }
 

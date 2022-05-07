@@ -79,9 +79,9 @@ struct devswtable 					sys_devsw;
 struct devswtable_head 				devsw_hashtable[MAXDEVSW];
 struct lock_object  				devswtable_lock;
 
-#define devswtable_lock_init(lock)	    (simple_lock_init(lock, "devswtable_lock"))
-#define devswtable_lock(lock)		    (simple_lock(lock))
-#define devswtable_unlock(lock)		    (simple_unlock(lock))
+#define devswtable_lock_init(lock)	(simple_lock_init(lock, "devswtable_lock"))
+#define devswtable_lock(lock)		(simple_lock(lock))
+#define devswtable_unlock(lock)		(simple_unlock(lock))
 
 #define devswtable_io_init(major, sw)	((major) > 0 ? (sw) : ENXIO)
 
