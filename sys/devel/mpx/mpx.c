@@ -301,6 +301,7 @@ int
 mpx_connect(cp1, cp2)
 	struct mpx_channel 	*cp1, *cp2;
 {
+	struct mpx_channel 	*cp3;
 	int i, cnt1, cnt2, total;
 
 	/* check channels used */
@@ -316,22 +317,16 @@ mpx_connect(cp1, cp2)
 			cnt2++;
 		}
 	}
+	/* merge channels */
 	if(cnt1 < NCHANS && cnt2 < NCHANS) {
 		total = (cnt1 + cnt2);
 		if (total < NCHANS) {
-			goto pass;
-		} else {
-			goto fail;
+			cp3 = mpx_merge_channels(cp1, cp2);
+			if(cp3) {
+				return (0);
+			}
 		}
 	}
-
-pass:
-	/* TODO: merge both channels together */
-
-	return (0);
-
-fail:
-	printf("mpx_connect: too many combined channels in use, to complete");
 	return (1);
 }
 
