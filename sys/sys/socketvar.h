@@ -212,7 +212,7 @@ u_long	sb_max;
 extern	char netio[], netcon[], netcls[];
 
 /* File Operations on sockets */
-int		soo_ioctl(struct file *, int, caddr_t, struct proc *);
+int		soo_ioctl(struct file *, u_long, caddr_t, struct proc *);
 int		soo_select(struct file *, int, struct proc *);
 int		soo_stat(struct socket *, struct stat *);
 int		soo_rw(struct file *, struct uio *, struct ucred *);

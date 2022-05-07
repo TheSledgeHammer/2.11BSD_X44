@@ -1143,7 +1143,7 @@ kqueue_write(fp, uio, cred)
 int
 kqueue_ioctl(fp, com, data, p)
 	struct file *fp;
-	int com;
+	u_long com;
 	caddr_t data;
 	struct proc *p;
 {

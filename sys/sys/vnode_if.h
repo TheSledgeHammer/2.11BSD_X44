@@ -576,7 +576,7 @@ int	vop_putpages(struct vnode *, off_t, off_t, int);
 int	vop_strategy(struct buf *);
 int vop_bwrite(struct buf *);
 
-/* non/standard vops: used in particular cases */
+/* no vop argument: used in particular cases */
 int	vop_nokqfilter(struct vop_kqfilter_args *);
 int	vop_noislocked(struct vop_islocked_args *);
 int	vop_nolock(struct vop_lock_args *);
@@ -681,5 +681,4 @@ int	vop_norevoke(struct vop_revoke_args *);
 	vop_strategy(bp)
 #define VOP_BWRITE(bp)																\
 	vop_bwrite(bp)
-
 #endif /* _SYS_VNODE_IF_H_ */

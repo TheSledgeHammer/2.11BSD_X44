@@ -351,7 +351,7 @@ typedef int (*vocall_func_t)(struct vop_generic_args *);
 /*
  * The default set of vnode operations.
  */
-extern struct vnodeops 	default_vnodeops;
+//extern struct vnodeops 	default_vnodeops;
 
 /*
  * Public vnode manipulation functions.
@@ -375,7 +375,7 @@ int 	bdevvp(dev_t, struct vnode **);
 int		cdevvp(dev_t, struct vnode **);
 void	cvtstat(struct stat *, struct ostat *);
 int		vfinddev(dev_t, enum vtype, struct vnode **);
-int 	getnewvnode(enum vtagtype, struct mount *, const struct vnodeops *, struct vnode **);
+int 	getnewvnode(enum vtagtype, struct mount *, struct vnodeops *, struct vnode **);
 void	insmntque(struct vnode *, struct mount *);
 void 	vattr_null(struct vattr *);
 void	vdevgone(int, int, int, enum vtype);
@@ -409,5 +409,7 @@ struct 	vnode *checkalias(struct vnode *, dev_t, struct mount *);
 void 	vput(struct vnode *);
 void 	vref(struct vnode *);
 void 	vrele(struct vnode *);
+
+void    vfs_bufstats(void);
 #endif /* KERNEL */
 #endif /* !_SYS_VNODE_H_ */

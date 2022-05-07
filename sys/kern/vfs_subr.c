@@ -349,7 +349,7 @@ int
 getnewvnode(tag, mp, vops, vpp)
 	enum vtagtype tag;
 	struct mount *mp;
-	const struct vnodeops *vops;
+	struct vnodeops *vops;
 	struct vnode **vpp;
 {
 	struct proc *p = curproc;	/* XXX */
@@ -414,7 +414,7 @@ top:
 	vp->v_type = VNON;
 	cache_purge(vp);
 	vp->v_tag = tag;
-	vp->v_op = &vops;
+	vp->v_op = vops;
 	insmntque(vp, mp);
 	*vpp = vp;
 	vp->v_usecount = 1;
@@ -1202,7 +1202,7 @@ vgonel(vp, p)
 	if (vp->v_usecount == 0) {
 		simple_lock(&vnode_free_list_slock);
 		if ((TAILQ_PREV(vp, freelst, v_freelist) != (struct vnode *) 0xdeadb) &&
-		TAILQ_FIRST(vnode_free_list) != vp) {
+		TAILQ_FIRST(&vnode_free_list) != vp) {
 			TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
 			TAILQ_INSERT_HEAD(&vnode_free_list, vp, v_freelist);
 		}

@@ -110,17 +110,20 @@ To build just the tools for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 -O ~/obj tools
 
-Compilers:
+Please read the following NetBSD guide for more information:
+
+<https://www.netbsd.org/docs/guide/en/chap-build.html>
+
+Cross-Compiler: Successful Builds
+---------------
+| Compiler | Toolchain | Arch's | Kernel | VM |
+| -------- | --------- | ------ | ------ | -- |
+|  GCC  | Yes   |  i386  | yes (without networking) | no | 
+
 
 Clang: Yes (but fails during llvm support) library very likely needs updating along with the relevent toolchain components.
 
 PCC: No.
-
-GCC: Yes: i386(tools = yes; kernel = fix compilation errors)
-
-Please read the following NetBSD guide for more information:
-
-<https://www.netbsd.org/docs/guide/en/chap-build.html>
 
 ## Contribution:
 
