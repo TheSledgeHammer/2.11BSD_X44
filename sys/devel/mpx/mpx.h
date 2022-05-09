@@ -40,7 +40,8 @@
 
 /* mpx reader/buffer */
 struct mpx_reader {
-    struct mpx_channel 		*mpr_chan;      /* channel */
+	struct mpx_group		*mpr_group;		/* group */
+    struct mpx_channel 		*mpr_channel;   /* channel */
     int 				    mpr_state;      /* state */
     size_t		            mpr_size;		/* size of buffer */
     caddr_t		            mpr_buffer;		/* kva of buffer */
@@ -48,11 +49,16 @@ struct mpx_reader {
 
 /* mpx writer/buffer */
 struct mpx_writer {
-    struct mpx_channel      *mpw_chan;      /* channel */
+	struct mpx_group		*mpw_group;		/* group */
+    struct mpx_channel      *mpw_channel;  	/* channel */
     int 				    mpw_state;      /* state */
     size_t		            mpw_size;		/* size of buffer */
     caddr_t		            mpw_buffer;		/* kva of buffer */
 };
+
+#define MPX_READER_SIZE		sizeof(struct mpx_reader *)
+#define MPX_WRITER_SIZE		sizeof(struct mpx_writer *)
+#define MPX_BUFFER(size)	(round_page(NGROUPS + NCHANS + (size)))
 
 struct channellist;
 LIST_HEAD(channellist, mpx_channel);
@@ -78,16 +84,18 @@ union mpxpair {
 };
 
 struct mpx {
-    union mpxpair			*mpx_pair;
-    struct mpx_channel	    *mpx_chan;
+	union  mpxpair			mpx_pair;
+    struct mpx_group		*mpx_group;
+    struct mpx_channel	    *mpx_channel;
     struct file				*mpx_file;
 };
 
 extern struct grouplist     mpx_groups[];
 extern struct channellist   mpx_channels[];
 
-#define MPX_LOCK(mpx)		simple_lock((mpx)->mpp_lock)
-#define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpp_lock)
+#define MPX_LOCK_INIT(mpp)	simple_lock_init((mpp)->mpp_lock, "mpxpair_lock")
+#define MPX_LOCK(mpp)		simple_lock((mpp)->mpp_lock)
+#define MPX_UNLOCK(mpp)		simple_unlock((mpp)->mpp_lock)
 
 void                		mpx_init(void);
 void                		mpx_create_group(int);
@@ -98,5 +106,6 @@ struct mpx_channel     		*mpx_get_channel(int);
 void						mpx_remove_channel(struct mpx_channel *, int);
 void						mpx_attach(struct mpx_channel *, struct mpx_group *);
 void						mpx_detach(struct mpx_channel *, struct mpx_group *);
+int							mpx_connect(struct mpx_channel *, struct mpx_channel *);
 
 #endif /* SYS_MPX_H_ */

@@ -60,8 +60,10 @@ mpx_init(void)
 	struct mpx 		*mpx;
 	register int 	i, j;
 
-	MALLOC(mpx, struct mpx *, sizeof(struct mpx *), M_MPX, M_WAITOK);
-    simple_lock_init(mpx->mpx_pair, "mpx_lock");
+	mpx = (struct mpx *)malloc(sizeof(struct mpx *), M_MPX, M_WAITOK);
+	mpx->mpx_pair = (union mpxpair *)malloc(sizeof(union mpxpair *), M_MPX, M_WAITOK);
+
+	MPX_LOCK_INIT(mpx->mpx_pair);
 
     for(i = 0; i <= NGROUPS; i++) {
     	LIST_INIT(&mpx_groups[i]);
@@ -72,50 +74,93 @@ mpx_init(void)
 	}
 }
 
+union mpxpair *
+mpxpair(mpx)
+	struct mpx 	*mpx;
+{
+	register union mpxpair *result;
+
+	result = mpx->mpx_pair;
+	if (result) {
+		return (result);
+	}
+	return (NULL);
+}
+
 struct mpx_writer *
-mpx_writer(mpx, size, buffer, state)
+mpx_writer(mpx, state)
 	struct mpx *mpx;
-	size_t size;
-	caddr_t buffer;
 	int state;
 {
-	struct mpx_writer *wmpx;
+	register union mpxpair 	*pair;
+	register struct mpx_writer 	*wmpx;
 
-	MPX_LOCK(mpx->mpx_pair);
-	wmpx = mpx->mpx_pair->mpp_wmpx;
+	pair = mpxpair(mpx);
+	MPX_LOCK(pair);
+	wmpx = pair->mpp_wmpx;
 	if(wmpx != NULL) {
-		wmpx->mpw_chan = mpx->mpx_chan;
-		wmpx->mpw_size = size;
-		wmpx->mpw_buffer = buffer;
+		wmpx->mpw_group = mpx->mpx_group;
+		wmpx->mpw_channel = mpx->mpx_channel;
+		wmpx->mpw_size = MPX_WRITER_SIZE;
+		wmpx->mpw_buffer = MPX_BUFFER(MPX_WRITER_SIZE);
 		wmpx->mpw_state = state;
-		MPX_UNLOCK(mpx->mpx_pair);
+		MPX_UNLOCK(pair);
 		return (wmpx);
 	}
-	MPX_UNLOCK(mpx->mpx_pair);
+	MPX_UNLOCK(pair);
 	return (NULL);
 }
 
 struct mpx_reader *
-mpx_reader(mpx, size, buffer, state)
+mpx_reader(mpx, state)
 	struct mpx *mpx;
-	size_t size;
-	caddr_t buffer;
 	int state;
 {
-	struct mpx_reader *rmpx;
+	register union mpxpair 	*pair;
+	register struct mpx_reader *rmpx;
 
-	MPX_LOCK(mpx->mpx_pair);
-	rmpx = mpx->mpx_pair->mpp_rmpx;
+	pair = mpxpair(mpx);
+	MPX_LOCK(pair);
+	rmpx = pair->mpp_rmpx;
 	if(rmpx != NULL) {
-		rmpx->mpr_chan = mpx->mpx_chan;
-		rmpx->mpr_size = size;
-		rmpx->mpr_buffer = buffer;
+		rmpx->mpr_group = mpx->mpx_group;
+		rmpx->mpr_channel = mpx->mpx_channel;
+		rmpx->mpr_size = MPX_READER_SIZE;
+		rmpx->mpr_buffer = MPX_BUFFER(MPX_READER_SIZE);
 		rmpx->mpr_state = state;
-		MPX_UNLOCK(mpx->mpx_pair);
+		MPX_UNLOCK(pair);
 		return (rmpx);
 	}
-	MPX_UNLOCK(mpx->mpx_pair);
+	MPX_UNLOCK(pair);
 	return (NULL);
+}
+
+int
+mpxread(mpx, state)
+	struct mpx 		*mpx;
+	int 			state;
+{
+	register struct mpx_reader 	*rmpx;
+
+	rmpx = mpx_reader(mpx, state);
+	if(rmpx == NULL) {
+		return (1);
+	}
+	return (0);
+}
+
+int
+mpxwrite(mpx, state)
+	struct mpx 		*mpx;
+	int 			state;
+{
+	register struct mpx_writer 	*wmpx;
+
+	wmpx = mpx_writer(mpx, state);
+	if(wmpx == NULL) {
+		return (1);
+	}
+	return (0);
 }
 
 void
@@ -361,8 +406,15 @@ mpx_split_channels(cp, idx)
     return (other);
 }
 
-mpx_disconnect()
+/* TODO: allow multiple elements to be specified in "elems" */
+mpx_disconnect(cp, elems)
+	struct mpx_channel *cp;
+	int *elems;
 {
+	struct mpx_channel *cp1;
+	int i;
+
+	cp1 = mpx_split_channels(cp, elems);
 
 }
 
@@ -398,12 +450,12 @@ mpx_read(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
-    struct mpx 			*mpx;
-    struct mpx_reader 	*read;
-
-    mpx = fp->f_mpx;
+    struct mpx 	*mpx;
+    int error;
+    mpx = (struct mpx *)fp->f_mpx;
     mpx->mpx_file = fp;
 
+    error = mpxread(mpx, state);
     return (0);
 }
 
@@ -413,12 +465,13 @@ mpx_write(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
-	struct mpx 			*mpx;
-	struct mpx_writer 	*write;
+	struct mpx 	*mpx;
+	int error;
 
-	mpx = fp->f_mpx;
+	mpx = (struct mpx *)fp->f_mpx;
 	mpx->mpx_file = fp;
 
+	error = mpxwrite(mpx, state);
 	return (0);
 }
 
