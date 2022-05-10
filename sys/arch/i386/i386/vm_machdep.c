@@ -223,7 +223,7 @@ pagemove(from, to, size)
 	register caddr_t from, to;
 	int size;
 {
-	register struct pte *fpte, *tpte;
+	register pt_entry_t *fpte, *tpte;
 
 	if (size % CLBYTES)
 		panic("pagemove");
@@ -268,7 +268,7 @@ prober(addr)
 
 	if (addr >= USRSTACK)
 		return(0);
-	p = u->u_procp;
+	p = u.u_procp;
 	page = btop(addr);
 	if (page < dptov(p, p->p_dsize) || page > sptov(p, p->p_ssize))
 		return(1);
@@ -284,7 +284,7 @@ probew(addr)
 
 	if (addr >= USRSTACK)
 		return(0);
-	p = u->u_procp;
+	p = u.u_procp;
 	page = btop(addr);
 	if (page < dptov(p, p->p_dsize) || page > sptov(p, p->p_ssize))
 		return((*(int *)vtopte(p, page) & PG_PROT) == PG_UW);
