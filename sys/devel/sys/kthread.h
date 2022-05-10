@@ -160,11 +160,10 @@ struct kthreadpool_thread {
 
 /* Kernel Threadpool */
 struct kthreadpool {
-	lock_t								ktp_lock;
+	struct lock							*ktp_lock;
 	struct kthreadpool_thread			ktp_overseer;
     struct job_head					    ktp_jobs;
     struct kthread_head		            ktp_idle_threads;
-
     struct kthread_head		            ktp_active_threads;
 
     int 								ktp_refcnt;			/* total thread count in pool */
@@ -197,12 +196,12 @@ extern struct kthreadlist				allkthread;				/* List of active kthreads. */
 extern struct kthreadlist				zombkthread;			/* List of zombie kthreads. */
 //extern struct kthreadlist 				freekthread;			/* List of free kthreads. */
 
-lock_t 									kthread_lkp; 			/* lock */
-rwlock_t								kthread_rwl;			/* reader-writers lock */
+struct lock								*kthread_lkp; 			/* lock */
+struct rwlock							*kthread_rwl;			/* reader-writers lock */
 
 extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;
-extern lock_t 							kthreadpool_lock;
+extern struct lock 						*kthreadpool_lock;
 
 void			threadinit (void);
 struct pgrp 	*tgfind (pid_t);

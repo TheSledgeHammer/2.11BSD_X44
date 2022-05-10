@@ -90,12 +90,14 @@ struct mpx {
     struct file				*mpx_file;
 };
 
-extern struct grouplist     mpx_groups[];
-extern struct channellist   mpx_channels[];
+#define mpxpair(mpx)		((mpx)->mpx_pair)
 
 #define MPX_LOCK_INIT(mpp)	simple_lock_init((mpp)->mpp_lock, "mpxpair_lock")
 #define MPX_LOCK(mpp)		simple_lock((mpp)->mpp_lock)
 #define MPX_UNLOCK(mpp)		simple_unlock((mpp)->mpp_lock)
+
+extern struct grouplist     mpx_groups[];
+extern struct channellist   mpx_channels[];
 
 void                		mpx_init(void);
 void                		mpx_create_group(int);

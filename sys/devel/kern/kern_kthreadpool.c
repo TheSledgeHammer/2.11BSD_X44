@@ -71,9 +71,10 @@
 
 #include <devel/sys/malloctypes.h>
 
+#include <machine/cpuinfo.h>
+
 struct kthreadpool_thread 				ktpool_thread;
 struct lock_object						*kthreadpools_lock;
-struct threadpool_itpc 					itpc;
 
 struct kthreadpool_unbound {
 	struct kthreadpool					ktpu_pool;
@@ -147,11 +148,10 @@ kthreadpool_remove_percpu(struct kthreadpool_percpu *ktpp)
 void
 kthreadpool_init(void)
 {
-	MALLOC(&ktpool_thread, struct kthreadpool_thread *, sizeof(struct kthreadpool_thread *), M_KTPOOLTHREAD, NULL);
+	&ktpool_thread = (struct kthreadpool_thread *)malloc(sizeof(struct kthreadpool_thread *), M_KTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_kthreadpools);
 	LIST_INIT(&percpu_kthreadpools);
 	simple_lock_init(&kthreadpools_lock, "kthreadpools_lock");
-	//itpc_threadpool_init();
 }
 
 /* KThread pool creation */
@@ -463,8 +463,7 @@ threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t
 	job->job_lock = lock;
 	job->job_name = name;
 	job->job_refcnt = 0;
-	job->job_itpc->itpc_ktpool = NULL;
-	job->job_itpc->itpc_utpool = NULL;
+	job->job_kthread = NULL;
 	job->job_func = func;
 }
 
@@ -622,7 +621,7 @@ kthreadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 
 /* Per-CPU thread pools */
 int
-kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
+kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, pid_t pri)
 {
 	struct kthreadpool_percpu *ktpool_percpu, *tmp = NULL;
 	int error;
@@ -657,7 +656,7 @@ kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
 }
 
 void
-kthreadpool_percpu_put(struct kthreadpool_percpu *ktpool_percpu, u_char pri)
+kthreadpool_percpu_put(struct kthreadpool_percpu *ktpool_percpu, pid_t pri)
 {
 	//KASSERT(kthreadpool_pri_is_valid(pri));
 
@@ -677,7 +676,7 @@ kthreadpool_percpu_put(struct kthreadpool_percpu *ktpool_percpu, u_char pri)
 }
 
 static int
-kthreadpool_percpu_create(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
+kthreadpool_percpu_create(struct kthreadpool_percpu **ktpool_percpup, pid_t pri)
 {
 	struct kthreadpool_percpu *ktpool_percpu;
 	int error, cpu;
@@ -691,14 +690,14 @@ kthreadpool_percpu_create(struct kthreadpool_percpu **ktpool_percpup, u_char pri
 }
 
 int
-kthreadpool_percpu_start(struct kthreadpool_percpu *ktpool_percpu, u_char pri, int ncpus)
+kthreadpool_percpu_start(struct kthreadpool_percpu *ktpool_percpu, pid_t pri, int ncpus)
 {
 	if (count <= 0) {
 		return (EINVAL);
 	}
 
-	ktpool_percpu = (struct kthreadpool_percpu*) malloc(
-			sizeof(struct kthreadpool_percpu*), M_KTPOOLTHREAD, M_WAITOK);
+	ktpool_percpu = (struct kthreadpool_percpu *) malloc(
+			sizeof(struct kthreadpool_percpu *), M_KTPOOLTHREAD, M_WAITOK);
 	ktpool_percpu->ktpp_pri = pri;
 	ktpool_percpu->ktpp_percpu = percpu_create(&cpu_info, sizeof(struct kthreadpool*), 1, ncpus);
 
@@ -749,128 +748,4 @@ kthreadpool_percpu_fini()
 	}
 	kthreadpool_destroy(*ktpoolp);
 	free(*ktpoolp, M_KTPOOLTHREAD);
-}
-
-/* Add kthread to itpc queue */
-void
-itpc_add_kthreadpool(itpc, ktpool)
-    struct threadpool_itpc *itpc;
-    struct kthreadpool *ktpool;
-{
-    struct kthread *kt = NULL;
-
-    if(ktpool != NULL) {
-        itpc->itpc_ktpool = ktpool;
-        kt = ktpool->ktp_overseer.ktpt_kthread;
-        if(kt != NULL) {
-        	itpc->itpc_ktinfo->itpc_kthread = kt;
-        	itpc->itpc_ktinfo->itpc_ktid = kt->kt_tid;
-        	itpc->itpc_ktinfo->itpc_ktgrp = kt->kt_pgrp;
-        	itpc->itpc_ktinfo->itpc_ktjob =  ktpool->ktp_overseer.ktpt_job;
-            itpc->itpc_refcnt++;
-            ktpool->ktp_initcq = TRUE;
-            TAILQ_INSERT_HEAD(itpc->itpc_header, itpc, itpc_entry);
-        } else {
-        	printf("no kthread found in kthreadpool");
-        }
-    } else {
-    	printf("no kthreadpool found");
-    }
-}
-
-/* Remove kthread from itpc queue */
-void
-itpc_remove_kthreadpool(itpc, ktpool)
-	struct threadpool_itpc *itpc;
-	struct kthreadpool *ktpool;
-{
-	register struct kthread *kt;
-
-	kt = itpc->itpc_ktinfo->itpc_kthread;
-	if (ktpool != NULL) {
-		TAILQ_FOREACH(itpc, itpc->itpc_header, itpc_entry) {
-			if (TAILQ_NEXT(itpc, itpc_entry)->itpc_ktpool == ktpool &&  ktpool->ktp_overseer.ktpt_kthread == kt) {
-				if(kt != NULL) {
-		        	itpc->itpc_ktinfo->itpc_kthread = NULL;
-		        	itpc->itpc_ktinfo->itpc_ktjob = NULL;
-					itpc->itpc_refcnt--;
-					ktpool->ktp_initcq = FALSE;
-					TAILQ_REMOVE(itpc->itpc_header, itpc, itpc_entry);
-				} else {
-					printf("cannot remove kthread. does not exist");
-				}
-			}
-		}
-	} else {
-		printf("no kthread to remove");
-	}
-}
-
-/* Sender checks request from receiver: providing info */
-void
-itpc_check_kthreadpool(itpc, ktpool)
-	struct threadpool_itpc *itpc;
-	struct kthreadpool *ktpool;
-{
-	register struct kthread *kt;
-
-	kt = ktpool->ktp_overseer.ktpt_kthread;
-	if(ktpool->ktp_issender) {
-		printf("kernel threadpool to send");
-		if(itpc->itpc_ktpool == ktpool) {
-			if(itpc->itpc_ktinfo->itpc_kthread == kt) {
-				if(itpc->itpc_ktinfo->itpc_ktid == kt->kt_tid) {
-					printf("kthread tid found");
-				} else {
-					printf("kthread tid not found");
-					goto retry;
-				}
-			} else {
-				printf("kthread not found");
-				goto retry;
-			}
-		}
-		panic("no kthreadpool");
-	}
-
-retry:
-	if(ktpool->ktp_retcnt <= 5) { /* retry up to 5 times */
-		if(ktpool->ktp_initcq) {
-			/* exit and re-enter queue increasing retry count */
-			itpc_remove_kthreadpool(itpc, ktpool);
-			ktpool->ktp_retcnt++;
-			itpc_add_kthreadpool(itpc, ktpool);
-		} else {
-			/* exit queue, reset count to 0 and panic */
-			itpc_remove_kthreadpool(itpc, ktpool);
-			ktpool->ktp_retcnt = 0;
-			panic("kthreadpool x exited itpc queue after 5 failed attempts");
-		}
-	}
-}
-
-/* Receiver verifies request to sender: providing info */
-void
-itpc_verify_kthreadpool(itpc, ktpool)
-	struct threadpool_itpc *itpc;
-	struct kthreadpool *ktpool;
-{
-	register struct kthread *kt;
-
-	kt = ktpool->ktp_overseer.ktpt_kthread;
-	if(ktpool->ktp_isreciever) {
-		printf("kernel threadpool to recieve");
-		if(itpc->itpc_ktpool == ktpool) {
-			if(itpc->itpc_ktinfo->itpc_kthread == kt) {
-				if(itpc->itpc_ktinfo->itpc_ktid == kt->kt_tid) {
-					printf("kthread tid found");
-				} else {
-					printf("kthread tid not found");
-				}
-			} else {
-				printf("kthread not found");
-			}
-		}
-		panic("no kthreadpool");
-	}
 }

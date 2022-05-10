@@ -57,13 +57,13 @@ struct channellist  mpx_channels[NCHANS];
 void
 mpx_init(void)
 {
-	struct mpx 		*mpx;
+	register struct mpx *mpx;
 	register int 	i, j;
 
 	mpx = (struct mpx *)malloc(sizeof(struct mpx *), M_MPX, M_WAITOK);
-	mpx->mpx_pair = (union mpxpair *)malloc(sizeof(union mpxpair *), M_MPX, M_WAITOK);
+	mpxpair(mpx) = (union mpxpair *)malloc(sizeof(union mpxpair *), M_MPX, M_WAITOK);
 
-	MPX_LOCK_INIT(mpx->mpx_pair);
+	MPX_LOCK_INIT(mpxpair(mpx));
 
     for(i = 0; i <= NGROUPS; i++) {
     	LIST_INIT(&mpx_groups[i]);
@@ -74,17 +74,60 @@ mpx_init(void)
 	}
 }
 
-union mpxpair *
-mpxpair(mpx)
-	struct mpx 	*mpx;
+int
+mpx_count_groups(gp)
+	struct mpx_group 	*gp;
 {
-	register union mpxpair *result;
-
-	result = mpx->mpx_pair;
-	if (result) {
-		return (result);
+	int i, count;
+	count = 0;
+	for(i = 0; i < NGROUPS; i++) {
+		gp = mpx_get_group(i);
+		if(gp->mpg_index == i && gp != NULL) {
+			count++;
+		}
 	}
-	return (NULL);
+	return (count);
+}
+
+int
+mpx_count_channels(cp)
+	struct mpx_channel 	*cp;
+{
+	int i, count;
+	count = 0;
+	for(i = 0; i < NCHANS; i++) {
+		cp = mpx_get_channel(i);
+		if(cp->mpc_index == i && cp != NULL) {
+			count++;
+		}
+	}
+	return (count);
+}
+
+int
+mpx_compare_groups(gp1, gp2)
+	struct mpx_group *gp1, *gp2;
+{
+	if(gp1->mpg_index < gp2->mpg_index) {
+		return (-1);
+	} else if(gp1->mpg_index > gp2->mpg_index) {
+		return (1);
+	} else {
+		return (0);
+	}
+}
+
+int
+mpx_compare_channels(cp1, cp2)
+	struct mpx_channel 	*cp1, *cp2;
+{
+	if(cp1->mpc_index < cp2->mpc_index) {
+		return (-1);
+	} else if(cp1->mpc_index > cp2->mpc_index) {
+		return (1);
+	} else {
+		return (0);
+	}
 }
 
 struct mpx_writer *
@@ -92,22 +135,20 @@ mpx_writer(mpx, state)
 	struct mpx *mpx;
 	int state;
 {
-	register union mpxpair 	*pair;
 	register struct mpx_writer 	*wmpx;
 
-	pair = mpxpair(mpx);
-	MPX_LOCK(pair);
-	wmpx = pair->mpp_wmpx;
+	MPX_LOCK(mpxpair(mpx));
+	wmpx = mpxpair(mpx)->mpp_wmpx;
 	if(wmpx != NULL) {
 		wmpx->mpw_group = mpx->mpx_group;
 		wmpx->mpw_channel = mpx->mpx_channel;
 		wmpx->mpw_size = MPX_WRITER_SIZE;
 		wmpx->mpw_buffer = MPX_BUFFER(MPX_WRITER_SIZE);
 		wmpx->mpw_state = state;
-		MPX_UNLOCK(pair);
+		MPX_UNLOCK(mpxpair(mpx));
 		return (wmpx);
 	}
-	MPX_UNLOCK(pair);
+	MPX_UNLOCK(mpxpair(mpx));
 	return (NULL);
 }
 
@@ -116,22 +157,20 @@ mpx_reader(mpx, state)
 	struct mpx *mpx;
 	int state;
 {
-	register union mpxpair 	*pair;
 	register struct mpx_reader *rmpx;
 
-	pair = mpxpair(mpx);
-	MPX_LOCK(pair);
-	rmpx = pair->mpp_rmpx;
+	MPX_LOCK(mpxpair(mpx));
+	rmpx = mpxpair(mpx)->mpp_rmpx;
 	if(rmpx != NULL) {
 		rmpx->mpr_group = mpx->mpx_group;
 		rmpx->mpr_channel = mpx->mpx_channel;
 		rmpx->mpr_size = MPX_READER_SIZE;
 		rmpx->mpr_buffer = MPX_BUFFER(MPX_READER_SIZE);
 		rmpx->mpr_state = state;
-		MPX_UNLOCK(pair);
+		MPX_UNLOCK(mpxpair(mpx));
 		return (rmpx);
 	}
-	MPX_UNLOCK(pair);
+	MPX_UNLOCK(mpxpair(mpx));
 	return (NULL);
 }
 
@@ -253,28 +292,6 @@ mpx_remove_channel(cp, idx)
 }
 
 /*
- * creates mpxspace.
- * default: 10 mpx groups with 20 mpx channels per group
- */
-void
-mpxspace(flags)
-	int flags;
-{
-    register struct mpx_group 	*gp;
-    register int i, j;
-
-    for(i = 0; i <= NGROUPS; i++) {
-        mpx_create_group(i);
-        LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
-            for(j = 0; j <= NCHANS; j++) {
-                mpx_create_channel(gp, j, flags);
-                gp->mpg_channel = mpx_get_channel(j);
-            }
-        }
-    }
-}
-
-/*
  * Attach an existing channel to an existing group, if channels are free
  * within that group.
  * Note: This does not add a new channel to the channels list.
@@ -282,7 +299,7 @@ mpxspace(flags)
 void
 mpx_attach(cp, gp)
 	struct mpx_channel 	*cp;
-	struct mpx_group *gp;
+	struct mpx_group 	*gp;
 {
 	register int i;
 
@@ -355,21 +372,15 @@ mpx_connect(cp1, cp2)
 	for(i = 0; i < NCHANS; i++) {
 		cp1 = mpx_get_channel(i);
 		cp2 = mpx_get_channel(i);
-		if(cp1->mpc_index == i && cp1 != NULL) {
-			cnt1++;
-		}
-		if(cp2->mpc_index == i && cp2 != NULL) {
-			cnt2++;
-		}
+		cnt1 = mpx_count_channels(cp1);
+		cnt2 = mpx_count_channels(cp2);
 	}
 	/* merge channels */
-	if(cnt1 < NCHANS && cnt2 < NCHANS) {
-		total = (cnt1 + cnt2);
-		if (total < NCHANS) {
-			cp3 = mpx_merge_channels(cp1, cp2);
-			if(cp3) {
-				return (0);
-			}
+	total = (cnt1 + cnt2);
+	if (total < NCHANS) {
+		cp3 = mpx_merge_channels(cp1, cp2);
+		if(cp3) {
+			return (0);
 		}
 	}
 	return (1);
@@ -389,9 +400,7 @@ mpx_split_channels(cp, idx)
 
     for(i = 0; i < NCHANS; i++) {
         LIST_FOREACH(cp, &mpx_channels[i], mpc_node) {
-            if(cp != NULL) {
-                other = mpx_get_channel(i);
-            }
+        	other = mpx_get_channel(i);
         }
         if(other != NULL) {
             if(idx == i) {
@@ -407,14 +416,16 @@ mpx_split_channels(cp, idx)
 }
 
 /* TODO: allow multiple elements to be specified in "elems" */
-mpx_disconnect(cp, elems)
+mpx_disconnect(cp, idx)
 	struct mpx_channel *cp;
-	int *elems;
+	int idx;
 {
 	struct mpx_channel *cp1;
 	int i;
 
-	cp1 = mpx_split_channels(cp, elems);
+	KASSERT(cp != NULL);
+
+	cp1 = mpx_split_channels(cp, idx);
 
 }
 
@@ -426,6 +437,28 @@ mpx_join()
 mpx_leave()
 {
 
+}
+
+/*
+ * creates mpxspace.
+ * default: 10 mpx groups with 20 mpx channels per group
+ */
+void
+mpxspace(flags)
+	int flags;
+{
+    register struct mpx_group 	*gp;
+    register int i, j;
+
+    for(i = 0; i <= NGROUPS; i++) {
+        mpx_create_group(i);
+        LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
+            for(j = 0; j <= NCHANS; j++) {
+                mpx_create_channel(gp, j, flags);
+                gp->mpg_channel = mpx_get_channel(j);
+            }
+        }
+    }
 }
 
 /*

@@ -45,6 +45,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/mman.h>
 #include <sys/malloc.h>
 
