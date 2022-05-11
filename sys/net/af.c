@@ -23,12 +23,12 @@
  * Address family support routines
  */
 int	null_hash(), null_netmatch();
-#define	AFNULL \
+#define	AFNULL 	\
 	{ null_hash,	null_netmatch }
 
 #ifdef INET
 extern int inet_hash(), inet_netmatch();
-#define	AFINET \
+#define	AFINET 		\
 	{ inet_hash,	inet_netmatch }
 #else
 #define	AFINET	AFNULL
@@ -36,7 +36,7 @@ extern int inet_hash(), inet_netmatch();
 
 #ifdef NS
 extern int ns_hash(), ns_netmatch();
-#define	AFNS \
+#define	AFNS	 \
 	{ ns_hash,	ns_netmatch }
 #else
 #define	AFNS	AFNULL

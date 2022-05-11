@@ -130,31 +130,31 @@ struct radix_node_head {
 
 
 #ifndef KERNEL
-#define Bcmp(a, b, n) bcmp(((char *)(a)), ((char *)(b)), (n))
-#define Bcopy(a, b, n) bcopy(((char *)(a)), ((char *)(b)), (unsigned)(n))
-#define Bzero(p, n) bzero((char *)(p), (int)(n));
-#define R_Malloc(p, t, n) (p = (t) malloc((unsigned int)(n)))
-#define Free(p) free((char *)p);
+#define Bcmp(a, b, n) 		bcmp(((char *)(a)), ((char *)(b)), (n))
+#define Bcopy(a, b, n) 		bcopy(((char *)(a)), ((char *)(b)), (unsigned)(n))
+#define Bzero(p, n) 		bzero((char *)(p), (int)(n));
+#define R_Malloc(p, t, n) 	(p = (t) malloc((unsigned int)(n)))
+#define Free(p) 			free((char *)p);
 #else
-#define Bcmp(a, b, n) 	bcmp(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
-#define Bcopy(a, b, n) 	bcopy(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
-#define Bzero(p, n) 	bzero((caddr_t)(p), (unsigned)(n));
-#define R_Malloc(p, t, n) (p = (t) malloc((unsigned long)(n), M_RTABLE, M_DONTWAIT))
-#define Free(p) 					free((caddr_t)p, M_RTABLE);
+#define Bcmp(a, b, n) 		bcmp(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
+#define Bcopy(a, b, n) 		bcopy(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
+#define Bzero(p, n) 		bzero((caddr_t)(p), (unsigned)(n));
+#define R_Malloc(p, t, n) 	(p = (t) malloc((unsigned long)(n), M_RTABLE, M_DONTWAIT))
+#define Free(p) 			free((caddr_t)p, M_RTABLE);
 #endif /*KERNEL*/
 
-void rn_init (void);
-int	 rn_inithead (void **, int);
-int	 rn_refines (void *, void *);
-int	 rn_walktree (struct radix_node_head *, int (*)(), void *);
+void rn_init(void);
+int	 rn_inithead(void **, int);
+int	 rn_refines(void *, void *);
+int	 rn_walktree(struct radix_node_head *, int (*)(), void *);
 struct radix_node
-	 *rn_addmask (void *, int, int),
-	 *rn_addroute (void *, void *, struct radix_node_head *, struct radix_node [2]),
-	 *rn_delete (void *, void *, struct radix_node_head *),
-	 *rn_insert (void *, struct radix_node_head *, int *, struct radix_node [2]),
-	 *rn_match (void *, struct radix_node_head *),
-	 *rn_newpair (void *, int, struct radix_node[2]),
-	 *rn_search (void *, struct radix_node *),
-	 *rn_search_m (void *, struct radix_node *, void *);
+	 *rn_addmask(void *, int, int),
+	 *rn_addroute(void *, void *, struct radix_node_head *, struct radix_node [2]),
+	 *rn_delete(void *, void *, struct radix_node_head *),
+	 *rn_insert(void *, struct radix_node_head *, int *, struct radix_node [2]),
+	 *rn_match(void *, struct radix_node_head *),
+	 *rn_newpair(void *, int, struct radix_node[2]),
+	 *rn_search(void *, struct radix_node *),
+	 *rn_search_m(void *, struct radix_node *, void *);
 
 #endif /* _RADIX_H_ */

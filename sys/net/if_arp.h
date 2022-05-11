@@ -47,7 +47,7 @@ struct	arphdr {
 struct arpreq {
 	struct	sockaddr arp_pa;		/* protocol address */
 	struct	sockaddr arp_ha;		/* hardware address */
-	int	arp_flags;					/* flags */
+	int				 arp_flags;		/* flags */
 };
 /*  arp_flags and at_flags field values */
 #define	ATF_INUSE		0x01	/* entry in use */

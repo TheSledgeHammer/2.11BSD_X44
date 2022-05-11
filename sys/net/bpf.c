@@ -390,11 +390,11 @@ bpf_sleep(d)
  * into the hold slot, and the free buffer into the store slot.
  * Zero the length of the new store buffer.
  */
-#define ROTATE_BUFFERS(d) \
-	(d)->bd_hbuf = (d)->bd_sbuf; \
-	(d)->bd_hlen = (d)->bd_slen; \
-	(d)->bd_sbuf = (d)->bd_fbuf; \
-	(d)->bd_slen = 0; \
+#define ROTATE_BUFFERS(d) 			\
+	(d)->bd_hbuf = (d)->bd_sbuf; 	\
+	(d)->bd_hlen = (d)->bd_slen; 	\
+	(d)->bd_sbuf = (d)->bd_fbuf; 	\
+	(d)->bd_slen = 0; 				\
 	(d)->bd_fbuf = 0;
 /*
  *  bpfread - read next chunk of packets from buffers
