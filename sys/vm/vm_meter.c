@@ -37,9 +37,12 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/map.h>
 #include <sys/sysctl.h>
 #include <sys/vmmeter.h>
+
 #include <vm/include/vm.h>
+#include <vm/include/vm_object.h>
 
 #define	MINFINITY	-32767			/* minus infinity */
 
@@ -47,7 +50,8 @@ struct loadavg 		averunnable;		/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
-int 	freemem =       cnt.v_free_count;
+int freemem =   &cnt.v_free_count;
+int nrun;
 
 void
 vmmeter()
@@ -99,10 +103,10 @@ void
 loadav(avg)
 	register struct loadavg *avg;
 {
-	register int i, nrun;
+	register int i;
 	register struct proc *p;
 
-	for (nrun = 0, p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
+	for(nrun = 0, p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 		switch (p->p_stat) {
 		case SSLEEP:
 			if (p->p_pri > PZERO || p->p_slptime != 0)
@@ -201,18 +205,19 @@ vmtotal(totalp)
 	totalp->t_sl = 0;
 	totalp->t_sw = 0;
 	bzero(totalp, sizeof *totalp);
+
 	/*
 	 * Mark all objects as inactive.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = RB_FIRST(object_t, &vm_object_list); object != NULL; object = RB_NEXT(object_t, &vm_object_list, object)) {
+	RB_FOREACH(object, object_t, &vm_object_list) {
 		object->flags &= ~OBJ_ACTIVE;
 	}
 	simple_unlock(&vm_object_list_lock);
 	/*
 	 * Calculate process statistics.
 	 */
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
+	for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 		if (p->p_flag & P_SYSTEM)
 			continue;
 		if (p->p_stat) {
@@ -225,6 +230,9 @@ vmtotal(totalp)
 			continue;
 
 		case SSLEEP:
+			if (p->p_slptime >= maxslp)
+				continue;
+			break;
 		case SSTOP:
 			if (!(p->p_flag & P_SINTR) && p->p_stat == SSLEEP) {
 				nrun++;
@@ -254,13 +262,6 @@ active:
 			if (p->p_stat == SIDL)
 				continue;
 			break;
-		case SSTOP:
-		case SSLEEP:
-			if (p->p_slptime >= maxslp)
-				continue;
-			break;
-		case SRUN:
-		case SIDL:
 		}
 
 		/*
@@ -294,7 +295,7 @@ active:
 	 * Calculate object memory usage statistics.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = RB_FIRST(object_t, vm_object_list); object != NULL; object = RB_NEXT(object_t, vm_object_list, object)) {
+	RB_FOREACH(object, object_t, &vm_object_list) {
 		totalp->t_vm += num_pages(object->size);
 		totalp->t_rm += object->resident_page_count;
 		if (object->flags & OBJ_ACTIVE) {

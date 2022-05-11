@@ -74,9 +74,6 @@
 #include <vm/include/vm_page.h>
 #include <vm/include/vm.h>
 
-#undef RB_AUGMENT
-#define	RB_AUGMENT(x)	vm_rb_augment(x)
-
 /*
  *	Virtual memory maps provide for the mapping, protection,
  *	and sharing of virtual memory objects.  In addition,
@@ -119,6 +116,26 @@
  *	occurs.
  */
 
+#undef RB_AUGMENT
+static void vm_rb_augment(struct vm_map_entry *);
+#define	RB_AUGMENT(x)	vm_rb_augment(x)
+
+static size_t vm_rb_space(const vm_map_t, const vm_map_entry_t);
+static size_t vm_rb_subtree_space(vm_map_entry_t);
+static void vm_rb_fixup(vm_map_t, vm_map_entry_t);
+static void vm_rb_insert(vm_map_t, vm_map_entry_t);
+static void vm_rb_remove(vm_map_t, vm_map_entry_t);
+static size_t vm_cl_space(const vm_map_t, const vm_map_entry_t);
+static void vm_cl_insert(vm_map_t, vm_map_entry_t);
+static void vm_cl_remove(vm_map_t, vm_map_entry_t);
+static bool_t vm_map_search_next_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
+static bool_t vm_map_search_prev_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
+static void	_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
+static void	_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
+
+RB_PROTOTYPE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
+RB_GENERATE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
+
 /*
  *	vm_map_startup:
  *
@@ -139,9 +156,6 @@ vm_offset_t		kentry_data;
 vm_size_t		kentry_data_size;
 vm_map_entry_t	kentry_free;
 vm_map_t		kmap_free;
-
-static void	_vm_map_clip_end (vm_map_t, vm_map_entry_t, vm_offset_t);
-static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
 
 void
 vm_map_startup()
@@ -212,9 +226,6 @@ vmspace_free(vm)
  *
  * The caller must hold the related map lock.
  */
-RB_PROTOTYPE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
-RB_GENERATE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
-
 static int
 vm_rb_compare(a, b)
 	vm_map_entry_t a, b;
@@ -228,15 +239,15 @@ vm_rb_compare(a, b)
 
 static void
 vm_rb_augment(entry)
-	struct vm_map_entry *entry;
+	vm_map_entry_t entry;
 {
 	entry->space = vm_rb_subtree_space(entry);
 }
 
 static size_t
 vm_rb_space(map, entry)
-    const struct vm_map *map;
-    const struct vm_map_entry *entry;
+    const vm_map_t map;
+    const vm_map_entry_t entry;
 {
     KASSERT(CIRCLEQ_NEXT(entry, cl_entry) != NULL);
     return (CIRCLEQ_NEXT(entry, cl_entry)->start - CIRCLEQ_FIRST(&map->cl_header)->end);
@@ -244,7 +255,7 @@ vm_rb_space(map, entry)
 
 static size_t
 vm_rb_subtree_space(entry)
-	const struct vm_map_entry *entry;
+	const vm_map_entry_t entry;
 {
 	caddr_t space, tmp;
 
@@ -266,8 +277,8 @@ vm_rb_subtree_space(entry)
 
 static void
 vm_rb_fixup(map, entry)
-	struct vm_map *map;
-	struct vm_map_entry *entry;
+	vm_map_t map;
+	vm_map_entry_t entry;
 {
 	/* We need to traverse to the very top */
 	do {
@@ -278,11 +289,11 @@ vm_rb_fixup(map, entry)
 
 static void
 vm_rb_insert(map, entry)
-    struct vm_map *map;
-    struct vm_map_entry *entry;
+    vm_map_t map;
+	vm_map_entry_t entry;
 {
     caddr_t space = vm_rb_space(map, entry);
-    struct vm_map_entry *tmp;
+    vm_map_entry_t tmp;
 
     entry->ownspace = entry->space = space;
     tmp = RB_INSERT(vm_map_rb_tree, &(map)->rb_root, entry);
@@ -297,10 +308,10 @@ vm_rb_insert(map, entry)
 
 static void
 vm_rb_remove(map, entry)
-    struct vm_map *map;
-    struct vm_map_entry *entry;
+    vm_map_t map;
+	vm_map_entry_t entry;
 {
-    struct vm_map_entry *parent;
+    vm_map_entry_t parent;
 
     parent = RB_PARENT(entry, rb_entry);
     RB_REMOVE(vm_map_rb_tree, &(map)->rb_root, entry);
@@ -321,10 +332,10 @@ int vm_debug_check_rbtree = 0;
 
 int
 _vm_tree_sanity(map, name)
-	struct vm_map *map;
+	vm_map_t map;
 	const char *name;
 {
-	struct vm_map_entry *tmp, *trtmp;
+	vm_map_entry_t tmp, trtmp;
 	int n = 0, i = 1;
 
 	RB_FOREACH(tmp, vm_map_rb_tree, &map->rb_root) {
@@ -372,8 +383,8 @@ error:
 /* Circular List Functions */
 static size_t
 vm_cl_space(map, entry)
-    const struct vm_map *map;
-    const struct vm_map_entry *entry;
+    const vm_map_t map;
+    const vm_map_entry_t entry;
 {
     size_t space, tmp;
     space = entry->ownspace;
@@ -397,10 +408,10 @@ vm_cl_space(map, entry)
 
 static void
 vm_cl_insert(map, entry)
-    struct vm_map *map;
-    struct vm_map_entry *entry;
+	vm_map_t map;
+	vm_map_entry_t entry;
 {
-    struct vm_map_entry *head, *tail;
+	vm_map_entry_t head, tail;
     head = CIRCLEQ_FIRST(&map->cl_header);
     tail = CIRCLEQ_LAST(&map->cl_header);
 
@@ -416,10 +427,10 @@ vm_cl_insert(map, entry)
 
 static void
 vm_cl_remove(map, entry)
-    struct vm_map *map;
-    struct vm_map_entry *entry;
+	vm_map_t map;
+    vm_map_entry_t entry;
 {
-    struct vm_map_entry *head, *tail;
+    vm_map_entry_t head, tail;
     head = CIRCLEQ_FIRST(&map->cl_header);
     tail = CIRCLEQ_LAST(&map->cl_header);
 
@@ -1463,13 +1474,13 @@ vm_map_advice(map, start, end, new_advice)
 
 	if (vm_map_lookup_entry(map, start, &temp_entry)) {
 		entry = temp_entry;
-		VM_MAP_CLIP_START(map, entry, start);
+		vm_map_clip_start(map, entry, start);
 	} else {
 		entry = CIRCLEQ_NEXT(temp_entry, cl_entry);
 	}
 
 	while ((entry != &map->cl_header) && (entry->start < end)) {
-		VM_MAP_CLIP_END(map, entry, end);
+		vm_map_clip_end(map, entry, end);
 
 		switch (new_advice) {
 		case MADV_NORMAL:
@@ -2521,8 +2532,7 @@ vmspace_fork(vm1)
 	new_map = &vm2->vm_map;			/* XXX */
 
 
-	old_entry = CIRCLEQ_FIRST(old_map->cl_header)->cl_entry.cqe_next;
-
+	old_entry = CIRCLEQ_FIRST(&old_map->cl_header)->cl_entry.cqe_next;
 
 	while (old_entry != CIRCLEQ_FIRST(&old_map->cl_header)) {
 		if (old_entry->is_sub_map)
@@ -2566,7 +2576,7 @@ vmspace_fork(vm1)
 				 *	map
 				 */
 
-				vm_map_entry_link(new_share_map, CIRCLEQ_FIRST(new_share_map->cl_header)->cl_entry.cqe_prev, new_share_entry);
+				vm_map_entry_link(new_share_map, CIRCLEQ_FIRST(&new_share_map->cl_header)->cl_entry.cqe_prev, new_share_entry);
 
 				/*
 				 *	Fix up the task map entry to refer
@@ -2593,7 +2603,7 @@ vmspace_fork(vm1)
 			 *	map.
 			 */
 
-			vm_map_entry_link(new_map, CIRCLEQ_FIRST(new_map->cl_header)->cl_entry.cqe_prev, new_entry);
+			vm_map_entry_link(new_map, CIRCLEQ_FIRST(&new_map->cl_header)->cl_entry.cqe_prev, new_entry);
 
 			/*
 			 *	Update the physical map
@@ -2615,7 +2625,7 @@ vmspace_fork(vm1)
 			new_entry->wired_count = 0;
 			new_entry->object.vm_object = NULL;
 			new_entry->is_a_map = FALSE;
-			vm_map_entry_link(new_map, CIRCLEQ_FIRST(new_map->cl_header)->cl_entry.cqe_prev, new_entry);
+			vm_map_entry_link(new_map, CIRCLEQ_FIRST(&new_map->cl_header)->cl_entry.cqe_prev, new_entry);
 			if (old_entry->is_a_map) {
 				int	check;
 
@@ -2694,11 +2704,10 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 
 	vm_map_lock_read(map);
 
-#define	RETURN(why) \
-		{ \
-		vm_map_unlock_read(map); \
-		return(why); \
-		}
+#define	RETURN(why) {			\
+	vm_map_unlock_read(map); 	\
+	return(why); 				\
+}
 
 	/*
 	 *	If the map has an interesting hint, try it before calling

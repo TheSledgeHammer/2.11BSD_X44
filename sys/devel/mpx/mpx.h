@@ -92,6 +92,8 @@ struct mpx {
 
 #define mpxpair(mpx)		((mpx)->mpx_pair)
 
+
+
 #define MPX_LOCK_INIT(mpp)	simple_lock_init((mpp)->mpp_lock, "mpxpair_lock")
 #define MPX_LOCK(mpp)		simple_lock((mpp)->mpp_lock)
 #define MPX_UNLOCK(mpp)		simple_unlock((mpp)->mpp_lock)

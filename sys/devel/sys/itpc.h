@@ -58,7 +58,7 @@
 struct itpc_list;
 TAILQ_HEAD(itpc_list, itpc);
 struct itpc {
-	TAILQ_ENTRY(itpc) 		itpc_entry;
+	TAILQ_ENTRY(itpc) 		itpc_node;
 	union {
 		struct kthread		*i_kthread;
 		struct uthread  	*i_uthread;
@@ -70,8 +70,13 @@ struct itpc {
 	} ithreadpool;
 };
 
-extern struct itpc_list itpc_header;
+TAILQ_HEAD(itpc_hash_head, itpc_hash_entry);
+struct itpc_hash_entry {
+	TAILQ_ENTRY(itpc_hash_entry) 	itpc_link;
+	struct itpc						itpc;
+};
 
+struct itpc_list itpc_header;
 /* kthreads & kthreadpools */
 #define IKTHREAD(itpc)					((itpc)->ithread.i_kthread)
 #define IKTHREADPOOL(itpc)				((itpc)->ithreadpool.i_kthreadpool)

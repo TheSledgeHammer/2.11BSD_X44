@@ -33,16 +33,14 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/user.h>
-#include <sys/itpc.h>
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
 #include <sys/percpu.h>
 
 #include <vm/include/vm_param.h>
 
+#include <devel/sys/itpc.h>
 #include <devel/sys/malloctypes.h>
-
-struct itpc_list itpc_header;
 
 /* Threadpool ITPC */
 void
@@ -479,4 +477,105 @@ kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
 
 	/* update job pool */
 	itpc_verify_kthreadpool(itpc, pid);
+}
+
+#include <sys/queue.h>
+#include <sys/fnv_hash.h>
+
+struct itpc 			itpc_store;
+
+#define ITPC_HASHMASK 	32
+struct itpc_hash_head 	itpc_hashtable[ITPC_HASHMASK];
+
+void
+itpc_init(u_long size)
+{
+	register int	i;
+
+	TAILQ_INIT(&itpc_header);
+
+	for (i = 0; i < ITPC_HASHMASK; i++) {
+		TAILQ_INIT(itpc_hashtable[i]);
+	}
+
+	itpc_allocate(size, &itpc_store);
+}
+
+void
+itpc_allocate(size, itpc)
+	u_long size;
+	register struct itpc *itpc;
+{
+	SET_IKTHREADPOOL(itpc, NULL);
+	SET_IUTHREADPOOL(itpc, NULL);
+
+	TAILQ_INSERT_TAIL(&itpc_header, itpc, itpc_node);
+}
+
+struct itpc *
+itpc_alloc(size)
+	u_long size;
+{
+	register struct itpc *result;
+	result = (struct itpc *)malloc((u_long)sizeof(*result), M_ITPC, M_WAITOK);
+	itpc_allocate(size, result);
+
+	return (result);
+}
+
+u_long
+itpc_hash(itpc)
+	struct itpc *itpc;
+{
+	Fnv32_t hash1 = fnv_32_buf(&itpc, sizeof(&itpc), FNV1_32_INIT) % ITPC_HASHMASK;
+	return (hash1);
+}
+
+void
+itpc_enter(itpc)
+	struct itpc *itpc;
+{
+	struct itpc_hash_head 			*bucket;
+	register struct itpc_hash_entry *entry;
+
+	if (itpc == NULL) {
+		return;
+	}
+
+	bucket = &itpc_hashtable[itpc_hash(itpc)];
+	entry = (struct itpc_hash_entry *)malloc((u_long)sizeof(*entry), M_ITPC, M_WAITOK);
+	entry->itpc = itpc;
+
+	TAILQ_INSERT_TAIL(bucket, entry, itpc_link);
+}
+
+void
+itpc_remove(itpc)
+	register struct itpc *itpc;
+{
+	struct itpc_hash_head 			*bucket;
+	register struct itpc_hash_entry *entry;
+
+	bucket = &itpc_hashtable[itpc_hash(itpc)];
+	TAILQ_FOREACH(entry, bucket, itpc_link)	{
+		if(itpc == entry->itpc) {
+			TAILQ_REMOVE(bucket, entry, itpc_link);
+			free((caddr_t)entry, M_ITPC);
+			break;
+		}
+	}
+}
+
+struct itpc *
+itpc_lookup(struct itpc *itpc)
+{
+	struct itpc_hash_head 			*bucket;
+	register struct itpc_hash_entry *entry;
+	bucket = &itpc_hashtable[itpc_hash(itpc)];
+	TAILQ_FOREACH(entry, bucket, itpc_link)	{
+		if(itpc == entry->itpc) {
+			return (itpc);
+		}
+	}
+	return (NULL);
 }

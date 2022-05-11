@@ -61,19 +61,6 @@ threadinit()
 void
 ktqinit()
 {
-	/*
-	register struct kthread *kt;
-
-	freekthread = NULL;
-	for (kt = kthreadNKTHREAD; --kt > kthread0; freekthread = kt)
-		kt->kt_nxt = freekthread;
-
-	allkthread = kt;
-	kt->kt_nxt = NULL;
-	kt->kt_prev = &allkthread;
-
-	zombkthread = NULL;
-	*/
 	LIST_INIT(&allkthread);
 	LIST_INIT(&zombkthread);
 }
@@ -84,19 +71,6 @@ ktqinit()
 void
 utqinit()
 {
-	/*
-	register struct uthread *ut;
-
-	freeuthread = NULL;
-	for (ut = uthreadNUTHREAD; --ut > uthread0; freeuthread = ut)
-		ut->ut_nxt = freeuthread;
-
-	alluthread = ut;
-	ut->ut_nxt = NULL;
-	ut->ut_prev = &alluthread;
-
-	zombuthread = NULL;
-	*/
 	LIST_INIT(&alluthread);
 	LIST_INIT(&zombuthread);
 }
@@ -116,3 +90,4 @@ tgfind(pgid)
 	}
 	return (NULL);
 }
+
