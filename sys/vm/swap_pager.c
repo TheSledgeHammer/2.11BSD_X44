@@ -475,8 +475,8 @@ swap_pager_haspage(pager, offset)
 		       "FT"[swb->swb_block && (swb->swb_mask & (1 << ix))]);
 #endif
 	if (swb->swb_block && (swb->swb_mask & (1 << ix)))
-		return(TRUE);
-	return(FALSE);
+		return (TRUE);
+	return (FALSE);
 }
 
 static void

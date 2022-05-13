@@ -17,6 +17,49 @@
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_text.h>
 
+/* ARGSUSED */
+int
+sbrk()
+{
+	register struct sbrk_args {
+		syscallarg(int)	type;
+		syscallarg(segsz_t)	size;
+		syscallarg(caddr_t)	addr;
+		syscallarg(int)	sep;
+		syscallarg(int)	flags;
+		syscallarg(int) incr;
+	} *uap = (struct sbrk_args *) u.u_ap;
+
+	struct proc *p;
+	register_t *retval;
+	register segsz_t n, d;
+
+	p = u.u_procp;
+
+	n = btoc(uap->size);
+	if (!SCARG(uap, sep)) {
+		SCARG(uap, sep) = PSEG_NOSEP;
+	} else {
+		n -= ctos(p->p_tsize) * stoc(1);
+	}
+	if (n < 0) {
+		n = 0;
+	}
+	p->p_tsize;
+	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
+		return (0);
+	}
+	vm_segment_expand(p, p->p_psegp, n, S_DATA);
+	/* set d to (new - old) */
+	d = n - p->p_dsize;
+	if (d > 0) {
+		clear(p->p_daddr + p->p_dsize, d);	/* fix this: clear as no kern or vm references */
+	}
+	p->p_dsize = n;
+	/* Not yet implemented */
+	return (EOPNOTSUPP);	/* return (0) */
+}
+
 /*
  * Change the size of the data+stack regions of the process.
  * If the size is shrinking, it's easy -- just release the extra core.

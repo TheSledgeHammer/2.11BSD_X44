@@ -105,7 +105,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	dev_t dev;
 	vm_pager_t pager;
 	const struct cdevsw *cdev;
-	int (*mapfunc)();
+	//int (*mapfunc)();
 	vm_object_t object;
 	dev_pager_t devp;
 	int npages, off;
@@ -128,8 +128,8 @@ dev_pager_alloc(handle, size, prot, foff)
 	 */
 	dev = (dev_t)handle;
 	cdev = cdevsw_lookup(dev);
-	mapfunc = cdev->d_mmap;
-	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
+	//mapfunc = cdev->d_mmap;
+	if (cdev->d_mmap == NULL || cdev->d_mmap == enodev || cdev->d_mmap == nullop)
 		return (NULL);
 
 	/*
@@ -146,7 +146,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	 */
 	npages = atop(round_page(size));
 	for (off = foff; npages--; off += PAGE_SIZE)
-		if ((*mapfunc)(dev, off, (int)prot) == -1)
+		if (*cdev->d_mmap(dev, off, (int)prot) == -1)
 			return (NULL);
 
 	/*
@@ -259,7 +259,7 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	vm_offset_t offset, paddr;
 	vm_page_t page;
 	dev_t dev;
-	int (*mapfunc)(), prot;
+	int /*(*mapfunc)(),*/ prot;
 	vm_page_t m;
 
 #ifdef DEBUG
@@ -277,12 +277,12 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	offset = m->offset + object->paging_offset;
 	prot = PROT_READ;	/* XXX should pass in? */
 	cdev = cdevsw_lookup(dev);
-	mapfunc = cdev->d_mmap;
+	//mapfunc = cdev->d_mmap;
 #ifdef DIAGNOSTIC
-	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
+	if (cdev->d_mmap == NULL || cdev->d_mmap == enodev || cdev->d_mmap == nullop)
 		panic("dev_pager_getpage: no map function");
 #endif
-	paddr = pmap_phys_address((*mapfunc)(dev, (int)offset, prot));
+	paddr = pmap_phys_address((*cdev->d_mmap)(dev, (int)offset, prot));
 #ifdef DIAGNOSTIC
 	if (paddr == -1)
 		panic("dev_pager_getpage: map function returns error");

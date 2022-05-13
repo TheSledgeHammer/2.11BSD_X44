@@ -84,33 +84,6 @@ sbrk()
 		syscallarg(int) incr;
 	} *uap = (struct sbrk_args *) u.u_ap;
 
-	struct proc *p;
-	register_t *retval;
-	register segsz_t n, d;
-
-	p = u.u_procp;
-
-	n = btoc(uap->size);
-	if (!SCARG(uap, sep)) {
-		SCARG(uap, sep) = PSEG_NOSEP;
-	} else {
-		n -= ctos(p->p_tsize) * stoc(1);
-	}
-	if (n < 0) {
-		n = 0;
-	}
-	p->p_tsize;
-	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
-		return (0);
-	}
-	vm_segment_expand(p, p->p_psegp, n, S_DATA);
-	/* set d to (new - old) */
-	d = n - p->p_dsize;
-	if (d > 0) {
-		clear(p->p_daddr + p->p_dsize, d);	/* fix this: clear as no kern or vm references */
-	}
-	p->p_dsize = n;
-	/* Not yet implemented */
 	return (EOPNOTSUPP);	/* return (0) */
 }
 
@@ -392,6 +365,22 @@ munmap()
 	return (0);
 }
 
+void
+munmapfd(p, fd)
+	struct proc *p;
+	int fd;
+{
+#ifdef DEBUG
+	if (mmapdebug & MDB_FOLLOW)
+		printf("munmapfd(%d): fd %d\n", p->p_pid, fd);
+#endif
+
+	/*
+	 * XXX should vm_deallocate any regions mapped to this file
+	 */
+	p->p_fd->fd_ofileflags[fd] &= ~UF_MAPPED;
+}
+
 int
 mprotect()
 {
@@ -603,4 +592,256 @@ munlock()
 
 	error = vm_map_pageable(&p->p_vmspace->vm_map, addr, addr + size, TRUE);
 	return (error == KERN_SUCCESS ? 0 : ENOMEM);
+}
+
+/*
+ * Internal version of mmap.
+ * Currently used by mmap, exec, and sys5 shared memory.
+ * Handle is either a vnode pointer or NULL for MAP_ANON.
+ */
+int
+vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
+	register vm_map_t map;
+	register vm_offset_t *addr;
+	register vm_size_t size;
+	vm_prot_t prot, maxprot;
+	register int flags;
+	caddr_t handle;		/* XXX should be vp */
+	vm_offset_t foff;
+{
+	register vm_pager_t pager;
+	bool_t fitit;
+	vm_object_t object;
+	struct vnode *vp = NULL;
+	int type;
+	int rv = KERN_SUCCESS;
+
+	if (size == 0)
+		return (0);
+
+	if ((flags & MAP_FIXED) == 0) {
+		fitit = TRUE;
+		*addr = round_page(*addr);
+	} else {
+		fitit = FALSE;
+		(void) vm_deallocate(map, *addr, size);
+	}
+
+	/*
+	 * Lookup/allocate pager.  All except an unnamed anonymous lookup
+	 * gain a reference to ensure continued existance of the object.
+	 * (XXX the exception is to appease the pageout daemon)
+	 */
+	if (flags & MAP_ANON)
+		type = PG_DFLT;
+	else {
+		vp = (struct vnode*) handle;
+		if (vp->v_type == VCHR) {
+			type = PG_DEVICE;
+			handle = (caddr_t) vp->v_rdev;
+		} else
+			type = PG_VNODE;
+	}
+	pager = vm_pager_allocate(type, handle, size, prot, foff);
+	if (pager == NULL)
+		return (type == PG_DEVICE ? EINVAL : ENOMEM);
+	/*
+	 * Find object and release extra reference gained by lookup
+	 */
+	object = vm_object_lookup(pager);
+	vm_object_deallocate(object);
+
+	/*
+	 * Anonymous memory.
+	 */
+	if (flags & MAP_ANON) {
+		rv = vm_allocate_with_pager(map, addr, size, fitit, pager, foff, TRUE);
+		if (rv != KERN_SUCCESS) {
+			if (handle == NULL)
+				vm_pager_deallocate(pager);
+			else
+				vm_object_deallocate(object);
+			goto out;
+		}
+		/*
+		 * Don't cache anonymous objects.
+		 * Loses the reference gained by vm_pager_allocate.
+		 * Note that object will be NULL when handle == NULL,
+		 * this is ok since vm_allocate_with_pager has made
+		 * sure that these objects are uncached.
+		 */
+		(void) pager_cache(object, FALSE);
+#ifdef DEBUG
+		if (mmapdebug & MDB_MAPIT)
+			printf("vm_mmap(%d): ANON *addr %x size %x pager %x\n",
+			       curproc->p_pid, *addr, size, pager);
+#endif
+	}
+	/*
+	 * Must be a mapped file.
+	 * Distinguish between character special and regular files.
+	 */
+	else if (vp->v_type == VCHR) {
+		rv = vm_allocate_with_pager(map, addr, size, fitit, pager, foff, FALSE);
+		/*
+		 * Uncache the object and lose the reference gained
+		 * by vm_pager_allocate().  If the call to
+		 * vm_allocate_with_pager() was sucessful, then we
+		 * gained an additional reference ensuring the object
+		 * will continue to exist.  If the call failed then
+		 * the deallocate call below will terminate the
+		 * object which is fine.
+		 */
+		(void) pager_cache(object, FALSE);
+		if (rv != KERN_SUCCESS)
+			goto out;
+	}
+	/*
+	 * A regular file
+	 */
+	else {
+#ifdef DEBUG
+		if (object == NULL)
+			printf("vm_mmap: no object: vp %x, pager %x\n",
+			       vp, pager);
+#endif
+		/*
+		 * Map it directly.
+		 * Allows modifications to go out to the vnode.
+		 */
+		if (flags & MAP_SHARED) {
+			rv = vm_allocate_with_pager(map, addr, size, fitit, pager, foff,
+					FALSE);
+			if (rv != KERN_SUCCESS) {
+				vm_object_deallocate(object);
+				goto out;
+			}
+			/*
+			 * Don't cache the object.  This is the easiest way
+			 * of ensuring that data gets back to the filesystem
+			 * because vnode_pager_deallocate() will fsync the
+			 * vnode.  pager_cache() will lose the extra ref.
+			 */
+			if (prot & VM_PROT_WRITE)
+				pager_cache(object, FALSE);
+			else
+				vm_object_deallocate(object);
+		}
+		/*
+		 * Copy-on-write of file.  Two flavors.
+		 * MAP_COPY is true COW, you essentially get a snapshot of
+		 * the region at the time of mapping.  MAP_PRIVATE means only
+		 * that your changes are not reflected back to the object.
+		 * Changes made by others will be seen.
+		 */
+		else {
+			vm_map_t tmap;
+			vm_offset_t off;
+
+			/* locate and allocate the target address space */
+			rv = vm_map_find(map, NULL, (vm_offset_t) 0, addr, size, fitit);
+			if (rv != KERN_SUCCESS) {
+				vm_object_deallocate(object);
+				goto out;
+			}
+			tmap = vm_map_create(pmap_create(size), VM_MIN_ADDRESS,
+			VM_MIN_ADDRESS + size, TRUE);
+			off = VM_MIN_ADDRESS;
+			rv = vm_allocate_with_pager(tmap, &off, size, TRUE, pager, foff,
+					FALSE);
+			if (rv != KERN_SUCCESS) {
+				vm_object_deallocate(object);
+				vm_map_deallocate(tmap);
+				goto out;
+			}
+			/*
+			 * (XXX)
+			 * MAP_PRIVATE implies that we see changes made by
+			 * others.  To ensure that we need to guarentee that
+			 * no copy object is created (otherwise original
+			 * pages would be pushed to the copy object and we
+			 * would never see changes made by others).  We
+			 * totally sleeze it right now by marking the object
+			 * internal temporarily.
+			 */
+			if ((flags & MAP_COPY) == 0)
+				object->flags |= OBJ_INTERNAL;
+			rv = vm_map_copy(map, tmap, *addr, size, off, FALSE, FALSE);
+			object->flags &= ~OBJ_INTERNAL;
+			/*
+			 * (XXX)
+			 * My oh my, this only gets worse...
+			 * Force creation of a shadow object so that
+			 * vm_map_fork will do the right thing.
+			 */
+			if ((flags & MAP_COPY) == 0) {
+				vm_map_t tmap;
+				vm_map_entry_t tentry;
+				vm_object_t tobject;
+				vm_offset_t toffset;
+				vm_prot_t tprot;
+				bool_t twired, tsu;
+
+				tmap = map;
+				vm_map_lookup(&tmap, *addr, VM_PROT_WRITE, &tentry, &tobject,
+						&toffset, &tprot, &twired, &tsu);
+				vm_map_lookup_done(tmap, tentry);
+			}
+			/*
+			 * (XXX)
+			 * Map copy code cannot detect sharing unless a
+			 * sharing map is involved.  So we cheat and write
+			 * protect everything ourselves.
+			 */
+			vm_object_pmap_copy(object, foff, foff + size);
+			vm_object_deallocate(object);
+			vm_map_deallocate(tmap);
+			if (rv != KERN_SUCCESS)
+				goto out;
+		}
+#ifdef DEBUG
+		if (mmapdebug & MDB_MAPIT)
+			printf("vm_mmap(%d): FILE *addr %x size %x pager %x\n",
+			       curproc->p_pid, *addr, size, pager);
+#endif
+	}
+	/*
+	 * Correct protection (default is VM_PROT_ALL).
+	 * If maxprot is different than prot, we must set both explicitly.
+	 */
+	rv = KERN_SUCCESS;
+	if (maxprot != VM_PROT_ALL)
+		rv = vm_map_protect(map, *addr, *addr + size, maxprot, TRUE);
+	if (rv == KERN_SUCCESS && prot != maxprot)
+		rv = vm_map_protect(map, *addr, *addr + size, prot, FALSE);
+	if (rv != KERN_SUCCESS) {
+		(void) vm_deallocate(map, *addr, size);
+		goto out;
+	}
+	/*
+	 * Shared memory is also shared with children.
+	 */
+	if (flags & MAP_SHARED) {
+		rv = vm_map_inherit(map, *addr, *addr + size, VM_INHERIT_SHARE);
+		if (rv != KERN_SUCCESS) {
+			(void) vm_deallocate(map, *addr, size);
+			goto out;
+		}
+	}
+out:
+#ifdef DEBUG
+	if (mmapdebug & MDB_MAPIT)
+		printf("vm_mmap: rv %d\n", rv);
+#endif
+	switch (rv) {
+	case KERN_SUCCESS:
+		return (0);
+	case KERN_INVALID_ADDRESS:
+	case KERN_NO_SPACE:
+		return (ENOMEM);
+	case KERN_PROTECTION_FAILURE:
+		return (EACCES);
+	default:
+		return (EINVAL);
+	}
 }

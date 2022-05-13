@@ -98,21 +98,21 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_prot_t	fault_type;
 	bool_t	change_wiring;
 {
-	vm_object_t		first_object;
-	vm_offset_t		first_offset;
-	vm_map_entry_t		entry;
+	vm_object_t				first_object;
+	vm_offset_t				first_offset;
+	vm_map_entry_t			entry;
 	register vm_object_t	object;
 	register vm_offset_t	offset;
-	register vm_page_t	m;
-	vm_page_t		first_m;
-	vm_prot_t		prot;
-	int			result;
-	bool_t		wired;
-	bool_t		su;
-	bool_t		lookup_still_valid;
-	bool_t		page_exists;
-	vm_page_t		old_m;
-	vm_object_t		next_object;
+	register vm_page_t		m;
+	vm_page_t				first_m;
+	vm_prot_t				prot;
+	int						result;
+	bool_t					wired;
+	bool_t					su;
+	bool_t					lookup_still_valid;
+	bool_t					page_exists;
+	vm_page_t				old_m;
+	vm_object_t				next_object;
 
 	cnt.v_faults++;		/* needs lock XXX */
 /*
