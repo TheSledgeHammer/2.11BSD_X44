@@ -105,8 +105,8 @@ struct vm_map_entry {
 	RB_ENTRY(vm_map_entry) 		rb_entry;		/* tree information */
 	vm_offset_t					start;			/* start address */
 	vm_offset_t					end;			/* end address */
-	caddr_t						ownspace;		/* free space after */
-	caddr_t						space;			/* space in subtree */
+	vm_offset_t					ownspace;		/* free space after */
+	vm_offset_t					space;			/* space in subtree */
 	union vm_map_object			object;			/* object I point to */
 	vm_offset_t					offset;			/* offset into object */
 	bool_t						is_a_map;		/* Is "object" a map? */
@@ -118,10 +118,6 @@ struct vm_map_entry {
 	vm_inherit_t				inheritance;	/* inheritance */
 	int							wired_count;	/* can be paged if = 0 */
 	int							advice;			/* madvise advice */
-
-	/* etype is a bitmap that replaces the following 4 items */
-	//int							etype;			/* entry type */
-	//struct vm_aref				aref;			/* anonymous overlay */
 };
 
 /*

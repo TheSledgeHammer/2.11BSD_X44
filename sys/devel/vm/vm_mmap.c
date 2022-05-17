@@ -50,7 +50,6 @@
 /*
  * Mapped file (mmap) interface to VM
  */
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/filedesc.h>
@@ -60,6 +59,7 @@
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/conf.h>
+#include <sys/user.h>
 
 #include <sys/mount.h>
 #include <sys/sysdecl.h>
@@ -82,9 +82,10 @@ sbrk()
 		syscallarg(int)	sep;
 		syscallarg(int)	flags;
 		syscallarg(int) incr;
-	} *uap = (struct sbrk_args *) u.u_ap;
+	} *uap = (struct sbrk_args *) vmu.u_ap;
 
-	return (EOPNOTSUPP);	/* return (0) */
+	/* Not yet implemented */
+	return (EOPNOTSUPP);
 }
 
 /* ARGSUSED */
@@ -93,7 +94,7 @@ sstk()
 {
 	register struct sstk_args {
 		syscallarg(int) incr;
-	} *uap = (struct sstk_args *) u.u_ap;
+	} *uap = (struct sstk_args *) vmu.u_ap;
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
@@ -110,7 +111,7 @@ mmap()
 		syscallarg(int) fd;
 		syscallarg(long) pad;
 		syscallarg(off_t) pos;
-	} *uap = (struct mmap_args *) u.u_ap;
+	} *uap = (struct mmap_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -123,7 +124,7 @@ mmap()
 	caddr_t handle;
 	int flags, error;
 
-	p = u.u_procp;
+	p = vmu.u_procp;
 	fdp = p->p_fd;
 	prot = SCARG(uap, prot) & VM_PROT_ALL;
 	flags = SCARG(uap, flags);
@@ -241,7 +242,7 @@ msync()
 	register struct msync_args {
 		syscallarg(caddr_t) addr;
 		syscallarg(int) len;
-	} *uap = (struct msync_args *) u.u_ap;
+	} *uap = (struct msync_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -251,7 +252,7 @@ msync()
 	int rv;
 	bool_t syncio, invalidate;
 
-	p = u.u_procp;
+	p = vmu.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & (MDB_FOLLOW|MDB_SYNC))
 		printf("msync(%d): addr %x len %x\n",
@@ -321,7 +322,7 @@ munmap()
 	register struct munmap_args {
 		syscallarg(caddr_t) addr;
 		syscallarg(int) len;
-	} *uap = (struct munmap_args *) u.u_ap;
+	} *uap = (struct munmap_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -329,7 +330,7 @@ munmap()
 	vm_size_t size;
 	vm_map_t map;
 
-	p = u.u_procp;
+	p = vmu.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("munmap(%d): addr %x len %x\n", p->p_pid, SCARG(uap, addr),
@@ -388,7 +389,7 @@ mprotect()
 		syscallarg(caddr_t) addr;
 		syscallarg(int) len;
 		syscallarg(int) prot;
-	} *uap = (struct mprotect_args *) u.u_ap;
+	} *uap = (struct mprotect_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -396,7 +397,7 @@ mprotect()
 	vm_size_t size;
 	register vm_prot_t prot;
 
-	p = u.u_procp;
+	p = vmu.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("mprotect(%d): addr %x len %x prot %d\n",
@@ -429,7 +430,7 @@ madvise()
 		syscallarg(caddr_t) addr;
 		syscallarg(int) len;
 		syscallarg(int) behav;
-	} *uap = (struct madvise_args *) u.u_ap;
+	} *uap = (struct madvise_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -437,7 +438,7 @@ madvise()
 	vm_size_t size;
 	int advice, error;
 
-	p = u.u_procp;
+	p = vmu.u_procp;
 	addr = (caddr_t)SCARG(uap, addr);
 	size = (vm_size_t)SCARG(uap, len);
 	advice = SCARG(uap, behav);
@@ -512,7 +513,7 @@ mincore()
 		syscallarg(caddr_t) addr;
 		syscallarg(int) len;
 		syscallarg(char *) vec;
-	} *uap = (struct mincore_args *) u.u_ap;
+	} *uap = (struct mincore_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -526,7 +527,7 @@ mlock()
 	register struct mlock_args {
 		syscallarg(caddr_t) addr;
 		syscallarg(size_t) len;
-	} *uap = (struct mlock_args *) u.u_ap;
+	} *uap = (struct mlock_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -535,7 +536,7 @@ mlock()
 	int error;
 	extern int vm_page_max_wired;
 
-	p = u.u_procp;
+	p = vmu.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("mlock(%d): addr %x len %x\n",
@@ -566,7 +567,7 @@ munlock()
 	register struct munlock_args {
 		syscallarg(caddr_t) addr;
 		syscallarg(size_t) len;
-	} *uap = (struct munlock_args *) u.u_ap;
+	} *uap = (struct munlock_args *) vmu.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -574,7 +575,7 @@ munlock()
 	vm_size_t size;
 	int error;
 
-	p = u.u_procp;
+	p = vmu.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("munlock(%d): addr %x len %x\n", p->p_pid, SCARG(uap, addr),
@@ -845,3 +846,79 @@ out:
 		return (EINVAL);
 	}
 }
+
+
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
+/* ARGSUSED */
+int
+compat_43_getpagesize(p, uap, retval)
+	struct proc *p;
+	void *uap;
+	register_t *retval;
+{
+
+	*retval = PAGE_SIZE;
+	return (0);
+}
+#endif /* COMPAT_43 || COMPAT_SUNOS */
+
+#ifdef COMPAT_43
+int
+compat_43_mmap(p, uap, retval)
+	struct proc *p;
+	register struct compat_43_mmap_args /* {
+		syscallarg(caddr_t) addr;
+		syscallarg(int) len;
+		syscallarg(int) prot;
+		syscallarg(int) flags;
+		syscallarg(int) fd;
+		syscallarg(long) pos;
+	} */ *uap;
+	register_t *retval;
+{
+	struct mmap_args /* {
+		syscallarg(caddr_t) addr;
+		syscallarg(size_t) len;
+		syscallarg(int) prot;
+		syscallarg(int) flags;
+		syscallarg(int) fd;
+		syscallarg(long) pad;
+		syscallarg(off_t) pos;
+	} */ nargs;
+	static const char cvtbsdprot[8] = {
+		0,
+		PROT_EXEC,
+		PROT_WRITE,
+		PROT_EXEC|PROT_WRITE,
+		PROT_READ,
+		PROT_EXEC|PROT_READ,
+		PROT_WRITE|PROT_READ,
+		PROT_EXEC|PROT_WRITE|PROT_READ,
+	};
+#define	OMAP_ANON		0x0002
+#define	OMAP_COPY		0x0020
+#define	OMAP_SHARED		0x0010
+#define	OMAP_FIXED		0x0100
+#define	OMAP_INHERIT	0x0800
+
+	SCARG(&nargs, addr) = SCARG(uap, addr);
+	SCARG(&nargs, len) = SCARG(uap, len);
+	SCARG(&nargs, prot) = cvtbsdprot[SCARG(uap, prot)&0x7];
+	SCARG(&nargs, flags) = 0;
+	if (SCARG(uap, flags) & OMAP_ANON)
+		SCARG(&nargs, flags) |= MAP_ANON;
+	if (SCARG(uap, flags) & OMAP_COPY)
+		SCARG(&nargs, flags) |= MAP_COPY;
+	if (SCARG(uap, flags) & OMAP_SHARED)
+		SCARG(&nargs, flags) |= MAP_SHARED;
+	else
+		SCARG(&nargs, flags) |= MAP_PRIVATE;
+	if (SCARG(uap, flags) & OMAP_FIXED)
+		SCARG(&nargs, flags) |= MAP_FIXED;
+	if (SCARG(uap, flags) & OMAP_INHERIT)
+		SCARG(&nargs, flags) |= MAP_INHERIT;
+	SCARG(&nargs, fd) = SCARG(uap, fd);
+	SCARG(&nargs, pos) = SCARG(uap, pos);
+	return (mmap(p, &nargs, retval));
+}
+#endif

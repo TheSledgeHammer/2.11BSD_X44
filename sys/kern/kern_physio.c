@@ -262,7 +262,7 @@ getphysbuf(void)
 	if (bp == NULL) {
 		bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_WAITOK);
 	}
-	memset(bp, 0, sizeof(*bp));
+	bzero(bp, sizeof(*bp));
 	BUF_INIT(bp);
 
 	bp->b_rcred = bp->b_wcred = NOCRED;

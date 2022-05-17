@@ -166,16 +166,16 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdstruct(oldp, oldlenp, newp, &vmtotals, sizeof(vmtotals)));
 	case VM_SWAPMAP:
 		if (oldp == NULL) {
-			*oldlenp = (char *)swapmap[0]->m_limit - (char *)swapmap[0]->m_map;
+			*oldlenp = (char *)swapmap[0].m_limit - (char *)swapmap[0].m_map;
 			return(0);
 		}
-		return (sysctl_rdstruct(oldp, oldlenp, newp, swapmap, (int)swapmap[0]->m_limit - (int)swapmap[0]->m_map));
+		return (sysctl_rdstruct(oldp, oldlenp, newp, swapmap, (int)swapmap[0].m_limit - (int)swapmap[0].m_map));
 	case VM_COREMAP:
 		if (oldp == NULL) {
-			*oldlenp = (char*) coremap[0]->m_limit - (char*) coremap[0]->m_map;
+			*oldlenp = (char*) coremap[0].m_limit - (char*) coremap[0].m_map;
 			return (0);
 		}
-		return (sysctl_rdstruct(oldp, oldlenp, newp, coremap, (int) coremap[0]->m_limit - (int) coremap[0]->m_map));
+		return (sysctl_rdstruct(oldp, oldlenp, newp, coremap, (int) coremap[0].m_limit - (int) coremap[0].m_map));
 	default:
 		return (EOPNOTSUPP);
 	}

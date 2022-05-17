@@ -163,31 +163,6 @@ int	ktrace();
 int	vtrace();
 #else
 #endif
-
-#ifdef COMPAT_43
-#define compat_43(func) __CONCAT(compat_43_,func)
-
-int	compat_43(creat)();
-int	compat_43(getpagesize)();
-int	compat_43(lseek)();
-int	compat_43(mmap)();
-int	compat_43(lstat)();
-int	compat_43(stat)();
-int	compat_43(sigstack)();
-int	compat_43(truncate)();
-int	compat_43(ftruncate)();
-int	compat_43(getdirentries)();
-#ifdef KTRACE
-#else 
-#endif
-#ifdef TRACE
-#else
-#endif
-
-#else /* COMPAT_43 */
-#define compat_43(func) nosys
-#endif /* COMPAT_43 */
-
 #define	s(type)	sizeof(type)
 
 struct sysent sysent[] = {
@@ -208,7 +183,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    wait4 },				/* 7 = wait4 */
 	{ 0, 0,
-	    compat_43(creat) },			/* 8 = compat_43 creat */
+	    nosys },				/* 8 = obsolete old compat_43_creat */
 	{ 0, 0,
 	    link },				/* 9 = link */
 	{ 0, 0,
@@ -320,15 +295,15 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    undelete },				/* 63 = undelete */
 	{ 0, 0,
-	    compat_43(getpagesize) },		/* 64 = compat_43 getpagesize */
+	    nosys },				/* 64 = obsolete old compat_43_getpagesize */
 	{ 0, 0,
 	    pselect },				/* 65 = pselect */
 	{ 0, 0,
 	    vfork },				/* 66 = vfork */
 	{ 0, 0,
-	    compat_43(lseek) },			/* 67 = compat_43 lseek */
+	    nosys },				/* 67 = obsolete old compat_43_lseek */
 	{ 0, 0,
-	    compat_43(mmap) },			/* 68 = compat_43 mmap */
+	    nosys },				/* 68 = obsolete old compat_43_mmap */
 	{ 0, 0,
 	    sbrk },				/* 69 = sbrk */
 	{ 0, 0,
@@ -360,7 +335,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    setitimer },			/* 83 = setitimer */
 	{ 0, 0,
-	    compat_43(lstat) },			/* 84 = compat_43 lstat */
+	    nosys },				/* 84 = obsolete old compat_43_lstat */
 	{ 0, 0,
 	    pathconf },				/* 85 = pathconf */
 	{ 0, 0,
@@ -374,7 +349,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    dup2 },				/* 90 = dup2 */
 	{ 0, 0,
-	    compat_43(stat) },			/* 91 = compat_43 stat */
+	    nosys },				/* 91 = obsolete old compat_43_stat */
 	{ 0, 0,
 	    fcntl },				/* 92 = fcntl */
 	{ 0, 0,
@@ -416,7 +391,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    nosys },				/* 111 = obsolete old sigpause */
 	{ 0, 0,
-	    compat_43(sigstack) },		/* 112 = compat_43 sigstack */
+	    nosys },				/* 112 = obsolete old compat_43_sigstack */
 	{ 0, 0,
 	    recvmsg },				/* 113 = recvmsg */
 	{ 0, 0,
@@ -456,7 +431,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    flock },				/* 131 = flock */
 	{ 0, 0,
-	    compat_43(truncate) },		/* 132 = compat_43 truncate */
+	    nosys },				/* 132 = obsolete old compat_43_truncate */
 	{ 0, 0,
 	    sendto },				/* 133 = sendto */
 	{ 0, 0,
@@ -470,7 +445,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    utimes },				/* 138 = utimes */
 	{ 0, 0,
-	    compat_43(ftruncate) },		/* 139 = compat_43 ftruncate */
+	    nosys },				/* 139 = obsolete old compat_43_ftruncate */
 	{ 0, 0,
 	    adjtime },				/* 140 = adjtime */
 	{ 0, 0,
@@ -494,7 +469,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    getsockname },			/* 150 = getsockname */
 	{ 0, 0,
-	    compat_43(getdirentries) },		/* 151 = compat_43 getdirentries */
+	    nosys },				/* 151 = obsolete old compat_43_getdirentries */
 	{ 0, 0,
 	    nosys },				/* 152 = obsolete old nostk */
 	{ 0, 0,

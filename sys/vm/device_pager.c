@@ -129,7 +129,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	dev = (dev_t)handle;
 	cdev = cdevsw_lookup(dev);
 	//mapfunc = cdev->d_mmap;
-	if (cdev->d_mmap == NULL || cdev->d_mmap == enodev() || cdev->d_mmap == nullop())
+	if (cdev->d_mmap == NULL || cdev->d_mmap == nommap || cdev->d_mmap == nullmmap)
 		return (NULL);
 
 	/*
@@ -279,7 +279,7 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	cdev = cdevsw_lookup(dev);
 	//mapfunc = cdev->d_mmap;
 #ifdef DIAGNOSTIC
-	if (cdev->d_mmap == NULL || cdev->d_mmap == enodev || cdev->d_mmap == nullop)
+	if (cdev->d_mmap == NULL || cdev->d_mmap == nommap || cdev->d_mmap == nullmmap)
 		panic("dev_pager_getpage: no map function");
 #endif
 	paddr = pmap_phys_address((int)(*cdev->d_mmap)(dev, (int)offset, prot));

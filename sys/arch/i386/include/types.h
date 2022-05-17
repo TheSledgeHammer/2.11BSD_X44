@@ -52,10 +52,10 @@ typedef struct label_t {
 typedef	unsigned long					vm_offset_t;
 typedef	unsigned long					vm_size_t;
 
-typedef unsigned long					__vaddr_t;
 typedef unsigned long					__paddr_t;
-typedef unsigned long					__vsize_t;
 typedef unsigned long					__psize_t;
+typedef unsigned long					__vaddr_t;
+typedef unsigned long					__vsize_t;
 
 /*
  * Basic integral types.  Omit the typedef if

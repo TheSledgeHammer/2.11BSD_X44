@@ -341,14 +341,16 @@ swapconf()
 {
 	register struct swdevt 	*swp;
 	register int nblks;
+	const struct bdevsw *bdev;
 
 	for (swp = swdevt; swp->sw_dev != NODEV; swp++)	{
 		if ( (u_int)swp->sw_dev >= nblkdev ){
 			break;
 		}
 
-		if (bdevsw[major(swp->sw_dev)].d_psize) {
-			nblks = (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
+		bdev = bdevsw_lookup(swp->sw_dev);
+		if (bdev->d_psize) {
+			nblks = (*bdev->d_psize)(swp->sw_dev);
 			if (nblks != -1 && (swp->sw_nblks == 0 || swp->sw_nblks > nblks)) {
 				swp->sw_nblks = nblks;
 			}
@@ -356,8 +358,9 @@ swapconf()
 		}
 	}
 
-	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize) {
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - (Maxmem * NBPG/512);
+	bdev = bdevsw_lookup(dumpdev);
+	if (dumplo == 0 && bdev->d_psize) {
+		dumplo = (*bdev->d_psize)(dumpdev) - (Maxmem * NBPG/512);
 	}
 	if (dumplo < 0) {
 		dumplo = 0;

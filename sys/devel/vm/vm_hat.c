@@ -88,7 +88,6 @@ vm_hat_bootstrap_alloc(int type, int nentries, u_long size)
 		data = (vm_offset_t)pmap_bootstrap_overlay_alloc(totsize);
 		break;
 	}
-
 	return (data);
 }
 

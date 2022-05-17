@@ -243,7 +243,7 @@ function parseline() {
 	}
 }
 function putent(nodefs, declfile, compatwrap) {
-		# output syscall declaration for switch table
+	# output syscall declaration for switch table
 	if (compatwrap == "")
 		printf("int\t%s();\n", funcname) > declfile
 	else
@@ -347,6 +347,7 @@ END {
 	printf("#define\t%sMAXSYSCALL\t%d\n", constprefix, syscall) > sysnumhdr
 } '
 
-cat $sysdcl $syscompat_files $sysent > $syssw
+cat $sysdcl $sysent > $syssw
 
+# $syscompat_files
 #chmod 444 $sysnames $syshdr $syssw

@@ -620,7 +620,7 @@ ttioctl_sc(tp, com, data, flag)
 
 	case TIOCSETD: { 		/* set line discipline */
 		register int t = *(int *)data;
-		int ndisp = devsw_nelems(LINETYPE);
+		int ndisp = devnum(LINETYPE);
 		int error = 0;
 
 		line = linesw_lookup(dev);

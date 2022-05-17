@@ -117,16 +117,16 @@
  */
 
 #undef RB_AUGMENT
-static void vm_rb_augment(struct vm_map_entry *);
+static void vm_rb_augment(vm_map_entry_t);
 #define	RB_AUGMENT(x)	vm_rb_augment(x)
 
 static int vm_rb_compare(vm_map_entry_t, vm_map_entry_t);
-static size_t vm_rb_space(const vm_map_t, const vm_map_entry_t);
-static size_t vm_rb_subtree_space(vm_map_entry_t);
+static vm_size_t vm_rb_space(const vm_map_t, const vm_map_entry_t);
+static vm_size_t vm_rb_subtree_space(vm_map_entry_t);
 static void vm_rb_fixup(vm_map_t, vm_map_entry_t);
 static void vm_rb_insert(vm_map_t, vm_map_entry_t);
 static void vm_rb_remove(vm_map_t, vm_map_entry_t);
-static size_t vm_cl_space(const vm_map_t, const vm_map_entry_t);
+static vm_size_t vm_cl_space(const vm_map_t, const vm_map_entry_t);
 static void vm_cl_insert(vm_map_t, vm_map_entry_t);
 static void vm_cl_remove(vm_map_t, vm_map_entry_t);
 static bool_t vm_map_search_next_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
@@ -232,10 +232,10 @@ vm_rb_compare(a, b)
 	vm_map_entry_t a, b;
 {
 	if (a->start < b->start)
-		return(-1);
+		return (-1);
 	else if (a->start > b->start)
 		return (1);
-	return(0);
+	return (0);
 }
 
 static void
@@ -245,7 +245,7 @@ vm_rb_augment(entry)
 	entry->space = vm_rb_subtree_space(entry);
 }
 
-static size_t
+static vm_size_t
 vm_rb_space(map, entry)
     const vm_map_t map;
     const vm_map_entry_t entry;
@@ -254,11 +254,11 @@ vm_rb_space(map, entry)
     return (CIRCLEQ_NEXT(entry, cl_entry)->start - CIRCLEQ_FIRST(&map->cl_header)->end);
 }
 
-static size_t
+static vm_size_t
 vm_rb_subtree_space(entry)
 	const vm_map_entry_t entry;
 {
-	caddr_t space, tmp;
+	vm_offset_t space, tmp;
 
 	space = entry->ownspace;
 	if (RB_LEFT(entry, rb_entry)) {
@@ -293,9 +293,10 @@ vm_rb_insert(map, entry)
     vm_map_t map;
 	vm_map_entry_t entry;
 {
-    caddr_t space = vm_rb_space(map, entry);
+	vm_offset_t space;
     vm_map_entry_t tmp;
 
+    space = vm_rb_space(map, entry);
     entry->ownspace = entry->space = space;
     tmp = RB_INSERT(vm_map_rb_tree, &(map)->rb_root, entry);
 #ifdef DIAGNOSTIC
@@ -382,14 +383,14 @@ error:
 }
 
 /* Circular List Functions */
-static size_t
+static vm_size_t
 vm_cl_space(map, entry)
     const vm_map_t map;
     const vm_map_entry_t entry;
 {
-    size_t space, tmp;
-    space = entry->ownspace;
+    vm_offset_t space, tmp;
 
+    space = entry->ownspace;
     if(CIRCLEQ_FIRST(&map->cl_header)) {
         tmp = CIRCLEQ_FIRST(&map->cl_header)->space;
         if(tmp > space) {
@@ -416,7 +417,7 @@ vm_cl_insert(map, entry)
     head = CIRCLEQ_FIRST(&map->cl_header);
     tail = CIRCLEQ_LAST(&map->cl_header);
 
-    size_t space = vm_rb_space(map, entry);
+    vm_offset_t space = vm_rb_space(map, entry);
     entry->ownspace = entry->space = space;
     if(head->space == vm_cl_space(map, entry)) {
         CIRCLEQ_INSERT_HEAD(&map->cl_header, head, cl_entry);

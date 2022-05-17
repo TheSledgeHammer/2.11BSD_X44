@@ -49,7 +49,7 @@
 5   STD     	{ int open(); }
 6   STD     	{ int close(); }
 7   STD     	{ int wait4(); }
-8	COMPAT_43	{ int creat(); }
+8 	OBSOL 		old compat_43_creat
 9   STD     	{ int link(); }
 10  STD     	{ int unlink(); }
 11  STD     	{ int execv(); }
@@ -60,7 +60,7 @@
 16  STD     	{ int chown(); }
 17  STD     	{ int chflags(); }
 18  STD     	{ int fchflags(); }
-19  STD		{ int lseek(); }
+19  STD			{ int lseek(); }
 20  STD     	{ int getpid(); }
 21  STD     	{ int mount(); }
 22  STD     	{ int unmount(); }
@@ -79,9 +79,9 @@
 35  STD     	{ int sigaltstack(); }
 36  STD     	{ int sync(); }
 37  STD     	{ int kill(); }
-38  STD		{ int stat(); }
+38  STD			{ int stat(); }
 39  STD     	{ int getlogin(); }
-40  STD		{ int lstat(); }
+40  STD			{ int lstat(); }
 41  STD     	{ int dup(); }
 42  STD     	{ int pipe(); }     	
 43  STD     	{ int setlogin(); }
@@ -105,11 +105,11 @@
 61  STD     	{ int chroot(); }
 62  STD     	{ int fstat(); }
 63	STD		    { int undelete(); }
-64	COMPAT_43	{ int getpagesize(); }
+64	OBSOL		old compat_43_getpagesize
 65  STD     	{ int pselect(); }
 66  STD     	{ int vfork(); }
-67	COMPAT_43	{ int lseek(); }
-68	COMPAT_43	{ int mmap(); }
+67	OBSOL		old compat_43_lseek
+68	OBSOL		old compat_43_mmap
 69  STD   		{ int sbrk(); }
 70	STD			{ int sstk(); }
 71	STD			{ int mmap(); }
@@ -125,14 +125,14 @@
 81  STD     	{ int getpgrp(); }
 82  STD     	{ int setpgrp(); }
 83  STD     	{ int setitimer(); }
-84	COMPAT_43	{ int lstat(); }
+84	OBSOL		old compat_43_lstat
 85	STD		    { int pathconf(); }
 86  STD     	{ int getitimer(); }
 87  STD   	    { int setsid(); } 
 88  STD   	    { int setpgid(); }
 89  STD     	{ int getdtablesize(); }
 90  STD     	{ int dup2(); }
-91	COMPAT_43	{ int stat(); }
+91	OBSOL		old compat_43_stat
 92  STD     	{ int fcntl(); }
 93  STD     	{ int select(); }
 94	STD		    { int mkfifo(); }
@@ -153,7 +153,7 @@
 109 OBSOL   	old sigblock
 110 OBSOL   	old sigsetmask
 111 OBSOL   	old sigpause
-112 COMPAT_43 	{ int sigstack(); }
+112 OBSOL 		old compat_43_sigstack
 113 STD     	{ int recvmsg(); }
 114 STD     	{ int sendmsg(); }
 115	STD		    { int revoke(); }
@@ -173,14 +173,14 @@
 129	STD			{ int truncate(); }
 130	STD			{ int ftruncate(); }
 131 STD     	{ int flock(); }
-132	COMPAT_43	{ int truncate(); }
+132	OBSOL		old compat_43_truncate
 133 STD     	{ int sendto(); }
 134 STD     	{ int shutdown(); }
 135 STD     	{ int socketpair(); }
 136 STD     	{ int mkdir(); }
 137 STD     	{ int rmdir(); }
 138 STD     	{ int utimes(); }
-139	COMPAT_43	{ int ftruncate(); }
+139	OBSOL		old compat_43_ftruncate
 140 STD     	{ int adjtime(); }
 141 STD     	{ int getpeername(); }
 142 OBSOL   	old gethostid
@@ -195,7 +195,7 @@
 ; 87 old gethostname
 ; 88 old sethostname
 ; Syscalls 151-160 are special for 2BSD
-151	COMPAT_43	{ int getdirentries(); }
+151	OBSOL		old compat_43_getdirentries
 152 OBSOL     	old nostk
 153 OBSOL     	old fetchi
 154 OBSOL     	old ucall
