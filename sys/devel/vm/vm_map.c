@@ -148,11 +148,9 @@ void
 vm_map_startup()
 {
 	kmap_hat = &kmap_store;
-	vm_hbootinit(kmap_hat, "KMAP", HAT_VM, kmap_free, MAX_KMAP,
-			sizeof(struct vm_map));
+	vm_hbootinit(kmap_hat, "KMAP", HAT_VM, kmap_free, MAX_KMAP, sizeof(struct vm_map));
 	kentry_hat = &kentry_store;
-	vm_hbootinit(kentry_hat, "KENTRY", HAT_VM, kentry_free, MAX_KMAPENT,
-			sizeof(struct vm_map_entry));
+	vm_hbootinit(kentry_hat, "KENTRY", HAT_VM, kentry_free, MAX_KMAPENT, sizeof(struct vm_map_entry));
 }
 
 /*

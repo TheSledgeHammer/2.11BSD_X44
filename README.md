@@ -110,6 +110,12 @@ To build just the tools for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 -O ~/obj tools
 
+To build the kernel for i386, in the src directory:
+
+./build.sh -U -u -j4 -m i386 -O ~/obj -m i386 kernel="kernel config name here"
+
+Recommended to copy GENERIC.i386 to your "kernel config name".
+
 Please read the following NetBSD guide for more information:
 
 <https://www.netbsd.org/docs/guide/en/chap-build.html>
@@ -119,11 +125,12 @@ Cross-Compiler: Successful Builds
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
 |  GCC  | Yes   |  i386  | yes (without networking) | no | 
+| -------- | --------- | ------ | ------ | -- |
+|  CLANG *  | No   |  i386  | no | no | 
+| -------- | --------- | ------ | ------ | -- |
+|  PCC  | No   |  i386  | no | no | 
 
-
-Clang: Yes (but fails during llvm support) library very likely needs updating along with the relevent toolchain components.
-
-PCC: No.
+* Clang: Library needs updating and fixing along with the relevent toolchain components.
 
 ## Contribution:
 

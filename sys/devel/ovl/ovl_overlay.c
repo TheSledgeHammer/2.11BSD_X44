@@ -221,7 +221,7 @@ omem_init(start, end)
 {
 	register ovl_map_t map;
 
-	map = ovl_map_create(overlay_pmap, OVL_MIN_ADDRESS, end);
+	map = ovl_map_create(kernel_pmap, OVL_MIN_ADDRESS, end);
 	ovl_map_lock(map);
 	overlay_map = map;
 	(void) ovl_map_insert(map, NULL, (vm_offset_t)0, OVL_MIN_ADDRESS, start);

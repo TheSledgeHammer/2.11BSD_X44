@@ -72,6 +72,39 @@ vm_hfree(vm_hat_t h)
 	}
 }
 
+vm_offset_t
+vm_hat_bootstrap_alloc(int type, int nentries, u_long size)
+{
+	vm_offset_t		data;
+	vm_size_t		data_size, totsize;
+
+	data_size = (nentries * size);
+	totsize = round_page(data_size);
+	switch(type) {
+	case HAT_VM:
+		data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
+		break;
+	case HAT_OVL:
+		data = (vm_offset_t)pmap_bootstrap_overlay_alloc(totsize);
+		break;
+	}
+
+	return (data);
+}
+
+void
+vm_hinit(char *name, int type, void *item, int nentries, u_long size)
+{
+	vm_hat_t h;
+
+	h = (vm_hat_t)malloc(sizeof(h), M_VMHAT, M_WAITOK);
+
+	vm_hat_lock_init(h);
+	if ((item = (vm_offset_t)vm_hat_bootstrap_alloc(type, nentries, size)) != NULL) {
+		vm_hat_add(h, name, type, item, size);
+	}
+}
+
 /*
  *	Pre-allocate maps and map entries that cannot be dynamically
  *	allocated via malloc().  The maps include the kernel_map and
@@ -86,54 +119,10 @@ vm_hfree(vm_hat_t h)
 void
 vm_hbootinit(vm_hat_t h, char *name, int type, void *item, int nentries, u_long size)
 {
-	vm_offset_t		data;
-	vm_size_t		data_size, totsize;
+	item = (vm_offset_t)vm_hat_bootstrap_alloc(type, nentries, size);
 
-	data_size = (nentries * size);
-	totsize = round_page(data_size);
-	if (type == HAT_VM) {
-		data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
-		goto init;
-	}
-	if(type == HAT_OVL) {
-		data = (vm_offset_t)pmap_bootstrap_overlay_alloc(totsize);
-		goto init;
-	}
-
-init:
-	item = (void *)data;
-	vm_hat_add(h, name, type, item, totsize);
 	vm_hat_lock_init(h);
-}
-
-/* pre-allocate data that cannot be dynamically allocated via malloc()  */
-vm_offset_t
-vm_hat_bootstrap_alloc(type, nentries, size)
-	int type, nentries;
-	vm_size_t size;
-{
-	vm_offset_t		data;
-	vm_size_t		data_size, totsize;
-
-	data_size = (nentries * size);
-	totsize = round_page(data_size);
-	if (type == HAT_VM) {
-		data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
-	} else if(type == HAT_OVL) {
-		data = (vm_offset_t)pmap_bootstrap_overlay_alloc(totsize);
-	}
-
-	return (data);
-}
-
-/* pre-allocate vm_hat */
-void
-vm_hat_bootstrap(hat, type)
-	vm_hat_t hat;
-	int type;
-{
-	hat = (vm_hat_t)vm_hat_bootstrap_alloc(type, 0, sizeof(vm_hat_t));
-	vm_hat_lock_init(hat);
+	vm_hat_add(h, name, type, item, size);
 }
 
 int

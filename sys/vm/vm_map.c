@@ -120,6 +120,7 @@
 static void vm_rb_augment(struct vm_map_entry *);
 #define	RB_AUGMENT(x)	vm_rb_augment(x)
 
+static int vm_rb_compare(vm_map_entry_t, vm_map_entry_t);
 static size_t vm_rb_space(const vm_map_t, const vm_map_entry_t);
 static size_t vm_rb_subtree_space(vm_map_entry_t);
 static void vm_rb_fixup(vm_map_t, vm_map_entry_t);
@@ -152,10 +153,10 @@ RB_GENERATE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
  *	maps and requires map entries.
  */
 
+vm_map_t 		kmap_free;
+vm_map_entry_t 	kentry_free;
 vm_offset_t		kentry_data;
 vm_size_t		kentry_data_size;
-vm_map_entry_t	kentry_free;
-vm_map_t		kmap_free;
 
 void
 vm_map_startup()

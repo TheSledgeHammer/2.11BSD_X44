@@ -246,7 +246,7 @@ vm_fork(p1, p2, isvfork)
 
 #ifdef i386
 	{
-		u_int addr = UPT_MIN_ADDRESS - UPAGES * NBPG;
+		vm_offset_t addr = UPT_MIN_ADDRESS - UPAGES * NBPG;
 		struct vm_map *vp;
 
 		vp = &p2->p_vmspace->vm_map;

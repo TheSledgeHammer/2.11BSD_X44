@@ -65,14 +65,14 @@ int	dpagerdebug = 0;
 #define DDB_FAIL	0x08
 #endif
 
-static vm_pager_t	dev_pager_alloc (caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
-static void		 	dev_pager_dealloc (vm_pager_t);
-static int		 	dev_pager_getpage (vm_pager_t, vm_page_t *, int, bool_t);
-static bool_t		dev_pager_haspage (vm_pager_t, vm_offset_t);
-static void		 	dev_pager_init (void);
-static int		 	dev_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
-static vm_page_t	dev_pager_getfake (vm_offset_t);
-static void		 	dev_pager_putfake (vm_page_t);
+static vm_pager_t	dev_pager_alloc(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
+static void		 	dev_pager_dealloc(vm_pager_t);
+static int		 	dev_pager_getpage(vm_pager_t, vm_page_t *, int, bool_t);
+static bool_t		dev_pager_haspage(vm_pager_t, vm_offset_t);
+static void		 	dev_pager_init(void);
+static int		 	dev_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
+static vm_page_t	dev_pager_getfake(vm_offset_t);
+static void		 	dev_pager_putfake(vm_page_t);
 
 struct pagerops devicepagerops = {
 	dev_pager_init,
@@ -129,7 +129,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	dev = (dev_t)handle;
 	cdev = cdevsw_lookup(dev);
 	//mapfunc = cdev->d_mmap;
-	if (cdev->d_mmap == NULL || cdev->d_mmap == enodev || cdev->d_mmap == nullop)
+	if (cdev->d_mmap == NULL || cdev->d_mmap == enodev() || cdev->d_mmap == nullop())
 		return (NULL);
 
 	/*
@@ -160,11 +160,11 @@ top:
 		 */
 		pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
 		if (pager == NULL)
-			return(NULL);
+			return (NULL);
 		devp = (dev_pager_t)malloc(sizeof *devp, M_VMPGDATA, M_WAITOK);
 		if (devp == NULL) {
 			free((caddr_t)pager, M_VMPAGER);
-			return(NULL);
+			return (NULL);
 		}
 		pager->pg_handle = handle;
 		pager->pg_ops = &devicepagerops;
@@ -282,7 +282,7 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	if (cdev->d_mmap == NULL || cdev->d_mmap == enodev || cdev->d_mmap == nullop)
 		panic("dev_pager_getpage: no map function");
 #endif
-	paddr = pmap_phys_address((*cdev->d_mmap)(dev, (int)offset, prot));
+	paddr = pmap_phys_address((int)(*cdev->d_mmap)(dev, (int)offset, prot));
 #ifdef DIAGNOSTIC
 	if (paddr == -1)
 		panic("dev_pager_getpage: map function returns error");
