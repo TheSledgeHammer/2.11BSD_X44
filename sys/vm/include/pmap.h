@@ -88,6 +88,7 @@ typedef struct pmap_statistics	*pmap_statistics_t;
 __BEGIN_DECLS
 void        pmap_bootstrap(/* machine dependent */);
 void        *pmap_bootstrap_alloc(u_long);
+int			pmap_isvalidphys(vm_offset_t);
 void        pmap_init(vm_offset_t, vm_offset_t);
 vm_offset_t pmap_map(vm_offset_t, vm_offset_t, vm_offset_t, int);
 pmap_t      pmap_create(vm_size_t);

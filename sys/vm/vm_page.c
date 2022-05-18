@@ -228,7 +228,6 @@ vm_page_startup(start, end)
 	 */
 
 	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page)) / (PAGE_SIZE + sizeof(struct vm_page));
-	vm_page_array_size = npages;
 
 	/*
 	 *	Record the extent of physical memory that the
@@ -236,7 +235,7 @@ vm_page_startup(start, end)
 	 */
 
 	first_page = *start;
-	first_page += npages*sizeof(struct vm_page);
+	first_page += npages * sizeof(struct vm_page);
 	first_page = atop(round_page(first_page));
 	last_page  = first_page + npages - 1;
 
@@ -246,7 +245,7 @@ vm_page_startup(start, end)
 	/*
 	 *	Allocate and clear the mem entry structures.
 	 */
-
+	vm_page_array_size = npages;
 	m = vm_page_array = (vm_page_t) pmap_bootstrap_alloc(npages * sizeof(struct vm_page));
 
 	/*
@@ -493,7 +492,7 @@ vm_page_alloc(object, offset)
 		return(NULL);
 	}
 
-	mem = vm_page_queue_free.tqh_first;
+	mem = TAILQ_FIRST(&vm_page_queue_free);
 	TAILQ_REMOVE(&vm_page_queue_free, mem, pageq);
 
 	cnt.v_free_count--;
@@ -702,7 +701,6 @@ vm_page_zero_fill(m)
  *
  *	Copy one page to another
  */
-
 void
 vm_page_copy(src_m, dest_m)
 	vm_page_t	src_m;
@@ -816,7 +814,7 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 	simple_lock(&vm_page_queue_free_lock);
 
 	/* Are there even any free pages? */
-	if (TAILQ_FIRST(vm_page_queue_free) == NULL)
+	if (TAILQ_FIRST(&vm_page_queue_free) == NULL)
 		goto out;
 
 	for (;; try += alignment) {
@@ -835,7 +833,7 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 
 		tryidx = idx = VM_PAGE_INDEX(try);
 		end = idx + (size / PAGE_SIZE);
-		if (end > vm_page_count) {
+		if (end > vm_page_array_size) {
 			/*
 			 * No more physical memory.
 			 */
@@ -900,7 +898,7 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 	while (idx < end) {
 		m = &vm_page_array[idx];
 #ifdef DEBUG
-		for (tp = TAILQ_FIRST(vm_page_queue_free); tp != NULL;
+		for (tp = TAILQ_FIRST(&vm_page_queue_free); tp != NULL;
 		    tp = TAILQ_NEXT(tp, pageq)) {
 			if (tp == m)
 				break;

@@ -129,6 +129,7 @@ struct vm_page {
 #define	PG_FAKE			0x0200		/* page is placeholder for pagein (O) */
 #define	PG_FILLED		0x0400		/* client flag to set when filled */
 #define	PG_DIRTY		0x0800		/* client flag to set when dirty */
+#define PG_FREE			0x1000		/* page is on free list */
 #define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
 #define	PG_PTPAGE		0x8000		/* DEBUG: is a user page table page */
 
@@ -189,11 +190,16 @@ vm_offset_t		last_phys_addr;			/* physical address for last_page */
 
 #define VM_PAGE_TO_PHYS(entry)	((entry)->phys_addr)
 
-#define IS_VM_PHYSADDR(pa) \
+#define IS_VM_PHYSADDR(pa) 	\
 		((pa) >= first_phys_addr && (pa) <= last_phys_addr)
 
+#define	VM_PAGE_INDEX(pa) 	\
+		(atop((pa)) - first_page)
+
 #define PHYS_TO_VM_PAGE(pa) \
-		(&vm_page_array[atop(pa) - first_page ])
+		(&vm_page_array[VM_PAGE_INDEX(pa)])
+
+#define VM_PAGE_IS_FREE(entry)  ((entry)->flags & PG_FREE)
 
 extern
 simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive
@@ -241,7 +247,7 @@ void		 vm_page_rename (vm_page_t, vm_object_t, vm_offset_t);
 void		 vm_page_startup (vm_offset_t *, vm_offset_t *);
 void		 vm_page_unwire (vm_page_t);
 void		 vm_page_wire (vm_page_t);
-bool_t	 	vm_page_zero_fill (vm_page_t);
+bool_t	 	 vm_page_zero_fill (vm_page_t);
 int		 	 vm_page_alloc_memory (vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int, int);
 void		 vm_page_free_memory (struct pglist *);
 

@@ -112,10 +112,6 @@ long	object_collapses = 0;
 long	object_bypasses  = 0;
 
 static void _vm_object_allocate(vm_size_t, vm_object_t);
-static int  vm_object_rb_compare(void *, void *);
-
-RB_PROTOTYPE(object_rbt, vm_object, object_tree, vm_object_rb_compare);
-RB_GENERATE(object_rbt, vm_object, object_tree, vm_object_rb_compare);
 
 /*
  *	vm_object_init:
@@ -144,6 +140,22 @@ vm_object_init(size)
 	kmem_object = &kmem_object_store;
 	_vm_object_allocate(VM_KMEM_SIZE + VM_MBUF_SIZE, kmem_object);
 }
+
+/* vm object rbtree comparator */
+static int
+vm_object_rb_compare(obj1, obj2)
+	vm_object_t obj1, obj2;
+{
+	if(obj1->size < obj2->size) {
+		return (-1);
+	} else if(obj1->size > obj2->size) {
+		return (1);
+	}
+	return (0);
+}
+
+RB_PROTOTYPE(object_rbt, vm_object, object_tree, vm_object_rb_compare);
+RB_GENERATE(object_rbt, vm_object, object_tree, vm_object_rb_compare);
 
 /*
  *	vm_object_allocate:
@@ -868,39 +880,21 @@ vm_object_setpager(object, pager, paging_offset, read_only)
 	vm_object_unlock(object);			/* XXX ? */
 }
 
-/* vm object rbtree comparator */
-/*
-int
-vm_object_rb_compare(obj1, obj2)
-	vm_object_t obj1, obj2;
-{
-	if(obj1->size < obj2->size) {
-		return (-1);
-	} else if(obj1->size > obj2->size) {
-		return (1);
-	}
-	return (0);
-}
-*/
+/* vm object hash rbtree comparator */
 static int
-vm_object_rb_compare(a1, a2)
-	void *a1, *a2;
+vm_object_hash_rb_compare(h1, h2)
+	struct vm_object_hash_entry *h1, *h2;
 {
-	vm_object_t obj1, obj2;
-	
-	obj1 = (vm_object_t)a1;
-	obj2 = (vm_object_t)a2;
-
-	if(obj1->size < obj2->size) {
+	if(h1->object < h2->object) {
 		return (-1);
-	} else if(obj1->size > obj2->size) {
+	} else if(h1->object > h2->object) {
 		return (1);
 	}
-	return (0);
+	return (vm_object_rb_compare(h1->object, h2->object));
 }
 
-RB_PROTOTYPE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
-RB_GENERATE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
+RB_PROTOTYPE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_hash_rb_compare);
+RB_GENERATE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_hash_rb_compare);
 
 /*
  *	vm_object_hash hashes the pager/id pair.

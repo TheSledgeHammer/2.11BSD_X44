@@ -528,7 +528,7 @@ pmap_bootstrap(firstaddr)
 
 int
 pmap_isvalidphys(addr)
-	int addr;
+	vm_offset_t addr;
 {
 	if (addr < 0xa0000)
 		return (1);

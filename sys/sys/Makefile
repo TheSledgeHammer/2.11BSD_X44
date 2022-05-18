@@ -19,7 +19,7 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h buf.h 	\
 			power.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h resource.h \
 			resourcevar.h rwlock.h scanio.h scsiio.h select.h signal.h 			\
 			signalvar.h socket.h socketvar.h stat.h stdarg.h stdbool.h stddef.h \
-			stdint.h syscall.h syscallargs.h sysctl.h syslimits.h syslog.h 		\
+			stdint.h syscall.h sysctl.h sysdecl.h syslimits.h syslog.h 			\
 			systm.h tablet.h termios.h time.h timeb.h timepps.h times.h 		\
 			tprintf.h trace.h tree.h tty.h ttychars.h ttydefaults.h ttydev.h 	\
 			types.h ucred.h uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h \
