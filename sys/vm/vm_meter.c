@@ -39,6 +39,7 @@
 #include <sys/kernel.h>
 #include <sys/map.h>
 #include <sys/sysctl.h>
+#include <sys/tree.h>
 #include <sys/vmmeter.h>
 
 #include <vm/include/vm.h>
@@ -50,7 +51,7 @@ struct loadavg 		averunnable;		/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
-int freemem =   &cnt.v_free_count;
+u_int freemem = &cnt.v_free_count;
 int nrun;
 
 void
@@ -274,21 +275,24 @@ active:
 		 */
 
 		paging = 0;
-		for (map = &p->p_vmspace->vm_map, entry = CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next; entry != CIRCLEQ_FIRST(&map->cl_header); entry = CIRCLEQ_NEXT(entry, cl_entry)) {
-			if (entry->is_a_map || entry->is_sub_map ||
-			    (object = entry->object.vm_object) == NULL) {
+		for (map = &p->p_vmspace->vm_map, entry =
+				CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next;
+				entry != CIRCLEQ_FIRST(&map->cl_header);
+				entry = CIRCLEQ_NEXT(entry, cl_entry)) {
+			if (entry->is_a_map || entry->is_sub_map
+					|| (object = entry->object.vm_object) == NULL) {
 				continue;
 			}
-			while (object->shadow &&
-			       object->resident_page_count == 0 &&
-			       object->shadow_offset == 0 &&
-			       object->size == object->shadow->size) {
+			while (object->shadow && object->resident_page_count == 0
+					&& object->shadow_offset == 0
+					&& object->size == object->shadow->size) {
 				object = object->shadow;
-			object->flags |= OBJ_ACTIVE;
-			paging |= object->paging_in_progress;
-		}
-		if (paging) {
-			totalp->t_pw++;
+				object->flags |= OBJ_ACTIVE;
+				paging |= object->paging_in_progress;
+			}
+			if (paging) {
+				totalp->t_pw++;
+			}
 		}
 	}
 	/*

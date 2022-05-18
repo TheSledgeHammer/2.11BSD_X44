@@ -468,7 +468,7 @@ vm_map_create(pmap, min, max, pageable)
 		kentry = CIRCLEQ_FIRST(&result->cl_header);
 		kmap_free = (vm_map_t)CIRCLEQ_NEXT(kentry, cl_entry);
 	} else {
-		MALLOC(result, struct vm_map, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
+		MALLOC(result, struct vm_map, sizeof(struct vm_map *), M_VMMAP, M_WAITOK);
 	}
 
 	vm_map_init(result, min, max, pageable);
@@ -524,7 +524,7 @@ vm_map_entry_create(map)
 		panic("vm_map_entry_create: bogus map");
 #endif
 	if (map->entries_pageable) {
-		MALLOC(entry, struct vm_map_entry, sizeof(struct vm_map_entry), M_VMMAPENT, M_WAITOK);
+		MALLOC(entry, struct vm_map_entry, sizeof(struct vm_map_entry *), M_VMMAPENT, M_WAITOK);
 	} else {
 		if (entry == kentry_free)
 			kentry_free = CIRCLEQ_NEXT(kentry_free, cl_entry);
@@ -780,7 +780,7 @@ vm_map_insert(map, object, offset, start, end)
  *	Saves the specified entry as the hint for
  *	future lookups.  Performs necessary interlocks.
  */
-#define	SAVE_HINT(map,value) 				\
+#define	SAVE_HINT(map, value) 				\
 		simple_lock(&(map)->hint_lock); 	\
 		(map)->hint = (value); 				\
 		simple_unlock(&(map)->hint_lock);
@@ -842,7 +842,7 @@ search_tree:
     vm_tree_sanity(map, __func__);
 
     if (use_tree) {
-    	struct vm_map_entry *prev = CIRCLEQ_FIRST(&map->cl_header);
+    	vm_map_entry_t prev = CIRCLEQ_FIRST(&map->cl_header);
         cur = RB_ROOT(&map->rb_root);
         while (cur) {
         	if(address >= cur->start) {
@@ -864,7 +864,7 @@ search_tree:
     }
 
 failed:
-	SAVE_HINT(map, entry);
+	SAVE_HINT(map, *entry);
     KDASSERT((*entry) == CIRCLEQ_FIRST(&map->cl_header) || (*entry)->end <= address);
     KDASSERT(CIRCLEQ_NEXT(*entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) || address < CIRCLEQ_NEXT(*entry, cl_entry)->start);
     return (FALSE);

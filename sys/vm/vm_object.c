@@ -909,7 +909,7 @@ vm_object_lookup(pager)
 
 	vm_object_cache_lock();
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
+	RB_FOREACH(entry, vm_object_hash_head, bucket) {
 		object = entry->object;
 		if (object->pager == pager) {
 			vm_object_lock(object);
@@ -978,8 +978,7 @@ vm_object_remove(pager)
 	register vm_object_t			object;
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-
-	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
+	RB_FOREACH(entry, vm_object_hash_head, bucket) {
 		object = entry->object;
 		if (object->pager == pager) {
 			RB_REMOVE(vm_object_hash_head, bucket, entry);
