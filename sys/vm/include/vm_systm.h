@@ -15,7 +15,7 @@
  * Miscellaneous virtual memory subsystem variables and structures.
  */
 #ifdef _KERNEL
-extern u_int freemem;			/* remaining clicks of free memory */
+extern int freemem;			/* remaining clicks of free memory */
 int	avefree;					/* moving average of remaining free clicks */
 int	avefree30;					/* 30 sec (avefree is 5 sec) moving average */
 
