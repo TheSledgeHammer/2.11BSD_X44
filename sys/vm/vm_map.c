@@ -468,7 +468,7 @@ vm_map_create(pmap, min, max, pageable)
 		kentry = CIRCLEQ_FIRST(&result->cl_header);
 		kmap_free = (vm_map_t)CIRCLEQ_NEXT(kentry, cl_entry);
 	} else {
-		MALLOC(result, struct vm_map, sizeof(struct vm_map *), M_VMMAP, M_WAITOK);
+		MALLOC(result, struct vm_map *, sizeof(struct vm_map *), M_VMMAP, M_WAITOK);
 	}
 
 	vm_map_init(result, min, max, pageable);
@@ -524,7 +524,7 @@ vm_map_entry_create(map)
 		panic("vm_map_entry_create: bogus map");
 #endif
 	if (map->entries_pageable) {
-		MALLOC(entry, struct vm_map_entry, sizeof(struct vm_map_entry *), M_VMMAPENT, M_WAITOK);
+		MALLOC(entry, struct vm_map_entry *, sizeof(struct vm_map_entry *), M_VMMAPENT, M_WAITOK);
 	} else {
 		if (entry == kentry_free)
 			kentry_free = CIRCLEQ_NEXT(kentry_free, cl_entry);
@@ -927,8 +927,9 @@ vm_map_findspace(map, start, length, addr)
 	vm_size_t length;
 	vm_offset_t *addr;
 {
-	register vm_map_entry_t entry, next, tmp;
+	register vm_map_entry_t entry, next;
 	register vm_offset_t end;
+	vm_map_entry_t tmp;
 
 	if (start < map->min_offset)
 		start = map->min_offset;
@@ -1119,7 +1120,7 @@ _vm_map_clip_start(map, entry, start)
 	register vm_offset_t	start;
 {
 	register vm_map_entry_t	new_entry;
-	caddr_t new_adj;
+	vm_offset_t new_adj;
 
 	/*
 	 *	See if we can simplify this entry first
@@ -1185,7 +1186,7 @@ _vm_map_clip_end(map, entry, end)
 	register vm_offset_t	end;
 {
 	register vm_map_entry_t	new_entry;
-	caddr_t new_adj;
+	vm_offset_t new_adj;
 
 	vm_tree_sanity(map, "clip_end entry");
 
@@ -1303,7 +1304,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 	register bool_t		set_max;
 {
 	register vm_map_entry_t		current;
-	vm_map_entry_t				entry;
+	vm_map_entry_t			entry;
 
 	vm_map_lock(map);
 
@@ -1374,7 +1375,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 				share_end = current->offset +
 					(current->end - current->start);
 				while ((share_entry !=
-					&current->object.share_map->cl_header) &&
+					CIRCLEQ_FIRST(&current->object.share_map->cl_header)) &&
 					(share_entry->start < share_end)) {
 
 					pmap_protect(map->pmap,
@@ -1469,7 +1470,8 @@ vm_map_advice(map, start, end, new_advice)
 	register vm_offset_t	end;
 	int 					new_advice;
 {
-	register vm_map_entry_t	entry, temp_entry;
+	register vm_map_entry_t	entry;
+	vm_map_entry_t temp_entry;
 
 	vm_map_lock(map);
 	VM_MAP_RANGE_CHECK(map, start, end);
@@ -1481,7 +1483,7 @@ vm_map_advice(map, start, end, new_advice)
 		entry = CIRCLEQ_NEXT(temp_entry, cl_entry);
 	}
 
-	while ((entry != &map->cl_header) && (entry->start < end)) {
+	while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 		vm_map_clip_end(map, entry, end);
 
 		switch (new_advice) {
@@ -1512,7 +1514,7 @@ vm_map_willneed(map, start, end)
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
-	register vm_map_entry_t	entry;
+	vm_map_entry_t	entry;
 
 	vm_map_lock_read(map);
 	VM_MAP_RANGE_CHECK(map, start, end);
