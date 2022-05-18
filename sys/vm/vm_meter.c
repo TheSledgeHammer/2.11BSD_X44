@@ -51,13 +51,13 @@ struct loadavg 		averunnable;		/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
-u_int freemem = &cnt.v_free_count;
+int freemem = (int)&cnt.v_free_count;
 int nrun;
 
 void
 vmmeter()
 {
-	register u_short *cp, *rp;
+	register u_int *cp, *rp;
 	register long *sp;
 
 	ave(avefree, freemem, 5);
