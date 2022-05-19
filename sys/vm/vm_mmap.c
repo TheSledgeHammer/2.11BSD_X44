@@ -53,6 +53,7 @@
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/user.h>
 
 #include <sys/mount.h>
@@ -459,7 +460,7 @@ minherit()
 {
 	register struct minherit_args {
 		syscallarg(caddr_t) addr;
-		syscallarg(int) len;
+		syscallarg(size_t) len;
 		syscallarg(int) inherit;
 	} *uap = (struct minherit_args *) u.u_ap;
 
