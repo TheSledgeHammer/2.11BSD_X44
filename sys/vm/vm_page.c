@@ -486,7 +486,7 @@ vm_page_alloc(object, offset)
 
 	spl = splimp();				/* XXX */
 	simple_lock(&vm_page_queue_free_lock);
-	if (TAILQ_FIRST(vm_page_queue_free) == NULL) {
+	if (TAILQ_FIRST(&vm_page_queue_free) == NULL) {
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(spl);
 		return(NULL);

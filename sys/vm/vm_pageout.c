@@ -142,7 +142,7 @@ vm_pageout_scan()
 	 */
 
 	pages_freed = 0;
-	for (m = TAILQ_FIRST(vm_page_queue_inactive); m != NULL; m = next) {
+	for (m = TAILQ_FIRST(&vm_page_queue_inactive); m != NULL; m = next) {
 		s = splimp();
 		simple_lock(&vm_page_queue_free_lock);
 		free = cnt.v_free_count;
@@ -210,7 +210,7 @@ vm_pageout_scan()
 		 * queues unlocked).  If it isn't, we just start over.
 		 */
 		if (next && (next->flags & PG_INACTIVE) == 0)
-			next = TAILQ_FIRST(vm_page_queue_inactive);
+			next = TAILQ_FIRST(&vm_page_queue_inactive);
 	}
 	
 	/*
@@ -228,7 +228,7 @@ vm_pageout_scan()
 		 *	Move some more pages from active to inactive.
 		 */
 
-		if ((m = TAILQ_FIRST(vm_page_queue_active)) == NULL)
+		if ((m = TAILQ_FIRST(&vm_page_queue_active)) == NULL)
 			break;
 		vm_page_deactivate(m);
 		page_shortage--;
