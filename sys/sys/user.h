@@ -172,7 +172,5 @@ struct user {
 
 #ifdef _KERNEL
 extern struct user 		u;
-#else
-extern struct user 		vmu;	/* vmspace */
 #endif
 #endif /* _SYS_USER_H_ */

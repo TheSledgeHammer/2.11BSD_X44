@@ -53,6 +53,7 @@
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/conf.h>
+#include <sys/user.h>
 
 #include <sys/mount.h>
 #include <sys/sysdecl.h>
@@ -80,7 +81,7 @@ sbrk()
 		syscallarg(int)	sep;
 		syscallarg(int)	flags;
 		syscallarg(int) incr;
-	} *uap = (struct sbrk_args *) vmu.u_ap;
+	} *uap = (struct sbrk_args *) u.u_ap;
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
@@ -92,7 +93,7 @@ sstk()
 {
 	register struct sstk_args {
 		syscallarg(int) incr;
-	} *uap = (struct sstk_args *) vmu.u_ap;
+	} *uap = (struct sstk_args *) u.u_ap;
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
@@ -109,7 +110,7 @@ mmap()
 		syscallarg(int) fd;
 		syscallarg(long) pad;
 		syscallarg(off_t) pos;
-	} *uap = (struct mmap_args *) vmu.u_ap;
+	} *uap = (struct mmap_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -122,7 +123,7 @@ mmap()
 	caddr_t handle;
 	int flags, error;
 
-	p = vmu.u_procp;
+	p = u.u_procp;
 	fdp = p->p_fd;
 	prot = SCARG(uap, prot) & VM_PROT_ALL;
 	flags = SCARG(uap, flags);
@@ -239,29 +240,53 @@ msync()
 {
 	register struct msync_args {
 		syscallarg(caddr_t) addr;
-		syscallarg(int) len;
-	} *uap = (struct msync_args *) vmu.u_ap;
+		syscallarg(size_t) len;
+		syscallarg(int) flags;
+	} *uap = (struct msync_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
 	vm_offset_t addr;
-	vm_size_t size;
+	vm_size_t size, pageoff;
 	vm_map_t map;
-	int rv;
+	int rv, flags;
 	bool_t syncio, invalidate;
 
-	p = vmu.u_procp;
+	p = u.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & (MDB_FOLLOW|MDB_SYNC))
 		printf("msync(%d): addr %x len %x\n",
 		       p->p_pid, SCARG(uap, addr), SCARG(uap, len));
 #endif
-	if (((vm_offset_t) SCARG(uap, addr) & PAGE_MASK) ||
-			SCARG(uap, addr) + SCARG(uap, len) < SCARG(uap, addr))
+	if (((vm_offset_t) SCARG(uap, addr) & PAGE_MASK) || SCARG(uap, addr) + SCARG(uap, len) < SCARG(uap, addr))
 		return (EINVAL);
+
 	map = &p->p_vmspace->vm_map;
 	addr = (vm_offset_t) SCARG(uap, addr);
 	size = (vm_size_t) SCARG(uap, len);
+	flags = SCARG(uap, flags);
+
+	/* sanity check flags */
+	if ((flags & ~(MS_ASYNC | MS_SYNC | MS_INVALIDATE)) != 0
+			|| (flags & (MS_ASYNC | MS_SYNC | MS_INVALIDATE)) == 0
+			|| (flags & (MS_ASYNC | MS_SYNC)) == (MS_ASYNC | MS_SYNC))
+		return (EINVAL);
+	if ((flags & (MS_ASYNC | MS_SYNC)) == 0)
+		flags |= MS_SYNC;
+
+	/*
+	 * align the address to a page boundary and adjust the size accordingly.
+	 */
+
+	pageoff = (addr & PAGE_MASK);
+	addr -= pageoff;
+	size += pageoff;
+	size = (vm_size_t)round_page(size);
+
+	/* disallow wrap-around. */
+	if (addr + size < addr)
+		return (EINVAL);
+
 	/*
 	 * XXX Gak!  If size is zero we are supposed to sync "all modified
 	 * pages with the region containing addr".  Unfortunately, we
@@ -297,6 +322,7 @@ msync()
 	 * pass this in to implement Sun's MS_INVALIDATE.
 	 */
 	invalidate = TRUE;
+
 	/*
 	 * Clean the pages and interpret the return value.
 	 */
@@ -319,8 +345,8 @@ munmap()
 {
 	register struct munmap_args {
 		syscallarg(caddr_t) addr;
-		syscallarg(int) len;
-	} *uap = (struct munmap_args *) vmu.u_ap;
+		syscallarg(size_t) len;
+	} *uap = (struct munmap_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -328,7 +354,7 @@ munmap()
 	vm_size_t size;
 	vm_map_t map;
 
-	p = vmu.u_procp;
+	p = u.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("munmap(%d): addr %x len %x\n", p->p_pid, SCARG(uap, addr),
@@ -385,17 +411,17 @@ mprotect()
 {
 	register struct mprotect_args {
 		syscallarg(caddr_t) addr;
-		syscallarg(int) len;
+		syscallarg(size_t) len;
 		syscallarg(int) prot;
-	} *uap = (struct mprotect_args *) vmu.u_ap;
+	} *uap = (struct mprotect_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
 	vm_offset_t addr;
-	vm_size_t size;
+	vm_size_t size, pageoff;
 	register vm_prot_t prot;
 
-	p = vmu.u_procp;
+	p = u.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("mprotect(%d): addr %x len %x prot %d\n",
@@ -408,8 +434,16 @@ mprotect()
 	size = (vm_size_t)SCARG(uap, len);
 	prot = SCARG(uap, prot) & VM_PROT_ALL;
 
-	switch (vm_map_protect(&p->p_vmspace->vm_map, addr, addr+size, prot,
-	    FALSE)) {
+	/*
+	 * align the address to a page boundary and adjust the size accordingly.
+	 */
+
+	pageoff = (addr & PAGE_MASK);
+	addr -= pageoff;
+	size += pageoff;
+	size = round_page(size);
+
+	switch (vm_map_protect(&p->p_vmspace->vm_map, addr, addr+size, prot, FALSE)) {
 	case KERN_SUCCESS:
 		return (0);
 	case KERN_PROTECTION_FAILURE:
@@ -420,26 +454,74 @@ mprotect()
 	return (0);
 }
 
+int
+minherit()
+{
+	register struct minherit_args {
+		syscallarg(caddr_t) addr;
+		syscallarg(int) len;
+		syscallarg(int) inherit;
+	} *uap = (struct minherit_args *) u.u_ap;
+
+	struct proc *p;
+	register_t *retval;
+	vm_offset_t addr;
+	vm_size_t size, pageoff;
+	vm_inherit_t inherit;
+	int error;
+
+	p = u.u_procp;
+	addr = (vm_offset_t)SCARG(uap, addr);
+	size = (vm_size_t)SCARG(uap, len);
+	inherit = SCARG(uap, inherit);
+
+	/*
+	 * align the address to a page boundary and adjust the size accordingly.
+	 */
+
+	pageoff = (addr & PAGE_MASK);
+	addr -= pageoff;
+	size += pageoff;
+	size = (vm_size_t)round_page(size);
+
+	if ((int)size < 0)
+		return (EINVAL);
+	error = vm_map_inherit(&p->p_vmspace->vm_map, addr, addr + size, inherit);
+	return (error);
+}
+
 /* ARGSUSED */
 int
 madvise()
 {
 	register struct madvise_args {
 		syscallarg(caddr_t) addr;
-		syscallarg(int) len;
+		syscallarg(size_t) len;
 		syscallarg(int) behav;
-	} *uap = (struct madvise_args *) vmu.u_ap;
+	} *uap = (struct madvise_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
-	caddr_t addr;
-	vm_size_t size;
+	vm_offset_t addr;
+	vm_size_t size, pageoff;
 	int advice, error;
 
-	p = vmu.u_procp;
-	addr = (caddr_t)SCARG(uap, addr);
+	p = u.u_procp;
+	addr = (vm_offset_t)SCARG(uap, addr);
 	size = (vm_size_t)SCARG(uap, len);
 	advice = SCARG(uap, behav);
+
+	/*
+	 * align the address to a page boundary, and adjust the size accordingly
+	 */
+
+	pageoff = (addr & PAGE_MASK);
+	addr -= pageoff;
+	size += pageoff;
+	size = (vm_size_t)round_page(size);
+
+	if ((ssize_t)size <= 0)
+		return (EINVAL);
 
 	switch (advice) {
 	case MADV_NORMAL:
@@ -509,9 +591,9 @@ mincore()
 {
 	register struct mincore_args {
 		syscallarg(caddr_t) addr;
-		syscallarg(int) len;
+		syscallarg(size_t) len;
 		syscallarg(char *) vec;
-	} *uap = (struct mincore_args *) vmu.u_ap;
+	} *uap = (struct mincore_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -525,7 +607,7 @@ mlock()
 	register struct mlock_args {
 		syscallarg(caddr_t) addr;
 		syscallarg(size_t) len;
-	} *uap = (struct mlock_args *) vmu.u_ap;
+	} *uap = (struct mlock_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -534,7 +616,7 @@ mlock()
 	int error;
 	extern int vm_page_max_wired;
 
-	p = vmu.u_procp;
+	p = u.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("mlock(%d): addr %x len %x\n",
@@ -565,7 +647,7 @@ munlock()
 	register struct munlock_args {
 		syscallarg(caddr_t) addr;
 		syscallarg(size_t) len;
-	} *uap = (struct munlock_args *) vmu.u_ap;
+	} *uap = (struct munlock_args *) u.u_ap;
 
 	struct proc *p;
 	register_t *retval;
@@ -573,7 +655,7 @@ munlock()
 	vm_size_t size;
 	int error;
 
-	p = vmu.u_procp;
+	p = u.u_procp;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("munlock(%d): addr %x len %x\n", p->p_pid, SCARG(uap, addr),

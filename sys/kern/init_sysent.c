@@ -83,6 +83,7 @@ int	msync();
 int	munmap();
 int	mprotect();
 int	madvise();
+int	minherit();
 int	mincore();
 int	mlock();
 int	munlock();
@@ -303,21 +304,21 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    nosys },				/* 67 = obsolete old compat_43_lseek */
 	{ 0, 0,
-	    nosys },				/* 68 = obsolete old compat_43_mmap */
+	    sbrk },				/* 68 = sbrk */
 	{ 0, 0,
-	    sbrk },				/* 69 = sbrk */
+	    sstk },				/* 69 = sstk */
 	{ 0, 0,
-	    sstk },				/* 70 = sstk */
+	    mmap },				/* 70 = mmap */
 	{ 0, 0,
-	    mmap },				/* 71 = mmap */
+	    msync },				/* 71 = msync */
 	{ 0, 0,
-	    msync },				/* 72 = msync */
+	    munmap },				/* 72 = munmap */
 	{ 0, 0,
-	    munmap },				/* 73 = munmap */
+	    mprotect },				/* 73 = mprotect */
 	{ 0, 0,
-	    mprotect },				/* 74 = mprotect */
+	    madvise },				/* 74 = madvise */
 	{ 0, 0,
-	    madvise },				/* 75 = madvise */
+	    minherit },				/* 75 = minherit */
 	{ 0, 0,
 	    mincore },				/* 76 = mincore */
 	{ 0, 0,

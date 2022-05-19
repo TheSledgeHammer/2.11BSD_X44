@@ -79,6 +79,7 @@ extern int	msync();
 extern int	munmap();
 extern int	mprotect();
 extern int	madvise();
+extern int	minherit();
 extern int	mincore();
 extern int	mlock();
 extern int	munlock();

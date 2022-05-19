@@ -84,21 +84,28 @@
  */
 #define MAP_FAILED			((void *)-1)
 
-#ifndef KERNEL
+/*
+ * Flags to msync
+ */
+#define	MS_ASYNC			0x01	/* perform asynchronous writes */
+#define	MS_INVALIDATE		0x02	/* invalidate cached data */
+#define	MS_SYNC				0x04	/* perform synchronous writes */
+
+#ifndef _KERNEL
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
 /* Some of these int's should probably be size_t's */
-//caddr_t	mmap (caddr_t, size_t, int, int, int, off_t);
-int	mprotect (caddr_t, size_t, int);
-int	munmap (caddr_t, size_t);
-int	msync (caddr_t, size_t);
-int	mlock (caddr_t, size_t);
-int	munlock (caddr_t, size_t);
+caddr_t	mmap(caddr_t, size_t, int, int, int, off_t);
+int	mprotect(caddr_t, size_t, int);
+int	munmap(caddr_t, size_t);
+int	msync(caddr_t, size_t, int);
+int	mlock(caddr_t, size_t);
+int	munlock(caddr_t, size_t);
 int madvise(caddr_t, size_t, int);
+int	minherit(caddr_t, size_t, int);
 __END_DECLS
 
 #endif /* !KERNEL */
-
 #endif

@@ -47,11 +47,11 @@
 
 #define	MINFINITY	-32767			/* minus infinity */
 
-struct loadavg 		averunnable;		/* load average, of runnable procs */
+struct loadavg 		averunnable;	/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
-int freemem = (int)&cnt.v_free_count;
+int freemem = 	(int)&cnt.v_free_count;
 int nrun;
 
 void
@@ -210,11 +210,8 @@ vmtotal(totalp)
 	/*
 	 * Mark all objects as inactive.
 	 */
-	simple_lock(&vm_object_list_lock);
-	RB_FOREACH(object, object_t, &vm_object_list) {
-		object->flags &= ~OBJ_ACTIVE;
-	}
-	simple_unlock(&vm_object_list_lock);
+	vm_object_mark_inactive(object);
+
 	/*
 	 * Calculate process statistics.
 	 */
@@ -295,28 +292,11 @@ active:
 			}
 		}
 	}
+
 	/*
 	 * Calculate object memory usage statistics.
 	 */
-	simple_lock(&vm_object_list_lock);
-	RB_FOREACH(object, object_t, &vm_object_list) {
-		totalp->t_vm += num_pages(object->size);
-		totalp->t_rm += object->resident_page_count;
-		if (object->flags & OBJ_ACTIVE) {
-			totalp->t_avm += num_pages(object->size);
-			totalp->t_arm += object->resident_page_count;
-		}
-		if (object->ref_count > 1) {
-			/* shared object */
-			totalp->t_vmtxt += num_pages(object->size);
-			totalp->t_rmtxt += object->resident_page_count;
-			if (object->flags & OBJ_ACTIVE) {
-				totalp->t_avmtxt += num_pages(object->size);
-				totalp->t_armtxt += object->resident_page_count;
-			}
-		}
-	}
-	simple_unlock(&vm_object_list_lock);
+	vm_object_mem_stats(totalp, object);
 
 	totalp->t_vm += totalp->t_vmtxt;
 	totalp->t_avm += totalp->t_avmtxt;

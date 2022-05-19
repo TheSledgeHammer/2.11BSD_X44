@@ -75,14 +75,14 @@
 #define	SYS_pselect	65
 #define	SYS_vfork	66
 				/* 67 is obsolete old compat_43_lseek */
-				/* 68 is obsolete old compat_43_mmap */
-#define	SYS_sbrk	69
-#define	SYS_sstk	70
-#define	SYS_mmap	71
-#define	SYS_msync	72
-#define	SYS_munmap	73
-#define	SYS_mprotect	74
-#define	SYS_madvise	75
+#define	SYS_sbrk	68
+#define	SYS_sstk	69
+#define	SYS_mmap	70
+#define	SYS_msync	71
+#define	SYS_munmap	72
+#define	SYS_mprotect	73
+#define	SYS_madvise	74
+#define	SYS_minherit	75
 #define	SYS_mincore	76
 #define	SYS_mlock	77
 #define	SYS_munlock	78

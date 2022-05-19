@@ -109,14 +109,14 @@
 65  STD     	{ int pselect(); }
 66  STD     	{ int vfork(); }
 67	OBSOL		old compat_43_lseek
-68	OBSOL		old compat_43_mmap
-69  STD   		{ int sbrk(); }
-70	STD			{ int sstk(); }
-71	STD			{ int mmap(); }
-72	STD			{ int msync(); }
-73	STD			{ int munmap(); }
-74	STD			{ int mprotect(); }
-75	STD			{ int madvise(); }
+68  STD   		{ int sbrk(); }
+69	STD			{ int sstk(); }
+70	STD			{ int mmap(); }
+71	STD			{ int msync(); }
+72	STD			{ int munmap(); }
+73	STD			{ int mprotect(); }
+74	STD			{ int madvise(); }
+75 	STD			{ int minherit(); }
 76	STD			{ int mincore(); }
 77	STD			{ int mlock(); }
 78	STD			{ int munlock(); }

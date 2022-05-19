@@ -110,8 +110,8 @@ struct vm_object_hash_entry {
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
 #ifdef _KERNEL
-struct object_t;
-RB_HEAD(object_t, vm_object);
+struct object_rbt;
+RB_HEAD(object_rbt, vm_object);
 struct object_q;
 TAILQ_HEAD(object_q, vm_object);
 
@@ -119,9 +119,9 @@ struct object_q		vm_object_cached_list;	/* list of objects persisting */
 int					vm_object_cached;		/* size of cached list */
 simple_lock_data_t	vm_cache_lock;			/* lock for object cache */
 
-struct object_t		vm_object_list;			/* list of allocated objects */
+struct object_rbt	vm_object_tree;			/* tree of allocated objects */
 long				vm_object_count;		/* count of all objects */
-simple_lock_data_t	vm_object_list_lock;	/* lock for object list and count */
+simple_lock_data_t	vm_object_tree_lock;	/* lock for object tree and count */
 
 vm_object_t			kernel_object;			/* the single kernel object */
 vm_object_t			kmem_object;
@@ -159,5 +159,7 @@ void		 vm_object_remove (vm_pager_t);
 void		 vm_object_setpager (vm_object_t, vm_pager_t, vm_offset_t, bool_t);
 void		 vm_object_shadow (vm_object_t *, vm_offset_t *, vm_size_t);
 void		 vm_object_terminate (vm_object_t);
+void		 vm_object_mem_stats(struct vmtotal *, vm_object_t);
+void		 vm_object_mark_inactive(vm_object_t);
 #endif
 #endif /* _VM_OBJECT_H_ */

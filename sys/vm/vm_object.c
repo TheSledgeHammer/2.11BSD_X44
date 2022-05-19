@@ -125,10 +125,10 @@ vm_object_init(size)
 	register int	i;
 
 	TAILQ_INIT(&vm_object_cached_list);
-	RB_INIT(&vm_object_list);
+	RB_INIT(&vm_object_tree);
 	vm_object_count = 0;
 	simple_lock_init(&vm_cache_lock, "vm_cache_lock");
-	simple_lock_init(&vm_object_list_lock, "vm_object_list_lock");
+	simple_lock_init(&vm_object_tree_lock, "vm_object_tree_lock");
 
 	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++)
 		RB_INIT(&vm_object_hashtable[i]);
@@ -183,11 +183,11 @@ _vm_object_allocate(size, object)
 	object->shadow = NULL;
 	object->shadow_offset = (vm_offset_t) 0;
 
-	simple_lock(&vm_object_list_lock);
-	RB_INSERT(object_t, &vm_object_list, object);
+	simple_lock(&vm_object_tree_lock);
+	RB_INSERT(object_rbt, &vm_object_tree, object);
 	vm_object_count++;
 	cnt.v_nzfod += atop(size);
-	simple_unlock(&vm_object_list_lock);
+	simple_unlock(&vm_object_tree_lock);
 }
 
 /*
@@ -346,10 +346,10 @@ vm_object_terminate(object)
 	if (object->pager != NULL)
 		vm_pager_deallocate(object->pager);
 
-	simple_lock(&vm_object_list_lock);
-	RB_REMOVE(object_t, &vm_object_list, object);
+	simple_lock(&vm_object_tree_lock);
+	RB_REMOVE(object_rbt, &vm_object_tree, object);
 	vm_object_count--;
-	simple_unlock(&vm_object_list_lock);
+	simple_unlock(&vm_object_tree_lock);
 
 	/*
 	 * Free the space for the object.
@@ -876,8 +876,8 @@ vm_object_rb_compare(obj1, obj2)
 	return (0);
 }
 
-RB_PROTOTYPE(object_t, vm_object, object_tree, vm_object_rb_compare);
-RB_GENERATE(object_t, vm_object, object_tree, vm_object_rb_compare);
+RB_PROTOTYPE(object_rbt, vm_object, object_tree, vm_object_rb_compare);
+RB_GENERATE(object_rbt, vm_object, object_tree, vm_object_rb_compare);
 
 RB_PROTOTYPE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
 RB_GENERATE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
@@ -1195,10 +1195,10 @@ vm_object_collapse(object)
 
 			vm_object_unlock(backing_object);
 
-			simple_lock(&vm_object_list_lock);
-			RB_REMOVE(object_t, &vm_object_tree, backing_object);
+			simple_lock(&vm_object_tree_lock);
+			RB_REMOVE(object_rbt, &vm_object_tree, backing_object);
 			vm_object_count--;
-			simple_unlock(&vm_object_list_lock);
+			simple_unlock(&vm_object_tree_lock);
 
 			free((caddr_t)backing_object, M_VMOBJ);
 
@@ -1409,6 +1409,51 @@ vm_object_coalesce(prev_object, next_object,
 
 	vm_object_unlock(prev_object);
 	return(TRUE);
+}
+
+/*
+ *	Routine: 	vm_object_mem_stats:
+ *	Function: 	Calculate object memory usage statistics.
+ */
+void
+vm_object_mem_stats(totalp, object)
+	register struct vmtotal *totalp;
+	register vm_object_t 	object;
+{
+	simple_lock(&vm_object_tree_lock);
+	RB_FOREACH(object, object_rbt, &vm_object_tree)	{
+		totalp->t_vm += num_pages(object->size);
+		totalp->t_rm += object->resident_page_count;
+		if (object->flags & OBJ_ACTIVE) {
+			totalp->t_avm += num_pages(object->size);
+			totalp->t_arm += object->resident_page_count;
+		}
+		if (object->ref_count > 1) {
+			/* shared object */
+			totalp->t_vmtxt += num_pages(object->size);
+			totalp->t_rmtxt += object->resident_page_count;
+			if (object->flags & OBJ_ACTIVE) {
+				totalp->t_avmtxt += num_pages(object->size);
+				totalp->t_armtxt += object->resident_page_count;
+			}
+		}
+	}
+	simple_unlock(&vm_object_tree_lock);
+}
+
+/*
+ *	Routine: 	vm_object_mark_inactive:
+ *	Function: 	Mark all objects as inactive.
+ */
+void
+vm_object_mark_inactive(object)
+	register vm_object_t object;
+{
+	simple_lock(&vm_object_tree_lock);
+	RB_FOREACH(object, object_rbt, &vm_object_tree) {
+		object->flags &= ~OBJ_ACTIVE;
+	}
+	simple_unlock(&vm_object_tree_lock);
 }
 
 /*
