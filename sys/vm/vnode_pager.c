@@ -78,7 +78,7 @@ static int		 	vnode_pager_getpage (vm_pager_t, vm_page_t *, int, bool_t);
 static bool_t		vnode_pager_haspage (vm_pager_t, vm_offset_t);
 static void		 	vnode_pager_init (void);
 static int		 	vnode_pager_io (vn_pager_t, vm_page_t *, int, bool_t, enum uio_rw);
-static bool_t		vnode_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
+static int		vnode_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
 
 struct pagerops vnodepagerops = {
 	vnode_pager_init,
@@ -235,7 +235,7 @@ vnode_pager_getpage(pager, mlist, npages, sync)
 			      mlist, npages, sync, UIO_READ));
 }
 
-static bool_t
+static int
 vnode_pager_putpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
@@ -263,7 +263,7 @@ vnode_pager_putpage(pager, mlist, npages, sync)
 			mlist++;
 		}
 	}
-	return(err);
+	return (err);
 }
 
 static bool_t

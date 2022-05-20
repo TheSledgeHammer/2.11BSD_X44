@@ -55,9 +55,10 @@
  * Indirect driver for multi-controller paging.
  */
 
-static dev_type_read(swread);
-static dev_type_write(swwrite);
-static dev_type_strategy(swstrategy);
+dev_type_read(swread);
+dev_type_write(swwrite);
+dev_type_strategy(swstrategy);
+
 const struct bdevsw swap_bdevsw = {
 		.d_open = nullopen,
 		.d_close = nullclose,
@@ -105,7 +106,7 @@ swapinit()
 	struct swdevt *swp;
 	int error;
 
-	sp = &swbuf;
+	sp = swbuf;
 	p = &proc0;	/* XXX */
 
 	/*
@@ -297,7 +298,7 @@ swstrategy(bp)
  * if already swapping on this device.
  */
 struct swapon_args {
-	syscallarg(char) *name;
+	syscallarg(char *) name;
 };
 
 /* ARGSUSED */
