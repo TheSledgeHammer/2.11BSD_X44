@@ -47,16 +47,17 @@ void		 	chgkprot (caddr_t, int, int);
 
 #ifdef _KERNEL
 #ifdef TYPEDEF_FOR_UAP
-int		 		compat_43_getpagesize (struct proc *p, void *, int *);
-int		 		madvise (struct proc *, void *, int *);
-int		 		mincore (struct proc *, void *, int *);
-int		 		mprotect (struct proc *, void *, int *);
-int		 		msync (struct proc *, void *, int *);
-int		 		munmap (struct proc *, void *, int *);
-int		 		obreak (struct proc *, void *, int *);
-int				sbrk (struct proc *, void *, int *);
-int		 		smmap (struct proc *, void *, int *);
-int		 		sstk (struct proc *, void *, int *);
+//int		 		compat_43_getpagesize(struct proc *p, void *, int *);
+int		 		minherit();
+int		 		madvise();
+int		 		mincore();
+int		 		mprotect();
+int		 		msync();
+int		 		munmap();
+int		 		obreak(struct proc *, void *, int *);
+int				sbrk();
+//int		 		smmap(struct proc *, void *, int *);
+int		 		sstk();
 #endif
 
 void		 	assert_wait (void *, bool_t);
@@ -79,8 +80,8 @@ int		 		svm_allocate (struct proc *, void *, int *);
 int		 		svm_deallocate (struct proc *, void *, int *);
 int		 		svm_inherit (struct proc *, void *, int *);
 int		 		svm_protect (struct proc *, void *, int *);
-void			swapinit (void);
-int		 		swapon (struct proc *, void *, int *);
+void			swapinit(void);
+int		 	swapon();
 void		 	swapout (struct proc *);
 void		 	swapout_threads (void);
 int			 	swfree (struct proc *, int);
