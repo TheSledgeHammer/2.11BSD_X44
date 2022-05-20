@@ -901,7 +901,6 @@ void
 bdev_strategy(struct buf *bp)
 {
 	const struct bdevsw *d;
-	void *rv;
 	int error;
 
 	error = devsw_io_lookup(bp->b_dev, d, BDEVTYPE);
@@ -909,7 +908,7 @@ bdev_strategy(struct buf *bp)
 		return;
 	}
 
-	rv = (*d->d_strategy)(bp);
+	(*d->d_strategy)(bp);
 
 	return;
 }
@@ -1160,7 +1159,6 @@ void
 cdev_strategy(struct buf *bp)
 {
 	const struct cdevsw *c;
-	void *rv
 	int error;
 
 	error = devsw_io_lookup(bp->b_dev, c, CDEVTYPE);
@@ -1168,7 +1166,7 @@ cdev_strategy(struct buf *bp)
 		return;
 	}
 
-	rv = (*c->d_strategy)(bp);
+	(*c->d_strategy)(bp);
 
 	return;
 }
