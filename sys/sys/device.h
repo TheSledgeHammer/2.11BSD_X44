@@ -195,11 +195,28 @@ struct cfresource {
 };
 
 /* cfdriver and cfops declarations */
+#define CFOPS_DECL1(name, matfn, attfn, detfn, actfn) 	\
+struct cfops __CONCAT(name,_cops) = {			\
+	.cops_match = (matfn),				\
+	.cops_attach = (attfn),				\
+	.cops_detach = (detfn),				\
+	.cops_activate = (actfn),			\
+}
+
+#define CFDRIVER_DECL1(devs, name, cops, class, size)	\
+struct cfdriver __CONCAT(name,_cd) = { 			\
+	.cd_devs = (devs),				\
+	.cd_name = __STRING(name),			\
+	.cd_ops =  &__CONCAT(name,_cops),		\
+	.cd_class = (class), 				\
+	.cd_devsize = (size),				\
+}
+
 #define CFDRIVER_DECL(devs, name, cops, class, size) 	\
-	struct cfdriver (name##_cd) = { (devs), (#name), (cops), (class), (size) }
+	CFDRIVER_DECL1(devs, name, cops, class, size)
 
 #define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
-	struct cfops (name##_cops) = { (#name), (matfn), (attfn), (detfn), (actfn) }
+	CFOPS_DECL1(name, matfn, attfn, detfn, actfn)
 
 extern struct devicelist			alldevs;				/* head of list of all devices */
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */
