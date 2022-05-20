@@ -87,8 +87,8 @@ __KERNEL_RCSID(0, "$NetBSD: pciide.c,v 1.209 2003/10/08 11:51:59 bouyer Exp $");
 int		pciide_match(struct device *, struct cfdata *, void *);
 void	pciide_attach(struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, pciide, &pciide_cops, DV_DULL, sizeof(struct pciide_softc));
 CFOPS_DECL(pciide, pciide_match, pciide_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, pciide, &pciide_cops, DV_DULL, sizeof(struct pciide_softc));
 
 int
 pciide_match(parent, match, aux)

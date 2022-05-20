@@ -135,8 +135,8 @@ static int uhid_do_read(struct uhid_softc *, struct uio *uio, int);
 static int uhid_do_write(struct uhid_softc *, struct uio *uio, int);
 static int uhid_do_ioctl(struct uhid_softc*, u_long, caddr_t, int, struct proc *);
 
-CFDRIVER_DECL(NULL, uhid, &uhid_cops, DV_DULL, sizeof(struct uhid_softc));
 CFOPS_DECL(uhid, uhid_match, uhid_attach, uhid_detach, uhid_activate);
+CFDRIVER_DECL(NULL, uhid, &uhid_cops, DV_DULL, sizeof(struct uhid_softc));
 
 int
 uhid_match(struct device *parent, struct cfdata *match, void *aux)

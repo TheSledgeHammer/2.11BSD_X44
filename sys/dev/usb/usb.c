@@ -129,8 +129,8 @@ struct cdevsw usb_cdevsw = {
 #define USBUNIT(dev) 	(minor(dev))
 static const char *usbrev_str[] = USBREV_STR;
 
-CFDRIVER_DECL(NULL, usb, &usb_cops, DV_DULL, sizeof(struct usb_softc));
 CFOPS_DECL(usb, usb_match, usb_attach, usb_detach, usb_activate);
+CFDRIVER_DECL(NULL, usb, &usb_cops, DV_DULL, sizeof(struct usb_softc));
 
 int
 usb_match(struct device *parent, struct cfdata *match, void *aux)

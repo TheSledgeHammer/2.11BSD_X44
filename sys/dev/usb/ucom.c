@@ -150,8 +150,8 @@ const struct cdevsw ucom_cdevsw = {
 		.d_type = D_TTY
 };
 
-CFDRIVER_DECL(NULL, ucom, &ucom_cops, DV_TTY, sizeof(struct ucom_softc));
 CFOPS_DECL(ucom, ucom_match, ucom_attach, ucom_detach, ucom_activate);
+CFDRIVER_DECL(NULL, ucom, &ucom_cops, DV_TTY, sizeof(struct ucom_softc));
 
 static void	ucom_cleanup(struct ucom_softc *);
 static void	ucom_hwiflow(struct ucom_softc *);

@@ -140,8 +140,8 @@ const struct cdevsw ugen_cdevsw = {
 		.d_type = D_OTHER
 };
 
-CFDRIVER_DECL(NULL, ugen, &ugen_cops, DV_TTY, sizeof(struct ugen_softc));
 CFOPS_DECL(ugen, ugen_match, ugen_attach, ugen_detach, ugen_activate);
+CFDRIVER_DECL(NULL, ugen, &ugen_cops, DV_TTY, sizeof(struct ugen_softc));
 
 static void ugenintr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status);
 static void ugen_isoc_rintr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status);

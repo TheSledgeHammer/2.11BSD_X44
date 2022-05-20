@@ -57,8 +57,8 @@ struct pcppi_softc {
 int		pcppi_match (struct device *, struct cfdata *, void *);
 void	pcppi_attach (struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, pcppi, &pcppi_cops, DV_DULL, sizeof(struct pcppi_softc));
 CFOPS_DECL(pcppi, pcppi_match, pcppi_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, pcppi, &pcppi_cops, DV_DULL, sizeof(struct pcppi_softc));
 
 static void pcppi_bell_stop (void*);
 

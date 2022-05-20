@@ -53,8 +53,8 @@ __KERNEL_RCSID(0, "$NetBSD: lpt_puc.c,v 1.6 2002/10/02 16:51:43 thorpej Exp $");
 int		lpt_puc_probe(struct device *, struct cfdata *, void *);
 void	lpt_puc_attach(struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, lpt_puc, &lpt_puc_cops, DV_DULL, sizeof(struct lpt_softc));
 CFOPS_DECL(lpt_puc, lpt_puc_probe, lpt_puc_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, lpt_puc, &lpt_puc_cops, DV_DULL, sizeof(struct lpt_softc));
 
 int
 lpt_puc_probe(parent, match, aux)

@@ -68,8 +68,8 @@ int	pcicisapnp_debug = 0 /* XXX */ ;
 int 	pcic_isapnp_match (struct device *, struct cfdata *, void *);
 void	pcic_isapnp_attach (struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, pcic_isapnp, &pcic_isapnp_cops, DV_DULL, sizeof(struct pcic_isa_softc));
 CFOPS_DECL(pcic_isapnp, pcic_isapnp_match, pcic_isapnp_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, pcic_isapnp, &pcic_isapnp_cops, DV_DULL, sizeof(struct pcic_isa_softc));
 
 static struct pcmcia_chip_functions pcic_isa_functions = {
 	pcic_chip_mem_alloc,

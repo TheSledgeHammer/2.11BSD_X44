@@ -55,8 +55,8 @@ void	pcic_pci_attach (struct device *, struct device *, void *);
 void	*pcic_pci_chip_intr_establish (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
 void	pcic_pci_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
 
-CFDRIVER_DECL(NULL, pcic_pci, &pcic_pci_cops, DV_DULL, sizeof(struct pcic_softc));
 CFOPS_DECL(pcic_pci, pcic_pci_match, pcic_pci_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, pcic_pci, &pcic_pci_cops, DV_DULL, sizeof(struct pcic_softc));
 
 static struct pcmcia_chip_functions pcic_pci_functions = {
 	pcic_chip_mem_alloc,

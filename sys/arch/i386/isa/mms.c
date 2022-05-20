@@ -60,8 +60,8 @@ int 	mmsprobe (struct device *, struct cfdata *, void *);
 void 	mmsattach (struct device *, struct device *, void *);
 int 	mmsintr (void *);
 
-CFDRIVER_DECL(NULL, mms, &mms_cops, DV_DULL, sizeof(struct mms_softc));
 CFOPS_DECL(mms, mmsprobe, mmsattach, NULL, NULL);
+CFDRIVER_DECL(NULL, mms, &mms_cops, DV_DULL, sizeof(struct mms_softc));
 
 int		mms_enable (void *);
 int		mms_ioctl (void *, u_long, caddr_t, int, struct proc *);

@@ -43,8 +43,8 @@ __KERNEL_RCSID(0, "$NetBSD: lpt_upc.c,v 1.5 2002/10/02 16:33:34 thorpej Exp $");
 static int lpt_upc_match(struct device *, struct cfdata *, void *);
 static void lpt_upc_attach(struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, lpt_upc, &lpt_upc_cops, DV_DULL, sizeof(struct lpt_softc));
 CFOPS_DECL(lpt_upc, lpt_upc_match, lpt_upc_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, lpt_upc, &lpt_upc_cops, DV_DULL, sizeof(struct lpt_softc));
 
 static int
 lpt_upc_match(struct device *parent, struct cfdata *cf, void *aux)

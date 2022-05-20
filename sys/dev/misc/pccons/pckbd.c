@@ -133,8 +133,8 @@ static int pckbd_is_console(pckbport_tag_t, pckbport_slot_t);
 int pckbdprobe(struct device *, struct cfdata *, void *);
 void pckbdattach(struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, pckbd, &pckbd_cops, DV_DULL, sizeof(struct pckbd_softc));
 CFOPS_DECL(pckbd, pckbdprobe, pckbdattach, NULL, NULL);
+CFDRIVER_DECL(NULL, pckbd, &pckbd_cops, DV_DULL, sizeof(struct pckbd_softc));
 
 int		pckbd_enable(void *, int);
 void	pckbd_set_leds(void *, int);

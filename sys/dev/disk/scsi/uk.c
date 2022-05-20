@@ -70,8 +70,8 @@ void ukattach (struct device *, struct device *, void *);
 int ukactivate (struct device *, enum devact);
 int ukdetach (struct device *, int);
 
-CFDRIVER_DECL(NULL, uk, &uk_cops, DV_DULL, sizeof(struct uk_softc));
 CFOPS_DECL(uk, ukmatch, ukattach, ukdetach, ukactivate);
+CFDRIVER_DECL(NULL, uk, &uk_cops, DV_DULL, sizeof(struct uk_softc));
 
 extern struct cfdriver uk_cd;
 

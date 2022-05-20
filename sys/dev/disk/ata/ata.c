@@ -346,8 +346,8 @@ atabus_detach(struct device *self, int flags)
 	return (error);
 }
 
-CFDRIVER_DECL(NULL, atabus, &atabus_cops, DV_DISK, sizeof(struct atabus_softc));
 CFOPS_DECL(atabus, atabus_match, atabus_attach, atabus_detach, atabus_activate);
+CFDRIVER_DECL(NULL, atabus, &atabus_cops, DV_DISK, sizeof(struct atabus_softc));
 
 /*****************************************************************************
  * Common ATA bus operations.

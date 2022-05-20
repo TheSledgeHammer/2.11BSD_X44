@@ -111,8 +111,8 @@ static int ibm_modem_getcfg (struct mca_attach_args *, int *, int *);
 static int neocom1_getcfg (struct mca_attach_args *, int *, int *);
 static int ibm_mpcom_getcfg (struct mca_attach_args *, int *, int *);
 
-CFDRIVER_DECL(NULL, com_mca, &com_mca_cops, DV_DULL, sizeof(struct com_mca_softc));
 CFOPS_DECL(com_mca, com_mca_probe, com_mca_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, com_mca, &com_mca_cops, DV_DULL, sizeof(struct com_mca_softc));
 
 static const struct com_mca_product {
 	u_int32_t	cp_prodid;	/* MCA product ID */

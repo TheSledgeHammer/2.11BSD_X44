@@ -255,8 +255,8 @@ static int wskbd_mux_close(struct wsevsrc *);
 static int wskbd_do_open(struct wskbd_softc *, struct wseventvar *);
 static int wskbd_do_ioctl(struct device *, u_long, caddr_t, int, struct proc *);
 
-CFDRIVER_DECL(NULL, wskbd, &wskbd_cops, DV_DULL, sizeof(struct wskbd_softc));
 CFOPS_DECL(wskbd, wskbd_match, wskbd_attach, wskbd_detach, wskbd_activate);
+CFDRIVER_DECL(NULL, wskbd, &wskbd_cops, DV_DULL, sizeof(struct wskbd_softc));
 
 extern struct cfdriver wskbd_cd;
 

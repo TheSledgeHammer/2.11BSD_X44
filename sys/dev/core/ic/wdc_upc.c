@@ -54,8 +54,8 @@ struct wdc_upc_softc {
 	struct ata_queue sc_chqueue;
 };
 
-CFDRIVER_DECL(NULL, wdc_upc, &wdc_upc_cops, DV_DULL, sizeof(struct wdc_upc_softc));
 CFOPS_DECL(wdc_upc, wdc_upc_match, wdc_upc_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, wdc_upc, &wdc_upc_cops, DV_DULL, sizeof(struct wdc_upc_softc));
 
 static int
 wdc_upc_match(struct device *parent, struct cfdata *cf, void *aux)

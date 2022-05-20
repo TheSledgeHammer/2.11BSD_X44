@@ -114,8 +114,8 @@ static void ega_setfont(struct ega_config *, struct egascreen *);
 static int ega_allocattr(void *, int, int, int, long *);
 void ega_copyrows(void *, int, int, int);
 
-CFDRIVER_DECL(NULL, ega, &ega_cops, DV_DULL, sizeof(struct ega_softc));
 CFOPS_DECL(ega, ega_match, ega_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, ega, &ega_cops, DV_DULL, sizeof(struct ega_softc));
 
 const struct wsdisplay_emulops ega_emulops = {
 	pcdisplay_cursor,

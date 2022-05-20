@@ -76,8 +76,8 @@ static int pcdisplay_probe_mono (bus_space_tag_t, bus_space_tag_t);
 static void pcdisplay_init (struct pcdisplay_config *, bus_space_tag_t, bus_space_tag_t, int);
 static int pcdisplay_allocattr (void *, int, int, int, long *);
 
-CFDRIVER_DECL(NULL, pcdisplay, &pcdisplay_cops, DV_DULL, sizeof(struct pcdisplay_softc));
 CFOPS_DECL(pcdisplay, pcdisplay_match, pcdisplay_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, pcdisplay, &pcdisplay_cops, DV_DULL, sizeof(struct pcdisplay_softc));
 
 const struct wsdisplay_emulops pcdisplay_emulops = {
 	pcdisplay_cursor,

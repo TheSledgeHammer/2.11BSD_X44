@@ -175,8 +175,8 @@ int		au_portof (struct audio_softc *, char *);
 struct audio_params audio_default = 
 	{ 8000, AUDIO_ENCODING_ULAW, 8, 1, 0, 1 };
 
-CFDRIVER_DECL(NULL, audio, &audio_cops, DV_DULL, sizeof(struct audio_softc));
 CFOPS_DECL(audio, audioprobe, audioattach, NULL, NULL);
+CFDRIVER_DECL(NULL, audio, &audio_cops, DV_DULL, sizeof(struct audio_softc));
 
 static dev_type_open(audioopen);
 /* XXXMRG use more dev_type_xxx */

@@ -63,8 +63,8 @@ int 	lmsprobe (struct device *, struct cfdata *, void *);
 void 	lmsattach (struct device *, struct device *, void *);
 int 	lmsintr (void *);
 
-CFDRIVER_DECL(NULL, lms, &lms_cops, DV_DULL, sizeof(struct lms_softc));
 CFOPS_DECL(lms, lmsprobe, lmsattach, NULL, NULL);
+CFDRIVER_DECL(NULL, lms, &lms_cops, DV_DULL, sizeof(struct lms_softc));
 
 int		lms_enable (void *);
 int		lms_ioctl (void *, u_long, caddr_t, int, struct proc *);

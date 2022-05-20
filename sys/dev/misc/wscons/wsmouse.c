@@ -161,8 +161,8 @@ static int  wsmousedoioctl(struct device *, u_long, caddr_t, int, struct proc *)
 
 static int  wsmousedoopen(struct wsmouse_softc *, struct wseventvar *);
 
-CFDRIVER_DECL(NULL, wsmouse, &wsmouse_cops, DV_DULL, sizeof(struct wsmouse_softc));
 CFOPS_DECL(wsmouse, wsmouse_match, wsmouse_attach, wsmouse_detach, wsmouse_activate);
+CFDRIVER_DECL(NULL, wsmouse, &wsmouse_cops, DV_DULL, sizeof(struct wsmouse_softc));
 
 extern struct cfdriver wsmouse_cd;
 

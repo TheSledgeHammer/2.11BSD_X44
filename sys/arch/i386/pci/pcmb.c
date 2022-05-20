@@ -62,8 +62,8 @@ __KERNEL_RCSID(0, "$NetBSD: pcmb.c,v 1.8 2003/02/26 22:23:09 fvdl Exp $");
 int	pcmbmatch (struct device *, struct cfdata *, void *);
 void	pcmbattach (struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, pcmb, &pcmb_cops, DV_DULL, sizeof(struct device));
 CFOPS_DECL(pcmb, pcmbmatch, pcmbattach, NULL, NULL);
+CFDRIVER_DECL(NULL, pcmb, &pcmb_cops, DV_DULL, sizeof(struct device));
 
 void	pcmb_callback (struct device *);
 int	pcmb_print (void *, const char *);

@@ -127,8 +127,8 @@ const struct wsmouse_accessops ums_accessops = {
 	ums_disable,
 };
 
-CFDRIVER_DECL(NULL, ums, &ums_cops, DV_DULL, sizeof(struct ums_softc));
 CFOPS_DECL(ums, ums_match, ums_attach, ums_detach, ums_activate);
+CFDRIVER_DECL(NULL, ums, &ums_cops, DV_DULL, sizeof(struct ums_softc));
 
 int
 ums_match(struct device *parent, struct cfdata *match, void *aux)

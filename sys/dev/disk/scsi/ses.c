@@ -179,8 +179,8 @@ static int ses_match (struct device *, struct cfdata *, void *);
 static void ses_attach (struct device *, struct device *, void *);
 static enctyp ses_device_type (struct scsipibus_attach_args *);
 
-CFDRIVER_DECL(NULL, ses, &ses_cops, DV_DULL, sizeof(struct ses_softc));
 CFOPS_DECL(ses, ses_match, ses_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, ses, &ses_cops, DV_DULL, sizeof(struct ses_softc));
 
 extern struct cfdriver ses_cd;
 

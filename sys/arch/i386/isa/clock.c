@@ -121,8 +121,8 @@ int clock_debug = 0;
 int sysbeepmatch(struct device *, struct cfdata *, void *);
 void sysbeepattach(struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, sysbeep, &sysbeep_cops, DV_DULL, sizeof(struct device));
 CFOPS_DECL(sysbeep, sysbeepmatch, sysbeepattach, NULL, NULL);
+CFDRIVER_DECL(NULL, sysbeep, &sysbeep_cops, DV_DULL, sizeof(struct device));
 
 static int 			ppi_attached;
 static pcppi_tag_t 	ppicookie;

@@ -73,8 +73,8 @@ struct vga_pci_softc {
 int		vga_pci_match (struct device *, struct cfdata *, void *);
 void	vga_pci_attach (struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, vga_pci, &video_cops, DV_DULL, sizeof(struct vga_pci_softc));
 CFOPS_DECL(vga_pci, vga_pci_match, vga_pci_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, vga_pci, &vga_pci_cops, DV_DULL, sizeof(struct vga_pci_softc));
 
 const struct vga_funcs vga_pci_funcs = {
 	vga_pci_ioctl,

@@ -270,8 +270,8 @@ const struct wskbd_mapdata ukbd_keymapdata = {
 #endif
 };
 
-CFDRIVER_DECL(NULL, ukbd, &ukbd_cops, DV_DULL, sizeof(struct ukbd_softc));
 CFOPS_DECL(ukbd, ukbd_match, ukbd_attach, ukbd_detach, ukbd_activate);
+CFDRIVER_DECL(NULL, ukbd, &ukbd_cops, DV_DULL, sizeof(struct ukbd_softc));
 
 int
 ukbd_match(struct device *parent, struct cfdata *match, void *aux)

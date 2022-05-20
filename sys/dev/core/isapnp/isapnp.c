@@ -66,8 +66,8 @@ static int isapnp_find (struct isapnp_softc *, int);
 static int isapnp_match (struct device *, struct cfdata *, void *);
 static void isapnp_attach (struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, isapnp, &isapnp_cops, DV_DULL, sizeof(struct isapnp_softc));
 CFOPS_DECL(isapnp, isapnp_attach, isapnp_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, isapnp, &isapnp_cops, DV_DULL, sizeof(struct isapnp_softc));
 
 /* isapnp_init():
  *	Write the PNP initiation key to wake up the cards...

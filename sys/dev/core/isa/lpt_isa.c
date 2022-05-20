@@ -93,8 +93,8 @@ struct lpt_isa_softc {
 int lpt_isa_probe (struct device *, struct cfdata *, void *);
 void lpt_isa_attach (struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, lpt_isa, &lpt_isa_cops, DV_DULL, sizeof(struct lpt_isa_softc));
 CFOPS_DECL(lpt_isa, lpt_isa_probe, lpt_isa_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, lpt_isa, &lpt_isa_cops, DV_DULL, sizeof(struct lpt_isa_softc));
 
 int	lpt_port_test (bus_space_tag_t, bus_space_handle_t, bus_addr_t,
 	    bus_size_t, u_char, u_char);

@@ -60,7 +60,7 @@ int	 	eisaprint (void *, const char *);
 void 	eisa_devinfo (const char *, char *);
 
 CFOPS_DECL(eisa, eisamatch, eisaattach, NULL, NULL);
-CFDRIVER_DECL(NULL, eisa, eisa_cops, DV_DULL, sizeof(struct device));
+CFDRIVER_DECL(NULL, eisa, &eisa_cops, DV_DULL, sizeof(struct device));
 
 int
 eisamatch(parent, cf, aux)

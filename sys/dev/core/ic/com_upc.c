@@ -46,8 +46,8 @@ __KERNEL_RCSID(0, "$NetBSD: com_upc.c,v 1.5 2002/10/02 16:33:32 thorpej Exp $");
 static int com_upc_match(struct device *, struct cfdata *, void *);
 static void com_upc_attach(struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, com_upc, &com_upc_cops, DV_DULL, sizeof(struct com_softc));
 CFOPS_DECL(com_upc, com_upc_match, com_upc_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, com_upc, &com_upc_cops, DV_DULL, sizeof(struct com_softc));
 
 static int
 com_upc_match(struct device *parent, struct cfdata *cf, void *aux)

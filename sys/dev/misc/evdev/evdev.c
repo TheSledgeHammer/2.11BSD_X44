@@ -57,8 +57,8 @@
 #define	debugf(client, fmt, args...)
 #endif
 
-CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
 CFOPS_DECL(evdev, evdev_match, evdev_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
 
 #define	DEF_RING_REPORTS	8
 

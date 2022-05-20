@@ -46,8 +46,8 @@ struct cpu_softc {
 static int cpu_match(struct device *, struct cfdata *, void *);
 static void cpu_attach(struct device *, struct device *, void *);
 
-CFDRIVER_DECL(NULL, cpu, &cpu_cops, DV_DULL, sizeof(struct cpu_softc));
 CFOPS_DECL(cpu, cpu_match, cpu_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, cpu, &cpu_cops, DV_DULL, sizeof(struct cpu_softc));
 
 void
 cpu_init_first()

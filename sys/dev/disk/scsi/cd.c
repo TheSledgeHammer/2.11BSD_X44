@@ -147,8 +147,8 @@ void	cdattach (struct device *, struct device *, void *);
 int		cdactivate (struct device *, enum devact);
 int		cddetach (struct device *, int);
 
-CFDRIVER_DECL(NULL, cd, &cd_cops, DV_DISK, sizeof(struct cd_softc));
 CFOPS_DECL(cd, cdmatch, cdattach, cddetach, cdactivate);
+CFDRIVER_DECL(NULL, cd, &cd_cops, DV_DISK, sizeof(struct cd_softc));
 
 extern struct cfdriver cd_cd;
 

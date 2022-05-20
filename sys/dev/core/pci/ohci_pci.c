@@ -75,8 +75,8 @@ struct ohci_pci_softc {
 	void 				*sc_ih;		/* interrupt vectoring */
 };
 
-CFDRIVER_DECL(NULL, ohci_pci, &ohci_pci_cops, DV_DULL, sizeof(struct ohci_pci_softc));
 CFOPS_DECL(ohci_pci, ohci_pci_match, ohci_pci_attach, ohci_pci_detach, ohci_activate);
+CFDRIVER_DECL(NULL, ohci_pci, &ohci_pci_cops, DV_DULL, sizeof(struct ohci_pci_softc));
 
 int
 ohci_pci_match(struct device *parent, struct cfdata *match, void *aux)

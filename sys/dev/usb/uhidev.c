@@ -82,8 +82,8 @@ static int uhidev_maxrepid(void *buf, int len);
 static int uhidevprint(void *aux, const char *pnp);
 static int uhidevsubmatch(struct device *parent, struct cfdata *cf, void *aux);
 
-CFDRIVER_DECL(NULL, uhidev, &uhidev_cops, DV_DULL, sizeof(struct uhidev_softc));
 CFOPS_DECL(uhidev, uhidev_match, uhidev_attach, uhidev_detach, uhidev_activate);
+CFDRIVER_DECL(NULL, uhidev, &uhidev_cops, DV_DULL, sizeof(struct uhidev_softc));
 
 uhidev_match(struct device *parent, struct cfdata *match, void *aux)
 {
