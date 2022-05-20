@@ -31,7 +31,7 @@
 struct bdevsw {
 	int			(*d_open)(dev_t, int, int, struct proc *);
 	int			(*d_close)(dev_t, int, int, struct proc *);
-	int			(*d_strategy)(struct buf *);
+	void		(*d_strategy)(struct buf *);
 	int			(*d_ioctl)(dev_t, u_long, caddr_t, int, struct proc *);
 	int			(*d_root)(void);		/* parameters vary by architecture */
 	int			(*d_dump)(dev_t);
@@ -55,7 +55,7 @@ struct cdevsw {
 	int			(*d_select)(dev_t, int, struct proc *);
 	int			(*d_poll)(dev_t, int, struct proc *);
 	caddr_t		(*d_mmap)(dev_t, off_t, int);
-	int			(*d_strategy)(struct buf *);
+	void		(*d_strategy)(struct buf *);
 	int			(*d_kqfilter)(dev_t, struct knote *);
 	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
@@ -117,7 +117,7 @@ typedef struct tty 	*dev_type_tty_t(dev_t);
 typedef int 		dev_type_select_t(dev_t, int, struct proc *);
 typedef int 		dev_type_poll_t(dev_t, int, struct proc *);
 typedef caddr_t 	dev_type_mmap_t(dev_t, off_t, int);
-typedef int 		dev_type_strategy_t(struct buf *);
+typedef void 		dev_type_strategy_t(struct buf *);
 typedef int 		dev_type_modem_t(struct tty *, int);
 typedef int 		dev_type_rint_t(int, struct tty *);
 typedef int 		dev_type_rend_t(void);

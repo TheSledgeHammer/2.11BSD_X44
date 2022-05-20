@@ -897,20 +897,21 @@ bdev_close(dev_t dev, int fflag, int devtype, struct proc *p)
 	return (rv);
 }
 
-int
+void
 bdev_strategy(struct buf *bp)
 {
 	const struct bdevsw *d;
-	int rv, error;
+	void *rv;
+	int error;
 
 	error = devsw_io_lookup(bp->b_dev, d, BDEVTYPE);
 	if(error != 0) {
-		return (error);
+		return;
 	}
 
 	rv = (*d->d_strategy)(bp);
 
-	return (rv);
+	return;
 }
 
 int
@@ -1155,20 +1156,21 @@ cdev_mmap(dev_t dev, off_t off, int flag)
 	return (rv);
 }
 
-int
+void
 cdev_strategy(struct buf *bp)
 {
 	const struct cdevsw *c;
-	int rv, error;
+	void *rv
+	int error;
 
 	error = devsw_io_lookup(bp->b_dev, c, CDEVTYPE);
 	if(error != 0) {
-		return (error);
+		return;
 	}
 
 	rv = (*c->d_strategy)(bp);
 
-	return (rv);
+	return;
 }
 
 int

@@ -57,13 +57,14 @@ void putphysbuf(struct buf *bp);
  *
  * Comments in brackets are from Leffler, et al.'s pseudo-code implementation.
  */
+
 int
 physio(strategy, bp, dev, flags, minphys, uio)
-	void (*strategy) (struct buf *);
+	void (*strategy)(struct buf *);
 	struct buf *bp;
 	dev_t dev;
 	int flags;
-	void (*minphys) (struct buf *);
+	void (*minphys)(struct buf *);
 	struct uio *uio;
 {
 	struct iovec *iovp;

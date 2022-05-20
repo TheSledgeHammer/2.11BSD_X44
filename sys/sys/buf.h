@@ -278,7 +278,12 @@ int			geterror(struct buf *);
 void		cluster_callback(struct buf *);
 int			cluster_read(struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
 void		cluster_write(struct buf *, u_quad_t);
+
+int 		physio(void (*)(struct buf *), struct buf *, dev_t, int, void (*)(struct buf *), struct uio *);
 void		minphys(struct buf *);
+int			rawrw(dev_t, struct uio *, int);
+int			rawread(dev_t, struct uio *);
+int			rawwrite(dev_t, struct uio *);
 
 void		vwakeup(struct buf *);
 void		vmapbuf(struct buf *);

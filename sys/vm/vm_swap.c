@@ -47,12 +47,17 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/file.h>
+#include <sys/sysdecl.h>
 
 #include <miscfs/specfs/specdev.h>
 
 /*
  * Indirect driver for multi-controller paging.
  */
+
+static dev_type_read(swread);
+static dev_type_write(swwrite);
+static dev_type_strategy(swstrategy);
 const struct bdevsw swap_bdevsw = {
 		.d_open = nullopen,
 		.d_close = nullclose,
@@ -256,7 +261,7 @@ swstrategy(bp)
 		seg = bp->b_blkno / dmmax;
 		index = seg % nswdev;
 		seg /= nswdev;
-		bp->b_blkno = seg*dmmax + off;
+		bp->b_blkno = seg * dmmax + off;
 #endif
 	} else
 		index = 0;
@@ -297,21 +302,22 @@ struct swapon_args {
 
 /* ARGSUSED */
 int
-swapon(p, uap, retval)
-	struct proc *p;
-	struct swapon_args *uap;
-	int *retval;
+swapon()
 {
+	register struct swapon_args *uap = (struct swapon_args *)u.u_ap;
+	struct proc *p;
+	int *retval;
 	register struct vnode *vp;
 	register struct swdevt *sp;
 	dev_t dev;
 	int error;
 	struct nameidata nd;
 
+	p = u.u_procp;
 	if (error == suser1(p->p_ucred, &p->p_acflag)) {
 		return (error);
 	}
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, name), p);
 	if (error == namei(&nd)) {
 		return (error);
 	}
@@ -369,6 +375,7 @@ swfree(p, index)
 	register swblk_t 		vsbase;
 	register long 			blk;
 	struct vnode 			*vp;
+	const struct bdevsw		*bdev;
 	register swblk_t 		dvbase;
 	register int 			nblks;
 	int 					error;
@@ -387,8 +394,9 @@ swfree(p, index)
 	if (nblks <= 0) {
 		int perdev;
 		dev_t dev = sp->sw_dev;
+		bdev = bdevsw_lookup(dev);
 
-		if (bdevsw[major(dev)].d_psize == 0 || (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
+		if (bdev->d_psize == 0 || (nblks = (*bdev->d_psize)(dev)) == -1) {
 			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
 			sp->sw_flags &= ~SW_FREED;
 			return (ENXIO);
