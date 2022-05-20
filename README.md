@@ -124,7 +124,7 @@ Cross-Compiler: Successful Builds
 ---------------
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
-|  GCC  | Yes   |  i386  | yes (without networking) | no | 
+|  GCC  | Yes   |  i386  | yes (without networking) | yes | 
 |  ** CLANG  | No   |  i386  | no | no | 
 |  PCC  | No   |  i386  | no | no | 
 
