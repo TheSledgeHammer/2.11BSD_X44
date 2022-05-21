@@ -39,8 +39,7 @@
 #ifndef _SYS_UCONTEXT_H_
 #define _SYS_UCONTEXT_H_
 
-//#include <sys/sigtypes.h>
-#include <devel/arch/i386/include/mcontext.h>
+#include <machine/mcontext.h>
 
 typedef struct {
 	void					*ss_sp;			/* signal stack base */

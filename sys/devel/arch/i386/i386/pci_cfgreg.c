@@ -137,8 +137,9 @@ pci_cfgregopen(void)
 	opened = 1;
 
 	/* $PIR requires PCI BIOS 2.10 or greater. */
-	if (v >= 0x0210)
+	if (v >= 0x0210) {
 		pci_pir_open();
+	}
 
 	return (1);
 }

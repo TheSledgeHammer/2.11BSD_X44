@@ -190,7 +190,7 @@ struct cfresource {
 	union {
 		long			longval;
 		int				intval;
-		char*			stringval;
+		char			*stringval;
 	} cr_u;
 };
 

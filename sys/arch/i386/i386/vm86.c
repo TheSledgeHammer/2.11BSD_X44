@@ -751,10 +751,7 @@ vm86_datacall(int intnum, struct vm86frame *vmf, struct vm86context *vmc)
 	}
 
 	vmf->vmf_trapno = intnum;
-	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall);
-	critical_enter();
-	retval = p(vmf);
-	critical_exit();
+	retval = vm86_bioscall(vmf);
 
 	for (i = 0; i < vmc->npages; i++) {
 		entry = vmc->pmap[i].pte_num;

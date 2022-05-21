@@ -13,7 +13,7 @@ INCS=		ansi.h aout_machdep.h asm.h atomic.h bios.h bootinfo.h bus.h 			\
 # MATH EMU
 INCS+=		math_emu.h
 # MP/SMP
-INCS+=		mpbiosreg.h mpbiosvar.h mpconfig.h percpu.h smp.h
+INCS+=		mcontext.h mpbiosreg.h mpbiosvar.h mpconfig.h percpu.h smp.h
 # APIC
 INCS+= 		apic/apic.h apic/ioapicreg.h apic/ioapicvar.h apic/lapicreg.h 			\
 			apic/lapicvar.h

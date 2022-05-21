@@ -80,6 +80,7 @@
 //#define	KPTDI				0										/* start of kernel virtual pde's */
 
 #ifndef PMAP_PAE_COMP
+
 /* NOPAE Constants */
 #define	PD_SHIFT			22
 //#define	PG_FRAME		(~PAGE_MASK)

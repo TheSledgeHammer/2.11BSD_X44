@@ -59,6 +59,7 @@
 #include <sys/sysctl.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
+#include <sys/ucontext.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
@@ -1143,6 +1144,173 @@ need_resched(p)
 	if (p) {
 		aston(p);
 	}
+}
+
+int
+cpu_getmcontext(p, mcp, flags)
+	struct proc *p;
+	mcontext_t *mcp;
+	unsigned int flags;
+{
+	const struct trapframe *tf;
+	gregset_t *gr;
+
+	tf = p->p_md.md_regs;
+	gr = mcp->mc_gregs;
+	/* Save register context. */
+	if (tf->tf_eflags & PSL_VM) {
+		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
+		struct vm86_kernel *vm86 =  &p->p_addr->u_pcb.pcb_vm86;
+
+		gr->mc_gs  = tf->tf_vm86_gs;
+		gr->mc_fs  = tf->tf_vm86_fs;
+		gr->mc_es  = tf->tf_vm86_es;
+		gr->mc_ds  = tf->tf_vm86_ds;
+		gr->mc_eflags = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+	}  else {
+		gr->mc_gs = tf->tf_gs;
+		gr->mc_fs = tf->tf_fs;
+		gr->mc_es = tf->tf_es;
+		gr->mc_ds = tf->tf_ds;
+		gr->mc_eflags = tf->tf_eflags;
+	}
+	gr->mc_edi = tf->tf_edi;
+	gr->mc_esi = tf->tf_esi;
+	gr->mc_ebp = tf->tf_ebp;
+	gr->mc_ebx = tf->tf_ebx;
+	gr->mc_edx = tf->tf_edx;
+	gr->mc_ecx = tf->tf_ecx;
+	gr->mc_eax = tf->tf_eax;
+	gr->mc_eip = tf->tf_eip;
+	gr->mc_cs  = tf->tf_cs;
+	gr->mc_esp = tf->tf_esp;
+	gr->mc_ss  = tf->tf_ss;
+	gr->mc_trapno = tf->tf_trapno;
+	gr->mc_err = tf->tf_err;
+
+	*flags |= _UC_CPU;
+
+	/* Save floating point register context, if any. */
+	if ((p->p_md.md_flags & MDP_USEDFPU) != 0) {
+		if (p->p_addr->u_pcb.pcb_fpcpu) {
+			npxsave_proc(p, 1);
+		}
+		if (i386_use_fxsave) {
+			memcpy(&mcp->mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm,
+					&p->p_addr->u_pcb.pcb_savefpu.sv_fx,
+					sizeof(mcp->mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm));
+			*flags |= _UC_FXSAVE;
+		} else {
+			memcpy(&mcp->mc_fpregs.mc_fp_reg_set.mc_fpchip_state.fp_state,
+					&p->p_addr->u_pcb.pcb_savefpu.sv_87,
+					sizeof(mcp->mc_fpregs.mc_fp_reg_set.mc_fpchip_state.fp_state));
+		}
+		*flags |= _UC_FPU;
+	}
+	return (0);
+}
+
+int
+cpu_setmcontext(p, mcp, flags)
+	struct proc *p;
+	const mcontext_t *mcp;
+	unsigned int flags;
+{
+	struct trapframe *tf;
+	gregset_t *gr;
+
+	tf = p->p_md.md_regs;
+	gr = mcp->mc_gregs;
+	/* Restore register context, if any. */
+	if ((flags & _UC_CPU) != 0) {
+		if (gr->mc_eflags & PSL_VM) {
+			struct trapframe_vm86 *tf = (struct trapframe_vm86*) tf;
+			struct vm86_kernel *vm86 = &p->p_addr->u_pcb.pcb_vm86;
+
+			tf->tf_vm86_gs = gr->mc_gs;
+			tf->tf_vm86_fs = gr->mc_fs;
+			tf->tf_vm86_es = gr->mc_es;
+			tf->tf_vm86_ds = gr->mc_ds;
+			tf->tf_eflags  = (gr->mc_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+		} else {
+			/*
+			 * Check for security violations.  If we're returning
+			 * to protected mode, the CPU will validate the segment
+			 * registers automatically and generate a trap on
+			 * violations.  We handle the trap, rather than doing
+			 * all of the checking here.
+			 */
+			if (((gr->mc_eflags ^ tf->tf_eflags) & PSL_USERSTATIC)
+					|| !USERMODE(gr->mc_cs, gr->mc_eflags)) {
+				printf("cpu_setmcontext error: uc EFL: 0x%08x"
+						" tf EFL: 0x%08x uc CS: 0x%x\n", gr->mc_eflags,
+						tf->tf_eflags, gr->mc_cs);
+				return (EINVAL);
+			}
+			tf->tf_gs = gr->mc_gs;
+			tf->tf_fs = gr->mc_fs;
+			tf->tf_es = gr->mc_es;
+			tf->tf_ds = gr->mc_ds;
+			/* Only change the user-alterable part of eflags */
+			tf->tf_eflags &= ~PSL_USER;
+			tf->tf_eflags |= (gr->mc_eflags & PSL_USER);
+		}
+	}
+	tf->tf_edi = gr->mc_edi;
+	tf->tf_esi = gr->mc_esi;
+	tf->tf_ebp = gr->mc_ebp;
+	tf->tf_ebx = gr->mc_ebx;
+	tf->tf_edx = gr->mc_edx;
+	tf->tf_ecx = gr->mc_ecx;
+	tf->tf_eax = gr->mc_eax;
+	tf->tf_eip = gr->mc_eip;
+	tf->tf_cs  = gr->mc_cs;
+	tf->tf_esp = gr->mc_esp;
+	tf->tf_ss  = gr->mc_ss;
+
+	/* Restore floating point register context, if any. */
+	if ((flags & _UC_FPU) != 0) {
+#if NNPX > 0
+		/*
+		 * If we were using the FPU, forget that we were.
+		 */
+		if (p->p_addr->u_pcb.pcb_fpcpu != NULL) {
+			npxsave_proc(p, 0);
+		}
+#endif
+		if (flags & _UC_FXSAVE) {
+			if (i386_use_fxsave) {
+				memcpy(&p->p_addr->u_pcb.pcb_savefpu.sv_fx,
+						&mcp->mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm,
+						sizeof(&p->p_addr->u_pcb.pcb_savefpu.sv_fx));
+			} else {
+				/* This is a weird corner case */
+				process_xmm_to_s87(
+						(struct savexmm*) &mcp->mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm,
+						&p->p_addr->u_pcb.pcb_savefpu.sv_87);
+			}
+		} else {
+			if (i386_use_fxsave) {
+				process_s87_to_xmm(
+						(struct save87*) &mcp->mc_fpregs.mc_fp_reg_set.mc_fpchip_state.fp_state,
+						&p->p_addr->u_pcb.pcb_savefpu.sv_fx);
+			} else {
+				memcpy(&p->p_addr->u_pcb.pcb_savefpu.sv_87,
+						&mcp->mc_fpregs.mc_fp_reg_set.mc_fpchip_state.fp_state,
+						sizeof(p->p_addr->u_pcb.pcb_savefpu.sv_87));
+			}
+		}
+	}
+	/* If not set already. */
+	p->p_md.md_flags |= MDP_USEDFPU;
+
+	if (flags & _UC_SETSTACK) {
+		p->p_sigacts->ps_sigstk.ss_flags |= SS_ONSTACK;
+	}
+	if (flags & _UC_CLRSTACK) {
+		p->p_sigacts->ps_sigstk.ss_flags &= ~SS_ONSTACK;
+	}
+	return (0);
 }
 
 /*

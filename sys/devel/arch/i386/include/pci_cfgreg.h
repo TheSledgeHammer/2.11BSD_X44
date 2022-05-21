@@ -31,7 +31,7 @@
 
 #ifndef __I386_PCI_CFGREG_H__
 #define	__I386_PCI_CFGREG_H__
-
+/*
 #define CONF1_ADDR_PORT    0x0cf8
 #define CONF1_DATA_PORT    0x0cfc
 
@@ -47,6 +47,7 @@
 
 #define CONF2_ENABLE_CHK   0x0e
 #define CONF2_ENABLE_RES   0x0e
+*/
 
 enum {
 	CFGMECH_NONE = 0,

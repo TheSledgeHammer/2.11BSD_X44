@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef __I386_PCIBIOS_H__
-#define	__I386_PCIBIOS_H__
+#ifndef _I386_PCIBIOS_H_
+#define	_I386_PCIBIOS_H_
 
 /* Convert to NetBSD equivalent */
 /* some PCI bus constants */
@@ -43,4 +43,4 @@
 #define	PCIR_INTLINE			0x3c
 #define	PCIR_INTPIN				0x3d
 
-#endif /* !__I386_PCIBIOS_H__ */
+#endif /* !_I386_PCIBIOS_H_ */
