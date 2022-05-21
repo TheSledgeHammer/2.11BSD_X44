@@ -1146,7 +1146,7 @@ need_resched(p)
 	}
 }
 
-int
+void
 cpu_getmcontext(p, mcp, flags)
 	struct proc *p;
 	mcontext_t *mcp;
@@ -1192,9 +1192,17 @@ cpu_getmcontext(p, mcp, flags)
 
 	/* Save floating point register context, if any. */
 	if ((p->p_md.md_flags & MDP_USEDFPU) != 0) {
+#if NNPX > 0
+		/*
+		 * If this process is the current FP owner, dump its
+		 * context to the PCB first.
+		 * XXX npxsave() also clears the FPU state; depending on the
+		 * XXX application this might be a penalty.
+		 */
 		if (p->p_addr->u_pcb.pcb_fpcpu) {
 			npxsave_proc(p, 1);
 		}
+#endif
 		if (i386_use_fxsave) {
 			memcpy(&mcp->mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm,
 					&p->p_addr->u_pcb.pcb_savefpu.sv_fx,
@@ -1207,7 +1215,6 @@ cpu_getmcontext(p, mcp, flags)
 		}
 		*flags |= _UC_FPU;
 	}
-	return (0);
 }
 
 int
