@@ -77,12 +77,12 @@ vm_aobject_init(size, object, flags)
 	vm_object_t 			object;
 	int 					flags;
 {
-	register struct uao_swhash_elt 	*elt;
+	register struct vao_swhash_elt 	*elt;
 
 	LIST_INIT(&aobject_list);
 	simple_lock_init(&aobject_list_lock, "aobject_list_lock");
 
-	elt = (struct uao_swhash_elt *)malloc(sizeof(struct uao_swhash_elt *), M_VMAOBJ, M_WAITOK);
+	elt = (struct vao_swhash_elt *)malloc(sizeof(struct vao_swhash_elt *), M_VMAOBJ, M_WAITOK);
 
 	vm_aobject_allocate(size, object, flags);
 }
@@ -95,9 +95,9 @@ vm_aobject_allocate(size, object, flags)
 {
 	register vm_aobject_t 	aobject;
 
-	if(flags & UAO_FLAG_KERNOBJ) {
+	if(flags & VAO_FLAG_KERNOBJ) {
 		aobject = (vm_aobject_t)&kernel_object_store;
-		aobject->u_flags = UAO_FLAG_NOSWAP;
+		aobject->u_flags = VAO_FLAG_NOSWAP;
 		aobject->u_ref_count = VM_OBJ_KERN;
 		object = (vm_object_t)&aobject;
 		vm_object_allocate(sizeof(object));
@@ -180,7 +180,7 @@ vm_aobject_detach(obj)
  	 * mark the aobj for death, releasepg will finish up for us.
  	 */
 	if (busybody) {
-		aobj->u_flags |= UAO_FLAG_KILLME;
+		aobj->u_flags |= VAO_FLAG_KILLME;
 		simple_unlock(&aobj->u_obj.Lock);
 		return;
 	}
@@ -201,7 +201,7 @@ vm_aobject_free(aobj)
 	vm_aobject_t aobj;
 {
 
-	if (UAO_USES_SWHASH(aobj)) {
+	if (VAO_USES_SWHASH(aobj)) {
 		int i, hashbuckets = aobj->u_swhashmask + 1;
 
 		/*
@@ -209,12 +209,12 @@ vm_aobject_free(aobj)
 		 * then the hash bucket, and finally the hash table itself.
 		 */
 		for (i = 0; i < hashbuckets; i++) {
-			struct uao_swhash_elt *elt, *next;
+			struct vao_swhash_elt *elt, *next;
 
 			for (elt = LIST_FIRST(aobj->u_swhash[i]); elt != NULL; elt = next) {
 				int j;
 
-				for (j = 0; j < UAO_SWHASH_CLUSTER_SIZE; j++) {
+				for (j = 0; j < VAO_SWHASH_CLUSTER_SIZE; j++) {
 					int slot = elt->slots[j];
 
 					if (slot) {
@@ -270,17 +270,17 @@ vm_aobject_swhash_allocate(aobject, pages, flags)
 	int 				pages;
 	int 				flags;
 {
-	const int kernswap = (flags & UAO_FLAG_KERNSWAP) != 0;
+	const int kernswap = (flags & VAO_FLAG_KERNSWAP) != 0;
 	if (flags == 0 || kernswap) {
-		if (UAO_USES_SWHASH(aobject)) {
+		if (VAO_USES_SWHASH(aobject)) {
 			/* allocate hash table or array depending on object size */
-			aobject->u_swhash = hashinit(UAO_SWHASH_BUCKETS(aobject), M_VMAOBJ, &aobject->u_swhashmask);
+			aobject->u_swhash = hashinit(VAO_SWHASH_BUCKETS(aobject), M_VMAOBJ, &aobject->u_swhashmask);
 		} else {
 			aobject->u_swhash = malloc(pages * sizeof(int), M_VMAOBJ, flags);
 			memset(aobject->u_swslots, 0, pages * sizeof(int));
 		}
 		if (flags) {
-			aobject->u_flags &= ~UAO_FLAG_NOSWAP; /* clear noswap */
+			aobject->u_flags &= ~VAO_FLAG_NOSWAP; /* clear noswap */
 		}
 	}
 }
@@ -292,18 +292,18 @@ vm_aobject_swhash_allocate(aobject, pages, flags)
  * => the object should be locked by the caller
  */
 
-static struct uao_swhash_elt *
+static struct vao_swhash_elt *
 vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	vm_aobject_t	aobject;
 	int pageidx;
 	bool_t create;
 {
 	struct aobjectswhash *swhash;
-	struct uao_swhash_elt *elt;
+	struct vao_swhash_elt *elt;
 	int page_tag;
 
-	swhash = UAO_SWHASH_HASH(aobject, pageidx); 	/* first hash to get bucket */
-	page_tag = UAO_SWHASH_ELT_TAG(pageidx); 		/* tag to search for */
+	swhash = VAO_SWHASH_HASH(aobject, pageidx); 	/* first hash to get bucket */
+	page_tag = VAO_SWHASH_ELT_TAG(pageidx); 		/* tag to search for */
 
 	/*
 	 * now search the bucket for the requested tag
@@ -321,7 +321,7 @@ vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	 * allocate a new entry for the bucket and init/insert it in
 	 */
 
-	elt = (struct uao_swhash_elt *)malloc(elt, sizeof(struct uao_swhash_elt *), M_VMAOBJ, M_NOWAIT);
+	elt = (struct vao_swhash_elt *)malloc(elt, sizeof(struct vao_swhash_elt *), M_VMAOBJ, M_NOWAIT);
 	LIST_INSERT_HEAD(swhash, elt, list);
 	elt->tag = page_tag;
 	elt->count = 0;
@@ -345,18 +345,18 @@ vm_aobject_find_swslot(aobj, pageidx)
 	 * if noswap flag is set, then we never return a slot
 	 */
 
-	if (aobj->u_flags & UAO_FLAG_NOSWAP)
+	if (aobj->u_flags & VAO_FLAG_NOSWAP)
 		return (0);
 
 	/*
 	 * if hashing, look in hash table.
 	 */
 
-	if (UAO_USES_SWHASH(aobj)) {
-		struct uao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, FALSE);
+	if (VAO_USES_SWHASH(aobj)) {
+		struct vao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, FALSE);
 
 		if (elt) {
-			return (UAO_SWHASH_ELT_PAGESLOT(elt, pageidx));
+			return (VAO_SWHASH_ELT_PAGESLOT(elt, pageidx));
 		} else {
 			return (NULL);
 		}
@@ -386,7 +386,7 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 	 * if noswap flag is set, then we can't set a slot
 	 */
 
-	if (aobj->u_flags & UAO_FLAG_NOSWAP) {
+	if (aobj->u_flags & VAO_FLAG_NOSWAP) {
 
 		if (slot == 0)
 			return (0); /* a clear is ok */
@@ -400,13 +400,13 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 	 * are we using a hash table?  if so, add it in the hash.
 	 */
 
-	if (UAO_USES_SWHASH(aobj)) {
+	if (VAO_USES_SWHASH(aobj)) {
 		/*
 		 * Avoid allocating an entry just to free it again if
 		 * the page had not swap slot in the first place, and
 		 * we are freeing.
 		 */
-		struct uao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, slot ? TRUE : FALSE);
+		struct vao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, slot ? TRUE : FALSE);
 		if (elt == NULL) {
 #ifdef DIAGNOSTIC
 			if (slot)
@@ -415,8 +415,8 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 			return (0);
 		}
 
-		oldslot = UAO_SWHASH_ELT_PAGESLOT(elt, pageidx);
-		UAO_SWHASH_ELT_PAGESLOT(elt, pageidx) = slot;
+		oldslot = VAO_SWHASH_ELT_PAGESLOT(elt, pageidx);
+		VAO_SWHASH_ELT_PAGESLOT(elt, pageidx) = slot;
 
 		/*
 		 * now adjust the elt's reference counter and free it if we've

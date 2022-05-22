@@ -47,30 +47,30 @@
 
 /*
  * for hash tables, we break the address space of the aobj into blocks
- * of UAO_SWHASH_CLUSTER_SIZE pages.   we require the cluster size to
+ * of VAO_SWHASH_CLUSTER_SIZE pages.   we require the cluster size to
  * be a power of two.
  */
 
-#define UAO_SWHASH_CLUSTER_SHIFT 4
-#define UAO_SWHASH_CLUSTER_SIZE (1 << UAO_SWHASH_CLUSTER_SHIFT)
+#define VAO_SWHASH_CLUSTER_SHIFT 4
+#define VAO_SWHASH_CLUSTER_SIZE (1 << VAO_SWHASH_CLUSTER_SHIFT)
 
 /* get the "tag" for this page index */
-#define UAO_SWHASH_ELT_TAG(PAGEIDX) 							\
-	((PAGEIDX) >> UAO_SWHASH_CLUSTER_SHIFT)
+#define VAO_SWHASH_ELT_TAG(PAGEIDX) 							\
+	((PAGEIDX) >> VAO_SWHASH_CLUSTER_SHIFT)
 
 /* given an ELT and a page index, find the swap slot */
-#define UAO_SWHASH_ELT_PAGESLOT(ELT, PAGEIDX) 					\
-	((ELT)->slots[(PAGEIDX) & (UAO_SWHASH_CLUSTER_SIZE - 1)])
+#define VAO_SWHASH_ELT_PAGESLOT(ELT, PAGEIDX) 					\
+	((ELT)->slots[(PAGEIDX) & (VAO_SWHASH_CLUSTER_SIZE - 1)])
 
 /* given an ELT, return its pageidx base */
-#define UAO_SWHASH_ELT_PAGEIDX_BASE(ELT) 						\
-	((ELT)->tag << UAO_SWHASH_CLUSTER_SHIFT)
+#define VAO_SWHASH_ELT_PAGEIDX_BASE(ELT) 						\
+	((ELT)->tag << VAO_SWHASH_CLUSTER_SHIFT)
 
 /*
  * the swhash hash function
  */
-#define UAO_SWHASH_HASH(AOBJ, PAGEIDX) 							\
-	(&(AOBJ)->u_swhash[(((PAGEIDX) >> UAO_SWHASH_CLUSTER_SHIFT) \
+#define VAO_SWHASH_HASH(AOBJ, PAGEIDX) 							\
+	(&(AOBJ)->u_swhash[(((PAGEIDX) >> VAO_SWHASH_CLUSTER_SHIFT) \
 			& (AOBJ)->u_swhashmask)])
 
 /*
@@ -78,17 +78,17 @@
  * hash table to store the list of allocated swap blocks.
  */
 
-#define UAO_SWHASH_THRESHOLD (UAO_SWHASH_CLUSTER_SIZE * 4)
-#define UAO_USES_SWHASH(AOBJ) 									\
-	((AOBJ)->u_pages > UAO_SWHASH_THRESHOLD)	/* use hash? */
+#define VAO_SWHASH_THRESHOLD (VAO_SWHASH_CLUSTER_SIZE * 4)
+#define VAO_USES_SWHASH(AOBJ) 									\
+	((AOBJ)->u_pages > VAO_SWHASH_THRESHOLD)	/* use hash? */
 
 /*
  * the number of buckets in a swhash, with an upper bound
  */
-#define UAO_SWHASH_MAXBUCKETS 256
-#define UAO_SWHASH_BUCKETS(AOBJ) 								\
-	(min((AOBJ)->u_pages >> UAO_SWHASH_CLUSTER_SHIFT, 			\
-			UAO_SWHASH_MAXBUCKETS))
+#define VAO_SWHASH_MAXBUCKETS 256
+#define VAO_SWHASH_BUCKETS(AOBJ) 								\
+	(min((AOBJ)->u_pages >> VAO_SWHASH_CLUSTER_SHIFT, 			\
+			VAO_SWHASH_MAXBUCKETS))
 
 /*
  * uao_list: global list of active aobjects, locked by uao_list_lock
@@ -118,15 +118,15 @@ struct vm_aobject {
 /*
  * uao_swhash: the swap hash table structure
  */
-struct uao_swhash_elt {
-	LIST_ENTRY(uao_swhash_elt) 	list;							/* the hash list */
+struct vao_swhash_elt {
+	LIST_ENTRY(vao_swhash_elt) 	list;							/* the hash list */
 	vaddr_t 					tag;							/* our 'tag' */
 	int 						count;							/* our number of active slots */
-	int 						slots[UAO_SWHASH_CLUSTER_SIZE];	/* the slots */
+	int 						slots[VAO_SWHASH_CLUSTER_SIZE];	/* the slots */
 };
 
 struct aobjectswhash;
-LIST_HEAD(aobjectswhash, uao_swhash_elt);
+LIST_HEAD(aobjectswhash, vao_swhash_elt);
 struct aobjectlist;
 LIST_HEAD(aobjectlist, vm_aobject);
 
@@ -138,19 +138,19 @@ static simple_lock_data_t 		aobject_list_lock; 		/* lock for aobject lists */
  * flags
  */
 /* flags for uao_create: can only be used one time (at bootup) */
-#define UAO_FLAG_KERNOBJ		0x1	/* create kernel object */
-#define UAO_FLAG_KERNSWAP		0x2	/* enable kernel swap */
+#define VAO_FLAG_KERNOBJ		0x1	/* create kernel object */
+#define VAO_FLAG_KERNSWAP		0x2	/* enable kernel swap */
 
 /* internal flags */
-#define UAO_FLAG_KILLME			0x4	/* aobj should die when last released page is no longer PG_BUSY ... */
-#define UAO_FLAG_NOSWAP			0x8	/* aobj can't swap (kernel obj only!) */
+#define VAO_FLAG_KILLME			0x4	/* aobj should die when last released page is no longer PG_BUSY ... */
+#define VAO_FLAG_NOSWAP			0x8	/* aobj can't swap (kernel obj only!) */
 
 
 void 							vm_aobject_init(vm_size_t, vm_object_t, int);
 void 							vm_aobject_allocate(vm_size_t, vm_object_t, int);
 void							vm_aobject_swhash_allocate(vm_aobject_t, int, int);
 int 							vm_aobject_set_swslot(vm_object_t, int, int);
-static struct uao_swhash_elt	*vm_aobject_find_swhash_elt(vm_aobject_t, int, bool_t);
+static struct vao_swhash_elt	*vm_aobject_find_swhash_elt(vm_aobject_t, int, bool_t);
 static int			 			vm_aobject_find_swslot(vm_aobject_t, int);
 static void	 					vm_aobject_free(vm_aobject_t);
 

@@ -57,7 +57,6 @@
 #define M_ADVVM			88 	/* AdvVM structures structures */
 #define M_MPX			92	/* multiplexor structure */
 
-
 /* Overlay Malloc */
 #define overlay_malloc(size, type, flags) 				\
 	malloc(size, type, flags | M_OVERLAY)

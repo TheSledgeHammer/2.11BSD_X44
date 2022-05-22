@@ -40,9 +40,8 @@
 #include <sys/queue.h>
 #include <sys/null.h>
 #include <sys/user.h>
-#include <devel/sys/vnodeopv.h>
 
-struct vnodeopv_desc_list vfs_opv_descs = LIST_HEAD_INITIALIZER(vfs_opv_descs);
+#include <devel/sys/vnodeopv.h>
 
 VNODEOPV_DESC_STRUCT(ffs, vnodeops);
 VNODEOPV_DESC_STRUCT(ffs, specops);
@@ -66,57 +65,79 @@ VNODEOPV_DESC_STRUCT(nfs, fifoops);
 VNODEOPV_DESC_STRUCT(ufml, vnodeops);
 VNODEOPV_DESC_STRUCT(union, vnodeops);
 
+VNODEOPV_ENTRY_DESC_STRUCT(ffs, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(ffs, specop);
+VNODEOPV_ENTRY_DESC_STRUCT(ffs, fifoop);
+VNODEOPV_ENTRY_DESC_STRUCT(lfs, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(lfs, specop);
+VNODEOPV_ENTRY_DESC_STRUCT(lfs, fifoop);
+VNODEOPV_ENTRY_DESC_STRUCT(mfs, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(ufs211, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(ufs211, specop);
+VNODEOPV_ENTRY_DESC_STRUCT(ufs211, fifoop);
+VNODEOPV_ENTRY_DESC_STRUCT(cd9660, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(cd9660, specop);
+VNODEOPV_ENTRY_DESC_STRUCT(cd9660, fifoop);
+VNODEOPV_ENTRY_DESC_STRUCT(msdosfs, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(lofs, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(fdesc, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(nfs, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(nfs, specop);
+VNODEOPV_ENTRY_DESC_STRUCT(nfs, fifoop);
+VNODEOPV_ENTRY_DESC_STRUCT(ufml, vnodeop);
+VNODEOPV_ENTRY_DESC_STRUCT(union, vnodeop);
+
 void
 vfs_opv_init()
 {
 	/* Fast Filesystem */
-	vnodeopv_desc_create(&ffs_vnodeops_opv_desc, "ffs", D_VNODEOPS, &ffs_vnodeops);
-	vnodeopv_desc_create(&ffs_specops_opv_desc, "ffs", D_SPECOPS, &ffs_specops);
-	vnodeopv_desc_create(&ffs_fifoops_opv_desc, "ffs", D_FIFOOPS, &ffs_fifoops);
+	vnodeopv_desc_create(&ffs_vnodeops_opv_desc, "ffs", D_VNODEOPS, &ffs_vnodeop_entries);
+	vnodeopv_desc_create(&ffs_specops_opv_desc, "ffs", D_SPECOPS, &ffs_specop_entries);
+	vnodeopv_desc_create(&ffs_fifoops_opv_desc, "ffs", D_FIFOOPS, &ffs_fifoop_entries);
 	/* Log-based Filesystem */
-	vnodeopv_desc_create(&lfs_vnodeops_opv_desc, "lfs", D_VNODEOPS, &lfs_vnodeops);
-	vnodeopv_desc_create(&lfs_specops_opv_desc, "lfs", D_SPECOPS, &lfs_specops);
-	vnodeopv_desc_create(&lfs_fifoops_opv_desc, "lfs", D_FIFOOPS, &lfs_fifoops);
+	vnodeopv_desc_create(&lfs_vnodeops_opv_desc, "lfs", D_VNODEOPS, &lfs_vnodeop_entries);
+	vnodeopv_desc_create(&lfs_specops_opv_desc, "lfs", D_SPECOPS, &lfs_specop_entries);
+	vnodeopv_desc_create(&lfs_fifoops_opv_desc, "lfs", D_FIFOOPS, &lfs_fifoop_entries);
 	/* Memory-based Filesystem */
-	vnodeopv_desc_create(&mfs_vnodeops_opv_desc, "mfs", D_VNODEOPS, &mfs_vnodeops);
+	vnodeopv_desc_create(&mfs_vnodeops_opv_desc, "mfs", D_VNODEOPS, &mfs_vnodeop_entries);
 	/* 2.11BSD UFS Filesystem  */
-	vnodeopv_desc_create(&ufs211_vnodeops_opv_desc, "ufs211", D_VNODEOPS, &ufs211_vnodeops);
-	vnodeopv_desc_create(&ufs211_specops_opv_desc, "ufs211", D_SPECOPS, &ufs211_specops);
-	vnodeopv_desc_create(&ufs211_fifoops_opv_desc, "ufs211", D_FIFOOPS, &ufs211_fifoops);
+	vnodeopv_desc_create(&ufs211_vnodeops_opv_desc, "ufs211", D_VNODEOPS, &ufs211_vnodeop_entries);
+	vnodeopv_desc_create(&ufs211_specops_opv_desc, "ufs211", D_SPECOPS, &ufs211_specop_entries);
+	vnodeopv_desc_create(&ufs211_fifoops_opv_desc, "ufs211", D_FIFOOPS, &ufs211_fifoop_entries);
 	/* ISO9660 (aka CDROM) Filesystem */
-	vnodeopv_desc_create(&cd9660_vnodeops_opv_desc, "cd9660", D_VNODEOPS, &cd9660_vnodeops);
-	vnodeopv_desc_create(&cd9660_specops_opv_desc, "cd9660", D_SPECOPS, &cd9660_specops);
-	vnodeopv_desc_create(&cd9660_fifoops_opv_desc, "cd9660", D_FIFOOPS, &cd9660_fifoops);
+	vnodeopv_desc_create(&cd9660_vnodeops_opv_desc, "cd9660", D_VNODEOPS, &cd9660_vnodeop_entries);
+	vnodeopv_desc_create(&cd9660_specops_opv_desc, "cd9660", D_SPECOPS, &cd9660_specop_entries);
+	vnodeopv_desc_create(&cd9660_fifoops_opv_desc, "cd9660", D_FIFOOPS, &cd9660_fifoop_entries);
 	/* MSDOS Filesystem */
-	vnodeopv_desc_create(&msdosfs_vnodeops_opv_desc, "msdos", D_VNODEOPS, &msdosfs_vnodeops);
+	vnodeopv_desc_create(&msdosfs_vnodeops_opv_desc, "msdos", D_VNODEOPS, &msdosfs_vnodeop_entries);
 	/* Loopback Filesystem */
-	vnodeopv_desc_create(&lofs_vnodeops_opv_desc, "loopback", D_VNODEOPS, &lofs_vnodeops);
+	vnodeopv_desc_create(&lofs_vnodeops_opv_desc, "loopback", D_VNODEOPS, &lofs_vnodeop_entries);
 	/* File Descriptor Filesystem */
-	vnodeopv_desc_create(&fdesc_vnodeops_opv_desc, "fdesc", D_VNODEOPS, &fdesc_vnodeops);
+	vnodeopv_desc_create(&fdesc_vnodeops_opv_desc, "fdesc", D_VNODEOPS, &fdesc_vnodeop_entries);
 	/* Sun-compatible Network Filesystem */
-	vnodeopv_desc_create(&nfs_vnodeops_opv_desc, "nfs", D_VNODEOPS, &nfs_vnodeops);
-	vnodeopv_desc_create(&nfs_specops_opv_desc, "nfs", D_SPECOPS, &nfs_specops);
-	vnodeopv_desc_create(&nfs_fifoops_opv_desc, "nfs", D_FIFOOPS, &nfs_fifoops);
+	vnodeopv_desc_create(&nfs_vnodeops_opv_desc, "nfs", D_VNODEOPS, &nfs_vnodeop_entries);
+	vnodeopv_desc_create(&nfs_specops_opv_desc, "nfs", D_SPECOPS, &nfs_specop_entries);
+	vnodeopv_desc_create(&nfs_fifoops_opv_desc, "nfs", D_FIFOOPS, &nfs_fifoop_entries);
 	/* UFML Filesystem  */
-	vnodeopv_desc_create(&ufml_vnodeops_opv_desc, "ufml", D_VNODEOPS, &ufml_vnodeops);
+	vnodeopv_desc_create(&ufml_vnodeops_opv_desc, "ufml", D_VNODEOPS, &ufml_vnodeop_entries);
 	/* Union (translucent) Filesystem */
-	vnodeopv_desc_create(&union_vnodeops_opv_desc, "union", D_VNODEOPS, &union_vnodeops);
+	vnodeopv_desc_create(&union_vnodeops_opv_desc, "union", D_VNODEOPS, &union_vnodeop_entries);
 }
 
+struct vnodeopv_desc_list vfs_opv_descs = LIST_HEAD_INITIALIZER(vfs_opv_descs);
+
 void
-vnodeopv_desc_create(opv, fsname, voptype, vops, op)
-	struct vnodeopv_desc    *opv;
-    const char              *fsname;
-    int                     voptype;
-    struct vnodeops         *vops;
-    struct vnodeop_desc 	*op;
+vnodeopv_desc_create(opv, fsname, voptype, opve)
+	struct vnodeopv_desc    	*opv;
+    const char              	*fsname;
+    int                     	voptype;
+    struct vnodeopv_entry_desc 	*opve;
 {
     opv->opv_fsname = fsname;
     opv->opv_voptype = voptype;
-    opv->opv_desc_ops.opve_op = op;
-    opv->opv_desc_vector_p = vops;
+    opv->opv_desc_ops = opve;
 
-    LIST_INSERT_HEAD(&vfs_opv_descs, opv, opv_entry);
+    vnodeopv_attach(opv);
 }
 
 struct vnodeopv_desc *
@@ -134,34 +155,29 @@ vnodeopv_desc_lookup(copv, fsname, voptype)
     return (NULL);
 }
 
-union vnodeopv_entry_desc
-vnodeopv_entry_desc(copv, fsname, voptype)
-	struct vnodeopv_desc *copv;
-	const char *fsname;
-	int voptype;
+struct vnodeopv_entry_desc *
+vnodeopv_entry_desc_lookup(opv, fsname, voptype)
 {
-	return (vnodeopv_desc_lookup(copv, fsname, voptype)->opv_desc_ops);
+	register struct vnodeopv_entry_desc *opve;
+
+	opve = vnodeopv_desc_lookup(opv, fsname, voptype)->opv_desc_ops;
+	return (opve);
 }
 
-struct vnodeops *
-vnodeopv_entry_desc_get_vnodeops(copv, fsname, voptype)
-	struct vnodeopv_desc *copv;
-	const char *fsname;
-	int voptype;
+void
+vnodeopv_attach(opv)
+	struct vnodeopv_desc  *opv;
 {
-	struct vnodeops *v;
-	v = vnodeopv_entry_desc(copv, fsname, voptype).opve_vops;
-	return (v);
+	if (opv != NULL) {
+		 LIST_INSERT_HEAD(&vfs_opv_descs, opv, opv_entry);
+	}
 }
 
-struct vnodeop_desc *
-vnodeopv_entry_desc_get_vnodeop_desc(copv, fsname, voptype)
-	struct vnodeopv_desc *copv;
-	const char *fsname;
-	int voptype;
+void
+vnodeopv_detach(opv)
+	struct vnodeopv_desc  *opv;
 {
-	struct vnodeop_desc *v;
-	v = vnodeopv_entry_desc(copv, fsname, voptype).opve_op;
-	return (v);
+	if (opv != NULL) {
+		LIST_REMOVE(opv, opv_entry);
+	}
 }
-

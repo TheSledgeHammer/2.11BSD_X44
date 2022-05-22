@@ -231,19 +231,19 @@ struct vm_amap {
  * prototypes for the amap interface
  */
 AMAP_INLINE
-struct vm_amap	*vm_amap_alloc (caddr_t, caddr_t, int); 							/* allocate a new amap */
-void			vm_amap_copy (vm_map_t, vm_map_entry_t, int, caddr_t, caddr_t); 	/* clear amap needs-copy flag */
-void			vm_amap_cow_now (vm_map_t, vm_map_entry_t); 						/* resolve all COW faults now */
-int				vm_amap_extend	(vm_map_entry_t, size_t); 							/* make amap larger */
-void			vm_amap_free (vm_amap_t); 											/* free amap */
-void			vm_amap_ref (vm_amap_t, vaddr_t, size_t, int);						/* add a reference to an amap */
-void			vm_amap_share_protect (vm_map_entry_t, vm_prot_t); 					/* protect pages in a shared amap */
-void			vm_amap_splitref (struct vm_aref *, struct vm_aref *, caddr_t); 	/* split reference to amap into two */
-void			vm_amap_wipeout (vm_amap_t); 										/* remove all anons from amap */
+vm_amap_t		vm_amap_alloc(caddr_t, caddr_t, int); 							/* allocate a new amap */
+void			vm_amap_copy(vm_map_t, vm_map_entry_t, int, caddr_t, caddr_t); 	/* clear amap needs-copy flag */
+void			vm_amap_cow_now(vm_map_t, vm_map_entry_t); 						/* resolve all COW faults now */
+int				vm_amap_extend(vm_map_entry_t, size_t); 							/* make amap larger */
+void			vm_amap_free(vm_amap_t); 											/* free amap */
+void			vm_amap_ref(vm_amap_t, vaddr_t, size_t, int);						/* add a reference to an amap */
+void			vm_amap_share_protect(vm_map_entry_t, vm_prot_t); 					/* protect pages in a shared amap */
+void			vm_amap_splitref(struct vm_aref *, struct vm_aref *, caddr_t); 	/* split reference to amap into two */
+void			vm_amap_wipeout(vm_amap_t); 										/* remove all anons from amap */
 
-void			vm_amap_pp_adjref (vm_amap_t, int, vm_size_t, int, vm_anon_t *); 	/* adjust references */
-void			vm_amap_pp_establish (vm_amap_t, caddr_t); 							/* establish ppref */
-void			vm_amap_wiperange (vm_amap_t, int, int, vm_anon_t *); 				/* wipe part of an amap */
+void			vm_amap_pp_adjref(vm_amap_t, int, vm_size_t, int, vm_anon_t *); 	/* adjust references */
+void			vm_amap_pp_establish(vm_amap_t, caddr_t); 							/* establish ppref */
+void			vm_amap_wiperange(vm_amap_t, int, int, vm_anon_t *); 				/* wipe part of an amap */
 
 vm_anon_t		vm_amap_lookup(vm_amap_t, caddr_t);
 void			vm_amap_lookups(vm_amap_t, caddr_t, vm_anon_t *, int);

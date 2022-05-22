@@ -61,16 +61,17 @@
 
 #include <devel/sys/malloctypes.h>
 
-static struct vm_amap *vm_amap_alloc1(int, int, int);
+static vm_amap_t vm_amap_alloc1(int, int, int);
 
-static struct simplelock amap_list_lock;
+static struct lock_object amap_list_lock;
 static LIST_HEAD(, vm_amap) amap_list;
 
 /*
  * local functions
  */
 static inline void
-vm_amap_list_insert(struct vm_amap *amap)
+vm_amap_list_insert(amap)
+	vm_amap_t	amap;
 {
 	simple_lock(&amap_list_lock);
 	LIST_INSERT_HEAD(&amap_list, amap, am_list);
@@ -78,7 +79,8 @@ vm_amap_list_insert(struct vm_amap *amap)
 }
 
 static inline void
-vm_amap_list_remove(struct vm_amap *amap)
+vm_amap_list_remove(amap)
+	vm_amap_t	amap;
 {
 	simple_lock(&amap_list_lock);
 	LIST_REMOVE(amap, am_list);
@@ -164,7 +166,7 @@ pp_setreflen(ppref, offset, ref, len)
 void
 vm_amap_init()
 {
-	register struct vm_amap *amap;
+	register vm_amap_t amap;
 	MALLOC(amap, struct vm_amap *, sizeof(struct vm_amap), M_VMAMAP, M_WAITOK);
 
 	LIST_INIT(&amap_list);
@@ -179,11 +181,11 @@ vm_amap_init()
  *
  * => lock on returned amap is init'd
  */
-static inline struct vm_amap *
+static inline vm_amap_t
 vm_amap_alloc1(slots, padslots, waitf)
 	int slots, padslots, waitf;
 {
-	struct vm_amap *amap;
+	vm_amap_t amap;
 	int totalslots = slots + padslots;
 
 	amap = (struct vm_amap *)malloc(sizeof(struct vm_amap *), M_VMAMAP, M_WAITOK);
@@ -230,12 +232,12 @@ fail1:
  * => new amap is returned unlocked
  */
 
-struct vm_amap *
+vm_amap_t
 vm_amap_alloc(sz, padsz, waitf)
 	vaddr_t sz, padsz;
 	int waitf;
 {
-	struct vm_amap *amap;
+	vm_amap_t amap;
 	int slots, padslots;
 
 	AMAP_B2SLOT(slots, sz); /* load slots */
@@ -256,7 +258,7 @@ vm_amap_alloc(sz, padsz, waitf)
  */
 void
 vm_amap_free(amap)
-	struct vm_amap *amap;
+	vm_amap_t amap;
 {
 #ifdef DIAGNOSTIC
 	if (amap->am_ref || amap->am_nused)

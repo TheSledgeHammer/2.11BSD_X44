@@ -144,7 +144,7 @@ vm_object_init(size, flags)
 	register int	i;
 
 	TAILQ_INIT(&vm_object_cached_list);
-	//SPLAY_INIT(&vm_object_cached_tree);
+	SPLAY_INIT(&vm_object_cached_tree);
 	RB_INIT(&vm_object_tree);
 	vm_object_count = 0;
 	simple_lock_init(&vm_cache_lock);
@@ -209,6 +209,24 @@ _vm_object_allocate(size, object)
 	cnt.v_nzfod += atop(size);
 	simple_unlock(&vm_object_tree_lock);
 }
+
+/* vm object splay tree comparator */
+/*
+int
+vm_object_spt_compare(obj1, obj2)
+	vm_object_t obj1, obj2;
+{
+	if(obj1->size < obj2->size) {
+		return (-1);
+	} else if(obj1->size > obj2->size) {
+		return (1);
+	}
+	return (0);
+}
+
+SPLAY_PROTOTYPE(object_spt, vm_object, cached_tree, vm_object_spt_compare);
+SPLAY_GENERATE(object_spt, vm_object, cached_tree, vm_object_spt_compare);
+*/
 
 /*
  *	vm_object_reference:
@@ -279,7 +297,7 @@ vm_object_deallocate(object)
 		 */
 
 		if (object->flags & OBJ_CANPERSIST) {
-			//SPLAY_INSERT(objectspt, &vm_object_cached_tree, object);
+			//SPLAY_INSERT(object_spt, &vm_object_cached_tree, object);
 			TAILQ_INSERT_TAIL(&vm_object_cached_list, object, cached_list);
 			vm_object_cached++;
 			vm_object_cache_unlock();
@@ -711,9 +729,6 @@ vm_object_rb_compare(obj1, obj2)
 RB_PROTOTYPE(objectrbt, vm_object, object_tree, vm_object_rb_compare);
 RB_GENERATE(objectrbt, vm_object, object_tree, vm_object_rb_compare);
 
-//SPLAY_PROTOTYPE(objectspt, vm_object, cached_tree, vm_object_rb_compare);
-//SPLAY_GENERATE(objectspt, vm_object, cached_tree, vm_object_rb_compare);
-
 RB_PROTOTYPE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
 RB_GENERATE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
 
@@ -748,7 +763,7 @@ vm_object_lookup(pager)
 		if (object->pager == pager) {
 			vm_object_lock(object);
 			if (object->ref_count == 0) {
-				//SPLAY_REMOVE(objectspt, &vm_object_cached_tree, object);
+				//SPLAY_REMOVE(object_spt, &vm_object_cached_tree, object);
 				TAILQ_REMOVE(&vm_object_cached_list, object, cached_list);
 				vm_object_cached--;
 			}
@@ -837,7 +852,7 @@ vm_object_cache_clear()
 	 *	list of cached objects.
 	 */
 	vm_object_cache_lock();
-	//while((object = SPLAY_FIND(objectspt, &vm_object_cached_tree, object)) != NULL) {
+	//while((object = SPLAY_FIND(object_spt, &vm_object_cached_tree, object)) != NULL) {
 	while ((object = TAILQ_FIRST(&vm_object_cached_list)) != NULL) {
 		vm_object_cache_unlock();
 

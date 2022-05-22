@@ -53,7 +53,7 @@
 
 #include <devel/sys/sa.h>
 #include <devel/sys/savar.h>
-#include <devel/sys/ucontext.h>
+#include <sys/ucontext.h>
 #include <devel/sys/malloctypes.h>
 
 static struct sadata_vp 		*sa_newsavp(struct sadata *);

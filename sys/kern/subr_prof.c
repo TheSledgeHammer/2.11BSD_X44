@@ -189,14 +189,13 @@ addupc_intru(pc, up, ticks)
 	struct uprof *up;
 	u_int ticks;
 {
-	if (ticks == 0) {
-		return;
-	}
 	register struct proc *p;
 	register u_int i;
 
-	if (ticks == 0)
+	if (ticks == 0) {
 		return;
+	}
+
 	p = u.u_procp;
 
 	if (pc < up->pr_off || (i = PC_TO_INDEX(pc, up)) >= up->pr_size) {

@@ -35,8 +35,8 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/user.h>
-#include <sys/threadpool.h>
-#include <sys/kthread.h>
+#include <devel/sys/threadpool.h>
+#include <devel/sys/kthread.h>
 #include <sys/stdbool.h>
 #include <sys/percpu.h>
 

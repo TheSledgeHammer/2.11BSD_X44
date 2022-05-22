@@ -46,32 +46,51 @@
 #include <sys/malloc.h>
 #include <sys/queue.h>
 #include <sys/vnode.h>
+#include <sys/vnode_if.h>
 #include <devel/sys/vnodeopv.h>
 
 struct vnodeopv_desc_list vfs_opv_descs;
 struct vattr va_null;
 
-int vfs_opv_numops;// = sizeof(vfs_op_descs) / sizeof(vfs_op_descs[0]);
+int vfs_opv_numops;
 
 void
 vfs_opv_init()
 {
-	struct vnodeopv_desc    	*opv;
-	struct vnodeop_desc 		*opv_desc;
-	union vnodeopv_entry_desc 	*opve_descp;
+	int i, j, k;
+	int (***opv_desc_vector_p)();
+	int (**opv_desc_vector)();
 
+	struct vnodeopv_entry_desc 	*opve_descp;
+
+	register struct vnodeopv_desc *opv;
 	LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
-		opv_desc = vnodeopv_entry_desc_get_vnodeop_desc(opv, NULL, D_NOOPS);
-		if(opv_desc == NULL) {
-			MALLOC(*opv_desc, struct vnodeop_desc *, vfs_opv_numops * sizeof(struct vnodeop_desc *), M_VNODE, M_WAITOK);
-			bzero(*opv_desc, vfs_opv_numops * sizeof(struct vnodeop_desc *));
+		opv_desc_vector_p = opv->opv_desc_vector_p;
+		if (*opv_desc_vector_p == NULL) {
+			*opv_desc_vector_p = (opv_desc_vector_t)calloc(vfs_opv_numops, sizeof(pfi_t), M_VNODE, M_WAITOK);
+			bzero (*opv_desc_vector_p, vfs_opv_numops * sizeof(pfi_t));
 		}
-
-		opve_descp = vnodeopv_entry_desc(opv, NULL, D_NOOPS);
-
+		opv_desc_vector = *opv_desc_vector_p;
+		opve_descp = opv->opv_desc_ops;
 		if (opve_descp->opve_op->vdesc_offset == 0 && opve_descp->opve_op->vdesc_offset != VOFFSET(vop_default)) {
 			printf("operation %s not listed in %s.\n", opve_descp->opve_op->vdesc_name, "vfs_op_descs");
-			panic ("vfs_opv_init: bad operation");
+			panic("vfs_opv_init: bad operation");
+			opv_desc_vector[opve_descp->opve_op->vdesc_offset] = opve_descp->opve_impl;
+		}
+	}
+
+	LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
+		opv_desc_vector = *opv->opv_desc_vector_p;
+		/*
+		 * Force every operations vector to have a default routine.
+		 */
+		if (opv_desc_vector[VOFFSET(vop_default)] == NULL) {
+			panic("vfs_opv_init: operation vector without default routine.");
+		}
+		for (k = 0; k < vfs_opv_numops; k++) {
+			if (opv_desc_vector[k] == NULL) {
+				opv_desc_vector[k] = opv_desc_vector[VOFFSET(vop_default)];
+			}
 		}
 	}
 }

@@ -1300,9 +1300,8 @@ vop_bwrite(bp)
 
 /* End of special cases. */
 
-/*
- * non/standard vnodeops
- */
+/* no vnodeop cases */
+
 /*
  * vnodeop kqfilter methods
  */

@@ -39,24 +39,14 @@
 #include <sys/buf.h>
 #include <sys/stddef.h>
 
-/* TODO:
- * - add: default vnodeop_desc
- * - re-add: vp_offsets to each vnodeop_desc
- * - re-design: vnodeopv_entry_desc to register each vnodeops operation (int (*opve_op)(void *))
- *  	with its vnodeop_desc
- * - change: vnodeopv_desc to work with vnodeopv_entry_desc changes
- *
- */
-//#include <sys/vnode.h>
-
+typedef int (*pfi_t)();
 typedef int (*opve_impl_t)(void *);
-typedef int (***opv_desc_vector_t)(void *);
-
 struct vnodeopv_entry_desc {
 	struct vnodeop_desc 		*opve_op;  			/* which operation this is */
 	opve_impl_t					opve_impl;			/* code implementing this operation */
 };
 
+typedef int (***opv_desc_vector_t)(void *);
 struct vnodeopv_desc_list;
 LIST_HEAD(vnodeopv_desc_list, vnodeopv_desc);
 struct vnodeopv_desc {
@@ -67,21 +57,23 @@ struct vnodeopv_desc {
 	struct vnodeopv_entry_desc 	opv_desc_ops;   	/* null terminated list */
 };
 
-/* vnodeops voptype */
+/* vnodeops types */
 #define D_NOOPS  	0   /* vops not set */
 #define D_VNODEOPS  1   /* vops vnodeops */
 #define D_SPECOPS   2   /* vops specops */
 #define D_FIFOOPS   3   /* vops fifoops */
 
-void 						vnodeopv_desc_create(struct vnodeopv_desc *, const char *, int, struct vnodeops *, struct vnodeop_desc *);
+void 						vnodeopv_desc_create(struct vnodeopv_desc *, const char *, int, struct vnodeopv_entry_desc *);
 struct vnodeopv_desc 		*vnodeopv_desc_lookup(struct vnodeopv_desc *, const char *, int);
-union vnodeopv_entry_desc	vnodeopv_entry_desc(struct vnodeopv_desc *, const char *, int);
-struct vnodeops 			*vnodeopv_entry_desc_get_vnodeops(struct vnodeopv_desc *, const char *, int);
-struct vnodeop_desc 		*vnodeopv_entry_desc_get_vnodeop_desc(struct vnodeopv_desc *, const char *, int);
+struct vnodeopv_entry_desc	*vnodeopv_entry_desc(struct vnodeopv_desc *, const char *, int);
+void 						vnodeopv_attach(struct vnodeopv_desc *);
+void 						vnodeopv_detach(struct vnodeopv_desc *);
 
-#define VNODEOPV_DESC_NAME(name, voptype)         name##_##voptype##_opv_desc
-#define VNODEOPV_DESC_STRUCT(name, voptype) \
-		struct vnodeopv_desc VNODEOPV_DESC_NAME(name, voptype);
+#define VNODEOPV_DESC_STRUCT(name, voptype) 		\
+	struct vnodeopv_desc  (name##_##voptype##_opv_desc)
+
+#define VNODEOPV_ENTRY_DESC_STRUCT(name, voptype) 	\
+	struct vnodeopv_entry_desc (name##_##voptype##_entries)
 
 extern struct vnodeopv_desc_list vfs_opv_descs;
 

@@ -51,7 +51,7 @@
 struct vm_anonblock {
 	LIST_ENTRY(vm_anonblock) 	list;
 	int 						count;
-	struct vm_anon 				*anons;
+	vm_anon_t 					anons;
 };
 static LIST_HEAD(anonlist, vm_anonblock) anonblock_list;
 
