@@ -1,4 +1,4 @@
-/*	$NetBSD: db_break.c,v 1.7 1996/03/30 22:30:03 christos Exp $	*/
+/*	$NetBSD: db_break.c,v 1.9.6.2 1999/04/12 21:27:07 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -32,12 +32,8 @@
 /*
  * Breakpoints.
  */
-
-#include <sys/cdefs.h>
-
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/user.h>
 
 #include <machine/db_machdep.h>		/* type definitions */
 
@@ -49,9 +45,9 @@
 
 #define	NBREAKPOINTS	100
 struct db_breakpoint	db_break_table[NBREAKPOINTS];
-db_breakpoint_t			db_next_free_breakpoint = &db_break_table[0];
-db_breakpoint_t			db_free_breakpoints = 0;
-db_breakpoint_t			db_breakpoint_list = 0;
+db_breakpoint_t		db_next_free_breakpoint = &db_break_table[0];
+db_breakpoint_t		db_free_breakpoints = 0;
+db_breakpoint_t		db_breakpoint_list = 0;
 
 db_breakpoint_t
 db_breakpoint_alloc()
@@ -59,12 +55,12 @@ db_breakpoint_alloc()
 	register db_breakpoint_t	bkpt;
 
 	if ((bkpt = db_free_breakpoints) != 0) {
-		db_free_breakpoints = bkpt->link;
-		return (bkpt);
+	    db_free_breakpoints = bkpt->link;
+	    return (bkpt);
 	}
 	if (db_next_free_breakpoint == &db_break_table[NBREAKPOINTS]) {
-		db_printf("All breakpoints used.\n");
-		return (0);
+	    db_printf("All breakpoints used.\n");
+	    return (0);
 	}
 	bkpt = db_next_free_breakpoint;
 	db_next_free_breakpoint++;
@@ -117,15 +113,18 @@ db_delete_breakpoint(map, addr)
 	register db_breakpoint_t	bkpt;
 	register db_breakpoint_t	*prev;
 
-	for (prev = &db_breakpoint_list; (bkpt = *prev) != 0; prev = &bkpt->link) {
-		if (db_map_equal(bkpt->map, map) && (bkpt->address == addr)) {
-			*prev = bkpt->link;
-			break;
-		}
+	for (prev = &db_breakpoint_list;
+	     (bkpt = *prev) != 0;
+	     prev = &bkpt->link) {
+	    if (db_map_equal(bkpt->map, map) &&
+		(bkpt->address == addr)) {
+		*prev = bkpt->link;
+		break;
+	    }
 	}
 	if (bkpt == 0) {
-		db_printf("Not set.\n");
-		return;
+	    db_printf("Not set.\n");
+	    return;
 	}
 
 	db_breakpoint_free(bkpt);
@@ -138,9 +137,13 @@ db_find_breakpoint(map, addr)
 {
 	register db_breakpoint_t	bkpt;
 
-	for (bkpt = db_breakpoint_list; bkpt != 0; bkpt = bkpt->link) {
-		if (db_map_equal(bkpt->map, map) && (bkpt->address == addr))
-			return (bkpt);
+	for (bkpt = db_breakpoint_list;
+	     bkpt != 0;
+	     bkpt = bkpt->link)
+	{
+	    if (db_map_equal(bkpt->map, map) &&
+		(bkpt->address == addr))
+		return (bkpt);
 	}
 	return (0);
 }
@@ -152,7 +155,7 @@ db_find_breakpoint_here(addr)
     return db_find_breakpoint(db_map_addr(addr), addr);
 }
 
-bool_t	db_breakpoints_inserted = TRUE;
+boolean_t	db_breakpoints_inserted = TRUE;
 
 void
 db_set_breakpoints()
@@ -194,42 +197,6 @@ db_clear_breakpoints()
 }
 
 /*
- * Set a temporary breakpoint.
- * The instruction is changed immediately,
- * so the breakpoint does not have to be on the breakpoint list.
- */
-db_breakpoint_t
-db_set_temp_breakpoint(addr)
-	db_addr_t	addr;
-{
-	register db_breakpoint_t	bkpt;
-
-	bkpt = db_breakpoint_alloc();
-	if (bkpt == 0) {
-	    db_printf("Too many breakpoints.\n");
-	    return 0;
-	}
-
-	bkpt->map = NULL;
-	bkpt->address = addr;
-	bkpt->flags = BKPT_TEMP;
-	bkpt->init_count = 1;
-	bkpt->count = 1;
-
-	bkpt->bkpt_inst = db_get_value(bkpt->address, BKPT_SIZE, FALSE);
-	db_put_value(bkpt->address, BKPT_SIZE, BKPT_SET(bkpt->bkpt_inst));
-	return bkpt;
-}
-
-void
-db_delete_temp_breakpoint(bkpt)
-	db_breakpoint_t	bkpt;
-{
-	db_put_value(bkpt->address, BKPT_SIZE, bkpt->bkpt_inst);
-	db_breakpoint_free(bkpt);
-}
-
-/*
  * List breakpoints.
  */
 void
@@ -243,11 +210,15 @@ db_list_breakpoints()
 	}
 
 	db_printf(" Map      Count    Address\n");
-	for (bkpt = db_breakpoint_list; bkpt != 0; bkpt = bkpt->link) {
-		db_printf("%s%p %5d    ", db_map_current(bkpt->map) ? "*" : " ",
-				bkpt->map, bkpt->init_count);
-		db_printsym(bkpt->address, DB_STGY_PROC);
-		db_printf("\n");
+	for (bkpt = db_breakpoint_list;
+	     bkpt != 0;
+	     bkpt = bkpt->link)
+	{
+	    db_printf("%s%p %5d    ",
+		      db_map_current(bkpt->map) ? "*" : " ",
+		      bkpt->map, bkpt->init_count);
+	    db_printsym(bkpt->address, DB_STGY_PROC);
+	    db_printf("\n");
 	}
 }
 
@@ -290,9 +261,7 @@ db_listbreak_cmd(addr, have_addr, count, modif)
 	db_list_breakpoints();
 }
 
-
-#include <vm/include/vm_extern.h>
-//#include <vm/include/vm_kern.h>
+#include <vm/include/vm_kern.h>
 
 /*
  *	We want ddb to be usable before most of the kernel has been
@@ -300,7 +269,7 @@ db_listbreak_cmd(addr, have_addr, count, modif)
  *	(or both) may be null.
  */
 
-bool_t
+boolean_t
 db_map_equal(map1, map2)
 	vm_map_t	map1, map2;
 {
@@ -309,7 +278,7 @@ db_map_equal(map1, map2)
 		((map1 == kernel_map) && (map2 == NULL)));
 }
 
-bool_t
+boolean_t
 db_map_current(map)
 	vm_map_t	map;
 {

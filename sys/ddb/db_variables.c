@@ -1,4 +1,4 @@
-/*	$NetBSD: db_variables.c,v 1.11 1997/02/04 00:33:32 cgd Exp $	*/
+/*	$NetBSD: db_variables.c,v 1.14.6.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -26,6 +26,9 @@
  * rights to redistribute these changes.
  */
 
+//#include "opt_ddb.h"				/* for sysctl.h */
+//#include "opt_ddbparam.h"
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <vm/include/vm.h>
@@ -33,11 +36,14 @@
 
 #include <machine/db_machdep.h>
 
+#include <ddb/ddbvar.h>
+
 #include <ddb/db_lex.h>
 #include <ddb/db_variables.h>
 #include <ddb/db_command.h>
 #include <ddb/db_sym.h>
 #include <ddb/db_extern.h>
+
 
 /*
  * If this is non-zero, the DDB will be entered when the system
@@ -48,23 +54,32 @@
 #endif
 int		db_onpanic = DDB_ONPANIC;
 
-extern unsigned int db_maxoff;
+/*
+ * Can  DDB can be entered from the console?
+ */
+#ifndef	DDB_FROMCONSOLE
+#define	DDB_FROMCONSOLE 1
+#endif
+int		db_fromconsole = DDB_FROMCONSOLE;
+
 
 extern int	db_radix;
 extern int	db_max_width;
 extern int	db_tab_stop_width;
 extern int	db_max_line;
 
-static int	db_rw_internal_variable (struct db_variable *, db_expr_t *, int);
+static int	db_rw_internal_variable __P((struct db_variable *, db_expr_t *,
+		    int));
 
 /* XXX must all be ints for sysctl. */
 struct db_variable db_vars[] = {
-	{ "radix",		(long *)&db_radix,	db_rw_internal_variable },
-	{ "maxoff",		(long *)&db_maxoff,	db_rw_internal_variable },
+	{ "radix",	(long *)&db_radix,	db_rw_internal_variable },
+	{ "maxoff",	(long *)&db_maxoff,	db_rw_internal_variable },
 	{ "maxwidth",	(long *)&db_max_width,	db_rw_internal_variable },
 	{ "tabstops",	(long *)&db_tab_stop_width, db_rw_internal_variable },
-	{ "lines",		(long *)&db_max_line,	db_rw_internal_variable },
+	{ "lines",	(long *)&db_max_line,	db_rw_internal_variable },
 	{ "onpanic",	(long *)&db_onpanic,	db_rw_internal_variable },
+	{ "fromconsole", (long *)&db_onpanic,	db_rw_internal_variable },
 };
 struct db_variable *db_evars = db_vars + sizeof(db_vars)/sizeof(db_vars[0]);
 
@@ -124,6 +139,9 @@ ddb_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 
 	case DDBCTL_ONPANIC:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &db_onpanic));
+	case DDBCTL_FROMCONSOLE:
+		return (sysctl_int(oldp, oldlenp, newp, newlen,
+		    &db_fromconsole));
 	}
 
 	return (EOPNOTSUPP);
@@ -190,7 +208,7 @@ db_read_variable(vp, valuep)
 	struct db_variable *vp;
 	db_expr_t	*valuep;
 {
-	int	(*func)(struct db_variable *, db_expr_t *, int) = vp->fcn;
+	int	(*func) __P((struct db_variable *, db_expr_t *, int)) = vp->fcn;
 
 	if (func == FCN_NULL)
 	    *valuep = *(vp->valuep);
@@ -203,7 +221,7 @@ db_write_variable(vp, valuep)
 	struct db_variable *vp;
 	db_expr_t	*valuep;
 {
-	int	(*func)(struct db_variable *, db_expr_t *, int) = vp->fcn;
+	int	(*func) __P((struct db_variable *, db_expr_t *, int)) = vp->fcn;
 
 	if (func == FCN_NULL)
 	    *(vp->valuep) = *valuep;

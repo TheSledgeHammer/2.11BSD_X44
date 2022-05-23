@@ -1,4 +1,4 @@
-/*	$NetBSD: db_write_cmd.c,v 1.8 1997/02/04 00:32:09 cgd Exp $	*/
+/*	$NetBSD: db_write_cmd.c,v 1.9.2.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -31,7 +31,6 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/user.h>
 
 #include <machine/db_machdep.h>
 
@@ -49,7 +48,7 @@
 void
 db_write_cmd(address, have_addr, count, modif)
 	db_expr_t	address;
-	bool_t	have_addr;
+	boolean_t	have_addr;
 	db_expr_t	count;
 	char *		modif;
 {
@@ -59,7 +58,7 @@ db_write_cmd(address, have_addr, count, modif)
 	db_expr_t	old_value;
 	db_expr_t	new_value;
 	register int	size;
-	bool_t	wrote_one = FALSE;
+	boolean_t	wrote_one = FALSE;
 
 	addr = (db_addr_t) address;
 
@@ -83,8 +82,8 @@ db_write_cmd(address, have_addr, count, modif)
 	while (db_expression(&new_value)) {
 	    old_value = db_get_value(addr, size, FALSE);
 	    db_printsym(addr, DB_STGY_ANY);
-	    db_printf("\t\t%#*ln = %#*ln\n", (sizeof (old_value) * 2) + 2,
-		old_value, (sizeof (new_value) * 2) + 2, new_value);
+	    db_printf("\t\t%#*ln = %#*ln\n", (int)(sizeof (old_value) * 2) + 2,
+		old_value, (int)(sizeof (new_value) * 2) + 2, new_value);
 	    db_put_value(addr, size, new_value);
 	    addr += size;
 

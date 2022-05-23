@@ -1,4 +1,4 @@
-/*	$NetBSD: db_examine.c,v 1.13 1997/02/03 23:43:36 mycroft Exp $	*/
+/*	$NetBSD: db_examine.c,v 1.13.20.2 1999/04/12 21:27:07 pk Exp $	*/
 
 /*
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  *
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  *
@@ -29,10 +29,7 @@
  *	Date:	7/90
  */
 
-#include <sys/cdefs.h>
-
 #include <sys/param.h>
-#include <sys/systm.h>
 #include <sys/proc.h>
 
 #include <machine/db_machdep.h>		/* type definitions */
@@ -45,10 +42,7 @@
 #include <ddb/db_extern.h>
 #include <ddb/db_interface.h>
 
-static char	db_examine_format[TOK_STRING_SIZE] = "x";
-
-static void	db_examine(db_addr_t, char *, int);
-static void	db_search(db_addr_t, int, db_expr_t, db_expr_t, unsigned int);
+char	db_examine_format[TOK_STRING_SIZE] = "x";
 
 /*
  * Examine (print) data.  Syntax is:
@@ -75,9 +69,10 @@ db_examine_cmd(addr, have_addr, count, modif)
 	db_examine((db_addr_t) addr, db_examine_format, count);
 }
 
-static void
+void
 db_examine(addr, fmt, count)
-	register db_addr_t	addr;
+	register
+	    db_addr_t	addr;
 	char *		fmt;	/* format string */
 	int		count;	/* repeat count */
 {
@@ -183,7 +178,7 @@ db_examine(addr, fmt, count)
 /*
  * Print value.
  */
-static char	db_print_format = 'x';
+char	db_print_format = 'x';
 
 /*ARGSUSED*/
 void
@@ -257,13 +252,13 @@ db_strcpy(dst, src)
 void
 db_search_cmd(daddr, have_addr, dcount, modif)
 	db_expr_t	daddr;
-	int			have_addr;
+	int		have_addr;
 	db_expr_t	dcount;
 	char *		modif;
 {
-	int			t;
+	int		t;
 	db_addr_t	addr;
-	int			size;
+	int		size;
 	db_expr_t	value;
 	db_expr_t	mask;
 	db_expr_t	count;
@@ -323,10 +318,11 @@ db_search_cmd(daddr, have_addr, dcount, modif)
 	db_search(addr, size, value, mask, count);
 }
 
-static void
+void
 db_search(addr, size, value, mask, count)
-	register db_addr_t	addr;
-	int			size;
+	register
+	db_addr_t	addr;
+	int		size;
 	db_expr_t	value;
 	db_expr_t	mask;
 	unsigned int	count;

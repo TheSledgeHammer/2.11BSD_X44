@@ -1,4 +1,4 @@
-/*	$NetBSD: db_run.h,v 1.3 1996/02/05 01:57:14 christos Exp $	*/
+/*	$NetBSD: db_run.h,v 1.3.24.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -39,18 +39,18 @@ int		db_inst_count;
 int		db_load_count;
 int		db_store_count;
 
-bool_t db_stop_at_pc (db_regs_t *, bool_t *);
-void db_restart_at_pc (db_regs_t *, bool_t);
-void db_single_step (db_regs_t *);
+boolean_t db_stop_at_pc __P((db_regs_t *, boolean_t *));
+void db_restart_at_pc __P((db_regs_t *, boolean_t));
+void db_single_step __P((db_regs_t *));
 #ifndef db_set_single_step
-void db_set_single_step (db_regs_t *);
+void db_set_single_step __P((db_regs_t *));
 #endif
 #ifndef db_clear_single_step
-void db_clear_single_step (db_regs_t *);
+void db_clear_single_step __P((db_regs_t *));
 #endif
-void db_single_step_cmd (db_expr_t, int, db_expr_t, char *);
-void db_trace_until_call_cmd (db_expr_t, int, db_expr_t, char *);
-void db_trace_until_matching_cmd (db_expr_t, int, db_expr_t, char *);
-void db_continue_cmd (db_expr_t, int, db_expr_t, char *);
+void db_single_step_cmd __P((db_expr_t, int, db_expr_t, char *));
+void db_trace_until_call_cmd __P((db_expr_t, int, db_expr_t, char *));
+void db_trace_until_matching_cmd __P((db_expr_t, int, db_expr_t, char *));
+void db_continue_cmd __P((db_expr_t, int, db_expr_t, char *));
 
-#endif	_DDB_DB_RUN_
+#endif	/* _DDB_DB_RUN_ */

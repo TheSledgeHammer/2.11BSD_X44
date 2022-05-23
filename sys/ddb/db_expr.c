@@ -1,4 +1,4 @@
-/*	$NetBSD: db_expr.c,v 1.7 1997/06/26 01:13:11 thorpej Exp $	*/
+/*	$NetBSD: db_expr.c,v 1.7.16.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -29,10 +29,8 @@
  *	Date:	7/90
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/user.h>
 
 #include <machine/db_machdep.h>
 
@@ -43,7 +41,7 @@
 #include <ddb/db_extern.h>
 #include <ddb/db_variables.h>
 
-static bool_t
+boolean_t
 db_term(valuep)
 	db_expr_t *valuep;
 {
@@ -51,54 +49,54 @@ db_term(valuep)
 
 	t = db_read_token();
 	if (t == tIDENT) {
-		if (!db_value_of_name(db_tok_string, valuep)) {
-			db_error("Symbol not found\n");
-			/*NOTREACHED*/
-		}
-		return (TRUE);
+	    if (!db_value_of_name(db_tok_string, valuep)) {
+		db_error("Symbol not found\n");
+		/*NOTREACHED*/
+	    }
+	    return (TRUE);
 	}
 	if (t == tNUMBER) {
-		*valuep = (db_expr_t) db_tok_number;
-		return (TRUE);
+	    *valuep = (db_expr_t)db_tok_number;
+	    return (TRUE);
 	}
 	if (t == tDOT) {
-		*valuep = (db_expr_t) db_dot;
-		return (TRUE);
+	    *valuep = (db_expr_t)db_dot;
+	    return (TRUE);
 	}
 	if (t == tDOTDOT) {
-		*valuep = (db_expr_t) db_prev;
-		return (TRUE);
+	    *valuep = (db_expr_t)db_prev;
+	    return (TRUE);
 	}
 	if (t == tPLUS) {
-		*valuep = (db_expr_t) db_next;
-		return (TRUE);
+	    *valuep = (db_expr_t) db_next;
+	    return (TRUE);
 	}
 	if (t == tDITTO) {
-		*valuep = (db_expr_t) db_last_addr;
-		return (TRUE);
+	    *valuep = (db_expr_t)db_last_addr;
+	    return (TRUE);
 	}
 	if (t == tDOLLAR) {
-		if (!db_get_variable(valuep))
-			return (FALSE);
-		return (TRUE);
+	    if (!db_get_variable(valuep))
+		return (FALSE);
+	    return (TRUE);
 	}
 	if (t == tLPAREN) {
-		if (!db_expression(valuep)) {
-			db_error("Syntax error\n");
-			/*NOTREACHED*/
-		}
-		t = db_read_token();
-		if (t != tRPAREN) {
-			db_error("Syntax error\n");
-			/*NOTREACHED*/
-		}
-		return (TRUE);
+	    if (!db_expression(valuep)) {
+		db_error("Syntax error\n");
+		/*NOTREACHED*/
+	    }
+	    t = db_read_token();
+	    if (t != tRPAREN) {
+		db_error("Syntax error\n");
+		/*NOTREACHED*/
+	    }
+	    return (TRUE);
 	}
 	db_unread_token(t);
 	return (FALSE);
 }
 
-static bool_t
+boolean_t
 db_unary(valuep)
 	db_expr_t *valuep;
 {
@@ -106,27 +104,28 @@ db_unary(valuep)
 
 	t = db_read_token();
 	if (t == tMINUS) {
-		if (!db_unary(valuep)) {
-			db_error("Syntax error\n");
-			/*NOTREACHED*/
-		}
-		*valuep = -*valuep;
-		return (TRUE);
+	    if (!db_unary(valuep)) {
+		db_error("Syntax error\n");
+		/*NOTREACHED*/
+	    }
+	    *valuep = -*valuep;
+	    return (TRUE);
 	}
 	if (t == tSTAR) {
-		/* indirection */
-		if (!db_unary(valuep)) {
-			db_error("Syntax error\n");
-			/*NOTREACHED*/
-		}
-		*valuep = db_get_value((db_addr_t) *valuep, sizeof(db_expr_t), FALSE);
-		return (TRUE);
+	    /* indirection */
+	    if (!db_unary(valuep)) {
+		db_error("Syntax error\n");
+		/*NOTREACHED*/
+	    }
+	    *valuep = db_get_value((db_addr_t)*valuep, sizeof(db_expr_t),
+	        FALSE);
+	    return (TRUE);
 	}
 	db_unread_token(t);
 	return (db_term(valuep));
 }
 
-static bool_t
+boolean_t
 db_mult_expr(valuep)
 	db_expr_t *valuep;
 {
@@ -134,36 +133,36 @@ db_mult_expr(valuep)
 	int		t;
 
 	if (!db_unary(&lhs))
-		return (FALSE);
+	    return (FALSE);
 
 	t = db_read_token();
 	while (t == tSTAR || t == tSLASH || t == tPCT || t == tHASH) {
-		if (!db_term(&rhs)) {
-			db_error("Syntax error\n");
-			/*NOTREACHED*/
+	    if (!db_term(&rhs)) {
+		db_error("Syntax error\n");
+		/*NOTREACHED*/
+	    }
+	    if (t == tSTAR)
+		lhs *= rhs;
+	    else {
+		if (rhs == 0) {
+		    db_error("Divide by 0\n");
+		    /*NOTREACHED*/
 		}
-		if (t == tSTAR)
-			lhs *= rhs;
-		else {
-			if (rhs == 0) {
-				db_error("Divide by 0\n");
-				/*NOTREACHED*/
-			}
-			if (t == tSLASH)
-				lhs /= rhs;
-			else if (t == tPCT)
-				lhs %= rhs;
-			else
-				lhs = ((lhs + rhs - 1) / rhs) * rhs;
-		}
-		t = db_read_token();
+		if (t == tSLASH)
+		    lhs /= rhs;
+		else if (t == tPCT)
+		    lhs %= rhs;
+		else
+		    lhs = ((lhs+rhs-1)/rhs)*rhs;
+	    }
+	    t = db_read_token();
 	}
 	db_unread_token(t);
 	*valuep = lhs;
 	return (TRUE);
 }
 
-static bool_t
+boolean_t
 db_add_expr(valuep)
 	db_expr_t *valuep;
 {
@@ -171,52 +170,52 @@ db_add_expr(valuep)
 	int		t;
 
 	if (!db_mult_expr(&lhs))
-		return (FALSE);
+	    return (FALSE);
 
 	t = db_read_token();
 	while (t == tPLUS || t == tMINUS) {
-		if (!db_mult_expr(&rhs)) {
-			db_error("Syntax error\n");
-			/*NOTREACHED*/
-		}
-		if (t == tPLUS)
-			lhs += rhs;
-		else
-			lhs -= rhs;
-		t = db_read_token();
+	    if (!db_mult_expr(&rhs)) {
+		db_error("Syntax error\n");
+		/*NOTREACHED*/
+	    }
+	    if (t == tPLUS)
+		lhs += rhs;
+	    else
+		lhs -= rhs;
+	    t = db_read_token();
 	}
 	db_unread_token(t);
 	*valuep = lhs;
 	return (TRUE);
 }
 
-static bool_t
+boolean_t
 db_shift_expr(valuep)
 	db_expr_t *valuep;
 {
 	db_expr_t	lhs, rhs;
-	int t;
+	int		t;
 
 	if (!db_add_expr(&lhs))
-		return (FALSE);
+	    return (FALSE);
 
 	t = db_read_token();
 	while (t == tSHIFT_L || t == tSHIFT_R) {
-		if (!db_add_expr(&rhs)) {
-			db_error("Syntax error\n");
-			/*NOTREACHED*/
-		}
-		if (rhs < 0) {
-			db_error("Negative shift amount\n");
-			/*NOTREACHED*/
-		}
-		if (t == tSHIFT_L)
-			lhs <<= rhs;
-		else {
-			/* Shift right is unsigned */
-			lhs = (unsigned long) lhs >> rhs;
-		}
-		t = db_read_token();
+	    if (!db_add_expr(&rhs)) {
+		db_error("Syntax error\n");
+		/*NOTREACHED*/
+	    }
+	    if (rhs < 0) {
+		db_error("Negative shift amount\n");
+		/*NOTREACHED*/
+	    }
+	    if (t == tSHIFT_L)
+		lhs <<= rhs;
+	    else {
+		/* Shift right is unsigned */
+		lhs = (unsigned long) lhs >> rhs;
+	    }
+	    t = db_read_token();
 	}
 	db_unread_token(t);
 	*valuep = lhs;

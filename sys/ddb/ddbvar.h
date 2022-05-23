@@ -1,11 +1,11 @@
-/*	$NetBSD: db_extern.h,v 1.6 1998/12/04 20:18:05 thorpej Exp $	*/
+/*	$NetBSD: ddbvar.h,v 1.2 1998/10/29 21:22:33 jonathan Exp $	*/
 
 /*-
- * Copyright (c) 1995 The NetBSD Foundation, Inc.
+ * Copyright (c) 1996, 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Christos Zoulas.
+ * by Jonathan Stone.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -17,8 +17,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
  * 4. Neither the name of The NetBSD Foundation nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
@@ -36,45 +36,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DDB_DB_EXTERN_H_
-#define _DDB_DB_EXTERN_H_
+#ifndef _DDBVAR_H_
+#define _DDBVAR_H_
 
-/* db_sym.c */
-void ddb_init __P((int, void *, void *));
+/*
+ * Externally-visible  debugger state and entrypoints
+ */
 
-/* db_examine.c */
-void db_examine_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_examine __P((db_addr_t, char *, int));
-void db_print_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_print_loc_and_inst __P((db_addr_t));
-void db_strcpy __P((char *, char *));
-void db_search_cmd __P((db_expr_t, boolean_t, db_expr_t, char *));
-void db_search __P((db_addr_t, int, db_expr_t, db_expr_t, unsigned int));
+extern	int db_onpanic;
+extern	int db_fromconsole;
 
-/* db_expr.c */
-boolean_t db_term __P((db_expr_t *));
-boolean_t db_unary __P((db_expr_t *));
-boolean_t db_mult_expr __P((db_expr_t *));
-boolean_t db_add_expr __P((db_expr_t *));
-boolean_t db_shift_expr __P((db_expr_t *));
-int db_expression __P((db_expr_t *));
+int ddb_sysctl __P((int *, u_int, void *, size_t *, void *, size_t,
+		    struct proc *));
 
-/* db_input.c */
-void db_putstring __P((char *, int));
-void db_putnchars __P((int, int));
-void db_delete __P((int, int));
-void db_delete_line __P((void));
-int db_inputchar __P((int));
-int db_readline __P((char *, int));
-void db_check_interrupt __P((void));
+int	read_symtab_from_file __P((struct proc *,struct vnode *,const char *));
 
-/* db_print.c */
-void db_show_regs __P((db_expr_t, boolean_t, db_expr_t, char *));
-
-/* db_trap.c */
-void db_trap(int, int);
-
-/* db_write_cmd.c */
-void db_write_cmd __P((db_expr_t, boolean_t, db_expr_t, char *));
-
-#endif /* _DDB_DB_EXTERN_H_ */
+#endif	/* !_DDBVAR_H_ */

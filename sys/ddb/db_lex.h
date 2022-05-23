@@ -1,4 +1,4 @@
-/*	$NetBSD: db_lex.h,v 1.8 1997/02/03 19:56:06 cgd Exp $	*/
+/*	$NetBSD: db_lex.h,v 1.8.20.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -32,14 +32,14 @@
 /*
  * Lexical analyzer.
  */
-int db_read_line (void);
-void db_flush_line (void);
-int db_read_char (void);
-void db_unread_char (int);
-void db_unread_token (int);
-int db_read_token (void);
-void db_flush_lex (void);
-int db_lex (void);
+int db_read_line __P((void));
+void db_flush_line __P((void));
+int db_read_char __P((void));
+void db_unread_char __P((int));
+void db_unread_token __P((int));
+int db_read_token __P((void));
+void db_flush_lex __P((void));
+int db_lex __P((void));
 
 db_expr_t db_tok_number;
 #define	TOK_STRING_SIZE		120 
@@ -55,7 +55,7 @@ int	db_radix;
 #define	tDOT		6
 #define	tSTAR		7
 #define	tSLASH		8
-#define	tEQ			9
+#define	tEQ		9
 #define	tLPAREN		10
 #define	tRPAREN		11
 #define	tPCT		12

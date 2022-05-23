@@ -1,4 +1,4 @@
-/*	$NetBSD: db_print.c,v 1.7 1997/02/04 00:32:10 cgd Exp $	*/
+/*	$NetBSD: db_print.c,v 1.9.2.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -43,8 +43,6 @@
 #include <ddb/db_output.h>
 #include <ddb/db_extern.h>
 
-extern unsigned int	db_maxoff;
-
 /*ARGSUSED*/
 void
 db_show_regs(addr, have_addr, count, modif)
@@ -59,7 +57,7 @@ db_show_regs(addr, have_addr, count, modif)
 
 	for (regp = db_regs; regp < db_eregs; regp++) {
 	    db_read_variable(regp, &value);
-	    db_printf("%-12s%#*ln", regp->name, (sizeof (value) * 2) + 2,
+	    db_printf("%-12s%#*ln", regp->name, (int)(sizeof (value) * 2) + 2,
 		value);
 	    db_find_xtrn_sym_and_offset((db_addr_t)value, &name, &offset);
 	    if (name != 0 && offset <= db_maxoff && offset != value) {

@@ -1,4 +1,4 @@
-/*	$NetBSD: db_trap.c,v 1.9 1996/02/05 01:57:18 christos Exp $	*/
+/*	$NetBSD: db_trap.c,v 1.12.6.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -48,8 +48,8 @@ void
 db_trap(type, code)
 	int	type, code;
 {
-	bool_t	bkpt;
-	bool_t	watchpt;
+	boolean_t	bkpt;
+	boolean_t	watchpt;
 
 	bkpt = IS_BREAKPOINT_TRAP(type, code);
 	watchpt = IS_WATCHPOINT_TRAP(type, code);
@@ -59,7 +59,14 @@ db_trap(type, code)
 		db_printf("After %d instructions (%d loads, %d stores),\n",
 			  db_inst_count, db_load_count, db_store_count);
 	    }
-	    if (bkpt)
+	    if (curproc != NULL) {
+		if (bkpt)
+		    db_printf("Breakpoint in %s at\t", curproc->p_comm);
+		else if (watchpt)
+		    db_printf("Watchpoint in %s at\t", curproc->p_comm);
+		else
+		    db_printf("Stopped in %s at\t", curproc->p_comm);
+	    } else if (bkpt)
 		db_printf("Breakpoint at\t");
 	    else if (watchpt)
 		db_printf("Watchpoint at\t");

@@ -1,4 +1,4 @@
-/*	$NetBSD: db_access.c,v 1.11 1997/09/13 18:44:55 pk Exp $	*/
+/*	$NetBSD: db_access.c,v 1.11.10.2 1999/04/12 21:27:07 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -29,7 +29,6 @@
  *	Date:	7/90
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 
@@ -43,7 +42,7 @@
  * boundaries.
  */
 
-const int db_extend[] = {	/* table for sign-extending */
+int db_extend[] = {	/* table for sign-extending */
 	0,
 	0xFFFFFF80,
 	0xFFFF8000,
@@ -54,7 +53,7 @@ db_expr_t
 db_get_value(addr, size, is_signed)
 	db_addr_t addr;
 	register size_t size;
-	bool_t is_signed;
+	boolean_t is_signed;
 {
 	char data[sizeof(db_expr_t)];
 	register db_expr_t value;

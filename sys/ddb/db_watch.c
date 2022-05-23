@@ -1,4 +1,4 @@
-/*	$NetBSD: db_watch.c,v 1.9 1996/03/30 22:30:12 christos Exp $	*/
+/*	$NetBSD: db_watch.c,v 1.10.6.2 1999/04/12 21:27:08 pk Exp $	*/
 
 /* 
  * Mach Operating System
@@ -11,7 +11,7 @@
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
  * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
  * 
@@ -48,13 +48,13 @@
  * Watchpoints.
  */
 
-bool_t	db_watchpoints_inserted = TRUE;
+boolean_t	db_watchpoints_inserted = TRUE;
 
 #define	NWATCHPOINTS	100
 struct db_watchpoint	db_watch_table[NWATCHPOINTS];
-db_watchpoint_t			db_next_free_watchpoint = &db_watch_table[0];
-db_watchpoint_t			db_free_watchpoints = 0;
-db_watchpoint_t			db_watchpoint_list = 0;
+db_watchpoint_t		db_next_free_watchpoint = &db_watch_table[0];
+db_watchpoint_t		db_free_watchpoints = 0;
+db_watchpoint_t		db_watchpoint_list = 0;
 
 db_watchpoint_t
 db_watchpoint_alloc()
@@ -237,7 +237,7 @@ db_clear_watchpoints()
 	db_watchpoints_inserted = FALSE;
 }
 
-bool_t
+boolean_t
 db_find_watchpoint(map, addr, regs)
 	vm_map_t	map;
 	db_addr_t	addr;
