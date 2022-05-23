@@ -29,6 +29,7 @@
  *	Date:	7/90
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 
@@ -42,7 +43,7 @@
  * boundaries.
  */
 
-int db_extend[] = {	/* table for sign-extending */
+const int db_extend[] = {	/* table for sign-extending */
 	0,
 	0xFFFFFF80,
 	0xFFFF8000,

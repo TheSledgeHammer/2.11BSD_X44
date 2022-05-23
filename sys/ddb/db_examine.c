@@ -29,7 +29,10 @@
  *	Date:	7/90
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 
 #include <machine/db_machdep.h>		/* type definitions */
@@ -42,7 +45,10 @@
 #include <ddb/db_extern.h>
 #include <ddb/db_interface.h>
 
-char	db_examine_format[TOK_STRING_SIZE] = "x";
+static char	db_examine_format[TOK_STRING_SIZE] = "x";
+
+static void	db_examine(db_addr_t, char *, int);
+static void	db_search(db_addr_t, int, db_expr_t, db_expr_t, unsigned int);
 
 /*
  * Examine (print) data.  Syntax is:
@@ -69,10 +75,9 @@ db_examine_cmd(addr, have_addr, count, modif)
 	db_examine((db_addr_t) addr, db_examine_format, count);
 }
 
-void
+static void
 db_examine(addr, fmt, count)
-	register
-	    db_addr_t	addr;
+	register db_addr_t	addr;
 	char *		fmt;	/* format string */
 	int		count;	/* repeat count */
 {
@@ -178,7 +183,7 @@ db_examine(addr, fmt, count)
 /*
  * Print value.
  */
-char	db_print_format = 'x';
+static char	db_print_format = 'x';
 
 /*ARGSUSED*/
 void
@@ -252,13 +257,13 @@ db_strcpy(dst, src)
 void
 db_search_cmd(daddr, have_addr, dcount, modif)
 	db_expr_t	daddr;
-	int		have_addr;
+	int			have_addr;
 	db_expr_t	dcount;
 	char *		modif;
 {
-	int		t;
+	int			t;
 	db_addr_t	addr;
-	int		size;
+	int			size;
 	db_expr_t	value;
 	db_expr_t	mask;
 	db_expr_t	count;
@@ -318,11 +323,10 @@ db_search_cmd(daddr, have_addr, dcount, modif)
 	db_search(addr, size, value, mask, count);
 }
 
-void
+static void
 db_search(addr, size, value, mask, count)
-	register
-	db_addr_t	addr;
-	int		size;
+	register db_addr_t	addr;
+	int			size;
 	db_expr_t	value;
 	db_expr_t	mask;
 	unsigned int	count;

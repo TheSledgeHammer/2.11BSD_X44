@@ -32,6 +32,9 @@
 /*
  * Breakpoints.
  */
+
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -287,7 +290,9 @@ db_listbreak_cmd(addr, have_addr, count, modif)
 	db_list_breakpoints();
 }
 
-#include <vm/include/vm_kern.h>
+
+#include <vm/include/vm_extern.h>
+//#include <vm/include/vm_kern.h>
 
 /*
  *	We want ddb to be usable before most of the kernel has been

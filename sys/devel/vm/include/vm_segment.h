@@ -60,7 +60,7 @@ struct vm_segment {
 
 	int							sg_resident_page_count;	/* number of resident pages */
 
-	vm_offset_t					sg_laddr;				/* segment logical address */
+	vm_offset_t					sg_log_addr;			/* segment logical address */
 
 	vm_psegment_t				sg_psegment;			/* pointer to pseudo segment register */
 };
@@ -85,6 +85,7 @@ struct vm_segment {
 		panic("vm_segment_check: not valid!"); 								\
 }
 
+//#ifdef _KERNEL
 extern
 struct seglist  	vm_segment_list;			/* free list */
 extern
@@ -116,10 +117,16 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 	vm_segment_insert((seg), (object), (offset)); 		\
 }
 
-#define VM_SEGMENT_TO_PHYS(entry)	((entry)->sg_laddr)
+#define VM_SEGMENT_TO_PHYS(entry)	((entry)->sg_log_addr)
+
+#define IS_VM_LOGICALADDR(pa) 							\
+		((pa) >= first_logical_addr && (pa) <= last_logical_addr)
+
+#define	VM_SEGMENT_INDEX(pa) 							\
+		(atos((pa)) - first_segment)
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
-		(&vm_segment_array[atos(pa) - first_segment])
+		(&vm_segment_array[VM_SEGMENT_INDEX(pa)])
 
 #define	vm_segment_lock_lists()		simple_lock(&vm_segment_list_lock)
 #define	vm_segment_unlock_lists()	simple_unlock(&vm_segment_list_lock)
@@ -137,7 +144,8 @@ void			vm_segment_page_insert(vm_object_t, vm_offset_t, vm_page_t, vm_offset_t);
 vm_page_t		vm_segment_page_lookup(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_page_remove(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_startup(vm_offset_t, vm_offset_t);
-bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
 bool_t			vm_segment_zero_fill(vm_segment_t);
+bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
 
+//#endif /* KERNEL */
 #endif /* VM_SEGMENT_H_ */

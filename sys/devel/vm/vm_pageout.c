@@ -201,6 +201,7 @@ vm_pageout_scan_page(pglst, segment, object, free, pages_freed)
 			segment = page->segment;
 		}
 		vm_pageout_inactive_scanner(page, segment, object, pages_freed);
+
 		/*
 		 * Former next page may no longer even be on the inactive
 		 * queue (due to potential blocking in the pager with the

@@ -13,8 +13,8 @@
  *	@(#)vmmac.h	1.1 (2.10 Berkeley) 12/1/86
  */
 
-#ifndef _VMMAC_H_
-#define _VMMAC_H_
+#ifndef _VM_MAC_H_
+#define _VM_MAC_H_
 
 /*
  * Virtual memory related conversion macros
@@ -33,11 +33,12 @@
 /* Tell whether virtual page numbers are in text|data|stack segment */
 #define	isassv(p, v)	((v) >= BTOPUSRSTACK - (p)->p_ssize)
 #define	isatsv(p, v)	(((v) - LOWPAGES) < (p)->p_tsize)
-#define	isadsv(p, v)	(((v) - LOWPAGES) >= stoc(ctos((p)->p_tsize)) && (v) < LOWPAGES + (p)->p_tsize + (p)->p_dsize + (p)->p_mmsize)
+#define	isadsv(p, v)	(((v) - LOWPAGES) >= stoc(ctos((p)->p_tsize)) && !isassv(p, v))
+//(v) < LOWPAGES + (p)->p_tsize + (p)->p_dsize)
 
 /* Average new into old with aging factor time */
 #define	ave(smooth, cnt, timo) \
 	(smooth) = (((timo - 1) * (smooth) + (cnt)) / (timo))
 
 
-#endif /* _VMMAC_H_ */
+#endif /* _VM_MAC_H_ */

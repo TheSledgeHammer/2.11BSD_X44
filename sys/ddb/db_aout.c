@@ -26,6 +26,8 @@
  * rights to redistribute these changes.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -37,7 +39,7 @@
 #include <ddb/db_output.h>
 #include <ddb/db_extern.h>
 
-#ifdef	DB_AOUT_SYMBOLS
+//#ifdef	DB_AOUT_SYMBOLS
 
 #include <ddb/db_aout.h>
 
@@ -355,5 +357,4 @@ ddb_init()
 	X_db_sym_init (db_symtab, 0, "211bsd");
 #endif
 }
-
 #endif	/* DB_AOUT_SYMBOLS */

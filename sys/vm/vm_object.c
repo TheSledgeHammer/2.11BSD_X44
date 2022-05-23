@@ -1478,6 +1478,15 @@ vm_object_print(object, full)
 	vm_object_t	object;
 	bool_t	full;
 {
+	_vm_object_print(object, full, printf);
+}
+
+void
+_vm_object_print(object, full, pr)
+	vm_object_t	object;
+	bool_t		full;
+	void		(*pr)(const char *, ...);
+{
 	register vm_page_t	p;
 	extern int indent;
 
@@ -1489,10 +1498,10 @@ vm_object_print(object, full)
 	iprintf("Object 0x%x: size=0x%x, res=%d, ref=%d, ",
 		(int) object, (int) object->size,
 		object->resident_page_count, object->ref_count);
-	printf("pager=0x%x+0x%x, shadow=(0x%x)+0x%x\n",
+	(*pr)("pager=0x%x+0x%x, shadow=(0x%x)+0x%x\n",
 	       (int) object->pager, (int) object->paging_offset,
 	       (int) object->shadow, (int) object->shadow_offset);
-	printf("cache: next=0x%x, prev=0x%x\n", TAILQ_NEXT(object, cached_list), TAILQ_PREV(object, object_q, cached_list));
+	(*pr)("cache: next=0x%x, prev=0x%x\n", TAILQ_NEXT(object, cached_list), TAILQ_PREV(object, object_q, cached_list));
 
 	if (!full)
 		return;
@@ -1503,16 +1512,16 @@ vm_object_print(object, full)
 		if (count == 0)
 			iprintf("memory:=");
 		else if (count == 6) {
-			printf("\n");
+			(*pr)("\n");
 			iprintf(" ...");
 			count = 0;
 		} else
-			printf(",");
+			(*pr)(",");
 		count++;
 
-		printf("(off=0x%x,page=0x%x)", p->offset, VM_PAGE_TO_PHYS(p));
+		(*pr)("(off=0x%x,page=0x%x)", p->offset, VM_PAGE_TO_PHYS(p));
 	}
 	if (count != 0)
-		printf("\n");
+		(*pr)("\n");
 	indent -= 2;
 }

@@ -29,11 +29,7 @@
 #ifndef	OVL_MAP_
 #define	OVL_MAP_
 
-#include "../../../ovl/include/ovl.h"
-
-struct ovl_map_clist;
-struct ovl_map_rb_tree;
-RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
+#include <devel/ovl/include/ovl.h>
 
 union ovl_map_object {
 	struct ovl_object					*ovl_object;		/* overlay_object object */
@@ -58,7 +54,10 @@ struct ovl_map_entry {
   vm_inherit_t							ovle_inheritance;	/* inheritance */
 };
 
+struct ovl_map_clist;
 CIRCLEQ_HEAD(ovl_map_clist, ovl_map_entry);
+
+struct ovl_map_rb_tree;
 RB_HEAD(ovl_map_rb_tree, ovl_map_entry);
 struct ovl_map {
 	struct ovl_map_clist         		ovl_header;        	/* Circular List of entries */

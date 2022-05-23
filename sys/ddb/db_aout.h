@@ -55,8 +55,8 @@
  */
 struct nlist {
 	union {
-		char *n_name;	/* symbol name (in memory) */
-		long n_strx;	/* file string table offset (on disk) */
+		char *n_name;		/* symbol name (in memory) */
+		long n_strx;		/* file string table offset (on disk) */
 	} n_un;
 
 #define	N_UNDF	0x00		/* undefined */
@@ -73,9 +73,9 @@ struct nlist {
 #define	N_TYPE	0x1e		/* mask for all the type bits */
 	unsigned char n_type;	/* type defines */
 
-	char n_other;		/* spare */
+	char n_other;			/* spare */
 #define	n_hash	n_desc		/* used internally by ld(1); XXX */
-	short n_desc;		/* used by stab entries */
+	short n_desc;			/* used by stab entries */
 	unsigned long n_value;	/* address/value of the symbol */
 };
 

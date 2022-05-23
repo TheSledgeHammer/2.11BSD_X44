@@ -160,6 +160,7 @@ ovlspace_free(ovl)
  *
  * The caller must hold the related map lock.
  */
+RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 
 static int

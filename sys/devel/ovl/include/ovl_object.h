@@ -74,8 +74,8 @@
 
 struct vobject_hash_head;
 TAILQ_HEAD(vobject_hash_head, ovl_object);
-struct object_t;
-RB_HEAD(object_t, ovl_object);
+struct object_rbt;
+RB_HEAD(object_rbt, ovl_object);
 struct ovl_object {
 	struct ovseglist					ovo_ovseglist;		/* list of segments */
 
@@ -114,7 +114,7 @@ struct ovl_object_hash_entry {
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
 #ifdef _KERNEL
-struct object_t				ovl_object_tree;				/* list of allocated objects */
+struct object_rbt			ovl_object_tree;				/* list of allocated objects */
 long						ovl_object_count;				/* count of all objects */
 simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
 

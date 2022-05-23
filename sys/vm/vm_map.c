@@ -2981,7 +2981,16 @@ vm_map_simplify(map, start)
 void
 vm_map_print(map, full)
 	register vm_map_t	map;
-	bool_t			full;
+	bool_t				full;
+{
+   _vm_map_print(map, full, printf);
+}
+
+void
+_vm_map_print(map, full, pr)
+	register vm_map_t	map;
+	bool_t				full;
+	void				(*pr)(const char *, ...);
 {
 	register vm_map_entry_t	entry;
 	extern int indent;
@@ -3001,16 +3010,16 @@ vm_map_print(map, full)
 		if (map->is_main_map) {
 		     	static char *inheritance_name[4] =
 				{ "share", "copy", "none", "donate_copy"};
-			printf("prot=%x/%x/%s, ",
+		     	(*pr)("prot=%x/%x/%s, ",
 				entry->protection,
 				entry->max_protection,
 				inheritance_name[entry->inheritance]);
 			if (entry->wired_count != 0)
-				printf("wired, ");
+				(*pr)("wired, ");
 		}
 
 		if (entry->is_a_map || entry->is_sub_map) {
-		 	printf("share=0x%x, offset=0x%x\n",
+			(*pr)("share=0x%x, offset=0x%x\n",
 				(int) entry->object.share_map,
 				(int) entry->offset);
 			if ((CIRCLEQ_PREV(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header)) ||
@@ -3024,13 +3033,13 @@ vm_map_print(map, full)
 				
 		}
 		else {
-			printf("object=0x%x, offset=0x%x",
+			(*pr)("object=0x%x, offset=0x%x",
 				(int) entry->object.vm_object,
 				(int) entry->offset);
 			if (entry->copy_on_write)
-				printf(", copy (%s)",
+				(*pr)(", copy (%s)",
 				       entry->needs_copy ? "needed" : "done");
-			printf("\n");
+			(*pr)("\n");
 
 			if ((CIRCLEQ_PREV(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header)) ||
 			    (CIRCLEQ_PREV(entry, cl_entry)->is_a_map) ||

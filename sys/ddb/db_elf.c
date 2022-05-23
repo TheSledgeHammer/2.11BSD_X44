@@ -37,6 +37,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/systm.h>  
@@ -61,7 +63,7 @@
 #define	CONCAT(x,y)		__CONCAT(x,y)
 #define	ELFDEFNAME(x)	CONCAT(ELF,CONCAT(ELFSIZE,CONCAT(_,x)))
 
-static char *db_elf_find_strtab __P((db_symtab_t *));
+static char *db_elf_find_strtab(db_symtab_t *);
 
 #define	STAB_TO_SYMSTART(stab)	((Elf_Sym *)((stab)->start))
 #define	STAB_TO_SYMEND(stab)	((Elf_Sym *)((stab)->end))
@@ -75,8 +77,8 @@ void
 X_db_sym_init(symtab, esymtab, name)
 	void *symtab;		/* pointer to start of symbol table */
 	void *esymtab;		/* pointer to end of string table,
-				   for checking - rounded up to integer
-				   boundary */
+				   	   	   for checking - rounded up to integer
+				   	   	   boundary */
 	char *name;
 {
 	Elf_Ehdr *elf;

@@ -145,7 +145,7 @@ vm_segment_startup(start, end)
 	while (nsegments--) {
 		seg->sg_flags = 0;
 		seg->sg_object = NULL;
-		seg->sg_laddr = la;
+		seg->sg_log_addr = la;
 		seg++;
 		la += SEGMENT_SIZE;
 	}
@@ -447,7 +447,7 @@ vm_segment_zero_fill(s, p, o)
  */
 
 /* check alignment of segment size to page size */
-#define npages_per_segment (SEGMENT_SIZE/ PAGE_SIZE)
+static int npages_per_segment = (SEGMENT_SIZE/ PAGE_SIZE)
 
 bool_t
 vm_segment_sanity_check(pgs, segs)

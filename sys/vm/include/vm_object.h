@@ -154,6 +154,7 @@ void		 vm_object_page_remove (vm_object_t, vm_offset_t, vm_offset_t);
 void		 vm_object_pmap_copy (vm_object_t, vm_offset_t, vm_offset_t);
 void		 vm_object_pmap_remove (vm_object_t, vm_offset_t, vm_offset_t);
 void		 vm_object_print (vm_object_t, bool_t);
+void		 _vm_object_print (vm_object_t, bool_t, void (*)(const char *, ...));
 void		 vm_object_reference (vm_object_t);
 void		 vm_object_remove (vm_pager_t);
 void		 vm_object_setpager (vm_object_t, vm_pager_t, vm_offset_t, bool_t);

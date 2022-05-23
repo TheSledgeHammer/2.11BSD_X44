@@ -32,24 +32,25 @@
 /*
  * Command loop declarations.
  */
-void db_skip_to_eol (void);
 struct db_command;
-int db_cmd_search (char *, struct db_command *, struct db_command **);
-void db_cmd_list (struct db_command *);
-void db_command (struct db_command **, struct db_command *);
-void db_map_print_cmd (db_expr_t, int, db_expr_t, char *);
-void db_object_print_cmd (db_expr_t, int, db_expr_t, char *);
-void db_machine_commands_install (struct db_command *);
-void db_help_cmd (void);
-void db_command_loop (void);
-void db_error (char *);
-void db_fncall (db_expr_t, int, db_expr_t, char *);
-void db_reboot_cmd (db_expr_t, int, db_expr_t, char *);
-
-db_addr_t	db_dot;		/* current location */
-db_addr_t	db_last_addr;	/* last explicit address typed */
-db_addr_t	db_prev;	/* last address examined or written */
-db_addr_t	db_next;	/* next address to be examined or written */
+void db_skip_to_eol(void);
+void db_command_loop(void);
+void db_error(char *);
+/*
+int db_cmd_search(char *, struct db_command *, struct db_command **);
+void db_cmd_list(struct db_command *);
+void db_command(struct db_command **, struct db_command *);
+void db_map_print_cmd(db_expr_t, int, db_expr_t, char *);
+void db_object_print_cmd(db_expr_t, int, db_expr_t, char *);
+void db_machine_commands_install(struct db_command *);
+void db_help_cmd(void);
+void db_fncall(db_expr_t, int, db_expr_t, char *);
+void db_reboot_cmd(db_expr_t, int, db_expr_t, char *);
+*/
+extern db_addr_t	db_dot;		/* current location */
+extern db_addr_t	db_last_addr;	/* last explicit address typed */
+extern db_addr_t	db_prev;	/* last address examined or written */
+extern db_addr_t	db_next;	/* next address to be examined or written */
 
 /*
  * Command table

@@ -29,6 +29,7 @@
  *	Date:	7/90
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -42,7 +43,7 @@
 #include <ddb/db_extern.h>
 #include <ddb/db_variables.h>
 
-bool_t
+static bool_t
 db_term(valuep)
 	db_expr_t *valuep;
 {
@@ -97,7 +98,7 @@ db_term(valuep)
 	return (FALSE);
 }
 
-bool_t
+static bool_t
 db_unary(valuep)
 	db_expr_t *valuep;
 {
@@ -125,7 +126,7 @@ db_unary(valuep)
 	return (db_term(valuep));
 }
 
-bool_t
+static bool_t
 db_mult_expr(valuep)
 	db_expr_t *valuep;
 {
@@ -162,7 +163,7 @@ db_mult_expr(valuep)
 	return (TRUE);
 }
 
-bool_t
+static bool_t
 db_add_expr(valuep)
 	db_expr_t *valuep;
 {
@@ -189,7 +190,7 @@ db_add_expr(valuep)
 	return (TRUE);
 }
 
-bool_t
+static bool_t
 db_shift_expr(valuep)
 	db_expr_t *valuep;
 {

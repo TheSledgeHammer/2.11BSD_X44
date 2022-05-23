@@ -251,7 +251,7 @@ vm_offset_t		vm_first_phys;		/* PA of first managed page */
 vm_offset_t		vm_last_phys;		/* PA just past last managed page */
 
 int				i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
-bool_t		pmap_initialized = FALSE;	/* Has pmap_init completed? */
+bool_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
 char			*pmap_attributes;	/* reference and modify bits */
 
 pd_entry_t 		*IdlePTD;			/* phys addr of kernel PTD */
@@ -483,10 +483,10 @@ pmap_bootstrap(firstaddr)
 	 * Count bootstrap data as being resident in case any of this data is
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
-	kernel_pmap->pm_pdir = (pd_entry_t *)IdlePTD;
+	kernel_pmap->pm_pdir = (pd_entry_t *)(IdlePTD);
 
 #ifdef PMAP_PAE_COMP
-	kernel_pmap->pm_pdpt = (pdpt_entry_t *)IdlePDPT;
+	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(IdlePDPT);
 #endif
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
 	LIST_INIT(&pmaps);
