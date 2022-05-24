@@ -35,6 +35,7 @@
 #include <sys/systm.h>
 #include <sys/reboot.h>
 #include <sys/proc.h>
+#include <sys/sysdecl.h>
 
 #include <machine/setjmp.h>	
 #include <machine/db_machdep.h>		/* type definitions */
