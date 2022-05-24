@@ -312,6 +312,17 @@ struct kinfo_proc {
 }
 
 /*
+ * CTL_DDB definitions
+ */
+#define	DDBCTL_RADIX		1	/* int: Input and output radix */
+#define	DDBCTL_MAXOFF		2	/* int: max symbol offset */
+#define	DDBCTL_MAXWIDTH		3	/* int: width of the display line */
+#define	DDBCTL_LINES		4	/* int: number of display lines */
+#define	DDBCTL_TABSTOPS		5	/* int: tab width */
+#define	DDBCTL_ONPANIC		6	/* int: DDB on panic if non-zero */
+#define	DDBCTL_FROMCONSOLE	7	/* int: DDB via console if non-zero */
+
+/*
  * CTL_DEBUG definitions
  *
  * Second level identifier specifies which debug variable.
