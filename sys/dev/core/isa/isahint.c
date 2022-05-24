@@ -81,11 +81,11 @@ isahint_register_device(ia, name, unit)
 	const char 				*name;
 	int 					unit;
 {
-	resource_int_value(name, unit, "port", ia->ia_iobase);
-	resource_int_value(name, unit, "portsize", ia->ia_iosize);
-	resource_int_value(name, unit, "maddr", ia->ia_maddr);
-	resource_int_value(name, unit, "msize", ia->ia_msize);
-	resource_int_value(name, unit, "irq", ia->ia_irq);
-	resource_int_value(name, unit, "drq", ia->ia_drq);
-	resource_int_value(name, unit, "drq2", ia->ia_drq2);
+	resource_int_value(name, unit, "port", &ia->ia_iobase);
+	resource_int_value(name, unit, "portsize", &ia->ia_iosize);
+	resource_int_value(name, unit, "maddr", &ia->ia_maddr);
+	resource_int_value(name, unit, "msize", &ia->ia_msize);
+	resource_int_value(name, unit, "irq", &ia->ia_irq);
+	resource_int_value(name, unit, "drq", &ia->ia_drq);
+	resource_int_value(name, unit, "drq2", &ia->ia_drq2);
 }
