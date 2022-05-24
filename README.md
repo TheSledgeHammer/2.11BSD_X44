@@ -124,9 +124,9 @@ Cross-Compiler: Successful Builds
 ---------------
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
-|  GCC  | Yes   |  i386  | yes (without networking) | yes | 
-|  ** CLANG  | No   |  i386  | no | no | 
-|  PCC  | No   |  i386  | no | no | 
+|  GCC  | Yes   |  i386  | Yes (without networking) | Yes | 
+|  ** CLANG  | No   |  i386  | No | No | 
+|  PCC  | No   |  i386  | No | No | 
 
 ** Clang: Library needs updating and fixing along with the relevent toolchain components.
 
