@@ -58,26 +58,22 @@
 
 #include <sys/exec_elf.h>
 
-#define	CONCAT(x,y)	__CONCAT(x,y)
+#define	CONCAT(x,y)		__CONCAT(x,y)
 #define	ELFDEFNAME(x)	CONCAT(ELF,CONCAT(ELFSIZE,CONCAT(_,x)))
 
-static char *db_elf_find_strtab __P((db_symtab_t *));
+static char *db_elf_find_strtab(db_symtab_t *);
 
 #define	STAB_TO_SYMSTART(stab)	((Elf_Sym *)((stab)->start))
 #define	STAB_TO_SYMEND(stab)	((Elf_Sym *)((stab)->end))
-#define	STAB_TO_EHDR(stab)	((Elf_Ehdr *)((stab)->private))
+#define	STAB_TO_EHDR(stab)		((Elf_Ehdr *)((stab)->private))
 #define	STAB_TO_SHDR(stab, e)	((Elf_Shdr *)((stab)->private + (e)->e_shoff))
 
-boolean_t	db_elf_sym_init __P((int, void *, void *, const char *));
-db_sym_t	db_elf_lookup __P((db_symtab_t *, char *));
-db_sym_t	db_elf_search_symbol __P((db_symtab_t *, db_addr_t,
-		    db_strategy_t, db_expr_t *));
-void		db_elf_symbol_values __P((db_symtab_t *, db_sym_t,
-		    char **, db_expr_t *));
-boolean_t	db_elf_line_at_pc __P((db_symtab_t *, db_sym_t,
-		    char **, int *, db_expr_t));
-boolean_t	db_elf_sym_numargs __P((db_symtab_t *, db_sym_t, int *,
-		    char **));
+boolean_t	db_elf_sym_init(int, void *, void *, const char *);
+db_sym_t	db_elf_lookup(db_symtab_t *, char *);
+db_sym_t	db_elf_search_symbol(db_symtab_t *, db_addr_t, db_strategy_t, db_expr_t *);
+void		db_elf_symbol_values(db_symtab_t *, db_sym_t, char **, db_expr_t *);
+boolean_t	db_elf_line_at_pc(db_symtab_t *, db_sym_t, char **, int *, db_expr_t);
+boolean_t	db_elf_sym_numargs(db_symtab_t *, db_sym_t, int *, char **);
 
 db_symformat_t db_symformat_elf = {
 	"ELF",

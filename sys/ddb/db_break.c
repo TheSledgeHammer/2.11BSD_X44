@@ -45,9 +45,9 @@
 
 #define	NBREAKPOINTS	100
 struct db_breakpoint	db_break_table[NBREAKPOINTS];
-db_breakpoint_t		db_next_free_breakpoint = &db_break_table[0];
-db_breakpoint_t		db_free_breakpoints = 0;
-db_breakpoint_t		db_breakpoint_list = 0;
+db_breakpoint_t			db_next_free_breakpoint = &db_break_table[0];
+db_breakpoint_t			db_free_breakpoints = 0;
+db_breakpoint_t			db_breakpoint_list = 0;
 
 db_breakpoint_t
 db_breakpoint_alloc()

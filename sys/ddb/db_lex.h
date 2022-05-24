@@ -32,19 +32,19 @@
 /*
  * Lexical analyzer.
  */
-int db_read_line __P((void));
-void db_flush_line __P((void));
-int db_read_char __P((void));
-void db_unread_char __P((int));
-void db_unread_token __P((int));
-int db_read_token __P((void));
-void db_flush_lex __P((void));
-int db_lex __P((void));
+int db_read_line(void);
+void db_flush_line(void);
+int db_read_char(void);
+void db_unread_char(int);
+void db_unread_token(int);
+int db_read_token(void);
+void db_flush_lex(void);
+int db_lex(void);
 
 db_expr_t db_tok_number;
 #define	TOK_STRING_SIZE		120 
 char	db_tok_string[TOK_STRING_SIZE];
-int	db_radix;
+int		db_radix;
 
 #define	tEOF		(-1)
 #define	tEOL		1

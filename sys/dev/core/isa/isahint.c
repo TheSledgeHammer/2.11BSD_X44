@@ -37,6 +37,8 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
+static void isahint_register_device(struct isa_attach_args *, const char *, int);
+
 int
 isahint_match(parent, cf, aux)
 	struct device *parent;
@@ -71,7 +73,6 @@ isahint_attach(parent, self, aux)
 			isahint_register_device(ia, is->id_dev->dv_xname, is->id_dev->dv_unit);
 		}
 	}
-
 }
 
 static void

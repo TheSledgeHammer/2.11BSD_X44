@@ -68,13 +68,12 @@ char *  db_history_last = db_history;	/* start of last line */
 char *  db_history_prev = (char *) 0;	/* start of previous line */
 #endif
 	
-#ifdef DDB_INPUT_H
 #define	CTRL(c)		((c) & 0x1f)
 #define	isspace(c)	((c) == ' ' || (c) == '\t')
 #define	BLANK		' '
 #define	BACKUP		'\b'
 
-static int cnmaygetc __P((void));
+static int cnmaygetc(void);
 
 void
 db_putstring(s, count)
@@ -386,5 +385,3 @@ cnmaygetc ()
 {
 	return (-1);
 }
-
-#endif

@@ -44,10 +44,10 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
-int 	isamatch (struct device *, struct cfdata *, void *);
-void 	isaattach (struct device *, struct device *, void *);
-int 	isaprint (void *, const char *);
-int		isasearch (struct device *, struct cfdata *, void *);
+int 	isamatch(struct device *, struct cfdata *, void *);
+void 	isaattach(struct device *, struct device *, void *);
+int 	isaprint(void *, const char *);
+int		isasearch(struct device *, struct cfdata *, void *);
 
 void	isa_attach_subdevs(struct isa_softc *);
 void	isa_free_subdevs(struct isa_softc *);
@@ -65,11 +65,7 @@ isamatch(parent, cf, aux)
 {
 	struct isabus_attach_args *iba = aux;
 
-	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name)) {
-		return (0);
-	}
-
-	if (isahint_match(parent, cf, aux) == 0) {
+	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name) || (isahint_match(parent, cf, aux) == 0)) {
 		return (0);
 	}
 
@@ -128,7 +124,7 @@ isaattach(parent, self, aux)
 
 	config_search(isasearch, self, NULL);
 
-	if (config_hint_enabled(sc->sc_dev)) {
+	if (config_hint_enabled(&sc->sc_dev)) {
 		isahint_attach(parent, self, aux);
 	}
 }
@@ -177,7 +173,7 @@ isa_free_subdevs(struct isa_softc *sc)
 	struct isa_subdev *is;
 	struct isa_pnpname *ipn;
 
-#define	FREEIT(x)	if (x != NULL) free(x, M_DEVBUF)
+#define	FREEIT(x)	if (x != NULL) free((void *)x, M_DEVBUF)
 
 	while ((is = TAILQ_FIRST(&sc->sc_subdevs)) != NULL) {
 		TAILQ_REMOVE(&sc->sc_subdevs, is, id_bchain);

@@ -46,6 +46,9 @@ A General todo list. Don't hesitate to add to this list. :)
 # usr/sys/ (Kernel):
 ## conf:
 
+## ddb:
+- fix: CTRL macro in ddb_input.c & ddb_output.c. Conflicts with CTRL macro in ttychars.h
+
 ## kern:
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - setup: a new freeproc list. 

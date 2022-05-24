@@ -141,5 +141,4 @@ set_unit(num)
 {
 	int unit = (num >> B_UNITSHIFT) & B_UNITMASK;
 }
-
 #endif

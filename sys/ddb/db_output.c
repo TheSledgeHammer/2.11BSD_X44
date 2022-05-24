@@ -58,16 +58,14 @@
  */
 
 #ifndef	DB_MAX_LINE
-#define	DB_MAX_LINE		24	/* maximum line */
+#define	DB_MAX_LINE			24	/* maximum line */
 #define DB_MAX_WIDTH		80	/* maximum width */
 #endif	/* DB_MAX_LINE */
 
 #define DB_MIN_MAX_WIDTH	20	/* minimum max width */
 #define DB_MIN_MAX_LINE		3	/* minimum max line */
 
-#ifdef DDB_OUPUT_H
 #define CTRL(c)			((c) & 0xff)
-#endif
 
 int	db_output_position = 0;		/* output column */
 int	db_output_line = 0;		/* output line number */
@@ -78,7 +76,7 @@ int	db_tab_stop_width = 8;		/* how wide are tab stops? */
 int	db_max_line = DB_MAX_LINE;	/* output max lines */
 int	db_max_width = DB_MAX_WIDTH;	/* output line width */
 
-static void db_more __P((void));
+static void db_more(void);
 
 /*
  * Force pending whitespace.

@@ -264,13 +264,13 @@ struct isa_softc {
  */
 
 /* ISA interrupt sharing types */
-char	*isa_intr_typename (int type);
+char	*isa_intr_typename(int type);
 
 #ifdef NEWCONFIG
 /*
  * Establish a device as being on the ISA bus (XXX NOT IMPLEMENTED).
  */
-void isa_establish (struct isadev *, struct device *);
+void isa_establish(struct isadev *, struct device *);
 #endif
 
 /*
@@ -278,5 +278,9 @@ void isa_establish (struct isadev *, struct device *);
  * flag is passed to bus_dmamap_create() to indicate that fact.
  */
 #define	ISABUS_DMA_32BIT	BUS_DMA_BUS1
+
+/* ISA Hints */
+int		isahint_match(struct device *, struct cfdata *, void *);
+void	isahint_attach(struct device *, struct device *, void *);
 
 #endif /* _DEV_ISA_ISAVAR_H_ */

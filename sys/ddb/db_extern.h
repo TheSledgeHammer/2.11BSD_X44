@@ -40,41 +40,41 @@
 #define _DDB_DB_EXTERN_H_
 
 /* db_sym.c */
-void ddb_init __P((int, void *, void *));
+void ddb_init(int, void *, void *);
 
 /* db_examine.c */
-void db_examine_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_examine __P((db_addr_t, char *, int));
-void db_print_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_print_loc_and_inst __P((db_addr_t));
-void db_strcpy __P((char *, char *));
-void db_search_cmd __P((db_expr_t, boolean_t, db_expr_t, char *));
-void db_search __P((db_addr_t, int, db_expr_t, db_expr_t, unsigned int));
+void db_examine_cmd(db_expr_t, int, db_expr_t, char *);
+void db_examine(db_addr_t, char *, int);
+void db_print_cmd(db_expr_t, int, db_expr_t, char *);
+void db_print_loc_and_inst(db_addr_t);
+void db_strcpy(char *, char *);
+void db_search_cmd(db_expr_t, boolean_t, db_expr_t, char *);
+void db_search(db_addr_t, int, db_expr_t, db_expr_t, unsigned int);
 
 /* db_expr.c */
-boolean_t db_term __P((db_expr_t *));
-boolean_t db_unary __P((db_expr_t *));
-boolean_t db_mult_expr __P((db_expr_t *));
-boolean_t db_add_expr __P((db_expr_t *));
-boolean_t db_shift_expr __P((db_expr_t *));
-int db_expression __P((db_expr_t *));
+boolean_t db_term(db_expr_t *);
+boolean_t db_unary(db_expr_t *);
+boolean_t db_mult_expr(db_expr_t *);
+boolean_t db_add_expr(db_expr_t *);
+boolean_t db_shift_expr(db_expr_t *);
+int db_expression(db_expr_t *);
 
 /* db_input.c */
-void db_putstring __P((char *, int));
-void db_putnchars __P((int, int));
-void db_delete __P((int, int));
-void db_delete_line __P((void));
-int db_inputchar __P((int));
-int db_readline __P((char *, int));
-void db_check_interrupt __P((void));
+void db_putstring(char *, int);
+void db_putnchars(int, int);
+void db_delete(int, int);
+void db_delete_line(void);
+int db_inputchar(int);
+int db_readline(char *, int);
+void db_check_interrupt(void);
 
 /* db_print.c */
-void db_show_regs __P((db_expr_t, boolean_t, db_expr_t, char *));
+void db_show_regs(db_expr_t, boolean_t, db_expr_t, char *);
 
 /* db_trap.c */
 void db_trap(int, int);
 
 /* db_write_cmd.c */
-void db_write_cmd __P((db_expr_t, boolean_t, db_expr_t, char *));
+void db_write_cmd(db_expr_t, boolean_t, db_expr_t, char *);
 
 #endif /* _DDB_DB_EXTERN_H_ */

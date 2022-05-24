@@ -52,7 +52,7 @@ db_symtab_t	db_symtabs[MAXNOSYMTABS] = {{0,},};
 
 db_symtab_t	*db_last_symtab;
 
-static char *db_qualify __P((db_sym_t, const char *));
+static char *db_qualify(db_sym_t, const char *);
 
 /*
  * Put the most picky symbol table formats at the top!
@@ -69,16 +69,12 @@ const db_symformat_t *db_symformats[] = {
 
 const db_symformat_t *db_symformat;
 
-boolean_t	X_db_sym_init __P((int, void *, void *, const char *));
-db_sym_t	X_db_lookup __P((db_symtab_t *, char *));
-db_sym_t	X_db_search_symbol __P((db_symtab_t *, db_addr_t,
-		    db_strategy_t, db_expr_t *));
-void		X_db_symbol_values __P((db_symtab_t *, db_sym_t, char **,
-		    db_expr_t *));
-boolean_t	X_db_line_at_pc __P((db_symtab_t *, db_sym_t, char **,
-		    int *, db_expr_t));
-int		X_db_sym_numargs __P((db_symtab_t *, db_sym_t, int *,
-		    char **));
+boolean_t	X_db_sym_init(int, void *, void *, const char *);
+db_sym_t	X_db_lookup(db_symtab_t *, char *);
+db_sym_t	X_db_search_symbol(db_symtab_t *, db_addr_t, db_strategy_t, db_expr_t *);
+void		X_db_symbol_values(db_symtab_t *, db_sym_t, char **, db_expr_t *);
+boolean_t	X_db_line_at_pc(db_symtab_t *, db_sym_t, char **, int *, db_expr_t);
+int		X_db_sym_numargs(db_symtab_t *, db_sym_t, int *, char **);
 
 /*
  * Initialize the kernel debugger by initializing the master symbol

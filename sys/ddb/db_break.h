@@ -50,20 +50,20 @@ typedef struct db_breakpoint {
 	struct db_breakpoint *link;	/* link in in-use or free chain */
 } *db_breakpoint_t;
 
-db_breakpoint_t db_breakpoint_alloc __P((void));
-void db_breakpoint_free __P((db_breakpoint_t));
-void db_set_breakpoint __P((vm_map_t, db_addr_t, int));
-void db_delete_breakpoint __P((vm_map_t, db_addr_t));
-db_breakpoint_t db_find_breakpoint __P((vm_map_t, db_addr_t));
-db_breakpoint_t db_find_breakpoint_here __P((db_addr_t));
-void db_set_breakpoints __P((void));
-void db_clear_breakpoints __P((void));
-void db_list_breakpoints __P((void));
-void db_delete_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_breakpoint_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_listbreak_cmd __P((db_expr_t, int, db_expr_t, char *));
-boolean_t db_map_equal __P((vm_map_t, vm_map_t));
-boolean_t db_map_current __P((vm_map_t));
-vm_map_t db_map_addr __P((vm_offset_t));
+db_breakpoint_t db_breakpoint_alloc(void);
+void db_breakpoint_free(db_breakpoint_t);
+void db_set_breakpoint(vm_map_t, db_addr_t, int);
+void db_delete_breakpoint(vm_map_t, db_addr_t);
+db_breakpoint_t db_find_breakpoint(vm_map_t, db_addr_t);
+db_breakpoint_t db_find_breakpoint_here(db_addr_t);
+void db_set_breakpoints(void);
+void db_clear_breakpoints(void);
+void db_list_breakpoints(void);
+void db_delete_cmd(db_expr_t, int, db_expr_t, char *);
+void db_breakpoint_cmd(db_expr_t, int, db_expr_t, char *);
+void db_listbreak_cmd(db_expr_t, int, db_expr_t, char *);
+boolean_t db_map_equal(vm_map_t, vm_map_t);
+boolean_t db_map_current(vm_map_t);
+vm_map_t db_map_addr(vm_offset_t);
 
 #endif	/* _DDB_DB_BREAK_H_ */

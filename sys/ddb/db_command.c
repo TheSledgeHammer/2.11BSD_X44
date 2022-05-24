@@ -356,7 +356,7 @@ struct db_command db_show_cmds[] = {
 	{ "watches",	db_listwatch_cmd, 	0,	NULL },
 	{ "map",	db_map_print_cmd,	0,	NULL },
 	{ "object",	db_object_print_cmd,	0,	NULL },
-	{ "page",	db_page_print_cmd,	0,	NULL },
+	//{ "page",	db_page_print_cmd,	0,	NULL },
 	{ NULL,		NULL,			0,	NULL, }
 };
 
@@ -482,7 +482,7 @@ db_fncall(addr, have_addr, count, modif)
 	db_expr_t	args[MAXARGS];
 	int		nargs = 0;
 	db_expr_t	retval;
-	db_expr_t	(*func) __P((db_expr_t, ...));
+	db_expr_t	(*func)(db_expr_t, ...);
 	int		t;
 
 	if (!db_expression(&fn_addr)) {
@@ -490,7 +490,7 @@ db_fncall(addr, have_addr, count, modif)
 	    db_flush_lex();
 	    return;
 	}
-	func = (db_expr_t (*) __P((db_expr_t, ...))) fn_addr;
+	func = (db_expr_t (*) (db_expr_t, ...)) fn_addr;
 
 	t = db_read_token();
 	if (t == tLPAREN) {
@@ -529,6 +529,13 @@ db_fncall(addr, have_addr, count, modif)
 }
 
 void
+db_reboot(howto)
+	int howto;
+{
+	reboot(howto);
+}
+
+void
 db_reboot_cmd(addr, have_addr, count, modif)
 	db_expr_t	addr;
 	int		have_addr;
@@ -544,5 +551,5 @@ db_reboot_cmd(addr, have_addr, count, modif)
 	    db_error("?\n");
 	    /*NOTREACHED*/
 	}
-	cpu_reboot((int)bootflags, NULL);
+	db_reboot((int)bootflags);
 }

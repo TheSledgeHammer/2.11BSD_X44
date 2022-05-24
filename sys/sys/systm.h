@@ -136,6 +136,7 @@ void 	panic(const char *, ...);
 void	tablefull(const char *);
 void	addlog(const char *, ...);
 void	log(int, const char *, ...);
+void	vlog(int, const char *, va_list);
 
 /* subr_prf.c */
 void	printf(const char *, ...);
