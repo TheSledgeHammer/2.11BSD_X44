@@ -59,7 +59,7 @@ static int isapnp_alloc_region (bus_space_tag_t, struct isapnp_region *);
 static int isapnp_alloc_irq (isa_chipset_tag_t, struct isapnp_pin *);
 static int isapnp_alloc_drq (isa_chipset_tag_t, struct isapnp_pin *);
 static int isapnp_testconfig (bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *, int);
-static struct isapnp_attach_args *isapnp_bestconfig (struct device *, struct isapnp_softc *, struct isapnp_attach_args **);
+static struct isapnp_attach_args *isapnp_bestconfig (struct isapnp_softc *, struct isapnp_attach_args **);
 static void isapnp_print_region (const char *, struct isapnp_region *, size_t);
 static void isapnp_configure (struct isapnp_softc *, const struct isapnp_attach_args *);
 static void isapnp_print_pin (const char *, struct isapnp_pin *, size_t);
@@ -386,8 +386,7 @@ isapnp_unconfig(iot, memt, ipa)
  *	free all other configurations.
  */
 static struct isapnp_attach_args *
-isapnp_bestconfig(isa, sc, ipa)
-	struct device *isa;
+isapnp_bestconfig(sc, ipa)
 	struct isapnp_softc *sc;
 	struct isapnp_attach_args **ipa;
 {
@@ -591,7 +590,7 @@ isapnp_com_submatch(parent, match, aux)
 	return (0);
 }
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 /* isapnp_submatch():
  *	Probe the logical device...
  */
@@ -690,6 +689,7 @@ isapnp_isa_attach_hook(isa_sc)
 
 	isapnp_unmap(&sc);
 }
+#endif
 
 /* isapnp_find():
  *	Probe and add cards
