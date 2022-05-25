@@ -1,4 +1,4 @@
-/*	$NetBSD: isapnpvar.h,v 1.5.4.2 1997/10/29 00:40:49 thorpej Exp $	*/
+/*	$NetBSD: isapnpvar.h,v 1.20 2001/12/25 14:03:15 christos Exp $	*/
 
 /*
  * Copyright (c) 1996 Christos Zoulas.  All rights reserved.
@@ -62,9 +62,6 @@ struct isapnp_softc;
 
 #else
 
-/* XXX */
-# define memset(a, b, c)			bzero(a, c)
-
 # define ISAPNP_WRITE_ADDR(sc, v) \
     bus_space_write_1(sc->sc_iot, sc->sc_addr_ioh, 0, v)
 # define ISAPNP_WRITE_DATA(sc, v) \
@@ -88,6 +85,8 @@ struct isapnp_softc {
 	int						sc_read_port;
 	bus_space_tag_t			sc_iot;
 	bus_space_tag_t			sc_memt;
+	isa_chipset_tag_t		sc_ic;
+	bus_dma_tag_t			sc_dmat;
 	bus_space_handle_t		sc_addr_ioh;
 	bus_space_handle_t		sc_wrdata_ioh;
 	bus_space_handle_t		sc_read_ioh;
@@ -115,13 +114,9 @@ struct isapnp_pin {
 };
 
 struct isapnp_attach_args {
-	struct device  			*ipa_isa;		/* isa device */
 	bus_space_tag_t 		ipa_iot;		/* isa i/o space tag */
 	bus_space_tag_t 		ipa_memt;		/* isa mem space tag */
-
-#if NISADMA > 0
 	bus_dma_tag_t			ipa_dmat;		/* isa dma tag */
-#endif
 	bus_space_handle_t 		ipa_delaybah;	/* i/o handle for `delay port' */
 
 	isa_chipset_tag_t 		ipa_ic;
@@ -177,6 +172,12 @@ char *isapnp_id_to_vendor (char *, const u_char *);
 
 int isapnp_config (bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *);
 void isapnp_unconfig (bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *);
+
+#ifdef _KERNEL
+struct isapnp_devinfo;
+int isapnp_devmatch(const struct isapnp_attach_args *, const struct isapnp_devinfo *, int *);
+void isapnp_isa_attach_hook(struct isa_softc *);
+#endif
 
 #ifdef DEBUG_ISAPNP
 void isapnp_print_mem (const char *, const struct isapnp_region *);

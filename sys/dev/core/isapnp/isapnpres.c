@@ -37,14 +37,12 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
-#include <sys/user.h>
 
 #include <machine/bus.h>
 
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isapnp/isapnpreg.h>
 #include <dev/core/isapnp/isapnpvar.h>
-
 
 static int isapnp_wait_status (struct isapnp_softc *);
 static struct isapnp_attach_args *isapnp_newdev (struct isapnp_attach_args *);
@@ -97,7 +95,6 @@ isapnp_newdev(card)
 			continue;
 		ipa->ipa_sibling = dev;
 	}
-
 
 	return dev;
 }

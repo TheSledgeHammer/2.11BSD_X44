@@ -1,4 +1,4 @@
-/*	$NetBSD: wdc_isapnp.c,v 1.15 2001/11/15 09:48:10 lukem Exp $	*/
+/*	$NetBSD: wdc_isapnp.c,v 1.26 2004/01/03 22:56:53 thorpej Exp $	*/
 
 /*-
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -167,7 +167,7 @@ wdc_isapnp_attach(parent, self, aux)
 	sc->sc_wdcdev.nchannels = 1;
 	sc->wdc_channel.ch_channel = 0;
 	sc->wdc_channel.ch_wdc = &sc->sc_wdcdev;
-	sc->wdc_channel.ch_queue = &sc->wdc_chqueue;//malloc(sizeof(struct channel_queue), M_DEVBUF, M_NOWAIT);
+	sc->wdc_channel.ch_queue = &sc->wdc_chqueue;
 	if (sc->wdc_channel.ch_queue == NULL) {
 		printf("%s: can't allocate memory for command queue",
 				sc->sc_wdcdev.sc_dev.dv_xname);

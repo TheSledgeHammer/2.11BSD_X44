@@ -162,7 +162,7 @@ atabus_thread(void *arg)
 	splx(s);
 	chp->ch_thread = NULL;
 	wakeup((void *)&chp->ch_flags);
-	kthread_exit(0);
+//	kthread_exit(0);
 }
 
 /*
