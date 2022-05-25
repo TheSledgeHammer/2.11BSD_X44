@@ -569,6 +569,7 @@ isapnp_print(aux, str)
  * A lot of com devices do not have the PNPxxx identifiers
  * they should have.  If it looks like a modem..... let's try it.
  */
+/*
 int
 isapnp_com_submatch(parent, match, aux)
 	struct device *parent;
@@ -589,6 +590,7 @@ isapnp_com_submatch(parent, match, aux)
 	}
 	return (0);
 }
+*/
 
 #ifdef _KERNEL
 /* isapnp_submatch():
