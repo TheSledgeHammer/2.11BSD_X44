@@ -32,7 +32,7 @@
 #define EXTA		14
 #define EXTB		15
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * Hardware bits.
  * SHOULD NOT BE HERE.

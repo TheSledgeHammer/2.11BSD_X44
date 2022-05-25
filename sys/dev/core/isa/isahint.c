@@ -37,15 +37,13 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
-static void isahint_register_device(struct isa_attach_args *, const char *, int);
+static void isahint_register(struct isa_attach_args *, const char *, int);
 
 int
-isahint_match(parent, cf, aux)
-	struct device *parent;
+isahint_match(iba, cf)
+	struct isabus_attach_args *iba;
 	struct cfdata *cf;
-	void *aux;
 {
-	struct isabus_attach_args *iba = (struct isabus_attach_args *) aux;
 	static char buf[] = iba->iba_busname;
 	const char *resname = cf->cf_driver->cd_name;
 	int i;
@@ -58,25 +56,25 @@ isahint_match(parent, cf, aux)
 
 /* must run after isa_attch */
 void
-isahint_attach(parent, self, aux)
-	struct device *parent, *self;
-	void *aux;
+isahint_attach(sc)
+	struct isa_softc 		*sc;
 {
-	struct isa_softc *sc = (struct isa_softc *)self;
-	struct isa_attach_args *ia = (struct isa_attach_args *)aux;
+	struct isa_attach_args 	ia;
+	struct isa_subdev 		*is;
 
 	if (TAILQ_EMPTY(&sc->sc_subdevs)) {
-		isahint_register_device(ia, sc->sc_dev->dv_xname, sc->sc_dev->dv_unit);
-	} else {
-		register struct isa_subdev *is;
-		TAILQ_FOREACH(is, &sc->sc_subdevs, id_bchain) {
-			isahint_register_device(ia, is->id_dev->dv_xname, is->id_dev->dv_unit);
+		return;
+	}
+
+	TAILQ_FOREACH(is, &sc->sc_subdevs, id_bchain) {
+		if((is->id_dev = config_found_sm(&sc->sc_dev, &ia, isaprint, isasubmatch)) != NULL) {
+			isahint_register(&ia, sc->sc_dev.dv_xname, sc->sc_dev.dv_unit);
 		}
 	}
 }
 
 static void
-isahint_register_device(ia, name, unit)
+isahint_register(ia, name, unit)
 	struct isa_attach_args 	*ia;
 	const char 				*name;
 	int 					unit;

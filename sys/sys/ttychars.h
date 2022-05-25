@@ -61,4 +61,4 @@ struct ttychars {
 #define	CDISCARD	CFLUSH
 #define	CREPRINT	CRPRNT
 
-#endif /* _SYS_TTYCHARS_H_ */
+#endif /* !_SYS_TTYCHARS_H_ */

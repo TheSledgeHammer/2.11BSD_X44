@@ -65,7 +65,9 @@ isamatch(parent, cf, aux)
 {
 	struct isabus_attach_args *iba = aux;
 
-	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name) || (isahint_match(parent, cf, aux) == 0)) {
+	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name) == 0) {
+		return (0);
+	} else if (isahint_match(iba, cf) == 0) {
 		return (0);
 	}
 
@@ -125,7 +127,7 @@ isaattach(parent, self, aux)
 	config_search(isasearch, self, NULL);
 
 	if (config_hint_enabled(&sc->sc_dev)) {
-		isahint_attach(parent, self, aux);
+		isahint_attach(sc);
 	}
 }
 
@@ -135,9 +137,11 @@ isa_attach_subdevs(sc)
 {
 	struct isa_attach_args ia;
 	struct isa_subdev *is;
+
 	if (TAILQ_EMPTY(&sc->sc_subdevs)) {
 		return;
 	}
+
 	TAILQ_FOREACH(is, &sc->sc_subdevs, id_bchain) {
 		ia.ia_iot = sc->sc_iot;
 		ia.ia_memt = sc->sc_memt;

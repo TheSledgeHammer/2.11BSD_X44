@@ -280,7 +280,7 @@ void isa_establish(struct isadev *, struct device *);
 #define	ISABUS_DMA_32BIT	BUS_DMA_BUS1
 
 /* ISA Hints */
-int		isahint_match(struct device *, struct cfdata *, void *);
-void	isahint_attach(struct device *, struct device *, void *);
+int		isahint_match(struct isabus_attach_args *, struct cfdata *);
+void	isahint_attach(struct isa_softc *);
 
 #endif /* _DEV_ISA_ISAVAR_H_ */

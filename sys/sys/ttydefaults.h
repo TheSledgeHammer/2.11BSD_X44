@@ -44,8 +44,6 @@
 #ifndef SYS_TTYDEFAULTS_H_
 #define SYS_TTYDEFAULTS_H_
 
-//#include <sys/termios.h>
-
 /*
  * Defaults on "first" open.
  */
@@ -61,6 +59,7 @@
 /*
  * #define TTYDEFCHARS to include an array of default control characters.
  */
+#ifdef _KERNEL
 #ifdef TTYDEFCHARS
 cc_t ttydefchars[NCCS] = {
 		CEOF,	CEOL,	CEOL,	CERASE, CWERASE, CKILL, CREPRINT,
@@ -68,4 +67,7 @@ cc_t ttydefchars[NCCS] = {
 		CDISCARD, CMIN,	CTIME,  CSTATUS, _POSIX_VDISABLE
 };
 #undef TTYDEFCHARS
+#else
+extern cc_t ttydefchars[NCCS];
 #endif
+#endif /* _KERNEL */
