@@ -67,7 +67,7 @@ isahint_attach(sc)
 	}
 
 	TAILQ_FOREACH(is, &sc->sc_subdevs, id_bchain) {
-		if((is->id_dev = config_found_sm(&sc->sc_dev, &ia, isaprint, isasubmatch)) != NULL) {
+		if(is->id_dev != NULL) {
 			isahint_register(&ia, sc->sc_dev.dv_xname, sc->sc_dev.dv_unit);
 		}
 	}
