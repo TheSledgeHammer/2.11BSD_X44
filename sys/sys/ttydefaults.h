@@ -44,6 +44,8 @@
 #ifndef SYS_TTYDEFAULTS_H_
 #define SYS_TTYDEFAULTS_H_
 
+#include <sys/ttychars.h>
+
 /*
  * Defaults on "first" open.
  */
