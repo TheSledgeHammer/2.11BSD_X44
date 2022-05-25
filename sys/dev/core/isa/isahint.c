@@ -44,7 +44,7 @@ isahint_match(iba, cf)
 	struct isabus_attach_args *iba;
 	struct cfdata *cf;
 {
-	static char buf[] = iba->iba_busname;
+	const char *buf = iba->iba_busname;
 	const char *resname = cf->cf_driver->cd_name;
 	int i;
 
