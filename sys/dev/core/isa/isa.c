@@ -82,7 +82,7 @@ isaattach(parent, self, aux)
 	void *aux;
 {
 	struct isa_softc *sc = (struct isa_softc *)self;
-	struct isabus_attach_args *iba = aux;
+	struct isabus_attach_args *iba = (struct isabus_attach_args *)aux;
 
 	TAILQ_INIT(&sc->sc_subdevs);
 
@@ -126,6 +126,7 @@ isaattach(parent, self, aux)
 
 	config_search(isasearch, self, NULL);
 
+	/* Detect and Attach any enabled hint-config children. */
 	if (config_hint_enabled(&sc->sc_dev)) {
 		isahint_attach(sc);
 	}

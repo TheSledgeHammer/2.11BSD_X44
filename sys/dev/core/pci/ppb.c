@@ -43,18 +43,18 @@ __KERNEL_RCSID(0, "$NetBSD: ppb.c,v 1.27 2003/12/09 19:51:39 briggs Exp $");
 #include <dev/core/pci/ppbreg.h>
 
 struct ppb_softc {
-	struct device sc_dev;		/* generic device glue */
-	pci_chipset_tag_t sc_pc;	/* our PCI chipset... */
-	pcitag_t sc_tag;			/* ...and tag. */
+	struct device 		sc_dev;		/* generic device glue */
+	pci_chipset_tag_t 	sc_pc;		/* our PCI chipset... */
+	pcitag_t 			sc_tag;		/* ...and tag. */
 };
 
-int		ppbmatch (struct device *, struct cfdata *, void *);
-void	ppbattach (struct device *, struct device *, void *);
+int		ppbmatch(struct device *, struct cfdata *, void *);
+void	ppbattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(ppb, ppbmatch, ppbattach, NULL, NULL);
 CFDRIVER_DECL(NULL, ppb, &ppb_cops, DV_DULL, sizeof(struct ppb_softc));
 
-int	ppbprint (void *, const char *pnp);
+int	ppbprint(void *, const char *pnp);
 
 int
 ppbmatch(parent, match, aux)
@@ -62,7 +62,7 @@ ppbmatch(parent, match, aux)
 	struct cfdata *match;
 	void *aux;
 {
-	struct pci_attach_args *pa = aux;
+	struct pci_attach_args *pa = (struct pci_attach_args *)aux;
 
 	/*
 	 * Check the ID register to see that it's a PCI bridge.
@@ -81,17 +81,16 @@ ppbattach(parent, self, aux)
 	struct device *parent, *self;
 	void *aux;
 {
-	struct ppb_softc *sc = (void *) self;
-	struct pci_attach_args *pa = aux;
+	struct ppb_softc *sc = (struct ppb_softc *) self;
+	struct pci_attach_args *pa = (struct pci_attach_args *)aux;
 	pci_chipset_tag_t pc = pa->pa_pc;
 	struct pcibus_attach_args pba;
 	pcireg_t busdata;
 	char devinfo[256];
 
 	pci_devinfo(pa->pa_id, pa->pa_class, 0, devinfo);
-	aprint_normal(": %s (rev. 0x%02x)\n", devinfo,
-	    PCI_REVISION(pa->pa_class));
-	aprint_naive("\n");
+	printf(": %s (rev. 0x%02x)\n", devinfo, PCI_REVISION(pa->pa_class));
+	printf("\n");
 
 	sc->sc_pc = pc;
 	sc->sc_tag = pa->pa_tag;
@@ -99,7 +98,7 @@ ppbattach(parent, self, aux)
 	busdata = pci_conf_read(pc, pa->pa_tag, PPB_REG_BUSINFO);
 
 	if (PPB_BUSINFO_SECONDARY(busdata) == 0) {
-		aprint_normal("%s: not configured by system firmware\n",
+		printf("%s: not configured by system firmware\n",
 		    self->dv_xname);
 		return;
 	}
@@ -142,11 +141,11 @@ ppbprint(aux, pnp)
 	void *aux;
 	const char *pnp;
 {
-	struct pcibus_attach_args *pba = aux;
+	struct pcibus_attach_args *pba = (struct pcibus_attach_args *)aux;
 
 	/* only PCIs can attach to PPBs; easy. */
 	if (pnp)
-		aprint_normal("pci at %s", pnp);
-	aprint_normal(" bus %d", pba->pba_bus);
+		printf("pci at %s", pnp);
+	printf(" bus %d", pba->pba_bus);
 	return (UNCONF);
 }

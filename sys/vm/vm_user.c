@@ -72,102 +72,6 @@
 
 #include <vm/include/vm.h>
 
-simple_lock_data_t	vm_alloc_lock;	/* XXX */
-
-#ifdef MACHVMCOMPAT
-/*
- * BSD style syscall interfaces to MACH calls
- * All return MACH return values.
- */
-struct svm_allocate_args {
-	vm_map_t map;
-	vm_offset_t *addr;
-	vm_size_t size;
-	bool_t anywhere;
-};
-/* ARGSUSED */
-int
-svm_allocate(p, uap, retval)
-	struct proc *p;
-	struct svm_allocate_args *uap;
-	int *retval;
-{
-	vm_offset_t addr;
-	int rv;
-
-	uap->map = p->p_map;		/* XXX */
-
-	if (copyin((caddr_t)uap->addr, (caddr_t)&addr, sizeof (addr)))
-		rv = KERN_INVALID_ARGUMENT;
-	else
-		rv = vm_allocate(uap->map, &addr, uap->size, uap->anywhere);
-	if (rv == KERN_SUCCESS) {
-		if (copyout((caddr_t)&addr, (caddr_t)uap->addr, sizeof(addr)))
-			rv = KERN_INVALID_ARGUMENT;
-	}
-	return((int)rv);
-}
-
-struct svm_deallocate_args {
-	vm_map_t map;
-	vm_offset_t addr;
-	vm_size_t size;
-};
-/* ARGSUSED */
-int
-svm_deallocate(p, uap, retval)
-	struct proc *p;
-	struct svm_deallocate_args *uap;
-	int *retval;
-{
-	int rv;
-
-	uap->map = p->p_map;		/* XXX */
-	rv = vm_deallocate(uap->map, uap->addr, uap->size);
-	return((int)rv);
-}
-
-struct svm_inherit_args {
-	vm_map_t map;
-	vm_offset_t addr;
-	vm_size_t size;
-	vm_inherit_t inherit;
-};
-/* ARGSUSED */
-int
-svm_inherit(p, uap, retval)
-	struct proc *p;
-	struct svm_inherit_args *uap;
-	int *retval;
-{
-	int rv;
-
-	uap->map = p->p_map;		/* XXX */
-	rv = vm_inherit(uap->map, uap->addr, uap->size, uap->inherit);
-	return((int)rv);
-}
-
-struct svm_protect_args {
-	vm_map_t map;
-	vm_offset_t addr;
-	vm_size_t size;
-	bool_t setmax;
-	vm_prot_t prot;
-};
-/* ARGSUSED */
-int
-svm_protect(p, uap, retval)
-	struct proc *p;
-	struct svm_protect_args *uap;
-	int *retval;
-{
-	int rv;
-
-	uap->map = p->p_map;		/* XXX */
-	rv = vm_protect(uap->map, uap->addr, uap->size, uap->setmax, uap->prot);
-	return((int)rv);
-}
-
 /*
  *	vm_inherit sets the inheritence of the specified range in the
  *	specified map.
@@ -177,12 +81,12 @@ vm_inherit(map, start, size, new_inheritance)
 	register vm_map_t	map;
 	vm_offset_t		start;
 	vm_size_t		size;
-	vm_inherit_t		new_inheritance;
+	vm_inherit_t	new_inheritance;
 {
 	if (map == NULL)
-		return(KERN_INVALID_ARGUMENT);
+		return (KERN_INVALID_ARGUMENT);
 
-	return(vm_map_inherit(map, trunc_page(start), round_page(start+size), new_inheritance));
+	return (vm_map_inherit(map, trunc_page(start), round_page(start+size), new_inheritance));
 }
 
 /*
@@ -195,15 +99,14 @@ vm_protect(map, start, size, set_maximum, new_protection)
 	register vm_map_t	map;
 	vm_offset_t		start;
 	vm_size_t		size;
-	bool_t		set_maximum;
+	bool_t			set_maximum;
 	vm_prot_t		new_protection;
 {
 	if (map == NULL)
-		return(KERN_INVALID_ARGUMENT);
+		return (KERN_INVALID_ARGUMENT);
 
-	return(vm_map_protect(map, trunc_page(start), round_page(start+size), new_protection, set_maximum));
+	return (vm_map_protect(map, trunc_page(start), round_page(start+size), new_protection, set_maximum));
 }
-#endif
 
 /*
  *	vm_allocate allocates "zero fill" memory in the specfied
@@ -219,10 +122,10 @@ vm_allocate(map, addr, size, anywhere)
 	int	result;
 
 	if (map == NULL)
-		return(KERN_INVALID_ARGUMENT);
+		return (KERN_INVALID_ARGUMENT);
 	if (size == 0) {
 		*addr = 0;
-		return(KERN_SUCCESS);
+		return (KERN_SUCCESS);
 	}
 
 	if (anywhere)
@@ -233,7 +136,7 @@ vm_allocate(map, addr, size, anywhere)
 
 	result = vm_map_find(map, NULL, (vm_offset_t) 0, addr, size, anywhere);
 
-	return(result);
+	return (result);
 }
 
 /*
@@ -252,7 +155,7 @@ vm_deallocate(map, start, size)
 	if (size == (vm_offset_t) 0)
 		return(KERN_SUCCESS);
 
-	return(vm_map_remove(map, trunc_page(start), round_page(start+size)));
+	return (vm_map_remove(map, trunc_page(start), round_page(start+size)));
 }
 
 /*

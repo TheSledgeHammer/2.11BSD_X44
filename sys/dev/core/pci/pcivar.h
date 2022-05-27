@@ -65,6 +65,7 @@ struct pcibus_attach_args {
 	bus_space_tag_t 	pba_iot;		/* pci i/o space tag */
 	bus_space_tag_t 	pba_memt;		/* pci mem space tag */
 	bus_dma_tag_t 		pba_dmat;		/* DMA tag */
+	bus_dma_tag_t 		pba_dmat64;		/* DMA tag */
 	pci_chipset_tag_t 	pba_pc;
 	int					pba_flags;		/* flags; see below */
 
@@ -123,7 +124,7 @@ struct pci_attach_args {
 #define	PCI_FLAGS_MRL_OKAY		0x04		/* Memory Read Line okay */
 #define	PCI_FLAGS_MRM_OKAY		0x08		/* Memory Read Multiple okay */
 #define	PCI_FLAGS_MWI_OKAY		0x10		/* Memory Write and Invalidate
-						   	   okay */
+						   	   	   	   	   	   okay */
 
 /*
  * Locators devices that attach to 'pcibus', as specified to config.
@@ -147,15 +148,14 @@ struct pci_attach_args {
  * Configuration space access and utility functions.  (Note that most,
  * e.g. make_tag, conf_read, conf_write are declared by pci_machdep.h.)
  */
-int		pci_mapreg_info (pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
-int		pci_mapreg_map (struct pci_attach_args *, int, pcireg_t, int, bus_space_tag_t *, bus_space_handle_t *, bus_addr_t *, bus_size_t *);
+int		pci_mapreg_info(pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
+int		pci_mapreg_map(struct pci_attach_args *, int, pcireg_t, int, bus_space_tag_t *, bus_space_handle_t *, bus_addr_t *, bus_size_t *);
 
 /*
  * Helper functions for autoconfiguration.
  */
-void	pci_devinfo (pcireg_t, pcireg_t, int, char *);
-void	set_pci_isa_bridge_callback (void (*)(void *), void *);
+void	pci_devinfo(pcireg_t, pcireg_t, int, char *);
+void	set_pci_isa_bridge_callback(void (*)(void *), void *);
 
 #endif /* _KERNEL */
-
 #endif /* _DEV_PCI_PCIVAR_H_ */

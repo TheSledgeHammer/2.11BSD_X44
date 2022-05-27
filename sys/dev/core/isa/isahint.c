@@ -54,7 +54,10 @@ isahint_match(iba, cf)
 	return (1);
 }
 
-/* must run after isa_attch */
+/*
+ * For the current hints-based config setup to work, isa-hints
+ * must run at the end of/after isa_attach.
+ */
 void
 isahint_attach(sc)
 	struct isa_softc 		*sc;
