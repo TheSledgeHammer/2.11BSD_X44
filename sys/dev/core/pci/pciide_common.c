@@ -133,8 +133,8 @@ pciide_common_attach(sc, pa, pp)
 	char devinfo[256];
 	const char *displaydev;
 
-	aprint_naive(": disk controller\n");
-	aprint_normal("\n");
+	printf(": disk controller\n");
+	printf("\n");
 
 	sc->sc_pci_id = pa->pa_id;
 	if (pp == NULL) {
@@ -149,7 +149,7 @@ pciide_common_attach(sc, pa, pp)
 
 	/* if displaydev == NULL, printf is done in chip-specific map */
 	if (displaydev)
-		aprint_normal("%s: %s (rev. 0x%02x)\n",
+		printf("%s: %s (rev. 0x%02x)\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname, displaydev,
 		    PCI_REVISION(pa->pa_class));
 
@@ -186,7 +186,7 @@ pciide_chipen(sc, pa)
 	if ((pa->pa_flags & PCI_FLAGS_IO_ENABLED) == 0) {
 		csr = pci_conf_read(sc->sc_pc, sc->sc_tag,
 		    PCI_COMMAND_STATUS_REG);
-		aprint_normal("%s: device disabled (at %s)\n",
+		printf("%s: device disabled (at %s)\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname,
 		   (csr & PCI_COMMAND_IO_ENABLE) == 0 ?
 		   "device" : "bridge");
@@ -213,7 +213,7 @@ pciide_mapregs_compat(pa, cp, compatchan, cmdsizep, ctlsizep)
 	wdc_cp->cmd_iot = pa->pa_iot;
 	if (bus_space_map(wdc_cp->cmd_iot, PCIIDE_COMPAT_CMD_BASE(compatchan),
 	    PCIIDE_COMPAT_CMD_SIZE, 0, &wdc_cp->cmd_baseioh) != 0) {
-		aprint_error("%s: couldn't map %s channel cmd regs\n",
+		printf("%s: couldn't map %s channel cmd regs\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 		goto bad;
 	}
@@ -231,7 +231,7 @@ pciide_mapregs_compat(pa, cp, compatchan, cmdsizep, ctlsizep)
 	for (i = 0; i < WDC_NREG; i++) {
 		if (bus_space_subregion(wdc_cp->cmd_iot, wdc_cp->cmd_baseioh, i,
 		    i == 0 ? 4 : 1, &wdc_cp->cmd_iohs[i]) != 0) {
-			aprint_error("%s: couldn't subregion %s channel "
+			printf("%s: couldn't subregion %s channel "
 				     "cmd regs\n",
 			    sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 			goto bad;
@@ -263,7 +263,7 @@ pciide_mapregs_native(pa, cp, cmdsizep, ctlsizep, pci_intr)
 
 	if (sc->sc_pci_ih == NULL) {
 		if (pci_intr_map(pa, &intrhandle) != 0) {
-			aprint_error("%s: couldn't map native-PCI interrupt\n",
+			printf("%s: couldn't map native-PCI interrupt\n",
 			    sc->sc_wdcdev.sc_dev.dv_xname);
 			goto bad;
 		}	
@@ -271,16 +271,16 @@ pciide_mapregs_native(pa, cp, cmdsizep, ctlsizep, pci_intr)
 		sc->sc_pci_ih = pci_intr_establish(pa->pa_pc,
 		    intrhandle, IPL_BIO, pci_intr, sc);
 		if (sc->sc_pci_ih != NULL) {
-			aprint_normal("%s: using %s for native-PCI interrupt\n",
+			printf("%s: using %s for native-PCI interrupt\n",
 			    sc->sc_wdcdev.sc_dev.dv_xname,
 			    intrstr ? intrstr : "unknown interrupt");
 		} else {
-			aprint_error(
+			printf(
 			    "%s: couldn't establish native-PCI interrupt",
 			    sc->sc_wdcdev.sc_dev.dv_xname);
 			if (intrstr != NULL)
-				aprint_normal(" at %s", intrstr);
-			aprint_normal("\n");
+				printf(" at %s", intrstr);
+			printf("\n");
 			goto bad;
 		}
 	}
@@ -296,7 +296,7 @@ pciide_mapregs_native(pa, cp, cmdsizep, ctlsizep, pci_intr)
 	if (pci_mapreg_map(pa, PCIIDE_REG_CTL_BASE(wdc_cp->ch_channel),
 	    PCI_MAPREG_TYPE_IO, 0,
 	    &wdc_cp->ctl_iot, &cp->ctl_baseioh, NULL, ctlsizep) != 0) {
-		aprint_error("%s: couldn't map %s channel ctl regs\n",
+		printf("%s: couldn't map %s channel ctl regs\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 		bus_space_unmap(wdc_cp->cmd_iot, wdc_cp->cmd_baseioh,
 		    *cmdsizep);
@@ -309,7 +309,7 @@ pciide_mapregs_native(pa, cp, cmdsizep, ctlsizep, pci_intr)
 	 */
 	if (bus_space_subregion(wdc_cp->ctl_iot, cp->ctl_baseioh, 2, 1,
 	    &wdc_cp->ctl_ioh) != 0) {
-		aprint_error("%s: unable to subregion %s channel ctl regs\n",
+		printf("%s: unable to subregion %s channel ctl regs\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 		bus_space_unmap(wdc_cp->cmd_iot, wdc_cp->cmd_baseioh,
 		     *cmdsizep);
@@ -320,7 +320,7 @@ pciide_mapregs_native(pa, cp, cmdsizep, ctlsizep, pci_intr)
 	for (i = 0; i < WDC_NREG; i++) {
 		if (bus_space_subregion(wdc_cp->cmd_iot, wdc_cp->cmd_baseioh, i,
 		    i == 0 ? 4 : 1, &wdc_cp->cmd_iohs[i]) != 0) {
-			aprint_error("%s: couldn't subregion %s channel "
+			printf("%s: couldn't subregion %s channel "
 				     "cmd regs\n",
 			    sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 			goto bad;
@@ -370,14 +370,14 @@ pciide_mapreg_dma(sc, pa)
 		    PCIIDE_REG_BUS_MASTER_DMA, PCI_MAPREG_TYPE_IO,
 		    &addr, NULL, NULL) == 0);
 		if (sc->sc_dma_ok == 0) {
-			aprint_normal(
+			printf(
 			    ", but unused (couldn't query registers)");
 			break;
 		}
 		if ((sc->sc_pp->ide_flags & IDE_16BIT_IOSPACE)
 		    && addr >= 0x10000) {
 			sc->sc_dma_ok = 0;
-			aprint_normal(
+			printf(
 			    ", but unused (registers at unsafe address "
 			    "%#lx)", (unsigned long)addr);
 			break;
@@ -390,7 +390,7 @@ pciide_mapreg_dma(sc, pa)
 		    &sc->sc_dma_iot, &sc->sc_dma_ioh, NULL, NULL) == 0);
 		sc->sc_dmat = pa->pa_dmat;
 		if (sc->sc_dma_ok == 0) {
-			aprint_normal(", but unused (couldn't map registers)");
+			printf(", but unused (couldn't map registers)");
 		} else {
 			sc->sc_wdcdev.dma_arg = sc;
 			sc->sc_wdcdev.dma_init = pciide_dma_init;
@@ -400,7 +400,7 @@ pciide_mapreg_dma(sc, pa)
 
 		if (sc->sc_wdcdev.sc_dev.dv_cfdata->cf_flags &
 		    PCIIDE_OPTIONS_NODMA) {
-			aprint_normal(
+			printf(
 			    ", but unused (forced off by config file)");
 			sc->sc_dma_ok = 0;
 		}
@@ -408,7 +408,7 @@ pciide_mapreg_dma(sc, pa)
 
 	default:
 		sc->sc_dma_ok = 0;
-		aprint_normal(
+		printf(
 		    ", but unsupported register maptype (0x%x)", maptype);
 	}
 
@@ -430,7 +430,7 @@ pciide_mapreg_dma(sc, pa)
 			    IDEDMA_SCH_OFFSET * chan + reg, size,
 			    &pc->dma_iohs[reg]) != 0) {
 				sc->sc_dma_ok = 0;
-				aprint_normal(", but can't subregion offset %d "
+				printf(", but can't subregion offset %d "
 					      "size %lu", reg, (u_long)size);
 				return;
 			}
@@ -533,7 +533,7 @@ pciide_dma_table_setup(sc, channel, drive)
 	if ((error = bus_dmamem_alloc(sc->sc_dmat, dma_table_size,
 	    IDEDMA_TBL_ALIGN, IDEDMA_TBL_ALIGN, &seg, 1, &rseg,
 	    BUS_DMA_NOWAIT)) != 0) {
-		aprint_error(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
+		printf(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
 		    "allocate", drive, error);
 		return error;
 	}
@@ -541,7 +541,7 @@ pciide_dma_table_setup(sc, channel, drive)
 	    dma_table_size,
 	    (caddr_t *)&dma_maps->dma_table,
 	    BUS_DMA_NOWAIT|BUS_DMA_COHERENT)) != 0) {
-		aprint_error(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
+		printf(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
 		    "map", drive, error);
 		return error;
 	}
@@ -552,7 +552,7 @@ pciide_dma_table_setup(sc, channel, drive)
 	if ((error = bus_dmamap_create(sc->sc_dmat, dma_table_size,
 	    1, dma_table_size, IDEDMA_TBL_ALIGN, BUS_DMA_NOWAIT,
 	    &dma_maps->dmamap_table)) != 0) {
-		aprint_error(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
+		printf(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
 		    "create", drive, error);
 		return error;
 	}
@@ -560,7 +560,7 @@ pciide_dma_table_setup(sc, channel, drive)
 	    dma_maps->dmamap_table,
 	    dma_maps->dma_table,
 	    dma_table_size, NULL, BUS_DMA_NOWAIT)) != 0) {
-		aprint_error(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
+		printf(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
 		    "load", drive, error);
 		return error;
 	}
@@ -572,7 +572,7 @@ pciide_dma_table_setup(sc, channel, drive)
 	    NIDEDMA_TABLES, sc->sc_dma_maxsegsz, sc->sc_dma_boundary,
 	    BUS_DMA_NOWAIT | BUS_DMA_ALLOCNOW,
 	    &dma_maps->dmamap_xfer)) != 0) {
-		aprint_error(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
+		printf(dmaerrfmt, sc->sc_wdcdev.sc_dev.dv_xname, channel,
 		    "create xfer", drive, error);
 		return error;
 	}
@@ -773,12 +773,12 @@ pciide_chansetup(sc, channel, interface)
 	cp->wdc_channel.ch_queue =
 	    malloc(sizeof(struct ata_queue), M_DEVBUF, M_NOWAIT);
 	if (cp->wdc_channel.ch_queue == NULL) {
-		aprint_error("%s %s channel: "
+		printf("%s %s channel: "
 		    "can't allocate memory for command queue",
 		sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 		return 0;
 	}
-	aprint_normal("%s: %s channel %s to %s mode\n",
+	printf("%s: %s channel %s to %s mode\n",
 	    sc->sc_wdcdev.sc_dev.dv_xname, cp->name,
 	    (interface & PCIIDE_INTERFACE_SETTABLE(channel)) ?
 	    "configured" : "wired",
@@ -825,7 +825,7 @@ pciide_map_compat_intr(pa, cp, compatchan)
 	    pa, compatchan, pciide_compat_intr, cp);
 	if (cp->ih == NULL) {
 #endif
-		aprint_error("%s: no compatibility interrupt for use by %s "
+		printf("%s: no compatibility interrupt for use by %s "
 		    "channel\n", sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 		cp->wdc_channel.ch_flags |= WDCF_DISABLED;
 #ifdef __HAVE_PCIIDE_MACHDEP_COMPAT_INTR_ESTABLISH
@@ -851,25 +851,25 @@ default_chip_map(sc, pa)
 		return;
 
 	if (interface & PCIIDE_INTERFACE_BUS_MASTER_DMA) {
-		aprint_normal("%s: bus-master DMA support present",
+		printf("%s: bus-master DMA support present",
 		    sc->sc_wdcdev.sc_dev.dv_xname);
 		if (sc->sc_pp == &default_product_desc &&
 		    (sc->sc_wdcdev.sc_dev.dv_cfdata->cf_flags &
 		    PCIIDE_OPTIONS_DMA) == 0) {
-			aprint_normal(", but unused (no driver support)");
+			printf(", but unused (no driver support)");
 			sc->sc_dma_ok = 0;
 		} else {
 			pciide_mapreg_dma(sc, pa);
 			if (sc->sc_dma_ok != 0)
-				aprint_normal(", used without full driver "
+				printf(", used without full driver "
 				    "support");
 		}
 	} else {
-		aprint_normal("%s: hardware does not support DMA",
+		printf("%s: hardware does not support DMA",
 		    sc->sc_wdcdev.sc_dev.dv_xname);
 		sc->sc_dma_ok = 0;
 	}
-	aprint_normal("\n");
+	printf("\n");
 	if (sc->sc_dma_ok) {
 		sc->sc_wdcdev.cap |= WDC_CAPABILITY_DMA | WDC_CAPABILITY_IRQACK;
 		sc->sc_wdcdev.irqack = pciide_irqack;
@@ -927,7 +927,7 @@ default_chip_map(sc, pa)
 		    PCI_COMMAND_STATUS_REG, csr);
 next:
 		if (failreason) {
-			aprint_error("%s: %s channel ignored (%s)\n",
+			printf("%s: %s channel ignored (%s)\n",
 			    sc->sc_wdcdev.sc_dev.dv_xname, cp->name,
 			    failreason);
 			cp->wdc_channel.ch_flags |= WDCF_DISABLED;
@@ -958,14 +958,14 @@ next:
 				continue;
 			if (pciide_dma_table_setup(sc, channel, drive) != 0) {
 				/* Abort DMA setup */
-				aprint_error(
+				printf(
 				    "%s:%d:%d: can't allocate DMA maps, "
 				    "using PIO transfers\n",
 				    sc->sc_wdcdev.sc_dev.dv_xname,
 				    channel, drive);
 				drvp->drive_flags &= ~DRIVE_DMA;
 			}
-			aprint_normal("%s:%d:%d: using DMA data transfers\n",
+			printf("%s:%d:%d: using DMA data transfers\n",
 			    sc->sc_wdcdev.sc_dev.dv_xname,
 			    channel, drive);
 			idedma_ctl |= IDEDMA_CTL_DRV_DMA(drive);
