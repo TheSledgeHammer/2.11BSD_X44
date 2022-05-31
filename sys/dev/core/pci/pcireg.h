@@ -290,6 +290,13 @@ typedef u_int8_t pci_revision_t;
 #define	PCI_MAPREG_ROM_ADDR(mr)				((mr) & PCI_MAPREG_ROM_ADDR_MASK)
 
 /*
+ * Subsystem identification register; contains a vendor ID and a device ID.
+ * Types/macros for PCI_ID_REG apply.
+ * (PCI rev. 2.1)
+ */
+#define PCI_SUBSYS_ID_REG 					0x2c
+
+/*
  * Interrupt Configuration Register; contains interrupt pin and line.
  */
 #define	PCI_INTERRUPT_REG					0x3c

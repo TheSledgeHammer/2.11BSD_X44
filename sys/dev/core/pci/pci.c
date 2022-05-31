@@ -43,10 +43,10 @@
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
 
-int 	pcimatch (struct device *, struct cfdata *, void *);
-void 	pciattach (struct device *, struct device *, void *);
-int		pciprint (void *, const char *);
-int		pcisubmatch (struct device *, struct cfdata *, void *);
+int 	pcimatch(struct device *, struct cfdata *, void *);
+void 	pciattach(struct device *, struct device *, void *);
+int		pciprint(void *, const char *);
+int		pcisubmatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(pci, pcimatch, pciattach, NULL, NULL);
 CFDRIVER_DECL(NULL, pci, &pci_cops, DV_DULL, sizeof(struct device));
@@ -72,7 +72,7 @@ CFDRIVER_DECL(NULL, pci, &pci_cops, DV_DULL, sizeof(struct device));
  * up as an ISA device, and that can (bogusly) complicate the PCI device's
  * attach code, or make the PCI device not be properly attached at all.
  */
-static void	(*pci_isa_bridge_callback) (void *);
+static void	(*pci_isa_bridge_callback)(void *);
 static void	*pci_isa_bridge_callback_arg;
 
 int
@@ -107,6 +107,7 @@ pciattach(parent, self, aux)
 	void *aux;
 {
 	struct pcibus_attach_args *pba = aux;
+	struct pci_softc *sc = (struct pci_softc *)self;
 	bus_space_tag_t iot, memt;
 	pci_chipset_tag_t pc;
 	int bus, device, maxndevs, function, nfunctions;

@@ -66,8 +66,8 @@ __KERNEL_RCSID(0, "$NetBSD: puc.c,v 1.20 2004/02/03 19:51:39 fredb Exp $");
 #include <dev/core/ic/comreg.h>
 #include <dev/core/ic/comvar.h>
 
-#include "locators.h"
-#include "opt_puccn.h"
+//#include "locators.h"
+//#include "opt_puccn.h"
 
 struct puc_softc {
 	struct device		sc_dev;
@@ -86,27 +86,27 @@ struct puc_softc {
 	} sc_bar_mappings[6];				/* XXX constant */
 
 	/* per-port dynamic data */
-        struct {
-		struct device	*dev;
+	struct {
+		struct device *dev;
 
-                /* filled in by port attachments */
-                int             (*ihand) (void *);
-                void            *ihandarg;
-        } sc_ports[PUC_MAX_PORTS];
+		/* filled in by port attachments */
+		int (*ihand)(void*);
+		void *ihandarg;
+	} sc_ports[PUC_MAX_PORTS];
 };
 
-int		puc_match (struct device *, struct cfdata *, void *);
-void	puc_attach (struct device *, struct device *, void *);
-int		puc_print (void *, const char *);
-int		puc_submatch (struct device *, struct cfdata *, void *);
+int		puc_match(struct device *, struct cfdata *, void *);
+void	puc_attach(struct device *, struct device *, void *);
+int		puc_print(void *, const char *);
+int		puc_submatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(puc, puc_match, puc_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, puc, &puc_cops, DV_DULL, sizeof(struct puc_softc));
 
 const struct puc_device_description *
-	puc_find_description (pcireg_t, pcireg_t, pcireg_t, pcireg_t);
+	puc_find_description(pcireg_t, pcireg_t, pcireg_t, pcireg_t);
 static const char *
-	puc_port_type_name (int);
+	puc_port_type_name(int);
 
 int
 puc_match(parent, match, aux)
@@ -119,7 +119,7 @@ puc_match(parent, match, aux)
 	pcireg_t bhlc, subsys;
 
 	bhlc = pci_conf_read(pa->pa_pc, pa->pa_tag, PCI_BHLC_REG);
-	if (PCI_HDRTYPE_TYPE(bhlc) != 0)
+	if (PCI_HDRTYPE(bhlc) != 0)
 		return (0);
 
 	subsys = pci_conf_read(pa->pa_pc, pa->pa_tag, PCI_SUBSYS_ID_REG);
@@ -129,24 +129,14 @@ puc_match(parent, match, aux)
 	if (desc != NULL)
 		return (10);
 
-#if 0
-	/*
-	 * XXX this is obviously bogus.  eventually, we might want
-	 * XXX to match communications/modem, etc., but that needs some
-	 * XXX special work in the match fn.
-	 */
 	/*
 	 * Match class/subclass, so we can tell people to compile kernel
 	 * with options that cause this driver to spew.
 	 */
-	if (PCI_CLASS(pa->pa_class) == PCI_CLASS_COMMUNICATIONS) {
-		switch (PCI_SUBCLASS(pa->pa_class)) {
-		case PCI_SUBCLASS_COMMUNICATIONS_SERIAL:
-		case PCI_SUBCLASS_COMMUNICATIONS_MODEM:
-			return (1);
-		}
+	if (PCI_CLASS(pa->pa_class) == PCI_CLASS_COMMUNICATIONS
+			PCI_SUBCLASS(pa->pa_class) == PCI_SUBCLASS_BRIDGE_PCI) {
+		return (1);
 	}
-#endif
 
 	return (0);
 }
@@ -240,7 +230,8 @@ puc_attach(parent, self, aux)
 	}
 
 	/* Map interrupt. */
-	if (pci_intr_map(pa, &intrhandle)) {
+	if (pci_intr_map(pa->pa_pc, pa->pa_intrtag, pa->pa_intrpin, pa->pa_intrline,
+			&intrhandle)) {
 		printf("%s: couldn't map interrupt\n", sc->sc_dev.dv_xname);
 		return;
 	}
@@ -288,18 +279,18 @@ puc_attach(parent, self, aux)
 
 		if (
 #ifdef PUCCN
-		    !com_is_console(sc->sc_bar_mappings[barindex].t,
-		    sc->sc_bar_mappings[barindex].a, &subregion_handle)
-		   && 
+		!com_is_console(sc->sc_bar_mappings[barindex].t,
+				sc->sc_bar_mappings[barindex].a, &subregion_handle)
+				&&
 #endif
-		    bus_space_subregion(sc->sc_bar_mappings[barindex].t,
-		    sc->sc_bar_mappings[barindex].h,
-		    sc->sc_desc->ports[i].offset,
-		    sc->sc_bar_mappings[barindex].s - 
-		      sc->sc_desc->ports[i].offset,
-		    &subregion_handle) != 0) {
+				bus_space_subregion(sc->sc_bar_mappings[barindex].t,
+						sc->sc_bar_mappings[barindex].h,
+						sc->sc_desc->ports[i].offset,
+						sc->sc_bar_mappings[barindex].s
+								- sc->sc_desc->ports[i].offset,
+						&subregion_handle) != 0) {
 			printf("%s: couldn't get subregion for port %d\n",
-			    sc->sc_dev.dv_xname, i);
+					sc->sc_dev.dv_xname, i);
 			continue;
 		}
 		paa.h = subregion_handle;
@@ -325,8 +316,8 @@ puc_print(aux, pnp)
 	struct puc_attach_args *paa = aux;
         
 	if (pnp)
-		aprint_normal("%s at %s", puc_port_type_name(paa->type), pnp);
-	aprint_normal(" port %d", paa->port);
+		printf("%s at %s", puc_port_type_name(paa->type), pnp);
+	printf(" port %d", paa->port);
 	return (UNCONF);
 }
 

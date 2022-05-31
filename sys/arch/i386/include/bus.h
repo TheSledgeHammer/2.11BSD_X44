@@ -150,21 +150,21 @@ struct uio;
 #define	BUS_SPACE_BARRIER_READ			0x01		/* force read barrier */
 #define	BUS_SPACE_BARRIER_WRITE			0x02		/* force write barrier */
 
-void 	i386_bus_space_init	(void);
-void 	i386_bus_space_mallocok	(void);
-void	i386_bus_space_check (vm_offset_t, int, int);
+void 	i386_bus_space_init(void);
+void 	i386_bus_space_mallocok(void);
+void	i386_bus_space_check(vm_offset_t, int, int);
 
-int		i386_memio_map (bus_space_tag_t, bus_addr_t, bus_size_t, int, bus_space_handle_t *);
+int		i386_memio_map(bus_space_tag_t, bus_addr_t, bus_size_t, int, bus_space_handle_t *);
 /* like map, but without extent map checking/allocation */
-int		_i386_memio_map (bus_space_tag_t, bus_addr_t, bus_size_t, int, bus_space_handle_t *);
-void 	i386_memio_unmap (bus_space_tag_t, bus_space_handle_t, bus_size_t);
-int		i386_memio_subregion (bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_size_t, bus_space_handle_t *);
-int		i386_memio_alloc (bus_space_tag_t, bus_addr_t, bus_addr_t, bus_size_t, bus_size_t, bus_size_t, int, bus_addr_t *, bus_space_handle_t *);
-void 	i386_memio_free (bus_space_tag_t, bus_space_handle_t, bus_size_t);
+int		_i386_memio_map(bus_space_tag_t, bus_addr_t, bus_size_t, int, bus_space_handle_t *);
+void 	i386_memio_unmap(bus_space_tag_t, bus_space_handle_t, bus_size_t);
+int		i386_memio_subregion(bus_space_tag_t, bus_space_handle_t, bus_size_t, bus_size_t, bus_space_handle_t *);
+int		i386_memio_alloc(bus_space_tag_t, bus_addr_t, bus_addr_t, bus_size_t, bus_size_t, bus_size_t, int, bus_addr_t *, bus_space_handle_t *);
+void 	i386_memio_free(bus_space_tag_t, bus_space_handle_t, bus_size_t);
 
 /* Bus DMA */
-typedef struct i386_bus_dma_segment		*bus_dma_tag_t;
-typedef struct i386_bus_dmamap			*bus_dmamap_t;
+typedef struct i386_bus_dma_tag		*bus_dma_tag_t;
+typedef struct i386_bus_dmamap		*bus_dmamap_t;
 
 /* Flags used in various bus DMA methods. */
 #define	BUS_DMA_WAITOK			0x000	/* safe to sleep (pseudo-flag) */

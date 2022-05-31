@@ -40,8 +40,8 @@
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
 
-static int pci_io_find (pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
-static int pci_mem_find (pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
+static int pci_io_find(pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
+static int pci_mem_find(pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
 
 static int
 pci_io_find(pc, tag, reg, type, basep, sizep, flagsp)
@@ -166,6 +166,21 @@ pci_mem_find(pc, tag, reg, type, basep, sizep, flagsp)
 		    BUS_SPACE_MAP_CACHEABLE : 0;
 
 	return (0);
+}
+
+#define _PCI_MAPREG_TYPEBITS(reg) 					\
+	(PCI_MAPREG_TYPE(reg) == PCI_MAPREG_TYPE_IO ? 	\
+	reg & PCI_MAPREG_TYPE_MASK : 					\
+	reg & (PCI_MAPREG_TYPE_MASK|PCI_MAPREG_MEM_TYPE_MASK))
+
+pcireg_t
+pci_mapreg_type(pc, tag, reg)
+	pci_chipset_tag_t pc;
+	pcitag_t tag;
+	int reg;
+{
+
+	return (_PCI_MAPREG_TYPEBITS(pci_conf_read(pc, tag, reg)));
 }
 
 int

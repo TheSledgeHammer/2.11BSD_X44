@@ -145,8 +145,8 @@ struct isapnp_attach_args {
 	struct isapnp_pin		ipa_drq[ISAPNP_NUM_DRQ];
 };
 
-static __inline void isapnp_write_reg (struct isapnp_softc *, int, u_char);
-static __inline u_char isapnp_read_reg (struct isapnp_softc *, int);
+static __inline void isapnp_write_reg(struct isapnp_softc *, int, u_char);
+static __inline u_char isapnp_read_reg(struct isapnp_softc *, int);
 
 static __inline void
 isapnp_write_reg(sc, r, v)
@@ -167,11 +167,11 @@ isapnp_read_reg(sc, r)
 	return ISAPNP_READ_DATA(sc);
 }
 
-struct isapnp_attach_args *isapnp_get_resource (struct isapnp_softc *, int);
-char *isapnp_id_to_vendor (char *, const u_char *);
+struct isapnp_attach_args *isapnp_get_resource(struct isapnp_softc *, int);
+char *isapnp_id_to_vendor(char *, const u_char *);
 
-int isapnp_config (bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *);
-void isapnp_unconfig (bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *);
+int isapnp_config(bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *);
+void isapnp_unconfig(bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *);
 
 #ifdef _KERNEL
 struct isapnp_devinfo;
@@ -180,14 +180,14 @@ void isapnp_isa_attach_hook(struct isa_softc *);
 #endif
 
 #ifdef DEBUG_ISAPNP
-void isapnp_print_mem (const char *, const struct isapnp_region *);
-void isapnp_print_io (const char *, const struct isapnp_region *);
-void isapnp_print_irq (const char *, const struct isapnp_pin *);
-void isapnp_print_drq (const char *, const struct isapnp_pin *);
-void isapnp_print_dep_start (const char *, const u_char);
-void isapnp_print_attach (const struct isapnp_attach_args *);
-void isapnp_get_config (struct isapnp_softc *, struct isapnp_attach_args *);
-void isapnp_print_config (const struct isapnp_attach_args *);
+void isapnp_print_mem(const char *, const struct isapnp_region *);
+void isapnp_print_io(const char *, const struct isapnp_region *);
+void isapnp_print_irq(const char *, const struct isapnp_pin *);
+void isapnp_print_drq(const char *, const struct isapnp_pin *);
+void isapnp_print_dep_start(const char *, const u_char);
+void isapnp_print_attach(const struct isapnp_attach_args *);
+void isapnp_get_config(struct isapnp_softc *, struct isapnp_attach_args *);
+void isapnp_print_config(const struct isapnp_attach_args *);
 #endif
 
 #endif /* ! _DEV_ISAPNP_ISAPNPVAR_H_ */

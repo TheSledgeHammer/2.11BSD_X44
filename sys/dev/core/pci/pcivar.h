@@ -49,7 +49,6 @@
  */
 typedef u_int32_t pcireg_t;		/* configuration space register XXX */
 struct pcibus_attach_args;
-struct pci_softc;
 
 #ifdef _KERNEL
 /*
@@ -126,6 +125,8 @@ struct pci_attach_args {
 #define	PCI_FLAGS_MWI_OKAY		0x10		/* Memory Write and Invalidate
 						   	   	   	   	   	   okay */
 
+#include "locators.h"
+
 /*
  * Locators devices that attach to 'pcibus', as specified to config.
  */
@@ -148,6 +149,7 @@ struct pci_attach_args {
  * Configuration space access and utility functions.  (Note that most,
  * e.g. make_tag, conf_read, conf_write are declared by pci_machdep.h.)
  */
+pcireg_t pci_mapreg_type(pci_chipset_tag_t, pcitag_t, int);
 int		pci_mapreg_info(pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
 int		pci_mapreg_map(struct pci_attach_args *, int, pcireg_t, int, bus_space_tag_t *, bus_space_handle_t *, bus_addr_t *, bus_size_t *);
 
@@ -155,6 +157,7 @@ int		pci_mapreg_map(struct pci_attach_args *, int, pcireg_t, int, bus_space_tag_
  * Helper functions for autoconfiguration.
  */
 void	pci_devinfo(pcireg_t, pcireg_t, int, char *);
+void	pci_conf_print(pci_chipset_tag_t, pcitag_t, void (*)(pci_chipset_tag_t, pcitag_t, const pcireg_t *));
 void	set_pci_isa_bridge_callback(void (*)(void *), void *);
 
 #endif /* _KERNEL */

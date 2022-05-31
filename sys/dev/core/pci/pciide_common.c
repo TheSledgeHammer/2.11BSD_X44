@@ -221,7 +221,7 @@ pciide_mapregs_compat(pa, cp, compatchan, cmdsizep, ctlsizep)
 	wdc_cp->ctl_iot = pa->pa_iot;
 	if (bus_space_map(wdc_cp->ctl_iot, PCIIDE_COMPAT_CTL_BASE(compatchan),
 	    PCIIDE_COMPAT_CTL_SIZE, 0, &wdc_cp->ctl_ioh) != 0) {
-		aprint_error("%s: couldn't map %s channel ctl regs\n",
+		printf("%s: couldn't map %s channel ctl regs\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 		bus_space_unmap(wdc_cp->cmd_iot, wdc_cp->cmd_baseioh,
 		    PCIIDE_COMPAT_CMD_SIZE);
@@ -262,7 +262,8 @@ pciide_mapregs_native(pa, cp, cmdsizep, ctlsizep, pci_intr)
 	cp->compat = 0;
 
 	if (sc->sc_pci_ih == NULL) {
-		if (pci_intr_map(pa, &intrhandle) != 0) {
+		if (pci_intr_map(pa->pa_pc, pa->pa_intrtag, pa->pa_intrpin,
+			    pa->pa_intrline, &intrhandle) != 0) {
 			printf("%s: couldn't map native-PCI interrupt\n",
 			    sc->sc_wdcdev.sc_dev.dv_xname);
 			goto bad;
@@ -602,9 +603,10 @@ pciide_dma_dmamap_setup(sc, channel, drive, databuf, datalen, flags)
 	}
 
 	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_xfer, 0,
-	    dma_maps->dmamap_xfer->dm_mapsize,
-	    (flags & WDC_DMA_READ) ?
-	    BUS_DMASYNC_PREREAD : BUS_DMASYNC_PREWRITE);
+			dma_maps->dmamap_xfer->dm_mapsize,
+	(flags & WDC_DMA_READ) ?
+	BUS_DMASYNC_PREREAD : BUS_DMASYNC_PREWRITE);
+
 
 	for (seg = 0; seg < dma_maps->dmamap_xfer->dm_nsegs; seg++) {
 #ifdef DIAGNOSTIC
@@ -634,9 +636,7 @@ pciide_dma_dmamap_setup(sc, channel, drive, databuf, datalen, flags)
 	dma_maps->dma_table[dma_maps->dmamap_xfer->dm_nsegs -1].byte_count |=
 	    htole32(IDEDMA_BYTE_COUNT_EOT);
 
-	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_table, 0,
-	    dma_maps->dmamap_table->dm_mapsize,
-	    BUS_DMASYNC_PREWRITE);
+	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_table, 0, dma_maps->dmamap_table->dm_mapsize, BUS_DMASYNC_PREWRITE);
 
 #ifdef DIAGNOSTIC
 	if (dma_maps->dmamap_table->dm_segs[0].ds_addr & ~IDEDMA_TBL_MASK) {
@@ -1014,7 +1014,6 @@ sata_setup_channel(chp)
 	 */
 	if (idedma_ctl != 0) {
 		/* Add software bits in status register */
-		bus_space_write_1(sc->sc_dma_iot, cp->dma_iohs[IDEDMA_CTL], 0,
-		    idedma_ctl);
+		bus_space_write_1(sc->sc_dma_iot, cp->dma_iohs[IDEDMA_CTL], 0, idedma_ctl);
 	}
 }

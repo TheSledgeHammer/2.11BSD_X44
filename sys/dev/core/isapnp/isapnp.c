@@ -51,26 +51,26 @@
 #define ISAPNP_ALLOC_INTR_MASK (~0)
 #endif
 
-static void isapnp_init (struct isapnp_softc *);
-static __inline u_char isapnp_shift_bit (struct isapnp_softc *);
-static int isapnp_findcard (struct isapnp_softc *);
-static void isapnp_free_region (bus_space_tag_t, struct isapnp_region *);
-static int isapnp_alloc_region (bus_space_tag_t, struct isapnp_region *);
-static int isapnp_alloc_irq (isa_chipset_tag_t, struct isapnp_pin *);
-static int isapnp_alloc_drq (isa_chipset_tag_t, struct isapnp_pin *);
-static int isapnp_testconfig (bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *, int);
-static struct isapnp_attach_args *isapnp_bestconfig (struct isapnp_softc *, struct isapnp_attach_args **);
-static void isapnp_print_region (const char *, struct isapnp_region *, size_t);
-static void isapnp_configure (struct isapnp_softc *, const struct isapnp_attach_args *);
-static void isapnp_print_pin (const char *, struct isapnp_pin *, size_t);
-static int isapnp_print (void *, const char *);
+static void isapnp_init(struct isapnp_softc *);
+static __inline u_char isapnp_shift_bit(struct isapnp_softc *);
+static int isapnp_findcard(struct isapnp_softc *);
+static void isapnp_free_region(bus_space_tag_t, struct isapnp_region *);
+static int isapnp_alloc_region(bus_space_tag_t, struct isapnp_region *);
+static int isapnp_alloc_irq(isa_chipset_tag_t, struct isapnp_pin *);
+static int isapnp_alloc_drq(isa_chipset_tag_t, struct isapnp_pin *);
+static int isapnp_testconfig(bus_space_tag_t, bus_space_tag_t, struct isapnp_attach_args *, int);
+static struct isapnp_attach_args *isapnp_bestconfig(struct isapnp_softc *, struct isapnp_attach_args **);
+static void isapnp_print_region(const char *, struct isapnp_region *, size_t);
+static void isapnp_configure(struct isapnp_softc *, const struct isapnp_attach_args *);
+static void isapnp_print_pin(const char *, struct isapnp_pin *, size_t);
+static int isapnp_print(void *, const char *);
 #ifdef _KERNEL
-static int isapnp_submatch (struct device *, struct cfdata *, void *);
+static int isapnp_submatch(struct device *, struct cfdata *, void *);
 #endif
-static int isapnp_find (struct isapnp_softc *, int);
-static int isapnp_match (struct device *, struct cfdata *, void *);
-static void isapnp_attach (struct device *, struct device *, void *);
-static void isapnp_callback (struct device *);
+static int isapnp_find(struct isapnp_softc *, int);
+static int isapnp_match(struct device *, struct cfdata *, void *);
+static void isapnp_attach(struct device *, struct device *, void *);
+static void isapnp_callback(struct device *);
 
 CFOPS_DECL(isapnp, isapnp_match, isapnp_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, isapnp, &isapnp_cops, DV_DULL, sizeof(struct isapnp_softc));

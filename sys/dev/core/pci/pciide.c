@@ -78,7 +78,6 @@
 __KERNEL_RCSID(0, "$NetBSD: pciide.c,v 1.209 2003/10/08 11:51:59 bouyer Exp $");
 
 #include <sys/param.h>
-#include <sys/systm.h>
 
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pciidereg.h>
