@@ -289,7 +289,7 @@ pciide_mapregs_native(pa, cp, cmdsizep, ctlsizep, pci_intr)
 	if (pci_mapreg_map(pa, PCIIDE_REG_CMD_BASE(wdc_cp->ch_channel),
 	    PCI_MAPREG_TYPE_IO, 0,
 	    &wdc_cp->cmd_iot, &wdc_cp->cmd_baseioh, NULL, cmdsizep) != 0) {
-		aprint_error("%s: couldn't map %s channel cmd regs\n",
+		printf("%s: couldn't map %s channel cmd regs\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname, cp->name);
 		goto bad;
 	}
@@ -602,9 +602,7 @@ pciide_dma_dmamap_setup(sc, channel, drive, databuf, datalen, flags)
 		return error;
 	}
 
-	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_xfer, 0,
-			dma_maps->dmamap_xfer->dm_mapsize,
-	(flags & WDC_DMA_READ) ?
+	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_xfer, (flags & WDC_DMA_READ) ?
 	BUS_DMASYNC_PREREAD : BUS_DMASYNC_PREWRITE);
 
 
@@ -636,7 +634,7 @@ pciide_dma_dmamap_setup(sc, channel, drive, databuf, datalen, flags)
 	dma_maps->dma_table[dma_maps->dmamap_xfer->dm_nsegs -1].byte_count |=
 	    htole32(IDEDMA_BYTE_COUNT_EOT);
 
-	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_table, 0, dma_maps->dmamap_table->dm_mapsize, BUS_DMASYNC_PREWRITE);
+	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_table, BUS_DMASYNC_PREWRITE);
 
 #ifdef DIAGNOSTIC
 	if (dma_maps->dmamap_table->dm_segs[0].ds_addr & ~IDEDMA_TBL_MASK) {
@@ -720,8 +718,7 @@ pciide_dma_finish(v, channel, drive, force)
 		& ~IDEDMA_CMD_START);
 
 	/* Unload the map of the data buffer */
-	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_xfer, 0,
-	    dma_maps->dmamap_xfer->dm_mapsize,
+	bus_dmamap_sync(sc->sc_dmat, dma_maps->dmamap_xfer,
 	    (dma_maps->dma_flags & WDC_DMA_READ) ?
 	    BUS_DMASYNC_POSTREAD : BUS_DMASYNC_POSTWRITE);
 	bus_dmamap_unload(sc->sc_dmat, dma_maps->dmamap_xfer);

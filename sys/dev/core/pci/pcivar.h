@@ -130,19 +130,19 @@ struct pci_attach_args {
 /*
  * Locators devices that attach to 'pcibus', as specified to config.
  */
-#define PCIBUSCF_BUS			0
-#define PCIBUSCF_BUS_DEFAULT	-1
+//#define PCIBUSCF_BUS			0
+//#define PCIBUSCF_BUS_DEFAULT	-1
 #define	PCIBUS_UNK_BUS			PCIBUSCF_BUS_DEFAULT	/* wildcarded 'bus' */
 
 /*
  * Locators for PCI devices, as specified to config.
  */
-#define PCICF_DEV				1
-#define PCICF_DEV_DEFAULT		-1
+//#define PCICF_DEV				1
+//#define PCICF_DEV_DEFAULT		-1
 #define	PCI_UNK_DEV				PCICF_DEV_DEFAULT		/* wildcarded 'dev' */
 
-#define PCICF_FUNCTION			0
-#define PCICF_FUNCTION_DEFAULT	-1
+//#define PCICF_FUNCTION			0
+//#define PCICF_FUNCTION_DEFAULT	-1
 #define	PCI_UNK_FUNCTION		PCICF_FUNCTION_DEFAULT /* wildcarded 'function' */
 
 /*

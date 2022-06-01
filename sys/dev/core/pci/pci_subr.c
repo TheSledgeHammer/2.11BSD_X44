@@ -443,7 +443,7 @@ pci_conf_print_common(pc, tag, regs)
 
 	rval = regs[o2i(PCI_BHLC_REG)];
 	printf("    BIST: 0x%02x\n", PCI_BIST(rval));
-	printf("    Header Type: 0x%02x%s (0x%02x)\n", PCI_HDRTYPE_TYPE(rval),
+	printf("    Header Type: 0x%02x%s (0x%02x)\n", PCI_HDRTYPE(rval),
 	    PCI_HDRTYPE_MULTIFN(rval) ? "+multifunction" : "",
 	    PCI_HDRTYPE(rval));
 	printf("    Latency Timer: 0x%02x\n", PCI_LATTIMER(rval));
@@ -601,7 +601,7 @@ pci_conf_print_type0(pc, tag, regs)
 		printf("(pin D)");
 		break;
 	default:
-		printf("(???)");
+//		printf("(???)");
 		break;
 	}
 	printf("\n");
@@ -718,7 +718,7 @@ pci_conf_print_type1(pc, tag, regs)
 		printf("(pin D)");
 		break;
 	default:
-		printf("(???)");
+//		printf("(???)");
 		break;
 	}
 	printf("\n");
@@ -831,7 +831,7 @@ pci_conf_print_type2(pc, tag, regs)
 		printf("(pin D)");
 		break;
 	default:
-		printf("(???)");
+//		printf("(???)");
 		break;
 	}
 	printf("\n");
@@ -880,7 +880,7 @@ pci_conf_print(pc, tag, printfn)
 	printf("\n");
 
 	/* type-dependent header */
-	hdrtype = PCI_HDRTYPE_TYPE(regs[o2i(PCI_BHLC_REG)]);
+	hdrtype = PCI_HDRTYPE(regs[o2i(PCI_BHLC_REG)]);
 	switch (hdrtype) {		/* XXX make a table, eventually */
 	case 0:
 		/* Standard device header */

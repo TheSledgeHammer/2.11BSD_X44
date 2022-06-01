@@ -66,8 +66,8 @@ __KERNEL_RCSID(0, "$NetBSD: puc.c,v 1.20 2004/02/03 19:51:39 fredb Exp $");
 #include <dev/core/ic/comreg.h>
 #include <dev/core/ic/comvar.h>
 
-//#include "locators.h"
-//#include "opt_puccn.h"
+#include "locators.h"
+#include "opt_puccn.h"
 
 struct puc_softc {
 	struct device		sc_dev;
@@ -128,16 +128,19 @@ puc_match(parent, match, aux)
 	    PCI_PRODUCT(pa->pa_id), PCI_VENDOR(subsys), PCI_PRODUCT(subsys));
 	if (desc != NULL)
 		return (10);
-
+#if 0
 	/*
 	 * Match class/subclass, so we can tell people to compile kernel
 	 * with options that cause this driver to spew.
 	 */
-	if (PCI_CLASS(pa->pa_class) == PCI_CLASS_COMMUNICATIONS
-			PCI_SUBCLASS(pa->pa_class) == PCI_SUBCLASS_BRIDGE_PCI) {
-		return (1);
+	if (PCI_CLASS(pa->pa_class) == PCI_CLASS_COMMUNICATIONS) {
+		switch (PCI_SUBCLASS(pa->pa_class)) {
+		case PCI_SUBCLASS_COMMUNICATIONS_SERIAL:
+		case PCI_SUBCLASS_COMMUNICATIONS_MODEM:
+			return (1);
+		}
 	}
-
+#endif
 	return (0);
 }
 
