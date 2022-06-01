@@ -1,6 +1,7 @@
 #	@(#)files.newconf	8.10 (Berkeley) 5/1/94
 
 # Common Kernel Conf Files
+include 									"conf/ddb.conf"
 include										"conf/devices.conf"
 include 									"conf/filesystems.conf"
 #include 									"conf/network.conf"
@@ -10,5 +11,4 @@ include 									"conf/vm.conf"
 #
 # Device Config Files
 #
-include 									"ddb/files.ddb"
 include 									"dev/files.dev"
