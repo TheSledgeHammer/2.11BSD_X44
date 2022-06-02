@@ -386,6 +386,46 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 	}
 }
 
+/*
+ * Bounds checking against the media size, used for the raw partition.
+ * The sector size passed in should currently always be DEV_BSIZE,
+ * and the media size the size of the device in DEV_BSIZE sectors.
+ */
+int
+bounds_check_with_mediasize(bp, secsize, mediasize)
+	struct buf *bp;
+	int secsize;
+	u_int64_t mediasize;
+{
+	int sz;
+
+	sz = howmany(bp->b_bcount, secsize);
+
+	if (bp->b_blkno + sz > mediasize) {
+		sz = mediasize - bp->b_blkno;
+		if (sz == 0) {
+			/* If exactly at end of disk, return EOF. */
+			bp->b_resid = bp->b_bcount;
+			goto done;
+		}
+		if (sz < 0) {
+			/* If past end of disk, return EINVAL. */
+			bp->b_error = EINVAL;
+			goto bad;
+		}
+		/* Otherwise, truncate request. */
+		bp->b_bcount = sz << DEV_BSHIFT;
+	}
+
+	return 1;
+
+bad:
+	bp->b_flags |= B_ERROR;
+done:
+	return 0;
+}
+
+
 /* disk functions for easy access */
 struct dkdriver *
 disk_driver(disk, dev)

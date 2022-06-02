@@ -188,14 +188,14 @@ struct ata_bio {
 #define	ATA_READ	0x0020	/* transfer is a read (otherwise a write) */
 #define	ATA_CORR	0x0040	/* transfer had a corrected error */
 #define	ATA_LBA48	0x0080	/* transfer uses 48-bit LBA addressing */
-	int		multi;	/* # of blocks to transfer in multi-mode */
+	int				 multi;	/* # of blocks to transfer in multi-mode */
 	struct disklabel *lp;	/* pointer to drive's label info */
-	daddr_t		blkno;	/* block addr */
-	daddr_t		blkdone;/* number of blks transferred */
-	daddr_t		nblks;	/* number of block currently transferring */
-	int		nbytes;	/* number of bytes currently transferring */
-	long		bcount;	/* total number of bytes */
-	char		*databuf;/* data buffer address */
+	daddr_t			blkno;	/* block addr */
+	daddr_t			blkdone;/* number of blks transferred */
+	daddr_t			nblks;	/* number of block currently transferring */
+	int				nbytes;	/* number of bytes currently transferring */
+	long			bcount;	/* total number of bytes */
+	char			*databuf;/* data buffer address */
 	volatile int	error;
 #define	NOERROR 	0	/* There was no error (r_error invalid) */
 #define	ERROR		1	/* check r_error */

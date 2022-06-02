@@ -90,6 +90,7 @@ __KERNEL_RCSID(0, "$NetBSD: wd.c,v 1.274.2.8.2.6.2.6 2007/10/15 23:10:19 riz Exp
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/ataio.h>
+#include <sys/power.h>
 
 #include <machine/intr.h>
 #include <machine/bus.h>
@@ -101,18 +102,18 @@ __KERNEL_RCSID(0, "$NetBSD: wd.c,v 1.274.2.8.2.6.2.6 2007/10/15 23:10:19 riz Exp
 
 #include "locators.h"
 
-#define	LBA48_THRESHOLD		(0xfffffff)	/* 128GB / DEV_BSIZE */
+#define	LBA48_THRESHOLD				(0xfffffff)	/* 128GB / DEV_BSIZE */
 
-#define	WDIORETRIES_SINGLE 4	/* number of retries before single-sector */
-#define	WDIORETRIES	5	/* number of retries before giving up */
-#define	RECOVERYTIME hz/2	/* time to wait before retrying a cmd */
+#define	WDIORETRIES_SINGLE 			4			/* number of retries before single-sector */
+#define	WDIORETRIES					5			/* number of retries before giving up */
+#define	RECOVERYTIME 				hz/2		/* time to wait before retrying a cmd */
 
-#define	WDUNIT(dev)		DISKUNIT(dev)
-#define	WDPART(dev)		DISKPART(dev)
-#define	WDMINOR(unit, part)	DISKMINOR(unit, part)
-#define	MAKEWDDEV(maj, unit, part)	MAKEDISKDEV(maj, unit, part)
+#define	WDUNIT(dev)					dkunit(dev)
+#define	WDPART(dev)					dkpart(dev)
+#define	WDMINOR(unit, part)			dkminor(unit, part)
+#define	MAKEWDDEV(maj, unit, part)	dkmakedev(maj, unit, part)
 
-#define	WDLABELDEV(dev)	(MAKEWDDEV(major(dev), WDUNIT(dev), RAW_PART))
+#define	WDLABELDEV(dev)				(MAKEWDDEV(major(dev), WDUNIT(dev), RAW_PART))
 
 #define DEBUG_INTR   0x01
 #define DEBUG_XFERS  0x02
@@ -489,7 +490,7 @@ wddetach(struct device *self, int flags)
 	rnd_detach_source(&sc->rnd_source);
 #endif
 
-	lockmgr(&sc->sc_lock, LK_DRAIN, NULL);
+	lockmgr(&sc->sc_lock, LK_DRAIN, &sc->sc_lock.lk_lnterlock, LOCKHOLDER_PID(&sc->sc_lock.lk_lockholder));
 
 	return (0);
 }
@@ -690,7 +691,7 @@ __wdstart(struct wd_softc *wd, struct buf *bp)
 			return;
 		}
 
-		BUF_INIT(nbp);
+		BUFQ_INIT(nbp);
 		nbp->b_error = 0;
 		nbp->b_proc = bp->b_proc;
 		nbp->b_vp = NULLVP;
@@ -726,7 +727,7 @@ __wdstart(struct wd_softc *wd, struct buf *bp)
 		wd->sc_wdc_bio.flags = ATA_SINGLE;
 	else
 		wd->sc_wdc_bio.flags = 0;
-	if (wd->sc_flags & WDF_LBA48 &&
+	if ((wd->sc_flags & WDF_LBA48) &&
 	    (wd->sc_wdc_bio.blkno > LBA48_THRESHOLD ||
 	    (wd->sc_quirks & WD_QUIRK_FORCE_LBA48) != 0))
 		wd->sc_wdc_bio.flags |= ATA_LBA48;
@@ -1064,12 +1065,11 @@ wdgetdefaultlabel(struct wd_softc *wd, struct disklabel *lp)
 void
 wdgetdisklabel(struct wd_softc *wd)
 {
-	struct disklabel *lp = wd->sc_dk.dk_label;
+	struct disklabel *lp;
 	const char *errstring;
 
+	lp = wd->sc_dk.dk_label;
 	WDCDEBUG_PRINT(("wdgetdisklabel\n"), DEBUG_FUNCS);
-
-	memset(wd->sc_dk.dk_cpulabel, 0, sizeof(struct cpu_disklabel));
 
 	wdgetdefaultlabel(wd, lp);
 
@@ -1078,7 +1078,7 @@ wdgetdisklabel(struct wd_softc *wd)
 	if (wd->drvp->state > RESET)
 		wd->drvp->drive_flags |= DRIVE_RESET;
 	errstring = readdisklabel(MAKEWDDEV(0, wd->sc_dev.dv_unit, RAW_PART),
-	    wdstrategy, lp, wd->sc_dk.dk_cpulabel);
+	    wdstrategy, lp);
 	if (errstring) {
 		/*
 		 * This probably happened because the drive's default
@@ -1089,7 +1089,7 @@ wdgetdisklabel(struct wd_softc *wd)
 		if (wd->drvp->state > RESET)
 			wd->drvp->drive_flags |= DRIVE_RESET;
 		errstring = readdisklabel(MAKEWDDEV(0, wd->sc_dev.dv_unit,
-		    RAW_PART), wdstrategy, lp, wd->sc_dk.dk_cpulabel);
+		    RAW_PART), wdstrategy, lp);
 	}
 	if (errstring) {
 		printf("%s: %s\n", wd->sc_dev.dv_xname, errstring);
@@ -1273,9 +1273,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 			goto bad;
 		wd->sc_flags |= WDF_LABELLING;
 
-		error = setdisklabel(wd->sc_dk.dk_label,
-		    lp, /*wd->sc_dk.dk_openmask : */0,
-		    wd->sc_dk.dk_cpulabel);
+		error = setdisklabel(wd->sc_dk.dk_label, lp, /*wd->sc_dk.dk_openmask : */0);
 		if (error == 0) {
 			if (wd->drvp->state > RESET)
 				wd->drvp->drive_flags |= DRIVE_RESET;
@@ -1285,8 +1283,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 #endif
 			    )
 				error = writedisklabel(WDLABELDEV(dev),
-				    wdstrategy, wd->sc_dk.dk_label,
-				    wd->sc_dk.dk_cpulabel);
+				    wdstrategy, wd->sc_dk.dk_label);
 		}
 
 		wd->sc_flags &= ~WDF_LABELLING;
@@ -1513,7 +1510,7 @@ wddump(dev_t dev, daddr_t blkno, caddr_t va, size_t size)
 		wd->sc_bp = NULL;
 		wd->sc_wdc_bio.blkno = blkno;
 		wd->sc_wdc_bio.flags = ATA_POLL;
-		if (wd->sc_flags & WDF_LBA48 &&
+		if ((wd->sc_flags & WDF_LBA48) &&
 		    (blkno > LBA48_THRESHOLD ||
 	    	    (wd->sc_quirks & WD_QUIRK_FORCE_LBA48) != 0))
 			wd->sc_wdc_bio.flags |= ATA_LBA48;
@@ -1765,7 +1762,7 @@ wi_get(void)
 	int s;
 
 	wi = malloc(sizeof(struct wd_ioctl), M_TEMP, M_WAITOK|M_ZERO);
-	simple_lock_init(&wi->wi_bp.b_interlock);
+	simple_lock_init(&wi->wi_bp.b_lnterlock, "wd_buf_slock");
 	s = splbio();
 	LIST_INSERT_HEAD(&wi_head, wi, wi_list);
 	splx(s);
@@ -1798,7 +1795,7 @@ wi_find(struct buf *bp)
 	int s;
 
 	s = splbio();
-	for (wi = wi_head.lh_first; wi != 0; wi = wi->wi_list.le_next)
+	for (wi = LIST_FIRST(&wi_head); wi != 0; wi = LIST_NEXT(wi, wi_list))
 		if (bp == &wi->wi_bp)
 			break;
 	splx(s);

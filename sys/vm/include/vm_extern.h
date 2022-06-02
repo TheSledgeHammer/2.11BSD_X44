@@ -42,7 +42,7 @@ struct mount;
 struct vnode;
 
 #ifdef KGDB
-void		 	chgkprot (caddr_t, int, int);
+void		 	chgkprot(caddr_t, int, int);
 #endif
 
 #ifdef _KERNEL

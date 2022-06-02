@@ -290,16 +290,7 @@ _bus_dmamap_sync(t, map, op)
 	bus_dmamap_t map;
 	bus_dmasync_op_t op;
 {
-
 	/* Nothing to do here. */
-	/*
-	switch (ops) {
-	case BUS_DMASYNC_PREREAD:
-	case BUS_DMASYNC_POSTREAD:
-	case BUS_DMASYNC_PREWRITE:
-	case BUS_DMASYNC_POSTWRITE:
-	}
-	*/
 }
 
 /*

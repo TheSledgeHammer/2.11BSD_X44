@@ -41,7 +41,7 @@
 #include <sys/tree.h>
 
 #include <devel/vm/include/vm.h>
-#include <devel/vm_hat.h>
+#include <devel/vm/include/vm_hat.h>
 
 /* vm_extent */
 void	vm_exbootinit(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);

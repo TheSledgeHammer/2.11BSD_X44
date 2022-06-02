@@ -47,6 +47,7 @@
 #ifndef	_SYS_DISK_H_
 #define	_SYS_DISK_H_
 
+#include <sys/time.h>
 #include <sys/queue.h>
 #include <sys/device.h>
 #include <sys/disklabel.h>
@@ -90,29 +91,29 @@ struct disklabel;
 struct diskslices;
 
 struct disklist_head;
-TAILQ_HEAD(disklist_head, dkdevice);				/* the disklist is a TAILQ */
+TAILQ_HEAD(disklist_head, dkdevice);			/* the disklist is a TAILQ */
 struct dkdevice {
-	TAILQ_ENTRY(dkdevice)		dk_link;				/* link in global disklist */
-	struct	device 	 		dk_dev;					/* base device */
+	TAILQ_ENTRY(dkdevice)	dk_link;			/* link in global disklist */
+	struct	device 	 	dk_dev;					/* base device */
 	char				*dk_name;				/* disk name */
-	int				dk_bps;					/* xfer rate: bytes per second */
-	int				dk_bopenmask;			/* block devices open */
-	int				dk_copenmask;			/* character devices open */
-	int				dk_openmask;			/* composite (bopen|copen) */
-	int				dk_flags;				/* label state aka dk_state */
-	int				dk_blkshift;			/* shift to convert DEV_BSIZE to blks */
-	int				dk_byteshift;			/* shift to convert bytes to blks */
-	int				dk_busy;				/* busy counter */
+	int					dk_bps;					/* xfer rate: bytes per second */
+	int					dk_bopenmask;			/* block devices open */
+	int					dk_copenmask;			/* character devices open */
+	int					dk_openmask;			/* composite (bopen|copen) */
+	int					dk_flags;				/* label state aka dk_state */
+	int					dk_blkshift;			/* shift to convert DEV_BSIZE to blks */
+	int					dk_byteshift;			/* shift to convert bytes to blks */
+	int					dk_busy;				/* busy counter */
 	u_int64_t			dk_seek;				/* total independent seek operations */
 	u_int64_t			dk_bytes;				/* total bytes transfered */
-	struct timeval			dk_attachtime;			/* time disk was attached */
-	struct timeval			dk_timestamp;			/* timestamp of last unbusy */
-	struct timeval			dk_time;				/* total time spent busy */
-	struct dkdriver 		*dk_driver;				/* pointer to driver */
+	struct timeval		dk_attachtime;			/* time disk was attached */
+	struct timeval		dk_timestamp;			/* timestamp of last unbusy */
+	struct timeval		dk_time;				/* total time spent busy */
+	struct dkdriver 	*dk_driver;				/* pointer to driver */
 	daddr_t				dk_labelsector;			/* sector containing label */
-	struct disklabel 		*dk_label;				/* label */
-	struct diskslices		*dk_slices;				/* slices */
-	struct partition 		dk_parts[MAXPARTITIONS];/* in-kernel portion */
+	struct disklabel 	*dk_label;				/* label */
+	struct diskslices	*dk_slices;				/* slices */
+	struct partition 	dk_parts[MAXPARTITIONS];/* in-kernel portion */
 };
 
 struct dkdriver {
@@ -135,7 +136,7 @@ struct dkdriver {
 #define	DKF_WLABEL			0x0020				/* label area is being written */
 #define	DKF_SEEK			0x0040				/* drive is seeking */
 #define	DKF_SWAIT			0x0080				/* waiting for seek to complete */
-#define 	DKF_RLABEL  		0x0100				/* label being read */
+#define DKF_RLABEL  		0x0100				/* label being read */
 #define	DKF_OPEN			0x0200				/* label read, drive open */
 #define	DKF_OPENRAW			0x0400				/* open without label */
 
@@ -154,6 +155,24 @@ struct disksort_stats {
 };
 #endif
 
+/*
+ * Bad sector lists per fixed disk
+ */
+struct dkbadsectors {
+	SLIST_ENTRY(dkbadsectors)	dbs_next;
+	daddr_t			dbs_min;		/* min. sector number */
+	daddr_t			dbs_max;		/* max. sector number */
+	struct timeval	dbs_failedat;	/* first failure at */
+};
+
+struct dkbadsecinfo {
+	u_int32_t		dbsi_bufsize;	/* size of region pointed to */
+	u_int32_t		dbsi_skip;		/* how many to skip past */
+	u_int32_t		dbsi_copied;	/* how many got copied back */
+	u_int32_t		dbsi_left;		/* remaining to copy */
+	caddr_t			dbsi_buffer;	/* region to copy disk_badsectors to */
+};
+
 /* encoding of disk minor numbers, should be elsewhere... but better
  * here than in ufs_disksubr.c
  *
@@ -162,9 +181,10 @@ struct disksort_stats {
  *	 these bits.
 */
 
-#define dkunit(dev)			(minor(dev) >> 3)
-#define dkpart(dev)			(minor(dev) & 07)
-#define dkminor(unit, part)	(((unit) << 3) | (part))
+#define dkunit(dev)					(minor(dev) >> 3)
+#define dkpart(dev)					(minor(dev) & 07)
+#define dkminor(unit, part)			(((unit) << 3) | (part))
+#define dkmakedev(maj, unit, part) 	(makedev(maj, dkminor(unit, part)))
 
 #ifdef _KERNEL
 extern	int 		disk_count;			/* number of disks in global disklist */
@@ -179,6 +199,7 @@ void				disk_resetstat(struct dkdevice *);
 struct dkdevice 	*disk_find(char *);
 void				disksort(struct bufq_state *, struct buf *, int);
 void				diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
+int					bounds_check_with_mediasize(struct buf *, int, u_int64_t);
 
 struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);
 struct disklabel	*disk_label(struct dkdevice *, dev_t);
