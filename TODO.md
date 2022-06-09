@@ -47,7 +47,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## ddb:
-- fix: CTRL macro in ddb_input.c & ddb_output.c. Conflicts with CTRL macro in ttychars.h
 
 ## kern:
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
@@ -73,6 +72,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - com (Disabled): Has several compiler errors.
 - usb (Disabled): Has several compiler errors.
 
+- Improve directory structure
 - Essential Driver Support:
 	- Audio:
 		- Check that all audio devices available are also configured	
