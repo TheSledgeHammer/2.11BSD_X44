@@ -160,7 +160,7 @@ POPL(struct vm86frame *vmf)
 	return (x);
 }
 
-__inline void
+void
 set_vflags(p, flags)
 	struct proc *p;
 	int flags;
@@ -180,7 +180,7 @@ set_vflags(p, flags)
 	}
 }
 
-__inline int
+int
 get_vflags(p)
 	struct proc *p;
 {
