@@ -151,8 +151,8 @@ struct vm86_intcall_args {
 	struct 	vm86frame 	vmf;
 };
 
-__inline void set_vflags(struct proc *, int);
-__inline int get_vflags(struct proc *);
+void set_vflags(struct proc *, int);
+int get_vflags(struct proc *);
 
 #define	VM86_STACK_SPACE	16
 
