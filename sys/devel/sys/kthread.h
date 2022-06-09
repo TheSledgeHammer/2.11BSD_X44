@@ -110,7 +110,7 @@ struct kthread {
 	vm_offset_t			kt_kstack;				/* (a) Kernel VA of kstack. */
 	int					kt_kstack_pages; 		/* (a) Size of the kstack. */
 	vm_object_t			kt_kstack_obj;
-
+	//void				*kt_ctxlink;			/* uc_link {get,set}context */
     //struct sadata_vp 	*kt_savp; 				/* SA "virtual processor" */
 };
 #define	kt_session		kt_pgrp->pg_session

@@ -72,8 +72,8 @@ typedef struct __ucontext	ucontext_t;
 #ifdef _KERNEL
 struct proc;
 
-void	getucontext(struct proc *, ucontext_t *);
-int		setucontext(struct proc *, const ucontext_t *);
+void	proc_getucontext(struct proc *, ucontext_t *);
+int		proc_setucontext(struct proc *, const ucontext_t *);
 void	cpu_getmcontext(struct proc *, mcontext_t *, unsigned int *);
 int		cpu_setmcontext(struct proc *, const mcontext_t *, unsigned int);
 
