@@ -115,6 +115,10 @@ struct vm86context {
 	} pmap[VM86_PMAPSIZE];
 };
 
+#define SETFLAGS(targ, newm, newmask) (targ) = ((targ) & ~(newmask)) | ((newm) & (newmask))
+#define	VM86_REALFLAGS	(~PSL_USERSTATIC)
+#define	VM86_VIRTFLAGS	(PSL_USERSTATIC & ~(PSL_MBO | PSL_MBZ))
+
 #define VM_USERCHANGE   (PSL_USERCHANGE)
 #define VME_USERCHANGE  (VM_USERCHANGE | PSL_VIP | PSL_VIF)
 
@@ -146,6 +150,9 @@ struct vm86_intcall_args {
 	int					intnum;
 	struct 	vm86frame 	vmf;
 };
+
+__inline void set_vflags(struct proc *, int);
+__inline int get_vflags(struct proc *);
 
 #define	VM86_STACK_SPACE	16
 

@@ -229,7 +229,6 @@ process_read_regs(p, regs)
 {
 	struct trapframe *tf = process_frame(p);
 
-#ifdef VM86
 	if (tf->tf_eflags & PSL_VM) {
 		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
 
@@ -238,9 +237,7 @@ process_read_regs(p, regs)
 		regs->r_es = tf->tf_vm86_es;
 		regs->r_ds = tf->tf_vm86_ds;
 		regs->r_eflags = get_vflags(p);
-	} else
-#endif
-	{
+	} else	{
 		regs->r_gs = tf->tf_gs & 0xffff;
 		regs->r_fs = tf->tf_fs & 0xffff;
 		regs->r_es = tf->tf_es & 0xffff;
@@ -319,39 +316,37 @@ process_write_regs(p, regs)
 {
 	struct trapframe *tf = process_frame(p);
 
-#ifdef VM86
 	if (regs->r_eflags & PSL_VM) {
-		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
+		struct trapframe_vm86 *tf = (struct trapframe_vm86 *)tf;
 
 		tf->tf_vm86_gs = regs->r_gs;
 		tf->tf_vm86_fs = regs->r_fs;
 		tf->tf_vm86_es = regs->r_es;
 		tf->tf_vm86_ds = regs->r_ds;
 		set_vflags(p, regs->r_eflags);
+
 		/*
 		 * Make sure that attempts at system calls from vm86
 		 * mode die horribly.
 		 */
 		//p->p_md.md_syscall = syscall_vm86;
-	} else
-#endif
-	{
+	} else	{
 		/*
 		 * Check for security violations.
 		 */
-		if (((regs->r_eflags ^ tf->tf_eflags) & PSL_USERSTATIC) != 0 ||
-		    !USERMODE(regs->r_cs, regs->r_eflags))
+		if (((regs->r_eflags ^ tf->tf_eflags) & PSL_USERSTATIC) != 0
+				|| !USERMODE(regs->r_cs, regs->r_eflags))
 			return (EINVAL);
 
 		tf->tf_gs = regs->r_gs;
 		tf->tf_fs = regs->r_fs;
 		tf->tf_es = regs->r_es;
 		tf->tf_ds = regs->r_ds;
-#ifdef VM86
+
 		/* Restore normal syscall handler */
 		if (tf->tf_eflags & PSL_VM)
 			(*p->p_emul->e_syscall)(p);
-#endif
+
 		tf->tf_eflags = regs->r_eflags;
 	}
 	tf->tf_edi = regs->r_edi;

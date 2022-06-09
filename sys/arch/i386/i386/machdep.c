@@ -574,10 +574,12 @@ sigreturn(p, uap, retval)
 		if ((context.sc_eflags & PSL_VIP) && (context.sc_eflags & PSL_VIF))
 			trapsignal(p, SIGBUS, 0);
 		if (vm86->vm86_has_vme) {
-			context.sc_eflags = (tf->tf_eflags & ~VME_USERCHANGE) | (context.sc_eflags & VME_USERCHANGE) | PSL_VM;
+			context.sc_eflags = (tf->tf_eflags & ~VME_USERCHANGE)
+					| (context.sc_eflags & VME_USERCHANGE) | PSL_VM;
 		} else {
 			vm86->vm86_eflags = context.sc_eflags; /* save VIF, VIP */
-			context.sc_eflags = (tf->tf_eflags & ~VM_USERCHANGE) | (eflags & VM_USERCHANGE)	| PSL_VM;
+			context.sc_eflags = (tf->tf_eflags & ~VM_USERCHANGE)
+					| (eflags & VM_USERCHANGE) | PSL_VM;
 		}
 		tf->tf_vm86_gs = context.sc_gs;
 		tf->tf_vm86_fs = context.sc_fs;
@@ -1146,6 +1148,8 @@ need_resched(p)
 	}
 }
 
+/* vm86 error & unused */
+#ifdef notyet
 void
 cpu_getmcontext(p, mcp, flags)
 	struct proc *p;
@@ -1158,7 +1162,7 @@ cpu_getmcontext(p, mcp, flags)
 	tf = p->p_md.md_regs;
 	gr = mcp->mc_gregs;
 	/* Save register context. */
-	if (tf->tf_eflags & PSL_VM) {
+	if (tf->tf_eflags & PSL_VM) { /* incorrect, fix... */
 		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
 		struct vm86_kernel *vm86 =  &p->p_addr->u_pcb.pcb_vm86;
 
@@ -1230,7 +1234,7 @@ cpu_setmcontext(p, mcp, flags)
 	gr = mcp->mc_gregs;
 	/* Restore register context, if any. */
 	if ((flags & _UC_CPU) != 0) {
-		if (gr->mc_eflags & PSL_VM) {
+		if (gr->mc_eflags & PSL_VM) { /* incorrect, fix... */
 			struct trapframe_vm86 *tf = (struct trapframe_vm86*) tf;
 			struct vm86_kernel *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
@@ -1319,6 +1323,7 @@ cpu_setmcontext(p, mcp, flags)
 	}
 	return (0);
 }
+#endif
 
 /*
  * Add a mask to cpl, and return the old value of cpl.

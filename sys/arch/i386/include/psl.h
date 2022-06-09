@@ -70,7 +70,7 @@
  * but this is too much trouble since the reserved flags depend on the cpu
  * and setting them to their historical values works in practice.
  */
-#define	PSL_RESERVED_DEFAULT	0x00000002
+#define	PSL_RESERVED_DEFAULT 	PSL_MBO
 
 /*
  * Initial flags for kernel and user mode.  The kernel later inherits
@@ -80,5 +80,7 @@
 #define	PSL_USERCLR		(PSL_T | PSL_VM | PSL_AC | PSL_D)
 #define	PSL_USERSTATIC	(PSL_MBO | PSL_MBZ | PSL_I | PSL_IOPL | PSL_NT | PSL_VM | PSL_VIF | PSL_VIP)
 #define PSL_USER		(PSL_C | PSL_PF | PSL_AF | PSL_Z | PSL_N | PSL_T | PSL_V | PSL_D | PSL_AC)
+
+#define	PSL_USERCHANGE 	(PSL_C | PSL_PF | PSL_AF | PSL_Z | PSL_N | PSL_T | PSL_D | PSL_V | PSL_NT | PSL_RF | PSL_AC | PSL_ID)
 
 #endif /* !_I386_PSL_H_ */

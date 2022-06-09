@@ -160,6 +160,44 @@ POPL(struct vm86frame *vmf)
 	return (x);
 }
 
+__inline void
+set_vflags(p, flags)
+	struct proc *p;
+	int flags;
+{
+	struct trapframe_vm86 	*tf;
+	struct vm86_kernel 		*vm86;
+
+	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
+	vm86 = &p->p_addr->u_pcb.pcb_vm86;
+
+	SETFLAGS(vm86->vm86_eflags, flags, VM86_VIRTFLAGS);
+	SETFLAGS(tf->tf_eflags, flags, VM86_REALFLAGS);
+
+	if (vm86->vm86_has_vme == 0) {
+		flags = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP))
+				| (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+	}
+}
+
+__inline int
+get_vflags(p)
+	struct proc *p;
+{
+	struct trapframe_vm86 	*tf;
+	struct vm86_kernel 		*vm86;
+	int flags;
+
+	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
+	vm86 = &p->p_addr->u_pcb.pcb_vm86;
+	flags = PSL_MBO;
+
+	SETFLAGS(flags, vm86->vm86_eflags, VM86_VIRTFLAGS);
+	SETFLAGS(flags, tf->tf_eflags, VM86_REALFLAGS);
+
+	return (flags);
+}
+
 int
 vm86_emulate(struct vm86frame *vmf)
 {
