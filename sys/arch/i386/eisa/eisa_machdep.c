@@ -87,6 +87,13 @@
 #include <dev/core/isa/isavar.h>
 #include <dev/core/eisa/eisavar.h>
 
+#if NIOAPIC > 0
+#include <machine/apic/ioapicreg.h>
+#include <machine/apic/ioapicvar.h>
+#include <machine/mpconfig.h>
+#include <machine/pic.h>
+#endif
+
 /*
  * EISA doesn't have any special needs; just use the generic versions
  * of these funcions.
@@ -144,6 +151,18 @@ eisa_intr_map(ec, irq, ihp)
 		irq = 9;
 	}
 
+#if NIOAPIC > 0
+	if (mp_busses != NULL) {
+		if (intr_find_mpmapping(mp_eisa_bus, irq, ihp) == 0
+				|| intr_find_mpmapping(mp_isa_bus, irq, ihp) == 0) {
+			*ihp |= irq;
+			return 0;
+		} else
+			printf("eisa_intr_map: no MP mapping found\n");
+	}
+	printf("eisa_intr_map: no MP mapping found\n");
+#endif
+
 	*ihp = irq;
 	return 0;
 }
@@ -158,9 +177,12 @@ eisa_intr_string(ec, ih)
 	if (ih == 0 || ih >= ICU_LEN || ih == 2)
 		panic("eisa_intr_string: bogus handle 0x%x\n", ih);
 
+#if NIOAPIC > 0
+	apic_intr_string(&irqstr, ec, ih);
+#else
 	sprintf(irqstr, "irq %d", ih);
+#endif
 	return (irqstr);
-	
 }
 
 void *

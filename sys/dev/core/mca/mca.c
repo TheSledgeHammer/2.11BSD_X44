@@ -54,8 +54,8 @@ __KERNEL_RCSID(0, "$NetBSD: mca.c,v 1.13 2003/01/01 00:10:21 thorpej Exp $");
 #include <dev/core/mca/mcavar.h>
 #include <dev/core/mca/mcadevs.h>
 
-int		mca_match (struct device *, struct cfdata *, void *);
-void	mca_attach (struct device *, struct device *, void *);
+int		mca_match(struct device *, struct cfdata *, void *);
+void	mca_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(mca, mca_match, mca_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, mca, &mca_cops, DV_DULL, sizeof(struct device));

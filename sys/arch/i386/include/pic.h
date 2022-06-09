@@ -144,4 +144,5 @@ int	 			intr_find_mpmapping(int, int, int *);
 /* apic_machdep.c */
 void 			*apic_intr_establish(int, int, int, int (*)(void *), void *);
 void			apic_intr_disestablish(void *);
+void			apic_intr_string(char *, void *, int);
 #endif /* _I386_PIC_H_ */

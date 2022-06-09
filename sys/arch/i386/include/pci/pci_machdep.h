@@ -69,8 +69,8 @@ extern struct i386_bus_dma_tag pci_bus_dma_tag;
 /*
  * Types provided to machine-independent PCI code
  */
-typedef void 	*pci_chipset_tag_t;
 typedef union 	i386_pci_tag_u pcitag_t;
+typedef void 	*pci_chipset_tag_t;
 typedef int 	pci_intr_handle_t;
 typedef void 	(*func_t)(pci_chipset_tag_t, pcitag_t, void *);
 

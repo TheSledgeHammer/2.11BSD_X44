@@ -179,7 +179,6 @@ pci_pir_find_link_handler(struct PIR_entry *entry, struct PIR_intpin *intpin, vo
 static int
 pci_pir_valid_irq(struct pci_link *pci_link, int irq)
 {
-
 	if (!PCI_INTERRUPT_VALID(irq))
 		return (0);
 	return (pci_link->pl_irqmask & (1 << irq));
@@ -233,20 +232,18 @@ pci_pir_create_links(struct PIR_entry *entry, struct PIR_intpin *intpin, void *a
 	}
 }
 
-static pci_chipset_tag_t pci_pc;
 /*
  * Look to see if any of the functions on the PCI device at bus/device
  * have an interrupt routed to intpin 'pin' by the BIOS.
  */
 static uint8_t
-pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device/*, int pin*/)
+pci_pir_search_irq(int bus, int device, int pin)
 {
 	pcitag_t tag;
 	pcireg_t id, bhlcr, value;
 	int function, nfuncs;
 	int maxdevs;
 
-	pci_pc = pc;
 	maxdevs = pci_bus_maxdevs(pc, bus);
 	for(device = 0; device < maxdevs; device++) {
 		tag = pci_make_tag(pc, bus, device, 0);
@@ -291,6 +288,114 @@ pci_pir_search_irq(pci_chipset_tag_t pc, int bus, int device/*, int pin*/)
 	return (PCI_INVALID_IRQ);
 }
 
+void
+pci_pir_read(pc, tag)
+	pci_chipset_tag_t 	pc;
+	pcitag_t 			tag;
+{
+	int pin, irq, bus, device, function;
+	pcireg_t intr, id;
+
+	pci_decompose_tag(pc, tag, &bus, &device, &function);
+	id = pci_conf_read(pc, tag, PCI_ID_REG);
+
+	intr = pci_conf_read(pc, tag, PCI_INTERRUPT_REG);
+	pin = PCI_INTERRUPT_PIN(intr);
+	irq = PCI_INTERRUPT_LINE(intr);
+}
+
+void
+pci_pir_write(pc, tag, irq)
+	pci_chipset_tag_t 	pc;
+	pcitag_t 			tag;
+	int 				irq;
+{
+	pcireg_t intr;
+	intr &= ~(PCI_INTERRUPT_LINE_MASK << PCI_INTERRUPT_LINE_SHIFT);
+	intr |= (pci_link->pl_irq << PCI_INTERRUPT_LINE_SHIFT);
+	pci_conf_write(pc, tag, PCI_INTERRUPT_REG, intr);
+}
+
+void
+pci_pir_initial(pc, tag, entry, intpin, context)
+	pci_chipset_tag_t 	pc;
+	pcitag_t 			tag;
+	struct PIR_entry 	*entry;
+	struct PIR_intpin 	*intpin;
+	void 				*context;
+{
+	struct pci_link *pci_link;
+	int pin, irq, link;
+	int bus, device, function;
+	pcireg_t intr, id;
+
+	pci_decompose_tag(pc, tag, &bus, &device, &function);
+	id = pci_conf_read(pc, tag, PCI_ID_REG);
+
+	intr = pci_conf_read(pc, tag, PCI_INTERRUPT_REG);
+	pin = PCI_INTERRUPT_PIN(intr);
+	irq = PCI_INTERRUPT_LINE(intr);
+
+	pci_link = pci_pir_find_link(intpin->link);
+
+	if (irq == PCI_INVALID_IRQ || irq == pci_link->pl_irq) {
+		return;
+	}
+	if (irq >= NUM_ISA_INTERRUPTS) {
+		printf(
+				"$PIR: Ignoring invalid BIOS IRQ %d from %d.%d.INT%c for link %#x\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A',
+				pci_link->pl_id);
+		return;
+	}
+
+	/*
+	 * If we don't have an IRQ for this link yet, then we trust the
+	 * BIOS, even if it seems invalid from the $PIR entries.
+	 */
+	if (pci_link->pl_irq == PCI_INVALID_IRQ) {
+		if (!pci_pir_valid_irq(pci_link, irq)) {
+			printf(
+					"$PIR: Using invalid BIOS IRQ %d from %d.%d.INT%c for link %#x\n",
+					irq, entry->pe_bus, entry->pe_device, pin + 'A',
+					pci_link->pl_id);
+			pci_link->pl_irq = irq;
+			pci_link->pl_routed = 1;
+			return;
+		}
+	}
+
+	/*
+	 * We have an IRQ and it doesn't match the current IRQ for this
+	 * link.  If the new IRQ is invalid, then warn about it and ignore
+	 * it.  If the old IRQ is invalid and the new IRQ is valid, then
+	 * prefer the new IRQ instead.  If both IRQs are valid, then just
+	 * use the first one.  Note that if we ever get into this situation
+	 * we are having to guess which setting the BIOS actually routed.
+	 * Perhaps we should just give up instead.
+	 */
+	if (!pci_pir_valid_irq(pci_link, irq)) {
+		printf("$PIR: BIOS IRQ %d for %d.%d.INT%c is not valid for link %#x\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A',
+				pci_link->pl_id);
+	} else if (!pci_pir_valid_irq(pci_link, pci_link->pl_irq)) {
+		printf(
+				"$PIR: Preferring valid BIOS IRQ %d from %d.%d.INT%c for link %#x to IRQ %d\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A', pci_link->pl_id, pci_link->pl_irq);
+		pci_link->pl_irq = irq;
+		pci_link->pl_routed = 1;
+	}  else {
+		printf(
+				"$PIR: BIOS IRQ %d for %d.%d.INT%c does not match link %#x irq %d\n",
+				irq, entry->pe_bus, entry->pe_device, pin + 'A',
+				pci_link->pl_id, pci_link->pl_irq);
+	}
+
+	intr &= ~(PCI_INTERRUPT_LINE_MASK << PCI_INTERRUPT_LINE_SHIFT);
+	intr |= (pci_link->pl_irq << PCI_INTERRUPT_LINE_SHIFT);
+	pci_conf_write(pc, tag, PCI_INTERRUPT_REG, intr);
+}
+
 /*
  * Try to initialize IRQ based on this device's IRQ.
  */
@@ -298,11 +403,13 @@ static void
 pci_pir_initial_irqs(struct PIR_entry *entry, struct PIR_intpin *intpin, void *arg)
 {
 	struct pci_link *pci_link;
-	uint8_t irq, pin;
+	int pin, irq, link;
+	int bus, device, function;
+	pcireg_t intr, id;
 
 	pin = intpin - entry->pe_intpin;
 	pci_link = pci_pir_find_link(intpin->link);
-	irq = pci_pir_search_irq(&pci_pc, entry->pe_bus, entry->pe_device);
+	irq = pci_pir_search_irq(entry->pe_bus, entry->pe_device, pin);
 
 	if (irq == PCI_INVALID_IRQ || irq == pci_link->pl_irq) {
 		return;
@@ -421,8 +528,7 @@ pci_pir_parse(void)
 	 * Build initial interrupt weights as well as bitmap of "known-good"
 	 * IRQs that the BIOS has already used for PCI link devices.
 	 */
-	TAILQ_FOREACH(pci_link, &pci_links, pl_links)
-	{
+	TAILQ_FOREACH(pci_link, &pci_links, pl_links) {
 		if (!PCI_INTERRUPT_VALID(pci_link->pl_irq))
 			continue;
 		pir_bios_irqs |= 1 << pci_link->pl_irq;

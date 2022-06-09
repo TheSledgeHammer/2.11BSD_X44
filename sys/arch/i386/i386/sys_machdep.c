@@ -476,11 +476,9 @@ sysarch()
 	case I386_SET_IOPERM:
 		error = i386_set_ioperm(p, SCARG(uap, parms), u.u_r.r_val1);
 		break;
-#ifdef VM86
 	case I386_VM86:
 		error = vm86_sysarch(p, SCARG(uap, parms), u.u_r.r_val1);
 		break;
-#endif
 	case I386_GET_GSBASE:
 		error = i386_get_sdbase(p, SCARG(uap, parms), 'g');
 		break;

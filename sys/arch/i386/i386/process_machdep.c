@@ -94,7 +94,6 @@
 #include <machine/reg.h>
 #include <machine/segments.h>
 
-
 static inline struct trapframe *
 process_frame(p)
 	struct proc *p;
@@ -232,6 +231,8 @@ process_read_regs(p, regs)
 
 #ifdef VM86
 	if (tf->tf_eflags & PSL_VM) {
+		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
+
 		regs->r_gs = tf->tf_vm86_gs;
 		regs->r_fs = tf->tf_vm86_fs;
 		regs->r_es = tf->tf_vm86_es;
@@ -320,7 +321,7 @@ process_write_regs(p, regs)
 
 #ifdef VM86
 	if (regs->r_eflags & PSL_VM) {
-		void syscall_vm86(struct trapframe *);
+		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
 
 		tf->tf_vm86_gs = regs->r_gs;
 		tf->tf_vm86_fs = regs->r_fs;
@@ -331,7 +332,7 @@ process_write_regs(p, regs)
 		 * Make sure that attempts at system calls from vm86
 		 * mode die horribly.
 		 */
-		p->p_md.md_syscall = syscall_vm86;
+		//p->p_md.md_syscall = syscall_vm86;
 	} else
 #endif
 	{

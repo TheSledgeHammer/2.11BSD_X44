@@ -99,11 +99,10 @@
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcidevs.h>
 
-
 #if NIOAPIC > 0
 #include <machine/apic/ioapicreg.h>
 #include <machine/apic/ioapicvar.h>
-#include <machine/mpbiosvar.h>
+#include <machine/mpconfig.h>
 #include <machine/pic.h>
 #endif
 
@@ -143,8 +142,8 @@ struct {
 #undef _qe
 
 struct pci_bridge_hook_arg {
-	void (*func)(pci_chipset_tag_t, pcitag_t, void *);
-	void *arg;
+	func_t	func;
+	void 	*arg;
 };
 
 /*
@@ -174,7 +173,6 @@ pci_attach_hook(parent, self, pba)
 	struct device *parent, *self;
 	struct pcibus_attach_args *pba;
 {
-
 	if (pba->pba_bus == 0)
 		printf(": configuration mode %d", pci_mode);
 
@@ -414,8 +412,7 @@ pci_mode_detect()
 		idreg = pci_conf_read(0, t, PCI_ID_REG); /* needs "pci_mode" */
 		if (idreg == pcim1_quirk_tbl[i].id) {
 #ifdef DEBUG
-			printf("known mode 1 PCI chipset (%08x)\n",
-			       idreg);
+			printf("known mode 1 PCI chipset (%08x)\n", idreg);
 #endif
 			return (pci_mode);
 		}
@@ -564,16 +561,33 @@ pci_intr_map(pc, intrtag, pin, line, ihp)
 	int pin, line;
 	pci_intr_handle_t *ihp;
 {
+#if NIOAPIC > 0
+	int bus, dev, func;
+#endif
 
 	if (pin == 0) {
 		/* No IRQ used. */
 		goto bad;
 	}
 
-	if (pin > 4) {
+	if (pin > PCI_INTERRUPT_PIN_MAX) {
 		printf("pci_intr_map: bad interrupt pin %d\n", pin);
 		goto bad;
 	}
+
+#if NIOAPIC > 0
+	pci_decompose_tag(pc, intrtag, &bus, &dev, &func);
+	if (mp_busses != NULL) {
+		if (intr_find_mpmapping(bus, (dev<<2)|(pin-1), ihp) == 0) {
+			*ihp |= line;
+			return 0;
+		}
+		/*
+		 * No explicit PCI mapping found. This is not fatal,
+		 * we'll try the ISA (or possibly EISA) mappings next.
+		 */
+	}
+#endif
 
 	/*
 	 * Section 6.2.4, `Miscellaneous Functions', says that 255 means
@@ -603,6 +617,24 @@ pci_intr_map(pc, intrtag, pin, line, ihp)
 		}
 	}
 
+#if NIOAPIC > 0
+	if (mp_busses != NULL) {
+		if (intr_find_mpmapping(mp_isa_bus, line, ihp) == 0) {
+			*ihp |= line;
+			return 0;
+		}
+#if NEISA > 0
+		if (intr_find_mpmapping(mp_eisa_bus, line, ihp) == 0) {
+			*ihp |= line;
+			return 0;
+		}
+#endif
+		printf("pci_intr_map: bus %d dev %d func %d pin %d; line %d\n", bus,
+				dev, func, pin, line);
+		printf("pci_intr_map: no MP mapping found\n");
+	}
+#endif
+
 	*ihp = line;
 	return 0;
 
@@ -621,16 +653,19 @@ pci_intr_string(pc, ih)
 	if (ih == 0 || ih >= ICU_LEN || ih == 2)
 		panic("pci_intr_string: bogus handle 0x%x\n", ih);
 
+#if NIOAPIC > 0
+	apic_intr_string(&irqstr, ec, ih);
+#else
 	sprintf(irqstr, "irq %d", ih);
+#endif
 	return (irqstr);
-	
 }
 
 void *
 pci_intr_establish(pc, ih, level, func, arg)
 	pci_chipset_tag_t pc;
 	pci_intr_handle_t ih;
-	int level, (*func) (void *);
+	int level, (*func)(void *);
 	void *arg;
 {
 	if (ih == 0 || ih >= ICU_LEN || ih == 2) {

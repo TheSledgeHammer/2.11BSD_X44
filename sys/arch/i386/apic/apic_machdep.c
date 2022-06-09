@@ -121,3 +121,16 @@ apic_intr_disestablish(void *arg)
 
 	intr_disestablish(ih);
 }
+
+void
+apic_intr_string(irqstr, ch, ih)
+	char 	*irqstr;
+	void 	*ch;
+	int	 	ih;
+{
+	if (ih & APIC_INT_VIA_APIC){
+		sprintf(irqstr, "apic %d int %d (irq %d)", APIC_IRQ_APIC(ih), APIC_IRQ_PIN(ih), ih & 0xff);
+	} else {
+		sprintf(irqstr, "irq %d", ih&0xff);
+	}
+}

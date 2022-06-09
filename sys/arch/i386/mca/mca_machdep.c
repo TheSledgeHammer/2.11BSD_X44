@@ -226,7 +226,7 @@ void *
 mca_intr_establish(mc, ih, level, func, arg)
 	mca_chipset_tag_t mc;
 	mca_intr_handle_t ih;
-	int level, (*func) __P((void *));
+	int level, (*func)(void *);
 	void *arg;
 {
 	if (ih == 0 || ih >= NUM_LEGACY_IRQS || ih == 2)
@@ -301,6 +301,7 @@ mca_nmi()
  * (1 byte) and up to 5 feature bytes. We only care about
  * first feature byte.
  */
+#ifdef UNUSED
 void
 mca_busprobe()
 {
@@ -350,9 +351,10 @@ mca_busprobe()
 
 	MCA_system = (scp->feature1 & FEATURE_MCABUS) ? 1 : 0;
 }
+#endif
 
 #define PORT_DISKLED	0x92
-#define DISKLED_ON	0x40
+#define DISKLED_ON		0x40
 
 /*
  * Light disk busy LED on IBM PS/2.
@@ -510,7 +512,7 @@ mca_dmamap_create(t, size, flags, dmamp, dmach)
 		/*
 		 * Allocate our cookie if not yet done.
 		 */
-		cookie = malloc(sizeof(struct x86_bus_dma_cookie), M_DEVBUF,
+		cookie = malloc(sizeof(struct i386_bus_dma_cookie), M_DEVBUF,
 		    ((flags & BUS_DMA_NOWAIT) ? M_NOWAIT : M_WAITOK) | M_ZERO);
 		if (cookie == NULL) {
 			

@@ -41,10 +41,20 @@
 #include <dev/core/isa/isavar.h>
 #include <dev/core/pci/pcivar.h>
 
+#if NMCA > 0
+#include <dev/core/mca/mcavar.h>
+#endif
+
 #include <machine/bus.h>
+
+#include <machine/apic/apic.h>
+#include <machine/apic/ioapicvar.h>
+#include <machine/cpuvar.h>
+#include <machine/mpbiosvar.h>
 
 #include <machine/eisa/eisa_machdep.h>
 #include <machine/isa/isa_machdep.h>
+#include <machine/mca/mca_machdep.h>
 
 int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
@@ -59,6 +69,11 @@ union mainbus_attach_args {
 	struct pcibus_attach_args 	mba_pba;
 	struct eisabus_attach_args 	mba_eba;
 	struct isabus_attach_args 	mba_iba;
+#if NMCA > 0
+	struct mcabus_attach_args	mba_mba;
+#endif
+	struct cpu_attach_args 		mba_caa;
+	struct apic_attach_args 	aaa_caa;
 };
 
 /*
@@ -70,6 +85,23 @@ int	isa_has_been_seen;
  * Same as above, but for EISA.
  */
 int eisa_has_been_seen;
+
+#if defined(MPBIOS) || defined(MPACPI)
+struct mp_bus *mp_busses;
+int mp_nbus;
+struct mp_intr_map *mp_intrs;
+int mp_nintr;
+
+int mp_isa_bus = -1;            /* XXX */
+int mp_eisa_bus = -1;           /* XXX */
+
+#ifdef MPVERBOSE
+int mp_verbose = 1;
+#else
+int mp_verbose = 0;
+#endif
+#endif
+
 
 /*
  * Probe for the mainbus; always succeeds.
@@ -92,7 +124,29 @@ mainbus_attach(parent, self, aux)
 {
 	union mainbus_attach_args mba;
 
+#ifdef MPBIOS
+	int mpbios_present = 0;
+#endif
+
 	printf("\n");
+
+#ifdef MPBIOS
+	mpbios_present = mpbios_probe(self);
+	if (mpbios_present) {
+		mpbios_scan(self);
+	} else
+#endif
+	{
+		struct cpu_attach_args caa;
+
+		bzero(&caa, sizeof(caa));
+		caa.caa_name = "cpu";
+		caa.cpu_number = 0;
+		caa.cpu_role = CPU_ROLE_SP;
+		caa.cpu_ops = 0;
+
+		config_found(self, &caa, mainbus_print);
+	}
 
 	/*
 	 * XXX Note also that the presence of a PCI bus should
@@ -101,19 +155,43 @@ mainbus_attach(parent, self, aux)
 	 * XXX that's not currently possible.
 	 */
 #if NPCI > 0
-	if (pci_mode_detect() != 0) {
+	pci_mode = pci_mode_detect();
+	if (pci_mode != 0) {
 		mba.mba_pba.pba_busname = "pci";
 		mba.mba_pba.pba_iot = I386_BUS_SPACE_IO;
 		mba.mba_pba.pba_memt = I386_BUS_SPACE_MEM;
 		mba.mba_pba.pba_dmat = &pci_bus_dma_tag;
+		mba.mba_pba.pba_dmat64 = NULL;
+		mba.mba_pba.pba_pc = NULL;
 		mba.mba_pba.pba_flags =
 		    PCI_FLAGS_IO_ENABLED | PCI_FLAGS_MEM_ENABLED;
 		mba.mba_pba.pba_bus = 0;
-		config_found(self, &mba.mba_pba, mainbus_print);
+		mba.mba_pba.pba_bridgetag = NULL;
+
+#if defined(MPBIOS) && defined(MPBIOS_SCANPCI)
+		if (mpbios_scanned != 0) {
+			mpbios_scan_pci(self, &mba.mba_pba, mainbus_print);
+		} else {
+#endif
+			config_found(self, &mba.mba_pba, mainbus_print);
 	}
 #endif
 
-	if (!bcmp(ISA_HOLE_VADDR(EISA_ID_PADDR), EISA_ID, EISA_ID_LEN)) {
+#if NMCA > 0
+	/* Note: MCA bus probe is done in i386/machdep.c */
+	if (MCA_system) {
+		mba.mba_mba.mba_busname = "mca";
+		mba.mba_mba.mba_iot = X86_BUS_SPACE_IO;
+		mba.mba_mba.mba_memt = X86_BUS_SPACE_MEM;
+		mba.mba_mba.mba_dmat = &mca_bus_dma_tag;
+		mba.mba_mba.mba_mc = NULL;
+		mba.mba_mba.mba_bus = 0;
+		config_found(self, &mba.mba_mba, mainbus_print);
+	}
+#endif
+
+	if (bcmp(ISA_HOLE_VADDR(EISA_ID_PADDR), EISA_ID, EISA_ID_LEN) == 0
+			&& eisa_has_been_seen == 0) {
 		mba.mba_eba.eba_busname = "eisa";
 		mba.mba_eba.eba_iot = I386_BUS_SPACE_IO;
 		mba.mba_eba.eba_memt = I386_BUS_SPACE_MEM;

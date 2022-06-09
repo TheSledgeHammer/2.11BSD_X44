@@ -70,6 +70,7 @@ extern struct cpu_info 		*cpu_info;			/* static allocation of cpu_info */
 
 struct cpu_attach_args {
 	const char 				*caa_name;
+	int 					cpu_number;
 	u_int 					cpu_apic_id;
 	u_int					cpu_acpi_id;
 	int 					cpu_role;

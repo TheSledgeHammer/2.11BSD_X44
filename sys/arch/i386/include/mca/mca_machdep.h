@@ -35,7 +35,6 @@
 /*
  * i386-specific definitions for MCA autoconfiguration.
  */
-
 extern struct i386_bus_dma_tag mca_bus_dma_tag;
 
 /* set to 1 if MCA bus is detected */
@@ -46,11 +45,7 @@ int	mca_nmi(void);
 /*
  * Types provided to machine-independent MCA code.
  */
-struct i386_mca_chipset {
-        void * /*struct mca_dma_state*/ ic_dmastate;
-};
-
-typedef struct i386_mca_chipset *mca_chipset_tag_t;
+typedef void *mca_chipset_tag_t;
 typedef int mca_intr_handle_t;
 
 /*

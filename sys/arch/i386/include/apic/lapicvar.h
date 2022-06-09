@@ -37,7 +37,7 @@
 
 #ifdef _KERNEL
 extern volatile u_int32_t  	local_apic_va;
-extern bool_t 			x2apic_mode;
+extern bool_t 				x2apic_mode;
 #endif
 
 /*

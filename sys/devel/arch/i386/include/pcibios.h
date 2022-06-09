@@ -38,9 +38,33 @@
 #define	PCIE_REGMAX				4095	/* highest supported config register addr. */
 
 #define	PCI_INVALID_IRQ			255
-#define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ)
+#define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ /*|| I386_PCI_INTERRUPT_LINE_NO_CONNECTION*/)
 
 #define	PCIR_INTLINE			0x3c
 #define	PCIR_INTPIN				0x3d
+
+#define	PCI_IRQ_TABLE_START		0xf0000
+#define	PCI_IRQ_TABLE_END		0xfffff
+
+#define	PIR_DEVFUNC_DEVICE(devfunc)		(((devfunc) >> 3) & 0x1f)
+#define	PIR_DEVFUNC_FUNCTION(devfunc)	((devfunc) & 7)
+
+#ifdef PCIBIOSVERBOSE
+extern int pcibiosverbose;
+
+#define	PCIBIOS_PRINTV(arg) 		\
+	do { 							\
+		if (pcibiosverbose) 		\
+			printf arg; 			\
+	} while (0)
+#define	PCIBIOS_PRINTVN(n, arg) 	\
+	do { 							\
+		 if (pcibiosverbose > (n)) 	\
+			printf arg; 			\
+	} while (0)
+#else
+#define	PCIBIOS_PRINTV(arg)
+#define	PCIBIOS_PRINTVN(n, arg)
+#endif
 
 #endif /* !_I386_PCIBIOS_H_ */
