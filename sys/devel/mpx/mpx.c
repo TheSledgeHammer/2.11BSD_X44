@@ -464,18 +464,26 @@ mpx_split_channels(cp, idx)
     return (other);
 }
 
-/* TODO: allow multiple elements to be specified in "elems" */
-mpx_disconnect(cp, idx)
+/*
+ * Similar to mpx_split_channels but takes multiple elements to form a new channel
+ * with those elements
+ */
+struct mpx_channel *
+mpx_disconnect(cp, nchans)
 	struct mpx_channel *cp;
-	int idx;
+	int nchans;
 {
 	struct mpx_channel *cp1;
 	int i;
 
-	KASSERT(cp != NULL);
-
-	cp1 = mpx_split_channels(cp, idx);
-
+	KASSERT(nchans >= 1);
+	for (i = 0; i < nchans; i++) {
+		LIST_FOREACH(cp, &mpx_channels[i], mpc_node) {
+			cp1 = mpx_split_channels(cp, i);
+		}
+		break;
+	}
+	return (cp1);
 }
 
 mpx_join()
@@ -487,11 +495,6 @@ mpx_leave()
 {
 
 }
-
-/*
- * Other Routines to consider:
- * mpx_attach, mpx_detach
- */
 
 int
 mpx_rw(fp, uio, cred)

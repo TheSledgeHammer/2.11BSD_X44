@@ -785,7 +785,7 @@ wddone(void *v)
 			goto noerror;
 		errmsg = "error";
 		do_perror = 1;
-		if (wd->sc_wdc_bio.r_error & WDCE_IDNF &&
+		if ((wd->sc_wdc_bio.r_error & WDCE_IDNF) &&
 		    (wd->sc_quirks & WD_QUIRK_FORCE_LBA48) == 0) {
 			nblks = wd->sc_wdc_bio.bcount /
 			    wd->sc_dk.dk_label->d_secsize;
@@ -1078,7 +1078,7 @@ wdgetdisklabel(struct wd_softc *wd)
 	if (wd->drvp->state > RESET)
 		wd->drvp->drive_flags |= DRIVE_RESET;
 	errstring = readdisklabel(MAKEWDDEV(0, wd->sc_dev.dv_unit, RAW_PART),
-	    wdstrategy, lp);
+			wdstrategy, lp);
 	if (errstring) {
 		/*
 		 * This probably happened because the drive's default
@@ -1088,8 +1088,8 @@ wdgetdisklabel(struct wd_softc *wd)
 		 */
 		if (wd->drvp->state > RESET)
 			wd->drvp->drive_flags |= DRIVE_RESET;
-		errstring = readdisklabel(MAKEWDDEV(0, wd->sc_dev.dv_unit,
-		    RAW_PART), wdstrategy, lp);
+		errstring = readdisklabel(MAKEWDDEV(0, wd->sc_dev.dv_unit, RAW_PART),
+				wdstrategy, lp);
 	}
 	if (errstring) {
 		printf("%s: %s\n", wd->sc_dev.dv_xname, errstring);

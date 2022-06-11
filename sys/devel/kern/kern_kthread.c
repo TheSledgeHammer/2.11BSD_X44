@@ -55,7 +55,8 @@ kthread_init(p, kt)
 	int 		error;
 
 	/* initialize current kthread & proc overseer from kthread0 */
-	kt = &proc0->p_kthreado = &kthread0;
+	p->p_kthreado = &kthread0;
+	kt = p->p_kthreado;
     curkthread = kt;
 
 	/* Initialize kthread and kthread group structures. */

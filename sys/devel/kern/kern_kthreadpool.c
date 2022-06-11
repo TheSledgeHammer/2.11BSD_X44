@@ -60,7 +60,8 @@ static LIST_HEAD(, kthreadpool_unbound) unbound_kthreadpools;
 
 struct kthreadpool_percpu {
 	struct percpu						*ktpp_percpu;
-	u_char								ktpp_pri;
+	pid_t								ktpp_pri;
+
 	/* protected by threadpools_lock */
 	LIST_ENTRY(kthreadpool_percpu)		ktpp_link;
 	uint64_t							ktpp_refcnt;
@@ -68,7 +69,8 @@ struct kthreadpool_percpu {
 static LIST_HEAD(, kthreadpool_percpu) 	percpu_kthreadpools;
 
 static struct kthreadpool_unbound *
-kthreadpool_lookup_unbound(pid_t pri)
+kthreadpool_lookup_unbound(pri)
+	pid_t pri;
 {
 	struct kthreadpool_unbound *ktpu;
 	LIST_FOREACH(ktpu, &unbound_kthreadpools, ktpu_link) {
@@ -79,21 +81,24 @@ kthreadpool_lookup_unbound(pid_t pri)
 }
 
 static void
-kthreadpool_insert_unbound(struct kthreadpool_unbound *ktpu)
+kthreadpool_insert_unbound(ktpu)
+	struct kthreadpool_unbound *ktpu;
 {
 	KASSERT(kthreadpool_lookup_unbound(ktpu->ktpu_pool.ktp_pri) == NULL);
 	LIST_INSERT_HEAD(&unbound_kthreadpools, ktpu, ktpu_link);
 }
 
 static void
-kthreadpool_remove_unbound(struct kthreadpool_unbound *ktpu)
+kthreadpool_remove_unbound(ktpu)
+	struct kthreadpool_unbound *ktpu;
 {
 	KASSERT(kthreadpool_lookup_unbound(ktpu->ktpu_pool.ktp_pri) == ktpu);
 	LIST_REMOVE(ktpu, ktpu_link);
 }
 
 static struct kthreadpool_percpu *
-kthreadpool_lookup_percpu(pid_t pri)
+kthreadpool_lookup_percpu(pri)
+	pid_t pri;
 {
 	struct kthreadpool_percpu *ktpp;
 
@@ -105,14 +110,16 @@ kthreadpool_lookup_percpu(pid_t pri)
 }
 
 static void
-kthreadpool_insert_percpu(struct kthreadpool_percpu *ktpp)
+kthreadpool_insert_percpu(ktpp)
+	struct kthreadpool_percpu *ktpp;
 {
 	KASSERT(kthreadpool_lookup_percpu(ktpp->ktpp_pri) == NULL);
 	LIST_INSERT_HEAD(&percpu_kthreadpools, ktpp, ktpp_link);
 }
 
 static void
-kthreadpool_remove_percpu(struct kthreadpool_percpu *ktpp)
+kthreadpool_remove_percpu(ktpp)
+	struct kthreadpool_percpu *ktpp;
 {
 	KASSERT(kthreadpool_lookup_percpu(ktpp->ktpp_pri) == ktpp);
 	LIST_REMOVE(ktpp, ktpp_link);
@@ -129,7 +136,9 @@ kthreadpool_init(void)
 
 /* KThread pool creation */
 static int
-kthreadpool_create(struct kthreadpool *ktpool, pid_t pri)
+kthreadpool_create(ktpool, pri)
+	struct kthreadpool *ktpool;
+	pid_t pri;
 {
 	struct proc *p;
 	int ktflags;
@@ -173,7 +182,8 @@ fail:
 
 /* Thread pool destruction */
 static void
-kthreadpool_destroy(struct kthreadpool *ktpool)
+kthreadpool_destroy(ktpool)
+	struct kthreadpool *ktpool;
 {
 	struct kthreadpool_thread *kthread;
 
@@ -207,9 +217,10 @@ kthreadpool_rele(ktpool)
 }
 
 /* Unbound thread pools */
-
 int
-kthreadpool_get(struct kthreadpool **ktpoolp, pid_t pri)
+kthreadpool_get(ktpoolp, pri)
+	struct kthreadpool **ktpoolp;
+	pid_t pri;
 {
 	struct kthreadpool_unbound *ktpu, *tmp = NULL;
 	int error;
@@ -246,7 +257,9 @@ kthreadpool_get(struct kthreadpool **ktpoolp, pid_t pri)
 }
 
 void
-kthreadpool_put(struct kthreadpool *ktpool, pid_t pri)
+kthreadpool_put(ktpool, pri)
+	struct kthreadpool *ktpool;
+	pid_t pri;
 {
 	struct kthreadpool_unbound *ktpu;
 
@@ -267,7 +280,8 @@ kthreadpool_put(struct kthreadpool *ktpool, pid_t pri)
 }
 
 static void
-kthreadpool_overseer_thread(void *arg)
+kthreadpool_overseer_thread(arg)
+	void *arg;
 {
 	struct kthreadpool_thread *const overseer = arg;
 	struct kthreadpool *const ktpool = overseer->ktpt_pool;
@@ -368,10 +382,14 @@ kthreadpool_overseer_thread(void *arg)
 }
 
 static void
-kthreadpool_thread(void *arg)
+kthreadpool_thread(arg)
+	void *arg;
 {
-	struct kthreadpool_thread *const kthread = arg;
-	struct kthreadpool *const ktpool = kthread->ktpt_pool;
+	struct kthreadpool_thread *const kthread;
+	struct kthreadpool *const ktpool;
+
+	kthread = arg;
+	ktpool = kthread->ktpt_pool;
 
 	/* Wait until we're initialized and on the queue.  */
 	simple_lock(&ktpool->ktp_lock);
@@ -420,11 +438,154 @@ kthreadpool_thread(void *arg)
 
 	kthread_exit(0);
 }
+/*
+static bool_t
+threadpool_pri_is_valid(pri_t pri)
+{
+	return (pri == PRI_NONE || (pri >= PRI_USER && pri < PRI_COUNT));
+}
+*/
+/* Percpu threadpools */
+int
+kthreadpool_percpu_get(ktpool_percpup, pri)
+	struct kthreadpool_percpu **ktpool_percpup;
+	pid_t pri;
+{
+	struct kthreadpool_percpu *ktpool_percpu, *tmp = NULL;
+	int error;
+	ktpool_percpu = kthreadpool_lookup_percpu(pri);
+	simple_lock(&kthreadpools_lock);
+	if(ktpool_percpu == NULL) {
+		simple_unlock(&kthreadpools_lock);
+		error = kthreadpool_percpu_create(&tmp, pri);
+		if (error) {
+			return (error);
+		}
+		KASSERT(tmp != NULL);
+		simple_lock(&kthreadpools_lock);
+		ktpool_percpu = kthreadpool_lookup_percpu(pri);
+		if (ktpool_percpu == NULL) {
+			ktpool_percpu = tmp;
+			tmp = NULL;
+			kthreadpool_insert_percpu(ktpool_percpu);
+		}
+	}
+	KASSERT(ktpool_percpu != NULL);
+	ktpool_percpu->ktpp_refcnt++;
+	KASSERT(ktpool_percpu->ktpp_refcnt != 0);
+	simple_unlock(&kthreadpools_lock);
 
-/* Threadpool Jobs */
+	if (tmp != NULL) {
+		kthreadpool_percpu_destroy(tmp);
+	}
+	KASSERT(ktpool_percpu != NULL);
+	*ktpool_percpup = ktpool_percpu;
+	return (0);
+}
 
 void
-threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t lock, char *name, const char *fmt, ...)
+kthreadpool_percpu_put(ktpool_percpu, pri)
+	struct kthreadpool_percpu *ktpool_percpu;
+	pid_t pri;
+{
+	//KASSERT(kthreadpool_pri_is_valid(pri));
+
+	simple_lock(&kthreadpools_lock);
+	KASSERT(ktpool_percpu == kthreadpool_lookup_percpu(pri));
+	KASSERT(0 < ktpool_percpu->ktpp_refcnt);
+	if (--ktpool_percpu->ktpp_refcnt == 0) {
+		kthreadpool_remove_percpu(ktpool_percpu);
+	} else {
+		ktpool_percpu = NULL;
+	}
+	simple_unlock(&kthreadpools_lock);
+
+	if (ktpool_percpu) {
+		kthreadpool_percpu_destroy(ktpool_percpu);
+	}
+}
+
+static int
+kthreadpool_percpu_create(ktpool_percpup, pri)
+	struct kthreadpool_percpu **ktpool_percpup;
+	pid_t pri;
+{
+	struct kthreadpool_percpu *ktpool_percpu;
+	int error, cpu;
+
+	for (cpu = 0; cpu < cpu_number(); cpu++) {
+		error = kthreadpool_percpu_start(ktpool_percpu, pri, cpu);
+	}
+
+	*ktpool_percpup = (struct kthreadpool_percpu *)ktpool_percpu;
+	return (error);
+}
+
+int
+kthreadpool_percpu_start(ktpool_percpu, pri, ncpus)
+	struct kthreadpool_percpu *ktpool_percpu;
+	pid_t pri;
+	int ncpus;
+{
+	ktpool_percpu = (struct kthreadpool_percpu *) malloc(
+			sizeof(struct kthreadpool_percpu *), M_KTPOOLTHREAD, M_WAITOK);
+	ktpool_percpu->ktpp_pri = pri;
+	ktpool_percpu->ktpp_percpu = percpu_create(&cpu_info, sizeof(struct kthreadpool*), 1, ncpus);
+
+	if (ktpool_percpu->ktpp_percpu != NULL) {
+		/* Success!  */
+		kthreadpool_percpu_init(pri);
+		return (0);
+	}
+
+	kthreadpool_percpu_fini();
+	percpu_extent_free(ktpool_percpu->ktpp_percpu,
+			ktpool_percpu->ktpp_percpu->pc_start,
+			ktpool_percpu->ktpp_percpu->pc_end);
+	free(ktpool_percpu, M_KTPOOLTHREAD);
+	return (ENOMEM);
+}
+
+static void
+kthreadpool_percpu_destroy(ktpool_percpu)
+	struct kthreadpool_percpu *ktpool_percpu;
+{
+	percpu_free(ktpool_percpu->ktpp_percpu, sizeof(struct kthreadpool *));
+	free(ktpool_percpu, M_KTPOOLTHREAD);
+}
+
+static void
+kthreadpool_percpu_init(pri)
+	u_char pri;
+{
+	struct kthreadpool **const ktpoolp;
+	int error;
+
+	*ktpoolp = (struct kthreadpool *) malloc(sizeof(struct kthreadpool *), M_KTPOOLTHREAD, M_WAITOK);
+	error = kthreadpool_create(*ktpoolp, pri);
+	if (error) {
+		KASSERT(error == ENOMEM);
+		free(*ktpoolp, M_KTPOOLTHREAD);
+		*ktpoolp = NULL;
+	}
+}
+
+static void
+kthreadpool_percpu_fini(void)
+{
+	struct kthreadpool **const ktpoolp;
+
+	if (*ktpoolp == NULL) {	/* initialization failed */
+		return;
+	}
+	kthreadpool_destroy(*ktpoolp);
+	free(*ktpoolp, M_KTPOOLTHREAD);
+}
+
+
+/* Threadpool Jobs */
+void
+threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, struct lock *lock, char *name, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -439,13 +600,15 @@ threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t
 }
 
 void
-threadpool_job_dead(struct threadpool_job *job)
+threadpool_job_dead(job)
+	struct threadpool_job *job;
 {
 	panic("threadpool job %p ran after destruction", job);
 }
 
 void
-threadpool_job_destroy(struct threadpool_job *job)
+threadpool_job_destroy(job)
+	struct threadpool_job *job;
 {
 	KASSERTMSG((job->job_kthread == NULL), "job %p still running", job);
 	job->job_lock = NULL;
@@ -456,7 +619,8 @@ threadpool_job_destroy(struct threadpool_job *job)
 }
 
 void
-threadpool_job_hold(struct threadpool_job *job)
+threadpool_job_hold(job)
+	struct threadpool_job *job;
 {
 	unsigned int refcnt;
 
@@ -467,7 +631,8 @@ threadpool_job_hold(struct threadpool_job *job)
 }
 
 void
-threadpool_job_rele(struct threadpool_job *job)
+threadpool_job_rele(job)
+	struct threadpool_job *job;
 {
 	unsigned int refcnt;
 
@@ -483,7 +648,8 @@ threadpool_job_rele(struct threadpool_job *job)
 }
 
 void
-kthreadpool_job_done(struct threadpool_job *job)
+kthreadpool_job_done(job)
+	struct threadpool_job *job;
 {
 	KASSERT(job->job_kthread != NULL);
 	KASSERT(job->job_kthread->ktpt_proc == curproc);
@@ -511,7 +677,9 @@ kthreadpool_job_done(struct threadpool_job *job)
 }
 
 void
-kthreadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
+kthreadpool_schedule_job(ktpool, job)
+	struct kthreadpool *ktpool;
+	struct threadpool_job *job;
 {
 	if (__predict_true(job->job_kthread != NULL)) {
 		return;
@@ -535,7 +703,9 @@ kthreadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 }
 
 bool
-kthreadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *job)
+kthreadpool_cancel_job_async(ktpool, job)
+	struct kthreadpool *ktpool;
+	struct threadpool_job *job;
 {
 	/*
 	 * XXXJRT This fails (albeit safely) when all of the following
@@ -577,7 +747,9 @@ kthreadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *
 }
 
 void
-kthreadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
+kthreadpool_cancel_job(ktpool, job)
+	struct kthreadpool *ktpool;
+	struct threadpool_job *job;
 {
 	/*
 	 * We may sleep here, but we can't ASSERT_SLEEPABLE() because
@@ -588,135 +760,4 @@ kthreadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 
 	if (threadpool_cancel_job_async(ktpool, job))
 		return;
-}
-
-/* Per-CPU thread pools */
-int
-kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, pid_t pri)
-{
-	struct kthreadpool_percpu *ktpool_percpu, *tmp = NULL;
-	int error;
-	ktpool_percpu = kthreadpool_lookup_percpu(pri);
-	simple_lock(&kthreadpools_lock);
-	if(ktpool_percpu == NULL) {
-		simple_unlock(&kthreadpools_lock);
-		error = kthreadpool_percpu_create(&tmp, pri);
-		if (error) {
-			return (error);
-		}
-		KASSERT(tmp != NULL);
-		simple_lock(&kthreadpools_lock);
-		ktpool_percpu = kthreadpool_lookup_percpu(pri);
-		if (ktpool_percpu == NULL) {
-			ktpool_percpu = tmp;
-			tmp = NULL;
-			kthreadpool_insert_percpu(ktpool_percpu);
-		}
-	}
-	KASSERT(ktpool_percpu != NULL);
-	ktpool_percpu->ktpp_refcnt++;
-	KASSERT(ktpool_percpu->ktpp_refcnt != 0);
-	simple_unlock(&kthreadpools_lock);
-
-	if (tmp != NULL) {
-		kthreadpool_percpu_destroy(tmp);
-	}
-	KASSERT(ktpool_percpu != NULL);
-	*ktpool_percpup = ktpool_percpu;
-	return (0);
-}
-
-void
-kthreadpool_percpu_put(struct kthreadpool_percpu *ktpool_percpu, pid_t pri)
-{
-	//KASSERT(kthreadpool_pri_is_valid(pri));
-
-	simple_lock(&kthreadpools_lock);
-	KASSERT(ktpool_percpu == kthreadpool_lookup_percpu(pri));
-	KASSERT(0 < ktpool_percpu->ktpp_refcnt);
-	if (--ktpool_percpu->ktpp_refcnt == 0) {
-		kthreadpool_remove_percpu(ktpool_percpu);
-	} else {
-		ktpool_percpu = NULL;
-	}
-	simple_unlock(&kthreadpools_lock);
-
-	if (ktpool_percpu) {
-		kthreadpool_percpu_destroy(ktpool_percpu);
-	}
-}
-
-static int
-kthreadpool_percpu_create(struct kthreadpool_percpu **ktpool_percpup, pid_t pri)
-{
-	struct kthreadpool_percpu *ktpool_percpu;
-	int error, cpu;
-
-	for (cpu = 0; cpu < cpu_number(); cpu++) {
-		error = kthreadpool_percpu_start(ktpool_percpu, pri, cpu);
-	}
-
-	*ktpool_percpup = (struct kthreadpool_percpu *)ktpool_percpu;
-	return (error);
-}
-
-int
-kthreadpool_percpu_start(struct kthreadpool_percpu *ktpool_percpu, pid_t pri, int ncpus)
-{
-	if (count <= 0) {
-		return (EINVAL);
-	}
-
-	ktpool_percpu = (struct kthreadpool_percpu *) malloc(
-			sizeof(struct kthreadpool_percpu *), M_KTPOOLTHREAD, M_WAITOK);
-	ktpool_percpu->ktpp_pri = pri;
-	ktpool_percpu->ktpp_percpu = percpu_create(&cpu_info, sizeof(struct kthreadpool*), 1, ncpus);
-
-	if (ktpool_percpu->ktpp_percpu) {
-		/* Success!  */
-		kthreadpool_percpu_init(pri);
-		return (0);
-	}
-
-	kthreadpool_percpu_fini();
-	percpu_extent_free(ktpool_percpu->ktpp_percpu,
-			ktpool_percpu->ktpp_percpu->pc_start,
-			ktpool_percpu->ktpp_percpu->pc_end);
-	free(ktpool_percpu, M_KTPOOLTHREAD);
-	return (ENOMEM);
-}
-
-static void
-kthreadpool_percpu_destroy(struct kthreadpool_percpu *ktpool_percpu)
-{
-	percpu_free(ktpool_percpu->ktpp_percpu, sizeof(struct kthreadpool *));
-	free(ktpool_percpu, M_KTPOOLTHREAD);
-}
-
-static void
-kthreadpool_percpu_init(pri)
-	u_char pri;
-{
-	struct kthreadpool **const ktpoolp;
-	int error;
-
-	*ktpoolp = (struct kthreadpool *) malloc(sizeof(struct kthreadpool *), M_KTPOOLTHREAD, M_WAITOK);
-	error = kthreadpool_create(*ktpoolp, pri);
-	if (error) {
-		KASSERT(error == ENOMEM);
-		free(*ktpoolp, M_KTPOOLTHREAD);
-		*ktpoolp = NULL;
-	}
-}
-
-static void
-kthreadpool_percpu_fini()
-{
-	struct kthreadpool **const ktpoolp;
-
-	if (*ktpoolp == NULL) {	/* initialization failed */
-		return;
-	}
-	kthreadpool_destroy(*ktpoolp);
-	free(*ktpoolp, M_KTPOOLTHREAD);
 }
