@@ -45,7 +45,8 @@ struct workqueue_queue {
 	struct lock_object 		*q_lock;
 	int 					q_savedipl;
 	struct workqhead 		q_queue;
-	struct proc 			*q_worker;
+	//struct proc 			*q_worker;
+	void					*q_worker;
 };
 
 struct workqueue {
@@ -66,7 +67,9 @@ struct workqueue_exitargs {
 #define	POISON				0xaabbccdd
 
 static void
-workqueue_lock(struct workqueue *wq, struct workqueue_queue *q)
+workqueue_lock(wq, q)
+	struct workqueue *wq;
+	struct workqueue_queue *q;
 {
 	int s;
 
@@ -80,7 +83,9 @@ workqueue_lock(struct workqueue *wq, struct workqueue_queue *q)
 }
 
 static void
-workqueue_unlock(struct workqueue *wq, struct workqueue_queue *q)
+workqueue_unlock(wq, q)
+	struct workqueue *wq;
+	struct workqueue_queue *q;
 {
 	int s = q->q_savedipl;
 
@@ -89,7 +94,9 @@ workqueue_unlock(struct workqueue *wq, struct workqueue_queue *q)
 }
 
 static void
-workqueue_runlist(struct workqueue *wq, struct workqhead *list)
+workqueue_runlist(wq, list)
+	struct workqueue *wq;
+	struct workqhead *list;
 {
 	struct work *wk;
 	struct work *next;
@@ -105,9 +112,12 @@ workqueue_runlist(struct workqueue *wq, struct workqhead *list)
 }
 
 static void
-workqueue_run(struct workqueue *wq)
+workqueue_run(wq)
+	struct workqueue *wq;
 {
-	struct workqueue_queue *q = &wq->wq_queue;
+	struct workqueue_queue *q;
+
+	q = &wq->wq_queue;
 
 	for (;;) {
 		struct workqhead tmp;
@@ -127,7 +137,7 @@ workqueue_run(struct workqueue *wq)
 				panic("%s: %s error=%d", __func__, wq->wq_name, error);
 			}
 		}
-		tmp.sqh_first = SIMPLEQ_FIRST(q->q_queue); /* XXX */
+		SIMPLEQ_FIRST(tmp) = SIMPLEQ_FIRST(q->q_queue); /* XXX */
 		SIMPLEQ_INIT(&q->q_queue);
 		workqueue_unlock(wq, q);
 
@@ -136,7 +146,8 @@ workqueue_run(struct workqueue *wq)
 }
 
 static void
-workqueue_worker(void *arg)
+workqueue_worker(arg)
+	void *arg;
 {
 	struct workqueue *wq = arg;
 
@@ -144,9 +155,13 @@ workqueue_worker(void *arg)
 }
 
 static void
-workqueue_init(struct workqueue *wq, const char *name, void (*callback_func)(struct work *, void *), void *callback_arg, int prio, int ipl)
+workqueue_init(wq, name, callback_func, callback_arg, prio, ipl)
+	struct workqueue *wq;
+	const char *name;
+	void (*callback_func)(struct work *, void *);
+	void *callback_arg;
+	int prio, ipl;
 {
-
 	wq->wq_ipl = ipl;
 	wq->wq_prio = prio;
 	wq->wq_name = name;
@@ -155,11 +170,13 @@ workqueue_init(struct workqueue *wq, const char *name, void (*callback_func)(str
 }
 
 static int
-workqueue_initqueue(struct workqueue *wq)
+workqueue_initqueue(wq)
+	struct workqueue *wq;
 {
-	struct workqueue_queue *q = &wq->wq_queue;
+	struct workqueue_queue *q;
 	int error;
 
+	q = &wq->wq_queue;
 	simple_lock_init(&q->q_lock);
 	SIMPLEQ_INIT(&q->q_queue);
 	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name);
@@ -168,7 +185,9 @@ workqueue_initqueue(struct workqueue *wq)
 }
 
 static void
-workqueue_exit(struct work *wk, void *arg)
+workqueue_exit(wk, arg)
+	struct work *wk;
+	void *arg;
 {
 	struct workqueue_exitargs *wqe = (void *)wk;
 	struct workqueue_queue *q = wqe->wqe_q;
@@ -187,11 +206,13 @@ workqueue_exit(struct work *wk, void *arg)
 }
 
 static void
-workqueue_finiqueue(struct workqueue *wq)
+workqueue_finiqueue(wq)
+	struct workqueue *wq;
 {
-	struct workqueue_queue *q = &wq->wq_queue;
+	struct workqueue_queue *q;
 	struct workqueue_exitargs wqe;
 
+	q = &wq->wq_queue;
 	wq->wq_func = workqueue_exit;
 
 	wqe.wqe_q = q;
@@ -212,9 +233,13 @@ workqueue_finiqueue(struct workqueue *wq)
 }
 
 /* --- */
-
 int
-workqueue_create(struct workqueue **wqp, const char *name,  void (*callback_func)(struct work *, void *), void *callback_arg, int prio, int ipl, int flags)
+workqueue_create(wqp, name, callback_func, callback_arg, prio, ipl, flags)
+	struct workqueue **wqp;
+	const char *name;
+	void (*callback_func)(struct work *, void *);
+	void *callback_arg;
+	int prio, ipl, flags;
 {
 	struct workqueue *wq;
 	int error;
@@ -237,14 +262,17 @@ workqueue_create(struct workqueue **wqp, const char *name,  void (*callback_func
 }
 
 void
-workqueue_destroy(struct workqueue *wq)
+workqueue_destroy(wq)
+	struct workqueue *wq;
 {
 	workqueue_finiqueue(wq);
 	free(wq, M_WORKQUEUE);
 }
 
 void
-workqueue_enqueue(struct workqueue *wq, struct work *wk)
+workqueue_enqueue(wq, wk)
+	struct workqueue *wq;
+	struct work *wk;
 {
 	struct workqueue_queue *q = &wq->wq_queue;
 	bool_t wasempty;
