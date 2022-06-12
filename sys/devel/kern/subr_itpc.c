@@ -173,13 +173,13 @@ itpc_uthreadpool(itpc, utpool)
 
 /* Threadpool Jobs */
 void
-threadpool_job_init(void *thread, struct threadpool_job *job, threadpool_job_fn_t func, struct lock *lock, char *name, const char *fmt, ...)
+job_init(thread, job, func, lock, name)
+	void 					*thread;
+	struct threadpool_job 	*job;
+	threadpool_job_fn_t 	func;
+	struct lock				*lock;
+	char 					*name;
 {
-	va_list ap;
-	va_start(ap, fmt);
-	(void) snprintf(job->job_name, sizeof(job->job_name), fmt, ap);
-	va_end(ap);
-
 	job->job_lock = lock;
 	job->job_name = name;
 	job->job_refcnt = 0;
@@ -188,24 +188,73 @@ threadpool_job_init(void *thread, struct threadpool_job *job, threadpool_job_fn_
 }
 
 void
-threadpool_job_dead(struct threadpool_job *job)
+job_enqueue(jobpool, job, lock)
+	struct job_head 		*jobpool;
+	struct threadpool_job 	*job;
+	struct lock				*lock;
+{
+	simple_lock(lock);
+	if (TAILQ_EMPTY(jobpool)) {
+		TAILQ_INSERT_HEAD(jobpool, job, job_entry);
+	} else {
+        TAILQ_INSERT_TAIL(jobpool, job, job_entry);
+     }
+     simple_unlock(lock);
+}
+
+void
+job_dequeue(jobpool, job, lock)
+    struct job_head         *jobpool;
+    struct threadpool_job   *job;
+    struct lock			 	*lock;
+{
+    simple_lock(lock);
+    TAILQ_REMOVE(jobpool, job, job_entry);
+    simple_unlock(lock);
+}
+
+struct threadpool_job *
+job_search(jobpool, thread, lock)
+	struct job_head  *jobpool;
+	void 			 *thread;
+	struct lock		 *lock;
+{
+	struct threadpool_job   *job;
+
+	KASSERT(thread != NULL);
+	simple_lock(lock);
+	TAILQ_FOREACH(job, jobpool, job_entry) {
+		if(job->job_thread == thread) {
+			simple_unlock(lock);
+			return (job);
+		}
+	}
+	simple_unlock(lock);
+	return (NULL);
+}
+
+void
+job_dead(job)
+	struct threadpool_job *job;
 {
 	panic("threadpool job %p ran after destruction", job);
 }
 
 void
-threadpool_job_destroy(struct threadpool_job *job)
+job_destroy(job)
+	struct threadpool_job *job;
 {
 	KASSERTMSG((job->job_thread == NULL), "job %p still running", job);
 	job->job_lock = NULL;
 	KASSERT(job->job_thread == NULL);
 	KASSERT(job->job_refcnt == 0);
-	job->job_func = threadpool_job_dead;
+	job->job_func = job_dead;
 	(void) strlcpy(job->job_name, "deadjob", sizeof(job->job_name));
 }
 
 void
-threadpool_job_hold(struct threadpool_job *job)
+job_hold(job)
+	struct threadpool_job *job;
 {
 	unsigned int refcnt;
 
@@ -216,7 +265,8 @@ threadpool_job_hold(struct threadpool_job *job)
 }
 
 void
-threadpool_job_rele(struct threadpool_job *job)
+job_rele(job)
+	struct threadpool_job *job;
 {
 	unsigned int refcnt;
 
@@ -232,12 +282,33 @@ threadpool_job_rele(struct threadpool_job *job)
 }
 
 void
-threadpool_job_done(struct threadpool_job *job)
+job_done(job)
+	struct threadpool_job *job;
 {
 	KASSERT(0 < job->job_refcnt);
 	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
 	job->job_thread = NULL;
+}
+
+void
+job_schedule(jobpool, job, lock)
+	struct job_head      	 *jobpool;
+	struct threadpool_job *job;
+	struct lock			  *lock;
+{
+	job_hold(job);
+	job_enqueue(jobpool, job, lock);
+}
+
+void
+job_cancel(jobpool, job, lock)
+ 	struct job_head       *jobpool;
+	struct threadpool_job *job;
+	struct lock			  *lock;
+{
+	job_dequeue(jobpool, job, lock);
+	job_rele(job);
 }
 
 /* kthread */

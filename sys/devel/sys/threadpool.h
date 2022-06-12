@@ -50,6 +50,7 @@ struct threadpool_job  {
 	const char							*job_name;
 	struct lock							*job_lock;
 	volatile unsigned int				job_refcnt;
+	void								*job_thread;
 	struct kthreadpool_thread			*job_kthread;
 	struct uthreadpool_thread			*job_uthread;
 };
