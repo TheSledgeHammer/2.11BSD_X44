@@ -50,22 +50,26 @@ struct threadpool_job  {
 	const char							*job_name;
 	struct lock							*job_lock;
 	volatile unsigned int				job_refcnt;
-	void								*job_thread;
 	struct kthreadpool_thread			*job_kthread;
 	struct uthreadpool_thread			*job_uthread;
 };
 
-/* kthreadpools */
-void	kthreadpool_init(void);
-int		kthreadpool_get(struct kthreadpool **, pid_t);
-void	kthreadpool_put(struct kthreadpool *, pid_t);
-void	threadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, struct lock *, const char *, ...);
-void	threadpool_job_destroy(struct threadpool_job *);
-void	kthreadpool_job_done(struct threadpool_job *);
-void	kthreadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
-void	kthreadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
-bool_t	kthreadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
+/* threadpool job queue flags */
+#define TPJ_HEAD 0	/* add to head of job queue */
+#define TPJ_TAIL 1	/* add to tail of job queue */
 
-int		kthreadpool_percpu_get(struct kthreadpool_percpu **, pid_t);
-void	kthreadpool_percpu_put(struct kthreadpool_percpu *, pid_t);
+#define threadpool_lock(lock) 	(simple_lock(lock->lk_lnterlock))
+#define threadpool_unlock(lock) (simple_unlock(lock->lk_lnterlock))
+
+void	threadpool_job_init(void *, struct threadpool_job *, threadpool_job_fn_t, struct lock *, const char *);
+void	threadpool_job_enqueue(struct job_head *, struct threadpool_job *, struct lock *, int);
+void	threadpool_job_dequeue(struct job_head *, struct threadpool_job *, struct lock *);
+struct threadpool_job *threadpool_job_search(struct job_head *, void *, void *, struct lock *);
+void	threadpool_job_dead(struct threadpool_job *);
+void	threadpool_job_destroy(void *, struct threadpool_job *);
+void	threadpool_job_hold(struct threadpool_job *);
+void	threadpool_job_rele(struct threadpool_job *);
+void	threadpool_job_done(void *, struct proc *, struct threadpool_job *, char *);
+void	threadpool_job_schedule(struct job_head *, struct threadpool_job *, struct lock *, int);
+void	threadpool_job_cancel(struct job_head *, struct threadpool_job *, struct lock *);
 #endif /* SYS_THREADPOOL_H_ */

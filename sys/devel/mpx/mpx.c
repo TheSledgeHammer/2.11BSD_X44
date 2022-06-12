@@ -513,10 +513,14 @@ mpx_read(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
-    struct mpx 	*mpx;
+    struct mpx 		*rmpx;
+    struct mpxbuf 	*bp;
     int error;
-    mpx = (struct mpx *)fp->f_mpx;
-    mpx->mpx_file = fp;
+
+    rmpx = fp->f_mpx;
+    bp = &rmpx->mpx_buffer;
+    rmpx->mpx_file = fp;
+
 
     error = mpxread(mpx, state);
     return (0);
@@ -528,11 +532,14 @@ mpx_write(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
-	struct mpx 	*mpx;
+	struct mpx 		*wmpx;
+	struct mpxbuf 	*bp;
 	int error;
 
-	mpx = (struct mpx *)fp->f_mpx;
-	mpx->mpx_file = fp;
+	wmpx = fp->f_mpx;
+	bp = &wmpx->mpx_buffer;
+	wmpx->mpx_file = fp;
+
 
 	error = mpxwrite(mpx, state);
 	return (0);

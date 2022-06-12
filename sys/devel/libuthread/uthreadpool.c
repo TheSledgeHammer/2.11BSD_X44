@@ -80,15 +80,6 @@ struct uthreadpool_unbound {
 };
 static LIST_HEAD(, uthreadpool_unbound) unbound_uthreadpools;
 
-struct uthreadpool_percpu {
-	struct percpu						*utpp_percpu;
-	u_char								utpp_pri;
-	/* protected by threadpools_lock */
-	LIST_ENTRY(uthreadpool_percpu)		utpp_link;
-	uint64_t							utpp_refcnt;
-};
-static LIST_HEAD(, uthreadpool_percpu) 	percpu_uthreadpools;
-
 static struct uthreadpool_unbound *
 uthreadpool_lookup_unbound(u_char pri)
 {
@@ -114,38 +105,12 @@ uthreadpool_remove_unbound(struct uthreadpool_unbound *utpu)
 	LIST_REMOVE(utpu, utpu_link);
 }
 
-static struct uthreadpool_percpu *
-uthreadpool_lookup_percpu(u_char pri)
-{
-	struct uthreadpool_percpu *utpp;
-
-	LIST_FOREACH(utpp, &percpu_uthreadpools, utpp_link) {
-		if (utpp->utpp_pri == pri)
-			return (utpp);
-	}
-	return (NULL);
-}
-
-static void
-uthreadpool_insert_percpu(struct uthreadpool_percpu *utpp)
-{
-	KASSERT(uthreadpool_lookup_percpu(utpp->utpp_pri) == NULL);
-	LIST_INSERT_HEAD(&percpu_uthreadpools, utpp, utpp_link);
-}
-
-static void
-uthreadpool_remove_percpu(struct uthreadpool_percpu *utpp)
-{
-	KASSERT(uthreadpool_lookup_percpu(utpp->utpp_pri) == utpp);
-	LIST_REMOVE(utpp, utpp_link);
-}
-
 void
 uthreadpool_init(void)
 {
 	MALLOC(&utpool_thread, struct uthreadpool_thread *, sizeof(struct uthreadpool_thread *), M_UTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_uthreadpools);
-	LIST_INIT(&percpu_uthreadpools);
+	//LIST_INIT(&percpu_uthreadpools);
 	simple_lock_init(&uthreadpools_lock, "uthreadpools_lock");
 }
 
@@ -445,7 +410,7 @@ uthreadpool_thread(void *arg)
 	uthread_exit(0);
 }
 
-/* Threadpool Jobs */
+/* UThreadpool Jobs */
 void
 uthreadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t lock, char *name, const char *fmt, ...)
 {
@@ -454,153 +419,64 @@ uthreadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_
 	(void) snprintf(job->job_name, sizeof(job->job_name), fmt, ap);
 	va_end(ap);
 
-	job->job_lock = lock;
-	job->job_name = name;
-	job->job_refcnt = 0;
-	job->job_uthread = NULL;
-	job->job_func = func;
+	threadpool_job_init(job, func, lock, name);
 }
 
 void
-uthreadpool_job_dead(struct threadpool_job *job)
+uthreadpool_job_destroy(job)
+	struct threadpool_job *job;
 {
-	panic("threadpool job %p ran after destruction", job);
+	threadpool_job_destroy(job->job_uthread, job);
 }
 
 void
-uthreadpool_job_destroy(struct threadpool_job *job)
+uthreadpool_job_done(job)
+	struct threadpool_job *job;
 {
-	KASSERTMSG((job->job_uthread == NULL), "job %p still running", job);
-	job->job_lock = NULL;
-	KASSERT(job->job_uthread == NULL);
-	KASSERT(job->job_refcnt == 0);
-	job->job_func = uthreadpool_job_dead;
-	(void) strlcpy(job->job_name, "deadjob", sizeof(job->job_name));
+	threadpool_job_done(job->job_uthread, job->job_kthread->ktpt_proc, job, job->job_uthread->utpt_uthread_savedname);
 }
 
 void
-uthreadpool_job_hold(struct threadpool_job *job)
-{
-	unsigned int refcnt;
-
-	do {
-		refcnt = job->job_refcnt;
-		KASSERT(refcnt != UINT_MAX);
-	} while (atomic_cas_uint(&job->job_refcnt, refcnt, (refcnt + 1)) != refcnt);
-}
-
-void
-uthreadpool_job_rele(struct threadpool_job *job)
-{
-	unsigned int refcnt;
-
-	do {
-		refcnt = job->job_refcnt;
-		KASSERT(0 < refcnt);
-		if (refcnt == 1) {
-			refcnt = atomic_dec_int_nv(&job->job_refcnt);
-			KASSERT(refcnt != UINT_MAX);
-			return;
-		}
-	} while (atomic_cas_uint(&job->job_refcnt, refcnt, (refcnt - 1)) != refcnt);
-}
-
-void
-uthreadpool_job_done(struct threadpool_job *job)
-{
-	KASSERT(job->job_uthread != NULL);
-	KASSERT(job->job_uthread->utpt_kthread == curkthread);
-
-	/*
-	 * We can safely read this field; it's only modified right before
-	 * we call the job work function, and we are only preserving it
-	 * to use here; no one cares if it contains junk afterward.
-	 */
-	KTHREAD_LOCK(curkthread);
-	curkthread->kt_name = job->job_uthread->utpt_uthread_savedname;
-	KTHREAD_UNLOCK(curkthread);
-
-	/*
-	 * Inline the work of threadpool_job_rele(); the job is already
-	 * locked, the most likely scenario (XXXJRT only scenario?) is
-	 * that we're dropping the last reference (the one taken in
-	 * threadpool_schedule_job()), and we always do the cv_broadcast()
-	 * anyway.
-	 */
-	KASSERT(0 < job->job_refcnt);
-	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
-	KASSERT(refcnt != UINT_MAX);
-	job->job_uthread = NULL;
-}
-
-void
-uthreadpool_schedule_job(struct uthreadpool *utpool, struct threadpool_job *job)
+uthreadpool_schedule_job(utpool, job)
+	struct uthreadpool *utpool;
+	struct threadpool_job *job;
 {
 	if (__predict_true(job->job_uthread != NULL)) {
 		return;
 	}
 
-	threadpool_job_hold(job);
-
-	simple_lock(&utpool->utp_lock);
 	if (__predict_false(TAILQ_EMPTY(&utpool->utp_idle_threads))) {
 		job->job_uthread = &utpool->utp_overseer;
-		TAILQ_INSERT_TAIL(&utpool->utp_jobs, job, job_entry);
+		threadpool_job_schedule(&utpool->utp_jobs, job, &utpool->utp_lock, TPJ_TAIL);
 	} else {
 		/* Assign it to the first idle thread.  */
 		job->job_uthread = TAILQ_FIRST(&utpool->utp_idle_threads);
 		job->job_uthread->utpt_job = job;
 	}
-
-	/* Notify whomever we gave it to, overseer or idle thread.  */
-	KASSERT(job->job_uthread != NULL);
-	simple_unlock(&utpool->utp_lock);
 }
 
-bool
-uthreadpool_cancel_job_async(struct uthreadpool *utpool, struct threadpool_job *job)
+bool_t
+uthreadpool_cancel_job_async(utpool, job)
+	struct uthreadpool *utpool;
+	struct threadpool_job *job;
 {
-	/*
-	 * XXXJRT This fails (albeit safely) when all of the following
-	 * are true:
-	 *
-	 *	=> "pool" is something other than what the job was
-	 *	   scheduled on.  This can legitimately occur if,
-	 *	   for example, a job is percpu-scheduled on CPU0
-	 *	   and then CPU1 attempts to cancel it without taking
-	 *	   a remote pool reference.  (this might happen by
-	 *	   "luck of the draw").
-	 *
-	 *	=> "job" is not yet running, but is assigned to the
-	 *	   overseer.
-	 *
-	 * When this happens, this code makes the determination that
-	 * the job is already running.  The failure mode is that the
-	 * caller is told the job is running, and thus has to wait.
-	 * The overseer will eventually get to it and the job will
-	 * proceed as if it had been already running.
-	 */
-
 	if (job->job_uthread == NULL) {
 		/* Nothing to do.  Guaranteed not running.  */
 		return (TRUE);
 	} else if (job->job_uthread == &utpool->utp_overseer) {
 		/* Take it off the list to guarantee it won't run.  */
 		job->job_uthread = NULL;
-		simple_lock(&utpool->utp_lock);
-
-		TAILQ_REMOVE(&utpool->utp_jobs, job, job_entry);
-		simple_unlock(&utpool->utp_lock);
-		threadpool_job_rele(job);
+		threadpool_job_cancel(&utpool->utp_jobs, job, &utpool->utp_lock);
 		return (TRUE);
 	} else {
-		/* Too late -- already running.  */
 		return (FALSE);
 	}
 }
 
 void
-uthreadpool_cancel_job(struct uthreadpool *utpool, struct threadpool_job *job)
+uthreadpool_cancel_job(utpool, job)
+	struct uthreadpool *utpool;
+	struct threadpool_job *job;
 {
 	/*
 	 * We may sleep here, but we can't ASSERT_SLEEPABLE() because
@@ -611,137 +487,6 @@ uthreadpool_cancel_job(struct uthreadpool *utpool, struct threadpool_job *job)
 
 	if (uthreadpool_cancel_job_async(utpool, job))
 		return;
-}
-
-/* Per-CPU thread pools */
-int
-uthreadpool_percpu_get(struct uthreadpool_percpu **utpool_percpup, u_char pri)
-{
-	struct uthreadpool_percpu *utpool_percpu, *tmp = NULL;
-	int error;
-	utpool_percpu = uthreadpool_lookup_percpu(pri);
-	simple_lock(&uthreadpools_lock);
-	if(utpool_percpu == NULL) {
-		simple_unlock(&uthreadpools_lock);
-		error = uthreadpool_percpu_create(&tmp, pri);
-		if (error) {
-			return (error);
-		}
-		KASSERT(tmp != NULL);
-		simple_lock(&uthreadpools_lock);
-		utpool_percpu = uthreadpool_lookup_percpu(pri);
-		if (utpool_percpu == NULL) {
-			utpool_percpu = tmp;
-			tmp = NULL;
-			uthreadpool_insert_percpu(utpool_percpu);
-		}
-	}
-	KASSERT(utpool_percpu != NULL);
-	utpool_percpu->utpp_refcnt++;
-	KASSERT(utpool_percpu->utpp_refcnt != 0);
-	simple_unlock(&uthreadpools_lock);
-
-	if (tmp != NULL) {
-		uthreadpool_percpu_destroy(tmp);
-	}
-	KASSERT(utpool_percpu != NULL);
-	*utpool_percpup = utpool_percpu;
-	return (0);
-}
-
-void
-uthreadpool_percpu_put(struct uthreadpool_percpu *utpool_percpu, u_char pri)
-{
-	//KASSERT(uthreadpool_pri_is_valid(pri));
-
-	simple_lock(&uthreadpools_lock);
-	KASSERT(utpool_percpu == uthreadpool_lookup_percpu(pri));
-	KASSERT(0 < utpool_percpu->utpp_refcnt);
-	if (--utpool_percpu->utpp_refcnt == 0) {
-		uthreadpool_remove_percpu(utpool_percpu);
-	} else {
-		utpool_percpu = NULL;
-	}
-	simple_unlock(&uthreadpools_lock);
-
-	if (utpool_percpu) {
-		uthreadpool_percpu_destroy(utpool_percpu);
-	}
-}
-
-static int
-uthreadpool_percpu_create(struct uthreadpool_percpu **utpool_percpup, u_char pri)
-{
-	struct uthreadpool_percpu *utpool_percpu;
-	int error, cpu;
-
-	for (cpu = 0; cpu < cpu_number(); cpu++) {
-		error = uthreadpool_percpu_start(utpool_percpu, pri, cpu);
-	}
-
-	*utpool_percpup = (struct uthreadpool_percpu *)utpool_percpu;
-	return (error);
-}
-
-int
-uthreadpool_percpu_start(struct uthreadpool_percpu *utpool_percpu, u_char pri, int ncpus)
-{
-	if (count <= 0) {
-		return (EINVAL);
-	}
-
-	utpool_percpu = (struct uthreadpool_percpu*) malloc(
-			sizeof(struct uthreadpool_percpu*), M_UTPOOLTHREAD, M_WAITOK);
-	utpool_percpu->utpp_pri = pri;
-	utpool_percpu->utpp_percpu = percpu_create(&cpu_info, sizeof(struct uthreadpool*), 1, ncpus);
-
-	if (utpool_percpu->utpp_percpu) {
-		/* Success!  */
-		uthreadpool_percpu_init(pri);
-		return (0);
-	}
-
-	uthreadpool_percpu_fini();
-	percpu_extent_free(utpool_percpu->utpp_percpu,
-			utpool_percpu->utpp_percpu->pc_start,
-			utpool_percpu->utpp_percpu->pc_end);
-	free(utpool_percpu, M_UTPOOLTHREAD);
-	return (ENOMEM);
-}
-
-static void
-uthreadpool_percpu_destroy(struct uthreadpool_percpu *utpool_percpu)
-{
-	percpu_free(utpool_percpu->utpp_percpu, sizeof(struct uthreadpool *));
-	free(utpool_percpu, M_KTPOOLTHREAD);
-}
-
-static void
-uthreadpool_percpu_init(pri)
-	u_char pri;
-{
-	struct uthreadpool **const utpoolp;
-	int error;
-
-	*utpoolp = (struct uthreadpool *) malloc(sizeof(struct uthreadpool *), M_UTPOOLTHREAD, M_WAITOK);
-	error = uthreadpool_create(*utpoolp, pri);
-	if (error) {
-		KASSERT(error == ENOMEM);
-		free(*utpoolp, M_UTPOOLTHREAD);
-		*utpoolp = NULL;
-	}
-}
-
-static void
-uthreadpool_percpu_fini()
-{
-	struct uthreadpool **const utpoolp;
-
-	if (*utpoolp == NULL) {	/* initialization failed */
-		return;
-	}
-	uthreadpool_destroy(*utpoolp);
-	free(*utpoolp, M_UTPOOLTHREAD);
 }
 
 /* UThreadpool ITPC */

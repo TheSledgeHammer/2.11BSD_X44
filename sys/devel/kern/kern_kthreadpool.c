@@ -582,98 +582,30 @@ kthreadpool_percpu_fini(void)
 	free(*ktpoolp, M_KTPOOLTHREAD);
 }
 
-
-/* Threadpool Jobs */
+/* KThreadpool Jobs */
 void
-threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, struct lock *lock, char *name, const char *fmt, ...)
+kthreadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, struct lock *lock, char *name, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
 	(void) snprintf(job->job_name, sizeof(job->job_name), fmt, ap);
 	va_end(ap);
 
-	job->job_lock = lock;
-	job->job_name = name;
-	job->job_refcnt = 0;
-	job->job_kthread = NULL;
-	job->job_func = func;
+	threadpool_job_init(job, func, lock, name);
 }
 
 void
-threadpool_job_dead(job)
+kthreadpool_job_destroy(job)
 	struct threadpool_job *job;
 {
-	panic("threadpool job %p ran after destruction", job);
-}
-
-void
-threadpool_job_destroy(job)
-	struct threadpool_job *job;
-{
-	KASSERTMSG((job->job_kthread == NULL), "job %p still running", job);
-	job->job_lock = NULL;
-	KASSERT(job->job_kthread == NULL);
-	KASSERT(job->job_refcnt == 0);
-	job->job_func = threadpool_job_dead;
-	(void) strlcpy(job->job_name, "deadjob", sizeof(job->job_name));
-}
-
-void
-threadpool_job_hold(job)
-	struct threadpool_job *job;
-{
-	unsigned int refcnt;
-
-	do {
-		refcnt = job->job_refcnt;
-		KASSERT(refcnt != UINT_MAX);
-	} while (atomic_cas_uint(&job->job_refcnt, refcnt, (refcnt + 1)) != refcnt);
-}
-
-void
-threadpool_job_rele(job)
-	struct threadpool_job *job;
-{
-	unsigned int refcnt;
-
-	do {
-		refcnt = job->job_refcnt;
-		KASSERT(0 < refcnt);
-		if (refcnt == 1) {
-			refcnt = atomic_dec_int_nv(&job->job_refcnt);
-			KASSERT(refcnt != UINT_MAX);
-			return;
-		}
-	} while (atomic_cas_uint(&job->job_refcnt, refcnt, (refcnt - 1)) != refcnt);
+	threadpool_job_destroy(job->job_kthread, job);
 }
 
 void
 kthreadpool_job_done(job)
 	struct threadpool_job *job;
 {
-	KASSERT(job->job_kthread != NULL);
-	KASSERT(job->job_kthread->ktpt_proc == curproc);
-
-	/*
-	 * We can safely read this field; it's only modified right before
-	 * we call the job work function, and we are only preserving it
-	 * to use here; no one cares if it contains junk afterward.
-	 */
-	PROC_LOCK(curproc);
-	curproc->p_name = job->job_kthread->ktpt_kthread_savedname;
-	PROC_UNLOCK(curproc);
-
-	/*
-	 * Inline the work of threadpool_job_rele(); the job is already
-	 * locked, the most likely scenario (XXXJRT only scenario?) is
-	 * that we're dropping the last reference (the one taken in
-	 * threadpool_schedule_job()), and we always do the cv_broadcast()
-	 * anyway.
-	 */
-	KASSERT(0 < job->job_refcnt);
-	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
-	KASSERT(refcnt != UINT_MAX);
-	job->job_kthread = NULL;
+	threadpool_job_done(job->job_kthread, job->job_kthread->ktpt_proc, job, job->job_kthread->ktpt_kthread_savedname);
 }
 
 void
@@ -685,27 +617,20 @@ kthreadpool_schedule_job(ktpool, job)
 		return;
 	}
 
-	threadpool_job_hold(job);
-
-	simple_lock(&ktpool->ktp_lock);
 	if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_idle_threads))) {
 		job->job_kthread = &ktpool->ktp_overseer;
-		TAILQ_INSERT_TAIL(&ktpool->ktp_jobs, job, job_entry);
+		threadpool_job_schedule(&ktpool->ktp_jobs, job, &ktpool->ktp_lock, TPJ_TAIL);
 	} else {
 		/* Assign it to the first idle thread.  */
 		job->job_kthread = TAILQ_FIRST(&ktpool->ktp_idle_threads);
 		job->job_kthread->ktpt_job = job;
 	}
-
-	/* Notify whomever we gave it to, overseer or idle thread.  */
-	KASSERT(job->job_kthread != NULL);
-	simple_unlock(&ktpool->ktp_lock);
 }
 
-bool
+bool_t
 kthreadpool_cancel_job_async(ktpool, job)
-	struct kthreadpool *ktpool;
-	struct threadpool_job *job;
+	struct kthreadpool 		*ktpool;
+	struct threadpool_job 	*job;
 {
 	/*
 	 * XXXJRT This fails (albeit safely) when all of the following
@@ -727,22 +652,16 @@ kthreadpool_cancel_job_async(ktpool, job)
 	 * The overseer will eventually get to it and the job will
 	 * proceed as if it had been already running.
 	 */
-
 	if (job->job_kthread == NULL) {
 		/* Nothing to do.  Guaranteed not running.  */
-		return TRUE;
+		return (TRUE);
 	} else if (job->job_kthread == &ktpool->ktp_overseer) {
 		/* Take it off the list to guarantee it won't run.  */
 		job->job_kthread = NULL;
-		simple_lock(&ktpool->ktp_lock);
-
-		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
-		simple_unlock(&ktpool->ktp_lock);
-		threadpool_job_rele(job);
-		return TRUE;
+		threadpool_job_cancel(&ktpool->ktp_jobs, job, &ktpool->ktp_lock);
+		return (TRUE);
 	} else {
-		/* Too late -- already running.  */
-		return FALSE;
+		return (FALSE);
 	}
 }
 
@@ -758,6 +677,7 @@ kthreadpool_cancel_job(ktpool, job)
 	 * as a false-positive.
 	 */
 
-	if (threadpool_cancel_job_async(ktpool, job))
+	if (kthreadpool_cancel_job_async(ktpool, job)) {
 		return;
+	}
 }

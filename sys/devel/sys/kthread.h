@@ -203,6 +203,11 @@ extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;
 extern struct lock 						*kthreadpool_lock;
 
+/* KThread Lock */
+struct lock_holder 			kthread_loholder;
+#define KTHREAD_LOCK(kt)	(mtx_lock(&(kt)->kt_mtx, &kthread_loholder))
+#define KTHREAD_UNLOCK(kt) 	(mtx_unlock(&(kt)->kt_mtx, &kthread_loholder))
+
 void			threadinit (void);
 struct pgrp 	*tgfind (pid_t);
 void			tgdelete (struct pgrp *);
@@ -225,8 +230,17 @@ extern void		itpc_remove_kthreadpool (struct threadpool_itpc *, struct kthreadpo
 void 			itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
 void 			itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
 
-/* KThread Lock */
-struct lock_holder 			kthread_loholder;
-#define KTHREAD_LOCK(kt)	(mtx_lock(&(kt)->kt_mtx, &kthread_loholder))
-#define KTHREAD_UNLOCK(kt) 	(mtx_unlock(&(kt)->kt_mtx, &kthread_loholder))
+/* kthreadpools */
+void	kthreadpool_init(void);
+int		kthreadpool_get(struct kthreadpool **, pid_t);
+void	kthreadpool_put(struct kthreadpool *, pid_t);
+void	kthreadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, struct lock *, char *, const char *, ...);
+void	kthreadpool_job_destroy(struct threadpool_job *);
+void	kthreadpool_job_done(struct threadpool_job *);
+void	kthreadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
+void	kthreadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
+bool_t	kthreadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
+
+int		kthreadpool_percpu_get(struct kthreadpool_percpu **, pid_t);
+void	kthreadpool_percpu_put(struct kthreadpool_percpu *, pid_t);
 #endif /* SYS_KTHREADS_H_ */

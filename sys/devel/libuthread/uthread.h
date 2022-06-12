@@ -115,8 +115,8 @@ struct uthread {
 /* User Threadpool Thread */
 TAILQ_HEAD(uthread_head, uthreadpool_thread);
 struct uthreadpool_thread {
-	struct kthreads						*utpt_kthread;
-	struct uthreads						*utpt_uthread;		/* user threads */
+	struct kthread						*utpt_kthread;
+	struct uthread						*utpt_uthread;		/* user threads */
     char				                *utpt_uthread_savedname;
 	struct uthreadpool					*utpt_pool;
 	struct threadpool_job				*utpt_job;
@@ -158,7 +158,12 @@ rwlock_t								uthread_rwl;		/* reader-writers lock */
 
 extern struct uthread 					uthread0;
 extern struct uthreadpool_thread 		utpool_thread;
-extern lock_t 							uthreadpool_lock;
+extern struct lock 						*uthreadpool_lock;
+
+/* UThread Lock */
+struct lock_holder 			uthread_loholder;
+#define UTHREAD_LOCK(ut)	(mtx_lock(&(ut)->ut_mtx, &uthread_loholder))
+#define UTHREAD_UNLOCK(ut) 	(mtx_unlock(&(ut)->ut_mtx, &uthread_loholder))
 
 /* UThread */
 void 			uthread_init(struct kthread *, struct uthread *);
@@ -177,10 +182,5 @@ extern void		itpc_add_uthreadpool(struct threadpool_itpc *, struct uthreadpool *
 extern void		itpc_remove_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
 void 			itpc_check_uthreadpool(struct threadpool_itpc *, pid_t);
 void 			itpc_verify_uthreadpool(struct threadpool_itpc *, pid_t);
-
-/* UThread Lock */
-struct lock_holder 			uthread_loholder;
-#define UTHREAD_LOCK(ut)	(mtx_lock(&(ut)->ut_mtx, &uthread_loholder))
-#define UTHREAD_UNLOCK(ut) 	(mtx_unlock(&(ut)->ut_mtx, &uthread_loholder))
 
 #endif /* SYS_UTHREADS_H_ */

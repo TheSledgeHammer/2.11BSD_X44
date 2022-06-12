@@ -1,0 +1,11 @@
+#	$211BSD: files.miscfs
+
+deffs		FIFO
+
+include 	"miscfs/fdesc/files.fdesc"
+include 	"miscfs/lofs/files.lofs"
+include 	"miscfs/union/files.union"
+
+file		miscfs/deadfs/dead_vnops.c
+file		miscfs/fifofs/fifo_vnops.c	   fifo
+file		miscfs/specfs/spec_vnops.c

@@ -55,13 +55,15 @@ uthread_init(kt, ut)
 	int error;
 
 	/* initialize current uthread(0) */
-    ut = &kthread0->kt_uthreado = &uthread0;
+	kt->kt_uthreado = &uthread0;
+    ut = kt->kt_uthreado;
     curuthread = ut;
 
     /* set up uthreads */
     LIST_INSERT_HEAD(&alluthread, ut, ut_list);
     ut->ut_pgrp = &pgrp0;
-    kthread0->kt_uthreado = ut;
+    LIST_INSERT_HEAD(TGRPHASH(0), &pgrp0, pg_hash);
+    kt->kt_uthreado = ut;
 
 	/* give the uthread the same creds as the initial kthread */
 	ut->ut_ucred = kt->kt_ucred;
