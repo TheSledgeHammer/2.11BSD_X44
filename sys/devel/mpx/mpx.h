@@ -38,9 +38,6 @@
 #define	NCHANS				20	/* number of channel structures */
 #define	NLEVELS				4
 
-extern struct vm_map 		mpx_map_store;
-#define	mpx_map				(&mpx_map_store)
-
 #ifndef MPX_SIZE
 #define MPX_SIZE			16384
 #endif
@@ -62,8 +59,6 @@ extern struct vm_map 		mpx_map_store;
 #endif
 
 #define MPXNPAGES			(BIG_MPX_SIZE / PAGE_SIZE + 1)
-
-//#define MPX_BUFFER			(round_page(NGROUPS + NCHANS + MPX_SIZE))
 
 struct mpxbuf {
 	u_int					cnt;		/* number of chars currently in buffer */
@@ -109,6 +104,7 @@ struct mpx {
     struct mpx_group		*mpx_group;
     struct mpx_channel	    *mpx_channel;
     struct mpxpair			*mpx_pair;
+
 	int 				    mpx_state;      /* state */
 	struct selinfo 			mpx_sel;		/* for compat with select */
 	struct timespec	 		mpx_atime;		/* time of last access */

@@ -54,6 +54,7 @@
 #include <sys/vnode.h>
 #include <sys/conf.h>
 #include <sys/lock.h>
+#include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
@@ -69,7 +70,7 @@ struct fileops mpxops = {
 		.fo_ioctl = mpx_ioctl,
 		.fo_poll = mpx_poll,
 		.fo_close = mpx_close,
-		.fo_kqfilter = mpx_kqfilter
+		.fo_kqfilter = mpx_kqfilter,
 };
 
 struct grouplist   	mpx_groups[NGROUPS];
@@ -88,6 +89,25 @@ static int mpxspace(struct mpx *, int);
 static int mpx_create(struct mpx *, bool_t);
 
 void
+mpxlock(cmpx)
+	struct mpx 	*cmpx;
+{
+	register struct mpxpair *mpp;
+
+	mpp = cmpx->mpx_pair;
+	MPX_LOCK(mpp);
+}
+
+void
+mpxunlock(cmpx)
+	struct mpx 	*cmpx;
+{
+	register struct mpxpair *mpp;
+	mpp = cmpx->mpx_pair;
+	MPX_UNLOCK(mpp);
+}
+
+void
 mpx_init(void)
 {
 	register struct mpx *mpx;
@@ -104,120 +124,6 @@ mpx_init(void)
 	for(j = 0; j <= NCHANS; j++) {
 		LIST_INIT(&mpx_channels[j]);
 	}
-}
-
-static int
-mpx_paircreate(p, p_mpp)
-	struct proc 	*p;
-	struct mpxpair 	**p_mpp;
-{
-	struct mpxpair *mpp;
-	struct mpx *wmpx, *rmpx;
-	int error;
-
-	*p_mpp = mpp = (struct mpxpair *)malloc(sizeof(struct mpxpair *), M_MPX, M_WAITOK);
-
-	rmpx = &mpp->mpp_rmpx;
-	wmpx = &mpp->mpp_wmpx;
-
-	error = mpx_create(rmpx, TRUE);
-	if (error != 0) {
-		goto fail;
-	}
-
-	error = mpx_create(wmpx, FALSE);
-	if (error != 0) {
-		goto fail;
-	}
-
-	rmpx->mpx_state |= MPX_DIRECTOK;
-	wmpx->mpx_state |= MPX_DIRECTOK;
-	return (0);
-
-fail:
-
-	free(mpp, M_MPX);
-	return (error);
-}
-
-static int
-mpxspace_new(cmpx, size)
-	struct mpx *cmpx;
-	int 		size;
-{
-	caddr_t buffer;
-	int error, cnt, firstseg;
-	static int curfail = 0;
-	static struct timeval lastfail;
-
-retry:
-	cnt = cmpx->mpx_buffer.cnt;
-	if (cnt > size) {
-		size = cnt;
-	}
-
-	size = round_page(size);
-	buffer = (caddr_t) vm_map_min(mpx_map);
-
-	error = vm_map_find(mpx_map, NULL, 0, (vm_offset_t *)&buffer, size, 0, FALSE);
-	if (error != KERN_SUCCESS) {
-		if (cmpx->mpx_buffer.buffer == NULL && size > SMALL_MPX_SIZE) {
-			size = SMALL_MPX_SIZE;
-			mpxfragretry++;
-			goto retry;
-		}
-		if (cmpx->mpx_buffer.buffer == NULL) {
-			mpxallocfail++;
-		} else {
-			mpxresizefail++;
-		}
-		return (ENOMEM);
-	}
-
-	/* copy data, then free old resources if we're resizing */
-	if (cnt > 0) {
-		if (cmpx->mpx_buffer.in <= cmpx->mpx_buffer.out) {
-			firstseg = cmpx->mpx_buffer.size - cmpx->mpx_buffer.out;
-			bcopy(&cmpx->mpx_buffer.buffer[cmpx->mpx_buffer.out], buffer, firstseg);
-			if ((cnt - firstseg) > 0) {
-				bcopy(cmpx->mpx_buffer.buffer, &buffer[firstseg],
-						cmpx->mpx_buffer.in);
-			}
-		} else {
-			bcopy(&cmpx->mpx_buffer.buffer[cmpx->mpx_buffer.out], buffer, cnt);
-		}
-	}
-
-	cmpx->mpx_buffer.buffer = buffer;
-	cmpx->mpx_buffer.size = size;
-	cmpx->mpx_buffer.in = cnt;
-	cmpx->mpx_buffer.out = 0;
-	cmpx->mpx_buffer.cnt = cnt;
-
-	return (0);
-}
-
-static int
-mpxspace(cmpx, size)
-	struct mpx *cmpx;
-	int 		size;
-{
-    KASSERT(cmpx->mpx_state & MPX_LOCKFL);
-    return (mpxspace_new(cmpx, size));
-}
-
-static int
-mpx_create(mpx, large_backing)
-	struct mpx 	*mpx;
-	bool_t  	large_backing;
-{
-	int error;
-
-	error = mpxspace_new(mpx,
-			!large_backing || amountmpxkva > maxmpxkva / 2 ?
-					SMALL_MPX_SIZE : MPX_SIZE);
-
-	return (error);
 }
 
 struct mpx_group *
@@ -402,7 +308,6 @@ mpx_merge_channels(cp1, cp2)
     return (cp3);
 }
 
-/* TODO: add file */
 int
 mpx_connect(cp1, cp2)
 	struct mpx_channel 	*cp1, *cp2;
@@ -496,6 +401,122 @@ mpx_leave()
 
 }
 
+/* mpx standard kernel routines & syscalls */
+
+static int
+mpx_paircreate(p, p_mpp)
+	struct proc 	*p;
+	struct mpxpair 	**p_mpp;
+{
+	struct mpxpair *mpp;
+	struct mpx *wmpx, *rmpx;
+	int error;
+
+	*p_mpp = mpp = (struct mpxpair *)malloc(sizeof(struct mpxpair *), M_MPX, M_WAITOK);
+
+	rmpx = &mpp->mpp_rmpx;
+	wmpx = &mpp->mpp_wmpx;
+
+	error = mpx_create(rmpx, TRUE);
+	if (error != 0) {
+		goto fail;
+	}
+
+	error = mpx_create(wmpx, FALSE);
+	if (error != 0) {
+		goto fail;
+	}
+
+	rmpx->mpx_state |= MPX_DIRECTOK;
+	wmpx->mpx_state |= MPX_DIRECTOK;
+	return (0);
+
+fail:
+
+	free(mpp, M_MPX);
+	return (error);
+}
+
+static int
+mpxspace_new(cmpx, size)
+	struct mpx *cmpx;
+	int 		size;
+{
+	caddr_t buffer;
+	int error, cnt, firstseg;
+	static int curfail = 0;
+	static struct timeval lastfail;
+
+retry:
+	cnt = cmpx->mpx_buffer.cnt;
+	if (cnt > size) {
+		size = cnt;
+	}
+
+	size = round_page(size);
+	buffer = (caddr_t) vm_map_min(kernel_map);
+
+	error = vm_map_find(kernel_map, NULL, 0, (vm_offset_t *)&buffer, size, 0, FALSE);
+	if (error != KERN_SUCCESS) {
+		if (cmpx->mpx_buffer.buffer == NULL && size > SMALL_MPX_SIZE) {
+			size = SMALL_MPX_SIZE;
+			mpxfragretry++;
+			goto retry;
+		}
+		if (cmpx->mpx_buffer.buffer == NULL) {
+			mpxallocfail++;
+		} else {
+			mpxresizefail++;
+		}
+		return (ENOMEM);
+	}
+
+	/* copy data, then free old resources if we're resizing */
+	if (cnt > 0) {
+		if (cmpx->mpx_buffer.in <= cmpx->mpx_buffer.out) {
+			firstseg = cmpx->mpx_buffer.size - cmpx->mpx_buffer.out;
+			bcopy(&cmpx->mpx_buffer.buffer[cmpx->mpx_buffer.out], buffer, firstseg);
+			if ((cnt - firstseg) > 0) {
+				bcopy(cmpx->mpx_buffer.buffer, &buffer[firstseg],
+						cmpx->mpx_buffer.in);
+			}
+		} else {
+			bcopy(&cmpx->mpx_buffer.buffer[cmpx->mpx_buffer.out], buffer, cnt);
+		}
+	}
+
+	cmpx->mpx_buffer.buffer = buffer;
+	cmpx->mpx_buffer.size = size;
+	cmpx->mpx_buffer.in = cnt;
+	cmpx->mpx_buffer.out = 0;
+	cmpx->mpx_buffer.cnt = cnt;
+
+	return (0);
+}
+
+static int
+mpxspace(cmpx, size)
+	struct mpx *cmpx;
+	int 		size;
+{
+    KASSERT(cmpx->mpx_state & MPX_LOCKFL);
+    return (mpxspace_new(cmpx, size));
+}
+
+static int
+mpx_create(mpx, large_backing)
+	struct mpx 	*mpx;
+	bool_t  	large_backing;
+{
+	int error;
+
+	error = mpxspace_new(mpx,
+			!large_backing || amountmpxkva > maxmpxkva / 2 ?
+					SMALL_MPX_SIZE : MPX_SIZE);
+
+	return (error);
+}
+
 int
 mpx_rw(fp, uio, cred)
 	struct file *fp;
@@ -514,15 +535,10 @@ mpx_read(fp, uio, cred)
     struct ucred *cred;
 {
     struct mpx 		*rmpx;
-    struct mpxbuf 	*bp;
-    int error;
+    int size, error, nread;
 
     rmpx = fp->f_mpx;
-    bp = &rmpx->mpx_buffer;
-    rmpx->mpx_file = fp;
 
-
-    error = mpxread(mpx, state);
     return (0);
 }
 
@@ -533,15 +549,10 @@ mpx_write(fp, uio, cred)
     struct ucred *cred;
 {
 	struct mpx 		*wmpx;
-	struct mpxbuf 	*bp;
 	int error;
 
 	wmpx = fp->f_mpx;
-	bp = &wmpx->mpx_buffer;
-	wmpx->mpx_file = fp;
 
-
-	error = mpxwrite(mpx, state);
 	return (0);
 }
 
@@ -552,6 +563,20 @@ mpx_ioctl(fp, cmd, data, p)
 	caddr_t data;
 	struct proc *p;
 {
+	struct mpx 	*mpx;
+	mpx = fp->f_mpx;
+
+	switch (cmd) {
+	case FIONBIO:
+		return (0);
+	case FIOASYNC:
+	case TIOCSPGRP:
+	case FIOSETOWN:
+		return fsetown(mpx->mpx_file, cmd, data);
+	case TIOCGPGRP:
+	case FIOGETOWN:
+		return fgetown(mpx->mpx_file, cmd, data);
+	}
 	return (0);
 }
 

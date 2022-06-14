@@ -460,6 +460,13 @@ struct partinfo {
 #define	DIOCGCACHE		_IOR('d', 116, int)				/* get cache enables */
 #define	DIOCSCACHE		_IOW('d', 117, int)				/* set cache enables */
 
+/* sync disk cache */
+#define	DIOCCACHESYNC	_IOW('d', 118, int)				/* sync cache (force?) */
+
+/* bad sector list */
+#define	DIOCBSLIST		_IOWR('d', 119, struct disk_badsecinfo)	/* get list */
+#define	DIOCBSFLUSH		_IO('d', 120)					/* flush list */
+
 #define	DKCACHE_READ	0x000001 						/* read cache enabled */
 #define	DKCACHE_WRITE	0x000002 						/* write(back) cache enabled */
 #define	DKCACHE_RCHANGE	0x000100 						/* read enable is changeable */

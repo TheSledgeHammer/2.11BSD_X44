@@ -1102,7 +1102,7 @@ out:
 void
 scontrol(cp, event, value)
 	register struct mpx_chan *cp;
-	short event,value;
+	short event, value;
 {
 	register struct clist *q;
 	int s;

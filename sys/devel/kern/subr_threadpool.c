@@ -156,23 +156,9 @@ threadpool_job_rele(job)
 }
 
 void
-threadpool_job_done(thread, p, job, name)
-	void 				  *thread;
-	struct proc 		  *p;
+threadpool_job_done(job)
 	struct threadpool_job *job;
-	char 				  *name;
 {
-	KASSERT(thread != NULL);
-	KASSERT(p == curproc());
-	/*
-	 * We can safely read this field; it's only modified right before
-	 * we call the job work function, and we are only preserving it
-	 * to use here; no one cares if it contains junk afterward.
-	 */
-	PROC_LOCK(curproc());
-	curproc()->p_name = name;//job->job_kthread->ktpt_kthread_savedname;
-	PROC_UNLOCK(curproc());
-
 	/*
 	 * Inline the work of threadpool_job_rele(); the job is already
 	 * locked, the most likely scenario (XXXJRT only scenario?) is
@@ -183,7 +169,6 @@ threadpool_job_done(thread, p, job, name)
 	KASSERT(0 < job->job_refcnt);
 	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
-	thread = NULL;
 }
 
 void

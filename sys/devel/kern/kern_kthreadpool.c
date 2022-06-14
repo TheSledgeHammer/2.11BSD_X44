@@ -605,7 +605,19 @@ void
 kthreadpool_job_done(job)
 	struct threadpool_job *job;
 {
-	threadpool_job_done(job->job_kthread, job->job_kthread->ktpt_proc, job, job->job_kthread->ktpt_kthread_savedname);
+	KASSERT(job->job_kthread != NULL);
+	KASSERT(job->job_kthread->ktpt_proc == curproc());
+	/*
+	 * We can safely read this field; it's only modified right before
+	 * we call the job work function, and we are only preserving it
+	 * to use here; no one cares if it contains junk afterward.
+	 */
+	PROC_LOCK(curproc());
+	curproc()->p_name = job->job_kthread->ktpt_kthread_savedname;
+	PROC_UNLOCK(curproc());
+
+	threadpool_job_done(job);
+	job->job_kthread = NULL;
 }
 
 void

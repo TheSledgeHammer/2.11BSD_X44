@@ -415,7 +415,7 @@ kthreadpool_itpc_recieve(itpc, ktpool, pid, cmd)
 
 struct itpc 			itpc_store;
 
-#define ITPC_HASHMASK 	32
+#define ITPC_HASHMASK 	128
 struct itpc_hash_head 	itpc_hashtable[ITPC_HASHMASK];
 
 void
@@ -440,6 +440,7 @@ itpc_allocate(size, itpc)
 	SET_IKTHREADPOOL(itpc, NULL);
 	SET_IUTHREADPOOL(itpc, NULL);
 
+
 	TAILQ_INSERT_TAIL(&itpc_header, itpc, itpc_node);
 }
 
@@ -455,11 +456,13 @@ itpc_alloc(size)
 }
 
 u_long
-itpc_hash(itpc)
-	struct itpc *itpc;
+itpc_hash(itpc/*, job */)
+	struct itpc 			*itpc;
+	//struct threadpool_job 	*job;
 {
 	Fnv32_t hash1 = fnv_32_buf(&itpc, sizeof(&itpc), FNV1_32_INIT) % ITPC_HASHMASK;
-	return (hash1);
+	//Fnv32_t hash2 = fnv_32_buf(&job, sizeof(&job), FNV1_32_INIT) % ITPC_HASHMASK;
+	return (hash1/* ^ hash2 */);
 }
 
 void
@@ -498,7 +501,8 @@ itpc_remove(itpc)
 }
 
 struct itpc *
-itpc_lookup(struct itpc *itpc)
+itpc_lookup(itpc)
+	struct itpc *itpc;
 {
 	struct itpc_hash_head 			*bucket;
 	register struct itpc_hash_entry *entry;

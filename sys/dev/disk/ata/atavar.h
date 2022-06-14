@@ -204,8 +204,8 @@ struct ata_bio {
 #define	TIMEOUT		4	/* device timed out */
 #define	ERR_NODEV	5	/* device has been gone */
 #define ERR_RESET	6	/* command was terminated by channel reset */
-	u_int8_t	r_error;/* copy of error register */
-	daddr_t		badsect[127];/* 126 plus trailing -1 marker */
+	u_int8_t		r_error;/* copy of error register */
+	daddr_t			badsect[127];/* 126 plus trailing -1 marker */
 };
 
 /*

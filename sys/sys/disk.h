@@ -200,6 +200,7 @@ struct dkdevice 	*disk_find(char *);
 void				disksort(struct bufq_state *, struct buf *, int);
 void				diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
 int					bounds_check_with_mediasize(struct buf *, int, u_int64_t);
+int					bounds_check_with_label(struct dkdevice *, struct buf *, int);
 
 struct dkdriver 	*disk_driver(struct dkdevice *, dev_t);
 struct disklabel	*disk_label(struct dkdevice *, dev_t);

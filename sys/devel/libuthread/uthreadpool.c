@@ -433,7 +433,15 @@ void
 uthreadpool_job_done(job)
 	struct threadpool_job *job;
 {
-	threadpool_job_done(job->job_uthread, job->job_kthread->ktpt_proc, job, job->job_uthread->utpt_uthread_savedname);
+	KASSERT(job->job_uthread != NULL);
+	KASSERT(job->job_uthread->utpt_kthread == curkthread);
+
+	KTHREAD_LOCK(curkthread);
+	curkthread->kt_name = job->job_uthread->utpt_uthread_savedname;
+	KTHREAD_UNLOCK(curkthread);
+
+	threadpool_job_done(job);
+	job->job_uthread = NULL;
 }
 
 void

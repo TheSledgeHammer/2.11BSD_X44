@@ -76,6 +76,7 @@ __KERNEL_RCSID(0, "$NetBSD: wd.c,v 1.274.2.8.2.6.2.6 2007/10/15 23:10:19 riz Exp
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -89,8 +90,8 @@ __KERNEL_RCSID(0, "$NetBSD: wd.c,v 1.274.2.8.2.6.2.6 2007/10/15 23:10:19 riz Exp
 #include <sys/syslog.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
-#include <sys/ataio.h>
 #include <sys/power.h>
+#include <sys/ataio.h>
 
 #include <machine/intr.h>
 #include <machine/bus.h>
@@ -129,12 +130,12 @@ int wdcdebug_wd_mask = 0x0;
 #define WDCDEBUG_PRINT(args, level)
 #endif
 
-int	wdprobe(struct device *, struct cfdata *, void *);
-void wdattach(struct device *, struct device *, void *);
-int	wddetach(struct device *, int);
-int	wdactivate(struct device *, enum devact);
-int	wdprint(void *, char *);
-void wdperror(const struct wd_softc *);
+int		wdprobe(struct device *, struct cfdata *, void *);
+void 	wdattach(struct device *, struct device *, void *);
+int		wddetach(struct device *, int);
+int		wdactivate(struct device *, enum devact);
+int		wdprint(void *, char *);
+void 	wdperror(const struct wd_softc *);
 
 CFOPS_DECL(wd, wdprobe, wdattach, wddetach, wdactivate);
 CFDRIVER_DECL(NULL, wd, &wd_cops, DV_DISK, sizeof(struct wd_softc));
@@ -390,19 +391,20 @@ wdattach(struct device *parent, struct device *self, void *aux)
 		    wd->sc_params.atap_heads *
 		    wd->sc_params.atap_sectors;
 	}
-	format_bytes(pbuf, sizeof(pbuf), wd->sc_capacity * DEV_BSIZE);
+	//format_bytes(pbuf, sizeof(pbuf), wd->sc_capacity * DEV_BSIZE);
 	printf("%s: %s, %d cyl, %d head, %d sec, "
-	    "%d bytes/sect x %llu sectors\n",
-	    self->dv_xname, pbuf,
-	    (wd->sc_flags & WDF_LBA) ? (int)(wd->sc_capacity /
-		(wd->sc_params.atap_heads * wd->sc_params.atap_sectors)) :
-		wd->sc_params.atap_cylinders,
-	    wd->sc_params.atap_heads, wd->sc_params.atap_sectors,
-	    DEV_BSIZE, (unsigned long long)wd->sc_capacity);
+			"%d bytes/sect x %llu sectors\n", self->dv_xname, pbuf,
+			(wd->sc_flags & WDF_LBA) ?
+					(int) (wd->sc_capacity
+							/ (wd->sc_params.atap_heads
+									* wd->sc_params.atap_sectors)) :
+					wd->sc_params.atap_cylinders, wd->sc_params.atap_heads,
+			wd->sc_params.atap_sectors, DEV_BSIZE,
+			(unsigned long long) wd->sc_capacity);
 
-	WDCDEBUG_PRINT(("%s: atap_dmatiming_mimi=%d, atap_dmatiming_recom=%d\n",
-	    self->dv_xname, wd->sc_params.atap_dmatiming_mimi,
-	    wd->sc_params.atap_dmatiming_recom), DEBUG_PROBE);
+	WDCDEBUG_PRINT(
+			("%s: atap_dmatiming_mimi=%d, atap_dmatiming_recom=%d\n", self->dv_xname, wd->sc_params.atap_dmatiming_mimi, wd->sc_params.atap_dmatiming_recom),
+			DEBUG_PROBE);
 	/*
 	 * Initialize and attach the disk structure.
 	 */
@@ -410,13 +412,10 @@ wdattach(struct device *parent, struct device *self, void *aux)
 	wd->sc_dk.dk_name = wd->sc_dev.dv_xname;
 	disk_attach(&wd->sc_dk);
 	wd->sc_wdc_bio.lp = wd->sc_dk.dk_label;
-	wd->sc_sdhook = shutdownhook_establish(wd_shutdown, wd);
+	wd->sc_sdhook = shutdownhook_establish(&wd_shutdown, wd);
 	if (wd->sc_sdhook == NULL)
 		printf("%s: WARNING: unable to establish shutdown hook\n",
-		    wd->sc_dev.dv_xname);
-#if NRND > 0
-	rnd_attach_source(&wd->rnd_source, wd->sc_dev.dv_xname, RND_TYPE_DISK, 0);
-#endif
+				wd->sc_dev.dv_xname);
 }
 
 int
@@ -484,11 +483,6 @@ wddetach(struct device *self, int flags)
 	/* Get rid of the shutdown hook. */
 	if (sc->sc_sdhook != NULL)
 		shutdownhook_disestablish(sc->sc_sdhook);
-
-#if NRND > 0
-	/* Unhook the entropy source. */
-	rnd_detach_source(&sc->rnd_source);
-#endif
 
 	lockmgr(&sc->sc_lock, LK_DRAIN, &sc->sc_lock.lk_lnterlock, LOCKHOLDER_PID(&sc->sc_lock.lk_lockholder));
 
@@ -621,7 +615,7 @@ static void
 wd_split_mod15_write(struct buf *bp)
 {
 	struct buf *obp = bp->b_private;
-	struct wd_softc *sc = wd_cd.cd_devs[DISKUNIT(obp->b_dev)];
+	struct wd_softc *sc = wd_cd.cd_devs[dkunit(obp->b_dev)];
 
 	if (__predict_false(bp->b_flags & B_ERROR) != 0) {
 		/*
@@ -673,10 +667,10 @@ __wdstart(struct wd_softc *wd, struct buf *bp)
 	 * Note we MUST do this here, because we can't let insertion
 	 * into the bufq cause the transfers to be re-merged.
 	 */
-	if (__predict_false((wd->sc_quirks & WD_QUIRK_SPLIT_MOD15_WRITE) != 0 &&
-			    (bp->b_flags & B_READ) == 0 &&
-			    bp->b_bcount > 512 &&
-			    ((bp->b_bcount / 512) % 15) == 1)) {
+	if (__predict_false(
+			(wd->sc_quirks & WD_QUIRK_SPLIT_MOD15_WRITE) != 0
+					&& (bp->b_flags & B_READ) == 0 && bp->b_bcount > 512
+					&& ((bp->b_bcount / 512) % 15) == 1)) {
 		struct buf *nbp;
 
 		/* already at splbio */
@@ -716,7 +710,7 @@ __wdstart(struct wd_softc *wd, struct buf *bp)
 	}
 
 	wd->sc_wdc_bio.blkno = bp->b_rawblkno;
-	wd->sc_wdc_bio.blkdone =0;
+	wd->sc_wdc_bio.blkdone = 0;
 	wd->sc_bp = bp;
 	/*
 	 * If we're retrying, retry in single-sector mode. This will give us
@@ -727,9 +721,9 @@ __wdstart(struct wd_softc *wd, struct buf *bp)
 		wd->sc_wdc_bio.flags = ATA_SINGLE;
 	else
 		wd->sc_wdc_bio.flags = 0;
-	if ((wd->sc_flags & WDF_LBA48) &&
-	    (wd->sc_wdc_bio.blkno > LBA48_THRESHOLD ||
-	    (wd->sc_quirks & WD_QUIRK_FORCE_LBA48) != 0))
+	if ((wd->sc_flags & WDF_LBA48)
+			&& (wd->sc_wdc_bio.blkno > LBA48_THRESHOLD
+					|| (wd->sc_quirks & WD_QUIRK_FORCE_LBA48) != 0))
 		wd->sc_wdc_bio.flags |= ATA_LBA48;
 	if (wd->sc_flags & WDF_LBA)
 		wd->sc_wdc_bio.flags |= ATA_LBA;
@@ -1148,9 +1142,6 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 {
 	struct wd_softc *wd = wd_cd.cd_devs[WDUNIT(dev)];
 	int error = 0;
-#ifdef __HAVE_OLD_DISKLABEL
-	struct disklabel *newlabel = NULL;
-#endif
 
 	WDCDEBUG_PRINT(("wdioctl\n"), DEBUG_FUNCS);
 
@@ -1225,19 +1216,6 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 	case DIOCGDINFO:
 		*(struct disklabel *)addr = *(wd->sc_dk.dk_label);
 		return 0;
-#ifdef __HAVE_OLD_DISKLABEL
-	case ODIOCGDINFO:
-		newlabel = malloc(sizeof *newlabel, M_TEMP, M_WAITOK);
-		if (newlabel == NULL)
-			return EIO;
-		*newlabel = *(wd->sc_dk.dk_label);
-		if (newlabel->d_npartitions <= OLDMAXPARTITIONS)
-			memcpy(addr, newlabel, sizeof (struct olddisklabel));
-		else
-			error = ENOTTY;
-		free(newlabel, M_TEMP);
-		return error;
-#endif
 
 	case DIOCGPART:
 		((struct partinfo *)addr)->disklab = wd->sc_dk.dk_label;
@@ -1247,52 +1225,33 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 
 	case DIOCWDINFO:
 	case DIOCSDINFO:
-#ifdef __HAVE_OLD_DISKLABEL
-	case ODIOCWDINFO:
-	case ODIOCSDINFO:
-#endif
 	{
 		struct disklabel *lp;
 
-		if ((flag & FWRITE) == 0)
+		if ((flag & FWRITE) == 0) {
 			return EBADF;
+		}
 
-#ifdef __HAVE_OLD_DISKLABEL
-		if (xfer == ODIOCSDINFO || xfer == ODIOCWDINFO) {
-			newlabel = malloc(sizeof *newlabel, M_TEMP, M_WAITOK);
-			if (newlabel == NULL)
-				return EIO;
-			memset(newlabel, 0, sizeof newlabel);
-			memcpy(newlabel, addr, sizeof (struct olddisklabel));
-			lp = newlabel;
-		} else
-#endif
-		lp = (struct disklabel *)addr;
+		lp = (struct disklabel*) addr;
 
-		if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL)) != 0)
+		if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL)) != 0) {
 			goto bad;
+		}
 		wd->sc_flags |= WDF_LABELLING;
 
-		error = setdisklabel(wd->sc_dk.dk_label, lp, /*wd->sc_dk.dk_openmask : */0);
+		error = setdisklabel(wd->sc_dk.dk_label, lp, /*wd->sc_dk.dk_openmask : */
+		0);
 		if (error == 0) {
 			if (wd->drvp->state > RESET)
 				wd->drvp->drive_flags |= DRIVE_RESET;
-			if (xfer == DIOCWDINFO
-#ifdef __HAVE_OLD_DISKLABEL
-			    || xfer == ODIOCWDINFO
-#endif
-			    )
-				error = writedisklabel(WDLABELDEV(dev),
-				    wdstrategy, wd->sc_dk.dk_label);
+			if (xfer == DIOCWDINFO)
+				error = writedisklabel(WDLABELDEV(dev), wdstrategy,
+						wd->sc_dk.dk_label);
 		}
 
 		wd->sc_flags &= ~WDF_LABELLING;
 		lockmgr(&wd->sc_lock, LK_RELEASE, NULL);
-bad:
-#ifdef __HAVE_OLD_DISKLABEL
-		if (newlabel != NULL)
-			free(newlabel, M_TEMP);
-#endif
+	bad:
 		return error;
 	}
 
@@ -1315,19 +1274,6 @@ bad:
 	case DIOCGDEFLABEL:
 		wdgetdefaultlabel(wd, (struct disklabel *)addr);
 		return 0;
-#ifdef __HAVE_OLD_DISKLABEL
-	case ODIOCGDEFLABEL:
-		newlabel = malloc(sizeof *newlabel, M_TEMP, M_WAITOK);
-		if (newlabel == NULL)
-			return EIO;
-		wdgetdefaultlabel(wd, newlabel);
-		if (newlabel->d_npartitions <= OLDMAXPARTITIONS)
-			memcpy(addr, &newlabel, sizeof(struct olddisklabel));
-		else
-			error = ENOTTY;
-		free(newlabel, M_TEMP);
-		return error;
-#endif
 
 #ifdef notyet
 	case DIOCWFORMAT:
@@ -1413,7 +1359,6 @@ bad:
 	default:
 		return ENOTTY;
 	}
-//	return (disk_ioctl(wd->sc_dk, dev, xfer, addr, flag, p));
 #ifdef DIAGNOSTIC
 	panic("wdioctl: impossible");
 #endif

@@ -425,6 +425,79 @@ done:
 	return 0;
 }
 
+/*
+ * Determine the size of the transfer, and make sure it is
+ * within the boundaries of the partition. Adjust transfer
+ * if needed, and signal errors or early completion.
+ */
+int
+bounds_check_with_label(dk, bp, wlabel)
+	struct dkdevice *dk;
+	struct buf *bp;
+	int wlabel;
+{
+	struct disklabel *lp = dk->dk_label;
+	struct partition *p = lp->d_partitions + DISKPART(bp->b_dev);
+	uint64_t p_size, p_offset, labelsector;
+	int64_t sz;
+
+	if (bp->b_blkno < 0) {
+		/* Reject negative offsets immediately. */
+		bp->b_error = EINVAL;
+		return -1;
+	}
+
+	/* Protect against division by zero. XXX: Should never happen?!?! */
+	if ((lp->d_secsize / DEV_BSIZE) == 0 || lp->d_secpercyl == 0) {
+		bp->b_error = EINVAL;
+		return -1;
+	}
+
+	p_size = (uint64_t) p->p_size << dk->dk_blkshift;
+	p_offset = (uint64_t) p->p_offset << dk->dk_blkshift;
+#if RAW_PART == 3
+	labelsector = lp->d_partitions[2].p_offset;
+#else
+	labelsector = lp->d_partitions[RAW_PART].p_offset;
+#endif
+	labelsector = (labelsector + dk->dk_labelsector) << dk->dk_blkshift;
+
+	sz = howmany((int64_t) bp->b_bcount, DEV_BSIZE);
+
+	/*
+	 * bp->b_bcount is a 32-bit value, and we rejected a negative
+	 * bp->b_blkno already, so "bp->b_blkno + sz" cannot overflow.
+	 */
+
+	if (bp->b_blkno + sz > p_size) {
+		sz = p_size - bp->b_blkno;
+		if (sz == 0) {
+			/* If exactly at end of disk, return EOF. */
+			bp->b_resid = bp->b_bcount;
+			return 0;
+		}
+		if (sz < 0) {
+			/* If past end of disk, return EINVAL. */
+			bp->b_error = EINVAL;
+			return -1;
+		}
+		/* Otherwise, truncate request. */
+		bp->b_bcount = sz << DEV_BSHIFT;
+	}
+
+	/* Overwriting disk label? */
+	if (bp->b_blkno + p_offset <= labelsector
+			&& bp->b_blkno + p_offset + sz > labelsector
+			&& (bp->b_flags & B_READ) == 0 && !wlabel) {
+		bp->b_error = EROFS;
+		return -1;
+	}
+
+	/* calculate cylinder for disksort to order transfers with */
+	bp->b_cylin = (bp->b_blkno + p->p_offset) / (lp->d_secsize / DEV_BSIZE)
+			/ lp->d_secpercyl;
+	return 1;
+}
 
 /* disk functions for easy access */
 struct dkdriver *
