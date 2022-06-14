@@ -437,7 +437,7 @@ bounds_check_with_label(dk, bp, wlabel)
 	int wlabel;
 {
 	struct disklabel *lp = dk->dk_label;
-	struct partition *p = lp->d_partitions + DISKPART(bp->b_dev);
+	struct partition *p = lp->d_partitions + dkpart(bp->b_dev);
 	uint64_t p_size, p_offset, labelsector;
 	int64_t sz;
 
