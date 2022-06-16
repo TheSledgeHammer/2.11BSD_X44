@@ -160,7 +160,7 @@ extern void device_init(struct devswtable *);
 extern void	audio_init(struct devswtable *);
 extern void	console_init(struct devswtable *);
 extern void	core_init(struct devswtable *);
-extern void	disk_init(struct devswtable *);
+extern void	disks_init(struct devswtable *);
 extern void	misc_init(struct devswtable *);
 extern void	usb_init(struct devswtable *);
 extern void	video_init(struct devswtable *);

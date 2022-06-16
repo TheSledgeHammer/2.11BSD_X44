@@ -139,6 +139,7 @@ struct dkdriver {
 #define DKF_RLABEL  		0x0100				/* label being read */
 #define	DKF_OPEN			0x0200				/* label read, drive open */
 #define	DKF_OPENRAW			0x0400				/* open without label */
+#define DKF_KLABEL			0x0800				/* retain label after 'full' close */
 
 #ifdef DISKSORT_STATS
 /*

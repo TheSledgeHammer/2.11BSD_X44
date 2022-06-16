@@ -68,7 +68,7 @@ vfs_opv_init()
 		opv_desc_vector_p = opv->opv_desc_vector_p;
 		if (*opv_desc_vector_p == NULL) {
 			*opv_desc_vector_p = (opv_desc_vector_t)calloc(vfs_opv_numops, sizeof(pfi_t), M_VNODE, M_WAITOK);
-			bzero (*opv_desc_vector_p, vfs_opv_numops * sizeof(pfi_t));
+			bzero(*opv_desc_vector_p, vfs_opv_numops * sizeof(pfi_t));
 		}
 		opv_desc_vector = *opv_desc_vector_p;
 		opve_descp = opv->opv_desc_ops;
@@ -92,5 +92,14 @@ vfs_opv_init()
 				opv_desc_vector[k] = opv_desc_vector[VOFFSET(vop_default)];
 			}
 		}
+	}
+}
+
+void
+vfs_op_init()
+{
+	register struct vnodeopv_desc *opv;
+	LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
+		opv->opv_desc_vector_p = NULL;
 	}
 }

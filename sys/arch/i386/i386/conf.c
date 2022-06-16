@@ -135,7 +135,7 @@ core_init(devsw)
 
 /* Add disk driver configuration */
 void
-disk_init(devsw)
+disks_init(devsw)
 	struct devswtable *devsw;
 {
 	/* ATA Devices */

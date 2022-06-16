@@ -559,7 +559,7 @@ wdstrategy(struct buf *bp)
 	 * XXX:SMP - mutex required to protect with DIOCBSFLUSH
 	 */
 	if (__predict_false(!SLIST_EMPTY(&wd->sc_bslist))) {
-		struct disk_badsectors *dbs;
+		struct dkbadsectors *dbs;
 		daddr_t maxblk = blkno + (bp->b_bcount >> DEV_BSHIFT) - 1;
 
 		SLIST_FOREACH(dbs, &wd->sc_bslist, dbs_next)
@@ -822,9 +822,9 @@ retry2:
 		 * itself, according to Manuel.
 		 */
 		if ((bp->b_flags & B_READ) &&
-		    ((wd->drvp->ata_vers >= 4 && wd->sc_wdc_bio.r_error & 64) ||
-	     	     (wd->drvp->ata_vers < 4 && wd->sc_wdc_bio.r_error & 192))) {
-			struct disk_badsectors *dbs;
+		    ((wd->drvp->ata_vers >= 4 && (wd->sc_wdc_bio.r_error & 64)) ||
+	     	     (wd->drvp->ata_vers < 4 && (wd->sc_wdc_bio.r_error & 192)))) {
+			struct dkbadsectors *dbs;
 
 			dbs = malloc(sizeof *dbs, M_TEMP, M_WAITOK);
 			dbs->dbs_min = bp->b_rawblkno;
@@ -915,7 +915,7 @@ wdopen(dev_t dev, int flag, int fmt, struct proc *p)
 	    (error = wd->atabus->ata_addref(wd->drvp)) != 0)
 		return (error);
 
-	if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL)) != 0)
+	if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder))) != 0)
 		goto bad4;
 
 	if (wd->sc_dk.dk_openmask != 0) {
@@ -961,7 +961,7 @@ wdopen(dev_t dev, int flag, int fmt, struct proc *p)
 	wd->sc_dk.dk_openmask =
 	    wd->sc_dk.dk_copenmask | wd->sc_dk.dk_bopenmask;
 
-	lockmgr(&wd->sc_lock, LK_RELEASE, NULL);
+	lockmgr(&wd->sc_lock, LK_RELEASE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder));
 	return 0;
 
 bad:
@@ -969,7 +969,7 @@ bad:
 	}
 
 bad3:
-	lockmgr(&wd->sc_lock, LK_RELEASE, NULL);
+	lockmgr(&wd->sc_lock, LK_RELEASE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder));
 bad4:
 	if (wd->sc_dk.dk_openmask == 0)
 		wd->atabus->ata_delref(wd->drvp);
@@ -984,7 +984,7 @@ wdclose(dev_t dev, int flag, int fmt, struct proc *p)
 	int error;
 
 	WDCDEBUG_PRINT(("wdclose\n"), DEBUG_FUNCS);
-	if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL)) != 0)
+	if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder))) != 0)
 		return error;
 
 	switch (fmt) {
@@ -1008,7 +1008,7 @@ wdclose(dev_t dev, int flag, int fmt, struct proc *p)
 		wd->atabus->ata_delref(wd->drvp);
 	}
 
-	lockmgr(&wd->sc_lock, LK_RELEASE, NULL);
+	lockmgr(&wd->sc_lock, LK_RELEASE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder));
 	return 0;
 }
 
@@ -1162,12 +1162,12 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 	case DIOCBSLIST :
 	{
 		u_int32_t count, missing, skip;
-		struct disk_badsecinfo dbsi;
-		struct disk_badsectors *dbs;
+		struct dkbadsecinfo dbsi;
+		struct dkbadsectors *dbs;
 		size_t available;
 		caddr_t laddr;
 
-		dbsi = *(struct disk_badsecinfo *)addr;
+		dbsi = *(struct dkbadsecinfo *)addr;
 		missing = wd->sc_bscount;
 		count = 0;
 		available = dbsi.dbsi_bufsize;
@@ -1234,13 +1234,12 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 
 		lp = (struct disklabel*) addr;
 
-		if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL)) != 0) {
+		if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder))) != 0) {
 			goto bad;
 		}
 		wd->sc_flags |= WDF_LABELLING;
 
-		error = setdisklabel(wd->sc_dk.dk_label, lp, /*wd->sc_dk.dk_openmask : */
-		0);
+		error = setdisklabel(wd->sc_dk.dk_label, lp, /*wd->sc_dk.dk_openmask : */0);
 		if (error == 0) {
 			if (wd->drvp->state > RESET)
 				wd->drvp->drive_flags |= DRIVE_RESET;
@@ -1250,7 +1249,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 		}
 
 		wd->sc_flags &= ~WDF_LABELLING;
-		lockmgr(&wd->sc_lock, LK_RELEASE, NULL);
+		lockmgr(&wd->sc_lock, LK_RELEASE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder));
 	bad:
 		return error;
 	}
@@ -1370,7 +1369,7 @@ wdformat(struct buf *bp)
 {
 
 	bp->b_flags |= B_FORMAT;
-	return wdstrategy(bp);
+	return (wdstrategy(bp));
 }
 #endif
 

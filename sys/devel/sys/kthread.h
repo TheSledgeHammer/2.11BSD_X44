@@ -71,7 +71,7 @@ struct kthread {
 
 #define	kt_startzero	kt_oppid
 
-	 pid_t				kt_oppid;	    		/* Save parent pid during ptrace. XXX */
+	pid_t				kt_oppid;	    		/* Save parent pid during ptrace. XXX */
 
     u_int				kt_estcpu;	 			/* Time averaged value of p_cpticks. */
 
@@ -107,9 +107,6 @@ struct kthread {
 
 	char				*kt_name;				/* (: name, optional */
 
-	vm_offset_t			kt_kstack;				/* (a) Kernel VA of kstack. */
-	int					kt_kstack_pages; 		/* (a) Size of the kstack. */
-	vm_object_t			kt_kstack_obj;
 	//void				*kt_ctxlink;			/* uc_link {get,set}context */
     //struct sadata_vp 	*kt_savp; 				/* SA "virtual processor" */
 };
@@ -209,8 +206,8 @@ struct lock_holder 			kthread_loholder;
 #define KTHREAD_UNLOCK(kt) 	(mtx_unlock(&(kt)->kt_mtx, &kthread_loholder))
 
 void			threadinit (void);
-struct pgrp 	*tgfind (pid_t);
-void			tgdelete (struct pgrp *);
+struct pgrp 	*tgfind(pid_t);
+void			tgdelete(struct pgrp *);
 
 /* KThread */
 void 			kthread_init(struct proc *, struct kthread *);
@@ -219,14 +216,14 @@ int 			kthread_exit(int);
 void			kthread_create_deferred(void (*)(void *), void *);
 void			kthread_run_deferred_queue(void);
 
-struct kthread *ktfind (pid_t);				/* Find kthread by id. */
-int				leavektgrp (kthread_t);		/* leave thread group */
+struct kthread *ktfind(pid_t);				/* Find kthread by id. */
+int				leavektgrp(kthread_t);		/* leave thread group */
 
 /* KThread ITPC */
-extern void 	kthreadpool_itpc_send (struct threadpool_itpc *, struct kthreadpool *);
-extern void 	kthreadpool_itpc_receive (struct threadpool_itpc *, struct kthreadpool *);
-extern void		itpc_add_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
-extern void		itpc_remove_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
+extern void 	kthreadpool_itpc_send(struct threadpool_itpc *, struct kthreadpool *);
+extern void 	kthreadpool_itpc_receive(struct threadpool_itpc *, struct kthreadpool *);
+extern void		itpc_add_kthreadpool(struct threadpool_itpc *, struct kthreadpool *);
+extern void		itpc_remove_kthreadpool(struct threadpool_itpc *, struct kthreadpool *);
 void 			itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
 void 			itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
 

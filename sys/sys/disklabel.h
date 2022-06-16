@@ -487,7 +487,7 @@ int		partition_check(struct buf *, struct dkdevice *);
 int		dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
 
 #if !defined(KERNEL) && !defined(LOCORE)
-#define	LABELDESC	(((btoc(sizeof (struct disklabel)) - 1) << 8))
+#define	LABELDESC	(((btoc(sizeof(struct disklabel)) - 1) << 8))
 #include <sys/cdefs.h>
 #endif
 

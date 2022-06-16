@@ -204,9 +204,9 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 	struct dkdevice *disk;
 	void (*strat)(struct buf *);
 	dev_t	dev;
-	int	cmd;
-	void *data;
-	int	flag;
+	int		cmd;
+	void 	*data;
+	int		flag;
 {
   register struct disklabel *lp;
   int error;
@@ -214,6 +214,13 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
   bcopy((struct disklabel *)disk->dk_label, lp, sizeof (*lp));
 
   switch (cmd) {
+  	case DIOCSBAD:
+  		if ((flag & FWRITE) == 0) {
+  			return (EBADF);
+  		}
+  		disk->dk_label->d_flags |= D_BADSECT;
+  		return (0);
+
 	case DIOCGDINFO:
 		bcopy(lp, (struct disklabel*) data, sizeof(*lp));
 		return (0);
@@ -221,6 +228,14 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 	case DIOCGPART:
 		((struct partinfo*) data)->disklab = (struct disklabel*) disk->dk_label;
 		((struct partinfo*) data)->part = &disk->dk_parts[dkpart(dev)];
+		return (0);
+
+	case DIOCKLABEL:
+		if (*(int *) data) {
+			disk->dk_flags |= DKF_KLABEL;
+		} else {
+			disk->dk_flags &= ~DKF_KLABEL;
+		}
 		return (0);
 
 	case DIOCWLABEL:
@@ -266,6 +281,7 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 		disk->dk_flags = flag;
 		return (error);
 	}
+
 	return (EINVAL);
 }
 
