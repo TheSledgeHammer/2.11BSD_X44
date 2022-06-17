@@ -482,6 +482,7 @@ char	*readdisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
 int		setdisklabel(struct disklabel *, struct disklabel *, u_long);
 int		writedisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
 int		ioctldisklabel(struct dkdevice *, void (*)(struct buf *), dev_t, int, void *, int);
+void	dkbadintern(struct dkdevice *);
 int		dkcksum(struct disklabel *);
 int		partition_check(struct buf *, struct dkdevice *);
 int		dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);

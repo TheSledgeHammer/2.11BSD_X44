@@ -74,8 +74,8 @@ struct ata_xfer {
 #define	C_FREE		0x0040		/* call wdc_free_xfer() asap */
 
 /* reasons for c_kill_xfer() */
-#define KILL_GONE 1 /* device is gone */
-#define KILL_RESET 2 /* xfer was reset */
+#define KILL_GONE 	1 /* device is gone */
+#define KILL_RESET 	2 /* xfer was reset */
 
 /* Per-channel queue of ata_xfers.  May be shared by multiple channels. */
 struct ata_queue {

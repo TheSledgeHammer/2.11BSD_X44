@@ -48,6 +48,7 @@
 #include <sys/time.h>
 #include <sys/disklabel.h>
 #include <sys/disk.h>
+#include <sys/dkbad.h>
 #include <sys/user.h>
 
 /*
@@ -218,7 +219,9 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
   		if ((flag & FWRITE) == 0) {
   			return (EBADF);
   		}
+  		disk->dk_cpulabel->bad = *(struct dkbad *)data;
   		disk->dk_label->d_flags |= D_BADSECT;
+  		dkbadintern(disk);
   		return (0);
 
 	case DIOCGDINFO:
@@ -283,6 +286,31 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 	}
 
 	return (EINVAL);
+}
+
+void
+dkbadintern(disk)
+	struct dkdevice *disk;
+{
+	struct dkbad *bt;
+	struct disklabel *lp;
+	int i;
+
+	bt = disk->dk_cpulabel->bad;
+	lp = disk->dk_label;
+	i = 0;
+
+	for (; i < MAXBAD; i++) {
+		if (bt->bt_bad[i].bt_cyl == 0xffff) {
+			break;
+		}
+		disk->dk_badsector[i] = bt->bt_bad[i].bt_cyl * lp->d_secpercyl
+				+ (bt->bt_bad[i].bt_trksec >> 8) * lp->d_nsectors
+				+ (bt->bt_bad[i].bt_trksec & 0xff);
+	}
+	for (; i < MAXBAD + 1; i++) {
+		disk->dk_badsector[i] = -1;
+	}
 }
 
 /*

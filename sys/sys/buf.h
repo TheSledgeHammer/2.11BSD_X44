@@ -106,6 +106,8 @@ struct buf {
 	int					b_validend;			/* Offset of end of valid region. */
 	//void				*b_fsdata;			/* fs private data */
 
+	void				*b_private;
+
 	struct lock_object	b_lnterlock;		/* buf lock */
 };
 

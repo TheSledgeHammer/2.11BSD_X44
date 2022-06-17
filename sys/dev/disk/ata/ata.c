@@ -112,6 +112,7 @@ ataprint(void *aux, const char *pnp)
  *
  *	Worker thread for the ATA bus.
  */
+#ifdef notyet
 static void
 atabus_thread(void *arg)
 {
@@ -162,7 +163,7 @@ atabus_thread(void *arg)
 	splx(s);
 	chp->ch_thread = NULL;
 	wakeup((void *)&chp->ch_flags);
-//	kthread_exit(0);
+	kthread_exit(0);
 }
 
 /*
@@ -170,7 +171,7 @@ atabus_thread(void *arg)
  *
  *	Helper routine to create the ATA bus worker thread.
  */
-/*
+
 static void
 atabus_create_thread(void *arg)
 {
@@ -183,7 +184,7 @@ atabus_create_thread(void *arg)
 		printf("%s: unable to create kernel thread: error %d\n",
 				sc->sc_dev.dv_xname, error);
 }
-*/
+#endif
 
 /*
  * atabus_match:

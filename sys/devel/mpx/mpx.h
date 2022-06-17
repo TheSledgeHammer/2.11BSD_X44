@@ -29,6 +29,10 @@
 #ifndef SYS_MPX_H_
 #define SYS_MPX_H_
 
+#ifndef _KERNEL
+#include <sys/select.h>			/* for struct selinfo */
+#endif
+
 #include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
@@ -68,19 +72,30 @@ struct mpxbuf {
 	caddr_t					buffer;		/* kva of buffer */
 };
 
+
+struct mpxmapping {
+	caddr_t					kva;		/* kernel virtual address */
+	vm_size_t				cnt;		/* number of chars in buffer */
+	vm_size_t				pos;		/* current position within page */
+	int						npages;		/* how many pages allocated */
+	vm_page_t				pgs[MPXNPAGES];		/* pointers to the pages */
+};
+
 /*
  * Bits in mpx_state.
  */
-#define MPX_ASYNC		0x004	/* Async? I/O. */
-#define MPX_WANTR		0x008	/* Reader wants some characters. */
-#define MPX_WANTW		0x010	/* Writer wants space to put characters. */
-#define MPX_WANT		0x020	/* Pipe is wanted to be run-down. */
-#define MPX_SEL			0x040	/* Pipe has a select active. */
-#define MPX_EOF			0x080	/* Pipe is in EOF condition. */
-#define MPX_LOCKFL		0x100	/* Process has exclusive access to pointers/data. */
-#define MPX_LWANT		0x200	/* Process wants exclusive access to pointers/data. */
-#define MPX_DIRECTW		0x400	/* Pipe direct write active. */
-#define MPX_DIRECTOK	0x800	/* Direct mode ok. */
+#define MPX_ASYNC		0x0004	/* Async? I/O. */
+#define MPX_WANTR		0x0008	/* Reader wants some characters. */
+#define MPX_WANTW		0x0010	/* Writer wants space to put characters. */
+#define MPX_WANT		0x0020	/* Pipe is wanted to be run-down. */
+#define MPX_SEL			0x0040	/* Pipe has a select active. */
+#define MPX_EOF			0x0080	/* Pipe is in EOF condition. */
+#define MPX_LOCKFL		0x0100	/* Process has exclusive access to pointers/data. */
+#define MPX_LWANT		0x0200	/* Process wants exclusive access to pointers/data. */
+#define MPX_DIRECTW		0x0400	/* Pipe direct write active. */
+#define MPX_DIRECTR		0x0800	/* Pipe direct read request (setup complete) */
+#define MPX_DIRECTOK	0x1000	/* Direct mode ok. */
+#define MPX_SIGNALR		0x2000	/* Do selwakeup() on read(2) */
 
 struct channellist;
 LIST_HEAD(channellist, mpx_channel);
@@ -100,33 +115,35 @@ struct mpx_group {
 };
 
 struct mpx {
-	struct mpxbuf			mpx_buffer;
+    struct lock_object		mpx_slock;		/* mpx mutex */
+    struct lock				mpx_lock;		/* long-term mpx lock */
+	struct mpxbuf			mpx_buffer;		/* data storage */
+    struct mpxmapping		mpx_map;		/* mpx mapping for direct I/O */
+    struct selinfo 			mpx_sel;		/* for compat with select */
+	struct timeval 	 		mpx_atime;		/* time of last access */
+	struct timeval  		mpx_mtime;		/* time of last modify */
+	struct timeval  		mpx_ctime;		/* time of status change */
+	pid_t					mpx_pgid;		/* process group for sigio */
+	struct mpxpair			*mpx_pair;
+	struct mpx				*mpx_peer;		/* link with other direction */
+	int 				    mpx_state;      /* mpx status info */
+	int 					mpx_busy;		/* busy flag, mostly to handle rundown sanely */
+
     struct mpx_group		*mpx_group;
     struct mpx_channel	    *mpx_channel;
-    struct mpxpair			*mpx_pair;
-
-	int 				    mpx_state;      /* state */
-	struct selinfo 			mpx_sel;		/* for compat with select */
-	struct timespec	 		mpx_atime;		/* time of last access */
-	struct timespec 		mpx_mtime;		/* time of last modify */
-	struct timespec 		mpx_ctime;		/* time of status change */
-
     struct file				*mpx_file;
 };
 
 struct mpxpair {
 	struct mpx				mpp_wmpx;
 	struct mpx				mpp_rmpx;
-    struct lock_object		mpp_lock;
 };
 
-#define MPX_LOCK_INIT(mpp)	simple_lock_init((mpp)->mpp_lock, "mpxpair_lock")
-#define MPX_LOCK(mpp)		simple_lock((mpp)->mpp_lock)
-#define MPX_UNLOCK(mpp)		simple_unlock((mpp)->mpp_lock)
+#define MPX_LOCK(mpx)		simple_lock((mpx)->mpx_slock)
+#define MPX_UNLOCK(mpx)		simple_unlock((mpx)->mpx_slock)
 
 extern struct grouplist     mpx_groups[];
 extern struct channellist   mpx_channels[];
-extern long					maxmpxkva;
 
 void                		mpx_init(void);
 void                		mpx_create_group(int);

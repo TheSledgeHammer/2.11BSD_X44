@@ -309,7 +309,7 @@ wdattach(struct device *parent, struct device *self, void *aux)
 	lockinit(&wd->sc_lock, PRIBIO | PCATCH, "wdlock", 0, 0);
 
 	callout_init(&wd->sc_restart_ch);
-	bufq_alloc(&wd->sc_q, BUFQ_DISK_DEFAULT_STRAT()|BUFQ_SORT_RAWBLOCK);
+	bufq_alloc(&wd->sc_q, BUFQ_DISK_DEFAULT_STRAT() | BUFQ_SORT_RAWBLOCK);
 	SLIST_INIT(&wd->sc_bslist);
 
 	wd->atabus = adev->adev_bustype;
@@ -593,8 +593,7 @@ wdstart(void *arg)
 	struct wd_softc *wd = arg;
 	struct buf *bp = NULL;
 
-	WDCDEBUG_PRINT(("wdstart %s\n", wd->sc_dev.dv_xname),
-	    DEBUG_XFERS);
+	WDCDEBUG_PRINT(("wdstart %s\n", wd->sc_dev.dv_xname), DEBUG_XFERS);
 	while (wd->openings > 0) {
 
 		/* Is there a buf for us ? */
@@ -649,7 +648,8 @@ wd_split_mod15_write(struct buf *bp)
 	obp->b_flags |= (bp->b_flags & (B_EINTR|B_ERROR));
 	obp->b_error = bp->b_error;
 	obp->b_resid = bp->b_resid;
-	pool_put(&bufpool, bp);
+
+	free(bp, M_DEVBUF);
 	biodone(obp);
 	sc->openings++;
 	/* wddone() will call wdstart() */
@@ -674,7 +674,7 @@ __wdstart(struct wd_softc *wd, struct buf *bp)
 		struct buf *nbp;
 
 		/* already at splbio */
-		nbp = pool_get(&bufpool, PR_NOWAIT);
+		nbp = (struct buf *)malloc(sizeof(struct buf *), M_DEVBUF, M_NOWAIT);
 		if (__predict_false(nbp == NULL)) {
 			/* No memory -- fail the iop. */
 			bp->b_error = ENOMEM;
@@ -849,9 +849,7 @@ noerror:	if ((wd->sc_wdc_bio.flags & ATA_CORR) || wd->retries > 0)
 	}
 	disk_unbusy(&wd->sc_dk, (bp->b_bcount - bp->b_resid),
 	    (bp->b_flags & B_READ));
-#if NRND > 0
-	rnd_add_uint32(&wd->rnd_source, bp->b_blkno);
-#endif
+
 	/* XXX Yuck, but we don't want to increment openings in this case */
 	if (__predict_false((bp->b_flags & B_CALL) != 0 &&
 			    bp->b_iodone == wd_split_mod15_write))
@@ -880,7 +878,6 @@ wdrestart(void *v)
 int
 wdread(dev_t dev, struct uio *uio, int flags)
 {
-
 	WDCDEBUG_PRINT(("wdread\n"), DEBUG_XFERS);
 	return (physio(wdstrategy, NULL, dev, B_READ, minphys, uio));
 }
@@ -1140,26 +1137,30 @@ wdperror(const struct wd_softc *wd)
 int
 wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 {
-	struct wd_softc *wd = wd_cd.cd_devs[WDUNIT(dev)];
-	int error = 0;
+	struct wd_softc *wd;
+	int error;
+
+	wd = wd_cd.cd_devs[WDUNIT(dev)];
+	error = 0;
 
 	WDCDEBUG_PRINT(("wdioctl\n"), DEBUG_FUNCS);
+	if ((wd->sc_flags & WDF_LOADED) == 0) {
+		return (EIO);
+	}
 
-	if ((wd->sc_flags & WDF_LOADED) == 0)
-		return EIO;
+	wd->sc_badsect = wd->sc_dk.dk_badsector;
 
 	switch (xfer) {
 #ifdef HAS_BAD144_HANDLING
 	case DIOCSBAD:
 		if ((flag & FWRITE) == 0)
 			return EBADF;
-		//wd->sc_dk.dk_cpulabel->bad = *(struct dkbad *)addr;
+		wd->sc_dk.dk_cpulabel->bad = *(struct dkbad *)addr;
 		wd->sc_dk.dk_label->d_flags |= D_BADSECT;
 		bad144intern(wd);
-		return 0;
+		return (0);
 #endif
-
-	case DIOCBSLIST :
+	case DIOCBSLIST:
 	{
 		u_int32_t count, missing, skip;
 		struct dkbadsecinfo dbsi;
@@ -1199,11 +1200,11 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 		}
 		dbsi.dbsi_left = missing;
 		dbsi.dbsi_copied = count;
-		*(struct disk_badsecinfo*) addr = dbsi;
-		return 0;
+		*(struct dkbadsecinfo*) addr = dbsi;
+		return (0);
 	}
 
-	case DIOCBSFLUSH :
+	case DIOCBSFLUSH:
 		/* Clean out the bad sector list */
 		while (!SLIST_EMPTY(&wd->sc_bslist)) {
 			void *head = SLIST_FIRST(&wd->sc_bslist);
@@ -1211,35 +1212,24 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 			free(head, M_TEMP);
 		}
 		wd->sc_bscount = 0;
-		return 0;
+		return (0);
 
-	case DIOCGDINFO:
-		*(struct disklabel *)addr = *(wd->sc_dk.dk_label);
-		return 0;
-
-	case DIOCGPART:
-		((struct partinfo *)addr)->disklab = wd->sc_dk.dk_label;
-		((struct partinfo *)addr)->part =
-		    &wd->sc_dk.dk_label->d_partitions[WDPART(dev)];
-		return 0;
-
-	case DIOCWDINFO:
 	case DIOCSDINFO:
 	{
 		struct disklabel *lp;
 
 		if ((flag & FWRITE) == 0) {
-			return EBADF;
+			return (EBADF);
 		}
 
 		lp = (struct disklabel*) addr;
 
 		if ((error = lockmgr(&wd->sc_lock, LK_EXCLUSIVE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder))) != 0) {
-			goto bad;
+			return (error);
 		}
 		wd->sc_flags |= WDF_LABELLING;
 
-		error = setdisklabel(wd->sc_dk.dk_label, lp, /*wd->sc_dk.dk_openmask : */0);
+		error = setdisklabel(wd->sc_dk.dk_label, lp, 0);
 		if (error == 0) {
 			if (wd->drvp->state > RESET)
 				wd->drvp->drive_flags |= DRIVE_RESET;
@@ -1250,34 +1240,16 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 
 		wd->sc_flags &= ~WDF_LABELLING;
 		lockmgr(&wd->sc_lock, LK_RELEASE, NULL, LOCKHOLDER_PID(&wd->sc_lock.lk_lockholder));
-	bad:
-		return error;
+		return (error);
 	}
-
-	case DIOCKLABEL:
-		if (*(int *)addr)
-			wd->sc_flags |= WDF_KLABEL;
-		else
-			wd->sc_flags &= ~WDF_KLABEL;
-		return 0;
-
-	case DIOCWLABEL:
-		if ((flag & FWRITE) == 0)
-			return EBADF;
-		if (*(int *)addr)
-			wd->sc_flags |= WDF_WLABEL;
-		else
-			wd->sc_flags &= ~WDF_WLABEL;
-		return 0;
 
 	case DIOCGDEFLABEL:
 		wdgetdefaultlabel(wd, (struct disklabel *)addr);
-		return 0;
+		return (0);
 
-#ifdef notyet
 	case DIOCWFORMAT:
 		if ((flag & FWRITE) == 0)
-			return EBADF;
+			return (EBADF);
 		{
 			register struct format_op *fop;
 			struct iovec aiov;
@@ -1296,17 +1268,17 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 			fop->df_count -= auio.uio_resid;
 			fop->df_reg[0] = wdc->sc_status;
 			fop->df_reg[1] = wdc->sc_error;
-			return error;
+			return (error);
 		}
-#endif
+
 	case DIOCGCACHE:
-		return wd_getcache(wd, (int *)addr);
+		return (wd_getcache(wd, (int *)addr));
 
 	case DIOCSCACHE:
-		return wd_setcache(wd, *(int *)addr);
+		return (wd_setcache(wd, *(int *)addr));
 
 	case DIOCCACHESYNC:
-		return wd_flushcache(wd, AT_WAIT);
+		return (wd_flushcache(wd, AT_WAIT));
 
 	case ATAIOCCOMMAND:
 		/*
@@ -1356,8 +1328,13 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 		}
 
 	default:
-		return ENOTTY;
+		error = ioctldisklabel(wd->sc_dk, wdstrategy, dev, cmd, addr, flag);
+		if(error) {
+			return (error);
+		}
+		return (ENOTTY);
 	}
+
 #ifdef DIAGNOSTIC
 	panic("wdioctl: impossible");
 #endif
@@ -1532,7 +1509,7 @@ bad144intern(struct wd_softc *wd)
 
 	WDCDEBUG_PRINT(("bad144intern\n"), DEBUG_XFERS);
 
-	for (; i < NBT_BAD; i++) {
+	for (; i < MAXBAD; i++) {
 		if (bt->bt_bad[i].bt_cyl == 0xffff)
 			break;
 		wd->sc_badsect[i] =
@@ -1540,7 +1517,7 @@ bad144intern(struct wd_softc *wd)
 		    (bt->bt_bad[i].bt_trksec >> 8) * lp->d_nsectors +
 		    (bt->bt_bad[i].bt_trksec & 0xff);
 	}
-	for (; i < NBT_BAD+1; i++)
+	for (; i < MAXBAD+1; i++)
 		wd->sc_badsect[i] = -1;
 }
 #endif

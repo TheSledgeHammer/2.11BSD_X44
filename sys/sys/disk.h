@@ -111,9 +111,16 @@ struct dkdevice {
 	struct timeval		dk_time;				/* total time spent busy */
 	struct dkdriver 	*dk_driver;				/* pointer to driver */
 	daddr_t				dk_labelsector;			/* sector containing label */
+	daddr_t				dk_badsector[127];		/* 126 plus trailing -1 marker */
 	struct disklabel 	*dk_label;				/* label */
 	struct diskslices	*dk_slices;				/* slices */
 	struct partition 	dk_parts[MAXPARTITIONS];/* in-kernel portion */
+	struct cpu_disklabel *dk_cpulabel;
+};
+
+struct cpu_disklabel {
+#define __HAVE_DISKLABEL_DKBAD
+	struct dkbad  		bad;
 };
 
 struct dkdriver {

@@ -673,7 +673,7 @@ wdc_ata_bio_intr(struct wdc_channel *chp, struct ata_xfer *xfer, int irq)
 		}
 		if (drv_err != WDC_ATA_ERR)
 			goto end;
-		if (ata_bio->r_error & WDCE_CRC || ata_bio->error == ERR_DMA)
+		if ((ata_bio->r_error & WDCE_CRC) || ata_bio->error == ERR_DMA)
 			ata_dmaerr(drvp, (xfer->c_flags & C_POLL) ? AT_POLL : 0);
 	}
 

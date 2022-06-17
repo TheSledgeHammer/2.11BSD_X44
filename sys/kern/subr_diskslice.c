@@ -55,6 +55,7 @@ static void slice_info(char *, struct diskslice *);
 static void set_ds_label(struct diskslices *, int, struct disklabel *);
 static void set_ds_labeldevs(dev_t, struct diskslices *);
 static void set_ds_wlabel(struct diskslices *, int, int);
+static void set_ds_klabel(struct diskslices *, int, int);
 
 static struct disklabel *
 clone_label(lp)
@@ -435,6 +436,10 @@ dsioctl(dev, cmd, data, flags, sspp)
 		/* XXX should invalidate in-core label if write failed. */
 		set_ds_wlabel(ssp, slice, old_wlabel);
 		return (error);
+
+	case DIOCKLABEL:
+		set_ds_klabel(ssp, slice, *(int*) data != 0);
+		return (0);
 
 	case DIOCWLABEL:
 		if (!(flags & FWRITE)) {
@@ -887,6 +892,19 @@ set_ds_wlabel(ssp, slice, wlabel)
 		ssp->dss_slices[ssp->dss_first_bsd_slice].ds_wlabel = wlabel;
 	else if (slice == ssp->dss_first_bsd_slice)
 		ssp->dss_slices[COMPATIBILITY_SLICE].ds_wlabel = wlabel;
+}
+
+static void
+set_ds_klabel(ssp, slice, klabel)
+	struct diskslices *ssp;
+	int	slice;
+	int	klabel;
+{
+	ssp->dss_slices[slice].ds_klabel = klabel;
+	if (slice == COMPATIBILITY_SLICE)
+		ssp->dss_slices[ssp->dss_first_bsd_slice].ds_klabel = klabel;
+	else if (slice == ssp->dss_first_bsd_slice)
+		ssp->dss_slices[COMPATIBILITY_SLICE].ds_klabel = klabel;
 }
 /*
 static char *
