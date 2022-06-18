@@ -200,6 +200,11 @@ void  wdstart(void *);
 void  __wdstart(struct wd_softc*, struct buf *);
 void  wdrestart(void *);
 void  wddone(void *);
+
+#ifdef B_FORMAT
+int   wdformat(struct buf *);
+#endif
+
 int   wd_get_params(struct wd_softc *, u_int8_t, struct ataparams *);
 int   wd_flushcache(struct wd_softc *, int);
 void  wd_shutdown(void *);
@@ -685,7 +690,7 @@ __wdstart(struct wd_softc *wd, struct buf *bp)
 			return;
 		}
 
-		BUFQ_INIT(nbp);
+		BUF_INIT(nbp);
 		nbp->b_error = 0;
 		nbp->b_proc = bp->b_proc;
 		nbp->b_vp = NULLVP;
@@ -801,8 +806,7 @@ wddone(void *v)
 retry:		/* Just reset and retry. Can we do more ? */
 		wd->atabus->ata_reset_channel(wd->drvp, AT_RST_NOCMD);
 retry2:
-		diskerr(bp, "wd", errmsg, LOG_PRINTF,
-		    wd->sc_wdc_bio.blkdone, wd->sc_dk.dk_label);
+		diskerr(bp, "wd", errmsg, LOG_PRINTF, wd->sc_wdc_bio.blkdone, wd->sc_dk.dk_label);
 		if (wd->retries < WDIORETRIES)
 			printf(", retrying");
 		printf("\n");
@@ -847,8 +851,7 @@ noerror:	if ((wd->sc_wdc_bio.flags & ATA_CORR) || wd->retries > 0)
 		bp->b_error = EIO;
 		break;
 	}
-	disk_unbusy(&wd->sc_dk, (bp->b_bcount - bp->b_resid),
-	    (bp->b_flags & B_READ));
+	disk_unbusy(&wd->sc_dk, (bp->b_bcount - bp->b_resid)/*, (bp->b_flags & B_READ)*/);
 
 	/* XXX Yuck, but we don't want to increment openings in this case */
 	if (__predict_false((bp->b_flags & B_CALL) != 0 &&
@@ -1244,7 +1247,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 	case DIOCGDEFLABEL:
 		wdgetdefaultlabel(wd, (struct disklabel *)addr);
 		return (0);
-
+#ifdef notyet
 	case DIOCWFORMAT:
 		if ((flag & FWRITE) == 0)
 			return (EBADF);
@@ -1268,7 +1271,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 			fop->df_reg[1] = wdc->sc_error;
 			return (error);
 		}
-
+#endif
 	case DIOCGCACHE:
 		return (wd_getcache(wd, (int *)addr));
 

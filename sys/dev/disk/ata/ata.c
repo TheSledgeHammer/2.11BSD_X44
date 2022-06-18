@@ -46,10 +46,10 @@
 #include <machine/intr.h>
 #include <machine/bus.h>
 
-#include <dev/core/ic/wdcreg.h>
-#include <dev/core/ic/wdcvar.h>
 #include <dev/disk/ata/atareg.h>
 #include <dev/disk/ata/atavar.h>
+#include <dev/core/ic/wdcreg.h>
+#include <dev/core/ic/wdcvar.h>
 
 #include "locators.h"
 

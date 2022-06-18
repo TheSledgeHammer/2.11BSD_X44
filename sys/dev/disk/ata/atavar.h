@@ -35,8 +35,8 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
-#define ATACF_CHANNEL 			0
-#define ATACF_CHANNEL_DEFAULT 	-1
+//#define ATACF_CHANNEL 		0
+//#define ATACF_CHANNEL_DEFAULT 	-1
 
 /*
  * Description of a command to be handled by an ATA controller.  These
