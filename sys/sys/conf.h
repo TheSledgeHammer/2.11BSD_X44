@@ -34,8 +34,8 @@ struct bdevsw {
 	void		(*d_strategy)(struct buf *);
 	int			(*d_ioctl)(dev_t, u_long, caddr_t, int, struct proc *);
 	int			(*d_root)(void);		/* parameters vary by architecture */
-	int			(*d_dump)(dev_t);
-	daddr_t		(*d_psize)(dev_t);
+	int			(*d_dump)(dev_t, daddr_t, caddr_t, size_t);
+	int		(*d_psize)(dev_t);
 	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
 };
@@ -125,8 +125,8 @@ typedef int 		dev_type_meta_t(void);
 typedef int 		dev_type_reset_t(int);
 typedef int 		dev_type_kqfilter_t(dev_t, struct knote *);
 typedef int 		dev_type_discard_t(dev_t, off_t, off_t);
-typedef int 		dev_type_dump_t(dev_t);
-typedef daddr_t 	dev_type_size_t(dev_t);
+typedef int 		dev_type_dump_t(dev_t, daddr_t, caddr_t, size_t);
+typedef int 		dev_type_size_t(dev_t);
 /* tty specific */
 typedef int 		dev_type_tty_open_t(dev_t, struct tty *);
 typedef int 		dev_type_tty_close_t(struct tty *, int);

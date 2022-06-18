@@ -207,7 +207,7 @@ int					disk_ioctl(struct dkdevice *, dev_t, u_long, void *, int, struct proc *)
 void				disk_resetstat(struct dkdevice *);
 struct dkdevice 	*disk_find(char *);
 void				disksort(struct bufq_state *, struct buf *, int);
-void				diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
+void				diskerr(struct buf *, char *, const char *, int, int, struct disklabel *);
 int					bounds_check_with_mediasize(struct buf *, int, u_int64_t);
 int					bounds_check_with_label(struct dkdevice *, struct buf *, int);
 
