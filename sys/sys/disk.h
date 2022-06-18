@@ -52,6 +52,7 @@
 #include <sys/device.h>
 #include <sys/disklabel.h>
 #include <sys/diskslice.h>
+#include <sys/dkbad.h>
 #include <sys/ioctl.h>
 #include <sys/ioccom.h>
 
