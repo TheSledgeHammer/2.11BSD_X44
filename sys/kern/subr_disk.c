@@ -346,7 +346,8 @@ hp0g: hard error reading fsbn 12345 of 12344-12347 (hp0 bn %d cn %d tn %d sn %d)
 void
 diskerr(bp, dname, what, pri, blkdone, lp)
 	register struct buf *bp;
-	char *dname, *what;
+	char *dname;
+	const char *what;
 	int pri, blkdone;
 	register struct disklabel *lp;
 {

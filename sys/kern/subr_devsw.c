@@ -930,7 +930,7 @@ bdev_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p)
 }
 
 int
-bdev_dump(dev_t dev)
+bdev_dump(dev_t dev, daddr_t blkno, caddr_t addr, size_t size)
 {
 	const struct bdevsw *d;
 	int rv, error;
@@ -940,7 +940,7 @@ bdev_dump(dev_t dev)
 		return (error);
 	}
 
-	rv = (*d->d_dump)(dev);
+	rv = (*d->d_dump)(dev, blkno, addr, size);
 
 	return (rv);
 }
@@ -951,12 +951,11 @@ bdev_root(void)
 	return (-1);
 }
 
-daddr_t
+int
 bdev_size(dev_t dev)
 {
 	const struct bdevsw *d;
-	daddr_t rv;
-	int error;
+	int rv, error;
 
 	error = devsw_io_lookup(dev, d, BDEVTYPE);
 	if(error != 0) {
