@@ -1148,8 +1148,6 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 		return (EIO);
 	}
 
-	wd->sc_badsect = wd->sc_dk.dk_badsector;
-
 	switch (xfer) {
 #ifdef HAS_BAD144_HANDLING
 	case DIOCSBAD:
@@ -1328,7 +1326,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 		}
 
 	default:
-		error = ioctldisklabel(wd->sc_dk, wdstrategy, dev, cmd, addr, flag);
+		error = ioctldisklabel(&wd->sc_dk, wdstrategy, dev, xfer, addr, flag);
 		if(error) {
 			return (error);
 		}
