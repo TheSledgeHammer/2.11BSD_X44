@@ -296,7 +296,7 @@ dkbadintern(disk)
 	struct disklabel *lp;
 	int i;
 
-	bt = disk->dk_cpulabel->bad;
+	bt = &disk->dk_cpulabel->bad;
 	lp = disk->dk_label;
 	i = 0;
 
