@@ -464,7 +464,7 @@ struct partinfo {
 #define	DIOCCACHESYNC	_IOW('d', 118, int)				/* sync cache (force?) */
 
 /* bad sector list */
-#define	DIOCBSLIST		_IOWR('d', 119, struct disk_badsecinfo)	/* get list */
+#define	DIOCBSLIST		_IOWR('d', 119, struct dkbadsecinfo)	/* get list */
 #define	DIOCBSFLUSH		_IO('d', 120)					/* flush list */
 
 #define	DKCACHE_READ	0x000001 						/* read cache enabled */
