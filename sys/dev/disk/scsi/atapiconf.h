@@ -46,7 +46,7 @@ extern const struct scsipi_periphsw atapi_probe_periphsw;
  */
 struct atapi_adapter {
 	struct scsipi_adapter _generic;
-	void (*atapi_probe_device) (struct atapibus_softc *, int);
+	void (*atapi_probe_device)(struct atapibus_softc *, int);
 };
 
 void 	*atapi_probe_device (struct atapibus_softc *, int,

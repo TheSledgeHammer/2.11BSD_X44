@@ -87,7 +87,7 @@ si_get()
 	int s;
 
 	si = malloc(sizeof(struct scsi_ioctl), M_TEMP, M_WAITOK|M_ZERO);
-	simple_lock_init(&si->si_bp.b_interlock);
+	simple_lock_init(&si->si_bp.b_lnterlock, "scsipi_slock");
 	s = splbio();
 	LIST_INSERT_HEAD(&si_head, si, si_list);
 	splx(s);
@@ -114,7 +114,7 @@ si_find(bp)
 	int s;
 
 	s = splbio();
-	for (si = si_head.lh_first; si != 0; si = si->si_list.le_next)
+	for (si = LIST_FIRST(&si_head); si != 0; si = LIST_NEXT(si, si_list))
 		if (bp == &si->si_bp)
 			break;
 	splx(s);

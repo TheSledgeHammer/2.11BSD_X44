@@ -86,18 +86,19 @@ scsipi_command(periph, xs, cmd, cmdlen, data_addr, datalen,
 {
 	int error;
  
-	if ((flags & XS_CTL_DATA_ONSTACK) != 0) {
+//	if ((flags & XS_CTL_DATA_ONSTACK) != 0) {
 		/*
 		 * If the I/O buffer is allocated on stack, the
 		 * process must NOT be swapped out, as the device will
 		 * be accessing the stack.
 		 */
-		PHOLD(curlwp);
-	}
+		//PHOLD(curlwp);
+//	}
 	error = (*periph->periph_channel->chan_bustype->bustype_cmd)(periph,
 	    xs, cmd, cmdlen, data_addr, datalen, retries, timeout, bp, flags);
-	if ((flags & XS_CTL_DATA_ONSTACK) != 0)
+/*	if ((flags & XS_CTL_DATA_ONSTACK) != 0)
 		PRELE(curlwp);
+*/
 	return (error);
 }
 
