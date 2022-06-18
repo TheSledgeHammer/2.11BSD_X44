@@ -41,9 +41,11 @@
 #include <sys/power.h>
 #include <sys/null.h>
 
+#define	__arraycount(__x)	(sizeof(__x) / sizeof(__x[0]))
+
 struct hook_desc {
 	TAILQ_ENTRY(hook_desc) 	hk_list;
-	hook_func_t				hk_fn;
+	void 					(*hk_fn)(void *);
 	void					*hk_arg;
 };
 typedef TAILQ_HEAD(hook_head, hook_desc) hook_list_t;
@@ -52,11 +54,10 @@ struct hook_list {
 	hook_list_t	 			hl_list;
 };
 
-#define	__arraycount(__x)	(sizeof(__x) / sizeof(__x[0]))
 int	powerhook_debug = 0;
 
 static void *
-hook_establish(hook_list_t *list, hook_func_t fn, void *arg)
+hook_establish(hook_list_t *list, void (*fn)(void *), void *arg)
 {
 	struct hook_desc *hd;
 	hd = malloc(sizeof(*hd), M_DEVBUF, M_NOWAIT);
@@ -102,61 +103,6 @@ hook_destroy(hook_list_t *list)
 	}
 }
 
-static void
-do_hooks_shutdown(hook_list_t *list, int why)
-{
-	struct hook_desc *hd;
-	while ((hd == TAILQ_FIRST(list)) != NULL) {
-		TAILQ_REMOVE(list, hd, hk_list);
-		(*hd->hk_fn)(why, hd->hk_arg);
-		free(hd, M_DEVBUF);
-	}
-}
-
-static void
-do_hooks_power(hook_list_t *list, int why)
-{
-    struct hook_desc *hd;
-    const char *why_name;
-	static const char * pwr_names[] = {PWR_NAMES};
-	why_name = why < __arraycount(pwr_names) ? pwr_names[why] : "???";
-	
-	if (why == PWR_RESUME || why == PWR_SOFTRESUME) {
-		TAILQ_FOREACH_REVERSE(hd, list, hook_head, hk_list) {
-			if (powerhook_debug) {
-				printf("dopowerhooks %s: (%p)\n", why_name, hd);
-			}
-			(*hd->hk_fn)(why, hd->hk_arg);
-		}
-	} else {
-		TAILQ_FOREACH(hd, list, hk_list) {
-			if (powerhook_debug) {
-				printf("dopowerhooks %s: (%p)\n", why_name, hd);
-			}
-			(*hd->hk_fn)(why, hd->hk_arg);
-		}
-	}
-
-	if (powerhook_debug) {
-		printf("dopowerhooks: %s done\n", why_name);
-	}
-}
-
-static void
-do_hooks(hook_list_t *list, int why, int type)
-{
-	struct hook_desc *hd;
-	switch (type) {
-	case HKLIST_SHUTDOWN:
-		do_hooks_shutdown(list, why);
-		return;
-
-	case HKLIST_POWER:
-		do_hooks_power(list, why);
-		return;
-	}
-}
-
 /*
  * "Shutdown hook" types, functions, and variables.
  *
@@ -171,7 +117,7 @@ do_hooks(hook_list_t *list, int why, int type)
 static hook_list_t shutdownhook_list = TAILQ_HEAD_INITIALIZER(shutdownhook_list);
 
 void *
-shutdownhook_establish(hook_func_t fn, void *arg)
+shutdownhook_establish(void (*fn)(void *), void *arg)
 {
 	return (hook_establish(&shutdownhook_list, fn, arg));
 }
@@ -185,7 +131,12 @@ shutdownhook_disestablish(void *vhook)
 void
 doshutdownhooks(void)
 {
-	do_hooks(&shutdownhook_list, PWR_SHUTDOWN, HKLIST_SHUTDOWN);
+	struct hook_desc *hd;
+	while ((hd == TAILQ_FIRST(&shutdownhook_list)) != NULL) {
+		TAILQ_REMOVE(&shutdownhook_list, hd, hk_list);
+		(*hd->hk_fn)(hd->hk_arg);
+		free(hd, M_DEVBUF);
+	}
 }
 
 /*
@@ -195,19 +146,51 @@ doshutdownhooks(void)
  * When running the hooks on power down the hooks are called in reverse
  * registration order, when powering up in registration order.
  */
-
-static hook_list_t powerhook_list = TAILQ_HEAD_INITIALIZER(powerhook_list);
+struct powerhook_desc {
+	TAILQ_ENTRY(powerhook_desc) sfd_list;
+	void						(*sfd_fn)(int, void *);
+	void						*sfd_arg;
+	char						sfd_name[16];
+};
+static TAILQ_HEAD(powerhook_head, powerhook_desc) powerhook_list =
+    TAILQ_HEAD_INITIALIZER(powerhook_list);
 
 void *
-powerhook_establish(hook_func_t fn, void *arg)
+powerhook_establish(const char *name, void (*fn)(int, void *), void *arg)
 {
-	return (hook_establish(&powerhook_list, fn, arg));
+	struct powerhook_desc *ndp;
+
+	ndp = (struct powerhook_desc *)
+	    malloc(sizeof(*ndp), M_DEVBUF, M_NOWAIT);
+	if (ndp == NULL)
+		return (NULL);
+
+	ndp->sfd_fn = fn;
+	ndp->sfd_arg = arg;
+	strlcpy(ndp->sfd_name, name, sizeof(ndp->sfd_name));
+	TAILQ_INSERT_HEAD(&powerhook_list, ndp, sfd_list);
+
+	printf("%s: WARNING: powerhook_establish is deprecated\n", name);
+	return (ndp);
 }
 
 void
 powerhook_disestablish(void *vhook)
 {
-	hook_disestablish(&powerhook_list, vhook);
+#ifdef DIAGNOSTIC
+	struct powerhook_desc *dp;
+
+	TAILQ_FOREACH(dp, &powerhook_list, sfd_list) {
+		if (dp == vhook) {
+			goto found;
+		}
+	}
+	panic("powerhook_disestablish: hook %p not established", vhook);
+ found:
+#endif
+
+	TAILQ_REMOVE(&powerhook_list, (struct powerhook_desc* )vhook, sfd_list);
+	free(vhook, M_DEVBUF);
 }
 
 /*
@@ -216,5 +199,31 @@ powerhook_disestablish(void *vhook)
 void
 dopowerhooks(int why)
 {
-	do_hooks(&powerhook_list, why, HKLIST_POWER);
+	struct powerhook_desc *dp;
+	const char *why_name;
+	static const char * pwr_names[] = {PWR_NAMES};
+	why_name = why < __arraycount(pwr_names) ? pwr_names[why] : "???";
+
+	if (why == PWR_RESUME || why == PWR_SOFTRESUME) {
+		TAILQ_FOREACH_REVERSE(dp, &powerhook_list, powerhook_head,
+				sfd_list) {
+			if (powerhook_debug) {
+				printf("dopowerhooks %s: %s (%p)\n", why_name, dp->sfd_name,
+						dp);
+			}
+			(*dp->sfd_fn)(why, dp->sfd_arg);
+		}
+	} else {
+		TAILQ_FOREACH(dp, &powerhook_list, sfd_list) {
+			if (powerhook_debug) {
+				printf("dopowerhooks %s: %s (%p)\n", why_name, dp->sfd_name,
+						dp);
+			}
+			(*dp->sfd_fn)(why, dp->sfd_arg);
+		}
+	}
+
+	if (powerhook_debug) {
+		printf("dopowerhooks: %s done\n", why_name);
+	}
 }

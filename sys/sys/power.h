@@ -49,16 +49,11 @@
 	"softsuspend",	/* 4 */ \
 	"softstandby"	/* 5 */	\
 
-/* do_hook types */
-#define HKLIST_SHUTDOWN 0x01
-#define HKLIST_POWER 	0x02
 
-typedef void (*hook_func_t)(int, void *);
-
-void	*powerhook_establish(hook_func_t, void *);
+void	*powerhook_establish(const char *name, void (*fn)(int, void *), void *arg);
 void	powerhook_disestablish(void *);
 void	dopowerhooks(int);
-void	*shutdownhook_establish(hook_func_t, void *);
+void	*shutdownhook_establish(void (*fn)(void *), void *);
 void	shutdownhook_disestablish(void *);
 void	doshutdownhooks(void);
 

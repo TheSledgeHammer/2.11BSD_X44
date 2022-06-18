@@ -412,7 +412,7 @@ wdattach(struct device *parent, struct device *self, void *aux)
 	wd->sc_dk.dk_name = wd->sc_dev.dv_xname;
 	disk_attach(&wd->sc_dk);
 	wd->sc_wdc_bio.lp = wd->sc_dk.dk_label;
-	wd->sc_sdhook = shutdownhook_establish(&wd_shutdown, wd);
+	wd->sc_sdhook = shutdownhook_establish(wd_shutdown, wd);
 	if (wd->sc_sdhook == NULL)
 		printf("%s: WARNING: unable to establish shutdown hook\n",
 				wd->sc_dev.dv_xname);
@@ -1327,7 +1327,7 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 
 	default:
 		error = ioctldisklabel(&wd->sc_dk, wdstrategy, dev, xfer, addr, flag);
-		if(error) {
+		if(error == 0) {
 			return (error);
 		}
 		return (ENOTTY);
