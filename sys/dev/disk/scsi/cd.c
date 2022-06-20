@@ -609,8 +609,8 @@ cdstrategy(bp)
 	struct buf *bp;
 {
 	struct cd_softc *cd = cd_cd.cd_devs[CDUNIT(bp->b_dev)];
-	struct disklabel *lp;
 	struct scsipi_periph *periph = cd->sc_periph;
+	struct disklabel *lp;
 	daddr_t blkno;
 	int s;
 
@@ -701,7 +701,7 @@ cdstrategy(bp)
 
 			blkno = ((blkno * lp->d_secsize) / cd->params.blksize);
 			s = splbio();
-			nbp = pool_get(&bufpool, PR_NOWAIT);
+			nbp = (struct buf *)malloc(sizeof(struct buf *), M_DEVBUF, M_NOWAIT);
 			splx(s);
 			if (!nbp) {
 				/* No memory -- fail the iop. */
@@ -712,7 +712,7 @@ cdstrategy(bp)
 			if (!bounce) {
 				/* No memory -- fail the iop. */
 				s = splbio();
-				pool_put(&bufpool, nbp);
+				free(nbp, M_DEVBUF);
 				splx(s);
 				bp->b_error = ENOMEM;
 				goto bad;
@@ -981,7 +981,7 @@ cdbounce(bp)
 			s = splbio();
 
 			/* We need to alloc a new buf. */
-			nbp = pool_get(&bufpool, PR_NOWAIT);
+			nbp = (struct buf *)malloc(sizeof(struct buf *), M_DEVBUF, M_NOWAIT);
 			if (!nbp) {
 				splx(s);
 				/* No buf available. */

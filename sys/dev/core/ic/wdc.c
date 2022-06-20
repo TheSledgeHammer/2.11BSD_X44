@@ -132,8 +132,6 @@ __KERNEL_RCSID(0, "$NetBSD: wdc.c,v 1.172.2.7.2.10 2005/08/23 13:35:55 tron Exp 
  */
 #define WDC_PROBE_WAIT	5
 
-struct ata_xfer *wdc_xfer_pool;
-
 #if NWD > 0
 extern const struct ata_bustype wdc_ata_bustype; /* in ata_wdc.c */
 #else
@@ -161,6 +159,7 @@ static void	__wdccommand_kill_xfer(struct wdc_channel *,
 static void	__wdccommand_start(struct wdc_channel *, struct ata_xfer *);
 static int	__wdccommand_intr(struct wdc_channel *, struct ata_xfer *, int);
 static int	__wdcwait(struct wdc_channel *, int, int, int);
+static void	wdc_alloc_xfer(struct ata_xfer *);
 
 #define DEBUG_INTR   0x01
 #define DEBUG_XFERS  0x02
@@ -777,6 +776,7 @@ void
 wdcattach(struct wdc_channel *chp)
 {
 	struct wdc_softc *wdc = chp->ch_wdc;
+	struct ata_xfer *xfer;
 	static int inited = 0;
 
 	if (chp->ch_flags & WDCF_DISABLED)
@@ -790,8 +790,8 @@ wdcattach(struct wdc_channel *chp)
 	if (wdc->reset == NULL)
 		wdc->reset = wdc_do_reset;
 	if (inited == 0) {
-		/* Initialize the ata_xfer pool. */
-		wdc_xfer_pool = (struct ata_xfer *)malloc(sizeof(struct ata_xfer), M_DEVBUF, M_WAITOK | M_NOWAIT);
+		/* Initialize the ata_xfer. */
+		wdc_alloc_xfer(xfer);
 		inited++;
 	}
 	TAILQ_INIT(&chp->ch_queue->queue_xfer);
@@ -2099,6 +2099,12 @@ wdc_exec_xfer(struct wdc_channel *chp, struct ata_xfer *xfer)
 	wdcstart(chp);
 }
 
+static void
+wdc_alloc_xfer(struct ata_xfer *xfer)
+{
+	xfer = (struct ata_xfer *)malloc(sizeof(struct ata_xfer), M_DEVBUF, M_WAITOK | M_NOWAIT);
+}
+
 struct ata_xfer *
 wdc_get_xfer(int flags)
 {
@@ -2106,7 +2112,7 @@ wdc_get_xfer(int flags)
 	int s;
 
 	s = splbio();
-	xfer = wdc_xfer_pool;
+	wdc_alloc_xfer(xfer);
 	splx(s);
 	if (xfer != NULL) {
 		memset(xfer, 0, sizeof(struct ata_xfer));

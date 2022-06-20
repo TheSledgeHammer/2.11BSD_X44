@@ -64,25 +64,24 @@ __KERNEL_RCSID(0, "$NetBSD: scsipi_base.c,v 1.104.2.2 2004/09/11 12:53:16 he Exp
 #include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/scsi/scsi_message.h>
 
-int		scsipi_complete (struct scsipi_xfer *);
-void	scsipi_request_sense (struct scsipi_xfer *);
-int		scsipi_enqueue (struct scsipi_xfer *);
-void	scsipi_run_queue (struct scsipi_channel *chan);
+int		scsipi_complete(struct scsipi_xfer *);
+void	scsipi_request_sense(struct scsipi_xfer *);
+int		scsipi_enqueue(struct scsipi_xfer *);
+void	scsipi_run_queue(struct scsipi_channel *);
 
-void	scsipi_completion_thread (void *);
+void	scsipi_completion_thread(void *);
 
-void	scsipi_get_tag (struct scsipi_xfer *);
-void	scsipi_put_tag (struct scsipi_xfer *);
+void	scsipi_get_tag(struct scsipi_xfer *);
+void	scsipi_put_tag(struct scsipi_xfer *);
 
-int	scsipi_get_resource (struct scsipi_channel *);
-void	scsipi_put_resource (struct scsipi_channel *);
-__inline int scsipi_grow_resources (struct scsipi_channel *);
+int	scsipi_get_resource(struct scsipi_channel *);
+void	scsipi_put_resource(struct scsipi_channel *);
+__inline int scsipi_grow_resources(struct scsipi_channel *);
 
-void	scsipi_async_event_max_openings (struct scsipi_channel *, struct scsipi_max_openings *);
-void	scsipi_async_event_xfer_mode (struct scsipi_channel *, struct scsipi_xfer_mode *);
-void	scsipi_async_event_channel_reset (struct scsipi_channel *);
+void	scsipi_async_event_max_openings(struct scsipi_channel *, struct scsipi_max_openings *);
+void	scsipi_async_event_xfer_mode(struct scsipi_channel *, struct scsipi_xfer_mode *);
+void	scsipi_async_event_channel_reset(struct scsipi_channel *);
 
-struct scsipi_xfer scsipi_xfer_pool;
 extern static struct lock_object scsibus_interlock;
 
 /*
@@ -96,12 +95,12 @@ scsipi_init()
 {
 	static int scsipi_init_done;
 
-	if (scsipi_init_done)
+	if (scsipi_init_done) {
 		return;
+	}
 	scsipi_init_done = 1;
 
-	/* Initialize the scsipi_xfer pool. */
-	scsipi_xfer_pool = malloc(sizeof(struct scsipi_xfer), M_DEVBUF, (M_NOWAIT | M_WAITOK));
+	/* Initialize the scsipi_xfer. */
 	simple_lock_init(&scsibus_interlock, "scsibus_interlock");
 }
 
@@ -123,8 +122,9 @@ scsipi_channel_init(chan)
 	TAILQ_INIT(&chan->chan_queue);
 	TAILQ_INIT(&chan->chan_complete);
 
-	for (i = 0; i < SCSIPI_CHAN_PERIPH_BUCKETS; i++)
+	for (i = 0; i < SCSIPI_CHAN_PERIPH_BUCKETS; i++) {
 		LIST_INIT(&chan->chan_periphtab[i]);
+	}
 
 	/*
 	 * Create the asynchronous completion thread.
@@ -462,9 +462,8 @@ scsipi_get_xs(periph, flags)
 		periph->periph_flags |= PERIPH_WAITING;
 		(void) tsleep(periph, PRIBIO, "getxs", 0);
 	}
-	SC_DEBUG(periph, SCSIPI_DB3, ("calling pool_get\n"));
-	xs = pool_get(&scsipi_xfer_pool,
-	    ((flags & XS_CTL_NOSLEEP) != 0 ? PR_NOWAIT : PR_WAITOK));
+	SC_DEBUG(periph, SCSIPI_DB3, ("calling malloc\n"));
+	xs = (struct scsipi_xfer *)malloc(sizeof(*xs), M_DEVBUF, ((flags & XS_CTL_NOSLEEP) != 0 ? M_NOWAIT : M_WAITOK));
 	if (xs == NULL) {
 		if (flags & XS_CTL_URGENT) {
 			if ((flags & XS_CTL_REQSENSE) == 0)
@@ -512,7 +511,7 @@ scsipi_put_xs(xs)
 	SC_DEBUG(periph, SCSIPI_DB3, ("scsipi_free_xs\n"));
 
 	TAILQ_REMOVE(&periph->periph_xferq, xs, device_q);
-	pool_put(&scsipi_xfer_pool, xs);
+	free(xs, M_DEVBUF);
 
 #ifdef DIAGNOSTIC
 	if ((periph->periph_flags & PERIPH_RECOVERY_ACTIVE) != 0 &&
@@ -2128,6 +2127,7 @@ scsipi_execute_xs(xs)
 	return (error);
 }
 
+#ifdef notyet
 /*
  * scsipi_completion_thread:
  *
@@ -2210,7 +2210,7 @@ scsipi_completion_thread(arg)
 	/* In case parent is waiting for us to exit. */
 	wakeup(&chan->chan_thread);
 
-//	kthread_exit(0);
+	kthread_exit(0);
 }
 
 /*
@@ -2218,7 +2218,7 @@ scsipi_completion_thread(arg)
  *
  *	Callback to actually create the completion thread.
  */
-/*
+
 void
 scsipi_create_completion_thread(arg)
 	void *arg;
@@ -2234,7 +2234,7 @@ scsipi_create_completion_thread(arg)
 		panic("scsipi_create_completion_thread");
 	}
 }
-*/
+
 
 /*
  * scsipi_thread_call_callback:
@@ -2267,6 +2267,7 @@ scsipi_thread_call_callback(chan, callback, arg)
 	splx(s);
 	return(0);
 }
+#endif
 
 /*
  * scsipi_async_event:
