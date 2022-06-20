@@ -82,7 +82,7 @@ void	scsipi_async_event_max_openings(struct scsipi_channel *, struct scsipi_max_
 void	scsipi_async_event_xfer_mode(struct scsipi_channel *, struct scsipi_xfer_mode *);
 void	scsipi_async_event_channel_reset(struct scsipi_channel *);
 
-extern static struct lock_object scsibus_interlock;
+extern struct lock_object scsibus_interlock;
 
 /*
  * scsipi_init:

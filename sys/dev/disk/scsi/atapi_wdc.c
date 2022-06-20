@@ -58,11 +58,11 @@ __KERNEL_RCSID(0, "$NetBSD: atapi_wdc.c,v 1.69.2.2.2.1 2005/07/18 03:57:34 riz E
 #define	bus_space_read_multi_stream_4	bus_space_read_multi_4
 #endif /* __BUS_SPACE_HAS_STREAM_METHODS */
 
+#include <dev/disk/ata/atareg.h>
+#include <dev/disk/ata/atavar.h>
 #include <dev/core/ic/wdcreg.h>
 #include <dev/core/ic/wdcvar.h>
 
-#include <dev/disk/ata/atareg.h>
-#include <dev/disk/ata/atavar.h>
 #include <dev/disk/scsi/scsi_all.h> /* for SCSI status */
 
 #define DEBUG_INTR   0x01
