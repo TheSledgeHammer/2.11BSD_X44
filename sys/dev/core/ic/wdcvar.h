@@ -179,6 +179,8 @@ void	wdcattach(struct wdc_channel *);
 int	wdcdetach(struct device *, int);
 int	wdcactivate(struct device *, enum devact);
 int	wdcintr(void *);
+
+struct ata_xfer;
 void	wdc_exec_xfer(struct wdc_channel *, struct ata_xfer *);
 
 struct ata_xfer *wdc_get_xfer(int); /* int = WDC_NOSLEEP/CANSLEEP */
@@ -209,6 +211,7 @@ void	wdctimeout(void *arg);
 void	wdc_reset_channel(struct ata_drive_datas *, int);
 void	wdc_do_reset(struct wdc_channel *, int);
 
+struct wdc_command;
 int	wdc_exec_command(struct ata_drive_datas *, struct wdc_command*);
 #define WDC_COMPLETE 0x01
 #define WDC_QUEUED   0x02
@@ -234,11 +237,10 @@ void	wdc_probe_caps(struct ata_drive_datas*);
 
 /* ATA/ATAPI specs says a device can take 31s to reset */
 #define WDC_RESET_WAIT 31000
-
+struct atabus_softc;
 void	wdc_atapibus_attach(struct atabus_softc *);
 
 /* XXX */
-struct atabus_softc;
 void	atabusconfig(struct atabus_softc *);
 
 #endif /* _DEV_IC_WDCVAR_H_ */
