@@ -10,7 +10,7 @@ an offical release is made.)
 - Arch: Machine dependent code to be included
   - i386: (Partially implemented in arch/i386)
 	- timecounters
-	- threading: ucontext & mcontext
+	- bios: pnpbios & pcibios
 
 - Dev: Device code to be included
 	- USB
