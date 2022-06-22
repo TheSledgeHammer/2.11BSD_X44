@@ -92,7 +92,7 @@ static void pckbport_cleanup(void *);
 static int pckbport_cmdresponse(struct pckbport_tag *, pckbport_slot_t, u_char);
 static void pckbport_start(struct pckbport_tag *, pckbport_slot_t);
 
-static const char * const pckbport_slot_names[] = { "kbd", "aux" };
+const char * const pckbport_slot_names[] = { "kbd", "aux" };
 
 static struct pckbport_tag pckbport_cntag;
 
