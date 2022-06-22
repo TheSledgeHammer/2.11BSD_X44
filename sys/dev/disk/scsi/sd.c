@@ -74,10 +74,9 @@ __KERNEL_RCSID(0, "$NetBSD: sd.c,v 1.216.2.3 2004/09/11 12:55:11 he Exp $");
 #include <sys/disk.h>
 #include <sys/proc.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
-#if NRND > 0
-#include <sys/rnd.h>
-#endif
+#include <sys/power.h>
 
 #include <dev/disk/scsi/scsipi_all.h>
 #include <dev/disk/scsi/scsi_all.h>
@@ -87,43 +86,41 @@ __KERNEL_RCSID(0, "$NetBSD: sd.c,v 1.216.2.3 2004/09/11 12:55:11 he Exp $");
 #include <dev/disk/scsi/scsipi_base.h>
 #include <dev/disk/scsi/sdvar.h>
 
-#define	SDUNIT(dev)			DISKUNIT(dev)
-#define	SDPART(dev)			DISKPART(dev)
-#define	SDMINOR(unit, part)		DISKMINOR(unit, part)
-#define	MAKESDDEV(maj, unit, part)	MAKEDISKDEV(maj, unit, part)
+#define	SDUNIT(dev)					dkunit(dev)
+#define	SDPART(dev)					dkpart(dev)
+#define	SDMINOR(unit, part)			dkminor(unit, part)
+#define	MAKESDDEV(maj, unit, part)	dkmakedev(maj, unit, part)
 
-#define	SDLABELDEV(dev)	(MAKESDDEV(major(dev), SDUNIT(dev), RAW_PART))
+#define	SDLABELDEV(dev)				(MAKESDDEV(major(dev), SDUNIT(dev), RAW_PART))
 
-int		sdlock (struct sd_softc *);
-void	sdunlock (struct sd_softc *);
-void	sdminphys (struct buf *);
-void	sdgetdefaultlabel (struct sd_softc *, struct disklabel *);
-void	sdgetdisklabel (struct sd_softc *);
-void	sdstart (struct scsipi_periph *);
-void	sdrestart (void *);
-void	sddone (struct scsipi_xfer *);
-void	sd_shutdown (void *);
-int		sd_reassign_blocks (struct sd_softc *, u_long);
-int		sd_interpret_sense (struct scsipi_xfer *);
+int		sdlock(struct sd_softc *);
+void	sdunlock(struct sd_softc *);
+void	sdminphys(struct buf *);
+void	sdgetdefaultlabel(struct sd_softc *, struct disklabel *);
+void	sdgetdisklabel(struct sd_softc *);
+void	sdstart(struct scsipi_periph *);
+void	sdrestart(void *);
+void	sddone(struct scsipi_xfer *);
+void	sd_shutdown(void *);
+int		sd_reassign_blocks(struct sd_softc *, u_long);
+int		sd_interpret_sense(struct scsipi_xfer *);
 
-int	sd_mode_sense (struct sd_softc *, u_int8_t, void *, size_t, int, int, int *);
-int	sd_mode_select (struct sd_softc *, u_int8_t, void *, size_t, int, int);
-int	sd_get_simplifiedparms (struct sd_softc *, struct disk_parms *, int);
-int	sd_get_capacity (struct sd_softc *, struct disk_parms *, int);
-int	sd_get_parms (struct sd_softc *, struct disk_parms *, int);
-int	sd_get_parms_page4 (struct sd_softc *, struct disk_parms *,
-	    int);
-int	sd_get_parms_page5 (struct sd_softc *, struct disk_parms *,
-	    int);
+int	sd_mode_sense(struct sd_softc *, u_int8_t, void *, size_t, int, int, int *);
+int	sd_mode_select(struct sd_softc *, u_int8_t, void *, size_t, int, int);
+int	sd_get_simplifiedparms(struct sd_softc *, struct disk_parms *, int);
+int	sd_get_capacity(struct sd_softc *, struct disk_parms *, int);
+int	sd_get_parms(struct sd_softc *, struct disk_parms *, int);
+int	sd_get_parms_page4(struct sd_softc *, struct disk_parms *, int);
+int	sd_get_parms_page5(struct sd_softc *, struct disk_parms *, int);
 
 int	sd_flush (struct sd_softc *, int);
 int	sd_getcache (struct sd_softc *, int *);
 int	sd_setcache (struct sd_softc *, int);
 
 int	sdmatch (struct device *, struct cfdata *, void *);
-void	sdattach (struct device *, struct device *, void *);
-int	sdactivate (struct device *, enum devact);
-int	sddetach (struct device *, int);
+void sdattach(struct device *, struct device *, void *);
+int	sdactivate(struct device *, enum devact);
+int	sddetach(struct device *, int);
 
 CFOPS_DECL(sd, sdmatch, sdattach, sddetach, sdactivate);
 CFDRIVER_DECL(NULL, sd, &sd_cops, DV_DISK, sizeof(struct sd_softc));
@@ -293,8 +290,7 @@ sdattach(parent, self, aux)
 	printf("%s: ", sd->sc_dev.dv_xname);
 	switch (result) {
 	case SDGP_RESULT_OK:
-		format_bytes(pbuf, sizeof(pbuf),
-		    (u_int64_t)dp->disksize * dp->blksize);
+		//format_bytes(pbuf, sizeof(pbuf), (u_int64_t)dp->disksize * dp->blksize);
 		printf("%s, %ld cyl, %ld head, %ld sec, %ld bytes/sect x %llu sectors",
 				pbuf, dp->cyls, dp->heads, dp->sectors, dp->blksize,
 				(unsigned long long) dp->disksize);
@@ -328,14 +324,6 @@ sdattach(parent, self, aux)
 	    shutdownhook_establish(sd_shutdown, sd)) == NULL)
 		printf("%s: WARNING: unable to establish shutdown hook\n",
 		    sd->sc_dev.dv_xname);
-
-#if NRND > 0
-	/*
-	 * attach the device into the random source list
-	 */
-	rnd_attach_source(&sd->rnd_source, sd->sc_dev.dv_xname,
-			  RND_TYPE_DISK, 0);
-#endif
 }
 
 int
@@ -404,11 +392,6 @@ sddetach(self, flags)
 
 	/* Get rid of the shutdown hook. */
 	shutdownhook_disestablish(sd->sc_sdhook);
-
-#if NRND > 0
-	/* Unhook the entropy source. */
-	rnd_detach_source(&sd->rnd_source);
-#endif
 
 	return (0);
 }
@@ -1042,12 +1025,9 @@ sdwrite(dev, uio, ioflag)
 	return (physio(sdstrategy, NULL, dev, B_WRITE, sdminphys, uio));
 }
 
-/*
- * Perform special action on behalf of the user
- * Knows about the internals of this device
- */
+/* internal sdioctl */
 int
-sdioctl(dev, cmd, addr, flag, p)
+sdioctl_sc(dev, cmd, addr, flag, p)
 	dev_t dev;
 	u_long cmd;
 	caddr_t addr;
@@ -1058,9 +1038,6 @@ sdioctl(dev, cmd, addr, flag, p)
 	struct scsipi_periph *periph = sd->sc_periph;
 	int part = SDPART(dev);
 	int error = 0;
-#ifdef __HAVE_OLD_DISKLABEL
-	struct disklabel *newlabel = NULL;
-#endif
 
 	SC_DEBUG(sd->sc_periph, SCSIPI_DB2, ("sdioctl 0x%lx ", cmd));
 
@@ -1081,9 +1058,10 @@ sdioctl(dev, cmd, addr, flag, p)
 		case OSCIOCIDENTIFY:
 		case SCIOCCOMMAND:
 		case SCIOCDEBUG:
-			if (part == RAW_PART)
+			if (part == RAW_PART) {
 				break;
-		/* FALLTHROUGH */
+			}
+			/* FALLTHROUGH */
 		default:
 			if ((periph->periph_flags & PERIPH_OPEN) == 0)
 				return (ENODEV);
@@ -1093,79 +1071,33 @@ sdioctl(dev, cmd, addr, flag, p)
 	}
 
 	switch (cmd) {
-	case DIOCGDINFO:
-		*(struct disklabel *)addr = *(sd->sc_dk.dk_label);
-		return (0);
-
-#ifdef __HAVE_OLD_DISKLABEL
-	case ODIOCGDINFO:
-		newlabel = malloc(sizeof *newlabel, M_TEMP, M_WAITOK);
-		if (newlabel == NULL)
-			return EIO;
-		memcpy(newlabel, sd->sc_dk.dk_label, sizeof (*newlabel));
-		if (newlabel->d_npartitions <= OLDMAXPARTITIONS)
-			memcpy(addr, newlabel, sizeof (struct olddisklabel));
-		else
-			error = ENOTTY;
-		free(newlabel, M_TEMP);
-		return error;
-#endif
-
-	case DIOCGPART:
-		((struct partinfo *)addr)->disklab = sd->sc_dk.dk_label;
-		((struct partinfo *)addr)->part =
-		    &sd->sc_dk.dk_label->d_partitions[part];
-		return (0);
-
-	case DIOCWDINFO:
 	case DIOCSDINFO:
-#ifdef __HAVE_OLD_DISKLABEL
-	case ODIOCWDINFO:
-	case ODIOCSDINFO:
-#endif
 	{
 		struct disklabel *lp;
 
-		if ((flag & FWRITE) == 0)
+		if ((flag & FWRITE) == 0) {
 			return (EBADF);
+		}
 
-#ifdef __HAVE_OLD_DISKLABEL
- 		if (cmd == ODIOCSDINFO || cmd == ODIOCWDINFO) {
-			newlabel = malloc(sizeof *newlabel, M_TEMP, M_WAITOK);
-			if (newlabel == NULL)
-				return EIO;
-			memset(newlabel, 0, sizeof newlabel);
-			memcpy(newlabel, addr, sizeof (struct olddisklabel));
-			lp = newlabel;
-		} else
-#endif
 		lp = (struct disklabel *)addr;
 
-		if ((error = sdlock(sd)) != 0)
-			goto bad;
+		if ((error = sdlock(sd)) != 0) {
+			return (error);
+		}
 		sd->flags |= SDF_LABELLING;
 
-		error = setdisklabel(sd->sc_dk.dk_label,
-		    lp, /*sd->sc_dk.dk_openmask : */0,
-		    sd->sc_dk.dk_cpulabel);
+		error = setdisklabel(sd->sc_dk.dk_label, lp, /*sd->sc_dk.dk_openmask : */
+				0);
 		if (error == 0) {
-			if (cmd == DIOCWDINFO
-#ifdef __HAVE_OLD_DISKLABEL
-			    || cmd == ODIOCWDINFO
-#endif
-			   )
-				error = writedisklabel(SDLABELDEV(dev),
-				    sdstrategy, sd->sc_dk.dk_label,
-				    sd->sc_dk.dk_cpulabel);
+			if (cmd == DIOCWDINFO) {
+			error = writedisklabel(SDLABELDEV(dev),
+					sdstrategy, sd->sc_dk.dk_label);
+			}
 		}
 
 		sd->flags &= ~SDF_LABELLING;
 		sdunlock(sd);
-bad:
-#ifdef __HAVE_OLD_DISKLABEL
-		if (newlabel != NULL)
-			free(newlabel, M_TEMP);
-#endif
+
 		return (error);
 	}
 
@@ -1217,20 +1149,6 @@ bad:
 		sdgetdefaultlabel(sd, (struct disklabel *)addr);
 		return (0);
 
-#ifdef __HAVE_OLD_DISKLABEL
-	case ODIOCGDEFLABEL:
-		newlabel = malloc(sizeof *newlabel, M_TEMP, M_WAITOK);
-		if (newlabel == NULL)
-			return EIO;
-		sdgetdefaultlabel(sd, newlabel);
-		if (newlabel->d_npartitions <= OLDMAXPARTITIONS)
-			memcpy(addr, newlabel, sizeof (struct olddisklabel));
-		else
-			error = ENOTTY;
-		free(newlabel, M_TEMP);
-		return error;
-#endif
-
 	case DIOCGCACHE:
 		return (sd_getcache(sd, (int *) addr));
 
@@ -1257,14 +1175,39 @@ bad:
 		return (error);
 
 	default:
-		if (part != RAW_PART)
+		if (part != RAW_PART) {
 			return (ENOTTY);
+		}
 		return (scsipi_do_ioctl(periph, dev, cmd, addr, flag, p));
 	}
 
 #ifdef DIAGNOSTIC
 	panic("sdioctl: impossible");
 #endif
+}
+
+/*
+ * Perform special action on behalf of the user
+ * Knows about the internals of this device
+ */
+int
+sdioctl(dev, cmd, addr, flag, p)
+	dev_t dev;
+	u_long cmd;
+	caddr_t addr;
+	int flag;
+	struct proc *p;
+{
+	struct sd_softc *sd;
+	int error;
+
+	sd = sd_cd.cd_devs[CDUNIT(dev)];
+
+	error = sdioctl_sc(sd, cmd, addr, flag, p);
+	if(error != 0) {
+		error = ioctldisklabel(sd->sc_dk, sdstrategy, cmd, addr, flag);
+	}
+	return (error);
 }
 
 void
@@ -1337,7 +1280,7 @@ sdgetdisklabel(sd)
 	 * Call the generic disklabel extraction routine
 	 */
 	errstring = readdisklabel(MAKESDDEV(0, sd->sc_dev.dv_unit, RAW_PART),
-	    sdstrategy, lp, sd->sc_dk.dk_cpulabel);
+	    sdstrategy, lp);
 	if (errstring) {
 		printf("%s: %s\n", sd->sc_dev.dv_xname, errstring);
 		return;

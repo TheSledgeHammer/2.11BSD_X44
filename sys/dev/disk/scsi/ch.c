@@ -67,38 +67,38 @@ __KERNEL_RCSID(0, "$NetBSD: ch.c,v 1.58.2.2 2004/09/11 12:51:07 he Exp $");
 #define CHUNIT(x)	(minor((x)))
 
 struct ch_softc {
-	struct device	sc_dev;		/* generic device info */
-	struct scsipi_periph *sc_periph;/* our periph data */
+	struct device			sc_dev;		/* generic device info */
+	struct scsipi_periph 	*sc_periph;/* our periph data */
 
-	u_int		sc_events;	/* event bitmask */
-	struct selinfo	sc_selq;	/* select/poll queue for events */
+	u_int					sc_events;	/* event bitmask */
+	struct selinfo			sc_selq;	/* select/poll queue for events */
 
-	int		sc_flags;	/* misc. info */
+	int						sc_flags;	/* misc. info */
 
-	int		sc_picker;	/* current picker */
+	int						sc_picker;	/* current picker */
 
 	/*
 	 * The following information is obtained from the
 	 * element address assignment page.
 	 */
-	int		sc_firsts[4];	/* firsts, indexed by CHET_* */
-	int		sc_counts[4];	/* counts, indexed by CHET_* */
+	int						sc_firsts[4];	/* firsts, indexed by CHET_* */
+	int						sc_counts[4];	/* counts, indexed by CHET_* */
 
 	/*
 	 * The following mask defines the legal combinations
 	 * of elements for the MOVE MEDIUM command.
 	 */
-	u_int8_t	sc_movemask[4];
+	u_int8_t				sc_movemask[4];
 
 	/*
 	 * As above, but for EXCHANGE MEDIUM.
 	 */
-	u_int8_t	sc_exchangemask[4];
+	u_int8_t				sc_exchangemask[4];
 
 	/*
 	 * Quirks; see below.
 	 */
-	int		sc_settledelay;	/* delay for settle */
+	int						sc_settledelay;	/* delay for settle */
 
 };
 
@@ -106,8 +106,8 @@ struct ch_softc {
 #define CHF_ROTATE		0x01	/* picker can rotate */
 
 /* Autoconfiguration glue */
-int		chmatch (struct device *, struct cfdata *, void *);
-void	chattach (struct device *, struct device *, void *);
+int		chmatch(struct device *, struct cfdata *, void *);
+void	chattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(ch, chmatch, chattach, NULL, NULL);
 CFDRIVER_DECL(NULL, ch, &ch_cops, DV_DULL, sizeof(struct ch_softc));
@@ -141,7 +141,7 @@ const struct cdevsw ch_cdevsw = {
 };
 
 /* SCSI glue */
-int	ch_interpret_sense (struct scsipi_xfer *);
+int	ch_interpret_sense(struct scsipi_xfer *);
 
 const struct scsipi_periphsw ch_switch = {
 	ch_interpret_sense,	/* check our error handler first */
@@ -150,27 +150,21 @@ const struct scsipi_periphsw ch_switch = {
 	NULL,			/* nothing to be done when xfer is done */
 };
 
-int	ch_move (struct ch_softc *, struct changer_move_request *);
-int	ch_exchange (struct ch_softc *, struct changer_exchange_request *);
-int	ch_position (struct ch_softc *, struct changer_position_request *);
-int	ch_ielem (struct ch_softc *);
-int	ch_ousergetelemstatus (struct ch_softc *, int, u_int8_t *);
-int	ch_usergetelemstatus (struct ch_softc *,
-	    struct changer_element_status_request *);
-int	ch_getelemstatus (struct ch_softc *, int, int, void *,
-	    size_t, int, int);
-int	ch_setvoltag (struct ch_softc *,
-	    struct changer_set_voltag_request *);
-int	ch_get_params (struct ch_softc *, int);
-void	ch_get_quirks (struct ch_softc *,
-	    struct scsipi_inquiry_pattern *);
-void	ch_event (struct ch_softc *, u_int);
-int	ch_map_element (struct ch_softc *, u_int16_t, int *, int *);
+int	ch_move(struct ch_softc *, struct changer_move_request *);
+int	ch_exchange(struct ch_softc *, struct changer_exchange_request *);
+int	ch_position(struct ch_softc *, struct changer_position_request *);
+int	ch_ielem(struct ch_softc *);
+int	ch_ousergetelemstatus(struct ch_softc *, int, u_int8_t *);
+int	ch_usergetelemstatus(struct ch_softc *, struct changer_element_status_request *);
+int	ch_getelemstatus(struct ch_softc *, int, int, void *, size_t, int, int);
+int	ch_setvoltag(struct ch_softc *, struct changer_set_voltag_request *);
+int	ch_get_params(struct ch_softc *, int);
+void ch_get_quirks(struct ch_softc *, struct scsipi_inquiry_pattern *);
+void ch_event(struct ch_softc *, u_int);
+int	ch_map_element(struct ch_softc *, u_int16_t, int *, int *);
 
-void	ch_voltag_convert_in (const struct changer_volume_tag *,
-	    struct changer_voltag *);
-int	ch_voltag_convert_out (const struct changer_voltag *,
-	    struct changer_volume_tag *);
+void ch_voltag_convert_in(const struct changer_volume_tag *, struct changer_voltag *);
+int	ch_voltag_convert_out(const struct changer_voltag *, struct changer_volume_tag *);
 
 /*
  * SCSI changer quirks.

@@ -1,4 +1,4 @@
-/*	$NetBSD: scsiio.h,v 1.5 1997/09/19 00:58:44 enami Exp $	*/
+/*     $NetBSD: scsiio.h,v 1.11 2002/07/10 21:56:42 wiz Exp $        */
 
 #ifndef _SYS_SCSIIO_H_
 #define _SYS_SCSIIO_H_

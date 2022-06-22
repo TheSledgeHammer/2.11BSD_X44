@@ -217,6 +217,10 @@ struct disklabel {
 		u_int32_t 	p_size;				/* number of sectors in partition */
 		u_int32_t 	p_offset;			/* starting sector */
 		u_int32_t 	p_fsize;			/* filesystem basic fragment size */
+		union {
+			u_int32_t session; 			/* ISO9660: session offset */
+		} __partition_u2;
+#define	p_session	__partition_u2.session
 		u_int8_t 	p_fstype;			/* filesystem type, see below */
 		u_int8_t 	p_frag;				/* filesystem fragments per block */
 		union {
@@ -253,10 +257,11 @@ struct disklabel {
 #define	DTYPE_FLOPPY		10		/* floppy */
 #define	DTYPE_CCD			11		/* concatenated disk */
 #define	DTYPE_VND			12		/* vnode pseudo-disk */
-#define	DTYPE_VINUM			13		/* vinum volume */
+#define DTYPE_ATAPI			13		/* ATAPI */
 #define	DTYPE_DOC2K			14		/* Msys DiskOnChip */
 #define	DTYPE_RAID			15		/* CMU RAIDFrame */
 #define	DTYPE_JFS2			16		/* IBM JFS 2 */
+#define	DTYPE_VINUM			17		/* vinum volume */
 
 /* d_subtype values: */
 #define DSTYPE_INDOSPART	0x8			/* is inside dos partition */
@@ -278,11 +283,12 @@ static char *dktypenames[] = {
 		"floppy",
 		"ccd",
 		"vnd",
-		"Vinum",
+		"ATAPI",
 		"DOC2K",
-		"Raid",
+		"RAID",
 		"?",
 		"jfs",
+		"Vinum",
 		NULL
 };
 #define DKMAXTYPES	(sizeof(dktypenames) / sizeof(dktypenames[0]) - 1)
