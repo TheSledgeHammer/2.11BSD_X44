@@ -44,6 +44,7 @@ __KERNEL_RCSID(0, "$NetBSD: ss.c,v 1.51.2.1 2004/09/11 12:56:41 he Exp $");
 #include <sys/user.h>
 #include <sys/device.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 #include <sys/scanio.h>
 

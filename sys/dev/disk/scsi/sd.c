@@ -967,11 +967,7 @@ sddone(xs)
 	}
 
 	if (xs->bp != NULL) {
-		disk_unbusy(&sd->sc_dk, xs->bp->b_bcount - xs->bp->b_resid,
-		    (xs->bp->b_flags & B_READ));
-#if NRND > 0
-		rnd_add_uint32(&sd->rnd_source, xs->bp->b_rawblkno);
-#endif
+		disk_unbusy(&sd->sc_dk, xs->bp->b_bcount - xs->bp->b_resid);
 	}
 }
 
@@ -1201,11 +1197,11 @@ sdioctl(dev, cmd, addr, flag, p)
 	struct sd_softc *sd;
 	int error;
 
-	sd = sd_cd.cd_devs[CDUNIT(dev)];
+	sd = sd_cd.cd_devs[SDUNIT(dev)];
 
-	error = sdioctl_sc(sd, cmd, addr, flag, p);
+	error = sdioctl_sc(sd, dev, cmd, addr, flag, p);
 	if(error != 0) {
-		error = ioctldisklabel(sd->sc_dk, sdstrategy, cmd, addr, flag);
+		error = ioctldisklabel(&sd->sc_dk, sdstrategy, dev, cmd, addr, flag);
 	}
 	return (error);
 }

@@ -497,8 +497,7 @@ ready:
 
 	if (wdc->cap & WDC_CAPABILITY_SELECT)
 		wdc->select(chp, xfer->c_drive);
-	bus_space_write_1(chp->cmd_iot, chp->cmd_iohs[wd_sdh], 0,
-	    WDSD_IBM | (xfer->c_drive << 4));
+	bus_space_write_1(chp->cmd_iot, chp->cmd_iohs[wd_sdh], 0, WDSD_IBM | (xfer->c_drive << 4));
 	switch (wdc_wait_for_unbusy(chp, ATAPI_DELAY, wait_flags)  < 0) {
 	case WDCWAIT_OK:
 		break;

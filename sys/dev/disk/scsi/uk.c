@@ -51,6 +51,7 @@ __KERNEL_RCSID(0, "$NetBSD: uk.c,v 1.41 2003/09/08 01:26:42 mycroft Exp $");
 #include <sys/ioctl.h>
 #include <sys/device.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 
 #include <dev/disk/scsi/scsi_all.h>

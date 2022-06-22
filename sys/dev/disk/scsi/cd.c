@@ -1520,9 +1520,9 @@ cdioctl(dev, cmd, addr, flag, p)
 
 	cd = cd_cd.cd_devs[CDUNIT(dev)];
 
-	error = cdioctl_sc(cd, cmd, addr, flag, p);
+	error = cdioctl_sc(cd, dev, cmd, addr, flag, p);
 	if(error != 0) {
-		error = ioctldisklabel(cd->sc_dk, cdstrategy, cmd, addr, flag);
+		error = ioctldisklabel(&cd->sc_dk, cdstrategy, dev, cmd, addr, flag);
 	}
 	return (error);
 }
@@ -1572,7 +1572,7 @@ cdgetdefaultlabel(cd, lp)
 	lp->d_partitions[0].p_size =
 	    lp->d_secperunit * (lp->d_secsize / DEV_BSIZE);
 #endif
-	lp->d_partitions[0].p_session = lastsession;
+	lp->d_partitions[0].p_cdsession = lastsession;
 	lp->d_partitions[0].p_fstype = FS_ISO9660;
 	lp->d_partitions[RAW_PART].p_offset = 0;
 #ifdef notyet

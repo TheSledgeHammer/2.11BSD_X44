@@ -72,6 +72,7 @@ __KERNEL_RCSID(0, "$NetBSD: st.c,v 1.163.4.1 2004/09/11 12:58:36 he Exp $");
 #include <sys/mtio.h>
 #include <sys/device.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/kernel.h>
 #include <sys/vnode.h>
 
@@ -331,26 +332,26 @@ const struct st_quirk_inquiry_pattern st_quirk_patterns[] = {
 #define NOEJECT 0
 #define EJECT 1
 
-void	st_identify_drive (struct st_softc *,
+void	st_identify_drive(struct st_softc *,
 	    struct scsipi_inquiry_pattern *);
-void	st_loadquirks (struct st_softc *);
-int	st_mount_tape (dev_t, int);
-void	st_unmount (struct st_softc *, boolean);
-int	st_decide_mode (struct st_softc *, boolean);
-void	ststart (struct scsipi_periph *);
-void	strestart (void *);
-void	stdone (struct scsipi_xfer *);
-int	st_read (struct st_softc *, char *, int, int);
-int	st_space (struct st_softc *, int, u_int, int);
-int	st_write_filemarks (struct st_softc *, int, int);
-int	st_check_eod (struct st_softc *, boolean, int *, int);
-int	st_load (struct st_softc *, u_int, int);
-int	st_rewind (struct st_softc *, u_int, int);
-int	st_interpret_sense (struct scsipi_xfer *);
-int	st_touch_tape (struct st_softc *);
-int	st_erase (struct st_softc *, int full, int flags);
-int	st_rdpos (struct st_softc *, int, u_int32_t *);
-int	st_setpos (struct st_softc *, int, u_int32_t *);
+void	st_loadquirks(struct st_softc *);
+int	st_mount_tape(dev_t, int);
+void	st_unmount(struct st_softc *, boolean);
+int	st_decide_mode(struct st_softc *, boolean);
+void	ststart(struct scsipi_periph *);
+void	strestart(void *);
+void	stdone(struct scsipi_xfer *);
+int	st_read(struct st_softc *, char *, int, int);
+int	st_space(struct st_softc *, int, u_int, int);
+int	st_write_filemarks(struct st_softc *, int, int);
+int	st_check_eod(struct st_softc *, boolean, int *, int);
+int	st_load(struct st_softc *, u_int, int);
+int	st_rewind(struct st_softc *, u_int, int);
+int	st_interpret_sense(struct scsipi_xfer *);
+int	st_touch_tape(struct st_softc *);
+int	st_erase(struct st_softc *, int full, int flags);
+int	st_rdpos(struct st_softc *, int, u_int32_t *);
+int	st_setpos(struct st_softc *, int, u_int32_t *);
 
 const struct scsipi_periphsw st_switch = {
 	st_interpret_sense,
