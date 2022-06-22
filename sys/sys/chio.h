@@ -117,8 +117,8 @@ struct changer_params {
  * Old-style command used to get element status.
  */
 struct ochanger_element_status_request {
-	int			ces_type;	/* element type */
-	u_int8_t 	*ces_data;	/* pre-allocated data storage */
+	int			cesr_type;	/* element type */
+	u_int8_t 	*cesr_data;	/* pre-allocated data storage */
 };
 
 /*

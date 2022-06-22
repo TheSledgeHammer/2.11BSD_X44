@@ -220,7 +220,7 @@ struct disklabel {
 		union {
 			u_int32_t session; 			/* ISO9660: session offset */
 		} __partition_u2;
-#define	p_session	__partition_u2.session
+#define	p_cdsession	__partition_u2.session
 		u_int8_t 	p_fstype;			/* filesystem type, see below */
 		u_int8_t 	p_frag;				/* filesystem fragments per block */
 		union {
