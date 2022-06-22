@@ -1023,14 +1023,14 @@ sdwrite(dev, uio, ioflag)
 
 /* internal sdioctl */
 int
-sdioctl_sc(dev, cmd, addr, flag, p)
+sdioctl_sc(sd, dev, cmd, addr, flag, p)
+	struct sd_softc *sd;
 	dev_t dev;
 	u_long cmd;
 	caddr_t addr;
 	int flag;
 	struct proc *p;
 {
-	struct sd_softc *sd = sd_cd.cd_devs[SDUNIT(dev)];
 	struct scsipi_periph *periph = sd->sc_periph;
 	int part = SDPART(dev);
 	int error = 0;
