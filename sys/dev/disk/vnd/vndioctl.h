@@ -158,8 +158,6 @@ struct vnd_softc {
 	char		 		sc_xname[8];	/* XXX external name */
 	struct dkdevice		sc_dkdev;		/* generic disk device info */
 	struct vndgeom	 	sc_geom;		/* virtual geometry */
-	struct vndxfer		sc_vxpool;		/* vndxfer pool */
-	struct vndbuf		sc_vbpool;		/* vndbuf pool */
 	struct proc 		*sc_kthread;	/* kernel thread */
 };
 #endif

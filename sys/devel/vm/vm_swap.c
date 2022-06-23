@@ -96,15 +96,15 @@ swapinit()
 	/*
 	 * Now set up swap buffer headers.
 	 */
-	bswlist.b_actf = sp;
+	TAILQ_INIT(&bswlist);
 	for (i = 0; i < nswbuf - 1; i++, sp++) {
-		sp->b_actf = sp + 1;
+		TAILQ_INSERT_HEAD(&bswlist, sp, b_freelist);
 		sp->b_rcred = sp->b_wcred = p->p_ucred;
 		LIST_NEXT(sp, b_vnbufs) = NOLIST;
 	}
 	sp->b_rcred = sp->b_wcred = p->p_ucred;
 	LIST_NEXT(sp, b_vnbufs) = NOLIST;
-	sp->b_actf = NULL;
+	TAILQ_REMOVE(&bswlist, sp, b_actq);
 }
 
 void
@@ -232,22 +232,19 @@ swalloc(index, lessok)
 }
 
 int
-swfree(p, index)
+swfree(p, index, nslots)
 	struct proc *p;
-	int index;
+	int index, nslots;
 {
 	register struct swdevt 	*swp;
 	register struct swapdev *sdp;
 	register struct vnode 	*vp;
+	const struct bdevsw		*bdev;
 	dev_t dev;
-	register swblk_t 		vsbase;
-	register long 	 		blk;
-	register swblk_t 		dvbase;
-	register int 			nblks;
-	register int 			startslot;
-	register int 			nslots;
-	int perdev;
-	int 					error;
+	register swblk_t vsbase, dvbase;
+	register long blk;
+	register int nblks, npages, startslot;
+	int error, perdev;
 
 	swp = &swdevt[index];
 	sdp = swp->sw_swapdev;
@@ -257,48 +254,120 @@ swfree(p, index)
 	}
 	swp->sw_flags |= SW_FREED;
 	nblks = swp->sw_nblks;
+	npages = dbtob(nblks) >> PAGE_SHIFT;
 	if (nblks <= 0) {
 		perdev = nswap / nswdev;
+		dev = swp->sw_dev;
+		bdev = bdevsw_lookup(dev);
+		if (bdev->d_psize == 0 || (nblks = (*bdev->d_psize)(dev)) == -1) {
+			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+			swp->sw_flags &= ~SW_FREED;
+			return (ENXIO);
+		}
+#ifdef SEQSWAP
+		if (index < niswdev) {
+			perdev = niswap / niswdev;
+			if (nblks > perdev) {
+				nblks = perdev;
+			}
+		} else {
+			if (nblks % dmmax) {
+				nblks -= (nblks % dmmax);
+			}
+			nswap += nblks;
+		}
+#else
 		if (nblks > perdev) {
 			nblks = perdev;
 		}
+#endif
 		swp->sw_nblks = nblks;
+		npages = dbtob(nblks) >> PAGE_SHIFT;
 	}
-	startslot = swap_search(swp, sdp);
-	/* find nslots */
 
+	if (nblks == 0) {
+		if (swap_sanity(nblks, npages) == 0) {
+			startslot = swap_search(swp, sdp, nblks, npages);
+			vm_swap_free(startslot, nslots);
+		}
+		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
+		swp->sw_flags &= ~SW_FREED;
+		return (0);
+	}
 	/*
-	 * use below method combined with original swfree(p, indx).
-	 * free swapextents then free swapmap if needed.
-	 * (in a similar vein to swap startup. 1st swapmap, 2nd swapextents)
+	 * 1st: free swap extents.
+	 * 2nd: free swapmap.
 	 */
-	vm_swap_free(startslot, nslots);
+//	startslot = swap_search(swp, sdp);
+//	vm_swap_free(startslot, nslots);
+
+#ifdef SEQSWAP
+	if (swp->sw_flags & SW_SEQUENTIAL) {
+		register struct swdevt *swp;
+
+		blk = niswap;
+		for (swp = &swdevt[niswdev]; swp != swp; swp++) {
+			blk += swp->sw_nblks;
+		}
+		rmfree(swapmap, nblks, blk);
+		return (0);
+	}
+#endif
+	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+#ifdef SEQSWAP
+		if ((vsbase = index*dmmax + dvbase*niswdev) >= niswap) {
+			panic("swfree");
+		}
+#else
+		if ((vsbase = index * dmmax + dvbase * nswdev) >= nswap) {
+			panic("swfree");
+		}
+#endif
+		if (blk > dmmax) {
+			blk = dmmax;
+		}
+		if (vsbase == 0) {
+			/*
+			 * First of all chunks... initialize the swapmap.
+			 * Don't use the first cluster of the device
+			 * in case it starts with a label or boot block.
+			 */
+			rminit(swapmap, blk - ctod(CLSIZE), vsbase + ctod(CLSIZE), "swap",
+			M_SWAPMAP, nswapmap);
+		} else if (dvbase == 0) {
+			/*
+			 * Don't use the first cluster of the device
+			 * in case it starts with a label or boot block.
+			 */
+			rmfree(swapmap, blk - ctod(CLSIZE), vsbase + ctod(CLSIZE));
+		} else {
+			rmfree(swapmap, blk, vsbase);
+		}
+	}
+	return (0);
 }
 
 /* find startslot for /dev/drum */
 int
-swap_search(swp, sdp)
+swap_search(swp, sdp, nblks, npages)
 	struct swdevt 	*swp;
 	struct swapdev 	*sdp;
+	int nblks, npages;
 {
-	int pageno, npages, nblks, startslot;
+	int pageno, startslot;
 
-	nblks = swp->sw_nblks;
-	npages = dbtob(nblks) >> PAGE_SHIFT;
-	if(swap_sanity(nblks, npages) == 0) {
-		pageno = btodb(npages << PAGE_SHIFT);
-		if (pageno == 0) {
-			for(pageno = 1; pageno <= npages; pageno++) {
-				if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
-					startslot = sdp->swd_drumoffset;
-					break;
-				}
-			}
-		} else {
+	pageno = btodb(npages << PAGE_SHIFT);
+	if (pageno == 0) {
+		for(pageno = 1; pageno <= npages; pageno++) {
 			if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
 				startslot = sdp->swd_drumoffset;
 				break;
 			}
+		}
+	} else {
+		if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
+			startslot = sdp->swd_drumoffset;
+			break;
 		}
 	}
 	return (startslot);

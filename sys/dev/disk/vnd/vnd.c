@@ -186,15 +186,11 @@ struct vndbuf {
 	struct vndxfer	*vb_xfer;
 };
 
-#define	VND_GETXFER(vnd)	(malloc(sizeof(&(vnd)->sc_vxpool), M_DEVBUF, M_WAITOK))
-#define	VND_PUTXFER(vnd, vx)			\
-	free(&(vnd)->sc_vxpool, M_DEVBUF); 	\
-	free((vx), M_DEVBUF);
+#define	VND_GETXFER()		(malloc(sizeof(struct vndxfer), M_DEVBUF, M_WAITOK))
+#define	VND_PUTXFER(vx)		(free((vx), M_DEVBUF))
 
-#define	VND_GETBUF(vnd)		(malloc(sizeof(&(vnd)->sc_vbpool), M_DEVBUF, M_WAITOK))
-#define	VND_PUTBUF(vnd, vb)				\
-	free(&(vnd)->sc_vbpool, M_DEVBUF);	\
-	free((vb), M_DEVBUF);
+#define	VND_GETBUF()		(malloc(sizeof(struct vndbuf), M_DEVBUF, M_WAITOK))
+#define	VND_PUTBUF(vb)		(free((vb), M_DEVBUF))
 
 struct vnd_softc *vnd_softc;
 int numvnd = 0;
@@ -205,7 +201,7 @@ int numvnd = 0;
 void	vndattach(int);
 int		vnddetach(void);
 
-void	vndclear(struct vnd_softc *);
+void	vndclear(struct vnd_softc *, int);
 int		vndsetcred(struct vnd_softc *, struct ucred *);
 void	vndthrottle(struct vnd_softc *, struct vnode *);
 void	vndiodone(struct buf *);
@@ -553,7 +549,7 @@ vndthread(void *arg)
 		 * buffer
 		 */
 		s = splbio();
-		vnx = VND_GETXFER(vnd);
+		vnx = VND_GETXFER();
 		splx(s);
 		vnx->vx_flags = VX_BUSY;
 		vnx->vx_error = 0;
@@ -621,7 +617,7 @@ vndthread(void *arg)
 				tsleep(&vnd->sc_tab, PRIBIO, "vndac", 0);
 			}
 			vnd->sc_active++;
-			nbp = VND_GETBUF(vnd);
+			nbp = VND_GETBUF();
 			splx(s);
 			BUF_INIT(&nbp->vb_buf);
 			nbp->vb_buf.b_flags = flags;
@@ -644,7 +640,7 @@ vndthread(void *arg)
 			 */
 			s = splbio();
 			if (vnx->vx_error != 0) {
-				VND_PUTBUF(vnd, nbp);
+				VND_PUTBUF(nbp);
 				goto out;
 			}
 			vnx->vx_pending++;
@@ -683,7 +679,7 @@ out: /* Arrive here at splbio */
 				bp->b_error = vnx->vx_error;
 				bp->b_flags |= B_ERROR;
 			}
-			VND_PUTXFER(vnd, vnx);
+			VND_PUTXFER(vnx);
 			biodone(bp);
 		}
 		continue;
@@ -734,7 +730,7 @@ vndiodone(bp)
 	if (vbp->vb_buf.b_vp != NULLVP)
 		brelvp(&vbp->vb_buf);
 
-	VND_PUTBUF(vnd, vbp);
+	VND_PUTBUF(vbp);
 
 	/*
 	 * Wrap up this transaction if it has run to completion or, in
@@ -750,7 +746,7 @@ vndiodone(bp)
 				printf("vndiodone: pbp %p iodone: error %d\n",
 					pbp, vnx->vx_error);
 #endif
-			VND_PUTXFER(vnd, vnx);
+			VND_PUTXFER(vnx);
 			biodone(pbp);
 		}
 	} else if (pbp->b_resid == 0) {
@@ -765,7 +761,7 @@ vndiodone(bp)
 			if (vnddebug & VDB_IO)
 				printf("vndiodone: pbp %p iodone\n", pbp);
 #endif
-			VND_PUTXFER(vnd, vnx);
+			VND_PUTXFER(vnx);
 			biodone(pbp);
 		}
 	}
@@ -852,7 +848,6 @@ vndioctl_sc(vnd, dev, cmd, data, flag, p)
 	if (unit >= numvnd)
 		return (ENXIO);
 
-	//vnd = &vnd_softc[unit];
 	vio = (struct vnd_ioctl *)data;
 
 	/* Must be open for writes for these commands... */
@@ -896,7 +891,7 @@ vndioctl_sc(vnd, dev, cmd, data, flag, p)
 		if ((error = vn_open(&nd, fflags, 0)) != 0)
 			goto unlock_and_exit;
 		error = VOP_GETATTR(nd.ni_vp, &vattr, p->p_ucred, p);
-		VOP_UNLOCK(nd.ni_vp, 0);
+		VOP_UNLOCK(nd.ni_vp, 0, p);
 		if (!error && nd.ni_vp->v_type != VREG)
 			error = EOPNOTSUPP;
 		if (error)
@@ -995,10 +990,6 @@ vndioctl_sc(vnd, dev, cmd, data, flag, p)
 		vnd->sc_dkdev.dk_name = vnd->sc_xname;
 		disk_attach(&vnd->sc_dkdev);
 
-		/* Initialize the xfer and buffer pools. */
-		vnd->sc_vxpool = (struct vndxfer)malloc(sizeof(struct vndxfer), M_DEVBUF, M_WAITOK);
-		vnd->sc_vbpool = (struct vndbuf)malloc(sizeof(struct vndbuf), M_DEVBUF, M_WAITOK);
-
 		/* Try and read the disklabel. */
 		vndgetdisklabel(dev);
 
@@ -1041,10 +1032,6 @@ unlock_and_exit:
 		if (vnddebug & VDB_INIT)
 			printf("vndioctl: CLRed\n");
 #endif
-
-		/* Destroy the xfer and buffer pools. */
-		free(&vnd->sc_vxpool, M_DEVBUF);
-		free(&vnd->sc_vbpool, M_DEVBUF);
 
 		/* Detatch the disk. */
 		disk_detach(&vnd->sc_dkdev);
@@ -1116,7 +1103,7 @@ unlock_and_exit:
 		return (ENOTTY);
 	}
 
-//	return (0);
+	return (0);
 }
 
 int
@@ -1168,7 +1155,7 @@ vndsetcred(vnd, cred)
 	auio.uio_rw = UIO_READ;
 	auio.uio_segflg = UIO_SYSSPACE;
 	auio.uio_resid = aiov.iov_len;
-	vn_lock(vnd->sc_vp, LK_EXCLUSIVE | LK_RETRY);
+	vn_lock(vnd->sc_vp, LK_EXCLUSIVE | LK_RETRY, vnd->sc_vp->v_proc);
 	error = VOP_READ(vnd->sc_vp, &auio, 0, vnd->sc_cred);
 	if (error == 0) {
 		/*
@@ -1214,7 +1201,7 @@ vndshutdown()
 
 	for (vnd = &vnd_softc[0]; vnd < &vnd_softc[numvnd]; vnd++)
 		if (vnd->sc_flags & VNF_INITED)
-			vndclear(vnd);
+			vndclear(vnd, vndunit(vnd->sc_unit));
 }
 
 void

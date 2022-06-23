@@ -1138,14 +1138,11 @@ wdperror(const struct wd_softc *wd)
 }
 
 int
-wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
+wdioctl_sc(struct wd_softc *wd, dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 {
-	struct wd_softc *wd;
 	int error;
 
-	wd = wd_cd.cd_devs[WDUNIT(dev)];
 	error = 0;
-
 	WDCDEBUG_PRINT(("wdioctl\n"), DEBUG_FUNCS);
 	if ((wd->sc_flags & WDF_LOADED) == 0) {
 		return (EIO);
@@ -1329,16 +1326,26 @@ wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
 		}
 
 	default:
-		error = ioctldisklabel(&wd->sc_dk, wdstrategy, dev, xfer, addr, flag);
-		if(error == 0) {
-			return (error);
-		}
 		return (ENOTTY);
 	}
 
 #ifdef DIAGNOSTIC
 	panic("wdioctl: impossible");
 #endif
+}
+
+int
+wdioctl(dev_t dev, u_long xfer, caddr_t addr, int flag, struct proc *p)
+{
+	struct wd_softc *wd;
+	int error;
+
+	wd = wd_cd.cd_devs[WDUNIT(dev)];
+	error = wdioctl_sc(wd, dev, xfer, addr, flag, p);
+	if(error != 0) {
+		error = ioctldisklabel(&wd->sc_dk, wdstrategy, dev, xfer, addr, flag);
+	}
+	return (error);
 }
 
 #ifdef B_FORMAT
