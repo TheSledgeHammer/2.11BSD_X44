@@ -260,18 +260,15 @@ vndattach(num)
 {
 	int i;
 	char *mem;
-	register u_long size;
 
 	if (num <= 0) {
 		return;
 	}
-	size = num * sizeof(struct vnd_softc);
-	mem = malloc(size, M_DEVBUF, M_NOWAIT);
+	mem = calloc(num, sizeof(struct vnd_softc), M_DEVBUF, M_NOWAIT);
 	if (mem == NULL) {
 		printf("WARNING: no memory for vnode disks\n");
 		return;
 	}
-	bzero(mem, size);
 	vnd_softc = (struct vnd_softc *)mem;
 	numvnd = num;
 
