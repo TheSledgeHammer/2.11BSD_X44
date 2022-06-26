@@ -1381,7 +1381,7 @@ ccdlookup(path, p, vpp)
 		vprint("ccdlookup: vnode info", vp);
 #endif
 
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 	*vpp = vp;
 	return (0);
 }
