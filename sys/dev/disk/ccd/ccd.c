@@ -191,6 +191,15 @@ static	void ccdgetdefaultlabel(struct ccd_softc *, struct disklabel *);
 static	void ccdgetdisklabel(dev_t);
 static	void ccdmakedisklabel(struct ccd_softc *);
 
+dev_type_open(ccdopen);
+dev_type_close(ccdclose);
+dev_type_read(ccdread);
+dev_type_write(ccdwrite);
+dev_type_ioctl(ccdioctl);
+dev_type_strategy(ccdstrategy);
+dev_type_dump(ccddump);
+dev_type_size(ccdsize);
+
 const struct bdevsw ccd_bdevsw = {
 	.d_open = ccdopen,
 	.d_close = ccdclose,
@@ -221,7 +230,6 @@ const struct cdevsw ccd_cdevsw = {
 #ifdef DEBUG
 static	void printiinfo(struct ccdiinfo *);
 #endif
-
 
 /* Non-private for the benefit of libkvm. */
 struct ccd_softc  *ccd_softc;
@@ -338,7 +346,7 @@ ccdinit(cs, cpaths, vpp, p)
 		/*
 		 * Get partition information for the component.
 		 */
-		error = VOP_IOCTL(vpp[ix], DIOCGPART, &dpart, FREAD, p->p_ucred, p);
+		error = VOP_IOCTL(vpp[ix], DIOCGPART, (void *)&dpart, FREAD, p->p_ucred, p);
 		if (error) {
 #ifdef DEBUG
 			if (ccddebug & (CCDB_FOLLOW|CCDB_INIT))
@@ -603,7 +611,7 @@ ccdopen(dev, flags, fmt, p)
 	    cs->sc_dkdev.dk_copenmask | cs->sc_dkdev.dk_bopenmask;
 
  done:
-	(void) lockmgr(&cs->sc_lock, LK_RELEASE, NULL);
+	(void) lockmgr(&cs->sc_lock, LK_RELEASE, NULL, p->p_pid);
 	return (error);
 }
 
@@ -627,7 +635,7 @@ ccdclose(dev, flags, fmt, p)
 		return (ENXIO);
 	cs = &ccd_softc[unit];
 
-	if ((error = lockmgr(&cs->sc_lock, LK_EXCLUSIVE, NULL)) != 0)
+	if ((error = lockmgr(&cs->sc_lock, LK_EXCLUSIVE, NULL, p->p_pid)) != 0)
 		return (error);
 
 	part = dkpart(dev);
@@ -650,7 +658,7 @@ ccdclose(dev, flags, fmt, p)
 			cs->sc_flags &= ~CCDF_VLABEL;
 	}
 
-	(void) lockmgr(&cs->sc_lock, LK_RELEASE, NULL);
+	(void) lockmgr(&cs->sc_lock, LK_RELEASE, NULL, p->p_pid);
 	return (0);
 }
 
@@ -754,7 +762,7 @@ ccdstart(cs)
 					SIMPLEQ_REMOVE_HEAD(&cbufq, cb_q);
 					CCD_PUTBUF(cbp);
 				}
-				disk_unbusy(&cs->sc_dkdev, 0, 0);
+				disk_unbusy(&cs->sc_dkdev, 0);
 				return;
 			}
 			SIMPLEQ_INSERT_TAIL(&cbufq, cbp, cb_q);
@@ -771,7 +779,7 @@ ccdstart(cs)
 			SIMPLEQ_REMOVE_HEAD(&cbufq, cb_q);
 			if ((cbp->cb_buf.b_flags & B_READ) == 0)
 				cbp->cb_buf.b_vp->v_numoutput++;
-			DEV_STRATEGY(&cbp->cb_buf);
+			VOP_STRATEGY(&cbp->cb_buf);
 		}
 	}
 }
@@ -898,8 +906,7 @@ ccdintr(cs, bp)
 	 */
 	if (bp->b_flags & B_ERROR)
 		bp->b_resid = bp->b_bcount;
-	disk_unbusy(&cs->sc_dkdev, (bp->b_bcount - bp->b_resid),
-			(bp->b_flags & B_READ));
+	disk_unbusy(&cs->sc_dkdev, (bp->b_bcount - bp->b_resid));
 	biodone(bp);
 }
 
@@ -1044,7 +1051,7 @@ ccdioctl_sc(cs, dev, cmd, data, flag, p)
 			return (EBADF);
 	}
 
-	if ((error = lockmgr(&cs->sc_lock, LK_EXCLUSIVE, NULL)) != 0)
+	if ((error = lockmgr(&cs->sc_lock, LK_EXCLUSIVE, NULL, p->p_pid)) != 0)
 		return (error);
 
 	/* Must be initialized for these... */
@@ -1090,13 +1097,13 @@ ccdioctl_sc(cs, dev, cmd, data, flag, p)
 		 * Allocate space for and copy in the array of
 		 * componet pathnames and device numbers.
 		 */
-		cpp = malloc(ccio->ccio_ndisks * sizeof(char*),
+		cpp = calloc(ccio->ccio_ndisks, sizeof(char*),
 		M_DEVBUF, M_WAITOK);
-		vpp = malloc(ccio->ccio_ndisks * sizeof(struct vnode*),
+		vpp = calloc(ccio->ccio_ndisks, sizeof(struct vnode*),
 		M_DEVBUF, M_WAITOK);
 
 		error = copyin(ccio->ccio_disks, cpp,
-		    ccio->ccio_ndisks * sizeof(char **));
+				ccio->ccio_ndisks * sizeof(char**));
 		if (error) {
 			free(vpp, M_DEVBUF);
 			free(cpp, M_DEVBUF);
@@ -1165,7 +1172,7 @@ ccdioctl_sc(cs, dev, cmd, data, flag, p)
 		 * or if both the character and block flavors of this
 		 * partition are open.
 		 */
-		part = DISKPART(dev);
+		part = dkpart(dev);
 		pmask = (1 << part);
 		if ((cs->sc_dkdev.dk_openmask & ~pmask) ||
 		    ((cs->sc_dkdev.dk_bopenmask & pmask) &&
@@ -1248,7 +1255,7 @@ ccdioctl_sc(cs, dev, cmd, data, flag, p)
 	}
 
  out:
-	(void) lockmgr(&cs->sc_lock, LK_RELEASE, NULL);
+	(void) lockmgr(&cs->sc_lock, LK_RELEASE, NULL, p->p_pid);
 	return (error);
 }
 
@@ -1263,7 +1270,7 @@ ccdioctl(dev, cmd, data, flag, p)
 	register struct ccd_softc *cs;
 	int error, unit;
 
-	int unit = ccdunit(dev);
+	unit = ccdunit(dev);
 	cs = &ccd_softc[unit];
 
 	error = ccdioctl_sc(cs, dev, cmd, data, flag, p);
@@ -1347,7 +1354,7 @@ ccdlookup(path, p, vpp)
 	vp = nd.ni_vp;
 
 	if (vp->v_usecount > 1) {
-		VOP_UNLOCK(vp, 0);
+		VOP_UNLOCK(vp, 0, p);
 		(void)vn_close(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (EBUSY);
 	}
@@ -1357,14 +1364,14 @@ ccdlookup(path, p, vpp)
 		if (ccddebug & (CCDB_FOLLOW|CCDB_INIT))
 			printf("ccdlookup: getattr error = %d\n", error);
 #endif
-		VOP_UNLOCK(vp, 0);
+		VOP_UNLOCK(vp, 0, p);
 		(void)vn_close(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (error);
 	}
 
 	/* XXX: eventually we should handle VREG, too. */
 	if (va.va_type != VBLK) {
-		VOP_UNLOCK(vp, 0);
+		VOP_UNLOCK(vp, 0, p);
 		(void)vn_close(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (ENOTBLK);
 	}
