@@ -156,10 +156,12 @@ struct wsemuldisplaydev_attach_args {
 #define WSEMULDISPLAYDEVCF_CONSOLE				0
 #define WSEMULDISPLAYDEVCF_CONSOLE_DEFAULT		-1	/* spec'd as console? */
 #define	WSEMULDISPLAYDEVCF_CONSOLE_UNK			(WSEMULDISPLAYDEVCF_CONSOLE_DEFAULT)
+#define WSEMULDISPLAYDEVCF_KBDMUX				1
+#define WSDISPLAYDEVCF_KBDMUX					0
 
-#define	wsemuldisplaydevcf_console	cf_loc[WSEMULDISPLAYDEVCF_CONSOLE]	/* spec'd as console? */
-#define	wsemuldisplaydevcf_kbdmux	cf_loc[WSEMULDISPLAYDEVCF_KBDMUX]
-#define	wsdisplaydevcf_kbdmux		cf_loc[WSDISPLAYDEVCF_KBDMUX]
+//#define	wsemuldisplaydevcf_console	cf_loc[WSEMULDISPLAYDEVCF_CONSOLE]	/* spec'd as console? */
+//#define	wsemuldisplaydevcf_kbdmux	cf_loc[WSEMULDISPLAYDEVCF_KBDMUX]
+//#define	wsdisplaydevcf_kbdmux		cf_loc[WSDISPLAYDEVCF_KBDMUX]
 
 struct wscons_syncops {
 	int 	(*detach) (void *, int, void (*)(void *, int, int), void *);

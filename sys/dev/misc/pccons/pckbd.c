@@ -88,19 +88,19 @@
 
 #include <dev/misc/pccons/pckbportvar.h>
 
-#include <dev/misc/pccons/pckbdreg.h>
-#include <dev/misc/pccons/pckbdvar.h>
-#include <dev/misc/pccons/wskbdmap_mfii.h>
-
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wskbdvar.h>
 #include <dev/misc/wscons/wsksymdef.h>
 #include <dev/misc/wscons/wsksymvar.h>
 
+#include <dev/misc/pccons/pckbdreg.h>
+#include <dev/misc/pccons/pckbdvar.h>
+#include <dev/misc/pccons/wskbdmap_mfii.h>
+
 #include "locators.h"
 
 #include "opt_pckbd_layout.h"
-//#include "opt_wsdisplay_compat.h"
+#include "opt_wsdisplay_compat.h"
 
 struct pckbd_internal {
 	int t_isconsole;

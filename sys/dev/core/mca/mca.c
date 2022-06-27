@@ -136,8 +136,8 @@ mca_submatch(parent, cf, aux)
 {
 	struct mca_attach_args *ma = aux;
 
-	if (cf->mcacf_slot != MCA_UNKNOWN_SLOT &&
-	    cf->mcacf_slot != ma->ma_slot)
+	if (cf->cf_loc[MCACF_SLOT] != MCA_UNKNOWN_SLOT &&
+	    cf->cf_loc[MCACF_SLOT] != ma->ma_slot)
 		return 0;
 	return (config_match(parent, cf, aux));
 }

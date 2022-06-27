@@ -58,7 +58,7 @@ struct wsmousedev_attach_args {
 #include "locators.h"
 
 #define WSMOUSEDEVCF_MUX 	0
-#define	wsmousedevcf_mux	cf_loc[WSMOUSEDEVCF_MUX]
+//#define	wsmousedevcf_mux	cf_loc[WSMOUSEDEVCF_MUX]
 
 /*
  * Autoconfiugration helper functions.

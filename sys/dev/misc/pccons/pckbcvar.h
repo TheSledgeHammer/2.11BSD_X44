@@ -32,8 +32,10 @@
 #include <sys/callout.h>
 #include <dev/misc/pccons/pckbportvar.h>
 
+/*
 #define PCKBCCF_SLOT            0
 #define PCKBCCF_SLOT_DEFAULT    -1
+*/
 
 typedef void *pckbc_tag_t;
 typedef int pckbc_slot_t;

@@ -107,10 +107,12 @@ edf_test(edf)
 	struct gsched_edf *edf;
 {
 	/* check deadline is possible in given time */
+	/*
 	if(edf->edf_time < edf->edf_cpticks) {
 		edf->edf_release = 0;
 		goto error;
 	}
+	*/
 	/* Sanity Check */
 	if(edf->edf_time == 0) {
 		printf("time not set");

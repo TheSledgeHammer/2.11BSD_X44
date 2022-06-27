@@ -136,6 +136,10 @@ struct pcic_softc {
 	int intr_mask[PCIC_NSLOTS / 2];	/* probed intterupts if possible */
 };
 
+#define PCICCF_CONTROLLER				0
+#define PCICCF_CONTROLLER_DEFAULT 		-1
+#define PCICCF_SOCKET					1
+#define PCICCF_SOCKET_DEFAULT 			-1
 
 int		pcic_ident_ok (int);
 int		pcic_vendor (struct pcic_handle *);

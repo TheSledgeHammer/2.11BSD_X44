@@ -73,8 +73,9 @@ struct mca_attach_args {
 	int 				ma_id;		/* MCA device ID (POS1 + POS2<<8) */
 };
 
-#define mcacf_slot			cf_loc[0]
-#define MCA_UNKNOWN_SLOT	-1		/* wildcarded 'slot' */
+#define MCACF_SLOT			0
+#define MCACF_SLOT_DEFAULT 	-1
+#define MCA_UNKNOWN_SLOT	MCACF_SLOT_DEFAULT		/* wildcarded 'slot' */
 
 void	mca_devinfo (int, char *);
 int		mca_match_disabled (int);
