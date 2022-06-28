@@ -290,6 +290,7 @@ pseudo-device	vnd							# disk-like interface to files
 pseudo-device	bpfilter					# Berkeley packet filter
 
 # miscellaneous pseudo-devices
+pseudo-device	ksyms							# kernel symbols
 pseudo-device	pty							# pseudo-terminals
 pseudo-device	sequencer					# MIDI sequencer
 
