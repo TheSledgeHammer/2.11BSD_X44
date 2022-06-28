@@ -314,6 +314,8 @@ swfree(p, index, nslots)
 	}
 #endif
 	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+		blk = nblks - dvbase;
+
 #ifdef SEQSWAP
 		if ((vsbase = index*dmmax + dvbase*niswdev) >= niswap) {
 			panic("swfree");
@@ -391,6 +393,7 @@ swap_sanity(nblks, npages)
             break;
         }
     }
+
     if(btodb(page << PAGE_SHIFT) == blk) {
     	return (0);
     }

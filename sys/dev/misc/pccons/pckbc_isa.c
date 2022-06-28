@@ -47,8 +47,8 @@
 #include <dev/core/ic/i8042reg.h>
 #include <dev/misc/pccons/pckbcvar.h>
 
-int		pckbc_isa_match (struct device *, struct cfdata *, void *);
-void	pckbc_isa_attach (struct device *, struct device *, void *);
+int		pckbc_isa_match(struct device *, struct cfdata *, void *);
+void	pckbc_isa_attach(struct device *, struct device *, void *);
 
 struct pckbc_isa_softc {
 	struct pckbc_softc 	sc_pckbc;
@@ -154,13 +154,13 @@ pckbc_isa_attach(parent, self, aux)
 	switch (ia->ia_nirq) {
 	case 1:
 		/* Both channels use the same IRQ. */
-		isc->sc_irq[PCKBC_KBD_SLOT] = isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq[0];
+		isc->sc_irq[PCKBC_KBD_SLOT] = isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq;
 		break;
 
 	case 2:
 		/* First IRQ is kbd, second IRQ is aux port. */
-		isc->sc_irq[PCKBC_KBD_SLOT] = ia->ia_irq[0];
-		isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq[1];
+		isc->sc_irq[PCKBC_KBD_SLOT] = ia->ia_irq;
+		isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq2;
 		break;
 
 	default:

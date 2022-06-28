@@ -58,11 +58,11 @@ struct pckbc_rbuf_item {
 struct pckbc_internal { 
 	pckbport_tag_t 			t_pt;
 	bus_space_tag_t 		t_iot;
-	bus_space_handle_t 		t_ioh_d, t_ioh_c; /* data port, cmd port */
+	bus_space_handle_t 		t_ioh_d, t_ioh_c; 	/* data port, cmd port */
 	bus_addr_t 				t_addr;
-	u_char 					t_cmdbyte; /* shadow */
+	u_char 					t_cmdbyte; 			/* shadow */
 
-	int 					t_haveaux; /* controller has an aux port */
+	int 					t_haveaux; 			/* controller has an aux port */
 	struct pckbc_slotdata 	*t_slotdata[PCKBC_NSLOTS];
 
 	struct pckbc_softc 		*t_sc; /* back pointer */
@@ -74,7 +74,7 @@ struct pckbc_internal {
 	int 					rbuf_write;
 };
 
-typedef void (*pckbc_inputfcn) (void *, int);
+//typedef void (*pckbc_inputfcn)(void *, int);
 
 /*
  * State per device.
@@ -83,7 +83,7 @@ struct pckbc_softc {
 	struct device 			sc_dv;
 	struct pckbc_internal 	*id;
 
-	void 					(*intr_establish) (struct pckbc_softc *, pckbc_slot_t);
+	void 					(*intr_establish)(struct pckbc_softc *, pckbc_slot_t);
 };
 
 struct pckbc_attach_args {

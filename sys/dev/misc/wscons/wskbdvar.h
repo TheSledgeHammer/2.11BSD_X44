@@ -72,13 +72,10 @@ struct wskbddev_attach_args {
 
 #include "locators.h"
 
-#define WSKBDDEVCF_CONSOLE			1
-#define WSKBDDEVCF_CONSOLE_DEFAULT	-1					/* spec'd as console? */
+//#define WSKBDDEVCF_CONSOLE			1
+//#define WSKBDDEVCF_CONSOLE_DEFAULT	-1					/* spec'd as console? */
 #define	WSKBDDEVCF_CONSOLE_UNK		(WSKBDDEVCF_CONSOLE_DEFAULT)
 #define WSKBDDEVCF_MUX				1
-
-//#define	wskbddevcf_console			cf_loc[WSKBDDEVCF_CONSOLE]	/* spec'd as console? */
-//#define	wskbddevcf_mux				cf_loc[WSKBDDEVCF_MUX]
 
 /*
  * Autoconfiguration helper functions.

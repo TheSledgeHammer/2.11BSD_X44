@@ -154,6 +154,7 @@ isa_attach_subdevs(sc)
 		ia.ia_maddr = is->id_maddr;
 		ia.ia_msize = is->id_msize;
 		ia.ia_irq = is->id_irq;
+		ia.ia_irq2 = is->id_irq2;
 		ia.ia_drq = is->id_drq;
 		ia.ia_drq2 = is->id_drq2;
 		ia.ia_aux = NULL;
@@ -234,6 +235,19 @@ isasubmatch(struct device *parent, struct cfdata *cf, void *aux)
 		if (cf->cf_loc[ISACF_DRQ2] != DRQUNK)
 			return (0);
 	} else {
+		if (cf->cf_loc[ISACF_DRQ] != DRQUNK) {
+			if(cf->cf_loc[ISACF_DRQ] != ia->ia_drq) {
+				return (0);
+			}
+			return (0);
+		}
+		if(cf->cf_loc[ISACF_DRQ2] != DRQUNK) {
+			if(cf->cf_loc[ISACF_DRQ2] != ia->ia_drq2) {
+				return (0);
+			}
+			return (0);
+		}
+		/*
 		for (i = 0; i < 2; i++) {
 			if (i == ia->ia_ndrq)
 				break;
@@ -244,6 +258,7 @@ isasubmatch(struct device *parent, struct cfdata *cf, void *aux)
 			if (cf->cf_loc[ISACF_DRQ + i] != DRQUNK)
 				return (0);
 		}
+		*/
 	}
 
 	return (config_match(parent, cf, aux));
@@ -256,20 +271,57 @@ isaprint(aux, isa)
 {
 	struct isa_attach_args *ia = aux;
 
-	if (ia->ia_iosize)
-		printf(" port 0x%x", ia->ia_iobase);
-	if (ia->ia_iosize > 1)
-		printf("-0x%x", ia->ia_iobase + ia->ia_iosize - 1);
-	if (ia->ia_msize)
-		printf(" iomem 0x%x", ia->ia_maddr);
-	if (ia->ia_msize > 1)
-		printf("-0x%x", ia->ia_maddr + ia->ia_msize - 1);
-	if (ia->ia_irq != IRQUNK)
-		printf(" irq %d", ia->ia_irq);
-	if (ia->ia_drq != DRQUNK)
-		printf(" drq %d", ia->ia_drq);
-	if (ia->ia_drq2 != DRQUNK)
-		printf(" drq2 %d", ia->ia_drq2);
+	if (isa != NULL) {
+		struct isa_pnpname *ipn;
+
+		if (ia->ia_pnpname != NULL) {
+			printf("%s", ia->ia_pnpname);
+		}
+		if ((ipn = ia->ia_pnpcompatnames) != NULL) {
+			printf(" (");
+			for (; ipn != NULL; ipn = ipn->ipn_next) {
+				printf("%s", ipn->ipn_name);
+			}
+			printf(")");
+		}
+		printf(" at %s", isa);
+	}
+
+	if (ia->ia_nio) {
+		if (ia->ia_iosize) {
+			printf(" port 0x%x", ia->ia_iobase);
+		}
+		if (ia->ia_iosize > 1) {
+			printf("-0x%x", ia->ia_iobase + ia->ia_iosize - 1);
+		}
+	}
+
+	if (ia->ia_niomem) {
+		if (ia->ia_msize) {
+			printf(" iomem 0x%x", ia->ia_maddr);
+		}
+		if (ia->ia_msize > 1) {
+			printf("-0x%x", ia->ia_maddr + ia->ia_msize - 1);
+		}
+	}
+
+	if(ia->ia_nirq) {
+		if (ia->ia_irq != IRQUNK) {
+			printf(" irq %d", ia->ia_irq);
+		}
+		if (ia->ia_irq2 != IRQUNK) {
+			printf(" irq2 %d", ia->ia_irq2);
+		}
+	}
+
+	if (ia->ia_ndrq) {
+		if (ia->ia_drq != DRQUNK) {
+			printf(" drq %d", ia->ia_drq);
+		}
+		if (ia->ia_drq2 != DRQUNK) {
+			printf(" drq2 %d", ia->ia_drq2);
+		}
+	}
 	return (UNCONF);
 }
 
@@ -296,6 +348,11 @@ isasearch(parent, cf, aux)
 		ia.ia_drq = cf->cf_loc[ISACF_DRQ];
 		ia.ia_drq2 = cf->cf_loc[ISACF_DRQ2];
 		ia.ia_delaybah = sc->sc_delaybah;
+
+		ia.ia_nio = 1;
+		ia.ia_niomem = 1;
+		ia.ia_nirq = 1;
+		ia.ia_ndrq = 2;
 
 		tryagain = 0;
 		if (config_match(parent, cf, &ia) > 0) {

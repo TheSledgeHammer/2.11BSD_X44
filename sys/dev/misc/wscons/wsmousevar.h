@@ -41,9 +41,9 @@
  * with these functions, which is passed to them when they are invoked.
  */
 struct wsmouse_accessops {
-	int		(*enable) (void *);
-	int		(*ioctl) (void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
-	void	(*disable) (void *);
+	int		(*enable)(void *);
+	int		(*ioctl)(void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
+	void	(*disable)(void *);
 };
 
 /*
@@ -58,12 +58,11 @@ struct wsmousedev_attach_args {
 #include "locators.h"
 
 #define WSMOUSEDEVCF_MUX 	0
-//#define	wsmousedevcf_mux	cf_loc[WSMOUSEDEVCF_MUX]
 
 /*
  * Autoconfiugration helper functions.
  */
-int	wsmousedevprint (void *, const char *);
+int	wsmousedevprint(void *, const char *);
 
 /*
  * Callbacks from the mouse driver to the wsmouse interface driver.
@@ -72,4 +71,4 @@ int	wsmousedevprint (void *, const char *);
 #define WSMOUSE_INPUT_ABSOLUTE_X	(1<<0)
 #define WSMOUSE_INPUT_ABSOLUTE_Y	(1<<1)
 #define WSMOUSE_INPUT_ABSOLUTE_Z	(1<<2)
-void wsmouse_input (struct device *kbddev, u_int btns, int dx, int dy, int dz);
+void wsmouse_input(struct device *kbddev, u_int btns, int dx, int dy, int dz, u_int flags);

@@ -122,6 +122,7 @@ struct isa_attach_args {
 	int						ia_iobase;		/* base i/o address ia.addr */
 	int						ia_iosize;		/* span of ports used */
 	int						ia_irq;			/* interrupt request */
+	int						ia_irq2;		/* second interrupt request */
 	int						ia_drq;			/* DMA request */
 	int						ia_drq2;		/* second DMA request */
 	int						ia_maddr;		/* physical i/o mem addr */
@@ -158,6 +159,7 @@ struct isa_subdev {
 	int						id_iobase;		/* base i/o address */
 	int						id_iosize;		/* span of ports used */
 	int						id_irq;			/* interrupt request */
+	int						id_irq2;		/* second interrupt request */
 	int						id_drq;			/* DMA request */
 	int						id_drq2;		/* second DMA request */
 	int						id_maddr;		/* physical i/o mem addr */
@@ -229,16 +231,6 @@ struct isa_softc {
 #define	ISACF_IRQ			4
 #define	ISACF_DRQ			5
 #define	ISACF_DRQ2 			6
-
-/*
-#define	cf_iobase			cf_loc[ISACF_IOBASE]
-#define	cf_iosize			cf_loc[ISACF_IOSIZE]
-#define	cf_maddr			cf_loc[ISACF_MADDR]
-#define	cf_msize			cf_loc[ISACF_MSIZE]
-#define	cf_irq				cf_loc[ISACF_IRQ]
-#define	cf_drq				cf_loc[ISACF_DRQ]
-#define	cf_drq2				cf_loc[ISACF_DRQ2]
-*/
 
 #define	ISA_DRQ_ISFREE(isadev, drq) \
 	((((struct isa_softc *)(isadev))->sc_drqmap & (1 << (drq))) == 0)

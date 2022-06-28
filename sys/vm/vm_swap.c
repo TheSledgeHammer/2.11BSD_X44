@@ -360,7 +360,6 @@ swapon()
 	return (EINVAL);
 }
 
-
 /*
  * Swfree(index) frees the index'th portion of the swap map.
  * Each of the nswdev devices provides 1/nswdev'th of the swap

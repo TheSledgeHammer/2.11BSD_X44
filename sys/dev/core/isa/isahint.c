@@ -87,6 +87,7 @@ isahint_register(ia, name, unit)
 	resource_int_value(name, unit, "maddr", &ia->ia_maddr);
 	resource_int_value(name, unit, "msize", &ia->ia_msize);
 	resource_int_value(name, unit, "irq", &ia->ia_irq);
+	resource_int_value(name, unit, "irq2", &ia->ia_irq2);
 	resource_int_value(name, unit, "drq", &ia->ia_drq);
 	resource_int_value(name, unit, "drq2", &ia->ia_drq2);
 }
