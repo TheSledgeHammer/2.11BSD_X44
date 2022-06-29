@@ -65,14 +65,14 @@ struct pcdisplay_softc {
 static int pcdisplayconsole, pcdisplay_console_attached;
 static struct pcdisplay_config pcdisplay_console_dc;
 
-int		pcdisplay_match (struct device *, struct cfdata *, void *);
-void	pcdisplay_attach (struct device *, struct device *, void *);
+int		pcdisplay_match(struct device *, struct cfdata *, void *);
+void	pcdisplay_attach(struct device *, struct device *, void *);
 
-static int pcdisplay_is_console (bus_space_tag_t);
-static int pcdisplay_probe_col (bus_space_tag_t, bus_space_tag_t);
-static int pcdisplay_probe_mono (bus_space_tag_t, bus_space_tag_t);
-static void pcdisplay_init (struct pcdisplay_config *, bus_space_tag_t, bus_space_tag_t, int);
-static int pcdisplay_allocattr (void *, int, int, int, long *);
+static int pcdisplay_is_console(bus_space_tag_t);
+static int pcdisplay_probe_col(bus_space_tag_t, bus_space_tag_t);
+static int pcdisplay_probe_mono(bus_space_tag_t, bus_space_tag_t);
+static void pcdisplay_init(struct pcdisplay_config *, bus_space_tag_t, bus_space_tag_t, int);
+static int pcdisplay_allocattr(void *, int, int, int, long *);
 
 CFOPS_DECL(pcdisplay, pcdisplay_match, pcdisplay_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pcdisplay, &pcdisplay_cops, DV_DULL, sizeof(struct pcdisplay_softc));
@@ -104,11 +104,11 @@ const struct wsscreen_list pcdisplay_screenlist = {
 	_pcdisplay_scrlist
 };
 
-static int pcdisplay_ioctl (void *, u_long, caddr_t, int, struct proc *);
-static caddr_t pcdisplay_mmap (void *, off_t, int);
-static int pcdisplay_alloc_screen (void *, const struct wsscreen_descr *, void **, int *, int *, long *);
-static void pcdisplay_free_screen (void *, void *);
-static int pcdisplay_show_screen (void *, void *, int, void (*) (void *, int, int), void *);
+static int pcdisplay_ioctl(void *, u_long, caddr_t, int, struct proc *);
+static u_long pcdisplay_mmap(void *, off_t, int);
+static int pcdisplay_alloc_screen(void *, const struct wsscreen_descr *, void **, int *, int *, long *);
+static void pcdisplay_free_screen(void *, void *);
+static int pcdisplay_show_screen(void *, void *, int, void (*) (void *, int, int), void *);
 
 const struct wsdisplay_accessops pcdisplay_accessops = {
 	pcdisplay_ioctl,
@@ -346,7 +346,7 @@ pcdisplay_ioctl(v, cmd, data, flag, p)
 	return (ENOIOCTL);
 }
 
-static caddr_t
+static u_long
 pcdisplay_mmap(v, offset, prot)
 	void *v;
 	off_t offset;

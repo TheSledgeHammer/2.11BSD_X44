@@ -49,14 +49,14 @@ struct device;
  * with these functions, which is passed to them when they are invoked.
  */
 struct wsdisplay_emulops {
-	void	(*cursor) (void *c, int on, int row, int col);
-	int		(*mapchar) (void *, int, unsigned int *);
-	void	(*putchar) (void *c, int row, int col, u_int uc, long attr);
-	void	(*copycols) (void *c, int row, int srccol, int dstcol, int ncols);
-	void	(*erasecols) (void *c, int row, int startcol, int ncols, long);
-	void	(*copyrows) (void *c, int srcrow, int dstrow, int nrows);
-	void	(*eraserows) (void *c, int row, int nrows, long);
-	int		(*allocattr) (void *c, int fg, int bg, int flags, long *);
+	void	(*cursor)(void *c, int on, int row, int col);
+	int		(*mapchar)(void *, int, unsigned int *);
+	void	(*putchar)(void *c, int row, int col, u_int uc, long attr);
+	void	(*copycols)(void *c, int row, int srccol, int dstcol, int ncols);
+	void	(*erasecols)(void *c, int row, int startcol, int ncols, long);
+	void	(*copyrows)(void *c, int srcrow, int dstrow, int nrows);
+	void	(*eraserows)(void *c, int row, int nrows, long);
+	int		(*allocattr)(void *c, int fg, int bg, int flags, long *);
 /* fg / bg values. Made identical to ANSI terminal color codes. */
 #define WSCOL_BLACK			0
 #define WSCOL_RED			1
@@ -114,7 +114,7 @@ struct wsdisplay_char;
  */
 struct wsdisplay_accessops {
 	int		(*ioctl)(void *, u_long, caddr_t, int, struct proc *);
-	int		(*mmap)(void *, off_t, int);
+	u_long	(*mmap)(void *, off_t, int);
 	int		(*alloc_screen)(void *, const struct wsscreen_descr *, void **, int *, int *, long *);
 	void	(*free_screen)(void *, void *);
 	int		(*show_screen)(void *, void *, int, void (*) (void *, int, int), void *);

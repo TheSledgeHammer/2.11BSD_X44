@@ -40,6 +40,7 @@
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/device.h>
+#include <sys/devsw.h>
 #include <sys/ioctl.h>
 #include <sys/kernel.h>
 #include <sys/proc.h>
@@ -52,6 +53,8 @@
 #include <sys/fcntl.h>
 #include <sys/vnode.h>
 
+#include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsdisplayvar.h>
 #include <dev/misc/wscons/wsksymvar.h>
@@ -144,10 +147,10 @@ struct wsdisplay_scroll_data wsdisplay_default_scroll_values = {
 extern struct cfdriver wsdisplay_cd;
 
 /* Autoconfiguration definitions. */
-static int wsdisplay_emul_match (struct device *, struct cfdata *, void *);
-static void wsdisplay_emul_attach (struct device *, struct device *, void *);
-static int wsdisplay_noemul_match (struct device *, struct cfdata *, void *);
-static void wsdisplay_noemul_attach (struct device *, struct device *, void *);
+static int wsdisplay_emul_match(struct device *, struct cfdata *, void *);
+static void wsdisplay_emul_attach(struct device *, struct device *, void *);
+static int wsdisplay_noemul_match(struct device *, struct cfdata *, void *);
+static void wsdisplay_noemul_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(wsdisplay_emul, wsdisplay_emul_match, wsdisplay_emul_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, wsdisplay_emul, &wsdisplay_emul_cops, DV_DULL, sizeof(struct wsdisplay_softc));
@@ -186,9 +189,11 @@ static void wsdisplaystart(struct tty *);
 static int wsdisplayparam(struct tty *, struct termios *);
 
 /* Internal macros, functions, and variables. */
+/*
 #define	SET(t, f)	(t) |= (f)
 #define	CLR(t, f)	(t) &= ~(f)
 #define	ISSET(t, f)	((t) & (f))
+*/
 
 #define	WSDISPLAYUNIT(dev)				(minor(dev) >> 8)
 #define	WSDISPLAYSCREEN(dev)			(minor(dev) & 0xff)
@@ -321,10 +326,10 @@ wsscreen_detach(scr)
 	free(scr, M_DEVBUF);
 }
 
-static const struct wsscreen_descr *
+const struct wsscreen_descr *
 wsdisplay_screentype_pick(scrdata, name)
 	const struct wsscreen_list *scrdata;
-	char *name;
+	const char *name;
 {
 	int i;
 	const struct wsscreen_descr *scr;
@@ -365,7 +370,7 @@ int
 wsdisplay_addscreen(sc, idx, screentype, emul)
 	struct wsdisplay_softc *sc;
 	int idx;
-	char *screentype, *emul;
+	const char *screentype, *emul;
 {
 	const struct wsscreen_descr *scrdesc;
 	int error;
@@ -414,12 +419,15 @@ wsdisplay_closescreen(sc, scr)
 	struct wsdisplay_softc *sc;
 	struct wsscreen *scr;
 {
+	const struct linesw *line;
 	int maj, mn, idx;
 
 	/* hangup */
 	if (WSSCREEN_HAS_TTY(scr)) {
 		struct tty *tp = scr->scr_tty;
-		(*linesw[tp->t_line].l_modem)(tp, 0);
+		line = linesw_lookup(tp->t_line);
+		(*line->l_modem)(tp, 0);
+		//(*linesw[tp->t_line].l_modem)(tp, 0);
 	}
 	/* locate the major number */
 	maj = cdevsw_lookup_major(&wsdisplay_cdevsw);
@@ -754,6 +762,7 @@ wsdisplayopen(dev, flag, mode, p)
 	struct tty *tp;
 	int newopen, error, unit;
 	struct wsscreen *scr;
+	const struct linesw *line;
 
 	unit = WSDISPLAYUNIT(dev);
 	sc = wsdisplay_cd.cd_devs[unit];
@@ -792,8 +801,8 @@ wsdisplayopen(dev, flag, mode, p)
 		} else if ((tp->t_state & TS_XCLUDE) != 0 && p->p_ucred->cr_uid != 0)
 			return EBUSY;
 		tp->t_state |= TS_CARR_ON;
-
-		error = ((*linesw[tp->t_line].l_open)(dev, tp));
+		line = linesw_lookup(tp->t_line);
+		error = ((*line->l_open)(dev, tp));
 		if (error)
 			return (error);
 
@@ -821,10 +830,10 @@ wsdisplayclose(dev, flag, mode, p)
 	struct tty *tp;
 	int unit;
 	struct wsscreen *scr;
+	const struct linesw *line;
 
 	unit = WSDISPLAYUNIT(dev);
 	sc = wsdisplay_cd.cd_devs[unit];
-
 
 	if (ISWSDISPLAYSTAT(dev)) {
 		wsevent_fini(&sc->evar);
@@ -848,7 +857,8 @@ wsdisplayclose(dev, flag, mode, p)
 			splx(s);
 		}
 		tp = scr->scr_tty;
-		(*linesw[tp->t_line].l_close)(tp, flag);
+		line = linesw_lookup(tp->t_line);
+		(*line->l_close)(tp, flag);
 		ttyclose(tp);
 	}
 
@@ -888,6 +898,7 @@ wsdisplayread(dev, uio, flag)
 	struct tty *tp;
 	int unit, error;
 	struct wsscreen *scr;
+	const struct linesw *line;
 
 	unit = WSDISPLAYUNIT(dev);
 	sc = wsdisplay_cd.cd_devs[unit];
@@ -907,7 +918,8 @@ wsdisplayread(dev, uio, flag)
 		return (ENODEV);
 
 	tp = scr->scr_tty;
-	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
+	line = linesw_lookup(tp->t_line);
+	return ((*line->l_read)(tp, uio, flag));
 }
 
 int
@@ -920,6 +932,7 @@ wsdisplaywrite(dev, uio, flag)
 	struct tty *tp;
 	int unit;
 	struct wsscreen *scr;
+	const struct linesw *line;
 
 	unit = WSDISPLAYUNIT(dev);
 	sc = wsdisplay_cd.cd_devs[unit];
@@ -938,7 +951,8 @@ wsdisplaywrite(dev, uio, flag)
 		return (ENODEV);
 
 	tp = scr->scr_tty;
-	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
+	line = linesw_lookup(tp->t_line);
+	return ((*line->l_write)(tp, uio, flag));
 }
 
 int
@@ -950,6 +964,7 @@ wsdisplaypoll(dev, events, p)
 	struct wsdisplay_softc *sc;
 	struct tty *tp;
 	struct wsscreen *scr;
+	const struct linesw *line;
 	int unit;
 
 	unit = WSDISPLAYUNIT(dev);
@@ -968,7 +983,8 @@ wsdisplaypoll(dev, events, p)
 		return (ENODEV);
 
 	tp = scr->scr_tty;
-	return ((*linesw[tp->t_line].l_poll)(tp, events, p));
+	line = linesw_lookup(tp->t_line);
+	return ((*line->l_poll)(tp, events, p));
 }
 
 int
@@ -1031,6 +1047,7 @@ wsdisplayioctl(dev, cmd, data, flag, p)
 	struct tty *tp;
 	int unit, error;
 	struct wsscreen *scr;
+	const struct linesw *line;
 
 	unit = WSDISPLAYUNIT(dev);
 	sc = wsdisplay_cd.cd_devs[unit];
@@ -1052,10 +1069,11 @@ wsdisplayioctl(dev, cmd, data, flag, p)
 
 	if (WSSCREEN_HAS_TTY(scr)) {
 		tp = scr->scr_tty;
+		line = linesw_lookup(tp->t_line);
 
 /* printf("disc\n"); */
 		/* do the line discipline ioctls first */
-		error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
+		error = (*line->l_ioctl)(tp, cmd, data, flag, p);
 		if (error != ENOIOCTL)
 			return (error);
 
@@ -1487,6 +1505,7 @@ wsdisplay_emulinput(v, data, count)
 {
 	struct wsscreen *scr = v;
 	struct tty *tp;
+	const struct linesw *line;
 
 	if (v == NULL)			/* console, before real attach */
 		return;
@@ -1497,8 +1516,9 @@ wsdisplay_emulinput(v, data, count)
 		return;
 
 	tp = scr->scr_tty;
+	line = linesw_lookup(tp->t_line);
 	while (count-- > 0)
-		(*linesw[tp->t_line].l_rint)(*data++, tp);
+		(*line->l_rint)(*data++, tp);
 };
 
 /*
@@ -1514,6 +1534,7 @@ wsdisplay_kbdinput(dev, ks)
 	char *dp;
 	int count;
 	struct tty *tp;
+	const struct linesw *line;
 
 	KASSERT(sc != NULL);
 
@@ -1523,14 +1544,14 @@ wsdisplay_kbdinput(dev, ks)
 		return;
 
 	tp = scr->scr_tty;
-
+	line = linesw_lookup(tp->t_line);
 	if (KS_GROUP(ks) == KS_GROUP_Ascii)
-		(*linesw[tp->t_line].l_rint)(KS_VALUE(ks), tp);
+		(*line->l_rint)(KS_VALUE(ks), tp);
 	else if (WSSCREEN_HAS_EMULATOR(scr)) {
 		count = (*scr->scr_dconf->wsemul->translate)
 		    (scr->scr_dconf->wsemulcookie, ks, &dp);
 		while (count-- > 0)
-			(*linesw[tp->t_line].l_rint)(*dp++, tp);
+			(*line->l_rint)(*dp++, tp);
 	}
 }
 
