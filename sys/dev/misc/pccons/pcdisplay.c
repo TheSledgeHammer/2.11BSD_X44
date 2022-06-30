@@ -346,13 +346,13 @@ pcdisplay_ioctl(v, cmd, data, flag, p)
 	return (ENOIOCTL);
 }
 
-static u_long
+static caddr_t
 pcdisplay_mmap(v, offset, prot)
 	void *v;
 	off_t offset;
 	int prot;
 {
-	return (-1);
+	return ((caddr_t)-1);
 }
 
 static int
