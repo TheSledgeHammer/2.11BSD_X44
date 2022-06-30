@@ -114,7 +114,7 @@ struct wsdisplay_char;
  */
 struct wsdisplay_accessops {
 	int		(*ioctl)(void *, u_long, caddr_t, int, struct proc *);
-	u_long	(*mmap)(void *, off_t, int);
+	caddr_t	(*mmap)(void *, off_t, int);
 	int		(*alloc_screen)(void *, const struct wsscreen_descr *, void **, int *, int *, long *);
 	void	(*free_screen)(void *, void *);
 	int		(*show_screen)(void *, void *, int, void (*) (void *, int, int), void *);
