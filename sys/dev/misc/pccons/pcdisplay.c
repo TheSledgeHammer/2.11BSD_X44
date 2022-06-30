@@ -105,7 +105,7 @@ const struct wsscreen_list pcdisplay_screenlist = {
 };
 
 static int pcdisplay_ioctl(void *, u_long, caddr_t, int, struct proc *);
-static u_long pcdisplay_mmap(void *, off_t, int);
+static caddr_t pcdisplay_mmap(void *, off_t, int);
 static int pcdisplay_alloc_screen(void *, const struct wsscreen_descr *, void **, int *, int *, long *);
 static void pcdisplay_free_screen(void *, void *);
 static int pcdisplay_show_screen(void *, void *, int, void (*) (void *, int, int), void *);
