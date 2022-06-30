@@ -1354,7 +1354,7 @@ wsdisplay_cfg_ioctl(sc, cmd, data, flag, p)
 	return (ENOIOCTL);
 }
 
-u_long
+caddr_t
 wsdisplaymmap(dev, offset, prot)
 	dev_t dev;
 	off_t offset;		/* XXX */
@@ -1364,16 +1364,16 @@ wsdisplaymmap(dev, offset, prot)
 	struct wsscreen *scr;
 
 	if (ISWSDISPLAYSTAT(dev))
-		return (-1);
+		return ((caddr_t)-1);
 
 	if (ISWSDISPLAYCTL(dev))
-		return (-1);
+		return ((caddr_t)-1);
 
 	if ((scr = sc->sc_scr[WSDISPLAYSCREEN(dev)]) == NULL)
-		return (-1);
+		return ((caddr_t)-1);
 
 	if (!(scr->scr_flags & SCR_GRAPHICS))
-		return (-1);
+		return ((caddr_t)-1);
 
 	/* pass mmap to display */
 	return ((*sc->sc_accessops->mmap)(sc->sc_accesscookie, offset, prot));
