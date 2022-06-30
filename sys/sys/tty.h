@@ -226,7 +226,7 @@ int	 tputchar(int, struct tty *);
 int	 ttioctl(struct tty *, u_long, caddr_t, int, struct proc *);
 int  ttpoll(struct tty *, int, struct proc *);
 int	 ttread(struct tty *, struct uio *, int);
-void ttrstrt(struct tty *);
+void ttrstrt(void *);
 void ttsetwater(struct tty *);
 int	 ttspeedtab(int, struct speedtab *);
 int	 ttstart(struct tty *);
