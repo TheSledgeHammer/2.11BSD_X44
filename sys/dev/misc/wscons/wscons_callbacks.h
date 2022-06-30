@@ -50,8 +50,8 @@ void	wsdisplay_reset(struct device *, enum wsdisplay_resetops);
 void	wsdisplay_kbdholdscreen(struct device *v, int);
 
 void	wsdisplay_set_cons_kbd(int (*get)(dev_t),
-			       void (*poll)(dev_t, int),
-			       void (*bell)(dev_t, u_int, u_int, u_int));
+			       void (*bell)(dev_t, u_int, u_int, u_int),
+			       void (*poll)(dev_t, int));
 void	wsdisplay_unset_cons_kbd(void);
 struct wsdisplay_param;
 int		wsdisplay_param(struct device*, u_long, struct wsdisplay_param*);
