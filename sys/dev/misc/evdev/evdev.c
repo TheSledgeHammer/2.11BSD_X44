@@ -45,11 +45,21 @@
 
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
 
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 #include <dev/misc/evdev/input.h>
 #include <dev/misc/evdev/freebsd-bitstring.h>
+
+#if defined(WSMUX_DEBUG) && NWSMUX > 0
+#define DPRINTF(x)	if (wsmuxdebug) printf x
+#define DPRINTFN(n,x)	if (wsmuxdebug > (n)) printf x
+extern int wsmuxdebug;
+#else
+#define DPRINTF(x)
+#define DPRINTFN(n,x)
+#endif
 
 #ifdef EVDEV_DEBUG
 #define	debugf(client, fmt, args...)	printf("evdev: "fmt"\n", ##args)
@@ -57,7 +67,15 @@
 #define	debugf(client, fmt, args...)
 #endif
 
-CFOPS_DECL(evdev, evdev_match, evdev_attach, NULL, NULL);
+int		evdev_enable(struct evdev_client *, struct wseventvar *);
+void 	evdev_disable(struct evdev_client *);
+
+#if NWSMUX > 0
+static int  evdev_mux_open(struct wsevsrc *, struct wseventvar *);
+static int  evdev_mux_close(struct wsevsrc *);
+#endif
+
+CFOPS_DECL(evdev, evdev_match, evdev_attach, evdev_detach, evdev_activate);
 CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
 
 #define	DEF_RING_REPORTS	8
@@ -72,19 +90,30 @@ dev_type_kqfilter(evdev_kqfilter);
 
 //extern struct cdevsw evdev_cdevsw;
 const struct cdevsw evdev_cdevsw = {
-	.d_open = evdev_open,
-	.d_close = evdev_close,
-	.d_read = evdev_read,
-	.d_write = evdev_write,
-	.d_ioctl = evdev_ioctl,
-	.d_stop = nostop,
-	.d_tty = notty,
-	.d_poll = evdev_poll,
-	.d_mmap = nommap,
-	.d_kqfilter = evdev_kqfilter,
-	.d_discard = nodiscard,
-	.d_type = D_OTHER
+		.d_open = evdev_open,
+		.d_close = evdev_close,
+		.d_read = evdev_read,
+		.d_write = evdev_write,
+		.d_ioctl = evdev_ioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = evdev_poll,
+		.d_mmap = nommap,
+		.d_kqfilter = evdev_kqfilter,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
 };
+
+#if NWSMUX > 0
+struct wssrcops evdev_srcops = {
+		.type = WSMUX_EVDEV,
+		.dopen = evdev_mux_open,
+		.dclose = evdev_mux_close,
+		.dioctl = evdev_do_ioctl,
+		.ddispioctl = NULL,
+		.dsetdisplay = NULL,
+};
+#endif
 
 size_t
 evdev_buffer_size(evdev)
@@ -113,6 +142,10 @@ evdev_attach(parent, self, aux)
 	struct evdev_dev *evdev = (struct evdev_dev *)aux;
 	struct evdev_client *client;
 	size_t buffer_size;
+	int ret;
+#if NWSMUX > 0
+	int mux, error;
+#endif
 
 	/* Initialize internal structures */
 	ret = evdev_register(evdev);
@@ -129,7 +162,89 @@ evdev_attach(parent, self, aux)
 	client->ec_buffer_ready = 0;
 
 	client->ec_evdev = evdev;
+
+#if NWSMUX > 0
+	client->ec_base.me_ops = &evdev_srcops;
+	mux = client->ec_base.me_dv.dv_cfdata->cf_loc[EVDEVDEVCF_MUX];
+	if (mux >= 0) {
+		error = wsmux_attach_sc(wsmux_getmux(mux), &client->ec_base);
+		if (error)
+			printf(" attach error=%d", error);
+		else
+			printf(" mux %d", mux);
+	}
+#else
+	if (client->ec_base.me_dv.dv_cfdata->cf_loc[EVDEVDEVCF_MUX] >= 0) {
+		printf(" (mux ignored)");
+	}
+#endif
+	printf("\n");
 	lockinit(&client->ec_buffer_lock, "evclient", 0, LK_CANRECURSE);
+}
+
+int
+evdev_activate(self, act)
+	struct device *self;
+	enum devact act;
+{
+	struct evdev_softc *sc = (struct evdev_softc *)self;
+
+	if (act == DVACT_DEACTIVATE) {
+		sc->sc_dying = 1;
+	}
+	return (0);
+}
+
+int
+evdev_detach(self, flags)
+	struct device *self;
+	int flags;
+{
+	struct evdev_softc *sc = (struct evdev_softc *)self;
+	struct evdev_dev *evdev = sc->sc_evdev;
+	struct evdev_client *client = evdev->ev_client;
+	struct wseventvar *evar;
+	int maj, mn, s;
+
+#if NWSMUX > 0
+	/* Tell parent mux we're leaving. */
+	if (client->ec_base.me_parent != NULL) {
+		DPRINTF(("evdev_detach:\n"));
+		wsmux_detach_sc(&client->ec_base);
+	}
+#endif
+
+	/* If we're open ... */
+	evar = client->ec_base.me_evp;
+	if (evar != NULL && evar->io != NULL) {
+		s = spltty();
+		if (--sc->sc_refcnt >= 0) {
+			struct wscons_event event;
+			struct input_event 	ie;
+
+			/* Wake everyone by generating a dummy event. */
+			event.type = 0;
+			event.value = 0;
+			ie.type = event.type;
+			ie.value = event.value;
+			if ((wsevent_inject(evar, &event, 1) != 0) && (evdev_wsevent_inject(evar, &ie, 1) != 0)) {
+				wsevent_wakeup(evar);
+			}
+			/* Wait for processes to go away. */
+			if (tsleep(sc, PZERO, "evddet", hz * 60))
+				printf("evdev_detach: %s didn't detach\n",
+						client->ec_base.me_dv.dv_xname);
+		}
+		splx(s);
+	}
+
+	/* locate the major number */
+	maj = cdevsw_lookup_major(&evdev_cdevsw);
+
+	/* Nuke the vnodes for any open instances (calls close). */
+	mn = self->dv_unit;
+	vdevgone(maj, mn, mn, VCHR);
+	return (0);
 }
 
 int
@@ -177,7 +292,9 @@ evdev_doopen(evdev, p)
 		return (EINVAL);
 	}
 	ret = evdev_register_client(evdev, client);
-
+	if (ret == 0) {
+		ret = evdev_enable(client, evar);
+	}
 	if(ret != 0) {
 		evdev_revoke_client(client);
 		evdev_unregister_wsevent(client);
@@ -221,7 +338,9 @@ evdev_doclose(evdev, p)
 	EVDEV_LOCK(evdev);
 	if (client != NULL) {
 		evdev_revoke_client(client);
+		evdev_disable(client);
 		evdev_unregister_wsevent(client);
+
 		/* free client */
 		evdev_client_free(client);
 		evdev->ev_client = client;
@@ -686,7 +805,8 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (evdev_ioctl_eviocgbit(evdev, type_num, len, data, p));
 	}
 
-	return (EINVAL);
+	error = (*client->ec_accessops->ioctl)(client->ec_accesscookie, cmd, data, fflag, p);
+	return (error);
 }
 
 static int
@@ -914,3 +1034,75 @@ evdev_client_filter_queue(client, type)
 	wsevent_put(ev, i);
 	wsevent_get(ev, tail);
 }
+
+int
+evdev_enable(client, evp)
+	struct evdev_client *client;
+	struct wseventvar *evp;
+{
+	client->ec_base.me_evp = evp;
+	return ((*client->ec_accessops->enable)(client->ec_accesscookie));
+}
+
+void
+evdev_disable(client)
+	struct evdev_client *client;
+{
+	client->ec_base.me_evp = NULL;
+	return ((*client->ec_accessops->disable)(client->ec_accesscookie));
+}
+
+#if NWSMUX > 0
+int
+evdev_mux_open(me, evp)
+	struct wsevsrc *me;
+	struct wseventvar *evp;
+{
+	struct evdev_softc *sc = (struct evdev_softc *)me;
+	struct evdev_dev 	*evdev = sc->sc_evdev;
+	struct evdev_client *client = evdev->ev_client;
+
+	if (client->ec_base.me_evp != NULL) {
+		return (EBUSY);
+	}
+
+	return (evdev_enable(client, evp));
+}
+
+int
+evdev_mux_close(me)
+	struct wsevsrc *me;
+{
+	struct evdev_softc *sc = (struct evdev_softc *)me;
+	struct evdev_dev 	*evdev = sc->sc_evdev;
+	struct evdev_client *client = evdev->ev_client;
+
+	evdev_disable(client);
+
+	return (0);
+}
+
+int
+evdev_add_mux(unit, muxsc)
+	int unit;
+	struct wsmux_softc *muxsc;
+{
+	struct evdev_softc *sc;
+	struct evdev_dev 	*evdev;
+	struct evdev_client *client;
+
+	sc = evdev_cd.cd_devs[unit];
+
+	if (unit < 0 || unit >= evdev_cd.cd_ndevs || sc == NULL) {
+		return (ENXIO);
+	}
+
+	evdev = sc->sc_evdev;
+	client = evdev->ev_client;
+
+	if (client->ec_base.me_parent != NULL || client->ec_base.me_evp != NULL) {
+		return (EBUSY);
+	}
+	return (wsmux_attach_sc(muxsc, &client->ec_base));
+}
+#endif

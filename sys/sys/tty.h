@@ -244,6 +244,7 @@ void ttyinfo(struct tty *);
 int	 ttyinput(int, struct tty *);
 int	 ttylclose(struct tty *, int);
 int	 ttymodem(struct tty *, int);
+int	 ttykqfilter(dev_t, struct knote *);
 int	 ttyopen(dev_t, struct tty *);
 int	 ttyoutput(int, struct tty *);
 void ttypend(struct tty *);

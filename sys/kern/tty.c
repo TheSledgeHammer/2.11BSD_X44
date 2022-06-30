@@ -313,7 +313,7 @@ ttyunblock(tp)
  * subroutine and it is called during a clock interrupt.
  */
 void
-ttrstrt(tp)
+_ttrstrt(tp)
 	register struct tty *tp;
 {
 	int		s;
@@ -323,6 +323,21 @@ ttrstrt(tp)
 	ttstart(tp);
 	TTY_UNLOCK(tp);
 	splx(s);
+}
+
+void
+ttrstrt(tp_arg)
+	void *tp_arg;
+{
+	register struct tty *tp;
+
+#ifdef DIAGNOSTIC
+	if (tp_arg == NULL) {
+		panic("ttrstrt");
+	}
+#endif
+	tp = tp_arg;
+	_ttrstrt(tp);
 }
 
 /*

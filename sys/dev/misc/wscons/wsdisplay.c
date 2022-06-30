@@ -1200,7 +1200,7 @@ wsdisplay_internal_ioctl(sc, scr, cmd, data, flag, p)
 		return ENODEV;
 #endif
 
-	case WSDISPLAYIO_SFONT:
+	case WSDISPLAYIO_USEFONT:
 #define d ((struct wsdisplay_usefontdata *)data)
 		if (!sc->sc_accessops->load_font)
 			return (EINVAL);
@@ -1354,10 +1354,10 @@ wsdisplay_cfg_ioctl(sc, cmd, data, flag, p)
 	return (ENOIOCTL);
 }
 
-caddr_t
+u_long
 wsdisplaymmap(dev, offset, prot)
 	dev_t dev;
-	int offset;		/* XXX */
+	off_t offset;		/* XXX */
 	int prot;
 {
 	struct wsdisplay_softc *sc = wsdisplay_cd.cd_devs[WSDISPLAYUNIT(dev)];
@@ -1452,7 +1452,7 @@ wsdisplaystart(tp)
 	splx(s);
 }
 
-void
+int
 wsdisplaystop(tp, flag)
 	struct tty *tp;
 	int flag;
@@ -1464,6 +1464,7 @@ wsdisplaystop(tp, flag)
 		if (!ISSET(tp->t_state, TS_TTSTOP))
 			SET(tp->t_state, TS_FLUSH);
 	splx(s);
+	return (0);
 }
 
 /* Set line parameters. */
@@ -1476,7 +1477,7 @@ wsdisplayparam(tp, t)
 	tp->t_ispeed = t->c_ispeed;
 	tp->t_ospeed = t->c_ospeed;
 	tp->t_cflag = t->c_cflag;
-	return 0;
+	return (0);
 }
 
 /*
@@ -1565,7 +1566,6 @@ wsdisplay_update_rawkbd(sc, scr)
 	int s, raw, data, error;
 	struct wsevsrc *inp;
 
-
 	s = spltty();
 
 	raw = (scr ? scr->scr_rawkbd : 0);
@@ -1580,8 +1580,7 @@ wsdisplay_update_rawkbd(sc, scr)
 	inp = sc->sc_input;
 	if (inp == NULL)
 		return (ENXIO);
-	error = wsevsrc_display_ioctl(sc->sc_kbddv, WSKBDIO_SETMODE,
-				   (caddr_t)&data, 0, 0);
+	error = wsevsrc_display_ioctl(inp, WSKBDIO_SETMODE, (caddr_t)&data, 0, 0);
 	if (!error)
 		sc->sc_rawkbd = raw;
 	splx(s);
@@ -2041,6 +2040,14 @@ wsdisplay_set_cons_kbd(get, bell, poll)
 	wsdisplay_cons.cn_getc = get;
 	wsdisplay_cons.cn_bell = bell;
 	wsdisplay_cons.cn_pollc = poll;
+}
+
+void
+wsdisplay_unset_cons_kbd(void)
+{
+	wsdisplay_cons.cn_getc = wsdisplay_getc_dummy;
+	wsdisplay_cons.cn_bell = NULL;
+	wsdisplay_cons_kbd_pollc = 0;
 }
 
 /*

@@ -71,11 +71,11 @@ struct wssrcops {
 #define wsevsrc_close(me) 								\
 	((me)->me_ops->dclose((me)))
 #define wsevsrc_ioctl(me, cmd, data, flag, p) 			\
-	((me)->me_ops->dioctl(&(me)->me_dv, cmd, (caddr_t)data, flag, p))
+	((me)->me_ops->dioctl((me)->me_dv, cmd, (caddr_t)data, flag, p))
 #define wsevsrc_display_ioctl(me, cmd, data, flag, p) 	\
-	((me)->me_ops->ddispioctl(&(me)->me_dv, cmd, (caddr_t)data, flag, p))
+	((me)->me_ops->ddispioctl((me)->me_dv, cmd, (caddr_t)data, flag, p))
 #define wsevsrc_set_display(me, arg) 					\
-	((me)->me_ops->dsetdisplay(&(me)->me_dv, arg))
+	((me)->me_ops->dsetdisplay((me)->me_dv, arg))
 
 #if NWSMUX > 0
 struct wsmux_softc {

@@ -173,6 +173,9 @@ struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
 	struct wsevsrc				ec_base;			/* input event to wscons event */
 
+	const struct evdev_accessops *ec_accessops;
+	void						*ec_accesscookie;
+
 	struct lock					ec_buffer_lock;
 	size_t						ec_buffer_size;
 	size_t						ec_buffer_ready;	/* (q) */
@@ -196,6 +199,22 @@ struct evdev_softc {
 	int					sc_refcnt;
 	u_char				sc_dying;
 };
+
+/* evdev mux accessops  */
+struct evdev_accessops {
+	int		(*enable)(void *);
+	int		(*ioctl)(void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
+	void	(*disable)(void *);
+};
+
+#define EVDEVDEVCF_MUX 	0
+
+#ifdef notyet
+/* Client Mux */
+int		evdev_mux_open(struct wsevsrc *, struct wseventvar *);
+int		evdev_mux_close(struct wsevsrc *);
+int		evdev_add_mux(int, struct wsmux_softc *);
+#endif
 
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);

@@ -35,7 +35,7 @@ struct bdevsw {
 	int			(*d_ioctl)(dev_t, u_long, caddr_t, int, struct proc *);
 	int			(*d_root)(void);		/* parameters vary by architecture */
 	int			(*d_dump)(dev_t, daddr_t, caddr_t, size_t);
-	int		(*d_psize)(dev_t);
+	int			(*d_psize)(dev_t);
 	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
 };

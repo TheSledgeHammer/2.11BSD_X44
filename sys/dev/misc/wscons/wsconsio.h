@@ -452,7 +452,8 @@ struct wsmux_device {
 	int 			type;
 #define	WSMUX_MOUSE	1
 #define	WSMUX_KBD	2
-#define	WSMUX_MUX	3
+#define	WSMUX_EVDEV	3
+#define	WSMUX_MUX	4
 	int 			idx;
 };
 #define	WSMUXIO_ADD_DEVICE			_IOW('W', 97, struct wsmux_device)
