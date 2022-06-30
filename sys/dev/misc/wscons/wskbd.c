@@ -87,6 +87,7 @@
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/device.h>
+#include <sys/devsw.h>
 #include <sys/ioctl.h>
 #include <sys/kernel.h>
 #include <sys/proc.h>
@@ -230,11 +231,11 @@ static int  wskbd_displayioctl(struct device *, u_long, caddr_t, int, struct pro
 #if NWSDISPLAY > 0
 static int  wskbd_set_display(struct device *, struct wsevsrc *);
 #else
-//#define wskbd_set_display NULL
+#define wskbd_set_display NULL
 #endif
 static inline void update_leds (struct wskbd_internal *);
 static inline void update_modifier (struct wskbd_internal *, u_int, int, int);
-static int internal_command (struct wskbd_softc *, u_int *, keysym_t);
+static int internal_command (struct wskbd_softc *, u_int *, keysym_t, keysym_t);
 static int wskbd_translate(struct wskbd_internal *, u_int, int);
 static int wskbd_enable(struct wskbd_softc *, int);
 #if NWSDISPLAY > 0
@@ -541,7 +542,7 @@ wskbd_cnattach(consops, conscookie, mapdata)
 	wskbd_console_data.t_consaccesscookie = conscookie;
 
 #if NWSDISPLAY > 0
-	wsdisplay_set_cons_kbd(wskbd_cngetc, wskbd_cnpollc);
+	wsdisplay_set_cons_kbd(wskbd_cngetc, wskbd_cnpollc, wskbd_cnbell);
 #endif
 
 	wskbd_console_initted = 1;

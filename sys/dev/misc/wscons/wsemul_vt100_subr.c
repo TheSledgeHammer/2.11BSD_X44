@@ -744,6 +744,7 @@ wsemul_vt100_handle_dcs(edp)
 #ifdef VT100_PRINTUNKNOWN
 				printf("unknown char %c in DCS\n", c);
 #endif
+				break;
 			}
 		}
 		if (pos > 0)
@@ -786,6 +787,7 @@ vt100_ansimode(edp, nr, op)
 #ifdef VT100_PRINTUNKNOWN
 		printf("ANSI mode %d unknown\n", nr);
 #endif
+		break;
 	}
 	return (res);
 }
