@@ -198,7 +198,7 @@ int wsdisplay_usl_ioctl1(struct wsdisplay_softc *, u_long, caddr_t, int, struct 
 
 int wsdisplay_usl_ioctl2(struct wsdisplay_softc *, struct wsscreen *, u_long, caddr_t, int, struct proc *);
 
-int wsdisplay_stat_ioctl(struct wsdisplay_softc *, u_long, void *, int, struct proc *);
+int wsdisplay_stat_ioctl(struct wsdisplay_softc *, u_long, caddr_t, int, struct proc *);
 
 int wsdisplay_cfg_ioctl(struct wsdisplay_softc *sc, u_long cmd, caddr_t data, int flag, struct proc *p);
 
