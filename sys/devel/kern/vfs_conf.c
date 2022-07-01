@@ -37,6 +37,7 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
+#include <sys/vnode_if.h>
 #include <sys/queue.h>
 #include <sys/null.h>
 #include <sys/user.h>

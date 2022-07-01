@@ -233,9 +233,9 @@ static int  wskbd_set_display(struct device *, struct wsevsrc *);
 #else
 #define wskbd_set_display NULL
 #endif
-static inline void update_leds (struct wskbd_internal *);
-static inline void update_modifier (struct wskbd_internal *, u_int, int, int);
-static int internal_command (struct wskbd_softc *, u_int *, keysym_t, keysym_t);
+static inline void update_leds(struct wskbd_internal *);
+static inline void update_modifier(struct wskbd_internal *, u_int, int, int);
+static int internal_command(struct wskbd_softc *, u_int *, keysym_t, keysym_t);
 static int wskbd_translate(struct wskbd_internal *, u_int, int);
 static int wskbd_enable(struct wskbd_softc *, int);
 #if NWSDISPLAY > 0
@@ -542,7 +542,7 @@ wskbd_cnattach(consops, conscookie, mapdata)
 	wskbd_console_data.t_consaccesscookie = conscookie;
 
 #if NWSDISPLAY > 0
-	wsdisplay_set_cons_kbd(wskbd_cngetc, wskbd_cnpollc, wskbd_cnbell);
+	wsdisplay_set_cons_kbd(wskbd_cngetc, wskbd_cnbell, wskbd_cnpollc);
 #endif
 
 	wskbd_console_initted = 1;
@@ -814,6 +814,24 @@ wskbd_enable(sc, on)
 	DPRINTF(("wskbd_enable: sc=%p on=%d res=%d\n", sc, on, error));
 	return (error);
 }
+
+#if NWSMUX > 0
+int
+wskbd_mux_open(me, evp)
+	struct wsevsrc 		*me;
+	struct wseventvar 	*evp;
+{
+	struct wskbd_softc *sc = (struct wskbd_softc *)me;
+
+	if (sc->sc_dying)
+		return (EIO);
+
+	if (sc->sc_base.me_evp != NULL)
+		return (EBUSY);
+
+	return (wskbd_do_open(sc, evp));
+}
+#endif
 
 int
 wskbdopen(dev, flags, mode, p)
@@ -1572,7 +1590,7 @@ internal_command(sc, type, ksym, ksym2)
 	if (ksym == KS_Cmd_Debugger) {
 		if (sc->sc_isconsole) {
 #ifdef DDB
-			console_debugger();
+		//	console_debugger();
 #endif
 #ifdef KGDB
 			kgdb_connect(1);

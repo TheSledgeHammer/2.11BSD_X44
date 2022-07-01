@@ -61,9 +61,9 @@ vfs_opv_init()
 	int (***opv_desc_vector_p)();
 	int (**opv_desc_vector)();
 
+	register struct vnodeopv_desc *opv;
 	struct vnodeopv_entry_desc 	*opve_descp;
 
-	register struct vnodeopv_desc *opv;
 	LIST_FOREACH(opv, &vfs_opv_descs, opv_entry) {
 		opv_desc_vector_p = opv->opv_desc_vector_p;
 		if (*opv_desc_vector_p == NULL) {

@@ -41,12 +41,13 @@
 
 typedef int (*pfi_t)();
 typedef int (*opve_impl_t)(void *);
+typedef int (***opv_desc_vector_t)(void *);
+
 struct vnodeopv_entry_desc {
 	struct vnodeop_desc 		*opve_op;  			/* which operation this is */
 	opve_impl_t					opve_impl;			/* code implementing this operation */
 };
 
-typedef int (***opv_desc_vector_t)(void *);
 struct vnodeopv_desc_list;
 LIST_HEAD(vnodeopv_desc_list, vnodeopv_desc);
 struct vnodeopv_desc {

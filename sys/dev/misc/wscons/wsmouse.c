@@ -91,6 +91,7 @@
 #include <sys/tty.h>
 #include <sys/signalvar.h>
 #include <sys/device.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 
 #include <dev/misc/wscons/wsconsio.h>
@@ -351,29 +352,6 @@ wsmouse_detach(struct device *self, int flags)
 	return (0);
 }
 
-/* NEXT prepares to put the next event, backing off if necessary */
-#define	NEXT								\
-if ((++put) % WSEVENT_QSIZE == get) {		\
-	put--;									\
-	goto out;								\
-}
-/* ADVANCE completes the `put' of the event */
-#define	ADVANCE								\
-ev++;										\
-if (put >= WSEVENT_QSIZE) {					\
-	put = 0;								\
-	ev = &sc->sc_events.q[0];				\
-}											\
-any = 1
-/* TIMESTAMP sets `time' field of the event to the current time */
-#define TIMESTAMP							\
-do {										\
-	int s;									\
-	s = splhigh();							\
-	TIMEVAL_TO_TIMESPEC(&time, &ev->time);	\
-	splx(s);								\
-} while (0)
-
 void
 wsmouse_input(wsmousedev, btns, x, y, z, flags)
 	struct device *wsmousedev;
@@ -383,6 +361,7 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 {
 	struct wsmouse_softc *sc = (struct wsmouse_softc *)wsmousedev;
 	struct wscons_event *ev;
+	struct wseventvar *evar;
 	int mb, ub, d, get, put, any;
 
 	/*
@@ -420,9 +399,32 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 	 */
 	ub = sc->sc_ub;
 	any = 0;
-	get = sc->sc_events.get;
-	put = sc->sc_events.put;
-	ev = &sc->sc_events.q[put];
+	get = evar->get;
+	put = evar->put;
+	ev = &evar->q[put];
+
+	/* NEXT prepares to put the next event, backing off if necessary */
+#define	NEXT									\
+	if ((++put) % WSEVENT_QSIZE == get) {		\
+		put--;									\
+		goto out;								\
+	}
+	/* ADVANCE completes the `put' of the event */
+#define	ADVANCE									\
+	ev++;										\
+	if (put >= WSEVENT_QSIZE) {					\
+		put = 0;								\
+		ev = &evar->q[0];						\
+	}											\
+	any = 1
+	/* TIMESTAMP sets `time' field of the event to the current time */
+#define TIMESTAMP								\
+	do {										\
+		int s;									\
+		s = splhigh();							\
+		TIMEVAL_TO_TIMESPEC(&time, &ev->time);	\
+		splx(s);								\
+	} while (0)
 
 	if (flags & WSMOUSE_INPUT_ABSOLUTE_X) {
 		if (sc->sc_x != x) {
@@ -509,8 +511,8 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 out:
 	if (any) {
 		sc->sc_ub = ub;
-		sc->sc_events.put = put;
-		wsevent_wakeup(&sc->sc_events);
+		evar->put = put;
+		wsevent_wakeup(evar);
 #if NWSMUX > 0
 		DPRINTFN(5,("wsmouse_input: %s wakeup evar=%p\n",
 			    sc->sc_base.me_dv.dv_xname, evar));
