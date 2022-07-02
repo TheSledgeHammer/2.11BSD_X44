@@ -64,7 +64,7 @@
 
 #ifdef FONT_LUCIDA16x29
 #define HAVE_FONT 1
-#include <dev/wsfont/lucida16x29.h>
+#include <dev/misc/wsfont/lucida16x29.h>
 #endif
 
 #ifdef FONT_VT220L8x8
@@ -79,7 +79,7 @@
 
 #ifdef FONT_VT220L8x16
 #define HAVE_FONT 1
-#include <dev/wsfont/vt220l8x16.h>
+#include <dev/misc/wsfont/vt220l8x16.h>
 #endif
 
 #ifdef FONT_VT220ISO8x16
