@@ -82,12 +82,21 @@ struct ksyms_hdr {
 	int32_t		kh_note[6];
 };
 
-static int 					ksyms_maxlen;
-static bool_t 				ksyms_isopen;
-static bool_t 				ksyms_initted;
-static bool_t 				ksyms_loaded;
+static int 			ksyms_maxlen;
+static bool_t 			ksyms_isopen;
+static bool_t 			ksyms_initted;
+static bool_t 			ksyms_loaded;
 static struct lock_object 	ksyms_lock;
 static struct ksyms_symtab 	kernel_symtab;
+
+/*
+ * used by savecore(8) so non-static
+ */
+struct ksyms_hdr 		ksyms_hdr;
+int 				ksyms_symsz;
+int 				ksyms_strsz;
+int 				ksyms_ctfsz;	/* this is not currently used by savecore(8) */
+TAILQ_HEAD(, ksyms_symtab) 	ksyms_symtabs;
 
 static void ksyms_sizes_calc(void);
 
