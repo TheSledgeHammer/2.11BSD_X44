@@ -69,7 +69,7 @@ cn_destroy_magic(cnm_state_t *cnm)
  * machine table.
  */
 int
-cn_set_magic(char *magic)
+cn_set_magic(const char *magic)
 {
 	unsigned int i, c, n;
 	unsigned short m[CNS_LEN];
@@ -127,7 +127,7 @@ cn_set_magic(char *magic)
  * a magic string.
  */
 int
-cn_get_magic(char *magic, int maglen)
+cn_get_magic(char *magic, size_t maglen)
 {
 	unsigned int i, c;
 
