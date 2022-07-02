@@ -62,7 +62,7 @@
 #ifndef _DEV_KOBJ_IMPL_H_
 #define	_DEV_KOBJ_IMPL_H_
 
-#define	ELFSIZE		ARCH_ELFSIZE_
+//#define	ELFSIZE		ARCH_ELFSIZE_
 #define	MAXMODNAME	32 		/* Unused: modules not implemented */
 
 #include <sys/systm.h>
