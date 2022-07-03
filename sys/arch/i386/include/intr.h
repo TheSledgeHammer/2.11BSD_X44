@@ -80,9 +80,10 @@
 //volatile int cpl, ipending/*, idepth*/;
 int imask[NIPL];
 int iunmask[NIPL];
+extern struct intrsource 	*intrsrc[];
+extern struct intrhand 		*intrhand[];
 
 extern void Xspllower(void);
-
 extern int splraise(int);
 extern int spllower(int);
 extern void splx(int);

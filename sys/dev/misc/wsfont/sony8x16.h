@@ -37,7 +37,7 @@
 
 /* This font data is generated from sys/arch/newsmips/dev/fnt.c */
 
-extern u_char sony8x16_data[];
+static u_char sony8x16_data[];
 
 struct wsdisplay_font sony8x16 = {
 	"sony8x16",			/* typeface name */

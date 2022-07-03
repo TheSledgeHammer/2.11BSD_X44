@@ -49,6 +49,7 @@
  */
 typedef u_int32_t pcireg_t;		/* configuration space register XXX */
 struct pcibus_attach_args;
+struct pci_softc;
 
 #ifdef _KERNEL
 /*
@@ -124,6 +125,45 @@ struct pci_attach_args {
 #define	PCI_FLAGS_MRM_OKAY		0x08		/* Memory Read Multiple okay */
 #define	PCI_FLAGS_MWI_OKAY		0x10		/* Memory Write and Invalidate
 						   	   	   	   	   	   okay */
+/*
+ * PCI device 'quirks'.
+ *
+ * In general strange behaviour which can be handled by a driver (e.g.
+ * a bridge's inability to pass a type of access correctly) should be.
+ * The quirks table should only contain information which impacts
+ * the operation of the MI PCI code and which can't be pushed lower
+ * (e.g. because it's unacceptable to require a driver to be present
+ * for the information to be known).
+ */
+struct pci_quirkdata {
+	pci_vendor_id_t		vendor;		/* Vendor ID */
+	pci_product_id_t	product;	/* Product ID */
+	int					quirks;		/* quirks; see below */
+};
+#define	PCI_QUIRK_MULTIFUNCTION		1
+#define	PCI_QUIRK_MONOFUNCTION		2
+#define	PCI_QUIRK_SKIP_FUNC(n)		(4 << n)
+#define	PCI_QUIRK_SKIP_FUNC0		PCI_QUIRK_SKIP_FUNC(0)
+#define	PCI_QUIRK_SKIP_FUNC1		PCI_QUIRK_SKIP_FUNC(1)
+#define	PCI_QUIRK_SKIP_FUNC2		PCI_QUIRK_SKIP_FUNC(2)
+#define	PCI_QUIRK_SKIP_FUNC3		PCI_QUIRK_SKIP_FUNC(3)
+#define	PCI_QUIRK_SKIP_FUNC4		PCI_QUIRK_SKIP_FUNC(4)
+#define	PCI_QUIRK_SKIP_FUNC5		PCI_QUIRK_SKIP_FUNC(5)
+#define	PCI_QUIRK_SKIP_FUNC6		PCI_QUIRK_SKIP_FUNC(6)
+#define	PCI_QUIRK_SKIP_FUNC7		PCI_QUIRK_SKIP_FUNC(7)
+
+struct pci_softc {
+	struct device 		sc_dev;
+	bus_space_tag_t 	sc_iot, sc_memt;
+	bus_dma_tag_t 		sc_dmat;
+	bus_dma_tag_t 		sc_dmat64;
+	pci_chipset_tag_t 	sc_pc;
+	int 				sc_bus, sc_maxndevs;
+	pcitag_t 			*sc_bridgetag;
+	u_int 				sc_intrswiz;
+	pcitag_t 			sc_intrtag;
+	int 				sc_flags;
+};
 
 #include "locators.h"
 
@@ -149,6 +189,7 @@ struct pci_attach_args {
  * Configuration space access and utility functions.  (Note that most,
  * e.g. make_tag, conf_read, conf_write are declared by pci_machdep.h.)
  */
+int		pci_mapreg_probe(pci_chipset_tag_t, pcitag_t, int, pcireg_t *);
 pcireg_t pci_mapreg_type(pci_chipset_tag_t, pcitag_t, int);
 int		pci_mapreg_info(pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
 int		pci_mapreg_map(struct pci_attach_args *, int, pcireg_t, int, bus_space_tag_t *, bus_space_handle_t *, bus_addr_t *, bus_size_t *);
@@ -156,9 +197,15 @@ int		pci_mapreg_map(struct pci_attach_args *, int, pcireg_t, int, bus_space_tag_
 /*
  * Helper functions for autoconfiguration.
  */
+const struct pci_quirkdata *pci_lookup_quirkdata(pci_vendor_id_t, pci_product_id_t);
 void	pci_devinfo(pcireg_t, pcireg_t, int, char *);
 void	pci_conf_print(pci_chipset_tag_t, pcitag_t, void (*)(pci_chipset_tag_t, pcitag_t, const pcireg_t *));
 void	set_pci_isa_bridge_callback(void (*)(void *), void *);
+
+/*
+ * Helper functions for user access to the PCI bus.
+ */
+int		pci_devioctl(pci_chipset_tag_t, pcitag_t, u_long, caddr_t, int flag, struct proc *);
 
 #endif /* _KERNEL */
 #endif /* _DEV_PCI_PCIVAR_H_ */

@@ -76,7 +76,7 @@
  *	This file is generated from sys/luna68k/font/font.c in 4.4BSD-Lite2.
  */
 
-extern u_char omron12x20_data[];
+static u_char omron12x20_data[];
 
 struct wsdisplay_font omron12x20 = {
 	"omron12x20",			/* typeface name */

@@ -80,6 +80,7 @@
 #include <sys/errno.h>
 #include <sys/exec.h>
 #include <sys/exec_aout.h>
+#include <sys/exec_linker.h>
 
 static int
 exec_nomid(elp)

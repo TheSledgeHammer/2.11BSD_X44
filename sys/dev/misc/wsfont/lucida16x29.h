@@ -63,7 +63,7 @@ This is the LEGAL NOTICE pertaining to the Lucida fonts from Bigelow & Holmes:
 
 */
 
-extern u_char lucida16x29_data[];
+static u_char lucida16x29_data[];
 
 struct wsdisplay_font lucida16x29 = {
 	"Lucida",			/* typeface name */

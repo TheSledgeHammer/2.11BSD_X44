@@ -43,7 +43,7 @@
  * by Izumi Tsutsui.
  */
 
-extern u_char vt220iso8x16_data[];
+static u_char vt220iso8x16_data[];
 
 struct wsdisplay_font vt220iso8x16 = {
 	"vt220iso8x16",			/* typeface name */

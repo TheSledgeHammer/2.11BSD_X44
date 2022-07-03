@@ -70,11 +70,15 @@ struct vga_pci_softc {
 	struct vga_bar 		sc_rom;
 };
 
-int		vga_pci_match (struct device *, struct cfdata *, void *);
-void	vga_pci_attach (struct device *, struct device *, void *);
+int		vga_pci_match(struct device *, struct cfdata *, void *);
+void	vga_pci_attach(struct device *, struct device *, void *);
+static int vga_pci_lookup_quirks(struct pci_attach_args *);
 
 CFOPS_DECL(vga_pci, vga_pci_match, vga_pci_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, vga_pci, &vga_pci_cops, DV_DULL, sizeof(struct vga_pci_softc));
+
+int		vga_pci_ioctl(void *, u_long, caddr_t, int, struct proc *);
+caddr_t	vga_pci_mmap(void *, off_t, int);
 
 const struct vga_funcs vga_pci_funcs = {
 	vga_pci_ioctl,
@@ -180,6 +184,7 @@ vga_pci_attach(parent, self, aux)
 	 */
 	for (bar = 0; bar < NBARS; bar++) {
 		reg = PCI_MAPREG_START + (bar * 4);
+		psc->sc_bars[bar].vb_type = pci_mapreg_type(psc->sc_pc, psc->sc_pcitag, reg);
 		if (!pci_mapreg_probe(psc->sc_pc, psc->sc_pcitag, reg, &psc->sc_bars[bar].vb_type)) {
 			/* there is no valid mapping register */
 			continue;
@@ -272,5 +277,5 @@ vga_pci_mmap(v, offset, prot)
 				prot, 0));
 
 	/* Range not found. */
-	return (-1);
+	return ((caddr_t)-1);
 }

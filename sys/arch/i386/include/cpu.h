@@ -141,6 +141,12 @@ void	setstatclockrate(int);
 /* autoconf.c */
 void	configure(void);
 
+/* k6_mem.c */
+void	k6_mem_drvinit(void);
+
+/* machdep.c */
+void	i386_proc0_tss_ldt_init(void);
+
 /* vm_machdep.c */
 struct vnode;
 int		cpu_fork(struct proc *, struct proc *);

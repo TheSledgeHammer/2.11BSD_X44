@@ -35,7 +35,7 @@
  * Derived from: @(#)gallant19.h	8.1 (Berkeley) 6/11/93
  */
  
-extern u_char gallant12x22_data[];
+static u_char gallant12x22_data[];
 
 struct wsdisplay_font gallant12x22 = { 
 	"Gallant",			/* typeface name */

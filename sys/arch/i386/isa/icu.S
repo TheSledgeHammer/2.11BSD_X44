@@ -123,10 +123,10 @@ IDTVEC(doreti)
 		cmpb	$0,_C_LABEL(astpending)
 		je		3f
 		testb   $SEL_RPL,TF_CS(%esp)
-#ifdef VM86
+
 		jnz		4f
 		testl	$PSL_VM,TF_EFLAGS(%esp)
-#endif
+
 		jz		3f
 4:		movb	$0,_C_LABEL(astpending)
 		sti
@@ -138,6 +138,13 @@ IDTVEC(doreti)
 /*
  * Soft interrupt handlers
  */
+IDTVEC(softclock)
+		movl	_C_LABEL(imask) + IPL_SOFTCLOCK * 4,%eax
+		movl	%eax,_C_LABEL(cpl)
+		call	_C_LABEL(softclock)
+		movl	%ebx,_C_LABEL(cpl)
+		jmp		%esi
+
 
 IDTVEC(softserial)
 		movl	_C_LABEL(imask) + IPL_SOFTSERIAL * 4,%eax
@@ -150,6 +157,7 @@ IDTVEC(softserial)
 */
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		%esi
+
 
 #define DONET(s, c) 		\
 	.globl  c				;\
@@ -192,12 +200,5 @@ IDTVEC(softnet)
 #if NPPP > 0
 	DONET(NETISR_PPP, _C_LABEL(pppintr))
 #endif
-		movl	%ebx,_C_LABEL(cpl)
-		jmp		%esi
-	
-IDTVEC(softclock)
-		movl	_C_LABEL(imask) + IPL_SOFTCLOCK * 4,%eax
-		movl	%eax,_C_LABEL(cpl)
-		call	_C_LABEL(softclock)
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		%esi

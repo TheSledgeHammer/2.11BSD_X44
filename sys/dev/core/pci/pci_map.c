@@ -184,6 +184,31 @@ pci_mapreg_type(pc, tag, reg)
 }
 
 int
+pci_mapreg_probe(pc, tag, reg, typep)
+	pci_chipset_tag_t pc;
+	pcitag_t tag;
+	int reg;
+	pcireg_t *typep;
+{
+	pcireg_t address, mask;
+	int s;
+
+	s = splhigh();
+	address = pci_conf_read(pc, tag, reg);
+	pci_conf_write(pc, tag, reg, 0xffffffff);
+	mask = pci_conf_read(pc, tag, reg);
+	pci_conf_write(pc, tag, reg, address);
+	splx(s);
+
+	if (mask == 0) /* unimplemented mapping register */
+		return (0);
+
+	if (typep)
+		*typep = _PCI_MAPREG_TYPEBITS(address);
+	return (1);
+}
+
+int
 pci_mapreg_info(pc, tag, reg, type, basep, sizep, flagsp)
 	pci_chipset_tag_t pc;
 	pcitag_t tag;

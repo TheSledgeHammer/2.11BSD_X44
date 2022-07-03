@@ -37,7 +37,7 @@
 
 /* This font data is generated from sys/arch/newsmips/dev/fnt24.c */
 
-extern u_char sony12x24_data[];
+static u_char sony12x24_data[];
 
 struct wsdisplay_font sony12x24 = {
 	"sony12x24",			/* typeface name */

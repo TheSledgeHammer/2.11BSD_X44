@@ -57,6 +57,8 @@
 #include <sys/null.h>
 #include <sys/devsw.h>
 
+#include <machine/bios.h>
+#include <machine/cpu.h>
 #include <machine/pte.h>
 
 #include <dev/core/isa/isareg.h>
@@ -76,6 +78,8 @@
  * the machine.
  */
 extern int	cold;		/* cold start flag initialized in locore.s */
+
+void	swapconf(void);
 
 /*
  * Determine i/o configuration for a machine.
@@ -137,9 +141,10 @@ int	dmmin, dmmax, dmtext;
  * Configure swap space and related parameters.
  */
 void
-swapconf()
+swapconf(void)
 {
 	register struct swdevt *swp;
+	const struct bdevsw *bdev;
 	register int nblks;
 	extern int Maxmem;
 
@@ -147,15 +152,17 @@ swapconf()
 		if ( (u_int)swp->sw_dev >= nblkdev ){
 			break;	/* XXX */
 		}
-		if (bdevsw[major(swp->sw_dev)].d_psize) {
-			nblks = (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
+		bdev = bdevsw_lookup(swp->sw_dev);
+		if (bdev->d_psize) {
+			nblks = (*bdev->d_psize)(swp->sw_dev);
 			if (nblks != -1 && (swp->sw_nblks == 0 || swp->sw_nblks > nblks)) {
 				swp->sw_nblks = nblks;
 			}
 		}
 	}
-	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize) {
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - (Maxmem * NBPG/512);
+	bdev = bdevsw_lookup(dumpdev);
+	if (dumplo == 0 && bdev->d_psize) {
+		dumplo = (*bdev->d_psize)(dumpdev) - (Maxmem * NBPG/512);
 	}
 	if (dumplo < 0) {
 		dumplo = 0;

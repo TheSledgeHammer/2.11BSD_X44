@@ -11,6 +11,7 @@ device	pci {[dev = -1], [function = -1]}
 attach	pci at pcibus
 file	dev/core/pci/pci.c		pci 				needs-flag
 file	dev/core/pci/pci_map.c		pci
+file	dev/core/pci/pci_quirks.c		pci
 file	dev/core/pci/pci_subr.c		pci
 
 # PCI-PCI bridge chips

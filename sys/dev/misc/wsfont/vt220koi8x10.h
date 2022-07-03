@@ -46,7 +46,7 @@
 #define _VT220_KOI8_X_8X10_STR	"vt220_koi8_r_8x10"
 #endif
 
-extern u_char _VT220_KOI8_X_8X10_DATA[];
+static u_char _VT220_KOI8_X_8X10_DATA[];
 
 struct wsdisplay_font _VT220KX8X10 = {
 	_VT220_KOI8_X_8X10_STR,		/* typeface name */

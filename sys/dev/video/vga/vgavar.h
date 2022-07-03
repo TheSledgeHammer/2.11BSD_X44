@@ -43,7 +43,7 @@ struct vga_handle {
 
 struct vga_funcs {
 	int 							(*vf_ioctl)(void *, u_long, caddr_t, int, struct proc *);
-	int 							(*vf_mmap)(void *, off_t, int);
+	caddr_t							(*vf_mmap)(void *, off_t, int);
 };
 
 struct vga_config {

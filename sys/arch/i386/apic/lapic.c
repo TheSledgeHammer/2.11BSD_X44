@@ -77,6 +77,7 @@ void			lapic_map(caddr_t);
 static void 	lapic_hwmask(struct softpic *, int);
 static void 	lapic_hwunmask(struct softpic *, int);
 static void 	lapic_setup(struct softpic *, struct cpu_info *, int, int, int);
+static void		lapic_register_pic(void);
 
 static void		x2apic_write_icr(uint32_t hi, uint32_t lo);
 
@@ -555,7 +556,7 @@ lapic_setup(spic, ci, pin, idtvec, type)
  * Register Local APIC interrupt pins.
  */
 static void
-lapic_register_pic()
+lapic_register_pic(void)
 {
 	softpic_register_pic(&lapic_template);
 }

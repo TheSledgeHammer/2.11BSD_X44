@@ -35,7 +35,7 @@
 /*
  * Translated into wsfont format by Izumi Tsutsui.
  */
-extern u_char vt220l8x16_data[];
+static u_char vt220l8x16_data[];
 
 struct wsdisplay_font vt220l8x16 = {
 	"vt220l",			/* typeface name */

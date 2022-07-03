@@ -39,9 +39,28 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/user.h>
+#include <sys/conf.h>
 
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
+
+dev_type_open(pciopen);
+dev_type_ioctl(pciioctl);
+dev_type_mmap(pcimmap);
+
+const struct cdevsw pci_cdevsw = {
+		.d_open = pciopen,
+		.d_close = pciclose,
+		.d_read = noread,
+		.d_write = nowrite,
+		.d_ioctl = pciioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = pcimmap,
+		.d_kqfilter = nokqfilter,
+		.d_type = D_TTY
+};
 
 int 	pcimatch(struct device *, struct cfdata *, void *);
 void 	pciattach(struct device *, struct device *, void *);
@@ -209,6 +228,10 @@ pciprint(aux, pnp)
 		printf("%s at %s", devinfo, pnp);
 	}
 	printf(" dev %d function %d", pa->pa_device, pa->pa_function);
+	if (!pnp) {
+		pci_devinfo(pa->pa_id, pa->pa_class, 0, devinfo, sizeof devinfo);
+		printf(" %s", devinfo);
+	}
 #if 0
 	printf(" (%si/o, %smem)",
 	    pa->pa_flags & PCI_FLAGS_IO_ENABLED ? "" : "no ",
@@ -238,9 +261,140 @@ set_pci_isa_bridge_callback(fn, arg)
 	void (*fn) (void *);
 	void *arg;
 {
-
 	if (pci_isa_bridge_callback != NULL)
 		panic("set_pci_isa_bridge_callback");
 	pci_isa_bridge_callback = fn;
 	pci_isa_bridge_callback_arg = arg;
+}
+
+/*
+ * User -> kernel interface for PCI bus access.
+ */
+int
+pciopen(dev, flags, mode, p)
+	dev_t dev;
+	int flags, mode;
+	struct proc *p;
+{
+	struct pci_softc *sc;
+	int unit;
+
+	unit = minor(dev);
+	sc = &pci_cd.cd_devs[unit];
+	if (sc == NULL)
+		return (ENXIO);
+
+	return (0);
+}
+
+int
+pciclose(dev, flags, mode, p)
+	dev_t dev;
+	int flags, mode;
+	struct proc *p;
+{
+
+	return (0);
+}
+
+int
+pciioctl(dev, cmd, data, flag, p)
+	dev_t dev;
+	u_long cmd;
+	caddr_t data;
+	int flag;
+	struct proc *p;
+{
+	struct pci_softc *sc = &pci_cd.cd_devs[minor(dev)];
+	struct pciio_bdf_cfgreg *bdfr = (void *) data;
+	struct pciio_businfo *binfo = (void *) data;
+	pcitag_t tag;
+
+	switch (cmd) {
+	case PCI_IOC_BDF_CFGREAD:
+	case PCI_IOC_BDF_CFGWRITE:
+		if (bdfr->bus > 255 || bdfr->device >= sc->sc_maxndevs ||
+		    bdfr->function > 7)
+			return (EINVAL);
+		tag = pci_make_tag(sc->sc_pc, bdfr->bus, bdfr->device,
+		    bdfr->function);
+		if (cmd == PCI_IOC_BDF_CFGREAD)
+			bdfr->cfgreg.val = pci_conf_read(sc->sc_pc, tag,
+			    bdfr->cfgreg.reg);
+		else {
+			if ((flag & FWRITE) == 0)
+				return (EBADF);
+			pci_conf_write(sc->sc_pc, tag, bdfr->cfgreg.reg,
+			    bdfr->cfgreg.val);
+		}
+		break;
+
+	case PCI_IOC_BUSINFO:
+		binfo->busno = sc->sc_bus;
+		binfo->maxdevs = sc->sc_maxndevs;
+		break;
+
+	default:
+		return (ENOTTY);
+	}
+
+	return (0);
+}
+
+caddr_t
+pcimmap(dev, offset, prot)
+	dev_t dev;
+	off_t offset;
+	int prot;
+{
+#if 0
+	struct pci_softc *sc = &pci_cd.cd_devs[minor(dev)];
+
+	/*
+	 * Since we allow mapping of the entire bus, we
+	 * take the offset to be the address on the bus,
+	 * and pass 0 as the offset into that range.
+	 *
+	 * XXX Need a way to deal with linear/prefetchable/etc.
+	 */
+	return (bus_space_mmap(sc->sc_memt, offset, 0, prot, 0));
+#else
+	/* XXX Consider this further. */
+	return ((caddr_t)-1);
+#endif
+}
+
+/*
+ * pci_devioctl:
+ *
+ *	PCI ioctls that can be performed on devices directly.
+ */
+int
+pci_devioctl(pc, tag, cmd, data, flag, p)
+	pci_chipset_tag_t pc;
+	pcitag_t tag;
+	u_long cmd;
+	caddr_t data;
+    int flag;
+    struct proc *p;
+{
+	struct pciio_cfgreg *r = (void *) data;
+
+	switch (cmd) {
+	case PCI_IOC_CFGREAD:
+	case PCI_IOC_CFGWRITE:
+		if (cmd == PCI_IOC_CFGREAD)
+			r->val = pci_conf_read(pc, tag, r->reg);
+		else {
+			if ((flag & FWRITE) == 0)
+				return (EBADF);
+			pci_conf_write(pc, tag, r->reg, r->val);
+		}
+		break;
+
+	default:
+		return (EPASSTHROUGH);
+	}
+
+	return (0);
 }
