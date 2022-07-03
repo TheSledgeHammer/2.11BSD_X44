@@ -44,8 +44,8 @@
 /*
  * Interrupt "level" mechanism variables, masks, and macros
  */
-extern	unsigned short			imen;		/* interrupt mask enable */
-extern	unsigned short			cpl;		/* current priority level mask */
+extern unsigned short			imen;		/* interrupt mask enable */
+extern unsigned short			cpl;		/* current priority level mask */
 extern unsigned short			ipending;
 extern unsigned short			idepth;
 
