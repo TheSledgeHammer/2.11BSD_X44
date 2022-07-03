@@ -77,16 +77,16 @@
 
 #ifndef _LOCORE
 
-volatile int cpl, ipending/*, idepth*/;
+//volatile int cpl, ipending/*, idepth*/;
 int imask[NIPL];
 int iunmask[NIPL];
 
-extern void Xspllower (void);
+extern void Xspllower(void);
 
-extern int splraise (int);
-extern int spllower (int);
-extern void splx (int);
-extern void softintr (int);
+extern int splraise(int);
+extern int spllower(int);
+extern void splx(int);
+extern void softintr(int);
 
 /*
  * Hardware interrupt masks
