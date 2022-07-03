@@ -56,8 +56,8 @@ const char redirhifmt[] = "\177\20"
 
 void
 apic_format_redir(where1, where2, idx, type, redirhi, redirlo)
-	char *where1;
-	char *where2;
+	const char *where1;
+	const char *where2;
 	int idx, type;
 	u_int32_t redirhi;
 	u_int32_t redirlo;
