@@ -153,7 +153,7 @@ __outb(int port, u_int8_t data)
 }
 
 static __inline void
-outsb(int port, void *addr, int cnt)
+outsb(int port, const void *addr, int cnt)
 {
 	__asm __volatile("cld\n\trepne\n\toutsb" :
 			:
@@ -177,7 +177,7 @@ __outw(int port, u_int16_t data)
 }
 
 static __inline void
-outsw(int port, void *addr, int cnt)
+outsw(int port, const void *addr, int cnt)
 {
 	__asm __volatile("cld\n\trepne\n\toutsw" :
 			:
@@ -201,7 +201,7 @@ __outl(int port, u_int32_t data)
 }
 
 static __inline void
-outsl(int port, void *addr, int cnt)
+outsl(int port, const void *addr, int cnt)
 {
 	__asm __volatile("cld\n\trepne\n\toutsl" :
 			:
