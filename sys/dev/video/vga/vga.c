@@ -251,7 +251,7 @@ const struct wsscreen_list vga_screenlist = {
 };
 
 static int		vga_ioctl(void *, u_long, caddr_t, int, struct proc *);
-static int		vga_mmap(void *, off_t, int);
+static caddr_t		vga_mmap(void *, off_t, int);
 static int		vga_alloc_screen(void *, const struct wsscreen_descr *, void **, int *, int *, long *);
 static void		vga_free_screen(void *, void *);
 static int		vga_show_screen(void *, void *, int, void (*)(void *, int, int), void *);
@@ -769,17 +769,17 @@ vga_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 	return ((*vf->vf_ioctl)(v, cmd, data, flag, p));
 }
 
-static int
+static caddr_t
 vga_mmap(void *v, off_t offset, int prot)
 {
 	struct vga_config *vc = v;
 	const struct vga_funcs *vf = vc->vc_funcs;
 
 	if (vc->vc_funcs == NULL)
-		return (-1);
+		return ((caddr_t)-1);
 
 	if (vf->vf_mmap == NULL)
-		return (-1);
+		return ((caddr_t)-1);
 
 	return ((*vf->vf_mmap)(v, offset, prot));
 }
