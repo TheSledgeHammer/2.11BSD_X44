@@ -121,9 +121,9 @@ consinit(void)
 
 	consinfo = &default_consinfo;
 
-//#if (NVGA > 0) || (NEGA > 0) || (NPCDISPLAY > 0)
+#if (NVGA > 0) || (NEGA > 0) || (NPCDISPLAY > 0)
 	consinit_io(consinfo);
-//#endif /* PC | VT | VGA | PCDISPLAY */
+#endif /* PC | VT | VGA | PCDISPLAY */
 
 #if (NCOM > 0)
 	consinit_com(consinfo);
