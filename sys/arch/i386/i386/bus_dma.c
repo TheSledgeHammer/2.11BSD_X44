@@ -47,8 +47,13 @@
 #include <sys/proc.h>
 
 #include <vm/include/vm_extern.h>
+#include <vm/include/vm_kern.h>
 
 #include <machine/bus.h>
+
+int _bus_dmamap_load_buffer(bus_dma_tag_t, bus_dmamap_t, void *, bus_size_t, struct proc *, int, u_long *, int *, int);
+int _bus_dmamem_alloc(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int);
+int _bus_dmamem_alloc_range(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int, vm_offset_t, vm_offset_t);
 
 /*
  * Common function for DMA map creation.  May be called by bus-specific
@@ -172,18 +177,18 @@ _bus_dmamap_load_mbuf(t, map, m0, flags)
 		panic("bus_dmamap_load_mbuf: no packet header");
 #endif
 
-	if (m0->m_cont->mc_pkthdr.len > map->_dm_size)
+	if (m0->m_pkthdr.len > map->_dm_size)
 		return (EINVAL);
 
 	first = 1;
 	seg = 0;
 	error = 0;
 	for (m = m0; m != NULL && error == 0; m = m->m_next) {
-		error = _bus_dmamap_load_buffer(t, map, m->m_cont->mc_data, m->m_len, NULL, flags, &lastaddr, &seg, first);
+		error = _bus_dmamap_load_buffer(t, map, m->m_data, m->m_len, NULL, flags, &lastaddr, &seg, first);
 		first = 0;
 	}
 	if (error == 0) {
-		map->dm_mapsize = m0->m_cont->mc_pkthdr.len;
+		map->dm_mapsize = m0->m_pkthdr.len;
 		map->dm_nsegs = seg + 1;
 	}
 	return (error);
@@ -361,7 +366,7 @@ _bus_dmamem_map(t, segs, nsegs, size, kvap, flags)
 
 	size = round_page(size);
 
-	va = uvm_km_valloc(kernel_map, size);
+	va = kmem_alloc(kernel_map, size);
 
 	if (va == 0)
 		return (ENOMEM);
@@ -378,7 +383,7 @@ _bus_dmamem_map(t, segs, nsegs, size, kvap, flags)
 			    VM_PROT_READ | VM_PROT_WRITE, VM_PROT_READ | VM_PROT_WRITE);
 		}
 	}
-	pmap_update(kernel_pmap);
+	pmap_update();
 
 	return (0);
 }
@@ -480,7 +485,7 @@ _bus_dmamap_load_buffer(t, map, buf, buflen, p, flags, lastaddrp, segp, first)
 		/*
 		 * Get the physical address for this segment.
 		 */
-		(void) pmap_extract(pmap, vaddr, &curaddr);
+		(void) pmap_extract(pmap, vaddr);
 
 		/*
 		 * If we're beyond the bounce threshold, notify
@@ -580,7 +585,7 @@ _bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs, flags,
 	 * Compute the location, size, and number of segments actually
 	 * returned by the VM code.
 	 */
-	m = TAILQ_FIRST(mlist);
+	m = TAILQ_FIRST(&mlist);
 	curseg = 0;
 	lastaddr = segs[curseg].ds_addr = VM_PAGE_TO_PHYS(m);
 	segs[curseg].ds_len = PAGE_SIZE;

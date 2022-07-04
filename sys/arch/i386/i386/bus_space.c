@@ -48,14 +48,17 @@
 #include <sys/proc.h>
 
 #include <vm/include/vm_extern.h>
+#include <vm/include/vm_kern.h>
 
 #include <dev/core/isa/isareg.h>
 
 #include <machine/isa/isa_machdep.h>
 
-#include <i386/include/bus.h>
+#include <machine/cputypes.h>
+#include <machine/bus.h>
 #include <machine/pmap.h>
 #include <machine/pmap_reg.h>
+#include <machine/pte.h>
 
 /*
  * Extent maps to manage I/O and ISA memory hole space.  Allocate
@@ -327,7 +330,7 @@ i386_mem_add_mapping(bpa, size, cacheable, bshp)
 		}
 	}
 
-	pmap_update(kernel_pmap);
+	pmap_update();
 	return (0);
 }
 
@@ -371,7 +374,7 @@ _i386_memio_unmap(t, bsh, size, adrp)
 #endif
 			bpa = pmap_extract(kernel_pmap, va) + (bsh & PGOFSET);
 
-			pmap_kremove(va, endva - va);
+			pmap_kremove(va);
 			/*
 			 * Free the kernel virtual mapping.
 			 */
@@ -414,7 +417,7 @@ i386_memio_unmap(t, bsh, size)
 
 		bpa = pmap_extract(kernel_pmap, va) + (bsh & PGOFSET);
 
-		pmap_kremove(va, endva - va);
+		pmap_kremove(va);
 
 		/*
 		 * Free the kernel virtual mapping.
@@ -462,7 +465,7 @@ i386_memio_mmap(t, addr, off, prot, flags)
 
 	/* Can't mmap I/O space. */
 	if (t == I386_BUS_SPACE_IO) {
-		return (-1);
+		return ((caddr_t)-1);
 	}
 
 	/*
@@ -472,7 +475,7 @@ i386_memio_mmap(t, addr, off, prot, flags)
 	 * Note we are called for each "page" in the device that
 	 * the upper layers want to map.
 	 */
-	return (i386_btop(addr + off));
+	return ((caddr_t)i386_btop(addr + off));
 }
 
 /*
