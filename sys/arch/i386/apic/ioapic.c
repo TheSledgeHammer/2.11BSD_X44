@@ -109,7 +109,7 @@ void 		ioapic_hwmask(struct softpic *, int);
 void 		ioapic_hwunmask(struct softpic *, int);
 static void ioapic_addroute(struct softpic *, struct cpu_info *, int, int, int);
 static void ioapic_delroute(struct softpic *, struct cpu_info *, int, int, int);
-void		ioapic_register_pic(void);
+static void	ioapic_register_pic(struct pic *);
 
 int ioapic_bsp_id = 0;
 int ioapic_cold = 1;
@@ -509,9 +509,11 @@ ioapic_delroute(spic, ci, pin, idtvec, type)
  * Register I/O APIC interrupt pins.
  */
 static void
-ioapic_register_pic(void)
+ioapic_register_pic(template)
+	struct pic *template;
 {
-	softpic_register_pic(&ioapic_template);
+	template = &ioapic_template;
+	softpic_register_pic(template);
 }
 
 #ifdef DDB

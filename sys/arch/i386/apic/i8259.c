@@ -94,7 +94,7 @@ static void 	i8259_hwmask(struct softpic *, int);
 static void 	i8259_hwunmask(struct softpic *, int);
 static void 	i8259_setup(struct softpic *, struct cpu_info *, int, int, int);
 static void	i8259_reinit_irqs(void);
-void		i8259_register_pic(void);
+static void		i8259_register_pic(struct pic *);
 
 struct pic i8259_template = {
 		.pic_type = PIC_I8259,
@@ -189,10 +189,12 @@ i8259_setup(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int 
 /*
  * Register Local APIC interrupt pins.
  */
-void
-i8259_register_pic(void)
+static void
+i8259_register_pic(template)
+	struct pic *template;
 {
-	softpic_register_pic(&i8259_template);
+	template = &i8259_template;
+	softpic_register_pic(template);
 }
 
 static void

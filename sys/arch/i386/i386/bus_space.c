@@ -859,7 +859,7 @@ bus_space_read_region_1(t, h, o, ptr, cnt)
 				cld													;	\
 				repne												;	\
 				movsb" :
-				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3) :
+				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3)	:
 				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
 				"memory");
 	}
@@ -887,8 +887,8 @@ bus_space_read_region_2(t, h, o, ptr, cnt)
 				addl $2,%1											;	\
 				loop 1b" :
 				"=&a" (__x), "=d" (dummy1), "=D" (dummy2),
-				"=c" (dummy3)
-				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt))
+				"=c" (dummy3) :
+				"1" ((h) + (o)), "2" ((ptr)), "3" ((cnt)) :
 				"memory");
 	} else {
 		int dummy1;
@@ -898,8 +898,8 @@ bus_space_read_region_2(t, h, o, ptr, cnt)
 				cld													;	\
 				repne												;	\
 				movsw"
-				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3)
-				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt))
+				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3)	:
+				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
 				"memory");
 	}
 }

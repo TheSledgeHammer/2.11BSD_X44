@@ -66,7 +66,8 @@ struct pic {
 	void 					(*pic_hwunmask)(struct softpic *, int);
 	void 					(*pic_addroute)(struct softpic *, struct cpu_info *, int, int, int);
 	void 					(*pic_delroute)(struct softpic *, struct cpu_info *, int, int, int);
-	void					(*pic_register)(void *);
+	//void					(*pic_register)(void *);
+	void					(*pic_register)(struct pic *);
 	TAILQ_ENTRY(pic) 		pic_entry;
 };
 
