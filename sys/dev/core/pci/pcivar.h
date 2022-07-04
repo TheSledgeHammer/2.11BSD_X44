@@ -41,8 +41,8 @@
  * provided by pci_machdep.h.
  */
 #include <sys/device.h>
-#include <dev/core/pci/pcireg.h>
 #include <machine/bus.h>
+#include <dev/core/pci/pcireg.h>
 
 /*
  * Structures and definitions needed by the machine-dependent header.

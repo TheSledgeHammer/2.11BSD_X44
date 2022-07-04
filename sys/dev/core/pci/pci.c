@@ -43,8 +43,10 @@
 
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
+#include <dev/core/pci/pciio.h>
 
 dev_type_open(pciopen);
+dev_type_close(pciclose);
 dev_type_ioctl(pciioctl);
 dev_type_mmap(pcimmap);
 
@@ -229,7 +231,7 @@ pciprint(aux, pnp)
 	}
 	printf(" dev %d function %d", pa->pa_device, pa->pa_function);
 	if (!pnp) {
-		pci_devinfo(pa->pa_id, pa->pa_class, 0, devinfo, sizeof devinfo);
+		pci_devinfo(pa->pa_id, pa->pa_class, 0, devinfo);
 		printf(" %s", devinfo);
 	}
 #if 0
@@ -280,7 +282,7 @@ pciopen(dev, flags, mode, p)
 	int unit;
 
 	unit = minor(dev);
-	sc = &pci_cd.cd_devs[unit];
+	sc = pci_cd.cd_devs[unit];
 	if (sc == NULL)
 		return (ENXIO);
 
@@ -305,7 +307,7 @@ pciioctl(dev, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
-	struct pci_softc *sc = &pci_cd.cd_devs[minor(dev)];
+	struct pci_softc *sc = pci_cd.cd_devs[minor(dev)];
 	struct pciio_bdf_cfgreg *bdfr = (void *) data;
 	struct pciio_businfo *binfo = (void *) data;
 	pcitag_t tag;
@@ -348,7 +350,7 @@ pcimmap(dev, offset, prot)
 	int prot;
 {
 #if 0
-	struct pci_softc *sc = &pci_cd.cd_devs[minor(dev)];
+	struct pci_softc *sc = pci_cd.cd_devs[minor(dev)];
 
 	/*
 	 * Since we allow mapping of the entire bus, we
