@@ -897,7 +897,7 @@ bus_space_read_region_2(t, h, o, ptr, cnt)
 		__asm __volatile("											\
 				cld													;	\
 				repne												;	\
-				movsw"
+				movsw" :
 				"=S" (dummy1), "=D" (dummy2), "=c" (dummy3)	:
 				"0" ((h) + (o)), "1" ((ptr)), "2" ((cnt)) :
 				"memory");
