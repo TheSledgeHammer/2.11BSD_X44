@@ -147,12 +147,12 @@ int midiseq_loadpatch (struct midi_dev *, struct sysex_info *, struct uio *);
 int midiseq_putc (struct midi_dev *, int);
 void midiseq_in (struct midi_dev *, u_char *, int);
 
-static dev_type_open(sequenceropen);
-static dev_type_close(sequencerclose);
-static dev_type_read(sequencerread);
-static dev_type_write(sequencerwrite);
-static dev_type_ioctl(sequencerioctl);
-static dev_type_poll(sequencerpoll);
+dev_type_open(sequenceropen);
+dev_type_close(sequencerclose);
+dev_type_read(sequencerread);
+dev_type_write(sequencerwrite);
+dev_type_ioctl(sequencerioctl);
+dev_type_poll(sequencerpoll);
 
 const struct cdevsw sequencer_cdevsw = {
 	.d_open = sequenceropen,
