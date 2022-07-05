@@ -44,6 +44,7 @@
 #include "cd.h"
 #include "uk.h"
 #include "ch.h"
+#include "ss.h"
 #include "ses.h"
 #include "vnd.h"
 #include "ccd.h"
@@ -110,7 +111,7 @@ device_init(devsw)
 	wscons_init(devsw);			/* wscons & pccons interfaces */
 	video_init(devsw);			/* video interfaces */
 	misc_init(devsw);			/* misc (ksyms) interfaces */
-	disk_init(devsw);			/* disk interfaces */
+	disks_init(devsw);			/* disk interfaces */
 	audio_init(devsw);			/* audio interfaces */
 	usb_init(devsw);			/* usb interfaces */
 }
