@@ -93,12 +93,12 @@ int		midiioctl(dev_t, u_long, caddr_t, int, struct proc *);
 int		midiprobe (struct device *, struct cfdata *, void *);
 void	midiattach (struct device *, struct device *, void *);
 
-static dev_type_open(midiopen);
-static dev_type_close(midiclose);
-static dev_type_read(midiread);
-static dev_type_write(midiwrite);
-static dev_type_ioctl(midiioctl);
-static dev_type_poll(midipoll);
+dev_type_open(midiopen);
+dev_type_close(midiclose);
+dev_type_read(midiread);
+dev_type_write(midiwrite);
+dev_type_ioctl(midiioctl);
+dev_type_poll(midipoll);
 
 const struct cdevsw midi_cdevsw = {
 	.d_open = midiopen,
