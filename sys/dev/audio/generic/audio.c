@@ -178,7 +178,7 @@ struct audio_params audio_default =
 CFOPS_DECL(audio, audioprobe, audioattach, NULL, NULL);
 CFDRIVER_DECL(NULL, audio, &audio_cops, DV_DULL, sizeof(struct audio_softc));
 
-static dev_type_open(audioopen);
+dev_type_open(audioopen);
 /* XXXMRG use more dev_type_xxx */
 
 const struct cdevsw audio_cdevsw = {
