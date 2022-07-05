@@ -290,7 +290,7 @@ extern const struct cdevsw cd_cdevsw;
 extern const struct cdevsw ch_cdevsw;
 extern const struct cdevsw uk_cdevsw;
 extern const struct cdevsw ss_cdevsw;
-extern const struct cdevsw ses_cdevsw
+extern const struct cdevsw ses_cdevsw;
 extern const struct cdevsw vnd_cdevsw;
 extern const struct cdevsw ccd_cdevsw;
 extern const struct cdevsw apm_cdevsw;
