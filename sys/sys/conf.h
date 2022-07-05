@@ -135,18 +135,18 @@ typedef int 		dev_type_tty_write_t(struct tty *, struct uio *, int);
 typedef int 		dev_type_tty_ioctl_t(struct tty *, u_long, caddr_t, int, struct proc *);
 typedef int 		dev_type_tty_poll_t(struct tty *, int, struct proc *);
 
-#define	dev_type_open(n)	    dev_type_open_t n
-#define	dev_type_close(n)	    dev_type_close_t n
-#define	dev_type_read(n)	    dev_type_read_t n
-#define	dev_type_write(n)	    dev_type_write_t n
-#define	dev_type_ioctl(n)	    dev_type_ioctl_t n
-#define dev_type_root(n)		dev_type_root_t n
+#define	dev_type_open(n)	dev_type_open_t n
+#define	dev_type_close(n)	dev_type_close_t n
+#define	dev_type_read(n)	dev_type_read_t n
+#define	dev_type_write(n)	dev_type_write_t n
+#define	dev_type_ioctl(n)	dev_type_ioctl_t n
+#define dev_type_root(n)	dev_type_root_t n
 #define	dev_type_start(n)       dev_type_start_t
-#define	dev_type_stop(n)	    dev_type_stop_t n
-#define	dev_type_tty(n)		    dev_type_tty_t n
+#define	dev_type_stop(n)	dev_type_stop_t n
+#define	dev_type_tty(n)		dev_type_tty_t n
 #define	dev_type_select(n)      dev_type_select_t n
-#define	dev_type_poll(n)	    dev_type_poll_t n
-#define	dev_type_mmap(n)	    dev_type_mmap_t n
+#define	dev_type_poll(n)	dev_type_poll_t n
+#define	dev_type_mmap(n)	dev_type_mmap_t n
 #define	dev_type_strategy(n)    dev_type_strategy_t n
 #define	dev_type_modem(n)       dev_type_modem_t n
 #define	dev_type_rint(n)        dev_type_rint_t n
@@ -154,9 +154,9 @@ typedef int 		dev_type_tty_poll_t(struct tty *, int, struct proc *);
 #define	dev_type_meta(n)        dev_type_meta_t n
 #define dev_type_reset(n)       dev_type_reset_t n
 #define	dev_type_kqfilter(n)    dev_type_kqfilter_t n
-#define dev_type_discard(n)	    dev_type_discard_t n
-#define	dev_type_dump(n)	    dev_type_dump_t n
-#define	dev_type_size(n)	    dev_type_size_t n
+#define dev_type_discard(n)	dev_type_discard_t n
+#define	dev_type_dump(n)	dev_type_dump_t n
+#define	dev_type_size(n)	dev_type_size_t n
 /* tty specific */
 #define	dev_type_tty_open(n)	dev_type_tty_open_t n
 #define	dev_type_tty_close(n)	dev_type_tty_close_t n
@@ -204,60 +204,112 @@ dev_type_meta(line_meta);
 dev_type_modem(line_modem);
 
 /* no dev routines */
-#define	noopen				((dev_type_open_t *)enodev)
-#define	noclose				((dev_type_close_t *)enodev)
-#define	noread				((dev_type_read_t *)enodev)
-#define	nowrite				((dev_type_write_t *)enodev)
-#define	noioctl				((dev_type_ioctl_t *)enodev)
-#define	nostart				((dev_type_start_t *)enodev)
-#define	nostop				((dev_type_stop_t *)enodev)
-#define	notty				((dev_type_tty_t *)enodev)
-#define	noselect			((dev_type_select_t *)enodev)
-#define	nopoll				((dev_type_poll_t *)enodev)
-#define	nommap				((dev_type_mmap_t *)enodev)
-#define	nostrategy			((dev_type_strategy_t *)enodev)
-#define	nomodem				((dev_type_modem_t *)enodev)
-#define	norint				((dev_type_rint_t *)enodev)
-#define	norend				((dev_type_rend_t *)enodev)
-#define	nometa				((dev_type_meta_t *)enodev)
-#define	nokqfilter			seltrue_kqfilter
-#define	nodiscard			((dev_type_discard_t *)enodev)
-#define	nodump				((dev_type_dump_t *)enodev)
-#define	nosize				((dev_type_size_t *)enodev)
+#define	noopen			((dev_type_open_t *)enodev)
+#define	noclose			((dev_type_close_t *)enodev)
+#define	noread			((dev_type_read_t *)enodev)
+#define	nowrite			((dev_type_write_t *)enodev)
+#define	noioctl			((dev_type_ioctl_t *)enodev)
+#define	nostart			((dev_type_start_t *)enodev)
+#define	nostop			((dev_type_stop_t *)enodev)
+#define	notty			((dev_type_tty_t *)enodev)
+#define	noselect		((dev_type_select_t *)enodev)
+#define	nopoll			((dev_type_poll_t *)enodev)
+#define	nommap			((dev_type_mmap_t *)enodev)
+#define	nostrategy		((dev_type_strategy_t *)enodev)
+#define	nomodem			((dev_type_modem_t *)enodev)
+#define	norint			((dev_type_rint_t *)enodev)
+#define	norend			((dev_type_rend_t *)enodev)
+#define	nometa			((dev_type_meta_t *)enodev)
+#define	nokqfilter		seltrue_kqfilter
+#define	nodiscard		((dev_type_discard_t *)enodev)
+#define	nodump			((dev_type_dump_t *)enodev)
+#define	nosize			((dev_type_size_t *)enodev)
 /* tty specific */
-#define nottyopen           ((dev_type_tty_open_t *)enodev)
-#define nottyclose          ((dev_type_tty_close_t *)enodev)
-#define nottyread           ((dev_type_tty_read_t *)enodev)
-#define nottywrite          ((dev_type_tty_write_t *)enodev)
-#define nottyioctl          ((dev_type_tty_ioctl_t *)enodev)
-#define nottypoll           ((dev_type_tty_poll_t *)enodev)
+#define nottyopen           	((dev_type_tty_open_t *)enodev)
+#define nottyclose          	((dev_type_tty_close_t *)enodev)
+#define nottyread           	((dev_type_tty_read_t *)enodev)
+#define nottywrite          	((dev_type_tty_write_t *)enodev)
+#define nottyioctl          	((dev_type_tty_ioctl_t *)enodev)
+#define nottypoll           	((dev_type_tty_poll_t *)enodev)
 
 /* null dev routines */
-#define	nullopen			((dev_type_open_t *)nullop)
-#define	nullclose			((dev_type_close_t *)nullop)
-#define	nullread			((dev_type_read_t *)nullop)
-#define	nullwrite			((dev_type_write_t *)nullop)
-#define	nullioctl			((dev_type_ioctl_t *)nullop)
-#define	nullstart			((dev_type_start_t *)nullop)
-#define	nullstop			((dev_type_stop_t *)nullop)
-#define	nulltty				((dev_type_tty_t *)nullop)
-#define	nullselect			((dev_type_select_t *)nullop)
-#define	nullpoll			((dev_type_poll_t *)nullop)
-#define	nullmmap			((dev_type_mmap_t *)nullop)
+#define	nullopen		((dev_type_open_t *)nullop)
+#define	nullclose		((dev_type_close_t *)nullop)
+#define	nullread		((dev_type_read_t *)nullop)
+#define	nullwrite		((dev_type_write_t *)nullop)
+#define	nullioctl		((dev_type_ioctl_t *)nullop)
+#define	nullstart		((dev_type_start_t *)nullop)
+#define	nullstop		((dev_type_stop_t *)nullop)
+#define	nulltty			((dev_type_tty_t *)nullop)
+#define	nullselect		((dev_type_select_t *)nullop)
+#define	nullpoll		((dev_type_poll_t *)nullop)
+#define	nullmmap		((dev_type_mmap_t *)nullop)
 #define	nullstrategy		((dev_type_strategy_t *)nullop)
-#define	nullrint			((dev_type_rint_t *)nullop)
-#define	nullrend			((dev_type_rend_t *)nullop)
-#define	nullmeta			((dev_type_meta_t *)nullop)
+#define	nullrint		((dev_type_rint_t *)nullop)
+#define	nullrend		((dev_type_rend_t *)nullop)
+#define	nullmeta		((dev_type_meta_t *)nullop)
 #define	nullkqfilter		((dev_type_kqfilter_t *)nullop)
-#define	nulldiscard			((dev_type_discard_t *)nullop)
-#define	nulldump			((dev_type_dump_t *)nullop)
-#define	nullsize			((dev_type_size_t *)nullop)
+#define	nulldiscard		((dev_type_discard_t *)nullop)
+#define	nulldump		((dev_type_dump_t *)nullop)
+#define	nullsize		((dev_type_size_t *)nullop)
 /* tty specific */
-#define nullttyopen         ((dev_type_tty_open_t *)nullop)
-#define nullttyclose        ((dev_type_tty_close_t *)nullop)
-#define nullttyread         ((dev_type_tty_read_t *)nullop)
-#define nullttywrite        ((dev_type_tty_write_t *)nullop)
-#define nullttyioctl        ((dev_type_tty_ioctl_t *)nullop)
-#define nullttypoll         ((dev_type_tty_poll_t *)nullop)
+#define nullttyopen         	((dev_type_tty_open_t *)nullop)
+#define nullttyclose        	((dev_type_tty_close_t *)nullop)
+#define nullttyread         	((dev_type_tty_read_t *)nullop)
+#define nullttywrite        	((dev_type_tty_write_t *)nullop)
+#define nullttyioctl        	((dev_type_tty_ioctl_t *)nullop)
+#define nullttypoll         	((dev_type_tty_poll_t *)nullop)
+
+/* bdevsw */
+extern const struct bdevsw swap_bdevsw;
+extern const struct bdevsw wd_bdevsw;
+extern const struct bdevsw sd_bdevsw;
+extern const struct bdevsw st_bdevsw;
+extern const struct bdevsw cd_bdevsw;
+extern const struct bdevsw vnd_bdevsw;
+extern const struct bdevsw ccd_bdevsw;
+
+/* cdevsw */
+extern const struct cdevsw log_cdevsw;
+extern const struct cdevsw swap_cdevsw;
+extern const struct cdevsw ctty_cdevsw;
+extern const struct cdevsw ptc_cdevsw;
+extern const struct cdevsw pts_cdevsw;
+extern const struct cdevsw audio_cdevsw;
+extern const struct cdevsw midi_cdevsw;
+extern const struct cdevsw sequencer_cdevsw;
+extern const struct cdevsw spkr_cdevsw;
+extern const struct cdevsw pci_cdevsw;
+extern const struct cdevsw com_cdevsw;
+extern const struct cdevsw lpt_cdevsw;
+extern const struct cdevsw wd_cdevsw;
+extern const struct cdevsw sd_cdevsw;
+extern const struct cdevsw st_cdevsw;
+extern const struct cdevsw cd_cdevsw;
+extern const struct cdevsw ch_cdevsw;
+extern const struct cdevsw uk_cdevsw;
+extern const struct cdevsw ss_cdevsw;
+extern const struct cdevsw vnd_cdevsw;
+extern const struct cdevsw ccd_cdevsw;
+extern const struct cdevsw apm_cdevsw;
+extern const struct cdevsw cmos_cdevsw;
+extern const struct cdevsw ksyms_cdevsw;
+extern const struct cdevsw bpf_cdevsw;
+extern const struct cdevsw video_cdevsw;
+extern const struct cdevsw wsdisplay_cdevsw;
+extern const struct cdevsw wskbd_cdevsw;
+extern const struct cdevsw wsmouse_cdevsw;
+extern const struct cdevsw wsmux_cdevsw;
+extern const struct cdevsw wsfont_cdevsw;
+
+/* linesw */
+extern const struct linesw ttydisc;
+extern const struct linesw nttydisc;
+extern const struct linesw ottydisc;
+extern const struct linesw netldisc;
+extern const struct linesw tabldisc;
+extern const struct linesw slipdisc;
+extern const struct linesw pppdisc;
+
 #endif
 #endif
