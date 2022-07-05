@@ -152,6 +152,7 @@ disks_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NCH, NULL, &ch_cdevsw, NULL);				/* SCSI autochanger */
 	DEVSWIO_CONFIG_INIT(devsw, NUK, NULL, &uk_cdevsw, NULL);				/* SCSI unknown  */
 	DEVSWIO_CONFIG_INIT(devsw, NSS, NULL, &ss_cdevsw, NULL);				/* SCSI scanner */
+	DEVSWIO_CONFIG_INIT(devsw, NSES, NULL, &ses_cdevsw, NULL);				/* SCSI ses */
 
 	/* Pseudo Devices */
 	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);		/* vnode disk driver */

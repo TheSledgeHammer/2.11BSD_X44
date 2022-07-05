@@ -1,0 +1,10 @@
+# $2.11BSD files.generic
+#
+# Generic Audio Devices
+#
+
+device audio
+attach audio at audiobus
+
+file	dev/audio/audio.c			audio | midi | midibus	needs-flag
+#file	dev/audio/audiobell.c		audiobell

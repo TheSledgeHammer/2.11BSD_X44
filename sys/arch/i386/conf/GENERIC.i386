@@ -279,20 +279,27 @@ uk*				at atapibus? drive ? flags 0x0000	# ATAPI unknown
 #usb*			at uhci?
 #usb*			at xhci?
 
+# Audio support
+audio*			at audiobus?
+
+# MIDI support
+midi*			at midibus?
+#midi*			at pcppi?		# MIDI interface to the PC speaker
+
 # Pseudo-Devices
 
 # disk/mass storage pseudo-devices
-pseudo-device	ccd							# concatenated/striped disk devices
+pseudo-device	ccd				4			# concatenated/striped disk devices
 
-pseudo-device	vnd							# disk-like interface to files
+pseudo-device	vnd				4			# disk-like interface to files
 
 # network pseudo-devices
-pseudo-device	bpfilter					# Berkeley packet filter
+pseudo-device	bpfilter		8			# Berkeley packet filter
 
 # miscellaneous pseudo-devices
 pseudo-device	ksyms							# kernel symbols
-pseudo-device	pty							# pseudo-terminals
-pseudo-device	sequencer					# MIDI sequencer
+pseudo-device	pty				1			# pseudo-terminals
+pseudo-device	sequencer		1			# MIDI sequencer
 
 # wscons pseudo-devices
 pseudo-device	wsmux						# mouse & keyboard multiplexor

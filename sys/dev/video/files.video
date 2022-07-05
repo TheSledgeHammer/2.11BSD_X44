@@ -3,17 +3,8 @@
 # Video Configuration Files
 #
 
+include "dev/video/ega/files.ega"
+include "dev/video/generic/files.generic"
 include "dev/video/videomode/files.videomode"
+include "dev/video/vga/files.vga"
 
-# generic ISA VGA
-attach	vga at isa with vga_isa
-file	dev/video/vga/vga_isa.c				vga_isa			needs-flag
-
-# generic PCI VGA
-attach	vga at pci with vga_pci
-file	dev/video/vga/vga_pci.c				vga_pci			needs-flag
-
-# generic EGA
-device	ega: wsemuldisplaydev, pcdisplayops
-attach	ega at isa
-file	dev/video/ega/ega.c					ega				needs-flag

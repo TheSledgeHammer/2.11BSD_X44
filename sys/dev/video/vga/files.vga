@@ -1,0 +1,12 @@
+# $211BSD: files.vga
+#
+# VGA Graphics
+#
+
+# generic ISA VGA
+attach	vga at isa with vga_isa
+file	dev/video/vga/vga_isa.c				vga_isa			needs-flag
+
+# generic PCI VGA
+attach	vga at pci with vga_pci
+file	dev/video/vga/vga_pci.c				vga_pci			needs-flag

@@ -1,0 +1,6 @@
+# $2.11BSD files.auconv
+#
+# Auconv Audio Devices
+#
+
+file	dev/audio/auconv.c				auconv

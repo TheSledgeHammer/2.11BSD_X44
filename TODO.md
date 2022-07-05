@@ -45,6 +45,7 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/sys/ (Kernel):
 ## conf:
+- Seperate file for conf options
 
 ## ddb:
 
@@ -58,6 +59,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- init_main.c: plimit pointer to rlimit and user pointer to rlimit
 	
 ## arch:
+- create seperate options file for each arch
 - i386/x86: (Merged under i386)
 	- setup kernel compiler support for bootloader
 		- see conf/kern.post.mk for initial port from FreeBSD

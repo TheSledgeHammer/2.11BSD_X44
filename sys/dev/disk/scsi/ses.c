@@ -47,6 +47,7 @@ __KERNEL_RCSID(0, "$NetBSD: ses.c,v 1.22.4.1 2004/09/11 12:56:11 he Exp $");
 #include <sys/proc.h>
 #include <sys/conf.h>
 #include <sys/vnode.h>
+
 #include <machine/stdarg.h>
 
 #include <dev/disk/scsi/scsipi_all.h>

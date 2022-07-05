@@ -1,0 +1,6 @@
+# $2.11BSD files.mulaw
+#
+# Mulaw Audio Devices
+#
+
+file	dev/audio/mulaw.c			mulaw

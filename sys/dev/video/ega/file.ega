@@ -1,0 +1,9 @@
+# $211BSD: files.vga
+#
+# EGA Graphics
+#
+
+# generic EGA
+device	ega: wsemuldisplaydev, pcdisplayops
+attach	ega at isa
+file	dev/video/ega/ega.c					ega				needs-flag

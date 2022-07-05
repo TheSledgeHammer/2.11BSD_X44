@@ -225,12 +225,12 @@ dev_type_modem(line_modem);
 #define	nodump			((dev_type_dump_t *)enodev)
 #define	nosize			((dev_type_size_t *)enodev)
 /* tty specific */
-#define nottyopen           	((dev_type_tty_open_t *)enodev)
-#define nottyclose          	((dev_type_tty_close_t *)enodev)
-#define nottyread           	((dev_type_tty_read_t *)enodev)
-#define nottywrite          	((dev_type_tty_write_t *)enodev)
-#define nottyioctl          	((dev_type_tty_ioctl_t *)enodev)
-#define nottypoll           	((dev_type_tty_poll_t *)enodev)
+#define nottyopen       ((dev_type_tty_open_t *)enodev)
+#define nottyclose      ((dev_type_tty_close_t *)enodev)
+#define nottyread       ((dev_type_tty_read_t *)enodev)
+#define nottywrite      ((dev_type_tty_write_t *)enodev)
+#define nottyioctl      ((dev_type_tty_ioctl_t *)enodev)
+#define nottypoll       ((dev_type_tty_poll_t *)enodev)
 
 /* null dev routines */
 #define	nullopen		((dev_type_open_t *)nullop)
@@ -244,22 +244,23 @@ dev_type_modem(line_modem);
 #define	nullselect		((dev_type_select_t *)nullop)
 #define	nullpoll		((dev_type_poll_t *)nullop)
 #define	nullmmap		((dev_type_mmap_t *)nullop)
-#define	nullstrategy		((dev_type_strategy_t *)nullop)
+#define	nullstrategy	((dev_type_strategy_t *)nullop)
 #define	nullrint		((dev_type_rint_t *)nullop)
 #define	nullrend		((dev_type_rend_t *)nullop)
 #define	nullmeta		((dev_type_meta_t *)nullop)
-#define	nullkqfilter		((dev_type_kqfilter_t *)nullop)
+#define	nullkqfilter	((dev_type_kqfilter_t *)nullop)
 #define	nulldiscard		((dev_type_discard_t *)nullop)
 #define	nulldump		((dev_type_dump_t *)nullop)
 #define	nullsize		((dev_type_size_t *)nullop)
 /* tty specific */
-#define nullttyopen         	((dev_type_tty_open_t *)nullop)
-#define nullttyclose        	((dev_type_tty_close_t *)nullop)
-#define nullttyread         	((dev_type_tty_read_t *)nullop)
-#define nullttywrite        	((dev_type_tty_write_t *)nullop)
-#define nullttyioctl        	((dev_type_tty_ioctl_t *)nullop)
-#define nullttypoll         	((dev_type_tty_poll_t *)nullop)
+#define nullttyopen     ((dev_type_tty_open_t *)nullop)
+#define nullttyclose    ((dev_type_tty_close_t *)nullop)
+#define nullttyread     ((dev_type_tty_read_t *)nullop)
+#define nullttywrite    ((dev_type_tty_write_t *)nullop)
+#define nullttyioctl    ((dev_type_tty_ioctl_t *)nullop)
+#define nullttypoll     ((dev_type_tty_poll_t *)nullop)
 
+/* MD config initialization (machine/conf.c) */
 /* bdevsw */
 extern const struct bdevsw swap_bdevsw;
 extern const struct bdevsw wd_bdevsw;
@@ -289,6 +290,7 @@ extern const struct cdevsw cd_cdevsw;
 extern const struct cdevsw ch_cdevsw;
 extern const struct cdevsw uk_cdevsw;
 extern const struct cdevsw ss_cdevsw;
+extern const struct cdevsw ses_cdevsw
 extern const struct cdevsw vnd_cdevsw;
 extern const struct cdevsw ccd_cdevsw;
 extern const struct cdevsw apm_cdevsw;

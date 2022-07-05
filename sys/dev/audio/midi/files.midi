@@ -1,0 +1,13 @@
+# $2.11BSD files.midi
+#
+# Midi & Sequencer Devices
+#
+
+device	midi
+attach	midi at midibus
+
+file	dev/audio/midi/midi.c			midi | midibus		needs-flag
+file	dev/audio/midi/midisyn.c		midisyn
+file	dev/audio/midi/sequencer.c		sequencer			needs-flag
+
+

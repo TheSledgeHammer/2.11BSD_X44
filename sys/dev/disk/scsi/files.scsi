@@ -28,7 +28,7 @@ file	dev/disk/scsi/scsiconf.c		scsibus							needs-flag
 
 device	atapibus {drive = -1}
 attach	atapibus at atapi
-file	dev/disk/scsi/atapiconf.c      atapibus						needs-flag
+file	dev/disk/scsi/atapiconf.c       atapibus						needs-flag
 
 device	cd: disk
 attach	cd at scsibus, atapibus
