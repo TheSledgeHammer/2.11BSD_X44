@@ -35,8 +35,10 @@
 #include <sys/tty.h>
 #include <sys/null.h>
 
-//#include "sequencer.h"
+#include "audio.h"
+#include "sequencer.h"
 #include "spkr.h"
+#include "midi.h"
 
 #include "wd.h"
 #include "sd.h"
@@ -58,9 +60,11 @@
 #include "uhid.h"
 #include "ugen.h"
 #include "ucom.h"
-
-#include "video.h"
 */
+#include "pty.h"
+#include "tb.h"
+#include "video.h"
+
 #include "wsdisplay.h"
 #include "wskbd.h"
 #include "wsmouse.h"
