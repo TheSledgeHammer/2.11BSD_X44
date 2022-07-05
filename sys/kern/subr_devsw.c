@@ -86,10 +86,10 @@ struct lock_object  				devswtable_lock;
 #define devswtable_io_init(major, sw)	((major) > 0 ? (sw) : ENXIO)
 
 static void devswtable_allocate(struct devswtable *);
-void devsw_io_add(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-void devsw_io_remove(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-int	 devsw_io_attach(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-void devsw_io_detach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+void devsw_io_add(struct devswtable *, dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
+void devsw_io_remove(dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
+int  devsw_io_attach(struct devswtable *, dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
+void devsw_io_detach(dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
 int  devsw_io_lookup(dev_t, const void *, int);
 
 void
@@ -113,9 +113,9 @@ int
 devswtable_configure(devsw, major, bdev, cdev, line)
 	struct devswtable 	*devsw;
 	dev_t				major;
-	struct bdevsw 		*bdev;
-	struct cdevsw 		*cdev;
-	struct linesw 		*line;
+	const struct bdevsw 		*bdev;
+	const struct cdevsw 		*cdev;
+	const struct linesw 		*line;
 {
 	int error, rv;
 	rv = devsw_io_attach(devsw, major, bdev, cdev, line);
@@ -613,9 +613,9 @@ void
 devsw_io_add(devsw, major, bdev, cdev, line)
 	struct devswtable 	*devsw;
 	dev_t				major;
-	struct bdevsw 		*bdev;
-	struct cdevsw 		*cdev;
-	struct linesw 		*line;
+	const struct bdevsw 		*bdev;
+	const struct cdevsw 		*cdev;
+	const struct linesw 		*line;
 {
 	if (bdev) {
 		bdevsw_add(devsw, bdev, major);
@@ -631,9 +631,9 @@ devsw_io_add(devsw, major, bdev, cdev, line)
 void
 devsw_io_remove(major, bdev, cdev, line)
 	dev_t			major;
-	struct bdevsw 	*bdev;
-	struct cdevsw 	*cdev;
-	struct linesw 	*line;
+	const struct bdevsw 	*bdev;
+	const struct cdevsw 	*cdev;
+	const struct linesw 	*line;
 {
 	if (bdev) {
 		bdevsw_remove(bdev, major);
@@ -650,9 +650,9 @@ int
 devsw_io_attach(devsw, major, bdev, cdev, line)
 	struct devswtable 	*devsw;
 	dev_t				major;
-	struct bdevsw 		*bdev;
-	struct cdevsw 		*cdev;
-	struct linesw 		*line;
+	const struct bdevsw 		*bdev;
+	const struct cdevsw 		*cdev;
+	const struct linesw 		*line;
 {
 	int error;
 
@@ -684,9 +684,9 @@ devsw_io_attach(devsw, major, bdev, cdev, line)
 void
 devsw_io_detach(major, bdev, cdev, line)
 	dev_t			major;
-	struct bdevsw 	*bdev;
-	struct cdevsw 	*cdev;
-	struct linesw 	*line;
+	const struct bdevsw 	*bdev;
+	const struct cdevsw 	*cdev;
+	const struct linesw 	*line;
 {
 	int error;
 
@@ -726,7 +726,7 @@ devsw_io_lookup(major, data, type)
 	int		type;
 {
 	struct devswtable *devsw;
-	const struct bdevsw *bd;
+    const struct bdevsw *bd;
     const struct cdevsw *cd;
     const struct linesw *ld;
     
