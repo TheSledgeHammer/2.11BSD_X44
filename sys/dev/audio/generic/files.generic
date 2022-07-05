@@ -6,5 +6,5 @@
 device audio
 attach audio at audiobus
 
-file	dev/audio/audio.c			audio | midi | midibus	needs-flag
-#file	dev/audio/audiobell.c		audiobell
+file	dev/audio/generic/audio.c			audio | midi | midibus	needs-flag
+#file	dev/audio/generic/audiobell.c		audiobell
