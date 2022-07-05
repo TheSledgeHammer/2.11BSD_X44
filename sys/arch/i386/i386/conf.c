@@ -43,11 +43,13 @@
 #include "st.h"
 #include "cd.h"
 #include "uk.h"
+#include "ch.h"
 #include "ses.h"
 #include "vnd.h"
 #include "ccd.h"
 
 #include "ksyms.h"
+#include "cmos.h"
 /*
 #include "bpfilter.h"
 
