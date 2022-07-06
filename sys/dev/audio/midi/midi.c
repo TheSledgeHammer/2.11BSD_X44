@@ -54,6 +54,7 @@
 #include <sys/kernel.h>
 #include <sys/signalvar.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/audioio.h>
 #include <sys/midiio.h>
 #include <sys/device.h>
@@ -834,7 +835,7 @@ filt_midirdetach(kn)
 	int s;
 
 	s = splaudio();
-	SLIST_REMOVE(&sc->rsel.sel_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&sc->rsel.si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
