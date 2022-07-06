@@ -79,6 +79,7 @@ __KERNEL_RCSID(0, "$NetBSD: audio.c,v 1.182.2.1.2.2 2005/06/12 21:28:22 tron Exp
 #include <sys/kernel.h>
 #include <sys/signalvar.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/audioio.h>
 #include <sys/device.h>
 
@@ -110,7 +111,7 @@ int	audio_write(struct audio_softc *, struct uio *, int);
 int	audio_ioctl(struct audio_softc *, u_long, caddr_t, int, struct proc *);
 int	audio_poll(struct audio_softc *, int, struct proc *);
 int	audio_kqfilter(struct audio_softc *, struct knote *);
-paddr_t	audio_mmap(struct audio_softc *, off_t, int);
+caddr_t	audio_mmap(struct audio_softc *, off_t, int);
 
 int	mixer_open(dev_t, struct audio_softc *, int, int, struct proc *);
 int	mixer_close(struct audio_softc *, int, int, struct proc *);
@@ -499,7 +500,7 @@ audio_attach_mi(struct audio_hw_if *ahwp, void *hdlp, struct device *dev)
 
 #ifdef DIAGNOSTIC
 	if (ahwp == NULL) {
-		aprint_error("audio_attach_mi: NULL\n");
+		printf("audio_attach_mi: NULL\n");
 		return (0);
 	}
 #endif
@@ -576,7 +577,7 @@ audioopen(dev_t dev, int flags, int ifmt, struct proc *p)
 	struct audio_softc *sc;
 	int error;
 
-	sc = device_lookup(&audio_cd, AUDIOUNIT(dev));
+	sc = audio_cd.cd_devs[AUDIOUNIT(dev)];
 	if (sc == NULL)
 		return (ENXIO);
 
@@ -635,7 +636,7 @@ audioread(dev_t dev, struct uio *uio, int ioflag)
 	struct audio_softc *sc;
 	int error;
 
-	sc = device_lookup(&audio_cd, AUDIOUNIT(dev));
+	sc = audio_cd.cd_devs[AUDIOUNIT(dev)];
 	if (sc == NULL)
 		return (ENXIO);
 
@@ -667,7 +668,7 @@ audiowrite(dev_t dev, struct uio *uio, int ioflag)
 	struct audio_softc *sc;
 	int error;
 
-	sc = device_lookup(&audio_cd, AUDIOUNIT(dev));
+	sc = audio_cd.cd_devs[AUDIOUNIT(dev)];
 	if (sc == NULL)
 		return (ENXIO);
 
@@ -784,7 +785,7 @@ audiommap(dev_t dev, off_t off, int prot)
 {
 	int unit = AUDIOUNIT(dev);
 	struct audio_softc *sc = audio_cd.cd_devs[unit];
-	paddr_t error;
+	caddr_t error;
 
 	if (sc->sc_dying)
 		return ((caddr_t)-1);
@@ -797,10 +798,10 @@ audiommap(dev_t dev, off_t off, int prot)
 		break;
 	case AUDIOCTL_DEVICE:
 	case MIXER_DEVICE:
-		error = -1;
+		error = (caddr_t)-1;
 		break;
 	default:
-		error = -1;
+		error = (caddr_t)-1;
 		break;
 	}
 	if (--sc->sc_refcnt < 0)
@@ -2120,7 +2121,7 @@ audio_mmap(struct audio_softc *sc, off_t off, int prot)
 #endif
 
 	if ((u_int)off >= cb->bufsize)
-		return -1;
+		return (caddr_t)-1;
 	if (!cb->mmapped) {
 		cb->mmapped = 1;
 		if (cb == &sc->sc_pr) {
@@ -3414,7 +3415,7 @@ audioprint(void *aux, const char *pnp)
 		default:
 			panic("audioprint: unknown type %d", arg->type);
 		}
-		aprint_normal("%s at %s", type, pnp);
+		printf("%s at %s", type, pnp);
 	}
 	return (UNCONF);
 }

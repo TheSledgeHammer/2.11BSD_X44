@@ -79,7 +79,6 @@ struct audio_params {
 /* The default audio mode: 8 kHz mono mu-law */
 extern const struct audio_params audio_default;
 
-struct malloc_type;
 struct audio_hw_if {
 	int	(*open)(void *, int);	/* open hardware */
 	void	(*close)(void *);	/* close hardware */
@@ -135,8 +134,8 @@ struct audio_hw_if {
 	int	(*query_devinfo)(void *, mixer_devinfo_t *);
 
 	/* Allocate/free memory for the ring buffer. Usually malloc/free. */
-	void	*(*allocm)(void *, int, size_t, struct malloc_type *, int);
-	void	(*freem)(void *, void *, struct malloc_type *);
+	void	*(*allocm)(void *, int, size_t, int, int);
+	void	(*freem)(void *, void *, int);
 	size_t	(*round_buffersize)(void *, int, size_t);
 	caddr_t	(*mappage)(void *, void *, off_t, int);
 
