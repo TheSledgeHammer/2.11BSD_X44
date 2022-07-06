@@ -90,11 +90,6 @@ pcppi_match(parent, match, aux)
 		return (0);
 
 	/* If values are hardwired to something that they can't be, punt. */
-	if (ia->ia_nio < 1
-			|| (ia->ia_io[0].ir_addr != ISACF_PORT_DEFAULT
-					&& ia->ia_io[0].ir_addr != IO_PPI))
-		return (0);
-
 	if (ia->ia_nio < 1 || (ia->ia_iobase != IOBASEUNK && ia->ia_iobase != IO_PPI)) {
 		return (0);
 	}
