@@ -1,4 +1,4 @@
-/*	$NetBSD: sequencervar.h,v 1.5 1998/11/25 22:17:07 augustss Exp $	*/
+/*	$NetBSD: sequencervar.h,v 1.7 2003/12/04 13:57:30 keihan Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -35,6 +35,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <sys/callout.h>
 
 struct midi_softc;
 
@@ -78,6 +80,7 @@ struct midi_dev {
 struct sequencer_softc {
 	struct	device 			dev;
 	struct	device 			*sc_dev;	/* Hardware device struct */
+	struct	callout 		sc_callout;
 	int						isopen;		/* Open indicator */
 	int						flags;		/* Open flags */
 	int						mode;

@@ -1,4 +1,4 @@
-/*	$NetBSD: midisyn.c,v 1.5 1998/11/25 22:17:07 augustss Exp $	*/
+/*	$NetBSD: midisyn.c,v 1.13 2003/12/04 13:57:30 keihan Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -66,16 +66,13 @@ int	midisyndebug = 0;
 #define DPRINTFN(n,x)
 #endif
 
-typedef void (*iintr)(void *, int);
-typedef void (*ointr)(void *);
-
 int			midisyn_findvoice(midisyn *, int, int);
 void		midisyn_freevoice(midisyn *, int);
 int			midisyn_allocvoice(midisyn *, u_int32_t, u_int32_t);
 u_int32_t 	midisyn_note_to_freq(int);
 u_int32_t 	midisyn_finetune(u_int32_t, int, int, int);
 
-int			midisyn_open(void *, int, iintr, ointr, void *arg);
+int			midisyn_open(void *, int, void (*iintr)(void *, int), void (*ointr)(void *), void *arg);
 void		midisyn_close(void *);
 int			midisyn_output(void *, int);
 void		midisyn_getinfo(void *, struct midi_info *);
@@ -97,8 +94,8 @@ int
 midisyn_open(addr, flags, iintr, ointr, arg)
 	void *addr;
 	int flags;
-	void (*iintr)__P((void *, int));
-	void (*ointr)__P((void *));
+	void (*iintr)(void *, int);
+	void (*ointr)(void *);
 	void *arg;
 {
 	midisyn *ms = addr;

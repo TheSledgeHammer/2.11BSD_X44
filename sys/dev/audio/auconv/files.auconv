@@ -3,4 +3,5 @@
 # Auconv Audio Devices
 #
 
-file	dev/audio/auconv.c				auconv
+file	dev/audio/auconv/auconv.c			auconv
+file	dev/audio/auconv/aurateconv.c		aurateconv	needs-flag

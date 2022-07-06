@@ -1,4 +1,4 @@
-/*	$NetBSD: audio_if.h,v 1.31 1999/02/17 02:37:39 mycroft Exp $	*/
+/*	$NetBSD: audio_if.h,v 1.53 2003/06/29 22:29:57 fvdl Exp $	*/
 
 /*
  * Copyright (c) 1994 Havard Eidnes.
@@ -37,6 +37,16 @@
 #ifndef _SYS_DEV_AUDIO_IF_H_
 #define _SYS_DEV_AUDIO_IF_H_
 
+/* check we have an audio(4) configured into kernel */
+#if defined(_KERNEL_OPT)
+#include "audio.h"
+
+#if (NAUDIO == 0) && (NMIDI == 0) && (NMIDIBUS == 0)
+#error "No 'audio* at audiobus?' or 'midi* at midibus?' or similar configured"
+#endif
+
+#endif /* _KERNEL_OPT */
+
 /*
  * Generic interface to hardware driver.
  */
@@ -45,36 +55,51 @@ struct audio_softc;
 
 struct audio_params {
 	u_long	sample_rate;			/* sample rate */
-	u_int	encoding;				/* e.g. ulaw, linear, etc */
-	u_int	precision;				/* bits/sample */
-	u_int	channels;				/* mono(1), stereo(2) */
+	u_int	encoding;			/* e.g. mu-law, linear, etc */
+	u_int	precision;			/* bits/sample */
+	u_int	channels;			/* mono(1), stereo(2) */
 	/* Software en/decode functions, set if SW coding required by HW */
 	void	(*sw_code)(void *, u_char *, int);
-	int		factor;					/* coding space change */
+	int	factor;				/* coding space change */
+	int	factor_denom;			/* denominator of factor */
+	/*
+	 * The following four members represent what format is used in a
+	 * hardware.  If hw_sample_rate != sample_rate || hw_channels !=
+	 * channels, the audio framework converts data.  Encoding and
+	 * precision are converted in sw_code().
+	 * set_params() should set correct values to them if no conversion is
+	 * needed.
+	 */
+	u_long	hw_sample_rate;
+	u_int	hw_encoding;
+	u_int	hw_precision;
+	u_int	hw_channels;
 };
 
-/* The default audio mode: 8 kHz mono ulaw */
-extern struct audio_params audio_default;
+/* The default audio mode: 8 kHz mono mu-law */
+extern const struct audio_params audio_default;
 
+struct malloc_type;
 struct audio_hw_if {
-	int		(*open)(void *, int);	/* open hardware */
-	void	(*close)(void *);		/* close hardware */
-	int		(*drain)(void *);		/* Optional: drain buffers */
-	
+	int	(*open)(void *, int);	/* open hardware */
+	void	(*close)(void *);	/* close hardware */
+	int	(*drain)(void *);	/* Optional: drain buffers */
+
 	/* Encoding. */
 	/* XXX should we have separate in/out? */
-	int		(*query_encoding)(void *, struct audio_encoding *);
+	int	(*query_encoding)(void *, struct audio_encoding *);
 
 	/* Set the audio encoding parameters (record and play).
-	 * Return 0 on success, or an error code if the 
+	 * Return 0 on success, or an error code if the
 	 * requested parameters are impossible.
 	 * The values in the params struct may be changed (e.g. rounding
 	 * to the nearest sample rate.)
 	 */
-    int		(*set_params)(void *, int, int, struct audio_params *, struct audio_params *);
-  
+	int	(*set_params)(void *, int, int, struct audio_params *,
+		    struct audio_params *);
+
 	/* Hardware may have some say in the blocksize to choose */
-	int		(*round_blocksize)(void *, int);
+	int	(*round_blocksize)(void *, int);
 
 	/*
 	 * Changing settings may require taking device out of "data mode",
@@ -84,43 +109,48 @@ struct audio_hw_if {
 	 * this function which indicates completion of settings
 	 * adjustment.
 	 */
-	int		(*commit_settings)(void *);
+	int	(*commit_settings)(void *);
 
 	/* Start input/output routines. These usually control DMA. */
-	int		(*init_output)(void *, void *, int);
-	int		(*init_input)(void *, void *, int);
-	int		(*start_output)(void *, void *, int, void (*)(void *), void *);
-	int		(*start_input)(void *, void *, int, void (*)(void *), void *);
-	int		(*halt_output)(void *);
-	int		(*halt_input)(void *);
+	int	(*init_output)(void *, void *, int);
+	int	(*init_input)(void *, void *, int);
+	int	(*start_output)(void *, void *, int,
+				    void (*)(void *), void *);
+	int	(*start_input)(void *, void *, int,
+				   void (*)(void *), void *);
+	int	(*halt_output)(void *);
+	int	(*halt_input)(void *);
 
-	int		(*speaker_ctl)(void *, int);
+	int	(*speaker_ctl)(void *, int);
 #define SPKR_ON		1
 #define SPKR_OFF	0
 
-	int		(*getdev)(void *, struct audio_device *);
-	int		(*setfd)(void *, int);
-	
+	int	(*getdev)(void *, struct audio_device *);
+	int	(*setfd)(void *, int);
+
 	/* Mixer (in/out ports) */
-	int		(*set_port)(void *, mixer_ctrl_t *);
-	int		(*get_port)(void *, mixer_ctrl_t *);
+	int	(*set_port)(void *, mixer_ctrl_t *);
+	int	(*get_port)(void *, mixer_ctrl_t *);
 
-	int		(*query_devinfo)(void *, mixer_devinfo_t *);
-	
+	int	(*query_devinfo)(void *, mixer_devinfo_t *);
+
 	/* Allocate/free memory for the ring buffer. Usually malloc/free. */
-	void	*(*allocm)(void *, int, size_t, int, int);
-	void	(*freem)(void *, void *, int);
+	void	*(*allocm)(void *, int, size_t, struct malloc_type *, int);
+	void	(*freem)(void *, void *, struct malloc_type *);
 	size_t	(*round_buffersize)(void *, int, size_t);
-	int		(*mappage)(void *, void *, int, int);
+	caddr_t	(*mappage)(void *, void *, off_t, int);
 
-	int 	(*get_props)(void *); /* device properties */
+	int	(*get_props)(void *); /* device properties */
 
-	int		(*trigger_output)(void *, void *, void *, int, void (*)(void *), void *, struct audio_params *);
-	int		(*trigger_input)(void *, void *, void *, int, void (*)(void *), void *, struct audio_params *);
+	int	(*trigger_output)(void *, void *, void *, int,
+		    void (*)(void *), void *, struct audio_params *);
+	int	(*trigger_input)(void *, void *, void *, int,
+		    void (*)(void *), void *, struct audio_params *);
+	int	(*dev_ioctl)(void *, u_long, caddr_t, int, struct proc *);
 };
 
 struct audio_attach_args {
-	int		type;
+	int	type;
 	void	*hwif;		/* either audio_hw_if * or midi_hw_if * */
 	void	*hdl;
 };
@@ -128,10 +158,11 @@ struct audio_attach_args {
 #define	AUDIODEV_TYPE_MIDI	1
 #define AUDIODEV_TYPE_OPL	2
 #define AUDIODEV_TYPE_MPU	3
+#define AUDIODEV_TYPE_AUX	4
 
 /* Attach the MI driver(s) to the MD driver. */
-void	audio_attach_mi (struct audio_hw_if *, void *, struct device *);
-int		audioprint (void *, const char *);
+struct device *audio_attach_mi(struct audio_hw_if *, void *, struct device *);
+int	audioprint(void *, const char *);
 
 /* Device identity flags */
 #define SOUND_DEVICE		0
@@ -140,17 +171,23 @@ int		audioprint (void *, const char *);
 #define MIXER_DEVICE		0x10
 
 #define AUDIOUNIT(x)		(minor(x)&0x0f)
-#define AUDIODEV(x)			(minor(x)&0xf0)
+#define AUDIODEV(x)		(minor(x)&0xf0)
 
 #define ISDEVSOUND(x)		(AUDIODEV((x)) == SOUND_DEVICE)
 #define ISDEVAUDIO(x)		(AUDIODEV((x)) == AUDIO_DEVICE)
 #define ISDEVAUDIOCTL(x)	(AUDIODEV((x)) == AUDIOCTL_DEVICE)
 #define ISDEVMIXER(x)		(AUDIODEV((x)) == MIXER_DEVICE)
 
-#if !defined(__i386__) && !defined(__arm32__)
-#define splaudio 			splbio		/* XXX */
-#define IPL_AUDIO 			IPL_BIO		/* XXX */
+#if !defined(__i386__) && !defined(__arm32__) && !defined(IPL_AUDIO)
+#define splaudio splbio		/* XXX */
+#define IPL_AUDIO IPL_BIO	/* XXX */
 #endif
+
+/*
+ * USB Audio specification defines 12 channels:
+ *	L R C LFE Ls Rs Lc Rc S Sl Sr T
+ */
+#define AUDIO_MAX_CHANNELS	12
 
 #endif /* _SYS_DEV_AUDIO_IF_H_ */
 

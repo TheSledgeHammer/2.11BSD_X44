@@ -3,4 +3,4 @@
 # Mulaw Audio Devices
 #
 
-file	dev/audio/mulaw.c			mulaw
+file	dev/audio/mulaw/mulaw.c			mulaw

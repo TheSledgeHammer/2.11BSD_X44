@@ -3,8 +3,8 @@
 # Audio Configuration Files
 #
 
+include		"dev/audio/speaker/files.speaker"
 include		"dev/audio/midi/files.midi"
 include		"dev/audio/generic/files.generic"
-include		"dev/audio/speaker/files.speaker"
 include		"dev/audio/mulaw/files.mulaw"
 include		"dev/audio/auconv/files.auconv"

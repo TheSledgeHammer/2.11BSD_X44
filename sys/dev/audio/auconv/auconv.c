@@ -1,4 +1,4 @@
-/*	$NetBSD: auconv.c,v 1.2 1997/08/24 22:20:24 augustss Exp $	*/
+/*	$NetBSD: auconv.c,v 1.10 2002/03/15 14:55:03 kent Exp $	*/
 
 /*
  * Copyright (c) 1996 The NetBSD Foundation, Inc.
@@ -37,23 +37,11 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/audioio.h>
+
 #include <dev/audio/auconv/auconv.h>
 
-#include <machine/endian.h>
-
-#if BYTE_ORDER == LITTLE_ENDIAN
-#define LO 0
-#define HI 1
-#else
-#define LO 1
-#define HI 0
-#endif
-
 void
-change_sign8(v, p, cc)
-	void *v;
-	u_char *p;
-	int cc;
+change_sign8(void *v, u_char *p, int cc)
 {
 	while (--cc >= 0) {
 		*p ^= 0x80;
@@ -62,22 +50,25 @@ change_sign8(v, p, cc)
 }
 
 void
-change_sign16(v, p, cc)
-	void *v;
-	u_char *p;
-	int cc;
+change_sign16_le(void *v, u_char *p, int cc)
 {
 	while ((cc -= 2) >= 0) {
-		p[HI] ^= 0x80;
+		p[1] ^= 0x80;
 		p += 2;
 	}
 }
 
 void
-swap_bytes(v, p, cc)
-	void *v;
-	u_char *p;
-	int cc;
+change_sign16_be(void *v, u_char *p, int cc)
+{
+	while ((cc -= 2) >= 0) {
+		p[0] ^= 0x80;
+		p += 2;
+	}
+}
+
+void
+swap_bytes(void *v, u_char *p, int cc)
 {
 	u_char t;
 
@@ -90,42 +81,45 @@ swap_bytes(v, p, cc)
 }
 
 void
-swap_bytes_change_sign16(v, p, cc)
-	void *v;
-	u_char *p;
-	int cc;
+swap_bytes_change_sign16_le(void *v, u_char *p, int cc)
 {
 	u_char t;
 
 	while ((cc -= 2) >= 0) {
-		t = p[HI];
-		p[HI] = p[LO] ^ 0x80;
-		p[LO] = t;
+		t = p[1];
+		p[1] = p[0] ^ 0x80;
+		p[0] = t;
 		p += 2;
 	}
 }
 
 void
-change_sign16_swap_bytes(v, p, cc)
-	void *v;
-	u_char *p;
-	int cc;
+swap_bytes_change_sign16_be(void *v, u_char *p, int cc)
 {
 	u_char t;
 
 	while ((cc -= 2) >= 0) {
-		t = p[LO];
-		p[LO] = p[HI] ^ 0x80;
-		p[HI] = t;
+		t = p[0];
+		p[0] = p[1] ^ 0x80;
+		p[1] = t;
 		p += 2;
 	}
 }
 
 void
-linear8_to_linear16(v, p, cc)
-	void *v;
-	u_char *p;
-	int cc;
+change_sign16_swap_bytes_le(void *v, u_char *p, int cc)
+{
+	swap_bytes_change_sign16_be(v, p, cc);
+}
+
+void
+change_sign16_swap_bytes_be(void *v, u_char *p, int cc)
+{
+	swap_bytes_change_sign16_le(v, p, cc);
+}
+
+void
+linear8_to_linear16_le(void *v, u_char *p, int cc)
 {
 	u_char *q = p;
 
@@ -133,21 +127,93 @@ linear8_to_linear16(v, p, cc)
 	q += cc * 2;
 	while (--cc >= 0) {
 		q -= 2;
-		q[HI] = *--p;
-		q[LO] = 0;
+		q[1] = *--p;
+		q[0] = 0;
 	}
 }
 
 void
-linear16_to_linear8(v, p, cc)
-	void *v;
-	u_char *p;
-	int cc;
+linear8_to_linear16_be(void *v, u_char *p, int cc)
 {
 	u_char *q = p;
 
-	while ((cc -= 2) >= 0) {
-		*q++ = p[HI];
+	p += cc;
+	q += cc * 2;
+	while (--cc >= 0) {
+		q -= 2;
+		q[0] = *--p;
+		q[1] = 0;
+	}
+}
+
+void
+linear16_to_linear8_le(void *v, u_char *p, int cc)
+{
+	u_char *q = p;
+
+	while (--cc >= 0) {
+		*q++ = p[1];
+		p += 2;
+	}
+}
+
+void
+linear16_to_linear8_be(void *v, u_char *p, int cc)
+{
+	u_char *q = p;
+
+	while (--cc >= 0) {
+		*q++ = p[0];
+		p += 2;
+	}
+}
+
+void
+ulinear8_to_slinear16_le(void *v, u_char *p, int cc)
+{
+	u_char *q = p;
+
+	p += cc;
+	q += cc * 2;
+	while (--cc >= 0) {
+		q -= 2;
+		q[1] = *--p ^ 0x80;
+		q[0] = 0;
+	}
+}
+
+void
+ulinear8_to_slinear16_be(void *v, u_char *p, int cc)
+{
+	u_char *q = p;
+
+	p += cc;
+	q += cc * 2;
+	while (--cc >= 0) {
+		q -= 2;
+		q[0] = *--p ^ 0x80;
+		q[1] = 0;
+	}
+}
+
+void
+slinear16_to_ulinear8_le(void *v, u_char *p, int cc)
+{
+	u_char *q = p;
+
+	while (--cc >= 0) {
+		*q++ = p[1] ^ 0x80;
+		p += 2;
+	}
+}
+
+void
+slinear16_to_ulinear8_be(void *v, u_char *p, int cc)
+{
+	u_char *q = p;
+
+	while (--cc >= 0) {
+		*q++ = p[0] ^ 0x80;
 		p += 2;
 	}
 }

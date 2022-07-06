@@ -1,4 +1,4 @@
-/*	$NetBSD: midisynvar.h,v 1.3 1998/11/25 22:17:07 augustss Exp $	*/
+/*	$NetBSD: midisynvar.h,v 1.7 2003/12/04 13:57:30 keihan Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -72,7 +72,7 @@ struct midisyn {
 	char name[32];
 	int nvoice;
 	int flags;
-#define MS_DOALLOC	1
+#define MS_DOALLOC		1
 #define MS_FREQXLATE	2
 	void *data;
 
@@ -90,7 +90,7 @@ struct midi_softc;
 
 extern struct midi_hw_if midisyn_hw_if;
 
-void	midisyn_attach __P((struct midi_softc *, midisyn *));
+void	midisyn_attach(struct midi_softc *, midisyn *);
 
 #define MIDISYN_FREQ_TO_HZ(f) ((f) >> 16)
 

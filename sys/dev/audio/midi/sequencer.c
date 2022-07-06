@@ -1,4 +1,4 @@
-/*	$NetBSD: sequencer.c,v 1.13 1998/11/25 22:17:07 augustss Exp $	*/
+/*	$NetBSD: sequencer.c,v 1.25 2003/12/04 13:57:30 keihan Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -36,10 +36,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "sequencer.h"
-#if NSEQUENCER > 0
-
 #include <sys/cdefs.h>
+
+#include "sequencer.h"
+
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/fcntl.h>
@@ -83,7 +83,7 @@ int	sequencerdebug = 0;
 #define DPRINTFN(n,x)
 #endif
 
-#define SEQ_CMD(b)  ((b)->arr[0])
+#define SEQ_CMD(b)   ((b)->arr[0])
 
 #define SEQ_EDEV(b)  ((b)->arr[1])
 #define SEQ_ECMD(b)  ((b)->arr[2])
@@ -111,41 +111,41 @@ int	sequencerdebug = 0;
 
 struct sequencer_softc seqdevs[NSEQUENCER];
 
-void sequencerattach (int);
-void seq_reset (struct sequencer_softc *);
-int seq_do_command (struct sequencer_softc *, seq_event_rec *);
-int seq_do_extcommand (struct sequencer_softc *, seq_event_rec *);
-int seq_do_chnvoice (struct sequencer_softc *, seq_event_rec *);
-int seq_do_chncommon (struct sequencer_softc *, seq_event_rec *);
-int seq_do_timing (struct sequencer_softc *, seq_event_rec *);
-int seq_do_local (struct sequencer_softc *, seq_event_rec *);
-int seq_do_sysex (struct sequencer_softc *, seq_event_rec *);
-int seq_do_fullsize (struct sequencer_softc *, seq_event_rec *, struct uio *);
-int seq_timer (struct sequencer_softc *, int, int, seq_event_rec *);
-static int seq_input_event (struct sequencer_softc *, seq_event_rec *);
-int seq_drain (struct sequencer_softc *);
-void seq_startoutput (struct sequencer_softc *);
-void seq_timeout (void *);
-int seq_to_new (seq_event_rec *, struct uio *);
-static int seq_sleep_timo (int *, char *, int);
-static int seq_sleep (int *, char *);
-static void seq_wakeup (int *);
+void sequencerattach(int);
+void seq_reset(struct sequencer_softc *);
+int seq_do_command(struct sequencer_softc *, seq_event_rec *);
+int seq_do_extcommand(struct sequencer_softc *, seq_event_rec *);
+int seq_do_chnvoice(struct sequencer_softc *, seq_event_rec *);
+int seq_do_chncommon(struct sequencer_softc *, seq_event_rec *);
+int seq_do_timing(struct sequencer_softc *, seq_event_rec *);
+int seq_do_local(struct sequencer_softc *, seq_event_rec *);
+int seq_do_sysex(struct sequencer_softc *, seq_event_rec *);
+int seq_do_fullsize(struct sequencer_softc *, seq_event_rec *, struct uio *);
+int seq_timer(struct sequencer_softc *, int, int, seq_event_rec *);
+static int seq_input_event(struct sequencer_softc *, seq_event_rec *);
+int seq_drain(struct sequencer_softc *);
+void seq_startoutput(struct sequencer_softc *);
+void seq_timeout(void *);
+int seq_to_new(seq_event_rec *, struct uio *);
+static int seq_sleep_timo(int *, char *, int);
+static int seq_sleep(int *, char *);
+static void seq_wakeup(int *);
 
 struct midi_softc;
-int midiseq_out (struct midi_dev *, u_char *, u_int, int);
-struct midi_dev *midiseq_open (int, int);
-void midiseq_close (struct midi_dev *);
-void midiseq_reset (struct midi_dev *);
-int midiseq_noteon (struct midi_dev *, int, int, int);
-int midiseq_noteoff (struct midi_dev *, int, int, int);
-int midiseq_keypressure (struct midi_dev *, int, int, int);
-int midiseq_pgmchange (struct midi_dev *, int, int);
-int midiseq_chnpressure (struct midi_dev *, int, int);
-int midiseq_ctlchange (struct midi_dev *, int, int, int);
-int midiseq_pitchbend (struct midi_dev *, int, int);
-int midiseq_loadpatch (struct midi_dev *, struct sysex_info *, struct uio *);
-int midiseq_putc (struct midi_dev *, int);
-void midiseq_in (struct midi_dev *, u_char *, int);
+int midiseq_out(struct midi_dev *, u_char *, u_int, int);
+struct midi_dev *midiseq_open(int, int);
+void midiseq_close(struct midi_dev *);
+void midiseq_reset(struct midi_dev *);
+int midiseq_noteon(struct midi_dev *, int, int, int);
+int midiseq_noteoff(struct midi_dev *, int, int, int);
+int midiseq_keypressure(struct midi_dev *, int, int, int);
+int midiseq_pgmchange(struct midi_dev *, int, int);
+int midiseq_chnpressure(struct midi_dev *, int, int);
+int midiseq_ctlchange(struct midi_dev *, int, int, int);
+int midiseq_pitchbend(struct midi_dev *, int, int);
+int midiseq_loadpatch(struct midi_dev *, struct sysex_info *, struct uio *);
+int midiseq_putc(struct midi_dev *, int);
+void midiseq_in(struct midi_dev *, u_char *, int);
 
 dev_type_open(sequenceropen);
 dev_type_close(sequencerclose);
@@ -153,6 +153,7 @@ dev_type_read(sequencerread);
 dev_type_write(sequencerwrite);
 dev_type_ioctl(sequencerioctl);
 dev_type_poll(sequencerpoll);
+dev_type_kqfilter(sequencerkqfilter);
 
 const struct cdevsw sequencer_cdevsw = {
 	.d_open = sequenceropen,
@@ -163,6 +164,7 @@ const struct cdevsw sequencer_cdevsw = {
 	.d_stop = nostop,
 	.d_tty = notty,
 	.d_poll = sequencerpoll,
+	.d_kqfilter = sequencerkqfilter,
 	.d_mmap = nommap,
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
@@ -172,6 +174,8 @@ void
 sequencerattach(n)
 	int n;
 {
+	for (n = 0; n < NSEQUENCER; n++)
+		callout_init(&seqdevs[n].sc_callout);
 }
 
 int
@@ -207,8 +211,7 @@ sequenceropen(dev, flags, ifmt, p)
 	sc->nmidi = 0;
 	nmidi = midi_unit_count();
 
-	sc->devs = malloc(nmidi * sizeof(struct midi_dev *),
-			  M_DEVBUF, M_WAITOK);
+	sc->devs = calloc(nmidi, sizeof(struct midi_dev *), M_DEVBUF, M_WAITOK);
 	for (unit = 0; unit < nmidi; unit++) {
 		md = midiseq_open(unit, flags);
 		if (md) {
@@ -299,7 +302,7 @@ seq_timeout(addr)
 	seq_startoutput(sc);
 	if (SEQ_QLEN(&sc->outq) < sc->lowat) {
 		seq_wakeup(&sc->wchan);
-		selwakeup1(&sc->wsel);
+		selnotify(&sc->wsel, 0);
 		if (sc->async)
 			psignal(sc->async, SIGIO);
 	}
@@ -336,7 +339,7 @@ sequencerclose(dev, flags, ifmt, p)
 	seq_drain(sc);
 	s = splaudio();
 	if (sc->timeout) {
-		untimeout(seq_timeout, sc);
+		callout_stop(&sc->sc_callout);
 		sc->timeout = 0;
 	}
 	splx(s);
@@ -362,7 +365,7 @@ seq_input_event(sc, cmd)
 		return (ENOMEM);
 	SEQ_QPUT(q, *cmd);
 	seq_wakeup(&sc->rchan);
-	selwakeup1(&sc->rsel);
+	selnotify(&sc->rsel, 0);
 	if (sc->async)
 		psignal(sc->async, SIGIO);
 	return 0;
@@ -675,6 +678,100 @@ sequencerpoll(dev, events, p)
 	return revents;
 }
 
+static void
+filt_sequencerrdetach(kn)
+	struct knote *kn;
+{
+	struct sequencer_softc *sc = kn->kn_hook;
+	int s;
+
+	s = splaudio();
+	SIMPLEQ_REMOVE(&sc->rsel.si_klist, kn, knote, kn_selnext);
+	splx(s);
+}
+
+static int
+filt_sequencerread(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	struct sequencer_softc *sc = kn->kn_hook;
+
+	/* XXXLUKEM (thorpej): make sure this is correct */
+
+	if (SEQ_QEMPTY(&sc->inq))
+		return (0);
+	kn->kn_data = sizeof(seq_event_rec);
+	return (1);
+}
+
+static const struct filterops sequencerread_filtops =
+	{ 1, NULL, filt_sequencerrdetach, filt_sequencerread };
+
+static void
+filt_sequencerwdetach(kn)
+	struct knote *kn;
+{
+	struct sequencer_softc *sc = kn->kn_hook;
+	int s;
+
+	s = splaudio();
+	SIMPLEQ_REMOVE(&sc->wsel.si_klist, kn, knote, kn_selnext);
+	splx(s);
+}
+
+static int
+filt_sequencerwrite(kn, hint)
+	struct knote *kn;
+	long hint;
+{
+	struct sequencer_softc *sc = kn->kn_hook;
+
+	/* XXXLUKEM (thorpej): make sure this is correct */
+
+	if (SEQ_QLEN(&sc->outq) >= sc->lowat)
+		return (0);
+	kn->kn_data = sizeof(seq_event_rec);
+	return (1);
+}
+
+static const struct filterops sequencerwrite_filtops =
+	{ 1, NULL, filt_sequencerwdetach, filt_sequencerwrite };
+
+int
+sequencerkqfilter(dev, kn)
+	dev_t dev;
+	struct knote *kn;
+{
+	struct sequencer_softc *sc = &seqdevs[SEQUENCERUNIT(dev)];
+	struct klist *klist;
+	int s;
+
+	switch (kn->kn_filter) {
+	case EVFILT_READ:
+		klist = &sc->rsel.si_klist;
+		kn->kn_fop = &sequencerread_filtops;
+		break;
+
+	case EVFILT_WRITE:
+		klist = &sc->wsel.si_klist;
+		kn->kn_fop = &sequencerwrite_filtops;
+		break;
+
+	default:
+		return (1);
+	}
+
+	kn->kn_hook = sc;
+
+	s = splaudio();
+	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
+	splx(s);
+
+	return (0);
+}
+
+
 void
 seq_reset(sc)
 	struct sequencer_softc *sc;
@@ -911,7 +1008,7 @@ seq_timer(sc, cmd, parm, b)
 			}
 #endif
 			sc->timeout = 1;
-			timeout(seq_timeout, sc, ticks);
+			callout_reset(&sc->sc_callout, ticks, seq_timeout, sc);
 		}
 #ifdef SEQUENCER_DEBUG
 		else if (tick < 0)
@@ -1111,7 +1208,7 @@ midiseq_open(unit, flags)
 	struct midi_info mi;
 
 	DPRINTFN(2, ("midiseq_open: %d %d\n", unit, flags));
-	error = midiopen(makedev(0, unit), flags, 0, 0);
+	error = (*midi_cdevsw.d_open)(makedev(0, unit), flags, 0, 0);
 	if (error)
 		return (0);
 	sc = midi_cd.cd_devs[unit];
@@ -1136,7 +1233,7 @@ midiseq_close(md)
 	struct midi_dev *md;
 {
 	DPRINTFN(2, ("midiseq_close: %d\n", md->unit));
-	midiclose(makedev(0, md->unit), 0, 0, 0);
+	(*midi_cdevsw.d_close)(makedev(0, md->unit), 0, 0, 0);
 	free(md, M_DEVBUF);
 }
 
@@ -1413,5 +1510,3 @@ midi_writebytes(unit, buf, cc)
 	return (ENXIO);
 }
 #endif /* NMIDI == 0 */
-
-#endif /* NSEQUENCER > 0 */

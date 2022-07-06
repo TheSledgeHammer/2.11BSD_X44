@@ -284,7 +284,7 @@ audio*			at audiobus?
 
 # MIDI support
 midi*			at midibus?
-#midi*			at pcppi?		# MIDI interface to the PC speaker
+midi*			at pcppi?		# MIDI interface to the PC speaker
 
 # Pseudo-Devices
 
@@ -306,4 +306,4 @@ pseudo-device	wsmux						# mouse & keyboard multiplexor
 pseudo-device	wsfont
 
 # cmos(4) pseudo-device
-pseudo-device	cmos
+pseudo-device	cmos						# cmos

@@ -1,4 +1,4 @@
-/*	$NetBSD: midivar.h,v 1.6 1998/11/25 22:17:07 augustss Exp $	*/
+/*	$NetBSD: midivar.h,v 1.9 2003/12/04 13:57:30 keihan Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -43,6 +43,8 @@
 
 #include "sequencer.h"
 
+#include <sys/callout.h>
+
 struct midi_buffer {
 	u_char	*inp;
 	u_char	*outp;
@@ -62,6 +64,7 @@ struct midi_softc {
 	struct	device *sc_dev;		/* Hardware device struct */
 	int				isopen;		/* Open indicator */
 	int				flags;		/* Open flags */
+	int				dying;
 	struct	midi_buffer outbuf;
 	struct	midi_buffer inbuf;
 	int				props;
@@ -70,6 +73,8 @@ struct midi_softc {
 	struct	selinfo wsel;		/* write selector */
 	struct	selinfo rsel;		/* read selector */
 	struct	proc 	*async;		/* process who wants audio SIGIO */
+
+	struct callout sc_callout;
 
 	/* MIDI input state machine */
 	int				in_state;

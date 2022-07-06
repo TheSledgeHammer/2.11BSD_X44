@@ -1,4 +1,4 @@
-/* $NetBSD: pcppi.c,v 1.1 1998/04/15 20:26:18 drochner Exp $ */
+/* $NetBSD: pcppi.c,v 1.10 2004/03/13 17:31:34 bjh21 Exp $ */
 
 /*
  * Copyright (c) 1996 Carnegie-Mellon University.
@@ -38,11 +38,19 @@
 
 #include <machine/bus.h>
 
-#include <dev/core/ic/i8253reg.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/audio/speaker/pcppireg.h>
 #include <dev/audio/speaker/pcppivar.h>
+
+#include <dev/core/ic/i8253reg.h>
+
+#include "pckbd.h"
+//#if NPCKBD > 0
+#include <dev/misc/pccons/pckbdvar.h>
+
+void	pcppi_pckbd_bell(void *, u_int, u_int, u_int, int);
+#endif
 
 struct pcppi_softc {
 	struct device 		sc_dv;
@@ -50,17 +58,20 @@ struct pcppi_softc {
 	bus_space_tag_t 	sc_iot;
 	bus_space_handle_t 	sc_ppi_ioh, sc_pit1_ioh;
 
+	struct callout 		sc_bell_ch;
+
 	int 				sc_bellactive, sc_bellpitch;
 	int 				sc_slp;
+	int 				sc_timeout;
 };
 
-int		pcppi_match (struct device *, struct cfdata *, void *);
-void	pcppi_attach (struct device *, struct device *, void *);
+int		pcppi_match(struct device *, struct cfdata *, void *);
+void	pcppi_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(pcppi, pcppi_match, pcppi_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pcppi, &pcppi_cops, DV_DULL, sizeof(struct pcppi_softc));
 
-static void pcppi_bell_stop (void*);
+static void pcppi_bell_stop(void*);
 
 #define PCPPIPRI (PZERO - 1)
 
@@ -75,11 +86,30 @@ pcppi_match(parent, match, aux)
 	int have_pit1, have_ppi, rv;
 	u_int8_t v, nv;
 
-	/* If values are hardwired to something that they can't be, punt. */
-	if ((ia->ia_iobase != IOBASEUNK && ia->ia_iobase != IO_PPI)
-			|| ia->ia_maddr != MADDRUNK || ia->ia_msize != 0||
-			ia->ia_irq != IRQUNK || ia->ia_drq != DRQUNK)
+	if (ISA_DIRECT_CONFIG(ia))
 		return (0);
+
+	/* If values are hardwired to something that they can't be, punt. */
+	if (ia->ia_nio < 1
+			|| (ia->ia_io[0].ir_addr != ISACF_PORT_DEFAULT
+					&& ia->ia_io[0].ir_addr != IO_PPI))
+		return (0);
+
+	if (ia->ia_nio < 1 || (ia->ia_iobase != IOBASEUNK && ia->ia_iobase != IO_PPI)) {
+		return (0);
+	}
+	if (ia->ia_niomem > 0 && (ia->ia_maddr != MADDRUNK)) {
+		return (0);
+	}
+	if (ia->ia_msize != 0) {
+		return (0);
+	}
+	if (ia->ia_nirq > 0 && (ia->ia_irq != IRQUNK)) {
+		return (0);
+	}
+	if (ia->ia_ndrq > 0 && (ia->ia_drq != DRQUNK)) {
+		return (0);
+	}
 
 	rv = 0;
 	have_pit1 = have_ppi = 0;
@@ -126,6 +156,11 @@ pcppi_match(parent, match, aux)
 		ia->ia_iobase = IO_PPI;
 		ia->ia_iosize = 0x1;
 		ia->ia_msize = 0x0;
+		ia->ia_nio = 1;
+
+		ia->ia_niomem = 0;
+		ia->ia_nirq = 0;
+		ia->ia_ndrq = 0;
 	}
 	return (rv);
 }
@@ -140,6 +175,8 @@ pcppi_attach(parent, self, aux)
 	bus_space_tag_t iot;
 	struct pcppi_attach_args pa;
 
+	callout_init(&sc->sc_bell_ch);
+
 	sc->sc_iot = iot = ia->ia_iot;
 
 	if (bus_space_map(iot, IO_TIMER1, 4, 0, &sc->sc_pit1_ioh)
@@ -151,8 +188,7 @@ pcppi_attach(parent, self, aux)
 	sc->sc_bellactive = sc->sc_bellpitch = sc->sc_slp = 0;
 
 	pa.pa_cookie = sc;
-	while (config_found(self, &pa, 0))
-		;
+	while (config_found(self, &pa, 0));
 }
 
 void
@@ -166,7 +202,10 @@ pcppi_bell(self, pitch, period, slp)
 
 	s1 = spltty(); /* ??? */
 	if (sc->sc_bellactive) {
-		untimeout(pcppi_bell_stop, sc);
+		if (sc->sc_timeout) {
+			sc->sc_timeout = 0;
+			callout_stop(&sc->sc_bell_ch);
+		}
 		if (sc->sc_slp)
 			wakeup(pcppi_bell_stop);
 	}
@@ -192,11 +231,18 @@ pcppi_bell(self, pitch, period, slp)
 	sc->sc_bellpitch = pitch;
 
 	sc->sc_bellactive = 1;
-	timeout(pcppi_bell_stop, sc, period);
-	if (slp) {
-		sc->sc_slp = 1;
-		tsleep(pcppi_bell_stop, PCPPIPRI | PCATCH, "bell", 0);
-		sc->sc_slp = 0;
+	sc->sc_bellactive = 1;
+	if (slp & PCPPI_BELL_POLL) {
+		delay((period * 1000000) / hz);
+		pcppi_bell_stop(sc);
+	} else {
+		sc->sc_timeout = 1;
+		callout_reset(&sc->sc_bell_ch, period, pcppi_bell_stop, sc);
+		if (slp & PCPPI_BELL_SLEEP) {
+			sc->sc_slp = 1;
+			tsleep(pcppi_bell_stop, PCPPIPRI | PCATCH, "bell", 0);
+			sc->sc_slp = 0;
+		}
 	}
 	splx(s1);
 }
@@ -209,6 +255,8 @@ pcppi_bell_stop(arg)
 	int s;
 
 	s = spltty(); /* ??? */
+	sc->sc_timeout = 0;
+
 	/* disable bell */
 	bus_space_write_1(sc->sc_iot, sc->sc_ppi_ioh, 0,
 			bus_space_read_1(sc->sc_iot, sc->sc_ppi_ioh, 0) & ~PIT_SPKR);
@@ -217,3 +265,18 @@ pcppi_bell_stop(arg)
 		wakeup(pcppi_bell_stop);
 	splx(s);
 }
+
+#if NPCKBD > 0
+void
+pcppi_pckbd_bell(arg, pitch, period, volume, poll)
+	void *arg;
+	u_int pitch, period, volume;
+	int poll;
+{
+
+	/*
+	 * Comes in as ms, goes out at ticks; volume ignored.
+	 */
+	pcppi_bell(arg, pitch, (period * hz) / 1000,  poll ? PCPPI_BELL_POLL : 0);
+}
+#endif /* NPCKBD > 0 */

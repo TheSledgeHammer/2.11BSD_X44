@@ -1,4 +1,4 @@
-/*	$NetBSD: midi_if.h,v 1.4 1999/03/22 07:57:15 mycroft Exp $	*/
+/*	$NetBSD: midi_if.h,v 1.13 2003/12/04 13:57:30 keihan Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -56,14 +56,14 @@ struct midi_hw_if {
 	int		(*ioctl)(void *, u_long, caddr_t, int, struct proc *);
 };
 
-void	midi_attach (struct midi_softc *, struct device *);
-void	midi_attach_mi (struct midi_hw_if *, void *, struct device *);
+void	midi_attach(struct midi_softc *, struct device *);
+void	midi_attach_mi(struct midi_hw_if *, void *, struct device *);
 
-int		midi_unit_count (void);
-void	midi_getinfo (dev_t, struct midi_info *);
-int		midi_writebytes (int, u_char *, int);
+int		midi_unit_count(void);
+void	midi_getinfo(dev_t, struct midi_info *);
+int		midi_writebytes(int, u_char *, int);
 
-#if !defined(__i386__) && !defined(__arm32__)
+#if !defined(IPL_AUDIO)
 #define splaudio splbio		/* XXX */
 #define IPL_AUDIO IPL_BIO	/* XXX */
 #endif

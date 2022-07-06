@@ -10,4 +10,5 @@ file	dev/audio/midi/midi.c			midi | midibus		needs-flag
 file	dev/audio/midi/midisyn.c		midisyn
 file	dev/audio/midi/sequencer.c		sequencer			needs-flag
 
-
+attach	midi at pcppi with midi_pcppi: midisyn
+file	dev/audio/midi/midi_pcppi.c		midi_pcppi
