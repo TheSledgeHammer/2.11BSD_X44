@@ -51,9 +51,6 @@ struct pcdisplay_handle {
 	bus_space_handle_t 			ph_ioh_6845, ph_memh;
 };
 
-static inline u_int8_t _pcdisplay_6845_read(struct pcdisplay_handle *, int);
-static inline void _pcdisplay_6845_write(struct pcdisplay_handle *, int, u_int8_t);
-
 static inline u_int8_t _pcdisplay_6845_read(ph, reg)
 	struct pcdisplay_handle *ph;
 	int reg;
