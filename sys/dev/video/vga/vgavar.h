@@ -28,7 +28,7 @@
  */
 
 #include <sys/callout.h>
-
+#include <dev/misc/pccons/pcdisplayvar.h>
 //#include "opt_vga.h"
 
 struct vga_handle {
