@@ -151,7 +151,6 @@ extern int 						*esym;
 #define BOOTINFO_SYMTAB 		8
 #define BOOTINFO_MEMMAP 		9
 
-void 			bootinfo_startup(struct bootinfo *, int (*)(struct bootinfo *));
 struct bootinfo *bootinfo_alloc(char *, int);
-void 			*bootinfo_lookup(int);
+void 		*bootinfo_lookup(int);
 #endif /* _I386_BOOTINFO_H_ */
