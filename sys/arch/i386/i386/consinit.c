@@ -90,7 +90,7 @@
 int comcnmode = 	CONMODE;
 #endif /* NCOM */
 
-const struct bootinfo_console default_consinfo = {
+struct bootinfo_console default_consinfo = {
 		.bi_devname = CONSDEVNAME,
 #if (NCOM > 0)
 		.bi_addr = CONADDR,
