@@ -126,6 +126,8 @@ long dumplo;
 int physmem, maxmem;
 int biosmem;
 struct bootinfo bootinfo;
+char bootsize[BOOTINFO_MAXSIZE];
+int  *esym;
 extern int biosbasemem, biosextmem;
 
 struct pcb *curpcb;			/* our current running pcb */
@@ -150,8 +152,7 @@ vm_offset_t proc0kstack;
 
 void
 init386_bootinfo(void)
-{
-	/*
+{	
 	struct bootinfo bootinfo = &bootinfo;
 	vm_offset_t addend;
 
@@ -165,8 +166,6 @@ init386_bootinfo(void)
 			init_static_kenv(NULL, 0);
 		}
 	}
-	*/
-	bootinfo_startup(&bootinfo, i386_ksyms_addsyms_elf(&bootinfo));
 }
 
 void
@@ -1012,14 +1011,12 @@ init386(first)
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
 }
 
-/*
 void
 init386_ksyms(bootinfo)
 	struct bootinfo *bootinfo;
 {
-	extern int 		end;
+	extern int 	end;
 	vm_offset_t 	addend;
-
 	if (bootinfo->bi_envp.bi_environment != 0) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
@@ -1028,12 +1025,10 @@ init386_ksyms(bootinfo)
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 		init_static_kenv(NULL, 0);
 	}
-
 	bootinfo->bi_envp->bi_symtab += KERNBASE;
 	bootinfo->bi_envp->bi_esymtab += KERNBASE;
 	ksyms_addsyms_elf(bootinfo->bi_envp->bi_nsymtab, (int*) bootinfo->bi_envp->bi_symtab, (int*) bootinfo->bi_envp->bi_esymtab);
 }
-*/
 
 void
 sdtossd(sd, ssd)
@@ -1382,6 +1377,34 @@ softintr(mask)
 	register int mask;
 {
 	__asm __volatile("orl %0,_ipending" : : "ir" (1 << mask));
+}
+
+struct bootinfo *
+bootinfo_alloc(size, len)
+	char *size;
+	int len;
+{
+	struct bootinfo *boot;
+	boot = (struct bootinfo *)(size + len);
+
+	return (boot);
+}
+
+void *
+bootinfo_lookup(type)
+	int type;
+{
+	struct bootinfo *help;
+	int n = *(int*)bootsize;
+	help = bootinfo_alloc(bootsize, sizeof(int));
+
+	while (n--) {
+		if (help->bi_type == type) {
+			return (help);
+		}
+		help = bootinfo_alloc((char *)help, help->bi_len);
+	}
+	return (0);
 }
 
 /*

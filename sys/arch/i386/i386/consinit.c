@@ -40,7 +40,7 @@
 #include "pcdisplay.h"
 #if (NVGA > 0) || (NEGA > 0) || (NPCDISPLAY > 0)
 #include <dev/core/ic/mc6845reg.h>
-#include <dev/misc/pccons/pcdisplayvar.h>
+//#include <dev/misc/pccons/pcdisplayvar.h>
 #if (NVGA > 0)
 #include <dev/video/vga/vgareg.h>
 #include <dev/video/vga/vgavar.h>
@@ -122,7 +122,7 @@ consinit(void)
 	initted = 1;
 
 #ifndef CONS_OVERRIDE
-	consinfo = lookup_bootinfo(BOOTINFO_CONSOLE);
+	consinfo = bootinfo_lookup(BOOTINFO_CONSOLE);
 	if (!consinfo) {
 #endif
 		consinfo = &default_consinfo;
