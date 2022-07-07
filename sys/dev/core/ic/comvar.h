@@ -31,8 +31,8 @@
  */
 
 #include <sys/callout.h>
-#include <sys/lock.h>
 #include <sys/timepps.h>
+#include <sys/lock.h>
 
 int comcnattach(bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t);
 #ifdef KGDB
@@ -148,12 +148,12 @@ struct com_softc {
 //#define CLR(t, f)	(t) &= ~(f)
 //#define ISSET(t, f)	((t) & (f))
 
-int 	comprobe1 (bus_space_tag_t, bus_space_handle_t);
-int 	comintr (void *);
-void 	com_attach_subr (struct com_softc *);
-int 	cominit (bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t, bus_space_handle_t *);
-int 	com_detach (struct device *, int);
-int 	com_activate (struct device *, enum devact);
+int 	comprobe1(bus_space_tag_t, bus_space_handle_t);
+int 	comintr(void *);
+void 	com_attach_subr(struct com_softc *);
+int 	cominit(bus_space_tag_t, bus_addr_t, int, int, int, tcflag_t, bus_space_handle_t *);
+int 	com_detach(struct device *, int);
+int 	com_activate(struct device *, enum devact);
 
 #ifndef __GENERIC_SOFT_INTERRUPTS
 #ifdef __NO_SOFT_SERIAL_INTERRUPT

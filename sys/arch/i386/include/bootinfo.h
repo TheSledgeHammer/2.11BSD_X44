@@ -138,8 +138,20 @@ struct bootinfo {
 
 #ifdef _KERNEL
 extern struct bootinfo 			bootinfo;
+extern char 					bootsize[];
 extern int						end;
 extern int 						*esym;
 #endif
 
+#define BOOTINFO_BOOTPATH 		0
+#define BOOTINFO_BOOTDISK 		3
+#define BOOTINFO_NETIF 			4
+#define BOOTINFO_CONSOLE 		6
+#define BOOTINFO_BIOSGEOM 		7
+#define BOOTINFO_SYMTAB 		8
+#define BOOTINFO_MEMMAP 		9
+
+void 			bootinfo_startup(struct bootinfo *, int (*)(struct bootinfo *));
+struct bootinfo *bootinfo_alloc(char *, int);
+void 			*bootinfo_lookup(int);
 #endif /* _I386_BOOTINFO_H_ */

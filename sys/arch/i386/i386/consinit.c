@@ -60,8 +60,9 @@
 #include <dev/misc/pccons/pckbcvar.h>
 #include <dev/misc/pccons/pckbportvar.h>
 #endif
+#include "pckbd.h"
 
-//#include "com.h"
+#include "com.h"
 #if (NCOM > 0)
 #include <sys/termios.h>
 #include <dev/core/ic/comreg.h>
@@ -89,7 +90,7 @@
 int comcnmode = 	CONMODE;
 #endif /* NCOM */
 
-struct bootinfo_console default_consinfo = {
+const struct bootinfo_console default_consinfo = {
 		.bi_devname = CONSDEVNAME,
 #if (NCOM > 0)
 		.bi_addr = CONADDR,
@@ -115,16 +116,21 @@ consinit(void)
 	struct bootinfo_console *consinfo;
 	static int initted;
 
-	if (initted)
+	if (initted) {
 		return;
+	}
 	initted = 1;
 
-	consinfo = &default_consinfo;
+#ifndef CONS_OVERRIDE
+	consinfo = lookup_bootinfo(BOOTINFO_CONSOLE);
+	if (!consinfo) {
+#endif
+		consinfo = &default_consinfo;
+	}
 
-#if (NVGA > 0) || (NEGA > 0) || (NPCDISPLAY > 0)
+#if (NPC > 0) || (NVGA > 0) || (NEGA > 0) || (NPCDISPLAY > 0)
 	consinit_io(consinfo);
 #endif /* PC | VT | VGA | PCDISPLAY */
-
 #if (NCOM > 0)
 	consinit_com(consinfo);
 #endif
@@ -156,13 +162,12 @@ consinit_io(consinfo)
 	if (0) {
 		goto dokbd;
 	}
-
 dokbd:
 #if (NPCKBC > 0)
 	pckbc_cnattach(I386_BUS_SPACE_IO, IO_KBD, KBCMDP, PCKBC_KBD_SLOT);
 #endif /* NPCKBC > 0 */
 #if NPCKBC == 0 && NUKBD > 0
-		ukbd_cnattach();
+	ukbd_cnattach();
 #endif
 	return;
 }
@@ -172,6 +177,7 @@ void
 consinit_com(consinfo)
 	struct bootinfo_console *consinfo;
 {
+#if (NCOM > 0)
 	if (!strcmp(consinfo->bi_devname, "com")) {
 		bus_space_tag_t tag = I386_BUS_SPACE_IO;
 
@@ -180,4 +186,5 @@ consinit_com(consinfo)
 		}
 		return;
 	}
+#endif
 }

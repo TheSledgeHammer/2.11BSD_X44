@@ -805,6 +805,7 @@ comopen(dev_t dev, int flag, int mode, struct proc *p)
 {
 	struct com_softc *sc;
 	struct tty *tp;
+	const struct linesw *line;
 	int s, s2;
 	int error;
 
@@ -935,8 +936,8 @@ comopen(dev_t dev, int flag, int mode, struct proc *p)
 	error = ttyopen(tp, COMDIALOUT(dev), ISSET(flag, O_NONBLOCK));
 	if (error)
 		goto bad;
-
-	error = (*linesw[tp->t_line].l_open)(dev, tp);
+	line = linesw_lookup(tp->t_line);
+	error = (*line->l_open)(dev, tp);
 	if (error)
 		goto bad;
 
@@ -959,12 +960,14 @@ comclose(dev_t dev, int flag, int mode, struct proc *p)
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(dev)];
 	struct tty *tp = sc->sc_tty;
+	const struct linesw *line;
 
 	/* XXX This is for cons.c. */
 	if (!ISSET(tp->t_state, TS_ISOPEN))
 		return (0);
 
-	(*linesw[tp->t_line].l_close)(tp, flag);
+	line = linesw_lookup(tp->t_line);
+	(*line->l_close)(tp, flag);
 	ttyclose(tp);
 
 	if (COM_ISALIVE(sc) == 0)
@@ -987,11 +990,13 @@ comread(dev_t dev, struct uio *uio, int flag)
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(dev)];
 	struct tty *tp = sc->sc_tty;
+	const struct linesw *line;
 
 	if (COM_ISALIVE(sc) == 0)
 		return (EIO);
  
-	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
+	line = linesw_lookup(tp->t_line);
+	return ((*line->l_read)(tp, uio, flag));
 }
  
 int
@@ -999,11 +1004,13 @@ comwrite(dev_t dev, struct uio *uio, int flag)
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(dev)];
 	struct tty *tp = sc->sc_tty;
+	const struct linesw *line;
 
 	if (COM_ISALIVE(sc) == 0)
 		return (EIO);
- 
-	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
+
+	line = linesw_lookup(tp->t_line);
+	return ((*line->l_write)(tp, uio, flag));
 }
 
 int
@@ -1011,11 +1018,13 @@ compoll(dev_t dev, int events, struct proc *p)
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(dev)];
 	struct tty *tp = sc->sc_tty;
+	const struct linesw *line;
 
 	if (COM_ISALIVE(sc) == 0)
 		return (EIO);
- 
-	return ((*linesw[tp->t_line].l_poll)(tp, events, p));
+
+	line = linesw_lookup(tp->t_line);
+	return ((*line->l_poll)(tp, events, p));
 }
 
 struct tty *
@@ -1032,13 +1041,15 @@ comioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(dev)];
 	struct tty *tp = sc->sc_tty;
+	const struct linesw *line;
 	int error;
 	int s;
 
 	if (COM_ISALIVE(sc) == 0)
 		return (EIO);
 
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
+	line = linesw_lookup(tp->t_line);
+	error = (*line->l_ioctl)(tp, cmd, data, flag, p);
 	if (error != ENOIOCTL)
 		return (error);
 
@@ -1378,6 +1389,7 @@ int
 comparam(struct tty *tp, struct termios *t)
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(tp->t_dev)];
+	const struct linesw *line;
 	int ospeed;
 	u_char lcr;
 	int s;
@@ -1547,7 +1559,8 @@ comparam(struct tty *tp, struct termios *t)
 	 * CLOCAL or MDMBUF.  We don't hang up here; we only do that by
 	 * explicit request.
 	 */
-	(void) (*linesw[tp->t_line].l_modem)(tp, ISSET(sc->sc_msr, MSR_DCD));
+	line = linesw_lookup(tp->t_line);
+	(void) (*line->l_modem)(tp, ISSET(sc->sc_msr, MSR_DCD));
 
 #ifdef COM_DEBUG
 	if (com_debug)
@@ -1713,7 +1726,7 @@ comstart(struct tty *tp)
 			CLR(tp->t_state, TS_ASLEEP);
 			wakeup(&tp->t_outq);
 		}
-		selwakeup1(&tp->t_swsel);
+		selwakeup1(&tp->t_wsel);
 		if (tp->t_outq.c_cc == 0)
 			goto out;
 	}
@@ -1810,7 +1823,7 @@ comdiag(void *arg)
 integrate void
 com_rxsoft(struct com_softc *sc, struct tty *tp)
 {
-	int (*rint)(int, struct tty *) = linesw[tp->t_line].l_rint;
+	const struct linesw *line;
 	u_char *get, *end;
 	u_int cc, scc;
 	u_char lsr;
@@ -1821,6 +1834,7 @@ com_rxsoft(struct com_softc *sc, struct tty *tp)
 	get = sc->sc_rbget;
 	scc = cc = com_rbuf_size - sc->sc_rbavail;
 
+	line = linesw_lookup(tp->t_line);
 	if (cc == com_rbuf_size) {
 		sc->sc_floods++;
 		if (sc->sc_errors++ == 0)
@@ -1850,7 +1864,7 @@ com_rxsoft(struct com_softc *sc, struct tty *tp)
 			if (ISSET(lsr, LSR_PE))
 				SET(code, TTY_PE);
 		}
-		if ((*rint)(code, tp) == -1) {
+		if ((*line->l_rint)(code, tp) == -1) {
 			/*
 			 * The line discipline's buffer is out of space.
 			 */
@@ -1915,18 +1929,21 @@ com_rxsoft(struct com_softc *sc, struct tty *tp)
 integrate void
 com_txsoft(struct com_softc *sc, struct tty *tp)
 {
+	const struct linesw *line;
 
 	CLR(tp->t_state, TS_BUSY);
 	if (ISSET(tp->t_state, TS_FLUSH))
 		CLR(tp->t_state, TS_FLUSH);
 	else
 		ndflush(&tp->t_outq, (int)(sc->sc_tba - tp->t_outq.c_cf));
-	(*linesw[tp->t_line].l_start)(tp);
+	line = linesw_lookup(tp->t_line);
+	(*line->l_start)(tp);
 }
 
 integrate void
 com_stsoft(struct com_softc *sc, struct tty *tp)
 {
+	const struct linesw *line;
 	u_char msr, delta;
 	int s;
 
@@ -1938,18 +1955,19 @@ com_stsoft(struct com_softc *sc, struct tty *tp)
 	COM_UNLOCK(sc);	
 	splx(s);
 
+	line = linesw_lookup(tp->t_line);
 	if (ISSET(delta, sc->sc_msr_dcd)) {
 		/*
 		 * Inform the tty layer that carrier detect changed.
 		 */
-		(void) (*linesw[tp->t_line].l_modem)(tp, ISSET(msr, MSR_DCD));
+		(void) (*line->l_modem)(tp, ISSET(msr, MSR_DCD));
 	}
 
 	if (ISSET(delta, sc->sc_msr_cts)) {
 		/* Block or unblock output according to flow control. */
 		if (ISSET(msr, sc->sc_msr_cts)) {
 			sc->sc_tx_stopped = 0;
-			(*linesw[tp->t_line].l_start)(tp);
+			(*line->l_start)(tp);
 		} else {
 			sc->sc_tx_stopped = 1;
 		}

@@ -126,8 +126,6 @@ long dumplo;
 int physmem, maxmem;
 int biosmem;
 struct bootinfo bootinfo;
-int 			*esym;
-
 extern int biosbasemem, biosextmem;
 
 struct pcb *curpcb;			/* our current running pcb */
@@ -153,6 +151,7 @@ vm_offset_t proc0kstack;
 void
 init386_bootinfo(void)
 {
+	/*
 	struct bootinfo bootinfo = &bootinfo;
 	vm_offset_t addend;
 
@@ -166,6 +165,8 @@ init386_bootinfo(void)
 			init_static_kenv(NULL, 0);
 		}
 	}
+	*/
+	bootinfo_startup(&bootinfo, i386_ksyms_addsyms_elf(&bootinfo));
 }
 
 void
@@ -1011,6 +1012,7 @@ init386(first)
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
 }
 
+/*
 void
 init386_ksyms(bootinfo)
 	struct bootinfo *bootinfo;
@@ -1031,6 +1033,7 @@ init386_ksyms(bootinfo)
 	bootinfo->bi_envp->bi_esymtab += KERNBASE;
 	ksyms_addsyms_elf(bootinfo->bi_envp->bi_nsymtab, (int*) bootinfo->bi_envp->bi_symtab, (int*) bootinfo->bi_envp->bi_esymtab);
 }
+*/
 
 void
 sdtossd(sd, ssd)
