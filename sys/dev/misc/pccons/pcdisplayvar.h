@@ -26,7 +26,7 @@
  *
  */
 
-#include "opt_pcdisplay.h"
+//#include "opt_pcdisplay.h"
 
 struct pcdisplayscreen {
 	struct pcdisplay_handle 	*hdl;
