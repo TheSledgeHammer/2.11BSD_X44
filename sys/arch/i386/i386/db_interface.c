@@ -55,23 +55,16 @@
 #include <ddb/db_output.h>
 #include <ddb/ddbvar.h>
 
+extern label_t	*db_recover;
 extern char *trap_type[];
 extern int trap_types;
 
 int	db_active = 0;
 db_regs_t ddb_regs;	/* register state */
 
-const struct db_command db_machine_command_table[] = {
-		{ (char *)0, },
-};
+void kdbprinttrap(int, int);
 
 db_regs_t *ddb_regp = 0;
-
-#define NOCPU -1
-
-int ddb_cpu = NOCPU;
-
-void kdbprinttrap(int, int);
 
 /*
  * Print trap reason.
@@ -296,7 +289,7 @@ db_write_bytes(addr, size, data)
 	register size_t	size;
 	register char	*data;
 {
-	extern char etext;
+//	extern char etext;
 	char 		*dst;
 
 	dst = (char *)addr;
