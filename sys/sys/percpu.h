@@ -41,7 +41,6 @@
 
 #include <machine/cpu.h>
 #include <machine/param.h>
-#include <machine/cpu.h>
 #include <machine/percpu.h>
 
 struct cpu_info;
