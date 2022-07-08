@@ -43,6 +43,7 @@
 #include <machine/db_machdep.h>
 #include <machine/segments.h>
 #include <machine/pmap.h>
+#include <machine/pte.h>
 
 #include <ddb/db_sym.h>
 #include <ddb/db_command.h>
