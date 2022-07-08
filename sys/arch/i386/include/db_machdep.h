@@ -1,4 +1,4 @@
-/*	$NetBSD: db_machdep.h,v 1.9 1996/05/03 19:23:59 christos Exp $	*/
+/*	$NetBSD: db_machdep.h,v 1.31 2017/11/06 03:47:46 christos Exp $	*/
 
 /* 
  * Mach Operating System
@@ -38,20 +38,28 @@
 
 #include <machine/trap.h>
 
-typedef	vm_offset_t	db_addr_t;	/* address - unsigned */
-typedef	int			db_expr_t;	/* expression - signed */
+typedef	vm_offset_t		db_addr_t;	/* address - unsigned */
+typedef	long			db_expr_t;	/* expression - signed */
 
 typedef struct trapframe db_regs_t;
-db_regs_t				ddb_regs;	/* register state */
-#define	DDB_REGS		(&ddb_regs)
 
-#define	PC_REGS(regs)	((db_addr_t)(regs)->tf_eip)
+#ifndef SMP
+extern db_regs_t 	ddb_regs;	/* register state */
+#define	DDB_REGS	(&ddb_regs)
+#else
+extern db_regs_t 	*ddb_regp;
+#define DDB_REGS	(ddb_regp)
+#define ddb_regs	(*ddb_regp)
+#endif
 
-#define	BKPT_INST		0xcc		/* breakpoint instruction */
-#define	BKPT_SIZE		(1)			/* size of breakpoint inst */
-#define	BKPT_SET(inst)	(BKPT_INST)
+#define	PC_REGS(regs)		((regs)->tf_eip)
 
-#define	FIXUP_PC_AFTER_BREAK			ddb_regs.tf_eip -= BKPT_SIZE;
+#define	BKPT_ADDR(addr)		(addr)		/* breakpoint address */
+#define	BKPT_INST			0xcc		/* breakpoint instruction */
+#define	BKPT_SIZE			(1)		/* size of breakpoint inst */
+#define	BKPT_SET(inst)		(BKPT_INST)
+
+#define	FIXUP_PC_AFTER_BREAK(regs)		((regs)->tf_eip -= BKPT_SIZE)
 
 #define	db_clear_single_step(regs)		((regs)->tf_eflags &= ~PSL_T)
 #define	db_set_single_step(regs)		((regs)->tf_eflags |=  PSL_T)
@@ -69,8 +77,8 @@ db_regs_t				ddb_regs;	/* register state */
 #define	inst_trap_return(ins)	(((ins)&0xff) == I_IRET)
 #define	inst_return(ins)		(((ins)&0xff) == I_RET)
 #define	inst_call(ins)			(((ins)&0xff) == I_CALL || \
-		(((ins)&0xff) == I_CALLI && \
-		((ins)&0x3800) == 0x1000))
+								(((ins)&0xff) == I_CALLI && \
+								((ins)&0x3800) == 0x1000))
 
 /* access capability and access macros */
 
@@ -87,8 +95,8 @@ db_regs_t				ddb_regs;	/* register state */
 	 ((user) && (addr) < VM_MAX_ADDRESS))
 
 #if 0
-bool_t 	db_check_access (vm_offset_t, int, task_t);
-bool_t	db_phys_eq (task_t, vm_offset_t, task_t, vm_offset_t);
+bool_t 	db_check_access(vm_offset_t, int, task_t);
+bool_t	db_phys_eq(task_t, vm_offset_t, task_t, vm_offset_t);
 #endif
 
 /* macros for printing OS server dependent task name */
@@ -106,6 +114,22 @@ void		db_task_name(/* task_t */);
 
 #define db_thread_fp_used(thread)	((thread)->pcb->ims.ifps != 0)
 
-int kdb_trap (int, int, db_regs_t *);
+int kdb_trap(int, int, db_regs_t *);
+
+/*
+ * We define some of our own commands
+ */
+#define DB_MACHINE_COMMANDS
+
+/*
+ * We use Elf32 symbols in DDB.
+ */
+#define	DB_AOUT_SYMBOLS
+#define	DB_ELF_SYMBOLS
+#define	DB_ELFSIZE		32
+
+extern void db_machine_init(void);
+
+extern void cpu_debug_dump(void);
 
 #endif	/* _I386_DB_MACHDEP_H_ */
