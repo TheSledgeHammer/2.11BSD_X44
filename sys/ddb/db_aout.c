@@ -32,6 +32,7 @@
 #include <sys/proc.h>
 
 #include <machine/db_machdep.h>		/* data types */
+//#include <machine/types.h>
 
 #include <ddb/db_sym.h>
 #include <ddb/db_output.h>

@@ -37,7 +37,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>  
 #include <sys/proc.h>
@@ -65,15 +65,16 @@ static char *db_elf_find_strtab(db_symtab_t *);
 
 #define	STAB_TO_SYMSTART(stab)	((Elf_Sym *)((stab)->start))
 #define	STAB_TO_SYMEND(stab)	((Elf_Sym *)((stab)->end))
-#define	STAB_TO_EHDR(stab)		((Elf_Ehdr *)((stab)->private))
+#define	STAB_TO_EHDR(stab)	((Elf_Ehdr *)((stab)->private))
 #define	STAB_TO_SHDR(stab, e)	((Elf_Shdr *)((stab)->private + (e)->e_shoff))
 
-boolean_t	db_elf_sym_init(int, void *, void *, const char *);
-db_sym_t	db_elf_lookup(db_symtab_t *, char *);
-db_sym_t	db_elf_search_symbol(db_symtab_t *, db_addr_t, db_strategy_t, db_expr_t *);
-void		db_elf_symbol_values(db_symtab_t *, db_sym_t, char **, db_expr_t *);
-boolean_t	db_elf_line_at_pc(db_symtab_t *, db_sym_t, char **, int *, db_expr_t);
-boolean_t	db_elf_sym_numargs(db_symtab_t *, db_sym_t, int *, char **);
+static boolean_t	db_elf_sym_init(int, void *, void *, const char *);
+static db_sym_t		db_elf_lookup(db_symtab_t *, char *);
+static db_sym_t		db_elf_search_symbol(db_symtab_t *, db_addr_t, db_strategy_t, db_expr_t *);
+static void		db_elf_symbol_values(db_symtab_t *, db_sym_t, char **, db_expr_t *);
+static boolean_t	db_elf_line_at_pc(db_symtab_t *, db_sym_t, char **, int *, db_expr_t);
+static boolean_t	db_elf_sym_numargs(db_symtab_t *, db_sym_t, int *, char **);
+//static void		db_elf_forall(db_symtab_t *, db_forall_func_t db_forall_func, void *);
 
 db_symformat_t db_symformat_elf = {
 	"ELF",
@@ -130,9 +131,9 @@ db_elf_sym_init(symsize, symtab, esymtab, name)
 	 * Validate the Elf header.
 	 */
 	elf = (Elf_Ehdr *)symtab;
-	if (memcmp(elf->e_ident, Elf_e_ident, Elf_e_siz) != 0)
+	if (memcmp(elf->e_ident, ELFMAG, SELFMAG) != 0 || elf->e_ident[EI_CLASS] != ELFCLASS)
 		goto badheader;
-
+		
 	switch (elf->e_machine) {
 
 	ELFDEFNAME(MACHDEP_ID_CASES)
@@ -153,12 +154,14 @@ db_elf_sym_init(symsize, symtab, esymtab, name)
 	 * its section type Elf_sht_null so that it will be ignored
 	 * later.
 	 */
+	 if (elf->e_shoff == 0)
+		goto badheader;
 	shp = (Elf_Shdr *)((char *)symtab + elf->e_shoff);
 	for (i = 0; i < elf->e_shnum; i++) {
 		switch (shp[i].sh_type) {
-		case Elf_sht_strtab:
+		case SHT_STRTAB:
 			if (shp[i].sh_size < NBPG) {
-				shp[i].sh_type = Elf_sht_null;
+				shp[i].sh_type = SHT_NULL;
 				continue;
 			}
 			if (strtab_start != NULL)
@@ -168,7 +171,7 @@ db_elf_sym_init(symsize, symtab, esymtab, name)
 			    shp[i].sh_size;
 			break;
 		
-		case Elf_sht_symtab:
+		case SHT_SYMTAB:
 			if (symtab_start != NULL)
 				goto multiple_symtab;
 			symtab_start = (Elf_Sym *)((char *)symtab + 
@@ -233,7 +236,7 @@ db_elf_find_strtab(stab)
 	int i;
 
 	for (i = 0; i < elf->e_shnum; i++) {
-		if (shp[i].sh_type == Elf_sht_strtab)
+		if (shp[i].sh_type == SHT_STRTAB)
 			return (stab->private + shp[i].sh_offset);
 	}
 
@@ -291,8 +294,8 @@ db_elf_search_symbol(symtab, off, strategy, diffp)
 			continue;
 #if 0
 		/* This prevents me from seeing anythin in locore.s -- eeh */
-		if (ELF_SYM_TYPE(symp->st_info) != Elf_estt_object &&
-		    ELF_SYM_TYPE(symp->st_info) != Elf_estt_func)
+		if (ELF_ST_TYPE(symp->st_info) != STT_OBJECT &&
+		    ELF_ST_TYPE(symp->st_info) != STT_FUNC)
 			continue;
 #endif
 
@@ -302,23 +305,23 @@ db_elf_search_symbol(symtab, off, strategy, diffp)
 				rsymp = symp;
 				if (diff == 0) {
 					if (strategy == DB_STGY_PROC &&
-					    ELF_SYM_TYPE(symp->st_info) ==
-					      Elf_estt_func &&
-					    ELF_SYM_BIND(symp->st_info) !=
-					      Elf_estb_local)
+					     ELFDEFNNAME(ST_TYPE)(symp->st_info) ==
+					      STT_FUNC &&
+					    ELFDEFNNAME(ST_BIND)(symp->st_info) !=
+					      STB_LOCAL)
 						break;
 					if (strategy == DB_STGY_ANY &&
-					    ELF_SYM_BIND(symp->st_info) !=
-					      Elf_estb_local)
+					    ELFDEFNNAME(ST_BIND)(symp->st_info) !=
+					      STB_LOCAL)
 						break;
 				}
 			} else if ((off - symp->st_value) == diff) {
 				if (rsymp == NULL)
 					rsymp = symp;
-				else if (ELF_SYM_BIND(rsymp->st_info) ==
-				      Elf_estb_local &&
-				    ELF_SYM_BIND(symp->st_info) !=
-				      Elf_estb_local) {
+				else if (ELFDEFNNAME(ST_BIND)(rsymp->st_info) ==
+				      STB_LOCAL &&
+				    ELFDEFNNAME(ST_BIND)(symp->st_info) !=
+				      STB_LOCAL) {
 					/* pick the external symbol */
 					rsymp = symp;
 				}
@@ -395,4 +398,48 @@ db_elf_sym_numargs(symtab, cursym, nargp, argnamep)
 	 */
 	return (FALSE);
 }
+
+#ifdef notyet
+static void
+db_elf_forall(stab, db_forall_func, arg)
+	db_symtab_t *stab;
+	db_forall_func_t db_forall_func;
+	void *arg;
+{
+	char *strtab;
+	static char suffix[2];
+	Elf_Sym *symp, *symtab_start, *symtab_end;
+
+	symtab_start = STAB_TO_SYMSTART(stab);
+	symtab_end = STAB_TO_SYMEND(stab);
+
+	strtab = db_elf_find_strtab(stab);
+	if (strtab == NULL)
+		return;
+
+	for (symp = symtab_start; symp < symtab_end; symp++)
+		if (symp->st_name != 0) {
+			suffix[1] = '\0';
+			switch (ELFDEFNNAME(ST_TYPE)(symp->st_info)) {
+			case STT_OBJECT:
+				suffix[0] = '+';
+				break;
+			case STT_FUNC:
+				suffix[0] = '*';
+				break;
+			case STT_SECTION:
+				suffix[0] = '&';
+				break;
+			case STT_FILE:
+				suffix[0] = '/';
+				break;
+			default:
+				suffix[0] = '\0';
+			}
+			(*db_forall_func)(stab, (db_sym_t)symp,
+			    strtab + symp->st_name, suffix, 0, arg);
+		}
+	return;
+}
+#endif
 #endif /* DB_ELF_SYMBOLS */
