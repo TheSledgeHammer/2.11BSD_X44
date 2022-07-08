@@ -40,7 +40,7 @@
 #include "pcdisplay.h"
 #if (NVGA > 0) || (NEGA > 0) || (NPCDISPLAY > 0)
 #include <dev/core/ic/mc6845reg.h>
-//#include <dev/misc/pccons/pcdisplayvar.h>
+#include <dev/misc/pccons/pcdisplayvar.h>
 #if (NVGA > 0)
 #include <dev/video/vga/vgareg.h>
 #include <dev/video/vga/vgavar.h>
@@ -49,7 +49,7 @@
 #include <dev/video/ega/egavar.h>
 #endif
 #if (NPCDISPLAY > 0)
-#include <dev/misc/pccons/pcdisplayvar.h>
+#include <dev/misc/pccons/pcdisplayvar_isa.h>
 #endif
 #endif
 

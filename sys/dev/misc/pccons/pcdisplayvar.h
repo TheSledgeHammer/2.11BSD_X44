@@ -26,7 +26,7 @@
  *
  */
 
-//#include "opt_pcdisplay.h"
+#include "opt_pcdisplay.h"
 
 struct pcdisplayscreen {
 	struct pcdisplay_handle 	*hdl;
@@ -50,6 +50,9 @@ struct pcdisplay_handle {
 	bus_space_tag_t				ph_iot, ph_memt;
 	bus_space_handle_t 			ph_ioh_6845, ph_memh;
 };
+
+static inline u_int8_t _pcdisplay_6845_read(struct pcdisplay_handle *, int);
+static inline void _pcdisplay_6845_write(struct pcdisplay_handle *, int, u_int8_t);
 
 static inline u_int8_t _pcdisplay_6845_read(ph, reg)
 	struct pcdisplay_handle *ph;
@@ -87,4 +90,3 @@ void	pcdisplay_eraserows(void *, int, int, long);
 struct wsdisplay_char;
 int		pcdisplay_getwschar(void *, struct wsdisplay_char *);
 int		pcdisplay_putwschar(void *, struct wsdisplay_char *);
-int 	pcdisplay_cnattach(bus_space_tag_t, bus_space_tag_t);

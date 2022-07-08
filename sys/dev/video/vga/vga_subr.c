@@ -189,8 +189,9 @@ vga_setscreentype(struct vga_handle *vh, const struct wsscreen_descr *type)
 		 * 512-character fonts
 		 */
 		vga_attr_write(vh, colplen, 0x0f);
-	} else
+	} else {
 		vga_attr_write(vh, colplen, 0x07);
+	}
 }
 
 #else /* !VGA_RASTERCONSOLE */

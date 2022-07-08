@@ -23,6 +23,13 @@ options 		I686_CPU
 # CPU-related options.
 options 		MATH_EMULATE	# floating point emulation
 
+# This option allows you to force a serial console at the specified
+# I/O address.   see console(4) for details.
+#options 		CONSDEVNAME="\"com\"",CONADDR=0x2f8,CONSPEED=57600
+#	you don't want the option below ON iff you are using the
+#	serial console option of the new boot strap code.
+#options 		CONS_OVERRIDE	# Always use above! independent of boot info
+
 # Standard system options
 options 		UCONSOLE		# users can use TIOCCONS (for xconsole)
 options 		INSECURE		# disable kernel security levels
@@ -32,9 +39,10 @@ options 		RTC_OFFSET=0	# hardware clock is this many mins. west of GMT
 options			KTRACE			# system call tracing, a la ktrace(1)
 
 # Diagnostic/debugging support options
-options			DIAGNOSTIC		# internal consistency checks
+#options		DIAGNOSTIC		# internal consistency checks
+#options 		DEBUG			# expensive debugging checks/support
 options			ACCOUNTING		# acct(2) process accounting
-options			KMEMSTATS		# collect malloc(9) statistics
+#options		KMEMSTATS		# collect malloc(9) statistics
 options 		DDB				# in-kernel debugger
 options			PTRACE			# ptrace(2) system call
 
@@ -42,19 +50,19 @@ options			PTRACE			# ptrace(2) system call
 file-system 		FFS			# UFS
 file-system 		LFS			# log-structured file system
 file-system 		MFS			# memory file system
-file-system 		UFS211			# 2.11BSD's UFS
+#file-system 		UFS211			# 2.11BSD's UFS
 file-system 		CD9660			# ISO 9660 + Rock Ridge file system
 file-system 		MSDOSFS			# MS-DOS file system
 file-system 		FDESC			# /dev/fd
 file-system 		FIFO			# FIFOs; RECOMMENDED
 file-system 		UNION			# union file system
-file-system 		UFML			# ufml file system
+#file-system 		UFML			# ufml file system
 
 # File system options
 options			QUOTA			# UFS quotas
 
 # Compatibility options
-options 		COMPAT_43		# and 4.3BSD
+#options 		COMPAT_43		# and 4.3BSD
 
 # Networking options
 options 		INET			# IP + ICMP + TCP + UDP
@@ -62,12 +70,12 @@ options 		NS			# XNS
 
 # These options enable verbose messages for several subsystems.
 # Warning, these may compile large string tables into the kernel!
-options 	  	EISAVERBOSE		# verbose EISA device autoconfig messages
-options 		PCIVERBOSE		# verbose PCI device autoconfig messages
+options 	  	EISAVERBOSE			# verbose EISA device autoconfig messages
+options 		PCIVERBOSE			# verbose PCI device autoconfig messages
 options 		PCMCIAVERBOSE		# verbose PCMCIA configuration messages
-options 		SCSIVERBOSE		# human readable SCSI error messages
-#options 		USBVERBOSE		# verbose USB device autoconfig messages
-#options 		MCAVERBOSE		# verbose MCA device autoconfig messages
+options 		MCAVERBOSE			# verbose MCA device autoconfig messages
+options 		SCSIVERBOSE			# human readable SCSI error messages
+#options 		USBVERBOSE			# verbose USB device autoconfig messages
 #options 		HDAUDIOVERBOSE		# verbose HDAUDIO driver messages
 
 #
@@ -100,6 +108,8 @@ options 		PCDISPLAY_SOFTCURSOR
 #options 		WSDISPLAY_CHARFUNCS		# mouse console support
 # console scrolling support.
 #options		WSDISPLAY_SCROLLSUPPORT
+# enable VGA raster mode capable of displaying multilingual text on console
+#options 		VGA_RASTERCONSOLE
 
 # Kernel root file system and dump configuration.
 config			twobsd	root on ? type ?

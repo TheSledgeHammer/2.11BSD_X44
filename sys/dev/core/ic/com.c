@@ -91,6 +91,7 @@ __KERNEL_RCSID(0, "$NetBSD: com.c,v 1.224.2.2 2004/07/05 21:57:45 he Exp $");
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/file.h>
 #include <sys/uio.h>
 #include <sys/kernel.h>

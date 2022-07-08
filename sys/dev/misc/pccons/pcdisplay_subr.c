@@ -39,6 +39,7 @@
 #include <dev/core/ic/mc6845reg.h>
 #include <dev/misc/pccons/pcdisplayvar.h>
 #include <dev/misc/wscons/wsconsio.h>
+
 #include <dev/misc/wscons/wsdisplayvar.h>
 
 #include "opt_wsdisplay_compat.h" /* for WSDISPLAY_CHARFUNCS */
@@ -53,8 +54,8 @@ pcdisplay_cursor_init(scr, existing)
 	bus_space_handle_t 	memh;
 	int off;
 
-	pcdisplay_6845_write(scr->hdl, curstart, 0x10);
-	pcdisplay_6845_write(scr->hdl, curend, 0x10);
+	pcdisplay_6845_write(scr->hdl, curstart, 0x20);
+	pcdisplay_6845_write(scr->hdl, curend, 0x00);
 	
 	if (existing) {
 		/*

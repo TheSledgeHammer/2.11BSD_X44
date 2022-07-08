@@ -42,6 +42,8 @@
 
 #include <dev/core/ic/mc6845reg.h>
 #include <dev/misc/pccons/pcdisplayvar.h>
+#include <dev/misc/pccons/pcdisplayvar_isa.h>
+
 #include <dev/misc/pccons/pcdisplay.h>
 
 #include <dev/misc/wscons/wsconsio.h>

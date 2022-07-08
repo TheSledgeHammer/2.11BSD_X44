@@ -3,6 +3,11 @@
 # VGA Graphics
 #
 
+defparam opt_vga.h		VGA_CONSOLE_SCREENTYPE
+defflag opt_vga.h 		VGA_CONSOLE_ATI_BROKEN_FONTSEL
+defflag opt_vga.h		VGA_RASTERCONSOLE
+defflag opt_vga.h		VGA_RESET
+
 # generic ISA VGA
 attach	vga at isa with vga_isa
 file	dev/video/vga/vga_isa.c				vga_isa			needs-flag
