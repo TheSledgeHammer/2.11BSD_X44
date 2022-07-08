@@ -36,9 +36,9 @@ attach	puc at pci
 file	dev/core/pci/puc.c		puc
 file	dev/core/pci/pucdata.c		puc
 
-#attach	com at puc with com_puc
-#file	dev/core/pci/com_puc.c		com_puc
-#file	dev/core/pci/cyber.c		com_puc
+attach	com at puc with com_puc
+file	dev/core/pci/com_puc.c		com_puc
+file	dev/core/pci/cyber.c		com_puc
 
 #attach	lpt at puc with lpt_puc
 #file	dev/core/pci/lpt_puc.c		lpt_puc & !ppbus
