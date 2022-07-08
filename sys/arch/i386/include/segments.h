@@ -58,6 +58,10 @@
 #define	LSEL(s,r)	(((s)<<3) | SEL_LDT | r)/* a local selector */
 #define	GSEL(s,r)	(((s)<<3) | r)			/* a global selector */
 
+
+#define	USERMODE(c, f)		(ISPL(c) == SEL_UPL)
+#define	KERNELMODE(c, f)	(ISPL(c) == SEL_KPL)
+
 /*
  * Memory and System segment descriptors
  */
