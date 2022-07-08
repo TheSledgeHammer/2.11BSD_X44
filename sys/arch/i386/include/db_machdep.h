@@ -128,8 +128,4 @@ int kdb_trap(int, int, db_regs_t *);
 #define	DB_ELF_SYMBOLS
 #define	DB_ELFSIZE		32
 
-extern void db_machine_init(void);
-
-extern void cpu_debug_dump(void);
-
 #endif	/* _I386_DB_MACHDEP_H_ */
