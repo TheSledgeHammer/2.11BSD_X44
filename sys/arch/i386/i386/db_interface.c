@@ -41,13 +41,15 @@
 #include <dev/misc/cons/cons.h>
 
 #include <machine/db_machdep.h>
+#include <machine/segments.h>
+#include <machine/pmap.h>
 
 #include <ddb/db_sym.h>
 #include <ddb/db_command.h>
 #include <ddb/db_extern.h>
 #include <ddb/db_access.h>
 #include <ddb/db_output.h>
-
+#include <ddb/ddbvar.h>
 
 extern label_t	*db_recover;
 extern char *trap_type[];
@@ -55,7 +57,7 @@ extern int trap_types;
 
 int	db_active = 0;
 
-void kdbprinttrap __P((int, int));
+void kdbprinttrap(int, int);
 
 /*
  * Print trap reason.
@@ -174,18 +176,18 @@ db_write_bytes(addr, size, data)
 	vm_offset_t	addr1;
 	register pt_entry_t *ptep1 = 0;
 	pt_entry_t	oldmap1 = { 0 };
-	extern char	etext;
+	//char	etext;
 
 	if (addr >= VM_MIN_KERNEL_ADDRESS &&
 	    addr < (vm_offset_t)&etext) {
-		ptep0 = pmap_pte(pmap_kernel(), addr);
+		ptep0 = pmap_pte(pmap_kernel, addr);
 		oldmap0 = *ptep0;
 		*(int *)ptep0 |= /* INTEL_PTE_WRITE */ PG_RW;
 
 		addr1 = i386_trunc_page(addr + size - 1);
 		if (i386_trunc_page(addr) != addr1) {
 			/* data crosses a page boundary */
-			ptep1 = pmap_pte(pmap_kernel(), addr1);
+			ptep1 = pmap_pte(pmap_kernel, addr1);
 			oldmap1 = *ptep1;
 			*(int *)ptep1 |= /* INTEL_PTE_WRITE */ PG_RW;
 		}

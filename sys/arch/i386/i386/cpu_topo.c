@@ -31,16 +31,21 @@
 #include <sys/malloc.h>
 #include <sys/memrange.h>
 #include <sys/cputopo.h>
+#include <sys/percpu.h>
 
 #include <vm/include/vm_param.h>
 
 #include <machine/bus.h>
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
 #include <machine/cputypes.h>
+#include <machine/cpuvar.h>
+#include <machine/apic/lapicvar.h>
 #include <machine/param.h>
+#include <machine/smp.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
-#include <machine/percpu.h>
+//#include <machine/percpu.h>
 
 /* lock region used by kernel profiling */
 int	mcount_lock;
