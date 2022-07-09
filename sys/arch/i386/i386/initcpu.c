@@ -72,20 +72,6 @@ static int	hw_instruction_sse;
  */
 static int	hw_clflush_disable = -1;
 
-static __inline u_char
-read_cyrix_reg(u_char reg)
-{
-	outb(0x22, reg);
-	return inb(0x23);
-}
-
-static __inline void
-write_cyrix_reg(u_char reg, u_char data)
-{
-	outb(0x22, reg);
-	outb(0x23, data);
-}
-
 u_int	cyrix_did;		/* Device ID of Cyrix CPU */
 
 #ifdef I486_CPU
