@@ -59,8 +59,8 @@
 #define	GSEL(s,r)	(((s)<<3) | r)			/* a global selector */
 
 
-#define	USERMODE(c, f)		(ISPL(c) == SEL_UPL)
-#define	KERNELMODE(c, f)	(ISPL(c) == SEL_KPL)
+#define	USERMODE(c, f)	(ISPL(c) == SEL_UPL)
+#define	KERNELMODE(c, f)(ISPL(c) == SEL_KPL)
 
 /*
  * Memory and System segment descriptors
@@ -69,10 +69,10 @@ struct	segment_descriptor	{
 	unsigned sd_lolimit:16 ;	/* segment extent (lsb) */
 	unsigned sd_lobase:24 ;		/* segment base address (lsb) */
 	unsigned sd_type:5 ;		/* segment type */
-	unsigned sd_dpl:2 ;			/* segment descriptor priority level */
-	unsigned sd_p:1 ;			/* segment descriptor present */
+	unsigned sd_dpl:2 ;		/* segment descriptor priority level */
+	unsigned sd_p:1 ;		/* segment descriptor present */
 	unsigned sd_hilimit:4 ;		/* segment extent (msb) */
-	unsigned sd_xx:2 ;			/* unused */
+	unsigned sd_xx:2 ;		/* unused */
 	unsigned sd_def32:1 ;		/* default 32 vs 16 bit size */
 	unsigned sd_gran:1 ;		/* limit granularity (byte/page units)*/
 	unsigned sd_hibase:8 ;		/* segment base address  (msb) */
@@ -85,10 +85,10 @@ struct	gate_descriptor	{
 	unsigned gd_looffset:16 ;	/* gate offset (lsb) */
 	unsigned gd_selector:16 ;	/* gate segment selector */
 	unsigned gd_stkcpy:5 ;		/* number of stack wds to cpy */
-	unsigned gd_xx:3 ;			/* unused */
+	unsigned gd_xx:3 ;		/* unused */
 	unsigned gd_type:5 ;		/* segment type */
-	unsigned gd_dpl:2 ;			/* segment descriptor priority level */
-	unsigned gd_p:1 ;			/* segment descriptor present */
+	unsigned gd_dpl:2 ;		/* segment descriptor priority level */
+	unsigned gd_p:1 ;		/* segment descriptor present */
 	unsigned gd_hioffset:16 ;	/* gate offset (msb) */
 } ;
 
@@ -99,7 +99,6 @@ union descriptor	{
 	struct	segment_descriptor 	sd;
 	struct	gate_descriptor 	gd;
 };
-//#define	d_type	gd.gd_type
 
 /* system segments and gate types */
 #define	SDT_SYSNULL	 	 0	/* system null */
@@ -165,26 +164,23 @@ union descriptor	{
  */
 
 struct soft_segment_descriptor	{
-	unsigned ssd_base ;			/* segment base address  */
+	unsigned ssd_base ;		/* segment base address  */
 	unsigned ssd_limit ;		/* segment extent */
 	unsigned ssd_type:5 ;		/* segment type */
 	unsigned ssd_dpl:2 ;		/* segment descriptor priority level */
-	unsigned ssd_p:1 ;			/* segment descriptor present */
-	unsigned ssd_xx:4 ;			/* unused */
+	unsigned ssd_p:1 ;		/* segment descriptor present */
+	unsigned ssd_xx:4 ;		/* unused */
 	unsigned ssd_xx1:2 ;		/* unused */
 	unsigned ssd_def32:1 ;		/* default 32 vs 16 bit size */
 	unsigned ssd_gran:1 ;		/* limit granularity (byte/page units)*/
 };
-
-extern struct soft_segment_descriptor gdt_segs[];
-extern struct soft_segment_descriptor ldt_segs[];
 
 /*
  * region descriptors, used to load gdt/idt tables before segments yet exist
  */
 struct region_descriptor {
 	unsigned rd_limit:16 ;		/* segment extent */
-	char 	*rd_base;			/* base address  */
+	char 	*rd_base;		/* base address  */
 };
 
 /* global descriptor table */
@@ -197,27 +193,27 @@ struct region_descriptor {
 #define GUDATA_SEL		6	/* User Data Descriptor */
 #define	GPROC0_SEL		7	/* Task state process slot zero and up */
 #define	GLDT_SEL		8	/* LDT - eventually one per process */
-#define GUSERLDT_SEL	9	/* User LDT Descriptor */
+#define GUSERLDT_SEL		9	/* User LDT Descriptor */
 #define	GPANIC_SEL		10	/* Task state to consider panic from */
 #define	GTGATE_SEL		11	/* Process task switch gate */
 #define	GINVTSS_SEL		12	/* Task state to take invalid tss on */
 #define	GDBLFLT_SEL		13	/* Task state to take double fault on */
 #define	GEXIT_SEL		14	/* Task state to process cpu_texit() on */
-#define GBIOSCODE32_SEL 15	/* BIOS interface (32bit Code) */
-#define GBIOSCODE16_SEL 16	/* BIOS interface (16bit Code) */
-#define GBIOSDATA_SEL	17	/* BIOS interface (Data) */
-#define GBIOSUTIL_SEL	18	/* BIOS interface (Utility) */
-#define GBIOSARGS_SEL 	19	/* BIOS interface (Arguments) */
+#define GBIOSCODE32_SEL 	15	/* BIOS interface (32bit Code) */
+#define GBIOSCODE16_SEL 	16	/* BIOS interface (16bit Code) */
+#define GBIOSDATA_SEL		17	/* BIOS interface (Data) */
+#define GBIOSUTIL_SEL		18	/* BIOS interface (Utility) */
+#define GBIOSARGS_SEL 		19	/* BIOS interface (Arguments) */
 
 #define NGDT 			20
 
 /* local descriptor table */
 #define	LUNULL_SEL		0	/* Null Descriptor */
-#define	LSYS5CALLS_SEL	1	/* forced by intel BCS */
-#define	LSYS5SIGR_SEL	2
+#define	LSYS5CALLS_SEL		1	/* forced by intel BCS */
+#define	LSYS5SIGR_SEL		2
 #define	LUCODE_SEL		3
 #define	LUDATA_SEL		4
-#define	L43BSDCALLS_SEL	5	/* notyet */
+#define	L43BSDCALLS_SEL		5	/* notyet */
 
 #define NLDT			7
 
@@ -228,18 +224,48 @@ struct region_descriptor {
 #define	SEGEX_EXT		0x01	/* recursive or externally induced */
 #define	SEGEX_IDT		0x02	/* interrupt descriptor table */
 #define	SEGEX_TI		0x04	/* local descriptor table */
-								/* other bits are affected descriptor index */
+					/* ther bits are affected descriptor index */
 #define SEGEX_IDX(s)		((s)>>3)&0x1fff)
 
 /*
  * Entries in the Interrupt Descriptor Table (IDT)
  */
 #define	NIDT			256
-#define	NRSVIDT			32		/* reserved entries for cpu exceptions */
+#define	NRSVIDT			32	/* reserved entries for cpu exceptions */
 
-extern int ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
-extern int sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */
+/*
+ * Entries in the Interrupt Descriptor Table (IDT)
+ */
+#define	IDT_DE			0	/* #DE: Divide Error */
+#define	IDT_DB			1	/* #DB: Debug */
+#define	IDT_NMI			2	/* Nonmaskable External Interrupt */
+#define	IDT_BP			3	/* #BP: Breakpoint */
+#define	IDT_OF			4	/* #OF: Overflow */
+#define	IDT_BR			5	/* #BR: Bound Range Exceeded */
+#define	IDT_UD			6	/* #UD: Undefined/Invalid Opcode */
+#define	IDT_NM			7	/* #NM: No Math Coprocessor */
+#define	IDT_DF			8	/* #DF: Double Fault */
+#define	IDT_FPUGP		9	/* Coprocessor Segment Overrun */
+#define	IDT_TS			10	/* #TS: Invalid TSS */
+#define	IDT_NP			11	/* #NP: Segment Not Present */
+#define	IDT_SS			12	/* #SS: Stack Segment Fault */
+#define	IDT_GP			13	/* #GP: General Protection Fault */
+#define	IDT_PF			14	/* #PF: Page Fault */
+#define	IDT_MF			16	/* #MF: FPU Floating-Point Error */
+#define	IDT_AC			17	/* #AC: Alignment Check */
+#define	IDT_MC			18	/* #MC: Machine Check */
+#define	IDT_XF			19	/* #XF: SIMD Floating-Point Exception */
+#define	IDT_IO_INTS		NRSVIDT	/* Base of IDT entries for I/O interrupts. */
+#define	IDT_SYSCALL		0x80	/* System Call Interrupt Vector */
+//#define	IDT_DTRACE_RET		0x92	/* DTrace pid provider Interrupt Vector */
+//#define	IDT_EVTCHN		0x93	/* Xen HVM Event Channel Interrupt Vector */
 
-void   lgdt(struct region_descriptor *rdp);
+#ifdef _KERNEL
+extern struct soft_segment_descriptor gdt_segs[];
+extern struct soft_segment_descriptor ldt_segs[];
 
+int 	ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
+int 	sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;	/* to encode a sd */
+void	lgdt(struct region_descriptor *rdp);
+#endif
 #endif /* _I386_SEGMENTS_H_ */

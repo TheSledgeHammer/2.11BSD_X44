@@ -400,4 +400,18 @@ ia32_pause(void)
 	__asm __volatile("pause");
 }
 
+
+static __inline u_char
+read_cyrix_reg(u_char reg)
+{
+	outb(0x22, reg);
+	return inb(0x23);
+}
+
+static __inline void
+write_cyrix_reg(u_char reg, u_char data)
+{
+	outb(0x22, reg);
+	outb(0x23, data);
+}
 #endif /* !_I386_CPUFUNC_H_ */

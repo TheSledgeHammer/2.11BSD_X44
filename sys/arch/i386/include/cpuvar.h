@@ -86,7 +86,7 @@ void	identify_cpu_fixup_bsp(void);
 void	initializecpu(void);
 void	initializecpucache(void);
 void	printcpuinfo(void);
-int		pti_get_default(void);
+int	pti_get_default(void);
 
 #define	MSR_OP_ANDNOT		0x00000001
 #define	MSR_OP_OR			0x00000002

@@ -119,6 +119,7 @@ extern char		etext[];
 void	boot(int);
 void	cpu_halt(void);
 void	cpu_reset(void);
+void	setidt(int, void *, int, int, int);
 
 /* locore.s */
 struct 	pcb;
@@ -133,7 +134,7 @@ extern u_int tsc_freq;
 void	startrtclock(void);
 void	i8254_initclocks(void);
 void	i8254_delay(int);
-int		gettick(void);
+int	gettick(void);
 void 	inittodr(time_t);
 void	resettodr(void);
 void	setstatclockrate(int);
