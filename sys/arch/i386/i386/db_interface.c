@@ -43,7 +43,6 @@
 
 #include <machine/cpufunc.h>
 #include <machine/db_machdep.h>
-#include <machine/pio.h>
 #include <machine/pmap_reg.h>
 #include <machine/pmap.h>
 #include <machine/pte.h>
