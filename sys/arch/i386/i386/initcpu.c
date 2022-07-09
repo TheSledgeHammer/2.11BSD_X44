@@ -39,7 +39,6 @@
 #include <machine/cputypes.h>
 #include <machine/cpufunc.h>
 #include <machine/cpuvar.h>
-#include <machine/pio.h>
 #include <machine/specialreg.h>
 
 #ifdef I486_CPU
