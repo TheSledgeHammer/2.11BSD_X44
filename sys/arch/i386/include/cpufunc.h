@@ -41,6 +41,7 @@
 #include <sys/types.h>
 
 #include <machine/pcb.h>
+#include <machine/pio.h>
 #include <machine/segments.h>
 #include <machine/specialreg.h>
 
