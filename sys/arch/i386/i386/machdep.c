@@ -76,6 +76,7 @@
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
+#include <machine/cpuvar.h>
 #include <machine/gdt.h>
 #include <machine/intr.h>
 #include <machine/psl.h>
@@ -93,7 +94,6 @@ extern struct proc *npxproc;
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
-
 
 void (*delay_func)(int) = i8254_delay;
 void (*microtime_func)(struct timeval *) = microtime;
@@ -131,10 +131,6 @@ int  *esym;
 extern int biosbasemem, biosextmem;
 
 struct pcb *curpcb;			/* our current running pcb */
-
-#if defined(I586_CPU) && !defined(NO_F00F_HACK)
-extern int has_f00f_bug;
-#endif
 
 int	i386_use_fxsave;
 
@@ -896,8 +892,28 @@ setidt(idx, func, args, typ, dpl)
 void
 init_descriptors()
 {
-	allocate_gdt(&gdt_segs);
-	allocate_ldt(&ldt_segs);
+	gdt_allocate(&gdt_segs);
+	ldt_allocate(&ldt_segs);
+}
+
+void
+make_memory_segments()
+{
+	int x;
+
+	/* make GDT memory segments */
+	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
+	for (x = 0; x < NGDT; x++) {
+		ssdtosd(gdt_segs + x, gdt + x);
+	}
+
+	/* make LDT memory segments */
+	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
+	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
+	/* Note. eventually want private ldts per process */
+	for (x=0; x < 5; x++) {
+		ssdtosd(ldt_segs + x, ldt + x);
+	}
 }
 
 #define	IDTVEC(name)	__CONCAT(X, name)
@@ -924,19 +940,8 @@ init386(first)
 	 */
 	cninit(KERNBASE+0xa0000);
 
-	/* make gdt memory segments */
-	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
-	for (x=0; x < NGDT; x++) {
-		ssdtosd(gdt_segs+x, gdt+x);
-	}
-
-	/* make ldt memory segments */
-	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
-	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
-	/* Note. eventually want private ldts per process */
-	for (x=0; x < 5; x++) {
-		ssdtosd(ldt_segs+x, ldt+x);
-	}
+	/* make GDT & LDT memory segments */
+	make_memory_segments();
 
 	/* exceptions */
 	for(x = 0; x < NIDT; x++) {

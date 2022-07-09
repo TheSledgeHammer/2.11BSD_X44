@@ -40,7 +40,7 @@
 
 extern int securelevel;				/* system security level */
 extern const char *panicstr;		/* panic message */
-extern char version[];			/* system version */
+extern char version[];				/* system version */
 extern char ostype[];
 extern char osversion[];
 extern char osrelease[];
@@ -52,6 +52,7 @@ extern int nswdev;					/* number of swap devices */
 extern int nswap;					/* size of swap space */
 
 extern int boothowto;				/* reboot flags, from boot */
+extern int bootverbose;				/* nonzero to print verbose messages */
 extern int selwait;					/* select timeout address */
 
 extern int maxmem;					/* actual max memory per process */

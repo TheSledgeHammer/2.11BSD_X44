@@ -65,6 +65,15 @@ static void print_transmeta_info(void);
 #endif
 static u_int find_cpu_vendor_id(void);
 static int	find_cpu_class(void);
+static void print_AMD_info(void);
+static void print_INTEL_info(void);
+static void print_INTEL_TLB(u_int data);
+//static void print_hypervisor_info(void);
+static void print_svm_info(void);
+static void print_via_padlock_info(void);
+//static void print_vmx_info(void);
+
+#define	nitems(x)	(sizeof((x)) / sizeof((x)[0]))
 
 #ifdef __i386__
 int			cpu;					/* Are we 386, 386sx, 486, etc? */
@@ -111,7 +120,7 @@ static char cpu_brand[48];
 
 #define	MAX_BRAND_INDEX	8
 
-static const char *cpu_cpuid_brandtable[MAX_BRAND_INDEX + 1] = {
+static const char *cpu_brandtable[MAX_BRAND_INDEX + 1] = {
 	NULL,							/* No brand */
 	"Intel Celeron",
 	"Intel Pentium III",

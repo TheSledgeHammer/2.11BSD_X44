@@ -31,7 +31,7 @@
 void setup_descriptor_table(struct soft_segment_descriptor *, unsigned int,
 		unsigned int, unsigned int, unsigned int, unsigned int, unsigned int,
 		unsigned int, unsigned int, unsigned int);
-void allocate_gdt(struct soft_segment_descriptor *);
-void allocate_ldt(struct soft_segment_descriptor *);
+void gdt_allocate(struct soft_segment_descriptor *);
+void ldt_allocate(struct soft_segment_descriptor *);
 
 #endif /* _I386_GDT_H_ */

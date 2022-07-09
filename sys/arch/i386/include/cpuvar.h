@@ -35,6 +35,10 @@
 /*
  * Miscellaneous machine-dependent declarations.
  */
+extern	u_int		cyrix_did;
+#if defined(I586_CPU) && !defined(NO_F00F_HACK)
+extern  int 		has_f00f_bug;
+#endif
 
 extern	long		Maxmem;
 extern	u_int		basemem;
@@ -75,7 +79,7 @@ extern	u_int		cpu_power_edx;
 extern	u_int		max_apic_id;
 
 void	finishidentcpu(void);
-bool	fix_cpuid(void);
+bool_t	fix_cpuid(void);
 void	identify_cpu1(void);
 void	identify_cpu2(void);
 void	identify_cpu_fixup_bsp(void);

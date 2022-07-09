@@ -64,7 +64,6 @@ static void	init_ppro(void);
 static void	init_mendocino(void);
 #endif
 
-
 static int	hw_instruction_sse;
 /*
  * -1: automatic (default)

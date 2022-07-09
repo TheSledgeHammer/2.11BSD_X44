@@ -51,6 +51,7 @@
 #include <machine/apic/apic.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
+#include <machine/pmap.h>
 
 void i386_ipi_halt(struct cpu_info *);
 

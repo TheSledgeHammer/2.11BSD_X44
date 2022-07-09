@@ -33,6 +33,7 @@
 
 #include <machine/segments.h>
 #include <machine/gdt.h>
+#include <machine/param.h>
 
 /* Defines all the parameters for the soft segment descriptors */
 void
@@ -53,8 +54,8 @@ setup_descriptor_table(ssd, ssd_base, ssd_limit, ssd_type, ssd_dpl, ssd_p, ssd_x
 
 /* Allocates & Predefines all the parameters for the Global Descriptor Table (GDT) segments */
 void
-allocate_gdt(gdt)
-    struct soft_segment_descriptor *gdt[];
+gdt_allocate(gdt)
+    struct soft_segment_descriptor *gdt;
 {
 	/* GNULL_SEL	0 Null Descriptor */
 	setup_descriptor_table(&gdt[GNULL_SEL], 0x0, 0x0, 0, SEL_KPL, 0, 0, 0, 0, 0);
@@ -101,8 +102,8 @@ allocate_gdt(gdt)
 
 /* Allocates & Predefines all the parameters for the Local Descriptor Table (LDT) segments */
 void
-allocate_ldt(ldt)
-	struct soft_segment_descriptor *ldt[];
+ldt_allocate(ldt)
+	struct soft_segment_descriptor *ldt;
 {
 	setup_descriptor_table(&ldt[LUNULL_SEL], 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
     setup_descriptor_table(&ldt[LUNULL_SEL], 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);

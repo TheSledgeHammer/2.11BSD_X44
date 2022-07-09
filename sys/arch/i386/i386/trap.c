@@ -105,6 +105,10 @@ int	nsysent;
 unsigned rcr2();
 extern int cpl;
 
+#if defined(I586_CPU) && !defined(NO_F00F_HACK)
+int has_f00f_bug = 0;		/* Initialized so that it can be patched. */
+#endif
+
 void trap(struct trapframe *);
 void trap_tss(struct i386tss *, int, int);
 static __inline void userret(struct proc *, int, u_quad_t);
