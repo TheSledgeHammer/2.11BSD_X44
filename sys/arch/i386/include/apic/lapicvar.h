@@ -100,8 +100,8 @@ extern 	IDTVEC(lapic_intr_ipi),
 	IDTVEC(i8259_stubs), 
 	IDTVEC(spurious),
 	IDTVEC(apic_intr),
-	IDTVEC(x2apic_intr), 	/* apic_machdep.c */
-	IDTVEC(legacy_intr); 	/* intr.c */
+	IDTVEC(x2apic_intr),
+	IDTVEC(legacy_intr);
 
 struct cpu_info;
 
@@ -117,9 +117,9 @@ extern void 			lapic_write_tpri(uint32_t);
 extern uint32_t 		lapic_cpu_number(void);
 extern bool_t 			lapic_is_x2apic(void);
 
-static int			i82489_ipi_init(int);
-static int			i82489_ipi_startup(int, int);
-static int			x2apic_ipi_init(int);
-static int			x2apic_ipi_startup(int, int);
+static int				i82489_ipi_init(int);
+static int				i82489_ipi_startup(int, int);
+static int				x2apic_ipi_init(int);
+static int				x2apic_ipi_startup(int, int);
 
 #endif /* _I386_LAPICVAR_H_ */

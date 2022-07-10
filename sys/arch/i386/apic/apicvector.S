@@ -43,6 +43,17 @@
 #include <dev/core/isa/isavar.h>
 
 #include "assym.h"
+
+IDTVEC(spurious)
+		/*
+		 * The Pentium Pro local APIC may erroneously call this vector for a
+		 * default IR7.  Just ignore it.
+		 *
+		 * (The local APIC does this when CPL is raised while it's on the
+		 * way to delivering an interrupt.. presumably enough has been set
+		 * up that it's inconvenient to abort delivery completely..)
+		 */
+		iret
 		
 #ifdef SMP	
 #if NLAPIC > 0

@@ -63,6 +63,13 @@
 #include <machine/pmap_reg.h>
 #include <machine/pmap_tlb.h>
 
+/*
+ * pmap_pg_g: if our processor supports PG_G in the PTE then we
+ * set pmap_pg_g to PG_G (otherwise it is zero).
+ */
+
+int pmap_pg_g = 0;
+
 /******************** TLB shootdown code ********************/
 
 /*
@@ -153,14 +160,42 @@ pmap_tlb_shootnow(pmap, cpumask)
 }
 
 /*
+ * Returns a PTE from address.
+ */
+pt_entry_t
+pmap_tlb_pte(sva, eva)
+	vm_offset_t sva, eva;
+{
+	pt_entry_t 	pte;
+	vm_offset_t addr;
+
+	if((sva == 0 && eva == 0) || (sva != 0 && eva == 0)) {
+		addr = sva;
+		if(vtopte(addr) != 0) {
+			pte = vtopte(addr);
+			return (pte);
+		}
+	} else {
+		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
+			if (vtopte(addr) != 0) {
+				pte = vtopte(addr);
+				return (pte);
+			}
+		}
+	}
+	return (0);
+}
+
+/*
  * pmap_tlb_shootdown:
  *
  *	Cause the TLB entry for pmap/va to be shot down.
  */
 void
-pmap_tlb_shootdown(pmap, addr1, addr2, mask)
+pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask)
 	pmap_t 		pmap;
 	vm_offset_t addr1, addr2;
+	pt_entry_t 	pte;
 	int32_t 	*mask;
 {
 	struct cpu_info *ci, *self;
@@ -168,7 +203,6 @@ pmap_tlb_shootdown(pmap, addr1, addr2, mask)
 	struct pmap_tlb_shootdown_job *pj;
 	CPU_INFO_ITERATOR cii;
 	int s;
-
 
 	if (pmap_initialized == FALSE /*|| cpus_attached == 0*/) {
 		invlpg(addr1);
@@ -199,20 +233,22 @@ pmap_tlb_shootdown(pmap, addr1, addr2, mask)
 		 * non-global flush, and this pte doesn't have the G
 		 * bit set, don't bother.
 		 */
-		if (pq->pq_flush > 0) {
+		if (pq->pq_flushg > 0 ||
+				(pq->pq_flushu > 0 && (pte & pmap_pg_g) == 0)) {
 			simple_unlock(&pq->pq_slock);
 			continue;
 		}
+
 #ifdef I386_CPU
 		if (cpu_class == CPUCLASS_386) {
-			pq->pq_flush++;
+			pq->pq_flushu++;
 			*mask |= 1U << ci->ci_cpuid;
 			simple_unlock(&pq->pq_slock);
 			continue;
 		}
 #endif
 		pj = pmap_tlb_shootdown_job_get(pq);
-		//pq->pq_pte |= pte;
+		pq->pq_pte |= pte;
 		if (pj == NULL) {
 			/*
 			* Couldn't allocate a job entry.
@@ -225,6 +261,16 @@ pmap_tlb_shootdown(pmap, addr1, addr2, mask)
 				simple_unlock(&pq->pq_slock);
 				continue;
 			} else {
+				if (pq->pq_pte & pmap_pg_g) {
+					pq->pq_flushg++;
+				} else {
+					pq->pq_flushu++;
+				}
+				/*
+				 * Since we've nailed the whole thing,
+				 * drain the job entries pending for that
+				 * processor.
+				 */
 				pmap_tlb_shootdown_q_drain(pq);
 				*mask |= 1U << ci->cpu_cpuid;
 			}
@@ -232,7 +278,7 @@ pmap_tlb_shootdown(pmap, addr1, addr2, mask)
 			pj->pj_pmap = pmap;
 			pj->pj_sva = addr1;
 			pj->pj_eva = addr2;
-			//pj->pj_pte = pte;
+			pj->pj_pte = pte;
 			TAILQ_INSERT_TAIL(&pq->pq_head, pj, pj_list);
 			*mask |= 1U << ci->cpu_cpuid;
 		}
@@ -267,20 +313,22 @@ pmap_do_tlb_shootdown(pmap, self)
 	simple_lock(&pq->pq_slock);
 	if (pq->pq_flush) {
 		tlbflush();
-		pq->pq_flush = 0;
+		pq->pq_flushg = 0;
+		pq->pq_flushu = 0;
 		pmap_tlb_shootdown_q_drain(pq);
 	} else {
-		if (pq->pq_flush) {
+		if (pq->pq_flushu) {
 			tlbflush();
 		}
 		while ((pj = TAILQ_FIRST(&pq->pq_head)) != NULL) {
 			TAILQ_REMOVE(&pq->pq_head, pj, pj_list);
-			if (/*(pj->pj_pte & pmap_pg_g) || */ pj->pj_pmap == kernel_pmap() || pj->pj_pmap == pmap) {
+			if ((pj->pj_pte & pmap_pg_g) || pj->pj_pmap == kernel_pmap() || pj->pj_pmap == pmap) {
 				invlpg(pj->pj_va);
 			}
 			pmap_tlb_shootdown_job_put(pq, pj);
 		}
-		pq->pq_flush /*= pq->pq_pte*/ = 0;
+		pq->pq_flushu = 0;
+		pq->pq_pte = 0;
 	}
 #ifdef SMP
 	for (CPU_INFO_FOREACH(cii, ci)) {
@@ -311,6 +359,7 @@ pmap_tlb_shootdown_q_drain(pq)
 		TAILQ_REMOVE(&pq->pq_head, pj, pj_list);
 		pmap_tlb_shootdown_job_put(pq, pj);
 	}
+	pq->pq_pte = 0;
 }
 
 /*

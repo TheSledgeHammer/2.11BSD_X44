@@ -56,11 +56,12 @@
 #include <machine/pmap_reg.h>
 #include <machine/pmap_tlb.h>
 
-vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
+//vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
 volatile int 		smp_tlb_wait;
 
 static __inline u_int32_t
-popcnt(u_int32_t m)
+popcnt(m)
+	u_int32_t m;
 {
 	m = (m & 0x55555555) + ((m & 0xaaaaaaaa) >> 1);
 	m = (m & 0x33333333) + ((m & 0xcccccccc) >> 2);
@@ -71,11 +72,16 @@ popcnt(u_int32_t m)
 }
 
 static void
-smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2)
+smp_targeted_tlb_shootdown(mask, vector, pmap, addr1, addr2)
+	u_int mask, vector;
+	pmap_t pmap;
+	vm_offset_t addr1, addr2;
 {
 	int ncpu, othercpus;
 	register_t eflags;
+	pt_entry_t	pte;
 
+	pte = pmap_tlb_pte(addr1, addr2);
 	if (mask == (u_int)-1) {
 		ncpu = othercpus;
 		if (ncpu < 1) {
@@ -101,8 +107,8 @@ smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t ad
 		panic("absolutely cannot call smp_targeted_ipi_shootdown with interrupts already disabled");
 	}
 
-	smp_tlb_addr1 = addr1;
-	smp_tlb_addr2 = addr2;
+	//smp_tlb_addr1 = addr1;
+	//smp_tlb_addr2 = addr2;
 	atomic_store_relaxed(&smp_tlb_wait, 0);
 
 	if (mask == (u_int)-1) {
@@ -110,16 +116,19 @@ smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t ad
 	} else {
 		i386_multicast_ipi(mask, vector);
 	}
+
 	while (smp_tlb_wait < ncpu) {
 		ncpu--;
-		pmap_tlb_shootdown(pmap, addr1, addr2, mask);
+		pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask);
 		pmap_tlb_shootnow(pmap, mask);
 	}
 	return;
 }
 
 __inline void
-smp_masked_invltlb(u_int mask, pmap_t pmap)
+smp_masked_invltlb(mask, pmap)
+	u_int mask;
+	pmap_t pmap;
 {
 	if (smp_started) {
 		smp_targeted_tlb_shootdown(mask, IPI_INVLTLB, pmap, 0, 0);
@@ -127,7 +136,10 @@ smp_masked_invltlb(u_int mask, pmap_t pmap)
 }
 
 __inline void
-smp_masked_invlpg(u_int mask, vm_offset_t addr, pmap_t pmap)
+smp_masked_invlpg(mask, addr, pmap)
+	u_int mask;
+	vm_offset_t addr;
+	pmap_t pmap;
 {
 	if (smp_started) {
 		smp_targeted_tlb_shootdown(mask, IPI_INVLPG, pmap, addr, 0);
@@ -135,7 +147,10 @@ smp_masked_invlpg(u_int mask, vm_offset_t addr, pmap_t pmap)
 }
 
 __inline void
-smp_masked_invlpg_range(u_int mask, vm_offset_t addr1, vm_offset_t addr2, pmap_t pmap)
+smp_masked_invlpg_range(mask, addr1, addr2, pmap)
+	u_int mask;
+	vm_offset_t addr1, addr2;
+	pmap_t pmap;
 {
 	if (smp_started) {
 		smp_targeted_tlb_shootdown(mask, IPI_INVLRNG, pmap, addr1, addr2);

@@ -589,6 +589,7 @@ IDTVEC(fpu)
 #endif
 IDTVEC(align)
 		ZTRAP(T_ALIGNFLT)
+
 /* 18 - 31 reserved for future exp */
 IDTVEC(rsvd)	/* rvsd 18 */
 		ZTRAP(T_RESERVED)

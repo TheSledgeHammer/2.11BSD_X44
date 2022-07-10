@@ -1120,6 +1120,31 @@ panicifcpuunsupported(void)
 
 static	volatile u_int trap_by_rdmsr;
 
+void
+bluetrap6(void)
+{
+	__asm("	.text															\
+			IDTVEC(bluetrap6) : 										\
+	        ss															;\
+	        movl   $0xa8c1d, " __STRING(_C_LABEL(trap_by_rdmsr)) "  	;\
+	        addl   $2, (%esp)	/* rdmsr is a 2-byte instruction */		;\ 
+	        iret 														\
+	        		");
+}
+
+void
+bluetrap13(void)
+{
+	__asm("	.text														\
+			IDTVEC(bluetrap13) : 										\
+	        ss															;\
+	        movl   $0xa89c4, " __STRING(_C_LABEL(trap_by_rdmsr)) "  	;\
+	        popl   %eax			/* discard error code */				;\
+	        addl   $2, (%esp)	/* rdmsr is a 2-byte instruction */		;\ 
+	        iret 														\
+	        		");
+}
+
 /*
  * Distinguish IBM Blue Lightning CPU from Cyrix CPUs that does not
  * support cpuid instruction.  This function should be called after

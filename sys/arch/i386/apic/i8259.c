@@ -93,7 +93,7 @@ struct intrhand 	*intrhand[MAX_INTR_SOURCES];
 static void 	i8259_hwmask(struct softpic *, int);
 static void 	i8259_hwunmask(struct softpic *, int);
 static void 	i8259_setup(struct softpic *, struct cpu_info *, int, int, int);
-static void	i8259_reinit_irqs(void);
+static void		i8259_reinit_irqs(void);
 static void		i8259_register_pic(struct pic *);
 
 struct pic i8259_template = {
