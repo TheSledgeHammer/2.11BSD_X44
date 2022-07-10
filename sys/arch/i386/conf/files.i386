@@ -25,7 +25,7 @@ file		arch/i386/i386/db_trace.c	          ddb
 file    arch/i386/i386/dkbad.c
 file    arch/i386/i386/gdt.c
 file    arch/i386/i386/identcpu.c
-file    arch/i386/i386/in_cksum.c	          inet
+#file    arch/i386/i386/in_cksum.c	          inet
 file    arch/i386/i386/initcpu.c
 file    arch/i386/i386/intr.c             
 file    arch/i386/i386/ipi.c              	smp
