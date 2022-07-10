@@ -83,6 +83,7 @@ bool_t	fix_cpuid(void);
 void	identify_cpu1(void);
 void	identify_cpu2(void);
 void	identify_cpu_fixup_bsp(void);
+u_int	cpu_auxmsr(void);
 void	initializecpu(void);
 void	initializecpucache(void);
 void	printcpuinfo(void);
