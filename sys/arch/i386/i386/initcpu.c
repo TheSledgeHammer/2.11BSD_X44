@@ -39,6 +39,7 @@
 #include <machine/cputypes.h>
 #include <machine/cpufunc.h>
 #include <machine/cpuvar.h>
+#include <machine/percpu.h>
 #include <machine/specialreg.h>
 
 #ifdef I486_CPU
@@ -616,6 +617,18 @@ init_transmeta(void)
 	cpu_feature = regs[3];
 }
 #endif
+
+/*
+ * The value for the TSC_AUX MSR and rdtscp/rdpid on the invoking CPU.
+ *
+ * Caller should prevent CPU migration.
+ */
+u_int
+cpu_auxmsr(void)
+{
+	KASSERT((read_eflags() & PSL_I) == 0/*, ("context switch possible")*/);
+	return (__PERCPU_GET(cpuid));
+}
 
 extern int elf32_nxstack;
 

@@ -1123,26 +1123,26 @@ static	volatile u_int trap_by_rdmsr;
 void
 bluetrap6(void)
 {
-	__asm("	.text															\
-			IDTVEC(bluetrap6) : 										\
-	        ss															;\
+	__asm("	.text								\
+		IDTVEC(bluetrap6) : 						\
+	       	ss								;\
 	        movl   $0xa8c1d, " __STRING(_C_LABEL(trap_by_rdmsr)) "  	;\
-	        addl   $2, (%esp)	/* rdmsr is a 2-byte instruction */		;\ 
-	        iret 														\
-	        		");
+	        addl   $2, (%esp)						;\
+	        iret								;\
+	        ");
 }
 
 void
 bluetrap13(void)
 {
-	__asm("	.text														\
-			IDTVEC(bluetrap13) : 										\
-	        ss															;\
+	__asm("	.text								\
+		IDTVEC(bluetrap13) :						\
+		ss								;\
 	        movl   $0xa89c4, " __STRING(_C_LABEL(trap_by_rdmsr)) "  	;\
-	        popl   %eax			/* discard error code */				;\
-	        addl   $2, (%esp)	/* rdmsr is a 2-byte instruction */		;\ 
-	        iret 														\
-	        		");
+	        popl   %eax							;\
+	        addl   $2, (%esp)						;\
+	        iret   								;\
+	        ");
 }
 
 /*
@@ -1255,7 +1255,7 @@ fix_cpuid(void)
 	 * Re-enable AMD Topology Extension that could be disabled by BIOS
 	 * on some notebook processors.  Without the extension it's really
 	 * hard to determine the correct CPU cache topology.
-	 * See BIOS and Kernel Developer’s Guide (BKDG) for AMD Family 15h
+	 * See BIOS and Kernel Developer\92s Guide (BKDG) for AMD Family 15h
 	 * Models 60h-6Fh Processors, Publication # 50742.
 	 */
 	if (/*vm_guest == VM_GUEST_NO && */cpu_vendor_id == CPUVENDOR_AMD &&
