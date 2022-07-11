@@ -37,10 +37,12 @@
  *
  */
 
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
-#include <vm/include/vm_param.h>
+//#include <vm/include/vm_param.h>
 
+#include <machine/proc.h>
 #include <machine/cpufunc.h>
 #include <machine/param.h>
 #include <machine/pmap.h>
@@ -95,6 +97,7 @@ physcopyseg(frm, to)
  * insert an element into a queue
  */
 #undef insque
+/*
 _insque(element, head)
 	register struct prochd *element, *head;
 {
@@ -103,11 +106,12 @@ _insque(element, head)
 	element->ph_rlink = (struct proc*) head;
 	((struct prochd*) (element->ph_link))->ph_rlink = (struct proc*) element;
 }
-
+*/
 /*
  * remove an element from a queue
  */
 #undef remque
+/*
 _remque(element)
 	register struct prochd *element;
 {
@@ -115,7 +119,7 @@ _remque(element)
 	((struct prochd*) (element->ph_rlink))->ph_link = element->ph_link;
 	element->ph_rlink = (struct proc*) 0;
 }
-
+*/
 
 vmunaccess()
 {

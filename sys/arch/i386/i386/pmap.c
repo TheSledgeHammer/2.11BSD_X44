@@ -88,7 +88,9 @@
 #include <sys/sysctl.h>
 #include <sys/cputopo.h>
 #include <sys/queue.h>
+#include <sys/lock.h>
 #include <sys/vmmeter.h>
+#include <sys/lock.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
@@ -255,8 +257,12 @@ bool_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
 char			*pmap_attributes;	/* reference and modify bits */
 
 pd_entry_t 		*IdlePTD;			/* phys addr of kernel PTD */
+#ifdef PMAP_PAE_COMP
 pdpt_entry_t 	*IdlePDPT;			/* phys addr of kernel PDPT */
+#endif
 pt_entry_t 		*KPTmap;			/* address of kernel page tables */
+
+static pt_entry_t *pmap_pte(pmap_t, vm_offset_t);
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
@@ -2006,7 +2012,7 @@ pmap_changebit(pa, bit, setem)
 
 	struct proc *p;
 
-	p = &curproc;
+	p = curproc;
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_BITS)

@@ -59,7 +59,7 @@
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/sysctl.h>
-#include <sys/exec.h>
+//#include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/kenv.h>
 #include <sys/ucontext.h>
@@ -68,17 +68,18 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
-#include <net/netisr.h>
+//#include <net/netisr.h>
 
 #include <dev/core/ic/i8042reg.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/misc/cons/cons.h>
+#include <dev/core/isa/rtc.h>
 
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
-#include <machine/cputypes.h>
+//#include <machine/cputypes.h>
 #include <machine/cpuvar.h>
 #include <machine/gdt.h>
 #include <machine/intr.h>
@@ -87,16 +88,11 @@
 #include <machine/specialreg.h>
 #include <machine/vm86.h>
 #include <machine/npx.h>
+#include <machine/proc.h>
+#include <machine/pmap.h>
 
 #include <machine/isa/isa_machdep.h>
 
-/*
-#include "npx.h"
-
-#if NNPX > 0
-struct proc *npxproc(void);
-#endif
-*/
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
@@ -145,8 +141,8 @@ union descriptor 		gdt[NGDT];
 struct gate_descriptor 	idt[32+16];
 union descriptor 		ldt[NLDT];
 
-struct soft_segment_descriptor gdt_segs[NGDT];
-struct soft_segment_descriptor ldt_segs[NLDT];
+struct soft_segment_descriptor *gdt_segs;
+struct soft_segment_descriptor *ldt_segs;
 
 int _udatasel, _ucodesel, _gsel_tss;
 
@@ -529,7 +525,7 @@ sigreturn()
 {
 	register struct sigreturn_args {
 		syscallarg(struct sigcontext *) sigcntxp;
-	} *uap = (struct sigstack_args *) u.u_ap;
+	} *uap = (struct sigreturn_args *) u.u_ap;
 
 	struct proc *p;
 	struct sigcontext *scp, context;
@@ -556,7 +552,7 @@ sigreturn()
 		 * if pcb_ext == 0 or vm86_inited == 0, the user hasn't
 		 * set up the vm86 area, and we can't enter vm86 mode.
 		 */
-		if(p->p_addr->u_pcb == NULL) {
+		if(&p->p_addr->u_pcb == NULL) {
 			return (EINVAL);
 		}
 		vm86 = &p->p_addr->u_pcb.pcb_vm86;
@@ -804,7 +800,7 @@ setregs(p, elp, stack)
 	if (npxproc == p)
 		npxdrop();
 #endif
-	p->p_md.md_flags &= ~MDL_USEDFPU;
+	p->p_md.md_flags &= ~MDP_USEDFPU;
 	if (i386_use_fxsave) {
 		pcb->pcb_savefpu.sv_fx.fxv_env.fx_cw = ___NPX87___;
 		pcb->pcb_savefpu.sv_fx.fxv_env.fx_mxcsr = __MXCSR__;
@@ -896,8 +892,8 @@ setidt(idx, func, args, typ, dpl)
 void
 init_descriptors()
 {
-	gdt_allocate(&gdt_segs);
-	ldt_allocate(&ldt_segs);
+	gdt_allocate(gdt_segs);
+	ldt_allocate(ldt_segs);
 }
 
 void
@@ -922,9 +918,9 @@ make_memory_segments()
 
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
-		IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
-		IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot), IDTVEC(page),
-		IDTVEC(fpu), IDTVEC(align), IDTVEC(rsvd), IDTVEC(syscall), IDTVEC(osyscall);
+	IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
+	IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot), IDTVEC(page),
+	IDTVEC(fpu), IDTVEC(align), IDTVEC(rsvd), IDTVEC(syscall), IDTVEC(osyscall);
 
 void
 init386(first)
@@ -932,7 +928,7 @@ init386(first)
 {
 	int x;
 	struct gate_descriptor *gdp;
-	extern int sigcode, szsigcode;
+	int sigcode, szsigcode;
 
 	i386_bus_space_init();
 	init_descriptors();
