@@ -88,7 +88,7 @@ mmrw(dev, uio, flags)
 /* minor device 0 is physical memory */
 		case 0:
 			v = uio->uio_offset;
-			pmap_enter(kernel_pmap, vmmap, v,
+			pmap_enter(kernel_pmap, (vm_offset_t)vmmap, v,
 				uio->uio_rw == UIO_READ ? VM_PROT_READ : VM_PROT_WRITE,
 				TRUE);
 			o = (int)uio->uio_offset & PGOFSET;
@@ -96,7 +96,7 @@ mmrw(dev, uio, flags)
 			c = min(c, (u_int)(NBPG - o));
 			c = min(c, (u_int)iov->iov_len);
 			error = uiomove((caddr_t)&vmmap[o], (int)c, uio);
-			pmap_remove(kernel_pmap, vmmap, &vmmap[NBPG]);
+			pmap_remove(kernel_pmap, (vm_offset_t)vmmap, (vm_offset_t)&vmmap[NBPG]);
 			continue;
 
 /* minor device 1 is kernel memory */

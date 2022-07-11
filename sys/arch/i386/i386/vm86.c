@@ -160,6 +160,40 @@ POPL(struct vm86frame *vmf)
 	return (x);
 }
 
+/* set vm86 flags from vm86 trapframe & kernel */
+void
+set_vm86flags(tf86, vm86, flags)
+	struct trapframe_vm86 	*tf86;
+	struct vm86_kernel 		*vm86;
+	int flags;
+{
+	SETFLAGS(vm86->vm86_eflags, flags, VM86_VIRTFLAGS);
+	SETFLAGS(tf86->tf_eflags, flags, VM86_REALFLAGS);
+
+	if (vm86->vm86_has_vme == 0) {
+		flags = ((tf86->tf_eflags & ~VME_USERCHANGE) | (flags & VME_USERCHANGE) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP)) | PSL_VM);
+	} else {
+		vm86->vm86_eflags = flags; /* save VIF, VIP */
+		flags = ((tf86->tf_eflags & ~VM_USERCHANGE) | (flags & VM_USERCHANGE) | PSL_VM);
+	}
+}
+
+/* get vm86 flags from vm86 trapframe & kernel */
+int
+get_vm86flags(tf86, vm86)
+	struct trapframe_vm86 	*tf86;
+	struct vm86_kernel 		*vm86;
+{
+	int flags;
+
+	flags = PSL_MBO;
+	SETFLAGS(flags, vm86->vm86_eflags, VM86_VIRTFLAGS);
+	SETFLAGS(flags, tf86->tf_eflags, VM86_REALFLAGS);
+
+	return (flags);
+}
+
+/* set vm86 flags */
 void
 set_vflags(p, flags)
 	struct proc *p;
@@ -171,31 +205,21 @@ set_vflags(p, flags)
 	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
 	vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
-	SETFLAGS(vm86->vm86_eflags, flags, VM86_VIRTFLAGS);
-	SETFLAGS(tf->tf_eflags, flags, VM86_REALFLAGS);
-
-	if (vm86->vm86_has_vme == 0) {
-		flags = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP))
-				| (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
-	}
+	set_vm86flags(tf, vm86, flags);
 }
 
+/* get vm86 flags */
 int
 get_vflags(p)
 	struct proc *p;
 {
 	struct trapframe_vm86 	*tf;
 	struct vm86_kernel 		*vm86;
-	int flags;
 
 	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
 	vm86 = &p->p_addr->u_pcb.pcb_vm86;
-	flags = PSL_MBO;
 
-	SETFLAGS(flags, vm86->vm86_eflags, VM86_VIRTFLAGS);
-	SETFLAGS(flags, tf->tf_eflags, VM86_REALFLAGS);
-
-	return (flags);
+	return (get_vm86flags(tf, vm86));
 }
 
 int

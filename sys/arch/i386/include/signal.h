@@ -39,6 +39,8 @@
  * Machine-dependent signal definitions
  */
 
+typedef int sig_atomic_t;
+
 #if !defined(_POSIX_SOURCE) && !defined(_ANSI_SOURCE)
 
 #include <machine/trap.h>	/* codes for SIGILL, SIGFPE */

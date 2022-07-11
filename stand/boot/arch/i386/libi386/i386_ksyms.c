@@ -49,31 +49,31 @@ i386_ksyms_addsyms_elf(struct bootinfo *bi)
 	caddr_t strstart = (caddr_t) bi->bi_sym->bi_strstart;
 
 
-	if(bi->bi_sym.bi_flags == BOOTINFO_ELF_SYMS) {
+	if (bi->bi_sym.bi_flags == BOOTINFO_ELF_SYMS) {
 		Elf_Ehdr ehdr;
 
 		KASSERT(esym != 0);
 
 		memset(&ehdr, 0, sizeof(ehdr));
 		memcpy(ehdr.e_ident, ELFMAG, SELFMAG);
-	#ifdef ELFSIZE32
+#ifdef ELFSIZE32
 		ehdr.e_ident[EI_CLASS] = ELFCLASS32;
-	#endif
-	#ifdef ELFSIZE64
+#endif
+#ifdef ELFSIZE64
 		ehdr.e_ident[EI_CLASS] = ELFCLASS64;
-	#endif
+#endif
 		ehdr.e_ident[EI_DATA] = ELFDATA2LSB;
 		ehdr.e_ident[EI_VERSION] = EV_CURRENT;
 		ehdr.e_ident[EI_OSABI] = ELFOSABI_SYSV;
 		ehdr.e_ident[EI_ABIVERSION] = 0;
 		ehdr.e_type = ET_EXEC;
-	#ifdef __amd64__
+#ifdef __amd64__
 		ehdr.e_machine = EM_X86_64;
-	#elif __i386__
+#elif __i386__
 		ehdr.e_machine = EM_386;
-	#else
-		#error "Unknwo ELF machine type"
-	#endif
+#else
+#error "Unknwo ELF machine type"
+#endif
 		ehdr.e_version = 1;
 		ehdr.e_ehsize = sizeof(ehdr);
 		ehdr.e_entry = (Elf_Addr) & start;

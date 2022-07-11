@@ -42,12 +42,14 @@
 #include <sys/systm.h>
 #include <sys/signalvar.h>
 #include <sys/kernel.h>
+#include <sys/sysdecl.h>
 #include <sys/map.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/reboot.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/file.h>
 #include <sys/clist.h>
 #include <sys/callout.h>
@@ -59,6 +61,7 @@
 #include <sys/sysctl.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
+#include <sys/kenv.h>
 #include <sys/ucontext.h>
 
 #include <vm/include/vm.h>
@@ -83,14 +86,17 @@
 #include <machine/reg.h>
 #include <machine/specialreg.h>
 #include <machine/vm86.h>
+#include <machine/npx.h>
 
 #include <machine/isa/isa_machdep.h>
 
+/*
 #include "npx.h"
-#if NNPX > 0
-extern struct proc *npxproc;
-#endif
 
+#if NNPX > 0
+struct proc *npxproc(void);
+#endif
+*/
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
@@ -121,10 +127,11 @@ extern vm_offset_t avail_end;
 /*
  * Machine-dependent startup code
  */
-int boothowto = 0, Maxmem = 0;
+long Maxmem = 0;
 long dumplo;
 int physmem, maxmem;
 int biosmem;
+int boothowto = 0;
 struct bootinfo bootinfo;
 char bootsize[BOOTINFO_MAXSIZE];
 int  *esym;
@@ -138,31 +145,13 @@ union descriptor 		gdt[NGDT];
 struct gate_descriptor 	idt[32+16];
 union descriptor 		ldt[NLDT];
 
-struct soft_segment_descriptor gdt_segs[];
-struct soft_segment_descriptor ldt_segs[];
+struct soft_segment_descriptor gdt_segs[NGDT];
+struct soft_segment_descriptor ldt_segs[NLDT];
 
 int _udatasel, _ucodesel, _gsel_tss;
 
 struct user *proc0paddr;
 vm_offset_t proc0kstack;
-
-void
-init386_bootinfo(void)
-{	
-	struct bootinfo bootinfo = &bootinfo;
-	vm_offset_t addend;
-
-	if (i386_ksyms_addsyms_elf(&bootinfo)) {
-		init386_ksyms(bootinfo);
-	} else {
-		if (bootinfo.bi_envp.bi_environment != 0) {
-			addend = (caddr_t)bootinfo.bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
-			init_static_kenv((char *)bootinfo.bi_envp.bi_environment + addend, 0);
-		} else {
-			init_static_kenv(NULL, 0);
-		}
-	}
-}
 
 void
 startup(void)
@@ -316,9 +305,10 @@ again:
 	 * Finally, allocate mbuf pool.  Since mclrefcnt is an off-size
 	 * we use the more space efficient malloc in place of kmem_alloc.
 	 */
-	mclrefcnt = (char*) malloc(NMBCLUSTERS + CLBYTES / MCLBYTES, M_MBUF, M_NOWAIT);
+	mclrefcnt = (char *) malloc(NMBCLUSTERS + CLBYTES / MCLBYTES, M_MBUF, M_NOWAIT);
 	bzero(mclrefcnt, NMBCLUSTERS + CLBYTES / MCLBYTES);
-	mb_map = kmem_suballoc(kernel_map, (vm_offset_t) &mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
+
+	mb_map = kmem_suballoc(kernel_map, (vm_offset_t)&mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
 
 	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
 	printf("using %d buffers containing %d bytes of memory\n", nbuf, bufpages * CLBYTES);
@@ -418,9 +408,9 @@ sendsig(catcher, sig, mask, code)
 	int sig, mask;
 	u_long  code;
 {
-	register struct proc *p = curproc;
+	struct proc *p = curproc;
 	struct trapframe *tf;
-	register struct sigframe *fp, frame;
+	struct sigframe *fp, frame;
 	struct sigacts *psp = p->p_sigacts;
 	int oonstack;
 	extern char sigcode[], esigcode[];
@@ -461,8 +451,10 @@ sendsig(catcher, sig, mask, code)
 		frame.sf_sc.sc_fs = tf->tf_vm86_fs;
 		frame.sf_sc.sc_es = tf->tf_vm86_es;
 		frame.sf_sc.sc_ds = tf->tf_vm86_ds;
-		if (vm86->vm86_has_vme == 0)
-			frame.sf_sc.sc_ps = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+		if (vm86->vm86_has_vme == 0) {
+			//frame.sf_sc.sc_eflags = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+			frame.sf_sc.sc_eflags = get_vm86frame(tf, vm86);
+		}
 		/*
 		 * We should never have PSL_T set when returning from vm86
 		 * mode.  It may be set here if we deliver a signal before
@@ -516,8 +508,9 @@ sendsig(catcher, sig, mask, code)
 	tf->tf_ss = GSEL(GUDATA_SEL, SEL_UPL);
 
 	/* Remember that we're now on the signal stack. */
-	if (oonstack)
+	if (oonstack) {
 		psp->ps_sigstk.ss_flags |= SS_ONSTACK;
+	}
 }
 
 /*
@@ -530,19 +523,20 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
-struct sigreturn_args {
-	struct sigcontext *sigcntxp;
-};
 
 int
-sigreturn(p, uap, retval)
-	struct proc *p;
-	struct sigreturn_args *uap;
-	int *retval;
+sigreturn()
 {
-	register struct sigcontext *scp, context;
-	register struct trapframe *tf;
+	register struct sigreturn_args {
+		syscallarg(struct sigcontext *) sigcntxp;
+	} *uap = (struct sigstack_args *) u.u_ap;
 
+	struct proc *p;
+	struct sigcontext *scp, context;
+	struct trapframe *tf;
+	int eflags;
+
+	p = u.u_procp;
 	tf = p->p_md.md_regs;
 
 	/*
@@ -550,10 +544,11 @@ sigreturn(p, uap, retval)
 	 * It is unsafe to keep track of it ourselves, in the event that a
 	 * program jumps out of a signal handler.
 	 */
-	scp = uap->sigcntxp;
+	scp = SCARG(uap, sigcntxp);
 	if (copyin((caddr_t)scp, &context, sizeof(*scp)) != 0)
 		return (EFAULT);
 
+	eflags = scp->sc_ps;
 	if (context.sc_eflags & PSL_VM) {
 		struct trapframe_vm86 *tf = (struct trapframe_vm86 *)tf;
 		struct vm86_kernel *vm86;
@@ -561,22 +556,28 @@ sigreturn(p, uap, retval)
 		 * if pcb_ext == 0 or vm86_inited == 0, the user hasn't
 		 * set up the vm86 area, and we can't enter vm86 mode.
 		 */
-		if (p->p_addr->u_pcb == 0)
+		if(p->p_addr->u_pcb == NULL) {
 			return (EINVAL);
+		}
 		vm86 = &p->p_addr->u_pcb.pcb_vm86;
-		if (vm86->vm86_inited == 0)
+		if (vm86->vm86_inited == 0) {
 			return (EINVAL);
+		}
 		/* go back to user mode if both flags are set */
-		if ((context.sc_eflags & PSL_VIP) && (context.sc_eflags & PSL_VIF))
+		if ((context.sc_eflags & PSL_VIP) && (context.sc_eflags & PSL_VIF)) {
 			trapsignal(p, SIGBUS, 0);
+		}
+		set_vm86flags(tf, vm86, context.sc_eflags);
+#ifdef notyet
 		if (vm86->vm86_has_vme) {
 			context.sc_eflags = (tf->tf_eflags & ~VME_USERCHANGE)
 					| (context.sc_eflags & VME_USERCHANGE) | PSL_VM;
 		} else {
 			vm86->vm86_eflags = context.sc_eflags; /* save VIF, VIP */
 			context.sc_eflags = (tf->tf_eflags & ~VM_USERCHANGE)
-					| (eflags & VM_USERCHANGE) | PSL_VM;
+					| (context.sc_eflags & VM_USERCHANGE) | PSL_VM;
 		}
+#endif
 		tf->tf_vm86_gs = context.sc_gs;
 		tf->tf_vm86_fs = context.sc_fs;
 		tf->tf_vm86_es = context.sc_es;
@@ -627,7 +628,7 @@ boot(arghowto)
 	register long dummy; 	/* r12 is reserved */
 	register int howto; 	/* r11 == how to boot */
 	register int devtype; 	/* r10 == major of root dev */
-	extern char *panicstr;
+	char *panicstr;
 	extern int cold;
 
 	howto = arghowto;
@@ -704,6 +705,8 @@ long	dumplo = 	0; 			/* blocks */
 void
 dumpsys()
 {
+	const struct bdevsw *bdev;
+
 	if (dumpdev == NODEV)
 		return;
 	if ((minor(dumpdev) & 07) != 1)
@@ -712,7 +715,8 @@ dumpsys()
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");
 
-	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) { /* bdev_dump(major(dumpdev)) */
+	bdev = bdevsw_lookup(dumpdev);
+	switch ((*bdev->d_dump)(dumpdev)) { /* bdev_dump(major(dumpdev)) */
 
 	case ENXIO:
 		printf("device bad\n");
@@ -1032,6 +1036,24 @@ init386_ksyms(bootinfo)
 	bootinfo->bi_envp->bi_symtab += KERNBASE;
 	bootinfo->bi_envp->bi_esymtab += KERNBASE;
 	ksyms_addsyms_elf(bootinfo->bi_envp->bi_nsymtab, (int*) bootinfo->bi_envp->bi_symtab, (int*) bootinfo->bi_envp->bi_esymtab);
+}
+
+void
+init386_bootinfo(void)
+{
+	struct bootinfo bootinfo = &bootinfo;
+	vm_offset_t addend;
+
+	if (i386_ksyms_addsyms_elf(&bootinfo)) {
+		init386_ksyms(bootinfo);
+	} else {
+		if (bootinfo.bi_envp.bi_environment != 0) {
+			addend = (caddr_t)bootinfo.bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
+			init_static_kenv((char *)bootinfo.bi_envp.bi_environment + addend, 0);
+		} else {
+			init_static_kenv(NULL, 0);
+		}
+	}
 }
 
 void

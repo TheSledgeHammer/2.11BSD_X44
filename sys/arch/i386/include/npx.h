@@ -45,11 +45,12 @@
  */
 
 /* Default x87 control word. */
-#define	___NPX87___		0x037f
+#define	___NPX87___			0x037f
+#define	__INITIAL_NPXCW__	___NPX87___
 
 /* Default values for the mxcsr. All traps masked. */
-#define ___MXCSR___		0x1f80
-#define	__MXCSR_MASK__	0xffbf
+#define ___MXCSR___			0x1f80
+#define	__MXCSR_MASK__		0xffbf
 
 /* Environment information of floating point unit */
 struct	env87 {

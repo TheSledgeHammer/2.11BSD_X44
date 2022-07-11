@@ -136,7 +136,7 @@ struct sigframe {
 	int					sf_eax;
 	int					sf_edx;
 	int					sf_ecx;
-	struct	osigcontext 	sf_sc;
+	struct	sigcontext 	sf_sc;
 };
 
 #endif /* _I386_FRAME_H_ */

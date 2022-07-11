@@ -49,7 +49,7 @@ typedef struct {
 
 struct __ucontext {
 	unsigned int			uc_flags;		/* properties */
-	ucontext_t * 			uc_link;		/* context to resume */
+	struct __ucontext		*uc_link;		/* context to resume */
 	sigset_t				uc_sigmask;		/* signals blocked in this context */
 	stack_t					uc_stack;		/* the stack used by this context */
 	mcontext_t				uc_mcontext;	/* machine state */

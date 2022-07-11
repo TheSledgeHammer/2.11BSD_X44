@@ -87,7 +87,8 @@ u_int	cpu_auxmsr(void);
 void	initializecpu(void);
 void	initializecpucache(void);
 void	printcpuinfo(void);
-int	pti_get_default(void);
+void	panicifcpuunsupported(void);
+int		pti_get_default(void);
 
 #define	MSR_OP_ANDNOT		0x00000001
 #define	MSR_OP_OR			0x00000002
