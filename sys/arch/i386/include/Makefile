@@ -11,7 +11,7 @@ INCS=		ansi.h aout_machdep.h asm.h atomic.h bios.h bootinfo.h bus.h 			\
 			signal.h specialreg.h stdarg.h sysarch.h trap.h tss.h types.h vm86.h 	\
 			vmparam.h xcoff_machdep.h
 # MATH EMU
-INCS+=		math_emu.h
+#INCS+=		math_emu.h
 # MP/SMP
 INCS+=		mcontext.h mpbiosreg.h mpbiosvar.h mpconfig.h percpu.h smp.h
 # APIC
