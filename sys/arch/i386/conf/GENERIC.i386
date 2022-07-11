@@ -39,7 +39,7 @@ options 		RTC_OFFSET=0	# hardware clock is this many mins. west of GMT
 options			KTRACE			# system call tracing, a la ktrace(1)
 
 # Diagnostic/debugging support options
-#options		DIAGNOSTIC		# internal consistency checks
+options		  DIAGNOSTIC		# internal consistency checks
 #options 		DEBUG			# expensive debugging checks/support
 options			ACCOUNTING		# acct(2) process accounting
 #options		KMEMSTATS		# collect malloc(9) statistics
