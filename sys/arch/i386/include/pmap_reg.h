@@ -107,7 +107,7 @@ typedef uint32_t	 		pd_entry_t;
 typedef uint32_t 			pt_entry_t;
 
 #else
-#define	PMAP_PAE_COMP
+//#define	PMAP_PAE_COMP
 
 /* PAE Constants  */
 #define	PD_SHIFT			21									/* LOG2(NBPDR) */
@@ -162,7 +162,7 @@ extern pd_entry_t 			PTDpde[], APTDpde[];
 extern pd_entry_t 			*IdlePTD;
 extern pt_entry_t 			*KPTmap;
 #ifdef PMAP_PAE_COMP
-extern pdpt_entry_t 		*IdlePDPT;
+extern pdpt_entry_t 			*IdlePDPT;
 #endif
 #endif	/* _KERNEL */
 #endif /* _I386_PMAP_REG_H_ */

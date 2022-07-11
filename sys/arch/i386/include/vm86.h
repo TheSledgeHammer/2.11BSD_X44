@@ -151,6 +151,7 @@ struct vm86_intcall_args {
 	struct 	vm86frame 	vmf;
 };
 
+struct trapframe_vm86;
 void set_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *, int);
 int get_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *);
 void set_vflags(struct proc *, int);

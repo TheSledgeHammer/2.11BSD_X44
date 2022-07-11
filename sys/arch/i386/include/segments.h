@@ -261,8 +261,8 @@ struct region_descriptor {
 //#define	IDT_EVTCHN		0x93	/* Xen HVM Event Channel Interrupt Vector */
 
 #ifdef _KERNEL
-extern struct soft_segment_descriptor gdt_segs[];
-extern struct soft_segment_descriptor ldt_segs[];
+extern struct soft_segment_descriptor *gdt_segs;
+extern struct soft_segment_descriptor *ldt_segs;
 
 int 	ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
 int 	sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;	/* to encode a sd */

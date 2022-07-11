@@ -131,19 +131,16 @@ pv_entry_t					pv_table;		/* array of entries, one per page */
 #define	pmap_wired_count(pmap)		\
 	((pmap)->pm_stats.wired_count)
 
-#define pmap_lock_init(pmap, name) 	(simple_lock_init((pmap)->pm_lock, (name)))
-#define pmap_lock(pmap)				(simple_lock((pmap)->pm_lock))
-#define pmap_unlock(pmap)			(simple_unlock((pmap)->pm_lock))
+#define pmap_lock_init(pmap, name) 	(simple_lock_init(&(pmap)->pm_lock, (name)))
+#define pmap_lock(pmap)				(simple_lock(&(pmap)->pm_lock))
+#define pmap_unlock(pmap)			(simple_unlock(&(pmap)->pm_lock))
 
 struct cpu_info;
 struct pcb;
 /* proto types */
 void        pmap_activate(pmap_t, struct pcb *);
 void        pmap_kenter(vm_offset_t, vm_offset_t);
-void		pmap_kremove(vm_offset_t);
-void        pmap_changebit(vm_offset_t, int, bool_t);
-void        pmap_bios16_enter(void);
-void        pmap_bios16_leave(void *);
+void	    pmap_kremove(vm_offset_t);
 /* SMP */
 void        pmap_invalidate_page(pmap_t, vm_offset_t);
 void        pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
@@ -154,6 +151,13 @@ void        pmap_tlb_shootnow(pmap_t, int32_t);
 pt_entry_t	pmap_tlb_pte(vm_offset_t, vm_offset_t);
 void        pmap_tlb_shootdown(pmap_t, vm_offset_t, vm_offset_t, int32_t *);
 void        pmap_do_tlb_shootdown(pmap_t, struct cpu_info *);
+/* misc */
+void	    i386_protection_init(void);
+bool_t	    pmap_testbit(vm_offset_t, int);
+void        pmap_changebit(vm_offset_t, int, bool_t);
+void        *pmap_bios16_enter(void);
+void        pmap_bios16_leave(void *);
+
 /* misc.c */
 void		clearseg(int);
 void		copyseg(int, int);
