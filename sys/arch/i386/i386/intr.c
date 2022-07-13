@@ -143,7 +143,6 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <i386/isa/icu.h>
 #include <machine/apic/lapicvar.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
@@ -153,10 +152,16 @@
 
 struct intrsource 	*intrsrc[MAX_INTR_SOURCES];
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
+int			imask[NIPL];
+int			iunmask[NIPL];
+int 			intrtype[MAX_INTR_SOURCES];
+int 			intrmask[MAX_INTR_SOURCES];
+int 			intrlevel[MAX_INTR_SOURCES];
 
-int 				intrtype[MAX_INTR_SOURCES];
-int 				intrmask[MAX_INTR_SOURCES];
-int 				intrlevel[MAX_INTR_SOURCES];
+void	intr_apic_vectors(void);
+void	intr_x2apic_vectors(void);
+void	intr_legacy_vectors(void);
+void	init_intrmask(void);
 
 void
 intr_default_setup()
@@ -168,7 +173,7 @@ intr_default_setup()
 }
 
 void
-intr_apic_vectors()
+intr_apic_vectors(void)
 {
 	int idx;
 	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
@@ -177,7 +182,7 @@ intr_apic_vectors()
 }
 
 void
-intr_x2apic_vectors()
+intr_x2apic_vectors(void)
 {
 	int idx;
 	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
@@ -186,7 +191,7 @@ intr_x2apic_vectors()
 }
 
 void
-intr_legacy_vectors()
+intr_legacy_vectors(void)
 {
 	int i;
 	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
@@ -211,7 +216,7 @@ intr_calculatemasks()
 			continue;
 		}
 
-		for (p = intrhand[irq]; (q = *p) != NULL; p = &q->ih_next) {
+		for (p = &intrhand[irq]; (q = *p) != NULL; p = &q->ih_next) {
 			levels |= 1U << q->ih_level;
 		}
 		intrlevel[irq] = levels;
@@ -291,7 +296,7 @@ intr_calculatemasks()
  * soft interrupt masks
  */
 void
-init_intrmask()
+init_intrmask(void)
 {
 	/*
 	 * Initialize soft interrupt masks to block themselves.
@@ -343,12 +348,21 @@ init_intrmask()
 	imask[IPL_SERIAL] |= imask[IPL_HIGH];
 }
 
+/*
 int
-fakeintr(arg)
-	void *arg;
-{
-	intr_calculatemasks();
+fakeintr(void *arg)
+{	
 	return (0);
+}
+*/
+void
+fakeintr(spic, fakehand, level)
+  struct softpic *spic;
+  struct intrhand *fakehand;
+  u_int level;
+{	
+  fakehand->ih_pic = softpic_handle_pic(spic);
+  fakehand->ih_level = level;
 }
 
 void *
@@ -361,7 +375,7 @@ intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
 	register struct softpic *spic;
 	register struct intrhand *ih;
 
-	spic = softpic_intr_handler(&intrspic, irq, type, isapic, pictemplate);
+	spic = softpic_intr_handler(intrspic, irq, type, isapic, pictemplate);
 
 	ih = spic->sp_inthnd;
 	if(isapic) {

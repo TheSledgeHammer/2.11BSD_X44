@@ -1120,11 +1120,14 @@ panicifcpuunsupported(void)
 
 static	volatile u_int trap_by_rdmsr;
 
+typedef void *vector_t;
+#define	IDTVEC(name)	__CONCAT(X, name)
+extern vector_t IDTVEC(bluetrap6), IDTVEC(bluetrap13);
+
 void
 bluetrap6(void)
 {
-	__asm("	.text								\
-		IDTVEC(bluetrap6) : 						\
+	__asm("									\
 	       	ss								;\
 	        movl   $0xa8c1d, " __STRING(_C_LABEL(trap_by_rdmsr)) "  	;\
 	        addl   $2, (%esp)						;\
@@ -1135,8 +1138,7 @@ bluetrap6(void)
 void
 bluetrap13(void)
 {
-	__asm("	.text								\
-		IDTVEC(bluetrap13) :						\
+	__asm("									\
 		ss								;\
 	        movl   $0xa89c4, " __STRING(_C_LABEL(trap_by_rdmsr)) "  	;\
 	        popl   %eax							;\
@@ -1165,14 +1167,14 @@ identblue(void)
 	 * will be trapped by bluetrap6() on Cyrix 486-class CPU.  The
 	 * bluetrap6() set the magic number to trap_by_rdmsr.
 	 */
-	setidt(IDT_UD, bluetrap6, SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(IDT_UD, &IDTVEC(bluetrap6), SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 
 	/*
 	 * Certain BIOS disables cpuid instruction of Cyrix 6x86MX CPU.
 	 * In this case, rdmsr generates general protection fault, and
 	 * exception will be trapped by bluetrap13().
 	 */
-	setidt(IDT_GP, bluetrap13, SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(IDT_GP, &IDTVEC(bluetrap13), SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 
 	rdmsr(0x1002); /* Cyrix CPU generates fault. */
 

@@ -32,11 +32,12 @@
 #include <sys/memrange.h>
 #include <sys/cputopo.h>
 #include <sys/percpu.h>
+//#include <sys/smp.h>
 
 #include <vm/include/vm_param.h>
 
 #include <machine/bus.h>
-#include <machine/cpu.h>
+//#include <machine/cpu.h>
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
@@ -89,6 +90,10 @@ struct cache_info {
 } static caches[MAX_CACHE_LEVELS];
 
 unsigned int boot_address;
+
+void	intr_add_cpu(u_int);
+
+#define MiB(v)	(v ## ULL << 20)
 
 void
 mem_range_AP_init(void)
@@ -286,7 +291,7 @@ topo_probe_intel_0x4(void)
 	}
 
 	core_id_shift = mask_width(max_logical/max_cores);
-	KASSERT(core_id_shift >= 0 ("intel topo: max_cores > max_logical\n"));
+	KASSERT(core_id_shift >= 0 /*("intel topo: max_cores > max_logical\n")*/);
 	pkg_id_shift = core_id_shift + mask_width(max_cores);
 }
 
@@ -444,7 +449,7 @@ topo_probe(void)
 		topo_probe_intel();
 	}
 
-	KASSERT(pkg_id_shift >= core_id_shift ("bug in APIC topology discovery"));
+	KASSERT(pkg_id_shift >= core_id_shift /*("bug in APIC topology discovery")*/);
 
 	nlayers = 0;
 	bzero(topo_layers, sizeof(topo_layers));
@@ -471,10 +476,10 @@ topo_probe(void)
 	for (i = MAX_CACHE_LEVELS - 1; i >= 0; --i) {
 		if (caches[i].present) {
 			if (node_id_shift != 0) {
-				KASSERT(caches[i].id_shift <= node_id_shift ("bug in APIC topology discovery"));
+				KASSERT(caches[i].id_shift <= node_id_shift /*("bug in APIC topology discovery")*/);
 			}
-			KASSERT(caches[i].id_shift <= pkg_id_shift ("bug in APIC topology discovery"));
-			KASSERT(caches[i].id_shift >= core_id_shift ("bug in APIC topology discovery"));
+			KASSERT(caches[i].id_shift <= pkg_id_shift /*("bug in APIC topology discovery")*/);
+			KASSERT(caches[i].id_shift >= core_id_shift /*("bug in APIC topology discovery")*/);
 
 			topo_layers[nlayers].type = TOPO_TYPE_CACHE;
 			topo_layers[nlayers].subtype = i + 1;
@@ -578,7 +583,7 @@ assign_cpu_ids(void)
 		mp_ncpus++;
 	}
 
-	KASSERT(mp_maxid >= mp_ncpus - 1 ("%s: counters out of sync: max %d, count %d", __func__, mp_maxid, mp_ncpus));
+	KASSERT(mp_maxid >= mp_ncpus - 1 /*("%s: counters out of sync: max %d, count %d", __func__, mp_maxid, mp_ncpus)*/);
 
 	mp_ncores = mp_ncpus - nhyper;
 	smp_threads_per_core = mp_ncpus / mp_ncores;
@@ -687,10 +692,10 @@ cpu_add(u_int apic_id, char boot_cpu)
 		panic("SMP: APIC ID %d too high", apic_id);
 		return;
 	}
-	KASSERT(cpu_info[apic_id].cpu_present == 0 ("CPU %u added twice", apic_id));
+	KASSERT(cpu_info[apic_id].cpu_present == 0 /*("CPU %u added twice", apic_id)*/);
 	cpu_info[apic_id].cpu_present = 1;
 	if (boot_cpu) {
-		KASSERT(boot_cpu_id == -1 ("CPU %u claims to be BSP, but CPU %u already is", apic_id, boot_cpu_id));
+		KASSERT(boot_cpu_id == -1 /*("CPU %u claims to be BSP, but CPU %u already is", apic_id, boot_cpu_id)*/);
 		boot_cpu_id = apic_id;
 		cpu_info[apic_id].cpu_bsp = 1;
 	}
@@ -743,7 +748,7 @@ cpu_mp_probe(void)
 
 /* Allocate memory for the AP trampoline. */
 void
-alloc_ap_trampoline(caddr_t *physmap, unsigned int *physmap_idx)
+alloc_ap_trampoline(vm_offset_t *physmap, unsigned int *physmap_idx)
 {
 	unsigned int i;
 	bool allocated;
@@ -835,13 +840,14 @@ init_secondary_tail(pc)
 	if (cpu_info[PERCPU_GET(pc, apic_id)].cpu_hyperthread) {
 		CPU_SET(cpu_info[PERCPU_GET(pc, apic_id)].cpu_topo, cpuid);
 	}
-
+	/*
 	if (bootverbose)
 		lapic_dump("AP");
+	*/
 
 	if (smp_cpus == mp_ncpus) {
 		/* enable IPI's, tlb shootdown, freezes etc */
-		&smp_started = 1;
+		smp_started = 1;
 	}
 
 #ifdef __amd64__
@@ -861,7 +867,7 @@ init_secondary_tail(pc)
 #endif
 
 	/* Wait until all the AP's are up. */
-	while (&smp_started == 0) {
+	while (smp_started == 0) {
 		ia32_pause();
 	}
 }
