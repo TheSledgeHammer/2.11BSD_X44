@@ -77,12 +77,14 @@
 
 #ifndef _LOCORE
 
-//volatile int cpl, ipending/*, idepth*/;
-int imask[NIPL];
-int iunmask[NIPL];
-extern struct intrsource 	*intrsrc[];
-extern struct intrhand 		*intrhand[];
-
+#include <i386/isa/icu.h>
+/*
+int 				imask[NIPL];
+int 				iunmask[NIPL];
+int 				intrtype[MAX_INTR_SOURCES];
+int 				intrmask[MAX_INTR_SOURCES];
+int 				intrlevel[MAX_INTR_SOURCES];
+*/
 extern void Xspllower(void);
 extern int splraise(int);
 extern int spllower(int);
@@ -97,7 +99,7 @@ extern void softintr(int);
 #define	spltty()			splraise(imask[IPL_TTY])
 #define	splaudio()			splraise(imask[IPL_AUDIO])
 #define	splclock()			splraise(imask[IPL_CLOCK])
-#define	splstatclock()		splclock()
+#define	splstatclock()			splclock()
 #define	splserial()			splraise(imask[IPL_SERIAL])
 #define splipi()			splraise(IPL_IPI)
 /*

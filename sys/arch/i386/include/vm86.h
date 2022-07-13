@@ -169,8 +169,8 @@ extern vm_offset_t vm86_getpage(struct vm86context *, int);
 extern vm_offset_t vm86_addpage(struct vm86context *, int, vm_offset_t);
 extern int vm86_getptr(struct vm86context *, vm_offset_t, u_short *, u_short *);
 extern vm_offset_t vm86_getaddr(struct vm86context *, u_short, u_short);
-extern void set_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *, int);
-extern int get_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *);
+void set_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *, int);
+int get_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *);
 extern void set_vflags(struct proc *, int);
 extern int get_vflags(struct proc *);
 #endif /* _KERNEL */
