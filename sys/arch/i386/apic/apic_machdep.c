@@ -39,6 +39,7 @@
 #include <machine/intr.h>
 #include <machine/pic.h>
 #include <machine/apic/lapicvar.h>
+#include <machine/apic/ioapicvar.h>
 #include <i386/isa/icu.h>
 
 int  intr_shared_edge;
@@ -52,7 +53,7 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	void *ih_arg;
 {
 	struct intrhand **p, *q, *ih;
-	static struct intrhand fakehand = { fakeintr };
+	static struct intrhand fakehand;// = {apic_fakeintr};
 	extern int cold;
 
 	ih = intr_establish(TRUE, PIC_IOAPIC, irq, type, level, ih_fun, ih_arg);
@@ -72,7 +73,7 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 		/* FALLTHROUGH */
 	case IST_PULSE:
 		if (type != IST_NONE) {
-			free(ih, M_DEVBUF, sizeof(*ih));
+			free(ih, M_DEVBUF);
 			return (NULL);
 		}
 		break;
@@ -88,10 +89,13 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	}
 
 	if(!cold) {
-		softpic_pic_hwmask(&intrspic, irq, TRUE, PIC_IOAPIC);
+		softpic_pic_hwmask(intrspic, irq, TRUE, PIC_IOAPIC);
 	}
-
+	
+	fakeintr(intrspic, &fakehand, level);
+	/*
 	fakehand.ih_level = level;
+	*/
 	*p = &fakehand;
 
 	intr_calculatemasks();
@@ -107,7 +111,7 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	*p = ih;
 
 	if(!cold) {
-		softpic_pic_hwunmask(&intrspic, irq, TRUE, PIC_IOAPIC);
+		softpic_pic_hwunmask(intrspic, irq, TRUE, PIC_IOAPIC);
 	}
 
 	return (ih);
