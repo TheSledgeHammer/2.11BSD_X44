@@ -87,8 +87,9 @@ extern void Xrecurse_lapic_ltimer(void);
 #define LAPIC_PIN_LVERR				5
 
 /* IDT Vectors for APIC, X2APIC & i8259(legacy) */
+typedef void *vector_t;
 #define	IDTVEC(name)	__CONCAT(X, name)
-extern void	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_intr_tlb), IDTVEC(lapic_intr_ltimer),
+extern vector_t	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_intr_tlb), IDTVEC(lapic_intr_ltimer),
 		IDTVEC(x2apic_intr_ipi), IDTVEC(x2apic_intr_tlb), IDTVEC(x2apic_intr_ltimer),
 		IDTVEC(apic_level_stubs), IDTVEC(apic_edge_stubs),
 		IDTVEC(x2apic_level_stubs),IDTVEC(x2apic_edge_stubs),
