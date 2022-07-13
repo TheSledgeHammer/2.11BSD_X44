@@ -78,6 +78,13 @@
 
 #define RTC_CENTURY				0x32	/* current century - please increment in Dec99*/
 
+/* NVRAM byte 1: reset code */
+#define NVRAM_RESET				(MC_NVRAM_START + 1)	/* RTC offset 0xf */
+
+#define	NVRAM_RESET_RST			0x00		/* normal reset */
+#define	NVRAM_RESET_LOAD 		0x04		/* load system */
+#define NVRAM_RESET_JUMP		0x0a		/* jump through 40:67 */
+
 /* NVRAM byte 2: diskette drive type in upper/lower nibble */
 #define NVRAM_DISKETTE			(MC_NVRAM_START + 2)	/* RTC offset 0x10 */
 

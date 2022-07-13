@@ -121,7 +121,6 @@ int
 _EUC_init(rl)
 	_RuneLocale *rl;
 {
-	_EUCEncodingInfo *ei;
 	int err;
 
 	rl->ops->ro_sgetrune = _EUC_sgetrune;
@@ -129,9 +128,7 @@ _EUC_init(rl)
 	rl->ops->ro_sgetrune_mb = _EUC_sgetrune_mb;
 	rl->ops->ro_sputrune_mb = _EUC_sputrune_mb;
 
-	_DIAGASSERT(ei != NULL);
-
-	err = _EUC_parse_variable(rl, ei);
+	err = _EUC_parse_variable(rl);
 	if(err != 0) {
 		return (err);
 	}
@@ -141,8 +138,9 @@ _EUC_init(rl)
 }
 
 static int
-_EUC_parse_variable(_RuneLocale *rl, _EUCEncodingInfo *ei)
+_EUC_parse_variable(_RuneLocale *rl)
 {
+	_EUCEncodingInfo *ei;
 	int x;
 	char *v, *e;
 
@@ -229,7 +227,7 @@ _EUC_sgetrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, 
 int
 _EUC_sputrune_mb(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
 {
-	int ret;
+	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(s != NULL);
 

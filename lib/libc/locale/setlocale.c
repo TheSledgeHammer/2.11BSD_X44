@@ -204,7 +204,6 @@ currentlocale()
 	return (current_locale_string);
 }
 
-
 static char *
 loadlocale(category)
 	int category;

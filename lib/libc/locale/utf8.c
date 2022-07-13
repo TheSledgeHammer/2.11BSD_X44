@@ -86,6 +86,7 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD$"); */
 
+#include <errno.h>
 #include <rune.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -125,6 +126,7 @@ _UTF8_sgetrune_mb(_UTF8EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n
 	const char *s0;
 
 	_DIAGASSERT(nresult != 0);
+	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(s != NULL);
 	_DIAGASSERT(psenc != NULL);
 
@@ -141,6 +143,7 @@ _UTF8_sgetrune_mb(_UTF8EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n
 	if (pwc != NULL) {
 		*pwc = wchar;
 	}
+
 	*nresult = (wchar == 0) ? 0 : s0 - *s;
 	*s = s0;
 
@@ -150,6 +153,7 @@ _UTF8_sgetrune_mb(_UTF8EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n
 int
 _UTF8_sputrune_mb(_UTF8EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF8State *psenc, size_t *nresult)
 {
+	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(s != NULL);
 

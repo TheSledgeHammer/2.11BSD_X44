@@ -59,7 +59,7 @@
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/sysctl.h>
-//#include <sys/exec.h>
+#include <sys/mount.h>
 #include <sys/exec_linker.h>
 #include <sys/kenv.h>
 #include <sys/ucontext.h>
@@ -100,6 +100,11 @@ char machine_arch[] = "i386";		/* machine == machine_arch */
 void (*delay_func)(int) = i8254_delay;
 void (*microtime_func)(struct timeval *) = microtime;
 void (*initclocks_func)(void) = i8254_initclocks;
+
+void cpu_dumpconf(void);
+int	 cpu_dump(void);
+void dumpsys(void);
+void init386_bootinfo(void);
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -205,12 +210,10 @@ again:
 
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
-
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
-
 	valloc(cfree, struct cblock, nclist);
-	valloc(swapmap, struct map, nswapmap = maxproc * 2);
+	//valloc(swapmap, struct map, nswapmap = maxproc * 2);
 #ifdef SYSVSHM
 	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
 #endif
@@ -264,7 +267,7 @@ again:
 	 * in that they usually occupy more virtual memory than physical.
 	 */
 	size = MAXBSIZE * nbuf;
-	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t) &buffers, &maxaddr, size, TRUE);
+	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t *)&buffers, &maxaddr, size, TRUE);
 	minaddr = (vm_offset_t) buffers;
 	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t) 0, &minaddr, size, FALSE) != KERN_SUCCESS) {
 		panic("startup: cannot allocate buffers");
@@ -304,7 +307,7 @@ again:
 	mclrefcnt = (char *) malloc(NMBCLUSTERS + CLBYTES / MCLBYTES, M_MBUF, M_NOWAIT);
 	bzero(mclrefcnt, NMBCLUSTERS + CLBYTES / MCLBYTES);
 
-	mb_map = kmem_suballoc(kernel_map, (vm_offset_t)&mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
+	mb_map = kmem_suballoc(kernel_map, (vm_offset_t *)&mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
 
 	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
 	printf("using %d buffers containing %d bytes of memory\n", nbuf, bufpages * CLBYTES);
@@ -487,7 +490,13 @@ sendsig(catcher, sig, mask, code)
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
 		 */
-		sigexit(p, SIGILL);
+		SIGACTION(p, SIGILL) = SIG_DFL;
+		sig = sigmask(SIGILL);
+		p->p_sigignore &= ~sig;
+		p->p_sigcatch &= ~sig;
+		p->p_sigmask &= ~sig;
+		psignal(p, SIGILL);
+		return;
 	}
 
 	/*
@@ -655,13 +664,13 @@ boot(arghowto)
 			if (nbusy == 0)
 				break;
 			printf("%d ", nbusy);
-			DELAY(40000 * iter);
+			delay(40000 * iter);
 		}
 		if (nbusy)
 			printf("giving up\n");
 		else
 			printf("done\n");
-		DELAY(10000); /* wait for printf to finish */
+		delay(10000); /* wait for printf to finish */
 	}
 	splhigh();
 	devtype = major(rootdev);
@@ -689,31 +698,152 @@ boot(arghowto)
 	/*NOTREACHED*/
 }
 
+struct dumpmem {
+	vm_offset_t start;
+    vm_size_t 	end;
+};
+
+struct pcb dumppcb;
+struct dumpmem dumpmem[16];
+u_int ndumpmem;
+
 u_long	dumpmag = 	0x8fca0101;	/* magic number for savecore */
 int		dumpsize = 	0;			/* also for savecore */
 long	dumplo = 	0; 			/* blocks */
+
+/*
+ * This is called by configure to set dumplo and dumpsize.
+ * Dumps always skip the first block of disk space
+ * in case there might be a disk label stored there.
+ * If there is extra space, put dump at the end to
+ * reduce the chance that swapping trashes it.
+ */
+void
+cpu_dumpconf(void)
+{
+	const struct bdevsw *bdev;
+	int nblks;	/* size of dump area */
+	int i;
+
+	bdev = bdevsw_lookup(dumpdev);
+	if (dumpdev == NODEV || bdev == NULL || bdev->d_psize == NULL) {
+		return;
+	}
+	if (nblks <= ctod(1)) {
+		return;
+	}
+
+	if (dumplo < ctod(1)) {
+		dumplo = ctod(1);
+	}
+	for (i = 0; i < ndumpmem; i++) {
+		dumpsize = max(dumpsize, dumpmem[i].end);
+	}
+
+	/* Put dump at end of partition, and make it fit. */
+	if (dumpsize > dtoc(nblks - dumplo - 1)) {
+		dumpsize = dtoc(nblks - dumplo - 1);
+	}
+	if (dumplo < nblks - ctod(dumpsize) - 1) {
+		dumplo = nblks - ctod(dumpsize) - 1;
+	}
+}
+
+/*
+ * cpu_dump: dump machine-dependent kernel core dump headers.
+ */
+int
+cpu_dump(void)
+{
+	const struct bdevsw *bdev;
+	int (*dump)(dev_t, daddr_t, caddr_t, size_t);
+	long buf[dbtob(1) / sizeof (long)];
+
+	bdev = bdevsw_lookup(dumpdev);
+	dump = bdev->d_dump;
+	return (dump(dumpdev, dumplo, (caddr_t)buf, dbtob(1)));
+}
 
 /*
  * Doadump comes here after turning off memory management and
  * getting on the dump stack, either when called above, or by
  * the auto-restart code.
  */
-void
-dumpsys()
-{
-	const struct bdevsw *bdev;
+static vm_offset_t dumpspace;
 
-	if (dumpdev == NODEV)
+vm_offset_t
+reserve_dumppages(vm_offset_t p)
+{
+	dumpspace = p;
+	return (p + PAGE_SIZE);
+}
+
+void
+dumpsys(void)
+{
+	u_long mem, npg, i, n;
+	u_long maddr;
+	int psize;
+	daddr_t blkno;
+	const struct bdevsw *bdev;
+	int (*dump)(dev_t, daddr_t, caddr_t, size_t);
+	int error;
+
+	/* Save registers. */
+	savectx(&dumppcb);
+
+	if (dumpdev == NODEV) {
 		return;
-	if ((minor(dumpdev) & 07) != 1)
-		return;
-	dumpsize = physmem;
-	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
-	printf("dump ");
+	}
 
 	bdev = bdevsw_lookup(dumpdev);
-	switch ((*bdev->d_dump)(dumpdev)) { /* bdev_dump(major(dumpdev)) */
+	if (bdev == NULL || bdev->d_psize == NULL) {
+		return;
+	}
+	if (dumpsize == 0) {
+		cpu_dumpconf();
+	}
+	if(dumplo <= 0 || dumpsize == 0) {
+		printf("\ndump to dev %u,%u not possible\n", major(dumpdev), minor(dumpdev));
+		return;
+	}
+	printf("\ndumping to dev %u,%u offset %ld\n", major(dumpdev), minor(dumpdev), dumplo);
 
+	psize = (*bdev->d_psize)(dumpdev);
+	printf("dump ");
+	if (psize == -1) {
+		printf("area unavailable\n");
+		return;
+	}
+
+	if ((error = cpu_dump()) != 0) {
+		goto err;
+	}
+
+	dump = bdev->d_dump;
+	error = 0;
+
+	for (mem = 0; mem < ndumpmem; mem++) {
+		npg = dumpmem[i].end - dumpmem[i].start;
+		maddr = ptoa(dumpmem[i].start);
+		blkno = dumplo + btodb(maddr) + 1;
+
+		for (i = npg; i--; maddr += NBPG, blkno += btodb(NBPG)) {
+			/* Print out how many MBs we have left to go. */
+			if (dbtob(blkno - dumplo) % (1024 * 1024) < NBPG) {
+				printf("%ld ", (ptoa(dumpsize) - maddr) / (1024 * 1024));
+			}
+
+			pmap_enter(pmap_kernel, dumpspace, maddr, PROT_READ, TRUE);
+			error = (*dump)(dumpdev, blkno, (caddr_t)dumpspace, NBPG);
+			if(error) {
+				goto err;
+			}
+		}
+	}
+
+err:
+	switch (error) {
 	case ENXIO:
 		printf("device bad\n");
 		break;
@@ -735,12 +865,12 @@ dumpsys()
 		break;
 	}
 	printf("\n\n");
-	DELAY(1000);
+	delay(5000000);
 }
 
 void
 microtime(tvp)
-	register struct timeval *tvp;
+	struct timeval *tvp;
 {
 	int s = splhigh();
 
@@ -803,7 +933,7 @@ setregs(p, elp, stack)
 	p->p_md.md_flags &= ~MDP_USEDFPU;
 	if (i386_use_fxsave) {
 		pcb->pcb_savefpu.sv_fx.fxv_env.fx_cw = ___NPX87___;
-		pcb->pcb_savefpu.sv_fx.fxv_env.fx_mxcsr = __MXCSR__;
+		pcb->pcb_savefpu.sv_fx.fxv_env.fx_mxcsr = ___MXCSR___;
 	} else {
 		pcb->pcb_savefpu.sv_87.sv_env.en_cw = ___NPX87___;
 	}
@@ -867,6 +997,15 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 /*
  * Initialize 386 and configure to run kernel
  */
+void
+setregion(rd, base, limit)
+	struct region_descriptor *rd;
+	void *base;
+	size_t limit;
+{
+	rd->rd_limit = (int)limit;
+	rd->rd_base = (int)base;
+}
 
 /*
  * Initialize segments & interrupt table
@@ -904,30 +1043,31 @@ make_memory_segments()
 	/* make GDT memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
 	for (x = 0; x < NGDT; x++) {
-		ssdtosd(gdt_segs + x, gdt + x);
+		ssdtosd(&gdt_segs[x], &gdt[x].sd);
 	}
 
 	/* make LDT memory segments */
 	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	/* Note. eventually want private ldts per process */
-	for (x=0; x < 5; x++) {
-		ssdtosd(ldt_segs + x, ldt + x);
+	for (x = 0; x < NLDT; x++) {
+		ssdtosd(&ldt_segs[x], &ldt[x].sd);
 	}
 }
 
 #define	IDTVEC(name)	__CONCAT(X, name)
-extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
-	IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
-	IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot), IDTVEC(page),
-	IDTVEC(fpu), IDTVEC(align), IDTVEC(rsvd), IDTVEC(syscall), IDTVEC(osyscall);
+extern void IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
+			IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
+			IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot), IDTVEC(page),
+			IDTVEC(fpu), IDTVEC(align), IDTVEC(rsvd), IDTVEC(syscall), IDTVEC(osyscall);
 
 void
 init386(first)
 	int first;
 {
 	int x;
-	struct gate_descriptor *gdp;
+	struct gate_descriptor 	*gdp;
+	struct region_descriptor region;
 	int sigcode, szsigcode;
 
 	i386_bus_space_init();
@@ -937,7 +1077,7 @@ init386(first)
 	/*
 	 * Initialize the console before we print anything out.
 	 */
-	cninit(KERNBASE+0xa0000);
+	cninit(/*KERNBASE+0xa0000*/);
 
 	/* make GDT & LDT memory segments */
 	make_memory_segments();
@@ -965,8 +1105,10 @@ init386(first)
 	setidt(17, &IDTVEC(align), 0, SDT_SYS386TGT, SEL_KPL);
 	setidt(128, &IDTVEC(syscall), 0, SDT_SYS386TGT, SEL_UPL);
 
-	lgdt(gdt, sizeof(gdt)-1);
-	lidt(idt, sizeof(idt)-1);
+	setregion(&region, gdt, sizeof(gdt)-1);
+	lgdt(&region);
+	setregion(&region, idt, sizeof(idt)-1);
+	lidt(&region);
 
 	finishidentcpu();		/* Final stage of CPU initialization */
 	pmap_set_nx();
@@ -1168,6 +1310,50 @@ need_resched(p)
 	}
 }
 
+void
+cpu_reset()
+{
+	struct region_descriptor region;
+
+	disable_intr();
+	/*
+	 * Ensure the NVRAM reset byte contains something vaguely sane.
+	 */
+
+	outb(IO_RTC, NVRAM_RESET);
+	outb(IO_RTC + 1, NVRAM_RESET_RST);
+
+	/*
+	 * The keyboard controller has 4 random output pins, one of which is
+	 * connected to the RESET pin on the CPU in many PCs.  We tell the
+	 * keyboard controller to pulse this line a couple of times.
+	 */
+	outb(IO_KBD + KBCMDP, KBC_PULSE0);
+	delay(100000);
+	outb(IO_KBD + KBCMDP, KBC_PULSE0);
+	delay(100000);
+
+	/*
+	 * Try to cause a triple fault and watchdog reset by making the IDT
+	 * invalid and causing a fault.
+	 */
+	memset((caddr_t) idt, 0, NIDT * sizeof(idt[0]));
+	setregion(&region, idt, NIDT * sizeof(idt[0]) - 1);
+	lidt(&region);
+	__asm __volatile("divl %0,%1" : : "q" (0), "a" (0));
+
+#if 0
+	/*
+	 * Try to cause a triple fault and watchdog reset by unmapping the
+	 * entire address space and doing a TLB flush.
+	 */
+	memset((caddr_t)PTD, 0, PAGE_SIZE);
+	tlbflush();
+#endif
+
+	for (;;);
+}
+
 #ifdef notyet
 void
 cpu_getmcontext(p, mcp, flags)
@@ -1345,6 +1531,8 @@ cpu_setmcontext(p, mcp, flags)
 	return (0);
 }
 #endif
+
+#include <i386/isa/icu.h>
 
 /*
  * Add a mask to cpl, and return the old value of cpl.

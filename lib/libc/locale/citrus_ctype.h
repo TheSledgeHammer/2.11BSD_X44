@@ -42,6 +42,8 @@ void		_citrus_ctype_pack_state(_ENCODING_INFO *ei, void *pspriv, const _ENCODING
 void		_citrus_ctype_unpack_state(_ENCODING_INFO *ei, _ENCODING_STATE *s, const void *pspriv);
 
 unsigned 	_citrus_ctype_get_mb_cur_max(void *cl);
+int			_citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar, size_t );
+void		_citrus_ctype_uninit(void *cl);
 int 		_citrus_ctype_mblen(void * __restrict cl, const char * __restrict s, size_t n, int * __restrict nresult);
 int 		_citrus_ctype_mbrlen(void * __restrict cl, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult);
 int 		_citrus_ctype_mbrtowc(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult);

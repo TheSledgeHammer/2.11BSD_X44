@@ -116,7 +116,7 @@ int smapsiz = 		SMAPSIZ;
 struct mapent		_coremap[CMAPSIZ];
 struct map coremap[1] = {
 		.m_map 		= _coremap,
-		.m_limit 	= &_coremap[cmapsiz],
+		.m_limit 	= &_coremap[CMAPSIZ],
 		.m_name 	= "coremap",
 		.m_types	= M_COREMAP,
 		.m_vmmap[1] = {
@@ -136,7 +136,7 @@ struct map coremap[1] = {
 struct mapent	    _swapmap[SMAPSIZ];
 struct map swapmap[1] = {
 		.m_map 		= _swapmap,
-		.m_limit 	= &_swapmap[smapsiz],
+		.m_limit 	= &_swapmap[SMAPSIZ],
 		.m_name 	= "swapmap",
 		.m_types	= M_SWAPMAP,
 		.m_vmmap    = NULL,

@@ -85,8 +85,9 @@ _UTF2_sgetrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n
 	const char *s0;
 
 	_DIAGASSERT(nresult != 0);
-	_DIAGASSERT(s != NULL);
+	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(psenc != NULL);
+	_DIAGASSERT(s != NULL);
 
 	s0 = *s;
 
@@ -110,6 +111,7 @@ _UTF2_sgetrune_mb(_UTF2EncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n
 int
 _UTF2_sputrune_mb(_UTF2EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF2State *psenc, size_t *nresult)
 {
+	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(s != NULL);
 
@@ -170,33 +172,29 @@ _UTF2_sputrune(c, string, n, result)
 			}
 			if (result)
 				*result = string + 3;
-		} else
-			if (result)
-				*result = NULL;
+		} else if (result)
+			*result = NULL;
 
 		return (3);
-	} else
-		if (c & 0x0780) {
-			if (n >= 2) {
-				if (string) {
-					string[0] = 0xC0 | ((c >> 6) & 0x1F);
-					string[1] = 0x80 | ((c) & 0x3F);
-				}
-				if (result)
-					*result = string + 2;
-			} else
-				if (result)
-					*result = NULL;
-			return (2);
-		} else {
-			if (n >= 1) {
-				if (string)
-					string[0] = c;
-				if (result)
-					*result = string + 1;
-			} else
-				if (result)
-					*result = NULL;
-			return (1);
-		}
+	} else if (c & 0x0780) {
+		if (n >= 2) {
+			if (string) {
+				string[0] = 0xC0 | ((c >> 6) & 0x1F);
+				string[1] = 0x80 | ((c) & 0x3F);
+			}
+			if (result)
+				*result = string + 2;
+		} else if (result)
+			*result = NULL;
+		return (2);
+	} else {
+		if (n >= 1) {
+			if (string)
+				string[0] = c;
+			if (result)
+				*result = string + 1;
+		} else if (result)
+			*result = NULL;
+		return (1);
+	}
 }

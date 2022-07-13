@@ -151,30 +151,28 @@ struct vm86_intcall_args {
 	struct 	vm86frame 	vmf;
 };
 
-struct trapframe_vm86;
-void set_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *, int);
-int get_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *);
-void set_vflags(struct proc *, int);
-int get_vflags(struct proc *);
-
 #define	VM86_STACK_SPACE	16
 
 #ifdef _KERNEL
 extern 	int vm86paddr;
 
 struct proc;
+struct trapframe_vm86;
 extern int vm86_emulate(struct vm86frame *);
 extern int vm86_sysarch(struct proc *, char *);
 extern void vm86_trap(struct vm86frame *);
 extern int vm86_intcall(int, struct vm86frame *);
 extern int vm86_datacall(int, struct vm86frame *, struct vm86context *);
 extern void vm86_initialize(void);
-extern void	vm86_initial_bioscalls(int, int);
+extern void	vm86_initial_bioscalls(int *, int *);
 extern vm_offset_t vm86_getpage(struct vm86context *, int);
 extern vm_offset_t vm86_addpage(struct vm86context *, int, vm_offset_t);
 extern int vm86_getptr(struct vm86context *, vm_offset_t, u_short *, u_short *);
-
 extern vm_offset_t vm86_getaddr(struct vm86context *, u_short, u_short);
+extern void set_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *, int);
+extern int get_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *);
+extern void set_vflags(struct proc *, int);
+extern int get_vflags(struct proc *);
 #endif /* _KERNEL */
 
 #endif /* _I386_VM86_H_ */

@@ -128,6 +128,41 @@ _citrus_ctype_get_mb_cur_max(void *cl)
 }
 
 int
+_citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar, size_t lenps)
+{
+	_CTYPE_INFO *cei;
+
+	_DIAGASSERT(cl != NULL);
+
+	/* sanity check to avoid overruns */
+	if (sizeof(_ENCODING_STATE) > lenps) {
+		return (EINVAL);
+	}
+	cei = calloc(1, sizeof(_CTYPE_INFO));
+	if (cei == NULL) {
+		return (ENOMEM);
+	}
+
+	*cl = (void *)cei;
+	return (0);
+}
+
+void
+_citrus_ctype_uninit(void *cl)
+{
+	if (cl) {
+		free(cl);
+	}
+}
+
+int
+_citrus_ctype_put_state_reset(void * __restrict cl, char * __restrict s, size_t n, void * __restrict ps, size_t * __restrict nresult)
+{
+	*nresult = 0;
+	return (0);
+}
+
+int
 _citrus_ctype_mblen(void * __restrict cl, const char * __restrict s, size_t n, int * __restrict nresult)
 {
 	_ENCODING_STATE *psenc;
@@ -283,13 +318,12 @@ _citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t wc, voi
 #if _ENCODING_IS_STATE_DEPENDENT
 	if (wc == L'\0') {
 		/* reset state */
-		/*
-		err = put_state_reset(_CEI_TO_EI(_TO_CEI(cl)), s, sz, psenc, &rsz);
+
+		err = _citrus_ctype_put_state_reset(_CEI_TO_EI(_TO_CEI(cl)), s, sz, psenc, &rsz);
 		if (err) {
 			*nresult = -1;
 			goto quit;
 		}
-		*/
 		s += rsz;
 		sz -= rsz;
 	}
@@ -368,13 +402,12 @@ _citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int 
 #if _ENCODING_IS_STATE_DEPENDENT
 	if (wc == L'\0') {
 		/* reset state */
-		/*
-		err = put_state_reset(_CEI_TO_EI(_TO_CEI(cl)), s, sz, psenc, &rsz);
+
+		err = _citrus_ctype_put_state_reset(_CEI_TO_EI(_TO_CEI(cl)), s, sz, psenc, &rsz);
 		if (err) {
 			*nresult = -1;
 			return 0;
 		}
-		*/
 		s += rsz;
 		sz -= rsz;
 	}

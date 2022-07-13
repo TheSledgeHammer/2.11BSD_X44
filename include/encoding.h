@@ -34,7 +34,8 @@
 
 /* generic encoding structures */
 typedef struct {
-	wchar_t				ch[3];
+	wchar_t				*ch;
+	//wchar_t				ch[3];
 	int 				chlen;
 	int					current_endian;		/* UTF16 & UTF32 needs this */
 } _Encoding_State;

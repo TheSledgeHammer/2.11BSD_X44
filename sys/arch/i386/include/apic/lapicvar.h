@@ -31,9 +31,10 @@
 
 #ifndef _I386_LAPICVAR_H_
 #define _I386_LAPICVAR_H_
-
+/*
 #include <machine/asm.h>
 #include "assym.h"
+*/
 
 /*
  * Software definitions belonging to Local APIC driver.
@@ -87,24 +88,14 @@ extern void Xrecurse_lapic_ltimer(void);
 
 /* IDT Vectors for APIC, X2APIC & i8259(legacy) */
 #define	IDTVEC(name)	__CONCAT(X, name)
-extern 	IDTVEC(lapic_intr_ipi), 
-	IDTVEC(lapic_intr_tlb), 
-	IDTVEC(lapic_intr_ltimer),
-	IDTVEC(x2apic_intr_ipi),
-	IDTVEC(x2apic_intr_tlb), 
-	IDTVEC(x2apic_intr_ltimer),
-	IDTVEC(apic_level_stubs), 
-	IDTVEC(apic_edge_stubs),
-	IDTVEC(x2apic_level_stubs),
-	IDTVEC(x2apic_edge_stubs),
-	IDTVEC(i8259_stubs), 
-	IDTVEC(spurious),
-	IDTVEC(apic_intr),
-	IDTVEC(x2apic_intr),
-	IDTVEC(legacy_intr);
+extern void	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_intr_tlb), IDTVEC(lapic_intr_ltimer),
+		IDTVEC(x2apic_intr_ipi), IDTVEC(x2apic_intr_tlb), IDTVEC(x2apic_intr_ltimer),
+		IDTVEC(apic_level_stubs), IDTVEC(apic_edge_stubs),
+		IDTVEC(x2apic_level_stubs),IDTVEC(x2apic_edge_stubs),
+		IDTVEC(i8259_stubs), IDTVEC(spurious),
+		IDTVEC(apic_intr), IDTVEC(x2apic_intr), IDTVEC(legacy_intr);
 
 struct cpu_info;
-
 extern void 			lapic_boot_init(caddr_t);
 extern void 			lapic_set_lvt(void);
 extern void 			lapic_enable(void);
