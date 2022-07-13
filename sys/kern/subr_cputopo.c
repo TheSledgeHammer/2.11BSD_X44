@@ -196,4 +196,95 @@ topo_set_pu_id(struct topo_node *node, cpuid_t id)
 		node->cpu_count++;
 	}
 }
+
+static struct topology_spec {
+	topo_node_type	type;
+	bool		match_subtype;
+	uintptr_t	subtype;
+} topology_level_table[TOPO_LEVEL_COUNT] = {
+	[TOPO_LEVEL_PKG] = { .type = TOPO_TYPE_PKG, },
+	[TOPO_LEVEL_GROUP] = { .type = TOPO_TYPE_GROUP, },
+	[TOPO_LEVEL_CACHEGROUP] = {
+		.type = TOPO_TYPE_CACHE,
+		.match_subtype = true,
+		.subtype = CG_SHARE_L3,
+	},
+	[TOPO_LEVEL_CORE] = { .type = TOPO_TYPE_CORE, },
+	[TOPO_LEVEL_THREAD] = { .type = TOPO_TYPE_PU, },
+};
+
+static bool_t
+topo_analyze_table(struct topo_node *root, int all, enum topo_level level, struct topo_analysis *results)
+{
+	struct topology_spec *spec;
+	struct topo_node *node;
+	int count;
+
+	if (level >= TOPO_LEVEL_COUNT)
+		return (true);
+
+	spec = &topology_level_table[level];
+	count = 0;
+	node = topo_next_node(root, root);
+
+	while (node != NULL) {
+		if (node->type != spec->type ||
+		    (spec->match_subtype && node->subtype != spec->subtype)) {
+			node = topo_next_node(root, node);
+			continue;
+		}
+		if (!all && CPU_EMPTY(&node->cpuset)) {
+			node = topo_next_nonchild_node(root, node);
+			continue;
+		}
+
+		count++;
+
+		if (!topo_analyze_table(node, all, level + 1, results))
+			return (FALSE);
+
+		node = topo_next_nonchild_node(root, node);
+	}
+
+	/* No explicit subgroups is essentially one subgroup. */
+	if (count == 0) {
+		count = 1;
+
+		if (!topo_analyze_table(root, all, level + 1, results))
+			return (FALSE);
+	}
+
+	if (results->entities[level] == -1)
+		results->entities[level] = count;
+	else if (results->entities[level] != count)
+		return (FALSE);
+
+	return (TRUE);
+}
+
+/*
+ * Check if the topology is uniform, that is, each package has the same number
+ * of cores in it and each core has the same number of threads (logical
+ * processors) in it.  If so, calculate the number of packages, the number of
+ * groups per package, the number of cachegroups per group, and the number of
+ * logical processors per cachegroup.  'all' parameter tells whether to include
+ * administratively disabled logical processors into the analysis.
+ */
+int
+topo_analyze(struct topo_node *topo_root, int all, struct topo_analysis *results)
+{
+	results->entities[TOPO_LEVEL_PKG] = -1;
+	results->entities[TOPO_LEVEL_CORE] = -1;
+	results->entities[TOPO_LEVEL_THREAD] = -1;
+	results->entities[TOPO_LEVEL_GROUP] = -1;
+	results->entities[TOPO_LEVEL_CACHEGROUP] = -1;
+
+	if (!topo_analyze_table(topo_root, all, TOPO_LEVEL_PKG, results)) {
+		return (0);
+	}
+
+	KASSERT(results->entities[TOPO_LEVEL_PKG] > 0/*, ("bug in topology or analysis")*/);
+
+	return (1);
+}
 #endif /* SMP */
