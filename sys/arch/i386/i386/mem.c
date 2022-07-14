@@ -102,9 +102,9 @@ mmrw(dev, uio, flags)
 /* minor device 1 is kernel memory */
 		case 1:
 			c = iov->iov_len;
-			if (!kernacc((off_t)uio->uio_offset, c, uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
+			if (!kernacc((caddr_t)uio->uio_offset, c, uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				return(EFAULT);
-			error = uiomove((off_t)uio->uio_offset, (int)c, uio);
+			error = uiomove(uio->uio_offset, (int)c, uio);
 			continue;
 
 /* minor device 2 is EOF/RATHOLE */
