@@ -38,7 +38,7 @@
 
 #include <machine/pic.h>
 #include <machine/intr.h>
-#include <i386/isa/icu.h>
+//#include <i386/isa/icu.h>
 
 struct softpic 					 	*intrspic;
 static TAILQ_HEAD(pic_list, pic) 	pichead;
@@ -74,11 +74,13 @@ softpic_register_pic(pic)
 }
 
 void
-softpic_init()
+softpic_init(void)
 {
 	struct softpic *spic;
-	spic = &intrspic = (struct softpic *)malloc(sizeof(struct softpic *), M_DEVBUF, M_WAITOK);
-
+	spic = &intrspic;
+	if(spic == NULL) {
+		spic = (struct softpic *)malloc(sizeof(struct softpic *), M_DEVBUF, M_WAITOK);
+	}
 	TAILQ_INIT(&pichead);
 
 	spic->sp_intsrc = &intrsrc[MAX_INTR_SOURCES];

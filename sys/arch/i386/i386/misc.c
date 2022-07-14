@@ -53,20 +53,6 @@ extern pt_entry_t		*CMAP1, *CMAP2;
 extern caddr_t			CADDR1, CADDR2;
 
 /*
- * zero out physical memory
- * specified in relocation units (NBPG bytes)
- */
-void
-clearseg(n)
-	int n;
-{
-	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
-	lcr3(rcr3());
-	bzero(CADDR2, NBPG);
-	*(int*) CADDR2 = 0;
-}
-
-/*
  * copy a page of physical memory
  * specified in relocation units (NBPG bytes)
  */
@@ -77,20 +63,6 @@ copyseg(frm, n)
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
 	lcr3(rcr3());
 	bcopy((void*) frm, (void*) CADDR2, NBPG);
-}
-
-/*
- * copy a page of physical memory
- * specified in relocation units (NBPG bytes)
- */
-void
-physcopyseg(frm, to)
-	int frm, to;
-{
-	*(int*) CMAP1 = PG_V | PG_KW | ctob(frm);
-	*(int*) CMAP2 = PG_V | PG_KW | ctob(to);
-	lcr3(rcr3());
-	bcopy(CADDR1, CADDR2, NBPG);
 }
 
 /*
@@ -120,6 +92,7 @@ _remque(element)
 	element->ph_rlink = (struct proc*) 0;
 }
 */
+
 
 vmunaccess()
 {

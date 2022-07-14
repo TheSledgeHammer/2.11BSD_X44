@@ -118,29 +118,27 @@ struct pcibus_attach_args;
 struct cpu_info;
 
 extern struct lock_object 	*icu_lock;
-extern int 			intr_shared_edge;		/* This system has shared edge interrupts */
+extern int 					intr_shared_edge;		/* This system has shared edge interrupts */
 extern struct softpic		*intrspic;
 extern struct intrsource 	*intrsrc[];
 extern struct intrhand 		*intrhand[];
 
 /* softpic.c */
-void			softpic_pic_init(void *);
+void 			softpic_init(void);
 int				softpic_register_pic(struct pic *);
 struct pic 		*softpic_handle_pic(struct softpic *);
 void			softpic_pic_hwmask(struct softpic *, int, bool_t, int);
 void			softpic_pic_hwunmask(struct softpic *, int, bool_t, int);
 void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
 void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
-struct softpic 		*softpic_intr_handler(struct softpic *, int, int, bool_t, int);
+struct softpic 	*softpic_intr_handler(struct softpic *, int, int, bool_t, int);
 
 /* intr.c */
 void 			*intr_establish(bool_t, int, int, int, int, int (*)(void *), void *);
 void			intr_disestablish(struct intrhand *);
 void			fakeintr(struct softpic *, struct intrhand *, u_int);
-
 void			intr_default_setup(void);
 void			intr_calculatemasks(void);
-
 void 			intr_add_pcibus(struct pcibus_attach_args *);
 int	 			intr_find_mpmapping(int, int, int *);
 

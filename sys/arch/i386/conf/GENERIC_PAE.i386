@@ -6,4 +6,4 @@
 include 		"arch/i386/conf/GENERIC.i386"
 
 # To make a PAE kernel, the next option is needed
-options 		PAE				# Physical Address Extensions Kernel
+options 		PMAP_PAE_COMP			# Physical Address Extensions Kernel

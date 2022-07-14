@@ -98,13 +98,14 @@ char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
 
 void (*delay_func)(int) = i8254_delay;
-void (*microtime_func)(struct timeval *) = microtime;
+void (*microtime_func)(struct timeval *) = i386_microtime;
 void (*initclocks_func)(void) = i8254_initclocks;
 
 void cpu_dumpconf(void);
 int	 cpu_dump(void);
 void dumpsys(void);
 void init386_bootinfo(void);
+void cpu_reset(void);
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -692,7 +693,7 @@ boot(arghowto)
 #ifdef	notdef
 	pg("pausing (hit any key to reset)");
 #endif
-	reset_cpu();
+	cpu_reset();
 	for (;;)
 		;
 	/*NOTREACHED*/
@@ -834,7 +835,7 @@ dumpsys(void)
 				printf("%ld ", (ptoa(dumpsize) - maddr) / (1024 * 1024));
 			}
 
-			pmap_enter(pmap_kernel, dumpspace, maddr, PROT_READ, TRUE);
+			pmap_enter(kernel_pmap, dumpspace, maddr, VM_PROT_READ, TRUE);
 			error = (*dump)(dumpdev, blkno, (caddr_t)dumpspace, NBPG);
 			if(error) {
 				goto err;
@@ -869,7 +870,7 @@ err:
 }
 
 void
-microtime(tvp)
+i386_microtime(tvp)
 	struct timeval *tvp;
 {
 	int s = splhigh();
@@ -1312,7 +1313,7 @@ need_resched(p)
 }
 
 void
-cpu_reset()
+cpu_reset(void)
 {
 	struct region_descriptor region;
 

@@ -151,13 +151,75 @@ struct vm86_intcall_args {
 	struct 	vm86frame 	vmf;
 };
 
-#define	VM86_STACK_SPACE	16
-
 #ifdef _KERNEL
-extern 	int vm86paddr;
+#define	VM86_STACK_SPACE	16
+extern u_long vm86paddr;
 
 struct proc;
 struct trapframe_vm86;
+
+/* set vm86 flags from vm86 trapframe & kernel */
+static __inline void
+set_vm86flags(tf86, vm86, flags)
+	struct trapframe_vm86 	*tf86;
+	struct vm86_kernel 		*vm86;
+	int flags;
+{
+	SETFLAGS(vm86->vm86_eflags, flags, VM86_VIRTFLAGS);
+	SETFLAGS(tf86->tf_eflags, flags, VM86_REALFLAGS);
+
+	if (vm86->vm86_has_vme == 0) {
+		flags = ((tf86->tf_eflags & ~VME_USERCHANGE) | (flags & VME_USERCHANGE) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP)) | PSL_VM);
+	} else {
+		vm86->vm86_eflags = flags; /* save VIF, VIP */
+		flags = ((tf86->tf_eflags & ~VM_USERCHANGE) | (flags & VM_USERCHANGE) | PSL_VM);
+	}
+}
+
+/* get vm86 flags from vm86 trapframe & kernel */
+static __inline int
+get_vm86flags(tf86, vm86)
+	struct trapframe_vm86 	*tf86;
+	struct vm86_kernel 		*vm86;
+{
+	int flags;
+
+	flags = PSL_MBO;
+	SETFLAGS(flags, vm86->vm86_eflags, VM86_VIRTFLAGS);
+	SETFLAGS(flags, tf86->tf_eflags, VM86_REALFLAGS);
+
+	return (flags);
+}
+
+/* set vm86 flags */
+static __inline void
+set_vflags(p, flags)
+	struct proc *p;
+	int flags;
+{
+	struct trapframe_vm86 	*tf;
+	struct vm86_kernel 		*vm86;
+
+	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
+	vm86 = &p->p_addr->u_pcb.pcb_vm86;
+
+	set_vm86flags(tf, vm86, flags);
+}
+
+/* get vm86 flags */
+static __inline int
+get_vflags(p)
+	struct proc *p;
+{
+	struct trapframe_vm86 	*tf;
+	struct vm86_kernel 		*vm86;
+
+	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
+	vm86 = &p->p_addr->u_pcb.pcb_vm86;
+
+	return (get_vm86flags(tf, vm86));
+}
+
 extern int vm86_emulate(struct vm86frame *);
 extern int vm86_sysarch(struct proc *, char *);
 extern void vm86_trap(struct vm86frame *);
@@ -169,10 +231,6 @@ extern vm_offset_t vm86_getpage(struct vm86context *, int);
 extern vm_offset_t vm86_addpage(struct vm86context *, int, vm_offset_t);
 extern int vm86_getptr(struct vm86context *, vm_offset_t, u_short *, u_short *);
 extern vm_offset_t vm86_getaddr(struct vm86context *, u_short, u_short);
-void set_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *, int);
-int get_vm86flags(struct trapframe_vm86 *, struct vm86_kernel *);
-extern void set_vflags(struct proc *, int);
-extern int get_vflags(struct proc *);
 #endif /* _KERNEL */
 
 #endif /* _I386_VM86_H_ */

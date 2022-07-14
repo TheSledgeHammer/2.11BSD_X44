@@ -152,11 +152,11 @@
 
 struct intrsource 	*intrsrc[MAX_INTR_SOURCES];
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
-int			imask[NIPL];
-int			iunmask[NIPL];
-int 			intrtype[MAX_INTR_SOURCES];
-int 			intrmask[MAX_INTR_SOURCES];
-int 			intrlevel[MAX_INTR_SOURCES];
+int					imask[NIPL];
+int					iunmask[NIPL];
+int 				intrtype[MAX_INTR_SOURCES];
+int 				intrmask[MAX_INTR_SOURCES];
+int 				intrlevel[MAX_INTR_SOURCES];
 
 void	intr_apic_vectors(void);
 void	intr_x2apic_vectors(void);
@@ -164,7 +164,7 @@ void	intr_legacy_vectors(void);
 void	init_intrmask(void);
 
 void
-intr_default_setup()
+intr_default_setup(void)
 {
 	/* icu & apic vectors */
 	intr_legacy_vectors();

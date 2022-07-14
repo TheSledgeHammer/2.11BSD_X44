@@ -142,6 +142,7 @@ void        pmap_activate(pmap_t, struct pcb *);
 void        pmap_kenter(vm_offset_t, vm_offset_t);
 void	    pmap_kremove(vm_offset_t);
 void 	    pmap_init_pat(void);
+void		pmap_set_nx(void);
 /* SMP */
 void        pmap_invalidate_page(pmap_t, vm_offset_t);
 void        pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
@@ -158,11 +159,6 @@ bool_t	    pmap_testbit(vm_offset_t, int);
 void        pmap_changebit(vm_offset_t, int, bool_t);
 void        *pmap_bios16_enter(void);
 void        pmap_bios16_leave(void *);
-
-/* misc.c */
-void		clearseg(int);
-void		copyseg(int, int);
-void		physcopyseg(int, int);
 #endif	/* KERNEL */
 #endif 	/* !LOCORE */
 #endif 	/* _I386_PMAP_H_ */

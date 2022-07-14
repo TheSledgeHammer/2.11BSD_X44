@@ -80,6 +80,7 @@
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
@@ -113,6 +114,8 @@
 #include <machine/pmap.h>
 #include <machine/pmap_reg.h>
 #include <machine/pmap_tlb.h>
+
+#include <machine/isa/isa_machdep.h>
 
 /*
  * Allocate various and sundry SYSMAPs used in the days of old VM
@@ -440,7 +443,7 @@ pmap_cold(void)
 	i386_pmap_PDRSHIFT = PD_SHIFT;
 }
 
-static void
+void
 pmap_set_nx(void)
 {
 #ifdef PMAP_PAE_COMP
@@ -572,7 +575,7 @@ pmap_bootstrap_alloc(size)
 /*
  * Setup the PAT MSR.
  */
-static void
+void
 pmap_init_pat(void)
 {
 	int pat_table[PAT_INDEX_SIZE];
@@ -703,7 +706,7 @@ pmap_init(phys_start, phys_end)
 	s = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
 	s = round_page(s);
 
-	pv_table = (pv_entry_t *)kmem_alloc(kernel_map, s);
+	pv_table = (pv_entry_t)kmem_alloc(kernel_map, s);
 	addr = (vm_offset_t) pv_table;
 	addr += sizeof(struct pv_entry) * npg;
 	pmap_attributes = (char *) addr;
@@ -821,7 +824,7 @@ pmap_pinit(pmap)
 
 #ifdef DEBUG
 	if (pmapdebug & (PDB_FOLLOW|PDB_CREATE))
-		pg("pmap_pinit(%x)\n", pmap);
+		printf("pmap_pinit(%x)\n", pmap);
 #endif
 
 	/*
@@ -896,7 +899,7 @@ pmap_release(pmap)
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
-		pg("pmap_release(%x)\n", pmap);
+		printf("pmap_release(%x)\n", pmap);
 #endif
 #ifdef notdef /* DIAGNOSTIC */
 	/* count would be 0 from pmap_destroy... */
@@ -920,7 +923,7 @@ pmap_reference(pmap)
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
-		pg("pmap_reference(%x)", pmap);
+		printf("pmap_reference(%x)", pmap);
 #endif
 	if (pmap != NULL) {
 		pmap_lock(pmap);
@@ -1242,7 +1245,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 	 * Page Directory table entry not valid, we need a new PT page
 	 */
 	if (!pmap_pde_v(pmap_pde(pmap, va))) {
-		pg("ptdi %x", pmap->pm_pdir[PTDPTDI]);
+		printf("ptdi %x", pmap->pm_pdir[PTDPTDI]);
 	}
 
 	pte = pmap_pte(pmap, va);
@@ -1268,7 +1271,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 		if ((wired && !pmap_pte_w(pte)) || (!wired && pmap_pte_w(pte))) {
 #ifdef DEBUG
 			if (pmapdebug & PDB_ENTER)
-				pg("enter: wiring change -> %x ", wired);
+				printf("enter: wiring change -> %x ", wired);
 #endif
 			if (wired)
 				pmap->pm_stats.wired_count++;
@@ -1454,7 +1457,7 @@ pmap_change_wiring(pmap, va, wired)
 	 */
 	if (!pmap_pde_v(pmap_pde(pmap, va))) {
 		if (pmapdebug & PDB_PARANOIA)
-			pg("pmap_change_wiring: invalid PDE for %x ", va);
+			printf("pmap_change_wiring: invalid PDE for %x ", va);
 		return;
 	}
 	/*
@@ -1463,7 +1466,7 @@ pmap_change_wiring(pmap, va, wired)
 	 */
 	if (!pmap_pte_v(pte)) {
 		if (pmapdebug & PDB_PARANOIA)
-			pg("pmap_change_wiring: invalid PTE for %x ", va);
+			printf("pmap_change_wiring: invalid PTE for %x ", va);
 	}
 #endif
 	if ((wired && !pmap_pte_w(pte)) || (!wired && pmap_pte_w(pte))) {
@@ -1542,7 +1545,7 @@ pmap_extract(pmap, va)
 
 #ifdef DEBUGx
 	if (pmapdebug & PDB_FOLLOW)
-		pg("pmap_extract(%x, %x) -> ", pmap, va);
+		printf("pmap_extract(%x, %x) -> ", pmap, va);
 #endif
 	pa = 0;
 	if (pmap && pmap_pde_v(pmap_pde(pmap, va))) {
@@ -1636,7 +1639,7 @@ pmap_collect(pmap)
 		 * page table pages.
 		 */
 		pv = pa_to_pvh(pa);
-		if (pv->pv_pmap != kernel_pmap || !(pv->pv_flags & PV_PTPAGE)) {
+		if (pv->pv_pmap != kernel_pmap || !(pv->pv_flags & PG_PTPAGE)) {
 			continue;
 		}
 		do {
@@ -1671,14 +1674,14 @@ pmap_activate(pmap, pcbp)
 	int x;
 #ifdef DEBUG
 	if (pmapdebug & (PDB_FOLLOW|PDB_PDRTAB))
-		pg("pmap_activate(%x, %x) ", pmap, pcbp);
+		printf("pmap_activate(%x, %x) ", pmap, pcbp);
 #endif
 	if(pmap != NULL && pmap->pm_pdchanged) {
 
 #ifdef PMAP_PAE_COMP
-		pcbp = pmap_extract(kernel_pmap, pmap->pm_pdpt);
+		pcbp = pmap_extract(kernel_pmap, (uint64_t)pmap->pm_pdpt);
 #else
-		pcbp = pmap_extract(kernel_pmap, pmap->pm_pdir);
+		pcbp = pmap_extract(kernel_pmap, (uint32_t)pmap->pm_pdir);
 #endif
 		if(pmap == &curproc->p_vmspace->vm_pmap) {
 			lcr3(pcbp->pcb_cr3);
@@ -1687,12 +1690,18 @@ pmap_activate(pmap, pcbp)
 	}
 }
 
+/*
+ * zero out physical memory
+ * specified in relocation units (NBPG bytes)
+ */
 void
-pmap_deactivate(pmap, pcbp)
-	register pmap_t pmap;
-	struct pcb *pcbp;
+clearseg(n)
+	int n;
 {
-
+	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
+	lcr3(rcr3());
+	bzero(CADDR2, NBPG);
+	*(int*) CADDR2 = 0;
 }
 
 /*
@@ -1716,6 +1725,20 @@ pmap_zero_page(phys)
 	do {
 		clearseg(phys++);
 	} while (++ix != i386pagesperpage);
+}
+
+/*
+ * copy a page of physical memory
+ * specified in relocation units (NBPG bytes)
+ */
+void
+physcopyseg(frm, to)
+	int frm, to;
+{
+	*(int*) CMAP1 = PG_V | PG_KW | ctob(frm);
+	*(int*) CMAP2 = PG_V | PG_KW | ctob(to);
+	lcr3(rcr3());
+	bcopy(CADDR1, CADDR2, NBPG);
 }
 
 /*
@@ -1790,7 +1813,7 @@ pmap_pageable(pmap, sva, eva, pageable)
 		pv = pa_to_pvh(pa);
 #ifdef DEBUG
 		if (pv->pv_va != sva || pv->pv_next) {
-			pg("pmap_pageable: bad PT page va %x next %x\n", pv->pv_va, pv->pv_next);
+			printf("pmap_pageable: bad PT page va %x next %x\n", pv->pv_va, pv->pv_next);
 			return;
 		}
 #endif
@@ -1800,7 +1823,7 @@ pmap_pageable(pmap, sva, eva, pageable)
 		pmap_clear_modify(pa);
 #ifdef needsomethinglikethis
 		if (pmapdebug & PDB_PTPAGE)
-			pg("pmap_pageable: PT page %x(%x) unmodified\n", sva, *(int *)pmap_pte(pmap, sva));
+			printf("pmap_pageable: PT page %x(%x) unmodified\n", sva, *(int *)pmap_pte(pmap, sva));
 		if (pmapdebug & PDB_WIRING)
 			pmap_check_wiring("pageable", sva);
 #endif
@@ -2106,7 +2129,7 @@ pmap_check_wiring(str, va)
 		return;
 
 	if (!vm_map_lookup_entry(pt_map, va, &entry)) {
-		pg("wired_check: entry for %x not found\n", va);
+		printf("wired_check: entry for %x not found\n", va);
 		return;
 	}
 	count = 0;
@@ -2114,7 +2137,7 @@ pmap_check_wiring(str, va)
 		if (*pte)
 			count++;
 	if (entry->wired_count != count)
-		pg("*%s*: %x: w%d/a%d\n", str, va, entry->wired_count, count);
+		printf("*%s*: %x: w%d/a%d\n", str, va, entry->wired_count, count);
 }
 #endif
 

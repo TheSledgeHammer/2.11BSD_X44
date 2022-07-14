@@ -164,12 +164,12 @@ union descriptor	{
  */
 
 struct soft_segment_descriptor	{
-	unsigned ssd_base ;		/* segment base address  */
+	unsigned ssd_base ;			/* segment base address  */
 	unsigned ssd_limit ;		/* segment extent */
 	unsigned ssd_type:5 ;		/* segment type */
 	unsigned ssd_dpl:2 ;		/* segment descriptor priority level */
-	unsigned ssd_p:1 ;		/* segment descriptor present */
-	unsigned ssd_xx:4 ;		/* unused */
+	unsigned ssd_p:1 ;			/* segment descriptor present */
+	unsigned ssd_xx:4 ;			/* unused */
 	unsigned ssd_xx1:2 ;		/* unused */
 	unsigned ssd_def32:1 ;		/* default 32 vs 16 bit size */
 	unsigned ssd_gran:1 ;		/* limit granularity (byte/page units)*/
@@ -180,7 +180,7 @@ struct soft_segment_descriptor	{
  */
 struct region_descriptor {
 	unsigned rd_limit:16 ;		/* segment extent */
-	char 	*rd_base;		/* base address  */
+	unsigned rd_base:32;		/* base address  */
 };
 
 /* global descriptor table */
