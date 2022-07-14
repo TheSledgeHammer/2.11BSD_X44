@@ -191,6 +191,7 @@ get_vm86flags(tf86, vm86)
 	return (flags);
 }
 
+#ifdef notyet
 /* set vm86 flags */
 static __inline void
 set_vflags(p, flags)
@@ -219,6 +220,7 @@ get_vflags(p)
 
 	return (get_vm86flags(tf, vm86));
 }
+#endif
 
 extern int vm86_emulate(struct vm86frame *);
 extern int vm86_sysarch(struct proc *, char *);
