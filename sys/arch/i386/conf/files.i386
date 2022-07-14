@@ -35,7 +35,6 @@ file    arch/i386/i386/machdep.c
 file		arch/i386/i386/macho_machdep.c	  	exec_macho
 #file		arch/i386/i386/math_emulate.c	    	math_emulate
 file    arch/i386/i386/mem.c
-#file    arch/i386/i386/misc.c
 file 		arch/i386/i386/mp_machdep.c		      smp
 file    arch/i386/i386/pmap.c
 file    arch/i386/i386/pmap_smp.c

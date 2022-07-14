@@ -42,8 +42,8 @@
 struct pmap_tlb_shootdown_job {
 	TAILQ_ENTRY(pmap_tlb_shootdown_job) 	pj_list;
 	vm_offset_t 							pj_va;			/* virtual address */
-	vm_offset_t 							pj_sva;			/* virtual address start */
-	vm_offset_t 							pj_eva;			/* virtual address end */
+	//vm_offset_t 							pj_sva;			/* virtual address start */
+	//vm_offset_t 							pj_eva;			/* virtual address end */
 	pt_entry_t 								pj_pte;			/* the PTE bits */
 	pmap_t 									pj_pmap;		/* the pmap which maps the address */
 	struct pmap_tlb_shootdown_job 			*pj_nextfree;

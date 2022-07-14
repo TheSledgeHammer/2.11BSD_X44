@@ -151,7 +151,7 @@ void        pmap_invalidate_all(pmap_t);
 void		pmap_tlb_init(void);
 void        pmap_tlb_shootnow(pmap_t, int32_t);
 pt_entry_t	pmap_tlb_pte(vm_offset_t, vm_offset_t);
-void        pmap_tlb_shootdown(pmap_t, vm_offset_t, vm_offset_t, int32_t *);
+void        pmap_tlb_shootdown(pmap_t, vm_offset_t, pt_entry_t, int32_t *);
 void        pmap_do_tlb_shootdown(pmap_t, struct cpu_info *);
 /* misc */
 void	    i386_protection_init(void);

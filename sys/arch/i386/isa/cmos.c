@@ -80,6 +80,9 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/rtc.h>
+#include <i386/isa/nvram.h>
+
+#include "ioconf.h"
 
 #define	CMOS_SUM		32
 #define	CMOS_BIOSSPEC	34	/* start of BIOS-specific configuration data */

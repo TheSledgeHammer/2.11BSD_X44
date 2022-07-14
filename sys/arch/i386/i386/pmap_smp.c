@@ -44,19 +44,17 @@
 
 #include <machine/atomic.h>
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
 #include <machine/param.h>
 #include <machine/pte.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
-#ifdef SMP
 #include <machine/smp.h>
-#endif
 #include <machine/pmap_reg.h>
 #include <machine/pmap_tlb.h>
 
-//vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
 volatile int 		smp_tlb_wait;
 
 static __inline u_int32_t
@@ -107,8 +105,6 @@ smp_targeted_tlb_shootdown(mask, vector, pmap, addr1, addr2)
 		panic("absolutely cannot call smp_targeted_ipi_shootdown with interrupts already disabled");
 	}
 
-	//smp_tlb_addr1 = addr1;
-	//smp_tlb_addr2 = addr2;
 	atomic_store_relaxed(&smp_tlb_wait, 0);
 
 	if (mask == (u_int)-1) {
@@ -119,13 +115,13 @@ smp_targeted_tlb_shootdown(mask, vector, pmap, addr1, addr2)
 
 	while (smp_tlb_wait < ncpu) {
 		ncpu--;
-		pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask);
+		pmap_tlb_shootdown(pmap, addr1, pte, mask);
 		pmap_tlb_shootnow(pmap, mask);
 	}
 	return;
 }
 
-__inline void
+void
 smp_masked_invltlb(mask, pmap)
 	u_int mask;
 	pmap_t pmap;
@@ -135,7 +131,7 @@ smp_masked_invltlb(mask, pmap)
 	}
 }
 
-__inline void
+void
 smp_masked_invlpg(mask, addr, pmap)
 	u_int mask;
 	vm_offset_t addr;
@@ -146,7 +142,7 @@ smp_masked_invlpg(mask, addr, pmap)
 	}
 }
 
-__inline void
+void
 smp_masked_invlpg_range(mask, addr1, addr2, pmap)
 	u_int mask;
 	vm_offset_t addr1, addr2;
@@ -180,7 +176,7 @@ pmap_invalidate_page(pmap, va)
 	 * XXX we may need to hold schedlock to get a coherent pm_active
 	 * XXX critical sections disable interrupts again
 	 */
-	if (pmap == kernel_pmap() || pmap->pm_active == all_cpus) {
+	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invlpg(va);
 	} else {
 		cpumask = __PERCPU_GET(cpumask);
@@ -212,7 +208,7 @@ pmap_invalidate_range(pmap, sva, eva)
 	 * XXX we may need to hold schedlock to get a coherent pm_active
 	 * XXX critical sections disable interrupts again
 	 */
-	if (pmap == kernel_pmap() || pmap->pm_active == all_cpus) {
+	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 			invlpg(addr);
 		}
@@ -245,7 +241,7 @@ pmap_invalidate_all(pmap)
 	 * XXX we may need to hold schedlock to get a coherent pm_active
 	 * XXX critical sections disable interrupts again
 	 */
-	if (pmap == kernel_pmap() || pmap->pm_active == all_cpus) {
+	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invltlb();
 	} else {
 		cpumask = __PERCPU_GET(cpumask);
@@ -266,7 +262,7 @@ pmap_invalidate_page(pmap, va)
 	pmap_t pmap;
 	vm_offset_t va;
 {
-	if (pmap == kernel_pmap() || pmap->pm_active) {
+	if (pmap == kernel_pmap || pmap->pm_active) {
 		invlpg(va);
 	}
 }
@@ -278,7 +274,7 @@ pmap_invalidate_range(pmap, sva, eva)
 {
 	vm_offset_t addr;
 
-	if (pmap == kernel_pmap() || pmap->pm_active) {
+	if (pmap == kernel_pmap || pmap->pm_active) {
 		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 			invlpg(addr);
 		}
@@ -289,7 +285,7 @@ __inline void
 pmap_invalidate_all(pmap)
 	pmap_t pmap;
 {
-	if (pmap == kernel_pmap() || pmap->pm_active) {
+	if (pmap == kernel_pmap || pmap->pm_active) {
 		invltlb();
 	}
 }

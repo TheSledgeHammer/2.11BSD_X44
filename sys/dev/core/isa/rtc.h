@@ -77,21 +77,3 @@
 #define RTC_EXTHI				0x18	/* low byte of extended mem size */
 
 #define RTC_CENTURY				0x32	/* current century - please increment in Dec99*/
-
-/* NVRAM byte 1: reset code */
-#define NVRAM_RESET				(MC_NVRAM_START + 1)	/* RTC offset 0xf */
-
-#define	NVRAM_RESET_RST			0x00		/* normal reset */
-#define	NVRAM_RESET_LOAD 		0x04		/* load system */
-#define NVRAM_RESET_JUMP		0x0a		/* jump through 40:67 */
-
-/* NVRAM byte 2: diskette drive type in upper/lower nibble */
-#define NVRAM_DISKETTE			(MC_NVRAM_START + 2)	/* RTC offset 0x10 */
-
-#define	NVRAM_DISKETTE_NONE	 	0		/* none present */
-#define	NVRAM_DISKETTE_360K	 	0x10	/* 360K */
-#define	NVRAM_DISKETTE_12M	 	0x20	/* 1.2M */
-#define	NVRAM_DISKETTE_720K	 	0x30	/* 720K */
-#define	NVRAM_DISKETTE_144M	 	0x40	/* 1.44M */
-#define	NVRAM_DISKETTE_TYPE5	0x50	/* 2.88M, presumably */
-#define	NVRAM_DISKETTE_TYPE6	0x60	/* 2.88M */

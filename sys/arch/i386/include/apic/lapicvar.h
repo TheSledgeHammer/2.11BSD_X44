@@ -31,10 +31,6 @@
 
 #ifndef _I386_LAPICVAR_H_
 #define _I386_LAPICVAR_H_
-/*
-#include <machine/asm.h>
-#include "assym.h"
-*/
 
 /*
  * Software definitions belonging to Local APIC driver.

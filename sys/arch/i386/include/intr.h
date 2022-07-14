@@ -99,7 +99,7 @@ extern void softintr(int);
 #define	spltty()			splraise(imask[IPL_TTY])
 #define	splaudio()			splraise(imask[IPL_AUDIO])
 #define	splclock()			splraise(imask[IPL_CLOCK])
-#define	splstatclock()			splclock()
+#define	splstatclock()		splclock()
 #define	splserial()			splraise(imask[IPL_SERIAL])
 #define splipi()			splraise(IPL_IPI)
 /*
@@ -137,7 +137,7 @@ struct cpu_info;
 int 	i386_send_ipi(struct cpu_info *, int);
 void	i386_self_ipi(int);
 void 	i386_broadcast_ipi(int);
-void 	i386_multicast_ipi(int);
+void 	i386_multicast_ipi(int, int);
 void 	i386_ipi_handler(void);
 
 #endif /* !_LOCORE */

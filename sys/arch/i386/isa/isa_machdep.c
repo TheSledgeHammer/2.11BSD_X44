@@ -206,7 +206,7 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	void *ih_arg;
 {
 	struct intrhand **p, *q, *ih;
-	static struct intrhand fakehand = { fakeintr };
+	static struct intrhand fakehand;
 	extern int cold;
 
 	ih = intr_establish(FALSE, PIC_I8259, irq, type, level, ih_fun, ih_arg);
@@ -263,7 +263,7 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 		;
 	}
 
-	fakehand.ih_level = level;
+	fakeintr(intrspic, &fakehand, level);
 	*p = &fakehand;
 
 	intr_calculatemasks();

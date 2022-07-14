@@ -102,10 +102,19 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/rtc.h>
 
+#include <i386/isa/nvram.h>
+
 #include <machine/cpu.h>
 #include <machine/intr.h>
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
+
+#include "config_time.h"			/* for CONFIG_TIME */
+
+#include "mca.h"
+#if NMCA > 0
+#include <machine/mca_machdep.h>	/* for MCA_system */
+#endif
 
 #include "pcppi.h"
 #if (NPCPPI > 0)
@@ -129,20 +138,20 @@ static pcppi_tag_t 	ppicookie;
 static int 			beeping;
 #endif /* PCPPI */
 
-void		findcpuspeed (void);
-int			clockintr (void *);
-int			gettick (void);
-void		sysbeepstop (void *);
-void		sysbeep (int, int);
-void		rtcinit (void);
-int			rtcget (mc_todregs *);
-void		rtcput (mc_todregs *);
-static int 	yeartoday (int);
-int 		bcdtobin (int);
-int			bintobcd (int);
+void		findcpuspeed(void);
+int			clockintr(void *);
+int			gettick(void);
+void		sysbeepstop(void *);
+void		sysbeep(int, int);
+void		rtcinit(void);
+int			rtcget(mc_todregs *);
+void		rtcput(mc_todregs *);
+static int 	yeartoday(int);
+int 		bcdtobin(int);
+int			bintobcd(int);
 
-__inline u_int mc146818_read (void *, u_int);
-__inline void mc146818_write (void *, u_int, u_int);
+__inline u_int mc146818_read(void *, u_int);
+__inline void mc146818_write(void *, u_int, u_int);
 
 #define	SECMIN	((unsigned)60)				/* seconds per minute */
 #define	SECHOUR	((unsigned)(60*SECMIN))		/* seconds per hour */

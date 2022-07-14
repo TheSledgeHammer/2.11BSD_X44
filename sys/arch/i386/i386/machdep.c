@@ -75,6 +75,7 @@
 #include <dev/core/isa/isavar.h>
 #include <dev/misc/cons/cons.h>
 #include <dev/core/isa/rtc.h>
+#include <dev/core/ic/mc146818reg.h>
 
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>

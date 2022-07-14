@@ -53,7 +53,7 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	void *ih_arg;
 {
 	struct intrhand **p, *q, *ih;
-	static struct intrhand fakehand;// = {apic_fakeintr};
+	static struct intrhand fakehand;
 	extern int cold;
 
 	ih = intr_establish(TRUE, PIC_IOAPIC, irq, type, level, ih_fun, ih_arg);
@@ -93,9 +93,6 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	}
 	
 	fakeintr(intrspic, &fakehand, level);
-	/*
-	fakehand.ih_level = level;
-	*/
 	*p = &fakehand;
 
 	intr_calculatemasks();

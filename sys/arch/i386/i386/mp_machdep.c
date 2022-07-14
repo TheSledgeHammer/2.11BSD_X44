@@ -46,6 +46,7 @@
 
 #include <machine/bus.h>
 #include <machine/cpu.h>
+//#include <machine/cpufunc.h>
 #include <machine/cputypes.h>
 #include <machine/pcb.h>
 #include <machine/psl.h>
@@ -114,6 +115,7 @@ static int	start_ap(int apic_id);
 /* Set to 1 once we're ready to let the APs out of the pen. */
 static volatile int aps_ready = 0;
 
+typedef void *vector_t;
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern	IDTVEC(pmap_invalidate_all),		/* TLB shootdowns - global */
 		IDTVEC(pmap_invalidate_page),		/* TLB shootdowns - 1 page */

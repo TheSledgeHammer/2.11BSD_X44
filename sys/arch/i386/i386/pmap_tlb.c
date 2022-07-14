@@ -192,9 +192,9 @@ pmap_tlb_pte(sva, eva)
  *	Cause the TLB entry for pmap/va to be shot down.
  */
 void
-pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask)
+pmap_tlb_shootdown(pmap, addr, pte, mask)
 	pmap_t 		pmap;
-	vm_offset_t addr1, addr2;
+	vm_offset_t addr;
 	pt_entry_t 	pte;
 	int32_t 	*mask;
 {
@@ -205,7 +205,7 @@ pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask)
 	int s;
 
 	if (pmap_initialized == FALSE /*|| cpus_attached == 0*/) {
-		invlpg(addr1);
+		invlpg(addr);
 		return;
 	}
 
@@ -214,11 +214,11 @@ pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask)
 	s = splipi();
 
 #if 0
-	printf("dshootdown %lx\n", addr1);
+	printf("dshootdown %lx\n", addr);
 #endif
 
 	for (CPU_INFO_FOREACH(cii, ci)) {
-		if (pmap == kernel_pmap() || pmap->pm_active) {
+		if (pmap == kernel_pmap || pmap->pm_active) {
 			continue;
 		}
 		if (ci != self && !(ci->cpu_flags & CPUF_RUNNING)) {
@@ -257,7 +257,7 @@ pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask)
  			* tell other cpus to kill everything..
  			*/
 			if (ci == self && pq->pq_count < PMAP_TLB_MAXJOBS) {
-				invlpg(addr1);
+				invlpg(addr);
 				simple_unlock(&pq->pq_slock);
 				continue;
 			} else {
@@ -276,8 +276,7 @@ pmap_tlb_shootdown(pmap, addr1, addr2, pte, mask)
 			}
 		} else {
 			pj->pj_pmap = pmap;
-			pj->pj_sva = addr1;
-			pj->pj_eva = addr2;
+			pj->pj_va = addr;
 			pj->pj_pte = pte;
 			TAILQ_INSERT_TAIL(&pq->pq_head, pj, pj_list);
 			*mask |= 1U << ci->cpu_cpuid;
@@ -322,7 +321,7 @@ pmap_do_tlb_shootdown(pmap, self)
 		}
 		while ((pj = TAILQ_FIRST(&pq->pq_head)) != NULL) {
 			TAILQ_REMOVE(&pq->pq_head, pj, pj_list);
-			if ((pj->pj_pte & pmap_pg_g) || pj->pj_pmap == kernel_pmap() || pj->pj_pmap == pmap) {
+			if ((pj->pj_pte & pmap_pg_g) || pj->pj_pmap == kernel_pmap || pj->pj_pmap == pmap) {
 				invlpg(pj->pj_va);
 			}
 			pmap_tlb_shootdown_job_put(pq, pj);
