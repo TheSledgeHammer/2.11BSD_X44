@@ -79,10 +79,10 @@
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
-//#include <machine/cputypes.h>
 #include <machine/cpuvar.h>
 #include <machine/gdt.h>
 #include <machine/intr.h>
+#include <machine/pic.h>
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
@@ -97,15 +97,16 @@
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
 
-void (*delay_func)(int) = i8254_delay;
-void (*microtime_func)(struct timeval *) = i386_microtime;
-void (*initclocks_func)(void) = i8254_initclocks;
-
+void i386_microtime(struct timeval *);
 void cpu_dumpconf(void);
 int	 cpu_dump(void);
 void dumpsys(void);
 void init386_bootinfo(void);
 void cpu_reset(void);
+
+void (*delay_func)(int) = i8254_delay;
+void (*microtime_func)(struct timeval *) = i386_microtime;
+void (*initclocks_func)(void) = i8254_initclocks;
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -453,7 +454,7 @@ sendsig(catcher, sig, mask, code)
 		frame.sf_sc.sc_ds = tf->tf_vm86_ds;
 		if (vm86->vm86_has_vme == 0) {
 			//frame.sf_sc.sc_eflags = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
-			frame.sf_sc.sc_eflags = get_vm86frame(tf, vm86);
+			frame.sf_sc.sc_eflags = get_vm86flags(tf, vm86);
 		}
 		/*
 		 * We should never have PSL_T set when returning from vm86
