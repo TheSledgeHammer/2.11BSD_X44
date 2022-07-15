@@ -113,7 +113,7 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "mca.h"
 #if NMCA > 0
-#include <machine/mca_machdep.h>	/* for MCA_system */
+#include <machine/mca/mca_machdep.h>	/* for MCA_system */
 #endif
 
 #include "pcppi.h"
