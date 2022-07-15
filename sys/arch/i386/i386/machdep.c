@@ -61,7 +61,6 @@
 #include <sys/sysctl.h>
 #include <sys/mount.h>
 #include <sys/exec_linker.h>
-#include <sys/kcore.h>
 #include <sys/kenv.h>
 #include <sys/ksyms.h>
 #include <sys/power.h>
