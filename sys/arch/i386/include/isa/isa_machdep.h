@@ -97,10 +97,10 @@ struct isabus_attach_args;	/* XXX */
 /*
  * Functions provided to machine-independent ISA code.
  */
-void	isa_attach_hook (struct device *, struct device *, struct isabus_attach_args *);
-int		isa_intr_alloc (isa_chipset_tag_t, int, int, int *);
-void	*isa_intr_establish (isa_chipset_tag_t ic, int irq, int type, int level, int (*ih_fun)(void *), void *ih_arg);
-void	isa_intr_disestablish (isa_chipset_tag_t ic, void *handler);
+void	isa_attach_hook(struct device *, struct device *, struct isabus_attach_args *);
+int		isa_intr_alloc(isa_chipset_tag_t, int, int, int *);
+void	*isa_intr_establish(isa_chipset_tag_t ic, int irq, int type, int level, int (*ih_fun)(void *), void *ih_arg);
+void	isa_intr_disestablish(isa_chipset_tag_t ic, void *handler);
 
 /*
  * ALL OF THE FOLLOWING ARE MACHINE-DEPENDENT, AND SHOULD NOT BE USED

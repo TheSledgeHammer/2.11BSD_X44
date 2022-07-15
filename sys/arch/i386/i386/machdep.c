@@ -61,7 +61,10 @@
 #include <sys/sysctl.h>
 #include <sys/mount.h>
 #include <sys/exec_linker.h>
+#include <sys/kcore.h>
 #include <sys/kenv.h>
+#include <sys/ksyms.h>
+#include <sys/power.h>
 #include <sys/ucontext.h>
 
 #include <vm/include/vm.h>
@@ -104,6 +107,7 @@ int	 cpu_dump(void);
 void dumpsys(void);
 void init386_bootinfo(void);
 void cpu_reset(void);
+void cpu_halt(void);
 
 void (*delay_func)(int) = i8254_delay;
 void (*microtime_func)(struct timeval *) = i386_microtime;
@@ -141,6 +145,24 @@ char bootsize[BOOTINFO_MAXSIZE];
 int  *esym;
 extern int biosbasemem, biosextmem;
 
+#ifdef CPURESET_DELAY
+int	cpureset_delay = CPURESET_DELAY;
+#else
+int cpureset_delay = 2000; /* default to 2s */
+#endif
+
+struct dumpmem {
+	vm_offset_t start;
+    vm_size_t 	end;
+};
+
+typedef struct {
+	u_quad_t	start;		/* Physical start address	*/
+	u_quad_t	size;		/* Size in bytes		*/
+} phys_ram_seg_t;
+phys_ram_seg_t mem_clusters[32];
+int	mem_cluster_cnt;
+
 struct pcb *curpcb;			/* our current running pcb */
 
 int	i386_use_fxsave;
@@ -176,7 +198,7 @@ startup(void)
 
 	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
 	for (i = 0; i < btoc(sizeof(struct msgbuf)); i++) {
-		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG, VM_PROT_ALL, TRUE);
+		pmap_enter(kernel_pmap, (vm_offset_t)msgbufp, avail_end + i * NBPG, VM_PROT_ALL, TRUE);
 	}
 	msgbufmapped = 1;
 
@@ -628,88 +650,73 @@ sigreturn()
 }
 
 int	waittime = -1;
+struct pcb dumppcb;
 
 void
 boot(arghowto)
 	int arghowto;
 {
-	register long dummy; 	/* r12 is reserved */
 	register int howto; 	/* r11 == how to boot */
-	register int devtype; 	/* r10 == major of root dev */
-	char *panicstr;
 	extern int cold;
+
+	if (cold) {
+		howto |= RB_HALT;
+		goto haltsys;
+	}
 
 	howto = arghowto;
 	if ((howto & RB_NOSYNC) == 0 && waittime < 0) {
-		register struct buf *bp;
-		int iter, nbusy;
-
 		waittime = 0;
-		(void) splnet();
-		printf("syncing disks... ");
-		/*
-		 * Release inodes held by texts before update.
-		 */
-		if (panicstr == 0)
-			vnode_pager_umount(NULL);
-		sync((struct sigcontext*) 0);
-		/*
-		 * Unmount filesystems
-		 */
-		if (panicstr == 0)
-			vfs_unmountall();
-
-		for (iter = 0; iter < 20; iter++) {
-			nbusy = 0;
-			for (bp = &buf[nbuf]; --bp >= buf;)
-				if ((bp->b_flags & (B_BUSY | B_INVAL)) == B_BUSY)
-					nbusy++;
-			if (nbusy == 0)
-				break;
-			printf("%d ", nbusy);
-			delay(40000 * iter);
-		}
-		if (nbusy)
-			printf("giving up\n");
-		else
-			printf("done\n");
-		delay(10000); /* wait for printf to finish */
 	}
+	/* Disable interrupts. */
 	splhigh();
-	devtype = major(rootdev);
-	if (howto & RB_HALT) {
-		printf("halting (in tight loop); hit reset\n\n");
-		splx(0xfffd); /* all but keyboard XXX */
-		for (;;)
-			;
-	} else {
-		if (howto & RB_DUMP) {
-			dumpsys();
-			/*NOTREACHED*/
-		}
+
+	/* Do a dump if requested. */
+	if ((howto & (RB_DUMP | RB_HALT)) == RB_DUMP) {
+		dumpsys();
 	}
-#ifdef lint
-	dummy = 0; dummy = dummy;
-	printf("howto %d, devtype %d\n", arghowto, devtype);
+
+haltsys:
+	doshutdownhooks();
+
+#ifdef SMP
+	i386_broadcast_ipi(I386_IPI_HALT);
 #endif
-#ifdef	notdef
-	pg("pausing (hit any key to reset)");
+
+	if (howto & RB_HALT) {
+		printf("\n");
+		printf("The operating system has halted.\n");
+		printf("Please press any key to reboot.\n\n");
+
+#ifdef BEEP_ONHALT
+		{
+			int c;
+			for (c = BEEP_ONHALT_COUNT; c > 0; c--) {
+				sysbeep(BEEP_ONHALT_PITCH, BEEP_ONHALT_PERIOD * hz / 1000);
+				delay(BEEP_ONHALT_PERIOD * 1000);
+				sysbeep(0, BEEP_ONHALT_PERIOD * hz / 1000);
+				delay(BEEP_ONHALT_PERIOD * 1000);
+			}
+		}
 #endif
+
+		cnpollc(1); /* for proper keyboard command handling */
+		if (cngetc() == 0) {
+			cpu_halt();
+		}
+		cnpollc(0);
+	}
+	printf("rebooting...\n");
+	if (cpureset_delay > 0) {
+		delay(cpureset_delay * 1000);
+	}
 	cpu_reset();
-	for (;;)
-		;
+	for(;;) ;
 	/*NOTREACHED*/
 }
 
-struct dumpmem {
-	vm_offset_t start;
-    vm_size_t 	end;
-};
-
-struct pcb dumppcb;
 struct dumpmem dumpmem[16];
 u_int ndumpmem;
-
 u_long	dumpmag = 	0x8fca0101;	/* magic number for savecore */
 int		dumpsize = 	0;			/* also for savecore */
 long	dumplo = 	0; 			/* blocks */
@@ -1032,14 +1039,14 @@ setidt(idx, func, args, typ, dpl)
 }
 
 void
-init_descriptors()
+init_descriptors(void)
 {
 	gdt_allocate(gdt_segs);
 	ldt_allocate(ldt_segs);
 }
 
 void
-make_memory_segments()
+make_memory_segments(void)
 {
 	int x;
 
@@ -1058,6 +1065,54 @@ make_memory_segments()
 	}
 }
 
+#define	KBTOB(x)		((size_t)(x) * 1024UL)
+
+void
+getmemsize(void)
+{
+	int error;
+	//if (mem_cluster_cnt == 0) {
+	error = extent_alloc_region(iomem_ex, 0, KBTOB(biosbasemem), EX_NOWAIT);
+	if (error) {
+		printf("WARNING: CAN'T ALLOCATE BASE MEMORY FROM IOMEM EXTENT MAP!\n");
+	}
+	mem_clusters[0].start = 0;
+	mem_clusters[0].size = trunc_page(KBTOB(biosbasemem));
+	physmem += atop(mem_clusters[0].size);
+
+	error = extent_alloc_region(iomem_ex, IOM_END, KBTOB(biosextmem), EX_NOWAIT)
+	if (error) {
+		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
+	}
+
+#if NISADMA > 0
+	/*
+	 * Some motherboards/BIOSes remap the 384K of RAM that would
+	 * normally be covered by the ISA hole to the end of memory
+	 * so that it can be used.  However, on a 16M system, this
+	 * would cause bounce buffers to be allocated and used.
+	 * This is not desirable behaviour, as more than 384K of
+	 * bounce buffers might be allocated.  As a work-around,
+	 * we round memory down to the nearest 1M boundary if
+	 * we're using any isadma devices and the remapped memory
+	 * is what puts us over 16M.
+	 */
+	if ((biosextmem > (15 * 1024)) && (biosextmem < (16 * 1024))) {
+		biosextmem = (15 * 1024);
+	}
+#endif
+
+	mem_clusters[1].start = IOM_END;
+	mem_clusters[1].size = trunc_page(KBTOB(biosextmem));
+	physmem += atop(mem_clusters[1].size);
+	Maxmem = atop(physmem);
+	mem_cluster_cnt = 2;
+
+	avail_end = IOM_END + trunc_page(KBTOB(biosextmem));
+//	}
+	maxmem = Maxmem - 1;
+}
+
 typedef void *vector_t;
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern vector_t IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
@@ -1070,7 +1125,6 @@ init386(first)
 	int first;
 {
 	int x;
-	struct gate_descriptor 	*gdp;
 	struct region_descriptor region;
 	int sigcode, szsigcode;
 
@@ -1126,21 +1180,9 @@ init386(first)
 	enable_intr();
 
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
+	vm86_initialize();
 	vm86_initial_bioscalls(&biosbasemem, &biosextmem);
-
-	/*
-	 * This memory size stuff is a real mess.  Here is a simple
-	 * setup that just believes the BIOS.  After the rest of
-	 * the system is a little more stable, we'll come back to
-	 * this and deal with issues if incorrect BIOS information,
-	 * and when physical memory is > 16 megabytes.
-	 */
-	biosbasemem = rtcin(RTC_BASELO) + (rtcin(RTC_BASEHI) << 8);
-	biosextmem = rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI) << 8);
-	Maxmem = btoc((biosextmem + 1024) * 1024);
-	maxmem = Maxmem - 1;
-	physmem = btoc(biosbasemem * 1024 + (biosextmem - 1) * 1024);
-	printf("bios %dK+%dK. maxmem %x, physmem %x\n", biosbasemem, biosextmem, ctob(maxmem), ctob(physmem));
+	getmemsize();
 	vm_set_page_size();
 
 	/* call pmap initialization to make new kernel address space */
@@ -1166,7 +1208,7 @@ init386_ksyms(bootinfo)
 	struct bootinfo *bootinfo;
 {
 	extern int 	end;
-	vm_offset_t 	addend;
+	vm_offset_t addend;
 	if (bootinfo->bi_envp.bi_environment != 0) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;

@@ -492,45 +492,48 @@ void
 vm86_initial_bioscalls(basemem, extmem)
 	int *basemem, *extmem;
 {
-	int i, method;
-	int hasbrokenint12;
-	struct vm86frame vmf;
-	struct vm86context vmc;
-	uint64_t highwat = 0;
-	u_long pa;
+	struct vm86frame 	vmf;
+	struct vm86context 	vmc;
+	struct bios_smap 	*smap;
 	pt_entry_t pte;
-	struct {
-		uint64_t base;
-		uint64_t length;
-		uint32_t type;
-	} *smap;
+	u_long pa;
+	int res, i;
 
-	hasbrokenint12 = 0;
 	bzero(&vmf, sizeof(struct vm86frame));		/* safety */
-	vm86_initialize();
 
-	/*
-	 * Some newer BIOSes has broken INT 12H implementation which cause
-	 * kernel panic immediately. In this case, we need to scan SMAP
-	 * with INT 15:E820 first, then determine base memory size.
-	 */
-	if (hasbrokenint12) {
-		goto int15e820;
-	}
-
-	/*
+   	/*
 	 * Perform "base memory" related probes & setup
 	 */
 	vm86_intcall(0x12, &vmf);
-	*basemem = vmf.vmf_ax;
-	if (basemem > 640) {
-		printf("Preposterous BIOS basemem of %uK, truncating to 640K\n", basemem);
-		basemem = 640;
+    basemem = vmf.vmf_ax;
+    if (basemem > 640) {
+        printf("Preposterous BIOS basemem of %uK, truncating to 640K\n", basemem);
+	    basemem = 640;
 	}
-	*extmem = 0;
 
-	for (pa = trunc_page(basemem * 1024); pa < ISA_HOLE_START; pa += PAGE_SIZE) {
-		pte = vtopte(pa + KERNBASE);
+	/*
+	 * XXX if biosbasemem is now < 640, there is a `hole'
+	 * between the end of base memory and the start of
+	 * ISA memory.  The hole may be empty or it may
+	 * contain BIOS code or data.  Map it read/write so
+	 * that the BIOS can write to it.  (Memory from 0 to
+	 * the physical end of the kernel is mapped read-only
+	 * to begin with and then parts of it are remapped.
+	 * The parts that aren't remapped form holes that
+	 * remain read-only and are unused by the kernel.
+	 * The base memory area is below the physical end of
+	 * the kernel and right now forms a read-only hole.
+	 * The part of it from PAGE_SIZE to
+	 * (trunc_page(biosbasemem * 1024) - 1) will be
+	 * remapped and used by the kernel later.)
+	 *
+	 * This code is similar to the code used in
+	 * pmap_mapdev, but since no memory needs to be
+	 * allocated we simply change the mapping.
+	 */
+	for (pa = trunc_page(basemem * 1024); pa < ISA_HOLE_START; pa +=
+			PAGE_SIZE) {
+		pte = (pt_entry_t) vtopte(pa + KERNBASE);
 		*pte = pa | PG_RW | PG_V;
 	}
 
@@ -539,11 +542,10 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * that the bios can scribble on it.
 	 */
 	pte = (pt_entry_t) vm86paddr;
-	for (i = *basemem / 4; i < 160; i++) {
+	for (i = basemem / 4; i < 160; i++) {
 		pte[i] = (i << PAGE_SHIFT) | PG_V | PG_RW | PG_U;
 	}
 
-int15e820:
 	/*
 	 * map page 1 R/W into the kernel page table so we can use it
 	 * as a buffer.  The kernel will unmap this page later.
@@ -559,7 +561,8 @@ int15e820:
 
 	vmc.npages = 0;
 	smap = (void*) vm86_addpage(&vmc, 1, KERNBASE + (1 << PAGE_SHIFT));
-	vm86_getptr(&vmc, (vm_offset_t) smap, &vmf.vmf_es, &vmf.vmf_di);
+	res = vm86_getptr(&vmc, (vm_offset_t) smap, &vmf.vmf_es, &vmf.vmf_di);
+    KASSERT(res != 0);
 
 	vmf.vmf_ebx = 0;
 	do {
@@ -570,46 +573,24 @@ int15e820:
 		if (i || vmf.vmf_eax != SMAP_SIG) {
 			break;
 		}
-		if (boothowto & RB_VERBOSE) {
-			printf("SMAP type=%02x base=%016llx len=%016llx\n", smap->type, smap->base, smap->length);
-		}
-		if (smap->type == 0x01 && smap->base >= highwat) {
-			*extmem += (smap->length / 1024);
-			highwat = smap->base + smap->length;
-		}
-#ifndef PAE
-		if (smap->base >= 0xffffffff) {
-			printf("%uK of memory above 4GB ignored\n", (u_int)(smap->length / 1024));
-		}
+#ifdef smap_not_ready
+		has_smap = 1;
+        if (!add_smap_entry(smap)) {
+            break;
+        }
 #endif
 	} while (vmf.vmf_ebx != 0);
-
-	if (*extmem != 0) {
-		if (*extmem > *basemem) {
-			*extmem -= *basemem;
-			method = 0xE820;
-			goto done;
-		}
-		printf("E820: extmem (%d) < basemem (%d)\n", *extmem, *basemem);
-	}
-
 	/*
 	 * try memory map with INT 15:E801
 	 */
 	vmf.vmf_ax = 0xE801;
 	if (vm86_intcall(0x15, &vmf) == 0) {
 		*extmem = vmf.vmf_cx + vmf.vmf_dx * 64;
-		method = 0xE801;
-		goto done;
+	} else {
+		vmf.vmf_ah = 0x88;
+		vm86_intcall(0x15, &vmf);
+		*extmem = vmf.vmf_ax;
 	}
-
-	vmf.vmf_ah = 0x88;
-	vm86_intcall(0x15, &vmf);
-	*extmem = vmf.vmf_ax;
-	method = 0x88;
-
-done:
-	printf("BIOS basemem: %dK, extmem: %dK (from %#x call)\n", *basemem, *extmem, method);
 }
 
 vm_offset_t

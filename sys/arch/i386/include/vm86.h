@@ -143,7 +143,7 @@ struct vm86_init_args {
 };
 
 struct vm86_vme_args {
-	int	state;			/* status */
+	int			state;			/* status */
 };
 
 struct vm86_intcall_args {

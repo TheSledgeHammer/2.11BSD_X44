@@ -123,7 +123,7 @@ ENTRY(vm86_bioscall)
 		movl	SCR_NEWPTD(%edx),%eax	/* mapping for vm86 page table */
 		movl	%eax,0(%ebx)			/* ... install as PTD entry 0 */
 
-#if defined(PAE) || defined(PAE_TABLES)
+#if defined(PMAP_PAE_COMP)
 		movl	IdlePDPT,%ecx
 #endif
 		movl	%ecx,%cr3				/* new page tables */
