@@ -143,8 +143,8 @@ typedef struct _WCTypeEntry {
 typedef struct {
 	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
 	int							(*ro_sputrune)(rune_t, char *, size_t, char **);
-	int 						(*ro_sgetrune_mb)(_Encoding_Info *, wchar_t *, const char **, size_t, _Encoding_State *, size_t *);
-	int							(*ro_sputrune_mb)(_Encoding_Info *, char *, size_t, wchar_t, _Encoding_State *, size_t *);
+	int 						(*ro_sgetmbrune)(_Encoding_Info *, wchar_t *, const char **, size_t, _Encoding_State *, size_t *);
+	int							(*ro_sputmbrune)(_Encoding_Info *, char *, size_t, wchar_t, _Encoding_State *, size_t *);
 } _RuneOps;
 
 /*

@@ -68,6 +68,9 @@ typedef struct {
 	} states;
 } _Encoding_TypeInfo;
 
+#define _MODE_UTF32							0x00000001U
+#define _MODE_FORCE_ENDIAN					0x00000002U
+
 /*
  * macros
  */
@@ -81,5 +84,4 @@ typedef struct {
 #define _ENCODING_MB_CUR_MAX(_ei_)			(_ei_)->mb_cur_max
 #define _ENCODING_IS_STATE_DEPENDENT		0
 #define _STATE_NEEDS_EXPLICIT_INIT(_ps_)	0
-
 #endif /* _ENCODING_H_ */

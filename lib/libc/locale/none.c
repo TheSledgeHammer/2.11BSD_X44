@@ -79,8 +79,8 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 
 rune_t		_none_sgetrune(const char *, size_t, char const **);
 int			_none_sputrune(rune_t, char *, size_t, char **);
-int			_none_sgetrune_mb(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
-int 		_none_sputrune_mb(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
+int			_none_sgetmbrune(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
+int 		_none_sputmbrune(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
 
 int
 _none_init(rl)
@@ -88,8 +88,8 @@ _none_init(rl)
 {
 	rl->ops->ro_sgetrune = _none_sgetrune;
 	rl->ops->ro_sputrune = _none_sputrune;
-	rl->ops->ro_sgetrune_mb = _none_sgetrune_mb;
-	rl->ops->ro_sputrune_mb = _none_sputrune_mb;
+	rl->ops->ro_sgetmbrune = _none_sgetmbrune;
+	rl->ops->ro_sputmbrune = _none_sputmbrune;
 
 	_CurrentRuneLocale = rl;
 
@@ -97,7 +97,7 @@ _none_init(rl)
 }
 
 int
-_none_sgetrune_mb(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult)
+_none_sgetmbrune(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if (s == NULL) {
 		*nresult = 0;
@@ -120,7 +120,7 @@ _none_sgetrune_mb(void * __restrict cl, wchar_t * __restrict pwc, const char * _
 }
 
 int
-_none_sputrune_mb(void * __restrict cl, char * __restrict s, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
+_none_sputmbrune(void * __restrict cl, char * __restrict s, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if ((wc & ~0xFFU) != 0) {
 		*nresult = (size_t) -1;

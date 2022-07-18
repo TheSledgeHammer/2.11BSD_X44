@@ -48,13 +48,13 @@
 
 #define __sgetrune      					_CurrentRuneLocale->ops->ro_sgetrune
 #define __sputrune     		 				_CurrentRuneLocale->ops->ro_sputrune
-#define __sgetrune_mb      					_CurrentRuneLocale->ops->ro_sgetrune_mb
-#define __sputrune_mb     					_CurrentRuneLocale->ops->ro_sputrune_mb
+#define __sgetmbrune      					_CurrentRuneLocale->ops->ro_sgetmbrune
+#define __sputmbrune     					_CurrentRuneLocale->ops->ro_sputmbrune
 
 #define sgetrune(s, n, r)       			(*__sgetrune)((s), (n), (r))
 #define sputrune(c, s, n, r)    			(*__sputrune)((c), (s), (n), (r))
-#define sgetrune_mb(ei, wc, s, n, es, r)    (*__sgetrune_mb)((ei), (wc), (s), (n), (es), (r))
-#define sputrune_mb(ei, s, n, wc, es, r)    (*__sputrune_mb)((ei), (s), (n), (wc), (es), (r))
+#define sgetmbrune(ei, wc, s, n, es, r)    (*__sgetmbrune)((ei), (wc), (s), (n), (es), (r))
+#define sputmbrune(ei, s, n, wc, es, r)    (*__sputmbrune)((ei), (s), (n), (wc), (es), (r))
 
 /*
  * Other namespace conversion.
@@ -71,5 +71,9 @@ int	 			fputrune(rune_t, FILE *);
 int	 			fungetrune(rune_t, FILE *);
 int	 			setrunelocale(char *);
 void			setinvalidrune(rune_t);
+
+/* emulated 4.4BSD's sgetrune & sputrune */
+rune_t			emulated_sgetrune(const char *, size_t, char const **);
+int				emulated_sputrune(rune_t, char *, size_t, char **);
 __END_DECLS
 #endif /* _RUNE_H_ */

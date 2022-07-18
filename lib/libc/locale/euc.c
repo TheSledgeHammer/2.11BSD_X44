@@ -114,33 +114,37 @@ typedef _Encoding_State				_EUCState;
 
 rune_t	_EUC_sgetrune(const char *, size_t, char const **);
 int		_EUC_sputrune(rune_t, char *, size_t, char **);
-int		_EUC_sgetrune_mb(_EUCEncodingInfo *, wchar_t *, const char **, size_t, _EUCState *, size_t *);
-int 	_EUC_sputrune_mb(_EUCEncodingInfo *, char *, wchar_t, _EUCState *, size_t *);
+int		_EUC_sgetmbrune(_EUCEncodingInfo *, wchar_t *, const char **, size_t, _EUCState *, size_t *);
+int 	_EUC_sputmbrune(_EUCEncodingInfo *, char *, wchar_t, _EUCState *, size_t *);
 
 int
 _EUC_init(rl)
 	_RuneLocale *rl;
 {
+	_EUCCTypeInfo 	*info;
+	_EUCState 		*state;
 	int err;
 
 	rl->ops->ro_sgetrune = _EUC_sgetrune;
 	rl->ops->ro_sputrune = _EUC_sputrune;
-	rl->ops->ro_sgetrune_mb = _EUC_sgetrune_mb;
-	rl->ops->ro_sputrune_mb = _EUC_sputrune_mb;
+	rl->ops->ro_sgetmbrune = _EUC_sgetmbrune;
+	rl->ops->ro_sputmbrune = _EUC_sputmbrune;
 
-	err = _EUC_parse_variable(rl);
+	_CurrentRuneLocale = rl;
+
+	_citrus_ctype_encoding_init(info, state);
+
+	err = _EUC_parse_variable(rl, info);
 	if(err != 0) {
 		return (err);
 	}
 
-	_CurrentRuneLocale = rl;
 	return (0);
 }
 
 static int
-_EUC_parse_variable(_RuneLocale *rl)
+_EUC_parse_variable(_RuneLocale *rl, _EUCEncodingInfo *ei)
 {
-	_EUCEncodingInfo *ei;
 	int x;
 	char *v, *e;
 
@@ -194,7 +198,7 @@ _EUC_parse_variable(_RuneLocale *rl)
 }
 
 int
-_EUC_sgetrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
+_EUC_sgetmbrune(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
 {
 	wchar_t wchar;
 	const char *s0, *s1 = NULL;
@@ -225,7 +229,7 @@ _EUC_sgetrune_mb(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, 
 }
 
 int
-_EUC_sputrune_mb(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
+_EUC_sputmbrune(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
 {
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);

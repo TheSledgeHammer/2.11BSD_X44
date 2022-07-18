@@ -41,6 +41,7 @@ void		_citrus_ctype_init_state(_ENCODING_INFO *ei, _ENCODING_STATE *s);
 void		_citrus_ctype_pack_state(_ENCODING_INFO *ei, void *pspriv, const _ENCODING_STATE *s);
 void		_citrus_ctype_unpack_state(_ENCODING_INFO *ei, _ENCODING_STATE *s, const void *pspriv);
 
+void		_citrus_ctype_encoding_init(_ENCODING_INFO *ei, _ENCODING_STATE *s);
 unsigned 	_citrus_ctype_get_mb_cur_max(void *cl);
 int			_citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar, size_t );
 void		_citrus_ctype_uninit(void *cl);

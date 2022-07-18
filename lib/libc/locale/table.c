@@ -52,8 +52,8 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 
 extern rune_t	_none_sgetrune (const char *, size_t, char const **);
 extern int		_none_sputrune (rune_t, char *, size_t, char **);
-extern int		_none_sgetrune_mb(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
-extern int 		_none_sputrune_mb(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
+extern int		_none_sgetmbrune(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
+extern int 		_none_sputmbrune(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
 
 _RuneLocale _DefaultRuneLocale = {
     _RUNE_MAGIC_1,
@@ -262,8 +262,8 @@ _RuneLocale _DefaultRuneLocale = {
 	{
 			_none_sgetrune,
 			_none_sputrune,
-			_none_sgetrune_mb,
-			_none_sputrune_mb
+			_none_sgetmbrune,
+			_none_sputmbrune
 	},
     {
     		{   "towlower",

@@ -68,13 +68,13 @@
 int
 _citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
-	return (sgetrune_mb(ei, pwc, s, n, psenc, nresult));
+	return (sgetmbrune(ei, pwc, s, n, psenc, nresult));
 }
 
 int
 _citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict ei, char * __restrict s, size_t n, wchar_t pwc, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
-	return (sputrune_mb(ei, s, n, pwc, psenc, nresult));
+	return (sputmbrune(ei, s, n, pwc, psenc, nresult));
 }
 
 /* ----------------------------------------------------------------------
@@ -125,6 +125,15 @@ unsigned
 _citrus_ctype_get_mb_cur_max(void *cl)
 {
 	return _ENCODING_MB_CUR_MAX(_CEI_TO_EI(_TO_CEI(cl)));
+}
+
+void
+_citrus_ctype_encoding_init(_ENCODING_INFO *ei, _ENCODING_STATE *s)
+{
+	_DIAGASSERT(ei != NULL);
+
+	memset((void *)ei, 0, sizeof(_ENCODING_INFO));
+	_citrus_ctype_init_state(ei, s);
 }
 
 int

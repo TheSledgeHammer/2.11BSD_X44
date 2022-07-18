@@ -53,11 +53,12 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #include "runefile.h"
 #include "setlocale.h"
 
-extern int			_none_init (_RuneLocale *);
-extern int			_UTF2_init (_RuneLocale *);
-extern int			_UTF8_init (_RuneLocale *);
-extern int			_EUC_init (_RuneLocale *);
-static _RuneLocale	*_Read_RuneMagi (FILE *);
+extern int			_none_init(_RuneLocale *);
+extern int			_UTF1632_init(_RuneLocale *);
+extern int			_UTF2_init(_RuneLocale *);
+extern int			_UTF8_init(_RuneLocale *);
+extern int			_EUC_init(_RuneLocale *);
+static _RuneLocale	*_Read_RuneMagi(FILE *);
 
 static char *PathLocale = 0;
 
@@ -117,6 +118,8 @@ setrunelocale(encoding)
 
 	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF-8")) {
 		return (_UTF8_init(rl));
+	} else if (!strcmp(rl->encoding, "UTF-1632")) {
+		return (_UTF1632_init(rl));
 	} else if (!strcmp(rl->encoding, "UTF-2")) {
 		return (_UTF2_init(rl));
 	} else if (!strcmp(rl->encoding, "NONE")) {
