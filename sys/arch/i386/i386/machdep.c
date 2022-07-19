@@ -80,6 +80,7 @@
 #include <dev/core/isa/rtc.h>
 #include <dev/core/ic/mc146818reg.h>
 
+#include <machine/bus.h>
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
@@ -96,6 +97,8 @@
 #include <machine/pmap.h>
 
 #include <machine/isa/isa_machdep.h>
+
+#include <i386/isa/nvram.h>
 
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
@@ -1080,7 +1083,7 @@ getmemsize(void)
 	mem_clusters[0].size = trunc_page(KBTOB(biosbasemem));
 	physmem += atop(mem_clusters[0].size);
 
-	error = extent_alloc_region(iomem_ex, IOM_END, KBTOB(biosextmem), EX_NOWAIT)
+	error = extent_alloc_region(iomem_ex, IOM_END, KBTOB(biosextmem), EX_NOWAIT);
 	if (error) {
 		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
@@ -1121,7 +1124,7 @@ proc0pcb_setup(p)
 
 	bcopy(&sigcode, p->p_addr->u_pcb.pcb_sigc, szsigcode);
 	p->p_addr->u_pcb.pcb_flags = 0;
-	p->p_addr->u_pcb.pcb_ptd = IdlePTD;
+	p->p_addr->u_pcb.pcb_ptd = (int)IdlePTD;
 }
 
 typedef void *vector_t;
@@ -1299,8 +1302,45 @@ makectx(tf, pcb)
 }
 
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
-static void f00f_hack(void *unused);
+static void f00f_hack(void /* *unused */);
 
+static void
+f00f_hack(void)
+{
+	struct region_descriptor region;
+	struct gate_descriptor 	 *new_idt;
+	vm_offset_t tmp;
+	void *p;
+	
+	if (!has_f00f_bug) {
+		return;
+	}
+	
+	printf("Intel Pentium detected, installing workaround for F00F bug\n");
+	
+	new_idt = idt;
+	tmp = kmem_alloc(kernel_map, PAGE_SIZE * 2);
+	if (tmp == 0) {
+		panic("kmem_alloc returned 0");
+	}
+	if (((unsigned int)tmp & (PAGE_SIZE-1)) != 0) {
+		panic("kmem_alloc returned non-page-aligned memory");
+	}
+	/* Put the first seven entries in the lower page */
+	p = (void *)(tmp + PAGE_SIZE - (7 * 8));
+	bcopy(new_idt, p, sizeof(idt));
+	new_idt = p;
+	
+	/* Reload idtr */
+	setregion(&region, new_idt, sizeof(idt) - 1);
+	lidt(&region);
+	
+	if (vm_map_protect(kernel_map, tmp, tmp + PAGE_SIZE, VM_PROT_READ, FALSE) != KERN_SUCCESS) {
+		panic("vm_map_protect failed");
+	}
+	return;
+}
+#ifdef notyet
 static void
 f00f_hack(void *unused) {
 	struct gate_descriptor *new_idt;
@@ -1331,6 +1371,7 @@ f00f_hack(void *unused) {
 		panic("vm_map_protect failed");
 	return;
 }
+#endif
 #endif /* defined(I586_CPU) && !NO_F00F_HACK */
 
 void

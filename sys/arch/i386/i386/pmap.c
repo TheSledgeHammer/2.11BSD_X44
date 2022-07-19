@@ -180,19 +180,31 @@ int pmapvacflush = 0;
  * PTmap is recursive pagemap at top of virtual address space.
  * Within PTmap, the page directory can be found (third indirection).
  */
-#define PDRPDROFF   		0x3F7						/* Page dir index of Page dir */
+#define PDRPDROFF   		0x3F7						/* Page dir index of Page dir (i.e. PTDPTDI) */
+/*
 #define PTmap       		((pt_entry_t *)0xFDC00000)
 #define PTD         		((pd_entry_t *)0xFDFF7000)
-#define PTDpde      		((pt_entry_t *)0xFDFF7000+4*PDRPDROFF)
+#define PTDpde      		((pd_entry_t *)0xFDFF7000+4*PDRPDROFF)
+*/
+//pt_entry_t PTmap[0xFDC00000];
+//pd_entry_t PTD[0xFDFF7000];
+//pd_entry_t PTDpde[0xFDFF7000+4*PDRPDROFF];
+
 
 /*
  * APTmap, APTD is the alternate recursive pagemap.
  * It's used when modifying another process's page tables.
  */
 #define APDRPDROFF  		0x3FE						/* Page dir index of Page dir */
+/*
 #define APTmap      		((pt_entry_t *)0xFF800000)
 #define APTD        		((pd_entry_t *)0xFFBFE000)
-#define APTDpde     		((pt_entry_t *)0xFDFF7000+4*APDRPDROFF)
+#define APTDpde     		((pd_entry_t *)0xFDFF7000+4*APDRPDROFF)
+*/
+
+//pt_entry_t APTmap[0xFF800000];
+//pd_entry_t APTD[0xFFBFE000];
+//pd_entry_t APTDpde[0xFDFF7000+4*APDRPDROFF];
 
 /*
  * Get PDEs and PTEs for user/kernel address space
@@ -1543,7 +1555,6 @@ pmap_pte(pmap, va)
 	pde = pmap_pde(pmap, va);
 
 	if (pmap && pmap_pde_v(pmap_pde(pmap, va))) {
-
 		/* are we current address space or kernel? */
 		if (pmap->pm_pdir[PTDPTDI] == PTDpde || pmap == kernel_pmap) {
 			return ((pt_entry_t *) vtopte(va));
@@ -1714,9 +1725,9 @@ pmap_activate(pmap, pcbp)
 	if(pmap != NULL && pmap->pm_pdchanged) {
 
 #ifdef PMAP_PAE_COMP
-		pcbp = pmap_extract(kernel_pmap, (uint64_t)pmap->pm_pdpt);
+		pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdpt);
 #else
-		pcbp = pmap_extract(kernel_pmap, (uint32_t)pmap->pm_pdir);
+		pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir);
 #endif
 		if(pmap == &curproc->p_vmspace->vm_pmap) {
 			lcr3(pcbp->pcb_cr3);
