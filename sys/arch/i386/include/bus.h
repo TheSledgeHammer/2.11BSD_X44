@@ -73,6 +73,9 @@
 
 #include <machine/pio.h>
 
+extern struct extent *ioport_ex;
+extern struct extent *iomem_ex;
+
 /*
  * Bus address and size types
  */
