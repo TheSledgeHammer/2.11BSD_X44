@@ -97,6 +97,7 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_param.h>
+#include <vm/include/vm_extern.h>
 
 #include <machine/atomic.h>
 #include <machine/cpu.h>
@@ -238,6 +239,7 @@ extern int 		elf32_nxstack;
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
+extern char 	_end[];
 vm_offset_t 	kernel_vm_end;
 u_long 			physfree;			/* phys addr of next free page */
 u_long 			vm86phystk;			/* PA of vm86/bios stack */
@@ -249,7 +251,6 @@ u_long 			tramp_idleptd;
 
 vm_offset_t 	avail_start;		/* PA of first available physical page */
 vm_offset_t		avail_end;			/* PA of last available physical page */
-vm_size_t		mem_size;			/* memory size in bytes */
 vm_offset_t		virtual_avail;  	/* VA of first avail page (after kernel bss)*/
 vm_offset_t		virtual_end;		/* VA of last avail page (end of kernel AS) */
 vm_offset_t		vm_first_phys;		/* PA of first managed page */
@@ -284,7 +285,9 @@ static pt_entry_t 	*PMAP1 = NULL, *PMAP2, *PMAP3;
 static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
 
 static u_long
-allocpages(u_int cnt, u_long *physfree)
+allocpages(cnt, physfree)
+	u_int cnt;
+	u_long *physfree;
 {
 	u_long res;
 
@@ -298,7 +301,7 @@ static void
 pmap_cold_map(pa, va, cnt)
 	u_long pa, va, cnt;
 {
-	pt_entry_t pt;
+	pt_entry_t *pt;
 	for (pt = (pt_entry_t *)KPTphys + atop(va); cnt > 0; cnt--, pt++, va += PAGE_SIZE, pa += PAGE_SIZE) {
 		*pt = pa | PG_V | PG_RW | PG_A | PG_M;
 	}
@@ -325,11 +328,17 @@ pmap_remap_lower(enable)
 void
 pmap_cold(void)
 {
-	u_long *pt;
+	pt_entry_t *pt;
 	u_long a;
 	u_int cr3, ncr4;
 
 	physfree = (u_long)&_end;
+	if (bootinfo.bi_envp.bi_esymtab != 0) {
+		physfree = bootinfo.bi_envp.bi_esymtab;
+	}
+	if (bootinfo.bi_envp.bi_kernend != 0) {
+		physfree = bootinfo.bi_envp.bi_kernend;
+	}
 	physfree = roundup(physfree, NBPDR);
 	KERNend = physfree;
 
@@ -338,8 +347,18 @@ pmap_cold(void)
 	KPTmap = (pt_entry_t *)KPTphys;
 
 	/* Allocate Page Table Directory */
+#ifdef PMAP_PAE_COMP
+	/* XXX only need 32 bytes (easier for now) */
+	IdlePDPT = (pdpt_entry_t *)allocpages(1, &physfree);
+#endif
 	IdlePTD = (pd_entry_t *)allocpages(NPGPTD, &physfree);
 
+	/*
+	 * Allocate KSTACK.  Leave a guard page between IdlePTD and
+	 * proc0kstack, to control stack overflow for thread0 and
+	 * prevent corruption of the page table.  We leak the guard
+	 * physical memory due to 1:1 mappings.
+	 */
 	allocpages(1, &physfree);
 	proc0kstack = allocpages(KSTACK_PAGES, &physfree);
 
@@ -366,6 +385,18 @@ pmap_cold(void)
 	for (a = 0; a < NPGPTD; a++)
 		IdlePTD[PTDPTDI + a] = ((u_int)IdlePTD + ptoa(a)) | PG_V | PG_RW;
 
+	/*
+	 * Initialize page table pages mapping physical address zero
+	 * through the (physical) end of the kernel.  Many of these
+	 * pages must be reserved, and we reserve them all and map
+	 * them linearly for convenience.  We do this even if we've
+	 * enabled PSE above; we'll just switch the corresponding
+	 * kernel PDEs before we turn on paging.
+	 *
+	 * This and all other page table entries allow read and write
+	 * access for various reasons.  Kernel mappings never have any
+	 * access restrictions.
+	 */
 	pmap_cold_mapident(0, atop(NBPDR) * LOWPTDI);
 	pmap_cold_map(0, NBPDR * LOWPTDI, atop(NBPDR) * LOWPTDI);
 	pmap_cold_mapident(KERNBASE, atop(KERNend - KERNBASE));
@@ -387,10 +418,10 @@ pmap_cold(void)
 	pmap_cold_mapident(vm86pa, 3);
 
 	/* Map page 0 into the vm86 page table */
-	*(pt_entry_t*) vm86pa = 0 | PG_RW | PG_U | PG_A | PG_M | PG_V;
+	*(pt_entry_t *)vm86pa = 0 | PG_RW | PG_U | PG_A | PG_M | PG_V;
 
 	/* ...likewise for the ISA hole for vm86 */
-	for (pt = (pt_entry_t*) vm86pa + atop(ISA_HOLE_START), a = 0; a < atop(ISA_HOLE_LENGTH); a++, pt++)
+	for (pt = (pt_entry_t *)vm86pa + atop(ISA_HOLE_START), a = 0; a < atop(ISA_HOLE_LENGTH); a++, pt++)
 		*pt = (ISA_HOLE_START + ptoa(a)) | PG_RW | PG_U | PG_A | PG_M | PG_V;
 
 	/* Enable PSE, PGE, VME, and PAE if configured. */
@@ -440,7 +471,11 @@ pmap_cold(void)
 	pmap_remap_lower(FALSE);
 
 	kernel_vm_end = /* 0 + */NKPT * NBPDR;
+#ifdef PMAP_PAE_COMP
 	i386_pmap_PDRSHIFT = PD_SHIFT;
+#else
+	i386_pmap_PDRSHIFT = PD_SHIFT;
+#endif
 }
 
 void
@@ -464,19 +499,9 @@ pmap_bootstrap(firstaddr)
 	u_long res;
 	int i;
 
-	extern vm_offset_t 	maxmem, physmem;
-
 	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
 
-	printf("ps %x pe %x ", firstaddr, maxmem << PGSHIFT);
-
 	avail_start = firstaddr;
-	avail_end = maxmem << PGSHIFT;
-
-	/* XXX: allow for msgbuf */
-	avail_end -= i386_round_page(sizeof(struct msgbuf));
-
-	mem_size = physmem << PGSHIFT;
 
 	virtual_avail = (vm_offset_t)firstaddr;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
@@ -506,13 +531,15 @@ pmap_bootstrap(firstaddr)
 	v = (c)va; va += ((n) * I386_PAGE_SIZE); p = pte; pte += (n);
 
 	va = virtual_avail;
-	pte = vtopte(va);
+	pte = pmap_pte(kernel_pmap, va);
 
 	SYSMAP(caddr_t, CMAP1, CADDR1, 1)
 	SYSMAP(caddr_t, CMAP2, CADDR2, 1)
 	SYSMAP(caddr_t, CMAP3, CADDR3, 1)
 	SYSMAP(caddr_t, mmap, vmmap, 1)
 	SYSMAP(struct msgbuf *, msgbufmap, msgbufp, 1)
+	/* XXX: allow for msgbuf */
+	avail_end -= i386_round_page(sizeof(struct msgbuf));
 
 	for (i = 0; i < NKPT; i++)
 		KPTD[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
@@ -532,6 +559,14 @@ pmap_bootstrap(firstaddr)
 	 */
 	pmap_tlb_init();
 
+	/*
+	 * Initialize the PAT MSR if present.
+	 * pmap_init_pat() clears and sets CR4_PGE, which, as a
+	 * side-effect, invalidates stale PG_G TLB entries that might
+	 * have been created in our pre-boot environment.  We assume
+	 * that PAT support implies PGE and in reverse, PGE presence
+	 * comes with PAT.  Both features were added for Pentium Pro.
+	 */
 	pmap_init_pat();
 }
 
@@ -762,7 +797,7 @@ pmap_map(virt, start, end, prot)
 		start += PAGE_SIZE;
 	}
 	pmap_invalidate_range(kernel_pmap, sva, va);
-	*virt = va;
+	virt = va;
 	return (sva);
 }
 

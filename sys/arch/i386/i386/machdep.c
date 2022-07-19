@@ -50,6 +50,7 @@
 #include <sys/reboot.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
+#include <sys/extent.h>
 #include <sys/file.h>
 #include <sys/clist.h>
 #include <sys/callout.h>
@@ -1112,6 +1113,17 @@ getmemsize(void)
 	maxmem = Maxmem - 1;
 }
 
+void
+proc0pcb_setup(p)
+	struct proc *p;
+{
+	int sigcode, szsigcode;
+
+	bcopy(&sigcode, p->p_addr->u_pcb.pcb_sigc, szsigcode);
+	p->p_addr->u_pcb.pcb_flags = 0;
+	p->p_addr->u_pcb.pcb_ptd = IdlePTD;
+}
+
 typedef void *vector_t;
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern vector_t IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
@@ -1125,7 +1137,6 @@ init386(first)
 {
 	int x;
 	struct region_descriptor region;
-	int sigcode, szsigcode;
 
 	i386_bus_space_init();
 	init_descriptors();
@@ -1196,10 +1207,7 @@ init386(first)
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
 
 	/* setup proc 0's pcb */
-	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szsigcode);
-
-	proc0.p_addr->u_pcb.pcb_flags = 0;
-	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
+	proc0pcb_setup(&proc0);
 }
 
 void

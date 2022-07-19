@@ -75,7 +75,7 @@
 static	long ioport_ex_storage[EXTENT_FIXED_STORAGE_SIZE(8) / sizeof(long)];
 static	long iomem_ex_storage[EXTENT_FIXED_STORAGE_SIZE(8) / sizeof(long)];
 struct	extent *ioport_ex;
-struct	extent *iomem_ex;
+extern struct extent *iomem_ex;
 static	int ioport_malloc_safe;
 
 int	i386_mem_add_mapping (bus_addr_t, bus_size_t, int, bus_space_handle_t *);

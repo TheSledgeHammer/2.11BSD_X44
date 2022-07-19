@@ -153,6 +153,4 @@ extern int 						*esym;
 
 struct bootinfo *bootinfo_alloc(char *, int);
 void 			*bootinfo_lookup(int);
-
-int				i386_ksyms_addsyms_elf(struct bootinfo *);
 #endif /* _I386_BOOTINFO_H_ */
