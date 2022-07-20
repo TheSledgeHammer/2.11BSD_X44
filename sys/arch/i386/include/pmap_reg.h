@@ -72,10 +72,11 @@
 #define I386_KPDES			8 										/* KPT page directory size */
 #define I386_UPDES			(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
 
-#define	UPTDI				0x3f6									/* ptd entry for u./kernel&user stack */
-#define	PTDPTDI				0x3f7									/* ptd entry that points to ptd! */
-#define	KPTDI_FIRST			0x3f8									/* start of kernel virtual pde's */
-#define	KPTDI_LAST			0x3fA									/* last of kernel virtual pde's */
+#define	UPTDI				0x3F6									/* ptd entry for u./kernel&user stack */
+#define	PTDPTDI				0x3F7									/* ptd entry that points to ptd! */
+#define	APTDPTDI			0x3FE									/* ptd entry that points to aptd! */
+#define	KPTDI_FIRST			0x3F8									/* start of kernel virtual pde's (i.e. SYSPDROFF) */
+#define	KPTDI_LAST			0x3FA									/* last of kernel virtual pde's */
 
 //#define	KPTDI				0										/* start of kernel virtual pde's */
 
@@ -155,14 +156,34 @@ typedef uint64_t 			pt_entry_t;
 #define	PT_ENTRY_NULL		((pt_entry_t) 0)
 #define	PD_ENTRY_NULL		((pd_entry_t) 0)
 
+/*
+ * PTmap is recursive pagemap at top of virtual address space.
+ * Within PTmap, the page directory can be found (third indirection).
+ */
+//#define PDRPDROFF   		0x3F7 	/* i.e. PTDPTDI */
+#define PTmap       		((pt_entry_t *)0xFDC00000)
+#define PTD         		((pd_entry_t *)0xFDFF7000)
+#define PTDpde      		((pd_entry_t *)0xFDFF7000+4*PTDPTDI)
+
+/*
+ * APTmap, APTD is the alternate recursive pagemap.
+ * It's used when modifying another process's page tables.
+ */
+//#define APDRPDROFF  		0x3FE	/* i.e. APTDPTDI */
+#define APTmap      		((pt_entry_t *)0xFF800000)
+#define APTD        		((pd_entry_t *)0xFFBFE000)
+#define APTDpde     		((pd_entry_t *)0xFDFF7000+4*APTDPTDI)
+
 #ifdef _KERNEL
+/*
 extern pt_entry_t 			PTmap[], APTmap[];
 extern pd_entry_t 			PTD[], APTD[];
 extern pd_entry_t 			PTDpde[], APTDpde[];
+*/
 extern pd_entry_t 			*IdlePTD;
 extern pt_entry_t 			*KPTmap;
 #ifdef PMAP_PAE_COMP
-extern pdpt_entry_t 			*IdlePDPT;
+extern pdpt_entry_t 		*IdlePDPT;
 #endif
 #endif	/* _KERNEL */
 #endif /* _I386_PMAP_REG_H_ */

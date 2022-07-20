@@ -100,6 +100,7 @@
 #include <vm/include/vm_extern.h>
 
 #include <machine/atomic.h>
+#include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 #include <machine/cpuinfo.h>
@@ -171,40 +172,6 @@ int pmapvacflush = 0;
 #define	PVF_PROTECT	0x04
 #define	PVF_TOTAL	0x80
 #endif
-
-/* System, pte's & apte's addresses */
-#define SYSTEM 				0xFE000000					/* virtual address of system start */
-#define SYSPDROFF 			0x3F8						/* Page dir index of System Base (i.e. KPTDI_FIRST) */
-
-/*
- * PTmap is recursive pagemap at top of virtual address space.
- * Within PTmap, the page directory can be found (third indirection).
- */
-#define PDRPDROFF   		0x3F7						/* Page dir index of Page dir (i.e. PTDPTDI) */
-/*
-#define PTmap       		((pt_entry_t *)0xFDC00000)
-#define PTD         		((pd_entry_t *)0xFDFF7000)
-#define PTDpde      		((pd_entry_t *)0xFDFF7000+4*PDRPDROFF)
-*/
-//pt_entry_t PTmap[0xFDC00000];
-//pd_entry_t PTD[0xFDFF7000];
-//pd_entry_t PTDpde[0xFDFF7000+4*PDRPDROFF];
-
-
-/*
- * APTmap, APTD is the alternate recursive pagemap.
- * It's used when modifying another process's page tables.
- */
-#define APDRPDROFF  		0x3FE						/* Page dir index of Page dir */
-/*
-#define APTmap      		((pt_entry_t *)0xFF800000)
-#define APTD        		((pd_entry_t *)0xFFBFE000)
-#define APTDpde     		((pd_entry_t *)0xFDFF7000+4*APDRPDROFF)
-*/
-
-//pt_entry_t APTmap[0xFF800000];
-//pd_entry_t APTD[0xFFBFE000];
-//pd_entry_t APTDpde[0xFDFF7000+4*APDRPDROFF];
 
 /*
  * Get PDEs and PTEs for user/kernel address space
@@ -332,9 +299,22 @@ pmap_remap_lower(enable)
 {
 	int i;
 
-	for (i = 0; i < LOWPTDI; i++)
+	for (i = 0; i < LOWPTDI; i++) {
 		IdlePTD[i] = enable ? IdlePTD[LOWPTDI + i] : 0;
+	}
 	lcr3(rcr3()); /* invalidate TLB */
+}
+
+static void
+pmap_bootinfo(boot)
+	struct bootinfo *boot;
+{
+	if (boot->bi_esymtab != 0) {
+		physfree = boot->bi_esymtab;
+	}
+	if (boot->bi_kernend != 0) {
+		physfree = boot->bi_kernend;
+	}
 }
 
 void
@@ -345,12 +325,7 @@ pmap_cold(void)
 	u_int cr3, ncr4;
 
 	physfree = (u_long)&_end;
-	if (bootinfo.bi_envp.bi_esymtab != 0) {
-		physfree = bootinfo.bi_envp.bi_esymtab;
-	}
-	if (bootinfo.bi_envp.bi_kernend != 0) {
-		physfree = bootinfo.bi_envp.bi_kernend;
-	}
+	pmap_bootinfo(&bootinfo);
 	physfree = roundup(physfree, NBPDR);
 	KERNend = physfree;
 
@@ -381,21 +356,24 @@ pmap_cold(void)
 	vm86paddr = vm86pa = allocpages(3, &physfree);
 
 	/* Install page tables into PTD.  Page table page 1 is wasted. */
-	for (a = 0; a < NKPT; a++)
+	for (a = 0; a < NKPT; a++) {
 		IdlePTD[a] = (KPTphys + ptoa(a)) | PG_V | PG_RW | PG_A | PG_M;
+	}
 
 #ifdef PMAP_PAE_COMP
 	/* PAE install PTD pointers into PDPT */
-	for (a = 0; a < NPGPTD; a++)
+	for (a = 0; a < NPGPTD; a++) {
 		IdlePDPT[a] = ((u_int)IdlePTD + ptoa(a)) | PG_V;
+	}
 #endif
 
 	/*
 	 * Install recursive mapping for kernel page tables into
 	 * itself.
 	 */
-	for (a = 0; a < NPGPTD; a++)
+	for (a = 0; a < NPGPTD; a++) {
 		IdlePTD[PTDPTDI + a] = ((u_int)IdlePTD + ptoa(a)) | PG_V | PG_RW;
+	}
 
 	/*
 	 * Initialize page table pages mapping physical address zero
@@ -433,8 +411,9 @@ pmap_cold(void)
 	*(pt_entry_t *)vm86pa = 0 | PG_RW | PG_U | PG_A | PG_M | PG_V;
 
 	/* ...likewise for the ISA hole for vm86 */
-	for (pt = (pt_entry_t *)vm86pa + atop(ISA_HOLE_START), a = 0; a < atop(ISA_HOLE_LENGTH); a++, pt++)
+	for (pt = (pt_entry_t *)vm86pa + atop(ISA_HOLE_START), a = 0; a < atop(ISA_HOLE_LENGTH); a++, pt++) {
 		*pt = (ISA_HOLE_START + ptoa(a)) | PG_RW | PG_U | PG_A | PG_M | PG_V;
+	}
 
 	/* Enable PSE, PGE, VME, and PAE if configured. */
 	ncr4 = 0;
@@ -445,8 +424,9 @@ pmap_cold(void)
 		 * Superpage mapping of the kernel text.  Existing 4k
 		 * page table pages are wasted.
 		 */
-		for (a = KERNBASE; a < KERNend; a += NBPDR)
+		for (a = KERNBASE; a < KERNend; a += NBPDR) {
 			IdlePTD[a >> PDRSHIFT] = a | PG_PS | PG_A | PG_M | PG_RW | PG_V;
+		}
 	}
 	if ((cpu_feature & CPUID_PGE) != 0) {
 		ncr4 |= CR4_PGE;
@@ -529,10 +509,9 @@ pmap_bootstrap(firstaddr)
 	 * Count bootstrap data as being resident in case any of this data is
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
-	kernel_pmap->pm_pdir = (pd_entry_t *)(IdlePTD);
-
+	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
 #ifdef PMAP_PAE_COMP
-	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(IdlePDPT);
+	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(KERNBASE + IdlePDPT);
 #endif
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
 	LIST_INIT(&pmaps);
@@ -741,7 +720,7 @@ pmap_init(phys_start, phys_end)
 		printf("pmap_init(%x, %x)\n", phys_start, phys_end);
 #endif
 
-	addr = (vm_offset_t) SYSTEM + KPTphys;
+	addr = (vm_offset_t) KERNBASE + KPTphys;
 	vm_object_reference(kernel_object);
 	vm_map_find(kernel_map, kernel_object, addr, &addr, 2 * NBPG, FALSE);
 
@@ -1553,15 +1532,14 @@ pmap_pte(pmap, va)
 	pd_entry_t *pde;
 
 	pde = pmap_pde(pmap, va);
-
 	if (pmap && pmap_pde_v(pmap_pde(pmap, va))) {
 		/* are we current address space or kernel? */
-		if (pmap->pm_pdir[PTDPTDI] == PTDpde || pmap == kernel_pmap) {
+		if (pmap->pm_pdir == PTDpde || pmap == kernel_pmap) {
 			return ((pt_entry_t *) vtopte(va));
 		} else {
 			/* otherwise, we are alternate address space */
-			if (pmap->pm_pdir[PTDPTDI] != APTDpde) {
-				APTDpde = pmap->pm_pdir[PTDPTDI];
+			if (pmap->pm_pdir != APTDpde) {
+				//APTDpde = pmap->pm_pdir;
 				tlbflush();
 			}
 			newpf = *pde & PG_FRAME;

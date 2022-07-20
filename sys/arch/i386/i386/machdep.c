@@ -108,7 +108,7 @@ void i386_microtime(struct timeval *);
 void cpu_dumpconf(void);
 int	 cpu_dump(void);
 void dumpsys(void);
-void init386_bootinfo(void);
+void init386_bootinfo(struct bootinfo *);
 void cpu_reset(void);
 void cpu_halt(void);
 
@@ -153,11 +153,6 @@ int	cpureset_delay = CPURESET_DELAY;
 #else
 int cpureset_delay = 2000; /* default to 2s */
 #endif
-
-struct dumpmem {
-	vm_offset_t start;
-    vm_size_t 	end;
-};
 
 typedef struct {
 	u_quad_t	start;		/* Physical start address	*/
@@ -718,11 +713,38 @@ haltsys:
 	/*NOTREACHED*/
 }
 
-struct dumpmem dumpmem[16];
-u_int ndumpmem;
 u_long	dumpmag = 	0x8fca0101;	/* magic number for savecore */
 int		dumpsize = 	0;			/* also for savecore */
 long	dumplo = 	0; 			/* blocks */
+
+/*
+ * cpu_dumpsize: calculate size of machine-dependent kernel core dump headers.
+ */
+int
+cpu_dumpsize(void)
+{
+	int size;
+	size = ALIGN(mem_cluster_cnt * sizeof(phys_ram_seg_t));
+	if(roundup(size, dbtob(1)) != dbtob(1)) {
+		return (-1);
+	}
+	return (1);
+}
+
+/*
+ * cpu_dump_mempagecnt: calculate the size of RAM (in pages) to be dumped.
+ */
+u_long
+cpu_dump_mempagecnt(void)
+{
+	u_long i, n;
+
+	n = 0;
+	for (i = 0; i < mem_cluster_cnt; i++) {
+		n += atop(mem_clusters[i].size);
+	}
+	return (n);
+}
 
 /*
  * This is called by configure to set dumplo and dumpsize.
@@ -735,45 +757,66 @@ void
 cpu_dumpconf(void)
 {
 	const struct bdevsw *bdev;
-	int nblks;	/* size of dump area */
-	int i;
+	int nblks, dumpblks;	/* size of dump area */
 
 	bdev = bdevsw_lookup(dumpdev);
-	if (dumpdev == NODEV || bdev == NULL || bdev->d_psize == NULL) {
+	if (dumpdev == NODEV){
+		dumpsize = 0;
 		return;
 	}
+	if(bdev == NULL) {
+		panic("dumpconf: bad dumpdev=0x%x", dumpdev);
+		return;
+	}
+	nblks = (*bdev->d_psize)(dumpdev);
 	if (nblks <= ctod(1)) {
+		dumpsize = 0;
+		return;
+	}
+	dumpblks = cpu_dumpsize();
+	if (dumpblks < 0) {
+		dumpsize = 0;
+		return;
+	}
+	/* If dump won't fit (incl. room for possible label), punt. */
+	if (dumpblks > (nblks - ctod(1))) {
+		dumpsize = 0;
 		return;
 	}
 
-	if (dumplo < ctod(1)) {
-		dumplo = ctod(1);
-	}
-	for (i = 0; i < ndumpmem; i++) {
-		dumpsize = max(dumpsize, dumpmem[i].end);
-	}
+	/* Put dump at end of partition */
+	dumplo = nblks - dumpblks;
 
-	/* Put dump at end of partition, and make it fit. */
-	if (dumpsize > dtoc(nblks - dumplo - 1)) {
-		dumpsize = dtoc(nblks - dumplo - 1);
-	}
-	if (dumplo < nblks - ctod(dumpsize) - 1) {
-		dumplo = nblks - ctod(dumpsize) - 1;
-	}
+	/* dumpsize is in page units, and doesn't include headers. */
+	dumpsize = cpu_dump_mempagecnt();
+	return;
 }
 
 /*
- * cpu_dump: dump machine-dependent kernel core dump headers.
+ * cpu_dump: dump the machine-dependent kernel core dump headers.
  */
 int
 cpu_dump(void)
 {
 	const struct bdevsw *bdev;
+	phys_ram_seg_t *memsegp;
 	int (*dump)(dev_t, daddr_t, caddr_t, size_t);
 	long buf[dbtob(1) / sizeof (long)];
+	int i;
 
 	bdev = bdevsw_lookup(dumpdev);
+	if (bdev == NULL) {
+		return (ENXIO);
+	}
 	dump = bdev->d_dump;
+
+	memset(buf, 0, sizeof buf);
+	memsegp = (phys_ram_seg_t *)&buf;
+
+	for (i = 0; i < mem_cluster_cnt; i++) {
+		memsegp[i].start = mem_clusters[i].start;
+		memsegp[i].size = mem_clusters[i].size;
+	}
 	return (dump(dumpdev, dumplo, (caddr_t)buf, dbtob(1)));
 }
 
@@ -794,7 +837,7 @@ reserve_dumppages(vm_offset_t p)
 void
 dumpsys(void)
 {
-	u_long mem, npg, i, n;
+	u_long totalbytesleft, bytes, i, n, m, memseg;
 	u_long maddr;
 	int psize;
 	daddr_t blkno;
@@ -833,28 +876,26 @@ dumpsys(void)
 		goto err;
 	}
 
-	dump = bdev->d_dump;
-	error = 0;
+	totalbytesleft = ptoa(cpu_dump_mempagecnt());
+	blkno = dumplo + cpu_dumpsize();
 
-	for (mem = 0; mem < ndumpmem; mem++) {
-		npg = dumpmem[i].end - dumpmem[i].start;
-		maddr = ptoa(dumpmem[i].start);
-		blkno = dumplo + btodb(maddr) + 1;
-
-		for (i = npg; i--; maddr += NBPG, blkno += btodb(NBPG)) {
+	for (memseg = 0; memseg < mem_cluster_cnt; memseg++) {
+		maddr = mem_clusters[memseg].start;
+		bytes = mem_clusters[memseg].size;
+		for (i = 0; i < bytes; i += n, totalbytesleft -= n) {
 			/* Print out how many MBs we have left to go. */
-			if (dbtob(blkno - dumplo) % (1024 * 1024) < NBPG) {
-				printf("%ld ", (ptoa(dumpsize) - maddr) / (1024 * 1024));
+			if ((totalbytesleft % (1024*1024)) == 0) {
+				printf("%ld ", totalbytesleft / (1024 * 1024));
 			}
-
+			/* Limit size for next transfer. */
+			n = bytes - i;
 			pmap_enter(kernel_pmap, dumpspace, maddr, VM_PROT_READ, TRUE);
-			error = (*dump)(dumpdev, blkno, (caddr_t)dumpspace, NBPG);
+			error = (*dump)(dumpdev, blkno, (caddr_t)dumpspace, n);
 			if(error) {
 				goto err;
 			}
 		}
 	}
-
 err:
 	switch (error) {
 	case ENXIO:
@@ -1068,7 +1109,7 @@ make_memory_segments(void)
 	}
 }
 
-#define	KBTOB(x)		((size_t)(x) * 1024UL)
+#define	KBTOB(x) ((size_t)(x) * 1024UL)
 
 void
 getmemsize(void)
@@ -1143,7 +1184,7 @@ init386(first)
 
 	i386_bus_space_init();
 	init_descriptors();
-	init386_bootinfo();
+	init386_bootinfo(&bootinfo);
 
 	/*
 	 * Initialize the console before we print anything out.
@@ -1209,41 +1250,42 @@ init386(first)
 	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
 
-	/* setup proc 0's pcb */
+	/* setup proc0's pcb */
 	proc0pcb_setup(&proc0);
 }
 
 void
-init386_ksyms(bootinfo)
-	struct bootinfo *bootinfo;
+init386_ksyms(boot)
+	struct bootinfo *boot;
 {
 	extern int 	end;
+
 	vm_offset_t addend;
-	if (bootinfo->bi_envp.bi_environment != 0) {
+	if (boot->bi_environment != 0) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
-		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
-		init_static_kenv((char*) bootinfo->bi_envp.bi_environment + addend, 0);
+		addend = (caddr_t) bootinfo->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
+		init_static_kenv((char*) bootinfo->bi_environment + addend, 0);
 	} else {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 		init_static_kenv(NULL, 0);
 	}
-	bootinfo->bi_envp->bi_symtab += KERNBASE;
-	bootinfo->bi_envp->bi_esymtab += KERNBASE;
-	ksyms_addsyms_elf(bootinfo->bi_envp->bi_nsymtab, (int*) bootinfo->bi_envp->bi_symtab, (int*) bootinfo->bi_envp->bi_esymtab);
+	bootinfo->bi_symtab += KERNBASE;
+	bootinfo->bi_esymtab += KERNBASE;
+	ksyms_addsyms_elf(bootinfo->bi_nsymtab, (int*) bootinfo->bi_symtab, (int*) bootinfo->bi_esymtab);
 }
 
 void
-init386_bootinfo(void)
+init386_bootinfo(boot)
+	struct bootinfo *boot;
 {
-	struct bootinfo bootinfo = &bootinfo;
 	vm_offset_t addend;
 
-	if (i386_ksyms_addsyms_elf(&bootinfo)) {
-		init386_ksyms(bootinfo);
+	if (i386_ksyms_addsyms_elf(boot)) {
+		init386_ksyms(boot);
 	} else {
-		if (bootinfo.bi_envp.bi_environment != 0) {
-			addend = (caddr_t)bootinfo.bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
-			init_static_kenv((char *)bootinfo.bi_envp.bi_environment + addend, 0);
+		if (bootinfo->bi_environment != 0) {
+			addend = (caddr_t)bootinfo->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
+			init_static_kenv((char *)bootinfo->bi_environment + addend, 0);
 		} else {
 			init_static_kenv(NULL, 0);
 		}
@@ -1302,7 +1344,7 @@ makectx(tf, pcb)
 }
 
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
-static void f00f_hack(void /* *unused */);
+static void f00f_hack(void);
 
 static void
 f00f_hack(void)
@@ -1340,38 +1382,6 @@ f00f_hack(void)
 	}
 	return;
 }
-#ifdef notyet
-static void
-f00f_hack(void *unused) {
-	struct gate_descriptor *new_idt;
-#ifndef SMP
-	struct region_descriptor r_idt;
-#endif
-	vm_offset_t tmp;
-
-	if (!has_f00f_bug)
-		return;
-
-	printf("Intel Pentium detected, installing workaround for F00F bug\n");
-
-	r_idt.rd_limit = sizeof(idt) - 1;
-
-	tmp = kmem_alloc(kernel_map, PAGE_SIZE * 2);
-	if (tmp == 0)
-		panic("kmem_alloc returned 0");
-	if (((unsigned int)tmp & (PAGE_SIZE-1)) != 0)
-		panic("kmem_alloc returned non-page-aligned memory");
-	/* Put the first seven entries in the lower page */
-	new_idt = (struct gate_descriptor*)(tmp + PAGE_SIZE - (7*8));
-	bcopy(idt, new_idt, sizeof(idt));
-	r_idt.rd_base = (int)new_idt;
-	lidt(&r_idt);
-	idt = new_idt;
-	if (vm_map_protect(kernel_map, tmp, tmp + PAGE_SIZE, VM_PROT_READ, FALSE) != KERN_SUCCESS)
-		panic("vm_map_protect failed");
-	return;
-}
-#endif
 #endif /* defined(I586_CPU) && !NO_F00F_HACK */
 
 void
@@ -1683,6 +1693,7 @@ softintr(mask)
 	__asm __volatile("orl %0,_ipending" : : "ir" (1 << mask));
 }
 
+#ifdef unused
 struct bootinfo *
 bootinfo_alloc(size, len)
 	char *size;
@@ -1710,6 +1721,7 @@ bootinfo_lookup(type)
 	}
 	return (0);
 }
+#endif
 
 /*
  * Provide inb() and outb() as functions.  They are normally only available as

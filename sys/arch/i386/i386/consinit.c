@@ -90,19 +90,8 @@
 int comcnmode = 	CONMODE;
 #endif /* NCOM */
 
-struct bootinfo_console default_consinfo = {
-		.bi_devname = CONSDEVNAME,
-#if (NCOM > 0)
-		.bi_addr = CONADDR,
-		.bi_speed = CONSPEED
-#else
-		.bi_addr = 0,
-		.bi_speed = 0
-#endif
-};
-
-void consinit_io(struct bootinfo_console *);
-void consinit_com(struct bootinfo_console *);
+void consinit_io(struct bootinfo *);
+void consinit_com(struct bootinfo *);
 
 /*
  * consinit:
@@ -113,20 +102,23 @@ void consinit_com(struct bootinfo_console *);
 void
 consinit(void)
 {
-	struct bootinfo_console *consinfo;
+	struct bootinfo *consinfo;
 	static int initted;
 
+	consinfo = &bootinfo;
 	if (initted) {
 		return;
 	}
 	initted = 1;
 
-#ifndef CONS_OVERRIDE
-	consinfo = bootinfo_lookup(BOOTINFO_CONSOLE);
-	if (!consinfo) {
+	consinfo->bi_devname = CONSDEVNAME;
+#if (NCOM > 0)
+	consinfo->bi_addr = CONADDR;
+	consinfo->bi_speed = CONSPEED;
+#else
+	consinfo->bi_addr = 0;
+	consinfo->bi_speed = 0;
 #endif
-		consinfo = &default_consinfo;
-	}
 
 #if (NPC > 0) || (NVGA > 0) || (NEGA > 0) || (NPCDISPLAY > 0)
 	consinit_io(consinfo);
@@ -140,7 +132,7 @@ consinit(void)
 /* consinit keyboard, mouse & display */
 void
 consinit_io(consinfo)
-	struct bootinfo_console *consinfo;
+	struct bootinfo *consinfo;
 {
 	if (!strcmp(consinfo->bi_devname, "pc")) {
 #if (NVGA > 0)
@@ -175,7 +167,7 @@ dokbd:
 /* consinit com */
 void
 consinit_com(consinfo)
-	struct bootinfo_console *consinfo;
+	struct bootinfo *consinfo;
 {
 #if (NCOM > 0)
 	if (!strcmp(consinfo->bi_devname, "com")) {

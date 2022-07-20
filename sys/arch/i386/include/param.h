@@ -107,7 +107,7 @@
 #endif
 #define	PDROFSET		(NBPDR - 1)			/* byte offset into page dir */
 
-#define	KERNBASE		0xFE000000			/* start of kernel virtual */
+#define	KERNBASE		0xFE000000			/* start of kernel virtual (i.e. SYSTEM) */
 #define KERNLOAD		KERNBASE			/* Kernel physical load address */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 

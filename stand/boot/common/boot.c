@@ -343,7 +343,6 @@ getrootmount(char *rootdev)
 	return (error);
 }
 
-
 static int
 loadakernel(int try, int argc, char* argv[])
 {

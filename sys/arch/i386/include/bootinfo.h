@@ -29,7 +29,7 @@
 #ifndef _I386_BOOTINFO_H_
 #define _I386_BOOTINFO_H_
 
-#include <sys/diskmbr.h>
+//#include <sys/diskmbr.h>
 
 #define	BOOTINFO_VERSION		1
 
@@ -42,6 +42,91 @@
 #define BOOTINFO_AOUT_SYMS      0x00000010
 #define BOOTINFO_ELF_SYMS		0x00000020
 
+struct bootinfo {
+	u_int32_t				bi_version;
+	u_int32_t				bi_kernelname;		/* represents a char * */
+	u_int32_t				bi_magic;			/* BOOTINFO_MAGIC */
+	u_int32_t				bi_boothowto;		/* value for boothowto */
+	char 					bi_bootpath[80];
+	int				 		bi_len;
+	int 					bi_type;
+	uint32_t				bi_nentries;		/* Number of bootinfo_* entries in bi_data. */
+	uint32_t 				bi_entry[1];
+
+	/* BIOS */
+	u_int32_t				bi_n_bios_used;
+#define	bi_endcommon		bi_n_bios_used
+	u_int32_t				bi_size;
+	u_int8_t				bi_memsizes_valid;
+	u_int8_t				bi_bios_dev;		/* bootdev BIOS unit number */
+	u_int8_t				bi_pad[2];
+	u_int32_t				bi_basemem;
+	u_int32_t				bi_extmem;
+
+	/* EFI */
+	u_int32_t				bi_systab;			/* pa of EFI system table */
+	u_int32_t				bi_memmap;			/* pa of EFI memory map */
+	u_int32_t				bi_memmap_size;		/* size of EFI memory map */
+	u_int32_t				bi_memdesc_size;	/* sizeof EFI memory desc */
+	u_int32_t				bi_memdesc_version;	/* EFI memory desc version */
+	uint64_t				bi_hcdp;			/* DIG64 HCDP table */
+	uint64_t				bi_fpswa;			/* FPSWA interface */
+
+	/* ENVIRONMENT */
+	u_int32_t				bi_kernend;			/* end of kernel space */
+	u_int32_t				bi_modulep;			/* pre-loaded modules */
+	u_int32_t				bi_nsymtab;
+	u_int32_t				bi_symtab;			/* start of kernel sym table */
+	u_int32_t				bi_esymtab;			/* end of kernel sym table */
+	u_int32_t				bi_environment;		/* environment */
+
+	/* BOOTDISK */
+	int 					bi_labelsector;
+	struct {
+		u_int16_t 			type;
+		u_int16_t 			checksum;
+		char 				packname[16];
+	} bi_label;
+	int 					bi_biosdev;
+	int 					bi_partition;
+	u_int32_t				bi_nfs_diskless;	/* struct nfs_diskless */
+
+	/* NETWORK */
+	char 					bi_ifname[16];
+	int 					bi_bus;
+#define BI_BUS_ISA 			0
+#define BI_BUS_PCI 			1
+	union {
+		unsigned int 		iobase; 			/* ISA */
+		unsigned int 		tag; 				/* PCI, BIOS format */
+	} bi_netaddr;
+
+	/* CONSOLE */
+	char 					bi_devname[16];
+	int 					bi_addr;
+	int 					bi_speed;
+
+	/* GEOMETRY */
+	u_int32_t				bi_bios_geom[N_BIOS_GEOM];
+	int 					bi_spc;
+	int						bi_spt;
+	struct dos_partition 	bi_dosparts[NDOSPART];
+
+	/* LEGACY */
+	int 					*bi_howtop;
+	int 					*bi_bootdevp;
+	vm_offset_t 			*bi_bip;
+
+	/* ELF SYMBOLS */
+	uint32_t				bi_flags;
+	u_long					bi_marks;
+	void *					bi_symstart;
+	size_t					bi_symsize;
+	void *					bi_strstart;
+	size_t					bi_strsize;
+};
+
+#ifdef unused
 struct bootinfo {
 	u_int32_t					bi_version;
 	u_int32_t					bi_kernelname;		/* represents a char * */
@@ -72,7 +157,7 @@ struct bootinfo {
 		u_int32_t				bi_memdesc_size;	/* sizeof EFI memory desc */
 		u_int32_t				bi_memdesc_version;	/* EFI memory desc version */
 		uint64_t				bi_hcdp;			/* DIG64 HCDP table */
-		//uint64_t				bi_fpswa;			/* FPSWA interface */
+		uint64_t				bi_fpswa;			/* FPSWA interface */
 	} bi_efi;
 
 	struct bootinfo_enivronment {/* ENVIRONMENT */
@@ -135,6 +220,7 @@ struct bootinfo {
 		size_t					bi_strsize;
 	} bi_sym;
 };
+#endif
 
 #ifdef _KERNEL
 extern struct bootinfo 			bootinfo;

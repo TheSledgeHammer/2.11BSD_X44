@@ -58,7 +58,8 @@ typedef struct {
 phys_ram_seg_t mem_clusters[VM_PHYSSEG_MAX];
 int	mem_cluster_cnt;
 
-#define	KBTOB(x)		((size_t)(x) * 1024UL)
+
+#define	KBTOB(x)	((size_t)(x) * 1024UL)
 
 int
 add_mem_cluster(u_int64_t seg_start, u_int64_t seg_end, u_int32_t type)
@@ -157,39 +158,23 @@ add_smap_entries(struct bios_smap *smapbase)
 	}
 }
 
-static inline u_char
-rtcin_locked(int reg)
-{
-	inb(0x84);
-	outb(IO_RTC, reg);
-	inb(0x84);
-	return (inb(IO_RTC + 1));
-}
-
 int
-rtcin(int reg)
+has_smapbase(smapbase)
+	struct bios_smap *smapbase;
 {
-	u_char val;
+	int has_smap;
 
-	val = rtcin_locked(reg);
-
-	return (val);
+	has_smap = 0;
+	if (smapbase != NULL) {
+		add_smap_entries(smapbase);
+		has_smap = 1;
+		return (has_smap);
+	}
+	return (has_smap);
 }
 
 void
-biosbasemem(void)
+getmemsize(void)
 {
-	/*
-	 * This memory size stuff is a real mess.  Here is a simple
-	 * setup that just believes the BIOS.  After the rest of
-	 * the system is a little more stable, we'll come back to
-	 * this and deal with issues if incorrect BIOS information,
-	 * and when physical memory is > 16 megabytes.
-	 */
-	biosbasemem = rtcin(RTC_BASELO) + (rtcin(RTC_BASEHI) << 8);
-	biosextmem = rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI) << 8);
-	Maxmem = btoc((biosextmem + 1024) * 1024);
-	maxmem = Maxmem - 1;
-	physmem = btoc(biosbasemem * 1024 + (biosextmem - 1) * 1024);
-	printf("bios %dK+%dK. maxmem %x, physmem %x\n", biosbasemem, biosextmem, ctob(maxmem), ctob(physmem));
+
 }

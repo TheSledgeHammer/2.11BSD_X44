@@ -497,8 +497,9 @@ vm86_initial_bioscalls(basemem, extmem)
 	struct bios_smap 	*smap;
 	pt_entry_t pte;
 	u_long pa;
-	int res, i;
+	int res, i, has_smap;
 
+	has_smap = 0;
 	bzero(&vmf, sizeof(struct vm86frame));		/* safety */
 
    	/*
