@@ -69,12 +69,7 @@
 #ifndef	_VM_PARAM_H_
 #define	_VM_PARAM_H_
 
-#ifdef _KERNEL
-#include <sys/resourcevar.h>
-#include <sys/types.h>
-#include <sys/vmmeter.h>
 #include <machine/vmparam.h>
-#endif
 
 /*
  *	The machine independent pages are refered to as PAGES.  A page
