@@ -57,7 +57,6 @@
 #include <machine/cputypes.h>
 #include <machine/bus.h>
 #include <machine/pmap.h>
-#include <machine/pmap_reg.h>
 #include <machine/pte.h>
 
 /*

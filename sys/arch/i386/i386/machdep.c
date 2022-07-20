@@ -149,7 +149,7 @@ int  *esym;
 extern int biosbasemem, biosextmem;
 
 #ifdef CPURESET_DELAY
-int	cpureset_delay = CPURESET_DELAY;
+int cpureset_delay = CPURESET_DELAY;
 #else
 int cpureset_delay = 2000; /* default to 2s */
 #endif
@@ -166,7 +166,7 @@ struct pcb *curpcb;			/* our current running pcb */
 int	i386_use_fxsave;
 
 union descriptor 		gdt[NGDT];
-struct gate_descriptor 	idt[32+16];
+struct gate_descriptor 		idt[NIDT];
 union descriptor 		ldt[NLDT];
 
 struct soft_segment_descriptor *gdt_segs;
@@ -1065,21 +1065,31 @@ setregion(rd, base, limit)
  * Initialize segments & interrupt table
  */
 void
-setidt(idx, func, args, typ, dpl)
-	int idx, args, typ, dpl;
-	void *func;
+setidt_nodisp(idx, off, args, typ, dpl)
+	int idx, off, args, typ, dpl;
 {
 	struct gate_descriptor *ip;
-
+	
 	ip = &idt[idx];
-	ip->gd_looffset = (u_int)func;
+	ip->gd_looffset = off;
 	ip->gd_selector = GSEL(GCODE_SEL, SEL_KPL);
 	ip->gd_stkcpy = args;
 	ip->gd_xx = 0;
 	ip->gd_type = typ;
 	ip->gd_dpl = dpl;
 	ip->gd_p = 1;
-	ip->gd_hioffset = ((u_int)func) >> 16 ;
+	ip->gd_hioffset = ((u_int)off) >> 16 ;
+}
+
+void
+setidt(idx, func, args, typ, dpl)
+	int idx, args, typ, dpl;
+	void *func;
+{
+	int off;
+	
+	off = func != NULL ? (int)func : 0;
+	setidt_nodisp(idx, off, typ, dpl);
 }
 
 void
@@ -1258,20 +1268,20 @@ void
 init386_ksyms(boot)
 	struct bootinfo *boot;
 {
-	extern int 	end;
-
+	extern int  end;
 	vm_offset_t addend;
+	
 	if (boot->bi_environment != 0) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
-		addend = (caddr_t) bootinfo->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
-		init_static_kenv((char*) bootinfo->bi_environment + addend, 0);
+		addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
+		init_static_kenv((char*) boot->bi_environment + addend, 0);
 	} else {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 		init_static_kenv(NULL, 0);
 	}
-	bootinfo->bi_symtab += KERNBASE;
-	bootinfo->bi_esymtab += KERNBASE;
-	ksyms_addsyms_elf(bootinfo->bi_nsymtab, (int*) bootinfo->bi_symtab, (int*) bootinfo->bi_esymtab);
+	boot->bi_symtab += KERNBASE;
+	boot->bi_esymtab += KERNBASE;
+	ksyms_addsyms_elf(boot->bi_nsymtab, (int*) boot->bi_symtab, (int*) boot->bi_esymtab);
 }
 
 void
@@ -1283,9 +1293,9 @@ init386_bootinfo(boot)
 	if (i386_ksyms_addsyms_elf(boot)) {
 		init386_ksyms(boot);
 	} else {
-		if (bootinfo->bi_environment != 0) {
-			addend = (caddr_t)bootinfo->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
-			init_static_kenv((char *)bootinfo->bi_environment + addend, 0);
+		if (boot->bi_environment != 0) {
+			addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
+			init_static_kenv((char *)boot->bi_environment + addend, 0);
 		} else {
 			init_static_kenv(NULL, 0);
 		}
@@ -1441,8 +1451,8 @@ cpu_reset(void)
 	 * Try to cause a triple fault and watchdog reset by making the IDT
 	 * invalid and causing a fault.
 	 */
-	memset((caddr_t) idt, 0, NIDT * sizeof(idt[0]));
-	setregion(&region, idt, NIDT * sizeof(idt[0]) - 1);
+	memset((caddr_t) idt, 0, sizeof(idt));
+	setregion(&region, idt, sizeof(idt) - 1);
 	lidt(&region);
 	__asm __volatile("divl %0,%1" : : "q" (0), "a" (0));
 
@@ -1692,36 +1702,6 @@ softintr(mask)
 {
 	__asm __volatile("orl %0,_ipending" : : "ir" (1 << mask));
 }
-
-#ifdef unused
-struct bootinfo *
-bootinfo_alloc(size, len)
-	char *size;
-	int len;
-{
-	struct bootinfo *boot;
-	boot = (struct bootinfo *)(size + len);
-
-	return (boot);
-}
-
-void *
-bootinfo_lookup(type)
-	int type;
-{
-	struct bootinfo *help;
-	int n = *(int*)bootsize;
-	help = bootinfo_alloc(bootsize, sizeof(int));
-
-	while (n--) {
-		if (help->bi_type == type) {
-			return (help);
-		}
-		help = bootinfo_alloc((char *)help, help->bi_len);
-	}
-	return (0);
-}
-#endif
 
 /*
  * Provide inb() and outb() as functions.  They are normally only available as

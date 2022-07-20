@@ -81,6 +81,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
@@ -90,31 +91,24 @@
 #include <sys/cputopo.h>
 #include <sys/queue.h>
 #include <sys/lock.h>
-#include <sys/vmmeter.h>
-#include <sys/lock.h>
+//#include <sys/vmmeter.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
-#include <vm/include/vm_param.h>
-#include <vm/include/vm_extern.h>
 
-#include <machine/atomic.h>
+//#include <machine/atomic.h>
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
-#include <machine/cpuinfo.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
-#include <machine/param.h>
+//#include <machine/param.h>
 #include <machine/pte.h>
-#include <machine/specialreg.h>
-#include <machine/vmparam.h>
 #ifdef SMP
 #include <machine/smp.h>
 #endif
 #include <machine/pmap.h>
-#include <machine/pmap_reg.h>
 #include <machine/pmap_tlb.h>
 
 #include <machine/isa/isa_machdep.h>
@@ -271,8 +265,8 @@ allocpages(cnt, physfree)
 	u_long res;
 
 	res = *physfree;
-	*physfree += PAGE_SIZE * cnt;
-	bzero((void *)res, PAGE_SIZE * cnt);
+	*physfree += PGSIZE * cnt;
+	bzero((void *)res, PGSIZE * cnt);
 	return (res);
 }
 
@@ -281,7 +275,7 @@ pmap_cold_map(pa, va, cnt)
 	u_long pa, va, cnt;
 {
 	pt_entry_t *pt;
-	for (pt = (pt_entry_t *)KPTphys + atop(va); cnt > 0; cnt--, pt++, va += PAGE_SIZE, pa += PAGE_SIZE) {
+	for (pt = (pt_entry_t *)KPTphys + atop(va); cnt > 0; cnt--, pt++, va += PGSIZE, pa += PGSIZE) {
 		*pt = pa | PG_V | PG_RW | PG_A | PG_M;
 	}
 }

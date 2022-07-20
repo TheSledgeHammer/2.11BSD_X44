@@ -110,7 +110,7 @@ consinit(void)
 		return;
 	}
 	initted = 1;
-
+	
 	consinfo->bi_devname = CONSDEVNAME;
 #if (NCOM > 0)
 	consinfo->bi_addr = CONADDR;

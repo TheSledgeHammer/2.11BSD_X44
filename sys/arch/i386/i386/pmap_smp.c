@@ -28,6 +28,7 @@
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
@@ -36,13 +37,13 @@
 #include <sys/sysctl.h>
 #include <sys/cputopo.h>
 #include <sys/queue.h>
+#include <sys/atomic.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_param.h>
 
-#include <machine/atomic.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
@@ -52,7 +53,7 @@
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
 #include <machine/smp.h>
-#include <machine/pmap_reg.h>
+#include <machine/pmap.h>
 #include <machine/pmap_tlb.h>
 
 volatile int 		smp_tlb_wait;
@@ -86,7 +87,7 @@ smp_targeted_tlb_shootdown(mask, vector, pmap, addr1, addr2)
 			return;
 		}
 	} else {
-		mask &= ~(1 << &cpuid_to_percpu[ncpu]);
+		mask &= ~(1 << cpuid_to_percpu[ncpu]->pc_cpumask);
 		if (mask == 0) {
 			return;
 		}
@@ -115,7 +116,7 @@ smp_targeted_tlb_shootdown(mask, vector, pmap, addr1, addr2)
 
 	while (smp_tlb_wait < ncpu) {
 		ncpu--;
-		pmap_tlb_shootdown(pmap, addr1, pte, mask);
+		pmap_tlb_shootdown(pmap, addr1, pte, (int32_t *)&mask);
 		pmap_tlb_shootnow(pmap, mask);
 	}
 	return;

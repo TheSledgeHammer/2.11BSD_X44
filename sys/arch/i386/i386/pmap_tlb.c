@@ -35,6 +35,7 @@
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
@@ -43,15 +44,16 @@
 #include <sys/sysctl.h>
 #include <sys/cputopo.h>
 #include <sys/queue.h>
+#include <sys/atomic.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_param.h>
 
-#include <machine/atomic.h>
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
+#include <machine/cpufunc.h>
 #include <machine/cpuvar.h>
 #include <machine/param.h>
 #include <machine/pte.h>
@@ -60,8 +62,13 @@
 #ifdef SMP
 #include <machine/smp.h>
 #endif
-#include <machine/pmap_reg.h>
+#include <machine/pmap.h>
 #include <machine/pmap_tlb.h>
+
+
+void pmap_tlb_shootdown_q_drain(struct pmap_tlb_shootdown_q *);
+struct pmap_tlb_shootdown_job *pmap_tlb_shootdown_job_get(struct pmap_tlb_shootdown_q *);
+void pmap_tlb_shootdown_job_put(struct pmap_tlb_shootdown_q *, struct pmap_tlb_shootdown_job *);
 
 /*
  * pmap_pg_g: if our processor supports PG_G in the PTE then we
@@ -172,13 +179,13 @@ pmap_tlb_pte(sva, eva)
 	if((sva == 0 && eva == 0) || (sva != 0 && eva == 0)) {
 		addr = sva;
 		if(vtopte(addr) != 0) {
-			pte = vtopte(addr);
+			pte = (pt_entry_t)vtopte(addr);
 			return (pte);
 		}
 	} else {
 		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 			if (vtopte(addr) != 0) {
-				pte = vtopte(addr);
+				pte = (pt_entry_t)vtopte(addr);
 				return (pte);
 			}
 		}
@@ -242,7 +249,7 @@ pmap_tlb_shootdown(pmap, addr, pte, mask)
 #ifdef I386_CPU
 		if (cpu_class == CPUCLASS_386) {
 			pq->pq_flushu++;
-			*mask |= 1U << ci->ci_cpuid;
+			*mask |= 1U << ci->cpu_cpuid;
 			simple_unlock(&pq->pq_slock);
 			continue;
 		}
@@ -310,7 +317,7 @@ pmap_do_tlb_shootdown(pmap, self)
 	s = splipi();
 
 	simple_lock(&pq->pq_slock);
-	if (pq->pq_flush) {
+	if (pq->pq_flushg) {
 		tlbflush();
 		pq->pq_flushg = 0;
 		pq->pq_flushu = 0;

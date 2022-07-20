@@ -208,12 +208,12 @@ define LIR_TIMER			LIR_TIMER
 define BOOTINFO_SIZE		sizeof(struct bootinfo)
 define BI_VERSION			offsetof(struct bootinfo, bi_version)
 define BI_KERNELNAME		offsetof(struct bootinfo, bi_kernelname)
-define BI_ENDCOMMON			offsetof(struct bootinfo, bi_bios.bi_endcommon)
-define BI_SIZE				offsetof(struct bootinfo, bi_bios.bi_size)
-define BI_SYMTAB			offsetof(struct bootinfo, bi_envp.bi_symtab)
-define BI_NSYMTAB			offsetof(struct bootinfo, bi_envp.bi_nsymtab)
-define BI_ESYMTAB			offsetof(struct bootinfo, bi_envp.bi_esymtab)
-define BI_KERNEND			offsetof(struct bootinfo, bi_envp.bi_kernend)
+define BI_ENDCOMMON			offsetof(struct bootinfo, bi_endcommon)
+define BI_SIZE				offsetof(struct bootinfo, bi_size)
+define BI_SYMTAB			offsetof(struct bootinfo, bi_symtab)
+define BI_NSYMTAB			offsetof(struct bootinfo, bi_nsymtab)
+define BI_ESYMTAB			offsetof(struct bootinfo, bi_esymtab)
+define BI_KERNEND			offsetof(struct bootinfo, bi_kernend)
 
 define VM86_FRAMESIZE		sizeof(struct vm86frame)
 define VM86_STACK_SPACE 	VM86_STACK_SPACE
