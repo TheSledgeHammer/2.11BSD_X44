@@ -39,8 +39,6 @@
 #ifndef _I386_VMPARAM_H_
 #define _I386_VMPARAM_H_
 
-#include <machine/pmap_reg.h>
-
 /*
  * Machine dependent constants for 386.
  */

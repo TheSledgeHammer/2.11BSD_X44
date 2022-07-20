@@ -42,8 +42,6 @@
 struct pmap_tlb_shootdown_job {
 	TAILQ_ENTRY(pmap_tlb_shootdown_job) 	pj_list;
 	vm_offset_t 							pj_va;			/* virtual address */
-	//vm_offset_t 							pj_sva;			/* virtual address start */
-	//vm_offset_t 							pj_eva;			/* virtual address end */
 	pt_entry_t 								pj_pte;			/* the PTE bits */
 	pmap_t 									pj_pmap;		/* the pmap which maps the address */
 	struct pmap_tlb_shootdown_job 			*pj_nextfree;
@@ -57,6 +55,7 @@ union pmap_tlb_shootdown_job_al {
 
 struct pmap_tlb_shootdown_q {
 	TAILQ_HEAD(, pmap_tlb_shootdown_job) 	pq_head;
+	int 					pq_pte;			/* aggregate PTE bits */
 	int 									pq_count;		/* number of pending requests */
 	struct lock_object						pq_slock;		/* spin lock on queue */
 	int 									pq_flushg;		/* pending flush global */

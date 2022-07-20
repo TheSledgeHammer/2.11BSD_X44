@@ -51,6 +51,112 @@
 #define _I386_PMAP_H_
 
 /*
+ * 386 page table entry and page table directory
+ * W.Jolitz, 8/89
+ */
+
+#ifndef NKPDE
+#define NKPDE				(KVA_PAGES)							/* number of page tables/pde's */
+#endif
+
+
+#ifndef PMAP_PAE_COMP /* PMAP_NOPAE */
+
+/* NOPAE Constants */
+#define	PD_SHIFT			22
+//#define	PG_FRAME		(~PAGE_MASK)
+#define	PG_PS_FRAME			(0xffc00000)							/* PD_MASK_NOPAE */
+
+#define	NTRPPTD				1
+#define	LOWPTDI				1
+#define	KERNPTDI			2
+
+#define NPGPTD				1
+#define NPGPTD_SHIFT		10
+#undef	PDRSHIFT
+#define	PDRSHIFT			PD_SHIFT
+#undef	NBPDR
+#define NBPDR				(1 << PD_SHIFT)							/* bytes/page dir */
+
+#define KVA_PAGES			(256*4)
+
+#ifndef NKPT
+#define	NKPT				30
+#endif
+
+typedef uint32_t	 		pd_entry_t;
+typedef uint32_t 			pt_entry_t;
+
+#else /* PMAP_PAE_COMP */
+//#define	PMAP_PAE_COMP
+
+/* PAE Constants  */
+#define	PD_SHIFT			21									/* LOG2(NBPDR) */
+#define	PG_FRAME			(0x000ffffffffff000ull)
+#define	PG_PS_FRAME			(0x000fffffffe00000ull)				/* PD_MASK_PAE */
+
+#define	NTRPPTD				2									/* Number of PTDs for trampoline mapping */
+#define	LOWPTDI				2									/* low memory map pde */
+#define	KERNPTDI			4									/* start of kernel text pde */
+
+#define NPGPTD				4									/* Num of pages for page directory */
+#define NPGPTD_SHIFT		9
+#undef	PDRSHIFT
+#define	PDRSHIFT			PD_SHIFT
+#undef	NBPDR
+#define NBPDR				(1 << PD_SHIFT)						/* bytes/page dir */
+
+/*
+ * Size of Kernel address space.  This is the number of page table pages
+ * (4MB each) to use for the kernel.  256 pages == 1 Gigabyte.
+ * This **MUST** be a multiple of 4 (eg: 252, 256, 260, etc).
+ * For PAE, the page table page unit size is 2MB.  This means that 512 pages
+ * is 1 Gigabyte.  Double everything.  It must be a multiple of 8 for PAE.
+ */
+#define KVA_PAGES			(512*4)
+
+/*
+ * The initial number of kernel page table pages that are constructed
+ * by pmap_cold() must be sufficient to map vm_page_array.  That number can
+ * be calculated as follows:
+ *     			max_phys / PAGE_SIZE * sizeof(struct vm_page) / NBPDR
+ * PAE:      	max_phys 16G, sizeof(vm_page) 76, NBPDR 2M, 152 page table pages.
+ * PAE_TABLES: 	max_phys 4G,  sizeof(vm_page) 68, NBPDR 2M, 36 page table pages.
+ * Non-PAE:  	max_phys 4G,  sizeof(vm_page) 68, NBPDR 4M, 18 page table pages.
+ */
+#ifndef NKPT
+#define	NKPT				240
+#endif
+
+typedef uint64_t 			pdpt_entry_t;
+typedef uint64_t 			pd_entry_t;
+typedef uint64_t 			pt_entry_t;
+#endif /* PMAP_PAE_COMP */
+
+#ifndef NKPDE
+#define NKPDE				(KVA_PAGES)					/* number of page tables/pde's */
+#endif
+
+/*
+ * One page directory, shared between
+ * kernel and user modes.
+ */
+#define I386_PAGE_SIZE			NBPG
+#define I386_PDR_SIZE			NBPDR
+
+#define I386_KPDES			8 										/* KPT page directory size */
+#define I386_UPDES			(NBPDR/sizeof(pd_entry_t) - I386_KPDES) /* UPT page directory size */
+
+
+#define	UPTDI				0x3F6									/* ptd entry for u./kernel&user stack */
+#define	PTDPTDI				0x3F7									/* ptd entry that points to ptd! */
+#define	APTDPTDI			0x3FE									/* ptd entry that points to aptd! */
+#define	KPTDI_FIRST			0x3F8									/* start of kernel virtual pde's (i.e. SYSPDROFF) */
+#define	KPTDI_LAST			0x3FA									/* last of kernel virtual pde's */
+
+//#define	KPTDI			0									/* start of kernel virtual pde's */
+
+/*
  * virtual address to page table entry and
  * to physical address. Likewise for alternate address space.
  * Note: these work recursively, thus vtopte of a pte will give
@@ -108,9 +214,36 @@ struct pv_entry {
 };
 typedef struct pv_entry		*pv_entry_t;
 
+#define	PT_ENTRY_NULL		((pt_entry_t) 0)
+#define	PD_ENTRY_NULL		((pd_entry_t) 0)
+
+/*
+ * PTmap is recursive pagemap at top of virtual address space.
+ * Within PTmap, the page directory can be found (third indirection).
+ */
+//#define PDRPDROFF   		0x3F7 	/* i.e. PTDPTDI */
+#define PTmap       		((pt_entry_t *)0xFDC00000)
+#define PTD         		((pd_entry_t *)0xFDFF7000)
+#define PTDpde      		((pd_entry_t *)0xFDFF7000+4*PTDPTDI)
+
+/*
+ * APTmap, APTD is the alternate recursive pagemap.
+ * It's used when modifying another process's page tables.
+ */
+//#define APDRPDROFF  		0x3FE	/* i.e. APTDPTDI */
+#define APTmap      		((pt_entry_t *)0xFF800000)
+#define APTD        		((pd_entry_t *)0xFFBFE000)
+#define APTDpde     		((pd_entry_t *)0xFDFF7000+4*APTDPTDI)
+
 #ifdef _KERNEL
+extern pd_entry_t 		*IdlePTD;
+extern pt_entry_t 		*KPTmap;
+#ifdef PMAP_PAE_COMP
+extern pdpt_entry_t 		*IdlePDPT;
+#endif
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
+extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */
 extern u_long 				physfree;		/* phys addr of next free page */
 extern u_long 				vm86phystk;		/* PA of vm86/bios stack */
 //extern u_long 				vm86paddr;		/* address of vm86 region */
@@ -122,6 +255,7 @@ extern u_long 				tramp_idleptd;
 extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
 pv_entry_t					pv_table;		/* array of entries, one per page */
+
 
 #define pa_index(pa)		atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
@@ -142,7 +276,7 @@ void        pmap_activate(pmap_t, struct pcb *);
 void        pmap_kenter(vm_offset_t, vm_offset_t);
 void	    pmap_kremove(vm_offset_t);
 void 	    pmap_init_pat(void);
-void		pmap_set_nx(void);
+void	    pmap_set_nx(void);
 /* SMP */
 void        pmap_invalidate_page(pmap_t, vm_offset_t);
 void        pmap_invalidate_range(pmap_t, vm_offset_t, vm_offset_t);
