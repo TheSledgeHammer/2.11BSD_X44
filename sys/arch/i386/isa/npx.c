@@ -816,7 +816,9 @@ npxsave_cpu(ci, save)
 }
 
 void
-npxsave_proc(struct proc *p, int save)
+npxsave_proc(p, save)
+	struct proc *p;
+	int save;
 {
 	struct cpu_info *ci = curcpu();
 	struct cpu_info *oci;
