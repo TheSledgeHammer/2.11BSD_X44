@@ -67,8 +67,8 @@ struct pcb {
 #define	pcb_cr2					pcb_tss.tss_cr2
 #define	pcb_cr3					pcb_tss.tss_cr3
 #define	pcb_cr4					pcb_tss.tss_cr4
-	int							pcb_fsd[2];				/* %fs descriptor */
-	int							pcb_gsd[2];				/* %gs descriptor */
+	struct segment_descriptor	 			pcb_fsd;	/* %fs descriptor */
+	struct segment_descriptor 				pcb_gsd;	/* %gs descriptor */
 	union descriptor			*pcb_desc;				/* gate & segment descriptors */
 	int							pcb_ldt_sel;
 	int							pcb_ldt_len;
