@@ -153,7 +153,7 @@ struct vm86_intcall_args {
 
 #ifdef _KERNEL
 #define	VM86_STACK_SPACE	16
-extern u_long vm86paddr;
+extern u_long 				vm86paddr;
 
 struct proc;
 struct trapframe_vm86;
@@ -190,37 +190,6 @@ get_vm86flags(tf86, vm86)
 
 	return (flags);
 }
-
-#ifdef notyet
-/* set vm86 flags */
-static __inline void
-set_vflags(p, flags)
-	struct proc *p;
-	int flags;
-{
-	struct trapframe_vm86 	*tf;
-	struct vm86_kernel 		*vm86;
-
-	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
-	vm86 = &p->p_addr->u_pcb.pcb_vm86;
-
-	set_vm86flags(tf, vm86, flags);
-}
-
-/* get vm86 flags */
-static __inline int
-get_vflags(p)
-	struct proc *p;
-{
-	struct trapframe_vm86 	*tf;
-	struct vm86_kernel 		*vm86;
-
-	tf = (struct trapframe_vm86 *)p->p_md.md_regs;
-	vm86 = &p->p_addr->u_pcb.pcb_vm86;
-
-	return (get_vm86flags(tf, vm86));
-}
-#endif
 
 extern int vm86_emulate(struct vm86frame *);
 extern int vm86_sysarch(struct proc *, char *);

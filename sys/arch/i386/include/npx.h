@@ -136,6 +136,7 @@ struct	emcsts {
 	long				em_dl;				/* memory mapped D low register when swtched */
 };
 
+extern int	i386_use_fxsave;
 struct proc *npxproc(void);
 
 #endif /* _I386_NPX_H_ */

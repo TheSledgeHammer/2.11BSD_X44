@@ -357,6 +357,10 @@ fakeintr(spic, fakehand, level)
 	fakehand->ih_pic = softpic_handle_pic(spic);
 
 	switch (level) {
+	case IPL_SOFTBIO:
+		fakehand->ih_level = IPL_SOFTBIO;
+		break;
+
 	case IPL_SOFTCLOCK:
 		fakehand->ih_level = IPL_SOFTCLOCK;
 		break;

@@ -1482,15 +1482,14 @@ cpu_getmcontext(p, mcp, flags)
 	gr = mcp->mc_gregs;
 	/* Save register context. */
 	if (tf->tf_eflags & PSL_VM) {
-		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
-		//struct vm86_kernel *vm86 =  &p->p_addr->u_pcb.pcb_vm86;
+		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
+		struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
 
-		gr->mc_gs  = tf->tf_vm86_gs;
-		gr->mc_fs  = tf->tf_vm86_fs;
-		gr->mc_es  = tf->tf_vm86_es;
-		gr->mc_ds  = tf->tf_vm86_ds;
-		gr->mc_eflags = get_vflags(p);
-		//gr->mc_eflags = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+		gr->mc_gs  = tf86->tf_vm86_gs;
+		gr->mc_fs  = tf86->tf_vm86_fs;
+		gr->mc_es  = tf86->tf_vm86_es;
+		gr->mc_ds  = tf86->tf_vm86_ds;
+		gr->mc_eflags = get_vm86flags(tf86, vm86);
 	}  else {
 		gr->mc_gs = tf->tf_gs;
 		gr->mc_fs = tf->tf_fs;
@@ -1555,15 +1554,14 @@ cpu_setmcontext(p, mcp, flags)
 	/* Restore register context, if any. */
 	if ((flags & _UC_CPU) != 0) {
 		if (gr->mc_eflags & PSL_VM) {
-			struct trapframe_vm86 *tf = (struct trapframe_vm86*) tf;
-			//struct vm86_kernel *vm86 = &p->p_addr->u_pcb.pcb_vm86;
+			struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
+			struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
 
-			tf->tf_vm86_gs = gr->mc_gs;
-			tf->tf_vm86_fs = gr->mc_fs;
-			tf->tf_vm86_es = gr->mc_es;
-			tf->tf_vm86_ds = gr->mc_ds;
-			set_vflags(p, gr->mc_eflags);
-			//tf->tf_eflags  = (gr->mc_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+			tf86->tf_vm86_gs = gr->mc_gs;
+			tf86->tf_vm86_fs = gr->mc_fs;
+			tf86->tf_vm86_es = gr->mc_es;
+			tf86->tf_vm86_ds = gr->mc_ds;
+			set_vm86flags(tf86, vm86, gr->mc_eflags);
 		} else {
 			/*
 			 * Check for security violations.  If we're returning

@@ -78,6 +78,7 @@
 /*__KERNEL_RCSID(0, "$NetBSD: process_machdep.c,v 1.94 2019/08/06 02:04:43 kamil Exp $");*/
 
 #include "npx.h"
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/time.h>
@@ -89,6 +90,8 @@
 
 #include <vm/include/vm_extern.h>
 
+#include <machine/frame.h>
+#include <machine/npx.h>
 #include <machine/proc.h>
 #include <machine/psl.h>
 #include <machine/reg.h>
@@ -105,11 +108,14 @@ static inline struct save87  *
 process_fpframe(p)
 	struct proc *p;
 {
-	return (p->p_addr->u_pcb.pcb_savefpu);
+	return (p->p_addr->u_pcb.pcb_savefpu.sv_87);
 }
 
 static int
-xmm_to_s87_tag(const uint8_t *fpac, int regno, uint8_t tw)
+xmm_to_s87_tag(fpac, regno, tw)
+	const uint8_t *fpac;
+	int regno;
+	uint8_t tw;
 {
 	static const uint8_t empty_significand[8] = { 0 };
 	int tag;
@@ -124,27 +130,32 @@ xmm_to_s87_tag(const uint8_t *fpac, int regno, uint8_t tw)
 
 		case 0x0000:
 			if (memcmp(empty_significand, fpac,
-				   sizeof(empty_significand)) == 0)
+				   sizeof(empty_significand)) == 0) {
 				tag = 1;
-			else
+			} else {
 				tag = 2;
+			}
 			break;
 
 		default:
-			if ((fpac[7] & 0x80) == 0)
+			if ((fpac[7] & 0x80) == 0) {
 				tag = 2;
-			else
+			} else {
 				tag = 0;
+			}
 			break;
 		}
-	} else
+	} else {
 		tag = 3;
+	}
 
 	return (tag);
 }
 
 void
-process_xmm_to_s87(const struct fxsave *sxmm, struct save87 *s87)
+process_xmm_to_s87(sxmm, s87)
+	const struct fxsave *sxmm;
+	struct save87 *s87;
 {
 	int i;
 
@@ -178,7 +189,9 @@ process_xmm_to_s87(const struct fxsave *sxmm, struct save87 *s87)
 }
 
 void
-process_s87_to_xmm(const struct save87 *s87, struct fxsave *sxmm)
+process_s87_to_xmm(s87, sxmm)
+	const struct save87 *s87;
+	struct fxsave *sxmm;
 {
 	int i;
 
@@ -194,24 +207,26 @@ process_s87_to_xmm(const struct save87 *s87, struct fxsave *sxmm)
 
 	/* Tag word and registers. */
 	for (i = 0; i < 8; i++) {
-		if (((s87->sv_env.en_tw >> (i * 2)) & 3) == 3)
+		if (((s87->sv_env.en_tw >> (i * 2)) & 3) == 3) {
 			sxmm->fxv_env.fx_tw &= ~(1U << i);
-		else
+		} else {
 			sxmm->fxv_env.fx_tw |= (1U << i);
+		}
 
 #if 0
 		/*
 		 * Software-only word not provided by the userland fpreg
 		 * structure.
 		 */
-		if (((s87->sv_ex_tw >> (i * 2)) & 3) == 3)
+		if (((s87->sv_ex_tw >> (i * 2)) & 3) == 3) {
 			sxmm->fxv_ex_tw &= ~(1U << i);
-		else
+		} else {
 			sxmm->fxv_ex_tw |= (1U << i);
+		}
 #endif
 
 		memcpy(&sxmm->fxv_ac[i].fp_bytes, &s87->sv_ac[i].fp_bytes,
-		    sizeof(sxmm->fxv_ac[i].fp_bytes));
+				sizeof(sxmm->fxv_ac[i].fp_bytes));
 	}
 #if 0
 	/*
@@ -230,13 +245,14 @@ process_read_regs(p, regs)
 	struct trapframe *tf = process_frame(p);
 
 	if (tf->tf_eflags & PSL_VM) {
-		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
+		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *) tf;
+		struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
 
-		regs->r_gs = tf->tf_vm86_gs;
-		regs->r_fs = tf->tf_vm86_fs;
-		regs->r_es = tf->tf_vm86_es;
-		regs->r_ds = tf->tf_vm86_ds;
-		regs->r_eflags = get_vflags(p);
+		regs->r_gs = tf86->tf_vm86_gs;
+		regs->r_fs = tf86->tf_vm86_fs;
+		regs->r_es = tf86->tf_vm86_es;
+		regs->r_ds = tf86->tf_vm86_ds;
+		regs->r_eflags = get_vm86flags(tf86, vm86);
 	} else	{
 		regs->r_gs = tf->tf_gs & 0xffff;
 		regs->r_fs = tf->tf_fs & 0xffff;
@@ -267,7 +283,7 @@ process_read_fpregs(p, regs)
 {
 	struct savefpu *frame = process_fpframe(p);
 
-	if (p->p_md.md_flags & MDL_USEDFPU) {
+	if (p->p_md.md_flags & MDP_USEDFPU) {
 #if NNPX > 0
 		npxsave();
 #endif
@@ -295,7 +311,7 @@ process_read_fpregs(p, regs)
 			frame->sv_87.sv_env.en_sw = 0x0000;
 			frame->sv_87.sv_env.en_tw = 0xffff;
 		}
-		p->p_md.md_flags |= MDL_USEDFPU;
+		p->p_md.md_flags |= MDP_USEDFPU;
 	}
 
 	if (i386_use_fxsave) {
@@ -317,13 +333,14 @@ process_write_regs(p, regs)
 	struct trapframe *tf = process_frame(p);
 
 	if (regs->r_eflags & PSL_VM) {
-		struct trapframe_vm86 *tf = (struct trapframe_vm86 *)tf;
+		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
+		struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
 
-		tf->tf_vm86_gs = regs->r_gs;
-		tf->tf_vm86_fs = regs->r_fs;
-		tf->tf_vm86_es = regs->r_es;
-		tf->tf_vm86_ds = regs->r_ds;
-		set_vflags(p, regs->r_eflags);
+		tf86->tf_vm86_gs = regs->r_gs;
+		tf86->tf_vm86_fs = regs->r_fs;
+		tf86->tf_vm86_es = regs->r_es;
+		tf86->tf_vm86_ds = regs->r_ds;
+		set_vm86flags(tf86, vm86, regs->r_eflags);
 
 		/*
 		 * Make sure that attempts at system calls from vm86
@@ -335,8 +352,9 @@ process_write_regs(p, regs)
 		 * Check for security violations.
 		 */
 		if (((regs->r_eflags ^ tf->tf_eflags) & PSL_USERSTATIC) != 0
-				|| !USERMODE(regs->r_cs, regs->r_eflags))
+				|| !USERMODE(regs->r_cs, regs->r_eflags)) {
 			return (EINVAL);
+		}
 
 		tf->tf_gs = regs->r_gs;
 		tf->tf_fs = regs->r_fs;
@@ -371,12 +389,13 @@ process_write_fpregs(p, regs, sz)
 	size_t *sz;
 {
 	struct savefpu  *frame = process_fpframe(p);
+
 	if (p->p_md.md_flags & MDP_USEDFPU) {
 #if NNPX > 0
-		extern struct proc *npxproc;
-		if (npxproc == p)
+		struct proc *npxp = npxproc();
+		if (npxp == p) {
 			npxsave();
-
+		}
 #endif
 	} else {
 		p->p_md.md_flags |= MDP_USEDFPU;
