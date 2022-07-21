@@ -483,10 +483,10 @@ i386_get_sdbase(p, arg, which)
 
 	switch (which) {
 	case 'f':
-		sd = (struct segment_descriptor *)p->p_addr->u_pcb.pcb_fsd;
+		sd = &p->p_addr->u_pcb.pcb_fsd;
 		break;
 	case 'g':
-		sd = (struct segment_descriptor *)p->p_addr->u_pcb.pcb_gsd;
+		sd = &p->p_addr->u_pcb.pcb_gsd;
 		break;
 	default:
 		panic("i386_get_sdbase");
@@ -505,28 +505,30 @@ sysarch()
 		syscallarg(void *) 	parms;
 	} *uap = (struct sysarch_args *) u.u_ap;
 	struct proc *p;
+	register_t *retval;
 	int error;
 
 	p = u.u_procp;
+	retval = (register_t *)&u.u_r.r_val1;
 	error = 0;
 
 	switch (SCARG(uap, op)) {
 #ifdef	USER_LDT
 	case I386_GET_LDT:
-		error = i386_get_ldt(p, SCARG(uap, parms), u.u_r.r_val1);
+		error = i386_get_ldt(p, SCARG(uap, parms), retval);
 		break;
 	case I386_SET_LDT:
-		error = i386_set_ldt(p, SCARG(uap, parms), u.u_r.r_val1);
+		error = i386_set_ldt(p, SCARG(uap, parms), retval);
 		break;
 #endif
 	case I386_GET_IOPERM:
-		error = i386_get_ioperm(p, SCARG(uap, parms), u.u_r.r_val1);
+		error = i386_get_ioperm(p, SCARG(uap, parms), retval);
 		break;
 	case I386_SET_IOPERM:
-		error = i386_set_ioperm(p, SCARG(uap, parms), u.u_r.r_val1);
+		error = i386_set_ioperm(p, SCARG(uap, parms), retval);
 		break;
 	case I386_VM86:
-		error = vm86_sysarch(p, SCARG(uap, parms), u.u_r.r_val1);
+		error = vm86_sysarch(p, SCARG(uap, parms), retval);
 		break;
 	case I386_GET_GSBASE:
 		error = i386_get_sdbase(p, SCARG(uap, parms), 'g');
