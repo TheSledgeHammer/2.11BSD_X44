@@ -44,23 +44,22 @@ struct i386_set_ioperm_args {
 };
 
 #ifdef _KERNEL
-int i386_get_ldt (struct proc *, char *, register_t *);
-int i386_set_ldt (struct proc *, char *, register_t *);
-int i386_iopl (struct proc *, char *, register_t *);
-int i386_get_ioperm (struct proc *, char *, register_t *);
-int i386_set_ioperm (struct proc *, char *, register_t *);
-int i386_get_sdbase(struct proc *, char *, register_t *);
-int i386_set_sdbase(struct proc *, char *, register_t *);
+int i386_get_ldt(struct proc *, void *, register_t *);
+int i386_set_ldt(struct proc *, void *, register_t *);
+int i386_iopl(struct proc *, void *, register_t *);
+int i386_get_ioperm(struct proc *, void *, register_t *);
+int i386_set_ioperm(struct proc *, void *, register_t *);
+int i386_get_sdbase(struct proc *, void *, register_t *);
+int i386_set_sdbase(struct proc *, void *, register_t *);
 #else
 __BEGIN_DECLS
-int i386_get_ldt(struct proc *, char *, register_t *);
-int i386_set_ldt(struct proc *, char *, register_t *);
+int i386_get_ldt(struct proc *, void *, register_t *);
+int i386_set_ldt(struct proc *, void *, register_t *);
 int i386_iopl(int);
-int i386_get_fsbase(void **);
+int i386_get_fsbase(void *);
 int i386_set_fsbase(void *);
-int i386_get_gsbase(void **);
+int i386_get_gsbase(void *);
 int i386_set_gsbase(void *);
-int i386_vm86(int, void *);
 int sysarch(int, void *);
 __END_DECLS
 #endif

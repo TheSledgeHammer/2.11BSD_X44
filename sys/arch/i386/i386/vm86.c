@@ -778,7 +778,7 @@ vm86_getptr(struct vm86context *vmc, vm_offset_t kva, u_short *sel,
 int
 vm86_sysarch(p, args, retval)
 	struct proc *p;
-	char *args;
+	void *args;
 	register_t *retval;
 {
 	int error = 0;

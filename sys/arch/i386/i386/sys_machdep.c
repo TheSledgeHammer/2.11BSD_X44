@@ -68,17 +68,17 @@
 extern vm_map_t kernel_map;
 
 #ifdef USER_LDT
-int i386_get_ldt(struct proc *, char *, register_t *);
-int i386_set_ldt(struct proc *, char *, register_t *);
+int i386_get_ldt(struct proc *, void *, register_t *);
+int i386_set_ldt(struct proc *, void *, register_t *);
 #endif
-int i386_get_ioperm(struct proc *, char *, register_t *);
-int i386_set_ioperm(struct proc *, char *, register_t *);
+int i386_get_ioperm(struct proc *, void *, register_t *);
+int i386_set_ioperm(struct proc *, void *, register_t *);
 int i386_set_sdbase(struct proc *, void *, char);
 int i386_get_sdbase(struct proc *, void *, char);
 
 #ifdef TRACE
-int	nvualarm;
-void 	vdoualarm(int);
+int	 nvualarm;
+void vdoualarm(int);
 
 int
 vtrace()
@@ -136,28 +136,31 @@ vdoualarm(arg)
 int
 i386_get_ldt(p, args, retval)
 	struct proc *p;
-	char *args;
+	void *args;
 	register_t *retval;
 {
 	int error;
 	struct pcb *pcb = &p->p_addr->u_pcb;
 	int nldt, num;
-	union descriptor *lp;
+	union descriptor *lp, *cp;
 	struct i386_get_ldt_args ua;
 
-	if ((error = copyin(args, &ua, sizeof(ua))) != 0)
+	if ((error = copyin(args, &ua, sizeof(ua))) != 0) {
 		return (error);
+	}
 
 #ifdef	LDT_DEBUG
 	printf("i386_get_ldt: start=%d num=%d descs=%p\n", ua.start, ua.num, ua.desc);
 #endif
 
-	if (ua.start < 0 || ua.num < 0)
+	if (ua.start < 0 || ua.num < 0 || ua.start > 8192 || ua.num > 8192 || ua.start + ua.num > 8192) {
 		return (EINVAL);
+	}
 
-	/*
-	 * XXX LOCKING.
-	 */
+	cp = malloc(ua.num * sizeof(union descriptor), M_TEMP, M_WAITOK);
+	if (cp == NULL) {
+		return ENOMEM;
+	}
 
 	if (pcb->pcb_flags & PMF_USER_LDT) {
 		nldt = pcb->pcb_ldt_len;
@@ -167,85 +170,60 @@ i386_get_ldt(p, args, retval)
 		lp = ldt;
 	}
 
-	if (ua.start > nldt)
+	if (ua.start > nldt) {
+		free(cp, M_TEMP);
 		return (EINVAL);
+	}
 
 	lp += ua.start;
 	num = min(ua.num, nldt - ua.start);
 
-	error = copyout(lp, ua.desc, num * sizeof(union descriptor));
-	if (error)
-		return (error);
+	memcpy(cp, lp, num * sizeof(union descriptor));
 
-	*retval = num;
-	return (0);
+	error = copyout(lp, ua.desc, num * sizeof(union descriptor));
+	if (error) {
+		*retval = num;
+	}
+
+	free(cp, M_TEMP);
+	return (error);
 }
 
 int
 i386_set_ldt(p, args, retval)
 	struct proc *p;
-	char *args;
+	void *args;
 	register_t *retval;
 {
 	int error, i, n;
 	struct pcb *pcb = &p->p_addr->u_pcb;
 	struct i386_set_ldt_args ua;
 	union descriptor *descv;
+	size_t old_len, new_len, ldt_len;
+	union descriptor *old_ldt, *new_ldt;
 
-	if ((error = copyin(args, &ua, sizeof(ua))) != 0)
+	if ((error = copyin(args, &ua, sizeof(ua))) != 0) {
 		return (error);
+	}
 
 #ifdef	LDT_DEBUG
 	printf("i386_set_ldt: start=%d num=%d descs=%p\n", ua.start, ua.num, ua.desc);
 #endif
 
 	if (ua.start < 0 || ua.num < 0 || ua.start > 8192 || ua.num > 8192 ||
-	    ua.start + ua.num > 8192)
+	    ua.start + ua.num > 8192) {
 		return (EINVAL);
-
-	descv = malloc(sizeof(*descv) * ua.num, union descriptor, descv, M_TEMP, M_NOWAIT);
-
-	if (descv == NULL)
-		return (ENOMEM);
-
-	if ((error = copyin(ua.desc, descv, sizeof (*descv) * ua.num)) != 0)
-		goto out;
-
-	/*
-	 * XXX LOCKING
-	 */
-
-	/* allocate user ldt */
-	if(pcb->pcb_desc == 0 || (ua.start + ua.num) > pcb->pcb_ldt_len) {
-		size_t old_len, new_len;
-		union descriptor *old_ldt, *new_ldt;
-		if(pcb->pcb_flags & PMF_USER_LDT) {
-			old_len = pcb->pcb_ldt_len * sizeof(union descriptor);
-			old_ldt = pcb->pcb_desc;
-		} else {
-			old_len = NLDT * sizeof(union descriptor);
-			old_ldt = ldt;
-			pcb->pcb_ldt_len = 512;
-		}
-		while ((ua.start + ua.num) > pcb->pcb_ldt_len) {
-			pcb->pcb_ldt_len *= 2;
-		}
-		new_len = pcb->pcb_ldt_len * sizeof(union descriptor);
-		new_ldt = (union descriptor *)kmem_alloc(kernel_map, new_len);
-		memcpy(new_ldt, old_ldt, old_len);
-		memset((caddr_t)new_ldt + old_len, 0, new_len - old_len);
-		pcb->pcb_desc = new_ldt;
-		pcb->pcb_flags |= PCB_USER_LDT;
-
-		if (pcb == curpcb)
-			lldt(pcb->pcb_ldt_sel);
-
-#ifdef LDT_DEBUG
-		printf("i386_set_ldt(%d): new_ldt=%p\n", p->p_pid, new_ldt);
-#endif
 	}
 
-	error = 0;
+	descv = malloc(sizeof(*descv) * ua.num, M_TEMP, M_NOWAIT);
+
+	if (descv == NULL) {
+		return (ENOMEM);
+	}
+
+	if ((error = copyin(ua.desc, descv, sizeof (*descv) * ua.num)) != 0) {
+		goto out;
+	}
 
 	/* Check descriptors for access violations. */
 	for (i = 0, n = ua.start; i < ua.num; i++, n++) {
@@ -263,10 +241,10 @@ i386_set_ldt(p, args, retval)
 			 * part of the gdt.  Segments in the LDT are
 			 * constrained (below) to be user segments.
 			 */
-			if (desc->gd.gd_p != 0 &&
-			    !ISLDT(desc->gd.gd_selector) &&
-			    ((IDXSEL(desc->gd.gd_selector) >= NGDT) ||
-			     (gdt[IDXSEL(desc->gd.gd_selector)].sd.sd_dpl != SEL_UPL))) {
+			if (desc->gd.gd_p != 0 && !ISLDT(desc->gd.gd_selector)
+					&& ((IDXSEL(desc->gd.gd_selector) >= NGDT)
+							|| (gdt[IDXSEL(desc->gd.gd_selector)].sd.sd_dpl
+									!= SEL_UPL))) {
 				error = EACCES;
 				goto out;
 			}
@@ -313,9 +291,55 @@ i386_set_ldt(p, args, retval)
 		}
 	}
 
+	/* allocate user ldt */
+	if (pcb->pcb_desc == 0 || (ua.start + ua.num) > pcb->pcb_ldt_len) {
+
+		if (pcb->pcb_flags & PMF_USER_LDT) {
+			ldt_len = pcb->pcb_ldt_len;
+		} else {
+			ldt_len = 512;
+		}
+		while ((ua.start + ua.num) > pcb->pcb_ldt_len) {
+			ldt_len *= 2;
+		}
+		new_len = ldt_len * sizeof(union descriptor);
+
+		if (pcb->pcb_desc != NULL && ldt_len <= pcb->pcb_ldt_len) {
+			kmem_free(kernel_map, (vm_offset_t) new_ldt, new_len);
+			goto copy;
+		}
+
+		old_ldt = pcb->pcb_desc;
+		if (old_ldt != NULL) {
+			old_len = pcb->pcb_ldt_len * sizeof(union descriptor);
+		} else {
+			old_len = NLDT * sizeof(union descriptor);
+			old_ldt = ldt;
+		}
+		memcpy(new_ldt, old_ldt, old_len);
+		memset((caddr_t) new_ldt + old_len, 0, new_len - old_len);
+
+		if (old_ldt != ldt) {
+			kmem_free(kernel_map, (vm_offset_t) old_ldt, old_len);
+		}
+		pcb->pcb_desc = new_ldt;
+		pcb->pcb_ldt_len = ldt_len;
+		pcb->pcb_flags |= PCB_USER_LDT;
+
+		if (pcb == curpcb) {
+			lldt(pcb->pcb_ldt_sel);
+		}
+
+#ifdef LDT_DEBUG
+			printf("i386_set_ldt(%d): new_ldt=%p\n", p->p_pid, new_ldt);
+	#endif
+	}
+
+copy:
 	/* Now actually replace the descriptors. */
-	for (i = 0, n = ua.start; i < ua.num; i++, n++)
+	for (i = 0, n = ua.start; i < ua.num; i++, n++) {
 		pcb->pcb_desc[n] = descv[i];
+	}
 
 	*retval = ua.start;
 
@@ -328,50 +352,55 @@ out:
 int
 i386_iopl(p, args, retval)
 	struct proc *p;
-	char *args;
+	void *args;
 	register_t *retval;
 {
 	int error;
 	struct trapframe *tf = p->p_md.md_regs;
 	struct i386_iopl_args ua;
 
-	if (securelevel > 1)
+	if (securelevel > 1) {
 		return EPERM;
+	}
 
-	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
+	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0) {
 		return error;
+	}
 
-	if ((error = copyin(args, &ua, sizeof(ua))) != 0)
+	if ((error = copyin(args, &ua, sizeof(ua))) != 0) {
 		return error;
+	}
 
-	if (ua.iopl)
+	if (ua.iopl) {
 		tf->tf_eflags |= PSL_IOPL;
-	else
+	} else {
 		tf->tf_eflags &= ~PSL_IOPL;
+	}
 
-	return 0;
+	return (0);
 }
 
 int
 i386_get_ioperm(p, args, retval)
 	struct proc *p;
-	char *args;
+	void *args;
 	register_t *retval;
 {
 	int error;
 	struct pcb *pcb = &p->p_addr->u_pcb;
 	struct i386_get_ioperm_args ua;
 
-	if ((error = copyin(args, &ua, sizeof(ua))) != 0)
+	if ((error = copyin(args, &ua, sizeof(ua))) != 0) {
 		return (error);
+	}
 
-	return copyout(pcb->pcb_iomap, ua.iomap, sizeof(pcb->pcb_iomap));
+	return (copyout(pcb->pcb_iomap, ua.iomap, sizeof(pcb->pcb_iomap)));
 }
 
 int
 i386_set_ioperm(p, args, retval)
 	struct proc *p;
-	char *args;
+	void *args;
 	register_t *retval;
 {
 	int error;
@@ -381,13 +410,32 @@ i386_set_ioperm(p, args, retval)
 	if (securelevel > 1)
 		return EPERM;
 
-	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
+	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0) {
 		return error;
+	}
 
-	if ((error = copyin(args, &ua, sizeof(ua))) != 0)
+	if ((error = copyin(args, &ua, sizeof(ua))) != 0) {
 		return (error);
+	}
 
-	return copyin(ua.iomap, pcb->pcb_iomap, sizeof(pcb->pcb_iomap));
+	return (copyin(ua.iomap, pcb->pcb_iomap, sizeof(pcb->pcb_iomap)));
+}
+
+void
+fill_based_sd(sdp, base)
+	struct segment_descriptor *sdp;
+	uint32_t base;
+{
+	sdp->sd_lobase = base & 0xffffff;
+	sdp->sd_hibase = (base >> 24) & 0xff;
+	sdp->sd_lolimit = 0xffff;
+	sdp->sd_hilimit = 0xf;
+	sdp->sd_type = SDT_MEMRWA;
+	sdp->sd_dpl = SEL_UPL;
+	sdp->sd_p = 1;
+	sdp->sd_xx = 0;
+	sdp->sd_def32 = 1;
+	sdp->sd_gran = 1;
 }
 
 int
@@ -397,33 +445,30 @@ i386_set_sdbase(p, arg, which)
 	char which;
 {
 	struct segment_descriptor sd;
-	caddr_t base;
+	uint32_t base;
 	int error;
 
 	error = copyin(arg, &base, sizeof(base));
-	if (error != 0)
-		return error;
-
-	sd.sd_lobase = base & 0xffffff;
-	sd.sd_hibase = (base >> 24) & 0xff;
-	sd.sd_lolimit = 0xffff;
-	sd.sd_hilimit = 0xf;
-	sd.sd_type = SDT_MEMRWA;
-	sd.sd_dpl = SEL_UPL;
-	sd.sd_p = 1;
-	sd.sd_xx = 0;
-	sd.sd_def32 = 1;
-	sd.sd_gran = 1;
-
-	if (which == 'f') {
-		memcpy(&curpcb->pcb_fsd, &sd, sizeof(sd));
-		memcpy(p->ci_gdt[GUFS_SEL], &sd, sizeof(sd));
-	} else /* which == 'g' */ {
-		memcpy(&curpcb->pcb_gsd, &sd, sizeof(sd));
-		memcpy(p->ci_gdt[GUGS_SEL], &sd, sizeof(sd));
+	if (error != 0) {
+		return (error);
 	}
 
-	return 0;
+	fill_based_sd(&sd, base);
+
+	switch(which) {
+	case 'f':
+		p->p_addr->u_pcb.pcb_fsd = sd;
+		p->p_addr->u_frame->tf_fs = GSEL(GUFS_SEL, SEL_UPL);
+		break;
+	case 'g':
+		p->p_addr->u_pcb.pcb_gsd = sd;
+		p->p_addr->u_frame->tf_fs = GSEL(GUGS_SEL, SEL_UPL);
+		break;
+	default:
+		panic("i386_set_sdbase");
+	}
+
+	return (0);
 }
 
 int
@@ -433,31 +478,35 @@ i386_get_sdbase(p, arg, which)
 	char which;
 {
 	struct segment_descriptor *sd;
-	caddr_t base;
+	uint32_t base;
+	int error;
 
 	switch (which) {
 	case 'f':
-		sd = (struct segment_descriptor *)&curpcb->pcb_fsd;
+		sd = (struct segment_descriptor *)p->p_addr->u_pcb.pcb_fsd;
 		break;
 	case 'g':
-		sd = (struct segment_descriptor *)&curpcb->pcb_gsd;
+		sd = (struct segment_descriptor *)p->p_addr->u_pcb.pcb_gsd;
 		break;
 	default:
 		panic("i386_get_sdbase");
 	}
 
 	base = sd->sd_hibase << 24 | sd->sd_lobase;
-	return copyout(&base, &arg, sizeof(base));
+	error = copyout(&base, &arg, sizeof(base));
+	return (error);
 }
 
 int
 sysarch()
 {
-	struct sysarch_args *uap;
-	struct proc 		*p;
+	register struct sysarch_args {
+		syscallarg(int) 	op;
+		syscallarg(void *) 	parms;
+	} *uap = (struct sysarch_args *) u.u_ap;
+	struct proc *p;
 	int error;
 
-	uap = (struct sysarch_args *) u.u_ap;
 	p = u.u_procp;
 	error = 0;
 

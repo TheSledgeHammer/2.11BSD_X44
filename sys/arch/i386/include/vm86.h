@@ -192,7 +192,7 @@ get_vm86flags(tf86, vm86)
 }
 
 extern int vm86_emulate(struct vm86frame *);
-extern int vm86_sysarch(struct proc *, char *);
+extern int vm86_sysarch(struct proc *, void *, register_t *);
 extern void vm86_trap(struct vm86frame *);
 extern int vm86_intcall(int, struct vm86frame *);
 extern int vm86_datacall(int, struct vm86frame *, struct vm86context *);

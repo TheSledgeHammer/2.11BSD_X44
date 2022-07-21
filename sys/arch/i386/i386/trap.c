@@ -103,7 +103,7 @@ int	trapdebug = 0;
 struct sysent sysent[];
 int	nsysent;
 unsigned rcr2();
-extern int cpl;
+//extern int cpl;
 
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
 int has_f00f_bug = 0;		/* Initialized so that it can be patched. */
@@ -262,7 +262,7 @@ userret(p, pc, oticks)
  */
 void
 trap(frame)
-	struct trapframe frame;
+	struct trapframe *frame;
 {
 	register struct proc *p = curproc;
 	struct pcb *pcb;
