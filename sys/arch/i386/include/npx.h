@@ -137,6 +137,9 @@ struct	emcsts {
 };
 
 extern int	i386_use_fxsave;
-struct proc *npxproc(void);
+struct proc 	*npxproc(void);
+void		npxsave(void);
+void		npxsave_cpu(struct cpu_info *, int);
+void		npxsave_proc(struct proc *, int);
 
 #endif /* _I386_NPX_H_ */
