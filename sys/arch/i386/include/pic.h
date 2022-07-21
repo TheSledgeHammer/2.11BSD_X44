@@ -122,6 +122,12 @@ extern struct softpic		*intrspic;
 extern struct intrsource 	*intrsrc[];
 extern struct intrhand 		*intrhand[];
 
+/* pic templates */
+extern struct pic		i8259_template;
+extern struct pic		ioapic_template;
+extern struct pic		lapic_template;
+extern struct pic		softintr_template;
+
 /* softpic.c */
 void 			softpic_init(void);
 int				softpic_register_pic(struct pic *);
