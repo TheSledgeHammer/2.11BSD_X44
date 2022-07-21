@@ -104,11 +104,11 @@ process_frame(p)
 	return (p->p_md.md_regs);
 }
 
-static inline struct save87  *
+static inline struct savefpu  *
 process_fpframe(p)
 	struct proc *p;
 {
-	return (p->p_addr->u_pcb.pcb_savefpu.sv_87);
+	return (&p->p_addr->u_pcb.pcb_savefpu);
 }
 
 static int
@@ -240,13 +240,13 @@ process_s87_to_xmm(s87, sxmm)
 int
 process_read_regs(p, regs)
 	struct proc *p;
-	const struct reg32 *regs;
+	struct reg32 *regs;
 {
 	struct trapframe *tf = process_frame(p);
 
 	if (tf->tf_eflags & PSL_VM) {
-		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *) tf;
-		struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
+		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
+		struct vm86_kernel    *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
 		regs->r_gs = tf86->tf_vm86_gs;
 		regs->r_fs = tf86->tf_vm86_fs;
@@ -285,7 +285,7 @@ process_read_fpregs(p, regs)
 
 	if (p->p_md.md_flags & MDP_USEDFPU) {
 #if NNPX > 0
-		npxsave();
+		npxsave_proc(p, 1);
 #endif
 	} else {
 		/*
@@ -328,13 +328,13 @@ process_read_fpregs(p, regs)
 int
 process_write_regs(p, regs)
 	struct proc *p;
-	const struct reg32 *regs;
+	struct reg32 *regs;
 {
 	struct trapframe *tf = process_frame(p);
 
 	if (regs->r_eflags & PSL_VM) {
 		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
-		struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
+		struct vm86_kernel 	  *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
 		tf86->tf_vm86_gs = regs->r_gs;
 		tf86->tf_vm86_fs = regs->r_fs;
@@ -392,10 +392,7 @@ process_write_fpregs(p, regs, sz)
 
 	if (p->p_md.md_flags & MDP_USEDFPU) {
 #if NNPX > 0
-		struct proc *npxp = npxproc();
-		if (npxp == p) {
-			npxsave();
-		}
+		npxsave_proc(p, 0);
 #endif
 	} else {
 		p->p_md.md_flags |= MDP_USEDFPU;

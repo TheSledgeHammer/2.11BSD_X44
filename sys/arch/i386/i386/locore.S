@@ -590,6 +590,22 @@ IDTVEC(fpu)
 IDTVEC(align)
 		ZTRAP(T_ALIGNFLT)
 
+#ifdef __i386__
+/* IBM Blue Lightning CPU IDT's */
+IDTVEC(bluetrap6)
+		ss
+		movl   $0xa8c1d, _C_LABEL(trap_by_rdmsr)
+		addl   $2, (%esp)
+		iret
+		
+IDTVEC(bluetrap6)
+		ss
+		movl   $0xa89c4, _C_LABEL(trap_by_rdmsr)
+		popl   %eax
+		addl   $2, (%esp)
+		iret
+#endif
+
 /* 18 - 31 reserved for future exp */
 IDTVEC(rsvd)	/* rvsd 18 */
 		ZTRAP(T_RESERVED)

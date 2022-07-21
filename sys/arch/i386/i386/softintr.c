@@ -45,6 +45,11 @@
 /*
  * Generic software interrupt support.
  */
+static void	softintr_hwmask(struct softpic *, int);
+static void	softintr_hwunmask(struct softpic *, int);
+static void	softintr_addroute(struct softpic *, struct cpu_info *, int, int, int);
+static void	softintr_delroute(struct softpic *, struct cpu_info *, int, int, int);
+static void	softintr_register_pic(struct pic *);
 
 struct pic softintr_template = {
 		.pic_type = PIC_SOFT,
@@ -55,35 +60,47 @@ struct pic softintr_template = {
 		.pic_register = softintr_register_pic
 };
 
-void
-softintr_hwmask(struct softpic *spic, int pin)
-{
-	/* Do Nothing */
-}
-
-void
-softintr_hwunmask(struct softpic *spic, int pin)
+static void
+softintr_hwmask(spic, pin)
+	struct softpic *spic;
+	int pin;
 {
 	/* Do Nothing */
 }
 
 static void
-softintr_addroute(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int type)
+softintr_hwunmask(spic, pin)
+	struct softpic *spic;
+	int pin;
+{
+	/* Do Nothing */
+}
+
+static void
+softintr_addroute(spic, ci, pin, idtvec, type)
+	struct softpic *spic;
+	struct cpu_info *ci;
+	int pin, idtvec, type;
 {
 	/* Do Nothing */
 }
 
 
 static void
-softintr_delroute(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int type)
+softintr_delroute(spic, ci, pin, idtvec, type)
+	struct softpic *spic;
+	struct cpu_info *ci;
+	int pin, idtvec, type;
 {
 	/* Do Nothing */
 }
 
 static void
-softintr_register_pic()
+softintr_register_pic(template)
+	struct pic *template;
 {
-	softpic_register_pic(&softintr_template);
+	template = &softintr_template;
+	softpic_register_pic(template);
 }
 
 /* XXX: incomplete */

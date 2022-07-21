@@ -68,16 +68,16 @@
 extern vm_map_t kernel_map;
 
 #ifdef USER_LDT
-static int i386_get_ldt	(struct proc *, char *, register_t *);
-static int i386_set_ldt	(struct proc *, char *, register_t *);
+int i386_get_ldt(struct proc *, char *, register_t *);
+int i386_set_ldt(struct proc *, char *, register_t *);
 #endif
-static int i386_get_ioperm	(struct proc *, char *, register_t *);
-static int i386_set_ioperm	(struct proc *, char *, register_t *);
-static int i386_set_sdbase	(struct proc *, void *, char);
-static int i386_get_sdbase	(struct proc *, void *, char);
+int i386_get_ioperm(struct proc *, char *, register_t *);
+int i386_set_ioperm(struct proc *, char *, register_t *);
+int i386_set_sdbase(struct proc *, void *, char);
+int i386_get_sdbase(struct proc *, void *, char);
 
 #ifdef TRACE
-int		nvualarm;
+int	nvualarm;
 void 	vdoualarm(int);
 
 int

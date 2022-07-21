@@ -38,6 +38,7 @@
 
 #include <machine/pic.h>
 #include <machine/intr.h>
+#include <machine/apic/ioapicvar.h>
 //#include <i386/isa/icu.h>
 
 struct softpic 					 	*intrspic;
@@ -77,14 +78,14 @@ void
 softpic_init(void)
 {
 	struct softpic *spic;
-	spic = &intrspic;
+	spic = intrspic;
 	if(spic == NULL) {
 		spic = (struct softpic *)malloc(sizeof(struct softpic *), M_DEVBUF, M_WAITOK);
 	}
 	TAILQ_INIT(&pichead);
 
-	spic->sp_intsrc = &intrsrc[MAX_INTR_SOURCES];
-	spic->sp_inthnd = &intrhand[MAX_INTR_SOURCES];
+	spic->sp_intsrc = intrsrc[MAX_INTR_SOURCES];
+	spic->sp_inthnd = intrhand[MAX_INTR_SOURCES];
 }
 
 void
@@ -96,7 +97,7 @@ softpic_check(spic, irq, isapic, pictemplate)
     int apicid = APIC_IRQ_APIC(irq);
     int pin = APIC_IRQ_PIN(irq);
 
-	if (spic == &intrspic) {
+	if (spic == intrspic) {
 		spic->sp_template = pictemplate;
 		if (isapic == TRUE) {
 			spic->sp_isapic = TRUE;
@@ -136,25 +137,25 @@ softpic_handle_pic(spic)
 	switch(spic->sp_template) {
 	case PIC_I8259:
 		pic = softpic_lookup_pic(spic, PIC_I8259);
-		if(pic == i8259_template && spic->sp_template == pic->pic_type) {
+		if(pic == &i8259_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_IOAPIC:
 		pic = softpic_lookup_pic(spic, PIC_IOAPIC);
-		if(pic == ioapic_template && spic->sp_template == pic->pic_type) {
+		if(pic == &ioapic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_LAPIC:
 		pic = softpic_lookup_pic(spic, PIC_LAPIC);
-		if(pic == lapic_template && spic->sp_template == pic->pic_type) {
+		if(pic == &lapic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_SOFT:
 		pic = softpic_lookup_pic(spic, PIC_SOFT);
-		if(pic == softintr_template && spic->sp_template == pic->pic_type) {
+		if(pic == &softintr_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
@@ -170,8 +171,8 @@ softpic_pic_hwmask(spic, pin, isapic, pictemplate)
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
-	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
-	pic = spic->sp_intsrc.is_pic;
+	spic->sp_intsrc->is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc->is_pic;
 	if (pic != NULL) {
 		(*pic->pic_hwmask)(spic, pin);
 	}
@@ -185,8 +186,8 @@ softpic_pic_hwunmask(spic, pin, isapic, pictemplate)
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
-	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
-	pic = spic->sp_intsrc.is_pic;
+	spic->sp_intsrc->is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc->is_pic;
 	if (pic != NULL) {
 		(*pic->pic_hwunmask)(spic, pin);
 	}
@@ -201,8 +202,8 @@ softpic_pic_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
-	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
-	pic = spic->sp_intsrc.is_pic;
+	spic->sp_intsrc->is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc->is_pic;
 	if (pic != NULL) {
 		(*pic->pic_addroute)(spic, ci, pin, idtvec, type);
 	}
@@ -217,8 +218,8 @@ softpic_pic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 {
 	register struct pic *pic;
 	softpic_check(spic, pin, isapic, pictemplate);
-	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
-	pic = spic->sp_intsrc.is_pic;
+	spic->sp_intsrc->is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc->is_pic;
 	if (pic != NULL) {
 		(*pic->pic_delroute)(spic, ci, pin, idtvec, type);
 	}
