@@ -58,7 +58,6 @@ struct pcb {
 #define pcb_ebx					pcb_tss.tss_ebx
 #define	pcb_eib					pcb_tss.tss_eip
 
-#define	pcb_ptd					pcb_tss.tss_cr3
 	struct savefpu				pcb_savefpu;			/* floating point state (context) for 287/387 */
 	struct cpu_info 			*pcb_fpcpu;				/* cpu holding our fp state. */
 	struct emcsts				pcb_saveemc;			/* Cyrix EMC state */
@@ -67,8 +66,9 @@ struct pcb {
 #define	pcb_cr2					pcb_tss.tss_cr2
 #define	pcb_cr3					pcb_tss.tss_cr3
 #define	pcb_cr4					pcb_tss.tss_cr4
-	struct segment_descriptor	 			pcb_fsd;	/* %fs descriptor */
-	struct segment_descriptor 				pcb_gsd;	/* %gs descriptor */
+#define	pcb_ptd					pcb_tss.tss_cr3
+	struct segment_descriptor	pcb_fsd;				/* %fs descriptor */
+	struct segment_descriptor 	pcb_gsd;				/* %gs descriptor */
 	union descriptor			*pcb_desc;				/* gate & segment descriptors */
 	int							pcb_ldt_sel;
 	int							pcb_ldt_len;

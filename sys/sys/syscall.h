@@ -71,7 +71,7 @@
 #define	SYS_chroot	61
 #define	SYS_fstat	62
 #define	SYS_undelete	63
-				/* 64 is obsolete old compat_43_getpagesize */
+#define	SYS__syscall	64
 #define	SYS_pselect	65
 #define	SYS_vfork	66
 				/* 67 is obsolete old compat_43_lseek */

@@ -124,6 +124,7 @@ void	setidt(int, void *, int, int, int);
 /* locore.s */
 struct 	pcb;
 void	savectx(struct pcb *);
+void 	proc_trampoline(void);
 
 /* sched.S */
 void    idle(void);

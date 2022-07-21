@@ -74,6 +74,8 @@ int	umask();
 int	chroot();
 int	fstat();
 int	undelete();
+int	nosys();
+#64	OBSOL		old compat_43_getpagesize
 int	pselect();
 int	vfork();
 int	sbrk();
@@ -296,7 +298,8 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    undelete },				/* 63 = undelete */
 	{ 0, 0,
-	    nosys },				/* 64 = obsolete old compat_43_getpagesize */
+	    nosys },				/* 64 = _syscall */
+#64	OBSOL		old compat_43_getpagesize
 	{ 0, 0,
 	    pselect },				/* 65 = pselect */
 	{ 0, 0,

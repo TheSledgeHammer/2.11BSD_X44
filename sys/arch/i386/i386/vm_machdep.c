@@ -53,8 +53,20 @@
 #include <machine/gdt.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
+#include <machine/pcb.h>
+#include <machine/pmap.h>
 
 #include "npx.h"
+
+vm_offset_t
+get_pcb_user_size(up)
+	struct user *up;
+{
+	vm_offset_t p;
+
+	p = up->u_kstack + up->u_kstack_pages + up->u_uspace - 16;
+	return (p);
+}
 
 /*
  * Finish a fork operation, with process p2 nearly set up.
@@ -69,10 +81,22 @@ int
 cpu_fork(p1, p2)
 	register struct proc *p1, *p2;
 {
-	register struct user *up = p2->p_addr;
-	int foo, offset, addr, i;
-	extern char kstack[];
-	extern int mvesp();
+	register struct user *up;
+	register struct pcb *pcb;
+	vm_offset_t stack, addr, extract;
+	int i;
+
+	up = p2->p_addr;
+	stack = up->u_kstack;
+
+#if NNPX > 0
+	/*
+	 * Save p1's npx h/w state to p1's pcb so that we can copy it.
+	 */
+	if (p1->p_addr->u_pcb.pcb_fpcpu != NULL) {
+		npxsave_proc(p1, 1);
+	}
+#endif
 
 	/*
 	 * Copy pcb and stack from proc p1 to p2.
@@ -86,31 +110,42 @@ cpu_fork(p1, p2)
 	 * replacing the bcopy and savectx.
 	 */
 	p2->p_addr->u_pcb = p1->p_addr->u_pcb;
-	offset = mvesp() - (int)kstack;
-	bcopy((caddr_t)kstack + offset, (caddr_t)p2->p_addr + offset, (unsigned) ctob(UPAGES) - offset);
-	p2->p_md.md_regs = p1->p_md.md_regs;
+	pcb = &p2->p_addr->u_pcb;
+	p2->p_md.md_regs = (struct trapframe *)((int)p2->p_addr + get_pcb_user_size(up)) - 1;
+	bcopy(p1->p_md.md_regs, p2->p_md.md_regs, sizeof(*p2->p_md.md_regs));
 
 	/*
 	 * Wire top of address space of child to it's u.
 	 * First, fault in a page of pte's to map it.
 	 */
-        addr = trunc_page((u_int)vtopte(kstack));
-	(void)vm_map_pageable(&p2->p_vmspace->vm_map, addr, addr+NBPG, FALSE);
-	for (i=0; i < UPAGES; i++)
-		pmap_enter(&p2->p_vmspace->vm_pmap, (vm_offset_t)kstack+i*NBPG, pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG), VM_PROT_READ, 1);
-	pmap_activate(&p2->p_vmspace->vm_pmap, &up->u_pcb);
+	addr = trunc_page((u_int)vtopte(stack));
+	(void)vm_map_pageable(&p2->p_vmspace->vm_map, addr, addr + NBPG, FALSE);
+	for (i = 0; i < UPAGES; i++) {
+		extract = pmap_extract(kernel_pmap, ((int)up) + i * NBPG);
+		pmap_enter(&p2->p_vmspace->vm_pmap, (stack + i * NBPG), extract, VM_PROT_READ, 1);
+	}
+	pmap_activate(&p2->p_vmspace->vm_pmap, pcb);
 
 	/*
 	 *
 	 * Arrange for a non-local goto when the new process
 	 * is started, to resume here, returning nonzero from setjmp.
 	 */
-	if (savectx(up, 1)) {
-		/*
-		 * Return 1 in child.
-		 */
+	if(savectx(pcb)) {
 		return (1);
 	}
+
+	/*
+	 * Set registers for trampoline to user mode.  Leave space for the
+	 * return address on stack.  These are the kernel mode register values.
+	 */
+	pcb->pcb_edi = 0;
+	pcb->pcb_esi = (int)child_return;
+	pcb->pcb_ebp = 0;
+	pcb->pcb_esp = (int)p2->p_md.md_regs - sizeof(void *);
+	pcb->pcb_ebx = (int)p2;
+	pcb->pcb_eip = (int)proc_trampoline;
+
 	return (0);
 }
 

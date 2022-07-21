@@ -76,6 +76,8 @@
 #include <sys/acct.h>
 #include <sys/kernel.h>
 #include <sys/endian.h>
+#include <sys/fperr.h>
+#include <sys/syscall.h>
 #include <sys/sysdecl.h>
 #ifdef KTRACE
 #include <sys/ktrace.h>
@@ -88,6 +90,8 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
+#include <machine/cpu.h>
+#include <machine/cpufunc.h>
 #include <machine/vmparam.h>
 #include <machine/trap.h>
 #include <machine/psl.h>
@@ -95,16 +99,19 @@
 #include <machine/pte.h>
 #include <machine/proc.h>
 #include <machine/reg.h>
+#ifdef DDB
+#include <machine/db_machdep.h>
+#endif
 
 #ifdef DEBUG
 int	trapdebug = 0;
 #endif
-
+/*
 struct sysent sysent[];
 int	nsysent;
 unsigned rcr2();
 //extern int cpl;
-
+*/
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
 int has_f00f_bug = 0;		/* Initialized so that it can be patched. */
 #endif
@@ -112,6 +119,9 @@ int has_f00f_bug = 0;		/* Initialized so that it can be patched. */
 void trap(struct trapframe *);
 void trap_tss(struct i386tss *, int, int);
 static __inline void userret(struct proc *, int, u_quad_t);
+#if defined(I386_CPU)
+int trapwrite(unsigned);
+#endif
 
 const char * const trap_type[] = {
 	"privileged instruction fault",		/*  0 T_PRIVINFLT */
@@ -136,6 +146,7 @@ const char * const trap_type[] = {
 	"SSE FP exception",					/* 19 T_XMM */
 	"reserved trap",					/* 20 T_RESERVED */
 };
+int	trap_types = sizeof trap_type / sizeof trap_type[0];
 
 void
 trap_tss(tss, trapno, code)
@@ -387,7 +398,7 @@ copyfault:
 		break;
 
 	case T_DIVIDE|T_USER:
-		ucode = FPE_INTDIV_TRAP;
+		ucode = FPE_FLTDIV_TRAP;
 		i = SIGFPE;
 		break;
 
@@ -436,9 +447,9 @@ copyfault:
 
 	case T_PAGEFLT|T_USER:
 		/* page fault */
-		register vm_offset_t va;
-		register struct vmspace *vm;
-		register vm_map_t map;
+		vm_offset_t va;
+		struct vmspace *vm;
+		vm_map_t map;
 		int rv;
 		vm_prot_t ftype;
 		extern vm_map_t kernel_map;
@@ -529,10 +540,19 @@ faultcommon:
 
 	case T_NMI|T_USER:
 		/* machine/parity/power fail/"kitchen sink" faults */
-		if(isa_nmi(frame->tf_err) == 0) {
-			return;
-		} else {
+		if(isa_nmi() != 0) {
 			goto we_re_toast;
+		} else {
+
+			return;
+		}
+#endif
+#if NMCA > 0
+		/* mca_nmi() takes care to call isa_nmi() if appropriate */
+		if (mca_nmi() != 0) {
+			goto we_re_toast;
+		} else {
+			return;
 		}
 #endif
 	}
@@ -622,56 +642,65 @@ void
 syscall(frame)
     struct trapframe *frame;
 {
-    register caddr_t params;
+	register caddr_t params;
+	register struct sysent *callp;
+	register struct proc *p;
 	register int i;
-    register struct sysent *callp;
-    register struct proc *p;
+	register_t code, args[8], rval[2];
     u_quad_t sticks;
     int error, nsys, opc;
-    register_t code;
-    int args[8], rval[2];
     short argsize;
 
-    sticks = p->p_sticks;
+	sticks = p->p_sticks;
 	if (ISPL(frame->tf_cs) != SEL_UPL) {
 		panic("syscall");
 	}
 
-    p = curproc;
-    p->p_md.md_regs = frame;
-    opc = frame->tf_eip;
-    code = frame->tf_eax;
+	p = curproc;
+	p->p_md.md_regs = frame;
+	opc = frame->tf_eip;
+	code = frame->tf_eax;
 
-    nsys =  p->p_emul->e_nsysent;
-    callp = p->p_emul->e_sysent;
+	nsys = p->p_emul->e_nsysent;
+	callp = p->p_emul->e_sysent;
 
-    curpcb->pcb_flags &= ~FM_TRAP;	                /* used by sendsig */
-	params = (caddr_t)frame->tf_esp + sizeof (int);
-
-    if (callp == sysent) {
-    	code = fuword(params + _QUAD_LOWWORD * sizeof(int));
-    	params += sizeof(quad_t);
+	curpcb->pcb_flags &= ~FM_TRAP; /* used by sendsig */
+	params = (caddr_t) frame->tf_esp + sizeof(int);
+	switch (code) {
+	case SYS_syscall:
+		code = fuword(params);
+		params += sizeof(int);
 		break;
-    }
-    if (code < 0 || code >= nsys) {
-        callp += p->p_emul->e_nosys;
-    } else {
-        callp += code;
-    }
-    argsize = callp->sy_argsize;
-    if(argsize && (error = copyin(params, args, argsize))) {
+
+	case SYS__syscall:
+		if (callp == sysent) {
+			code = fuword(params + _QUAD_LOWWORD * sizeof(int));
+			params += sizeof(quad_t);
+		}
+		break;
+	default:
+		break;
+	}
+	if (code < 0 || code >= nsys) {
+		callp += p->p_emul->e_nosys;
+	} else {
+		callp += code;
+	}
+	argsize = callp->sy_argsize;
+	if(argsize && (error = copyin(params, args, argsize))) {
         frame->tf_eax = error;
 		frame->tf_eflags |= PSL_C;	/* carry bit */
 #ifdef KTRACE
-		if (KTRPOINT(p, KTR_SYSCALL))
+		if (KTRPOINT(p, KTR_SYSCALL)) {
 			ktrsyscall(p, code, callp->sy_narg, &args);
+		}
 #endif
         goto done;
     }
-
 #ifdef KTRACE
-	if (KTRPOINT(p, KTR_SYSCALL))
+	if (KTRPOINT(p, KTR_SYSCALL)) {
 		ktrsyscall(p, code, callp->sy_narg, &args);
+	}
 #endif
     rval[0] = 0;
 	rval[1] = frame->tf_edx;
@@ -764,10 +793,10 @@ user_page_fault(p, map, addr, ftype, type)
 }
 
 int
-user_write_fault (addr)
+user_write_fault(addr)
 	void *addr;
 {
-	if (user_page_fault (curproc, &curproc->p_vmspace->vm_map, addr, VM_PROT_READ | VM_PROT_WRITE, T_PAGEFLT) == KERN_SUCCESS) {
+	if (user_page_fault(curproc, &curproc->p_vmspace->vm_map, addr, VM_PROT_READ | VM_PROT_WRITE, T_PAGEFLT) == KERN_SUCCESS) {
 		return (0);
 	} else {
 		return (EFAULT);
@@ -783,9 +812,11 @@ child_return(arg)
 
 	tf->tf_eax = 0;
 	tf->tf_eflags &= ~PSL_C;
+
 	userret(p, tf->tf_eip, 0);
 #ifdef KTRACE
-	if (KTRPOINT(p, KTR_SYSRET))
+	if (KTRPOINT(p, KTR_SYSRET)) {
 		ktrsysret(p, SYS_fork, 0, 0);
+	}
 #endif
 }

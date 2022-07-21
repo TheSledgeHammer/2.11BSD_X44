@@ -504,6 +504,12 @@ trycpuid:	/* Use the `cpuid' instruction. */
 		popl	%ebx
 		ret
 		
+ENTRY(proc_trampoline)
+		pushl	%ebx
+		call	%esi
+		addl	$4,%esp
+		INTRFASTEXIT
+
 /**********************************************************************/
 /*
  * Signal trampoline, copied to top of user stack

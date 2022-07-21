@@ -70,6 +70,7 @@ extern int	umask();
 extern int	chroot();
 extern int	fstat();
 extern int	undelete();
+extern int	nosys();
 extern int	pselect();
 extern int	vfork();
 extern int	sbrk();
