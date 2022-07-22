@@ -31,6 +31,11 @@ struct i386_set_ldt_args {
 	int 				num;
 };
 
+struct i386_vm86_args {
+	int				sub_op;			/* sub-operation to perform */
+	char				*sub_args;		/* args */
+};
+
 struct i386_iopl_args {
 	int 				iopl;
 };
