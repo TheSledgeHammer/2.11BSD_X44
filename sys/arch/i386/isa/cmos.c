@@ -116,7 +116,7 @@ const struct cdevsw cmos_cdevsw = {
 		.d_type = 	D_OTHER
 };
 
-static struct lock_object *cmos_lock;
+static struct lock_object cmos_lock;
 static uint8_t cmos_buf[CMOS_SIZE];
 
 void
