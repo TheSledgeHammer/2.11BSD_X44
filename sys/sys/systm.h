@@ -162,14 +162,16 @@ int		copyoutstr(const void *, void *, size_t, size_t *);
 int		copyin(const void *, void *, size_t);
 int		copyout(const void *, void *, size_t);
 
-int		fubyte(void *);
+int		fubyte(const void *);
 int		fuibyte(void *);
-int		fuword(void *);
+int		fuword(const void *);
 int		fuiword(void *);
+int 		fusword(const void *);
 int		subyte(void *, int);
 int		suibyte(void *, int);
 int		suword(void *, int);
 int		suiword(void *, int);
+int		susword(void *, int);
 
 int		hzto(struct timeval *tv);
 void 	timeout(void (*func)(void *), void *, int);
