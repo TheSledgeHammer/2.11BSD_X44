@@ -36,7 +36,8 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <machine/cpu.h>
+#include <machine/apic/lapicvar.h>
+#include <machine/percpu.h>
 
 struct cpu_softc {
 	struct device 		*sc_dev;		/* device tree glue */
@@ -56,7 +57,7 @@ cpu_init_first()
 
 	if (cpunum != 0) {
 		cpu_info[0] = NULL;
-		cpu_info[cpunum] = &cpu_info;
+		cpu_info[cpunum] = cpu_info;
 	}
 }
 

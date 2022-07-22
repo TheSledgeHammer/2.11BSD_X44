@@ -56,7 +56,7 @@
 #include <machine/isa/isa_machdep.h>
 #include <machine/mca/mca_machdep.h>
 
-int	 mainbus_match (struct device *, void *, void *);
+int	 mainbus_match (struct device *, struct cfdata *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
 
 CFOPS_DECL(mainbus, mainbus_match, mainbus_attach, NULL, NULL);
@@ -109,7 +109,8 @@ int mp_verbose = 0;
 int
 mainbus_match(parent, match, aux)
 	struct device *parent;
-	void *match, *aux;
+	struct cfdata *match;
+	void *aux;
 {
 	return 1;
 }

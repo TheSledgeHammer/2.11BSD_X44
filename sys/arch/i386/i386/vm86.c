@@ -50,6 +50,7 @@
 #include <machine/pte.h>
 #include <machine/specialreg.h>
 #include <machine/sysarch.h>
+#include <machine/pmap.h>
 //#include <machine/segments.h>
 #include <machine/vm86.h>
 
@@ -381,14 +382,14 @@ vm86_emulate(struct vm86frame *vmf)
 #define IOPAGES			2			/* pages of i/o permission bitmap */
 #define PGTABLE_SIZE	((1024 + 64) * 1024 / PAGE_SIZE)
 #define INTMAP_SIZE		32
-#define IOMAP_SIZE		ctob(IOPAGES)
+#define IOMAP_SIZE		ctob(IOPAGES) 		/* NPORT/32 */
 #define TSS_SIZE 	\
 	(sizeof(struct pcb) - sizeof(struct segment_descriptor) + \
 	 INTMAP_SIZE + IOMAP_SIZE + 1)
 
 struct vm86_layout {
-	pt_entry_t		vml_pgtbl[PGTABLE_SIZE];
-	struct 	pcb 	vml_pcb;
+//	pt_entry_t		vml_pgtbl[PGTABLE_SIZE];
+	struct 	pcb 		vml_pcb;
 	char			vml_intmap[INTMAP_SIZE];
 	char			vml_iomap[IOMAP_SIZE];
 	char			vml_iomap_trailer;
@@ -399,7 +400,8 @@ vm86_initialize(void)
 {
 	int i;
 	u_int *addr;
-	struct vm86_layout *vml = (struct vm86_layout *)vm86paddr;
+	char	pcb_iomap;
+	struct vm86_layout *vml;
 	struct pcb *pcb;
 	struct soft_segment_descriptor ssd;
 	setup_descriptor_table(&ssd, 0, 0, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
@@ -452,6 +454,7 @@ vm86_initialize(void)
 #define vm86_frame	pcb_ebp
 #define pgtable_va	pcb_ebx
 
+	vml = (struct vm86_layout *)vm86paddr;
 	pcb = &vml->vml_pcb;
 
 	simple_lock_init(&vm86_lock, "vm86_lock");
@@ -462,12 +465,10 @@ vm86_initialize(void)
 	pcb->pgtable_va = vm86paddr;
 	pcb->pcb_flags = PCB_VM86CALL;
 
-
 	pcb->pcb_tss.tss_esp0 = vm86paddr;
 	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
-	pcb->pcb_tss.tss_ioopt =
-		((u_int)vml->vml_iomap - (u_int)&pcb->pcb_tss) << 16;
-	pcb->pcb_iomap = vml->vml_iomap;
+	pcb->pcb_tss.tss_ioopt = ((u_int)vml->vml_iomap - (u_int)&pcb->pcb_tss) << 16;
+	pcb->pcb_iomap[0] = (u_long)vml->vml_iomap;
 	pcb->pcb_vm86.vm86_intmap = vml->vml_intmap;
 
 	if (cpu_feature & CPUID_VME) {
@@ -513,7 +514,7 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * Perform "base memory" related probes & setup
 	 */
 	vm86_intcall(0x12, &vmf);
-    basemem = &vmf.vmf_ax;
+    basemem = (int *)&vmf.vmf_ax;
     if (basemem > (int *)640) {
         printf("Preposterous BIOS basemem of %uK, truncating to 640K\n", basemem);
 	    basemem = (int *)640;
@@ -539,7 +540,7 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * pmap_mapdev, but since no memory needs to be
 	 * allocated we simply change the mapping.
 	 */
-	for (pa = trunc_page(basemem * (int *)1024); pa < ISA_HOLE_START; pa +=
+	for (pa = trunc_page((int)basemem * 1024); pa < ISA_HOLE_START; pa +=
 			PAGE_SIZE) {
 		pte = (pt_entry_t *) vtopte(pa + KERNBASE);
 		*pte = pa | PG_RW | PG_V;
@@ -550,7 +551,7 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * that the bios can scribble on it.
 	 */
 	pte = (pt_entry_t *) vm86paddr;
-	for (i = basemem / (int *)4; i < 160; i++) {
+	for (i = (int)basemem / 4; i < 160; i++) {
 		pte[i] = (i << PAGE_SHIFT) | PG_V | PG_RW | PG_U;
 	}
 
@@ -564,7 +565,7 @@ vm86_initial_bioscalls(basemem, extmem)
 	/*
 	 * get memory map with INT 15:E820
 	 */
-#define SMAPSIZ 	sizeof(*smap)
+#define SMAPSIZ 	sizeof(smap)
 #define SMAP_SIG	0x534D4150			/* 'SMAP' */
 
 	vmc.npages = 0;
@@ -726,7 +727,7 @@ vm86_datacall(int intnum, struct vm86frame *vmf, struct vm86context *vmc)
 {
 	pt_entry_t *pte;
 	int (*p)(struct vm86frame *);
-	caddr_t page;
+	vm_offset_t page;
 	int i, entry, retval;
 
 	pte = (pt_entry_t *)vm86paddr;
@@ -792,7 +793,7 @@ vm86_sysarch(p, args, retval)
 	struct i386_vm86_args ua;
 	struct vm86_kernel *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
-	if ((error = copyin(args, &ua, sizeof(struct i386_vm86_args *))) != 0)
+	if ((error = copyin(args, &ua, sizeof(struct i386_vm86_args))) != 0)
 		return (error);
 
 	vm86 = &p->p_addr->u_pcb.pcb_vm86;

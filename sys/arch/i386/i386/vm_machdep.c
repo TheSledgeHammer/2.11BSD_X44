@@ -56,6 +56,7 @@
 #include <machine/specialreg.h>
 #include <machine/pcb.h>
 #include <machine/pmap.h>
+#include <machine/pte.h>
 
 #include "npx.h"
 
@@ -153,27 +154,6 @@ cpu_fork(p1, p2)
 	pcb->pcb_eib = (int)proc_trampoline;
 
 	return (0);
-}
-
-void
-cpu_swapin(p)
-	struct proc *p;
-{
-#ifndef NOREDZONE
-	setredzone(p);
-#endif
-}
-
-void
-cpu_swapout(p)
-	struct proc *p;
-{
-#if NNPX > 0
-	/*
-	 * Make sure we save the FP state before the user area vanishes.
-	 */
-	npxsave_proc(p, 1);
-#endif
 }
 
 void
