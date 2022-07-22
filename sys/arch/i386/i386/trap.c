@@ -118,7 +118,7 @@ static __inline void userret(struct proc *, int, u_quad_t);
 #if defined(I386_CPU)
 int trapwrite(unsigned);
 #endif
-int user_page_fault(struct proc *, vm_map_t, caddr_t, vm_prot_t, int);
+int user_page_fault(struct proc *, vm_map_t, vm_offset_t, vm_prot_t, int);
 
 const char * const trap_type[] = {
 	"privileged instruction fault",		/*  0 T_PRIVINFLT */
@@ -273,14 +273,19 @@ trap(frame)
 	struct trapframe *frame;
 {
 	register struct proc *p = curproc;
+	register struct vmspace *vm;
 	struct pcb *pcb;
 	register int i;
+	vm_offset_t va;
+	vm_map_t map;
+	vm_prot_t ftype;
 	u_quad_t sticks;
 	void *onfault;
 	int type, error = 0;
-	int ucode;
+	int ucode, rv;
 	uint32_t cr2;
 	bool pfail;
+	extern vm_map_t kernel_map;
 	extern int cold;
 
 	if (__predict_true(p != NULL)) {
@@ -444,13 +449,6 @@ copyfault:
 
 	case T_PAGEFLT|T_USER:
 		/* page fault */
-		vm_offset_t va;
-		register struct vmspace *vm;
-		vm_map_t map;
-		int rv;
-		vm_prot_t ftype;
-		extern vm_map_t kernel_map;
-
 		cr2 = rcr2();
 
 faultcommon:
@@ -500,7 +498,7 @@ faultcommon:
 		error = vm_fault(map, va, ftype, FALSE);
 		pcb->pcb_onfault = onfault;
 		if (error == 0) {
-			if (map != kernel_map && (void *)va >= vm->vm_maxsaddr) {
+			if (map != kernel_map && va >= (vm_offset_t)vm->vm_maxsaddr) {
 				grow(p, va);
 			}
 			pfail = FALSE;
@@ -643,7 +641,7 @@ syscall(frame)
     struct trapframe *frame;
 {
 	register caddr_t params;
-	register struct sysent *callp;
+	register const struct sysent *callp;
 	register struct proc *p;
 	register int i;
 	register_t code, args[8], rval[2];
@@ -677,7 +675,7 @@ syscall(frame)
 			 * Like syscall, but code is a quad, so as to maintain
 			 * quad alignment for the rest of the arguments.
 			 */
-			code = fuword(params + _QUAD_LOWWORD * sizeof(int));
+			code = fuword(params + 1 * sizeof(int));
 			params += sizeof(quad_t);
 			break;
 
@@ -745,7 +743,7 @@ int
 user_page_fault(p, map, addr, ftype, type)
 	struct proc *p;
 	vm_map_t map;
-	caddr_t addr;
+	vm_offset_t addr;
 	vm_prot_t ftype;
 	int type;
 {
@@ -804,7 +802,7 @@ int
 user_write_fault(addr)
 	void *addr;
 {
-	if (user_page_fault(curproc, &curproc->p_vmspace->vm_map, addr, VM_PROT_READ | VM_PROT_WRITE, T_PAGEFLT) == KERN_SUCCESS) {
+	if (user_page_fault(curproc, &curproc->p_vmspace->vm_map, (vm_offset_t) addr, VM_PROT_READ | VM_PROT_WRITE, T_PAGEFLT) == KERN_SUCCESS) {
 		return (0);
 	} else {
 		return (EFAULT);
