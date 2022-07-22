@@ -54,9 +54,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## ddb:
 
 ## kern:
-- syscall config: 
-	- Fix INDIR: As to create a syscall { int nosys(); } 
-	with the specified syscall name.
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.

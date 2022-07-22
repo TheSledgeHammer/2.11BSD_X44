@@ -104,9 +104,8 @@
 60  STD     	{ int umask(); }
 61  STD     	{ int chroot(); }
 62  STD     	{ int fstat(); }
-63	STD		    { int undelete(); }
-64	STD		{ int nosys(); } _syscall
-; 64	OBSOL		old compat_43_getpagesize
+63	STD		{ int undelete(); }
+64	OBSOL		old compat_43_getpagesize
 65  STD     	{ int pselect(); }
 66  STD     	{ int vfork(); }
 67	OBSOL		old compat_43_lseek
@@ -212,7 +211,7 @@
 162 STD         { int kevent(); }
 163 STD         { int kqueue(); }
 164 STD         { int swapon(); }
-165 UNIMPL      { int swapctl(); }
+165 STD		{ int nosys(); } _syscall
 #ifdef KTRACE
 166 STD			{ int ktrace(); }
 #else 

@@ -75,7 +75,7 @@
 #include <sys/user.h>
 #include <sys/acct.h>
 #include <sys/kernel.h>
-#include <sys/endian.h>
+//#include <sys/endian.h>
 #include <sys/fperr.h>
 #include <sys/syscall.h>
 #include <sys/sysdecl.h>
@@ -92,6 +92,7 @@
 
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
+#include <machine/endian.h>
 #include <machine/vmparam.h>
 #include <machine/trap.h>
 #include <machine/psl.h>
@@ -106,12 +107,7 @@
 #ifdef DEBUG
 int	trapdebug = 0;
 #endif
-/*
-struct sysent sysent[];
-int	nsysent;
-unsigned rcr2();
-//extern int cpl;
-*/
+
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
 int has_f00f_bug = 0;		/* Initialized so that it can be patched. */
 #endif
@@ -122,6 +118,7 @@ static __inline void userret(struct proc *, int, u_quad_t);
 #if defined(I386_CPU)
 int trapwrite(unsigned);
 #endif
+int user_page_fault(struct proc *, vm_map_t, caddr_t, vm_prot_t, int);
 
 const char * const trap_type[] = {
 	"privileged instruction fault",		/*  0 T_PRIVINFLT */
@@ -448,7 +445,7 @@ copyfault:
 	case T_PAGEFLT|T_USER:
 		/* page fault */
 		vm_offset_t va;
-		struct vmspace *vm;
+		register struct vmspace *vm;
 		vm_map_t map;
 		int rv;
 		vm_prot_t ftype;
@@ -637,6 +634,9 @@ trapwrite(addr)
  *	System call request from POSIX system call gate interface to kernel.
  * Like trap(), argument is call by reference.
  */
+
+#define TF_CODE_ALLOC(frame, nsys) ((frame)->tf_eax & ((nsys) - 1))
+
 /*ARGSUSED*/
 void
 syscall(frame)
@@ -648,7 +648,7 @@ syscall(frame)
 	register int i;
 	register_t code, args[8], rval[2];
     u_quad_t sticks;
-    int error, nsys, opc;
+    int error, nsys;
     short argsize;
 
 	sticks = p->p_sticks;
@@ -658,29 +658,34 @@ syscall(frame)
 
 	p = curproc;
 	p->p_md.md_regs = frame;
-	opc = frame->tf_eip;
-	code = frame->tf_eax;
-
+	code = TF_CODE_ALLOC(frame, nsys);
 	nsys = p->p_emul->e_nsysent;
 	callp = p->p_emul->e_sysent;
 
 	curpcb->pcb_flags &= ~FM_TRAP; /* used by sendsig */
 	params = (caddr_t) frame->tf_esp + sizeof(int);
-	switch (code) {
-	case SYS_syscall:
-		code = fuword(params);
-		params += sizeof(int);
-		break;
 
-	case SYS__syscall:
-		if (callp == sysent) {
+	if (callp == sysent) {
+		switch(code) {
+		case SYS_syscall:
+			code = fuword(params);
+			params += sizeof(int);
+			break;
+
+		case SYS__syscall:
+			/*
+			 * Like syscall, but code is a quad, so as to maintain
+			 * quad alignment for the rest of the arguments.
+			 */
 			code = fuword(params + _QUAD_LOWWORD * sizeof(int));
 			params += sizeof(quad_t);
+			break;
+
+		default:
+			break;
 		}
-		break;
-	default:
-		break;
 	}
+
 	if (code < 0 || code >= nsys) {
 		callp += p->p_emul->e_nosys;
 	} else {
@@ -690,34 +695,37 @@ syscall(frame)
 	if(argsize && (error = copyin(params, args, argsize))) {
         frame->tf_eax = error;
 		frame->tf_eflags |= PSL_C;	/* carry bit */
-#ifdef KTRACE
-		if (KTRPOINT(p, KTR_SYSCALL)) {
-			ktrsyscall(p, code, callp->sy_narg, &args);
-		}
-#endif
         goto done;
     }
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL)) {
-		ktrsyscall(p, code, callp->sy_narg, &args);
+		ktrsyscall(p, code, argsize, args);
 	}
 #endif
-    rval[0] = 0;
-	rval[1] = frame->tf_edx;
 
+	rval[0] = 0;
+	rval[1] = 0;
     error = (*callp->sy_call)(p, args, rval);
-    if (error == ERESTART) {
-		frame->tf_eip = opc;
-    } else if (error != EJUSTRETURN) {
-		if (error) {
-			frame->tf_eax = error;
-			frame->tf_eflags |= PSL_C;	/* carry bit */
-		} else {
-			frame->tf_eax = rval[0];
-			frame->tf_edx = rval[1];
-			frame->tf_eflags &= ~PSL_C;	/* carry bit */
-		}
-	}
+    switch (error) {
+    case 0:
+		frame->tf_eax = rval[0];
+		frame->tf_edx = rval[1];
+		frame->tf_eflags &= ~PSL_C;	/* carry bit */
+		break;
+
+    case ERESTART:
+    	frame->tf_eip -= frame->tf_err;
+    	break;
+
+	case EJUSTRETURN:
+		/* nothing to do */
+		break;
+
+	default:
+		frame->tf_eax = error;
+		frame->tf_eflags |= PSL_C;	/* carry bit */
+		break;
+    }
 
 done:
 	/*

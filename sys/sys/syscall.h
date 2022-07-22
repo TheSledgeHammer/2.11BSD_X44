@@ -71,7 +71,7 @@
 #define	SYS_chroot	61
 #define	SYS_fstat	62
 #define	SYS_undelete	63
-#define	SYS__syscall	64
+				/* 64 is obsolete old compat_43_getpagesize */
 #define	SYS_pselect	65
 #define	SYS_vfork	66
 				/* 67 is obsolete old compat_43_lseek */
@@ -172,6 +172,7 @@
 #define	SYS_kevent	162
 #define	SYS_kqueue	163
 #define	SYS_swapon	164
+#define	SYS__syscall	165
 #define	SYS_ktrace	166
 #define	SYS_vtrace	167
 #define	SYS_MAXSYSCALL	168

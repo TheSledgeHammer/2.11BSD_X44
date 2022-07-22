@@ -175,11 +175,10 @@ void ktrcsw(struct proc *, int, int);
 void ktrgenio(struct proc *, int, enum uio_rw, struct iovec *, int, int);
 void ktrnamei(struct proc *, char *);
 void ktrpsig(struct proc *, int, sig_t, int, int);
-void ktrsyscall(struct proc *, int, int, register_t []);
+void ktrsyscall(struct proc *, int, int, register_t[]);
 void ktrsysret(struct proc *, int, int, int);
 void ktruser(struct proc *, const char *, void *, size_t, int);
 void ktrderef(struct proc *);
 void ktradref(struct proc *);
-
 #endif	/* !KERNEL */
 #endif /* _SYS_KTRACE_H_ */

@@ -244,32 +244,38 @@ function parseline() {
 }
 function putent(nodefs, declfile, compatwrap) {
 	# output syscall declaration for switch table
-	if (compatwrap == "")
-		printf("int\t%s();\n", funcname) > declfile
-	else
-		printf("int\t%s(%s)();\n", compatwrap, funcname) > declfile
-	
+	if (nodefs != "INDIR") {
+		prototype = "()"
+		if (compatwrap == "")
+			printf("int\t%s();\n", funcname) > declfile
+		else
+			printf("int\t%s(%s)();\n", compatwrap, funcname) > declfile
+	}
 	# output syscall switch entry
-	printf("\t{ %d, ", argc) > sysent
-	if (argc == 0)
-		printf("0") > sysent
-	else if (compatwrap == "")
-		printf("s(struct %s_args)", funcname) > sysent
-	else
-		printf("s(struct %s_%s_args)", compatwrap, funcname) > sysent
-	if (compatwrap == "")
-		wfn = sprintf("%s", funcname);
-	else
-		wfn = sprintf("%s(%s)", compatwrap, funcname);
-	printf(",\n\t    %s },", wfn) > sysent
-	for (i = 0; i < (33 - length(wfn)) / 8; i++)
-		printf("\t") > sysent
-	if (compatwrap == "")
-		printf("/* %d = %s */\n", syscall, funcalias) > sysent
-	else
-		printf("/* %d = %s %s */\n", syscall, compatwrap,
-		    funcalias) > sysent
-	
+	if (nodefs == "INDIR") {
+		printf("\t{ 0, 0, %s,\n\t    nosys },\t\t\t/* %d = %s */\n", \
+		    sycall_flags, syscall, funcalias) > sysent
+	} else {
+		printf("\t{ %d, ", argc) > sysent
+		if (argc == 0)
+			printf("0") > sysent
+		else if (compatwrap == "")
+			printf("s(struct %s_args)", funcname) > sysent
+		else
+			printf("s(struct %s_%s_args)", compatwrap, funcname) > sysent
+		if (compatwrap == "")
+			wfn = sprintf("%s", funcname);
+		else
+			wfn = sprintf("%s(%s)", compatwrap, funcname);
+		printf(",\n\t    %s },", wfn) > sysent
+		for (i = 0; i < (33 - length(wfn)) / 8; i++)
+			printf("\t") > sysent
+		if (compatwrap == "")
+			printf("/* %d = %s */\n", syscall, funcalias) > sysent
+		else
+			printf("/* %d = %s %s */\n", syscall, compatwrap, funcalias) > sysent
+	}
+
 	# output syscall name for names table
 	if (compatwrap == "")
 		printf("\t\"%s\",\t\t\t/* %d = %s */\n", funcalias, syscall,
@@ -279,7 +285,7 @@ function putent(nodefs, declfile, compatwrap) {
 		    funcalias, syscall, compatwrap, funcalias) > sysnames
 		    
 	# output syscall number of header, if appropriate
-	if (nodefs == "" || nodefs == "NOARGS")
+	if (nodefs == "" || nodefs == "NOARGS" || nodefs == "INDIR")
 		printf("#define\t%s%s\t%d\n", constprefix, funcalias,
 		    syscall) > sysnumhdr
 	else if (nodefs != "NODEF")

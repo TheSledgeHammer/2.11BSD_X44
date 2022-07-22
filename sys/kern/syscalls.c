@@ -72,8 +72,7 @@ char *syscallnames[] = {
 	"chroot",			/* 61 = chroot */
 	"fstat",			/* 62 = fstat */
 	"undelete",			/* 63 = undelete */
-	"_syscall",			/* 64 = _syscall */
-#64	OBSOL		old compat_43_getpagesize
+	"#64 (obsolete old compat_43_getpagesize)",		/* 64 = obsolete old compat_43_getpagesize */
 	"pselect",			/* 65 = pselect */
 	"vfork",			/* 66 = vfork */
 	"#67 (obsolete old compat_43_lseek)",		/* 67 = obsolete old compat_43_lseek */
@@ -174,7 +173,7 @@ char *syscallnames[] = {
 	"kevent",			/* 162 = kevent */
 	"kqueue",			/* 163 = kqueue */
 	"swapon",			/* 164 = swapon */
-	"#165 (unimplemented { int swapctl ( ) ; })",		/* 165 = unimplemented { int swapctl ( ) ; } */
+	"_syscall",			/* 165 = _syscall */
 #ifdef KTRACE
 	"ktrace",			/* 166 = ktrace */
 #else 
