@@ -37,6 +37,8 @@
  *
  */
 
+#include <sys/systm.h>
+
 #include <machine/asm.h>
 #include <machine/cputypes.h>
 #include <machine/pmap.h>

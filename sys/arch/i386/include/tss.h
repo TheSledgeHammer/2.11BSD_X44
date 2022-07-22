@@ -42,7 +42,6 @@
 /*
  * Intel 386 Context Data Type
  */
-
 struct i386tss {
 	int			tss_link;	/* actually 16 bits: top 16 bits must be zero */
 	int			tss_esp0; 	/* kernel stack pointer privilege level 0 */

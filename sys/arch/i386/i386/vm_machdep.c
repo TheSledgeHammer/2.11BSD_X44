@@ -50,6 +50,7 @@
 #include <vm/include/vm_kern.h>
 
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
 #include <machine/gdt.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
@@ -57,6 +58,10 @@
 #include <machine/pmap.h>
 
 #include "npx.h"
+
+#ifndef NOREDZONE
+static void setredzone(struct proc *);
+#endif
 
 vm_offset_t
 get_pcb_user_size(up)
@@ -131,7 +136,8 @@ cpu_fork(p1, p2)
 	 * Arrange for a non-local goto when the new process
 	 * is started, to resume here, returning nonzero from setjmp.
 	 */
-	if(savectx(pcb)) {
+	if(p1 == curproc) {
+		savectx(pcb);
 		return (1);
 	}
 
@@ -144,65 +150,42 @@ cpu_fork(p1, p2)
 	pcb->pcb_ebp = 0;
 	pcb->pcb_esp = (int)p2->p_md.md_regs - sizeof(void *);
 	pcb->pcb_ebx = (int)p2;
-	pcb->pcb_eip = (int)proc_trampoline;
+	pcb->pcb_eib = (int)proc_trampoline;
 
 	return (0);
 }
 
-#ifdef notyet
-/*
- * cpu_exit is called as the last action during exit.
- *
- * We change to an inactive address space and a "safe" stack,
- * passing thru an argument to the new stack. Now, safely isolated
- * from the resources we're shedding, we release the address space
- * and any remaining machine-dependent resources, including the
- * memory for the user structure and kernel stack.
- *
- * Next, we assign a dummy context to be written over by mi_switch,
- * calling it to send this process off to oblivion.
- * [The nullpcb allows us to minimize cost in mi_switch() by not having
- * a special case].
- */
-struct proc *switch_to_inactive();
-
 void
-cpu_exit(p)
-	register struct proc *p;
+cpu_swapin(p)
+	struct proc *p;
 {
-	static struct pcb nullpcb;	/* pcb to overwrite on last switch */
-
-#if NNPX > 0
-	/* free cporcessor (if we have it) */
-	if( p == npxproc()) {
-		npxproc() = 0;
-	}
+#ifndef NOREDZONE
+	setredzone(p);
 #endif
-
-	/* move to inactive space and stack, passing arg accross */
-	p = switch_to_inactive(p);
-
-	/* drop per-process resources */
-	vmspace_free(p->p_vmspace);
-	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
-
-	p->p_addr = (struct user *) &nullpcb;
-	swtch();
-	/* NOTREACHED */
 }
-#else
+
+void
+cpu_swapout(p)
+	struct proc *p;
+{
+#if NNPX > 0
+	/*
+	 * Make sure we save the FP state before the user area vanishes.
+	 */
+	npxsave_proc(p, 1);
+#endif
+}
 
 void
 cpu_exit(p)
 	register struct proc *p;
 {
-	/* free coprocessor (if we have it) */
 #if NNPX > 0
-	if( p == npxproc()) {
-		npxproc() = 0;
+	/* If we were using the FPU, forget about it. */
+	if (p->p_addr->u_pcb.pcb_fpcpu != NULL) {
+		npxsave_proc(p, 0);
 	}
 #endif
-
 	curproc = p;
 	swtch();
 }
@@ -216,7 +199,6 @@ cpu_wait(p)
 	vmspace_free(p->p_vmspace);
 	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
 }
-#endif
 
 /*
  * Dump the machine specific header information at the start of a core dump.
@@ -230,23 +212,22 @@ cpu_coredump(p, vp, cred)
 	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) p->p_addr, ctob(UPAGES), (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)NULL, p));
 }
 
+#ifndef NOREDZONE
 /*
  * Set a red zone in the kernel stack after the u. area.
  */
-void
-setredzone(pte, vaddr)
-	u_short *pte;
-	caddr_t vaddr;
+static void
+setredzone(p)
+	struct proc *p;
 {
-/* eventually do this by setting up an expand-down stack segment
-   for ss0: selector, allowing stack access down to top of u.
-   this means though that protection violations need to be handled
-   thru a double fault exception that must do an integral task
-   switch to a known good context, within which a dump can be
-   taken. a sensible scheme might be to save the initial context
-   used by sched (that has physical memory mapped 1:1 at bottom)
-   and take the dump while still in mapped mode */
+	vm_offset_t sva, eva;
+	sva = (vm_offset_t)p->p_addr + PAGE_SIZE;
+	eva = (vm_offset_t)p->p_addr + 2 * PAGE_SIZE;
+
+	pmap_remove(kernel_pmap, sva, eva);
+	pmap_update();
 }
+#endif
 
 /*
  * Move pages from one kernel virtual address to another.
@@ -256,22 +237,32 @@ setredzone(pte, vaddr)
 void
 pagemove(from, to, size)
 	register caddr_t from, to;
-	int size;
+	size_t size;
 {
-	register pt_entry_t *fpte, *tpte;
+	register pt_entry_t *fpte, *tpte, ofpte, otpte;
+	int32_t cpumask = 0;
 
-	if (size % CLBYTES)
+	if (size % CLBYTES) {
 		panic("pagemove");
+	}
 	fpte = kvtopte(from);
 	tpte = kvtopte(to);
 	while (size > 0) {
+		otpte = *tpte;
+		ofpte = *fpte;
 		*tpte++ = *fpte;
-		*(int *)fpte++ = 0;
+		*fpte++ = 0;
+		if (otpte & PG_V) {
+			pmap_tlb_shootdown(kernel_pmap, (vm_offset_t)to, otpte, &cpumask);
+		}
+		if (ofpte & PG_V) {
+			pmap_tlb_shootdown(kernel_pmap, (vm_offset_t)from, ofpte, &cpumask);
+		}
 		from += NBPG;
 		to += NBPG;
 		size -= NBPG;
 	}
-	tlbflush();
+	pmap_tlb_shootnow(kernel_pmap, cpumask);
 }
 
 /*
@@ -284,8 +275,9 @@ kvtop(addr)
 	vm_offset_t va;
 
 	va = pmap_extract(kernel_pmap, (vm_offset_t)addr);
-	if (va == 0)
+	if (va == 0) {
 		panic("kvtop: zero page frame");
+	}
 	return((int)va);
 }
 

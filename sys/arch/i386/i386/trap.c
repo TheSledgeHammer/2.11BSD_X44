@@ -664,23 +664,12 @@ syscall(frame)
 	params = (caddr_t) frame->tf_esp + sizeof(int);
 
 	if (callp == sysent) {
-		switch(code) {
-		case SYS_syscall:
+		if(code == SYS_syscall) {
 			code = fuword(params);
 			params += sizeof(int);
-			break;
-
-		case SYS__syscall:
-			/*
-			 * Like syscall, but code is a quad, so as to maintain
-			 * quad alignment for the rest of the arguments.
-			 */
-			code = fuword(params + 1 * sizeof(int));
+		} else if(code == SYS__syscall){
+			code = fuword(params + sizeof(int));
 			params += sizeof(quad_t);
-			break;
-
-		default:
-			break;
 		}
 	}
 

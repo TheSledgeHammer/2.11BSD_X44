@@ -41,14 +41,20 @@
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_page.h>
 
+#include <machine/cpu.h>
+#include <machine/cpufunc.h>
+#include <machine/cpuvar.h>
 #include <machine/gdt.h>
 #include <machine/pcb.h>
-#include <machine/psl.h>
+//#include <machine/psl.h>
 #include <machine/pte.h>
 #include <machine/specialreg.h>
 #include <machine/sysarch.h>
-#include <machine/segments.h>
+//#include <machine/segments.h>
 #include <machine/vm86.h>
+
+#include <machine/isa/isa_machdep.h>
+
 
 extern int 					vm86pa;
 extern struct pcb 			*vm86pcb;
@@ -372,17 +378,17 @@ vm86_emulate(struct vm86frame *vmf)
 	return (SIGBUS);
 }
 
+#define IOPAGES			2			/* pages of i/o permission bitmap */
 #define PGTABLE_SIZE	((1024 + 64) * 1024 / PAGE_SIZE)
 #define INTMAP_SIZE		32
 #define IOMAP_SIZE		ctob(IOPAGES)
-#define TSS_SIZE \
-	(sizeof(struct pcb_ext) - sizeof(struct segment_descriptor) + \
+#define TSS_SIZE 	\
+	(sizeof(struct pcb) - sizeof(struct segment_descriptor) + \
 	 INTMAP_SIZE + IOMAP_SIZE + 1)
 
 struct vm86_layout {
 	pt_entry_t		vml_pgtbl[PGTABLE_SIZE];
 	struct 	pcb 	vml_pcb;
-	struct	pcb_ext vml_ext;
 	char			vml_intmap[INTMAP_SIZE];
 	char			vml_iomap[IOMAP_SIZE];
 	char			vml_iomap_trailer;
@@ -464,8 +470,9 @@ vm86_initialize(void)
 	pcb->pcb_iomap = vml->vml_iomap;
 	pcb->pcb_vm86.vm86_intmap = vml->vml_intmap;
 
-	if (cpu_feature & CPUID_VME)
+	if (cpu_feature & CPUID_VME) {
 		pcb->pcb_vm86.vm86_has_vme = (rcr4() & CR4_VME ? 1 : 0);
+	}
 
 	addr = (u_int *)pcb->pcb_vm86.vm86_intmap;
 	for (i = 0; i < (INTMAP_SIZE + IOMAP_SIZE) / sizeof(u_int); i++)
@@ -479,12 +486,12 @@ vm86_initialize(void)
 	vm86pcb = pcb;
 
 #if 0
-        /*
-         * use whatever is leftover of the vm86 page layout as a
-         * message buffer so we can capture early output.
-         */
-        msgbufinit((vm_offset_t)vm86paddr + sizeof(struct vm86_layout),
-            ctob(3) - sizeof(struct vm86_layout));
+	/*
+	 * use whatever is leftover of the vm86 page layout as a
+	 * message buffer so we can capture early output.
+	 */
+	msgbufinit((vm_offset_t) vm86paddr + sizeof(struct vm86_layout),
+			ctob(3) - sizeof(struct vm86_layout));
 #endif
 }
 
@@ -495,7 +502,7 @@ vm86_initial_bioscalls(basemem, extmem)
 	struct vm86frame 	vmf;
 	struct vm86context 	vmc;
 	struct bios_smap 	*smap;
-	pt_entry_t pte;
+	pt_entry_t *pte;
 	u_long pa;
 	int res, i, has_smap;
 
@@ -506,10 +513,10 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * Perform "base memory" related probes & setup
 	 */
 	vm86_intcall(0x12, &vmf);
-    basemem = vmf.vmf_ax;
-    if (basemem > 640) {
+    basemem = &vmf.vmf_ax;
+    if (basemem > (int *)640) {
         printf("Preposterous BIOS basemem of %uK, truncating to 640K\n", basemem);
-	    basemem = 640;
+	    basemem = (int *)640;
 	}
 
 	/*
@@ -532,9 +539,9 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * pmap_mapdev, but since no memory needs to be
 	 * allocated we simply change the mapping.
 	 */
-	for (pa = trunc_page(basemem * 1024); pa < ISA_HOLE_START; pa +=
+	for (pa = trunc_page(basemem * (int *)1024); pa < ISA_HOLE_START; pa +=
 			PAGE_SIZE) {
-		pte = (pt_entry_t) vtopte(pa + KERNBASE);
+		pte = (pt_entry_t *) vtopte(pa + KERNBASE);
 		*pte = pa | PG_RW | PG_V;
 	}
 
@@ -542,8 +549,8 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * if basemem != 640, map pages r/w into vm86 page table so
 	 * that the bios can scribble on it.
 	 */
-	pte = (pt_entry_t) vm86paddr;
-	for (i = basemem / 4; i < 160; i++) {
+	pte = (pt_entry_t *) vm86paddr;
+	for (i = basemem / (int *)4; i < 160; i++) {
 		pte[i] = (i << PAGE_SHIFT) | PG_V | PG_RW | PG_U;
 	}
 
@@ -551,7 +558,7 @@ vm86_initial_bioscalls(basemem, extmem)
 	 * map page 1 R/W into the kernel page table so we can use it
 	 * as a buffer.  The kernel will unmap this page later.
 	 */
-	pte = (pt_entry_t) vtopte(KERNBASE + (1 << PAGE_SHIFT));
+	pte = (pt_entry_t *) vtopte(KERNBASE + (1 << PAGE_SHIFT));
 	*pte = (1 << PAGE_SHIFT) | PG_RW | PG_V;
 
 	/*
@@ -728,7 +735,7 @@ vm86_datacall(int intnum, struct vm86frame *vmf, struct vm86context *vmc)
 		page = vtophys(vmc->pmap[i].kva & PG_FRAME);
 		entry = vmc->pmap[i].pte_num;
 		vmc->pmap[i].old_pte = pte[entry];
-		pte[entry] = page | PG_V | PG_RW | PG_U;
+		pte[entry] = (pt_entry_t)page | PG_V | PG_RW | PG_U;
 		pmap_invalidate_page(kernel_pmap, vmc->pmap[i].kva);
 	}
 
@@ -785,7 +792,7 @@ vm86_sysarch(p, args, retval)
 	struct i386_vm86_args ua;
 	struct vm86_kernel *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
-	if ((error = copyin(args, &ua, sizeof(struct i386_vm86_args))) != 0)
+	if ((error = copyin(args, &ua, sizeof(struct i386_vm86_args *))) != 0)
 		return (error);
 
 	vm86 = &p->p_addr->u_pcb.pcb_vm86;
