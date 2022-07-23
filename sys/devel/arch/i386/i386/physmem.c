@@ -42,6 +42,8 @@
 
 #include <arch/i386/include/bios.h>
 
+/* TODO: change how add_mem_cluster works */
+
 extern int biosbasemem, biosextmem;
 
 #define	VM_PHYSSEG_MAX	32
@@ -58,11 +60,12 @@ typedef struct {
 phys_ram_seg_t mem_clusters[VM_PHYSSEG_MAX];
 int	mem_cluster_cnt;
 
-
 #define	KBTOB(x)	((size_t)(x) * 1024UL)
 
 int
-add_mem_cluster(u_int64_t seg_start, u_int64_t seg_end, u_int32_t type)
+add_mem_cluster(seg_start, seg_end, type)
+	u_int64_t seg_start, seg_end;
+	u_int32_t type;
 {
 	extern struct extent *iomem_ex;
 	int error, i;
@@ -123,17 +126,16 @@ add_mem_cluster(u_int64_t seg_start, u_int64_t seg_end, u_int32_t type)
 }
 
 void
-alloc_ap_trampoline(u_int64_t seg_start, u_int64_t seg_end)
+alloc_ap_trampoline(seg_start, seg_end, type)
+	u_int64_t seg_start, seg_end;
+	u_int32_t type;
 {
-	unsigned int i;
-	u_int64_t seg_size;
+	int error;
 	bool allocated;
 
-	seg_size = seg_end - seg_start;
 	allocated = TRUE;
-	if((seg_size >= MiB(1)) || (trunc_page(seg_end) - round_page(seg_start) < round_page(bootMP_size))) {
+	if((seg_end >= MiB(1)) || (trunc_page(seg_end) - round_page(seg_start) < round_page(bootMP_size))) {
 		allocated = TRUE;
-
 		if(seg_end < MiB(1)) {
 			boot_address = trunc_page(seg_end);
 			if ((seg_end - boot_address) < bootMP_size) {
@@ -145,6 +147,12 @@ alloc_ap_trampoline(u_int64_t seg_start, u_int64_t seg_end)
 			seg_start = boot_address + round_page(bootMP_size);
 		}
 	}
+
+	error = add_mem_cluster(seg_start, seg_end, type); /* change to extent_alloc_region? */
+	if(error) {
+		allocated = FALSE;
+	}
+
 	if (!allocated) {
 		boot_address = biosbasemem * 1024 - bootMP_size;
 		if (bootverbose) {
@@ -153,6 +161,57 @@ alloc_ap_trampoline(u_int64_t seg_start, u_int64_t seg_end)
 	}
 }
 
+void
+setmemsize(basemem, extmem)
+	int *basemem, *extmem;
+{
+	u_int64_t seg_start, seg_end;
+	int error;
+
+	/* really needed? with the only bios memory map coming from biobasemem and biosextmem */
+	if (mem_cluster_cnt == 0) {
+		seg_start = 0;
+		seg_end = KBTOB(basemem);
+
+		error = extent_alloc_region(iomem_ex, seg_start, seg_end, EX_NOWAIT);
+		if (error) {
+			printf("WARNING: CAN'T ALLOCATE BASE MEMORY FROM IOMEM EXTENT MAP!\n");
+		}
+
+		mem_clusters[0].start = seg_start;
+		mem_clusters[0].size = trunc_page(seg_end);
+		physmem += atop(mem_clusters[0].size);
+
+		error = extent_alloc_region(iomem_ex, IOM_END, KBTOB(extmem), EX_NOWAIT);
+		if (error) {
+			printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
+		}
+#if NISADMA > 0
+		/*
+		 * Some motherboards/BIOSes remap the 384K of RAM that would
+		 * normally be covered by the ISA hole to the end of memory
+		 * so that it can be used.  However, on a 16M system, this
+		 * would cause bounce buffers to be allocated and used.
+		 * This is not desirable behaviour, as more than 384K of
+		 * bounce buffers might be allocated.  As a work-around,
+		 * we round memory down to the nearest 1M boundary if
+		 * we're using any isadma devices and the remapped memory
+		 * is what puts us over 16M.
+		 */
+		if (extmem > (15*1024) && extmem < (16*1024)) {
+			extmem = (15*1024);
+		}
+#endif
+		mem_clusters[1].start = IOM_END;
+		mem_clusters[1].size = trunc_page(KBTOB(extmem));
+		physmem += atop(mem_clusters[1].size);
+
+		mem_cluster_cnt = 2;
+		avail_end = IOM_END + trunc_page(KBTOB(extmem));
+	}
+}
+
+/* bios smap */
 static int
 add_smap_entry(struct bios_smap *smap)
 {

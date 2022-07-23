@@ -146,7 +146,8 @@ int boothowto = 0;
 struct bootinfo bootinfo;
 char bootsize[BOOTINFO_MAXSIZE];
 int  *esym;
-extern int biosbasemem, biosextmem;
+extern int biosbasemem = 0;
+extern int biosextmem = 0;
 
 #ifdef CPURESET_DELAY
 int cpureset_delay = CPURESET_DELAY;
@@ -159,7 +160,7 @@ typedef struct {
 	u_quad_t	size;		/* Size in bytes		*/
 } phys_ram_seg_t;
 phys_ram_seg_t mem_clusters[32];
-int	mem_cluster_cnt;
+int	mem_cluster_cnt = 0;
 
 struct pcb *curpcb;			/* our current running pcb */
 
