@@ -49,7 +49,7 @@
 5   STD     	{ int open(); }
 6   STD     	{ int close(); }
 7   STD     	{ int wait4(); }
-8 	OBSOL 		old compat_43_creat
+8   UNIMPL 		old creat
 9   STD     	{ int link(); }
 10  STD     	{ int unlink(); }
 11  STD     	{ int execv(); }
@@ -105,10 +105,10 @@
 61  STD     	{ int chroot(); }
 62  STD     	{ int fstat(); }
 63	STD		{ int undelete(); }
-64	OBSOL		old compat_43_getpagesize
+64	UNIMPL	old getpagesize
 65  STD     	{ int pselect(); }
 66  STD     	{ int vfork(); }
-67	OBSOL		old compat_43_lseek
+67	UNIMPL
 68  STD   		{ int sbrk(); }
 69	STD			{ int sstk(); }
 70	STD			{ int mmap(); }
@@ -125,14 +125,14 @@
 81  STD     	{ int getpgrp(); }
 82  STD     	{ int setpgrp(); }
 83  STD     	{ int setitimer(); }
-84	OBSOL		old compat_43_lstat
+84  UNIMPL
 85	STD		    { int pathconf(); }
 86  STD     	{ int getitimer(); }
 87  STD   	    { int setsid(); } 
 88  STD   	    { int setpgid(); }
 89  STD     	{ int getdtablesize(); }
 90  STD     	{ int dup2(); }
-91	OBSOL		old compat_43_stat
+91  UNIMPL
 92  STD     	{ int fcntl(); }
 93  STD     	{ int select(); }
 94	STD		    { int mkfifo(); }
@@ -153,7 +153,7 @@
 109 OBSOL   	old sigblock
 110 OBSOL   	old sigsetmask
 111 OBSOL   	old sigpause
-112 OBSOL 		old compat_43_sigstack
+112 STD		{ int sigstack(); }
 113 STD     	{ int recvmsg(); }
 114 STD     	{ int sendmsg(); }
 115	STD		    { int revoke(); }
@@ -173,14 +173,14 @@
 129	STD			{ int truncate(); }
 130	STD			{ int ftruncate(); }
 131 STD     	{ int flock(); }
-132	OBSOL		old compat_43_truncate
+132 UNIMPL
 133 STD     	{ int sendto(); }
 134 STD     	{ int shutdown(); }
 135 STD     	{ int socketpair(); }
 136 STD     	{ int mkdir(); }
 137 STD     	{ int rmdir(); }
 138 STD     	{ int utimes(); }
-139	OBSOL		old compat_43_ftruncate
+139 UNIMPL
 140 STD     	{ int adjtime(); }
 141 STD     	{ int getpeername(); }
 142 OBSOL   	old gethostid
@@ -192,10 +192,8 @@
 148 OBSOL     	old setquota
 149 STD     	{ int quota(); }
 150 STD     	{ int getsockname(); }
-; 87 old gethostname
-; 88 old sethostname
 ; Syscalls 151-160 are special for 2BSD
-151	OBSOL		old compat_43_getdirentries
+151 UNIMPL
 152 OBSOL     	old nostk
 153 OBSOL     	old fetchi
 154 OBSOL     	old ucall

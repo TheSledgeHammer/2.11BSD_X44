@@ -32,25 +32,16 @@
  * SUCH DAMAGE.
  */
 
-#include "dlogo.h"
+/* Logo Global Functions */
+#define LOGO_LEFT 		0
+#define LOGO_RIGHT 		1
 
-extern char *DirBase;
+#define MAX_BLANK_LINES 25
+#define DEFAULT_LINES 	MAX_BLANK_LINES
 
-typedef struct dvar {
-	struct dvar *next;
-	char 		*name;
-	char 		**data;
-	int 		count;
-} *dvar_t;
+static char logo_blank_line[DEFAULT_LINES] = "\0";
+//static char *logo_blank_line = "                                 ";
 
-dvar_t 	dvar_get(const char *name);
-void 	dvar_set(const char *name, char **data, int count);
-void 	dvar_unset(const char *name);
-int 	dvar_istrue(dvar_t var);
-dvar_t 	dvar_first(void);
-dvar_t 	dvar_next(dvar_t var);
-dvar_t 	dvar_copy(dvar_t var);
-void 	dvar_free(dvar_t *lastp);
-
-void 	dcmds_init(void);
-int 	dloader_run(int ac, char **av);
+void logo_display(char **logo, int line, int lineNum, int orientation, int barrier);
+void display_fred(int logo_left, int separated);
+void display_beastie(int logo_left, int separated);

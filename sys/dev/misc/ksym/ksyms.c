@@ -98,7 +98,10 @@ ksymsattach(int num)
 }
 
 int
-ksymsopen(dev_t dev, int flag, int mode, struct proc *p)
+ksymsopen(dev, flag, mode, p)
+	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	if (minor(dev) != 0 || !ksyms_loaded) {
 		return (ENXIO);
@@ -122,14 +125,20 @@ ksymsopen(dev_t dev, int flag, int mode, struct proc *p)
 }
 
 int
-ksymsclose(dev_t dev, int flag, int mode, struct proc *p)
+ksymsclose(dev, flag, mode, p)
+	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	ksyms_delsymtab();
 	return (0);
 }
 
 int
-ksymsread(dev_t dev, struct uio *uio, int flags)
+ksymsread(dev, uio, flags)
+	dev_t dev;
+	struct uio *uio;
+	int flags;
 {
 	struct ksyms_symtab *st;
 	size_t filepos, inpos, off;
@@ -207,7 +216,10 @@ ksymsread(dev_t dev, struct uio *uio, int flags)
 }
 
 int
-ksymswrite(dev_t dev, struct uio *uio, int flags)
+ksymswrite(dev, uio, flags)
+	dev_t dev;
+	struct uio *uio;
+	int flags;
 {
 	return (EROFS);
 }

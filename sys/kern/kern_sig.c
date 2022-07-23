@@ -714,8 +714,9 @@ core(void)
 	pcred = p->p_cred;
 	cred = u.u_ucred;
 	vm = p->p_vmspace;
-	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u.u_acflag & ASUGID) && !suser()))
+	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u.u_acflag & ASUGID) && !suser())) {
 			return (EFAULT);
+	}
 	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >= p->p_rlimit[RLIMIT_CORE].rlim_cur || ctob(USIZE + u.u_dsize+u.u_ssize) >= u.u_rlimit[RLIMIT_CORE].rlim_cur) {
 		return (EFAULT);
 	}
@@ -778,8 +779,9 @@ out:
 int
 nosys()
 {
-	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
+	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD) {
 		u.u_error = EINVAL;
+	}
 	psignal(u.u_procp, SIGSYS);
 	return (ENOSYS);
 }

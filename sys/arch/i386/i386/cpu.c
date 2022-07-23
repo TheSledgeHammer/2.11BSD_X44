@@ -37,6 +37,8 @@
 #include <sys/user.h>
 
 #include <machine/apic/lapicvar.h>
+
+#include <machine/cpuinfo.h>
 #include <machine/percpu.h>
 
 struct cpu_softc {
@@ -50,15 +52,55 @@ static void cpu_attach(struct device *, struct device *, void *);
 CFOPS_DECL(cpu, cpu_match, cpu_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, cpu, &cpu_cops, DV_DULL, sizeof(struct cpu_softc));
 
+struct cpu_info *cpu_info;
+int *apic_cpuids;
+
+#ifdef SMP
+u_int all_cpus;
+int mp_ncpus;
+/* export this for libkvm consumers. */
+int mp_maxcpus = NCPUS;
+
+int smp_disabled = 0;			/* has smp been disabled? */
+int smp_cpus = 1;				/* how many cpu's running */
+int smp_threads_per_core = 1;	/* how many SMT threads are running per core */
+int mp_ncores = -1;				/* how many physical cores running */
+int smp_topology = 0;			/* Which topology we're using. */
+#endif
+
 void
-cpu_init_first()
+cpu_alloc(cpunum)
+	int cpunum;
+{
+	/*
+	 * Dynamically allocate the arrays that depend on the
+	 * maximum APIC ID.
+	 */
+	cpu_info = calloc((cpunum + 1), sizeof(*cpu_info), M_DEVBUF, M_WAITOK | M_ZERO);
+	apic_cpuids = calloc((cpunum + 1), sizeof(*apic_cpuids), M_DEVBUF, M_WAITOK | M_ZERO);
+}
+
+void
+cpu_init_first(void)
 {
 	int cpunum = lapic_cpu_number();
 
 	if (cpunum != 0) {
-		cpu_info[0] = NULL;
-		cpu_info[cpunum] = cpu_info;
+		cpu_alloc(cpunum);
+	} else {
+		cpu_alloc(0);
 	}
+}
+
+void
+cpu_init(ci, cpuid, size)
+	struct cpu_info *ci;
+	int cpuid;
+	size_t size;
+{
+	ci->cpu_cpuid = cpuid;
+	ci->cpu_cpumask = 1 << cpuid;
+	ci->cpu_size = size;
 }
 
 static int
@@ -79,16 +121,23 @@ cpu_attach(parent, self, aux)
 	struct device *parent, *self;
 	void *aux;
 {
-	struct cpu_softc *sc = (struct cpu_softc *)self;
-	struct cpu_attach_args *caa = (struct cpu_attach_args *)aux;
+	struct cpu_softc *sc;
+	struct cpu_attach_args *caa;
 	struct cpu_info *ci;
+	int cpunum;
+
+	sc = (struct cpu_softc*) self;
+	caa = (struct cpu_attach_args*) aux;
+	ci = cpu_info;
+
 #ifdef SMP
-	int cpunum = caa->cpu_apic_id;
+	cpunum = caa->cpu_apic_id;
 #endif
 	caa->cpu_acpi_id = 0xffffffff;
-
 	if (caa->cpu_role == CPU_ROLE_AP) {
-		cpu_alloc(ci);
+		if(ci == NULL) {
+			ci = malloc(sizeof(*ci), M_DEVBUF, M_WAITOK);
+		}
 		memset(ci, 0, sizeof(*ci));
 #ifdef SMP
 		if (cpu_info[cpunum] != NULL) {
@@ -97,21 +146,17 @@ cpu_attach(parent, self, aux)
 		cpu_info[cpunum] = ci;
 #endif
 	} else {
-		ci = &cpu_info;
 #ifdef SMP
-		if(cpunum != lapic_cpu_number()) {
+		if (cpunum != lapic_cpu_number()) {
 			panic("%s: running CPU is at apic %d instead of at expected %d", sc->sc_dev->dv_xname, lapic_cpu_number(), cpunum);
 		}
 #endif
 	}
-
 	sc->sc_dev = self;
-
 	ci->cpu_self = ci;
 	sc->sc_info = ci;
 	ci->cpu_dev = self;
 	ci->cpu_apic_id = caa->cpu_apic_id;
-	//ci->cpu_acpi_id = caa->cpu_acpi_id;
 #ifdef SMP
 	cpu_init(ci, caa->cpu_apic_id, sizeof(struct cpu_info));
 #else
@@ -123,7 +168,6 @@ cpu_attach(parent, self, aux)
 	case CPU_ROLE_SP:
 		printf("(uniprocessor)\n");
 		ci->cpu_flags |= CPUF_PRESENT | CPUF_SP | CPUF_PRIMARY;
-
 		break;
 	case CPU_ROLE_BP:
 		printf("apid %d (boot processor)\n", caa->cpu_apic_id);
@@ -140,9 +184,6 @@ cpu_attach(parent, self, aux)
 #endif
 		break;
 	case CPU_ROLE_AP:
-		/*
-		 * report on an AP
-		 */
 		printf("apid %d (application processor)\n", caa->cpu_apic_id);
 #ifdef SMP
 		cpu_smp_init(ci);
@@ -156,17 +197,15 @@ cpu_attach(parent, self, aux)
 	return;
 }
 
-void
-cpu_init(ci, cpuid, size)
-	struct cpu_info *ci;
-	int cpuid;
-	size_t size;
-{
-	ci->cpu_cpuid = cpuid;
-	ci->cpu_cpumask = 1 << cpuid;
-	ci->cpu_size = size;
-}
-
+/*
+ * The CPU ends up here when its ready to run
+ * This is called from code in mptramp.s; at this point, we are running
+ * in the idle pcb/idle stack of the new CPU.  When this function returns,
+ * this processor will enter the idle loop and start looking for work.
+ *
+ * XXX should share some of this with init386 in machdep.c
+ */
+/* Runs in NetBSD mptramp.S */
 void
 cpu_hatch(void *v)
 {
@@ -181,17 +220,6 @@ cpu_hatch(void *v)
 }
 
 #ifdef SMP
-u_int all_cpus;
-int mp_ncpus;
-/* export this for libkvm consumers. */
-int mp_maxcpus = NCPUS;
-
-int smp_disabled = 0;			/* has smp been disabled? */
-int smp_cpus = 1;				/* how many cpu's running */
-int smp_threads_per_core = 1;	/* how many SMT threads are running per core */
-int mp_ncores = -1;				/* how many physical cores running */
-int smp_topology = 0;			/* Which topology we're using. */
-
 void
 cpu_smp_init(ci)
 	struct cpu_info *ci;
@@ -199,9 +227,10 @@ cpu_smp_init(ci)
 	ci->cpu_flags |= CPUF_PRESENT | CPUF_AP;
 
 	cpu_mp_setmaxid();
-	KASSERT(mp_ncpus >= 1 ("%s: CPU count < 1", __func__));
-	KASSERT(mp_ncpus > 1 || mp_maxid == 0 ("%s: one CPU but mp_maxid is not zero", __func__));
-	KASSERT(mp_maxid >= mp_ncpus - 1 ("%s: counters out of sync: max %d, count %d", __func__, mp_maxid, mp_ncpus));
+
+	KASSERT(mp_ncpus >= 1 /*("%s: CPU count < 1", __func__)*/);
+	KASSERT(mp_ncpus > 1 || mp_maxid == 0 /*("%s: one CPU but mp_maxid is not zero", __func__)*/);
+	KASSERT(mp_maxid >= mp_ncpus - 1 /*("%s: counters out of sync: max %d, count %d", __func__, mp_maxid, mp_ncpus)*/);
 
 	if (smp_disabled != 0 || cpu_mp_probe() == 0) {
 		mp_ncores = 1;

@@ -15,7 +15,6 @@
 #define	SYS_open	5
 #define	SYS_close	6
 #define	SYS_wait4	7
-				/* 8 is obsolete old compat_43_creat */
 #define	SYS_link	9
 #define	SYS_unlink	10
 #define	SYS_execv	11
@@ -71,10 +70,8 @@
 #define	SYS_chroot	61
 #define	SYS_fstat	62
 #define	SYS_undelete	63
-				/* 64 is obsolete old compat_43_getpagesize */
 #define	SYS_pselect	65
 #define	SYS_vfork	66
-				/* 67 is obsolete old compat_43_lseek */
 #define	SYS_sbrk	68
 #define	SYS_sstk	69
 #define	SYS_mmap	70
@@ -91,14 +88,12 @@
 #define	SYS_getpgrp	81
 #define	SYS_setpgrp	82
 #define	SYS_setitimer	83
-				/* 84 is obsolete old compat_43_lstat */
 #define	SYS_pathconf	85
 #define	SYS_getitimer	86
 #define	SYS_setsid	87
 #define	SYS_setpgid	88
 #define	SYS_getdtablesize	89
 #define	SYS_dup2	90
-				/* 91 is obsolete old compat_43_stat */
 #define	SYS_fcntl	92
 #define	SYS_select	93
 #define	SYS_mkfifo	94
@@ -119,7 +114,7 @@
 				/* 109 is obsolete old sigblock */
 				/* 110 is obsolete old sigsetmask */
 				/* 111 is obsolete old sigpause */
-				/* 112 is obsolete old compat_43_sigstack */
+#define	SYS_sigstack	112
 #define	SYS_recvmsg	113
 #define	SYS_sendmsg	114
 #define	SYS_revoke	115
@@ -139,14 +134,12 @@
 #define	SYS_truncate	129
 #define	SYS_ftruncate	130
 #define	SYS_flock	131
-				/* 132 is obsolete old compat_43_truncate */
 #define	SYS_sendto	133
 #define	SYS_shutdown	134
 #define	SYS_socketpair	135
 #define	SYS_mkdir	136
 #define	SYS_rmdir	137
 #define	SYS_utimes	138
-				/* 139 is obsolete old compat_43_ftruncate */
 #define	SYS_adjtime	140
 #define	SYS_getpeername	141
 				/* 142 is obsolete old gethostid */
@@ -158,7 +151,6 @@
 				/* 148 is obsolete old setquota */
 #define	SYS_quota	149
 #define	SYS_getsockname	150
-				/* 151 is obsolete old compat_43_getdirentries */
 				/* 152 is obsolete old nostk */
 				/* 153 is obsolete old fetchi */
 				/* 154 is obsolete old ucall */

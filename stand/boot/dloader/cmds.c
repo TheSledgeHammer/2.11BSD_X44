@@ -459,26 +459,6 @@ command_menu(ac, av)
 	return (res);
 }
 
-void
-logo_display(logo, line, lineNum, orientation, barrier)
-	char **logo;
-	int line, lineNum, orientation, barrier;
-{
-	const char *fmt;
-
-	if (orientation == LOGO_LEFT)
-		fmt = barrier ? "%s  | " : "  %s  ";
-	else
-		fmt = barrier ? " |  %s" : "  %s  ";
-
-	if (logo != NULL) {
-		if (line < lineNum)
-			printf(fmt, logo[line]);
-		else
-			printf(fmt, logo_blank_line);
-	}
-}
-
 static void
 menu_display(void)
 {

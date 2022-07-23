@@ -114,6 +114,7 @@ int	bind();
 int	setsockopt();
 int	listen();
 int	sigsuspend();
+int	sigstack();
 int	recvmsg();
 int	sendmsg();
 int	revoke();
@@ -185,7 +186,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    wait4 },				/* 7 = wait4 */
 	{ 0, 0,
-	    nosys },				/* 8 = obsolete old compat_43_creat */
+	    nosys },				/* 8 = unused old creat */
 	{ 0, 0,
 	    link },				/* 9 = link */
 	{ 0, 0,
@@ -297,13 +298,13 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    undelete },				/* 63 = undelete */
 	{ 0, 0,
-	    nosys },				/* 64 = obsolete old compat_43_getpagesize */
+	    nosys },				/* 64 = unused old getpagesize */
 	{ 0, 0,
 	    pselect },				/* 65 = pselect */
 	{ 0, 0,
 	    vfork },				/* 66 = vfork */
 	{ 0, 0,
-	    nosys },				/* 67 = obsolete old compat_43_lseek */
+	    nosys },				/* 67 = unused */
 	{ 0, 0,
 	    sbrk },				/* 68 = sbrk */
 	{ 0, 0,
@@ -337,7 +338,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    setitimer },			/* 83 = setitimer */
 	{ 0, 0,
-	    nosys },				/* 84 = obsolete old compat_43_lstat */
+	    nosys },				/* 84 = unused */
 	{ 0, 0,
 	    pathconf },				/* 85 = pathconf */
 	{ 0, 0,
@@ -351,7 +352,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    dup2 },				/* 90 = dup2 */
 	{ 0, 0,
-	    nosys },				/* 91 = obsolete old compat_43_stat */
+	    nosys },				/* 91 = unused */
 	{ 0, 0,
 	    fcntl },				/* 92 = fcntl */
 	{ 0, 0,
@@ -393,7 +394,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    nosys },				/* 111 = obsolete old sigpause */
 	{ 0, 0,
-	    nosys },				/* 112 = obsolete old compat_43_sigstack */
+	    sigstack },				/* 112 = sigstack */
 	{ 0, 0,
 	    recvmsg },				/* 113 = recvmsg */
 	{ 0, 0,
@@ -433,7 +434,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    flock },				/* 131 = flock */
 	{ 0, 0,
-	    nosys },				/* 132 = obsolete old compat_43_truncate */
+	    nosys },				/* 132 = unused */
 	{ 0, 0,
 	    sendto },				/* 133 = sendto */
 	{ 0, 0,
@@ -447,7 +448,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    utimes },				/* 138 = utimes */
 	{ 0, 0,
-	    nosys },				/* 139 = obsolete old compat_43_ftruncate */
+	    nosys },				/* 139 = unused */
 	{ 0, 0,
 	    adjtime },				/* 140 = adjtime */
 	{ 0, 0,
@@ -471,7 +472,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    getsockname },			/* 150 = getsockname */
 	{ 0, 0,
-	    nosys },				/* 151 = obsolete old compat_43_getdirentries */
+	    nosys },				/* 151 = unused */
 	{ 0, 0,
 	    nosys },				/* 152 = obsolete old nostk */
 	{ 0, 0,
@@ -505,14 +506,14 @@ struct sysent sysent[] = {
 	    ktrace },				/* 166 = ktrace */
 #else 
 	{ 0, 0,
-	    nosys },				/* 166 = unimplemented ktrace */
+	    nosys },				/* 166 = unused ktrace */
 #endif
 #ifdef TRACE
 	{ 0, 0,
 	    vtrace },				/* 167 = vtrace */
 #else
 	{ 0, 0,
-	    nosys },				/* 167 = unimplemented vtrace */
+	    nosys },				/* 167 = unused vtrace */
 #endif
 };
 

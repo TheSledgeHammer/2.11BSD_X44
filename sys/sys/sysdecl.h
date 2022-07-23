@@ -110,6 +110,7 @@ extern int	bind();
 extern int	setsockopt();
 extern int	listen();
 extern int	sigsuspend();
+extern int	sigstack();
 extern int	recvmsg();
 extern int	sendmsg();
 extern int	revoke();

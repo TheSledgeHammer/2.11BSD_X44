@@ -69,7 +69,11 @@
 #include <dev/misc/kobj/kobj_impl.h>
 
 int
-kobj_reloc(kobj_t ko, uintptr_t relocbase, const void *data, bool isrela, bool local)
+kobj_reloc(ko, relocbase, data, isrela, local)
+	kobj_t ko;
+	uintptr_t relocbase;
+	const void *data;
+	bool isrela, local;
 {
 	Elf_Addr *where;
 	Elf_Addr addr;

@@ -70,6 +70,5 @@ typedef struct kobj *kobj_t;
 int		kobj_sym_lookup(kobj_t, uintptr_t, Elf_Addr *);
 int		kobj_reloc(kobj_t, uintptr_t, const void *, bool, bool);
 void	kobj_self_reloc(kobj_t);
-int		kobj_machdep(kobj_t, uintptr_t, const void *, bool, bool);
 
 #endif	/* _DEV_KOBJ_H */

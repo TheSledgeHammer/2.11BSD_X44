@@ -86,7 +86,10 @@ static void	kobj_out(const char *, int, kobj_t, const char *, ...);
  *	is known (ie during relocation).
  */
 int
-kobj_sym_lookup(kobj_t ko, uintptr_t symidx, Elf_Addr *val)
+kobj_sym_lookup(ko, symidx, val)
+	kobj_t ko;
+	uintptr_t symidx;
+	Elf_Addr *val;
 {
 	const Elf_Sym *sym;
 	const char *symbol;
@@ -150,7 +153,9 @@ kobj_sym_lookup(kobj_t ko, uintptr_t symidx, Elf_Addr *val)
  *	Return base address of the given section.
  */
 static uintptr_t
-kobj_findbase(kobj_t ko, int sec)
+kobj_findbase(ko, sec)
+	kobj_t ko;
+	int sec;
 {
 	int i;
 
@@ -191,7 +196,9 @@ pass:
  *	Resolve relocations for the loaded object.
  */
 static int
-kobj_relocate(kobj_t ko, bool local)
+kobj_relocate(ko, local)
+	kobj_t ko;
+	bool local;
 {
 	const Elf_Rel *rellim;
 	const Elf_Rel *rel;

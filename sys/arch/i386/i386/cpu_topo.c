@@ -670,18 +670,6 @@ cpu_mp_announce(void)
 	}
 }
 
-void
-cpu_alloc(ci)
-	struct cpu_info *ci;
-{
-	/*
-	 * Dynamically allocate the arrays that depend on the
-	 * maximum APIC ID.
-	 */
-	cpu_info = malloc(sizeof(*cpu_info) * (max_apic_id + 1), M_DEVBUF, M_WAITOK | M_ZERO);
-	apic_cpuids = malloc(sizeof(*apic_cpuids) * (max_apic_id + 1), M_DEVBUF, M_WAITOK | M_ZERO);
-}
-
 /*
  * Add a logical CPU to the topology.
  */

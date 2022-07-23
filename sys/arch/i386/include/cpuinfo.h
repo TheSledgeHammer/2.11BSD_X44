@@ -66,6 +66,7 @@ struct cpu_info {
 	struct evcnt			cpu_ipi_events[I386_NIPI];
 	volatile u_int32_t 		cpu_tlb_ipi_mask;
 };
+extern struct cpu_info 		cpu_info_primary;
 extern struct cpu_info 		*cpu_info;			/* static allocation of cpu_info */
 
 struct cpu_attach_args {

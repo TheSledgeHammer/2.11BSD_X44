@@ -103,8 +103,9 @@ add_mem_cluster(u_int64_t seg_start, u_int64_t seg_end, u_int32_t type)
 		return (0);
 	}
 
-	if (mem_cluster_cnt >= VM_PHYSSEG_MAX)
+	if (mem_cluster_cnt >= VM_PHYSSEG_MAX) {
 		panic("init386: too many memory segments");
+	}
 
 	seg_start = round_page(seg_start);
 	seg_end = trunc_page(seg_end);
@@ -119,6 +120,37 @@ add_mem_cluster(u_int64_t seg_start, u_int64_t seg_end, u_int32_t type)
 	mem_cluster_cnt++;
 
 	return (1);
+}
+
+void
+alloc_ap_trampoline(u_int64_t seg_start, u_int64_t seg_end)
+{
+	unsigned int i;
+	u_int64_t seg_size;
+	bool allocated;
+
+	seg_size = seg_end - seg_start;
+	allocated = TRUE;
+	if((seg_size >= MiB(1)) || (trunc_page(seg_end) - round_page(seg_start) < round_page(bootMP_size))) {
+		allocated = TRUE;
+
+		if(seg_end < MiB(1)) {
+			boot_address = trunc_page(seg_end);
+			if ((seg_end - boot_address) < bootMP_size) {
+				boot_address -= round_page(bootMP_size);
+			}
+			seg_end = boot_address;
+		} else {
+			boot_address = round_page(seg_start);
+			seg_start = boot_address + round_page(bootMP_size);
+		}
+	}
+	if (!allocated) {
+		boot_address = biosbasemem * 1024 - bootMP_size;
+		if (bootverbose) {
+			printf("Cannot find enough space for the boot trampoline, placing it at %#x", boot_address);
+		}
+	}
 }
 
 static int
@@ -171,10 +203,4 @@ has_smapbase(smapbase)
 		return (has_smap);
 	}
 	return (has_smap);
-}
-
-void
-getmemsize(void)
-{
-
 }

@@ -102,6 +102,7 @@ extern void softintr(int);
 #define	splstatclock()		splclock()
 #define	splserial()			splraise(imask[IPL_SERIAL])
 #define splipi()			splraise(IPL_IPI)
+
 /*
  * Software interrupt masks
  *

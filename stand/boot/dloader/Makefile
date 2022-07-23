@@ -7,9 +7,9 @@ INTERP_RC=		dloader.rc
 
 INCSDIR= 	/usr/include/stand/boot/dloader
 
-SRCS+=		subs.c cmds.c logo_beastie.c logo_fred.c
+SRCS+=		subs.c cmds.c dlogo.c logo_beastie.c logo_fred.c
 
-INCS=		dloader.h
+INCS=		dloader.h dlogo.h
 
 # Allow machine specific loader.rc to be installed.
 FILES= 		${INTERP_MENU} ${INTERP_CONF}

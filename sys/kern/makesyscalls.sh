@@ -314,14 +314,14 @@ $2 == "OBSOL" || $2 == "UNIMPL" {
 	if ($2 == "OBSOL")
 		comment="obsolete"
 	else
-		comment="unimplemented"
+		comment="unused"
 	for (i = 3; i <= NF; i++)
 		comment=comment " " $i
 		
 	printf("\t{ 0, 0,\n\t    nosys },\t\t\t\t/* %d = %s */\n", \
 	    syscall, comment) > sysent
-	printf("\t\"#%d (%s)\",\t\t/* %d = %s */\n", \
-	    syscall, comment, syscall, comment) > sysnames
+	printf("\t\"#%d\",\t\t/* %d = %s */\n", \
+	    syscall, syscall, comment) > sysnames
 	if ($2 != "UNIMPL")
 		printf("\t\t\t\t/* %d is %s */\n", syscall, comment) > sysnumhdr
 	syscall++

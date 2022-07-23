@@ -32,25 +32,46 @@
  * SUCH DAMAGE.
  */
 
-#include "dlogo.h"
+#include "dloader.h"
 
-extern char *DirBase;
+char *
+logo_get_blank_lines(lineLen)
+    int lineLen;
+{
+    int i;
+    char *blank = logo_blank_line;
 
-typedef struct dvar {
-	struct dvar *next;
-	char 		*name;
-	char 		**data;
-	int 		count;
-} *dvar_t;
+    if (lineLen == 0) {
+        lineLen = DEFAULT_LINES;
+    } else if (lineLen >= MAX_BLANK_LINES) {
+        lineLen = MAX_BLANK_LINES;
+    } else {
+        for(i = 0; i < lineLen; i++) {
+            blank[i] = logo_blank_line[i];
+        }
+    }
+    return (blank);
+}
 
-dvar_t 	dvar_get(const char *name);
-void 	dvar_set(const char *name, char **data, int count);
-void 	dvar_unset(const char *name);
-int 	dvar_istrue(dvar_t var);
-dvar_t 	dvar_first(void);
-dvar_t 	dvar_next(dvar_t var);
-dvar_t 	dvar_copy(dvar_t var);
-void 	dvar_free(dvar_t *lastp);
+void
+logo_display(logo, line, lineNum, orientation, barrier)
+    char **logo;
+    int line, lineNum, orientation, barrier;
+{
+    const char *fmt;
+    char *blank_line = logo_get_blank_lines(lineNum);
 
-void 	dcmds_init(void);
-int 	dloader_run(int ac, char **av);
+    if (orientation == 0) {
+        fmt = barrier ? "%s  | " : "  %s  ";
+    } else {
+        fmt = barrier ? " |  %s" : "  %s  ";
+    }
+
+    if (logo != NULL) {
+        if (line < lineNum) {
+            printf(fmt, logo[line]);
+        } else {
+            printf(fmt, blank_line);
+        }
+    }
+}

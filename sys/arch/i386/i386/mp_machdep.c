@@ -56,7 +56,9 @@
 #include <machine/vmparam.h>
 #include <machine/vm86.h>
 #include <machine/smp.h>
-#include <machine/percpu.h>
+//#include <machine/percpu.h>
+
+#include <arch/i386/include/percpu.h>
 
 #define WARMBOOT_TARGET		0
 #define WARMBOOT_OFF		(PMAP_MAP_LOW + 0x0467)
@@ -140,7 +142,7 @@ cpu_mp_start(pc)
 
 	/* Set boot_cpu_id if needed. */
 	if (boot_cpu_id == -1) {
-		boot_cpu_id = PERCPU_GET(pc, apic_id);
+		boot_cpu_id = PERCPU_GET(apic_id);
 		cpu_info[boot_cpu_id].cpu_bsp = 1;
 	} else {
 		KASSERT(boot_cpu_id == PERCPU_GET(pc, apic_id)("BSP's APIC ID doesn't match boot_cpu_id"));

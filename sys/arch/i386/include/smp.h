@@ -53,5 +53,4 @@ extern int 				smp_threads_per_core;
 extern u_int 			all_cpus;
 
 void 	bootMP(void);
-void 	cpu_alloc(struct cpu_info *);
 #endif /* _I386_SMP_H_ */
