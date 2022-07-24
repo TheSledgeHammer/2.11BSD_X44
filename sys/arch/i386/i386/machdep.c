@@ -1125,6 +1125,11 @@ make_memory_segments(void)
 
 #define	KBTOB(x) ((size_t)(x) * 1024UL)
 
+memcluster_update()
+{
+
+}
+
 int
 add_mem_cluster(seg_start, seg_end)
 	u_int64_t seg_start, seg_end;
@@ -1197,15 +1202,18 @@ setmemsize_common(basemem, extmem)
 	/* BIOS_BASEMEM */
 	base_start = basemem;
 	base_end = KBTOB(basemem);
-	error = add_mem_cluster(base_start, base_end);
+	error = extent_alloc_region(iomem_ex, base_start, base_end, EX_NOWAIT);
 	if (error) {
 		printf("WARNING: CAN'T ALLOCATE BASE MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
+	mem_clusters[0].start = 0;
+	mem_clusters[0].size = trunc_page(base_end);
+	physmem += atop(mem_clusters[0].size);
 
 	/* BIOS_EXTMEM */
 	ext_start = IOM_END;
 	ext_end = KBTOB(extmem);
-	error = add_mem_cluster(ext_start, ext_end);
+	error = extent_alloc_region(iomem_ex, ext_start, ext_end, EX_NOWAIT);
 	if (error) {
 		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
@@ -1225,6 +1233,14 @@ setmemsize_common(basemem, extmem)
 		extmem = (15*1024);
 	}
 #endif
+
+	mem_clusters[1].start = ext_start;
+	mem_clusters[1].size = trunc_page(ext_end);
+	physmem += atop(mem_clusters[1].size);
+
+	mem_cluster_cnt = 2;
+
+	Maxmem = atop(physmem);
 	avail_end = ext_start + trunc_page(ext_end);
 	maxmem = Maxmem - 1;
 
