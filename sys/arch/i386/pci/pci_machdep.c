@@ -146,6 +146,8 @@ struct pci_bridge_hook_arg {
 	void 	*arg;
 };
 
+static void pci_bridge_hook(pci_chipset_tag_t, pcitag_t, void *);
+
 /*
  * PCI doesn't have any special needs; just use the generic versions
  * of these functions.

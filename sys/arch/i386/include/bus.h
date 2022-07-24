@@ -236,7 +236,7 @@ struct i386_bus_dma_tag {
 	void	(*_dmamem_free)(bus_dma_tag_t, bus_dma_segment_t *, int);
 	int		(*_dmamem_map)(bus_dma_tag_t, bus_dma_segment_t *, int, size_t, caddr_t *, int);
 	void	(*_dmamem_unmap)(bus_dma_tag_t, caddr_t, size_t);
-	int		(*_dmamem_mmap)(bus_dma_tag_t, bus_dma_segment_t *, int, int, int, int);
+	int		(*_dmamem_mmap)(bus_dma_tag_t, bus_dma_segment_t *, int , off_t, int, int);
 	int		(*_dmamem_alloc_range)(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bus_dma_segment_t *, int, int *, int, vm_offset_t, vm_offset_t);
 };
 
