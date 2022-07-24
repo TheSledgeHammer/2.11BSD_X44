@@ -148,7 +148,7 @@ struct bootinfo bootinfo;
 char bootsize[BOOTINFO_MAXSIZE];
 int  *esym;
 
-extern int biosbasemem = 0;
+extern int biosbasemem;
 extern int biosextmem;
 
 #ifdef CPURESET_DELAY
@@ -1124,11 +1124,6 @@ make_memory_segments(void)
 }
 
 #define	KBTOB(x) ((size_t)(x) * 1024UL)
-
-memcluster_update()
-{
-
-}
 
 int
 add_mem_cluster(seg_start, seg_end)
