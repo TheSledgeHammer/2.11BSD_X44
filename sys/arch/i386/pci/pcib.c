@@ -1,4 +1,4 @@
-/*	$NetBSD: pcib.c,v 1.9 1997/10/09 08:48:33 jtc Exp $	*/
+/*	$NetBSD: pcib.c,v 1.32 2003/02/26 22:23:09 fvdl Exp $	*/
 
 /*-
  * Copyright (c) 1996 The NetBSD Foundation, Inc.
@@ -73,13 +73,8 @@ pcibmatch(parent, match, aux)
 	switch (PCI_VENDOR(pa->pa_id)) {
 	case PCI_VENDOR_INTEL:
 		switch (PCI_PRODUCT(pa->pa_id)) {
-		case PCI_PRODUCT_INTEL_SIO:
 		case PCI_PRODUCT_INTEL_82426EX:
-		case PCI_PRODUCT_INTEL_82371MX:
 		case PCI_PRODUCT_INTEL_82380AB:
-		case PCI_PRODUCT_INTEL_82471FB_ISA:
-		case PCI_PRODUCT_INTEL_82371SB_ISA:
-		case PCI_PRODUCT_INTEL_82371AB_ISA:
 			return (1);
 		}
 		break;
@@ -94,6 +89,7 @@ pcibmatch(parent, match, aux)
 	case PCI_VENDOR_ALI:
 		switch (PCI_PRODUCT(pa->pa_id)) {
 		case PCI_PRODUCT_ALI_M1449:
+		case PCI_PRODUCT_ALI_M1543:
 			return (1);
 		}
 		break;
@@ -106,7 +102,7 @@ pcibmatch(parent, match, aux)
 	case PCI_VENDOR_VIATECH:
 		switch (PCI_PRODUCT(pa->pa_id)) {
 		case PCI_PRODUCT_VIATECH_VT82C570MV:
-		case PCI_PRODUCT_VIATECH_VT82C586:
+		case PCI_PRODUCT_VIATECH_VT82C586_ISA:
 			return (1);
 		}
 		break;
