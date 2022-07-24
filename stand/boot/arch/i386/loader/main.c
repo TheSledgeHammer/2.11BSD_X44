@@ -159,8 +159,8 @@ main(void)
 
     printf("BIOS %dkB/%dkB available memory\n", bios_basemem / 1024, bios_extmem / 1024);
     if (initial_bootinfo != NULL) {
-    	initial_bootinfo->bi_bios.bi_basemem = bios_basemem / 1024;
-    	initial_bootinfo->bi_bios.bi_extmem = bios_extmem / 1024;
+    	initial_bootinfo->bi_basemem = bios_basemem / 1024;
+    	initial_bootinfo->bi_extmem = bios_extmem / 1024;
     }
 
     /* detect ACPI for future reference */
@@ -295,7 +295,7 @@ bsd_slices(struct i386_devdesc currdev, int major, int biosdev)
 {
 	currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
 	currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
-	biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
+	biosdev = initial_bootinfo->bi_bios_dev;
 	major = B_TYPE(initial_bootdev);
 }
 
@@ -305,7 +305,7 @@ bsd_traditional(struct i386_devdesc currdev, int major, int biosdev)
 	currdev.d_kind.biosdisk.adaptor = B_ADAPTOR(initial_bootdev) << 4;
 	currdev.d_kind.biosdisk.controller = B_CONTROLLER(initial_bootdev) - 1;
     currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
-	biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
+	biosdev = initial_bootinfo->bi_bios_dev;
 	major = B_TYPE(initial_bootdev);
 }
 

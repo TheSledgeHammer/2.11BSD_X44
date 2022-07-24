@@ -53,4 +53,6 @@ extern int 				smp_threads_per_core;
 extern u_int 			all_cpus;
 
 void 	bootMP(void);
+void	alloc_ap_trampoline(int *, u_int64_t, u_int64_t);
+
 #endif /* _I386_SMP_H_ */

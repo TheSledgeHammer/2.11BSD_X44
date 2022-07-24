@@ -126,7 +126,6 @@ struct bootinfo {
 	size_t					bi_strsize;
 };
 
-
 #ifdef _KERNEL
 extern struct bootinfo 			bootinfo;
 extern char 					bootsize[];

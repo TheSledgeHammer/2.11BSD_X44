@@ -46,7 +46,7 @@ struct __v86 {
 extern struct __v86 __v86;	/* V86 interface structure */
 void __v86int(void);
 
-#define v86	__v86
+#define v86		__v86
 #define v86int	__v86int
 
 extern u_int32_t	__base;

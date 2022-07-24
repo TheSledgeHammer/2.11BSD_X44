@@ -66,7 +66,7 @@ nullc_probe(struct console *cp)
 static int
 nullc_init(int arg)
 {
-	return(0);
+	return (0);
 }
 
 static void
@@ -77,11 +77,11 @@ nullc_putchar(int c)
 static int
 nullc_getchar(void)
 {
-	return(-1);
+	return (-1);
 }
 
 static int
 nullc_ischar(void)
 {
-	return(0);
+	return (0);
 }

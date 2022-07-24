@@ -736,49 +736,38 @@ cpu_mp_probe(void)
 
 /* Allocate memory for the AP trampoline. */
 void
-alloc_ap_trampoline(vm_offset_t *physmap, unsigned int *physmap_idx)
+alloc_ap_trampoline(basemem, seg_start, seg_end)
+	int *basemem;
+	u_int64_t seg_start, seg_end;
 {
-	unsigned int i;
+	int error;
 	bool allocated;
 
 	allocated = TRUE;
-	for (i = *physmap_idx; i <= *physmap_idx; i -= 2) {
-		/*
-		 * Find a memory region big enough and below the 1MB boundary
-		 * for the trampoline code.
-		 * NB: needs to be page aligned.
-		 */
-		if (physmap[i] >= MiB(1)
-				|| (trunc_page(physmap[i + 1]) - round_page(physmap[i]))
-						< round_page(bootMP_size))
-			continue;
-
+	if((seg_end >= MiB(1)) || (trunc_page(seg_end) - round_page(seg_start) < round_page(bootMP_size))) {
 		allocated = TRUE;
-		/*
-		 * Try to steal from the end of the region to mimic previous
-		 * behaviour, else fallback to steal from the start.
-		 */
-		if (physmap[i + 1] < MiB(1)) {
-			boot_address = trunc_page(physmap[i + 1]);
-			if ((physmap[i + 1] - boot_address) < bootMP_size)
+		if(seg_end < MiB(1)) {
+			boot_address = trunc_page(seg_end);
+			if ((seg_end - boot_address) < bootMP_size) {
 				boot_address -= round_page(bootMP_size);
-			physmap[i + 1] = boot_address;
+			}
+			seg_end = boot_address;
 		} else {
-			boot_address = round_page(physmap[i]);
-			physmap[i] = boot_address + round_page(bootMP_size);
+			boot_address = round_page(seg_start);
+			seg_start = boot_address + round_page(bootMP_size);
 		}
-		if (physmap[i] == physmap[i + 1] && *physmap_idx != 0) {
-			memmove(&physmap[i], &physmap[i + 2],
-					sizeof(*physmap) * (*physmap_idx - i + 2));
-			*physmap_idx -= 2;
-		}
-		break;
+	}
+
+	error = add_mem_cluster(seg_start, seg_end);
+	if(error) {
+		allocated = FALSE;
 	}
 
 	if (!allocated) {
 		boot_address = basemem * 1024 - bootMP_size;
-		if (bootverbose)
+		if (bootverbose) {
 			printf("Cannot find enough space for the boot trampoline, placing it at %#x", boot_address);
+		}
 	}
 }
 

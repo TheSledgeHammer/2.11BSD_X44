@@ -137,7 +137,7 @@ bi_load_stage0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	case DEVT_CD:
 	case DEVT_DISK:
 		/* pass in the BIOS device number of the current disk */
-		bi->bi_bios.bi_bios_dev = bd_unit2bios(rootdev);
+		bi->bi_bios_dev = bd_unit2bios(rootdev);
 		bootdevnr = bd_getdev(rootdev);
 		break;
 	case DEVT_NET: /* to be implemented */
@@ -160,9 +160,9 @@ bi_load_stage0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 		nsym = ssym = esym = 0; 				/* sanity */
 	}
 
-	bi->bi_envp->bi_nsymtab = nsym;
-    bi->bi_envp->bi_symtab = ssym;
-    bi->bi_envp->bi_esymtab = esym;
+	bi->bi_nsymtab = nsym;
+    bi->bi_symtab = ssym;
+    bi->bi_esymtab = esym;
 
 	/* find the last module in the chain */
 	addr = 0;
@@ -174,14 +174,14 @@ bi_load_stage0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	addr = roundup(addr, PAGE_SIZE);
 
 	/* copy our environment */
-	bi->bi_envp->bi_environment = addr;
+	bi->bi_environment = addr;
 	addr = bi_copyenv(addr);
 
 	/* pad to a page boundary */
 	addr = roundup(addr, PAGE_SIZE);
 
     /* all done copying stuff in, save end of loaded object space */
-    bi->bi_envp->bi_kernend = addr;
+    bi->bi_kernend = addr;
 
     return (0);
 }
@@ -211,20 +211,20 @@ bi_load_legacy(struct bootinfo bi, struct preloaded_file *fp, char *args)
 	i386_getdev(NULL, kernelname, &kernelpath);
 	bi.bi_version = BOOTINFO_VERSION;
 	bi.bi_kernelname = 0; 						/* XXX char * -> kernel name */
-	bi.bi_disk.bi_nfs_diskless = 0; 			/* struct nfs_diskless * */
-	bi.bi_bios.bi_n_bios_used = 0; 				/* XXX would have to hook biosdisk driver for these */
+	bi.bi_nfs_diskless = 0; 					/* struct nfs_diskless * */
+	bi.bi_n_bios_used = 0; 						/* XXX would have to hook biosdisk driver for these */
 	for (i = 0; i < N_BIOS_GEOM; i++)
-		bi->bi_geom.bi_bios_geom[i] = bd_getbigeom(i);
-	bi.bi_bios.bi_size = sizeof(bi);
-	bi.bi_bios.bi_memsizes_valid = 1;
-	bi.bi_bios.bi_basemem = bios_basemem / 1024;
-	bi.bi_bios.bi_extmem = bios_extmem / 1024;
+		bi.bi_bios_geom[i] = bd_getbigeom(i);
+	bi.bi_size = sizeof(bi);
+	bi.bi_memsizes_valid = 1;
+	bi.bi_basemem = bios_basemem / 1024;
+	bi.bi_extmem = bios_extmem / 1024;
 	bi.bi_kernelname = VTOP(kernelpath);
 
 	/* legacy boot arguments */
-	bi.bi_leg.bi_howtop = howto | RB_BOOTINFO;
-	bi.bi_leg.bi_bootdevp = bootdevnr;
-	bi.bi_leg.bi_bip = VTOP(&bi);
+	bi.bi_howtop = howto | RB_BOOTINFO;
+	bi.bi_bootdevp = bootdevnr;
+	bi.bi_bip = VTOP(&bi);
 }
 
 void

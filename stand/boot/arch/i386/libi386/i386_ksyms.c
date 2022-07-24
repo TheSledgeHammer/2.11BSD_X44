@@ -45,11 +45,11 @@
 int
 i386_ksyms_addsyms_elf(struct bootinfo *bi)
 {
-	caddr_t symstart = (caddr_t) bi->bi_sym->bi_symstart;
-	caddr_t strstart = (caddr_t) bi->bi_sym->bi_strstart;
+	caddr_t symstart = (caddr_t) bi->bi_symstart;
+	caddr_t strstart = (caddr_t) bi->bi_strstart;
 
 
-	if (bi->bi_sym.bi_flags == BOOTINFO_ELF_SYMS) {
+	if (bi->bi_flags == BOOTINFO_ELF_SYMS) {
 		Elf_Ehdr ehdr;
 
 		KASSERT(esym != 0);
@@ -78,8 +78,8 @@ i386_ksyms_addsyms_elf(struct bootinfo *bi)
 		ehdr.e_ehsize = sizeof(ehdr);
 		ehdr.e_entry = (Elf_Addr) & start;
 
-		ksyms_addsyms_explicit((void*) &ehdr, (void*) symstart, bi->bi_sym->bi_symsize, (void*) strstart, bi->bi_sym->bi_strsize);
+		ksyms_addsyms_explicit((void*) &ehdr, (void*) symstart, bi->bi_symsize, (void*) strstart, bi->bi_strsize);
 	}
 
-	return (bi->bi_sym.bi_flags & BOOTINFO_ELF_SYMS);
+	return (bi->bi_flags & BOOTINFO_ELF_SYMS);
 }

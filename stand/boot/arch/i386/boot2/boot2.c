@@ -242,10 +242,10 @@ main(void)
     dsk.unit = dsk.drive & DRV_MASK;
     dsk.slice = *(uint8_t *)PTOV(ARGS + 1) + 1;
     bootinfo.bi_version = BOOTINFO_VERSION;
-    bootinfo.bi_bios.bi_size = sizeof(bootinfo);
-    bootinfo.bi_bios.bi_basemem = 0;	/* XXX will be filled by loader or kernel */
-    bootinfo.bi_bios.bi_extmem = memsize();
-    bootinfo.bi_bios.bi_memsizes_valid++;
+    bootinfo.bi_size = sizeof(bootinfo);
+    bootinfo.bi_basemem = 0;	/* XXX will be filled by loader or kernel */
+    bootinfo.bi_extmem = memsize();
+    bootinfo.bi_memsizes_valid++;
 
     /* Process configuration file */
 
@@ -341,7 +341,7 @@ load(void)
 		if (xfsread(ino, p, hdr.ex.a_data))
 			return;
 		p += hdr.ex.a_data + roundup2(hdr.ex.a_bss, PAGE_SIZE);
-		bootinfo.bi_envp.bi_symtab = VTOP(p);
+		bootinfo.bi_symtab = VTOP(p);
 		memcpy(p, &hdr.ex.a_syms, sizeof(hdr.ex.a_syms));
 		p += sizeof(hdr.ex.a_syms);
 		if (hdr.ex.a_syms) {
@@ -372,7 +372,7 @@ load(void)
 				return;
 		}
 		p += roundup2(ep[1].p_memsz, PAGE_SIZE);
-		bootinfo.bi_envp.bi_symtab = VTOP(p);
+		bootinfo.bi_symtab = VTOP(p);
 		if (hdr.eh.e_shnum == hdr.eh.e_shstrndx + 3) {
 			fs_off = hdr.eh.e_shoff + sizeof(es[0]) * (hdr.eh.e_shstrndx + 1);
 			if (xfsread(ino, &es, sizeof(es)))
@@ -389,9 +389,9 @@ load(void)
 		addr = hdr.eh.e_entry & 0xffffff;
 	}
 
-	bootinfo.bi_envp.bi_esymtab = VTOP(p);
+	bootinfo.bi_esymtab = VTOP(p);
 	bootinfo.bi_kernelname = VTOP(kname);
-	bootinfo.bi_bios.bi_bios_dev = dsk.drive;
+	bootinfo.bi_bios_dev = dsk.drive;
 	__exec((caddr_t) addr, opts & RBX_MASK, MAKEBOOTDEV1(dev_maj[dsk.type], 0, dsk.slice, dsk.unit, dsk.part), 0, 0, 0, VTOP(&bootinfo));
 }
 

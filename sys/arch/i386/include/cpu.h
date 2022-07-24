@@ -148,6 +148,7 @@ void	k6_mem_drvinit(void);
 
 /* machdep.c */
 void	i386_proc0_tss_ldt_init(void);
+int		add_mem_cluster(u_int64_t, u_int64_t);
 
 /* trap.c */
 void 	child_return(void *);

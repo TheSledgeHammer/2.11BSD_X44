@@ -1260,7 +1260,6 @@ bd_getdev(struct i386_devdesc *dev)
 			unit = i;
 		}
 	}
-
     rootdev = MAKEBOOTDEV1(major,
 			  (dev->d_kind.biosdisk.slice + 1) >> 4, 	/* XXX slices may be wrong here */
 			  (dev->d_kind.biosdisk.slice + 1) & 0xf,

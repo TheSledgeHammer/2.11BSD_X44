@@ -229,10 +229,10 @@ biospci_detect(void)
     v86.edi = 0x0;
     v86int();
 
-    /* Check for OK response */
-    if (V86_CY(v86.efl) || ((v86.eax & 0xff00) != 0) ||
-	(v86.edx != PCI_SIGNATURE))
-	return;
+	/* Check for OK response */
+	if (V86_CY(v86.efl) || ((v86.eax & 0xff00) != 0)
+			|| (v86.edx != PCI_SIGNATURE))
+		return;
 
     version = v86.ebx & 0xffff;
     hwcap = v86.eax & 0xff;
@@ -265,33 +265,34 @@ biospci_enumerate(void)
     struct pci_subclass *psc;
     struct pci_progif	*ppi;
 
-    /* Iterate over known classes */
-    for (pc = pci_classes; pc->pc_class >= 0; pc++) {
-	/* Iterate over subclasses */
-	for (psc = pc->pc_subclass; psc->ps_subclass >= 0; psc++) {
-	    /* Iterate over programming interfaces */
-	    for (ppi = psc->ps_progif; ppi->pi_code >= 0; ppi++) {
+	/* Iterate over known classes */
+	for (pc = pci_classes; pc->pc_class >= 0; pc++) {
+		/* Iterate over subclasses */
+		for (psc = pc->pc_subclass; psc->ps_subclass >= 0; psc++) {
+			/* Iterate over programming interfaces */
+			for (ppi = psc->ps_progif; ppi->pi_code >= 0; ppi++) {
 
-		/* Scan for matches */
-		for (device_index = 0; ; device_index++) {
-		    /* Look for a match */
-		    err = biospci_find_devclass((pc->pc_class << 16)
-			+ (psc->ps_subclass << 8) + ppi->pi_code,
-			device_index, &locator);
-		    if (err != 0)
-			break;
+				/* Scan for matches */
+				for (device_index = 0;; device_index++) {
+					/* Look for a match */
+					err = biospci_find_devclass(
+							(pc->pc_class << 16) + (psc->ps_subclass << 8)
+									+ ppi->pi_code, device_index, &locator);
+					if (err != 0)
+						break;
 
-		    /* Read the device identifier from the nominated device */
-		    err = biospci_read_config(locator, 0, BIOSPCI_32BITS, &devid);
-		    if (err != 0)
-			break;
-		    
-		    /* We have the device ID, create a PnP object and save everything */
-		    biospci_addinfo(devid, pc, psc, ppi);
+					/* Read the device identifier from the nominated device */
+					err = biospci_read_config(locator, 0, BIOSPCI_32BITS,
+							&devid);
+					if (err != 0)
+						break;
+
+					/* We have the device ID, create a PnP object and save everything */
+					biospci_addinfo(devid, pc, psc, ppi);
+				}
+			}
 		}
-	    }
 	}
-    }
 }
 
 static void
@@ -300,25 +301,24 @@ biospci_addinfo(int devid, struct pci_class *pc, struct pci_subclass *psc, struc
     struct pnpinfo	*pi;
     char		desc[80];
     
-    
     /* build the description */
-    desc[0] = 0;
-    if (ppi->pi_name != NULL) {
-	strcat(desc, ppi->pi_name);
-	strcat(desc, " ");
-    }
-    if (psc->ps_name != NULL) {
-	strcat(desc, psc->ps_name);
-	strcat(desc, " ");
-    }
-    if (pc->pc_name != NULL)
-	strcat(desc, pc->pc_name);
+	desc[0] = 0;
+	if (ppi->pi_name != NULL) {
+		strcat(desc, ppi->pi_name);
+		strcat(desc, " ");
+	}
+	if (psc->ps_name != NULL) {
+		strcat(desc, psc->ps_name);
+		strcat(desc, " ");
+	}
+	if (pc->pc_name != NULL)
+		strcat(desc, pc->pc_name);
 
-    pi = pnp_allocinfo();
-    pi->pi_desc = strdup(desc);
-    sprintf(desc,"0x%08x", devid);
-    pnp_addident(pi, desc);
-    pnp_addinfo(pi);
+	pi = pnp_allocinfo();
+	pi->pi_desc = strdup(desc);
+	sprintf(desc, "0x%08x", devid);
+	pnp_addident(pi, desc);
+	pnp_addinfo(pi);
 }
 
 int

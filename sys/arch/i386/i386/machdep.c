@@ -109,6 +109,7 @@ void cpu_dumpconf(void);
 int	 cpu_dump(void);
 void dumpsys(void);
 void init386_bootinfo(struct bootinfo *);
+int	bootinfo_check(struct bootinfo *);
 void cpu_reset(void);
 void cpu_halt(void);
 
@@ -146,8 +147,9 @@ int boothowto = 0;
 struct bootinfo bootinfo;
 char bootsize[BOOTINFO_MAXSIZE];
 int  *esym;
+
 extern int biosbasemem = 0;
-extern int biosextmem = 0;
+extern int biosextmem;
 
 #ifdef CPURESET_DELAY
 int cpureset_delay = CPURESET_DELAY;
@@ -155,11 +157,12 @@ int cpureset_delay = CPURESET_DELAY;
 int cpureset_delay = 2000; /* default to 2s */
 #endif
 
+#define PHYSSEG_MAX 32
 typedef struct {
 	u_quad_t	start;		/* Physical start address	*/
 	u_quad_t	size;		/* Size in bytes		*/
 } phys_ram_seg_t;
-phys_ram_seg_t mem_clusters[32];
+phys_ram_seg_t mem_clusters[PHYSSEG_MAX];
 int	mem_cluster_cnt = 0;
 
 struct pcb *curpcb;			/* our current running pcb */
@@ -167,7 +170,7 @@ struct pcb *curpcb;			/* our current running pcb */
 int	i386_use_fxsave;
 
 union descriptor 		gdt[NGDT];
-struct gate_descriptor 		idt[NIDT];
+struct gate_descriptor 	idt[NIDT];
 union descriptor 		ldt[NLDT];
 
 struct soft_segment_descriptor *gdt_segs;
@@ -1122,24 +1125,90 @@ make_memory_segments(void)
 
 #define	KBTOB(x) ((size_t)(x) * 1024UL)
 
-void
-getmemsize(void)
+int
+add_mem_cluster(seg_start, seg_end)
+	u_int64_t seg_start, seg_end;
 {
+	extern struct extent *iomem_ex;
+	int error, i;
+
+	if (seg_end > 0x100000000ULL) {
+		printf("WARNING: skipping large "
+				"memory map entry: "
+				"0x%qx/0x%qx\n", seg_start, (seg_end - seg_start));
+		return (0);
+	}
+
+	if (seg_end == 0x100000000ULL) {
+		seg_end -= PAGE_SIZE;
+	}
+
+	if (seg_end <= seg_start) {
+		return (0);
+	}
+
+	for (i = 0; i < mem_cluster_cnt; i++) {
+		if ((mem_clusters[i].start == round_page(seg_start)) && (mem_clusters[i].size == trunc_page(seg_end) - mem_clusters[i].start)) {
+			return (0);
+		}
+	}
+
+	/*
+	 * Allocate the physical addresses used by RAM
+	 * from the iomem extent map.  This is done before
+	 * the addresses are page rounded just to make
+	 * sure we get them all.
+	 */
+	error = extent_alloc_region(iomem_ex, seg_start, seg_end - seg_start, EX_NOWAIT);
+	if (error) {
+		printf("WARNING: CAN'T ALLOCATE "
+				"MEMORY SEGMENT "
+				"(0x%qx/0x%qx) FROM "
+				"IOMEM EXTENT MAP!\n", seg_start, seg_end - seg_start);
+		return (0);
+	}
+
+	if (mem_cluster_cnt >= PHYSSEG_MAX) {
+		panic("init386: too many memory segments");
+	}
+
+	seg_start = round_page(seg_start);
+	seg_end = trunc_page(seg_end);
+
+	if (seg_start == seg_end) {
+		return (0);
+	}
+	mem_clusters[mem_cluster_cnt].start = seg_start;
+	mem_clusters[mem_cluster_cnt].size = seg_end - seg_start;
+
+	physmem += atop(mem_clusters[mem_cluster_cnt].size);
+	mem_cluster_cnt++;
+
+	return (1);
+}
+
+void
+setmemsize_common(basemem, extmem)
+	int *basemem, *extmem;
+{
+	u_int64_t base_start, base_end, ext_start, ext_end;
 	int error;
-	//if (mem_cluster_cnt == 0) {
-	error = extent_alloc_region(iomem_ex, 0, KBTOB(biosbasemem), EX_NOWAIT);
+
+	/* BIOS_BASEMEM */
+	base_start = basemem;
+	base_end = KBTOB(basemem);
+	error = add_mem_cluster(base_start, base_end);
 	if (error) {
 		printf("WARNING: CAN'T ALLOCATE BASE MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
-	mem_clusters[0].start = 0;
-	mem_clusters[0].size = trunc_page(KBTOB(biosbasemem));
-	physmem += atop(mem_clusters[0].size);
 
-	error = extent_alloc_region(iomem_ex, IOM_END, KBTOB(biosextmem), EX_NOWAIT);
+	/* BIOS_EXTMEM */
+	ext_start = IOM_END;
+	ext_end = KBTOB(extmem);
+	error = add_mem_cluster(ext_start, ext_end);
 	if (error) {
 		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
-
 #if NISADMA > 0
 	/*
 	 * Some motherboards/BIOSes remap the 384K of RAM that would
@@ -1152,20 +1221,40 @@ getmemsize(void)
 	 * we're using any isadma devices and the remapped memory
 	 * is what puts us over 16M.
 	 */
-	if ((biosextmem > (15 * 1024)) && (biosextmem < (16 * 1024))) {
-		biosextmem = (15 * 1024);
+	if (extmem > (15*1024) && extmem < (16*1024)) {
+		extmem = (15*1024);
 	}
 #endif
-
-	mem_clusters[1].start = IOM_END;
-	mem_clusters[1].size = trunc_page(KBTOB(biosextmem));
-	physmem += atop(mem_clusters[1].size);
-	Maxmem = atop(physmem);
-	mem_cluster_cnt = 2;
-
-	avail_end = IOM_END + trunc_page(KBTOB(biosextmem));
-//	}
+	avail_end = ext_start + trunc_page(ext_end);
 	maxmem = Maxmem - 1;
+
+#ifdef SMP
+	alloc_ap_trampoline(basemem, base_start, base_end);
+#endif
+}
+
+void
+setmemsize(boot, basemem, extmem)
+	struct bootinfo *boot;
+	int *basemem, *extmem;
+{
+	int error;
+
+	vm86_initial_bioscalls(basemem, extmem);
+
+	error = bootinfo_check(boot);
+	if (boot != NULL && error) {
+		setmemsize_common(boot->bi_basemem, boot->bi_extmem);
+	} else {
+		setmemsize_common(basemem, extmem);
+	}
+}
+
+void
+getmemsize(boot)
+	struct bootinfo *boot;
+{
+	setmemsize(boot, &biosbasemem, &biosextmem);
 }
 
 void
@@ -1246,8 +1335,7 @@ init386(first)
 
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
 	vm86_initialize();
-	vm86_initial_bioscalls(&biosbasemem, &biosextmem);
-	getmemsize();
+	getmemsize(&bootinfo);
 	vm_set_page_size();
 
 	/* call pmap initialization to make new kernel address space */
@@ -1301,6 +1389,25 @@ init386_bootinfo(boot)
 			init_static_kenv(NULL, 0);
 		}
 	}
+}
+
+int
+bootinfo_check(boot)
+	struct bootinfo *boot;
+{
+	if(boot->bi_version != BOOTINFO_VERSION) {
+		printf("Bootinfo Check: Boot version does not match!\n");
+		return (1);
+	}
+	if(boot->bi_memsizes_valid == 0) {
+		printf("Bootinfo Check: Boot is not valid!\n");
+		return (1);
+	}
+	if(boot->bi_size > BOOTINFO_MAXSIZE || boot->bi_size != sizeof(struct bootinfo *)) {
+		printf("Bootinfo Check: Boot size is too big!\n");
+		return (1);
+	}
+	return (0);
 }
 
 void
