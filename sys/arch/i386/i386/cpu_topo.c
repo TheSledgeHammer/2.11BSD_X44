@@ -266,7 +266,7 @@ topo_probe_amd(void)
  * using CPUID Leaf 1 and Leaf 4, if supported.
  * See:
  *  - Intel 64 Architecture Processor Topology Enumeration
- *  - Intel 64 and IA-32 ArchitecturesSoftware Developer’s Manual,
+ *  - Intel 64 and IA-32 ArchitecturesSoftware Developerâ€™s Manual,
  *    Volume 3A: System Programming Guide, PROGRAMMING CONSIDERATIONS
  *    FOR HARDWARE MULTI-THREADING CAPABLE PROCESSORS
  */
@@ -300,7 +300,7 @@ topo_probe_intel_0x4(void)
  * using CPUID Leaf 11, if supported.
  * See:
  *  - Intel 64 Architecture Processor Topology Enumeration
- *  - Intel 64 and IA-32 ArchitecturesSoftware Developer’s Manual,
+ *  - Intel 64 and IA-32 ArchitecturesSoftware Developerâ€™s Manual,
  *    Volume 3A: System Programming Guide, PROGRAMMING CONSIDERATIONS
  *    FOR HARDWARE MULTI-THREADING CAPABLE PROCESSORS
  */
@@ -349,7 +349,7 @@ topo_probe_intel_0xb(void)
  * Determine topology of caches for Intel CPUs.
  * See:
  *  - Intel 64 Architecture Processor Topology Enumeration
- *  - Intel 64 and IA-32 Architectures Software Developer’s Manual
+ *  - Intel 64 and IA-32 Architectures Software Developerâ€™s Manual
  *    Volume 2A: Instruction Set Reference, A-M,
  *    CPUID instruction
  */
@@ -764,7 +764,7 @@ alloc_ap_trampoline(basemem, seg_start, seg_end)
 	}
 
 	if (!allocated) {
-		boot_address = basemem * 1024 - bootMP_size;
+		boot_address = (int)basemem * 1024 - bootMP_size;
 		if (bootverbose) {
 			printf("Cannot find enough space for the boot trampoline, placing it at %#x", boot_address);
 		}
