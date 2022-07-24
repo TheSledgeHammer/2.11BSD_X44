@@ -435,7 +435,7 @@ const struct filterops sig_filtops = {
  * Old system calls that were specific to 2.11BSD, which
  * have potential future use cases.
  */
-
+#ifdef notyet
 /*
  * fetch the word at iaddr from user I-space.  This system call is
  * required on machines with separate I/D space because the mfpi
@@ -540,3 +540,4 @@ ucall()
 
 	return (0);
 }
+#endif
