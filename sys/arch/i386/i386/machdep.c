@@ -1195,13 +1195,13 @@ setmemsize_common(basemem, extmem)
 	int error;
 
 	/* BIOS_BASEMEM */
-	base_start = basemem;
+	base_start = (u_int64_t)*basemem;
 	base_end = KBTOB(basemem);
 	error = extent_alloc_region(iomem_ex, base_start, base_end, EX_NOWAIT);
 	if (error) {
 		printf("WARNING: CAN'T ALLOCATE BASE MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
-	mem_clusters[0].start = 0;
+	mem_clusters[0].start = base_start;
 	mem_clusters[0].size = trunc_page(base_end);
 	physmem += atop(mem_clusters[0].size);
 
