@@ -56,7 +56,7 @@
 #include <sys/ioctl.h>
 #include <sys/vmmeter.h>
 
-#include <machine/asm.h>
+//#include <machine/asm.h>
 #include <machine/cpu.h>
 #include <i386/include/cpuinfo.h>
 #include <machine/intr.h>
@@ -93,19 +93,19 @@
  * state is saved.
  */
 
-#define	fldcw(cw)			__asm __volatile("fldcw %0" : : "m" (cw))
-#define	fnclex()			__asm __volatile("fnclex")
-#define	fninit()			__asm __volatile("fninit")
-#define	fnsave(addr)		__asm __volatile("fnsave %0" : "=m" (*(addr)))
-#define	fnstcw(addr)		__asm __volatile("fnstcw %0" : "=m" (*(addr)))
-#define	fnstsw(addr)		__asm __volatile("fnstsw %0" : "=am" (*(addr)))
-#define	fp_divide_by_0()	__asm __volatile("fldz; fld1; fdiv %st,%st(1); fnop")
-#define	frstor(addr)		__asm __volatile("frstor %0" : : "m" (*(addr)))
-#define	fxrstor(addr)		__asm __volatile("fxrstor %0" : : "m" (*(addr)))
-#define	fxsave(addr)		__asm __volatile("fxsave %0" : "=m" (*(addr)))
-#define	ldmxcsr(csr)		__asm __volatile("ldmxcsr %0" : : "m" (csr))
-#define	stmxcsr(addr)		__asm __volatile("stmxcsr %0" : : "m" (*(addr)))
-#define	clts()				__asm __volatile("clts")
+#define	fldcw(cw)			__asm__volatile("fldcw %0" : : "m" (cw))
+#define	fnclex()			__asm__volatile("fnclex")
+#define	fninit()			__asm__volatile("fninit")
+#define	fnsave(addr)		__asm__volatile("fnsave %0" : "=m" (*(addr)))
+#define	fnstcw(addr)		__asm__volatile("fnstcw %0" : "=m" (*(addr)))
+#define	fnstsw(addr)		__asm__volatile("fnstsw %0" : "=am" (*(addr)))
+#define	fp_divide_by_0()	__asm__volatile("fldz; fld1; fdiv %st,%st(1); fnop")
+#define	frstor(addr)		__asm__volatile("frstor %0" : : "m" (*(addr)))
+#define	fxrstor(addr)		__asm__volatile("fxrstor %0" : : "m" (*(addr)))
+#define	fxsave(addr)		__asm__volatile("fxsave %0" : "=m" (*(addr)))
+#define	ldmxcsr(csr)		__asm__volatile("ldmxcsr %0" : : "m" (csr))
+#define	stmxcsr(addr)		__asm__volatile("stmxcsr %0" : : "m" (*(addr)))
+#define	clts()				__asm__volatile("clts")
 #define	stts()				lcr0(rcr0() | CR0_TS)
 
 void						npxexit(void);
@@ -137,6 +137,9 @@ struct npx_softc {
 	void                *sc_ih;
 };
 
+int	npx_probe(struct device *, struct cfdata *, void *);
+void	npx_attach(struct device *, struct device *, void *);
+
 CFOPS_DECL(npx, npx_probe, npx_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, npx, &npx_cops, DV_DULL, sizeof(struct npx_softc));
 
@@ -146,7 +149,7 @@ CFDRIVER_DECL(NULL, npx, &npx_cops, DV_DULL, sizeof(struct npx_softc));
  * latch stuff in probintr() can be moved to npxprobe().
  */
 void probeintr(void);
-asm __volatile(".text\n\t"
+asm__volatile(".text\n\t"
 		"probeintr:\n\t"
 		"ss\n\t"
 		"incl	npx_intrs_while_probing\n\t"
@@ -160,7 +163,7 @@ asm __volatile(".text\n\t"
 		"iret\n\t");
 
 void probetrap(void);
-asm __volatile(".text\n\t"
+asm__volatile(".text\n\t"
 		"probetrap:\n\t"
 		"ss\n\t"
 		"incl	npx_traps_while_probing\n\t"
@@ -168,7 +171,7 @@ asm __volatile(".text\n\t"
 		"iret\n\t");
 
 int npx586bug1(int, int);
-asm __volatile(".text\n\t"
+asm__volatile(".text\n\t"
 		"npx586bug1:\n\t"
 		"fildl	4(%esp)		# x\n\t"
 		"fildl	8(%esp)		# y\n\t"

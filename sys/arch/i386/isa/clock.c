@@ -318,7 +318,7 @@ gettick()
  * wave' mode counts at 2:1).
  */
 void
-delay(n)
+i8254_delay(n)
 	int n;
 {
 	int limit, tick, otick;
@@ -339,13 +339,14 @@ delay(n)
 	if (n < 0)
 		return;
 	{register int m;
-	__asm __volatile("mul %3"
+	__asm("mul %3"
 			 : "=a" (n), "=d" (m)
 			 : "0" (n), "r" (TIMER_FREQ));
-	__asm __volatile("div %3"
+	__asm("div %3"
 			 : "=a" (n)
 			 : "0" (n), "d" (m), "r" (1000000)
-			 : "%edx");}
+			 : "%edx");
+			 }
 #else
 	/*
 	 * Calculate ((n * TIMER_FREQ) / 1e6) without using floating point and
@@ -483,6 +484,7 @@ rtcinit()
 	mc146818_write(NULL, MC_REGB, MC_REGB_24HR | MC_REGB_PIE);			/* XXX softc */
 }
 
+#ifdef unused
 void
 rtcdrain(void *v)
 {
@@ -494,7 +496,7 @@ rtcdrain(void *v)
 		; /* Nothing. */
 	}
 }
-
+#endif
 int
 rtcget(regs)
 	mc_todregs *regs;
