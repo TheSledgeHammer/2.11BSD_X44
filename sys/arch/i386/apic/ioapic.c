@@ -251,13 +251,13 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	printf(" apid %d (I/O APIC)\n", aaa->apic_id);
 
 	if (ioapic_find(aaa->apic_id) != NULL) {
-		printf("%s: duplicate apic id (ignored)\n", sc->sc_dev.dv_xname);
+		printf("%s: duplicate apic id (ignored)\n", sc->sc_dev->dv_xname);
 		return;
 	}
 	
 	ioapic_add(sc);
 
-	printf("%s: pa 0x%lx", sc->sc_dev.dv_xname, aaa->apic_address);
+	printf("%s: pa 0x%lx", sc->sc_dev->dv_xname, aaa->apic_address);
 
 	if (i386_mem_add_mapping(aaa->apic_address, PAGE_SIZE, 0, &bh) != 0) {
 		printf(": map failed\n");
@@ -306,16 +306,16 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	 * mapping later ...
 	 */
 	if (apic_id != sc->sc_apicid) {
-		printf("%s: misconfigured as apic %d\n", sc->sc_dev.dv_xname, apic_id);
+		printf("%s: misconfigured as apic %d\n", sc->sc_dev->dv_xname, apic_id);
 
 		ioapic_write(sc, IOAPIC_ID, (ioapic_read(sc, IOAPIC_ID) & ~IOAPIC_ID_MASK) | (sc->sc_apicid << IOAPIC_ID_SHIFT));
 
 		apic_id = (ioapic_read(sc, IOAPIC_ID) & IOAPIC_ID_MASK)	>> IOAPIC_ID_SHIFT;
 
 		if (apic_id != sc->sc_apicid) {
-			printf("%s: can't remap to apid %d\n", sc->sc_dev.dv_xname, sc->sc_apicid);
+			printf("%s: can't remap to apid %d\n", sc->sc_dev->dv_xname, sc->sc_apicid);
 		} else {
-			printf("%s: remapped to apic %d\n", sc->sc_dev.dv_xname, sc->sc_apicid);
+			printf("%s: remapped to apic %d\n", sc->sc_dev->dv_xname, sc->sc_apicid);
 		}
 	}
 }
@@ -418,13 +418,13 @@ ioapic_enable(void)
 	}
 
 	if (sc->sc_flags & IOAPIC_PICMODE) {
-		printf("%s: writing to IMCR to disable pics\n", sc->sc_dev.dv_xname);
+		printf("%s: writing to IMCR to disable pics\n", sc->sc_dev->dv_xname);
 		outb(IMCR_ADDR, IMCR_REGISTER);
 		outb(IMCR_DATA, IMCR_APIC);
 	}
 
 	SIMPLEQ_FOREACH(sc, &ioapics, sc_next) {
-		printf("%s: enabling\n", sc->sc_dev.dv_xname);
+		printf("%s: enabling\n", sc->sc_dev->dv_xname);
 
 		for (p = 0; p < sc->sc_apic_sz; p++) {
 			spic = &sc->sc_pins[p];

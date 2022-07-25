@@ -62,6 +62,7 @@
 #include <machine/specialreg.h>
 
 #include <machine/apic/apic.h>
+#include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
 #include <machine/isa/isa_machdep.h>
@@ -72,9 +73,9 @@
 #define lapic_unlock(lock) 		simple_unlock(lock)
 
 void			lapic_clockintr(void *);
-static void		lapic_delay(unsigned int);
+void		lapic_delay(int);
 static uint32_t lapic_gettick(void);
-static void		lapic_map(caddr_t);
+static void		lapic_map(vm_offset_t);
 
 static void 	lapic_hwmask(struct softpic *, int);
 static void 	lapic_hwunmask(struct softpic *, int);
@@ -219,15 +220,15 @@ lapic_is_x2apic(void)
 }
 
 static void
-lapic_map(caddr_t lapic_base)
+lapic_map(vm_offset_t lapic_base)
 {
 	pt_entry_t *pte;
-	vm_offset_t va = (vm_offset_t)&local_apic_va;
+	vm_offset_t va = local_apic_va;
 
 	intr_disable();
 
 	pte = kvtopte(va);
-	*pte = (lapic_base | PG_RW | PG_V | PG_N | PG_G | PG_NX | PG_W | PG_NC_PCD);
+	*pte = lapic_base | PG_RW | PG_V | PG_N | PG_G | PG_NX | PG_W | PG_NC_PCD;
 	invlpg(va);
 
 	lapic_enable_x2apic();
@@ -311,7 +312,7 @@ lapic_set_lvt(void)
  * Initialize fixed idt vectors for use by local apic.
  */
 void
-lapic_boot_init(caddr_t lapic_base)
+lapic_boot_init(vm_offset_t lapic_base)
 {
 	lapic_map(lapic_base);
 
@@ -472,7 +473,7 @@ lapic_calibrate_timer(ci)
 		 * for all our timing needs..
 		 */
 		delay_func = lapic_delay;
-		initclock_func = lapic_initclocks;
+		initclocks_func = lapic_initclocks;
 	}
 }
 
@@ -480,7 +481,7 @@ lapic_calibrate_timer(ci)
  * delay for N usec.
  */
 
-static void
+void
 lapic_delay(usec)
 	int usec;
 {
@@ -553,7 +554,7 @@ lapic_setup(spic, ci, pin, idtvec, type)
 	struct cpu_info *ci;
 	int pin, idtvec, type;
 {
-		ci->cpu_dev->dv_xname
+	
 }
 
 /*
@@ -577,13 +578,13 @@ lapic_dump(void)
 	struct cpu_info *ci;
 
 	ci =  curcpu();
-	APIC_LVT_PRINT(ci, "cmci", 0, LAPIC_LVT_CMCI);
-	APIC_LVT_PRINT(ci, "timer", 0, LAPIC_LVT_TIMER);
-	APIC_LVT_PRINT(ci, "thermal", 0, LAPIC_LVT_THERM);
-	APIC_LVT_PRINT(ci, "pcint", 0, LAPIC_LVT_PCINT);
-	APIC_LVT_PRINT(ci, "lint", 0, LAPIC_LVT_LINT0);
-	APIC_LVT_PRINT(ci, "lint", 1, LAPIC_LVT_LINT1);
-	APIC_LVT_PRINT(ci, "err", 0, LAPIC_LVT_ERR);
+	APIC_LVT_PRINT(ci, "cmci", 0, LAPIC_LVCMCI);
+	APIC_LVT_PRINT(ci, "timer", 0, LAPIC_LVTT);
+	APIC_LVT_PRINT(ci, "thermal", 0, LAPIC_LVTHERM);
+	APIC_LVT_PRINT(ci, "pcint", 0, LAPIC_PCINT);
+	APIC_LVT_PRINT(ci, "lint", 0, LAPIC_LVINT0);
+	APIC_LVT_PRINT(ci, "lint", 1, LAPIC_LVINT1);
+	APIC_LVT_PRINT(ci, "err", 0, LAPIC_LVERR);
 
 #undef APIC_LVT_PRIINT
 }
@@ -627,7 +628,7 @@ i82489_ipi_init(int target)
 
 	esr = i82489_read32(LAPIC_ESR);
 	if (esr != 0) {
-		print("%s: ESR %08x\n", __func__, esr);
+		printf("%s: ESR %08x\n", __func__, esr);
 	}
 
 	return (0);
@@ -652,7 +653,7 @@ i82489_ipi_startup(int target, int vec)
 
 	esr = i82489_read32(LAPIC_ESR);
 	if (esr != 0) {
-		print("%s: ESR %08x\n", __func__, esr);
+		printf("%s: ESR %08x\n", __func__, esr);
 	}
 
 	return (0);
