@@ -33,7 +33,7 @@ INTERP_RC=					loader.rc
 MK_DLOADER=					yes
 MK_FORTH=					no
 MK_LUA=						no
-MK_RUBY=					no
+MK_MRUBY=					no
 
 #
 # Have a sensible default

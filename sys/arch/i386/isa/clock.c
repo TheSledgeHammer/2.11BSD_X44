@@ -322,6 +322,11 @@ i8254_delay(n)
 	int n;
 {
 	int limit, tick, otick;
+	static const int delaytab[26] = {
+		 0,  2,  3,  4,  5,  6,  7,  9, 10, 11,
+		12, 13, 15, 16, 17, 18, 19, 21, 22, 23,
+		24, 25, 27, 28, 29, 30,
+	};
 
 	/*
 	 * Read the counter first, so that the rest of the setup overhead is
@@ -329,48 +334,49 @@ i8254_delay(n)
 	 */
 	otick = gettick();
 
+	if (n <= 25) {
+			n = delaytab[n];
+	} else {
 #ifdef __GNUC__
-	/*
-	 * Calculate ((n * TIMER_FREQ) / 1e6) using explicit assembler code so
-	 * we can take advantage of the intermediate 64-bit quantity to prevent
-	 * loss of significance.
-	 */
-	n -= 5;
-	if (n < 0)
-		return;
-	{register int m;
-	__asm("mul %3"
-			 : "=a" (n), "=d" (m)
-			 : "0" (n), "r" (TIMER_FREQ));
-	__asm("div %3"
-			 : "=a" (n)
-			 : "0" (n), "d" (m), "r" (1000000)
-			 : "%edx");
-			 }
+		/*
+		 * Calculate ((n * TIMER_FREQ) / 1e6) using explicit assembler code so
+		 * we can take advantage of the intermediate 64-bit quantity to prevent
+		 * loss of significance.
+		 */
+		int m;
+		__asm __volatile(
+				"mul %3"
+				: "=a" (n), "=d" (m)
+				: "0" (n), "r" (TIMER_FREQ)
+		);
+		__asm __volatile(
+				"div %4"
+				: "=a" (n), "=d" (m)
+				: "0" (n), "1" (m), "r" (1000000)
+		);
 #else
-	/*
-	 * Calculate ((n * TIMER_FREQ) / 1e6) without using floating point and
-	 * without any avoidable overflows.
-	 */
-	n -= 20;
-	{
+		/*
+		 * Calculate ((n * TIMER_FREQ) / 1e6) without using floating point and
+		 * without any avoidable overflows.
+		 */
 		int sec = n / 1000000,
-		    usec = n % 1000000;
+			usec = n % 1000000;
 		n = sec * TIMER_FREQ +
-		    usec * (TIMER_FREQ / 1000000) +
-		    usec * ((TIMER_FREQ % 1000000) / 1000) / 1000 +
-		    usec * (TIMER_FREQ % 1000) / 1000000;
-	}
+			usec * (TIMER_FREQ / 1000000) +
+			usec * ((TIMER_FREQ % 1000000) / 1000) / 1000 +
+			usec * (TIMER_FREQ % 1000) / 1000000;
 #endif
+	}
 
 	limit = TIMER_FREQ / hz;
 
 	while (n > 0) {
 		tick = gettick();
-		if (tick > otick)
+		if (tick > otick) {
 			n -= limit - (tick - otick);
-		else
+		} else {
 			n -= otick - tick;
+		}
 		otick = tick;
 	}
 }
@@ -484,19 +490,6 @@ rtcinit()
 	mc146818_write(NULL, MC_REGB, MC_REGB_24HR | MC_REGB_PIE);			/* XXX softc */
 }
 
-#ifdef unused
-void
-rtcdrain(void *v)
-{
-	struct timeout *to = (struct timeout *)v;
-	if (to != NULL) {
-		timeout_del(to);
-	}
-	while (mc146818_read(NULL, MC_REGC) & MC_REGC_PF) {
-		; /* Nothing. */
-	}
-}
-#endif
 int
 rtcget(regs)
 	mc_todregs *regs;

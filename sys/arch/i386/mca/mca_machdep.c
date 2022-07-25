@@ -90,6 +90,7 @@ struct bios_config {
 	u_int8_t	pad[9];
 } __attribute__ ((packed));
 
+#ifdef UNUSED
 /*
  * Used to encode DMA channel into ISA DMA cookie. We use upper 4 bits of
  * ISA DMA cookie id_flags, it's unused.
@@ -99,8 +100,8 @@ struct i386_isa_dma_cookie {
 	/* We don't care about rest */
 };
 
-#ifdef UNUSED
-static void	_mca_bus_dmamap_sync (bus_dma_tag_t, bus_dmamap_t, bus_addr_t, bus_size_t, int);
+//#ifdef UNUSED
+static void	_mca_bus_dmamap_sync(bus_dma_tag_t, bus_dmamap_t, bus_addr_t, bus_size_t, int);
 #endif
 
 /*
