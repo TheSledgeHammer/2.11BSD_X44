@@ -259,6 +259,10 @@ struct region_descriptor {
 #define	IDT_SYSCALL		0x80	/* System Call Interrupt Vector */
 
 #ifdef _KERNEL
+
+extern union descriptor 		gdt[NGDT];
+extern struct gate_descriptor 		idt[NIDT];
+extern union descriptor 		ldt[NLDT];
 extern struct soft_segment_descriptor *gdt_segs;
 extern struct soft_segment_descriptor *ldt_segs;
 
