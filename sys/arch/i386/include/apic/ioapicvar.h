@@ -43,7 +43,7 @@
 struct ioapic_head;
 SIMPLEQ_HEAD(ioapic_head, ioapic_softc);
 struct ioapic_softc {
-	SIMPLEQ_ENTRY(ioapic) 	sc_next;
+	SIMPLEQ_ENTRY(ioapic_softc) 	sc_next;
 	struct softpic			*sc_pins;
 	struct pic 				*sc_pic;
 	struct device			sc_dev;
@@ -81,6 +81,7 @@ struct ioapic_softc {
 #define APIC_IRQ_ISLEGACY(x) 	(bool)(!((x) & APIC_INT_VIA_APIC))
 #define APIC_IRQ_LEGACY_IRQ(x) 	(int)((x) & 0xff)
 
+extern struct ioapic_head ioapics;
 void ioapic_print_redir(struct ioapic_softc *, const char *, int);
 struct ioapic_softc 		*ioapic_find(int);
 struct ioapic_softc 		*ioapic_find_bybase(int);
