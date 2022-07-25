@@ -513,7 +513,7 @@ mca_dmamap_create(t, size, flags, dmamp, dmach)
 		/*
 		 * Allocate our cookie if not yet done.
 		 */
-		cookie = malloc(sizeof(struct i386_bus_dma_cookie), M_DEVBUF,
+		cookie = malloc(sizeof(struct i386_bus_dma_cookie *), M_DEVBUF,
 		    ((flags & BUS_DMA_NOWAIT) ? M_NOWAIT : M_WAITOK) | M_ZERO);
 		if (cookie == NULL) {
 			
