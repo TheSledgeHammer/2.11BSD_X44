@@ -105,8 +105,9 @@ void    	ioapic_attach(struct device *, struct device *, void *);
 
 extern int 	i386_mem_add_mapping(bus_addr_t, bus_size_t, int, bus_space_handle_t *);
 
-void 		ioapic_hwmask(struct softpic *, int);
-void 		ioapic_hwunmask(struct softpic *, int);
+static void	ioapic_init_intpins(struct ioapic_softc *);
+static void 		ioapic_hwmask(struct softpic *, int);
+static void 		ioapic_hwunmask(struct softpic *, int);
 static void ioapic_addroute(struct softpic *, struct cpu_info *, int, int, int);
 static void ioapic_delroute(struct softpic *, struct cpu_info *, int, int, int);
 static void	ioapic_register_pic(struct pic *);
@@ -114,7 +115,7 @@ static void	ioapic_register_pic(struct pic *);
 int ioapic_bsp_id = 0;
 int ioapic_cold = 1;
 
-struct lock_object *icu_lock;
+struct lock_object icu_lock;
 struct ioapic_head ioapics = SIMPLEQ_HEAD_INITIALIZER(ioapics);
 int nioapics = 0;	   	 	/* number attached */
 static int ioapic_vecbase;
@@ -243,14 +244,14 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 
 	sc->sc_flags = aaa->flags;
 	sc->sc_apicid = aaa->apic_id;
-
+	
 	printf(" apid %d (I/O APIC)\n", aaa->apic_id);
 
 	if (ioapic_find(aaa->apic_id) != NULL) {
 		printf("%s: duplicate apic id (ignored)\n", sc->sc_dev.dv_xname);
 		return;
 	}
-
+	
 	ioapic_add(sc);
 
 	printf("%s: pa 0x%lx", sc->sc_dev.dv_xname, aaa->apic_address);
@@ -262,7 +263,7 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_reg = (volatile u_int32_t *)(bh + IOAPIC_REG);
 	sc->sc_data = (volatile u_int32_t *)(bh + IOAPIC_DATA);
 
-	sc->sc_pic = ioapic_template;
+	sc->sc_pic = &ioapic_template;
 	sc->sc_dev = self;
 	ioapic_lock_init(&icu_lock);
 
@@ -419,7 +420,7 @@ ioapic_enable(void)
 		outb(IMCR_DATA, IMCR_APIC);
 	}
 
-	SIMPLEQ_FOREACH(sc, ioapics, sc_next) {
+	SIMPLEQ_FOREACH(sc, &ioapics, sc_next) {
 		printf("%s: enabling\n", sc->sc_dev.dv_xname);
 
 		for (p = 0; p < sc->sc_apic_sz; p++) {

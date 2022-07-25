@@ -71,7 +71,7 @@
 #define lapic_lock(lock) 		simple_lock(lock)
 #define lapic_unlock(lock) 		simple_unlock(lock)
 
-extern volatile vaddr_t local_apic_va;
+extern volatile vm_offset_t local_apic_va;
 
 void			lapic_map(caddr_t);
 static void 	lapic_hwmask(struct softpic *, int);
@@ -121,7 +121,7 @@ i82489_write32(int reg, uint32_t val)
 static uint32_t
 i82489_cpu_number(void)
 {
-	return (lapic_read32(LAPIC_ID) >> LAPIC_ID_SHIFT);
+	return (i82489_read32(LAPIC_ID) >> LAPIC_ID_SHIFT);
 }
 
 static uint32_t
@@ -219,7 +219,7 @@ void
 lapic_map(caddr_t lapic_base)
 {
 	pt_entry_t *pte;
-	vaddr_t va = (vaddr_t)&local_apic_va;
+	vm_offset_t va = (vm_offset_t)&local_apic_va;
 
 	intr_disable();
 
@@ -477,7 +477,8 @@ lapic_calibrate_timer(ci)
  * delay for N usec.
  */
 
-void lapic_delay(usec)
+void 
+lapic_delay(usec)
 	int usec;
 {
 	int32_t tick, otick;
