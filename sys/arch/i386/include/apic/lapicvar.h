@@ -103,7 +103,7 @@ extern void 			lapic_write(u_int, uint32_t);
 extern void 			lapic_write_tpri(uint32_t);
 extern uint32_t 		lapic_cpu_number(void);
 extern bool_t 			lapic_is_x2apic(void);
-exterm void				lapic_dump(void);
+extern void				lapic_dump(void);
 
 static int				i82489_ipi_init(int);
 static int				i82489_ipi_startup(int, int);
