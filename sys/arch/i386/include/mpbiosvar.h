@@ -58,7 +58,5 @@ int mpbios_scan_pci(struct device *, struct pcibus_attach_args *, cfprint_t);
 
 extern int mpbios_scanned;
 #endif
-
 #endif
-
 #endif /* !_I386_MPBIOSVAR_H_ */

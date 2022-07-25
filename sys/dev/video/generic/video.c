@@ -427,7 +427,7 @@ videommap(dev_t dev, off_t off, int prot)
 	p = sc->hw_if->mappage(sc->hw_hdl, off, prot);
 	if (p == NULL)
 		return (-1);
-	if (pmap_extract(pmap_kernel(), (vaddr_t)p, &pa) == FALSE)
+	if (pmap_extract(pmap_kernel(), (vm_offset_t)p, &pa) == FALSE)
 		panic("videommap: invalid page");
 	sc->sc_vidmode = VIDMODE_MMAP;
 

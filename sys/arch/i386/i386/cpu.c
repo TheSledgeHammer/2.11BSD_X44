@@ -157,6 +157,7 @@ cpu_attach(parent, self, aux)
 	sc->sc_info = ci;
 	ci->cpu_dev = self;
 	ci->cpu_apic_id = caa->cpu_apic_id;
+	ci->cpu_acpi_id = caa->cpu_acpi_id;
 #ifdef SMP
 	cpu_init(ci, caa->cpu_apic_id, sizeof(struct cpu_info));
 #else

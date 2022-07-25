@@ -234,7 +234,7 @@ fail1:
 
 vm_amap_t
 vm_amap_alloc(sz, padsz, waitf)
-	vaddr_t sz, padsz;
+	vm_offset_t sz, padsz;
 	int waitf;
 {
 	vm_amap_t amap;
@@ -550,11 +550,11 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 	vm_map_entry_t entry;
 	int waitf;
 	bool_t canchunk;
-	vaddr_t startva, endva;
+	vm_offset_t startva, endva;
 {
 	vm_amap_t amap, srcamap;
 	int slots, lcv;
-	vaddr_t chunksize;
+	vm_offset_t chunksize;
 
 	/*
 	 * is there a map to copy?   if not, create one from scratch.
@@ -826,7 +826,7 @@ ReStart:
 void
 vm_amap_splitref(origref, splitref, offset)
 	vm_aref_t origref, splitref;
-	vaddr_t offset;
+	vm_offset_t offset;
 {
 	int leftslots;
 

@@ -736,7 +736,7 @@ vm_map_insert(map, object, offset, start, end)
 		new_entry->wired_count = 0;
 		//new_entry->advice = advice;
 
-		vaddr_t to_add = (flags & VM_FLAG_AMAPPAD) ? VM_AMAP_CHUNK << PAGE_SHIFT : 0;
+		vm_offset_t to_add = (flags & VM_FLAG_AMAPPAD) ? VM_AMAP_CHUNK << PAGE_SHIFT : 0;
 		struct vm_amap *amap = vm_amap_alloc(map->size, to_add, M_WAITOK);
 		new_entry->aref.ar_pageoff = 0;
 		new_entry->aref.ar_amap = amap;

@@ -37,7 +37,7 @@
  */
 
 #ifdef _KERNEL
-extern volatile u_int32_t  	local_apic_va;
+extern volatile vm_offset_t	local_apic_va;
 extern bool_t 				x2apic_mode;
 #endif
 
@@ -66,7 +66,6 @@ extern void Xintr_x2apic_tlb(void);
 /*
  * Vector used for local apic timer interrupts.
  */
-
 extern void Xintr_lapic_ltimer(void);
 extern void Xintr_x2apic_ltimer(void);
 extern void Xresume_lapic_ltimer(void);
@@ -96,7 +95,7 @@ struct cpu_info;
 extern void 			lapic_boot_init(caddr_t);
 extern void 			lapic_set_lvt(void);
 extern void 			lapic_enable(void);
-extern void 			lapic_calibrate_timer(bool_t);
+extern void 			lapic_calibrate_timer(struct cpu_info *);
 extern void 			lapic_reset(void);
 
 extern uint32_t 		lapic_read(u_int);
@@ -104,6 +103,7 @@ extern void 			lapic_write(u_int, uint32_t);
 extern void 			lapic_write_tpri(uint32_t);
 extern uint32_t 		lapic_cpu_number(void);
 extern bool_t 			lapic_is_x2apic(void);
+exterm void				lapic_dump(void);
 
 static int				i82489_ipi_init(int);
 static int				i82489_ipi_startup(int, int);

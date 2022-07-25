@@ -120,7 +120,7 @@ struct vm_aobject {
  */
 struct vao_swhash_elt {
 	LIST_ENTRY(vao_swhash_elt) 	list;							/* the hash list */
-	vaddr_t 					tag;							/* our 'tag' */
+	vm_offset_t 				tag;							/* our 'tag' */
 	int 						count;							/* our number of active slots */
 	int 						slots[VAO_SWHASH_CLUSTER_SIZE];	/* the slots */
 };

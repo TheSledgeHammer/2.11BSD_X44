@@ -454,7 +454,7 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 bool_t
 vm_aobject_flush(obj, start, end, flags)
 	vm_object_t obj;
-	vaddr_t start, end;
+	vm_offset_t start, end;
 	int flags;
 {
 

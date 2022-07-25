@@ -161,41 +161,41 @@ static const char *loc_where[] = {
 };
 
 struct mp_map {
-	vaddr_t		sva;	/* start address */
-	vaddr_t		eva;	/* end address */
-	vaddr_t 	baseva;	/* address */
-	vaddr_t 	pa;
-	int	 		vsize;
-	int			psize;
+	vm_offset_t		sva;	/* start address */
+	vm_offset_t		eva;	/* end address */
+	vm_offset_t 	baseva;	/* address */
+	vm_offset_t 	pa;
+	int	 			vsize;
+	int				psize;
 };
 
-int mp_print (void *, const char *);
-int mp_match (struct device *, struct cfdata *, void *);
-static const void *mpbios_search (struct device *, caddr_t, int, struct mp_map *);
-static inline int mpbios_cksum (const void *,int);
+int mp_print(void *, const char *);
+int mp_match(struct device *, struct cfdata *, void *);
+static const void *mpbios_search(struct device *, caddr_t, int, struct mp_map *);
+static inline int mpbios_cksum(const void *,int);
 
-static void mp_cfg_special_intr (const struct mpbios_int *, u_int32_t *);
-static void mp_print_special_intr (int);
+static void mp_cfg_special_intr(const struct mpbios_int *, u_int32_t *);
+static void mp_print_special_intr(int);
 
-static void mp_cfg_pci_intr (const struct mpbios_int *, u_int32_t *);
-static void mp_print_pci_intr (int);
+static void mp_cfg_pci_intr(const struct mpbios_int *, u_int32_t *);
+static void mp_print_pci_intr(int);
 
 #ifdef I386_MPBIOS_SUPPORT_EISA
-static void mp_print_eisa_intr (int);
-static void mp_cfg_eisa_intr (const struct mpbios_int *, u_int32_t *);
+static void mp_print_eisa_intr(int);
+static void mp_cfg_eisa_intr(const struct mpbios_int *, u_int32_t *);
 #endif
 
-static void mp_cfg_isa_intr (const struct mpbios_int *, u_int32_t *);
-static void mp_print_isa_intr (int);
+static void mp_cfg_isa_intr(const struct mpbios_int *, u_int32_t *);
+static void mp_print_isa_intr(int);
 
-static void mpbios_cpus (struct device *);
-static void mpbios_cpu (const u_int8_t *, struct device *);
-static void mpbios_bus (const u_int8_t *, struct device *);
-static void mpbios_ioapic (const u_int8_t *, struct device *);
-static void mpbios_int (const u_int8_t *, int, struct mp_intr_map *);
+static void mpbios_cpus(struct device *);
+static void mpbios_cpu(const u_int8_t *, struct device *);
+static void mpbios_bus(const u_int8_t *, struct device *);
+static void mpbios_ioapic(const u_int8_t *, struct device *);
+static void mpbios_int(const u_int8_t *, int, struct mp_intr_map *);
 
-static const void *mpbios_map (caddr_t, int, struct mp_map *);
-static void mpbios_unmap (struct mp_map *);
+static const void *mpbios_map(caddr_t, int, struct mp_map *);
+static void mpbios_unmap(struct mp_map *);
 
 /*
  * globals to help us bounce our way through parsing the config table.
@@ -246,8 +246,8 @@ mpbios_map(pa, len, handle)
 
 	caddr_t startpa = i386_trunc_page(pa);
 	caddr_t endpa = i386_round_page(pa + len);
-	vaddr_t va = kmem_alloc(kernel_map, endpa - startpa);
-	vaddr_t retva = va + (pa & PGOFSET);
+	vm_offset_t va = kmem_alloc(kernel_map, endpa - startpa);
+	vm_offset_t retva = va + (pa & PGOFSET);
 
 	handle->pa = pa;
 	handle->sva = startpa;

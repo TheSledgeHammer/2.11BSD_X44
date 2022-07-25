@@ -43,18 +43,18 @@
 struct ioapic_head;
 SIMPLEQ_HEAD(ioapic_head, ioapic_softc);
 struct ioapic_softc {
-	SIMPLEQ_ENTRY(ioapic_softc) 	sc_next;
-	struct softpic			*sc_pins;
-	struct pic 				*sc_pic;
-	struct device			sc_dev;
-	int						sc_apicid;
-	int						sc_apic_vers;
-	int						sc_apic_vecbase; 	/* global int base if ACPI */
-	int						sc_apic_sz;			/* apic size*/
-	int						sc_flags;
-	caddr_t					sc_pa;				/* PA of ioapic */
-	volatile u_int32_t		*sc_reg;			/* KVA of ioapic addr */
-	volatile u_int32_t		*sc_data;			/* KVA of ioapic data */
+	SIMPLEQ_ENTRY(ioapic_softc) sc_next;
+	struct softpic				*sc_pins;
+	struct pic 					*sc_pic;
+	struct device				sc_dev;
+	int							sc_apicid;
+	int							sc_apic_vers;
+	int							sc_apic_vecbase; 	/* global int base if ACPI */
+	int							sc_apic_sz;			/* apic size*/
+	int							sc_flags;
+	caddr_t						sc_pa;				/* PA of ioapic */
+	volatile u_int32_t			*sc_reg;			/* KVA of ioapic addr */
+	volatile u_int32_t			*sc_data;			/* KVA of ioapic data */
 };
 
 /*
@@ -81,9 +81,11 @@ struct ioapic_softc {
 #define APIC_IRQ_ISLEGACY(x) 	(bool)(!((x) & APIC_INT_VIA_APIC))
 #define APIC_IRQ_LEGACY_IRQ(x) 	(int)((x) & 0xff)
 
-extern struct ioapic_head ioapics;
 void ioapic_print_redir(struct ioapic_softc *, const char *, int);
-struct ioapic_softc 		*ioapic_find(int);
-struct ioapic_softc 		*ioapic_find_bybase(int);
+struct ioapic_softc 	*ioapic_find(int);
+struct ioapic_softc 	*ioapic_find_bybase(int);
+
+extern int nioapics;
+extern struct ioapic_head ioapics;
 
 #endif /* _I386_IOAPICVAR_H_ */

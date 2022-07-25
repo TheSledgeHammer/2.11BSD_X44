@@ -51,10 +51,9 @@
 
 #include <dev/core/ic/i8253reg.h>
 
-#include <machine/isa/isa_machdep.h>
-
 #include <machine/bus.h>
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
 #include <machine/pic.h>
 #include <machine/intr.h>
 #include <machine/pio.h>
@@ -65,19 +64,23 @@
 #include <machine/apic/apic.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
-#include <machine/mpconfig.h>
+#include <machine/isa/isa_machdep.h>
+#include <machine/mpbiosvar.h>
 
 #define lapic_lock_init(lock) 	simple_lock_init(lock, "lapic_lock")
 #define lapic_lock(lock) 		simple_lock(lock)
 #define lapic_unlock(lock) 		simple_unlock(lock)
 
-extern volatile vm_offset_t local_apic_va;
+void			lapic_clockintr(void *);
+static void		lapic_delay(unsigned int);
+static uint32_t lapic_gettick(void);
+static void		lapic_map(caddr_t);
 
-void			lapic_map(caddr_t);
 static void 	lapic_hwmask(struct softpic *, int);
 static void 	lapic_hwunmask(struct softpic *, int);
 static void 	lapic_setup(struct softpic *, struct cpu_info *, int, int, int);
 static void		lapic_register_pic(struct pic *);
+void			lapic_dump(void);
 
 static void		x2apic_write_icr(uint32_t hi, uint32_t lo);
 
@@ -154,16 +157,16 @@ x2apic_write_icr(uint32_t hi, uint32_t lo)
 static uint32_t
 x2apic_cpu_number(void)
 {
-	return x2apic_readreg(LAPIC_ID);
+	return (x2apic_read32(LAPIC_ID));
 }
 
 uint32_t
 lapic_read(u_int reg)
 {
 	if (x2apic_mode) {
-		return x2apic_read32(reg);
+		return (x2apic_read32(reg));
 	}
-	return i82489_read32(reg);
+	return (i82489_read32(reg));
 }
 
 void
@@ -215,7 +218,7 @@ lapic_is_x2apic(void)
 	return ((apicbase & (APICBASE_X2APIC | APICBASE_ENABLED)) == (APICBASE_X2APIC | APICBASE_ENABLED));
 }
 
-void
+static void
 lapic_map(caddr_t lapic_base)
 {
 	pt_entry_t *pte;
@@ -329,7 +332,7 @@ lapic_boot_init(caddr_t lapic_base)
 }
 
 static inline u_int32_t
-lapic_gettick()
+lapic_gettick(void)
 {
 	return (lapic_read(LAPIC_CCR_TIMER));
 }
@@ -353,7 +356,7 @@ lapic_clockintr(void *arg)
 }
 
 void
-lapic_initclocks()
+lapic_initclocks(void)
 {
 	/*
 	 * Start local apic countdown timer running, in repeated mode.
@@ -477,7 +480,7 @@ lapic_calibrate_timer(ci)
  * delay for N usec.
  */
 
-void 
+static void
 lapic_delay(usec)
 	int usec;
 {
@@ -550,7 +553,7 @@ lapic_setup(spic, ci, pin, idtvec, type)
 	struct cpu_info *ci;
 	int pin, idtvec, type;
 {
-
+		ci->cpu_dev->dv_xname
 }
 
 /*
@@ -562,6 +565,27 @@ lapic_register_pic(template)
 {
 	template = &lapic_template;
 	softpic_register_pic(template);
+}
+
+#define APIC_LVT_PRINT(ci, where, idx, lvtreg)						\
+		apic_format_redir((ci)->cpu_dev->dv_xname, (where), (idx), 	\
+				APIC_VECTYPE_LAPIC_LVT, 0, lapic_read(lvtreg))
+
+void
+lapic_dump(void)
+{
+	struct cpu_info *ci;
+
+	ci =  curcpu();
+	APIC_LVT_PRINT(ci, "cmci", 0, LAPIC_LVT_CMCI);
+	APIC_LVT_PRINT(ci, "timer", 0, LAPIC_LVT_TIMER);
+	APIC_LVT_PRINT(ci, "thermal", 0, LAPIC_LVT_THERM);
+	APIC_LVT_PRINT(ci, "pcint", 0, LAPIC_LVT_PCINT);
+	APIC_LVT_PRINT(ci, "lint", 0, LAPIC_LVT_LINT0);
+	APIC_LVT_PRINT(ci, "lint", 1, LAPIC_LVT_LINT1);
+	APIC_LVT_PRINT(ci, "err", 0, LAPIC_LVT_ERR);
+
+#undef APIC_LVT_PRIINT
 }
 
 static void
@@ -615,7 +639,7 @@ i82489_ipi_startup(int target, int vec)
 	uint32_t esr;
 
 	i82489_write32(LAPIC_ESR, 0);
-	(void)i82489_readreg(LAPIC_ESR);
+	(void)i82489_read32(LAPIC_ESR);
 
 	i82489_icr_wait();
 	i82489_write32(LAPIC_ICRHI, target << LAPIC_ID_SHIFT);
