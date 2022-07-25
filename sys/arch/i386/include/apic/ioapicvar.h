@@ -46,7 +46,7 @@ struct ioapic_softc {
 	SIMPLEQ_ENTRY(ioapic_softc) sc_next;
 	struct softpic				*sc_pins;
 	struct pic 					*sc_pic;
-	struct device				sc_dev;
+	struct device				*sc_dev;
 	int							sc_apicid;
 	int							sc_apic_vers;
 	int							sc_apic_vecbase; 	/* global int base if ACPI */

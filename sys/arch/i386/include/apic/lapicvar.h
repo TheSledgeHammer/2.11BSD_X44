@@ -92,7 +92,7 @@ extern vector_t	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_intr_tlb), IDTVEC(lapic_int
 		IDTVEC(apic_intr), IDTVEC(x2apic_intr), IDTVEC(legacy_intr);
 
 struct cpu_info;
-extern void 			lapic_boot_init(caddr_t);
+extern void 			lapic_boot_init(vm_offset_t);
 extern void 			lapic_set_lvt(void);
 extern void 			lapic_enable(void);
 extern void 			lapic_calibrate_timer(struct cpu_info *);

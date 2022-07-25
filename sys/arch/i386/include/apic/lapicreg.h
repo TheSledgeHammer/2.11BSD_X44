@@ -111,6 +111,8 @@
 
 #define LAPIC_RESV2_MASK			0xfff00000
 
+#define LAPIC_LVCMCI					0x2f0	/* Loc.vec (CMCI) RW */
+
 #define LAPIC_ICRHI					0x310		/* Int. cmd. RW */
 
 #define LAPIC_LVTT					0x320		/* Loc.vec.(timer) RW */
@@ -122,7 +124,9 @@
 #define LAPIC_LVTT_TM_PERIODIC		0x00020000
 #define LAPIC_LVTT_TM_TSCDL			0x00040000
 
-#define LAPIC_PCINT					0x340
+#define LAPIC_LVTHERM					0x330	/* Loc.vec (Thermal) RW */
+
+#define LAPIC_PCINT					0x340	/* Loc.vec (Perf Mon) RW */
 #define LAPIC_LVINT0				0x350		/* Loc.vec (LINT0) RW */
 #define LAPIC_LVT_PERIODIC			0x00020000
 #define LAPIC_LVT_MASKED			0x00010000
