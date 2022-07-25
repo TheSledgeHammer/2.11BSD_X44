@@ -58,7 +58,6 @@
 
 //#include <machine/asm.h>
 #include <machine/cpu.h>
-#include <machine/cpuinfo.h>
 #include <machine/intr.h>
 #include <machine/npx.h>
 #include <machine/pio.h>
@@ -66,9 +65,8 @@
 #include <machine/pcb.h>
 #include <machine/trap.h>
 #include <machine/specialreg.h>
+#include <machine/pio.h>
 #include <machine/segments.h>
-
-#include <i386/isa/icu.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
@@ -93,23 +91,23 @@
  * state is saved.
  */
 
-#define	fldcw(cw)			__asm("fldcw %0" : : "m" (cw))
+
+#define	fldcw(addr)		__asm("fldcw %0" : : "m" (*addr))
 #define	fnclex()			__asm("fnclex")
 #define	fninit()			__asm("fninit")
-#define	fnsave(addr)		__asm("fnsave %0" : "=m" (*(addr)))
-#define	fnstcw(addr)		__asm("fnstcw %0" : "=m" (*(addr)))
-#define	fnstsw(addr)		__asm("fnstsw %0" : "=am" (*(addr)))
-#define	fp_divide_by_0()	__asm ("fldz; fld1; fdiv %st,%st(1); fnop")
-#define	frstor(addr)		__asm("frstor %0" : : "m" (*(addr)))
-#define	fxrstor(addr)		__asm("fxrstor %0" : : "m" (*(addr)))
-#define	fxsave(addr)		__asm("fxsave %0" : "=m" (*(addr)))
-#define	fwait()				__asm("fwait")
-#define	ldmxcsr(csr)		__asm("ldmxcsr %0" : : "m" (csr))
-#define	stmxcsr(addr)		__asm("stmxcsr %0" : : "m" (*(addr)))
-#define	clts()				__asm("clts")
-#define	stts()				lcr0(rcr0() | CR0_TS)
+#define	fnsave(addr)		__asm("fnsave %0" : "=m" (*addr))
+#define	fnstcw(addr)		__asm("fnstcw %0" : "=m" (*addr))
+#define	fnstsw(addr)		__asm("fnstsw %0" : "=m" (*addr))
+#define	fp_divide_by_0()	__asm("fldz; fld1; fdiv %st,%st(1); fwait")
+#define	frstor(addr)		__asm("frstor %0" : : "m" (*addr))
+#define	fwait()			__asm("fwait")
+#define	clts()			__asm("clts")
+#define	stts()			lcr0(rcr0() | CR0_TS)
 
-void						npxexit(void);
+#ifdef I686_CPU
+#define	fxsave(addr)		__asm("fxsave %0" : "=m" (*addr))
+#define	fxrstor(addr)		__asm("fxrstor %0" : : "m" (*addr))
+#endif /* I686_CPU */
 
 static	enum npx_type		npx_type;
 static	int					npx_nointr;
@@ -120,8 +118,6 @@ extern int 					i386_fpu_present;
 extern int 					i386_fpu_exception;
 extern int 					i386_fpu_fdivbug;
 struct npx_softc			*npx_softc;	/* XXXSMP: per-cpu */
-
-int (*npxdna_func)(struct cpu_info *);
 
 enum npx_type {
 	NPX_NONE = 0,
@@ -144,9 +140,12 @@ void	npx_attach(struct device *, struct device *, void *);
 CFOPS_DECL(npx, npx_probe, npx_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, npx, &npx_cops, DV_DULL, sizeof(struct npx_softc));
 
-int			npxintr(void *);
+static int	npxdna_notset(struct cpu_info *);
+int		npxintr(void *);
 static int	npxdna_xmm(struct cpu_info *);
 static int	npxdna_s87(struct cpu_info *);
+
+int	(*npxdna_func)(struct cpu_info *) = npxdna_notset;
 
 /*
  * Special interrupt handlers.  Someday intr0-intr15 will be used to count
@@ -210,11 +209,13 @@ npxproc(void)
 static __inline void
 fpu_save(struct savefpu *addr)
 {
+#ifdef I686_CPU
 	if (i386_use_fxsave) {
-		fxsave(&addr->sv_xmm);
+		fxsave(&addr->sv_fx);
 		/* FXSAVE doesn't FNINIT like FNSAVE does -- so do it here. */
 		fninit();
 	} else {
+#endif /* I686_CPU */
 		fnsave(&addr->sv_87);
 	}
 }
@@ -249,8 +250,8 @@ npxprobe1(bus_space_tag_t iot, bus_space_handle_t ioh, int irq)
 	disable_intr();
 	save_idt_npxintr = idt[NRSVIDT + irq];
 	save_idt_npxtrap = idt[16];
-	setidt(&idt[irq], probeintr, 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(&idt[16], probetrap, 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(irq, probeintr, 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(16, probetrap, 0, SDT_SYS386TGT, SEL_KPL);
 	save_imen = imen;
 	imen = ~((1 << IRQ_SLAVE) | (1 << irq));
 	outb(IO_ICU1 + 1, imen);
@@ -513,7 +514,7 @@ npxintr(void *arg)
 	 * Restore control word (was clobbered by fpu_save).
 	 */
 	if (i386_use_fxsave) {
-		fldcw(&addr->sv_xmm.sv_env.en_cw);
+		fldcw(&addr->sv_fx.fxv_env.fx_cw);
 		/*
 		 * FNINIT doesn't affect MXCSR or the XMM registers;
 		 * no need to re-load MXCSR here.
@@ -632,10 +633,10 @@ npxdna_xmm(struct cpu_info *ci)
 	splx(s);
 
 	if ((p->p_md.md_flags & MDP_USEDFPU) == 0) {
-		fldcw(&p->p_addr->u_pcb.pcb_savefpu.sv_xmm.sv_env.en_cw);
+		fldcw(&p->p_addr->u_pcb.pcb_savefpu.sv_fx.fxv_env.fx_cw);
 		p->p_md.md_flags |= MDP_USEDFPU;
 	} else {
-		fxrstor(&p->p_addr->u_pcb.pcb_savefpu.sv_xmm);
+		fxrstor(&p->p_addr->u_pcb.pcb_savefpu.sv_fx);
 	}
 
 	return (1);
