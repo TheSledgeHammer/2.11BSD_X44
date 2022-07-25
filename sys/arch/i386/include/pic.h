@@ -116,7 +116,7 @@ struct intrhand {
 struct pcibus_attach_args;
 struct cpu_info;
 
-extern struct lock_object 	*icu_lock;
+extern struct lock_object 	icu_lock;
 extern int 					intr_shared_edge;		/* This system has shared edge interrupts */
 extern struct softpic		*intrspic;
 extern struct intrsource 	*intrsrc[];
