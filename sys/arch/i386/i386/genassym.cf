@@ -205,10 +205,9 @@ define IS_PIC				offsetof(struct intrsource, is_pic)
 define IS_PIN				offsetof(struct intrsource, is_pin)
 define IS_TYPE				offsetof(struct intrsource, is_type)
 define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)
-define SPIC_IOAPIC			offsetof(struct intrsource, is_pic)
 
 if NIOAPIC > 0
-#define SPIC_IOAPIC			offsetof(struct softpic, sp_intsrc->is_pic)
+define SPIC_IOAPIC			 offsetof(struct ioapic_softc, sc_pic)
 define IOAPIC_SC_REG			offsetof(struct ioapic_softc, sc_reg)
 define IOAPIC_SC_DATA			offsetof(struct ioapic_softc, sc_data)
 endif
@@ -236,4 +235,3 @@ define BI_KERNEND			offsetof(struct bootinfo, bi_kernend)
 
 define VM86_FRAMESIZE		sizeof(struct vm86frame)
 define VM86_STACK_SPACE 	VM86_STACK_SPACE
-
