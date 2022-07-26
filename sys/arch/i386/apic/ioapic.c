@@ -338,7 +338,6 @@ ioapic_init_intpins(struct ioapic_softc *sc)
 		softpic->sp_map = NULL;
 		softpic->sp_vector = 0;
 		softpic->sp_type = IST_NONE;
-		sc->sc_pins[i] = softpic;
 	}
 }
 
