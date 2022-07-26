@@ -330,7 +330,7 @@ ioapic_init_intpins(struct ioapic_softc *sc)
 {
 	struct softpic *softpic;
 
-	sc->sc_pins = malloc(sizeof(struct softpic) * sc->sc_apic_sz, M_DEVBUF, M_WAITOK);
+	sc->sc_pins = calloc(sc->sc_apic_sz, sizeof(struct softpic), M_DEVBUF, M_WAITOK);
 
 	int i;
 	for (i = 0, softpic = sc->sc_pins; i < sc->sc_apic_sz; i++, softpic++) {
@@ -338,6 +338,7 @@ ioapic_init_intpins(struct ioapic_softc *sc)
 		softpic->sp_map = NULL;
 		softpic->sp_vector = 0;
 		softpic->sp_type = IST_NONE;
+		sc->sc_pins[i] = softpic;
 	}
 }
 

@@ -49,7 +49,8 @@
 struct hatspl hat_splay = SPLAY_INITIALIZER(hat_splay);
 
 void *
-vm_halloc(vm_hat_t h)
+vm_halloc(h)
+	vm_hat_t h;
 {
 	void *item;
 
@@ -63,7 +64,8 @@ vm_halloc(vm_hat_t h)
 }
 
 void
-vm_hfree(vm_hat_t h)
+vm_hfree(h)
+	vm_hat_t h;
 {
 	void *item;
 	item = vm_hat_lookup(h->vh_name, h->vh_type);
@@ -73,13 +75,16 @@ vm_hfree(vm_hat_t h)
 }
 
 vm_offset_t
-vm_hat_bootstrap_alloc(int type, int nentries, u_long size)
+vm_hat_bootstrap_alloc(type, nentries, size)
+	int type, nentries;
+	u_long size;
 {
 	vm_offset_t		data;
 	vm_size_t		data_size, totsize;
 
 	data_size = (nentries * size);
 	totsize = round_page(data_size);
+
 	switch(type) {
 	case HAT_VM:
 		data = (vm_offset_t)pmap_bootstrap_alloc(totsize);
@@ -91,15 +96,32 @@ vm_hat_bootstrap_alloc(int type, int nentries, u_long size)
 	return (data);
 }
 
+vm_offset_t
+vm_hat_bootstrap(type, nentries, size)
+	int type, nentries;
+	u_long size;
+{
+	vm_offset_t	data;
+
+	data = vm_hat_bootstrap_alloc(type, nentries, size);
+
+	return (data);
+}
+
 void
-vm_hinit(char *name, int type, void *item, int nentries, u_long size)
+vm_hinit(name, type, item, nentries, size)
+	char *name;
+	int type, nentries;
+	void *item;
+	u_long size;
 {
 	vm_hat_t h;
 
 	h = (vm_hat_t)malloc(sizeof(h), M_VMHAT, M_WAITOK);
 
 	vm_hat_lock_init(h);
-	if ((item = (vm_offset_t)vm_hat_bootstrap_alloc(type, nentries, size)) != NULL) {
+	item = (vm_offset_t)vm_hat_bootstrap(type, nentries, size);
+	if (item != NULL) {
 		vm_hat_add(h, name, type, item, size);
 	}
 }
@@ -116,12 +138,19 @@ vm_hinit(char *name, int type, void *item, int nentries, u_long size)
  *	map (they should use their own maps).
  */
 void
-vm_hbootinit(vm_hat_t h, char *name, int type, void *item, int nentries, u_long size)
+vm_hbootinit(h, name, type, item, nentries, size)
+	vm_hat_t h;
+	char *name;
+	int type, nentries;
+	void *item;
+	u_long size;
 {
-	item = (vm_offset_t)vm_hat_bootstrap_alloc(type, nentries, size);
+	item = (vm_offset_t)vm_hat_bootstrap(type, nentries, size);
 
 	vm_hat_lock_init(h);
-	vm_hat_add(h, name, type, item, size);
+	if (item != NULL) {
+		vm_hat_add(h, name, type, item, size);
+	}
 }
 
 int

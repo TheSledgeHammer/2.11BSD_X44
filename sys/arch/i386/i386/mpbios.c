@@ -111,6 +111,7 @@
 #include <sys/malloc.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_kern.h>
 #include <vm/include/vm_param.h>
 #include <vm/include/vm_extern.h>
 
@@ -120,18 +121,22 @@
 #include <machine/cpuvar.h>
 #include <machine/bus.h>
 #include <machine/cpu.h>
+#include <machine/pic.h>
+#include <machine/mpbiosvar.h>
+
 #include <machine/apic/apic.h>
 #include <machine/apic/ioapicreg.h>
 #include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
-#include <machine/mpbiosvar.h>
 
 #include <dev/core/isa/isareg.h>
 
 #ifdef I386_MPBIOS_SUPPORT_EISA
 #include <dev/core/eisa/eisavar.h>	/* for ELCR* def'ns */
 #endif
+
+#include "pci.h"
 
 #if NPCI > 0
 #include <dev/core/pci/pcivar.h>
@@ -164,14 +169,14 @@ struct mp_map {
 	vm_offset_t		sva;	/* start address */
 	vm_offset_t		eva;	/* end address */
 	vm_offset_t 	baseva;	/* address */
-	vm_offset_t 	pa;
+	u_long 			pa;
 	int	 			vsize;
 	int				psize;
 };
 
 int mp_print(void *, const char *);
 int mp_match(struct device *, struct cfdata *, void *);
-static const void *mpbios_search(struct device *, caddr_t, int, struct mp_map *);
+static const void *mpbios_search(struct device *, u_long, int, struct mp_map *);
 static inline int mpbios_cksum(const void *,int);
 
 static void mp_cfg_special_intr(const struct mpbios_int *, u_int32_t *);
@@ -194,7 +199,7 @@ static void mpbios_bus(const u_int8_t *, struct device *);
 static void mpbios_ioapic(const u_int8_t *, struct device *);
 static void mpbios_int(const u_int8_t *, int, struct mp_intr_map *);
 
-static const void *mpbios_map(caddr_t, int, struct mp_map *);
+static const void *mpbios_map(u_long, int, struct mp_map *);
 static void mpbios_unmap(struct mp_map *);
 
 /*
@@ -210,7 +215,8 @@ int mpbios_scanned;
 
 int
 mp_print(aux, pnp)
-	void *aux;const char *pnp;
+	void *aux;
+	const char *pnp;
 {
 	struct cpu_attach_args *caa = (struct cpu_attach_args*) aux;
 	if (pnp)
@@ -232,6 +238,18 @@ mp_match(parent, cf, aux)
 	return (config_match(parent, cf, aux));
 }
 
+struct softpic *
+mpbios_softpic(sc, pin)
+	struct ioapic_softc *sc;
+	u_int32_t pin;
+{
+	struct softpic *spic;
+
+	spic = sc->sc_pins[pin];
+
+	return (spic);
+}
+
 /*
  * Map a chunk of memory read-only and return an appropraitely
  * const'ed pointer.
@@ -239,13 +257,12 @@ mp_match(parent, cf, aux)
 
 static const void *
 mpbios_map(pa, len, handle)
-	caddr_t pa;
+	u_long pa;
 	int len;
 	struct mp_map *handle;
 {
-
-	caddr_t startpa = i386_trunc_page(pa);
-	caddr_t endpa = i386_round_page(pa + len);
+	u_long startpa = i386_trunc_page(pa);
+	u_long endpa = i386_round_page(pa + len);
 	vm_offset_t va = kmem_alloc(kernel_map, endpa - startpa);
 	vm_offset_t retva = va + (pa & PGOFSET);
 
@@ -257,7 +274,7 @@ mpbios_map(pa, len, handle)
 	handle->vsize = endpa - startpa;
 
 	do {
-		pmap_enter(kernel_map, va, startpa, VM_PROT_READ, FALSE);
+		pmap_enter(kernel_pmap, va, startpa, VM_PROT_READ, FALSE);
 		va += PAGE_SIZE;
 		startpa += PAGE_SIZE;
 	} while (startpa < endpa);
@@ -269,7 +286,7 @@ inline static void
 mpbios_unmap(handle)
 	struct mp_map *handle;
 {
-	pmap_remove(kernel_map, handle->sva, handle->eva);
+	pmap_remove(kernel_pmap, handle->sva, handle->eva);
 	kmem_free(kernel_map, handle->baseva, handle->vsize);
 }
 
@@ -280,9 +297,9 @@ int
 mpbios_probe(self)
 	struct device *self;
 {
-	caddr_t ebda, memtop;
+	u_long ebda, memtop;
 
-	caddr_t cthpa;
+	u_long cthpa;
 	int cthlen;
 	const u_int8_t *mpbios_page;
 	int scan_loc;
@@ -411,7 +428,7 @@ mpbios_cksum(start, len)
 const void *
 mpbios_search(self, start, count, map)
 	struct device *self;
-	caddr_t start;
+	u_long start;
 	int count;
 	struct mp_map *map;
 {
@@ -498,7 +515,7 @@ mpbios_scan(self)
 	int count;
 	int type;
 	int intr_cnt, cur_intr;
-	caddr_t lapic_base;
+	u_long lapic_base;
 	const struct mpbios_int *iep;
 	struct mpbios_int ie;
 	struct ioapic_softc *sc;
@@ -527,7 +544,7 @@ mpbios_scan(self)
 #endif
 		lapic_base = LAPIC_BASE;
 		if (mp_cth != NULL)
-			lapic_base = (caddr_t) mp_cth->apic_address;
+			lapic_base = (u_long) mp_cth->apic_address;
 
 		lapic_boot_init(lapic_base);
 #ifdef MPACPI
@@ -605,8 +622,7 @@ mpbios_scan(self)
 
 		mp_busses = malloc(sizeof(struct mp_bus) * mp_nbus, M_DEVBUF, M_NOWAIT);
 		memset(mp_busses, 0, sizeof(struct mp_bus) * mp_nbus);
-		mp_intrs = malloc(sizeof(struct mp_intr_map) * intr_cnt,
-		M_DEVBUF, M_NOWAIT | M_ZERO);
+		mp_intrs = malloc(sizeof(struct mp_intr_map) * intr_cnt, M_DEVBUF, M_NOWAIT | M_ZERO);
 		mp_nintr = intr_cnt;
 
 		/* re-walk the table, recording info of interest */
@@ -639,7 +655,7 @@ mpbios_scan(self)
 				iep = (const struct mpbios_int*) position;
 				ie = *iep;
 				if (iep->dst_apic_id == MPS_ALL_APICS) {
-					for (sc = ioapics; sc != NULL; sc = sc->sc_next) {
+					SIMPLEQ_FOREACH(sc, &ioapics, sc_next) {
 						ie.dst_apic_id = sc->sc_apicid;
 						mpbios_int((char*) &ie, type, &mp_intrs[cur_intr++]);
 					}
@@ -702,15 +718,15 @@ mpbios_cpu(ent, self)
 }
 
 static void
-mpbios_cpus(struct device *self)
+mpbios_cpus(self)
+	struct device *self;
 {
 	struct mpbios_proc pe;
 	/* use default addresses */
 	pe.apic_id = lapic_cpu_number();
 	pe.cpu_flags = PROCENTRY_FLAG_EN | PROCENTRY_FLAG_BP;
-
-	//pe.cpu_signature = CPUID_TO_MODEL();//cpu_info.ci_signature;
-	//pe.feature_flags = (cpu_feature | cpu_feature2 | amd_feature | amd_feature2);
+	pe.cpu_signature = CPUID_TO_MODEL();
+	pe.feature_flags = (cpu_feature | cpu_feature2 | amd_feature | amd_feature2);
 
 	mpbios_cpu((u_int8_t*) &pe, self);
 
@@ -727,7 +743,7 @@ mpbios_cpus(struct device *self)
  * Fill in: trigger mode, polarity, and possibly delivery mode.
  */
 static void
-mp_cfg_special_intr (entry, redir)
+mp_cfg_special_intr(entry, redir)
 	const struct mpbios_int *entry;
 	u_int32_t *redir;
 {
@@ -765,7 +781,7 @@ mp_cfg_special_intr (entry, redir)
 /* XXX too much duplicated code here. */
 
 static void
-mp_cfg_pci_intr (entry, redir)
+mp_cfg_pci_intr(entry, redir)
 	const struct mpbios_int *entry;
 	u_int32_t *redir;
 {
@@ -1006,7 +1022,7 @@ mpbios_ioapic(ent, self)
 	aaa.aaa_name = "ioapic";
 	aaa.apic_id = entry->apic_id;
 	aaa.apic_version = entry->apic_version;
-	aaa.apic_address = (caddr_t) entry->apic_address;
+	aaa.apic_address = (u_long) entry->apic_address;
 	aaa.apic_vecbase = -1;
 	aaa.flags = (mp_fps->mpfb2 & 0x80) ? IOAPIC_PICMODE : IOAPIC_VWIRE;
 
@@ -1028,6 +1044,7 @@ mpbios_int(ent, enttype, mpi)
 {
 	const struct mpbios_int *entry = (const struct mpbios_int *)ent;
 	struct ioapic_softc *sc = NULL, *sc2;
+	struct softpic *spic;
 
 	struct mp_intr_map *altmpi;
 	struct mp_bus *mpb;
@@ -1097,16 +1114,16 @@ mpbios_int(ent, enttype, mpi)
 
 		mpi->ioapic = sc;
 		mpi->ioapic_pin = pin;
-
-		altmpi = sc->sc_pins[pin].sp_map;
+		spic = mpbios_softpic(sc, pin);
+		altmpi = spic->sp_map;
 
 		if (altmpi != NULL) {
 			if ((altmpi->type != type) || (altmpi->flags != flags)) {
 				printf("%s: conflicting map entries for pin %d\n",
-						sc->sc_dev.dv_xname, pin);
+						sc->sc_dev->dv_xname, pin);
 			}
 		} else {
-			sc->sc_pins[pin].sp_map = mpi;
+			spic->sp_map = mpi;
 		}
 	} else {
 		if (pin >= 2)
@@ -1125,7 +1142,7 @@ mpbios_int(ent, enttype, mpi)
 		char buf[256];
 
 		printf("%s: int%d attached to %s",
-				sc ? sc->sc_dev.dv_xname : "local apic", pin, mpb->mb_name);
+				sc ? sc->sc_dev->dv_xname : "local apic", pin, mpb->mb_name);
 
 		if (mpb->mb_idx != -1)
 			printf("%d", mpb->mb_idx);
@@ -1142,8 +1159,9 @@ mpbios_int(ent, enttype, mpi)
 
 #if NPCI > 0
 int
-mpbios_pci_attach_hook(struct device *parent, struct device *self,
-		       struct pcibus_attach_args *pba)
+mpbios_pci_attach_hook(parent, self, pba)
+	struct device *parent, *self;
+	struct pcibus_attach_args *pba;
 {
 	struct mp_bus *mpb;
 
@@ -1169,8 +1187,10 @@ mpbios_pci_attach_hook(struct device *parent, struct device *self,
 }
 
 int
-mpbios_scan_pci(struct device *self, struct pcibus_attach_args *pba,
-	        cfprint_t print)
+mpbios_scan_pci(self, pba, print)
+	struct device *self;
+	struct pcibus_attach_args *pba;
+	cfprint_t print;
 {
 	int i;
 	struct mp_bus *mpb;
@@ -1187,5 +1207,4 @@ mpbios_scan_pci(struct device *self, struct pcibus_attach_args *pba,
 	}
 	return 0;
 }
-
 #endif
