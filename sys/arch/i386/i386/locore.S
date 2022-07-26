@@ -55,12 +55,10 @@
 //#include <sys/reboot.h>
 #include <sys/syscall.h>
 
-#include <machine/pmap.h>
-#include <machine/pte.h>
-#include <machine/trap.h>
-#include <machine/specialreg.h>
-#include <machine/cpu.h>
-#include <machine/cputypes.h>
+
+#include "machine/trap.h"
+
+#include "machine/specialreg.h"
 
 #include <machine/asm.h>
 
@@ -106,9 +104,13 @@
  * Compiled KERNBASE location and the kernel load address, now identical.
  */
 		.globl	kernbase
-		.set	kernbase,KERNBASE
+		.set	kernbase, _C_LABEL(KERNBASE)
 		.globl	kernload
-		.set	kernload,KERNLOAD
+		.set	kernload, _C_LABEL(KERNLOAD)
+
+ 		.globl	_C_LABEL(biosbasemem),_C_LABEL(biosextmem)
+ 		_C_LABEL(biosbasemem):	.long	0			# base memory reported by BIOS
+ 		_C_LABEL(biosextmem):	.long	0			# extended memory reported by BIOS
 		
 /*
  * Globals
@@ -129,16 +131,12 @@ bootinfo:		.space	BOOTINFO_SIZE				/* bootinfo that we can handle */
 
 ENTRY(start)
 		movw	$0x1234,0x472							# warm boot
-		jmp		1f
-		.space	0x500									# skip over warm boot shit
-
-1:		movl	%eax,RELOC(_esym)
-		movl	20(%esp),%eax
-		movl	%eax,RELOC(_biosextmem)
-		movl	24(%esp),%eax
-		movl	%eax,RELOC(_biosbasemem)
-
-		/* First, reset the PSL. */
+/* Set up a real frame in case the double return in newboot is executed. */
+		xorl	%ebp,%ebp
+		pushl	%ebp
+		movl	%esp, %ebp
+		
+/* First, reset the PSL. */
 		pushl	$PSL_MBO
 		popfl
 		
@@ -509,7 +507,7 @@ trycpuid:	/* Use the `cpuid' instruction. */
 		popl	%ebx
 		ret
 		
-ENTRY(proc_trampoline)
+NENTRY(proc_trampoline)
 		pushl	%ebx
 		call	%esi
 		addl	$4,%esp
@@ -519,28 +517,22 @@ ENTRY(proc_trampoline)
 /*
  * Signal trampoline, copied to top of user stack
  */
-
 ENTRY(sigcode)
-		movl	12(%esp),%eax						# unsure if call will dec stack 1st
-		call	%eax
-		xorl	%eax,%eax							# smaller movl $103,%eax
-		movb	$103,%al							# sigreturn()
-		LCALL(0x7,0)								# enter kernel with args on stack
-		hlt											# never gets here
-
-esigcode:
-		.data
-		.globl	szsigcode
-
-szsigcode:
-		.long	szsigcode-sigcode
+		leal	12(%esp),%eax		# get pointer to sigcontext
+		movl	%eax,4(%esp)		# put it in the argument slot
+						# fake return address already there
+		movl	$SYS_sigreturn,%eax
+		int	$0x80	 		# enter kernel with args on stack
+		movl	$SYS_exit,%eax
+		int	$0x80			# exit if sigreturn fails
+		.globl	_C_LABEL(esigcode)
+_C_LABEL(esigcode):
 
 /**********************************************************************/
 /*
  * Trap and fault vector routines
  */
 		.text
-
 IDTVEC(div)
 		ZTRAP(T_DIVIDE)
 IDTVEC(dbg)
@@ -698,5 +690,3 @@ syscall1:
 		jmp		_C_LABEL(Xdoreti)
 
 /**********************************************************************/
-
-//#include "i386/i386/sched.S"
