@@ -77,10 +77,9 @@ int	hz = 			HZ;
 int mshz = 			(1000000L + 60 - 1)/60;
 int	tick = 			1000000 / HZ;
 int	tickadj = 		30000 / (60 * HZ);			/* can adjust 30ms in 60s */
-struct	timezone tz = { TIMEZONE, DST };
+//struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC 		(20 + 16 * MAXUSERS)
 int	maxproc = 		NPROC;
-int nproc = 		maxproc;
 #define	NTEXT 		(80 + NPROC / 8)			/* actually the object cache */
 int	ntext = 		NTEXT;
 #define	NVNODE 		(NPROC + NTEXT + 100)
@@ -110,35 +109,19 @@ char				*buffers;
 
 #define CMAPSIZ		NPROC						/* size of core allocation map */
 #define SMAPSIZ		((9 * NPROC) / 10)			/* size of swap allocation map */
-int cmapsiz = 		CMAPSIZ;
-int smapsiz = 		SMAPSIZ;
 
-struct mapent		_coremap[CMAPSIZ];
+struct mapent	_coremap[CMAPSIZ];
 struct map coremap[1] = {
-		.m_map 		= _coremap,
-		.m_limit 	= &_coremap[CMAPSIZ],
-		.m_name 	= "coremap",
-		.m_types	= M_COREMAP,
-		.m_vmmap[1] = {
-				{ .m_name = "buffer_map",   .m_vmmap = (vm_map_t) &buffer_map },
-				{ .m_name = "exec_map",     .m_vmmap = (vm_map_t) &exec_map },
-				{ .m_name = "kernel_map",   .m_vmmap = (vm_map_t) &kernel_map },
-				{ .m_name = "kmem_map",     .m_vmmap = (vm_map_t) &kmem_map },
-				{ .m_name = "mb_map",       .m_vmmap = (vm_map_t) &mb_map },
-				{ .m_name = "phys_map",     .m_vmmap = (vm_map_t) &phys_map },
-		},
-		/*.m_ovlmap[1] = {
-				{ .m_name = "overlay_map",  .m_ovlmap = (ovl_map_t) &overlay_map },
-				{ .m_name = "omem_map",   	.m_ovlmap = (ovl_map_t) &omem_map },
-		},*/
+		_coremap,
+		&_coremap[CMAPSIZ],
+		"coremap",
+		67
 };
 
-struct mapent	    _swapmap[SMAPSIZ];
+struct mapent	_swapmap[SMAPSIZ];
 struct map swapmap[1] = {
-		.m_map 		= _swapmap,
-		.m_limit 	= &_swapmap[SMAPSIZ],
-		.m_name 	= "swapmap",
-		.m_types	= M_SWAPMAP,
-		.m_vmmap    = NULL,
-//		.m_ovlmap = NULL
+		_swapmap,
+		&_swapmap[SMAPSIZ],
+		"swapmap",
+		68
 };
