@@ -38,20 +38,16 @@
  * $FreeBSD$
  *      @(#)locore.s	8.3 (Berkeley) 9/23/93
  */
-/*
+
 #include "assym.h"
-*/
+
 #include <sys/errno.h>
 #include <sys/reboot.h>
 
 #include <machine/asm.h>
 #include <machine/psl.h>
-#include <machine/pmap.h>
 #include <machine/pte.h>
 #include <machine/trap.h>
-#include <machine/specialreg.h>
-#include <machine/cpu.h>
-#include <machine/cputypes.h>
 
 
 /**********************************************************************/
@@ -69,79 +65,17 @@
 		.comm	_C_LABEL(runrun),4
 
 /*
- * Setrq(p)
- *
- * Call should be made at spl6(), and p->p_stat should be SRUN
- */
-ENTRY(setrq)
-		movl	4(%esp),%eax
-		cmpl	$0,P_BACK(%eax)						# should not be on q already
-		je		set1
-		pushl	$set2
-		call	_C_LABEL(panic)
-set1:
-		movzbl	P_PRIORITY(%eax),%edx
-		shrl	$2,%edx
-		btsl	%edx,_C_LABEL(whichqs)				# set q full bit
-		shll	$3,%edx
-		addl	$_qs,%edx							# locate q hdr
-		movl	%edx,P_FORW(%eax)					# link process on tail of q
-		movl	P_BACK(%edx),%ecx
-		movl	%ecx,P_BACK(%eax)
-		movl	%eax,P_BACK(%edx)
-		movl	%eax,P_FORW(%ecx)
-		ret
-
-set2:	.asciz	"setrq"
-
-/*
- * Remrq(p)
- *
- * Call should be made at spl6().
- */
-ENTRY(remrq)
-		movl	4(%esp),%eax
-		movzbl	P_PRIORITY(%eax),%edx
-		shrl	$2,%edx
-		btrl	%edx,_C_LABEL(whichqs)				# clear full bit, panic if clear already
-		jb		rem1
-		pushl	$rem3
-		call	_C_LABEL(panic)
-rem1:
-		pushl	%edx
-		movl	P_FORW(%eax),%ecx					# unlink process
-		movl	P_BACK(%eax),%edx
-		movl	%edx,P_BACK(%ecx)
-		movl	P_BACK(%eax),%ecx
-		movl	P_FORW(%eax),%edx
-		movl	%edx,P_FORW(%ecx)
-		popl	%edx
-		movl	$_C_LABEL(qs),%ecx
-		shll	$3,%edx
-		addl	%edx,%ecx
-		cmpl	P_FORW(%ecx),%ecx					# q still has something?
-		je		rem2
-		shrl	$3,%edx								# yes, set bit as still full
-		btsl	%edx,_C_LABEL(whichqs)
-rem2:
-		movl	$0,P_BACK(%eax)						# zap reverse link to indicate off list
-		ret
-
-rem3:	.asciz	"remrq"
-sw0:	.asciz	"cpu_switch"
-
-/*
  * When no processes are on the runq, Swtch branches to idle
  * to wait for something to come ready.
  */
 ENTRY(idle)
 		call	_C_LABEL(spl0)
 		cmpl	$0,_C_LABEL(whichqs)
-		jne		sw1
-		hlt		# wait for interrupt
-		jmp		idle
+		jne	sw1
+		hlt						# wait for interrupt
+		jmp	idle
 
-		.align 	4 									/* ..so that profiling doesn't lump Idle with Xswitch().. */
+		.align 	4 					/* ..so that profiling doesn't lump Idle with Xswitch().. */
 badsw:
 		pushl	$sw0
 		call	_C_LABEL(panic)
@@ -160,7 +94,7 @@ ENTRY(cpu_switch)
 
 /* if no process to save, don't bother */
 		cmpl	$0,%ecx
-		je		sw1
+		je	sw1
 
 		movl	P_ADDR(%ecx),%ecx
 
@@ -175,9 +109,9 @@ ENTRY(cpu_switch)
 
 #ifdef NPX
 /* have we used fp, and need a save? */
-		mov		_C_LABEL(curproc),%eax
-		cmp		%eax,_C_LABEL(npxproc)
-		jne		1f
+		mov	_C_LABEL(curproc),%eax
+		cmp	%eax,_C_LABEL(npxproc)
+		jne	1f
 		pushl	%ecx								/* h/w bugs make saving complicated */
 		leal	PCB_SAVEFPU(%ecx),%eax
 		pushl	%eax
@@ -200,7 +134,7 @@ sw1:
 2:
 		cli
 		bsfl	%edi,%eax							# find a full q
-		jz		idle								# if none, idle
+		jz	idle								# if none, idle
 # XX update whichqs?
 swfnd:
 		btrl	%eax,%edi							# clear q full status
@@ -270,26 +204,6 @@ swfnd:
 ENTRY(mvesp)
 		movl	%esp,%eax
 		ret
-
-#ifdef notyet
-/*
- * struct proc *switch_to_inactive(p) ; struct proc *p;
- *
- * At exit of a process, move off the address space of the
- * process and onto a "safe" one. Then, on a temporary stack
- * return and run code that disposes of the old state.
- * Since this code requires a parameter from the "old" stack,
- * pass it back as a return value.
- */
-
-ENTRY(switch_to_inactive)
-		popl	%edx								# old pc
-		popl	%eax								# arg, our return value
-		movl	_IdlePTD,%ecx
-		movl	%ecx,%cr3							# good bye address space
- #write buffer?
-		movl	$tmpstk-4,%esp						# temporary stack, compensated for call
-		jmp		%edx								# return, execute remainder of cleanup
 
 /*
  * savectx(pcb, altreturn)
@@ -368,54 +282,6 @@ ENTRY(savectx)
 		xorl	%eax, %eax						# return 0
 		ret
 
-/*
- * addupc(int pc, struct uprof *up, int ticks):
- * update profiling information for the user process.
- */
-
-ENTRY(addupc)
-		pushl 	%ebp
-		movl 	%esp,%ebp
-		movl 	12(%ebp),%edx					/* up */
-		movl 	8(%ebp),%eax					/* pc */
-
-		subl 	PR_OFF(%edx),%eax				/* pc -= up->pr_off */
-		jl 		L1								/* if (pc < 0) return */
-
-		shrl 	$1,%eax							/* praddr = pc >> 1 */
-		imull	PR_SCALE(%edx),%eax				/* praddr *= up->pr_scale */
-		shrl 	$15,%eax						/* praddr = praddr << 15 */
-		andl 	$-2,%eax						/* praddr &= ~1 */
-
-		cmpl 	PR_SIZE(%edx),%eax				/* if (praddr > up->pr_size) return */
-		ja 		L1
-
-/*		addl 	%eax,%eax						/* praddr -> word offset */
-		addl 	PR_BASE(%edx),%eax				/* praddr += up-> pr_base */
-		movl 	16(%ebp),%ecx					/* ticks */
-
-		movl 	_C_LABEL(curpcb),%edx
-		movl 	$_C_LABEL(proffault),PCB_ONFAULT(%edx)
-		addl 	%ecx,(%eax)						/* storage location += ticks */
-		movl 	$0,PCB_ONFAULT(%edx)
-L1:
-		leave
-		ret
-
-#endif
-
-proffault:
-/* if we get a fault, then kill profiling all together */
-		movl 	$0,PCB_ONFAULT(%edx)			/* squish the fault handler */
- 		movl 	12(%ebp),%ecx
-		movl 	$0,PR_SCALE(%ecx)				/* up->pr_scale = 0 */
-		leave
-		ret
-
-LF:		.asciz "cpu_switch %x"
-
-.text
  # To be done:
-		.globl _astoff
-_astoff:
+ENTRY(astoff)
 		ret
