@@ -37,7 +37,7 @@
 #ifndef _I386_ASM_H_
 #define	_I386_ASM_H_
 
-#include <sys/cdefs.h>
+//#include <sys/cdefs.h>
 
 #define	NOP				\
 	inb 	$0x84, %al;	\
