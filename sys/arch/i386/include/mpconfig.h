@@ -38,23 +38,22 @@ struct mpbios_int;
 struct mp_bus {
 	char 					*mb_name;				/* XXX bus name */
 	int 					mb_idx;					/* XXX bus index */
-	struct mp_intr_map 		*mb_intrs;
+	void 					(*mb_intr_print)(int);
+	void 					(*mb_intr_cfg)(const struct mpbios_int *, u_int32_t *);
+	struct mp_intr_map 			*mb_intrs;
 	u_int32_t 				mb_data;				/* random bus-specific datum. */
 	int 					mb_configured;			/* has been autoconfigured */
 	pcitag_t 				*mb_pci_bridge_tag;
-	pci_chipset_tag_t 		mb_pci_chipset_tag;
-
-	void 					(*mb_intr_print)(int);
-	void 					(*mb_intr_cfg)(const struct mpbios_int *, u_int32_t *);
+	pci_chipset_tag_t 			mb_pci_chipset_tag;
 };
 
 struct mp_intrs_list;
 LIST_HEAD(mp_intrs_list, mp_intr_map);
 struct mp_intr_map {
 	LIST_ENTRY(mp_intr_map) entry;
-	struct mp_intr_map		*next;
-	struct mp_bus 			*bus;
-	struct ioapic_softc 	*ioapic;
+	struct mp_intr_map			*next;
+	struct mp_bus 				*bus;
+	struct ioapic_softc 			*ioapic;
 	int 					bus_pin;
 	int 					ioapic_pin;
 	int 					ioapic_ih;				/* int handle, for apic_intr_est */
