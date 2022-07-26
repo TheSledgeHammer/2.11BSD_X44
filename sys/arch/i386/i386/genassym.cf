@@ -36,15 +36,18 @@
  #	@(#)genassym.c	8.2 (Berkeley) 9/23/93
  #
 
-include <sys/cdefs.h>
+#include <sys/cdefs.h>
 include <sys/param.h>
 include <sys/buf.h>
 include <sys/map.h>
 include <sys/proc.h>
+include <sys/resourcevar.h>
+include <sys/device.h>
+include <sys/user.h>
 include <sys/mbuf.h>
 include <sys/msgbuf.h>
-include <sys/syscall.h>
-include <sys/stddef.h>
+#include <sys/syscall.h>
+#include <sys/stddef.h>
 include <sys/vmmeter.h>
 
 include <vm/include/vm.h>
@@ -55,15 +58,30 @@ include <machine/cpufunc.h>
 include <machine/frame.h>
 include <machine/pcb.h>
 include <machine/pic.h>
-include <machine/psl.h>
-include <machine/reg.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+
 include <machine/trap.h>
-include <machine/tss.h>
-include <machine/signal.h>
+include <machine/pmap.h>
+include <machine/intr.h>
+include <machine/types.h>
 
 include <machine/vmparam.h>
 
+#include <machine/tss.h>
+#include <machine/signal.h>
+
+if defined(_KERNEL)
+include "isa.h"
+include "ioapic.h"
+endif
+
+if NISA > 0
+include <machine/isa/isa_machdep.h>
+endif
+
 if NIOAPIC > 0
+include <machine/apic/ioapicreg.h>
 include <machine/apic/ioapicvar.h>
 endif
 
@@ -92,19 +110,19 @@ define V_SOFT 				offsetof(struct vmrate, v_soft)
 define V_FAULTS 			offsetof(struct vmrate, v_faults)
 
 define KSTACK_PAGES			KSTACK_PAGES
-define PAGE_SIZE			PGSIZE
-define PAGE_MASK			PGOFSET
+#define PAGE_SIZE			PGSIZE
+#define PAGE_MASK			PGOFSET
 
-define UPAGES 				UPAGES
-define HIGHPAGES			HIGHPAGES
+#define UPAGES 				UPAGES
+#define HIGHPAGES			HIGHPAGES
 define CLSIZE 				CLSIZE
 define PGSHIFT 				PGSHIFT
-define SYSPTSIZE 			SYSPTSIZE
-define USRPTSIZE 			USRPTSIZE
+#define SYSPTSIZE 			SYSPTSIZE
+#define USRPTSIZE 			USRPTSIZE
 define USRIOSIZE 			USRIOSIZE
 
-define USRSTACK 			USRSTACK
-define MSGBUFPTECNT 		btoc(sizeof (struct msgbuf))
+#define USRSTACK 			USRSTACK
+define MSGBUFPTECNT 			btoc(sizeof (struct msgbuf))
 define NMBCLUSTERS 			NMBCLUSTERS
 define MCLBYTES 			MCLBYTES
 
@@ -146,7 +164,7 @@ define PCB_IML 				offsetof(struct pcb, pcb_iml)
 define PCB_ONFAULT 			offsetof(struct pcb, pcb_onfault)
 define PCB_VM86				offsetof(struct pcb, pcb_vm86)
 define PCB_SIZE				sizeof(struct pcb)
-define PCB_VM86CALL			PCB_VM86CALL
+#define PCB_VM86CALL			PCB_VM86CALL
 
 define U_PROF 				offsetof(struct user, u_stats.p_prof)
 define U_PROFSCALE 			offsetof(struct user, u_stats.p_prof.pr_scale)
@@ -175,7 +193,7 @@ define SC_EFLAGS			offsetof(struct sigcontext, sc_eflags)
 define B_READ  				B_READ
 define ENOENT  				ENOENT
 define EFAULT  				EFAULT
-define ENAMETOOLONG 		ENAMETOOLONG
+define ENAMETOOLONG 			ENAMETOOLONG
 
 define IH_FUN				offsetof(struct intrhand, ih_fun)
 define IH_ARG				offsetof(struct intrhand, ih_arg)
@@ -187,17 +205,18 @@ define IS_PIC				offsetof(struct intrsource, is_pic)
 define IS_PIN				offsetof(struct intrsource, is_pin)
 define IS_TYPE				offsetof(struct intrsource, is_type)
 define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)
+define SPIC_IOAPIC			offsetof(struct intrsource, is_pic)
 
 if NIOAPIC > 0
-define SPIC_IOAPIC			offsetof(struct softpic, sp_intsrc.is_pic)
-define IOAPIC_SC_REG		offsetof(struct ioapic_softc, sc_reg)
-define IOAPIC_SC_DATA		offsetof(struct ioapic_softc, sc_data)
+#define SPIC_IOAPIC			offsetof(struct softpic, sp_intsrc->is_pic)
+define IOAPIC_SC_REG			offsetof(struct ioapic_softc, sc_reg)
+define IOAPIC_SC_DATA			offsetof(struct ioapic_softc, sc_data)
 endif
 
 define IPL_NONE				IPL_NONE
-define IPL_SOFTCLOCK		IPL_SOFTCLOCK
+define IPL_SOFTCLOCK			IPL_SOFTCLOCK
 define IPL_SOFTNET			IPL_SOFTNET
-define IPL_SOFTSERIAL		IPL_SOFTSERIAL
+define IPL_SOFTSERIAL			IPL_SOFTSERIAL
 define IPL_CLOCK			IPL_CLOCK
 define IPL_HIGH				IPL_HIGH
 define IPL_IPI				IPL_IPI
@@ -205,9 +224,9 @@ define IPL_IPI				IPL_IPI
 define LIR_IPI				LIR_IPI
 define LIR_TIMER			LIR_TIMER
 
-define BOOTINFO_SIZE		sizeof(struct bootinfo)
+define BOOTINFO_SIZE			sizeof(struct bootinfo)
 define BI_VERSION			offsetof(struct bootinfo, bi_version)
-define BI_KERNELNAME		offsetof(struct bootinfo, bi_kernelname)
+define BI_KERNELNAME			offsetof(struct bootinfo, bi_kernelname)
 define BI_ENDCOMMON			offsetof(struct bootinfo, bi_endcommon)
 define BI_SIZE				offsetof(struct bootinfo, bi_size)
 define BI_SYMTAB			offsetof(struct bootinfo, bi_symtab)

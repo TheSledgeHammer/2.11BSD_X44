@@ -38,7 +38,9 @@
  * $FreeBSD$
  *      @(#)locore.s	8.3 (Berkeley) 9/23/93
  */
-
+/*
+#include "assym.h"
+*/
 #include <sys/errno.h>
 #include <sys/reboot.h>
 
@@ -51,7 +53,6 @@
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
 
-#include "assym.h"
 
 /**********************************************************************/
 /* Scheduling */
@@ -270,6 +271,7 @@ ENTRY(mvesp)
 		movl	%esp,%eax
 		ret
 
+#ifdef notyet
 /*
  * struct proc *switch_to_inactive(p) ; struct proc *p;
  *
@@ -399,6 +401,8 @@ ENTRY(addupc)
 L1:
 		leave
 		ret
+
+#endif
 
 proffault:
 /* if we get a fault, then kill profiling all together */

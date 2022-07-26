@@ -245,7 +245,7 @@ mpbios_softpic(sc, pin)
 {
 	struct softpic *spic;
 
-	spic = sc->sc_pins[pin];
+	spic = &sc->sc_pins[pin];
 
 	return (spic);
 }
@@ -674,7 +674,7 @@ mpbios_scan(self)
 				return;
 			}
 
-			(u_char*) position += mp_conf[type].length;
+			position += mp_conf[type].length;
 		}
 		if (mp_verbose && mp_cth->ext_len)
 			printf(
@@ -725,7 +725,7 @@ mpbios_cpus(self)
 	/* use default addresses */
 	pe.apic_id = lapic_cpu_number();
 	pe.cpu_flags = PROCENTRY_FLAG_EN | PROCENTRY_FLAG_BP;
-	pe.cpu_signature = CPUID_TO_MODEL();
+//	pe.cpu_signature = CPUID_TO_MODEL();
 	pe.feature_flags = (cpu_feature | cpu_feature2 | amd_feature | amd_feature2);
 
 	mpbios_cpu((u_int8_t*) &pe, self);

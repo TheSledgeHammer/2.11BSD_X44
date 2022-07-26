@@ -45,11 +45,16 @@
  *		Written by William F. Jolitz, 386BSD Project
  */
 
-#include <sys/errno.h>
-#include <sys/reboot.h>
+#include "npx.h"
+#include "assym.h"
+#include "lapic.h"
+#include "ioapic.h"
+#include "ksyms.h"
 
-#include <machine/asm.h>
-#include <machine/psl.h>
+#include <sys/errno.h>
+//#include <sys/reboot.h>
+#include <sys/syscall.h>
+
 #include <machine/pmap.h>
 #include <machine/pte.h>
 #include <machine/trap.h>
@@ -57,7 +62,7 @@
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
 
-#include "assym.h"
+#include <machine/asm.h>
 
 /**********************************************************************/
 /* Some Handy Macros */
@@ -435,7 +440,7 @@ try486:	/* Try to toggle identification flag; does not exist on early 486s. */
 		popfl
 
 		testl	%eax,%eax
-		jnz		trycpuid
+		jnz	trycpuid
 		movl	$CPU_486,_C_LABEL(cpu)
 
 		/*
@@ -693,3 +698,5 @@ syscall1:
 		jmp		_C_LABEL(Xdoreti)
 
 /**********************************************************************/
+
+//#include "i386/i386/sched.S"
