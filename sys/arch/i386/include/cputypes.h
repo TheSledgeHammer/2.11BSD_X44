@@ -96,9 +96,9 @@
 #define CPU_MINFAMILY		4	/* Lowest that cpuid can return (486) */
 #define CPU_MAXFAMILY		6	/* Highest we know (686) */
 
-#ifndef LOCORE
+#ifndef _LOCORE
 extern int					cpu;
 extern int					cpu_class;
-#endif
+#endif /* !_LOCORE */
 
 #endif /* !_I386_CPUTYPES_H_ */

@@ -37,7 +37,7 @@
 #ifndef _I386_ASM_H_
 #define	_I386_ASM_H_
 
-#define	NOP				\
+#define	NOP			\
 	inb 	$0x84, %al;	\
 	inb 	$0x84, %al
 
@@ -48,8 +48,42 @@
 
 #define	LCALL(x,y)		\
 	.byte 	0x9a;		\
-	.long 	y; 			\
+	.long 	y;		\
 	.word 	x
+
+#define	INTRENTRY 		\
+	pushl	%eax		; \
+	pushl	%ecx		; \
+	pushl	%edx		; \
+	pushl	%ebx		; \
+	movl	$GSEL(GDATA_SEL, SEL_KPL),%eax	; \
+	pushl	%ebp		; \
+	pushl	%esi		; \
+	pushl	%edi		; \
+	pushl	%ds		; \
+	pushl	%es		; \
+	movw	%ax,%ds		; \
+	movw	%ax,%es		; \
+	pushl	%fs		; \
+	pushl	%gs		; \
+	movw	%ax,%fs		; \
+	movw	%ax,%gs		; \
+
+#define	INTRFASTEXIT 		\
+	popl	%gs		; \
+	popl	%fs		; \
+	popl	%es		; \
+	popl	%ds		; \
+	popl	%edi		; \
+	popl	%esi		; \
+	popl	%ebp		; \
+	popl	%ebx		; \
+	popl	%edx		; \
+	popl	%ecx		; \
+	popl	%eax		; \
+	addl	$8,%esp		; \
+	iret
+
 
 #ifdef PIC
 #define	PIC_PROLOGUE								\

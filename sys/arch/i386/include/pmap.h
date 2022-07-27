@@ -171,7 +171,7 @@ typedef uint64_t 			pt_entry_t;
 #define	ptetoav(pt)	 		(i386_ptob(pt - APTmap))
 #define	avtophys(va)  		(i386_ptob(avtopte(va)) | ((int)(va) & PGOFSET))
 
-#ifndef LOCORE
+#ifndef _LOCORE
 #include <sys/queue.h>
 
 /*
@@ -293,5 +293,5 @@ void        pmap_changebit(vm_offset_t, int, bool_t);
 void        *pmap_bios16_enter(void);
 void        pmap_bios16_leave(void *);
 #endif	/* KERNEL */
-#endif 	/* !LOCORE */
+#endif 	/* !_LOCORE */
 #endif 	/* _I386_PMAP_H_ */

@@ -58,9 +58,10 @@
 #define	LSEL(s,r)	(((s)<<3) | SEL_LDT | r)/* a local selector */
 #define	GSEL(s,r)	(((s)<<3) | r)			/* a global selector */
 
-
 #define	USERMODE(c, f)	(ISPL(c) == SEL_UPL)
 #define	KERNELMODE(c, f)(ISPL(c) == SEL_KPL)
+
+#ifndef _LOCORE
 
 /*
  * Memory and System segment descriptors
@@ -99,6 +100,8 @@ union descriptor	{
 	struct	segment_descriptor 	sd;
 	struct	gate_descriptor 	gd;
 };
+
+#endif /* !_LOCORE */
 
 /* system segments and gate types */
 #define	SDT_SYSNULL	 	 0	/* system null */
@@ -157,6 +160,7 @@ union descriptor	{
 /* is system segment descriptor pointer ? */
 #define ISSYSSDP(s)	(!ISMEMSDP(s) && !ISGDP(s))
 
+#ifndef _LOCORE
 /*
  * Software definitions are in this convenient format,
  * which are translated into inconvenient segment descriptors
@@ -182,6 +186,7 @@ struct region_descriptor {
 	unsigned rd_limit:16 ;		/* segment extent */
 	unsigned rd_base:32;		/* base address  */
 };
+#endif /* !_LOCORE */
 
 /* global descriptor table */
 #define	GNULL_SEL		0	/* Null Descriptor */
@@ -258,8 +263,8 @@ struct region_descriptor {
 #define	IDT_IO_INTS		NRSVIDT	/* Base of IDT entries for I/O interrupts. */
 #define	IDT_SYSCALL		0x80	/* System Call Interrupt Vector */
 
+#ifndef _LOCORE
 #ifdef _KERNEL
-
 extern union descriptor 		gdt[NGDT];
 extern struct gate_descriptor 		idt[NIDT];
 extern union descriptor 		ldt[NLDT];
@@ -269,5 +274,6 @@ extern struct soft_segment_descriptor *ldt_segs;
 void 	ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
 void 	sdtossd(struct segment_descriptor *sd, struct soft_segment_descriptor *ssd) ;	/* to encode a sd */
 void	lgdt(struct region_descriptor *rdp);
-#endif
+#endif	/* !_KERNEL */
+#endif /* !_LOCORE */
 #endif /* _I386_SEGMENTS_H_ */

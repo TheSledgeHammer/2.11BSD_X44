@@ -80,9 +80,9 @@
 #define	ILL_FPOP_FAULT		T_FPOPFLT	/* coprocessor operand fault */
 
 /* codes for SIGFPE/ARITHTRAP */
-#ifdef LOCORE
+#ifndef _LOCORE
 #include <sys/fperr.h>
-#endif
+#endif /* !_LOCORE */
 
 /* codes for SIGBUS */
 #define	BUS_PAGE_FAULT		T_PAGEFLT	/* page fault protection base */
