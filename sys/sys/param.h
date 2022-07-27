@@ -40,7 +40,7 @@
 #define	NULL	0
 #endif
 
-#ifndef LOCORE
+#ifndef _LOCORE
 #include <sys/types.h>
 #endif
 #include <sys/ansi.h>
