@@ -49,7 +49,6 @@
 #include <machine/pte.h>
 #include <machine/trap.h>
 
-
 /**********************************************************************/
 /* Scheduling */
 /*
@@ -71,9 +70,9 @@
 ENTRY(idle)
 		call	_C_LABEL(spl0)
 		cmpl	$0,_C_LABEL(whichqs)
-		jne	sw1
+		jne		sw1
 		hlt						# wait for interrupt
-		jmp	idle
+		jmp		idle
 
 		.align 	4 					/* ..so that profiling doesn't lump Idle with Xswitch().. */
 badsw:
@@ -94,7 +93,7 @@ ENTRY(cpu_switch)
 
 /* if no process to save, don't bother */
 		cmpl	$0,%ecx
-		je	sw1
+		je		sw1
 
 		movl	P_ADDR(%ecx),%ecx
 
@@ -109,9 +108,9 @@ ENTRY(cpu_switch)
 
 #ifdef NPX
 /* have we used fp, and need a save? */
-		mov	_C_LABEL(curproc),%eax
-		cmp	%eax,_C_LABEL(npxproc)
-		jne	1f
+		mov		_C_LABEL(curproc),%eax
+		cmp		%eax,_C_LABEL(npxproc)
+		jne		1f
 		pushl	%ecx								/* h/w bugs make saving complicated */
 		leal	PCB_SAVEFPU(%ecx),%eax
 		pushl	%eax
@@ -134,7 +133,7 @@ sw1:
 2:
 		cli
 		bsfl	%edi,%eax							# find a full q
-		jz	idle								# if none, idle
+		jz		idle								# if none, idle
 # XX update whichqs?
 swfnd:
 		btrl	%eax,%edi							# clear q full status
@@ -204,6 +203,12 @@ swfnd:
 ENTRY(mvesp)
 		movl	%esp,%eax
 		ret
+
+ENTRY(proc_trampoline)
+		pushl	%ebx
+		call	%esi
+		addl	$4,%esp
+		INTRFASTEXIT
 
 /*
  * savectx(pcb, altreturn)

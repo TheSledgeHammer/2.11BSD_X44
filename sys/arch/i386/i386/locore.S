@@ -55,9 +55,7 @@
 //#include <sys/reboot.h>
 #include <sys/syscall.h>
 
-
 #include "machine/trap.h"
-
 #include "machine/specialreg.h"
 
 #include <machine/asm.h>
@@ -177,7 +175,7 @@ ENTRY(start)
  		movl	$tmpstk,%esp
 
 		call	identify_cpu
-		call	pmap_cold
+		call	_C_LABEL(pmap_cold)
 		
 		/* set up bootstrap stack */
 		movl	_C_LABEL(proc0kstack),%eax			/* location of in-kernel stack */
@@ -191,7 +189,7 @@ ENTRY(start)
 		xorl	%ebp,%ebp							/* mark end of frames */
 
 		pushl	physfree							/* value of first for init386(first) */
-		call	init386								/* wire 386 chip for unix operation */
+		call	_C_LABEL(init386)					/* wire 386 chip for unix operation */
 		
 		/*
 		 * Clean up the stack in a way that db_numargs() understands, so
@@ -203,29 +201,8 @@ ENTRY(start)
 		/* Switch to true top of stack. */
 		movl	%eax,%esp
 		
-
-		call 	main								/* autoconfiguration, mountroot etc */
-		
-		.globl	__ucodesel,__udatasel
-		movzwl	__ucodesel,%eax
-		movzwl	__udatasel,%ecx
-		
-		# build outer stack frame
-		pushl	%ecx								# user ss
-		pushl	$ USRSTACK							# user esp
-		pushl	%eax								# user cs
-		pushl	$0									# user ip
-		movw	%cx,%ds
-		movw	%cx,%es
-		movw	%ax,%fs								# double map cs to fs
-		movw	%cx,%gs								# and ds to gs
-		lret										# goto user!
-
-		pushl	$lretmsg1							/* "should never get here!" */
-		call	_C_LABEL(panic)
-lretmsg1:
-		.asciz	"lret: toinit\n"
-
+		call 	_C_LABEL(main)						/* autoconfiguration, mountroot etc */
+		addl	$0,%esp								/* for db_numargs() again */
 		
 /**********************************************************************/
 /* Recover the Bootinfo */
@@ -506,12 +483,6 @@ trycpuid:	/* Use the `cpuid' instruction. */
 3:
 		popl	%ebx
 		ret
-		
-NENTRY(proc_trampoline)
-		pushl	%ebx
-		call	%esi
-		addl	$4,%esp
-		INTRFASTEXIT
 
 /**********************************************************************/
 /*
@@ -520,11 +491,11 @@ NENTRY(proc_trampoline)
 ENTRY(sigcode)
 		leal	12(%esp),%eax		# get pointer to sigcontext
 		movl	%eax,4(%esp)		# put it in the argument slot
-						# fake return address already there
+									# fake return address already there
 		movl	$SYS_sigreturn,%eax
-		int	$0x80	 		# enter kernel with args on stack
+		int		$0x80	 			# enter kernel with args on stack
 		movl	$SYS_exit,%eax
-		int	$0x80			# exit if sigreturn fails
+		int		$0x80				# exit if sigreturn fails
 		.globl	_C_LABEL(esigcode)
 _C_LABEL(esigcode):
 
@@ -592,22 +563,6 @@ IDTVEC(fpu)
 #endif
 IDTVEC(align)
 		ZTRAP(T_ALIGNFLT)
-
-#ifdef __i386__
-/* IBM Blue Lightning CPU IDT's */
-IDTVEC(bluetrap6)
-		ss
-		movl   $0xa8c1d, _C_LABEL(trap_by_rdmsr)
-		addl   $2, (%esp)
-		iret
-		
-IDTVEC(bluetrap6)
-		ss
-		movl   $0xa89c4, _C_LABEL(trap_by_rdmsr)
-		popl   %eax
-		addl   $2, (%esp)
-		iret
-#endif
 
 /* 18 - 31 reserved for future exp */
 IDTVEC(rsvd)	/* rvsd 18 */

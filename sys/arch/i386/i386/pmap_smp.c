@@ -56,7 +56,10 @@
 #include <machine/pmap.h>
 #include <machine/pmap_tlb.h>
 
-volatile int 		smp_tlb_wait;
+/* Variables needed for SMP tlb shootdown. */
+volatile int smp_tlb_wait;
+vm_offset_t smp_tlb_addr1, smp_tlb_addr2;
+pmap_t smp_tlb_pmap;
 
 static __inline u_int32_t
 popcnt(m)
@@ -106,14 +109,15 @@ smp_targeted_tlb_shootdown(mask, vector, pmap, addr1, addr2)
 		panic("absolutely cannot call smp_targeted_ipi_shootdown with interrupts already disabled");
 	}
 
+	smp_tlb_addr1 = addr1;
+	smp_tlb_addr2 = addr2;
+	smp_tlb_pmap = pmap;
 	atomic_store_relaxed(&smp_tlb_wait, 0);
-
 	if (mask == (u_int)-1) {
 		i386_broadcast_ipi(vector);
 	} else {
 		i386_multicast_ipi(mask, vector);
 	}
-
 	while (smp_tlb_wait < ncpu) {
 		ncpu--;
 		pmap_tlb_shootdown(pmap, addr1, pte, (int32_t *)&mask);
@@ -291,3 +295,37 @@ pmap_invalidate_all(pmap)
 	}
 }
 #endif /* !SMP */
+
+/*
+ * Handlers for TLB related IPIs
+ */
+void
+invltlb_handler(void)
+{
+	if (smp_tlb_pmap == kernel_pmap) {
+		invltlb();
+	}
+}
+
+void
+invlpg_handler(void)
+{
+	if (smp_tlb_pmap == kernel_pmap) {
+		invlpg(smp_tlb_addr1);
+	}
+}
+
+void
+invlrng_handler(void)
+{
+	vm_offset_t addr, addr2;
+
+	addr = smp_tlb_addr1;
+	addr2 = smp_tlb_addr2;
+	if (smp_tlb_pmap == kernel_pmap) {
+		do {
+			invlpg(addr);
+			addr += PAGE_SIZE;
+		} while (addr < addr2);
+	}
+}

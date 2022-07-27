@@ -105,7 +105,7 @@ IDTVEC(lapic_intr_tlb)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
-		call	invltlb
+		call	_C_LABEL(invltlb_handler)
 		movl	_C_LABEL_(local_apic_va),%eax
 		movl	$0,LAPIC_EOI(%eax)
 		INTRFASTEXIT
@@ -114,13 +114,12 @@ IDTVEC(x2apic_intr_tlb)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
-		call	invltlb
+		call	_C_LABEL(invltlb_handler)
 		movl	$(MSR_X2APIC_BASE + MSR_X2APIC_EOI),%ecx
 		xorl	%eax,%eax
 		xorl	%edx,%edx
 		wrmsr
 		INTRFASTEXIT
-
 #endif /* SMP */
 
 /* Interrupt from the local APIC timer. */

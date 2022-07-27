@@ -37,8 +37,6 @@
 #ifndef _I386_ASM_H_
 #define	_I386_ASM_H_
 
-//#include <sys/cdefs.h>
-
 #define	NOP				\
 	inb 	$0x84, %al;	\
 	inb 	$0x84, %al
@@ -170,7 +168,6 @@
 #define ALIGN_TEXT		.align	4	/* 16-byte boundaries */
 #define SUPERALIGN_TEXT	.align	4	/* 16-byte boundaries */
 #endif /* __ELF__ */
-
-#define _ALIGN_TEXT ALIGN_TEXT
+#define _ALIGN_TEXT 	ALIGN_TEXT
 #endif /* _KERNEL */
 #endif /* _I386_ASM_H_ */

@@ -56,7 +56,6 @@
 #include <sys/ioctl.h>
 #include <sys/vmmeter.h>
 
-//#include <machine/asm.h>
 #include <machine/cpu.h>
 #include <machine/intr.h>
 #include <machine/npx.h>
