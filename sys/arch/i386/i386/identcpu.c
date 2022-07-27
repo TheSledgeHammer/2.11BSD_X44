@@ -1123,10 +1123,10 @@ static	volatile u_int trap_by_rdmsr;
 void bluetrap6(void);
 __asm(
 		".text\n\t"
-		"ALIGN_TEXT, 0x90\n\t"
+		".align 2, 0x90\n\t"
 		".type bluetrap6, @function; bluetrap6:\n\t"
 		"ss\n\t"
-		"movl	$0xa8c1d, _C_LABEL(trap_by_rdmsr)\n\t"
+		"movl	$0xa8c1d, trap_by_rdmsr\n\t"
 		"addl	$2,(%esp)	#rdmsr is a 2-byte instruction\n\t"
 		"iret\n\t"
 );
@@ -1134,10 +1134,10 @@ __asm(
 void bluetrap13(void);
 __asm(
 		".text\n\t"
-		"ALIGN_TEXT, 0x90\n\t"
+		".align 2, 0x90\n\t"
 		".type bluetrap13, @function; bluetrap13:\n\t"
 		"ss\n\t"
-		"movl	$0xa89c4, _C_LABEL(trap_by_rdmsr)\n\t"
+		"movl	$0xa89c4, trap_by_rdmsr\n\t"
 		"popl	%eax 		#discard error code\n\t"
 		"addl	$2,(%esp)	#rdmsr is a 2-byte instruction\n\t"
 		"iret\n\t"

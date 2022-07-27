@@ -112,6 +112,7 @@ void init386_bootinfo(struct bootinfo *);
 int	bootinfo_check(struct bootinfo *);
 void cpu_reset(void);
 void cpu_halt(void);
+void identify_cpu(void);
 
 void (*delay_func)(int) = i8254_delay;
 void (*microtime_func)(struct timeval *) = i386_microtime;
@@ -1400,6 +1401,7 @@ init386_bootinfo(boot)
 			init_static_kenv(NULL, 0);
 		}
 	}
+	identify_cpu();
 }
 
 int

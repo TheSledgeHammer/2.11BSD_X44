@@ -55,6 +55,7 @@
 //#include <sys/reboot.h>
 #include <sys/syscall.h>
 
+#include "machine/segments.h"
 #include "machine/trap.h"
 #include "machine/specialreg.h"
 
@@ -63,38 +64,11 @@
 /**********************************************************************/
 /* Some Handy Macros */
 
-#define	_RELOC(x)		((x) - KERNBASE)
-#define	RELOC(x)		_RELOC(_C_LABEL(x))
+#define	_RELOC(x)	((x) - KERNBASE)
+#define	RELOC(x)	_RELOC(_C_LABEL(x))
 
-#define	TRAP(a)			pushl $(a) ; jmp alltraps
-#define	ZTRAP(a)		pushl $0 ; TRAP(a)
-
-#define	INTRENTRY 				  \
-		pushl	%eax			; \
-		pushl	%ecx			; \
-		pushl	%edx			; \
-		pushl	%ebx			; \
-		pushl	%ebp			; \
-		pushl	%esi			; \
-		pushl	%edi			; \
-		pushl	%ds				; \
-		pushl	%es				; \
-		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax	; \
-		movl	%ax,%ds			; \
-		movl	%ax,%es
-
-#define	INTRFASTEXIT 			  \
-		popl	%es				; \
-		popl	%ds				; \
-		popl	%edi			; \
-		popl	%esi			; \
-		popl	%ebp			; \
-		popl	%ebx			; \
-		popl	%edx			; \
-		popl	%ecx			; \
-		popl	%eax			; \
-		addl	$8,%esp			; \
-		iret
+#define	TRAP(a)		pushl $(a) ; jmp alltraps
+#define	ZTRAP(a)	pushl $0 ; TRAP(a)
 
 /**********************************************************************/
 
@@ -105,30 +79,34 @@
 		.set	kernbase, _C_LABEL(KERNBASE)
 		.globl	kernload
 		.set	kernload, _C_LABEL(KERNLOAD)
-
- 		.globl	_C_LABEL(biosbasemem),_C_LABEL(biosextmem)
- 		_C_LABEL(biosbasemem):	.long	0			# base memory reported by BIOS
- 		_C_LABEL(biosextmem):	.long	0			# extended memory reported by BIOS
 		
 /*
  * Globals
  */
  		.data
  		ALIGN_DATA
+ 		.globl	_C_LABEL(esym)
+ 		.globl	_C_LABEL(biosbasemem),_C_LABEL(biosextmem)
+ 		
+_C_LABEL(esym):		.long	0	# ptr to end of syms	
+_C_LABEL(biosbasemem):	.long	0	# base memory reported by BIOS
+_C_LABEL(biosextmem):	.long	0	# extended memory reported by BIOS
+
  		.globl	tmpstk
-				.space	0x2000						/* space for tmpstk - temporary stack */
+		.space	0x2000						/* space for tmpstk - temporary stack */
 tmpstk:	
 
 		.globl	bootinfo
-bootinfo:		.space	BOOTINFO_SIZE				/* bootinfo that we can handle */
+bootinfo:	.space	BOOTINFO_SIZE				/* bootinfo that we can handle */
 		
 		.text
-		
+			
 /**********************************************************************/
 /* Initialization */
 
 ENTRY(start)
 		movw	$0x1234,0x472							# warm boot
+		
 /* Set up a real frame in case the double return in newboot is executed. */
 		xorl	%ebp,%ebp
 		pushl	%ebp
@@ -142,9 +120,9 @@ ENTRY(start)
  * Don't trust what the BIOS gives for %fs and %gs.  Trust the bootstrap
  * to set %cs, %ds, %es and %ss.
  */
-		mov		%ds, %ax
-		mov		%ax, %fs
-		mov		%ax, %gs
+		mov	%ds, %ax
+		mov	%ax, %fs
+		mov	%ax, %gs
 		
 		/*
  * Clear the bss.  Not all boot programs do it, and it is our job anyway.
@@ -203,6 +181,26 @@ ENTRY(start)
 		
 		call 	_C_LABEL(main)						/* autoconfiguration, mountroot etc */
 		addl	$0,%esp								/* for db_numargs() again */
+		
+		.globl	__ucodesel,__udatasel
+		movzwl	__ucodesel,%eax
+		movzwl	__udatasel,%ecx
+		
+		# build outer stack frame
+		pushl	%ecx								# user ss
+		pushl	$USRSTACK							# user esp
+		pushl	%eax								# user cs
+		pushl	$0									# user ip
+		movw	%cx,%ds
+		movw	%cx,%es
+		movw	%ax,%fs								# double map cs to fs
+		movw	%cx,%gs								# and ds to gs
+		lret										# goto user!
+
+		pushl	$lretmsg1							/* "should never get here!" */
+		call	_C_LABEL(panic)
+lretmsg1:
+		.asciz	"lret: toinit\n"
 		
 /**********************************************************************/
 /* Recover the Bootinfo */
@@ -358,7 +356,7 @@ olddiskboot:
 /**********************************************************************/
 /* Identify CPU's */
 
-ENTRY(identify_cpu)
+identify_cpu:
 
 		pushl	%ebx
 
@@ -366,7 +364,7 @@ ENTRY(identify_cpu)
 		pushfl
 		popl	%eax
 		movl	%eax,%ecx
-		orl		$PSL_AC,%eax
+		orl	$PSL_AC,%eax
 		pushl	%eax
 		popfl
 		pushfl
@@ -377,7 +375,7 @@ ENTRY(identify_cpu)
 		popfl
 
 		testl	%eax,%eax
-		jnz		try486
+		jnz	try486
 
 		/* NexGen CPU does not have aligment check flag. */
 		pushfl
@@ -488,16 +486,21 @@ trycpuid:	/* Use the `cpuid' instruction. */
 /*
  * Signal trampoline, copied to top of user stack
  */
-ENTRY(sigcode)
+sigcode:
 		leal	12(%esp),%eax		# get pointer to sigcontext
 		movl	%eax,4(%esp)		# put it in the argument slot
 									# fake return address already there
 		movl	$SYS_sigreturn,%eax
-		int		$0x80	 			# enter kernel with args on stack
+		int	$0x80	 			# enter kernel with args on stack
 		movl	$SYS_exit,%eax
-		int		$0x80				# exit if sigreturn fails
-		.globl	_C_LABEL(esigcode)
-_C_LABEL(esigcode):
+		int	$0x80				# exit if sigreturn fails
+		
+		ALIGN_TEXT
+esigcode:
+		.data
+		.globl	szsigcode
+szsigcode:
+		.long	esigcode-sigcode
 
 /**********************************************************************/
 /*
@@ -568,7 +571,7 @@ IDTVEC(align)
 IDTVEC(rsvd)	/* rvsd 18 */
 		ZTRAP(T_RESERVED)
 
-ENTRY(alltraps)
+alltraps:
 		pushal
 		nop
 		push 	%ds
@@ -595,12 +598,8 @@ IDTVEC(osyscall)
 		/* Set eflags in trap frame. */
 		pushfl
 		popl	8(%esp)
-		/* Turn off trace flag and nested task. */
-		pushfl
-		andb	$~((PSL_T|PSL_NT)>>8),1(%esp)
-		popfl
-		pushl	$7									/* size of instruction for restart	*/
-		jmp		syscall1
+		pushl	$7		# size of instruction for restart
+		jmp	syscall1
 
 /*
  * Call gate entry for syscall
@@ -609,39 +608,37 @@ IDTVEC(osyscall)
 IDTVEC(syscall)
 		pushl	$2									/* size of instruction for restart */
 syscall1:
-		pushfl										/* only for stupid carry bit and more stupid wait3 cc kludge */
-		pushal										/* only need eax,ecx,edx - trap resaves others */
-		nop
-		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax		/* switch to kernel segments */
-		movl	%ax,%ds
-		movl	%ax,%es
-		incl	_C_LABEL(cnt)+V_SYSCALL  			/* kml 3/25/93 */
+		pushl	$T_ASTFLT	# trap # for doing ASTs
+		INTRENTRY
+#ifdef DIAGNOSTIC
+		movl	_C_LABEL(cpl),%ebx
+#endif /* DIAGNOSTIC */
 		call	_C_LABEL(syscall)
-/*
- * Return through doreti to handle ASTs.  Have to change syscall frame
- * to interrupt frame.
- *
- * XXX - we should have set up the frame earlier to avoid the
- * following popal/pushal (not much can be done to avoid shuffling
- * the flags).  Consistent frames would simplify things all over.
- */
-		movl	32+0(%esp),%eax						/* old flags, shuffle to above cs:eip */
-		movl	32+4(%esp),%ebx						/* `int' frame should have been ef, eip, cs */
-		movl	32+8(%esp),%ecx
-		movl	%ebx,32+0(%esp)
-		movl	%ecx,32+4(%esp)
-		movl	%eax,32+8(%esp)
-		popal
-		nop
-		pushl	$0									/* dummy error code */
-		pushl	$T_ASTFLT
-		pushal
-		nop
-		movl	__udatasel,%eax						/* switch back to user segments */
-		push	%eax								/* XXX - better to preserve originals? */
-		push	%eax
-		pushl	_C_LABEL(cpl)
-		pushl	$0
-		jmp		_C_LABEL(Xdoreti)
-
+2:		/* Check for ASTs on exit to user mode. */
+		cli
+		cmpb	$0,_C_LABEL(astpending)
+		je	1f
+		/* Always returning to user mode here. */
+		movb	$0,_C_LABEL(astpending)
+		sti
+		/* Pushed T_ASTFLT into tf_trapno on entry. */
+		call	_C_LABEL(trap)
+		jmp	2b
+#ifndef DIAGNOSTIC
+1:		INTRFASTEXIT
+#else /* DIAGNOSTIC */
+1:		cmpl	_C_LABEL(cpl),%ebx
+		jne	3f
+		INTRFASTEXIT
+3:		sti
+		pushl	$4f
+		call	_C_LABEL(printf)
+		addl	$4,%esp
+#ifdef DDB
+		int	$3
+#endif /* DDB */
+		movl	%ebx,_C_LABEL(cpl)
+		jmp	2b
+4:		.asciz	"WARNING: SPL NOT LOWERED ON SYSCALL EXIT\n"
+#endif /* DIAGNOSTIC */
 /**********************************************************************/
