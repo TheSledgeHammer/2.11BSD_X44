@@ -39,7 +39,7 @@
 #ifndef	_I386_ICU_H_
 #define	_I386_ICU_H_
 
-#ifndef	LOCORE
+#ifndef	_LOCORE
 
 /*
  * Interrupt "level" mechanism variables, masks, and macros
@@ -91,5 +91,5 @@ extern int 				intrlevel[];
 
 #define MAX_INTR_SOURCES 		ICU_OFFSET
 #define NUM_LEGACY_IRQS			ICU_LEN
-#endif
+#endif /* !_LOCORE */
 #endif	/* _I386_ICU_H_ */
