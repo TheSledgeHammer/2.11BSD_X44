@@ -39,11 +39,11 @@
 
 #include "assym.h"
 
-#include <machine/asm.h>
-#include <i386/isa/icu.h>
-#include <machine/segments.h>
+#include <dev/core/isa/isareg.h>
 
-//#include <i386/apic/apicvector.S>
+#include <machine/asm.h>
+#include <machine/segments.h>
+#include <i386/isa/icu.h>
 
 #define ICU_HARDWARE_MASK
 
@@ -64,8 +64,8 @@
 #ifdef ICU_SPECIAL_MASK_MODE
 
 #define	ENABLE_ICU1(irq_num)
-#define	ENABLE_ICU1_AND_2(irq_num) 											 \
-		movb	$(0x60|2),%al					/* specific EOI for IRQ2 */	;\
+#define	ENABLE_ICU2(irq_num) 											 	 \
+		movb	$(0x60|IRQ_SLAVE),%al			/* specific EOI for IRQ2 */	;\
 		outb	%al,$IO_ICU1
 #define	LEGACY_MASK(irq_num, icu)
 #define	LEGACY_UNMASK(irq_num, icu) 										 \
@@ -83,13 +83,13 @@
 #endif
 
 #ifndef AUTO_EOI_2
-#define	ENABLE_ICU1_AND_2(irq_num) 											 \
+#define	ENABLE_ICU2(irq_num) 											 	 \
 		movb	$(0x60|(irq_num%8)),%al		/* specific EOI */				;\
 		outb	%al,$IO_ICU2				/* do the second ICU first */	;\
-		movb	$(0x60|2),%al				/* specific EOI for IRQ2 */		;\
+		movb	$(0x60|IRQ_SLAVE),%al		/* specific EOI for IRQ2 */		;\
 		outb	%al,$IO_ICU1
 #else
-#define	ENABLE_ICU1_AND_2(irq_num)
+#define	ENABLE_ICU2(irq_num)
 #endif
 
 #ifdef ICU_HARDWARE_MASK
@@ -102,13 +102,11 @@
 		outb	%al,$(icu+1)
 
 #define	LEGACY_UNMASK(irq_num, icu) 										 \
-		cli																	;\
 		movb	_C_LABEL(imen) + IRQ_BYTE(irq_num),%al						;\
 		andb	$~IRQ_BIT(irq_num),%al										;\
 		movb	%al,_C_LABEL(imen) + IRQ_BYTE(irq_num)						;\
 		FASTER_NOP															;\
-		outb	%al,$(icu+1)												;\
-		sti
+		outb	%al,$(icu+1)
 
 #else /* ICU_HARDWARE_MASK */
 
@@ -248,8 +246,6 @@ IDTVEC(name_/**/fast/**/irq_num)											;\
 		popl	%eax														;\
 		iret
 
-
-
 LEGACYINTR(legacy, 0, IO_ICU1, ENABLE_ICU1)
 LEGACYINTR(legacy, 1, IO_ICU1, ENABLE_ICU1)
 LEGACYINTR(legacy, 2, IO_ICU1, ENABLE_ICU1)
@@ -258,15 +254,14 @@ LEGACYINTR(legacy, 4, IO_ICU1, ENABLE_ICU1)
 LEGACYINTR(legacy, 5, IO_ICU1, ENABLE_ICU1)
 LEGACYINTR(legacy, 6, IO_ICU1, ENABLE_ICU1)
 LEGACYINTR(legacy, 7, IO_ICU1, ENABLE_ICU1)
-LEGACYINTR(legacy, 8, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYINTR(legacy, 9, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYINTR(legacy, 10, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYINTR(legacy, 11, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYINTR(legacy, 12, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYINTR(legacy, 13, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYINTR(legacy, 14, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYINTR(legacy, 15, IO_ICU2, ENABLE_ICU1_AND_2)
-
+LEGACYINTR(legacy, 8, IO_ICU2, ENABLE_ICU2)
+LEGACYINTR(legacy, 9, IO_ICU2, ENABLE_ICU2)
+LEGACYINTR(legacy, 10, IO_ICU2, ENABLE_ICU2)
+LEGACYINTR(legacy, 11, IO_ICU2, ENABLE_ICU2)
+LEGACYINTR(legacy, 12, IO_ICU2, ENABLE_ICU2)
+LEGACYINTR(legacy, 13, IO_ICU2, ENABLE_ICU2)
+LEGACYINTR(legacy, 14, IO_ICU2, ENABLE_ICU2)
+LEGACYINTR(legacy, 15, IO_ICU2, ENABLE_ICU2)
 
 LEGACYFAST(legacy, 0, IO_ICU1, ENABLE_ICU1)
 LEGACYFAST(legacy, 1, IO_ICU1, ENABLE_ICU1)
@@ -276,14 +271,14 @@ LEGACYFAST(legacy, 4, IO_ICU1, ENABLE_ICU1)
 LEGACYFAST(legacy, 5, IO_ICU1, ENABLE_ICU1)
 LEGACYFAST(legacy, 6, IO_ICU1, ENABLE_ICU1)
 LEGACYFAST(legacy, 7, IO_ICU1, ENABLE_ICU1)
-LEGACYFAST(legacy, 8, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYFAST(legacy, 9, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYFAST(legacy, 10, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYFAST(legacy, 11, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYFAST(legacy, 12, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYFAST(legacy, 13, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYFAST(legacy, 14, IO_ICU2, ENABLE_ICU1_AND_2)
-LEGACYFAST(legacy, 15, IO_ICU2, ENABLE_ICU1_AND_2)
+LEGACYFAST(legacy, 8, IO_ICU2, ENABLE_ICU2)
+LEGACYFAST(legacy, 9, IO_ICU2, ENABLE_ICU2)
+LEGACYFAST(legacy, 10, IO_ICU2, ENABLE_ICU2)
+LEGACYFAST(legacy, 11, IO_ICU2, ENABLE_ICU2)
+LEGACYFAST(legacy, 12, IO_ICU2, ENABLE_ICU2)
+LEGACYFAST(legacy, 13, IO_ICU2, ENABLE_ICU2)
+LEGACYFAST(legacy, 14, IO_ICU2, ENABLE_ICU2)
+LEGACYFAST(legacy, 15, IO_ICU2, ENABLE_ICU2)
 
 		.globl _C_LABEL(i8259_stubs)
 _C_LABEL(i8259_stubs):
