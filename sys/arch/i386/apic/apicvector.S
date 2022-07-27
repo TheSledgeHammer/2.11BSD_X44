@@ -32,17 +32,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
  
+#include "assym.h"
+ 
 #include <machine/asm.h>
 #include <i386/isa/icu.h>
 #include <machine/apic/ioapicreg.h>
-#include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicreg.h>
-#include <machine/apic/lapicvar.h>
-
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
-
-#include "assym.h"
 
 IDTVEC(spurious)
 		/*

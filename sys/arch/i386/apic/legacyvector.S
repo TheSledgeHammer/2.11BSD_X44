@@ -37,14 +37,13 @@
  *	$Id: vector.s,v 1.18.2.1 1994/10/11 09:46:40 mycroft Exp $
  */
 
+#include "assym.h"
+
 #include <machine/asm.h>
 #include <i386/isa/icu.h>
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
+#include <machine/segments.h>
 
-#include <i386/apic/apicvector.S>
-
-#include "assym.h"
+//#include <i386/apic/apicvector.S>
 
 #define ICU_HARDWARE_MASK
 
@@ -188,25 +187,26 @@ IDTVEC(name_/**/intr/**/irq_num)                                        ;\
 		jnz		6b														;\
 5:																		;\
 		cli																;\
-		LEGACY_UNMASK(irq_num)			/* unmask it in hardware */		;\
+		LEGACY_UNMASK(irq_num, icu)			/* unmask it in hardware */		;\
 		sti																;\
 		jmp		_C_LABEL(Xdoreti)		/* lower spl and do ASTs */		;\
 7:																		;\
 		cli																;\
 		orl     $(1 << irq_num),_C_LABEL(ipending)						;\
-		LEGACY_MASK(irq_num)											;\
+		LEGACY_MASK(irq_num, icu)											;\
 		sti																;\
 		jmp		_C_LABEL(Xdoreti)		/* lower spl and do ASTs */		;\
 10:																		;\
 		cli																;\
 		orl     $(1 << irq_num),_C_LABEL(ipending)						;\
-		LEGACY_MASK(irq_num)											;\
+		LEGACY_MASK(irq_num, icu)											;\
 		sti																;\
 		INTRFASTEXIT													;\
 9:																		;\
-		LEGACY_UNMASK(irq_num)											;\
+		LEGACY_UNMASK(irq_num, icu)											;\
 		sti																;\
 		INTRFASTEXIT
+
 
 /*
  * Fast vectors.
@@ -248,6 +248,8 @@ IDTVEC(name_/**/fast/**/irq_num)											;\
 		popl	%eax														;\
 		iret
 
+
+
 LEGACYINTR(legacy, 0, IO_ICU1, ENABLE_ICU1)
 LEGACYINTR(legacy, 1, IO_ICU1, ENABLE_ICU1)
 LEGACYINTR(legacy, 2, IO_ICU1, ENABLE_ICU1)
@@ -264,7 +266,8 @@ LEGACYINTR(legacy, 12, IO_ICU2, ENABLE_ICU1_AND_2)
 LEGACYINTR(legacy, 13, IO_ICU2, ENABLE_ICU1_AND_2)
 LEGACYINTR(legacy, 14, IO_ICU2, ENABLE_ICU1_AND_2)
 LEGACYINTR(legacy, 15, IO_ICU2, ENABLE_ICU1_AND_2)
-		
+
+
 LEGACYFAST(legacy, 0, IO_ICU1, ENABLE_ICU1)
 LEGACYFAST(legacy, 1, IO_ICU1, ENABLE_ICU1)
 LEGACYFAST(legacy, 2, IO_ICU1, ENABLE_ICU1)
@@ -284,7 +287,7 @@ LEGACYFAST(legacy, 15, IO_ICU2, ENABLE_ICU1_AND_2)
 
 		.globl _C_LABEL(i8259_stubs)
 _C_LABEL(i8259_stubs):
-		.long	_C_LABEL(Xlegacy_intr0), _C_LABEL(Xlegacy_intr1)
+		.long	_C_LABEL(Xlegacy_intr), _C_LABEL(Xlegacy_intr1)
 		.long	_C_LABEL(Xlegacy_intr2), _C_LABEL(Xlegacy_intr3)
 		.long	_C_LABEL(Xlegacy_intr4), _C_LABEL(Xlegacy_intr5)
 		.long	_C_LABEL(Xlegacy_intr6), _C_LABEL(Xlegacy_intr7)
@@ -292,15 +295,6 @@ _C_LABEL(i8259_stubs):
 		.long	_C_LABEL(Xlegacy_intr10), _C_LABEL(Xlegacy_intr11)
 		.long	_C_LABEL(Xlegacy_intr12), _C_LABEL(Xlegacy_intr13)
 		.long	_C_LABEL(Xlegacy_intr14), _C_LABEL(Xlegacy_intr15)
-		/* fast interrupt routine entry points */
-		.long	_C_LABEL(Xlegacy_fast0), _C_LABEL(Xlegacy_fast1)
-		.long	_C_LABEL(Xlegacy_fast2), _C_LABEL(Xlegacy_fast3)
-		.long	_C_LABEL(Xlegacy_fast4), _C_LABEL(Xlegacy_fast5)
-		.long	_C_LABEL(Xlegacy_fast6), _C_LABEL(Xlegacy_fast7)
-		.long	_C_LABEL(Xlegacy_fast8), _C_LABEL(Xlegacy_fast9)
-		.long	_C_LABEL(Xlegacy_fast10), _C_LABEL(Xlegacy_fast11)
-		.long	_C_LABEL(Xlegacy_fast12), _C_LABEL(Xlegacy_fast13)
-		.long	_C_LABEL(Xlegacy_fast14), _C_LABEL(Xlegacy_fast15)
 		/* resume points for suspended interrupts */
 		.long	_C_LABEL(Xlegacy_resume0), _C_LABEL(Xlegacy_resume1)
 		.long	_C_LABEL(Xlegacy_resume2), _C_LABEL(Xlegacy_resume3)
@@ -319,7 +313,16 @@ _C_LABEL(i8259_stubs):
 		.long	_C_LABEL(Xlegacy_recurse10), _C_LABEL(Xlegacy_recurse11)
 		.long	_C_LABEL(Xlegacy_recurse12), _C_LABEL(Xlegacy_recurse13)
 		.long	_C_LABEL(Xlegacy_recurse14), _C_LABEL(Xlegacy_recurse15)
-
+		/* fast interrupt routine entry points */
+		.long	_C_LABEL(Xlegacy_fast0), _C_LABEL(Xlegacy_fast1)
+		.long	_C_LABEL(Xlegacy_fast2), _C_LABEL(Xlegacy_fast3)
+		.long	_C_LABEL(Xlegacy_fast4), _C_LABEL(Xlegacy_fast5)
+		.long	_C_LABEL(Xlegacy_fast6), _C_LABEL(Xlegacy_fast7)
+		.long	_C_LABEL(Xlegacy_fast8), _C_LABEL(Xlegacy_fast9)
+		.long	_C_LABEL(Xlegacy_fast10), _C_LABEL(Xlegacy_fast11)
+		.long	_C_LABEL(Xlegacy_fast12), _C_LABEL(Xlegacy_fast13)
+		.long	_C_LABEL(Xlegacy_fast14), _C_LABEL(Xlegacy_fast15)		
+*/
 /*
  * Symbols that vmstat -i wants, even though they're not used.
  */
