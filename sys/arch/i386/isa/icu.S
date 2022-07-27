@@ -143,7 +143,7 @@ IDTVEC(softclock)
 		movl	%eax,_C_LABEL(cpl)
 		call	_C_LABEL(softclock)
 		movl	%ebx,_C_LABEL(cpl)
-		jmp		%esi
+		jmp		*%esi
 
 
 IDTVEC(softserial)
@@ -156,7 +156,7 @@ IDTVEC(softserial)
 #endif
 */
 		movl	%ebx,_C_LABEL(cpl)
-		jmp		%esi
+		jmp		*%esi
 
 
 #define DONET(s, c) 		\
@@ -201,4 +201,4 @@ IDTVEC(softnet)
 	DONET(NETISR_PPP, _C_LABEL(pppintr))
 #endif
 		movl	%ebx,_C_LABEL(cpl)
-		jmp		%esi
+		jmp		*%esi
