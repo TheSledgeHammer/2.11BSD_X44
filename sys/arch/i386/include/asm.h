@@ -75,53 +75,59 @@
 # define __STRING(x)	"x"
 #endif
 
+/* let kernels and others override entrypoint alignment */
+#if !defined(_ALIGN_TEXT) && !defined(_KERNEL)
+# ifdef __ELF__
+#  define _ALIGN_TEXT .align 4
+# else
+#  define _ALIGN_TEXT .align 2
+# endif
+#endif
+
 #ifdef _KERNEL
+
+#define GEN_ENTRY(name)		\
+	.text; ALIGN_TEXT;	\
+	.globl name;		\
+	.type name,@function; 	\
+	name:
+#define GEN_ALTENTRY(name)	\
+	.globl name;
+
+#ifdef __ELF__
+#ifdef __STDC__
+#define	GEN_IDTVEC(name) \
+	ALIGN_TEXT; .globl X ## name; .type X ## name,@function; X ## name:
+#else 
+#define	GEN_IDTVEC(name) \
+	ALIGN_TEXT; .globl X/**/name; .type X/**/name,@function; X/**/name:
+#endif /* __STDC__ */ 
+#else 
+#ifdef __STDC__
+#define	GEN_IDTVEC(name) \
+	ALIGN_TEXT; .globl _X ## name; .type _X ## name,@function; _X ## name: 
+#else
+#define	GEN_IDTVEC(name) \
+	ALIGN_TEXT; .globl _X/**/name; .type _X/**/name,@function; _X/**/name:
+#endif /* __STDC__ */
+#endif /* __ELF__ */
+
 /* let kernels and others override entrypoint alignment */
 #ifdef __ELF__
-#define _ALIGN_DATA			.align	4
-#define _ALIGN_TEXT			.align	4,0x90  /* 4-byte boundaries, NOP-filled */
-#define _SUPERALIGN_TEXT	.align	16,0x90 /* 16-byte boundaries better for 486 */
+#define ALIGN_DATA			.align	4
+#define ALIGN_TEXT			.align	4,0x90  /* 4-byte boundaries, NOP-filled */
+#define SUPERALIGN_TEXT	.align	16,0x90 /* 16-byte boundaries better for 486 */
 #else
-#define _ALIGN_DATA			.align	2
-#define _ALIGN_TEXT			.align	2,0x90  /* 4-byte boundaries, NOP-filled */
-#define _SUPERALIGN_TEXT	.align	4,0x90  /* 16-byte boundaries better for 486 */
+#define ALIGN_DATA			.align	2
+#define ALIGN_TEXT			.align	2,0x90  /* 4-byte boundaries, NOP-filled */
+#define SUPERALIGN_TEXT	.align	4,0x90  /* 16-byte boundaries better for 486 */
 #endif /* __ELF__ */
-#define _ALIGN_DATA			ALIGN_DATA
+
 #define _ALIGN_TEXT 		ALIGN_TEXT
-#define _SUPERALIGN_TEXT 	SUPERALIGN_TEXT
-
-#define _START_ENTRY		.text; ALIGN_TEXT
-
-#ifdef __STDC__
-#define GEN_ENTRY(name)								\
-	_START_ENTRY									\
-	.globl _ ## name; _ ## name:					\
-	.type x,@function; x:
-#define GEN_ALTENTRY(name)							\
-	.globl _ ## name; _ ## name:
-#define	GEN_IDTVEC(name) 							\
-	ALIGN_TEXT; .globl _X ## name; 					\
-	.type _X ## name, @function; _X ## name:
-#define	GEN_IDTVEC_END(name) 						\
-	.size _X ## name, . - _X ## name
-#else
-#define GEN_ENTRY(name)								\
-	_START_ENTRY									\
-	.globl _/**/name; _/**/name:					\
-	.type x,@function; x:
-#define GEN_ALTENTRY(name)							\
-	.globl _/**/name; _/**/name:
-#define	GEN_IDTVEC(name) 							\
-	ALIGN_TEXT; .globl X/**/name; 					\
-	.type X/**/name,@function; X/**/name:
-#define	GEN_IDTVEC_END(name) 						\
-	.size X/**/name, . - X/**/name
-#endif
 
 #define	_ENTRY(name) 		GEN_ENTRY(name)
 #define	_ALTENTRY(name)		GEN_ALTENTRY(name)
 #define	IDTVEC(name)		GEN_IDTVEC(name)
-#define	IDTVEC_END(name)	GEN_IDTVEC_END(name)
 
 #endif /* _KERNEL */
 
