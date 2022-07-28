@@ -340,7 +340,7 @@ INTRSTUB(x2apic, 31, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
 
 		.globl _C_LABEL(i8259_stubs)
 _C_LABEL(i8259_stubs):
-		.long	_C_LABEL(Xlegacy_intr), _C_LABEL(Xlegacy_intr1)
+		.long	_C_LABEL(Xlegacy_intr0), _C_LABEL(Xlegacy_intr1)
 		.long	_C_LABEL(Xlegacy_intr2), _C_LABEL(Xlegacy_intr3)
 		.long	_C_LABEL(Xlegacy_intr4), _C_LABEL(Xlegacy_intr5)
 		.long	_C_LABEL(Xlegacy_intr6), _C_LABEL(Xlegacy_intr7)
