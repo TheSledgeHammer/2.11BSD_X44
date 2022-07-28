@@ -45,8 +45,7 @@ typedef void *vector_t;
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern vector_t	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_resume_ipi), IDTVEC(lapic_recurse_ipi), IDTVEC(x2apic_intr_ipi),
 				IDTVEC(lapic_intr_ltimer), IDTVEC(lapic_resume_ltimer), IDTVEC(lapic_recurse_ltimer),IDTVEC(x2apic_intr_ltimer),
-				IDTVEC(lapic_intr_tlb), IDTVEC(x2apic_intr_tlb), IDTVEC(spurious),
-				IDTVEC(apic_intr), IDTVEC(x2apic_intr), IDTVEC(legacy_intr);
+				IDTVEC(lapic_intr_tlb), IDTVEC(x2apic_intr_tlb), IDTVEC(spurious);
 
 /*
  * "spurious interrupt vector"; vector used by interrupt which was
