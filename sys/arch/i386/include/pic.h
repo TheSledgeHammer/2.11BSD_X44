@@ -146,11 +146,11 @@ extern struct intrsource 	*intrsrc[];
 extern struct intrhand 		*intrhand[];
 
 /* intrstubs */
-extern struct intrstub 		legacy_stubs[];
-extern struct intrstub 		apic_edge_stubs[];
-extern struct intrstub 		apic_level_stubs[];
-extern struct intrstub 		x2apic_edge_stubs[];
-extern struct intrstub 		x2apic_level_stubs[];
+extern struct intrstubs		legacy_stubs[];
+extern struct intrstubs		apic_edge_stubs[];
+extern struct intrstubs		apic_level_stubs[];
+extern struct intrstubs		x2apic_edge_stubs[];
+extern struct intrstubs		x2apic_level_stubs[];
 
 /* pic templates */
 extern struct pic			i8259_template;
