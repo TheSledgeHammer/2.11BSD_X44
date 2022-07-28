@@ -177,7 +177,7 @@ intr_apic_vectors(void)
 {
 	int idx;
 	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, &IDTVEC(apic_intr)[idx], 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(idx, apic_edge_stubs[i].ist_entry, 0, SDT_SYS386IGT, SEL_KPL);
 	}
 }
 
@@ -186,7 +186,7 @@ intr_x2apic_vectors(void)
 {
 	int idx;
 	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, &IDTVEC(x2apic_intr)[idx], 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(idx, x2apic_edge_stubs[i].ist_entry, 0, SDT_SYS386IGT, SEL_KPL);
 	}
 }
 
@@ -196,7 +196,7 @@ intr_legacy_vectors(void)
 	int i;
 	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
 		int idx = ICU_OFFSET + i;
-		setidt(idx, &IDTVEC(legacy_intr)[idx], 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(idx, legacy_stubs[i].ist_entry, 0, SDT_SYS386IGT, SEL_KPL);
 	}
 	i8259_default_setup();
 }

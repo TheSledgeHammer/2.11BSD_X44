@@ -84,30 +84,27 @@
 # endif
 #endif
 
-#ifdef _KERNEL
+#define _ENTRY(name)		\
+	.text; ALIGN_TEXT; .globl name; .type name,@function; name:
+#define _ALTENTRY(name) 	\
+	_ENTRY(name)
 
-#define GEN_ENTRY(name)		\
-	.text; ALIGN_TEXT;	\
-	.globl name;		\
-	.type name,@function; 	\
-	name:
-#define GEN_ALTENTRY(name)	\
-	.globl name;
+#ifdef _KERNEL
 
 #ifdef __ELF__
 #ifdef __STDC__
-#define	GEN_IDTVEC(name) \
+#define	IDTVEC(name) 		\
 	ALIGN_TEXT; .globl X ## name; .type X ## name,@function; X ## name:
 #else 
-#define	GEN_IDTVEC(name) \
+#define	IDTVEC(name) 		\
 	ALIGN_TEXT; .globl X/**/name; .type X/**/name,@function; X/**/name:
 #endif /* __STDC__ */ 
 #else 
 #ifdef __STDC__
-#define	GEN_IDTVEC(name) \
+#define	IDTVEC(name) 		\
 	ALIGN_TEXT; .globl _X ## name; .type _X ## name,@function; _X ## name: 
 #else
-#define	GEN_IDTVEC(name) \
+#define	IDTVEC(name) 		\
 	ALIGN_TEXT; .globl _X/**/name; .type _X/**/name,@function; _X/**/name:
 #endif /* __STDC__ */
 #endif /* __ELF__ */
@@ -116,27 +113,23 @@
 #ifdef __ELF__
 #define ALIGN_DATA			.align	4
 #define ALIGN_TEXT			.align	4,0x90  /* 4-byte boundaries, NOP-filled */
-#define SUPERALIGN_TEXT	.align	16,0x90 /* 16-byte boundaries better for 486 */
+#define SUPERALIGN_TEXT		.align	16,0x90 /* 16-byte boundaries better for 486 */
 #else
 #define ALIGN_DATA			.align	2
 #define ALIGN_TEXT			.align	2,0x90  /* 4-byte boundaries, NOP-filled */
-#define SUPERALIGN_TEXT	.align	4,0x90  /* 16-byte boundaries better for 486 */
+#define SUPERALIGN_TEXT		.align	4,0x90  /* 16-byte boundaries better for 486 */
 #endif /* __ELF__ */
 
 #define _ALIGN_TEXT 		ALIGN_TEXT
-
-#define	_ENTRY(name) 		GEN_ENTRY(name)
-#define	_ALTENTRY(name)		GEN_ALTENTRY(name)
-#define	IDTVEC(name)		GEN_IDTVEC(name)
 
 #endif /* _KERNEL */
 
 #ifdef GPROF
 # ifdef __ELF__
-#  define _PROF_PROLOGUE							\
+#  define _PROF_PROLOGUE	\
 	pushl %ebp; movl %esp,%ebp; call PIC_PLT(__mcount); popl %ebp
 # else
-#  define _PROF_PROLOGUE							\
+#  define _PROF_PROLOGUE	\
 	pushl %ebp; movl %esp,%ebp; call PIC_PLT(mcount); popl %ebp
 # endif
 #else

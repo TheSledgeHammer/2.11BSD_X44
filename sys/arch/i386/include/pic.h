@@ -86,7 +86,7 @@ struct pic {
  */
 struct intrsource {
 	struct pic 				*is_pic;
-    	struct intrhand     	*is_handlers;	/* handler chain */
+    struct intrhand     	*is_handlers;	/* handler chain */
 	u_long 					*is_count;
 	u_long 					*is_straycount;
 	u_int 					is_index;
@@ -113,6 +113,29 @@ struct intrhand {
 	int						ih_irq;
 };
 
+/*
+ * Struct describing an interrupt source for a CPU. struct cpu_info
+ * has an array of MAX_INTR_SOURCES of these. The index in the array
+ * is equal to the stub number of the stubcode as present in vector.s
+ *
+ * The primary CPU's array of interrupt sources has its first 16
+ * entries reserved for legacy ISA irq handlers. This means that
+ * they have a 1:1 mapping for arrayindex:irq_num. This is not
+ * true for interrupts that come in through IO APICs, to find
+ * their source, go through ci->ci_isources[index].is_pic
+ *
+ * It's possible to always maintain a 1:1 mapping, but that means
+ * limiting the total number of interrupt sources to MAX_INTR_SOURCES
+ * (32), instead of 32 per CPU. It also would mean that having multiple
+ * IO APICs which deliver interrupts from an equal pin number would
+ * overlap if they were to be sent to the same CPU.
+ */
+struct intrstubs {
+	void 					*ist_entry;
+	void 					*ist_recurse;
+	void 					*ist_resume;
+};
+
 struct pcibus_attach_args;
 struct cpu_info;
 
@@ -122,11 +145,18 @@ extern struct softpic		*intrspic;
 extern struct intrsource 	*intrsrc[];
 extern struct intrhand 		*intrhand[];
 
+/* intrstubs */
+extern struct intrstub 		legacy_stubs[];
+extern struct intrstub 		apic_edge_stubs[];
+extern struct intrstub 		apic_level_stubs[];
+extern struct intrstub 		x2apic_edge_stubs[];
+extern struct intrstub 		x2apic_level_stubs[];
+
 /* pic templates */
-extern struct pic		i8259_template;
-extern struct pic		ioapic_template;
-extern struct pic		lapic_template;
-extern struct pic		softintr_template;
+extern struct pic			i8259_template;
+extern struct pic			ioapic_template;
+extern struct pic			lapic_template;
+extern struct pic			softintr_template;
 
 /* softpic.c */
 void 			softpic_init(void);
