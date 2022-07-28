@@ -37,6 +37,137 @@
 #ifndef _I386_ASM_H_
 #define	_I386_ASM_H_
 
+#ifdef PIC
+#define	PIC_PROLOGUE								\
+	pushl	%ebx;									\
+	call	1f;										\
+1:													\
+	popl	%ebx;									\
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-1b],%ebx
+#define	PIC_EPILOGUE								\
+	popl	%ebx
+#define	PIC_PLT(x)		x@PLT
+#define	PIC_GOT(x)		x@GOT(%ebx)
+#define	PIC_GOTOFF(x)	x@GOTOFF(%ebx)
+#else
+#define	PIC_PROLOGUE
+#define	PIC_EPILOGUE
+#define	PIC_PLT(x)		x
+#define	PIC_GOTOFF(x)	x
+#endif
+
+#ifdef __ELF__
+# define _C_LABEL(x)	x
+#else
+# ifdef __STDC__
+#  define _C_LABEL(x)	_ ## x
+# else
+#  define _C_LABEL(x)	_/**/x
+# endif
+#endif
+#define	_ASM_LABEL(x)	x
+
+#ifdef __STDC__
+# define __CONCAT(x,y)	x ## y
+# define __STRING(x)	#x
+#else
+# define __CONCAT(x,y)	x/**/y
+# define __STRING(x)	"x"
+#endif
+
+#ifdef _KERNEL
+/* let kernels and others override entrypoint alignment */
+#ifdef __ELF__
+#define _ALIGN_DATA			.align	4
+#define _ALIGN_TEXT			.align	4,0x90  /* 4-byte boundaries, NOP-filled */
+#define _SUPERALIGN_TEXT	.align	16,0x90 /* 16-byte boundaries better for 486 */
+#else
+#define _ALIGN_DATA			.align	2
+#define _ALIGN_TEXT			.align	2,0x90  /* 4-byte boundaries, NOP-filled */
+#define _SUPERALIGN_TEXT	.align	4,0x90  /* 16-byte boundaries better for 486 */
+#endif /* __ELF__ */
+#define _ALIGN_DATA			ALIGN_DATA
+#define _ALIGN_TEXT 		ALIGN_TEXT
+#define _SUPERALIGN_TEXT 	SUPERALIGN_TEXT
+
+#define _START_ENTRY		.text; ALIGN_TEXT
+
+#ifdef __STDC__
+#define GEN_ENTRY(name)								\
+	_START_ENTRY									\
+	.globl _ ## name; _ ## name:					\
+	.type x,@function; x:
+#define GEN_ALTENTRY(name)							\
+	.globl _ ## name; _ ## name:
+#define	GEN_IDTVEC(name) 							\
+	ALIGN_TEXT; .globl _X ## name; 					\
+	.type _X ## name, @function; _X ## name:
+#define	GEN_IDTVEC_END(name) 						\
+	.size _X ## name, . - _X ## name
+#else
+#define GEN_ENTRY(name)								\
+	_START_ENTRY									\
+	.globl _/**/name; _/**/name:					\
+	.type x,@function; x:
+#define GEN_ALTENTRY(name)							\
+	.globl _/**/name; _/**/name:
+#define	GEN_IDTVEC(name) 							\
+	ALIGN_TEXT; .globl X/**/name; 					\
+	.type X/**/name,@function; X/**/name:
+#define	GEN_IDTVEC_END(name) 						\
+	.size X/**/name, . - X/**/name
+#endif
+
+#define	_ENTRY(name) 		GEN_ENTRY(name)
+#define	_ALTENTRY(name)		GEN_ALTENTRY(name)
+#define	IDTVEC(name)		GEN_IDTVEC(name)
+#define	IDTVEC_END(name)	GEN_IDTVEC_END(name)
+
+#endif /* _KERNEL */
+
+#ifdef GPROF
+# ifdef __ELF__
+#  define _PROF_PROLOGUE							\
+	pushl %ebp; movl %esp,%ebp; call PIC_PLT(__mcount); popl %ebp
+# else
+#  define _PROF_PROLOGUE							\
+	pushl %ebp; movl %esp,%ebp; call PIC_PLT(mcount); popl %ebp
+# endif
+#else
+# define _PROF_PROLOGUE
+#endif
+
+#define	ENTRY(y)			_ENTRY(_C_LABEL(y)); _PROF_PROLOGUE
+#define	NENTRY(y)			_ENTRY(_C_LABEL(y))
+#define	ASENTRY(y)			_ENTRY(_ASM_LABEL(y)); _PROF_PROLOGUE
+#define	ALTENTRY(y)			_ALTENTRY(_C_LABEL(y))
+
+/*
+ * STRONG_ALIAS, WEAK_ALIAS
+ *	Create a strong or weak alias.
+ */
+#define STRONG_ALIAS(alias,sym) 					\
+	.global alias; 									\
+	alias = sym
+#define WEAK_ALIAS(alias,sym) 						\
+	.weak alias; 									\
+	alias = sym
+
+#ifdef __STDC__
+#define	WARN_REFERENCES(sym,msg)					\
+	.stabs msg ## ,30,0,0,0 ;						\
+	.stabs __STRING(_C_LABEL(sym)) ## ,1,0,0,0
+#elif defined(__ELF__)
+#define	WARN_REFERENCES(sym,msg)					\
+	.stabs msg,30,0,0,0 ;							\
+	.stabs __STRING(sym),1,0,0,0
+#else
+#define	WARN_REFERENCES(sym,msg)					\
+	.stabs msg,30,0,0,0 ;							\
+	.stabs __STRING(_/**/sym),1,0,0,0
+#endif /* __STDC__ */
+
+/* Handy Assembly Macros */
 #define	NOP				\
 	inb 	$0x84, %al;	\
 	inb 	$0x84, %al
@@ -88,123 +219,4 @@
 	addl	$8,%esp		; \
 	iret
 
-#ifdef PIC
-#define	PIC_PROLOGUE								\
-	pushl	%ebx;									\
-	call	1f;										\
-1:													\
-	popl	%ebx;									\
-	addl	$_GLOBAL_OFFSET_TABLE_+[.-1b],%ebx
-#define	PIC_EPILOGUE								\
-	popl	%ebx
-#define	PIC_PLT(x)		x@PLT
-#define	PIC_GOT(x)		x@GOT(%ebx)
-#define	PIC_GOTOFF(x)	x@GOTOFF(%ebx)
-#else
-#define	PIC_PROLOGUE
-#define	PIC_EPILOGUE
-#define	PIC_PLT(x)		x
-#define	PIC_GOTOFF(x)	x
-#endif
-
-#ifdef __ELF__
-# define _C_LABEL(x)	x
-#else
-# ifdef __STDC__
-#  define _C_LABEL(x)	_ ## x
-# else
-#  define _C_LABEL(x)	_/**/x
-# endif
-#endif
-#define	_ASM_LABEL(x)	x
-
-#ifdef __STDC__
-# define __CONCAT(x,y)	x ## y
-# define __STRING(x)	#x
-#else
-# define __CONCAT(x,y)	x/**/y
-# define __STRING(x)	"x"
-#endif
-
-/* let kernels and others override entrypoint alignment */
-#if !defined(_ALIGN_TEXT) && !defined(_KERNEL)
-# ifdef _STANDALONE
-#  define _ALIGN_TEXT .align 1
-# elif defined __ELF__
-#  define _ALIGN_TEXT .align 16
-# else
-#  define _ALIGN_TEXT .align 4
-# endif
-#endif
-
-/*
- * STRONG_ALIAS, WEAK_ALIAS
- *	Create a strong or weak alias.
- */
-#define STRONG_ALIAS(alias,sym) 					\
-	.global alias; 									\
-	alias = sym
-#define WEAK_ALIAS(alias,sym) 						\
-	.weak alias; 									\
-	alias = sym
-
-#define _START_ENTRY								\
-	.text; _ALIGN_TEXT
-
-#ifdef __STDC__
-#define	ENTRY(name) 								\
-	_START_ENTRY;									\
-	.globl _ ## name; _ ## name:					\
-	.type x,@function; x:
-
-#define	ALTENTRY(name) 								\
-	.globl _ ## name; _ ## name:					\
-
-#define	IDTVEC(name) 								\
-	ALIGN_TEXT; .globl _X ## name; 					\
-	.type _X ## name,@function; _X ## name:
-
-#define	IDTVEC_END(name) 							\
-	.size _X ## name, . - _X ## name
-
-#define	WARN_REFERENCES(sym,msg)					\
-	.stabs msg ## ,30,0,0,0 ;						\
-	.stabs __STRING(_C_LABEL(sym)) ## ,1,0,0,0
-#else
-#define	ENTRY(name) 								\
-	_START_ENTRY;									\
-	.globl _/**/name; _/**/name:					\
-	.type x,@function; x:
-
-#define	ALTENTRY(name) 								\
-	.globl _/**/name; _/**/name:					\
-
-#define	IDTVEC(name) 								\
-	ALIGN_TEXT; .globl X/**/name; 					\
-	.type X/**/name,@function; X/**/name:
-
-#define	IDTVEC_END(name) 							\
-	.size X/**/name, . - X/**/name
-
-#define	WARN_REFERENCES(sym,msg)					\
-	.stabs msg,30,0,0,0 ;							\
-	.stabs __STRING(_/**/sym),1,0,0,0
-#endif /* __STDC__ */
-
-#ifdef _KERNEL
-#ifdef _STANDALONE
-#define ALIGN_DATA		.align	4
-#define ALIGN_TEXT		.align	4	/* 4-byte boundaries */
-#define SUPERALIGN_TEXT	.align	16	/* 15-byte boundaries */
-#elif defined __ELF__
-#define ALIGN_DATA		.align	4
-#define ALIGN_TEXT		.align	16	/* 16-byte boundaries */
-#define SUPERALIGN_TEXT	.align	16	/* 16-byte boundaries */
-#else
-#define ALIGN_DATA		.align	2
-#define ALIGN_TEXT		.align	4	/* 16-byte boundaries */
-#define SUPERALIGN_TEXT	.align	4	/* 16-byte boundaries */
-#endif /* __ELF__ */
-#define _ALIGN_TEXT 	ALIGN_TEXT
-#endif /* _KERNEL */
 #endif /* _I386_ASM_H_ */

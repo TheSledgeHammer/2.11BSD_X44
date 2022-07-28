@@ -41,35 +41,48 @@ extern volatile vm_offset_t	local_apic_va;
 extern bool_t 				x2apic_mode;
 #endif
 
+typedef void *vector_t;
+#define	IDTVEC(name)	__CONCAT(X, name)
+extern vector_t	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_resume_ipi), IDTVEC(lapic_recurse_ipi), IDTVEC(x2apic_intr_ipi),
+				IDTVEC(lapic_intr_ltimer), IDTVEC(lapic_resume_ltimer), IDTVEC(lapic_recurse_ltimer),IDTVEC(x2apic_intr_ltimer),
+				IDTVEC(lapic_intr_tlb), IDTVEC(x2apic_intr_tlb), IDTVEC(spurious),
+				IDTVEC(apic_intr), IDTVEC(x2apic_intr), IDTVEC(legacy_intr);
+
 /*
  * "spurious interrupt vector"; vector used by interrupt which was
  * aborted because the CPU masked it after it happened but before it
  * was delivered.. "Oh, sorry, i caught you at a bad time".
  * Low-order 4 bits must be all ones.
  */
-extern void Xintrspurious(void);
+//extern void Xintrspurious(void);
 #define LAPIC_SPURIOUS_VECTOR		0xef
 
 /*
  * Vectors used for inter-processor interrupts.
  */
-extern void Xintr_lapic_ipi(void);
-extern void Xintr_x2apic_ipi(void);
-extern void Xrecurse_lapic_ipi(void);
-extern void Xresume_lapic_ipi(void);
+/*
+extern void Xlapic_intr_ipi(void);
+extern void Xlapic_resume_ipi(void);
+extern void Xlapic_recurse_ipi(void);
+extern void Xx2apic_intr_ipi(void);
+*/
 #define LAPIC_IPI_VECTOR			0xe0
 
-extern void Xintr_lapic_tlb(void);
-extern void Xintr_x2apic_tlb(void);
+/*
+extern void Xlapic_intr_tlb(void);
+extern void Xx2apic_intr_tlb(void);
+*/
 #define LAPIC_TLB_VECTOR			0xe1
 
 /*
  * Vector used for local apic timer interrupts.
  */
-extern void Xintr_lapic_ltimer(void);
-extern void Xintr_x2apic_ltimer(void);
-extern void Xresume_lapic_ltimer(void);
-extern void Xrecurse_lapic_ltimer(void);
+/*
+extern void Xlapic_intr_ltimer(void);
+extern void Xlapic_resume_ltimer(void);
+extern void Xlapic_recurse_ltimer(void);
+extern void Xx2apic_intr_ltimer(void);
+*/
 #define LAPIC_TIMER_VECTOR			0xc0
 
 /*
@@ -80,16 +93,6 @@ extern void Xrecurse_lapic_ltimer(void);
 #define LAPIC_PIN_LVINT0			3
 #define LAPIC_PIN_LVINT1			4
 #define LAPIC_PIN_LVERR				5
-
-/* IDT Vectors for APIC, X2APIC & i8259(legacy) */
-typedef void *vector_t;
-#define	IDTVEC(name)	__CONCAT(X, name)
-extern vector_t	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_intr_tlb), IDTVEC(lapic_intr_ltimer),
-		IDTVEC(x2apic_intr_ipi), IDTVEC(x2apic_intr_tlb), IDTVEC(x2apic_intr_ltimer),
-		IDTVEC(apic_level_stubs), IDTVEC(apic_edge_stubs),
-		IDTVEC(x2apic_level_stubs),IDTVEC(x2apic_edge_stubs),
-		IDTVEC(i8259_stubs), IDTVEC(spurious),
-		IDTVEC(apic_intr), IDTVEC(x2apic_intr), IDTVEC(legacy_intr);
 
 struct cpu_info;
 extern void 			lapic_boot_init(vm_offset_t);

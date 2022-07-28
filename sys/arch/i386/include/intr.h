@@ -78,13 +78,7 @@
 #ifndef _LOCORE
 
 #include <i386/isa/icu.h>
-/*
-int 				imask[NIPL];
-int 				iunmask[NIPL];
-int 				intrtype[MAX_INTR_SOURCES];
-int 				intrmask[MAX_INTR_SOURCES];
-int 				intrlevel[MAX_INTR_SOURCES];
-*/
+
 extern void Xspllower(void);
 extern int splraise(int);
 extern int spllower(int);
