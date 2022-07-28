@@ -580,3 +580,16 @@ _C_LABEL(x2apic_edge_stubs):
 		.long	_C_LABEL(Xx2apic_edge_recurse28), _C_LABEL(Xx2apic_edge_recurse29)
 		.long	_C_LABEL(Xx2apic_edge_recurse30), _C_LABEL(Xx2apic_edge_recurse31)
 #endif
+
+/*
+ * Symbols that vmstat -i wants, even though they're not used.
+ */
+		.globl	_C_LABEL(intrnames)
+_C_LABEL(intrnames):
+		.globl	_C_LABEL(eintrnames)
+_C_LABEL(eintrnames):
+
+		.globl	_C_LABEL(intrcnt)
+_C_LABEL(intrcnt):
+		.globl	_C_LABEL(eintrcnt)
+_C_LABEL(eintrcnt):
