@@ -37,7 +37,7 @@
 #include <machine/asm.h>
 #include <machine/apic/i8259.h>
 #include <machine/apic/i82093.h>
-
+#include <machine/segments.h>
 #include <i386/isa/icu.h>
 
 #include "ioapic.h"
