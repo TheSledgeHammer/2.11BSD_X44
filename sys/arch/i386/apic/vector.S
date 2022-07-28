@@ -1,5 +1,5 @@
+/*	$NetBSD: vector.S,v 1.88 2022/05/24 15:55:19 bouyer Exp $	*/
 /* $OpenBSD: apicvec.s,v 1.35 2018/06/18 23:15:05 bluhm Exp $ */
-/* $NetBSD: apicvec.s,v 1.1.2.2 2000/02/21 21:54:01 sommerfeld Exp $ */
 
 /*-
  * Copyright (c) 2000 The NetBSD Foundation, Inc.
@@ -31,13 +31,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 #include "assym.h"
- 
+
 #include <machine/asm.h>
+#include <machine/apic/i8259.h>
+#include <machine/apic/i82093.h>
+
 #include <i386/isa/icu.h>
-#include <machine/apic/ioapicreg.h>
-#include <machine/apic/lapicreg.h>
+
+#include "ioapic.h"
+#include "lapic.h"
 
 IDTVEC(spurious)
 		/*
@@ -49,21 +53,21 @@ IDTVEC(spurious)
 		 * up that it's inconvenient to abort delivery completely..)
 		 */
 		iret
-		
-#ifdef SMP	
+
+#ifdef SMP
 #if NLAPIC > 0
 /* Interrupt from the local APIC IPI */
-IDTVEC(lapic_recurse_ipi)		
-		pushfl					
-		pushl	%cs				
-		pushl	%esi			
-		pushl	$0				
-		pushl	$T_ASTFLT		
-		INTRENTRY				
-IDTVEC(lapic_intr_ipi)
-		pushl	$0		
+IDTVEC(lapic_recurse_ipi)
+		pushfl
+		pushl	%cs
+		pushl	%esi
+		pushl	$0
 		pushl	$T_ASTFLT
-		INTRENTRY		
+		INTRENTRY
+IDTVEC(lapic_intr_ipi)
+		pushl	$0
+		pushl	$T_ASTFLT
+		INTRENTRY
 		movl	$0,local_apic+LAPIC_EOI
 		movl	_C_LABEL(cpl),%ebx
 		cmpl	$IPL_IPI,%ebx
@@ -91,8 +95,8 @@ IDTVEC(x2apic_intr_ipi)
 		cmpl	$IPL_HIGH,%ebx
 		jae		2f
 		jmp		1f
-IDTVEC(lapic_resume_ipi)			
-		cli						
+IDTVEC(lapic_resume_ipi)
+		cli
 		jmp		1f
 
 /* Interrupt from the local APIC TLB */
@@ -104,7 +108,7 @@ IDTVEC(lapic_intr_tlb)
 		movl	_C_LABEL_(local_apic_va),%eax
 		movl	$0,LAPIC_EOI(%eax)
 		INTRFASTEXIT
-		
+
 IDTVEC(x2apic_intr_tlb)
 		pushl	$0
 		pushl	$T_ASTFLT
@@ -118,13 +122,13 @@ IDTVEC(x2apic_intr_tlb)
 #endif /* SMP */
 
 /* Interrupt from the local APIC timer. */
-IDTVEC(lapic_recurse_ltimer)		
-		pushfl					
-		pushl	%cs				
-		pushl	%esi			
-		pushl	$0				
-		pushl	$T_ASTFLT		
-		INTRENTRY	
+IDTVEC(lapic_recurse_ltimer)
+		pushfl
+		pushl	%cs
+		pushl	%esi
+		pushl	$0
+		pushl	$T_ASTFLT
+		INTRENTRY
 IDTVEC(lapic_intr_ltimer)
 		pushl	$0
 		pushl	$T_ASTFLT
@@ -141,7 +145,7 @@ IDTVEC(lapic_intr_ltimer)
 		pushl	%ebx
 		pushl	$0
 		call	_C_LABEL(lapic_clockintr)
-		addl	$4,%esp		
+		addl	$4,%esp
 		jmp		_C_LABEL(Xdoreti)
 2:
 		orl		$(1 << LIR_TIMER),_C_LABEL(ipending)
@@ -159,199 +163,211 @@ IDTVEC(x2apic_intr_ltimer)
 		cmpl	$IPL_CLOCK,%ebx
 		jae		2f
 		jmp		1f
-IDTVEC(lapic_resume_ltimer)			
-		cli						
+IDTVEC(lapic_resume_ltimer)
+		cli
 		jmp		1f
 
 #endif /* NLAPIC > 0 */
-		
-#define IOAPIC_ICU(irq_num)												 \
-		movl	_C_LABEL(local_apic_va),%eax							;\
-		movl	$0,LAPIC_EOI(%eax)
-		
-#define X2APIC_ICU(irq_num)												 \
-		movl	$(MSR_X2APIC_BASE + MSR_X2APIC_EOI),%ecx 				;\
-		xorl	%eax,%eax												;\
-		xorl	%edx,%edx												;\
-		wrmsr
 
-#define IOAPIC_MASK(irq_num)											 \
-		movl	IS_PIC(%ebp),%edi										;\
-		movl	IS_PIN(%ebp),%esi										;\
-		leal	0x10(%esi,%esi,1),%esi									;\
-		movl	SPIC_IOAPIC(%edi),%edi									;\
-		movl	IOAPIC_SC_REG(%edi),%ebx								;\
-		movl	%esi, (%ebx)											;\
-		movl	IOAPIC_SC_DATA(%edi),%ebx								;\
-		movl	(%ebx),%esi												;\
-		orl		$IOAPIC_REDLO_MASK,%esi									;\
-		andl	$~IOAPIC_REDLO_RIRR,%esi								;\
-		movl	%esi,(%ebx)												;\
-		movl	IS_PIC(%ebp),%edi										;\
+#define voidop(irq_num)
 
-#define IOAPIC_UNMASK(irq_num)											 \
-		movl    (%esp),%eax												;\
-		cmpl    $IREENT_MAGIC,(TF_ERR+4)(%eax)							;\
-		jne     79f														;\
-		movl	IS_PIC(%ebp),%edi										;\
-		movl	IS_PIN(%ebp),%esi										;\
-		leal	0x10(%esi,%esi,1),%esi									;\
-		movl	SPIC_IOAPIC(%edi),%edi									;\
-		movl	IOAPIC_SC_REG(%edi),%ebx								;\
-		movl	IOAPIC_SC_DATA(%edi),%eax								;\
-		movl	%esi, (%ebx)											;\
-		movl	(%eax),%edx												;\
-		andl	$~(IOAPIC_REDLO_MASK|IOAPIC_REDLO_RIRR),%edx			;\
-		movl	%esi, (%ebx)											;\
-		movl	%edx,(%eax)												;\
-		movl	IS_PIC(%ebp),%edi										;\
-79:
+#define	INTRSTUB(name, irq_num, early_icu, late_icu, mask, unmask, level_mask)	\
+IDTVEC(name_/**/recurse/**/irq_num)												;\
+		pushfl																	;\
+		pushl	%cs																;\
+		pushl	%esi															;\
+		subl	$4,%esp															;\
+		pushl	$T_ASTFLT						/* trap # for doing ASTs */		;\
+		INTRENTRY																;\
+IDTVEC(name_/**/resume/**/irq_num)												;\
+		movl	$IREENT_MAGIC,TF_ERR(%esp)										;\
+		movl	%ebx,%esi														;\
+		movl	_C_LABEL(intrsource[irq_num]), %ebp								;\
+		movl	IS_MAXLEVEL(%ebp),%ebx											;\
+		jmp		1f																;\
+IDTVEC(name_/**/intr/**/irq_num)                                	       		;\
+pushl	$0										/* dummy error code */			;\
+		pushl	$T_ASTFLT						/* trap # for doing ASTs */		;\
+		INTRENTRY																;\
+		movl	_C_LABEL(intrsource[irq_num]),%ebp								;\
+		mask(irq_num)															;\
+		early_icu(num)							/* and allow other intrs */		;\
+		testl	%ebp,%ebp														;\
+		jz		9f								/* stray */						;\
+		movl	IS_MAXLEVEL(%ebp),%ebx											;\
+		movl	_C_LABEL(cpl),%esi												;\
+		cmpl	%ebx,%esi														;\
+		jae		10f								/* currently masked; hold it */	;\
+		incl	MY_COUNT+V_INTR					/* statistical info */			;\
+		sti																		;\
+1:																				;\
+		pushl	%esi															;\
+		movl	%ebx,_C_LABEL(cpl)												;\
+		sti																		;\
+		incl	_C_LABEL(idepth)												;\
+		movl	IS_HANDLERS(%ebp),%ebx											;\
+6:																				;\
+		movl	IH_LEVEL(%ebx),%edi												;\
+		cmpl	%esi,%edi														;\
+		jle		7f																;\
+		pushl	IH_ARG(%ebx)													;\
+		movl	IH_FUN(%ebx),%eax												;\
+		movl	%edi,_C_LABEL(cpl)												;\
+		movl	IH_NEXT(%ebx),%ebx				/* next handler in chain */		;\
+		call	*%eax							/* call it */					;\
+		addl	$4,%esp							/* toss the arg */				;\
+		testl	%ebx,%ebx														;\
+		jnz		6b																;\
+5:																				;\
+		cli																		;\
+		unmask(irq_num)							/* unmask it in hardware */		;\
+		late_icu(irq_num)														;\
+		sti																		;\
+		jmp		_C_LABEL(Xdoreti)				/* lower spl and do ASTs */		;\
+7:																				;\
+		cli																		;\
+		orl     $(1 << irq_num),_C_LABEL(ipending)								;\
+		level_mask(irq_num)														;\
+		late_icu(irq_num)														;\
+		sti																		;\
+		jmp		_C_LABEL(Xdoreti)				/* lower spl and do ASTs */		;\
+10:																				;\
+		cli																		;\
+		orl     $(1 << irq_num),_C_LABEL(ipending)								;\
+		level_mask(irq_num)														;\
+		late_icu(irq_num)														;\
+		sti																		;\
+		INTRFASTEXIT															;\
+9:																				;\
+		pushl	%esp							/* for unmask */				;\
+		unmask(irq_num)															;\
+		late_icu(irq_num)														;\
+		addl	$4,%esp															;\
+		INTRFASTEXIT															;\
 
-	/*
-	 * I/O APIC interrupt.
-	 * We sort out which one is which based on the value of
-	 * the processor priority register.
-	 *
-	 * XXX use cmove when appropriate.
-	 */
-#define	APICINTR(name, irq_num, late_icu)                        		\
-IDTVEC(name_/**/recurse/**/irq_num)										;\
-		pushfl															;\
-		pushl	%cs														;\
-		pushl	%esi													;\
-		subl	$4,%esp													;\
-		pushl	$T_ASTFLT				/* trap # for doing ASTs */		;\
-		INTRENTRY														;\
-IDTVEC(name_/**/resume/**/irq_num)										;\
-		movl	$IREENT_MAGIC,TF_ERR(%esp)								;\
-		movl	%ebx,%esi												;\
-		movl	INTR_ADDR(intrsource, irq_num), %ebp					;\
-		movl	IS_MAXLEVEL(%ebp),%ebx									;\
-		jmp		1f														;\
-IDTVEC(name_/**/intr/**/irq_num)                                        ;\
-		pushl	$0						/* dummy error code */			;\
-		pushl	$T_ASTFLT				/* trap # for doing ASTs */		;\
-		INTRENTRY														;\
-		movl	INTR_ADDR(intrsource, irq_num),%ebp						;\
-		IOAPIC_MASK(irq_num)											;\
-		testl	%ebp,%ebp												;\
-		jz		9f						/* stray */						;\
-		movl	IS_MAXLEVEL(%ebp),%ebx									;\
-		movl	_C_LABEL(cpl),%esi										;\
-		cmpl	%ebx,%esi												;\
-		jae		10f						/* currently masked; hold it */	;\
-		incl	MY_COUNT+V_INTR			/* statistical info */			;\
-		sti																;\
-1:																		;\
-		pushl	%esi													;\
-		movl	%ebx,_C_LABEL(cpl)										;\
-		sti																;\
-		incl	_C_LABEL(idepth)										;\
-		movl	IS_HANDLERS(%ebp),%ebx									;\
-6:																		;\
-		movl	IH_LEVEL(%ebx),%edi										;\
-		cmpl	%esi,%edi												;\
-		jle		7f														;\
-		pushl	IH_ARG(%ebx)											;\
-		movl	IH_FUN(%ebx),%eax										;\
-		movl	%edi,_C_LABEL(cpl)										;\
-		movl	IH_NEXT(%ebx),%ebx		/* next handler in chain */		;\
-		call	*%eax					/* call it */					;\
-		addl	$4,%esp					/* toss the arg */				;\
-		testl	%ebx,%ebx												;\
-		jnz		6b														;\
-5:																		;\
-		cli																;\
-		IOAPIC_UNMASK(irq_num)			/* unmask it in hardware */		;\
-		late_icu(irq_num)												;\
-		sti																;\
-		jmp		_C_LABEL(Xdoreti)		/* lower spl and do ASTs */		;\
-7:																		;\
-		cli																;\
-		orl     $(1 << irq_num),_C_LABEL(ipending)						;\
-		IOAPIC_MASK(irq_num)											;\
-		late_icu(irq_num)												;\
-		sti																;\
-		jmp		_C_LABEL(Xdoreti)		/* lower spl and do ASTs */		;\
-10:																		;\
-		cli																;\
-		orl     $(1 << irq_num),_C_LABEL(ipending)						;\
-		IOAPIC_MASK(irq_num)											;\
-		late_icu(irq_num)												;\
-		sti																;\
-		INTRFASTEXIT													;\
-9:																		;\
-		IOAPIC_UNMASK(irq_num)											;\
-		late_icu(irq_num)												;\
+#define ICUADDR IO_ICU1
+
+INTRSTUB(legacy, 0, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 1, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 2, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 3, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 4, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 5, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 6, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 7, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+
+#undef ICUADDR
+#define ICUADDR IO_ICU2
+
+INTRSTUB(legacy, 8, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 9, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 10, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 11, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 12, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 13, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 14, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
+INTRSTUB(legacy, 15, ENABLE_ICU2, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
 
 #if NIOAPIC > 0
 
-APICINTR(apic, 0, IOAPIC_ICU)
-APICINTR(apic, 1, IOAPIC_ICU)
-APICINTR(apic, 2, IOAPIC_ICU)
-APICINTR(apic, 3, IOAPIC_ICU)
-APICINTR(apic, 4, IOAPIC_ICU)
-APICINTR(apic, 5, IOAPIC_ICU)
-APICINTR(apic, 6, IOAPIC_ICU)
-APICINTR(apic, 7, IOAPIC_ICU)
-APICINTR(apic, 8, IOAPIC_ICU)
-APICINTR(apic, 9, IOAPIC_ICU)
-APICINTR(apic, 10, IOAPIC_ICU)
-APICINTR(apic, 11, IOAPIC_ICU)
-APICINTR(apic, 12, IOAPIC_ICU)
-APICINTR(apic, 13, IOAPIC_ICU)
-APICINTR(apic, 14, IOAPIC_ICU)
-APICINTR(apic, 15, IOAPIC_ICU)
-APICINTR(apic, 16, IOAPIC_ICU)
-APICINTR(apic, 17, IOAPIC_ICU)
-APICINTR(apic, 18, IOAPIC_ICU)
-APICINTR(apic, 19, IOAPIC_ICU)
-APICINTR(apic, 20, IOAPIC_ICU)
-APICINTR(apic, 21, IOAPIC_ICU)
-APICINTR(apic, 22, IOAPIC_ICU)
-APICINTR(apic, 23, IOAPIC_ICU)
-APICINTR(apic, 24, IOAPIC_ICU)
-APICINTR(apic, 25, IOAPIC_ICU)
-APICINTR(apic, 26, IOAPIC_ICU)
-APICINTR(apic, 27, IOAPIC_ICU)
-APICINTR(apic, 28, IOAPIC_ICU)
-APICINTR(apic, 29, IOAPIC_ICU)
-APICINTR(apic, 30, IOAPIC_ICU)
-APICINTR(apic, 31, IOAPIC_ICU)
+INTRSTUB(apic, 0, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 1, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 2, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 3, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 4, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 5, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 6, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 7, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 8, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 9, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 10, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 11, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 12, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 13, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 14, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 15, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 16, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 17, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 18, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 19, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 20, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 21, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 22, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 23, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 24, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 25, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 26, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 27, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 28, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 29, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 30, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(apic, 31, voidop, IOAPIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
 
-APICINTR(x2apic, 0, X2APIC_ICU)
-APICINTR(x2apic, 1, X2APIC_ICU)
-APICINTR(x2apic, 2, X2APIC_ICU)
-APICINTR(x2apic, 3, X2APIC_ICU)
-APICINTR(x2apic, 4, X2APIC_ICU)
-APICINTR(x2apic, 5, X2APIC_ICU)
-APICINTR(x2apic, 6, X2APIC_ICU)
-APICINTR(x2apic, 7, X2APIC_ICU)
-APICINTR(x2apic, 8, X2APIC_ICU)
-APICINTR(x2apic, 9, X2APIC_ICU)
-APICINTR(x2apic, 10, X2APIC_ICU)
-APICINTR(x2apic, 11, X2APIC_ICU)
-APICINTR(x2apic, 12, X2APIC_ICU)
-APICINTR(x2apic, 13, X2APIC_ICU)
-APICINTR(x2apic, 14, X2APIC_ICU)
-APICINTR(x2apic, 15, X2APIC_ICU)
-APICINTR(x2apic, 16, X2APIC_ICU)
-APICINTR(x2apic, 17, X2APIC_ICU)
-APICINTR(x2apic, 18, X2APIC_ICU)
-APICINTR(x2apic, 19, X2APIC_ICU)
-APICINTR(x2apic, 20, X2APIC_ICU)
-APICINTR(x2apic, 21, X2APIC_ICU)
-APICINTR(x2apic, 22, X2APIC_ICU)
-APICINTR(x2apic, 23, X2APIC_ICU)
-APICINTR(x2apic, 24, X2APIC_ICU)
-APICINTR(x2apic, 25, X2APIC_ICU)
-APICINTR(x2apic, 26, X2APIC_ICU)
-APICINTR(x2apic, 27, X2APIC_ICU)
-APICINTR(x2apic, 28, X2APIC_ICU)
-APICINTR(x2apic, 29, X2APIC_ICU)
-APICINTR(x2apic, 30, X2APIC_ICU)
-APICINTR(x2apic, 31, X2APIC_ICU)
+INTRSTUB(x2apic, 0, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 1, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 2, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 3, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 4, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 5, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 6, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 7, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 8, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 9, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 10, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 11, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 12, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 13, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 14, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 15, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 16, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 17, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 18, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 19, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 20, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 21, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 22, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 23, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 24, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 25, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 26, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 27, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 28, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 29, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 30, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
+INTRSTUB(x2apic, 31, voidop, X2APIC_ICU, voidop, IOAPIC_MASK, IOAPIC_UNMASK)
 
+#endif
+
+		.globl _C_LABEL(i8259_stubs)
+_C_LABEL(i8259_stubs):
+		.long	_C_LABEL(Xlegacy_intr), _C_LABEL(Xlegacy_intr1)
+		.long	_C_LABEL(Xlegacy_intr2), _C_LABEL(Xlegacy_intr3)
+		.long	_C_LABEL(Xlegacy_intr4), _C_LABEL(Xlegacy_intr5)
+		.long	_C_LABEL(Xlegacy_intr6), _C_LABEL(Xlegacy_intr7)
+		.long	_C_LABEL(Xlegacy_intr8), _C_LABEL(Xlegacy_intr9)
+		.long	_C_LABEL(Xlegacy_intr10), _C_LABEL(Xlegacy_intr11)
+		.long	_C_LABEL(Xlegacy_intr12), _C_LABEL(Xlegacy_intr13)
+		.long	_C_LABEL(Xlegacy_intr14), _C_LABEL(Xlegacy_intr15)
+		/* resume points for suspended interrupts */
+		.long	_C_LABEL(Xlegacy_resume0), _C_LABEL(Xlegacy_resume1)
+		.long	_C_LABEL(Xlegacy_resume2), _C_LABEL(Xlegacy_resume3)
+		.long	_C_LABEL(Xlegacy_resume4), _C_LABEL(Xlegacy_resume5)
+		.long	_C_LABEL(Xlegacy_resume6), _C_LABEL(Xlegacy_resume7)
+		.long	_C_LABEL(Xlegacy_resume8), _C_LABEL(Xlegacy_resume9)
+		.long	_C_LABEL(Xlegacy_resume10), _C_LABEL(Xlegacy_resume11)
+		.long	_C_LABEL(Xlegacy_resume12), _C_LABEL(Xlegacy_resume13)
+		.long	_C_LABEL(Xlegacy_resume14), _C_LABEL(Xlegacy_resume15)
+		/* fake interrupts to resume from splx() */
+		.long	_C_LABEL(Xlegacy_recurse0), _C_LABEL(Xlegacy_recurse1)
+		.long	_C_LABEL(Xlegacy_recurse2), _C_LABEL(Xlegacy_recurse3)
+		.long	_C_LABEL(Xlegacy_recurse4), _C_LABEL(Xlegacy_recurse5)
+		.long	_C_LABEL(Xlegacy_recurse6), _C_LABEL(Xlegacy_recurse7)
+		.long	_C_LABEL(Xlegacy_recurse8), _C_LABEL(Xlegacy_recurse9)
+		.long	_C_LABEL(Xlegacy_recurse10), _C_LABEL(Xlegacy_recurse11)
+		.long	_C_LABEL(Xlegacy_recurse12), _C_LABEL(Xlegacy_recurse13)
+		.long	_C_LABEL(Xlegacy_recurse14), _C_LABEL(Xlegacy_recurse15)
+
+#if NIOAPIC > 0
 		.globl _C_LABEL(apic_level_stubs)
 _C_LABEL(apic_level_stubs):
 		.long	_C_LABEL(Xapic_level_intr0), _C_LABEL(Xapic_level_intr1)
@@ -404,7 +420,7 @@ _C_LABEL(apic_level_stubs):
 		.long	_C_LABEL(Xapic_level_recurse26), _C_LABEL(Xapic_level_recurse27)
 		.long	_C_LABEL(Xapic_level_recurse28), _C_LABEL(Xapic_level_recurse29)
 		.long	_C_LABEL(Xapic_level_recurse30), _C_LABEL(Xapic_level_recurse31)
-		
+
 		.globl _C_LABEL(apic_edge_stubs)
 _C_LABEL(apic_edge_stubs):
 		.long	_C_LABEL(Xapic_edge_intr0), _C_LABEL(Xapic_edge_intr1)

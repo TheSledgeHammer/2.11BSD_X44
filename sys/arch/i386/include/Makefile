@@ -14,8 +14,8 @@ INCS=		ansi.h aout_machdep.h asm.h atomic.h bios.h bootinfo.h bus.h 			\
 # MP/SMP
 INCS+=		mcontext.h mpbiosreg.h mpbiosvar.h mpconfig.h percpu.h smp.h
 # APIC
-INCS+= 		apic/apic.h apic/ioapicreg.h apic/ioapicvar.h apic/lapicreg.h 			\
-			apic/lapicvar.h
+INCS+= 		apic/apic.h apic/i82093.h apic/i8259.h apic/ioapicreg.h 				\
+			apic/ioapicvar.h apic/lapicreg.h apic/lapicvar.h
 			
 # machdeps needed outside of machine arch
 # EISA

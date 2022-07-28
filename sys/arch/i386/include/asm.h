@@ -37,18 +37,22 @@
 #ifndef _I386_ASM_H_
 #define	_I386_ASM_H_
 
-#define	NOP			\
+#define	NOP				\
 	inb 	$0x84, %al;	\
 	inb 	$0x84, %al
 
+#ifdef PIC_MASKDELAY
 #define	FASTER_NOP		\
 	pushl 	%eax; 		\
 	inb 	$0x84,%al; 	\
 	popl 	%eax
+#else
+#define FASTER_NOP
+#endif
 
 #define	LCALL(x,y)		\
 	.byte 	0x9a;		\
-	.long 	y;		\
+	.long 	y;			\
 	.word 	x
 
 #define	INTRENTRY 		\
@@ -60,20 +64,20 @@
 	pushl	%ebp		; \
 	pushl	%esi		; \
 	pushl	%edi		; \
-	pushl	%ds		; \
-	pushl	%es		; \
+	pushl	%ds			; \
+	pushl	%es			; \
 	movw	%ax,%ds		; \
 	movw	%ax,%es		; \
-	pushl	%fs		; \
-	pushl	%gs		; \
+	pushl	%fs			; \
+	pushl	%gs			; \
 	movw	%ax,%fs		; \
 	movw	%ax,%gs		; \
 
-#define	INTRFASTEXIT 		\
-	popl	%gs		; \
-	popl	%fs		; \
-	popl	%es		; \
-	popl	%ds		; \
+#define	INTRFASTEXIT 	\
+	popl	%gs			; \
+	popl	%fs			; \
+	popl	%es			; \
+	popl	%ds			; \
 	popl	%edi		; \
 	popl	%esi		; \
 	popl	%ebp		; \
@@ -83,7 +87,6 @@
 	popl	%eax		; \
 	addl	$8,%esp		; \
 	iret
-
 
 #ifdef PIC
 #define	PIC_PROLOGUE								\

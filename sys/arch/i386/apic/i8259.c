@@ -84,6 +84,7 @@
 #include <machine/cpufunc.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
+#include <machine/apic/i8259.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>

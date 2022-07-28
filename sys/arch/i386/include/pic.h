@@ -153,5 +153,5 @@ void			apic_intr_disestablish(void *);
 void			apic_intr_string(char *, void *, int);
 
 /* i8259.c */
-void			i8259_default_setup(void);
+void 			i8259_default_setup(void);
 #endif /* _I386_PIC_H_ */
