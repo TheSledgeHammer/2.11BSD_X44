@@ -205,7 +205,7 @@ define IS_TYPE				offsetof(struct intrsource, is_type)
 define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)
 
 if NIOAPIC > 0
-define SPIC_IOAPIC			offsetof(struct ioapic_softc, sc_pic)
+define SPIC_IOAPIC			offsetof(struct softpic, sp_ioapic)
 define IOAPIC_SC_REG		offsetof(struct ioapic_softc, sc_reg)
 define IOAPIC_SC_DATA		offsetof(struct ioapic_softc, sc_data)
 endif
