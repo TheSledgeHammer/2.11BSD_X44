@@ -394,7 +394,7 @@ intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
 
 	ih = spic->sp_inthnd;
 	if(isapic) {
-		ih->ih_irq = spic->sp_pins[i].sp_irq;
+		ih->ih_irq = spic->sp_pins[irq].sp_irq;
 	}
 	return (ih);
 }
