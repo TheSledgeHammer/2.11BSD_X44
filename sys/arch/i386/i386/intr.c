@@ -168,10 +168,13 @@ intr_default_setup(void)
 {
 	/* icu & apic vectors */
 	intr_legacy_vectors();
+#if NIOAPIC > 0
 	intr_apic_vectors();
 	intr_x2apic_vectors();
+#endif
 }
 
+#if NIOAPIC > 0
 void
 intr_apic_vectors(void)
 {
@@ -181,6 +184,7 @@ intr_apic_vectors(void)
 	}
 }
 
+
 void
 intr_x2apic_vectors(void)
 {
@@ -189,6 +193,7 @@ intr_x2apic_vectors(void)
 		setidt(idx, x2apic_edge_stubs[i].ist_entry, 0, SDT_SYS386IGT, SEL_KPL);
 	}
 }
+#endif
 
 void
 intr_legacy_vectors(void)
@@ -389,7 +394,7 @@ intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
 
 	ih = spic->sp_inthnd;
 	if(isapic) {
-		ih->ih_irq = spic->sp_irq;
+		ih->ih_irq = spic->sp_pins[i].sp_irq;
 	}
 	return (ih);
 }

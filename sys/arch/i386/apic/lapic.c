@@ -554,7 +554,29 @@ lapic_setup(spic, ci, pin, idtvec, type)
 	struct cpu_info *ci;
 	int pin, idtvec, type;
 {
-	
+
+}
+
+/* register stubs */
+static void
+lapic_stubs(spic, pin, edge, level, type)
+	struct softpic *spic;
+	struct intrstub *edge, *level;
+	int pin, type;
+{
+	if(x2apic_mode) {
+#ifdef NIOAPIC > 0
+		int pin;
+		SIMPLEQ_FOREACH(spic->sp_ioapic, &ioapics, sc_next) {
+			softpic_pic_stubs(spic, 0, x2apic_edge_stubs, x2apic_level_stubs, PIC_LAPIC);
+		}
+#ifdef notyet
+		for(pin = 0; pin < MAX_INTR_SOURCES; pin++) {
+			softpic_pic_stubs(spic, pin, x2apic_edge_stubs[pin], x2apic_level_stubs[pin], PIC_LAPIC);
+		}
+#endif
+	}
+#endif
 }
 
 /*

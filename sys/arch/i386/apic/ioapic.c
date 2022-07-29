@@ -328,17 +328,17 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 static void
 ioapic_init_intpins(struct ioapic_softc *sc)
 {
-	struct softpic *softpic;
-
-	sc->sc_pins = calloc(sc->sc_apic_sz, sizeof(struct softpic), M_DEVBUF, M_WAITOK);
-
+	struct softpic *spic;
 	int i;
-	for (i = 0, softpic = sc->sc_pins; i < sc->sc_apic_sz; i++, softpic++) {
-		softpic->sp_intsrc->is_pic = (struct pic *)sc;
-		softpic->sp_map = NULL;
-		softpic->sp_vector = 0;
-		softpic->sp_type = IST_NONE;
+
+	spic->sp_pins = calloc(sc->sc_apic_sz, sizeof(struct softpic_pin), M_DEVBUF, M_WAITOK);
+	for (i = 0, spic = sc->sc_softpic; i < sc->sc_apic_sz; i++, spic++) {
+		spic->sp_pins[i].sp_next = NULL;
+		spic->sp_pins[i].sp_map = NULL;
+		spic->sp_pins[i].sp_vector = 0;
+		spic->sp_pins[i].sp_type = IST_NONE;
 	}
+	sc = spic->sp_ioapic;
 }
 
 static void
@@ -348,10 +348,12 @@ apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *c
 	u_int32_t redhi = 0;
 	int delmode;
 
-	struct softpic *pp;
+	struct softpic *sp;
+	struct softpic_pin	*pp;
 	struct mp_intr_map *map;
 
-	pp = &sc->sc_pins[pin];
+	sp = sc->sc_softpic;
+	pp = &sp->sp_pins[pin];
 	map = pp->sp_map;
 	redlo = map == NULL ? IOAPIC_REDLO_MASK : map->redir;
 	delmode = (redlo & IOAPIC_REDLO_DEL_MASK) >> IOAPIC_REDLO_DEL_SHIFT;
@@ -409,7 +411,8 @@ ioapic_enable(void)
 {
 	int p;
 	struct ioapic_softc *sc;
-	struct softpic *spic;
+	struct softpic 		*spic;
+	struct softpic_pin	*spin;
 
 	ioapic_cold = 0;
 
@@ -427,9 +430,10 @@ ioapic_enable(void)
 		printf("%s: enabling\n", sc->sc_dev->dv_xname);
 
 		for (p = 0; p < sc->sc_apic_sz; p++) {
-			spic = &sc->sc_pins[p];
-			if (spic->sp_type != IST_NONE) {
-				apic_set_redir(sc, p, spic->sp_vector, spic->sp_cpu);
+			spic = sc->sc_softpic;
+			spin = spic->sp_pins[p];
+			if (spin->sp_type != IST_NONE) {
+				apic_set_redir(sc, p, spin->sp_vector, spin->sp_cpu);
 			}
 		}
 	}
@@ -441,7 +445,9 @@ ioapic_hwmask(spic, pin)
 	int pin;
 {
 	u_int32_t redlo;
-	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc->is_pic;
+	struct ioapic_softc *sc;
+
+	sc = spic->sp_ioapic;
 	softpic_pic_hwmask(spic, pin, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
@@ -460,7 +466,9 @@ ioapic_hwunmask(spic, pin)
 	int pin;
 {
 	u_int32_t redlo;
-	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc->is_pic;
+	struct ioapic_softc *sc;
+
+	sc = spic->sp_ioapic;
 	softpic_pic_hwunmask(spic, pin, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
@@ -479,14 +487,17 @@ ioapic_addroute(spic, ci, pin, idtvec, type)
 	struct cpu_info *ci;
 	int pin, idtvec, type;
 {
-	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc->is_pic;
+	struct ioapic_softc *sc;
+	struct softpic_pin *spin;
+
+	sc = spic->sp_ioapic;
 	softpic_pic_addroute(spic, ci, pin, idtvec, type, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
-		spic = &sc->sc_pins[pin];
-		spic->sp_type = type;
-		spic->sp_vector = idtvec;
-		spic->sp_cpu = ci;
+		spin = &spic->sp_pins[pin];
+		spin->sp_type = type;
+		spin->sp_vector = idtvec;
+		spin->sp_cpu = ci;
 		return;
 	}
 	apic_set_redir(sc, pin, idtvec, ci);
@@ -498,15 +509,37 @@ ioapic_delroute(spic, ci, pin, idtvec, type)
 	struct cpu_info *ci;
 	int pin, idtvec, type;
 {
-	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc->is_pic;
+	struct ioapic_softc *sc;
+	struct softpic_pin *spin;
+
+	sc = spic->sp_ioapic;
 	softpic_pic_delroute(spic, ci, pin, idtvec, type, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
-		spic = &sc->sc_pins[pin];
-		spic->sp_type = IST_NONE;
+		spin = &spic->sp_pins[pin];
+		spin->sp_type = IST_NONE;
 		return;
 	}
 	ioapic_hwmask(spic, pin);
+}
+
+/* register stubs */
+static void
+ioapic_stubs(spic, pin, edge, level, type)
+	struct softpic *spic;
+	struct intrstub *edge, *level;
+	int pin, type;
+{
+	//spic->sp_edgestubs = apic_edge_stubs;
+	//spic->sp_levelstubs = apic_level_stubs;
+	softpic_pic_stubs(spic, 0, apic_edge_stubs, apic_level_stubs, PIC_IOAPIC);
+
+#ifdef notyet
+	int pin;
+	for (pin = 0; pin < MAX_INTR_SOURCES; pin++) {
+		softpic_pic_stubs(spic, pin, apic_edge_stubs[pin], apic_level_stubs[pin], PIC_IOAPIC);
+	}
+#endif
 }
 
 /*
@@ -526,13 +559,14 @@ void
 ioapic_dump(void)
 {
 	struct ioapic_softc *sc;
-	struct softpic *spic;
+	struct softpic 		*spic;
+	struct softpic_pin 	*spin;
 	int p;
 
 	SIMPLEQ_FOREACH(sc, &ioapics, sc_next) {
 		for (p = 0; p < sc->sc_apic_sz; p++) {
-			spic = &sc->sc_pins[p];
-			if (spic->sp_type != IST_NONE) {
+			spin = &spic->sp_pins[p];
+			if (spin->sp_type != IST_NONE) {
 				ioapic_print_redir(sc, "dump", p);
 			}
 		}

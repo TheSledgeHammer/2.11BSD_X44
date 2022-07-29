@@ -44,7 +44,7 @@ struct ioapic_head;
 SIMPLEQ_HEAD(ioapic_head, ioapic_softc);
 struct ioapic_softc {
 	SIMPLEQ_ENTRY(ioapic_softc) sc_next;
-	struct softpic				*sc_pins;
+	struct softpic				*sc_softpic;
 	struct pic 					*sc_pic;
 	struct device				*sc_dev;
 	int							sc_apicid;

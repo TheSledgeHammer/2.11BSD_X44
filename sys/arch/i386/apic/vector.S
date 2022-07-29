@@ -182,14 +182,14 @@ IDTVEC(name_##recurse##irq_num)													;\
 IDTVEC(name_##resume##irq_num)													;\
 		movl	$IREENT_MAGIC,TF_ERR(%esp)										;\
 		movl	%ebx,%esi														;\
-		movl	_C_LABEL(intrsource[irq_num]), %ebp								;\
+		movl	_C_LABEL(intrsrc)+irq_num, %ebp									;\
 		movl	IS_MAXLEVEL(%ebp),%ebx											;\
 		jmp		1f																;\
 IDTVEC(name_##intr##irq_num)                                	       			;\
 pushl	$0										/* dummy error code */			;\
 		pushl	$T_ASTFLT						/* trap # for doing ASTs */		;\
 		INTRENTRY																;\
-		movl	_C_LABEL(intrsource[irq_num]),%ebp								;\
+		movl	_C_LABEL(intrsrc)+irq_num,%ebp									;\
 		mask(irq_num)															;\
 		early_icu(num)							/* and allow other intrs */		;\
 		testl	%ebp,%ebp														;\

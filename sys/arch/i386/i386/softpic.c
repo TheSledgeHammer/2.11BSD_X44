@@ -92,7 +92,7 @@ void
 softpic_check(spic, irq, isapic, pictemplate)
     struct softpic  *spic;
     int             irq, pictemplate;
-    bool_t 		isapic;
+    bool_t 			isapic;
 {
     int apicid = APIC_IRQ_APIC(irq);
     int pin = APIC_IRQ_PIN(irq);
@@ -101,13 +101,13 @@ softpic_check(spic, irq, isapic, pictemplate)
 		spic->sp_template = pictemplate;
 		if (isapic == TRUE) {
 			spic->sp_isapic = TRUE;
-			spic->sp_apicid = apicid;
-			spic->sp_irq = pin;
-			spic->sp_pin = pin;
+			spic->sp_pins[pin].sp_apicid = apicid;
+			spic->sp_pins[pin].sp_irq = pin;
+			spic->sp_pins[pin].sp_pin = pin;
 		} else {
 			spic->sp_isapic = FALSE;
-			spic->sp_irq = irq;
-			spic->sp_pin = irq;
+			spic->sp_pins[irq].sp_irq = irq;
+			spic->sp_pins[irq].sp_pin = irq;
 		}
 	} else {
 		return;
@@ -248,4 +248,21 @@ softpic_intr_handler(spic, irq, type, isapic, pictemplate)
 	spic->sp_inthnd = ih;
 
 	return (spic);
+}
+
+void
+softpic_pic_stubs(spic, pin, edgestubs, levelstubs, pictemplate)
+	struct softpic *spic;
+	struct intrstub *edgestubs, *levelstubs;
+	int pin, pictemplate;
+{
+	register struct pic *pic;
+	softpic_check(spic, pin, TRUE, pictemplate);
+	spic->sp_intsrc->is_pic = softpic_lookup_pic(spic, pictemplate);
+	pic = spic->sp_intsrc->is_pic;
+	if (pic != NULL) {
+		spic->sp_edgestubs = edgestubs;
+		spic->sp_levelstubs = levelstubs;
+//		(*pic->pic_stubs)(spic, pin, edgestubs, levelstubs, pictemplate);
+	}
 }

@@ -40,19 +40,32 @@
 
 #include <sys/queue.h>
 
-/* Softpic, acts as a selector for which PIC/APIC to use: see softpic.c */
+/*
+ * Softpic_pin, serves as the selector pin, or equivalent to ioapic_pin in NetBSD
+ */
+struct softpic_pin {
+	struct softpic			*sp_next;
+    unsigned int 			sp_vector:8;
+    int                 	sp_irq;
+    int                 	sp_pin;
+    int                 	sp_apicid;
+    int						sp_type;
+    struct cpu_info     	*sp_cpu;
+    struct mp_intr_map 		*sp_map;
+};
+
+/*
+ * Softpic, acts as a selector for which PIC/APIC to use: see softpic.c
+ */
 struct softpic {
-    struct cpu_info         *sp_cpu;
     struct intrsource       *sp_intsrc;
     struct intrhand         *sp_inthnd;
+    struct ioapic_softc		*sp_ioapic;
+    struct softpic_pin		sp_pins[0];
     int                     sp_template;
-    unsigned int 			sp_vector:8;
-    int                     sp_irq;
-    int                     sp_pin;
-    int                     sp_apicid;
-    int						sp_type;
     bool_t               	sp_isapic;
-    struct mp_intr_map 		*sp_map;
+	struct intrstub			*sp_levelstubs;
+	struct intrstub			*sp_edgestubs;
 };
 
 /*
@@ -66,6 +79,7 @@ struct pic {
 	void 					(*pic_hwunmask)(struct softpic *, int);
 	void 					(*pic_addroute)(struct softpic *, struct cpu_info *, int, int, int);
 	void 					(*pic_delroute)(struct softpic *, struct cpu_info *, int, int, int);
+	//void					(*pic_stubs)(struct softpic *, int, struct intrstub *, struct intrstub *, int);
 	void					(*pic_register)(struct pic *);
 	TAILQ_ENTRY(pic) 		pic_entry;
 };
@@ -130,7 +144,7 @@ struct intrhand {
  * IO APICs which deliver interrupts from an equal pin number would
  * overlap if they were to be sent to the same CPU.
  */
-struct intrstubs {
+struct intrstub {
 	void 					*ist_entry;
 	void 					*ist_recurse;
 	void 					*ist_resume;
@@ -146,11 +160,11 @@ extern struct intrsource 	*intrsrc[];
 extern struct intrhand 		*intrhand[];
 
 /* intrstubs */
-extern struct intrstubs		legacy_stubs[];
-extern struct intrstubs		apic_edge_stubs[];
-extern struct intrstubs		apic_level_stubs[];
-extern struct intrstubs		x2apic_edge_stubs[];
-extern struct intrstubs		x2apic_level_stubs[];
+extern struct intrstub		legacy_stubs[];
+extern struct intrstub		apic_edge_stubs[];
+extern struct intrstub		apic_level_stubs[];
+extern struct intrstub		x2apic_edge_stubs[];
+extern struct intrstub		x2apic_level_stubs[];
 
 /* pic templates */
 extern struct pic			i8259_template;
