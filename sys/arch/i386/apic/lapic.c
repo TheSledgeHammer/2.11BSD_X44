@@ -68,6 +68,8 @@
 #include <machine/isa/isa_machdep.h>
 #include <machine/mpbiosvar.h>
 
+#include "ioapic.h"
+
 #define lapic_lock_init(lock) 	simple_lock_init(lock, "lapic_lock")
 #define lapic_lock(lock) 		simple_lock(lock)
 #define lapic_unlock(lock) 		simple_unlock(lock)
@@ -558,6 +560,7 @@ lapic_setup(spic, ci, pin, idtvec, type)
 }
 
 /* register stubs */
+/*
 static void
 lapic_stubs(spic, pin, edge, level, type)
 	struct softpic *spic;
@@ -570,15 +573,16 @@ lapic_stubs(spic, pin, edge, level, type)
 		SIMPLEQ_FOREACH(spic->sp_ioapic, &ioapics, sc_next) {
 			softpic_pic_stubs(spic, 0, x2apic_edge_stubs, x2apic_level_stubs, PIC_LAPIC);
 		}
+		
 #ifdef notyet
 		for(pin = 0; pin < MAX_INTR_SOURCES; pin++) {
 			softpic_pic_stubs(spic, pin, x2apic_edge_stubs[pin], x2apic_level_stubs[pin], PIC_LAPIC);
 		}
 #endif
-	}
 #endif
+	}
 }
-
+*/
 /*
  * Register Local APIC interrupt pins.
  */

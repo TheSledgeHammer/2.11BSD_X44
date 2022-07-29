@@ -330,9 +330,10 @@ ioapic_init_intpins(struct ioapic_softc *sc)
 {
 	struct softpic *spic;
 	int i;
-
+	
 	spic->sp_pins = calloc(sc->sc_apic_sz, sizeof(struct softpic_pin), M_DEVBUF, M_WAITOK);
 	for (i = 0, spic = sc->sc_softpic; i < sc->sc_apic_sz; i++, spic++) {
+		spic->sp_ioapic = sc;
 		spic->sp_pins[i].sp_next = NULL;
 		spic->sp_pins[i].sp_map = NULL;
 		spic->sp_pins[i].sp_vector = 0;
@@ -431,7 +432,7 @@ ioapic_enable(void)
 
 		for (p = 0; p < sc->sc_apic_sz; p++) {
 			spic = sc->sc_softpic;
-			spin = spic->sp_pins[p];
+			spin = &spic->sp_pins[p];
 			if (spin->sp_type != IST_NONE) {
 				apic_set_redir(sc, p, spin->sp_vector, spin->sp_cpu);
 			}
@@ -530,8 +531,6 @@ ioapic_stubs(spic, pin, edge, level, type)
 	struct intrstub *edge, *level;
 	int pin, type;
 {
-	//spic->sp_edgestubs = apic_edge_stubs;
-	//spic->sp_levelstubs = apic_level_stubs;
 	softpic_pic_stubs(spic, 0, apic_edge_stubs, apic_level_stubs, PIC_IOAPIC);
 
 #ifdef notyet
