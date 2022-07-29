@@ -181,6 +181,7 @@ void			softpic_pic_hwunmask(struct softpic *, int, bool_t, int);
 void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
 void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
 struct softpic 	*softpic_intr_handler(struct softpic *, int, int, bool_t, int);
+void			softpic_pic_stubs(struct softpic *, int, struct intrstub *, struct intrstub *, int);
 
 /* intr.c */
 void 			*intr_establish(bool_t, int, int, int, int, int (*)(void *), void *);
