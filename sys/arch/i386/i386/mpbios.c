@@ -238,18 +238,6 @@ mp_match(parent, cf, aux)
 	return (config_match(parent, cf, aux));
 }
 
-struct softpic *
-mpbios_softpic(sc, pin)
-	struct ioapic_softc *sc;
-	u_int32_t pin;
-{
-	struct softpic *spic;
-
-	spic = &sc->sc_pins[pin];
-
-	return (spic);
-}
-
 /*
  * Map a chunk of memory read-only and return an appropraitely
  * const'ed pointer.
@@ -1114,8 +1102,8 @@ mpbios_int(ent, enttype, mpi)
 
 		mpi->ioapic = sc;
 		mpi->ioapic_pin = pin;
-		spic = mpbios_softpic(sc, pin);
-		altmpi = spic->sp_map;
+		spic = sc->sc_softpic;
+		altmpi = spic->sp_pins[pin].sp_map;
 
 		if (altmpi != NULL) {
 			if ((altmpi->type != type) || (altmpi->flags != flags)) {
@@ -1123,7 +1111,7 @@ mpbios_int(ent, enttype, mpi)
 						sc->sc_dev->dv_xname, pin);
 			}
 		} else {
-			spic->sp_map = mpi;
+			spic->sp_pins[pin].sp_map = mpi;
 		}
 	} else {
 		if (pin >= 2)
