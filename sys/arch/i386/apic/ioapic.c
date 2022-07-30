@@ -329,15 +329,17 @@ static void
 ioapic_init_intpins(struct ioapic_softc *sc)
 {
 	struct softpic *spic;
+	struct softpic_pin *spin;
 	int i;
 	
-	spic->sp_pins = calloc(sc->sc_apic_sz, sizeof(struct softpic_pin), M_DEVBUF, M_WAITOK);
+	spin = calloc(sc->sc_apic_sz, sizeof(struct softpic_pin), M_DEVBUF, M_WAITOK);
 	for (i = 0, spic = sc->sc_softpic; i < sc->sc_apic_sz; i++, spic++) {
+		spin[i].sp_next = NULL;
+		spin[i].sp_map = NULL;
+		spin[i].sp_vector = 0;
+		spin[i].sp_type = IST_NONE;
+		spic->sp_pins[i] = spin[i];
 		spic->sp_ioapic = sc;
-		spic->sp_pins[i].sp_next = NULL;
-		spic->sp_pins[i].sp_map = NULL;
-		spic->sp_pins[i].sp_vector = 0;
-		spic->sp_pins[i].sp_type = IST_NONE;
 	}
 	sc = spic->sp_ioapic;
 }

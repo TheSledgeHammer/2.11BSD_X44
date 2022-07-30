@@ -282,7 +282,7 @@ tlbflush(void)
 	__asm __volatile("movl %0,%%eax; movl %%eax,%%cr3" : : "g" (val) : "ax");
 }
 
-void	setidt	(int idx, /*XXX*/caddr_t func, int typ, int dpl);
+//void	setidt(int idx, /*XXX*/caddr_t func, int typ, int dpl);
 #endif
 
 /* XXXX ought to be in psl.h with spl() functions */

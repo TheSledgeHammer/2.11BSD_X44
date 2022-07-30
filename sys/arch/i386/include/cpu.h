@@ -120,6 +120,7 @@ void	boot(int);
 void	cpu_halt(void);
 void	cpu_reset(void);
 void	setidt(int, void *, int, int, int);
+void 	unsetidt(int);
 
 /* locore.s */
 struct 	pcb;

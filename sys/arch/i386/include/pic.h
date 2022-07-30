@@ -40,33 +40,7 @@
 
 #include <sys/queue.h>
 
-/*
- * Softpic_pin, serves as the selector pin, or equivalent to ioapic_pin in NetBSD
- */
-struct softpic_pin {
-	struct softpic			*sp_next;
-    unsigned int 			sp_vector:8;
-    int                 	sp_irq;
-    int                 	sp_pin;
-    int                 	sp_apicid;
-    int						sp_type;
-    struct cpu_info     	*sp_cpu;
-    struct mp_intr_map 		*sp_map;
-};
-
-/*
- * Softpic, acts as a selector for which PIC/APIC to use: see softpic.c
- */
-struct softpic {
-    struct intrsource       *sp_intsrc;
-    struct intrhand         *sp_inthnd;
-    struct ioapic_softc		*sp_ioapic;
-    struct softpic_pin		sp_pins[0];
-    int                     sp_template;
-    bool_t               	sp_isapic;
-	struct intrstub			*sp_levelstubs;
-	struct intrstub			*sp_edgestubs;
-};
+#include <machine/softpic.h>
 
 /*
  * Methods that a PIC provides to mask/unmask a given interrupt source,
@@ -151,13 +125,6 @@ struct intrstub {
 };
 
 struct pcibus_attach_args;
-struct cpu_info;
-
-extern struct lock_object 	icu_lock;
-extern int 					intr_shared_edge;		/* This system has shared edge interrupts */
-extern struct softpic		*intrspic;
-extern struct intrsource 	*intrsrc[];
-extern struct intrhand 		*intrhand[];
 
 /* intrstubs */
 extern struct intrstub		legacy_stubs[];
@@ -171,17 +138,6 @@ extern struct pic			i8259_template;
 extern struct pic			ioapic_template;
 extern struct pic			lapic_template;
 extern struct pic			softintr_template;
-
-/* softpic.c */
-void 			softpic_init(void);
-int				softpic_register_pic(struct pic *);
-struct pic 		*softpic_handle_pic(struct softpic *);
-void			softpic_pic_hwmask(struct softpic *, int, bool_t, int);
-void			softpic_pic_hwunmask(struct softpic *, int, bool_t, int);
-void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
-void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
-struct softpic 	*softpic_intr_handler(struct softpic *, int, int, bool_t, int);
-void			softpic_pic_stubs(struct softpic *, int, struct intrstub *, struct intrstub *, int);
 
 /* intr.c */
 void 			*intr_establish(bool_t, int, int, int, int, int (*)(void *), void *);

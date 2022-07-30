@@ -39,7 +39,6 @@
 #include <machine/pic.h>
 #include <machine/intr.h>
 #include <machine/apic/ioapicvar.h>
-//#include <i386/isa/icu.h>
 
 struct softpic 					 	*intrspic;
 static TAILQ_HEAD(pic_list, pic) 	pichead;
@@ -84,8 +83,8 @@ softpic_init(void)
 	}
 	TAILQ_INIT(&pichead);
 
-	spic->sp_intsrc = intrsrc[MAX_INTR_SOURCES];
-	spic->sp_inthnd = intrhand[MAX_INTR_SOURCES];
+	spic->sp_intsrc = (struct intrsource *)intrsrc;
+	spic->sp_inthnd = (struct intrhand *)intrhand;
 }
 
 void
@@ -115,8 +114,7 @@ softpic_check(spic, irq, isapic, pictemplate)
 }
 
 static struct pic *
-softpic_lookup_pic(spic, pictemplate)
-	struct softpic *spic;
+softpic_lookup_pic(pictemplate)
 	int pictemplate;
 {
 	struct pic *pic;
@@ -136,25 +134,25 @@ softpic_handle_pic(spic)
 
 	switch(spic->sp_template) {
 	case PIC_I8259:
-		pic = softpic_lookup_pic(spic, PIC_I8259);
+		pic = softpic_lookup_pic(PIC_I8259);
 		if(pic == &i8259_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_IOAPIC:
-		pic = softpic_lookup_pic(spic, PIC_IOAPIC);
+		pic = softpic_lookup_pic(PIC_IOAPIC);
 		if(pic == &ioapic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_LAPIC:
-		pic = softpic_lookup_pic(spic, PIC_LAPIC);
+		pic = softpic_lookup_pic(PIC_LAPIC);
 		if(pic == &lapic_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
 		break;
 	case PIC_SOFT:
-		pic = softpic_lookup_pic(spic, PIC_SOFT);
+		pic = softpic_lookup_pic(PIC_SOFT);
 		if(pic == &softintr_template && spic->sp_template == pic->pic_type) {
 			return (pic);
 		}
@@ -248,21 +246,4 @@ softpic_intr_handler(spic, irq, type, isapic, pictemplate)
 	spic->sp_inthnd = ih;
 
 	return (spic);
-}
-
-void
-softpic_pic_stubs(spic, pin, edgestubs, levelstubs, pictemplate)
-	struct softpic *spic;
-	struct intrstub *edgestubs, *levelstubs;
-	int pin, pictemplate;
-{
-	register struct pic *pic;
-	softpic_check(spic, pin, TRUE, pictemplate);
-	spic->sp_intsrc->is_pic = softpic_lookup_pic(spic, pictemplate);
-	pic = spic->sp_intsrc->is_pic;
-	if (pic != NULL) {
-		spic->sp_edgestubs = edgestubs;
-		spic->sp_levelstubs = levelstubs;
-//		(*pic->pic_stubs)(spic, pin, edgestubs, levelstubs, pictemplate);
-	}
 }

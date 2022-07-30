@@ -1070,20 +1070,18 @@ setregion(rd, base, limit)
  * Initialize segments & interrupt table
  */
 void
-setidt_nodisp(idx, off, args, typ, dpl)
-	int idx, off, args, typ, dpl;
-{
+setidt_nodisp(ip, idx, off, sel, args, typ, dpl, p, hi)
 	struct gate_descriptor *ip;
-	
-	ip = &idt[idx];
+	int idx, off, args, sel, typ, dpl, p, hi;
+{
 	ip->gd_looffset = off;
-	ip->gd_selector = GSEL(GCODE_SEL, SEL_KPL);
+	ip->gd_selector = sel;
 	ip->gd_stkcpy = args;
 	ip->gd_xx = 0;
 	ip->gd_type = typ;
 	ip->gd_dpl = dpl;
-	ip->gd_p = 1;
-	ip->gd_hioffset = ((u_int)off) >> 16 ;
+	ip->gd_p = p;
+	ip->gd_hioffset = hi;
 }
 
 void
@@ -1091,10 +1089,25 @@ setidt(idx, func, args, typ, dpl)
 	int idx, args, typ, dpl;
 	void *func;
 {
-	int off;
-	
+	struct gate_descriptor *ip;
+	int off, sel, p, hi;
+
+	ip = &idt[idx];
 	off = func != NULL ? (int)func : 0;
-	setidt_nodisp(idx, off, typ, dpl);
+	sel = GSEL(GCODE_SEL, SEL_KPL);
+	p = 1;
+	hi = ((u_int)off) >> 16;
+	setidt_nodisp(ip, idx, off, sel, args, typ, dpl, p, hi);
+}
+
+void
+unsetidt(idx)
+	int idx;
+{
+	struct gate_descriptor *ip;
+
+	ip = &idt[idx];
+	setidt_nodisp(ip, idx, 0, 0, 0, 0, 0, 0, 0);
 }
 
 void
