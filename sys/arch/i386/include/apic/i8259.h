@@ -39,6 +39,21 @@
 
 #include <dev/core/isa/isareg.h>
 
+#ifndef	_LOCORE
+
+/*
+ * Interrupt "level" mechanism variables, masks, and macros
+ */
+extern unsigned i8259_imen;		/* interrupt mask enable */
+extern unsigned i8259_setmask(unsigned);
+
+#define SET_ICUS()	(outb(IO_ICU1 + 1, imen), outb(IO_ICU2 + 1, imen >> 8))
+
+extern void i8259_default_setup(void);
+extern void i8259_reinit(void);
+
+#endif /* !_LOCORE */
+
 #define ICU_HARDWARE_MASK
 
 /*
@@ -88,26 +103,35 @@
 #define	ENABLE_ICU2(irq_num)
 #endif
 
+#ifdef PIC_MASKDELAY
+#define	FASTER_NOP		\
+	pushl 	%eax; 		\
+	inb 	$0x84,%al; 	\
+	popl 	%eax
+#else
+#define FASTER_NOP
+#endif
+
 #ifdef ICU_HARDWARE_MASK
 
 #define	LEGACY_MASK(irq_num) 												 \
-		movb	_C_LABEL(imen) + IRQ_BYTE(irq_num),%al						;\
+		movb	CVAROFF(i8259_imen, IRQ_BYTE(irq_num)),%al					;\
 		orb		$IRQ_BIT(irq_num),%al										;\
-		movb	%al,_C_LABEL(imen) + IRQ_BYTE(irq_num)						;\
+		movb	%al,CVAROFF(i8259_imen, IRQ_BYTE(irq_num))					;\
 		FASTER_NOP															;\
 		outb	%al,$(ICUADDR+1)
 
 #define	LEGACY_UNMASK(irq_num) 										 		 \
-		movb	_C_LABEL(imen) + IRQ_BYTE(irq_num),%al						;\
+		movb	CVAROFF(i8259_imen, IRQ_BYTE(irq_num)),%al					;\
 		andb	$~IRQ_BIT(irq_num),%al										;\
-		movb	%al,_C_LABEL(imen) + IRQ_BYTE(irq_num)						;\
+		movb	%al,CVAROFF(i8259_imen, IRQ_BYTE(irq_num))					;\
 		FASTER_NOP															;\
 		outb	%al,$(ICUADDR+1)
 
 #else /* ICU_HARDWARE_MASK */
 
-#define	LEGACY_MASK(irq_num, icu)
-#define	LEGACY_UNMASK(irq_num, icu)
+#define	LEGACY_MASK(irq_num)
+#define	LEGACY_UNMASK(irq_num)
 
 #endif /* ICU_HARDWARE_MASK */
 #endif /* ICU_SPECIAL_MASK_MODE */

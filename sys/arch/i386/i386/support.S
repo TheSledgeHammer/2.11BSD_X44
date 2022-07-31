@@ -48,6 +48,10 @@
 
 #define	IDXSHIFT 	10
 
+#define	NOP				\
+	inb 	$0x84, %al;	\
+	inb 	$0x84, %al
+
 /*
  * Support routines for GCC
  */

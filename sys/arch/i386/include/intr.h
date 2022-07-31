@@ -86,6 +86,11 @@ extern void splx(int);
 extern void softintr(int);
 
 /*
+ * Convert spl level to local APIC level
+ */
+#define APIC_LEVEL(l)   ((l) << 4)
+
+/*
  * Hardware interrupt masks
  */
 #define	splbio()			splraise(imask[IPL_BIO])

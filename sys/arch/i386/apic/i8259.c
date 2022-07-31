@@ -90,6 +90,7 @@
 #include <dev/core/isa/isavar.h>
 
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
+unsigned i8259_imen;
 
 static void 	i8259_hwmask(struct softpic *, int);
 static void 	i8259_hwunmask(struct softpic *, int);
@@ -151,12 +152,16 @@ i8259_hwmask(struct softpic *spic, int pin)
 	u_int8_t byte;
 	softpic_pic_hwmask(spic, pin, FALSE, PIC_I8259);
 
+	i8259_imen |= (1 << pin);
+#ifdef PIC_MASKDELAY
+	delay(10);
+#endif
 	if (pin > 7) {
 		port = IO_ICU2 + 1;
-		byte = imen >> 8;
+		byte = i8259_imen >> 8;
 	} else {
 		port = IO_ICU1 + 1;
-		byte = imen & 0xff;
+		byte = i8259_imen & 0xff;
 	}
 	outb(port, byte);
 }
@@ -169,16 +174,16 @@ i8259_hwunmask(struct softpic *spic, int pin)
 	softpic_pic_hwunmask(spic, pin, FALSE, PIC_I8259);
 
 	disable_intr();
-	imen &= ~(1 << pin);
+	i8259_imen &= ~(1 << pin);
 #ifdef PIC_MASKDELAY
 	delay(10);
 #endif
 	if (pin > 7) {
 		port = IO_ICU2 + 1;
-		byte = imen >> 8;
+		byte = i8259_imen >> 8;
 	} else {
 		port = IO_ICU1 + 1;
-		byte = imen & 0xff;
+		byte = i8259_imen & 0xff;
 	}
 	outb(port, byte);
 	enable_intr();
@@ -210,18 +215,19 @@ static void
 i8259_reinit_irqs(void)
 {
 	int irqs, irq;
+
 	irqs = 0;
 	for (irq = 0; irq < NUM_LEGACY_IRQS; irq++) {
-		if (intrhand[irq]) {
+		if (intrsrc[irq] != NULL) {
 			irqs |= 1 << irq;
 		}
 	}
 	if (irqs >= 0x100) { 			/* any IRQs >= 8 in use */
 		irqs |= 1 << IRQ_SLAVE;
 	}
-	imen = ~irqs;
-	outb(IO_ICU1 + 1, imen);
-	outb(IO_ICU2 + 1, imen >> 8);
+	i8259_imen = ~irqs;
+	outb(IO_ICU1 + 1, i8259_imen);
+	outb(IO_ICU2 + 1, i8259_imen >> 8);
 }
 
 void
@@ -234,11 +240,11 @@ i8259_reinit(void)
 unsigned
 i8259_setmask(unsigned mask)
 {
-	unsigned old = imen;
+	unsigned old = i8259_imen;
 
-	imen = mask;
-	outb(IO_ICU1 + 1, imen);
-	outb(IO_ICU2 + 1, imen >> 8);
+	i8259_imen = mask;
+	outb(IO_ICU1 + 1, i8259_imen);
+	outb(IO_ICU2 + 1, i8259_imen >> 8);
 
 	return (old);
 }
