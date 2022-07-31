@@ -73,8 +73,6 @@ static void print_svm_info(void);
 static void print_via_padlock_info(void);
 //static void print_vmx_info(void);
 
-#define	nitems(x)	(sizeof((x)) / sizeof((x)[0]))
-
 #ifdef __i386__
 int			cpu;					/* Are we 386, 386sx, 486, etc? */
 int			cpu_class;
@@ -1169,7 +1167,7 @@ identblue(void)
 	 * In this case, rdmsr generates general protection fault, and
 	 * exception will be trapped by bluetrap13().
 	 */
-	setidt(IDT_GP, bluetrap13, 0, SDT_SYS386TGT, SEL_KPL));
+	setidt(IDT_GP, bluetrap13, 0, SDT_SYS386TGT, SEL_KPL);
 
 	rdmsr(0x1002); /* Cyrix CPU generates fault. */
 

@@ -627,7 +627,7 @@ u_int
 cpu_auxmsr(void)
 {
 	KASSERT((read_eflags() & PSL_I) == 0/*, ("context switch possible")*/);
-	return (__PERCPU_GET(cpuid));
+	return (PERCPU_GET(cpuid));
 }
 
 extern int elf32_nxstack;

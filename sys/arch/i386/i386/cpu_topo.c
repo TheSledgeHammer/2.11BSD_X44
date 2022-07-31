@@ -794,11 +794,11 @@ init_secondary_tail(pc)
 	}
 
 	/* A quick check from sanity claus */
-	cpuid = PERCPU_GET(pc, cpuid);
-	if (PERCPU_GET(pc, apic_id) != lapic_cpu_number()) {
+	cpuid = PERCPU_GET(cpuid);
+	if (PERCPU_GET(apic_id) != lapic_cpu_number()) {
 		printf("SMP: cpuid = %d\n", cpuid);
 		printf("SMP: actual apic_id = %d\n", lapic_cpu_number());
-		printf("SMP: correct apic_id = %d\n", PERCPU_GET(pc, apic_id));
+		printf("SMP: correct apic_id = %d\n", PERCPU_GET(apic_id));
 		panic("cpuid mismatch! boom!!");
 	}
 
@@ -814,8 +814,8 @@ init_secondary_tail(pc)
 	}
 
 	/* Determine if we are a hyperthread. */
-	if (cpu_info[PERCPU_GET(pc, apic_id)].cpu_hyperthread) {
-		CPU_SET(cpu_info[PERCPU_GET(pc, apic_id)].cpu_topo, cpuid);
+	if (cpu_info[PERCPU_GET(apic_id)].cpu_hyperthread) {
+		CPU_SET(cpu_info[PERCPU_GET(apic_id)].cpu_topo, cpuid);
 	}
 	/*
 	if (bootverbose)

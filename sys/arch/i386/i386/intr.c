@@ -168,13 +168,9 @@ intr_default_setup(void)
 {
 	/* icu & apic vectors */
 	intr_legacy_vectors();
-#if NIOAPIC > 0
-	intr_apic_vectors();
-	intr_x2apic_vectors();
-#endif
 }
 
-#if NIOAPIC > 0
+#ifdef notyet
 void
 intr_apic_vectors(void)
 {

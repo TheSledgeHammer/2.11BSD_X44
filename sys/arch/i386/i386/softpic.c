@@ -330,7 +330,7 @@ softpic_handle_apic(spic)
     switch(spic->sp_template) {
         case PIC_I8259:
             apic = softpic_lookup_apic(PIC_I8259);
-            if(apic == &legacy_intrmap && spic->sp_template == apic->apic_pic_type) {
+            if(apic == &i8259_intrmap && spic->sp_template == apic->apic_pic_type) {
                 return (apic);
             }
             break;
