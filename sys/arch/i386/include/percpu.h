@@ -46,19 +46,14 @@ extern struct percpu 				*__percpu[];
 
 #ifdef _KERNEL
 #define	__percpu_offset(name)		offsetof(struct percpu, name)
-#define	__percpu_type(name)			__typeof(((struct percpu *)0)->name)
+#define	__percpu_type(name)		__typeof(((struct percpu *)0)->name)
 
-#define	PERCPU_PTR(pc, name)		((pc)->pc_##name)
-#define PERCPU_SET(pc, name, val)	(PERCPU_PTR(pc, name) = (val))
-#define PERCPU_GET(pc, name)        (PERCPU_PTR(pc, name))
-#define PERCPU_ADD(pc, name, val)   (PERCPU_PTR(pc, name) += (val))
+#define PERCPU_PTR(name)		(__percpu_offset(pc_ ## name))
+#define PERCPU_SET(name, val)		(PERCPU_PTR(name) = (val))
+#define PERCPU_GET(name)      		(PERCPU_PTR(name))
+#define PERCPU_ADD(name, val)   	(PERCPU_PTR(name) += (val))
 
-#define __PERCPU_PTR(name)			(__percpu_offset(pc_ ## name))
-#define __PERCPU_SET(name, val)		(__PERCPU_PTR(name) = (val))
-#define __PERCPU_GET(name)      	(__PERCPU_PTR(name))
-#define __PERCPU_ADD(name, val)   	(__PERCPU_PTR(name) += (val))
-
-#define	IS_BSP(pc)					(PERCPU_GET(pc, cpuid) == 0)
+#define	IS_BSP()			(PERCPU_GET(cpuid) == 0)
 
 /*
 struct kthread *
