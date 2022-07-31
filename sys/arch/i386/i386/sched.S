@@ -199,11 +199,11 @@ swfnd:
 		movl	%edx,%eax							# return (1);
 		ret
 
-mvesp:
+ENTRY(mvesp)
 		movl	%esp,%eax
 		ret
 
-proc_trampoline:
+ENTRY(proc_trampoline)
 		movl	$IPL_NONE,_C_LABEL(cpl)
 		pushl	%ebx
 		call	*%esi
@@ -215,7 +215,7 @@ proc_trampoline:
  * Update pcb, saving current processor state and arranging
  * for alternate return ala longjmp in Xswitch if altreturn is true.
  */
-savectx:
+ENTRY(savectx)
 		movl	4(%esp), %ecx
 		movw	_C_LABEL(cpl), %ax
 		movw	%ax,  PCB_IML(%ecx)
@@ -288,5 +288,5 @@ savectx:
 		ret
 
  # To be done:
-astoff:
+ENTRY(astoff)
 		ret

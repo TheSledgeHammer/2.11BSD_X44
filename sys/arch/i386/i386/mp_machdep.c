@@ -140,10 +140,10 @@ cpu_mp_start(pc)
 
 	/* Set boot_cpu_id if needed. */
 	if (boot_cpu_id == -1) {
-		boot_cpu_id = PERCPU_GET(pc, apic_id);
+		boot_cpu_id = PERCPU_GET(apic_id);
 		cpu_info[boot_cpu_id].cpu_bsp = 1;
 	} else {
-		KASSERT(boot_cpu_id == PERCPU_GET(pc, apic_id)("BSP's APIC ID doesn't match boot_cpu_id"));
+		KASSERT(boot_cpu_id == PERCPU_GET(apic_id)("BSP's APIC ID doesn't match boot_cpu_id"));
 	}
 
 	/* Probe logical/physical core configuration. */
@@ -197,18 +197,18 @@ init_secondary(ci)
 	lidt(&r_idt);
 
 	lldt(_default_ldt);
-	PERCPU_SET(pc, currentldt, _default_ldt);
+	PERCPU_SET(currentldt, _default_ldt);
 
 	gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 	gdt[myid * NGDT + GPROC0_SEL].sd.sd_type = SDT_SYS386TSS;
-	common_tssp->tss_esp0 = PERCPU_GET(pc, trampstk);
+	common_tssp->tss_esp0 = PERCPU_GET(trampstk);
 	common_tssp->tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
 	common_tssp->tss_ioopt = sizeof(struct i386tss) << 16;
-	PERCPU_SET(pc, tss_gdt, &gdt[myid * NGDT + GPROC0_SEL].sd);
-	PERCPU_SET(pc, common_tssd, PERCPU_GET(pc, tss_gdt));
+	PERCPU_SET(tss_gdt, &gdt[myid * NGDT + GPROC0_SEL].sd);
+	PERCPU_SET(common_tssd, PERCPU_GET(tss_gdt));
 	ltr(gsel_tss);
 
-	PERCPU_SET(pc, fsgs_gdt, &gdt[myid * NGDT + GUFS_SEL].sd);
+	PERCPU_SET(fsgs_gdt, &gdt[myid * NGDT + GUFS_SEL].sd);
 
 	/*
 	 * Set to a known state:

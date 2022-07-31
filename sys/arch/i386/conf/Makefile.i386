@@ -75,7 +75,8 @@ LINKFORMAT=	-T ${I386}/conf/${KERN_LDSCRIPT}
 ##
 
 support.o: assym.h
-vm86bios.o bioscall.o mpbios.o: assym.h
+vm86bios.o bioscall.o: assym.h
+mpboot.o: assym.h
 
 ##
 ## (7) misc settings

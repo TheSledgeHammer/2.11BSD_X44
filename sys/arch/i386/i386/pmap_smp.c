@@ -184,7 +184,7 @@ pmap_invalidate_page(pmap, va)
 	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invlpg(va);
 	} else {
-		cpumask = __PERCPU_GET(cpumask);
+		cpumask = PERCPU_GET(cpumask);
 		if (pmap->pm_active & cpumask) {
 			invlpg(va);
 		} else {
@@ -218,7 +218,7 @@ pmap_invalidate_range(pmap, sva, eva)
 			invlpg(addr);
 		}
 	} else {
-		cpumask = __PERCPU_GET(cpumask);
+		cpumask = PERCPU_GET(cpumask);
 		if (pmap->pm_active & cpumask) {
 			for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 				invlpg(addr);
@@ -249,7 +249,7 @@ pmap_invalidate_all(pmap)
 	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invltlb();
 	} else {
-		cpumask = __PERCPU_GET(cpumask);
+		cpumask = PERCPU_GET(cpumask);
 		if (pmap->pm_active & cpumask) {
 			invltlb();
 		}

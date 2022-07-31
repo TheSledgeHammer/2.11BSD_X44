@@ -43,6 +43,19 @@
 #include "ioapic.h"
 #include "lapic.h"
 
+#define MY_COUNT 			_C_LABEL(cnt)
+
+/* XXX See comment in locore.s */
+#ifdef __ELF__
+#define	XINTR(name,num)		Xintr_##name##num
+#define	XSTRAY(name,num)	Xstray_##name/**/num
+#define XINTR_TSS(irq_num)	Xintr_tss_##irq_num
+#else
+#define	XINTR(name,num)		_Xintr_##name##num
+#define	XSTRAY(name,num)	_Xstray_##name##num
+#define XINTR_TSS(irq_num)	Xintr_tss_##irq_num
+#endif
+
 IDTVEC(spurious)
 		/*
 		 * The Pentium Pro local APIC may erroneously call this vector for a
@@ -179,19 +192,19 @@ IDTVEC(recurse_##name##irq_num)													;\
 		subl	$4,%esp															;\
 		pushl	$T_ASTFLT						/* trap # for doing ASTs */		;\
 		INTRENTRY																;\
-IDTVEC(resume_##name##irq_num)													;\
+IDTVEC(resume_##name##irq_num)													\
 		movl	$IREENT_MAGIC,TF_ERR(%esp)										;\
 		movl	%ebx,%esi														;\
-		movl	_C_LABEL(intrsrc) + irq_num * 4, %ebp									;\
+		movl	_C_LABEL(intrsrc) + irq_num * 4, %ebp							;\
 		movl	IS_MAXLEVEL(%ebp),%ebx											;\
 		jmp		1f																;\
-IDTVEC(intr_##name##irq_num)                                	       			;\
-pushl	$0										/* dummy error code */			;\
+IDTVEC(intr_##name##irq_num)                                	       			\
+		pushl	$0								/* dummy error code */			;\
 		pushl	$T_ASTFLT						/* trap # for doing ASTs */		;\
 		INTRENTRY																;\
-		movl	_C_LABEL(intrsrc) + irq_num * 4,%ebp									;\
+		movl	_C_LABEL(intrsrc) + irq_num * 4,%ebp							;\
 		mask(irq_num)															;\
-		early_icu(irq_num)							/* and allow other intrs */		;\
+		early_icu(irq_num)						/* and allow other intrs */		;\
 		testl	%ebp,%ebp														;\
 		jz		9f								/* stray */						;\
 		movl	IS_MAXLEVEL(%ebp),%ebx											;\
@@ -210,17 +223,17 @@ pushl	$0										/* dummy error code */			;\
 		cmpl	%esi,%edi														;\
 		jle		7f																;\
 		pushl	IH_ARG(%ebx)													;\
-		movl	IH_FUN(%ebx),%eax												;\
 		movl	%edi,_C_LABEL(cpl)												;\
-		movl	IH_NEXT(%ebx),%ebx				/* next handler in chain */		;\
-		call	*%eax							/* call it */					;\
+		call	*IH_FUN(%ebx),%eax				/* call it */					;\
 		addl	$4,%esp							/* toss the arg */				;\
+		movl	IH_NEXT(%ebx),%ebx				/* next handler in chain */		;\
 		testl	%ebx,%ebx														;\
 		jnz		6b																;\
 5:																				;\
 		cli																		;\
 		unmask(irq_num)							/* unmask it in hardware */		;\
 		late_icu(irq_num)														;\
+		sti 																	;\
 		jmp		_C_LABEL(Xdoreti)				/* lower spl and do ASTs */		;\
 7:																				;\
 		cli																		;\
@@ -237,10 +250,9 @@ pushl	$0										/* dummy error code */			;\
 		sti																		;\
 		INTRFASTEXIT															;\
 9:																				;\
-		pushl	%esp							/* for unmask */				;\
 		unmask(irq_num)															;\
 		late_icu(irq_num)														;\
-		addl	$4,%esp															;\
+		sti																		;\
 		INTRFASTEXIT															;\
 
 #define ICUADDR IO_ICU1

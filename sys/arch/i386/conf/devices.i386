@@ -21,7 +21,7 @@ define	mpbios
 device	mpbios
 attach	mpbios at mainbus
 file 	arch/i386/i386/mpbios.c				mpbios   needs-flag
-file	arch/i386/i386/mpboot.S				mpbios
+#file	arch/i386/i386/mpboot.S				mpbios
 
 # CPUS
 define cpu { [apid = -1] }

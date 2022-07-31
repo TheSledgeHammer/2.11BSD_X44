@@ -52,7 +52,6 @@
 #include "ksyms.h"
 
 #include <sys/errno.h>
-//#include <sys/reboot.h>
 #include <sys/syscall.h>
 
 #include "machine/segments.h"
@@ -356,7 +355,7 @@ olddiskboot:
 /**********************************************************************/
 /* Identify CPU's */
 
-identify_cpu:
+ENTRY(identify_cpu)
 
 		pushl	%ebx
 
@@ -486,14 +485,14 @@ trycpuid:	/* Use the `cpuid' instruction. */
 /*
  * Signal trampoline, copied to top of user stack
  */
-sigcode:
+ENTRY(sigcode)
 		leal	12(%esp),%eax		# get pointer to sigcontext
 		movl	%eax,4(%esp)		# put it in the argument slot
 									# fake return address already there
 		movl	$SYS_sigreturn,%eax
-		int	$0x80	 			# enter kernel with args on stack
+		int		$0x80	 			# enter kernel with args on stack
 		movl	$SYS_exit,%eax
-		int	$0x80				# exit if sigreturn fails
+		int		$0x80				# exit if sigreturn fails
 		
 		ALIGN_TEXT
 esigcode:
@@ -571,7 +570,7 @@ IDTVEC(align)
 IDTVEC(rsvd)	/* rvsd 18 */
 		ZTRAP(T_RESERVED)
 
-alltraps:
+ENTRY(alltraps)
 		pushal
 		nop
 		push 	%ds
@@ -604,7 +603,6 @@ IDTVEC(osyscall)
 /*
  * Call gate entry for syscall
  */
-
 IDTVEC(syscall)
 		pushl	$2									/* size of instruction for restart */
 syscall1:
@@ -641,4 +639,5 @@ syscall1:
 		jmp	2b
 4:		.asciz	"WARNING: SPL NOT LOWERED ON SYSCALL EXIT\n"
 #endif /* DIAGNOSTIC */
+
 /**********************************************************************/

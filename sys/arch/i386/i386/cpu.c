@@ -236,7 +236,7 @@ cpu_smp_init(ci)
 	if (smp_disabled != 0 || cpu_mp_probe() == 0) {
 		mp_ncores = 1;
 		mp_ncpus = 1;
-		all_cpus = PERCPU_GET(ci->cpu_percpu, cpumask);
+		all_cpus = PERCPU_GET(cpumask);
 		return;
 	}
 

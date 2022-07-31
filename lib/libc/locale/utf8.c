@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_utf8.c,v 1.18 2013/05/28 16:57:56 joerg Exp $	*/
+/*	$NetBSD: citrus_utf8.c,v 1.10 2003/08/07 16:42:38 agc Exp $	*/
 
 /*-
  * Copyright (c)2002 Citrus Project,
@@ -57,40 +57,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-/*-
- * Copyright (c) 2002 Tim J. Robbins
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD$"); */
 
 #include <errno.h>
 #include <rune.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
 
 #include "citrus_ctype.h"
 
@@ -106,6 +81,53 @@ int		_UTF8_sputrune(rune_t, char *, size_t, char **);
 int		_UTF8_sgetmbrune(_UTF8EncodingInfo *, wchar_t *, const char **, size_t, _UTF8State *, size_t *);
 int 	_UTF8_sputmbrune(_UTF8EncodingInfo *, char *, wchar_t, _UTF8State *, size_t *);
 
+static int _UTF8_count_array[256];
+static int const *_UTF8_count = NULL;
+
+static u_int32_t _UTF8_range[] = {
+	0,	/*dummy*/
+	0x00000000, 0x00000080, 0x00000800, 0x00010000,
+	0x00200000, 0x04000000, 0x80000000,
+};
+
+static int
+_UTF8_findlen(wchar_t v)
+{
+	int i;
+	u_int32_t c;
+
+	c = (u_int32_t)v;	/*XXX*/
+	for (i = 1; i < sizeof(_UTF8_range) / sizeof(_UTF8_range[0]); i++) {
+		if (c >= _UTF8_range[i] && c < _UTF8_range[i + 1]) {
+			return (i);
+		}
+	}
+
+	return (-1);	/*out of range*/
+}
+
+static __inline void
+_UTF8_init_count(void)
+{
+	int i;
+	if (!_UTF8_count) {
+		memset(_UTF8_count_array, 0, sizeof(_UTF8_count_array));
+		for (i = 0; i <= 0x7f; i++)
+			_UTF8_count_array[i] = 1;
+		for (i = 0xc0; i <= 0xdf; i++)
+			_UTF8_count_array[i] = 2;
+		for (i = 0xe0; i <= 0xef; i++)
+			_UTF8_count_array[i] = 3;
+		for (i = 0xf0; i <= 0xf7; i++)
+			_UTF8_count_array[i] = 4;
+		for (i = 0xf8; i <= 0xfb; i++)
+			_UTF8_count_array[i] = 5;
+		for (i = 0xfc; i <= 0xfd; i++)
+			_UTF8_count_array[i] = 6;
+		_UTF8_count = _UTF8_count_array;
+	}
+}
+
 int
 _UTF8_init(_RuneLocale *rl)
 {
@@ -119,6 +141,7 @@ _UTF8_init(_RuneLocale *rl)
 
 	_CurrentRuneLocale = rl;
 
+	_UTF8_init_count();
 	_citrus_ctype_encoding_init(info, state);
 
 	return (0);
@@ -129,6 +152,9 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, 
 {
 	wchar_t wchar;
 	const char *s0;
+	int c;
+	int i;
+	int chlenbak;
 
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(ei != NULL);
@@ -143,24 +169,135 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, 
 		return 0;
 	}
 
-	wchar = (wchar_t) _UTF8_sgetrune(s, n, nresult);
+	chlenbak = psenc->chlen;
 
-	if (pwc != NULL) {
+	/* make sure we have the first byte in the buffer */
+	switch (psenc->chlen) {
+	case 0:
+		if (n < 1) {
+			goto restart;
+		}
+		psenc->ch[0] = *s0++;
+		psenc->chlen = 1;
+		n--;
+		break;
+	case 1:
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+		break;
+	default:
+		/* illegal state */
+		goto ilseq;
+	}
+
+	c = _UTF8_count[psenc->ch[0] & 0xff];
+	if (c == 0) {
+		goto ilseq;
+	}
+	while (psenc->chlen < c) {
+		if (n < 1) {
+			goto restart;
+		}
+		psenc->ch[psenc->chlen] = *s0++;
+		psenc->chlen++;
+		n--;
+	}
+
+	switch (c) {
+	case 1:
+		wchar = psenc->ch[0] & 0xff;
+		break;
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+		wchar = psenc->ch[0] & (0x7f >> c);
+		for (i = 1; i < c; i++) {
+			if ((psenc->ch[i] & 0xc0) != 0x80) {
+				goto ilseq;
+			}
+			wchar <<= 6;
+			wchar |= (psenc->ch[i] & 0x3f);
+		}
+
+		_DIAGASSERT(findlen(wchar) == c);
+
+		break;
+	}
+
+	*s = s0;
+
+	psenc->chlen = 0;
+
+	if (pwc) {
 		*pwc = wchar;
 	}
 
-	*nresult = (wchar == 0) ? 0 : s0 - *s;
-	*s = s0;
+	if (!wchar) {
+		*nresult = 0;
+	} else {
+		*nresult = c - chlenbak;
+	}
 
+	return (0);
+
+ilseq:
+	psenc->chlen = 0;
+	*nresult = (size_t)-1;
+	return (EILSEQ);
+
+restart:
+	*s = s0;
+	*nresult = (size_t)-2;
 	return (0);
 }
 
 int
 _UTF8_sputmbrune(_UTF8EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF8State *psenc, size_t *nresult)
 {
+	int cnt, i, ret;
+	wchar_t c;
+
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(s != NULL);
+
+	cnt = _UTF8_findlen(wc);
+	if (cnt <= 0 || cnt > 6) {
+		/* invalid UCS4 value */
+		ret = EILSEQ;
+		goto err;
+	}
+	if (n < cnt) {
+		/* bound check failure */
+		ret = E2BIG;
+		goto err;
+	}
+
+	c = wc;
+	if (s) {
+		for (i = cnt - 1; i > 0; i--) {
+			s[i] = 0x80 | (c & 0x3f);
+			c >>= 6;
+		}
+		s[0] = c;
+		if (cnt == 1) {
+			s[0] &= 0x7f;
+		} else {
+			s[0] &= (0x7f >> cnt);
+			s[0] |= ((0xff00 >> cnt) & 0xff);
+		}
+	}
+
+	*nresult = (size_t) cnt;
+	return 0;
+
+err:
+	*nresult = (size_t) - 1;
+	return ret;
 
 	return (_UTF8_sputrune(wc, s, n, nresult));
 }
@@ -168,155 +305,11 @@ _UTF8_sputmbrune(_UTF8EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF8Sta
 rune_t
 _UTF8_sgetrune(const char *string, size_t n, const char **result)
 {
-	int ch, len, mask, siglen;
-	rune_t lbound, wch;
-
-	if (n < 1) {
-		if (result != NULL)
-			*result = string;
-		return (_INVALID_RUNE);
-	}
-
-	/*
-	 * Determine the number of octets that make up this character from
-	 * the first octet, and a mask that extracts the interesting bits of
-	 * the first octet.
-	 *
-	 * We also specify a lower bound for the character code to detect
-	 * redundant, non-"shortest form" encodings. For example, the
-	 * sequence C0 80 is _not_ a legal representation of the null
-	 * character. This enforces a 1-to-1 mapping between character
-	 * codes and their multibyte representations.
-	 */
-	ch = (unsigned char)*string;
-	if ((ch & 0x80) == 0) {
-		mask = 0x7f;
-		len = 1;
-		lbound = 0;
-	} else if ((ch & 0xe0) == 0xc0) {
-		mask = 0x1f;
-		len = 2;
-		lbound = 0x80;
-	} else if ((ch & 0xf0) == 0xe0) {
-		mask = 0x0f;
-		len = 3;
-		lbound = 0x800;
-	} else if ((ch & 0xf8) == 0xf0) {
-		mask = 0x07;
-		len = 4;
-		lbound = 0x10000;
-	} else if ((ch & 0xfc) == 0xf8) {
-		mask = 0x03;
-		len = 5;
-		lbound = 0x200000;
-	} else if ((ch & 0xfc) == 0xfc) {
-		mask = 0x01;
-		len = 6;
-		lbound = 0x4000000;
-	} else {
-		/*
-		 * Malformed input; input is not UTF-8.
-		 */
-		if (result != NULL)
-			*result = string + 1;
-		return (_INVALID_RUNE);
-	}
-
-	if (n < len) {
-		/*
-		 * Truncated or partial input.
-		 */
-		if (result != NULL)
-			*result = string;
-		return (_INVALID_RUNE);
-	}
-
-	/*
-	 * Decode the octet sequence representing the character in chunks
-	 * of 6 bits, most significant first.
-	 */
-	wch = (unsigned char)*string++ & mask;
-	while (--len != 0) {
-		if ((*string & 0xc0) != 0x80) {
-			/*
-			 * Malformed input; bad characters in the middle
-			 * of a character.
-			 */
-			wch = _INVALID_RUNE;
-			if (result != NULL)
-				*result = string + 1;
-			return (_INVALID_RUNE);
-		}
-		wch <<= 6;
-		wch |= *string++ & 0x3f;
-	}
-	if (wch != _INVALID_RUNE && wch < lbound)
-		/*
-		 * Malformed input; redundant encoding.
-		 */
-		wch = _INVALID_RUNE;
-	if (result != NULL)
-		*result = string;
-	return (wch);
+	return (emulated_sgetrune(string, n, result));
 }
 
 int
 _UTF8_sputrune(rune_t c, char *string, size_t n, char **result)
 {
-	unsigned char lead;
-	int i, len;
-
-	/*
-	 * Determine the number of octets needed to represent this character.
-	 * We always output the shortest sequence possible. Also specify the
-	 * first few bits of the first octet, which contains the information
-	 * about the sequence length.
-	 */
-	if ((c & ~0x7f) == 0) {
-		lead = 0;
-		len = 1;
-	} else if ((c & ~0x7ff) == 0) {
-		lead = 0xc0;
-		len = 2;
-	} else if ((c & ~0xffff) == 0) {
-		lead = 0xe0;
-		len = 3;
-	} else if ((c & ~0x1fffff) == 0) {
-		lead = 0xf0;
-		len = 4;
-	} else if ((c & ~0x3ffffff) == 0) {
-		lead = 0xf8;
-		len = 5;
-	} else if ((c & ~0x7fffffff) == 0) {
-		lead = 0xfc;
-		len = 6;
-	} else {
-		/*
-		 * Wide character code is out of range.
-		 */
-		if (result != NULL)
-			*result = NULL;
-		return (0);
-	}
-
-	if (n < len) {
-		if (result != NULL)
-			*result = NULL;
-	} else {
-		/*
-		 * Output the octets representing the character in chunks
-		 * of 6 bits, least significant last. The first octet is
-		 * a special case because it contains the sequence length
-		 * information.
-		 */
-		for (i = len - 1; i > 0; i--) {
-			string[i] = (c & 0x3f) | 0x80;
-			c >>= 6;
-		}
-		*string = (c & 0xff) | lead;
-		if (result != NULL)
-			*result = string + len;
-	}
-
-	return (len);
+	return (emulated_sputrune(c, string, n, result));
 }
