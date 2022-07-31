@@ -41,8 +41,6 @@
 #include <sys/power.h>
 #include <sys/null.h>
 
-#define	__arraycount(__x)	(sizeof(__x) / sizeof(__x[0]))
-
 struct hook_desc {
 	TAILQ_ENTRY(hook_desc) 	hk_list;
 	void 					(*hk_fn)(void *);

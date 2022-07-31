@@ -25,6 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -42,37 +43,12 @@
 
 struct softpic 					 	*intrspic;
 static TAILQ_HEAD(pic_list, pic) 	pichead;
+static TAILQ_HEAD(apic_list, apic) 	apichead;
 
-static int
-softpic_pic_registered(pic)
-	struct pic *pic;
-{
-	struct pic *p;
+int	softpic_register_pic(struct pic *);
+int	softpic_register_apic(struct apic *);
 
-	TAILQ_FOREACH(p, &pichead, pic_entry) {
-		if (p == pic) {
-			return (1);
-		}
-	}
-	return (0);
-}
-
-int
-softpic_register_pic(pic)
-	struct pic *pic;
-{
-	int error;
-
-	if (softpic_pic_registered(pic)) {
-		error = EBUSY;
-	} else {
-		TAILQ_INSERT_TAIL(&pichead, pic, pic_entry);
-		error = 0;
-	}
-
-	return (error);
-}
-
+/* Softpic Methods common to pic & apic*/
 void
 softpic_init(void)
 {
@@ -82,6 +58,7 @@ softpic_init(void)
 		spic = (struct softpic *)malloc(sizeof(struct softpic *), M_DEVBUF, M_WAITOK);
 	}
 	TAILQ_INIT(&pichead);
+	TAILQ_INIT(&apichead);
 
 	spic->sp_intsrc = (struct intrsource *)intrsrc;
 	spic->sp_inthnd = (struct intrhand *)intrhand;
@@ -111,6 +88,58 @@ softpic_check(spic, irq, isapic, pictemplate)
 	} else {
 		return;
 	}
+}
+
+void
+softpic_register(pic, apic)
+	struct pic 	*pic;
+	struct apic *apic;
+{
+	int error;
+	if(softpic_register_pic(pic) != 0 || pic == NULL) {
+		printf("softpic_register: pic not found!\n");
+	} else {
+		printf("softpic_register: pic registered\n");
+	}
+	if(softpic_register_apic(apic) != 0 || apic == NULL) {
+		printf("softpic_register: apic not found!\n");
+	} else {
+		printf("softpic_register: apic registered\n");
+	}
+}
+
+/*
+ * PIC Methods
+ */
+
+static int
+softpic_pic_registered(pic)
+	struct pic *pic;
+{
+	struct pic *p;
+
+	TAILQ_FOREACH(p, &pichead, pic_entry) {
+		if (p == pic) {
+			return (1);
+		}
+	}
+	return (0);
+}
+
+int
+softpic_register_pic(pic)
+	struct pic *pic;
+{
+	int error;
+
+	if (softpic_pic_registered(pic)) {
+		error = EBUSY;
+	} else {
+		TAILQ_INSERT_TAIL(&pichead, pic, pic_entry);
+		error = 0;
+	}
+
+	return (error);
 }
 
 static struct pic *
@@ -246,4 +275,77 @@ softpic_intr_handler(spic, irq, type, isapic, pictemplate)
 	spic->sp_inthnd = ih;
 
 	return (spic);
+}
+
+/*
+ * APIC Methods
+ */
+static int
+softpic_apic_registered(apic)
+    struct apic *apic;
+{
+    struct apic *p;
+
+    TAILQ_FOREACH(p, &apichead, apic_entry) {
+        if (p == apic) {
+            return (1);
+        }
+    }
+    return (0);
+}
+
+int
+softpic_register_apic(apic)
+        struct apic *apic;
+{
+    int error;
+
+    if (softpic_apic_registered(apic)) {
+        error = 1;
+    } else {
+        TAILQ_INSERT_TAIL(&apichead, apic, apic_entry);
+        error = 0;
+    }
+    return (error);
+}
+
+static struct apic *
+softpic_lookup_apic(pictemplate)
+    int             pictemplate;
+{
+    struct apic *apic;
+    TAILQ_FOREACH(apic, &apichead, apic_entry) {
+        if(apic->apic_pic_type == pictemplate) {
+            return (apic);
+        }
+    }
+    return (NULL);
+}
+
+struct apic *
+softpic_handle_apic(spic)
+    struct softpic *spic;
+{
+    struct apic *apic;
+    switch(spic->sp_template) {
+        case PIC_I8259:
+            apic = softpic_lookup_apic(PIC_I8259);
+            if(apic == &legacy_intrmap && spic->sp_template == apic->apic_pic_type) {
+                return (apic);
+            }
+            break;
+        case PIC_IOAPIC:
+            apic = softpic_lookup_apic(PIC_IOAPIC);
+            if(apic == &ioapic_intrmap && spic->sp_template == apic->apic_pic_type) {
+                return (apic);
+            }
+            break;
+        case PIC_LAPIC:
+            apic = softpic_lookup_apic(PIC_LAPIC);
+            if(apic == &lapic_intrmap && spic->sp_template == apic->apic_pic_type) {
+                return (apic);
+            }
+            break;
+    }
+    return (NULL);
 }

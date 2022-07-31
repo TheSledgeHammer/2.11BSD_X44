@@ -82,7 +82,7 @@ static void		lapic_map(vm_offset_t);
 static void 	lapic_hwmask(struct softpic *, int);
 static void 	lapic_hwunmask(struct softpic *, int);
 static void 	lapic_setup(struct softpic *, struct cpu_info *, int, int, int);
-static void		lapic_register_pic(struct pic *);
+static void		lapic_register_pic(struct pic *, struct apic *);
 void			lapic_dump(void);
 
 static void		x2apic_write_icr(uint32_t hi, uint32_t lo);
@@ -96,14 +96,20 @@ struct pic lapic_template = {
 		.pic_register = lapic_register_pic
 };
 
+struct apic lapic_intrmap = {
+		.apic_pic_type = PIC_LAPIC,
+		.apic_edge = NULL,
+		.apic_level = NULL
+};
+
 static int i82489_ipi(int vec, int target, int dl);
 static int x2apic_ipi(int vec, int target, int dl);
 int (*i386_ipi)(int, int, int) = i82489_ipi;
 
 #ifdef LAPIC_ENABLE_X2APIC
-bool x2apic_enable = true;
+bool x2apic_enable = TRUE;
 #else
-bool x2apic_enable = false;
+bool x2apic_enable = FALSE;
 #endif
 
 /* i82489_readreg */
@@ -233,6 +239,17 @@ lapic_map(vm_offset_t lapic_base)
 	*pte = lapic_base | PG_RW | PG_V | PG_N | PG_G | PG_NX | PG_W | PG_NC_PCD;
 	invlpg(va);
 
+	if(x2apic_mode) {
+		i386_ipi = x2apic_ipi;
+#if NIOAPIC > 0
+		struct ioapic_softc *ioapic;
+		SIMPLEQ_FOREACH(ioapic, &ioapics, sc_next) {
+			lapic_intrmap.apic_edge = x2apic_edge_stubs;
+			lapic_intrmap.apic_level = x2apic_edge_stubs;
+			ioapic->sc_apic = &lapic_intrmap;
+		}
+#endif
+	}
 	lapic_enable_x2apic();
 #ifdef SMP
 	cpu_init_first();	/* catch up to changed cpu_number() */
@@ -559,39 +576,17 @@ lapic_setup(spic, ci, pin, idtvec, type)
 
 }
 
-/* register stubs */
-/*
-static void
-lapic_stubs(spic, pin, edge, level, type)
-	struct softpic *spic;
-	struct intrstub *edge, *level;
-	int pin, type;
-{
-	if(x2apic_mode) {
-#ifdef NIOAPIC > 0
-		int pin;
-		SIMPLEQ_FOREACH(spic->sp_ioapic, &ioapics, sc_next) {
-			softpic_pic_stubs(spic, 0, x2apic_edge_stubs, x2apic_level_stubs, PIC_LAPIC);
-		}
-		
-#ifdef notyet
-		for(pin = 0; pin < MAX_INTR_SOURCES; pin++) {
-			softpic_pic_stubs(spic, pin, x2apic_edge_stubs[pin], x2apic_level_stubs[pin], PIC_LAPIC);
-		}
-#endif
-#endif
-	}
-}
-*/
 /*
  * Register Local APIC interrupt pins.
  */
 static void
-lapic_register_pic(template)
-	struct pic *template;
+lapic_register_pic(pic, apic)
+	struct pic *pic;
+	struct apic *apic;
 {
-	template = &lapic_template;
-	softpic_register_pic(template);
+	pic = &lapic_template;
+	apic = &lapic_intrmap;
+	softpic_register_pic(pic, apic);
 }
 
 #define APIC_LVT_PRINT(ci, where, idx, lvtreg)						\

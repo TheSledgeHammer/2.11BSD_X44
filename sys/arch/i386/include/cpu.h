@@ -122,14 +122,12 @@ void	cpu_reset(void);
 void	setidt(int, void *, int, int, int);
 void 	unsetidt(int);
 
-/* locore.s */
-struct 	pcb;
-void	savectx(struct pcb *);
-void 	proc_trampoline(void);
-
 /* sched.S */
+struct 	pcb;
 void    idle(void);
 void    cpu_switch(struct proc *);
+void 	proc_trampoline(void);
+void	savectx(struct pcb *);
 
 /* clock.c */
 extern u_int tsc_freq;
@@ -170,11 +168,6 @@ int		i386_set_ldt(struct proc *, char *, register_t *);
 
 /* isa_machdep.c */
 int		isa_nmi(void);
-
-#ifdef MATH_EMULATE
-/* math_emulate.c */
-int		math_emulate(struct trapframe *);
-#endif
 #endif /* _KERNEL */
 
 /*

@@ -257,6 +257,18 @@
 #define	__used		__unused
 #endif
 
+/*
+ * __diagused: Note that item is used in diagnostic code, but may be
+ * unused in non-diagnostic code.
+ */
+#if (defined(_KERNEL) && defined(DIAGNOSTIC)) \
+ || (!defined(_KERNEL) && !defined(NDEBUG))
+#define	__diagused	/* empty */
+#else
+#define	__diagused	__unused
+#endif
+
+
 #if __GNUC_PREREQ__(2, 96) || defined(__lint__)
 #define	__predict_true(exp)		__builtin_expect((exp) != 0, 1)
 #define	__predict_false(exp)	__builtin_expect((exp) != 0, 0)

@@ -106,6 +106,12 @@ struct pic i8259_template = {
 		.pic_register = i8259_register_pic
 };
 
+struct apic i8259_intrmap = {
+		.apic_pic_type = PIC_I8259,
+		.apic_edge = legacy_stubs,
+		.apic_level = legacy_stubs
+};
+
 /* initialize 8259's */
 void
 i8259_default_setup(void)
@@ -191,11 +197,13 @@ i8259_setup(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int 
  * Register Local APIC interrupt pins.
  */
 static void
-i8259_register_pic(template)
-	struct pic *template;
+i8259_register_pic(pic, apic)
+	struct pic *pic;
+	struct apic *apic;
 {
-	template = &i8259_template;
-	softpic_register_pic(template);
+	pic = &i8259_template;
+	apic = &i8259_intrmap;
+	softpic_register_pic(pic, apic);
 }
 
 static void

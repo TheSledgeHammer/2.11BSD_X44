@@ -43,6 +43,17 @@
 #include <machine/softpic.h>
 
 /*
+ * APIC extends the PIC methods, providing mapping register of
+ * the apic, x2apic and legacy interrupt sources.
+ */
+struct apic {
+    int                     apic_pic_type;
+    struct intrstub         *apic_edge;
+    struct intrstub         *apic_level;
+    TAILQ_ENTRY(apic)       apic_entry;
+};
+
+/*
  * Methods that a PIC provides to mask/unmask a given interrupt source,
  * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
  * return the vector associated with this source.
@@ -53,8 +64,7 @@ struct pic {
 	void 					(*pic_hwunmask)(struct softpic *, int);
 	void 					(*pic_addroute)(struct softpic *, struct cpu_info *, int, int, int);
 	void 					(*pic_delroute)(struct softpic *, struct cpu_info *, int, int, int);
-	//void					(*pic_stubs)(struct softpic *, int, struct intrstub *, struct intrstub *, int);
-	void					(*pic_register)(struct pic *);
+	void					(*pic_register)(struct pic *, struct apic *);
 	TAILQ_ENTRY(pic) 		pic_entry;
 };
 
@@ -74,6 +84,7 @@ struct pic {
  */
 struct intrsource {
 	struct pic 				*is_pic;
+	struct apic 			*is_apic;
     struct intrhand     	*is_handlers;	/* handler chain */
 	u_long 					*is_count;
 	u_long 					*is_straycount;
@@ -92,6 +103,7 @@ struct intrsource {
  */
 struct intrhand {
     struct pic          	*ih_pic;
+    struct apic 			*ih_apic;
 	int						(*ih_fun)(void *);
 	void					*ih_arg;
 	u_long					ih_count;
@@ -138,6 +150,11 @@ extern struct pic			i8259_template;
 extern struct pic			ioapic_template;
 extern struct pic			lapic_template;
 extern struct pic			softintr_template;
+
+/* apic intrmaps */
+extern struct apic          i8259_intrmap;
+extern struct apic          ioapic_intrmap;
+extern struct apic          lapic_intrmap;
 
 /* intr.c */
 void 			*intr_establish(bool_t, int, int, int, int, int (*)(void *), void *);

@@ -71,6 +71,7 @@
 
 #include <arch/i386/include/cpu.h>
 #include <arch/i386/include/segments.h>
+#include <arch/i386/isa/icu.h>
 
 /* TODO: Move these Macro's to correct location */
 #define IDT_INTR_LOW	    (0x20 + NUM_LEGACY_IRQS)
@@ -78,7 +79,6 @@
 #define APIC_LEVEL(l)       ((l) << 4)
 
 char idt_allocmap[NIDT];
-int nidtitems = sizeof(idt_allocmap)/sizeof(idt_allocmap[0]);
 
 /*
  * IDT APIC Vectors:
@@ -99,7 +99,7 @@ idt_vec_alloc(low, high)
     int vec;
     char *allocmap = idt_allocmap;
 
-    if (low < 0 || high >= nidtitems) {
+    if (low < 0 || high >= nitems(idt_allocmap)) {
         return (-1);
     }
     for (vec = low; vec <= high; vec++) {
@@ -149,4 +149,18 @@ idt_vec_free(vec)
 
 	unsetidt(vec);
 	atomic_store_release(&allocmap[vec], 0);
+}
+
+int
+idtvector(irq, level, isapic)
+    int irq, level;
+    bool isapic;
+{
+    int idtvec;
+    if(isapic) {
+        idtvec = idt_vec_alloc(APIC_LEVEL(level), IDT_INTR_HIGH);
+    } else {
+        idtvec = ICU_OFFSET + irq;
+    }
+    return (idtvec);
 }

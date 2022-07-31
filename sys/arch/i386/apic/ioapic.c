@@ -108,11 +108,11 @@ void    	ioapic_attach(struct device *, struct device *, void *);
 extern int 	i386_mem_add_mapping(bus_addr_t, bus_size_t, int, bus_space_handle_t *);
 
 static void	ioapic_init_intpins(struct ioapic_softc *);
-static void 		ioapic_hwmask(struct softpic *, int);
-static void 		ioapic_hwunmask(struct softpic *, int);
+static void ioapic_hwmask(struct softpic *, int);
+static void ioapic_hwunmask(struct softpic *, int);
 static void ioapic_addroute(struct softpic *, struct cpu_info *, int, int, int);
 static void ioapic_delroute(struct softpic *, struct cpu_info *, int, int, int);
-static void	ioapic_register_pic(struct pic *);
+static void	ioapic_register_pic(struct pic *, struct apic *);
 
 int ioapic_bsp_id = 0;
 int ioapic_cold = 1;
@@ -129,6 +129,12 @@ struct pic ioapic_template = {
 		.pic_addroute = ioapic_addroute,
 		.pic_delroute = ioapic_delroute,
 		.pic_register = ioapic_register_pic
+};
+
+struct apic ioapic_intrmap = {
+		.apic_pic_type = PIC_IOAPIC,
+		.apic_edge = apic_edge_stubs,
+		.apic_level = apic_level_stubs
 };
 
 /*
@@ -267,6 +273,7 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_data = (volatile u_int32_t *)(bh + IOAPIC_DATA);
 
 	sc->sc_pic = &ioapic_template;
+	sc->sc_apic = &ioapic_intrmap;
 	ioapic_lock_init(&icu_lock);
 
 	/* add others here */
@@ -526,32 +533,17 @@ ioapic_delroute(spic, ci, pin, idtvec, type)
 	ioapic_hwmask(spic, pin);
 }
 
-/* register stubs */
-static void
-ioapic_stubs(spic, pin, edge, level, type)
-	struct softpic *spic;
-	struct intrstub *edge, *level;
-	int pin, type;
-{
-	softpic_pic_stubs(spic, 0, apic_edge_stubs, apic_level_stubs, PIC_IOAPIC);
-
-#ifdef notyet
-	int pin;
-	for (pin = 0; pin < MAX_INTR_SOURCES; pin++) {
-		softpic_pic_stubs(spic, pin, apic_edge_stubs[pin], apic_level_stubs[pin], PIC_IOAPIC);
-	}
-#endif
-}
-
 /*
  * Register I/O APIC interrupt pins.
  */
 static void
-ioapic_register_pic(template)
-	struct pic *template;
+ioapic_register_pic(pic, apic)
+	struct pic *pic;
+	struct apic *apic;
 {
-	template = &ioapic_template;
-	softpic_register_pic(template);
+	pic = &ioapic_template;
+	apic = &ioapic_intrmap;
+	softpic_register_pic(pic, apic);
 }
 
 #ifdef DDB
