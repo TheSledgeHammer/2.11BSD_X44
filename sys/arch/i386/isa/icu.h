@@ -54,10 +54,8 @@ extern int 				intrtype[];
 extern int 				intrmask[];
 extern int 				intrlevel[];
 
-#define	INTREN(s)			imen &= ~(s)
-#define	INTRDIS(s)			imen |= (s)
-#define	INTRMASK(msk,s)			msk |= (s)
-#define INTRUNMASK(msk,s)		(msk &= ~(s))
+#endif /* !_LOCORE */
+
 #define SOFTINTR_MASK(mask, sir)	((mask) = 1 << (sir))
 
 /*
@@ -91,5 +89,5 @@ extern int 				intrlevel[];
 
 #define MAX_INTR_SOURCES 		ICU_OFFSET
 #define NUM_LEGACY_IRQS			ICU_LEN
-#endif /* !_LOCORE */
+
 #endif	/* _I386_ICU_H_ */
