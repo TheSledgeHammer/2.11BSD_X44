@@ -35,10 +35,10 @@
 #include "assym.h"
 
 #include <machine/asm.h>
-#include <i386/isa/icu.h>
 #include <machine/apic/i8259.h>
 #include <machine/apic/i82093.h>
 #include <machine/segments.h>
+#include <machine/trap.h>
 
 #include "ioapic.h"
 #include "lapic.h"
@@ -184,77 +184,79 @@ IDTVEC(lapic_resume_ltimer)
 
 #define voidop(irq_num)
 
-#define	INTRSTUB(name, irq_num, early_icu, late_icu, mask, unmask, level_mask)	\
+
+#define	INTRSTUB(name, irq_num, early_icu, late_icu, mask, unmask, level_mask)			\
 IDTVEC(recurse_##name##irq_num)													;\
-		pushfl																	;\
-		pushl	%cs																;\
+		pushfl															;\
+		pushl	%cs															;\
 		pushl	%esi															;\
-		subl	$4,%esp															;\
-		pushl	$T_ASTFLT						/* trap # for doing ASTs */		;\
-		INTRENTRY																;\
+		subl	$4,%esp														;\
+		pushl	$T_ASTFLT						/* trap # for doing ASTs */			;\
+		INTRENTRY															;\
 IDTVEC(resume_##name##irq_num)													\
-		movl	$IREENT_MAGIC,TF_ERR(%esp)										;\
+		movl	$IREENT_MAGIC,TF_ERR(%esp)											;\
 		movl	%ebx,%esi														;\
-		movl	_C_LABEL(intrsrc) + irq_num * 4, %ebp							;\
+		movl	_C_LABEL(intrsrc) + (irq_num) * 4, %ebp								;\
 		movl	IS_MAXLEVEL(%ebp),%ebx											;\
-		jmp		1f																;\
-IDTVEC(intr_##name##irq_num)                                	       			\
+		jmp		1f														;\
+IDTVEC(intr_##name##irq_num)                                	       					\
 		pushl	$0								/* dummy error code */			;\
-		pushl	$T_ASTFLT						/* trap # for doing ASTs */		;\
-		INTRENTRY																;\
-		movl	_C_LABEL(intrsrc) + irq_num * 4,%ebp							;\
-		mask(irq_num)															;\
+		pushl	$T_ASTFLT						/* trap # for doing ASTs */			;\
+		INTRENTRY															;\
+		movl	_C_LABEL(intrsrc) + (irq_num) * 4,%ebp								;\
+		mask(irq_num)														;\
 		early_icu(irq_num)						/* and allow other intrs */		;\
 		testl	%ebp,%ebp														;\
-		jz		9f								/* stray */						;\
+		jz		9f								/* stray */				;\
 		movl	IS_MAXLEVEL(%ebp),%ebx											;\
 		movl	_C_LABEL(cpl),%esi												;\
 		cmpl	%ebx,%esi														;\
 		jae		10f								/* currently masked; hold it */	;\
-		incl	MY_COUNT+V_INTR					/* statistical info */			;\
-1:																				;\
+		incl	MY_COUNT+V_INTR					/* statistical info */				;\
+1:																		;\
 		pushl	%esi															;\
 		movl	%ebx,_C_LABEL(cpl)												;\
-		sti																		;\
+		sti																;\
 		incl	_C_LABEL(idepth)												;\
 		movl	IS_HANDLERS(%ebp),%ebx											;\
-6:																				;\
+6:																		;\
 		movl	IH_LEVEL(%ebx),%edi												;\
 		cmpl	%esi,%edi														;\
-		jle		7f																;\
+		jle		7f														;\
 		pushl	IH_ARG(%ebx)													;\
+		movl	IH_FUN(%ebx),%eax												;\
 		movl	%edi,_C_LABEL(cpl)												;\
-		call	*IH_FUN(%ebx),%eax				/* call it */					;\
+		movl	IH_NEXT(%ebx),%ebx				/* next handler in chain */			;\
+		call	*%eax							/* call it */						;\
 		addl	$4,%esp							/* toss the arg */				;\
-		movl	IH_NEXT(%ebx),%ebx				/* next handler in chain */		;\
 		testl	%ebx,%ebx														;\
-		jnz		6b																;\
-5:																				;\
-		cli																		;\
+		jnz		6b														;\
+5:																		;\
+		cli																;\
 		unmask(irq_num)							/* unmask it in hardware */		;\
-		late_icu(irq_num)														;\
-		sti 																	;\
+		late_icu(irq_num)													;\
+		sti																;\
 		jmp		_C_LABEL(Xdoreti)				/* lower spl and do ASTs */		;\
-7:																				;\
-		cli																		;\
-		orl     $(1 << irq_num),_C_LABEL(ipending)								;\
-		level_mask(irq_num)														;\
-		late_icu(irq_num)														;\
-		sti																		;\
+7:																		;\
+		cli																;\
+		orl     $(1 << irq_num),_C_LABEL(ipending)									;\
+		level_mask(irq_num)													;\
+		late_icu(irq_num)													;\
+		sti																;\
 		jmp		_C_LABEL(Xdoreti)				/* lower spl and do ASTs */		;\
-10:																				;\
-		cli																		;\
-		orl     $(1 << irq_num),_C_LABEL(ipending)								;\
-		level_mask(irq_num)														;\
-		late_icu(irq_num)														;\
-		sti																		;\
-		INTRFASTEXIT															;\
-9:																				;\
-		unmask(irq_num)															;\
-		late_icu(irq_num)														;\
-		sti																		;\
-		INTRFASTEXIT															;\
-
+10:																		;\
+		cli																;\
+		orl     $(1 << irq_num),_C_LABEL(ipending)									;\
+		level_mask(irq_num)													;\
+		late_icu(irq_num)													;\
+		sti																;\
+		INTRFASTEXIT														;\
+9:																		;\
+		unmask(irq_num)														;\
+		late_icu(irq_num)													;\
+		INTRFASTEXIT														;\
+		
+		
 #define ICUADDR IO_ICU1
 
 INTRSTUB(legacy, 0, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)
