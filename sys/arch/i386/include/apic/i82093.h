@@ -3,6 +3,7 @@
 #ifndef _I386_I82093_H_
 #define _I386_I82093_H_
 
+#include <machine/specialreg.h>
 #include <machine/apic/ioapicreg.h>
 #include <machine/apic/lapicreg.h>
 
@@ -11,7 +12,7 @@
 		movl	$0,LAPIC_EOI(%eax)
 
 #define X2APIC_ICU(irq_num)												 \
-		movl	$(MSR_X2APIC_BASE + MSR_X2APIC_EOI),%ecx 				;\
+		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx 				;\
 		xorl	%eax,%eax												;\
 		xorl	%edx,%edx												;\
 		wrmsr

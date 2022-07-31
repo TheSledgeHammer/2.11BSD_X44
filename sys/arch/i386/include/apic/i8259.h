@@ -38,6 +38,7 @@
 #define _I386_I8259_H_
 
 #include <dev/core/isa/isareg.h>
+#include <i386/isa/icu.h>
 
 #ifndef	_LOCORE
 
@@ -104,10 +105,7 @@ extern void i8259_reinit(void);
 #endif
 
 #ifdef PIC_MASKDELAY
-#define	FASTER_NOP		\
-	pushl 	%eax; 		\
-	inb 	$0x84,%al; 	\
-	popl 	%eax
+#define	FASTER_NOP		pushl %eax; inb $0x84,%al; popl %eax
 #else
 #define FASTER_NOP
 #endif
