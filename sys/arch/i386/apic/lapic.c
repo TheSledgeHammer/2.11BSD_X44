@@ -586,7 +586,7 @@ lapic_register_pic(pic, apic)
 {
 	pic = &lapic_template;
 	apic = &lapic_intrmap;
-	softpic_register_pic(pic, apic);
+	softpic_register(pic, apic);
 }
 
 #define APIC_LVT_PRINT(ci, where, idx, lvtreg)						\

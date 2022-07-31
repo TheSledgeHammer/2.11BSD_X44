@@ -543,7 +543,7 @@ ioapic_register_pic(pic, apic)
 {
 	pic = &ioapic_template;
 	apic = &ioapic_intrmap;
-	softpic_register_pic(pic, apic);
+	softpic_register(pic, apic);
 }
 
 #ifdef DDB
