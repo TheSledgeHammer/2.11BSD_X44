@@ -48,7 +48,7 @@
 /* XXX See comment in locore.s */
 #ifdef __ELF__
 #define	XINTR(name,num)		Xintr_##name##num
-#define	XSTRAY(name,num)	Xstray_##name/**/num
+#define	XSTRAY(name,num)	Xstray_##name##num
 #define XINTR_TSS(irq_num)	Xintr_tss_##irq_num
 #else
 #define	XINTR(name,num)		_Xintr_##name##num
@@ -100,7 +100,7 @@ IDTVEC(x2apic_intr_ipi)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
-		movl	$(MSR_X2APIC_BASE + MSR_X2APIC_EOI),%ecx
+		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx
 		xorl	%eax,%eax
 		xorl	%edx,%edx
 		wrmsr
@@ -127,7 +127,7 @@ IDTVEC(x2apic_intr_tlb)
 		pushl	$T_ASTFLT
 		INTRENTRY
 		call	_C_LABEL(invltlb_handler)
-		movl	$(MSR_X2APIC_BASE + MSR_X2APIC_EOI),%ecx
+		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx
 		xorl	%eax,%eax
 		xorl	%edx,%edx
 		wrmsr
@@ -168,7 +168,7 @@ IDTVEC(x2apic_intr_ltimer)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
-		movl	$(MSR_X2APIC_BASE + MSR_X2APIC_EOI),%ecx
+		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx
 		xorl	%eax,%eax
 		xorl	%edx,%edx
 		wrmsr

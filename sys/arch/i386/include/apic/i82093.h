@@ -12,7 +12,7 @@
 		movl	$0,LAPIC_EOI(%eax)
 
 #define X2APIC_ICU(irq_num)												 \
-		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx 				;\
+		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx 					;\
 		xorl	%eax,%eax												;\
 		xorl	%edx,%edx												;\
 		wrmsr

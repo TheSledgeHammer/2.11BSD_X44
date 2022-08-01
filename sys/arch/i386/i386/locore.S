@@ -615,18 +615,18 @@ syscall1:
 2:		/* Check for ASTs on exit to user mode. */
 		cli
 		cmpb	$0,_C_LABEL(astpending)
-		je	1f
+		je		1f
 		/* Always returning to user mode here. */
 		movb	$0,_C_LABEL(astpending)
 		sti
 		/* Pushed T_ASTFLT into tf_trapno on entry. */
 		call	_C_LABEL(trap)
-		jmp	2b
+		jmp		2b
 #ifndef DIAGNOSTIC
 1:		INTRFASTEXIT
 #else /* DIAGNOSTIC */
 1:		cmpl	_C_LABEL(cpl),%ebx
-		jne	3f
+		jne		3f
 		INTRFASTEXIT
 3:		sti
 		pushl	$4f
@@ -636,7 +636,7 @@ syscall1:
 		int	$3
 #endif /* DDB */
 		movl	%ebx,_C_LABEL(cpl)
-		jmp	2b
+		jmp		2b
 4:		.asciz	"WARNING: SPL NOT LOWERED ON SYSCALL EXIT\n"
 #endif /* DIAGNOSTIC */
 

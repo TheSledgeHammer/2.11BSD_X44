@@ -387,7 +387,6 @@ intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
 	register struct intrhand *ih;
 
 	spic = softpic_intr_handler(intrspic, irq, type, isapic, pictemplate);
-
 	ih = spic->sp_inthnd;
 	if(isapic) {
 		ih->ih_irq = spic->sp_pins[irq].sp_irq;

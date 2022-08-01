@@ -53,6 +53,9 @@ struct softpic {
     struct softpic_pin		sp_pins[0];
     int                     sp_template;
     bool_t               	sp_isapic;
+
+    int 					sp_idtvec;
+    int 					sp_slot;
 };
 
 struct cpu_info;

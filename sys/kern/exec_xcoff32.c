@@ -45,7 +45,7 @@ int
 exec_xcoff_linker(elp)
 	struct exec_linker *elp;
 {
-	struct xcoff_exechdr *xcoff = (struct xcoff_exechdr *) elp->el_image_hdr;
+	xcoff_exechdr *xcoff = (xcoff_exechdr *) elp->el_image_hdr;
 	int error;
 
 	xcoff->f.f_magic = XCOFF_F_MAGIC;
@@ -86,7 +86,7 @@ exec_xcoff_linker(elp)
 int
 exec_xcoff_prep_zmagic(elp, xcoff, vp)
 	struct exec_linker *elp;
-	struct xcoff_exechdr *xcoff;
+	xcoff_exechdr *xcoff;
 	struct vnode *vp;
 {
 		struct xcoff_aouthdr *xcoff_aout = &xcoff->a;
@@ -115,10 +115,10 @@ exec_xcoff_prep_zmagic(elp, xcoff, vp)
 int
 exec_xcoff_prep_nmagic(elp, xcoff, vp)
 	struct exec_linker *elp;
-	struct xcoff_exechdr *xcoff;
+	xcoff_exechdr *xcoff;
 	struct vnode *vp;
 {
-		struct xcoff_aouthdr *xcoff_aout = &xcoff->a;
+		xcoff_aouthdr *xcoff_aout = &xcoff->a;
 
 		elp->el_taddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->text_start);
 		elp->el_tsize = xcoff_aout->tsize;
@@ -150,10 +150,10 @@ exec_xcoff_prep_nmagic(elp, xcoff, vp)
 int
 exec_xcoff_prep_omagic(elp, xcoff, vp)
 	struct exec_linker *elp;
-	struct xcoff_exechdr *xcoff;
+	xcoff_exechdr *xcoff;
 	struct vnode *vp;
 {
-	struct xcoff_aouthdr *xcoff_aout = &xcoff->a;
+	xcoff_aouthdr *xcoff_aout = &xcoff->a;
 
 	elp->el_taddr = XCOFF_SEGMENT_ALIGN(xcoff, xcoff_aout->text_start);
 	elp->el_tsize = xcoff_aout->tsize;

@@ -384,6 +384,7 @@ typedef struct xcoff64_ldrsyms {
 #define xcoff_exechdr		xcoff32_exechdr
 #define XCOFF_HDR_SIZE		XCOFF32_HDR_SIZE
 #define XCOFF_F_MAGIC		XCOFF_F_32_MAGIC
+
 #elif defined(XCOFFSIZE) && (XCOFFSIZE == 64)
 #define xcoff_filehdr		xcoff64_filehdr
 #define xcoff_aouthdr		xcoff64_aouthdr

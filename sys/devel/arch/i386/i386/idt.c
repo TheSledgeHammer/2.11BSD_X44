@@ -71,12 +71,11 @@
 
 #include <arch/i386/include/cpu.h>
 #include <arch/i386/include/segments.h>
-#include <arch/i386/isa/icu.h>
+#include <arch/i386/include/intr.h>
 
 /* TODO: Move these Macro's to correct location */
 #define IDT_INTR_LOW	    (0x20 + NUM_LEGACY_IRQS)
 #define IDT_INTR_HIGH	    0xef
-#define APIC_LEVEL(l)       ((l) << 4)
 
 char idt_allocmap[NIDT];
 
@@ -152,13 +151,19 @@ idt_vec_free(vec)
 }
 
 int
-idtvector(irq, level, isapic)
-    int irq, level;
+idtvector(irq, level, minlevel, maxlevel, isapic)
+    int irq, level, minlevel, maxlevel;
     bool isapic;
 {
     int idtvec;
     if(isapic) {
-        idtvec = idt_vec_alloc(APIC_LEVEL(level), IDT_INTR_HIGH);
+#ifdef IOAPIC_HWMASK
+    	if (level > maxlevel) {
+#else
+    	if (minlevel == 0 || level < minlevel) {
+#endif
+    		 idtvec = idt_vec_alloc(APIC_LEVEL(level), IDT_INTR_HIGH);
+    	}
     } else {
         idtvec = ICU_OFFSET + irq;
     }
