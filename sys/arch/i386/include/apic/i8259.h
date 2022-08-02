@@ -51,7 +51,6 @@ extern unsigned i8259_setmask(unsigned);
 #define SET_ICUS()	(outb(IO_ICU1 + 1, imen), outb(IO_ICU2 + 1, imen >> 8))
 
 extern void i8259_default_setup(void);
-extern void i8259_reinit(void);
 
 #endif /* !_LOCORE */
 

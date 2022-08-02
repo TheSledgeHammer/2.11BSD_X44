@@ -21,7 +21,6 @@ options 		I586_CPU
 options 		I686_CPU
 
 # CPU-related options.
-options 		MATH_EMULATE	# floating point emulation
 
 # This option allows you to force a serial console at the specified
 # I/O address.   see console(4) for details.

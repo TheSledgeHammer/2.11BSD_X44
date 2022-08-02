@@ -143,6 +143,7 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
+#include <machine/apic/i8259.h>
 #include <machine/apic/lapicvar.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
@@ -174,19 +175,22 @@ intr_default_setup(void)
 void
 intr_apic_vectors(void)
 {
-	int idx;
-	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, apic_edge_stubs[i].ist_entry, 0, SDT_SYS386IGT, SEL_KPL);
+	int i, idx, level;
+	for(i = 0; i < MAX_INTR_SOURCES; i++) {
+		level = intrlevel[i];
+		idx = idtvector(i, level, 0, MAX_INTR_SOURCES, TRUE);
+		idt_vec_set(idx, apic_edge_stubs[i].ist_entry);
 	}
 }
-
 
 void
 intr_x2apic_vectors(void)
 {
-	int idx;
-	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, x2apic_edge_stubs[i].ist_entry, 0, SDT_SYS386IGT, SEL_KPL);
+	int i, idx, level;
+	for(i = 0; i < MAX_INTR_SOURCES; i++) {
+		level = intrlevel[i];
+		idx = idtvector(i, level, 0, MAX_INTR_SOURCES, TRUE);
+		idt_vec_set(idx, x2apic_edge_stubs[i].ist_entry);
 	}
 }
 #endif
@@ -194,10 +198,12 @@ intr_x2apic_vectors(void)
 void
 intr_legacy_vectors(void)
 {
-	int i;
+	int i, idx, level;
 	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
-		int idx = ICU_OFFSET + i;
-		setidt(idx, legacy_stubs[i].ist_entry, 0, SDT_SYS386IGT, SEL_KPL);
+		level = intrlevel[i];
+		idx = idtvector(i, level, 0, NUM_LEGACY_IRQS, FALSE);
+		idt_vec_reserve(idx);
+		idt_vec_set(idx, legacy_stubs[i].ist_entry);
 	}
 	i8259_default_setup();
 }
@@ -377,9 +383,9 @@ fakeintr(spic, fakehand, level)
 }
 
 void *
-intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
+intr_establish(isapic, pictemplate, irq, type, ih_fun, ih_arg)
 	bool_t isapic;
-	int irq, type, level, pictemplate;
+	int irq, type, pictemplate;
 	int (*ih_fun)(void *);
 	void *ih_arg;
 {

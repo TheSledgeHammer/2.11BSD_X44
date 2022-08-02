@@ -73,10 +73,6 @@
 #include <arch/i386/include/segments.h>
 #include <arch/i386/include/intr.h>
 
-/* TODO: Move these Macro's to correct location */
-#define IDT_INTR_LOW	    (0x20 + NUM_LEGACY_IRQS)
-#define IDT_INTR_HIGH	    0xef
-
 char idt_allocmap[NIDT];
 
 /*

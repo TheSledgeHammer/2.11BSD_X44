@@ -38,7 +38,6 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-
 #include <sys/endian.h>
 
 #define _BYTE_ORDER 	_LITTLE_ENDIAN

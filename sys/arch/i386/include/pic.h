@@ -50,6 +50,8 @@ struct apic {
     int                     apic_pic_type;
     struct intrstub         *apic_edge;
     struct intrstub         *apic_level;
+    void 					*apic_resume;
+    void 					*apic_recurse;
     TAILQ_ENTRY(apic)       apic_entry;
 };
 
@@ -157,7 +159,7 @@ extern struct apic          ioapic_intrmap;
 extern struct apic          lapic_intrmap;
 
 /* intr.c */
-void 			*intr_establish(bool_t, int, int, int, int, int (*)(void *), void *);
+void 			*intr_establish(bool_t, int, int, int, int (*)(void *), void *);
 void			intr_disestablish(struct intrhand *);
 void			fakeintr(struct softpic *, struct intrhand *, u_int);
 void			intr_default_setup(void);
@@ -169,7 +171,4 @@ int	 			intr_find_mpmapping(int, int, int *);
 void 			*apic_intr_establish(int, int, int, int (*)(void *), void *);
 void			apic_intr_disestablish(void *);
 void			apic_intr_string(char *, void *, int);
-
-/* i8259.c */
-void 			i8259_default_setup(void);
 #endif /* _I386_PIC_H_ */

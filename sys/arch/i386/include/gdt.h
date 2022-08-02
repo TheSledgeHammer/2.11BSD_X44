@@ -28,10 +28,15 @@
 #ifndef _I386_GDT_H_
 #define _I386_GDT_H_
 
-void setup_descriptor_table(struct soft_segment_descriptor *, unsigned int,
+/* GDT, LDT & IDT */
+void 	setup_descriptor_table(struct soft_segment_descriptor *, unsigned int,
 		unsigned int, unsigned int, unsigned int, unsigned int, unsigned int,
 		unsigned int, unsigned int, unsigned int);
-void gdt_allocate(struct soft_segment_descriptor *);
-void ldt_allocate(struct soft_segment_descriptor *);
-
+void 	gdt_allocate(struct soft_segment_descriptor *);
+void 	ldt_allocate(struct soft_segment_descriptor *);
+int	 	idt_vec_alloc(int, int);
+void	idt_vec_reserve(int);
+void	idt_vec_set(int, void (*)(void));
+void	idt_vec_free(int);
+int		idtvector(int, int, int, int, bool);
 #endif /* _I386_GDT_H_ */

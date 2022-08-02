@@ -48,7 +48,9 @@ static TAILQ_HEAD(apic_list, apic) 	apichead;
 int	softpic_register_pic(struct pic *);
 int	softpic_register_apic(struct apic *);
 
-/* Softpic Methods common to pic & apic*/
+/*
+ * Common Softpic Methods
+ */
 void
 softpic_init(void)
 {
@@ -108,10 +110,34 @@ softpic_register(pic, apic)
 	}
 }
 
+struct softpic *
+softpic_intr_handler(spic, irq, type, isapic, pictemplate)
+	struct softpic *spic;
+	bool_t isapic;
+	int irq, type, pictemplate;
+{
+	struct intrhand *ih;
+	extern int cold;
+
+	softpic_check(spic, irq, isapic, pictemplate);
+
+	/* no point in sleeping unless someone can free memory. */
+	ih = malloc(sizeof *ih, M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
+	if (ih == NULL) {
+		panic("softpic_intr_handler: can't malloc handler info");
+	}
+	if (!LEGAL_IRQ(irq) || type == IST_NONE) {
+		panic("softpic_intr_handler: bogus irq or type");
+	}
+
+	spic->sp_inthnd = ih;
+
+	return (spic);
+}
+
 /*
  * PIC Methods
  */
-
 static int
 softpic_pic_registered(pic)
 	struct pic *pic;
@@ -250,31 +276,6 @@ softpic_pic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	if (pic != NULL) {
 		(*pic->pic_delroute)(spic, ci, pin, idtvec, type);
 	}
-}
-
-struct softpic *
-softpic_intr_handler(spic, irq, type, isapic, pictemplate)
-	struct softpic *spic;
-	bool_t isapic;
-	int irq, type, pictemplate;
-{
-	struct intrhand *ih;
-	extern int cold;
-
-	softpic_check(spic, irq, isapic, pictemplate);
-
-	/* no point in sleeping unless someone can free memory. */
-	ih = malloc(sizeof *ih, M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
-	if (ih == NULL) {
-		panic("softpic_intr_handler: can't malloc handler info");
-	}
-	if (!LEGAL_IRQ(irq) || type == IST_NONE) {
-		panic("softpic_intr_handler: bogus irq or type");
-	}
-
-	spic->sp_inthnd = ih;
-
-	return (spic);
 }
 
 /*

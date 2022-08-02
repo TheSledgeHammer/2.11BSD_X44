@@ -253,6 +253,7 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_dev = self;
 	sc->sc_flags = aaa->flags;
 	sc->sc_apicid = aaa->apic_id;
+	sc->sc_softpic->sp_ioapic = sc;
 	
 	printf(" apid %d (I/O APIC)\n", aaa->apic_id);
 

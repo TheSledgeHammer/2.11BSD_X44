@@ -81,8 +81,10 @@
 #include <sys/null.h>
 
 #include <arch/i386/include/cpu.h>
+#include <arch/i386/include/gdt.h>
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/pic.h>
+#include <arch/i386/include/softpic.h>
 
 int
 intr_allocate_slot_cpu(spic, ci, pin, slot)
@@ -165,6 +167,76 @@ found:
     return (0);
 }
 
+void
+intr_free_slot(slot, idtvec, isapic)
+	int slot, idtvec;
+	bool_t isapic;
+{
+	struct intrsource *isp;
+
+	isp = intrsrc[slot];
+	if (isp->is_handlers != NULL) {
+		return;
+	}
+	intrsrc[slot] = NULL;
+	if(isapic == FALSE) {
+		idt_vec_free(idtvec);
+	}
+	isp->is_apic->apic_resume = NULL;
+	isp->is_apic->apic_recurse = NULL;
+}
+
+int
+intr_idt_alloc(spic, irq, type, level, isapic)
+	struct softpic 	*spic;
+	int irq, type, level;
+	bool_t isapic;
+{
+	register struct intrsource 	*is;
+	register struct intrhand 	*ih;
+	register struct cpu_info *ci;
+	int error, idtvec;
+
+	intr_calculatemasks();
+	ih = intrhand[irq];
+	is = intrsrc[irq];
+	idtvec = idtvector(irq, level, is->is_minlevel, is->is_maxlevel, isapic);
+	error = intr_allocate_slot(spic, &ci, irq, idtvec);
+	if(error != 0) {
+		free(ih, M_DEVBUF);
+		printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
+	}
+	return (error);
+}
+
+intr_idt_free(spic, irq, type, level, isapic)
+{
+	int error;
+
+	error = intr_idt_alloc(spic, irq, type, level, isapic);
+	if(error != 0) {
+		free(spic->sp_inthnd, M_DEVBUF);
+		printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
+	}
+}
+
+intr_preestablish(isapic, pictemplate, irq, type, level)
+	int irq, type, level, pictemplate;
+	bool_t isapic;
+{
+	register struct softpic 	*spic;
+    register struct intrsource 	*is;
+	int error;
+
+	spic = softpic_intr_handler(intrspic, irq, type, isapic, pictemplate);
+	error = intr_idt_alloc(spic, irq, type, level, isapic);
+	if (error != 0) {
+		free(ih, M_DEVBUF);
+		printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
+	}
+}
+
+
 void *
 intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
 	bool_t isapic;
@@ -199,4 +271,32 @@ intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
     	return (NULL);
     }
     return (ih);
+}
+
+void
+intr_idt_select(spic, slot, type, idtvec)
+	struct softpic *spic;
+	int slot, type, idtvec;
+{
+	register struct apic 		*apic;
+	register struct intrstub 	*stubp;
+
+	apic = softpic_handle_apic(spic);
+	if(apic->apic_resume == NULL || spic->sp_idtvec != idtvec) {
+		if(spic->sp_idtvec != 0 && spic->sp_idtvec != idtvec) {
+			idt_vec_free(idtvec);
+		}
+		spic->sp_idtvec = idtvec;
+		switch(type) {
+		case IST_LEVEL:
+			stubp = apic->apic_level[slot];
+			break;
+		case IST_EDGE:
+			stubp = apic->apic_edge[slot];
+			break;
+		}
+		apic->apic_resume = stubp->ist_resume;
+		apic->apic_recurse = stubp->ist_recurse;
+		idt_vec_set(idtvec, stubp->ist_entry);
+	}
 }

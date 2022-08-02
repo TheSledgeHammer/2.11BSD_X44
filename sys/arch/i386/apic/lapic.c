@@ -245,7 +245,7 @@ lapic_map(vm_offset_t lapic_base)
 		struct ioapic_softc *ioapic;
 		SIMPLEQ_FOREACH(ioapic, &ioapics, sc_next) {
 			lapic_intrmap.apic_edge = x2apic_edge_stubs;
-			lapic_intrmap.apic_level = x2apic_edge_stubs;
+			lapic_intrmap.apic_level = x2apic_level_stubs;
 			ioapic->sc_apic = &lapic_intrmap;
 		}
 #endif

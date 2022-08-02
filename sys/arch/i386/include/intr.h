@@ -79,20 +79,27 @@
 
 #include <i386/isa/icu.h>
 
-extern void Xspllower(void);
-extern int splraise(int);
-extern int spllower(int);
-extern void splx(int);
-extern void softintr(int);
-
 /*
  * Convert spl level to local APIC level
  */
 #define APIC_LEVEL(l)   ((l) << 4)
 
 /*
+ * Low and high boundaries between which interrupt gates will
+ * be allocated in the IDT.
+ */
+#define IDT_INTR_LOW	    (0x20 + NUM_LEGACY_IRQS)
+#define IDT_INTR_HIGH	    0xef
+
+/*
  * Hardware interrupt masks
  */
+extern void Xspllower(void);
+extern int splraise(int);
+extern int spllower(int);
+extern void splx(int);
+extern void softintr(int);
+
 #define	splbio()			splraise(imask[IPL_BIO])
 #define	splnet()			splraise(imask[IPL_NET])
 #define	spltty()			splraise(imask[IPL_TTY])
