@@ -76,6 +76,6 @@ void			softpic_pic_hwmask(struct softpic *, int, bool_t, int);
 void			softpic_pic_hwunmask(struct softpic *, int, bool_t, int);
 void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
 void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
-struct softpic 	*softpic_intr_handler(struct softpic *, int, int, int, bool_t, int);
+struct softpic 	*softpic_intr_handler(struct softpic *, int, int, bool_t, int);
 
 #endif /* _I386_SOFTPIC_H_ */
