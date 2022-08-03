@@ -49,9 +49,6 @@
 #define IPL_IPI			0	/* inter-processor interrupts */
 #define	NIPL			10
 
-//#define	IPL_VM			6	/* low I/O, memory allocation */
-//#define IPL_SCHED		7	/* medium I/O, scheduler, clock */
-
 /* Interrupt sharing types. */
 #define	IST_NONE		0	/* none */
 #define	IST_PULSE		1	/* pulsed */
@@ -88,8 +85,8 @@
  * Low and high boundaries between which interrupt gates will
  * be allocated in the IDT.
  */
-#define IDT_INTR_LOW	    (0x20 + NUM_LEGACY_IRQS)
-#define IDT_INTR_HIGH	    0xef
+#define IDT_INTR_LOW	 (0x20 + NUM_LEGACY_IRQS)
+#define IDT_INTR_HIGH	 0xef
 
 /*
  * Hardware interrupt masks

@@ -209,7 +209,7 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	static struct intrhand fakehand;
 	extern int cold;
 
-	ih = intr_establish(FALSE, PIC_I8259, irq, type, level, ih_fun, ih_arg);
+	ih = intr_establish(FALSE, PIC_I8259, irq, type, ih_fun, ih_arg);
 
 #if NIOAPIC > 0
 	struct pic *pic;

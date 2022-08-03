@@ -350,3 +350,60 @@ softpic_handle_apic(spic)
     }
     return (NULL);
 }
+
+void
+softpic_apic_allocate(spic, pin, type, idtvec, isapic, pictemplate)
+	struct softpic *spic;
+	int pin, type, idtvec, pictemplate;
+	bool_t isapic;
+{
+	register struct apic *apic;
+	register struct intrstub *stubp;
+
+	softpic_check(spic, pin, isapic, pictemplate);
+	spic->sp_intsrc->is_apic = softpic_handle_apic(spic);
+	apic = spic->sp_intsrc->is_apic;
+	if (apic != NULL) {
+		if (apic->apic_resume == NULL || spic->sp_idtvec != idtvec) {
+			if (spic->sp_idtvec != 0 && spic->sp_idtvec != idtvec) {
+				idt_vec_free(idtvec);
+			}
+			spic->sp_idtvec = idtvec;
+			switch (type) {
+			case IST_EDGE:
+				stubp = apic->apic_edge[pin];
+				break;
+			case IST_LEVEL:
+				stubp = apic->apic_level[pin];
+				break;
+			}
+			apic->apic_resume = stubp->ist_resume;
+			apic->apic_recurse = stubp->ist_recurse;
+			idt_vec_set(idtvec, stubp->ist_entry);
+		}
+	}
+}
+
+void
+softpic_apic_free(spic, pin, idtvec, isapic, pictemplate)
+	struct softpic *spic;
+	int pin, idtvec, pictemplate;
+	bool_t isapic;
+{
+	register struct apic *apic;
+
+	softpic_check(spic, pin, isapic, pictemplate);
+	spic->sp_intsrc->is_apic = softpic_handle_apic(spic);
+	apic = spic->sp_intsrc->is_apic;
+	if (apic != NULL) {
+		if(spic->sp_intsrc[pin].is_handlers != NULL) {
+			return;
+		}
+		spic->sp_intsrc[pin] = NULL;
+		if(isapic) {
+			idt_vec_free(idtvec);
+			apic->apic_resume = NULL;
+			apic->apic_recurse = NULL;
+		}
+	}
+}

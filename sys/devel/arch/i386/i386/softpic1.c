@@ -40,8 +40,17 @@
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/apic/ioapicvar.h>
 
+/* TODO: */
+void
+softpic_establish_xcall(spic, ci, pin, type, idtvec, isapic, pictemplate)
+{
+	intr_calculatemasks();
+
+	softpic_apic_allocate(spic, pin, type, idtvec, isapic, pictemplate);
+}
+
 struct softpic *
-softpic_intr_alloc(spic, irq, type, level, isapic, pictemplate)
+softpic_establish(spic, irq, type, level, isapic, pictemplate)
 	struct softpic *spic;
 	int irq, type, level, pictemplate;
 	bool_t isapic;
@@ -55,6 +64,10 @@ softpic_intr_alloc(spic, irq, type, level, isapic, pictemplate)
 
     ih = malloc(sizeof(*ih), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
     is = malloc(sizeof(*is), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
+
+    spic->sp_inthnd[irq] = intrhand[irq];
+    spic->sp_intsrc[irq] = intrsrc[irq];
+
     if (ih == NULL || is == NULL) {
         panic("softpic_intr_handler: can't malloc handler info");
     }
@@ -62,9 +75,6 @@ softpic_intr_alloc(spic, irq, type, level, isapic, pictemplate)
         panic("softpic_intr_handler: bogus irq or type");
     }
 
-    intr_calculatemasks();
-    idtvec = idtvector(irq, level, is->is_minlevel, is->is_maxlevel, isapic);
-    spic->sp_idtvec = idtvec;
     if(spic->sp_inthnd != ih) {
     	spic->sp_inthnd = ih;
     }
@@ -75,24 +85,26 @@ softpic_intr_alloc(spic, irq, type, level, isapic, pictemplate)
     return (spic);
 }
 
-struct softpic *
-softpic_intr_free(spic, irq, type, level, isapic, pictemplate)
+/* TODO: irq should equal slot with SMP */
+void
+softpic_disestablish_xcall(spic, ci, irq, isapic, pictemplate)
 	struct softpic *spic;
-	int irq, type, level, pictemplate;
+	struct cpu_info *ci;
+	int irq, pictemplate;
 	bool_t isapic;
 {
     register struct intrhand    *ih, *q, **p;
     register struct intrsource 	*is;
+    register struct apic *apic;
     int idtvec;
-
-    softpic_check(spic, irq, isapic, pictemplate);
 
     ih = intrhand[irq];
     is = intrsrc[irq];
-    idtvec = idtvector(irq, level, is->is_minlevel, is->is_maxlevel, isapic);
+    idtvec = spic->sp_idtvec;
 
-    is->is_handlers = ih;
-    for (p = &ih; (q = *p) != NULL && q != spic->sp_inthnd; p = &q->ih_next) {
+    softpic_pic_hwmask(spic, ih->ih_irq, isapic, pictemplate);
+
+    for (p = &is->is_handlers; (q = *p) != NULL && q != ih; p = &q->ih_next) {
         ;
     }
     if (q) {
@@ -101,49 +113,23 @@ softpic_intr_free(spic, irq, type, level, isapic, pictemplate)
         panic("softpic_intr_free: handler not registered");
     }
 
-	free(ih, M_DEVBUF);
-    free(is, M_DEVBUF);
-
     intr_calculatemasks();
 
-    if(ih == NULL) {
-        is->is_handlers = NULL;
-        type = IST_NONE;
+    if(is->is_handlers == NULL) {
+    	 softpic_pic_delroute(spic, ci, ih->ih_irq, idtvec, is->is_type, isapic, pictemplate);
+    } else if(is->is_count == 0) {
+    	 softpic_pic_hwunmask(spic, ih->ih_irq, isapic, pictemplate);
     }
-    is = NULL;
-    if(isapic == FALSE) {
-        idt_vec_free(idtvec);
-    }
-    is->is_apic->apic_resume = NULL;
-	is->is_apic->apic_recurse = NULL;
-    if(spic->sp_idtvec != idtvec) {
-        spic->sp_idtvec = idtvec;
-    }
-    if(spic->sp_inthnd != ih) {
-        spic->sp_inthnd = ih;
-    }
-    if(spic->sp_intsrc != is) {
-        spic->sp_intsrc = is;
-    }
-    return (spic);
+    softpic_apic_free(spic, ih->ih_irq, idtvec, isapic, pictemplate);
+    is->is_apic = softpic_handle_apic(spic);
+    free(ih, M_DEVBUF);
 }
 
-void *
-intr_establish(irq, type, level, ih_fun, ih_arg, isapic, pictemplate)
+
+/* TODO: */
+void
+softpic_disestablish(spic)
+	struct softpic *spic;
 {
-    register struct softpic  *spic;
 
-    spic = softpic_intr_alloc(intrspic, irq, type, isapic, pictemplate);
-
-    return (spic->sp_inthnd);
-}
-
-void *
-intr_disestablish(irq, type, level, isapic, pictemplate)
-{
-    register struct softpic  *spic;
-
-    spic = softpic_intr_free(intrspic, irq, type, level, isapic, pictemplate);
-
-    return (spic->sp_inthnd);
 }

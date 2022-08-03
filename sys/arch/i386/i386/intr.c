@@ -171,6 +171,18 @@ intr_default_setup(void)
 	intr_legacy_vectors();
 }
 
+void
+intr_legacy_vectors(void)
+{
+	int i, idx;
+	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
+		idx = ICU_OFFSET + i;
+		idt_vec_reserve(idx);
+		idt_vec_set(idx, legacy_stubs[i].ist_entry);
+	}
+	i8259_default_setup();
+}
+
 #ifdef notyet
 void
 intr_apic_vectors(void)
@@ -194,19 +206,6 @@ intr_x2apic_vectors(void)
 	}
 }
 #endif
-
-void
-intr_legacy_vectors(void)
-{
-	int i, idx, level;
-	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
-		level = intrlevel[i];
-		idx = idtvector(i, level, 0, NUM_LEGACY_IRQS, FALSE);
-		idt_vec_reserve(idx);
-		idt_vec_set(idx, legacy_stubs[i].ist_entry);
-	}
-	i8259_default_setup();
-}
 
 void
 intr_calculatemasks()

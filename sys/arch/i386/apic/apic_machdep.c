@@ -56,7 +56,7 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	static struct intrhand fakehand;
 	extern int cold;
 
-	ih = intr_establish(TRUE, PIC_IOAPIC, irq, type, level, ih_fun, ih_arg);
+	ih = intr_establish(TRUE, PIC_IOAPIC, irq, type, ih_fun, ih_arg);
 	irq = ih->ih_irq;
 
 	switch (intrtype[irq]) {

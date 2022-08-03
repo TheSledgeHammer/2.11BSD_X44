@@ -73,6 +73,7 @@
  *
  *	@(#)isa.c	7.2 (Berkeley) 5/13/91
  */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -156,6 +157,7 @@ intr_allocate_slot(spic, cip, pin, idtvec)
         }
     }
     return (EBUSY);
+
 found:
     if (idtvec == 0) {
 		intrsrc[slot] = NULL;
@@ -168,135 +170,41 @@ found:
 }
 
 void
-intr_free_slot(slot, idtvec, isapic)
-	int slot, idtvec;
-	bool_t isapic;
+intr_establish_xcall(spic, irq, idtvec)
+	struct softpic *spic;
+	int irq, idtvec;
 {
-	struct intrsource *isp;
+	 register struct cpu_info *ci;
+	 int error;
 
-	isp = intrsrc[slot];
-	if (isp->is_handlers != NULL) {
-		return;
-	}
-	intrsrc[slot] = NULL;
-	if(isapic == FALSE) {
-		idt_vec_free(idtvec);
-	}
-	isp->is_apic->apic_resume = NULL;
-	isp->is_apic->apic_recurse = NULL;
+	 error = intr_allocate_slot(spic, &ci, irq, idtvec);
+	 if(error != 0) {
+		 free(spic->sp_inthnd, M_DEVBUF);
+		 printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
+	 }
 }
 
-int
-intr_idt_alloc(spic, irq, type, level, isapic)
-	struct softpic 	*spic;
-	int irq, type, level;
-	bool_t isapic;
-{
-	register struct intrsource 	*is;
-	register struct intrhand 	*ih;
-	register struct cpu_info *ci;
-	int error, idtvec;
-
-	intr_calculatemasks();
-	ih = intrhand[irq];
-	is = intrsrc[irq];
-	idtvec = idtvector(irq, level, is->is_minlevel, is->is_maxlevel, isapic);
-	error = intr_allocate_slot(spic, &ci, irq, idtvec);
-	if(error != 0) {
-		free(ih, M_DEVBUF);
-		printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
-	}
-	return (error);
-}
-
-intr_idt_free(spic, irq, type, level, isapic)
-{
-	int error;
-
-	error = intr_idt_alloc(spic, irq, type, level, isapic);
-	if(error != 0) {
-		free(spic->sp_inthnd, M_DEVBUF);
-		printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
-	}
-}
-
-intr_preestablish(isapic, pictemplate, irq, type, level)
-	int irq, type, level, pictemplate;
-	bool_t isapic;
-{
-	register struct softpic 	*spic;
-    register struct intrsource 	*is;
-	int error;
-
-	spic = softpic_intr_handler(intrspic, irq, type, isapic, pictemplate);
-	error = intr_idt_alloc(spic, irq, type, level, isapic);
-	if (error != 0) {
-		free(ih, M_DEVBUF);
-		printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
-	}
-}
-
-
+/* TODO: */
 void *
-intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
-	bool_t isapic;
+intr_establish(irq, type, level, ih_fun, ih_arg, isapic, pictemplate)
 	int irq, type, level, pictemplate;
 	int (*ih_fun)(void *);
 	void *ih_arg;
+	bool_t isapic;
 {
-    register struct softpic *spic;
-	register struct intrhand *ih;
-    register struct intrsource *is;
-    register struct cpu_info *ci;
-    int error, idtvec, pin;
-
-    spic = softpic_intr_handler(intrspic, irq, type, isapic, pictemplate);
-    ih = spic->sp_inthnd;
-    is = spic->sp_intsrc;
-    idtvec = idtvector(irq, level, is->is_minlevel, is->is_maxlevel, isapic);
-    spic->sp_idtvec = idtvec;
-    if(isapic) {
-    	ih->ih_irq = spic->sp_pins[irq].sp_irq;
-        error = intr_allocate_slot(spic, &ci, ih->ih_irq, idtvec);
-        if(error != 0) {
-        	free(ih, M_DEVBUF);
-        	printf("failed to allocate interrupt slot for PIC pin %d\n", ih->ih_irq);
-        	return (NULL);
-        }
-    }
-    error = intr_allocate_slot(spic, &ci, irq, idtvec);
-    if(error != 0) {
-    	free(ih, M_DEVBUF);
-    	printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
-    	return (NULL);
-    }
-    return (ih);
+	return (NULL);
 }
 
+/* TODO: */
 void
-intr_idt_select(spic, slot, type, idtvec)
-	struct softpic *spic;
-	int slot, type, idtvec;
+intr_disestablish_xcall()
 {
-	register struct apic 		*apic;
-	register struct intrstub 	*stubp;
 
-	apic = softpic_handle_apic(spic);
-	if(apic->apic_resume == NULL || spic->sp_idtvec != idtvec) {
-		if(spic->sp_idtvec != 0 && spic->sp_idtvec != idtvec) {
-			idt_vec_free(idtvec);
-		}
-		spic->sp_idtvec = idtvec;
-		switch(type) {
-		case IST_LEVEL:
-			stubp = apic->apic_level[slot];
-			break;
-		case IST_EDGE:
-			stubp = apic->apic_edge[slot];
-			break;
-		}
-		apic->apic_resume = stubp->ist_resume;
-		apic->apic_recurse = stubp->ist_recurse;
-		idt_vec_set(idtvec, stubp->ist_entry);
-	}
+}
+
+/* TODO: */
+void
+intr_disestablish()
+{
+
 }
