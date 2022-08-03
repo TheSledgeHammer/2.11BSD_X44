@@ -145,6 +145,7 @@
 
 #include <machine/apic/i8259.h>
 #include <machine/apic/lapicvar.h>
+#include <machine/gdt.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
 
