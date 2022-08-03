@@ -37,6 +37,7 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
+#include <machine/gdt.h>
 #include <machine/pic.h>
 #include <machine/intr.h>
 #include <machine/apic/ioapicvar.h>
@@ -371,10 +372,10 @@ softpic_apic_allocate(spic, pin, type, idtvec, isapic, pictemplate)
 			spic->sp_idtvec = idtvec;
 			switch (type) {
 			case IST_EDGE:
-				stubp = apic->apic_edge[pin];
+				stubp = &apic->apic_edge[pin];
 				break;
 			case IST_LEVEL:
-				stubp = apic->apic_level[pin];
+				stubp = &apic->apic_level[pin];
 				break;
 			}
 			apic->apic_resume = stubp->ist_resume;
@@ -399,7 +400,7 @@ softpic_apic_free(spic, pin, idtvec, isapic, pictemplate)
 		if(spic->sp_intsrc[pin].is_handlers != NULL) {
 			return;
 		}
-		spic->sp_intsrc[pin] = NULL;
+		spic->sp_intsrc = NULL;
 		if(isapic) {
 			idt_vec_free(idtvec);
 			apic->apic_resume = NULL;
