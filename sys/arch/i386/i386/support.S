@@ -37,9 +37,10 @@
  *
  */
 
+//#include <sys/systm.h>
+
 #include <machine/asm.h>
 #include <machine/cputypes.h>
-//#include <machine/pmap.h>
 #include <machine/specialreg.h>
 
 #include "assym.h"
@@ -594,8 +595,7 @@ ENTRY(suword)
 		movl	4(%esp),%edx
 #endif
 		.byte	0x65					# use gs
-		movb	8(%esp),%al
-		movb	%al,(%edx)
+		movl	%eax,0(%edx)
 		xorl	%eax,%eax
 		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 		ret
@@ -654,7 +654,8 @@ ENTRY(subyte)
 1: 		movl	4(%esp),%edx
 #endif
 		.byte	0x65					# use gs
-		movb	%eax,0(%edx)
+		movb	8(%esp),%al
+		movb	%al,(%edx)
 		xorl	%eax,%eax
 		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 		ret
