@@ -1,3 +1,5 @@
+/*	$NetBSD: profile.h,v 1.18 2003/10/27 13:44:20 junyoung Exp $	*/
+
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -38,24 +36,39 @@
 
 #define	_MCOUNT_DECL static inline void _mcount
 
-#define	MCOUNT \
-extern void mcount() asm("mcount"); void mcount() { \
-	int selfpc, frompcindex; \
-	/* \
-	 * find the return address for mcount, \
-	 * and the return address for mcount's caller. \
-	 * \
-	 * selfpc = pc pushed by mcount call \
-	 */ \
-	asm("movl 4(%%ebp),%0" : "=r" (selfpc)); \
-	/* \
-	 * frompcindex = pc pushed by jsr into self. \
-	 * In GCC the caller's stack frame has already been built so we \
-	 * have to chase a6 to find caller's raddr. \
-	 */ \
-	asm("movl (%%ebp),%0" : "=r" (frompcindex)); \
-	frompcindex = ((int *)frompcindex)[1]; \
-	_mcount(frompcindex, selfpc); \
+#ifdef __ELF__
+#define MCOUNT_ENTRY	"__mcount"
+#define MCOUNT_COMPAT	__weak_alias(mcount, __mcount)
+#else
+#define MCOUNT_ENTRY	"mcount"
+#define MCOUNT_COMPAT	/* nothing */
+#endif
+
+#define	MCOUNT 								\
+MCOUNT_COMPAT								\
+extern void mcount(void) __asm__(MCOUNT_ENTRY);				\
+void									\
+mcount()								\
+{									\
+	int selfpc, frompcindex;					\
+	/*								\
+	 * find the return address for mcount,				\
+	 * and the return address for mcount's caller.			\
+	 *								\
+	 * selfpc = pc pushed by mcount call				\
+	 */								\
+	__asm__ __volatile__("movl 4(%%ebp),%0" : "=r" (selfpc));	\
+	/*								\
+	 * frompcindex = pc pushed by call into self.			\
+	 */								\
+	__asm__ __volatile__("movl (%%ebp),%0;movl 4(%0),%0"		\
+	    : "=r" (frompcindex));					\
+	_mcount((u_long)frompcindex, (u_long)selfpc);			\
 }
+
+#ifdef _KERNEL
+#define	MCOUNT_ENTER	(void)&s; __asm__("cli");
+#define	MCOUNT_EXIT	__asm__("sti");
+#endif /* _KERNEL */
 
 #endif /* _I386_PROFILE_H_ */
