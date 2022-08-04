@@ -37,11 +37,9 @@
  *
  */
 
-#include <sys/systm.h>
-
 #include <machine/asm.h>
 #include <machine/cputypes.h>
-#include <machine/pmap.h>
+//#include <machine/pmap.h>
 #include <machine/specialreg.h>
 
 #include "assym.h"
@@ -192,7 +190,7 @@ ALTENTRY(bcopy)
 		popl	%esi
 		xorl	%eax,%eax
 		ret
-		ALIGN32
+		ALIGN_TEXT
 1:
 		addl	%ecx,%edi		/* copy backwards. */
 		addl	%ecx,%esi
@@ -596,7 +594,8 @@ ENTRY(suword)
 		movl	4(%esp),%edx
 #endif
 		.byte	0x65					# use gs
-		movl	%eax,0(%edx)
+		movb	8(%esp),%al
+		movb	%al,(%edx)
 		xorl	%eax,%eax
 		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 		ret
