@@ -51,6 +51,7 @@
  * with 48-bit ints.
  */
 
+#include <sys/endian.h>
 #include <sys/types.h>
 #if !defined(_KERNEL) && !defined(_STANDALONE)
 #include <limits.h>

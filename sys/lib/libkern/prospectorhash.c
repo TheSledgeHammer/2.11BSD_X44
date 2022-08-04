@@ -31,8 +31,6 @@
 
 #include <sys/types.h>
 
-#define UINT32_C(val) (val##U)
-
 /* prospector32 */
 uint32_t
 prospector32(uint32_t x)

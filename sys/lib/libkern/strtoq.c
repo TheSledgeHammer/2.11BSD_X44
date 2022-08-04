@@ -44,15 +44,9 @@ __FBSDID("$FreeBSD$");
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
-
 #else
 #include <sys/param.h>
 #include <lib/libkern/libkern.h>
-#define _DIAGASSERT(x)	(void)0
-#define isspace(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r')
-#define isdigit(x) ((x) >= '0' && (x) <= '9')
-#define isalpha(x) (((x) >= 'a' && (x) <= 'z') || ((x) >= 'A' && (x) <= 'Z'))
-#define toupper(x) ((x) & ~0x20)
 #endif
 
 /*

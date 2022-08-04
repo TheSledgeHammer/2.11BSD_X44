@@ -45,7 +45,6 @@ __RCSID("$NetBSD: memchr.c,v 1.6 2003/08/07 16:32:09 agc Exp $");
 #include <string.h>
 #else
 #include <lib/libkern/libkern.h>
-#define	NULL	((char *)0)
 #endif
 
 void *

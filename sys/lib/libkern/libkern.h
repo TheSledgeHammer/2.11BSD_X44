@@ -52,6 +52,8 @@ extern char const	hex2ascii_data[];
 #define	bin2bcd(bin)	(bin2bcd_data[bin])
 #define	hex2ascii(hex)	(hex2ascii_data[hex])
 
+extern const char hexdigits[];	/* "0123456789abcdef" */
+
 int 	imax(int, int);
 int 	imin(int, int);
 u_int 	max(u_int, u_int);
@@ -71,6 +73,13 @@ int 	isdigit(int);
 int 	isxdigit(int);
 int 	toupper(int);
 int 	tolower(int);
+
+static __inline int
+isprint(int ch)
+{
+	return (ch >= 0x20 && ch <= 0x7E);
+}
+
 
 #define __KASSERTSTR  "Kernel assertion failed: (%s), function %s, file %s, line %d."
 

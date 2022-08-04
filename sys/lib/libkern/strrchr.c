@@ -43,7 +43,6 @@ __RCSID("$NetBSD: strrchr.c,v 1.2 2003/11/01 13:17:01 jdolecek Exp $");
 #include <string.h>
 #else
 #include <lib/libkern/libkern.h>
-#define	NULL	((char *)0)
 #endif
 
 char *
