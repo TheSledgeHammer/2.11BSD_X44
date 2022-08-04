@@ -154,11 +154,11 @@
 
 struct intrsource 	*intrsrc[MAX_INTR_SOURCES];
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
-int					imask[NIPL];
-int					iunmask[NIPL];
 int 				intrtype[MAX_INTR_SOURCES];
 int 				intrmask[MAX_INTR_SOURCES];
 int 				intrlevel[MAX_INTR_SOURCES];
+int					imask[NIPL];
+int					iunmask[NIPL];
 
 void	intr_apic_vectors(void);
 void	intr_x2apic_vectors(void);

@@ -42,10 +42,20 @@
 
 /* TODO: */
 void
-softpic_establish_xcall(spic, ci, pin, type, idtvec, isapic, pictemplate)
+softpic_establish_xcall(spic, ci, pin, type, level, isapic, pictemplate)
+	struct softpic *spic;
+	struct cpu_info *ci;
+	int pin, type, level, pictemplate;
+	bool_t isapic;
 {
-	intr_calculatemasks();
+	int idtvec;
 
+	if (isapic) {
+		intrvector(pin, level, &idtvec, TRUE);
+	} else {
+		level = 0;
+		intrvector(pin, level, &idtvec, FALSE);
+	}
 	softpic_apic_allocate(spic, pin, type, idtvec, isapic, pictemplate);
 }
 
@@ -57,16 +67,13 @@ softpic_establish(spic, irq, type, level, isapic, pictemplate)
 {
     struct intrhand     *ih;
     struct intrsource 	*is;
-    int idtvec;
+
     extern int cold;
 
     softpic_check(spic, irq, isapic, pictemplate);
 
     ih = malloc(sizeof(*ih), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
     is = malloc(sizeof(*is), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
-
-    spic->sp_inthnd[irq] = intrhand[irq];
-    spic->sp_intsrc[irq] = intrsrc[irq];
 
     if (ih == NULL || is == NULL) {
         panic("softpic_intr_handler: can't malloc handler info");
@@ -75,13 +82,12 @@ softpic_establish(spic, irq, type, level, isapic, pictemplate)
         panic("softpic_intr_handler: bogus irq or type");
     }
 
-    if(spic->sp_inthnd != ih) {
-    	spic->sp_inthnd = ih;
-    }
-    if(spic->sp_intsrc != is) {
-    	spic->sp_intsrc = is;
-    }
-
+	spic->sp_inthnd = ih;
+	spic->sp_intsrc = is;
+	if(isapic) {
+		ih->ih_irq = spic->sp_pins[irq].sp_irq;
+		is->is_pin = spic->sp_pins[irq].sp_pin;
+	}
     return (spic);
 }
 
@@ -95,14 +101,14 @@ softpic_disestablish_xcall(spic, ci, irq, isapic, pictemplate)
 {
     register struct intrhand    *ih, *q, **p;
     register struct intrsource 	*is;
-    register struct apic *apic;
+    register struct apic 		*apic;
     int idtvec;
 
     ih = intrhand[irq];
     is = intrsrc[irq];
     idtvec = spic->sp_idtvec;
 
-    softpic_pic_hwmask(spic, ih->ih_irq, isapic, pictemplate);
+    softpic_pic_hwmask(spic, irq, isapic, pictemplate);
 
     for (p = &is->is_handlers; (q = *p) != NULL && q != ih; p = &q->ih_next) {
         ;
@@ -116,20 +122,46 @@ softpic_disestablish_xcall(spic, ci, irq, isapic, pictemplate)
     intr_calculatemasks();
 
     if(is->is_handlers == NULL) {
-    	 softpic_pic_delroute(spic, ci, ih->ih_irq, idtvec, is->is_type, isapic, pictemplate);
+    	intrhand[irq] = NULL;
+    	intrtype[irq] = IST_NONE;
+    	softpic_pic_delroute(spic, ci, irq, idtvec, is->is_type, isapic, pictemplate);
     } else if(is->is_count == 0) {
-    	 softpic_pic_hwunmask(spic, ih->ih_irq, isapic, pictemplate);
+    	softpic_pic_hwunmask(spic, irq, isapic, pictemplate);
     }
-    softpic_apic_free(spic, ih->ih_irq, idtvec, isapic, pictemplate);
+    softpic_apic_free(spic, irq, idtvec, isapic, pictemplate);
     is->is_apic = softpic_handle_apic(spic);
     free(ih, M_DEVBUF);
 }
 
-
-/* TODO: */
-void
-softpic_disestablish(spic)
+struct softpic *
+softpic_disestablish(spic, irq, isapic, pictemplate)
 	struct softpic *spic;
+	int irq, pictemplate;
+	bool_t isapic;
 {
+	register struct intrhand *ih, *q, **p;
+	register struct intrsource *is;
+	register struct apic *apic;
+	int idtvec;
 
+	ih = intrhand[irq];
+	is = intrsrc[irq];
+	idtvec = spic->sp_idtvec;
+
+	if (!LEGAL_IRQ(irq)) {
+		panic("intr_disestablish: bogus irq");
+	}
+
+    softpic_pic_hwmask(spic, irq, isapic, pictemplate);
+
+    for (p = &is->is_handlers; (q = *p) != NULL && q != ih; p = &q->ih_next) {
+        ;
+    }
+    if (q) {
+        *p = q->ih_next;
+    } else {
+        panic("softpic_intr_free: handler not registered");
+    }
+
+    return (spic);
 }

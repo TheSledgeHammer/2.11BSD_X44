@@ -87,85 +87,142 @@
 #include <arch/i386/include/pic.h>
 #include <arch/i386/include/softpic.h>
 
+/*
+ * Determine the idtvec from the irq and level.
+ * Notes:
+ * If isapic = false: level is ignored and can be set to 0.
+ */
+void
+intrvector(int irq, int level, int *idtvec, bool isapic)
+{
+    int i, min, max;
+    min = 0;
+    max = MAX_INTR_SOURCES;
+    for(i = min; i < max; i++) {
+        intrlevel[i] = i;
+        if(level == i) {
+            level = intrlevel[i];
+            *idtvec = idtvector(irq, level, min, max, isapic);
+        }
+    }
+}
+
 int
-intr_allocate_slot_cpu(spic, ci, pin, slot)
+intr_allocate_slot_cpu(spic, ci, pin, index, isapic)
     struct softpic *spic;
     struct cpu_info *ci;
-    int pin, slot;
+    int pin, *index;
+    bool_t isapic;
 {
     struct intrsource *isp;
-    struct pic *pic;
-    int start, max;
+    int i, slot, start, max;
 
-    pic = softpic_handle_pic(spic);
-    start = 0;
-    max = MAX_INTR_SOURCES;
-    slot = -1;
+    if(isapic == FALSE) {
+    	slot = pin;
+    } else {
+        start = 0;
+        max = MAX_INTR_SOURCES;
+        slot = -1;
 
-    if (CPU_IS_PRIMARY(ci)) {
-    	start = NUM_LEGACY_IRQS;
-    }
-    for (i = start; i < max; i++) {
-        isp = intrsrc[i];
-        if (isp != NULL && isp->is_pic == pic && isp->is_pin == pin && pin != -1) {
-			slot = i;
-			break;
-        }
-        if (isp == NULL && slot == -1) {
-            slot = i;
-			continue;
-        }
-    }
-    if (slot == -1) {
-		return (EBUSY);
-	}
-    isp = intrsrc[slot];
-	if(isp == NULL) {
-		isp = spic->sp_intsrc;
-		if (isp == NULL) {
-			spic->sp_intsrc[slot] = isp;
-			return (ENOMEM);
+        if (CPU_IS_PRIMARY(ci)) {
+			start = NUM_LEGACY_IRQS;
 		}
-	}
+        for (i = start; i < max; i++) {
+        	if(intrsrc[i] == NULL) {
+        		slot = i;
+        		break;
+        	}
+        }
+		if (slot == -1) {
+			return EBUSY;
+		}
+    }
+    isp = intrsrc[slot];
+	spic->sp_intsrc = isp;
     spic->sp_slot = slot;
-    spic->sp_intsrc = isp;
+    *index = slot;
     return (0);
 }
 
 int
-intr_allocate_slot(spic, cip, pin, idtvec)
+intr_allocate_slot(spic, cip, pin, level, index, idtslot, isapic)
     struct softpic *spic;
     struct cpu_info **cip;
-    int pin, idtvec;
+    int pin, level, *index, *idtslot;
+    bool_t isapic;
 {
     CPU_INFO_ITERATOR cii;
-	struct cpu_info *ci;
-    int error, slot;
+	struct cpu_info *ci, *lci;
+	struct intrsource *isp;
+    int error, slot, idtvec;
 
-    ci = &cpu_info;
-    slot = spic->sp_slot;
-    error = intr_allocate_slot_cpu(spic, ci, pin, slot);
-    if (error == 0) {
-        goto found;
-    }
     for (CPU_INFO_FOREACH(cii, ci)) {
-        if (CPU_IS_PRIMARY(ci)) {
-            error = intr_allocate_slot_cpu(spic, ci, pin, slot);
-            if (error == 0) {
-                goto found;
-            }
-        }
+    	for (slot = 0 ; slot < MAX_INTR_SOURCES ; slot++) {
+    		if ((isp = intrsrc[slot]) == NULL) {
+    			continue;
+    		}
+    		if(pin != -1 && isp->is_pin == pin) {
+    			*idtslot = spic->sp_idtvec;
+    			*index = slot;
+    			*cip = ci;
+    			return 0;
+    		}
+    	}
     }
-    return (EBUSY);
 
-found:
-    if (idtvec == 0) {
+    if(isapic == FALSE) {
+		/*
+		 * Must be directed to BP.
+		 */
+    	ci = &cpu_info;
+    	error = intr_allocate_slot_cpu(spic, ci, pin, slot, FALSE);
+    } else {
+		/*
+		 * Find least loaded AP/BP and try to allocate there.
+		 */
+    	ci = NULL;
+    	for (CPU_INFO_FOREACH(cii, lci)) {
+#if 0
+    		if (ci == NULL) {
+    			ci = lci;
+    		}
+#else
+    		ci = &cpu_info;
+#endif
+    	}
+    	KASSERT(ci != NULL);
+    	error = intr_allocate_slot_cpu(ci, pin, &slot, TRUE);
+		/*
+		 * If that did not work, allocate anywhere.
+		 */
+		if (error != 0) {
+			for (CPU_INFO_FOREACH(cii, ci)) {
+				error = intr_allocate_slot_cpu(spic, ci, pin, &slot, TRUE);
+				if (error == 0) {
+					break;
+				}
+			}
+		}
+    }
+	if (error != 0) {
+		return (error);
+	}
+	KASSERT(ci != NULL);
+
+	if(isapic == FALSE) {
+		intrvector(pin, level, &idtvec, FALSE);
+	} else {
+		intrvector(pin, level, &idtvec, TRUE);
+	}
+	if (idtvec < 0) {
 		intrsrc[slot] = NULL;
+		spic->sp_intsrc = intrsrc[slot];
 		return (EBUSY);
 	}
-    spic->sp_idtvec = idtvec;
-    spic->sp_slot = slot;
-    *cip = ci;
+	spic->sp_idtvec = idtvec;
+	*idtslot = idtvec;
+	*index = slot;
+	*cip = ci;
     return (0);
 }
 
@@ -177,11 +234,8 @@ intr_establish_xcall(spic, irq, idtvec)
 	 register struct cpu_info *ci;
 	 int error;
 
-	 error = intr_allocate_slot(spic, &ci, irq, idtvec);
-	 if(error != 0) {
-		 free(spic->sp_inthnd, M_DEVBUF);
-		 printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
-	 }
+
+	 softpic_establish_xcall(spic, pin, type, level, isapic, pictemplate);
 }
 
 /* TODO: */
@@ -192,7 +246,29 @@ intr_establish(irq, type, level, ih_fun, ih_arg, isapic, pictemplate)
 	void *ih_arg;
 	bool_t isapic;
 {
-	return (NULL);
+	register struct softpic 	*spic;
+	register struct cpu_info 	*ci;
+	register struct intrhand 	*ih;
+	register struct intrsource 	*is;
+	int error, slot, idtvec;
+
+	spic = softpic_establish(intrspic, irq, type, level, isapic, pictemplate);
+	ih = spic->sp_inthnd;
+	is = spic->sp_intsrc;
+	if(ih == NULL) {
+		ih = intrhand[irq];
+	}
+	if(is == NULL) {
+		is = intrsrc[irq];
+	}
+	error = intr_allocate_slot(spic, &ci, irq, level &slot, &idtvec, isapic);
+	if (error != 0) {
+		free(ih, M_DEVBUF);
+		printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
+		return (NULL);
+	}
+
+	return (ih);
 }
 
 /* TODO: */
@@ -206,5 +282,7 @@ intr_disestablish_xcall()
 void
 intr_disestablish()
 {
+	register struct softpic *spic;
 
+	spic = softpic_disestablish(intrspic);
 }
