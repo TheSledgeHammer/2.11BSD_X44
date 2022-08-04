@@ -27,6 +27,7 @@
  */
 
 #include <machine/asm.h>				/* miscellaneous asm macros */
+#include <machine/segments.h>
 #include <machine/trap.h>
 
 #include "assym.h"
