@@ -10,6 +10,7 @@ SI386=	${SYSDIR}/arch/i386/apic/*.[ch] \
 		${SYSDIR}/arch/i386/i386/*.[ch] \
 		${SYSDIR}/arch/i386/include/*.h \
 		${SYSDIR}/arch/i386/isa/*.[ch] 	\
+		${SYSDIR}/arch/i386/mca/*.[ch] \
 		${SYSDIR}/arch/i386/pci/*.[ch] 	\
 AI386=	${SYSDIR}/arch/i386/apic/*.S	\
 		${SYSDIR}/arch/i386/i386/*.S	\

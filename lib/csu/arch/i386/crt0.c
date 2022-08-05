@@ -43,11 +43,30 @@ extern int 	eprol;
 extern int 	etext;
 #endif
 
-void _start(fptr, const Obj_Entry *, struct ps_strings *, int, char *[]) __dead2;
+void ___start(fptr, const Obj_Entry *, struct ps_strings *, int, char *[]);
+
+__asm(
+		"	.text							\n"
+		"	.align	4						\n"
+		"	.globl	__start					\n"
+		"	.globl	_start					\n"
+		"_start:							\n"
+		"__start:							\n"
+		"	pushl	%ebx					# ps_strings	\n"
+		"	pushl	%ecx					# obj			\n"
+		"	pushl	%edx					# cleanup		\n"
+		"	movl	12(%esp),%eax			\n"
+		"	leal	20(%esp,%eax,4),%ecx	\n"
+		"	leal	16(%esp),%edx			\n"
+		"	pushl	%ecx					\n"
+		"	pushl	%edx					\n"
+		"	pushl	%eax					\n"
+		"	call	___start"
+);
 
 /* The entry function, C part. */
 void
-_start(cleanup, obj, ps_strings, argc, argv)
+___start(cleanup, obj, ps_strings, argc, argv)
 	fptr cleanup;
 	const Obj_Entry *obj;
 	struct ps_strings *ps_strings;
@@ -74,6 +93,9 @@ _start(cleanup, obj, ps_strings, argc, argv)
 	monstartup(&eprol, &etext);
 __asm__("eprol:");
 #endif
+
+	atexit(_fini);
+	_init();
 
 	handle_static_init(argc, argv, env);
 	exit(main(argc, argv, env));

@@ -132,36 +132,3 @@ softpic_disestablish_xcall(spic, ci, irq, isapic, pictemplate)
     is->is_apic = softpic_handle_apic(spic);
     free(ih, M_DEVBUF);
 }
-
-struct softpic *
-softpic_disestablish(spic, irq, isapic, pictemplate)
-	struct softpic *spic;
-	int irq, pictemplate;
-	bool_t isapic;
-{
-	register struct intrhand *ih, *q, **p;
-	register struct intrsource *is;
-	register struct apic *apic;
-	int idtvec;
-
-	ih = intrhand[irq];
-	is = intrsrc[irq];
-	idtvec = spic->sp_idtvec;
-
-	if (!LEGAL_IRQ(irq)) {
-		panic("intr_disestablish: bogus irq");
-	}
-
-    softpic_pic_hwmask(spic, irq, isapic, pictemplate);
-
-    for (p = &is->is_handlers; (q = *p) != NULL && q != ih; p = &q->ih_next) {
-        ;
-    }
-    if (q) {
-        *p = q->ih_next;
-    } else {
-        panic("softpic_intr_free: handler not registered");
-    }
-
-    return (spic);
-}

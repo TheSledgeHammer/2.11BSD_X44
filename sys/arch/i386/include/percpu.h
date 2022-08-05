@@ -34,7 +34,8 @@
 extern struct percpu 				*__percpu[];
 
 #define	PERCPU_MD_FIELDS 																\
-	struct	cpu_info				*pc_cpuinfo;		/* Self-reference */			\
+	struct	percpu 					*pc_prvspace;		/* Self-reference */			\
+	struct	cpu_info				*pc_cpuinfo;										\
 	struct	segment_descriptor 		pc_common_tssd;										\
 	struct	segment_descriptor 		*pc_tss_gdt;										\
 	struct	segment_descriptor 		*pc_fsgs_gdt;										\
@@ -48,13 +49,12 @@ extern struct percpu 				*__percpu[];
 #define	__percpu_offset(name)		offsetof(struct percpu, name)
 #define	__percpu_type(name)		__typeof(((struct percpu *)0)->name)
 
-#define PERCPU_PTR(name)		(__percpu_offset(pc_ ## name))
+#define PERCPU_PTR(name)			(__percpu_offset(pc_ ## name))
 #define PERCPU_SET(name, val)		(PERCPU_PTR(name) = (val))
 #define PERCPU_GET(name)      		(PERCPU_PTR(name))
 #define PERCPU_ADD(name, val)   	(PERCPU_PTR(name) += (val))
 
-#define	IS_BSP()			(PERCPU_GET(cpuid) == 0)
-
+#define	IS_BSP()					(PERCPU_GET(cpuid) == 0)
 /*
 struct kthread *
 __curkthread(void)

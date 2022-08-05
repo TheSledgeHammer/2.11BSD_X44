@@ -98,12 +98,12 @@ struct extent_fixed {
 	((ALIGN(sizeof(struct extent_region))) *		\
 			(_nregions)))
 
-struct	extent *extent_create (char *, u_long, u_long, int, caddr_t, size_t, int);
-void	extent_destroy (struct extent *);
-int		extent_alloc_subregion (struct extent *, u_long, u_long, u_long, u_long, u_long, int, u_long *);
-int		extent_alloc_region (struct extent *, u_long, u_long, int);
-int		extent_free (struct extent *, u_long, u_long, int);
-void	extent_print (struct extent *);
+struct	extent *extent_create(char *, u_long, u_long, int, caddr_t, size_t, int);
+void	extent_destroy(struct extent *);
+int		extent_alloc_subregion(struct extent *, u_long, u_long, u_long, u_long, u_long, int, u_long *);
+int		extent_alloc_region(struct extent *, u_long, u_long, int);
+int		extent_free(struct extent *, u_long, u_long, int);
+void	extent_print(struct extent *);
 
 /* Simple case of extent_alloc_subregion() */
 int     extent_alloc(struct extent *, u_long, u_long, u_long, int, u_long *);

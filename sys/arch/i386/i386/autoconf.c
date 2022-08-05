@@ -80,6 +80,7 @@
 extern int	cold;		/* cold start flag initialized in locore.s */
 
 void	swapconf(void);
+void	setroot(void);
 
 /*
  * Determine i/o configuration for a machine.
@@ -102,6 +103,7 @@ configure()
 	ioapic_enable();
 #endif
 
+	setroot();
 	/*
 	 * Configure device structures
 	 */
@@ -118,7 +120,6 @@ configure()
 #if NLAPIC > 0
 	lapic_write_tpri(0);
 #endif
-
 	cold = 0;
 }
 
@@ -128,6 +129,7 @@ configure()
 dev_t	rootdev = makedev(0,0);
 dev_t	dumpdev = makedev(0,1);
 int		nswap;
+u_long	bootdev = 0;
 
 struct swdevt swdevt[] = {
 		{ 1, 0,	0 },
@@ -166,5 +168,47 @@ swapconf(void)
 	}
 	if (dumplo < 0) {
 		dumplo = 0;
+	}
+}
+
+void
+setroot(void)
+{
+	int  majdev, mindev, unit, part, adaptor;
+	dev_t orootdev;
+	dev_t temp = 0;
+	struct swdevt *swp;
+
+	if ((boothowto & RB_DFLTROOT) || (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC) {
+		return;
+	}
+	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
+
+	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	mindev = (unit * MAXPARTITIONS) + part;
+	orootdev = rootdev;
+	rootdev = makedev(majdev, mindev);
+
+	if (rootdev == orootdev) {
+		return;
+	}
+
+	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {
+		if (majdev == major(swp->sw_dev)
+				&& (mindev / MAXPARTITIONS)
+						== (minor(swp->sw_dev) / MAXPARTITIONS)) {
+			temp = swdevt[0].sw_dev;
+			swdevt[0].sw_dev = swp->sw_dev;
+			swp->sw_dev = temp;
+			break;
+		}
+	}
+	if (swp->sw_dev == NODEV) {
+		return;
+	}
+	if (temp == dumpdev) {
+		dumpdev = swdevt[0].sw_dev;
 	}
 }
