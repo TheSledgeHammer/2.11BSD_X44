@@ -13,7 +13,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ### Kernel:
 - Building Kernel/Arch:
 	- Compile:
-		- numerous compilation errors 
+		- linker errors 
 
 # usr/ (User & OS Libraries):
 ## lib:
