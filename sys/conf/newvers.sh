@@ -1,5 +1,7 @@
 #!/bin/sh -
 #
+#	$NetBSD: newvers.sh,v 1.37 2004/01/05 03:33:06 lukem Exp $
+#
 # Copyright (c) 1984, 1986, 1990, 1993
 #	The Regents of the University of California.  All rights reserved.
 #
@@ -33,25 +35,48 @@
 #
 #	@(#)newvers.sh	8.1 (Berkeley) 4/20/94
 
-if [ ! -r version ]
-then
+if [ ! -e version ]; then
 	echo 0 > version
 fi
 
-touch version
-v=`cat version` u=${USER-root} d=`pwd` h=`hostname` t=`date`
-id=`basename ${d}`
-osrelcmd=`dirname $0`/osrelease.sh
+v=$(cat version)
+t=$(date)
+u=${USER-root}
+h=$(hostname)
+d=$(pwd)
+cwd=$(dirname $0)
+copyright=$(awk '{ print "\""$0"\\n\""}' ${cwd}/copyright)
+
+if [ -f ident ]; then
+	id="$(cat ident)"
+else
+	id=$(basename ${d})
+fi
+
+osrelcmd=${cwd}/osrelease.sh
 
 ost="2.11BSD_X44"
-osr=`sh $osrelcmd`
+osr=$(sh $osrelcmd)
 
-echo "char ostype[] = \"${ost}\";" > vers.c
-echo "char osrelease[] = \"${osr}\";" >> vers.c
-# note: pad `sccs' with spaces, so its size becomes 8
-#echo "char sccs[8] = { ' ', ' ', ' ', ' ', '@', '(', '#', ')' };" >> vers.c
-echo \
-  "char version[] = \"${ost} ${osr} (${id}) #${v}: ${t}\\n\";" \
-  >> vers.c
+fullversion="${ost} ${osr} (${id}) #${v}: ${t}\n\t${u}@${h}:${d}\n"
 
-echo `expr ${v} + 1` > version
+cat << _EOF > vers.c
+/*
+ * Automatically generated file from $0
+ * Do not edit.
+ */
+#include <sys/cdefs.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/exec.h>
+#include <sys/exec_elf.h>
+const char ostype[] = "${ost}";
+const char osrelease[] = "${osr}";
+const char sccs[] = "@(#)${fullversion}";
+const char version[] = "${fullversion}";
+const char copyright[] =
+${copyright}
+"\n";
+
+_EOF
+echo $(expr ${v} + 1) > version
