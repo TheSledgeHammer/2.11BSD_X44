@@ -56,22 +56,12 @@ extern const char hexdigits[];	/* "0123456789abcdef" */
 
 int 	imax(int, int);
 int 	imin(int, int);
+u_int	max(u_int, u_int);
+u_int	min(u_int, u_int);
 long 	lmax(long, long);
 long 	lmin(long, long);
 u_long 	ulmax(u_long, u_long);
 u_long 	ulmin(u_long, u_long);
-
-static __inline u_int
-max(u_int a, u_int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_int
-min(u_int a, u_int b)
-{
-	return (a < b ? a : b);
-}
 
 static __inline quad_t
 qmax(quad_t a, quad_t b)
@@ -336,6 +326,18 @@ imax(int a, int b)
 
 static __inline int
 imin(int a, int b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline u_int
+max(u_int a, u_int b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline u_int
+min(u_int a, u_int b)
 {
 	return (a < b ? a : b);
 }
