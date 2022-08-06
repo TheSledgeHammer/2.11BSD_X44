@@ -98,4 +98,4 @@ __asm__("eprol:");
 	exit(main(argc, argv, env));
 }
 
-__asm(".hidden	_start");
+#__asm(".hidden	___start");
