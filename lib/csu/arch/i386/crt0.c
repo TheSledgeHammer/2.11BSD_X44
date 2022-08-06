@@ -94,9 +94,6 @@ ___start(cleanup, obj, ps_strings, argc, argv)
 __asm__("eprol:");
 #endif
 
-	atexit(_fini);
-	_init();
-
 	handle_static_init(argc, argv, env);
 	exit(main(argc, argv, env));
 }
