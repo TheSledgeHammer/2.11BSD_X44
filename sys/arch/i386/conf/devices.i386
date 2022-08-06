@@ -14,6 +14,7 @@ file	arch/i386/i386/mainbus.c	    	mainbus
 # attribute used to bring in BIOS trampoline code for real-mode probing
 # of certain devices/BIOS features
 define bioscall
+device bioscall
 attach	bioscall at mainbus
 file	arch/i386/i386/bioscall.S	    	bioscall 					needs-flag
 
