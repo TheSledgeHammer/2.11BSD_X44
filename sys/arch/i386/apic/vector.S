@@ -56,7 +56,7 @@
 #define XINTR_TSS(irq_num)	Xintr_tss_##irq_num
 #endif
 
-IDTVEC(spurious)
+IDTVEC(intrspurious)
 		/*
 		 * The Pentium Pro local APIC may erroneously call this vector for a
 		 * default IR7.  Just ignore it.
