@@ -96,6 +96,7 @@
 #include <machine/proc.h>
 #include <machine/pmap.h>
 
+#include <machine/apic/lapicvar.h>
 #include <machine/isa/isa_machdep.h>
 
 #include <i386/isa/nvram.h>
