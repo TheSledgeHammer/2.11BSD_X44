@@ -145,6 +145,7 @@
 
 #include <machine/apic/i8259.h>
 #include <machine/apic/lapicvar.h>
+#include <machine/cpuinfo.h>
 #include <machine/gdt.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
@@ -160,10 +161,8 @@ int 				intrlevel[MAX_INTR_SOURCES];
 int					imask[NIPL];
 int					iunmask[NIPL];
 
-void	intr_apic_vectors(void);
-void	intr_x2apic_vectors(void);
-void	intr_legacy_vectors(void);
-void	init_intrmask(void);
+void				intr_legacy_vectors(void);
+void				init_intrmask(void);
 
 void
 intr_default_setup(void)
@@ -184,29 +183,25 @@ intr_legacy_vectors(void)
 	i8259_default_setup();
 }
 
-#ifdef notyet
+/*
+ * Determine the idtvec from the irq and level.
+ * Notes:
+ * If isapic = false: level is ignored and can be set to 0.
+ */
 void
-intr_apic_vectors(void)
+intrvector(int irq, int level, int *idtvec, bool isapic)
 {
-	int i, idx, level;
-	for(i = 0; i < MAX_INTR_SOURCES; i++) {
-		level = intrlevel[i];
-		idx = idtvector(i, level, 0, MAX_INTR_SOURCES, TRUE);
-		idt_vec_set(idx, apic_edge_stubs[i].ist_entry);
-	}
+    int i, min, max;
+    min = 0;
+    max = MAX_INTR_SOURCES;
+    for(i = min; i < max; i++) {
+        intrlevel[i] = i;
+        if(level == i) {
+            level = intrlevel[i];
+            *idtvec = idtvector(irq, level, min, max, isapic);
+        }
+    }
 }
-
-void
-intr_x2apic_vectors(void)
-{
-	int i, idx, level;
-	for(i = 0; i < MAX_INTR_SOURCES; i++) {
-		level = intrlevel[i];
-		idx = idtvector(i, level, 0, MAX_INTR_SOURCES, TRUE);
-		idt_vec_set(idx, x2apic_edge_stubs[i].ist_entry);
-	}
-}
-#endif
 
 void
 intr_calculatemasks()
@@ -302,9 +297,12 @@ intr_calculatemasks()
 /*
  * soft interrupt masks
  */
+
 void
 init_intrmask(void)
 {
+#define SOFTINTR_MASK(mask, sir)	((mask) = 1 << (sir))
+
 	/*
 	 * Initialize soft interrupt masks to block themselves.
 	 */
@@ -353,6 +351,125 @@ init_intrmask(void)
 	 * avoid overruns, so serial > high.
 	 */
 	imask[IPL_SERIAL] |= imask[IPL_HIGH];
+}
+
+int
+intr_allocate_slot_cpu(spic, ci, pin, index, isapic)
+    struct softpic *spic;
+    struct cpu_info *ci;
+    int pin, *index;
+    bool_t isapic;
+{
+    struct intrsource *isp;
+    int i, slot, start, max;
+
+    if(isapic == FALSE) {
+    	slot = pin;
+    } else {
+        start = 0;
+        max = MAX_INTR_SOURCES;
+        slot = -1;
+
+        if (CPU_IS_PRIMARY(ci)) {
+			start = NUM_LEGACY_IRQS;
+		}
+        for (i = start; i < max; i++) {
+        	if(intrsrc[i] == NULL) {
+        		slot = i;
+        		break;
+        	}
+        }
+		if (slot == -1) {
+			return EBUSY;
+		}
+    }
+    isp = intrsrc[slot];
+	spic->sp_intsrc = isp;
+    spic->sp_slot = slot;
+    *index = slot;
+    return (0);
+}
+
+int
+intr_allocate_slot(spic, cip, pin, level, index, idtslot, isapic)
+    struct softpic *spic;
+    struct cpu_info **cip;
+    int pin, level, *index, *idtslot;
+    bool_t isapic;
+{
+    CPU_INFO_ITERATOR cii;
+	struct cpu_info *ci, *lci;
+	struct intrsource *isp;
+    int error, slot, idtvec;
+
+    for (CPU_INFO_FOREACH(cii, ci)) {
+    	for (slot = 0 ; slot < MAX_INTR_SOURCES ; slot++) {
+    		if ((isp = intrsrc[slot]) == NULL) {
+    			continue;
+    		}
+    		if(pin != -1 && isp->is_pin == pin) {
+    			*idtslot = spic->sp_idtvec;
+    			*index = slot;
+    			*cip = ci;
+    			return 0;
+    		}
+    	}
+    }
+
+    if(isapic == FALSE) {
+		/*
+		 * Must be directed to BP.
+		 */
+    	ci = &cpu_info;
+    	error = intr_allocate_slot_cpu(spic, ci, pin, slot, FALSE);
+    } else {
+		/*
+		 * Find least loaded AP/BP and try to allocate there.
+		 */
+    	ci = NULL;
+    	for (CPU_INFO_FOREACH(cii, lci)) {
+#if 0
+    		if (ci == NULL) {
+    			ci = lci;
+    		}
+#else
+    		ci = &cpu_info;
+#endif
+    	}
+    	KASSERT(ci != NULL);
+    	error = intr_allocate_slot_cpu(ci, pin, &slot, TRUE);
+		/*
+		 * If that did not work, allocate anywhere.
+		 */
+		if (error != 0) {
+			for (CPU_INFO_FOREACH(cii, ci)) {
+				error = intr_allocate_slot_cpu(spic, ci, pin, &slot, TRUE);
+				if (error == 0) {
+					break;
+				}
+			}
+		}
+    }
+	if (error != 0) {
+		return (error);
+	}
+	KASSERT(ci != NULL);
+
+	if(isapic == FALSE) {
+		intrvector(pin, level, &idtvec, FALSE);
+	} else {
+		intrvector(pin, level, &idtvec, TRUE);
+	}
+	if (idtvec < 0) {
+		intrsrc[slot] = NULL;
+		spic->sp_intsrc = intrsrc[slot];
+		return (EBUSY);
+	}
+	spic->sp_idtvec = idtvec;
+	*idtslot = idtvec;
+	*index = slot;
+	*cip = ci;
+    return (0);
 }
 
 void

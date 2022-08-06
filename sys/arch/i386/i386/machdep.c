@@ -1319,6 +1319,9 @@ init386(first)
 	/* make GDT & LDT memory segments */
 	make_memory_segments();
 
+	pmap_kenter(local_apic_va, local_apic_pa);
+	memset((void *)local_apic_va, 0, PAGE_SIZE);
+
 	/* exceptions */
 	for(x = 0; x < NIDT; x++) {
 		setidt(x, &IDTVEC(rsvd), 0, SDT_SYS386TGT, SEL_KPL);
@@ -1777,8 +1780,6 @@ cpu_setmcontext(p, mcp, flags)
 	return (0);
 }
 #endif
-
-#include <i386/isa/icu.h>
 
 /*
  * Add a mask to cpl, and return the old value of cpl.

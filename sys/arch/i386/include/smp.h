@@ -15,20 +15,13 @@
 #ifndef _I386_SMP_H_
 #define _I386_SMP_H_
 
-#include <i386/isa/icu.h>
-
-#include <machine/bus.h>
-#include <machine/frame.h>
-#include <machine/intr.h>
-#include <machine/pcb.h>
+#ifndef _LOCORE
 
 #define LAPIC_IPI_INTS 	0xf0
 #define	IPI_INVLOP		(LAPIC_IPI_INTS + 1)	/* TLB Shootdown IPIs, amd64 */
 #define	IPI_INVLTLB		(LAPIC_IPI_INTS + 1)	/* TLB Shootdown IPIs, i386 */
 #define	IPI_INVLPG		(LAPIC_IPI_INTS + 2)
 #define	IPI_INVLRNG		(LAPIC_IPI_INTS + 3)
-
-struct pmap;
 
 /* global data in mp.c */
 extern int	 			mp_naps;
@@ -54,5 +47,9 @@ extern u_int 			all_cpus;
 
 void 	bootMP(void);
 void	alloc_ap_trampoline(int *, u_int64_t, u_int64_t);
+#endif
 
+extern void	invltlb_handler(void);
+extern void	invlpg_handler(void);
+extern void	invlrng_handler(void);
 #endif /* _I386_SMP_H_ */

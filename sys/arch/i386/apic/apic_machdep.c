@@ -40,7 +40,6 @@
 #include <machine/pic.h>
 #include <machine/apic/lapicvar.h>
 #include <machine/apic/ioapicvar.h>
-#include <i386/isa/icu.h>
 
 int  intr_shared_edge;
 

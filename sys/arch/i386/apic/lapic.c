@@ -54,6 +54,7 @@
 #include <machine/bus.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
+#include <machine/gdt.h>
 #include <machine/pic.h>
 #include <machine/intr.h>
 #include <machine/pio.h>
@@ -106,6 +107,7 @@ static int i82489_ipi(int vec, int target, int dl);
 static int x2apic_ipi(int vec, int target, int dl);
 int (*i386_ipi)(int, int, int) = i82489_ipi;
 
+bool x2apic_mode;
 #ifdef LAPIC_ENABLE_X2APIC
 bool x2apic_enable = TRUE;
 #else
@@ -335,20 +337,19 @@ lapic_boot_init(vm_offset_t lapic_base)
 {
 	lapic_map(lapic_base);
 
-	if(x2apic_mode) {
 #ifdef SMP
-		setidt(LAPIC_IPI_VECTOR, &IDTVEC(x2apic_intr_ipi), 0, SDT_SYS386IGT, SEL_KPL);
-		setidt(LAPIC_TLB_VECTOR, &IDTVEC(x2apic_intr_tlb), 0, SDT_SYS386IGT, SEL_KPL);
+	idt_vec_reserve(LAPIC_IPI_VECTOR);
+	idt_vec_set(LAPIC_IPI_VECTOR, x2apic_mode ? Xintr_x2apic_ipi : Xintr_lapic_ipi);
+
+	idt_vec_reserve(LAPIC_TLB_VECTOR);
+	idt_vec_set(LAPIC_TLB_VECTOR, x2apic_mode ? Xintr_x2apic_tlb : Xintr_lapic_tlb);
 #endif
-		setidt(LAPIC_TIMER_VECTOR, &IDTVEC(x2apic_intr_ltimer), 0, SDT_SYS386IGT, SEL_KPL);
-	} else {
-#ifdef SMP
-		setidt(LAPIC_IPI_VECTOR, &IDTVEC(lapic_intr_ipi), 0, SDT_SYS386IGT, SEL_KPL);
-		setidt(LAPIC_TLB_VECTOR, &IDTVEC(lapic_intr_tlb), 0, SDT_SYS386IGT, SEL_KPL);
-#endif
-		setidt(LAPIC_TIMER_VECTOR, &IDTVEC(lapic_intr_ltimer), 0, SDT_SYS386IGT, SEL_KPL);
-	}
-	setidt(LAPIC_SPURIOUS_VECTOR, &IDTVEC(spurious), 0, SDT_SYS386IGT, SEL_KPL);
+
+	idt_vec_reserve(LAPIC_SPURIOUS_VECTOR);
+	idt_vec_set(LAPIC_SPURIOUS_VECTOR, Xintrspurious);
+
+	idt_vec_reserve(LAPIC_TIMER_VECTOR);
+	idt_vec_set(LAPIC_TIMER_VECTOR, x2apic_mode ? Xintr_x2apic_ltimer : Xintr_lapic_ltimer);
 }
 
 static inline u_int32_t

@@ -80,7 +80,6 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <i386/isa/icu.h>
 #include <machine/cpufunc.h>
 #include <machine/intr.h>
 #include <machine/pic.h>

@@ -76,7 +76,7 @@ SRCS+=	strcat.c strchr.c strcmp.c strcpy.c strlen.c
 SRCS+=	strrchr.c strncmp.c strncpy.c strsep.c
 SRCS+=	strcasecmp.c strncasecmp.c
 
-SRCS+=	qsort.c #rindex.c
+SRCS+=	qsort.c
 
 SRCS+=	hexdump.c
 

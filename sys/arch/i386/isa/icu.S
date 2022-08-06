@@ -38,7 +38,7 @@
  */
 
 #include <machine/asm.h>
-#include <i386/isa/icu.h>
+#include <machine/intr.h>
 #include <net/netisr.h>
 
 #include "assym.h"

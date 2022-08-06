@@ -56,30 +56,106 @@ extern const char hexdigits[];	/* "0123456789abcdef" */
 
 int 	imax(int, int);
 int 	imin(int, int);
-u_int 	max(u_int, u_int);
-u_int 	min(u_int, u_int);
 long 	lmax(long, long);
 long 	lmin(long, long);
 u_long 	ulmax(u_long, u_long);
 u_long 	ulmin(u_long, u_long);
-int 	abs(int);
 
-int 	isspace(int);
-int 	isascii(int);
-int 	isupper(int);
-int 	islower(int);
-int 	isalpha(int);
-int 	isdigit(int);
-int 	isxdigit(int);
-int 	toupper(int);
-int 	tolower(int);
+static __inline u_int
+max(u_int a, u_int b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline u_int
+min(u_int a, u_int b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline quad_t
+qmax(quad_t a, quad_t b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline quad_t
+qmin(quad_t a, quad_t b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline int
+abs(int j)
+{
+	return(j < 0 ? -j : j);
+}
+
+static __inline int
+isspace(int ch)
+{
+	return (ch == ' ' || (ch >= '\t' && ch <= '\r'));
+}
+
+static __inline int
+isascii(int ch)
+{
+	return ((ch & ~0x7f) == 0);
+}
+
+static __inline int
+isupper(int ch)
+{
+	return (ch >= 'A' && ch <= 'Z');
+}
+
+static __inline int
+islower(int ch)
+{
+	return (ch >= 'a' && ch <= 'z');
+}
+
+static __inline int
+isalpha(int ch)
+{
+	return (isupper(ch) || islower(ch));
+}
+
+static __inline int
+isdigit(int ch)
+{
+	return (ch >= '0' && ch <= '9');
+}
+
+static __inline int
+isxdigit(int ch)
+{
+	return (isdigit(ch) ||
+	    (ch >= 'A' && ch <= 'F') ||
+	    (ch >= 'a' && ch <= 'f'));
+}
+
+static __inline int
+toupper(int ch)
+{
+	if (islower(ch))
+		return (ch - 0x20);
+	return (ch);
+}
+
+static __inline int
+tolower(int ch)
+{
+	if (isupper(ch))
+		return (ch + 0x20);
+	return (ch);
+}
 
 static __inline int
 isprint(int ch)
 {
 	return (ch >= 0x20 && ch <= 0x7E);
 }
-
 
 #define __KASSERTSTR  "Kernel assertion failed: (%s), function %s, file %s, line %d."
 
@@ -276,30 +352,6 @@ lmin(long a, long b)
 	return (a < b ? a : b);
 }
 
-static __inline u_int
-max(u_int a, u_int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_int
-min(u_int a, u_int b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline quad_t
-qmax(quad_t a, quad_t b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline quad_t
-qmin(quad_t a, quad_t b)
-{
-	return (a < b ? a : b);
-}
-
 static __inline u_long
 ulmax(u_long a, u_long b)
 {
@@ -310,71 +362,5 @@ static __inline u_long
 ulmin(u_long a, u_long b)
 {
 	return (a < b ? a : b);
-}
-
-static __inline int
-abs(int j)
-{
-	return(j < 0 ? -j : j);
-}
-
-static __inline int
-isspace(int ch)
-{
-	return (ch == ' ' || (ch >= '\t' && ch <= '\r'));
-}
-
-static __inline int
-isascii(int ch)
-{
-	return ((ch & ~0x7f) == 0);
-}
-
-static __inline int
-isupper(int ch)
-{
-	return (ch >= 'A' && ch <= 'Z');
-}
-
-static __inline int
-islower(int ch)
-{
-	return (ch >= 'a' && ch <= 'z');
-}
-
-static __inline int
-isalpha(int ch)
-{
-	return (isupper(ch) || islower(ch));
-}
-
-static __inline int
-isdigit(int ch)
-{
-	return (ch >= '0' && ch <= '9');
-}
-
-static __inline int
-isxdigit(int ch)
-{
-	return (isdigit(ch) ||
-	    (ch >= 'A' && ch <= 'F') ||
-	    (ch >= 'a' && ch <= 'f'));
-}
-
-static __inline int
-toupper(int ch)
-{
-	if (islower(ch))
-		return (ch - 0x20);
-	return (ch);
-}
-
-static __inline int
-tolower(int ch)
-{
-	if (isupper(ch))
-		return (ch + 0x20);
-	return (ch);
 }
 */

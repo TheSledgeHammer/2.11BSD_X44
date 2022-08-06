@@ -93,7 +93,7 @@
 #include <machine/bus.h>
 #include <machine/pio.h>
 
-#include <i386/isa/icu.h>
+#include <machine/intr.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pcireg.h>

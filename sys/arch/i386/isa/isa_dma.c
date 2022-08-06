@@ -89,14 +89,13 @@
 
 #define _I386_BUS_DMA_PRIVATE
 #include <machine/bus.h>
-
+#include <machine/intr.h>
 #include <machine/pic.h>
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 #include <machine/segments.h>
 
 #include <machine/isa/isa_machdep.h>
-#include <i386/isa/icu.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>

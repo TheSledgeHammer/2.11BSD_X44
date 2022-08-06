@@ -47,7 +47,7 @@ extern struct percpu 				*__percpu[];
 
 #ifdef _KERNEL
 #define	__percpu_offset(name)		offsetof(struct percpu, name)
-#define	__percpu_type(name)		__typeof(((struct percpu *)0)->name)
+#define	__percpu_type(name)			__typeof(((struct percpu *)0)->name)
 
 #define PERCPU_PTR(name)			(__percpu_offset(pc_ ## name))
 #define PERCPU_SET(name, val)		(PERCPU_PTR(name) = (val))

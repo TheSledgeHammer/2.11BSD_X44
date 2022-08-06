@@ -30,9 +30,9 @@
  * Functions for calling x86 BIOS functions from the BSD kernel
  */
 
-#include <machine/param.h>
-#include <machine/bioscall.h>
 #include <machine/asm.h>
+#include <machine/param.h>
+#include <machine/segments.h>
 
 #include "assym.h"
 
@@ -129,7 +129,7 @@ ENTRY(bios16_call)
 		lret						/* ...continue below */
 
 
-ENTRY(bios16_jmp):
+ENTRY(bios16_jmp)
 		lcallw	*bioscall_vector	/* 16-bit call */
 
 		jc	1f

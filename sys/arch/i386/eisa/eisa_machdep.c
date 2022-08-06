@@ -82,7 +82,7 @@
 #define _I386_BUS_DMA_PRIVATE
 #include <machine/bus.h>
 
-#include <i386/isa/icu.h>
+#include <machine/intr.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/core/eisa/eisavar.h>

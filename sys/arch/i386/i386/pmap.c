@@ -97,13 +97,11 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
-//#include <machine/atomic.h>
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
-//#include <machine/param.h>
 #include <machine/pte.h>
 #ifdef SMP
 #include <machine/smp.h>
@@ -111,6 +109,7 @@
 #include <machine/pmap.h>
 #include <machine/pmap_tlb.h>
 
+#include <machine/apic/lapicvar.h>
 #include <machine/isa/isa_machdep.h>
 
 /*
@@ -194,6 +193,12 @@ int pmapvacflush = 0;
 #define pte_prot(m, p)	(protection_codes[p])
 int	protection_codes[8];
 
+/*
+ * LAPIC virtual address, and fake physical address.
+ */
+volatile vm_offset_t 	local_apic_va;
+vm_offset_t local_apic_pa;
+
 static int pgeflag = 0;			/* PG_G or-in */
 static int pseflag = 0;			/* PG_PS or-in */
 
@@ -239,7 +244,10 @@ pdpt_entry_t 	*IdlePDPT;			/* phys addr of kernel PDPT */
 #endif
 pt_entry_t 		*KPTmap;			/* address of kernel page tables */
 
+static vm_offset_t	pmap_bootstrap_valloc(size_t);
+static vm_offset_t	pmap_bootstrap_palloc(size_t);
 static pt_entry_t *pmap_pte(pmap_t, vm_offset_t);
+
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
@@ -539,6 +547,9 @@ pmap_bootstrap(firstaddr)
 
 	virtual_avail = va;
 
+	local_apic_va = pmap_bootstrap_valloc(1);
+	local_apic_pa = pmap_bootstrap_palloc(1);
+
 	/*
 	 * Initialize the TLB shootdown queues.
 	 */
@@ -590,6 +601,36 @@ pmap_bootstrap_alloc(size)
 
 	bzero ((caddr_t) val, size);
 	return ((void *) val);
+}
+
+/*
+ * pmap_bootstrap_valloc: allocate a virtual address in the bootstrap area.
+ * This function is to be used before any VM system has been set up.
+ *
+ * The va is taken from virtual_avail.
+ */
+static vm_offset_t
+pmap_bootstrap_valloc(npages)
+	size_t npages;
+{
+	vm_offset_t va = virtual_avail;
+	virtual_avail += npages * PAGE_SIZE;
+	return (va);
+}
+
+/*
+ * pmap_bootstrap_palloc: allocate a physical address in the bootstrap area.
+ * This function is to be used before any VM system has been set up.
+ *
+ * The pa is taken from avail_start.
+ */
+static vm_offset_t
+pmap_bootstrap_palloc(npages)
+	size_t npages;
+{
+	vm_offset_t pa = avail_start;
+	avail_start += npages * PAGE_SIZE;
+	return (pa);
 }
 
 /*

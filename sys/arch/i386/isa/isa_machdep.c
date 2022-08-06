@@ -95,7 +95,6 @@
 #include <machine/pic.h>
 
 #include <machine/isa/isa_machdep.h>
-#include <i386/isa/icu.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
