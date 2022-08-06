@@ -83,8 +83,6 @@ include <machine/apic/ioapicreg.h>
 include <machine/apic/ioapicvar.h>
 endif
 
-define	COHERENCY_UNIT		COHERENCY_UNIT
-
 define P_FORW 				offsetof(struct proc, p_forw)
 define P_BACK 				offsetof(struct proc, p_back)
 define P_ADDR 				offsetof(struct proc, p_addr)
