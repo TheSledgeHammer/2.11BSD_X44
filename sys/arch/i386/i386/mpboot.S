@@ -90,7 +90,7 @@ ENTRY(MPentry)
 	/* Now enable paging mode */
 	cmpl	$0, pae_mode
 	je		4f
-	movl	IdlePDPT, %eax
+	movl	_C_LABEL(IdlePDPT), %eax
 	movl	%eax, %cr3
 	movl	%cr4, %eax
 	orl		$CR4_PAE, %eax
@@ -109,7 +109,7 @@ ENTRY(MPentry)
 	orl		$EFER_NXE,%eax
 	wrmsr
 	jmp		5f
-4:	movl	IdlePTD_nopae, %eax
+4:	movl	_C_LABEL(IdlePTD), %eax
 	movl	%eax,%cr3	
 5:	movl	%cr0,%eax
 	orl		$CR0_PE|CR0_PG,%eax		/* enable paging */
@@ -124,7 +124,7 @@ ENTRY(MPentry)
 	 */
 mp_begin:	/* now running relocated at KERNBASE */
 	CHECKPOINT(0x37, 4)
-	call	init_secondary			/* load i386 tables */
+	call	_C_LABEL(init_secondary)		/* load i386 tables */
 
 /*
  * This is the embedded trampoline or bootstrap that is
@@ -135,8 +135,8 @@ mp_begin:	/* now running relocated at KERNBASE */
  * 1Meg.		-jackv
  */
 
-	.data
-	ALIGN_DATA						/* just to be sure */
+		.data
+		ALIGN_DATA						/* just to be sure */
 
 BOOTMP1:
 

@@ -162,7 +162,7 @@ init_secondary(ci)
 {
 	struct percpu *pc;
 	struct i386tss *common_tssp;
-	struct region_descriptor r_gdt, r_idt;
+	struct region_descriptor region;
 	int gsel_tss, myid, x;
 	u_int cr0;
 
@@ -187,13 +187,11 @@ init_secondary(ci)
 		ssdtosd(&gdt_segs[x], &gdt[myid * NGDT + x].sd);
 	}
 
-	r_gdt.rd_limit = NGDT * sizeof(gdt[0]) - 1;
-	r_gdt.rd_base = (int) &gdt[myid * NGDT];
-	lgdt(&r_gdt);									/* does magic intra-segment return */
+	setregion(&region, gdt[myid * NGDT], NGDT * sizeof(gdt[0]) - 1);
+	lgdt(&region);
 
-	r_idt.rd_limit = sizeof(struct gate_descriptor) * NIDT - 1;
-	r_idt.rd_base = (int)idt;
-	lidt(&r_idt);
+	setregion(&region, idt, NIDT * sizeof(struct gate_descriptor)-1);
+	lidt(&region);
 
 	lldt(_default_ldt);
 	PERCPU_SET(currentldt, _default_ldt);

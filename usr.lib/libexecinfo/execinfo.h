@@ -32,7 +32,7 @@
 #define _EXECINFO_H_
 
 #include <sys/cdefs.h>
-#include <sys/featuretest.h>
+//#include <sys/featuretest.h>
 #include <sys/ansi.h>
   
 #ifdef  _BSD_SIZE_T_

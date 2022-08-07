@@ -44,7 +44,7 @@
  * FreeBSD: see FreeBSD's i386/asmacros.h
  * Access per-CPU data. 
  */
-//#define	PCPU(member)	%fs:PC_ ## member
+//#define	PERCPU(member)	%fs:PC_ ## member
 #define	PERCPU(member)	member
 #define	PERCPU_ADDR(member, reg)					\
 		movl %fs:PC_PRVSPACE, reg ;					\
@@ -79,7 +79,7 @@ ENTRY(vm86_bioscall)
 		pushl	%edx
 		movl	TD_PCB(%ecx),%ecx
 		pushl	PCB_SAVEFPU(%ecx)
-		movl	$npxsave,%eax
+		movl	_C_LABEL(npxsave),%eax
 		call	*%eax
 		addl	$4,%esp
 		popl	%edx					/* recover our pcb */
@@ -92,9 +92,9 @@ ENTRY(vm86_bioscall)
 		rep
 		movsl							/* copy frame to new stack */
 
-		movl	PERCPU(CURPCB),%eax
+		movl	_C_LABEL(curpcb),%eax
 		pushl	%eax					/* save curpcb */
-		movl	%edx,PERCPU(CURPCB)		/* set curpcb to vm86pcb */
+		movl	%edx,_C_LABEL(curpcb)	/* set curpcb to vm86pcb */
 
 		movl	PERCPU(TSS_GDT),%ebx	/* entry in GDT */
 		movl	0(%ebx),%eax
@@ -113,7 +113,7 @@ ENTRY(vm86_bioscall)
 
 		movl	%cr3,%eax
 		pushl	%eax					/* save address space */
-		movl	IdlePTD,%ecx			/* va (and pa) of Idle PTD */
+		movl	_C_LABEL(IdlePTD),%ecx	/* va (and pa) of Idle PTD */
 		movl	%ecx,%ebx
 		movl	0(%ebx),%eax
 		pushl	%eax					/* old ptde != 0 when booting */
@@ -125,20 +125,20 @@ ENTRY(vm86_bioscall)
 		movl	%eax,0(%ebx)			/* ... install as PTD entry 0 */
 
 #if defined(PMAP_PAE_COMP)
-		movl	IdlePDPT,%ecx
+		movl	_C_LABEL(IdlePDPT),%ecx
 #endif
 		movl	%ecx,%cr3				/* new page tables */
 		movl	SCR_VMFRAME(%edx),%esp	/* switch to new stack */
 
 		pushl	%esp
-		movl	$vm86_prepcall, %eax
+		movl	_C_LABEL(vm86_prepcall), %eax
 		call	*%eax					/* finish setup */
-		add	$4, %esp
+		add		$4, %esp
 
 		/*
 		 * Return via doreti
 		 */
-		jmp	doreti
+		jmp		_C_LABEL(Xdoreti)
 
 
 /*
@@ -169,7 +169,7 @@ ENTRY(vm86_biosret)
 		movl	$GPROC0_SEL*8,%esi		/* GSEL(entry, SEL_KPL) */
 		ltr		%si
 
-		popl	PERCPU(CURPCB)			/* restore curpcb/curproc */
+		popl	_C_LABEL(curpcb)		/* restore curpcb/curproc */
 		movl	SCR_ARGFRAME(%edx),%edx	/* original stack frame */
 		movl	TF_TRAPNO(%edx),%eax	/* return (trapno) */
 

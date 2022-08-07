@@ -7,7 +7,7 @@ ARCHSUBDIR=	${MACHINE_CPU}
 M=			${.CURDIR}/arch/${ARCHSUBDIR}
 
 
-.if (${MACHINE_ARCH} == "i386") &&					\
+.if (${MACHINE_ARCH} == "i386") || (${MACHINE_ARCH} == "x86_64") &&					\
     ${OBJECT_FMT} == "ELF" && ${MKPIC} != "no"
     
 PROG=		ld.so

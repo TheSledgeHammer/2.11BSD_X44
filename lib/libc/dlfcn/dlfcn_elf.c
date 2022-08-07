@@ -31,7 +31,7 @@ __RCSID("$NetBSD: dlfcn_elf.c,v 1.4.2.1 2004/07/19 09:07:13 tron Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include <assert.h>
-//#include <elf.h>
+#include <elf.h>
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>

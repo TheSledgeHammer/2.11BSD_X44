@@ -27,6 +27,10 @@ SRCS+=unwind_arm_ehabi_stub.c
 SRCS+=builtin.c
 .endif
 
+.if exists(${.CURDIR}/symbol_${LIBEXECINFO_MACHINE_ARCH}.c)
+SRCS+=symbol_${LIBEXECINFO_MACHINE_ARCH}.c
+.endif
+
 MLINKS+= backtrace.3 backtrace_symbols.3
 MLINKS+= backtrace.3 backtrace_symbols_fmt.3
 MLINKS+= backtrace.3 backtrace_symbols_fd.3

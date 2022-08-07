@@ -31,6 +31,7 @@
 #include <sys/device.h>
 #include <sys/cputopo.h>
 #include <sys/percpu.h>
+
 #include <machine/intr.h>
 
 struct percpu;

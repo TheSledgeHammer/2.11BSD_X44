@@ -1063,8 +1063,8 @@ setregion(rd, base, limit)
 	void *base;
 	size_t limit;
 {
-	rd->rd_limit = (int)limit;
 	rd->rd_base = (int)base;
+	rd->rd_limit = (int)limit;
 }
 
 /*

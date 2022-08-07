@@ -129,21 +129,21 @@ define IOAPIC_SC_REG		offsetof(struct ioapic_softc, sc_reg)
 define IOAPIC_SC_DATA		offsetof(struct ioapic_softc, sc_data)
 endif
 
-define IPL_NONE			IPL_NONE
+define IPL_NONE				IPL_NONE
 define IPL_SOFTCLOCK		IPL_SOFTCLOCK
-define IPL_SOFTNET		IPL_SOFTNET
+define IPL_SOFTNET			IPL_SOFTNET
 define IPL_SOFTSERIAL		IPL_SOFTSERIAL
-define IPL_CLOCK		IPL_CLOCK
-define IPL_HIGH			IPL_HIGH
-define IPL_IPI			IPL_IPI
+define IPL_CLOCK			IPL_CLOCK
+define IPL_HIGH				IPL_HIGH
+define IPL_IPI				IPL_IPI
 
-define LIR_IPI			LIR_IPI
-define LIR_TIMER		LIR_TIMER
+define LIR_IPI				LIR_IPI
+define LIR_TIMER			LIR_TIMER
 
 define BOOTINFO_SIZE		sizeof(struct bootinfo)
-define BI_VERSION		offsetof(struct bootinfo, bi_version)
+define BI_VERSION			offsetof(struct bootinfo, bi_version)
 define BI_KERNELNAME		offsetof(struct bootinfo, bi_kernelname)
-define BI_ENDCOMMON		offsetof(struct bootinfo, bi_endcommon)
-define BI_SIZE			offsetof(struct bootinfo, bi_size)
+define BI_ENDCOMMON			offsetof(struct bootinfo, bi_endcommon)
+define BI_SIZE				offsetof(struct bootinfo, bi_size)
 
 define VM86_FRAMESIZE		sizeof(struct vm86frame)

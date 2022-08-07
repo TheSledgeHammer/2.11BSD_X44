@@ -50,6 +50,12 @@ __RCSID("$NetBSD: symtab.c,v 1.5 2016/04/20 14:00:16 christos Exp $");
 
 #include "symtab.h"
 
+#ifdef SYMTAB_DEBUG
+#define DPRINTF(fmt, ...)	fprintf(stderr, "%s: " fmt "\n", __func__, __VA_ARGS__)
+#else
+#define DPRINTF(fmt, ...)
+#endif
+
 struct symbol {
 	char *st_name;
 	uintptr_t st_value;

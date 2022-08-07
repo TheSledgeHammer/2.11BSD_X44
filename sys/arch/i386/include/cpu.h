@@ -149,6 +149,13 @@ void	k6_mem_drvinit(void);
 void	i386_proc0_tss_ldt_init(void);
 int		add_mem_cluster(u_int64_t, u_int64_t);
 
+/* npx.c */
+extern int	i386_use_fxsave;
+struct proc *npxproc(void);
+void		npxsave(void);
+void		npxsave_cpu(struct cpu_info *, int);
+void		npxsave_proc(struct proc *, int);
+
 /* trap.c */
 void 	child_return(void *);
 
