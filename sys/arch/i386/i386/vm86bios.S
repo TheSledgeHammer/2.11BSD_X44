@@ -103,7 +103,7 @@ ENTRY(vm86_bioscall)
 		andl    $~0x200, %eax			/* flip 386BSY -> 386TSS */
 		movl	%eax,SCR_TSS1(%edx)		/* save second word */
 
-		movl	PCB_EXT(%edx),%edi		/* vm86 tssd entry */
+		movl	PCB_TSSD(%edx),%edi		/* vm86 tssd entry */
 		movl	0(%edi),%eax
 		movl	%eax,0(%ebx)
 		movl	4(%edi),%eax

@@ -50,7 +50,7 @@ include <sys/proc.h>
 #include <sys/stddef.h>
 #include <sys/vmmeter.h>
 
-#include <vm/include/vm.h>
+include <vm/include/vm.h>
 
 include <machine/bootinfo.h>
 #include <machine/cpu.h>
@@ -69,10 +69,10 @@ include <machine/intr.h>
 
 #include <machine/vmparam.h>
 
-#if defined(_KERNEL)
-#include "isa.h"
-#include "ioapic.h"
-#endif
+if defined(_KERNEL)
+include "isa.h"
+include "ioapic.h"
+endif
 
 if NISA > 0
 include <machine/isa/isa_machdep.h>
@@ -89,17 +89,20 @@ define P_ADDR 				offsetof(struct proc, p_addr)
 define P_STAT 				offsetof(struct proc, p_stat)
 define P_WCHAN 				offsetof(struct proc, p_wchan)
 
+define U_PCB				offsetof(struct user, u_pcb)
+
 define V_SWTCH 				offsetof(struct vmrate, v_swtch)
 define V_TRAP 				offsetof(struct vmrate, v_trap)
 define V_INTR 				offsetof(struct vmrate, v_intr)
 
 define PCB_CR3 				offsetof(struct pcb, pcb_cr3)
-define PCB_EIP 				offsetof(struct pcb, pcb_tss.tss_eip)
+define PCB_EIP 				offsetof(struct pcb, pcb_eib)
 define PCB_EBX 				offsetof(struct pcb, pcb_ebx)
 define PCB_ESP 				offsetof(struct pcb, pcb_esp)
 define PCB_EBP 				offsetof(struct pcb, pcb_ebp)
 define PCB_ESI 				offsetof(struct pcb, pcb_esi)
 define PCB_EDI 				offsetof(struct pcb, pcb_edi)
+define PCB_TSSD 			offsetof(struct pcb, pcb_tssd)
 define PCB_SAVEFPU 			offsetof(struct pcb, pcb_savefpu)
 define PCB_CMAP2 			offsetof(struct pcb, pcb_cmap2)
 define PCB_ONFAULT 			offsetof(struct pcb, pcb_onfault)
@@ -108,6 +111,8 @@ define PCB_SIZE				sizeof(struct pcb)
 
 define TF_CS				offsetof(struct trapframe, tf_cs)
 define TF_EFLAGS			offsetof(struct trapframe, tf_eflags)
+define TF_ERR				offsetof(struct trapframe, tf_err)
+define TF_TRAPNO			offsetof(struct trapframe, tf_trapno)
 
 define ENOENT  				ENOENT
 define EFAULT  				EFAULT
@@ -116,6 +121,7 @@ define IH_FUN				offsetof(struct intrhand, ih_fun)
 define IH_ARG				offsetof(struct intrhand, ih_arg)
 define IH_COUNT				offsetof(struct intrhand, ih_count)
 define IH_NEXT				offsetof(struct intrhand, ih_next)
+define IH_LEVEL				offsetof(struct intrhand, ih_level)
 
 define IS_HANDLERS			offsetof(struct intrsource, is_handlers)
 define IS_PIC				offsetof(struct intrsource, is_pic)
