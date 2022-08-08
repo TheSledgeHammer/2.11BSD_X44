@@ -41,7 +41,6 @@
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/apic/ioapicvar.h>
 
-
 char *
 intr_typename(type)
 	int type;
@@ -60,7 +59,7 @@ intr_typename(type)
 	}
 }
 
-/* place in softpin.c */
+/* place in softpic.c */
 struct softpic *
 softpic_intr_handler(irq, isapic, pictemplate)
 {
@@ -85,6 +84,8 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
 	static struct intrhand fakehand;
 	int pin;
 	extern int cold;
+
+	KASSERT(ci == curcpu());
 
     ih = malloc(sizeof(*ih), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
     is = malloc(sizeof(*is), M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
@@ -177,6 +178,8 @@ softpic_disestablish(spic, ci, irq, type, idtvec, isapic, pictemplate)
 	register struct intrhand    *ih, *q, **p;
     register struct intrsource 	*is;
 
+    KASSERT(ci == curcpu());
+
     ih = intrhand[irq];
     is = intrsrc[irq];
 
@@ -222,8 +225,6 @@ intr_establish(irq, type, level, ih_fun, ih_arg, isapic, pictemplate)
 	int error, pin, slot, idtvec;
 	void *arg;
 
-	KASSERT(ci == curcpu());
-
 	spic = softpic_intr_handler(irq, isapic, pictemplate);
 	if(isapic) {
 		pin = spic->sp_pins[irq].sp_irq;
@@ -250,8 +251,6 @@ intr_disestablish(irq, type, isapic, pictemplate)
 	register struct softpic *spic;
 	register struct cpu_info *ci;
 	int pin, idtvec;
-
-	KASSERT(ci == curcpu());
 
 	spic = softpic_intr_handler(irq, isapic, pictemplate);
 	idtvec = spic->sp_idtvec;
