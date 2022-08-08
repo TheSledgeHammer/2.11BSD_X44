@@ -58,6 +58,8 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 
+#include <vm/include/vm_kern.h>
+
 //#include <ufs/ufs/quota.h>
 
 /*
