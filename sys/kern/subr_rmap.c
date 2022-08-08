@@ -38,6 +38,8 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
+extern	struct	mapent _coremap[];
+
 /*
  * Resource map handling routines.
  *
