@@ -89,10 +89,10 @@ struct intrsource {
 	struct apic 			*is_apic;
     struct intrhand     	*is_handlers;	/* handler chain */
 	u_long 					*is_count;
-	u_long 					*is_straycount;
+	//u_long 					*is_straycount;
 	u_int 					is_index;
-	u_int 					is_domain;
-	u_int 					is_cpu;
+	//u_int 					is_domain;
+	//u_int 					is_cpu;
 	int						is_type;
 	int 					is_pin;
 	int  					is_minlevel;
