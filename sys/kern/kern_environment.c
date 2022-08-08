@@ -51,6 +51,7 @@
 #include <sys/systm.h>
 #include <sys/kenv.h>
 #include <sys/device.h>
+#include <sys/ucred.h>
 
 #include <lib/libkern/libkern.h>
 

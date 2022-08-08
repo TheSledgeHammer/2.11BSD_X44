@@ -38,8 +38,6 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
-extern	struct	mapent _coremap[];
-
 /*
  * Resource map handling routines.
  *
@@ -143,6 +141,9 @@ again:
 					break;
 				}
 			}
+			if(mp == coremap) {
+				freemem -= size;
+			}
 			return (addr);
 		} else if ((bp->m_size - first) < size) {
 		    goto retry;
@@ -191,6 +192,7 @@ rmfree(mp, size, addr)
 			runin = 0;
 			wakeup((caddr_t)&runin);
 		}
+		freemem += size;
 	}
 
 	/*
@@ -343,6 +345,10 @@ resolve:
 		bp = madd[next];
 		a[next] = bp->m_addr;
 		bp->m_addr += sizes[next];
+	}
+
+	if (mp == coremap) {
+		freemem -= d_size + s_size + u_size;
 	}
 
 	/* remove any entries of size 0; addr of 0 terminates */

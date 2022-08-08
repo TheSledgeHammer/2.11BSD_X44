@@ -49,10 +49,10 @@
 #include <sys/mman.h>
 #include <sys/malloc.h>
 
+#include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/device_pager.h>
-#include <vm/include/vm.h>
 
 struct pagerlst	dev_pager_list;		/* list of managed devices */
 struct pglist	dev_pager_fakelist;	/* list of available vm_page_t's */

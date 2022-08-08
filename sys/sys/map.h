@@ -8,7 +8,7 @@
 #ifndef	 _SYS_MAP_H_
 #define	 _SYS_MAP_H_
 
-#include <vm/include/vm.h>
+//#include <vm/include/vm.h>
 
 /*
  * Resource Allocation Maps.

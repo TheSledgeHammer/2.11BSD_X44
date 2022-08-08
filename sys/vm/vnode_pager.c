@@ -55,9 +55,9 @@
 #include <sys/uio.h>
 #include <sys/mount.h>
 
+#include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vnode_pager.h>
-#include <vm/include/vm.h>
 
 struct pagerlst	vnode_pager_list;	/* list of managed vnodes */
 

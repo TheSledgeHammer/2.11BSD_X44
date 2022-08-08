@@ -71,17 +71,15 @@ typedef struct lock_object	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
 
-#include <sys/lock.h>
-#include <sys/queue.h>
-#include <sys/user.h>
+//#include <sys/user.h>
+#include <sys/vmmeter.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
-#include <sys/vmmeter.h>
-
 #include <vm/include/vm_param.h>
-#include <vm/include/vm_prot.h>
+#include <sys/lock.h>
 #include <vm/include/vm_mac.h>
 #include <vm/include/vm_systm.h>
+#include <vm/include/vm_prot.h>
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_object.h>

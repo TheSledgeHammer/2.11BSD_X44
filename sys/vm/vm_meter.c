@@ -40,10 +40,8 @@
 #include <sys/map.h>
 #include <sys/sysctl.h>
 #include <sys/tree.h>
-#include <sys/vmmeter.h>
 
 #include <vm/include/vm.h>
-#include <vm/include/vm_object.h>
 
 #define	MINFINITY	-32767			/* minus infinity */
 
@@ -51,7 +49,6 @@ struct loadavg 		averunnable;	/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
-int freemem = 	(int)&cnt.v_free_count;
 int nrun;
 
 void
@@ -302,5 +299,6 @@ active:
 	totalp->t_avm += totalp->t_avmtxt;
 	totalp->t_rm += totalp->t_rmtxt;
 	totalp->t_arm += totalp->t_armtxt;
-	totalp->t_free = freemem;
+	totalp->t_free = (long)cnt.v_free_count;
+	avefree = &cnt.v_free_count;
 }

@@ -9,31 +9,40 @@
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
 
-#include <sys/cdefs.h>
-
-#include <sys/param.h>
-#include <sys/errno.h>
-#include <sys/exec.h>
-#include <sys/exec_aout.h>
+#ifdef _KERNEL
 #include <sys/fperr.h>
+#include <sys/exec_aout.h>
+#include <sys/errno.h>
+#include <sys/time.h>
 #include <sys/resource.h>
-#include <sys/resourcevar.h>
-#include <sys/signal.h>
+#include <sys/ucred.h>
+#include <sys/uio.h>
+#endif
+#include <sys/fperr.h>
+#include <sys/exec_aout.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/signalvar.h>
 #include <sys/sysctl.h>
-#include <sys/syslimits.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/ucred.h>
-#include <sys/dirent.h>
-#include <sys/file.h>
-#include <sys/filedesc.h>
 
 #include <vm/include/vm.h>			/* XXX */
 
 #include <machine/param.h>
 #include <machine/pcb.h>
-#include <machine/types.h>
+
+//#include <sys/cdefs.h>
+//#include <sys/param.h>
+//#include <sys/errno.h>
+//#include <sys/exec.h>
+//#include <sys/resourcevar.h>
+//#include <sys/signal.h>
+//#include <sys/types.h>
+//#include <sys/ucred.h>
+//#include <sys/dirent.h>
+//#include <sys/file.h>
+//#include <sys/filedesc.h>
+//#include <sys/syslimits.h>
+//#include <machine/types.h>
 
 /*
  * data that doesn't need to be referenced while the process is swapped.

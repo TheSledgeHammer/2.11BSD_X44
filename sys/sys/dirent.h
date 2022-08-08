@@ -37,8 +37,8 @@
 #ifndef _SYS_DIRENT_H_
 #define _SYS_DIRENT_H_
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
+//#include <sys/cdefs.h>
+//#include <sys/types.h>
 #include <sys/stddef.h>
 
 /*

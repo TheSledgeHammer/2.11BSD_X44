@@ -71,9 +71,9 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 
+#include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
-#include <vm/include/vm.h>
 
 #ifdef SWAPPAGER
 extern struct pagerops swappagerops;

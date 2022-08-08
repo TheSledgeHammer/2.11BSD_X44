@@ -69,8 +69,6 @@
 #ifndef	_VM_MAP_H_
 #define	_VM_MAP_H_
 
-#include <vm/include/vm.h>
-
 struct vm_map_clist;
 struct vm_map_rb_tree;
 

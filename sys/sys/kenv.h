@@ -32,12 +32,6 @@
 #define _SYS_KENV_H_
 
 /*
- * Kernel environment priveleges.
- */
-#define	PRIV_KENV_SET	120	/* Set kernel env. variables. */
-#define	PRIV_KENV_UNSET	121	/* Unset kernel env. variables. */
-
-/*
  * Constants for the kenv(2) syscall
  */
 #define KENV_GET		0

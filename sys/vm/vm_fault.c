@@ -69,9 +69,9 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 
+#include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>
-#include <vm/include/vm.h>
 
 /*
  *	vm_fault:

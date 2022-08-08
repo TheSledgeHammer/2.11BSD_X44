@@ -71,8 +71,8 @@
 #include <sys/malloc.h>
 #include <sys/mman.h>
 
-#include <vm/include/vm_page.h>
 #include <vm/include/vm.h>
+#include <vm/include/vm_page.h>
 
 /*
  *	Virtual memory maps provide for the mapping, protection,

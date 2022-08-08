@@ -9,18 +9,17 @@
 #ifndef _VM_SYSTM_H_
 #define _VM_SYSTM_H_
 
-#include <sys/vmmeter.h>
-
 /*
  * Miscellaneous virtual memory subsystem variables and structures.
  */
+size_t freemem;							/* remaining clicks of free memory */
+
 #ifdef _KERNEL
-extern int freemem;			/* remaining clicks of free memory */
-int	avefree;					/* moving average of remaining free clicks */
-int	avefree30;					/* 30 sec (avefree is 5 sec) moving average */
+int	avefree;							/* moving average of remaining free clicks */
+int	avefree30;							/* 30 sec (avefree is 5 sec) moving average */
 
 /* writable copies of tunables */
-int	maxslp;						/* max sleep time before very swappable */
+extern int	maxslp;						/* max sleep time before very swappable */
 #endif
 
 struct forkstat {

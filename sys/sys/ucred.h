@@ -57,10 +57,17 @@ struct ucred {
  * Track beginning of privilege list.
  */
 #define	_PRIV_LOWEST	1
+
+/*
+ * Kernel environment priveleges.
+ */
+#define	PRIV_KENV_SET	2	/* 120: Set kernel env. variables. */
+#define	PRIV_KENV_UNSET	3	/* 121: Unset kernel env. variables. */
+
 /*
  * Track end of privilege list.
  */
-#define	_PRIV_HIGHEST	682
+#define	_PRIV_HIGHEST	4 /* 682: FreeBSD's Highest  */
 
 /*
  * Validate that a named privilege is known by the privilege system.  Invalid

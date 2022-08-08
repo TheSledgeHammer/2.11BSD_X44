@@ -50,17 +50,18 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/user.h>
+//#include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/map.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 
+#include <miscfs/specfs/specdev.h>
+
+#include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>
 #include <vm/include/swap_pager.h>
-#include <vm/include/vm.h>
-#include <miscfs/specfs/specdev.h>
 
 #define NSWSIZES	16	/* size of swtab */
 #define MAXDADDRS	64	/* max # of disk addrs for fixed allocations */

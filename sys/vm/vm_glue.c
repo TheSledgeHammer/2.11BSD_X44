@@ -66,18 +66,18 @@
 #include <sys/resourcevar.h>
 #include <sys/buf.h>
 #include <sys/user.h>
-#include <sys/dk.h>
+//#include <sys/dk.h>
+
+#include <vm/include/vm.h>
 
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
-#include <vm/include/vm_pageout.h>
-#include <vm/include/vm_extern.h>
-#include <vm/include/vm.h>
+//#include <vm/include/vm_pageout.h>
+//#include <vm/include/vm_extern.h>
 
 #include <machine/cpu.h>
-#include <machine/param.h>
+//#include <machine/param.h>
 
-int	avefree = 0;			/* XXX */
 unsigned maxdmap = MAXDSIZ;	/* XXX */
 int	readbuffers = 0;		/* XXX allow kgdb to read kernel buffer pool */
 
