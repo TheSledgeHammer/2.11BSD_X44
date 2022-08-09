@@ -12,17 +12,17 @@ A General todo list. Don't hesitate to add to this list. :)
 			
 ### Kernel:
 - Building Kernel/Arch:
-	- Compile:
-		- linker errors 
+	- Compile Issues/Errors:
+		- Linker: Lots of them...!
+		- Compiler: None atm, Yay! :)
 
 # usr/ (User & OS Libraries):
 ## lib:
 - libc/locale:
-	- Better utilization of Encoding_State.
-	- Improve on srunes (sputrune & sgetrune).
-		- Provide Encoding_State Information.
+	- Add other locales???
 
 ## libexec:
+- ld.so: To Update
 
 ## sbin:
 
