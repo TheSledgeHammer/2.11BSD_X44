@@ -50,6 +50,7 @@ A General todo list. Don't hesitate to add to this list. :)
 # usr/sys/ (Kernel):
 ## conf:
 - Seperate file for conf options
+- Better intergration of kern.post.mk: Initial Port
 
 ## ddb:
 
@@ -66,8 +67,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - create seperate options file for each arch
 - i386/x86: (Merged under i386)
 	- fix percpu & cpu_info. Currently Doubling up.
-	- setup kernel compiler support for bootloader
-		- see conf/kern.post.mk for initial port from FreeBSD
+	- icu.S: Soft Interrupt Handlers need fixing/updating
 	- pcibios & pnpbios: both supported in i386/bios.c but not elsewhere
 
 ## devel: (planned)
