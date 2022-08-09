@@ -39,19 +39,27 @@
 
 #include <machine/asm.h>
 #include <machine/intr.h>
-//#include <net/netisr.h>
+#include <machine/psl.h>
+#include <machine/segments.h>
+#include <net/netisr.h>
 
 #include "assym.h"
 
 		.data
 		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(idepth)
-		.globl	_C_LABEL(astpending) #,_C_LABEL(netisr)
+		.globl	_C_LABEL(astpending),_C_LABEL(netisr)
 _C_LABEL(cpl):
 		.long	0xffff			# current priority level (all off)
 _C_LABEL(imen):
 		.long	0xffff			# interrupt mask enable (all off)
 _C_LABEL(idepth):
 		.long	0xffff
+_C_LABEL(ipending):
+		.long	0xffff
+_C_LABEL(astpending):
+		.long	0xffff
+		
+		.text
 			
 #if defined(PROF) || defined(GPROF)
 		.globl	_C_LABEL(splhigh), _C_LABEL(splx)
@@ -87,13 +95,17 @@ IDTVEC(spllower)
 		movl	$1f,%esi				# address to resume loop at
 1:		movl	%ebx,%eax
 		notl	%eax
+		cli
 		andl	_C_LABEL(ipending),%eax
 		jz	2f
+		sti
 		bsfl	%eax,%eax
 		btrl	%eax,_C_LABEL(ipending)
 		jnc	1b
-		jmp		*IS_RECURSE(,%eax,4)
-2:		popl	%edi
+		jmp		*APIC_RECURSE(,%eax,4)
+2:		movl	%ebx,_C_LABEL(cpl)
+		sti
+		popl	%edi
 		popl	%esi
 		popl	%ebx
 		ret
@@ -107,32 +119,31 @@ IDTVEC(spllower)
  *   edi - scratch for Xsoftnet
  */
 IDTVEC(doreti)
-		popl	%ebx					# get previous priority
-		movl	%ebx,_C_LABEL(cpl)
-		movl	$1f,%esi				# address to resume loop at
+		popl	%ebx			# get previous priority
+		movl	$1f,%esi		# address to resume loop at
 1:		movl	%ebx,%eax
 		notl	%eax
+		cli
 		andl	_C_LABEL(ipending),%eax
-		jz		2f
+		jz	2f
+		sti
 		bsfl    %eax,%eax               # slow, but not worth optimizing
 		btrl    %eax,_C_LABEL(ipending)
-		jnc     1b						# some intr cleared the in-memory bit
-		jmp		*IS_RESUME(,%eax,4)
+		jnc     1b			# some intr cleared the in-memory bit
+		jmp	*APIC_RESUME(,%eax,4)
 2:		/* Check for ASTs on exit to user mode. */
-		cli
+		movl	%ebx,_C_LABEL(cpl)
 		cmpb	$0,_C_LABEL(astpending)
-		je		3f
-		testb   $SEL_RPL,TF_CS(%esp)
-
-		jnz		4f
+		je	3f
+		testb   $SEL_UPL,TF_CS(%esp)
+		jnz	4f
 		testl	$PSL_VM,TF_EFLAGS(%esp)
-
 		jz		3f
 4:		movb	$0,_C_LABEL(astpending)
 		sti
 		/* Pushed T_ASTFLT into tf_trapno on entry. */
 		call	_C_LABEL(trap)
-		jmp		2b
+		jmp	2b
 3:		INTRFASTEXIT
 
 /*
@@ -143,25 +154,24 @@ IDTVEC(softclock)
 		movl	%eax,_C_LABEL(cpl)
 		call	_C_LABEL(softclock)
 		movl	%ebx,_C_LABEL(cpl)
-		jmp		*%esi
+		jmp	*%esi
 
 
 IDTVEC(softserial)
 		movl	_C_LABEL(imask) + IPL_SOFTSERIAL * 4,%eax
 		movl	%eax,_C_LABEL(cpl)
-/*
+
 #include "com.h"
 #if NCOM > 0
 		call	_C_LABEL(comsoft)
 #endif
-*/
+
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		*%esi
 
-IDTVEC(softnet)
-		ret
 
-/*
+
+
 #define DONET(s, c) 		\
 	.globl  c				;\
 	testl	$(1 << s),%edi	;\
@@ -206,4 +216,3 @@ IDTVEC(softnet)
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		*%esi
 
-*/
