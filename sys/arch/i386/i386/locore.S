@@ -81,7 +81,7 @@
 		.set	kernbase, _C_LABEL(KERNBASE)
 		.globl	kernload
 		.set	kernload, _C_LABEL(KERNLOAD)
-		
+	
 /*
  * Globals
  */
@@ -182,27 +182,8 @@ ENTRY(start)
 		movl	%eax,%esp
 		
 		call 	_C_LABEL(main)						/* autoconfiguration, mountroot etc */
+		/* NOTREACHED */
 		addl	$0,%esp								/* for db_numargs() again */
-		
-		.globl	__ucodesel,__udatasel
-		movzwl	__ucodesel,%eax
-		movzwl	__udatasel,%ecx
-		
-		# build outer stack frame
-		pushl	%ecx								# user ss
-		pushl	$USRSTACK							# user esp
-		pushl	%eax								# user cs
-		pushl	$0									# user ip
-		movw	%cx,%ds
-		movw	%cx,%es
-		movw	%ax,%fs								# double map cs to fs
-		movw	%cx,%gs								# and ds to gs
-		lret										# goto user!
-
-		pushl	$lretmsg1							/* "should never get here!" */
-		call	_C_LABEL(panic)
-lretmsg1:
-		.asciz	"lret: toinit\n"
 		
 /**********************************************************************/
 /* Recover the Bootinfo */

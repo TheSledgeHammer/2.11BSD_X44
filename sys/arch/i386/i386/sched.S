@@ -44,6 +44,7 @@
 #include <sys/errno.h>
 
 #include <machine/asm.h>
+//#include <machine/pcb.h>
 #include <machine/psl.h>
 #include <machine/pte.h>
 #include <machine/trap.h>
@@ -82,7 +83,7 @@ badsw:
 /*
  * Swtch()
  */
-cpu_switch:
+ENTRY(cpu_switch)
 
 		incl	_C_LABEL(cnt)+V_SWTCH
 
@@ -119,11 +120,11 @@ cpu_switch:
 1:
 #endif
 
-		movl	CMAP2,%eax							# save temporary map PTE
+		movl	_C_LABEL(CMAP2),%eax							# save temporary map PTE
 		movl	%eax,PCB_CMAP2(%ecx)				# in our context
 		movl	$0,_C_LABEL(curproc)				# out of process
 
-		# movw	_cpl, %ax
+		# movw	_C_LABEL(cpl), %ax
 		# movw	%ax, PCB_IML(%ecx)	# save ipl
 
 /* save is done, now choose a new process or idle */
@@ -265,7 +266,7 @@ ENTRY(savectx)
 1:
 #endif
 
-		movl	_CMAP2, %edx					# save temporary map PTE
+		movl	_C_LABEL(CMAP2), %edx					# save temporary map PTE
 		movl	%edx, PCB_CMAP2(%ecx)			# in our context
 
 		cmpl	$0, 8(%esp)
