@@ -205,10 +205,10 @@
 /*
  * L_PROC: is pointer to proc from lwp,
 #define	CHECK_ASTPENDING(reg)			\
-	movl	CPUVAR(CURPROC),reg			;\
+	movl	_C_LABEL(curproc),reg			;\
 	cmpl	$0, reg						;\
 	je		1f							;\
-	movl	L_PROC(reg),reg				;\
+	movl	_C_LABEL(curproc),reg				;\
 	cmpl	$0, P_MD_ASTPENDING(reg)	;\
 	1:
 
