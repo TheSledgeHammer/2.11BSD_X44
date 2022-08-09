@@ -54,11 +54,14 @@
 #include <sys/errno.h>
 #include <sys/syscall.h>
 
+#include <machine/asm.h>
+
+#include "machine/cputypes.h"
+#include "machine/intr.h"
+#include "machine/psl.h"
 #include "machine/segments.h"
 #include "machine/trap.h"
 #include "machine/specialreg.h"
-
-#include <machine/asm.h>
 
 /**********************************************************************/
 /* Some Handy Macros */
@@ -363,7 +366,7 @@ ENTRY(identify_cpu)
 		pushfl
 		popl	%eax
 		movl	%eax,%ecx
-		orl	$PSL_AC,%eax
+		orl		$PSL_AC,%eax
 		pushl	%eax
 		popfl
 		pushfl
@@ -491,7 +494,7 @@ ENTRY(sigcode)
 									# fake return address already there
 		movl	$SYS_sigreturn,%eax
 		int		$0x80	 			# enter kernel with args on stack
-		movl	$SYS_exit,%eax
+		movl	$SYS_rexit,%eax
 		int		$0x80				# exit if sigreturn fails
 		
 		ALIGN_TEXT

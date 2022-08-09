@@ -83,11 +83,18 @@ include <machine/apic/ioapicreg.h>
 include <machine/apic/ioapicvar.h>
 endif
 
+#define I386_CR3PAT 		I386_CR3PAT
+
 define P_FORW 				offsetof(struct proc, p_forw)
 define P_BACK 				offsetof(struct proc, p_back)
 define P_ADDR 				offsetof(struct proc, p_addr)
 define P_STAT 				offsetof(struct proc, p_stat)
 define P_WCHAN 				offsetof(struct proc, p_wchan)
+define P_MD_TSS_SEL			offsetof(struct proc, p_md.md_tss_sel)
+define P_MD_REGS			offsetof(struct proc, p_md.md_regs)
+define P_MD_ASTPENDING		offsetof(struct proc, p_md.md_astpending)
+
+define SRUN 				SRUN
 
 define U_PCB				offsetof(struct user, u_pcb)
 
@@ -128,6 +135,8 @@ define IS_PIC				offsetof(struct intrsource, is_pic)
 define IS_PIN				offsetof(struct intrsource, is_pin)
 define IS_TYPE				offsetof(struct intrsource, is_type)
 define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)
+define IS_RECURSE			offsetof(struct intrsource, is_apic.apic_recurse)
+define IS_RESUME			offsetof(struct intrsource, is_apic.apic_resume)
 
 if NIOAPIC > 0
 define SPIC_IOAPIC			offsetof(struct softpic, sp_ioapic)

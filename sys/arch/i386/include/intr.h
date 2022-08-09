@@ -141,18 +141,20 @@
 #define	LEGAL_IRQ(x)		((x) >= 0 && (x) < ICU_LEN && (x) != 2)
 
 #ifndef _LOCORE
+
 /*
  * Interrupt "level" mechanism variables, masks, and macros
  */
-extern unsigned short		imen;		/* interrupt mask enable */
-extern unsigned short		cpl;		/* current priority level mask */
-extern unsigned short		ipending;
-extern unsigned short		idepth;
-extern int 					imask[];
-extern int 					iunmask[];
-extern int 					intrtype[];
-extern int 					intrmask[];
-extern int 					intrlevel[];
+extern volatile int		imen;		/* interrupt mask enable */
+extern volatile int		cpl;		/* current priority level mask */
+extern volatile int		ipending;
+extern volatile int		idepth;
+extern volatile int		astpending;
+extern int 				imask[];
+extern int 				iunmask[];
+extern int 				intrtype[];
+extern int 				intrmask[];
+extern int 				intrlevel[];
 
 /*
  * Convert spl level to local APIC level
@@ -169,7 +171,8 @@ extern int 					intrlevel[];
 /*
  * Hardware interrupt masks
  */
-extern void Xspllower(void);
+void Xspllower(void);
+
 extern int splraise(int);
 extern int spllower(int);
 extern void splx(int);

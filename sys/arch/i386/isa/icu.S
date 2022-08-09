@@ -39,13 +39,13 @@
 
 #include <machine/asm.h>
 #include <machine/intr.h>
-#include <net/netisr.h>
+//#include <net/netisr.h>
 
 #include "assym.h"
 
 		.data
 		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(idepth)
-		.globl	_C_LABEL(astpending),_C_LABEL(netisr)
+		.globl	_C_LABEL(astpending) #,_C_LABEL(netisr)
 _C_LABEL(cpl):
 		.long	0xffff			# current priority level (all off)
 _C_LABEL(imen):
@@ -92,7 +92,7 @@ IDTVEC(spllower)
 		bsfl	%eax,%eax
 		btrl	%eax,_C_LABEL(ipending)
 		jnc	1b
-		jmp		*_C_LABEL(Xrecurse)(,%eax,4)
+		jmp		*IS_RECURSE(,%eax,4)
 2:		popl	%edi
 		popl	%esi
 		popl	%ebx
@@ -113,11 +113,11 @@ IDTVEC(doreti)
 1:		movl	%ebx,%eax
 		notl	%eax
 		andl	_C_LABEL(ipending),%eax
-		jz	2f
+		jz		2f
 		bsfl    %eax,%eax               # slow, but not worth optimizing
 		btrl    %eax,_C_LABEL(ipending)
 		jnc     1b						# some intr cleared the in-memory bit
-		jmp		*_C_LABEL(Xresume)(,%eax,4)
+		jmp		*IS_RESUME(,%eax,4)
 2:		/* Check for ASTs on exit to user mode. */
 		cli
 		cmpb	$0,_C_LABEL(astpending)
@@ -158,7 +158,10 @@ IDTVEC(softserial)
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		*%esi
 
+IDTVEC(softnet)
+		ret
 
+/*
 #define DONET(s, c) 		\
 	.globl  c				;\
 	testl	$(1 << s),%edi	;\
@@ -202,3 +205,5 @@ IDTVEC(softnet)
 #endif
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		*%esi
+
+*/

@@ -36,7 +36,6 @@
  *	@(#)dkbad.c	8.1 (Berkeley) 6/11/93
  */
 
-
 #ifndef NOBADSECT
 #include <sys/param.h>
 #include <sys/buf.h>

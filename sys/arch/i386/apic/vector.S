@@ -256,7 +256,6 @@ IDTVEC(intr_##name##irq_num)                                	       					\
 		late_icu(irq_num)													;\
 		INTRFASTEXIT														;\
 		
-		
 #define ICUADDR IO_ICU1
 
 INTRSTUB(legacy, 0, ENABLE_ICU1, voidop, LEGACY_MASK, LEGACY_UNMASK, voidop)

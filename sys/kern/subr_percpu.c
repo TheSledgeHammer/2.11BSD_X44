@@ -72,7 +72,7 @@ percpu_init(pc, ci, size)
 	pc->pc_cpumask = cpu_cpumask(ci);
 	cpuid_to_percpu[ci->cpu_cpuid] = pc;
 	LIST_INSERT_HEAD(&cpuhead, pc, pc_entry);
-	//pc->pc_acpi_id = cpu_acpi_id(ci);
+	pc->pc_acpi_id = cpu_acpi_id(ci);
 	pc->pc_offset = percpu_offset_cpu(cpu_cpuid(ci));
 }
 

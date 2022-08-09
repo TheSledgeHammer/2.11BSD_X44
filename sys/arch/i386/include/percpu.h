@@ -66,4 +66,5 @@ __curkthread(void)
 }
 */
 #endif /* _KERNEL */
+
 #endif /* _I386_PERCPU_H_ */

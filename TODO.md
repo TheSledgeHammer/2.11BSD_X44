@@ -65,6 +65,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - create seperate options file for each arch
 - i386/x86: (Merged under i386)
+	- fix percpu & cpu_info. Currently Doubling up.
 	- setup kernel compiler support for bootloader
 		- see conf/kern.post.mk for initial port from FreeBSD
 	- pcibios & pnpbios: both supported in i386/bios.c but not elsewhere

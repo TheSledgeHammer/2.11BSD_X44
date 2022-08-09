@@ -32,7 +32,6 @@
 #include <sys/memrange.h>
 #include <sys/cputopo.h>
 #include <sys/percpu.h>
-//#include <sys/smp.h>
 
 #include <vm/include/vm_param.h>
 

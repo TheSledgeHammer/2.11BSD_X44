@@ -253,6 +253,7 @@ intr_disestablish(irq, type, isapic, pictemplate)
 	int pin, idtvec;
 
 	spic = softpic_intr_handler(irq, isapic, pictemplate);
+	ci = &cpu_info;
 	idtvec = spic->sp_idtvec;
 	if(isapic) {
 		pin = spic->sp_pins[irq].sp_irq;
