@@ -38,7 +38,6 @@
 #define _I386_I8259_H_
 
 #include <dev/core/isa/isareg.h>
-#include <machine/intr.h>
 
 #ifndef	_LOCORE
 /*
