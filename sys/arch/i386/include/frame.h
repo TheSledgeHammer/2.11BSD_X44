@@ -39,6 +39,8 @@
 #ifndef _I386_FRAME_H_
 #define _I386_FRAME_H_
 
+#include <sys/signal.h>
+
 /*
  * System stack frames.
  */
