@@ -125,7 +125,7 @@ Cross-Compiler Compatability Table:
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
 |  GCC  | Yes   |  i386  | Yes (without networking) | Yes | 
-|  ** CLANG  | No   |  i386  | No | No | 
+|  CLANG  | Partial **   |  i386  | No | No | 
 |  PCC  | No   |  i386  | No | No | 
 
 ** Clang: Library needs updating and fixing along with the relevent toolchain components.
