@@ -120,7 +120,7 @@ Please read the following NetBSD guide for more information:
 
 <https://www.netbsd.org/docs/guide/en/chap-build.html>
 
-Cross-Compiler: Successful Builds
+Cross-Compiler Compatability Table:
 ---------------
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
