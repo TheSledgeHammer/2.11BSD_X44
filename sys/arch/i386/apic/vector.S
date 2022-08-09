@@ -37,9 +37,11 @@
 #include <machine/asm.h>
 #include <machine/apic/i8259.h>
 #include <machine/apic/i82093.h>
+#include <machine/intr.h>
 #include <machine/segments.h>
 #include <machine/trap.h>
 
+#include "npx.h"
 #include "ioapic.h"
 #include "lapic.h"
 
@@ -118,7 +120,7 @@ IDTVEC(intr_lapic_tlb)
 		pushl	$T_ASTFLT
 		INTRENTRY
 		call	_C_LABEL(invltlb_handler)
-		movl	_C_LABEL_(local_apic_va),%eax
+		movl	_C_LABEL(local_apic_va),%eax
 		movl	$0,LAPIC_EOI(%eax)
 		INTRFASTEXIT
 
