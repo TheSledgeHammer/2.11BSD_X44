@@ -41,7 +41,6 @@
 #include <machine/intr.h>
 #include <machine/psl.h>
 #include <machine/segments.h>
-#include <net/netisr.h>
 
 #include "assym.h"
 
@@ -125,7 +124,7 @@ IDTVEC(doreti)
 		notl	%eax
 		cli
 		andl	_C_LABEL(ipending),%eax
-		jz	2f
+		jz		2f
 		sti
 		bsfl    %eax,%eax               # slow, but not worth optimizing
 		btrl    %eax,_C_LABEL(ipending)
@@ -156,7 +155,6 @@ IDTVEC(softclock)
 		movl	%ebx,_C_LABEL(cpl)
 		jmp	*%esi
 
-
 IDTVEC(softserial)
 		movl	_C_LABEL(imask) + IPL_SOFTSERIAL * 4,%eax
 		movl	%eax,_C_LABEL(cpl)
@@ -169,50 +167,24 @@ IDTVEC(softserial)
 		movl	%ebx,_C_LABEL(cpl)
 		jmp		*%esi
 
-
-
-
-#define DONET(s, c) 		\
-	.globl  c				;\
-	testl	$(1 << s),%edi	;\
-	jz		1f				;\
-	call	c				;\
-1:
-
 IDTVEC(softnet)
 		movl	_C_LABEL(imask) + IPL_SOFTNET * 4,%eax
 		movl	%eax,_C_LABEL(cpl)
 		xorl	%edi,%edi
 		xchgl	_C_LABEL(netisr),%edi
-#ifdef INET
-//#include "arp.h"
-#if NARP > 0
-	DONET(NETISR_ARP, _C_LABEL(arpintr))
-#endif
-	DONET(NETISR_IP, _C_LABEL(ipintr))
-#endif
-#ifdef IMP
-	DONET(NETISR_IMP, _C_LABEL(impintr))
-#endif
-#ifdef NS
-	DONET(NETISR_NS, _C_LABEL(nsintr))
-#endif
-#ifdef ISO
-	DONET(NETISR_ISO, _C_LABEL(clnlintr))
-#endif
-#ifdef CCITT
-	DONET(NETISR_CCITT, _C_LABEL(ccittintr))
-#endif
-#ifdef NATM
-	DONET(NETISR_NATM, _C_LABEL(natmintr))
-#endif
-#ifdef NETATALK
-	DONET(NETISR_ATALK, _C_LABEL(atintr))
-#endif
-//#include "ppp.h"
-#if NPPP > 0
-	DONET(NETISR_PPP, _C_LABEL(pppintr))
-#endif
+
+#define DONET(s, c) 			\
+		.globl  c				;\
+		testl	$(1 << s),%edi	;\
+		jz		1f				;\
+		call	c				;\
+1:
+
+#include <net/netisr.h>
+
+#undef DONET
+
 		movl	%ebx,_C_LABEL(cpl)
+
 		jmp		*%esi
 

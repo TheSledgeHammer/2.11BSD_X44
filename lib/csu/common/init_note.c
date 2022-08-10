@@ -214,43 +214,6 @@ _rtld_setup(cleanup, obj)
 	if (obj->version != RTLD_VERSION)
 		_FATAL("Dynamic linker version mismatch");
 
-	__mainprog_obj = obj;
-}
-
-void *
-dlopen(name, mode)
-	const char *name;
-	int mode;
-{
-	if (__mainprog_obj == NULL)
-		return NULL;
-	return (__mainprog_obj->dlopen)(name, mode);
-}
-
-int
-dlclose(fd)
-	void *fd;
-{
-	if (__mainprog_obj == NULL)
-		return -1;
-	return (__mainprog_obj->dlclose)(fd);
-}
-
-void *
-dlsym(fd, name)
-	void *fd;
-	const char *name;
-{
-	if (__mainprog_obj == NULL)
-		return NULL;
-	return (__mainprog_obj->dlsym)(fd, name);
-}
-
-char *
-dlerror()
-{
-	if (__mainprog_obj == NULL)
-		return ("Dynamic linker interface not available");
-	return (__mainprog_obj->dlerror)();
+	atexit(cleanup);
 }
 #endif /* DYNAMIC */

@@ -44,3 +44,33 @@
 #ifdef SUPERVISOR
 int	netisr;				/* scheduling bits for network */
 #endif
+
+#ifdef INET
+#if NARP > 0
+#include "arp.h"
+	DONET(NETISR_ARP, _C_LABEL(arpintr))
+#endif
+	DONET(NETISR_IP, _C_LABEL(ipintr))
+#endif
+#ifdef IMP
+	DONET(NETISR_IMP, _C_LABEL(impintr))
+#endif
+#ifdef NS
+	DONET(NETISR_NS, _C_LABEL(nsintr))
+#endif
+#ifdef ISO
+	DONET(NETISR_ISO, _C_LABEL(clnlintr))
+#endif
+#ifdef CCITT
+	DONET(NETISR_CCITT, _C_LABEL(ccittintr))
+#endif
+#ifdef NATM
+	DONET(NETISR_NATM, _C_LABEL(natmintr))
+#endif
+#ifdef NETATALK
+	DONET(NETISR_ATALK, _C_LABEL(atintr))
+#endif
+#if NPPP > 0
+#include "ppp.h"
+	DONET(NETISR_PPP, _C_LABEL(pppintr))
+#endif

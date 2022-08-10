@@ -204,11 +204,9 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	int (*ih_fun)(void *);
 	void *ih_arg;
 {
-	struct intrhand **p, *q, *ih;
-	static struct intrhand fakehand;
-	extern int cold;
+	struct intrhand *ih;
 
-	ih = intr_establish(FALSE, PIC_I8259, irq, type, ih_fun, ih_arg);
+	ih = intr_establish(irq, type, level, ih_fun, ih_arg, FALSE, PIC_I8259);
 
 #if NIOAPIC > 0
 	struct pic *pic;
@@ -228,55 +226,9 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 				pic = &ioapic->sc_pic;
 			}
 		}
-		return (apic_intr_establish(pin, type, level, ih_fun, ih_arg));
+		return (intr_establish(pin, type, level, ih_fun, ih_arg, TRUE, PIC_IOAPIC));
 	}
 #endif
-
-	switch (intrtype[irq]) {
-	case IST_NONE:
-		intrtype[irq] = type;
-		break;
-	case IST_EDGE:
-	case IST_LEVEL:
-		if (intrtype[irq] == type) {
-			break;
-		}
-		/* FALLTHROUGH */
-	case IST_PULSE:
-		if (type != IST_NONE) {
-			panic("intr_establish: irq %d can't share %s with %s",
-			      irq,
-			      isa_intr_typename(intrtype[irq]),
-			      isa_intr_typename(type));
-			return (NULL);
-		}
-		break;
-	}
-
-	/*
-	 * Figure out where to put the handler.
-	 * This is O(N^2), but we want to preserve the order, and N is
-	 * generally small.
-	 */
-	for (p = &intrhand[irq]; (q = *p) != NULL; p = &q->ih_next) {
-		;
-	}
-
-	fakeintr(intrspic, &fakehand, level);
-	*p = &fakehand;
-
-	intr_calculatemasks();
-
-	/*
-	 * Poke the real handler in now.
-	 */
-	ih->ih_fun = ih_fun;
-	ih->ih_arg = ih_arg;
-	ih->ih_next = NULL;
-	ih->ih_level = level;
-	ih->ih_irq = irq;
-	*p = ih;
-
 	return (ih);
 }
 
@@ -288,16 +240,17 @@ isa_intr_disestablish(ic, arg)
 	isa_chipset_tag_t ic;
 	void *arg;
 {
-	struct intrhand *ih = arg;
+	struct intrhand *ih;
 
+	ih = arg;
 #if NIOAPIC > 0
 	if (ih->ih_irq & APIC_INT_VIA_APIC) {
-		apic_intr_disestablish(arg);
+		intr_disestablish(ih->ih_irq, TRUE, PIC_IOAPIC);
 		return;
 	}
 #endif
 
-	intr_disestablish(ih);
+	intr_disestablish(ih->ih_irq, FALSE, PIC_I8259);
 }
 
 void

@@ -363,21 +363,3 @@ isasearch(parent, cf, aux)
 
 	return (0);
 }
-
-char *
-isa_intr_typename(type)
-	int type;
-{
-	switch (type) {
-	case IST_NONE:
-		return ("none");
-	case IST_PULSE:
-		return ("pulsed");
-	case IST_EDGE:
-		return ("edge-triggered");
-	case IST_LEVEL:
-		return ("level-triggered");
-	default:
-		panic("isa_intr_typename: invalid type %d", type);
-	}
-}

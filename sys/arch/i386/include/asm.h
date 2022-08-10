@@ -202,17 +202,15 @@
 	addl	$8,%esp		;\
 	iret
 
-/*
- * L_PROC: is pointer to proc from lwp,
 #define	CHECK_ASTPENDING(reg)			\
-	movl	_C_LABEL(curproc),reg			;\
+	movl	_C_LABEL(curproc),reg		;\
 	cmpl	$0, reg						;\
 	je		1f							;\
-	movl	_C_LABEL(curproc),reg				;\
+	movl	_C_LABEL(curproc),reg		;\
 	cmpl	$0, P_MD_ASTPENDING(reg)	;\
 	1:
 
 #define	CLEAR_ASTPENDING(reg)			\
 	movl	$0, P_MD_ASTPENDING(reg)
-*/
+
 #endif /* _I386_ASM_H_ */

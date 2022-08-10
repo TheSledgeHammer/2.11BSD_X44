@@ -258,7 +258,6 @@ struct isa_softc {
  */
 
 /* ISA interrupt sharing types */
-char	*isa_intr_typename(int type);
 
 #ifdef NEWCONFIG
 /*

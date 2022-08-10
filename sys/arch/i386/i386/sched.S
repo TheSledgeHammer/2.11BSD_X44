@@ -219,7 +219,7 @@ ENTRY(proc_trampoline)
 ENTRY(savectx)
 		movl	4(%esp), %ecx
 		movw	_C_LABEL(cpl), %ax
-		movw	%ax,  PCB_IML(%ecx)
+		movw	%ax, PCB_IML(%ecx)
 		movl	(%esp), %eax
 		movl	%eax, PCB_EIP(%ecx)
 		movl	%ebx, PCB_EBX(%ecx)

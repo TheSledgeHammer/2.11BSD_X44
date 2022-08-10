@@ -163,6 +163,7 @@ int					iunmask[NIPL];
 
 void				intr_legacy_vectors(void);
 void				init_intrmask(void);
+char 				*intr_typename(int);
 
 void
 intr_default_setup(void)
@@ -500,54 +501,53 @@ fakeintr(spic, fakehand, level)
 }
 
 void *
-intr_establish(isapic, pictemplate, irq, type, ih_fun, ih_arg)
+intr_establish(irq, type, level, ih_fun, ih_arg, isapic, pictemplate)
+	int irq, type, level, pictemplate;
 	bool_t isapic;
-	int irq, type, pictemplate;
 	int (*ih_fun)(void *);
 	void *ih_arg;
 {
 	register struct softpic *spic;
 	register struct intrhand *ih;
+	register struct cpu_info *ci;
+	int error, pin, slot, idtvec;
+	void *arg;
 
-	spic = softpic_intr_handler(intrspic, irq, type, isapic, pictemplate);
-	ih = spic->sp_inthnd;
+	spic = softpic_intr_handler(irq, isapic, pictemplate);
 	if(isapic) {
-		ih->ih_irq = spic->sp_pins[irq].sp_irq;
+		pin = spic->sp_pins[irq].sp_irq;
+		irq = pin;
+	}
+	error = intr_allocate_slot(spic, &ci, irq, level &slot, &idtvec, isapic);
+	if (error) {
+		ih = softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isapic, pictemplate);
+	} else {
+		if (error != 0) {
+			free(ih, M_DEVBUF);
+			printf("failed to allocate interrupt slot for PIC pin %d\n", irq);
+			return (NULL);
+		}
 	}
 	return (ih);
 }
 
 void
-intr_disestablish(ih)
-	struct intrhand *ih;
+intr_disestablish(irq, isapic, pictemplate)
+	int irq, pictemplate;
+	bool_t isapic;
 {
-	int irq = ih->ih_irq;
-	struct intrhand **p, *q;
+	register struct softpic *spic;
+	register struct cpu_info *ci;
+	int pin, idtvec;
 
-	if (!LEGAL_IRQ(irq)) {
-		panic("intr_disestablish: bogus irq");
+	spic = softpic_intr_handler(irq, isapic, pictemplate);
+	ci = &cpu_info;
+	idtvec = spic->sp_idtvec;
+	if(isapic) {
+		pin = spic->sp_pins[irq].sp_irq;
+		irq = pin;
 	}
-	/*
-	 * Remove the handler from the chain.
-	 * This is O(n^2), too.
-	 */
-	for (p = &intrhand[irq]; (q = *p) != NULL && q != ih; p = &q->ih_next) {
-		;
-	}
-
-	if (q) {
-		*p = q->ih_next;
-	} else {
-		panic("intr_disestablish: handler not registered");
-	}
-
-	free(ih, M_DEVBUF);
-
-	intr_calculatemasks();
-
-	if (intrhand[irq] == NULL) {
-		intrtype[irq] = IST_NONE;
-	}
+	softpic_disestablish(spic, ci, irq, idtvec, isapic, pictemplate);
 }
 
 #if NIOAPIC > 0
@@ -665,3 +665,34 @@ intr_scan_bus(int bus, int pin, int *handle)
 	return (ENOENT);
 }
 #endif
+
+void
+apic_intr_string(irqstr, ch, ih)
+	char 	*irqstr;
+	void 	*ch;
+	int	 	ih;
+{
+	if (ih & APIC_INT_VIA_APIC){
+		sprintf(irqstr, "apic %d int %d (irq %d)", APIC_IRQ_APIC(ih), APIC_IRQ_PIN(ih), ih & 0xff);
+	} else {
+		sprintf(irqstr, "irq %d", ih&0xff);
+	}
+}
+
+char *
+intr_typename(type)
+	int type;
+{
+	switch (type) {
+	case IST_NONE:
+		return ("none");
+	case IST_PULSE:
+		return ("pulsed");
+	case IST_EDGE:
+		return ("edge-triggered");
+	case IST_LEVEL:
+		return ("level-triggered");
+	default:
+		panic("intr_typename: invalid type %d", type);
+	}
+}

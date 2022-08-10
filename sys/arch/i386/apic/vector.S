@@ -186,7 +186,6 @@ IDTVEC(resume_lapic_ltimer)
 
 #define voidop(irq_num)
 
-
 #define	INTRSTUB(name, irq_num, early_icu, late_icu, mask, unmask, level_mask)			\
 IDTVEC(recurse_##name##irq_num)													;\
 		pushfl															;\

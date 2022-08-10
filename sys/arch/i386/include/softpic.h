@@ -70,16 +70,15 @@ extern struct intrhand 		*intrhand[];
 /* softpic.c */
 void 			softpic_init(void);
 void			softpic_register(struct pic *, struct apic *);
-
+struct softpic *softpic_intr_handler(int, bool_t, int);
 struct pic 		*softpic_handle_pic(struct softpic *);
 void			softpic_pic_hwmask(struct softpic *, int, bool_t, int);
 void			softpic_pic_hwunmask(struct softpic *, int, bool_t, int);
 void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
 void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, bool_t, int);
-struct softpic 	*softpic_intr_handler(struct softpic *, int, int, bool_t, int);
-
 struct apic		*softpic_handle_apic(struct softpic *);
 void			softpic_apic_allocate(struct softpic *, int, int, int, bool_t, int);
 void			softpic_apic_free(struct softpic *, int, int, bool_t, int);
-
+void 			*softpic_establish(struct softpic *, struct cpu_info *, int, int, int, int (*)(void *), void *, int, int, bool_t, int);
+void			softpic_disestablish(struct softpic *, struct cpu_info *, int, int, bool_t, int);
 #endif /* _I386_SOFTPIC_H_ */

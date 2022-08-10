@@ -8,7 +8,6 @@ maxpartitions 16
 
 maxusers 2 16 64
 
-file		arch/i386/apic/apic_machdep.c	   	  ioapic | lapic
 file		arch/i386/apic/apic.c			          ioapic | lapic
 file		arch/i386/apic/i8259.c
 file		arch/i386/i386/aout_machdep.c	    	exec_aout

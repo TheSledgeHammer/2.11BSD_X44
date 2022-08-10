@@ -90,16 +90,19 @@
  		.globl	_C_LABEL(esym)
  		.globl	_C_LABEL(biosbasemem),_C_LABEL(biosextmem)
  		
-_C_LABEL(esym):		.long	0	# ptr to end of syms	
-_C_LABEL(biosbasemem):	.long	0	# base memory reported by BIOS
-_C_LABEL(biosextmem):	.long	0	# extended memory reported by BIOS
+_C_LABEL(esym):
+		.long	0							# ptr to end of syms
+_C_LABEL(biosbasemem):
+		.long	0							# base memory reported by BIOS
+_C_LABEL(biosextmem):
+		.long	0							# extended memory reported by BIOS
 
  		.globl	tmpstk
 		.space	0x2000						/* space for tmpstk - temporary stack */
 tmpstk:	
 
 		.globl	bootinfo
-bootinfo:	.space	BOOTINFO_SIZE				/* bootinfo that we can handle */
+bootinfo:	.space	BOOTINFO_SIZE			/* bootinfo that we can handle */
 		
 		.text
 			
@@ -107,7 +110,7 @@ bootinfo:	.space	BOOTINFO_SIZE				/* bootinfo that we can handle */
 /* Initialization */
 
 ENTRY(start)
-		movw	$0x1234,0x472							# warm boot
+		movw	$0x1234,0x472				# warm boot
 		
 /* Set up a real frame in case the double return in newboot is executed. */
 		xorl	%ebp,%ebp
@@ -126,7 +129,7 @@ ENTRY(start)
 		mov	%ax, %fs
 		mov	%ax, %gs
 		
-		/*
+/*
  * Clear the bss.  Not all boot programs do it, and it is our job anyway.
  *
  * XXX we don't check that there is memory for our bss and page tables

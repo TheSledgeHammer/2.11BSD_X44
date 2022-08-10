@@ -91,8 +91,6 @@ struct intrsource {
 	u_long 					*is_count;
 	//u_long 					*is_straycount;
 	u_int 					is_index;
-	//u_int 					is_domain;
-	//u_int 					is_cpu;
 	int						is_type;
 	int 					is_pin;
 	int  					is_minlevel;
@@ -113,6 +111,7 @@ struct intrhand {
     struct intrhand 		*ih_prev;
 	int						ih_level;
 	int						ih_irq;
+	int 					ih_slot;
 };
 
 /*
@@ -159,16 +158,12 @@ extern struct apic          ioapic_intrmap;
 extern struct apic          lapic_intrmap;
 
 /* intr.c */
-void 			*intr_establish(bool_t, int, int, int, int (*)(void *), void *);
-void			intr_disestablish(struct intrhand *);
+void 			*intr_establish(int, int, int (*)(void *), void *, bool_t, int);
+void			intr_disestablish(int, bool_t, int);
 void			fakeintr(struct softpic *, struct intrhand *, u_int);
 void			intr_default_setup(void);
 void			intr_calculatemasks(void);
 void 			intr_add_pcibus(struct pcibus_attach_args *);
 int	 			intr_find_mpmapping(int, int, int *);
-
-/* apic_machdep.c */
-void 			*apic_intr_establish(int, int, int, int (*)(void *), void *);
-void			apic_intr_disestablish(void *);
 void			apic_intr_string(char *, void *, int);
 #endif /* _I386_PIC_H_ */

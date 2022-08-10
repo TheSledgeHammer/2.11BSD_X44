@@ -37,6 +37,7 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
+#include <sys/null.h>
 
 #include <ufs/ufml/ufml.h>
 #include <ufs/ufml/ufml_extern.h>
@@ -185,4 +186,57 @@ ufml_check_encryption(meta, type)
 	}
 
 	return (0);
+}
+
+/* WIP */
+static struct ufml_mmodlist ufml_modhead = LIST_INITIALIZER(ufml_modhead);
+
+void
+ufml_module_init()
+{
+	struct ufml_module 	*module;
+
+	ufml_module_insert(module, UFML_FSMOD_NAME, UFML_FSMOD_ID);
+	ufml_module_insert(module, UFML_ARCHMOD_NAME, UFML_ARCHMOD_ID);
+	ufml_module_insert(module, UFML_COMPMOD_NAME, UFML_COMPMOD_ID);
+	ufml_module_insert(module, UFML_ENCMOD_NAME, UFML_ENCMOD_ID);
+}
+
+void
+ufml_module_insert(module, name, id)
+	struct ufml_module 	*module;
+	char 				*name;
+	int 				id;
+{
+	module->ufml_modname = name;
+	module->ufml_modid = id;
+	LIST_INSERT_HEAD(&ufml_modhead, module, ufml_modentry);
+}
+
+struct ufml_module *
+ufml_module_find(name, id)
+	char 		*name;
+	int 		id;
+{
+	struct ufml_module *module;
+
+	LIST_FOREACH(module, &ufml_modhead, ufml_modentry) {
+		if(module->ufml_modname == name && module->ufml_modid == id) {
+			return (module);
+		}
+	}
+	return (NULL);
+}
+
+void
+ufml_module_remove(name, id)
+	char *name;
+	int id;
+{
+	struct ufml_module *module;
+
+	module = ufml_module_find(name, id);
+	if(module != NULL) {
+		LIST_REMOVE(module, ufml_modentry);
+	}
 }

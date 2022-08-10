@@ -155,47 +155,47 @@ extern bool 			_rtld_trust;
 extern const char 		*_rtld_error_message;
 
 /* rtld_start.S */
-void _rtld_bind_start (void);
+void 			_rtld_bind_start(void);
 
 /* rtld.c */
-void 			_rtld_error (const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void 			_rtld_die (void) __dead;
-char 			*_rtld_dlerror (void);
-void 			*_rtld_dlopen (const char *, int);
-void 			*_rtld_dlsym (void *, const char *);
-int 			_rtld_dlclose (void *);
-void 			_rtld_debug_state (void);
-void 			_rtld_linkmap_add (Obj_Entry *);
-void 			_rtld_linkmap_delete (Obj_Entry *);
+void 			_rtld_error(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+void 			_rtld_die(void) __dead;
+char 			*_rtld_dlerror(void);
+void 			*_rtld_dlopen(const char *, int);
+void 			*_rtld_dlsym(void *, const char *);
+int 			_rtld_dlclose(void *);
+void 			_rtld_debug_state(void);
+void 			_rtld_linkmap_add(Obj_Entry *);
+void 			_rtld_linkmap_delete(Obj_Entry *);
 
 /* headers.c */
-void 			_rtld_digest_dynamic (Obj_Entry *);
-Obj_Entry 		*_rtld_digest_phdr (const Elf_Phdr *, int, caddr_t);
+void 			_rtld_digest_dynamic(Obj_Entry *);
+Obj_Entry 		*_rtld_digest_phdr(const Elf_Phdr *, int, caddr_t);
 
 /* load.c */
-Obj_Entry 		*_rtld_load_object (char *, bool);
-int 			_rtld_load_needed_objects (Obj_Entry *);
-int 			_rtld_preload (const char *, bool);
+Obj_Entry 		*_rtld_load_object(char *, bool);
+int 			_rtld_load_needed_objects(Obj_Entry *);
+int 			_rtld_preload(const char *, bool);
 
 /* path.c */
-void 			_rtld_add_paths (Search_Path **, const char *, bool);
+void 			_rtld_add_paths(Search_Path **, const char *, bool);
 
 /* reloc.c */
-int 			_rtld_do_copy_relocations (const Obj_Entry *, bool);
-caddr_t 		_rtld_bind (const Obj_Entry *, Elf_Word);
-int 			_rtld_relocate_objects (Obj_Entry *, bool, bool);
-int 			_rtld_relocate_nonplt_object (const Obj_Entry *, const Elf_RelA *, bool);
-int 			_rtld_relocate_plt_object (const Obj_Entry *, const Elf_RelA *, caddr_t *, bool, bool);
+int 			_rtld_do_copy_relocations(const Obj_Entry *, bool);
+caddr_t 		_rtld_bind(const Obj_Entry *, Elf_Word);
+int 			_rtld_relocate_objects(Obj_Entry *, bool, bool);
+int 			_rtld_relocate_nonplt_object(const Obj_Entry *, const Elf_RelA *, bool);
+int 			_rtld_relocate_plt_object(const Obj_Entry *, const Elf_RelA *, caddr_t *, bool, bool);
 
 /* search.c */
-char 			*_rtld_find_library (const char *, const Obj_Entry *);
+char 			*_rtld_find_library(const char *, const Obj_Entry *);
 
 /* symbol.c */
-unsigned long 	_rtld_elf_hash (const char *);
-const Elf_Sym 	*_rtld_symlook_obj (const char *, unsigned long, const Obj_Entry *, bool);
-const Elf_Sym 	*_rtld_find_symdef (const Obj_Entry *, Elf_Word, const char *, const Obj_Entry *, const Obj_Entry **, bool);
+unsigned long 	_rtld_elf_hash(const char *);
+const Elf_Sym 	*_rtld_symlook_obj(const char *, unsigned long, const Obj_Entry *, bool);
+const Elf_Sym 	*_rtld_find_symdef(const Obj_Entry *, Elf_Word, const char *, const Obj_Entry *, const Obj_Entry **, bool);
 
 /* map_object.c */
-Obj_Entry 		*_rtld_map_object (const char *, int);
+Obj_Entry 		*_rtld_map_object(const char *, int);
 
 #endif
