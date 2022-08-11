@@ -38,9 +38,9 @@
 
 #ifdef _KERNEL
 extern volatile vm_offset_t	local_apic_va;
+extern vm_offset_t local_apic_pa;
 extern bool x2apic_mode;
 #endif
-extern vm_offset_t local_apic_pa;
 
 /*
  * "spurious interrupt vector"; vector used by interrupt which was
