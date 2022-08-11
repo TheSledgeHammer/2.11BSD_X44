@@ -69,6 +69,10 @@
 #ifndef _I386_SPECIALREG_H_
 #define	_I386_SPECIALREG_H_
 
+#ifndef I386_CR3PAT
+#define	I386_CR3PAT		0x0
+#endif
+
 /*
  * 386 Special registers:
  */
