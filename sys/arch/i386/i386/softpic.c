@@ -480,7 +480,7 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
     ih->ih_apic = softpic_handle_apic(spic);
 	ih->ih_fun = ih_fun;
 	ih->ih_arg = ih_arg;
-	ih->ih_prev = p;
+//	ih->ih_prev = p;
 	ih->ih_next = *p;
 	ih->ih_level = level;
 	ih->ih_irq = irq;
@@ -493,7 +493,7 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
 
 	intr_calculatemasks();
 
-	softpic_allocate_apic(spic, irq, type, idtvec, isapic, pictemplate);
+	softpic_apic_allocate(spic, irq, type, idtvec, isapic, pictemplate);
 	softpic_pic_addroute(spic, ci, irq, idtvec, type, isapic, pictemplate);
 
     if(!cold) {

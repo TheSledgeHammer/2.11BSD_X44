@@ -26,11 +26,12 @@
  * $FreeBSD$
  */
 
+#include "assym.h"
+
 #include <machine/asm.h>				/* miscellaneous asm macros */
 #include <machine/segments.h>
 #include <machine/trap.h>
 
-#include "assym.h"
 
 #define SCR_NEWPTD		PCB_ESI			/* readability macros */
 #define SCR_VMFRAME		PCB_EBP			/* see vm86.c for explanation */
@@ -72,11 +73,11 @@ ENTRY(vm86_bioscall)
 		pushl	%edi
 		pushl	%gs
 
-		movl	PERCPU(CURTHREAD),%ecx
-		cmpl	%ecx,PERCPU(FPCURTHREAD)	/* do we need to save fp? */
+		movl	_C_LABEL(curproc),%ecx		/* todo: fix */
+		cmpl	%ecx,_C_LABEL(curproc)		/* do we need to save fp? */
 		jne		1f
 		pushl	%edx
-		movl	TD_PCB(%ecx),%ecx
+		movl	U_PCB(%ecx),%ecx
 		pushl	PCB_SAVEFPU(%ecx)
 		movl	_C_LABEL(npxsave),%eax
 		call	*%eax

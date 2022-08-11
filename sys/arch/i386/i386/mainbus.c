@@ -86,7 +86,7 @@ int	isa_has_been_seen;
  */
 int eisa_has_been_seen;
 
-#if defined(MPBIOS) || defined(MPACPI)
+//#if defined(MPBIOS) || defined(MPACPI)
 struct mp_bus *mp_busses;
 int mp_nbus;
 struct mp_intr_map *mp_intrs;
@@ -100,7 +100,7 @@ int mp_verbose = 1;
 #else
 int mp_verbose = 0;
 #endif
-#endif
+//#endif
 
 
 /*

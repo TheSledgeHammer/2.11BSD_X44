@@ -169,6 +169,10 @@ int	mem_cluster_cnt = 0;
 
 struct pcb *curpcb;			/* our current running pcb */
 
+int	i386_fpu_present;
+int	i386_fpu_exception;
+int	i386_fpu_fdivbug;
+
 int	i386_use_fxsave;
 
 union descriptor 		gdt[NGDT];
@@ -195,6 +199,9 @@ startup(void)
 	extern long Usrptsize;
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
+	struct user *u;
+	
+	u = &proc0paddr;
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -241,6 +248,8 @@ again:
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
+	    
+	
 	valloc(cfree, struct cblock, nclist);
 	//valloc(swapmap, struct map, nswapmap = maxproc * 2);
 #ifdef SYSVSHM

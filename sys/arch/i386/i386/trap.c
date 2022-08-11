@@ -173,33 +173,6 @@ trap_tss(tss, trapno, code)
 	trap(&tf);
 }
 
-static void *
-onfault_handler(pcb, tf)
-	const struct pcb *pcb;
-	const struct trapframe *tf;
-{
-	struct onfault_table {
-		uintptr_t 	start;
-		uintptr_t 	end;
-		void 		*handler;
-	};
-	extern const struct onfault_table onfault_table[];
-	const struct onfault_table *p;
-	uintptr_t pc;
-
-	if (pcb->pcb_onfault != NULL) {
-		return (pcb->pcb_onfault);
-	}
-
-	pc = tf->tf_eip;
-	for (p = onfault_table; p->start; p++) {
-		if (p->start <= pc && pc < p->end) {
-			return (p->handler);
-		}
-	}
-	return (NULL);
-}
-
 static void
 trap_print(frame, p)
 	const struct trapframe *frame;
@@ -344,12 +317,11 @@ trap(frame)
 			goto we_re_toast;
 		}
 		/* Check for copyin/copyout fault. */
-		onfault = onfault_handler(pcb, frame);
-		if (onfault != NULL) {
+		if (pcb->pcb_onfault != NULL) {
 copyefault:
 			error = EFAULT;
 copyfault:
-			frame->tf_eip = (uintptr_t) onfault;
+			frame->tf_eip = (uintptr_t) pcb->pcb_onfault;
 			frame->tf_eax = error;
 			return;
 		}
@@ -438,7 +410,7 @@ copyfault:
 
 		if ((frame->tf_err & PGEX_P) && cr2 < VM_MAXUSER_ADDRESS) {
 			/* SMAP might have brought us here */
-			if (onfault_handler(pcb, frame) == NULL) {
+			if (pcb->pcb_onfault == NULL) {
 				printf("prevented access to %p (SMAP)\n", (void *)cr2);
 				goto we_re_toast;
 			}
@@ -506,8 +478,7 @@ faultcommon:
 		}
 
 		if (type == T_PAGEFLT) {
-			onfault = onfault_handler(pcb, frame);
-			if (onfault != NULL) {
+			if (pcb->pcb_onfault != 0) {
 				goto copyfault;
 			}
 			printf("vm_fault(%x, %x, %x, 0) -> %x\n", map, va, ftype, rv);

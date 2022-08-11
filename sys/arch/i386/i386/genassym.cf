@@ -85,6 +85,10 @@ endif
 
 #define I386_CR3PAT 		I386_CR3PAT
 
+define U_PCB				offsetof(struct user, u_pcb)
+#define U_PROCP				offsetof(struct user, u_procp)
+#define U_STACK				offsetof(struct user, u_stack)
+
 define P_FORW 				offsetof(struct proc, p_forw)
 define P_BACK 				offsetof(struct proc, p_back)
 define P_ADDR 				offsetof(struct proc, p_addr)
@@ -95,8 +99,6 @@ define P_MD_REGS			offsetof(struct proc, p_md.md_regs)
 define P_MD_ASTPENDING			offsetof(struct proc, p_md.md_astpending)
 
 define SRUN 				SRUN
-
-define U_PCB				offsetof(struct user, u_pcb)
 
 define V_SWTCH 				offsetof(struct vmrate, v_swtch)
 define V_TRAP 				offsetof(struct vmrate, v_trap)
@@ -166,3 +168,5 @@ define BI_ENDCOMMON			offsetof(struct bootinfo, bi_endcommon)
 define BI_SIZE				offsetof(struct bootinfo, bi_size)
 
 define VM86_FRAMESIZE		sizeof(struct vm86frame)
+
+define PC_TSS_GDT		offsetof(struct percpu, pc_tss_gdt)

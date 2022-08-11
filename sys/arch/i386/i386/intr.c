@@ -144,6 +144,7 @@
 #include <sys/user.h>
 
 #include <machine/apic/i8259.h>
+#include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicvar.h>
 #include <machine/cpuinfo.h>
 #include <machine/gdt.h>
@@ -421,7 +422,7 @@ intr_allocate_slot(spic, cip, pin, level, index, idtslot, isapic)
 		/*
 		 * Must be directed to BP.
 		 */
-    	ci = &cpu_info;
+    	ci = cpu_info;
     	error = intr_allocate_slot_cpu(spic, ci, pin, slot, FALSE);
     } else {
 		/*
@@ -434,7 +435,7 @@ intr_allocate_slot(spic, cip, pin, level, index, idtslot, isapic)
     			ci = lci;
     		}
 #else
-    		ci = &cpu_info;
+    		ci = cpu_info;
 #endif
     	}
     	KASSERT(ci != NULL);
@@ -509,7 +510,7 @@ intr_establish(irq, type, level, ih_fun, ih_arg, isapic, pictemplate)
 {
 	register struct softpic *spic;
 	register struct intrhand *ih;
-	register struct cpu_info *ci;
+	struct cpu_info *ci;
 	int error, pin, slot, idtvec;
 	void *arg;
 
@@ -541,7 +542,7 @@ intr_disestablish(irq, isapic, pictemplate)
 	int pin, idtvec;
 
 	spic = softpic_intr_handler(irq, isapic, pictemplate);
-	ci = &cpu_info;
+	ci = cpu_info;
 	idtvec = spic->sp_idtvec;
 	if(isapic) {
 		pin = spic->sp_pins[irq].sp_irq;

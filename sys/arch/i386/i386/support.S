@@ -37,8 +37,6 @@
  *
  */
 
-//#include <sys/systm.h>
-
 #include <machine/asm.h>
 #include <machine/cputypes.h>
 #include <machine/specialreg.h>
