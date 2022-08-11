@@ -71,7 +71,7 @@ extern int	mpid;					/* generic for unique process id's */
 extern char	runin;					/* scheduling flag */
 extern char	runout;					/* scheduling flag */
 extern int	runrun;					/* scheduling flag */
-extern char	curpri;					/* more scheduling */
+char		curpri;					/* more scheduling */
 
 /* system call args */
 #define	syscallarg(x)	union { x datum; register_t pad; }
