@@ -26,11 +26,12 @@
 #include <sys/gmon.h>
 #endif
 
-int noproc;
 struct callout *callfree, *calltodo;
 
++int	stathz;
 int	profprocs;
 static int psdiv, pscnt;	/* prof => stat divider */
+int	psratio;		/* ratio: prof / stat */
 
 volatile struct timeval time;
 volatile struct	timeval mono_time;
