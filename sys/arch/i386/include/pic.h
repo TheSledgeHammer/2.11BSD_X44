@@ -158,7 +158,7 @@ extern struct apic          ioapic_intrmap;
 extern struct apic          lapic_intrmap;
 
 /* intr.c */
-void 			*intr_establish(int, int, int (*)(void *), void *, bool_t, int);
+void 			*intr_establish(int, int, int, int (*)(void *), void *, bool_t, int);
 void			intr_disestablish(int, bool_t, int);
 void			fakeintr(struct softpic *, struct intrhand *, u_int);
 void			intr_default_setup(void);
@@ -166,4 +166,5 @@ void			intr_calculatemasks(void);
 void 			intr_add_pcibus(struct pcibus_attach_args *);
 int	 			intr_find_mpmapping(int, int, int *);
 void			apic_intr_string(char *, void *, int);
+char 			*intr_typename(int);
 #endif /* _I386_PIC_H_ */
