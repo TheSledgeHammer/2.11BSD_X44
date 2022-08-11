@@ -48,9 +48,6 @@
 /*
  * Flush MMU TLB
  */
-#ifndef I386_CR3PAT
-#define	I386_CR3PAT	0x0
-#endif
 
 static __inline u_int
 bsfl(u_int mask)
