@@ -28,7 +28,7 @@ file    arch/i386/i386/idt.c
 #file    arch/i386/i386/in_cksum.c	          inet
 file    arch/i386/i386/initcpu.c
 file    arch/i386/i386/intr.c             
-file    arch/i386/i386/ipi.c              	smp
+file    arch/i386/i386/ipi.c              	
 file    arch/i386/i386/k6_mem.c           	mtrr
 file    arch/i386/i386/kobj_machdep.c
 file    arch/i386/i386/machdep.c
