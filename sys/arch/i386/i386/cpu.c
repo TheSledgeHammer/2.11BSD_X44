@@ -58,8 +58,12 @@ int *apic_cpuids;
 #ifdef SMP
 u_int all_cpus;
 int mp_ncpus;
+
 /* export this for libkvm consumers. */
 int mp_maxcpus = NCPUS;
+
+volatile int smp_started;
+u_int mp_maxid;
 
 int smp_disabled = 0;			/* has smp been disabled? */
 int smp_cpus = 1;				/* how many cpu's running */

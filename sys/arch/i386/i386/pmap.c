@@ -210,9 +210,10 @@ pt_entry_t pg_nx;
 #define	pg_nx	0
 #endif
 
-extern int 		pat_works;
-extern int 		pg_ps_enabled;
-extern int 		elf32_nxstack;
+int 			pat_works;
+int 			pg_ps_enabled;
+int 			elf32_nxstack;
+int 			i386_pmap_PDRSHIFT;
 
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
@@ -244,11 +245,6 @@ pdpt_entry_t 	*IdlePDPT;			/* phys addr of kernel PDPT */
 #endif
 pt_entry_t 		*KPTmap;			/* address of kernel page tables */
 
-static vm_offset_t	pmap_bootstrap_valloc(size_t);
-static vm_offset_t	pmap_bootstrap_palloc(size_t);
-static pt_entry_t *pmap_pte(pmap_t, vm_offset_t);
-
-
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
 static struct pmap_head pmaps;
@@ -264,6 +260,11 @@ struct msgbuf		*msgbufp;
 
 static pt_entry_t 	*PMAP1 = NULL, *PMAP2, *PMAP3;
 static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
+
+/* static methods */
+static vm_offset_t	pmap_bootstrap_valloc(size_t);
+static vm_offset_t	pmap_bootstrap_palloc(size_t);
+static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
 static u_long
 allocpages(cnt, physfree)

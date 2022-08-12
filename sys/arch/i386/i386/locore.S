@@ -87,9 +87,11 @@
  */
  		.data
  		ALIGN_DATA
- 		.globl	_C_LABEL(esym)
+ 		.globl	_C_LABEL(esym), _C_LABEL(cold)
  		.globl	_C_LABEL(biosbasemem),_C_LABEL(biosextmem)
- 		
+
+_C_LABEL(cold):
+		.long	1							# cold till we are not
 _C_LABEL(esym):
 		.long	0							# ptr to end of syms
 _C_LABEL(biosbasemem):

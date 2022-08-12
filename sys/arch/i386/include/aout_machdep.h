@@ -44,6 +44,7 @@ struct relocation_info {
 					 r_relative :  1,	/* load address relative */
 					 r_copy 	:  1;	/* run time copy */
 };
+
 #define relocation_info_i386 relocation_info
 
 #endif  /* _I386_AOUT_MACHDEP_H_ */

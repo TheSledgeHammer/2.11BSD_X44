@@ -41,10 +41,6 @@
 #include <sys/ucontext.h>
 #include <sys/user.h>
 
-struct	lwp {
-	void	*l_ctxlink;	/* uc_link {get,set}context */
-};
-
 void
 kthread_getucontext(kt, ucp)
 	struct kthread *kt;
@@ -52,10 +48,19 @@ kthread_getucontext(kt, ucp)
 {
 	struct proc *p;
 
-	ucp->uc_link = kt->kt_ctxlink;
 	p = kt->kt_procp;
-
 	proc_getucontext(p, ucp);
+}
+
+void
+kthread_setucontext(kt, ucp)
+	struct kthread *kt;
+	ucontext_t *ucp;
+{
+	struct proc *p;
+
+	p = kt->kt_procp;
+	proc_setucontext(p, ucp);
 }
 
 void
@@ -64,7 +69,7 @@ proc_getucontext(p, ucp)
 	ucontext_t *ucp;
 {
 	ucp->uc_flags = 0;
-	//ucp->uc_link = l->l_ctxlink;
+	ucp->uc_link = p->p_ctxlink;
 
 	(void)sigprocmask(p, 0, NULL, &ucp->uc_sigmask);
 	ucp->uc_flags |= _UC_SIGMASK;
@@ -97,7 +102,7 @@ proc_setucontext(p, ucp)
 	if ((error = cpu_setmcontext(p, &ucp->uc_mcontext, ucp->uc_flags)) != 0) {
 		return (error);
 	}
-	//l->l_ctxlink = ucp->uc_link;
+	p->p_ctxlink = ucp->uc_link;
 
 	if ((ucp->uc_flags & _UC_SIGMASK) != 0) {
 		sigprocmask(p, SIG_SETMASK, &ucp->uc_sigmask, NULL);

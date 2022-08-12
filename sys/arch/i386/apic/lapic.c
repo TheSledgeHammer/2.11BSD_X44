@@ -61,13 +61,13 @@
 #include <machine/pmap.h>
 #include <machine/pte.h>
 #include <machine/specialreg.h>
+#include <machine/mpbiosvar.h>
 
 #include <machine/apic/apic.h>
 #include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
 #include <machine/isa/isa_machdep.h>
-#include <machine/mpbiosvar.h>
 
 #include "ioapic.h"
 

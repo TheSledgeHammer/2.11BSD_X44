@@ -23,7 +23,7 @@
 #define	IPI_INVLPG		(LAPIC_IPI_INTS + 2)
 #define	IPI_INVLRNG		(LAPIC_IPI_INTS + 3)
 
-/* global data in mp.c */
+/* global data in mp_machdep.c */
 extern int	 			mp_naps;
 extern int 				boot_cpu_id;
 extern int 				cpu_apic_ids[];

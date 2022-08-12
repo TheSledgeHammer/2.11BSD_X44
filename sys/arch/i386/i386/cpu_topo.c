@@ -816,10 +816,9 @@ init_secondary_tail(pc)
 	if (cpu_info[PERCPU_GET(apic_id)].cpu_hyperthread) {
 		CPU_SET(cpu_info[PERCPU_GET(apic_id)].cpu_topo, cpuid);
 	}
-	/*
+
 	if (bootverbose)
 		lapic_dump("AP");
-	*/
 
 	if (smp_cpus == mp_ncpus) {
 		/* enable IPI's, tlb shootdown, freezes etc */

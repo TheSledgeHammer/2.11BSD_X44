@@ -244,3 +244,30 @@ mmmmap(dev, off, prot)
 		return ((caddr_t)-1);
 	return ((caddr_t)i386_btop((u_int) off));
 }
+
+int
+mmioctl(dev, cmd, data, flag, p)
+	dev_t dev;
+	u_long cmd;
+	caddr_t data;
+	int flag;
+	struct proc *p;
+{
+	switch (minor(dev)) {
+	default:
+		switch (cmd) {
+		case FIONBIO:	/* We never block anyway */
+			return 0;
+		case FIOSETOWN:
+		case FIOGETOWN:
+		case TIOCGPGRP:
+		case TIOCSPGRP:
+			return ENOTTY;
+		case FIOASYNC:
+			if ((*(int *)data) == 0)
+				return 0;
+			/*FALLTHROUGH*/
+		}
+		return EOPNOTSUPP;
+	}
+}

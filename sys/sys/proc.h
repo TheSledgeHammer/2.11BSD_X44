@@ -39,6 +39,7 @@ struct	proc {
 	char				p_lock;			/* Process lock count. */
 	char				p_pad1[2];
 	char				p_dummy;		/* room for one more, here */
+	void				*p_ctxlink;		/* p: uc_link {get,set}context */
 
     short				p_uid;			/* user id, used to direct tty signals */
     pid_t				p_pid;			/* unique process id */
@@ -51,6 +52,7 @@ struct	proc {
 	struct	plimit 	 	*p_limit;		/* Process limits. */
 	struct	vmspace  	*p_vmspace;		/* Address space. */
 	struct 	sigacts 	*p_sigacts;		/* Signal actions, state (PROC ONLY). */
+
 
 #define	p_ucred			p_cred->pc_ucred
 #define	p_rlimit		p_limit->pl_rlimit

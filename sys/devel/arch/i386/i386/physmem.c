@@ -37,30 +37,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/reboot.h>
+
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/rtc.h>
 
 #include <arch/i386/include/bios.h>
-
 #include <arch/i386/include/bootinfo.h>
 
-/* TODO: change how add_mem_cluster works */
-
-extern int biosbasemem, biosextmem;
-
-#define	PHYSSEG_MAX	32
-
-/*
- * Description of a memory segment. To make this suitable for sharing
- * between all architectures, u_quad_t seems to be the necessary type...
- */
-typedef struct {
-	u_quad_t	start;		/* Physical start address	*/
-	u_quad_t	size;		/* Size in bytes		*/
-} phys_ram_seg_t;
-
-phys_ram_seg_t mem_clusters[PHYSSEG_MAX];
-int	mem_cluster_cnt;
 
 /* bios smap */
 static int

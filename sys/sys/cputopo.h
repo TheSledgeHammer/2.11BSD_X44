@@ -100,7 +100,7 @@ struct topo_node {
 /*
  * Convenience routines for building and traversing topologies.
  */
-//#ifdef SMP
+#ifdef SMP
 void 				topo_init_node(struct topo_node *node);
 void 				topo_init_root(struct topo_node *root);
 struct topo_node 	*topo_add_node_by_hwid(struct topo_node *parent, int hwid, topo_node_type type, uintptr_t subtype);
@@ -133,6 +133,5 @@ int			topo_analyze(struct topo_node *topo_root, int all, struct topo_analysis *r
 #define	TOPO_FOREACH(i, root)	\
 	for (i = root; i != NULL; i = topo_next_node(root, i))
 
-//#endif /* SMP */
-
+#endif /* SMP */
 #endif /* _SYS_CPU_H_ */

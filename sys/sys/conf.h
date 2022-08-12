@@ -303,6 +303,7 @@ extern const struct cdevsw wskbd_cdevsw;
 extern const struct cdevsw wsmouse_cdevsw;
 extern const struct cdevsw wsmux_cdevsw;
 extern const struct cdevsw wsfont_cdevsw;
+extern const struct cdevsw mem_cdevsw;
 
 /* linesw */
 extern const struct linesw ttydisc;

@@ -48,6 +48,7 @@
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
+#include <machine/intr.h>
 #include <machine/param.h>
 #include <machine/pte.h>
 #include <machine/specialreg.h>

@@ -45,6 +45,7 @@
 #include <arch/i386/include/cpu.h>
 #include <arch/i386/include/cpufunc.h>
 #include <arch/i386/include/cputypes.h>
+#include <arch/i386/include/percpu.h>
 #include <arch/i386/include/specialreg.h>
 
 #include <arch/i386/include/ansi.h>
@@ -340,7 +341,7 @@ static void														\
 tsc_read_##x(void *arg)											\
 {																\
 	u_int64_t *tsc = arg;										\
-	u_int cpu = PCPU_GET(cpuid);								\
+	u_int cpu = PERCPU_GET(cpuid);								\
 																\
 	__asm __volatile("cpuid" : : : "eax", "ebx", "ecx", "edx");	\
 	tsc[cpu * 3 + x] = rdtsc();									\

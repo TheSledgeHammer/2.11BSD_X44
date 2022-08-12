@@ -54,6 +54,7 @@ topo_init_root(struct topo_node *root)
 	topo_init_node(root);
 	root->type = TOPO_TYPE_SYSTEM;
 }
+
 /*
  * Add a child node with the given ID under the given parent.
  * Do nothing if there is already a child with that ID.

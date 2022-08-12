@@ -38,6 +38,9 @@
  *	@(#)cons.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _SYS_DEV_CONS_H_
+#define _SYS_DEV_CONS_H_
+
 struct consdev {
 	void		(*cn_probe)(struct consdev *);			/* probe hardware and fill in consdev info */
 	void		(*cn_init)(struct consdev *);			/* turn on as console */
@@ -107,3 +110,5 @@ void	nullcnpollc(dev_t, int);
 	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
 	dev_init(n,cnputc), dev_init(n,cnpollc), dev_init(n,cnbell) }
 #endif
+
+#endif /* _SYS_DEV_CONS_H_ */

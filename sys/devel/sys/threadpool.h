@@ -41,9 +41,10 @@ struct threadpool_job;
 struct kthreadpool_percpu;
 struct kthreadpool_thread;
 
+typedef void threadpool_job_fn_t(struct threadpool_job *);
+
 struct job_head;
 TAILQ_HEAD(job_head, threadpool_job);
-typedef void threadpool_job_fn_t(struct threadpool_job *);
 struct threadpool_job  {
 	TAILQ_ENTRY(threadpool_job)			job_entry;
 	threadpool_job_fn_t					*job_func;
@@ -58,8 +59,8 @@ struct threadpool_job  {
 #define TPJ_HEAD 0	/* add to head of job queue */
 #define TPJ_TAIL 1	/* add to tail of job queue */
 
-#define threadpool_lock(lock) 	(simple_lock(lock->lk_lnterlock))
-#define threadpool_unlock(lock) (simple_unlock(lock->lk_lnterlock))
+#define threadpool_lock(lock) 	(simple_lock((lock)->lk_lnterlock))
+#define threadpool_unlock(lock) (simple_unlock((lock)->lk_lnterlock))
 
 void	threadpool_job_init(void *, struct threadpool_job *, threadpool_job_fn_t, struct lock *, const char *);
 void	threadpool_job_enqueue(struct job_head *, struct threadpool_job *, struct lock *, int);

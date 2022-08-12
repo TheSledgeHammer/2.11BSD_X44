@@ -1843,7 +1843,7 @@ void
 softintr(mask)
 	register int mask;
 {
-	__asm __volatile("orl %0,_ipending" : : "ir" (1 << mask));
+	__asm __volatile("orl %0, ipending" : : "ir" (1 << mask));
 }
 
 /*
