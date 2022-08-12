@@ -260,6 +260,8 @@ dev_type_modem(line_modem);
 #define nullttyioctl    ((dev_type_tty_ioctl_t *)nullop)
 #define nullttypoll     ((dev_type_tty_poll_t *)nullop)
 
+#endif /* KERNEL */
+
 /* MD config initialization (machine/conf.c) */
 /* bdevsw */
 extern const struct bdevsw swap_bdevsw;
@@ -314,5 +316,4 @@ extern const struct linesw tabldisc;
 extern const struct linesw slipdisc;
 extern const struct linesw pppdisc;
 
-#endif
 #endif
