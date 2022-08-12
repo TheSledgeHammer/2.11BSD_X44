@@ -131,6 +131,6 @@ extern struct bootinfo 			bootinfo;
 extern char 					bootsize[];
 extern int						end;
 extern int 						*esym;
-int				i386_ksyms_addsyms_elf(struct bootinfo *);
 #endif
+int				i386_ksyms_addsyms_elf(struct bootinfo *);
 #endif /* _I386_BOOTINFO_H_ */
