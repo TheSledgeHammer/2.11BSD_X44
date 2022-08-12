@@ -55,6 +55,8 @@ CFDRIVER_DECL(NULL, cpu, &cpu_cops, DV_DULL, sizeof(struct cpu_softc));
 struct cpu_info *cpu_info;
 int *apic_cpuids;
 
+volatile int smp_started;
+
 #ifdef SMP
 u_int all_cpus;
 int mp_ncpus;
@@ -62,7 +64,6 @@ int mp_ncpus;
 /* export this for libkvm consumers. */
 int mp_maxcpus = NCPUS;
 
-volatile int smp_started;
 u_int mp_maxid;
 
 int smp_disabled = 0;			/* has smp been disabled? */

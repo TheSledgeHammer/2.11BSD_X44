@@ -46,6 +46,8 @@ struct softpic 					 	*intrspic;
 static TAILQ_HEAD(pic_list, pic) 	pichead;
 static TAILQ_HEAD(apic_list, apic) 	apichead;
 
+int  intr_shared_edge;
+
 int	softpic_register_pic(struct pic *);
 int	softpic_register_apic(struct apic *);
 

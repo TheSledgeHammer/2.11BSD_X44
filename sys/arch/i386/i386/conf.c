@@ -75,6 +75,18 @@
 #include "scsibus.h"
 #include "pci.h"
 
+void kernel_init(struct devswtable *);
+void device_init(struct devswtable *);
+void audio_init(struct devswtable *);
+void console_init(struct devswtable *);
+void core_init(struct devswtable *);
+void disks_init(struct devswtable *);
+void misc_init(struct devswtable *);
+void usb_init(struct devswtable *);
+void video_init(struct devswtable *);
+void wscons_init(struct devswtable *);
+void network_init(struct devswtable *);
+
 /*
  * Configure Initialization
  */

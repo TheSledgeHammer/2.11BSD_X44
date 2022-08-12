@@ -59,14 +59,18 @@
 
 #define	ELFSIZE		ARCH_ELFSIZE
 
+#include <sys/cdefs_elf.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/ksyms.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/exec_elf.h>
 #include <dev/misc/kobj/kobj.h>
 #include <dev/misc/kobj/kobj_impl.h>
+
+#include <machine/bootinfo.h>
 
 int
 kobj_reloc(ko, relocbase, data, isrela, local)
@@ -132,4 +136,46 @@ kobj_reloc(ko, relocbase, data, isrela, local)
 
 	*where = addr;
 	return 0;
+}
+
+int
+i386_ksyms_addsyms_elf(struct bootinfo *bi)
+{
+	caddr_t symstart = (caddr_t) bi->bi_symstart;
+	caddr_t strstart = (caddr_t) bi->bi_strstart;
+
+
+	if (bi->bi_flags == BOOTINFO_ELF_SYMS) {
+		Elf_Ehdr ehdr;
+
+		KASSERT(esym != 0);
+
+		memset(&ehdr, 0, sizeof(ehdr));
+		memcpy(ehdr.e_ident, ELFMAG, SELFMAG);
+#ifdef ELFSIZE32
+		ehdr.e_ident[EI_CLASS] = ELFCLASS32;
+#endif
+#ifdef ELFSIZE64
+		ehdr.e_ident[EI_CLASS] = ELFCLASS64;
+#endif
+		ehdr.e_ident[EI_DATA] = ELFDATA2LSB;
+		ehdr.e_ident[EI_VERSION] = EV_CURRENT;
+		ehdr.e_ident[EI_OSABI] = ELFOSABI_SYSV;
+		ehdr.e_ident[EI_ABIVERSION] = 0;
+		ehdr.e_type = ET_EXEC;
+#ifdef __amd64__
+		ehdr.e_machine = EM_X86_64;
+#elif __i386__
+		ehdr.e_machine = EM_386;
+#else
+#error "Unknwo ELF machine type"
+#endif
+		ehdr.e_version = 1;
+		ehdr.e_ehsize = sizeof(ehdr);
+		ehdr.e_entry = (Elf_Addr)0xffffff;
+
+		ksyms_addsyms_explicit((void*) &ehdr, (void*) symstart, bi->bi_symsize, (void*) strstart, bi->bi_strsize);
+	}
+
+	return (bi->bi_flags & BOOTINFO_ELF_SYMS);
 }

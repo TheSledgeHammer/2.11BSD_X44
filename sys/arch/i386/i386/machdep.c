@@ -184,6 +184,7 @@ struct soft_segment_descriptor *ldt_segs;
 
 int _udatasel, _ucodesel, _gsel_tss;
 
+struct user u;
 struct user *proc0paddr;
 vm_offset_t proc0kstack;
 
@@ -199,9 +200,9 @@ startup(void)
 	extern long Usrptsize;
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
-	struct user *u;
 	
-	u = &proc0paddr;
+	/* Initialize user */
+	u = u;
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -450,8 +451,7 @@ sendsig(catcher, sig, mask, code)
 	struct sigframe *fp, frame;
 	struct sigacts *psp = p->p_sigacts;
 	int oonstack;
-	extern char sigcode[], esigcode[];
-
+	extern int szsigcode;
 	/*
 	 * Build the argument list for the signal handler.
 	 */
@@ -544,7 +544,7 @@ sendsig(catcher, sig, mask, code)
 	tf->tf_fs = GSEL(GUDATA_SEL, SEL_UPL);
 	tf->tf_es = GSEL(GUDATA_SEL, SEL_UPL);
 	tf->tf_ds = GSEL(GUDATA_SEL, SEL_UPL);
-	tf->tf_eip = (int)(((char *)PS_STRINGS) - (esigcode - sigcode));
+	tf->tf_eip = (int)(((char *)PS_STRINGS) - (szsigcode));
 	tf->tf_cs = GSEL(GUCODE_SEL, SEL_UPL);
 	tf->tf_eflags &= ~(PSL_T|PSL_VM|PSL_AC);
 	tf->tf_esp = (int)fp;

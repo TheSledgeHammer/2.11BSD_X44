@@ -48,6 +48,7 @@
 
 #include <machine/atomic.h>
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
 #include <machine/apic/apic.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
