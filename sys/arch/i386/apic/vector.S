@@ -69,8 +69,8 @@ IDTVEC(intrspurious)
 		 */
 		iret
 
-#ifdef SMP
 #if NLAPIC > 0
+#ifdef SMP
 /* Interrupt from the local APIC IPI */
 IDTVEC(recurse_lapic_ipi)
 		pushfl
@@ -79,6 +79,18 @@ IDTVEC(recurse_lapic_ipi)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
+IDTVEC(intr_x2apic_ipi)
+		pushl	$0
+		pushl	$T_ASTFLT
+		INTRENTRY
+		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx
+		xorl	%eax,%eax
+		xorl	%edx,%edx
+		wrmsr
+		movl	_C_LABEL(cpl),%ebx
+		cmpl	$IPL_HIGH,%ebx
+		jae		2f
+		jmp		1f
 IDTVEC(intr_lapic_ipi)
 		pushl	$0
 		pushl	$T_ASTFLT
@@ -98,18 +110,6 @@ IDTVEC(intr_lapic_ipi)
 		orl		$(1 << LIR_IPI),_C_LABEL(ipending)
 		sti
 		INTRFASTEXIT
-IDTVEC(intr_x2apic_ipi)
-		pushl	$0
-		pushl	$T_ASTFLT
-		INTRENTRY
-		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx
-		xorl	%eax,%eax
-		xorl	%edx,%edx
-		wrmsr
-		movl	_C_LABEL(cpl),%ebx
-		cmpl	$IPL_HIGH,%ebx
-		jae		2f
-		jmp		1f
 IDTVEC(resume_lapic_ipi)
 		cli
 		jmp		1f
@@ -144,6 +144,18 @@ IDTVEC(recurse_lapic_ltimer)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
+IDTVEC(intr_x2apic_ltimer)
+		pushl	$0
+		pushl	$T_ASTFLT
+		INTRENTRY
+		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx
+		xorl	%eax,%eax
+		xorl	%edx,%edx
+		wrmsr
+		movl	_C_LABEL(cpl),%ebx
+		cmpl	$IPL_CLOCK,%ebx
+		jae		2f
+		jmp		1f
 IDTVEC(intr_lapic_ltimer)
 		pushl	$0
 		pushl	$T_ASTFLT
@@ -166,18 +178,6 @@ IDTVEC(intr_lapic_ltimer)
 		orl		$(1 << LIR_TIMER),_C_LABEL(ipending)
 		sti
 		INTRFASTEXIT
-IDTVEC(intr_x2apic_ltimer)
-		pushl	$0
-		pushl	$T_ASTFLT
-		INTRENTRY
-		movl	$(MSR_APIC_000 + MSR_APIC_EOI),%ecx
-		xorl	%eax,%eax
-		xorl	%edx,%edx
-		wrmsr
-		movl	_C_LABEL(cpl),%ebx
-		cmpl	$IPL_CLOCK,%ebx
-		jae		2f
-		jmp		1f
 IDTVEC(resume_lapic_ltimer)
 		cli
 		jmp		1f
