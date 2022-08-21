@@ -54,6 +54,7 @@ static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #include "setlocale.h"
 
 extern int			_none_init(_RuneLocale *);
+extern int			_UES_init(_RuneLocale *);
 extern int			_UTF1632_init(_RuneLocale *);
 extern int			_UTF2_init(_RuneLocale *);
 extern int			_UTF8_init(_RuneLocale *);
@@ -120,6 +121,8 @@ setrunelocale(encoding)
 		return (_UTF8_init(rl));
 	} else if (!strcmp(rl->encoding, "UTF-1632")) {
 		return (_UTF1632_init(rl));
+	} else if (!strcmp(rl->encoding, "UES")) {
+		return (_UES_init(rl));
 	} else if (!strcmp(rl->encoding, "UTF-2")) {
 		return (_UTF2_init(rl));
 	} else if (!strcmp(rl->encoding, "NONE")) {

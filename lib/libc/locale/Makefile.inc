@@ -5,7 +5,7 @@
 
 SRCS+=	ansi.c citrus_ctype.c ctype.c euc.c frune.c isctype.c lconv.c 	\
 		localeconv.c mbrune.c __mb_cur_max.c none.c rune.c setlocale.c 	\
-		srune.c table.c utf1632.c utf2.c utf8.c wcscoll.c wcstod.c 		\
+		srune.c table.c ues.c utf1632.c utf2.c utf8.c wcscoll.c wcstod.c \
 		wcstol.c wcstoll.c wcstoimax.c wcstoul.c wcstoull.c wcstoumax.c \
 		wcsxfrm.c aliasname.c
 SRCS+=	multibyte.c _wctrans.c iswctype.c

@@ -46,6 +46,7 @@ typedef struct {
 #define _ENDIAN_UNKNOWN	0
 #define _ENDIAN_BIG		1
 #define _ENDIAN_LITTLE	2
+#define _MODE_C99		3					/* UES needs this */
 	unsigned			count[4];
 	wchar_t				bits[4];
 	wchar_t				mask;
