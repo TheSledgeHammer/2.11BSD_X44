@@ -89,6 +89,7 @@
 #include <machine/intr.h>
 #include <machine/pic.h>
 #include <machine/psl.h>
+#include <machine/pte.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
 #include <machine/vm86.h>
@@ -1844,6 +1845,141 @@ softintr(mask)
 	register int mask;
 {
 	__asm __volatile("orl %0, ipending" : : "ir" (1 << mask));
+}
+
+int
+copyout(from, to, len)
+	const void *from;
+	void *to;
+	size_t len;
+{
+	int *pte, *pde;
+	int rest_of_page;
+	int thistime;
+	int err;
+
+	/* be very careful not to overflow doing this check */
+	if (to >= (void *)USRSTACK || (void *)USRSTACK - to < len) {
+		return (EFAULT);
+	}
+
+	pte = (int *)vtopte(to);
+	pde = (int *)vtopte(pte);
+
+	rest_of_page = PAGE_SIZE - ((int)to & (PAGE_SIZE - 1));
+
+	while (1) {
+		thistime = len;
+		if (thistime > rest_of_page) {
+			thistime = rest_of_page;
+		}
+
+		if ((*pde & PG_V) == 0 || (*pte & (PG_V | PG_UW)) != (PG_V | PG_UW)) {
+			if (err == user_write_fault(to)) {
+				return (err);
+			}
+		}
+
+		bcopy(from, to, thistime);
+
+		len -= thistime;
+
+		/*
+		 * Break out as soon as possible in the common case
+		 * that the whole transfer is containted in one page.
+		 */
+		if (len == 0) {
+			break;
+		}
+
+		from += thistime;
+		to += thistime;
+		pte++;
+		pde = (u_int *)vtopte(pte);
+		rest_of_page = PAGE_SIZE;
+	}
+
+	return (0);
+}
+
+/*
+ * Below written in C to allow access to debugging code
+ */
+int
+copyinstr(fromaddr, toaddr, maxlength, lencopied)
+	const void *fromaddr;
+	void *toaddr;
+	size_t *lencopied, maxlength;
+{
+	int c, tally;
+
+	tally = 0;
+	while (maxlength--) {
+		c = fubyte(fromaddr++);
+		if (c == -1) {
+			if (lencopied)
+				*lencopied = tally;
+			return (EFAULT);
+		}
+		tally++;
+		*(char*) toaddr++ = (char) c;
+		if (c == 0) {
+			if (lencopied)
+				*lencopied = tally;
+			return (0);
+		}
+	}
+	if (lencopied)
+		*lencopied = tally;
+	return (ENAMETOOLONG);
+}
+
+int
+copyoutstr(fromaddr, toaddr, maxlength, lencopied)
+	const void *fromaddr;
+	void *toaddr;
+	size_t *lencopied, maxlength;
+{
+	int c, tally;
+
+	tally = 0;
+	while (maxlength--) {
+		c = subyte(toaddr++, *(char*) fromaddr);
+		if (c == -1)
+			return (EFAULT);
+		tally++;
+		if (*(char*) fromaddr++ == 0) {
+			if (lencopied)
+				*lencopied = tally;
+			return (0);
+		}
+	}
+	if (lencopied)
+		*lencopied = tally;
+	return (ENAMETOOLONG);
+}
+
+int
+copystr(fromaddr, toaddr, maxlength, lencopied)
+	const void *fromaddr;
+	void *toaddr;
+	size_t *lencopied, maxlength;
+{
+	u_int tally;
+
+	tally = 0;
+	while (maxlength--) {
+		*(u_char*) toaddr = *(u_char*) fromaddr++;
+		tally++;
+		if (*(u_char*) toaddr++ == 0) {
+			if (lencopied)
+				*lencopied = tally;
+			return (0);
+		}
+	}
+	if (lencopied)
+		*lencopied = tally;
+	return (ENAMETOOLONG);
 }
 
 /*

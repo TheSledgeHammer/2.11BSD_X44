@@ -52,9 +52,12 @@
 #include <machine/apic/apic.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
+#include <machine/intr.h>
 #include <machine/pmap.h>
+#include <machine/pmap_tlb.h>
 
 void i386_ipi_halt(struct cpu_info *);
+void i386_ipi_tlb_shootdown(struct cpu_info *ci);
 
 #if NNPX > 0
 void i386_ipi_synch_fpu(struct cpu_info *);
@@ -74,7 +77,7 @@ void (*ipifunc[I386_NIPI])(struct cpu_info *) = {
 		i386_ipi_halt,
 		i386_ipi_flush_fpu,
 		i386_ipi_synch_fpu,
-		pmap_do_tlb_shootdown,
+		i386_ipi_tlb_shootdown,
 		i386_ipi_reload_mtrr,
 		NULL,
 };
@@ -205,3 +208,9 @@ i386_ipi_reload_mtrr(struct cpu_info *ci)
 		mem_range_softc.mr_op->reload(&mem_range_softc);
 }
 #endif
+
+void
+i386_ipi_tlb_shootdown(struct cpu_info *ci)
+{
+	pmap_do_tlb_shootdown(kernel_pmap, ci);
+}
