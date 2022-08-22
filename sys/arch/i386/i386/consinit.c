@@ -60,9 +60,8 @@
 #include <dev/misc/pccons/pckbcvar.h>
 #include <dev/misc/pccons/pckbportvar.h>
 #endif
-#include "pckbd.h"
 
-#include "com.h"
+//#include "com.h"
 #if (NCOM > 0)
 #include <sys/termios.h>
 #include <dev/core/ic/comreg.h>

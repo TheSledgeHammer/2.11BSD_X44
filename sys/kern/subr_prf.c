@@ -64,6 +64,11 @@
 
 #include <dev/misc/cons/cons.h>
 
+#ifdef DDB
+#include <ddb/ddbvar.h>		/* db_panic */
+#include <ddb/db_output.h>	/* db_printf, db_putchar prototypes */
+#endif
+
 struct lock_object kprintf_slock;
 
 /*
@@ -228,6 +233,43 @@ ttyprintf(struct tty *tp, const char *fmt, ...)
 	prf1(fmt, TOTTY, tp, ap);
 	va_end(ap);
 }
+
+#ifdef DDB
+
+/*
+ * db_printf: printf for DDB (via db_putchar)
+ */
+void
+db_printf(const char *fmt, ...)
+{
+	va_list ap;
+
+	/* No mutex needed; DDB pauses all processors. */
+	va_start(ap, fmt);
+	prf2(fmt, TODDB, ap);
+	va_end(ap);
+
+	if (db_tee_msgbuf) {
+		va_start(ap, fmt);
+		prf2(fmt, TOLOG, ap);
+		va_end(ap);
+	}
+}
+
+void
+db_vprintf(const char *fmt, va_list ap)
+{
+	va_list cap;
+
+	va_copy(cap, ap);
+	/* No mutex needed; DDB pauses all processors. */
+	prf2(fmt, TODDB, ap);
+	if (db_tee_msgbuf)
+		prf2(fmt, TOLOG, cap);
+	va_end(cap);
+}
+
+#endif /* DDB */
 
 /*
  * Log writes to the log buffer,

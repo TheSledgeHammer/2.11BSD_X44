@@ -11,6 +11,7 @@
 
 #include <machine/proc.h>		/* Machine-dependent proc substruct. */
 #include <machine/frame.h>
+
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/queue.h>
 #include <sys/callout.h>
@@ -248,12 +249,12 @@ struct emul {
 #define	S_STACK		1
 
 #ifdef _KERNEL
-struct lock_holder 			proc_loholder;
+extern struct lock_holder 	proc_loholder;
 #define PROC_LOCK(p)		(mtx_lock(&(p)->p_mtx, &proc_loholder))
 #define PROC_UNLOCK(p)		(mtx_unlock(&(p)->p_mtx, &proc_loholder))
 
-#define	PID_MAX		30000
-#define	NO_PID		30001
+#define	PID_MAX			30000
+#define	NO_PID			30001
 
 #define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
 #define	SESSHOLD(s)		((s)->s_count++)

@@ -26,22 +26,43 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_MUTEX_H_
-#define _SYS_MUTEX_H_
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/lock.h>
+#include <sys/mutex.h>
 
-struct mtx {
-	struct lock_object	*mtx_lock;
-	struct lock_holder 	*mtx_holder;
-	char 				*mtx_name;
-};
+void
+mtx_init(mtx, holder, name, data, pid, pgrp)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+	char 				*name;
+	void 				*data;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
+{
+	memset(mtx, 0, sizeof(struct mtx));
+	simple_lock_init(mtx->mtx_lock, name);
+	mtx->mtx_name = name;
+	holder = lockholder_create(data, pid, pgrp);
+}
 
-#ifdef _KERNEL
-struct lock_holder;
-struct lock_object;
-struct pgrp;
+void
+mtx_lock(mtx, holder)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+{
+	mtx->mtx_holder = holder;
+	simple_lock(mtx->mtx_lock);
+}
 
-void mtx_init(struct mtx *, struct lock_holder *, char *, void *, pid_t, struct pgrp *);
-void mtx_lock(struct mtx *, struct lock_holder *);
-void mtx_unlock(struct mtx *, struct lock_holder *);
-#endif /* _KERNEL */
-#endif /* _SYS_MUTEX_H_ */
+void
+mtx_unlock(mtx, holder)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+{
+	if(mtx->mtx_holder == holder) {
+		simple_unlock(mtx->mtx_lock);
+	}
+}
