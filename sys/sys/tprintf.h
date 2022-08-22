@@ -63,6 +63,7 @@ extern struct lock_object kprintf_slock;
 #define TOTTY		0x2
 #define TOLOG		0x4
 #define	TOBUFONLY	0x8		/* to the buffer (only) [for snprintf] */
+#define	TODDB		0x10		/* to ddb console */
 
 /* max size buffer kprintf needs to print quad_t [size in base 8 + \0] */
 #define KPRINTF_BUFSIZE		(sizeof(quad_t) * NBBY / 3 + 2)
