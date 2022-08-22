@@ -36,7 +36,7 @@
 #include <sys/memrange.h>
 #include <sys/user.h>
 
-#include <machine/cputypes.h>
+#include <machine/cpu.h>
 #include <machine/specialreg.h>
 
 /*

@@ -78,7 +78,6 @@
 void kernel_init(struct devswtable *);
 void device_init(struct devswtable *);
 void audio_init(struct devswtable *);
-void console_init(struct devswtable *);
 void core_init(struct devswtable *);
 void disks_init(struct devswtable *);
 void misc_init(struct devswtable *);
@@ -86,6 +85,60 @@ void usb_init(struct devswtable *);
 void video_init(struct devswtable *);
 void wscons_init(struct devswtable *);
 void network_init(struct devswtable *);
+
+/* MD config initialization (machine/conf.c) */
+/* bdevsw */
+extern const struct bdevsw swap_bdevsw;
+extern const struct bdevsw wd_bdevsw;
+extern const struct bdevsw sd_bdevsw;
+extern const struct bdevsw st_bdevsw;
+extern const struct bdevsw cd_bdevsw;
+extern const struct bdevsw vnd_bdevsw;
+extern const struct bdevsw ccd_bdevsw;
+
+/* cdevsw */
+const struct cdevsw log_cdevsw;
+const struct cdevsw swap_cdevsw;
+const struct cdevsw ctty_cdevsw;
+const struct cdevsw ptc_cdevsw;
+const struct cdevsw pts_cdevsw;
+const struct cdevsw audio_cdevsw;
+const struct cdevsw midi_cdevsw;
+const struct cdevsw sequencer_cdevsw;
+const struct cdevsw spkr_cdevsw;
+const struct cdevsw pci_cdevsw;
+const struct cdevsw com_cdevsw;
+const struct cdevsw lpt_cdevsw;
+const struct cdevsw wd_cdevsw;
+const struct cdevsw sd_cdevsw;
+const struct cdevsw st_cdevsw;
+const struct cdevsw cd_cdevsw;
+const struct cdevsw ch_cdevsw;
+const struct cdevsw uk_cdevsw;
+const struct cdevsw ss_cdevsw;
+const struct cdevsw ses_cdevsw;
+const struct cdevsw vnd_cdevsw;
+const struct cdevsw ccd_cdevsw;
+const struct cdevsw apm_cdevsw;
+const struct cdevsw cmos_cdevsw;
+const struct cdevsw ksyms_cdevsw;
+const struct cdevsw bpf_cdevsw;
+const struct cdevsw video_cdevsw;
+const struct cdevsw wsdisplay_cdevsw;
+const struct cdevsw wskbd_cdevsw;
+const struct cdevsw wsmouse_cdevsw;
+const struct cdevsw wsmux_cdevsw;
+const struct cdevsw wsfont_cdevsw;
+const struct cdevsw mem_cdevsw;
+
+/* linesw */
+const struct linesw ttydisc;
+const struct linesw nttydisc;
+const struct linesw ottydisc;
+const struct linesw netldisc;
+const struct linesw tabldisc;
+const struct linesw slipdisc;
+const struct linesw pppdisc;
 
 /*
  * Configure Initialization
@@ -123,7 +176,6 @@ void
 device_init(devsw)
 	struct devswtable *devsw;
 {
-	console_init(devsw);		/* console interfaces */
 	core_init(devsw);			/* core interfaces */
 	wscons_init(devsw);			/* wscons & pccons interfaces */
 	video_init(devsw);			/* video interfaces */

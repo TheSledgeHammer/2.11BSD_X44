@@ -218,7 +218,9 @@ int 			i386_pmap_PDRSHIFT;
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
-extern char 	_end[];
+
+//extern char 	_end[]; /* boot.ldscript */
+char 	_end[];	
 vm_offset_t 	kernel_vm_end;
 u_long 			physfree;			/* phys addr of next free page */
 u_long 			vm86phystk;			/* PA of vm86/bios stack */

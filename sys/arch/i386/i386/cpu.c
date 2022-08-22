@@ -38,7 +38,7 @@
 
 #include <machine/apic/lapicvar.h>
 
-#include <machine/cpuinfo.h>
+#include <machine/cpu.h>
 #include <machine/percpu.h>
 
 struct cpu_softc {
