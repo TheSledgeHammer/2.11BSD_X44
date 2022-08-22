@@ -219,6 +219,9 @@ extern void softintr(int);
 
 struct cpu_info;
 
+extern int (*i386_ipi)(int, int, int);
+int 	i386_ipi_init(int);
+int 	i386_ipi_startup(int, int);
 int 	i386_send_ipi(struct cpu_info *, int);
 void	i386_self_ipi(int);
 void 	i386_broadcast_ipi(int);

@@ -112,7 +112,7 @@ extern void (*microtime_func)(struct timeval *);
 #define microtime(tv)		(*microtime_func)(tv)
 #define cpu_initclocks()	(*initclocks_func)()
 
-extern char 		_end[];
+//extern char 		_end[];
 extern char		btext[];
 extern char		etext[];
 

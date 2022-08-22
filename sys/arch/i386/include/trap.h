@@ -98,4 +98,7 @@
 #define TC_TSS				0x80000000
 #define TC_FLAGMASK			(TC_TSS)
 
+#ifndef _LOCORE
+int	user_write_fault(void *);
+#endif
 #endif /* !_I386_TRAP_H_ */
