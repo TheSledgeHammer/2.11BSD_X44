@@ -356,7 +356,6 @@ parse_variable(_RuneLocale *rl, _UESEncodingInfo * __restrict ei)
 	p = rl->variable;
 	lenvar = rl->variable_len;
 
-	memset((void *)ei, 0, sizeof(*ei));
 	while (lenvar > 0) {
 		switch (toupper(*p)) {
 		case 'C':
