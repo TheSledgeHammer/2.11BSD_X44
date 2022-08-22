@@ -65,7 +65,7 @@ _rtld_digest_dynamic(obj)
 	const Elf_Dyn  *dyn_rpath = NULL;
 	enum Elf_e_dynamic_type plttype = Elf_edt_rel;
 	Elf_Word        relsz = 0, relasz = 0;
-	Elf_Word	pltrelsz = 0, pltrelasz = 0;
+	Elf_Word		pltrelsz = 0, pltrelasz = 0;
 
 	for (dynp = obj->dynamic; dynp->d_tag != Elf_edt_null; ++dynp) {
 		switch (dynp->d_tag) {

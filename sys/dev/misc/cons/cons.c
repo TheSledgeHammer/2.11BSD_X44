@@ -344,7 +344,9 @@ cnpoll(dev, events, p)
 }
 
 int
-cnkqfilter(dev_t dev, struct knote *kn)
+cnkqfilter(dev, kn)
+	dev_t dev;
+	struct knote *kn;
 {
 	const struct cdevsw *cdev;
 	int error;
@@ -369,7 +371,9 @@ cngetc(void)
 }
 
 int
-cngetsn(char *cp, int size)
+cngetsn(cp, size)
+	char *cp;
+	int size;
 {
 	char *lp;
 	int c, len;
@@ -446,7 +450,8 @@ cnpollc(on)
 }
 
 void
-cnbell(u_int pitch, u_int period, u_int volume)
+cnbell(pitch, period, volume)
+	u_int pitch, period, volume;
 {
 
 	if (cn_tab == NULL || cn_tab->cn_bell == NULL)
@@ -471,7 +476,9 @@ nullcnpollc(dev, on)
 }
 
 static const struct cdevsw *
-cn_redirect(dev_t *devp, int is_read, int *error)
+cn_redirect(devp, is_read, error)
+	dev_t *devp;
+	int is_read, *error;
 {
 	dev_t dev = *devp;
 

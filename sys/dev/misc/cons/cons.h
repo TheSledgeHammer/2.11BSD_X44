@@ -69,27 +69,21 @@ extern	struct consdev constab[];
 extern	struct consdev *cn_tab;
 
 void	cninit(void);
-int		cnopen(dev_t, int, int, struct proc *);
-int		cnclose(dev_t, int, int, struct proc *);
-int		cnread(dev_t, struct uio *, int);
-int		cnwrite(dev_t, struct uio *, int);
-int		cnioctl(dev_t, u_long, caddr_t, int, struct proc *);
-int		cnpoll(dev_t, int, struct proc *);
-int		cnkqfilter(dev_t, struct knote *);
-void	cnbell(u_int, u_int, u_int);
-void	cnflush(void);
 int		cngetc(void);
+int		cngetsn(char *, int);
 void	cnputc(int);
 void	cnpollc(int);
+void	cnbell(u_int, u_int, u_int);
+void	cnflush(void);
 void	cnrint(void);
 void	nullcnpollc(dev_t, int);
 
 /* console-specific types */
-#define	dev_type_cnprobe(n)	void n (struct consdev *)
-#define	dev_type_cninit(n)	void n (struct consdev *)
-#define	dev_type_cngetc(n)	int n (dev_t)
-#define	dev_type_cnputc(n)	void n (dev_t, int)
-#define	dev_type_cnpollc(n)	void n (dev_t, int)
+#define	dev_type_cnprobe(n)	void n(struct consdev *)
+#define	dev_type_cninit(n)	void n(struct consdev *)
+#define	dev_type_cngetc(n)	int n(dev_t)
+#define	dev_type_cnputc(n)	void n(dev_t, int)
+#define	dev_type_cnpollc(n)	void n(dev_t, int)
 #define	dev_type_cnbell(n)	void n(dev_t, u_int, u_int, u_int)
 #define	dev_type_cnflush(n)	void n(dev_t)
 

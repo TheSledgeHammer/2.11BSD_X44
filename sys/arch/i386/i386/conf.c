@@ -129,7 +129,7 @@ const struct cdevsw wskbd_cdevsw;
 const struct cdevsw wsmouse_cdevsw;
 const struct cdevsw wsmux_cdevsw;
 const struct cdevsw wsfont_cdevsw;
-const struct cdevsw mem_cdevsw;
+const struct cdevsw mm_cdevsw;
 
 /* linesw */
 const struct linesw ttydisc;
@@ -235,6 +235,7 @@ misc_init(devsw)
 {
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &apm_cdevsw, NULL);					/* Power Management (APM) Interface */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);				/* CMOS Interface */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &mm_cdevsw, NULL);					/* /dev/{null,mem,kmem,...} */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */
 }
 

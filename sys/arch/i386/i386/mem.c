@@ -106,7 +106,7 @@ dev_type_read(mmrw);
 dev_type_ioctl(mmioctl);
 dev_type_mmap(mmmmap);
 
-const struct cdevsw mem_cdevsw = {
+const struct cdevsw mm_cdevsw = {
 		.d_open = mmopen,
 		.d_close = nullclose,
 		.d_read = mmrw,

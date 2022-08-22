@@ -46,7 +46,7 @@
 #define ELFNAMEEND(x)   CONCAT(x,CONCAT(_elf,ELFSIZE))
 #define ELFDEFNNAME(x)  CONCAT(ELF,CONCAT(ELFSIZE,CONCAT(_,x)))
 
-static int protflags __P((int));	/* Elf flags -> mmap protection */
+static int protflags(int);	/* Elf flags -> mmap protection */
 
 /*
  * Map a shared object into memory.  The argument is a file descriptor,
