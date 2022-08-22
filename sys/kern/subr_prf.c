@@ -256,19 +256,6 @@ db_printf(const char *fmt, ...)
 	}
 }
 
-void
-db_vprintf(const char *fmt, va_list ap)
-{
-	va_list cap;
-
-	va_copy(cap, ap);
-	/* No mutex needed; DDB pauses all processors. */
-	prf2(fmt, TODDB, ap);
-	if (db_tee_msgbuf)
-		prf2(fmt, TOLOG, cap);
-	va_end(cap);
-}
-
 #endif /* DDB */
 
 /*
