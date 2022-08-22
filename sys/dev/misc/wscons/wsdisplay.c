@@ -53,15 +53,18 @@
 #include <sys/fcntl.h>
 #include <sys/vnode.h>
 
+#include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wsmuxvar.h>
-#include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsdisplayvar.h>
 #include <dev/misc/wscons/wsksymvar.h>
 #include <dev/misc/wscons/wsksymdef.h>
 #include <dev/misc/wscons/wsemulvar.h>
 #include <dev/misc/wscons/wscons_callbacks.h>
 #include <dev/misc/cons/cons.h>
+
+#include "locators.h"
+#include "ioconf.h"
 
 struct wsscreen_internal {
 	const struct wsdisplay_emulops *emulops;
@@ -144,8 +147,6 @@ struct wsdisplay_scroll_data wsdisplay_default_scroll_values = {
 };
 #endif
 
-extern struct cfdriver wsdisplay_cd;
-
 /* Autoconfiguration definitions. */
 static int wsdisplay_emul_match(struct device *, struct cfdata *, void *);
 static void wsdisplay_emul_attach(struct device *, struct device *, void *);
@@ -153,10 +154,12 @@ static int wsdisplay_noemul_match(struct device *, struct cfdata *, void *);
 static void wsdisplay_noemul_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(wsdisplay_emul, wsdisplay_emul_match, wsdisplay_emul_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, wsdisplay_emul, &wsdisplay_emul_cops, DV_DULL, sizeof(struct wsdisplay_softc));
-
+CFDRIVER_DECL(NULL, wsdisplay, &wsdisplay_emul_cops, DV_DULL, sizeof(struct wsdisplay_softc));
+/*
 CFOPS_DECL(wsdisplay_noemul, wsdisplay_noemul_match, wsdisplay_noemul_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, wsdisplay_noemul, &wsdisplay_noemul_cops, DV_DULL, sizeof(struct wsdisplay_softc));
+*/
+extern struct cfdriver wsdisplay_cd;
 
 /* Exported tty- and cdevsw-related functions. */
 dev_type_open(wsdisplayopen);
