@@ -69,7 +69,7 @@
  * to wait for something to come ready.
  */
 ENTRY(idle)
-		call	_C_LABEL(spl0)
+		call	_C_LABEL(spllower)
 		cmpl	$0,_C_LABEL(whichqs)
 		jne		sw1
 		hlt						# wait for interrupt
@@ -164,7 +164,7 @@ swfnd:
 		movl	%edi,_C_LABEL(whichqs)				# update q status
 
 		movl	$0,%eax
-		call	_C_LABEL(want_resched)
+		call	want_resched
 
 #ifdef	DIAGNOSTIC
 		cmpl	%eax,P_WCHAN(%ecx)
