@@ -181,4 +181,4 @@ void	stattach(struct device *, struct st_softc *, void *);
 int 	stactivate(struct device *, enum devact);
 int 	stdetach(struct device *, int);
 
-//extern struct cfdriver st_cd;
+extern struct cfdriver st_cd;
