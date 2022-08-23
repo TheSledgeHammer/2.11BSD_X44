@@ -177,8 +177,8 @@ struct st_softc {
 			 ST_FIXEDBLOCKS | ST_READONLY | ST_FM_WRITTEN |	\
 			 ST_2FM_AT_EOD | ST_PER_ACTION | ST_POSUPDATED)
 
-void	stattach (struct device *, struct st_softc *, void *);
-int 	stactivate (struct device *, enum devact);
-int 	stdetach (struct device *, int);
+void	stattach(struct device *, struct st_softc *, void *);
+int 	stactivate(struct device *, enum devact);
+int 	stdetach(struct device *, int);
 
-extern struct cfdriver st_cd;
+//extern struct cfdriver st_cd;

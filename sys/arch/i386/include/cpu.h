@@ -39,6 +39,7 @@
 #ifndef _I386_CPU_H_
 #define _I386_CPU_H_
 
+#ifndef _LOCORE
 /*
  * Definitions unique to i386 cpu support.
  */
@@ -95,8 +96,11 @@ void	cpu_need_proftick(struct proc *p);
 
 #define aston(p) 					((p)->p_md.md_astpending = 1)
 
+#endif /* !_LOCORE */
+
 #define	want_resched(p)				((p)->p_md.md_want_resched = 1) /* resched() was called */
 
+#ifndef _LOCORE
 #ifdef _KERNEL
 
 /*
@@ -193,4 +197,6 @@ int		isa_nmi(void);
 	{ "biosbasemem", CTLTYPE_INT }, 		\
 	{ "biosextmem", CTLTYPE_INT }, 			\
 }
+
+#endif /* !_LOCORE */
 #endif /* !_I386_CPU_H_ */

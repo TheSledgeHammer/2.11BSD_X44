@@ -243,7 +243,7 @@ int numccd = 0;
  * swap device since swapconf() has been called before now.
  */
 void
-cdattach(num)
+ccdattach(num)
 	int num;
 {
 	struct ccd_softc *cs;

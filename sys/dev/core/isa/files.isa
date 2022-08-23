@@ -34,5 +34,5 @@ file	dev/core/isa/com_multi.c		com_multi
 #
 # Other ISA disk controllers
 #
-attach	wdc at isa with wdc_isa
+attach wdc at isa with wdc_isa
 file	dev/core/isa/wdc_isa.c			wdc_isa

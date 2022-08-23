@@ -48,10 +48,8 @@ int 	isamatch(struct device *, struct cfdata *, void *);
 void 	isaattach(struct device *, struct device *, void *);
 int 	isaprint(void *, const char *);
 int		isasearch(struct device *, struct cfdata *, void *);
-
 void	isa_attach_subdevs(struct isa_softc *);
 void	isa_free_subdevs(struct isa_softc *);
-
 int		isasubmatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(isa, isamatch, isaattach, NULL, NULL);

@@ -33,7 +33,7 @@ file   arch/i386/i386/cpu.c					cpu
 
 # CMOS RAM #
 defpseudo cmos
-file	arch/i386/isa/cmos.c				cmos 						needs-flag
+file		arch/i386/isa/cmos.c					cmos 						needs-flag
 
 # PC Mice; Logitech-style, Microsoft-style, and PS/2-style
 device	lms: wsmousedev

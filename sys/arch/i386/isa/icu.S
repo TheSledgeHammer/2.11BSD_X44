@@ -37,12 +37,12 @@
  *	@(#)icu.s	8.1 (Berkeley) 6/11/93
  */
 
+#include "assym.h"
+
 #include <machine/asm.h>
 #include <machine/intr.h>
 #include <machine/psl.h>
 #include <machine/segments.h>
-
-#include "assym.h"
 
 		.data
 		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(idepth)
@@ -171,6 +171,7 @@ IDTVEC(softnet)
 		movl	_C_LABEL(imask) + IPL_SOFTNET * 4,%eax
 		movl	%eax,_C_LABEL(cpl)
 		xorl	%edi,%edi
+#if 0
 		xchgl	_C_LABEL(netisr),%edi
 
 #define DONET(s, c) 			\
@@ -183,8 +184,7 @@ IDTVEC(softnet)
 #include <net/netisr.h>
 
 #undef DONET
-
+#endif
 		movl	%ebx,_C_LABEL(cpl)
-
 		jmp		*%esi
 

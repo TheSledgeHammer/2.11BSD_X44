@@ -72,13 +72,13 @@ __KERNEL_RCSID(0, "$NetBSD: st_scsi.c,v 1.10.8.1 2004/09/11 12:59:02 he Exp $");
 #include <dev/disk/scsi/scsi_tape.h>
 #include <dev/disk/scsi/scsi_all.h>
 
-int		st_scsibus_match (struct device *, struct cfdata *, void *);
-void	st_scsibus_attach (struct device *, struct device *, void *);
-int		st_scsibus_ops (struct st_softc *, int, int);
-int		st_scsibus_read_block_limits (struct st_softc *, int);
-int		st_scsibus_mode_sense (struct st_softc *, int);
-int		st_scsibus_mode_select (struct st_softc *, int);
-int		st_scsibus_cmprss (struct st_softc *, int, int);
+int		st_scsibus_match(struct device *, struct cfdata *, void *);
+void	st_scsibus_attach(struct device *, struct device *, void *);
+int		st_scsibus_ops(struct st_softc *, int, int);
+int		st_scsibus_read_block_limits(struct st_softc *, int);
+int		st_scsibus_mode_sense(struct st_softc *, int);
+int		st_scsibus_mode_select(struct st_softc *, int);
+int		st_scsibus_cmprss(struct st_softc *, int, int);
 
 CFOPS_DECL(st_scsibus, st_scsibus_match, st_scsibus_attach, stdetach, stactivate);
 CFDRIVER_DECL(NULL, st_scsibus, &st_scsibus_cops, DV_TAPE, sizeof(struct st_softc));

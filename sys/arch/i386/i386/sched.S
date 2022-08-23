@@ -44,7 +44,7 @@
 #include <sys/errno.h>
 
 #include <machine/asm.h>
-//#include <machine/pcb.h>
+#include <machine/intr.h>
 #include <machine/psl.h>
 #include <machine/pte.h>
 #include <machine/trap.h>
@@ -59,7 +59,8 @@
  * by 4 actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
-		.globl	_C_LABEL(whichqs),_C_LABEL(qs),_C_LABEL(cnt),_C_LABEL(panic)
+		.globl	_C_LABEL(whichqs),_C_LABEL(qs)
+		.globl	_C_LABEL(cnt),_C_LABEL(panic)
 		.comm	_C_LABEL(noproc),4
 		.comm	_C_LABEL(runrun),4
 
@@ -73,12 +74,13 @@ ENTRY(idle)
 		jne		sw1
 		hlt						# wait for interrupt
 		jmp		idle
-
 		.align 	4 					/* ..so that profiling doesn't lump Idle with Xswitch().. */
 badsw:
 		pushl	$sw0
 		call	_C_LABEL(panic)
 		/*NOTREACHED*/
+sw0:
+		.asciz	"Xcpu_switch"
 
 /*
  * Swtch()
@@ -120,7 +122,7 @@ ENTRY(cpu_switch)
 1:
 #endif
 
-		movl	_C_LABEL(CMAP2),%eax							# save temporary map PTE
+		movl	_C_LABEL(CMAP2),%eax				# save temporary map PTE
 		movl	%eax,PCB_CMAP2(%ecx)				# in our context
 		movl	$0,_C_LABEL(curproc)				# out of process
 

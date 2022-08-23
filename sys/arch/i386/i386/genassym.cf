@@ -105,7 +105,6 @@ define V_TRAP 				offsetof(struct vmrate, v_trap)
 define V_INTR 				offsetof(struct vmrate, v_intr)
 
 define PAGE_SIZE			PGSIZE
-
 define USRSTACK 			USRSTACK
 
 define PCB_CR3 				offsetof(struct pcb, pcb_cr3)
@@ -118,6 +117,7 @@ define PCB_EDI 				offsetof(struct pcb, pcb_edi)
 define PCB_TSSD 			offsetof(struct pcb, pcb_tssd)
 define PCB_SAVEFPU 			offsetof(struct pcb, pcb_savefpu)
 define PCB_CMAP2 			offsetof(struct pcb, pcb_cmap2)
+define PCB_IML 				offsetof(struct pcb, pcb_iml)
 define PCB_ONFAULT 			offsetof(struct pcb, pcb_onfault)
 define PCB_VM86				offsetof(struct pcb, pcb_vm86)
 define PCB_SIZE				sizeof(struct pcb)
@@ -129,6 +129,7 @@ define TF_TRAPNO			offsetof(struct trapframe, tf_trapno)
 
 define ENOENT  				ENOENT
 define EFAULT  				EFAULT
+define MAXPATHLEN			MAXPATHLEN
 
 define IH_FUN				offsetof(struct intrhand, ih_fun)
 define IH_ARG				offsetof(struct intrhand, ih_arg)
@@ -169,4 +170,4 @@ define BI_SIZE				offsetof(struct bootinfo, bi_size)
 
 define VM86_FRAMESIZE		sizeof(struct vm86frame)
 
-define PC_TSS_GDT		offsetof(struct percpu, pc_tss_gdt)
+define PC_TSS_GDT			offsetof(struct percpu, pc_tss_gdt)

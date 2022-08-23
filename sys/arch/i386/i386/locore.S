@@ -52,6 +52,7 @@
 #include "ksyms.h"
 
 #include <sys/errno.h>
+#include <sys/reboot.h>
 #include <sys/syscall.h>
 
 #include <machine/asm.h>

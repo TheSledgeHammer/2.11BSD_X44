@@ -75,8 +75,8 @@ static u_int8_t dmamode[4] = {
 	DMA37MD_WRITE | DMA37MD_SINGLE | DMA37MD_LOOP
 };
 
-static inline void isa_dmaunmask (struct isa_softc *, int);
-static inline void isa_dmamask (struct isa_softc *, int);
+static inline void isa_dmaunmask(struct isa_softc *, int);
+static inline void isa_dmamask(struct isa_softc *, int);
 
 static inline void
 isa_dmaunmask(sc, chan)

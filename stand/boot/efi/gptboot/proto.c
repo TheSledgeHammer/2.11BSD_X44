@@ -36,7 +36,7 @@ __FBSDID("$FreeBSD$");
 
 #include "paths.h"
 #include "proto.h"
-#include "gpt.h"		/* FreeBSD: libsa/gpt.h & gpt.c */
+//#include "gpt.h"		/* FreeBSD: libsa/gpt.h & gpt.c */
 
 #include <machine/elf.h>
 #include <machine/stdarg.h>

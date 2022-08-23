@@ -69,8 +69,8 @@ struct wdc_isapnp_softc {
 	int						sc_drq;
 };
 
-int		wdc_isapnp_probe 	(struct device *, struct cfdata *, void *);
-void	wdc_isapnp_attach 	(struct device *, struct device *, void *);
+int		wdc_isapnp_probe(struct device *, struct cfdata *, void *);
+void	wdc_isapnp_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(wdc_isapnp, wdc_isapnp_probe, wdc_isapnp_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, wdc_isapnp, &wdc_isapnp_cops, DV_DULL, sizeof(struct wdc_isapnp_softc));

@@ -40,6 +40,7 @@
 
 #define	RB_BOOTINFO		0x80000000	/* have `struct bootinfo *' arg */
 
+#ifndef _LOCORE
 /*
  * Constants for converting boot-style device number to type,
  * adaptor (uba, mba, etc), unit number and partition number.
@@ -141,4 +142,6 @@ set_unit(num)
 {
 	int unit = (num >> B_UNITSHIFT) & B_UNITMASK;
 }
+
+#endif /* !_LOCORE */
 #endif

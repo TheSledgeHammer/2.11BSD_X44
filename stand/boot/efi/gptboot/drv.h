@@ -29,13 +29,13 @@
 #define _DRV_H_
 
 struct dsk {
-	int part;
+	int 	part;
 	daddr_t start;
-	void *devinfo;		/* Really a dev_into_t *, but that's not in scope */
+	void 	*devinfo;		/* Really a dev_into_t *, but that's not in scope */
 };
 
-int 	drvread(struct dsk *dskp, void *buf, daddr_t lba, unsigned nblk);
-int 	drvwrite(struct dsk *dskp, void *buf, daddr_t lba, unsigned nblk);
-uint64_t drvsize(struct dsk *dskp);
+int 		drvread(struct dsk *dskp, void *buf, daddr_t lba, unsigned nblk);
+int 		drvwrite(struct dsk *dskp, void *buf, daddr_t lba, unsigned nblk);
+uint64_t 	drvsize(struct dsk *dskp);
 
 #endif	/* !_DRV_H_ */

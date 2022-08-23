@@ -218,11 +218,11 @@ struct cfresource {
 			.cd_devsize = (size),						\
 	}
 
-#define CFDRIVER_DECL(devs, name, cops, clas, size) 	\
-	CFDRIVER_DECL1(devs, name, cops, clas, size)
-
 #define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
 	CFOPS_DECL1(name, matfn, attfn, detfn, actfn)
+
+#define CFDRIVER_DECL(devs, name, cops, clas, size) 	\
+	CFDRIVER_DECL1(devs, name, cops, clas, size)
 
 extern struct devicelist			alldevs;				/* head of list of all devices */
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */

@@ -11,7 +11,8 @@ options 		VNODEPAGER		# mmap() of files
 options 		DEVPAGER		# mmap() of devices
 
 options			EXEC_AOUT		# exec a.out binaries
-options 		EXEC_ELF32		# exec ELF binaries
+options 		EXEC_ELF32			# exec ELF binaries
+#options 			EXEC_MACHO		# exec MACH-O binaries
 options			EXEC_SCRIPT		# exec #! scripts
 
 # CPU support.  At least one is REQUIRED.
@@ -60,12 +61,9 @@ file-system 		UNION			# union file system
 # File system options
 options			QUOTA			# UFS quotas
 
-# Compatibility options
-#options 		COMPAT_43		# and 4.3BSD
-
 # Networking options
-options 		INET			# IP + ICMP + TCP + UDP
-options 		NS			# XNS
+#options 		INET			# IP + ICMP + TCP + UDP
+#options 		NS			# XNS
 
 # These options enable verbose messages for several subsystems.
 # Warning, these may compile large string tables into the kernel!
@@ -151,8 +149,20 @@ pcmcia* 		at pcic? controller ? socket ?
 # MCA bus support
 mca0			at mainbus?
 
+# ISA PCMCIA controllers
+pcic0			at isa? port 0x3e0 iomem 0xd0000 iosiz 0x10000
+pcic1			at isa? port 0x3e2 iomem 0xe0000 iosiz 0x4000
+pcic2			at isa? port 0x3e4 iomem 0xe0000 iosiz 0x4000
+
+
+# PCI PCMCIA controllers
+pcic0			at pci? dev? function ?
+
 # ISA Plug-and-Play bus support
 isapnp0 		at isa?
+
+# ISA Plug-and-Play PCMCIA controllers
+pcic*			at isapnp?
 
 # Coprocessor Support
 # Math Coprocessor support
@@ -180,19 +190,22 @@ sysbeep0		at pcppi?
 # Serial Devices
 
 # PCI serial interfaces
-#com*			at puc? port ?				# 16x50s on "universal" comm boards
+com*			at puc? port ?				# 16x50s on "universal" comm boards
+
+# ISA Plug-and-Play serial interfaces
+com*			at isapnp?			# Modems and serial boards
 
 # PCMCIA serial interfaces
-#com*			at pcmcia? function ?		# Modems and serial cards
+com*			at pcmcia? function ?		# Modems and serial cards
 
 # ISA serial interfaces
 #options 		COM_HAYESP					# adds Hayes ESP serial board support
-#com0			at isa? port 0x3f8 irq 4	# Standard PC serial ports
-#com1			at isa? port 0x2f8 irq 3
-#com2			at isa? port 0x3e8 irq 5
+com0			at isa? port 0x3f8 irq 4	# Standard PC serial ports
+com1			at isa? port 0x2f8 irq 3
+com2			at isa? port 0x3e8 irq 5
 
 # MCA serial interfaces
-#com*			at mca? slot ?			# 16x50s on comm boards
+com*			at mca? slot ?			# 16x50s on comm boards
 
 # Parallel Printer Interfaces
 
@@ -203,16 +216,6 @@ sysbeep0		at pcppi?
 #lpt0			at isa? port 0x378 irq 7	# standard PC parallel ports
 #lpt1			at isa? port 0x278
 #lpt2			at isa? port 0x3bc
-
-# Mice
-
-# ISA busmice
-lms0			at isa? port 0x23c irq 5	# Logitech bus mouse
-lms1			at isa? port 0x238 irq 5
-mms0			at isa? port 0x23c irq 5	# Microsoft InPort mouse
-mms1			at isa? port 0x238 irq 5
-wsmouse*		at lms? mux 0
-wsmouse*		at mms? mux 0
 
 # SCSI Controllers and Devices
 
@@ -237,6 +240,9 @@ pciide* 		at pci? dev ? function ? flags 0x0000	# GENERIC pciide driver
 
 # ISA Plug-and-Play IDE controllers
 wdc*			at isapnp?
+
+# PCMCIA IDE controllers
+wdc*			at pcmcia? function ?
 
 # ISA ST506, ESDI, and IDE controllers
 # Use flags 0x01 if you want to try to use 32bits data I/O (the driver will
@@ -267,33 +273,32 @@ atapibus* 		at atapi?
 
 # ATAPI devices
 # flags have the same meaning as for IDE drives.
-cd*				at atapibus? drive ? flags 0x0000	# ATAPI CD-ROM drives
-sd*				at atapibus? drive ? flags 0x0000	# ATAPI disk drives
+cd*			at atapibus? drive ? flags 0x0000	# ATAPI CD-ROM drives
+sd*			at atapibus? drive ? flags 0x0000	# ATAPI disk drives
 st*			at atapibus? drive ? flags 0x0000	# ATAPI tape drives
-uk*				at atapibus? drive ? flags 0x0000	# ATAPI unknown
+uk*			at atapibus? drive ? flags 0x0000	# ATAPI unknown
 
-# Network Interfaces
-
-# USB Controller and Devices
-
-# PCI USB controllers
-#ehci*			at pci?	dev ? function ?	# Enhanced Host Controller
-#ohci*			at pci?	dev ? function ?	# Open Host Controller
-#uhci*			at pci?	dev ? function ?	# Universal Host Controller (Intel)
-#xhci*			at pci?	dev ? function ?	# eXtensible Host Controller
-
-# USB bus support
-#usb*			at ehci?
-#usb*			at ohci?
-#usb*			at uhci?
-#usb*			at xhci?
+# Audio Devices
 
 # Audio support
-audio*			at audiobus?
+audio*		at audiobus?
 
 # MIDI support
 midi*			at midibus?
 midi*			at pcppi?		# MIDI interface to the PC speaker
+
+# The spkr driver provides a simple tone interface to the built in speaker.
+#spkr0		at pcppi?		# PC speaker
+
+# Mice
+
+# ISA busmice
+lms0			at isa? port 0x23c irq 5	# Logitech bus mouse
+lms1			at isa? port 0x238 irq 5
+mms0			at isa? port 0x23c irq 5	# Microsoft InPort mouse
+mms1			at isa? port 0x238 irq 5
+wsmouse*		at lms? mux 0
+wsmouse*		at mms? mux 0
 
 # Pseudo-Devices
 
