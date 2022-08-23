@@ -97,10 +97,14 @@ mapply(m, cf)
 
 	cd = cf->cf_driver;
 	cops = cd->cd_ops;
-	if (m->fn != NULL)
+	if (m->fn != NULL) {
 		pri = (*m->fn)(m->parent, cf, m->aux);
-	else
+	} else {
+		if (cops->cops_match == NULL) {
+			panic("mapply: no match function for '%s' device\n", cd->cd_name);
+		}
 		pri = (*cops->cops_match)(m->parent, cf, m->aux);
+	}
 	if (pri > m->pri) {
 		m->match = cf;
 		m->pri = pri;
@@ -230,7 +234,9 @@ config_found_sm(parent, aux, print, submatch)
 	if ((cf = config_search(submatch, parent, aux)) != NULL) {
 		return (config_attach(parent, cf, aux, print));
 	}
-	printf(msgs[(*print)(aux, parent->dv_xname)]);
+	if (print) {
+		printf(msgs[(*print)(aux, parent->dv_xname)]);
+	}
 	return (NULL);
 }
 
@@ -265,6 +271,46 @@ number(ep, n)
 	}
 	*--ep = n + '0';
 	return (ep);
+}
+
+/*
+ * Expand the size of the cd_devs array if necessary.
+ */
+void
+config_makeroom(n, cd)
+	int n;
+	struct cfdriver *cd;
+{
+	int old, new;
+	void **nsp;
+
+	if (n < cd->cd_ndevs) {
+		return;
+	}
+
+	/*
+	 * Need to expand the array.
+	 */
+	old = cd->cd_ndevs;
+	if (old == 0) {
+		new = MINALLOCSIZE / sizeof(void*);
+	} else {
+		new = old * 2;
+	}
+	while (new <= n) {
+		new *= 2;
+	}
+	cd->cd_ndevs = new;
+	nsp = calloc(new, sizeof(void*), M_DEVBUF, M_WAITOK);
+	if (nsp == NULL) {
+		panic("config_attach: %sing dev array", old != 0 ? "expand" : "creat");
+	}
+	bzero(nsp + old, (new - old) * sizeof(void*));
+	if (old != 0) {
+		bcopy(nsp, cd->cd_devs, old * sizeof(void*));
+		free(cd->cd_devs, M_DEVBUF);
+	}
+	cd->cd_devs = nsp;
 }
 
 /*
@@ -304,6 +350,9 @@ config_attach(parent, cf, aux, print)
 
 	/* get memory for all device vars */
 	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);	/* XXX cannot wait! */
+	if (!dev) {
+		panic("config_attach: memory allocation for device softc failed");
+	}
 	bzero(dev, cd->cd_devsize);
 	TAILQ_INSERT_TAIL(&alldevs, dev, dv_list);	/* link up */
 	dev->dv_class = cd->cd_class;
@@ -312,43 +361,21 @@ config_attach(parent, cf, aux, print)
 	bcopy(cd->cd_name, dev->dv_xname, lname);
 	bcopy(xunit, dev->dv_xname + lname, lunit);
 	dev->dv_parent = parent;
-	if (parent == ROOT)
+	dev->dv_flags = DVF_ACTIVE;	/* always initially active */
+	if (parent == ROOT) {
 		printf("%s (root)", dev->dv_xname);
-	else {
+	} else {
 		printf("%s at %s", dev->dv_xname, parent->dv_xname);
-		(void) (*print)(aux, (char *)0);
+		if (print) {
+			(void) (*print)(aux, NULL);
+		}
 	}
 
 	/* put this device in the devices array */
-	if (dev->dv_unit >= cd->cd_ndevs) {
-		/*
-		 * Need to expand the array.
-		 */
-		int old = cd->cd_ndevs, oldbytes, new, newbytes;
-		void **nsp;
-
-		if (old == 0) {
-			new = max(MINALLOCSIZE / sizeof(void *), dev->dv_unit + 1);
-			newbytes = new * sizeof(void *);
-			nsp = malloc(newbytes, M_DEVBUF, M_WAITOK);	/*XXX*/
-			bzero(nsp, newbytes);
-		} else {
-			new = cd->cd_ndevs;
-			do {
-				new *= 2;
-			} while (new <= dev->dv_unit);
-			oldbytes = old * sizeof(void *);
-			newbytes = new * sizeof(void *);
-			nsp = malloc(newbytes, M_DEVBUF, M_WAITOK);	/*XXX*/
-			bcopy(cd->cd_devs, nsp, oldbytes);
-			bzero(&nsp[old], newbytes - oldbytes);
-			free(cd->cd_devs, M_DEVBUF);
-		}
-		cd->cd_ndevs = new;
-		cd->cd_devs = nsp;
-	}
-	if (cd->cd_devs[dev->dv_unit])
+	config_makeroom(dev->dv_unit, cd);
+	if (cd->cd_devs[dev->dv_unit]) {
 		panic("config_attach: duplicate %s", dev->dv_xname);
+	}
 	cd->cd_devs[dev->dv_unit] = dev;
 
 	/*
@@ -365,8 +392,8 @@ config_attach(parent, cf, aux, print)
 			}
 		}
 	}
-	(*cops->cops_attach)(parent, dev, aux);
 
+	(*cops->cops_attach)(parent, dev, aux);
 	config_process_deferred(&deferred_config_queue, dev);
 	return (dev);
 }

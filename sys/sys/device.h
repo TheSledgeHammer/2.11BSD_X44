@@ -103,7 +103,6 @@ struct cfdata {
 	int					cf_flags;				/* flags from config */
 	short				*cf_parents;			/* potential parents */
 	const char 			**cf_locnames;			/* locator names (machine dependent) */
-//	void				(**cf_ivstubs)(void);	/* config-generated vectors, if any */
 };
 #define FSTATE_NOTFOUND	0						/* has not been found */
 #define	FSTATE_FOUND	1						/* has been found */

@@ -25,6 +25,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - ld.so: To Update
 
 ## sbin:
+- config:
+	- update mkioconf.c: 
+		- current: cfdriver does not handle multiple instances with different
+		attributes of	the same device.
+		- update: cfdriver to handle different attributes on the same device. 
+		Similar to NetBSD 1.6 & 2.1
 
 ## share:
 
@@ -55,6 +61,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## ddb:
 
 ## kern:
+- update device.h & subr_autoconf.c: improve device configuration handling
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.
