@@ -58,7 +58,6 @@
 static int cf_locnames_print(const char *, void *, void *);
 static int cforder(const void *, const void *);
 static int emitcfdata(FILE *);
-static int emitcfdrivers(FILE *);
 static int emitexterns(FILE *);
 static int emithdr(FILE *);
 static int emitloc(FILE *);
@@ -89,7 +88,7 @@ mkioconf(void)
 		return (1);
 	}
 	v = emithdr(fp);
-	if (v != 0 || emitcfdrivers(fp) || emitexterns(fp) || emitloc(fp)
+	if (v != 0 || emitexterns(fp) || emitloc(fp)
 			|| emitpv(fp) || emitcfdata(fp) || emitroots(fp)
 			|| emitpseudo(fp)) {
 		if (v >= 0)
@@ -164,32 +163,19 @@ emithdr(FILE *ofp)
 }
 
 static int
-emitcfdrivers(FILE *fp)
+emitexterns(FILE *fp)
 {
 	struct devbase *d;
+	struct deva *da;
 
 	NEWLINE;
 	TAILQ_FOREACH(d, &allbases, d_next) {
 		if (!devbase_has_instances(d, WILD))
 			continue;
-		if (fprintf(fp, "struct cfdriver %s_cd = {\n",
+		if (fprintf(fp, "extern struct cfdriver %s_cd;\n",
 			    d->d_name) < 0)
 			return (1);
-		if (fprintf(fp, "\tNULL, \"%s\", %s\n",
-			    d->d_name, d->d_classattr != NULL ?
-			    d->d_classattr->a_devclass : "DV_DULL") < 0)
-			return (1);
-		if (fprintf(fp, "};\n\n") < 0)
-			return (1);
 	}
-	return (0);
-}
-
-static int
-emitexterns(FILE *fp)
-{
-	struct deva *da;
-	
 	NEWLINE;
 	TAILQ_FOREACH(da, &alldevas, d_next) {
 		if (!deva_has_instances(da, WILD))
