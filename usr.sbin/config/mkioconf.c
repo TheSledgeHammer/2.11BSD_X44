@@ -192,7 +192,7 @@ emitexterns(FILE *fp)
 	
 	NEWLINE;
 	TAILQ_FOREACH(da, &alldevas, d_next) {
-		if (!devbase_has_instances(da, WILD))
+		if (!deva_has_instances(da, WILD))
 			continue;
 		if (fprintf(fp, "extern struct cfattach %s_ca;\n",
 			    da->d_name) < 0)
