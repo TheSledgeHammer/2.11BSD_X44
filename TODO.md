@@ -56,7 +56,8 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## kern:
 - update device.h & subr_autoconf.c: improve device configuration handling
-	- change cfdriver to be matched by cfattach name and unit (currently). e.g. wsdisplay0
+	- change cfdriver to be matched by cfattach name and unit (currently).
+	e.g. wsdisplay0 & wsdisplay1 would reference both attached wsdisplay drivers
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.
