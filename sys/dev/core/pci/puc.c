@@ -102,6 +102,7 @@ int		puc_submatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(puc, puc_match, puc_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, puc, &puc_cops, DV_DULL, sizeof(struct puc_softc));
+CFATTACH_DECL(puc, 0, &puc_cd);
 
 const struct puc_device_description *
 	puc_find_description(pcireg_t, pcireg_t, pcireg_t, pcireg_t);

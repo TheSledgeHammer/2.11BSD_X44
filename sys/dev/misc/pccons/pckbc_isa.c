@@ -59,6 +59,7 @@ struct pckbc_isa_softc {
 
 CFOPS_DECL(pckbc_isa, pckbc_isa_match, pckbc_isa_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pckbc_isa, &pckbc_isa_cops, DV_DULL, sizeof(struct pckbc_isa_softc));
+CFATTACH_DECL(pckbc_isa, 0, &pckbc_isa_cd);
 
 void	pckbc_isa_intr_establish(struct pckbc_softc *, pckbc_slot_t);
 

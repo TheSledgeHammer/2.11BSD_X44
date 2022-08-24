@@ -66,13 +66,14 @@ struct uk_softc {
 	struct scsipi_periph *sc_periph; /* all the inter level info */
 };
 
-int ukmatch (struct device *, struct cfdata *, void *);
-void ukattach (struct device *, struct device *, void *);
-int ukactivate (struct device *, enum devact);
-int ukdetach (struct device *, int);
+int ukmatch(struct device *, struct cfdata *, void *);
+void ukattach(struct device *, struct device *, void *);
+int ukactivate(struct device *, enum devact);
+int ukdetach(struct device *, int);
 
 CFOPS_DECL(uk, ukmatch, ukattach, ukdetach, ukactivate);
 CFDRIVER_DECL(NULL, uk, &uk_cops, DV_DULL, sizeof(struct uk_softc));
+CFATTACH_DECL(uk, 0, &uk_cd);
 
 extern struct cfdriver uk_cd;
 

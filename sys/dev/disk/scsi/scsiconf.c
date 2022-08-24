@@ -91,17 +91,18 @@ struct scsi_initq {
 static TAILQ_HEAD(, scsi_initq) scsi_initq_head = TAILQ_HEAD_INITIALIZER(scsi_initq_head);
 static struct lock_object scsibus_interlock;	/* initialized in scsipi_base.c */
 
-int	scsi_probe_device (struct scsibus_softc *, int, int);
+int	scsi_probe_device(struct scsibus_softc *, int, int);
 
-int	scsibusmatch (struct device *, struct cfdata *, void *);
-void	scsibusattach (struct device *, struct device *, void *);
-int	scsibusactivate (struct device *, enum devact);
-int	scsibusdetach (struct device *, int flags);
+int	scsibusmatch(struct device *, struct cfdata *, void *);
+void	scsibusattach(struct device *, struct device *, void *);
+int	scsibusactivate(struct device *, enum devact);
+int	scsibusdetach(struct device *, int flags);
 
-int	scsibussubmatch (struct device *, struct cfdata *, void *);
+int	scsibussubmatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(scsibus, scsibusmatch, scsibusattach, scsibusdetach, scsibusactivate);
 CFDRIVER_DECL(NULL, scsibus, &scsibus_cops, DV_DULL, sizeof(struct scsibus_softc));
+CFATTACH_DECL(scsibus, 0, &scsibus_cd);
 
 extern struct cfdriver scsibus_cd;
 
@@ -123,8 +124,8 @@ const struct cdevsw scsibus_cdevsw = {
 	.d_type = D_OTHER
 };
 
-int	scsibusprint (void *, const char *);
-void	scsibus_config (struct scsipi_channel *, void *);
+int	scsibusprint(void *, const char *);
+void	scsibus_config(struct scsipi_channel *, void *);
 
 const struct scsipi_bustype scsi_bustype = {
 	SCSIPI_BUSTYPE_SCSI,

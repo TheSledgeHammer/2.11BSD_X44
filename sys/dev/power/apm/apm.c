@@ -129,6 +129,7 @@ const struct cdevsw apm_cdevsw = {
 
 CFOPS_DECL(apm, apm_match, apm_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, apm, &apm_cops, DV_DULL, sizeof(struct apm_softc));
+CFATTACH_DECL(apm, 0, &apm_cd);
 
 /* configurable variables */
 #ifdef APM_NO_STANDBY

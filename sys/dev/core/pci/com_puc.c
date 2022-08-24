@@ -65,6 +65,7 @@ void	com_puc_attach (struct device *, struct device *, void *);
 
 CFOPS_DECL(com_puc, com_puc_probe, com_puc_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, com_puc, &com_puc_cops, DV_DULL, sizeof(struct com_puc_softc));
+CFATTACH_DECL(com_puc, 0, &com_puc_cd);
 
 int
 com_puc_probe(parent, match, aux)

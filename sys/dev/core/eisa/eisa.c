@@ -61,6 +61,7 @@ void 	eisa_devinfo (const char *, char *);
 
 CFOPS_DECL(eisa, eisamatch, eisaattach, NULL, NULL);
 CFDRIVER_DECL(NULL, eisa, &eisa_cops, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(eisa, 0, &eisa_cd);
 
 int
 eisamatch(parent, cf, aux)

@@ -61,8 +61,9 @@ void mainbus_attach (struct device *, struct device *, void *);
 
 CFOPS_DECL(mainbus, mainbus_match, mainbus_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, mainbus, &mainbus_cops, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(mainbus, 0, &mainbus_cd);
 
-int	mainbus_print (void *, const char *);
+int	mainbus_print(void *, const char *);
 
 union mainbus_attach_args {
 	const char 					*mba_busname;		/* first elem of all */

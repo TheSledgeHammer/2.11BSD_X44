@@ -182,6 +182,7 @@ static enctyp ses_device_type (struct scsipibus_attach_args *);
 
 CFOPS_DECL(ses, ses_match, ses_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, ses, &ses_cops, DV_DULL, sizeof(struct ses_softc));
+CFATTACH_DECL(ses, 0, &ses_cd);
 
 extern struct cfdriver ses_cd;
 

@@ -56,17 +56,18 @@ const struct scsipi_periphsw atapi_probe_periphsw = {
 	NULL,
 };
 
-int		atapibusmatch (struct device *, struct cfdata *, void *);
-void	atapibusattach (struct device *, struct device *, void *);
-int		atapibusactivate (struct device *, enum devact);
-int		atapibusdetach (struct device *, int flags);
+int		atapibusmatch(struct device *, struct cfdata *, void *);
+void	atapibusattach(struct device *, struct device *, void *);
+int		atapibusactivate(struct device *, enum devact);
+int		atapibusdetach(struct device *, int flags);
 
-int		atapibussubmatch (struct device *, struct cfdata *, void *);
+int		atapibussubmatch(struct device *, struct cfdata *, void *);
 
-int		atapi_probe_bus (struct atapibus_softc *, int);
+int		atapi_probe_bus(struct atapibus_softc *, int);
 
 CFOPS_DECL(atapibus, atapibusmatch, atapibusattach, atapibusdetach, atapibusactivate);
 CFDRIVER_DECL(NULL, atapibus, &atapibus_cops, DV_DISK, sizeof(struct atapibus_softc));
+CFATTACH_DECL(atapibus, 0, &atapibus_cd);
 
 extern struct cfdriver atapibus_cd;
 

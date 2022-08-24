@@ -150,6 +150,7 @@ int		cddetach(struct device *, int);
 
 CFOPS_DECL(cd, cdmatch, cdattach, cddetach, cdactivate);
 CFDRIVER_DECL(NULL, cd, &cd_cops, DV_DISK, sizeof(struct cd_softc));
+CFATTACH_DECL(cd, 0, &cd_cd);
 
 extern struct cfdriver cd_cd;
 

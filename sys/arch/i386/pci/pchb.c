@@ -56,13 +56,13 @@
 #define PCISET_BRIDGE_NUMBER(reg)	(((reg) >> 8) & 0xff)
 #define PCISET_PCI_BUS_NUMBER(reg)	(((reg) >> 16) & 0xff)
 
-int		pchbmatch (struct device *, struct cfdata *, void *);
-void	pchbattach (struct device *, struct device *, void *);
-
-int		pchb_print (void *, const char *);
+int		pchbmatch(struct device *, struct cfdata *, void *);
+void	pchbattach(struct device *, struct device *, void *);
+int		pchb_print(void *, const char *);
 
 CFOPS_DECL(pchb, pchbmatch, pchbattach, NULL, NULL);
 CFDRIVER_DECL(NULL, pchb, &pchb_cops, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(pchb, 0, &pchb_cd);
 
 int
 pchbmatch(parent, match, aux)

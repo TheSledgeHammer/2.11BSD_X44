@@ -57,11 +57,12 @@ __KERNEL_RCSID(0, "$NetBSD: pceb.c,v 1.12 2003/02/26 22:23:07 fvdl Exp $");
 //#include "eisa.h"
 //#include "isa.h"
 
-int		pcebmatch (struct device *, struct cfdata *, void *);
-void	pcebattach (struct device *, struct device *, void *);
+int		pcebmatch(struct device *, struct cfdata *, void *);
+void	pcebattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(pceb, pcebmatch, pcebattach, NULL, NULL);
 CFDRIVER_DECL(NULL, pceb, &pceb_cops, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(pceb, 0, &pceb_cd);
 
 void	pceb_callback (struct device *);
 int		pceb_print (void *, const char *);

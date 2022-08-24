@@ -316,6 +316,24 @@ config_makeroom(n, cd)
 	cd->cd_devs = nsp;
 }
 
+void
+config_cfattach_attach(ca, cd)
+	register struct cfattach *ca;
+	register struct cfdriver *cd;
+{
+	ca->ca_driver = cd;
+	LIST_INSERT_HEAD(&allattachs, ca, ca_list);
+}
+
+void
+config_cfattach_detach(ca, cd)
+	register struct cfattach *ca;
+	register struct cfdriver *cd;
+{
+	ca->ca_driver = cd;
+	LIST_REMOVE(ca, ca_list);
+}
+
 /*
  * Attach a found device.  Allocates memory for device variables.
  */
@@ -398,8 +416,8 @@ config_attach(parent, cf, aux, print)
 		}
 	}
 
-	/* add to attachments */
-	LIST_INSERT_HEAD(&allattachs, ca, ca_list);
+	/* link to attachments */
+	config_cfattach_attach(ca, cd);
 
 	(*cops->cops_attach)(parent, dev, aux);
 	config_process_deferred(&deferred_config_queue, dev);
@@ -487,8 +505,6 @@ config_detach(dev, flags)
 		}
 	}
 
-	LIST_REMOVE(ca, ca_list);
-
 	/*
 	 * Unlink from device list.
 	 */
@@ -514,6 +530,11 @@ config_detach(dev, flags)
 		cd->cd_devs = NULL;
 		cd->cd_ndevs = 0;
 	}
+
+	/*
+	 * Unlink from attachment list.
+	 */
+	config_cfattach_detach(ca, cd);
 
 	/*
 	 * Return success.

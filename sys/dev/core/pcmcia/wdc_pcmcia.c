@@ -84,6 +84,7 @@ static int wdc_pcmcia_detach (struct device *, int);
 
 CFOPS_DECL(wdc_pcmcia, wdc_pcmcia_match, wdc_pcmcia_attach, wdc_pcmcia_detach, NULL);
 CFDRIVER_DECL(NULL, wdc_pcmcia, &wdc_pcmcia_cops, DV_DULL, sizeof(struct wdc_pcmcia_softc));
+CFATTACH_DECL(wdc_pcmcia, 0, &wdc_cd);
 
 const struct wdc_pcmcia_product {
 	u_int32_t	wpp_vendor;	/* vendor ID */

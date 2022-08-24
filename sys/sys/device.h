@@ -124,9 +124,10 @@ typedef int				(*cfactivate_t)(struct device *, enum devact);
  */
 LIST_HEAD(cfattachlist, cfattach);
 struct cfattach {
-	const char			*ca_dname;				/* name of attachment */
-	size_t				ca_ddevsize;			/* size of dev attachment */
-	LIST_ENTRY(cfattach)ca_list;				/* link on cfdriver's list */
+	const char			*ca_name;				/* name of attachment */
+	short				ca_unit;			    /* attachment unit number */
+	struct cfdriver     *ca_driver;             /* the cfdriver i am linked too */
+	LIST_ENTRY(cfattach)ca_list;				/* list of attached cfdriver's */
 };
 
 struct cfdriver {
@@ -201,7 +202,7 @@ struct cfresource {
 	} cr_u;
 };
 
-/* cfdriver and cfops declarations */
+/* cfattach, cfdriver and cfops declarations */
 #define CFOPS_STRUCT_DECL(name)							\
 	struct cfops (name##_cops)
 
@@ -228,10 +229,11 @@ struct cfresource {
 #define CFATTACH_STRUCT_DECL(name)						\
 	struct cfattach (name##_ca)
 
-#define CFATTACH_DECL1(name, size)						\
+#define CFATTACH_DECL1(name, unit, driver)				\
 	CFATTACH_STRUCT_DECL(name) = {						\
-			.ca_dname = (#name),						\
-			.ca_ddevsize = (size),						\
+			.ca_name = (#name),							\
+			.ca_unit = (unit),							\
+			.ca_driver = (driver),						\
 			.ca_list = { 0 },							\
 	}
 
@@ -241,11 +243,11 @@ struct cfresource {
 #define CFDRIVER_DECL(devs, name, cops, clas, size) 	\
 	CFDRIVER_DECL1(devs, name, cops, clas, size)
 
-#define CFATTACH_DECL(name, size)						\
-	CFATTACH_DECL1(name, size)
+#define CFATTACH_DECL(name, unit, driver)				\
+	CFATTACH_DECL1(name, unit, driver)
 
 extern struct devicelist			alldevs;				/* head of list of all devices */
-extern struct cfattachlist			allattachs;
+extern struct cfattachlist			allattachs;				/* head of list of all attachments */
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */
 extern struct deferred_config_head	interrupt_config_queue;	/* head of interrupt queue */
 extern struct evcntlist				allevents;				/* head of list of all events */

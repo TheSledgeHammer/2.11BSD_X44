@@ -138,6 +138,7 @@ void	npx_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(npx, npx_probe, npx_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, npx, &npx_cops, DV_DULL, sizeof(struct npx_softc));
+CFATTACH_DECL(npx, 0, &npx_cd);
 
 static int	npxdna_notset(struct cpu_info *);
 int		npxintr(void *);

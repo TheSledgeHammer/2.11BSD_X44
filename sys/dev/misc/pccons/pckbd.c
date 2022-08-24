@@ -135,6 +135,7 @@ void pckbdattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(pckbd, pckbdprobe, pckbdattach, NULL, NULL);
 CFDRIVER_DECL(NULL, pckbd, &pckbd_cops, DV_DULL, sizeof(struct pckbd_softc));
+CFATTACH_DECL(pckbd, 0, &pckbd_cd);
 
 int		pckbd_enable(void *, int);
 void	pckbd_set_leds(void *, int);
