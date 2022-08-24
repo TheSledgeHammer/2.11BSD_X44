@@ -96,6 +96,7 @@ struct evcnt {
  * Configuration data (i.e., data placed in ioconf.c).
  */
 struct cfdata {
+	struct cfattach 	*cf_attach;				/* config attachment */
 	struct cfdriver 	*cf_driver;				/* config driver */
 	short				cf_unit;				/* unit number */
 	short				cf_fstate;				/* finding state (below) */
@@ -121,6 +122,13 @@ typedef int				(*cfactivate_t)(struct device *, enum devact);
  * an array of pointers.  The array itself must be dynamic since devices
  * can be found long after the machine is up and running.
  */
+LIST_HEAD(cfattachlist, cfattach);
+struct cfattach {
+	const char			*ca_dname;				/* name of attachment */
+	size_t				ca_ddevsize;			/* size of dev attachment */
+	LIST_ENTRY(cfattach)ca_list;				/* link on cfdriver's list */
+};
+
 struct cfdriver {
 	void				**cd_devs;				/* devices found */
 	char				*cd_name;				/* device name */
@@ -217,13 +225,27 @@ struct cfresource {
 			.cd_devsize = (size),						\
 	}
 
+#define CFATTACH_STRUCT_DECL(name)						\
+	struct cfattach (name##_ca)
+
+#define CFATTACH_DECL1(name, size)						\
+	CFATTACH_STRUCT_DECL(name) = {						\
+			.ca_dname = (#name),						\
+			.ca_ddevsize = (size),						\
+			.ca_list = { 0 },							\
+	}
+
 #define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
 	CFOPS_DECL1(name, matfn, attfn, detfn, actfn)
 
 #define CFDRIVER_DECL(devs, name, cops, clas, size) 	\
 	CFDRIVER_DECL1(devs, name, cops, clas, size)
 
+#define CFATTACH_DECL(name, size)						\
+	CFATTACH_DECL1(name, size)
+
 extern struct devicelist			alldevs;				/* head of list of all devices */
+extern struct cfattachlist			allattachs;
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */
 extern struct deferred_config_head	interrupt_config_queue;	/* head of interrupt queue */
 extern struct evcntlist				allevents;				/* head of list of all events */

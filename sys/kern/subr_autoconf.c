@@ -58,6 +58,8 @@ struct deferred_config_head	deferred_config_queue = TAILQ_HEAD_INITIALIZER(defer
 struct deferred_config_head	interrupt_config_queue = TAILQ_HEAD_INITIALIZER(interrupt_config_queue);
 struct evcntlist allevents = TAILQ_HEAD_INITIALIZER(allevents);
 
+struct cfattachlist	allattachs = LIST_HEAD_INITIALIZER(allattachs);
+
 static void config_process_deferred(struct deferred_config_head *, struct device *);
 
 __volatile int config_pending;		/* semaphore for mountroot */
@@ -198,8 +200,9 @@ config_rootsearch(fn, rootname, aux)
 	 */
 	for (p = cfroots; *p >= 0; p++) {
 		cf = &cfdata[*p];
-		if (strcmp(cf->cf_driver->cd_name, rootname) == 0)
+		if (strcmp(cf->cf_driver->cd_name, rootname) == 0) {
 			mapply(&m, cf);
+		}
 	}
 	return (m.match);
 }
@@ -324,6 +327,7 @@ config_attach(parent, cf, aux, print)
 	cfprint_t 		print;
 {
 	register struct device *dev;
+	register struct cfattach *ca;
 	register struct cfdriver *cd;
 	register struct cfops *cops;
 	register size_t lname, lunit;
@@ -331,6 +335,7 @@ config_attach(parent, cf, aux, print)
 	int myunit;
 	char num[10];
 
+	ca = cf->cf_attach;
 	cd = cf->cf_driver;
 	cops = cd->cd_ops;
 	if (cd->cd_devsize < sizeof(struct device))
@@ -393,6 +398,9 @@ config_attach(parent, cf, aux, print)
 		}
 	}
 
+	/* add to attachments */
+	LIST_INSERT_HEAD(&allattachs, ca, ca_list);
+
 	(*cops->cops_attach)(parent, dev, aux);
 	config_process_deferred(&deferred_config_queue, dev);
 	return (dev);
@@ -413,6 +421,7 @@ config_detach(dev, flags)
 	int flags;
 {
 	struct cfdata *cf;
+	struct cfattach *ca;
 	struct cfdriver *cd;
 	struct cfops	*cops;
 #ifdef DIAGNOSTIC
@@ -425,6 +434,7 @@ config_detach(dev, flags)
 	if (cf->cf_fstate != FSTATE_FOUND && cf->cf_fstate != FSTATE_STAR)
 		panic("config_detach: bad device fstate");
 #endif
+	ca = cf->cf_attach;
 	cd = cf->cf_driver;
 	cops = cd->cd_ops;
 
@@ -476,6 +486,8 @@ config_detach(dev, flags)
 				cf->cf_unit--;
 		}
 	}
+
+	LIST_REMOVE(ca, ca_list);
 
 	/*
 	 * Unlink from device list.

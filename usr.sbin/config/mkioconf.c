@@ -58,6 +58,7 @@
 static int cf_locnames_print(const char *, void *, void *);
 static int cforder(const void *, const void *);
 static int emitcfdata(FILE *);
+static int emitcfdrivers(FILE *);
 static int emitexterns(FILE *);
 static int emithdr(FILE *);
 static int emitloc(FILE *);
@@ -88,8 +89,9 @@ mkioconf(void)
 		return (1);
 	}
 	v = emithdr(fp);
-	if (v != 0 || emitexterns(fp) || emitloc(fp) || emitpv(fp) ||
-	    emitcfdata(fp) || emitroots(fp) || emitpseudo(fp)) {
+	if (v != 0 || emitcfdrivers(fp) || emitexterns(fp) || emitloc(fp)
+			|| emitpv(fp) || emitcfdata(fp) || emitroots(fp)
+			|| emitpseudo(fp)) {
 		if (v >= 0)
 			(void)fprintf(stderr,
 			    "config: error writing ioconf.c: %s\n",
@@ -162,16 +164,38 @@ emithdr(FILE *ofp)
 }
 
 static int
-emitexterns(FILE *fp)
+emitcfdrivers(FILE *fp)
 {
 	struct devbase *d;
-	
+
 	NEWLINE;
 	TAILQ_FOREACH(d, &allbases, d_next) {
 		if (!devbase_has_instances(d, WILD))
 			continue;
-		if (fprintf(fp, "extern struct cfdriver %s_cd;\n",
+		if (fprintf(fp, "struct cfdriver %s_cd = {\n",
 			    d->d_name) < 0)
+			return (1);
+		if (fprintf(fp, "\tNULL, \"%s\", %s\n",
+			    d->d_name, d->d_classattr != NULL ?
+			    d->d_classattr->a_devclass : "DV_DULL") < 0)
+			return (1);
+		if (fprintf(fp, "};\n\n") < 0)
+			return (1);
+	}
+	return (0);
+}
+
+static int
+emitexterns(FILE *fp)
+{
+	struct deva *da;
+	
+	NEWLINE;
+	TAILQ_FOREACH(da, &alldevas, d_next) {
+		if (!devbase_has_instances(da, WILD))
+			continue;
+		if (fprintf(fp, "extern struct cfattach %s_ca;\n",
+			    da->d_name) < 0)
 			return (1);
 	}
 	return (0);
@@ -261,7 +285,7 @@ emitcfdata(FILE *fp)
 {
 	struct devi **p, *i, **ps;
 	int unit, v;
-	const char *state, *basename;
+	const char *state, *basename, *attachment;
 	struct nvlist *nv;
 	struct attr *a;
 	char *loc;
@@ -273,7 +297,7 @@ emitcfdata(FILE *fp)
 #define STAR FSTATE_STAR\n\
 \n\
 struct cfdata cfdata[] = {\n\
-    /* driver        unit state loc   flags parents  locnames */\n") < 0)
+    /* attachment       driver        unit state loc   flags parents  locnames */\n") < 0)
 		return (1);
 	for (p = packed; (i = *p) != NULL; p++) {
 		/* the description */
@@ -305,6 +329,7 @@ struct cfdata cfdata[] = {\n\
 
 		/* then the actual defining line */
 		basename = i->i_base->d_name;
+		attachment = i->i_atdeva->d_name;
 		if (i->i_unit == STAR) {
 			unit = i->i_base->d_umax;
 			state = "STAR";
@@ -319,9 +344,11 @@ struct cfdata cfdata[] = {\n\
 			loc = "loc";
 		}
 		if (fprintf(fp, "\
-	    {&%s_cd,%s%2d, %s, %7s, %#6x, pv+%2d, %scf_locnames},\n",
-				basename, strlen(basename) < 3 ? "\t\t" : "\t", unit, state, loc,
-				i->i_cfflags, i->i_pvoff, a->a_locs ? a->a_name : "null") < 0)
+		    {&%s_ca,%s&%s_cd,%s%2d, %s, %7s, %#6x, pv+%2d, %scf_locnames},\n",
+				    attachment, strlen(attachment) < 6 ? "\t\t" : "\t",
+				    basename, strlen(basename) < 3 ? "\t\t" : "\t", unit,
+				    state, loc, i->i_cfflags, i->i_pvoff,
+				    a->a_locs ? a->a_name : "null") < 0)
 			return (1);
 	}
 	return (fputs("    {0}\n};\n", fp) < 0);
