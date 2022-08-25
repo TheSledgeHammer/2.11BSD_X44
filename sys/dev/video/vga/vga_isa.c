@@ -51,8 +51,8 @@ int		vga_isa_match(struct device *, struct cfdata *, void *);
 void	vga_isa_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(vga_isa, vga_isa_match, vga_isa_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, vga_isa, &vga_isa_cops, DV_DULL, sizeof(struct vga_softc));
-CFATTACH_DECL(vga_isa, 0, &vga_isa_cd);
+CFDRIVER_DECL(NULL, vga, &vga_isa_cops, DV_DULL, sizeof(struct vga_softc));
+CFATTACH_DECL(vga_isa, 0, &vga_cd);
 
 int
 vga_isa_match(struct device *parent, struct cfdata *match, void *aux)
