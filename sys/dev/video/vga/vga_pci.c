@@ -75,8 +75,8 @@ void	vga_pci_attach(struct device *, struct device *, void *);
 static int vga_pci_lookup_quirks(struct pci_attach_args *);
 
 CFOPS_DECL(vga_pci, vga_pci_match, vga_pci_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, vga_pci, &vga_pci_cops, DV_DULL, sizeof(struct vga_pci_softc));
-CFATTACH_DECL(vga_pci, 0, &vga_pci_cd);
+CFDRIVER_DECL(NULL, vga, &vga_pci_cops, DV_DULL, sizeof(struct vga_pci_softc));
+CFATTACH_DECL(vga_pci, 0, &vga_cd);
 
 extern struct cfdriver vga_pci_cd;
 
