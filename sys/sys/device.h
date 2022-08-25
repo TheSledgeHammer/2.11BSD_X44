@@ -203,22 +203,16 @@ struct cfresource {
 };
 
 /* cfattach, cfdriver and cfops declarations */
-#define CFOPS_STRUCT_DECL(name)							\
-	struct cfops (name##_cops)
-
-#define CFOPS_DECL1(name, matfn, attfn, detfn, actfn) 	\
-	CFOPS_STRUCT_DECL(name) = {							\
+#define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
+	struct cfops (name##_cops) = {							\
 			.cops_match = (matfn),						\
 			.cops_attach = (attfn),						\
 			.cops_detach = (detfn),						\
 			.cops_activate = (actfn),					\
 	}
 
-#define CFDRIVER_STRUCT_DECL(name)						\
-	struct cfdriver (name##_cd)
-
-#define CFDRIVER_DECL1(devs, name, cops, clas, size)	\
-	CFDRIVER_STRUCT_DECL(name) = { 						\
+#define CFDRIVER_DECL(devs, name, cops, clas, size)	\
+	struct cfdriver (name##_cd) = { 						\
 			.cd_devs = (devs),							\
 			.cd_name = (#name),							\
 			.cd_ops = (cops),							\
@@ -226,25 +220,13 @@ struct cfresource {
 			.cd_devsize = (size),						\
 	}
 
-#define CFATTACH_STRUCT_DECL(name)						\
-	struct cfattach (name##_ca)
-
-#define CFATTACH_DECL1(name, unit, driver)				\
-	CFATTACH_STRUCT_DECL(name) = {						\
+#define CFATTACH_DECL(name, unit, driver)				\
+	struct cfattach (name##_ca) = {						\
 			.ca_name = (#name),							\
 			.ca_unit = (unit),							\
 			.ca_driver = (driver),						\
 			.ca_list = { 0 },							\
 	}
-
-#define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
-	CFOPS_DECL1(name, matfn, attfn, detfn, actfn)
-
-#define CFDRIVER_DECL(devs, name, cops, clas, size) 	\
-	CFDRIVER_DECL1(devs, name, cops, clas, size)
-
-#define CFATTACH_DECL(name, unit, driver)				\
-	CFATTACH_DECL1(name, unit, driver)
 
 extern struct devicelist			alldevs;				/* head of list of all devices */
 extern struct cfattachlist			allattachs;				/* head of list of all attachments */
