@@ -604,10 +604,10 @@ syscall1:
 		call	_C_LABEL(syscall)
 2:		/* Check for ASTs on exit to user mode. */
 		cli
-		cmpb	$0,_C_LABEL(astpending)
+		CHECK_ASTPENDING(%eax)
 		je		1f
 		/* Always returning to user mode here. */
-		movb	$0,_C_LABEL(astpending)
+		CLEAR_ASTPENDING(%eax)
 		sti
 		/* Pushed T_ASTFLT into tf_trapno on entry. */
 		call	_C_LABEL(trap)

@@ -46,7 +46,7 @@
 
 		.data
 		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(idepth)
-		.globl	_C_LABEL(astpending),_C_LABEL(netisr)
+		.globl	_C_LABEL(netisr)
 _C_LABEL(cpl):
 		.long	0xffff			# current priority level (all off)
 _C_LABEL(imen):
@@ -54,8 +54,6 @@ _C_LABEL(imen):
 _C_LABEL(idepth):
 		.long	0xffff
 _C_LABEL(ipending):
-		.long	0xffff
-_C_LABEL(astpending):
 		.long	0xffff
 		
 		.text
@@ -118,8 +116,8 @@ IDTVEC(spllower)
  *   edi - scratch for Xsoftnet
  */
 IDTVEC(doreti)
-		popl	%ebx			# get previous priority
-		movl	$1f,%esi		# address to resume loop at
+		popl	%ebx					# get previous priority
+		movl	$1f,%esi				# address to resume loop at
 1:		movl	%ebx,%eax
 		notl	%eax
 		cli
@@ -128,22 +126,30 @@ IDTVEC(doreti)
 		sti
 		bsfl    %eax,%eax               # slow, but not worth optimizing
 		btrl    %eax,_C_LABEL(ipending)
-		jnc     1b			# some intr cleared the in-memory bit
-		jmp	*APIC_RESUME(,%eax,4)
+		jnc     1b						# some intr cleared the in-memory bit
+		jmp		*APIC_RESUME(,%eax,4)
 2:		/* Check for ASTs on exit to user mode. */
 		movl	%ebx,_C_LABEL(cpl)
-		cmpb	$0,_C_LABEL(astpending)
-		je	3f
+5:
 		testb   $SEL_UPL,TF_CS(%esp)
-		jnz	4f
+		jnz		doreti_checkast
 		testl	$PSL_VM,TF_EFLAGS(%esp)
 		jz		3f
-4:		movb	$0,_C_LABEL(astpending)
+
+doreti_checkast:
+		CHECK_ASTPENDING(%eax)
+		jz		3f
+4:		CLEAR_ASTPENDING(%eax)
 		sti
+		movl	$T_ASTFLT,TF_TRAPNO(%esp)	/* XXX undo later.. */
 		/* Pushed T_ASTFLT into tf_trapno on entry. */
+		pushl	%esp
 		call	_C_LABEL(trap)
-		jmp	2b
-3:		INTRFASTEXIT
+		addl	$4,%esp
+		cli
+		jmp		5b
+3:
+		INTRFASTEXIT
 
 /*
  * Soft interrupt handlers
