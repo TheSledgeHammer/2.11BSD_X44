@@ -427,7 +427,7 @@ com_attach_subr(struct com_softc *sc)
 
 	callout_init(&sc->sc_diag_callout);
 //#if (defined(MULTIPROCESSOR) || defined(LOCKDEBUG)) && defined(COM_MPLOCK)
-	simple_lock_init(&sc->sc_lock);
+	simple_lock_init(&sc->sc_lock, "com slock");
 //#endif
 
 	/* Disable interrupts before configuring the device. */
