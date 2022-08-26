@@ -149,7 +149,6 @@ extern volatile int		imen;		/* interrupt mask enable */
 extern volatile int		cpl;		/* current priority level mask */
 extern volatile int		ipending;
 extern volatile int		idepth;
-extern volatile int		astpending;
 extern int 				imask[];
 extern int 				iunmask[];
 extern int 				intrtype[];
