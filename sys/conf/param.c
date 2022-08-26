@@ -117,7 +117,7 @@ char				*buffers;
 #define SMAPSIZ		((9 * NPROC) / 10)			/* size of swap allocation map */
 
 /*
-struct vmmapent corevmmap[] = {
+struct vmmapent corevmmap[6] = {
 		{ "buffer_map", buffer_map },
 		{ "exec_map",   exec_map },
 		{ "kernel_map", kernel_map },
@@ -126,7 +126,7 @@ struct vmmapent corevmmap[] = {
 		{ "phys_map", 	phys_map }
 };
 
-struct ovlmapent coreovlmap[] = {
+struct ovlmapent coreovlmap[2] = {
 		{ "overlay_map", &overlay_map },
 		{ "omem_map",    &omem_map }
 };

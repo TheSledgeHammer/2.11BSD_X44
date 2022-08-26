@@ -62,7 +62,7 @@ new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vnode, offset)
 	struct exec_vmcmd *vcp;
 
 	if (evsp->evs_used >= evsp->evs_cnt) {
-		vmcmdset_extend(evsp);
+		vmcmd_extend(evsp);
 	}
 	vcp = &evsp->evs_cmds[evsp->evs_used++];
 	vcp->ev_proc = proc;
@@ -91,7 +91,8 @@ vmcmd_extend(evsp)
 		evsp->evs_cnt += ocnt;
 		nvcp = malloc(sizeof(struct exec_vmcmd), M_EXEC, M_WAITOK);
 		if (ocnt) {
-			memcpy(nvcp, evsp->evs_cmds, (ocnt * sizeof(struct exec_vmcmd)));
+			bcopy(evsp->evs_cmds, nvcp, (ocnt * sizeof(struct exec_vmcmd)));
+			//memcpy(nvcp, evsp->evs_cmds, (ocnt * sizeof(struct exec_vmcmd)));
 			free(evsp->evs_cmds, M_EXEC);
 		}
 		evsp->evs_cmds = nvcp;

@@ -5,8 +5,8 @@
  *
  *	@(#)dk.h	7.1 (Berkeley) 6/4/86
  */
-#ifndef _SYS_DKSTAT_H_
-#define _SYS_DKSTAT_H_ 1
+#ifndef _SYS_DK_H_
+#define _SYS_DK_H_
 
 #include <sys/disklabel.h>
 #include <sys/ioccom.h>

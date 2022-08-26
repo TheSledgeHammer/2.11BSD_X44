@@ -74,13 +74,14 @@ ENTRY(idle)
 		jne		sw1
 		hlt						# wait for interrupt
 		jmp		idle
-		.align 	4 					/* ..so that profiling doesn't lump Idle with Xswitch().. */
+
+		ALIGN_TEXT
 badsw:
 		pushl	$sw0
 		call	_C_LABEL(panic)
 		/*NOTREACHED*/
 sw0:
-		.asciz	"Xcpu_switch"
+		.asciz	"cpu_switch"
 
 /*
  * Swtch()
@@ -136,8 +137,7 @@ sw1:
 		cli
 		bsfl	%edi,%eax							# find a full q
 		jz		idle								# if none, idle
-# XX update whichqs?
-swfnd:
+
 		btrl	%eax,%edi							# clear q full status
 		jnb		2b									# if it was clear, look for another
 		movl	%eax,%ebx							# save which one we are using

@@ -75,26 +75,29 @@
 #include "scsibus.h"
 #include "pci.h"
 
-void kernel_init(struct devswtable *);
-void device_init(struct devswtable *);
-void audio_init(struct devswtable *);
-void core_init(struct devswtable *);
-void disks_init(struct devswtable *);
-void misc_init(struct devswtable *);
-void usb_init(struct devswtable *);
-void video_init(struct devswtable *);
-void wscons_init(struct devswtable *);
-void network_init(struct devswtable *);
+/* devsw switch table */
+const struct bdevsw **bdevsw = bdevsw0;
+const struct cdevsw **cdevsw = cdevsw0;
+const struct linesw **linesw = linesw0;
+const int sys_bdevsws = __arraycount(bdevsw0);
+const int sys_cdevsws = __arraycount(cdevsw0);
+const int sys_linesws = __arraycount(linesw0);
+int max_bdevsws = __arraycount(bdevsw0);
+int max_cdevsws = __arraycount(cdevsw0);
+int max_linesws = __arraycount(linesw0);
+
+int	nblkdev = sys_bdevsws;
+int	nchrdev = sys_cdevsws;
 
 /* MD config initialization (machine/conf.c) */
 /* bdevsw */
-extern const struct bdevsw swap_bdevsw;
-extern const struct bdevsw wd_bdevsw;
-extern const struct bdevsw sd_bdevsw;
-extern const struct bdevsw st_bdevsw;
-extern const struct bdevsw cd_bdevsw;
-extern const struct bdevsw vnd_bdevsw;
-extern const struct bdevsw ccd_bdevsw;
+const struct bdevsw swap_bdevsw;
+const struct bdevsw wd_bdevsw;
+const struct bdevsw sd_bdevsw;
+const struct bdevsw st_bdevsw;
+const struct bdevsw cd_bdevsw;
+const struct bdevsw vnd_bdevsw;
+const struct bdevsw ccd_bdevsw;
 
 /* cdevsw */
 const struct cdevsw log_cdevsw;
@@ -139,6 +142,17 @@ const struct linesw netldisc;
 const struct linesw tabldisc;
 const struct linesw slipdisc;
 const struct linesw pppdisc;
+
+void kernel_init(struct devswtable *);
+void device_init(struct devswtable *);
+void audio_init(struct devswtable *);
+void core_init(struct devswtable *);
+void disks_init(struct devswtable *);
+void misc_init(struct devswtable *);
+void usb_init(struct devswtable *);
+void video_init(struct devswtable *);
+void wscons_init(struct devswtable *);
+void network_init(struct devswtable *);
 
 /*
  * Configure Initialization

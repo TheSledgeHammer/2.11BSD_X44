@@ -72,15 +72,15 @@
 #include <machine/apic/lapicvar.h>
 #endif
 
+void	swapconf(void);
+void	setroot(void);
+
 /*
  * The following several variables are related to
  * the configuration process, and are used in initializing
  * the machine.
  */
 extern int	cold;		/* cold start flag initialized in locore.s */
-
-void	swapconf(void);
-void	setroot(void);
 
 /*
  * Determine i/o configuration for a machine.
@@ -128,16 +128,17 @@ configure()
  */
 dev_t	rootdev = makedev(0,0);
 dev_t	dumpdev = makedev(0,1);
-int		nswap;
+dev_t	swapdev = makedev(1,0);
 u_long	bootdev = 0;
+
+int		nswap;
+long 	dumplo;
+int		dmmin, dmmax, dmtext;
 
 struct swdevt swdevt[] = {
 		{ 1, 0,	0 },
 		{ NODEV, 1,	0 },
 };
-
-long dumplo;
-int	dmmin, dmmax, dmtext;
 
 /*
  * Configure swap space and related parameters.
@@ -174,7 +175,7 @@ swapconf(void)
 void
 setroot(void)
 {
-	int  majdev, mindev, unit, part, adaptor;
+	int  majdev, mindev, unit, part, adaptor, slice;
 	dev_t orootdev;
 	dev_t temp = 0;
 	struct swdevt *swp;
@@ -183,10 +184,10 @@ setroot(void)
 		return;
 	}
 	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-
-	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	//slice = set_slice(bootdev);
+	adaptor = set_adaptor(bootdev);
+	part = set_partition(bootdev);
+	unit = set_unit(bootdev);
 	mindev = (unit * MAXPARTITIONS) + part;
 	orootdev = rootdev;
 	rootdev = makedev(majdev, mindev);

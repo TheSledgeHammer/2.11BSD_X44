@@ -56,16 +56,16 @@
  * since input always ends with a new-line.  We just
  * reset the line position at the end.
  */
-char *	db_lbuf_start;	/* start of input line buffer */
-char *	db_lbuf_end;	/* end of input line buffer */
-char *	db_lc;		/* current character */
-char *	db_le;		/* one past last character */
+char 	*db_lbuf_start;	/* start of input line buffer */
+char 	*db_lbuf_end;	/* end of input line buffer */
+char 	*db_lc;		/* current character */
+char 	*db_le;		/* one past last character */
 #if DDB_HISTORY_SIZE != 0
 char    db_history[DDB_HISTORY_SIZE];	/* start of history buffer */
 int     db_history_size = DDB_HISTORY_SIZE;/* size of history buffer */
-char *  db_history_curr = db_history;	/* start of current line */
-char *  db_history_last = db_history;	/* start of last line */
-char *  db_history_prev = (char *) 0;	/* start of previous line */
+char 	*db_history_curr = db_history;	/* start of current line */
+char 	*db_history_last = db_history;	/* start of last line */
+char 	*db_history_prev = (char *) 0;	/* start of previous line */
 #endif
 	
 #define	CTRL(c)		((c) & 0x1f)

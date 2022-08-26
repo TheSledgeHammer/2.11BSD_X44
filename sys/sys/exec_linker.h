@@ -134,7 +134,7 @@ struct execsw_entry {
 extern struct lock 	exec_lock;
 int				exec_maxhdrsz;
 
-void 	vmcmdset_extend(struct exec_vmcmd_set *);
+void 	vmcmd_extend(struct exec_vmcmd_set *);
 void 	kill_vmcmd(struct exec_vmcmd_set *);
 int 	vmcmd_map_pagedvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);

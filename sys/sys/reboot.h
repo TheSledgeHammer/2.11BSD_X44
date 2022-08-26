@@ -108,39 +108,44 @@
 #define	WHOLE_DISK_SLICE	1
 
 /* setters for disks */
-static inline void
+static inline int
 set_adaptor(num)
 	u_long num;
 {
 	int adaptor = (num >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+	return (adaptor);
 }
 
-static inline void
+static inline int
 set_controller(num)
 	u_long num;
 {
 	int controller = (num >> B_CONTROLLERSHIFT) & B_CONTROLLERMASK;
+	return (controller);
 }
 
-static inline void
+static inline int
 set_slice(num)
 	u_long num;
 {
 	int slice = (num >> B_SLICESHIFT) & B_SLICEMASK;
+	return (slice);
 }
 
-static inline void
+static inline int
 set_partition(num)
 	u_long num;
 {
 	int part = (num >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+	return (part);
 }
 
-static inline void
+static inline int
 set_unit(num)
 	u_long num;
 {
 	int unit = (num >> B_UNITSHIFT) & B_UNITMASK;
+	return (unit);
 }
 
 #endif /* !_LOCORE */
