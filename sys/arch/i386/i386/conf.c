@@ -76,12 +76,16 @@
 #include "pci.h"
 
 /* devsw switch table */
-const struct bdevsw **bdevsw = bdevsw0;
-const struct cdevsw **cdevsw = cdevsw0;
-const struct linesw **linesw = linesw0;
+
+const struct bdevsw *bdevsw0;
+const struct cdevsw *cdevsw0;
+const struct linesw *linesw0;
+const struct bdevsw **bdevsw = &bdevsw0;
+const struct cdevsw **cdevsw = &cdevsw0;
+const struct linesw **linesw = &linesw0;
 const int sys_bdevsws = __arraycount(bdevsw0);
 const int sys_cdevsws = __arraycount(cdevsw0);
-const int sys_linesws = __arraycount(linesw0);
+int sys_linesws = __arraycount(linesw0);
 int max_bdevsws = __arraycount(bdevsw0);
 int max_cdevsws = __arraycount(cdevsw0);
 int max_linesws = __arraycount(linesw0);
