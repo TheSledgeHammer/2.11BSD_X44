@@ -43,6 +43,7 @@
 #include <machine/intr.h>
 #include <machine/psl.h>
 #include <machine/segments.h>
+#include <machine/trap.h>
 
 		.data
 		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(idepth)
