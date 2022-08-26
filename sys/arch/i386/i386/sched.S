@@ -164,7 +164,7 @@ sw1:
 		movl	%edi,_C_LABEL(whichqs)				# update q status
 
 		movl	$0,%eax
-		call	P_MD_WANT_RESCHED(%eax)
+		call	*P_MD_WANT_RESCHED(%eax)
 
 #ifdef	DIAGNOSTIC
 		cmpl	%eax,P_WCHAN(%ecx)
