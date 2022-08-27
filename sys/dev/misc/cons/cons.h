@@ -48,6 +48,7 @@ struct consdev {
 	void		(*cn_putc)(dev_t, int);					/* kernel putchar interface */
 	void		(*cn_pollc)(dev_t, int); 				/* turn on and off polling */
 	void		(*cn_bell)(dev_t, u_int, u_int, u_int);	/* ring bell */
+	void		(*cn_halt)(dev_t);						/* stop device */
 	void		(*cn_flush)(dev_t);						/* flush output */
 	struct	tty *cn_tp;									/* tty structure for console device */
 	dev_t		cn_dev;									/* major/minor of device */
@@ -61,9 +62,6 @@ struct consdev {
 #define CN_INTERNAL	3	/* "internal" bit-mapped display */
 #define CN_REMOTE	4	/* serial interface with remote bit set */
 
-/* XXX */
-#define	CONSMAJOR	0
-
 #ifdef _KERNEL
 extern	struct consdev constab[];
 extern	struct consdev *cn_tab;
@@ -75,17 +73,78 @@ void	cnputc(int);
 void	cnpollc(int);
 void	cnbell(u_int, u_int, u_int);
 void	cnflush(void);
+void	cnhalt(void);
 void	cnrint(void);
 void	nullcnpollc(dev_t, int);
 
+/* dev types */
+typedef void 	dev_type_cnprobe_t(struct consdev *);
+typedef void 	dev_type_cninit_t(struct consdev *);
+typedef int 	dev_type_cngetc_t(dev_t);
+typedef void 	dev_type_cnputc_t(dev_t, int);
+typedef void 	dev_type_cnpollc_t(dev_t, int);
+typedef void 	dev_type_cnbell_t(dev_t, u_int, u_int, u_int);
+typedef void 	dev_type_cnhalt_t(dev_t);
+typedef void 	dev_type_cnflush_t(dev_t);
+
+#define	dev_type_cnprobe(n)	dev_type_cnprobe_t n
+#define	dev_type_cninit(n)	dev_type_cninit_t n
+#define	dev_type_cngetc(n)	dev_type_cngetc_t n
+#define	dev_type_cnputc(n)	dev_type_cnputc_t n
+#define	dev_type_cnpollc(n)	dev_type_cnpollc_t n
+#define	dev_type_cnbell(n)	dev_type_cnbell_t n
+#define	dev_type_cnhalt(n)	dev_type_cnhalt_t n
+#define	dev_type_cnflush(n)	dev_type_cnflush_t n
+
 /* console-specific types */
-#define	dev_type_cnprobe(n)	void n(struct consdev *)
-#define	dev_type_cninit(n)	void n(struct consdev *)
-#define	dev_type_cngetc(n)	int n(dev_t)
-#define	dev_type_cnputc(n)	void n(dev_t, int)
-#define	dev_type_cnpollc(n)	void n(dev_t, int)
-#define	dev_type_cnbell(n)	void n(dev_t, u_int, u_int, u_int)
-#define	dev_type_cnflush(n)	void n(dev_t)
+//dev_type_cnprobe(cnprobe);
+dev_type_cninit(cninit);
+dev_type_cngetc(cngetc);
+dev_type_cnputc(cnputc);
+dev_type_cnpollc(cnpollc);
+dev_type_cnbell(cnbell);
+dev_type_cnhalt(cnhalt);
+dev_type_cnflush(cnflush);
+
+/* no dev routines */
+#define nocnprobe	((dev_type_cnprobe_t *)enodev)
+#define nocninit	((dev_type_cninit_t *)enodev)
+#define nocngetc	((dev_type_cngetc_t *)enodev)
+#define nocnputc	((dev_type_cnputc_t *)enodev)
+#define nocnpollc	((dev_type_cnpollc_t *)enodev)
+#define nocnbell	((dev_type_cnbell_t *)enodev)
+#define nocnhalt	((dev_type_cnhalt_t *)enodev)
+#define nocnflush	((dev_type_cnflush_t *)enodev)
+
+/* null dev routines */
+#define nullcnprobe	((dev_type_cnprobe_t *)nullop)
+#define nullcninit	((dev_type_cninit_t *)nullop)
+#define nullcngetc	((dev_type_cngetc_t *)nullop)
+#define nullcnputc	((dev_type_cnputc_t *)nullop)
+#define nullcnpollc	((dev_type_cnpollc_t *)nullop)
+#define nullcnbell	((dev_type_cnbell_t *)nullop)
+#define nullcnhalt	((dev_type_cnhalt_t *)nullop)
+#define nullcnflush	((dev_type_cnflush_t *)nullop)
+
+#endif /* KERNEL */
+
+#ifdef notyet
+#define	CONSDEV_DECL(name, probe, init, getc, putc, pollc, bell, 	\
+		halt, flush, tp, dev, pri) 									\
+	static struct consdev (name##_cons) = {							\
+				.cn_probe = (probe),								\
+				.cn_init = (init),									\
+				.cn_getc = (getc),									\
+				.cn_putc = (putc),									\
+				.cn_pollc = (pollc),								\
+				.cn_bell = (probe),									\
+				.cn_halt = (halt),									\
+				.cn_flush = (flush),								\
+				.cn_tp = (tp),										\
+				.cn_dev = (dev),									\
+				.cn_pri = (pri),									\
+	}
+
 
 #define	dev_decl(n,t)		__CONCAT(dev_type_,t)(__CONCAT(n,t))
 #define	dev_init(n,t)		__CONCAT(n,t)

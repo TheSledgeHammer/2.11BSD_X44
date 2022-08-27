@@ -229,14 +229,19 @@ static void wsdisplay_pollc(dev_t, int);
 static int wsdisplay_cons_pollmode;
 static void (*wsdisplay_cons_kbd_pollc)(dev_t, int);
 
+dev_type_cngetc(wsdisplay_getc_dummy);
+dev_type_cnputc(wsdisplay_cnputc);
+dev_type_cnpollc(wsdisplay_pollc);
+
 static struct consdev wsdisplay_cons = {
-		.cn_probe = NULL,
-		.cn_init = NULL,
+		.cn_probe = nullcnprobe,
+		.cn_init = nullcninit,
 		.cn_getc = wsdisplay_getc_dummy,
 		.cn_putc = wsdisplay_cnputc,
 		.cn_pollc = wsdisplay_pollc,
-		.cn_bell = NULL,
-		.cn_flush = NULL,
+		.cn_bell = nullcnbell,
+		.cn_halt = nullcnhalt,
+		.cn_flush = nullcnflush,
 		.cn_tp = NULL,
 		.cn_dev = NODEV,
 		.cn_pri = CN_NORMAL

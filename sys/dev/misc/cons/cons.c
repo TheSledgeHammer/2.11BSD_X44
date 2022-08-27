@@ -87,7 +87,6 @@
 #include <sys/tty.h>
 #include <sys/file.h>
 #include <sys/conf.h>
-#include <sys/devsw.h>
 #include <sys/vnode.h>
 
 #include <dev/misc/cons/cons.h>
@@ -99,8 +98,6 @@ dev_type_write(cnwrite);
 dev_type_ioctl(cnioctl);
 dev_type_poll(cnpoll);
 dev_type_kqfilter(cnkqfilter);
-
-static const struct cdevsw *cn_redirect(dev_t *, int, int *);
 
 const struct cdevsw cons_cdevsw = {
 		.d_open = cnopen,
@@ -119,48 +116,55 @@ const struct cdevsw cons_cdevsw = {
 		.d_type = D_TTY
 };
 
-struct	tty *constty = NULL;	/* virtual console output device */
-struct	consdev *cn_tab;		/* physical console device info */
-struct	vnode *cn_devvp[2];		/* vnode for underlying device. */
+struct tty *constty = NULL;		/* virtual console output device */
+struct consdev *cn_tab;			/* physical console device info */
+struct vnode *cn_devvp[2];		/* vnode for underlying device. */
+
+static const struct cdevsw *cn_redirect(dev_t *, int, int *);
 
 void
-cnprobe(cp)
-	struct consdev *cp;
+cninit(void)
 {
+	struct consdev *cp;
+	struct consdev *bestMatch;
+
+	bestMatch = cn_tab = NULL;
+
 	/*
 	 * Collect information about all possible consoles
 	 * and find the one with highest priority.
 	 */
-	register struct consdev *cpp;
-	for (cpp = constab; cpp->cn_probe; cpp++) {
-		if (cp == cpp) {
-			(*cp->cn_probe)(cp);
-			if (cp->cn_pri != CN_DEAD && (cn_tab == NULL || cp->cn_pri > cn_tab->cn_pri)) {
-				cn_tab = cp;
-			}
+	for (cp = constab; cp->cn_probe; cp++) {
+		(*cp->cn_probe)(cp);
+		if (cp->cn_pri != CN_DEAD && (bestMatch  == NULL || cp->cn_pri > bestMatch->cn_pri)) {
+			bestMatch = cp;
 		}
 	}
 
 	/*
 	 * No console, we can handle it.
 	 */
-	if ((cp = cn_tab) == NULL) {
+	if ((cp = bestMatch) == NULL) {
 		return;
 	}
-}
-
-void
-cninit(void)
-{
-	struct consdev *cp;
-
-	/* probe consdev */
-	cnprobe(cp);
 
 	/*
 	 * Turn on console.
 	 */
-	(*cp->cn_init)(cp);
+	{
+		struct consdev *old_cn_tab = cn_tab;
+
+		(*cp->cn_init)(cp);
+		/*
+		 * Now let everyone know we have an active console they can
+		 * use for diagnostics. If we use cn_tab in the search loop
+		 * then interrupts from the ethernet at boot may cause system
+		 * hang.
+		 */
+		if (cn_tab == old_cn_tab) {
+			cn_tab = bestMatch;
+		}
+	}
 }
 
 int
@@ -370,6 +374,7 @@ cngetc(void)
 	return ((*cn_tab->cn_getc)(cn_tab->cn_dev));
 }
 
+
 int
 cngetsn(cp, size)
 	char *cp;
@@ -450,29 +455,40 @@ cnpollc(on)
 }
 
 void
+nullcnpollc(dev, on)
+	dev_t dev;
+	int on;
+{
+
+}
+
+void
 cnbell(pitch, period, volume)
 	u_int pitch, period, volume;
 {
 
-	if (cn_tab == NULL || cn_tab->cn_bell == NULL)
+	if (cn_tab == NULL || cn_tab->cn_bell == NULL) {
 		return;
+	}
 	(*cn_tab->cn_bell)(cn_tab->cn_dev, pitch, period, volume);
 }
 
 void
 cnflush(void)
 {
-	if (cn_tab == NULL || cn_tab->cn_flush == NULL)
+	if (cn_tab == NULL || cn_tab->cn_flush == NULL) {
 		return;
+	}
 	(*cn_tab->cn_flush)(cn_tab->cn_dev);
 }
 
 void
-nullcnpollc(dev, on)
-	dev_t dev;
-	int on;
+cnhalt(void)
 {
-
+	if (cn_tab == NULL || cn_tab->cn_halt == NULL) {
+		return;
+	}
+	(*cn_tab->cn_halt)(cn_tab->cn_dev);
 }
 
 static const struct cdevsw *
@@ -499,5 +515,5 @@ cn_redirect(devp, is_read, error)
 	else
 		dev = cn_tab->cn_dev;
 	*devp = dev;
-	return cdevsw_lookup(dev);
+	return (cdevsw_lookup(dev));
 }

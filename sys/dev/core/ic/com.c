@@ -188,14 +188,19 @@ const struct cdevsw com_cdevsw = {
 		.d_type = D_TTY
 };
 
+dev_type_cngetc(comcngetc);
+dev_type_cnputc(comcnputc);
+dev_type_cnpollc(comcnpollc);
+
 static struct consdev comcons = {
-		.cn_probe = NULL,
-		.cn_init = NULL,
+		.cn_probe = nullcnprobe,
+		.cn_init = nullcninit,
 		.cn_getc = comcngetc,
 		.cn_putc = comcnputc,
 		.cn_pollc = comcnpollc,
-		.cn_bell = NULL,
-		.cn_flush = NULL,
+		.cn_bell = nullcnbell,
+		.cn_halt = nullcnhalt,
+		.cn_flush = nullcnflush,
 		.cn_tp = NULL,
 		.cn_dev = NODEV,
 		.cn_pri = CN_NORMAL
