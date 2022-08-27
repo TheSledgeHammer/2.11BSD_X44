@@ -87,6 +87,7 @@
 #include <sys/tty.h>
 #include <sys/file.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 
 #include <dev/misc/cons/cons.h>
@@ -307,7 +308,7 @@ cnioctl(dev, cmd, data, flag, p)
 	 * output from the "virtual" console.
 	 */
 	if (cmd == TIOCCONS && constty != NULL) {
-		error = suser(p->p_ucred, (u_short*) NULL);
+		error = suser1(p->p_ucred, (u_short*) NULL);
 		if (error)
 			return (error);
 		constty = NULL;
