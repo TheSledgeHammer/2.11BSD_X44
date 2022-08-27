@@ -455,6 +455,7 @@ cnpollc(on)
 		++refcount;
 }
 
+/*
 void
 nullcnpollc(dev, on)
 	dev_t dev;
@@ -462,6 +463,7 @@ nullcnpollc(dev, on)
 {
 
 }
+*/
 
 void
 cnbell(pitch, period, volume)
