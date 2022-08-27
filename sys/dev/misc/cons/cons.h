@@ -97,7 +97,8 @@ typedef void 	dev_type_cnflush_t(dev_t);
 #define	dev_type_cnflush(n)	dev_type_cnflush_t n
 
 /* console-specific types */
-//dev_type_cnprobe(cnprobe);
+/*
+dev_type_cnprobe(cnprobe);
 dev_type_cninit(cninit);
 dev_type_cngetc(cngetc);
 dev_type_cnputc(cnputc);
@@ -105,7 +106,7 @@ dev_type_cnpollc(cnpollc);
 dev_type_cnbell(cnbell);
 dev_type_cnhalt(cnhalt);
 dev_type_cnflush(cnflush);
-
+*/
 /* no dev routines */
 #define nocnprobe	((dev_type_cnprobe_t *)enodev)
 #define nocninit	((dev_type_cninit_t *)enodev)
