@@ -35,6 +35,8 @@
 #include <sys/tty.h>
 #include <sys/null.h>
 
+#include <dev/misc/cons/cons.h>
+
 #include "audio.h"
 #include "sequencer.h"
 #include "spkr.h"
@@ -92,6 +94,13 @@ int max_linesws = __arraycount(linesw0);
 
 int	nblkdev = sys_bdevsws;
 int	nchrdev = sys_cdevsws;
+
+struct consdev constab[] = {
+#if NWSDISPLAY > 0
+	wsdisplay_cons,
+#endif
+	{ 0 },
+};
 
 /* MD config initialization (machine/conf.c) */
 /* bdevsw */
