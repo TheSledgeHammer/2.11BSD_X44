@@ -53,9 +53,6 @@ struct consdev {
 	struct	tty *cn_tp;									/* tty structure for console device */
 	dev_t		cn_dev;									/* major/minor of device */
 	int			cn_pri;									/* pecking order; the higher the better */
-
-	int			cn_flags;								/* capabilities of this console */
-	char		cn_name[MAXNAMLEN + 1];					/* console (device) name */
 };
 
 /* values for cn_pri - reflect our policy for console selection */
@@ -120,47 +117,6 @@ void	cnbell(u_int, u_int, u_int);
 void	cnflush(void);
 void	cnhalt(void);
 void	cnrint(void);
-void	nullcnpollc(dev_t, int);
+//void	nullcnpollc(dev_t, int);
 
-/* consdev */
-extern static struct consdev wsdisplay_cons;
-extern static struct consdev com_cons;
-
-#ifdef notyet
-#define	dev_decl(n,t)		__CONCAT(dev_type_,t)(__CONCAT(n,t))
-#define	dev_init(n,t)		__CONCAT(n,t)
-
-#define	cons_decl(n) 												\
-	dev_decl(n,cnprobe); dev_decl(n,cninit); dev_decl(n,cngetc); 	\
-	dev_decl(n,cnputc); dev_decl(n,cnpollc); dev_decl(n,cnbell);	\
-	dev_decl(n,cnflush); dev_decl(n,cnhalt);
-
-#define	cons_init(n) { 												\
-	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
-	dev_init(n,cnputc), dev_init(n,cnpollc) }
-
-#define	cons_init_bell(n) { 										\
-	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
-	dev_init(n,cnputc), dev_init(n,cnpollc), dev_init(n,cnbell) }
-
-#define	cons_init_halt(n) { 										\
-	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
-	dev_init(n,cnputc), dev_init(n,cnpollc), 0,	             		\
-	dev_init(n,cnhalt) }
-
-#define	CONSDEV_DECL(probe, init, getc, putc, pollc, bell, halt, flush, tp, dev, pri) 									\
-	static struct consdev constab[] = {								\
-				.cn_probe = (probe),								\
-				.cn_init = (init),									\
-				.cn_getc = (getc),									\
-				.cn_putc = (putc),									\
-				.cn_pollc = (pollc),								\
-				.cn_bell = (bell),									\
-				.cn_halt = (halt),									\
-				.cn_flush = (flush),								\
-				.cn_tp = (tp),										\
-				.cn_dev = (dev),									\
-				.cn_pri = (pri),									\
-	}
-#endif
 #endif /* _SYS_DEV_CONS_H_ */
