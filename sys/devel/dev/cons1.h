@@ -88,7 +88,7 @@ struct consdev {
 	void		(*cn_bell)(dev_t, u_int, u_int, u_int);	/* ring bell */
 	void		(*cn_halt)(dev_t);						/* stop device */
 	void		(*cn_flush)(dev_t);						/* flush output */
-	struct	tty *cn_tp;									/* tty structure for console device */
+	struct tty 	*cn_tp;									/* tty structure for console device */
 	dev_t		cn_dev;									/* major/minor of device */
 	int			cn_pri;									/* pecking order; the higher the better */
 	int			cn_flags;								/* capabilities of this console */
@@ -105,6 +105,8 @@ struct consdev {
 /* Values for cn_flags. */
 #define	CN_FLAG_NODEBUG	0x00000001	/* Not supported with debugger. */
 #define	CN_FLAG_NOAVAIL	0x00000002	/* Temporarily not available. */
+
+#define devtoname(dev)	(#dev)
 
 #ifdef _KERNEL
 extern	struct consdev constab[];
@@ -166,4 +168,9 @@ void	cnpollc(int);
 void	cnbell(u_int, u_int, u_int);
 void	cnflush(void);
 void	cnhalt(void);
+
+/* consdev */
+extern static struct consdev wsdisplay_cons;
+extern static struct consdev com_cons;
+
 #endif /* _SYS_DEV_CONS_H_ */

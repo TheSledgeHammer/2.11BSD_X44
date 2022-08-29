@@ -45,6 +45,16 @@
 #include <sys/exec_script.h>
 #include <sys/exec_elf.h>
 
+const struct execsw script_exec = {
+	.ex_hdrsz = SCRIPT_HDR_SIZE,
+	.ex_makecmds = exec_script_linker,
+	.ex_emul = NULL,
+	.ex_prio = EXECSW_PRIO_ANY,
+	.ex_arglen = 0,
+	.ex_copyargs = NULL,
+	.ex_setup_stack = exec_setup_stack
+};
+
 int
 exec_script_linker(elp)
 	struct exec_linker *elp;

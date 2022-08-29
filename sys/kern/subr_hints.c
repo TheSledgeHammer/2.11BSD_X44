@@ -173,7 +173,7 @@ resource_kenv(const char *name, int unit, const char *resname, long *result)
 
 	snprintf(buf, sizeof(buf), "%s%d.%s", name, unit, resname);
 	if ((env = kern_getenv(buf)) != NULL) {
-		*result = strtoq(env, NULL, 0);
+		*result = strtoul(env, NULL, 0);
 		return (0);
 	}
 
@@ -182,7 +182,7 @@ resource_kenv(const char *name, int unit, const char *resname, long *result)
 	 */
 	snprintf(buf, sizeof(buf), "hint.%s.%d.%s", name, unit, resname);
 	if ((env = kern_getenv(buf)) != NULL) {
-		*result = strtoq(env, NULL, 0);
+		*result = strtoul(env, NULL, 0);
 		return (0);
 	}
 

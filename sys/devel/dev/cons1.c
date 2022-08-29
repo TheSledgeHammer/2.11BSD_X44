@@ -126,13 +126,6 @@ struct consdev *cn_tab;			/* physical console device info */
 struct vnode *cn_devvp[2];		/* vnode for underlying device. */
 
 static const char *dev_console_filename;
-
-void
-ttyconsdev_select(const char *name)
-{
-	dev_console_filename = name;
-}
-
 static const struct cdevsw *cn_redirect(dev_t *, int, int *);
 
 struct cn_device {
@@ -177,6 +170,10 @@ cninit(void)
 	if ((cp = bestMatch) == NULL) {
 		return;
 	}
+
+	/*
+	 * Turn on console.
+	 */
 	if ((boothowto & RB_MULTIPLE) == 0) {
 		(*bestMatch->cn_init)(bestMatch);
 		cnadd(bestMatch);
@@ -222,6 +219,7 @@ cnadd(cp)
 		printf("WARNING: console at %p has no name\n", cp);
 	}
 	SIMPLEQ_INSERT_TAIL(&cn_devlist, cnd, cnd_next);
+	cn_tab = cp;
 	if (SIMPLEQ_FIRST(&cn_devlist) == cnd) {
 		ttyconsdev_select(cnd->cnd_cp->cn_name);
 	}
@@ -724,4 +722,11 @@ cn_redirect(devp, is_read, error)
 		dev = cp->cn_dev;
 	*devp = dev;
 	return (cdevsw_lookup(dev));
+}
+
+void
+ttyconsdev_select(name)
+	const char *name;
+{
+	dev_console_filename = name;
 }

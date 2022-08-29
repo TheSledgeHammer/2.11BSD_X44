@@ -41,6 +41,16 @@
 #include <sys/exec_xcoff.h>
 #include <sys/resourcevar.h>
 
+const struct execsw xcoff32_exec = {
+	.ex_hdrsz = XCOFF32_HDR_SIZE,
+	.ex_makecmds = exec_xcoff_linker,
+	.ex_emul = &emul_211bsd,
+	.ex_prio = EXECSW_PRIO_ANY,
+	.ex_arglen = 0,
+	.ex_copyargs = copyargs,
+	.ex_setup_stack = exec_setup_stack
+};
+
 int
 exec_xcoff_linker(elp)
 	struct exec_linker *elp;

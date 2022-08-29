@@ -79,6 +79,7 @@ struct vnodeops fifo_vnodeops = {
 		.vop_lease = fifo_lease_check,	/* lease */
 		.vop_ioctl = fifo_ioctl,		/* ioctl */
 		.vop_select = fifo_select,		/* select */
+		.vop_poll = fifo_poll,			/* poll */
 		.vop_revoke = fifo_revoke,		/* revoke */
 		.vop_mmap = fifo_mmap,			/* mmap */
 		.vop_fsync = fifo_fsync,		/* fsync */
@@ -347,13 +348,41 @@ fifo_select(ap)
 
 	if (ap->a_fflags & FREAD) {
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_readsock;
-		ready = soo_select(&filetmp, ap->a_which, ap->a_p);
+		ready = soo_poll(&filetmp, ap->a_which, ap->a_p);
 		if (ready)
 			return (ready);
 	}
 	if (ap->a_fflags & FWRITE) {
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_writesock;
-		ready = soo_select(&filetmp, ap->a_which, ap->a_p);
+		ready = soo_poll(&filetmp, ap->a_which, ap->a_p);
+		if (ready)
+			return (ready);
+	}
+	return (0);
+}
+
+int
+fifo_poll(ap)
+	struct vop_poll_args /* {
+		struct vnode *a_vp;
+		int  a_events;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	struct file filetmp;
+	int ready;
+
+	if (ap->a_fflags & FREAD) {
+		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_readsock;
+		ready = soo_poll(&filetmp, ap->a_events, ap->a_p);
+		if (ready)
+			return (ready);
+	}
+	if (ap->a_fflags & FWRITE) {
+		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_writesock;
+		ready = soo_poll(&filetmp, ap->a_events, ap->a_p);
 		if (ready)
 			return (ready);
 	}

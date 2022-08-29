@@ -47,6 +47,7 @@ int	fifo_read(struct vop_read_args *);
 int	fifo_write(struct vop_write_args *);
 int	fifo_ioctl(struct vop_ioctl_args *);
 int	fifo_select(struct vop_select_args *);
+int	fifo_poll(struct vop_poll_args *);
 int	fifo_inactive(struct  vop_inactive_args *);
 int	fifo_bmap(struct vop_bmap_args *);
 int	fifo_print(struct vop_print_args *);

@@ -69,17 +69,6 @@ struct consdev {
 extern	struct consdev constab[];
 extern	struct consdev *cn_tab;
 
-void	cninit(void);
-int		cngetc(void);
-int		cngetsn(char *, int);
-void	cnputc(int);
-void	cnpollc(int);
-void	cnbell(u_int, u_int, u_int);
-void	cnflush(void);
-void	cnhalt(void);
-void	cnrint(void);
-void	nullcnpollc(dev_t, int);
-
 /* console-specific types */
 typedef void 	dev_type_cnprobe_t(struct consdev *);
 typedef void 	dev_type_cninit_t(struct consdev *);
@@ -121,8 +110,23 @@ typedef void 	dev_type_cnflush_t(dev_t);
 
 #endif /* KERNEL */
 
-#ifdef notyet
+/* Other kernel entry points. */
+void	cninit(void);
+int		cngetc(void);
+int		cngetsn(char *, int);
+void	cnputc(int);
+void	cnpollc(int);
+void	cnbell(u_int, u_int, u_int);
+void	cnflush(void);
+void	cnhalt(void);
+void	cnrint(void);
+void	nullcnpollc(dev_t, int);
 
+/* consdev */
+extern static struct consdev wsdisplay_cons;
+extern static struct consdev com_cons;
+
+#ifdef notyet
 #define	dev_decl(n,t)		__CONCAT(dev_type_,t)(__CONCAT(n,t))
 #define	dev_init(n,t)		__CONCAT(n,t)
 

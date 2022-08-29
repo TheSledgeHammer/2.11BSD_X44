@@ -93,7 +93,7 @@ struct tty {
 
 	void					(*t_oproc)(struct tty *);						/* device *//* Start output. */
 	void					(*t_stop)(struct tty *, int);					/* Stop output. */
-	int						(*t_param)(struct tty *, struct termios *);	/* Set hardware state. */
+	int						(*t_param)(struct tty *, struct termios *);		/* Set hardware state. */
 	int						(*t_hwiflow)(struct tty *, int);				/* Set hardware flow control. */
 
 /* be careful of tchars & co. */

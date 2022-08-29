@@ -156,6 +156,8 @@ void 	bcopy(const void *, void *, u_int);
 void 	ovbcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
 
+int		copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
+
 int		copystr(const void *, void *, size_t, size_t *);
 int		copyinstr(const void *, void *, size_t, size_t *);
 int		copyoutstr(const void *, void *, size_t, size_t *);

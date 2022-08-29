@@ -711,7 +711,7 @@ getenv_array(name, pdata, size, psize, type_size, allow_signed)
 
 	for (ptr = buf; *ptr != 0; ) {
 
-		value = strtoq(ptr, &end, 0);
+		value = strtoul(ptr, &end, 0);
 
 		/* check if signed numbers are allowed */
 		if (value < 0 && !allow_signed)
@@ -939,7 +939,7 @@ getenv_quad(name, data)
 	value = getenv_string_buffer(name);
 	if (value == NULL)
 		return (0);
-	iv = strtoq(value, &vtp, 0);
+	iv = strtoul(value, &vtp, 0);
 	if (vtp == value || (vtp[0] != '\0' && vtp[1] != '\0')) {
 		freeenv(value);
 		return (0);

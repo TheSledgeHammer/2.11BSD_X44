@@ -54,37 +54,27 @@ extern char *syscallnames[];
 static void link_exec(struct execsw_entry **, const struct execsw *);
 void exec_init(void);
 
-/* execsw Format: hdr size, exec_linker, emul_211bsd, exec_prio, arglen, copyargs, exec_setup_stack */
 const struct execsw execsw[] = {
 		/* shell scripts */
-		{ SCRIPT_HDR_SIZE, exec_script_linker, NULL, EXECSW_PRIO_ANY, 0, NULL, exec_setup_stack },
-
+		{ &script_exec },
 		/* a.out binaries */
-		{ AOUT_HDR_SIZE, exec_aout_linker, &emul_211bsd, EXECSW_PRIO_FIRST, 0, copyargs, exec_setup_stack },
-
+		{ &aout_exec },
 		/* coff binaries */
-		{ COFF_HDR_SIZE, exec_coff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
-
+		{ &coff_exec },
 		/* ecoff binaries */
-		{ ECOFF_HDR_SIZE, exec_ecoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
-
+		{ &ecoff_exec },
 		/* pecoff binaries */
-		{ PECOFF_HDR_SIZE, exec_pecoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, PECOFF_AUXSIZE, pecoff_copyargs, exec_setup_stack },
-
+		{ &pecoff_exec },
 		/* mach-o binaries */
-		{ MACHO_HDR_SIZE, exec_macho_linker, &emul_211bsd, EXECSW_PRIO_ANY, MACHO_AUXSIZE, macho_copyargs, exec_setup_stack },
-
+		{ &macho_exec },
 		/* 32-Bit ELF binaries */
-		{ ELF32_HDR_SIZE, exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, ELF32_AUXSIZE, elf_copyargs, exec_setup_stack },
-
+		{ &elf32_exec },
 		/* 64-Bit ELF binaries */
-		{ ELF64_HDR_SIZE, exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, ELF64_AUXSIZE, elf_copyargs, exec_setup_stack },
-
+		{ &elf64_exec },
 		/* 32-Bit xcoff binaries */
-		{ XCOFF32_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
-
+		{ &xcoff32_exec },
 		/* 64-Bit xcoff binaries */
-		{ XCOFF64_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
+		{ &xcoff64_exec },
 };
 
 int nexecs = (sizeof execsw / sizeof(struct execsw));

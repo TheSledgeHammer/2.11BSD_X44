@@ -62,8 +62,6 @@ int	getegid();
 int	setgid();
 int	setegid();
 int	acct();
-int	phys();
-int	lock();
 int	ioctl();
 int	reboot();
 int	sigwait();
@@ -146,7 +144,6 @@ int	getrlimit();
 int	setrlimit();
 int	killpg();
 int	quotactl();
-int	quota();
 int	getsockname();
 int	lfs_bmapv();
 int	lfs_markv();
@@ -274,9 +271,9 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    acct },				/* 51 = acct */
 	{ 0, 0,
-	    phys },				/* 52 = phys */
+	    nosys },				/* 52 = obsolete old phys */
 	{ 0, 0,
-	    lock },				/* 53 = lock */
+	    nosys },				/* 53 = obsolete old lock */
 	{ 0, 0,
 	    ioctl },				/* 54 = ioctl */
 	{ 0, 0,
@@ -468,7 +465,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    nosys },				/* 148 = obsolete old setquota */
 	{ 0, 0,
-	    quota },				/* 149 = quota */
+	    nosys },				/* 149 = obsolete old quota */
 	{ 0, 0,
 	    getsockname },			/* 150 = getsockname */
 	{ 0, 0,

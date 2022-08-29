@@ -192,7 +192,7 @@ dev_type_cngetc(comcngetc);
 dev_type_cnputc(comcnputc);
 dev_type_cnpollc(comcnpollc);
 
-static struct consdev comcons = {
+static struct consdev com_cons = {
 		.cn_probe = nullcnprobe,
 		.cn_init = nullcninit,
 		.cn_getc = comcngetc,
@@ -2439,7 +2439,7 @@ comcnattach(bus_space_tag_t iot, bus_addr_t iobase, int rate, int frequency,
 	res = cominit(iot, iobase, rate, frequency, type, cflag, &comconsioh);
 	if (res)
 		return (res);
-	cn_tab = &comcons;
+	cn_tab = &com_cons;
 	cn_init_magic(&com_cnm_state);
 	cn_set_magic("\047\001"); /* default magic is BREAK */
 

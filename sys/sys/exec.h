@@ -73,6 +73,8 @@ struct ps_strings {
 
 struct exec_linker;
 typedef int (*exec_makecmds_fcn)(struct exec_linker *);
+typedef int (*exec_copyargs_fcn)(struct exec_linker *, struct ps_strings *, void *, void *);
+typedef int (*exec_setup_stack_fcn)(struct exec_linker *);
 
 struct execsw {
 	u_int				ex_hdrsz;		/* size of header for this format */
@@ -81,9 +83,8 @@ struct execsw {
 	struct emul 		*ex_emul;		/* os emulation */
 	int					ex_prio;		/* entry priority */
 	int					ex_arglen;		/* Extra argument size in words */
-										/* Copy arguments on the new stack */
-	int					(*ex_copyargs)(struct exec_linker *, struct ps_strings *, void *, void *);
-	int					(*ex_setup_stack)(struct exec_linker *);
+	exec_copyargs_fcn	ex_copyargs;	/* Copy arguments on the new stack */
+	exec_setup_stack_fcn ex_setup_stack;
 };
 
 #define EXECSW_PRIO_ANY		0	/* default, no preference */
@@ -93,6 +94,17 @@ struct execsw {
 #ifdef _KERNEL
 extern const struct execsw 	execsw[];
 extern int					nexecs;
+
+extern const struct execsw script_exec;
+extern const struct execsw aout_exec;
+extern const struct execsw coff_exec;
+extern const struct execsw ecoff_exec;
+extern const struct execsw pecoff_exec;
+extern const struct execsw macho_exec;
+extern const struct execsw elf32_exec;
+extern const struct execsw elf64_exec;
+extern const struct execsw xcoff32_exec;
+extern const struct execsw xcoff64_exec;
 #endif
 
 #include <machine/exec.h>

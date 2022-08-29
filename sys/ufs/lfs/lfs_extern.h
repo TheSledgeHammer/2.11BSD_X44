@@ -103,7 +103,10 @@ void lfs_dump_dinode(void *);
 void lfs_dump_super(struct lfs *);
 #endif
 __END_DECLS
+
 extern int lfs_mount_type;
 extern struct vnodeops lfs_vnodeops;
 extern struct vnodeops lfs_specops;
+#ifdef FIFO
 extern struct vnodeops lfs_fifoops;
+#endif

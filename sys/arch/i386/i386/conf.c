@@ -78,7 +78,6 @@
 #include "pci.h"
 
 /* devsw switch table */
-
 const struct bdevsw *bdevsw0;
 const struct cdevsw *cdevsw0;
 const struct linesw *linesw0;
@@ -95,14 +94,17 @@ int max_linesws = __arraycount(linesw0);
 int	nblkdev = sys_bdevsws;
 int	nchrdev = sys_cdevsws;
 
+/* constab */
 struct consdev constab[] = {
 #if NWSDISPLAY > 0
-	wsdisplay_cons,
+		{ &wsdisplay_cons },
 #endif
-	{ 0 },
+#if NCOM > 0
+		{ &com_cons },
+#endif
+		{ 0 }
 };
 
-/* MD config initialization (machine/conf.c) */
 /* bdevsw */
 const struct bdevsw swap_bdevsw;
 const struct bdevsw wd_bdevsw;

@@ -1023,15 +1023,16 @@ ttyopen(dev, tp)
 {
 	int s;
 	
-	s = spltty();	
+	s = spltty();
 	TTY_LOCK(tp);
 	tp->t_dev = dev;
 	tp->t_state &= ~TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_ISOPEN;
 		bzero((caddr_t) & tp->t_winsize, sizeof(tp->t_winsize));
-		if (tp->t_line != NTTYDISC)
+		if (tp->t_line != NTTYDISC) {
 			ttywflush(tp);
+		}
 	}
 	TTY_UNLOCK(tp);
 	splx(s);

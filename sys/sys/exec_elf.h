@@ -975,5 +975,4 @@ int		twoelevenbsd_elf_signature(struct exec_linker *, Elf_Ehdr *);
 int		twoelevenbsd_elf_probe(struct exec_linker *, void *, char *, caddr_t *);
 
 #endif /* _KERNEL */
-
 #endif /* _SYS_EXEC_ELF_H_ */

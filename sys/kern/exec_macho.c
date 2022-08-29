@@ -53,6 +53,16 @@
 
 #include <vm/include/vm.h>
 
+const struct execsw macho_exec = {
+	.ex_hdrsz = MACHO_HDR_SIZE,
+	.ex_makecmds = exec_macho_linker,
+	.ex_emul = &emul_211bsd,
+	.ex_prio = EXECSW_PRIO_ANY,
+	.ex_arglen = MACHO_AUXSIZE,
+	.ex_copyargs = macho_copyargs,
+	.ex_setup_stack = exec_setup_stack
+};
+
 #ifdef DEBUG_MACHO
 static void
 exec_macho_print_segment_command(ls)

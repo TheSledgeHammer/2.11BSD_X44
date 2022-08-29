@@ -58,8 +58,8 @@
 #define	SYS_setgid	49
 #define	SYS_setegid	50
 #define	SYS_acct	51
-#define	SYS_phys	52
-#define	SYS_lock	53
+				/* 52 is obsolete old phys */
+				/* 53 is obsolete old lock */
 #define	SYS_ioctl	54
 #define	SYS_reboot	55
 #define	SYS_sigwait	56
@@ -149,7 +149,7 @@
 #define	SYS_killpg	146
 #define	SYS_quotactl	147
 				/* 148 is obsolete old setquota */
-#define	SYS_quota	149
+				/* 149 is obsolete old quota */
 #define	SYS_getsockname	150
 				/* 152 is obsolete old nostk */
 				/* 153 is obsolete old fetchi */
