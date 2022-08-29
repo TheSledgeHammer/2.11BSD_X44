@@ -51,8 +51,16 @@
 extern char *syscallnames[];
 #endif
 
-static void link_exec(struct execsw_entry **, const struct execsw *);
-void exec_init(void);
+const struct execsw script_exec;
+const struct execsw aout_exec;
+const struct execsw coff_exec;
+const struct execsw ecoff_exec;
+const struct execsw pecoff_exec;
+const struct execsw macho_exec;
+const struct execsw elf32_exec;
+const struct execsw elf64_exec;
+const struct execsw xcoff32_exec;
+const struct execsw xcoff64_exec;
 
 const struct execsw execsw[] = {
 		/* shell scripts */
