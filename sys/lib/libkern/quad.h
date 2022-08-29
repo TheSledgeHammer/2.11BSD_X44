@@ -138,6 +138,6 @@ u_quad_t 	__udivdi3(u_quad_t, u_quad_t );
 u_quad_t 	__umoddi3(u_quad_t, u_quad_t );
 quad_t 		__xordi3(quad_t, quad_t);
 
-quad_t		__divmoddi4(quad_t n, quad_t d, quad_t *r);
-u_quad_t	__udivmoddi4(u_quad_t n, u_quad_t d, u_quad_t *r);
+quad_t		__divmoddi4(quad_t, quad_t, quad_t *);
+u_quad_t	__udivmoddi4(u_quad_t, u_quad_t, u_quad_t *);
 __END_DECLS
