@@ -94,8 +94,8 @@ int max_linesws = __arraycount(linesw0);
 int	nblkdev = sys_bdevsws;
 int	nchrdev = sys_cdevsws;
 
-//extern struct consdev wsdisplay_cons;
-//extern struct consdev com_cons;
+struct consdev wsdisplay_cons;
+struct consdev com_cons;
 
 /* constab */
 struct consdev constab[] = {
