@@ -120,7 +120,7 @@ static struct lock_object cmos_lock;
 static uint8_t cmos_buf[CMOS_SIZE];
 
 void
-cmos_attach(int num)
+cmosattach(int num)
 {
 	if (num > 1)
 		return;

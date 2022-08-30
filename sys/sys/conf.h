@@ -278,6 +278,7 @@ extern const struct cdevsw swap_cdevsw;
 extern const struct cdevsw ctty_cdevsw;
 extern const struct cdevsw ptc_cdevsw;
 extern const struct cdevsw pts_cdevsw;
+extern const struct cdevsw cons_cdevsw;
 extern const struct cdevsw audio_cdevsw;
 extern const struct cdevsw midi_cdevsw;
 extern const struct cdevsw sequencer_cdevsw;

@@ -307,7 +307,7 @@ pseudo-device	ccd				4			# concatenated/striped disk devices
 pseudo-device	vnd				4			# disk-like interface to files
 
 # network pseudo-devices
-pseudo-device	bpfilter		8			# Berkeley packet filter
+#pseudo-device	bpfilter		8			# Berkeley packet filter
 
 # miscellaneous pseudo-devices
 pseudo-device	ksyms							# kernel symbols

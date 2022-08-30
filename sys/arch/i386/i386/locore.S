@@ -475,7 +475,7 @@ trycpuid:	/* Use the `cpuid' instruction. */
 /*
  * Signal trampoline, copied to top of user stack
  */
-ENTRY(sigcode)
+NENTRY(sigcode)
 		leal	12(%esp),%eax		# get pointer to sigcontext
 		movl	%eax,4(%esp)		# put it in the argument slot
 									# fake return address already there
@@ -483,9 +483,10 @@ ENTRY(sigcode)
 		int		$0x80	 			# enter kernel with args on stack
 		movl	$SYS_rexit,%eax
 		int		$0x80				# exit if sigreturn fails
-		
+
 		ALIGN_TEXT
-esigcode:
+		.globl	_C_LABEL(esigcode)
+_C_LABEL(esigcode):
 		.data
 		.globl	szsigcode
 szsigcode:

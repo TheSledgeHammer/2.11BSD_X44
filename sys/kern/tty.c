@@ -148,6 +148,11 @@ struct ttychars ttydefaults = {
 	CSUSP,	CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT, CMIN, CTIME
 };
 
+long tk_nin;
+long tk_nout;
+long tk_cancc;
+long tk_rawcc;
+
 static int  ttnread(struct tty *);
 static void ttyrubo(struct tty *, int);
 static void ttyecho(int, struct tty *);
@@ -2346,13 +2351,14 @@ tty_init_termios(tp)
 	struct tty *tp;
 {
 	struct termios *t = &tp->t_termios;
+
 	t->c_cflag = TTYDEF_CFLAG;
 	t->c_iflag = TTYDEF_IFLAG;
 	t->c_lflag = TTYDEF_LFLAG;
 	t->c_oflag = TTYDEF_OFLAG;
 	t->c_ispeed = TTYDEF_SPEED;
 	t->c_ospeed = TTYDEF_SPEED;
-	memcpy(&t->c_cc, ttydefchars, sizeof(ttydefchars));
+	bcopy(ttydefchars, &t->c_cc, sizeof(ttydefchars));
 	tp->t_termios = *t;
 }
 

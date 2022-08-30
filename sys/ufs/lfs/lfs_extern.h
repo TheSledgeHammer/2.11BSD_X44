@@ -33,6 +33,9 @@
  *	@(#)lfs_extern.h	8.6 (Berkeley) 5/8/95
  */
 
+#ifndef _UFS_LFS_EXTERN_H
+#define	_UFS_LFS_EXTERN_H
+
 struct fid;
 struct mount;
 struct nameidata;
@@ -99,8 +102,8 @@ int	 lfs_gatherblock (struct segment *, struct buf *, int *);
 
 #ifdef DEBUG
 void lfs_dump_dinode(void *);
-//void lfs_dump_dinode(struct ufs1_dinode *);
 void lfs_dump_super(struct lfs *);
+//void lfs_dump_dinode(struct ufs1_dinode *);
 #endif
 __END_DECLS
 
@@ -110,3 +113,4 @@ extern struct vnodeops lfs_specops;
 #ifdef FIFO
 extern struct vnodeops lfs_fifoops;
 #endif
+#endif /* !_UFS_LFS_EXTERN_H */

@@ -94,8 +94,8 @@ int max_linesws = __arraycount(linesw0);
 int	nblkdev = sys_bdevsws;
 int	nchrdev = sys_cdevsws;
 
-extern struct consdev wsdisplay_cons;
-extern struct consdev com_cons;
+//extern struct consdev wsdisplay_cons;
+//extern struct consdev com_cons;
 
 /* constab */
 struct consdev constab[] = {
@@ -123,6 +123,7 @@ const struct cdevsw swap_cdevsw;
 const struct cdevsw ctty_cdevsw;
 const struct cdevsw ptc_cdevsw;
 const struct cdevsw pts_cdevsw;
+const struct cdevsw cons_cdevsw;
 const struct cdevsw audio_cdevsw;
 const struct cdevsw midi_cdevsw;
 const struct cdevsw sequencer_cdevsw;
@@ -198,6 +199,7 @@ kernel_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
 //	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
 //	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);				/* virtual console */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);				/* ctty controlling terminal */
 	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);				/* ptc pseudo-tty slave, pseudo-tty master  */
 	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &pts_cdevsw, NULL);				/* pts pseudo-tty slave, pseudo-tty master  */

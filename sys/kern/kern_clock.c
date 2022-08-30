@@ -30,8 +30,9 @@ struct callout *callfree, *calltodo;
 
 int	stathz;
 int	profprocs;
+int profhz;
+int	psratio;				/* ratio: prof / stat */
 static int psdiv, pscnt;	/* prof => stat divider */
-int	psratio;		/* ratio: prof / stat */
 
 volatile struct timeval time;
 volatile struct	timeval mono_time;

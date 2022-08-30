@@ -2025,7 +2025,6 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 	struct vnodeops *fifoops;
 	struct vnode 	**vpp;
 {
-	struct proc *p = curproc;	/* XXX */
 	struct inode *ip;
 	struct vnode *vp, *nvp;
 
@@ -2054,7 +2053,9 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 		}
 		break;
 	case VFIFO:
+#ifdef FIFO
 		vp->v_op = fifoops;
+#endif
 		break;
 	default:
 		break;

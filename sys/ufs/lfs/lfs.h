@@ -33,6 +33,9 @@
  *	@(#)lfs.h	8.9 (Berkeley) 5/8/95
  */
 
+#ifndef _UFS_LFS_LFS_H_
+#define	_UFS_LFS_LFS_H_
+
 /*
  * Compile-time options for LFS.
  */
@@ -391,4 +394,5 @@ struct lfs_stats {
 	u_int	flush_invoked;
 };
 extern struct lfs_stats lfs_stats;
+#endif
 #endif
