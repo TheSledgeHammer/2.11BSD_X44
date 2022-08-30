@@ -805,8 +805,14 @@ ffs_vget(mp, ino, vpp)
 	struct ufsmount *ump;
 	struct buf *bp;
 	struct vnode *vp;
+	struct vnodeops *fifoops;
 	dev_t dev;
 	int i, type, error;
+#ifdef FIFO
+	fifoops = &ffs_fifoops
+#else
+	fifoops = NULL;
+#endif
 
 	ump = VFSTOUFS(mp);
 	dev = ump->um_dev;
@@ -864,7 +870,7 @@ ffs_vget(mp, ino, vpp)
 	 * Initialize the vnode from the inode, check for aliases.
 	 * Note that the underlying vnode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &ffs_specops, &ffs_fifoops, &vp)) {
+	if (error == ufs_vinit(mp, &ffs_specops, fifoops, &vp)) {
 		vput(vp);
 		*vpp = NULL;
 		return (error);
