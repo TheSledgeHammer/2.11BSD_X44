@@ -70,11 +70,17 @@ lfs_valloc(ap)
 	struct ifile *ifp;
 	struct inode *ip;
 	struct vnode *vp;
+	struct vnodeops *fifoops;
 	ufs1_daddr_t blkno;
 	ino_t new_ino;
 	u_long i, max;
 	int error;
 
+#ifdef FIFO
+	fifoops = &lfs_fifoops
+#else
+	fifoops = NULL;
+#endif
 	/* Get the head of the freelist. */
 	fs = VTOI(ap->a_pvp)->i_lfs;
 	new_ino = fs->lfs_free;
@@ -139,7 +145,7 @@ lfs_valloc(ap)
 	/* Insert into the inode hash table. */
 	ufs_ihashins(ip);
 
-	if (error == ufs_vinit(vp->v_mount, &lfs_specops, &lfs_fifoops, &vp)) {
+	if (error == ufs_vinit(vp->v_mount, &lfs_specops, fifoops, &vp)) {
 		vput(vp);
 		*ap->a_vpp = NULL;
 		return (error);

@@ -508,9 +508,16 @@ lfs_vget(mp, ino, vpp)
 	struct ifile *ifp;
 	struct vnode *vp;
 	struct ufsmount *ump;
+	struct vnodeops *fifoops;
 	ufs1_daddr_t daddr;
 	dev_t dev;
 	int error, retries;
+
+#ifdef FIFO
+	fifoops = &lfs_fifoops
+#else
+	fifoops = NULL;
+#endif
 
 	ump = VFSTOUFS(mp);
 	dev = ump->um_dev;
@@ -610,7 +617,7 @@ again:
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &lfs_specops, &lfs_fifoops, &vp)) {
+	if (error == ufs_vinit(mp, &lfs_specops, fifoops, &vp)) {
 		vput(vp);
 		*vpp = NULL;
 		return (error);

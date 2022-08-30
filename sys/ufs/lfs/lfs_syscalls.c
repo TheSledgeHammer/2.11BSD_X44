@@ -522,9 +522,14 @@ lfs1_fastvget(mp, ino, daddr, vpp, dinp)
 	struct vnode *vp;
 	struct ufsmount *ump;
 	struct buf *bp;
+	struct vnodeops *fifoops;
 	dev_t dev;
 	int error, retries;
-
+#ifdef FIFO
+	fifoops = &lfs_fifoops
+#else
+	fifoops = NULL;
+#endif
 	ump = VFSTOUFS(mp);
 	dev = ump->um_dev;
 	
@@ -612,7 +617,7 @@ lfs1_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &lfs_specops, &lfs_fifoops, &vp)) {
+	if (error == ufs_vinit(mp, &lfs_specops, fifoops, &vp)) {
 		lfs_vunref(vp);
 		*vpp = NULL;
 		return (error);
@@ -641,8 +646,15 @@ lfs2_fastvget(mp, ino, daddr, vpp, dinp)
 	struct vnode *vp;
 	struct ufsmount *ump;
 	struct buf *bp;
+	struct vnodeops *fifoops;
 	dev_t dev;
 	int error, retries;
+	
+#ifdef FIFO
+	fifoops = &lfs_fifoops
+#else
+	fifoops = NULL;
+#endif
 
 	ump = VFSTOUFS(mp);
 	dev = ump->um_dev;
@@ -731,7 +743,7 @@ lfs2_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, &lfs_specops, &lfs_fifoops, &vp)) {
+	if (error == ufs_vinit(mp, &lfs_specops, fifoops, &vp)) {
 		lfs_vunref(vp);
 		*vpp = NULL;
 		return (error);
