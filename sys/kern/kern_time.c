@@ -270,7 +270,7 @@ realitexpire(arg)
 	
 	p = (struct proc *)arg;
 	if(p == NULL) {
-		p = &u.u_procp;
+		p = u.u_procp;
 	}
 	psignal(p, SIGALRM);
 	if (!timerisset(&p->p_krealtimer.it_interval)) {
