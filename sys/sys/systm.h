@@ -178,7 +178,7 @@ int		susword(void *, int);
 int		hzto(struct timeval *tv);
 void 	timeout(void (*func)(void *), void *, int);
 void 	untimeout(void (*func)(void *), void *);
-void	realitexpire(void);
+void	realitexpire(void *);
 
 void	initclocks(void);
 void 	hardclock(struct clockframe *, caddr_t);
