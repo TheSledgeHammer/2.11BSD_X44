@@ -11,13 +11,6 @@ device	mainbus: isabus, eisabus, mcabus, pcibus, mainbus
 attach	mainbus at root
 file	arch/i386/i386/mainbus.c	    	mainbus
 
-# attribute used to bring in BIOS trampoline code for real-mode probing
-# of certain devices/BIOS features
-define bioscall
-device bioscall
-attach	bioscall at mainbus
-file	arch/i386/i386/bioscall.S	    	bioscall 					needs-flag
-
 # MP configuration using Intel SMP specification 1.4
 define	mpbios
 device	mpbios

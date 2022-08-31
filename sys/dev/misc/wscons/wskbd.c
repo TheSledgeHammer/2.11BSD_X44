@@ -260,7 +260,7 @@ static int wskbd_do_ioctl(struct device *, u_long, caddr_t, int, struct proc *);
 
 CFOPS_DECL(wskbd, wskbd_match, wskbd_attach, wskbd_detach, wskbd_activate);
 CFDRIVER_DECL(NULL, wskbd, &wskbd_cops, DV_DULL, sizeof(struct wskbd_softc));
-CFATTACH_DECL(wskbd, 0, &wskbd_cd);
+CFATTACH_DECL(wskbd, &wskbd_cd);
 
 extern struct cfdriver wskbd_cd;
 

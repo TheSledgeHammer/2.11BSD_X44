@@ -53,7 +53,7 @@ void	ppbattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(ppb, ppbmatch, ppbattach, NULL, NULL);
 CFDRIVER_DECL(NULL, ppb, &ppb_cops, DV_DULL, sizeof(struct ppb_softc));
-CFATTACH_DECL(ppb, 0, &ppb_cd);
+CFATTACH_DECL(ppb, &ppb_cd);
 
 int	ppbprint(void *, const char *pnp);
 

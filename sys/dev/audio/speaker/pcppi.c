@@ -70,7 +70,7 @@ void	pcppi_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(pcppi, pcppi_match, pcppi_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pcppi, &pcppi_cops, DV_DULL, sizeof(struct pcppi_softc));
-CFATTACH_DECL(pcppi, 0, &pcppi_cd);
+CFATTACH_DECL(pcppi, &pcppi_cd);
 
 static void pcppi_bell_stop(void*);
 

@@ -108,7 +108,7 @@ void com_isa_cleanup(void *);
 
 CFOPS_DECL(com_isa, com_isa_probe, com_isa_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, com_isa, &com_isa_cops, DV_DULL, sizeof(struct com_isa_softc));
-CFATTACH_DECL(com_isa, 0, &com_isa_cd);
+CFATTACH_DECL(com_isa, &com_isa_cd);
 
 int
 com_isa_probe(parent, match, aux)

@@ -78,7 +78,7 @@ static int pcdisplay_allocattr(void *, int, int, int, long *);
 
 CFOPS_DECL(pcdisplay, pcdisplay_match, pcdisplay_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pcdisplay, &pcdisplay_cops, DV_DULL, sizeof(struct pcdisplay_softc));
-CFATTACH_DECL(pcdisplay, 0, &pcdisplay_cd);
+CFATTACH_DECL(pcdisplay, &pcdisplay_cd);
 
 const struct wsdisplay_emulops pcdisplay_emulops = {
 	pcdisplay_cursor,

@@ -123,7 +123,7 @@ const struct cdevsw midi_cdevsw = {
 
 CFOPS_DECL(midi, midiprobe, midiattach, mididetach, midiactivate);
 CFDRIVER_DECL(NULL, midi, &midi_cops, DV_DULL, sizeof(struct midi_softc));
-CFATTACH_DECL(midi, 0, &midi_cd);
+CFATTACH_DECL(midi, &midi_cd);
 
 #ifdef MIDI_SAVE
 #define MIDI_SAVE_SIZE 100000

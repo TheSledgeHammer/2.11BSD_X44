@@ -88,7 +88,7 @@ void	pciide_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(pciide, pciide_match, pciide_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pciide, &pciide_cops, DV_DULL, sizeof(struct pciide_softc));
-CFATTACH_DECL(pciide, 0, &pciide_cd);
+CFATTACH_DECL(pciide, &pciide_cd);
 
 int
 pciide_match(parent, match, aux)

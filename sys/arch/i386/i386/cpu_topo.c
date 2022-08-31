@@ -94,6 +94,8 @@ void	intr_add_cpu(u_int);
 
 #define MiB(v)	(v ## ULL << 20)
 
+struct mem_range_softc mem_range_softc;
+
 void
 mem_range_AP_init(void)
 {

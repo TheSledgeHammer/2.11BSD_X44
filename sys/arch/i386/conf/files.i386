@@ -12,7 +12,7 @@ file		arch/i386/apic/apic.c			          ioapic | lapic
 file		arch/i386/apic/i8259.c
 file		arch/i386/i386/aout_machdep.c	    	exec_aout
 file   	arch/i386/i386/autoconf.c
-file    arch/i386/i386/bios.c             	bios            	
+file    arch/i386/i386/bios.c             	            	
 file    arch/i386/i386/bus_dma.c
 file    arch/i386/i386/bus_space.c
 file    arch/i386/i386/conf.c
@@ -48,6 +48,7 @@ file		arch/i386/i386/vm86.c
 file		dev/misc/cons/cons.c
 
 # Assembly Files
+file	  arch/i386/i386/bioscall.S
 file   arch/i386/i386/mpboot.S			        smp
 file   arch/i386/i386/support.S
 file   arch/i386/i386/vm86bios.S

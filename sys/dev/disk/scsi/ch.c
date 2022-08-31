@@ -111,7 +111,7 @@ void	chattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(ch, chmatch, chattach, NULL, NULL);
 CFDRIVER_DECL(NULL, ch, &ch_cops, DV_DULL, sizeof(struct ch_softc));
-CFATTACH_DECL(ch, 0, &ch_cd);
+CFATTACH_DECL(ch, &ch_cd);
 
 extern struct cfdriver ch_cd;
 

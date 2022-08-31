@@ -93,7 +93,7 @@ const struct cdevsw video_cdevsw = {
 
 CFOPS_DECL(video, videoprobe, videoattach, videodetach, videoactivate);
 CFDRIVER_DECL(NULL, video, &video_cops, DV_DULL, sizeof(struct video_softc));
-CFATTACH_DECL(video, 0, &video_cd);
+CFATTACH_DECL(video, &video_cd);
 
 int
 videoprobe(struct device *parent, struct cfdata *match, void *aux)

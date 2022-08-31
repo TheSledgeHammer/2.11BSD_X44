@@ -62,6 +62,7 @@ static int emitexterns(FILE *);
 static int emithdr(FILE *);
 static int emitloc(FILE *);
 static int emitpseudo(FILE *);
+static int emitcfhints(FILE *fp);
 static int emitpv(FILE *);
 static int emitroots(FILE *);
 
@@ -90,7 +91,7 @@ mkioconf(void)
 	v = emithdr(fp);
 	if (v != 0 || emitexterns(fp) || emitloc(fp)
 			|| emitpv(fp) || emitcfdata(fp) || emitroots(fp)
-			|| emitpseudo(fp)) {
+			|| emitpseudo(fp) || emitcfhints(fp)) {
 		if (v >= 0)
 			(void)fprintf(stderr,
 			    "config: error writing ioconf.c: %s\n",
@@ -390,4 +391,40 @@ emitpseudo(FILE *fp)
 			return (1);
 	}
 	return (fputs("\t{ 0, 0 }\n};\n", fp) < 0);
+}
+
+static char *
+devstr(struct devbase *dp)
+{
+    static char buf[100];
+
+    if (dp->d_major >= 0) {
+		snprintf(buf, sizeof(buf), "%s%d", dp->d_name, dp->d_major);
+		return (buf);
+    } else {
+		return (dp->d_name);
+	}
+}
+
+/*
+ * Emit cfhints.
+ */
+static int
+emitcfhints(FILE *fp)
+{
+	struct devbase *d;
+	int count;
+
+	count = 0;
+	fprintf(fp, "struct cfhints allhints[] = {\n");
+	TAILQ_FOREACH(d, &allbases, d_next) {
+		if (!devbase_has_instances(d, WILD)) {
+			continue;
+		}
+		char *n = devstr(d);
+		count++;
+	}
+	fprintf(fp, "};\n");
+	fprintf(fp, "int cfhint_count = %d;\n", count);
+	return (0);
 }

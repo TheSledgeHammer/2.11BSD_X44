@@ -125,7 +125,6 @@ typedef int				(*cfactivate_t)(struct device *, enum devact);
 LIST_HEAD(cfattachlist, cfattach);
 struct cfattach {
 	const char			*ca_name;				/* name of attachment */
-	short				ca_unit;			    /* attachment unit number */
 	struct cfdriver     *ca_driver;             /* the cfdriver i am linked too */
 	LIST_ENTRY(cfattach)ca_list;				/* list of attached cfdriver's */
 };
@@ -204,15 +203,15 @@ struct cfresource {
 
 /* cfattach, cfdriver and cfops declarations */
 #define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
-	struct cfops (name##_cops) = {							\
+	struct cfops (name##_cops) = {						\
 			.cops_match = (matfn),						\
 			.cops_attach = (attfn),						\
 			.cops_detach = (detfn),						\
 			.cops_activate = (actfn),					\
 	}
 
-#define CFDRIVER_DECL(devs, name, cops, clas, size)	\
-	struct cfdriver (name##_cd) = { 						\
+#define CFDRIVER_DECL(devs, name, cops, clas, size)		\
+	struct cfdriver (name##_cd) = { 					\
 			.cd_devs = (devs),							\
 			.cd_name = (#name),							\
 			.cd_ops = (cops),							\
@@ -220,10 +219,9 @@ struct cfresource {
 			.cd_devsize = (size),						\
 	}
 
-#define CFATTACH_DECL(name, unit, driver)				\
+#define CFATTACH_DECL(name, driver)						\
 	struct cfattach (name##_ca) = {						\
 			.ca_name = (#name),							\
-			.ca_unit = (unit),							\
 			.ca_driver = (driver),						\
 			.ca_list = { 0 },							\
 	}

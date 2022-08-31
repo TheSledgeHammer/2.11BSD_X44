@@ -54,7 +54,7 @@ int		isasubmatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(isa, isamatch, isaattach, NULL, NULL);
 CFDRIVER_DECL(NULL, isa, &isa_cops, DV_DULL, sizeof(struct isa_softc));
-CFATTACH_DECL(isa, 0, &isa_cd);
+CFATTACH_DECL(isa, &isa_cd);
 
 int
 isamatch(parent, cf, aux)

@@ -76,9 +76,9 @@ static int vga_pci_lookup_quirks(struct pci_attach_args *);
 
 CFOPS_DECL(vga_pci, vga_pci_match, vga_pci_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, vga, &vga_pci_cops, DV_DULL, sizeof(struct vga_pci_softc));
-CFATTACH_DECL(vga_pci, 0, &vga_cd);
+CFATTACH_DECL(vga_pci, &vga_cd);
 
-extern struct cfdriver vga_pci_cd;
+extern struct cfdriver vga_cd;
 
 int		vga_pci_ioctl(void *, u_long, caddr_t, int, struct proc *);
 caddr_t	vga_pci_mmap(void *, off_t, int);

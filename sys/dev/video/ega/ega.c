@@ -116,7 +116,7 @@ void ega_copyrows(void *, int, int, int);
 
 CFOPS_DECL(ega, ega_match, ega_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, ega, &ega_cops, DV_DULL, sizeof(struct ega_softc));
-CFATTACH_DECL(ega, 0, &ega_cd);
+CFATTACH_DECL(ega, &ega_cd);
 
 const struct wsdisplay_emulops ega_emulops = {
 	pcdisplay_cursor,

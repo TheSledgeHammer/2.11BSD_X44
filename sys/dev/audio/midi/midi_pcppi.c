@@ -74,7 +74,7 @@ void	midi_pcppi_close(midisyn *);
 
 CFOPS_DECL(midi_pcppi, midi_pcppi_match, midi_pcppi_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, midi_pcppi, &midi_pcppi_cops, DV_DULL, sizeof(struct midi_pcppi_softc));
-CFATTACH_DECL(midi_pcppi, 0, &midi_pcppi_cd);
+CFATTACH_DECL(midi_pcppi, &midi_pcppi_cd);
 
 struct midisyn_methods midi_pcppi_hw = {
 	0,			/* open */

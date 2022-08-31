@@ -132,7 +132,7 @@ void sysbeepattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(sysbeep, sysbeepmatch, sysbeepattach, NULL, NULL);
 CFDRIVER_DECL(NULL, sysbeep, &sysbeep_cops, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(sysbeep, 0, &sysbeep_cd);
+CFATTACH_DECL(sysbeep, &sysbeep_cd);
 
 static int 			ppi_attached;
 static pcppi_tag_t 	ppicookie;

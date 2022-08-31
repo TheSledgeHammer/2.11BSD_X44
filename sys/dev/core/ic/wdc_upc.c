@@ -56,7 +56,7 @@ struct wdc_upc_softc {
 
 CFOPS_DECL(wdc_upc, wdc_upc_match, wdc_upc_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, wdc, &wdc_upc_cops, DV_DULL, sizeof(struct wdc_upc_softc));
-CFATTACH_DECL(wd_upc, 0, &wdc_cd);
+CFATTACH_DECL(wd_upc, &wdc_cd);
 
 static int
 wdc_upc_match(struct device *parent, struct cfdata *cf, void *aux)

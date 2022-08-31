@@ -48,11 +48,10 @@
 #include <machine/vmparam.h>
 #include <machine/bios.h>
 
-#ifdef DEV_ISA
+
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isapnp/isapnpreg.h>
 #include <dev/core/isapnp/isapnpvar.h>
-#endif
 
 #define BIOS_START			0xe0000
 #define BIOS_SIZE			0x20000
@@ -63,14 +62,14 @@ static struct PnPBIOS_table	*PnPBIOStable;
 static u_int				bios32_SDCI;
 
 /* start fairly early */
-static void					bios32_init(void); /* init'ed in autoconf.c */
+void					bios32_init(void); /* init'ed in autoconf.c */
 
 /*
  * bios32_init
  *
  * Locate various bios32 entities.
  */
-static void
+void
 bios32_init(void)
 {
     u_long					sigaddr;

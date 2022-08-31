@@ -145,9 +145,6 @@ mkoneswap(struct config *cf)
 	if (fprintf(fp, "const char *swapspec = %s;\n", specinfo) < 0) {
 		goto wrerror;
 	}
-	if (fputs("\nstruct\tswdevt swdevt[] = {\n", fp) < 0) {
-		goto wrerror;
-	}
 	for (nv = cf->cf_swap; nv != NULL; nv = nv->nv_next) {
 		if (fprintf(fp, "dev_t\tswapdev = %s;\t/* %s */\n\n", nv ? mkdevstr(nv->nv_int) : "NODEV", nv ? nv->nv_str : "unspecified") < 0) {
 			goto wrerror;

@@ -96,7 +96,6 @@ const struct cdevsw ptc_cdevsw = {
 		.d_ioctl = ptyioctl,
 		.d_stop = nodev,
 		.d_tty = ptytty,
-		.d_select = ptcselect,
 		.d_poll = ptcpoll,
 		.d_mmap = nodev,
 		.d_discard = nodev,
@@ -119,8 +118,10 @@ const struct cdevsw pts_cdevsw = {
 
 /*ARGSUSED*/
 int
-ptsopen(dev, flag)
+ptsopen(dev, flag, devtype, p)
 	dev_t dev;
+	int flag, devtype;
+	struct proc *p;
 {
 	register struct tty *tp;
 	const struct linesw *line;
@@ -154,9 +155,10 @@ ptsopen(dev, flag)
 }
 
 int
-ptsclose(dev, flag)
+ptsclose(dev, flag, devtype, p)
 	dev_t dev;
-	int flag;
+	int flag, devtype;
+	struct proc *p;
 {
 	register struct tty *tp;
 	const struct linesw *line;
@@ -297,9 +299,10 @@ ptcwakeup(tp, flag)
 
 /*ARGSUSED*/
 int
-ptcopen(dev, flag)
+ptcopen(dev, flag, devtype, p)
 	dev_t dev;
-	int flag;
+	int flag, devtype;
+	struct proc *p;
 {
 	register struct tty *tp;
 	const struct linesw *line;
@@ -325,9 +328,10 @@ ptcopen(dev, flag)
 }
 
 int
-ptcclose(dev, flag)
+ptcclose(dev, flag, devtype, p)
 	dev_t dev;
-	int flag;
+	int flag, devtype;
+	struct proc *p;
 {
 	register struct tty *tp;
 	const struct linesw *line;
@@ -429,9 +433,10 @@ ptsstop(tp, flush)
 }
 
 int
-ptcselect(dev, rw)
+ptcselect(dev, rw, p)
 	dev_t dev;
 	int rw;
+	struct proc *p;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
@@ -758,11 +763,12 @@ ptytty(dev_t dev)
 
 /*ARGSUSED*/
 int
-ptyioctl(dev, cmd, data, flag)
+ptyioctl(dev, cmd, data, flag, p)
 	caddr_t data;
 	u_int cmd;
 	dev_t dev;
 	int flag;
+	struct proc *p;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
