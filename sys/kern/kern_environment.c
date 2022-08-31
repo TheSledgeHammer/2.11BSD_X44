@@ -81,7 +81,7 @@ static char *_getenv_static(const char *);
 static char *_getenv_dynamic(const char *, int *);
 static char *_getenv_dynamic_locked(const char *, int *);
 static char *getenv_string_buffer(const char *);
-//static int	setenv_static(const char *, const char *);
+static int	setenv_static(const char *, const char *);
 
 int
 kenv()
