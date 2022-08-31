@@ -261,6 +261,30 @@ setitimer()
 	return (0);
 }
 
+void
+realitexpire(void)
+{
+	register struct proc *p;
+	int s;
+
+	p = &u.u_procp;
+	psignal(p, SIGALRM);
+	if (!timerisset(&p->p_krealtimer.it_interval)) {
+		timerclear(&p->p_krealtimer);
+		return;
+	}
+	for (;;) {
+		s = splclock();
+		timevaladd(&p->p_krealtimer.it_value, &p->p_krealtimer.it_interval);
+		if (timercmp(&p->p_krealtimer.it_value, &time, >)) {
+			timeout(realitexpire, (caddr_t)p, hzto(&p->p_krealtimer.it_value));
+			splx(s);
+			return;
+		}
+		splx(s);
+	}
+}
+
 /*
  * Check that a proposed value to load into the .it_value or
  * .it_interval part of an interval timer is acceptable, and
@@ -332,7 +356,6 @@ void
 timevaladd(t1, t2)
 	struct timeval *t1, *t2;
 {
-
 	t1->tv_sec += t2->tv_sec;
 	t1->tv_usec += t2->tv_usec;
 	timevalfix(t1);
@@ -342,7 +365,6 @@ void
 timevalsub(t1, t2)
 	struct timeval *t1, *t2;
 {
-
 	t1->tv_sec -= t2->tv_sec;
 	t1->tv_usec -= t2->tv_usec;
 	timevalfix(t1);
@@ -352,7 +374,6 @@ void
 timevalfix(t1)
 	struct timeval *t1;
 {
-
 	if (t1->tv_usec < 0) {
 		t1->tv_sec--;
 		t1->tv_usec += 1000000L;

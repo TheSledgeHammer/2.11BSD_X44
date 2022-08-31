@@ -45,7 +45,6 @@
 
 extern	int db_onpanic;			/* enter ddb on panic */
 extern	int db_fromconsole;		/* can be entered from the console */
-extern	int db_tee_msgbuf;		/* add ddb output to dmesg */
 
 int ddb_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 int	read_symtab_from_file(struct proc *,struct vnode *,const char *);

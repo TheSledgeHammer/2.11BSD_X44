@@ -68,9 +68,9 @@ extern dev_t swapdev;				/* swapping device */
 extern struct vnode *swapdev_vp;	/* vnode equivalent to above */
 
 extern int	mpid;					/* generic for unique process id's */
-extern char	runin;					/* scheduling flag */
-extern char	runout;					/* scheduling flag */
 extern int	runrun;					/* scheduling flag */
+char		runin;					/* scheduling flag */
+char		runout;					/* scheduling flag */
 char		curpri;					/* more scheduling */
 
 /* system call args */
@@ -168,7 +168,7 @@ int		fubyte(const void *);
 int		fuibyte(void *);
 int		fuword(const void *);
 int		fuiword(void *);
-int 		fusword(const void *);
+int 	fusword(const void *);
 int		subyte(void *, int);
 int		suibyte(void *, int);
 int		suword(void *, int);
@@ -178,7 +178,7 @@ int		susword(void *, int);
 int		hzto(struct timeval *tv);
 void 	timeout(void (*func)(void *), void *, int);
 void 	untimeout(void (*func)(void *), void *);
-void	realitexpire(void *);
+void	realitexpire(void);
 
 void	initclocks(void);
 void 	hardclock(struct clockframe *, caddr_t);

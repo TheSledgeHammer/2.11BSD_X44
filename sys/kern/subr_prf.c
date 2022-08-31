@@ -248,12 +248,6 @@ db_printf(const char *fmt, ...)
 	va_start(ap, fmt);
 	prf2(fmt, TODDB, ap);
 	va_end(ap);
-
-	if (db_tee_msgbuf) {
-		va_start(ap, fmt);
-		prf2(fmt, TOLOG, ap);
-		va_end(ap);
-	}
 }
 
 #endif /* DDB */

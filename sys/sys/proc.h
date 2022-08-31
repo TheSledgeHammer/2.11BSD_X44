@@ -79,7 +79,8 @@ struct	proc {
 	u_int				p_swtime;	 	/* Time swapped in or out. */
 	struct callout 		p_tsleep_ch;	/* callout for tsleep */
 
-    struct k_itimerval 	p_realtimer;	/* Alarm timer. */
+    struct itimerval 	p_krealtimer;	/* Alarm timer. 4.4BSD Compat */
+	struct k_itimerval 	p_realtimer;   	/* Alarm Timer. 2.11BSD */
     struct timeval     	p_rtime;	    /* Real time. */
     u_quad_t 			p_uticks;		/* Statclock hits in user mode. */
     u_quad_t 			p_sticks;		/* Statclock hits in system mode. */
@@ -134,7 +135,6 @@ struct	proc {
 	size_t				p_ssize;		/* size of stack segment (clicks) */
 	size_t				p_tsize;		/* size of text segment (clicks) */
 
-    struct k_itimerval 	p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short 			p_acflag;	    /* Accounting flags. */
 
 	long				p_spare[2];		/* pad to 256, avoid shifting eproc. */

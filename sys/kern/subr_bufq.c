@@ -85,6 +85,12 @@
 #include <sys/syslog.h>
 #include <sys/tree.h>
 
+#ifdef NEW_BUFQ_STRATEGY
+int bufq_disk_default_strat = BUFQ_READ_PRIO;
+#else /* NEW_BUFQ_STRATEGY */
+int bufq_disk_default_strat = BUFQ_DISKSORT;
+#endif /* NEW_BUFQ_STRATEGY */
+
 struct bufq_fcfs {
 	TAILQ_HEAD(, buf) 	bq_head;			/* actual list of buffers */
 };

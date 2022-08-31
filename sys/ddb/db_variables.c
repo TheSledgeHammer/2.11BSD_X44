@@ -62,7 +62,6 @@ int		db_onpanic = DDB_ONPANIC;
 #endif
 int		db_fromconsole = DDB_FROMCONSOLE;
 
-
 extern int	db_radix;
 extern int	db_max_width;
 extern int	db_tab_stop_width;

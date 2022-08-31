@@ -96,7 +96,8 @@ procxmt(p)
 	register struct proc *p;
 {
 	register int i, *poff, *paln;
-	extern char kstack[];
+	extern vm_offset_t 	proc0kstack;
+	//extern char kstack[];
 
 	if (ipc.ip_lock != u.u_procp->p_pid)
 		return (0);
@@ -163,7 +164,7 @@ procxmt(p)
 
 	case PT_WRITE_U:
 		i = (int) ipc.ip_addr;
-		poff = (int*) PHYSOFF(kstack, i);
+		poff = (int*) PHYSOFF(proc0kstack, i);
 		paln = (int*) PHYSALIGNED(i);
 		if (paln >= (int*) &u.u_fps && paln < (int*) &u.u_fps.u_fpregs[6])
 			goto ok;

@@ -228,7 +228,6 @@ socantrcvmore(so)
 /*
  * Queue a process for a select on a socket buffer.
  */
-/*
 void
 sbselqueue(sb)
 	register struct sockbuf *sb;
@@ -236,12 +235,21 @@ sbselqueue(sb)
 	register struct proc *p;
 	extern int selwait;
 
-	if ((p = sb->sb_sel) && ((caddr_t)mfkd(&p->p_wchan) == (caddr_t)&selwait)) {
+	p = pfind(sb->sb_sel.si_pid);
+	if(p != NULL) {
+		goto select;
+	} else {
+		p = &u.u_procp;
+		goto select;
+	}
+
+select:
+	if ((p->p_wchan == (caddr_t)&selwait)) {
+		selrecord(p, sb->sb_sel);
 		sb->sb_flags |= SB_COLL;
-	} //else
-		//sb->sb_sel = u.u_procp;
+	}
 }
-*/
+
 /*
  * Wait for data to arrive at/drain from a socket buffer.
  */
@@ -249,7 +257,6 @@ void
 sbwait(sb)
 	register struct sockbuf *sb;
 {
-
 	sb->sb_flags |= SB_WAIT;
 	sleep((caddr_t)&sb->sb_cc, PZERO+1);
 }

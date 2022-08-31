@@ -63,8 +63,8 @@ char						*kern_envp;
 
 /* pointer to the md-static environment */
 char						*md_envp;
-static int					md_env_len;
-static int					md_env_pos;
+//static int					md_env_len;
+//static int					md_env_pos;
 
 /* dynamic environment variables */
 char						**kenvp;
@@ -81,7 +81,7 @@ static char *_getenv_static(const char *);
 static char *_getenv_dynamic(const char *, int *);
 static char *_getenv_dynamic_locked(const char *, int *);
 static char *getenv_string_buffer(const char *);
-static int	setenv_static(const char *, const char *);
+//static int	setenv_static(const char *, const char *);
 
 int
 kenv()
@@ -242,10 +242,10 @@ kern_setenv(name, value)
 {
 	char *buf, *cp, *oldenv;
 	int namelen, vallen, i;
-
+/*
 	if (!dynamic_kenv && md_env_len > 0)
 		return (setenv_static(name, value));
-
+*/
 	KENV_CHECK;
 
 	namelen = strlen(name) + 1;
@@ -346,13 +346,14 @@ testenv(name)
 		simple_lock(&kenv_lock.lk_lnterlock);
 		cp = _getenv_dynamic(name, NULL);
 		simple_unlock(&kenv_lock.lk_lnterlock);
-	} else
+	} /*else
 		cp = _getenv_static(name);
+		*/
 	if (cp != NULL)
 		return (1);
 	return (0);
 }
-
+#ifdef notyet
 /*
  * Set an environment variable in the MD-static environment.  This cannot
  * feasibly be done on config(8)-generated static environments as they don't
@@ -474,6 +475,7 @@ init_static_kenv(buf, len)
 		static_hints[1] = '\0';
 	}
 }
+#endif
 
 static void
 init_dynamic_kenv_from(init_env, curpos)

@@ -1365,6 +1365,43 @@ wsdisplay_cfg_ioctl(sc, cmd, data, flag, p)
 	return (ENOIOCTL);
 }
 
+int
+wsdisplay_stat_inject(dev, type, value)
+	struct device *dev;
+	u_int type;
+	int value;
+{
+	struct wsdisplay_softc *sc = (struct wsdisplay_softc *) dev;
+	struct wseventvar *evar;
+	struct wscons_event *ev;
+	struct timeval thistime;
+	int put;
+
+	evar = &sc->evar;
+
+	if (evar == NULL)
+		return (0);
+
+	if (evar->q == NULL)
+		return (1);
+
+	put = evar->put;
+	ev = &evar->q[put];
+	put = (put + 1) % WSEVENT_QSIZE;
+	if (put == evar->get) {
+		log(LOG_WARNING, "wsdisplay: event queue overflow\n");
+		return (1);
+	}
+	ev->type = type;
+	ev->value = value;
+	microtime(&thistime);
+	TIMEVAL_TO_TIMESPEC(&thistime, &ev->time);
+	evar->put = put;
+	WSEVENT_WAKEUP(evar);
+
+	return (0);
+}
+
 caddr_t
 wsdisplaymmap(dev, offset, prot)
 	dev_t dev;

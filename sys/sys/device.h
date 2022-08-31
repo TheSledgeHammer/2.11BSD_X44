@@ -233,6 +233,8 @@ extern struct cfattachlist			allattachs;				/* head of list of all attachments *
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */
 extern struct deferred_config_head	interrupt_config_queue;	/* head of interrupt queue */
 extern struct evcntlist				allevents;				/* head of list of all events */
+extern struct cfhint 				allhints[];				/* head of list of device hints */
+extern int 							cfhint_count; 			/* hint count */
 
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search(cfmatch_t, struct device *, void *);

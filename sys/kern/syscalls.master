@@ -83,7 +83,7 @@
 39  STD     	{ int getlogin(); }
 40  STD			{ int lstat(); }
 41  STD     	{ int dup(); }
-42  STD     	{ int pipe(); }     	
+42  OBSOL     	old pipe
 43  STD     	{ int setlogin(); }
 44  STD     	{ int profil(); }
 45  STD     	{ int setuid(); }

@@ -50,13 +50,13 @@ extern bool_t dynamic_kenv;
 extern struct lock 	kenv_lock;
 extern char *kern_envp;
 extern char *md_envp;
-extern char static_env[];
-extern char static_hints[];	/* by config for now */
+//extern char static_env[];
+//extern char static_hints[];	/* by config for now */
 
 extern char **kenvp;
 
 void	kenv_init(void);
-void	init_static_kenv(char *, size_t);
+//void	init_static_kenv(char *, size_t);
 
 #endif /* _KERNEL */
 

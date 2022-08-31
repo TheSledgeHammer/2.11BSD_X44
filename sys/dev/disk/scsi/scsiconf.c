@@ -89,7 +89,7 @@ struct scsi_initq {
 };
 
 static TAILQ_HEAD(, scsi_initq) scsi_initq_head = TAILQ_HEAD_INITIALIZER(scsi_initq_head);
-static struct lock_object scsibus_interlock;	/* initialized in scsipi_base.c */
+struct lock_object scsibus_interlock;	/* initialized in scsipi_base.c */
 
 int	scsi_probe_device(struct scsibus_softc *, int, int);
 

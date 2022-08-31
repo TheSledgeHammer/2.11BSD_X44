@@ -42,8 +42,8 @@
  * Access functions for device resources.
  */
 /* Supplied by config(8) in ioconf.c */
-extern struct cfhint allhints[];	/* head of list of device hints */
-extern int cfhint_count; 			/* hint count */
+struct cfhint allhints[];	/* head of list of device hints */
+int cfhint_count; 			/* hint count */
 
 /* Runtime version */
 struct cfhint *hint = allhints;
@@ -54,6 +54,7 @@ void
 resource_init(void)
 {
 	resource_cfgload();
+	cfhint_count = 0;
 }
 
 static int

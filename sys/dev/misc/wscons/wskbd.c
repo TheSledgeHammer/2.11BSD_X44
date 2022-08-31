@@ -80,6 +80,8 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_wsdisplay_compat.h"
+
 #include "wsdisplay.h"
 #include "wskbd.h"
 #include "wsmux.h"

@@ -108,6 +108,7 @@ int	nbuf, nswbuf;
  * them here forces loader errors if this file is omitted
  * (if they've been externed everywhere else; hah!).
  */
+struct	timezone 	tz;
 struct 	callout 	*callout;
 struct  cblock		*cfree;
 struct	buf 		*buf, *swbuf;

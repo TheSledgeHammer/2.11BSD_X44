@@ -48,7 +48,7 @@
 #define	SYS_getlogin	39
 #define	SYS_lstat	40
 #define	SYS_dup	41
-#define	SYS_pipe	42
+				/* 42 is obsolete old pipe */
 #define	SYS_setlogin	43
 #define	SYS_profil	44
 #define	SYS_setuid	45
