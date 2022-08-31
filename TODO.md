@@ -55,9 +55,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## ddb:
 
 ## kern:
-- update device.h & subr_autoconf.c: improve device configuration handling
-	- change cfdriver to be matched by cfattach name and unit (currently).
-	e.g. wsdisplay0 & wsdisplay1 would reference both attached wsdisplay drivers
+- rollback kern_environment.c: to FreeBSD 5.x/DragonflyBSD version, where static environment is not implemented.
+	- As the static environment with hints (aka GENERIC.hints) does not offer anything over the current config style.
+	- FreeBSD 5.x & DragonflyBSD also suggest it is unneccessary to get a working BTX Bootloader.
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.
