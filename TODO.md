@@ -121,15 +121,16 @@ Of Interest Todo:
 		- plus much more
 		
 ## ufs:
+- implement Extended Attributes
 - lfs:
 	- update lfs structures for 64-bit.
-	- set up: dip & dip_set in lfs_segment.c, lfs_vfsops.c & lfs_vnops.c
+	- improve logging facilities (see: NetBSD)
+	- snapshots? 
 - ufs:
-	- journaling
+	- journaling: softupdates + revised htbc
 	- dirhash
 - ufs211:
-   	- add Extended Attributes
-	- add UFML Support
+   	- fix quotas
 - ufml:
 	- adds User libs
 	- improve fs support
