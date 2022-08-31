@@ -239,13 +239,13 @@ sbselqueue(sb)
 	if(p != NULL) {
 		goto select;
 	} else {
-		p = &u.u_procp;
+		p = u.u_procp;
 		goto select;
 	}
 
 select:
 	if ((p->p_wchan == (caddr_t)&selwait)) {
-		selrecord(p, sb->sb_sel);
+		selrecord(p, &sb->sb_sel);
 		sb->sb_flags |= SB_COLL;
 	}
 }

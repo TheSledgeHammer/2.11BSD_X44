@@ -262,15 +262,19 @@ setitimer()
 }
 
 void
-realitexpire(void)
+realitexpire(arg)
+	void *arg;
 {
 	register struct proc *p;
 	int s;
-
-	p = &u.u_procp;
+	
+	p = (struct proc *)arg;
+	if(p == NULL) {
+		p = &u.u_procp;
+	}
 	psignal(p, SIGALRM);
 	if (!timerisset(&p->p_krealtimer.it_interval)) {
-		timerclear(&p->p_krealtimer);
+		timerclear(&p->p_krealtimer.it_value);
 		return;
 	}
 	for (;;) {
