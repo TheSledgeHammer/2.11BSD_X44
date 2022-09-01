@@ -39,13 +39,8 @@
 #ifndef _SYS_UCONTEXT_H_
 #define _SYS_UCONTEXT_H_
 
+#include <sys/signal.h>
 #include <machine/mcontext.h>
-
-typedef struct {
-	void					*ss_sp;			/* signal stack base */
-	size_t					ss_size;		/* signal stack length */
-	int						ss_flags;		/* SS_DISABLE and/or SS_ONSTACK */
-} stack_t;
 
 struct __ucontext {
 	unsigned int			uc_flags;		/* properties */

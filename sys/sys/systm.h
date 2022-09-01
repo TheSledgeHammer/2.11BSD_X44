@@ -115,7 +115,9 @@ extern void vfsinit(void);			/* vfs startup */
 
 /* General Function Declarations */
 struct clockframe;
+struct exec_linker;
 struct timeval;
+struct ps_strings;
 
 int 	nodev(void);
 int 	nulldev(void *);
