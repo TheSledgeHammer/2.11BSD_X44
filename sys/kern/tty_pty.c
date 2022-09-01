@@ -19,6 +19,7 @@
 #include <sys/pty.h>
 #include <sys/user.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/file.h>
 #include <sys/proc.h>
 #include <sys/uio.h>
@@ -51,7 +52,7 @@ struct pt_ioctl {
 };
 
 struct tty pt_tty[DEFAULT_NPTYS];
-struct pt_ioctl pt_ioctl[DEFAULT_NPTYS];
+static struct pt_ioctl **pt_ioctl;
 int	npty = DEFAULT_NPTYS;		/* for pstat -t */
 int maxptys = DEFAULT_MAXPTYS;	/* maximum number of ptys (sysctable) */
 
@@ -68,20 +69,21 @@ void	ptcwakeup(struct tty *, int);
 void	ptsstart(struct tty *);
 int		pty_maxptys(int, int);
 
-static struct pt_softc **ptyarralloc(int);
+static struct pt_ioctl **ptyarralloc(int);
 static int check_pty(int);
 
 dev_type_open(ptsopen);
 dev_type_close(ptsclose);
 dev_type_read(ptsread);
 dev_type_write(ptswrite);
-dev_type_start(ptsstart);
+dev_type_poll(ptspoll);
 dev_type_stop(ptsstop);
 
 dev_type_open(ptcopen);
 dev_type_close(ptcclose);
 dev_type_read(ptcread);
 dev_type_write(ptcwrite);
+dev_type_poll(ptcpoll);
 
 dev_type_ioctl(ptyioctl);
 dev_type_tty(ptytty);
@@ -131,7 +133,7 @@ ptsopen(dev, flag, devtype, p)
 	if ((error = check_pty(dev))) {
 		return (error);
 	}
-	if (minor(dev) >= NPTY)
+	if (minor(dev) >= DEFAULT_NPTYS)
 		return (ENXIO);
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state & TS_ISOPEN) == 0) {
@@ -183,7 +185,7 @@ ptsread(dev, uio, flag)
 	int flag;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
-	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	register struct pt_ioctl *pti = pt_ioctl[minor(dev)];
 	const struct linesw *line;
 	int error = 0;
 	int s;
@@ -197,7 +199,7 @@ again:
 					|| (u.u_procp->p_flag & P_SVFORK)) {
 				return (EIO);
 			}
-			gsignal(u.u_procp->p_pgrp, SIGTTIN);
+			gsignal(u.u_procp->p_pgrp->pg_id, SIGTTIN);
 			s = spltty();
 			TTY_LOCK(tp);
 			sleep((caddr_t)&lbolt, TTIPRI);
@@ -271,7 +273,7 @@ void
 ptsstart(tp)
 	struct tty *tp;
 {
-	register struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
+	register struct pt_ioctl *pti = pt_ioctl[minor(tp->t_dev)];
 
 	if (tp->t_state & TS_TTSTOP)
 		return;
@@ -280,7 +282,7 @@ ptsstart(tp)
 		pti->pt_send = TIOCPKT_START;
 	}
 
-	selnotify(&pti->pt_selr, NOTE_SUBMIT);
+	selnotify(pti->pt_selr, NOTE_SUBMIT);
 	ptcwakeup(tp, FREAD);
 }
 
@@ -290,7 +292,7 @@ ptspoll(dev, events, p)
 	int events;
 	struct proc *p;
 {
-	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	register struct pt_ioctl *pti = pt_ioctl[minor(dev)];
 	const struct linesw *line;
 	struct tty *tp = pti->pt_tty;
 
@@ -306,14 +308,14 @@ ptcwakeup(tp, flag)
 	struct tty *tp;
 	int flag;
 {
-	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
+	struct pt_ioctl *pti = pt_ioctl[minor(tp->t_dev)];
 	int s;
 
 	s = spltty();
 	TTY_LOCK(tp);
 	if (flag & FREAD) {
 		if (pti->pt_selr) {
-			selnotify(&pti->pt_selr, NOTE_SUBMIT);
+			selnotify(pti->pt_selr, NOTE_SUBMIT);
 			pti->pt_selr = 0;
 			pti->pt_flags &= ~PF_RCOLL;
 		}
@@ -321,7 +323,7 @@ ptcwakeup(tp, flag)
 	}
 	if (flag & FWRITE) {
 		if (pti->pt_selw) {
-			selnotify(&pti->pt_selw, NOTE_SUBMIT);
+			selnotify(pti->pt_selw, NOTE_SUBMIT);
 			pti->pt_selw = 0;
 			pti->pt_flags &= ~PF_WCOLL;
 		}
@@ -347,7 +349,7 @@ ptcopen(dev, flag, devtype, p)
 	if ((error = check_pty(dev))) {
 		return (error);
 	}
-	if (minor(dev) >= NPTY)
+	if (minor(dev) >= DEFAULT_NPTYS)
 		return (ENXIO);
 	tp = &pt_tty[minor(dev)];
 
@@ -363,7 +365,7 @@ ptcopen(dev, flag, devtype, p)
 	splx(s);
 	line = linesw_lookup(tp->t_line);
 	(void)(*line->l_modem)(tp, 1);
-	pti = &pt_ioctl[minor(dev)];
+	pti = pt_ioctl[minor(dev)];
 	pti->pt_flags = 0;
 	pti->pt_send = 0;
 	pti->pt_ucntl = 0;
@@ -399,7 +401,7 @@ ptcread(dev, uio, flag)
 	int flag;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
-	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	struct pt_ioctl *pti = pt_ioctl[minor(dev)];
 	char buf[BUFSIZ];
 	int error = 0, cc;
 	int s;
@@ -463,11 +465,8 @@ ptcread(dev, uio, flag)
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t) & tp->t_outq);
 		}
-		if (tp->t_wsel) {
-			selnotify(&tp->t_wsel, NOTE_SUBMIT);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
+		selnotify(&tp->t_wsel, NOTE_SUBMIT);
+		tp->t_state &= ~TS_WCOLL;
 	}
 	TTY_UNLOCK(tp);
 	splx(s);
@@ -479,7 +478,7 @@ ptsstop(tp, flush)
 	register struct tty *tp;
 	int flush;
 {
-	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
+	struct pt_ioctl *pti = pt_ioctl[minor(tp->t_dev)];
 	int flag;
 
 	/* note: FLUSHREAD and FLUSHWRITE already ok */
@@ -494,12 +493,12 @@ ptsstop(tp, flush)
 	flag = 0;
 	if (flush & FREAD) {
 		flag |= FWRITE;
-		selnotify1(&pti->pt_selw, NOTE_SUBMIT);
+		selnotify(pti->pt_selw, NOTE_SUBMIT);
 		wakeup((caddr_t)&tp->t_rawq.c_cf);
 	}
 	if (flush & FWRITE) {
 		flag |= FREAD;
-		selnotify(&pti->pt_selr, NOTE_SUBMIT);
+		selnotify(pti->pt_selr, NOTE_SUBMIT);
 		wakeup((caddr_t)&tp->t_outq.c_cf);
 	}
 	ptcwakeup(tp, flag);
@@ -539,10 +538,10 @@ ptcpoll(dev, events, p)
 
 	if (revents == 0) {
 		if (events & (POLLIN | POLLHUP | POLLRDNORM))
-			selrecord(p, &pti->pt_selr);
+			selrecord(p, pti->pt_selr);
 
 		if (events & (POLLOUT | POLLWRNORM))
-			selrecord(p, &pti->pt_selw);
+			selrecord(p, pti->pt_selw);
 	}
 
 	splx(s);
@@ -561,7 +560,7 @@ ptcwrite(dev, uio, flag)
 	register int cc = 0;
 	char locbuf[BUFSIZ];
 	int cnt = 0;
-	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	struct pt_ioctl *pti = pt_ioctl[minor(dev)];
 	int error = 0;
 	int s;
 
@@ -679,13 +678,15 @@ check_pty(ptn)
 	int ptn;
 {
 	struct pt_ioctl *pti;
+	
 	if (ptn >= npty) {
 		struct pt_ioctl **newpt, **oldpt;
 		int newnpty;
 
 		/* check if the requested pty can be granted */
 		if (ptn >= maxptys) {
-			limit_reached: tablefull("pty", "increase kern.maxptys");
+	limit_reached: 
+			tablefull("increase kern.maxptys");
 			return (ENXIO);
 		}
 
@@ -720,9 +721,9 @@ check_pty(ptn)
 		 * allocated array and start using the new bigger array.
 		 */
 		if (newnpty > npty) {
-			memcpy(newpt, pt_softc, npty * sizeof(struct pt_ioctl*));
-			oldpt = pt_softc;
-			pt_softc = newpt;
+			memcpy(newpt, pt_ioctl, npty * sizeof(struct pt_ioctl *));
+			oldpt = pt_ioctl;
+			pt_ioctl = newpt;
 			npty = newnpty;
 		} else {
 			/* was enlarged when waited for lock, free new space */
@@ -740,7 +741,7 @@ check_pty(ptn)
 	 */
 	if (!pt_ioctl[ptn]) {
 		MALLOC(pti, struct pt_ioctl *, sizeof(struct pt_ioctl), M_DEVBUF, M_WAITOK);
-		memset(pti, 0, sizeof(struct pt_ioctl));
+		bzero(pti, sizeof(struct pt_ioctl));
 
 		pti->pt_tty = ttymalloc();
 
@@ -831,11 +832,10 @@ ptyioctl(dev, cmd, data, flag, p)
 	struct proc *p;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
-	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	register struct pt_ioctl *pti = pt_ioctl[minor(dev)];
 	const struct cdevsw *cdev;
 	const struct linesw *line;
 	int stop, error;
-	//extern ttyinput();
 
 	/*
 	 * IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG.

@@ -44,6 +44,7 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/ucontext.h>
+#include <sys/wait.h>
 
 void
 proc_getucontext(p, ucp)
@@ -62,7 +63,7 @@ proc_getucontext(p, ucp)
 	 * the main context stack.
 	 */
 	if ((p->p_sigacts->ps_sigstk.ss_flags & SS_ONSTACK) == 0) {
-		ucp->uc_stack.ss_sp = (void *)USRSTACK;
+		ucp->uc_stack.ss_base = (void *)USRSTACK;
 		ucp->uc_stack.ss_size = ctob(p->p_vmspace->vm_ssize);
 		ucp->uc_stack.ss_flags = 0;	/* XXX, def. is Very Fishy */
 	} else {
@@ -77,7 +78,7 @@ proc_getucontext(p, ucp)
 int
 proc_setucontext(p, ucp)
 	struct proc *p;
-	ucontext_t *ucp;
+	const ucontext_t *ucp;
 {
 	int		error;
 
