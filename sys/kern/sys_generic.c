@@ -358,6 +358,7 @@ struct pselect_args {
 };
 
 static int select1(struct pselect_args *, int);
+int	selwait, nselcoll;
 
 /*
  * Select system call.

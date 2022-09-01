@@ -93,6 +93,7 @@ struct 	vmspace vmspace0;
 struct 	proc *curproc = &proc0;
 struct	proc *initproc, *pageproc;
 
+int	netoff = 1;
 int		securelevel;
 int 	cmask = CMASK;
 extern	struct user *proc0paddr;
@@ -105,7 +106,7 @@ struct	timeval runtime;
 #ifndef BOOTVERBOSE
 #define	BOOTVERBOSE	0
 #endif
-int	bootverbose = 	BOOTVERBOSE;
+int	bootverbose = BOOTVERBOSE;
 
 static void start_init(struct proc *p, void *framep);
 /*

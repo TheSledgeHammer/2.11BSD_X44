@@ -31,6 +31,7 @@ struct callout *callfree, *calltodo;
 int	stathz;
 int	profprocs;
 int profhz;
+int hard_ticks;
 int	psratio;				/* ratio: prof / stat */
 static int psdiv, pscnt;	/* prof => stat divider */
 

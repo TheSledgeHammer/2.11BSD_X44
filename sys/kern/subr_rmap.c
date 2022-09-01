@@ -38,6 +38,7 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
+extern	size_t physmem;
 extern	struct	mapent _coremap[];
 
 /*

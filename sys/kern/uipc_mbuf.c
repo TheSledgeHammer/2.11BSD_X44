@@ -26,7 +26,11 @@
 extern	vm_map_t mb_map;
 struct mbuf *mbuf, *mbutl, xmbuf[NMBUFS + 1];
 struct mbuf xmbutl[(NMBCLUSTERS*CLBYTES/sizeof (struct mbuf))+7];
-char	*mclrefcnt;
+char *mclrefcnt;
+int max_linkhdr;
+int max_protohdr;
+int max_hdr;
+int max_datalen;
 
 void
 mbinit(void)

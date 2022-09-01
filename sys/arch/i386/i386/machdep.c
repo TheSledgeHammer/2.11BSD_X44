@@ -1402,10 +1402,8 @@ init386_ksyms(boot)
 	if (boot->bi_environment != 0) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 		addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
-		init_static_kenv((char*) boot->bi_environment + addend, 0);
 	} else {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
-		init_static_kenv(NULL, 0);
 	}
 	boot->bi_symtab += KERNBASE;
 	boot->bi_esymtab += KERNBASE;
@@ -1423,9 +1421,6 @@ init386_bootinfo(boot)
 	} else {
 		if (boot->bi_environment != 0) {
 			addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
-			init_static_kenv((char *)boot->bi_environment + addend, 0);
-		} else {
-			init_static_kenv(NULL, 0);
 		}
 	}
 	identify_cpu();
@@ -1616,7 +1611,6 @@ cpu_reset(void)
 	for (;;);
 }
 
-#ifdef notyet
 void
 cpu_getmcontext(p, mcp, flags)
 	struct proc *p;
@@ -1790,7 +1784,6 @@ cpu_setmcontext(p, mcp, flags)
 	}
 	return (0);
 }
-#endif
 
 /*
  * Add a mask to cpl, and return the old value of cpl.

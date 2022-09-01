@@ -36,32 +36,14 @@
  *	@(#)kern_sig.c	8.14 (Berkeley) 5/14/95
  */
 
+#include <sys/cdefs.h>
+
+#include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/sysdecl.h>
-#include <sys/ucontext.h>
 #include <sys/user.h>
-
-void
-kthread_getucontext(kt, ucp)
-	struct kthread *kt;
-	ucontext_t *ucp;
-{
-	struct proc *p;
-
-	p = kt->kt_procp;
-	proc_getucontext(p, ucp);
-}
-
-void
-kthread_setucontext(kt, ucp)
-	struct kthread *kt;
-	ucontext_t *ucp;
-{
-	struct proc *p;
-
-	p = kt->kt_procp;
-	proc_setucontext(p, ucp);
-}
+#include <sys/proc.h>
+#include <sys/ucontext.h>
 
 void
 proc_getucontext(p, ucp)
@@ -153,3 +135,27 @@ setucontext()
 	}
 	return (EJUSTRETURN);
 }
+
+/*
+void
+kthread_getucontext(kt, ucp)
+	struct kthread *kt;
+	ucontext_t *ucp;
+{
+	struct proc *p;
+
+	p = kt->kt_procp;
+	proc_getucontext(p, ucp);
+}
+
+void
+kthread_setucontext(kt, ucp)
+	struct kthread *kt;
+	ucontext_t *ucp;
+{
+	struct proc *p;
+
+	p = kt->kt_procp;
+	proc_setucontext(p, ucp);
+}
+*/
