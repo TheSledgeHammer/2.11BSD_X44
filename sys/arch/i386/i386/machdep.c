@@ -1615,17 +1615,17 @@ void
 cpu_getmcontext(p, mcp, flags)
 	struct proc *p;
 	mcontext_t *mcp;
-	unsigned int flags;
+	unsigned int *flags;
 {
 	const struct trapframe *tf;
 	gregset_t *gr;
 
 	tf = p->p_md.md_regs;
-	gr = mcp->mc_gregs;
+	gr = &mcp->mc_gregs;
 	/* Save register context. */
 	if (tf->tf_eflags & PSL_VM) {
 		struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
-		struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
+		struct vm86_kernel 	  *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
 		gr->mc_gs  = tf86->tf_vm86_gs;
 		gr->mc_fs  = tf86->tf_vm86_fs;
@@ -1692,12 +1692,12 @@ cpu_setmcontext(p, mcp, flags)
 	gregset_t *gr;
 
 	tf = p->p_md.md_regs;
-	gr = mcp->mc_gregs;
+	gr = &mcp->mc_gregs;
 	/* Restore register context, if any. */
 	if ((flags & _UC_CPU) != 0) {
 		if (gr->mc_eflags & PSL_VM) {
 			struct trapframe_vm86 *tf86 = (struct trapframe_vm86 *)tf;
-			struct vm86_kernel 	  *vm86 = p->p_addr->u_pcb.pcb_vm86;
+			struct vm86_kernel *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
 			tf86->tf_vm86_gs = gr->mc_gs;
 			tf86->tf_vm86_fs = gr->mc_fs;
@@ -1758,7 +1758,7 @@ cpu_setmcontext(p, mcp, flags)
 			} else {
 				/* This is a weird corner case */
 				process_xmm_to_s87(
-						(struct savexmm*) &mcp->mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm,
+						(struct fxsave*) &mcp->mc_fpregs.mc_fp_reg_set.mc_fp_xmm_state.fp_xmm,
 						&p->p_addr->u_pcb.pcb_savefpu.sv_87);
 			}
 		} else {

@@ -47,7 +47,7 @@
 #include <machine/stdarg.h>
 #include <machine/vmparam.h>
 #include <machine/bios.h>
-
+#include <machine/gdt.h>
 
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isapnp/isapnpreg.h>
