@@ -135,4 +135,8 @@ struct	emcsts {
 	long				em_tar;				/* memory mapped temp A register when swtched */
 	long				em_dl;				/* memory mapped D low register when swtched */
 };
+
+/* process_machdep.c */
+void		process_xmm_to_s87(const struct fxsave *, struct save87 *);
+void		process_s87_to_xmm(const struct save87 *, struct fxsave *);
 #endif /* _I386_NPX_H_ */
