@@ -57,6 +57,8 @@ extern int	getegid();
 extern int	setgid();
 extern int	setegid();
 extern int	acct();
+extern int	getucontext();
+extern int	setucontext();
 extern int	ioctl();
 extern int	reboot();
 extern int	sigwait();
