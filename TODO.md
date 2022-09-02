@@ -14,6 +14,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - Building Kernel/Arch:
 	- Compile Issues/Errors:
 		- Linker: Lots of them...!
+			- Yay only multiple definitions
 		- Compiler: None atm, Yay! :)
 
 # usr/ (User & OS Libraries):
@@ -55,9 +56,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## ddb:
 
 ## kern:
-- rollback kern_environment.c: to FreeBSD 5.x/DragonflyBSD version, where static environment is not implemented.
-	- As the static environment with hints (aka GENERIC.hints) does not offer anything over the current config style.
-	- FreeBSD 5.x & DragonflyBSD also suggest it is unneccessary to get a working BTX Bootloader.
+- subr_hints.c: It's usefulness is in question...
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
 - setup: a new freeproc list. 
 	- To manage proc's that are not active or zombie's.
