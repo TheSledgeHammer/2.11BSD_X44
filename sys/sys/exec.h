@@ -77,14 +77,13 @@ typedef int (*exec_copyargs_fcn)(struct exec_linker *, struct ps_strings *, void
 typedef int (*exec_setup_stack_fcn)(struct exec_linker *);
 
 struct execsw {
-	u_int				ex_hdrsz;		/* size of header for this format */
-	exec_makecmds_fcn	ex_makecmds;	/* function to setup vmcmds */
-
-	struct emul 		*ex_emul;		/* os emulation */
-	int					ex_prio;		/* entry priority */
-	int					ex_arglen;		/* Extra argument size in words */
-	exec_copyargs_fcn	ex_copyargs;	/* Copy arguments on the new stack */
-	exec_setup_stack_fcn ex_setup_stack;
+	u_int					ex_hdrsz;		/* size of header for this format */
+	exec_makecmds_fcn		ex_makecmds;	/* function to setup vmcmds */
+	struct emul 			*ex_emul;		/* os emulation */
+	int						ex_prio;		/* entry priority */
+	int						ex_arglen;		/* Extra argument size in words */
+	exec_copyargs_fcn		ex_copyargs;	/* Copy arguments on the new stack */
+	exec_setup_stack_fcn 	ex_setup_stack;
 };
 
 #define EXECSW_PRIO_ANY		0	/* default, no preference */

@@ -95,7 +95,7 @@ link_exec(listp, exp)
 {
 	struct execsw_entry *et, *e1;
 
-	et = (struct execsw_entry *) malloc(sizeof(struct execsw_entry), M_TEMP, M_WAITOK);
+	et = (struct execsw_entry *)malloc(sizeof(struct execsw_entry), M_TEMP, M_WAITOK);
 	et->next = NULL;
 	et->ex = exp;
 	if (*listp == NULL) {
@@ -110,15 +110,18 @@ link_exec(listp, exp)
 		break;
 	case EXECSW_PRIO_ANY:
 		/* put new entry after all *_FIRST and *_ANY entries */
-		for(e1 = *listp; e1->next
-			&& e1->next->ex->ex_prio != EXECSW_PRIO_LAST;
-			e1 = e1->next);
+		for (e1 = *listp; e1->next && e1->next->ex->ex_prio != EXECSW_PRIO_LAST;
+				e1 = e1->next) {
+			;
+		}
 		et->next = e1->next;
 		e1->next = et;
 		break;
 	case EXECSW_PRIO_LAST:
 		/* put new entry as the last one */
-		for(e1 = *listp; e1->next; e1 = e1->next);
+		for (e1 = *listp; e1->next; e1 = e1->next) {
+			;
+		}
 		e1->next = et;
 		break;
 	default:

@@ -115,9 +115,7 @@ extern void vfsinit(void);			/* vfs startup */
 
 /* General Function Declarations */
 struct clockframe;
-struct exec_linker;
 struct timeval;
-struct ps_strings;
 
 int 	nodev(void);
 int 	nulldev(void *);
@@ -157,8 +155,6 @@ char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 void 	bcopy(const void *, void *, u_int);
 void 	ovbcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
-
-int		copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 
 int		copystr(const void *, void *, size_t, size_t *);
 int		copyinstr(const void *, void *, size_t, size_t *);
