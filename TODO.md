@@ -14,7 +14,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - Building Kernel/Arch:
 	- Compile Issues/Errors:
 		- Linker: Lots of them...!
-			- Yay only multiple definitions
+			- Yay only multiple definitions to fix!
 		- Compiler: None atm, Yay! :)
 
 # usr/ (User & OS Libraries):
