@@ -105,6 +105,7 @@ define V_SWTCH 				offsetof(struct vmrate, v_swtch)
 define V_TRAP 				offsetof(struct vmrate, v_trap)
 define V_INTR 				offsetof(struct vmrate, v_intr)
 
+define PAGE_MASK			PGMASK
 define PAGE_SIZE			PGSIZE
 define USRSTACK 			USRSTACK
 

@@ -54,7 +54,6 @@ void
 resource_init(void)
 {
 	resource_cfgload();
-	cfhint_count = 0;
 }
 
 static int

@@ -112,7 +112,7 @@ u_int		cpu_power_edx;			/* 06H: Power management leaf, %edx */
 
 char machine[] = MACHINE;
 
-static char cpu_model[128];
+char cpu_model[128];
 static int 	hw_clockrate;
 static char cpu_brand[48];
 

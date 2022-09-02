@@ -171,6 +171,9 @@ int hostnamelen;
 long hostid;
 int securelevel;
 char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
+char osversion[];
+char osrelease[];
+long osrevision[];
 
 /*
  * kernel related system variables.
@@ -212,15 +215,16 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
 	case KERN_SECURELVL:
 		level = securelevel;
-		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) || newp == NULL)
+		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) || newp == NULL) {
 			return (error);
-		if (level < securelevel && u.u_procp->p_pid != 1)
+		}
+		if (level < securelevel && u.u_procp->p_pid != 1) {
 			return (EPERM);
+		}
 		securelevel = level;
 		return (0);
 	case KERN_HOSTNAME:
-		error = sysctl_string(oldp, oldlenp, newp, newlen,
-		    hostname, sizeof(hostname));
+		error = sysctl_string(oldp, oldlenp, newp, newlen, hostname, sizeof(hostname));
 		if (newp && !error)
 			hostnamelen = newlen;
 		return (error);

@@ -104,7 +104,7 @@ int		wsevent_poll(struct wseventvar *, int, struct proc *);
 int		wsevent_kqfilter(struct wseventvar *, struct knote *);
 void	wsevent_wakeup(struct wseventvar *);
 int		wsevent_inject(struct wseventvar *, struct wscons_event *, size_t);
-size_t		wsevent_avail(struct wseventvar *);
+size_t	wsevent_avail(struct wseventvar *);
 void	wsevent_put(struct wseventvar *, size_t);
 void	wsevent_get(struct wseventvar *, size_t);
 

@@ -31,6 +31,13 @@
  * Primitive routines for operating on sockets and socket buffers
  */
 
+/* strings for sleep message: */
+char	netio[] = "netio";
+char	netcon[] = "netcon";
+char	netcls[] = "netcls";
+
+u_long	sb_max = SB_MAX;		/* patchable */
+
 /*
  * Procedures to manipulate state flags of socket
  * and do appropriate wakeups.  Normal sequence from the

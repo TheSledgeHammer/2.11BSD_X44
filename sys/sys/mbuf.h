@@ -388,10 +388,13 @@ struct	mbuf 	*m_retryhdr(int, int);
 void			m_cat(struct mbuf *, struct mbuf *);
 void			m_adj(struct mbuf *, int);
 int			    m_clalloc(int, int);
-void			m_copyback(struct mbuf *, int, int, caddr_t);
+void			m_copydata(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
 void 			mbinit2(void *, int, int);
+
+#define m_copyback(m, off, len, cp)	\
+	(m_copydata(m, off, len, cp))
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */

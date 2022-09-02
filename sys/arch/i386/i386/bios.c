@@ -373,7 +373,7 @@ bios16(struct bios_args *args, char *fmt, ...)
 		args->seg.args.limit = 0xffff;
 	}
 
-	args->seg.code32.base = pmap_pg_frame((u_int) &bios16_jmp);
+	args->seg.code32.base = (u_int)&bios16_jmp;
 	args->seg.code32.limit = 0xffff;
 
 	bios16_pmap_handle = pmap_bios16_enter();

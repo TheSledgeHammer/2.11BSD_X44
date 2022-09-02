@@ -182,7 +182,7 @@ struct deferred_config {
 struct cfhint {
 	char				*ch_name;		/* device name */
 	int					ch_unit;		/**< current unit number */
-	char*				ch_nameunit;	/**< name+unit e.g. foodev0 */
+	char				*ch_nameunit;	/**< name+unit e.g. foodev0 */
 	int					ch_rescount;
 	struct cfresource	*ch_resources;
 };

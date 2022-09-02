@@ -69,6 +69,8 @@ static void	k6_mrinit(struct mem_range_softc *sc);
 static int	k6_mrset(struct mem_range_softc *, struct mem_range_desc *, int *);
 static __inline int k6_mrmake(struct mem_range_desc *, u_int32_t *);
 
+struct mem_range_softc mem_range_softc;
+
 static struct mem_range_ops k6_mrops = {
 	k6_mrinit,
 	k6_mrset,

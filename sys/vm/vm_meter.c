@@ -50,6 +50,8 @@ struct loadavg 		averunnable;	/* load average, of runnable procs */
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
 int nrun;
+int	avenrun[3];
+
 
 void
 vmmeter()

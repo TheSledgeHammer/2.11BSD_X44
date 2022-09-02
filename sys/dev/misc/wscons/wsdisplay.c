@@ -1397,7 +1397,7 @@ wsdisplay_stat_inject(dev, type, value)
 	microtime(&thistime);
 	TIMEVAL_TO_TIMESPEC(&thistime, &ev->time);
 	evar->put = put;
-	//WSEVENT_WAKEUP(evar);
+	wsevent_wakeup(evar);
 
 	return (0);
 }
