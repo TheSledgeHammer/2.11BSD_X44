@@ -91,7 +91,7 @@ struct 	filedesc0 filedesc0;
 struct 	plimit limit0;
 struct 	vmspace vmspace0;
 struct 	proc *curproc = &proc0;
-struct	proc *initproc, *pageproc;
+struct	proc *initproc;
 
 int	netoff = 1;
 int		securelevel;
@@ -339,7 +339,6 @@ main(framep)
 		panic("fork pager");
 	if (rval[1]) {
 		p = curproc;
-		pageproc = p;
 		p->p_flag |= P_INMEM | P_SYSTEM;	/* XXX */
 		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
 		vm_pageout();

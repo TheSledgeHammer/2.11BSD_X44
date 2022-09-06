@@ -135,8 +135,7 @@ struct	namecache {
 
 #ifdef _KERNEL
 struct mount;
-u_long	nextvnodeid;
-struct namecache *namecache;
+//struct namecache *namecache;
 int		namei(struct nameidata *);
 int		lookup(struct nameidata *);
 int		relookup(struct vnode *, struct vnode **, struct componentname *);

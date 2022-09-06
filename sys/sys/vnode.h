@@ -260,9 +260,9 @@ vref(vp)
 /*
  * Global vnode data.
  */
-extern	struct vnode *rootvnode;	/* root (i.e. "/") vnode */
-extern	int desiredvnodes;			/* number of vnodes desired */
-extern	struct vattr va_null;		/* predefined null vattr structure */
+extern struct vnode *rootvnode;		/* root (i.e. "/") vnode */
+extern int desiredvnodes;			/* number of vnodes desired */
+extern struct vattr va_null;		/* predefined null vattr structure */
 
 /*
  * Macro/function to check for client cache inconsistency w.r.t. leasing.
@@ -321,7 +321,7 @@ extern struct vnodeop_desc *vnodeop_descs[];
 /*
  * Interlock for scanning list of vnodes attached to a mountpoint
  */
-struct lock_object mntvnode_slock;
+extern struct lock_object mntvnode_slock;
 
 /*
  * This macro is very helpful in defining those offsets in the vdesc struct.
@@ -347,11 +347,6 @@ typedef int (*vocall_func_t)(struct vop_generic_args *);
  * Finally, include the default set of vnode operations.
  */
 #include <sys/vnode_if.h>
-
-/*
- * The default set of vnode operations.
- */
-//extern struct vnodeops 	default_vnodeops;
 
 /*
  * Public vnode manipulation functions.

@@ -266,7 +266,7 @@ extern struct lock_holder 	proc_loholder;
 #define	PIDHSZ						16
 #define	PIDHASH(pid)				(&pidhashtbl[(pid) & pid_hash & (PIDHSZ * ((pid) + pid_hash) - 1)])
 extern LIST_HEAD(pidhashhead, proc) *pidhashtbl;
-u_long pid_hash;
+extern u_long pid_hash;
 
 #define	PGRPHASH(pgid)				(&pgrphashtbl[(pgid) & pgrphash])
 extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
@@ -282,24 +282,24 @@ extern struct proc *curproc;			/* current running proc */
 
 extern int pidhashmask;					/* In param.c. */
 extern struct proc proc0;				/* Process slot for swapper. */
-int	nproc, maxproc;						/* Current and max number of procs. */
+extern int	nproc, maxproc;				/* Current and max number of procs. */
 
 LIST_HEAD(proclist, proc);
 extern struct proclist allproc;			/* List of active procs. */
 extern struct proclist zombproc;		/* List of zombie procs. */
 //extern struct proclist freeproc;		/* List of free procs. */
-struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
+extern struct proc *initproc, *pageproc;/* Process slots for init, pager. */
 
 #define	NQS	32							/* 32 run queues. */
 extern int	whichqs;					/* Bit mask summary of non-empty Q's. */
 TAILQ_HEAD(prochd, proc);				/* Linked list of running processes. */
-struct prochd qs[NQS];
+TAILQ_HEAD(sleepque, proc);				/* Linked list of sleeping processes. */
+extern struct prochd qs[];
+extern struct sleepque slpque[];
+extern struct emul emul_211bsd;			/* emulation struct */
 
-struct emul emul_211bsd;				/* emulation struct */
-
-struct 	proc *pfind(pid_t);			    /* Find process by id. */
-struct 	pgrp *pgfind(pid_t);			/* Find process group by id. */
-
+struct proc *pfind(pid_t);			    /* Find process by id. */
+struct pgrp *pgfind(pid_t);				/* Find process group by id. */
 int			setpri(struct proc *);
 void		setrun(struct proc *);
 void		setrq(struct proc *);

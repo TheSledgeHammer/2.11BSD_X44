@@ -89,6 +89,6 @@ struct pcb {
 };
 
 #ifdef _KERNEL
-struct pcb 						*curpcb;		/* our current running pcb */
+extern struct pcb 				*curpcb;				/* our current running pcb */
 #endif
 #endif /* _I386_PCB_H_ */

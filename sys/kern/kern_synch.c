@@ -72,7 +72,8 @@ fixpt_t	ccpu = 				0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 #define	HASH(x)				(((long)x >> 5) & (SQSIZE - 1))
 #define	SCHMAG				8/10
 #define	PPQ					(128 / NQS)				/* priorities per queue */
-TAILQ_HEAD(sleepque, proc) 	slpque[SQSIZE];
+struct prochd 				qs[NQS];
+struct sleepque 			slpque[SQSIZE];
 int							lbolt;					/* once a second sleep address */
 int 						whichqs;
 
@@ -165,9 +166,6 @@ schedcpu(arg)
 	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
-	}
-	if(bclnlist != NULL) {
-		wakeup((caddr_t)pageproc);
 	}
 	++runrun;					/* swtch at least once a second */
 	timeout(schedcpu, (void *)0, hz);

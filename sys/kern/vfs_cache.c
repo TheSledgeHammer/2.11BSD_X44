@@ -263,7 +263,6 @@ cache_enter(dvp, vp, cnp)
 void
 nchinit()
 {
-
 	TAILQ_INIT(&nclruhead);
 	nchashtbl = hashinit(desiredvnodes, M_CACHE, &nchash);
 }
@@ -282,6 +281,7 @@ cache_purge(vp)
 {
 	struct namecache *ncp;
 	struct nchashhead *ncpp;
+	static u_long nextvnodeid;
 
 	vp->v_id = ++nextvnodeid;
 	if (nextvnodeid != 0)

@@ -253,7 +253,7 @@ extern vm_offset_t 			kernel_vm_end;
 extern u_long 				tramp_idleptd;
 extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
-pv_entry_t					pv_table;		/* array of entries, one per page */
+extern pv_entry_t			pv_table;		/* array of entries, one per page */
 
 #define pa_index(pa)		atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])

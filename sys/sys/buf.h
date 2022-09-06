@@ -248,14 +248,14 @@ struct cluster_save {
 };
 
 #ifdef _KERNEL
+TAILQ_HEAD(swqueue, buf); 			/* Head of swap I/O buffer headers free list. */
+extern struct swqueue bswlist;
 extern int		nbuf;				/* number of buffer headers */
 extern struct	buf *buf;			/* the buffer pool itself */
 extern char		*buffers;			/* The buffer contents. */
 extern int		bufpages;			/* Number of memory pages in the buffer pool. */
 extern struct	buf *swbuf;			/* Swap I/O buffer headers. */
 extern int		nswbuf;				/* Number of swap I/O buffer headers. */
-TAILQ_HEAD(swqueue, buf) bswlist;	/* Head of swap I/O buffer headers free list. */
-struct buf 		*bclnlist;			/* Head of cleaned page list. */
 
 __BEGIN_DECLS
 void		bufinit(void);

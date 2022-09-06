@@ -13,10 +13,6 @@ SUBDIR=  	byacc elftoolchain/common file flex gnu 	\
 SUBDIR+= libc++
 .endif
 
-.if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
-SUBDIR+= llvm
-.endif
-
 .if ${MKPCC} != "no"
 SUBDIR+= pcc
 .endif
