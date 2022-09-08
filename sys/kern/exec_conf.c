@@ -63,26 +63,35 @@ const struct execsw xcoff32_exec;
 const struct execsw xcoff64_exec;
 
 const struct execsw execsw[] = {
-		/* shell scripts */
-		{ &script_exec },
-		/* a.out binaries */
-		{ &aout_exec },
-		/* coff binaries */
-		{ &coff_exec },
-		/* ecoff binaries */
-		{ &ecoff_exec },
-		/* pecoff binaries */
-		{ &pecoff_exec },
-		/* mach-o binaries */
-		{ &macho_exec },
-		/* 32-Bit ELF binaries */
-		{ &elf32_exec },
-		/* 64-Bit ELF binaries */
-		{ &elf64_exec },
-		/* 32-Bit xcoff binaries */
-		{ &xcoff32_exec },
-		/* 64-Bit xcoff binaries */
-		{ &xcoff64_exec },
+	/* shell scripts */
+	{ &script_exec.ex_hdrsz, &script_exec.ex_makecmds, &script_exec.ex_emul, &script_exec.ex_prio, &script_exec.ex_arglen, &script_exec.ex_copyargs, &script_exec.ex_setup_stack },
+
+	/* a.out binaries */
+	{ &aout_exec.ex_hdrsz, &aout_exec.ex_makecmds, &aout_exec.ex_emul, &aout_exec.ex_prio, &aout_exec.ex_arglen, &aout_exec.ex_copyargs, &aout_exec.ex_setup_stack },
+
+	/* coff binaries */
+	{ &coff_exec.ex_hdrsz, &coff_exec.ex_makecmds, &coff_exec.ex_emul, &coff_exec.ex_prio, &coff_exec.ex_arglen, &coff_exec.ex_copyargs, &coff_exec.ex_setup_stack },
+
+	/* ecoff binaries */
+	{ &ecoff_exec.ex_hdrsz, &ecoff_exec.ex_makecmds, &ecoff_exec.ex_emul, &ecoff_exec.ex_prio, &ecoff_exec.ex_arglen, &ecoff_exec.ex_copyargs, &ecoff_exec.ex_setup_stack },
+	
+	/* pecoff binaries */
+	{ &pecoff_exec.ex_hdrsz, &pecoff_exec.ex_makecmds, &pecoff_exec.ex_emul, &pecoff_exec.ex_prio, &pecoff_exec.ex_arglen, &pecoff_exec.ex_copyargs, &pecoff_exec.ex_setup_stack },
+
+	/* mach-o binaries */
+	{ &macho_exec.ex_hdrsz, &macho_exec.ex_makecmds, &macho_exec.ex_emul, &macho_exec.ex_prio, &macho_exec.ex_arglen, &macho_exec.ex_copyargs, &macho_exec.ex_setup_stack },
+
+	/* 32-Bit ELF binaries */
+	{ &elf32_exec.ex_hdrsz, &elf32_exec.ex_makecmds, &elf32_exec.ex_emul, &elf32_exec.ex_prio, &elf32_exec.ex_arglen, &elf32_exec.ex_copyargs, &elf32_exec.ex_setup_stack },
+
+	/* 64-Bit ELF binaries */
+	{ &elf64_exec.ex_hdrsz, &elf64_exec.ex_makecmds, &elf64_exec.ex_emul, &elf64_exec.ex_prio, &elf64_exec.ex_arglen, &elf64_exec.ex_copyargs, &elf64_exec.ex_setup_stack },
+	
+	/* 32-Bit xcoff binaries */
+	{ &xcoff32_exec.ex_hdrsz, &xcoff32_exec.ex_makecmds, &xcoff32_exec.ex_emul, &xcoff32_exec.ex_prio, &xcoff32_exec.ex_arglen, &xcoff32_exec.ex_copyargs, &xcoff32_exec.ex_setup_stack },
+
+	/* 64-Bit xcoff binaries */
+	{ &xcoff64_exec.ex_hdrsz, &xcoff64_exec.ex_makecmds, &xcoff64_exec.ex_emul, &xcoff64_exec.ex_prio, &xcoff64_exec.ex_arglen, &xcoff64_exec.ex_copyargs, &xcoff64_exec.ex_setup_stack },
 };
 
 int nexecs = (sizeof execsw / sizeof(struct execsw));
