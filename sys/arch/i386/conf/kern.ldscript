@@ -1,4 +1,4 @@
-/*	$NetBSD: kern.ldscript,v 1.1 2001/01/20 01:05:23 thorpej Exp $	*/
+/*	$NetBSD: kern.ldscript,v 1.7 2007/10/18 15:28:34 yamt Exp $	*/
 
 /*
  * Kernel linker script for NetBSD/i386.  This script is based on
