@@ -255,8 +255,8 @@ extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
 extern pv_entry_t			pv_table;		/* array of entries, one per page */
 
-#define pa_index(pa)		atop(pa - vm_first_phys)
-#define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
+//#define pa_index(pa)		atop(pa - vm_first_phys)
+//#define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
 
 #define	pmap_resident_count(pmap)	\
 	((pmap)->pm_stats.resident_count)

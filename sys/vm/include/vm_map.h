@@ -205,9 +205,9 @@ typedef struct {
 /*
  *	Functions implemented as macros
  */
-#define		vm_map_min(map)		((map)->min_offset)
-#define		vm_map_max(map)		((map)->max_offset)
-#define		vm_map_pmap(map)	((map)->pmap)
+#define	vm_map_min(map)		((map)->min_offset)
+#define	vm_map_max(map)		((map)->max_offset)
+#define	vm_map_pmap(map)	((map)->pmap)
 
 /* XXX: number of kernel maps and entries to statically allocate */
 #define MAX_KMAP	10

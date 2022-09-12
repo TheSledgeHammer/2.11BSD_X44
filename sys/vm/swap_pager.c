@@ -659,8 +659,7 @@ swap_pager_io(swp, mlist, npages, flags)
 	while (TAILQ_FIRST(&bswlist) == NULL) {
 #ifdef DEBUG
 		if (swpagerdebug & SDB_ANOM)
-			printf("swap_pager_io: wait on swbuf for %x (%d)\n",
-			       m, flags);
+			printf("swap_pager_io: wait on swbuf for %x (%d)\n", m, flags);
 #endif
 		TAILQ_INIT(&bswlist);
 		TAILQ_FIRST(&bswlist)->b_flags |= B_WANTED;

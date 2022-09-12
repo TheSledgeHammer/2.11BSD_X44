@@ -418,7 +418,7 @@ lfs_segwait()
 	register struct proc *p;
 	register struct lfs_segwait_args *uap;
 	int *retval;
-	extern int lfs_allclean_wakeup;
+	//extern int lfs_allclean_wakeup;
 	struct mount *mntp;
 	struct timeval atv;
 	fsid_t fsid;

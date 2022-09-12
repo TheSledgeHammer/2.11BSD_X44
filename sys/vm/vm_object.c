@@ -100,16 +100,28 @@
  *
  */
 
-struct vm_object	kernel_object_store;
-struct vm_object	kmem_object_store;
+static struct vm_object	kernel_object_store;
+static struct vm_object	kmem_object_store;
+vm_object_t	kernel_object;
+vm_object_t	kmem_object;
 
 #define	VM_OBJECT_HASH_COUNT	157
 
-int	vm_cache_max = 100;	/* can patch if necessary */
-struct	vm_object_hash_head vm_object_hashtable[VM_OBJECT_HASH_COUNT];
+struct vm_object_hash_head vm_object_hashtable[VM_OBJECT_HASH_COUNT];
+long vm_object_count;
 
-long	object_collapses = 0;
-long	object_bypasses  = 0;
+long object_collapses = 0;
+long object_bypasses  = 0;
+
+int	vm_cache_max = 100;	/* can patch if necessary */
+
+struct object_q		vm_object_cached_list;
+int					vm_object_cached;
+simple_lock_data_t	vm_cache_lock;
+
+struct object_rbt	vm_object_tree;
+long				vm_object_count;
+simple_lock_data_t	vm_object_tree_lock;
 
 static void _vm_object_allocate(vm_size_t, vm_object_t);
 
@@ -200,11 +212,11 @@ _vm_object_allocate(size, object)
 	object->shadow = NULL;
 	object->shadow_offset = (vm_offset_t) 0;
 
-	simple_lock(&vm_object_tree_lock);
+	vm_object_tree_lock();
 	RB_INSERT(object_rbt, &vm_object_tree, object);
 	vm_object_count++;
 	cnt.v_nzfod += atop(size);
-	simple_unlock(&vm_object_tree_lock);
+	vm_object_tree_unlock();
 }
 
 /*
@@ -298,7 +310,6 @@ vm_object_deallocate(object)
 	}
 }
 
-
 /*
  *	vm_object_terminate actually destroys the specified object, freeing
  *	up all previously used resources.
@@ -363,10 +374,10 @@ vm_object_terminate(object)
 	if (object->pager != NULL)
 		vm_pager_deallocate(object->pager);
 
-	simple_lock(&vm_object_tree_lock);
+	vm_object_tree_lock();
 	RB_REMOVE(object_rbt, &vm_object_tree, object);
 	vm_object_count--;
-	simple_unlock(&vm_object_tree_lock);
+	vm_object_tree_unlock();
 
 	/*
 	 * Free the space for the object.
@@ -1209,10 +1220,10 @@ vm_object_collapse(object)
 
 			vm_object_unlock(backing_object);
 
-			simple_lock(&vm_object_tree_lock);
+			vm_object_tree_lock();
 			RB_REMOVE(object_rbt, &vm_object_tree, backing_object);
 			vm_object_count--;
-			simple_unlock(&vm_object_tree_lock);
+			vm_object_tree_unlock();
 
 			free((caddr_t)backing_object, M_VMOBJ);
 
@@ -1434,7 +1445,7 @@ vm_object_mem_stats(totalp, object)
 	register struct vmtotal *totalp;
 	register vm_object_t 	object;
 {
-	simple_lock(&vm_object_tree_lock);
+	vm_object_tree_lock();
 	RB_FOREACH(object, object_rbt, &vm_object_tree)	{
 		totalp->t_vm += num_pages(object->size);
 		totalp->t_rm += object->resident_page_count;
@@ -1452,7 +1463,7 @@ vm_object_mem_stats(totalp, object)
 			}
 		}
 	}
-	simple_unlock(&vm_object_tree_lock);
+	vm_object_tree_unlock();
 }
 
 /*
@@ -1463,11 +1474,11 @@ void
 vm_object_mark_inactive(object)
 	register vm_object_t object;
 {
-	simple_lock(&vm_object_tree_lock);
+	vm_object_tree_lock();
 	RB_FOREACH(object, object_rbt, &vm_object_tree) {
 		object->flags &= ~OBJ_ACTIVE;
 	}
-	simple_unlock(&vm_object_tree_lock);
+	vm_object_tree_unlock();
 }
 
 /*

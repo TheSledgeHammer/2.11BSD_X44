@@ -200,10 +200,9 @@ vm_offset_t		last_phys_addr;			/* physical address for last_page */
 #define VM_PAGE_IS_FREE(entry)  ((entry)->flags & PG_FREE)
 
 extern
-simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive
-						   	   	   	   page queues */
-extern									/* lock on free page queue */
-simple_lock_data_t	vm_page_queue_free_lock;
+simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive page queues */
+extern
+simple_lock_data_t	vm_page_queue_free_lock; /* lock on free page queue */
 
 /*
  *	Functions implemented as macros
@@ -233,21 +232,21 @@ simple_lock_data_t	vm_page_queue_free_lock;
 	(mem)->wire_count = 0; 							\
 }
 
-void		 vm_page_activate (vm_page_t);
-vm_page_t	 vm_page_alloc (vm_object_t, vm_offset_t);
-void		 vm_page_copy (vm_page_t, vm_page_t);
-void		 vm_page_deactivate (vm_page_t);
-void		 vm_page_free (vm_page_t);
-void		 vm_page_insert (vm_page_t, vm_object_t, vm_offset_t);
-vm_page_t	 vm_page_lookup (vm_object_t, vm_offset_t);
-void		 vm_page_remove (vm_page_t);
-void		 vm_page_rename (vm_page_t, vm_object_t, vm_offset_t);
-void		 vm_page_startup (vm_offset_t *, vm_offset_t *);
-void		 vm_page_unwire (vm_page_t);
-void		 vm_page_wire (vm_page_t);
-bool_t	 	 vm_page_zero_fill (vm_page_t);
-int		 	 vm_page_alloc_memory (vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int, int);
-void		 vm_page_free_memory (struct pglist *);
+void		 vm_page_activate(vm_page_t);
+vm_page_t	 vm_page_alloc(vm_object_t, vm_offset_t);
+void		 vm_page_copy(vm_page_t, vm_page_t);
+void		 vm_page_deactivate(vm_page_t);
+void		 vm_page_free(vm_page_t);
+void		 vm_page_insert(vm_page_t, vm_object_t, vm_offset_t);
+vm_page_t	 vm_page_lookup(vm_object_t, vm_offset_t);
+void		 vm_page_remove(vm_page_t);
+void		 vm_page_rename(vm_page_t, vm_object_t, vm_offset_t);
+void		 vm_page_startup(vm_offset_t *, vm_offset_t *);
+void		 vm_page_unwire(vm_page_t);
+void		 vm_page_wire(vm_page_t);
+bool_t	 	 vm_page_zero_fill(vm_page_t);
+int		 	 vm_page_alloc_memory(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int, int);
+void		 vm_page_free_memory(struct pglist *);
 
 #endif /* KERNEL */
 #endif /* !_VM_PAGE_H_ */

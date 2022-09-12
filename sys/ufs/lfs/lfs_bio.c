@@ -178,7 +178,7 @@ lfs_check(vp, blkno)
 	struct vnode *vp;
 	ufs2_daddr_t blkno;
 {
-	extern int lfs_allclean_wakeup;
+	//extern int lfs_allclean_wakeup;
 	int error;
 
 	error = 0;

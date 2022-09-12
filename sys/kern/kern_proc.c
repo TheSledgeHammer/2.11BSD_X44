@@ -85,7 +85,6 @@ u_long 				pgrphash;
 struct proclist 	allproc;
 struct proclist 	zombproc;
 //struct proclist 	freeproc;
-
 struct lock_holder 	proc_loholder;
 
 void	pqinit(void);
@@ -166,7 +165,6 @@ pfind(pid)
 			return (p);
 	return (NULL);
 }
-
 
 /*
  * Change the count associated with number of processes

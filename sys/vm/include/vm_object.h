@@ -115,19 +115,28 @@ RB_HEAD(object_rbt, vm_object);
 struct object_q;
 TAILQ_HEAD(object_q, vm_object);
 
+extern
 struct object_q		vm_object_cached_list;	/* list of objects persisting */
+extern
 int					vm_object_cached;		/* size of cached list */
+extern
 simple_lock_data_t	vm_cache_lock;			/* lock for object cache */
-
+extern
 struct object_rbt	vm_object_tree;			/* tree of allocated objects */
+extern
 long				vm_object_count;		/* count of all objects */
+extern
 simple_lock_data_t	vm_object_tree_lock;	/* lock for object tree and count */
-
+extern
 vm_object_t			kernel_object;			/* the single kernel object */
+extern
 vm_object_t			kmem_object;
 
 #define	vm_object_cache_lock()		simple_lock(&vm_cache_lock)
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)
+
+#define	vm_object_tree_lock()		simple_lock(&vm_object_tree_lock)
+#define	vm_object_tree_unlock()		simple_unlock(&vm_object_tree_lock)
 #endif /* KERNEL */
 
 #define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock, "vm_object_lock")
@@ -138,28 +147,28 @@ vm_object_t			kmem_object;
 			thread_sleep((event), &(object)->Lock, (interruptible))
 
 #ifdef _KERNEL
-vm_object_t	 vm_object_allocate (vm_size_t);
-void		 vm_object_cache_clear (void);
-void		 vm_object_cache_trim (void);
-bool_t	 	 vm_object_coalesce (vm_object_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_size_t);
-void		 vm_object_collapse (vm_object_t);
-void		 vm_object_copy (vm_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, bool_t *);
-void		 vm_object_deactivate_pages (vm_object_t);
-void		 vm_object_deallocate (vm_object_t);
-void		 vm_object_enter (vm_object_t, vm_pager_t);
-void		 vm_object_init (vm_size_t);
-vm_object_t	 vm_object_lookup (vm_pager_t);
-bool_t	 	 vm_object_page_clean (vm_object_t, vm_offset_t, vm_offset_t, bool_t, bool_t);
-void		 vm_object_page_remove (vm_object_t, vm_offset_t, vm_offset_t);
-void		 vm_object_pmap_copy (vm_object_t, vm_offset_t, vm_offset_t);
-void		 vm_object_pmap_remove (vm_object_t, vm_offset_t, vm_offset_t);
-void		 vm_object_print (vm_object_t, bool_t);
-void		 _vm_object_print (vm_object_t, bool_t, void (*)(const char *, ...));
-void		 vm_object_reference (vm_object_t);
-void		 vm_object_remove (vm_pager_t);
-void		 vm_object_setpager (vm_object_t, vm_pager_t, vm_offset_t, bool_t);
-void		 vm_object_shadow (vm_object_t *, vm_offset_t *, vm_size_t);
-void		 vm_object_terminate (vm_object_t);
+vm_object_t	 vm_object_allocate(vm_size_t);
+void		 vm_object_cache_clear(void);
+void		 vm_object_cache_trim(void);
+bool_t	 	 vm_object_coalesce(vm_object_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_size_t);
+void		 vm_object_collapse(vm_object_t);
+void		 vm_object_copy(vm_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, bool_t *);
+void		 vm_object_deactivate_pages(vm_object_t);
+void		 vm_object_deallocate(vm_object_t);
+void		 vm_object_enter(vm_object_t, vm_pager_t);
+void		 vm_object_init(vm_size_t);
+vm_object_t	 vm_object_lookup(vm_pager_t);
+bool_t	 	 vm_object_page_clean(vm_object_t, vm_offset_t, vm_offset_t, bool_t, bool_t);
+void		 vm_object_page_remove(vm_object_t, vm_offset_t, vm_offset_t);
+void		 vm_object_pmap_copy(vm_object_t, vm_offset_t, vm_offset_t);
+void		 vm_object_pmap_remove(vm_object_t, vm_offset_t, vm_offset_t);
+void		 vm_object_print(vm_object_t, bool_t);
+void		 _vm_object_print(vm_object_t, bool_t, void (*)(const char *, ...));
+void		 vm_object_reference(vm_object_t);
+void		 vm_object_remove(vm_pager_t);
+void		 vm_object_setpager(vm_object_t, vm_pager_t, vm_offset_t, bool_t);
+void		 vm_object_shadow(vm_object_t *, vm_offset_t *, vm_size_t);
+void		 vm_object_terminate(vm_object_t);
 void		 vm_object_mem_stats(struct vmtotal *, vm_object_t);
 void		 vm_object_mark_inactive(vm_object_t);
 #endif

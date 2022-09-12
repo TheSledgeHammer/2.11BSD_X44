@@ -196,7 +196,7 @@ int	protection_codes[8];
 /*
  * LAPIC virtual address, and fake physical address.
  */
-volatile vm_offset_t 	local_apic_va;
+volatile vm_offset_t local_apic_va;
 vm_offset_t local_apic_pa;
 
 static int pgeflag = 0;			/* PG_G or-in */
@@ -210,17 +210,16 @@ pt_entry_t pg_nx;
 #define	pg_nx	0
 #endif
 
-int 			pat_works;
-int 			pg_ps_enabled;
-int 			elf32_nxstack;
-int 			i386_pmap_PDRSHIFT;
+int pat_works;
+int pg_ps_enabled;
+int elf32_nxstack;
+int i386_pmap_PDRSHIFT;
 
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
-
 //extern char 	_end[]; /* boot.ldscript */
-char 	_end[];	
+char 			_end[];
 vm_offset_t 	kernel_vm_end;
 u_long 			physfree;			/* phys addr of next free page */
 u_long 			vm86phystk;			/* PA of vm86/bios stack */
@@ -246,6 +245,7 @@ pd_entry_t 		*IdlePTD;			/* phys addr of kernel PTD */
 pdpt_entry_t 	*IdlePDPT;			/* phys addr of kernel PDPT */
 #endif
 pt_entry_t 		*KPTmap;			/* address of kernel page tables */
+pv_entry_t		pv_table;			/* array of entries, one per page */
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
@@ -267,6 +267,24 @@ static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
 static vm_offset_t	pmap_bootstrap_valloc(size_t);
 static vm_offset_t	pmap_bootstrap_palloc(size_t);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
+
+static vm_offset_t
+pa_index(pa)
+	vm_offset_t pa;
+{
+	vm_offset_t index;
+	index = atop(pa - vm_first_phys);
+	return (index);
+}
+
+static pv_entry_t
+pa_to_pvh(pa)
+	vm_offset_t pa;
+{
+	pv_entry_t pvh;
+	pvh = &pv_table[pa_index(pa)];
+	return (pvh);
+}
 
 static u_long
 allocpages(cnt, physfree)

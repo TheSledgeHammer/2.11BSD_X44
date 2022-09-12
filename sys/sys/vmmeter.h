@@ -7,6 +7,7 @@
  */
 #ifndef _SYS_VMMETER_H_
 #define _SYS_VMMETER_H_
+
 /*
  * Virtual memory related instrumentation
  */

@@ -264,9 +264,9 @@ extern struct lock_holder 	proc_loholder;
 }
 
 #define	PIDHSZ						16
-#define	PIDHASH(pid)				(&pidhashtbl[(pid) & pid_hash & (PIDHSZ * ((pid) + pid_hash) - 1)])
+#define	PIDHASH(pid)				(&pidhashtbl[(pid) & pidhash & (PIDHSZ * ((pid) + pidhash) - 1)])
 extern LIST_HEAD(pidhashhead, proc) *pidhashtbl;
-extern u_long pid_hash;
+extern u_long pidhash;
 
 #define	PGRPHASH(pgid)				(&pgrphashtbl[(pgid) & pgrphash])
 extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;

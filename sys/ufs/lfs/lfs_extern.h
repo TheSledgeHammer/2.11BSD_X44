@@ -107,6 +107,7 @@ void lfs_dump_super(struct lfs *);
 #endif
 __END_DECLS
 
+extern int lfs_allclean_wakeup;
 extern int lfs_mount_type;
 extern struct vnodeops lfs_vnodeops;
 extern struct vnodeops lfs_specops;

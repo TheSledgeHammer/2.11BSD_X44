@@ -308,8 +308,9 @@ void
 minphys(bp)
 	struct buf *bp;
 {
-	if (bp->b_bcount > MAXPHYS)
+	if (bp->b_bcount > MAXPHYS) {
 		bp->b_bcount = MAXPHYS;
+	}
 }
 
 /*
