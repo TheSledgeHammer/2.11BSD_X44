@@ -62,6 +62,8 @@ char	devout[] = "devout";
 char	devioc[] = "devioc";
 char	devcls[] = "devcls";
 
+struct vnode	*speclisth[SPECHSZ];
+
 struct vnodeops spec_vnodeops = {
 		.vop_default = vop_default_error,/* default */
 		.vop_lookup = spec_lookup,		/* lookup */

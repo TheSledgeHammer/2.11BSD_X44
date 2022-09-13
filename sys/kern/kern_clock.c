@@ -28,6 +28,7 @@
 
 struct callout *callfree, *calltodo;
 
+int adjdelta;
 int	stathz;
 int	profprocs;
 int profhz;

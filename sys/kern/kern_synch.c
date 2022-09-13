@@ -76,6 +76,7 @@ struct prochd 				qs[NQS];
 struct sleepque 			slpque[SQSIZE];
 int							lbolt;					/* once a second sleep address */
 int 						whichqs;
+char 						curpri, runin, runout;
 
 /*
  * Force switch among equal priority processes every 100ms.

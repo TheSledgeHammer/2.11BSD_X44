@@ -238,7 +238,7 @@ cfs_schedcpu(p)
 			if (cfs->cfs_cpticks == cpticks) {
 				/* test if time doesn't equal the base scheduling period */
 				if (cfs->cfs_time != cfs->cfs_bsched) {
-					goto runout;
+					goto fin;
 					break;
 				} else {
 					goto out;
@@ -247,7 +247,7 @@ cfs_schedcpu(p)
 			} else if (cfs->cfs_cpticks != cpticks) {
 				/* test if time equals the base scheduling period */
 				if (cfs->cfs_time == cfs->cfs_bsched) {
-					goto runout;
+					goto fin;
 					break;
 				} else {
 					goto out;
@@ -274,7 +274,7 @@ out:
 
 	return (0);
 
-runout:
+fin:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
 	/* remove from cfs queue */

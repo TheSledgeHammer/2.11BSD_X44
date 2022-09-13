@@ -24,8 +24,10 @@
 #include <vm/include/vm.h>
 
 extern	vm_map_t mb_map;
-struct mbuf *mbuf, *mbutl, xmbuf[NMBUFS + 1];
+struct mbuf *mbuf, *mbutl, *mbfree, xmbuf[NMBUFS + 1];
+struct mbuf mbstat;
 struct mbuf xmbutl[(NMBCLUSTERS*CLBYTES/sizeof (struct mbuf))+7];
+union mcluster *mclfree;
 char *mclrefcnt;
 int max_linkhdr;
 int max_protohdr;
@@ -75,6 +77,7 @@ mbinit2(mem, how, num)
 	case MPG_CLUSTERS:
 		for (i = 0; i < num; i++) {
 			m->m_off = 0;
+			MCLFREE(m);
 			((union mcluster *)m)->mcl_next = mclfree;
 			mclfree = (union mcluster *)m;
 			m += NMBPCL;

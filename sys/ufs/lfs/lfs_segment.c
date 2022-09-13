@@ -85,7 +85,7 @@ void	lfs_vunref (struct vnode *);
 void	lfs_writefile (struct lfs *, struct segment *, struct vnode *);
 void	lfs_writevnodes (struct lfs *fs, struct mount *mp, struct segment *sp, int dirops);
 
-int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
+//int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
 
 /* Statistics Counters */
 #define DOSTATS

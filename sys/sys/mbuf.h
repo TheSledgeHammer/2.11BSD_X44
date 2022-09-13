@@ -364,27 +364,26 @@ struct mbstat {
 
 #ifdef	_KERNEL
 extern struct mbuf *mbutl;		/* virtual address of net free mem */
+extern struct mbuf *mbfree;
+extern struct mbstat mbstat;
+extern union mcluster *mclfree;
 extern int nmbclusters;
 extern char *mclrefcnt;			/* cluster reference counts */
-extern	int max_linkhdr;		/* largest link-level header */
-extern	int max_protohdr;		/* largest protocol header */
-extern	int max_hdr;			/* largest link+protocol header */
-extern	int	max_datalen;		/* MHLEN - max_hdr */
+extern int max_linkhdr;			/* largest link-level header */
+extern int max_protohdr;		/* largest protocol header */
+extern int max_hdr;				/* largest link+protocol header */
+extern int max_datalen;			/* MHLEN - max_hdr */
+extern int m_want;
 
-struct	mbuf *mbfree;
-struct	mbstat mbstat;
-union	mcluster *mclfree;
-int		m_want;
-
-struct	mbuf 	*m_copy(struct mbuf *, int, int);
-struct	mbuf 	*m_free(struct mbuf *);
-struct	mbuf 	*m_get(int, int);
-struct	mbuf 	*m_getclr(int, int);
-struct	mbuf 	*m_gethdr(int, int);
-struct	mbuf 	*m_prepend(struct mbuf *, int, int);
-struct	mbuf 	*m_pullup(struct mbuf *, int);
-struct	mbuf 	*m_retry(int, int);
-struct	mbuf 	*m_retryhdr(int, int);
+struct mbuf 	*m_copy(struct mbuf *, int, int);
+struct mbuf 	*m_free(struct mbuf *);
+struct mbuf 	*m_get(int, int);
+struct mbuf 	*m_getclr(int, int);
+struct mbuf 	*m_gethdr(int, int);
+struct mbuf 	*m_prepend(struct mbuf *, int, int);
+struct mbuf 	*m_pullup(struct mbuf *, int);
+struct mbuf 	*m_retry(int, int);
+struct mbuf 	*m_retryhdr(int, int);
 void			m_cat(struct mbuf *, struct mbuf *);
 void			m_adj(struct mbuf *, int);
 int			    m_clalloc(int, int);

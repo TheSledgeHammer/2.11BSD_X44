@@ -22,7 +22,7 @@ extern struct timeval 			boottime;
 extern struct timeval 			runtime;
 extern volatile struct timeval 	time;
 extern struct timezone 			tz;			/* XXX */
-int								adjdelta;
+extern int						adjdelta;
 
 extern int 						cold;		/* still working on startup */
 extern int 						rtc_offset;	/* offset of rtc from UTC in minutes */

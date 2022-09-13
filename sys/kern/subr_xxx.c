@@ -137,7 +137,6 @@ einval(void)
 int
 nullop(void *v)
 {
-
 	return (nulldev(v));
 }
 

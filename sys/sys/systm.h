@@ -69,9 +69,10 @@ extern struct vnode *swapdev_vp;	/* vnode equivalent to above */
 
 extern int	mpid;					/* generic for unique process id's */
 extern int	runrun;					/* scheduling flag */
-char		runin;					/* scheduling flag */
-char		runout;					/* scheduling flag */
-char		curpri;					/* more scheduling */
+extern char runin;					/* scheduling flag */
+extern char	runout;					/* scheduling flag */
+extern char	curpri;					/* more scheduling */
+extern int	noproc;					/* no one is running just now */
 
 /* system call args */
 #define	syscallarg(x)	union { x datum; register_t pad; }
@@ -96,8 +97,6 @@ extern struct sysent {
 	int		(*sy_call)();			/* handler */
 } sysent[];
 extern int nsysent;
-
-int	noproc;							/* no one is running just now */
 
 /* Initialize the world */
 int 				execa(struct execa_args *);
