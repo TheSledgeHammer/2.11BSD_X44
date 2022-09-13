@@ -50,7 +50,7 @@
 #ifdef SYSCALL_DEBUG
 extern char *syscallnames[];
 #endif
-/*
+
 const struct execsw script_exec;
 const struct execsw aout_exec;
 const struct execsw coff_exec;
@@ -61,7 +61,6 @@ const struct execsw elf32_exec;
 const struct execsw elf64_exec;
 const struct execsw xcoff32_exec;
 const struct execsw xcoff64_exec;
-*/
 
 const struct execsw execsw[] = {
 	/* shell scripts */
