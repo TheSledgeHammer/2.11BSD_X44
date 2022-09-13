@@ -58,8 +58,6 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 
-#include <vm/include/vm_kern.h>
-
 #include <ufs/ufs/quota.h>
 
 /*
@@ -80,7 +78,7 @@
 #define	HZ 			100
 #endif
 int	hz = 			HZ;
-int mshz = 			(1000000L + 60 - 1)/60;
+int 	mshz = 			(1000000L + 60 - 1)/60;
 int	tick = 			1000000 / HZ;
 //int	tickadj = 		30000 / (60 * HZ);			/* can adjust 30ms in 60s */
 int	rtc_offset = RTC_OFFSET;
@@ -117,27 +115,12 @@ char				*buffers;
 #define CMAPSIZ		NPROC						/* size of core allocation map */
 #define SMAPSIZ		((9 * NPROC) / 10)			/* size of swap allocation map */
 
-struct vmmapent corevmmap[6] = {
-		{ "buffer_map", &buffer_map },
-		{ "exec_map",   &exec_map },
-		{ "kernel_map", &kernel_map },
-		{ "kmem_map", 	&kmem_map },
-		{ "mb_map",   	&mb_map },
-		{ "phys_map", 	&phys_map }
-};
-/*
-struct ovlmapent coreovlmap[2] = {
-		{ "overlay_map", &overlay_map },
-		{ "omem_map",    &omem_map }
-};
-*/
 struct mapent	_coremap[CMAPSIZ];
 struct map coremap[1] = {
 		_coremap,
 		&_coremap[CMAPSIZ],
 		"coremap",
 		M_COREMAP,
-		corevmmap,
 };
 
 struct mapent	_swapmap[SMAPSIZ];
