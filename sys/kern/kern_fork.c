@@ -19,10 +19,11 @@
 #include <sys/vnode.h>
 #include <sys/acct.h>
 #include <sys/ktrace.h>
-
-#include <vm/include/vm_systm.h>
+#include <sys/vmsystm.h>
 
 #include <machine/setjmp.h>
+
+struct forkstat forkstat;
 
 static int fork1(int);
 

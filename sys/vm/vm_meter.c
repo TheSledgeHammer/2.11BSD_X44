@@ -45,13 +45,17 @@
 
 #define	MINFINITY	-32767			/* minus infinity */
 
-struct loadavg 		averunnable;	/* load average, of runnable procs */
+struct vmrate	cnt, rate;
+struct vmsum	sum;
+struct vmtotal 	total;
+struct loadavg 	averunnable;		/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
+int	avefree;
+int	avefree30;
 int nrun;
 int	avenrun[3];
-
 
 void
 vmmeter()

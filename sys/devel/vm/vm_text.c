@@ -16,9 +16,33 @@
 #include <devel/vm/include/vm_text.h>
 
 struct txtlist      vm_text_list;
-simple_lock_data_t	vm_text_lock;
 struct vm_xstats 	*xstats;			/* cache statistics */
 int					xcache;				/* number of "sticky" texts retained */
+
+/* lock a virtual text segment */
+void
+xlock(xp)
+	vm_text_t  xp;
+{
+	simple_lock(&xp->psx_lock);
+	while (xp->psx_flag & XLOCK) {
+		xp->psx_flag |= XWANT;
+		tsleep((caddr_t)&xp, PSWP+1, "xlock", 0);
+	}
+	xp->psx_flag |= XLOCK;
+}
+
+/* unlock a virtual text segment */
+void
+xunlock(xp)
+	vm_text_t 	xp;
+{
+	if ((xp)->psx_flag & XWANT) {
+		wakeup((caddr_t)&xp);
+	}
+	xp->psx_flag &= ~(XLOCK|XWANT);
+	simple_unlock(&xp->psx_lock);
+}
 
 /*
  * initialize text table
@@ -27,7 +51,7 @@ void
 vm_text_init(xp)
 	vm_text_t 		xp;
 {
-    simple_lock_init(&vm_text_lock, "vm_text_lock");
+    simple_lock_init(&xp->psx_lock, "vm_text_lock");
     TAILQ_INIT(&vm_text_list);
 }
 
@@ -53,7 +77,7 @@ vm_xalloc(vp, tsize, toff)
 			xwait(xp);
 			continue;
 		}
-		xlock(&vm_text_lock);
+		xlock(xp);
 		if (TAILQ_LAST(&vm_text_list, txtlist)) {
 			TAILQ_INSERT_HEAD(&vm_text_list, xp, psx_list);
 			xstats->psxs_alloc_cachehit++;
@@ -68,7 +92,7 @@ vm_xalloc(vp, tsize, toff)
 		} else {
 			++xp->psx_ccount;
 		}
-		xunlock(&vm_text_lock);
+		xunlock(xp);
 		return;
 	}
 	xp = TAILQ_FIRST(&vm_text_list);
@@ -109,7 +133,7 @@ vm_xalloc(vp, tsize, toff)
 	p->p_flag &= ~P_SLOCK;
 	xp->psx_flag |= XWRIT;
 	xp->psx_flag &= ~XLOAD;
-	xunlock(&vm_text_lock);
+	xunlock(xp);
 }
 
 /*
@@ -130,7 +154,7 @@ vm_xfree()
 	}
 	xstats->psxs_free++;
 
-	xlock(&vm_text_lock);
+	xlock(xp);
 	vp = xp->psx_vptr;
 	if (xp->psx_count-- == 0 && (VOP_GETATTR(vp, vattr, u->u_cred, u->u_procp) != 0 || (vattr->va_mode & VSVTX) == 0)) {
 		if ((xp->psx_flag & XTRC) || vattr->va_nlink == 0) {
@@ -150,7 +174,7 @@ vm_xfree()
 		xp->psx_ccount--;
 		xstats->psxs_free_inuse++;
 	}
-	xunlock(&vm_text_lock);
+	xunlock(xp);
 	u->u_procp->p_textp = NULL;
 }
 
@@ -165,17 +189,17 @@ vm_xexpand(p, xp)
 	struct proc *p;
 	vm_text_t xp;
 {
-	xlock(&vm_text_lock);
+	xlock(xp);
 	if ((xp->psx_caddr = rmalloc(coremap, xp->psx_size)) != NULL) {
 		if ((xp->psx_flag & XLOAD) == 0) {
 			swap(xp->psx_daddr, xp->psx_caddr, xp->psx_size, xp->psx_vptr, B_READ);
 		}
-		xunlock(&vm_text_lock);
+		xunlock(xp);
 		xp->psx_ccount++;
 		return;
 	}
 	vm_xswapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
-	xunlock(&vm_text_lock);
+	xunlock(xp);
 	p->p_flag |= SSWAP;
 	swtch();
 	/* NOTREACHED */
@@ -193,7 +217,7 @@ vm_xccdec(xp)
 	if (!xp->psx_ccount) {
 		return;
 	}
-	xlock(&vm_text_lock);
+	xlock(xp);
 	if (--xp->psx_ccount == 0) {
 		if (xp->psx_flag & XWRIT) {
 			swap(xp->psx_daddr, xp->psx_caddr, xp->psx_size, &swapdev_vp, B_WRITE);
@@ -202,7 +226,7 @@ vm_xccdec(xp)
 		rmfree(coremap, xp->psx_size, xp->psx_caddr);
 		xp->psx_caddr = NULL;
 	}
-	xunlock(&vm_text_lock);
+	xunlock(xp);
 }
 
 /*
@@ -232,7 +256,7 @@ vm_xuntext(xp)
 {
 	register struct vnode *vp;
 
-	xlock(&vm_text_lock);
+	xlock(xp);
 	if (xp->psx_count == 0) {
 		vp = xp->psx_vptr;
 		xp->psx_vptr = NULL;
@@ -245,7 +269,7 @@ vm_xuntext(xp)
 		vp->v_text = NULL;
 		vrele(vp);
 	}
-	xunlock(&vm_text_lock);
+	xunlock(xp);
 }
 
 /*
@@ -262,7 +286,7 @@ vm_xuncore(size)
     	if(!xp->psx_vptr) {
     		continue;
     	}
-		xlock(&vm_text_lock);
+		xlock(xp);
 		if (!xp->psx_ccount && xp->psx_caddr) {
 			if (xp->psx_flag & XWRIT) {
 				swap(xp->psx_daddr, xp->psx_caddr, xp->psx_size, xp->psx_vptr, B_WRITE);
@@ -271,11 +295,11 @@ vm_xuncore(size)
 			rmfree(coremap, xp->psx_size, xp->psx_caddr);
 			xp->psx_caddr = NULL;
 			if (xp->psx_size >= size) {
-				xunlock(&vm_text_lock);
+				xunlock(xp);
 				return;
 			}
 		}
-		xunlock(&vm_text_lock);
+		xunlock(xp);
 	}
 }
 
@@ -376,7 +400,7 @@ sysctl_text(where, sizep)
 
 	buflen = *sizep;
 	if (where == NULL) {
-		xlock(&vm_text_lock);
+		xlock(xp);
 		for (i = 0, xp = TAILQ_FIRST(&vm_text_list); xp != NULL; xp = TAILQ_NEXT(xp, psx_list)) {
 			if (xp->psx_count) {
 				i++;
@@ -388,7 +412,7 @@ sysctl_text(where, sizep)
 		 */
 		*sizep = (i + 3) * (TEXTSZ + TPTRSZ);
 		}
-		xunlock(&vm_text_lock);
+		xunlock(xp);
 		return (0);
 	}
 
@@ -396,7 +420,7 @@ sysctl_text(where, sizep)
 	 * array of extended file structures: first the address then the
 	 * file structure.
 	 */
-	xlock(&vm_text_lock);
+	xlock(xp);
 	TAILQ_FOREACH(xp, &vm_text_list, psx_list) {
 		if (xp->psx_count == 0) {
 			continue;
@@ -408,13 +432,13 @@ sysctl_text(where, sizep)
 		xpp = xp;
 		if ((error = copyout(&xpp, where, TPTRSZ))
 				|| (error = copyout(xp, where + TPTRSZ, TEXTSZ))) {
-			xunlock(&vm_text_lock);
+			xunlock(xp);
 			return (error);
 		}
 		buflen -= (TPTRSZ + TEXTSZ);
 		where += (TPTRSZ + TEXTSZ);
 	}
 	*sizep = where - start;
-	xunlock(&vm_text_lock);
+	xunlock(xp);
 	return (0);
 }

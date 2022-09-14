@@ -90,6 +90,7 @@ struct vm_text {
     u_char	                psx_count;				/* reference count */
     u_char	                psx_ccount;				/* number of loaded references */
     u_char	                psx_flag;				/* traced, written flags */
+    simple_lock_data_t		psx_lock;				/* text lock */
     char	                dummy;					/* room for one more */
 };
 
@@ -139,11 +140,13 @@ union vm_pseudo_segment {
 extern
 struct txtlist              vm_text_list;
 
+/*
 extern
 simple_lock_data_t			vm_text_lock;
 
 #define xlock(lock)			simple_lock(lock);
 #define xunlock(lock)		simple_unlock(lock);
+*/
 
 /* pseudo-segment types */
 #define PSEG_DATA			1						/* data segment */
@@ -217,6 +220,8 @@ void	vm_psegment_extent_free(vm_psegment_t *, caddr_t, u_long, int, int);
 void	vm_psegment_extent_destroy(vm_psegment_t *);
 
 /* vm_text */
+void	xlock(vm_text_t);
+void	xunlock(vm_text_t);
 void	vm_text_init(vm_text_t);
 void	vm_xalloc(struct vnode *, u_long, off_t);
 void	vm_xfree(void);

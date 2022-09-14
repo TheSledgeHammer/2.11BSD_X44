@@ -23,8 +23,8 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h buf.h 	\
 			systm.h tablet.h termios.h time.h timeb.h timepps.h times.h 		\
 			tprintf.h trace.h tree.h tty.h ttychars.h ttydefaults.h ttydev.h 	\
 			types.h ucontext.h ucred.h uio.h un.h unistd.h unpcb.h user.h 		\
-			utsname.h uuid.h vcmd.h videoio.h vlimit.h vmmeter.h vnode_if.h 	\
-			vnode.h wait.h			
+			utsname.h uuid.h vcmd.h videoio.h vlimit.h vmmeter.h vmsystm.h		\
+			vnode_if.h vnode.h wait.h			
 
 INCSYMLINKS=									\
 		sys/exec_elf.h 	/usr/include/elf.h 		\

@@ -117,6 +117,12 @@ struct vmtotal {
 	long		t_free;						/* free memory pages, kb */
 };
 
+#ifdef _KERNEL
+extern struct vmrate	cnt, rate;
+extern struct vmsum		sum;
+extern struct vmtotal 	total;
+#endif
+
 /* Optional instrumentation. */
 #ifdef PGINPROF
 
@@ -151,11 +157,5 @@ int	rres;
 
 unsigned rectime;		/* accumulator for reclaim times */
 unsigned pgintime;		/* accumulator for page in times */
-#endif
-
-#ifdef _KERNEL
-struct vmrate	cnt, rate;
-struct vmsum	sum;
-struct vmtotal 	total;
 #endif
 #endif /* _SYS_VMMETER_H_ */
