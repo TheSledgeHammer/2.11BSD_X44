@@ -249,7 +249,7 @@ struct cluster_save {
 
 #ifdef _KERNEL
 TAILQ_HEAD(swqueue, buf); 			/* Head of swap I/O buffer headers free list. */
-extern struct swqueue bswlist;
+extern struct 	swqueue bswlist;
 extern int		nbuf;				/* number of buffer headers */
 extern struct	buf *buf;			/* the buffer pool itself */
 extern char		*buffers;			/* The buffer contents. */
@@ -267,7 +267,7 @@ int			bwrite(struct buf *);
 void		bdwrite(struct buf *);
 void		bawrite(struct buf *);
 void		brelse(struct buf *);
-struct 	buf *getnewbuf(int slpflag, int slptimeo);
+struct 	buf *getnewbuf(int, int);
 struct 	buf *getpbuf(void);
 struct 	buf *incore(struct vnode *, daddr_t);
 struct 	buf *getblk(struct vnode *, daddr_t, int, int, int);

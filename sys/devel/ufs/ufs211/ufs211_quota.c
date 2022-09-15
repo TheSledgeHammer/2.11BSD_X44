@@ -60,7 +60,22 @@ getinoquota(ip)
 	vp = UFS211_ITOV(ip);
 	ump = VFSTOUFS(vp->v_mount);
 
-
+	/*
+	 * Set up the user quota based on file uid.
+	 * EINVAL means that quotas are not enabled.
+	 */
+	if (ip->i_dquot[USRQUOTA] == NODQUOT
+			&& (error = dqget(vp, ip->i_uid, ump, USRQUOTA,
+					&ip->i_dquot[USRQUOTA])) && error != EINVAL)
+		return (error);
+	/*
+	 * Set up the group quota based on file gid.
+	 * EINVAL means that quotas are not enabled.
+	 */
+	if (ip->i_dquot[GRPQUOTA] == NODQUOT
+			&& (error = dqget(vp, ip->i_gid, ump, GRPQUOTA,
+					&ip->i_dquot[GRPQUOTA])) && error != EINVAL)
+		return (error);
 
 	return (0);
 }

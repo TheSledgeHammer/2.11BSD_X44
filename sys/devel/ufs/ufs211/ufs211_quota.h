@@ -23,6 +23,8 @@
 #ifndef _UFS211_QUOTA_H_
 #define	_UFS211_QUOTA_H_
 
+#include <sys/queue.h>
+
 struct ufs211_quota {
     LIST_ENTRY(ufs211_quota) 	q_hash;			/* hash chain, MUST be first */
     short	                	q_cnt;			/* ref count (# processes) */
@@ -73,7 +75,7 @@ struct ufs211_dqblk {
  * for the current user. A cache is kept of other recently used entries.
  */
 struct ufs211_dquot {
-	LIST_ENTRY(ufs211_dquot) 			dq_node;
+	LIST_ENTRY(ufs211_dquot) 			dq_hash;
     union	{
         struct	ufs211_quota 			*Dq_own;
         struct {
@@ -136,5 +138,8 @@ struct	ufs211_dqwarn {
 	u_char	dw_bwarn;
 	u_char	dw_iwarn;
 };
+
+#define	UFS211_NQHASH		16	/* small power of 2 */
+#define	UFS211_NDQHASH		37	/* 4.3bsd used 51 which isn't even prime */
 
 #endif /* _UFS211_QUOTA_H_ */

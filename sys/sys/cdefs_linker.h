@@ -28,11 +28,6 @@
 
 #ifndef _SYS_CDEFS_LINKER_H_
 #define _SYS_CDEFS_LINKER_H_
-/*
-#ifndef _SYS_CDEFS_H_
-#include <sys/cdefs.h>
-#endif
-*/
 
 #include <sys/cdefs_elf.h>
 

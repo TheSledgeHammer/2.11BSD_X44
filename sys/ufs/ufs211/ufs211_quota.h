@@ -167,18 +167,18 @@ struct	ufs211_dqhead {
 	struct	ufs211_dqhead *dqh_back;
 };
 
-ufs211_size_t			quotreg;
-u_short					quotdesc;
 struct ufs211_dquot 	**ix_dquot;
+ufs211_size_t	quotreg = btoc(8192);
+u_short			quotdesc = ((quotreg - 1) << 8) | (UFS211_IREAD|UFS211_IWRITE);
+
+#define QUOTAMAP()		(bufmap_alloc(quotreg, quotdesc))
+#define	QUOTAUNMAP()	(bufmap_free(quotreg))
 
 #define	UFS211_NQHASH		16	/* small power of 2 */
 #define	UFS211_NDQHASH		37	/* 4.3bsd used 51 which isn't even prime */
 #define	UFS211_NQUOTA		40
 #define	UFS211_NDQUOT		150
 #define UFS211_NINODE 		((NPROC + 16 + MAXUSERS) + 22) /* 2.11BSD param.c */
-
-#define	QUOTAMAP()	    bufmap_alloc(quotreg, quotdesc)
-#define	QUOTAUNMAP()	bufmap_free(quotreg) //,quotreg, quotdes
 
 struct BigQ {
 	struct quota 	xquota[UFS211_NQUOTA];		/* the quotas themselves */

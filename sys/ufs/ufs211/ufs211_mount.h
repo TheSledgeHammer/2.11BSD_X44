@@ -38,7 +38,7 @@ struct ufs211_mount {
 	ufs211_size_t	    	m_extern;	        			/* click address of mount table extension */
 	struct buf				*m_bufp;
 
-	struct	vnode 			*m_quotas[MAXQUOTAS];
+	struct vnode 			*m_quotas[MAXQUOTAS];
 };
 
 struct ufs211_xmount {

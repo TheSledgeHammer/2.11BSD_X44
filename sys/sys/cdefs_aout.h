@@ -110,14 +110,14 @@
 #define	__link_set_add_data(set, sym)	__link_set_make_entry(set, sym, 25)
 #define	__link_set_add_bss(set, sym)	__link_set_make_entry(set, sym, 27)
 
-#define	__link_set_decl(set, ptype)					\
+#define	__link_set_decl(set, ptype)			\
 extern struct {								\
 	int	__ls_length;						\
-	ptype	*__ls_items[1];						\
+	ptype	*__ls_items[1];					\
 } __link_set_##set
 
 #define	__link_set_start(set)	(&(__link_set_##set).__ls_items[0])
-#define	__link_set_end(set)						\
+#define	__link_set_end(set)					\
 	(&(__link_set_##set).__ls_items[(__link_set_##set).__ls_length])
 
 #define	__link_set_count(set)	((__link_set_##set).__ls_length)

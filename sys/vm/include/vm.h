@@ -71,10 +71,8 @@ typedef struct lock_object	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
 
-#ifdef _KERNEL
-#include <sys/vmsystm.h>
-#endif
 #include <sys/vmmeter.h>
+#include <sys/vmsystm.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
 #include <vm/include/vm_param.h>

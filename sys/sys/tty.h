@@ -133,7 +133,7 @@ struct tty {
 #define	TTYHOG				1024
 
 #ifdef _KERNEL
-short						tthiwat[NSPEEDS], ttlowat[NSPEEDS];
+extern short				tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)			tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)			ttlowat[(tp)->t_ospeed&TTMASK]
 #define	TTMAXHIWAT			roundup(2048, CBSIZE)

@@ -67,10 +67,9 @@ ufs211_mapout(bp)
  * allocate bufmap data
  */
 static void *
-bufmap_alloc(data, size, flags)
+bufmap_alloc(data, size)
     void  	*data;
 	long 	size;
-	int		flags;
 {
     struct ufs211_bufmap *bm;
 

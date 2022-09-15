@@ -181,7 +181,7 @@
 #define	__link_set_add_bss2(set, sym, n)    __link_set_make_entry2(set, sym, n)
 
 #define	__link_set_start(set)	(__start_link_set_##set)
-#define	__link_set_end(set)	(__stop_link_set_##set)
+#define	__link_set_end(set)		(__stop_link_set_##set)
 
 #define	__link_set_decl(set, ptype)									\
 	extern ptype * const __link_set_start(set)[] __dso_hidden;		\

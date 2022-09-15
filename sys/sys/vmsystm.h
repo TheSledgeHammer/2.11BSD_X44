@@ -12,7 +12,7 @@
 /*
  * Miscellaneous virtual memory subsystem variables and structures.
  */
-size_t 		freemem;					/* remaining clicks of free memory */
+extern size_t freemem;					/* remaining clicks of free memory */
 
 #ifdef _KERNEL
 extern int	avefree;					/* moving average of remaining free clicks */
@@ -30,6 +30,6 @@ struct forkstat {
 };
 
 #ifdef _KERNEL
-struct forkstat forkstat;
+extern struct forkstat forkstat;
 #endif
 #endif /* _SYS_VMSYSTM_H_ */

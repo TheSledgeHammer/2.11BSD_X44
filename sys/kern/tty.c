@@ -135,11 +135,11 @@ char const char_type[] = {
 #undef	TB
 #undef	VT
 
-short tthiwat[16] = {
+short tthiwat[NSPEEDS] = {
 		100, 100, 100, 100, 100, 100, 100, 200, 200, 400, 400, 400, 650, 650, 1300, 2000
 };
 
-short ttlowat[16] = {
+short ttlowat[NSPEEDS] = {
 		30, 30, 30, 30, 30, 30, 30, 50, 50, 120, 120, 120, 125, 125, 125, 125
 };
 

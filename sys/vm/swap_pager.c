@@ -607,7 +607,7 @@ swap_pager_io(swp, mlist, npages, flags)
 				printf("%s: no available io headers\n",
 				       "swap_pager_io");
 #endif
-			return(VM_PAGER_AGAIN);
+			return (VM_PAGER_AGAIN);
 		}
 	}
 

@@ -1238,7 +1238,36 @@ swap_pager_get()
 
 }
 
-swap_pager_io()
+daddr_t
+swap_alloc(index, bsize)
+	int index, bsize;
 {
+	daddr_t block;
 
+	block = (daddr_t)swalloc(index, FALSE);
+	return (block);
+}
+
+static int
+swap_pager_io(swp, mlist, npages, flags)
+	register sw_pager_t swp;
+	vm_page_t *mlist;
+	int npages;
+	int flags;
+{
+	register struct buf *bp;
+	register sw_blk_t swb;
+	register int s;
+	int ix, mask;
+	bool_t rv;
+	vm_offset_t kva, off;
+	swp_clean_t spc;
+	vm_page_t m;
+
+	/*
+	 * Allocate a swap block if necessary.
+	 */
+	if (swb->swb_block == 0) {
+		swb->swb_block = swap_alloc(0, swp->sw_bsize);
+	}
 }

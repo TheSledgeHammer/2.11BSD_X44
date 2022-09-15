@@ -52,6 +52,8 @@ struct loadavg 	averunnable;		/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
 int	saferss = 	SAFERSS;
+
+size_t freemem;
 int	avefree;
 int	avefree30;
 int nrun;
