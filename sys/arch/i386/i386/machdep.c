@@ -137,6 +137,9 @@ int	bufpages = 0;
 int	msgbufmapped;		/* set when safe to use msgbuf */
 
 vm_map_t buffer_map;
+vm_map_t exec_map;
+vm_map_t mb_map;
+vm_map_t phys_map;
 extern vm_offset_t avail_end;
 
 /*
