@@ -67,11 +67,12 @@
 #ifndef	_VM_KERN_H_
 #define	_VM_KERN_H_
 
-vm_map_t	buffer_map;
-vm_map_t	exec_map;
-vm_map_t	kernel_map;
-vm_map_t	kmem_map;
-vm_map_t	mb_map;
-vm_map_t	phys_map;
+extern vm_map_t	buffer_map;
+extern vm_map_t	exec_map;
+extern vm_map_t	kernel_map;
+extern vm_map_t	kmem_map;
+extern vm_map_t	mb_map;
+extern vm_map_t pager_map;
+extern vm_map_t	phys_map;
 
 #endif /* _VM_KERN_H_ */
