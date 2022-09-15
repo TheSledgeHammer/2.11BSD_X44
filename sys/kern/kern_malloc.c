@@ -64,6 +64,7 @@ struct kmemstats 		kmemstats[M_LAST];
 struct kmemusage 		*kmemusage;
 int			        	kmemslab_count;
 struct lock_object 		malloc_slock;
+vm_map_t			kmem_map;
 char *kmembase, 		*kmemlimit;
 char *memname[] = INITKMEMNAMES;
 
