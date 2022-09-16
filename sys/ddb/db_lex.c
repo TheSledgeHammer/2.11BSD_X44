@@ -126,39 +126,6 @@ db_read_token(void)
 
 int	db_radix = 16;
 
-/*
- * Convert the number to a string in the current radix.
- * This replaces the non-standard %n printf() format.
- */
-
-char *
-db_num_to_str(db_expr_t val)
-{
-
-	/*
-	 * 2 chars for "0x", 1 for a sign ("-")
-	 * up to 21 chars for a 64-bit number:
-	 *   % echo 2^64 | bc | wc -c
-	 *   21
-	 * and 1 char for a terminal NUL
-	 * 2+1+21+1 => 25
-	 */
-	static char buf[25];
-
-	if (db_radix == 16)
-		snprintf(buf, sizeof(buf), DB_EXPR_T_IS_QUAD ? "%#qx" : "%#lx",
-		    val);
-	else if (db_radix == 8)
-		snprintf(buf, sizeof(buf), DB_EXPR_T_IS_QUAD ? "%#qo" : "%#lo",
-		    val);
-	else
-		snprintf(buf, sizeof(buf), DB_EXPR_T_IS_QUAD ? "%qu" : "%lu",
-		    val);
-
-	return (buf);
-}
-
-
 void
 db_flush_lex(void)
 {
