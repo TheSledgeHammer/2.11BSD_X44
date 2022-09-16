@@ -33,7 +33,6 @@
  * Lexical analyzer.
  */
 void 	db_flush_lex(void);
-char 	*db_num_to_str(db_expr_t);
 int 	db_read_line(void);
 void 	db_unread_token(int);
 int 	db_read_token(void);
