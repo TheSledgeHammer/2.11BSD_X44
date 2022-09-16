@@ -240,17 +240,17 @@ rwlock_lock_held(rwl)
 	return ((cpu->loc_my_ticket & RW_KERNPROC) != 0);
 }
 
-int lock_wait_time = 100;
+int rwlock_wait_time = 100;
 
 void
 rwlock_pause(rwl, wanted)
 	struct rwlock *rwl;
 	int wanted;
 {
-	if (lock_wait_time > 0) {
+	if (rwlock_wait_time > 0) {
 		int i;
 		rwlock_unlock(rwl);
-		for(i = lock_wait_time; i > 0; i--) {
+		for(i = rwlock_wait_time; i > 0; i--) {
 			if (!(wanted)) {
 				break;
 			}
