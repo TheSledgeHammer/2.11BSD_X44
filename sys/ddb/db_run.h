@@ -35,9 +35,9 @@
 /*
  * Commands to run process.
  */
-int		db_inst_count;
-int		db_load_count;
-int		db_store_count;
+extern int		db_inst_count;
+extern int		db_load_count;
+extern int		db_store_count;
 
 boolean_t db_stop_at_pc(db_regs_t *, boolean_t *);
 void db_restart_at_pc(db_regs_t *, boolean_t);
