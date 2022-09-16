@@ -71,7 +71,7 @@
  */
 
 extern int			vm_pages_needed;	/* should be some "event" structure */
-simple_lock_data_t	vm_pages_needed_lock;
+extern simple_lock_data_t	vm_pages_needed_lock;
 
 /*
  *	Exported routines.
