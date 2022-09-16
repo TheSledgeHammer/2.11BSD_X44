@@ -31,6 +31,8 @@
 /*
  * Command dispatcher.
  */
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/reboot.h>
@@ -60,6 +62,10 @@
  */
 boolean_t	db_cmd_loop_done;
 label_t		*db_recover;
+db_addr_t	db_dot;
+db_addr_t	db_last_addr;
+db_addr_t	db_prev;
+db_addr_t	db_next;
 
 /*
  * if 'ed' style: 'dot' is set at start of last item printed,
@@ -72,7 +78,7 @@ boolean_t	db_ed_style = TRUE;
  * Utility routine - discard tokens through end-of-line.
  */
 void
-db_skip_to_eol()
+db_skip_to_eol(void)
 {
 	int	t;
 	do {
@@ -102,39 +108,38 @@ db_cmd_search(name, table, cmdp)
 	int			result = CMD_NONE;
 
 	for (cmd = table; cmd->name != 0; cmd++) {
-	    register char *lp;
-	    register char *rp;
-	    register int  c;
+		register char *lp;
+		register char *rp;
+		register int c;
 
-	    lp = name;
-	    rp = cmd->name;
-	    while ((c = *lp) == *rp) {
+		lp = name;
+		rp = cmd->name;
+		while ((c = *lp) == *rp) {
+			if (c == 0) {
+				/* complete match */
+				*cmdp = cmd;
+				return (CMD_UNIQUE);
+			}
+			lp++;
+			rp++;
+		}
 		if (c == 0) {
-		    /* complete match */
-		    *cmdp = cmd;
-		    return (CMD_UNIQUE);
+			/* end of name, not end of command -
+			 partial match */
+			if (result == CMD_FOUND) {
+				result = CMD_AMBIGUOUS;
+				/* but keep looking for a full match -
+				 this lets us match single letters */
+			} else {
+				*cmdp = cmd;
+				result = CMD_FOUND;
+			}
 		}
-		lp++;
-		rp++;
-	    }
-	    if (c == 0) {
-		/* end of name, not end of command -
-		   partial match */
-		if (result == CMD_FOUND) {
-		    result = CMD_AMBIGUOUS;
-		    /* but keep looking for a full match -
-		       this lets us match single letters */
-		}
-		else {
-		    *cmdp = cmd;
-		    result = CMD_FOUND;
-		}
-	    }
 	}
 	if (result == CMD_NONE) {
-	    /* check for 'help' */
-		if (name[0] == 'h' && name[1] == 'e'
-		    && name[2] == 'l' && name[3] == 'p')
+		/* check for 'help' */
+		if (name[0] == 'h' && name[1] == 'e' && name[2] == 'l'
+				&& name[3] == 'p')
 			result = CMD_HELP;
 	}
 	return (result);
@@ -166,128 +171,118 @@ db_command(last_cmdp, cmd_table)
 
 	t = db_read_token();
 	if (t == tEOL) {
-	    /* empty line repeats last command, at 'next' */
-	    cmd = *last_cmdp;
-	    addr = (db_expr_t)db_next;
-	    have_addr = FALSE;
-	    count = 1;
-	    modif[0] = '\0';
-	}
-	else if (t == tEXCL) {
-	    db_fncall(0, 0, 0, NULL);
-	    return;
-	}
-	else if (t != tIDENT) {
-	    db_printf("?\n");
-	    db_flush_lex();
-	    return;
-	}
-	else {
-	    /*
-	     * Search for command
-	     */
-	    while (cmd_table) {
-		result = db_cmd_search(db_tok_string,
-				       cmd_table,
-				       &cmd);
-		switch (result) {
-		    case CMD_NONE:
-			db_printf("No such command\n");
-			db_flush_lex();
-			return;
-		    case CMD_AMBIGUOUS:
-			db_printf("Ambiguous\n");
-			db_flush_lex();
-			return;
-		    case CMD_HELP:
-			db_cmd_list(cmd_table);
-			db_flush_lex();
-			return;
-		    default:
-			break;
-		}
-		if ((cmd_table = cmd->more) != 0) {
-		    t = db_read_token();
-		    if (t != tIDENT) {
-			db_cmd_list(cmd_table);
-			db_flush_lex();
-			return;
-		    }
-		}
-	    }
-
-	    if ((cmd->flag & CS_OWN) == 0) {
+		/* empty line repeats last command, at 'next' */
+		cmd = *last_cmdp;
+		addr = (db_expr_t) db_next;
+		have_addr = FALSE;
+		count = 1;
+		modif[0] = '\0';
+	} else if (t == tEXCL) {
+		db_fncall(0, 0, 0, NULL);
+		return;
+	} else if (t != tIDENT) {
+		db_printf("?\n");
+		db_flush_lex();
+		return;
+	} else {
 		/*
-		 * Standard syntax:
-		 * command [/modifier] [addr] [,count]
+		 * Search for command
 		 */
-		t = db_read_token();
-		if (t == tSLASH) {
-		    t = db_read_token();
-		    if (t != tIDENT) {
-			db_printf("Bad modifier\n");
-			db_flush_lex();
-			return;
-		    }
-		    db_strcpy(modif, db_tok_string);
-		}
-		else {
-		    db_unread_token(t);
-		    modif[0] = '\0';
+		while (cmd_table) {
+			result = db_cmd_search(db_tok_string, cmd_table, &cmd);
+			switch (result) {
+			case CMD_NONE:
+				db_printf("No such command\n");
+				db_flush_lex();
+				return;
+			case CMD_AMBIGUOUS:
+				db_printf("Ambiguous\n");
+				db_flush_lex();
+				return;
+			case CMD_HELP:
+				db_cmd_list(cmd_table);
+				db_flush_lex();
+				return;
+			default:
+				break;
+			}
+			if ((cmd_table = cmd->more) != 0) {
+				t = db_read_token();
+				if (t != tIDENT) {
+					db_cmd_list(cmd_table);
+					db_flush_lex();
+					return;
+				}
+			}
 		}
 
-		if (db_expression(&addr)) {
-		    db_dot = (db_addr_t) addr;
-		    db_last_addr = db_dot;
-		    have_addr = TRUE;
+		if ((cmd->flag & CS_OWN) == 0) {
+			/*
+			 * Standard syntax:
+			 * command [/modifier] [addr] [,count]
+			 */
+			t = db_read_token();
+			if (t == tSLASH) {
+				t = db_read_token();
+				if (t != tIDENT) {
+					db_printf("Bad modifier\n");
+					db_flush_lex();
+					return;
+				}
+				db_strcpy(modif, db_tok_string);
+			} else {
+				db_unread_token(t);
+				modif[0] = '\0';
+			}
+
+			if (db_expression(&addr)) {
+				db_dot = (db_addr_t) addr;
+				db_last_addr = db_dot;
+				have_addr = TRUE;
+			} else {
+				addr = (db_expr_t) db_dot;
+				have_addr = FALSE;
+			}
+			t = db_read_token();
+			if (t == tCOMMA) {
+				if (!db_expression(&count)) {
+					db_printf("Count missing\n");
+					db_flush_lex();
+					return;
+				}
+			} else {
+				db_unread_token(t);
+				count = -1;
+			}
+			if ((cmd->flag & CS_MORE) == 0) {
+				db_skip_to_eol();
+			}
 		}
-		else {
-		    addr = (db_expr_t) db_dot;
-		    have_addr = FALSE;
-		}
-		t = db_read_token();
-		if (t == tCOMMA) {
-		    if (!db_expression(&count)) {
-			db_printf("Count missing\n");
-			db_flush_lex();
-			return;
-		    }
-		}
-		else {
-		    db_unread_token(t);
-		    count = -1;
-		}
-		if ((cmd->flag & CS_MORE) == 0) {
-		    db_skip_to_eol();
-		}
-	    }
 	}
 	*last_cmdp = cmd;
 	if (cmd != 0) {
-	    /*
-	     * Execute the command.
-	     */
-	    (*cmd->fcn)(addr, have_addr, count, modif);
+		/*
+		 * Execute the command.
+		 */
+		(*cmd->fcn)(addr, have_addr, count, modif);
 
-	    if (cmd->flag & CS_SET_DOT) {
-		/*
-		 * If command changes dot, set dot to
-		 * previous address displayed (if 'ed' style).
-		 */
-		if (db_ed_style) {
-		    db_dot = db_prev;
+		if (cmd->flag & CS_SET_DOT) {
+			/*
+			 * If command changes dot, set dot to
+			 * previous address displayed (if 'ed' style).
+			 */
+			if (db_ed_style) {
+				db_dot = db_prev;
+			} else {
+				db_dot = db_next;
+			}
+		} else {
+			/*
+			 * If command does not change dot,
+			 * set 'next' location to be the same.
+			 */
+			db_next = db_dot;
 		}
-		else {
-		    db_dot = db_next;
-		}
-	    }
-	    else {
-		/*
-		 * If command does not change dot,
-		 * set 'next' location to be the same.
-		 */
-		db_next = db_dot;
-	    }
 	}
 }
 
@@ -299,12 +294,12 @@ db_map_print_cmd(addr, have_addr, count, modif)
 	db_expr_t	count;
 	char *		modif;
 {
-        boolean_t full = FALSE;
-        
-        if (modif[0] == 'f')
-                full = TRUE;
+	boolean_t full = FALSE;
 
-        _vm_map_print((vm_map_t) addr, full, db_printf);
+	if (modif[0] == 'f')
+		full = TRUE;
+
+	_vm_map_print((vm_map_t) addr, full, db_printf);
 }
 
 /*ARGSUSED*/
@@ -315,10 +310,10 @@ db_object_print_cmd(addr, have_addr, count, modif)
 	db_expr_t	count;
 	char *		modif;
 {
-        boolean_t full = FALSE;
-        
-        if (modif[0] == 'f')
-                full = TRUE;
+	boolean_t full = FALSE;
+
+	if (modif[0] == 'f')
+		full = TRUE;
 
 	_vm_object_print((vm_object_t) addr, full, db_printf);
 }
@@ -399,8 +394,9 @@ struct db_command db_command_table[] = {
 
 /* this function should be called to install the machine dependent
    commands. It should be called before the debugger is enabled  */
-void db_machine_commands_install(ptr)
-struct db_command *ptr;
+void
+db_machine_commands_install(ptr)
+	struct db_command *ptr;
 {
   db_command_table[0].more = ptr;
   return;
@@ -411,7 +407,7 @@ struct db_command *ptr;
 struct db_command	*db_last_command = 0;
 
 void
-db_help_cmd()
+db_help_cmd(void)
 {
 	struct db_command *cmd = db_command_table;
 
@@ -423,7 +419,7 @@ db_help_cmd()
 }
 
 void
-db_command_loop()
+db_command_loop(void)
 {
 	label_t		db_jmpbuf;
 	label_t		*savejmp;
@@ -465,7 +461,6 @@ db_error(s)
 	longjmp(db_recover);
 }
 
-
 /*
  * Call random function:
  * !expr(arg,arg,arg)
@@ -487,41 +482,41 @@ db_fncall(addr, have_addr, count, modif)
 	int		t;
 
 	if (!db_expression(&fn_addr)) {
-	    db_printf("Bad function\n");
-	    db_flush_lex();
-	    return;
+		db_printf("Bad function\n");
+		db_flush_lex();
+		return;
 	}
-	func = (db_expr_t (*) (db_expr_t, ...)) fn_addr;
+	func = (db_expr_t (*)(db_expr_t, ...)) fn_addr;
 
 	t = db_read_token();
 	if (t == tLPAREN) {
-	    if (db_expression(&args[0])) {
-		nargs++;
-		while ((t = db_read_token()) == tCOMMA) {
-		    if (nargs == MAXARGS) {
-			db_printf("Too many arguments\n");
-			db_flush_lex();
-			return;
-		    }
-		    if (!db_expression(&args[nargs])) {
-			db_printf("Argument missing\n");
-			db_flush_lex();
-			return;
-		    }
-		    nargs++;
+		if (db_expression(&args[0])) {
+			nargs++;
+			while ((t = db_read_token()) == tCOMMA) {
+				if (nargs == MAXARGS) {
+					db_printf("Too many arguments\n");
+					db_flush_lex();
+					return;
+				}
+				if (!db_expression(&args[nargs])) {
+					db_printf("Argument missing\n");
+					db_flush_lex();
+					return;
+				}
+				nargs++;
+			}
+			db_unread_token(t);
 		}
-		db_unread_token(t);
-	    }
-	    if (db_read_token() != tRPAREN) {
-		db_printf("?\n");
-		db_flush_lex();
-		return;
-	    }
+		if (db_read_token() != tRPAREN) {
+			db_printf("?\n");
+			db_flush_lex();
+			return;
+		}
 	}
 	db_skip_to_eol();
 
 	while (nargs < MAXARGS) {
-	    args[nargs++] = 0;
+		args[nargs++] = 0;
 	}
 
 	retval = (*func)(args[0], args[1], args[2], args[3], args[4],

@@ -42,16 +42,6 @@
 #include <sys/exec_ecoff.h>
 #include <sys/resourcevar.h>
 
-const struct execsw ecoff_exec = {
-	.ex_hdrsz = ECOFF_HDR_SIZE,
-	.ex_makecmds = exec_ecoff_linker,
-	.ex_emul = &emul_211bsd,
-	.ex_prio = EXECSW_PRIO_ANY,
-	.ex_arglen = 0,
-	.ex_copyargs = copyargs,
-	.ex_setup_stack = exec_setup_stack
-};
-
 int
 exec_ecoff_linker(elp)
 	struct exec_linker *elp;

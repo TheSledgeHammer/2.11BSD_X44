@@ -28,7 +28,7 @@
  * 	Author: Richard P. Draves, Carnegie Mellon University
  *	Date:	10/90
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 

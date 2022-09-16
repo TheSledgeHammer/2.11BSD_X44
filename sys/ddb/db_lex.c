@@ -32,7 +32,10 @@
 /*
  * Lexical analyzer.
  */
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
+#include <sys/systm.h>
 
 #include <machine/db_machdep.h>
 
@@ -41,12 +44,24 @@
 #include <ddb/db_command.h>
 #include <ddb/db_sym.h>
 #include <ddb/db_extern.h>
+#include <ddb/db_interface.h>
 
-char	db_line[120];
-char *	db_lp, *db_endlp;
+db_expr_t	db_tok_number;
+char		db_tok_string[TOK_STRING_SIZE];
+
+static char	db_line[120];
+static char *db_lp, *db_endlp;
+
+static int	db_look_char = 0;
+static int	db_look_token = 0;
+
+static void	db_flush_line(void);
+static int	db_read_char(void);
+static void	db_unread_char(int);
+static int	db_lex(void);
 
 int
-db_read_line()
+db_read_line(void)
 {
 	int	i;
 
@@ -58,17 +73,15 @@ db_read_line()
 	return (i);
 }
 
-void
-db_flush_line()
+static void
+db_flush_line(void)
 {
 	db_lp = db_line;
 	db_endlp = db_line;
 }
 
-int	db_look_char = 0;
-
-int
-db_read_char()
+static int
+db_read_char(void)
 {
 	int	c;
 
@@ -83,14 +96,12 @@ db_read_char()
 	return (c);
 }
 
-void
+static void
 db_unread_char(c)
 	int c;
 {
 	db_look_char = c;
 }
-
-int	db_look_token = 0;
 
 void
 db_unread_token(t)
@@ -100,7 +111,7 @@ db_unread_token(t)
 }
 
 int
-db_read_token()
+db_read_token(void)
 {
 	int	t;
 
@@ -115,165 +126,189 @@ db_read_token()
 
 int	db_radix = 16;
 
+/*
+ * Convert the number to a string in the current radix.
+ * This replaces the non-standard %n printf() format.
+ */
+
+char *
+db_num_to_str(db_expr_t val)
+{
+
+	/*
+	 * 2 chars for "0x", 1 for a sign ("-")
+	 * up to 21 chars for a 64-bit number:
+	 *   % echo 2^64 | bc | wc -c
+	 *   21
+	 * and 1 char for a terminal NUL
+	 * 2+1+21+1 => 25
+	 */
+	static char buf[25];
+
+	if (db_radix == 16)
+		snprintf(buf, sizeof(buf), DB_EXPR_T_IS_QUAD ? "%#qx" : "%#lx",
+		    val);
+	else if (db_radix == 8)
+		snprintf(buf, sizeof(buf), DB_EXPR_T_IS_QUAD ? "%#qo" : "%#lo",
+		    val);
+	else
+		snprintf(buf, sizeof(buf), DB_EXPR_T_IS_QUAD ? "%qu" : "%lu",
+		    val);
+
+	return (buf);
+}
+
+
 void
-db_flush_lex()
+db_flush_lex(void)
 {
 	db_flush_line();
 	db_look_char = 0;
 	db_look_token = 0;
 }
 
-int
-db_lex()
+static int
+db_lex(void)
 {
-	int	c;
+	int c;
 
 	c = db_read_char();
 	while (c <= ' ' || c > '~') {
-	    if (c == '\n' || c == -1)
-		return (tEOL);
-	    c = db_read_char();
+		if (c == '\n' || c == -1)
+			return (tEOL);
+		c = db_read_char();
 	}
 
 	if (c >= '0' && c <= '9') {
-	    /* number */
-	    db_expr_t	r, digit = 0;
+		/* number */
+		db_expr_t r, digit = 0;
 
-	    if (c > '0')
-		r = db_radix;
-	    else {
-		c = db_read_char();
-		if (c == 'O' || c == 'o')
-		    r = 8;
-		else if (c == 'T' || c == 't')
-		    r = 10;
-		else if (c == 'X' || c == 'x')
-		    r = 16;
+		if (c > '0')
+			r = db_radix;
 		else {
-		    r = db_radix;
-		    db_unread_char(c);
+			c = db_read_char();
+			if (c == 'O' || c == 'o')
+				r = 8;
+			else if (c == 'T' || c == 't')
+				r = 10;
+			else if (c == 'X' || c == 'x')
+				r = 16;
+			else {
+				r = db_radix;
+				db_unread_char(c);
+			}
+			c = db_read_char();
 		}
-		c = db_read_char();
-	    }
-	    db_tok_number = 0;
-	    for (;;) {
-		if (c >= '0' && c <= ((r == 8) ? '7' : '9'))
-		    digit = c - '0';
-		else if (r == 16 && ((c >= 'A' && c <= 'F') ||
-				     (c >= 'a' && c <= 'f'))) {
-		    if (c >= 'a')
-			digit = c - 'a' + 10;
-		    else if (c >= 'A')
-			digit = c - 'A' + 10;
+		db_tok_number = 0;
+		for (;;) {
+			if (c >= '0' && c <= ((r == 8) ? '7' : '9'))
+				digit = c - '0';
+			else if (r == 16
+					&& ((c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'))) {
+				if (c >= 'a')
+					digit = c - 'a' + 10;
+				else if (c >= 'A')
+					digit = c - 'A' + 10;
+			} else
+				break;
+			db_tok_number = db_tok_number * r + digit;
+			c = db_read_char();
 		}
-		else
-		    break;
-		db_tok_number = db_tok_number * r + digit;
-		c = db_read_char();
-	    }
-	    if ((c >= '0' && c <= '9') ||
-		(c >= 'A' && c <= 'Z') ||
-		(c >= 'a' && c <= 'z') ||
-		(c == '_'))
-	    {
-		db_error("Bad character in number\n");
-		/*NOTREACHED*/
-	    }
-	    db_unread_char(c);
-	    return (tNUMBER);
+		if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
+				|| (c >= 'a' && c <= 'z') || (c == '_')) {
+			db_error("Bad character in number\n");
+			/*NOTREACHED*/
+		}
+		db_unread_char(c);
+		return (tNUMBER);
 	}
-	if ((c >= 'A' && c <= 'Z') ||
-	    (c >= 'a' && c <= 'z') ||
-	    c == '_' || c == '\\')
-	{
-	    /* string */
-	    char *cp;
+	if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'
+			|| c == '\\') {
+		/* string */
+		char *cp;
 
-	    cp = db_tok_string;
-	    if (c == '\\') {
-		c = db_read_char();
-		if (c == '\n' || c == -1) {
-		    db_error("Bad escape\n");
-		    /*NOTREACHED*/
-		}
-	    }
-	    *cp++ = c;
-	    while (1) {
-		c = db_read_char();
-		if ((c >= 'A' && c <= 'Z') ||
-		    (c >= 'a' && c <= 'z') ||
-		    (c >= '0' && c <= '9') ||
-		    c == '_' || c == '\\' || c == ':')
-		{
-		    if (c == '\\') {
+		cp = db_tok_string;
+		if (c == '\\') {
 			c = db_read_char();
 			if (c == '\n' || c == -1) {
-			    db_error("Bad escape\n");
-			    /*NOTREACHED*/
+				db_error("Bad escape\n");
+				/*NOTREACHED*/
 			}
-		    }
-		    *cp++ = c;
-		    if (cp == db_tok_string+sizeof(db_tok_string)) {
-			db_error("String too long\n");
-			/*NOTREACHED*/
-		    }
-		    continue;
 		}
-		else {
-		    *cp = '\0';
-		    break;
+		*cp++ = c;
+		while (1) {
+			c = db_read_char();
+			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+					|| (c >= '0' && c <= '9') || c == '_' || c == '\\'
+					|| c == ':') {
+				if (c == '\\') {
+					c = db_read_char();
+					if (c == '\n' || c == -1) {
+						db_error("Bad escape\n");
+						/*NOTREACHED*/
+					}
+				}
+				*cp++ = c;
+				if (cp == db_tok_string + sizeof(db_tok_string)) {
+					db_error("String too long\n");
+					/*NOTREACHED*/
+				}
+				continue;
+			} else {
+				*cp = '\0';
+				break;
+			}
 		}
-	    }
-	    db_unread_char(c);
-	    return (tIDENT);
+		db_unread_char(c);
+		return (tIDENT);
 	}
 
 	switch (c) {
-	    case '+':
+	case '+':
 		return (tPLUS);
-	    case '-':
+	case '-':
 		return (tMINUS);
-	    case '.':
+	case '.':
 		c = db_read_char();
 		if (c == '.')
-		    return (tDOTDOT);
+			return (tDOTDOT);
 		db_unread_char(c);
 		return (tDOT);
-	    case '*':
+	case '*':
 		return (tSTAR);
-	    case '/':
+	case '/':
 		return (tSLASH);
-	    case '=':
+	case '=':
 		return (tEQ);
-	    case '%':
+	case '%':
 		return (tPCT);
-	    case '#':
+	case '#':
 		return (tHASH);
-	    case '(':
+	case '(':
 		return (tLPAREN);
-	    case ')':
+	case ')':
 		return (tRPAREN);
-	    case ',':
+	case ',':
 		return (tCOMMA);
-	    case '"':
+	case '"':
 		return (tDITTO);
-	    case '$':
+	case '$':
 		return (tDOLLAR);
-	    case '!':
+	case '!':
 		return (tEXCL);
-	    case '<':
+	case '<':
 		c = db_read_char();
 		if (c == '<')
-		    return (tSHIFT_L);
+			return (tSHIFT_L);
 		db_unread_char(c);
 		break;
-	    case '>':
+	case '>':
 		c = db_read_char();
 		if (c == '>')
-		    return (tSHIFT_R);
+			return (tSHIFT_R);
 		db_unread_char(c);
 		break;
-	    case -1:
+	case -1:
 		return (tEOF);
 	}
 	db_printf("Bad character\n");

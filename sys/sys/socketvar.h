@@ -206,7 +206,7 @@ sbunlock(sb)
 struct msghdr;
 
 /* to catch callers missing new second argument to sonewconn: */
-u_long	sb_max;
+extern u_long	sb_max;
 
 /* strings for sleep message: */
 extern	char netio[], netcon[], netcls[];

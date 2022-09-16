@@ -1,4 +1,4 @@
-/*	$NetBSD: db_lex.h,v 1.8.20.2 1999/04/12 21:27:08 pk Exp $	*/
+/*	$NetBSD: db_lex.h,v 1.13 2002/02/15 07:33:51 simonb Exp $	*/
 
 /* 
  * Mach Operating System
@@ -32,19 +32,15 @@
 /*
  * Lexical analyzer.
  */
-int db_read_line(void);
-void db_flush_line(void);
-int db_read_char(void);
-void db_unread_char(int);
-void db_unread_token(int);
-int db_read_token(void);
-void db_flush_lex(void);
-int db_lex(void);
+void 	db_flush_lex(void);
+char 	*db_num_to_str(db_expr_t);
+int 	db_read_line(void);
+void 	db_unread_token(int);
+int 	db_read_token(void);
 
-db_expr_t db_tok_number;
+extern db_expr_t 	db_tok_number;
 #define	TOK_STRING_SIZE		120 
-char	db_tok_string[TOK_STRING_SIZE];
-int		db_radix;
+extern char			db_tok_string[TOK_STRING_SIZE];
 
 #define	tEOF		(-1)
 #define	tEOL		1
@@ -55,7 +51,7 @@ int		db_radix;
 #define	tDOT		6
 #define	tSTAR		7
 #define	tSLASH		8
-#define	tEQ		9
+#define	tEQ			9
 #define	tLPAREN		10
 #define	tRPAREN		11
 #define	tPCT		12

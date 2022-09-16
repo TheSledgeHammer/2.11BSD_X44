@@ -1,4 +1,4 @@
-/*	$NetBSD: db_output.h,v 1.10.8.2 1999/04/12 21:27:08 pk Exp $	*/
+/*	$NetBSD: db_output.h,v 1.17 2002/06/05 17:53:52 drochner Exp $	*/
 
 /* 
  * Mach Operating System
@@ -29,7 +29,7 @@
  *	Date:	8/90
  */
 
-#include <sys/stdarg.h>
+//#include <sys/stdarg.h>
 
 /*
  * Printing routines for kernel debugger.
@@ -39,3 +39,12 @@ void db_putchar(int);
 int db_print_position(void);
 void db_printf(const char *, ...); //__printflike(1, 2);
 void db_end_line(void);
+
+extern int	db_max_line;
+extern int	db_max_width;
+extern int	db_output_line;
+extern int	db_radix;
+extern int	db_tab_stop_width;
+
+#define	DB_NEXT_TAB(i) \
+	((((i) + db_tab_stop_width) / db_tab_stop_width) * db_tab_stop_width)

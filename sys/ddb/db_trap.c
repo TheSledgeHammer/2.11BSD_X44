@@ -32,6 +32,7 @@
 /*
  * Trap entry point to kernel debugger.
  */
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 

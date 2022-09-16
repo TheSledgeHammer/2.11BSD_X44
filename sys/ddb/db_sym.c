@@ -25,7 +25,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/systm.h>

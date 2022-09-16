@@ -93,17 +93,6 @@ struct execsw {
 #ifdef _KERNEL
 extern const struct execsw 	execsw[];
 extern int					nexecs;
-
-extern const struct execsw script_exec;
-extern const struct execsw aout_exec;
-extern const struct execsw coff_exec;
-extern const struct execsw ecoff_exec;
-extern const struct execsw pecoff_exec;
-extern const struct execsw macho_exec;
-extern const struct execsw elf32_exec;
-extern const struct execsw elf64_exec;
-extern const struct execsw xcoff32_exec;
-extern const struct execsw xcoff64_exec;
 #endif
 
 #include <machine/exec.h>

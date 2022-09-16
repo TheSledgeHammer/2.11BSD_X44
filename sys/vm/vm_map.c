@@ -516,7 +516,6 @@ vm_map_entry_create(map)
 {
 	vm_map_entry_t	entry;
 #ifdef DEBUG
-	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
 	bool_t				isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
@@ -546,7 +545,6 @@ vm_map_entry_dispose(map, entry)
 	vm_map_entry_t	entry;
 {
 #ifdef DEBUG
-	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
 	bool_t				isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);

@@ -71,7 +71,7 @@ static char *db_elf_find_strtab(db_symtab_t *);
 static boolean_t	db_elf_sym_init(int, void *, void *, const char *);
 static db_sym_t		db_elf_lookup(db_symtab_t *, char *);
 static db_sym_t		db_elf_search_symbol(db_symtab_t *, db_addr_t, db_strategy_t, db_expr_t *);
-static void		db_elf_symbol_values(db_symtab_t *, db_sym_t, char **, db_expr_t *);
+static void			db_elf_symbol_values(db_symtab_t *, db_sym_t, char **, db_expr_t *);
 static boolean_t	db_elf_line_at_pc(db_symtab_t *, db_sym_t, char **, int *, db_expr_t);
 static boolean_t	db_elf_sym_numargs(db_symtab_t *, db_sym_t, int *, char **);
 //static void		db_elf_forall(db_symtab_t *, db_forall_func_t db_forall_func, void *);

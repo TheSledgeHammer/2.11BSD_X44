@@ -36,62 +36,163 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
-#include <sys/exec.h>
 #include <sys/exec_linker.h>
+#include <sys/exec.h>
+
+#ifdef EXEC_SCRIPT
 #include <sys/exec_script.h>
+#endif
+#ifdef EXEC_AOUT
 #include <sys/exec_aout.h>
+#endif
+#ifdef EXEC_COFF
 #include <sys/exec_coff.h>
+#endif
+#ifdef EXEC_ECOFF
 #include <sys/exec_ecoff.h>
+#endif
+#ifdef EXEC_MACHO
 #include <sys/exec_macho.h>
+#endif
+#ifdef EXEC_PECOFF
 #include <sys/exec_pecoff.h>
+#endif
+#ifdef EXEC_ELF
 #include <sys/exec_elf.h>
+#endif
+#ifdef EXEC_XCOFF
 #include <sys/exec_xcoff.h>
+#endif
 
 #ifdef SYSCALL_DEBUG
 extern char *syscallnames[];
 #endif
 
-const struct execsw script_exec;
-const struct execsw aout_exec;
-const struct execsw coff_exec;
-const struct execsw ecoff_exec;
-const struct execsw pecoff_exec;
-const struct execsw macho_exec;
-const struct execsw elf32_exec;
-const struct execsw elf64_exec;
-const struct execsw xcoff32_exec;
-const struct execsw xcoff64_exec;
-
 const struct execsw execsw[] = {
-	/* shell scripts */
-	{ &script_exec.ex_hdrsz, &script_exec.ex_makecmds, &script_exec.ex_emul, &script_exec.ex_prio, &script_exec.ex_arglen, &script_exec.ex_copyargs, &script_exec.ex_setup_stack },
-
-	/* a.out binaries */
-	{ &aout_exec.ex_hdrsz, &aout_exec.ex_makecmds, &aout_exec.ex_emul, &aout_exec.ex_prio, &aout_exec.ex_arglen, &aout_exec.ex_copyargs, &aout_exec.ex_setup_stack },
-
-	/* coff binaries */
-	{ &coff_exec.ex_hdrsz, &coff_exec.ex_makecmds, &coff_exec.ex_emul, &coff_exec.ex_prio, &coff_exec.ex_arglen, &coff_exec.ex_copyargs, &coff_exec.ex_setup_stack },
-
-	/* ecoff binaries */
-	{ &ecoff_exec.ex_hdrsz, &ecoff_exec.ex_makecmds, &ecoff_exec.ex_emul, &ecoff_exec.ex_prio, &ecoff_exec.ex_arglen, &ecoff_exec.ex_copyargs, &ecoff_exec.ex_setup_stack },
-	
-	/* pecoff binaries */
-	{ &pecoff_exec.ex_hdrsz, &pecoff_exec.ex_makecmds, &pecoff_exec.ex_emul, &pecoff_exec.ex_prio, &pecoff_exec.ex_arglen, &pecoff_exec.ex_copyargs, &pecoff_exec.ex_setup_stack },
-
-	/* mach-o binaries */
-	{ &macho_exec.ex_hdrsz, &macho_exec.ex_makecmds, &macho_exec.ex_emul, &macho_exec.ex_prio, &macho_exec.ex_arglen, &macho_exec.ex_copyargs, &macho_exec.ex_setup_stack },
-
-	/* 32-Bit ELF binaries */
-	{ &elf32_exec.ex_hdrsz, &elf32_exec.ex_makecmds, &elf32_exec.ex_emul, &elf32_exec.ex_prio, &elf32_exec.ex_arglen, &elf32_exec.ex_copyargs, &elf32_exec.ex_setup_stack },
-
-	/* 64-Bit ELF binaries */
-	{ &elf64_exec.ex_hdrsz, &elf64_exec.ex_makecmds, &elf64_exec.ex_emul, &elf64_exec.ex_prio, &elf64_exec.ex_arglen, &elf64_exec.ex_copyargs, &elf64_exec.ex_setup_stack },
-	
-	/* 32-Bit xcoff binaries */
-	{ &xcoff32_exec.ex_hdrsz, &xcoff32_exec.ex_makecmds, &xcoff32_exec.ex_emul, &xcoff32_exec.ex_prio, &xcoff32_exec.ex_arglen, &xcoff32_exec.ex_copyargs, &xcoff32_exec.ex_setup_stack },
-
-	/* 64-Bit xcoff binaries */
-	{ &xcoff64_exec.ex_hdrsz, &xcoff64_exec.ex_makecmds, &xcoff64_exec.ex_emul, &xcoff64_exec.ex_prio, &xcoff64_exec.ex_arglen, &xcoff64_exec.ex_copyargs, &xcoff64_exec.ex_setup_stack },
+		/* shell scripts */
+#ifdef EXEC_SCRIPT
+		{
+				.ex_hdrsz = SCRIPT_HDR_SIZE,
+				.ex_makecmds = exec_script_linker,
+				.ex_emul = NULL,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = 0,
+				.ex_copyargs = NULL,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* a.out binaries */
+#ifdef EXEC_AOUT
+		{
+				.ex_hdrsz = AOUT_HDR_SIZE,
+				.ex_makecmds = exec_aout_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_FIRST,
+				.ex_arglen = 0,
+				.ex_copyargs = copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* coff binaries */
+#ifdef EXEC_COFF
+		{
+				.ex_hdrsz = COFF_HDR_SIZE,
+				.ex_makecmds = exec_coff_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = 0,
+				.ex_copyargs = copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* ecoff binaries */
+#ifdef EXEC_ECOFF
+		{
+				.ex_hdrsz = ECOFF_HDR_SIZE,
+				.ex_makecmds = exec_ecoff_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = 0,
+				.ex_copyargs = copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* pecoff binaries */
+#ifdef EXEC_PECOFF
+		{
+				.ex_hdrsz = PECOFF_HDR_SIZE,
+				.ex_makecmds = exec_pecoff_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = PECOFF_AUXSIZE,
+				.ex_copyargs = pecoff_copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* mach-o binaries */
+#ifdef EXEC_MACHO
+		{
+				.ex_hdrsz = MACHO_HDR_SIZE,
+				.ex_makecmds = exec_macho_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = MACHO_AUXSIZE,
+				.ex_copyargs = macho_copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* 32-Bit ELF binaries */
+#ifdef EXEC_ELF
+#if defined(ELFSIZE) && (ELFSIZE == 32)
+		{
+				.ex_hdrsz = ELF32_HDR_SIZE,
+				.ex_makecmds = exec_elf_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = ELF32_AUXSIZE,
+				.ex_copyargs = elf_copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* 64-Bit ELF binaries */
+#if defined(ELFSIZE) && (ELFSIZE == 64)
+		{
+				.ex_hdrsz = ELF64_HDR_SIZE,
+				.ex_makecmds = exec_elf_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = ELF64_AUXSIZE,
+				.ex_copyargs = elf_copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+#endif
+		/* 32-Bit xcoff binaries */
+#ifdef EXEC_XCOFF
+#if defined(XCOFFSIZE) && (XCOFFSIZE == 32)
+		{
+				.ex_hdrsz = XCOFF32_HDR_SIZE,
+				.ex_makecmds = exec_xcoff_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = 0,
+				.ex_copyargs = copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+		/* 64-Bit xcoff binaries */
+#if defined(XCOFFSIZE) && (XCOFFSIZE == 64)
+		{
+				.ex_hdrsz = XCOFF64_HDR_SIZE,
+				.ex_makecmds = exec_xcoff_linker,
+				.ex_emul = &emul_211bsd,
+				.ex_prio = EXECSW_PRIO_ANY,
+				.ex_arglen = 0,
+				.ex_copyargs = copyargs,
+				.ex_setup_stack = exec_setup_stack
+		},
+#endif
+#endif
 };
 
 int nexecs = (sizeof execsw / sizeof(struct execsw));

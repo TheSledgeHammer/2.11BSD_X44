@@ -1238,6 +1238,8 @@ swap_pager_get()
 
 }
 
+
+
 daddr_t
 swap_alloc(index, bsize)
 	int index, bsize;
@@ -1268,6 +1270,6 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * Allocate a swap block if necessary.
 	 */
 	if (swb->swb_block == 0) {
-		swb->swb_block = swap_alloc(0, swp->sw_bsize);
+		swb->swb_block = (daddr_t) vm_swap_alloc(swp, swp->sw_bsize, FALSE);
 	}
 }

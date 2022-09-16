@@ -94,6 +94,7 @@ int	maxfiles = 		NFILE;
 int	nclist = 		NCLIST;
 int	nmbclusters = 	NMBCLUSTERS;
 int	fscale = 		FSCALE;						/* kernel uses `FSCALE', user uses `fscale' */
+int nswapmap = 		NPROC * 2;
 
 /*
  * These are initialized at bootstrap time

@@ -56,16 +56,6 @@
 
 #include <machine/coff_machdep.h>
 
-const struct execsw pecoff_exec = {
-	.ex_hdrsz = PECOFF_HDR_SIZE,
-	.ex_makecmds = exec_pecoff_linker,
-	.ex_emul = &emul_211bsd,
-	.ex_prio = EXECSW_PRIO_ANY,
-	.ex_arglen = PECOFF_AUXSIZE,
-	.ex_copyargs = pecoff_copyargs,
-	.ex_setup_stack = exec_setup_stack
-};
-
 #define PECOFF_SIGNATURE "PE\0\0"
 static const char signature[] = PECOFF_SIGNATURE;
 

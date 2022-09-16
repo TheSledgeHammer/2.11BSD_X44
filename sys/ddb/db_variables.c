@@ -28,7 +28,7 @@
 
 //#include "opt_ddb.h"				/* for sysctl.h */
 //#include "opt_ddbparam.h"
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <vm/include/vm.h>

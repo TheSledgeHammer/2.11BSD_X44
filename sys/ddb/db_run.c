@@ -34,7 +34,7 @@
  */
 
 //#include "opt_ddb.h"
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 
@@ -45,8 +45,8 @@
 #include <ddb/db_break.h>
 
 #ifdef	SOFTWARE_SSTEP
-static void	db_set_temp_breakpoint(db_breakpoint_t, db_addr_t);
-static void	db_delete_temp_breakpoint(db_breakpoint_t);
+static void		db_set_temp_breakpoint(db_breakpoint_t, db_addr_t);
+static void		db_delete_temp_breakpoint(db_breakpoint_t);
 static struct	db_breakpoint	db_not_taken_bkpt;
 static struct	db_breakpoint	db_taken_bkpt;
 #endif

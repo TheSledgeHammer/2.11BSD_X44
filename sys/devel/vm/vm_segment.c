@@ -447,7 +447,7 @@ vm_segment_zero_fill(s, p, o)
  */
 
 /* check alignment of segment size to page size */
-static int npages_per_segment = (SEGMENT_SIZE/ PAGE_SIZE)
+static int npages_per_segment = (SEGMENT_SIZE/ PAGE_SIZE);
 
 bool_t
 vm_segment_sanity_check(pgs, segs)

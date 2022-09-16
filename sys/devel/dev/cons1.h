@@ -109,8 +109,8 @@ struct consdev {
 #define devtoname(dev)	(#dev)
 
 #ifdef _KERNEL
-extern	struct consdev constab[];
-extern	struct consdev *cn_tab;
+extern struct consdev constab[];
+extern struct consdev *cn_tab;
 
 /* console-specific types */
 typedef void 	dev_type_cnprobe_t(struct consdev *);

@@ -28,7 +28,7 @@
  *	Author: David B. Golub,  Carnegie Mellon University
  *	Date:	7/90
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 
@@ -63,17 +63,17 @@ db_write_cmd(address, have_addr, count, modif)
 	addr = (db_addr_t) address;
 
 	switch (modif[0]) {
-	    case 'b':
+	case 'b':
 		size = 1;
 		break;
-	    case 'h':
+	case 'h':
 		size = 2;
 		break;
-	    case 'l':
-	    case '\0':
+	case 'l':
+	case '\0':
 		size = 4;
 		break;
-	    default:
+	default:
 		size = -1;
 		db_error("Unknown size\n");
 		/*NOTREACHED*/

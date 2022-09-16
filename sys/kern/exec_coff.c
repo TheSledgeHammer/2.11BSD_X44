@@ -47,16 +47,6 @@
 #include <sys/resourcevar.h>
 #include <sys/namei.h>
 
-const struct execsw coff_exec = {
-	.ex_hdrsz = COFF_HDR_SIZE,
-	.ex_makecmds = exec_coff_linker,
-	.ex_emul = &emul_211bsd,
-	.ex_prio = EXECSW_PRIO_ANY,
-	.ex_arglen = 0,
-	.ex_copyargs = copyargs,
-	.ex_setup_stack = exec_setup_stack
-};
-
 int
 exec_coff_linker(elp)
 	struct exec_linker *elp;

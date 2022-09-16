@@ -59,7 +59,7 @@ vm_map_t 		kmapex;
 vm_map_entry_t 	kentryex;
 //struct vmspace	vmspaceex;
 
-//long 			vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
+long 			vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
 long 			kmap_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_t))];
 long			kentry_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_entry_t))];
 

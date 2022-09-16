@@ -1,4 +1,4 @@
-/*	$NetBSD: db_access.c,v 1.11.10.2 1999/04/12 21:27:07 pk Exp $	*/
+/*	$NetBSD: db_access.c,v 1.17 2002/02/15 07:33:49 simonb Exp $	*/
 
 /* 
  * Mach Operating System
@@ -28,6 +28,8 @@
  *	Author: David B. Golub, Carnegie Mellon University
  *	Date:	7/90
  */
+
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/proc.h>

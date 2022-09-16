@@ -32,6 +32,7 @@
 /*
  * Breakpoints.
  */
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 
@@ -113,18 +114,15 @@ db_delete_breakpoint(map, addr)
 	register db_breakpoint_t	bkpt;
 	register db_breakpoint_t	*prev;
 
-	for (prev = &db_breakpoint_list;
-	     (bkpt = *prev) != 0;
-	     prev = &bkpt->link) {
-	    if (db_map_equal(bkpt->map, map) &&
-		(bkpt->address == addr)) {
-		*prev = bkpt->link;
-		break;
-	    }
+	for (prev = &db_breakpoint_list; (bkpt = *prev) != 0; prev = &bkpt->link) {
+		if (db_map_equal(bkpt->map, map) && (bkpt->address == addr)) {
+			*prev = bkpt->link;
+			break;
+		}
 	}
 	if (bkpt == 0) {
-	    db_printf("Not set.\n");
-	    return;
+		db_printf("Not set.\n");
+		return;
 	}
 
 	db_breakpoint_free(bkpt);
@@ -200,7 +198,7 @@ db_clear_breakpoints()
  * List breakpoints.
  */
 void
-db_list_breakpoints()
+db_list_breakpoints(void)
 {
 	register db_breakpoint_t	bkpt;
 

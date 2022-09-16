@@ -300,7 +300,7 @@ probew(addr)
 #endif
 
 
-extern vm_map_t phys_map;
+//extern vm_map_t phys_map;
 
 /*
  * Map an IO request into kernel virtual address space.  Requests fall into

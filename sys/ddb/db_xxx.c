@@ -39,7 +39,7 @@
  * Miscellaneous DDB functions that are intimate (xxx) with various
  * data structures and functions used by the kernel (proc, callout).
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>

@@ -156,8 +156,7 @@ void 	new_vmcmd(struct exec_vmcmd_set *, int (*)(struct proc *, struct exec_vmcm
 	new_vmcmd(evsp, proc, size, addr, prot, maxprot, 0, vp, offset)
 #define	NEW_VMCMD2(evsp, proc, size, addr, prot, maxprot, flags, vp, offset) \
 	new_vmcmd(evsp, proc, size, addr, prot, maxprot, flags, vp, offset)
+
 #endif 	/* _KERNEL */
-
 #include <sys/exec_aout.h>
-
 #endif  /* _SYS_EXEC_LINKER_H_ */

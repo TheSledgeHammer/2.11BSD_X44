@@ -70,7 +70,7 @@ struct vmmapent {
 #ifdef _KERNEL
 extern struct map coremap[1];																	/* space for core allocation */
 extern struct map swapmap[1];																	/* space for swap allocation */
-int	nswapmap;
+extern int nswapmap;
 
 void	    rmapinit(void);
 memaddr_t   rmalloc(struct map *, size_t); 											/* Allocate units from the given map. */

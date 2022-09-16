@@ -38,12 +38,3 @@
 
 #include "exec_elf32.c"
 
-const struct execsw elf64_exec = {
-	.ex_hdrsz = ELF64_HDR_SIZE,
-	.ex_makecmds = exec_elf_linker,
-	.ex_emul = &emul_211bsd,
-	.ex_prio = EXECSW_PRIO_ANY,
-	.ex_arglen = ELF64_AUXSIZE,
-	.ex_copyargs = elf_copyargs,
-	.ex_setup_stack = exec_setup_stack
-};
