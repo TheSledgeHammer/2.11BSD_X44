@@ -25,7 +25,7 @@ struct	msgbuf {
 #define	logACCT	2		/* /dev/acct */
 
 #ifdef _KERNEL
-struct	msgbuf *msgbufp;
+extern struct	msgbuf *msgbufp;
 
 void	loginit(void);
 int     logisopen(int);
