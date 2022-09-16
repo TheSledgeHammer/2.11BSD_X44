@@ -44,6 +44,10 @@
 #include <ddb/db_access.h>
 #include <ddb/db_break.h>
 
+int		db_inst_count;
+int		db_load_count;
+int		db_store_count;
+
 #ifdef	SOFTWARE_SSTEP
 static void		db_set_temp_breakpoint(db_breakpoint_t, db_addr_t);
 static void		db_delete_temp_breakpoint(db_breakpoint_t);
