@@ -40,6 +40,7 @@
 #include <sys/queue.h>
 #include <sys/stdint.h>
 
+TAILQ_HEAD(ksyms_symhead, ksyms_symtab);
 struct ksyms_symtab {
 	TAILQ_ENTRY(ksyms_symtab) 	sd_queue; 		/* All active tables */
 	const char 					*sd_name;		/* Name of this table */
@@ -92,11 +93,11 @@ static struct ksyms_symtab 	kernel_symtab;
 /*
  * used by savecore(8) so non-static
  */
-struct ksyms_hdr 		ksyms_hdr;
-int 				ksyms_symsz;
-int 				ksyms_strsz;
-int 				ksyms_ctfsz;	/* this is not currently used by savecore(8) */
-TAILQ_HEAD(, ksyms_symtab) 	ksyms_symtabs;
+extern struct ksyms_hdr 	ksyms_hdr;
+extern int 			ksyms_symsz;
+extern int 			ksyms_strsz;
+extern int 			ksyms_ctfsz;	/* this is not currently used by savecore(8) */
+extern struct ksyms_symhead 	ksyms_symtabs;
 
 static void ksyms_sizes_calc(void);
 
