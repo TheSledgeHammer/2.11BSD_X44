@@ -122,6 +122,11 @@ extern char db_symtab[];
 extern int db_symtabsize;
 #endif
 
+struct ksyms_hdr 	ksyms_hdr;
+int 			ksyms_symsz;
+int 			ksyms_strsz;
+int 			ksyms_ctfsz;
+struct ksyms_symhead 	ksyms_symtabs;
 static void ksyms_hdr_init(const void *hdraddr);
 
 static int
