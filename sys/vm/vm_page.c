@@ -90,6 +90,7 @@ struct pglist		vm_page_queue_active;
 struct pglist		vm_page_queue_inactive;
 simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
+simple_lock_data_t	vm_pages_needed_lock;
 
 /* has physical page allocation been initialized? */
 bool_t 				vm_page_startup_initialized;
