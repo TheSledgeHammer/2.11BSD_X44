@@ -94,19 +94,19 @@ int	maxfiles = 		NFILE;
 int	nclist = 		NCLIST;
 int	nmbclusters = 	NMBCLUSTERS;
 int	fscale = 		FSCALE;						/* kernel uses `FSCALE', user uses `fscale' */
-int nswapmap = 		NPROC * 2;
 
 /*
  * These are initialized at bootstrap time
  * to values dependent on memory size
  */
-int	nbuf, nswbuf;
+int	nbuf, nswbuf, nswapmap;
 
 /*
  * These have to be allocated somewhere; allocating
  * them here forces loader errors if this file is omitted
  * (if they've been externed everywhere else; hah!).
  */
+int securelevel = -1;
 struct	timezone 	tz;
 struct 	callout 	*callout;
 struct  cblock		*cfree;

@@ -244,7 +244,8 @@ static struct consdev wsdisplay_cons = {
 		.cn_flush = nullcnflush,
 		.cn_tp = NULL,
 		.cn_dev = NODEV,
-		.cn_pri = CN_NORMAL
+		.cn_pri = CN_NORMAL,
+		.cn_name = "wsdisplay_cons"
 };
 
 #ifndef WSDISPLAY_DEFAULTSCREENS
@@ -756,7 +757,8 @@ wsdisplay_cnattach(type, cookie, ccol, crow, defattr)
 								  ccol, crow,
 								  defattr);
 
-	cn_tab = &wsdisplay_cons;
+	//cn_tab = &wsdisplay_cons;
+	cnadd(&wsdisplay_cons);
 	wsdisplay_console_initted = 1;
 }
 

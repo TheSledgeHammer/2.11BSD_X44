@@ -9,7 +9,6 @@
 #include <sys/cdefs.h>
 
 #include "tb.h"
-#if NTB > 0
 
 /*
  * Line discipline for RS232 tablets;
@@ -33,7 +32,7 @@ struct	tbconf {
 	short	tbc_recsize;		/* input record size in bytes */
 	short	tbc_uiosize;		/* size of data record returned user */
 	int		tbc_sync;			/* mask for finding sync byte/bit */
-	int		(*tbc_decode)();	/* decoding routine */
+	void	(*tbc_decode)();	/* decoding routine */
 	char	*tbc_run;			/* enter run mode sequence */
 	char	*tbc_point;			/* enter point mode sequence */
 	char	*tbc_stop;			/* stop sequence */
@@ -42,8 +41,11 @@ struct	tbconf {
 #define	TBF_POL	0x1				/* polhemus hack */
 };
 
-static	int tbdecode(), gtcodecode(), poldecode();
-static	int tblresdecode(), tbhresdecode();
+static void gtcodecode(char *, struct gtcopos *);
+static void tbdecode(char *, struct tbpos *);
+static void tblresdecode(char *, struct tbpos *);
+static void	tbhresdecode(char *, struct tbpos *);
+static void poldecode(char *, struct polpos *);
 
 struct	tbconf tbconf[TBTYPE] = {
 		{ 0 },
@@ -101,6 +103,7 @@ tbopen(dev, tp)
 /*
  * Line discipline change or last device close.
  */
+void
 tbclose(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -176,12 +179,11 @@ tbinput(c, tp)
 /*
  * Decode GTCO 8 byte format (high res, tilt, and pressure).
  */
-static
+static void
 gtcodecode(cp, tbpos)
 	register char *cp;
 	register struct gtcopos *tbpos;
 {
-
 	tbpos->pressure = *cp >> 2;
 	tbpos->status = (tbpos->pressure > 16) | TBINPROX; /* half way down */
 	tbpos->xpos = (*cp++ & 03) << 14;
@@ -198,7 +200,7 @@ gtcodecode(cp, tbpos)
 /*
  * Decode old Hitachi 5 byte format (low res).
  */
-static
+static void
 tbdecode(cp, tbpos)
 	register char *cp;
 	register struct tbpos *tbpos;
@@ -219,10 +221,11 @@ tbdecode(cp, tbpos)
 	tbpos->scount++;
 }
 
+
 /*
  * Decode new Hitach 5-byte format (low res).
  */
-static
+static void
 tblresdecode(cp, tbpos)
 	register char *cp;
 	register struct tbpos *tbpos;
@@ -240,7 +243,7 @@ tblresdecode(cp, tbpos)
 /*
  * Decode new Hitach 6-byte format (high res).
  */
-static
+static void
 tbhresdecode(cp, tbpos)
 	register char *cp;
 	register struct tbpos *tbpos;
@@ -261,7 +264,7 @@ tbhresdecode(cp, tbpos)
 /*
  * Polhemus decode.
  */
-static
+static void
 poldecode(cp, polpos)
 	register char *cp;
 	register struct polpos *polpos;
@@ -280,10 +283,11 @@ poldecode(cp, polpos)
 
 /*ARGSUSED*/
 int
-tbioctl(tp, cmd, data, flag)
+tbioctl(tp, cmd, data, flag, p)
 	struct tty *tp;
-	u_int cmd;
+	u_long cmd;
 	caddr_t data;
+	struct proc *p;
 {
 	register struct tb *tbp = (struct tb *)tp->T_LINEP;
 
@@ -337,4 +341,3 @@ tbioctl(tp, cmd, data, flag)
 	}
 	return (0);
 }
-#endif

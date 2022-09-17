@@ -172,7 +172,7 @@ long hostid;
 int securelevel;
 char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
 char osversion[];
-char osrelease[];
+//char osrelease[];
 long osrevision[];
 
 /*
@@ -694,6 +694,7 @@ sysctl_file(where, sizep)
 	return (0);
 }
 
+#ifdef notyet
 /*
  * This one is in kern_clock.c in 4.4 but placed here for the reasons
  * given earlier (back around line 367).
@@ -715,7 +716,7 @@ sysctl_clockrate(where, sizep)
 	clkinfo.stathz = hz;
 	return (sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof (clkinfo)));
 }
-
+#endif
 /*
  * try over estimating by 5 procs
  */

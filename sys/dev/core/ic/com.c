@@ -203,7 +203,8 @@ static struct consdev com_cons = {
 		.cn_flush = nullcnflush,
 		.cn_tp = NULL,
 		.cn_dev = NODEV,
-		.cn_pri = CN_NORMAL
+		.cn_pri = CN_NORMAL,
+		.cn_name = "com_cons"
 };
 
 /*
@@ -2437,9 +2438,11 @@ comcnattach(bus_space_tag_t iot, bus_addr_t iobase, int rate, int frequency,
 	int res;
 
 	res = cominit(iot, iobase, rate, frequency, type, cflag, &comconsioh);
-	if (res)
+	if (res) {
 		return (res);
-	cn_tab = &com_cons;
+	}
+	//cn_tab = &com_cons;
+	cnadd(&com_cons);
 	cn_init_magic(&com_cnm_state);
 	cn_set_magic("\047\001"); /* default magic is BREAK */
 

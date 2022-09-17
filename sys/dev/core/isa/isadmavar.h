@@ -53,7 +53,7 @@ struct isa_mem {
 	bus_addr_t 				addr;
 	caddr_t 				kva;
 	struct isa_mem 			*next;
-} *isa_mem_head = 0;
+};
 
 struct proc;
 

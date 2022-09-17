@@ -18,6 +18,10 @@
  */
 
 #include <sys/cdefs.h>
+
+#include "video.h"
+#if NVIDEO > 0
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
@@ -34,6 +38,8 @@
 #include <dev/video/generic/video_if.h>
 
 #include <vm/include/vm_extern.h>
+
+#include "ioconf.h"
 
 #ifdef VIDEO_DEBUG
 #define	DPRINTF(x)	do { printf x; } while (0)
@@ -513,3 +519,4 @@ videoactivate(struct device *self, int act)
 	return (0);
 }
 
+#endif /* NVIDEO > 0 */

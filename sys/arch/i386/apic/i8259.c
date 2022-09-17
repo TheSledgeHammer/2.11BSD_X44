@@ -88,7 +88,7 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
-struct intrhand 	*intrhand[MAX_INTR_SOURCES];
+//struct intrhand 	*intrhand[MAX_INTR_SOURCES];
 unsigned i8259_imen;
 
 static void 	i8259_hwmask(struct softpic *, int);

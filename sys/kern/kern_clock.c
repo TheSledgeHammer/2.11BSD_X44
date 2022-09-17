@@ -35,6 +35,9 @@ int profhz;
 int hard_ticks;
 int	psratio;				/* ratio: prof / stat */
 static int psdiv, pscnt;	/* prof => stat divider */
+int	 dk_busy;
+long dk_time[DK_NDRIVE];
+long cp_time[CPUSTATES];
 
 volatile struct timeval time;
 volatile struct	timeval mono_time;

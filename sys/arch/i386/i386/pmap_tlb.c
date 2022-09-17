@@ -65,17 +65,19 @@
 #include <machine/pmap.h>
 #include <machine/pmap_tlb.h>
 
-
-void pmap_tlb_shootdown_q_drain(struct pmap_tlb_shootdown_q *);
-struct pmap_tlb_shootdown_job *pmap_tlb_shootdown_job_get(struct pmap_tlb_shootdown_q *);
-void pmap_tlb_shootdown_job_put(struct pmap_tlb_shootdown_q *, struct pmap_tlb_shootdown_job *);
+struct pmap_tlb_shootdown_q 				pmap_tlb_shootdown_q[NCPUS];
+struct lock_object 							pmap_tlb_shootdown_job_lock;
+union pmap_tlb_shootdown_job_al 			*pj_page, *pj_free;
 
 /*
  * pmap_pg_g: if our processor supports PG_G in the PTE then we
  * set pmap_pg_g to PG_G (otherwise it is zero).
  */
-
 int pmap_pg_g = 0;
+
+void pmap_tlb_shootdown_q_drain(struct pmap_tlb_shootdown_q *);
+struct pmap_tlb_shootdown_job *pmap_tlb_shootdown_job_get(struct pmap_tlb_shootdown_q *);
+void pmap_tlb_shootdown_job_put(struct pmap_tlb_shootdown_q *, struct pmap_tlb_shootdown_job *);
 
 /******************** TLB shootdown code ********************/
 

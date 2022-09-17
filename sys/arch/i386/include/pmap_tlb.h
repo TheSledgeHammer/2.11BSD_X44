@@ -55,16 +55,13 @@ union pmap_tlb_shootdown_job_al {
 
 struct pmap_tlb_shootdown_q {
 	TAILQ_HEAD(, pmap_tlb_shootdown_job) 	pq_head;
-	int 					pq_pte;			/* aggregate PTE bits */
+	int 									pq_pte;			/* aggregate PTE bits */
 	int 									pq_count;		/* number of pending requests */
 	struct lock_object						pq_slock;		/* spin lock on queue */
 	int 									pq_flushg;		/* pending flush global */
 	int 									pq_flushu;		/* pending flush user */
-} pmap_tlb_shootdown_q[NCPUS];
+};
 
 #define	PMAP_TLB_MAXJOBS					16
-
-struct lock_object 							pmap_tlb_shootdown_job_lock;
-union pmap_tlb_shootdown_job_al 			*pj_page, *pj_free;
 
 #endif /* _I386_PMAP_TLB_H_ */

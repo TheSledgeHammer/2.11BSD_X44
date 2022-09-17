@@ -121,6 +121,8 @@ mainbus0    		at root
 cpu0 			at mainbus?
 ioapic* 		at mainbus?
 
+apm0			at mainbus0		# Advanced power management
+
 # PCI bus support
 pci*			at mainbus? bus ?
 pci*			at pchb? bus ?

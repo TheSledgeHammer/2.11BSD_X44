@@ -94,20 +94,6 @@ int max_linesws = __arraycount(linesw0);
 int	nblkdev = sys_bdevsws;
 int	nchrdev = sys_cdevsws;
 
-struct consdev wsdisplay_cons;
-struct consdev com_cons;
-
-/* constab */
-struct consdev constab[] = {
-#if NWSDISPLAY > 0
-		{ &wsdisplay_cons },
-#endif
-#if NCOM > 0
-		{ &com_cons },
-#endif
-		{ 0 }
-};
-
 void kernel_init(struct devswtable *);
 void device_init(struct devswtable *);
 void audio_init(struct devswtable *);

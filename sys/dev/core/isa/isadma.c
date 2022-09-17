@@ -78,6 +78,8 @@ static u_int8_t dmamode[4] = {
 static inline void isa_dmaunmask(struct isa_softc *, int);
 static inline void isa_dmamask(struct isa_softc *, int);
 
+static struct isa_mem *isa_mem_head = 0;
+
 static inline void
 isa_dmaunmask(sc, chan)
 	struct isa_softc *sc;

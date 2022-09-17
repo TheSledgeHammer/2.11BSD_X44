@@ -26,10 +26,10 @@
 #define DK_NAMELEN	8
 
 #ifdef _KERNEL
-long		cp_time[CPUSTATES];		/* number of ticks spent in each cpu state */
+extern long	cp_time[CPUSTATES];		/* number of ticks spent in each cpu state */
 extern int	dk_ndrive;				/* number of drives being monitored */
-int			dk_busy;				/* bit array of drive busy flags */
-long		dk_time[DK_NDRIVE];		/* ticks spent with drive busy */
+extern int	dk_busy;				/* bit array of drive busy flags */
+extern long	dk_time[DK_NDRIVE];		/* ticks spent with drive busy */
 extern long	dk_seek[DK_NDRIVE];		/* number of seeks */
 extern long	dk_xfer[DK_NDRIVE];		/* number of transfers */
 extern long	dk_wds[DK_NDRIVE];		/* number of clicks transfered */

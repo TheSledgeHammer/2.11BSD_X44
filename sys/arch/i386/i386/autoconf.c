@@ -120,6 +120,8 @@ configure()
 #if NLAPIC > 0
 	lapic_write_tpri(0);
 #endif
+
+	cninit_finish();
 	cold = 0;
 }
 

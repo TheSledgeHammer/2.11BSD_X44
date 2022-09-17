@@ -88,7 +88,8 @@ struct dos_partition {
 	unsigned char	dp_ecyl;	/* end cylinder */
 	uint32_t		dp_start;	/* absolute starting sector number */
 	uint32_t		dp_size;	/* partition size in sectors */
-} dos_partitions[NDOSPART];
+};
+struct dos_partition dos_partitions[NDOSPART];
 
 #ifdef CTASSERT
 CTASSERT(sizeof (struct dos_partition) == DOSPARTSIZE);

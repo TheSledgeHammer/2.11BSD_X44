@@ -55,6 +55,7 @@ int		 		mincore();
 int		 		mprotect();
 int		 		msync();
 int		 		munmap();
+int				mmap();
 int		 		obreak(struct proc *, void *, int *);
 int				sbrk();
 int		 		sstk();
