@@ -64,6 +64,8 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
+#include <dev/misc/cons/cons.h>
+
 #if NIOAPIC > 0
 #include <machine/apic/ioapicvar.h>
 #endif

@@ -1692,7 +1692,7 @@ cpu_setmcontext(p, mcp, flags)
 	unsigned int flags;
 {
 	struct trapframe *tf;
-	gregset_t *gr;
+	const gregset_t *gr;
 
 	tf = p->p_md.md_regs;
 	gr = &mcp->mc_gregs;
