@@ -25,6 +25,8 @@
 #include <sys/errno.h>
 #include <sys/sysctl.h>
 
+struct domain *domains;
+
 void	pffasttimo(void *);
 void	pfslowtimo(void *);
 

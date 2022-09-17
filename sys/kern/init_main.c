@@ -94,7 +94,7 @@ struct 	proc *curproc = &proc0;
 struct	proc *initproc;
 
 int	netoff = 1;
-int		securelevel;
+int	securelevel;
 int 	cmask = CMASK;
 extern	struct user *proc0paddr;
 
