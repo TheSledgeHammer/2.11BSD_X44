@@ -64,4 +64,6 @@ struct pmap_tlb_shootdown_q {
 
 #define	PMAP_TLB_MAXJOBS					16
 
+extern union pmap_tlb_shootdown_job_al 			*pj_page, *pj_free;
+
 #endif /* _I386_PMAP_TLB_H_ */
