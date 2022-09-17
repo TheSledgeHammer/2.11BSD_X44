@@ -92,7 +92,7 @@ struct consdev {
 	dev_t		cn_dev;									/* major/minor of device */
 	int			cn_pri;									/* pecking order; the higher the better */
 	int			cn_flags;								/* capabilities of this console */
-	char		cn_name[MAXNAMLEN + 1];					/* console (device) name */
+	char		cn_name[256];					/* console (device) name */
 };
 
 /* values for cn_pri - reflect our policy for console selection */

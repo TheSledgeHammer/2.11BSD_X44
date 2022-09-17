@@ -92,9 +92,7 @@
 #include <sys/vnode.h>
 #include <sys/reboot.h>
 
-//#include <dev/misc/cons/cons.h>
-
-#include <devel/dev/cons1.h>
+#include <dev/misc/cons/cons.h>
 
 dev_type_open(cnopen);
 dev_type_close(cnclose);
@@ -142,7 +140,8 @@ static bool_t 		console_pausing;	/* pause after each line during probe */
 static const char 	console_pausestr[] = "<pause; press any key to proceed to next line or '.' to end pause mode>";
 static const char 	*dev_console_filename;
 static const struct cdevsw *cn_redirect(dev_t *, int, int *);
-
+static void ttyconsdev_select(const char *);
+	
 void
 cninit(void)
 {
@@ -261,9 +260,11 @@ cnsearch(cp)
 	struct consdev *cp;
 {
 	struct cn_device *cnd;
-
+	struct consdev *cnp;
+	
 	SIMPLEQ_FOREACH(cnd, &cn_devlist, cnd_next) {
-		if(cp == SIMPLEQ_FIRST(&cn_devlist)) {
+		cnp = SIMPLEQ_FIRST(&cn_devlist)->cnd_cp;
+		if(cnp == cp) {
 			return (cp);
 		}
 	}
@@ -723,7 +724,7 @@ cn_redirect(devp, is_read, error)
 	return (cdevsw_lookup(dev));
 }
 
-void
+static void
 ttyconsdev_select(name)
 	const char *name;
 {
