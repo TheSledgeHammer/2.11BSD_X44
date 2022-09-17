@@ -56,7 +56,7 @@
 #include <sys/devsw.h>
 //#include <sys/user.h>
 #include <sys/mount.h>
-//#include <sys/sysdecl.h>
+#include <sys/sysdecl.h>
 
 #include <miscfs/specfs/specdev.h>
 
