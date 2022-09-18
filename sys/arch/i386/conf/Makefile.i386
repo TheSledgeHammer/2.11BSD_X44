@@ -108,7 +108,6 @@ mpboot.o: assym.h
 ##
 .include "$S/conf/Makefile.kern.inc"
 
-
 ##
 ## (10) Appending make options.
 ##

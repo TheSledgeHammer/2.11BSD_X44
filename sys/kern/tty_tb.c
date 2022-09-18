@@ -130,6 +130,7 @@ int
 tbread(tp, uio, flag)
 	register struct tty *tp;
 	struct uio *uio;
+	int flag;
 {
 	register struct tb *tbp = (struct tb *)tp->T_LINEP;
 	register struct tbconf *tc = &tbconf[tbp->tbflags & TBTYPE];
@@ -287,6 +288,7 @@ tbioctl(tp, cmd, data, flag, p)
 	struct tty *tp;
 	u_long cmd;
 	caddr_t data;
+	int flag;
 	struct proc *p;
 {
 	register struct tb *tbp = (struct tb *)tp->T_LINEP;
