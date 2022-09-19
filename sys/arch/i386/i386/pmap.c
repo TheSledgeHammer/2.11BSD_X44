@@ -255,8 +255,8 @@ static struct pmap_head pmaps;
  * All those kernel PT submaps that BSD is so fond of
  */
 static pd_entry_t 	*KPTD;
-pt_entry_t			*CMAP1, *CMAP2, *CMAP3, *mmap;
-caddr_t				CADDR1, CADDR2, CADDR3, vmmap;
+pt_entry_t			*CMAP1, *CMAP2, *CMAP3, *cmmap;
+caddr_t				CADDR1, CADDR2, CADDR3, cvmmap;
 pt_entry_t			*msgbufmap;
 struct msgbuf		*msgbufp;
 
@@ -348,7 +348,7 @@ pmap_cold(void)
 	u_int cr3, ncr4;
 
 	physfree = (u_long)&_end;
-	pmap_bootinfo(&bootinfo);
+	pmap_bootinfo(&boot);
 	physfree = roundup(physfree, NBPDR);
 	KERNend = physfree;
 
@@ -551,7 +551,7 @@ pmap_bootstrap(firstaddr)
 	SYSMAP(caddr_t, CMAP1, CADDR1, 1)
 	SYSMAP(caddr_t, CMAP2, CADDR2, 1)
 	SYSMAP(caddr_t, CMAP3, CADDR3, 1)
-	SYSMAP(caddr_t, mmap, vmmap, 1)
+	SYSMAP(caddr_t, cmmap, cvmmap, 1)
 	SYSMAP(struct msgbuf *, msgbufmap, msgbufp, 1)
 	/* XXX: allow for msgbuf */
 	avail_end -= i386_round_page(sizeof(struct msgbuf));

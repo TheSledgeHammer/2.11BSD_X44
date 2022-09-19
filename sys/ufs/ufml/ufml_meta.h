@@ -82,32 +82,4 @@ enum ufml_enctype { UFML_TWOFISH };
 #define UFMLTOMFS(vp)		(VTOMFS(vp))		/* MFS */
 #define UFMLTOLFS(vp)		(VTOI(vp)->i_lfs)	/* LFS */
 
-/* ufml modules (WIP) */
-/*
- * Modules are the framework for adding, removing and modifying support
- * of the various types (i.e. filesystem, archive, compression & encryption)
- * or adding new types.
- * Each module has a name, id and a sublist
- * of what that module supports.
- */
-struct ufml_mmodlist;
-LIST_HEAD(ufml_mmodlist, ufml_module);
-struct ufml_module {
-	LIST_ENTRY(ufml_module) ufml_modentry;	/* module list entry */
-	char					*ufml_modname;	/* module name */
-	int						ufml_modid;		/* module id */
-};
-
-/* module names */
-#define UFML_FSMOD_NAME		"ufml_filesystem_module"
-#define UFML_ARCHMOD_NAME	"ufml_archive_module"
-#define UFML_COMPMOD_NAME	"ufml_compression_module"
-#define UFML_ENCMOD_NAME	"ufml_encryption_module"
-
-/* module identifier */
-#define UFML_FSMOD_ID 		0x01
-#define UFML_ARCHMOD_ID 	0x02
-#define UFML_COMPMOD_ID 	0x03
-#define UFML_ENCMOD_ID 		0x04
-
 #endif /* UFS_UFML_META_H_ */

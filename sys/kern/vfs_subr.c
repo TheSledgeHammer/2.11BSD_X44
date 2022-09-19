@@ -93,6 +93,7 @@ static struct lock_object 	mntid_slock;
 struct lock_object 			mntvnode_slock;
 struct lock_object 			vnode_free_list_slock;
 struct lock_object 			spechash_slock;
+int 						prtactive = 0;	  /* 1 => print out reclaim of active vnodes */
 
 /*
  * Initialize the vnode management data structures.

@@ -171,9 +171,9 @@ int hostnamelen;
 long hostid;
 //int securelevel;
 char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
-//char osversion[];
+char osversion[];
 //char osrelease[];
-//long osrevision[];
+long osrevision[];
 
 /*
  * kernel related system variables.

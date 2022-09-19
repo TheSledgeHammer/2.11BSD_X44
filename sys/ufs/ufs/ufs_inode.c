@@ -54,7 +54,6 @@
 #include <ufs/ufs/ufs_extern.h>
 
 u_long	nextgennumber;			/* Next generation number to assign. */
-int		prtactive = 0;			/* 1 => print out reclaim of active vnodes */
 
 /*
  * Last reference to an inode.  If necessary, write or delete it.

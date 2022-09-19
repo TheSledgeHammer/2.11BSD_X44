@@ -89,8 +89,8 @@ struct dos_partition {
 	uint32_t		dp_start;	/* absolute starting sector number */
 	uint32_t		dp_size;	/* partition size in sectors */
 };
-struct dos_partition dos_partitions[NDOSPART];
 
+extern struct dos_partition dos_partitions[NDOSPART];
 #ifdef CTASSERT
 CTASSERT(sizeof (struct dos_partition) == DOSPARTSIZE);
 #endif

@@ -247,6 +247,13 @@ disk_ioctl(diskp, dev, cmd, data, flag, p)
 		return (ENOIOCTL);
 	}
 
+	/* diskslices */
+#ifdef DK_SLICES
+	if(ssp != NULL) {
+		return (dsioctl(dev, cmd, data, flag, &ssp));
+	}
+#endif
+
 	switch (cmd) {
 	case DIOCGSECTORSIZE:
 		*(u_int *)data = lp->d_secsize;
@@ -260,7 +267,7 @@ disk_ioctl(diskp, dev, cmd, data, flag, p)
 		return (ENOIOCTL);
 	}
 
-	return (dsioctl(dev, cmd, data, flag, &ssp));
+	return (ENOIOCTL);
 }
 
 /*

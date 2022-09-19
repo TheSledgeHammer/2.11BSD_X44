@@ -81,7 +81,7 @@
 
 #include <machine/cpu.h>
 
-char 	copyright[] = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
+extern char copyright[] = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
 
 struct 	session session0;
 struct 	pgrp pgrp0;

@@ -25,7 +25,6 @@
 int	ufs211_direnter2(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
 
 int	dirchk = 0;
-struct	nchstats nchstats;				/* cache effectiveness statistics */
 
 int
 ufs211_lookup(ap)

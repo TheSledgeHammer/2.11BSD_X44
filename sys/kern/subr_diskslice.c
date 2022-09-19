@@ -35,8 +35,8 @@
 #include <sys/syslog.h>
 #include <sys/time.h>
 #include <sys/disklabel.h>
-#include <sys/diskmbr.h>
 #include <sys/diskslice.h>
+#include <sys/diskmbr.h>
 #include <sys/disk.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
@@ -508,7 +508,7 @@ dsmakeslicestruct(nslices, lp)
 	struct diskslice *sp;
 	struct diskslices *ssp;
 
-	ssp = malloc(offsetof(struct diskslices, dss_slices) + nslices * sizeof *sp, M_DEVBUF, M_WAITOK);
+	ssp = malloc(offsetof(struct diskslices, dss_slices) + nslices * sizeof(*sp), M_DEVBUF, M_WAITOK);
 	ssp->dss_first_bsd_slice = COMPATIBILITY_SLICE;
 	ssp->dss_nslices = nslices;
 	ssp->dss_oflags = 0;

@@ -54,7 +54,7 @@ SECTIONS
      . = ALIGN(32 / 8);
    }
    . = ALIGN(32 / 8);
-  __bss_end = . ;
+  _end = . ;
   PROVIDE (end = .) ;
   .note.211bsd.ident :
   {

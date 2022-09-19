@@ -5,5 +5,4 @@
 
 device	video
 attach	video at videobus
-
 file dev/video/generic/video.c				video			needs-flag

@@ -110,7 +110,7 @@ u_int		cpu_power_ebx;			/* 06H: Power management leaf, %ebx */
 u_int		cpu_power_ecx;			/* 06H: Power management leaf, %ecx */
 u_int		cpu_power_edx;			/* 06H: Power management leaf, %edx */
 
-char machine[] = MACHINE;
+//char machine[] = MACHINE;
 
 char cpu_model[128];
 static int 	hw_clockrate;

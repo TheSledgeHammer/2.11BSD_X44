@@ -70,7 +70,7 @@ u_long idvhash;
 #define	DNOHASH(device, inum)	(((device) + ((inum)>>12)) & idvhash)
 #endif
 
-int prtactive;	/* 1 => print out reclaim of active vnodes */
+extern int prtactive;
 
 /*
  * Initialize hash links for inodes and dnodes.

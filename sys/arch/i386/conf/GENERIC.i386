@@ -11,7 +11,8 @@ options 		VNODEPAGER		# mmap() of files
 options 		DEVPAGER		# mmap() of devices
 
 options			EXEC_AOUT		# exec a.out binaries
-options 		EXEC_ELF32			# exec ELF binaries
+options 			EXEC_ELF32			# exec ELF binaries
+#options 			EXEC_XCOFF32		# exec XCOFF binaries
 #options 			EXEC_MACHO		# exec MACH-O binaries
 options			EXEC_SCRIPT		# exec #! scripts
 
@@ -60,6 +61,9 @@ file-system 		UNION			# union file system
 
 # File system options
 options			QUOTA			# UFS quotas
+
+# Disk Format options
+#options			DK_SLICES		# enable diskslices (WIP)
 
 # Networking options
 #options 		INET			# IP + ICMP + TCP + UDP

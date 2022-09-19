@@ -136,7 +136,6 @@ dev_t	swapdev = makedev(1,0);
 u_long	bootdev = 0;
 
 int		nswap;
-long 	dumplo;
 int		dmmin, dmmax, dmtext;
 
 struct swdevt swdevt[] = {

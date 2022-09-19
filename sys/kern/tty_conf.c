@@ -76,7 +76,6 @@ const struct linesw netldisc = {
 };
 #endif
 
-#if NTB > 0
 /* 4- TABLDISC */
 const struct linesw tabldisc = {
 	.l_open = tbopen,
@@ -91,7 +90,6 @@ const struct linesw tabldisc = {
 	.l_modem = nullmodem,
 	.l_poll = nottypoll
 };
-#endif
 
 #if NSL > 0
 /* 5- SLIPDISC */

@@ -664,7 +664,7 @@ realloc(curaddr, newsize, type, flags)
 		 */
 		return (NULL);
 	}
-	memcpy(newaddr, curaddr, cursize);
+	bcopy(curaddr, newaddr, cursize);
 
 	/*
 	 * We were successful: free the old allocation and return

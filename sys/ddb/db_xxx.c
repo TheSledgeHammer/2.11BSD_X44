@@ -183,6 +183,7 @@ db_show_all_procs(addr, haddr, count, modif)
 	}
 }
 
+#ifdef notyet
 void
 db_show_callout(addr, haddr, count, modif)
 	db_expr_t addr; 
@@ -213,3 +214,4 @@ db_show_callout(addr, haddr, count, modif)
 	}
 	splx(s);
 }
+#endif

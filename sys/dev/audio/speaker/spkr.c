@@ -9,7 +9,7 @@
  *      use hz value from param.c
  */
 
-#if NSPKR > 0
+//#if NSPKR > 0
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -508,4 +508,4 @@ int spkrioctl(dev, cmd, data, flag, p)
 }
 
 /* spkr.c ends here */
-#endif /* NSPKR > 0 */
+//#endif /* NSPKR > 0 */

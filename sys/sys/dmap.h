@@ -48,8 +48,8 @@ struct dmap {
 	swblk_t dm_map[NDMAP];	/* first disk block number in each chunk */
 };
 #ifdef _KERNEL
-struct dmap zdmap;
-int dmmin, dmmax, dmtext;
+//extern struct dmap zdmap;
+extern int dmmin, dmmax, dmtext;
 #endif
 
 /* The following structure is that ``returned'' from a call to vstodb(). */
