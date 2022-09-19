@@ -107,3 +107,9 @@ mpboot.o: assym.h
 ## (9) port independent kernel machinery
 ##
 .include "$S/conf/Makefile.kern.inc"
+
+
+##
+## (10) Appending make options.
+##
+%MAKEOPTIONSAPPEND

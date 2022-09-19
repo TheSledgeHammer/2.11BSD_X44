@@ -125,7 +125,7 @@ mainbus0    		at root
 cpu0 			at mainbus?
 ioapic* 		at mainbus?
 
-apm0			at mainbus0		# Advanced power management
+#apm0			at mainbus0		# Advanced power management
 
 # PCI bus support
 pci*			at mainbus? bus ?
@@ -229,7 +229,7 @@ scsibus* 		at scsi?
 
 # SCSI devices
 sd*			at scsibus? target ? lun ?	# SCSI disk drives
-st*			at scsibus? target ? lun ?	# SCSI tape drives
+#st*			at scsibus? target ? lun ?	# SCSI tape drives
 cd*			at scsibus? target ? lun ?	# SCSI CD-ROM drives
 ch*			at scsibus? target ? lun ?	# SCSI autochangers
 ses*			at scsibus? target ? lun ?	# SCSI Enclosure Services devices
@@ -253,8 +253,8 @@ wdc*			at isapnp?
 # Use flags 0x01 if you want to try to use 32bits data I/O (the driver will
 # fall back to 16bits I/O if 32bits I/O are not functional).
 # Some controllers pass the initial 32bit test, but will fail later.
-wdc0			at isa? port 0x1f0 irq 14 flags 0x00
-wdc1			at isa? port 0x170 irq 15 flags 0x00
+#wdc0			at isa? port 0x1f0 irq 14 flags 0x00
+#wdc1			at isa? port 0x170 irq 15 flags 0x00
 
 # ATA (IDE) bus support
 atabus* 		at ata?
