@@ -13,9 +13,11 @@ A General todo list. Don't hesitate to add to this list. :)
 ### Kernel:
 - Building Kernel/Arch:
 	- Compile Issues/Errors:
-		- Linker: Lots of them...!
-			- Yay only multiple definitions to fix!
+		- Linker: None atm, Yay! :)
 		- Compiler: None atm, Yay! :)
+- Config: Fix and update arch/conf.c.
+	- Device driver's setup, that need-count and may not have any initalized device. 
+	- current examples: video, apm & tabldisc
 
 # usr/ (User & OS Libraries):
 ## lib:
