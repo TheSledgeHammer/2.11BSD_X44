@@ -130,12 +130,12 @@ configure()
 /*
  * Generic configuration;  all in one
  */
-dev_t	rootdev = makedev(0,0);
-dev_t	dumpdev = makedev(0,1);
+//dev_t	rootdev = makedev(0,0);
+//dev_t	dumpdev = makedev(0,1);
 dev_t	swapdev = makedev(1,0);
 u_long	bootdev = 0;
 
-int		nswap;
+//int		nswap;
 int		dmmin, dmmax, dmtext;
 
 struct swdevt swdevt[] = {

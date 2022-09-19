@@ -348,7 +348,7 @@ pmap_cold(void)
 	u_int cr3, ncr4;
 
 	physfree = (u_long)&_end;
-	pmap_bootinfo(&boot);
+	pmap_bootinfo(&i386boot);
 	physfree = roundup(physfree, NBPDR);
 	KERNend = physfree;
 

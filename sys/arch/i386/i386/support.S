@@ -312,7 +312,7 @@ ENTRY(cpyflt)
 		ret
 #else
 
-ENTRY(copyout)
+ENTRY(copyout_fast)
 		movl	_C_LABEL(curpcb),%eax
 		movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
 		pushl	%esi

@@ -98,7 +98,7 @@
 #define	DEV_ZERO	12	/* minor device 12 is '\0'/rathole */
 #define	DEV_IO		14
 
-extern char *vmmap;     /* poor name! */
+extern char *cvmmap;     /* poor name! */
 caddr_t zeropage;
 
 dev_type_open(mmopen);
@@ -174,12 +174,12 @@ mmrw(dev, uio, flags)
 		case DEV_MEM:
 			v = uio->uio_offset;
 			prot = uio->uio_rw == UIO_READ ? VM_PROT_READ : VM_PROT_WRITE;
-			pmap_enter(kernel_pmap, (vm_offset_t) vmmap, trunc_page(v), prot, TRUE);
+			pmap_enter(kernel_pmap, (vm_offset_t) cvmmap, trunc_page(v), prot, TRUE);
 			pmap_update();
 			o = uio->uio_offset & PGOFSET;
 			c = min(uio->uio_resid, (int) (PAGE_SIZE - o));
-			error = uiomove((caddr_t) vmmap + o, c, uio);
-			pmap_remove(kernel_pmap, (vm_offset_t) vmmap, (vm_offset_t) vmmap + PAGE_SIZE);
+			error = uiomove((caddr_t) cvmmap + o, c, uio);
+			pmap_remove(kernel_pmap, (vm_offset_t) cvmmap, (vm_offset_t) cvmmap + PAGE_SIZE);
 			pmap_update();
 			break;
 

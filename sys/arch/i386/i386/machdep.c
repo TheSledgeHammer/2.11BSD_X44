@@ -123,12 +123,14 @@ void (*initclocks_func)(void) = i8254_initclocks;
 /*
  * Declare these as initialized data so we can patch them.
  */
+/*
 extern int	nswbuf = 0;
 #ifdef	NBUF
 extern int	nbuf = NBUF;
 #else
 extern int	nbuf = 0;
 #endif
+*/
 #ifdef	BUFPAGES
 int	bufpages = BUFPAGES;
 #else
@@ -150,7 +152,7 @@ long dumplo;
 int physmem, maxmem;
 int biosmem;
 //int boothowto = 0;
-struct bootinfo boot;
+struct bootinfo i386boot;
 char bootsize[BOOTINFO_MAXSIZE];
 extern int  *esym;
 
@@ -1323,7 +1325,7 @@ init386(first)
 
 	i386_bus_space_init();
 	init_descriptors();
-	init386_bootinfo(&boot);
+	init386_bootinfo(&i386boot);
 
 	/*
 	 * Initialize the console before we print anything out.
@@ -1377,7 +1379,7 @@ init386(first)
 
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
 	vm86_initialize();
-	getmemsize(&boot);
+	getmemsize(&i386boot);
 	vm_set_page_size();
 
 	/* call pmap initialization to make new kernel address space */
