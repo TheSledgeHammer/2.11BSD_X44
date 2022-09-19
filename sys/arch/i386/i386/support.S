@@ -212,7 +212,7 @@ ALTENTRY(bcopy)
 		ret
 
 #ifdef notdef
-ENTRY(copyout_fast)
+ENTRY(copyout)
 		movl	_C_LABEL(curpcb), %eax
 		movl	$cpyflt, PCB_ONFAULT(%eax) # in case we page/protection violate
 		pushl	%esi
@@ -312,7 +312,7 @@ ENTRY(cpyflt)
 		ret
 #else
 
-ENTRY(copyout_fast)
+ENTRY(copyout)
 		movl	_C_LABEL(curpcb),%eax
 		movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
 		pushl	%esi

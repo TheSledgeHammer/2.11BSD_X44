@@ -1845,60 +1845,77 @@ softintr(mask)
 	__asm __volatile("orl %0, ipending" : : "ir" (1 << mask));
 }
 
+#ifdef notyet
+/*
+ * Copy a binary buffer from user space to kernel space.
+ *
+ * Returns 0 on success, EFAULT on failure.
+ */
+int
+copyin(to, from, len)
+	const void *to;
+	void *from;
+	size_t len;
+{
+	int error;
+	size_t n;
+
+	error = 0;
+	while (len) {
+		error = user_write_fault(to);
+		if (error) {
+			break;
+		}
+		n = PAGE_SIZE - ((vm_offset_t)to & PAGE_MASK);
+		if (n > len) {
+			n = len;
+		}
+		bcopy(to & PAGE_MASK, from, n);
+		len -= n;
+		to = (const char *)to + n;
+		from = (char *)from + n;
+	}
+	if (error) {
+		error = EFAULT;
+	}
+	return (error);
+}
+
+/*
+ * Copy a binary buffer from kernel space to user space.
+ *
+ * Returns 0 on success, EFAULT on failure.
+ */
 int
 copyout(from, to, len)
 	const void *from;
 	void *to;
 	size_t len;
 {
-	int *pte, *pde;
-	int rest_of_page;
-	int thistime;
-	int err;
+	int error;
+	size_t n;
 
-	/* be very careful not to overflow doing this check */
-	if (to >= (void *)USRSTACK || (void *)USRSTACK - to < len) {
-		return (EFAULT);
-	}
-
-	pte = (int *)vtopte(to);
-	pde = (int *)vtopte(pte);
-
-	rest_of_page = PAGE_SIZE - ((int)to & (PAGE_SIZE - 1));
-
-	while (1) {
-		thistime = len;
-		if (thistime > rest_of_page) {
-			thistime = rest_of_page;
-		}
-
-		if ((*pde & PG_V) == 0 || (*pte & (PG_V | PG_UW)) != (PG_V | PG_UW)) {
-			if (err == user_write_fault(to)) {
-				return (err);
-			}
-		}
-
-		bcopy(from, to, thistime);
-
-		len -= thistime;
-
-		/*
-		 * Break out as soon as possible in the common case
-		 * that the whole transfer is containted in one page.
-		 */
-		if (len == 0) {
+	error = 0;
+	while (len) {
+		error = user_write_fault(to);
+		if (error) {
 			break;
 		}
-
-		from += thistime;
-		to += thistime;
-		pte++;
-		pde = (u_int *)vtopte(pte);
-		rest_of_page = PAGE_SIZE;
+		n = PAGE_SIZE - ((vm_offset_t)to & PAGE_MASK);
+		if (n > len) {
+			n = len;
+		}
+		bcopy(from, to & PAGE_MASK, n);
+		len -= n;
+		to = (char *)to + n;
+		from = (const char *)from + n;
 	}
-
-	return (0);
+	if (error) {
+		error = EFAULT;
+	}
+	return (error);
 }
+#endif
 
 /*
  * Below written in C to allow access to debugging code

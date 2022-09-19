@@ -17,7 +17,7 @@ A General todo list. Don't hesitate to add to this list. :)
 		- Compiler: None atm, Yay! :)
 - Config: Fix and update arch/conf.c.
 	- Device driver's setup, that need-count and may not have any initalized device. 
-	- current examples: video, apm & tabldisc
+	- current examples: video, pc speaker, apm & tabldisc
 
 # usr/ (User & OS Libraries):
 ## lib:

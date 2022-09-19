@@ -495,6 +495,7 @@ fperr()
  * various device drivers.
  */
 /* Current re-implementation is i386 machine-dependent */
+
 int
 ucall()
 {
@@ -535,9 +536,9 @@ ucall()
 			break;
 		}
 	}
-	(*SCARG(uap, routine))(SCARG(uap, arg1), SCARG(uap, arg2));
+	u.u_error = (*SCARG(uap, routine))(SCARG(uap, arg1), SCARG(uap, arg2));
 	splx(s);
 
-	return (0);
+	return (error);
 }
 #endif
