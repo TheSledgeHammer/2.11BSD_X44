@@ -169,9 +169,11 @@ __sysctl()
 char hostname[MAXHOSTNAMELEN];
 int hostnamelen;
 long hostid;
+//int securelevel;
 char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
-char osversion[];
-long osrevision[];
+char osversion[0];
+//char osrelease[];
+long osrevision[0];
 
 /*
  * kernel related system variables.

@@ -103,7 +103,7 @@ tbopen(dev, tp)
 /*
  * Line discipline change or last device close.
  */
-void
+int
 tbclose(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -120,6 +120,7 @@ tbclose(tp, flag)
 	tp->t_canq.c_cc = 0;
 	tp->t_line = 0;			/* paranoid: avoid races */
 	splx(s);
+	return (0);
 }
 
 /*
@@ -152,7 +153,7 @@ tbread(tp, uio, flag)
  * This routine could be expanded in-line in the receiver
  * interrupt routine to make it run as fast as possible.
  */
-void
+int
 tbinput(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -161,7 +162,7 @@ tbinput(c, tp)
 	register struct tbconf *tc = &tbconf[tbp->tbflags & TBTYPE];
 
 	if (tc->tbc_recsize == 0 || tc->tbc_decode == 0)	/* paranoid? */
-		return;
+		return (EIO);
 	/*
 	 * Locate sync bit/byte or reset input buffer.
 	 */
@@ -175,6 +176,7 @@ tbinput(c, tp)
 	 */
 	if (++tp->t_inbuf == tc->tbc_recsize)
 		(*tc->tbc_decode)(tbp->cbuf, &tbp->rets);
+	return (0);
 }
 
 /*

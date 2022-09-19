@@ -46,7 +46,7 @@
  */
 struct mount *rootfs;
 struct vnode *rootvnode;
-int (*mountroot)() = NULL;
+//int (*mountroot)() = NULL;
 
 /*
  * Set up the initial array of known filesystem types.
