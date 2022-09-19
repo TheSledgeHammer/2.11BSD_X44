@@ -257,6 +257,13 @@ struct tty 	*ttymalloc(void);
 void ttyfree(struct tty *);
 void tty_init_console(struct tty *, speed_t);
 
+/* From tty_tb.c. */
+int	tbopen(dev_t, struct tty *);
+int	tbclose(struct tty *, int);
+int	tbread(struct tty *, struct uio *, int);
+int	tbinput(int, struct tty *);
+int	tbioctl(struct tty *, u_long, caddr_t, int, struct proc *);
+
 /* From tty_ctty.c. */
 int	cttyioctl(dev_t, u_long, caddr_t, int, struct proc *);
 int	cttyopen(dev_t, int, int, struct proc *);
