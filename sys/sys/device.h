@@ -215,8 +215,8 @@ struct deferred_config {
 #define CFATTACH_DECL(name, driver, cops)				\
 	struct cfattach (name##_ca) = {						\
 			.ca_name = (#name),							\
-			.ca_driver = &(driver),						\
-			.ca_ops = &(cops),							\
+			.ca_driver = (driver),						\
+			.ca_ops = (cops),							\
 			.ca_list = { 0 },							\
 	}
 
