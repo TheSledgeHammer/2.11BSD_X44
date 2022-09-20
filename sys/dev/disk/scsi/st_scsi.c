@@ -81,8 +81,7 @@ int		st_scsibus_mode_select(struct st_softc *, int);
 int		st_scsibus_cmprss(struct st_softc *, int, int);
 
 CFOPS_DECL(st_scsibus, st_scsibus_match, st_scsibus_attach, stdetach, stactivate);
-CFDRIVER_DECL(NULL, st, &st_scsibus_cops, DV_TAPE, sizeof(struct st_softc));
-CFATTACH_DECL(st_scsibus, &st_cd);
+CFATTACH_DECL(st_scsibus, st_cd, st_scsibus_cops);
 
 const struct scsipi_inquiry_pattern st_scsibus_patterns[] = {
 	{T_SEQUENTIAL, T_REMOV,

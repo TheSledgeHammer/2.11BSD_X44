@@ -76,8 +76,8 @@ static int  evdev_mux_close(struct wsevsrc *);
 #endif
 
 CFOPS_DECL(evdev, evdev_match, evdev_attach, evdev_detach, evdev_activate);
-CFDRIVER_DECL(NULL, evdev, &evdev_cops, DV_DULL, sizeof(struct evdev_softc));
-CFATTACH_DECL(evdev, &evdev_cd);
+CFDRIVER_DECL(NULL, evdev, DV_DULL, sizeof(struct evdev_softc));
+CFATTACH_DECL(evdev, &evdev_cd, &evdev_cops);
 
 #define	DEF_RING_REPORTS	8
 

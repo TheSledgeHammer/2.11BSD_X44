@@ -60,8 +60,8 @@ int	 mainbus_match (struct device *, struct cfdata *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
 
 CFOPS_DECL(mainbus, mainbus_match, mainbus_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, mainbus, &mainbus_cops, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(mainbus, &mainbus_cd);
+CFDRIVER_DECL(NULL, mainbus, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(mainbus, mainbus_cd, mainbus_cops);
 
 int	mainbus_print(void *, const char *);
 

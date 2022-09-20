@@ -73,8 +73,8 @@ static void isapnp_attach(struct device *, struct device *, void *);
 static void isapnp_callback(struct device *);
 
 CFOPS_DECL(isapnp, isapnp_match, isapnp_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, isapnp, &isapnp_cops, DV_DULL, sizeof(struct isapnp_softc));
-CFATTACH_DECL(isapnp, &isapnp_cd);
+CFDRIVER_DECL(NULL, isapnp, DV_DULL, sizeof(struct isapnp_softc));
+CFATTACH_DECL(isapnp, &isapnp_cd, &isapnp_cops);
 
 /*
  * This keeps track if which ISA's we have been probed on.

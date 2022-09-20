@@ -44,8 +44,8 @@ static int lpt_upc_match(struct device *, struct cfdata *, void *);
 static void lpt_upc_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(lpt_upc, lpt_upc_match, lpt_upc_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, lpt_upc, &lpt_upc_cops, DV_DULL, sizeof(struct lpt_softc));
-CFATTACH_DECL(lpt_upc, &lpt_upc_cd);
+CFDRIVER_DECL(NULL, lpt_upc, DV_DULL, sizeof(struct lpt_softc));
+CFATTACH_DECL(lpt_upc, &lpt_upc_cd, &lpt_upc_cops);
 
 static int
 lpt_upc_match(struct device *parent, struct cfdata *cf, void *aux)

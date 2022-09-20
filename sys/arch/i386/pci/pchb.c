@@ -61,8 +61,8 @@ void	pchbattach(struct device *, struct device *, void *);
 int		pchb_print(void *, const char *);
 
 CFOPS_DECL(pchb, pchbmatch, pchbattach, NULL, NULL);
-CFDRIVER_DECL(NULL, pchb, &pchb_cops, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(pchb, &pchb_cd);
+CFDRIVER_DECL(NULL, pchb, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(pchb, pchb_cd, pchb_cops);
 
 int
 pchbmatch(parent, match, aux)

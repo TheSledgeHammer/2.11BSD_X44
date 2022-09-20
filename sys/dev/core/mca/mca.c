@@ -58,8 +58,8 @@ int		mca_match(struct device *, struct cfdata *, void *);
 void	mca_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(mca, mca_match, mca_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, mca, &mca_cops, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(mca, &mca_cd);
+CFDRIVER_DECL(NULL, mca, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(mca, &mca_cd, &mca_cops);
 
 int	mca_submatch (struct device *, struct cfdata *, void *);
 int	mca_print (void *, const char *);

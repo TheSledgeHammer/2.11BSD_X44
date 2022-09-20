@@ -58,8 +58,8 @@ const struct cdevsw spkr_cdevsw = {
 };
 
 CFOPS_DECL(spkr, spkrprobe, spkrattach, NULL, NULL);
-CFDRIVER_DECL(NULL, spkr, &spkr_cops, DV_DULL, sizeof(struct spkr_softc));
-CFATTACH_DECL(spkr, &spkr_cd);
+CFDRIVER_DECL(NULL, spkr, DV_DULL, sizeof(struct spkr_softc));
+CFATTACH_DECL(spkr, &spkr_cd, &spkr_cops);
 
 static pcppi_tag_t ppicookie;
 

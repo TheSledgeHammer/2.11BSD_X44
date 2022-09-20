@@ -54,8 +54,8 @@ int		lpt_puc_probe(struct device *, struct cfdata *, void *);
 void	lpt_puc_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(lpt_puc, lpt_puc_probe, lpt_puc_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, lpt_puc, &lpt_puc_cops, DV_DULL, sizeof(struct lpt_softc));
-CFATTACH_DECL(lpt_puc, &lpt_puc_cd);
+CFDRIVER_DECL(NULL, lpt_puc, DV_DULL, sizeof(struct lpt_softc));
+CFATTACH_DECL(lpt_puc, &lpt_puc_cd, &lpt_puc_cops);
 
 int
 lpt_puc_probe(parent, match, aux)

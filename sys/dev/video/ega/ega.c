@@ -115,8 +115,8 @@ static int ega_allocattr(void *, int, int, int, long *);
 void ega_copyrows(void *, int, int, int);
 
 CFOPS_DECL(ega, ega_match, ega_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, ega, &ega_cops, DV_DULL, sizeof(struct ega_softc));
-CFATTACH_DECL(ega, &ega_cd);
+CFDRIVER_DECL(NULL, ega, DV_DULL, sizeof(struct ega_softc));
+CFATTACH_DECL(ega, &ega_cd, &ega_cops);
 
 const struct wsdisplay_emulops ega_emulops = {
 	pcdisplay_cursor,

@@ -78,13 +78,13 @@ struct wdc_pcmcia_softc {
 #define WDC_PCMCIA_MEMMODE		0x0002
 };
 
-static int wdc_pcmcia_match	(struct device *, struct cfdata *, void *);
-static void wdc_pcmcia_attach (struct device *, struct device *, void *);
-static int wdc_pcmcia_detach (struct device *, int);
+static int wdc_pcmcia_match(struct device *, struct cfdata *, void *);
+static void wdc_pcmcia_attach(struct device *, struct device *, void *);
+static int wdc_pcmcia_detach(struct device *, int);
 
 CFOPS_DECL(wdc_pcmcia, wdc_pcmcia_match, wdc_pcmcia_attach, wdc_pcmcia_detach, NULL);
-CFDRIVER_DECL(NULL, wdc_pcmcia, &wdc_pcmcia_cops, DV_DULL, sizeof(struct wdc_pcmcia_softc));
-CFATTACH_DECL(wdc_pcmcia, &wdc_cd);
+CFDRIVER_DECL(NULL, wdc_pcmcia, DV_DULL, sizeof(struct wdc_pcmcia_softc));
+CFATTACH_DECL(wdc_pcmcia, &wdc_cd, &wdc_pcmcia_cops);
 
 const struct wdc_pcmcia_product {
 	u_int32_t	wpp_vendor;	/* vendor ID */

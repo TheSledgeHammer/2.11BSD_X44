@@ -679,20 +679,6 @@ config_pending_decr(void)
 		wakeup((void *)&config_pending);
 }
 
-int
-config_hint_enabled(dev)
-	struct device *dev;
-{
-	return (resource_enabled(dev->dv_xname, dev->dv_unit));
-}
-
-int
-config_hint_disabled(dev)
-	struct device *dev;
-{
-	return (resource_disabled(dev->dv_xname, dev->dv_unit));
-}
-
 /*
  * Attach an event.  These must come from initially-zero space (see
  * commented-out assignments below), but that occurs naturally for
@@ -719,4 +705,22 @@ evcnt_detach(ev)
 	struct evcnt *ev;
 {
 	TAILQ_REMOVE(&allevents, ev, ev_list);
+}
+
+/*
+ * Hint related configuration routines. These allow for a hints file to
+ * enable or disable the specified device.
+ */
+int
+config_hint_enabled(dev)
+	struct device *dev;
+{
+	return (resource_enabled(dev->dv_xname, dev->dv_unit));
+}
+
+int
+config_hint_disabled(dev)
+	struct device *dev;
+{
+	return (resource_disabled(dev->dv_xname, dev->dv_unit));
 }

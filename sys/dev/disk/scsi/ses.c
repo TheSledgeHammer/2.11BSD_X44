@@ -181,8 +181,8 @@ static void ses_attach (struct device *, struct device *, void *);
 static enctyp ses_device_type (struct scsipibus_attach_args *);
 
 CFOPS_DECL(ses, ses_match, ses_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, ses, &ses_cops, DV_DULL, sizeof(struct ses_softc));
-CFATTACH_DECL(ses, &ses_cd);
+CFDRIVER_DECL(NULL, ses, DV_DULL, sizeof(struct ses_softc));
+CFATTACH_DECL(ses, &ses_cd, &ses_cops);
 
 extern struct cfdriver ses_cd;
 
@@ -192,7 +192,6 @@ const struct scsipi_periphsw ses_switch = {
 	NULL,
 	NULL
 };
-
 
 int
 ses_match(parent, match, aux)

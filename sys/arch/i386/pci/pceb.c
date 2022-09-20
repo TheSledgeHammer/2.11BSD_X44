@@ -61,8 +61,8 @@ int		pcebmatch(struct device *, struct cfdata *, void *);
 void	pcebattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(pceb, pcebmatch, pcebattach, NULL, NULL);
-CFDRIVER_DECL(NULL, pceb, &pceb_cops, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(pceb, &pceb_cd);
+CFDRIVER_DECL(NULL, pceb, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(pceb, pceb_cd, pceb_cops);
 
 void	pceb_callback (struct device *);
 int		pceb_print (void *, const char *);

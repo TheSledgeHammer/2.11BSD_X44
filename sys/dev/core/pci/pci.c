@@ -70,8 +70,8 @@ int		pciprint(void *, const char *);
 int		pcisubmatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(pci, pcimatch, pciattach, NULL, NULL);
-CFDRIVER_DECL(NULL, pci, &pci_cops, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(pci, &pci_cd);
+CFDRIVER_DECL(NULL, pci, DV_DULL, sizeof(struct device));
+CFATTACH_DECL(pci, &pci_cd, &pci_cops);
 
 /*
  * Callback so that ISA/EISA bridges can attach their child busses

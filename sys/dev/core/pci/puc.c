@@ -101,8 +101,8 @@ int		puc_print(void *, const char *);
 int		puc_submatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(puc, puc_match, puc_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, puc, &puc_cops, DV_DULL, sizeof(struct puc_softc));
-CFATTACH_DECL(puc, &puc_cd);
+CFDRIVER_DECL(NULL, puc, DV_DULL, sizeof(struct puc_softc));
+CFATTACH_DECL(puc, &puc_cd, &puc_cops);
 
 const struct puc_device_description *
 	puc_find_description(pcireg_t, pcireg_t, pcireg_t, pcireg_t);

@@ -187,7 +187,7 @@ struct deferred_config {
 			.cops_detach = (detfn),						\
 			.cops_activate = (actfn),					\
 	}
-
+/*
 #define CFDRIVER_DECL(devs, name, cops, clas, size)		\
 	struct cfdriver (name##_cd) = { 					\
 			.cd_devs = (devs),							\
@@ -203,19 +203,20 @@ struct deferred_config {
 			.ca_driver = (driver),						\
 			.ca_list = { 0 },							\
 	}
-
-#define CFDRIVER_DECL1(devs, name, cops, size)			\
-	extern struct cfdriver (name##_cd) = { 				\
+*/
+#define CFDRIVER_DECL(devs, name, clas, size)			\
+	struct cfdriver (name##_cd) = { 					\
 			.cd_devs = (devs),							\
-			.cd_ops = &(cops##_cops),					\
+			.cd_name = (#name),							\
+			.cd_class = (clas), 						\
 			.cd_devsize = (size),						\
 	}
 
-#define CFATTACH_DECL1(name, driver, cops)				\
+#define CFATTACH_DECL(name, driver, cops)				\
 	struct cfattach (name##_ca) = {						\
 			.ca_name = (#name),							\
-			.ca_driver = &(driver##_cd),				\
-			.ca_ops = &(cops##_cops),					\
+			.ca_driver = &(driver),						\
+			.ca_ops = &(cops),							\
 			.ca_list = { 0 },							\
 	}
 
@@ -239,9 +240,9 @@ void 			config_defer(struct device *, void (*)(struct device *));
 void 			config_interrupts(struct device *, void (*)(struct device *));
 void 			config_pending_incr(void);
 void 			config_pending_decr(void);
-int     		config_hint_enabled(struct device *);
-int     		config_hint_disabled(struct device *);
 void 			evcnt_attach(struct device *, const char *, struct evcnt *);
 void 			evcnt_detach(struct evcnt *);
+int     		config_hint_enabled(struct device *);
+int     		config_hint_disabled(struct device *);
 
 #endif /* !_SYS_DEVICE_H_ */
