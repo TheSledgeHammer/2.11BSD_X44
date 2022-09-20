@@ -228,7 +228,7 @@ ioapic_print_redir(struct ioapic_softc *sc, const char *why, int pin)
 
 CFOPS_DECL(ioapic, ioapic_match, ioapic_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, ioapic, DV_DULL, sizeof(struct ioapic_softc));
-CFATTACH_DECL(ioapic, ioapic_cd, ioapic_cops);
+CFATTACH_DECL(ioapic, &ioapic_cd, &ioapic_cops);
 
 int
 ioapic_match(struct device *parent, struct cfdata *match, void *aux)

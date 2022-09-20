@@ -156,10 +156,10 @@ static void wsdisplay_noemul_attach(struct device *, struct device *, void *);
 CFDRIVER_DECL(NULL, wsdisplay, DV_DULL, sizeof(struct wsdisplay_softc));
 
 CFOPS_DECL(wsdisplay_emul, wsdisplay_emul_match, wsdisplay_emul_attach, NULL, NULL);
-CFATTACH_DECL(wsdisplay_emul, wsdisplay_cd, wsdisplay_emul_cops);
+CFATTACH_DECL(wsdisplay_emul, &wsdisplay_cd, &wsdisplay_emul_cops);
 
 CFOPS_DECL(wsdisplay_noemul, wsdisplay_noemul_match, wsdisplay_noemul_attach, NULL, NULL);
-CFATTACH_DECL(wsdisplay_noemul, wsdisplay_cd, wsdisplay_noemul_cops);
+CFATTACH_DECL(wsdisplay_noemul, &wsdisplay_cd, &wsdisplay_noemul_cops);
 
 extern struct cfdriver wsdisplay_cd;
 

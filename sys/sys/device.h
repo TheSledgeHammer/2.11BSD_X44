@@ -187,23 +187,7 @@ struct deferred_config {
 			.cops_detach = (detfn),						\
 			.cops_activate = (actfn),					\
 	}
-/*
-#define CFDRIVER_DECL(devs, name, cops, clas, size)		\
-	struct cfdriver (name##_cd) = { 					\
-			.cd_devs = (devs),							\
-			.cd_name = (#name),							\
-			.cd_ops = (cops),							\
-			.cd_class = (clas), 						\
-			.cd_devsize = (size),						\
-	}
 
-#define CFATTACH_DECL(name, driver)						\
-	struct cfattach (name##_ca) = {						\
-			.ca_name = (#name),							\
-			.ca_driver = (driver),						\
-			.ca_list = { 0 },							\
-	}
-*/
 #define CFDRIVER_DECL(devs, name, clas, size)			\
 	struct cfdriver (name##_cd) = { 					\
 			.cd_devs = (devs),							\

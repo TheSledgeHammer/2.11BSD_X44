@@ -172,12 +172,16 @@ emitexterns(FILE *fp)
 	TAILQ_FOREACH(d, &allbases, d_next) {
 		if (!devbase_has_instances(d, WILD))
 			continue;
+		if (fprintf(fp, "extern struct cfdriver %s_cd;\n", d->d_name) < 0)
+			return (1);
+/*
 		if (fprintf(fp, "struct cfdriver %s_cd = {\n", d->d_name) < 0)
 			return (1);
 		if (fprintf(fp, "\tNULL, \"%s\", %s\n", d->d_name, d->d_classattr != NULL ?  d->d_classattr->a_devclass : "DV_DULL") < 0)
 			return (1);
 		if (fprintf(fp, "};\n\n") < 0)
 			return (1);
+*/
 	}
 	NEWLINE;
 	TAILQ_FOREACH(da, &alldevas, d_next) {

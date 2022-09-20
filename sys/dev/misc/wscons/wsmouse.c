@@ -164,7 +164,7 @@ static int  wsmousedoopen(struct wsmouse_softc *, struct wseventvar *);
 
 CFOPS_DECL(wsmouse, wsmouse_match, wsmouse_attach, wsmouse_detach, wsmouse_activate);
 CFDRIVER_DECL(NULL, wsmouse, DV_DULL, sizeof(struct wsmouse_softc));
-CFATTACH_DECL(wsmouse, wsmouse_cd, wsmouse_cops);
+CFATTACH_DECL(wsmouse, &wsmouse_cd, &wsmouse_cops);
 
 extern struct cfdriver wsmouse_cd;
 

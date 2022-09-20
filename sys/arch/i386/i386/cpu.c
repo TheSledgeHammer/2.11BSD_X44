@@ -50,8 +50,8 @@ static int cpu_match(struct device *, struct cfdata *, void *);
 static void cpu_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(cpu, cpu_match, cpu_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, cpu, DV_DULL, sizeof(struct cpu_softc));
-CFATTACH_DECL(cpu, cpu_cd, cpu_cops);
+CFDRIVER_DECL(NULL, cpu, DV_CPU, sizeof(struct cpu_softc));
+CFATTACH_DECL(cpu, &cpu_cd, &cpu_cops);
 
 struct cpu_info *cpu_info;
 int *apic_cpuids;

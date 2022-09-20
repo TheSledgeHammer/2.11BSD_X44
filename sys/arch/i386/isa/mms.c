@@ -62,7 +62,7 @@ int 	mmsintr (void *);
 
 CFOPS_DECL(mms, mmsprobe, mmsattach, NULL, NULL);
 CFDRIVER_DECL(NULL, mms, DV_DULL, sizeof(struct mms_softc));
-CFATTACH_DECL(mms, mms_cd, mms_cops);
+CFATTACH_DECL(mms, &mms_cd, &mms_cops);
 
 int		mms_enable (void *);
 int		mms_ioctl (void *, u_long, caddr_t, int, struct proc *);

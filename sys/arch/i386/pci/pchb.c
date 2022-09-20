@@ -62,7 +62,7 @@ int		pchb_print(void *, const char *);
 
 CFOPS_DECL(pchb, pchbmatch, pchbattach, NULL, NULL);
 CFDRIVER_DECL(NULL, pchb, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(pchb, pchb_cd, pchb_cops);
+CFATTACH_DECL(pchb, &pchb_cd, &pchb_cops);
 
 int
 pchbmatch(parent, match, aux)
