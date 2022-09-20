@@ -126,6 +126,7 @@ LIST_HEAD(cfattachlist, cfattach);
 struct cfattach {
 	const char			*ca_name;				/* name of attachment */
 	struct cfdriver     *ca_driver;             /* the cfdriver i am linked too */
+	struct cfops		*ca_ops;				/* cfdriver operations: see below */
 	LIST_ENTRY(cfattach)ca_list;				/* list of attached cfdriver's */
 };
 
@@ -178,29 +179,6 @@ struct deferred_config {
 	void 							(*dc_func)(struct device *);
 };
 
-/* configure hints */
-struct cfhint {
-	char				*ch_name;		/* device name */
-	int					ch_unit;		/**< current unit number */
-	char				*ch_nameunit;	/**< name+unit e.g. foodev0 */
-	int					ch_rescount;
-	struct cfresource	*ch_resources;
-};
-
-typedef enum {
-	RES_INT, RES_STRING, RES_LONG
-} resource_type;
-
-struct cfresource {
-	char 				*cr_name;
-	resource_type		cr_type;
-	union {
-		long			longval;
-		int				intval;
-		char			*stringval;
-	} cr_u;
-};
-
 /* cfattach, cfdriver and cfops declarations */
 #define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
 	struct cfops (name##_cops) = {						\
@@ -226,13 +204,26 @@ struct cfresource {
 			.ca_list = { 0 },							\
 	}
 
+#define CFDRIVER_DECL1(devs, name, cops, size)			\
+	extern struct cfdriver (name##_cd) = { 				\
+			.cd_devs = (devs),							\
+			.cd_ops = &(cops##_cops),					\
+			.cd_devsize = (size),						\
+	}
+
+#define CFATTACH_DECL1(name, driver, cops)				\
+	struct cfattach (name##_ca) = {						\
+			.ca_name = (#name),							\
+			.ca_driver = &(driver##_cd),				\
+			.ca_ops = &(cops##_cops),					\
+			.ca_list = { 0 },							\
+	}
+
 extern struct devicelist			alldevs;				/* head of list of all devices */
 extern struct cfattachlist			allattachs;				/* head of list of all attachments */
 extern struct deferred_config_head	deferred_config_queue;	/* head of deferred queue */
 extern struct deferred_config_head	interrupt_config_queue;	/* head of interrupt queue */
 extern struct evcntlist				allevents;				/* head of list of all events */
-extern struct cfhint 				allhints[];				/* head of list of device hints */
-extern int 							cfhint_count; 			/* hint count */
 
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search(cfmatch_t, struct device *, void *);
@@ -252,21 +243,5 @@ int     		config_hint_enabled(struct device *);
 int     		config_hint_disabled(struct device *);
 void 			evcnt_attach(struct device *, const char *, struct evcnt *);
 void 			evcnt_detach(struct evcnt *);
-
-/* Access functions for device resources. */
-int				resource_int_value(const char *, int, const char *, int *);
-int				resource_long_value(const char *, int, const char *, long *);
-int				resource_string_value(const char *, int, const char *, const char **);
-int     		resource_enabled(const char *, int);
-int     		resource_disabled(const char *, int);
-int				resource_query_string(int, const char *, const char *);
-char			*resource_query_name(int);
-int				resource_query_unit(int);
-int				resource_locate(int, const char *);
-int				resource_set_int(const char *, int, const char *, int);
-int				resource_set_long(const char *, int, const char *, long);
-int				resource_set_string(const char *, int, const char *, const char *);
-int				resource_count(void);
-void			resource_init(void);
 
 #endif /* !_SYS_DEVICE_H_ */

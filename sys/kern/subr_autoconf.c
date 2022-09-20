@@ -49,6 +49,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/hint.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include <lib/libkern/libkern.h>
@@ -93,12 +94,14 @@ mapply(m, cf)
 	register struct matchinfo *m;
 	register struct cfdata *cf;
 {
+	register struct cfattach *ca;
 	register struct cfdriver *cd;
 	register struct cfops *cops;
 	register int pri;
 
+	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops;
+	cops = cd->cd_ops = ca->ca_ops;
 	if (m->fn != NULL) {
 		pri = (*m->fn)(m->parent, cf, m->aux);
 	} else {
@@ -123,11 +126,13 @@ config_match(parent, cf, aux)
 	struct cfdata *cf;
 	void *aux;
 {
+	struct cfattach *ca;
 	struct cfdriver *cd;
 	struct cfops *cops;
 
+	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops;
+	cops = cd->cd_ops = ca->ca_ops;
 	if(cd == NULL) {
 		return (0);
 	}
@@ -316,24 +321,6 @@ config_makeroom(n, cd)
 	cd->cd_devs = nsp;
 }
 
-void
-config_cfattach_attach(ca, cd)
-	register struct cfattach *ca;
-	register struct cfdriver *cd;
-{
-	ca->ca_driver = cd;
-	LIST_INSERT_HEAD(&allattachs, ca, ca_list);
-}
-
-void
-config_cfattach_detach(ca, cd)
-	register struct cfattach *ca;
-	register struct cfdriver *cd;
-{
-	ca->ca_driver = cd;
-	LIST_REMOVE(ca, ca_list);
-}
-
 /*
  * Attach a found device.  Allocates memory for device variables.
  */
@@ -355,7 +342,7 @@ config_attach(parent, cf, aux, print)
 
 	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops;
+	cops = cd->cd_ops = ca->ca_ops;
 	if (cd->cd_devsize < sizeof(struct device))
 		panic("config_attach");
 	myunit = cf->cf_unit;
@@ -417,7 +404,7 @@ config_attach(parent, cf, aux, print)
 	}
 
 	/* link to attachments */
-	config_cfattach_attach(ca, cd);
+	LIST_INSERT_HEAD(&allattachs, ca, ca_list);
 
 	(*cops->cops_attach)(parent, dev, aux);
 	config_process_deferred(&deferred_config_queue, dev);
@@ -454,7 +441,7 @@ config_detach(dev, flags)
 #endif
 	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops;
+	cops = cd->cd_ops = ca->ca_ops;
 
 	/*
 	 * Try to detach the device.  If that's not possible, then
@@ -534,7 +521,7 @@ config_detach(dev, flags)
 	/*
 	 * Unlink from attachment list.
 	 */
-	config_cfattach_detach(ca, cd);
+	LIST_REMOVE(ca, ca_list);
 
 	/*
 	 * Return success.

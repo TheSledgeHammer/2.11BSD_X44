@@ -158,9 +158,11 @@ CFDRIVER_DECL(NULL, wsdisplay, &wsdisplay_emul_cops, DV_DULL, sizeof(struct wsdi
 CFATTACH_DECL(wsdisplay_emul, &wsdisplay_cd);
 
 /*
+CFDRIVER_DECL1(NULL, wsdisplay, wsdisplay_emul, sizeof(struct wsdisplay_softc));
+CFATTACH_DECL1(wsdisplay_emul, wsdisplay, wsdisplay_emul);
+
 CFOPS_DECL(wsdisplay_noemul, wsdisplay_noemul_match, wsdisplay_noemul_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, wsdisplay_noemul, &wsdisplay_noemul_cops, DV_DULL, sizeof(struct wsdisplay_softc));
-CFATTACH_DECL(wsdisplay_noemul, &wsdisplay_cd);
+CFATTACH_DECL1(wsdisplay_noemul, wsdisplay, wsdisplay_noemul);
 */
 extern struct cfdriver wsdisplay_cd;
 

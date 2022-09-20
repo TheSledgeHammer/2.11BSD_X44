@@ -37,6 +37,7 @@
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/device.h>
+#include <sys/hint.h>
 
 /*
  * Access functions for device resources.

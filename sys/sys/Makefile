@@ -12,7 +12,7 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h buf.h 	\
 			event.h eventvar.h exec_aout.h exec_coff.h exec_ecoff.h exec_elf.h 	\
 			exec_linker.h exec_macho.h exec_pecoff.h exec_script.h exec_xcoff.h \
 			exec.h 	extent.h fcntl.h fdio.h file.h filedesc.h fnv_hash.h fperr.h\ 
-			gmon.h gsched_cfs.h gsched_edf.h gsched.h inttypes.h ioccom.h 		\
+			gmon.h gsched_cfs.h gsched_edf.h gsched.h hint.h inttypes.h ioccom.h\
 			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h lock.h 		\
 			lockf.h malloc.h map.h mbuf.h memrange.h midiio.h mman.h mount.h 	\
 			msgbuf.h mtio.h mutex.h	namei.h null.h param.h percpu.h	poll.h 		\
