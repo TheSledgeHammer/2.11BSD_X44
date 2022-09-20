@@ -32,6 +32,7 @@
 #include <sys/conf.h>
 #include <sys/malloc.h>
 #include <sys/device.h>
+#include <sys/hint.h>
 #include <sys/user.h>
 
 #include <dev/core/isa/isareg.h>
