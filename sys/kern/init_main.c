@@ -63,6 +63,7 @@
 #include <sys/vnode.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
+#include <sys/hint.h>
 #include <sys/buf.h>
 #include <sys/clist.h>
 #include <sys/protosw.h>
