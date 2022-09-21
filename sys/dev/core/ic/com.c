@@ -78,8 +78,6 @@ __KERNEL_RCSID(0, "$NetBSD: com.c,v 1.224.2.2 2004/07/05 21:57:45 he Exp $");
 #include "opt_com.h"
 #include "opt_ddb.h"
 #include "opt_kgdb.h"
-#include "opt_lockdebug.h"
-#include "opt_multiprocessor.h"
 #include "opt_ntp.h"
 */
 

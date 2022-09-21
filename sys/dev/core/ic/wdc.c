@@ -154,12 +154,13 @@ static int	__wdcwait_reset(struct wdc_channel *, int, int);
 static void	__wdc_reset_channel(struct wdc_channel *, int);
 static void	__wdccommand_done(struct wdc_channel *, struct ata_xfer *);
 static void	__wdccommand_done_end(struct wdc_channel *, struct ata_xfer *);
-static void	__wdccommand_kill_xfer(struct wdc_channel *,
-			               struct ata_xfer *, int);
+static void	__wdccommand_kill_xfer(struct wdc_channel *, struct ata_xfer *, int);
 static void	__wdccommand_start(struct wdc_channel *, struct ata_xfer *);
 static int	__wdccommand_intr(struct wdc_channel *, struct ata_xfer *, int);
 static int	__wdcwait(struct wdc_channel *, int, int, int);
 static void	wdc_alloc_xfer(struct ata_xfer *);
+
+CFDRIVER_DECL(NULL, wdc, DV_DULL);
 
 #define DEBUG_INTR   0x01
 #define DEBUG_XFERS  0x02

@@ -46,7 +46,7 @@ __KERNEL_RCSID(0, "$NetBSD: st_atapi.c,v 1.12 2003/10/05 17:48:49 bouyer Exp $")
 #include <dev/disk/scsi/atapi_tape.h>
 
 int	st_atapibus_match(struct device *, struct cfdata *, void *);
-void	st_atapibus_attach(struct device *, struct device *, void *);
+void st_atapibus_attach(struct device *, struct device *, void *);
 int	st_atapibus_ops(struct st_softc *, int, int);
 int	st_atapibus_mode_sense(struct st_softc *, int);
 int	st_atapibus_mode_select(struct st_softc *, int);

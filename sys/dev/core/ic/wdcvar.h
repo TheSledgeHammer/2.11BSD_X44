@@ -180,6 +180,8 @@ int	wdcdetach(struct device *, int);
 int	wdcactivate(struct device *, enum devact);
 int	wdcintr(void *);
 
+extern struct cfdriver wdc_cd;
+
 struct ata_xfer;
 void	wdc_exec_xfer(struct wdc_channel *, struct ata_xfer *);
 
