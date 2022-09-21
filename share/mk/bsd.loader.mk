@@ -16,8 +16,12 @@ BOOTARCH?=					${BOOTSRC}/arch
 EFISRC=						${BOOTSRC}/efi
 EFIINC=						${EFISRC}/include
 EFIINCMD=					${EFIINC}/${MACHINE}
-DLOADER=					${BOOTSRC}/dloader
+FDTSRC=						${BOOTSRC}/fdt
 LDRSRC=						${BOOTSRC}/common
+LIBLUASRC=					${BOOTSRC}/liblua
+LUASRC=						/contrib/lua/src
+DLOADER=					${BOOTSRC}/dloader
+LUA=						${BOOTSRC}/lua
 UBOOTSRC=					${BOOTSRC}/uboot
 LIBCSRC=					/lib/libc
 
@@ -25,6 +29,7 @@ BOOTOBJ=					${BOOTSTAND}
 
 # Interpreter Files (loader, menu & conf)
 # Accommodates for different naming conventions (i.e. dloader)
+
 INTERP_CONF=				loader.conf
 INTERP_MENU=				menu.rc
 INTERP_RC=					loader.rc
