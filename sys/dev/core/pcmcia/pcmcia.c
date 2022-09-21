@@ -74,8 +74,8 @@ int		pcmcia_print (void *, const char *);
 int		pcmcia_card_intr (void *);
 
 CFOPS_DECL(pcmcia, pcmcia_match, pcmcia_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, pcmcia, DV_DULL, sizeof(struct pcmcia_softc));
-CFATTACH_DECL(pcmcia, &pcmcia_cd, &pcmcia_cops);
+CFDRIVER_DECL(NULL, pcmcia, DV_DULL);
+CFATTACH_DECL(pcmcia, &pcmcia_cd, &pcmcia_cops, sizeof(struct pcmcia_softc));
 
 int
 pcmcia_ccr_read(pf, ccr)

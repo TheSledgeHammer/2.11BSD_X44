@@ -77,8 +77,7 @@ int		wdc_isa_probe(struct device *, struct cfdata *, void *);
 void	wdc_isa_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(wdc_isa, wdc_isa_probe, wdc_isa_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, wdc, DV_DULL, sizeof(struct wdc_isa_softc));
-CFATTACH_DECL(wdc_isa, &wdc_cd, &wdc_isa_cops);
+CFATTACH_DECL(wdc_isa, &wdc_cd, &wdc_isa_cops, sizeof(struct wdc_isa_softc));
 
 #if 0
 static void	wdc_isa_dma_setup(struct wdc_isa_softc *);

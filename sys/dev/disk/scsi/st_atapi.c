@@ -53,7 +53,7 @@ int	st_atapibus_mode_select(struct st_softc *, int);
 int	st_atapibus_do_ms(struct st_softc *, int, void *, int, int);
 
 CFOPS_DECL(st_atapibus, st_atapibus_match, st_atapibus_attach, stdetach, stactivate);
-CFATTACH_DECL(st_atapibus, &st_cd, &st_atapibus_cops);
+CFATTACH_DECL(st_atapibus, &st_cd, &st_atapibus_cops, sizeof(struct st_softc));
 
 const struct scsipi_inquiry_pattern st_atapibus_patterns[] = {
 	{T_SEQUENTIAL, T_REMOV,

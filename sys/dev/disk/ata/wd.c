@@ -138,8 +138,8 @@ int		wdprint(void *, char *);
 void 	wdperror(const struct wd_softc *);
 
 CFOPS_DECL(wd, wdprobe, wdattach, wddetach, wdactivate);
-CFDRIVER_DECL(NULL, wd, DV_DISK, sizeof(struct wd_softc));
-CFATTACH_DECL(wd, &wd_cd, &wd_cops);
+CFDRIVER_DECL(NULL, wd, DV_DISK);
+CFATTACH_DECL(wd, &wd_cd, &wd_cops, sizeof(struct wd_softc));
 
 extern struct cfdriver wd_cd;
 

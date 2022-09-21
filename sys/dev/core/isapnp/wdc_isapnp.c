@@ -73,8 +73,8 @@ int		wdc_isapnp_probe(struct device *, struct cfdata *, void *);
 void	wdc_isapnp_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(wdc_isapnp, wdc_isapnp_probe, wdc_isapnp_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, wdc, DV_DULL, sizeof(struct wdc_isapnp_softc));
-CFATTACH_DECL(wdc_isapnp, &wdc_cd, &wdc_isapnp_cops);
+CFDRIVER_DECL(NULL, wdc, DV_DULL);
+CFATTACH_DECL(wdc_isapnp, &wdc_cd, &wdc_isapnp_cops, sizeof(struct wdc_isapnp_softc));
 
 #ifdef notyet
 static void	wdc_isapnp_dma_setup (struct wdc_isapnp_softc *);

@@ -54,8 +54,8 @@ int		pcibmatch (struct device *, struct cfdata *, void *);
 void	pcibattach (struct device *, struct device *, void *);
 
 CFOPS_DECL(pcib, pcibmatch, pcibattach, NULL, NULL);
-CFDRIVER_DECL(NULL, pcib, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(pcib, &pcib_cd, &pcib_cops);
+CFDRIVER_DECL(NULL, pcib, DV_DULL);
+CFATTACH_DECL(pcib, &pcib_cd, &pcib_cops, sizeof(struct device));
 
 void	pcib_callback (void *);
 int		pcib_print (void *, const char *);

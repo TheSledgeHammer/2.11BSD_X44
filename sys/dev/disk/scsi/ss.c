@@ -75,8 +75,8 @@ int ssdetach(struct device *self, int flags);
 int ssactivate(struct device *self, enum devact act);
 
 CFOPS_DECL(ss, ssmatch, ssattach, ssdetach, ssactivate);
-CFDRIVER_DECL(NULL, ss, DV_DULL, sizeof(struct ss_softc));
-CFATTACH_DECL(ss, &ss_cd, &ss_cops);
+CFDRIVER_DECL(NULL, ss, DV_DULL);
+CFATTACH_DECL(ss, &ss_cd, &ss_cops, sizeof(struct ss_softc));
 
 extern struct cfdriver ss_cd;
 

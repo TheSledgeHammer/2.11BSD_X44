@@ -127,15 +127,14 @@ struct cfattach {
 	const char			*ca_name;				/* name of attachment */
 	struct cfdriver     *ca_driver;             /* the cfdriver i am linked too */
 	struct cfops		*ca_ops;				/* cfdriver operations: see below */
+	size_t				ca_devsize;				/* size of dev data (for malloc) */
 	LIST_ENTRY(cfattach)ca_list;				/* list of attached cfdriver's */
 };
 
 struct cfdriver {
 	void				**cd_devs;				/* devices found */
 	char				*cd_name;				/* device name */
-	struct cfops		*cd_ops;				/* config driver operations: see below */
 	enum devclass 		cd_class;				/* device classification */
-	size_t				cd_devsize;				/* size of dev data (for malloc) */
 	void				*cd_aux;				/* additional driver, if any */
 	int					cd_ndevs;				/* size of cd_devs array */
 };
@@ -188,19 +187,19 @@ struct deferred_config {
 			.cops_activate = (actfn),					\
 	}
 
-#define CFDRIVER_DECL(devs, name, clas, size)			\
+#define CFDRIVER_DECL(devs, name, clas)					\
 	struct cfdriver (name##_cd) = { 					\
 			.cd_devs = (devs),							\
 			.cd_name = (#name),							\
 			.cd_class = (clas), 						\
-			.cd_devsize = (size),						\
 	}
 
-#define CFATTACH_DECL(name, driver, cops)				\
+#define CFATTACH_DECL(name, driver, cops, size)			\
 	struct cfattach (name##_ca) = {						\
 			.ca_name = (#name),							\
 			.ca_driver = (driver),						\
 			.ca_ops = (cops),							\
+			.ca_devsize = (size),						\
 			.ca_list = { 0 },							\
 	}
 

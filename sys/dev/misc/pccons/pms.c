@@ -87,8 +87,8 @@ void pmsattach(struct device *, struct device *, void *);
 void pmsinput(void *, int);
 
 CFOPS_DECL(pms, pmsprobe, pmsattach, NULL, NULL);
-CFDRIVER_DECL(NULL, pms, DV_DULL, sizeof(struct pms_softc));
-CFATTACH_DECL(pms, &pms_cd, &pms_cops);
+CFDRIVER_DECL(NULL, pms, DV_DULL);
+CFATTACH_DECL(pms, &pms_cd, &pms_cops, sizeof(struct pms_softc));
 
 static int	pms_protocol(pckbport_tag_t, pckbport_slot_t);
 static void	do_enable(struct pms_softc *);

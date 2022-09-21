@@ -105,6 +105,8 @@ struct vgascreen {
 	int 					visibleoffset;
 };
 
+CFDRIVER_DECL(NULL, vga, DV_DULL);
+
 static int vgaconsole, vga_console_type, vga_console_attached;
 static struct vgascreen vga_console_screen;
 static struct vga_config vga_console_vc;

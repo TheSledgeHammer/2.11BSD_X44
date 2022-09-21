@@ -47,8 +47,8 @@ static int com_upc_match(struct device *, struct cfdata *, void *);
 static void com_upc_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(com_upc, com_upc_match, com_upc_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, com_upc, DV_DULL, sizeof(struct com_softc));
-CFATTACH_DECL(com_upc, &com_upc_cd, &com_upc_cops);
+CFDRIVER_DECL(NULL, com_upc, DV_DULL);
+CFATTACH_DECL(com_upc, &com_upc_cd, &com_upc_cops, sizeof(struct com_softc));
 
 static int
 com_upc_match(struct device *parent, struct cfdata *cf, void *aux)

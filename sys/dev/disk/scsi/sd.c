@@ -123,8 +123,8 @@ int	sdactivate(struct device *, enum devact);
 int	sddetach(struct device *, int);
 
 CFOPS_DECL(sd, sdmatch, sdattach, sddetach, sdactivate);
-CFDRIVER_DECL(NULL, sd, DV_DISK, sizeof(struct sd_softc));
-CFATTACH_DECL(sd, &sd_cd, &sd_cops);
+CFDRIVER_DECL(NULL, sd, DV_DISK);
+CFATTACH_DECL(sd, &sd_cd, &sd_cops, sizeof(struct sd_softc));
 
 extern struct cfdriver sd_cd;
 

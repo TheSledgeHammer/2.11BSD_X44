@@ -63,8 +63,8 @@ int	pcmbmatch(struct device *, struct cfdata *, void *);
 void pcmbattach(struct device *, struct device *, void *);
 
 CFOPS_DECL(pcmb, pcmbmatch, pcmbattach, NULL, NULL);
-CFDRIVER_DECL(NULL, pcmb, DV_DULL, sizeof(struct device));
-CFATTACH_DECL(pcmb, &pcmb_cd, &pcmb_cops);
+CFDRIVER_DECL(NULL, pcmb, DV_DULL);
+CFATTACH_DECL(pcmb, &pcmb_cd, &pcmb_cops, sizeof(struct device));
 
 void pcmb_callback(struct device *);
 int	pcmb_print(void *, const char *);

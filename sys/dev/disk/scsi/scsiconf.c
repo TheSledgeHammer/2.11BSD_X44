@@ -101,8 +101,8 @@ int	scsibusdetach(struct device *, int flags);
 int	scsibussubmatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(scsibus, scsibusmatch, scsibusattach, scsibusdetach, scsibusactivate);
-CFDRIVER_DECL(NULL, scsibus, DV_DULL, sizeof(struct scsibus_softc));
-CFATTACH_DECL(scsibus, &scsibus_cd, &scsibus_cops);
+CFDRIVER_DECL(NULL, scsibus, DV_DULL);
+CFATTACH_DECL(scsibus, &scsibus_cd, &scsibus_cops, sizeof(struct scsibus_softc));
 
 extern struct cfdriver scsibus_cd;
 

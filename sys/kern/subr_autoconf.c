@@ -101,7 +101,7 @@ mapply(m, cf)
 
 	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops = ca->ca_ops;
+	cops = ca->ca_ops;
 	if (m->fn != NULL) {
 		pri = (*m->fn)(m->parent, cf, m->aux);
 	} else {
@@ -132,7 +132,7 @@ config_match(parent, cf, aux)
 
 	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops = ca->ca_ops;
+	cops = ca->ca_ops;
 	if(cd == NULL) {
 		return (0);
 	}
@@ -329,7 +329,7 @@ config_attach(parent, cf, aux, print)
 	register struct device *parent;
 	register struct cfdata *cf;
 	register void 			*aux;
-	cfprint_t 		print;
+	cfprint_t 				print;
 {
 	register struct device *dev;
 	register struct cfattach *ca;
@@ -342,8 +342,8 @@ config_attach(parent, cf, aux, print)
 
 	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops = ca->ca_ops;
-	if (cd->cd_devsize < sizeof(struct device))
+	cops = ca->ca_ops;
+	if (ca->ca_devsize < sizeof(struct device))
 		panic("config_attach");
 	myunit = cf->cf_unit;
 	if (cf->cf_fstate == FSTATE_NOTFOUND)
@@ -359,11 +359,11 @@ config_attach(parent, cf, aux, print)
 		panic("config_attach: device name too long");
 
 	/* get memory for all device vars */
-	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);	/* XXX cannot wait! */
+	dev = (struct device *)malloc(ca->ca_devsize, M_DEVBUF, M_WAITOK);	/* XXX cannot wait! */
 	if (!dev) {
 		panic("config_attach: memory allocation for device softc failed");
 	}
-	bzero(dev, cd->cd_devsize);
+	bzero(dev, ca->ca_devsize);
 	TAILQ_INSERT_TAIL(&alldevs, dev, dv_list);	/* link up */
 	dev->dv_class = cd->cd_class;
 	dev->dv_cfdata = cf;
@@ -441,7 +441,7 @@ config_detach(dev, flags)
 #endif
 	ca = cf->cf_attach;
 	cd = cf->cf_driver;
-	cops = cd->cd_ops = ca->ca_ops;
+	cops = ca->ca_ops;
 
 	/*
 	 * Try to detach the device.  If that's not possible, then
@@ -533,9 +533,16 @@ int
 config_activate(dev)
 	struct device *dev;
 {
-	struct cfdriver *cd = dev->dv_cfdata->cf_driver;
-	struct cfops *cops	= cd->cd_ops;
-	int rv = 0, oflags = dev->dv_flags;
+	struct cfattach *ca;
+	struct cfdriver *cd;
+	struct cfops *cops;
+	int rv, oflags;
+
+	ca = dev->dv_cfdata->cf_attach;
+	cd = dev->dv_cfdata->cf_driver;
+	cops = ca->ca_ops;
+	oflags = dev->dv_flags;
+	rv = 0;
 
 	if (cops->cops_activate == NULL) {
 		return (EOPNOTSUPP);
@@ -556,9 +563,16 @@ int
 config_deactivate(dev)
 	struct device *dev;
 {
-	struct cfdriver *cd = dev->dv_cfdata->cf_driver;
-	struct cfops *cops	= cd->cd_ops;
-	int rv = 0, oflags = dev->dv_flags;
+	struct cfattach *ca;
+	struct cfdriver *cd;
+	struct cfops *cops;
+	int rv, oflags;
+
+	ca = dev->dv_cfdata->cf_attach;
+	cd = dev->dv_cfdata->cf_driver;
+	cops = ca->ca_ops;
+	oflags = dev->dv_flags;
+	rv = 0;
 
 	if (cops->cops_activate == NULL) {
 		return (EOPNOTSUPP);

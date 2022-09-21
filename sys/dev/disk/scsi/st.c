@@ -135,7 +135,7 @@ const struct cdevsw st_cdevsw = {
 		.d_type = D_TAPE
 };
 
-CFDRIVER_DECL(NULL, st, DV_TAPE, sizeof(struct st_softc));
+CFDRIVER_DECL(NULL, st, DV_TAPE);
 
 /*
  * Define various devices that we know mis-behave in some way,

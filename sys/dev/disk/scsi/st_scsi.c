@@ -81,7 +81,7 @@ int		st_scsibus_mode_select(struct st_softc *, int);
 int		st_scsibus_cmprss(struct st_softc *, int, int);
 
 CFOPS_DECL(st_scsibus, st_scsibus_match, st_scsibus_attach, stdetach, stactivate);
-CFATTACH_DECL(st_scsibus, &st_cd, &st_scsibus_cops);
+CFATTACH_DECL(st_scsibus, &st_cd, &st_scsibus_cops, sizeof(struct st_softc));
 
 const struct scsipi_inquiry_pattern st_scsibus_patterns[] = {
 	{T_SEQUENTIAL, T_REMOV,

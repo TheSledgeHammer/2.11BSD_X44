@@ -102,8 +102,8 @@ int com_multi_probe (struct device *, struct cfdata *, void *);
 void com_multi_attach (struct device *, struct device *, void *);
 
 CFOPS_DECL(com_multi, com_multi_probe, com_multi_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, com_multi, DV_DULL, sizeof(struct com_softc));
-CFATTACH_DECL(com_multi, &com_multi_cd, &com_multi_cops);
+CFDRIVER_DECL(NULL, com_multi, DV_DULL);
+CFATTACH_DECL(com_multi, &com_multi_cd, &com_multi_cops, sizeof(struct com_softc));
 
 int
 com_multi_probe(parent, match, aux)

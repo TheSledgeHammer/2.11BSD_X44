@@ -53,8 +53,8 @@ void	isa_free_subdevs(struct isa_softc *);
 int		isasubmatch(struct device *, struct cfdata *, void *);
 
 CFOPS_DECL(isa, isamatch, isaattach, NULL, NULL);
-CFDRIVER_DECL(NULL, isa, DV_DULL, sizeof(struct isa_softc));
-CFATTACH_DECL(isa, &isa_cd, &isa_cops);
+CFDRIVER_DECL(NULL, isa, DV_DULL);
+CFATTACH_DECL(isa, &isa_cd, &isa_cops, sizeof(struct isa_softc));
 
 int
 isamatch(parent, cf, aux)

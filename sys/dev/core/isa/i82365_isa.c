@@ -116,8 +116,8 @@ void	*pcic_isa_chip_intr_establish (pcmcia_chipset_handle_t,
 void	pcic_isa_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
 
 CFOPS_DECL(pcic_isa, pcic_isa_probe, pcic_isa_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, pcic_isa, DV_DULL, sizeof(struct pcic_softc));
-CFATTACH_DECL(pcic_isa, &pcic_isa_cd, &pcic_isa_cops);
+CFDRIVER_DECL(NULL, pcic_isa, DV_DULL);
+CFATTACH_DECL(pcic_isa, &pcic_isa_cd, &pcic_isa_cops, sizeof(struct pcic_softc));
 
 static struct pcmcia_chip_functions pcic_isa_functions = {
 	pcic_chip_mem_alloc,

@@ -66,8 +66,8 @@ int		atapibussubmatch(struct device *, struct cfdata *, void *);
 int		atapi_probe_bus(struct atapibus_softc *, int);
 
 CFOPS_DECL(atapibus, atapibusmatch, atapibusattach, atapibusdetach, atapibusactivate);
-CFDRIVER_DECL(NULL, atapibus, DV_DISK, sizeof(struct atapibus_softc));
-CFATTACH_DECL(atapibus, &atapibus_cd, &atapibus_cops);
+CFDRIVER_DECL(NULL, atapibus, DV_DISK);
+CFATTACH_DECL(atapibus, &atapibus_cd, &atapibus_cops, sizeof(struct atapibus_softc));
 
 extern struct cfdriver atapibus_cd;
 

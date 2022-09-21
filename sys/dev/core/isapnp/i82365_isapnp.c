@@ -69,8 +69,8 @@ int 	pcic_isapnp_match (struct device *, struct cfdata *, void *);
 void	pcic_isapnp_attach (struct device *, struct device *, void *);
 
 CFOPS_DECL(pcic_isapnp, pcic_isapnp_match, pcic_isapnp_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, pcic_isapnp, DV_DULL, sizeof(struct pcic_isa_softc));
-CFATTACH_DECL(pcic_isapnp, &pcic_isapnp_cd, &pcic_isapnp_cops);
+CFDRIVER_DECL(NULL, pcic_isapnp, DV_DULL);
+CFATTACH_DECL(pcic_isapnp, &pcic_isapnp_cd, &pcic_isapnp_cops, sizeof(struct pcic_isa_softc));
 
 static struct pcmcia_chip_functions pcic_isa_functions = {
 	pcic_chip_mem_alloc,

@@ -219,8 +219,8 @@ const struct audio_params audio_default = {
 };
 
 CFOPS_DECL(audio, audioprobe, audioattach, audiodetach, audioactivate);
-CFDRIVER_DECL(NULL, audio, DV_DULL, sizeof(struct audio_softc));
-CFATTACH_DECL(audio, &audio_cd, &audio_cops);
+CFDRIVER_DECL(NULL, audio, DV_DULL);
+CFATTACH_DECL(audio, &audio_cd, &audio_cops, sizeof(struct audio_softc));
 
 extern struct cfdriver audio_cd;
 
