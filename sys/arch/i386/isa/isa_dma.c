@@ -93,14 +93,15 @@
 #include <machine/bus.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
-#include <machine/pio.h>
+//#include <machine/pio.h>
 #include <machine/cpufunc.h>
-#include <machine/segments.h>
-
-#include <machine/isa/isa_machdep.h>
+//#include <machine/segments.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
+#include <dev/core/isa/isadmavar.h>
+
+#include <machine/isa/isa_machdep.h>
 
 #include <vm/include/vm.h>
 
@@ -124,11 +125,11 @@ int		_isa_bus_dmamem_alloc(bus_dma_tag_t, bus_size_t, bus_size_t, bus_size_t, bu
 void	_isa_bus_dmamem_free(bus_dma_tag_t, bus_dma_segment_t *, int);
 int		_isa_bus_dmamem_map(bus_dma_tag_t, bus_dma_segment_t *, int, size_t, caddr_t *, int);
 void	_isa_bus_dmamem_unmap(bus_dma_tag_t, caddr_t, size_t);
-int		_isa_bus_dmamem_mmap(bus_dma_tag_t, bus_dma_segment_t *, int, off_t, int, int);
+//int		_isa_bus_dmamem_mmap(bus_dma_tag_t, bus_dma_segment_t *, int, off_t, int, int);
 
-int		_isa_dma_check_buffer (void *, bus_size_t, int, bus_size_t, struct proc *);
-int		_isa_dma_alloc_bouncebuf (bus_dma_tag_t, bus_dmamap_t, bus_size_t, int);
-void	_isa_dma_free_bouncebuf (bus_dma_tag_t, bus_dmamap_t);
+int		_isa_dma_check_buffer(void *, bus_size_t, int, bus_size_t, struct proc *);
+int		_isa_dma_alloc_bouncebuf(bus_dma_tag_t, bus_dmamap_t, bus_size_t, int);
+void	_isa_dma_free_bouncebuf(bus_dma_tag_t, bus_dmamap_t);
 
 /*
  * Entry points for ISA DMA.  These are mostly wrappers around

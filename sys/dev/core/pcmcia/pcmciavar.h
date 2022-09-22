@@ -129,19 +129,21 @@ struct pcmcia_function {
 	SIMPLEQ_ENTRY(pcmcia_function) 		pf_list;
 	/* run-time state */
 	struct pcmcia_softc *sc;
+	struct device *child;
 	struct pcmcia_config_entry *cfe;
 	struct pcmcia_mem_handle pf_pcmh;
 #define	pf_ccrt			pf_pcmh.memt
 #define	pf_ccrh			pf_pcmh.memh
 #define	pf_ccr_mhandle	pf_pcmh.mhandle
 #define	pf_ccr_realsize	pf_pcmh.realsize
-	bus_addr_t	pf_ccr_offset;
-	int		pf_ccr_window;
-	int		(*ih_fct) (void *);
-	void	*ih_arg;
-	int		ih_ipl;
-	int		pf_flags;
-
+	bus_addr_t			pf_ccr_offset;
+	int					pf_ccr_window;
+	long				pf_mfc_iobase;
+	long				pf_mfc_iomax;
+	int					(*ih_fct)(void *);
+	void				*ih_arg;
+	int					ih_ipl;
+	int					pf_flags;
 
 	union pcmcia_funce pf_funce; /* CISTPL_FUNCE */
 #define pf_funce_disk_interface pf_funce.pfv_disk.pfd_interface
@@ -151,6 +153,7 @@ struct pcmcia_function {
 
 /* pf_flags */
 #define	PFF_ENABLED	0x0001		/* function is enabled */
+SIMPLEQ_HEAD(pcmcia_function_head, pcmcia_function);
 
 struct pcmcia_card {
 	int			cis1_major;
@@ -188,14 +191,22 @@ struct pcmcia_softc {
 	 * so that cards with Very Special address allocation needs
 	 * know what range they should be dealing with.
 	 */
-	bus_addr_t iobase;		/* start i/o space allocation here */
-	bus_size_t iosize;		/* size of the i/o space range */
+	bus_addr_t 			iobase;		/* start i/o space allocation here */
+	bus_size_t 			iosize;		/* size of the i/o space range */
+};
+
+struct pcmcia_cis_quirk {
+	int32_t 			manufacturer;
+	int32_t 			product;
+	const char 			*cis1_info[4];
+	const struct pcmcia_function *pf;
+	const struct pcmcia_config_entry *cfe;
 };
 
 struct pcmcia_attach_args {
-	int32_t manufacturer;
-	int32_t product;
-	struct pcmcia_card *card;
+	int32_t 			manufacturer;
+	int32_t 			product;
+	struct pcmcia_card 	*card;
 	struct pcmcia_function *pf;
 };
 
@@ -208,8 +219,22 @@ struct pcmcia_tuple {
 	bus_space_handle_t memh;
 };
 
+struct pcmcia_product {
+	const char	*pp_name;		/* NULL if end of table */
+	u_int32_t	pp_vendor;
+	u_int32_t	pp_product;
+	int			pp_expfunc;
+};
+
 #define PCMCIACF_FUNCTION_DEFAULT 	-1
 #define PCMCIACF_FUNCTION 			0
+
+typedef int (*pcmcia_product_match_fn)(struct pcmcia_attach_args *, const struct pcmcia_product *, int);
+
+const struct pcmcia_product
+		*pcmcia_product_lookup(struct pcmcia_attach_args *, const struct pcmcia_product *, size_t, pcmcia_product_match_fn);
+
+void	pcmcia_devinfo(struct pcmcia_card *, int, char *, int);
 
 void	pcmcia_read_cis(struct pcmcia_softc *);
 void	pcmcia_print_cis(struct pcmcia_softc *);
@@ -248,8 +273,8 @@ int		pcmcia_scan_cis(struct device * dev, int (*) (struct pcmcia_tuple *, void *
 int		pcmcia_ccr_read(struct pcmcia_function *, int);
 void	pcmcia_ccr_write(struct pcmcia_function *, int, int);
 
-#define	pcmcia_mfc(sc)	((sc)->card.pf_head.sqh_first &&		\
-			 (sc)->card.pf_head.sqh_first->pf_list.sqe_next)
+#define	pcmcia_mfc(sc)	(! SIMPLEQ_EMPTY(&(sc)->card.pf_head) &&	\
+		SIMPLEQ_NEXT(SIMPLEQ_FIRST(&(sc)->card.pf_head), pf_list))
 
 void	pcmcia_function_init(struct pcmcia_function *, struct pcmcia_config_entry *);
 int		pcmcia_function_enable(struct pcmcia_function *);

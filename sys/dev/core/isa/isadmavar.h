@@ -37,7 +37,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define MAX_ISADMA		65536
+#ifndef _DEV_ISA_ISADMAVAR_H_
+#define	_DEV_ISA_ISADMAVAR_H_
+
+#define MAX_ISADMA			65536
 
 #define	DMAMODE_WRITE		0x00
 #define	DMAMODE_READ		0x01
@@ -55,27 +58,39 @@ struct isa_mem {
 	struct isa_mem 			*next;
 };
 
+#ifdef _KERNEL
+struct isa_softc;
 struct proc;
 
-void	   	isa_dmacascade (struct device *, int);
+void	   	isa_dmainit(struct isa_softc *, bus_space_tag_t, bus_dma_tag_t, struct device *);
+void	   	isa_dmacascade(struct device *, int);
 
-int	  		isa_dmamap_create (struct device *, int, bus_size_t, int);
-void	   	isa_dmamap_destroy (struct device *, int);
+bus_size_t	isa_dmamaxsize(struct device *, int);
 
-int	   		isa_dmastart (struct device *, int, void *, bus_size_t, struct proc *, int, int);
-void	   	isa_dmaabort (struct device *, int);
-bus_size_t 	isa_dmacount (struct device *, int);
-int	   		isa_dmafinished (struct device *, int);
-void		isa_dmadone (struct device *, int);
+int	  		isa_dmamap_create(struct device *, int, bus_size_t, int);
+void	   	isa_dmamap_destroy(struct device *, int);
 
-int	   		isa_dmamem_alloc (struct device *, int, bus_size_t, bus_addr_t *, int);
-void		isa_dmamem_free (struct device *, int, bus_addr_t, bus_size_t);
-int	   		isa_dmamem_map (struct device *, int, bus_addr_t, bus_size_t, caddr_t *, int);
-void		isa_dmamem_unmap (struct device *, int, caddr_t, size_t);
-int	   		isa_dmamem_mmap (struct device *, int, bus_addr_t, bus_size_t, int, int, int);
+int	   		isa_dmastart(struct device *, int, void *, bus_size_t, struct proc *, int, int);
+void	   	isa_dmaabort(struct device *, int);
+bus_size_t 	isa_dmacount(struct device *, int);
+int	   		isa_dmafinished(struct device *, int);
+void		isa_dmadone(struct device *, int);
 
-int	   		isa_drq_isfree (struct device *, int);
+void	   	isa_dmafreeze(struct device *);
+void	   	isa_dmathaw(struct device *);
 
-void    	*isa_malloc (struct device *, int, size_t, int, int);
-void		isa_free (void *, int);
-int	   		isa_mappage (void *, int, int);
+int	   		isa_dmamem_alloc(struct device *, int, bus_size_t, bus_addr_t *, int);
+void		isa_dmamem_free(struct device *, int, bus_addr_t, bus_size_t);
+int	   		isa_dmamem_map(struct device *, int, bus_addr_t, bus_size_t, caddr_t *, int);
+void		isa_dmamem_unmap(struct device *, int, caddr_t, size_t);
+int	   		isa_dmamem_mmap(struct device *, int, bus_addr_t, bus_size_t, int, int, int);
+
+int	   		isa_drq_alloc(struct device *, int);
+int	   		isa_drq_free(struct device *, int);
+int	   		isa_drq_isfree(struct device *, int);
+
+void    	*isa_malloc(struct device *, int, size_t, int, int);
+void		isa_free(void *, int);
+int	   		isa_mappage(void *, int, int);
+#endif /* _KERNEL */
+#endif /* _DEV_ISA_ISADMAVAR_H_ */

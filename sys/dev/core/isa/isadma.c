@@ -87,11 +87,14 @@ isa_dmaunmask(sc, chan)
 {
 	int ochan = chan & 3;
 
+	ISA_DMA_MASK_CLR(sc, chan);
+
 	/* set dma channel mode, and set dma channel mode */
-	if ((chan & 4) == 0)
+	if ((chan & 4) == 0) {
 		bus_space_write_1(sc->sc_iot, sc->sc_dma1h, DMA1_SMSK, ochan | DMA37SM_CLEAR);
-	else
+	} else {
 		bus_space_write_1(sc->sc_iot, sc->sc_dma2h, DMA2_SMSK, ochan | DMA37SM_CLEAR);
+	}
 }
 
 static inline void
@@ -100,6 +103,8 @@ isa_dmamask(sc, chan)
 	int chan;
 {
 	int ochan = chan & 3;
+
+	ISA_DMA_MASK_SET(sc, chan);
 
 	/* set dma channel mode, and set dma channel mode */
 	if ((chan & 4) == 0) {
@@ -111,6 +116,72 @@ isa_dmamask(sc, chan)
 	}
 }
 
+/*
+ * _isa_dmainit(): Initialize the isa_dma_state for this chipset.
+ */
+void
+isa_dmainit(sc, iot, dmat, dev)
+	struct isa_softc *sc;
+	bus_space_tag_t iot;
+	bus_dma_tag_t dmat;
+	struct device *dev;
+{
+	int chan;
+
+	sc->sc_dev = dev;
+	if (sc->sc_initialized) {
+		/*
+		 * Some systems may have e.g. `ofisa' (OpenFirmware
+		 * configuration of ISA bus) and a regular `isa'.
+		 * We allow both to call the initialization function,
+		 * and take the device name from the last caller
+		 * (assuming it will be the indirect ISA bus).  Since
+		 * `ofisa' and `isa' are the same bus with different
+		 * configuration mechanisms, the space and dma tags
+		 * must be the same!
+		 */
+		if (sc->sc_iot != iot || sc->sc_dmat != dmat) {
+			panic("isa_dmainit: inconsistent ISA tags");
+		}
+	} else {
+		sc->sc_iot = iot;
+		sc->sc_dmat = dmat;
+
+		/*
+		 * Map the registers used by the ISA DMA controller.
+		 */
+		if (bus_space_map(sc->sc_iot, IO_DMA1, DMA1_IOSIZE, 0, &sc->sc_dma1h))
+			panic("_isa_dmainit: unable to map DMA controller #1");
+		if (bus_space_map(sc->sc_iot, IO_DMA2, DMA2_IOSIZE, 0, &sc->sc_dma2h))
+			panic("_isa_dmainit: unable to map DMA controller #2");
+		if (bus_space_map(sc->sc_iot, IO_DMAPG, 0xf, 0, &sc->sc_dmapgh))
+			panic("_isa_dmainit: unable to map DMA page registers");
+
+		/*
+		 * All 8 DMA channels start out "masked".
+		 */
+		sc->sc_masked = 0xff;
+
+		/*
+		 * Initialize the max transfer size for each channel, if
+		 * it is not initialized already (i.e. by a bus-dependent
+		 * front-end).
+		 */
+		for (chan = 0; chan < 8; chan++) {
+			if (sc->sc_maxsize[chan] == 0)
+				sc->sc_maxsize[chan] = ISA_DMA_MAXSIZE_DEFAULT(chan);
+		}
+
+		sc->sc_initialized = 1;
+
+		/*
+		 * DRQ 4 is used to chain the two 8237s together; make
+		 * sure it's always cascaded, and that it will be unmasked
+		 * when DMA is thawed.
+		 */
+		isa_dmacascade(sc->sc_dev, 4);
+	}
+}
 /*
  * isa_dmacascade(): program 8237 DMA controller channel to accept
  * external dma control by a board.
@@ -125,12 +196,12 @@ isa_dmacascade(isadev, chan)
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", sc->sc_dev.dv_xname, chan);
-		goto lose;
+		return (EINVAL);
 	}
 
 	if (ISA_DRQ_ISFREE(sc, chan) == 0) {
 		printf("%s: DRQ %d is not free\n", sc->sc_dev.dv_xname, chan);
-		goto lose;
+		return (EAGAIN);
 	}
 
 	ISA_DRQ_ALLOC(sc, chan);
@@ -143,9 +214,44 @@ isa_dmacascade(isadev, chan)
 
 	isa_dmaunmask(sc, chan);
 	return;
+}
 
- lose:
-	panic("isa_dmacascade");
+int
+isa_drq_alloc(isadev, chan)
+	struct device *isadev;
+	int chan;
+{
+	struct isa_softc *sc = (struct isa_softc *)isadev;
+	if (ISA_DMA_DRQ_ISFREE(sc, chan) == 0)
+		return EBUSY;
+	ISA_DMA_DRQ_ALLOC(sc, chan);
+	return 0;
+}
+
+int
+isa_drq_free(isadev, chan)
+	struct device *isadev;
+	int chan;
+{
+	struct isa_softc *sc = (struct isa_softc *)isadev;
+	if (ISA_DMA_DRQ_ISFREE(sc, chan))
+		return EINVAL;
+	ISA_DMA_DRQ_FREE(sc, chan);
+	return 0;
+}
+
+bus_size_t
+isa_dmamaxsize(isadev, chan)
+	struct device *isadev;
+	int chan;
+{
+	struct isa_softc *sc = (struct isa_softc *)isadev;
+	if (chan < 0 || chan > 7) {
+		printf("%s: bogus drq %d\n", sc->sc_dev->dv_xname, chan);
+		return (0);
+	}
+
+	return (sc->sc_maxsize[chan]);
 }
 
 int
@@ -156,32 +262,27 @@ isa_dmamap_create(isadev, chan, size, flags)
 	int flags;
 {
 	struct isa_softc *sc = (struct isa_softc *)isadev;
-	bus_size_t maxsize;
+	int error;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", sc->sc_dev.dv_xname, chan);
-		goto lose;
+		return (EINVAL);
 	}
 
-	if (chan & 4)
-		maxsize = (1 << 17);
-	else
-		maxsize = (1 << 16);
-
-	if (size > maxsize)
+	if (size > sc->sc_maxsize[chan]) {
 		return (EINVAL);
+	}
 
 	if (ISA_DRQ_ISFREE(sc, chan) == 0) {
 		printf("%s: drq %d is not free\n", sc->sc_dev.dv_xname, chan);
-		goto lose;
+		panic("isa_dmamap_create");
 	}
 
 	ISA_DRQ_ALLOC(sc, chan);
 
-	return (bus_dmamap_create(sc->sc_dmat, size, 1, size, maxsize, flags, &sc->sc_dmamaps[chan]));
+	error = bus_dmamap_create(sc->sc_dmat, size, 1, size, sc->sc_maxsize[chan], flags, &sc->sc_dmamaps[chan]);
 
- lose:
-	panic("isa_dmamap_create");
+	return (error);
 }
 
 void
@@ -419,11 +520,11 @@ isa_dmafinished(isadev, chan)
 
 	/* check that the terminal count was reached */
 	if ((chan & 4) == 0)
-		sc->sc_dmafinished |= bus_space_read_1(sc->sc_iot,
-		    sc->sc_dma1h, DMA1_SR) & 0x0f;
+		sc->sc_dmafinished |= bus_space_read_1(sc->sc_iot, sc->sc_dma1h,
+				DMA1_SR) & 0x0f;
 	else
-		sc->sc_dmafinished |= (bus_space_read_1(sc->sc_iot,
-		    sc->sc_dma2h, DMA2_SR) & 0x0f) << 4;
+		sc->sc_dmafinished |= (bus_space_read_1(sc->sc_iot, sc->sc_dma2h,
+				DMA2_SR) & 0x0f) << 4;
 
 	return ((sc->sc_dmafinished & (1 << chan)) != 0);
 }
@@ -455,6 +556,48 @@ isa_dmadone(isadev, chan)
 
 	bus_dmamap_unload(sc->sc_dmat, dmam);
 	sc->sc_dmareads &= ~(1 << chan);
+}
+
+void
+isa_dmafreeze(sc)
+	struct isa_softc *sc;
+{
+	int s;
+
+	s = splhigh();
+
+	if (sc->sc_frozen == 0) {
+		bus_space_write_1(sc->sc_iot, sc->sc_dma1h, DMA1_MASK, 0x0f);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma2h, DMA2_MASK, 0x0f);
+	}
+
+	sc->sc_frozen++;
+	if (sc->sc_frozen < 1)
+		panic("_isa_dmafreeze: overflow");
+
+	splx(s);
+}
+
+void
+isa_dmathaw(sc)
+	struct isa_softc *sc;
+{
+	int s;
+
+	s = splhigh();
+
+	sc->sc_frozen--;
+	if (sc->sc_frozen < 0)
+		panic("_isa_dmathaw: underflow");
+
+	if (sc->sc_frozen == 0) {
+		bus_space_write_1(sc->sc_iot, sc->sc_dma1h, DMA1_MASK,
+				sc->sc_masked & 0x0f);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma2h, DMA2_MASK,
+				(sc->sc_masked >> 4) & 0x0f);
+	}
+
+	splx(s);
 }
 
 int
@@ -631,7 +774,7 @@ isa_free(addr, pool)
 	struct isa_mem **mp, *m;
 	caddr_t kva = (caddr_t)addr;
 
-	for(mp = &isa_mem_head; *mp && (*mp)->kva != kva; mp = &(*mp)->next)
+	for (mp = &isa_mem_head; *mp && (*mp)->kva != kva; mp = &(*mp)->next)
 		;
 	m = *mp;
 	if (!m) {
@@ -658,5 +801,5 @@ isa_mappage(mem, off, prot)
 		printf("isa_mappage: mapping unallocted memory\n");
 		return -1;
 	}
-	return isa_dmamem_mmap(m->isadev, m->chan, m->addr, m->size, off, prot, BUS_DMA_WAITOK);
+	return (isa_dmamem_mmap(m->isadev, m->chan, m->addr, m->size, off, prot, BUS_DMA_WAITOK));
 }

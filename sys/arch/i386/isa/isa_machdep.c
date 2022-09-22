@@ -88,11 +88,9 @@
 #include <sys/proc.h>
 
 #include <machine/bus.h>
-#include <machine/pio.h>
 #include <machine/cpufunc.h>
-//#include <machine/segments.h>
 
-//#include <machine/intr.h>
+#include <machine/intr.h>
 #include <machine/pic.h>
 
 #include <machine/isa/isa_machdep.h>
@@ -100,7 +98,7 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
-#include <vm/include/vm.h>
+#include <vm/include/vm_extern.h>
 
 #include "ioapic.h"
 

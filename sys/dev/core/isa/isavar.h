@@ -189,6 +189,7 @@ struct isa_softc {
 	bus_dma_tag_t 			sc_dmat;		/* isa DMA tag */
 
 	isa_chipset_tag_t 		sc_ic;
+	int 					sc_dynamicdevs;
 
 	/*
 	 * Bitmap representing the DRQ channels available for ISA.
@@ -206,9 +207,12 @@ struct isa_softc {
 	 */
 	bus_dmamap_t			sc_dmamaps[8];
 	vm_size_t				sc_dmalength[8];
-
+	bus_size_t 				sc_maxsize[8];	/* max size per channel */
 	int						sc_dmareads;	/* state for isa_dmadone() */
 	int						sc_dmafinished;	/* DMA completion state */
+	int						sc_masked;		/* masked channels (bitmap) */
+	int						sc_frozen;		/* `frozen' count */
+	int						sc_initialized;	/* only initialize once... */
 
 	/*
 	 * This i/o handle is used to map port 0x84, which is
@@ -232,14 +236,20 @@ struct isa_softc {
 #define	ISACF_DRQ			5
 #define	ISACF_DRQ2 			6
 
-#define	ISA_DRQ_ISFREE(isadev, drq) \
+#define	ISA_DRQ_ISFREE(isadev, drq) 	\
 	((((struct isa_softc *)(isadev))->sc_drqmap & (1 << (drq))) == 0)
 
-#define	ISA_DRQ_ALLOC(isadev, drq) \
+#define	ISA_DRQ_ALLOC(isadev, drq) 		\
 	((struct isa_softc *)(isadev))->sc_drqmap |= (1 << (drq))
 
-#define	ISA_DRQ_FREE(isadev, drq) \
+#define	ISA_DRQ_FREE(isadev, drq) 		\
 	((struct isa_softc *)(isadev))->sc_drqmap &= ~(1 << (drq))
+
+#define	ISA_DMA_MASK_SET(isadev, drq)	\
+	((struct isa_softc *)(isadev))->sc_masked |= (1 << (drq))
+
+#define	ISA_DMA_MASK_CLR(isadev, drq)	\
+	((struct isa_softc *)(isadev))->sc_masked &= ~(1 << (drq))
 
 /*
  * ISA interrupt handler manipulation.

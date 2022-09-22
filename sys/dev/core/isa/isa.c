@@ -40,9 +40,17 @@
 
 #include <machine/intr.h>
 
-#include <dev/core/isa/isadmareg.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
+#include <dev/core/isa/isadmareg.h>
+
+#include "isadma.h"
+
+#include "isapnp.h"
+#if NISAPNP > 0
+#include <dev/core/isapnp/isapnpreg.h>
+#include <dev/core/isapnp/isapnpvar.h>
+#endif
 
 int 	isamatch(struct device *, struct cfdata *, void *);
 void 	isaattach(struct device *, struct device *, void *);
@@ -90,39 +98,31 @@ isaattach(parent, self, aux)
 
 	sc->sc_iot = iba->iba_iot;
 	sc->sc_memt = iba->iba_memt;
-#if NISADMA > 0
 	sc->sc_dmat = iba->iba_dmat;
-#endif /* NISADMA > 0 */
 	sc->sc_ic = iba->iba_ic;
 
+#if NISAPNP > 0
+	/*
+	 * Reset isapnp cards that the bios configured for us
+	 */
+	isapnp_isa_attach_hook(sc);
+#endif
+
 #if NISADMA > 0
-
 	/*
-	 * Map the registers used by the ISA DMA controller.
+	 * Initialize our DMA state.
 	 */
-	if (bus_space_map(sc->sc_iot, IO_DMA1, DMA1_IOSIZE, 0, &sc->sc_dma1h)) {
-		panic("isaattach: can't map DMA controller #1");
-	}
-	if (bus_space_map(sc->sc_iot, IO_DMA2, DMA2_IOSIZE, 0, &sc->sc_dma2h)) {
-		panic("isaattach: can't map DMA controller #2");
-	}
-	if (bus_space_map(sc->sc_iot, IO_DMAPG, 0xf, 0, &sc->sc_dmapgh)) {
-		panic("isaattach: can't map DMA page registers");
-	}
-
-	/*
-	 * Map port 0x84, which causes a 1.25us delay when read.
-	 * We do this now, since several drivers need it.
-	 */
-	if (bus_space_subregion(sc->sc_iot, sc->sc_dmapgh, 0x04, 1, &sc->sc_delaybah))
-#else /* NISADMA > 0 */
-	if (bus_space_map(sc->sc_iot, IO_DMAPG + 0x4, 0x1, 0, &sc->sc_delaybah))
-#endif /* NISADMA > 0 */
-		panic("isaattach: can't map `delay port'"); /* XXX */
+	isa_dmainit(sc->sc_ic, sc->sc_iot, sc->sc_dmat, self);
+#endif
 
 	/* Attach all direct-config children. */
 	isa_attach_subdevs(sc);
 
+	if (sc->sc_dynamicdevs == 0) {
+		isa_free_subdevs(sc);
+	}
+
+	/* Attach all indrect-config children. */
 	config_search(isasearch, self, NULL);
 
 	/* Detect and Attach any enabled hint-config children. */
@@ -173,7 +173,8 @@ isa_attach_subdevs(sc)
 }
 
 void
-isa_free_subdevs(struct isa_softc *sc)
+isa_free_subdevs(sc)
+	struct isa_softc *sc;
 {
 	struct isa_subdev *is;
 	struct isa_pnpname *ipn;
@@ -199,7 +200,10 @@ isa_free_subdevs(struct isa_softc *sc)
 }
 
 int
-isasubmatch(struct device *parent, struct cfdata *cf, void *aux)
+isasubmatch(parent, cf, aux)
+	struct device *parent;
+	struct cfdata *cf;
+	void *aux;
 {
 	struct isa_attach_args *ia = aux;
 	int i;

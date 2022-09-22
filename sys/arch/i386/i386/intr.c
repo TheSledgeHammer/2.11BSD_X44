@@ -143,16 +143,31 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <machine/apic/i8259.h>
-#include <machine/apic/ioapicvar.h>
-#include <machine/apic/lapicvar.h>
+//#include <dev/core/isa/isareg.h>
+//#include <dev/core/isa/isavar.h>
+
 #include <machine/cpuinfo.h>
 #include <machine/gdt.h>
-#include <machine/intr.h>
+//#include <machine/intr.h>
 #include <machine/pic.h>
+#include <machine/apic/i8259.h>
 
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
+#include "ioapic.h"
+#include "lapic.h"
+#include "pci.h"
+
+#if NIOAPIC > 0
+#include <machine/apic/ioapicvar.h>
+#include <machine/mpbiosvar.h>
+#endif
+
+#if NLAPIC > 0
+#include <machine/apic/lapicvar.h>
+#endif
+
+#if NPCI > 0
+#include <dev/core/pci/ppbreg.h>
+#endif
 
 struct intrsource 	*intrsrc[MAX_INTR_SOURCES];
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
@@ -165,6 +180,13 @@ int					iunmask[NIPL];
 void				intr_legacy_vectors(void);
 void				init_intrmask(void);
 char 				*intr_typename(int);
+
+#if NIOAPIC > 0
+static int intr_scan_bus(int, int, int *);
+#if NPCI > 0
+static int intr_find_pcibridge(int, pcitag_t *, pci_chipset_tag_t *);
+#endif
+#endif
 
 void
 intr_default_setup(void)
