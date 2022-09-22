@@ -86,6 +86,7 @@ __KERNEL_RCSID(0, "$NetBSD: com_mca.c,v 1.10 2003/08/07 16:31:08 agc Exp $");
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 #include <sys/device.h>
+#include <sys/power.h>
 
 #include <machine/intr.h>
 #include <machine/bus.h>
