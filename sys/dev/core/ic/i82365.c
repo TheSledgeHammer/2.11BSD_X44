@@ -1,6 +1,4 @@
-/*	$NetBSD: i82365.c,v 1.6.2.1 1999/02/02 05:38:07 cgd Exp $	*/
-
-#define	PCICDEBUG
+/*	$NetBSD: i82365.c,v 1.77 2003/12/28 01:21:37 christos Exp $	*/
 
 /*
  * Copyright (c) 1997 Marc Horowitz.  All rights reserved.
@@ -32,14 +30,15 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
+
+#define	PCICDEBUG
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/extent.h>
 #include <sys/malloc.h>
-
-#include <vm/include/vm.h>
+#include <sys/power.h>
 
 #include <machine/bus.h>
 #include <machine/intr.h>
@@ -59,11 +58,7 @@ int	pcic_debug = 0;
 #define	DPRINTF(arg)
 #endif
 
-#define	PCIC_VENDOR_UNKNOWN			0
-#define	PCIC_VENDOR_I82365SLR0		1
-#define	PCIC_VENDOR_I82365SLR1		2
-#define	PCIC_VENDOR_CIRRUS_PD6710	3
-#define	PCIC_VENDOR_CIRRUS_PD672X	4
+CFDRIVER_DECL(NULL, pcic, DV_DULL);
 
 /*
  * Individual drivers will allocate their own memory and io regions. Memory
@@ -73,21 +68,31 @@ int	pcic_debug = 0;
 #define	PCIC_MEM_ALIGN	PCIC_MEM_PAGESIZE
 
 void	pcic_attach_socket(struct pcic_handle *);
-void	pcic_init_socket(struct pcic_handle *);
+void	pcic_attach_socket_finish(struct pcic_handle *);
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-int		pcic_submatch(struct device *, void *, void *);
-#else
 int		pcic_submatch(struct device *, struct cfdata *, void *);
-#endif
 int		pcic_print(void *arg, const char *pnp);
 int		pcic_intr_socket(struct pcic_handle *);
+void	pcic_poll_intr(void *);
 
 void	pcic_attach_card(struct pcic_handle *);
 void	pcic_detach_card(struct pcic_handle *);
+void	pcic_deactivate_card(struct pcic_handle *);
 
 void	pcic_chip_do_mem_map(struct pcic_handle *, int);
 void	pcic_chip_do_io_map(struct pcic_handle *, int);
+
+void	pcic_create_event_thread(void *);
+void	pcic_event_thread(void *);
+
+void	pcic_queue_event(struct pcic_handle *, int);
+void	pcic_power(int, void *);
+
+static void	pcic_wait_ready(struct pcic_handle *);
+static void	pcic_delay(struct pcic_handle *, int, const char *);
+
+static u_int8_t st_pcic_read(struct pcic_handle *, int);
+static void 	st_pcic_write(struct pcic_handle *, int, u_int8_t);
 
 int
 pcic_ident_ok(ident)
@@ -113,35 +118,67 @@ pcic_vendor(h)
 	struct pcic_handle *h;
 {
 	int reg;
-
-	/*
-	 * the chip_id of the cirrus toggles between 11 and 00 after a write.
-	 * weird.
-	 */
-
-	pcic_write(h, PCIC_CIRRUS_CHIP_INFO, 0);
-	reg = pcic_read(h, -1);
-
-	if ((reg & PCIC_CIRRUS_CHIP_INFO_CHIP_ID) ==
-	    PCIC_CIRRUS_CHIP_INFO_CHIP_ID) {
-		reg = pcic_read(h, -1);
-		if ((reg & PCIC_CIRRUS_CHIP_INFO_CHIP_ID) == 0) {
-			if (reg & PCIC_CIRRUS_CHIP_INFO_SLOTS)
-				return (PCIC_VENDOR_CIRRUS_PD672X);
-			else
-				return (PCIC_VENDOR_CIRRUS_PD6710);
-		}
-	}
-	/* XXX how do I identify the GD6729? */
+	int vendor;
 
 	reg = pcic_read(h, PCIC_IDENT);
 
-	if ((reg & PCIC_IDENT_REV_MASK) == PCIC_IDENT_REV_I82365SLR0)
-		return (PCIC_VENDOR_I82365SLR0);
-	else
-		return (PCIC_VENDOR_I82365SLR1);
+	if ((reg & PCIC_IDENT_REV_MASK) == 0)
+		return (PCIC_VENDOR_NONE);
 
-	return (PCIC_VENDOR_UNKNOWN);
+	switch (reg) {
+	case 0x00:
+	case 0xff:
+		return (PCIC_VENDOR_NONE);
+	case PCIC_IDENT_ID_INTEL0:
+		vendor = PCIC_VENDOR_I82365SLR0;
+		break;
+	case PCIC_IDENT_ID_INTEL1:
+		vendor = PCIC_VENDOR_I82365SLR1;
+		break;
+	case PCIC_IDENT_ID_INTEL2:
+		vendor = PCIC_VENDOR_I82365SL_DF;
+		break;
+	case PCIC_IDENT_ID_IBM1:
+	case PCIC_IDENT_ID_IBM2:
+		vendor = PCIC_VENDOR_IBM;
+		break;
+	case PCIC_IDENT_ID_IBM3:
+		vendor = PCIC_VENDOR_IBM_KING;
+		break;
+	default:
+		vendor = PCIC_VENDOR_UNKNOWN;
+		break;
+	}
+
+	if (vendor == PCIC_VENDOR_I82365SLR0 ||
+	    vendor == PCIC_VENDOR_I82365SLR1) {
+		/*
+		 * Check for Cirrus PD67xx.
+		 * the chip_id of the cirrus toggles between 11 and 00 after a
+		 * write.  weird.
+		 */
+		pcic_write(h, PCIC_CIRRUS_CHIP_INFO, 0);
+		reg = pcic_read(h, -1);
+		if ((reg & PCIC_CIRRUS_CHIP_INFO_CHIP_ID) ==
+		    PCIC_CIRRUS_CHIP_INFO_CHIP_ID) {
+			reg = pcic_read(h, -1);
+			if ((reg & PCIC_CIRRUS_CHIP_INFO_CHIP_ID) == 0)
+				return (PCIC_VENDOR_CIRRUS_PD67XX);
+		}
+
+		/*
+		 * check for Ricoh RF5C[23]96
+		 */
+		reg = pcic_read(h, PCIC_RICOH_REG_CHIP_ID);
+		switch (reg) {
+		case PCIC_RICOH_CHIP_ID_5C296:
+			return (PCIC_VENDOR_RICOH_5C296);
+		case PCIC_RICOH_CHIP_ID_5C396:
+			return (PCIC_VENDOR_RICOH_5C396);
+		}
+	}
+
+	return (vendor);
 }
 
 char *
@@ -153,10 +190,18 @@ pcic_vendor_to_string(vendor)
 		return ("Intel 82365SL Revision 0");
 	case PCIC_VENDOR_I82365SLR1:
 		return ("Intel 82365SL Revision 1");
-	case PCIC_VENDOR_CIRRUS_PD6710:
-		return ("Cirrus PD6710");
-	case PCIC_VENDOR_CIRRUS_PD672X:
-		return ("Cirrus PD672X");
+	case PCIC_VENDOR_CIRRUS_PD67XX:
+		return ("Cirrus PD6710/2X");
+	case PCIC_VENDOR_I82365SL_DF:
+		return ("Intel 82365SL-DF");
+	case PCIC_VENDOR_RICOH_5C296:
+		return ("Ricoh RF5C296");
+	case PCIC_VENDOR_RICOH_5C396:
+		return ("Ricoh RF5C396");
+	case PCIC_VENDOR_IBM:
+		return ("IBM PCIC");
+	case PCIC_VENDOR_IBM_KING:
+		return ("IBM KING");
 	}
 
 	return ("Unknown controller");
@@ -166,139 +211,148 @@ void
 pcic_attach(sc)
 	struct pcic_softc *sc;
 {
-	int vendor, count, i, reg;
-
-	/* now check for each controller/socket */
-
-	/*
-	 * this could be done with a loop, but it would violate the
-	 * abstraction
-	 */
-
-	count = 0;
+	int i, reg, chip, socket;
+	struct pcic_handle *h;
 
 	DPRINTF(("pcic ident regs:"));
 
-	sc->handle[0].sc = sc;
-	sc->handle[0].sock = C0SA;
-	if (pcic_ident_ok(reg = pcic_read(&sc->handle[0], PCIC_IDENT))) {
-		sc->handle[0].flags = PCIC_FLAG_SOCKETP;
-		count++;
-	} else {
-		sc->handle[0].flags = 0;
-	}
+	lockinit(&sc->sc_pcic_lock, PWAIT, "pciclk", 0, 0);
 
-	DPRINTF((" 0x%02x", reg));
-
-	sc->handle[1].sc = sc;
-	sc->handle[1].sock = C0SB;
-	if (pcic_ident_ok(reg = pcic_read(&sc->handle[1], PCIC_IDENT))) {
-		sc->handle[1].flags = PCIC_FLAG_SOCKETP;
-		count++;
-	} else {
-		sc->handle[1].flags = 0;
-	}
-
-	DPRINTF((" 0x%02x", reg));
-
-	sc->handle[2].sc = sc;
-	sc->handle[2].sock = C1SA;
-	if (pcic_ident_ok(reg = pcic_read(&sc->handle[2], PCIC_IDENT))) {
-		sc->handle[2].flags = PCIC_FLAG_SOCKETP;
-		count++;
-	} else {
-		sc->handle[2].flags = 0;
-	}
-
-	DPRINTF((" 0x%02x", reg));
-
-	sc->handle[3].sc = sc;
-	sc->handle[3].sock = C1SB;
-	if (pcic_ident_ok(reg = pcic_read(&sc->handle[3], PCIC_IDENT))) {
-		sc->handle[3].flags = PCIC_FLAG_SOCKETP;
-		count++;
-	} else {
-		sc->handle[3].flags = 0;
-	}
-
-	DPRINTF((" 0x%02x\n", reg));
-
-	if (count == 0)
-		panic("pcic_attach: attach found no sockets");
-
-	/* establish the interrupt */
-
-	/* XXX block interrupts? */
-
+	/* find and configure for the available sockets */
 	for (i = 0; i < PCIC_NSLOTS; i++) {
-#if 0
-		/*
-		 * this should work, but w/o it, setting tty flags hangs at
-		 * boot time.
-		 */
-		if (sc->handle[i].flags & PCIC_FLAG_SOCKETP)
-#endif
-		{
-			pcic_write(&sc->handle[i], PCIC_CSC_INTR, 0);
-			pcic_read(&sc->handle[i], PCIC_CSC);
+		h = &sc->handle[i];
+		chip = i / 2;
+		socket = i % 2;
+
+		h->ph_parent = (struct device*) sc;
+		h->chip = chip;
+		h->sock = chip * PCIC_CHIP_OFFSET + socket * PCIC_SOCKET_OFFSET;
+		h->laststate = PCIC_LASTSTATE_EMPTY;
+		/* initialize pcic_read and pcic_write functions */
+		h->ph_read = st_pcic_read;
+		h->ph_write = st_pcic_write;
+		h->ph_bus_t = sc->iot;
+		h->ph_bus_h = sc->ioh;
+		h->flags = 0;
+
+		/* need to read vendor -- for cirrus to report no xtra chip */
+		if (socket == 0)
+			h->vendor = (h + 1)->vendor = pcic_vendor(h);
+
+		switch (h->vendor) {
+		case PCIC_VENDOR_NONE:
+			/* no chip */
+			continue;
+		case PCIC_VENDOR_CIRRUS_PD67XX:
+			reg = pcic_read(h, PCIC_CIRRUS_CHIP_INFO);
+			if (socket == 0 || (reg & PCIC_CIRRUS_CHIP_INFO_SLOTS))
+				h->flags = PCIC_FLAG_SOCKETP;
+			break;
+		default:
+			/*
+			 * During the socket probe, read the ident register
+			 * twice.  I don't understand why, but sometimes the
+			 * clone chips in hpcmips boxes read all-0s the first
+			 * time. -- mycroft
+			 */
+			reg = pcic_read(h, PCIC_IDENT);
+			DPRINTF(("socket %d ident reg 0x%02x\n", i, reg))
+			;
+			reg = pcic_read(h, PCIC_IDENT);
+			DPRINTF(("socket %d ident reg 0x%02x\n", i, reg))
+			;
+			if (pcic_ident_ok(reg))
+				h->flags = PCIC_FLAG_SOCKETP;
+			break;
+		}
+	}
+	for (i = 0; i < PCIC_NSLOTS; i++) {
+		h = &sc->handle[i];
+
+		if (h->flags & PCIC_FLAG_SOCKETP) {
+			SIMPLEQ_INIT(&h->events);
+
+			/* disable interrupts and leave socket in reset */
+			pcic_write(h, PCIC_CSC_INTR, 0);
+			pcic_write(h, PCIC_INTR, 0);
+			(void) pcic_read(h, PCIC_CSC);
 		}
 	}
 
-	if ((sc->handle[0].flags & PCIC_FLAG_SOCKETP) ||
-	    (sc->handle[1].flags & PCIC_FLAG_SOCKETP)) {
-		vendor = pcic_vendor(&sc->handle[0]);
+	/* print detected info */
+	for (i = 0; i < PCIC_NSLOTS; i += 2) {
+		h = &sc->handle[i];
+		chip = i / 2;
 
-		printf("%s: controller 0 (%s) has ", sc->dev.dv_xname,
-		       pcic_vendor_to_string(vendor));
+		if (h->vendor == PCIC_VENDOR_NONE)
+			continue;
 
-		if ((sc->handle[0].flags & PCIC_FLAG_SOCKETP) &&
-		    (sc->handle[1].flags & PCIC_FLAG_SOCKETP))
+		printf("%s: controller %d (%s) has ", sc->dev.dv_xname, chip,
+				pcic_vendor_to_string(sc->handle[i].vendor));
+
+		if ((h->flags & PCIC_FLAG_SOCKETP)
+				&& ((h + 1)->flags & PCIC_FLAG_SOCKETP))
 			printf("sockets A and B\n");
-		else if (sc->handle[0].flags & PCIC_FLAG_SOCKETP)
+		else if (h->flags & PCIC_FLAG_SOCKETP)
 			printf("socket A only\n");
-		else
+		else if ((h + 1)->flags & PCIC_FLAG_SOCKETP)
 			printf("socket B only\n");
-
-		if (sc->handle[0].flags & PCIC_FLAG_SOCKETP)
-			sc->handle[0].vendor = vendor;
-		if (sc->handle[1].flags & PCIC_FLAG_SOCKETP)
-			sc->handle[1].vendor = vendor;
-	}
-	if ((sc->handle[2].flags & PCIC_FLAG_SOCKETP) ||
-	    (sc->handle[3].flags & PCIC_FLAG_SOCKETP)) {
-		vendor = pcic_vendor(&sc->handle[2]);
-
-		printf("%s: controller 1 (%s) has ", sc->dev.dv_xname,
-		       pcic_vendor_to_string(vendor));
-
-		if ((sc->handle[2].flags & PCIC_FLAG_SOCKETP) &&
-		    (sc->handle[3].flags & PCIC_FLAG_SOCKETP))
-			printf("sockets A and B\n");
-		else if (sc->handle[2].flags & PCIC_FLAG_SOCKETP)
-			printf("socket A only\n");
 		else
-			printf("socket B only\n");
-
-		if (sc->handle[2].flags & PCIC_FLAG_SOCKETP)
-			sc->handle[2].vendor = vendor;
-		if (sc->handle[3].flags & PCIC_FLAG_SOCKETP)
-			sc->handle[3].vendor = vendor;
+			printf("no sockets\n");
 	}
 }
 
+/*
+ * attach the sockets before we know what interrupts we have
+ */
 void
 pcic_attach_sockets(sc)
 	struct pcic_softc *sc;
 {
 	int i;
 
-	for (i = 0; i < PCIC_NSLOTS; i++) {
-		if (sc->handle[i].flags & PCIC_FLAG_SOCKETP) {
+	for (i = 0; i < PCIC_NSLOTS; i++)
+		if (sc->handle[i].flags & PCIC_FLAG_SOCKETP)
 			pcic_attach_socket(&sc->handle[i]);
+}
+
+void
+pcic_power(why, arg)
+	int why;
+	void *arg;
+{
+	struct pcic_handle *h = (struct pcic_handle *)arg;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
+	int reg;
+
+	DPRINTF(("%s: power: why %d\n", h->ph_parent->dv_xname, why));
+
+	if (h->flags & PCIC_FLAG_SOCKETP) {
+		if ((why == PWR_RESUME) && (pcic_read(h, PCIC_CSC_INTR) == 0)) {
+#ifdef PCICDEBUG
+			char bitbuf[64];
+#endif
+			reg = PCIC_CSC_INTR_CD_ENABLE;
+			if (sc->irq != -1)
+				reg |= sc->irq << PCIC_CSC_INTR_IRQ_SHIFT;
+			pcic_write(h, PCIC_CSC_INTR, reg);
+			DPRINTF(
+					("%s: CSC_INTR was zero; reset to %s\n", sc->dev.dv_xname, bitmask_snprintf(pcic_read(h, PCIC_CSC_INTR), PCIC_CSC_INTR_FORMAT, bitbuf, sizeof(bitbuf))));
 		}
+
+		/*
+		 * check for card insertion or removal during suspend period.
+		 * XXX: the code can't cope with card swap (remove then insert).
+		 * how can we detect such situation?
+		 */
+		if (why == PWR_RESUME)
+			(void) pcic_intr_socket(h);
 	}
 }
 
+/*
+ * attach a socket -- we don't know about irqs yet
+ */
 void
 pcic_attach_socket(h)
 	struct pcic_handle *h;
@@ -308,58 +362,264 @@ pcic_attach_socket(h)
 
 	/* initialize the rest of the handle */
 
+	h->shutdown = 0;
 	h->memalloc = 0;
 	h->ioalloc = 0;
 	h->ih_irq = 0;
 
 	/* now, config one pcmcia device per socket */
-	paa.pct = (pcmcia_chipset_tag_t) h->sc->pct;
+
+	paa.paa_busname = "pcmcia";
+	paa.pct = (pcmcia_chipset_tag_t) sc->pct;
 	paa.pch = (pcmcia_chipset_handle_t) h;
-	paa.iobase = h->sc->iobase;
-	paa.iosize = h->sc->iosize;
+	paa.iobase = sc->iobase;
+	paa.iosize = sc->iosize;
 
-	h->pcmcia = config_found_sm(&h->sc->dev, &paa, pcic_print, pcic_submatch);
-
-	/* if there's actually a pcmcia device attached, initialize the slot */
-
+	h->pcmcia = config_found_sm(&sc->dev, &paa, pcic_print, pcic_submatch);
 	if (h->pcmcia == NULL) {
 		h->flags &= ~PCIC_FLAG_SOCKETP;
-		pcic_init_socket(h);
+		return;
 	}
+
+	/*
+	 * queue creation of a kernel thread to handle insert/removal events.
+	 */
+#ifdef DIAGNOSTIC
+	if (h->event_thread != NULL)
+		panic("pcic_attach_socket: event thread");
+#endif
+	config_pending_incr();
+	//kthread_create(pcic_create_event_thread, h);
 }
 
+/*
+ * now finish attaching the sockets, we are ready to allocate
+ * interrupts
+ */
 void
-pcic_init_socket(h)
+pcic_attach_sockets_finish(sc)
+	struct pcic_softc *sc;
+{
+	int i;
+
+	for (i = 0; i < PCIC_NSLOTS; i++)
+		if (sc->handle[i].flags & PCIC_FLAG_SOCKETP)
+			pcic_attach_socket_finish(&sc->handle[i]);
+}
+
+/*
+ * finishing attaching the socket.  Interrupts may now be on
+ * if so expects the pcic interrupt to be blocked
+ */
+void
+pcic_attach_socket_finish(h)
 	struct pcic_handle *h;
 {
-	int reg;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
+	int reg, intr;
 
-	/* set up the card to interrupt on card detect */
+	DPRINTF(("%s: attach finish socket %ld\n", h->ph_parent->dv_xname,
+	    (long) (h - &sc->handle[0])));
 
-	pcic_write(h, PCIC_CSC_INTR, (h->sc->irq << PCIC_CSC_INTR_IRQ_SHIFT) |
-	    PCIC_CSC_INTR_CD_ENABLE);
-	pcic_write(h, PCIC_INTR, 0);
+	/*
+	 * Set up a powerhook to ensure it continues to interrupt on
+	 * card detect even after suspend.
+	 * (this works around a bug seen in suspend-to-disk on the
+	 * Sony VAIO Z505; on resume, the CSC_INTR state is not preserved).
+	 */
+	powerhook_establish(pcic_power, h);
+
+	/* enable interrupts on card detect, poll for them if no irq avail */
+	reg = PCIC_CSC_INTR_CD_ENABLE;
+	if (sc->irq == -1) {
+		if (sc->poll_established == 0) {
+			callout_init(&sc->poll_ch);
+			callout_reset(&sc->poll_ch, hz / 2, pcic_poll_intr, sc);
+			sc->poll_established = 1;
+		}
+	} else
+		reg |= sc->irq << PCIC_CSC_INTR_IRQ_SHIFT;
+	pcic_write(h, PCIC_CSC_INTR, reg);
+
+	/* steer above mgmt interrupt to configured place */
+	intr = pcic_read(h, PCIC_INTR);
+	intr &= ~(PCIC_INTR_IRQ_MASK | PCIC_INTR_ENABLE);
+	if (sc->irq == 0)
+		intr |= PCIC_INTR_ENABLE;
+	pcic_write(h, PCIC_INTR, intr);
+
+	/* power down the socket */
+	pcic_write(h, PCIC_PWRCTL, 0);
+
+	/* zero out the address windows */
+	pcic_write(h, PCIC_ADDRWIN_ENABLE, 0);
+
+	/* clear possible card detect interrupt */
 	pcic_read(h, PCIC_CSC);
 
-	/* unsleep the cirrus controller */
+	DPRINTF(
+			("%s: attach finish vendor 0x%02x\n", h->ph_parent->dv_xname, h->vendor));
 
-	if ((h->vendor == PCIC_VENDOR_CIRRUS_PD6710)
-			|| (h->vendor == PCIC_VENDOR_CIRRUS_PD672X)) {
+	/* unsleep the cirrus controller */
+	if (h->vendor == PCIC_VENDOR_CIRRUS_PD67XX) {
 		reg = pcic_read(h, PCIC_CIRRUS_MISC_CTL_2);
 		if (reg & PCIC_CIRRUS_MISC_CTL_2_SUSPEND) {
 			DPRINTF(
-					("%s: socket %02x was suspended\n", h->sc->dev.dv_xname, h->sock));
+					("%s: socket %02x was suspended\n", h->ph_parent->dv_xname, h->sock));
 			reg &= ~PCIC_CIRRUS_MISC_CTL_2_SUSPEND;
 			pcic_write(h, PCIC_CIRRUS_MISC_CTL_2, reg);
 		}
 	}
+
 	/* if there's a card there, then attach it. */
-
 	reg = pcic_read(h, PCIC_IF_STATUS);
-
 	if ((reg & PCIC_IF_STATUS_CARDDETECT_MASK) ==
-	PCIC_IF_STATUS_CARDDETECT_PRESENT)
-		pcic_attach_card(h);
+	PCIC_IF_STATUS_CARDDETECT_PRESENT) {
+		pcic_queue_event(h, PCIC_EVENT_INSERTION);
+		h->laststate = PCIC_LASTSTATE_PRESENT;
+	} else {
+		h->laststate = PCIC_LASTSTATE_EMPTY;
+	}
+}
+
+void
+pcic_create_event_thread(arg)
+	void *arg;
+{
+	struct pcic_handle *h = arg;
+	const char *cs;
+
+	switch (h->sock) {
+	case C0SA:
+		cs = "0,0";
+		break;
+	case C0SB:
+		cs = "0,1";
+		break;
+	case C1SA:
+		cs = "1,0";
+		break;
+	case C1SB:
+		cs = "1,1";
+		break;
+	default:
+		panic("pcic_create_event_thread: unknown pcic socket");
+	}
+/*
+	if (kthread_create1(pcic_event_thread, h, &h->event_thread,
+	    "%s,%s", h->ph_parent->dv_xname, cs)) {
+		printf("%s: unable to create event thread for sock 0x%02x\n",
+		    h->ph_parent->dv_xname, h->sock);
+		panic("pcic_create_event_thread");
+	}
+	*/
+}
+
+void
+pcic_event_thread(arg)
+	void *arg;
+{
+	struct pcic_handle *h = arg;
+	struct pcic_event *pe;
+	int s, first = 1;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
+
+	while (h->shutdown == 0) {
+		/*
+		 * Serialize event processing on the PCIC.  We may
+		 * sleep while we hold this lock.
+		 */
+		(void) lockmgr(&sc->sc_pcic_lock, LK_EXCLUSIVE, NULL);
+
+		s = splhigh();
+		if ((pe = SIMPLEQ_FIRST(&h->events)) == NULL) {
+			splx(s);
+			if (first) {
+				first = 0;
+				config_pending_decr();
+			}
+			/*
+			 * No events to process; release the PCIC lock.
+			 */
+			(void) lockmgr(&sc->sc_pcic_lock, LK_RELEASE, NULL);
+			(void) tsleep(&h->events, PWAIT, "pcicev", 0);
+			continue;
+		} else {
+			splx(s);
+			/* sleep .25s to be enqueued chatterling interrupts */
+			(void) tsleep((caddr_t)pcic_event_thread, PWAIT,
+			    "pcicss", hz/4);
+		}
+		s = splhigh();
+		SIMPLEQ_REMOVE_HEAD(&h->events, pe_q);
+		splx(s);
+
+		switch (pe->pe_type) {
+		case PCIC_EVENT_INSERTION:
+			s = splhigh();
+			while (1) {
+				struct pcic_event *pe1, *pe2;
+
+				if ((pe1 = SIMPLEQ_FIRST(&h->events)) == NULL)
+					break;
+				if (pe1->pe_type != PCIC_EVENT_REMOVAL)
+					break;
+				if ((pe2 = SIMPLEQ_NEXT(pe1, pe_q)) == NULL)
+					break;
+				if (pe2->pe_type == PCIC_EVENT_INSERTION) {
+					SIMPLEQ_REMOVE_HEAD(&h->events, pe_q);
+					free(pe1, M_TEMP);
+					SIMPLEQ_REMOVE_HEAD(&h->events, pe_q);
+					free(pe2, M_TEMP);
+				}
+			}
+			splx(s);
+
+			DPRINTF(("%s: insertion event\n",
+			    h->ph_parent->dv_xname));
+			pcic_attach_card(h);
+			break;
+
+		case PCIC_EVENT_REMOVAL:
+			s = splhigh();
+			while (1) {
+				struct pcic_event *pe1, *pe2;
+
+				if ((pe1 = SIMPLEQ_FIRST(&h->events)) == NULL)
+					break;
+				if (pe1->pe_type != PCIC_EVENT_INSERTION)
+					break;
+				if ((pe2 = SIMPLEQ_NEXT(pe1, pe_q)) == NULL)
+					break;
+				if (pe2->pe_type == PCIC_EVENT_REMOVAL) {
+					SIMPLEQ_REMOVE_HEAD(&h->events, pe_q);
+					free(pe1, M_TEMP);
+					SIMPLEQ_REMOVE_HEAD(&h->events, pe_q);
+					free(pe2, M_TEMP);
+				}
+			}
+			splx(s);
+
+			DPRINTF(("%s: removal event\n",
+			    h->ph_parent->dv_xname));
+			pcic_detach_card(h, DETACH_FORCE);
+			break;
+
+		default:
+			panic("pcic_event_thread: unknown event %d",
+			    pe->pe_type);
+		}
+		free(pe, M_TEMP);
+
+		(void) lockmgr(&sc->sc_pcic_lock, LK_RELEASE, NULL);
+	}
+
+	h->event_thread = NULL;
+
+	/* In case parent is waiting for us to exit. */
+	wakeup(sc);
+
+	//kthread_exit(0);
 }
 
 int
@@ -368,47 +628,44 @@ pcic_submatch(parent, cf, aux)
 	struct cfdata *cf;
 	void *aux;
 {
+
 	struct pcmciabus_attach_args *paa = aux;
 	struct pcic_handle *h = (struct pcic_handle *) paa->pch;
 
 	switch (h->sock) {
 	case C0SA:
-		if (cf->cf_loc[PCICCF_CONTROLLER] !=
-		    PCICCF_CONTROLLER_DEFAULT &&
-		    cf->cf_loc[PCICCF_CONTROLLER] != 0)
+		if (cf->cf_loc[PCMCIABUSCF_CONTROLLER] != PCMCIABUSCF_CONTROLLER_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_CONTROLLER] != 0)
 			return 0;
-		if (cf->cf_loc[PCICCF_SOCKET] != PCICCF_SOCKET_DEFAULT &&
-		    cf->cf_loc[PCICCF_SOCKET] != 0)
+		if (cf->cf_loc[PCMCIABUSCF_SOCKET] != PCMCIABUSCF_SOCKET_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_SOCKET] != 0)
 			return 0;
 
 		break;
 	case C0SB:
-		if (cf->cf_loc[PCICCF_CONTROLLER] !=
-		    PCICCF_CONTROLLER_DEFAULT &&
-		    cf->cf_loc[PCICCF_CONTROLLER] != 0)
+		if (cf->cf_loc[PCMCIABUSCF_CONTROLLER] != PCMCIABUSCF_CONTROLLER_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_CONTROLLER] != 0)
 			return 0;
-		if (cf->cf_loc[PCICCF_SOCKET] != PCICCF_SOCKET_DEFAULT &&
-		    cf->cf_loc[PCICCF_SOCKET] != 1)
+		if (cf->cf_loc[PCMCIABUSCF_SOCKET] != PCMCIABUSCF_SOCKET_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_SOCKET] != 1)
 			return 0;
 
 		break;
 	case C1SA:
-		if (cf->cf_loc[PCICCF_CONTROLLER] !=
-		    PCICCF_CONTROLLER_DEFAULT &&
-		    cf->cf_loc[PCICCF_CONTROLLER] != 1)
+		if (cf->cf_loc[PCMCIABUSCF_CONTROLLER] != PCMCIABUSCF_CONTROLLER_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_CONTROLLER] != 1)
 			return 0;
-		if (cf->cf_loc[PCICCF_SOCKET] != PCICCF_SOCKET_DEFAULT &&
-		    cf->cf_loc[PCICCF_SOCKET] != 0)
+		if (cf->cf_loc[PCMCIABUSCF_SOCKET] != PCMCIABUSCF_SOCKET_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_SOCKET] != 0)
 			return 0;
 
 		break;
 	case C1SB:
-		if (cf->cf_loc[PCICCF_CONTROLLER] !=
-		    PCICCF_CONTROLLER_DEFAULT &&
-		    cf->cf_loc[PCICCF_CONTROLLER] != 1)
+		if (cf->cf_loc[PCMCIABUSCF_CONTROLLER] != PCMCIABUSCF_CONTROLLER_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_CONTROLLER] != 1)
 			return 0;
-		if (cf->cf_loc[PCICCF_SOCKET] != PCICCF_SOCKET_DEFAULT &&
-		    cf->cf_loc[PCICCF_SOCKET] != 1)
+		if (cf->cf_loc[PCMCIABUSCF_SOCKET] != PCMCIABUSCF_SOCKET_DEFAULT
+				&& cf->cf_loc[PCMCIABUSCF_SOCKET] != 1)
 			return 0;
 
 		break;
@@ -451,6 +708,22 @@ pcic_print(arg, pnp)
 	return (UNCONF);
 }
 
+void
+pcic_poll_intr(arg)
+	void *arg;
+{
+	struct pcic_softc *sc;
+	int i, s;
+
+	s = spltty();
+	sc = arg;
+	for (i = 0; i < PCIC_NSLOTS; i++)
+		if (sc->handle[i].flags & PCIC_FLAG_SOCKETP)
+			(void)pcic_intr_socket(&sc->handle[i]);
+	callout_reset(&sc->poll_ch, hz / 2, pcic_poll_intr, sc);
+	splx(s);
+}
+
 int
 pcic_intr(arg)
 	void *arg;
@@ -467,6 +740,7 @@ pcic_intr(arg)
 	return (ret ? 1 : 0);
 }
 
+
 int
 pcic_intr_socket(h)
 	struct pcic_handle *h;
@@ -482,79 +756,120 @@ pcic_intr_socket(h)
 		   PCIC_CSC_BATTDEAD);
 
 	if (cscreg & PCIC_CSC_GPI) {
-		DPRINTF(("%s: %02x GPI\n", h->sc->dev.dv_xname, h->sock));
+		DPRINTF(("%s: %02x GPI\n", h->ph_parent->dv_xname, h->sock));
 	}
 	if (cscreg & PCIC_CSC_CD) {
 		int statreg;
 
 		statreg = pcic_read(h, PCIC_IF_STATUS);
 
-		DPRINTF(("%s: %02x CD %x\n", h->sc->dev.dv_xname, h->sock,
+		DPRINTF(("%s: %02x CD %x\n", h->ph_parent->dv_xname, h->sock,
 		    statreg));
-
-		/*
-		 * XXX This should probably schedule something to happen
-		 * after the interrupt handler completes
-		 */
 
 		if ((statreg & PCIC_IF_STATUS_CARDDETECT_MASK) ==
 		    PCIC_IF_STATUS_CARDDETECT_PRESENT) {
-			if (!(h->flags & PCIC_FLAG_CARDP))
-				pcic_attach_card(h);
+			if (h->laststate != PCIC_LASTSTATE_PRESENT) {
+				DPRINTF(("%s: enqueing INSERTION event\n",
+					 h->ph_parent->dv_xname));
+				pcic_queue_event(h, PCIC_EVENT_INSERTION);
+			}
+			h->laststate = PCIC_LASTSTATE_PRESENT;
 		} else {
-			if (h->flags & PCIC_FLAG_CARDP)
-				pcic_detach_card(h);
+			if (h->laststate == PCIC_LASTSTATE_PRESENT) {
+				/* Deactivate the card now. */
+				DPRINTF(("%s: deactivating card\n",
+					 h->ph_parent->dv_xname));
+				pcic_deactivate_card(h);
+
+				DPRINTF(("%s: enqueing REMOVAL event\n",
+					 h->ph_parent->dv_xname));
+				pcic_queue_event(h, PCIC_EVENT_REMOVAL);
+			}
+			h->laststate =
+			    ((statreg & PCIC_IF_STATUS_CARDDETECT_MASK) == 0) ?
+			    PCIC_LASTSTATE_EMPTY : PCIC_LASTSTATE_HALF;
 		}
 	}
 	if (cscreg & PCIC_CSC_READY) {
-		DPRINTF(("%s: %02x READY\n", h->sc->dev.dv_xname, h->sock));
+		DPRINTF(("%s: %02x READY\n", h->ph_parent->dv_xname, h->sock));
 		/* shouldn't happen */
 	}
 	if (cscreg & PCIC_CSC_BATTWARN) {
-		DPRINTF(("%s: %02x BATTWARN\n", h->sc->dev.dv_xname, h->sock));
+		DPRINTF(("%s: %02x BATTWARN\n", h->ph_parent->dv_xname,
+		    h->sock));
 	}
 	if (cscreg & PCIC_CSC_BATTDEAD) {
-		DPRINTF(("%s: %02x BATTDEAD\n", h->sc->dev.dv_xname, h->sock));
+		DPRINTF(("%s: %02x BATTDEAD\n", h->ph_parent->dv_xname,
+		    h->sock));
 	}
 	return (cscreg ? 1 : 0);
+}
+
+void
+pcic_queue_event(h, event)
+	struct pcic_handle *h;
+	int event;
+{
+	struct pcic_event *pe;
+	int s;
+
+	pe = malloc(sizeof(*pe), M_TEMP, M_NOWAIT);
+	if (pe == NULL)
+		panic("pcic_queue_event: can't allocate event");
+
+	pe->pe_type = event;
+	s = splhigh();
+	SIMPLEQ_INSERT_TAIL(&h->events, pe, pe_q);
+	splx(s);
+	wakeup(&h->events);
 }
 
 void
 pcic_attach_card(h)
 	struct pcic_handle *h;
 {
-	if (h->flags & PCIC_FLAG_CARDP)
-		panic("pcic_attach_card: already attached");
+	if (!(h->flags & PCIC_FLAG_CARDP)) {
+		/* call the MI attach function */
+		pcmcia_card_attach(h->pcmcia);
 
-	/* call the MI attach function */
-
-	pcmcia_card_attach(h->pcmcia);
-
-	h->flags |= PCIC_FLAG_CARDP;
+		h->flags |= PCIC_FLAG_CARDP;
+	} else {
+		DPRINTF(("pcic_attach_card: already attached"));
+	}
 }
 
 void
-pcic_detach_card(h)
+pcic_detach_card(h, flags)
+	struct pcic_handle *h;
+	int flags;		/* DETACH_* */
+{
+	if (h->flags & PCIC_FLAG_CARDP) {
+		h->flags &= ~PCIC_FLAG_CARDP;
+
+		/* call the MI detach function */
+		pcmcia_card_detach(h->pcmcia, flags);
+	} else {
+		DPRINTF(("pcic_detach_card: already detached"));
+	}
+}
+
+
+void
+pcic_deactivate_card(h)
 	struct pcic_handle *h;
 {
-	if (!(h->flags & PCIC_FLAG_CARDP))
-		panic("pcic_attach_card: already detached");
+	int intr;
 
-	h->flags &= ~PCIC_FLAG_CARDP;
-
-	/* call the MI attach function */
-
-	pcmcia_card_detach(h->pcmcia);
-
-	/* disable card detect resume and configuration reset */
+	/* call the MI deactivate function */
+	pcmcia_card_deactivate(h->pcmcia);
 
 	/* power down the socket */
-
 	pcic_write(h, PCIC_PWRCTL, 0);
 
-	/* reset the card */
-
-	pcic_write(h, PCIC_INTR, 0);
+	/* reset the socket */
+	intr = pcic_read(h, PCIC_INTR);
+	intr &= PCIC_INTR_ENABLE;
+	pcic_write(h, PCIC_INTR, intr);
 }
 
 int 
@@ -568,44 +883,39 @@ pcic_chip_mem_alloc(pch, size, pcmhp)
 	bus_addr_t addr;
 	bus_size_t sizepg;
 	int i, mask, mhandle;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
 
 	/* out of sc->memh, allocate as many pages as necessary */
 
 	/* convert size to PCIC pages */
 	sizepg = (size + (PCIC_MEM_ALIGN - 1)) / PCIC_MEM_ALIGN;
+	if (sizepg > PCIC_MAX_MEM_PAGES)
+		return (1);
 
 	mask = (1 << sizepg) - 1;
 
 	addr = 0;		/* XXX gcc -Wuninitialized */
 	mhandle = 0;		/* XXX gcc -Wuninitialized */
 
-	for (i = 0; i < (PCIC_MEM_PAGES + 1 - sizepg); i++) {
-		if ((h->sc->subregionmask & (mask << i)) == (mask << i)) {
-			if (bus_space_subregion(h->sc->memt, h->sc->memh,
-			    i * PCIC_MEM_PAGESIZE,
-			    sizepg * PCIC_MEM_PAGESIZE, &memh))
+	for (i = 0; i <= PCIC_MAX_MEM_PAGES - sizepg; i++) {
+		if ((sc->subregionmask & (mask << i)) == (mask << i)) {
+			if (bus_space_subregion(sc->memt, sc->memh, i * PCIC_MEM_PAGESIZE,
+					sizepg * PCIC_MEM_PAGESIZE, &memh))
 				return (1);
 			mhandle = mask << i;
-			addr = h->sc->membase + (i * PCIC_MEM_PAGESIZE);
-			h->sc->subregionmask &= ~(mhandle);
-			break;
+			addr = sc->membase + (i * PCIC_MEM_PAGESIZE);
+			sc->subregionmask &= ~(mhandle);
+			pcmhp->memt = sc->memt;
+			pcmhp->memh = memh;
+			pcmhp->addr = addr;
+			pcmhp->size = size;
+			pcmhp->mhandle = mhandle;
+			pcmhp->realsize = sizepg * PCIC_MEM_PAGESIZE;
+			return (0);
 		}
 	}
 
-	if (i == (PCIC_MEM_PAGES + 1 - size))
-		return (1);
-
-	DPRINTF(("pcic_chip_mem_alloc bus addr 0x%lx+0x%lx\n", (u_long) addr,
-		 (u_long) size));
-
-	pcmhp->memt = h->sc->memt;
-	pcmhp->memh = memh;
-	pcmhp->addr = addr;
-	pcmhp->size = size;
-	pcmhp->mhandle = mhandle;
-	pcmhp->realsize = sizepg * PCIC_MEM_PAGESIZE;
-
-	return (0);
+	return (1);
 }
 
 void 
@@ -614,8 +924,9 @@ pcic_chip_mem_free(pch, pcmhp)
 	struct pcmcia_mem_handle *pcmhp;
 {
 	struct pcic_handle *h = (struct pcic_handle *) pch;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
 
-	h->sc->subregionmask |= pcmhp->mhandle;
+	sc->subregionmask |= pcmhp->mhandle;
 }
 
 static struct mem_map_index_st {
@@ -674,23 +985,27 @@ static struct mem_map_index_st {
 	},
 };
 
+
 void 
 pcic_chip_do_mem_map(h, win)
 	struct pcic_handle *h;
 	int win;
 {
 	int reg;
+	int kind = h->mem[win].kind & ~PCMCIA_WIDTH_MEM_MASK;
+	int mem8 =
+	    (h->mem[win].kind & PCMCIA_WIDTH_MEM_MASK) == PCMCIA_WIDTH_MEM8
+	    || (kind == PCMCIA_MEM_ATTR);
+
+	DPRINTF(("mem8 %d\n", mem8));
+	/* mem8 = 1; */
 
 	pcic_write(h, mem_map_index[win].sysmem_start_lsb,
 	    (h->mem[win].addr >> PCIC_SYSMEM_ADDRX_SHIFT) & 0xff);
 	pcic_write(h, mem_map_index[win].sysmem_start_msb,
 	    ((h->mem[win].addr >> (PCIC_SYSMEM_ADDRX_SHIFT + 8)) &
-	    PCIC_SYSMEM_ADDRX_START_MSB_ADDR_MASK));
-
-#if 0
-	/* XXX do I want 16 bit all the time? */
-	PCIC_SYSMEM_ADDRX_START_MSB_DATASIZE_16BIT;
-#endif
+	    PCIC_SYSMEM_ADDRX_START_MSB_ADDR_MASK) |
+	    (mem8 ? 0 : PCIC_SYSMEM_ADDRX_START_MSB_DATASIZE_16BIT));
 
 	pcic_write(h, mem_map_index[win].sysmem_stop_lsb,
 	    ((h->mem[win].addr + h->mem[win].size) >>
@@ -706,12 +1021,14 @@ pcic_chip_do_mem_map(h, win)
 	pcic_write(h, mem_map_index[win].cardmem_msb,
 	    ((h->mem[win].offset >> (PCIC_CARDMEM_ADDRX_SHIFT + 8)) &
 	    PCIC_CARDMEM_ADDRX_MSB_ADDR_MASK) |
-	    ((h->mem[win].kind == PCMCIA_MEM_ATTR) ?
+	    ((kind == PCMCIA_MEM_ATTR) ?
 	    PCIC_CARDMEM_ADDRX_MSB_REGACTIVE_ATTR : 0));
 
 	reg = pcic_read(h, PCIC_ADDRWIN_ENABLE);
 	reg |= (mem_map_index[win].memenable | PCIC_ADDRWIN_ENABLE_MEMCS16);
 	pcic_write(h, PCIC_ADDRWIN_ENABLE, reg);
+
+	delay(100);
 
 #ifdef PCICDEBUG
 	{
@@ -744,6 +1061,7 @@ pcic_chip_mem_map(pch, kind, card_addr, size, pcmhp, offsetp, windowp)
 	bus_addr_t busaddr;
 	long card_offset;
 	int i, win;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
 
 	win = -1;
 	for (i = 0; i < (sizeof(mem_map_index) / sizeof(mem_map_index[0]));
@@ -762,7 +1080,7 @@ pcic_chip_mem_map(pch, kind, card_addr, size, pcmhp, offsetp, windowp)
 
 	/* XXX this is pretty gross */
 
-	if (h->sc->memt != pcmhp->memt)
+	if (sc->memt != pcmhp->memt)
 		panic("pcic_chip_mem_map memt is bogus");
 
 	busaddr = pcmhp->addr;
@@ -830,27 +1148,27 @@ pcic_chip_io_alloc(pch, start, size, align, pcihp)
 	bus_space_handle_t ioh;
 	bus_addr_t ioaddr;
 	int flags = 0;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
 
 	/*
 	 * Allocate some arbitrary I/O space.
 	 */
 
-	iot = h->sc->iot;
+	iot = sc->iot;
 
 	if (start) {
 		ioaddr = start;
 		if (bus_space_map(iot, start, size, 0, &ioh))
 			return (1);
-		DPRINTF(("pcic_chip_io_alloc map port %lx+%lx\n",
-		    (u_long) ioaddr, (u_long) size));
+		DPRINTF(
+				("pcic_chip_io_alloc map port %lx+%lx\n", (u_long) ioaddr, (u_long) size));
 	} else {
 		flags |= PCMCIA_IO_ALLOCATED;
-		if (bus_space_alloc(iot, h->sc->iobase,
-		    h->sc->iobase + h->sc->iosize, size, align, 0, 0,
-		    &ioaddr, &ioh))
+		if (bus_space_alloc(iot, sc->iobase, sc->iobase + sc->iosize, size,
+				align, 0, 0, &ioaddr, &ioh))
 			return (1);
-		DPRINTF(("pcic_chip_io_alloc alloc port %lx+%lx\n",
-		    (u_long) ioaddr, (u_long) size));
+		DPRINTF(
+				("pcic_chip_io_alloc alloc port %lx+%lx\n", (u_long) ioaddr, (u_long) size));
 	}
 
 	pcihp->iot = iot;
@@ -877,8 +1195,7 @@ pcic_chip_io_free(pch, pcihp)
 		bus_space_unmap(iot, ioh, size);
 }
 
-
-static struct io_map_index_st {
+static const struct io_map_index_st {
 	int	start_lsb;
 	int	start_msb;
 	int	stop_lsb;
@@ -886,7 +1203,7 @@ static struct io_map_index_st {
 	int	ioenable;
 	int	ioctlmask;
 	int	ioctlbits[3];		/* indexed by PCMCIA_WIDTH_* */
-}               io_map_index[] = {
+}       io_map_index[] = {
 	{
 		PCIC_IOADDR0_START_LSB,
 		PCIC_IOADDR0_START_MSB,
@@ -920,6 +1237,7 @@ static struct io_map_index_st {
 		},
 	},
 };
+
 
 void 
 pcic_chip_do_io_map(h, win)
@@ -1024,89 +1342,192 @@ pcic_chip_io_unmap(pch, window)
 	h->ioalloc &= ~(1 << window);
 }
 
+static void
+pcic_wait_ready(h)
+	struct pcic_handle *h;
+{
+	int i;
+
+	/* wait an initial 10ms for quick cards */
+	if (pcic_read(h, PCIC_IF_STATUS) & PCIC_IF_STATUS_READY)
+		return;
+	pcic_delay(h, 10, "pccwr0");
+	for (i = 0; i < 50; i++) {
+		if (pcic_read(h, PCIC_IF_STATUS) & PCIC_IF_STATUS_READY)
+			return;
+		/* wait .1s (100ms) each iteration now */
+		pcic_delay(h, 100, "pccwr1");
+#ifdef PCICDEBUG
+		if (pcic_debug) {
+			if ((i > 20) && (i % 100 == 99))
+				printf(".");
+		}
+#endif
+	}
+
+#ifdef DIAGNOSTIC
+	printf("pcic_wait_ready: ready never happened, status = %02x\n",
+	    pcic_read(h, PCIC_IF_STATUS));
+#endif
+}
+
+/*
+ * Perform long (msec order) delay.
+ */
+static void
+pcic_delay(h, timo, wmesg)
+	struct pcic_handle *h;
+	int timo;			/* in ms.  must not be zero */
+	const char *wmesg;
+{
+#ifdef DIAGNOSTIC
+	if (timo <= 0) {
+		printf("called with timeout %d\n", timo);
+		panic("pcic_delay");
+	}
+	if (curproc == NULL) {
+		printf("called in interrupt context\n");
+		panic("pcic_delay");
+	}
+	if (h->event_thread == NULL) {
+		printf("no event thread\n");
+		panic("pcic_delay");
+	}
+#endif
+	DPRINTF(
+			("pcic_delay: \"%s\" %p, sleep %d ms\n", wmesg, h->event_thread, timo));
+	tsleep(pcic_delay, PWAIT, wmesg, roundup(timo * hz, 1000) / 1000);
+}
+
 void
 pcic_chip_socket_enable(pch)
 	pcmcia_chipset_handle_t pch;
 {
 	struct pcic_handle *h = (struct pcic_handle *) pch;
-	int cardtype, reg, win;
+	int cardtype, win, intr, pwr;
+#if defined(DIAGNOSTIC) || defined(PCICDEBUG)
+	int reg;
+#endif
 
-	/* this bit is mostly stolen from pcic_attach_card */
+#ifdef DIAGNOSTIC
+	if (h->flags & PCIC_FLAG_ENABLED)
+		printf("pcic_chip_socket_enable: enabling twice\n");
+#endif
+
+	/* disable interrupts */
+	intr = pcic_read(h, PCIC_INTR);
+	intr &= ~PCIC_INTR_IRQ_MASK;
+	pcic_write(h, PCIC_INTR, intr);
 
 	/* power down the socket to reset it, clear the card reset pin */
+	pwr = 0;
+	pcic_write(h, PCIC_PWRCTL, pwr);
 
-	pcic_write(h, PCIC_PWRCTL, 0);
-
-	/* 
+	/*
 	 * wait 300ms until power fails (Tpf).  Then, wait 100ms since
 	 * we are changing Vcc (Toff).
 	 */
-	delay((300 + 100) * 1000);
+	pcic_delay(h, 300 + 100, "pccen0");
 
+	/*
+	 * power hack for RICOH RF5C[23]96
+	 */
+	switch( h->vendor ) {
+	case PCIC_VENDOR_RICOH_5C296:
+	case PCIC_VENDOR_RICOH_5C396:
+	{
+		int regtmp;
+		regtmp = pcic_read(h, PCIC_RICOH_REG_MCR2);
+#ifdef RICOH_POWER_HACK
+		regtmp |= PCIC_RICOH_MCR2_VCC_DIRECT;
+#else
+		regtmp &= ~(PCIC_RICOH_MCR2_VCC_DIRECT|PCIC_RICOH_MCR2_VCC_SEL_3V);
+#endif
+		pcic_write(h, PCIC_RICOH_REG_MCR2, regtmp);
+	}
+		break;
+	default:
+		break;
+	}
+
+#ifdef VADEM_POWER_HACK
+	bus_space_write_1(sc->iot, sc->ioh, PCIC_REG_INDEX, 0x0e);
+	bus_space_write_1(sc->iot, sc->ioh, PCIC_REG_INDEX, 0x37);
+	printf("prcr = %02x\n", pcic_read(h, 0x02));
+	printf("cvsr = %02x\n", pcic_read(h, 0x2f));
+	printf("DANGER WILL ROBINSON!  Changing voltage select!\n");
+	pcic_write(h, 0x2f, pcic_read(h, 0x2f) & ~0x03);
+	printf("cvsr = %02x\n", pcic_read(h, 0x2f));
+#endif
 	/* power up the socket */
-
-	pcic_write(h, PCIC_PWRCTL, PCIC_PWRCTL_DISABLE_RESETDRV
-			   | PCIC_PWRCTL_PWR_ENABLE);
+	pwr |= PCIC_PWRCTL_DISABLE_RESETDRV | PCIC_PWRCTL_PWR_ENABLE | PCIC_PWRCTL_VPP1_VCC;
+	pcic_write(h, PCIC_PWRCTL, pwr);
 
 	/*
 	 * wait 100ms until power raise (Tpr) and 20ms to become
 	 * stable (Tsu(Vcc)).
 	 *
 	 * some machines require some more time to be settled
-	 * (200ms is added here).
+	 * (300ms is added here).
 	 */
-	delay((100 + 20 + 200) * 1000);
+	pcic_delay(h, 100 + 20 + 300, "pccen1");
+	pwr |= PCIC_PWRCTL_OE;
+	pcic_write(h, PCIC_PWRCTL, pwr);
 
-	pcic_write(h, PCIC_PWRCTL, PCIC_PWRCTL_DISABLE_RESETDRV | PCIC_PWRCTL_OE
-			   | PCIC_PWRCTL_PWR_ENABLE);
-	pcic_write(h, PCIC_INTR, 0);
+	/* now make sure we have reset# active */
+	intr &= ~PCIC_INTR_RESET;
+	pcic_write(h, PCIC_INTR, intr);
 
+	pcic_write(h, PCIC_PWRCTL, PCIC_PWRCTL_DISABLE_RESETDRV |
+	    PCIC_PWRCTL_OE | PCIC_PWRCTL_PWR_ENABLE | PCIC_PWRCTL_VPP1_VCC);
 	/*
-	 * hold RESET at least 10us.
+	 * hold RESET at least 10us, this is a min allow for slop in
+	 * delay routine.
 	 */
-	delay(10);
+	delay(20);
 
 	/* clear the reset flag */
-
-	pcic_write(h, PCIC_INTR, PCIC_INTR_RESET);
+	intr |= PCIC_INTR_RESET;
+	pcic_write(h, PCIC_INTR, intr);
 
 	/* wait 20ms as per pc card standard (r2.01) section 4.3.6 */
+	pcic_delay(h, 20, "pccen2");
 
-	delay(20000);
-
+#if defined(DIAGNOSTIC) || defined(PCICDEBUG)
+	reg = pcic_read(h, PCIC_IF_STATUS);
+#endif
+#ifdef DIAGNOSTIC
+	if (!(reg & PCIC_IF_STATUS_POWERACTIVE)) {
+		printf("pcic_chip_socket_enable: status %x\n", reg);
+	}
+#endif
 	/* wait for the chip to finish initializing */
-
 	pcic_wait_ready(h);
 
 	/* zero out the address windows */
-
 	pcic_write(h, PCIC_ADDRWIN_ENABLE, 0);
 
-	/* set the card type */
-
+	/* set the card type and enable the interrupt */
 	cardtype = pcmcia_card_gettype(h->pcmcia);
+	intr |= ((cardtype == PCMCIA_IFTYPE_IO) ? PCIC_INTR_CARDTYPE_IO : PCIC_INTR_CARDTYPE_MEM);
+	pcic_write(h, PCIC_INTR, intr);
 
-	reg = pcic_read(h, PCIC_INTR);
-	reg &= ~PCIC_INTR_CARDTYPE_MASK;
-	reg |= ((cardtype == PCMCIA_IFTYPE_IO) ?
-		PCIC_INTR_CARDTYPE_IO :
-		PCIC_INTR_CARDTYPE_MEM);
-	reg |= h->ih_irq;
-	pcic_write(h, PCIC_INTR, reg);
-
-	DPRINTF(("%s: pcic_chip_socket_enable %02x cardtype %s %02x\n",
-	    h->sc->dev.dv_xname, h->sock,
-	    ((cardtype == PCMCIA_IFTYPE_IO) ? "io" : "mem"), reg));
+	DPRINTF(
+			("%s: pcic_chip_socket_enable %02x cardtype %s %02x\n", h->ph_parent->dv_xname, h->sock, ((cardtype == PCMCIA_IFTYPE_IO) ? "io" : "mem"), reg));
 
 	/* reinstall all the memory and io mappings */
-
 	for (win = 0; win < PCIC_MEM_WINS; win++)
 		if (h->memalloc & (1 << win))
 			pcic_chip_do_mem_map(h, win);
-
 	for (win = 0; win < PCIC_IO_WINS; win++)
 		if (h->ioalloc & (1 << win))
 			pcic_chip_do_io_map(h, win);
+
+	h->flags |= PCIC_FLAG_ENABLED;
+
+	/* finally enable the interrupt */
+	intr |= h->ih_irq;
+	pcic_write(h, PCIC_INTR, intr);
 }
 
 void
@@ -1114,10 +1535,45 @@ pcic_chip_socket_disable(pch)
 	pcmcia_chipset_handle_t pch;
 {
 	struct pcic_handle *h = (struct pcic_handle *) pch;
+	int intr;
 
 	DPRINTF(("pcic_chip_socket_disable\n"));
 
-	/* power down the socket */
+	/* disable interrupts */
+	intr = pcic_read(h, PCIC_INTR);
+	intr &= ~PCIC_INTR_IRQ_MASK;
+	pcic_write(h, PCIC_INTR, intr);
 
+	/* power down the socket */
 	pcic_write(h, PCIC_PWRCTL, 0);
+
+	/* zero out the address windows */
+	pcic_write(h, PCIC_ADDRWIN_ENABLE, 0);
+
+	h->flags &= ~PCIC_FLAG_ENABLED;
+}
+
+static u_int8_t
+st_pcic_read(h, idx)
+	struct pcic_handle *h;
+	int idx;
+{
+
+	if (idx != -1)
+		bus_space_write_1(h->ph_bus_t, h->ph_bus_h, PCIC_REG_INDEX,
+				h->sock + idx);
+	return (bus_space_read_1(h->ph_bus_t, h->ph_bus_h, PCIC_REG_DATA));
+}
+
+static void
+st_pcic_write(h, idx, data)
+	struct pcic_handle *h;
+	int idx;
+	u_int8_t data;
+{
+
+	if (idx != -1)
+		bus_space_write_1(h->ph_bus_t, h->ph_bus_h, PCIC_REG_INDEX,
+				h->sock + idx);
+	bus_space_write_1(h->ph_bus_t, h->ph_bus_h, PCIC_REG_DATA, data);
 }

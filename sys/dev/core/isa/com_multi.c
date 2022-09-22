@@ -98,12 +98,13 @@
 #include <dev/core/ic/comreg.h>
 #include <dev/core/ic/comvar.h>
 
-int com_multi_probe (struct device *, struct cfdata *, void *);
-void com_multi_attach (struct device *, struct device *, void *);
+int com_multi_probe(struct device *, struct cfdata *, void *);
+void com_multi_attach(struct device *, struct device *, void *);
 
+extern struct cfdriver com_cd;
 CFOPS_DECL(com_multi, com_multi_probe, com_multi_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, com_multi, DV_DULL);
-CFATTACH_DECL(com_multi, &com_multi_cd, &com_multi_cops, sizeof(struct com_softc));
+//CFDRIVER_DECL(NULL, com_multi, DV_DULL);
+CFATTACH_DECL(com_multi, &com_cd, &com_multi_cops, sizeof(struct com_softc));
 
 int
 com_multi_probe(parent, match, aux)

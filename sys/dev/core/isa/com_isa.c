@@ -106,9 +106,10 @@ int com_isa_probe(struct device *, struct cfdata *, void *);
 void com_isa_attach(struct device *, struct device *, void *);
 void com_isa_cleanup(void *);
 
+extern struct cfdriver com_cd;
 CFOPS_DECL(com_isa, com_isa_probe, com_isa_attach, NULL, NULL);
-CFDRIVER_DECL(NULL, com_isa, DV_DULL);
-CFATTACH_DECL(com_isa, &com_isa_cd, &com_isa_cops, sizeof(struct com_isa_softc));
+//CFDRIVER_DECL(NULL, com_isa, DV_DULL);
+CFATTACH_DECL(com_isa, &com_cd, &com_isa_cops, sizeof(struct com_isa_softc));
 
 int
 com_isa_probe(parent, match, aux)

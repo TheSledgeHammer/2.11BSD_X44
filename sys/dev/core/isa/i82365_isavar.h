@@ -41,14 +41,14 @@ extern int pcic_isa_intr_alloc_mask;
  * Establish/disestablish interrupts for PCMCIA functions.
  */
 
-void	*pcic_isa_chip_intr_establish (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
-void	pcic_isa_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
+void	*pcic_isa_chip_intr_establish(pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
+void	pcic_isa_chip_intr_disestablish(pcmcia_chipset_handle_t, void *);
 
 /*
  * Figure out how wide the ISA bus is...
  */
 
-void 	pcic_isa_bus_width_probe (struct pcic_softc *, bus_space_tag_t, bus_space_handle_t, bus_addr_t, u_int32_t);
-void	pcic_isa_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
-void	pcic_isa_config_interrupts (struct device *);
-void	*pcic_isa_chip_intr_establish (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
+void 	pcic_isa_bus_width_probe(struct pcic_softc *, bus_space_tag_t, bus_space_handle_t, bus_addr_t, u_int32_t);
+void	pcic_isa_chip_intr_disestablish(pcmcia_chipset_handle_t, void *);
+void	pcic_isa_config_interrupts(struct device *);
+void	*pcic_isa_chip_intr_establish(pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);

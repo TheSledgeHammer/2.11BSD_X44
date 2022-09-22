@@ -44,37 +44,45 @@ typedef struct pcmcia_chip_functions *pcmcia_chipset_tag_t;
 typedef void *pcmcia_chipset_handle_t;
 typedef int pcmcia_mem_handle_t;
 
-#define	PCMCIA_MEM_ATTR		1
-#define	PCMCIA_MEM_COMMON	2
+#define	PCMCIA_MEM_ATTR			1
+#define	PCMCIA_MEM_COMMON		2
 
-#define	PCMCIA_WIDTH_AUTO	0
-#define	PCMCIA_WIDTH_IO8	1
-#define	PCMCIA_WIDTH_IO16	2
+#define	PCMCIA_WIDTH_MEM8		8
+#define	PCMCIA_WIDTH_MEM16		16
+
+#define	PCMCIA_WIDTH_MEM_MASK	24
+
+#define	PCMCIA_WIDTH_AUTO		0
+#define	PCMCIA_WIDTH_IO8		1
+#define	PCMCIA_WIDTH_IO16		2
 
 struct pcmcia_chip_functions {
 	/* memory space allocation */
-	int		(*mem_alloc) (pcmcia_chipset_handle_t, bus_size_t, struct pcmcia_mem_handle *);
-	void	(*mem_free) (pcmcia_chipset_handle_t, struct pcmcia_mem_handle *);
+	int		(*mem_alloc)(pcmcia_chipset_handle_t, bus_size_t, struct pcmcia_mem_handle *);
+	void	(*mem_free)(pcmcia_chipset_handle_t, struct pcmcia_mem_handle *);
 
 	/* memory space window mapping */
-	int		(*mem_map) (pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_mem_handle *, bus_addr_t *, int *);
-	void	(*mem_unmap) (pcmcia_chipset_handle_t, int);
+	int		(*mem_map)(pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_mem_handle *, bus_addr_t *, int *);
+	void	(*mem_unmap)(pcmcia_chipset_handle_t, int);
 
 	/* I/O space allocation */
-	int		(*io_alloc) (pcmcia_chipset_handle_t, bus_addr_t, bus_size_t, bus_size_t, struct pcmcia_io_handle *);
-	void	(*io_free) (pcmcia_chipset_handle_t, struct pcmcia_io_handle *);
+	int		(*io_alloc)(pcmcia_chipset_handle_t, bus_addr_t, bus_size_t, bus_size_t, struct pcmcia_io_handle *);
+	void	(*io_free)(pcmcia_chipset_handle_t, struct pcmcia_io_handle *);
 
 	/* I/O space window mapping */
-	int		(*io_map) (pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
-	void	(*io_unmap) (pcmcia_chipset_handle_t, int);
+	int		(*io_map)(pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
+	void	(*io_unmap)(pcmcia_chipset_handle_t, int);
 
 	/* interrupt glue */
-	void	*(*intr_establish) (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*)(void *), void *);
-	void	(*intr_disestablish) (pcmcia_chipset_handle_t, void *);
+	void	*(*intr_establish)(pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*)(void *), void *);
+	void	(*intr_disestablish)(pcmcia_chipset_handle_t, void *);
 
 	/* card enable/disable */
-	void	(*socket_enable) (pcmcia_chipset_handle_t);
-	void	(*socket_disable) (pcmcia_chipset_handle_t);
+	void	(*socket_enable)(pcmcia_chipset_handle_t);
+	void	(*socket_disable)(pcmcia_chipset_handle_t);
+
+	/* card detection */
+	int 	(*card_detect)(pcmcia_chipset_handle_t);
 };
 
 /* Memory space functions. */
@@ -100,7 +108,7 @@ struct pcmcia_chip_functions {
 	((*(tag)->io_free)((handle), (pcihp)))
 
 #define pcmcia_chip_io_map(tag, handle, width, card_addr, size, pcihp,	\
-	    windowp) \
+	    windowp) 														\
 	((*(tag)->io_map)((handle), (width), (card_addr), (size), (pcihp), 	\
 	    (windowp)))
 
@@ -121,6 +129,7 @@ struct pcmcia_chip_functions {
 	((*(tag)->socket_disable)((handle)))
 
 struct pcmciabus_attach_args {
+	char 					*paa_busname;	/* Bus name */
 	pcmcia_chipset_tag_t 	pct;
 	pcmcia_chipset_handle_t pch;
 	bus_addr_t 				iobase;		/* start i/o space allocation here */
@@ -129,8 +138,9 @@ struct pcmciabus_attach_args {
 
 /* interfaces for the chipset to call pcmcia */
 
-int		pcmcia_card_attach (struct device *);
-void	pcmcia_card_detach (struct device *);
-int		pcmcia_card_gettype (struct device *);
+int		pcmcia_card_attach(struct device *);
+void	pcmcia_card_detach(struct device *);
+void	pcmcia_card_deactivate(struct device *);
+int		pcmcia_card_gettype(struct device *);
 
 #endif /* _PCMCIA_PCMCIACHIP_H_ */

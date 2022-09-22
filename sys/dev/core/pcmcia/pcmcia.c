@@ -61,17 +61,13 @@ int	pcmcia_verbose = 1;
 int	pcmcia_verbose = 0;
 #endif
 
-#ifdef	__BROKEN_INDIRECT_CONFIG
-int		pcmcia_match (struct device *, void *, void *));
-int		pcmcia_submatch (struct device *, void *, void *));
-#else
-int		pcmcia_match (struct device *, struct cfdata *, void *);
-int		pcmcia_submatch (struct device *, struct cfdata *, void *);
-#endif
-void	pcmcia_attach (struct device *, struct device *, void *);
-int		pcmcia_print (void *, const char *);
+int		pcmcia_match(struct device *, struct cfdata *, void *);
+int		pcmcia_submatch(struct device *, struct cfdata *, void *);
 
-int		pcmcia_card_intr (void *);
+void	pcmcia_attach(struct device *, struct device *, void *);
+int		pcmcia_print(void *, const char *);
+
+int		pcmcia_card_intr(void *);
 
 CFOPS_DECL(pcmcia, pcmcia_match, pcmcia_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pcmcia, DV_DULL);

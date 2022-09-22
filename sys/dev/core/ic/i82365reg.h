@@ -1,4 +1,4 @@
-/*	$NetBSD: i82365reg.h,v 1.2 1997/10/16 23:18:18 thorpej Exp $	*/
+/*	$NetBSD: i82365reg.h,v 1.8 2003/09/12 22:09:04 mycroft Exp $	*/
 
 /*
  * Copyright (c) 1997 Marc Horowitz.  All rights reserved.
@@ -62,6 +62,13 @@
 #define	PCIC_IDENT_REV_MASK					0x0F
 #define	PCIC_IDENT_REV_I82365SLR0			0x02
 #define	PCIC_IDENT_REV_I82365SLR1			0x03
+
+#define PCIC_IDENT_ID_INTEL0 				0x82
+#define PCIC_IDENT_ID_INTEL1 				0x83
+#define PCIC_IDENT_ID_INTEL2 				0x84
+#define PCIC_IDENT_ID_IBM1 					0x88
+#define PCIC_IDENT_ID_IBM2 					0x89
+#define PCIC_IDENT_ID_IBM3 					0x8A
 
 #define	PCIC_IF_STATUS						0x01	/* RO */
 #define	PCIC_IF_STATUS_GPI					0x80 	/* General Purpose Input */

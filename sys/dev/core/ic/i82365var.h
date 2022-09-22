@@ -30,10 +30,24 @@
  */
 
 #include <sys/device.h>
+#include <sys/callout.h>
+#include <sys/lock.h>
 
-#include <dev/core/ic/i82365reg.h>
 #include <dev/core/pcmcia/pcmciachip.h>
 #include <dev/core/pcmcia/pcmciareg.h>
+
+#include <dev/core/ic/i82365reg.h>
+
+struct proc;
+
+struct pcic_event {
+	SIMPLEQ_ENTRY(pcic_event) 	pe_q;
+	int 						pe_type;
+};
+
+/* pe_type */
+#define	PCIC_EVENT_INSERTION	0
+#define	PCIC_EVENT_REMOVAL		1
 
 struct pcic_handle {
 	struct device 		*ph_parent;
@@ -41,7 +55,7 @@ struct pcic_handle {
 	bus_space_handle_t 	ph_bus_h;
 	uint8_t 			(*ph_read)(struct pcic_handle *, int);
 	void 				(*ph_write)(struct pcic_handle *, int, uint8_t);
-	struct pcic_softc 	*sc;
+
 	int					vendor;		/* vendor of chip */
 	int					chip;		/* chip index 0 or 1 */
 	int					sock;
@@ -62,6 +76,9 @@ struct pcic_handle {
 	} io[PCIC_IO_WINS];
 	int					ih_irq;
 	struct device 		*pcmcia;
+	int 				shutdown;
+	struct proc 		*event_thread;
+	SIMPLEQ_HEAD(, pcic_event) events;
 };
 
 #define	PCIC_FLAG_SOCKETP		0x0001
@@ -106,13 +123,16 @@ struct pcic_softc {
 	bus_space_tag_t 	iot;
 	bus_space_handle_t 	ioh;
 
-	/* XXX isa_chipset_tag_t, pci_chipset_tag_t, etc. */
-	caddr_t				intr_est;
+	struct callout 		poll_ch;
+	int 				poll_established;
 
 	pcmcia_chipset_tag_t pct;
 
+	struct lock 		sc_pcic_lock;
+
 	/* this needs to be large enough to hold PCIC_MEM_PAGES bits */
 	int					subregionmask;
+#define PCIC_MAX_MEM_PAGES	(8 * sizeof(int))
 
 	/* used by memory window mapping functions */
 	bus_addr_t 			membase;
@@ -131,15 +151,11 @@ struct pcic_softc {
 	void				*ih;
 
 	struct pcic_handle 	handle[PCIC_NSLOTS];
+
 	/* for use by underlying chip code for discovering irqs */
 	int intr_detect, intr_false;
 	int intr_mask[PCIC_NSLOTS / 2];	/* probed intterupts if possible */
 };
-
-#define PCICCF_CONTROLLER				0
-#define PCICCF_CONTROLLER_DEFAULT 		-1
-#define PCICCF_SOCKET					1
-#define PCICCF_SOCKET_DEFAULT 			-1
 
 int		pcic_ident_ok(int);
 int		pcic_vendor(struct pcic_handle *);
@@ -147,6 +163,7 @@ char	*pcic_vendor_to_string(int);
 
 void	pcic_attach(struct pcic_softc *);
 void	pcic_attach_sockets(struct pcic_softc *);
+void	pcic_attach_sockets_finish(struct pcic_softc *);
 int		pcic_intr(void *arg);
 
 static inline int pcic_read(struct pcic_handle *, int);
@@ -166,6 +183,7 @@ void	pcic_chip_io_unmap(pcmcia_chipset_handle_t, int);
 void	pcic_chip_socket_enable(pcmcia_chipset_handle_t);
 void	pcic_chip_socket_disable(pcmcia_chipset_handle_t);
 
+#if 0
 static __inline int pcic_read(struct pcic_handle *, int);
 static __inline int
 pcic_read(h, idx)
@@ -206,3 +224,11 @@ pcic_wait_ready(h)
 	printf("pcic_wait_ready ready never happened\n");
 #endif
 }
+#else
+#define pcic_read(h, idx) 			\
+	(*(h)->ph_read)((h), (idx))
+
+#define pcic_write(h, idx, data) 	\
+	(*(h)->ph_write)((h), (idx), (data))
+
+#endif

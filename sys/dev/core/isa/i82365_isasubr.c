@@ -233,7 +233,7 @@ pcic_isa_probe_interrupts(sc, h)
 		(void) pcic_read(h, PCIC_CSC);
 
 		if ((sc->ih = isa_intr_establish(ic, irq, IST_EDGE, IPL_TTY,
-		    pcic_isa_count_intr, h)) == NULL)
+				pcic_isa_count_intr, h)) == NULL)
 			panic("cant get interrupt");
 
 		/* interrupt 40 times */
@@ -360,7 +360,7 @@ pcic_isa_config_interrupts(self)
 		printf("%s: using irq %d for socket events\n", sc->dev.dv_xname,
 		    sc->irq);
 
-	pcic_attach_sockets(sc);
+	pcic_attach_sockets_finish(sc);
 
 	splx(s);
 }
@@ -408,11 +408,11 @@ pcic_isa_bus_width_probe(sc, iot, ioh, base, length)
 			 */
 
 			bus_space_write_1(iot, ioh, PCIC_REG_INDEX,
-			    sc->handle[i].sock + PCIC_IDENT);
+					sc->handle[i].sock + PCIC_IDENT);
 			tmp1 = bus_space_read_1(iot, ioh, PCIC_REG_DATA);
 
 			bus_space_write_1(iot, ioh_high, PCIC_REG_INDEX,
-			    sc->handle[i].sock + PCIC_IDENT);
+					sc->handle[i].sock + PCIC_IDENT);
 			tmp2 = bus_space_read_1(iot, ioh_high, PCIC_REG_DATA);
 
 			if (tmp1 == tmp2)
@@ -460,7 +460,7 @@ pcic_isa_chip_intr_establish(pch, pf, ipl, fct, arg)
 	pcmcia_chipset_handle_t pch;
 	struct pcmcia_function *pf;
 	int ipl;
-	int (*fct) (void *);
+	int (*fct)(void *);
 	void *arg;
 {
 	struct pcic_handle *h = (struct pcic_handle *) pch;

@@ -1,4 +1,4 @@
-/*	$NetBSD: pcic_pci_machdep.c,v 1.2 2001/11/15 07:03:35 lukem Exp $	*/
+/*	$NetBSD: i82365_pcivar.h,v 1.2 2000/02/22 16:04:47 thorpej Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -33,63 +33,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: pcic_pci_machdep.c,v 1.2 2001/11/15 07:03:35 lukem Exp $");
+struct pcic_pci_softc {
+	struct pcic_softc sc_pcic;		/* real pcic softc */
+	void 			  *intr_est;	/* XXX */
+};
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/device.h>
-#include <sys/null.h>
+/*
+ * Establish/disestablish interrupts for PCMCIA functions.
+ */
 
-#include <dev/core/pcmcia/pcmciachip.h>
-#include <dev/core/ic/i82365reg.h>
-#include <dev/core/ic/i82365var.h>
+void *pcic_pci_machdep_intr_est(pci_chipset_tag_t);
 
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
-#include <dev/core/isa/i82365_isavar.h>
+void *pcic_pci_machdep_pcic_intr_establish(struct pcic_softc *, int (*)(void *));
 
-#include <dev/core/pci/pcireg.h>
-#include <dev/core/pci/pcivar.h>
-#include <dev/core/pci/i82365_pcivar.h>
-
-#include <machine/intr.h>
-
-extern int pcic_isa_intr_alloc_mask;
-
-void *
-pcic_pci_machdep_intr_est(pc)
-	pci_chipset_tag_t pc;
-{
-	return NULL;
-}
-
-void *
-pcic_pci_machdep_pcic_intr_establish(sc, fct)
-	struct pcic_softc *sc;
-	int (*fct) (void *);
-{
-	if (isa_intr_alloc(NULL, PCIC_CSC_INTR_IRQ_VALIDMASK & pcic_isa_intr_alloc_mask, IST_EDGE, &(sc->irq)))
-		return (NULL);
-	printf("%s: interrupting at irq %d\n", sc->dev.dv_xname, sc->irq);
-	return (isa_intr_establish(NULL, sc->irq, IST_EDGE, IPL_TTY, fct, sc));
-}
-
-void *
-pcic_pci_machdep_chip_intr_establish(pch, pf, ipl, fct, arg)
-	pcmcia_chipset_handle_t pch;
-	struct pcmcia_function *pf;
-	int ipl;
-	int (*fct) (void *);
-	void *arg;
-{
-	return (pcic_isa_chip_intr_establish(pch, pf, ipl, fct, arg));
-}
-
-void
-pcic_pci_machdep_chip_intr_disestablish(pch, ih)
-	pcmcia_chipset_handle_t pch;
-	void *ih;
-{
-	pcic_isa_chip_intr_disestablish(pch, ih);
-}
+void *pcic_pci_machdep_chip_intr_establish(pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*)(void *), void *);
+void pcic_pci_machdep_chip_intr_disestablish(pcmcia_chipset_handle_t, void *);
