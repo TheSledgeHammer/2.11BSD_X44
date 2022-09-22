@@ -141,32 +141,32 @@ struct pcic_softc {
 #define PCICCF_SOCKET					1
 #define PCICCF_SOCKET_DEFAULT 			-1
 
-int		pcic_ident_ok (int);
-int		pcic_vendor (struct pcic_handle *);
-char	*pcic_vendor_to_string (int);
+int		pcic_ident_ok(int);
+int		pcic_vendor(struct pcic_handle *);
+char	*pcic_vendor_to_string(int);
 
-void	pcic_attach (struct pcic_softc *);
-void	pcic_attach_sockets (struct pcic_softc *);
-int		pcic_intr (void *arg);
+void	pcic_attach(struct pcic_softc *);
+void	pcic_attach_sockets(struct pcic_softc *);
+int		pcic_intr(void *arg);
 
-static inline int pcic_read (struct pcic_handle *, int);
-static inline void pcic_write (struct pcic_handle *, int, int);
-static inline void pcic_wait_ready (struct pcic_handle *);
+static inline int pcic_read(struct pcic_handle *, int);
+static inline void pcic_write(struct pcic_handle *, int, int);
+static inline void pcic_wait_ready(struct pcic_handle *);
 
-int		pcic_chip_mem_alloc (pcmcia_chipset_handle_t, bus_size_t, struct pcmcia_mem_handle *);
-void	pcic_chip_mem_free (pcmcia_chipset_handle_t, struct pcmcia_mem_handle *);
-int		pcic_chip_mem_map (pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_mem_handle *, bus_addr_t *, int *);
-void	pcic_chip_mem_unmap (pcmcia_chipset_handle_t, int);
+int		pcic_chip_mem_alloc(pcmcia_chipset_handle_t, bus_size_t, struct pcmcia_mem_handle *);
+void	pcic_chip_mem_free(pcmcia_chipset_handle_t, struct pcmcia_mem_handle *);
+int		pcic_chip_mem_map(pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_mem_handle *, bus_addr_t *, int *);
+void	pcic_chip_mem_unmap(pcmcia_chipset_handle_t, int);
 
-int		pcic_chip_io_alloc (pcmcia_chipset_handle_t, bus_addr_t, bus_size_t, bus_size_t, struct pcmcia_io_handle *);
-void	pcic_chip_io_free (pcmcia_chipset_handle_t, struct pcmcia_io_handle *);
-int		pcic_chip_io_map (pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
-void	pcic_chip_io_unmap (pcmcia_chipset_handle_t, int);
+int		pcic_chip_io_alloc(pcmcia_chipset_handle_t, bus_addr_t, bus_size_t, bus_size_t, struct pcmcia_io_handle *);
+void	pcic_chip_io_free(pcmcia_chipset_handle_t, struct pcmcia_io_handle *);
+int		pcic_chip_io_map(pcmcia_chipset_handle_t, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
+void	pcic_chip_io_unmap(pcmcia_chipset_handle_t, int);
 
-void	pcic_chip_socket_enable (pcmcia_chipset_handle_t);
-void	pcic_chip_socket_disable (pcmcia_chipset_handle_t);
+void	pcic_chip_socket_enable(pcmcia_chipset_handle_t);
+void	pcic_chip_socket_disable(pcmcia_chipset_handle_t);
 
-static __inline int pcic_read (struct pcic_handle *, int);
+static __inline int pcic_read(struct pcic_handle *, int);
 static __inline int
 pcic_read(h, idx)
 	struct pcic_handle *h;
@@ -189,7 +189,7 @@ pcic_write(h, idx, data)
 	bus_space_write_1(h->sc->iot, h->sc->ioh, PCIC_REG_DATA, (data));
 }
 
-static __inline void pcic_wait_ready (struct pcic_handle *);
+static __inline void pcic_wait_ready(struct pcic_handle *);
 static __inline void
 pcic_wait_ready(h)
 	struct pcic_handle *h;

@@ -72,22 +72,22 @@ int	pcic_debug = 0;
 
 #define	PCIC_MEM_ALIGN	PCIC_MEM_PAGESIZE
 
-void	pcic_attach_socket (struct pcic_handle *);
-void	pcic_init_socket (struct pcic_handle *);
+void	pcic_attach_socket(struct pcic_handle *);
+void	pcic_init_socket(struct pcic_handle *);
 
 #ifdef __BROKEN_INDIRECT_CONFIG
-int		pcic_submatch (struct device *, void *, void *);
+int		pcic_submatch(struct device *, void *, void *);
 #else
-int		pcic_submatch (struct device *, struct cfdata *, void *);
+int		pcic_submatch(struct device *, struct cfdata *, void *);
 #endif
-int		pcic_print  (void *arg, const char *pnp);
-int		pcic_intr_socket (struct pcic_handle *);
+int		pcic_print(void *arg, const char *pnp);
+int		pcic_intr_socket(struct pcic_handle *);
 
-void	pcic_attach_card (struct pcic_handle *);
-void	pcic_detach_card (struct pcic_handle *);
+void	pcic_attach_card(struct pcic_handle *);
+void	pcic_detach_card(struct pcic_handle *);
 
-void	pcic_chip_do_mem_map (struct pcic_handle *, int);
-void	pcic_chip_do_io_map (struct pcic_handle *, int);
+void	pcic_chip_do_mem_map(struct pcic_handle *, int);
+void	pcic_chip_do_io_map(struct pcic_handle *, int);
 
 int
 pcic_ident_ok(ident)
@@ -292,9 +292,11 @@ pcic_attach_sockets(sc)
 {
 	int i;
 
-	for (i = 0; i < PCIC_NSLOTS; i++)
-		if (sc->handle[i].flags & PCIC_FLAG_SOCKETP)
+	for (i = 0; i < PCIC_NSLOTS; i++) {
+		if (sc->handle[i].flags & PCIC_FLAG_SOCKETP) {
 			pcic_attach_socket(&sc->handle[i]);
+		}
+	}
 }
 
 void
@@ -302,6 +304,7 @@ pcic_attach_socket(h)
 	struct pcic_handle *h;
 {
 	struct pcmciabus_attach_args paa;
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
 
 	/* initialize the rest of the handle */
 
@@ -310,19 +313,19 @@ pcic_attach_socket(h)
 	h->ih_irq = 0;
 
 	/* now, config one pcmcia device per socket */
-
 	paa.pct = (pcmcia_chipset_tag_t) h->sc->pct;
 	paa.pch = (pcmcia_chipset_handle_t) h;
 	paa.iobase = h->sc->iobase;
 	paa.iosize = h->sc->iosize;
 
-	h->pcmcia = config_found_sm(&h->sc->dev, &paa, pcic_print,
-	    pcic_submatch);
+	h->pcmcia = config_found_sm(&h->sc->dev, &paa, pcic_print, pcic_submatch);
 
 	/* if there's actually a pcmcia device attached, initialize the slot */
 
-	if (h->pcmcia)
+	if (h->pcmcia == NULL) {
+		h->flags &= ~PCIC_FLAG_SOCKETP;
 		pcic_init_socket(h);
+	}
 }
 
 void
@@ -340,12 +343,12 @@ pcic_init_socket(h)
 
 	/* unsleep the cirrus controller */
 
-	if ((h->vendor == PCIC_VENDOR_CIRRUS_PD6710) ||
-	    (h->vendor == PCIC_VENDOR_CIRRUS_PD672X)) {
+	if ((h->vendor == PCIC_VENDOR_CIRRUS_PD6710)
+			|| (h->vendor == PCIC_VENDOR_CIRRUS_PD672X)) {
 		reg = pcic_read(h, PCIC_CIRRUS_MISC_CTL_2);
 		if (reg & PCIC_CIRRUS_MISC_CTL_2_SUSPEND) {
-			DPRINTF(("%s: socket %02x was suspended\n",
-			    h->sc->dev.dv_xname, h->sock));
+			DPRINTF(
+					("%s: socket %02x was suspended\n", h->sc->dev.dv_xname, h->sock));
 			reg &= ~PCIC_CIRRUS_MISC_CTL_2_SUSPEND;
 			pcic_write(h, PCIC_CIRRUS_MISC_CTL_2, reg);
 		}
@@ -355,7 +358,7 @@ pcic_init_socket(h)
 	reg = pcic_read(h, PCIC_IF_STATUS);
 
 	if ((reg & PCIC_IF_STATUS_CARDDETECT_MASK) ==
-	    PCIC_IF_STATUS_CARDDETECT_PRESENT)
+	PCIC_IF_STATUS_CARDDETECT_PRESENT)
 		pcic_attach_card(h);
 }
 

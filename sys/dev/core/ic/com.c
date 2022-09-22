@@ -938,7 +938,8 @@ comopen(dev_t dev, int flag, int mode, struct proc *p)
 	
 	splx(s);
 
-	error = ttyopen(tp, COMDIALOUT(dev), ISSET(flag, O_NONBLOCK));
+	//error = ttyopen(COMDIALOUT(dev), tp, ISSET(flag, O_NONBLOCK));
+	error = ttyopen(COMDIALOUT(dev), tp);
 	if (error)
 		goto bad;
 	line = linesw_lookup(tp->t_line);

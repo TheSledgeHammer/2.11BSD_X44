@@ -107,7 +107,6 @@ struct consdev {
 #define	CN_FLAG_NOAVAIL	0x00000002	/* Temporarily not available. */
 
 #ifdef _KERNEL
-extern struct consdev constab[];
 extern struct consdev *cn_tab;
 
 /* console-specific types */

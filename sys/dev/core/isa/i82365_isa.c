@@ -108,12 +108,12 @@ int	pcicisa_debug = 0 /* XXX */ ;
 #define	DPRINTF(arg)
 #endif
 
-int		pcic_isa_probe (struct device *, void *, void *);
-void	pcic_isa_attach (struct device *, struct device *, void *);
+int		pcic_isa_probe(struct device *, struct cfdata *, void *);
+void	pcic_isa_attach(struct device *, struct device *, void *);
 
-void	*pcic_isa_chip_intr_establish (pcmcia_chipset_handle_t,
+void	*pcic_isa_chip_intr_establish(pcmcia_chipset_handle_t,
 	    struct pcmcia_function *, int, int (*) (void *), void *);
-void	pcic_isa_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
+void	pcic_isa_chip_intr_disestablish(pcmcia_chipset_handle_t, void *);
 
 CFOPS_DECL(pcic_isa, pcic_isa_probe, pcic_isa_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, pcic_isa, DV_DULL);

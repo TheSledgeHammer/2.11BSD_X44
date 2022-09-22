@@ -53,9 +53,9 @@
 #define	PCMCIA_VENDOR_PANASONIC	0x0032	/* Matsushita Electric Industrial Co. */
 #define	PCMCIA_VENDOR_SANDISK	0x0045	/* Sandisk Corporation */
 #define	PCMCIA_VENDOR_NEWMEDIA	0x0057	/* New Media Corporation */
-#define	PCMCIA_VENDOR_INTEL		0x0089	/* Intel */
-#define	PCMCIA_VENDOR_IBM		0x00a4	/* IBM Corporation */
-#define	PCMCIA_VENDOR_SHARP		0x00b0	/* Sharp Corporation */
+#define	PCMCIA_VENDOR_INTEL	0x0089	/* Intel */
+#define	PCMCIA_VENDOR_IBM	0x00a4	/* IBM Corporation */
+#define	PCMCIA_VENDOR_SHARP	0x00b0	/* Sharp Corporation */
 #define	PCMCIA_VENDOR_3COM	0x0101	/* 3Com Corporation */
 #define	PCMCIA_VENDOR_MEGAHERTZ	0x0102	/* Megahertz Corporation */
 #define	PCMCIA_VENDOR_SOCKET	0x0104	/* Socket Communications */

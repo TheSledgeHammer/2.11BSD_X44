@@ -89,7 +89,7 @@ pcic_pci_match(parent, match, aux)
 		return (0);
 
 	switch (PCI_PRODUCT(pa->pa_id)) {
-	case PCI_PRODUCT_CIRRUS_CL_GD6729:
+	case PCI_PRODUCT_CIRRUS_CL_PD6729:
 		break;
 	default:
 		return (0);
@@ -149,7 +149,7 @@ pcic_pci_attach(parent, self, aux)
 	sc->memh = memh;
 
 	switch (PCI_PRODUCT(pa->pa_id)) {
-	case PCI_PRODUCT_CIRRUS_CL_GD6729:
+	case PCI_PRODUCT_CIRRUS_CL_PD6729:
 		model = "Cirrus Logic GD6729 PCMCIA controller";
 		break;
 	default:

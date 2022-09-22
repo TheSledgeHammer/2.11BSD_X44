@@ -126,8 +126,8 @@ int	pcicsubr_debug = 0;
  * just use socket 0
  */
 
-void pcic_isa_probe_interrupts (struct pcic_softc *, struct pcic_handle *);
-static int pcic_isa_count_intr (void *);
+void pcic_isa_probe_interrupts(struct pcic_softc *, struct pcic_handle *);
+static int pcic_isa_count_intr(void *);
 
 static int
 pcic_isa_count_intr(arg)
@@ -360,7 +360,7 @@ pcic_isa_config_interrupts(self)
 		printf("%s: using irq %d for socket events\n", sc->dev.dv_xname,
 		    sc->irq);
 
-	pcic_attach_sockets_finish(sc);
+	pcic_attach_sockets(sc);
 
 	splx(s);
 }
@@ -376,7 +376,8 @@ pcic_isa_config_interrupts(self)
  * and then within those limits allocate a sparse map, where the
  * each sub region is offset by 0x400.
  */
-void pcic_isa_bus_width_probe (sc, iot, ioh, base, length)
+void
+pcic_isa_bus_width_probe(sc, iot, ioh, base, length)
 	struct pcic_softc *sc;
 	bus_space_tag_t iot;
 	bus_space_handle_t ioh;

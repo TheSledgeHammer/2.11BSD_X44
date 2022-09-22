@@ -51,9 +51,8 @@ __KERNEL_RCSID(0, "$NetBSD: wdc_pcmcia.c,v 1.67 2004/01/03 22:56:53 thorpej Exp 
 #include <dev/core/pcmcia/pcmciavar.h>
 #include <dev/core/pcmcia/pcmciadevs.h>
 #include <dev/core/ic/wdcreg.h>
-#include <dev/core/ic/wdcvar.h>
-
 #include <dev/disk/ata/atavar.h>
+#include <dev/core/ic/wdcvar.h>
 
 #define WDC_PCMCIA_REG_NPORTS      8
 #define WDC_PCMCIA_AUXREG_OFFSET   (WDC_PCMCIA_REG_NPORTS + 6)
@@ -61,8 +60,9 @@ __KERNEL_RCSID(0, "$NetBSD: wdc_pcmcia.c,v 1.67 2004/01/03 22:56:53 thorpej Exp 
 
 struct wdc_pcmcia_softc {
 	struct wdc_softc 			sc_wdcdev;
-	struct channel_softc 		*wdc_chanlist[1];
-	struct channel_softc 		wdc_channel;
+	struct wdc_channel  		*wdc_chanlist[1];
+	struct wdc_channel 			wdc_channel;
+	struct ata_queue 			wdc_chqueue;
 	struct pcmcia_io_handle 	sc_pioh;
 	struct pcmcia_io_handle 	sc_auxpioh;
 	struct pcmcia_mem_handle 	sc_pmembaseh;
@@ -82,7 +82,7 @@ static int wdc_pcmcia_match(struct device *, struct cfdata *, void *);
 static void wdc_pcmcia_attach(struct device *, struct device *, void *);
 static int wdc_pcmcia_detach(struct device *, int);
 
-CFOPS_DECL(wdc_pcmcia, wdc_pcmcia_match, wdc_pcmcia_attach, wdc_pcmcia_detach, NULL);
+CFOPS_DECL(wdc_pcmcia, wdc_pcmcia_match, wdc_pcmcia_attach, wdc_pcmcia_detach, wdcactivate);
 CFDRIVER_DECL(NULL, wdc_pcmcia, DV_DULL);
 CFATTACH_DECL(wdc_pcmcia, &wdc_cd, &wdc_pcmcia_cops, sizeof(struct wdc_pcmcia_softc));
 
@@ -175,9 +175,9 @@ const struct wdc_pcmcia_product {
 	{ 0, 0, 0, { NULL, NULL, NULL, NULL}, NULL }
 };
 
-const struct wdc_pcmcia_product *wdc_pcmcia_lookup (struct pcmcia_attach_args *);
+const struct wdc_pcmcia_product *wdc_pcmcia_lookup(struct pcmcia_attach_args *);
 
-int	wdc_pcmcia_enable (struct device *, int);
+int	wdc_pcmcia_enable(struct device *, int);
 
 const struct wdc_pcmcia_product *
 wdc_pcmcia_lookup(pa)
@@ -341,19 +341,19 @@ wdc_pcmcia_attach(parent, self, aux)
 	sc->sc_wdcdev.cap |= WDC_CAPABILITY_DATA16;
 	if (sc->sc_flags & WDC_PCMCIA_MEMMODE) {
 		sc->wdc_channel.cmd_iot = sc->sc_pmemh.memt;
-		sc->wdc_channel.cmd_ioh = sc->sc_pmemh.memh;
+		sc->wdc_channel.cmd_baseioh = sc->sc_pmemh.memh;
 		sc->wdc_channel.ctl_iot = sc->sc_auxpmemh.memt;
 		sc->wdc_channel.ctl_ioh = sc->sc_auxpmemh.memh;
 	} else {
 		sc->wdc_channel.cmd_iot = sc->sc_pioh.iot;
-		sc->wdc_channel.cmd_ioh = sc->sc_pioh.ioh;
+		sc->wdc_channel.cmd_baseioh = sc->sc_pioh.ioh;
 		sc->wdc_channel.ctl_iot = sc->sc_auxpioh.iot;
 		sc->wdc_channel.ctl_ioh = sc->sc_auxpioh.ioh;
 		sc->sc_wdcdev.cap |= WDC_CAPABILITY_DATA32;
 	}
 	for (i = 0; i < WDC_PCMCIA_REG_NPORTS; i++) {
 		if (bus_space_subregion(sc->wdc_channel.cmd_iot,
-		    sc->wdc_channel.cmd_ioh,
+		    sc->wdc_channel.cmd_baseioh,
 		    offset + i, i == 0 ? 4 : 1,
 		    &sc->wdc_channel.cmd_iohs[i]) != 0) {
 			printf(": can't subregion I/O space\n");
@@ -366,9 +366,9 @@ wdc_pcmcia_attach(parent, self, aux)
 	sc->wdc_chanlist[0] = &sc->wdc_channel;
 	sc->sc_wdcdev.channels = sc->wdc_chanlist;
 	sc->sc_wdcdev.nchannels = 1;
-	sc->wdc_channel.channel = 0;
-	sc->wdc_channel.wdc = &sc->sc_wdcdev;
-	sc->wdc_channel.ch_queue = malloc(sizeof(struct channel_queue), M_DEVBUF, M_NOWAIT);
+	sc->wdc_channel.ch_channel = 0;
+	sc->wdc_channel.ch_wdc = &sc->sc_wdcdev;
+	sc->wdc_channel.ch_queue = &sc->wdc_chqueue; //malloc(sizeof(struct channel_queue), M_DEVBUF, M_NOWAIT);
 	if (sc->wdc_channel.ch_queue == NULL) {
 		printf("%s: can't allocate memory for command queue\n",
 		    sc->sc_wdcdev.sc_dev.dv_xname);

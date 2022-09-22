@@ -242,6 +242,7 @@ void ttyblock(struct tty *);
 void ttyunblock(struct tty *);
 void ttyinfo(struct tty *);
 int	 ttyinput(int, struct tty *);
+int	 ttylopen(struct tty *, int, int);
 int	 ttylclose(struct tty *, int);
 int	 ttymodem(struct tty *, int);
 int	 ttykqfilter(dev_t, struct knote *);

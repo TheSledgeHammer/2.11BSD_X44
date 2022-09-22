@@ -1044,6 +1044,92 @@ ttyopen(dev, tp)
 	return (0);
 }
 
+int
+ttylopen(tp, dialout, nonblock)
+	struct tty *tp;
+	int dialout, nonblock;
+{
+	int	s, error;
+
+	error = 0;
+	s = spltty();
+	TTY_LOCK(tp);
+
+	if (dialout) {
+		/*
+		 * If the device is already open for non-dialout, fail.
+		 * Otherwise, set TS_DIALOUT to block any pending non-dialout
+		 * opens.
+		 */
+		if (ISSET(tp->t_state, TS_ISOPEN) && !ISSET(tp->t_state, TS_DIALOUT)) {
+			error = EBUSY;
+			goto out;
+		}
+		SET(tp->t_state, TS_DIALOUT);
+	} else {
+		if (!nonblock) {
+			/*
+			 * Wait for carrier.  Also wait for any dialout
+			 * processes to close the tty first.
+			 */
+			while (ISSET(tp->t_state, TS_DIALOUT) || !CONNECTED(tp)) {
+				tp->t_wopen++;
+				error = ttysleep(tp, &tp->t_rawq, TTIPRI | PCATCH, ttopen, 0);
+				tp->t_wopen--;
+				if (error) {
+					goto out;
+				}
+			}
+		} else {
+			/*
+			 * Don't allow a non-blocking non-dialout open if the
+			 * device is already open for dialout.
+			 */
+			if (ISSET(tp->t_state, TS_DIALOUT)) {
+				error = EBUSY;
+				goto out;
+			}
+		}
+	}
+
+out:
+	TTY_UNLOCK(tp);
+	splx(s);
+	return (error);
+}
+
+/*
+ * clean tp on last close
+ */
+int
+ttyclose(tp)
+	register struct tty *tp;
+{
+	extern struct tty *constty; /* Temporary virtual console. */
+	int s;
+
+	s = spltty();
+	TTY_LOCK(tp);
+
+	if (constty == tp) {
+		constty = NULL;
+	}
+
+	ttyflush(tp, FREAD | FWRITE);
+
+	tp->t_gen++;
+	tp->t_pgrp = NULL;
+	if (tp->t_session != NULL) {
+		SESSRELE(tp->t_session);
+		tp->t_session = NULL;
+	}
+	tp->t_state = 0;
+
+	TTY_UNLOCK(tp);
+	splx(s);
+	return (0);
+}
+
 /*
  * "close" a line discipline
  */
@@ -1066,40 +1152,10 @@ ttylclose(tp, flag)
 		ttyflush(tp, FREAD | FWRITE);
 		TTY_UNLOCK(tp);
 		splx(s);
-	} else
+	} else {
 		ttywflush(tp);
-	tp->t_line = 0;
-	return (0);
-}
-
-/*
- * clean tp on last close
- */
-int
-ttyclose(tp)
-	register struct tty *tp;
-{
-	extern struct tty *constty; /* Temporary virtual console. */
-	int s;
-
-	s = spltty();
-	TTY_LOCK(tp);
-
-	if (constty == tp)
-		constty = NULL;
-
-	ttyflush(tp, FREAD | FWRITE);
-
-	tp->t_gen++;
-	tp->t_pgrp = NULL;
-	if (tp->t_session != NULL) {
-		SESSRELE(tp->t_session);
-		tp->t_session = NULL;
 	}
-	tp->t_state = 0;
-
-	TTY_UNLOCK(tp);
-	splx(s);
+	tp->t_line = 0;
 	return (0);
 }
 

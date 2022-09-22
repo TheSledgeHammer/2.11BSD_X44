@@ -145,8 +145,8 @@ struct pcmcia_function {
 
 	union pcmcia_funce pf_funce; /* CISTPL_FUNCE */
 #define pf_funce_disk_interface pf_funce.pfv_disk.pfd_interface
-#define pf_funce_lan_nid pf_funce.pfv_lan.pfl_nid
-#define pf_funce_lan_nidlen pf_funce.pfv_lan.pfl_nidlen
+#define pf_funce_lan_nid 		pf_funce.pfv_lan.pfl_nid
+#define pf_funce_lan_nidlen 	pf_funce.pfv_lan.pfl_nidlen
 };
 
 /* pf_flags */
@@ -211,9 +211,9 @@ struct pcmcia_tuple {
 #define PCMCIACF_FUNCTION_DEFAULT 	-1
 #define PCMCIACF_FUNCTION 			0
 
-void	pcmcia_read_cis (struct pcmcia_softc *);
-void	pcmcia_print_cis (struct pcmcia_softc *);
-int		pcmcia_scan_cis (struct device * dev, int (*) (struct pcmcia_tuple *, void *), void *);
+void	pcmcia_read_cis(struct pcmcia_softc *);
+void	pcmcia_print_cis(struct pcmcia_softc *);
+int		pcmcia_scan_cis(struct device * dev, int (*) (struct pcmcia_tuple *, void *), void *);
 
 #define	pcmcia_cis_read_1(tuple, idx0)						\
 	(bus_space_read_1((tuple)->memt, (tuple)->memh, (tuple)->mult*(idx0)))
@@ -245,21 +245,23 @@ int		pcmcia_scan_cis (struct device * dev, int (*) (struct pcmcia_tuple *, void 
 #define	PCMCIA_SPACE_MEMORY	1
 #define	PCMCIA_SPACE_IO		2
 
-int		pcmcia_ccr_read (struct pcmcia_function *, int);
-void	pcmcia_ccr_write (struct pcmcia_function *, int, int);
+int		pcmcia_ccr_read(struct pcmcia_function *, int);
+void	pcmcia_ccr_write(struct pcmcia_function *, int, int);
 
 #define	pcmcia_mfc(sc)	((sc)->card.pf_head.sqh_first &&		\
 			 (sc)->card.pf_head.sqh_first->pf_list.sqe_next)
 
-void	pcmcia_function_init (struct pcmcia_function *, struct pcmcia_config_entry *);
-int		pcmcia_function_enable (struct pcmcia_function *);
-void	pcmcia_function_disable (struct pcmcia_function *);
+void	pcmcia_function_init(struct pcmcia_function *, struct pcmcia_config_entry *);
+int		pcmcia_function_enable(struct pcmcia_function *);
+void	pcmcia_function_disable(struct pcmcia_function *);
 
 #define	pcmcia_io_alloc(pf, start, size, align, pciop)			\
 	(pcmcia_chip_io_alloc((pf)->sc->pct, pf->sc->pch, (start),	\
 	 (size), (align), (pciop)))
 
-int		pcmcia_io_map (struct pcmcia_function *, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
+int		pcmcia_io_map(struct pcmcia_function *, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
+void	pcmcia_io_unmap(struct pcmcia_function *, int);
+//void	pcmcia_free_pf(struct pcmcia_function_head *);
 
 #define pcmcia_mem_alloc(pf, size, pcmhp)						\
 	(pcmcia_chip_mem_alloc((pf)->sc->pct, (pf)->sc->pch, (size), (pcmhp)))
@@ -274,5 +276,5 @@ int		pcmcia_io_map (struct pcmcia_function *, int, bus_addr_t, bus_size_t, struc
 #define	pcmcia_mem_unmap(pf, window)							\
 	(pcmcia_chip_mem_unmap((pf)->sc->pct, (pf)->sc->pch, (window)))
 
-void	*pcmcia_intr_establish (struct pcmcia_function *, int, int (*) (void *), void *);
-void 	pcmcia_intr_disestablish (struct pcmcia_function *, void *);
+void	*pcmcia_intr_establish(struct pcmcia_function *, int, int (*) (void *), void *);
+void 	pcmcia_intr_disestablish(struct pcmcia_function *, void *);

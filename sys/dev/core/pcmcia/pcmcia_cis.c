@@ -61,7 +61,7 @@ struct cis_state {
 	struct pcmcia_function *pf;
 };
 
-int	pcmcia_parse_cis_tuple (struct pcmcia_tuple *, void *);
+int	pcmcia_parse_cis_tuple(struct pcmcia_tuple *, void *);
 
 void
 pcmcia_read_cis(sc)

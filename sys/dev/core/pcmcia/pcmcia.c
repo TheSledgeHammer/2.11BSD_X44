@@ -492,6 +492,17 @@ pcmcia_io_map(pf, width, offset, size, pcihp, windowp)
 	return (0);
 }
 
+void
+pcmcia_io_unmap(pf, window)
+	struct pcmcia_function *pf;
+	int window;
+{
+
+	pcmcia_chip_io_unmap(pf->sc->pct, pf->sc->pch, window);
+
+	/* XXX Anything for multi-function cards? */
+}
+
 void *
 pcmcia_intr_establish(pf, ipl, ih_fct, ih_arg)
 	struct pcmcia_function *pf;

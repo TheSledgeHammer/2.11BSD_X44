@@ -47,16 +47,16 @@ vendor PANASONIC		0x0032	Matsushita Electric Industrial Co.
 vendor SANDISK			0x0045	Sandisk Corporation
 vendor NEWMEDIA			0x0057	New Media Corporation
 vendor INTEL			0x0089	Intel
-vendor IBM				0x00a4	IBM Corporation
+vendor IBM			0x00a4	IBM Corporation
 vendor SHARP			0x00b0	Sharp Corporation
-vendor 3COM				0x0101	3Com Corporation
+vendor 3COM			0x0101	3Com Corporation
 vendor MEGAHERTZ		0x0102	Megahertz Corporation
 vendor SOCKET			0x0104	Socket Communications
-vendor TDK				0x0105	TDK Corporation
+vendor TDK			0x0105	TDK Corporation
 vendor XIRCOM			0x0105	Xircom
-vendor SMC				0x0108	Standard Microsystems Corporation
+vendor SMC			0x0108	Standard Microsystems Corporation
 vendor MOTOROLA			0x0109	Motorola Corporation
-vendor NI				0x010b	National Instruments
+vendor NI			0x010b	National Instruments
 vendor USROBOTICS		0x0115	US Robotics Corporation
 vendor OLICOM			0x0121	Olicom
 vendor PROXIM			0x0126	Proxim
