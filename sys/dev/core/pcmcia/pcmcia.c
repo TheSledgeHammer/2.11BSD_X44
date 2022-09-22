@@ -816,7 +816,7 @@ pcmcia_intr_disestablish(pf, ih)
 		if (ihcnt == 0) {
 			int reg;
 
-//#ifdef DIAGNOSTIC
+#ifdef DIAGNOSTIC
 			if (pf->sc->ih == NULL)
 				panic("disestablishing last function, but card has no ih");
 #endif
