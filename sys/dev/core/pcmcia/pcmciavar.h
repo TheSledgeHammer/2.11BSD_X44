@@ -259,7 +259,10 @@ void	pcmcia_function_disable(struct pcmcia_function *);
 	(pcmcia_chip_io_alloc((pf)->sc->pct, pf->sc->pch, (start),	\
 	 (size), (align), (pciop)))
 
-int		pcmcia_io_map(struct pcmcia_function *, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
+#define	pcmcia_io_free(pf, pciohp)					\
+	(pcmcia_chip_io_free((pf)->sc->pct, (pf)->sc->pch, (pciohp)))
+
+int	pcmcia_io_map(struct pcmcia_function *, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
 void	pcmcia_io_unmap(struct pcmcia_function *, int);
 //void	pcmcia_free_pf(struct pcmcia_function_head *);
 
