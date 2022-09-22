@@ -76,7 +76,7 @@ int		pcic_intr_socket(struct pcic_handle *);
 void	pcic_poll_intr(void *);
 
 void	pcic_attach_card(struct pcic_handle *);
-void	pcic_detach_card(struct pcic_handle *);
+void	pcic_detach_card(struct pcic_handle *, int);
 void	pcic_deactivate_card(struct pcic_handle *);
 
 void	pcic_chip_do_mem_map(struct pcic_handle *, int);
@@ -89,7 +89,7 @@ void	pcic_queue_event(struct pcic_handle *, int);
 void	pcic_power(int, void *);
 
 static void	pcic_wait_ready(struct pcic_handle *);
-static void	pcic_delay(struct pcic_handle *, int, const char *);
+static void	pcic_delay(struct pcic_handle *, int, char *);
 
 static u_int8_t st_pcic_read(struct pcic_handle *, int);
 static void 	st_pcic_write(struct pcic_handle *, int, u_int8_t);
@@ -427,7 +427,7 @@ pcic_attach_socket_finish(h)
 	 * (this works around a bug seen in suspend-to-disk on the
 	 * Sony VAIO Z505; on resume, the CSC_INTR state is not preserved).
 	 */
-	powerhook_establish(pcic_power, h);
+	powerhook_establish("pcic_power", pcic_power, h);
 
 	/* enable interrupts on card detect, poll for them if no irq avail */
 	reg = PCIC_CSC_INTR_CD_ENABLE;
@@ -529,7 +529,7 @@ pcic_event_thread(arg)
 		 * Serialize event processing on the PCIC.  We may
 		 * sleep while we hold this lock.
 		 */
-		(void) lockmgr(&sc->sc_pcic_lock, LK_EXCLUSIVE, NULL);
+		(void) lockmgr(&sc->sc_pcic_lock, LK_EXCLUSIVE, &sc->sc_pcic_lock.lk_lnterlock, LOCKHOLDER_PID(&sc->sc_pcic_lock.lk_lockholder));
 
 		s = splhigh();
 		if ((pe = SIMPLEQ_FIRST(&h->events)) == NULL) {
@@ -541,7 +541,7 @@ pcic_event_thread(arg)
 			/*
 			 * No events to process; release the PCIC lock.
 			 */
-			(void) lockmgr(&sc->sc_pcic_lock, LK_RELEASE, NULL);
+			(void) lockmgr(&sc->sc_pcic_lock, LK_RELEASE, &sc->sc_pcic_lock.lk_lnterlock, LOCKHOLDER_PID(&sc->sc_pcic_lock.lk_lockholder));
 			(void) tsleep(&h->events, PWAIT, "pcicev", 0);
 			continue;
 		} else {
@@ -611,7 +611,7 @@ pcic_event_thread(arg)
 		}
 		free(pe, M_TEMP);
 
-		(void) lockmgr(&sc->sc_pcic_lock, LK_RELEASE, NULL);
+		(void) lockmgr(&sc->sc_pcic_lock, LK_RELEASE, &sc->sc_pcic_lock.lk_lnterlock, LOCKHOLDER_PID(&sc->sc_pcic_lock.lk_lockholder));
 	}
 
 	h->event_thread = NULL;
@@ -1284,7 +1284,8 @@ pcic_chip_io_map(pch, width, offset, size, pcihp, windowp)
 #ifdef PCICDEBUG
 	static char *width_names[] = { "auto", "io8", "io16" };
 #endif
-
+	struct pcic_softc *sc = (struct pcic_softc *)h->ph_parent;
+	
 	/* XXX Sanity check offset/size. */
 
 	win = -1;
@@ -1303,7 +1304,7 @@ pcic_chip_io_map(pch, width, offset, size, pcihp, windowp)
 
 	/* XXX this is pretty gross */
 
-	if (h->sc->iot != pcihp->iot)
+	if (sc->iot != pcihp->iot)
 		panic("pcic_chip_io_map iot is bogus");
 
 	DPRINTF(("pcic_chip_io_map window %d %s port %lx+%lx\n",
@@ -1378,7 +1379,7 @@ static void
 pcic_delay(h, timo, wmesg)
 	struct pcic_handle *h;
 	int timo;			/* in ms.  must not be zero */
-	const char *wmesg;
+	char *wmesg;
 {
 #ifdef DIAGNOSTIC
 	if (timo <= 0) {
