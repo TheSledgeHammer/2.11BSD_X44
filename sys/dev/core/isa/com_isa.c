@@ -102,7 +102,7 @@ struct com_isa_softc {
 };
 
 
-int com_isa_probe(struct device *, void *, void *);
+int com_isa_probe(struct device *, struct cfdata *, void *);
 void com_isa_attach(struct device *, struct device *, void *);
 void com_isa_cleanup(void *);
 
