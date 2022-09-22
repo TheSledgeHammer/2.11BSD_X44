@@ -60,8 +60,8 @@ struct com_puc_softc {
 	void	*sc_ih;			/* interrupt handler */
 };
 
-int	com_puc_probe (struct device *, struct cfdata *, void *);
-void	com_puc_attach (struct device *, struct device *, void *);
+int	com_puc_probe(struct device *, struct cfdata *, void *);
+void	com_puc_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(com_puc, com_puc_probe, com_puc_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, com_puc, DV_DULL);
@@ -108,7 +108,7 @@ com_puc_attach(parent, self, aux)
 	 * XXX directly on PCI.
 	 */
 
-	aprint_naive(": Serial port\n");
+	printf(": Serial port\n");
 
 	sc->sc_iobase = aa->a;
 	sc->sc_iot = aa->t;
@@ -134,14 +134,14 @@ com_puc_attach(parent, self, aux)
 	psc->sc_ih = pci_intr_establish(aa->pc, aa->intrhandle, IPL_SERIAL,
 	    comintr, sc);
 	if (psc->sc_ih == NULL) {
-		aprint_error(": couldn't establish interrupt");
+		printf(": couldn't establish interrupt");
 		if (intrstr != NULL)
-			aprint_normal(" at %s", intrstr);
-		aprint_normal("\n");
+			printf(" at %s", intrstr);
+		printf("\n");
 		return;
 	}
-	aprint_normal(": interrupting at %s\n", intrstr);
-	aprint_normal("%s", sc->sc_dev.dv_xname);
+	printf(": interrupting at %s\n", intrstr);
+	printf("%s", sc->sc_dev.dv_xname);
 
 	com_attach_subr(sc);
 }
