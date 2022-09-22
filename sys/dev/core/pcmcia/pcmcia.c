@@ -205,8 +205,9 @@ pcmcia_card_attach(dev)
 }
 
 void
-pcmcia_card_detach(dev)
+pcmcia_card_detach(dev, flags)
 	struct device *dev;
+	int flags;
 {
 	/* struct pcmcia_softc *sc = (struct pcmcia_softc *) dev; */
 	/* don't do anything yet */
