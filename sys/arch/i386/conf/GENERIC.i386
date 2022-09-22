@@ -156,18 +156,18 @@ pcmcia* 		at pcic? controller ? socket ?
 mca0			at mainbus?
 
 # ISA PCMCIA controllers
-#pcic0			at isa? port 0x3e0 iomem 0xd0000 iosiz 0x10000
-#pcic1			at isa? port 0x3e2 iomem 0xe0000 iosiz 0x4000
-#pcic2			at isa? port 0x3e4 iomem 0xe0000 iosiz 0x4000
+pcic0			at isa? port 0x3e0 iomem 0xd0000 iosiz 0x10000
+pcic1			at isa? port 0x3e2 iomem 0xe0000 iosiz 0x4000
+pcic2			at isa? port 0x3e4 iomem 0xe0000 iosiz 0x4000
 
 # PCI PCMCIA controllers
-#pcic0			at pci? dev? function ?
+pcic0			at pci? dev? function ?
 
 # ISA Plug-and-Play bus support
 isapnp0 		at isa?
 
 # ISA Plug-and-Play PCMCIA controllers
-#pcic*			at isapnp?
+pcic*			at isapnp?
 
 # Coprocessor Support
 # Math Coprocessor support
@@ -210,7 +210,7 @@ com1			at isa? port 0x2f8 irq 3
 com2			at isa? port 0x3e8 irq 5
 
 # MCA serial interfaces
-#com*			at mca? slot ?			# 16x50s on comm boards
+com*			at mca? slot ?			# 16x50s on comm boards
 
 # Parallel Printer Interfaces
 
