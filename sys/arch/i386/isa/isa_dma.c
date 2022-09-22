@@ -1,7 +1,5 @@
 /*	$NetBSD: isa_machdep.c,v 1.23.2.1 1997/11/13 08:11:04 mellon Exp $	*/
 
-#define ISA_DMA_STATS
-
 /*-
  * Copyright (c) 1996, 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -79,6 +77,9 @@
  *	@(#)isa.c	7.2 (Berkeley) 5/13/91
  */
 
+#define ISA_DMA_STATS
+
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
@@ -88,6 +89,7 @@
 #include <sys/mbuf.h>
 
 #define _I386_BUS_DMA_PRIVATE
+
 #include <machine/bus.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
@@ -150,30 +152,6 @@ struct i386_bus_dma_tag isa_bus_dma_tag = {
 	_bus_dmamem_mmap,
 	_bus_dmamem_alloc_range
 };
-
-int
-isa_mem_alloc(t, size, align, boundary, flags, addrp, bshp)
-	bus_space_tag_t t;
-	bus_size_t size, align;
-	bus_addr_t boundary;
-	int flags;
-	bus_addr_t *addrp;
-	bus_space_handle_t *bshp;
-{
-	/*
-	 * Allocate physical address space in the ISA hole.
-	 */
-	return (bus_space_alloc(t, ISA_HOLE_START, ISA_HOLE_END - 1, size, align, boundary, flags, addrp, bshp));
-}
-
-void
-isa_mem_free(t, bsh, size)
-	bus_space_tag_t t;
-	bus_space_handle_t bsh;
-	bus_size_t size;
-{
-	bus_space_free(t, bsh, size);
-}
 
 /**********************************************************************
  * bus_dma.h dma interface entry points

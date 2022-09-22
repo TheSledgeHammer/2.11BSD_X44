@@ -79,6 +79,7 @@
  *	@(#)isa.c	7.2 (Berkeley) 5/13/91
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
@@ -89,9 +90,9 @@
 #include <machine/bus.h>
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
-#include <machine/segments.h>
+//#include <machine/segments.h>
 
-#include <machine/intr.h>
+//#include <machine/intr.h>
 #include <machine/pic.h>
 
 #include <machine/isa/isa_machdep.h>
@@ -100,6 +101,13 @@
 #include <dev/core/isa/isavar.h>
 
 #include <vm/include/vm.h>
+
+#include "ioapic.h"
+
+#if NIOAPIC > 0
+#include <machine/apic/ioapicvar.h>
+#include <machine/mpbiosvar.h>
+#endif
 
 /*
  * Handle a NMI, possibly a machine check.
@@ -211,7 +219,7 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 #if NIOAPIC > 0
 	struct pic *pic;
 	struct ioapic_softc *ioapic = NULL;
-	uint64_t mpih = 0;
+	int mpih;
 	int pin;
 
 	if (mp_busses != NULL) {
@@ -223,7 +231,7 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 					printf("isa_intr_establish: unknown apic %d\n", APIC_IRQ_APIC(mpih));
 					return (NULL);
 				}
-				pic = &ioapic->sc_pic;
+				pic = ioapic->sc_pic;
 			}
 		}
 		return (intr_establish(pin, type, level, ih_fun, ih_arg, TRUE, PIC_IOAPIC));
@@ -268,4 +276,39 @@ isa_attach_hook(parent, self, iba)
 		panic("isaattach: ISA bus already seen!");
 	}
 	isa_has_been_seen = 1;
+}
+
+
+void
+isa_detach_hook(ic, self)
+	isa_chipset_tag_t ic;
+	struct device *self;
+{
+	extern int isa_has_been_seen;
+
+	isa_has_been_seen = 0;
+}
+
+int
+isa_mem_alloc(t, size, align, boundary, flags, addrp, bshp)
+	bus_space_tag_t t;
+	bus_size_t size, align;
+	bus_addr_t boundary;
+	int flags;
+	bus_addr_t *addrp;
+	bus_space_handle_t *bshp;
+{
+	/*
+	 * Allocate physical address space in the ISA hole.
+	 */
+	return (bus_space_alloc(t, ISA_HOLE_START, ISA_HOLE_END - 1, size, align, boundary, flags, addrp, bshp));
+}
+
+void
+isa_mem_free(t, bsh, size)
+	bus_space_tag_t t;
+	bus_space_handle_t bsh;
+	bus_size_t size;
+{
+	bus_space_free(t, bsh, size);
 }
