@@ -74,12 +74,14 @@ static struct pcmcia_chip_functions pcic_pci_functions = {
 	pcic_chip_io_map,
 	pcic_chip_io_unmap,
 
-	pcic_pci_chip_intr_establish,
-	pcic_pci_chip_intr_disestablish,
+	pcic_isa_chip_intr_establish,
+	pcic_isa_chip_intr_disestablish,
 
 	pcic_chip_socket_enable,
 	pcic_chip_socket_disable,
 };
+
+static void pcic_pci_callback(struct device *);
 
 int
 pcic_pci_match(parent, match, aux)
