@@ -54,12 +54,12 @@ file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
 #file	ufs/ufs211/ufs211_vnops.c			ufs211
 
 # UFML Sources
-#file	ufs/ufml/ufml_archive.c				ufml
-#file	ufs/ufml/ufml_compress.c			ufml
-#file	ufs/ufml/ufml_encrypt.c				ufml
-#file	ufs/ufml/ufml_meta.c				ufml
-#file	ufs/ufml/ufml_snapshot.c			ufml
-#file	ufs/ufml/ufml_subr.c				ufml
-#file	ufs/ufml/ufml_uops.c				ufml
-#file	ufs/ufml/ufml_vfsops.c				ufml
-#file	ufs/ufml/ufml_vnops.c				ufml
+file	ufs/ufml/ufml_archive.c				ufml
+file	ufs/ufml/ufml_compress.c			ufml
+file	ufs/ufml/ufml_encrypt.c				ufml
+file	ufs/ufml/ufml_meta.c				ufml
+file	ufs/ufml/ufml_snapshot.c			ufml
+file	ufs/ufml/ufml_subr.c				ufml
+file	ufs/ufml/ufml_uops.c				ufml
+file	ufs/ufml/ufml_vfsops.c				ufml
+file	ufs/ufml/ufml_vnops.c				ufml
