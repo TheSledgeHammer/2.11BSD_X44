@@ -142,7 +142,7 @@ ufml_node_alloc(mp, lowervp, vpp)
 	struct vnode *othervp, *vp;
 	int error;
 
-	if (error == getnewvnode(VT_UFML, mp, ufml_vnodeops, vpp))
+	if (error == getnewvnode(VT_UFML, mp, &ufml_vnodeops, vpp))
 		return (error);
 	vp = *vpp;
 
@@ -156,7 +156,7 @@ ufml_node_alloc(mp, lowervp, vpp)
 	 * check to see if someone else has beaten us to it.
 	 * (We could have slept in MALLOC.)
 	 */
-	if (othervp == null_node_find(lowervp)) {
+	if (othervp == ufml_node_find(lowervp)) {
 		FREE(xp, M_TEMP);
 		vp->v_type = VBAD;	/* node is discarded */
 		vp->v_usecount = 0;	/* XXX */

@@ -26,24 +26,30 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/proc.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/vnode.h>
-#include <sys/mount.h>
 #include <sys/namei.h>
-#include <sys/malloc.h>
+#include <sys/resourcevar.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
+#include <sys/stat.h>
 #include <sys/buf.h>
-#include <sys/null.h>
+#include <sys/proc.h>
+#include <sys/conf.h>
+#include <sys/mount.h>
+#include <sys/vnode.h>
+#include <sys/malloc.h>
+#include <sys/dirent.h>
+#include <sys/endian.h>
 
 #include <ufs/ufml/ufml.h>
 #include <ufs/ufml/ufml_extern.h>
 #include <ufs/ufml/ufml_meta.h>
 #include <ufs/ufml/ufml_ops.h>
 
+#include <vm/include/vm.h>
+
+#ifdef notyet
 void
 ufml_meta_itimes(vp)
 	struct vnode *vp;
@@ -80,6 +86,7 @@ ufml_meta_itimes(vp)
 	}
 	meta->ufml_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);
 }
+#endif
 
 /* Check filesystem types to see if the filesystem is supported */
 int

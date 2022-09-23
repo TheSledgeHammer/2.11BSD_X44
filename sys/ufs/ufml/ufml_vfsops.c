@@ -65,7 +65,7 @@ ufmlfs_mount(mp, path, data, ndp, p)
 	struct proc *p;
 {
 	int error = 0;
-	struct null_args args;
+	struct ufml_args args;
 	struct vnode *lowerrootvp, *vp;
 	struct vnode *ufmlm_rootvp;
 	struct ufml_mount *xmp;
@@ -86,7 +86,7 @@ ufmlfs_mount(mp, path, data, ndp, p)
 	/*
 	 * Get argument
 	 */
-	if (error == copyin(data, (caddr_t)&args, sizeof(struct null_args)))
+	if (error == copyin(data, (caddr_t)&args, sizeof(struct ufml_args)))
 		return (error);
 
 	/*

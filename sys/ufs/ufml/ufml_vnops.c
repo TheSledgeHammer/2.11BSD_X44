@@ -318,6 +318,7 @@ ufml_lookup(ap)
  * ni_dvp references the locked directory.
  * ni_vp is NULL.
  */
+int
 ufml_mknod(ap)
 	struct vop_mknod_args /* {
 		struct vnode *a_dvp;
@@ -348,6 +349,7 @@ ufml_mknod(ap)
  * ni_dvp references the locked directory
  * ni_vp is NULL.
  */
+int
 ufml_create(ap)
 	struct vop_create_args /* {
 		struct vnode *a_dvp;
@@ -745,7 +747,7 @@ ufml_rename(ap)
 	 * And source object if it is lofsed...
 	 */
 	fvp = ap->a_fvp;
-	if (fvp && fvp->v_op == ufml_vnodeops) {
+	if (fvp && fvp->v_op == &ufml_vnodeops) {
 		ap->a_fvp = UFMLVPTOLOWERVP(fvp);
 		VREF(ap->a_fvp);
 	} else {
@@ -760,7 +762,7 @@ ufml_rename(ap)
 	 * And source startdir object if it is lofsed...
 	 */
 	fsvp = fndp->ni_startdir;
-	if (fsvp && fsvp->v_op == ufml_vnodeops) {
+	if (fsvp && fsvp->v_op == &ufml_vnodeops) {
 		fndp->ni_startdir = UFMLVPTOLOWERVP(fsvp);
 		VREF(fndp->ni_startdir);
 	} else {
@@ -775,7 +777,7 @@ ufml_rename(ap)
  	 * Switch target directory to point to lofsed vnode
 	 */
 	tdvp = ap->a_tdvp;
-	if (tdvp && tdvp->v_op == ufml_vnodeops) {
+	if (tdvp && tdvp->v_op == &ufml_vnodeops) {
 		ap->a_tdvp = UFMLVPTOLOWERVP(tdvp);
 		VREF(ap->a_tdvp);
 	} else {
@@ -789,7 +791,7 @@ ufml_rename(ap)
 	 * And target object if it is lofsed...
 	 */
 	tvp = ap->a_tvp;
-	if (tvp && tvp->v_op == ufml_vnodeops) {
+	if (tvp && tvp->v_op == &ufml_vnodeops) {
 		ap->a_tvp = UFMLVPTOLOWERVP(tvp);
 		VREF(ap->a_tvp);
 	} else {
@@ -804,7 +806,7 @@ ufml_rename(ap)
 	 * And target startdir object if it is lofsed...
 	 */
 	tsvp = tndp->ni_startdir;
-	if (tsvp && tsvp->v_op == ufml_vnodeops) {
+	if (tsvp && tsvp->v_op == &ufml_vnodeops) {
 		tndp->ni_startdir = UFMLVPTOLOWERVP(fsvp);
 		VREF(tndp->ni_startdir);
 	} else {

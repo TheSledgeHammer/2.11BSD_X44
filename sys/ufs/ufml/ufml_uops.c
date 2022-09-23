@@ -38,24 +38,10 @@
 #include <ufs/ufml/ufml_meta.h>
 #include <ufs/ufml/ufml_ops.h>
 
-
 #define UNOP(up, uop_field)					\
 	((up)->ufml_op->uop_field)
 #define DO_UOPS(uops, error, ap, uop_field)	\
 	error = uops->uop_field(ap)
-
-struct ufmlops default_uops = {
-		.uop_archive = uop_archive,
-		.uop_extract = uop_extract,
-		.uop_compress = uop_compress,
-		.uop_decompress = uop_decompress,
-		.uop_encrypt = uop_encrypt,
-		.uop_decrypt = uop_decrypt,
-		.uop_snapshot_write = uop_snapshot_write,
-		.uop_snapshot_read = uop_snapshot_read,
-		.uop_snapshot_delete = uop_snapshot_delete,
-		.uop_snapshot_commit = uop_snapshot_commit
-};
 
 int
 uop_archive(up, vp, mp, fstype, archive)
@@ -78,7 +64,7 @@ uop_archive(up, vp, mp, fstype, archive)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_archive);
+	DO_UOPS(up->ufml_op, error, &ap, uop_archive);
 
 	return (error);
 }
@@ -104,7 +90,7 @@ uop_extract(up, vp, mp, fstype, archive)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_extract);
+	DO_UOPS(up->ufml_op, error, &ap, uop_extract);
 
 	return (error);
 }
@@ -130,7 +116,7 @@ uop_compress(up, vp, mp, fstype, compress)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_compress);
+	DO_UOPS(up->ufml_op, error, &ap, uop_compress);
 
 	return (error);
 }
@@ -156,7 +142,7 @@ uop_decompress(up, vp, mp, fstype, compress)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_decompress);
+	DO_UOPS(up->ufml_op, error, &ap, uop_decompress);
 
 	return (error);
 }
@@ -181,7 +167,7 @@ uop_encrypt(up, vp, mp, fstype, encrypt)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_encrypt);
+	DO_UOPS(up->ufml_op, error, &ap, uop_encrypt);
 
 	return (error);
 }
@@ -207,7 +193,7 @@ uop_decrypt(up, vp, mp, fstype, encrypt)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_decrypt);
+	DO_UOPS(up->ufml_op, error, &ap, uop_decrypt);
 
 	return (error);
 }
@@ -232,7 +218,7 @@ uop_snapshot_write(up, vp, mp, fstype)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_snapshot_write);
+	DO_UOPS(up->ufml_op, error, &ap, uop_snapshot_write);
 
 	return (error);
 }
@@ -257,7 +243,7 @@ uop_snapshot_read(up, vp, mp, fstype)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_snapshot_read);
+	DO_UOPS(up->ufml_op, error, &ap, uop_snapshot_read);
 
 	return (error);
 }
@@ -282,7 +268,7 @@ uop_snapshot_delete(up, vp, mp, fstype)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_snapshot_delete);
+	DO_UOPS(up->ufml_op, error, &ap, uop_snapshot_delete);
 
 	return (error);
 }
@@ -307,7 +293,7 @@ uop_snapshot_commit(up, vp, mp, fstype)
 		return (EOPNOTSUPP);
 	}
 
-	DO_UOPS(up->ufml_op, mp, &ap, uop_snapshot_commit);
+	DO_UOPS(up->ufml_op, error, &ap, uop_snapshot_commit);
 
 	return (error);
 }

@@ -29,9 +29,21 @@
 #ifndef UFS_UFML_META_H_
 #define UFS_UFML_META_H_
 
-#include <ufs/ufs/inode.h>
-#include <ufs/mfs/mfsnode.h>
+//#include <ufs/ufs/inode.h>
+//#include <ufs/mfs/mfsnode.h>
 #include <sys/queue.h>
+
+/* UFML Supported File system Types */
+enum ufml_fstype { UFML_UFS, UFML_FFS, UFML_MFS, UFML_LFS };
+
+/* UFML Supported Archive Formats */
+enum ufml_archtype { UFML_AR, UFML_CPIO, UFML_TAR };
+
+/* UFML Supported Compression Formats */
+enum ufml_comptype { UFML_BZIP2, UFML_GZIP, UFML_LZIP, UFML_LZMA, UFML_XZ };
+
+/* UFML Supported Encryption Algorithms */
+enum ufml_enctype { UFML_TWOFISH };
 
 struct ufml_metadata {
 	struct ufml_node	*ufml_node;			/* ufml node pointer */
@@ -63,18 +75,6 @@ struct ufml_metadata {
 #define	IN_EXLOCK			0x0040		/* File has exclusive lock. */
 #define	IN_HASHED			0x0080		/* Inode is on hash list */
 #define	IN_LAZYMOD			0x0100		/* Modified, but don't write yet. */
-
-/* UFML Supported File system Types */
-enum ufml_fstype { UFML_UFS, UFML_FFS, UFML_MFS, UFML_LFS };
-
-/* UFML Supported Archive Formats */
-enum ufml_archtype { UFML_AR, UFML_CPIO, UFML_TAR };
-
-/* UFML Supported Compression Formats */
-enum ufml_comptype { UFML_BZIP2, UFML_GZIP, UFML_LZIP, UFML_LZMA, UFML_XZ };
-
-/* UFML Supported Encryption Algorithms */
-enum ufml_enctype { UFML_TWOFISH };
 
 /* Macros to other supported filesystems */
 #define UFMLTOUFS(vp)		(VTOI(vp))			/* UFS */
