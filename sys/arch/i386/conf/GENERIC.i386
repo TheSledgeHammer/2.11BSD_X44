@@ -57,7 +57,7 @@ file-system 		MSDOSFS			# MS-DOS file system
 file-system 		FDESC			# /dev/fd
 file-system 		FIFO			# FIFOs; RECOMMENDED
 file-system 		UNION			# union file system
-#file-system 		UFML			# ufml file system
+file-system 		UFML			# ufml file system
 
 # File system options
 options			QUOTA			# UFS quotas
