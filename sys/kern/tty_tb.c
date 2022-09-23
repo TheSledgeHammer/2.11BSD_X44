@@ -94,7 +94,7 @@ tbopen(dev, tp)
 	tbp->tbflags = TBTIGER|TBPOINT;		/* default */
 	tp->t_cp = tbp->cbuf;
 	tp->t_inbuf = 0;
-	bzero((caddr_t)&tbp->rets, sizeof (tbp->rets));
+	bzero((caddr_t)&tbp->rets, sizeof(tbp->rets));
 	tp->T_LINEP = (caddr_t)tbp;
 	tp->t_flags |= LITOUT;
 	return (0);
@@ -108,18 +108,15 @@ tbclose(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
-	register int s;
 	int modebits = TBPOINT|TBSTOP;
 
-	tbioctl(tp, (u_int)(BIOSMODE), &modebits, 0);
-	s = spl5();
+	tbioctl(tp, (u_int)(BIOSMODE), &modebits, 0, curproc);
 	((struct tb *)tp->T_LINEP)->tbflags = 0;
 	tp->t_cp = 0;
 	tp->t_inbuf = 0;
 	tp->t_rawq.c_cc = 0;		/* clear queues -- paranoid */
 	tp->t_canq.c_cc = 0;
 	tp->t_line = 0;			/* paranoid: avoid races */
-	splx(s);
 	return (0);
 }
 

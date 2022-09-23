@@ -40,6 +40,7 @@ __FBSDID("$FreeBSD$");
 #include "commands.h"
 
 COMMAND_SET(include, "include", "read commands from a file", command_include);
+COMMAND_SET(optinclude, "optinclude", "run commands from file; ignore exit status", command_optinclude);
 
 #define	MAXARGS	20			/* maximum number of arguments allowed */
 
@@ -119,6 +120,29 @@ command_include(int argc, char *argv[])
 	free(argvbuf);
 
 	return (res);
+}
+
+int
+command_optinclude(int argc, char *argv[])
+{
+    int		i;
+    char	**argvbuf;
+
+	/*
+	 * Since argv is static, we need to save it here.
+	 */
+	argvbuf = (char**) calloc((u_int) argc, sizeof(char*));
+	for (i = 0; i < argc; i++)
+		argvbuf[i] = strdup(argv[i]);
+
+	for (i = 1; (i < argc); i++)
+		interp_include(argvbuf[i]);
+
+	for (i = 0; i < argc; i++)
+		free(argvbuf[i]);
+	free(argvbuf);
+
+	return (CMD_OK);
 }
 
 /*

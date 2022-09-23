@@ -38,5 +38,5 @@ interp_init(void)
 {
 	setenv("script.lang", "simple", 1);
 	/* Read our default configuration. */
-	interp_include("/boot/loader.rc");
+	interp_include("/boot/dloader.rc");
 }

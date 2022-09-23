@@ -19,7 +19,7 @@ HELP_FILES=		${.CURDIR}/help.i386
 
 # Always add MI sources
 
-CLEANFILES+=		${LOADER} ${LOADER}.bin
+CLEANFILES+=	${LOADER} ${LOADER}.bin
 
 ORG=			0x0
 

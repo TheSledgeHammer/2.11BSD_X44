@@ -7,8 +7,8 @@ _BSD_LOADER_MK_=1
 .include <bsd.own.mk>
 
 # Directories
-BOOTSTAND?=					/stand
-BOOTSRC?=					/stand/boot
+BOOTSTAND?=					stand
+BOOTSRC?=					stand/boot
 LIBKERN?= 					${KERNSRCDIR}/lib/libkern
 LIBSA?=						${KERNSRCDIR}/lib/libsa
 BOOTARCH?=					${BOOTSRC}/arch
@@ -31,22 +31,22 @@ BOOTOBJ=					${BOOTSTAND}
 # Accommodates for different naming conventions (i.e. dloader)
 
 INTERP_CONF=				loader.conf
-INTERP_MENU=				menu.rc
-INTERP_RC=					loader.rc
+INTERP_MENU=				dloader.menu
+INTERP_RC=					dloader.rc
 
 # Interpreter Support
-MK_DLOADER=					yes
-MK_FORTH=					no
-MK_LUA=						no
-MK_MRUBY=					no
+MK_LOADER_DLOADER=			yes
+MK_LOADER_LUA=				no
 
 #
 # Have a sensible default
 #
-.if ${MK_DLOADER} == "yes"
-LOADER_DEFAULT_INTERP?= 	dloader
+.if ${MK_LOADER_LUA} == "yes"
+LOADER_DEFAULT_INTERP?=lua
+.elif ${MK_LOADER_DLOADER} == "yes"
+LOADER_DEFAULT_INTERP?=dloader
 .else
-LOADER_DEFAULT_INTERP?=		simp
+LOADER_DEFAULT_INTERP?=simp
 .endif
 LOADER_INTERP?=	${LOADER_DEFAULT_INTERP}
 

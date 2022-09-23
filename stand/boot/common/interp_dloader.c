@@ -32,11 +32,15 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <lib/libsa/stand.h>
 #include "bootstrap.h"
 #include "commands.h"
+
+INTERP_DEFINE("dloader");
 
 struct bootblk_command commands[] = {
 		COMMON_COMMANDS,
@@ -57,7 +61,5 @@ interp_init(void)
 	setenv("script.lang", "dloader", 1);
 
 	/* Read our default configuration. */
-	 if(interp_include("/boot/dloader.rc") != CMD_OK) {
-		 interp_include("/boot/loader.conf");
-	 }
+	interp_include("/boot/dloader.rc");
 }

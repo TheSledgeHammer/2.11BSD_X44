@@ -22,9 +22,11 @@
 /*
  * Address family support routines
  */
-int	null_hash(), null_netmatch();
+int	null_hash(struct sockaddr *, struct afhash *);
+int null_netmatch(struct sockaddr *, struct sockaddr *);
+
 #define	AFNULL 		\
-	{ null_hash,	null_netmatch }
+	{ null_hash, null_netmatch }
 
 #ifdef INET
 extern int inet_hash(), inet_netmatch();
@@ -33,7 +35,6 @@ extern int inet_hash(), inet_netmatch();
 #else
 #define	AFINET	AFNULL
 #endif
-
 #ifdef NS
 extern int ns_hash(), ns_netmatch();
 #define	AFNS	 \
@@ -49,7 +50,8 @@ struct afswitch afswitch[AF_MAX] = {
 	AFNULL, AFNULL,					/* through 16 */
 };
 
-null_init()
+void
+null_init(void)
 {
 	register struct afswitch *af;
 
@@ -62,11 +64,14 @@ null_init()
 }
 
 /*ARGSUSED*/
+int
 null_hash(addr, hp)
 	struct sockaddr *addr;
 	struct afhash *hp;
 {
 	hp->afh_nethash = hp->afh_hosthash = 0;
+
+	return (0);
 }
 
 /*ARGSUSED*/
