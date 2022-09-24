@@ -97,6 +97,7 @@ struct isabus_attach_args;	/* XXX */
 /*
  * Functions provided to machine-independent ISA code.
  */
+int		isa_nmi(void);
 void	isa_attach_hook(struct device *, struct device *, struct isabus_attach_args *);
 void	isa_detach_hook(isa_chipset_tag_t, struct device *);
 int		isa_intr_alloc(isa_chipset_tag_t, int, int, int *);

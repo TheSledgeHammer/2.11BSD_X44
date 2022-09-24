@@ -57,6 +57,10 @@
 #include <sys/null.h>
 #include <sys/devsw.h>
 
+#ifdef DK_SLICES
+#include <sys/diskslice.h>
+#endif
+
 #include <machine/bios.h>
 #include <machine/cpu.h>
 #include <machine/pte.h>
@@ -76,6 +80,22 @@
 
 void	swapconf(void);
 void	setroot(void);
+
+/*
+ * Generic configuration;  all in one
+ */
+//dev_t	rootdev = makedev(0,0);
+//dev_t	dumpdev = makedev(0,1);
+dev_t	swapdev = makedev(1,0);
+u_long	bootdev = 0;
+
+//int		nswap;
+int		dmmin, dmmax, dmtext;
+
+struct swdevt swdevt[] = {
+		{ 1, 0,	0 },
+		{ NODEV, 1,	0 },
+};
 
 /*
  * The following several variables are related to
@@ -128,22 +148,6 @@ configure()
 }
 
 /*
- * Generic configuration;  all in one
- */
-//dev_t	rootdev = makedev(0,0);
-//dev_t	dumpdev = makedev(0,1);
-dev_t	swapdev = makedev(1,0);
-u_long	bootdev = 0;
-
-//int		nswap;
-int		dmmin, dmmax, dmtext;
-
-struct swdevt swdevt[] = {
-		{ 1, 0,	0 },
-		{ NODEV, 1,	0 },
-};
-
-/*
  * Configure swap space and related parameters.
  */
 void
@@ -176,33 +180,18 @@ swapconf(void)
 }
 
 void
-setroot(void)
+setswap(majdev, mindev)
+	int majdev, mindev;
 {
-	int  majdev, mindev, unit, part, adaptor, slice;
-	dev_t orootdev;
-	dev_t temp = 0;
 	struct swdevt *swp;
+	dev_t temp;
+	int swmaj, swmin;
 
-	if ((boothowto & RB_DFLTROOT) || (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC) {
-		return;
-	}
-	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	//slice = set_slice(bootdev);
-	adaptor = set_adaptor(bootdev);
-	part = set_partition(bootdev);
-	unit = set_unit(bootdev);
-	mindev = (unit * MAXPARTITIONS) + part;
-	orootdev = rootdev;
-	rootdev = makedev(majdev, mindev);
-
-	if (rootdev == orootdev) {
-		return;
-	}
-
+	temp = 0;
+	swmaj = major(swp->sw_dev);
+	swmin = minor(swp->sw_dev);
 	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {
-		if (majdev == major(swp->sw_dev)
-				&& (mindev / MAXPARTITIONS)
-						== (minor(swp->sw_dev) / MAXPARTITIONS)) {
+		if (majdev == swmaj && (mindev == swmin)) {
 			temp = swdevt[0].sw_dev;
 			swdevt[0].sw_dev = swp->sw_dev;
 			swp->sw_dev = temp;
@@ -215,4 +204,57 @@ setroot(void)
 	if (temp == dumpdev) {
 		dumpdev = swdevt[0].sw_dev;
 	}
+}
+
+#ifdef DK_SLICES
+int
+setroot_slices(void)
+{
+	int mindev, unit, part, slice;
+
+	unit = B_UNIT(bootdev);
+	part = B_PARTITION(bootdev);
+	slice = B_SLICE(bootdev);
+	mindev = dkmakeminor(unit, slice, part);
+
+	return (mindev);
+}
+#else
+int
+setroot_traditional(void)
+{
+	int mindev, unit, part, adaptor;
+
+	unit = B_UNIT(bootdev);
+	part = B_PARTITION(bootdev);
+	adaptor = B_ADAPTOR(bootdev);
+	mindev = dkminor(unit, part);
+
+	return (mindev);
+}
+#endif
+
+void
+setroot(void)
+{
+	int  majdev, mindev;
+	dev_t orootdev;
+
+	if ((boothowto & RB_DFLTROOT) || (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC) {
+		return;
+	}
+	majdev = B_TYPE(bootdev);
+#ifdef DK_SLICES
+	mindev = setroot_slices();
+
+#else
+	mindev = setroot_traditional();
+#endif
+	//mindev = mindev * MAXPARTITIONS;// (unit * MAXPARTITIONS) + part;
+	orootdev = rootdev;
+	rootdev = makedev(majdev, mindev);
+	if (rootdev == orootdev) {
+		return;
+	}
+	setswap(majdev, mindev);
 }

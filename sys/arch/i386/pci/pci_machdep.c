@@ -656,7 +656,7 @@ pci_intr_string(pc, ih)
 		panic("pci_intr_string: bogus handle 0x%x\n", ih);
 
 #if NIOAPIC > 0
-	apic_intr_string(&irqstr, ec, ih);
+	apic_intr_string(&irqstr, pc, ih);
 #else
 	sprintf(irqstr, "irq %d", ih);
 #endif

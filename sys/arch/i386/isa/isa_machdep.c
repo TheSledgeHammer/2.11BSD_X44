@@ -1,7 +1,5 @@
 /*	$NetBSD: isa_machdep.c,v 1.23.2.1 1997/11/13 08:11:04 mellon Exp $	*/
 
-//#define ISA_DMA_STATS
-
 /*-
  * Copyright (c) 1996, 1997 The NetBSD Foundation, Inc.
  * All rights reserved.

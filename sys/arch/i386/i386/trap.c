@@ -100,6 +100,7 @@
 #include <machine/pte.h>
 #include <machine/proc.h>
 #include <machine/reg.h>
+#include <machine/isa/isa_machdep.h>
 #ifdef DDB
 #include <machine/db_machdep.h>
 #endif

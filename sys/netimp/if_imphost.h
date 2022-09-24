@@ -45,7 +45,7 @@ struct host {
  * mbuf's at the same index.  Reclamation is done
  * automatically at the time a structure is free'd.
  */
-#define	HPMBUF	((MLEN - sizeof(int)) / sizeof(struct host))
+#define	HPMBUF		((MLEN - sizeof(int)) / sizeof(struct host))
 #define	HOSTHASH(a)	(((a).s_addr>>8) % HPMBUF)
 
 /*

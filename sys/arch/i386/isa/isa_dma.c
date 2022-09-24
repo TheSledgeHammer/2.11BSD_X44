@@ -93,9 +93,7 @@
 #include <machine/bus.h>
 #include <machine/intr.h>
 #include <machine/pic.h>
-//#include <machine/pio.h>
 #include <machine/cpufunc.h>
-//#include <machine/segments.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>

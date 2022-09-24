@@ -60,6 +60,7 @@ __KERNEL_RCSID(0, "$NetBSD: mca_machdep.c,v 1.22 2003/12/15 08:38:01 jdolecek Ex
 #define _I386_BUS_DMA_PRIVATE
 #include <machine/bus.h>
 
+#include <machine/isa/isa_machdep.h>
 #include <machine/mca/mca_machdep.h>
 #include <machine/intr.h>
 

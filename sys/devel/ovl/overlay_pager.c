@@ -251,10 +251,19 @@ overlay_pager_io(ovl, vm_page, npages, flags)
 
 	ovl_object = ovl->ovl_object;
 
-	/* if overlay object is null. Assume overlay_pager is also null & return */
-	if(ovl_object == NULL) {
-		return (VM_PAGER_FAIL);
+	/*
+	 * check if overlay pager is not null. if overlay object is null,
+	 * allocate the overlay object and assign it to the overlay pager.
+	 */
+	if(ovl != NULL && ovl_object == NULL) {
+		ovl_object = ovl_object_allocate(0);
+		ovl->ovl_object = ovl_object;
+	} else {
+		if(ovl == NULL && ovl_object == NULL) {
+			goto fail;
+		}
 	}
+
 	/* determine number of pages, to find overlay segment & page offset */
 	if(npages == 1) {
 		ovl_segment = CIRCLEQ_FIRST(&ovl_object->ovo_ovseglist);
@@ -297,6 +306,7 @@ overlay_pager_io(ovl, vm_page, npages, flags)
 			}
 		}
 	}
+fail:
 	/* Shouldn't reach this */
 	return (VM_PAGER_FAIL);
 }

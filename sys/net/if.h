@@ -118,24 +118,24 @@ struct ifnet {
  * IF_ADJ should be used otherwise to adjust for its presence.
  */
 #define	IF_ADJ(m) { \
-	(m)->m_off += sizeof(struct ifnet *); \
-	(m)->m_len -= sizeof(struct ifnet *); \
-	if ((m)->m_len == 0) { \
-		struct mbuf *n; \
-		MFREE((m), n); \
-		(m) = n; \
-	} \
+	(m)->m_off += sizeof(struct ifnet *); 			\
+	(m)->m_len -= sizeof(struct ifnet *); 			\
+	if ((m)->m_len == 0) { 							\
+		struct mbuf *n; 							\
+		MFREE((m), n); 								\
+		(m) = n; 									\
+	} 												\
 }
-#define	IF_DEQUEUEIF(ifq, m, ifp) { \
-	(m) = (ifq)->ifq_head; \
-	if (m) { \
-		if (((ifq)->ifq_head = (m)->m_act) == 0) \
-			(ifq)->ifq_tail = 0; \
-		(m)->m_act = 0; \
-		(ifq)->ifq_len--; \
-		(ifp) = *(mtod((m), struct ifnet **)); \
-		IF_ADJ(m); \
-	} \
+#define	IF_DEQUEUEIF(ifq, m, ifp) { 				\
+	(m) = (ifq)->ifq_head; 							\
+	if (m) { 										\
+		if (((ifq)->ifq_head = (m)->m_act) == 0) 	\
+			(ifq)->ifq_tail = 0; 					\
+		(m)->m_act = 0; 							\
+		(ifq)->ifq_len--; 							\
+		(ifp) = *(mtod((m), struct ifnet **)); 		\
+		IF_ADJ(m); 									\
+	} 												\
 }
 #define	IF_DEQUEUE(ifq, m) { 						\
 	(m) = (ifq)->ifq_head; 							\
@@ -185,9 +185,9 @@ struct	ifreq {
 		struct	sockaddr ifru_addr;
 		struct	sockaddr ifru_dstaddr;
 		struct	sockaddr ifru_broadaddr;
-		short	ifru_flags;
-		int	ifru_metric;
-		caddr_t	ifru_data;
+		short			 ifru_flags;
+		int				 ifru_metric;
+		caddr_t			 ifru_data;
 	} ifr_ifru;
 #define	ifr_addr		ifr_ifru.ifru_addr		/* address */
 #define	ifr_dstaddr		ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */

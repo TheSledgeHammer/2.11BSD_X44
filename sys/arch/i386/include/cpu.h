@@ -176,9 +176,6 @@ void	pagemove(caddr_t, caddr_t, size_t);
 int		i386_get_ldt(struct proc *, char *, register_t *);
 int		i386_set_ldt(struct proc *, char *, register_t *);
 #endif
-
-/* isa_machdep.c */
-int		isa_nmi(void);
 #endif /* _KERNEL */
 
 /*
