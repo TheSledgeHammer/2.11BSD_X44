@@ -53,7 +53,7 @@
 int
 XCOFFNAMEEND(loadfile)(fd, coff, marks, flags)
 	int fd;
-	struct xcoff_exechdr *coff;
+	xcoff_exechdr *coff;
 	u_long *marks;
 	int flags;
 {

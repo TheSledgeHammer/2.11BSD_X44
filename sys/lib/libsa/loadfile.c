@@ -139,6 +139,12 @@ fdloadfile(fd, marks, flags)
 #ifdef BOOT_ELF64
 		Elf64_Ehdr elf64;
 #endif
+#ifdef BOOT_XCOFF32
+		xcoff32_exechdr xcoff32;
+#endif
+#ifdef BOOT_XCOFF64
+		xcoff64_exechdr xcoff64;
+#endif
 #ifdef BOOT_AOUT
 		struct exec aout;
 #endif
@@ -176,6 +182,16 @@ fdloadfile(fd, marks, flags)
 	    hdr.elf64.e_ident[EI_CLASS] == ELFCLASS64) {
 		rval = loadfile_elf64(fd, &hdr.elf64, marks, flags);
 	} else
+#endif
+#ifdef BOOT_XCOFF32
+		if(!XCOFF_BADMAG(&hdr.xcoff32)) {
+			rval = loadfile_xcoff32(fd, &hdr.xcoff32, marks, flags);
+		} else
+#endif
+#ifdef BOOT_XCOFF64
+		if(!XCOFF_BADMAG(&hdr.xcoff64)) {
+			rval = loadfile_xcoff64(fd, &hdr.xcoff64, marks, flags);
+		} else
 #endif
 #ifdef BOOT_AOUT
 	if (OKMAGIC(N_GETMAGIC(hdr.aout))
