@@ -628,9 +628,9 @@ syscall(frame)
 
 	p = curproc;
 	p->p_md.md_regs = frame;
-	code = TF_CODE_ALLOC(frame, nsys);
 	nsys = p->p_emul->e_nsysent;
 	callp = p->p_emul->e_sysent;
+	code = TF_CODE_ALLOC(frame, nsys);
 
 	curpcb->pcb_flags &= ~FM_TRAP; /* used by sendsig */
 	params = (caddr_t) frame->tf_esp + sizeof(int);
