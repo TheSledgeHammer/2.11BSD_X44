@@ -257,7 +257,7 @@ set_bios_selectors(struct bios_segments *seg, int flags)
     setup_descriptor_table(&ssd, 0, 0, SDT_MEMERA, 0, 1, 0, 0, 1, 0);
 
 #ifdef SMP
-    p_gdt = &gdt[PCPU_GET(cpuid) * NGDT];
+    p_gdt = &gdt[PERCPU_GET(cpuid) * NGDT];
 #else
     p_gdt = gdt;
 #endif
