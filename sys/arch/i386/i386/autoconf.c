@@ -52,6 +52,7 @@
 #include <sys/buf.h>
 #include <sys/dk.h>
 #include <sys/conf.h>
+#include <sys/disk.h>
 #include <sys/dmap.h>
 #include <sys/reboot.h>
 #include <sys/null.h>
