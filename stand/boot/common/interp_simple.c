@@ -33,6 +33,8 @@ __FBSDID("$FreeBSD$");
 
 #include "bootstrap.h"
 
+INTERP_DEFINE("simple");
+
 void
 interp_init(void)
 {

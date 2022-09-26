@@ -255,18 +255,26 @@ struct vfsops {
 	int	(*vfs_sysctl)(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 };
 
-#define VFS_MOUNT(MP, PATH, DATA, NDP, P) \
+#define VFS_MOUNT(MP, PATH, DATA, NDP, P) 			\
 	(*(MP)->mnt_op->vfs_mount)(MP, PATH, DATA, NDP, P)
-#define VFS_START(MP, FLAGS, P)	  	(*(MP)->mnt_op->vfs_start)(MP, FLAGS, P)
-#define VFS_UNMOUNT(MP, FORCE, P) 	(*(MP)->mnt_op->vfs_unmount)(MP, FORCE, P)
-#define VFS_ROOT(MP, VPP)	  		(*(MP)->mnt_op->vfs_root)(MP, VPP)
-#define VFS_QUOTACTL(MP,C,U,A,P)  	(*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A, P)
-#define VFS_STATFS(MP, SBP, P)	  	(*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
-#define VFS_SYNC(MP, WAIT, C, P)  	(*(MP)->mnt_op->vfs_sync)(MP, WAIT, C, P)
-#define VFS_VGET(MP, INO, VPP)	  	(*(MP)->mnt_op->vfs_vget)(MP, INO, VPP)
+#define VFS_START(MP, FLAGS, P)	  					\
+	(*(MP)->mnt_op->vfs_start)(MP, FLAGS, P)
+#define VFS_UNMOUNT(MP, FORCE, P) 					\
+	(*(MP)->mnt_op->vfs_unmount)(MP, FORCE, P)
+#define VFS_ROOT(MP, VPP)	  						\
+	(*(MP)->mnt_op->vfs_root)(MP, VPP)
+#define VFS_QUOTACTL(MP,C,U,A,P)  					\
+	(*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A, P)
+#define VFS_STATFS(MP, SBP, P)	  					\
+	(*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
+#define VFS_SYNC(MP, WAIT, C, P)  					\
+	(*(MP)->mnt_op->vfs_sync)(MP, WAIT, C, P)
+#define VFS_VGET(MP, INO, VPP)	  					\
+	(*(MP)->mnt_op->vfs_vget)(MP, INO, VPP)
 #define VFS_FHTOVP(MP, FIDP, NAM, VPP, EXFLG, CRED) \
 	(*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, NAM, VPP, EXFLG, CRED)
-#define	VFS_VPTOFH(VP, FIDP)	  	(*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
+#define	VFS_VPTOFH(VP, FIDP)	  					\
+	(*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
 
 /*
  * Network address lookup element
@@ -290,10 +298,10 @@ struct netexport {
  * exported vnode operations
  */
 int				dounmount(struct mount *, int, struct proc *);
-struct	mount 	*vfs_getvfs(fsid_t *);														/* return vfs given fsid */
+struct mount 	*vfs_getvfs(fsid_t *);														/* return vfs given fsid */
 int				vflush(struct mount *, struct vnode *, int);
 int				vfs_export(struct mount *, struct netexport *, struct export_args *); 		/* process mount export info */
-struct	netcred *vfs_export_lookup(struct mount *, struct netexport *, struct mbuf *); 		/* lookup host in fs export list */
+struct netcred 	*vfs_export_lookup(struct mount *, struct netexport *, struct mbuf *); 		/* lookup host in fs export list */
 int				vfs_mountedon(struct vnode *);    											/* is a vfs mounted on vp */
 int				vfs_busy(struct mount *, int, struct lock_object *, struct proc *);  		/* mark a vfs  busy */
 void			vfs_unbusy(struct mount *, struct proc *);       							/* mark a vfs not busy */
