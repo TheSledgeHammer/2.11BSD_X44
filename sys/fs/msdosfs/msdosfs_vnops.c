@@ -733,6 +733,14 @@ msdosfs_select(ap)
 }
 
 int
+msdosfs_poll(ap)
+	struct vop_poll_args *ap;
+{
+
+	return (1);
+}
+
+int
 msdosfs_mmap(ap)
 	struct vop_mmap_args *ap;
 {
@@ -1855,6 +1863,7 @@ struct vnodeops msdosfs_vnodeops = {
 		.vop_lease = msdosfs_lease_check,	/* lease */
 		.vop_ioctl = msdosfs_ioctl,			/* ioctl */
 		.vop_select = msdosfs_select,		/* select */
+		.vop_select = msdosfs_poll,			/* poll */
 		.vop_revoke = msdosfs_revoke,		/* revoke */
 		.vop_mmap = msdosfs_mmap,			/* mmap */
 		.vop_fsync = msdosfs_fsync,			/* fsync */

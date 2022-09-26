@@ -151,10 +151,9 @@ long Maxmem = 0;
 long dumplo;
 int physmem, maxmem;
 int biosmem;
-//int boothowto = 0;
 struct bootinfo i386boot;
 char bootsize[BOOTINFO_MAXSIZE];
-extern int  *esym;
+extern int *esym;
 
 extern int biosbasemem;
 extern int biosextmem;

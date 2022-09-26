@@ -829,6 +829,21 @@ union_select(ap)
 }
 
 int
+union_poll(ap)
+	struct vop_poll_args /* {
+		struct vnode 	*a_vp;
+		int 			a_fflags;
+		int 			a_events;
+		struct proc 	*a_p;
+	} */ *ap;
+{
+	register struct vnode *ovp = OTHERVP(ap->a_vp);
+
+	ap->a_vp = ovp;
+	return (VCALL(ovp, &ap->a_head));
+}
+
+int
 union_revoke(ap)
 	struct vop_revoke_args /* {
 		struct vnode *a_vp;
@@ -1624,6 +1639,7 @@ struct vnodeops union_vnodeops = {
 		.vop_write = union_write,		/* write */
 		.vop_ioctl = union_ioctl,		/* ioctl */
 		.vop_select = union_select,		/* select */
+		.vop_poll = union_poll,			/* poll */
 		.vop_revoke = union_revoke,		/* revoke */
 		.vop_mmap = union_mmap,			/* mmap */
 		.vop_fsync = union_fsync,		/* fsync */

@@ -599,6 +599,22 @@ ufml_select(ap)
 }
 
 int
+ufml_poll(ap)
+	struct vop_poll_args /* {
+		struct vnode 	*a_vp;
+		int 			a_fflags;
+		int 			a_events;
+		struct proc 	*a_p;
+	} */ *ap;
+{
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_poll(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	return VOP_POLL(UFMLVPTOLOWERVP(ap->a_vp), ap->a_fflags, ap->a_events, ap->a_p);
+}
+
+int
 ufml_mmap(ap)
 	struct vop_mmap_args /* {
 		struct vnode *a_vp;
@@ -1428,6 +1444,7 @@ struct vnodeops ufml_vnodeops = {
 		.vop_lease = ufml_lease_check,	/* lease */
 		.vop_ioctl = ufml_ioctl,		/* ioctl */
 		.vop_select = ufml_select,		/* select */
+		.vop_poll = ufml_poll,			/* poll */
 		.vop_revoke = ufml_revoke,		/* revoke */
 		.vop_mmap = ufml_mmap,			/* mmap */
 		.vop_fsync = ufml_fsync,		/* fsync */

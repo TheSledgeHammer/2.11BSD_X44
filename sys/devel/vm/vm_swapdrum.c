@@ -1238,8 +1238,6 @@ swap_pager_get()
 
 }
 
-
-
 daddr_t
 swap_alloc(index, bsize)
 	int index, bsize;

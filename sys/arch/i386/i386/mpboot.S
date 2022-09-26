@@ -88,7 +88,7 @@ ENTRY(MPentry)
 3:	movl	%eax,%cr4
 
 	/* Now enable paging mode */
-	cmpl	$0, pae_mode
+	cmpl	$0, PAE_MODE
 	je		4f
 	movl	_C_LABEL(IdlePDPT), %eax
 	movl	%eax, %cr3

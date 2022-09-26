@@ -56,9 +56,9 @@ int		 		mprotect();
 int		 		msync();
 int		 		munmap();
 int				mmap();
-int		 		obreak(struct proc *, void *, int *);
 int				sbrk();
 int		 		sstk();
+int		 		obreak(struct proc *, void *, int *);
 #endif
 
 void		 	assert_wait(void *, bool_t);

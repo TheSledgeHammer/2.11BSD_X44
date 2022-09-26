@@ -63,6 +63,7 @@ struct mfsnode {
 #define mfs_read 		((int (*) (struct  vop_read_args *))mfs_badop)
 #define mfs_write 		((int (*) (struct  vop_write_args *))mfs_badop)
 #define mfs_select 		((int (*) (struct  vop_select_args *))mfs_badop)
+#define mfs_poll 		((int (*) (struct  vop_poll_args *))mfs_badop)
 #define mfs_mmap 		((int (*) (struct  vop_mmap_args *))mfs_badop)
 #define mfs_seek 		((int (*) (struct  vop_seek_args *))mfs_badop)
 #define mfs_remove 		((int (*) (struct  vop_remove_args *))mfs_badop)

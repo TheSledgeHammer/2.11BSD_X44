@@ -658,6 +658,19 @@ ufs_select(ap)
 	return (1);
 }
 
+int
+ufs_poll(ap)
+	struct vop_poll_args /* {
+		struct vnode 	*a_vp;
+		int 			a_fflags;
+		int 			a_events;
+		struct proc 	*a_p;
+	} */ *ap;
+{
+
+	return (1);
+}
+
 /*
  * Mmap a file
  *

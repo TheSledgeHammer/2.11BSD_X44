@@ -60,6 +60,7 @@
 #endif
 
 #ifndef PMAP_PAE_COMP /* PMAP_NOPAE */
+#define PAE_MODE			1									/* pae not enabled */
 
 /* NOPAE Constants */
 #define	PD_SHIFT			22
@@ -86,8 +87,8 @@
 typedef uint32_t	 		pd_entry_t;
 typedef uint32_t 			pt_entry_t;
 
-#else /* PMAP_PAE_COMP */
-//#define	PMAP_PAE_COMP
+#else /* PMAP_PAE */
+#define PAE_MODE			0									/* pae enabled */
 
 /* PAE Constants  */
 #define	PD_SHIFT			21									/* LOG2(NBPDR) */

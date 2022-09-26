@@ -66,6 +66,7 @@ struct vnodeops mfs_vnodeops = {
 		.vop_write = mfs_write,			/* write */
 		.vop_ioctl = mfs_ioctl,			/* ioctl */
 		.vop_select = mfs_select,		/* select */
+		.vop_poll = mfs_poll,			/* poll */
 		.vop_revoke = mfs_revoke,		/* revoke */
 		.vop_mmap = mfs_mmap,			/* mmap */
 		.vop_fsync = spec_fsync,		/* fsync */

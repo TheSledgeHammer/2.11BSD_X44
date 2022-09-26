@@ -73,6 +73,7 @@ struct vnodeops ufs211_vnodeops = {
 		.vop_lease = ufs211_lease_check,	/* lease */
 		.vop_ioctl = ufs211_ioctl,			/* ioctl */
 		.vop_select = ufs211_select,		/* select */
+		.vop_poll = ufs211_poll,			/* poll */
 		.vop_revoke = ufs211_revoke,		/* revoke */
 		.vop_mmap = ufs211_mmap,			/* mmap */
 		.vop_fsync = ufs211_fsync,			/* fsync */
@@ -120,6 +121,7 @@ struct vnodeops ufs211_specops = {
 		.vop_lease = spec_lease_check,		/* lease */
 		.vop_ioctl = spec_ioctl,			/* ioctl */
 		.vop_select = spec_select,			/* select */
+		.vop_poll = spec_poll,				/* poll */
 		.vop_revoke = spec_revoke,			/* revoke */
 		.vop_mmap = spec_mmap,				/* mmap */
 		.vop_fsync = spec_fsync,			/* fsync */
@@ -168,6 +170,7 @@ struct vnodeops ufs211_fifoops = {
 		.vop_lease = fifo_lease_check,		/* lease */
 		.vop_ioctl = fifo_ioctl,			/* ioctl */
 		.vop_select = fifo_select,			/* select */
+		.vop_poll = fifo_poll,				/* poll */
 		.vop_revoke = fifo_revoke,			/* revoke */
 		.vop_mmap = fifo_mmap,				/* mmap */
 		.vop_fsync = fifo_fsync,			/* fsync */
@@ -645,35 +648,42 @@ ufs211_write(ap)
 
 int
 ufs211_lease_check(ap)
-	struct vop_lease_check_args ap;
+	struct vop_lease_check_args *ap;
 {
 	return (0);
 }
 
 int
 ufs211_ioctl(ap)
-	struct vop_ioctl_args ap;
+	struct vop_ioctl_args *ap;
 {
 	return (ENOTTY);
 }
 
 int
 ufs211_select(ap)
-	struct vop_select_args ap;
+	struct vop_select_args *ap;
+{
+	return (1);
+}
+
+int
+ufs211_poll(ap)
+	struct vop_poll_args *ap;
 {
 	return (1);
 }
 
 int
 ufs211_revoke(ap)
-	struct vop_revoke_args ap;
+	struct vop_revoke_args *ap;
 {
 	return (0);
 }
 
 int
 ufs211_mmap(ap)
-	struct vop_mmap_args ap;
+	struct vop_mmap_args *ap;
 {
 	return (EINVAL);
 }

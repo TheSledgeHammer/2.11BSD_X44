@@ -393,6 +393,22 @@ lofs_select(ap)
 }
 
 int
+lofs_poll(ap)
+	struct vop_poll_args /* {
+		struct vnode 	*a_vp;
+		int 			a_fflags;
+		int 			a_events;
+		struct proc 	*a_p;
+	} */ *ap;
+{
+#ifdef LOFS_DIAGNOSTIC
+	printf("lofs_poll(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
+#endif
+
+	return VOP_POLL(LOFSVP(ap->a_vp), ap->a_fflags, ap->a_events, ap->a_p);
+}
+
+int
 lofs_mmap(ap)
 	struct vop_mmap_args /* {
 		struct vnode *a_vp;
@@ -1179,6 +1195,7 @@ struct vnodeops lofs_vnodeops = {
 		.vop_lease = lofs_lease_check,	/* lease */
 		.vop_ioctl = lofs_ioctl,		/* ioctl */
 		.vop_select = lofs_select,		/* select */
+		.vop_poll = lofs_poll,			/* poll */
 		.vop_revoke = lofs_revoke,		/* revoke */
 		.vop_mmap = lofs_mmap,			/* mmap */
 		.vop_fsync = lofs_fsync,		/* fsync */

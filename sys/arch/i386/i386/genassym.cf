@@ -109,6 +109,8 @@ define PAGE_MASK			PGMASK
 define PAGE_SIZE			PGSIZE
 define USRSTACK 			USRSTACK
 
+define PAE_MODE				PAE_MODE
+
 define PCB_CR3 				offsetof(struct pcb, pcb_cr3)
 define PCB_EIP 				offsetof(struct pcb, pcb_eib)
 define PCB_EBX 				offsetof(struct pcb, pcb_ebx)

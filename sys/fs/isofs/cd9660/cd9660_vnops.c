@@ -466,6 +466,19 @@ cd9660_select(ap)
 	return (1);
 }
 
+int
+cd9660_poll(ap)
+	struct vop_poll_args /* {
+		struct vnode 	*a_vp;
+		int 			a_fflags;
+		int 			a_events;
+		struct proc 	*a_p;
+	} */ *ap;
+{
+
+	return (1);
+}
+
 /*
  * Mmap a file
  *
@@ -1110,6 +1123,7 @@ struct vnodeops cd9660_vnodeops = {
 		.vop_lease = cd9660_lease_check,		/* lease */
 		.vop_ioctl = cd9660_ioctl,				/* ioctl */
 		.vop_select= cd9660_select,				/* select */
+		.vop_poll= cd9660_poll,					/* poll */
 		.vop_revoke = cd9660_revoke,			/* revoke */
 		.vop_mmap = cd9660_mmap,				/* mmap */
 		.vop_fsync = cd9660_fsync,				/* fsync */
@@ -1159,6 +1173,7 @@ struct vnodeops cd9660_specops = {
 		.vop_lease = spec_lease_check,			/* lease */
 		.vop_ioctl = spec_ioctl,				/* ioctl */
 		.vop_select= spec_select,				/* select */
+		.vop_poll= spec_poll,					/* poll */
 		.vop_revoke = spec_revoke,				/* revoke */
 		.vop_mmap = spec_mmap,					/* mmap */
 		.vop_fsync = spec_fsync,				/* fsync */
@@ -1206,6 +1221,7 @@ struct vnodeops cd9660_fifoops = {
 		.vop_lease = fifo_lease_check, 			/* lease */
 		.vop_ioctl = fifo_ioctl, 				/* ioctl */
 		.vop_select = fifo_select, 				/* select */
+		.vop_poll= fifo_poll,					/* poll */
 		.vop_revoke = fifo_revoke, 				/* revoke */
 		.vop_mmap = fifo_mmap, 					/* mmap */
 		.vop_fsync = fifo_fsync, 				/* fsync */
