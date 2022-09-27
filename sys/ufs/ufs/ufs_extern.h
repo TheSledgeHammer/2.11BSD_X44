@@ -111,6 +111,7 @@ int	 	ufs_rename(struct vop_rename_args *);
 int	 	ufs_rmdir(struct vop_rmdir_args *);
 int	 	ufs_seek(struct vop_seek_args *);
 int	 	ufs_select(struct vop_select_args *);
+int	 	ufs_poll(struct vop_poll_args *);
 int	 	ufs_setattr(struct vop_setattr_args *);
 int	 	ufs_strategy(struct vop_strategy_args *);
 int	 	ufs_symlink(struct vop_symlink_args *);
