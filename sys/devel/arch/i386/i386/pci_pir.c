@@ -74,20 +74,20 @@ struct pci_dev_lookup {
 	int						pin;
 };
 
-typedef void pir_entry_handler(struct PIR_entry *entry, struct PIR_intpin* intpin, void *arg);
+typedef void pir_entry_handler(struct PIR_entry *, struct PIR_intpin *, void *);
 
-static void		pci_print_irqmask(u_int16_t irqs);
-static int		pci_pir_biosroute(int bus, int device, int func, int pin, int irq);
-static int		pci_pir_choose_irq(struct pci_link *pci_link, int irqmask);
-static void		pci_pir_create_links(struct PIR_entry *entry, struct PIR_intpin *intpin, void *arg);
+static void		pci_print_irqmask(u_int16_t);
+static int		pci_pir_biosroute(int, int, int, int, int);
+static int		pci_pir_choose_irq(struct pci_link *, int);
+static void		pci_pir_create_links(struct PIR_entry *, struct PIR_intpin *, void *);
 static void		pci_pir_dump_links(void);
-static struct pci_link *pci_pir_find_link(uint8_t link_id);
-static void		pci_pir_find_link_handler(struct PIR_entry *entry, struct PIR_intpin *intpin, void *arg);
-static void		pci_pir_initial_irqs(struct PIR_entry *entry, struct PIR_intpin *intpin, void *arg);
+static struct pci_link *pci_pir_find_link(uint8_t);
+static void		pci_pir_find_link_handler(struct PIR_entry *, struct PIR_intpin *, void *);
+static void		pci_pir_initial_irqs(struct PIR_entry *, struct PIR_intpin *, void *);
 static void		pci_pir_parse(void);
-static uint8_t	pci_pir_search_irq(int bus, int device, int pin);
-static int		pci_pir_valid_irq(struct pci_link *pci_link, int irq);
-static void		pci_pir_walk_table(pir_entry_handler *handler, void *arg);
+static uint8_t	pci_pir_search_irq(int, int, int);
+static int		pci_pir_valid_irq(struct pci_link *, int);
+static void		pci_pir_walk_table(pir_entry_handler *, void *);
 
 static struct PIR_table *pci_route_table;
 static struct device pir_device;
@@ -123,10 +123,12 @@ pcibios_pir_init()
 
 	/* Look for $PIR and then _PIR. */
 	sigaddr = bios_sigsearch(0, "$PIR", 4, 16, 0);
-	if (sigaddr == 0)
+	if (sigaddr == 0) {
 		sigaddr = bios_sigsearch(0, "_PIR", 4, 16, 0);
-	if (sigaddr == 0)
+	}
+	if (sigaddr == 0) {
 		return;
+	}
 
 	/* If we found something, check the checksum and length. */
 	/* XXX - Use pmap_mapdev()? */
@@ -134,27 +136,30 @@ pcibios_pir_init()
 	if (pt->pt_header.ph_length <= sizeof(struct PIR_header)) {
 		return;
 	}
-	for (cv = (u_int8_t*) pt, ck = 0, i = 0; i < (pt->pt_header.ph_length); i++)
+	for (cv = (u_int8_t*) pt, ck = 0, i = 0; i < (pt->pt_header.ph_length); i++) {
 		ck += cv[i];
-	if (ck != 0)
+	}
+	if (ck != 0) {
 		return;
+	}
 	/* Ok, we've got a valid table. */
 	pci_route_table = pt;
-	pci_route_count = (pt->pt_header.ph_length - sizeof(struct PIR_header))
-			/ sizeof(struct PIR_entry);
+	pci_route_count = (pt->pt_header.ph_length - sizeof(struct PIR_header))/sizeof(struct PIR_entry);
 }
 
 /*
  * Find the pci_link structure for a given link ID.
  */
 static struct pci_link *
-pci_pir_find_link(uint8_t link_id)
+pci_pir_find_link(link_id)
+	uint8_t link_id;
 {
 	struct pci_link *pci_link;
 
 	TAILQ_FOREACH(pci_link, &pci_links, pl_links) {
-		if (pci_link->pl_id == link_id)
+		if (pci_link->pl_id == link_id) {
 			return (pci_link);
+		}
 	}
 	return (NULL);
 }
@@ -168,9 +173,9 @@ pci_pir_find_link_handler(struct PIR_entry *entry, struct PIR_intpin *intpin, vo
 	struct pci_link_lookup *lookup;
 
 	lookup = (struct pci_link_lookup*) arg;
-	if (entry->pe_bus == lookup->bus && entry->pe_device == lookup->device
-			&& intpin - entry->pe_intpin == lookup->pin)
+	if (entry->pe_bus == lookup->bus && entry->pe_device == lookup->device && intpin - entry->pe_intpin == lookup->pin) {
 		*lookup->pci_link_ptr = pci_pir_find_link(intpin->link);
+	}
 }
 
 /*
@@ -179,8 +184,9 @@ pci_pir_find_link_handler(struct PIR_entry *entry, struct PIR_intpin *intpin, vo
 static int
 pci_pir_valid_irq(struct pci_link *pci_link, int irq)
 {
-	if (!PCI_INTERRUPT_VALID(irq))
+	if (!PCI_INTERRUPT_VALID(irq)) {
 		return (0);
+	}
 	return (pci_link->pl_irqmask & (1 << irq));
 }
 
@@ -199,9 +205,11 @@ pci_pir_walk_table(pir_entry_handler *handler, void *arg)
 	entry = &pci_route_table->pt_entry[0];
 	for (i = 0; i < pci_route_count; i++, entry++) {
 		intpin = &entry->pe_intpin[0];
-		for (pin = 0; pin < 4; pin++, intpin++)
-			if (intpin->link != 0)
+		for (pin = 0; pin < 4; pin++, intpin++) {
+			if (intpin->link != 0) {
 				handler(entry, intpin, arg);
+			}
+		}
 	}
 }
 
@@ -239,6 +247,7 @@ pci_pir_create_links(struct PIR_entry *entry, struct PIR_intpin *intpin, void *a
 static uint8_t
 pci_pir_search_irq(int bus, int device, int pin)
 {
+	const struct pci_quirkdata *qd;
 	pcitag_t tag;
 	pcireg_t id, bhlcr, value;
 	int function, nfuncs;
@@ -257,8 +266,10 @@ pci_pir_search_irq(int bus, int device, int pin)
 		if (PCI_VENDOR(id) == 0) {
 			continue;
 		}
+
+		qd = pci_lookup_quirkdata(PCI_VENDOR(id), PCI_PRODUCT(id));
 		bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
-		if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
+		if (PCI_HDRTYPE_MULTIFN(bhlcr) || (qd != NULL && (qd->quirks & PCI_QUIRK_MULTIFUNCTION) != 0)) {
 			nfuncs = 8;
 		} else {
 			nfuncs = 1;
@@ -271,10 +282,7 @@ pci_pir_search_irq(int bus, int device, int pin)
 			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID) {
 				continue;
 			}
-			/*
-			 * XXX Not invalid, but we've done this
-			 * ~forever.
-			 */
+			/* Not invalid, but we've done this ~forever */
 			if (PCI_VENDOR(id) == 0) {
 				continue;
 			}
@@ -302,6 +310,8 @@ pci_pir_read(pc, tag)
 	intr = pci_conf_read(pc, tag, PCI_INTERRUPT_REG);
 	pin = PCI_INTERRUPT_PIN(intr);
 	irq = PCI_INTERRUPT_LINE(intr);
+
+
 }
 
 void
@@ -502,8 +512,7 @@ pci_pir_parse(void)
 	 * of 255 or 0 clears any preset IRQ.
 	 */
 	i = 0;
-	TAILQ_FOREACH(pci_link, &pci_links, pl_links)
-	{
+	TAILQ_FOREACH(pci_link, &pci_links, pl_links) {
 		snprintf(tunable_buffer, sizeof(tunable_buffer), "hw.pci.link.%#x.irq",
 				pci_link->pl_id);
 		if (getenv_int(tunable_buffer, &irq) == 0)

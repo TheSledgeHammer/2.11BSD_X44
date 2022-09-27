@@ -71,15 +71,47 @@ __KERNEL_RCSID(0, "$NetBSD: pcibios.c,v 1.14.2.1 2004/04/28 05:19:13 jmc Exp $")
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
+#include <sys/null.h>
 
 #include <dev/core/pci/pcidevs.h>
 #include <dev/core/pci/pcireg.h>
-#include <include/pci/pci_machdep.h>
+
+#include <arch/i386/include/pci/pci_machdep.h>
+#include <arch/i386/include/bios.h>
 
 #include <devel/arch/i386/include/pci_cfgreg.h>
 #include <devel/arch/i386/include/pcibios.h>
 
-static struct lock_object pcicfg_lock;
+#define PRVERB(a) do {			\
+	if (bootverbose)			\
+		printf a ;				\
+} while (0)
+
+static struct PIR_table *pci_route_table;
+static struct lock_object pcibios_lock;
+static int pci_route_count;
+int pcibios_max_bus;
+
+static u_int16_t
+pcibios_get_version(void)
+{
+	struct bios_regs args;
+
+	if (PCIbios.ventry == 0) {
+		PRVERB(("pcibios: No call entry point\n"));
+		return (0);
+	}
+	args.eax = PCIBIOS_BIOS_PRESENT;
+	if (bios32(&args, PCIbios.ventry, GSEL(GCODE_SEL, SEL_KPL))) {
+		PRVERB(("pcibios: BIOS_PRESENT call failed\n"));
+		return (0);
+	}
+	if (args.edx != 0x20494350) {
+		PRVERB(("pcibios: BIOS_PRESENT didn't return 'PCI ' in edx\n"));
+		return (0);
+	}
+	return (args.ebx & 0xffff);
+}
 
 void
 pcibios_init(void)
@@ -89,12 +121,14 @@ pcibios_init(void)
 	static int opened = 0;
 
 	sigaddr = bios_sigsearch(0, "$PCI", 4, 16, 0);
-	if (sigaddr == 0)
+	if (sigaddr == 0) {
 		sigaddr = bios_sigsearch(0, "_PCI", 4, 16, 0);
-	if (sigaddr == 0)
+	}
+	if (sigaddr == 0) {
 		return;
+	}
 
-	if (cfgmech == CFGMECH_NONE && pcireg_cfgopen() == 0) {
+	if (cfgmech == CFGMECH_NONE) {
 		pci_mode_set(cfgmech ? 1 : 2);
 	} else {
 		pci_mode_set(cfgmech ? 1 : 2);
@@ -104,84 +138,89 @@ pcibios_init(void)
 	if (v > 0) {
 		PRVERB(("pcibios: BIOS version %x.%02x\n", (v & 0xff00) >> 8, v & 0xff));
 	}
-	simple_lock_init(&pcicfg_lock, "pcicfg_lock");
+	simple_lock_init(&pcibios_lock, "pcibios_lock");
 	opened = 1;
 
 	/* $PIR requires PCI BIOS 2.10 or greater. */
 	if (v >= 0x0210) {
 		pcibios_pir_init();
 	}
+
+#ifdef PCIBIOS_INTR_FIXUP
+	if (pci_route_table != NULL) {
+		int rv;
+		u_int16_t pciirq;
+
+		rv = pci_intr_fixup(NULL, I386_BUS_SPACE_IO, &pciirq);
+		switch (rv) {
+		case -1:
+			/* Non-fatal error. */
+			printf("Warning: unable to fix up PCI interrupt "
+					"routing\n");
+			break;
+
+		case 1:
+			/* Fatal error. */
+			panic("pcibios_init: interrupt fixup failed");
+			break;
+		}
+	}
+#endif
+
+#ifdef PCIBIOS_BUS_FIXUP
+	pcibios_max_bus = pci_bus_fixup(NULL, 0);
+#ifdef PCIBIOSVERBOSE
+	printf("PCI bus #%d is the last bus\n", pcibios_max_bus);
+#endif
+#endif
+
+#ifdef PCIBIOS_ADDR_FIXUP
+	pci_addr_fixup(NULL, pcibios_max_bus);
+#endif
 }
 
-#define PCIADDR_MEM_START		0x0
-#define PCIADDR_MEM_END			0xffffffff
-#define PCIADDR_PORT_START		0x0
-#define PCIADDR_PORT_END		0xffff
-
-/* for ISA devices */
-#define PCIADDR_ISAPORT_RESERVE	0x5800 /* empirical value */
-#define PCIADDR_ISAMEM_RESERVE	(16 * 1024 * 1024)
-
-struct pciaddr {
-	struct extent 	*extent_mem;
-	struct extent 	*extent_port;
-	bus_addr_t 		mem_alloc_start;
-	bus_addr_t 		port_alloc_start;
-	int 			nbogus;
-};
-
-extern struct pciaddr pciaddr;
-
-int
-pci_alloc_mem(int type, bus_addr_t *addr, bus_size_t size)
-{
-	struct pciaddr *pciaddrmap;
-	struct extent *ex;
-	bus_addr_t start;
-	int error;
-
-	ex = (type == PCI_MAPREG_TYPE_MEM ? pciaddrmap->extent_mem : pciaddrmap->extent_port);
-
-	start = (type == PCI_MAPREG_TYPE_MEM ? pciaddrmap->mem_alloc_start : pciaddrmap->port_alloc_start);
-	if (start < ex->ex_start || start + size - 1 >= ex->ex_end) {
-		printf("No available resources.\n");
-		return (1);
-	}
-
-	pciaddr.extent_mem = extent_create("PCI I/O memory space",
-			PCIADDR_MEM_START, PCIADDR_MEM_END, 0, 0, EX_NOWAIT);
-	KASSERT(pciaddr.extent_mem);
-
-	pciaddr.extent_port = extent_create("PCI I/O port space",
-	PCIADDR_PORT_START, PCIADDR_PORT_END, 0, 0, EX_NOWAIT);
-	KASSERT(pciaddr.extent_port);
-
-	error = extent_alloc_region(ex, *addr, size, EX_NOWAIT| EX_MALLOCOK);
-	if (error) {
-		printf("No available resources.\n");
-		return (1);
-	}
-
-	error = extent_alloc_subregion(ex, start, ex->ex_end, size, size, 0,
-	EX_FAST | EX_NOWAIT | EX_MALLOCOK, (u_long*) addr);
-	if (error) {
-		printf("Resource conflict.\n");
-		return (1);
-	}
-	return (0);
-}
-
+/*
+ * Look for the interrupt routing table.
+ *
+ * We use PCI BIOS's PIR table if it's available. $PIR is the standard way
+ * to do this.  Sadly, some machines are not standards conforming and have
+ * _PIR instead.  We shrug and cope by looking for both.
+ */
 void
-pci_alloc_isa_mem()
+pcibios_pir_init()
 {
-	extern vm_offset_t avail_end;
-	bus_addr_t start;
+	struct PIR_table *pt;
+	uint32_t sigaddr;
+	int i;
+	uint8_t ck, *cv;
 
-	start = i386_round_page(avail_end + 1);
-	if (start < PCIADDR_ISAMEM_RESERVE)
-		start = PCIADDR_ISAMEM_RESERVE;
-	pciaddr.mem_alloc_start = (start + 0x100000 + 1) & ~(0x100000 - 1);
-	pciaddr.port_alloc_start = PCIADDR_ISAPORT_RESERVE;
-	printf(" Physical memory end: 0x%08x\n PCI memory mapped I/O "
-			"space start: 0x%08x\n", (unsigned) avail_end, (unsigned) pciaddr.mem_alloc_start);
+	/* Don't try if we've already found a table. */
+	if (pci_route_table != NULL) {
+		return;
+	}
+
+	/* Look for $PIR and then _PIR. */
+	sigaddr = bios_sigsearch(0, "$PIR", 4, 16, 0);
+	if (sigaddr == 0) {
+		sigaddr = bios_sigsearch(0, "_PIR", 4, 16, 0);
+	}
+	if (sigaddr == 0) {
+		return;
+	}
+
+	/* If we found something, check the checksum and length. */
+	/* XXX - Use pmap_mapdev()? */
+	pt = (struct PIR_table *)(uintptr_t)BIOS_PADDRTOVADDR(sigaddr);
+	if (pt->pt_header.ph_length <= sizeof(struct PIR_header)) {
+		return;
+	}
+	for (cv = (u_int8_t*) pt, ck = 0, i = 0; i < (pt->pt_header.ph_length); i++) {
+		ck += cv[i];
+	}
+	if (ck != 0) {
+		return;
+	}
+	/* Ok, we've got a valid table. */
+	pci_route_table = pt;
+	pci_route_count = (pt->pt_header.ph_length - sizeof(struct PIR_header))/sizeof(struct PIR_entry);
 }

@@ -37,8 +37,7 @@
 /*
  * Signature structure for the BIOS32 Service Directory header
  */
-struct bios32_SDheader
-{
+struct bios32_SDheader {
     u_int8_t	sig[4];
     u_int32_t	entry;
     u_int8_t	revision;
@@ -50,8 +49,7 @@ struct bios32_SDheader
 /*
  * PnP BIOS presence structure
  */
-struct PnPBIOS_table
-{
+struct PnPBIOS_table {
     u_int8_t	sig[4];			/* "$PnP */
     u_int8_t	version;		/* should be 0x10 */
     u_int8_t	len;    		/* total structure length */
@@ -88,39 +86,35 @@ struct PnPBIOS_table
  * int 1a:b18e returns PIR_table in buffer at es:(e)di
  * int 1a:b406 returns es:di pointing to the BIOS PIR_table
  */
-struct PIR_header
-{
-    int8_t				ph_signature[4];
+struct PIR_header {
+    int8_t				ph_signature[4];			/* $PIR */
     u_int16_t			ph_version;
     u_int16_t			ph_length;
     u_int8_t			ph_router_bus;
     u_int8_t			ph_router_dev_fn;
     u_int16_t			ph_pci_irqs;
-    u_int16_t			ph_router_vendor;
-    u_int16_t			ph_router_device;
+    u_int16_t			ph_router_vendor;			/* PCI vendor */
+    u_int16_t			ph_router_device;			/* PCI product */
     u_int32_t			ph_miniport;
     u_int8_t			ph_res[11];
     u_int8_t			ph_checksum;
 } __attribute__((__packed__));
 
-struct PIR_intpin
-{
+struct PIR_intpin {
     u_int8_t			link;
     u_int16_t			irqs;
 } __attribute__((__packed__));
 
-struct PIR_entry
-{
+struct PIR_entry {
     u_int8_t			pe_bus;
     u_int8_t			pe_res1:3;
     u_int8_t			pe_device:5;
-    struct PIR_intpin	pe_intpin[4];
+    struct PIR_intpin	pe_intpin[4];				/* INT[A:D]# */
     u_int8_t			pe_slot;
     u_int8_t			pe_res3;
 } __attribute__((__packed__));
 
-struct PIR_table
-{
+struct PIR_table {
     struct PIR_header	pt_header;
     struct PIR_entry	pt_entry[0];
 } __attribute__((__packed__));

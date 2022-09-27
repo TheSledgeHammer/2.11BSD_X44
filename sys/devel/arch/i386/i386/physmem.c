@@ -45,7 +45,6 @@
 #include <arch/i386/include/bios.h>
 #include <arch/i386/include/bootinfo.h>
 
-
 /* bios smap */
 static int
 add_smap_entry(struct bios_smap *smap)
