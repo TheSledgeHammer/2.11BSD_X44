@@ -51,10 +51,10 @@
 #define _I386_PMAP_H_
 
 #ifdef PMAP_PAE_COMP
-#define PAE_MODE 	0
+#define PAE_MODE 	0	/* pae enabled */
 #else
 #undef PMAP_PAE_COMP
-#define PAE_MODE 	1
+#define PAE_MODE 	1	/* pae disabled */
 #endif
 
 /*
@@ -66,7 +66,7 @@
 #define NKPDE				(KVA_PAGES)							/* number of page tables/pde's */
 #endif
 
-#ifndef PMAP_PAE_COMP /* PMAP_NOPAE */									/* pae not enabled */
+#ifndef PMAP_PAE_COMP /* PMAP_NOPAE */									
 
 /* NOPAE Constants */
 #define	PD_SHIFT			22
@@ -93,8 +93,7 @@
 typedef uint32_t	 		pd_entry_t;
 typedef uint32_t 			pt_entry_t;
 
-#else /* PMAP_PAE */
-#define PAE_MODE			0									/* pae enabled */
+#else /* PMAP_PAE */							
 
 /* PAE Constants  */
 #define	PD_SHIFT			21									/* LOG2(NBPDR) */
