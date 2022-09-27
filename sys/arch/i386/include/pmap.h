@@ -50,6 +50,13 @@
 #ifndef _I386_PMAP_H_
 #define _I386_PMAP_H_
 
+#ifdef PMAP_PAE_COMP
+#define PAE_MODE 	0
+#else
+#undef PMAP_PAE_COMP
+#define PAE_MODE 	1
+#endif
+
 /*
  * 386 page table entry and page table directory
  * W.Jolitz, 8/89
@@ -59,8 +66,7 @@
 #define NKPDE				(KVA_PAGES)							/* number of page tables/pde's */
 #endif
 
-#ifndef PMAP_PAE_COMP /* PMAP_NOPAE */
-#define PAE_MODE			1									/* pae not enabled */
+#ifndef PMAP_PAE_COMP /* PMAP_NOPAE */									/* pae not enabled */
 
 /* NOPAE Constants */
 #define	PD_SHIFT			22
@@ -92,8 +98,8 @@ typedef uint32_t 			pt_entry_t;
 
 /* PAE Constants  */
 #define	PD_SHIFT			21									/* LOG2(NBPDR) */
-#define	PG_FRAME			(0x000ffffffffff000ull)
-#define	PG_PS_FRAME			(0x000fffffffe00000ull)				/* PD_MASK_PAE */
+//#define	PG_FRAME			(0x000ffffffffff000ull)
+#define	PG_PS_FRAME			(0x000fffffffe00000ull)							/* PD_MASK_PAE */
 
 #define	NTRPPTD				2									/* Number of PTDs for trampoline mapping */
 #define	LOWPTDI				2									/* low memory map pde */
