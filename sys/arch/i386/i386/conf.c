@@ -168,7 +168,6 @@ void
 core_init(devsw)
 	struct devswtable *devsw;
 {
-	DEVSWIO_CONFIG_INIT(devsw, NPCI, NULL, &pci_cdevsw, NULL);				/* PCI user  */
 	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);				/* Serial port */
 //	DEVSWIO_CONFIG_INIT(devsw, NLPT, NULL, &lpt_cdevsw, NULL);				/* parallel printer */
 }
