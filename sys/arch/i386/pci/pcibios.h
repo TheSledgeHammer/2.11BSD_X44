@@ -31,8 +31,6 @@
 #ifndef _I386_PCIBIOS_H_
 #define	_I386_PCIBIOS_H_
 
-#include <machine/bios.h>
-
 #define	PCI_IRQ_TABLE_START		0xf0000
 #define	PCI_IRQ_TABLE_END		0xfffff
 
