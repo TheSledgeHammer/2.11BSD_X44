@@ -73,24 +73,34 @@ __KERNEL_RCSID(0, "$NetBSD: pcibios.c,v 1.14.2.1 2004/04/28 05:19:13 jmc Exp $")
 #include <sys/queue.h>
 #include <sys/null.h>
 
-#include <dev/core/pci/pcidevs.h>
 #include <dev/core/pci/pcireg.h>
+#include <dev/core/pci/pcivar.h>
+#include <dev/core/pci/pcidevs.h>
 
-#include <arch/i386/include/pci/pci_machdep.h>
-#include <arch/i386/include/bios.h>
+#include <machine/pci/pci_machdep.h>
+#include <i386/include/pcibios.h>
+#ifdef PCIBIOS_INTR_FIXUP
+#include <i386/pci/pci_intr_fixup.h>
+#endif
+#ifdef PCIBIOS_BUS_FIXUP
+#include <i386/pci/pci_bus_fixup.h>
+#endif
+#ifdef PCIBIOS_ADDR_FIXUP
+#include <i386/pci/pci_addr_fixup.h>
+#endif
 
-#include <devel/arch/i386/include/pci_cfgreg.h>
-#include <devel/arch/i386/include/pcibios.h>
+#ifdef PCIBIOSVERBOSE
+int	pcibiosverbose = 1;
+#endif
+
+struct PIR_table *pci_route_table;
+int pci_route_count;
+int pcibios_max_bus;
 
 #define PRVERB(a) do {			\
 	if (bootverbose)			\
 		printf a ;				\
 } while (0)
-
-static struct PIR_table *pci_route_table;
-static struct lock_object pcibios_lock;
-static int pci_route_count;
-int pcibios_max_bus;
 
 static u_int16_t
 pcibios_get_version(void)
@@ -118,7 +128,6 @@ pcibios_init(void)
 {
 	uint32_t sigaddr;
 	uint16_t v;
-	static int opened = 0;
 
 	sigaddr = bios_sigsearch(0, "$PCI", 4, 16, 0);
 	if (sigaddr == 0) {
@@ -128,21 +137,18 @@ pcibios_init(void)
 		return;
 	}
 
-	if (cfgmech == CFGMECH_NONE) {
-		pci_mode_set(cfgmech ? 1 : 2);
-	} else {
-		pci_mode_set(cfgmech ? 1 : 2);
-	}
+	pci_mode_set(pci_mode ? 1 : 2);
 
 	v = pcibios_get_version();
 	if (v > 0) {
 		PRVERB(("pcibios: BIOS version %x.%02x\n", (v & 0xff00) >> 8, v & 0xff));
 	}
-	simple_lock_init(&pcibios_lock, "pcibios_lock");
-	opened = 1;
 
 	/* $PIR requires PCI BIOS 2.10 or greater. */
 	if (v >= 0x0210) {
+		/*
+		 * Find the PCI IRQ Routing table.
+		 */
 		pcibios_pir_init();
 	}
 
@@ -155,8 +161,7 @@ pcibios_init(void)
 		switch (rv) {
 		case -1:
 			/* Non-fatal error. */
-			printf("Warning: unable to fix up PCI interrupt "
-					"routing\n");
+			printf("Warning: unable to fix up PCI interrupt routing\n");
 			break;
 
 		case 1:

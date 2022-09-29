@@ -257,12 +257,12 @@ struct bios32_SDentry {
 extern struct bios32_SDentry	PCIbios;
 
 void 		bios32_init(void);
-int			bios_oem_strings(struct bios_oem *oem, u_char *buffer, size_t maxlen);
-uint32_t	bios_sigsearch(uint32_t start, u_char *sig, int siglen, int paralen, int sigofs);
+int			bios_oem_strings(struct bios_oem *, u_char *, size_t);
+uint32_t	bios_sigsearch(uint32_t, u_char *, int, int, int);
 int			bios16(struct bios_args *, char *, ...);
 int			bios16_call(struct bios_regs *, char *);
 int			bios32(struct bios_regs *, u_int, u_short);
-int			bios32_SDlookup(struct bios32_SDentry *ent);
+int			bios32_SDlookup(struct bios32_SDentry *);
 void		set_bios_selectors(struct bios_segments *, int);
 
 #endif

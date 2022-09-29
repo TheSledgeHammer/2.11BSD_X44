@@ -31,23 +31,19 @@
 #ifndef _I386_PCIBIOS_H_
 #define	_I386_PCIBIOS_H_
 
-/* Convert to NetBSD equivalent */
-/* some PCI bus constants */
-#define	PCI_SLOTMAX				31		/* highest supported slot number */
-#define	PCI_FUNCMAX				7		/* highest supported function number */
-#define	PCIE_REGMAX				4095	/* highest supported config register addr. */
-
-#define	PCI_INVALID_IRQ			255
-#define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ /*|| I386_PCI_INTERRUPT_LINE_NO_CONNECTION*/)
-
-#define	PCIR_INTLINE			0x3c
-#define	PCIR_INTPIN				0x3d
+#include <machine/bios.h>
 
 #define	PCI_IRQ_TABLE_START		0xf0000
 #define	PCI_IRQ_TABLE_END		0xfffff
 
 #define	PIR_DEVFUNC_DEVICE(devfunc)		(((devfunc) >> 3) & 0x1f)
 #define	PIR_DEVFUNC_FUNCTION(devfunc)	((devfunc) & 7)
+
+void pcibios_init(void);
+
+extern struct PIR_table *pci_route_table;
+extern int pci_route_count;
+extern int pcibios_max_bus;
 
 #ifdef PCIBIOSVERBOSE
 extern int pcibiosverbose;
@@ -66,5 +62,4 @@ extern int pcibiosverbose;
 #define	PCIBIOS_PRINTV(arg)
 #define	PCIBIOS_PRINTVN(n, arg)
 #endif
-
 #endif /* !_I386_PCIBIOS_H_ */

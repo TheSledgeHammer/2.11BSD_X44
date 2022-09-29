@@ -49,6 +49,18 @@
 #define CONF2_ENABLE_RES   0x0e
 */
 
+/* Convert to NetBSD equivalent */
+/* some PCI bus constants */
+#define	PCI_SLOTMAX				31		/* highest supported slot number */
+#define	PCI_FUNCMAX				7		/* highest supported function number */
+#define	PCIE_REGMAX				4095	/* highest supported config register addr. */
+
+#define	PCI_INVALID_IRQ			255
+#define	PCI_INTERRUPT_VALID(x)	((x) != PCI_INVALID_IRQ /*|| I386_PCI_INTERRUPT_LINE_NO_CONNECTION*/)
+
+#define	PCIR_INTLINE			0x3c
+#define	PCIR_INTPIN				0x3d
+
 enum {
 	CFGMECH_NONE = 0,
 	CFGMECH_1,

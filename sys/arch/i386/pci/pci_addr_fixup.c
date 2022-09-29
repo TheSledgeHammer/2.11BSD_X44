@@ -44,24 +44,16 @@ __KERNEL_RCSID(0, "$NetBSD: pci_addr_fixup.c,v 1.12 2003/02/26 22:23:07 fvdl Exp
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pcidevs.h>
 
-#include <devel/arch/i386/include/pcibios.h>
-#include <devel/arch/i386/include/pci_addr_fixup.h>
+#include <i386/pci/pcibios.h>
+#include <i386/pci/pci_addr_fixup.h>
 
 struct pciaddr pciaddr;
 
-void	pciaddr_resource_reserve(pci_chipset_tag_t, pcitag_t,
-				      void *context);
-int	pciaddr_do_resource_reserve(pci_chipset_tag_t, pcitag_t, int,
-					 void *, int, bus_addr_t *,
-					 bus_size_t);
-void	pciaddr_resource_allocate(pci_chipset_tag_t, pcitag_t,
-				       void *context);
-int	pciaddr_do_resource_allocate(pci_chipset_tag_t, pcitag_t, int,
-					  void *, int,	bus_addr_t *,
-					  bus_size_t);
-int	device_is_agp(pci_chipset_tag_t, pcitag_t);
-
-int	device_is_agp(pci_chipset_tag_t, pcitag_t);
+void	pciaddr_resource_reserve(pci_chipset_tag_t, pcitag_t, void *);
+int		pciaddr_do_resource_reserve(pci_chipset_tag_t, pcitag_t, int, void *, int, bus_addr_t *, bus_size_t);
+void	pciaddr_resource_allocate(pci_chipset_tag_t, pcitag_t, void *);
+int		pciaddr_do_resource_allocate(pci_chipset_tag_t, pcitag_t, int, void *, int,	bus_addr_t *, bus_size_t);
+int		device_is_agp(pci_chipset_tag_t, pcitag_t);
 
 #define PCIADDR_MEM_START	0x0
 #define PCIADDR_MEM_END		0xffffffff
@@ -420,4 +412,3 @@ device_is_agp(pc, tag)
 	}
 	return (0);
 }
-

@@ -79,6 +79,13 @@
 #include <machine/apic/lapicvar.h>
 #endif
 
+#include "opt_pcibios.h"
+#ifdef PCIBIOS
+#include <dev/core/pci/pcireg.h>
+#include <dev/core/pci/pcivar.h>
+#include <i386/pci/pcibios.h>
+#endif
+
 void	swapconf(void);
 void	setroot(void);
 
@@ -115,6 +122,10 @@ configure()
 
 	bios32_init();
 	k6_mem_drvinit();
+
+#ifdef PCIBIOS
+	pcibios_init();
+#endif
 
 	i386_proc0_tss_ldt_init();
 

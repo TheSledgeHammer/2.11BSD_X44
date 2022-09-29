@@ -43,7 +43,7 @@ typedef const struct pciintr_icu *pciintr_icu_tag_t;
 	(*(t)->pi_get_intr)((h), (pirq), (irqp))
 #define	pciintr_icu_set_intr(t, h, pirq, irq)				\
 	(*(t)->pi_set_intr)((h), (pirq), (irq))
-#define	pciintr_icu_get_trigger(t, h, irq, triggerp)			\
+#define	pciintr_icu_get_trigger(t, h, irq, triggerp)		\
 	(*(t)->pi_get_trigger)((h), (irq), (triggerp))
 #define	pciintr_icu_set_trigger(t, h, irq, trigger)			\
 	(*(t)->pi_set_trigger)((h), (irq), (trigger))

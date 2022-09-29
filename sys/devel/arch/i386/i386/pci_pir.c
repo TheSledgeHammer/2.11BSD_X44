@@ -245,13 +245,13 @@ pci_pir_create_links(struct PIR_entry *entry, struct PIR_intpin *intpin, void *a
  * have an interrupt routed to intpin 'pin' by the BIOS.
  */
 static uint8_t
-pci_pir_search_irq(int bus, int device, int pin)
+pci_pir_search_irq(pci_chipset_tag_t pc, int bus)
 {
 	const struct pci_quirkdata *qd;
 	pcitag_t tag;
-	pcireg_t id, bhlcr, value;
+	pcireg_t id, bhlcr;
 	int function, nfuncs;
-	int maxdevs;
+	int device, maxdevs;
 
 	maxdevs = pci_bus_maxdevs(pc, bus);
 	for(device = 0; device < maxdevs; device++) {
@@ -286,44 +286,17 @@ pci_pir_search_irq(int bus, int device, int pin)
 			if (PCI_VENDOR(id) == 0) {
 				continue;
 			}
+
 			value = id;
+			goto error;
 		}
 	}
 
+error:
 	if(value != PCI_INVALID_IRQ) {
 		return (value);
 	}
-	return (PCI_INVALID_IRQ);
-}
-
-void
-pci_pir_read(pc, tag)
-	pci_chipset_tag_t 	pc;
-	pcitag_t 			tag;
-{
-	int pin, irq, bus, device, function;
-	pcireg_t intr, id;
-
-	pci_decompose_tag(pc, tag, &bus, &device, &function);
-	id = pci_conf_read(pc, tag, PCI_ID_REG);
-
-	intr = pci_conf_read(pc, tag, PCI_INTERRUPT_REG);
-	pin = PCI_INTERRUPT_PIN(intr);
-	irq = PCI_INTERRUPT_LINE(intr);
-
-
-}
-
-void
-pci_pir_write(pc, tag, irq)
-	pci_chipset_tag_t 	pc;
-	pcitag_t 			tag;
-	int 				irq;
-{
-	pcireg_t intr;
-	intr &= ~(PCI_INTERRUPT_LINE_MASK << PCI_INTERRUPT_LINE_SHIFT);
-	intr |= (pci_link->pl_irq << PCI_INTERRUPT_LINE_SHIFT);
-	pci_conf_write(pc, tag, PCI_INTERRUPT_REG, intr);
+	return (id);
 }
 
 void

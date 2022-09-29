@@ -296,6 +296,47 @@ itpc_verify_kthreadpool(itpc, ktpool)
 	}
 }
 
+int
+itpc_ioctl(fp, cmd, data, p)
+	struct file *fp;
+	u_long cmd;
+	caddr_t data;
+	struct proc *p;
+{
+	struct threadpool_itpc *itpc;
+	bool_t issender, isreciever;
+
+	itpc = (struct threadpool_itpc *)fp->f_data;
+
+	switch (cmd) {
+	case ITPC_SENDER:
+		if(issender) {
+			case ITPC_INIT:
+			case ITPC_DEAD:
+			case ITPC_DESTROY:
+			case ITPC_HOLD:
+			case ITPC_RELE:
+			case ITPC_SCHEDULE:
+			case ITPC_CANCEL:
+			case ITPC_CANCEL_ASYNC:
+		}
+		break;
+	case ITPC_RECIEVER:
+		if(isreciever) {
+			case ITPC_INIT:
+			case ITPC_DEAD:
+			case ITPC_DESTROY:
+			case ITPC_HOLD:
+			case ITPC_RELE:
+			case ITPC_SCHEDULE:
+			case ITPC_CANCEL:
+			case ITPC_CANCEL_ASYNC:
+		}
+		break;
+	}
+	return (0);
+}
+
 /* Threadpool's FIFO Queue (IPC) */
 void
 kthreadpool_itpc_send(itpc, ktpool, pid, cmd)

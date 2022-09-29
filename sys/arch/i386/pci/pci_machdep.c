@@ -194,10 +194,11 @@ pci_bus_maxdevs(pc, busno)
 	 * Mechanism 1 is in use, can have devices 0-32 (i.e. the `normal'
 	 * range).
 	 */
-	if (pci_mode == 2)
+	if (pci_mode == 2) {
 		return (16);
-	else
+	} else {
 		return (32);
+	}
 }
 
 pcitag_t
@@ -391,8 +392,9 @@ pci_mode_detect()
 	int i;
 	pcireg_t idreg;
 
-	if (pci_mode != -1)
+	if (pci_mode != -1) {
 		return pci_mode;
+	}
 
 	/*
 	 * We try to divine which configuration mode the host bridge wants.
@@ -480,6 +482,7 @@ pci_device_foreach_min(pc, minbus, maxbus, func, context)
 	func_t func;
 	void *context;
 {
+	const struct pci_quirkdata *qd;
 	int bus, device, function, maxdevs, nfuncs;
 	pcireg_t id, bhlcr;
 	pcitag_t tag;
@@ -491,14 +494,17 @@ pci_device_foreach_min(pc, minbus, maxbus, func, context)
 			id = pci_conf_read(pc, tag, PCI_ID_REG);
 
 			/* Invalid vendor ID value? */
-			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+			if (PCI_VENDOR(id) == PCI_VENDOR_INVALID) {
 				continue;
+			}
 			/* XXX Not invalid, but we've done this ~forever. */
-			if (PCI_VENDOR(id) == 0)
+			if (PCI_VENDOR(id) == 0) {
 				continue;
+			}
 
+			qd = pci_lookup_quirkdata(PCI_VENDOR(id), PCI_PRODUCT(id));
 			bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
-			if (PCI_HDRTYPE_MULTIFN(bhlcr)) {
+			if (PCI_HDRTYPE_MULTIFN(bhlcr) || (qd != NULL && (qd->quirks & PCI_QUIRK_MULTIFUNCTION) != 0)) {
 				nfuncs = 8;
 			} else {
 				nfuncs = 1;
@@ -509,14 +515,16 @@ pci_device_foreach_min(pc, minbus, maxbus, func, context)
 				id = pci_conf_read(pc, tag, PCI_ID_REG);
 
 				/* Invalid vendor ID value? */
-				if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+				if (PCI_VENDOR(id) == PCI_VENDOR_INVALID) {
 					continue;
+				}
 				/*
 				 * XXX Not invalid, but we've done this
 				 * ~forever.
 				 */
-				if (PCI_VENDOR(id) == 0)
+				if (PCI_VENDOR(id) == 0) {
 					continue;
+				}
 
 				(*func)(pc, tag, context);
 			}

@@ -53,8 +53,9 @@
 #include <sys/queue.h>
 #include <devel/sys/threadpool.h>
 
-/* Inter-Threadpool Communication (ITPC) */
 
+
+/* Inter-Threadpool Communication (ITPC) */
 struct itpc_list;
 TAILQ_HEAD(itpc_list, itpc);
 struct itpc {
