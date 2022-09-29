@@ -68,16 +68,22 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: pcibios.c,v 1.14.2.1 2004/04/28 05:19:13 jmc Exp $");
 
-#include <sys/extent.h>
-#include <sys/malloc.h>
-#include <sys/queue.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/null.h>
+
+#include <machine/bus.h>
+#include <machine/segments.h>
+#include <machine/stdarg.h>
+#include <machine/vmparam.h>
+#include <machine/bios.h>
+#include <machine/gdt.h>
 
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pcidevs.h>
 
-#include <machine/pci/pci_machdep.h>
 #include <i386/pci/pcibios.h>
 #ifdef PCIBIOS_INTR_FIXUP
 #include <i386/pci/pci_intr_fixup.h>
@@ -96,6 +102,8 @@ int	pcibiosverbose = 1;
 struct PIR_table *pci_route_table;
 int pci_route_count;
 int pcibios_max_bus;
+
+void pcibios_pir_init(void);
 
 #define PRVERB(a) do {			\
 	if (bootverbose)			\
