@@ -78,7 +78,7 @@ __KERNEL_RCSID(0, "$NetBSD: pcibios.c,v 1.14.2.1 2004/04/28 05:19:13 jmc Exp $")
 #include <dev/core/pci/pcidevs.h>
 
 #include <machine/pci/pci_machdep.h>
-#include <i386/include/pcibios.h>
+#include <i386/pci/pcibios.h>
 #ifdef PCIBIOS_INTR_FIXUP
 #include <i386/pci/pci_intr_fixup.h>
 #endif
