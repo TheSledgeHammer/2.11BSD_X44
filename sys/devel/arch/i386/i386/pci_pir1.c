@@ -198,16 +198,24 @@ pci_pir_inital_irqs(struct PIR_entry *entry, struct PIR_intpin *intpin, void *ar
 }
 
 struct pciintr_icu_table {
-	pci_vendor_id_t		piit_vendor;
-	pci_product_id_t 	piit_product;
-	struct piitops		*piit_op;
-	SIMPLEQ_ENTRY(pciintr_icu_table) piit_list;
+	pci_vendor_id_t						piit_vendor;
+	pci_product_id_t 					piit_product;
+	int (*piiops_init)(pci_chipset_tag_t, bus_space_tag_t, pcitag_t, pciintr_icu_tag_t *, pciintr_icu_handle_t *);
+	SIMPLEQ_ENTRY(pciintr_icu_table) 	piit_list;
 };
-SIMPLEQ_HEAD(piit_head, pciintr_icu_table);
-struct piit_head piit_header;
+SIMPLEQ_HEAD( , pciintr_icu_table) piit_header = SIMPLEQ_HEAD_INITIALIZER(piit_header);
 
-struct piitops {
-	int (*piit_init)(pci_chipset_tag_t, bus_space_tag_t, pcitag_t, pciintr_icu_tag_t *, pciintr_icu_handle_t *);
+struct pciintr_icu {
+	struct piiops  			*pi_ops;
+};
+
+struct piiops {
+	int (*piiops_init)(pci_chipset_tag_t, bus_space_tag_t, pcitag_t, pciintr_icu_tag_t *, pciintr_icu_handle_t *);
+	int	(*piiops_getclink)(pciintr_icu_handle_t, int, int *);
+	int	(*piiops_get_intr)(pciintr_icu_handle_t, int, int *);
+	int	(*piiops_set_intr)(pciintr_icu_handle_t, int, int);
+	int	(*piiops_get_trigger)(pciintr_icu_handle_t, int, int *);
+	int	(*piiops_set_trigger)(pciintr_icu_handle_t, int, int);
 };
 
 struct pciintr_icu_table *
@@ -225,13 +233,17 @@ piit_icu_lookup(vendor, product)
 }
 
 void
-piit_icu_insert(piit, vendor, product)
-	struct pciintr_icu_table *piit;
+piit_icu_insert(vendor, product, icu)
 	pci_vendor_id_t 		vendor;
 	pci_product_id_t 		product;
+	struct pciintr_icu		*icu;
 {
+	struct pciintr_icu_table *piit;
+
+	piit = malloc(sizeof(*piit), M_DEVBUF, M_NOWAIT);
 	piit->piit_vendor = vendor;
 	piit->piit_product = product;
+	piit->piit_icu = icu;
 	SIMPLEQ_INSERT_HEAD(&piit_header, piit, piit_list);
 }
 
@@ -249,9 +261,70 @@ piit_icu_remove(vendor, product)
 }
 
 int
-piit_init()
+piiops_init(ops, pc, iot, tag, ptagp, phandp)
+	struct piiops *ops;
+	pci_chipset_tag_t pc;
+	bus_space_tag_t iot;
+	pcitag_t tag;
+	pciintr_icu_tag_t *ptagp;
+	pciintr_icu_handle_t *phandp;
 {
-	struct pciintr_icu_table *piit;
+	int rv;
+	rv = (*ops->piiops_init)(pc, iot, tag, ptagp, phandp);
+	return (rv);
+}
 
-	return (0);
+int
+piiops_getclink(ops, v, link, clinkp)
+	struct piiops *ops;
+	pciintr_icu_handle_t v;
+	int link, *clinkp;
+{
+	int rv;
+	rv = (*ops->piiops_getclink)(pc, v, link, clinkp);
+	return (rv);
+}
+
+int
+piiops_get_intr(ops, v, clink, irqp)
+	struct piiops *ops;
+	pciintr_icu_handle_t v;
+	int clink, *irqp;
+{
+	int rv;
+	rv = (*ops->piiops_get_intr)(pc, v, clink, irqp);
+	return (rv);
+}
+
+int
+piiops_set_intr(ops, v, clink, irq)
+	struct piiops *ops;
+	pciintr_icu_handle_t v;
+	int clink, irq;
+{
+	int rv;
+	rv = (*ops->piiops_set_intr)(pc, v, clink, irq);
+	return (rv);
+}
+
+int
+piiops_get_trigger(ops, v, irq, triggerp)
+	struct piiops *ops;
+	pciintr_icu_handle_t v;
+	int irq, *triggerp;
+{
+	int rv;
+	rv = (*ops->piiops_get_trigger)(pc, v, irq, triggerp);
+	return (rv);
+}
+
+int
+piiops_set_trigger(ops, v, irq, trigger)
+	struct piiops *ops;
+	pciintr_icu_handle_t v;
+	int irq, trigger;
+{
+	int rv;
+	rv = (*ops->piiops_set_trigger)(pc, v, irq, trigger);
+	return (rv);
 }

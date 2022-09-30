@@ -845,6 +845,13 @@ found:;
 	}
 
 	/*
+	 * Initialize the PCI ICU.
+	 */
+	if ((*piit->piit_init)(pc, iot, icutag, &pciintr_icu_tag, &pciintr_icu_handle) != 0) {
+		return (-1);		/* non-fatal */
+	}
+
+	/*
 	 * Initialize the PCI interrupt link map.
 	 */
 	if (pciintr_link_init()) {

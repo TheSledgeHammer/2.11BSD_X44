@@ -55,10 +55,10 @@ void	pciaddr_resource_allocate(pci_chipset_tag_t, pcitag_t, void *);
 int		pciaddr_do_resource_allocate(pci_chipset_tag_t, pcitag_t, int, void *, int,	bus_addr_t *, bus_size_t);
 int		device_is_agp(pci_chipset_tag_t, pcitag_t);
 
-#define PCIADDR_MEM_START	0x0
-#define PCIADDR_MEM_END		0xffffffff
-#define PCIADDR_PORT_START	0x0
-#define PCIADDR_PORT_END	0xffff
+#define PCIADDR_MEM_START		0x0
+#define PCIADDR_MEM_END			0xffffffff
+#define PCIADDR_PORT_START		0x0
+#define PCIADDR_PORT_END		0xffff
 
 /* for ISA devices */
 #define PCIADDR_ISAPORT_RESERVE	0x5800 /* empirical value */
@@ -69,7 +69,7 @@ pci_addr_fixup(pc, maxbus)
 	pci_chipset_tag_t pc;
 	int maxbus;
 {
-	extern paddr_t avail_end;
+	extern vm_offset_t avail_end;
 #ifdef PCIBIOSVERBOSE
 	const char *verbose_header = 
 		"[%s]-----------------------\n"
@@ -89,7 +89,7 @@ pci_addr_fixup(pc, maxbus)
 		{ 0xfffe0000, 0x20000, "BIOS PROM" },
 		{ 0, 0, 0 }, /* terminator */
 	}, *srp;
-	paddr_t start;
+	vm_offset_t start;
 	int error;
 
 	pciaddr.extent_mem = extent_create("PCI I/O memory space",

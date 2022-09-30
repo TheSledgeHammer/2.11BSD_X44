@@ -305,6 +305,38 @@ typedef u_int8_t pci_revision_t;
 #define PCI_SUBSYS_ID_REG 					0x2c
 
 /*
+ * Capabilities link list (PCI rev. 2.2)
+ */
+#define	PCI_CAPLISTPTR_REG					0x34	/* header type 0 */
+#define	PCI_CARDBUS_CAPLISTPTR_REG 			0x14	/* header type 2 */
+#define	PCI_CAPLIST_PTR(cpr)				((cpr) & 0xff)
+#define	PCI_CAPLIST_NEXT(cr)				(((cr) >> 8) & 0xff)
+#define	PCI_CAPLIST_CAP(cr)					((cr) & 0xff)
+
+#define	PCI_CAP_RESERVED0					0x00
+#define	PCI_CAP_PWRMGMT						0x01
+#define	PCI_CAP_AGP							0x02
+#define	PCI_CAP_VPD							0x03
+#define	PCI_CAP_SLOTID						0x04
+#define	PCI_CAP_MSI							0x05
+#define	PCI_CAP_CPCI_HOTSWAP				0x06
+#define	PCI_CAP_PCIX						0x07
+#define	PCI_CAP_LDT							0x08	/* HyperTransport */
+#define	PCI_CAP_VENDSPEC					0x09
+#define	PCI_CAP_DEBUGPORT					0x0a
+#define	PCI_CAP_CPCI_RSRCCTL				0x0b
+#define	PCI_CAP_HOTPLUG						0x0c	/* Standard Hot-Plug Controller(SHPC)*/
+#define	PCI_CAP_SUBVENDOR					0x0d
+#define	PCI_CAP_AGP8						0x0e
+#define	PCI_CAP_SECURE						0x0f
+#define	PCI_CAP_PCIEXPRESS					0x10
+#define	PCI_CAP_MSIX						0x11
+#define	PCI_CAP_SATA						0x12
+#define	PCI_CAP_PCIAF						0x13
+#define	PCI_CAP_EA							0x14	/* Enhanced Allocation (EA) */
+#define	PCI_CAP_FPB							0x15	/* Flattening Portal Bridge (FPB) */
+
+/*
  * Interrupt Configuration Register; contains interrupt pin and line.
  */
 #define	PCI_INTERRUPT_REG					0x3c
