@@ -128,7 +128,7 @@ extern struct cpu_ops 		cpu_ops;
 #define	CPU_IS_PRIMARY(ci)	((void)ci, 1)
 #endif
 
-//#if defined(SMP)
+#if defined(SMP)
 static struct cpu_info *curcpu(void);
 
 __inline static struct cpu_info *
