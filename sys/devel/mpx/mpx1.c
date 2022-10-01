@@ -134,3 +134,30 @@ free2:
 	return (u.u_error);
 }
 
+
+mpxn_open()
+{
+
+}
+
+mpxn_ioctl()
+{
+	struct mpx 			*mpx;
+	struct mpx_group 	*grp;
+	struct mpx_channel 	*chan;
+
+	switch (cmd) {
+	case MPXIOATTACH:
+		mpx_attach(chan, grp);
+		break;
+	case MPXIODETACH:
+		mpx_detach(chan, grp);
+		break;
+	case MPXIOCONNECT:
+		mpx_connect(chan, chan1);
+		break;
+	case MPXIODISCONNECT:
+		mpx_disconnect(chan, nchans);
+		break;
+	}
+}

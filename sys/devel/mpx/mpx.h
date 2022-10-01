@@ -109,9 +109,10 @@ struct mpx_channel {
 struct grouplist;
 LIST_HEAD(grouplist, mpx_group);
 struct mpx_group {
-    LIST_ENTRY(mpx_group)    mpg_node;     /* group node in list */
-    struct mpx_channel      *mpg_channel;  /* channels in this group */
-    int 					 mpg_index;    /* group index */
+    LIST_ENTRY(mpx_group)    mpg_node;     	/* group node in list */
+    struct mpx_channel      *mpg_channel;  	/* channels in this group */
+    int 					 mpg_index;    	/* group index */
+    struct pgrp				*mpg_pgrp;		/* proc group association (Optional) */
 };
 
 struct mpx {
@@ -155,5 +156,10 @@ void						mpx_remove_channel(struct mpx_channel *, int);
 void						mpx_attach(struct mpx_channel *, struct mpx_group *);
 void						mpx_detach(struct mpx_channel *, struct mpx_group *);
 int							mpx_connect(struct mpx_channel *, struct mpx_channel *);
+struct mpx_channel 			*mpx_disconnect(struct mpx_channel *, int);
 
+#define MPXIOATTACH			0
+#define MPXIODETACH			1
+#define MPXIOCONNECT		2
+#define MPXIODISCONNECT		3
 #endif /* SYS_MPX_H_ */

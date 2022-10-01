@@ -35,8 +35,8 @@
 
 #include <devel/ovl/include/ovl.h>
 
-vm_offset_t						overlay_avail;
-vm_offset_t 					overlay_end;
+vm_offset_t				overlay_avail;
+vm_offset_t 			overlay_end;
 
 void
 pmap_overlay(firstaddr)

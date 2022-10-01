@@ -30,8 +30,8 @@
 
 /* Overlay memory management definitions. */
 
-ovl_map_t 						omem_map;
-ovl_map_t 						overlay_map;
+extern ovl_map_t 			omem_map;
+extern ovl_map_t 			overlay_map;
 
 /* OVL Space Address Layout (machine/vmparam.h) */
 #define OVL_MIN_ADDRESS 		((vm_offset_t)0)			/* put ovlspace before vmspace in memory stack */

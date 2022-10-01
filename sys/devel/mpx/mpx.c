@@ -171,6 +171,7 @@ mpx_create_group(mpx, idx)
 	group = &mpx_groups[idx];
 	gp = mpx_allocate_groups(mpx, NGROUPS);
     gp->mpg_index = idx;
+    gp->mpg_pgrp = NULL;
 
 	LIST_INSERT_HEAD(group, gp, mpg_node);
 }
@@ -987,7 +988,10 @@ mpx_ioctl(fp, cmd, data, p)
 	caddr_t data;
 	struct proc *p;
 {
-	struct mpx 	*mpx;
+	struct mpx 			*mpx;
+	struct mpx_group 	*grp;
+	struct mpx_channel 	*chan;
+
 	mpx = fp->f_mpx;
 
 	switch (cmd) {

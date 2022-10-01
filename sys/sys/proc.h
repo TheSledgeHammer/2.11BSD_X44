@@ -274,7 +274,8 @@ extern u_long pgrphash;
 
 #if !defined(curproc)
 #if defined(SMP)
-#define curproc		curcpu()->cpu_curproc;
+#include <machine/cpuinfo.h>
+#define curproc()	(curcpu()->cpu_curproc)
 #else
 extern struct proc *curproc;			/* current running proc */
 #endif

@@ -270,7 +270,7 @@ sigpending()
 	struct proc *p = u.u_procp;
 
 	if (SCARG(uap, set))
-		error = copyout((caddr_t) & p->p_sigacts, (caddr_t) SCARG(uap, set), sizeof(p->p_sigacts));
+		error = copyout((caddr_t) &p->p_sigacts, (caddr_t) SCARG(uap, set), sizeof(p->p_sigacts));
 	else
 		error = EINVAL;
 	return (u.u_error = error);
@@ -495,7 +495,6 @@ fperr()
  * various device drivers.
  */
 /* Current re-implementation is i386 machine-dependent */
-
 int
 ucall()
 {
@@ -506,7 +505,8 @@ ucall()
 		syscallarg(int) 		arg1;
 		syscallarg(int) 		arg2;
 	} *uap = (struct ucall_args *)u.u_ap;
-	int s;
+	int error, s;
+	routine_t routine;
 
 	if (suser()) {
 		switch (SCARG(uap, priority)) {
@@ -536,9 +536,15 @@ ucall()
 			break;
 		}
 	}
-	u.u_error = (*SCARG(uap, routine))(SCARG(uap, arg1), SCARG(uap, arg2));
-	splx(s);
+	routine = (*SCARG(uap, routine))(SCARG(uap, arg1), SCARG(uap, arg2));
+	error = copyout(routine, SCARG(uap, routine), sizeof(routine));
+	if (error) {
+		goto out;
+	}
 
+out:
+	u.u_error = error;
+	splx(s);
 	return (error);
 }
 #endif

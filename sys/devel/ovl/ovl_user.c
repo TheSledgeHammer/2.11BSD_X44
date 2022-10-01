@@ -150,16 +150,17 @@ ovl_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 			ovl_object_enter(object, pager);
 	}
 
-	if (internal)
+	if (internal) {
 		object->ovo_flags |= OBJ_INTERNAL;
-	else {
+	} else {
 		object->ovo_flags &= ~OBJ_INTERNAL;
 	}
 
 	result = ovl_map_find(map, object, poffset, addr, size, anywhere);
-	if (result != KERN_SUCCESS)
+	if (result != KERN_SUCCESS) {
 		ovl_object_deallocate(object);
-	else if (pager != NULL)
+	} else if (pager != NULL) {
 		ovl_object_setpager(object, pager, (vm_offset_t) 0);
+	}
 	return(result);
 }
