@@ -333,7 +333,7 @@ init_intrmask(void)
 	SOFTINTR_MASK(imask[IPL_SOFTCLOCK], SIR_CLOCK);
 	SOFTINTR_MASK(imask[IPL_SOFTNET], SIR_NET);
 	SOFTINTR_MASK(imask[IPL_SOFTSERIAL], SIR_SERIAL);
-
+	SOFTINTR_MASK(imask[IPL_SOFTBIO], SIR_BIO);
 	/*
 	 * IPL_NONE is used for hardware interrupts that are never blocked,
 	 * and do not block anything else.
@@ -347,6 +347,7 @@ init_intrmask(void)
 	imask[IPL_SOFTCLOCK] |= imask[IPL_NONE];
 	imask[IPL_SOFTNET] |= imask[IPL_SOFTCLOCK];
 	imask[IPL_BIO] |= imask[IPL_SOFTNET];
+	imask[IPL_SOFTBIO] |= imask[IPL_SOFTNET];
 	imask[IPL_NET] |= imask[IPL_BIO];
 	imask[IPL_SOFTSERIAL] |= imask[IPL_NET];
 	imask[IPL_TTY] |= imask[IPL_SOFTSERIAL];

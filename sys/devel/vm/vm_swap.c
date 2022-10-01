@@ -401,7 +401,6 @@ swap_sanity(nblks, npages)
 }
 
 /* to be placed machine autoconf.c */
-
 struct swdevt swdevt[] = {
 		/* dev, flags, nblks, inuse */
 		{ 1, 0,	0, 0 },

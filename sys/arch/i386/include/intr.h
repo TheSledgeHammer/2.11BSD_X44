@@ -195,6 +195,7 @@ extern void softintr(int);
 #define	splsoftclock()		spllower(imask[IPL_SOFTCLOCK])
 #define	splsoftnet()		splraise(imask[IPL_SOFTNET])
 #define	splsoftserial()		splraise(imask[IPL_SOFTSERIAL])
+#define	splsoftbio()		splraise(imask[IPL_SOFTBIO])
 
 /*
  * Miscellaneous
@@ -207,6 +208,7 @@ extern void softintr(int);
 #define	setsoftclock()		softintr(SIR_CLOCK)
 #define	setsoftnet()		softintr(SIR_NET)
 #define	setsoftserial()		softintr(SIR_SERIAL)
+#define setsoftbio()		softintr(SIR_BIO)
 
 #define I386_IPI_HALT		0x00000001
 #define I386_IPI_MICROSET	0x00000002

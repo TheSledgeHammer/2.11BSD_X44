@@ -493,58 +493,39 @@ fperr()
  * ucall allows user level code to call various kernel functions.
  * Autoconfig uses it to call the probe and attach routines of the
  * various device drivers.
+ * New revision makes use of Soft Interrupts.
  */
-/* Current re-implementation is i386 machine-dependent */
 int
 ucall()
 {
 	typedef int (*routine_t)(int, int);
 	register struct ucall_args {
-		syscallarg(int) 		priority;
 		syscallarg(routine_t) 	routine;
+		syscallarg(int) 		priority;
 		syscallarg(int) 		arg1;
 		syscallarg(int) 		arg2;
 	} *uap = (struct ucall_args *)u.u_ap;
-	int error, s;
+	int s;
 	routine_t routine;
 
 	if (suser()) {
 		switch (SCARG(uap, priority)) {
-		case IPL_BIO:
-			s = splbio();
+		case IPL_SOFTCLOCK:
+			s = splsoftclock();
 			break;
-		case IPL_NET:
-			s = splnet();
+		case IPL_SOFTSERIAL:
+			s = splsoftserial();
 			break;
-		case IPL_TTY:
-			s = spltty();
+		case IPL_SOFTNET:
+			s = splsoftnet();
 			break;
-		case IPL_IMP:
-			s = splimp();
-			break;
-		case IPL_AUDIO:
-			s = splaudio();
-			break;
-		case IPL_CLOCK:
-			s = splclock();
-			break;
-		case IPL_SERIAL:
-			s = splserial();
-			break;
-		case IPL_HIGH:
-			s = splhigh();
-			break;
+		case IPL_SOFTBIO:
+			s = splsoftbio();
 		}
 	}
 	routine = (*SCARG(uap, routine))(SCARG(uap, arg1), SCARG(uap, arg2));
-	error = copyout(routine, SCARG(uap, routine), sizeof(routine));
-	if (error) {
-		goto out;
-	}
-
-out:
-	u.u_error = error;
+	u.u_error = copyout(routine, SCARG(uap, routine), sizeof(routine));
 	splx(s);
-	return (error);
+	return (u.u_error);
 }
 #endif

@@ -76,6 +76,8 @@ struct swappri {
 struct swapbuf {
 	struct buf 							sw_buf;			/* a buffer structure */
 	SIMPLEQ_ENTRY(swapbuf) 				sw_sq;			/* free list pointer */
+	TAILQ_HEAD(, buf)					sw_bswlist;		/* Head of swap I/O buffer headers free list. */
+	int 								sw_nswbuf;
 };
 
 /*
@@ -120,4 +122,11 @@ struct vm_page;
 struct lock 				swap_syscall_lock;
 simple_lock_data_t 			swap_data_lock;
 extern struct swdevt 		swdevt[];
+
+struct vndxfer *vndxfer_alloc(void);
+void			vndxfer_free(struct vndxfer *);
+struct vndbuf 	*vndbuf_alloc(void);
+void			vndbuf_free(struct vndbuf *);
+struct swapbuf 	*swapbuf_alloc(void);
+void			swapbuf_free(struct swapbuf *);
 #endif /* _VM_SWAP_H_ */

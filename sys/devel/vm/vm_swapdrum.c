@@ -131,9 +131,57 @@ swapdrum_init(swp)
 	if (swapextent == 0) {
 		panic("swapinit: extent_create failed");
 	}
-	&swapbuf_pool = (struct swapbuf)rmalloc(&swapmap, sizeof(struct swapbuf));
-	&vndxfer_pool = (struct vndxfer)rmalloc(&swapmap, sizeof(struct vndxfer));
-	&vndbuf_pool = (struct vndbuf)rmalloc(&swapmap, sizeof(struct vndbuf));
+	&swapbuf_pool = swapbuf_alloc();
+	&vndxfer_pool = vndxfer_alloc();
+	&vndbuf_pool = vndbuf_alloc();
+}
+
+struct vndxfer *
+vndxfer_alloc(void)
+{
+	struct vndxfer *vndx;
+
+	vndx = (struct vndxfer *)rmalloc(&swapmap, sizeof(struct vndxfer *));
+	return (vndx);
+}
+
+void
+vndxfer_free(vndx)
+	struct vndxfer *vndx;
+{
+	rmfree(&swapmap, sizeof(vndx), vndx);
+}
+
+struct vndbuf *
+vndbuf_alloc(void)
+{
+	struct vndbuf *vndb;
+
+	vndb = (struct vndbuf *)rmalloc(&swapmap, sizeof(struct vndbuf *));
+	return (vndb);
+}
+
+void
+vndbuf_free(vndb)
+	struct vndbuf *vndb;
+{
+	rmfree(&swapmap, sizeof(vndb), vndb);
+}
+
+struct swapbuf *
+swapbuf_alloc(void)
+{
+	struct swapbuf *swbuf;
+
+	swbuf = (struct swapbuf *)rmalloc(&swapmap, sizeof(struct swapbuf *));
+	return (swbuf);
+}
+
+void
+swapbuf_free(swbuf)
+	struct swapbuf *swbuf;
+{
+	rmfree(&swapmap, sizeof(swbuf), swbuf);
 }
 
 void
@@ -207,7 +255,7 @@ swaplist_insert(sdp, newspp, priority)
 		}
 	} else {
 		/* we don't need a new priority structure, free it */
-		rmfree(&swapmap, newspp, sizeof(*newspp));
+		rmfree(&swapmap, sizeof(*newspp), newspp);
 	}
 	sdp->swd_priority = priority;
 	CIRCLEQ_INSERT_TAIL(&spp->spi_swapdev, sdp, swd_next);
@@ -263,7 +311,7 @@ swaplist_trim(void)
 			continue;
 		}
 		LIST_REMOVE(spp, spi_swappri);
-		rmfree(&swapmap, spp, sizeof(*spp));
+		rmfree(&swapmap, sizeof(*spp), spp);
 	}
 }
 
@@ -698,7 +746,7 @@ swapdrum_off(p, swp)
 	npages = sdp->swd_npages;
 
 	/* turn off the enable flag */
-	sp->sw_flags &= ~SW_ENABLE;
+	swp->sw_flags &= ~SW_ENABLE;
 	cnt.v_swpgavail -= npages;
 	simple_unlock(&swap_data_lock);
 
@@ -887,7 +935,7 @@ sw_reg_strategy(swp, bp, bn)
 	 * allocate a vndxfer head for this transfer and point it to
 	 * our buffer.
 	 */
-	vnx = &vndxfer_pool;
+	vnx = vndxfer_alloc();
 	vnx->vx_flags = VX_BUSY;
 	vnx->vx_error = 0;
 	vnx->vx_pending = 0;
@@ -956,7 +1004,7 @@ sw_reg_strategy(swp, bp, bn)
 		 * at the front of the nbp structure so that you can
 		 * cast pointers between the two structure easily.
 		 */
-		nbp = rmalloc(&vndbuf_pool, sizeof(nbp));
+		nbp = vndbuf_alloc();//rmalloc(&vndbuf_pool, sizeof(nbp));
 		&nbp->vb_buf = &swbuf; /* XXX: FIX */
 		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
 		nbp->vb_buf.b_bcount   = sz;
@@ -979,7 +1027,7 @@ sw_reg_strategy(swp, bp, bn)
 		 */
 		s = splbio();
 		if (vnx->vx_error != 0) {
-			rmfree(&vndbuf_pool, sizeof(nbp), nbp);
+			vndbuf_free(nbp);//rmfree(&vndbuf_pool, sizeof(nbp), nbp);
 			goto out;
 		}
 		vnx->vx_pending++;
@@ -1005,7 +1053,7 @@ out: /* Arrive here at splbio */
 			bp->b_error = vnx->vx_error;
 			bp->b_flags |= B_ERROR;
 		}
-		rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+		vndxfer_free(vnx);//rmfree(&vndxfer_pool, sizeof(vnx), vnx);
 		biodone(bp);
 	}
 	splx(s);
@@ -1083,7 +1131,7 @@ sw_reg_iodone(bp)
 	/*
 	 * kill vbp structure
 	 */
-	rmfree(&vndbuf_pool, sizeof(vbp), vbp);
+	vndbuf_free(vbp);//rmfree(&vndbuf_pool, sizeof(vbp), vbp);
 
 	/*
 	 * wrap up this transaction if it has run to completion or, in
@@ -1094,13 +1142,13 @@ sw_reg_iodone(bp)
 		pbp->b_flags |= B_ERROR;
 		pbp->b_error = vnx->vx_error;
 		if ((vnx->vx_flags & VX_BUSY) == 0 && vnx->vx_pending == 0) {
-			rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+			vndxfer_free(vnx);//rmfree(&vndxfer_pool, sizeof(vnx), vnx);
 			biodone(pbp);
 		}
 	} else if (pbp->b_resid == 0) {
 		KASSERT(vnx->vx_pending == 0);
 		if ((vnx->vx_flags & VX_BUSY) == 0) {
-			rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+			vndxfer_free(vnx);//rmfree(&vndxfer_pool, sizeof(vnx), vnx);
 			biodone(pbp);
 		}
 	}
@@ -1224,10 +1272,81 @@ vm_swap_free(startslot, nslots)
 	simple_unlock(&swap_data_lock);
 }
 
+static struct swapbufhead swapbuflist;
+
+void
+swapbuf_init(bp, p)
+	struct buf  	*bp;
+	struct proc 	*p;
+{
+	register struct swapbuf *sbp;
+
+	sbp = swapbuf_alloc();
+	TAILQ_INIT(sbp->sw_bswlist);
+	sbp->sw_buf = bp;
+	sbp->sw_nswbuf = nswbuf;
+
+	for (i = 0; i < nswbuf - 1; i++, sbp->sw_buf++) {
+		TAILQ_INSERT_HEAD(sbp->sw_bswlist, sbp->sw_buf, b_freelist);
+		sbp->sw_buf->b_rcred = sbp->sw_buf->b_wcred = p->p_ucred;
+		LIST_NEXT(sbp->sw_buf, b_vnbufs) = NOLIST;
+	}
+	sbp->sw_buf->b_rcred = sbp->sw_buf->b_wcred = p->p_ucred;
+	LIST_NEXT(sbp->sw_buf, b_vnbufs) = NOLIST;
+	TAILQ_REMOVE(sbp->sw_bswlist, sbp->sw_buf, b_actq);
+}
+
+struct buf *
+swapbuf_getbuf(void)
+{
+	register struct swapbuf *sbp;
+	int s;
+
+	sbp = swapbuf_alloc();
+	s = splbio();
+	while((sbp->sw_buf = TAILQ_FIRST(sbp->sw_bswlist)) == NULL) {
+		sbp->sw_buf->b_flags |= B_WANTED;
+		sleep((caddr_t)&sbp->sw_buf, BPRIO_DEFAULT);
+	}
+	TAILQ_REMOVE(sbp->sw_bswlist, sbp->sw_buf, b_freelist);
+	splx(s);
+
+	if (sbp->sw_buf == NULL) {
+		sbp->sw_buf = (struct buf *)malloc(sizeof(*sbp->sw_buf), M_TEMP, M_WAITOK);
+	}
+	bzero(sbp->sw_buf, sizeof(*sbp->sw_buf));
+	BUF_INIT(sbp->sw_buf);
+
+	sbp->sw_buf->b_rcred = sbp->sw_buf->b_wcred = NOCRED;
+	LIST_NEXT(sbp->sw_buf, b_vnbufs) = NOLIST;
+
+	return (sbp->sw_buf);
+}
+
+void
+swapbuf_putbuf(sbp, bp)
+	struct swapbuf 	*sbp;
+	struct buf 		*bp;
+{
+	int s;
+
+	s = splbio();
+	if (bp->b_vp) {
+		brelvp(bp);
+	}
+	if (bp->b_flags & B_WANTED) {
+		bp->b_flags &= ~B_WANTED;
+		wakeup((caddr_t) bp);
+	}
+	sbp->sw_buf = bp;
+	TAILQ_INSERT_HEAD(sbp->sw_bswlist, bp, b_freelist);
+	free(bp, M_TEMP);
+	splx(s);
+}
+
 /*
  * swap_pager.c
  */
-
 swap_pager_put()
 {
 

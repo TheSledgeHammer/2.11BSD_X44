@@ -128,15 +128,19 @@ extern struct cpu_ops 		cpu_ops;
 #define	CPU_IS_PRIMARY(ci)	((void)ci, 1)
 #endif
 
+//#if defined(SMP)
+static struct cpu_info *curcpu(void);
+
 __inline static struct cpu_info *
-curcpu(void)
+curcpu()
 {
 	struct cpu_info *ci;
 
 	__asm volatile(
 			"movl %%fs:%1, %0" : "=r" (ci) : "m"
-			(*(struct cpu_info * const *)&((struct cpu_info *)0)->cpu_self)
+			(*(struct cpu_info * const *)offsetof(struct cpu_info, cpu_self))
 	);
 	return (ci);
 }
+#endif
 #endif /* _I386_CPUINFO_H_ */

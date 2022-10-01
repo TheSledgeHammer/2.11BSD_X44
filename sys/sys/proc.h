@@ -8,7 +8,9 @@
 
 #ifndef	_SYS_PROC_H_
 #define	_SYS_PROC_H_
-
+#ifdef _KERNEL
+#include <machine/cpuinfo.h>
+#endif
 #include <machine/proc.h>		/* Machine-dependent proc substruct. */
 #include <machine/frame.h>
 
@@ -274,12 +276,11 @@ extern u_long pgrphash;
 
 #if !defined(curproc)
 #if defined(SMP)
-#include <machine/cpuinfo.h>
-#define curproc()	(curcpu()->cpu_curproc)
+#define curproc	curcpu()->cpu_curproc	/* current running proc */
 #else
 extern struct proc *curproc;			/* current running proc */
-#endif
-#endif
+#endif	 /* SMP */
+#endif  /* !curproc */
 
 extern int pidhashmask;					/* In param.c. */
 extern struct proc proc0;				/* Process slot for swapper. */
@@ -314,12 +315,10 @@ void        endtsleep(struct proc *);
 void		unsleep(struct proc *);
 void		wakeup(const void *);
 void		reschedule(struct proc *);
-
 void		procinit(void);
 void		proc_init(struct proc *);
 void		rqinit(void);
 void		sqinit(void);
-
 int 		chgproccnt(uid_t, int);
 void		pgdelete(struct pgrp *);
 int			leavepgrp(struct proc *);
