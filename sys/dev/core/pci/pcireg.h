@@ -228,6 +228,7 @@ typedef u_int8_t pci_revision_t;
 #define	PCI_HDRTYPE_MASK					0xff
 #define	PCI_HDRTYPE(bhlcr)     				(((bhlcr) >> PCI_HDRTYPE_SHIFT) & PCI_HDRTYPE_MASK)
 
+#define	PCI_HDRTYPE_TYPE(bhlcr) 			(PCI_HDRTYPE(bhlcr) & 0x7f)
 #define	PCI_HDRTYPE_MULTIFN(bhlcr) 			((PCI_HDRTYPE(bhlcr) & 0x80) != 0)
 
 #define	PCI_LATTIMER_SHIFT					8
