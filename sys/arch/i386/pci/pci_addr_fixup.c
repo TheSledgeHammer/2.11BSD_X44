@@ -126,7 +126,7 @@ pci_addr_fixup(pc, maxbus)
 	/* 
 	 * 3. determine allocation space 
 	 */
-	start = x86_round_page(avail_end + 1);
+	start = i386_round_page(avail_end + 1);
 	if (start < PCIADDR_ISAMEM_RESERVE)
 		start = PCIADDR_ISAMEM_RESERVE;
 	pciaddr.mem_alloc_start = (start + 0x100000 + 1) & ~(0x100000 - 1);

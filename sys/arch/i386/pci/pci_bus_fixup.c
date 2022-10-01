@@ -45,6 +45,8 @@ __KERNEL_RCSID(0, "$NetBSD: pci_bus_fixup.c,v 1.4 2002/01/22 15:08:53 uch Exp $"
 #include <dev/core/pci/pcidevs.h>
 #include <dev/core/pci/ppbreg.h>
 
+#include <machine/pci/pci_machdep.h>
+
 #include <i386/pci/pci_bus_fixup.h>
 #include <i386/pci/pcibios.h>
 

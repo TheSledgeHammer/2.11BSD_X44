@@ -80,6 +80,7 @@ __KERNEL_RCSID(0, "$NetBSD: pci_intr_fixup.c,v 1.27.2.1 2004/04/28 05:19:04 jmc 
 #include <sys/queue.h>
 #include <sys/null.h>
 
+#include <machine/bios.h>
 #include <machine/bus.h>
 #include <machine/intr.h>
 
@@ -87,13 +88,14 @@ __KERNEL_RCSID(0, "$NetBSD: pci_intr_fixup.c,v 1.27.2.1 2004/04/28 05:19:04 jmc 
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pcidevs.h>
 
+#include <machine/pci/pci_machdep.h>
 #include <i386/pci/pcibios.h>
 #include <i386/pci/pci_intr_fixup.h>
 
 struct pciintr_link_map {
 	int 							link;
 	int 							clink;
-	uint8_t							irq;
+	int							irq;
 	uint16_t						bitmap;
 	int 							fixup_stage;
 	SIMPLEQ_ENTRY(pciintr_link_map) list;
@@ -128,6 +130,7 @@ const struct pciintr_icu_table {
 	pci_product_id_t 	piit_product;
 	int (*piit_init)(pci_chipset_tag_t, bus_space_tag_t, pcitag_t, pciintr_icu_tag_t *, pciintr_icu_handle_t *);
 } pciintr_icu_table[] = {
+#ifdef notyet
 	{ PCI_VENDOR_INTEL,	PCI_PRODUCT_INTEL_82371MX,
 	  piix_init },
 	{ PCI_VENDOR_INTEL,	PCI_PRODUCT_INTEL_82371AB_ISA,
@@ -175,6 +178,7 @@ const struct pciintr_icu_table {
 
 	{ PCI_VENDOR_ALI,	PCI_PRODUCT_ALI_M1543,
 	  ali1543_init },
+#endif
 
 	{ 0,			0,
 	  NULL },
@@ -200,7 +204,7 @@ pciintr_icu_lookup(id)
 }
 
 struct pciintr_link_map *
-pci_pir_find_link(link_id)
+pciintr_link_lookup(link_id)
 	int link_id;
 {
 	struct pciintr_link_map *l;
@@ -222,7 +226,7 @@ pciintr_link_alloc(entry, pin)
 	struct PIR_intpin *intpin;
 	int link, clink, irq;
 
-	intpin = entry->pe_intpin[pin];
+	intpin = &entry->pe_intpin[pin];
 	link = intpin->link;
 	if (pciintr_icu_tag != NULL) {
 		if (pciintr_icu_getclink(pciintr_icu_tag, pciintr_icu_handle, link, &clink) != 0) {
@@ -279,7 +283,7 @@ pciintr_pir_lookup(bus, device)
 		return (NULL);
 	}
 	for (i = 0; i < pci_route_count; i++) {
-		entry = pci_route_table->pt_entry[i];
+		entry = &pci_route_table->pt_entry[i];
 		if(entry->pe_bus == bus && PIR_DEVFUNC_DEVICE(entry->pe_device) == device) {
 			return (entry);
 		}
@@ -613,7 +617,7 @@ pciintr_do_header_fixup(pc, tag, context)
 #endif
 
 	entry = pciintr_pir_lookup(bus, device);
-	intpin = entry->pe_intpin[pin - 1];
+	intpin = &entry->pe_intpin[pin - 1];
 	if (entry == NULL || (link = intpin->link) == 0) {
 		/*
 		 * Interrupt not connected; no
