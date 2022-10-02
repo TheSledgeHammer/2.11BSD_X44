@@ -40,22 +40,30 @@
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
-#include <vm/include/pmap.h>
+//#include <vm/include/pmap.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
 
+#include <dev/misc/cons/cons.h>
+
 #include <machine/bus.h>
 #include <machine/cpu.h>
+#include <machine/cpufunc.h>
+#include <machine/cpuvar.h>
 #include <machine/cputypes.h>
+#include <machine/gdt.h>
+#include <machine/intr.h>
+#include <machine/pic.h>
 #include <machine/pcb.h>
 #include <machine/psl.h>
 #include <machine/pte.h>
 #include <machine/param.h>
+#include <machine/pmap.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
 #include <machine/vm86.h>
 #include <machine/smp.h>
-#include <machine/percpu.h>
+//#include <machine/percpu.h>
 
 #define WARMBOOT_TARGET		0
 #define WARMBOOT_OFF		(PMAP_MAP_LOW + 0x0467)
@@ -109,14 +117,15 @@
  */
 static void	install_ap_tramp(void);
 static int	start_all_aps(void);
-static int	start_ap(int apic_id);
+static int	start_ap(int);
+static void	ipi_startup(int, int);
 
 /* Set to 1 once we're ready to let the APs out of the pen. */
 static volatile int aps_ready = 0;
 
 typedef void *vector_t;
 #define	IDTVEC(name)	__CONCAT(X, name)
-extern	IDTVEC(pmap_invalidate_all),		/* TLB shootdowns - global */
+extern vector_t IDTVEC(pmap_invalidate_all),		/* TLB shootdowns - global */
 		IDTVEC(pmap_invalidate_page),		/* TLB shootdowns - 1 page */
 		IDTVEC(pmap_invalidate_range);		/* TLB shootdowns - page range */
 
@@ -142,7 +151,7 @@ cpu_mp_start(pc)
 		boot_cpu_id = PERCPU_GET(apic_id);
 		cpu_info[boot_cpu_id].cpu_bsp = 1;
 	} else {
-		KASSERT(boot_cpu_id == PERCPU_GET(apic_id)("BSP's APIC ID doesn't match boot_cpu_id"));
+		KASSERT(boot_cpu_id == PERCPU_GET(apic_id)/*("BSP's APIC ID doesn't match boot_cpu_id")*/);
 	}
 
 	/* Probe logical/physical core configuration. */
@@ -163,7 +172,7 @@ init_secondary(ci)
 	struct percpu *pc;
 	struct i386tss *common_tssp;
 	struct region_descriptor region;
-	int gsel_tss, myid, x;
+	int gsel_tss, default_ldt, myid, x;
 	u_int cr0;
 
 	/* Get per-cpu data */
@@ -172,9 +181,9 @@ init_secondary(ci)
 	/* prime data page for it to use */
 	percpu_init(pc, ci, sizeof(struct percpu));
 	pc->pc_apic_id = cpu_apic_ids[myid];
-	pc->pc_curkthread = 0;
+//	pc->pc_curkthread = 0;
 	pc->pc_cpuinfo = ci;
-	pc->pc_cpuinfo->cpu_percpu = pc = ci->cpu_percpu;
+	pc->pc_cpuinfo->cpu_percpu = pc = &ci->cpu_percpu;
 	pc->pc_common_tssp = common_tssp = &(__percpu[0].pc_common_tssp)[myid];
 
 	fix_cpuid();
@@ -187,14 +196,15 @@ init_secondary(ci)
 		ssdtosd(&gdt_segs[x], &gdt[myid * NGDT + x].sd);
 	}
 
-	setregion(&region, gdt[myid * NGDT], NGDT * sizeof(gdt[0]) - 1);
+	setregion(&region, &gdt[myid * NGDT], NGDT * sizeof(gdt[0]) - 1);
 	lgdt(&region);
 
 	setregion(&region, idt, NIDT * sizeof(struct gate_descriptor)-1);
 	lidt(&region);
 
-	lldt(_default_ldt);
-	PERCPU_SET(currentldt, _default_ldt);
+	default_ldt = GSEL(GLDT_SEL, SEL_KPL);
+	lldt(default_ldt);
+	PERCPU_SET(currentldt, default_ldt);
 
 	gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 	gdt[myid * NGDT + GPROC0_SEL].sd.sd_type = SDT_SYS386TSS;
@@ -231,7 +241,7 @@ init_secondary(ci)
 	pmap_invalidate_range(kernel_pmap, 0, NKPT * NBPDR - 1);
 
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
-	lidt(&r_idt);
+	//lidt(&r_idt);
 #endif
 
 	init_secondary_tail(pc);
@@ -327,7 +337,7 @@ install_ap_tramp(void)
 	u_int16_t *dst16;
 	u_int32_t *dst32;
 
-	KASSERT (size <= PAGE_SIZE ("'size' do not fit into PAGE_SIZE, as expected."));
+	KASSERT (size <= PAGE_SIZE /*("'size' do not fit into PAGE_SIZE, as expected.")*/);
 	pmap_kenter(va, boot_address);
 	pmap_invalidate_page(kernel_pmap, va);
 	for (x = 0; x < size; ++x) {

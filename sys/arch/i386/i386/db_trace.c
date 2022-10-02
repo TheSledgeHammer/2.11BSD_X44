@@ -47,23 +47,50 @@
 /*
  * Machine register set.
  */
+
+#define dbreg(xx) (long *)offsetof(db_regs_t, tf_ ## xx)
+
+static int db_i386_regop(const struct db_variable *, db_expr_t *, int);
+
 struct db_variable db_regs[] = {
-	{ "es",		(long *)&ddb_regs.tf_es,     FCN_NULL },
-	{ "ds",		(long *)&ddb_regs.tf_ds,     FCN_NULL },
-	{ "edi",	(long *)&ddb_regs.tf_edi,    FCN_NULL },
-	{ "esi",	(long *)&ddb_regs.tf_esi,    FCN_NULL },
-	{ "ebp",	(long *)&ddb_regs.tf_ebp,    FCN_NULL },
-	{ "ebx",	(long *)&ddb_regs.tf_ebx,    FCN_NULL },
-	{ "edx",	(long *)&ddb_regs.tf_edx,    FCN_NULL },
-	{ "ecx",	(long *)&ddb_regs.tf_ecx,    FCN_NULL },
-	{ "eax",	(long *)&ddb_regs.tf_eax,    FCN_NULL },
-	{ "eip",	(long *)&ddb_regs.tf_eip,    FCN_NULL },
-	{ "cs",		(long *)&ddb_regs.tf_cs,     FCN_NULL },
-	{ "eflags",	(long *)&ddb_regs.tf_eflags, FCN_NULL },
-	{ "esp",	(long *)&ddb_regs.tf_esp,    FCN_NULL },
-	{ "ss",		(long *)&ddb_regs.tf_ss,     FCN_NULL },
+	{ "ds",		dbreg(ds),     FCN_NULL },
+	{ "es",		dbreg(es),     FCN_NULL },
+	{ "fs",		dbreg(fs),     FCN_NULL },
+	{ "gs",		dbreg(gs),     FCN_NULL },
+	{ "edi",	dbreg(edi),    FCN_NULL },
+	{ "esi",	dbreg(esi),    FCN_NULL },
+	{ "ebp",	dbreg(ebp),    FCN_NULL },
+	{ "ebx",	dbreg(ebx),    FCN_NULL },
+	{ "edx",	dbreg(edx),    FCN_NULL },
+	{ "ecx",	dbreg(ecx),    FCN_NULL },
+	{ "eax",	dbreg(eax),    FCN_NULL },
+	{ "eip",	dbreg(eip),    FCN_NULL },
+	{ "cs",		dbreg(cs),     FCN_NULL },
+	{ "eflags",	dbreg(eflags), FCN_NULL },
+	{ "esp",	dbreg(esp),    FCN_NULL },
+	{ "ss",		dbreg(ss),     FCN_NULL },
 };
+
 struct db_variable *db_eregs = db_regs + sizeof(db_regs)/sizeof(db_regs[0]);
+
+static int
+db_i386_regop(const struct db_variable *vp, db_expr_t *val, int opcode)
+{
+	db_expr_t *regaddr =
+	    (db_expr_t *)(((uint8_t *)DDB_REGS) + ((size_t)vp->valuep));
+	
+	switch (opcode) {
+	case DB_VAR_GET:
+		*val = *regaddr;
+		break;
+	case DB_VAR_SET:
+		*regaddr = *val;
+		break;
+	default:
+		panic("db_i386_regop: unknown op %d", opcode);
+	}
+	return 0;
+}
 
 /*
  * Stack trace.

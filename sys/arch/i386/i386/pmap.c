@@ -316,7 +316,7 @@ pmap_cold_mapident(pa, cnt)
 	pmap_cold_map(pa, pa, cnt);
 }
 
-static void
+void
 pmap_remap_lower(enable)
 	bool_t enable;
 {

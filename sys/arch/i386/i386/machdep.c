@@ -102,6 +102,10 @@
 
 #include <i386/isa/nvram.h>
 
+#ifdef SMP
+#include <machine/smp.h>
+#endif
+
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
