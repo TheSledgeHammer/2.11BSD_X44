@@ -820,7 +820,7 @@ init_secondary_tail(pc)
 	}
 
 	if (bootverbose)
-		lapic_dump("AP");
+		lapic_dump();
 
 	if (smp_cpus == mp_ncpus) {
 		/* enable IPI's, tlb shootdown, freezes etc */
