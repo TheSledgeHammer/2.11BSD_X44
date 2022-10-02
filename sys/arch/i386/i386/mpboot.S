@@ -135,9 +135,6 @@ mp_begin:	/* now running relocated at KERNBASE */
  * 1Meg.		-jackv
  */
 
-		.data
-		ALIGN_DATA						/* just to be sure */
-
 BOOTMP1:
 
 ENTRY(bootMP)
