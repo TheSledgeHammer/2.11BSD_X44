@@ -320,11 +320,11 @@ lapic_set_lvt(void)
 
 #ifdef SMP
 	if (mp_verbose) {
-			apic_format_redir (ci->cpu_dev->dv_xname, "timer", 0, 0, lapic_read(LAPIC_LVTT));
-			apic_format_redir (ci->cpu_dev->dv_xname, "pcint", 0, 0, lapic_read(LAPIC_PCINT));
-			apic_format_redir (ci->cpu_dev->dv_xname, "lint", 0, 0, lapic_read(LAPIC_LVINT0));
-			apic_format_redir (ci->cpu_dev->dv_xname, "lint", 1, 0, lapic_read(LAPIC_LVINT1));
-			apic_format_redir (ci->cpu_dev->dv_xname, "err", 0, 0, lapic_read(LAPIC_LVERR));
+			apic_format_redir(ci->cpu_dev->dv_xname, "timer", 0, APIC_VECTYPE_LAPIC_ICR, 0, lapic_read(LAPIC_LVTT));
+			apic_format_redir(ci->cpu_dev->dv_xname, "pcint", 0, APIC_VECTYPE_LAPIC_ICR, 0, lapic_read(LAPIC_PCINT));
+			apic_format_redir(ci->cpu_dev->dv_xname, "lint", 0, APIC_VECTYPE_LAPIC_LVT, 0, lapic_read(LAPIC_LVINT0));
+			apic_format_redir(ci->cpu_dev->dv_xname, "lint", 1, APIC_VECTYPE_LAPIC_LVT, 0, lapic_read(LAPIC_LVINT1));
+			apic_format_redir(ci->cpu_dev->dv_xname, "err", 0, APIC_VECTYPE_LAPIC_ICR, 0, lapic_read(LAPIC_LVERR));
 		}
 #endif
 }
