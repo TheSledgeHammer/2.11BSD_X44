@@ -119,11 +119,17 @@ extern void (*microtime_func)(struct timeval *);
 extern char		btext[];
 extern char		etext[];
 
+/* cpu.c */
+void 	cpu_init_first(void);
+
 /* cpu_topo.c */
 void	assign_cpu_ids(void);
 void	init_secondary_tail(struct percpu *);
 void	set_interrupt_apic_ids(void);
 void	topo_probe(void);
+void	cpu_mp_setmaxid(void);
+int	cpu_mp_probe(void);
+void	cpu_mp_announce(void);
 
 /* machdep.c */
 void	boot(int);
@@ -133,6 +139,9 @@ void	setidt(int, void *, int, int, int);
 void 	unsetidt(int);
 void	setregion(struct region_descriptor *, void *, size_t);
 void 	f00f_hack(void);
+
+/* mp_machdep.c */
+void	cpu_mp_start(struct percpu *);
 
 /* sched.S */
 struct 	pcb;
