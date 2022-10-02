@@ -1505,9 +1505,8 @@ makectx(tf, pcb)
 }
 
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
-static void f00f_hack(void);
 
-static void
+void
 f00f_hack(void)
 {
 	struct region_descriptor region;

@@ -34,8 +34,6 @@
 #include <sys/percpu.h>
 #include <sys/stddef.h>
 
-extern struct percpu 				*__percpu[];
-
 #define	PERCPU_MD_FIELDS 																\
 	struct	percpu 					*pc_prvspace;		/* Self-reference */			\
 	struct	cpu_info				*pc_cpuinfo;										\
@@ -43,6 +41,7 @@ extern struct percpu 				*__percpu[];
 	struct	segment_descriptor 		*pc_tss_gdt;										\
 	struct	segment_descriptor 		*pc_fsgs_gdt;										\
 	struct	i386tss 				*pc_common_tssp;									\
+	u_int							pc_trampstk;										\
 	int								pc_currentldt;										\
 	u_int   						pc_acpi_id;			/* ACPI CPU id */				\
 	u_int							pc_apic_id;			/* APIC CPU id */				\
@@ -128,7 +127,7 @@ extern struct percpu 				*__percpu[];
 		*__PERCPU_PTR(name) = __val;								\
 	}																\
 } while (0)
-
+#ifdef notyet
 #define	get_percpu() __extension__ ({								\
 	struct percpu *__pc;											\
 																	\
@@ -137,23 +136,16 @@ extern struct percpu 				*__percpu[];
 	    : "m" (*(struct percpu *)(__percpu_offset(pc_cpuinfo))));	\
 	__pc;															\
 })
+#endif
+#define	get_percpu()			curcpu()->cpu_percpu
 
 #define	PERCPU_GET(member)		__PERCPU_GET(pc_ ## member)
 #define	PERCPU_ADD(member, val)	__PERCPU_ADD(pc_ ## member, val)
 #define	PERCPU_PTR(member)		__PERCPU_PTR(pc_ ## member)
 #define	PERCPU_SET(member, val)	__PERCPU_SET(pc_ ## member, val)
 
-#define	IS_BSP()					(PERCPU_GET(cpuid) == 0)
-/*
-struct kthread *
-__curkthread(void)
-{
-	struct kthread *kt;
-	__asm("movl %%fs:%1,%0" : "=r" (kt)
-			: "m" (*(char *)offsetof(struct percpu, pc_curkthread)));
-	return (kt);
-}
-*/
+#define	IS_BSP()				(__PERCPU_GET(cpuid) == 0)
+
 #endif /* _KERNEL */
 
 #endif /* _I386_PERCPU_H_ */

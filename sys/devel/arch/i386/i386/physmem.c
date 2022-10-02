@@ -44,6 +44,9 @@
 
 #include <arch/i386/include/bios.h>
 #include <arch/i386/include/bootinfo.h>
+#include <sys/percpu.h>
+#include <arch/i386/include/cpuinfo.h>
+#include <arch/i386/include/percpu.h>
 
 /* bios smap */
 static int

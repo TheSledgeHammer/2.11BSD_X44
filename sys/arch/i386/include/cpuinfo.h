@@ -39,7 +39,7 @@ struct percpu;
 struct cpu_info {
 	struct cpu_info 		*cpu_self;			/* self-pointer */
 	struct device 			*cpu_dev;			/* pointer to our device */
-	struct percpu			cpu_percpu;			/* pointer to percpu info, when NCPUS > 1 */
+	struct percpu			*cpu_percpu;		/* pointer to percpu info, when NCPUS > 1 */
 	struct proc				*cpu_curproc;		/* current owner of the processor */
 
 	u_int					cpu_cpuid;			/* This cpu number */
@@ -91,13 +91,14 @@ extern struct cpu_ops 		cpu_ops;
 
 /* cpu_info macros */
 #define cpu_is_primary(ci)	((ci)->cpu_flags & CPUF_PRIMARY)
+/*
 #define cpu_cpuid(ci) 		((ci)->cpu_cpuid)
 #define cpu_cpumask(ci)		((ci)->cpu_cpumask)
 #define cpu_cpusize(ci)		((ci)->cpu_size)
 #define cpu_acpi_id(ci)		((ci)->cpu_acpi_id)
 #define cpu_apic_id(ci)		((ci)->cpu_apic_id)
 #define cpu_percpu(ci)		((ci)->cpu_percpu)
-
+*/
 /*
  * Processor flag notes: The "primary" CPU has certain MI-defined
  * roles (mostly relating to hardclock handling); we distinguish
@@ -146,7 +147,7 @@ curcpu()
 #else
 
 #define	curcpu()		(cpu_info)
-#define cpu_number()		0
+#define cpu_number()	0
 
 #endif
 #endif /* _I386_CPUINFO_H_ */

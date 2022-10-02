@@ -68,12 +68,12 @@ percpu_init(pc, ci, size)
 	bzero(pc, size);
 	KASSERT(ci->cpu_cpuid >= 0 && ci->cpu_cpuid < NCPUS);
 
-	pc->pc_cpuid = cpu_cpuid(ci);
-	pc->pc_cpumask = cpu_cpumask(ci);
+	pc->pc_cpuid = ci->cpu_cpuid;
+	pc->pc_cpumask = ci->cpu_cpumask;
 	cpuid_to_percpu[ci->cpu_cpuid] = pc;
 	LIST_INSERT_HEAD(&cpuhead, pc, pc_entry);
-	pc->pc_acpi_id = cpu_acpi_id(ci);
-	pc->pc_offset = percpu_offset_cpu(cpu_cpuid(ci));
+	pc->pc_acpi_id = ci->cpu_acpi_id;
+	pc->pc_offset = percpu_offset_cpu(ci->cpu_cpuid);
 }
 
 /* lookup percpu from cpu_info */
@@ -83,7 +83,7 @@ percpu_lookup(ci)
 {
 	struct percpu *pc, *npci;
 	LIST_FOREACH(pc, &cpuhead, pc_entry) {
-	    npci = &cpu_percpu(ci);
+	    npci = ci->cpu_percpu;
 		if(npci == pc) {
 			return (pc);
 		}
@@ -231,20 +231,20 @@ percpu_free(pc)
 
 /* start a percpu struct from valid cpu_info */
 struct percpu *
-percpu_start(ci, size)
+percpu_start(ci, size, ncpus)
 	struct cpu_info *ci;
 	size_t 			size;
+	int 			ncpus;
 {
 	struct percpu *pc;
 
-	pc = &cpu_percpu(ci);
+	pc = ci->cpu_percpu[ncpus];
 	pc->pc_size = size;
-
 	return (pc);
 }
 
 struct percpu *
-percpu_create(ci, size, count , ncpus)
+percpu_create(ci, size, count, ncpus)
 	struct cpu_info *ci;
 	size_t size;
 	int count, ncpus;
@@ -253,18 +253,12 @@ percpu_create(ci, size, count , ncpus)
 	int i, error, cpu;
 
 	percpu_malloc(pc, size);
-
 	cpu = ncpus;
-
 	for (i = 0; i < count; i++) {
 		if ((ncpus <= -1) && (count > 1)) {
 			cpu = i%ncpus;
-			if (count == 1) {
-				pc = percpu_start(ci, size);
-			} else {
-				pc = percpu_start(ci, size);
-			}
 		}
+		pc = percpu_start(ci, size, i);
 	}
 	return (pc);
 }

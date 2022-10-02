@@ -132,6 +132,7 @@ void	cpu_reset(void);
 void	setidt(int, void *, int, int, int);
 void 	unsetidt(int);
 void	setregion(struct region_descriptor *, void *, size_t);
+void 	f00f_hack(void);
 
 /* sched.S */
 struct 	pcb;

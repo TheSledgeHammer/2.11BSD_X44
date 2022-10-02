@@ -453,7 +453,7 @@ lock_object_init(lock, type, name, flags)
     const char				*name;
     u_int					flags;
 {
-    memset(lock->lo_cpus, 0, sizeof(lock->lo_cpus));
+    bzero(lock->lo_cpus, sizeof(lock->lo_cpus));
 
     lock->lo_nxt_ticket = 0;
     for (int i = 1; i < cpu_number(); i++) {
@@ -586,7 +586,7 @@ void
 lockholder_init(holder)
 	struct lock_holder 	*holder;
 {
-	memset(holder, 0, sizeof(struct lock_holder));
+	bzero(holder, sizeof(struct lock_holder));
 	holder->lh_data = NULL;
 	holder->lh_pid = LK_NOPROC;
 	holder->lh_pgrp = NULL;
@@ -601,7 +601,7 @@ lockholder_create(data, pid, pgrp)
 {
 	struct lock_holder 	*holder;
 
-	memset(holder, 0, sizeof(struct lock_holder));
+	bzero(holder, sizeof(struct lock_holder));
 	holder->lh_data = data;
 	holder->lh_pid = pid;
 	holder->lh_pgrp = pgrp;

@@ -38,8 +38,8 @@
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 
-void		rwlock_pause(struct rwlock *, int);
-void		rwlock_acquire(struct rwlock *, int, int, int);
+void		rwlock_pause(__volatile struct rwlock *, int);
+void		rwlock_acquire(__volatile struct rwlock *, int, int, int);
 
 #if NCPUS > 1
 #define PAUSE(rwl, wanted)						\
@@ -49,7 +49,7 @@ void		rwlock_acquire(struct rwlock *, int, int, int);
 #endif /* NCPUS == 1 */
 
 #define ACQUIRE(rwl, error, extflags, wanted)	\
-		rwlock_acquire((struct rwlock *)rwl, error, extflags, wanted);
+		rwlock_acquire(rwl, error, extflags, wanted);
 
 /* Initialize a rwlock */
 void
@@ -244,7 +244,7 @@ int rwlock_wait_time = 100;
 
 void
 rwlock_pause(rwl, wanted)
-	struct rwlock *rwl;
+	__volatile struct rwlock *rwl;
 	int wanted;
 {
 	if (rwlock_wait_time > 0) {
@@ -266,7 +266,7 @@ rwlock_pause(rwl, wanted)
 
 void
 rwlock_acquire(rwl, error, extflags, wanted)
-	struct rwlock *rwl;
+	__volatile struct rwlock *rwl;
 	int error, extflags, wanted;
 {
 	rwlock_pause(rwl, wanted);

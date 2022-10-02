@@ -60,7 +60,6 @@ struct percpu {
 	u_long 					pc_start;			/* start of per-cpu extent region */
 	u_long 					pc_end;				/* end of per-cpu extent region */
 
-
 	u_int					pc_offset;
 	PERCPU_MD_FIELDS;
 };
@@ -81,7 +80,7 @@ extern struct percpu 			*cpuid_to_percpu[];
  * initializing machine dependent fields of struct percpu.
  */
 void					percpu_init(struct percpu *, struct cpu_info *, size_t);
-struct percpu 			*percpu_start(struct cpu_info *, size_t);
+struct percpu 			*percpu_start(struct cpu_info *, size_t, int);
 void					percpu_remove(struct cpu_info *);
 struct percpu 			*percpu_lookup(struct cpu_info *);
 struct percpu 			*percpu_create(struct cpu_info *, size_t, int, int);

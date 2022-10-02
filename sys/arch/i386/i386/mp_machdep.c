@@ -63,7 +63,6 @@
 #include <machine/vmparam.h>
 #include <machine/vm86.h>
 #include <machine/smp.h>
-//#include <machine/percpu.h>
 
 #define WARMBOOT_TARGET		0
 #define WARMBOOT_OFF		(PMAP_MAP_LOW + 0x0467)
@@ -176,15 +175,15 @@ init_secondary(ci)
 	u_int cr0;
 
 	/* Get per-cpu data */
-	pc = ci->cpu_percpu = &__percpu[myid];
+	pc = ci->cpu_percpu[myid];
 
 	/* prime data page for it to use */
 	percpu_init(pc, ci, sizeof(struct percpu));
 	pc->pc_apic_id = cpu_apic_ids[myid];
-//	pc->pc_curkthread = 0;
 	pc->pc_cpuinfo = ci;
-	pc->pc_cpuinfo->cpu_percpu = pc = &ci->cpu_percpu;
-	pc->pc_common_tssp = common_tssp = &(__percpu[0].pc_common_tssp)[myid];
+	pc->pc_cpuinfo->cpu_percpu = pc;
+	common_tssp = (ci->cpu_percpu[0].pc_common_tssp)[myid];
+	pc->pc_common_tssp = common_tssp;
 
 	fix_cpuid();
 
@@ -241,7 +240,7 @@ init_secondary(ci)
 	pmap_invalidate_range(kernel_pmap, 0, NKPT * NBPDR - 1);
 
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
-	//lidt(&r_idt);
+	f00f_hack();
 #endif
 
 	init_secondary_tail(pc);
