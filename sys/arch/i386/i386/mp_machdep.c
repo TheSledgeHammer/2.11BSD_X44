@@ -175,14 +175,14 @@ init_secondary(ci)
 	u_int cr0;
 
 	/* Get per-cpu data */
-	pc = ci->cpu_percpu[myid];
+	pc = &ci->cpu_percpu[myid];
 
 	/* prime data page for it to use */
 	percpu_init(pc, ci, sizeof(struct percpu));
 	pc->pc_apic_id = cpu_apic_ids[myid];
 	pc->pc_cpuinfo = ci;
 	pc->pc_cpuinfo->cpu_percpu = pc;
-	common_tssp = (ci->cpu_percpu[0].pc_common_tssp)[myid];
+	common_tssp = &(ci->cpu_percpu[0].pc_common_tssp)[myid];
 	pc->pc_common_tssp = common_tssp;
 
 	fix_cpuid();
@@ -211,7 +211,7 @@ init_secondary(ci)
 	common_tssp->tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
 	common_tssp->tss_ioopt = sizeof(struct i386tss) << 16;
 	PERCPU_SET(tss_gdt, &gdt[myid * NGDT + GPROC0_SEL].sd);
-	PERCPU_SET(common_tssd, PERCPU_GET(tss_gdt));
+	PERCPU_SET(common_tssd, *PERCPU_GET(tss_gdt));
 	ltr(gsel_tss);
 
 	PERCPU_SET(fsgs_gdt, &gdt[myid * NGDT + GUFS_SEL].sd);
