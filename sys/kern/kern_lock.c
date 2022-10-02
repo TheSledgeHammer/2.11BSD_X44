@@ -49,8 +49,8 @@
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
 
-void	lock_pause(struct lock *, int);
-void	lock_acquire(struct lock *, int, int, int);
+void	lock_pause(__volatile struct lock *, int);
+void	lock_acquire(__volatile struct lock *, int, int, int);
 void	lkp_lock(__volatile struct lock *);
 void	lkp_unlock(__volatile struct lock *);
 int		lkp_lock_try(__volatile struct lock *);
@@ -63,7 +63,7 @@ int		lkp_lock_try(__volatile struct lock *);
 #endif /* NCPUS == 1 */
 
 #define ACQUIRE(lkp, error, extflags, wanted)	\
-		lock_acquire((struct lock *)lkp, error, extflags, wanted);
+		lock_acquire(lkp, error, extflags, wanted);
 
 /*
  * Locking primitives implementation.
@@ -397,7 +397,7 @@ lockmgr_printinfo(lkp)
 int lock_wait_time = 100;
 void
 lock_pause(lkp, wanted)
-	struct lock *lkp;
+	__volatile struct lock *lkp;
 	int wanted;
 {
 	if (lock_wait_time > 0) {
@@ -419,7 +419,7 @@ lock_pause(lkp, wanted)
 
 void
 lock_acquire(lkp, error, extflags, wanted)
-	struct lock *lkp;
+	__volatile struct lock *lkp;
 	int error, extflags, wanted;
 {
 	lock_pause(lkp, wanted);
