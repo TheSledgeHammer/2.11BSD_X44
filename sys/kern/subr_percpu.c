@@ -238,7 +238,7 @@ percpu_start(ci, size, ncpus)
 {
 	struct percpu *pc;
 
-	pc = ci->cpu_percpu[ncpus];
+	pc = &ci->cpu_percpu[ncpus];
 	pc->pc_size = size;
 	return (pc);
 }
