@@ -91,7 +91,9 @@ struct 	pcred cred0;
 struct 	filedesc0 filedesc0;
 struct 	plimit limit0;
 struct 	vmspace vmspace0;
+#ifndef curproc
 struct 	proc *curproc = &proc0;
+#endif
 struct	proc *initproc;
 
 int	netoff = 1;
