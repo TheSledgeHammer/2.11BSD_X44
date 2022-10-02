@@ -209,8 +209,9 @@ struct region_descriptor {
 #define GBIOSDATA_SEL		17	/* BIOS interface (Data) */
 #define GBIOSUTIL_SEL		18	/* BIOS interface (Utility) */
 #define GBIOSARGS_SEL 		19	/* BIOS interface (Arguments) */
+#define	GPRIV_SEL		20	/* SMP Per-Processor Private Data */
 
-#define NGDT 			20
+#define NGDT 			21
 
 /* local descriptor table */
 #define	LUNULL_SEL		0	/* Null Descriptor */

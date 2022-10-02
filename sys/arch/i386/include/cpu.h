@@ -119,12 +119,19 @@ extern void (*microtime_func)(struct timeval *);
 extern char		btext[];
 extern char		etext[];
 
+/* cpu_topo.c */
+void	assign_cpu_ids(void);
+void	init_secondary_tail(struct percpu *);
+void	set_interrupt_apic_ids(void);
+void	topo_probe(void);
+
 /* machdep.c */
 void	boot(int);
 void	cpu_halt(void);
 void	cpu_reset(void);
 void	setidt(int, void *, int, int, int);
 void 	unsetidt(int);
+void	setregion(struct region_descriptor *, void *, size_t);
 
 /* sched.S */
 struct 	pcb;

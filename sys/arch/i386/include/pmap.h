@@ -281,6 +281,7 @@ void        pmap_kenter(vm_offset_t, vm_offset_t);
 void	    pmap_kremove(vm_offset_t);
 void 	    pmap_init_pat(void);
 void	    pmap_set_nx(void);
+void	    pmap_remap_lower(bool_t);
 
 /* SMP */
 void        pmap_invalidate_page(pmap_t, vm_offset_t);

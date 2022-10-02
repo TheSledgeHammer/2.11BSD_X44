@@ -98,8 +98,6 @@ extern struct cpu_ops 		cpu_ops;
 #define cpu_apic_id(ci)		((ci)->cpu_apic_id)
 #define cpu_percpu(ci)		((ci)->cpu_percpu)
 
-#define cpu_number() 		(curcpu()->cpu_cpuid) /* number of cpus available */
-
 /*
  * Processor flag notes: The "primary" CPU has certain MI-defined
  * roles (mostly relating to hardclock handling); we distinguish
@@ -142,5 +140,13 @@ curcpu()
 	);
 	return (ci);
 }
+
+#define cpu_number() 		curcpu()->cpu_cpuid /* number of cpus available */
+
+#else
+
+#define	curcpu()		(cpu_info)
+#define cpu_number()		0
+
 #endif
 #endif /* _I386_CPUINFO_H_ */
