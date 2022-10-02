@@ -53,6 +53,8 @@ CFOPS_DECL(cpu, cpu_match, cpu_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, cpu, DV_CPU);
 CFATTACH_DECL(cpu, &cpu_cd, &cpu_cops, sizeof(struct cpu_softc));
 
+void cpu_smp_init(struct cpu_info *);
+
 struct cpu_info *cpu_info;
 int *apic_cpuids;
 
@@ -146,10 +148,10 @@ cpu_attach(parent, self, aux)
 		}
 		memset(ci, 0, sizeof(*ci));
 #ifdef SMP
-		if (cpu_info[cpunum] != NULL) {
+		if (&cpu_info[cpunum] != NULL) {
 			panic("cpu at apic id %d already attached?", cpunum);
 		}
-		cpu_info[cpunum] = ci;
+		cpu_info[cpunum] = *ci;
 #endif
 	} else {
 #ifdef SMP
