@@ -53,20 +53,19 @@
 #include <sys/queue.h>
 #include <devel/sys/threadpool.h>
 
-
-
 /* Inter-Threadpool Communication (ITPC) */
 struct itpc_list;
 TAILQ_HEAD(itpc_list, itpc);
 struct itpc {
 	TAILQ_ENTRY(itpc) 				itpc_node;
 	struct threadpool_job			*itpc_jobs;
+
 	union {
 		struct kthread				*i_kthread;
 		struct uthread  			*i_uthread;
 	} ithread;
 
-	union {
+	union ithreadpool {
 		struct kthreadpool 			*i_kthreadpool;
 		struct uthreadpool 			*i_uthreadpool;
 	} ithreadpool;
@@ -88,7 +87,7 @@ struct itpc_list itpc_header;
 /* kthreads & kthreadpools */
 #define IKTHREAD(itpc)					((itpc)->ithread.i_kthread)
 #define IKTHREADPOOL(itpc)				((itpc)->ithreadpool.i_kthreadpool)			/* threadpool */
-#define IKTPTHREAD(itpc)				((itpc)->ithreadpool_thread.i_ktpthread)	/* threadpool thread */
+#define IKTPTHREAD(itpc)				((itpc)->ithreadpool.i_ktpthread)	/* threadpool thread */
 #define SET_IKTHREAD(itpc, kt)			(IKTHREAD(itpc) = (kt))
 #define SET_IKTHREADPOOL(itpc, ktpool)	(IKTHREADPOOL(itpc) = (ktpool))
 #define GET_IKTHREAD(itpc)				(IKTHREAD(itpc))

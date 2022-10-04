@@ -137,7 +137,7 @@ static struct filterops mpx_wfiltops =
 void
 mpx_init(void)
 {
-	register int 	i, j;
+	register int i, j;
 
     for(i = 0; i <= NGROUPS; i++) {
     	LIST_INIT(&mpx_groups[i]);
@@ -146,6 +146,8 @@ mpx_init(void)
 	for(j = 0; j <= NCHANS; j++) {
 		LIST_INIT(&mpx_channels[j]);
 	}
+
+
 }
 
 struct mpx_group *
@@ -161,8 +163,9 @@ mpx_allocate_groups(mpx, ngroups)
 }
 
 void
-mpx_create_group(mpx, idx)
+mpx_create_group(mpx, idx, pgrp)
 	struct mpx 	*mpx;
+	struct pgrp *pgrp;
 	int idx;
 {
 	struct grouplist *group;
@@ -171,7 +174,7 @@ mpx_create_group(mpx, idx)
 	group = &mpx_groups[idx];
 	gp = mpx_allocate_groups(mpx, NGROUPS);
     gp->mpg_index = idx;
-    gp->mpg_pgrp = NULL;
+    gp->mpg_pgrp = pgrp;
 
 	LIST_INSERT_HEAD(group, gp, mpg_node);
 }
@@ -793,7 +796,7 @@ retry:
 	++wmpx->mpx_busy;
 
 	/* Aquire the long-term mpx lock */
-	if ((error = pipelock(wmpx, 1)) != 0) {
+	if ((error = mpxlock(wmpx, 1)) != 0) {
 		--wmpx->mpx_busy;
 		if (wmpx->mpx_busy == 0
 		    && (wmpx->mpx_state & MPX_WANT)) {
@@ -993,6 +996,9 @@ mpx_ioctl(fp, cmd, data, p)
 	struct mpx_channel 	*chan;
 
 	mpx = fp->f_mpx;
+	if(mpx->mpx_file != fp) {
+		mpx->mpx_file = fp;
+	}
 
 	switch (cmd) {
 	case FIONBIO:

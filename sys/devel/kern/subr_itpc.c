@@ -480,8 +480,6 @@ itpc_allocate(size, itpc)
 {
 	SET_IKTHREADPOOL(itpc, NULL);
 	SET_IUTHREADPOOL(itpc, NULL);
-
-
 	TAILQ_INSERT_TAIL(&itpc_header, itpc, itpc_node);
 }
 
@@ -497,18 +495,16 @@ itpc_alloc(size)
 }
 
 u_long
-itpc_hash(itpc/*, job */)
-	struct itpc 			*itpc;
-	//struct threadpool_job 	*job;
+itpc_hash(itpc)
+	struct itpc *itpc;
 {
 	Fnv32_t hash1 = fnv_32_buf(&itpc, sizeof(&itpc), FNV1_32_INIT) % ITPC_HASHMASK;
-	//Fnv32_t hash2 = fnv_32_buf(&job, sizeof(&job), FNV1_32_INIT) % ITPC_HASHMASK;
-	return (hash1/* ^ hash2 */);
+	return (hash1);
 }
 
 void
 itpc_enter(itpc)
-	struct itpc *itpc;
+	struct itpc 		*itpc;
 {
 	struct itpc_hash_head 			*bucket;
 	register struct itpc_hash_entry *entry;
@@ -526,14 +522,15 @@ itpc_enter(itpc)
 
 void
 itpc_remove(itpc)
-	register struct itpc *itpc;
+	struct itpc *itpc;
 {
 	struct itpc_hash_head 			*bucket;
 	register struct itpc_hash_entry *entry;
 
 	bucket = &itpc_hashtable[itpc_hash(itpc)];
 	TAILQ_FOREACH(entry, bucket, itpc_link)	{
-		if(itpc == entry->itpc) {
+		itpc = entry->itpc;
+		if(itpc != NULL) {
 			TAILQ_REMOVE(bucket, entry, itpc_link);
 			free((caddr_t)entry, M_ITPC);
 			break;
@@ -543,15 +540,42 @@ itpc_remove(itpc)
 
 struct itpc *
 itpc_lookup(itpc)
-	struct itpc *itpc;
+	struct itpc 					*itpc;
 {
 	struct itpc_hash_head 			*bucket;
 	register struct itpc_hash_entry *entry;
+
 	bucket = &itpc_hashtable[itpc_hash(itpc)];
 	TAILQ_FOREACH(entry, bucket, itpc_link)	{
-		if(itpc == entry->itpc) {
+		itpc = entry->itpc;
+		if(itpc != NULL) {
 			return (itpc);
 		}
 	}
 	return (NULL);
+}
+
+void
+ithreadpool_add_kthreadpool(itpc, ktpool)
+	struct itpc 		*itpc;
+	struct kthreadpool 	*ktpool;
+{
+	SET_IKTHREADPOOL(itpc, ktpool);
+	itpc_enter(itpc);
+}
+
+void
+ithreadpool_add_uthreadpool(itpc, utpool)
+	struct itpc 		*itpc;
+	struct uthreadpool 	*utpool;
+{
+	SET_UKTHREADPOOL(itpc, utpool);
+	itpc_enter(itpc);
+}
+
+ithreadpool_get()
+{
+	struct itpc 		*itpc;
+
+
 }

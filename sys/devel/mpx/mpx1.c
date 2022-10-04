@@ -135,29 +135,94 @@ free2:
 }
 
 
-mpxn_open()
+mpx_open(mpx)
+	struct mpx 			*mpx;
 {
 
 }
 
-mpxn_ioctl()
+int
+mpx_ioctl_sc(mpx, cmd, data, p)
+	struct mpx 	*mpx;
+	u_long cmd;
+	caddr_t data;
+	struct proc *p;
 {
-	struct mpx 			*mpx;
-	struct mpx_group 	*grp;
-	struct mpx_channel 	*chan;
+	struct mpx_group 	*grp, *grp1;
+	struct mpx_channel 	*chan, *chan1;
+	int gpidx, nchans;
+
+	grp = mpx->mpx_group;
+	chan = mpx->mpx_channel;
 
 	switch (cmd) {
 	case MPXIOATTACH:
+		if(grp == NULL && chan == NULL) {
+			mpx_create_group(mpx, 0, p->p_pgrp);
+			grp = mpx_get_group(0);
+			mpx_create_channel(mpx, grp, 0, 0);
+			chan =  mpx_get_channel(0);
+			mpx_attach(chan, grp);
+			return (0);
+		}
+		if(grp != NULL && chan == NULL) {
+			gpidx = (int)data;
+			grp = mpx_get_group(gpidx);
+			chan1 = grp->mpg_channel;
+			if(chan1 != NULL) {
+				chan = chan1;
+				mpx_attach(chan, grp);
+				return (0);
+			}
+			return (1); /* no channel found */
+		}
+		if(grp == NULL && chan != NULL) {
+			mpx_create_group(mpx, 0, p->p_pgrp);
+			grp = mpx_get_group(0);
+			chan1 = mpx_get_channel(chan->mpc_index);
+			if(chan == chan1) {
+				mpx_attach(chan, grp);
+				return (0);
+			}
+			return (1); /* no channel found */
+		}
 		mpx_attach(chan, grp);
-		break;
+		return (0);
+
 	case MPXIODETACH:
+		if(grp == NULL && chan == NULL) {
+			/* nothing to remove */
+			return (0);
+		}
+		if(grp != NULL && chan == NULL) {
+			chan1 = grp->mpg_channel;
+			if(chan1 != NULL) {
+				chan = chan1;
+				mpx_detach(chan, grp);
+				return (0);
+			}
+			return (1); /* cannot detach a non-existing channel */
+		}
+		if(grp == NULL && chan != NULL) {
+			grp1 = chan->mpc_group;
+			if(grp1 != NULL) {
+				grp = grp1;
+				mpx_detach(chan, grp);
+				return (0);
+			}
+			return (1); /* no group found */
+		}
 		mpx_detach(chan, grp);
-		break;
+		return (0);
+
 	case MPXIOCONNECT:
-		mpx_connect(chan, chan1);
-		break;
+		chan1 = (struct mpx_channel *)data;
+		return (mpx_connect(chan, chan1));
+
 	case MPXIODISCONNECT:
-		mpx_disconnect(chan, nchans);
-		break;
+		nchans = (int)data;
+		chan1 = mpx_disconnect(chan, nchans);
+		return (0);
 	}
+	return (0);
 }

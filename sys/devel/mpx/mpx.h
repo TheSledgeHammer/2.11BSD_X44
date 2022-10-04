@@ -84,18 +84,18 @@ struct mpxmapping {
 /*
  * Bits in mpx_state.
  */
-#define MPX_ASYNC		0x0004	/* Async? I/O. */
-#define MPX_WANTR		0x0008	/* Reader wants some characters. */
-#define MPX_WANTW		0x0010	/* Writer wants space to put characters. */
-#define MPX_WANT		0x0020	/* Pipe is wanted to be run-down. */
-#define MPX_SEL			0x0040	/* Pipe has a select active. */
-#define MPX_EOF			0x0080	/* Pipe is in EOF condition. */
-#define MPX_LOCKFL		0x0100	/* Process has exclusive access to pointers/data. */
-#define MPX_LWANT		0x0200	/* Process wants exclusive access to pointers/data. */
-#define MPX_DIRECTW		0x0400	/* Pipe direct write active. */
-#define MPX_DIRECTR		0x0800	/* Pipe direct read request (setup complete) */
-#define MPX_DIRECTOK	0x1000	/* Direct mode ok. */
-#define MPX_SIGNALR		0x2000	/* Do selwakeup() on read(2) */
+#define MPX_ASYNC			0x0004	/* Async? I/O. */
+#define MPX_WANTR			0x0008	/* Reader wants some characters. */
+#define MPX_WANTW			0x0010	/* Writer wants space to put characters. */
+#define MPX_WANT			0x0020	/* Pipe is wanted to be run-down. */
+#define MPX_SEL				0x0040	/* Pipe has a select active. */
+#define MPX_EOF				0x0080	/* Pipe is in EOF condition. */
+#define MPX_LOCKFL			0x0100	/* Process has exclusive access to pointers/data. */
+#define MPX_LWANT			0x0200	/* Process wants exclusive access to pointers/data. */
+#define MPX_DIRECTW			0x0400	/* Pipe direct write active. */
+#define MPX_DIRECTR			0x0800	/* Pipe direct read request (setup complete) */
+#define MPX_DIRECTOK		0x1000	/* Direct mode ok. */
+#define MPX_SIGNALR			0x2000	/* Do selwakeup() on read(2) */
 
 struct channellist;
 LIST_HEAD(channellist, mpx_channel);
@@ -147,10 +147,10 @@ extern struct grouplist     mpx_groups[];
 extern struct channellist   mpx_channels[];
 
 void                		mpx_init(void);
-void                		mpx_create_group(int);
+void                		mpx_create_group(struct mpx *, int);
 struct mpx_group    		*mpx_get_group(int);
 void						mpx_remove_group(struct mpx_group *, int);
-void                		mpx_create_channel(struct mpx_group *, int, int);
+void                		mpx_create_channel(struct mpx *, struct mpx_group *, int, int);
 struct mpx_channel     		*mpx_get_channel(int);
 void						mpx_remove_channel(struct mpx_channel *, int);
 void						mpx_attach(struct mpx_channel *, struct mpx_group *);
@@ -158,8 +158,9 @@ void						mpx_detach(struct mpx_channel *, struct mpx_group *);
 int							mpx_connect(struct mpx_channel *, struct mpx_channel *);
 struct mpx_channel 			*mpx_disconnect(struct mpx_channel *, int);
 
-#define MPXIOATTACH			0
-#define MPXIODETACH			1
-#define MPXIOCONNECT		2
-#define MPXIODISCONNECT		3
+#define MPXIOATTACH			_IO('m', 1)
+#define MPXIODETACH			_IO('m', 2)
+#define MPXIOCONNECT		_IOW('m', 130, struct mpx_channel)
+#define MPXIODISCONNECT		_IOW('m', 131, int)
+
 #endif /* SYS_MPX_H_ */

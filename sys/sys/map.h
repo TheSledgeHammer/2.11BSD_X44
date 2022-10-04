@@ -42,18 +42,6 @@ struct mapent {
 	memaddr_t			m_addr;		/* resource-space addr of start of segment */
 };
 
-/* vm_kern.h: for memory definitions */
-struct vmmapent {
-    char           		*m_name;	/* vm map resource name */
-    vm_map_t        	m_vmmap;	/* vm map memory resources */
-};
-
-/* ovl_overlay.h: for memory definitions */
-//struct ovlmapent {
-//	char           		*m_name;	/* ovl map resource name */
-//	ovl_map_t      		m_ovlmap;	/* ovl map memory resources */
-//};
-
 /* macros */
 #define RMALLOC(mp, cast, size) {							\
 	(mp) = (cast)rmalloc(mp, size);							\
