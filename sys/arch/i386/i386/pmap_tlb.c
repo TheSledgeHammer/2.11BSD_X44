@@ -181,13 +181,13 @@ pmap_tlb_pte(sva, eva)
 	if((sva == 0 && eva == 0) || (sva != 0 && eva == 0)) {
 		addr = sva;
 		if(vtopte(addr) != 0) {
-			pte = (pt_entry_t)vtopte(addr);
+			pte = (pt_entry_t)*vtopte(addr);
 			return (pte);
 		}
 	} else {
 		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 			if (vtopte(addr) != 0) {
-				pte = (pt_entry_t)vtopte(addr);
+				pte = (pt_entry_t)*vtopte(addr);
 				return (pte);
 			}
 		}
