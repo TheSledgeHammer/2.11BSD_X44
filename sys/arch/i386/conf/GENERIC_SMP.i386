@@ -2,11 +2,10 @@
 #
 #	GENERIC_SMP -- enable smp and everything that's currently supported
 #	
-#	NOTICE: It is strongly advised against compiling with SMP support. 
-#	As it's is incomplete and will likely cause issues. 
+#	NOTICE: PAE is the minimum requirement for running SMP
 #
 
-include 		"arch/i386/conf/GENERIC.i386"
+include 		"arch/i386/conf/GENERIC_PAE.i386"
 
 # To make a SMP kernel, the next option is needed
 options 		SMP				# multiprocessor support
