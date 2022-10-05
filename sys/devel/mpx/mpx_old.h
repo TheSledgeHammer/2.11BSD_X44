@@ -133,7 +133,7 @@ struct mpxpair {
 	struct lock_object				mpp_lock;
 };
 
-struct mpx_args {
+struct mpxargs {
 	char							*m_name;
 	int								m_cmd;
 	int								m_arg[3];

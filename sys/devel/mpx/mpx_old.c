@@ -249,19 +249,18 @@ mpx_add_channel(vp, isport)
 void
 mpxchan()
 {
+	register struct mpx_args {
+		syscallarg(int)		cmd;
+		syscallarg(int *) 	argvec;
+	} *uap = (struct mpx_args *)u.u_ap;
+
 	struct	vnode		*vp, *gvp;
 	struct	vattr		*vap;
 	struct	tty			*tp;
 	struct	file		*fp, *chfp, *gfp;
 	struct	mpx_chan	*cp;
 	struct	mpx_group	*gp, *ngp;
-	struct	mpx_args	vec;
-
-	register struct a {
-		syscallarg(int)		cmd;
-		syscallarg(int *) 	argvec;
-	} *uap = (struct a *)u->u_ap;
-
+	struct	mpxargs		vec;
 	dev_t	dev;
 	register int i;
 

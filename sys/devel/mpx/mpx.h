@@ -103,7 +103,6 @@ struct mpx_channel {
     LIST_ENTRY(mpx_channel) mpc_node;       /* channel node in list */
     struct mpx_group	    *mpc_group;     /* this channels group */
     int 	                mpc_index;      /* channel index */
-    int 			        mpc_flags;      /* channel flags */
 };
 
 struct grouplist;
@@ -146,13 +145,23 @@ struct mpxpair {
 extern struct grouplist     mpx_groups[];
 extern struct channellist   mpx_channels[];
 
-void                		mpx_init(void);
+/* groups */
+struct mpx_group 			*mpx_allocate_groups(struct mpx *, int);
+void						mpx_add_group(struct mpx_group *, int);
 void                		mpx_create_group(struct mpx *, int);
 struct mpx_group    		*mpx_get_group(int);
+struct mpx_group 			*mpx_get_group_from_channel(int);
 void						mpx_remove_group(struct mpx_group *, int);
-void                		mpx_create_channel(struct mpx *, struct mpx_group *, int, int);
+/* channels */
+struct mpx_channel 			*mpx_allocate_channels(struct mpx *, int);
+void						mpx_add_channel(struct mpx_channel *, int);
+void                		mpx_create_channel(struct mpx *, struct mpx_group *, int);
 struct mpx_channel     		*mpx_get_channel(int);
+struct mpx_channel 			*mpx_get_channel_from_group(int);
 void						mpx_remove_channel(struct mpx_channel *, int);
+/* common routines */
+void                		mpx_init(void);
+void						mpx_set_channelgroup(struct mpx_channel *, struct mpx_group *);
 void						mpx_attach(struct mpx_channel *, struct mpx_group *);
 void						mpx_detach(struct mpx_channel *, struct mpx_group *);
 int							mpx_connect(struct mpx_channel *, struct mpx_channel *);

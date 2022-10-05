@@ -134,11 +134,97 @@ free2:
 	return (u.u_error);
 }
 
-
-mpx_open(mpx)
-	struct mpx 			*mpx;
+struct mpx_group *
+mpx_search_group(mpx, idx)
+	struct mpx *mpx;
+	int idx;
 {
+	struct mpx_group *gp;
 
+	LIST_FOREACH(gp, &mpx_groups[idx], mpg_node) {
+		if(mpx->mpx_group == gp) {
+			return (gp);
+		}
+	}
+	return (NULL);
+}
+
+struct mpx_channel *
+mpx_search_channel(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	struct mpx_channel *cp;
+
+	LIST_FOREACH(cp, &mpx_channels[idx], mpc_node) {
+		if(mpx->mpx_channel == cp) {
+			return (cp);
+		}
+	}
+	return (NULL);
+}
+
+int
+mpxnwrite(mpx, gpidx, cpidx)
+	struct mpx *mpx;
+	int gpidx, cpidx;
+{
+    struct mpx_group *gp;
+    struct mpx_channel *cp;
+
+    gp = mpx_allocate_groups(mpx, NGROUPS);
+    cp = mpx_allocate_channels(mpx, NCHANS);
+    mpx_add_group(gp, gpidx);
+    mpx_add_channel(cp, cpidx);
+    mpx_set_channelgroup(cp, gp);
+    mpx->mpx_group = gp;
+    mpx->mpx_channel = cp;
+
+    return (0);
+}
+
+int
+mpx_write1(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+    struct mpx *mpx;
+    struct mpx_group *gp;
+    struct mpx_channel *cp;
+    int gpidx, cpidx;
+
+    mpx = fp->f_mpx;
+    gp = mpx->mpx_group;
+    cp = mpx->mpx_channel;
+    gpidx = gp->mpg_index;
+    cpidx = cp->mpc_index;
+    if (gpidx == -1) {
+        gpidx = 0;
+    } else {
+        while (gpidx <= NGROUPS) {
+            gpidx++;
+            if(gpidx == NGROUPS) {
+                break;
+            }
+        }
+    }
+    if (cpidx == -1) {
+        cpidx = 0;
+    } else {
+        while (cpidx <= NCHANS) {
+            cpidx++;
+            if(cpidx == NCHANS) {
+                break;
+            }
+        }
+    }
+    gp->mpg_index = gpidx;
+    cp->mpc_index = cpidx;
+
+    error = mpxnwrite(mpx, gpidx, cpidx, (struct pgrp *)NULL);
+
+    return (error);
 }
 
 int

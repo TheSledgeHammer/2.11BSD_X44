@@ -52,7 +52,7 @@ struct fileops {
 	int (*fo_read)		(struct file *, struct uio *, struct ucred *);
 	int (*fo_write)		(struct file *, struct uio *, struct ucred *);
 	int	(*fo_ioctl)		(struct file *, u_long, caddr_t, struct proc *);
-	int	(*fo_select) 	(struct file *, int, struct proc *);
+	int	(*fo_select) 	(struct file *, int, struct proc *);	/* deprecated */
 	int	(*fo_poll)		(struct file *, int, struct proc *);
 	int	(*fo_close)		(struct file *, struct proc *);
 	int (*fo_kqfilter)	(struct file *, struct knote *);

@@ -146,8 +146,18 @@ mpx_init(void)
 	for(j = 0; j <= NCHANS; j++) {
 		LIST_INIT(&mpx_channels[j]);
 	}
+}
 
-
+void
+mpx_set_channelgroup(cp, gp)
+	struct mpx_channel 	*cp;
+	struct mpx_group 	*gp;
+{
+	if (cp == NULL && gp == NULL) {
+		return;
+	}
+	cp->mpc_group = gp;
+	gp->mpg_channel = cp;
 }
 
 struct mpx_group *
@@ -157,26 +167,36 @@ mpx_allocate_groups(mpx, ngroups)
 {
 	register struct mpx_group *result;
 	result = (struct mpx_group *)calloc(ngroups, sizeof(struct mpx_group *), M_MPX, M_WAITOK);
+	result->mpg_index = -1;
 	mpx->mpx_group = result;
 
 	return (result);
 }
 
 void
-mpx_create_group(mpx, idx, pgrp)
-	struct mpx 	*mpx;
-	struct pgrp *pgrp;
+mpx_add_group(gp, idx)
+	struct mpx_group *gp;
 	int idx;
 {
 	struct grouplist *group;
+
+	if(gp == NULL) {
+	        return;
+	}
+	group = &mpx_groups[idx];
+    gp->mpg_index = idx;
+    LIST_INSERT_HEAD(group, gp, mpg_node);
+}
+
+void
+mpx_create_group(mpx, idx)
+	struct mpx 	*mpx;
+	int idx;
+{
 	struct mpx_group *gp;
 
-	group = &mpx_groups[idx];
 	gp = mpx_allocate_groups(mpx, NGROUPS);
-    gp->mpg_index = idx;
-    gp->mpg_pgrp = pgrp;
-
-	LIST_INSERT_HEAD(group, gp, mpg_node);
+	mpx_add_group(gp, idx);
 }
 
 struct mpx_group *
@@ -189,6 +209,26 @@ mpx_get_group(idx)
     group = &mpx_groups[idx];
     LIST_FOREACH(gp, group, mpg_node) {
         if(gp->mpg_index == idx) {
+            return (gp);
+        }
+    }
+    return (NULL);
+}
+
+/*
+ * returns the associated group from channel index
+ */
+struct mpx_group *
+mpx_get_group_from_channel(idx)
+	int idx;
+{
+    struct mpx_group    *gp;
+    struct mpx_channel  *cp;
+
+    cp = mpx_get_channel(idx);
+    if(cp != NULL) {
+        gp = cp->mpc_group;
+        if(gp != NULL) {
             return (gp);
         }
     }
@@ -215,27 +255,37 @@ mpx_allocate_channels(mpx, nchans)
 {
 	register struct mpx_channel *result;
 	result = (struct mpx_channel *)calloc(nchans, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
+	result->mpc_index = -1;
 	mpx->mpx_channel = result;
 
 	return (result);
 }
 
 void
-mpx_create_channel(mpx, gp, idx, flags)
+mpx_add_channel(cp, idx)
+	struct mpx_channel *cp;
+	int idx;
+{
+	struct channellist *chan;
+    if(cp == NULL) {
+        return;
+    }
+    chan = &mpx_channels[idx];
+    cp->mpc_index = idx;
+    LIST_INSERT_HEAD(chan, cp, mpc_node);
+}
+
+void
+mpx_create_channel(mpx, gp, idx)
 	struct mpx 			*mpx;
 	struct mpx_group 	*gp;
-	int 				idx, flags;
+	int 				idx;
 {
-    struct channellist *chan;
     struct mpx_channel *cp;
 
-    chan = &mpx_channels[idx];
     cp = mpx_allocate_channels(mpx, NCHANS);
-    cp->mpc_group = gp;
-    cp->mpc_index = idx;
-    cp->mpc_flags = flags;
-
-    LIST_INSERT_HEAD(chan, cp, mpc_node);
+    mpx_add_channel(cp, idx);
+    mpx_set_channelgroup(cp, gp);
 }
 
 struct mpx_channel *
@@ -248,6 +298,26 @@ mpx_get_channel(idx)
     chan = &mpx_channels[idx];
     LIST_FOREACH(cp, chan, mpc_node) {
         if(cp->mpc_index == idx) {
+            return (cp);
+        }
+    }
+    return (NULL);
+}
+
+/*
+ * returns the associated channel from group index
+ */
+struct mpx_channel *
+mpx_get_channel_from_group(idx)
+	int idx;
+{
+	struct mpx_group *gp;
+    struct mpx_channel  *cp;
+
+    gp = mpx_get_group(idx);
+    if(gp != NULL) {
+        cp = gp->mpg_channel;
+        if(cp != NULL) {
             return (cp);
         }
     }
@@ -428,12 +498,12 @@ mpx_leave()
 }
 
 int
-mpx_compare_groups(gp1, gp2)
-	struct mpx_group *gp1, *gp2;
+mpx_compare_index(idx1, idx2)
+	int idx1, idx2;
 {
-	if(gp1->mpg_index < gp2->mpg_index) {
+	if (idx1 < idx2) {
 		return (-1);
-	} else if(gp1->mpg_index > gp2->mpg_index) {
+	} else if (idx1 > idx2) {
 		return (1);
 	} else {
 		return (0);
@@ -441,16 +511,17 @@ mpx_compare_groups(gp1, gp2)
 }
 
 int
+mpx_compare_groups(gp1, gp2)
+	struct mpx_group *gp1, *gp2;
+{
+	return (mpx_compare_index(gp1->mpg_index, gp2->mpg_index));
+}
+
+int
 mpx_compare_channels(cp1, cp2)
 	struct mpx_channel 	*cp1, *cp2;
 {
-	if(cp1->mpc_index < cp2->mpc_index) {
-		return (-1);
-	} else if(cp1->mpc_index > cp2->mpc_index) {
-		return (1);
-	} else {
-		return (0);
-	}
+	return (mpx_compare_index(cp1->mpc_index, cp2->mpc_index));
 }
 
 /*
