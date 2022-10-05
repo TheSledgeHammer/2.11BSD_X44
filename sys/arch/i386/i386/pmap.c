@@ -916,9 +916,9 @@ pmap_pinit(pmap)
 	 */
 	pmap->pm_pdir = (pd_entry_t *) kmem_alloc(kernel_map, NBPTD);
 #ifdef PMAP_PAE_COMP
-	pmap->pm_pdpt = (pdpt_entry_t *) kmem_alloc(kernel_map, (pd_entry_t *)NPGPTD * sizeof(pdpt_entry_t));
-	KASSERT(((vm_offset_t)pmap->pm_pdpt & ((NPGPTD * sizeof(pdpt_entry_t)) - 1)) == 0, ("pmap_pinit: pdpt misaligned"));
-	KASSERT(pmap_extract((vm_offset_t)pmap->pm_pdpt) < (4ULL<<30), ("pmap_pinit: pdpt above 4g"));
+	pmap->pm_pdpt = (pdpt_entry_t *) kmem_alloc(kernel_map, (vm_offset_t)(NPGPTD * sizeof(pdpt_entry_t)));
+	KASSERT(((vm_offset_t)pmap->pm_pdpt & ((NPGPTD * sizeof(pdpt_entry_t)) - 1)) == 0/*, ("pmap_pinit: pdpt misaligned")*/);
+	KASSERT(pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdpt) < (4ULL<<30)/*, ("pmap_pinit: pdpt above 4g")*/);
 #endif
 
 	/* wire in kernel global address entries */
