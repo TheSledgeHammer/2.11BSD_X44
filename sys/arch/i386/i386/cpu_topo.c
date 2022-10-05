@@ -36,7 +36,7 @@
 #include <vm/include/vm_param.h>
 
 #include <machine/bus.h>
-//#include <machine/cpu.h>
+#include <machine/cpuinfo.h>
 #include <machine/cpufunc.h>
 #include <machine/cputypes.h>
 #include <machine/cpuvar.h>
@@ -57,6 +57,7 @@ int	boot_cpu_id = -1;	/* designated BSP */
 char *bootSTK;
 int bootAP;
 
+
 /* Free these after use */
 void *bootstacks[NCPUS];
 
@@ -70,8 +71,6 @@ volatile int aps_ready = 0;
  * Store data from cpu_add() until later in the boot when we actually setup
  * the APs.
  */
-struct cpu_info *cpu_info;
-int *apic_cpuids;
 int cpu_apic_ids[NCPUS];
 
 static int hyperthreading_allowed = 1;
@@ -89,12 +88,11 @@ struct cache_info {
 } static caches[MAX_CACHE_LEVELS];
 
 unsigned int boot_address;
+u_int max_apic_id;
 
 void	intr_add_cpu(u_int);
 
 #define MiB(v)	(v ## ULL << 20)
-
-struct mem_range_softc mem_range_softc;
 
 void
 mem_range_AP_init(void)

@@ -68,8 +68,6 @@ struct cpu_info {
 	volatile u_int32_t 		cpu_tlb_ipi_mask;
 };
 
-extern struct cpu_info 		*cpu_info;			/* static allocation of cpu_info */
-
 struct cpu_attach_args {
 	const char 				*caa_name;
 	int 					cpu_number;
@@ -87,18 +85,31 @@ struct cpu_ops {
 	void 					(*cpu_init)(void);
 	void 					(*cpu_resume)(void);
 };
-extern struct cpu_ops 		cpu_ops;
 
 /* cpu_info macros */
 #define cpu_is_primary(ci)	((ci)->cpu_flags & CPUF_PRIMARY)
-/*
-#define cpu_cpuid(ci) 		((ci)->cpu_cpuid)
-#define cpu_cpumask(ci)		((ci)->cpu_cpumask)
-#define cpu_cpusize(ci)		((ci)->cpu_size)
-#define cpu_acpi_id(ci)		((ci)->cpu_acpi_id)
-#define cpu_apic_id(ci)		((ci)->cpu_apic_id)
-#define cpu_percpu(ci)		((ci)->cpu_percpu)
-*/
+
+#if defined(SMP)
+static struct cpu_info *curcpu(void);
+
+__inline static struct cpu_info *
+curcpu()
+{
+	struct cpu_info *ci;
+
+	__asm volatile(
+			"movl %%fs:%1, %0" : "=r" (ci) : "m"
+			(*(struct cpu_info * const *)offsetof(struct cpu_info, cpu_self))
+	);
+	return (ci);
+}
+
+#define cpu_number() 	curcpu()->cpu_cpuid 	/* number of cpus available */
+#else
+#define	curcpu()		(cpu_info)
+#define cpu_number()	0
+#endif
+
 /*
  * Processor flag notes: The "primary" CPU has certain MI-defined
  * roles (mostly relating to hardclock handling); we distinguish
@@ -127,27 +138,7 @@ extern struct cpu_ops 		cpu_ops;
 #define	CPU_IS_PRIMARY(ci)	((void)ci, 1)
 #endif
 
-#if defined(SMP)
-static struct cpu_info *curcpu(void);
-
-__inline static struct cpu_info *
-curcpu()
-{
-	struct cpu_info *ci;
-
-	__asm volatile(
-			"movl %%fs:%1, %0" : "=r" (ci) : "m"
-			(*(struct cpu_info * const *)offsetof(struct cpu_info, cpu_self))
-	);
-	return (ci);
-}
-
-#define cpu_number() 		curcpu()->cpu_cpuid /* number of cpus available */
-
-#else
-
-#define	curcpu()		(cpu_info)
-#define cpu_number()	0
-
-#endif
+extern struct cpu_info 	*cpu_info;		/* static allocation of cpu_info */
+extern struct cpu_ops 	cpu_ops;
+extern int *apic_cpuids;
 #endif /* _I386_CPUINFO_H_ */

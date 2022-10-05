@@ -95,7 +95,7 @@ IDTVEC(intr_lapic_ipi)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
-		movl	$0,local_apic+LAPIC_EOI
+		movl	$0,_C_LABEL(local_apic)+LAPIC_EOI
 		movl	_C_LABEL(cpl),%ebx
 		cmpl	$IPL_IPI,%ebx
 		jae		2f

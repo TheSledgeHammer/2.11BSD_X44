@@ -39,6 +39,63 @@
 
 #include <vm/include/vm_param.h>
 
+struct threadpool {
+	struct job_head		tp_jobs;
+	pid_t				tp_pri;			/* priority */
+};
+
+struct threadpool_unbound {
+	struct threadpool					tpu_pool;
+
+	/* protected by kthreadpools_lock */
+	LIST_ENTRY(threadpool_unbound)		tpu_link;
+	uint64_t							tpu_refcnt;
+};
+static LIST_HEAD(, threadpool_unbound) unbound_threadpools;
+
+static struct threadpool_unbound *
+threadpool_lookup_unbound(pri)
+	pid_t pri;
+{
+	struct threadpool_unbound *tpu;
+	LIST_FOREACH(tpu, &unbound_threadpools, tpu_link) {
+		if (tpu->tpu_pool.tp_pri == pri)
+			return (tpu);
+	}
+	return (NULL);
+}
+
+static void
+threadpool_insert_unbound(tpu)
+	struct threadpool_unbound *tpu;
+{
+	KASSERT(threadpool_lookup_unbound(tpu->tpu_pool.tp_pri) == NULL);
+	LIST_INSERT_HEAD(&unbound_threadpools, tpu, tpu_link);
+}
+
+static void
+threadpool_remove_unbound(tpu)
+	struct threadpool_unbound *tpu;
+{
+	KASSERT(kthreadpool_lookup_unbound(tpu->tpu_pool.tp_pri) == tpu);
+	LIST_REMOVE(tpu, tpu_link);
+}
+
+void
+threadpool_init(void)
+{
+	LIST_INIT(&unbound_threadpools);
+}
+
+int
+threadpool_create(tpool, pri)
+	struct threadpool *tpool;
+{
+
+	tpool->tp_pri = pri;
+	return (error);
+}
+
 /* Threadpool Jobs */
 void
 threadpool_job_init(job, func, lock, name)

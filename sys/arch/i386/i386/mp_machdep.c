@@ -122,11 +122,11 @@ static void	ipi_startup(int, int);
 /* Set to 1 once we're ready to let the APs out of the pen. */
 static volatile int aps_ready = 0;
 
-typedef void *vector_t;
-#define	IDTVEC(name)	__CONCAT(X, name)
-extern vector_t IDTVEC(pmap_invalidate_all),		/* TLB shootdowns - global */
-		IDTVEC(pmap_invalidate_page),		/* TLB shootdowns - 1 page */
-		IDTVEC(pmap_invalidate_range);		/* TLB shootdowns - page range */
+//typedef void *vector_t;
+//#define	IDTVEC(name)	__CONCAT(X, name)
+//extern vector_t IDTVEC(pmap_invalidate_all),		/* TLB shootdowns - global */
+//		IDTVEC(pmap_invalidate_page),		/* TLB shootdowns - 1 page */
+//		IDTVEC(pmap_invalidate_range);		/* TLB shootdowns - page range */
 
 /*
  * Initialize the IPI handlers and start up the AP's.
@@ -141,10 +141,11 @@ cpu_mp_start(pc)
 	}
 
 	/* Install an inter-CPU IPI for TLB invalidation */
+/*
 	setidt(IPI_INVLTLB, &IDTVEC(pmap_invalidate_all), 0, SDT_SYS386IGT, SEL_KPL);
 	setidt(IPI_INVLPG, &IDTVEC(pmap_invalidate_page), 0, SDT_SYS386IGT, SEL_KPL);
 	setidt(IPI_INVLRNG, &IDTVEC(pmap_invalidate_range), 0, SDT_SYS386IGT, SEL_KPL);
-
+*/
 	/* Set boot_cpu_id if needed. */
 	if (boot_cpu_id == -1) {
 		boot_cpu_id = PERCPU_GET(apic_id);

@@ -57,12 +57,12 @@
 
 #include <machine/asm.h>
 
-#include "machine/cputypes.h"
-#include "machine/intr.h"
-#include "machine/psl.h"
-#include "machine/segments.h"
-#include "machine/trap.h"
-#include "machine/specialreg.h"
+#include <machine/cputypes.h>
+#include <machine/intr.h>
+#include <machine/psl.h>
+#include <machine/segments.h>
+#include <machine/trap.h>
+#include <machine/specialreg.h>
 
 /**********************************************************************/
 /* Some Handy Macros */
@@ -589,7 +589,7 @@ IDTVEC(osyscall)
 		pushfl
 		popl	8(%esp)
 		pushl	$7		# size of instruction for restart
-		jmp	syscall1
+		jmp		syscall1
 
 /*
  * Call gate entry for syscall

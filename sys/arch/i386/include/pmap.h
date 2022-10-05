@@ -243,9 +243,9 @@ typedef struct pv_entry		*pv_entry_t;
 #ifdef _KERNEL
 extern pd_entry_t 		*IdlePTD;
 extern pt_entry_t 		*KPTmap;
-#ifdef PMAP_PAE_COMP
-extern pdpt_entry_t 		*IdlePDPT;
-#endif
+//#ifdef PMAP_PAE_COMP
+extern pdpt_entry_t 	*IdlePDPT;
+//#endif
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
 extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */

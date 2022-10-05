@@ -52,10 +52,10 @@
 #define MDF_FORCE			(1<<31)	/* force risky changes */
 
 struct mem_range_desc {
-	u_int64_t	mr_base;
-	u_int64_t	mr_len;
-	int			mr_flags;
-	char		mr_owner[8];
+	u_int64_t				mr_base;
+	u_int64_t				mr_len;
+	int						mr_flags;
+	char					mr_owner[8];
 };
 
 struct mem_range_op {

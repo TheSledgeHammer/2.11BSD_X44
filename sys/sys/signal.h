@@ -85,7 +85,7 @@ typedef struct sigaltstack stack_t;
 struct	sigaltstack {
 	void			*ss_base;		    /* signal stack base */
 	size_t			ss_size;		    /* signal stack length */
-	int			ss_flags;		    /* SA_DISABLE and/or SA_ONSTACK */
+	int				ss_flags;		    /* SA_DISABLE and/or SA_ONSTACK */
 };
 #define	MINSIGSTKSZ	128					/* minimum allowable stack */
 #define	SIGSTKSZ	(MINSIGSTKSZ + 384)	/* recommended stack size */

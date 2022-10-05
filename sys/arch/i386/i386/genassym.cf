@@ -175,3 +175,5 @@ define BI_SIZE				offsetof(struct bootinfo, bi_size)
 define VM86_FRAMESIZE		sizeof(struct vm86frame)
 
 define PC_TSS_GDT			offsetof(struct percpu, pc_tss_gdt)
+
+define CPU_INFO_CURPROC		offsetof(struct cpu_info, cpu_curproc)

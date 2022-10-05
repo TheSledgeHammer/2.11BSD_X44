@@ -93,6 +93,12 @@
 
 #ifdef _KERNEL
 
+#if defined(SMP)
+#define CPUVAR(off) %fs:__CONCAT(CPU_INFO_,off)
+#else
+#define CPUVAR(off) _C_LABEL(cpu_info)+__CONCAT(CPU_INFO_,off)
+#endif /* SMP */
+
 #ifdef __ELF__
 #ifdef __STDC__
 #define	IDTVEC(name) 		\
@@ -169,44 +175,44 @@
 #endif /* __STDC__ */
 
 /* Handy Assembly Macros */
-#define	INTRENTRY 		\
-	pushl	%eax		;\
-	pushl	%ecx		;\
-	pushl	%edx		;\
-	pushl	%ebx		;\
+#define	INTRENTRY 						\
+	pushl	%eax						;\
+	pushl	%ecx						;\
+	pushl	%edx						;\
+	pushl	%ebx						;\
 	movl	$GSEL(GDATA_SEL, SEL_KPL),%eax	;\
-	pushl	%ebp		;\
-	pushl	%esi		;\
-	pushl	%edi		;\
-	pushl	%ds			;\
-	pushl	%es			;\
-	movw	%ax,%ds		;\
-	movw	%ax,%es		;\
-	pushl	%fs			;\
-	pushl	%gs			;\
-	movw	%ax,%fs		;\
-	movw	%ax,%gs		;\
+	pushl	%ebp						;\
+	pushl	%esi						;\
+	pushl	%edi						;\
+	pushl	%ds							;\
+	pushl	%es							;\
+	movw	%ax,%ds						;\
+	movw	%ax,%es						;\
+	pushl	%fs							;\
+	pushl	%gs							;\
+	movw	%ax,%fs						;\
+	movw	%ax,%gs						;\
 
-#define	INTRFASTEXIT 	\
-	popl	%gs			;\
-	popl	%fs			;\
-	popl	%es			;\
-	popl	%ds			;\
-	popl	%edi		;\
-	popl	%esi		;\
-	popl	%ebp		;\
-	popl	%ebx		;\
-	popl	%edx		;\
-	popl	%ecx		;\
-	popl	%eax		;\
-	addl	$8,%esp		;\
+#define	INTRFASTEXIT 					\
+	popl	%gs							;\
+	popl	%fs							;\
+	popl	%es							;\
+	popl	%ds							;\
+	popl	%edi						;\
+	popl	%esi						;\
+	popl	%ebp						;\
+	popl	%ebx						;\
+	popl	%edx						;\
+	popl	%ecx						;\
+	popl	%eax						;\
+	addl	$8,%esp						;\
 	iret
 
 #define	CHECK_ASTPENDING(reg)			\
-	movl	_C_LABEL(curproc),reg		;\
+	movl	CPUVAR(CURPROC),reg			;\
 	cmpl	$0, reg						;\
 	je		1f							;\
-	movl	_C_LABEL(curproc),reg		;\
+	movl	CPUVAR(CURPROC),reg			;\
 	cmpl	$0, P_MD_ASTPENDING(reg)	;\
 	1:
 

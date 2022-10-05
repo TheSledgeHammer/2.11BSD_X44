@@ -92,7 +92,7 @@ ENTRY(cpu_switch)
 
 /* switch to new process. first, save context as needed */
 
-		movl	_C_LABEL(curproc),%ecx
+		movl	CPUVAR(CURPROC),%ecx
 
 /* if no process to save, don't bother */
 		cmpl	$0,%ecx
@@ -111,7 +111,7 @@ ENTRY(cpu_switch)
 
 #ifdef NPX
 /* have we used fp, and need a save? */
-		mov		_C_LABEL(curproc),%eax
+		mov		CPUVAR(CURPROC),%eax
 		cmp		%eax,_C_LABEL(npxproc)
 		jne		1f
 		pushl	%ecx								/* h/w bugs make saving complicated */
@@ -125,7 +125,7 @@ ENTRY(cpu_switch)
 
 		movl	_C_LABEL(CMAP2),%eax				# save temporary map PTE
 		movl	%eax,PCB_CMAP2(%ecx)				# in our context
-		movl	$0,_C_LABEL(curproc)				# out of process
+		movl	$0,CPUVAR(CURPROC)				# out of process
 
 		# movw	_C_LABEL(cpl), %ax
 		# movw	%ax, PCB_IML(%ecx)	# save ipl
@@ -192,7 +192,7 @@ sw1:
 		movl	PCB_CMAP2(%edx),%eax				# get temporary map
 		movl	%eax,CMAP2							# reload temporary map PTE
 
-		movl	%ecx,_C_LABEL(curproc)				# into next process
+		movl	%ecx,CPUVAR(CURPROC)				# into next process
 		movl	%edx,_C_LABEL(curpcb)
 
 		/* pushl	PCB_IML(%edx)

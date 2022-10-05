@@ -73,8 +73,8 @@ ENTRY(vm86_bioscall)
 		pushl	%edi
 		pushl	%gs
 
-		movl	_C_LABEL(curproc),%ecx		/* todo: fix */
-		cmpl	%ecx,_C_LABEL(curproc)		/* do we need to save fp? */
+		movl	CPUVAR(CURPROC),%ecx		/* todo: fix */
+		cmpl	%ecx,CPUVAR(CURPROC)		/* do we need to save fp? */
 		jne		1f
 		pushl	%edx
 		movl	U_PCB(%ecx),%ecx
