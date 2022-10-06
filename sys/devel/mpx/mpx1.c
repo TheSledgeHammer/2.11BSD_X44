@@ -165,6 +165,41 @@ mpx_search_channel(mpx, idx)
 }
 
 int
+mpxnread(mpx, gpidx, cpidx)
+	struct mpx *mpx;
+	int gpidx, cpidx;
+{
+    struct mpx_group 	*gp;
+    struct mpx_channel 	*cp;
+
+    gp = mpx_get_group(gpidx);
+    cp = mpx_get_channel(cpidx);
+    if(gp == NULL && cp == NULL) {
+    	return (EMPX);
+    }
+    if (gp != NULL && cp == NULL) {
+    	cp = mpx_get_channel_from_group(gpidx);
+        if (cpidx != cp->mpc_index) {
+            return (EMPX);
+        }
+    }
+	if (gp == NULL && cp != NULL) {
+		gp = mpx_get_group_from_channel(cpidx);
+        if (gpidx != gp->mpg_index) {
+            return (EMPX);
+        }
+	}
+
+	if(gp != mpx->mpx_group || mpx->mpx_group == NULL) {
+		mpx->mpx_group = gp;
+	}
+	if(cp != mpx->mpx_channel || mpx->mpx_channel == NULL) {
+		mpx->mpx_channel = cp;
+	}
+    return (0);
+}
+
+int
 mpxnwrite(mpx, gpidx, cpidx)
 	struct mpx *mpx;
 	int gpidx, cpidx;
@@ -184,46 +219,42 @@ mpxnwrite(mpx, gpidx, cpidx)
 }
 
 int
-mpx_write1(fp, uio, cred)
-	struct file *fp;
-	struct uio *uio;
-	struct ucred *cred;
+mpxn_read(rmpx)
+	struct mpx *rmpx;
 {
-    struct mpx *mpx;
     struct mpx_group *gp;
     struct mpx_channel *cp;
-    int gpidx, cpidx;
+    int error, i, j;
 
-    mpx = fp->f_mpx;
-    gp = mpx->mpx_group;
-    cp = mpx->mpx_channel;
-    gpidx = gp->mpg_index;
-    cpidx = cp->mpc_index;
-    if (gpidx == -1) {
-        gpidx = 0;
-    } else {
-        while (gpidx <= NGROUPS) {
-            gpidx++;
-            if(gpidx == NGROUPS) {
-                break;
-            }
-        }
-    }
-    if (cpidx == -1) {
-        cpidx = 0;
-    } else {
-        while (cpidx <= NCHANS) {
-            cpidx++;
-            if(cpidx == NCHANS) {
-                break;
-            }
-        }
-    }
-    gp->mpg_index = gpidx;
-    cp->mpc_index = cpidx;
+    gp = rmpx->mpx_group;
+    cp = rmpx->mpx_channel;
+	for (i = 0; i <= NGROUPS; i++) {
+		for (j = 0; j <= NCHANS; j++) {
+			 if(i == gp->mpg_index && j == cp->mpc_index) {
+				 error = mpxnread(rmpx, i, j);
+			 }
+		}
+	}
+	return (error);
+}
 
-    error = mpxnwrite(mpx, gpidx, cpidx, (struct pgrp *)NULL);
+int
+mpxn_write(wmpx)
+	struct mpx *wmpx;
+{
+    struct mpx_group *gp;
+    struct mpx_channel *cp;
+    int error, i, j;
 
+    gp = wmpx->mpx_group;
+    cp = wmpx->mpx_channel;
+	for (i = 0; i <= NGROUPS; i++) {
+		for (j = 0; j <= NCHANS; j++) {
+			 if(i == gp->mpg_index && j == cp->mpc_index) {
+				 error = mpxnwrite(wmpx, i, j);
+			 }
+		}
+	}
     return (error);
 }
 
@@ -240,64 +271,40 @@ mpx_ioctl_sc(mpx, cmd, data, p)
 
 	grp = mpx->mpx_group;
 	chan = mpx->mpx_channel;
-
 	switch (cmd) {
 	case MPXIOATTACH:
 		if(grp == NULL && chan == NULL) {
-			mpx_create_group(mpx, 0, p->p_pgrp);
-			grp = mpx_get_group(0);
-			mpx_create_channel(mpx, grp, 0, 0);
-			chan =  mpx_get_channel(0);
-			mpx_attach(chan, grp);
-			return (0);
+			grp = mpx_allocate_groups(mpx, NGROUPS);
+			chan = mpx_allocate_channels(mpx, NCHANS);
+			mpx_set_channelgroup(chan, grp);
+			goto attach;
 		}
 		if(grp != NULL && chan == NULL) {
-			gpidx = (int)data;
-			grp = mpx_get_group(gpidx);
-			chan1 = grp->mpg_channel;
-			if(chan1 != NULL) {
-				chan = chan1;
-				mpx_attach(chan, grp);
-				return (0);
-			}
-			return (1); /* no channel found */
+			chan = mpx_allocate_channels(mpx, NCHANS);
+			mpx_add_channel(chan, 0);
+			mpx_set_channelgroup(chan, grp);
+			goto attach;
 		}
 		if(grp == NULL && chan != NULL) {
-			mpx_create_group(mpx, 0, p->p_pgrp);
-			grp = mpx_get_group(0);
-			chan1 = mpx_get_channel(chan->mpc_index);
-			if(chan == chan1) {
-				mpx_attach(chan, grp);
-				return (0);
-			}
-			return (1); /* no channel found */
+			grp = mpx_allocate_groups(mpx, NGROUPS);
+			mpx_add_group(grp, 0);
+			mpx_set_channelgroup(chan, grp);
+			goto attach;
 		}
+	attach:
 		mpx_attach(chan, grp);
 		return (0);
 
 	case MPXIODETACH:
-		if(grp == NULL && chan == NULL) {
-			/* nothing to remove */
-			return (0);
-		}
 		if(grp != NULL && chan == NULL) {
-			chan1 = grp->mpg_channel;
-			if(chan1 != NULL) {
-				chan = chan1;
-				mpx_detach(chan, grp);
-				return (0);
-			}
-			return (1); /* cannot detach a non-existing channel */
+			chan = mpx_get_channel_from_group(grp->mpg_index);
+			goto detach;
 		}
 		if(grp == NULL && chan != NULL) {
-			grp1 = chan->mpc_group;
-			if(grp1 != NULL) {
-				grp = grp1;
-				mpx_detach(chan, grp);
-				return (0);
-			}
-			return (1); /* no group found */
+			grp = mpx_get_group_from_channel(chan->mpc_index);
+			goto detach;
 		}
+	detach:
 		mpx_detach(chan, grp);
 		return (0);
 

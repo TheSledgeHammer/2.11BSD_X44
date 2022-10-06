@@ -133,7 +133,6 @@ static struct filterops mpx_rfiltops =
 static struct filterops mpx_wfiltops =
 	{ 1, NULL, filt_mpxdetach, filt_mpxwrite };
 
-
 void
 mpx_init(void)
 {
@@ -166,10 +165,10 @@ mpx_allocate_groups(mpx, ngroups)
 	int 		ngroups;
 {
 	register struct mpx_group *result;
+
 	result = (struct mpx_group *)calloc(ngroups, sizeof(struct mpx_group *), M_MPX, M_WAITOK);
 	result->mpg_index = -1;
 	mpx->mpx_group = result;
-
 	return (result);
 }
 
@@ -254,10 +253,10 @@ mpx_allocate_channels(mpx, nchans)
 	int 		nchans;
 {
 	register struct mpx_channel *result;
+
 	result = (struct mpx_channel *)calloc(nchans, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
 	result->mpc_index = -1;
 	mpx->mpx_channel = result;
-
 	return (result);
 }
 
