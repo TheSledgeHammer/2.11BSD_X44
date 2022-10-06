@@ -134,36 +134,6 @@ free2:
 	return (u.u_error);
 }
 
-struct mpx_group *
-mpx_search_group(mpx, idx)
-	struct mpx *mpx;
-	int idx;
-{
-	struct mpx_group *gp;
-
-	LIST_FOREACH(gp, &mpx_groups[idx], mpg_node) {
-		if(mpx->mpx_group == gp) {
-			return (gp);
-		}
-	}
-	return (NULL);
-}
-
-struct mpx_channel *
-mpx_search_channel(mpx, idx)
-	struct mpx *mpx;
-	int idx;
-{
-	struct mpx_channel *cp;
-
-	LIST_FOREACH(cp, &mpx_channels[idx], mpc_node) {
-		if(mpx->mpx_channel == cp) {
-			return (cp);
-		}
-	}
-	return (NULL);
-}
-
 int
 mpxnread(mpx, gpidx, cpidx)
 	struct mpx *mpx;
@@ -250,9 +220,7 @@ mpxn_write(wmpx)
     cp = wmpx->mpx_channel;
 	for (i = 0; i <= NGROUPS; i++) {
 		for (j = 0; j <= NCHANS; j++) {
-			 if(i == gp->mpg_index && j == cp->mpc_index) {
-				 error = mpxnwrite(wmpx, i, j);
-			 }
+			error = mpxnwrite(wmpx, i, j);
 		}
 	}
     return (error);
@@ -265,9 +233,9 @@ mpx_ioctl_sc(mpx, cmd, data, p)
 	caddr_t data;
 	struct proc *p;
 {
-	struct mpx_group 	*grp, *grp1;
+	struct mpx_group 	*grp;
 	struct mpx_channel 	*chan, *chan1;
-	int gpidx, nchans;
+	int nchans;
 
 	grp = mpx->mpx_group;
 	chan = mpx->mpx_channel;
@@ -276,6 +244,8 @@ mpx_ioctl_sc(mpx, cmd, data, p)
 		if(grp == NULL && chan == NULL) {
 			grp = mpx_allocate_groups(mpx, NGROUPS);
 			chan = mpx_allocate_channels(mpx, NCHANS);
+			mpx_add_group(grp, 0);
+			mpx_add_channel(chan, 0);
 			mpx_set_channelgroup(chan, grp);
 			goto attach;
 		}
@@ -291,7 +261,7 @@ mpx_ioctl_sc(mpx, cmd, data, p)
 			mpx_set_channelgroup(chan, grp);
 			goto attach;
 		}
-	attach:
+attach:
 		mpx_attach(chan, grp);
 		return (0);
 
@@ -304,7 +274,7 @@ mpx_ioctl_sc(mpx, cmd, data, p)
 			grp = mpx_get_group_from_channel(chan->mpc_index);
 			goto detach;
 		}
-	detach:
+detach:
 		mpx_detach(chan, grp);
 		return (0);
 
