@@ -171,8 +171,17 @@ consinit_com(consinfo)
 #if (NCOM > 0)
 	if (!strcmp(consinfo->bi_devname, "com")) {
 		bus_space_tag_t tag = I386_BUS_SPACE_IO;
+		int addr = consinfo->bi_addr;
+		int speed = consinfo->bi_speed;
+		
+		if (addr == 0) {
+			addr = CONADDR;
+		}
+		if (speed == 0) {
+			speed = CONSPEED;
+		}
 
-		if (comcnattach(tag, consinfo->bi_addr, consinfo->bi_speed, COM_FREQ, comcnmode)) {
+		if (comcnattach(tag, addr, speed, COM_FREQ, COM_TYPE_NORMAL, comcnmode)) {
 			panic("can't init serial console @%x", consinfo->bi_addr);
 		}
 		return;
