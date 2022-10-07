@@ -51,7 +51,7 @@ __KERNEL_RCSID(0, "$NetBSD: com_puc.c,v 1.10 2004/02/03 20:35:17 fredb Exp $");
 #include <dev/core/io/puc/pucvar.h>
 #include <dev/core/io/com/comreg.h>
 #include <dev/core/io/com/comvar.h>
-#include <dev/core/pci/cybervar.h>
+#include <dev/core/io/com/cybervar.h>
 
 struct com_puc_softc {
 	struct com_softc sc_com;	/* real "com" softc */
