@@ -99,7 +99,7 @@ __KERNEL_RCSID(0, "$NetBSD: wd.c,v 1.274.2.8.2.6.2.6 2007/10/15 23:10:19 riz Exp
 #include <dev/disk/ata/atareg.h>
 #include <dev/disk/ata/atavar.h>
 #include <dev/disk/ata/wdvar.h>
-#include <dev/core/ic/wdcreg.h>
+#include <dev/core/io/wdc/wdcreg.h>
 
 #include "locators.h"
 
