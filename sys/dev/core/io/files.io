@@ -4,9 +4,8 @@
 # IO device code
 #
 
-include 	"dev/io/upc/files.upc"
-include 	"dev/io/puc/files.puc"
-
-include 	"dev/io/com/files.serial"
-include 	"dev/io/lpt/files.lpt"
-include 	"dev/io/wdc/files.wdc"
+include 	"dev/core/io/upc/files.upc"
+include 	"dev/core/io/puc/files.puc"
+include 	"dev/core/io/com/files.serial"
+include 	"dev/core/io/lpt/files.lpt"
+include 	"dev/core/io/wdc/files.wdc"
