@@ -159,6 +159,14 @@ mpx_set_channelgroup(cp, gp)
 	gp->mpg_channel = cp;
 }
 
+void
+mpx_set_grouppgrp(gp, pgrp)
+	struct mpx_group 	*gp;
+	struct pgrp 		*pgrp;
+{
+	gp->mpg_pgrp = pgrp;
+}
+
 struct mpx_group *
 mpx_allocate_groups(mpx, ngroups)
 	struct mpx 	*mpx;
@@ -188,14 +196,17 @@ mpx_add_group(gp, idx)
 }
 
 void
-mpx_create_group(mpx, idx)
+mpx_create_group(mpx, idx, pgrp)
 	struct mpx 	*mpx;
 	int idx;
+	struct pgrp *pgrp;
 {
 	struct mpx_group *gp;
 
 	gp = mpx_allocate_groups(mpx, NGROUPS);
 	mpx_add_group(gp, idx);
+	mpx_set_grouppgrp(gp, pgrp);
+	mpx->mpx_pgid = gp->mpg_pgrp->pg_id;
 }
 
 struct mpx_group *

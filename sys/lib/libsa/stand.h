@@ -88,6 +88,7 @@ struct fs_ops {
 	 int				(*readdir)(struct open_file *, struct dirent *);
 };
 extern struct fs_ops 	file_system[];
+extern struct fs_ops	*exclusive_file_system;
 
 /*
  * libstand-supplied filesystems
@@ -249,6 +250,5 @@ extern size_t 			strspn(const char *, const char *);
 
 /* strtol.c */
 extern long				strtol(const char *, char **, int);
-
 
 #endif	/* _LIBSA_STAND_H */

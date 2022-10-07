@@ -61,11 +61,11 @@
 #include <dev/misc/pccons/pckbportvar.h>
 #endif
 
-//#include "com.h"
+#include "com.h"
 #if (NCOM > 0)
 #include <sys/termios.h>
-#include <dev/core/ic/comreg.h>
-#include <dev/core/ic/comvar.h>
+#include <dev/core/io/com/comreg.h>
+#include <dev/core/io/com/comvar.h>
 #endif
 
 //#include "ukbd.h"

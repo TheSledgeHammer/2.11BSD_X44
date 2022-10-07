@@ -49,7 +49,7 @@ struct cdevsw {
 	int			(*d_read)(dev_t, struct uio *, int);
 	int			(*d_write)(dev_t, struct uio *, int);
 	int			(*d_ioctl)(dev_t, u_long, caddr_t, int, struct proc *);
-	int		(*d_stop)(struct tty *, int);
+	int			(*d_stop)(struct tty *, int);
 	int			(*d_reset)(int);	/* XXX */
 	struct tty 	*(*d_tty)(dev_t);
 	int			(*d_select)(dev_t, int, struct proc *);

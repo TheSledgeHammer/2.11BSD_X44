@@ -90,7 +90,7 @@ __KERNEL_RCSID(0, "$NetBSD: pciide_common.c,v 1.8.2.3.2.1 2005/03/16 13:04:31 tr
 #include <dev/core/pci/pciidereg.h>
 #include <dev/core/pci/pciidevar.h>
 
-#include <dev/core/ic/wdcreg.h>
+#include <dev/core/io/wdc/wdcreg.h>
 
 #ifdef WDCDEBUG
 int wdcdebug_pciide_mask = 0;

@@ -91,7 +91,6 @@ int
 threadpool_create(tpool, pri)
 	struct threadpool *tpool;
 {
-
 	tpool->tp_pri = pri;
 	return (error);
 }

@@ -9,7 +9,7 @@ defflag	opt_puccn.h	PUCCN
 
 device	pci {[dev = -1], [function = -1]}
 attach	pci at pcibus
-file	dev/core/pci/pci.c		pci 				needs-flag
+file	dev/core/pci/pci.c			pci 				needs-flag
 file	dev/core/pci/pci_map.c		pci
 file	dev/core/pci/pci_quirks.c		pci
 file	dev/core/pci/pci_subr.c		pci
@@ -19,7 +19,7 @@ file	dev/core/pci/pci_subr.c		pci
 # PCI-PCI bridge chips
 device	ppb: pcibus
 attach	ppb at pci
-file	dev/core/pci/ppb.c		ppb
+file	dev/core/pci/ppb.c			ppb
 
 # PCI IDE controllers
 define pciide_common
@@ -27,24 +27,7 @@ file 	dev/core/pci/pciide_common.c 	pciide_common
 
 device	pciide {[channel = -1]}: ata, pciide_common
 attach	pciide at pci
-file	dev/core/pci/pciide.c		pciide
-
-# PCI "universal" communication device driver, for PCI com, lpt, etc. ports
-# (see documentation in the driver for what, exactly, should be supported)
-device	puc { port = -1 }
-attach	puc at pci
-file	dev/core/pci/puc.c		puc
-file	dev/core/pci/pucdata.c		puc
-
-attach	com at puc with com_puc
-file	dev/core/pci/com_puc.c		com_puc
-file	dev/core/pci/cyber.c		com_puc
-
-#attach	lpt at puc with lpt_puc
-#file	dev/core/pci/lpt_puc.c		lpt_puc & !ppbus
-
-# Console device support for puc drivers
-file	dev/core/pci/puccn.c		puccn
+file	dev/core/pci/pciide.c			pciide
 
 # PCI USB controllers
 # UHCI USB controller

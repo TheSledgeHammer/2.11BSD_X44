@@ -76,7 +76,7 @@ struct socket {
 	} so_rcv, so_snd;
 
 	caddr_t				so_tpcb;	/* Misc. protocol control block XXX */
-	void				(*so_upcall) (struct socket *so, caddr_t arg, int waitf);
+	void				(*so_upcall)(struct socket *so, caddr_t arg, int waitf);
 	caddr_t				so_upcallarg;/* Arg for above */
 };
 

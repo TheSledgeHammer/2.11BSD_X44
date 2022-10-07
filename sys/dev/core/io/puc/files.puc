@@ -1,0 +1,12 @@
+# $211BSD$ files.puc
+#
+
+# PCI "universal" communication device driver, for PCI com, lpt, etc. ports
+# (see documentation in the driver for what, exactly, should be supported)
+device	puc { port = -1 }
+attach	puc at pci
+file	dev/core/io/puc/puc.c		puc
+file	dev/core/io/puc/pucdata.c		puc
+
+# Console device support for puc drivers
+file	dev/core/io/puc/puccn.c		puccn

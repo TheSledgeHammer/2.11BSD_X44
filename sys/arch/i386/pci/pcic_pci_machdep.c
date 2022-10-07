@@ -42,16 +42,16 @@ __KERNEL_RCSID(0, "$NetBSD: pcic_pci_machdep.c,v 1.2 2001/11/15 07:03:35 lukem E
 #include <sys/null.h>
 
 #include <dev/core/pcmcia/pcmciachip.h>
-#include <dev/core/ic/i82365reg.h>
-#include <dev/core/ic/i82365var.h>
+#include <dev/core/io/i82365/i82365reg.h>
+#include <dev/core/io/i82365/i82365var.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
-#include <dev/core/isa/i82365_isavar.h>
+#include <dev/core/io/i82365/i82365_isavar.h>
 
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
-#include <dev/core/pci/i82365_pcivar.h>
+#include <dev/core/io/i82365/i82365_pcivar.h>
 
 #include <machine/intr.h>
 

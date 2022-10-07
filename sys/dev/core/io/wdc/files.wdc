@@ -1,0 +1,21 @@
+# $211BSD$ files.wdc
+#
+#
+# CHIPS and Technologies 82C7[12][01] Universal Peripheral Controller
+#
+attach	wdc at upc with wdc_upc
+file	dev/core/io/wdc/wdc_upc.c				wdc_upc
+
+#
+# Other ISA disk controllers
+#
+attach wdc at isa with wdc_isa
+file	dev/core/io/wdc/wdc_isa.c				wdc_isa
+
+# IDE disks
+attach	wdc at isapnp with wdc_isapnp
+file	dev/core/io/wdc/wdc_isapnp.c			wdc_isapnp
+
+# PCMCIA IDE controller
+attach	wdc at pcmcia with wdc_pcmcia
+file	dev/core/io/wdc/wdc_pcmcia.c		wdc_pcmcia

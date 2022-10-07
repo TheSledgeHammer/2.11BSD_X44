@@ -1,0 +1,21 @@
+# $211BSD$ files.serial
+#
+
+attach	com at upc with com_upc
+file	dev/core/io/com/com_upc.c			com_upc
+
+# Serial and parallel drivers #
+attach	com at isa with com_isa
+file	dev/core/io/com/com_isa.c			com_isa
+
+define	commulti {[slave = -1]}
+attach 	com at commulti with com_multi
+file	dev/core/io/com/com_multi.c			com_multi
+
+# serial port devices
+attach	com at mca with com_mca
+file	dev/core/io/com/com_mca.c			com_mca
+
+attach	com at puc with com_puc
+file	dev/core/io/com/com_puc.c			com_puc
+file	dev/core/io/com/cyber.c				com_puc

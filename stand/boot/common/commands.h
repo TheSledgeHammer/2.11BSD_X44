@@ -87,6 +87,9 @@ int command_load(int argc, char *argv[]);
 int command_unload(int argc, char *argv[]);
 int command_lskern(int argc, char *argv[]);
 
+/*	install.c	*/
+int command_install(int argc, char *argv[]);
+
 /*	interp.c	*/
 int command_include(int argc, char *argv[]);
 int command_optinclude(int argc, char *argv[]);
@@ -140,7 +143,8 @@ int command_fdt(int argc, char *argv[]);
 		{ "lskern", "list loaded kernel", command_lskern },									\
 		{ "include", "read commands from a file", command_include },						\
 		{ "optinclude", "run commands from file; ignore exit status", command_optinclude }, \
-		{ "ls", "list files", command_ls }
+		{ "ls", "list files", command_ls },													\
+		{ "install",  "install software package", command_install }
 
 extern struct bootblk_command commands[];
 

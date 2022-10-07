@@ -35,6 +35,7 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 #include <sys/videoio.h>
+
 #include <dev/video/generic/video_if.h>
 
 #include <vm/include/vm_extern.h>

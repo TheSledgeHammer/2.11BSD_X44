@@ -1,0 +1,5 @@
+# $211BSD$ files.lpt
+#
+
+#attach	lpt at puc with lpt_puc
+#file	dev/core/io/lpt/lpt_puc.c		lpt_puc & !ppbus

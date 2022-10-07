@@ -18,22 +18,3 @@ file	dev/core/isa/isahint.c			isa
 # ISA DMA controller
 define	isadma
 file	dev/core/isa/isadma.c			isadma 			needs-flag
-
-# Serial and parallel drivers #
-attach	com at isa with com_isa
-file	dev/core/isa/com_isa.c			com_isa
-
-define	commulti {[slave = -1]}
-attach 	com at commulti with com_multi
-file	dev/core/isa/com_multi.c		com_multi
-
-# PC-style parallel ports: ISA bus attachment (XXX what chip?)
-# XXX chip driver should be defined elsewhere
-#attach	lpt at isa with lpt_isa
-#file	dev/core/isa/lpt_isa.c			lpt_isa & !ppbus
-
-#
-# Other ISA disk controllers
-#
-attach wdc at isa with wdc_isa
-file	dev/core/isa/wdc_isa.c			wdc_isa
