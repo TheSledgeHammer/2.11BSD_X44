@@ -60,8 +60,8 @@ __KERNEL_RCSID(0, "$NetBSD: atapi_wdc.c,v 1.69.2.2.2.1 2005/07/18 03:57:34 riz E
 
 #include <dev/disk/ata/atareg.h>
 #include <dev/disk/ata/atavar.h>
-#include <dev/core/ic/wdcreg.h>
-#include <dev/core/ic/wdcvar.h>
+#include <dev/core/io/wdc/wdcreg.h>
+#include <dev/core/io/wdc/wdcvar.h>
 
 #include <dev/disk/scsi/scsi_all.h> /* for SCSI status */
 
