@@ -96,8 +96,8 @@ __KERNEL_RCSID(0, "$NetBSD: ata_wdc.c,v 1.53.2.3.2.4 2005/07/18 03:57:36 riz Exp
 
 #include <dev/disk/ata/atareg.h>
 #include <dev/disk/ata/atavar.h>
-#include <dev/core/ic/wdcreg.h>
-#include <dev/core/ic/wdcvar.h>
+#include <dev/core/io/wdc/wdcreg.h>
+#include <dev/core/io/wdc/wdcvar.h>
 
 #define DEBUG_INTR   0x01
 #define DEBUG_XFERS  0x02
