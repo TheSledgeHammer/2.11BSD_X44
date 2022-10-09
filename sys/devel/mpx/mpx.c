@@ -78,6 +78,8 @@ struct fileops mpxops = {
 
 struct grouplist   	mpx_groups[NGROUPS];
 struct channellist  mpx_channels[NCHANS];
+int groupcount;
+int channelcount;
 
 #define MPX_TIMESTAMP(tvp)	(*(tvp) = time)
 
@@ -138,13 +140,15 @@ mpx_init(void)
 {
 	register int i, j;
 
-    for(i = 0; i <= NGROUPS; i++) {
+    for(i = 0; i < NGROUPS; i++) {
     	LIST_INIT(&mpx_groups[i]);
     }
 
-	for(j = 0; j <= NCHANS; j++) {
+	for(j = 0; j < NCHANS; j++) {
 		LIST_INIT(&mpx_channels[j]);
 	}
+	groupcount = -1;
+	channelcount = -1;
 }
 
 void
@@ -193,6 +197,7 @@ mpx_add_group(gp, idx)
 	group = &mpx_groups[idx];
     gp->mpg_index = idx;
     LIST_INSERT_HEAD(group, gp, mpg_node);
+    groupcount++;
 }
 
 void
@@ -216,6 +221,7 @@ mpx_get_group(idx)
     struct grouplist *group;
     struct mpx_group *gp;
 
+    KASSERT(idx < NGROUPS);
     group = &mpx_groups[idx];
     LIST_FOREACH(gp, group, mpg_node) {
         if(gp->mpg_index == idx) {
@@ -283,6 +289,7 @@ mpx_add_channel(cp, idx)
     chan = &mpx_channels[idx];
     cp->mpc_index = idx;
     LIST_INSERT_HEAD(chan, cp, mpc_node);
+    channelcount++;
 }
 
 void
@@ -305,6 +312,7 @@ mpx_get_channel(idx)
     struct channellist *chan;
     struct mpx_channel *cp;
 
+    KASSERT(idx < NCHANS);
     chan = &mpx_channels[idx];
     LIST_FOREACH(cp, chan, mpc_node) {
         if(cp->mpc_index == idx) {
@@ -360,7 +368,7 @@ mpx_attach(cp, gp)
 	register int i;
 
 	KASSERT(cp != NULL);
-	for (i = 0; i <= NGROUPS; i++) {
+	for (i = 0; i < NGROUPS; i++) {
 		 LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
 			 if (gp->mpg_channel == NULL) {
 				 gp->mpg_channel = cp;
@@ -380,7 +388,7 @@ mpx_detach(cp, gp)
 {
 	register int i;
 
-	for (i = 0; i <= NGROUPS; i++) {
+	for (i = 0; i < NGROUPS; i++) {
 		LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
 			 if (gp->mpg_channel == cp && cp != NULL) {
 				 gp->mpg_channel = NULL;

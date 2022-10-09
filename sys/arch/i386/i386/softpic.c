@@ -292,7 +292,7 @@ softpic_register_apic(apic)
     int error;
 
     if (softpic_apic_registered(apic)) {
-        error = 1;
+        error = EBUSY;
     } else {
         TAILQ_INSERT_TAIL(&apichead, apic, apic_entry);
         error = 0;

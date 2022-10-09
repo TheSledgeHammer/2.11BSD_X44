@@ -144,6 +144,8 @@ struct mpxpair {
 
 extern struct grouplist     mpx_groups[];
 extern struct channellist   mpx_channels[];
+extern int groupcount;
+extern int channelcount;
 
 /* groups */
 struct mpx_group 			*mpx_allocate_groups(struct mpx *, int);
@@ -162,6 +164,7 @@ void						mpx_remove_channel(struct mpx_channel *, int);
 /* common routines */
 void                		mpx_init(void);
 void						mpx_set_channelgroup(struct mpx_channel *, struct mpx_group *);
+void						mpx_set_grouppgrp(struct mpx_group *, struct pgrp *);
 void						mpx_attach(struct mpx_channel *, struct mpx_group *);
 void						mpx_detach(struct mpx_channel *, struct mpx_group *);
 int							mpx_connect(struct mpx_channel *, struct mpx_channel *);

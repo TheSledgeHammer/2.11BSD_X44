@@ -62,6 +62,8 @@ struct advvm_softc {
 	struct fileset 		*sc_fileset;	/* advvm filesets */
 };
 
+#define advvmunit(dev) dkunit(dev)
+
 static dev_type_open(advvm_open);
 static dev_type_close(advvm_close);
 static dev_type_read(advvm_read);
@@ -210,30 +212,35 @@ advvm_activate(struct device *self, int act)
 int
 advvm_open(dev_t dev, int oflag, int devtype, struct proc *p)
 {
+	struct advvm_softc *sc;
 	return (0);
 }
 
 int
 advvm_close(dev_t dev, int fflag, int devtype, struct proc *p)
 {
+	struct advvm_softc *sc;
 	return (0);
 }
 
 int
 advvm_read(dev_t dev, struct uio *uio, int ioflag)
 {
+	struct advvm_softc *sc;
 	return (0);
 }
 
 int
 advvm_write(dev_t dev, struct uio *uio, int ioflag)
 {
+	struct advvm_softc *sc;
 	return (0);
 }
 
 int
 advvm_strategy(dev_t dev, int fflag, int devtype, struct proc *p)
 {
+
 	return (0);
 }
 

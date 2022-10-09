@@ -129,4 +129,7 @@ struct vndbuf 	*vndbuf_alloc(void);
 void			vndbuf_free(struct vndbuf *);
 struct swapbuf 	*swapbuf_alloc(void);
 void			swapbuf_free(struct swapbuf *);
+
+struct buf 		*vm_getswapbuf(struct swapbuf *);
+void			vm_putswapbuf(struct swapbuf *, struct buf*);
 #endif /* _VM_SWAP_H_ */

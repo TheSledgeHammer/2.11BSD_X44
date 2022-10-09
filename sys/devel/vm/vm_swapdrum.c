@@ -576,6 +576,7 @@ swapdrum_on(p, swp)
 	struct swapdev *sdp;
 	static int count = 0;	/* static */
 	struct vnode *vp;
+	const struct bdevsw *bdev;
 	int error, npages, nblks, size;
 	long addr;
 	u_long result;
@@ -591,6 +592,7 @@ swapdrum_on(p, swp)
 	vp = swp->sw_vp;
 	dev = swp->sw_dev;
 	sdp = swp->sw_swapdev;
+	bdev = bdevsw_lookup(dev);
 
 	/*
 	 * open the swap file (mostly useful for block device files to
@@ -614,7 +616,7 @@ swapdrum_on(p, swp)
 	 */
 	switch (vp->v_type) {
 	case VBLK:
-		if (bdevsw[major(dev)].d_psize == 0 || (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
+		if (bdev->d_psize == 0 || (nblks = (*bdev->d_psize)(dev)) == -1) {
 			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
 			return (ENXIO);
 		}
@@ -1004,7 +1006,7 @@ sw_reg_strategy(swp, bp, bn)
 		 * at the front of the nbp structure so that you can
 		 * cast pointers between the two structure easily.
 		 */
-		nbp = vndbuf_alloc();//rmalloc(&vndbuf_pool, sizeof(nbp));
+		nbp = vndbuf_alloc();
 		&nbp->vb_buf = &swbuf; /* XXX: FIX */
 		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
 		nbp->vb_buf.b_bcount   = sz;
@@ -1027,7 +1029,7 @@ sw_reg_strategy(swp, bp, bn)
 		 */
 		s = splbio();
 		if (vnx->vx_error != 0) {
-			vndbuf_free(nbp);//rmfree(&vndbuf_pool, sizeof(nbp), nbp);
+			vndbuf_free(nbp);
 			goto out;
 		}
 		vnx->vx_pending++;
@@ -1053,7 +1055,7 @@ out: /* Arrive here at splbio */
 			bp->b_error = vnx->vx_error;
 			bp->b_flags |= B_ERROR;
 		}
-		vndxfer_free(vnx);//rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+		vndxfer_free(vnx);
 		biodone(bp);
 	}
 	splx(s);
@@ -1131,7 +1133,7 @@ sw_reg_iodone(bp)
 	/*
 	 * kill vbp structure
 	 */
-	vndbuf_free(vbp);//rmfree(&vndbuf_pool, sizeof(vbp), vbp);
+	vndbuf_free(vbp);
 
 	/*
 	 * wrap up this transaction if it has run to completion or, in
@@ -1142,13 +1144,13 @@ sw_reg_iodone(bp)
 		pbp->b_flags |= B_ERROR;
 		pbp->b_error = vnx->vx_error;
 		if ((vnx->vx_flags & VX_BUSY) == 0 && vnx->vx_pending == 0) {
-			vndxfer_free(vnx);//rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+			vndxfer_free(vnx);
 			biodone(pbp);
 		}
 	} else if (pbp->b_resid == 0) {
 		KASSERT(vnx->vx_pending == 0);
 		if ((vnx->vx_flags & VX_BUSY) == 0) {
-			vndxfer_free(vnx);//rmfree(&vndxfer_pool, sizeof(vnx), vnx);
+			vndxfer_free(vnx);
 			biodone(pbp);
 		}
 	}
@@ -1272,10 +1274,11 @@ vm_swap_free(startslot, nslots)
 	simple_unlock(&swap_data_lock);
 }
 
-static struct swapbufhead swapbuflist;
+/* place in buf struct */
+struct swapbuf		*b_swbuf;			/* swapbuf back pointer */
 
 void
-swapbuf_init(bp, p)
+vm_swapbuf_init(bp, p)
 	struct buf  	*bp;
 	struct proc 	*p;
 {
@@ -1297,39 +1300,46 @@ swapbuf_init(bp, p)
 }
 
 struct buf *
-swapbuf_getbuf(void)
+vm_getswapbuf(sbp)
+	struct swapbuf *sbp;
 {
-	register struct swapbuf *sbp;
+	struct buf *bp;
 	int s;
 
-	sbp = swapbuf_alloc();
-	s = splbio();
-	while((sbp->sw_buf = TAILQ_FIRST(sbp->sw_bswlist)) == NULL) {
-		sbp->sw_buf->b_flags |= B_WANTED;
-		sleep((caddr_t)&sbp->sw_buf, BPRIO_DEFAULT);
+	if (sbp == NULL) {
+		sbp = swapbuf_alloc();
 	}
-	TAILQ_REMOVE(sbp->sw_bswlist, sbp->sw_buf, b_freelist);
+	s = splbio();
+	while((bp = TAILQ_FIRST(sbp->sw_bswlist)) == NULL) {
+		bp->b_flags |= B_WANTED;
+		sleep((caddr_t)&bp, BPRIO_DEFAULT);
+	}
+	TAILQ_REMOVE(sbp->sw_bswlist, bp, b_freelist);
 	splx(s);
 
-	if (sbp->sw_buf == NULL) {
-		sbp->sw_buf = (struct buf *)malloc(sizeof(*sbp->sw_buf), M_TEMP, M_WAITOK);
+	if (bp == NULL) {
+		bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_WAITOK);
 	}
-	bzero(sbp->sw_buf, sizeof(*sbp->sw_buf));
-	BUF_INIT(sbp->sw_buf);
+	bzero(bp, sizeof(*bp));
+	BUF_INIT(bp);
 
-	sbp->sw_buf->b_rcred = sbp->sw_buf->b_wcred = NOCRED;
-	LIST_NEXT(sbp->sw_buf, b_vnbufs) = NOLIST;
-
-	return (sbp->sw_buf);
+	bp->b_rcred = bp->b_wcred = NOCRED;
+	LIST_NEXT(bp, b_vnbufs) = NOLIST;
+	sbp->sw_buf = bp;
+	bp->b_swbuf = sbp;
+	return (bp);
 }
 
 void
-swapbuf_putbuf(sbp, bp)
+vm_putswapbuf(sbp, bp)
 	struct swapbuf 	*sbp;
 	struct buf 		*bp;
 {
 	int s;
 
+	if(sbp == NULL) {
+		sbp = bp->b_swbuf;
+	}
 	s = splbio();
 	if (bp->b_vp) {
 		brelvp(bp);
@@ -1342,6 +1352,22 @@ swapbuf_putbuf(sbp, bp)
 	TAILQ_INSERT_HEAD(sbp->sw_bswlist, bp, b_freelist);
 	free(bp, M_TEMP);
 	splx(s);
+}
+
+/* kern_physio.c */
+struct swapbuf physbuf;
+
+struct buf *
+getphysbuf(void)
+{
+	return (vm_getswapbuf(&physbuf));
+}
+
+void
+putphysbuf(bp)
+	struct buf *bp;
+{
+	vm_putswapbuf(&physbuf, bp);
 }
 
 /*
