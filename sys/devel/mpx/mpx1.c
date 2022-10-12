@@ -142,6 +142,8 @@ mpxnread(mpx, gpidx, cpidx)
     struct mpx_group 	*gp;
     struct mpx_channel 	*cp;
 
+    KASSERT(gpidx <= NGROUPS);
+    KASSERT(cpidx <= NCHANS);
     gp = mpx_get_group(gpidx);
     cp = mpx_get_channel(cpidx);
     if(gp == NULL && cp == NULL) {
@@ -177,6 +179,8 @@ mpxnwrite(mpx, gpidx, cpidx)
     struct mpx_group *gp;
     struct mpx_channel *cp;
 
+    KASSERT(gpidx <= NGROUPS);
+    KASSERT(cpidx <= NCHANS);
     gp = mpx_allocate_groups(mpx, NGROUPS);
     cp = mpx_allocate_channels(mpx, NCHANS);
     mpx_add_group(gp, gpidx);
@@ -198,8 +202,8 @@ mpxn_read(rmpx)
 
     gp = rmpx->mpx_group;
     cp = rmpx->mpx_channel;
-	for (i = 0; i <= NGROUPS; i++) {
-		for (j = 0; j <= NCHANS; j++) {
+	for (i = 0; i < NGROUPS; i++) {
+		for (j = 0; j < NCHANS; j++) {
 			 if(i == gp->mpg_index && j == cp->mpc_index) {
 				 error = mpxnread(rmpx, i, j);
 			 }
@@ -218,8 +222,8 @@ mpxn_write(wmpx)
 
     gp = wmpx->mpx_group;
     cp = wmpx->mpx_channel;
-	for (i = 0; i <= NGROUPS; i++) {
-		for (j = 0; j <= NCHANS; j++) {
+	for (i = 0; i < NGROUPS; i++) {
+		for (j = 0; j < NCHANS; j++) {
 			error = mpxnwrite(wmpx, i, j);
 		}
 	}
@@ -289,3 +293,125 @@ detach:
 	}
 	return (0);
 }
+
+#define MPXCHAN 	0	/* create new channel */
+#define MPXGROUP 	1	/* create new group */
+
+int
+mpxchan()
+{
+	register struct mpx_args {
+		syscallarg(int) 	cmd;
+		syscallarg(int *) 	arg;
+	} *uap = (struct mpx_args *) u.u_ap;
+
+	struct mpx *rmpx, *wmpx;
+	struct mpxpair *mm;
+	struct mpx_group 	*gp;
+	struct mpx_channel 	*cp;
+
+	mm = mpx_paircreate();
+	if(mm == NULL) {
+		return (ENOMEM);
+	}
+	rmpx = &mm->mpp_rmpx;
+	wmpx = &mm->mpp_wmpx;
+
+	switch(SCARG(uap, cmd)) {
+	case MPXCHAN:
+		cp = mpx_create_channel(wmpx, NCHANS);
+		mpx_add_channel(cp, 0);
+		return (0);
+
+	case MPXGROUP:
+		gp = mpx_create_group(wmpx, NGROUPS);
+		mpx_add_group(gp, 0);
+		return (0);
+
+	case MPXIOATTACH:
+	}
+
+	return (u.u_error);
+}
+
+void
+mpx_channel(mpx, cmd)
+	struct mpx *mpx;
+	int 	cmd;
+{
+	struct file *rf;
+	struct mpx *rmpx, *wmpx;
+    struct mpx_group *gp;
+    struct mpx_channel *cp;
+    int error;
+
+    /* reader */
+    if(rmpx->mpx_group != NULL){
+        gp = rmpx->mpx_group;
+    } else {
+    	gp = NULL;
+    }
+    if(rmpx->mpx_channel != NULL) {
+    	 cp = rmpx->mpx_channel;
+    } else {
+    	cp = NULL;
+    }
+
+    /* writer */
+    switch(cmd) {
+    case MPXCHAN:
+    	if(cp != NULL) {
+    		if(channelcount < 0) {
+    			mpx_add_channel(cp, 0);
+    		} else {
+    			int idx;
+    			idx = channelcount+1;
+    			mpx_add_channel(cp, idx);
+    		}
+    	} else {
+    		cp = mpx_allocate_channels(wmpx, NCHANS);
+    		mpx_add_channel(cp, 0);
+    	}
+		if(gp != NULL) {
+			mpx_set_channelgroup(cp, gp);
+		}
+    	break;
+
+    case MPXGROUP:
+    	if(gp != NULL) {
+    		if(groupcount < 0) {
+    			mpx_add_group(gp, 0);
+    		} else {
+    			int idx;
+    			idx = groupcount+1;
+    			mpx_add_group(gp, idx);
+    		}
+    	} else {
+    		gp = mpx_allocate_channels(wmpx, NGROUPS);
+    		mpx_add_group(gp, 0);
+    	}
+    	mpx_set_grouppgrp(gp, u.u_procp->p_pgrp);
+    	break;
+    }
+}
+
+
+
+/*
+ * TODO: Possible idea
+ * - make mpx a sys pipe extension.
+ * - mpx have their own fileops and syscall.
+ * 	- however they can return the pipe equivalent.
+ *
+ * 	example:
+ * 	mpx_read() {
+ * 		mpx read code function here
+ *
+ * 		return (pipe_read());
+ * 	}
+ *
+ * 	- This would simplify the mpx code, but offer same functionality.
+ * 	- Keeping it generic enough, but also niche capable.
+ * 	- It also has the added benefit of being a plugin\module if the other BSD's wish to adopt it.
+ * 	not a rewrite of pipes.
+ */

@@ -119,6 +119,7 @@ int	bootinfo_check(struct bootinfo *);
 void cpu_reset(void);
 void cpu_halt(void);
 void identify_cpu(void);
+caddr_t allocsys(caddr_t);
 
 void (*delay_func)(int) = i8254_delay;
 void (*microtime_func)(struct timeval *) = i386_microtime;
@@ -200,7 +201,7 @@ vm_offset_t proc0kstack;
 void
 startup(void)
 {
-	int firstaddr;
+	int firstaddr, sz;
 	register int unixsize;
 	register unsigned i;
 	int mapaddr, j;
@@ -243,7 +244,6 @@ startup(void)
 	 * An index into the kernel page table corresponding to the
 	 * virtual memory address maintained in "v" is kept in "mapaddr".
 	 */
-
 	/*
 	 * Make two passes.  The first pass calculates how much memory is
 	 * needed and allocates it.  The second pass assigns virtual
@@ -252,52 +252,14 @@ startup(void)
 	firstaddr = 0;
 
 again:
-	v = (caddr_t) firstaddr;
-
-#define	valloc(name, type, num) \
-	    (name) = (type *)v; v = (caddr_t)((name)+(num))
-#define	valloclim(name, type, num, lim) \
-	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
-	    
-	valloc(cfree, struct cblock, nclist);
-	nswapmap = maxproc * 2;
-	//valloc(swapmap, struct map, nswapmap = maxproc * 2);
-#ifdef SYSVSHM
-	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
-#endif
-	/*
-	 * Determine how many buffers to allocate.
-	 * Use 10% of memory for the first 2 Meg, 5% of the remaining
-	 * memory. Insure a minimum of 16 buffers.
-	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
-	 */
-	if (bufpages == 0) {
-		if (physmem < (2 * 1024 * 1024)) {
-			bufpages = physmem / 10 / CLSIZE;
-		} else {
-			bufpages = ((2 * 1024 * 1024 + physmem) / 20) / CLSIZE;
-		}
-	}
-	if (nbuf == 0) {
-		nbuf = bufpages / 2;
-		if (nbuf < 16) {
-			nbuf = 16;
-		}
-	}
-	if (nswbuf == 0) {
-		nswbuf = (nbuf / 2) & ~1; /* force even */
-		if (nswbuf > 256) {
-			nswbuf = 256; /* sanity */
-		}
-	}
-	valloc(swbuf, struct buf, nswbuf);
-	valloc(buf, struct buf, nbuf);
+	v = (caddr_t)firstaddr;
+	sz = (int)allocsys(v);
 
 	/*
 	 * End of first pass, size has been calculated so allocate memory
 	 */
-	if (firstaddr == 0) {
-		size = (vm_size_t) (v - firstaddr);
+	if(firstaddr == 0) {
+		size = (vm_size_t)(sz - v);
 		firstaddr = (int) kmem_alloc(kernel_map, round_page(size));
 		if (firstaddr == 0) {
 			panic("startup: no room for tables");
@@ -307,9 +269,10 @@ again:
 	/*
 	 * End of second pass, addresses have been assigned
 	 */
-	if ((vm_size_t) (v - firstaddr) != size) {
+	if ((vm_size_t)(sz - v) != size) {
 		panic("startup: table size inconsistency");
 	}
+
 	/*
 	 * Now allocate buffers proper.  They are different than the above
 	 * in that they usually occupy more virtual memory than physical.
@@ -372,6 +335,63 @@ again:
 
 	/* Safe for i/o port / memory space allocation to use malloc now. */
 	i386_bus_space_mallocok();
+}
+
+/*
+ * Allocate space for system data structures.  We are given
+ * a starting virtual address and we return a final virtual
+ * address; along the way we set each data structure pointer.
+ *
+ * We call allocsys() with 0 to find out how much space we want,
+ * allocate that much and fill it with zeroes, and then call
+ * allocsys() again with the correct base virtual address.
+ */
+caddr_t
+allocsys(v)
+	register caddr_t v;
+{
+#define	valloc(name, type, num) \
+	    (name) = (type *)v; v = (caddr_t)((name)+(num))
+#define	valloclim(name, type, num, lim) \
+	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
+
+	valloc(cfree, struct cblock, nclist);
+
+	nswapmap = maxproc * 2;
+	//valloc(swapmap, struct map, nswapmap = maxproc * 2);
+#ifdef SYSVSHM
+	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
+#endif
+
+	/*
+	 * Determine how many buffers to allocate.
+	 * Use 10% of memory for the first 2 Meg, 5% of the remaining
+	 * memory. Insure a minimum of 16 buffers.
+	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
+	 */
+	if (bufpages == 0) {
+		if (physmem < (2 * 1024 * 1024)) {
+			bufpages = physmem / 10 / CLSIZE;
+		} else {
+			bufpages = ((2 * 1024 * 1024 + physmem) / 20) / CLSIZE;
+		}
+	}
+	if (nbuf == 0) {
+		nbuf = bufpages / 2;
+		if (nbuf < 16) {
+			nbuf = 16;
+		}
+	}
+	if (nswbuf == 0) {
+		nswbuf = (nbuf / 2) & ~1; /* force even */
+		if (nswbuf > 256) {
+			nswbuf = 256; /* sanity */
+		}
+	}
+	valloc(swbuf, struct buf, nswbuf);
+	valloc(buf, struct buf, nbuf);
+
+	return (v);
 }
 
 /*

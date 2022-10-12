@@ -96,15 +96,7 @@ swapinit()
 	/*
 	 * Now set up swap buffer headers.
 	 */
-	TAILQ_INIT(&bswlist);
-	for (i = 0; i < nswbuf - 1; i++, sp++) {
-		TAILQ_INSERT_HEAD(&bswlist, sp, b_freelist);
-		sp->b_rcred = sp->b_wcred = p->p_ucred;
-		LIST_NEXT(sp, b_vnbufs) = NOLIST;
-	}
-	sp->b_rcred = sp->b_wcred = p->p_ucred;
-	LIST_NEXT(sp, b_vnbufs) = NOLIST;
-	TAILQ_REMOVE(&bswlist, sp, b_actq);
+	vm_swapbuf_init(sp, p);
 }
 
 void
@@ -218,17 +210,14 @@ swapoff(p, index)
 }
 
 int
-swalloc(index, lessok)
-	int 	index;
+swalloc(index, nslots, lessok)
+	int 	index, *nslots;
 	bool_t 	lessok;
 {
 	register struct swdevt 	*swp;
-	int npages;
 
 	swp = &swdevt[index];
-	npages = MAXPHYS >> PAGE_SHIFT;
-
-	return (vm_swap_alloc(swp, &npages, lessok));
+	return (vm_swap_alloc(swp, nslots, lessok));
 }
 
 int

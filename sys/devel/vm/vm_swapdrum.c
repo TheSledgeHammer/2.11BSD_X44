@@ -1077,8 +1077,9 @@ sw_reg_start(swp)
 	sdp = swp->sw_swapdev;
 
 	/* recursion control */
-	if ((swp->sw_flags & SW_BUSY) != 0)
+	if ((swp->sw_flags & SW_BUSY) != 0) {
 		return;
+	}
 
 	swp->sw_flags |= SW_BUSY;
 
@@ -1188,8 +1189,9 @@ vm_swap_alloc(swp, nslots, lessok)
 	/*
 	 * no swap devices configured yet?   definite failure.
 	 */
-	if (cnt.v_nswapdev < 1)
+	if (cnt.v_nswapdev < 1) {
 		return 0;
+	}
 
 	/*
 	 * lock data lock, convert slots into blocks, and enter loop
@@ -1213,6 +1215,7 @@ ReTry: /* XXXMRG */
 			 */
 			CIRCLEQ_REMOVE(&spp->spi_swapdev, sdp, swd_next);
 			CIRCLEQ_INSERT_TAIL(&spp->spi_swapdev, sdp, swd_next);
+			swp->sw_swapdev = sdp;
 			sdp->swd_npginuse += *nslots;
 			cnt.v_swpginuse += *nslots;
 			simple_unlock(&swap_data_lock);
@@ -1383,16 +1386,6 @@ swap_pager_get()
 
 }
 
-daddr_t
-swap_alloc(index, bsize)
-	int index, bsize;
-{
-	daddr_t block;
-
-	block = (daddr_t)swalloc(index, FALSE);
-	return (block);
-}
-
 static int
 swap_pager_io(swp, mlist, npages, flags)
 	register sw_pager_t swp;
@@ -1413,6 +1406,6 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * Allocate a swap block if necessary.
 	 */
 	if (swb->swb_block == 0) {
-		swb->swb_block = (daddr_t) vm_swap_alloc(swp, swp->sw_bsize, FALSE);
+		swb->swb_block = (daddr_t)swalloc(0, swp->sw_bsize, FALSE);
 	}
 }
