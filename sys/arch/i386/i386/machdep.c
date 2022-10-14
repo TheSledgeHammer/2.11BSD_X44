@@ -259,7 +259,7 @@ again:
 	 * End of first pass, size has been calculated so allocate memory
 	 */
 	if(firstaddr == 0) {
-		size = (vm_size_t)(sz - v);
+		size = (vm_size_t)(sz - (int)v);
 		firstaddr = (int) kmem_alloc(kernel_map, round_page(size));
 		if (firstaddr == 0) {
 			panic("startup: no room for tables");
@@ -269,7 +269,7 @@ again:
 	/*
 	 * End of second pass, addresses have been assigned
 	 */
-	if ((vm_size_t)(sz - v) != size) {
+	if ((vm_size_t)(sz - (int)v) != size) {
 		panic("startup: table size inconsistency");
 	}
 
