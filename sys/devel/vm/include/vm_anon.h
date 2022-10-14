@@ -91,15 +91,16 @@ struct vm_aref {
  * the offset field indicates which part of the amap we are referencing.
  * locked by vm_map lock.
  */
-
+#ifdef _KERNEL
 /*
  * prototypes
  */
 
-struct vm_anon 	*vm_anon_alloc (void);
-void 			vm_anon_free (struct vm_anon *);
-void 			vm_anon_init (void);
-void 			vm_anon_add (int);
-void 			vm_anon_dropswap (struct vm_anon *);
-
+struct vm_anon 	*vm_anon_alloc(void);
+void 			vm_anon_free(vm_anon_t);
+void 			vm_anon_init(void);
+void 			vm_anon_add(int);
+void 			vm_anon_dropswap(vm_anon_t);
+bool_t 			vm_anon_swap_off(int, int);
+#endif /* _KERNEL */
 #endif /* _VM_ANON_H_ */

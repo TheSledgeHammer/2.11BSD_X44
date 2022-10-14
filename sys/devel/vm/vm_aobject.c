@@ -152,13 +152,13 @@ vm_aobject_detach(obj)
  	 */
 
 	busybody = FALSE;
-	for (sg = CIRCLEQ_FIRST(obj->seglist); sg != NULL; sg = CIRCLEQ_NEXT(sg, sg_list)) {
+	CIRCLEQ_FOREACH(sg, obj->seglist, sg_list) {
 		if(sg->sg_flags & SEG_BUSY) {
 			sg->sg_flags |= SEG_RELEASED;
 			busybody = TRUE;
 			continue;
 		}
-		for (pg = TAILQ_FIRST(sg->sg_memq); pg != NULL ; pg = TAILQ_NEXT(pg, listq)) {
+		TAILQ_FOREACH(pg, sg->sg_memq, listq) {
 			if (pg->flags & PG_BUSY) {
 				pg->flags |= PG_RELEASED;
 				busybody = TRUE;
@@ -308,7 +308,7 @@ vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	/*
 	 * now search the bucket for the requested tag
 	 */
-	for (elt = LIST_FIRST(swhash); elt != NULL; elt = LIST_NEXT(elt, list)) {
+	LIST_FOREACH(elt, swhash, list) {
 		if (elt->tag == page_tag)
 			return (elt);
 	}
@@ -335,18 +335,20 @@ vm_aobject_find_swhash_elt(aobject, pageidx, create)
  *
  * => object must be locked by caller
  */
-__inline static int
-vm_aobject_find_swslot(aobj, pageidx)
-	vm_aobject_t aobj;
+int
+vm_aobject_find_swslot(obj, pageidx)
+	vm_object_t obj;
 	int pageidx;
 {
+	vm_aobject_t aobj = (vm_aobject_t)obj;
 
 	/*
 	 * if noswap flag is set, then we never return a slot
 	 */
 
-	if (aobj->u_flags & VAO_FLAG_NOSWAP)
+	if (aobj->u_flags & VAO_FLAG_NOSWAP) {
 		return (0);
+	}
 
 	/*
 	 * if hashing, look in hash table.
@@ -485,4 +487,201 @@ vm_aobject_dropswap(obj, pageidx)
 	if (slot) {
 		vm_swap_free(slot, 1);
 	}
+}
+
+/*
+ * page in every page in every aobj that is paged-out to a range of swslots.
+ *
+ * => nothing should be locked.
+ * => returns TRUE if pagein was aborted due to lack of memory.
+ */
+bool_t
+vm_aobject_swap_off(startslot, endslot)
+	int startslot, endslot;
+{
+	vm_aobject_t aobj, nextaobj;
+	bool_t rv;
+
+	/*
+	 * walk the list of all aobjs.
+	 */
+restart:
+	simple_lock(&aobject_list_lock);
+	for (aobj = LIST_FIRST(&aobject_list); aobj != NULL; aobj = nextaobj) {
+
+		/*
+		 * try to get the object lock, start all over if we fail.
+		 * most of the time we'll get the aobj lock,
+		 * so this should be a rare case.
+		 */
+		if (!simple_lock_try(&aobj->u_obj.Lock)) {
+			simple_unlock(&aobject_list_lock);
+			goto restart;
+		}
+		/*
+		 * add a ref to the aobj so it doesn't disappear
+		 * while we're working.
+		 */
+
+		vm_object_reference(&aobj->u_obj);
+
+		/*
+		 * now it's safe to unlock the uao list.
+		 */
+
+		simple_unlock(&aobject_list_lock);
+
+		/*
+		 * page in any pages in the swslot range.
+		 * if there's an error, abort and return the error.
+		 */
+
+		rv = vm_aobject_pagein(aobj, startslot, endslot);
+		if (rv) {
+			vm_aobject_detach(&aobj->u_obj);
+			return (rv);
+		}
+
+		/*
+		 * we're done with this aobj.
+		 * relock the list and drop our ref on the aobj.
+		 */
+
+		simple_lock(&aobject_list_lock);
+		nextaobj = LIST_NEXT(aobj, u_list);
+		vm_aobject_detach(&aobj->u_obj);
+	}
+
+	/*
+	 * done with traversal, unlock the list
+	 */
+	simple_unlock(&aobject_list_lock);
+	return (FALSE);
+}
+
+/*
+ * page in any pages from aobj in the given range.
+ *
+ * => aobj must be locked and is returned locked.
+ * => returns TRUE if pagein was aborted due to lack of memory.
+ */
+static bool_t
+vm_aobject_pagein(aobj, startslot, endslot)
+	vm_aobject_t aobj;
+	int startslot, endslot;
+{
+	bool_t rv;
+	if (VAO_USES_SWHASH(aobj)) {
+		struct vao_swhash_elt *elt;
+		int buck;
+
+restart:
+		for (buck = aobj->u_swhashmask; buck >= 0; buck--) {
+			LIST_FOREACH(elt, &aobj->u_swhash[buck], list) {
+				int i;
+
+				for (i = 0; i < VAO_SWHASH_CLUSTER_SIZE; i++) {
+					int slot = elt->slots[i];
+					int pageidx = VAO_SWHASH_ELT_PAGEIDX_BASE(elt) + i;
+
+					/*
+					 * if the slot isn't in range, skip it.
+					 */
+
+					if (slot < startslot || slot >= endslot) {
+						continue;
+					}
+
+					/*
+					 * process the page,
+					 * the start over on this object
+					 * since the swhash elt
+					 * may have been freed.
+					 */
+					rv = vm_aobject_pagein_page(aobj, pageidx);
+					if (rv) {
+						return (rv);
+					}
+					goto restart;
+				}
+			}
+		}
+	} else {
+		int i;
+
+		for (i = 0; i < aobj->u_pages; i++) {
+			int slot = aobj->u_swslots[i];
+			/*
+			 * if the slot isn't in range, skip it
+			 */
+
+			if (slot < startslot || slot >= endslot) {
+				continue;
+			}
+
+			/*
+			 * process the page.
+			 */
+			rv = vm_aobject_pagein_page(aobj, i);
+			if (rv) {
+				return (rv);
+			}
+		}
+	}
+	return (FALSE);
+}
+
+/*
+ * page in a page from an aobj.  used for swap_off.
+ * returns TRUE if pagein was aborted due to lack of memory.
+ *
+ * => aobj must be locked and is returned locked.
+ */
+static bool_t
+vm_aobject_pagein_page(aobj, pageidx)
+	vm_aobject_t aobj;
+	int pageidx;
+{
+	vm_page_t pg;
+	int rv, npages;
+
+	pg = NULL;
+	npages = 1;
+	/* locked: aobj */
+	rv = vm_pager_get_pages(&aobj->u_obj.pager, &pg, npages, TRUE);
+	/* unlocked: aobj */
+
+	/*
+	 * relock and finish up.
+	 */
+	simple_lock(&aobj->u_obj.Lock);
+	switch (rv) {
+	case VM_PAGER_OK:
+		return (TRUE);
+
+	case VM_PAGER_FAIL:
+		break;
+	}
+
+	/*
+	 * ok, we've got the page now.
+	 * mark it as dirty, clear its swslot and un-busy it.
+	 */
+	vm_aobject_dropswap(&aobj->u_obj, pageidx);
+
+	/*
+	 * deactivate the page (to make sure it's on a page queue).
+	 */
+	vm_page_lock_queues();
+	if (pg->wire_count == 0) {
+		vm_page_deactivate(pg);
+	}
+	vm_page_unlock_queues();
+
+	if (pg->flags & PG_WANTED) {
+		wakeup(pg);
+	}
+	pg->flags &= ~(PG_WANTED|PG_BUSY|PG_CLEAN|PG_FAKE);
+
+	return (FALSE);
 }

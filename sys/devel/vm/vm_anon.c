@@ -152,6 +152,7 @@ vm_anon_free(anon)
 {
 	vm_page_t pg;
 
+	KASSERT(anon->an_ref == 0);
 	/*
 	 * get page
 	 */
@@ -164,16 +165,47 @@ vm_anon_free(anon)
 	 */
 
 	if (pg) {
-		if ((pg->flags & PG_BUSY) != 0) {
-			/* tell them to dump it when done */
-			pg->flags |= PG_RELEASED;
-			return;
-		}
+		/*
+		 * if the page is owned by a object (now locked), then we must
+		 * kill the loan on the page rather than free it.
+		 */
+		if(pg->object) {
+			vm_page_lock_queues();
+			pg->anon = NULL;
+			vm_page_unlock_queues();
+			simple_unlock(&pg->object->Lock);
+		} else {
+			/*
+			 * page has no object, so we must be the owner of it.
+			 */
 
-		pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
-		vm_page_lock_queues();		/* lock out pagedaemon */
-		vm_page_free(pg);			/* bye bye */
-		vm_page_unlock_queues();	/* free the daemon */
+			KASSERT((pg->flags & PG_RELEASED) == 0);
+			simple_lock(&anon->an_lock);
+			pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
+
+			/*
+			 * if the page is busy, mark it as PG_RELEASED
+			 * so that uvm_anon_release will release it later.
+			 */
+
+			if ((pg->flags & PG_BUSY) != 0) {
+				/* tell them to dump it when done */
+				pg->flags |= PG_RELEASED;
+				simple_unlock(&anon->an_lock);
+				return;
+			}
+			vm_page_lock_queues();
+			vm_page_free(pg);
+			m_page_unlock_queues();
+			simple_unlock(&anon->an_lock);
+		}
+	}
+	if (pg == NULL && anon->an_swslot > 0) {
+		/* this page is no longer only in swap. */
+		simple_lock(&swap_data_lock);
+		KASSERT(cnt.swpgonly > 0);
+		cnt.swpgonly--;
+		simple_unlock(&swap_data_lock);
 	}
 
 	/*
@@ -185,6 +217,10 @@ vm_anon_free(anon)
 	 * now that we've stripped the data areas from the anon, free the anon
 	 * itself!
 	 */
+
+	KASSERT(anon->u.an_page == NULL);
+	KASSERT(anon->an_swslot == 0);
+
 	simple_lock(&anon->u.an_freelock);
 	anon->u.an_nxt = anon->u.an_free;
 	anon->u.an_free = anon;
@@ -210,8 +246,126 @@ vm_anon_dropswap(anon)
 
 	if (anon->u.an_page == NULL) {
 		/* this page is no longer only in swap. */
-		simple_lock(&uvm.swap_data_lock);
+		simple_lock(&swap_data_lock);
 		cnt.v_swpgonly--;
-		simple_unlock(&uvm.swap_data_lock);
+		simple_unlock(&swap_data_lock);
 	}
+}
+
+/*
+ * page in every anon that is paged out to a range of swslots.
+ *
+ * swap_syscall_lock should be held (protects anonblock_list).
+ */
+bool_t
+vm_anon_swap_off(startslot, endslot)
+	int startslot, endslot;
+{
+	struct vm_anonblock *anonblock;
+
+	LIST_FOREACH(anonblock, &anonblock_list, list) {
+		int i;
+
+		/*
+		 * loop thru all the anons in the anonblock,
+		 * paging in where needed.
+		 */
+
+		for (i = 0; i < anonblock->count; i++) {
+			vm_anon_t anon = &anonblock->anons[i];
+			int slot;
+
+			/*
+			 * lock anon to work on it.
+			 */
+
+			simple_lock(&anon->an_lock);
+
+			/*
+			 * is this anon's swap slot in range?
+			 */
+
+			slot = anon->an_swslot;
+			if (slot >= startslot && slot < endslot) {
+				bool_t rv;
+
+				/*
+				 * yup, page it in.
+				 */
+
+				/* locked: anon */
+				rv = vm_anon_pagein(anon);
+				/* unlocked: anon */
+
+				if (rv) {
+					return rv;
+				}
+			} else {
+
+				/*
+				 * nope, unlock and proceed.
+				 */
+
+				simple_unlock(&anon->an_lock);
+			}
+		}
+	}
+	return (FALSE);
+}
+
+static bool_t
+vm_anon_pagein(anon)
+	vm_anon_t anon;
+{
+	vm_page_t pg;
+	vm_object_t obj;
+	int rv;
+
+	/* locked: anon */
+	rv = vm_fault_anonget(NULL, NULL, anon);
+	/*
+	 * if rv == 0, anon is still locked, else anon
+	 * is unlocked
+	 */
+	switch (rv) {
+	default:
+		return (TRUE);
+	}
+	/*
+	 * ok, we've got the page now.
+	 * mark it as dirty, clear its swslot and un-busy it.
+	 */
+
+	pg = anon->u.an_page;
+	obj = pg->object;
+	if (anon->an_swslot > 0) {
+		vm_swap_free(anon->an_swslot, 1);
+	}
+	anon->an_swslot = 0;
+	pg->flags &= ~(PG_CLEAN);
+
+	/*
+	 * deactivate the page (to put it on a page queue)
+	 */
+
+	pmap_clear_reference(VM_PAGE_TO_PHYS(pg));
+	vm_page_lock_queues();
+	if (pg->wire_count == 0) {
+		vm_page_deactivate(pg);
+	}
+	vm_page_unlock_queues();
+	if (pg->flags & PG_WANTED) {
+		wakeup(pg);
+		pg->flags &= ~(PG_WANTED);
+	}
+
+	/*
+	 * unlock the anon and we're done.
+	 */
+
+	simple_unlock(&anon->an_lock);
+	if (obj) {
+		simple_unlock(&obj->Lock);
+	}
+	return (FALSE);
 }

@@ -119,7 +119,7 @@ struct vm_map_entry {
 	int							advice;			/* madvise advice */
 
 	/* etype is a bitmap that replaces the following 4 items */
-	int							etype;			/* entry type */
+	//int							etype;			/* entry type */
 	struct vm_aref				aref;			/* anonymous overlay */
 };
 
@@ -230,25 +230,25 @@ vm_map_entry_t	 vm_map_entry_create (vm_map_t);
 void		vm_map_entry_delete (vm_map_t, vm_map_entry_t);
 void		vm_map_entry_dispose (vm_map_t, vm_map_entry_t);
 void		vm_map_entry_unwire (vm_map_t, vm_map_entry_t);
-int		 	vm_map_find (vm_map_t, vm_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
-int		 	vm_map_findspace (vm_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
-int		 	vm_map_inherit (vm_map_t, vm_offset_t, vm_offset_t, vm_inherit_t);
-void		vm_map_init (struct vm_map *, vm_offset_t, vm_offset_t, bool_t);
-int			vm_map_insert (vm_map_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
-int		 	vm_map_lookup (vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *, bool_t *, bool_t *);
-void		vm_map_lookup_done (vm_map_t, vm_map_entry_t);
-bool_t		vm_map_lookup_entry (vm_map_t, vm_offset_t, vm_map_entry_t *);
-int		 	vm_map_pageable (vm_map_t, vm_offset_t, vm_offset_t, bool_t);
-int		 	vm_map_clean (vm_map_t, vm_offset_t, vm_offset_t, bool_t, bool_t);
-void		vm_map_print (vm_map_t, bool_t);
-int		 	vm_map_protect (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
-void		vm_map_reference (vm_map_t);
-int		 	vm_map_remove (vm_map_t, vm_offset_t, vm_offset_t);
-void		vm_map_simplify (vm_map_t, vm_offset_t);
-void		vm_map_simplify_entry (vm_map_t, vm_map_entry_t);
-void		vm_map_startup (void);
-int		 	vm_map_submap (vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
-int			vm_map_advice (vm_map_t, vm_offset_t, vm_offset_t, int);
-int			vm_map_willneed (vm_map_t, vm_offset_t, vm_offset_t);
+int		 	vm_map_find(vm_map_t, vm_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
+int		 	vm_map_findspace(vm_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
+int		 	vm_map_inherit(vm_map_t, vm_offset_t, vm_offset_t, vm_inherit_t);
+void		vm_map_init(struct vm_map *, vm_offset_t, vm_offset_t, bool_t);
+int			vm_map_insert(vm_map_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
+int		 	vm_map_lookup(vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *, bool_t *, bool_t *);
+void		vm_map_lookup_done(vm_map_t, vm_map_entry_t);
+bool_t		vm_map_lookup_entry(vm_map_t, vm_offset_t, vm_map_entry_t *);
+int		 	vm_map_pageable(vm_map_t, vm_offset_t, vm_offset_t, bool_t);
+int		 	vm_map_clean(vm_map_t, vm_offset_t, vm_offset_t, bool_t, bool_t);
+void		vm_map_print(vm_map_t, bool_t);
+int		 	vm_map_protect(vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
+void		vm_map_reference(vm_map_t);
+int		 	vm_map_remove(vm_map_t, vm_offset_t, vm_offset_t);
+void		vm_map_simplify(vm_map_t, vm_offset_t);
+void		vm_map_simplify_entry(vm_map_t, vm_map_entry_t);
+void		vm_map_startup(void);
+int		 	vm_map_submap(vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
+int			vm_map_advice(vm_map_t, vm_offset_t, vm_offset_t, int);
+int			vm_map_willneed(vm_map_t, vm_offset_t, vm_offset_t);
 #endif
 #endif /* _VM_MAP_ */

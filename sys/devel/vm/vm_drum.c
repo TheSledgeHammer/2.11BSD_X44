@@ -28,7 +28,7 @@
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_text.h>
-
+/* ARGUNUSED */
 /*
  * Expand the swap area for both the data and stack segments.
  * If space is not available for both, retract and return ENOMEM.
@@ -61,7 +61,7 @@ vm_swpexpand(ds, ss, dmp, smp)
 	}
 	return (0);
 }
-
+/* ARGUNUSED */
 /*
  * Expand or contract the virtual swap segment mapped
  * by the argument diskmap so as to just allow the given size.
@@ -173,6 +173,7 @@ vm_vsxfree(xp, ts)
 	}
 }
 
+/* ARGUNUSED */
 /*
  * Given a base/size pair in virtual swap area,
  * return a physical base/size pair which is the
@@ -204,7 +205,7 @@ vm_vstodb(vsbase, vssize, dmp, dbp, rev)
 	dbp->db_size = imin(vssize, blk - vsbase);
 	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
 }
-
+/* ARGUNUSED */
 /*
  * Convert a virtual page number
  * to its corresponding disk block number.
@@ -215,7 +216,7 @@ vm_vstodb(vsbase, vssize, dmp, dbp, rev)
 swblk_t
 vm_vtod(p, v, dmap, smap)
 	register struct proc *p;
-	unsigned v;
+	unsigned int v;
 	struct dmap *dmap, *smap;
 {
 	struct dblock db;

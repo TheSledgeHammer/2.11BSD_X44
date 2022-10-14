@@ -575,15 +575,16 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 			endva = roundup(endva, chunksize);
 			vm_map_clip_start(map, entry, startva);
 			/* watch out for endva wrap-around! */
-			if (endva >= startva)
+			if (endva >= startva) {
 				vm_map_clip_end(map, entry, endva);
+			}
 		}
 
 		entry->aref.ar_pageoff = 0;
-		entry->aref.ar_amap = vm_amap_alloc(entry->end - entry->start, 0,
-		    waitf);
-		if (entry->aref.ar_amap != NULL)
-			entry->etype &= ~VM_ET_NEEDSCOPY;
+		entry->aref.ar_amap = vm_amap_alloc(entry->end - entry->start, 0, waitf);
+		if (entry->aref.ar_amap != NULL ) {
+			entry->needs_copy = FALSE;
+		}
 		return;
 	}
 
@@ -598,7 +599,7 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 	 */
 
 	if (entry->aref.ar_amap->am_ref == 1) {
-		entry->etype &= ~VM_ET_NEEDSCOPY;
+		entry->needs_copy = FALSE;
 		return;
 	}
 
@@ -623,7 +624,7 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 	 */
 
 	if (srcamap->am_ref == 1) {		/* take it over? */
-		entry->etype &= ~VM_ET_NEEDSCOPY;
+		entry->needs_copy = FALSE;
 		amap->am_ref--;				/* drop final reference to map */
 		vm_amap_free(amap);			/* dispose of new (unused) amap */
 		amap_unlock(srcamap);
@@ -674,7 +675,7 @@ vm_amap_copy(map, entry, waitf, canchunk, startva, endva)
 
 	entry->aref.ar_pageoff = 0;
 	entry->aref.ar_amap = amap;
-	entry->etype &= ~VM_ET_NEEDSCOPY;
+	entry->needs_copy = FALSE;
 
 	/*
 	 * done!
@@ -750,7 +751,7 @@ ReStart:
 		 * [note: if loan_count == 0, then the anon must own the page]
 		 */
 
-		if (anon->an_ref > 1 && pg->loan_count == 0) {
+		if (anon->an_ref > 1) {
 
 			/*
 			 * if the page is busy then we have to unlock, wait for
@@ -759,7 +760,6 @@ ReStart:
 			if (pg->flags & PG_BUSY) {
 				pg->flags |= PG_WANTED;
 				amap_unlock(amap);
-				//UVM_UNLOCK_AND_WAIT(pg, &anon->an_lock, FALSE, "cownow", 0);
 				goto ReStart;
 			}
 
@@ -800,7 +800,6 @@ ReStart:
 			 * PG_RELEASED | PG_WANTED.
 			 */
 			npg->flags &= ~(PG_BUSY|PG_FAKE);
-			//UVM_PAGE_OWN(npg, NULL);
 			vm_page_lock_queues();
 			vm_page_activate(npg);
 			vm_page_unlock_queues();
@@ -1041,7 +1040,7 @@ vm_amap_wiperange(amap, slotoff, slots)
  */
 vm_anon_t
 vm_amap_lookup(aref, offset)
-	vm_amap_t aref;
+	vm_aref_t aref;
 	caddr_t offset;
 {
 	int slot;
@@ -1065,7 +1064,7 @@ vm_amap_lookup(aref, offset)
  */
 void
 vm_amap_lookups(aref, offset, anons, npages)
-	vm_amap_t aref;
+	vm_aref_t aref;
 	caddr_t offset;
 	vm_anon_t *anons;
 	int npages;

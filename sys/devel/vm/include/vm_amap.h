@@ -245,8 +245,8 @@ void			vm_amap_pp_adjref(vm_amap_t, int, vm_size_t, int, vm_anon_t *); 	/* adjus
 void			vm_amap_pp_establish(vm_amap_t, caddr_t); 							/* establish ppref */
 void			vm_amap_wiperange(vm_amap_t, int, int, vm_anon_t *); 				/* wipe part of an amap */
 
-vm_anon_t		vm_amap_lookup(vm_amap_t, caddr_t);
-void			vm_amap_lookups(vm_amap_t, caddr_t, vm_anon_t *, int);
+vm_anon_t		vm_amap_lookup(vm_aref_t, caddr_t);
+void			vm_amap_lookups(vm_aref_t, caddr_t, vm_anon_t *, int);
 caddr_t			vm_amap_add(vm_aref_t, caddr_t, vm_anon_t, int);
 void			vm_amap_unadd(vm_amap_t, caddr_t);
 void			vm_amap_ref(vm_map_entry_t, int);

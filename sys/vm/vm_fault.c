@@ -96,7 +96,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_map_t	map;
 	vm_offset_t	vaddr;
 	vm_prot_t	fault_type;
-	bool_t	change_wiring;
+	bool_t		change_wiring;
 {
 	vm_object_t				first_object;
 	vm_offset_t				first_offset;

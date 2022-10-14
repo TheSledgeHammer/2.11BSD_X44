@@ -125,19 +125,19 @@ struct swpclean	swap_pager_inuse;	/* list of pending page cleans */
 struct swpclean	swap_pager_free;	/* list of free pager clean structs */
 struct pagerlst	swap_pager_list;	/* list of "named" anon regions */
 
-static void 		swap_pager_init (void);
-static vm_pager_t	swap_pager_alloc (caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
-static void			swap_pager_clean (int);
+static void 		swap_pager_init(void);
+static vm_pager_t	swap_pager_alloc(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
+static void			swap_pager_clean(int);
 #ifdef DEBUG
-static void			swap_pager_clean_check (vm_page_t *, int, int);
+static void			swap_pager_clean_check(vm_page_t *, int, int);
 #endif
-static void			swap_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
-static void			swap_pager_dealloc (vm_pager_t);
-static int			swap_pager_getpage (vm_pager_t, vm_page_t *, int, bool_t);
-static bool_t		swap_pager_haspage (vm_pager_t, vm_offset_t);
-static int			swap_pager_io (sw_pager_t, vm_page_t *, int, int);
-static void			swap_pager_iodone (struct buf *);
-static int			swap_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
+static void			swap_pager_cluster(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+static void			swap_pager_dealloc(vm_pager_t);
+static int			swap_pager_getpage(vm_pager_t, vm_page_t *, int, bool_t);
+static bool_t		swap_pager_haspage(vm_pager_t, vm_offset_t);
+static int			swap_pager_io(sw_pager_t, vm_page_t *, int, int);
+static void			swap_pager_iodone(struct buf *);
+static int			swap_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
 
 struct pagerops swappagerops = {
 	swap_pager_init,

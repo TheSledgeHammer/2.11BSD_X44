@@ -2672,7 +2672,7 @@ vmspace_fork(vm1)
 						if (old_entry->max_protection & VM_PROT_WRITE) {
 							pmap_protect(old_map->pmap, old_entry->start, old_entry->end, old_entry->protection & ~VM_PROT_WRITE);
 						}
-						old_entry->etype |= VM_ET_NEEDSCOPY;
+						old_entry->etype |= TRUE;
 					}
 				} else {
 					pmap_copy(new_pmap, old_map->pmap, new_entry->start, (old_entry->end - old_entry->start), old_entry->start);
@@ -2726,7 +2726,6 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 	vm_map_t				*var_map;	/* IN/OUT */
 	register vm_offset_t	vaddr;
 	register vm_prot_t		fault_type;
-
 	vm_map_entry_t			*out_entry;		/* OUT */
 	vm_object_t				*object;		/* OUT */
 	vm_offset_t				*offset;		/* OUT */
@@ -2739,7 +2738,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 	register vm_map_entry_t	entry;
 	register vm_map_t		map = *var_map;
 	register vm_prot_t		prot;
-	register bool_t		su;
+	register bool_t			su;
 
 	RetryLookup: ;
 

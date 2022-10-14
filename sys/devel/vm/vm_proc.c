@@ -60,6 +60,16 @@ sbrk()
 	return (EOPNOTSUPP);	/* return (0) */
 }
 
+int
+sstk()
+{
+	register struct sstk_args {
+		syscallarg(int) incr;
+	} *uap = (struct sstk_args *) u.u_ap;
+
+	return (EOPNOTSUPP);
+}
+
 /*
  * Change the size of the data+stack regions of the process.
  * If the size is shrinking, it's easy -- just release the extra core.
@@ -275,7 +285,7 @@ swap(blkno, coreaddr, count, vp, rdflg)
 		bp->b_vp = vp;
 		bp->b_dev = swapdev; 				/* TODO: add support for finding swapdrum */
 		bp->b_bcount = ctob(tcount);
-		bp->b_un.b_addr = (caddr_t)(coreaddr<<6);
+		bp->b_un.b_addr = (caddr_t)(coreaddr << 6);
 		bp->b_xmem = (coreaddr >> 10) & 077;
 		VOP_STRATEGY(bp);
 		while ((bp->b_flags & B_DONE) == 0) {

@@ -48,7 +48,7 @@
 
 TAILQ_HEAD(pagerlst, pager_struct);
 
-struct	pager_struct {
+struct pager_struct {
 	TAILQ_ENTRY(pager_struct) 	pg_list;	/* links for list management */
 	caddr_t			  			pg_handle;	/* ext. handle (vp, dev, fp) */
 	int			  				pg_type;	/* type of pager */
@@ -103,27 +103,27 @@ struct pagerops {
 #ifdef _KERNEL
 extern struct pagerops *dfltpagerops;
 
-vm_pager_t	 vm_pager_allocate (int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
-vm_page_t	 vm_pager_atop (vm_offset_t);
-void		 vm_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
-void		 vm_pager_clusternull (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
-void		 vm_pager_deallocate (vm_pager_t);
-int		 	 vm_pager_get_pages (vm_pager_t, vm_page_t *, int, bool_t);
-bool_t	 	 vm_pager_has_page (vm_pager_t, vm_offset_t);
-void		 vm_pager_init (void);
-vm_pager_t	 vm_pager_lookup (struct pagerlst *, caddr_t);
-vm_offset_t	 vm_pager_map_pages (vm_page_t *, int, bool_t);
-int		 	 vm_pager_put_pages	(vm_pager_t, vm_page_t *, int, bool_t);
-void		 vm_pager_sync (void);
-void		 vm_pager_unmap_pages (vm_offset_t, int);
+vm_pager_t	 vm_pager_allocate(int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
+vm_page_t	 vm_pager_atop(vm_offset_t);
+void		 vm_pager_cluster(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+void		 vm_pager_clusternull(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+void		 vm_pager_deallocate(vm_pager_t);
+int		 	 vm_pager_get_pages(vm_pager_t, vm_page_t *, int, bool_t);
+bool_t	 	 vm_pager_has_page(vm_pager_t, vm_offset_t);
+void		 vm_pager_init(void);
+vm_pager_t	 vm_pager_lookup(struct pagerlst *, caddr_t);
+vm_offset_t	 vm_pager_map_pages(vm_page_t *, int, bool_t);
+int		 	 vm_pager_put_pages(vm_pager_t, vm_page_t *, int, bool_t);
+void		 vm_pager_sync(void);
+void		 vm_pager_unmap_pages(vm_offset_t, int);
 
 #define 	 vm_pager_cancluster(p, b)	((p)->pg_flags & (b))
 
 /*
  * XXX compat with old interface
  */
-int		 	 vm_pager_get (vm_pager_t, vm_page_t, bool_t);
-int		 	 vm_pager_put (vm_pager_t, vm_page_t, bool_t);
+int		 	 vm_pager_get(vm_pager_t, vm_page_t, bool_t);
+int		 	 vm_pager_put(vm_pager_t, vm_page_t, bool_t);
 #endif
 
 #endif	/* _VM_PAGER_H_ */
