@@ -45,19 +45,18 @@
 
 /* vm_extent */
 void	vm_exbootinit(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
-void	vm_exbootinita(struct extent *, char *, u_long, u_long, int, caddr_t, size_t, int);
 void	vm_exboot_region(struct extent *, u_long, u_long, int);
-void	vm_exboot_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
+void	vm_exboot_subregion(struct extent *, u_long, u_long, u_long, u_long, u_long, int, u_long *);
 int		vm_exalloc_region(struct extent *, u_long, u_long, int);
-int		vm_exalloc_subregion(struct extent *, u_long, u_long, u_long, int, u_long *);
+int		vm_exalloc_subregion(struct extent *, u_long, u_long, u_long, u_long, u_long, int, u_long *);
 void	vm_exfree(struct extent *, u_long, u_long, int);
 
 /* example vm_map startup using extents */
-static struct extent 	*kmap_extent, *kentry_extent;//, *vmspace_extent;
+static struct extent 	*kmap_extent, *kentry_extent, *vmspace_extent;
 static struct extent 	kmap_store, kentry_store;
 vm_map_t 		kmapex;
 vm_map_entry_t 	kentryex;
-//struct vmspace	vmspaceex;
+struct vmspace	vmspaceex;
 
 long vmspace_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(struct vmspace *))];
 long kmap_storage[EXTENT_FIXED_STORAGE_SIZE(sizeof(vm_map_t))];
@@ -68,6 +67,7 @@ vm_map_startup1()
 {
 	kmap_extent = vm_exinit("KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_NOWAIT);
 	kentry_extent = vm_exinit("KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_NOWAIT);
+	vmspace_extent = vm_exinit("VMSPACE", &vmspaceex[0], sizeof(vmspaceex), M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_NOWAIT);
 }
 
 void
@@ -123,15 +123,30 @@ vm_exboot_region(ex, size, flags)
 }
 
 void
-vm_exboot_subregion(ex, size, alignment, boundary, flags, result)
+vm_exboot_subregion(ex, start, end, size, alignment, boundary, flags, result)
 	struct extent 	*ex;
+	u_long start, end, size, alignment, boundary;
+	int flags;
+	u_long *result;
+{
+	int error;
+
+	error = vm_exalloc_subregion(ex, start, end, size, alignment, boundary, flags, result);
+	if (error != 0) {
+		vm_exfree(ex, start, size, flags);
+	}
+}
+
+void
+vm_exboot(ex, size, alignment, boundary, flags, result)
+	struct extent *ex;
 	u_long size, alignment, boundary;
 	int flags;
 	u_long *result;
 {
 	int error;
 
-	error = vm_exalloc_subregion(ex, size, alignment, boundary, flags, result);
+	error = vm_exalloc(ex, size, alignment, boundary, flags, result);
 	if (error != 0) {
 		vm_exfree(ex, ex->ex_start, size, flags);
 	}
@@ -149,7 +164,19 @@ vm_exalloc_region(ex, start, size, flags)
 }
 
 int
-vm_exalloc_subregion(ex, size, alignment, boundary, flags, result)
+vm_exalloc_subregion(ex, start, end, size, alignment, boundary, flags, result)
+	struct extent *ex;
+	u_long start, end, size, alignment, boundary;
+	int flags;
+	u_long *result;
+{
+	int error;
+	error = extent_alloc_subregion(ex, start, end, size, alignment, boundary, flags, result);
+	return (error);
+}
+
+int
+vm_exalloc(ex, size, alignment, boundary, flags, result)
 	struct extent *ex;
 	u_long size, alignment, boundary;
 	int flags;

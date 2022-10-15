@@ -151,12 +151,13 @@ vm_anon_free(anon)
 	vm_anon_t anon;
 {
 	vm_page_t pg;
+	vm_segment_t seg;
 
 	KASSERT(anon->an_ref == 0);
 	/*
 	 * get page
 	 */
-
+	seg = anon->u.an_segment;
 	pg = anon->u.an_page;
 
 	/*
@@ -203,8 +204,8 @@ vm_anon_free(anon)
 	if (pg == NULL && anon->an_swslot > 0) {
 		/* this page is no longer only in swap. */
 		simple_lock(&swap_data_lock);
-		KASSERT(cnt.swpgonly > 0);
-		cnt.swpgonly--;
+		KASSERT(cnt.v_swpgonly > 0);
+		cnt.v_swpgonly--;
 		simple_unlock(&swap_data_lock);
 	}
 
@@ -318,6 +319,7 @@ vm_anon_pagein(anon)
 	vm_anon_t anon;
 {
 	vm_page_t pg;
+	vm_segment_t seg;
 	vm_object_t obj;
 	int rv;
 

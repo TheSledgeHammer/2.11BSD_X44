@@ -5,6 +5,13 @@
  *
  *	@(#)vm_text.c	1.2 (2.11BSD GTE) 11/26/94
  */
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vm_swap.c	1.3 (2.11BSD GTE) 3/10/93
+ */
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -331,8 +338,90 @@ vm_xrele(vp)
 }
 
 /*
- * Swap out process p if segmented.
- * NOTE: Likely to be run within the current swapout method as needed
+ * TODO:
+ * Config for process segmentation to be enabled or disabled
+ */
+/*
+ * Swap a process in.
+ * Allocate data and possible text separately.  It would be better
+ * to do largest first.  Text, data, stack and u. are allocated in
+ * that order, as that is likely to be in order of size.
+ */
+void
+vm_xswapin(p)
+	struct proc *p;
+{
+	register struct vm_text *xp;
+	register memaddr_t x;
+	memaddr_t a[3];
+	vm_offset_t addr;
+
+	x = NULL;
+	addr = (vm_offset_t)p->p_addr;
+	vm_map_pageable(kernel_map, addr, addr + USPACE, FALSE);
+
+	/* Malloc the text segment first, as it tends to be largest. */
+	xp = p->p_textp;
+	if (xp) {
+		xlock(xp);
+		if (!xp->psx_caddr && !xp->psx_ccount) {
+			x = rmalloc(coremap, xp->psx_size);
+			if (!x) {
+				xunlock(xp);
+				return;
+			}
+		}
+	}
+	if (rmalloc3(coremap, p->p_dsize, p->p_ssize, USIZE, a) == NULL) {
+		if (x) {
+			rmfree(coremap, xp->psx_size, x);
+		}
+		if (xp) {
+			xunlock(xp);
+		}
+		return;
+	}
+	if (xp) {
+		if (x) {
+			xp->psx_caddr = x;
+			if ((xp->psx_flag & XLOAD) == 0) {
+				swap(xp->psx_daddr, x, xp->psx_size, p->p_textvp, B_READ);
+			}
+		}
+		xp->psx_ccount++;
+		xunlock(xp);
+	}
+	if (p->p_dsize) {
+		swap(p->p_daddr, a[0], p->p_dsize, p->p_textvp, B_READ);
+		rmfree(swapmap, ctod(p->p_dsize), p->p_daddr);
+	}
+	if (p->p_ssize) {
+		swap(p->p_saddr, a[1], p->p_ssize, p->p_textvp, B_READ);
+		rmfree(swapmap, ctod(p->p_ssize), p->p_saddr);
+	}
+	swap(addr, a[2], USIZE, p->p_textvp, B_READ);
+	rmfree(swapmap, ctod(USIZE), addr);
+	p->p_daddr = a[0];
+	p->p_saddr = a[1];
+	addr = a[2];
+	if (p->p_stat == SRUN) {
+		setrq(p);
+	}
+	p->p_flag |= SLOAD;
+	p->p_time = 0;
+
+	cnt.v_swpin++;
+}
+
+/*
+ * Swap out process p.
+ * odata and ostack are the old data size and the stack size
+ * of the process, and are supplied during core expansion swaps.
+ * The freecore flag causes its core to be freed -- it may be
+ * off when called to create an image for a child process
+ * in newproc.
+ *
+ * panic: out of swap space
  */
 void
 vm_xswapout(p, freecore, odata, ostack)
@@ -340,7 +429,18 @@ vm_xswapout(p, freecore, odata, ostack)
 	int freecore;
 	register u_int odata, ostack;
 {
+	vm_offset_t addr;
+	vm_size_t size;
 	memaddr_t a[3];
+
+	size = round_page(ctob(USIZE));
+	addr = (vm_offset_t)p->p_addr;
+
+	/*
+	 * Unwire the to-be-swapped process's user struct and kernel stack.
+	 */
+	vm_map_pageable(kernel_map, addr, addr + addr+size, TRUE);
+	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
 
 	if (odata == X_OLDSIZE) {
 		odata = p->p_dsize;
@@ -366,13 +466,13 @@ vm_xswapout(p, freecore, odata, ostack)
 			rmfree(coremap, ostack, p->p_saddr);
 		}
 	}
-	swap(a[2], p->p_addr, USIZE, p->p_textvp, B_WRITE);
+	swap(a[2], addr, USIZE, p->p_textvp, B_WRITE);
 	if (freecore == X_FREECORE) {
-		rmfree(coremap, USIZE, p->p_addr);
+		rmfree(coremap, USIZE, addr);
 	}
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
-	p->p_addr = a[2];
+	addr = a[2];
 	p->p_flag &= ~(P_SLOAD | P_SLOCK);
 	p->p_time = 0;
 

@@ -201,15 +201,15 @@ vm_amap_alloc1(slots, padslots, waitf)
 	amap->am_nslot = slots;
 	amap->am_nused = 0;
 
-	amap->am_slots = malloc(totalslots * sizeof(int), M_VMAMAP, waitf);
+	amap->am_slots = calloc(totalslots, sizeof(int), M_VMAMAP, waitf);
 	if (amap->am_slots == NULL)
 		goto fail1;
 
-	amap->am_bckptr = malloc(totalslots * sizeof(int), M_VMAMAP, waitf);
+	amap->am_bckptr = calloc(totalslots, sizeof(int), M_VMAMAP, waitf);
 	if (amap->am_bckptr == NULL)
 		goto fail2;
 
-	amap->am_anon = malloc(totalslots * sizeof(struct vm_anon *), M_VMAMAP, waitf);
+	amap->am_anon = calloc(totalslots, sizeof(struct vm_anon *), M_VMAMAP, waitf);
 	if (amap->am_anon == NULL)
 		goto fail3;
 
@@ -291,8 +291,8 @@ vm_amap_extend(entry, addsize)
 	vm_map_entry_t entry;
 	vm_size_t addsize;
 {
-	vm_amap_t amap = entry->aref.ar_amap;
-	int slotoff = entry->aref.ar_pageoff;
+	vm_amap_t amap;
+	int slotoff;
 	int slotmapped, slotadd, slotneed;
 #ifdef VM_AMAP_PPREF
 	int *newppref, *oldppref;
@@ -300,6 +300,9 @@ vm_amap_extend(entry, addsize)
 	u_int *newsl, *newbck, *oldsl, *oldbck;
 	struct vm_anon **newover, **oldover;
 	int slotadded;
+
+	amap = entry->aref.ar_amap;
+	slotoff = entry->aref.ar_pageoff;
 
 	/*
 	 * first, determine how many slots we need in the amap.  don't

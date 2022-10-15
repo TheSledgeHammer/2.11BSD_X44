@@ -131,8 +131,9 @@
 #define M_UFS211		78	/* UFS211 bufmap */
 #define M_UFMLOPS		79	/* UFML uop structure */
 #define M_GSCHED		80	/* global scheduler structures */
-#define	M_TEMP			81	/* misc temporary data buffers */
-#define	M_LAST			82	/* Must be last type + 1 */
+#define M_EVDEV			81	/* evdev structures */
+#define	M_TEMP			82	/* misc temporary data buffers */
+#define	M_LAST			83	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -216,7 +217,8 @@
 	"ufs211 buf",	/* 78 M_UFS211 */		\
 	"ufml uops",	/* 79 M_UFMLOPS */		\
 	"gscheduler",	/* 80 M_GSCHED */		\
-	"temp",			/* 81 M_TEMP */ 		\
+	"evdev",		/* 81 M_EVDEV */		\
+	"temp",			/* 82 M_TEMP */ 		\
 }
 
 struct kmemstats {

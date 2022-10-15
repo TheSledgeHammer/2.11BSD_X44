@@ -53,7 +53,7 @@ sbrk()
 	/* set d to (new - old) */
 	d = n - p->p_dsize;
 	if (d > 0) {
-		clear(p->p_daddr + p->p_dsize, d);	/* fix this: clear as no kern or vm references */
+		bzero(p->p_daddr + p->p_dsize, d);
 	}
 	p->p_dsize = n;
 	/* Not yet implemented */

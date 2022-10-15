@@ -83,17 +83,10 @@
 #include <devel/vm/include/vm_swap.h>
 
 /*
- * We keep a of pool vndbuf's and vndxfer structures.
- */
-static struct vndxfer 			*vndxfer_pool;
-static struct vndbuf 			*vndbuf_pool;
-
-/*
  * local variables
  */
 static struct extent 			*swapextent;		/* controls the mapping of /dev/drum */
 SIMPLEQ_HEAD(swapbufhead, swapbuf);
-static struct swapbuf 			*swapbuf_pool;
 
 /* list of all active swap devices [by priority] */
 LIST_HEAD(swap_priority, swappri);
@@ -131,9 +124,6 @@ swapdrum_init(swp)
 	if (swapextent == 0) {
 		panic("swapinit: extent_create failed");
 	}
-	&swapbuf_pool = swapbuf_alloc();
-	&vndxfer_pool = vndxfer_alloc();
-	&vndbuf_pool = vndbuf_alloc();
 }
 
 struct vndxfer *

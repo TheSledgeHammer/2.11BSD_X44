@@ -32,7 +32,6 @@
 #include <sys/types.h>
 #include <dev/misc/evdev/input.h>
 
-#define M_EVDEV		90
 #define	NAMELEN		80
 
 struct evdev_dev;

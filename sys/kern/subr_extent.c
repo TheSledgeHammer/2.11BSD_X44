@@ -67,9 +67,9 @@
 #define	wakeup(chan)					((void)0)
 #endif
 
-static	void extent_insert_and_optimize (struct extent *, u_long, u_long, int, struct extent_region *, struct extent_region *);
-static	struct extent_region *extent_alloc_region_descriptor (struct extent *, int);
-static	void extent_free_region_descriptor (struct extent *, struct extent_region *);
+static	void extent_insert_and_optimize(struct extent *, u_long, u_long, int, struct extent_region *, struct extent_region *);
+static	struct extent_region *extent_alloc_region_descriptor(struct extent *, int);
+static	void extent_free_region_descriptor(struct extent *, struct extent_region *);
 
 /*
  * Macro to align to an arbitrary power-of-two boundary.

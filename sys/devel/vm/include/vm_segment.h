@@ -58,6 +58,8 @@ struct vm_segment {
 	vm_size_t					sg_size;				/* size of segment */
 	int							sg_flags;				/* see below */
 
+	vm_anon_t					sg_anon;				/* anon (O,S) */
+
 	int							sg_resident_page_count;	/* number of resident pages */
 
 	vm_offset_t					sg_log_addr;			/* segment logical address */

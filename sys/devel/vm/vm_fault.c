@@ -234,7 +234,7 @@ vm_fault_anonget(map, amap, anon)
 				return (VM_PAGER_OK);
 			}
 			pg->flags |= PG_WANTED;
-			cnt.fltpgwait++;
+			cnt.v_fltpgwait++;
 
 			/*
 			 * the last unlock must be an atomic unlock+wait on
@@ -256,7 +256,7 @@ vm_fault_anonget(map, amap, anon)
 			pg = uvm_pagealloc(NULL, 0, anon, 0);
 			if (pg == NULL) {		/* out of RAM.  */
 				vm_fault_unlockall(map, amap, NULL, anon);
-				cnt.fltnoram++;
+				cnt.v_fltnoram++;
 				uvm_wait("flt_noram1");
 			} else {
 				/* we set the PG_BUSY bit */
@@ -270,7 +270,7 @@ vm_fault_anonget(map, amap, anon)
 				 * it is ok to read an_swslot here because
 				 * we hold PG_BUSY on the page.
 				 */
-				cnt.pageins++;
+				cnt.v_pageins++;
 				error = vm_swap_get(pg, anon->an_swslot, PGO_SYNCIO);
 
 				/*
@@ -317,12 +317,13 @@ vm_fault_anonget(map, amap, anon)
 				 */
 
 				if (anon->an_swslot > 0) {
-					uvm_swap_markbad(anon->an_swslot, 1);
+					vm_swap_markbad(anon->an_swslot, 1);
 				}
 				anon->an_swslot = SWSLOT_BAD;
 
-				if ((pg->flags & PG_RELEASED) != 0)
+				if ((pg->flags & PG_RELEASED) != 0) {
 					goto released;
+				}
 
 				/*
 				 * note: page was never !PG_BUSY, so it
@@ -366,9 +367,9 @@ released:
 			 * we've successfully read the page, activate it.
 			 */
 
-			uvm_lock_pageq();
+			vm_page_lock_queues();
 			vm_page_activate(pg);
-			uvm_unlock_pageq();
+			vm_page_unlock_queues();
 			pg->flags &= ~(PG_WANTED|PG_BUSY|PG_FAKE);
 			if (!locked) {
 				simple_unlock(&anon->an_lock);
@@ -398,7 +399,7 @@ released:
 		 * try it again!
 		 */
 
-		cnt.fltanretry++;
+		cnt.v_fltanretry++;
 		continue;
 	}
 	/*NOTREACHED*/

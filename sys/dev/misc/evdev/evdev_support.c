@@ -88,7 +88,7 @@ evdev_client_alloc(evdev, buffer_size)
 	struct evdev_dev 	*evdev;
 	size_t 				buffer_size;
 {
-	evdev->ev_client = (struct evdev_client *)malloc(offsetof(struct evdev_client, ec_buffer) + sizeof(struct input_event) * buffer_size, M_EVDEV, M_WAITOK | M_ZERO));
+	evdev->ev_client = (struct evdev_client *)malloc(offsetof(struct evdev_client, ec_buffer) + sizeof(struct input_event) * buffer_size, M_EVDEV, M_WAITOK | M_ZERO);
 
 	return (evdev->ev_client);
 }
