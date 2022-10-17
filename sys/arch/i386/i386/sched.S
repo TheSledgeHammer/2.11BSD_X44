@@ -90,16 +90,15 @@ ENTRY(cpu_switch)
 
 		incl	_C_LABEL(cnt)+V_SWTCH
 
-/* switch to new process. first, save context as needed */
+		/* switch to new process. first, save context as needed */
 
 		movl	CPUVAR(CURPROC),%ecx
 
-/* if no process to save, don't bother */
+		/* if no process to save, don't bother */
 		cmpl	$0,%ecx
 		je		sw1
 
 		movl	P_ADDR(%ecx),%ecx
-
 
 		movl	(%esp),%eax							# Hardware registers
 		movl	%eax, PCB_EIP(%ecx)
@@ -110,7 +109,7 @@ ENTRY(cpu_switch)
 		movl	%edi, PCB_EDI(%ecx)
 
 #ifdef NPX
-/* have we used fp, and need a save? */
+		/* have we used fp, and need a save? */
 		mov		CPUVAR(CURPROC),%eax
 		cmp		%eax,_C_LABEL(npxproc)
 		jne		1f
@@ -125,12 +124,9 @@ ENTRY(cpu_switch)
 
 		movl	_C_LABEL(CMAP2),%eax				# save temporary map PTE
 		movl	%eax,PCB_CMAP2(%ecx)				# in our context
-		movl	$0,CPUVAR(CURPROC)				# out of process
+		movl	$0,CPUVAR(CURPROC)					# out of process
 
-		# movw	_C_LABEL(cpl), %ax
-		# movw	%ax, PCB_IML(%ecx)	# save ipl
-
-/* save is done, now choose a new process or idle */
+		/* save is done, now choose a new process or idle */
 sw1:
 		movl	_C_LABEL(whichqs),%edi
 2:
@@ -144,21 +140,21 @@ sw1:
 
 		shll	$3,%eax
 		addl	$_C_LABEL(qs),%eax					# select q
+		pushl	%eax
+		call	_C_LABEL(getrq)
 		movl	%eax,%esi
 
 #ifdef	DIAGNOSTIC
-		cmpl	P_FORW(%eax),%eax 					# linked to self? (e.g. not on list)
-		je		badsw								# not possible
+		cmpl	%esi, %eax							# linked to self? (e.g. not on list)
+		je	badsw								# not possible
 #endif
 
-		movl	P_FORW(%eax),%ecx					# unlink from front of process q
-		movl	P_FORW(%ecx),%edx
-		movl	%edx,P_FORW(%eax)
-		movl	P_BACK(%ecx),%eax
-		movl	%eax,P_BACK(%edx)
+		movl	%esi,%ecx					# unlink from front of process q
+		pushl	%ecx
+		call	_C_LABEL(remrq)
 
-		cmpl	P_FORW(%ecx),%esi					# q empty
-		je		3f
+		cmpl	%ecx,%esi					# q empty
+		je	3f
 		btsl	%ebx,%edi							# nope, set to indicate full
 3:
 		movl	%edi,_C_LABEL(whichqs)				# update q status
@@ -169,11 +165,12 @@ sw1:
 #ifdef	DIAGNOSTIC
 		cmpl	%eax,P_WCHAN(%ecx)
 		jne		badsw
-		cmpb	$ SRUN,P_STAT(%ecx)
+		cmpb	$SRUN,P_STAT(%ecx)
 		jne		badsw
 #endif
-
-		movl	%eax,P_BACK(%ecx)					/* isolate process to run */
+		pushl 	%ecx
+		call	_C_LABEL(getrq)
+		movl	%eax,%ecx
 		movl	P_ADDR(%ecx),%edx
 		movl	PCB_CR3(%edx),%ebx
 
@@ -194,10 +191,6 @@ sw1:
 
 		movl	%ecx,CPUVAR(CURPROC)				# into next process
 		movl	%edx,_C_LABEL(curpcb)
-
-		/* pushl	PCB_IML(%edx)
-		call	_splx
-		popl	%eax*/
 
 		movl	%edx,%eax							# return (1);
 		ret
