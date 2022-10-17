@@ -30,9 +30,9 @@
  * is swapped with the process.
  */
 struct	proc {
-    struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
-	struct	proc 		*p_back;
-
+    //struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
+	//struct	proc 		*p_back;
+    TAILQ_ENTRY(proc)	p_link;			/* Doubly-linked run/sleep queue. */
 	LIST_ENTRY(proc) 	p_list;			/* List of all processes */
 	 	 	 	 	 	 	 	 	 	/* linked list of allocated proc slots */
 										/* also zombies, and free proc's */
@@ -55,7 +55,6 @@ struct	proc {
 	struct	plimit 	 	*p_limit;		/* Process limits. */
 	struct	vmspace  	*p_vmspace;		/* Address space. */
 	struct 	sigacts 	*p_sigacts;		/* Signal actions, state (PROC ONLY). */
-
 
 #define	p_ucred			p_cred->pc_ucred
 #define	p_rlimit		p_limit->pl_rlimit
@@ -92,11 +91,11 @@ struct	proc {
     int	    			p_traceflag;	/* Kernel trace points. */
     struct file 	    *p_tracep;		/* Trace to file. */
     
-    struct	vnode 	    *p_textvp;		/* Vnode of executable. */
+    struct vnode 	    *p_textvp;		/* Vnode of executable. */
     
     long				p_sig;		    /* Signals pending to this process */
     
-    struct	emul		*p_emul;		/* Emulation information */
+    struct emul			*p_emul;		/* Emulation information */
     const struct execsw *p_execsw;		/* Exec package information */
     struct klist		p_klist;		/* Knotes attached to this process */
 
@@ -125,8 +124,6 @@ struct	proc {
 #define	p_endcopy		p_thread
 
     void				*p_thread;		/* Id for this "thread"; Mach glue. XXX */
-
-    TAILQ_ENTRY(proc)	p_link;			/* linked list of running processes */
 
     struct user			*p_addr;		/* virtual address of u. area */
 

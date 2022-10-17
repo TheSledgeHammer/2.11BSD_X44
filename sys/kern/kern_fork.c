@@ -199,7 +199,6 @@ again:
 
 	/* onto allproc */
 	LIST_INSERT_HEAD(&allproc, rpp, p_list); 	/* (allproc is never NULL) */
-	rpp->p_forw = rpp->p_back = NULL;			/* shouldn't be necessary */
 	LIST_INSERT_HEAD(PIDHASH(rpp->p_pid), rpp, p_hash);
 
 	/*

@@ -141,8 +141,8 @@ static vm_hat_t			kmap_hat, kentry_hat;
 vm_map_t 				kmap_free;
 vm_map_entry_t 			kentry_free;
 
-static void	_vm_map_clip_end (vm_map_t, vm_map_entry_t, vm_offset_t);
-static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
+static void	_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
+static void	_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
 
 void
 vm_map_startup()

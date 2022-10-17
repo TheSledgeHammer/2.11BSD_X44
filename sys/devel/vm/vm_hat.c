@@ -46,6 +46,7 @@
 
 #include <devel/vm/include/vm_hat.h>
 
+#define M_VMHAT 82
 struct hatspl hat_splay = SPLAY_INITIALIZER(hat_splay);
 
 void *
@@ -74,7 +75,7 @@ vm_hfree(h)
 	}
 }
 
-vm_offset_t
+static __inline vm_offset_t
 vm_hat_bootstrap_alloc(type, nentries, size)
 	int type, nentries;
 	u_long size;
@@ -108,7 +109,48 @@ vm_hat_bootstrap(type, nentries, size)
 	return (data);
 }
 
-void
+static vm_size_t hat_kvaspace;
+
+int
+vm_hat_hinitna(h, name, type, item, size, nentries)
+	vm_hat_t h;
+	char *name;
+	int type, nentries;
+	void *item;
+	u_long size;
+{
+   	vm_offset_t		data;
+	vm_size_t		data_size, totsize;
+
+	vm_hat_lock_init(h);
+	h->vh_freecnt = 0;
+	h->vh_total = 0;
+	h->vh_max = 0;
+	vm_hat_add(h, name, type, NULL, size);
+
+    data_size = (nentries * size);
+	totsize = round_page(data_size);
+    hat_kvaspace += totsize;
+
+    switch(type) {
+    case HAT_VM:
+    	h->vh_kva = kmem_alloc_pageable(kernel_map, totsize);
+    	break;
+
+    case HAT_OVL:
+    	 h->vh_kva = omem_alloc(overlay_map, totsize);
+    	 break;
+    }
+    if (h->vh_kva == 0) {
+    	vm_hat_remove(name, type);
+    	return (0);
+    }
+    h->vh_max += nentries;
+
+	return (1);
+}
+
+vm_hat_t
 vm_hinit(name, type, item, nentries, size)
 	char *name;
 	int type, nentries;
@@ -118,12 +160,15 @@ vm_hinit(name, type, item, nentries, size)
 	vm_hat_t h;
 
 	h = (vm_hat_t)malloc(sizeof(h), M_VMHAT, M_WAITOK);
-
-	vm_hat_lock_init(h);
-	item = (vm_offset_t)vm_hat_bootstrap(type, nentries, size);
-	if (item != NULL) {
-		vm_hat_add(h, name, type, item, size);
+	if (h == NULL) {
+		return (NULL);
 	}
+
+	if(vm_hat_hinitna(h, name, type, item, nentries, size) == 0) {
+		free(h, M_VMHAT);
+		return (NULL);
+	}
+	return (h);
 }
 
 /*
@@ -138,19 +183,33 @@ vm_hinit(name, type, item, nentries, size)
  *	map (they should use their own maps).
  */
 void
-vm_hbootinit(h, name, type, item, nentries, size)
+vm_hbootinit(h, name, type, item, nitems, size)
 	vm_hat_t h;
 	char *name;
-	int type, nentries;
+	int type;
 	void *item;
+	long nitems;
 	u_long size;
 {
-	item = (vm_offset_t)vm_hat_bootstrap(type, nentries, size);
+	long i;
 
 	vm_hat_lock_init(h);
-	if (item != NULL) {
-		vm_hat_add(h, name, type, item, size);
+	h->vh_name = name;
+	h->vh_type = type;
+
+	bzero(item, (size_t)nitems * h->vh_size);
+	h->vh_item = NULL;
+	for (i = 0; i < nitems; i++) {
+		((void **)item)[0] = h->vh_item;
+		h->vh_item = item;
+		item = (uint8_t *)item + h->vh_size;
 	}
+	h->vh_max = nitems;
+	h->vh_total = nitems;
+
+	vm_hat_lock(h);
+	SPLAY_INSERT(hatspl, &hat_splay, item);
+	vm_hat_unlock(h);
 }
 
 int

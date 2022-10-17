@@ -67,7 +67,7 @@ vm_map_startup1()
 {
 	kmap_extent = vm_exinit("KMAP", &kmapex[0], &kmapex[MAX_KMAP], M_VMMAP, kmap_storage, sizeof(kmap_storage), EX_NOWAIT);
 	kentry_extent = vm_exinit("KENTRY", &kentryex[0], &kentryex[MAX_KMAPENT], M_VMMAPENT, kentry_storage, sizeof(kentry_storage), EX_NOWAIT);
-	vmspace_extent = vm_exinit("VMSPACE", &vmspaceex[0], sizeof(vmspaceex), M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_NOWAIT);
+	vmspace_extent = vm_exinit("VMSPACE", &vmspaceex[0], &vmspaceex[], M_VMMAP, vmspace_storage, sizeof(vmspace_storage), EX_NOWAIT);
 }
 
 void
@@ -75,6 +75,11 @@ vm_map_boot()
 {
 	vm_exboot_region(kmap_extent, sizeof(vm_map_t), EX_MALLOCOK);
 	vm_exboot_region(kentry_extent, sizeof(vm_map_entry_t), EX_MALLOCOK);
+}
+
+vm_extent_init()
+{
+	struct extent extent_zone;
 }
 
 struct extent *
@@ -201,4 +206,13 @@ vm_exfree(ex, start, size, flags)
 	} else {
 		panic("vm_hat_exfree: extent wasn't freed");
 	}
+}
+
+static void
+vm_map_zinit(void *mem, int size)
+{
+	vm_map_t map;
+
+	map = (vm_map_t)mem;
+	map->size = 0;
 }

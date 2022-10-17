@@ -128,7 +128,7 @@ ovlspace_alloc(min, max)
 
 	OVERLAY_MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP, M_WAITOK);
 
-	memset(ovl, 0, sizeof(struct ovlspace *));
+	bzero(ovl, sizeof(struct ovlspace *));
 	ovl_map_init(&ovl->ovl_map, min, max);
 	pmap_pinit(&ovl->ovl_pmap);
 	ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;

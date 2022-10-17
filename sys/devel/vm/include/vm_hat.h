@@ -36,16 +36,22 @@
 struct hatspl;
 SPLAY_HEAD(hatspl, vm_hat);
 struct vm_hat {
+	struct lock_object		vh_lock;
 	SPLAY_ENTRY(vm_hat)		vh_node;
 	char 					*vh_name;
-	int 					vh_type;
-	void					*vh_item;
-	u_long 					vh_size;
-	struct lock_object		vh_lock;
+	int 					vh_type;	/* type of hat i.e. vm or ovl */
+	void					*vh_item;	/* linked list of items */
+	u_long 					vh_size;	/* size of each entry */
+	long					vh_freecnt;	/* free entries */
+	vm_offset_t	          	vh_kva;		/* Base kva of hat */
+	long					vh_max;		/* Max number of entries allocated */
+	long					vh_total;	/* Total entries allocated now */
+	long					vh_flags;	/* flags for hat */
 };
 
-#define HAT_VM 	0x01
-#define HAT_OVL 0x02
+#define HAT_VM 			0x0001	/* flag used to specify vm address space  */
+#define HAT_OVL 		0x0002	/* flag used to specify overlay address space  */
+#define HAT_BOOT      	0x0010	/* Internal flag used by hbootinit */
 
 #define vm_hat_lock_init(hat) 	(simple_lock_init((hat)->vh_lock, "vm_hat_lock"))
 #define vm_hat_lock(hat) 		(simple_lock((hat)->vh_lock))
@@ -54,9 +60,10 @@ struct vm_hat {
 /* vm_hat */
 void 		*vm_halloc(vm_hat_t);
 void		vm_hfree(vm_hat_t);
-void		vm_hbootinit(vm_hat_t, char *, int, void *, int, u_long);
-vm_offset_t	vm_hat_bootstrap_alloc(int, int, vm_size_t);
-void		vm_hat_bootstrap(vm_hat_t, int);
+
+vm_offset_t	vm_hat_bootstrap(int, int, u_long);
+vm_hat_t	vm_hinit(char *, int, void *, int, u_long);
+void		vm_hbootinit(vm_hat_t, char *, int, void *, long, u_long);
 void 		*vm_hat_lookup(char *, int);
 void		vm_hat_add(vm_hat_t, char *, int, void *, u_long);
 void		vm_hat_remove(char *, int);
