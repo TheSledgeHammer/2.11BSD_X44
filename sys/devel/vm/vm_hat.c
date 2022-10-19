@@ -48,6 +48,7 @@
 
 #define M_VMHAT 82
 struct hatspl hat_splay = SPLAY_INITIALIZER(hat_splay);
+static vm_size_t hat_kvaspace;
 
 void *
 vm_halloc(h)
@@ -58,8 +59,8 @@ vm_halloc(h)
 	if (h == NULL) {
 		panic("hat: invalid");
 	}
-	item = vm_hat_lookup(h->vh_name, h->vh_type);
-	h->vh_item = item;
+	item = vm_hat_lookup(h->hname, h->htype);
+	h->hitem = item;
 
 	return (item);
 }
@@ -69,9 +70,9 @@ vm_hfree(h)
 	vm_hat_t h;
 {
 	void *item;
-	item = vm_hat_lookup(h->vh_name, h->vh_type);
+	item = vm_hat_lookup(h->hname, h->htype);
 	if(item != NULL) {
-		vm_hat_remove(h->vh_name, h->vh_type);
+		vm_hat_remove(h->hname, h->htype);
 	}
 }
 
@@ -109,8 +110,6 @@ vm_hat_bootstrap(type, nentries, size)
 	return (data);
 }
 
-static vm_size_t hat_kvaspace;
-
 int
 vm_hat_hinitna(h, name, type, item, size, nentries)
 	vm_hat_t h;
@@ -123,9 +122,9 @@ vm_hat_hinitna(h, name, type, item, size, nentries)
 	vm_size_t		data_size, totsize;
 
 	vm_hat_lock_init(h);
-	h->vh_freecnt = 0;
-	h->vh_total = 0;
-	h->vh_max = 0;
+	h->hfreecnt = 0;
+	h->htotal = 0;
+	h->hmax = 0;
 	vm_hat_add(h, name, type, NULL, size);
 
     data_size = (nentries * size);
@@ -134,18 +133,18 @@ vm_hat_hinitna(h, name, type, item, size, nentries)
 
     switch(type) {
     case HAT_VM:
-    	h->vh_kva = kmem_alloc_pageable(kernel_map, totsize);
+    	h->hkva = kmem_alloc_pageable(kernel_map, totsize);
     	break;
 
     case HAT_OVL:
-    	 h->vh_kva = omem_alloc(overlay_map, totsize);
+    	 h->hkva = omem_alloc(overlay_map, totsize);
     	 break;
     }
-    if (h->vh_kva == 0) {
+    if (h->hkva == 0) {
     	vm_hat_remove(name, type);
     	return (0);
     }
-    h->vh_max += nentries;
+    h->hmax += nentries;
 
 	return (1);
 }
@@ -194,18 +193,18 @@ vm_hbootinit(h, name, type, item, nitems, size)
 	long i;
 
 	vm_hat_lock_init(h);
-	h->vh_name = name;
-	h->vh_type = type;
+	h->hname = name;
+	h->htype = type;
 
-	bzero(item, (size_t)nitems * h->vh_size);
-	h->vh_item = NULL;
+	bzero(item, (size_t)nitems * h->hsize);
+	h->hitem = NULL;
 	for (i = 0; i < nitems; i++) {
-		((void **)item)[0] = h->vh_item;
-		h->vh_item = item;
-		item = (uint8_t *)item + h->vh_size;
+		((void **)item)[0] = h->hitem;
+		h->hitem = item;
+		item = (uint8_t *)item + h->hsize;
 	}
-	h->vh_max = nitems;
-	h->vh_total = nitems;
+	h->hmax = nitems;
+	h->htotal = nitems;
 
 	vm_hat_lock(h);
 	SPLAY_INSERT(hatspl, &hat_splay, item);
@@ -216,16 +215,16 @@ int
 vm_hat_compare(hat1, hat2)
 	struct vm_hat *hat1, *hat2;
 {
-	if ((hat1->vh_type < hat2->vh_type) && (hat1->vh_size < hat2->vh_size)) {
+	if ((hat1->htype < hat2->htype) && (hat1->hsize < hat2->hsize)) {
 		return (-1);
-	} else if ((hat1->vh_type > hat2->vh_type) && (hat1->vh_size > hat2->vh_size)) {
+	} else if ((hat1->htype > hat2->htype) && (hat1->hsize > hat2->hsize)) {
 		return (1);
 	}
 	return (0);
 }
 
-SPLAY_PROTOTYPE(hatspl, vm_hat, vh_node, vm_hat_compare);
-SPLAY_GENERATE(hatspl, vm_hat, vh_node, vm_hat_compare);
+SPLAY_PROTOTYPE(hatspl, vm_hat, hnode, vm_hat_compare);
+SPLAY_GENERATE(hatspl, vm_hat, hnode, vm_hat_compare);
 
 /* add items to the splay tree */
 void
@@ -236,10 +235,10 @@ vm_hat_add(hat, name, type, item, size)
 	void 	*item;
 	u_long 	size;
 {
-	hat->vh_name = name;
-	hat->vh_type = type;
-	hat->vh_item = item;
-	hat->vh_size = size;
+	hat->hname = name;
+	hat->htype = type;
+	hat->hitem = item;
+	hat->hsize = size;
 
 	vm_hat_lock(hat);
 	SPLAY_INSERT(hatspl, &hat_splay, item);
@@ -257,8 +256,8 @@ vm_hat_remove(name, type)
 
 	vm_hat_lock(hat);
 	SPLAY_FOREACH(hat, hatspl, hat_splay) {
-		item = hat->vh_item;
-		if(hat->vh_name == name && hat->vh_type == type) {
+		item = hat->hitem;
+		if(hat->hname == name && hat->htype == type) {
 			SPLAY_REMOVE(hatspl, &hat_splay, item);
 			vm_hat_unlock(hat);
 		}
@@ -275,12 +274,112 @@ vm_hat_lookup(name, type)
 
 	vm_hat_lock(hat);
 	SPLAY_FOREACH(hat, hatspl, hat_splay) {
-		item = hat->vh_item;
-		if (hat->vh_name == name && hat->vh_type == type) {
+		item = hat->hitem;
+		if (hat->hname == name && hat->htype == type) {
 			vm_hat_unlock(hat);
 			return (SPLAY_FIND(hatspl, hat, item));
 		}
 	}
 	vm_hat_unlock(hat);
 	return (NULL);
+}
+
+void *
+_hget(h)
+	vm_hat_t h;
+{
+	vm_hat_t hat;
+	void 	*item;
+	char 	*name;
+	int 	type;
+
+	KASSERT(h != NULL);
+
+	name = h->hname;
+	type = h->htype;
+	item = h->hitem;
+
+	vm_hat_lock(hat);
+	SPLAY_FOREACH(hat, hatspl, hat_splay) {
+		if(h == hat && hat->hitem == item && hat->hname == name && hat->htype == type) {
+			return (SPLAY_FIND(hatspl, hat, item));
+		}
+	}
+	vm_hat_unlock(hat);
+	return (NULL);
+}
+
+void *
+hat_type(int type)
+{
+	vm_hat_t h;
+	int nitems, nbytes;
+	void *item;
+
+	nbytes = h->halloc * PAGE_SIZE;
+	switch(type) {
+	case HAT_VM:
+		if (lockstatus(&kernel_map->lock)) {
+			item = (void *)kmem_malloc(kernel_map, nbytes, M_WAITOK);
+		} else {
+			item = (void *)kmem_alloc(kernel_map, nbytes);
+		}
+	    break;
+
+	case HAT_OVL:
+		if (lockstatus(&overlay_map->ovl_lock)) {
+			item = (void *)omem_malloc(overlay_map, nbytes, M_WAITOK);
+		} else {
+			item = (void *)omem_alloc(overlay_map, nbytes);
+		}
+	    break;
+	}
+	if (item != NULL) {
+		bzero(item, nbytes);
+	} else {
+		nbytes = 0;
+	}
+	nitems = nbytes / h->hsize;
+
+	h->htotal += nitems;
+
+	if (nitems != 0) {
+		nitems -= 1;
+		for (i = 0; i < nitems; i++) {
+			((void**) item)[0] = h->hitem;
+			h->hitem = item;
+			(char*) item += h->hsize;
+		}
+		h->hfreecnt += nitems;
+		h->hnalloc++;
+	} else if (h->hfreecnt > 0) {
+		item = h->hitem;
+		h->hitem = ((void **) item)[0];
+		h->hfreecnt--;
+		h->hnalloc++;
+	} else {
+		item = NULL;
+	}
+	return (item);
+}
+
+void *
+halloc(h)
+	vm_hat_t h;
+{
+	void *item;
+	int tryagain;
+	long n;
+
+	if (h->hfreecnt <= h->hfreemin) {
+		item = _hget(h);
+		if (item == NULL && (h->hflags & ZONE_PANICFAIL)) {
+			panic("zalloc(%s) failed", h->hname);
+		}
+		return (item);
+	}
+	item = h->hitem;
+	h->hitem = ((void **)item)[0];
+	--h->hfreecnt;
+	return (item);
 }

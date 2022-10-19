@@ -44,6 +44,11 @@ simple_lock_data_t			ovl_segment_bucket_lock;		/* lock for all segment buckets X
 struct ovseglist  			ovl_segment_list;
 simple_lock_data_t			ovl_segment_list_lock;
 
+long						ovl_first_segment;
+long						ovl_last_segment;
+vm_offset_t					ovl_first_logical_addr;
+vm_offset_t					ovl_last_logical_addr;
+
 struct vsegment_hash_head 	*ovl_vsegment_hashtable;
 
 void
@@ -51,6 +56,9 @@ ovl_segment_init(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {
+	register ovl_segment_t		seg;
+	vm_size_t					nsegments;
+	vm_offset_t					la;
 	int	i;
 
 	simple_lock_init(&ovl_segment_list_lock, "ovl_segment_list_lock");
@@ -64,12 +72,34 @@ ovl_segment_init(start, end)
 	}
 
 	ovl_segment_hash_mask = ovl_segment_bucket_count - 1;
+	ovl_segment_buckets = (struct ovseglist *)pmap_bootstrap_overlay_alloc(ovl_segment_bucket_count * sizeof(struct ovseglist));
 
 	for(i = 0; i < ovl_segment_hash_mask; i++) {
 		CIRCLEQ_INIT(&ovl_segment_buckets[i]);
 		TAILQ_INIT(&ovl_vsegment_hashtable[i]);
 	}
 	simple_lock_init(&ovl_segment_bucket_lock, "ovl_segment_bucket_lock");
+
+	*end = trunc_segment(*end);
+
+	nsegments = (*end - *start + sizeof(struct ovl_segment)) / (SEGMENT_SIZE + sizeof(struct ovl_segment));
+	ovl_first_segment = *start;
+	ovl_first_segment += nsegments * sizeof(struct ovl_segment);
+	ovl_first_segment = atos(round_segment(ovl_first_segment));
+	ovl_last_segment = ovl_first_segment + nsegments - 1;
+
+	ovl_first_logical_addr = stoa(ovl_first_segment);
+	ovl_last_logical_addr  = stoa(ovl_last_segment) + SEGMENT_MASK;
+	seg = (ovl_segment_t)pmap_bootstrap_overlay_alloc(nsegments * sizeof(struct ovl_segment));
+
+	la = ovl_first_logical_addr;
+	while (nsegments--) {
+		seg->ovs_flags = 0;
+		seg->ovs_object = NULL;
+		seg->ovs_log_addr = la;
+		seg++;
+		la += SEGMENT_SIZE;
+	}
 }
 
 unsigned long

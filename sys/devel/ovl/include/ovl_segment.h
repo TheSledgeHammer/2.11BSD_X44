@@ -47,7 +47,7 @@ struct ovl_segment {
 	vm_offset_t 					ovs_offset;					/* offset into object (O,S) */
 
 	int								ovs_resident_page_count;	/* number of resident pages */
-
+	vm_offset_t						ovs_log_addr;				/* segment logical address */
 	TAILQ_ENTRY(ovl_segment)    	ovs_vsegment_hlist;			/* list of all associated vm_segments */
 
 #define ovs_vm						ovs_object->ovl_vm_map

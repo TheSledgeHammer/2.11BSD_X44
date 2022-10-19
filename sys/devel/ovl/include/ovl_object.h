@@ -68,14 +68,15 @@
 #ifndef _OVL_OBJECT_H_
 #define _OVL_OBJECT_H_
 
-#include <devel/ovl/include/ovl.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
 
+#include <devel/ovl/include/ovl.h>
+
 struct vobject_hash_head;
 TAILQ_HEAD(vobject_hash_head, ovl_object);
-struct object_rbt;
-RB_HEAD(object_rbt, ovl_object);
+struct ovl_object_rbt;
+RB_HEAD(ovl_object_rbt, ovl_object);
 struct ovl_object {
 	struct ovseglist					ovo_ovseglist;		/* list of segments */
 
@@ -114,7 +115,7 @@ struct ovl_object_hash_entry {
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
 #ifdef _KERNEL
-struct object_rbt			ovl_object_tree;				/* list of allocated objects */
+struct ovl_object_rbt		ovl_object_tree;				/* list of allocated objects */
 long						ovl_object_count;				/* count of all objects */
 simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
 
@@ -133,16 +134,16 @@ simple_lock_data_t			ovl_vobject_hash_lock;
 #define	ovl_object_unlock(object)		simple_unlock(&(object)->ovo_lock)
 
 #ifdef _KERNEL
-ovl_object_t	ovl_object_allocate (vm_size_t);
-void		 	ovl_object_enter (ovl_object_t, vm_pager_t);
-void		 	ovl_object_init (vm_size_t);
-ovl_object_t	ovl_object_lookup (vm_pager_t);
-void		 	ovl_object_reference (ovl_object_t);
-void			ovl_object_remove (vm_pager_t);
+ovl_object_t	ovl_object_allocate(vm_size_t);
+void		 	ovl_object_enter(ovl_object_t, vm_pager_t);
+void		 	ovl_object_init(vm_size_t);
+ovl_object_t	ovl_object_lookup(vm_pager_t);
+void		 	ovl_object_reference(ovl_object_t);
+void			ovl_object_remove(vm_pager_t);
 
-void			ovl_object_enter_vm_object (ovl_object_t, vm_object_t);
-vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);
-void			ovl_object_remove_vm_object (ovl_object_t, vm_object_t);
+void			ovl_object_enter_vm_object(ovl_object_t, vm_object_t);
+vm_object_t		ovl_object_lookup_vm_object(ovl_object_t, vm_object_t);
+void			ovl_object_remove_vm_object(ovl_object_t, vm_object_t);
 
 #endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

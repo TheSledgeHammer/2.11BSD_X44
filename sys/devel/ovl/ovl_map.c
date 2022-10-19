@@ -101,6 +101,23 @@
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
 
+static int ovl_rb_compare(ovl_map_entry_t, ovl_map_entry_t);
+static vm_size_t ovl_rb_space(const ovl_map_t, const ovl_map_entry_t);
+static vm_size_t ovl_rb_subtree_space(ovl_map_entry_t);
+static void ovl_rb_fixup(ovl_map_t, ovl_map_entry_t);
+static void ovl_rb_insert(ovl_map_t, ovl_map_entry_t);
+static void ovl_rb_remove(ovl_map_t, ovl_map_entry_t);
+static vm_size_t ovl_cl_space(const ovl_map_t, const ovl_map_entry_t);
+static void ovl_cl_insert(ovl_map_t, ovl_map_entry_t);
+static void ovl_cl_remove(ovl_map_t, ovl_map_entry_t);
+static bool_t ovl_map_search_next_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
+static bool_t ovl_map_search_prev_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
+static void	_ovl_map_clip_end(ovl_map_t, ovl_map_entry_t, vm_offset_t);
+static void	_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
+
+RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
+RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
+
 static struct vm_hat 	omap_store, oentry_store;
 static vm_hat_t			omap_hat, oentry_hat;
 ovl_map_entry_t 		oentry_free;
@@ -117,9 +134,6 @@ ovl_map_startup()
 			sizeof(struct ovl_map_entry));
 }
 
-/* Allocate ovlspace
- * segmented(TRUE/FALSE): allocation of the 3 process segments (data, stack, text)
- */
 struct ovlspace *
 ovlspace_alloc(min, max)
 	vm_offset_t min, max;
@@ -127,13 +141,11 @@ ovlspace_alloc(min, max)
 	register struct ovlspace *ovl;
 
 	OVERLAY_MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP, M_WAITOK);
-
-	bzero(ovl, sizeof(struct ovlspace *));
+	bzero(ovl,(caddr_t)&ovl->ovl_startcopy - (caddr_t)ovl);
 	ovl_map_init(&ovl->ovl_map, min, max);
 	pmap_pinit(&ovl->ovl_pmap);
 	ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
 	ovl->ovl_refcnt = 1;
-
 	return (ovl);
 }
 
@@ -149,7 +161,7 @@ ovlspace_free(ovl)
 		 * then call the pmap module to reclaim anything left.
 		 */
 		ovl_map_lock(&ovl->ovl_map);
-		(void) ovl_map_delete(&ovl->ovl_map, ovl->ovl_map.min_offset, ovl->ovl_map.max_offset);
+		(void) ovl_map_delete(&ovl->ovl_map, ovl->ovl_map.ovl_min_offset, ovl->ovl_map.ovl_max_offset);
 		pmap_release(&ovl->ovl_pmap);
 		OVERLAY_FREE(ovl, M_OVLMAP);
 	}
@@ -160,8 +172,7 @@ ovlspace_free(ovl)
  *
  * The caller must hold the related map lock.
  */
-RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
-RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
+
 
 static int
 ovl_rb_compare(a, b)
@@ -397,7 +408,7 @@ ovl_map_create(pmap, min, max)
 		oentry = CIRCLEQ_FIRST(&result->ovl_header);
 		omap_free = (ovl_map_t)CIRCLEQ_NEXT(oentry, ovl_cl_entry);
 	} else {
-		OVERLAY_MALLOC(result, struct ovl_map, sizeof(struct ovl_map), M_OVLMAP, M_WAITOK);
+		OVERLAY_MALLOC(result, struct ovl_map *, sizeof(struct ovl_map *), M_OVLMAP, M_WAITOK);
 	}
 
 	ovl_map_init(result, min, max);
@@ -416,8 +427,8 @@ ovl_map_init(map, min, max)
 	map->ovl_size = 0;
 	map->ovl_ref_count = 1;
 	map->ovl_is_main_map = TRUE;
-	map->min_offset = min;
-	map->max_offset = max;
+	map->ovl_min_offset = min;
+	map->ovl_max_offset = max;
 	map->ovl_hint = &map->ovl_header;
 	map->ovl_timestamp = 0;
 	lockinit(&map->ovl_lock, PVM, "thrd_sleep", 0, 0);
@@ -431,7 +442,7 @@ ovl_map_entry_create(map)
 {
 	ovl_map_entry_t	entry;
 #ifdef DEBUG
-	extern ovl_map_t	overlay_map, omem_map;
+	bool_t				isspecial;
 	isspecial = (map == overlay_map || map == omem_map);
 	if (isspecial || !isspecial) {
 		panic("ovl_map_entry_create: bogus map");
@@ -453,7 +464,7 @@ ovl_map_entry_dispose(map, entry)
 	ovl_map_entry_t	entry;
 {
 #ifdef DEBUG
-	extern ovl_map_t	overlay_map, omem_map;
+	bool_t				isspecial;
 	isspecial = (map == overlay_map || map == omem_map);
 	if (isspecial || !isspecial) {
 		panic("ovl_map_entry_dispose: bogus map");
@@ -464,20 +475,33 @@ ovl_map_entry_dispose(map, entry)
 	oentry_free = entry;
 }
 
-#define	ovl_map_entry_link(map, after_where, entry) { 							\
-		(map)->ovl_nentries++; 													\
-	    (entry)->ovl_cl_entry.cqe_prev = (after_where);                   		\
-	    (entry)->ovl_cl_entry.cqe_next = (after_where)->ovl_cl_entry.cqe_next; 	\
-	    (entry)->ovl_cl_entry.cqe_prev->ovl_cl_entry.cqe_next = (entry);       	\
-	    (entry)->ovl_cl_entry.cqe_next->ovl_cl_entry.cqe_prev = (entry);       	\
-		ovl_cl_insert((map), (entry));                   						\
-		ovl_rb_insert((map), (entry));  										\
+/*
+ *	ovl_map_entry_{un,}link:
+ *
+ *	Insert/remove entries from maps.
+ */
+static void
+ovl_map_entry_link(map, after_where, entry)
+	ovl_map_t map;
+	ovl_map_entry_t after_where, entry;
+{
+	map->ovl_nentries++;
+	CIRCLEQ_PREV(entry, ovl_cl_entry) = after_where;
+	CIRCLEQ_NEXT(entry, ovl_cl_entry) = CIRCLEQ_NEXT(after_where, ovl_cl_entry);
+	CIRCLEQ_PREV(entry, ovl_cl_entry)->ovl_cl_entry.cqe_next = entry;
+	CIRCLEQ_NEXT(entry, ovl_cl_entry)->ovl_cl_entry.cqe_prev = entry;
+	ovl_cl_insert(map, entry);
+	ovl_rb_insert(map, entry);
 }
 
-#define	ovl_map_entry_unlink(map, entry) { 										\
-		(map)->ovl_nentries--; 													\
-		ovl_cl_remove((map), (entry)); 			        						\
-		ovl_rb_remove((map), (entry));  										\
+static void
+ovl_map_entry_unlink(map, entry)
+	ovl_map_t map;
+	ovl_map_entry_t entry;
+{
+	map->ovl_nentries--;
+	ovl_cl_remove(map, entry);
+	ovl_rb_remove(map, entry);
 }
 
 void
@@ -516,9 +540,9 @@ ovl_map_deallocate(map)
 
 	ovl_map_lock_drain_interlock(map);
 
-	(void)ovl_map_delete(map, map->min_offset, map->max_offset);
+	(void)ovl_map_delete(map, map->ovl_min_offset, map->ovl_max_offset);
 
-	//pmap_destroy(map->ovl_pmap);
+	pmap_destroy(map->ovl_pmap);
 
 	ovl_map_unlock(map);
 
@@ -541,8 +565,8 @@ ovl_map_insert(map, object, offset, start, end)
 	 *	Check that the start and end points are not bogus.
 	 */
 
-	if ((start < map->min_offset) || (end > map->max_offset) || (start >= end))
-		return(KERN_INVALID_ADDRESS);
+	if ((start < map->ovl_min_offset) || (end > map->ovl_max_offset) || (start >= end))
+		return (KERN_INVALID_ADDRESS);
 
 	prev_entry = temp_entry;
 
@@ -561,13 +585,18 @@ ovl_map_insert(map, object, offset, start, end)
 	 *	extending one of our neighbors.
 	 */
 	if (object == NULL) {
-		if ((prev_entry != &map->ovl_header) &&
-				(prev_entry->ovle_end == start) &&
-				(map->ovl_is_main_map) &&
-				(prev_entry->ovle_inheritance == VM_INHERIT_DEFAULT) &&
-				(prev_entry->ovle_protection == VM_PROT_DEFAULT) &&
-				(prev_entry->ovle_max_protection == VM_PROT_DEFAULT)) {
+		if ((prev_entry != CIRCLEQ_FIRST(&map->ovl_header)) &&
+		    (prev_entry->ovle_end == start) &&
+		    (map->ovl_is_main_map) &&
+		    (prev_entry->ovle_is_a_map == FALSE) &&
+		    (prev_entry->ovle_is_sub_map == FALSE) &&
+		    (prev_entry->ovle_inheritance == VM_INHERIT_DEFAULT) &&
+		    (prev_entry->ovle_protection == VM_PROT_DEFAULT) &&
+		    (prev_entry->ovle_max_protection == VM_PROT_DEFAULT)) {
 
+			/*
+			 * TODO: ovl_object_coalesce
+			 */
 			map->ovl_size += (end - prev_entry->ovle_end);
 			prev_entry->ovle_end = end;
 			return (KERN_SUCCESS);
@@ -618,6 +647,7 @@ ovl_map_lookup_entry(map, address, entry)
     ovl_map_entry_t		    *entry;		/* OUT */
 {
     register ovl_map_entry_t cur;
+    register ovl_map_entry_t	 last;
     bool_t use_tree = FALSE;
 
 	simple_lock(&map->ovl_hint_lock);
@@ -739,16 +769,16 @@ ovl_map_findspace(map, start, length, addr)
 
 	ovl_tree_sanity(map, "map_findspace entry");
 
-	if (start < map->min_offset)
-		start = map->min_offset;
-	if (start > map->max_offset)
+	if (start < map->ovl_min_offset)
+		start = map->ovl_min_offset;
+	if (start > map->ovl_max_offset)
 		return (1);
 
 	/*
 	 * Look for the first possible address; if there's already
 	 * something at this address, we have to start after it.
 	 */
-	if (start == map->min_offset) {
+	if (start == map->ovl_min_offset) {
 		if ((entry = map->ovl_first_free) != CIRCLEQ_FIRST(&map->ovl_header))
 			start = entry->ovle_end;
 	} else {
@@ -776,7 +806,7 @@ ovl_map_findspace(map, start, length, addr)
 		 * win.
 		 */
 		end = start + length;
-		if (end > map->max_offset || end < start)
+		if (end > map->ovl_max_offset || end < start)
 			return (1);
         next = CIRCLEQ_NEXT(entry, ovl_cl_entry);
         if (next == CIRCLEQ_FIRST(&map->ovl_header) || next->ovle_start >= end)
@@ -813,6 +843,127 @@ ovl_map_find(map, object, offset, addr, length, find_space)
 	return (result);
 }
 
+/*
+ *	vm_map_clip_start:	[ internal use only ]
+ *
+ *	Asserts that the given entry begins at or after
+ *	the specified address; if necessary,
+ *	it splits the entry into two.
+ */
+#define ovl_map_clip_start(map, entry, startaddr) 	\
+{ 													\
+	if (startaddr > entry->ovle_start) 				\
+		_ovl_map_clip_start(map, entry, startaddr); \
+}
+
+/*
+ *	This routine is called only when it is known that
+ *	the entry must be split.
+ */
+static void
+_ovl_map_clip_start(map, entry, start)
+	register ovl_map_t		map;
+	register ovl_map_entry_t	entry;
+	register vm_offset_t	start;
+{
+	register ovl_map_entry_t	new_entry;
+	vm_offset_t new_adj;
+
+	/*
+	 *	See if we can simplify this entry first
+	 */
+
+	ovl_map_simplify_entry(map, entry);
+	ovl_tree_sanity(map, "clip_start entry");
+
+	/*
+	 *	Split off the front portion --
+	 *	note that we must insert the new
+	 *	entry BEFORE this one, so that
+	 *	this entry has the specified starting
+	 *	address.
+	 */
+
+	new_entry = ovl_map_entry_create(map);
+	*new_entry = *entry;
+
+	new_entry->ovle_end = start;
+	new_adj = start - new_entry->ovle_start;
+	if (entry->ovle_object.ovl_object) {
+		entry->ovle_offset += new_adj;	/* shift start over */
+	} else {
+		entry->ovle_offset += (start - entry->ovle_start);
+	}
+
+	/* Does not change order for the RB tree */
+	entry->ovle_start = start;
+
+	ovl_map_entry_link(map, CIRCLEQ_PREV(entry, ovl_cl_entry), new_entry);
+
+	if (entry->ovle_is_a_map || entry->ovle_is_sub_map)
+	 	ovl_map_reference(new_entry->ovle_object.ovl_share_map);
+	else
+		ovl_object_reference(new_entry->ovle_object.ovl_object);
+
+	ovl_tree_sanity(map, "clip_start leave");
+}
+
+/*
+ *	ovl_map_clip_end:	[ internal use only ]
+ *
+ *	Asserts that the given entry ends at or before
+ *	the specified address; if necessary,
+ *	it splits the entry into two.
+ */
+
+#define ovl_map_clip_end(map, entry, endaddr) 	\
+{ 												\
+	if (endaddr < entry->ovle_end) 				\
+		_ovl_map_clip_end(map, entry, endaddr); \
+}
+
+/*
+ *	This routine is called only when it is known that
+ *	the entry must be split.
+ */
+static void
+_ovl_map_clip_end(map, entry, end)
+	register ovl_map_t			map;
+	register ovl_map_entry_t	entry;
+	register vm_offset_t		end;
+{
+	register ovl_map_entry_t	new_entry;
+	vm_offset_t new_adj;
+
+	ovl_tree_sanity(map, "clip_end entry");
+
+	/*
+	 *	Create a new entry and insert it
+	 *	AFTER the specified entry
+	 */
+
+	new_entry = ovl_map_entry_create(map);
+	*new_entry = *entry;
+
+	new_entry->ovle_start = entry->ovle_end = end;
+	new_adj = end - entry->ovle_start;
+	if (new_entry->ovle_object.ovl_object) {
+		new_entry->ovle_offset += new_adj;
+	} else {
+		new_entry->ovle_offset += (end - entry->ovle_start);
+	}
+
+	ovl_rb_fixup(map, entry);
+
+	ovl_map_entry_link(map, entry, new_entry);
+
+	if (entry->ovle_is_a_map || entry->ovle_is_sub_map)
+	 	ovl_map_reference(new_entry->ovle_object.ovl_share_map);
+	else
+		ovl_object_reference(new_entry->ovle_object.ovl_object);
+
+	ovl_tree_sanity(map, "clip_end leave");
+}
 
 #define	OVL_MAP_RANGE_CHECK(map, start, end) {	\
 		if (start < ovl_map_min(map))			\
@@ -909,7 +1060,7 @@ ovl_map_delete(map, start, end)
 		entry = CIRCLEQ_NEXT(first_entry, ovl_cl_entry);
 	else {
 		entry = first_entry;
-		//vm_map_clip_start(map, entry, start);
+		ovl_map_clip_start(map, entry, start);
 
 		/*
 		 *	Fix the lookup hint now, rather than each
@@ -935,7 +1086,7 @@ ovl_map_delete(map, start, end)
 		register vm_offset_t	s, e;
 		register ovl_object_t	object;
 
-		//ovl_map_clip_end(map, entry, end);
+		ovl_map_clip_end(map, entry, end);
 
 		next = CIRCLEQ_NEXT(entry, ovl_cl_entry);
 		s = entry->ovle_start;
@@ -948,7 +1099,11 @@ ovl_map_delete(map, start, end)
 		 */
 
 		object = entry->ovle_object.ovl_object;
-
+		/*
+		if (object == overlay_object || object == omem_object) {
+			vm_object_page_remove();
+		}
+		*/
 		/*
 		 *	Delete the entry (which may delete the object)
 		 *	only after removing all pmap entries pointing
@@ -977,4 +1132,69 @@ ovl_map_remove(map, start, end)
 	ovl_map_unlock(map);
 
 	return (result);
+}
+
+struct ovlspace *
+ovlspace_fork(ovl1)
+	struct ovlspace *ovl1;
+{
+	register struct ovlspace *ovl2;
+	ovl_map_t		old_map = &ovl1->ovl_map;
+	ovl_map_t		new_map;
+	ovl_map_entry_t	old_entry;
+	ovl_map_entry_t	new_entry;
+	pmap_t			new_pmap;
+
+	ovl_map_lock(old_map);
+
+	ovl2 = ovlspace_alloc(old_map->ovl_min_offset, old_map->ovl_max_offset);
+	bcopy(&ovl1->ovl_startcopy, &ovl2->ovl_startcopy, (caddr_t)(ovl1 + 1) - (caddr_t) &ovl1->ovl_startcopy);
+	new_pmap = &ovl2->ovl_pmap;		/* XXX */
+	new_map = &ovl2->ovl_map;		/* XXX */
+
+	old_entry = CIRCLEQ_FIRST(&old_map->ovl_header)->ovl_cl_entry.cqe_next;
+	while (old_entry != CIRCLEQ_FIRST(&old_map->ovl_header)) {
+		if (old_entry->ovle_is_sub_map) {
+			panic("ovl_map_fork: encountered a submap");
+		}
+		switch (old_entry->ovle_inheritance) {
+		case VM_INHERIT_NONE:
+			break;
+		case VM_INHERIT_SHARE:
+			if (!old_entry->ovle_is_a_map) {
+			 	ovl_map_t	new_share_map;
+				ovl_map_entry_t	new_share_entry;
+
+				new_share_map = vm_map_create(NULL, old_entry->ovle_start, old_entry->ovle_end, TRUE);
+				new_share_map->ovl_is_main_map = FALSE;
+
+				new_share_entry = ovl_map_entry_create(new_share_map);
+				*new_share_entry = *old_entry;
+				//new_share_entry->wired_count = 0;
+
+				ovl_map_entry_link(new_share_map, CIRCLEQ_FIRST(&new_share_map->ovl_header)->ovl_cl_entry.cqe_prev, new_share_entry);
+
+				old_entry->ovle_is_a_map = TRUE;
+				old_entry->ovle_object.ovl_share_map = new_share_map;
+				old_entry->ovle_offset = old_entry->ovle_start;
+			}
+			new_entry = ovl_map_entry_create(new_map);
+			*new_entry = *old_entry;
+			//new_entry->wired_count = 0;
+			ovl_map_reference(new_entry->ovle_object.ovl_share_map);
+
+			ovl_map_entry_link(new_map, CIRCLEQ_FIRST(&new_map->ovl_header)->ovl_cl_entry.cqe_prev, new_entry);
+			pmap_copy(new_map->ovl_pmap, old_map->ovl_pmap,
+					new_entry->ovle_start,
+					(old_entry->ovle_end - old_entry->ovle_start),
+					old_entry->ovle_start);
+			break;
+		case VM_INHERIT_COPY:
+			break;
+		}
+		old_entry = CIRCLEQ_NEXT(old_entry, ovl_cl_entry);
+	}
+	new_map->ovl_size = old_map->ovl_size;
+	ovl_map_unlock(old_map);
+	return (ovl2);
 }

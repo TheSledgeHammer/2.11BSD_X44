@@ -104,6 +104,11 @@ simple_lock_data_t		ovl_page_bucket_lock;		/* lock for all page buckets XXX */
 struct ovpglist			ovl_page_list;
 simple_lock_data_t		ovl_page_list_lock;
 
+long					ovl_first_page;
+long					ovl_last_page;
+vm_offset_t				ovl_first_phys_addr;
+vm_offset_t				ovl_last_phys_addr;
+
 struct vpage_hash_head 	*ovl_vpage_hashtable;
 
 void
@@ -111,6 +116,9 @@ ovl_page_init(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {
+	register ovl_page_t		 m;
+	vm_size_t				 npages;
+	vm_offset_t				 pa;
 	int i;
 
 	simple_lock_init(&ovl_page_list_lock, "ovl_page_list_lock");
@@ -124,6 +132,7 @@ ovl_page_init(start, end)
 	}
 
 	ovl_page_hash_mask = ovl_page_bucket_count - 1;
+	ovl_page_buckets = (struct ovpglist *)pmap_bootstrap_overlay_alloc(ovl_page_bucket_count * sizeof(struct ovpglist));
 
 	for (i = 0; i < ovl_page_hash_mask; i++) {
 		TAILQ_INIT(&ovl_page_buckets[i]);
@@ -132,6 +141,27 @@ ovl_page_init(start, end)
 	simple_lock_init(&ovl_page_bucket_lock, "ovl_page_bucket_lock");
 
 	*end = trunc_page(*end);
+
+	npages = (*end - *start + sizeof(struct ovl_page)) / (PAGE_SIZE + sizeof(struct ovl_page));
+
+	ovl_first_page = *start;
+	ovl_first_page += npages * sizeof(struct ovl_page);
+	ovl_first_page = atop(round_page(ovl_first_page));
+	ovl_last_page  = ovl_first_page + npages - 1;
+
+	ovl_first_phys_addr = ptoa(ovl_first_page);
+	ovl_last_phys_addr  = ptoa(ovl_last_page) + PAGE_MASK;
+
+	m = (ovl_page_t)pmap_bootstrap_overlay_alloc(npages * sizeof(struct ovl_page));
+
+	pa = first_phys_addr;
+	while (npages--) {
+		m->ovp_flags = 0;
+		m->ovp_segment = NULL;
+		m->ovp_phys_addr = pa;
+		m++;
+		pa += PAGE_SIZE;
+	}
 }
 
 unsigned long

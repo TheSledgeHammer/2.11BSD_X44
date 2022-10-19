@@ -65,6 +65,6 @@ pmap_bootstrap_overlay_alloc(size)
 		avail_start += PAGE_SIZE;
 	}
 
-	bzero ((caddr_t) val, size);
+	bzero((caddr_t) val, size);
 	return ((void *) val);
 }

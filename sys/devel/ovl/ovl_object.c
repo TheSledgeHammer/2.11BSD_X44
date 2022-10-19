@@ -75,13 +75,20 @@
 
 struct ovl_object	overlay_object_store;
 struct ovl_object	omem_object_store;
+ovl_object_t		overlay_object;
+ovl_object_t		omem_object;
 
 #define	OVL_OBJECT_HASH_COUNT	157
 
 struct	ovl_object_hash_head 	ovl_object_hashtable[OVL_OBJECT_HASH_COUNT];
 struct 	vobject_hash_head 		ovl_vobject_hashtable[OVL_OBJECT_HASH_COUNT];
 
-static void _ovl_object_allocate (vm_size_t, ovl_object_t);
+struct ovl_object_rbt	ovl_object_tree;
+long					ovl_object_count;
+simple_lock_data_t		ovl_object_tree_lock;
+
+long					ovl_vobject_count;
+static void _ovl_object_allocate(vm_size_t, ovl_object_t);
 
 /*
  *	ovl_object_init:
@@ -195,8 +202,8 @@ ovl_object_rb_compare(obj1, obj2)
 	return (0);
 }
 
-RB_PROTOTYPE(object_t, ovl_object, ovo_object_tree, ovl_object_rb_compare);
-RB_GENERATE(object_t, ovl_object, ovo_object_tree, ovl_object_rb_compare);
+RB_PROTOTYPE(ovl_object_rbt, ovl_object, ovo_object_tree, ovl_object_rb_compare);
+RB_GENERATE(ovl_object_rbt, ovl_object, ovo_object_tree, ovl_object_rb_compare);
 RB_PROTOTYPE(ovl_object_hash_head, ovl_object_hash_entry, ovoe_hlinks, ovl_object_rb_compare);
 RB_GENERATE(ovl_object_hash_head, ovl_object_hash_entry, ovoe_hlinks, ovl_object_rb_compare);
 

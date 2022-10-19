@@ -31,9 +31,13 @@
 
 #include <devel/ovl/include/ovl.h>
 
+struct ovl_map_clist;
+struct ovl_map_rb_tree;
+
 union ovl_map_object {
 	struct ovl_object					*ovl_object;		/* overlay_object object */
-	struct ovl_map						*ovl_sub_map;
+	struct ovl_map						*ovl_share_map;		/* share map */
+	struct ovl_map						*ovl_sub_map;		/* belongs to another map */
 };
 
 struct ovl_map_entry {
@@ -54,10 +58,7 @@ struct ovl_map_entry {
   vm_inherit_t							ovle_inheritance;	/* inheritance */
 };
 
-struct ovl_map_clist;
 CIRCLEQ_HEAD(ovl_map_clist, ovl_map_entry);
-
-struct ovl_map_rb_tree;
 RB_HEAD(ovl_map_rb_tree, ovl_map_entry);
 struct ovl_map {
 	struct ovl_map_clist         		ovl_header;        	/* Circular List of entries */
@@ -76,8 +77,8 @@ struct ovl_map {
 	ovl_map_entry_t						ovl_first_free;		/* First free space hint */
     unsigned int		                ovl_timestamp;	    /* Version number */
 
-#define	min_offset			    		ovl_header.cqh_first->ovle_start
-#define max_offset			    		ovl_header.cqh_first->ovle_end
+#define	ovl_min_offset			    		ovl_header.cqh_first->ovle_start
+#define ovl_max_offset			    		ovl_header.cqh_first->ovle_end
 };
 
 #define	ovl_lock_drain_interlock(ovl) { 								\
@@ -110,8 +111,8 @@ struct ovl_map {
 /*
  *	Functions implemented as macros
  */
-#define	ovl_map_min(map)	((map)->min_offset)
-#define	ovl_map_max(map)	((map)->max_offset)
+#define	ovl_map_min(map)	((map)->ovl_min_offset)
+#define	ovl_map_max(map)	((map)->ovl_max_offset)
 #define	ovl_map_pmap(map)	((map)->ovl_pmap)
 
 /* XXX: number of overlay maps and entries to statically allocate */
@@ -121,21 +122,21 @@ struct ovl_map {
 
 #ifdef _KERNEL
 struct pmap;
-vm_map_t		ovl_map_create (struct pmap *, vm_offset_t, vm_offset_t, bool_t);
-void			ovl_map_deallocate (ovl_map_t);
-int		 		ovl_map_delete (ovl_map_t, vm_offset_t, vm_offset_t);
-vm_map_entry_t	ovl_map_entry_create (ovl_map_t);
-void			ovl_map_entry_delete (ovl_map_t, ovl_map_entry_t);
-void			ovl_map_entry_dispose (ovl_map_t, ovl_map_entry_t);
-int		 		ovl_map_find (ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
-int		 		ovl_map_findspace (ovl_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
-void			ovl_map_init (ovl_map_t, vm_offset_t, vm_offset_t, bool_t);
-int				ovl_map_insert (ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
-bool_t			ovl_map_lookup_entry (ovl_map_t, vm_offset_t, ovl_map_entry_t *);
+vm_map_t		ovl_map_create(struct pmap *, vm_offset_t, vm_offset_t, bool_t);
+void			ovl_map_deallocate(ovl_map_t);
+int		 		ovl_map_delete(ovl_map_t, vm_offset_t, vm_offset_t);
+vm_map_entry_t	ovl_map_entry_create(ovl_map_t);
+void			ovl_map_entry_delete(ovl_map_t, ovl_map_entry_t);
+void			ovl_map_entry_dispose(ovl_map_t, ovl_map_entry_t);
+int		 		ovl_map_find(ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
+int		 		ovl_map_findspace(ovl_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
+void			ovl_map_init(ovl_map_t, vm_offset_t, vm_offset_t, bool_t);
+int				ovl_map_insert(ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
+bool_t			ovl_map_lookup_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 //void			ovl_map_print (ovl_map_t, bool_t);
-void			ovl_map_reference (ovl_map_t);
-int		 		ovl_map_remove (ovl_map_t, vm_offset_t, vm_offset_t);
-void			ovl_map_startup (void);
+void			ovl_map_reference(ovl_map_t);
+int		 		ovl_map_remove(ovl_map_t, vm_offset_t, vm_offset_t);
+void			ovl_map_startup(void);
 
 void 			ovl_map_swapin(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 void 			ovl_map_swapout(ovl_map_t, vm_offset_t, ovl_map_entry_t *);

@@ -105,6 +105,30 @@ vm_size_t			page_mask;
 int					page_shift;
 
 /*
+ *	Pre-allocate maps and map entries that cannot be dynamically
+ *	allocated via malloc().  The maps include the kernel_map and
+ *	kmem_map which must be initialized before malloc() will
+ *	work (obviously).  Also could include pager maps which would
+ *	be allocated before kmeminit.
+ *
+ *	Allow some kernel map entries... this should be plenty
+ *	since people shouldn't be cluttering up the kernel
+ *	map (they should use their own maps).
+ */
+void
+kmap_bootstrap(void)
+{
+	extern vm_offset_t	kentry_data;
+	extern vm_size_t	kentry_data_size;
+	vm_size_t 			kmap_size, kentry_size;
+
+	kmap_size = (MAX_KMAP * sizeof(struct vm_map));
+	kentry_size = (MAX_KMAPENT * sizeof(struct vm_map_entry));
+	kentry_data_size = round_page(kmap_size + kentry_size);
+	kentry_data = (vm_offset_t)pmap_bootstrap_alloc(kentry_data_size);
+}
+
+/*
  *	vm_set_page_size:
  *
  *	Sets the page size, perhaps based upon the memory
@@ -145,9 +169,6 @@ vm_page_startup(start, end)
 	vm_size_t				npages;
 	int						i;
 	vm_offset_t				pa;
-	extern	vm_offset_t		kentry_data;
-	extern	vm_size_t		kentry_data_size;
-
 
 	/*
 	 *	Initialize the locks
@@ -215,12 +236,7 @@ vm_page_startup(start, end)
 	 *	since people shouldn't be cluttering up the kernel
 	 *	map (they should use their own maps).
 	 */
-
-	vm_size_t kmap_size = (MAX_KMAP * sizeof(struct vm_map));
-	vm_size_t kentry_size = (MAX_KMAPENT * sizeof(struct vm_map_entry));
-
-	kentry_data_size = round_page(kmap_size + kentry_size);
-	kentry_data = (vm_offset_t) pmap_bootstrap_alloc(kentry_data_size);
+	kmap_bootstrap();
 
 	/*
  	 *	Compute the number of pages of memory that will be

@@ -107,6 +107,7 @@ struct ovl_page {
 	vm_offset_t				ovp_offset;					/* offset into segment (O,(S,P)) */
 
 	u_short					ovp_flags;					/* see below */
+	vm_offset_t				ovp_phys_addr;				/* physical address of page */
 
 	TAILQ_ENTRY(ovl_page) 	ovp_vpage_hlist;			/* list of all my associated vm_pages */
 

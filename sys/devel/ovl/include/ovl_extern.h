@@ -46,6 +46,7 @@ int 			ovl_allocate(ovl_map_t, vm_offset_t, vm_size_t, bool_t);
 int 			ovl_deallocate(ovl_map_t, vm_offset_t, vm_size_t);
 int				ovl_allocate_with_pager(ovl_map_t, vm_offset_t *, vm_size_t, bool_t, vm_pager_t, bool_t);
 struct ovlspace *ovlspace_alloc(vm_offset_t, vm_offset_t, bool_t);
+struct ovlspace	*ovlspace_fork(struct ovlspace *);
 struct ovlspace *ovlspace_free(struct ovlspace *);
 void			ovl_object_enter_vm_object (ovl_object_t, vm_object_t);
 vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);
