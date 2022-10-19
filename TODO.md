@@ -70,9 +70,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - create seperate options file for each arch
 - i386/x86: (Merged under i386)
-	- fix percpu & cpu_info. Currently Doubling up.
-	- icu.S: Soft Interrupt Handlers need fixing/updating
-	- pcibios & pnpbios: both supported in i386/bios.c but not elsewhere
+	- pnpbios: both supported in i386/bios.c but not elsewhere
 
 ## devel: (planned)
 - Code planned for future integration
@@ -80,7 +78,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
-- com (Disabled): Has several compiler errors.
 - usb (Disabled): Has several compiler errors.
 
 - Improve directory structure
