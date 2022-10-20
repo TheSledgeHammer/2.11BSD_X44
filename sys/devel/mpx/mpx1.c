@@ -65,75 +65,167 @@
 #include <devel/mpx/mpx.h>
 #include <devel/sys/malloctypes.h>
 
+/*
+ * TODO: Possible idea
+ * - make mpx a sys pipe extension.
+ * - mpx have their own fileops and syscall.
+ * 	- however they can return the pipe equivalent.
+ *
+ * 	example:
+ * 	mpx_read() {
+ * 		mpx read code function here
+ *
+ * 		return (pipe_read());
+ * 	}
+ *
+ * 	- This would simplify the mpx code, but offer same functionality.
+ * 	- Keeping it generic enough, but also niche capable.
+ * 	- It also has the added benefit of being a plugin\module if the other BSD's wish to adopt it.
+ * 	not a rewrite of pipes.
+ */
+
+/* mpx type */
+#define MPXCHANNEL 	0
+#define MPXGROUP 	1
+
+/* mpx args */
+#define MPXALLOCATE	0
+#define MPXADD		1
+#define MPXREMOVE	2
+#define MPXGET		3
+
+int mpxchan(struct mpx *, int, int, int);
+int mpxgroup(struct mpx *, int, int, int);
+
+/* mpx syscall */
 int
 mpx()
 {
-	/*
 	register struct mpx_args {
-		syscallarg(int *) fdp;
-	} *uap = (struct mpx_args *) u.u_ap;
-	*/
-	struct file *rf, *wf;
-	struct mpx *rmpx, *wmpx;
-	struct mpxpair *mm;
-	int fd, error;
+		syscallarg(int) 	cmd;
+		syscallarg(int) 	type; /* channel or group */
+		syscallarg(int) 	idx;
+	} *uap;
+	struct mpxpair 	*mm;
+	struct mpx 		*mpx;
+	int error, nchans, ngroups;
+
+	nchans = NCHANS;
+	ngroups = NGROUPS;
 
 	mm = mpx_paircreate();
 	if(mm == NULL) {
 		return (ENOMEM);
 	}
-	rmpx = &mm->mpp_rmpx;
-	wmpx = &mm->mpp_wmpx;
+	mpx = &mm->mpp_rmpx; /* uses mpx reader */
 
-	rf = falloc();
-	if (rf != NULL) {
-		u.u_r.r_val1 = fd;
-		rf->f_flag = FREAD;
-		rf->f_type = DTYPE_PIPE;
-		rf->f_mpx = rmpx;
-		rf->f_ops = &mpxops;
-		error = ufdalloc(rf);
-		if(error != 0) {
-			goto free2;
-		}
-	} else {
-		u.u_error = ENFILE;
-		goto free2;
+	switch(SCARG(uap, type)) {
+	case MPXCHANNEL:
+		error = mpxchan(mpx, SCARG(uap, cmd), SCARG(uap, idx), nchans);
+		break;
+
+	case MPXGROUP:
+		error = mpxgroup(mpx, SCARG(uap, cmd), SCARG(uap, idx), ngroups);
+		break;
 	}
-	wf = falloc();
-	if (wf != NULL) {
-		u.u_r.r_val2 = fd;
-		wf->f_flag = FWRITE;
-		wf->f_type = DTYPE_PIPE;
-		wf->f_mpx = wmpx;
-		wf->f_ops = &mpxops;
-		error = ufdalloc(wf);
-		if(error != 0) {
-			goto free3;
-		}
-	} else {
-		u.u_error = ENFILE;
-		goto free3;
-	}
-
-	rmpx->mpx_peer = wmpx;
-	wmpx->mpx_peer = rmpx;
-
-	FILE_UNUSE(rf, u.u_procp);
-	FILE_UNUSE(wf, u.u_procp);
-	return (0);
-
-free3:
-	FILE_UNUSE(rf, u.u_procp);
-	ffree(rf);
-	fdremove(u.u_r.r_val1);
-
-free2:
-	mpxclose(NULL, rmpx);
-	mpxclose(NULL, wmpx);
-	return (u.u_error);
+	return (error);
 }
 
+int
+mpxchan(mpx, cmd, idx, nchans)
+	struct mpx *mpx;
+	int cmd, idx, nchans;
+{
+	 switch(cmd) {
+	 case MPXALLOCATE:
+		 mpx->mpx_channel = mpx_allocate_channels(mpx, nchans);
+		 if(mpx->mpx_channel == NULL) {
+			 return (ENIVAL);
+		 }
+		 break;
+
+	 case MPXADD:
+		 if(mpx->mpx_channel != NULL) {
+			 if(channelcount < 0) {
+				 idx = 0;
+				 mpx_add_channel(mpx->mpx_channel, idx);
+			 } else {
+				 idx = channelcount+1;
+				 mpx_add_channel(mpx->mpx_channel, idx);
+			 }
+		 } else {
+			 idx = 0;
+			 mpx_create_channel(mpx->mpx_channel, idx, nchans);
+		 }
+		 if(mpx->mpx_group != NULL) {
+			 mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
+		 }
+		 break;
+
+	 case MPXREMOVE:
+		 if(mpx->mpx_channel != NULL) {
+			 mpx_remove_channel(mpx->mpx_channel, idx);
+		 }
+		 break;
+
+	 case MPXGET:
+		 mpx->mpx_channel = mpx_get_channel(idx);
+		 if(mpx->mpx_channel == NULL) {
+			 return (ENIVAL);
+		 }
+		 break;
+	 }
+	 return (0);
+}
+
+int
+mpxgroup(mpx, cmd, idx, ngroups)
+	struct mpx *mpx;
+	int cmd, idx, ngroups;
+{
+	switch (cmd) {
+	case MPXALLOCATE:
+		mpx->mpx_group = mpx_allocate_groups(mpx, ngroups);
+		if (mpx->mpx_group == NULL) {
+			return (ENIVAL);
+		}
+		break;
+
+	case MPXADD:
+		if (mpx->mpx_group != NULL) {
+			if (groupcount < 0) {
+				idx = 0;
+				mpx_add_group(mpx->mpx_group, idx);
+			} else {
+				idx = groupcount + 1;
+				mpx_add_group(mpx->mpx_group, idx);
+			}
+		} else {
+			idx = 0;
+			mpx_create_group(mpx->mpx_group, idx, ngroups);
+		}
+		if (mpx->mpx_channel != NULL) {
+			mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
+		}
+		break;
+
+	case MPXREMOVE:
+		if (mpx->mpx_group != NULL) {
+			mpx_remove_group(mpx->mpx_group, idx);
+		}
+		break;
+
+	case MPXGET:
+		mpx->mpx_group = mpx_get_group(idx);
+		if (mpx->mpx_group == NULL) {
+			return (ENIVAL);
+		}
+		break;
+	}
+	 return (0);
+}
+
+/* mpx file ops */
 int
 mpxnread(mpx, gpidx, cpidx)
 	struct mpx *mpx;
@@ -292,221 +384,4 @@ detach:
 		return (0);
 	}
 	return (0);
-}
-
-#define MPXCHAN 	0	/* create new channel */
-#define MPXGROUP 	1	/* create new group */
-
-int
-mpxchan()
-{
-	register struct mpx_args {
-		syscallarg(int) 	cmd;
-		syscallarg(int *) 	arg;
-	} *uap = (struct mpx_args *) u.u_ap;
-
-	struct mpx *rmpx, *wmpx;
-	struct mpxpair *mm;
-	struct mpx_group 	*gp;
-	struct mpx_channel 	*cp;
-
-	mm = mpx_paircreate();
-	if(mm == NULL) {
-		return (ENOMEM);
-	}
-	rmpx = &mm->mpp_rmpx;
-	wmpx = &mm->mpp_wmpx;
-
-	switch(SCARG(uap, cmd)) {
-	case MPXCHAN:
-		cp = mpx_create_channel(wmpx, NCHANS);
-		mpx_add_channel(cp, 0);
-		return (0);
-
-	case MPXGROUP:
-		gp = mpx_create_group(wmpx, NGROUPS);
-		mpx_add_group(gp, 0);
-		return (0);
-
-	case MPXIOATTACH:
-	}
-
-	return (u.u_error);
-}
-
-void
-mpx_channel(mpx, cmd)
-	struct mpx *mpx;
-	int 	cmd;
-{
-	struct file *rf;
-	struct mpx *rmpx, *wmpx;
-    struct mpx_group *gp;
-    struct mpx_channel *cp;
-    int error;
-
-    /* reader */
-    if(rmpx->mpx_group != NULL){
-        gp = rmpx->mpx_group;
-    } else {
-    	gp = NULL;
-    }
-    if(rmpx->mpx_channel != NULL) {
-    	 cp = rmpx->mpx_channel;
-    } else {
-    	cp = NULL;
-    }
-
-    /* writer */
-    switch(cmd) {
-    case MPXCHAN:
-    	if(cp != NULL) {
-    		if(channelcount < 0) {
-    			mpx_add_channel(cp, 0);
-    		} else {
-    			int idx;
-    			idx = channelcount+1;
-    			mpx_add_channel(cp, idx);
-    		}
-    	} else {
-    		cp = mpx_allocate_channels(wmpx, NCHANS);
-    		mpx_add_channel(cp, 0);
-    	}
-		if(gp != NULL) {
-			mpx_set_channelgroup(cp, gp);
-		}
-    	break;
-
-    case MPXGROUP:
-    	if(gp != NULL) {
-    		if(groupcount < 0) {
-    			mpx_add_group(gp, 0);
-    		} else {
-    			int idx;
-    			idx = groupcount+1;
-    			mpx_add_group(gp, idx);
-    		}
-    	} else {
-    		gp = mpx_allocate_channels(wmpx, NGROUPS);
-    		mpx_add_group(gp, 0);
-    	}
-    	mpx_set_grouppgrp(gp, u.u_procp->p_pgrp);
-    	break;
-    }
-}
-
-
-
-/*
- * TODO: Possible idea
- * - make mpx a sys pipe extension.
- * - mpx have their own fileops and syscall.
- * 	- however they can return the pipe equivalent.
- *
- * 	example:
- * 	mpx_read() {
- * 		mpx read code function here
- *
- * 		return (pipe_read());
- * 	}
- *
- * 	- This would simplify the mpx code, but offer same functionality.
- * 	- Keeping it generic enough, but also niche capable.
- * 	- It also has the added benefit of being a plugin\module if the other BSD's wish to adopt it.
- * 	not a rewrite of pipes.
- */
-/* mpxchan ctl args */
-#define MPXCHANCREATE		0
-#define MPXCHANADD			1
-#define MPXCHANREMOVE		2
-#define MPXCHANGET			3
-
-/* mpxgroup ctl args */
-#define MPXGROUPCREATE		0
-#define MPXGROUPADD			1
-#define MPXGROUPREMOVE		2
-#define MPXGROUPGET			3
-
-int
-mpxchan()
-{
-	struct mpxchannel_args {
-		syscallarg(int) 	cmd;
-		syscallarg(void *) 	arg;
-		syscallarg(int) 	nchans;
-		syscallarg(int) 	idx;
-	} *uap;
-
-	 switch(cmd) {
-	 case MPXCHANCREATE:
-	 case MPXCHANADD:
-	 case MPXCHANREMOVE:
-	 case MPXCHANGET:
-	 }
-	 return (error);
-}
-
-struct mpxgroup_args {
-	syscallarg(int) 			cmd;
-	syscallarg(void *) 			arg;
-	syscallarg(struct mpx *) 	mpx;
-	syscallarg(int) 			idx;
-	syscallarg(int) 			ngroups;
-};
-
-int
-mpxgroup()
-{
-	struct mpxgroup_args/* {
-		syscallarg(int) 			cmd;
-		syscallarg(void *) 			arg;
-		syscallarg(struct mpx *) 	mpx;
-		syscallarg(int) 			idx;
-		syscallarg(int) 			ngroups;
-	}*/ *uap;
-
-	struct mpxpair *mm;
-	struct mpx mpx;
-	int error, idx;;
-
-	if(SCARG(uap, arg) == MPXGROUPADD) {
-		error = copyin(&mpx, SCARG(uap, mpx), sizof(mpx));
-		if (error != 0) {
-			goto out;
-		}
-	}
-
-	switch (SCARG(uap, cmd)) {
-	case MPXGROUPCREATE:
-		if(&mpx.mpx_group == NULL) {
-			&mpx.mpx_group = mpx_allocate_groups(mpx, SCARG(uap, ngroups));
-		} else {
-			error = ENIVAL;
-		}
-		break;
-
-	case MPXGROUPADD:
-		if (&mpx.mpx_group != NULL) {
-			if (groupcount < 0) {
-				mpx_add_group(&mpx.mpx_group, 0);
-			} else {
-				SCARG(uap, idx) = groupcount + 1;
-				mpx_add_group(&mpx.mpx_group, SCARG(uap, idx));
-			}
-		} else {
-			error = ENIVAL;
-		}
-		break;
-
-	case MPXGROUPREMOVE:
-		mpx_remove_group(&mpx.mpx_group, idx);
-		break;
-
-	case MPXGROUPGET:
-		&mpx.mpx_group = mpx_get_group(SCARG(uap, idx));
-		break;
-	}
-
-out:
-	return (error);
 }

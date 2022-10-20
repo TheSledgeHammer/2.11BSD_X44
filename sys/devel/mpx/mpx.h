@@ -150,7 +150,7 @@ extern int channelcount;
 /* groups */
 struct mpx_group 			*mpx_allocate_groups(struct mpx *, int);
 void						mpx_add_group(struct mpx_group *, int);
-void                		mpx_create_group(struct mpx *, int);
+void                		mpx_create_group(struct mpx *, int, int);
 struct mpx_group    		*mpx_get_group(int);
 struct mpx_group 			*mpx_get_group_from_channel(int);
 void						mpx_remove_group(struct mpx_group *, int);
