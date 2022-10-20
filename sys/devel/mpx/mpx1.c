@@ -140,7 +140,7 @@ mpxchan(mpx, cmd, idx, nchans)
 	 case MPXALLOCATE:
 		 mpx->mpx_channel = mpx_allocate_channels(mpx, nchans);
 		 if(mpx->mpx_channel == NULL) {
-			 return (ENIVAL);
+			 return (ENOMEM);
 		 }
 		 break;
 
@@ -155,7 +155,7 @@ mpxchan(mpx, cmd, idx, nchans)
 			 }
 		 } else {
 			 idx = 0;
-			 mpx_create_channel(mpx->mpx_channel, idx, nchans);
+			 mpx_create_channel(mpx, idx, nchans);
 		 }
 		 if(mpx->mpx_group != NULL) {
 			 mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
@@ -171,7 +171,7 @@ mpxchan(mpx, cmd, idx, nchans)
 	 case MPXGET:
 		 mpx->mpx_channel = mpx_get_channel(idx);
 		 if(mpx->mpx_channel == NULL) {
-			 return (ENIVAL);
+			 return (ENOMEM);
 		 }
 		 break;
 	 }
@@ -187,7 +187,7 @@ mpxgroup(mpx, cmd, idx, ngroups)
 	case MPXALLOCATE:
 		mpx->mpx_group = mpx_allocate_groups(mpx, ngroups);
 		if (mpx->mpx_group == NULL) {
-			return (ENIVAL);
+			return (ENOMEM);
 		}
 		break;
 
@@ -202,7 +202,7 @@ mpxgroup(mpx, cmd, idx, ngroups)
 			}
 		} else {
 			idx = 0;
-			mpx_create_group(mpx->mpx_group, idx, ngroups);
+			mpx_create_group(mpx, idx, ngroups);
 		}
 		if (mpx->mpx_channel != NULL) {
 			mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
@@ -218,7 +218,7 @@ mpxgroup(mpx, cmd, idx, ngroups)
 	case MPXGET:
 		mpx->mpx_group = mpx_get_group(idx);
 		if (mpx->mpx_group == NULL) {
-			return (ENIVAL);
+			return (ENOMEM);
 		}
 		break;
 	}
