@@ -157,7 +157,7 @@ void						mpx_remove_group(struct mpx_group *, int);
 /* channels */
 struct mpx_channel 			*mpx_allocate_channels(struct mpx *, int);
 void						mpx_add_channel(struct mpx_channel *, int);
-void                		mpx_create_channel(struct mpx *, struct mpx_group *, int);
+void                		mpx_create_channel(struct mpx *, int, int);
 struct mpx_channel     		*mpx_get_channel(int);
 struct mpx_channel 			*mpx_get_channel_from_group(int);
 void						mpx_remove_channel(struct mpx_channel *, int);
