@@ -69,3 +69,5 @@ datum	dbm_nextkey();
 long	dbm_forder();
 int		dbm_delete();
 int		dbm_store();
+
+#endif	/* _NDBM_H_ */

@@ -57,10 +57,8 @@ struct timecounter {
 					 * suspend/resume.
 					 */
 
-	void				*tc_priv;
-			/* Pointer to the timecounter's private parts. */
-	struct timecounter	*tc_next;
-			/* Pointer to the next timecounter. */
+	void				*tc_priv;		/* Pointer to the timecounter's private parts. */
+	struct timecounter	*tc_next;		/* Pointer to the next timecounter. */
 };
 
 

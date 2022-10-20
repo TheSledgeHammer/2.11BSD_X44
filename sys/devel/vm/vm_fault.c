@@ -69,9 +69,9 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 
-#include <vm/include/vm.h>
-#include <vm/include/vm_page.h>
-#include <vm/include/vm_pageout.h>
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_page.h>
+#include <devel/vm/include/vm_pageout.h>
 
 /*
  * private prototypes
@@ -421,7 +421,9 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_anon_t 				anons_store[VM_MAXRANGE], *anons, anon, oanon;
 	register vm_object_t	object;
 	register vm_offset_t	offset;
+	register vm_segment_t	seg;
 	register vm_page_t		m;
+	vm_segment_t			first_seg;
 	vm_page_t				first_m;
 	vm_prot_t				prot;
 	int						result;
@@ -431,6 +433,60 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	bool_t					page_exists;
 	vm_page_t				old_m;
 	vm_object_t				next_object;
+
+	/*
+	 *	Recovery actions
+	 */
+#define	FREE_SEGMENT(seg)	{			\
+	vm_segment_lock_lists();			\
+	vm_segment_free(seg);				\
+	vm_segment_unlock_lists();			\
+}
+
+#define	RELEASE_SEGMENT(seg)	{		\
+	vm_segment_lock_lists();			\
+	vm_segment_activate(seg);			\
+	vm_segment_unlock_lists();			\
+}
+
+#define	FREE_PAGE(m)	{				\
+	PAGE_WAKEUP(m);						\
+	vm_page_lock_queues();				\
+	vm_page_free(m);					\
+	vm_page_unlock_queues();			\
+}
+
+#define	RELEASE_PAGE(m)	{				\
+	PAGE_WAKEUP(m);						\
+	vm_page_lock_queues();				\
+	vm_page_activate(m);				\
+	vm_page_unlock_queues();			\
+}
+
+#define	UNLOCK_MAP	{					\
+	if (lookup_still_valid) {			\
+		vm_map_lookup_done(map, entry);	\
+		lookup_still_valid = FALSE;		\
+	}									\
+}
+
+#define	UNLOCK_THINGS	{				\
+	object->paging_in_progress--;		\
+	vm_object_unlock(object);			\
+	if (object != first_object) {		\
+		vm_object_lock(first_object);	\
+		FREE_SEGMENT(first_seg);		\
+		FREE_PAGE(first_m);				\
+		first_object->paging_in_progress--;	\
+		vm_object_unlock(first_object);	\
+	}									\
+	UNLOCK_MAP;							\
+}
+
+#define	UNLOCK_AND_DEALLOCATE	{		\
+	UNLOCK_THINGS;						\
+	vm_object_deallocate(first_object);	\
+}
 
 	anon = NULL;
 
@@ -448,8 +504,55 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	if (wired) {
 		fault_type = prot;
 	}
-
+	first_seg = NULL;
 	first_m = NULL;
+
+	vm_object_lock(first_object);
+
+	first_object->ref_count++;
+	first_object->paging_in_progress++;
+
+	object = first_object;
+	offset = first_offset;
+
+	seg = vm_segment_lookup(object, offset);
+	while (TRUE) {
+		m = vm_page_lookup(seg, offset);
+	}
+}
+
+vm_fault_segment(object, offset, bool_t resident)
+{
+	register vm_segment_t	seg;
+	register vm_page_t		pg;
+
+	seg = vm_segment_lookup(object, offset);
+	while(resident){
+		pg = vm_page_lookup(seg, offset);
+		if (pg != NULL) {
+			if (pg->flags & PG_BUSY) {
+				goto RetryFault;
+			}
+
+			vm_page_lock_queues();
+			if (pg->flags & PG_INACTIVE) {
+				TAILQ_REMOVE(&vm_page_queue_inactive, pg, pageq);
+				pg->flags &= ~PG_INACTIVE;
+				cnt.v_page_inactive_count--;
+				cnt.v_reactivated++;
+			}
+
+			if (pg->flags & PG_ACTIVE) {
+				TAILQ_REMOVE(&vm_page_queue_active, pg, pageq);
+				pg->flags &= ~PG_ACTIVE;
+				cnt.v_page_active_count--;
+			}
+			vm_page_unlock_queues();
+
+			pg->flags |= PG_BUSY;
+			break;
+		}
+	}
 }
 
 /*

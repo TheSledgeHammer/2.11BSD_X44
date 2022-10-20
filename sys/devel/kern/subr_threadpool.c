@@ -39,60 +39,119 @@
 
 #include <vm/include/vm_param.h>
 
+#define M_THREADPOOL 83
+
 struct threadpool {
-	struct job_head		tp_jobs;
-	pid_t				tp_pri;			/* priority */
+	void 								*tp_pool;
+	LIST_ENTRY(threadpool)				tp_link;
+	uint64_t							tp_refcnt;
 };
+static LIST_HEAD(, threadpool) threadpools;
 
-struct threadpool_unbound {
-	struct threadpool					tpu_pool;
-
-	/* protected by kthreadpools_lock */
-	LIST_ENTRY(threadpool_unbound)		tpu_link;
-	uint64_t							tpu_refcnt;
-};
-static LIST_HEAD(, threadpool_unbound) unbound_threadpools;
-
-static struct threadpool_unbound *
-threadpool_lookup_unbound(pri)
-	pid_t pri;
+static struct threadpool *
+threadpool_lookup(void *pool)
 {
-	struct threadpool_unbound *tpu;
-	LIST_FOREACH(tpu, &unbound_threadpools, tpu_link) {
-		if (tpu->tpu_pool.tp_pri == pri)
-			return (tpu);
+	struct threadpool *tp;
+	LIST_FOREACH(tp, &threadpools, tp_link) {
+		if(tp->tp_pool == pool) {
+			return (tp);
+		}
 	}
 	return (NULL);
 }
 
 static void
-threadpool_insert_unbound(tpu)
-	struct threadpool_unbound *tpu;
+threadpool_insert(tp)
+	struct threadpool *tp;
 {
-	KASSERT(threadpool_lookup_unbound(tpu->tpu_pool.tp_pri) == NULL);
-	LIST_INSERT_HEAD(&unbound_threadpools, tpu, tpu_link);
+	KASSERT(threadpool_lookup(tp->tp_pool) == NULL);
+	LIST_INSERT_HEAD(&threadpools, tp, tp_link);
 }
 
 static void
-threadpool_remove_unbound(tpu)
-	struct threadpool_unbound *tpu;
+threadpool_remove(tp)
+	struct threadpool *tp;
 {
-	KASSERT(kthreadpool_lookup_unbound(tpu->tpu_pool.tp_pri) == tpu);
-	LIST_REMOVE(tpu, tpu_link);
+	KASSERT(threadpool_lookup(tp->tp_pool) == tp);
+	LIST_REMOVE(tp, tp_link);
 }
 
 void
 threadpool_init(void)
 {
-	LIST_INIT(&unbound_threadpools);
+	LIST_INIT(&threadpools);
 }
 
 int
-threadpool_create(tpool, pri)
-	struct threadpool *tpool;
+threadpool_create(pool)
+	void *pool;
 {
-	tpool->tp_pri = pri;
+	struct threadpool *tp;
+	int error;
+
+	tp = (struct threadpool)malloc(sizeof(struct threadpool *), M_THREADPOOL, NULL);
+	tp->tp_pool = pool;
+
 	return (error);
+}
+
+static void
+threadpool_destroy(pool)
+	void *pool;
+{
+
+}
+
+int
+threadpool_get(pool)
+	void 	*pool;
+{
+	struct threadpool *tp, *tmp = NULL;
+	int error;
+
+	tp = threadpool_lookup(pool);
+	if(tp == NULL) {
+		error = threadpool_create(&tmp->tp_pool);
+		if(error) {
+			FREE(tmp, M_THREADPOOL);
+			return (error);
+		}
+		tp = threadpool_lookup(pool);
+		if(tp == NULL) {
+			tp = tmp;
+			tmp = NULL;
+			threadpool_insert(tp);
+		}
+	}
+	KASSERT(tp != NULL);
+	tp->tp_refcnt++;
+	KASSERT(tp->tp_refcnt != 0);
+
+	if (tmp != NULL) {
+		threadpool_destroy(&tmp->tp_pool);
+		FREE(tmp, M_THREADPOOL);
+	}
+	KASSERT(tp != NULL);
+	pool = &tp->tp_pool;
+	return (0);
+}
+
+void
+threadpool_put(pool)
+	void 	*pool;
+{
+	struct threadpool *tp;
+	KASSERT(tp == threadpool_lookup(pool));
+	KASSERT(0 < tp->tp_refcnt);
+	if(tp->tp_refcnt-- == 0) {
+		threadpool_remove(tp);
+	} else {
+		tp = NULL;
+	}
+	if (tp) {
+		threadpool_destroy(&tp->tp_pool);
+		FREE(tp, M_THREADPOOL);
+	}
 }
 
 /* Threadpool Jobs */
@@ -106,8 +165,7 @@ threadpool_job_init(job, func, lock, name)
 	job->job_lock = lock;
 	job->job_name = name;
 	job->job_refcnt = 0;
-	job->job_kthread = NULL;
-	job->job_uthread = NULL;
+	job->job_thread = NULL;
 	job->job_func = func;
 }
 

@@ -843,7 +843,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	PAGE_WAKEUP(m);
 	UNLOCK_AND_DEALLOCATE;
 
-	return(KERN_SUCCESS);
+	return (KERN_SUCCESS);
 
 }
 

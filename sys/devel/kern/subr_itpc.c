@@ -576,6 +576,47 @@ ithreadpool_add_uthreadpool(itpc, utpool)
 ithreadpool_get()
 {
 	struct itpc 		*itpc;
+}
 
+SIMPLEQ_HEAD(, ithread) allithreads = SIMPLEQ_HEAD_INITIALIZER(allithreads);
+struct ithread {
+	void 					*ithread;
+	SIMPLEQ_ENTRY(ithread)  ientry;
+};
 
+void
+ithread_init(struct itpc *itpc)
+{
+	struct ithread *ith;
+
+	ith = (struct ithread *)malloc(sizeof(struct ithread *));
+	itpc->ithread = ith;
+}
+
+struct ithread *
+ithread_lookup(void *thread)
+{
+	struct ithread *ith;
+	SIMPLEQ_FOREACH(ith, &allithreads, ientry) {
+		if(ith->ithread == thread) {
+			return (ith);
+		}
+	}
+	return (NULL);
+}
+
+void
+ithread_remove(void *thread)
+{
+	struct ithread *ith;
+	ith = ithread_lookup(thread);
+	if(ith != NULL) {
+		SIMPLEQ_REMOVE(&allithreads, ith, ithread, ientry);
+	}
+}
+
+ithread_put(struct ithread *ith, void *thread)
+{
+	ith->ithread = thread;
+	SIMPLEQ_INSERT_HEAD(&allithreads, ith, ientry);
 }

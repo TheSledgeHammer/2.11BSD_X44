@@ -415,3 +415,98 @@ mpx_channel(mpx, cmd)
  * 	- It also has the added benefit of being a plugin\module if the other BSD's wish to adopt it.
  * 	not a rewrite of pipes.
  */
+/* mpxchan ctl args */
+#define MPXCHANCREATE		0
+#define MPXCHANADD			1
+#define MPXCHANREMOVE		2
+#define MPXCHANGET			3
+
+/* mpxgroup ctl args */
+#define MPXGROUPCREATE		0
+#define MPXGROUPADD			1
+#define MPXGROUPREMOVE		2
+#define MPXGROUPGET			3
+
+int
+mpxchan()
+{
+	struct mpxchannel_args {
+		syscallarg(int) 	cmd;
+		syscallarg(void *) 	arg;
+		syscallarg(int) 	nchans;
+		syscallarg(int) 	idx;
+	} *uap;
+
+	 switch(cmd) {
+	 case MPXCHANCREATE:
+	 case MPXCHANADD:
+	 case MPXCHANREMOVE:
+	 case MPXCHANGET:
+	 }
+	 return (error);
+}
+
+struct mpxgroup_args {
+	syscallarg(int) 			cmd;
+	syscallarg(void *) 			arg;
+	syscallarg(struct mpx *) 	mpx;
+	syscallarg(int) 			idx;
+	syscallarg(int) 			ngroups;
+};
+
+int
+mpxgroup()
+{
+	struct mpxgroup_args/* {
+		syscallarg(int) 			cmd;
+		syscallarg(void *) 			arg;
+		syscallarg(struct mpx *) 	mpx;
+		syscallarg(int) 			idx;
+		syscallarg(int) 			ngroups;
+	}*/ *uap;
+
+	struct mpxpair *mm;
+	struct mpx mpx;
+	int error, idx;;
+
+	if(SCARG(uap, arg) == MPXGROUPADD) {
+		error = copyin(&mpx, SCARG(uap, mpx), sizof(mpx));
+		if (error != 0) {
+			goto out;
+		}
+	}
+
+	switch (SCARG(uap, cmd)) {
+	case MPXGROUPCREATE:
+		if(&mpx.mpx_group == NULL) {
+			&mpx.mpx_group = mpx_allocate_groups(mpx, SCARG(uap, ngroups));
+		} else {
+			error = ENIVAL;
+		}
+		break;
+
+	case MPXGROUPADD:
+		if (&mpx.mpx_group != NULL) {
+			if (groupcount < 0) {
+				mpx_add_group(&mpx.mpx_group, 0);
+			} else {
+				SCARG(uap, idx) = groupcount + 1;
+				mpx_add_group(&mpx.mpx_group, SCARG(uap, idx));
+			}
+		} else {
+			error = ENIVAL;
+		}
+		break;
+
+	case MPXGROUPREMOVE:
+		mpx_remove_group(&mpx.mpx_group, idx);
+		break;
+
+	case MPXGROUPGET:
+		&mpx.mpx_group = mpx_get_group(SCARG(uap, idx));
+		break;
+	}
+
+out:
+	return (error);
+}
