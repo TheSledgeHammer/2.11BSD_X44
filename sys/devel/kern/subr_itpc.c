@@ -573,11 +573,6 @@ ithreadpool_add_uthreadpool(itpc, utpool)
 	itpc_enter(itpc);
 }
 
-ithreadpool_get()
-{
-	struct itpc 		*itpc;
-}
-
 SIMPLEQ_HEAD(, ithread) allithreads = SIMPLEQ_HEAD_INITIALIZER(allithreads);
 struct ithread {
 	void 					*ithread;
@@ -615,6 +610,7 @@ ithread_remove(void *thread)
 	}
 }
 
+void
 ithread_put(struct ithread *ith, void *thread)
 {
 	ith->ithread = thread;
