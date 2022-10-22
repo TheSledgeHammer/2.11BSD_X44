@@ -127,4 +127,6 @@ int				swalloc(int, int *, bool_t);
 void			vm_swapbuf_init(struct buf *, struct proc *);
 struct buf 		*vm_getswapbuf(struct swapbuf *);
 void			vm_putswapbuf(struct swapbuf *, struct buf*);
+
+void			vm_swap_markbad(int, int);
 #endif /* _VM_SWAP_H_ */

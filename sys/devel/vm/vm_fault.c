@@ -555,6 +555,45 @@ vm_fault_segment(object, offset, bool_t resident)
 	}
 }
 
+vm_fault_segment(first_object, first_offset)
+{
+	register vm_object_t	object;
+	register vm_segment_t	seg;
+	register vm_offset_t	offset;
+	bool_t RetryFault;
+
+	RetryFault = FALSE
+	object = first_object;
+	offset = first_offset;
+
+	seg = vm_segment_lookup(object, offset);
+	if (seg != NULL) {
+		if (seg->sg_flags & SEG_BUSY) {
+			int	wait_result;
+			cnt.v_intrans++;
+			thread_block();
+			vm_object_deallocate(first_object);
+			RetryFault = TRUE;
+		}
+
+		vm_segment_lock_lists();
+		if(seg->sg_flags & SEG_INACTIVE) {
+			CIRCLEQ_REMOVE(&vm_segment_list_inactive, seg, sg_list);
+			seg->sg_flags &= ~SEG_INACTIVE;
+			cnt.v_segment_active_count--;
+		}
+		if(seg->sg_flags & SEG_ACTIVE) {
+			CIRCLEQ_REMOVE(&vm_segment_list_active, seg, sg_list);
+			seg->sg_flags &= ~SEG_ACTIVE;
+			cnt.v_segment_active_count--;
+		}
+		vm_segment_unlock_lists();
+
+		seg->sg_flags |= SEG_BUSY;
+		break;
+	}
+}
+
 /*
  * uvmfault_unlockmaps: unlock the maps
  */

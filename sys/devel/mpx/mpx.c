@@ -26,27 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Copyright (c) 1996 John S. Dyson
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice immediately at the beginning of the file, without modification,
- *    this list of conditions, and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Absolutely no warranty of function or purpose is made by the author
- *    John S. Dyson.
- * 4. Modifications may be freely made to this file if the above conditions
- *    are met.
- *
- * $FreeBSD: src/sys/kern/sys_pipe.c,v 1.95 2002/03/09 22:06:31 alfred Exp $
- */
-
 #include <sys/cdefs.h>
 #include <sys/systm.h>
 #include <sys/param.h>
@@ -66,19 +45,8 @@
 #include <devel/mpx/mpx.h>
 #include <devel/sys/malloctypes.h>
 
-/* mpx type */
-#define MPXCHANNEL 	0
-#define MPXGROUP 	1
-
-/* mpx args */
-#define MPXCREATE	0
-#define MPXDESTROY	1
-#define MPXADD		2
-#define MPXREMOVE	3
-#define MPXGET		3
-
-int mpxchan(struct mpx *, int, int, int);
-int mpxgroup(struct mpx *, int, int, int);
+int mpxchan(int, int, struct mpx *, int);
+int mpxgroup(int, int, struct mpx *, int);
 
 struct grouplist   	mpx_groups[NGROUPS];
 struct channellist  mpx_channels[NCHANS];
@@ -97,6 +65,7 @@ mpx_init(void)
 	for(j = 0; j < NCHANS; j++) {
 		LIST_INIT(&mpx_channels[j]);
 	}
+	/* A count of -1 indicates no channel or group exists */
 	groupcount = -1;
 	channelcount = -1;
 }
@@ -119,30 +88,57 @@ mpx_free(mpx)
 	free(mpx, M_MPX);
 }
 
+static int
+mpx_set(mpx)
+	struct mpx *mpx;
+{
+	struct mpx mx;
+	int error;
+
+	error = copyin(mpx, &mx, sizeof(struct mpx));
+	return (error);
+}
+
+static int
+mpx_get(mpx)
+	struct mpx *mpx;
+{
+	struct mpx mx;
+	int error;
+
+	error = copyout(mpx, &mx, sizeof(struct mpx));
+	return (error);
+}
+
 /* mpx callback */
 int
-mpxcall(cmd, type, idx)
+mpxcall(cmd, type, mpx, idx)
 	int cmd, type, idx;
+	struct mpx *mpx;
 {
-	register struct mpx *mpx;
 	int error, nchans, ngroups;
 
 	nchans = NCHANS;
 	ngroups = NGROUPS;
 
-	mpx = mpx_alloc();
-	if(mpx == NULL) {
-		return (ENOMEM);
-	}
-	switch(type){
-	case MPXCHANNEL:
-		error = mpxchan(mpx, cmd, idx, nchans);
-		break;
+	error = mpx_set(mpx);
+	if (error) {
+		switch (type) {
+		case MPXCHANNEL:
+			error = mpxchan(cmd, idx, mpx, nchans);
+			break;
 
-	case MPXGROUP:
-		error = mpxgroup(mpx, cmd, idx, ngroups);
-		break;
+		case MPXGROUP:
+			error = mpxgroup(cmd, idx, mpx, ngroups);
+			break;
+		}
 	}
+
+	if (error != 0) {
+		return (error);
+	}
+
+	error = mpx_get(mpx);
 	return (error);
 }
 
@@ -153,29 +149,39 @@ mpx()
 	register struct mpx_args {
 		syscallarg(int) cmd;
 		syscallarg(int) type; /* channel or group */
-		syscallarg(int) idx;
+		syscallarg(struct mpx *) mpx;
+		syscallarg(int) idx; /* channel or group index */
 	} *uap = (struct mpx_args *)u.u_ap;
 
 	int error;
 
-	error = mpxcall(SCARG(uap, cmd), SCARG(uap, type), SCARG(uap, idx));
+	error = mpxcall(SCARG(uap, cmd), SCARG(uap, type), SCARG(uap, mpx), SCARG(uap, idx));
 	return (error);
 }
 
 int
-mpxchan(mpx, cmd, idx, nchans)
-	struct mpx *mpx;
+mpxchan(cmd, idx, mpx, nchans)
 	int cmd, idx, nchans;
+	struct mpx *mpx;
 {
-	 switch(cmd) {
+	int error;
+
+	switch (cmd) {
 	case MPXCREATE:
+		if (channelcount < 0) {
+			idx = 0;
+		}
 		mpx_create_channel(mpx, idx, nchans);
 		break;
 
-	case MPXDESTROY: /* WIP */
+	case MPXDESTROY:
+		if (channelcount <= 0) {
+			idx = -1;
+		}
+		mpx_destroy_channel(mpx, idx);
 		break;
 
-	case MPXADD:
+	case MPXPUT:
 		if (mpx->mpx_channel != NULL) {
 			if (channelcount < 0) {
 				idx = 0;
@@ -206,23 +212,31 @@ mpxchan(mpx, cmd, idx, nchans)
 		}
 		break;
 	}
-	 return (0);
+
+	return (0);
 }
 
 int
-mpxgroup(mpx, cmd, idx, ngroups)
-	struct mpx *mpx;
+mpxgroup(cmd, idx, mpx, ngroups)
 	int cmd, idx, ngroups;
+	struct mpx *mpx;
 {
 	switch (cmd) {
 	case MPXCREATE:
-		 mpx_create_group(mpx, idx, ngroups);
-		 break;
-
-	case MPXDESTROY: /* WIP */
+		if (groupcount < 0) {
+			idx = 0;
+		}
+		mpx_create_group(mpx, idx, ngroups);
 		break;
 
-	case MPXADD:
+	case MPXDESTROY:
+		if (groupcount <= 0) {
+			idx = -1;
+		}
+		mpx_destroy_group(mpx, idx);
+		break;
+
+	case MPXPUT:
 		if (mpx->mpx_group != NULL) {
 			if (groupcount < 0) {
 				idx = 0;
@@ -253,7 +267,7 @@ mpxgroup(mpx, cmd, idx, ngroups)
 		}
 		break;
 	}
-	 return (0);
+	return (0);
 }
 
 void
@@ -290,17 +304,21 @@ mpx_allocate_groups(mpx, ngroups)
 }
 
 void
-mpx_deallocate_groups(mpx)
-	struct mpx 	*mpx;
+mpx_deallocate_groups(mpx, gp)
+	struct mpx 		 *mpx;
+	struct mpx_group *gp;
 {
-	register struct mpx_group *result;
-
-	result = mpx->mpx_group;
-	if(result == NULL) {
+	if(gp == NULL) {
 		return;
 	}
-	free(result, M_MPX);
-	mpx->mpx_group = NULL;
+
+	mpx->mpx_group = mpx_get_group(gp->mpg_index);
+	if(mpx->mpx_group != gp) {
+		return;
+	}
+
+	free(gp, M_MPX);
+	mpx->mpx_group = gp;
 }
 
 void
@@ -328,6 +346,18 @@ mpx_create_group(mpx, idx, ngroups)
 
 	gp = mpx_allocate_groups(mpx, ngroups);
 	mpx_add_group(gp, idx);
+}
+
+void
+mpx_destroy_group(mpx, idx)
+	struct mpx 	*mpx;
+	int idx;
+{
+	struct mpx_group *gp;
+
+	gp = mpx_get_group(idx);
+	mpx_remove_group(gp, gp->mpg_index);
+	mpx_deallocate_groups(mpx, gp);
 }
 
 struct mpx_group *
@@ -378,6 +408,7 @@ mpx_remove_group(gp, idx)
 		gp = mpx_get_group(idx);
 		LIST_REMOVE(gp, mpg_node);
 	}
+	groupcount--;
 }
 
 struct mpx_channel *
@@ -394,17 +425,21 @@ mpx_allocate_channels(mpx, nchans)
 }
 
 void
-mpx_deallocate_channels(mpx)
+mpx_deallocate_channels(mpx, cp)
 	struct mpx 	*mpx;
+	struct mpx_channel *cp;
 {
-	register struct mpx_channel *result;
-
-	result = mpx->mpx_channel;
-	if(result == NULL) {
+	if(cp == NULL) {
 		return;
 	}
-	free(result, M_MPX);
-	mpx->mpx_channel = NULL;
+
+	mpx->mpx_channel = mpx_get_group(cp->mpc_index);
+	if(mpx->mpx_channel != cp) {
+		return;
+	}
+
+	free(cp, M_MPX);
+	mpx->mpx_channel = cp;
 }
 
 void
@@ -431,6 +466,18 @@ mpx_create_channel(mpx, idx, nchans)
 
     cp = mpx_allocate_channels(mpx, nchans);
     mpx_add_channel(cp, idx);
+}
+
+void
+mpx_destroy_channel(mpx, idx)
+	struct mpx 	*mpx;
+	int idx;
+{
+	struct mpx_channel *cp;
+
+	cp = mpx_get_channel(idx);
+	mpx_remove_channel(cp, cp->mpc_index);
+	mpx_deallocate_channels(mpx, cp);
 }
 
 struct mpx_channel *
@@ -481,6 +528,7 @@ mpx_remove_channel(cp, idx)
 		cp = mpx_get_channel(idx);
 		LIST_REMOVE(cp, mpc_node);
 	}
+	channelcount--;
 }
 
 /*

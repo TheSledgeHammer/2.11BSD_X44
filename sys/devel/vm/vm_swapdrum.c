@@ -1225,6 +1225,35 @@ ReTry: /* XXXMRG */
 }
 
 /*
+ * uvm_swap_markbad: keep track of swap ranges where we've had i/o errors
+ *
+ * => we lock uvm.swap_data_lock
+ */
+void
+vm_swap_markbad(startslot, nslots)
+	int startslot;
+	int nslots;
+{
+	struct swapdev *sdp;
+
+	simple_unlock(&swap_data_lock);
+	sdp = swapdrum_getsdp(startslot);
+	KASSERT(sdp != NULL);
+
+	/*
+	 * we just keep track of how many pages have been marked bad
+	 * in this device, to make everything add up in swap_off().
+	 * we assume here that the range of slots will all be within
+	 * one swap device.
+	 */
+
+	KASSERT(cnt.v_swpgonly >= nslots);
+	cnt.v_swpgonly -= nslots;
+	sdp->swd_npgbad += nslots;
+	simple_unlock(&swap_data_lock);
+}
+
+/*
  * vm_swap_free: free swap slots
  *
  * => this can be all or part of an allocation made by vm_swap_alloc
@@ -1366,15 +1395,6 @@ putphysbuf(bp)
 /*
  * swap_pager.c
  */
-swap_pager_put()
-{
-
-}
-
-swap_pager_get()
-{
-
-}
 
 static int
 swap_pager_io(swp, mlist, npages, flags)
