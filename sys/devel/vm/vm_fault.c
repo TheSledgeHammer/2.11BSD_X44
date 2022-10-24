@@ -68,15 +68,28 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/mman.h>
 
 #include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_fault.h>
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm_pageout.h>
+#include <devel/vm/include/vm_segment.h>
+
+/*
+ * local data structures
+ */
+static struct vm_advice vmadvice[] = {
+		{ MADV_NORMAL, 3, 4 },
+		{ MADV_RANDOM, 0, 0 },
+		{ MADV_SEQUENTIAL, 8, 7},
+};
+
+#define VM_MAXRANGE 16 	/* must be MAX() of nback+nforw+1 */
 
 /*
  * private prototypes
  */
-
 static void vm_fault_amapcopy(vm_map_t, vm_map_entry_t, vm_offset_t, unsigned int);
 static __inline void vm_fault_anonflush(vm_anon_t *, int);
 static __inline void vm_fault_unlockmaps(vm_map_t, bool_t);
@@ -271,7 +284,7 @@ vm_fault_anonget(map, amap, anon)
 				 * we hold PG_BUSY on the page.
 				 */
 				cnt.v_pageins++;
-				error = vm_swap_get(pg, anon->an_swslot, PGO_SYNCIO);
+				error = vm_swap_get(pg, anon->an_swslot, PGO_SYNCIO); /* fix; non-existent */
 
 				/*
 				 * we clean up after the i/o below in the
@@ -405,8 +418,6 @@ released:
 	/*NOTREACHED*/
 }
 
-#define VM_MAXRANGE 16	/* must be MAX() of nback+nforw+1 */
-
 int
 vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_map_t	map;
@@ -434,61 +445,15 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_page_t				old_m;
 	vm_object_t				next_object;
 
-	/*
-	 *	Recovery actions
-	 */
-#define	FREE_SEGMENT(seg)	{			\
-	vm_segment_lock_lists();			\
-	vm_segment_free(seg);				\
-	vm_segment_unlock_lists();			\
-}
-
-#define	RELEASE_SEGMENT(seg)	{		\
-	vm_segment_lock_lists();			\
-	vm_segment_activate(seg);			\
-	vm_segment_unlock_lists();			\
-}
-
-#define	FREE_PAGE(m)	{				\
-	PAGE_WAKEUP(m);						\
-	vm_page_lock_queues();				\
-	vm_page_free(m);					\
-	vm_page_unlock_queues();			\
-}
-
-#define	RELEASE_PAGE(m)	{				\
-	PAGE_WAKEUP(m);						\
-	vm_page_lock_queues();				\
-	vm_page_activate(m);				\
-	vm_page_unlock_queues();			\
-}
-
-#define	UNLOCK_MAP	{					\
-	if (lookup_still_valid) {			\
-		vm_map_lookup_done(map, entry);	\
-		lookup_still_valid = FALSE;		\
-	}									\
-}
-
-#define	UNLOCK_THINGS	{				\
-	object->paging_in_progress--;		\
-	vm_object_unlock(object);			\
-	if (object != first_object) {		\
-		vm_object_lock(first_object);	\
-		FREE_SEGMENT(first_seg);		\
-		FREE_PAGE(first_m);				\
-		first_object->paging_in_progress--;	\
-		vm_object_unlock(first_object);	\
-	}									\
-	UNLOCK_MAP;							\
-}
-
-#define	UNLOCK_AND_DEALLOCATE	{		\
-	UNLOCK_THINGS;						\
-	vm_object_deallocate(first_object);	\
-}
+	struct vm_faultinfo 	vfi;
+	vm_page_t 				pg;
 
 	anon = NULL;
+	pg = NULL;
+
+	vfi.orig_map = map;
+	vfi.orig_vaddr = truc_page(vaddr);
+	vfi.orig_size = PAGE_SIZE;
 
 	result = vm_map_lookup(&map, vaddr, fault_type, &entry, &first_object, &first_offset, &prot, &wired, &su);
 	if(result != KERN_SUCCESS) {
@@ -519,43 +484,53 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	while (TRUE) {
 		m = vm_page_lookup(seg, offset);
 	}
-}
 
-vm_fault_segment(object, offset, bool_t resident)
-{
-	register vm_segment_t	seg;
-	register vm_page_t		pg;
-
-	seg = vm_segment_lookup(object, offset);
-	while(resident){
-		pg = vm_page_lookup(seg, offset);
-		if (pg != NULL) {
-			if (pg->flags & PG_BUSY) {
-				goto RetryFault;
-			}
-
-			vm_page_lock_queues();
-			if (pg->flags & PG_INACTIVE) {
-				TAILQ_REMOVE(&vm_page_queue_inactive, pg, pageq);
-				pg->flags &= ~PG_INACTIVE;
-				cnt.v_page_inactive_count--;
-				cnt.v_reactivated++;
-			}
-
-			if (pg->flags & PG_ACTIVE) {
-				TAILQ_REMOVE(&vm_page_queue_active, pg, pageq);
-				pg->flags &= ~PG_ACTIVE;
-				cnt.v_page_active_count--;
-			}
-			vm_page_unlock_queues();
-
-			pg->flags |= PG_BUSY;
-			break;
+	if (((object->pager != NULL) && (!change_wiring || wired))
+			|| (object == first_object)) {
+		m = vm_page_alloc(object, offset);
+		if (m == NULL) {
+			UNLOCK_AND_DEALLOCATE;
+			VM_WAIT;
+			goto RetryFault;
 		}
 	}
 }
 
+vm_fault_page(segment, resident)
+	vm_segment_t 	segment;
+	bool_t 			resident;
+{
+	register vm_page_t		pg;
+
+	pg = vm_page_lookup(segment, segment->sg_offset);
+	if (pg != NULL) {
+		if (pg->flags & PG_BUSY) {
+			goto RetryFault;
+		}
+
+		vm_page_lock_queues();
+		if (pg->flags & PG_INACTIVE) {
+			TAILQ_REMOVE(&vm_page_queue_inactive, pg, pageq);
+			pg->flags &= ~PG_INACTIVE;
+			cnt.v_page_inactive_count--;
+			cnt.v_reactivated++;
+		}
+
+		if (pg->flags & PG_ACTIVE) {
+			TAILQ_REMOVE(&vm_page_queue_active, pg, pageq);
+			pg->flags &= ~PG_ACTIVE;
+			cnt.v_page_active_count--;
+		}
+		vm_page_unlock_queues();
+
+		pg->flags |= PG_BUSY;
+		break;
+	}
+}
+
 vm_fault_segment(first_object, first_offset)
+	vm_object_t first_object;
+	vm_offset_t first_offset;
 {
 	register vm_object_t	object;
 	register vm_segment_t	seg;
@@ -592,12 +567,60 @@ vm_fault_segment(first_object, first_offset)
 		seg->sg_flags |= SEG_BUSY;
 		break;
 	}
+
+	if (((object->pager != NULL) && (!change_wiring || wired))
+			|| (object == first_object)) {
+		seg = vm_segment_alloc(object, offset);
+		if(seg == NULL) {
+
+		}
+	}
+	if (object->pager != NULL && (!change_wiring || wired)) {
+		int rv;
+
+		vm_object_unlock(object);
+		UNLOCK_MAP;
+		cnt.v_pageins++;
+
+		//rv = vm_pager_get(object->pager, , TRUE);
+
+		vm_object_lock(object);
+	}
+	if (object == first_object) {
+
+	}
+	offset += object->shadow_offset;
+	next_object = object->shadow;
+	if (next_object == NULL) {
+		if (object != first_object) {
+			object->paging_in_progress--;
+			vm_object_unlock(object);
+
+			object = first_object;
+			offset = first_offset;
+			m = first_m;
+			vm_object_lock(object);
+		}
+		first_m = NULL;
+
+		vm_page_zero_fill(m);
+		cnt.v_zfod++;
+		m->flags &= ~PG_FAKE;
+		break;
+	} else {
+		vm_object_lock(next_object);
+		if (object != first_object) {
+			object->paging_in_progress--;
+		}
+		vm_object_unlock(object);
+		object = next_object;
+		object->paging_in_progress++;
+	}
 }
 
 /*
  * uvmfault_unlockmaps: unlock the maps
  */
-
 static __inline void
 vm_fault_unlockmaps(map, write_locked)
 	vm_map_t map;

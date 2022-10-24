@@ -206,13 +206,13 @@ mpxchan(cmd, idx, mpx, nchans)
 		break;
 
 	case MPXGET:
-		mpx->mpx_channel = mpx_get_channel(idx);
-		if (mpx->mpx_channel == NULL) {
+		if(idx >= 0) {
+			mpx->mpx_channel = mpx_get_channel(idx);
+		} else {
 			return (ENOMEM);
 		}
 		break;
 	}
-
 	return (0);
 }
 
@@ -261,8 +261,9 @@ mpxgroup(cmd, idx, mpx, ngroups)
 		break;
 
 	case MPXGET:
-		mpx->mpx_group = mpx_get_group(idx);
-		if (mpx->mpx_group == NULL) {
+		if(idx >= 0) {
+			mpx->mpx_group = mpx_get_group(idx);
+		} else {
 			return (ENOMEM);
 		}
 		break;
@@ -708,14 +709,26 @@ int
 mpx_compare_groups(gp1, gp2)
 	struct mpx_group *gp1, *gp2;
 {
-	return (mpx_compare_index(gp1->mpg_index, gp2->mpg_index));
+	if (gp1 < gp2) {
+		return (-1);
+	} else if(gp1 > gp2) {
+		return (1);
+	} else {
+		return (mpx_compare_index(gp1->mpg_index, gp2->mpg_index));
+	}
 }
 
 int
 mpx_compare_channels(cp1, cp2)
 	struct mpx_channel 	*cp1, *cp2;
 {
-	return (mpx_compare_index(cp1->mpc_index, cp2->mpc_index));
+	if (cp1 < cp2) {
+		return (-1);
+	} else if(cp1 > cp2) {
+		return (1);
+	} else {
+		return (mpx_compare_index(cp1->mpc_index, cp2->mpc_index));
+	}
 }
 
 /*

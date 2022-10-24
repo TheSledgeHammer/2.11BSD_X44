@@ -77,6 +77,7 @@ struct vm_segment {
 #define	SEG_BUSY		0x040	/* segment is in transit (O) */
 #define	SEG_CLEAN		0x080	/* segment has not been modified */
 #define	SEG_RELEASED	0x100	/* segment to be freed when unbusied */
+#define	SEG_WANTED		0x200	/* someone is waiting for segment (O) */
 
 #define	VM_SEGMENT_CHECK(seg) { 											\
 	if ((((unsigned int) seg) < ((unsigned int) &vm_segment_array[0])) || 	\
@@ -129,6 +130,14 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
 		(&vm_segment_array[VM_SEGMENT_INDEX(pa)])
+
+#define SEGMENT_WAKEUP(s) {             				\
+    (s)->sg_flags &= ~SEG_BUSY; 						\
+    if ((s)->sg_flags & SEG_WANTED) { 					\
+        (s)->sg_flags &= ~SEG_WANTED; 					\
+		thread_wakeup((s)); 							\
+	} 													\
+}
 
 #define	vm_segment_lock_lists()		simple_lock(&vm_segment_list_lock)
 #define	vm_segment_unlock_lists()	simple_unlock(&vm_segment_list_lock)
