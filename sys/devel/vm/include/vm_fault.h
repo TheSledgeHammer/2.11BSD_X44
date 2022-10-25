@@ -43,6 +43,7 @@ struct vm_faultinfo {
     vm_size_t        orig_size;
     unsigned int     version;
     vm_size_t        size;
+    unsigned int	 mapv;
 
     /* map */
    vm_map_t         orig_map;

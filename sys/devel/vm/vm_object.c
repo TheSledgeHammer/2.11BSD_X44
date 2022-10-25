@@ -552,17 +552,23 @@ vm_object_deactivate_pages(object)
 	register vm_object_t	object;
 {
 	register vm_segment_t 	segment;
-	register vm_page_t		page;
+	register vm_page_t	 	page;
 
-	for(segment = CIRCLEQ_FIRST(object->seglist); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_list)) {
-		if(segment->sg_object == object && segment->sg_memq != NULL) {
-			for(page = TAILQ_FIRST(segment->sg_memq); page != NULL; page = TAILQ_NEXT(page, listq)) {
-				if(page->segment == segment) {
-					vm_page_lock_queues();
-					vm_page_deactivate(page);
-					vm_page_unlock_queues();
+	CIRCLEQ_FOREACH(segment, object->seglist, sg_list) {
+		if (segment->sg_object == object) {
+			vm_segment_lock_lists();
+			if (segment->sg_memq == NULL) {
+				vm_segment_deactivate(segment);
+			} else {
+				TAILQ_FOREACH(page, segment->sg_memq, listq) {
+					if (page->segment == segment) {
+						vm_page_lock_queues();
+						vm_page_deactivate(page);
+						vm_page_unlock_queues();
+					}
 				}
 			}
+			vm_segment_unlock_lists();
 		}
 	}
 }

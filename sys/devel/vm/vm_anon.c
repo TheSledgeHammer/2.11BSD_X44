@@ -55,6 +55,26 @@ struct vm_anonblock {
 };
 static LIST_HEAD(anonlist, vm_anonblock) anonblock_list;
 
+static inline void
+vm_anonblock_insert(anon, count)
+	vm_anon_t anon;
+	int count;
+{
+	struct vm_anonblock *anonblock;
+
+	MALLOC(anonblock, void *, sizeof(*anonblock), M_VMAMAP, M_WAITOK);
+	anonblock->anons = anon;
+	anonblock->count = count;
+	LIST_INSERT_HEAD(&anonblock_list, anonblock, list);
+}
+
+static inline void
+vm_anonblock_remove(anonblock)
+	struct vm_anonblock *anonblock;
+{
+	LIST_REMOVE(anonblock, list);
+}
+
 /*
  * allocate anons
  */
@@ -67,6 +87,7 @@ vm_anon_init()
 	int lcv;
 	simple_lock_init(&anon->u.an_freelock);
 
+	LIST_INIT(&anonblock_list);
 	/*
 	 * Allocate the initial anons.
 	 */
@@ -120,7 +141,7 @@ vm_anon_add(pages)
  * allocate an anon
  */
 vm_anon_t
-vm_anon_alloc()
+vm_anon_alloc(void)
 {
 	vm_anon_t a;
 

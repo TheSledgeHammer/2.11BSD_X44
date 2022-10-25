@@ -457,9 +457,10 @@ vm_amap_share_protect(entry, prot)
 	vm_map_entry_t entry;
 	vm_prot_t prot;
 {
-	vm_amap_t amap = entry->aref.ar_amap;
+	vm_amap_t amap;
 	int slots, lcv, slot, stop;
 
+	amap = entry->aref.ar_amap;
 	AMAP_B2SLOT(slots, (entry->end - entry->start));
 	stop = entry->aref.ar_pageoff + slots;
 
@@ -712,11 +713,12 @@ vm_amap_cow_now(map, entry)
 	vm_map_t  map;
 	vm_map_entry_t entry;
 {
-	vm_amap_t amap = entry->aref.ar_amap;
+	vm_amap_t amap;
 	int lcv, slot;
 	vm_anon_t anon, nanon;
 	vm_page_t pg, npg;
 
+	amap = entry->aref.ar_amap;
 	/*
 	 * note that if we unlock the amap then we must ReStart the "lcv" for
 	 * loop because some other process could reorder the anon's in the
@@ -734,6 +736,7 @@ ReStart:
 		slot = amap->am_slots[lcv];
 		anon = amap->am_anon[slot];
 		simple_lock(&anon->an_lock);
+
 		pg = anon->u.an_page;
 
 		/*

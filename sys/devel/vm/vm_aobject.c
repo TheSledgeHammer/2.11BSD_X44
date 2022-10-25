@@ -54,13 +54,13 @@
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_page.h>
 #include <vm/include/vm_kern.h>
-#include <vm/include/vm_pager.h>
+#include <devel/vm/include/vm_pager.h>
 #include <devel/vm/include/vm_aobject.h>
 
 #include <devel/sys/malloctypes.h>
 
 /*
- * an aobj manages anonymous-memory backed uvm_objects.   in addition
+ * an aobj manages anonymous-memory backed vm_objects.   in addition
  * to keeping the list of resident pages, it also keeps a list of
  * allocated swap blocks.  depending on the size of the aobj this list
  * of allocated swap blocks is either stored in an array (small objects)
@@ -121,11 +121,12 @@ void
 vm_aobject_detach(obj)
 	vm_object_t obj;
 {
-	vm_aobject_t aobj = (struct vm_aobject *)obj;
-	vm_segment_t sg;
-	vm_page_t 	pg;
+	vm_aobject_t 	aobj;
+	vm_segment_t 	seg;
+	vm_page_t	 	pg;
 	bool_t busybody;
 
+	aobj = (struct vm_aobject *)obj;
 	/*
  	 * detaching from kernel_object is a noop.
  	 */
@@ -150,27 +151,15 @@ vm_aobject_detach(obj)
 	/*
  	 * free all the pages that aren't PG_BUSY, mark for release any that are.
  	 */
-
 	busybody = FALSE;
-	CIRCLEQ_FOREACH(sg, obj->seglist, sg_list) {
-		if(sg->sg_flags & SEG_BUSY) {
-			sg->sg_flags |= SEG_RELEASED;
-			busybody = TRUE;
-			continue;
-		}
-		TAILQ_FOREACH(pg, sg->sg_memq, listq) {
-			if (pg->flags & PG_BUSY) {
-				pg->flags |= PG_RELEASED;
-				busybody = TRUE;
-				continue;
-			}
-			/* zap the mappings, free the swap slot, free the page */
-			pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
-			vm_aobject_dropswap(&aobj->u_obj, pg->offset >> PAGE_SHIFT);
+	CIRCLEQ_FOREACH(seg, obj->seglist, sg_list) {
+		if (seg->sg_memq == NULL) {
+			vm_aobject_free_segment(&aobj->u_obj, seg, busybody);
+		} else {
 			vm_segment_lock_lists();
-			vm_page_lock_queues();
-			vm_page_free(pg);
-			vm_page_unlock_queues();
+			TAILQ_FOREACH(pg, seg->sg_memq, listq) {
+				vm_aobject_free_page(seg, pg, busybody);
+			}
 			vm_segment_unlock_lists();
 		}
 	}
@@ -191,6 +180,42 @@ vm_aobject_detach(obj)
 	vm_aobject_free(aobj);
 }
 
+static void
+vm_aobject_free_segment(object, segment, busybody)
+	vm_object_t	object;
+	vm_segment_t segment;
+	bool_t busybody;
+{
+	if (segment->sg_flags & SEG_BUSY) {
+		segment->sg_flags |= SEG_RELEASED;
+		busybody = TRUE;
+		continue;
+	}
+	pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_NONE);
+	vm_aobject_dropswap(object, segment->sg_offset >> SEGMENT_SHIFT);
+	vm_segment_lock_lists();
+	vm_segment_free(segment);
+	vm_segment_unlock_lists();
+}
+
+static void
+vm_aobject_free_page(segment, page, busybody)
+	vm_segment_t segment;
+	vm_page_t	 page;
+	bool_t 		busybody;
+{
+	if (page->flags & PG_BUSY) {
+		page->flags |= PG_RELEASED;
+		busybody = TRUE;
+		continue;
+	}
+	pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+	vm_aobject_dropswap(segment->sg_object, page->offset >> PAGE_SHIFT);
+	vm_page_lock_queues();
+	vm_page_free(page);
+	vm_page_unlock_queues();
+}
+
 /*
  * uao_free: free all resources held by an aobj, and then free the aobj
  *
@@ -200,7 +225,6 @@ static void
 vm_aobject_free(aobj)
 	vm_aobject_t aobj;
 {
-
 	if (VAO_USES_SWHASH(aobj)) {
 		int i, hashbuckets = aobj->u_swhashmask + 1;
 
@@ -276,7 +300,7 @@ vm_aobject_swhash_allocate(aobject, pages, flags)
 			/* allocate hash table or array depending on object size */
 			aobject->u_swhash = hashinit(VAO_SWHASH_BUCKETS(aobject), M_VMAOBJ, &aobject->u_swhashmask);
 		} else {
-			aobject->u_swhash = malloc(pages * sizeof(int), M_VMAOBJ, flags);
+			aobject->u_swhash = calloc(pages, sizeof(int), M_VMAOBJ, flags);
 			memset(aobject->u_swslots, 0, pages * sizeof(int));
 		}
 		if (flags) {
@@ -340,8 +364,9 @@ vm_aobject_find_swslot(obj, pageidx)
 	vm_object_t obj;
 	int pageidx;
 {
-	vm_aobject_t aobj = (vm_aobject_t)obj;
+	vm_aobject_t aobj;
 
+	aobj = (vm_aobject_t)obj;
 	/*
 	 * if noswap flag is set, then we never return a slot
 	 */
@@ -381,9 +406,10 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 	vm_object_t obj;
 	int pageidx, slot;
 {
-	vm_aobject_t aobj = (struct vm_aobject *)obj;
+	vm_aobject_t aobj;
 	int oldslot;
 
+	aobj = (struct vm_aobject *)obj;
 	/*
 	 * if noswap flag is set, then we can't set a slot
 	 */

@@ -51,8 +51,8 @@ struct vm_anon {
 	int 					an_ref;			/* reference count [an_lock] */
 	simple_lock_data_t 		an_lock;		/* lock for an_ref */
 	union {
-		struct vm_anon 		*an_nxt;		/* if on free list [afreelock] */
-		struct vm_anon 		*an_free;		/* anon free list */
+		vm_anon_t 			an_nxt;			/* if on free list [afreelock] */
+		vm_anon_t 			an_free;		/* anon free list */
 		simple_lock_data_t 	an_freelock; 	/* lock on anon free list */
 		vm_page_t 			an_page;		/* if in RAM [an_lock] */
 		vm_segment_t		an_segment;
@@ -85,7 +85,7 @@ struct vm_anon {
 
 struct vm_aref {
 	int 				ar_pageoff;	/* page offset into amap we start */
-	struct vm_amap 		*ar_amap;	/* pointer to amap */
+	vm_amap_t 			ar_amap;	/* pointer to amap */
 };
 
 /*

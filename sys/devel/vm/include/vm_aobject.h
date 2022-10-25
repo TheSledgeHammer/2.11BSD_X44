@@ -97,7 +97,7 @@ struct vm_aobject {
 	struct vm_object 			u_obj; 			/* has: lock, pgops, memq, #pages, #refs */
 	int 						u_pages;		/* number of pages in entire segment */
 	int 						u_segments;		/* number of segments in entire object */
-	int 						u_flags;		/* the flags (see uvm_aobj.h) */
+	int 						u_flags;		/* the flags (see vm_aobject.h) */
 
 
 	int							u_ref_count;

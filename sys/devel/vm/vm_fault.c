@@ -112,6 +112,7 @@ vm_fault_anonflush(anons, n)
 	int n;
 {
 	int lcv;
+	vm_segment_t sg;
 	vm_page_t pg;
 
 	for (lcv = 0 ; lcv < n ; lcv++) {
@@ -145,7 +146,8 @@ vm_fault_anonflush(anons, n)
  */
 
 static void
-vm_fault_amapcopy(map, entry, size, timestamp)
+vm_fault_amapcopy(vfi, map, entry, size, timestamp)
+	struct vm_faultinfo *vfi;
 	vm_map_t 	   map;
 	vm_map_entry_t entry;
 	vm_offset_t 	size;
@@ -173,7 +175,7 @@ vm_fault_amapcopy(map, entry, size, timestamp)
 
 		if (entry->needs_copy) {
 			vm_fault_unlockmaps(map, TRUE);
-			//vm_wait();
+			VM_WAIT;//vm_wait();
 			continue;
 		}
 
@@ -496,128 +498,6 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	}
 }
 
-vm_fault_page(segment, resident)
-	vm_segment_t 	segment;
-	bool_t 			resident;
-{
-	register vm_page_t		pg;
-
-	pg = vm_page_lookup(segment, segment->sg_offset);
-	if (pg != NULL) {
-		if (pg->flags & PG_BUSY) {
-			goto RetryFault;
-		}
-
-		vm_page_lock_queues();
-		if (pg->flags & PG_INACTIVE) {
-			TAILQ_REMOVE(&vm_page_queue_inactive, pg, pageq);
-			pg->flags &= ~PG_INACTIVE;
-			cnt.v_page_inactive_count--;
-			cnt.v_reactivated++;
-		}
-
-		if (pg->flags & PG_ACTIVE) {
-			TAILQ_REMOVE(&vm_page_queue_active, pg, pageq);
-			pg->flags &= ~PG_ACTIVE;
-			cnt.v_page_active_count--;
-		}
-		vm_page_unlock_queues();
-
-		pg->flags |= PG_BUSY;
-		break;
-	}
-}
-
-vm_fault_segment(first_object, first_offset)
-	vm_object_t first_object;
-	vm_offset_t first_offset;
-{
-	register vm_object_t	object;
-	register vm_segment_t	seg;
-	register vm_offset_t	offset;
-	bool_t RetryFault;
-
-	RetryFault = FALSE
-	object = first_object;
-	offset = first_offset;
-
-	seg = vm_segment_lookup(object, offset);
-	if (seg != NULL) {
-		if (seg->sg_flags & SEG_BUSY) {
-			int	wait_result;
-			cnt.v_intrans++;
-			thread_block();
-			vm_object_deallocate(first_object);
-			RetryFault = TRUE;
-		}
-
-		vm_segment_lock_lists();
-		if(seg->sg_flags & SEG_INACTIVE) {
-			CIRCLEQ_REMOVE(&vm_segment_list_inactive, seg, sg_list);
-			seg->sg_flags &= ~SEG_INACTIVE;
-			cnt.v_segment_active_count--;
-		}
-		if(seg->sg_flags & SEG_ACTIVE) {
-			CIRCLEQ_REMOVE(&vm_segment_list_active, seg, sg_list);
-			seg->sg_flags &= ~SEG_ACTIVE;
-			cnt.v_segment_active_count--;
-		}
-		vm_segment_unlock_lists();
-
-		seg->sg_flags |= SEG_BUSY;
-		break;
-	}
-
-	if (((object->pager != NULL) && (!change_wiring || wired))
-			|| (object == first_object)) {
-		seg = vm_segment_alloc(object, offset);
-		if(seg == NULL) {
-
-		}
-	}
-	if (object->pager != NULL && (!change_wiring || wired)) {
-		int rv;
-
-		vm_object_unlock(object);
-		UNLOCK_MAP;
-		cnt.v_pageins++;
-
-		//rv = vm_pager_get(object->pager, , TRUE);
-
-		vm_object_lock(object);
-	}
-	if (object == first_object) {
-
-	}
-	offset += object->shadow_offset;
-	next_object = object->shadow;
-	if (next_object == NULL) {
-		if (object != first_object) {
-			object->paging_in_progress--;
-			vm_object_unlock(object);
-
-			object = first_object;
-			offset = first_offset;
-			m = first_m;
-			vm_object_lock(object);
-		}
-		first_m = NULL;
-
-		vm_page_zero_fill(m);
-		cnt.v_zfod++;
-		m->flags &= ~PG_FAKE;
-		break;
-	} else {
-		vm_object_lock(next_object);
-		if (object != first_object) {
-			object->paging_in_progress--;
-		}
-		vm_object_unlock(object);
-		object = next_object;
-		object->paging_in_progress++;
-	}
-}
-
 /*
  * uvmfault_unlockmaps: unlock the maps
  */
@@ -779,3 +659,4 @@ vm_fault_relock(map, timestamp)
 	}
 	return (TRUE);
 }
+

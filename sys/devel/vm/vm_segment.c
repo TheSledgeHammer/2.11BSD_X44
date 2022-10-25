@@ -338,6 +338,48 @@ vm_segment_page_remove(object, offset1, offset2)
     }
 }
 
+void
+vm_segment_free_page(o, s, p)
+	vm_object_t		o;
+	vm_segment_t 	s;
+	vm_page_t 		p;
+{
+	SEGMENT_WAKEUP(s);
+	vm_segment_lock_lists();
+	if((p == vm_page_lookup(s, s->sg_offset)) != NULL) {
+		PAGE_WAKEUP(p);
+		vm_page_lock_queues();
+		vm_page_free(p);
+		vm_page_unlock_queues();
+	}
+	if(s != NULL && p == NULL) {
+		vm_segment_free(o, s);
+	}
+	vm_segment_unlock_lists();
+}
+
+void
+vm_segment_release_page(s, p)
+	vm_segment_t 	s;
+	vm_page_t 		p;
+{
+	vm_page_t 		ps;
+
+	SEGMENT_WAKEUP(s);
+	vm_segment_lock_lists();
+	ps = vm_page_lookup(s, s->sg_offset);
+	if(p != NULL && p == ps) {
+		PAGE_WAKEUP(p);
+		vm_page_lock_queues();
+		vm_page_activate(p);
+		vm_page_unlock_queues();
+	}
+	if(s != NULL) {
+		vm_segment_activate(s);
+	}
+	vm_segment_unlock_lists();
+}
+
 vm_segment_t
 vm_segment_alloc(object, offset)
 	vm_object_t	object;
@@ -416,21 +458,24 @@ vm_segment_activate(segment)
 
 /*
  *	vm_segment_zero_fill:
- *	Same as vm_page_zero_fill, but includes a
- *	segment check.
+ *	Will perform a segment check.
+ *	if pages are empty, will zero fill the segment.
+ *	Otherwise returns vm_page_zero_fill.
  */
 bool_t
-vm_segment_zero_fill(s, p, o)
+vm_segment_zero_fill(s, o)
     vm_segment_t 	s;
-	vm_page_t 		p;
 	vm_offset_t 	o;
 {
+	register vm_page_t 	p;
+
     VM_SEGMENT_CHECK(s);
     s->sg_flags &= ~SEG_CLEAN;
     p = vm_page_lookup(s, o);
-    VM_PAGE_CHECK(p);
-	p->flags &= ~PG_CLEAN;
-	pmap_zero_page(VM_PAGE_TO_PHYS(p));
+    if(p != NULL && p->segment == s) {
+    	return (vm_page_zero_fill(p));
+    }
+    pmap_zero_page(VM_SEGMENT_TO_PHYS(s));
 	return (TRUE);
 }
 

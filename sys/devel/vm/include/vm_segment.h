@@ -154,8 +154,10 @@ vm_segment_t	vm_segment_lookup(vm_object_t, vm_offset_t);
 void			vm_segment_page_insert(vm_object_t, vm_offset_t, vm_page_t, vm_offset_t);
 vm_page_t		vm_segment_page_lookup(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_page_remove(vm_object_t, vm_offset_t, vm_offset_t);
+void			vm_segment_free_page(vm_object_t, vm_segment_t, vm_page_t);
+void			vm_segment_release_page(vm_segment_t, vm_page_t);
 void			vm_segment_startup(vm_offset_t, vm_offset_t);
-bool_t			vm_segment_zero_fill(vm_segment_t);
+bool_t			vm_segment_zero_fill(vm_segment_t, vm_offset_t);
 bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
 
 //#endif /* KERNEL */

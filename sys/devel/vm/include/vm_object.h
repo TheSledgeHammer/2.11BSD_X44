@@ -90,7 +90,7 @@ struct vm_object {
 	struct vm_object				*shadow;				/* My shadow */
 	vm_offset_t						shadow_offset;			/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)			cached_list;			/* for persistence */
-	SPLAY_ENTRY(vm_object)			cached_tree;			/* for persistence */
+	//SPLAY_ENTRY(vm_object)			cached_tree;			/* for persistence */
 };
 
 /* flags */
