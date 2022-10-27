@@ -339,26 +339,31 @@ vm_segment_page_remove(object, offset1, offset2)
 }
 
 void
-vm_segment_free_page(o, s, p)
-	vm_object_t		o;
+vm_segment_free_page(s, p)
 	vm_segment_t 	s;
 	vm_page_t 		p;
 {
-	register vm_page_t 		ps;
+	register vm_page_t 	ps;
 
-	SEGMENT_WAKEUP(s);
-	vm_segment_lock_lists();
-	ps = vm_page_lookup(s, s->sg_offset);
-	if(p != NULL && p == ps) {
-		PAGE_WAKEUP(p);
-		vm_page_lock_queues();
-		vm_page_free(p);
-		vm_page_unlock_queues();
+	if (s != NULL) {
+		SEGMENT_WAKEUP(s);
+		vm_segment_lock_lists();
+		ps = vm_page_lookup(s, s->sg_offset);
+		if (p != NULL) {
+			PAGE_WAKEUP(p);
+			vm_page_lock_queues();
+			if (p == ps) {
+				vm_page_free(p);
+			} else {
+				p = ps;
+				vm_page_free(p);
+			}
+			vm_page_unlock_queues();
+		} else {
+			vm_segment_free(s);
+		}
+		vm_segment_unlock_lists();
 	}
-	if(s != NULL && p == NULL) {
-		vm_segment_free(o, s);
-	}
-	vm_segment_unlock_lists();
 }
 
 void
@@ -366,21 +371,27 @@ vm_segment_release_page(s, p)
 	vm_segment_t 	s;
 	vm_page_t 		p;
 {
-	register vm_page_t 		ps;
+	register vm_page_t 	ps;
 
-	SEGMENT_WAKEUP(s);
-	vm_segment_lock_lists();
-	ps = vm_page_lookup(s, s->sg_offset);
-	if(p != NULL && p == ps) {
-		PAGE_WAKEUP(p);
-		vm_page_lock_queues();
-		vm_page_activate(p);
-		vm_page_unlock_queues();
+	if (s != NULL) {
+		SEGMENT_WAKEUP(s);
+		vm_segment_lock_lists();
+		ps = vm_page_lookup(s, s->sg_offset);
+		if (p != NULL) {
+			PAGE_WAKEUP(p);
+			vm_page_lock_queues();
+			if(p == ps) {
+				vm_page_activate(p);
+			} else {
+				p = ps;
+				vm_page_activate(p);
+			}
+			vm_page_unlock_queues();
+		} else {
+			vm_segment_activate(s);
+		}
+		vm_segment_unlock_lists();
 	}
-	if(s != NULL) {
-		vm_segment_activate(s);
-	}
-	vm_segment_unlock_lists();
 }
 
 vm_segment_t
@@ -407,11 +418,10 @@ vm_segment_alloc(object, offset)
 }
 
 void
-vm_segment_free(object, segment)
-	vm_object_t	object;
+vm_segment_free(segment)
 	register vm_segment_t segment;
 {
-	vm_segment_remove(object, segment);
+	vm_segment_remove(segment);
 	if(segment->sg_flags & SEG_ACTIVE) {
 		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
 		segment->sg_flags &= SEG_ACTIVE;

@@ -297,7 +297,7 @@ vm_pageout_inactive_scanner(page, segment, object, freed)
 					continue;
 				}
 				vm_page_free(page);
-				vm_segment_free(object, segment);
+				vm_segment_free(segment);
 				freed++;
 				cnt.v_dfree++;
 

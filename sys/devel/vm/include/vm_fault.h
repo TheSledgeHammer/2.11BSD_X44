@@ -62,10 +62,6 @@ struct vm_faultinfo {
    /* page */
    vm_page_t        page;
 
-   vm_offset_t	    vaddr;
-   vm_size_t		segment_size;
-   vm_size_t		page_size;
-
    /* first object, segment & page */
    vm_object_t      first_object;
    vm_offset_t      first_offset;
@@ -78,64 +74,5 @@ struct vm_advice {
 	int 			nback;
 	int 			nforw;
 };
-
-/*
- * TODO:
- * - Should not allow freeing or releasing of a segment without first checking pages
- */
-/*
- *	Recovery actions
- */
-#define	FREE_SEGMENT(s)	{				\
-	SEGMENT_WAKEUP(s);					\
-	vm_segment_lock_lists();			\
-	vm_segment_free(s);					\
-	vm_segment_unlock_lists();			\
-}
-
-#define	RELEASE_SEGMENT(s)	{			\
-	SEGMENT_WAKEUP(s);					\
-	vm_segment_lock_lists();			\
-	vm_segment_activate(s);				\
-	vm_segment_unlock_lists();			\
-}
-
-#define	FREE_PAGE(m)	{				\
-	PAGE_WAKEUP(m);						\
-	vm_page_lock_queues();				\
-	vm_page_free(m);					\
-	vm_page_unlock_queues();			\
-}
-
-#define	RELEASE_PAGE(m)	{				\
-	PAGE_WAKEUP(m);						\
-	vm_page_lock_queues();				\
-	vm_page_activate(m);				\
-	vm_page_unlock_queues();			\
-}
-
-#define	UNLOCK_MAP	{					\
-	if (lookup_still_valid) {			\
-		vm_map_lookup_done(map, entry);	\
-		lookup_still_valid = FALSE;		\
-	}									\
-}
-
-#define	UNLOCK_THINGS	{				\
-	object->paging_in_progress--;		\
-	vm_object_unlock(object);			\
-	if (object != first_object) {		\
-		vm_object_lock(first_object);	\
-		FREE_PAGE(first_m);				\
-		first_object->paging_in_progress--;	\
-		vm_object_unlock(first_object);	\
-	}									\
-	UNLOCK_MAP;							\
-}
-
-#define	UNLOCK_AND_DEALLOCATE	{		\
-	UNLOCK_THINGS;						\
-	vm_object_deallocate(first_object);	\
-}
 
 #endif /* _VM_FAULT_H_ */

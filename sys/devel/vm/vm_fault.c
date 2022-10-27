@@ -100,6 +100,62 @@ static struct vm_advice vmadvice[] = {
  * inline functions
  */
 
+void
+vm_fault_free(segment, page)
+	vm_segment_t 	segment;
+	vm_page_t 		page;
+{
+	register vm_page_t 	ps;
+
+	if (segment != NULL) {
+		SEGMENT_WAKEUP(segment);
+		vm_segment_lock_lists();
+		ps = vm_page_lookup(segment, segment->sg_offset);
+		if (page != NULL) {
+			PAGE_WAKEUP(page);
+			vm_page_lock_queues();
+			if (page == ps) {
+				vm_page_free(page);
+			} else {
+				page = ps;
+				vm_page_free(page);
+			}
+			vm_page_unlock_queues();
+		} else {
+			vm_segment_free(segment);
+		}
+		vm_segment_unlock_lists();
+	}
+}
+
+void
+vm_fault_release(segment, page)
+	vm_segment_t 	segment;
+	vm_page_t 		page;
+{
+	register vm_page_t 	ps;
+
+	if (segment != NULL) {
+		SEGMENT_WAKEUP(segment);
+		vm_segment_lock_lists();
+		ps = vm_page_lookup(segment, segment->sg_offset);
+		if (page != NULL) {
+			PAGE_WAKEUP(page);
+			vm_page_lock_queues();
+			if (page == ps) {
+				vm_page_activate(page);
+			} else {
+				page = ps;
+				vm_page_activate(page);
+			}
+			vm_page_unlock_queues();
+		} else {
+			vm_segment_activate(segment);
+		}
+		vm_segment_unlock_lists();
+	}
+}
+
 static __inline void
 unlock_map(vfi)
 	struct vm_faultinfo *vfi;
@@ -114,14 +170,13 @@ static __inline void
 unlock_things(vfi)
 	struct vm_faultinfo *vfi;
 {
+	register vm_segment_t so;
+
 	vfi->object->paging_in_progress--;
 	vm_object_unlock(vfi->object);
 	if (vfi->object != vfi->first_object) {
 		vm_object_lock(vfi->first_object);
-		vfi->first_segment = vm_segment_lookup(vfi->first_object, vfi->first_offset);
-		if(vfi->segment != vfi->first_segment) {
-			vm_fault_free_segment_page(vfi->first_object, vfi->first_segment, vfi->page);
-		}
+		vm_fault_free(vfi->first_segment, vfi->first_page);
 		vfi->first_object->paging_in_progress--;
 		vm_object_unlock(vfi->first_object);
 	}
@@ -137,9 +192,9 @@ unlock_and_deallocate(vfi)
 }
 
 static int
-vm_fault_pager(vfi, change_wiring, wired)
+vm_fault_pager(vfi, change_wiring)
 	struct vm_faultinfo *vfi;
-	bool_t		change_wiring, wired;
+	bool_t		change_wiring;
 {
 	int rv;
 
@@ -171,7 +226,7 @@ vm_fault_pager(vfi, change_wiring, wired)
 			vfi->page = vm_page_lookup(vfi->segment, vfi->segment->sg_offset);
 			if(VM_PAGE_TO_PHYS(vfi->page) == VM_SEGMENT_TO_PHYS(vfi->segment)) {
 				pmap_clear_modify(VM_PAGE_TO_PHYS(vfi->page));
-				break;
+				return (rv);
 			}
 		}
 
@@ -182,12 +237,8 @@ vm_fault_pager(vfi, change_wiring, wired)
 		}
 
 		if (vfi->object != vfi->first_object) {
-			vm_fault_free_segment_page(vfi->object, vfi->segment, vfi->page);
+			vm_fault_free(vfi->segment, vfi->page);
 		}
-	}
-	if (vfi->object != vfi->first_object) {
-		vfi->first_segment = vfi->segment;
-		vfi->first_page = vfi->page;
 	}
 	return (rv);
 }
@@ -215,6 +266,10 @@ vm_fault_object(vfi, change_wiring)
 		}
 	} else {
 		error = vm_fault_pager(vfi, change_wiring);
+	}
+	if (vfi->object != vfi->first_object) {
+		vfi->first_segment = vfi->segment;
+		vfi->first_page = vfi->page;
 	}
 	return (error);
 }
@@ -289,7 +344,11 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 {
 	vm_prot_t			prot;
 	int					result;
+	bool_t				page_exists;
+	vm_page_t 			old_page;
 	struct vm_faultinfo vfi;
+
+	cnt.v_faults++;
 
 RetryFault: ;
 	result = vm_fault_lookup(vfi, vaddr, fault_type);
@@ -324,7 +383,97 @@ RetryFault: ;
 	}
 	vm_fault_check_flags(&vfi);
 
+	/* Revise: fault_cow/fault_copy function */
+	old_page = vfi.page;
+	if (vfi.object != vfi.first_object) {
+		if (fault_type & VM_PROT_WRITE) {
+			vm_page_copy(vfi.page, vfi.first_page);
+			vfi.first_page->flags &= ~PG_FAKE;
+			vm_page_lock_queues();
+			vm_page_activate(vfi.page);
+			vm_page_deactivate(vfi.page);
+			pmap_page_protect(VM_PAGE_TO_PHYS(vfi.page), VM_PROT_NONE);
+			vm_page_unlock_queues();
 
+			PAGE_WAKEUP(vfi.page);
+			vfi.object->paging_in_progress--;
+			vm_object_unlock(vfi.object);
+
+			cnt.v_cow_faults++;
+			vfi.page = vfi.first_page;
+			vfi.object = vfi.first_object;
+			vfi.offset = vfi.first_offset;
+			vm_object_lock(vfi.object);
+			vfi.object->paging_in_progress--;
+			vm_object_collapse(vfi.object);
+			vfi.object->paging_in_progress++;
+		} else {
+	    	prot &= ~VM_PROT_WRITE;
+	    	vfi.page->flags |= PG_COPYONWRITE;
+		}
+	}
+
+	if (vfi.page->flags & (PG_ACTIVE|PG_INACTIVE)) {
+		panic("vm_fault: active or inactive before copy object handling");
+	}
+
+RetryCopy:
+	if (vfi.first_object->copy != NULL) {
+		vm_object_t copy_object;
+		vm_offset_t copy_offset;
+		vm_page_t copy_page;
+
+		copy_object = vfi.first_object->copy;
+
+		if ((fault_type & VM_PROT_WRITE) == 0) {
+			prot &= ~VM_PROT_WRITE;
+			vfi.page->flags |= PG_COPYONWRITE;
+		} else {
+			if (!vm_object_lock_try(copy_object)) {
+				vm_object_unlock(vfi.object);
+				/* should spin a bit here... */
+				vm_object_lock(vfi.object);
+				goto RetryCopy;
+			}
+			copy_object->ref_count++;
+			copy_offset = vfi.first_offset - copy_object->shadow_offset;
+			copy_page = vm_page_lookup(copy_object, copy_offset);
+			if (page_exists == (copy_page != NULL)) {
+				if (copy_page->flags & PG_BUSY) {
+					PAGE_ASSERT_WAIT(copy_page, !change_wiring);
+					vm_fault_release(vfi.segment, vfi.page);
+					copy_object->ref_count--;
+					vm_object_unlock(copy_object);
+					unlock_things(&vfi);
+					vm_object_deallocate(vfi.first_object);
+					goto RetryFault;
+				}
+			}
+			if (!page_exists) {
+
+			}
+		}
+	}
+
+	vm_object_unlock(vfi.object);
+
+	pmap_enter(map->pmap, vaddr, VM_PAGE_TO_PHYS(vfi.page), prot, vfi.wired);
+
+	vm_object_lock(vfi.object);
+	vm_page_lock_queues();
+	if (change_wiring) {
+		if (vfi.wired) {
+			vm_page_wire(vfi.page);
+		} else {
+			vm_page_unwire(vfi.page);
+		}
+	} else {
+		vm_page_activate(vfi.page);
+	}
+	vm_page_unlock_queues();
+
+	SEGMENT_WAKEUP(vfi.segment);
+	PAGE_WAKEUP(vfi.page);
 	unlock_and_deallocate(&vfi);
 	return (KERN_SUCCESS);
 }
@@ -401,6 +550,7 @@ vm_fault_lookup(vfi, vaddr, fault_type)
 		vfi->entry = vfi->orig_entry;
 		vfi->mapv = vfi->map->timestamp;
 	}
+
 	return (result);
 }
 
@@ -442,7 +592,7 @@ vm_fault_unlockmaps(vfi, write_locked)
 	boolean_t write_locked;
 {
 	/*
-	 * ufi can be NULL when this isn't really a fault,
+	 * vfi can be NULL when this isn't really a fault,
 	 * but merely paging in anon data.
 	 */
 

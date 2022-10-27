@@ -356,7 +356,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			if (rv == VM_PAGER_ERROR || rv == VM_PAGER_BAD) {
 				FREE_PAGE(m);
 				UNLOCK_AND_DEALLOCATE;
-				return(KERN_PROTECTION_FAILURE); /* XXX */
+				return (KERN_PROTECTION_FAILURE); /* XXX */
 			}
 			/*
 			 * rv == VM_PAGER_FAIL:
@@ -519,8 +519,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			object->paging_in_progress--;
 			vm_object_collapse(object);
 			object->paging_in_progress++;
-		}
-		else {
+		} else {
 		    	prot &= ~VM_PROT_WRITE;
 			m->flags |= PG_COPYONWRITE;
 		}
@@ -881,12 +880,11 @@ vm_fault_wire(map, start, end)
 		if (rv) {
 			if (va != start)
 				vm_fault_unwire(map, start, va);
-			return(rv);
+			return (rv);
 		}
 	}
-	return(KERN_SUCCESS);
+	return (KERN_SUCCESS);
 }
-
 
 /*
  *	vm_fault_unwire:
