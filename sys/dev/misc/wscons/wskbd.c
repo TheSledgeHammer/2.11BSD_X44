@@ -184,7 +184,7 @@ struct wskbd_softc {
 #ifdef EVDEV_SUPPORT
 static const struct evdev_methods wskbd_evdev_methods = {
 		.ev_cdev = &evdev_cdevsw,
-		.ev_event = evdev_ev_kbd_event,
+		.ev_event = evdev_kbd_event,
 };
 #endif
 

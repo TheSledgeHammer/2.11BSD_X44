@@ -344,9 +344,12 @@ vm_segment_free_page(o, s, p)
 	vm_segment_t 	s;
 	vm_page_t 		p;
 {
+	register vm_page_t 		ps;
+
 	SEGMENT_WAKEUP(s);
 	vm_segment_lock_lists();
-	if((p == vm_page_lookup(s, s->sg_offset)) != NULL) {
+	ps = vm_page_lookup(s, s->sg_offset);
+	if(p != NULL && p == ps) {
 		PAGE_WAKEUP(p);
 		vm_page_lock_queues();
 		vm_page_free(p);
@@ -363,7 +366,7 @@ vm_segment_release_page(s, p)
 	vm_segment_t 	s;
 	vm_page_t 		p;
 {
-	vm_page_t 		ps;
+	register vm_page_t 		ps;
 
 	SEGMENT_WAKEUP(s);
 	vm_segment_lock_lists();

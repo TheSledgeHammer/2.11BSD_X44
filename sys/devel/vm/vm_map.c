@@ -2723,24 +2723,26 @@ vmspace_fork(vm1)
  */
 int
 vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, wired, single_use)
-	vm_map_t				*var_map;	/* IN/OUT */
+	vm_map_t				*var_map;		/* IN/OUT */
 	register vm_offset_t	vaddr;
 	register vm_prot_t		fault_type;
 	vm_map_entry_t			*out_entry;		/* OUT */
 	vm_object_t				*object;		/* OUT */
 	vm_offset_t				*offset;		/* OUT */
 	vm_prot_t				*out_prot;		/* OUT */
-	bool_t				*wired;			/* OUT */
-	bool_t				*single_use;	/* OUT */
+	bool_t					*wired;			/* OUT */
+	bool_t					*single_use;	/* OUT */
 {
 	vm_map_t				share_map;
 	vm_offset_t				share_offset;
 	register vm_map_entry_t	entry;
-	register vm_map_t		map = *var_map;
+	register vm_map_t		map;
 	register vm_prot_t		prot;
 	register bool_t			su;
 
-	RetryLookup: ;
+	map = *var_map;
+
+RetryLookup: ;
 
 	/*
 	 *	Lookup the faulting address.
@@ -2748,11 +2750,10 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 
 	vm_map_lock_read(map);
 
-#define	RETURN(why) \
-		{ \
-		vm_map_unlock_read(map); \
-		return(why); \
-		}
+#define	RETURN(why) { 			\
+	vm_map_unlock_read(map); 	\
+	return(why); 				\
+}
 
 	/*
 	 *	If the map has an interesting hint, try it before calling
@@ -2773,8 +2774,9 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 		 *	Entry was either not a valid hint, or the vaddr
 		 *	was not contained in the entry, so do a full lookup.
 		 */
-		if (!vm_map_lookup_entry(map, vaddr, &tmp_entry))
+		if (!vm_map_lookup_entry(map, vaddr, &tmp_entry)) {
 			RETURN(KERN_INVALID_ADDRESS);
+		}
 
 		entry = tmp_entry;
 		*out_entry = entry;
@@ -2798,8 +2800,9 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 	 */
 
 	prot = entry->protection;
-	if ((fault_type & (prot)) != fault_type)
+	if ((fault_type & (prot)) != fault_type) {
 		RETURN(KERN_PROTECTION_FAILURE);
+	}
 
 	/*
 	 *	If this page is not pageable, we have to get
@@ -2817,8 +2820,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 	if (su == !entry->is_a_map) {
 	 	share_map = map;
 		share_offset = vaddr;
-	}
-	else {
+	} else {
 		vm_map_entry_t	share_entry;
 
 		/*
@@ -2878,8 +2880,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 			entry->needs_copy = FALSE;
 			
 			lockmgr(&share_map->lock, LK_DOWNGRADE, (void *)0, curproc->p_pid);
-		}
-		else {
+		} else {
 			/*
 			 *	We're attempting to read a copy-on-write
 			 *	page -- don't allow writes.
@@ -2927,7 +2928,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 	*out_prot = prot;
 	*single_use = su;
 
-	return(KERN_SUCCESS);
+	return (KERN_SUCCESS);
 	
 #undef	RETURN
 }

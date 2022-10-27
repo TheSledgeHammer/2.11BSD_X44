@@ -237,7 +237,7 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 void		 vm_page_activate(vm_page_t);
 vm_page_t	 vm_page_alloc(vm_segment_t, vm_offset_t);
 void		 vm_page_copy(vm_page_t, vm_page_t);
-void		 vm_page_deactivate (vm_page_t);
+void		 vm_page_deactivate(vm_page_t);
 void		 vm_page_free(vm_page_t);
 void		 vm_page_insert(vm_page_t, vm_segment_t, vm_offset_t);
 vm_page_t	 vm_page_lookup(vm_segment_t, vm_offset_t);

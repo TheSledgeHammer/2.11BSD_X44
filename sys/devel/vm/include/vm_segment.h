@@ -59,6 +59,7 @@ struct vm_segment {
 	int							sg_flags;				/* see below */
 
 	vm_anon_t					sg_anon;				/* anon (O,S) */
+	int							sg_anoncnt;				/* number of anon pages */
 
 	int							sg_resident_page_count;	/* number of resident pages */
 
@@ -130,6 +131,11 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
 		(&vm_segment_array[VM_SEGMENT_INDEX(pa)])
+
+#define SEGMENT_ASSERT_WAIT(s, interruptible)	{ 		\
+	(s)->sg_flags |= SEG_WANTED; 						\
+	assert_wait((s), (interruptible)); 					\
+}
 
 #define SEGMENT_WAKEUP(s) {             				\
     (s)->sg_flags &= ~SEG_BUSY; 						\

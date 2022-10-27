@@ -510,9 +510,6 @@ vm_page_free(mem)
 		cnt.v_free_count++;
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(spl);
-	} else if (mem->flags & PG_ANON) {
-		mem->flags &= ~PG_ANON;
-		mem->anon = NULL;
 	}
 }
 
@@ -671,4 +668,41 @@ vm_page_copy(src_m, dest_m)
 
 	dest_m->flags &= ~PG_CLEAN;
 	pmap_copy_page(VM_PAGE_TO_PHYS(src_m), VM_PAGE_TO_PHYS(dest_m));
+}
+
+/* page anon management (WIP) */
+vm_page_t
+vm_page_anon_alloc(segment, offset, anon)
+	vm_segment_t segment;
+	vm_offset_t	offset;
+	vm_anon_t anon;
+{
+	vm_page_t	mem;
+
+	mem = vm_page_alloc(segment, offset);
+
+	mem->anon = anon;
+	if (anon) {
+		anon->u.an_page = mem;
+		mem->flags = PG_ANON;
+	} else {
+		if(segment) {
+			vm_page_insert(mem, segment, offset);
+			mem->flags = 0;
+		}
+	}
+	return (mem);
+}
+
+void
+vm_page_anon_free(mem)
+	vm_page_t mem;
+{
+	if (mem->flags & PG_ANON) {
+		mem->flags &= ~PG_ANON;
+		mem->anon = NULL;
+		return;
+	}
+	vm_page_free(mem);
+	mem->anon = (void*) 0xdeadbeef;
 }

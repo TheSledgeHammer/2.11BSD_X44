@@ -152,6 +152,7 @@ vm_anon_alloc(void)
 		cnt.v_anfree_count--;
 		a->an_ref = 1;
 		a->an_swslot = 0;
+		a->u.an_segment = NULL;
 		a->u.an_page = NULL;		/* so we can free quickly */
 	}
 	simple_unlock(&a->u.an_freelock);
@@ -171,12 +172,12 @@ void
 vm_anon_free(anon)
 	vm_anon_t anon;
 {
-	vm_page_t pg;
 	vm_segment_t seg;
+	vm_page_t 	 pg;
 
 	KASSERT(anon->an_ref == 0);
 	/*
-	 * get page
+	 * get segment & page
 	 */
 	seg = anon->u.an_segment;
 	pg = anon->u.an_page;
@@ -294,8 +295,10 @@ vm_anon_swap_off(startslot, endslot)
 		 */
 
 		for (i = 0; i < anonblock->count; i++) {
-			vm_anon_t anon = &anonblock->anons[i];
+			vm_anon_t anon;
 			int slot;
+
+			anon = &anonblock->anons[i];
 
 			/*
 			 * lock anon to work on it.

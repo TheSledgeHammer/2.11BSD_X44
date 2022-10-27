@@ -87,337 +87,197 @@ static struct vm_advice vmadvice[] = {
 
 #define VM_MAXRANGE 16 	/* must be MAX() of nback+nforw+1 */
 
+/* fault errors */
+#define FAULTCONT 	0	/* fault continue */
+#define FAULTRETRY 	1	/* error fault retry */
+#define FAULTCOPY 	2	/* error fault copy */
+
 /*
  * private prototypes
  */
-static void vm_fault_amapcopy(vm_map_t, vm_map_entry_t, vm_offset_t, unsigned int);
-static __inline void vm_fault_anonflush(vm_anon_t *, int);
-static __inline void vm_fault_unlockmaps(vm_map_t, bool_t);
-static __inline void vm_fault_unlockall(vm_map_t, vm_amap_t, vm_object_t, vm_anon_t);
-static __inline bool_t vm_fault_lookup(vm_map_t, vm_map_t, bool_t, unsigned int);
-static __inline bool_t vm_fault_relock(vm_map_t, unsigned int);
 
 /*
  * inline functions
  */
 
-/*
- * uvmfault_anonflush: try and deactivate pages in specified anons
- *
- * => does not have to deactivate page if it is busy
- */
 static __inline void
-vm_fault_anonflush(anons, n)
-	vm_anon_t *anons;
-	int n;
-{
-	int lcv;
-	vm_segment_t sg;
-	vm_page_t pg;
-
-	for (lcv = 0 ; lcv < n ; lcv++) {
-		if (anons[lcv] == NULL) {
-			continue;
-		}
-		simple_lock(&anons[lcv]->an_lock);
-		pg = anons[lcv]->u.an_page;
-		if (pg && (pg->flags & PG_BUSY) == 0) {
-			vm_page_lock_queues();
-			if (pg->wire_count == 0) {
-				pmap_clear_reference(VM_PAGE_TO_PHYS(pg));
-				vm_page_deactivate(pg);
-			}
-			vm_page_unlock_queues();
-		}
-		simple_unlock(&anons[lcv]->an_lock);
-	}
-}
-
-/*
- * normal functions
- */
-
-/*
- * uvmfault_amapcopy: clear "needs_copy" in a map.
- *
- * => called with VM data structures unlocked (usually, see below)
- * => we get a write lock on the maps and clear needs_copy for a VA
- * => if we are out of RAM we sleep (waiting for more)
- */
-
-static void
-vm_fault_amapcopy(vfi, map, entry, size, timestamp)
+unlock_map(vfi)
 	struct vm_faultinfo *vfi;
-	vm_map_t 	   map;
-	vm_map_entry_t entry;
-	vm_offset_t 	size;
-	unsigned int timestamp;
 {
-	for (;;) {
-		/*
-		 * no mapping?  give up.
-		 */
-		if (vm_fault_lookup(map, size, TRUE, timestamp) == FALSE) {
-			return;
-		}
-
-		/*
-		 * copy if needed.
-		 */
-
-		if (entry->needs_copy) {
-			vm_amap_copy(map, entry, M_NOWAIT, TRUE, size, size + 1);
-		}
-
-		/*
-		 * didn't work?  must be out of RAM.   unlock and sleep.
-		 */
-
-		if (entry->needs_copy) {
-			vm_fault_unlockmaps(map, TRUE);
-			VM_WAIT;//vm_wait();
-			continue;
-		}
-
-		/*
-		 * got it!   unlock and return.
-		 */
-
-		vm_fault_unlockmaps(map, TRUE);
-		return;
+	if (vfi->lookup_still_valid) {
+		vm_map_lookup_done(vfi->map, vfi->entry);
+		vfi->lookup_still_valid = FALSE;
 	}
-	/*NOTREACHED*/
 }
 
-/*
- * uvmfault_anonget: get data in an anon into a non-busy, non-released
- * page in that anon.
- *
- * => maps, amap, and anon locked by caller.
- * => if we fail (result != VM_PAGER_OK) we unlock everything.
- * => if we are successful, we return with everything still locked.
- * => we don't move the page on the queues [gets moved later]
- * => if we allocate a new page [we_own], it gets put on the queues.
- *    either way, the result is that the page is on the queues at return time
- * => for pages which are on loan from a uvm_object (and thus are not
- *    owned by the anon): if successful, we return with the owning object
- *    locked.   the caller must unlock this object when it unlocks everything
- *    else.
- */
-int
-vm_fault_anonget(map, amap, anon)
-	vm_map_t  map;
-	vm_amap_t amap;
-	vm_anon_t anon;
+static __inline void
+unlock_things(vfi)
+	struct vm_faultinfo *vfi;
 {
-	bool_t we_own;	/* we own anon's page? */
-	bool_t locked;	/* did we relock? */
-	vm_map_entry_t entry;
-	vm_page_t pg;
+	vfi->object->paging_in_progress--;
+	vm_object_unlock(vfi->object);
+	if (vfi->object != vfi->first_object) {
+		vm_object_lock(vfi->first_object);
+		vfi->first_segment = vm_segment_lookup(vfi->first_object, vfi->first_offset);
+		if(vfi->segment != vfi->first_segment) {
+			vm_fault_free_segment_page(vfi->first_object, vfi->first_segment, vfi->page);
+		}
+		vfi->first_object->paging_in_progress--;
+		vm_object_unlock(vfi->first_object);
+	}
+	unlock_map(vfi);
+}
+
+static __inline void
+unlock_and_deallocate(vfi)
+	struct vm_faultinfo *vfi;
+{
+	unlock_things(vfi);
+	vm_object_deallocate(vfi->first_object);
+}
+
+static int
+vm_fault_pager(vfi, change_wiring, wired)
+	struct vm_faultinfo *vfi;
+	bool_t		change_wiring, wired;
+{
+	int rv;
+
+	if (((vfi->object->pager != NULL) && (!change_wiring || vfi->wired)) || (vfi->object == vfi->first_object)) {
+		vfi->segment = vm_segment_alloc(vfi->object, vfi->offset);
+		if(vfi->segment == NULL) {
+			unlock_and_deallocate(vfi);
+			VM_WAIT;
+			return (FAULTRETRY);
+		}
+		vfi->page = vm_page_alloc(vfi->segment, vfi->segment->sg_offset);
+		if(vfi->page == NULL) {
+			unlock_and_deallocate(vfi);
+			VM_WAIT;
+			return (FAULTRETRY);
+		}
+	}
+	if (vfi->object->pager != NULL && (!change_wiring || vfi->wired)) {
+		vm_object_unlock(vfi->object);
+
+		unlock_map(vfi);
+		cnt.v_pageins++;
+		rv = vm_pager_get(vfi->object->pager, vfi->page, TRUE);
+
+		vm_object_lock(vfi->object);
+
+		if (rv == VM_PAGER_OK) {
+			vfi->segment = vm_segment_lookup(vfi->object, vfi->offset);
+			vfi->page = vm_page_lookup(vfi->segment, vfi->segment->sg_offset);
+			if(VM_PAGE_TO_PHYS(vfi->page) == VM_SEGMENT_TO_PHYS(vfi->segment)) {
+				pmap_clear_modify(VM_PAGE_TO_PHYS(vfi->page));
+				break;
+			}
+		}
+
+		if (rv == VM_PAGER_ERROR || rv == VM_PAGER_BAD) {
+			vm_fault_free_segment_page(vfi->object, vfi->segment, vfi->page);
+			unlock_and_deallocate(vfi);
+			return (KERN_PROTECTION_FAILURE);
+		}
+
+		if (vfi->object != vfi->first_object) {
+			vm_fault_free_segment_page(vfi->object, vfi->segment, vfi->page);
+		}
+	}
+	if (vfi->object != vfi->first_object) {
+		vfi->first_segment = vfi->segment;
+		vfi->first_page = vfi->page;
+	}
+	return (rv);
+}
+
+static int
+vm_fault_object(vfi, change_wiring)
+	struct vm_faultinfo *vfi;
+	bool_t		change_wiring;
+{
 	int error;
 
-	error = 0;
-
-	if (anon->u.an_page) {
-		curproc->p_stats->p_ru.ru_minflt++;
-	} else {
-		curproc->p_stats->p_ru.ru_majflt++;
-	}
-
-	/*
-	 * loop until we get it, or fail.
-	 */
-
-	for (;;) {
-		we_own = FALSE;		/* TRUE if we set PG_BUSY on a page */
-		pg = anon->u.an_page;
-
-		/*
-		 * page there?   make sure it is not busy/released.
-		 */
-
-		if (pg) {
-
-			/*
-			 * at this point, if the page has a uobject [meaning
-			 * we have it on loan], then that uobject is locked
-			 * by us!   if the page is busy, we drop all the
-			 * locks (including uobject) and try again.
-			 */
-
-			if ((pg->flags & PG_BUSY) == 0) {
-				return (VM_PAGER_OK);
-			}
-			pg->flags |= PG_WANTED;
-			cnt.v_fltpgwait++;
-
-			/*
-			 * the last unlock must be an atomic unlock+wait on
-			 * the owner of page
-			 */
-
-			if (pg->object) {	/* owner is uobject ? */
-				vm_fault_unlockall(map, amap, NULL, anon);
-			} else {
-				/* anon owns page */
-				vm_fault_unlockall(map, amap, NULL, NULL);
+	vfi->segment = vm_segment_lookup(vfi->object, vfi->offset);
+	if(vfi->segment != NULL) {
+		vfi->page = vm_page_lookup(vfi->segment, vfi->segment->sg_offset);
+		if(vfi->page != NULL) {
+			error = vm_fault_page(vfi, change_wiring);
+			if(error != FAULTCONT) {
+				return (error);
 			}
 		} else {
-
-			/*
-			 * no page, we must try and bring it in.
-			 */
-
-			pg = uvm_pagealloc(NULL, 0, anon, 0);
-			if (pg == NULL) {		/* out of RAM.  */
-				vm_fault_unlockall(map, amap, NULL, anon);
-				cnt.v_fltnoram++;
-				uvm_wait("flt_noram1");
-			} else {
-				/* we set the PG_BUSY bit */
-				we_own = TRUE;
-				vm_fault_unlockall(map, amap, NULL, anon);
-
-				/*
-				 * we are passing a PG_BUSY+PG_FAKE+PG_CLEAN
-				 * page into the uvm_swap_get function with
-				 * all data structures unlocked.  note that
-				 * it is ok to read an_swslot here because
-				 * we hold PG_BUSY on the page.
-				 */
-				cnt.v_pageins++;
-				error = vm_swap_get(pg, anon->an_swslot, PGO_SYNCIO); /* fix; non-existent */
-
-				/*
-				 * we clean up after the i/o below in the
-				 * "we_own" case
-				 */
+			error = vm_fault_segment(vfi, change_wiring);
+			if(error != FAULTCONT) {
+				return (error);
 			}
 		}
-
-		/*
-		 * now relock and try again
-		 */
-
-		locked = vm_fault_relock(map, map->timestamp);
-		if (locked && amap != NULL) {
-			amap_lock(amap);
-		}
-		if (locked || we_own) {
-			simple_lock(&anon->an_lock);
-		}
-
-		/*
-		 * if we own the page (i.e. we set PG_BUSY), then we need
-		 * to clean up after the I/O. there are three cases to
-		 * consider:
-		 *   [1] page released during I/O: free anon and ReFault.
-		 *   [2] I/O not OK.   free the page and cause the fault
-		 *       to fail.
-		 *   [3] I/O OK!   activate the page and sync with the
-		 *       non-we_own case (i.e. drop anon lock if not locked).
-		 */
-
-		if (we_own) {
-			if (pg->flags & PG_WANTED) {
-				wakeup(pg);
-			}
-			if (error) {
-
-				/*
-				 * remove the swap slot from the anon
-				 * and mark the anon as having no real slot.
-				 * don't free the swap slot, thus preventing
-				 * it from being used again.
-				 */
-
-				if (anon->an_swslot > 0) {
-					vm_swap_markbad(anon->an_swslot, 1);
-				}
-				anon->an_swslot = SWSLOT_BAD;
-
-				if ((pg->flags & PG_RELEASED) != 0) {
-					goto released;
-				}
-
-				/*
-				 * note: page was never !PG_BUSY, so it
-				 * can't be mapped and thus no need to
-				 * pmap_page_protect it...
-				 */
-
-				uvm_lock_pageq();
-				uvm_pagefree(pg);
-				uvm_unlock_pageq();
-
-				if (locked) {
-					vm_fault_unlockall(map, amap, NULL, anon);
-				} else {
-					simple_unlock(&anon->an_lock);
-				}
-				return error;
-			}
-
-			if ((pg->flags & PG_RELEASED) != 0) {
-released:
-				KASSERT(anon->an_ref == 0);
-
-				/*
-				 * released while we unlocked amap.
-				 */
-
-				if (locked) {
-					vm_fault_unlockall(map, amap, NULL, NULL);
-				}
-
-				vm_anon_release(anon);
-
-				if (error) {
-					return (error);
-				}
-				return (ERESTART);
-			}
-
-			/*
-			 * we've successfully read the page, activate it.
-			 */
-
-			vm_page_lock_queues();
-			vm_page_activate(pg);
-			vm_page_unlock_queues();
-			pg->flags &= ~(PG_WANTED|PG_BUSY|PG_FAKE);
-			if (!locked) {
-				simple_unlock(&anon->an_lock);
-			}
-		}
-
-		/*
-		 * we were not able to relock.   restart fault.
-		 */
-
-		if (!locked) {
-			return (ERESTART);
-		}
-
-		/*
-		 * verify no one has touched the amap and moved the anon on us.
-		 */
-
-		if (map != NULL && vm_map_lookup_entry(map, map->size, &entry)) {
-			if(vm_amap_lookup(&entry->aref, map->size - entry->start) != anon) {
-				vm_fault_unlockall(map, amap, NULL, anon);
-				return (ERESTART);
-			}
-		}
-
-		/*
-		 * try it again!
-		 */
-
-		cnt.v_fltanretry++;
-		continue;
+	} else {
+		error = vm_fault_pager(vfi, change_wiring);
 	}
-	/*NOTREACHED*/
+	return (error);
+}
+
+static int
+vm_fault_segment(vfi, change_wiring)
+	struct vm_faultinfo *vfi;
+	bool_t		change_wiring;
+{
+	if (vfi->segment->sg_flags & SEG_BUSY) {
+		SEGMENT_ASSERT_WAIT(vfi->segment, !change_wiring);
+		unlock_things(vfi);
+		cnt.v_intrans++;
+		vm_object_deallocate(vfi->first_object);
+		return (FAULTRETRY);
+	}
+
+	vm_segment_lock_lists();
+	if (vfi->segment->sg_flags & SEG_INACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_inactive, vfi->segment, sg_list);
+		vfi->segment->sg_flags &= ~SEG_INACTIVE;
+		cnt.v_segment_active_count--;
+	}
+	if (vfi->segment->sg_flags & SEG_ACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_active, vfi->segment, sg_list);
+		vfi->segment->sg_flags &= ~SEG_ACTIVE;
+		cnt.v_segment_active_count--;
+	}
+	vm_segment_unlock_lists();
+
+	vfi->segment->sg_flags |= SEG_BUSY;
+	return (FAULTCONT);
+}
+
+static int
+vm_fault_page(vfi, change_wiring)
+	struct vm_faultinfo *vfi;
+	bool_t		change_wiring;
+{
+	if (vfi->page->flags & PG_BUSY) {
+		PAGE_ASSERT_WAIT(vfi->page, !change_wiring);
+		unlock_things(vfi);
+		cnt.v_intrans++;
+		vm_object_deallocate(vfi->first_object);
+		return (FAULTRETRY);
+	}
+
+	vm_page_lock_queues();
+	if (vfi->page->flags & PG_INACTIVE) {
+		TAILQ_REMOVE(&vm_page_queue_inactive, vfi->page, pageq);
+		vfi->page->flags &= ~PG_INACTIVE;
+		cnt.v_page_inactive_count--;
+		cnt.v_reactivated++;
+	}
+	if (vfi->page->flags & PG_ACTIVE) {
+		TAILQ_REMOVE(&vm_page_queue_active, vfi->page, pageq);
+		vfi->page->flags &= ~PG_ACTIVE;
+		cnt.v_page_active_count--;
+	}
+	vm_page_unlock_queues();
+
+	vfi->page->flags |= PG_BUSY;
+	return (FAULTCONT);
 }
 
 int
@@ -427,96 +287,173 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_prot_t	fault_type;
 	bool_t		change_wiring;
 {
-	vm_object_t				first_object;
-	vm_offset_t				first_offset;
-	vm_map_entry_t			entry;
-	vm_amap_t 				amap;
-	vm_anon_t 				anons_store[VM_MAXRANGE], *anons, anon, oanon;
-	register vm_object_t	object;
-	register vm_offset_t	offset;
-	register vm_segment_t	seg;
-	register vm_page_t		m;
-	vm_segment_t			first_seg;
-	vm_page_t				first_m;
-	vm_prot_t				prot;
-	int						result;
-	bool_t					wired;
-	bool_t					su;
-	bool_t					lookup_still_valid;
-	bool_t					page_exists;
-	vm_page_t				old_m;
-	vm_object_t				next_object;
+	vm_prot_t			prot;
+	int					result;
+	struct vm_faultinfo vfi;
 
-	struct vm_faultinfo 	vfi;
-	vm_page_t 				pg;
-
-	anon = NULL;
-	pg = NULL;
-
-	vfi.orig_map = map;
-	vfi.orig_vaddr = truc_page(vaddr);
-	vfi.orig_size = PAGE_SIZE;
-
-	result = vm_map_lookup(&map, vaddr, fault_type, &entry, &first_object, &first_offset, &prot, &wired, &su);
+RetryFault: ;
+	result = vm_fault_lookup(vfi, vaddr, fault_type);
 	if(result != KERN_SUCCESS) {
 		return (result);
 	}
 
-	if(vm_fault_lookup(map, vaddr, FALSE, map->timestamp) == FALSE) {
-		return (EFAULT);
-	}
-
-	lookup_still_valid = TRUE;
-
-	if (wired) {
+	vfi->lookup_still_valid = TRUE;
+	if (vfi.wired) {
 		fault_type = prot;
 	}
-	first_seg = NULL;
-	first_m = NULL;
 
-	vm_object_lock(first_object);
+	vfi.first_segment = NULL;
+	vfi.first_page = NULL;
 
-	first_object->ref_count++;
-	first_object->paging_in_progress++;
+	vm_object_lock(vfi.first_object);
 
-	object = first_object;
-	offset = first_offset;
+	vfi.first_object->ref_count++;
+	vfi.first_object->paging_in_progress++;
 
-	seg = vm_segment_lookup(object, offset);
+	vfi.object = vfi.first_object;
+	vfi.offset = vfi.first_offset;
+
+	/*
+	 *	See whether this page is resident
+	 */
 	while (TRUE) {
-		m = vm_page_lookup(seg, offset);
-	}
-
-	if (((object->pager != NULL) && (!change_wiring || wired))
-			|| (object == first_object)) {
-		m = vm_page_alloc(object, offset);
-		if (m == NULL) {
-			UNLOCK_AND_DEALLOCATE;
-			VM_WAIT;
+		if (vm_fault_object(&vfi, change_wiring) == FAULTRETRY) {
 			goto RetryFault;
 		}
+		vm_fault_zerofill(&vfi);
 	}
+	vm_fault_check_flags(&vfi);
+
+
+	unlock_and_deallocate(&vfi);
+	return (KERN_SUCCESS);
+}
+
+void
+vm_fault_check_flags(vfi)
+	struct vm_faultinfo *vfi;
+{
+	int segflags, pgflags;
+
+	segflags = (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
+	pgflags = (PG_ACTIVE | PG_INACTIVE | PG_BUSY);
+
+	if (((vfi->segment->sg_flags & segflags) != SEG_BUSY) || ((vfi->page->flags & pgflags) != PG_BUSY)) {
+		panic("vm_fault_check_flags: active, inactive or !busy after main loop");
+	}
+}
+
+void
+vm_fault_zerofill(vfi)
+	struct vm_faultinfo *vfi;
+{
+	vm_object_t next_object;
+
+	vfi->offset += vfi->object->shadow_offset;
+	next_object = vfi->object->shadow;
+	if (next_object == NULL) {
+		if (vfi->object != vfi->first_object) {
+			vfi->object->paging_in_progress--;
+			vm_object_unlock(vfi->object);
+
+			vfi->object = vfi->first_object;
+			vfi->offset = vfi->first_offset;
+			vfi->segment = vfi->first_segment;
+			vfi->page = vfi->first_page;
+			vm_object_lock(vfi->object);
+		}
+		if (vfi->first_segment == NULL) {
+			vfi->first_segment = NULL;
+			vm_segment_zero_fill(vfi->segment, vfi->page);
+		} else {
+			if (vfi->first_segment != NULL && vfi->first_page == NULL) {
+				vfi->first_page = NULL;
+				vm_page_zero_fill(vfi->page);
+			}
+		}
+		cnt.v_zfod++;
+		vfi->page->flags &= ~PG_FAKE;
+		return;
+	} else {
+		vm_object_lock(next_object);
+		if (vfi->object != vfi->first_object) {
+			vfi->object->paging_in_progress--;
+		}
+		vm_object_unlock(vfi->object);
+		vfi->object = next_object;
+		vfi->object->paging_in_progress++;
+	}
+}
+
+static int
+vm_fault_lookup(vfi, vaddr, fault_type)
+	struct vm_faultinfo *vfi;
+	vm_offset_t	vaddr;
+	vm_prot_t	fault_type;
+{
+	vm_prot_t		prot;
+	bool_t			su;
+	int 			result;
+
+	result = vm_map_lookup(&vfi->orig_map, vaddr, fault_type, &vfi->orig_entry, &vfi->first_object, &vfi->first_offset, &prot, &vfi->wired, &su);
+	if (result == KERN_SUCCESS) {
+		vfi->map = vfi->orig_map;
+		vfi->entry = vfi->orig_entry;
+		vfi->mapv = vfi->map->timestamp;
+	}
+	return (result);
+}
+
+/* uvm /anons related */
+static bool_t 	vm_fault_lookup(struct vm_faultinfo *, bool_t);
+static bool_t 	vm_fault_relock(struct vm_faultinfo *);
+static void 	vm_fault_unlockall(struct vm_faultinfo *, vm_amap_t, vm_object_t, vm_anon_t);
+static void 	vm_fault_unlockmaps(struct vm_faultinfo *, bool_t);
+
+int
+vm_fault_anonget(vfi, amap, anon)
+	struct vm_faultinfo *vfi;
+	vm_amap_t amap;
+	vm_anon_t anon;
+{
+	bool_t we_own;	/* we own anon's page? */
+	bool_t locked;	/* did we relock? */
+	vm_page_t page;
+	int result;
+
+	while (1) {
+		we_own = FALSE;
+		page = anon->u.an_page;
+		if (page) {
+			if (page->segment) {
+
+			}
+		}
+	} /* while (1) */
 }
 
 /*
  * uvmfault_unlockmaps: unlock the maps
  */
+
 static __inline void
-vm_fault_unlockmaps(map, write_locked)
-	vm_map_t map;
-	bool_t write_locked;
+vm_fault_unlockmaps(vfi, write_locked)
+	struct vm_faultinfo *vfi;
+	boolean_t write_locked;
 {
 	/*
 	 * ufi can be NULL when this isn't really a fault,
 	 * but merely paging in anon data.
 	 */
-	if (map == NULL) {
+
+	if (vfi == NULL) {
 		return;
 	}
+
 	if (write_locked) {
-		vm_map_unlock(map);
+		vm_map_unlock(vfi->map);
 	} else {
-		vm_map_unlock_read(map);
+		vm_map_unlock_read(vfi->map);
 	}
 }
 
@@ -527,8 +464,8 @@ vm_fault_unlockmaps(map, write_locked)
  */
 
 static __inline void
-vm_fault_unlockall(map, amap, obj, anon)
-	vm_map_t map;
+vm_fault_unlockall(vfi, amap, obj, anon)
+	struct vm_faultinfo *vfi;
 	vm_amap_t amap;
 	vm_object_t obj;
 	vm_anon_t anon;
@@ -542,7 +479,7 @@ vm_fault_unlockall(map, amap, obj, anon)
 	if (amap) {
 		amap_unlock(amap);
 	}
-	vm_fault_unlockmaps(map, FALSE);
+	vm_fault_unlockmaps(vfi, FALSE);
 }
 
 /*
@@ -560,71 +497,69 @@ vm_fault_unlockall(map, amap, obj, anon)
  *	map and the submap is unnecessary).
  */
 static __inline bool_t
-vm_fault_lookup(orig_map, orig_size, write_lock, timestamp)
-	vm_map_t orig_map;
-	vm_size_t orig_size;
+vm_fault_lookup(vfi, write_lock)
+	struct vm_faultinfo *vfi;
 	bool_t write_lock;
-	unsigned int timestamp;
 {
-	vm_map_t map, tmpmap;
-	vm_map_entry_t entry;
-	vm_size_t size;
+	vm_map_t tmpmap;
 
-	map = orig_map;
-	size = orig_size;
+	/*
+	 * init vfi values for lookup.
+	 */
+
+	vfi->map = vfi->orig_map;
+	vfi->size = vfi->orig_size;
 
 	/*
 	 * keep going down levels until we are done.   note that there can
 	 * only be two levels so we won't loop very long.
 	 */
 	while (1) {
-
 		/*
 		 * lock map
 		 */
 		if (write_lock) {
-			vm_map_lock(map);
+			vm_map_lock(vfi->map);
 		} else {
-			vm_map_lock_read(map);
+			vm_map_lock_read(vfi->map);
 		}
 
 		/*
 		 * lookup
 		 */
-		if (!vm_map_lookup_entry(map, orig_size, &entry)) {
+		if (!vm_map_lookup_entry(vfi->map, vfi->orig_rvaddr, &vfi->entry)) {
+			vm_fault_unlockmaps(vfi, write_lock);
 			return (FALSE);
 		}
 
 		/*
 		 * reduce size if necessary
 		 */
-		if(entry->end - orig_size < size) {
-			size = entry->end - orig_size;
+		if (vfi->entry->end - vfi->orig_rvaddr < vfi->size) {
+			vfi->size = vfi->entry->end - vfi->orig_rvaddr;
 		}
 
 		/*
 		 * submap?    replace map with the submap and lookup again.
 		 * note: VAs in submaps must match VAs in main map.
 		 */
-		if(entry->is_sub_map) {
-			tmpmap = entry->object.sub_map;
+		if(vfi->entry->is_sub_map) {
+			tmpmap = vfi->entry->object.sub_map;
 			if (write_lock) {
-				vm_map_lock(map);
+				vm_map_unlock(vfi->map);
 			} else {
-				vm_map_lock_read(map);
+				vm_map_unlock_read(vfi->map);
 			}
-			map = tmpmap;
+			vfi->map = tmpmap;
 			continue;
 		}
 
 		/*
 		 * got it!
 		 */
-		timestamp = map->timestamp;
-		return( TRUE);
+		vfi->mapv = vfi->map->timestamp;
+		return (TRUE);
 	} /* while loop */
-
-	/*NOTREACHED*/
 }
 
 /*
@@ -634,29 +569,30 @@ vm_fault_lookup(orig_map, orig_size, write_lock, timestamp)
  * => if a success (TRUE) maps will be locked after call.
  */
 static __inline bool_t
-vm_fault_relock(map, timestamp)
-	vm_map_t map;
-	unsigned int timestamp;
+vm_fault_relock(vfi)
+	struct vm_faultinfo *vfi;
 {
 	/*
 	 * ufi can be NULL when this isn't really a fault,
 	 * but merely paging in anon data.
 	 */
 
-	if (map == NULL) {
+	if (vfi == NULL) {
 		return (TRUE);
 	}
+
+	cnt.v_fltrelck++;
 
 	/*
 	 * relock map.   fail if version mismatch (in which case nothing
 	 * gets locked).
 	 */
 
-	vm_map_lock_read(map);
-	if (timestamp != map->timestamp) {
-		vm_map_unlock_read(map);
+	vm_map_lock_read(vfi->map);
+	if (vfi->mapv != vfi->map->timestamp) {
+		vm_map_unlock_read(vfi->map);
 		return (FALSE);
 	}
+	cnt.v_fltrelckok++;
 	return (TRUE);
 }
-

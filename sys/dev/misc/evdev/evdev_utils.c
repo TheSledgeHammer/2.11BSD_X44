@@ -314,7 +314,7 @@ evdev_push_repeats(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd)
 }
 
 void
-evdev_ev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
+evdev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
 {
 	struct wskbd_softc *kbd = (struct wskbd_softc *)softc;
 	struct wskbd_keyrepeat_data *rdat = kbd->sc_keyrepeat_data;

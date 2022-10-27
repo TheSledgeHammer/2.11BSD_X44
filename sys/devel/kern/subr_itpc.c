@@ -576,7 +576,16 @@ ithreadpool_add_uthreadpool(itpc, utpool)
 SIMPLEQ_HEAD(, ithread) allithreads = SIMPLEQ_HEAD_INITIALIZER(allithreads);
 struct ithread {
 	void 					*ithread;
+	int 					ichannel;
 	SIMPLEQ_ENTRY(ithread)  ientry;
+};
+
+SIMPLEQ_HEAD(, ithreadpool) allithreadpools = SIMPLEQ_HEAD_INITIALIZER(allithreadpools);
+struct ithreadpool {
+	void 						*ipool;
+	int 						igroup;
+	SIMPLEQ_ENTRY(ithreadpool)  ientry;
+	struct job_head				ijobs;
 };
 
 void
@@ -585,6 +594,9 @@ ithread_init(struct itpc *itpc)
 	struct ithread *ith;
 
 	ith = (struct ithread *)malloc(sizeof(struct ithread *));
+
+	ith->ithread = NULL;
+	ith->ichannel = 0;
 	itpc->ithread = ith;
 }
 
@@ -611,8 +623,115 @@ ithread_remove(void *thread)
 }
 
 void
-ithread_put(struct ithread *ith, void *thread)
+ithread_put(struct ithread *ith, void *thread, int channel)
 {
 	ith->ithread = thread;
+	ith->ichannel = channel;
 	SIMPLEQ_INSERT_HEAD(&allithreads, ith, ientry);
+	//return (mxthread_put(mx, channel));
+}
+
+/* mpx api's for threads & threadpools */
+#include <devel/mpx/mpx.h>
+
+struct itpmx {
+	struct mpx				*itp_mpx;
+
+	struct ithread 			*itp_ithread;
+	struct ithreadpool 		*itp_ithreadpool;
+
+	struct threadpool_job	*itp_job;
+};
+
+ithreadpool_init(struct itpc *itpc)
+{
+	struct ithreadpool *itp;
+
+	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *));
+
+	itp->ipool = NULL;
+	itp->igroup = 0;
+	itp->ijobs = NULL;
+	itpc->ithreadpool = itp;
+	itpc->ithreadpool.ijobs = itp->ijobs;
+}
+
+int
+mxthread_create(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXCREATE, MPXCHANNEL, mpx, idx));
+}
+
+int
+mxthread_destroy(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXDESTROY, MPXCHANNEL, mpx, idx));
+}
+
+int
+mxthread_put(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXPUT, MPXCHANNEL, mpx, idx));
+}
+
+int
+mxthread_get(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXGET, MPXCHANNEL, mpx, idx));
+}
+
+int
+mxthread_remove(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXREMOVE, MPXCHANNEL, mpx, idx));
+}
+
+int
+mxthreadpool_create(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXCREATE, MPXGROUP, mpx, idx));
+}
+
+int
+mxthreadpool_destroy(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXDESTROY, MPXGROUP, mpx, idx));
+}
+
+int
+mxthreadpool_put(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXPUT, MPXGROUP, mpx, idx));
+}
+
+int
+mxthreadpool_get(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXGET, MPXGROUP, mpx, idx));
+}
+
+int
+mxthreadpool_remove(mpx, idx)
+	struct mpx *mpx;
+	int idx;
+{
+	return (mpxcall(MPXREMOVE, MPXGROUP, mpx, idx));
 }
