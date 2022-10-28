@@ -47,7 +47,7 @@ vm_psegment_init(seg, start, end)
 	register vm_stack_t 	stack;
 	register vm_text_t 		text;
 
-	MALLOC(pseg, sizeof(union vm_pseudo_segment *), M_VMPSEG, M_WAITOK);
+	pseg = (union vm_pseudo_segment *)pmap_bootstrap(sizeof(union vm_pseudo_segment *));
 
 	pseg->ps_start = start;
 	pseg->ps_end = end;

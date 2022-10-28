@@ -231,7 +231,7 @@ vm_fault_pager(vfi, change_wiring)
 		}
 
 		if (rv == VM_PAGER_ERROR || rv == VM_PAGER_BAD) {
-			vm_fault_free_segment_page(vfi->object, vfi->segment, vfi->page);
+			vm_fault_free(vfi->segment, vfi->page);
 			unlock_and_deallocate(vfi);
 			return (KERN_PROTECTION_FAILURE);
 		}
@@ -343,20 +343,19 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	bool_t		change_wiring;
 {
 	vm_prot_t			prot;
-	int					result;
-	bool_t				page_exists;
-	vm_page_t 			old_page;
+	int					error, result;
+	bool_t				segment_exists, page_exists;
 	struct vm_faultinfo vfi;
 
 	cnt.v_faults++;
 
 RetryFault: ;
-	result = vm_fault_lookup(vfi, vaddr, fault_type);
+	result = vm_fault_lookup(&vfi, vaddr, fault_type);
 	if(result != KERN_SUCCESS) {
 		return (result);
 	}
 
-	vfi->lookup_still_valid = TRUE;
+	vfi.lookup_still_valid = TRUE;
 	if (vfi.wired) {
 		fault_type = prot;
 	}
@@ -382,77 +381,20 @@ RetryFault: ;
 		vm_fault_zerofill(&vfi);
 	}
 	vm_fault_check_flags(&vfi);
-
-	/* Revise: fault_cow/fault_copy function */
-	old_page = vfi.page;
-	if (vfi.object != vfi.first_object) {
-		if (fault_type & VM_PROT_WRITE) {
-			vm_page_copy(vfi.page, vfi.first_page);
-			vfi.first_page->flags &= ~PG_FAKE;
-			vm_page_lock_queues();
-			vm_page_activate(vfi.page);
-			vm_page_deactivate(vfi.page);
-			pmap_page_protect(VM_PAGE_TO_PHYS(vfi.page), VM_PROT_NONE);
-			vm_page_unlock_queues();
-
-			PAGE_WAKEUP(vfi.page);
-			vfi.object->paging_in_progress--;
-			vm_object_unlock(vfi.object);
-
-			cnt.v_cow_faults++;
-			vfi.page = vfi.first_page;
-			vfi.object = vfi.first_object;
-			vfi.offset = vfi.first_offset;
-			vm_object_lock(vfi.object);
-			vfi.object->paging_in_progress--;
-			vm_object_collapse(vfi.object);
-			vfi.object->paging_in_progress++;
-		} else {
-	    	prot &= ~VM_PROT_WRITE;
-	    	vfi.page->flags |= PG_COPYONWRITE;
-		}
-	}
+	vm_fault_cow(&vfi, fault_type, prot);
 
 	if (vfi.page->flags & (PG_ACTIVE|PG_INACTIVE)) {
 		panic("vm_fault: active or inactive before copy object handling");
 	}
 
 RetryCopy:
-	if (vfi.first_object->copy != NULL) {
-		vm_object_t copy_object;
-		vm_offset_t copy_offset;
-		vm_page_t copy_page;
+	error = vm_fault_copy(vfi, fault_type, prot, change_wiring, segment_exists, page_exists);
+	switch (error) {
+	case FAULTCOPY:
+		goto RetryCopy;
 
-		copy_object = vfi.first_object->copy;
-
-		if ((fault_type & VM_PROT_WRITE) == 0) {
-			prot &= ~VM_PROT_WRITE;
-			vfi.page->flags |= PG_COPYONWRITE;
-		} else {
-			if (!vm_object_lock_try(copy_object)) {
-				vm_object_unlock(vfi.object);
-				/* should spin a bit here... */
-				vm_object_lock(vfi.object);
-				goto RetryCopy;
-			}
-			copy_object->ref_count++;
-			copy_offset = vfi.first_offset - copy_object->shadow_offset;
-			copy_page = vm_page_lookup(copy_object, copy_offset);
-			if (page_exists == (copy_page != NULL)) {
-				if (copy_page->flags & PG_BUSY) {
-					PAGE_ASSERT_WAIT(copy_page, !change_wiring);
-					vm_fault_release(vfi.segment, vfi.page);
-					copy_object->ref_count--;
-					vm_object_unlock(copy_object);
-					unlock_things(&vfi);
-					vm_object_deallocate(vfi.first_object);
-					goto RetryFault;
-				}
-			}
-			if (!page_exists) {
-
-			}
-		}
+	case FAULTRETRY:
+		goto RetryFault;
 	}
 
 	vm_object_unlock(vfi.object);
@@ -476,6 +418,99 @@ RetryCopy:
 	PAGE_WAKEUP(vfi.page);
 	unlock_and_deallocate(&vfi);
 	return (KERN_SUCCESS);
+}
+
+/* TODO: better segment & page workings */
+int
+vm_fault_copy(vfi, fault_type, prot, change_wiring, segment_exists, page_exists)
+	struct vm_faultinfo *vfi;
+	vm_prot_t fault_type, prot;
+	bool_t	change_wiring, segment_exists, page_exists;
+{
+	vm_object_t 	copy_object;
+	vm_offset_t 	copy_offset;
+	vm_segment_t 	copy_segment;
+	vm_page_t 		copy_page;
+
+	if (vfi->first_object->copy != NULL) {
+		copy_object = vfi->first_object->copy;
+		if ((fault_type & VM_PROT_WRITE) == 0) {
+			prot &= ~VM_PROT_WRITE;
+			vfi->page->flags |= PG_COPYONWRITE;
+		} else {
+			if (!vm_object_lock_try(copy_object)) {
+				vm_object_unlock(vfi->object);
+				/* should spin a bit here... */
+				vm_object_lock(vfi->object);
+				return (FAULTCOPY);
+			}
+			copy_object->ref_count++;
+			copy_offset = vfi->first_offset - copy_object->shadow_offset;
+			copy_segment = vm_segment_lookup(copy_object, copy_offset);
+			if(segment_exists == (copy_segment != NULL)) {
+				if(copy_segment->sg_flags & SEG_BUSY) {
+					SEGMENT_ASSERT_WAIT(copy_segment, !change_wiring);
+					copy_page = vm_page_lookup(copy_segment, copy_segment->sg_offset);
+					if (page_exists == (copy_page != NULL)) {
+						if (copy_page->flags & PG_BUSY) {
+							PAGE_ASSERT_WAIT(copy_page, !change_wiring);
+							vm_fault_release(vfi->segment, vfi->page);
+							copy_object->ref_count--;
+							vm_object_unlock(copy_object);
+							unlock_things(&vfi);
+							vm_object_deallocate(vfi->first_object);
+							return (FAULTRETRY);
+						}
+					}
+					if (!page_exists) {
+
+					}
+				}
+			}
+			if (!segment_exists) {
+
+			}
+		}
+	}
+	return (0);
+}
+
+/* TODO: have it check the segment contains page */
+void
+vm_fault_cow(vfi, fault_type, prot)
+	struct vm_faultinfo *vfi;
+	vm_prot_t fault_type, prot;
+{
+	vm_page_t 	old_page;
+
+	old_page = vfi->page;
+	if (vfi->object != vfi->first_object) {
+		if (fault_type & VM_PROT_WRITE) {
+			vm_page_copy(vfi->page, vfi->first_page);
+			vfi->first_page->flags &= ~PG_FAKE;
+			vm_page_lock_queues();
+			vm_page_activate(vfi->page);
+			vm_page_deactivate(vfi->page);
+			pmap_page_protect(VM_PAGE_TO_PHYS(vfi->page), VM_PROT_NONE);
+			vm_page_unlock_queues();
+
+			PAGE_WAKEUP(vfi->page);
+			vfi->object->paging_in_progress--;
+			vm_object_unlock(vfi->object);
+
+			cnt.v_cow_faults++;
+			vfi->page = vfi->first_page;
+			vfi->object = vfi->first_object;
+			vfi->offset = vfi->first_offset;
+			vm_object_lock(vfi->object);
+			vfi->object->paging_in_progress--;
+			vm_object_collapse(vfi->object);
+			vfi->object->paging_in_progress++;
+		} else {
+			prot &= ~VM_PROT_WRITE;
+			vfi->page->flags |= PG_COPYONWRITE;
+		}
+	}
 }
 
 void

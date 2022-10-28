@@ -78,8 +78,8 @@ struct vmrate {
 	unsigned 	v_nswget;					/* number of times fault calls uvm_swap_get() */
 
 	/* Distribution of anon usages. */
-	unsigned	v_kernel_anons;				/* total number of anons in system */
-	unsigned	v_anfree_count;				/* number of anons free */
+	unsigned	v_nanon;					/* total number of anons in system */
+	unsigned	v_nfreeanon;				/* number of anons free */
 };
 
 struct vmsum {

@@ -209,7 +209,7 @@ simple_lock_data_t			vm_text_lock;
 /* vm text sysctl */
 extern int sysctl_text(char *, size_t *);
 
-/* vm_stack */
+/* vm_psegment */
 void	vm_psegment_init(vm_segment_t, vm_offset_t *, vm_offset_t *);
 void	vm_psegment_expand(vm_psegment_t *, int, segsz_t, caddr_t);
 void	vm_psegment_shrink(vm_psegment_t *, int, segsz_t, caddr_t);

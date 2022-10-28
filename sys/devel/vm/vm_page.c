@@ -686,9 +686,10 @@ vm_page_anon_alloc(segment, offset, anon)
 		anon->u.an_page = mem;
 		mem->flags = PG_ANON;
 	} else {
-		if(segment) {
+		if (segment) {
 			vm_page_insert(mem, segment, offset);
 			mem->flags = 0;
+			segment->sg_anon_page_count++;
 		}
 	}
 	return (mem);

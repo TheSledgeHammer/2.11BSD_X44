@@ -59,7 +59,7 @@ struct vm_segment {
 	int							sg_flags;				/* see below */
 
 	vm_anon_t					sg_anon;				/* anon (O,S) */
-	int							sg_anoncnt;				/* number of anon pages */
+	int							sg_anon_page_count;		/* number of anon pages */
 
 	int							sg_resident_page_count;	/* number of resident pages */
 

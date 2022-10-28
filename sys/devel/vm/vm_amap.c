@@ -796,8 +796,8 @@ ReStart:
 			 * got it... now we can copy the data and replace anon
 			 * with our new one...
 			 */
-			vm_pagecopy(pg, npg);		/* old -> new */
-			anon->an_ref--;			/* can't drop to zero */
+			vm_pagecopy(pg, npg);			/* old -> new */
+			anon->an_ref--;					/* can't drop to zero */
 			amap->am_anon[slot] = nanon;	/* replace */
 
 			/*
@@ -1050,8 +1050,9 @@ vm_amap_lookup(aref, offset)
 	caddr_t offset;
 {
 	int slot;
-	vm_amap_t amap = aref->ar_amap;
+	vm_amap_t amap;
 
+	amap = aref->ar_amap;
 	AMAP_B2SLOT(slot, offset);
 	slot += aref->ar_pageoff;
 
@@ -1075,9 +1076,10 @@ vm_amap_lookups(aref, offset, anons, npages)
 	vm_anon_t *anons;
 	int npages;
 {
+	vm_amap_t amap;
 	int slot;
-	vm_amap_t amap = aref->ar_amap;
 
+	amap = aref->ar_amap;
 	AMAP_B2SLOT(slot, offset);
 	slot += aref->ar_pageoff;
 
@@ -1105,9 +1107,10 @@ vm_amap_add(aref, offset, anon, replace)
 	vm_anon_t anon;
 	int replace;
 {
+	vm_amap_t amap;
 	int slot;
-	vm_amap_t amap = aref->ar_amap;
 
+	amap = aref->ar_amap;
 	AMAP_B2SLOT(slot, offset);
 	slot += aref->ar_pageoff;
 
@@ -1176,8 +1179,9 @@ vm_amap_ref(entry, flags)
 	vm_map_entry_t entry;
 	int flags;
 {
-	vm_amap_t amap = entry->aref.ar_amap;
+	vm_amap_t amap;
 
+	amap = entry->aref.ar_amap;
 	amap_lock(amap);
 	amap->am_ref++;
 	if (flags & AMAP_SHARED)
@@ -1209,7 +1213,9 @@ vm_amap_unref(entry, all)
 	vm_map_entry_t entry;
 	int all;
 {
-	vm_amap_t amap = entry->aref.ar_amap;
+	vm_amap_t amap;
+
+	amap = entry->aref.ar_amap;
 
 	/*
 	 * lock it
@@ -1222,7 +1228,7 @@ vm_amap_unref(entry, all)
 
 	if (amap->am_ref == 1) {
 		vm_amap_wipeout(amap);	/* drops final ref and frees */
-		return;			/* no need to unlock */
+		return;					/* no need to unlock */
 	}
 
 	/*

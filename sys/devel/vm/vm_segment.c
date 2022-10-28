@@ -544,3 +544,23 @@ vm_segment_sanity_check(pgs, segs)
         return (FALSE);
     }
 }
+
+vm_segment_t
+vm_anon_segment_alloc(aobject, offset, anon)
+	vm_aobject_t	aobject;
+	vm_offset_t		offset;
+	vm_anon_t 		anon;
+{
+	vm_object_t 	object;
+	vm_segment_t 	seg;
+	vm_page_t 		page;
+
+	object = aobject->u_obj;
+	seg = vm_segment_alloc(object, offset);
+	seg->sg_anon = anon;
+	seg->sg_anon_page_count = 0;
+	if (anon) {
+		anon->u.an_segment = seg;
+	}
+	return (seg);
+}

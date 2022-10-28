@@ -82,9 +82,10 @@ void
 vm_anon_init()
 {
 	vm_anon_t anon;
-
-	int nanon = cnt.v_free_count - (cnt.v_free_count / 16); /* XXXCDC ??? */
+	int nanon;
 	int lcv;
+
+	nanon = cnt.v_free_count - (cnt.v_free_count / 16); /* XXXCDC ??? */
 	simple_lock_init(&anon->u.an_freelock);
 
 	LIST_INIT(&anonblock_list);
@@ -99,7 +100,7 @@ vm_anon_init()
 
 	memset(anon, 0, sizeof(*anon) * nanon);
 	anon->u.an_free = NULL;
-	cnt.v_free_count = cnt.v_anfree_count = nanon;
+	cnt.v_nanon = cnt.v_nfreeanon = nanon;
 	for (lcv = 0 ; lcv < nanon ; lcv++) {
 		anon[lcv].u.an_nxt = anon->u.an_free;
 		anon->u.an_free = &anon[lcv];
@@ -127,8 +128,8 @@ vm_anon_add(pages)
 
 	simple_lock(&anon->u.an_freelock);
 	memset(anon, 0, sizeof(*anon) * pages);
-	cnt.v_kernel_anons += pages;
-	cnt.v_anfree_count += pages;
+	cnt.v_nanon += pages;
+	cnt.v_nfreeanon += pages;
 	for (lcv = 0; lcv < pages; lcv++) {
 		simple_lock_init(&anon->an_lock);
 		anon[lcv].u.an_nxt = anon->u.an_free;
@@ -149,7 +150,7 @@ vm_anon_alloc(void)
 	a = a->u.an_free;
 	if (a) {
 		a->u.an_free = a->u.an_nxt;
-		cnt.v_anfree_count--;
+		cnt.v_nfreeanon--;
 		a->an_ref = 1;
 		a->an_swslot = 0;
 		a->u.an_segment = NULL;
@@ -247,7 +248,7 @@ vm_anon_free(anon)
 	simple_lock(&anon->u.an_freelock);
 	anon->u.an_nxt = anon->u.an_free;
 	anon->u.an_free = anon;
-	cnt.v_anfree_count++;
+	cnt.v_nfreeanon++;
 	simple_unlock(&anon->u.an_freelock);
 }
 

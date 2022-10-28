@@ -91,7 +91,7 @@
 			VAO_SWHASH_MAXBUCKETS))
 
 /*
- * uao_list: global list of active aobjects, locked by uao_list_lock
+ * aobject_list: global list of active aobjects, locked by aobject_list_lock
  */
 struct vm_aobject {
 	struct vm_object 			u_obj; 			/* has: lock, pgops, memq, #pages, #refs */
