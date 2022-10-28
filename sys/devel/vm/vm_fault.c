@@ -92,6 +92,10 @@ static struct vm_advice vmadvice[] = {
 #define FAULTRETRY 	1	/* error fault retry */
 #define FAULTCOPY 	2	/* error fault copy */
 
+/* fault handler check flags */
+#define FHDBUSY			0x01	/* handler active | inactive | busy  */
+#define FHDACTIVITY		0x02 	/* handler active | inactive  */
+
 /*
  * private prototypes
  */
@@ -350,7 +354,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	cnt.v_faults++;
 
 RetryFault: ;
-	result = vm_fault_lookup(&vfi, vaddr, fault_type);
+	result = vm_fault_lookup(&vfi, vaddr, fault_type, &prot);
 	if(result != KERN_SUCCESS) {
 		return (result);
 	}
@@ -380,12 +384,9 @@ RetryFault: ;
 		}
 		vm_fault_zerofill(&vfi);
 	}
-	vm_fault_check_flags(&vfi);
+	vm_fault_handler_check(&vfi, FHDBUSY);
 	vm_fault_cow(&vfi, fault_type, prot);
-
-	if (vfi.page->flags & (PG_ACTIVE|PG_INACTIVE)) {
-		panic("vm_fault: active or inactive before copy object handling");
-	}
+	vm_fault_handler_check(&vfi, FHDACTIVITY);
 
 RetryCopy:
 	error = vm_fault_copy(vfi, fault_type, prot, change_wiring, segment_exists, page_exists);
@@ -514,16 +515,33 @@ vm_fault_cow(vfi, fault_type, prot)
 }
 
 void
-vm_fault_check_flags(vfi)
+vm_fault_handler_check(vfi, flag)
 	struct vm_faultinfo *vfi;
+	int flag;
 {
-	int segflags, pgflags;
+	vm_segment_t 	segment;
+	vm_page_t 		page;
+	int sgflag, pgflag;
 
-	segflags = (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
-	pgflags = (PG_ACTIVE | PG_INACTIVE | PG_BUSY);
+	segment = vfi->segment;
+	page = vfi->page;
 
-	if (((vfi->segment->sg_flags & segflags) != SEG_BUSY) || ((vfi->page->flags & pgflags) != PG_BUSY)) {
-		panic("vm_fault_check_flags: active, inactive or !busy after main loop");
+	switch (flag) {
+	case FHDBUSY:
+		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
+		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE | PG_BUSY);
+		if((sgflag != SEG_BUSY) || (pgflag != PG_BUSY)) {
+			panic("vm_fault_handler_check: active, inactive or !busy after main loop");
+		}
+		break;
+
+	case FHDACTIVITY:
+		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
+		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
+		if (sgflag || pgflag) {
+			panic("vm_fault_handler_check: active or inactive before copy object handling");
+		}
+		break;
 	}
 }
 
@@ -570,16 +588,15 @@ vm_fault_zerofill(vfi)
 }
 
 static int
-vm_fault_lookup(vfi, vaddr, fault_type)
+vm_fault_lookup(vfi, vaddr, fault_type, prot)
 	struct vm_faultinfo *vfi;
 	vm_offset_t	vaddr;
-	vm_prot_t	fault_type;
+	vm_prot_t	fault_type, *prot;
 {
-	vm_prot_t		prot;
 	bool_t			su;
 	int 			result;
 
-	result = vm_map_lookup(&vfi->orig_map, vaddr, fault_type, &vfi->orig_entry, &vfi->first_object, &vfi->first_offset, &prot, &vfi->wired, &su);
+	result = vm_map_lookup(&vfi->orig_map, vaddr, fault_type, &vfi->orig_entry, &vfi->first_object, &vfi->first_offset, prot, &vfi->wired, &su);
 	if (result == KERN_SUCCESS) {
 		vfi->map = vfi->orig_map;
 		vfi->entry = vfi->orig_entry;

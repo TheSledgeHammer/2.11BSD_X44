@@ -333,13 +333,15 @@ vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	 * now search the bucket for the requested tag
 	 */
 	LIST_FOREACH(elt, swhash, list) {
-		if (elt->tag == page_tag)
+		if (elt->tag == page_tag) {
 			return (elt);
+		}
 	}
 
 	/* fail now if we are not allowed to create a new entry in the bucket */
-	if (!create)
+	if (!create) {
 		return NULL;
+	}
 
 	/*
 	 * allocate a new entry for the bucket and init/insert it in
@@ -380,8 +382,9 @@ vm_aobject_find_swslot(obj, pageidx)
 	 */
 
 	if (VAO_USES_SWHASH(aobj)) {
-		struct vao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, FALSE);
+		struct vao_swhash_elt *elt;
 
+		elt = vm_aobject_find_swhash_elt(aobj, pageidx, FALSE);
 		if (elt) {
 			return (VAO_SWHASH_ELT_PAGESLOT(elt, pageidx));
 		} else {
@@ -434,7 +437,9 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 		 * the page had not swap slot in the first place, and
 		 * we are freeing.
 		 */
-		struct vao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, slot ? TRUE : FALSE);
+		struct vao_swhash_elt *elt;
+
+		elt = vm_aobject_find_swhash_elt(aobj, pageidx, slot ? TRUE : FALSE);
 		if (elt == NULL) {
 #ifdef DIAGNOSTIC
 			if (slot)

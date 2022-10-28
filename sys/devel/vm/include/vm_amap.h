@@ -128,6 +128,7 @@ struct vm_amap {
 	#ifdef VM_AMAP_PPREF
 	int 				*am_ppref;		/* per page reference count (if !NULL) */
 	#endif
+
 	LIST_ENTRY(vm_amap) am_list;
 };
 
@@ -199,6 +200,10 @@ struct vm_amap {
 #define VM_AMAP_LARGE	256	/* # of slots in "large" amap */
 #define VM_AMAP_CHUNK	16	/* # of slots to chunk large amaps in */
 
+#define VM_AMAP_SMALL(amap)			((amap)->am_nslot <= VM_AMAP_CHUNK)
+#define VM_AMAP_SLOTIDX(slot)		((slot) % VM_AMAP_CHUNK)
+#define VM_AMAP_BUCKET(amap, slot)	(((slot) / VM_AMAP_CHUNK) >> (amap)->am_hashshift)
+
 /*
  * macros
  */
@@ -236,7 +241,7 @@ void			vm_amap_copy(vm_map_t, vm_map_entry_t, int, caddr_t, caddr_t); 		/* clear
 void			vm_amap_cow_now(vm_map_t, vm_map_entry_t); 							/* resolve all COW faults now */
 int				vm_amap_extend(vm_map_entry_t, size_t); 							/* make amap larger */
 void			vm_amap_free(vm_amap_t); 											/* free amap */
-void			vm_amap_ref(vm_amap_t, vm_offset_t, size_t, int);						/* add a reference to an amap */
+void			vm_amap_ref(vm_amap_t, vm_offset_t, size_t, int);					/* add a reference to an amap */
 void			vm_amap_share_protect(vm_map_entry_t, vm_prot_t); 					/* protect pages in a shared amap */
 void			vm_amap_splitref(struct vm_aref *, struct vm_aref *, caddr_t); 		/* split reference to amap into two */
 void			vm_amap_wipeout(vm_amap_t); 										/* remove all anons from amap */

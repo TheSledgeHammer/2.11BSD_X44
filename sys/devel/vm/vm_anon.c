@@ -48,38 +48,11 @@
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_swap.h>
 
-struct vm_anonblock {
-	LIST_ENTRY(vm_anonblock) 	list;
-	int 						count;
-	vm_anon_t 					anons;
-};
-static LIST_HEAD(anonlist, vm_anonblock) anonblock_list;
-
-static inline void
-vm_anonblock_insert(anon, count)
-	vm_anon_t anon;
-	int count;
-{
-	struct vm_anonblock *anonblock;
-
-	MALLOC(anonblock, void *, sizeof(*anonblock), M_VMAMAP, M_WAITOK);
-	anonblock->anons = anon;
-	anonblock->count = count;
-	LIST_INSERT_HEAD(&anonblock_list, anonblock, list);
-}
-
-static inline void
-vm_anonblock_remove(anonblock)
-	struct vm_anonblock *anonblock;
-{
-	LIST_REMOVE(anonblock, list);
-}
-
 /*
  * allocate anons
  */
 void
-vm_anon_init()
+vm_anon_init(void)
 {
 	vm_anon_t anon;
 	int nanon;
@@ -88,23 +61,32 @@ vm_anon_init()
 	nanon = cnt.v_free_count - (cnt.v_free_count / 16); /* XXXCDC ??? */
 	simple_lock_init(&anon->u.an_freelock);
 
-	LIST_INIT(&anonblock_list);
 	/*
 	 * Allocate the initial anons.
 	 */
-	anon = (struct vm_anon *)kmem_alloc(kernel_map, sizeof(*anon) * nanon);
-	if (anon == NULL) {
-		printf("vm_anon_init: can not allocate %d anons\n", nanon);
-		panic("vm_anon_init");
-	}
+	anon = vm_anon_allocate(nanon);
 
 	memset(anon, 0, sizeof(*anon) * nanon);
-	anon->u.an_free = NULL;
 	cnt.v_nanon = cnt.v_nfreeanon = nanon;
+
+	anon->u.an_free = NULL;
 	for (lcv = 0 ; lcv < nanon ; lcv++) {
 		anon[lcv].u.an_nxt = anon->u.an_free;
 		anon->u.an_free = &anon[lcv];
 	}
+}
+
+vm_anon_t
+vm_anon_allocate(nanon)
+	int nanon;
+{
+	register vm_anon_t result;
+	vm_size_t totsize;
+
+	totsize = sizeof(*result) * nanon;
+	result = (vm_anon_t)kmem_alloc(kernel_map, totsize);
+
+	return (result);
 }
 
 /*
@@ -118,13 +100,7 @@ vm_anon_add(pages)
 	vm_anon_t anon;
 	int lcv;
 
-	anon = (struct vm_anon *)kmem_alloc(kernel_map, sizeof(*anon) * pages);
-
-	/* XXX Should wait for VM to free up. */
-	if (anon == NULL) {
-		printf("vm_anon_add: can not allocate %d anons\n", pages);
-		panic("vm_anon_add");
-	}
+	anon = vm_anon_allocate(pages);
 
 	simple_lock(&anon->u.an_freelock);
 	memset(anon, 0, sizeof(*anon) * pages);
@@ -144,21 +120,21 @@ vm_anon_add(pages)
 vm_anon_t
 vm_anon_alloc(void)
 {
-	vm_anon_t a;
+	vm_anon_t anon;
 
-	simple_lock(&a->u->an_freelock);
-	a = a->u.an_free;
-	if (a) {
-		a->u.an_free = a->u.an_nxt;
+	simple_lock(&anon->u->an_freelock);
+	anon = anon->u.an_free;
+	if (anon) {
+		anon->u.an_free = anon->u.an_nxt;
 		cnt.v_nfreeanon--;
-		a->an_ref = 1;
-		a->an_swslot = 0;
-		a->u.an_segment = NULL;
-		a->u.an_page = NULL;		/* so we can free quickly */
+		anon->an_ref = 1;
+		anon->u.an_segment = NULL;
+		anon->u.an_page = NULL;
+		anon->an_swslot = 0;
 	}
-	simple_unlock(&a->u.an_freelock);
+	simple_unlock(&anon->u.an_freelock);
 
-	return (a);
+	return (anon);
 }
 
 /*
@@ -274,6 +250,34 @@ vm_anon_dropswap(anon)
 		cnt.v_swpgonly--;
 		simple_unlock(&swap_data_lock);
 	}
+}
+
+#ifdef notyet
+struct vm_anonblock {
+	LIST_ENTRY(vm_anonblock) 	list;
+	int 						count;
+	vm_anon_t 					anons;
+};
+static LIST_HEAD(anonlist, vm_anonblock) anonblock_list;
+
+static inline void
+vm_anonblock_insert(anon, count)
+	vm_anon_t anon;
+	int count;
+{
+	struct vm_anonblock *anonblock;
+
+	MALLOC(anonblock, void *, sizeof(*anonblock), M_VMAMAP, M_WAITOK);
+	anonblock->anons = anon;
+	anonblock->count = count;
+	LIST_INSERT_HEAD(&anonblock_list, anonblock, list);
+}
+
+static inline void
+vm_anonblock_remove(anonblock)
+	struct vm_anonblock *anonblock;
+{
+	LIST_REMOVE(anonblock, list);
 }
 
 /*
@@ -396,3 +400,4 @@ vm_anon_pagein(anon)
 	}
 	return (FALSE);
 }
+#endif
