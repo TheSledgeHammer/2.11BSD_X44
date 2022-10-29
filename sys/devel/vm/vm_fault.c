@@ -174,8 +174,6 @@ static __inline void
 unlock_things(vfi)
 	struct vm_faultinfo *vfi;
 {
-	register vm_segment_t so;
-
 	vfi->object->paging_in_progress--;
 	vm_object_unlock(vfi->object);
 	if (vfi->object != vfi->first_object) {

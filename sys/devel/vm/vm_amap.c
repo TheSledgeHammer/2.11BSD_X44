@@ -167,6 +167,7 @@ void
 vm_amap_init()
 {
 	register vm_amap_t amap;
+
 	MALLOC(amap, struct vm_amap *, sizeof(struct vm_amap), M_VMAMAP, M_WAITOK);
 
 	LIST_INIT(&amap_list);
@@ -189,8 +190,9 @@ vm_amap_alloc1(slots, padslots, waitf)
 	int totalslots = slots + padslots;
 
 	amap = (struct vm_amap *)malloc(sizeof(struct vm_amap *), M_VMAMAP, M_WAITOK);
-	if (amap == NULL)
+	if (amap == NULL) {
 		return (NULL);
+	}
 
 	amap->am_ref = 1;
 	amap->am_flags = 0;
@@ -416,8 +418,8 @@ vm_amap_extend(entry, addsize)
 		amap->am_ppref = newppref;
 		if ((slotoff + slotmapped) < amap->am_nslot)
 			amap_pp_adjref(amap, slotoff + slotmapped,
-			    (amap->am_nslot - (slotoff + slotmapped)) <<
-			    PAGE_SHIFT, 1);
+					(amap->am_nslot - (slotoff + slotmapped)) <<
+					PAGE_SHIFT, 1);
 		pp_setreflen(newppref, amap->am_nslot, 1, slotadded);
 	}
 #endif

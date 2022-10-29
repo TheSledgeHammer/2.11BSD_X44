@@ -59,7 +59,6 @@ struct vm_segment {
 	int							sg_flags;				/* see below */
 
 	vm_anon_t					sg_anon;				/* anon (O,S) */
-	int							sg_anon_page_count;		/* number of anon pages */
 
 	int							sg_resident_page_count;	/* number of resident pages */
 
@@ -160,11 +159,10 @@ vm_segment_t	vm_segment_lookup(vm_object_t, vm_offset_t);
 void			vm_segment_page_insert(vm_object_t, vm_offset_t, vm_page_t, vm_offset_t);
 vm_page_t		vm_segment_page_lookup(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_page_remove(vm_object_t, vm_offset_t, vm_offset_t);
-void			vm_segment_free_page(vm_object_t, vm_segment_t, vm_page_t);
-void			vm_segment_release_page(vm_segment_t, vm_page_t);
 void			vm_segment_startup(vm_offset_t, vm_offset_t);
 bool_t			vm_segment_zero_fill(vm_segment_t, vm_offset_t);
 bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
-
+vm_segment_t	vm_segment_anon_alloc(vm_object_t, vm_offset_t, vm_anon_t);
+void			vm_segment_anon_free(vm_segment_t);
 //#endif /* KERNEL */
 #endif /* VM_SEGMENT_H_ */

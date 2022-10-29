@@ -470,8 +470,9 @@ vm_page_alloc(segment, offset)
 
 	if (cnt.v_free_count < cnt.v_free_min ||
 	    (cnt.v_free_count < cnt.v_free_target &&
-	     cnt.v_page_inactive_count < cnt.v_inactive_target))
+	     cnt.v_page_inactive_count < cnt.v_inactive_target)) {
 		thread_wakeup(&vm_pages_needed);
+	}
 	return (mem);
 }
 
@@ -586,7 +587,6 @@ vm_page_deactivate(m)
 	 *	Only move active pages -- ignore locked or already
 	 *	inactive ones.
 	 */
-
 	if (m->flags & PG_ACTIVE) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
 		TAILQ_REMOVE(&vm_page_queue_active, m, pageq);
@@ -595,12 +595,14 @@ vm_page_deactivate(m)
 		m->flags |= PG_INACTIVE;
 		cnt.v_page_active_count--;
 		cnt.v_page_inactive_count++;
-		if (pmap_is_modified(VM_PAGE_TO_PHYS(m)))
+		if (pmap_is_modified(VM_PAGE_TO_PHYS(m))) {
 			m->flags &= ~PG_CLEAN;
-		if (m->flags & PG_CLEAN)
+		}
+		if (m->flags & PG_CLEAN) {
 			m->flags &= ~PG_LAUNDRY;
-		else
+		} else {
 			m->flags |= PG_LAUNDRY;
+		}
 	}
 }
 
@@ -624,9 +626,9 @@ vm_page_activate(m)
 		m->flags &= ~PG_INACTIVE;
 	}
 	if (m->wire_count == 0) {
-		if (m->flags & PG_ACTIVE)
+		if (m->flags & PG_ACTIVE) {
 			panic("vm_page_activate: already active");
-
+		}
 		TAILQ_INSERT_TAIL(&vm_page_queue_active, m, pageq);
 		m->flags |= PG_ACTIVE;
 		cnt.v_page_active_count++;
@@ -670,7 +672,7 @@ vm_page_copy(src_m, dest_m)
 	pmap_copy_page(VM_PAGE_TO_PHYS(src_m), VM_PAGE_TO_PHYS(dest_m));
 }
 
-/* page anon management (WIP) */
+/* page anon management */
 vm_page_t
 vm_page_anon_alloc(segment, offset, anon)
 	vm_segment_t segment;
@@ -681,14 +683,17 @@ vm_page_anon_alloc(segment, offset, anon)
 
 	mem = vm_page_alloc(segment, offset);
 
+	mem->segment = segment;
+	mem->offset = offset;
 	mem->anon = anon;
+	mem->flags = PG_BUSY|PG_CLEAN|PG_FAKE;
+	mem->wire_count = 0;
 	if (anon) {
 		anon->u.an_page = mem;
 		mem->flags = PG_ANON;
 	} else {
 		if (segment) {
 			vm_page_insert(mem, segment, offset);
-			mem->flags = 0;
 		}
 	}
 	return (mem);
@@ -698,11 +703,12 @@ void
 vm_page_anon_free(mem)
 	vm_page_t mem;
 {
-	if (mem->flags & PG_ANON) {
+	if (mem->flags & PG_TABLED) {
+		vm_page_remove(mem);
+	} else if (mem->flags & PG_ANON) {
 		mem->flags &= ~PG_ANON;
 		mem->anon = NULL;
 		return;
 	}
 	vm_page_free(mem);
-	mem->anon = (void*) 0xdeadbeef;
 }

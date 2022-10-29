@@ -338,62 +338,6 @@ vm_segment_page_remove(object, offset1, offset2)
     }
 }
 
-void
-vm_segment_free_page(s, p)
-	vm_segment_t 	s;
-	vm_page_t 		p;
-{
-	register vm_page_t 	ps;
-
-	if (s != NULL) {
-		SEGMENT_WAKEUP(s);
-		vm_segment_lock_lists();
-		ps = vm_page_lookup(s, s->sg_offset);
-		if (p != NULL) {
-			PAGE_WAKEUP(p);
-			vm_page_lock_queues();
-			if (p == ps) {
-				vm_page_free(p);
-			} else {
-				p = ps;
-				vm_page_free(p);
-			}
-			vm_page_unlock_queues();
-		} else {
-			vm_segment_free(s);
-		}
-		vm_segment_unlock_lists();
-	}
-}
-
-void
-vm_segment_release_page(s, p)
-	vm_segment_t 	s;
-	vm_page_t 		p;
-{
-	register vm_page_t 	ps;
-
-	if (s != NULL) {
-		SEGMENT_WAKEUP(s);
-		vm_segment_lock_lists();
-		ps = vm_page_lookup(s, s->sg_offset);
-		if (p != NULL) {
-			PAGE_WAKEUP(p);
-			vm_page_lock_queues();
-			if(p == ps) {
-				vm_page_activate(p);
-			} else {
-				p = ps;
-				vm_page_activate(p);
-			}
-			vm_page_unlock_queues();
-		} else {
-			vm_segment_activate(s);
-		}
-		vm_segment_unlock_lists();
-	}
-}
-
 vm_segment_t
 vm_segment_alloc(object, offset)
 	vm_object_t	object;
@@ -421,6 +365,8 @@ void
 vm_segment_free(segment)
 	register vm_segment_t segment;
 {
+	KASSERT(TAILQ_EMPTY(segment->sg_memq));
+
 	vm_segment_remove(segment);
 	if(segment->sg_flags & SEG_ACTIVE) {
 		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
@@ -545,22 +491,43 @@ vm_segment_sanity_check(pgs, segs)
     }
 }
 
+/* segment anon management */
 vm_segment_t
-vm_anon_segment_alloc(aobject, offset, anon)
-	vm_aobject_t	aobject;
+vm_segment_anon_alloc(object, offset, anon)
+	vm_object_t 	object;
 	vm_offset_t		offset;
 	vm_anon_t 		anon;
 {
-	vm_object_t 	object;
 	vm_segment_t 	seg;
-	vm_page_t 		page;
 
-	object = aobject->u_obj;
 	seg = vm_segment_alloc(object, offset);
+
+	seg->sg_object = object;
+	seg->sg_offset = offset;
 	seg->sg_anon = anon;
-	seg->sg_anon_page_count = 0;
+	seg->sg_flags = SEG_BUSY | SEG_CLEAN;
 	if (anon) {
 		anon->u.an_segment = seg;
+	} else {
+		if (object) {
+			vm_segment_insert(seg, object, offset);
+		}
 	}
 	return (seg);
+}
+
+void
+vm_segment_anon_free(segment)
+	vm_segment_t 	segment;
+{
+	vm_page_t anpage;
+
+	anpage = segment->sg_anon->u.an_page;
+	if (anpage != NULL) {
+		return;
+	} else {
+		segment->sg_anon = NULL;
+		return;
+	}
+	vm_segment_free(segment);
 }

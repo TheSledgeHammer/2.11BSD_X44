@@ -75,4 +75,7 @@ struct vm_advice {
 	int 			nforw;
 };
 
+void	vm_fault_free(vm_segment_t, vm_page_t);
+void	vm_fault_release(vm_segment_t, vm_page_t);
+
 #endif /* _VM_FAULT_H_ */

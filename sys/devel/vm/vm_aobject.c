@@ -113,110 +113,6 @@ vm_aobject_allocate(size, object, flags)
 }
 
 /*
- * uao_detach: drop a reference to an aobj
- *
- * => aobj must be unlocked, we will lock it
- */
-void
-vm_aobject_detach(obj)
-	vm_object_t obj;
-{
-	vm_aobject_t 	aobj;
-	vm_segment_t 	seg;
-	vm_page_t	 	pg;
-	bool_t busybody;
-
-	aobj = (struct vm_aobject *)obj;
-	/*
- 	 * detaching from kernel_object is a noop.
- 	 */
-	if (obj->ref_count == VM_OBJ_KERN)
-		return;
-
-	simple_lock(&obj->Lock);
-
-	obj->ref_count--;					/* drop ref! */
-	if (obj->ref_count) {				/* still more refs? */
-		simple_unlock(&obj->Lock);
-		return;
-	}
-
-	/*
- 	 * remove the aobj from the global list.
- 	 */
-	simple_lock(&aobject_list_lock);
-	LIST_REMOVE(aobj, u_list);
-	simple_unlock(&aobject_list_lock);
-
-	/*
- 	 * free all the pages that aren't PG_BUSY, mark for release any that are.
- 	 */
-	busybody = FALSE;
-	CIRCLEQ_FOREACH(seg, obj->seglist, sg_list) {
-		if (seg->sg_memq == NULL) {
-			vm_aobject_free_segment(&aobj->u_obj, seg, busybody);
-		} else {
-			vm_segment_lock_lists();
-			TAILQ_FOREACH(pg, seg->sg_memq, listq) {
-				vm_aobject_free_page(seg, pg, busybody);
-			}
-			vm_segment_unlock_lists();
-		}
-	}
-
-	/*
- 	 * if we found any busy pages, we're done for now.
- 	 * mark the aobj for death, releasepg will finish up for us.
- 	 */
-	if (busybody) {
-		aobj->u_flags |= VAO_FLAG_KILLME;
-		simple_unlock(&aobj->u_obj.Lock);
-		return;
-	}
-
-	/*
- 	 * finally, free the rest.
- 	 */
-	vm_aobject_free(aobj);
-}
-
-static void
-vm_aobject_free_segment(object, segment, busybody)
-	vm_object_t	object;
-	vm_segment_t segment;
-	bool_t busybody;
-{
-	if (segment->sg_flags & SEG_BUSY) {
-		segment->sg_flags |= SEG_RELEASED;
-		busybody = TRUE;
-		continue;
-	}
-	pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_NONE);
-	vm_aobject_dropswap(object, segment->sg_offset >> SEGMENT_SHIFT);
-	vm_segment_lock_lists();
-	vm_segment_free(segment);
-	vm_segment_unlock_lists();
-}
-
-static void
-vm_aobject_free_page(segment, page, busybody)
-	vm_segment_t segment;
-	vm_page_t	 page;
-	bool_t 		busybody;
-{
-	if (page->flags & PG_BUSY) {
-		page->flags |= PG_RELEASED;
-		busybody = TRUE;
-		continue;
-	}
-	pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
-	vm_aobject_dropswap(segment->sg_object, page->offset >> PAGE_SHIFT);
-	vm_page_lock_queues();
-	vm_page_free(page);
-	vm_page_unlock_queues();
-}
-
-/*
  * uao_free: free all resources held by an aobj, and then free the aobj
  *
  * => the aobj should be dead
@@ -278,6 +174,93 @@ vm_aobject_free(aobj)
 		}
 		FREE(aobj->u_swslots, M_VMAOBJ);
 	}
+}
+
+/*
+ * uao_detach: drop a reference to an aobj
+ *
+ * => aobj must be unlocked, we will lock it
+ */
+void
+vm_aobject_detach(object)
+	vm_object_t object;
+{
+	vm_aobject_t 	aobject;
+	vm_segment_t 	segment;
+	vm_page_t	 	page;
+	bool_t 			busybody;
+
+	aobject = (struct vm_aobject *)object;
+	/*
+ 	 * detaching from kernel_object is a noop.
+ 	 */
+	if (object->ref_count == VM_OBJ_KERN) {
+		return;
+	}
+
+	simple_lock(&object->Lock);
+
+	object->ref_count--;					/* drop ref! */
+	if (object->ref_count) {				/* still more refs? */
+		simple_unlock(&object->Lock);
+		return;
+	}
+
+	/*
+ 	 * remove the aobj from the global list.
+ 	 */
+	simple_lock(&aobject_list_lock);
+	LIST_REMOVE(aobject, u_list);
+	simple_unlock(&aobject_list_lock);
+
+	/*
+ 	 * free all the pages that aren't PG_BUSY, mark for release any that are.
+ 	 */
+	busybody = FALSE;
+	CIRCLEQ_FOREACH(segment, object->seglist, sg_list) {
+		segment->sg_object = object;
+		if (TAILQ_EMPTY(segment->sg_memq)) {
+			if (segment->sg_flags & SEG_BUSY) {
+				segment->sg_flags |= SEG_RELEASED;
+				busybody = TRUE;
+				continue;
+			}
+			pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_NONE);
+			vm_aobject_dropswap(object, segment->sg_offset >> SEGMENT_SHIFT);
+			vm_segment_lock_lists();
+			vm_segment_anon_free(segment);
+			vm_segment_unlock_lists();
+		} else {
+			page->segment = segment;
+			TAILQ_FOREACH(page, segment->sg_memq, listq) {
+				if (page->flags & PG_BUSY) {
+					page->flags |= PG_RELEASED;
+					busybody = TRUE;
+					continue;
+				}
+				pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+				vm_aobject_dropswap(object, page->offset >> PAGE_SHIFT);
+				vm_page_lock_queues();
+				vm_page_anon_free(page);
+				vm_page_unlock_queues();
+			}
+		}
+	}
+
+	/*
+ 	 * if we found any busy pages, we're done for now.
+ 	 * mark the aobj for death, releasepg will finish up for us.
+ 	 */
+	if (busybody) {
+		aobject->u_flags |= VAO_FLAG_KILLME;
+		simple_unlock(&aobject->u_obj.Lock);
+		return;
+	}
+
+	/*
+ 	 * finally, free the rest.
+ 	 */
+	vm_aobject_free(aobject);
 }
 
 /*

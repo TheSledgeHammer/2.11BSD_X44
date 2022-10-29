@@ -247,6 +247,7 @@ void		 vm_page_startup(vm_offset_t *, vm_offset_t *);
 void		 vm_page_unwire(vm_page_t);
 void		 vm_page_wire(vm_page_t);
 bool_t	 	 vm_page_zero_fill(vm_page_t);
-
+vm_page_t	 vm_page_anon_alloc(vm_segment_t, vm_offset_t, vm_anon_t);
+void		 vm_page_anon_free(vm_page_t);
 #endif /* KERNEL */
 #endif /* !_VM_PAGE_ */
