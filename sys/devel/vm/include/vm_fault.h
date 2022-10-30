@@ -43,8 +43,10 @@ struct vm_faultinfo {
     vm_size_t        orig_size;
     unsigned int	 mapv;
     vm_size_t        size;
-    bool_t 			 lookup_still_valid;
+    vm_prot_t		 prot;
     bool_t			 wired;
+    bool_t		 	 su;
+    bool_t 			 lookup_still_valid;
 
     /* map */
    vm_map_t         orig_map;
@@ -55,17 +57,15 @@ struct vm_faultinfo {
    /* object */
    vm_object_t      object;
    vm_offset_t      offset;
+   vm_object_t      first_object;
+   vm_offset_t      first_offset;
 
    /* segment */
    vm_segment_t     segment;
+   vm_segment_t     first_segment;
 
    /* page */
    vm_page_t        page;
-
-   /* first object, segment & page */
-   vm_object_t      first_object;
-   vm_offset_t      first_offset;
-   vm_segment_t     first_segment;
    vm_page_t        first_page;
 };
 

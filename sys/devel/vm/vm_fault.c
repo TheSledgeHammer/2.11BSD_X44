@@ -1,3 +1,38 @@
+/*	$NetBSD: uvm_fault.c,v 1.76.4.3 2002/12/10 07:14:41 jmc Exp $	*/
+
+/*
+ *
+ * Copyright (c) 1997 Charles D. Cranor and Washington University.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *      This product includes software developed by Charles D. Cranor and
+ *      Washington University.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * from: Id: uvm_fault.c,v 1.1.2.23 1998/02/06 05:29:05 chs Exp
+ */
 /*
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -88,17 +123,25 @@ static struct vm_advice vmadvice[] = {
 #define VM_MAXRANGE 16 	/* must be MAX() of nback+nforw+1 */
 
 /* fault errors */
-#define FAULTCONT 	0	/* fault continue */
-#define FAULTRETRY 	1	/* error fault retry */
-#define FAULTCOPY 	2	/* error fault copy */
+#define EFAULTRETRY 	1	/* error fault retry */
+#define EFAULTCOPY 		2	/* error fault copy */
 
 /* fault handler check flags */
-#define FHDBUSY			0x01	/* handler active | inactive | busy  */
-#define FHDACTIVITY		0x02 	/* handler active | inactive  */
+#define FHDMLOOP		0x01	/* handler active | inactive | busy after main loop */
+#define FHDOBJCOPY		0x02	/* handler active | inactive before object copy*/
+#define FHDRETRY		0x04	/* handler active | inactive before retry */
+#define FHDPMAP			0x08	/* handler active | inactive before pmap  */
 
 /*
  * private prototypes
  */
+static int	vm_fault_map_lookup(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
+static void vm_fault_amapcopy(struct vm_faultinfo *);
+static __inline void 	vm_fault_anonflush(vm_anon_t *, int);
+static __inline void 	vm_fault_unlockall(struct vm_faultinfo *, vm_amap_t, vm_object_t, vm_anon_t);
+static __inline void 	vm_fault_unlockmaps(struct vm_faultinfo *, bool_t);
+static __inline bool_t 	vm_fault_lookup(struct vm_faultinfo *, bool_t);
+static __inline bool_t 	vm_fault_relock(struct vm_faultinfo *);
 
 /*
  * inline functions
@@ -205,13 +248,13 @@ vm_fault_pager(vfi, change_wiring)
 		if(vfi->segment == NULL) {
 			unlock_and_deallocate(vfi);
 			VM_WAIT;
-			return (FAULTRETRY);
+			return (EFAULTRETRY);
 		}
 		vfi->page = vm_page_alloc(vfi->segment, vfi->segment->sg_offset);
 		if(vfi->page == NULL) {
 			unlock_and_deallocate(vfi);
 			VM_WAIT;
-			return (FAULTRETRY);
+			return (EFAULTRETRY);
 		}
 	}
 	if (vfi->object->pager != NULL && (!change_wiring || vfi->wired)) {
@@ -257,12 +300,12 @@ vm_fault_object(vfi, change_wiring)
 		vfi->page = vm_page_lookup(vfi->segment, vfi->segment->sg_offset);
 		if(vfi->page != NULL) {
 			error = vm_fault_page(vfi, change_wiring);
-			if(error != FAULTCONT) {
+			if(error != 0) {
 				return (error);
 			}
 		} else {
 			error = vm_fault_segment(vfi, change_wiring);
-			if(error != FAULTCONT) {
+			if(error != 0) {
 				return (error);
 			}
 		}
@@ -286,7 +329,7 @@ vm_fault_segment(vfi, change_wiring)
 		unlock_things(vfi);
 		cnt.v_intrans++;
 		vm_object_deallocate(vfi->first_object);
-		return (FAULTRETRY);
+		return (EFAULTRETRY);
 	}
 
 	vm_segment_lock_lists();
@@ -303,7 +346,7 @@ vm_fault_segment(vfi, change_wiring)
 	vm_segment_unlock_lists();
 
 	vfi->segment->sg_flags |= SEG_BUSY;
-	return (FAULTCONT);
+	return (0);
 }
 
 static int
@@ -316,7 +359,7 @@ vm_fault_page(vfi, change_wiring)
 		unlock_things(vfi);
 		cnt.v_intrans++;
 		vm_object_deallocate(vfi->first_object);
-		return (FAULTRETRY);
+		return (EFAULTRETRY);
 	}
 
 	vm_page_lock_queues();
@@ -334,7 +377,7 @@ vm_fault_page(vfi, change_wiring)
 	vm_page_unlock_queues();
 
 	vfi->page->flags |= PG_BUSY;
-	return (FAULTCONT);
+	return (0);
 }
 
 int
@@ -344,22 +387,27 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_prot_t	fault_type;
 	bool_t		change_wiring;
 {
-	vm_prot_t			prot;
+	vm_page_t 			old_page;
 	int					error, result;
-	bool_t				segment_exists, page_exists;
+	bool_t				page_exists;
 	struct vm_faultinfo vfi;
 
 	cnt.v_faults++;
 
 RetryFault: ;
-	result = vm_fault_lookup(&vfi, vaddr, fault_type, &prot);
-	if(result != KERN_SUCCESS) {
+
+	vfi.orig_map = map;
+	vfi.orig_rvaddr = trunc_page(vaddr);
+	vfi.orig_size = PAGE_SIZE;				/* can't get any smaller than this */
+
+	result = vm_fault_map_lookup(&vfi, vaddr, fault_type);
+	if (result != KERN_SUCCESS && vm_fault_lookup(&vfi, FALSE) == FALSE) {
 		return (result);
 	}
 
 	vfi.lookup_still_valid = TRUE;
 	if (vfi.wired) {
-		fault_type = prot;
+		fault_type = vfi.prot;
 	}
 
 	vfi.first_segment = NULL;
@@ -377,30 +425,38 @@ RetryFault: ;
 	 *	See whether this page is resident
 	 */
 	while (TRUE) {
-		if (vm_fault_object(&vfi, change_wiring) == FAULTRETRY) {
+		if (vm_fault_object(&vfi, change_wiring) == EFAULTRETRY) {
 			goto RetryFault;
 		}
 		vm_fault_zerofill(&vfi);
 	}
-	vm_fault_handler_check(&vfi, FHDBUSY);
-	vm_fault_cow(&vfi, fault_type, prot);
-	vm_fault_handler_check(&vfi, FHDACTIVITY);
+	vm_fault_handler_check(&vfi, FHDMLOOP);
+	old_page = vfi->page;
+	vm_fault_cow(&vfi, fault_type, old_page);
+	vm_fault_handler_check(&vfi, FHDOBJCOPY);
 
 RetryCopy:
-	error = vm_fault_copy(vfi, fault_type, prot, change_wiring, segment_exists, page_exists);
+	error = vm_fault_copy(&vfi, fault_type, change_wiring, page_exists, old_page);
 	switch (error) {
-	case FAULTCOPY:
+	case EFAULTCOPY:
 		goto RetryCopy;
 
-	case FAULTRETRY:
+	case EFAULTRETRY:
 		goto RetryFault;
 	}
 
+	vm_fault_handler_check(&vfi, FHDRETRY);
+	if (vm_fault_retry(&vfi, vaddr, fault_type) == EFAULTRETRY) {
+		goto RetryFault;
+	}
+
+	vm_fault_handler_check(&vfi, FHDPMAP);
 	vm_object_unlock(vfi.object);
 
-	pmap_enter(map->pmap, vaddr, VM_PAGE_TO_PHYS(vfi.page), prot, vfi.wired);
+	pmap_enter(vfi.map->pmap, vaddr, VM_PAGE_TO_PHYS(vfi.page), vfi.prot, vfi.wired);
 
 	vm_object_lock(vfi.object);
+
 	vm_page_lock_queues();
 	if (change_wiring) {
 		if (vfi.wired) {
@@ -421,10 +477,11 @@ RetryCopy:
 
 /* TODO: better segment & page workings */
 int
-vm_fault_copy(vfi, fault_type, prot, change_wiring, segment_exists, page_exists)
+vm_fault_copy(vfi, fault_type, change_wiring, page_exists, old_page)
 	struct vm_faultinfo *vfi;
-	vm_prot_t fault_type, prot;
-	bool_t	change_wiring, segment_exists, page_exists;
+	vm_prot_t fault_type;
+	bool_t	change_wiring, page_exists;
+	vm_page_t old_page;
 {
 	vm_object_t 	copy_object;
 	vm_offset_t 	copy_offset;
@@ -434,19 +491,19 @@ vm_fault_copy(vfi, fault_type, prot, change_wiring, segment_exists, page_exists)
 	if (vfi->first_object->copy != NULL) {
 		copy_object = vfi->first_object->copy;
 		if ((fault_type & VM_PROT_WRITE) == 0) {
-			prot &= ~VM_PROT_WRITE;
+			vfi->prot &= ~VM_PROT_WRITE;
 			vfi->page->flags |= PG_COPYONWRITE;
 		} else {
 			if (!vm_object_lock_try(copy_object)) {
 				vm_object_unlock(vfi->object);
 				/* should spin a bit here... */
 				vm_object_lock(vfi->object);
-				return (FAULTCOPY);
+				return (EFAULTCOPY);
 			}
 			copy_object->ref_count++;
 			copy_offset = vfi->first_offset - copy_object->shadow_offset;
 			copy_segment = vm_segment_lookup(copy_object, copy_offset);
-			if(segment_exists == (copy_segment != NULL)) {
+			if(copy_segment != NULL) {
 				if(copy_segment->sg_flags & SEG_BUSY) {
 					SEGMENT_ASSERT_WAIT(copy_segment, !change_wiring);
 					copy_page = vm_page_lookup(copy_segment, copy_segment->sg_offset);
@@ -458,31 +515,69 @@ vm_fault_copy(vfi, fault_type, prot, change_wiring, segment_exists, page_exists)
 							vm_object_unlock(copy_object);
 							unlock_things(&vfi);
 							vm_object_deallocate(vfi->first_object);
-							return (FAULTRETRY);
+							return (EFAULTRETRY);
 						}
 					}
 					if (!page_exists) {
+						copy_page = vm_page_alloc(copy_segment, copy_segment->sg_offset);
+						if(copy_page == NULL) {
+							vm_fault_release(vfi->segment, vfi->page);
+							copy_object->ref_count--;
+							vm_object_unlock(copy_object);
+							unlock_and_deallocate(&vfi);
+							VM_WAIT;
+							return (EFAULTRETRY);
+						}
 
+						if (copy_object->pager != NULL) {
+							vm_object_unlock(vfi->object);
+							vm_object_unlock(copy_object);
+							unlock_map(vfi);
+							page_exists = vm_pager_has_page(copy_object->pager,
+									(copy_offset + copy_object->paging_offset));
+							vm_object_lock(copy_object);
+							if (copy_object->shadow != vfi->object ||
+												    copy_object->ref_count == 1) {
+								vm_fault_free(copy_segment, copy_page);
+								vm_object_unlock(copy_object);
+								vm_object_deallocate(copy_object);
+								vm_object_lock(vfi->object);
+								return (EFAULTCOPY);
+							}
+
+							vm_object_lock(vfi->object);
+
+							if (page_exists) {
+								vm_fault_free(copy_segment, copy_page);
+							}
+						}
 					}
+					if (!page_exists) {
+						vm_page_copy(vfi->page, copy_page);
+						copy_page->flags &= ~PG_FAKE;
+						vm_page_lock_queues();
+						pmap_page_protect(VM_PAGE_TO_PHYS(old_page), VM_PROT_NONE);
+						copy_page->flags &= ~PG_CLEAN;
+						vm_page_activate(copy_page);
+						vm_page_unlock_queues();
+						PAGE_WAKEUP(copy_page);
+					}
+					copy_object->ref_count--;
+					vm_object_unlock(copy_object);
+					vfi->page->flags &= ~PG_COPYONWRITE;
 				}
-			}
-			if (!segment_exists) {
-
 			}
 		}
 	}
 	return (0);
 }
 
-/* TODO: have it check the segment contains page */
 void
-vm_fault_cow(vfi, fault_type, prot)
+vm_fault_cow(vfi, fault_type, old_page)
 	struct vm_faultinfo *vfi;
-	vm_prot_t fault_type, prot;
+	vm_prot_t fault_type;
+	vm_page_t old_page;
 {
-	vm_page_t 	old_page;
-
-	old_page = vfi->page;
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
 			vm_page_copy(vfi->page, vfi->first_page);
@@ -498,7 +593,9 @@ vm_fault_cow(vfi, fault_type, prot)
 			vm_object_unlock(vfi->object);
 
 			cnt.v_cow_faults++;
+
 			vfi->page = vfi->first_page;
+			vfi->segment = vfi->first_segment;
 			vfi->object = vfi->first_object;
 			vfi->offset = vfi->first_offset;
 			vm_object_lock(vfi->object);
@@ -506,10 +603,55 @@ vm_fault_cow(vfi, fault_type, prot)
 			vm_object_collapse(vfi->object);
 			vfi->object->paging_in_progress++;
 		} else {
-			prot &= ~VM_PROT_WRITE;
+			vfi->prot &= ~VM_PROT_WRITE;
 			vfi->page->flags |= PG_COPYONWRITE;
 		}
 	}
+}
+
+int
+vm_fault_retry(vfi, vaddr, fault_type)
+	struct vm_faultinfo *vfi;
+	vm_offset_t	vaddr;
+	vm_prot_t	fault_type;
+{
+	vm_object_t	retry_object;
+	vm_offset_t	retry_offset;
+	vm_prot_t	retry_prot;
+	int 		result;
+
+	if (!vfi->lookup_still_valid) {
+		vm_object_unlock(vfi->object);
+		result = vm_map_lookup(&vfi->map, vaddr, fault_type, &vfi->entry,
+				&retry_object, &retry_offset, &vfi->prot, &vfi->wired,
+				&vfi->su);
+		vm_object_lock(vfi->object);
+
+		if (result != KERN_SUCCESS) {
+			vm_fault_release(vfi->segment, vfi->page);
+			unlock_and_deallocate(vfi);
+			return (result);
+		}
+
+		vfi->lookup_still_valid = TRUE;
+
+		if ((retry_object != vfi->first_object)
+				|| (retry_offset != vfi->first_offset)) {
+			vm_fault_release(vfi->segment, vfi->page);
+			unlock_and_deallocate(vfi);
+			return (EFAULTRETRY);
+		}
+		vfi->prot &= retry_prot;
+		if (vfi->page->flags & PG_COPYONWRITE) {
+			vfi->prot &= ~VM_PROT_WRITE;
+		}
+	}
+
+	if (vfi->prot & VM_PROT_WRITE) {
+		vfi->page->flags &= ~PG_COPYONWRITE;
+	}
+
+	return (0);
 }
 
 void
@@ -525,7 +667,7 @@ vm_fault_handler_check(vfi, flag)
 	page = vfi->page;
 
 	switch (flag) {
-	case FHDBUSY:
+	case FHDMLOOP:
 		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE | PG_BUSY);
 		if((sgflag != SEG_BUSY) || (pgflag != PG_BUSY)) {
@@ -533,11 +675,26 @@ vm_fault_handler_check(vfi, flag)
 		}
 		break;
 
-	case FHDACTIVITY:
+	case FHDOBJCOPY:
 		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
 		if (sgflag || pgflag) {
 			panic("vm_fault_handler_check: active or inactive before copy object handling");
+		}
+		break;
+	case FHDRETRY:
+		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
+		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
+		if (sgflag || pgflag) {
+			panic("vm_fault_handler_check: active or inactive before retrying lookup");
+		}
+		break;
+
+	case FHDPMAP:
+		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
+		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
+		if (sgflag || pgflag) {
+			panic("vm_fault_handler_check: active or inactive before pmap_enter");
 		}
 		break;
 	}
@@ -586,29 +743,74 @@ vm_fault_zerofill(vfi)
 }
 
 static int
-vm_fault_lookup(vfi, vaddr, fault_type, prot)
+vm_fault_map_lookup(vfi, vaddr, fault_type)
 	struct vm_faultinfo *vfi;
 	vm_offset_t	vaddr;
-	vm_prot_t	fault_type, *prot;
+	vm_prot_t	fault_type;
 {
-	bool_t			su;
-	int 			result;
-
-	result = vm_map_lookup(&vfi->orig_map, vaddr, fault_type, &vfi->orig_entry, &vfi->first_object, &vfi->first_offset, prot, &vfi->wired, &su);
+	int  result;
+	result = vm_map_lookup(&vfi->orig_map, vaddr, fault_type, &vfi->orig_entry, &vfi->first_object, &vfi->first_offset, &vfi->prot, &vfi->wired, &vfi->su);
 	if (result == KERN_SUCCESS) {
 		vfi->map = vfi->orig_map;
 		vfi->entry = vfi->orig_entry;
 		vfi->mapv = vfi->map->timestamp;
 	}
-
 	return (result);
 }
 
 /* uvm /anons related */
-static bool_t 	vm_fault_lookup(struct vm_faultinfo *, bool_t);
-static bool_t 	vm_fault_relock(struct vm_faultinfo *);
-static void 	vm_fault_unlockall(struct vm_faultinfo *, vm_amap_t, vm_object_t, vm_anon_t);
-static void 	vm_fault_unlockmaps(struct vm_faultinfo *, bool_t);
+static __inline void
+vm_fault_anonflush(anons, n)
+	vm_anon_t *anons;
+	int n;
+{
+	int lcv;
+	vm_segment_t sg;
+	vm_page_t pg;
+
+	for (lcv = 0 ; lcv < n ; lcv++) {
+		if (anons[lcv] == NULL) {
+			continue;
+		}
+		simple_lock(&anons[lcv]->an_lock);
+		sg = anons[lcv]->u.an_segment;
+		pg = anons[lcv]->u.an_page;
+		if (pg && (pg->flags & PG_BUSY) == 0) {
+			vm_page_lock_queues();
+			if (pg->wire_count == 0) {
+				pmap_clear_reference(VM_PAGE_TO_PHYS(pg));
+				vm_page_deactivate(pg);
+			}
+			vm_page_unlock_queues();
+		}
+		simple_unlock(&anons[lcv]->an_lock);
+	}
+}
+
+static void
+vm_fault_amapcopy(vfi)
+	struct vm_faultinfo *vfi;
+{
+	for (;;) {
+		if (vm_fault_lookup(vfi, TRUE) == FALSE) {
+			return;
+		}
+
+		if (vfi->entry->needs_copy) {
+			vm_amap_copy(vfi->map, vfi->entry, M_NOWAIT, TRUE, vfi->orig_rvaddr, vfi->orig_rvaddr + 1);
+		}
+
+		if (vfi->entry->needs_copy) {
+			vm_fault_unlockmaps(vfi, TRUE);
+			VM_WAIT;
+			continue;
+		}
+
+		vm_fault_unlockmaps(vfi, TRUE);
+		return;
+	}
+	/*NOTREACHED*/
+}
 
 int
 vm_fault_anonget(vfi, amap, anon)
@@ -616,30 +818,126 @@ vm_fault_anonget(vfi, amap, anon)
 	vm_amap_t amap;
 	vm_anon_t anon;
 {
-	bool_t we_own;	/* we own anon's page? */
-	bool_t locked;	/* did we relock? */
-	vm_page_t page;
-	int result;
+	bool_t 			we_own;	/* we own anon's page? */
+	bool_t 			locked;	/* did we relock? */
+	vm_segment_t 	segment;
+	vm_page_t 	 	page;
+	int error;
+
+	error = 0;
+	cnt.v_fltanget++;
 
 	while (1) {
 		we_own = FALSE;
+		segment = anon->u.an_segment;
 		page = anon->u.an_page;
-		if (page) {
-			if (page->segment) {
 
+		if(segment) {
+			if ((segment->sg_flags & SEG_BUSY) == 0) {
+				return (0);
+			}
+
+			segment->sg_flags |= SEG_WANTED;
+
+			if (page) {
+				if ((page->flags & PG_BUSY) == 0) {
+					return (0);
+				}
+				page->flags |= PG_WANTED;
+
+				if(segment->sg_object) {
+					vm_fault_unlockall(vfi, amap, NULL, anon);
+				} else {
+					vm_fault_unlockall(vfi, amap, NULL, NULL);
+				}
+			} else {
+			pagealloc:
+				page = vm_page_anon_alloc(segment, segment->sg_offset, anon);
+				if(page == NULL) {
+					vm_fault_unlockall(vfi, amap, NULL, anon);
+					VM_WAIT;
+				} else {
+					we_own = TRUE;
+					vm_fault_unlockall(vfi, amap, NULL, anon);
+					cnt.v_pageins++;
+					error = vm_pager_get(vfi->object->pager, page, TRUE);
+				}
+			}
+		} else {
+			segment = vm_segment_anon_alloc(vfi->object, vfi->offset, anon);
+			if(segment == NULL) {
+				vm_fault_unlockall(vfi, amap, NULL, anon);
+				VM_WAIT;
+			} else {
+				goto pagealloc;
 			}
 		}
+		locked = vm_fault_relock(vfi);
+		if (locked && amap != NULL) {
+			amap_lock(amap);
+		}
+		if (locked || we_own) {
+			simple_lock(&anon->an_lock);
+		}
+		if (we_own) {
+			if (segment->sg_flags & SEG_WANTED) {
+				wakeup(segment);
+			}
+			if (page->flags & PG_WANTED) {
+				wakeup(page);
+			}
+			if (error) {
+				anon->u.an_segment = NULL;
+				anon->u.an_page = NULL;
+
+				vm_swap_markbad(anon->an_swslot, 1);
+				anon->an_swslot = SWSLOT_BAD;
+
+				vm_segment_lock_lists();
+				if (page) {
+					vm_page_lock_queues();
+					vm_page_anon_free(page);
+					vm_page_unlock_queues();
+				} else {
+					vm_segment_anon_free(segment);
+				}
+				vm_segment_unlock_lists();
+
+				if (locked) {
+					vm_fault_unlockall(vfi, amap, NULL, anon);
+				} else {
+					simple_unlock(&anon->an_lock);
+				}
+				return (error);
+			}
+
+			vm_page_lock_queues();
+			vm_page_activate(page);
+			vm_page_unlock_queues();
+			if (!locked) {
+				simple_unlock(&anon->an_lock);
+			}
+		}
+		if (!locked) {
+			return (ERESTART);
+		}
+		if (vfi != NULL && vm_amap_lookup(&vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start) != anon) {
+			vm_fault_unlockall(vfi, amap, NULL, anon);
+			return (ERESTART);
+		}
+		cnt.v_fltanretry++;
+
+		continue;
 	} /* while (1) */
 }
 
 /*
  * uvmfault_unlockmaps: unlock the maps
  */
-
 static __inline void
 vm_fault_unlockmaps(vfi, write_locked)
 	struct vm_faultinfo *vfi;
-	boolean_t write_locked;
+	bool_t write_locked;
 {
 	/*
 	 * vfi can be NULL when this isn't really a fault,
