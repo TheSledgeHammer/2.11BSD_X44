@@ -461,6 +461,12 @@ RetryCopy:
 	if (change_wiring) {
 		if (vfi.wired) {
 			vm_page_wire(vfi.page);
+#ifdef notyet
+			if (vfi.page->flags & PG_AOBJ) {
+				vfi.page->flags &= ~(PG_CLEAN);
+				vm_aobject_dropswap(vfi.object, vfi.page->offset >> PAGE_SHIFT);
+			}
+#endif
 		} else {
 			vm_page_unwire(vfi.page);
 		}
@@ -469,8 +475,12 @@ RetryCopy:
 	}
 	vm_page_unlock_queues();
 
-	SEGMENT_WAKEUP(vfi.segment);
-	PAGE_WAKEUP(vfi.page);
+	if (vfi.segment->sg_flags & SEG_WANTED) {
+		SEGMENT_WAKEUP(vfi.segment);
+	}
+	if (vfi.page->flags & PG_WANTED) {
+		PAGE_WAKEUP(vfi.page);
+	}
 	unlock_and_deallocate(&vfi);
 	return (KERN_SUCCESS);
 }
@@ -682,6 +692,7 @@ vm_fault_handler_check(vfi, flag)
 			panic("vm_fault_handler_check: active or inactive before copy object handling");
 		}
 		break;
+
 	case FHDRETRY:
 		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
@@ -740,6 +751,7 @@ vm_fault_zerofill(vfi)
 		vfi->object = next_object;
 		vfi->object->paging_in_progress++;
 	}
+	//vm_amap_add ?
 }
 
 static int
@@ -758,7 +770,9 @@ vm_fault_map_lookup(vfi, vaddr, fault_type)
 	return (result);
 }
 
-/* uvm /anons related */
+/*
+ * amap, anon & aobject related
+ */
 static __inline void
 vm_fault_anonflush(anons, n)
 	vm_anon_t *anons;
@@ -827,7 +841,7 @@ vm_fault_anonget(vfi, amap, anon)
 	error = 0;
 	cnt.v_fltanget++;
 
-	while (1) {
+	for (;;) {
 		we_own = FALSE;
 		segment = anon->u.an_segment;
 		page = anon->u.an_page;
@@ -851,7 +865,6 @@ vm_fault_anonget(vfi, amap, anon)
 					vm_fault_unlockall(vfi, amap, NULL, NULL);
 				}
 			} else {
-			pagealloc:
 				page = vm_page_anon_alloc(segment, segment->sg_offset, anon);
 				if(page == NULL) {
 					vm_fault_unlockall(vfi, amap, NULL, anon);
@@ -869,7 +882,16 @@ vm_fault_anonget(vfi, amap, anon)
 				vm_fault_unlockall(vfi, amap, NULL, anon);
 				VM_WAIT;
 			} else {
-				goto pagealloc;
+				page = vm_page_anon_alloc(segment, segment->sg_offset, anon);
+				if (page == NULL) {
+					vm_fault_unlockall(vfi, amap, NULL, anon);
+					VM_WAIT;
+				} else {
+					we_own = TRUE;
+					vm_fault_unlockall(vfi, amap, NULL, anon);
+					cnt.v_pageins++;
+					error = vm_pager_get(vfi->object->pager, page, TRUE);
+				}
 			}
 		}
 		locked = vm_fault_relock(vfi);
@@ -910,10 +932,16 @@ vm_fault_anonget(vfi, amap, anon)
 				}
 				return (error);
 			}
-
-			vm_page_lock_queues();
-			vm_page_activate(page);
-			vm_page_unlock_queues();
+			if (segment) {
+				vm_segment_lock_lists();
+				vm_segment_activate(segment);
+				vm_segment_unlock_lists();
+			}
+			if (page) {
+				vm_page_lock_queues();
+				vm_page_activate(page);
+				vm_page_unlock_queues();
+			}
 			if (!locked) {
 				simple_unlock(&anon->an_lock);
 			}

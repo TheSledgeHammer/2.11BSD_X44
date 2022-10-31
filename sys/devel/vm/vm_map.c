@@ -642,7 +642,7 @@ vm_map_insert(map, object, offset, start, end)
 	register vm_map_entry_t		new_entry;
 	register vm_map_entry_t		prev_entry;
 	vm_map_entry_t				temp_entry;
-	//int advice = VM_ADVICE();
+	int advice = VM_ADVICE(4);
 	vm_tree_sanity(map, "map insert");
 
 	/*
@@ -734,7 +734,7 @@ vm_map_insert(map, object, offset, start, end)
 		new_entry->protection = VM_PROT_DEFAULT;
 		new_entry->max_protection = VM_PROT_DEFAULT;
 		new_entry->wired_count = 0;
-		//new_entry->advice = advice;
+		new_entry->advice = advice;
 
 		vm_offset_t to_add = (flags & VM_FLAG_AMAPPAD) ? VM_AMAP_CHUNK << PAGE_SHIFT : 0;
 		struct vm_amap *amap = vm_amap_alloc(map->size, to_add, M_WAITOK);

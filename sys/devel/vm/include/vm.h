@@ -168,4 +168,7 @@ struct vmspace {
 #define VM_ET_ISSUBMAP(E)		(((E)->etype & VM_ET_SUBMAP) != 0)
 #define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
 #define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
+
+#define MADV_MASK				0x7	/* mask */
+#define VM_ADVICE(X)			(((X) >> 12) & MADV_MASK)
 #endif /* _VM_H */

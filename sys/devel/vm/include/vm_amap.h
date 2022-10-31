@@ -202,7 +202,6 @@ struct vm_amap {
 
 #define VM_AMAP_SMALL(amap)			((amap)->am_nslot <= VM_AMAP_CHUNK)
 #define VM_AMAP_SLOTIDX(slot)		((slot) % VM_AMAP_CHUNK)
-#define VM_AMAP_BUCKET(amap, slot)	(((slot) / VM_AMAP_CHUNK) >> (amap)->am_hashshift)
 
 /*
  * macros
