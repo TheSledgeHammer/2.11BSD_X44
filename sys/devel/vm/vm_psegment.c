@@ -38,37 +38,56 @@
 #include <devel/sys/malloctypes.h>
 
 void
-vm_psegment_init(seg, start, end)
-	vm_segment_t 	seg;
+vm_psegment_startup(pseg, start, end)
+	vm_psegment_t 	*pseg;
 	vm_offset_t 	*start, *end;
 {
-	register vm_psegment_t 	*pseg;
-	register vm_data_t 		data;
-	register vm_stack_t 	stack;
-	register vm_text_t 		text;
-
-	pseg = (union vm_pseudo_segment *)pmap_bootstrap_alloc(sizeof(union vm_pseudo_segment *));
-
 	pseg->ps_start = start;
 	pseg->ps_end = end;
 	pseg->ps_size = end - start;
 
-	data = (struct vm_data *)rmalloc(&coremap, sizeof(struct vm_data *));
-	stack = (struct vm_stack *)rmalloc(&coremap, sizeof(struct vm_stack *));
-	text = (struct vm_text *)rmalloc(&coremap, sizeof(struct vm_text *));
+	pseg->ps_data = (struct vm_data *)rmalloc(&coremap, sizeof(struct vm_data *));
+	pseg->ps_stack = (struct vm_stack *)rmalloc(&coremap, sizeof(struct vm_stack *));
+	pseg->ps_text = (struct vm_text *)rmalloc(&coremap, sizeof(struct vm_text *));
 
-	vm_psegment_extent_create(pseg, "vm_psegment", start, end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	/* extents */
+	vm_psegment_extent_create(pseg, "vm_psegment", pseg->ps_start, pseg->ps_end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
 	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size, EX_WAITOK | EX_MALLOCOK);
 
-	vm_psegment_extent_suballoc(pseg, sizeof(data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK); 	/* data extent region */
-	vm_psegment_extent_suballoc(pseg, sizeof(stack), 0, PSEG_STACK, EX_WAITOK | EX_MALLOCOK);	/* stack extent region */
-	vm_psegment_extent_suballoc(pseg, sizeof(text), 0, PSEG_TEXT, EX_WAITOK | EX_MALLOCOK);		/* text extent region */
-	vm_text_init(text);	/* initialize vm_text */
+	/* extent regions (data, stack & text) */
+	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK);
+	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_stack), 0, PSEG_STACK, EX_WAITOK | EX_MALLOCOK);
+	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_text), 0, PSEG_TEXT, EX_WAITOK | EX_MALLOCOK);
 
-	pseg->ps_data = data;
-	pseg->ps_stack = stack;
-	pseg->ps_text = text;
-	seg->sg_psegment = pseg;
+	/* initialize vm_text */
+	vm_text_init(pseg->ps_text);
+}
+
+void
+vm_psegment_init(seg, start, end)
+	vm_segment_t 	seg;
+	vm_offset_t 	*start, *end;
+{
+	if (&seg->sg_psegment == NULL) {
+		&seg->sg_psegment = vm_psegment_allocate();
+	}
+	vm_psegment_startup(&seg->sg_psegment, start, end);
+}
+
+vm_psegment_t *
+vm_psegment_alloc(void)
+{
+	register vm_psegment_t 	*pseg;
+
+	pseg = (union vm_pseudo_segment *)rmalloc(&coremap, sizeof(*pseg));
+	return (pseg);
+}
+
+void
+vm_psegment_free(pseg)
+	vm_psegment_t 	*pseg;
+{
+	rmfree(&coremap, sizeof(*pseg), pseg);
 }
 
 /*

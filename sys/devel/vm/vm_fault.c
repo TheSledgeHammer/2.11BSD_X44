@@ -590,14 +590,24 @@ vm_fault_cow(vfi, fault_type, old_page)
 {
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
-			vm_page_copy(vfi->page, vfi->first_page);
-			vfi->first_page->flags &= ~PG_FAKE;
-			vm_page_lock_queues();
-			vm_page_activate(vfi->page);
-			vm_page_deactivate(vfi->page);
-			pmap_page_protect(VM_PAGE_TO_PHYS(vfi->page), VM_PROT_NONE);
-			vm_page_unlock_queues();
+			if (vfi->first_segment != NULL) {
+				vm_segment_copy(vfi->segment, vfi->first_segment);
+				vm_segment_lock_lists();
+				vm_segment_activate(vfi->segment);
+				vm_segment_deactivate(vfi->segment);
+				pmap_page_protect(VM_SEGMENT_TO_PHYS(vfi->segment), VM_PROT_NONE);
+				vm_segment_unlock_lists();
+			} else {
+				vm_page_copy(vfi->page, vfi->first_page);
+				vfi->first_page->flags &= ~PG_FAKE;
+				vm_page_lock_queues();
+				vm_page_activate(vfi->page);
+				vm_page_deactivate(vfi->page);
+				pmap_page_protect(VM_PAGE_TO_PHYS(vfi->page), VM_PROT_NONE);
+				vm_page_unlock_queues();
+			}
 
+			SEGMENT_WAKEUP(vfi->segment);
 			PAGE_WAKEUP(vfi->page);
 			vfi->object->paging_in_progress--;
 			vm_object_unlock(vfi->object);

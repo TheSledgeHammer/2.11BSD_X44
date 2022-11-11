@@ -99,7 +99,7 @@ int	fscale = 		FSCALE;						/* kernel uses `FSCALE', user uses `fscale' */
  * These are initialized at bootstrap time
  * to values dependent on memory size
  */
-int	nbuf, nswbuf, nswapmap;
+int	nbuf, nswbuf;
 
 /*
  * These have to be allocated somewhere; allocating
@@ -113,7 +113,8 @@ struct	buf 		*buf, *swbuf;
 char				*buffers;
 
 #define CMAPSIZ		NPROC						/* size of core allocation map */
-#define SMAPSIZ		((9 * NPROC) / 10)			/* size of swap allocation map */
+#define SMAPSIZ		(((9 * NPROC) / 10) * 2)	/* size of swap allocation map */
+int nswapmap = 		SMAPSIZ;
 
 struct mapent	_coremap[CMAPSIZ];
 struct map coremap[1] = {

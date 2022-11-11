@@ -40,6 +40,8 @@
 
 extern struct mapent _coremap[];
 
+static struct mapent *rmcreate(struct map *, memaddr_t, size_t, int);
+
 /*
  * Resource map handling routines.
  *
@@ -66,14 +68,6 @@ extern struct mapent _coremap[];
  * delimiter.
  */
 
-/*
- * Allocate 'size' units from the given map.  Return the base of the
- * allocated space.  In a map, the addresses are increasing and the
- * list is terminated by a 0 size.
- *
- * Algorithm is first-fit.
- */
-
 void
 rminit(mp, addr, size, name, mtype, mapsize)
 	register struct map *mp;
@@ -88,12 +82,51 @@ rminit(mp, addr, size, name, mtype, mapsize)
 	if (mapsize < 2 || addr <= 0 || size < 0) {
 		panic("rminit %s", name);
 	}
+
 	mp->m_name = name;
 	mp->m_types = mtype;
 	mp->m_limit = (struct mapent *)mp + mapsize;
 
 	/* initially the first entry describes all free space */
-	ep = (struct mapent *)(mp + 1);
+	ep = rmcreate(mp, addr, size, 1);
+}
+
+/*
+ * Allocates 'size' units from the given map, like rminit. But assumes the map is already initialized.
+ */
+void
+rmallocate(mp, addr, size, mapsize)
+	register struct map *mp;
+	memaddr_t addr;
+	size_t size;
+	int mapsize;
+{
+	struct mapent *ep;
+
+	/* mapsize had better be at least 2 */
+	if (mapsize < 2 || addr <= 0 || size < 0) {
+		panic("rminit %s", name);
+	}
+
+	ep = rmcreate(mp, addr, size, mapsize);
+	if (rmalloc(mp, size) != 0) {
+		rmfree(mp, addr, size);
+	}
+}
+
+/*
+ * creates a mapent in map.
+ */
+static struct mapent *
+rmcreate(mp, addr, size, mapsize)
+	register struct map *mp;
+	memaddr_t addr;
+	size_t size;
+	int mapsize;
+{
+	struct mapent *ep;
+
+	ep = (struct mapent *)(mp + mapsize);
 	ep->m_size = size;
 	ep->m_addr = addr;
 
@@ -101,7 +134,16 @@ rminit(mp, addr, size, name, mtype, mapsize)
 	while (++ep < mp->m_limit) {
 		ep->m_addr = 0;
 	}
+	return (ep);
 }
+
+/*
+ * Allocate 'size' units from the given map.  Return the base of the
+ * allocated space.  In a map, the addresses are increasing and the
+ * list is terminated by a 0 size.
+ *
+ * Algorithm is first-fit.
+ */
 
 memaddr_t
 rmalloc(mp, size)

@@ -599,30 +599,45 @@ pmap_isvalidphys(addr)
 	return(0);
 }
 
+/*
+ * pmap_bootstrap_allocate: allocate vm space in bootstrap.
+ * va: is taken from virtual_avail.
+ * size: is the size of the virtual address to allocate
+ */
 void *
-pmap_bootstrap_alloc(size)
-	u_long size;
+pmap_bootstrap_allocate(va, size)
+	vm_offset_t va;
+	u_long 		size;
 {
 	vm_offset_t val;
 	int i;
-	extern bool_t vm_page_startup_initialized;
 
-	if (vm_page_startup_initialized)
-		panic("pmap_bootstrap_alloc: called after startup initialized");
 	size = round_page(size);
-	val = virtual_avail;
+	val = va;
 
 	/* deal with "hole incursion" */
 	for (i = 0; i < size; i += PAGE_SIZE) {
 		while (!pmap_isvalidphys(avail_start)) {
 			avail_start += PAGE_SIZE;
 		}
-		virtual_avail = pmap_map(virtual_avail, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
+		va = pmap_map(va, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
 		avail_start += PAGE_SIZE;
 	}
-
 	bzero((caddr_t) val, size);
 	return ((void *) val);
+}
+
+void *
+pmap_bootstrap_alloc(size)
+	u_long size;
+{
+	extern bool_t vm_page_startup_initialized;
+
+	if (vm_page_startup_initialized) {
+		panic("pmap_bootstrap_alloc: called after startup initialized");
+	}
+
+	return (pmap_bootstrap_allocate(virtual_avail, size));
 }
 
 /*

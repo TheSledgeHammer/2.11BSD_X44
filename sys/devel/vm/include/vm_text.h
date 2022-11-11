@@ -140,14 +140,6 @@ union vm_pseudo_segment {
 extern
 struct txtlist              vm_text_list;
 
-/*
-extern
-simple_lock_data_t			vm_text_lock;
-
-#define xlock(lock)			simple_lock(lock);
-#define xunlock(lock)		simple_unlock(lock);
-*/
-
 /* pseudo-segment types */
 #define PSEG_DATA			1						/* data segment */
 #define PSEG_STACK			2						/* stack segment */
@@ -210,6 +202,8 @@ simple_lock_data_t			vm_text_lock;
 extern int sysctl_text(char *, size_t *);
 
 /* vm_psegment */
+vm_psegment_t *vm_psegment_alloc(void);
+void	vm_psegment_free(vm_psegment_t *);
 void	vm_psegment_init(vm_segment_t, vm_offset_t *, vm_offset_t *);
 void	vm_psegment_expand(vm_psegment_t *, int, segsz_t, caddr_t);
 void	vm_psegment_shrink(vm_psegment_t *, int, segsz_t, caddr_t);
@@ -220,8 +214,8 @@ void	vm_psegment_extent_free(vm_psegment_t *, caddr_t, u_long, int, int);
 void	vm_psegment_extent_destroy(vm_psegment_t *);
 
 /* vm_text */
-void	xlock(vm_text_t);
-void	xunlock(vm_text_t);
+void	vm_xlock(vm_text_t);
+void	vm_xunlock(vm_text_t);
 void	vm_text_init(vm_text_t);
 void	vm_xalloc(struct vnode *, u_long, off_t);
 void	vm_xfree(void);
@@ -232,5 +226,6 @@ void	vm_xuntext(vm_text_t);
 void	vm_xuncore(size_t);
 int		vm_xpurge(void);
 void	vm_xrele(struct vnode *);
+void	vm_xswapin(struct proc *);
 void	vm_xswapout(struct proc *, int, u_int, u_int);
 #endif /* _VM_TEXT_H_ */

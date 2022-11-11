@@ -310,7 +310,7 @@ vm_segment_page_lookup(object, offset1, offset2)
     register vm_segment_t segment;
 
     segment = vm_segment_lookup(object, offset1);
-    if(segment) {
+    if (segment) {
         page = vm_page_lookup(segment, offset2);
         return (page);
     }
@@ -489,6 +489,37 @@ vm_segment_sanity_check(pgs, segs)
     } else {
         return (FALSE);
     }
+}
+
+/*
+ *	vm_segment_copy:
+ *
+ *	Copy one segment to another. Checks if destination segment isn't null and
+ *	contains no pages, it will run vm_page_copy on all the source segment pages instead.
+ */
+void
+vm_segment_copy(src_seg, dest_seg)
+	vm_segment_t src_seg, dest_seg;
+{
+	vm_page_t src_m;
+	vm_page_t dest_m;
+
+	VM_SEGMENT_CHECK(src_seg);
+	VM_SEGMENT_CHECK(dest_seg);
+
+	if (dest_seg != NULL && TAILQ_EMTPY(dest_seg->sg_memq)) {
+		TAILQ_FOREACH(src_m, src_seg->sg_memq, listq) {
+			if(src_m->segment == src_seg) {
+				if (dest_m == NULL) {
+					dest_m = vm_page_alloc(src_m->segment, src_m->offset);
+				}
+				vm_copy_page(src_m, dest_m);
+			}
+		}
+	} else {
+		dest_seg->sg_flags &= ~SEG_CLEAN;
+		pmap_copy_page(VM_SEGMENT_TO_PHYS(src_seg), VM_SEGMENT_TO_PHYS(dest_seg));
+	}
 }
 
 /* segment anon management */

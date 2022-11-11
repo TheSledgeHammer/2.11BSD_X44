@@ -284,9 +284,7 @@ overlay_pager_io(ovl, vm_page, npages, flags)
 	}
 
 	/* check if overlay page contains a vm_page */
-	vm_page = ovl_page->ovp_vm_page;
-
-	if(vm_page) {
+	if(ovl_page->ovp_vm_page) {
 		/* find vm page in list of overlaid pages */
 		vm_page = ovl_page_lookup_vm_page(ovl_page);
 		/* if vm_page is not null return depending on the flags set */

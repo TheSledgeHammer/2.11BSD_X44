@@ -406,6 +406,48 @@ vm_object_terminate(object)
 	free((caddr_t)object, M_VMOBJ);
 }
 
+#ifdef notyet
+bool_t
+vm_object_segment_clean(object, start, end, syncio, de_queue)
+	register vm_object_t	object;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	bool_t					syncio;
+	bool_t					de_queue;
+{
+	register vm_segment_t	segment;
+
+	if (object == NULL) {
+		return (TRUE);
+	}
+
+	if ((object->flags & OBJ_INTERNAL) && object->pager == NULL) {
+		vm_object_collapse(object);
+		if (object->pager == NULL) {
+			vm_pager_t pager;
+
+			vm_object_unlock(object);
+			pager = vm_pager_allocate(PG_DFLT, (caddr_t) 0, object->size, VM_PROT_ALL, (vm_offset_t) 0);
+			if (pager) {
+				vm_object_setpager(object, pager, 0, FALSE);
+			}
+			vm_object_lock(object);
+		}
+	}
+	if (object->pager == NULL) {
+		return (FALSE);
+	}
+
+	CIRCLEQ_FOREACH(segment, object->seglist, sg_list) {
+		if ((start == end || (segment->sg_offset >= start && segment->sg_offset < end))) {
+			if ((segment->sg_flags & SEG_CLEAN) && pmap_is_modified(VM_SEGMENT_TO_PHYS(segment))) {
+
+			}
+		}
+	}
+}
+#endif
+
 /*
  *	vm_object_page_clean
  *
@@ -470,7 +512,7 @@ vm_object_page_clean(object, start, end, syncio, de_queue)
 	/*
 	 * Loop through the object page list cleaning as necessary.
 	 */
-	for (page = TAILQ_FIRST(segment->sg_memq); page != NULL; page = TAILQ_NEXT(page, listq)) {
+	TAILQ_FOREACH(page, segment->sg_memq, listq) {
 		if ((start == end || (page->offset >= start && page->offset < end)) && !(page->flags & PG_FICTITIOUS)) {
 			if ((page->flags & PG_CLEAN) && pmap_is_modified(VM_PAGE_TO_PHYS(page)))
 				page->flags &= ~PG_CLEAN;
@@ -1078,8 +1120,8 @@ vm_object_collapse(object)
 			 *	Should have a check for a 'small' number
 			 *	of pages here.
 			 */
-			for(segment = CIRCLEQ_FIRST(backing_object->seglist); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_list)) {
-				for (p = TAILQ_FIRST(segment->sg_memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
+			CIRCLEQ_FOREACH(segment, backing_object->seglist, sg_list) {
+				TAILQ_FOREACH(p, segment->sg_memq, listq) {
 					new_offset = (p->offset - backing_offset);
 					/*
 					 *	If the parent has a page here, or if
@@ -1101,6 +1143,7 @@ vm_object_collapse(object)
 					}
 				}
 			}
+
 			/*
 			 *	Make the parent shadow the next object
 			 *	in the chain.  Deallocating backing_object
@@ -1184,8 +1227,9 @@ vm_object_page_remove(object, start, end)
 {
 	register vm_segment_t 	segment;
 
-	if (object == NULL)
+	if (object == NULL) {
 		return;
+	}
 
 	for (segment = CIRCLEQ_FIRST(object->seglist); segment != NULL;	segment = CIRCLEQ_NEXT(segment, sg_list)) {
 		if ((start <= segment->sg_offset) && (segment->sg_offset < end)) {

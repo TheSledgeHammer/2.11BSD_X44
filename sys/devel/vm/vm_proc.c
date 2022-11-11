@@ -45,8 +45,8 @@ sbrk()
 	if (n < 0) {
 		n = 0;
 	}
-	p->p_tsize;
-	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
+	//p->p_tsize;
+	if(vm_estabur(p->p_psegp, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
 		return (0);
 	}
 	vm_segment_expand(p, p->p_psegp, n, S_DATA);
@@ -173,18 +173,13 @@ vm_segment_expand(p, pseg, newsize, type)
  * read-write or read-only.
  */
 int
-vm_estabur(p, dsize, ssize, tsize, sep, flags)
-	struct proc *p;
+vm_estabur(pseg, dsize, ssize, tsize, sep, flags)
+	vm_psegment_t	pseg;
 	segsz_t	 dsize, ssize, tsize;
 	int 	 sep, flags;
 {
-	vm_psegment_t	pseg;
-
-	pseg = p->p_psegp;
-	if(pseg) {
-		if (estabur(pseg->ps_data, pseg->ps_stack, pseg->ps_text, dsize, ssize, tsize, sep, flags)) {
-			return (0);
-		}
+	if (estabur(pseg->ps_data, pseg->ps_stack, pseg->ps_text, dsize, ssize, tsize, sep, flags)) {
+		return (0);
 	}
 	return (1);
 }
@@ -200,7 +195,7 @@ estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
 	if(data == NULL || stack == NULL || text == NULL) {
 		return (1);
 	}
-	switch(sep) {
+	switch (sep) {
 	case PSEG_NOSEP:
 		if (flags == SEG_RO) {
 			TEXT_SEGMENT(text, tsize, text->psx_taddr, SEG_RO);

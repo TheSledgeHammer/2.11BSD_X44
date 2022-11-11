@@ -357,7 +357,6 @@ allocsys(v)
 
 	valloc(cfree, struct cblock, nclist);
 
-	nswapmap = maxproc * 2;
 	//valloc(swapmap, struct map, nswapmap = maxproc * 2);
 #ifdef SYSVSHM
 	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
