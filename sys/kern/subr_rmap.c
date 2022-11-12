@@ -105,7 +105,7 @@ rmallocate(mp, addr, size, mapsize)
 
 	/* mapsize had better be at least 2 */
 	if (mapsize < 2 || addr <= 0 || size < 0) {
-		panic("rminit %s", name);
+		panic("rmallocate %s", mp->m_name);
 	}
 
 	ep = rmcreate(mp, addr, size, mapsize);

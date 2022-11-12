@@ -33,10 +33,9 @@
  *	@(#)ufs.h	8.1 (Berkeley) 6/11/93
  */
 
-int		ufs_open (char *path, struct open_file *f);
-int		ufs_close (struct open_file *f);
-int		ufs_read (struct open_file *f, char *buf, u_int size, u_int *resid);
-int		ufs_write (struct open_file *f, char *buf, u_int size, u_int *resid);
-off_t	ufs_seek (struct open_file *f, off_t offset, int where);
-int		ufs_stat (struct open_file *f, struct stat *sb);
-
+int		ufs_open(char *path, struct open_file *f);
+int		ufs_close(struct open_file *f);
+int		ufs_read(struct open_file *f, char *buf, u_int size, u_int *resid);
+int		ufs_write(struct open_file *f, char *buf, u_int size, u_int *resid);
+off_t	ufs_seek(struct open_file *f, off_t offset, int where);
+int		ufs_stat(struct open_file *f, struct stat *sb);

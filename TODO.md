@@ -21,11 +21,8 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/ (User & OS Libraries):
 ## lib:
-- libc/locale:
-	- Add other locales???
 
 ## libexec:
-- ld.so: To Update
 
 ## sbin:
 
@@ -38,10 +35,10 @@ A General todo list. Don't hesitate to add to this list. :)
 	- setup configuration settings for elf & non-elf based kernels
 	- add gfx_fb
 	- efi:
-		- refactor
-		- add fdt & gptboot directory
+		- update missing.
+		- needs acpica.
 	- uboot:
-		- refactor
+		- remove
 
 ## usr.bin:
 
@@ -104,13 +101,15 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## lib:
 - libsa:
-	- uuid: efi boot support
+	- Add other supported filesystems.
+	- Add Networking
 - libkern:
 - x86emu:
 
 ## miscfs:
 
 ## net / netimp / netinet / netns:
+- Update to fix compiler issues.
 Of Interest Todo:
 - 2.11BSD's networking stack
 	- To Support:
@@ -122,6 +121,7 @@ Of Interest Todo:
 - implement Extended Attributes
 - lfs:
 	- update lfs structures for 64-bit.
+		- dip switching depending on if UFS1/UFS2 is complete
 	- improve logging facilities (see: NetBSD)
 	- snapshots? 
 - ufs:

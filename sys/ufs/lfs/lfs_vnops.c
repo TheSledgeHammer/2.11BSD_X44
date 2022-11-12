@@ -432,25 +432,31 @@ lfs_getattr(ap)
 	vap->va_nlink = ip->i_nlink;
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
-	vap->va_rdev = (dev_t)ip->i_ffs1_rdev;
-	vap->va_size = ip->i_size;
-	vap->va_atime.tv_sec = ip->i_ffs1_atime;
-	vap->va_atime.tv_nsec = ip->i_ffs1_atimensec;
-	vap->va_mtime.tv_sec = ip->i_ffs1_mtime;
-	vap->va_mtime.tv_nsec = ip->i_ffs1_mtimensec;
-	vap->va_ctime.tv_sec = ip->i_ffs1_ctime;
-	vap->va_ctime.tv_nsec = ip->i_ffs1_ctimensec;
+	if (I_IS_UFS1(ip) && I_IS_UFS1_MOUNTED(ip)) {
+		vap->va_rdev = ip->i_ffs1_rdev;
+		vap->va_size = ip->i_ffs1_size;
+		vap->va_atime.tv_sec = ip->i_ffs1_atime;
+		vap->va_atime.tv_nsec = ip->i_ffs1_atimensec;
+		vap->va_mtime.tv_sec = ip->i_ffs1_mtime;
+		vap->va_mtime.tv_nsec = ip->i_ffs1_mtimensec;
+		vap->va_ctime.tv_sec = ip->i_ffs1_ctime;
+		vap->va_ctime.tv_nsec = ip->i_ffs1_ctimensec;
+		vap->va_bytes = dbtob((u_quad_t)ip->i_ffs1_blocks);
+	} else {
+		vap->va_rdev = ip->i_ffs2_rdev;
+		vap->va_size = ip->i_ffs2_size;
+		vap->va_atime.tv_sec = ip->i_ffs2_atime;
+		vap->va_atime.tv_nsec = ip->i_ffs2_atimensec;
+		vap->va_mtime.tv_sec = ip->i_ffs2_mtime;
+		vap->va_mtime.tv_nsec = ip->i_ffs2_mtimensec;
+		vap->va_ctime.tv_sec = ip->i_ffs2_ctime;
+		vap->va_ctime.tv_nsec = ip->i_ffs2_ctimensec;
+		vap->va_bytes = dbtob((u_quad_t)ip->i_ffs2_blocks);
+	}
 	vap->va_flags = ip->i_flags;
 	vap->va_gen = ip->i_gen;
-	/* this doesn't belong here */
-	if (vp->v_type == VBLK)
-		vap->va_blocksize = BLKDEV_IOSIZE;
-	else if (vp->v_type == VCHR)
-		vap->va_blocksize = MAXBSIZE;
-	else
-		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
-	vap->va_bytes = dbtob(ip->i_ffs1_blocks);
-	vap->va_type = vp->v_type;
+	vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
+	vap->va_type = IFTOVT(ip->i_mode);
 	vap->va_filerev = ip->i_modrev;
 	return (0);
 }

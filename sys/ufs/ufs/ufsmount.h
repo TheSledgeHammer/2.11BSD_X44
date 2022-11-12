@@ -104,6 +104,18 @@ struct ufsmount {
 #define UFS1  	1
 #define UFS2  	2
 
+static inline bool_t
+I_IS_UFS1_MOUNTED(const struct inode *ip)
+{
+	return ((ip->i_ump->um_fstype & UFS1) == 0)
+}
+
+static inline bool_t
+I_IS_UFS2_MOUNTED(const struct inode *ip)
+{
+	return ((ip->i_ump->um_fstype & UFS2) == 0)
+}
+
 /*
  * Flags describing the state of quotas.
  */

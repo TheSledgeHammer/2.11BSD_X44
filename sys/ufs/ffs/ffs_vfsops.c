@@ -859,7 +859,7 @@ ffs_vget(mp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	if (ip->i_ump->um_fstype == UFS1) {
+	if (I_IS_UFS1_MOUNTED(ip)) {
 		ip->i_din.ffs1_din = ((struct ufs1_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
 	} else {
 		ip->i_din.ffs2_din = ((struct ufs2_dinode *)bp->b_data + ino_to_fsbo(fs, ino));

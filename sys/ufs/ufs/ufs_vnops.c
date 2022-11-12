@@ -324,7 +324,7 @@ ufs_getattr(ap)
 	vap->va_nlink = ip->i_effnlink;
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
-	if (ip->i_ump->um_fstype == UFS1) {
+	if (I_IS_UFS1(ip) || I_IS_UFS1_MOUNTED(ip)) {
 		vap->va_rdev = ip->i_ffs1_rdev;
 		vap->va_size = ip->i_ffs1_size;
 		vap->va_atime.tv_sec = ip->i_ffs1_atime;

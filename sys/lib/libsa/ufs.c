@@ -73,7 +73,9 @@
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/dir.h>
+
 #include <libsa/stand.h>
+#include <libsa/ufs.h>
 
 /*
  * In-core open file.
@@ -121,7 +123,7 @@ read_inode(inumber, f)
 	}
 
 	{
-		if(fp->f_ip->i_ump->um_fstype == UFS1) {
+		if(I_IS_UFS1_MOUNTED(fp->f_ip)) {
 			struct ufs1_dinode *dp = (struct ufs1_dinode *)buf;
 			DIP(fp->f_ip, dp[ino_to_fsbo(fs, inumber)]);
 		} else {

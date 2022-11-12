@@ -195,7 +195,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 				return (error);
 			}
 		}
-		if (ip->i_ump->um_fstype == UFS1) {
+		if (I_IS_UFS1_MOUNTED(ip)) {
 			daddr = ((ufs1_daddr_t *)bp->b_data)[ap->in_off];
 			if (num == 1 && daddr && runp) {
 				for (bn = ap->in_off + 1;
