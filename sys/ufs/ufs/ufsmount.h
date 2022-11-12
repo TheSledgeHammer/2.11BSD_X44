@@ -107,13 +107,13 @@ struct ufsmount {
 static inline bool_t
 I_IS_UFS1_MOUNTED(const struct inode *ip)
 {
-	return ((ip->i_ump->um_fstype & UFS1) == 0)
+	return (ip->i_ump->um_fstype == UFS1);
 }
 
 static inline bool_t
 I_IS_UFS2_MOUNTED(const struct inode *ip)
 {
-	return ((ip->i_ump->um_fstype & UFS2) == 0)
+	return (ip->i_ump->um_fstype == UFS2);
 }
 
 /*
