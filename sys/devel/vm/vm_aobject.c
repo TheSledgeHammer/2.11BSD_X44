@@ -94,17 +94,20 @@ vm_aobject_allocate(size, object, flags)
 	int 					flags;
 {
 	register vm_aobject_t 	aobject;
+	int pages, segments;
 
+    pages = round_page(size) >> PAGE_SHIFT;
+    segments = round_segment(size) >> SEGMENT_SHIFT;
 	if(flags & VAO_FLAG_KERNOBJ) {
-		aobject = (vm_aobject_t)&kernel_object_store;
+		aobject = (vm_aobject_t)&object;
+        aobject->u_pages = pages;
+        aobject->u_segments = segments;
 		aobject->u_flags = VAO_FLAG_NOSWAP;
-		aobject->u_ref_count = VM_OBJ_KERN;
-		object = (vm_object_t)&aobject;
-		vm_object_allocate(sizeof(object));
 	} else {										/* normal object */
 		aobject = (struct vm_aobject *)malloc(sizeof(struct vm_aobject *), M_VMAOBJ, M_WAITOK);
-		aobject->u_flags = object->flags;
-		aobject->u_ref_count = object->ref_count;
+        aobject->u_pages = pages;
+        aobject->u_segments = segments;
+		aobject->u_flags = 0;
 	}
 
 	simple_lock(&aobject_list_lock);
@@ -182,7 +185,7 @@ vm_aobject_free(aobj)
  * => aobj must be unlocked, we will lock it
  */
 void
-vm_aobject_detach(object)
+vm_aobject_deallocate(object)
 	vm_object_t object;
 {
 	vm_aobject_t 	aobject;
@@ -190,7 +193,7 @@ vm_aobject_detach(object)
 	vm_page_t	 	page;
 	bool_t 			busybody;
 
-	aobject = (struct vm_aobject *)object;
+	aobject = (vm_aobject_t)object;
 	/*
  	 * detaching from kernel_object is a noop.
  	 */
@@ -277,7 +280,9 @@ vm_aobject_swhash_allocate(aobject, pages, flags)
 	int 				pages;
 	int 				flags;
 {
-	const int kernswap = (flags & VAO_FLAG_KERNSWAP) != 0;
+	const int kernswap;
+
+	kernswap = (flags & VAO_FLAG_KERNSWAP) != 0;
 	if (flags == 0 || kernswap) {
 		if (VAO_USES_SWHASH(aobject)) {
 			/* allocate hash table or array depending on object size */
@@ -395,7 +400,7 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 	vm_aobject_t aobj;
 	int oldslot;
 
-	aobj = (struct vm_aobject *)obj;
+	aobj = (vm_aobject_t)obj;
 	/*
 	 * if noswap flag is set, then we can't set a slot
 	 */
@@ -425,8 +430,9 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 		elt = vm_aobject_find_swhash_elt(aobj, pageidx, slot ? TRUE : FALSE);
 		if (elt == NULL) {
 #ifdef DIAGNOSTIC
-			if (slot)
+			if (slot) {
 				panic("uao_set_swslot: didn't create elt");
+			}
 #endif
 			return (0);
 		}

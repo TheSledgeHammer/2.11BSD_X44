@@ -264,8 +264,8 @@ vm_object_deallocate(object)
 
 	while (object != NULL) {
 
-		/* detach an aobject */
-		vm_aobject_detach(object);
+		/* deallocate an aobject */
+		vm_aobject_deallocate(object);
 
 		/*
 		 *	The cache holds a reference (uncounted) to
@@ -340,16 +340,21 @@ vm_object_terminate(object)
 	 *	Detach the object from its shadow if we are the shadow's
 	 *	copy.
 	 */
-	if ((shadow_object = object->shadow) != NULL) {
+	shadow_object = object->shadow;
+	if (shadow_object != NULL) {
 		vm_object_lock(shadow_object);
-		if (shadow_object->copy == object)
+		if (shadow_object->copy == object) {
 			shadow_object->copy = NULL;
+		}
 #if 0
-		else if (shadow_object->copy != NULL)
+		else if (shadow_object->copy != NULL) {
 			panic("vm_object_terminate: copy/shadow inconsistency");
+		}
 #endif
 		vm_object_unlock(shadow_object);
 	}
+
+	//vm_object_shadow_detach(object);
 
 	/*
 	 * Wait until the pageout daemon is through with the object.
@@ -688,16 +693,17 @@ vm_object_pmap_remove(object, start, end)
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
-	register vm_segment_t 	seg;
+	register vm_segment_t 	segment;
 	register vm_page_t		page;
 
-	if (object == NULL)
+	if (object == NULL) {
 		return;
+	}
 
 	vm_object_lock(object);
-	for (seg = CIRCLEQ_FIRST(object->seglist); seg != NULL; seg = CIRCLEQ_NEXT(seg, sg_list)) {
-		if (seg->sg_object == object && seg != NULL) {
-			for (page = TAILQ_FIRST(seg->sg_memq); page != NULL; page = TAILQ_NEXT(page, listq)) {
+	CIRCLEQ_FOREACH(segment, &object->seglist, sg_list) {
+		if (segment->sg_object == object && segment != NULL) {
+			TAILQ_FOREACH(page, &segment->sg_memq, listq) {
 				if ((start <= page->offset) && (page->offset < end)) {
 					pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
 				}
@@ -705,6 +711,83 @@ vm_object_pmap_remove(object, start, end)
 		}
 	}
 	vm_object_unlock(object);
+}
+
+/*
+ * shadow slot hash function
+ * TODO:
+ * - determine a shadow object from shadow slot.
+ * - validate/consistency check of shadow object.
+ */
+u_long
+vm_object_shadow_index(object, offset)
+	vm_object_t object;
+	vm_offset_t offset;
+{
+	Fnv32_t slot = fnv_32_buf(&object, (sizeof(&object)+offset), FNV1_32_INIT)%(sizeof(&object)+offset);
+
+	return (slot);
+}
+
+/*
+ * Add shadow object to list of anon objects list
+ */
+void
+vm_object_add_shadow(aobject, shadow, offset)
+	vm_aobject_t aobject;
+	vm_object_t shadow;
+	vm_offset_t offset;
+{
+    if (shadow) {
+        shadow->ref_count++;
+        LIST_INSERT_HEAD(&aobject_list, aobject, u_list);
+    }
+    aobject->u_obj.shadow = shadow;
+    aobject->u_obj.shadow_offset = offset;
+    //aobject->u_obj.flags |= flags;
+}
+
+void
+vm_object_remove_shadow(aobject, shadow)
+	vm_aobject_t aobject;
+	vm_object_t  shadow;
+{
+    if (aobject->u_obj.shadow == shadow) {
+        return;
+    }
+    if (aobject->u_obj.shadow) {
+        aobject->u_obj.shadow->ref_count--;
+        LIST_REMOVE(aobject, u_list);
+    }
+}
+
+void
+vm_object_shadow_attach(object, offset)
+    vm_object_t object;
+	vm_offset_t offset;
+{
+    register vm_aobject_t aobject;
+
+    aobject = (vm_aobject_t)object;
+    vm_object_add_shadow(aobject, object, offset);
+}
+
+void
+vm_object_shadow_detach(object)
+	vm_object_t object;
+{
+	register vm_aobject_t aobject;
+
+	aobject = (vm_aobject_t)object;
+    aobject->u_obj.shadow = object->shadow;
+    if (aobject->u_obj.shadow != NULL) {
+        vm_object_lock(aobject->u_obj.shadow);
+        if (aobject->u_obj.shadow->copy == object) {
+			aobject->u_obj.shadow->copy = NULL;
+		}
+        vm_object_unlock(aobject->u_obj.shadow);
+    }
+	vm_object_remove_shadow(aobject, object);
 }
 
 /*
@@ -732,10 +815,9 @@ vm_object_shadow(object, offset, length)
 	 *	Allocate a new object with the given length
 	 */
 
-	if ((result = vm_object_allocate(length)) == NULL)
+	if ((result = vm_object_allocate(length)) == NULL) {
 		panic("vm_object_shadow: no object for shadowing");
-
-	source->flags |= OBJ_SHADOW;
+	}
 
 	/*
 	 *	The new object shadows the source object, adding
@@ -752,6 +834,8 @@ vm_object_shadow(object, offset, length)
 	 */
 
 	result->shadow_offset = *offset;
+
+	//vm_object_shadow_attach(result, result->shadow_offset);
 
 	/*
 	 *	Return the new things

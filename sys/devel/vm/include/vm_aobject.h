@@ -98,9 +98,6 @@ struct vm_aobject {
 	int 						u_pages;		/* number of pages in entire segment */
 	int 						u_segments;		/* number of segments in entire object */
 	int 						u_flags;		/* the flags (see vm_aobject.h) */
-
-
-	int							u_ref_count;
 	int 						*u_swslots;		/* array of offset->swapslot mappings */
 					 	 	 	 	 			/*
 					 	 	 	 	 			 * hashtable of offset->swapslot mappings
@@ -147,6 +144,7 @@ static simple_lock_data_t 		aobject_list_lock; 		/* lock for aobject lists */
 
 #ifdef _KERNEL
 void 							vm_aobject_init(vm_size_t, vm_object_t, int);
+void							vm_aobject_deallocate(vm_object_t);
 void							vm_aobject_swhash_allocate(vm_aobject_t, int, int);
 int 							vm_aobject_set_swslot(vm_object_t, int, int);
 void							vm_aobject_dropswap(vm_object_t, int);

@@ -495,7 +495,7 @@ vm_segment_sanity_check(pgs, segs)
  *	vm_segment_copy:
  *
  *	Copy one segment to another. Checks if destination segment isn't null and
- *	contains no pages, it will run vm_page_copy on all the source segment pages instead.
+ *	contains no pages. if pages do exist will run vm_page_copy on all the source segment pages instead.
  */
 void
 vm_segment_copy(src_seg, dest_seg)

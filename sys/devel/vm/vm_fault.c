@@ -406,10 +406,26 @@ RetryFault: ;
 	}
 
 	vfi.lookup_still_valid = TRUE;
+#ifdef notyet
+	if ((vfi.entry->protection & fault_type) != fault_type) {
+		vm_fault_unlockmaps(&vfi, FALSE);
+		return (KERN_PROTECTION_FAILURE);
+	}
+#endif
 	if (vfi.wired) {
 		fault_type = vfi.prot;
 	}
-
+#ifdef notyet
+	if (vfi.entry->needs_copy) {
+		if ((fault_type & VM_PROT_WRITE) || (vfi.entry->object.vm_object == NULL)) {
+			vm_fault_unlockmaps(&vfi, FALSE);
+			vm_fault_amapcopy(&vfi);
+			goto RetryFault;
+		} else {
+			vfi.prot &= ~VM_PROT_WRITE;
+		}
+	}
+#endif
 	vfi.first_segment = NULL;
 	vfi.first_page = NULL;
 
@@ -418,6 +434,7 @@ RetryFault: ;
 	vfi.first_object->ref_count++;
 	vfi.first_object->paging_in_progress++;
 
+	//vfi.amap = vfi.entry->aref.ar_amap;
 	vfi.object = vfi.first_object;
 	vfi.offset = vfi.first_offset;
 
@@ -481,7 +498,11 @@ RetryCopy:
 	if (vfi.page->flags & PG_WANTED) {
 		PAGE_WAKEUP(vfi.page);
 	}
+#ifdef notyet
+	vm_fault_unlockall(&vfi, &vfi.amap, &vfi.object, NULL);
+#endif
 	unlock_and_deallocate(&vfi);
+
 	return (KERN_SUCCESS);
 }
 
@@ -590,7 +611,7 @@ vm_fault_cow(vfi, fault_type, old_page)
 {
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
-			if (vfi->first_segment != NULL) {
+			if (vfi->first_segment != NULL || !TAILQ_EMPTY(vfi->first_segment->sg_memq)) {
 				vm_segment_copy(vfi->segment, vfi->first_segment);
 				vm_segment_lock_lists();
 				vm_segment_activate(vfi->segment);
