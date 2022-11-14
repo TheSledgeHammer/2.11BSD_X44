@@ -1,9 +1,43 @@
+/*	$NetBSD: uvm_fault.c,v 1.87.2.1.2.1 2005/05/11 19:15:41 riz Exp $	*/
+
 /*
- * vm_fault2.c
  *
- *  Created on: 31 Oct 2022
- *      Author: marti
+ * Copyright (c) 1997 Charles D. Cranor and Washington University.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *      This product includes software developed by Charles D. Cranor and
+ *      Washington University.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * from: Id: uvm_fault.c,v 1.1.2.23 1998/02/06 05:29:05 chs Exp
  */
+
+/*
+ * uvm_fault.c: fault handler
+ */
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mman.h>
@@ -22,97 +56,107 @@ static struct vm_advice vmadvice[] = {
 
 #define VM_MAXRANGE 16
 
-struct vm_advice_range {
-	int 		npages;
-	int 		nback;
-	int 		nforw;
-	int 		centeridx;
-	vm_offset_t startva;
-	vm_offset_t currva;
-};
-
 void
 vm_fault_advice(vfi)
 	struct vm_faultinfo *vfi;
 {
-	bool_t narrow;
-	int npages, nback, nforw, centeridx;
-	vm_offset_t startva, currva;
-
-	if (narrow == FALSE) {
-		KASSERT(vmadvice[vfi->entry->advice].advice == vfi->entry->advice);
-		nback = MIN(vmadvice[vfi->entry->advice].nback,
-				(vfi->orig_rvaddr - vfi->entry->start) >> PAGE_SHIFT);
-		startva = vfi->orig_rvaddr - (nback << PAGE_SHIFT);
-		nforw = MIN(vmadvice[vfi->entry->advice].nforw,
-				((vfi->entry->end - vfi->orig_rvaddr) >> PAGE_SHIFT) - 1);
-
-		npages = nback + nforw + 1;
-		centeridx = nback;
-
-		narrow = TRUE; /* ensure only once per-fault */
-	} else {
-
-		/* narrow fault! */
-		nback = nforw = 0;
-		startva = vfi->orig_rvaddr;
-		npages = 1;
-		centeridx = 0;
-	}
-
-
-
-	/*
-	 * for MADV_SEQUENTIAL mappings we want to deactivate the back pages
-	 * now and then forget about them (for the rest of the fault).
-	 */
-	if (vfi->entry->advice == MADV_SEQUENTIAL && nback != 0) {
-		if (amap) {
-			vm_fault_anonflush(anons, nback);
-		}
-		if (vfi->object) {
-			objaddr = (startva - vfi->entry->start) + vfi->entry->offset;
-			simple_lock(&vfi->object->Lock);
-			//(void)vm_pager_put(obj->pager, );
-		}
-		if (amap) {
-			anons += nback;
-		}
-		startva += (nback << PAGE_SHIFT);
-		npages -= nback;
-		nback = centeridx = 0;
-	}
+	KASSERT(vmadvice[vfi->entry->advice].advice == vfi->entry->advice);
+	vfi->nback = min(vmadvice[vfi->entry->advice].nback, (vfi->orig_rvaddr - vfi->entry->start) >> PAGE_SHIFT);
+	vfi->startva = vfi->orig_rvaddr - (vfi->nback << PAGE_SHIFT);
+	vfi->nforw = min(vmadvice[vfi->entry->advice].nforw, ((vfi->entry->end - vfi->orig_rvaddr) >> PAGE_SHIFT) - 1);
+	vfi->npages = vfi->nback + vfi->nforw + 1;
+    vfi->nsegments = num_segments(vfi->npages); /* converts npages to nsegments */
+    vfi->centeridx = vfi->nback;
 }
 
 void
 vm_fault_amap(vfi)
 	struct vm_faultinfo *vfi;
 {
-	vm_amap_t amap;
 	vm_anon_t anons_store[VM_MAXRANGE], *anons;
-	vm_offset_t startva, currva;
-	int lcv, npages;
+	vm_page_t pages[VM_MAXRANGE];
+	vm_offset_t start, end;
+	int lcv;
 
-	startva = vfi->orig_rvaddr;
-	npages = 1;
-
-	if (amap == NULL) {
+	if(vfi->amap && vfi->object == NULL) {
 		vm_fault_unlockmaps(vfi, FALSE);
-		return (KERN_INVALID_ADDRESS);
+		//return (EFAULT);
 	}
-	if (amap) {
-		amap_lock(amap);
+
+	vm_fault_advice(vfi);
+
+	if (vfi->amap) {
+		amap_lock(vfi->amap);
 		anons = anons_store;
-		vm_amap_lookups(vfi->entry->aref, startva - vfi->entry->start, anons, npages);
+		vm_amap_lookups(vfi->entry->aref, vfi->startva - vfi->entry->start, anons, vfi->npages);
 	} else {
 		anons = NULL;
 	}
 
-	vfi->anon = anons[centeridx];
+	/*
+	 * for MADV_SEQUENTIAL mappings we want to deactivate the back pages
+	 * now and then forget about them (for the rest of the fault).
+	 */
+	if (vfi->entry->advice == MADV_SEQUENTIAL && vfi->nback != 0) {
+		if (vfi->amap) {
+			vm_fault_anonflush(anons, vfi->nback);
+		}
+		/* flush object? */
+		if (vfi->object) {
+			start = (vfi->startva - vfi->entry->start) + vfi->entry->offset;
+			end = start + (vfi->nback << PAGE_SHIFT);
+			simple_lock(&vfi->object->Lock);
+			(void)vm_object_page_clean(vfi->object, start, end, TRUE, TRUE);
+		}
+		if (vfi->amap) {
+			anons += vfi->nback;
+		}
+		vfi->startva += (vfi->nback << PAGE_SHIFT);
+		vfi->npages -= vfi->nback;
+		vfi->nback = vfi->centeridx = 0;
+	}
+
+	vfi->currva = vfi->startva;
+	for (lcv = 0 ; lcv < vfi->npages ; lcv++, vfi->currva += PAGE_SIZE) {
+		vfi->anon = anons[lcv];
+		simple_lock(&vfi->anon->an_lock);
+		if (vfi->anon->u.an_page && (vfi->anon->u.an_page->flags & PG_BUSY) == 0) {
+			vm_page_lock_queues();
+			vm_page_activate(vfi->anon->u.an_page);
+			vm_page_unlock_queues();
+			pmap_enter(vfi->orig_map->pmap, vfi->currva, VM_PAGE_TO_PHYS(vfi->anon->u.an_page), (vfi->anon->an_ref > 1) ? (vfi->prot & ~VM_PROT_WRITE) : vfi->prot, vfi->wired);
+		}
+		simple_unlock(&vfi->anon->an_lock);
+		pmap_update();
+	}
+
+	vfi->anon = anons[vfi->centeridx];
 	simple_lock(vfi->anon->an_lock);
 
+
 	error = vm_fault_anonget(vfi, vfi->amap, vfi->anon);
+	switch (error) {
+	case 0:
+		break;
+
+	case ERESTART:
+		goto ReFault;
+
+	case EAGAIN:
+		tsleep(&lbolt, PVM, "fltagain1", 0);
+		goto ReFault;
+
+	default:
+		return error;
+	}
 	vfi->object = vfi->anon->u.an_page->object;
+
+	if (cow_now && vfi->anon->an_ref > 1) {
+		vfi->anon = vm_anon_alloc();
+		if (vfi->anon) {
+			vm_page_anon_alloc();
+		}
+	}
 	cnt.v_flt_przero++;
 	vm_fault_zero_fill(vfi);
 	vm_amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 0);
@@ -123,34 +167,25 @@ vm_fault_anon(vfi, fault_type)
 	struct vm_faultinfo *vfi;
 	vm_prot_t fault_type;
 {
-	vm_object_t 	object;
-	vm_segment_t 	segment;
-	vm_page_t 		page;
-	vm_amap_t 		amap;
-	vm_anon_t 		anon, oanon;
+	vm_anon_t 		oanon;
 	vm_prot_t 		enter_prot;
 
-	object = vfi->object;
-	segment = vfi->segment;
-	page = vfi->page;
-	amap = vfi->amap;
-	anon = vfi->anon;
-
-	if ((fault_type & VM_PROT_WRITE) != 0 && anon->an_ref > 1) {
-		oanon = anon;
-		anon = vm_anon_alloc();
-		if (anon) {
-			segment = vm_segment_anon_alloc(vfi->object, vfi->offset, anon);
-			if (segment) {
-				page = vm_page_anon_alloc(vfi->segment, vfi->segment->sg_offset, anon);
+	if ((fault_type & VM_PROT_WRITE) != 0 && vfi->anon->an_ref > 1) {
+		cnt.v_flt_acow++;
+		oanon = vfi->anon;
+		vfi->anon = vm_anon_alloc();
+		if (vfi->anon) {
+			vfi->segment = vm_segment_anon_alloc(vfi->object, vfi->offset, vfi->anon);
+			if (vfi->segment) {
+				vfi->page = vm_page_anon_alloc(vfi->segment, vfi->segment->sg_offset, vfi->anon);
 			}
 		}
-		if (anon == NULL || segment == NULL || page == NULL) {
-			if (anon) {
-				vm_anon_free(anon);
+		if (vfi->anon == NULL || vfi->segment == NULL || vfi->page == NULL) {
+			if (vfi->anon) {
+				vm_anon_free(vfi->anon);
 			}
-			vm_fault_unlockall(vfi, amap, object, oanon);
-			if (anon == NULL || cnt.v_swpgonly == cnt.v_swpages) {
+			vm_fault_unlockall(vfi, vfi->amap, vfi->object, oanon);
+			if (vfi->anon == NULL || cnt.v_swpgonly == cnt.v_swpages) {
 				cnt.v_fltnoanon++;
 				return (KERN_RESOURCE_SHORTAGE);
 			}
@@ -158,14 +193,19 @@ vm_fault_anon(vfi, fault_type)
 			VM_WAIT;
 			goto ReFault;
 		}
-		vm_page_copy(oanon->u.an_page, page);
-		amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, anon, 1);
+		vm_page_copy(oanon->u.an_page, vfi->page);
+		vm_page_lock_queues();
+		vm_page_activate(vfi->page);
+		vfi->page->flags &= ~(PG_BUSY|PG_FAKE);
+		vm_page_lock_queues();
+		amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 1);
 		oanon->an_ref--;
 	} else {
-		oanon = anon;
-		segment = anon->u.an_segment;
-		page = anon->u.an_page;
-		if (anon->an_ref > 1) {
+		cnt.v_flt_anon++;
+		oanon = vfi->anon;
+		vfi->segment = vfi->anon->u.an_segment;
+		vfi->page = vfi->anon->u.an_page;
+		if (vfi->anon->an_ref > 1) {
 			enter_prot = enter_prot & ~VM_PROT_WRITE;
 		}
 	}

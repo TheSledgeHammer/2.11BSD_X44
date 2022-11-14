@@ -67,6 +67,21 @@ struct vm_faultinfo {
    /* page */
    vm_page_t        page;
    vm_page_t        first_page;
+
+   /* amap */
+   vm_amap_t		amap;
+
+   /* anon */
+   vm_anon_t		anon;
+
+   /* advice info */
+   int         		npages;
+   int         		nsegments;
+   int         		nback;
+   int         		nforw;
+   int         		centeridx;
+   vm_offset_t 		startva;
+   vm_offset_t 		currva;
 };
 
 struct vm_advice {

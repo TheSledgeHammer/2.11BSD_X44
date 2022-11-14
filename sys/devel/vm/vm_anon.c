@@ -49,6 +49,8 @@
 #include <devel/vm/include/vm_swap.h>
 
 vm_anon_t vm_anon_allocate(int);
+static void vm_anon_release_segment(vm_anon_t, vm_segment_t);
+static void vm_anon_release_page(vm_anon_t, vm_segment_t, vm_page_t);
 static void vm_anon_free_segment(vm_segment_t, vm_anon_t);
 static void vm_anon_free_page(vm_segment_t, vm_page_t, vm_anon_t);
 
@@ -236,28 +238,10 @@ vm_anon_release(anon)
 	segment = anon->u.an_segment;
 	page = anon->u.an_page;
 
-	KASSERT(segment != NULL);
-
-	KASSERT((segment->sg_flags & SEG_RELEASED) != 0);
-	KASSERT((segment->sg_flags & SEG_BUSY) != 0);
-	KASSERT(segment->sg_object == NULL);
-	KASSERT(segment->sg_anon == anon);
-
-	KASSERT(page != NULL);
-	KASSERT((page->flags & PG_RELEASED) != 0);
-	KASSERT((page->flags & PG_BUSY) != 0);
-	KASSERT(page->segment == segment);
-	KASSERT(page->anon == anon);
-	KASSERT(anon->an_ref == 0);
-
-	vm_segment_lock_lists();
-	vm_page_lock_queues();
-	vm_page_anon_free(page);
-	if(page == NULL) {
-		vm_segment_anon_free(segment);
+	if (page) {
+		vm_anon_release_page(anon, segment, page);
 	}
-	vm_page_unlock_queues();
-	vm_segment_unlock_lists();
+	vm_anon_release_segment(anon, segment);
 
 	KASSERT(anon->u.an_segment == NULL);
 	KASSERT(anon->u.an_page == NULL);
@@ -270,9 +254,9 @@ vm_anon_pagein(amap, anon)
 	vm_amap_t amap;
 	vm_anon_t anon;
 {
-	vm_page_t pg;
-	vm_segment_t seg;
-	vm_object_t obj;
+	vm_page_t page;
+	vm_segment_t segment;
+	vm_object_t object;
 	int rv;
 
 	KASSERT(anon->an_lock == amap->am_lock);
@@ -284,6 +268,12 @@ vm_anon_pagein(amap, anon)
 	 * is unlocked
 	 */
 	switch (rv) {
+	case 0:
+		break;
+
+	case ERESTART:
+		return (FALSE);
+
 	default:
 		return (TRUE);
 	}
@@ -292,28 +282,28 @@ vm_anon_pagein(amap, anon)
 	 * mark it as dirty, clear its swslot and un-busy it.
 	 */
 
-	seg = anon->u.an_segment;
-	pg = anon->u.an_page;
-	obj = seg->sg_object;
+	segment = anon->u.an_segment;
+	page = anon->u.an_page;
+	object = segment->sg_object;
 	if (anon->an_swslot > 0) {
 		vm_swap_free(anon->an_swslot, 1);
 	}
 	anon->an_swslot = 0;
-	pg->flags &= ~(PG_CLEAN);
+	page->flags &= ~(PG_CLEAN);
 
 	/*
 	 * deactivate the page (to put it on a page queue)
 	 */
 
-	pmap_clear_reference(VM_PAGE_TO_PHYS(pg));
+	pmap_clear_reference(VM_PAGE_TO_PHYS(page));
 	vm_page_lock_queues();
-	if (pg->wire_count == 0) {
-		vm_page_deactivate(pg);
+	if (page->wire_count == 0) {
+		vm_page_deactivate(page);
 	}
 	vm_page_unlock_queues();
-	if (pg->flags & PG_WANTED) {
-		wakeup(pg);
-		pg->flags &= ~(PG_WANTED);
+	if (page->flags & PG_WANTED) {
+		wakeup(page);
+		page->flags &= ~(PG_WANTED);
 	}
 
 	/*
@@ -321,10 +311,43 @@ vm_anon_pagein(amap, anon)
 	 */
 
 	simple_unlock(&anon->an_lock);
-	if (obj) {
-		simple_unlock(&obj->Lock);
+	if (object) {
+		simple_unlock(&object->Lock);
 	}
 	return (FALSE);
+}
+
+static void
+vm_anon_release_segment(anon, segment)
+	vm_anon_t 		anon;
+	vm_segment_t 	segment;
+{
+	KASSERT(segment != NULL);
+	KASSERT((segment->sg_flags & SEG_RELEASED) != 0);
+	KASSERT((segment->sg_flags & SEG_BUSY) != 0);
+	KASSERT(segment->sg_object == NULL);
+	KASSERT(segment->sg_anon == anon);
+
+	vm_segment_lock_lists();
+	vm_segment_anon_free(segment);
+	vm_segment_unlock_lists();
+}
+
+static void
+vm_anon_release_page(anon, segment, page)
+	vm_anon_t 		anon;
+	vm_segment_t 	segment;
+	vm_page_t 		page;
+{
+	KASSERT(page != NULL);
+	KASSERT((page->flags & PG_RELEASED) != 0);
+	KASSERT((page->flags & PG_BUSY) != 0);
+	KASSERT(page->segment == segment);
+	KASSERT(page->anon == anon);
+
+	vm_page_lock_queues();
+	vm_page_anon_free(page);
+	vm_page_unlock_queues();
 }
 
 static void

@@ -733,7 +733,7 @@ vm_object_shadow_index(object, offset)
  * Add shadow object to list of anon objects list
  */
 void
-vm_object_add_shadow(aobject, shadow, offset)
+vm_object_shadow_add(aobject, shadow, offset)
 	vm_aobject_t aobject;
 	vm_object_t shadow;
 	vm_offset_t offset;
@@ -748,7 +748,7 @@ vm_object_add_shadow(aobject, shadow, offset)
 }
 
 void
-vm_object_remove_shadow(aobject, shadow)
+vm_object_shadow_remove(aobject, shadow)
 	vm_aobject_t aobject;
 	vm_object_t  shadow;
 {
@@ -769,7 +769,7 @@ vm_object_shadow_attach(object, offset)
     register vm_aobject_t aobject;
 
     aobject = (vm_aobject_t)object;
-    vm_object_add_shadow(aobject, object, offset);
+    vm_object_shadow_add(aobject, object, offset);
 }
 
 void
@@ -787,7 +787,7 @@ vm_object_shadow_detach(object)
 		}
         vm_object_unlock(aobject->u_obj.shadow);
     }
-	vm_object_remove_shadow(aobject, object);
+    vm_object_shadow_remove(aobject, object);
 }
 
 /*

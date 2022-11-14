@@ -1045,7 +1045,6 @@ vm_map_simplify_entry(map, entry)
 				(prev->object.vm_object == entry->object.vm_object) &&
 				(!prev->object.vm_object ||
 						(prev->offset + prevsize == entry->offset)) &&
-						/* (prev->eflags == entry->eflags) && */
 						(prev->protection == entry->protection) &&
 						(prev->max_protection == entry->max_protection) &&
 						(prev->inheritance == entry->inheritance) &&
@@ -1073,7 +1072,6 @@ vm_map_simplify_entry(map, entry)
 				(next->object.vm_object == entry->object.vm_object) &&
 				(!entry->object.vm_object ||
 						(entry->offset + esize == next->offset)) &&
-						/* (next->eflags == entry->eflags) && */
 						(next->protection == entry->protection) &&
 						(next->max_protection == entry->max_protection) &&
 						(next->inheritance == entry->inheritance) &&
@@ -1282,7 +1280,7 @@ vm_map_submap(map, start, end, submap)
 	}
 	vm_map_unlock(map);
 
-	return(result);
+	return (result);
 }
 
 /*

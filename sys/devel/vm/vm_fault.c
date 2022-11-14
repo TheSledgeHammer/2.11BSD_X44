@@ -135,8 +135,8 @@ static struct vm_advice vmadvice[] = {
 /*
  * private prototypes
  */
-static int	vm_fault_map_lookup(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
-static void vm_fault_amapcopy(struct vm_faultinfo *);
+static int				vm_fault_map_lookup(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
+static void 			vm_fault_amapcopy(struct vm_faultinfo *);
 static __inline void 	vm_fault_anonflush(vm_anon_t *, int);
 static __inline void 	vm_fault_unlockall(struct vm_faultinfo *, vm_amap_t, vm_object_t, vm_anon_t);
 static __inline void 	vm_fault_unlockmaps(struct vm_faultinfo *, bool_t);
@@ -392,6 +392,8 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	bool_t				page_exists;
 	struct vm_faultinfo vfi;
 
+	//vfi.anon = NULL;
+
 	cnt.v_faults++;
 
 RetryFault: ;
@@ -611,8 +613,13 @@ vm_fault_cow(vfi, fault_type, old_page)
 {
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
-			if (vfi->first_segment != NULL || !TAILQ_EMPTY(vfi->first_segment->sg_memq)) {
+			if ((vfi->first_segment != NULL && !TAILQ_EMPTY(vfi->first_segment->sg_memq)) ||
+					(vfi->first_segment == NULL && TAILQ_EMPTY(vfi->first_segment->sg_memq))) {
 				vm_segment_copy(vfi->segment, vfi->first_segment);
+				vfi->first_page = vm_page_lookup(vfi->first_segment, vfi->first_segment->sg_offset);
+				if (vfi->first_page) {
+					vfi->first_page->flags &= ~PG_FAKE;
+				}
 				vm_segment_lock_lists();
 				vm_segment_activate(vfi->segment);
 				vm_segment_deactivate(vfi->segment);
