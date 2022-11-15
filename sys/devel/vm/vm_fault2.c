@@ -132,34 +132,6 @@ vm_fault_amap(vfi)
 
 	vfi->anon = anons[vfi->centeridx];
 	simple_lock(vfi->anon->an_lock);
-
-
-	error = vm_fault_anonget(vfi, vfi->amap, vfi->anon);
-	switch (error) {
-	case 0:
-		break;
-
-	case ERESTART:
-		goto ReFault;
-
-	case EAGAIN:
-		tsleep(&lbolt, PVM, "fltagain1", 0);
-		goto ReFault;
-
-	default:
-		return error;
-	}
-	vfi->object = vfi->anon->u.an_page->object;
-
-	if (cow_now && vfi->anon->an_ref > 1) {
-		vfi->anon = vm_anon_alloc();
-		if (vfi->anon) {
-			vm_page_anon_alloc();
-		}
-	}
-	cnt.v_flt_przero++;
-	vm_fault_zero_fill(vfi);
-	vm_amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 0);
 }
 
 void
@@ -210,3 +182,5 @@ vm_fault_anon(vfi, fault_type)
 		}
 	}
 }
+
+

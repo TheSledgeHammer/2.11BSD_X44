@@ -160,7 +160,7 @@ void			vm_segment_page_insert(vm_object_t, vm_offset_t, vm_page_t, vm_offset_t);
 vm_page_t		vm_segment_page_lookup(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_page_remove(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_startup(vm_offset_t, vm_offset_t);
-bool_t			vm_segment_zero_fill(vm_segment_t, vm_offset_t);
+bool_t			vm_segment_zero_fill(vm_segment_t);
 bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
 vm_segment_t	vm_segment_anon_alloc(vm_object_t, vm_offset_t, vm_anon_t);
 void			vm_segment_anon_free(vm_segment_t);

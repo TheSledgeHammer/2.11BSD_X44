@@ -84,6 +84,11 @@ struct pagerops {
 	bool_t  	(*pgo_haspage)(vm_pager_t, vm_offset_t);
 	/* Return range of cluster. */
 	void		(*pgo_cluster)(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+
+	/* Get (read) segment. */
+	int			(*pgo_getsegments)(vm_pager_t, vm_segment_t *, int, bool_t);
+	/* Put (write) segment. */
+	int			(*pgo_putsegments)(vm_pager_t, vm_segment_t *, int, bool_t);
 };
 
 /*

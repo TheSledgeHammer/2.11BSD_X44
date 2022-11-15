@@ -419,22 +419,24 @@ vm_segment_activate(segment)
  *	vm_segment_zero_fill:
  *	Will perform a segment check.
  *	if pages are empty, will zero fill the segment.
- *	Otherwise returns vm_page_zero_fill.
+ *	Otherwise will zero fill all pages in the segment.
  */
 bool_t
-vm_segment_zero_fill(s, o)
+vm_segment_zero_fill(s)
     vm_segment_t 	s;
-	vm_offset_t 	o;
 {
 	register vm_page_t 	p;
 
     VM_SEGMENT_CHECK(s);
     s->sg_flags &= ~SEG_CLEAN;
-    p = vm_page_lookup(s, o);
-    if(p != NULL && p->segment == s) {
-    	return (vm_page_zero_fill(p));
+    if (!TAILQ_EMPTY(&s->sg_memq)) {
+    	TAILQ_FOREACH(p, &s->sg_memq, listq) {
+    		if (p->segment == s) {
+    			return (vm_page_zero_fill(p));
+    		}
+    	}
     }
-    pmap_zero_page(VM_SEGMENT_TO_PHYS(s));
+	pmap_zero_page(VM_SEGMENT_TO_PHYS(s));
 	return (TRUE);
 }
 

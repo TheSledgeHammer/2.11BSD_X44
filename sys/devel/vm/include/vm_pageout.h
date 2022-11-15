@@ -89,6 +89,7 @@ simple_lock_data_t	vm_pages_needed_lock;
 	thread_sleep(&cnt.v_free_count, 	\
 	&vm_pages_needed_lock, FALSE); 		\
 }
+
 #ifdef _KERNEL
 void		vm_pageout(void);
 void		vm_pageout_scan_segment(vm_object_t, int, int);

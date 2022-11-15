@@ -770,7 +770,7 @@ vm_fault_zerofill(vfi)
 		}
 		if (vfi->first_segment == NULL) {
 			vfi->first_segment = NULL;
-			vm_segment_zero_fill(vfi->segment, vfi->page);
+			vm_segment_zero_fill(vfi->segment);
 		} else {
 			if (vfi->first_segment != NULL && vfi->first_page == NULL) {
 				vfi->first_page = NULL;

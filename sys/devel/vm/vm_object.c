@@ -413,43 +413,129 @@ vm_object_terminate(object)
 
 #ifdef notyet
 bool_t
-vm_object_segment_clean(object, start, end, syncio, de_queue)
+vm_object_segment_page_clean(object, start, end, syncio, de_queue)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 	bool_t					syncio;
 	bool_t					de_queue;
+
 {
 	register vm_segment_t	segment;
+	register vm_page_t		page;
+	int 					onqueue;
+	bool_t issgmod, ispgmod;
+	bool_t noerror = TRUE;
 
-	if (object == NULL) {
-		return (TRUE);
-	}
-
-	if ((object->flags & OBJ_INTERNAL) && object->pager == NULL) {
-		vm_object_collapse(object);
-		if (object->pager == NULL) {
-			vm_pager_t pager;
-
-			vm_object_unlock(object);
-			pager = vm_pager_allocate(PG_DFLT, (caddr_t) 0, object->size, VM_PROT_ALL, (vm_offset_t) 0);
-			if (pager) {
-				vm_object_setpager(object, pager, 0, FALSE);
-			}
-			vm_object_lock(object);
-		}
-	}
-	if (object->pager == NULL) {
-		return (FALSE);
-	}
+again:
 
 	CIRCLEQ_FOREACH(segment, object->seglist, sg_list) {
 		if ((start == end || (segment->sg_offset >= start && segment->sg_offset < end))) {
-			if ((segment->sg_flags & SEG_CLEAN) && pmap_is_modified(VM_SEGMENT_TO_PHYS(segment))) {
+			issgmod = pmap_is_modified(VM_SEGMENT_TO_PHYS(segment));
+			if ((segment->sg_flags & SEG_CLEAN) && issgmod) {
+				segment->sg_flags &= ~PG_CLEAN;
+			}
+			if (de_queue || !(segment->sg_flags & SEG_CLEAN)) {
+				vm_segment_lock_lists();
+				if (segment->sg_flags & SEG_ACTIVE) {
+					CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
+					segment->sg_flags &= ~SEG_ACTIVE;
+					cnt.v_segment_active_count--;
+					onqueue = 1;
+				} else if (segment->sg_flags & SEG_INACTIVE) {
+					CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
+					segment->sg_flags &= ~SEG_INACTIVE;
+					cnt.v_segment_inactive_count--;
+					onqueue = -1;
+				} else {
+					onqueue = 0;
+				}
+				vm_segment_unlock_lists();
+			}
 
+			if (TAILQ_EMPTY(segment->sg_memq)) {
+				/* protect entire segment & allocate new pages */
+				pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_READ);
+				page = vm_page_alloc(segment, segment->sg_offset);
+				vm_page_insert(segment, page, page->offset);
+			} else {
+				TAILQ_FOREACH(page, segment->sg_memq, listq) {
+					if (!(page->flags & PG_FICTITIOUS)) {
+						ispgmod = pmap_is_modified(VM_PAGE_TO_PHYS(page));
+						if ((page->flags & PG_CLEAN) && ispgmod) {
+							page->flags &= ~PG_CLEAN;
+						}
+						if (de_queue || !(page->flags & PG_CLEAN)) {
+							vm_page_lock_queues();
+							if (page->flags & PG_ACTIVE) {
+								TAILQ_REMOVE(&vm_page_queue_active, page, pageq);
+								page->flags &= ~PG_ACTIVE;
+								cnt.v_page_active_count--;
+								onqueue = 1;
+							} else if (page->flags & PG_INACTIVE) {
+								TAILQ_REMOVE(&vm_page_queue_inactive, page, pageq);
+								page->flags &= ~PG_INACTIVE;
+								cnt.v_page_inactive_count--;
+								onqueue = -1;
+							} else {
+								onqueue = 0;
+							}
+							vm_page_unlock_queues();
+						}
+
+						pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_READ);
+						if (!(page->flags & PG_CLEAN)) {
+							page->flags |= PG_BUSY;
+							object->paging_in_progress++;
+							vm_object_unlock(object);
+							if (vm_pager_put(object->pager, page, syncio)) {
+								printf("%s: pager_put error\n", "vm_object_page_clean");
+								page->flags |= PG_CLEAN;
+								noerror = FALSE;
+							}
+							vm_object_lock(object);
+							object->paging_in_progress--;
+							if (!de_queue && onqueue) {
+								vm_page_lock_queues();
+								if (onqueue > 0) {
+									vm_page_activate(page);
+								} else {
+									vm_page_deactivate(page);
+								}
+								vm_page_unlock_queues();
+							}
+							page->flags &= ~PG_BUSY;
+							PAGE_WAKEUP(page);
+							goto again;
+						}
+					}
+				}
+			}
+
+			if (!(segment->sg_flags & SEG_CLEAN)) {
+				segment->sg_flags |= SEG_BUSY;
+				/*
+				 * Pager access should not be required for segments.
+				 * As empty pages are unmodified pages,
+				 * which are usually clean. If pages aren't empty,
+				 * they should have already been dealt with before getting here.
+				 */
+				if (!de_queue && onqueue) {
+					vm_segment_lock_lists();
+					if (onqueue > 0) {
+						vm_segment_activate(segment);
+					} else {
+						vm_segment_deactivate(segment);
+					}
+					vm_segment_unlock_lists();
+				}
+				segment->sg_flags &= ~SEG_BUSY;
+				SEGMENT_WAKEUP(segment);
+				goto again;
 			}
 		}
 	}
+	return (noerror);
 }
 #endif
 
@@ -483,8 +569,9 @@ vm_object_page_clean(object, start, end, syncio, de_queue)
 	int onqueue;
 	bool_t noerror = TRUE;
 
-	if (object == NULL)
+	if (object == NULL) {
 		return (TRUE);
+	}
 
 	/*
 	 * If it is an internal object and there is no pager, attempt to
@@ -604,7 +691,7 @@ vm_object_deactivate_pages(object)
 	CIRCLEQ_FOREACH(segment, object->seglist, sg_list) {
 		if (segment->sg_object == object) {
 			vm_segment_lock_lists();
-			if (segment->sg_memq == NULL) {
+			if (TAILQ_EMPTY(segment->sg_memq)) {
 				vm_segment_deactivate(segment);
 			} else {
 				TAILQ_FOREACH(page, segment->sg_memq, listq) {
@@ -619,7 +706,37 @@ vm_object_deactivate_pages(object)
 		}
 	}
 }
+#ifdef notyet
+void
+vm_object_deactivate_segments(object)
+	register vm_object_t	object;
+{
+	register vm_segment_t 	segment;
 
+	CIRCLEQ_FOREACH(segment, object->seglist, sg_list) {
+		if (segment->sg_object == object) {
+			vm_segment_lock_lists();
+			vm_segment_deactivate(segment);
+			vm_segment_unlock_lists();
+		}
+	}
+}
+
+void
+vm_object_deactivate_pages1(segment)
+	register vm_segment_t	segment;
+{
+	register vm_page_t	 	page;
+
+	TAILQ_FOREACH(page, segment->sg_memq, listq) {
+		if (page->segment == segment) {
+			vm_page_lock_queues();
+			vm_page_deactivate(page);
+			vm_page_unlock_queues();
+		}
+	}
+}
+#endif
 /*
  *	Trim the object cache to size.
  */
