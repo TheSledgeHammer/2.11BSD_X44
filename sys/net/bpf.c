@@ -41,9 +41,9 @@
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
  */
 
-//#include "bpfilter.h"
+#include "bpfilter.h"
 
-#if NBPFILTER > 0
+//#if NBPFILTER > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -113,22 +113,22 @@ bpfilterattach(n)
 }
 #endif
 
-static int	bpf_allocbufs (struct bpf_d *);
-static int	bpf_allocbufs (struct bpf_d *);
-static void	bpf_freed (struct bpf_d *);
-static void	bpf_freed (struct bpf_d *);
-static void	bpf_ifname (struct ifnet *, struct ifreq *);
-static void	bpf_ifname (struct ifnet *, struct ifreq *);
-static void	bpf_mcopy (const void *, void *, u_int);
-static int	bpf_movein (struct uio *, int,
-		    struct mbuf **, struct sockaddr *, int *);
-static int	bpf_setif (struct bpf_d *, struct ifreq *);
-static int	bpf_setif (struct bpf_d *, struct ifreq *);
-static __inline void
-		bpf_wakeup (struct bpf_d *);
-static void	catchpacket (struct bpf_d *, u_char *, u_int,
-		    u_int, void (*)(const void *, void *, u_int));
-static void	reset_d (struct bpf_d *);
+static int	bpf_allocbufs(struct bpf_d *);
+static int	bpf_allocbufs(struct bpf_d *);
+static void	bpf_freed(struct bpf_d *);
+static void	bpf_freed(struct bpf_d *);
+static void	bpf_ifname(struct ifnet *, struct ifreq *);
+static void	bpf_ifname(struct ifnet *, struct ifreq *);
+static void	bpf_mcopy(const void *, void *, u_int);
+static int	bpf_movein(struct uio *, int, struct mbuf **, struct sockaddr *, int *);
+static void	bpf_attachd(struct bpf_d *, struct bpf_if *);
+static void	bpf_detachd(struct bpf_d *);
+static int	bpf_setif(struct bpf_d *, struct ifreq *);
+int			bpfpoll(dev_t, int, struct proc *);
+static int	bpf_setif(struct bpf_d *, struct ifreq *);
+static __inline void bpf_wakeup(struct bpf_d *);
+static void	catchpacket(struct bpf_d *, u_char *, u_int, u_int, void (*)(const void *, void *, u_int));
+static void	reset_d(struct bpf_d *);
 
 static int
 bpf_movein(uio, linktype, mp, sockp, datlen)
@@ -141,6 +141,7 @@ bpf_movein(uio, linktype, mp, sockp, datlen)
 	int error;
 	int len;
 	int hlen;
+	int align;
 
 	/*
 	 * Build a sockaddr based on the data link layer type.
@@ -156,23 +157,27 @@ bpf_movein(uio, linktype, mp, sockp, datlen)
 	case DLT_SLIP:
 		sockp->sa_family = AF_INET;
 		hlen = 0;
+		align = 0;
 		break;
 
 	case DLT_EN10MB:
 		sockp->sa_family = AF_UNSPEC;
 		/* XXX Would MAXLINKHDR be better? */
 		hlen = sizeof(struct ether_header);
+		align = 2;
 		break;
 
 	case DLT_FDDI:
 		sockp->sa_family = AF_UNSPEC;
 		/* XXX 4(FORMAC)+6(dst)+6(src)+3(LLC)+5(SNAP) */
 		hlen = 24;
+		align = 0;
 		break;
 
 	case DLT_NULL:
 		sockp->sa_family = AF_UNSPEC;
 		hlen = 0;
+		align = 0;
 		break;
 
 	default:
@@ -180,14 +185,19 @@ bpf_movein(uio, linktype, mp, sockp, datlen)
 	}
 
 	len = uio->uio_resid;
+
 	*datlen = len - hlen;
-	if ((unsigned)len > MCLBYTES)
+	if ((unsigned)len > MCLBYTES - align) {
 		return (EIO);
+	}
 
 	MGET(m, M_WAIT, MT_DATA);
-	if (m == 0)
+	if (m == 0) {
 		return (ENOBUFS);
-	if (len > MLEN) {
+	}
+	m->m_pkthdr.rcvif = 0;
+	m->m_pkthdr.len = len - hlen;
+	if (len > MLEN - align) {
 #if BSD >= 199103
 		MCLGET(m, M_WAIT);
 		if ((m->m_flags & M_EXT) == 0) {
@@ -199,6 +209,15 @@ bpf_movein(uio, linktype, mp, sockp, datlen)
 			goto bad;
 		}
 	}
+	if (align > 0) {
+#if BSD >= 199103
+			m->m_data += align;
+	#else
+		m->m_off += align;
+#endif
+		m->m_len -= align;
+	}
+
 	m->m_len = len;
 	*mp = m;
 	/*
@@ -212,12 +231,14 @@ bpf_movein(uio, linktype, mp, sockp, datlen)
 		m->m_off += hlen;
 #endif
 		error = UIOMOVE((caddr_t)sockp->sa_data, hlen, UIO_WRITE, uio);
-		if (error)
+		if (error) {
 			goto bad;
+		}
 	}
 	error = UIOMOVE(mtod(m, caddr_t), len - hlen, UIO_WRITE, uio);
-	if (!error)
+	if (!error) {
 		return (0);
+	}
  bad:
 	m_freem(m);
 	return (error);
@@ -277,11 +298,12 @@ bpf_detachd(d)
 			panic("bpf_detachd: descriptor not in list");
 	}
 	*p = (*p)->bd_next;
-	if (bp->bif_dlist == 0)
+	if (bp->bif_dlist == 0) {
 		/*
 		 * Let the driver know that there are no more listeners.
 		 */
 		*d->bd_bif->bif_driverp = 0;
+	}
 	d->bd_bif = 0;
 }
 
@@ -296,6 +318,23 @@ bpf_detachd(d)
 #define D_MARKUSED(d) ((d)->bd_next = 0)
 
 /*
+ * bpfilterattach() is called at boot time.
+ */
+/* ARGSUSED */
+void
+bpfilterattach(n)
+	int n;
+{
+	int i;
+	/*
+	 * Mark all the descriptors free.
+	 */
+	for (i = 0; i < NBPFILTER; ++i) {
+		D_MARKFREE(&bpf_dtab[i]);
+	}
+}
+
+/*
  * Open ethernet device.  Returns ENXIO for illegal minor device number,
  * EBUSY if file is open by another process.
  */
@@ -307,15 +346,17 @@ bpfopen(dev, flag)
 {
 	register struct bpf_d *d;
 
-	if (minor(dev) >= NBPFILTER)
+	if (minor(dev) >= NBPFILTER) {
 		return (ENXIO);
+	}
 	/*
 	 * Each minor can be opened by only one process.  If the requested
 	 * minor is in use, return EBUSY.
 	 */
 	d = &bpf_dtab[minor(dev)];
-	if (!D_ISFREE(d))
+	if (!D_ISFREE(d)) {
 		return (EBUSY);
+	}
 
 	/* Mark "free" and do most initialization. */
 	bzero((char *)d, sizeof(*d));
@@ -334,12 +375,14 @@ bpfclose(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register struct bpf_d *d = &bpf_dtab[minor(dev)];
+	register struct bpf_d *d;
 	register int s;
 
+	d = &bpf_dtab[minor(dev)];
 	s = splimp();
-	if (d->bd_bif)
+	if (d->bd_bif) {
 		bpf_detachd(d);
+	}
 	splx(s);
 	bpf_freed(d);
 
@@ -374,10 +417,11 @@ bpf_sleep(d)
 	}
 	st = sleep((caddr_t)d, PRINET|PCATCH);
 	if (rto != 0) {
-		if (d->bd_timedout == 0)
+		if (d->bd_timedout == 0) {
 			untimeout(bpf_timeout, (caddr_t)d);
-		else if (st == 0)
+		} else if (st == 0) {
 			return EWOULDBLOCK;
+		}
 	}
 	return (st != 0) ? EINTR : 0;
 }
@@ -431,8 +475,7 @@ bpfread(dev, uio)
 			ROTATE_BUFFERS(d);
 			break;
 		}
-		error = BPF_SLEEP((caddr_t)d, PRINET|PCATCH, "bpf",
-				  d->bd_rtout);
+		error = BPF_SLEEP((caddr_t)d, PRINET|PCATCH, "bpf", d->bd_rtout);
 		if (error == EINTR || error == ERESTART) {
 			splx(s);
 			return (error);

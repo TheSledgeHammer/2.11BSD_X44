@@ -40,16 +40,19 @@
  * @(#) $Header: bpf.h,v 1.24 91/10/27 21:22:32 mccanne Exp $ (LBL)
  */
 
+#ifndef _NET_BPF_H_
+#define _NET_BPF_H_
+
 /*
  * Alignment macros.  BPF_WORDALIGN rounds up to the next 
  * even multiple of BPF_ALIGNMENT. 
  */
-#define BPF_ALIGNMENT sizeof(long)
-#define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
+#define BPF_ALIGNMENT 		sizeof(long)
+#define BPF_WORDALIGN(x) 	(((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
 
-#define BPF_MAXINSNS 512
-#define BPF_MAXBUFSIZE 0x8000
-#define BPF_MINBUFSIZE 32
+#define BPF_MAXINSNS 	512
+#define BPF_MAXBUFSIZE 	0x8000
+#define BPF_MINBUFSIZE 	32
 
 /*
  *  Structure for BIOCSETF.
@@ -139,7 +142,11 @@ struct bpf_hdr {
  * Only the kernel needs to know about it; applications use bh_hdrlen.
  */
 #ifdef _KERNEL
+#if defined(__arm32__) || defined(__i386__)
 #define SIZEOF_BPF_HDR 18
+#else
+#define SIZEOF_BPF_HDR sizeof(struct bpf_hdr)
+#endif
 #endif
 
 /*
@@ -231,21 +238,23 @@ struct bpf_insn {
 #define BPF_JUMP(code, k, jt, jf) { (u_short)(code), jt, jf, k }
 
 #ifdef _KERNEL
-int	 	bpf_validate (struct bpf_insn *, int);
-int	 	bpfopen (dev_t, int);
-int	 	bpfclose (dev_t, int);
-int	 	bpfread (dev_t, struct uio *);
-int	 	bpfwrite (dev_t, struct uio *);
-int	 	bpfioctl (dev_t, u_long, caddr_t, int);
-int		bpf_select (dev_t, int, struct proc *);
-void	bpf_tap (caddr_t, u_char *, u_int);
-void	bpf_mtap (caddr_t, struct mbuf *);
-void	bpfattach (caddr_t *, struct ifnet *, u_int, u_int);
-void	bpfilterattach (int);
-u_int	bpf_filter (struct bpf_insn *, u_char *, u_int, u_int);
+int	 	bpf_validate(struct bpf_insn *, int);
+int	 	bpfopen(dev_t, int);
+int	 	bpfclose(dev_t, int);
+int	 	bpfread(dev_t, struct uio *);
+int	 	bpfwrite(dev_t, struct uio *);
+int	 	bpfioctl(dev_t, u_long, caddr_t, int);
+int		bpf_select(dev_t, int, struct proc *);
+void	bpf_tap(caddr_t, u_char *, u_int);
+void	bpf_mtap(caddr_t, struct mbuf *);
+void	bpfattach(caddr_t *, struct ifnet *, u_int, u_int);
+void	bpfilterattach(int);
+u_int	bpf_filter(struct bpf_insn *, u_char *, u_int, u_int);
 #endif
 
 /*
  * Number of scratch memory words (for BPF_LD|BPF_MEM and BPF_ST).
  */
 #define BPF_MEMWORDS 16
+
+#endif /* _NET_BPF_H_ */

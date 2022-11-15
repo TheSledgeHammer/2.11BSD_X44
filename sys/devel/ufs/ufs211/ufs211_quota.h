@@ -90,6 +90,7 @@ struct ufs211_dquot {
 #define	DQ_BLKS			0x10		/* has been warned about blk limit */
 #define	DQ_INODS		0x20		/* has been warned about inode limit */
 	short				dq_cnt;		/* count of active references */
+	short 				dq_type;	/* quota type of this dquot */
 	uid_t				dq_id;		/* user this applies to */
     struct ufs211_mount *dq_ump;	/* filesystem that this is taken from */
     struct ufs211_dqblk dq_dqb;		/* actual usage & quotas */
@@ -119,14 +120,13 @@ struct ufs211_dquot {
 #define	Q_SETWARN		25	/* alter inode/block warning counts */
 #define	Q_DOWARN		26	/* warn user about excessive space/inodes */
 
-
 #define	QUOTAFILENAME	"quotas"
 #define	QUOTAGROUP	    "operator"
 
 /*
  * Used in Q_SETDUSE.
  */
-struct	ufs211_dqusage {
+struct ufs211_dqusage {
 	u_short	du_curinodes;
 	u_long	du_curblocks;
 };
@@ -134,7 +134,7 @@ struct	ufs211_dqusage {
 /*
  * Used in Q_SETWARN.
  */
-struct	ufs211_dqwarn {
+struct ufs211_dqwarn {
 	u_char	dw_bwarn;
 	u_char	dw_iwarn;
 };

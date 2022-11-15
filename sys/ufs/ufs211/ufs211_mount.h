@@ -38,7 +38,11 @@ struct ufs211_mount {
 	ufs211_size_t	    	m_extern;	        			/* click address of mount table extension */
 	struct buf				*m_bufp;
 
-	struct vnode 			*m_quotas[MAXQUOTAS];
+	struct vnode 			*m_quotas[MAXQUOTAS];			/* pointer to quota files */
+	struct ucred 			*m_cred[MAXQUOTAS];				/* quota file access cred */
+	time_t					m_bwarn[MAXQUOTAS];				/* block quota time limit */
+	time_t					m_iwarn[MAXQUOTAS];				/* inode quota time limit */
+	char					m_qflags[MAXQUOTAS];			/* quota specific flags */
 };
 
 struct ufs211_xmount {

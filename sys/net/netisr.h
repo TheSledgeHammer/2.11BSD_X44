@@ -12,6 +12,9 @@
  *	@(#)netisr.h	7.3 (Berkeley) 12/30/87
  */
 
+#ifndef _NET_NETISR_H_
+#define _NET_NETISR_H_
+
 /*
  * The networking code runs off software interrupts.
  *
@@ -41,8 +44,10 @@
 
 #define	schednetisr(anisr)	{ netisr |= 1<<(anisr); setsoftnet(); }
 
-#ifdef SUPERVISOR
+#ifndef _LOCORE
+#ifdef _KERNEL
 int	netisr;				/* scheduling bits for network */
+#endif
 #endif
 
 #ifdef INET
@@ -74,3 +79,5 @@ int	netisr;				/* scheduling bits for network */
 #include "ppp.h"
 	DONET(NETISR_PPP, _C_LABEL(pppintr))
 #endif
+
+#endif /* _NET_NETISR_H_ */

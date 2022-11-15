@@ -11,6 +11,8 @@
  *
  *	@(#)if_arp.h	7.2 (Berkeley) 12/30/87
  */
+#ifndef _NET_IF_ARP_H_
+#define _NET_IF_ARP_H_
 
 /*
  * Address Resolution Protocol.
@@ -23,14 +25,14 @@
  * specified.  Field names used correspond to RFC 826.
  */
 struct	arphdr {
-	u_short	ar_hrd;		/* format of hardware address */
+	u_short	ar_hrd;			/* format of hardware address */
 #define ARPHRD_ETHER 	1	/* ethernet hardware address */
-	u_short	ar_pro;		/* format of protocol address */
-	u_char	ar_hln;		/* length of hardware address */
-	u_char	ar_pln;		/* length of protocol address */
-	u_short	ar_op;		/* one of: */
+	u_short	ar_pro;			/* format of protocol address */
+	u_char	ar_hln;			/* length of hardware address */
+	u_char	ar_pln;			/* length of protocol address */
+	u_short	ar_op;			/* one of: */
 #define	ARPOP_REQUEST	1	/* request to resolve address */
-#define	ARPOP_REPLY	2	/* response to previous request */
+#define	ARPOP_REPLY		2	/* response to previous request */
 /*
  * The remaining fields are variable in size,
  * according to the sizes above.
@@ -55,3 +57,5 @@ struct arpreq {
 #define	ATF_PERM		0x04	/* permanent entry */
 #define	ATF_PUBL		0x08	/* publish entry (respond for other host) */
 #define	ATF_USETRAILERS	0x10	/* has requested trailers */
+
+#endif /* _NET_IF_ARP_H_ */

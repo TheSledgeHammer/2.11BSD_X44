@@ -23,7 +23,7 @@
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
 
-#ifdef QUOTA
+//#ifdef QUOTA
 //#define	QHASH(id)	((unsigned)(uid) & (NQHASH-1))
 #define QHASH(qvp, id)	\
 	(&qhashtbl[((((int)(qvp)) >> 8) + id) & UFS211_NQHASH])
@@ -144,8 +144,7 @@ chkdq(ip, change, force)
 	/*
 	 * reset warnings if below disk quota.
 	 */
-        if (dq->dq_bwarn == 0 && dq->dq_bsoftlimit &&
-	    (dq->dq_curblocks + change) < dq->dq_bsoftlimit) {
+	if (dq->dq_bwarn == 0&& dq->dq_bsoftlimit && (dq->dq_curblocks + change) < dq->dq_bsoftlimit) {
 		dq->dq_bwarn = MAX_DQ_WARN;
 		if (dq->dq_own == u->u_quota) {
 			uprintf("\nUNDER DISC QUOTA: (%s) by %d Kbytes\n",
