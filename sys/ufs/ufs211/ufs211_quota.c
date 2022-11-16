@@ -23,7 +23,7 @@
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
 
-//#ifdef QUOTA
+#ifdef QUOTA
 //#define	QHASH(id)	((unsigned)(uid) & (NQHASH-1))
 #define QHASH(qvp, id)	\
 	(&qhashtbl[((((int)(qvp)) >> 8) + id) & UFS211_NQHASH])
@@ -291,5 +291,91 @@ chkiq(dev, ip, uid, force)
 	dq->dq_curinodes++;
 	dqrele(dq);
 	return (0);
+}
+
+struct ufs211_dquot *
+discquota(id, ip)
+	uid_t id;
+	register struct ufs211_inode *ip;
+{
+	register struct ufs211_dquot *dq, *dp;
+	struct ufs211_dqhash *dqh;
+	struct vnode *dqvp;
+
+	dqvp = UFS211_ITOV(ip);
+	dqh = DQHASH(dqvp, id);
+	for (dq = LIST_FIRST(dqh); dq; dq = LIST_NEXT(dq, dq_hash)) {
+		if (dq->dq_cnt++ == 0) {
+			TAILQ_REMOVE(&ufs211_dqfreelist, dq, dq_freelist);
+			dq->dq_own = NOQUOTA;
+		}
+		if (dq->dq_isoftlimit == 0 && dq->dq_bsoftlimit == 0) {
+			dqrele(dqvp, dq);
+			return (NODQUOT);
+		}
+		return (dq);
+	}
+	return (dq);
+}
+
+struct ufs211_dquot *
+dqp(q, id)
+	struct ufs211_quota *q;
+	u_long id;
+{
+	register struct ufs211_dquot **dqq;
+	struct ufs211_qhash *qh;
+	struct ufs211_mount *ump;
+
+	if (q == NOQUOTA || (q->q_flags & Q_NDQ)) {
+		return (NODQUOT);
+	}
+	dqq = q->q_dq[id];
+	ump = q->q_dq[id].dq_ump;
+	if (*dqq == LOSTDQUOT) {
+		*dqq = discquota(id, ump->m_qinod);
+		if (*dqq != NODQUOT) {
+			(*dqq)->dq_own = q;
+		}
+	}
+	if (*dqq != NODQUOT) {
+		(*dqq)->dq_cnt++;
+	}
+	return (*dqq);
+}
+
+int
+setwarn(mp, id, type, addr)
+	struct mount *mp;
+	u_long id;
+	int type;
+	caddr_t addr;
+{
+	struct vnode *vp;
+	struct ufs211_mount *ump;
+	struct ufs211_dquot *dq;
+	struct ufs211_dqwarn warn;
+	int error;
+
+	ump = VFSTOUFS211(mp);
+	dq = ump->
+
+	error = 0;
+	if (dq == NODQUOT) {
+		return (ESRCH);
+	}
+	while (dq->dq_flags & DQ_LOCK) {
+		dq->dq_flags |= DQ_WANT;
+		sleep((caddr_t)dq, PINOD+1);
+	}
+	error = copyin(addr, (caddr_t)&warn, sizeof (warn));
+	if (error == 0) {
+		dq->dq_iwarn = warn.dw_iwarn;
+		dq->dq_bwarn = warn.dw_bwarn;
+		dq->dq_flags &= ~(DQ_INODS | DQ_BLKS);
+		dq->dq_flags |= DQ_MOD;
+	}
+	dqrele(vp, dq);
+	return (error);
 }
 #endif

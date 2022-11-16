@@ -43,7 +43,7 @@
 
 #include "bpfilter.h"
 
-//#if NBPFILTER > 0
+#if NBPFILTER > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -340,9 +340,11 @@ bpfilterattach(n)
  */
 /* ARGSUSED */
 int
-bpfopen(dev, flag)
+bpfopen(dev, flag, mode, p)
 	dev_t dev;
 	int flag;
+	int mode;
+	struct proc *p;
 {
 	register struct bpf_d *d;
 
@@ -361,6 +363,7 @@ bpfopen(dev, flag)
 	/* Mark "free" and do most initialization. */
 	bzero((char *)d, sizeof(*d));
 	d->bd_bufsize = bpf_bufsize;
+	callout_init(&d->bd_callout);
 
 	return (0);
 }
@@ -371,15 +374,21 @@ bpfopen(dev, flag)
  */
 /* ARGSUSED */
 int
-bpfclose(dev, flag)
+bpfclose(dev, flag, mode, p)
 	dev_t dev;
 	int flag;
+	int mode;
+	struct proc *p;
 {
 	register struct bpf_d *d;
 	register int s;
 
 	d = &bpf_dtab[minor(dev)];
 	s = splimp();
+	if (d->bd_state == BPF_WAITING) {
+		callout_stop(&d->bd_callout);
+	}
+	d->bd_state = BPF_IDLE;
 	if (d->bd_bif) {
 		bpf_detachd(d);
 	}
@@ -444,11 +453,13 @@ bpf_sleep(d)
  *  bpfread - read next chunk of packets from buffers
  */
 int
-bpfread(dev, uio)
+bpfread(dev, uio, ioflag)
 	dev_t dev;
 	register struct uio *uio;
+	int ioflag;
 {
 	register struct bpf_d *d = &bpf_dtab[minor(dev)];
+	int timed_out;
 	int error;
 	int s;
 
@@ -460,6 +471,10 @@ bpfread(dev, uio)
 		return (EINVAL);
 
 	s = splimp();
+	if (d->bd_state == BPF_WAITING)
+		callout_stop(&d->bd_callout);
+	timed_out = (d->bd_state == BPF_TIMED_OUT);
+	d->bd_state = BPF_IDLE;
 	/*
 	 * If the hold buffer is empty, then do a timed sleep, which
 	 * ends when the timeout expires or when enough packets
@@ -542,13 +557,16 @@ bpf_wakeup(d)
 		d->bd_selcoll = 0;
 		d->bd_selproc = 0;
 	}
+	//selnotify(&d->bd_sel, 0);
+	//d->bd_sel.sel_pid = 0;
 #endif
 }
 
 int
-bpfwrite(dev, uio)
+bpfwrite(dev, uio, ioflag)
 	dev_t dev;
 	struct uio *uio;
+	int ioflag;
 {
 	register struct bpf_d *d = &bpf_dtab[minor(dev)];
 	struct ifnet *ifp;
@@ -569,7 +587,7 @@ bpfwrite(dev, uio)
 	if (error)
 		return (error);
 
-	if (datlen > ifp->if_mtu)
+	if (datlen > ifp->if_mtu || m->m_pkthdr.len > ifp->if_mtu)
 		return (EMSGSIZE);
 
 	s = splnet();
@@ -622,17 +640,23 @@ reset_d(d)
  */
 /* ARGSUSED */
 int
-bpfioctl(dev, cmd, addr, flag)
+bpfioctl(dev, cmd, addr, flag, p)
 	dev_t dev;
 	u_long cmd;
 	caddr_t addr;
 	int flag;
+	struct proc *p;
 {
 	register struct bpf_d *d = &bpf_dtab[minor(dev)];
 	int s, error = 0;
 
-	switch (cmd) {
+	s = splnet();
+	if (d->bd_state == BPF_WAITING)
+		callout_stop(&d->bd_callout);
+	d->bd_state = BPF_IDLE;
+	splx(s);
 
+	switch (cmd) {
 	default:
 		error = EINVAL;
 		break;

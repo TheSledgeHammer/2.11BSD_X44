@@ -48,27 +48,7 @@
 #include <devel/vm/include/vm_pageout.h>
 #include <devel/vm/include/vm_segment.h>
 
-static struct vm_advice vmadvice[] = {
-		{ MADV_NORMAL, 3, 4 },
-		{ MADV_RANDOM, 0, 0 },
-		{ MADV_SEQUENTIAL, 8, 7},
-};
-
-#define VM_MAXRANGE 16
-
-void
-vm_fault_advice(vfi)
-	struct vm_faultinfo *vfi;
-{
-	KASSERT(vmadvice[vfi->entry->advice].advice == vfi->entry->advice);
-	vfi->nback = min(vmadvice[vfi->entry->advice].nback, (vfi->orig_rvaddr - vfi->entry->start) >> PAGE_SHIFT);
-	vfi->startva = vfi->orig_rvaddr - (vfi->nback << PAGE_SHIFT);
-	vfi->nforw = min(vmadvice[vfi->entry->advice].nforw, ((vfi->entry->end - vfi->orig_rvaddr) >> PAGE_SHIFT) - 1);
-	vfi->npages = vfi->nback + vfi->nforw + 1;
-    vfi->nsegments = num_segments(vfi->npages); /* converts npages to nsegments */
-    vfi->centeridx = vfi->nback;
-}
-
+/* may merge this into vm_fault_advice method */
 void
 vm_fault_amap(vfi)
 	struct vm_faultinfo *vfi;
@@ -77,11 +57,6 @@ vm_fault_amap(vfi)
 	vm_page_t pages[VM_MAXRANGE];
 	vm_offset_t start, end;
 	int lcv;
-
-	if(vfi->amap && vfi->object == NULL) {
-		vm_fault_unlockmaps(vfi, FALSE);
-		//return (EFAULT);
-	}
 
 	vm_fault_advice(vfi);
 
@@ -119,17 +94,11 @@ vm_fault_amap(vfi)
 	vfi->currva = vfi->startva;
 	for (lcv = 0 ; lcv < vfi->npages ; lcv++, vfi->currva += PAGE_SIZE) {
 		vfi->anon = anons[lcv];
-		simple_lock(&vfi->anon->an_lock);
-		if (vfi->anon->u.an_page && (vfi->anon->u.an_page->flags & PG_BUSY) == 0) {
-			vm_page_lock_queues();
-			vm_page_activate(vfi->anon->u.an_page);
-			vm_page_unlock_queues();
-			pmap_enter(vfi->orig_map->pmap, vfi->currva, VM_PAGE_TO_PHYS(vfi->anon->u.an_page), (vfi->anon->an_ref > 1) ? (vfi->prot & ~VM_PROT_WRITE) : vfi->prot, vfi->wired);
-		}
-		simple_unlock(&vfi->anon->an_lock);
-		pmap_update();
 	}
 
+	/*
+	 * After whether page is resident
+	 */
 	vfi->anon = anons[vfi->centeridx];
 	simple_lock(vfi->anon->an_lock);
 }
@@ -140,7 +109,6 @@ vm_fault_anon(vfi, fault_type)
 	vm_prot_t fault_type;
 {
 	vm_anon_t 		oanon;
-	vm_prot_t 		enter_prot;
 
 	if ((fault_type & VM_PROT_WRITE) != 0 && vfi->anon->an_ref > 1) {
 		cnt.v_flt_acow++;
@@ -163,14 +131,20 @@ vm_fault_anon(vfi, fault_type)
 			}
 			cnt.v_fltnoram++;
 			VM_WAIT;
-			goto ReFault;
+			goto RetryFault;
 		}
+
+		vm_segment_copy(oanon->u.an_segment, vfi->segment);
+		vm_segment_lock_lists();
+		vm_segment_activate(vfi->segment);
+		 vfi->segment->sg_flags &= ~SEG_BUSY;
 		vm_page_copy(oanon->u.an_page, vfi->page);
 		vm_page_lock_queues();
 		vm_page_activate(vfi->page);
 		vfi->page->flags &= ~(PG_BUSY|PG_FAKE);
-		vm_page_lock_queues();
-		amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 1);
+		vm_page_unlock_queues();
+		vm_segment_ulock_lists();
+		vm_amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 1);
 		oanon->an_ref--;
 	} else {
 		cnt.v_flt_anon++;
@@ -178,9 +152,8 @@ vm_fault_anon(vfi, fault_type)
 		vfi->segment = vfi->anon->u.an_segment;
 		vfi->page = vfi->anon->u.an_page;
 		if (vfi->anon->an_ref > 1) {
-			enter_prot = enter_prot & ~VM_PROT_WRITE;
+			vfi->prot = vfi->prot & ~VM_PROT_WRITE;
 		}
 	}
+	vm_fault_unlockall(vfi, vfi->amap, vfi->object, oanon);
 }
-
-

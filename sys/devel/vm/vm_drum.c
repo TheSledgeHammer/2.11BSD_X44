@@ -28,6 +28,71 @@
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_text.h>
+
+/*
+ * Allocate swap space for a text segment,
+ * in chunks of at most dmtext pages.
+ */
+int
+vm_vsxalloc(xp)
+	struct vm_text *xp;
+{
+	register long blk;
+	register swblk_t *dp;
+	swblk_t vsbase;
+	if (ctod(xp->psx_size) > NXDAD * dmtext) {
+		return (0);
+	}
+	dp = xp->psx_daddr;
+	for (vsbase = 0; vsbase < ctod(xp->psx_size); vsbase += dmtext) {
+		blk = ctod(xp->psx_size) - vsbase;
+		if (blk > dmtext) {
+			blk = dmtext;
+		}
+		if ((*dp++ = rmalloc(swapmap, blk)) == 0) {
+			vm_vsxfree(xp, dtoc(vsbase));
+			return (0);
+		}
+	}
+	if (xp->psx_flag & XPAGV) {
+		xp->psx_ptdaddr = rmalloc(swapmap, (long)ctod(clrnd(ctopt(xp->psx_size))));
+		if (xp->psx_ptdaddr == 0) {
+			vm_vsxfree(xp, (long)xp->psx_size);
+			return (0);
+		}
+	}
+	return (1);
+}
+
+/*
+ * Free the swap space of a text segment which
+ * has been allocated ts pages.
+ */
+void
+vm_vsxfree(xp, ts)
+	struct vm_text *xp;
+	long ts;
+{
+	register long blk;
+	register swblk_t *dp;
+	swblk_t 		vsbase;
+
+	ts = ctod(ts);
+	dp = xp->psx_daddr;
+	for (vsbase = 0; vsbase < ts; vsbase += dmtext) {
+		blk = ts - vsbase;
+		if (blk > dmtext) {
+			blk = dmtext;
+		}
+		rmfree(swapmap, blk, *dp);
+		*dp++ = 0;
+	}
+	if ((xp->psx_flag & XPAGV) && xp->psx_ptdaddr) {
+		rmfree(swapmap, (long)ctod(clrnd(ctopt(xp->psx_size))), xp->psx_ptdaddr);
+		xp->psx_ptdaddr = 0;
+	}
+}
+
 /* ARGUNUSED */
 /*
  * Expand the swap area for both the data and stack segments.
@@ -107,70 +172,6 @@ vm_vsexpand(vssize, dmp, canshrink)
 	}
 	dmp->dm_size = vssize;
 	return (1);
-}
-
-/*
- * Allocate swap space for a text segment,
- * in chunks of at most dmtext pages.
- */
-int
-vm_vsxalloc(xp)
-	struct vm_text *xp;
-{
-	register long blk;
-	register swblk_t *dp;
-	swblk_t vsbase;
-	if (ctod(xp->psx_size) > NXDAD * dmtext) {
-		return (0);
-	}
-	dp = xp->psx_daddr;
-	for (vsbase = 0; vsbase < ctod(xp->psx_size); vsbase += dmtext) {
-		blk = ctod(xp->psx_size) - vsbase;
-		if (blk > dmtext) {
-			blk = dmtext;
-		}
-		if ((*dp++ = rmalloc(swapmap, blk)) == 0) {
-			vm_vsxfree(xp, dtoc(vsbase));
-			return (0);
-		}
-	}
-	if (xp->psx_flag & XPAGV) {
-		xp->psx_ptdaddr = rmalloc(swapmap, (long)ctod(clrnd(ctopt(xp->psx_size))));
-		if (xp->psx_ptdaddr == 0) {
-			vm_vsxfree(xp, (long)xp->psx_size);
-			return (0);
-		}
-	}
-	return (1);
-}
-
-/*
- * Free the swap space of a text segment which
- * has been allocated ts pages.
- */
-void
-vm_vsxfree(xp, ts)
-	struct vm_text *xp;
-	long ts;
-{
-	register long blk;
-	register swblk_t *dp;
-	swblk_t 		vsbase;
-
-	ts = ctod(ts);
-	dp = xp->psx_daddr;
-	for (vsbase = 0; vsbase < ts; vsbase += dmtext) {
-		blk = ts - vsbase;
-		if (blk > dmtext) {
-			blk = dmtext;
-		}
-		rmfree(swapmap, blk, *dp);
-		*dp++ = 0;
-	}
-	if ((xp->psx_flag & XPAGV) && xp->psx_ptdaddr) {
-		rmfree(swapmap, (long)ctod(clrnd(ctopt(xp->psx_size))), xp->psx_ptdaddr);
-		xp->psx_ptdaddr = 0;
-	}
 }
 
 /* ARGUNUSED */

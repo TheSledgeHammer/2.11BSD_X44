@@ -125,6 +125,7 @@ static struct vm_advice vmadvice[] = {
 /* fault errors */
 #define EFAULTRETRY 	1	/* error fault retry */
 #define EFAULTCOPY 		2	/* error fault copy */
+#define EFAULTPROT 		3	/* error fault protection */
 
 /* fault handler check flags */
 #define FHDMLOOP		0x01	/* handler active | inactive | busy after main loop */
@@ -440,23 +441,48 @@ RetryFault: ;
 	vfi.object = vfi.first_object;
 	vfi.offset = vfi.first_offset;
 
+#ifdef notyet
+	if(vfi->amap && vfi->object == NULL) {
+		vm_fault_unlockmaps(&vfi, FALSE);
+		//return (KERN_PROTECTION_FAILURE);
+	}
+	vm_fault_amap(&vfi);
+#endif
+
 	/*
 	 *	See whether this page is resident
 	 */
 	while (TRUE) {
-		if (vm_fault_object(&vfi, change_wiring) == EFAULTRETRY) {
+		error = vm_fault_object(&vfi, change_wiring);
+		if (error == EFAULTRETRY) {
 			goto RetryFault;
 		}
 		vm_fault_zerofill(&vfi);
 	}
 	vm_fault_handler_check(&vfi, FHDMLOOP);
-	old_page = vfi->page;
-	vm_fault_cow(&vfi, fault_type, old_page);
+	vm_fault_cow(&vfi, fault_type);
 	vm_fault_handler_check(&vfi, FHDOBJCOPY);
 
-RetryCopy:
-	error = vm_fault_copy(&vfi, fault_type, change_wiring, page_exists, old_page);
+#ifdef notyet
+	error = vm_fault_anonget(&vfi, vfi.amap, vfi.anon);
 	switch (error) {
+	case 0:
+		break;
+
+	case ERESTART:
+		goto RetryFault;
+
+	default:
+		return (error);
+	}
+#endif
+
+RetryCopy:
+	error = vm_fault_copy(&vfi, fault_type, change_wiring, page_exists, vfi.page);
+	switch (error) {
+	case 0:
+		break;
+
 	case EFAULTCOPY:
 		goto RetryCopy;
 
@@ -491,6 +517,7 @@ RetryCopy:
 		}
 	} else {
 		vm_page_activate(vfi.page);
+		vm_segment_activate(vfi.segment);
 	}
 	vm_page_unlock_queues();
 
@@ -606,10 +633,9 @@ vm_fault_copy(vfi, fault_type, change_wiring, page_exists, old_page)
 }
 
 void
-vm_fault_cow(vfi, fault_type, old_page)
+vm_fault_cow(vfi, fault_type)
 	struct vm_faultinfo *vfi;
 	vm_prot_t fault_type;
-	vm_page_t old_page;
 {
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
@@ -811,6 +837,19 @@ vm_fault_map_lookup(vfi, vaddr, fault_type)
 /*
  * amap, anon & aobject related
  */
+void
+vm_fault_advice(vfi)
+	struct vm_faultinfo *vfi;
+{
+	KASSERT(vmadvice[vfi->entry->advice].advice == vfi->entry->advice);
+	vfi->nback = min(vmadvice[vfi->entry->advice].nback, (vfi->orig_rvaddr - vfi->entry->start) >> PAGE_SHIFT);
+	vfi->startva = vfi->orig_rvaddr - (vfi->nback << PAGE_SHIFT);
+	vfi->nforw = min(vmadvice[vfi->entry->advice].nforw, ((vfi->entry->end - vfi->orig_rvaddr) >> PAGE_SHIFT) - 1);
+	vfi->npages = vfi->nback + vfi->nforw + 1;
+    vfi->nsegments = num_segments(vfi->npages);
+    vfi->centeridx = vfi->nback;
+}
+
 static __inline void
 vm_fault_anonflush(anons, n)
 	vm_anon_t *anons;
@@ -946,6 +985,18 @@ vm_fault_anonget(vfi, amap, anon)
 			if (page->flags & PG_WANTED) {
 				wakeup(page);
 			}
+			segment->sg_flags &= ~(SEG_WANTED|SEG_BUSY);
+			page->flags &= ~(PG_WANTED|PG_BUSY|PG_FAKE);
+
+			if (page->flags & PG_RELEASED) {
+				pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+				simple_unlock(&anon->an_lock);
+				vm_anon_free(anon);
+				if (locked) {
+					vm_fault_unlockall(vfi, amap, NULL, NULL);
+				}
+			}
+
 			if (error) {
 				anon->u.an_segment = NULL;
 				anon->u.an_page = NULL;
@@ -970,6 +1021,7 @@ vm_fault_anonget(vfi, amap, anon)
 				}
 				return (error);
 			}
+
 			if (segment) {
 				vm_segment_lock_lists();
 				vm_segment_activate(segment);

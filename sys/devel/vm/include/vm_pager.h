@@ -100,12 +100,12 @@ struct pagerops {
  * ERROR error while accessing data that is in range and exists
  * AGAIN temporary resource shortage prevented operation from happening
  */
-#define	VM_PAGER_OK		0
-#define	VM_PAGER_BAD	1
-#define	VM_PAGER_FAIL	2
-#define	VM_PAGER_PEND	3
-#define	VM_PAGER_ERROR	4
-#define VM_PAGER_AGAIN	5
+#define	VM_PAGER_OK			0
+#define	VM_PAGER_BAD		1
+#define	VM_PAGER_FAIL		2
+#define	VM_PAGER_PEND		3
+#define	VM_PAGER_ERROR		4
+#define VM_PAGER_AGAIN		5
 
 #ifdef _KERNEL
 extern struct pagerops *dfltpagerops;

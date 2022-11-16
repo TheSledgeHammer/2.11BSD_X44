@@ -64,6 +64,7 @@ typedef struct advvm_vdisk			advvm_vdisk_t;
 void			advvm_vdisk_init(advvm_vdisk_t *);
 void			advvm_vdisk_set(advvm_vdisk_t *, uint32_t, uint32_t, u_int, uint32_t, uint32_t);
 
+/* vdisk freelist's */
 void			advvm_vdfree_add(advvm_vdisk_t *, advvm_vdfree_t *, uint32_t, uint32_t);
 advvm_vdfree_t 	*advvm_vdfree_lookup(advvm_vdisk_t *, uint32_t, uint32_t, uint32_t);
 void			advvm_vdfree_remove(advvm_vdisk_t *, uint32_t, uint32_t, uint32_t);

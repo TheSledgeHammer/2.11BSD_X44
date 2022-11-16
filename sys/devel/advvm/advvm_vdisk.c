@@ -96,11 +96,11 @@ advvm_vdisk_insert(advdsk, adom)
 	advvm_vdisk_t	*advdsk;
 	advvm_domain_t 	*adom;
 {
+
 	if(advdsk == NULL) {
 		advvm_malloc((advvm_vdisk_t *)advdsk, sizeof(advvm_vdisk_t *));
 	}
 	advvm_vdisk_set_domain(advdsk, adom);
-
 }
 
 void
@@ -127,7 +127,7 @@ advvm_vdfree_lookup(advdsk, vindex, cluster, number)
 	advvm_vdfree_t *advfree;
 
 	freelist = advdsk->avd_freelist;
-	for (advfree = LIST_FIRST(freelist); advfree != NULL; advfree = LIST_NEXT(advfree, avd_entry)) {
+	LIST_FOREACH(advfree, freelist, avd_entry) {
 		if (advdsk->avd_vdindex == vindex) {
 			if(advfree->avd_startcluster == cluster && advfree->avd_numcluster == number) {
 				return (advfree);

@@ -182,31 +182,27 @@ vm_pager_deallocate(pager)
 }
 
 int
+vm_pager_get_segments(pager, slist, nsegments, sync)
+	vm_pager_t	pager;
+	vm_segment_t *slist;
+	int			nsegments;
+	bool_t		sync;
+{
+	if (pager == NULL) {
+		panic("vm_pager_get_segments: null pager");
+	}
+	return ((*pager->pg_ops->pgo_gettsegments)(pager, slist, nsegments, sync));
+}
+
+int
 vm_pager_put_segments(pager, slist, nsegments, sync)
 	vm_pager_t	pager;
 	vm_segment_t *slist;
 	int			nsegments;
 	bool_t		sync;
 {
+	if (pager == NULL) {
+		panic("vm_pager_put_segments: null pager");
+	}
 	return ((*pager->pg_ops->pgo_putsegments)(pager, slist, nsegments, sync));
-}
-
-vm_offset_t
-vm_pager_map_segments(slist, nsegments, canwait)
-	vm_segment_t	*slist;
-	int			nsegments;
-	bool_t		canwait;
-{
-	vm_offset_t kva, va;
-	vm_size_t size;
-	vm_segment_t s;
-
-	size = nsegments * SEGMENT_SIZE;
-	while (vm_map_findspace(pager_map, 0, size, &kva)) {
-
-	}
-	for (va = kva; nsegments--; va += SEGMENT_SIZE) {
-		s = *slist++;
-	}
-	return (kva);
 }

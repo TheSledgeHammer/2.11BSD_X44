@@ -443,7 +443,7 @@ setquota(mp, id, type, addr)
 {
 	register struct ufs211_dquot *dq;
 	struct ufs211_dquot *ndq;
-	struct ufs211_mount *ump = VFSTOUFS(mp);
+	struct ufs211_mount *ump = VFSTOUFS211(mp);
 	struct ufs211_dqblk newlim;
 	int error;
 
@@ -828,7 +828,7 @@ dqflush(vp)
 				panic("dqflush: stray dquot");
 			}
 			LIST_REMOVE(dq, dq_hash);
-			dq->dq_ump = (struct ufsmount *)0;
+			dq->dq_ump = (struct ufs211_mount *)0;
 		}
 	}
 }
