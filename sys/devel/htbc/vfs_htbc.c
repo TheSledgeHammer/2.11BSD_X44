@@ -1601,8 +1601,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 			sort_info->h_offset = (char *)ep - block1;
 			htbc_htree_hash(ep->h_name, ep->h_namlen, hash_seed, hash_version, &sort_info->h_hash, NULL);
 		}
-		ep = (struct htree_direct *)
-		    ((char *)ep + ep->h_reclen);
+		ep = (struct htree_direct *)((char *)ep + ep->h_reclen);
 	}
 
 	/*
@@ -1659,8 +1658,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 
 	if (entry_hash >= *split_hash) {
 		/* Add entry to block 2. */
-		htree_append_entry(block2, blksize,
-		    (struct htree_direct *)dest, entry);
+		htree_append_entry(block2, blksize,(struct htree_direct *)dest, entry);
 
 		/* Adjust length field of last entry of block 1. */
 		last->h_reclen = block1 + blksize - (char *)last;
@@ -1669,8 +1667,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 		htree_append_entry(block1, blksize, last, entry);
 
 		/* Adjust length field of last entry of block 2. */
-		((struct htree_direct *)dest)->h_reclen =
-		    block2 + blksize - dest;
+		((struct htree_direct *)dest)->h_reclen = block2 + blksize - dest;
 	}
 
 	return (0);
@@ -1705,15 +1702,15 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_dir
 	if ((error = htbc_blkatoff(vp, 0, NULL, &bp)) != 0)
 		goto out;
 
-	root = (struct htree_root *)bp->b_data;
-	dotdot = (struct htree_direct *)((char *)&(root->h_dotdot));
-	ep = (struct htree_direct *)((char *)dotdot + dotdot->h_reclen);
-	dirlen = (char *)root + blksize - (char *)ep;
+	root = (struct htree_root*) bp->b_data;
+	dotdot = (struct htree_direct*) ((char*) &(root->h_dotdot));
+	ep = (struct htree_direct*) ((char*) dotdot + dotdot->h_reclen);
+	dirlen = (char*) root + blksize - (char*) ep;
 	memcpy(buf1, ep, dirlen);
-	ep = (struct htree_direct *)buf1;
-	while ((char *)ep < buf1 + dirlen)
-		ep = (struct htree_direct *)((char *)ep + ep->h_reclen);
-	ep->h_reclen = buf1 + blksize - (char *)ep;
+	ep = (struct htree_direct*) buf1;
+	while ((char*) ep < buf1 + dirlen)
+		ep = (struct htree_direct*) ((char*) ep + ep->h_reclen);
+	ep->h_reclen = buf1 + blksize - (char*) ep;
 	/* XXX It should be made dp->i_flag |= IN_E3INDEX; */
 	dp->hi_sflags |= HTREE_INDEX;
 
@@ -1736,8 +1733,7 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_dir
 	hash_version = root->h_info.h_hash_version;
 	if (hash_version <= HTREE_TEA)
 		hash_version += mfs->hi_uhash;
-	htree_split_dirblock(buf1, buf2, blksize, dp->hi_hash_seed,
-	    hash_version, &split_hash, new_entry);
+	htree_split_dirblock(buf1, buf2, blksize, dp->hi_hash_seed, hash_version, &split_hash, new_entry);
 	htree_insert_entry(&info, split_hash, 2);
 
 	/*
@@ -1804,8 +1800,8 @@ htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct componentn
 
 	/* Target directory block is full, split it */
 	memset(&info, 0, sizeof(info));
-	error = htree_find_leaf(ip, entry->h_name, entry->h_namlen,
-	    &dirhash, &hash_version, &info);
+	error = htree_find_leaf(ip, entry->h_name, entry->h_namlen, &dirhash,
+			&hash_version, &info);
 	if (error)
 		return error;
 	entries = info.h_levels[info.h_levels_num - 1].h_entries;

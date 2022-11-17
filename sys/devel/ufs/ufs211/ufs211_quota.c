@@ -832,3 +832,153 @@ dqflush(vp)
 		}
 	}
 }
+
+int
+setwarn(mp, id, type, addr)
+	struct mount *mp;
+	u_long id;
+	int type;
+	caddr_t addr;
+{
+	register struct ufs211_dquot *dq;
+	struct ufs211_mount *ump;
+	struct ufs211_dquot *ndq;
+	struct ufs211_dqwarn warn;
+	int error;
+
+	ump = VFSTOUFS211(mp);
+	if (error == dqget(NULLVP, id, ump, type, &ndq)) {
+		return (error);
+	}
+	dq = ndq;
+	if (dq == NODQUOT) {
+		return (ESRCH);
+	}
+	while (dq->dq_flags & DQ_LOCK) {
+		dq->dq_flags |= DQ_WANT;
+		sleep((caddr_t)dq, PINOD+1);
+	}
+	if (error == copyin(addr, (caddr_t)&warn, sizeof(struct ufs211_dqwarn))) {
+		dq->dq_iwarn = warn.dw_iwarn;
+		dq->dq_bwarn = warn.dw_bwarn;
+		dq->dq_flags &= ~(DQ_INODS | DQ_BLKS);
+		dq->dq_flags |= DQ_MOD;
+	}
+	dqrele(NULLVP, dq);
+	return (0);
+}
+
+void
+qwarn(ump, dq)
+	register struct ufs211_mount *ump;
+	register struct ufs211_dquot *dq;
+{
+	register struct ufs211_fs *fs;
+
+	fs = ump->m_filsys;
+	if (dq->dq_isoftlimit && dq->dq_curinodes >= dq->dq_isoftlimit) {
+		dq->dq_flags |= DQ_MOD;
+		if (dq->dq_iwarn && --dq->dq_iwarn) {
+			uprintf(
+			    "Warning: too many files on %s, %d warning%s left\n"
+			    , fs->fs_fsmnt
+			    , dq->dq_iwarn
+			    , dq->dq_iwarn > 1 ? "s" : ""
+			);
+		} else {
+			uprintf(
+			    "WARNING: too many files on %s, NO MORE!!\n"
+			    , fs->fs_fsmnt
+			);
+		}
+	} else {
+		dq->dq_iwarn = MAX_IQ_WARN;
+	}
+	if (dq->dq_bsoftlimit && dq->dq_curblocks >= dq->dq_bsoftlimit) {
+		dq->dq_flags |= DQ_MOD;
+		if (dq->dq_bwarn && --dq->dq_bwarn) {
+			uprintf(
+				"Warning: too much disc space on %s, %d warning%s left\n"
+				, fs->fs_fsmnt
+				, dq->dq_bwarn
+				, dq->dq_bwarn > 1 ? "s" : ""
+			);
+		} else {
+			uprintf(
+				"WARNING: too much disc space on %s, NO MORE!!\n"
+				, fs->fs_fsmnt
+			);
+		}
+	} else {
+		dq->dq_bwarn = MAX_DQ_WARN;
+	}
+}
+
+int
+dowarn(mp, id, type)
+	struct mount *mp;
+	u_long id;
+	int type;
+{
+	struct ufs211_mount *ump;
+	struct ufs211_dquot *dq;
+	struct dqhash *dqh;
+	struct vnode *dqvp;
+
+	ump = VFSTOUFS211(mp);
+	dqvp = ump->m_quotas[type];
+	if (dqvp == NULLVP || (ump->m_qflags[type] & QTF_CLOSING)) {
+		*dqp = NODQUOT;
+		return (EINVAL);
+	}
+
+	dqh = DQHASH(dqvp, id);
+	for (dq = LIST_FIRST(dqh); dq; dq = LIST_NEXT(dq, dq_hash)) {
+		if (dq != NODQUOT && dq != LOSTDQUOT) {
+			qwarn(ump, dq);
+			dqrele(NULLVP, dq);
+		}
+	}
+	return (0);
+}
+
+int
+setduse(mp, id, type, addr)
+	struct mount *mp;
+	u_long id;
+	int type;
+	caddr_t addr;
+{
+	register struct ufs211_dquot *dq;
+	struct ufs211_mount *ump;
+	struct ufs211_dquot *ndq;
+	struct ufs211_dqusage usage;
+	int error;
+
+	ump = VFSTOUFS211(mp);
+	if (error == dqget(NULLVP, id, ump, type, &ndq)) {
+		return (error);
+	}
+	dq = ndq;
+	if (dq == NODQUOT) {
+		return (ESRCH);
+	}
+	while (dq->dq_flags & DQ_LOCK) {
+		dq->dq_flags |= DQ_WANT;
+		sleep((caddr_t)dq, PINOD+1);
+	}
+	if (error == copyin(addr, (caddr_t)&usage, sizeof(struct ufs211_dqusage))) {
+		dq->dq_curinodes = usage.du_curinodes;
+		dq->dq_curblocks = usage.du_curblocks;
+		if (dq->dq_curinodes < dq->dq_isoftlimit) {
+			dq->dq_iwarn = MAX_IQ_WARN;
+		}
+		if (dq->dq_curblocks < dq->dq_bsoftlimit) {
+			dq->dq_bwarn = MAX_DQ_WARN;
+		}
+		dq->dq_flags &= ~(DQ_INODS | DQ_BLKS);
+		dq->dq_flags |= DQ_MOD;
+	}
+	dqrele(NULLVP, dq);
+	return (error);
+}

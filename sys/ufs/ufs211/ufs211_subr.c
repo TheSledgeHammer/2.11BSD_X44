@@ -93,6 +93,7 @@ ufs211_badblock(fp, bn)
 	return (0);
 }
 
+#ifdef QUOTA
 /*
  * Getfs maps a device number into a pointer to the incore super block.
  *
@@ -123,7 +124,7 @@ ufs211_getfs(dev)
 	return((struct ufs211_fs *) NULL);
 }
 
-#ifdef QUOTA
+
 /*
  * Getfsx returns the index in the file system
  * table of the specified device.  The swap device

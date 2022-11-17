@@ -292,6 +292,7 @@ chkiq(dev, ip, uid, force)
 	dqrele(dq);
 	return (0);
 }
+#endif
 
 struct ufs211_dquot *
 discquota(id, ip)
@@ -304,6 +305,7 @@ discquota(id, ip)
 
 	dqvp = UFS211_ITOV(ip);
 	dqh = DQHASH(dqvp, id);
+
 	for (dq = LIST_FIRST(dqh); dq; dq = LIST_NEXT(dq, dq_hash)) {
 		if (dq->dq_cnt++ == 0) {
 			TAILQ_REMOVE(&ufs211_dqfreelist, dq, dq_freelist);
@@ -343,39 +345,3 @@ dqp(q, id)
 	}
 	return (*dqq);
 }
-
-int
-setwarn(mp, id, type, addr)
-	struct mount *mp;
-	u_long id;
-	int type;
-	caddr_t addr;
-{
-	struct vnode *vp;
-	struct ufs211_mount *ump;
-	struct ufs211_dquot *dq;
-	struct ufs211_dqwarn warn;
-	int error;
-
-	ump = VFSTOUFS211(mp);
-	dq = ump->
-
-	error = 0;
-	if (dq == NODQUOT) {
-		return (ESRCH);
-	}
-	while (dq->dq_flags & DQ_LOCK) {
-		dq->dq_flags |= DQ_WANT;
-		sleep((caddr_t)dq, PINOD+1);
-	}
-	error = copyin(addr, (caddr_t)&warn, sizeof (warn));
-	if (error == 0) {
-		dq->dq_iwarn = warn.dw_iwarn;
-		dq->dq_bwarn = warn.dw_bwarn;
-		dq->dq_flags &= ~(DQ_INODS | DQ_BLKS);
-		dq->dq_flags |= DQ_MOD;
-	}
-	dqrele(vp, dq);
-	return (error);
-}
-#endif
