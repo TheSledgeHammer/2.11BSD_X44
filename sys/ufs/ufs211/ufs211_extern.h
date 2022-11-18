@@ -27,6 +27,8 @@
  *
  * @(#)ufs211_extern.h	1.00
  */
+#ifndef _UFS_UFS211_EXTERN_H_
+#define	_UFS_UFS211_EXTERN_H_
 
 int				 		updlock;			/* lock for sync */
 daddr_t	 				rablock;			/* block to be read ahead */
@@ -42,27 +44,28 @@ struct ufs211_bufmap {
 	long				bm_size;			/* sizeof data */
 };
 
-#define	DEV_BSHIFT		10					/* log2(DEV_BSIZE) */
+//#define	DEV_BSHIFT		10					/* log2(DEV_BSIZE) */
 #define	DEV_BMASK		(DEV_BSIZE - 1)
 
 struct buf;
+struct componentname;
 struct direct;
 struct disklabel;
 struct ufid;
 struct flock;
-struct ufs211_inode;
 struct mbuf;
-struct ufs211_mount;
-struct ufs211_xmount;
 struct nameidata;
 struct proc;
 struct ucred;
-struct ufs211_args;
 struct uio;
 struct vattr;
 struct vfsconf;
 struct vnode;
-
+struct ufs211_inode;
+struct ufs211_mount;
+struct ufs211_xmount;
+struct ufs211_args;
+struct ufs211_fs;
 __BEGIN_DECLS
 /* ufs211 bufmap */
 void 		ufs211_buffmap_init(void);
@@ -75,8 +78,8 @@ static void *bufmap_free(void *);			/* free from the dedicated ufs211 space (gen
 struct buf 	*ufs211_balloc(struct ufs211_inode *, int);
 void		ufs211_bfree(struct ufs211_inode *, daddr_t);
 void		ufs211_fserr(struct ufs211_fs *, char *);
-int 		ufs211_bmap1(struct ufs211_inode *, daddr_t, int, int);
-int			ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
+daddr_t		ufs211_bmap1(struct ufs211_inode *, daddr_t, int, int);
+int		ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
 void 		ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 void 		ufs211_dirbad(struct ufs211_inode *, off_t, char *);
 int 		ufs211_dirbadentry(struct direct *, int);
@@ -134,3 +137,5 @@ extern struct vnodeops ufs211_specops;
 #ifdef FIFO
 extern struct vnodeops ufs211_fifoops;
 #endif
+
+#endif /* _UFS_UFS_EXTERN_H_ */

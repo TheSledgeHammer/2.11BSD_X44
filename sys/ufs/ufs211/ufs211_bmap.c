@@ -14,11 +14,12 @@
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/uio.h>
+#include <sys/vnode.h>
 
 #include <ufs/ufs211/ufs211_dir.h>
-#include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
 /*
  * Bmap defines the structure of file system storage
@@ -35,14 +36,14 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	int rwflg, flags;
 {
 	register int i;
-	register struct buf *bp;
+	struct buf *bp;
 	struct buf *nbp;
 	int j, sh, error;
 	daddr_t nb, *bap, ra;
 	int async = ip->i_fs->fs_flags & MNT_ASYNC;
 
 	if (bn < 0) {
-		u->u_error = EFBIG;
+		u.u_error = EFBIG;
 		return ((daddr_t) 0);
 	}
 	ra = rablock = 0;
@@ -91,7 +92,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 		bn -= nb;
 	}
 	if (j == 0) {
-		u->u_error = EFBIG;
+		u.u_error = EFBIG;
 		return ((daddr_t) 0);
 	}
 
@@ -119,7 +120,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	 * fetch through the indirect blocks
 	 */
 	for (; j <= 3; j++) {
-		error = bread(ip->i_dev, nb, ip->i_fs->fs_fsize, u->u_ucred, &bp);
+		error = bread(ip->i_devvp, nb, ip->i_fs->fs_fsize, u.u_ucred, &bp);
 		if (error == 0 && ((bp->b_flags & B_ERROR) || bp->b_resid)) {
 			brelse(bp);
 			return ((daddr_t) 0);

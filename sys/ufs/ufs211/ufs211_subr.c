@@ -93,7 +93,7 @@ ufs211_badblock(fp, bn)
 	return (0);
 }
 
-#ifdef QUOTA
+#ifdef notyet
 /*
  * Getfs maps a device number into a pointer to the incore super block.
  *
@@ -151,3 +151,70 @@ ufs211_getfsx(dev)
 	return (-1);
 }
 #endif
+
+struct ufs211_bufmap *ufs211buf;
+
+void
+ufs211_bufmap_init(void)
+{
+	MALLOC(&ufs211buf, struct ufs211_bufmap, sizeof(struct ufs211_bufmap *), M_UFS211, M_WAITOK);
+}
+
+/* mapin buf */
+void
+ufs211_mapin(bp)
+    struct buf *bp;
+{
+    if (bufmap_alloc(bp, sizeof(bp))) {
+        printf("buf allocated\n");
+    }
+}
+
+/* mapout buf */
+void
+ufs211_mapout(bp)
+    struct buf *bp;
+{
+    if (bufmap_free(bp) == NULL) {
+        printf("buf freed\n");
+    }
+}
+
+/*
+ * allocate bufmap data
+ */
+static void *
+bufmap_alloc(data, size)
+    void  	*data;
+	long 	size;
+{
+    struct ufs211_bufmap *bm;
+
+    bm = &ufs211buf;
+    if (bm) {
+    	bm->bm_data = data;
+    	bm->bm_size = size;
+        printf("data allocated \n");
+    }
+    return (bm->bm_data);
+}
+
+/*
+ * free bufmap data
+ */
+static void *
+bufmap_free(data)
+    void  *data;
+{
+    struct ufs211_bufmap *bm;
+
+    bm = &ufs211buf;
+    if (bm->bm_data == data) {
+    	if (bm->bm_data != NULL && bm->bm_size == sizeof(data)) {
+    		bm->bm_data = NULL;
+    		bm->bm_size = 0;
+    		printf("data freed\n");
+    	}
+    }
+    return (bm->bm_data);
+}

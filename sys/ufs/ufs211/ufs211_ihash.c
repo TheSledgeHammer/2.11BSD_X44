@@ -38,9 +38,10 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 
-#include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_inode.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
 #define	INOHSZ				16							/* must be power of two */
 #define	INOHASH(dev,ino)	(&ihashtbl[((dev) + (ino)) & ihash & (INOHSZ * (dev + ihash) - 1)])
@@ -122,7 +123,7 @@ ufs211_ihashins(ip)
 	struct ufs211_ihashhead *ipp;
 
 	/* lock the inode, then put it on the appropriate hash list */
-	lockmgr(&ip->i_lock, LK_EXCLUSIVE, &ufs211_ihash, p);
+	lockmgr(&ip->i_lock, LK_EXCLUSIVE, &ufs211_ihash, p->p_pid);
 
 	simple_lock(&ufs211_ihash);
 	ipp = INOHASH(ip->i_dev, ip->i_number);

@@ -15,17 +15,19 @@
 #include <sys/buf.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
+#include <sys/vnode.h>
 
 #include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
-//#include <ufs/ufs211/ufs211_quota.h>
+#include <ufs/ufs211/ufs211_quota.h>
 
 #define	SINGLE				0	/* index of single indirect block */
 #define	DOUBLE				1	/* index of double indirect block */
 #define	TRIPLE				2	/* index of triple indirect block */
 
-static void	ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
+void	ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
+void    ufs211_indirtrunc(struct ufs211_inode *, daddr_t, daddr_t, int, int);
 
 /*
  * Check accessed and update flags on
@@ -41,7 +43,7 @@ ufs211_updat(ip, ta, tm, waitfor)
 	struct timeval 		*ta, *tm;
 	int 				waitfor;
 {
-	register struct buf *bp;
+	struct buf *bp;
 	register struct ufs211_dinode *dp;
 #ifdef EXTERNALITIMES
 	struct ufs211_icommon2 xic2, *xicp2;
@@ -53,7 +55,7 @@ ufs211_updat(ip, ta, tm, waitfor)
 		return;
 	if (tip->i_fs->fs_ronly)
 		return;
-	if (bread(tip->i_devvp, itod(tip->i_number), tip->i_fs->fs_fsize, u->u_cred,
+	if (bread(tip->i_devvp, itod(tip->i_number), tip->i_fs->fs_fsize, u.u_ucred,
 			&bp)) {
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
@@ -105,7 +107,7 @@ ufs211_updat(ip, ta, tm, waitfor)
  * NB: triple indirect blocks are untested.
  */
 void
-ufs211_trunc(oip,length, ioflags)
+ufs211_trunc(oip, length, ioflags)
 	register struct ufs211_inode *oip;
 	u_long length;
 	int	ioflags;
@@ -144,8 +146,8 @@ ufs211_trunc(oip,length, ioflags)
 	 * value of osize is 0, length will be at least 1.
 	 */
 	if (oip->i_size < length) {
-		bn = bmap(oip, lblkno(length - 1), B_WRITE, aflags);
-		if (u->u_error || bn < 0)
+		bn = ufs211_bmap1(oip, lblkno(length - 1), B_WRITE, aflags);
+		if (u.u_error || bn < 0)
 			return;
 #ifdef	QUOTA
 		bytesreleased = oip->i_size - length;
@@ -173,12 +175,12 @@ ufs211_trunc(oip,length, ioflags)
 	 */
 	offset = blkoff(length);
 	if (offset) {
-		bn = bmap(oip, lblkno(length), B_WRITE, aflags);
-		if (u->u_error || bn < 0)
+		bn = ufs211_bmap1(oip, lblkno(length), B_WRITE, aflags);
+		if (u.u_error || bn < 0)
 			return;
-		if(bread(oip->i_devvp, bn, oip->i_fs->fs_fsize, u->u_ucred, &bp)){
+		if(bread(oip->i_devvp, bn, oip->i_fs->fs_fsize, u.u_ucred, &bp)){
 			if (bp->b_flags & B_ERROR) {
-				u->u_error = EIO;
+				u.u_error = EIO;
 				brelse(bp);
 				return;
 			}
@@ -253,9 +255,9 @@ done:
 
 doquotaupd:
 #ifdef QUOTA
-	QUOTAMAP();
-	(void)chkdq(oip, -bytesreleased, 0);
-	QUOTAUNMAP();
+	//QUOTAMAP();
+	(void)chkdq(oip, -bytesreleased, u.u_ucred, 0);
+	//QUOTAUNMAP();
 #endif
 updret:
 	oip->i_flag |= UFS211_ICHG|UFS211_IUPD;
@@ -279,7 +281,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	int level;
 	int aflags;
 {
-	register struct buf *bp;
+	struct buf *bp;
 	daddr_t nb, last;
 	long factor;
 
@@ -311,14 +313,14 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 		register daddr_t *bap;
 		register struct buf *cpy;
 
-		if (bread(ip->i_devvp, bn, ip->i_fs->fs_fsize, u->u_ucred, &bp)) {
+		if (bread(ip->i_devvp, bn, ip->i_fs->fs_fsize, u.u_ucred, &bp)) {
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
 				return;
 			}
 		}
-		cpy = geteblk();
-		copy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));
+		cpy = geteblk(sizeof(*bp));
+		bcopy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));
 		ufs211_mapin(bp);
 		bap = (daddr_t *) bp;
 		bzero((caddr_t)&bap[last + 1], (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
@@ -339,7 +341,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	 * and that doesn't work well with recursion.
 	 */
 	if (level == SINGLE)
-		ufs211_trsingle(ip, bp, last, aflags);
+		ufs211_trsingle(ip, (caddr_t)bp, last, aflags);
 	else {
 		register daddr_t *bstart, *bstop;
 
@@ -377,7 +379,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	brelse(bp);
 }
 
-static void
+void
 ufs211_trsingle(ip, bp,last, aflags)
 	register struct ufs211_inode *ip;
 	caddr_t bp;

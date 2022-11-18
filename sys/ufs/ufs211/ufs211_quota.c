@@ -50,8 +50,8 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/errno.h>
-#include <sys/user.h>
+//#include <sys/errno.h>
+
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
@@ -61,6 +61,7 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
+#include <sys/user.h>
 
 #include <ufs/ufs211/ufs211_extern.h>
 #include <ufs/ufs211/ufs211_fs.h>

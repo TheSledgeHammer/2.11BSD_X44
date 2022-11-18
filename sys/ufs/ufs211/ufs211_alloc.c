@@ -13,11 +13,13 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
+#include <sys/vnode.h>
 
 #include <ufs/ufs211/ufs211_dir.h>
 #include <ufs/ufs211/ufs211_fs.h>
-#include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_quota.h>
+#include <ufs/ufs211/ufs211_inode.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
 typedef	struct ufs211_fblk *FBLKP;
 
@@ -35,7 +37,7 @@ ufs211_balloc(ip, flags)
 	int flags;
 {
 	register struct ufs211_fs *fs;
-	register struct buf *bp;
+	struct buf *bp;
 	int async, error;
 	daddr_t bno;
 
@@ -57,11 +59,8 @@ ufs211_balloc(ip, flags)
 	} while (ufs211_badblock(fs, bno));
 	if (fs->fs_nfree <= 0) {
 		fs->fs_flock++;
-		error = bread(ip->i_devvp, bno, (int)fs->fs_fsize, u->u_ucred, &bp);
-		if (error) {
-			continue;
-		}
-		if (((bp->b_flags & B_ERROR) == 0) && (bp->b_resid == 0)) {
+		error = bread(ip->i_devvp, bno, (int)fs->fs_fsize, u.u_ucred, &bp);
+		if (((bp->b_flags & B_ERROR) == 0) && (bp->b_resid == 0) && error) {
 			register struct ufs211_fblk *fbp;
 			ufs211_mapin(bp);
 			fbp = (FBLKP) bp;
@@ -120,7 +119,7 @@ nospace:
 		for (i = 0; i < 5; i++)
 			sleep((caddr_t) &lbolt, PRIBIO);
 	}
-	u->u_error = ENOSPC;
+	u.u_error = ENOSPC;
 	return (NULL);
 }
 

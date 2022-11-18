@@ -228,7 +228,7 @@ int	chkiqchg(struct ufs211_inode *, long, struct ucred *, int);
 void dqflush(struct vnode *);
 int	dqget(struct vnode *, u_long, struct ufs211_mount *, int, struct ufs211_dquot **);
 void dqinit(void);
-void dqref(struct dquot *);
+void dqref(struct ufs211_dquot *);
 void dqrele(struct vnode *, struct ufs211_dquot *);
 int	dqsync(struct vnode *, struct ufs211_dquot *);
 int	getinoquota(struct ufs211_inode *);

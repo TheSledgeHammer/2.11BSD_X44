@@ -17,7 +17,7 @@
 #ifndef _UFS211_INODE_H_
 #define	_UFS211_INODE_H_
 
-#include <ufs/ufs211/ufs211_dir.h>
+//#include <ufs/ufs211/ufs211_dir.h>
 
 /* 2.11BSD bit-length for UFS */
 typedef	u_int	 		ufs211_size_t;
@@ -40,6 +40,10 @@ struct ufs211_icommon2 {
 	time_t					ic_ctimensec;
 };
 
+/*
+ * Inode structure as it appears on
+ * a disk block.
+ */
 struct ufs211_inode {
 	LIST_ENTRY(ufs211_inode) i_chain;				/* Hash chain. must be first  */
 	struct	vnode 			*i_vnode;				/* Vnode associated with this inode. */
@@ -53,7 +57,7 @@ struct ufs211_inode {
 	struct	 ufs211_fs 		*i_fs;					/* file sys associated with this inode */
 	struct	 lockf 			*i_lockf;				/* Head of byte-level lock list. */
 	struct	 lock 			i_lock;					/* Inode lock. */
-	struct 	 ufs211_dquot	i_dquot;				/* dquotas */
+	struct 	 ufs211_dquot	*i_dquot;				/* dquotas */
 	u_quad_t 				i_modrev;				/* Revision level for NFS lease. */
 
 	ufs211_doff_t	  		i_endoff;				/* End of useful stuff in directory. */
@@ -109,13 +113,9 @@ struct ufs211_inode {
 */
 	u_short			        	i_flags;				/* user changeable flags */
 	struct ufs211_icommon2  	i_ic2;
-	struct ufs211_dinode		i_din;					/* dinode ptr */
+	struct ufs211_dinode		*i_din;					/* dinode ptr */
 };
 
-/*
- * Inode structure as it appears on
- * a disk block.
- */
 struct ufs211_dinode {
 	struct	ufs211_icommon1     di_icom1;
 	daddr_t		        		di_addr[7];			/* 7 block addresses 4 bytes each */
@@ -126,7 +126,6 @@ struct ufs211_dinode {
 	u_short						di_gen;				/* 108: Generation number. */
 	u_short						di_blocks;			/* 104: Blocks actually held. */
 };
-
 #define	i_mode			i_ic1.ic_mode
 #define	i_nlink			i_ic1.ic_nlink
 #define	i_uid			i_ic1.ic_uid
