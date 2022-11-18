@@ -216,3 +216,61 @@ vm_map_zinit(void *mem, int size)
 	map = (vm_map_t)mem;
 	map->size = 0;
 }
+
+/* vm_kern.c */
+vm_offset_t
+kmem_alloc(map, size)
+	register vm_map_t	map;
+	register vm_size_t	size;
+{
+	vm_offset_t				addr;
+	register vm_offset_t	offset;
+	vm_segment_t 	segment;
+	vm_page_t	 	page;
+	vm_size_t		pgsize, sgsize;
+	vm_offset_t 	i, j;
+
+	size = round_page(size);
+	sgsize = round_segment(size);
+
+	vm_map_lock(map);
+	if (vm_map_findspace(map, 0, size, &addr)) {
+		vm_map_unlock(map);
+		return (0);
+	}
+	offset = addr - VM_MIN_KERNEL_ADDRESS;
+	vm_object_reference(kernel_object);
+	vm_map_insert(map, kernel_object, offset, addr, addr + size);
+	vm_map_unlock(map);
+
+	vm_object_lock(kernel_object);
+	for (i = 0 ; i < sgsize; i+= SEGMENT_SIZE) {
+		segment = vm_segment_alloc(kernel_object, offset+i);
+		while (segment != NULL) {
+			for (j = 0 ; j < size; j+= PAGE_SIZE) {
+				page = vm_page_alloc(segment, offset+j);
+				while (page == NULL) {
+					vm_object_unlock(kernel_object);
+					VM_WAIT;
+					vm_object_lock(kernel_object);
+				}
+				vm_page_zero_fill(page);
+				page->flags &= ~PG_BUSY;
+			}
+		}
+		while (segment == NULL) {
+			vm_object_unlock(kernel_object);
+			VM_WAIT;
+			vm_object_lock(kernel_object);
+		}
+		vm_segment_zero_fill(segment);
+		segment->sg_flags &= ~SEG_BUSY;
+	}
+	vm_object_unlock(kernel_object);
+
+	(void) vm_map_pageable(map, (vm_offset_t) addr, addr + size, FALSE);
+
+	vm_map_simplify(map, addr);
+
+	return (addr);
+}

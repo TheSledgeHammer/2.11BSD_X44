@@ -52,6 +52,13 @@ struct ufs211_xmount {
 
 #define	XMOUNTDESC		(((btoc(sizeof (struct ufs211_xmount)) - 1) << 8) | RW)
 
+/*
+ * Flags describing the state of quotas.
+ */
+#define	QTF_OPENING					0x01			/* Q_QUOTAON in progress */
+#define	QTF_CLOSING					0x02			/* Q_QUOTAOFF in progress */
+
 /* Convert mount ptr to ufs211 mount ptr. */
 #define VFSTOUFS211(mp)	((struct ufs211_mount *)((mp)->mnt_data))
+
 #endif

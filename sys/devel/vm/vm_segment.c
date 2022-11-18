@@ -385,16 +385,17 @@ vm_segment_wire(segment)
 	register vm_segment_t segment;
 {
 	VM_SEGMENT_CHECK(segment);
-
-	if(segment->sg_flags & SEG_ACTIVE) {
-		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
-		segment->sg_flags &= SEG_ACTIVE;
-		cnt.v_segment_active_count--;
-	}
-	if(segment->sg_flags & SEG_INACTIVE) {
-		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
-		segment->sg_flags &= SEG_INACTIVE;
-		cnt.v_segment_inactive_count--;
+	if (!TAILQ_EMPTY(segment->sg_memq)) {
+		if(segment->sg_flags & SEG_ACTIVE) {
+			CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
+			segment->sg_flags &= SEG_ACTIVE;
+			cnt.v_segment_active_count--;
+		}
+		if(segment->sg_flags & SEG_INACTIVE) {
+			CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
+			segment->sg_flags &= SEG_INACTIVE;
+			cnt.v_segment_inactive_count--;
+		}
 	}
 }
 
@@ -403,10 +404,11 @@ vm_segment_unwire(segment)
 	register vm_segment_t segment;
 {
 	VM_SEGMENT_CHECK(segment);
-
-	CIRCLEQ_INSERT_TAIL(&vm_segment_list_active, segment, sg_list);
-	cnt.v_segment_active_count++;
-	segment->sg_flags |= SEG_ACTIVE;
+	if (TAILQ_EMPTY(segment->sg_memq)) {
+		CIRCLEQ_INSERT_TAIL(&vm_segment_list_active, segment, sg_list);
+		cnt.v_segment_active_count++;
+		segment->sg_flags |= SEG_ACTIVE;
+	}
 }
 
 void

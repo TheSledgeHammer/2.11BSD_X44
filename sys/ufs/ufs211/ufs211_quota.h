@@ -1,4 +1,41 @@
 /*
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Robert Elz at The University of Melbourne.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)quota.h	8.3 (Berkeley) 8/19/94
+ */
+/*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
@@ -23,25 +60,19 @@
 #ifndef _UFS211_QUOTA_H_
 #define	_UFS211_QUOTA_H_
 
-//#define	UFS211_NMOUNT	6							/* number of mountable file systems */
+//#include <sys/queue.h>
 
 struct ufs211_quota {
-	LIST_ENTRY(ufs211_quota) 	q_hash;				/* hash chain, MUST be first */
-	TAILQ_ENTRY(ufs211_quota) 	q_freelist;				/* free list */
-
-	struct	ufs211_quota    *q_forw;   				/* hash chain, MUST be first */
-    struct	ufs211_quota    *q_back;
-	short	                q_cnt;					/* ref count (# processes) */
-	uid_t	                q_uid;					/* real uid of owner */
-	int	                    q_flags;				/* struct management flags */
-#define	Q_LOCK	            0x01					/* quota struct locked (for disc i/o) */
-#define	Q_WANT	            0x02					/* issue a wakeup when lock goes off */
-#define	Q_NEW	            0x04					/* new quota - no proc1 msg sent yet */
-#define	Q_NDQ	            0x08					/* account has NO disc quota */
-	struct	ufs211_quota    *q_freef;
-    struct	ufs211_quota    **q_freeb;
-
-	struct	ufs211_dquot    *q_dq[NMOUNT];			/* disc quotas for mounted filesys's */
+    LIST_ENTRY(ufs211_quota) 	q_hash;			/* hash chain, MUST be first */
+    short	                	q_cnt;			/* ref count (# processes) */
+    uid_t	                	q_uid;			/* real uid of owner */
+    int	                    	q_flags;		/* struct management flags */
+#define	Q_LOCK	            	0x01			/* quota struct locked (for disc i/o) */
+#define	Q_WANT	            	0x02			/* issue a wakeup when lock goes off */
+#define	Q_NEW	            	0x04			/* new quota - no proc1 msg sent yet */
+#define	Q_NDQ	            	0x08			/* account has NO disc quota */
+    TAILQ_ENTRY(ufs211_quota) 	q_freelist;		/* free list */
+    struct ufs211_dquot    		*q_dq;			/* disc quotas for mounted filesys's */
 };
 
 #define	NOQUOTA	((struct ufs211_quota *) 0)
@@ -64,6 +95,22 @@ struct ufs211_quota {
 #define	MAX_IQ_WARN	3
 #define	MAX_DQ_WARN	3
 
+#define	MAXQUOTAS	2
+#define	USRQUOTA	0	/* element used for user quotas */
+#define	GRPQUOTA	1	/* element used for group quotas */
+
+/*
+ * Definitions for the default names of the quotas files.
+ */
+#define INITQFNAMES { 			\
+	"user",		/* USRQUOTA */ 	\
+	"group",	/* GRPQUOTA */ 	\
+	"undefined", 				\
+};
+
+#define	QUOTAFILENAME	"quotas"
+#define	QUOTAGROUP	    "operator"
+
 struct ufs211_dqblk {
 	u_long	dqb_bhardlimit;	/* absolute limit on disc blks alloc */
 	u_long	dqb_bsoftlimit;	/* preferred limit on disc blks */
@@ -81,18 +128,14 @@ struct ufs211_dqblk {
  * for the current user. A cache is kept of other recently used entries.
  */
 struct ufs211_dquot {
-	LIST_ENTRY(ufs211_dquot) 			dq_list;	 /* MUST be first entry */
-	struct	ufs211_dquot *dq_forw;
-    struct	ufs211_dquot *dq_back;      /* MUST be first entry */
-	union	{
-		struct	ufs211_quota 			*Dq_own;	/* the quota that points to this */
-		struct {		                /* free list */
-			TAILQ_ENTRY(ufs211_dquot) 	Dq_freelist;
-			struct	ufs211_dquot 		*Dq_freef;
-            struct	ufs211_dquot 		**Dq_freeb;
-		} dq_f;
-	} dq_u;
-	short				dq_flags;
+	LIST_ENTRY(ufs211_dquot) 			dq_hash;
+    union	{
+        struct	ufs211_quota 			*Dq_own;
+        struct {
+        	TAILQ_ENTRY(ufs211_dquot) 	Dq_freelist;
+        } dq_f;
+    } dq_u;
+    short				dq_flags;
 #define	DQ_LOCK			0x01		/* this quota locked (no MODS) */
 #define	DQ_WANT			0x02		/* wakeup on unlock */
 #define	DQ_MOD			0x04		/* this quota modified since read */
@@ -100,15 +143,13 @@ struct ufs211_dquot {
 #define	DQ_BLKS			0x10		/* has been warned about blk limit */
 #define	DQ_INODS		0x20		/* has been warned about inode limit */
 	short				dq_cnt;		/* count of active references */
-	uid_t				dq_uid;		/* user this applies to */
-	dev_t				dq_dev;		/* filesystem this relates to */
-	struct ufs211_dqblk dq_dqb;		/* actual usage & quotas */
+	short 				dq_type;	/* quota type of this dquot */
+	uid_t				dq_id;		/* user this applies to */
+    struct ufs211_mount *dq_ump;	/* filesystem that this is taken from */
+    struct ufs211_dqblk dq_dqb;		/* actual usage & quotas */
 };
-
 #define	dq_own		    dq_u.Dq_own
 #define	dq_freelist    	dq_u.dq_f.Dq_freelist
-#define	dq_freef	    dq_u.dq_f.Dq_freef
-#define	dq_freeb	    dq_u.dq_f.Dq_freeb
 #define	dq_bhardlimit	dq_dqb.dqb_bhardlimit
 #define	dq_bsoftlimit	dq_dqb.dqb_bsoftlimit
 #define	dq_curblocks	dq_dqb.dqb_curblocks
@@ -121,30 +162,25 @@ struct ufs211_dquot {
 #define	NODQUOT		((struct ufs211_dquot *) 0)
 #define	LOSTDQUOT	((struct ufs211_dquot *) 1)
 
-#if defined(KERNEL) && defined(QUOTA)
-struct	dquot *dquot, *dquotNDQUOT;
-int		ndquot;
-struct	dquot *discquota(), *inoquota(), *dqalloc(), *dqp();
-#endif
-
-#define	QUOTAFILENAME	"quotas"
-#define	QUOTAGROUP	    "operator"
-
 /*
  * Definitions for the 'quota' system call.
  */
-#define	Q_SETDLIM	1	/* set disc limits & usage */
-#define	Q_GETDLIM	2	/* get disc limits & usage */
-#define	Q_SETDUSE	3	/* set disc usage only */
-#define	Q_SYNC		4	/* update disc copy of quota usages */
-#define	Q_SETUID	16	/* change proc to use quotas for uid */
-#define	Q_SETWARN	25	/* alter inode/block warning counts */
-#define	Q_DOWARN	26	/* warn user about excessive space/inodes */
-
+#define	Q_QUOTAON	0x0100	/* enable quotas */
+#define	Q_QUOTAOFF	0x0200	/* disable quotas */
+#define	Q_SETDLIM	0x0300	/* set disc limits & usage */
+#define	Q_GETDLIM	0x0400	/* get disc limits & usage */
+#define	Q_SETDUSE	0x0500	/* set disc usage only */
+#define	Q_SYNC		0x0600	/* update disc copy of quota usages */
+#define	Q_SETUID	0x0700	/* change proc to use quotas for uid */
+#define	Q_SETWARN	0x0800	/* alter inode/block warning counts */
+#define	Q_DOWARN	0x0900	/* warn user about excessive space/inodes */
+#define	Q_SETUSE	0x1100	/* set usage */
+#define	Q_GETQUOTA	0x1200	/* get limits and usage */
+#define	Q_SETQUOTA	0x1300	/* set limits and usage */
 /*
  * Used in Q_SETDUSE.
  */
-struct	ufs211_dqusage {
+struct ufs211_dqusage {
 	u_short	du_curinodes;
 	u_long	du_curblocks;
 };
@@ -152,40 +188,66 @@ struct	ufs211_dqusage {
 /*
  * Used in Q_SETWARN.
  */
-struct	ufs211_dqwarn {
+struct ufs211_dqwarn {
 	u_char	dw_bwarn;
 	u_char	dw_iwarn;
 };
 
-struct	ufs211_qhash {
-	struct	ufs211_qhash *qh_forw;
-	struct	ufs211_qhash *qh_back;
-};
-
-struct	ufs211_dqhead {
-	struct	ufs211_dqhead *dqh_forw;
-	struct	ufs211_dqhead *dqh_back;
-};
-
-struct ufs211_dquot 	**ix_dquot;
-ufs211_size_t	quotreg = btoc(8192);
-u_short			quotdesc = ((quotreg - 1) << 8) | (UFS211_IREAD|UFS211_IWRITE);
-
-#define QUOTAMAP()		(bufmap_alloc(quotreg, quotdesc))
-#define	QUOTAUNMAP()	(bufmap_free(quotreg))
-
 #define	UFS211_NQHASH		16	/* small power of 2 */
 #define	UFS211_NDQHASH		37	/* 4.3bsd used 51 which isn't even prime */
-#define	UFS211_NQUOTA		40
-#define	UFS211_NDQUOT		150
-#define UFS211_NINODE 		((NPROC + 16 + MAXUSERS) + 22) /* 2.11BSD param.c */
 
-struct BigQ {
-	struct quota 	xquota[UFS211_NQUOTA];		/* the quotas themselves */
-	struct dquot 	*ixdquot[UFS211_NINODE];	/* 2.11 equiv of i_dquot */
-	struct dquot 	xdquot[UFS211_NDQUOT];		/* the dquots themselves */
-	struct qhash 	xqhash[UFS211_NQHASH];
-	struct dqhead 	xdqhash[UFS211_NDQHASH];
-};
+/*
+ * Flags to chkdq() and chkiq()
+ */
+#define	FORCE	0x01	/* force usage changes independent of limits */
+#define	CHOWN	0x02	/* (advisory) change initiated by chown */
 
+/*
+ * Macros to avoid subroutine calls to trivial functions.
+ */
+#ifdef DIAGNOSTIC
+#define	DQREF(dq)	dqref(dq)
+#else
+#define	DQREF(dq)	(dq)->dq_cnt++
 #endif
+
+#include <sys/cdefs.h>
+
+struct ufs211_dquot;
+struct ufs211_inode;
+struct mount;
+struct proc;
+struct ucred;
+struct ufs211_mount;
+struct vnode;
+__BEGIN_DECLS
+int	chkdq(struct ufs211_inode *, long, struct ucred *, int);
+int	chkdqchg(struct ufs211_inode *, long, struct ucred *, int);
+int	chkiq(struct ufs211_inode *, long, struct ucred *, int);
+int	chkiqchg(struct ufs211_inode *, long, struct ucred *, int);
+void dqflush(struct vnode *);
+int	dqget(struct vnode *, u_long, struct ufs211_mount *, int, struct ufs211_dquot **);
+void dqinit(void);
+void dqref(struct dquot *);
+void dqrele(struct vnode *, struct ufs211_dquot *);
+int	dqsync(struct vnode *, struct ufs211_dquot *);
+int	getinoquota(struct ufs211_inode *);
+int	getquota(struct mount *, u_long, int, caddr_t);
+int	qsync(struct mount *);
+int	quotaoff(struct proc *, struct mount *, int);
+int	quotaon(struct proc *, struct mount *, int, caddr_t);
+int	setquota(struct mount *, u_long, int, caddr_t);
+int	setuse(struct mount *, u_long, int, caddr_t);
+int setwarn(struct mount *, u_long, int, caddr_t);
+int dowarn(struct mount *, u_long, int);
+int	setduse(struct mount *, u_long, int, caddr_t);
+int	ufs211_quotactl(struct mount *, int, uid_t, caddr_t, struct proc *);
+__END_DECLS
+
+#ifdef DIAGNOSTIC
+__BEGIN_DECLS
+void chkdquot(struct ufs211_inode *);
+__END_DECLS
+#endif
+
+#endif /* _UFS211_QUOTA_H_ */

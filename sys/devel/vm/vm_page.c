@@ -541,7 +541,6 @@ vm_page_wire(mem)
 			mem->flags &= ~PG_INACTIVE;
 		}
 		cnt.v_wire_count++;
-		//vm_segment_wire(mem->segment);
 	}
 	mem->wire_count++;
 }
@@ -566,7 +565,6 @@ vm_page_unwire(mem)
 		cnt.v_page_active_count++;
 		mem->flags |= PG_ACTIVE;
 		cnt.v_wire_count--;
-		//vm_segment_unwire(mem->segment);
 	}
 }
 

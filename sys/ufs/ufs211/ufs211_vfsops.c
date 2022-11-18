@@ -178,7 +178,7 @@ ufs211_quotactl(mp, cmds, uid, arg, p)
 		return (0);
 
 	switch (cmd) {
-/*
+
 	case Q_QUOTAON:
 		error = quotaon(p, mp, type, arg);
 		break;
@@ -186,17 +186,37 @@ ufs211_quotactl(mp, cmds, uid, arg, p)
 	case Q_QUOTAOFF:
 		error = quotaoff(p, mp, type);
 		break;
-*/
+
+	case Q_SETQUOTA:
+		error = setquota(mp, uid, type, arg);
+		break;
+
+	case Q_SETUSE:
+		error = setuse(mp, uid, type, arg);
+		break;
+
+	case Q_GETQUOTA:
+		error = getquota(mp, uid, type, arg);
+		break;
+
 	case Q_SETDLIM:
 		error = setquota(mp, uid, type, arg);
 		break;
 
 	case Q_SETDUSE:
-		error = setuse(mp, uid, type, arg);
+		error = setduse(mp, uid, type, arg);
 		break;
 
 	case Q_GETDLIM:
 		error = getquota(mp, uid, type, arg);
+		break;
+
+	case Q_SETWARN:
+		error = setwarn(mp, uid, type, arg);
+		break;
+
+	case Q_DOWARN:
+		error = dowarn(mp, uid, type);
 		break;
 
 	case Q_SYNC:
@@ -376,7 +396,7 @@ ufs211_vget(mp, ino, vpp)
 
 	ufs211_ihashins(ip);
 
-	if (error == bread(ump->um_devvp, fsbtodb(itoo(ino)), (int)fs->fs_fsize, NOCRED, &bp)) {
+	if (error == bread(ump->m_devvp, fsbtodb(itoo(ino)), (int)fs->fs_fsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
 		 * be misleading to leave it on its hash chain. With mode
@@ -402,7 +422,7 @@ ufs211_vget(mp, ino, vpp)
 	/*
 	 * Finish inode initialization now that aliasing has been resolved.
 	 */
-	ip->i_devvp = ump->um_devvp;
+	ip->i_devvp = ump->m_devvp;
 	VREF(ip->i_devvp);
 
 	if (fs->fs_magic == FS_UFS211_MAGIC) {

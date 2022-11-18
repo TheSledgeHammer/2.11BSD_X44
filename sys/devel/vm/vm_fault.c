@@ -506,6 +506,7 @@ RetryCopy:
 	if (change_wiring) {
 		if (vfi.wired) {
 			vm_page_wire(vfi.page);
+			vm_segment_wire(vfi.segment);
 #ifdef notyet
 			if (vfi.page->flags & PG_AOBJ) {
 				vfi.page->flags &= ~(PG_CLEAN);
@@ -514,6 +515,7 @@ RetryCopy:
 #endif
 		} else {
 			vm_page_unwire(vfi.page);
+			vm_segment_unwire(vfi.segment);
 		}
 	} else {
 		vm_page_activate(vfi.page);
