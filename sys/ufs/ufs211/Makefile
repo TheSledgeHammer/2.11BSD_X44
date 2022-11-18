@@ -2,7 +2,6 @@
 
 INCSDIR= 	/usr/include/ufs/ufs211
 
-INCS= 		ufs211_dir.h ufs211_extern.h ufs211_fs.h ufs211_inode.h ufs211_mount.h 
-#ufs211_quota.h
+INCS= 		ufs211_dir.h ufs211_extern.h ufs211_fs.h ufs211_inode.h ufs211_mount.h ufs211_quota.h
 
 .include <bsd.kinc.mk>
