@@ -320,15 +320,16 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 			}
 		}
 		cpy = geteblk(sizeof(*bp));
-		bcopy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));
+		bcopy(bp, cpy, btoc(DEV_BSIZE));
 		ufs211_mapin(bp);
 		bap = (daddr_t *) bp;
 		bzero((caddr_t)&bap[last + 1], (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
 		ufs211_mapout(bp);
-		if (aflags & B_SYNC)
+		if (aflags & B_SYNC) {
 			bwrite(bp);
-		else
+		} else {
 			bawrite(bp);
+		}
 		bp = cpy;
 	}
 
@@ -380,7 +381,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 }
 
 void
-ufs211_trsingle(ip, bp,last, aflags)
+ufs211_trsingle(ip, bp, last, aflags)
 	register struct ufs211_inode *ip;
 	caddr_t bp;
 	daddr_t last;

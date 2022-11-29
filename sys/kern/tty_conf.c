@@ -16,6 +16,44 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
+#include "tb.h"
+#if NTB > 0
+int	tbopen(dev_t, struct tty *);
+int	tbclose(struct tty *, int);
+int	tbread(struct tty *, struct uio *, int);
+int	tbtioctl(struct tty *, u_long, caddr_t, int, struct proc *);
+int	tbinput(int, struct tty *);
+#endif
+
+#include "sl.h"
+#if NSL > 0
+int	slopen(dev_t, struct tty *);
+int	slclose(struct tty *, int);
+int	sltioctl(struct tty *, u_long, caddr_t, int, struct proc *);
+int	slinput(int, struct tty *);
+int	slstart(struct tty *);
+#endif
+
+#include "ppp.h"
+#if NPPP > 0
+int	pppopen(dev_t, struct tty *);
+int	pppclose(struct tty *, int);
+int	ppptioctl(struct tty *, u_long, caddr_t, int, struct proc *);
+int	pppinput(int, struct tty *);
+int	pppstart(struct tty *);
+int	pppread(struct tty *, struct uio *, int);
+int	pppwrite(struct tty *, struct uio *, int);
+#endif
+
+#include "strip.h"
+#if NSTRIP > 0
+int	stripopen(dev_t, struct tty *);
+int	stripclose(struct tty *, int);
+int	striptioctl(struct tty *, u_long, caddr_t, int, struct proc *);
+int	stripinput(int, struct tty *);
+int	stripstart(struct tty *);
+#endif
+
 /* 0- TTYDISC (Termios) */
 const struct linesw ttydisc = {
 	.l_open = ttyopen,
@@ -110,21 +148,39 @@ const struct linesw slipdisc = {
 };
 #endif
 
-/* 6- PPPDISC */
-const struct linesw pppdisc = {
-	.l_open = nottyopen,
-	.l_close = nottyclose,
+#if NSTRIP > 0
+/* 6- STRIPDISC */
+const struct linesw strip_disc = {
+	.l_open = stripopen,
+	.l_close = stripclose,
 	.l_read = nottyread,
 	.l_write = nottywrite,
-	.l_ioctl = nottyioctl,
-	.l_rint = norint,
+	.l_ioctl = striptioctl,
+	.l_rint = stripinput,
 	.l_rend = norend,
 	.l_meta = nometa,
-	.l_start = nostart,
-	.l_modem = nomodem,
+	.l_start = stripstart,
+	.l_modem = nullmodem,
+	.l_poll = nottypoll
+};
+#endif
+
+#if NPPP > 0
+/* 7- PPPDISC */
+const struct linesw pppdisc = {
+	.l_open = pppopen,
+	.l_close = pppclose,
+	.l_read = pppread,
+	.l_write = pppwrite,
+	.l_ioctl = ppptioctl,
+	.l_rint = pppinput,
+	.l_rend = norend,
+	.l_meta = nometa,
+	.l_start = pppstart,
+	.l_modem = ttymodem,
 	.l_poll = ttpoll
 };
-
+#endif
 /*
  * Do nothing specific version of line
  * discipline specific ioctl command.

@@ -182,10 +182,10 @@ IDTVEC(softnet)
 		xchgl	_C_LABEL(netisr),%edi
 
 #define DONET(s, c) 			\
-		.globl  c				;\
+		.globl   _C_LABEL(c)	;\
 		testl	$(1 << s),%edi	;\
 		jz		1f				;\
-		call	c				;\
+		call	_C_LABEL(c)		;\
 1:
 
 #include <net/netisr.h>

@@ -133,6 +133,18 @@ struct sockproto {
 #define	PF_MAX			AF_MAX
 
 /*
+ * PF_ROUTE - Routing table
+ *
+ * Three additional levels are defined:
+ *	Fourth: address family, 0 is wildcard
+ *	Fifth: type of info, defined below
+ *	Sixth: flag(s) to mask with for NET_RT_FLAGS
+ */
+#define	NET_RT_DUMP			1	/* dump; may limit to a.f. */
+#define	NET_RT_FLAGS		2	/* by flags, e.g. RESOLVING */
+#define	NET_RT_IFLIST		3	/* survey interface list */
+
+/*
  * Definitions for network related sysctl, CTL_NET.
  *
  * Second level is protocol family.
@@ -167,7 +179,10 @@ struct sockproto {
 /*
  * Maximum queue length specifiable by listen.
  */
-#define	SOMAXCONN	5
+//#define	SOMAXCONN	5
+#ifndef SOMAXCONN
+#define	SOMAXCONN	128
+#endif
 
 /*
  * Message header for recvmsg and sendmsg calls.

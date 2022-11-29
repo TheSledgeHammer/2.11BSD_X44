@@ -18,7 +18,13 @@
 /*
  * Structure per communications domain.
  */
+#include <sys/mbuf.h>
+
+/*
+ * Forward structure declarations for function prototypes [sic].
+ */
 struct	mbuf;
+struct	ifnet;
 
 struct	domain {
 	int		dom_family;							/* AF_xxx */
@@ -31,6 +37,8 @@ struct	domain {
 	int		(*dom_rtattach)(void **, int);		/* initialize routing table */
 	int		dom_rtoffset;						/* an arg to rtattach, in bits */
 	int		dom_maxrtkey;						/* for routing layer */
+	void	*(*dom_ifattach)(struct ifnet *);
+	void	(*dom_ifdetach)(struct ifnet *, void *); /* af-dependent data on ifnet */
 };
 
 #ifdef _KERNEL
