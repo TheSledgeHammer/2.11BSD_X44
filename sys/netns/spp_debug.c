@@ -1,29 +1,51 @@
+/*	$NetBSD: spp_debug.c,v 1.13 2003/08/07 16:33:47 agc Exp $	*/
+
 /*
- * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1984, 1985, 1986, 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *      @(#)spp_debug.c	7.4 (Berkeley) 3/12/88
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)spp_debug.c	8.1 (Berkeley) 6/10/93
  */
 
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: spp_debug.c,v 1.13 2003/08/07 16:33:47 agc Exp $");
+
+#include "opt_inet.h"
+
 #include <sys/param.h>
-#ifdef	NS
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-#include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
+#include <sys/protosw.h>
 #include <sys/errno.h>
 
-#include <net/if.h>
 #include <net/route.h>
-
+#include <net/if.h>
 #include <netinet/tcp_fsm.h>
 
 #include <netns/ns.h>
@@ -35,29 +57,36 @@
 #define SPPTIMERS
 #include <netns/spp_timer.h>
 #include <netns/spp_var.h>
-#define	SANAMES
+#define SANAMES
 #include <netns/spp_debug.h>
 
+extern char *prurequests[];
+extern char *tcpstates[];
+extern const char * const sanames[];
+extern const char * const sppnames[];
+
 int	sppconsdebug = 0;
+
+struct	spp_debug spp_debug[SPP_NDEBUG];
+int	spp_debx;
+
 /*
  * spp debug routines
  */
+void
 spp_trace(act, ostate, sp, si, req)
 	short act;
-	u_char ostate;
+	u_int ostate;
 	struct sppcb *sp;
 	struct spidp *si;
 	int req;
 {
 #ifdef INET
+#ifdef SPPDEBUG
 	u_short seq, ack, len, alo;
-	u_long iptime();
+	unsigned long iptime();
 	int flags;
 	struct spp_debug *sd = &spp_debug[spp_debx++];
-	extern char *prurequests[];
-	extern char *sanames[];
-	extern char *tcpstates[];
-	extern char *spptimers[];
 
 	if (spp_debx == SPP_NDEBUG)
 		spp_debx = 0;
@@ -146,5 +175,5 @@ spp_trace(act, ostate, sp, si, req)
 	printf("\t"); p3(rack);p3(ralo);p3(smax);p3(flags); printf("\n");
 #endif
 #endif
-}
 #endif
+}

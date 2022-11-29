@@ -1,60 +1,85 @@
+/*	$NetBSD: ns_pcb.c,v 1.20 2004/02/24 15:22:01 wiz Exp $	*/
+
 /*
- * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1984, 1985, 1986, 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *      @(#)ns_pcb.c	7.3 (Berkeley) 1/20/88
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)ns_pcb.c	8.1 (Berkeley) 6/10/93
  */
 
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: ns_pcb.c,v 1.20 2004/02/24 15:22:01 wiz Exp $");
+
 #include <sys/param.h>
-#ifdef	NS
 #include <sys/systm.h>
-#include <sys/user.h>
 #include <sys/mbuf.h>
-#include <sys/protosw.h>
+#include <sys/errno.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/proc.h>
 
 #include <net/if.h>
 #include <net/route.h>
 
 #include <netns/ns.h>
-#include <netns/ns_pcb.h>
 #include <netns/ns_if.h>
+#include <netns/ns_pcb.h>
+#include <netns/ns_var.h>
 
-struct	ns_addr zerons_addr;
+static const struct	ns_addr zerons_addr;
 
+int
 ns_pcballoc(so, head)
 	struct socket *so;
 	struct nspcb *head;
 {
-	struct mbuf *m;
-	register struct nspcb *nsp;
+	struct nspcb *nsp;
 
-	m = m_getclr(M_DONTWAIT, MT_PCB);
-	if (m == NULL)
+	nsp = malloc(sizeof(*nsp), M_PCB, M_NOWAIT);
+	if (nsp == 0)
 		return (ENOBUFS);
-	nsp = mtod(m, struct nspcb *);
+	bzero((caddr_t)nsp, sizeof(*nsp));
 	nsp->nsp_socket = so;
 	insque(nsp, head);
-	so->so_pcb = (caddr_t)nsp;
+	so->so_pcb = nsp;
 	return (0);
 }
 	
-ns_pcbbind(nsp, nam)
-	register struct nspcb *nsp;
+int
+ns_pcbbind(nsp, nam, p)
+	struct nspcb *nsp;
 	struct mbuf *nam;
+	struct proc *p;
 {
-	register struct sockaddr_ns *sns;
-	u_short lport = 0;
+	struct sockaddr_ns *sns;
+	u_int16_t lport = 0;
 
-	if(nsp->nsp_lport || !ns_nullhost(nsp->nsp_laddr))
+	if (nsp->nsp_lport || !ns_nullhost(nsp->nsp_laddr))
 		return (EINVAL);
 	if (nam == 0)
 		goto noname;
@@ -65,15 +90,15 @@ ns_pcbbind(nsp, nam)
 		int tport = sns->sns_port;
 
 		sns->sns_port = 0;		/* yech... */
-		if (ifa_ifwithaddr((struct sockaddr *)sns) == 0)
+		if (ifa_ifwithaddr(snstosa(sns)) == 0)
 			return (EADDRNOTAVAIL);
 		sns->sns_port = tport;
 	}
 	lport = sns->sns_port;
 	if (lport) {
-		u_short aport = ntohs(lport);
 
-		if (aport < NSPORT_RESERVED && u.u_uid != 0)
+		if (ntohs(lport) < NSPORT_RESERVED &&
+		    (p == 0 || suser(p->p_ucred, &p->p_acflag)))
 			return (EACCES);
 		if (ns_pcblookup(&zerons_addr, lport, 0))
 			return (EADDRINUSE);
@@ -96,14 +121,16 @@ noname:
  * If don't have a local address for this socket yet,
  * then pick one.
  */
+int
 ns_pcbconnect(nsp, nam)
 	struct nspcb *nsp;
 	struct mbuf *nam;
 {
 	struct ns_ifaddr *ia;
-	register struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
-	struct sockaddr_ns *ifaddr;
-	register struct ns_addr *dst;
+	struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
+	struct ns_addr *dst;
+	struct route *ro;
+	struct ifnet *ifp;
 
 	if (nam->m_len != sizeof (*sns))
 		return (EINVAL);
@@ -111,65 +138,86 @@ ns_pcbconnect(nsp, nam)
 		return (EAFNOSUPPORT);
 	if (sns->sns_port==0 || ns_nullhost(sns->sns_addr))
 		return (EADDRNOTAVAIL);
-	if (ns_nullhost(nsp->nsp_laddr)) {
-		register struct route *ro;
-		struct ifnet *ifp;
+	/*
+	 * If we haven't bound which network number to use as ours,
+	 * we will use the number of the outgoing interface.
+	 * This depends on having done a routing lookup, which
+	 * we will probably have to do anyway, so we might
+	 * as well do it now.  On the other hand if we are
+	 * sending to multiple destinations we may have already
+	 * done the lookup, so see if we can use the route
+	 * from before.  In any case, we only
+	 * chose a port number once, even if sending to multiple
+	 * destinations.
+	 */
+	ro = &nsp->nsp_route;
+	dst = &satons_addr(ro->ro_dst);
+	if (nsp->nsp_socket->so_options & SO_DONTROUTE)
+		goto flush;
+	if (!ns_neteq(nsp->nsp_lastdst, sns->sns_addr))
+		goto flush;
+	if (!ns_hosteq(nsp->nsp_lastdst, sns->sns_addr)) {
+		if (ro->ro_rt && ! (ro->ro_rt->rt_flags & RTF_HOST)) {
+			/* can patch route to avoid rtalloc */
+			*dst = sns->sns_addr;
+		} else {
+	flush:
+			if (ro->ro_rt)
+				RTFREE(ro->ro_rt);
+			ro->ro_rt = (struct rtentry *)0;
+			nsp->nsp_laddr.x_net = ns_zeronet;
+		}
+	}/* else cached route is ok; do nothing */
+	nsp->nsp_lastdst = sns->sns_addr;
+	if ((nsp->nsp_socket->so_options & SO_DONTROUTE) == 0 && /*XXX*/
+	    (ro->ro_rt == (struct rtentry *)0 ||
+	     ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
+		    /* No route yet, so try to acquire one */
+		    ro->ro_dst.sa_family = AF_NS;
+		    ro->ro_dst.sa_len = sizeof(ro->ro_dst);
+		    *dst = sns->sns_addr;
+		    dst->x_port = 0;
+		    rtalloc(ro);
+	}
+	if (ns_neteqnn(nsp->nsp_laddr.x_net, ns_zeronet)) {
 		/* 
 		 * If route is known or can be allocated now,
 		 * our src addr is taken from the i/f, else punt.
 		 */
-		ro = &nsp->nsp_route;
-		dst = &satons_addr(ro->ro_dst);
 
-		ia = (struct ns_ifaddr *)0;
-		if (ro->ro_rt) {
-		    if ((!ns_neteq(nsp->nsp_lastdst, sns->sns_addr)) ||
-			((ifp = ro->ro_rt->rt_ifp) &&
-			 (ifp->if_flags & IFF_POINTOPOINT) &&
-			 (!ns_hosteq(nsp->nsp_lastdst, sns->sns_addr))) ||
-			(nsp->nsp_socket->so_options & SO_DONTROUTE)) {
-				RTFREE(ro->ro_rt);
-				ro->ro_rt = (struct rtentry *)0;
-			}
-		}
-		if ((nsp->nsp_socket->so_options & SO_DONTROUTE) == 0 && /*XXX*/
-		    (ro->ro_rt == (struct rtentry *)0 ||
-		     ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
-			    /* No route yet, so try to acquire one */
-			    ro->ro_dst.sa_family = AF_NS;
-			    *dst = sns->sns_addr;
-			    dst->x_port = 0;
-			    rtalloc(ro);
-		}
+		ia = 0;
 		/*
 		 * If we found a route, use the address
 		 * corresponding to the outgoing interface
 		 */
-		if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp))
-			for (ia = ns_ifaddr; ia; ia = ia->ia_next)
+		if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp)) {
+			for (ia = ns_ifaddr.tqh_first; ia != 0;
+			    ia = ia->ia_list.tqe_next) {
 				if (ia->ia_ifp == ifp)
 					break;
+			}
+		}
 		if (ia == 0) {
-			u_short fport = sns->sns_addr.x_port;
+			u_int16_t fport = sns->sns_addr.x_port;
 			sns->sns_addr.x_port = 0;
 			ia = (struct ns_ifaddr *)
-				ifa_ifwithdstaddr((struct sockaddr *)sns);
+				ifa_ifwithdstaddr(snstosa(sns));
 			sns->sns_addr.x_port = fport;
 			if (ia == 0)
 				ia = ns_iaonnetof(&sns->sns_addr);
 			if (ia == 0)
-				ia = ns_ifaddr;
+				ia = ns_ifaddr.tqh_first;
 			if (ia == 0)
 				return (EADDRNOTAVAIL);
 		}
 		nsp->nsp_laddr.x_net = satons_addr(ia->ia_addr).x_net;
-		nsp->nsp_lastdst = sns->sns_addr;
 	}
 	if (ns_pcblookup(&sns->sns_addr, nsp->nsp_lport, 0))
 		return (EADDRINUSE);
 	if (ns_nullhost(nsp->nsp_laddr)) {
 		if (nsp->nsp_lport == 0)
-			(void) ns_pcbbind(nsp, (struct mbuf *)0);
+			(void) ns_pcbbind(nsp, (struct mbuf *)0,
+			    (struct proc *)0);
 		nsp->nsp_laddr.x_host = ns_thishost;
 	}
 	nsp->nsp_faddr = sns->sns_addr;
@@ -177,6 +225,7 @@ ns_pcbconnect(nsp, nam)
 	return (0);
 }
 
+void
 ns_pcbdisconnect(nsp)
 	struct nspcb *nsp;
 {
@@ -186,6 +235,7 @@ ns_pcbdisconnect(nsp)
 		ns_pcbdetach(nsp);
 }
 
+void
 ns_pcbdetach(nsp)
 	struct nspcb *nsp;
 {
@@ -196,31 +246,35 @@ ns_pcbdetach(nsp)
 	if (nsp->nsp_route.ro_rt)
 		rtfree(nsp->nsp_route.ro_rt);
 	remque(nsp);
-	(void) m_free(dtom(nsp));
+	free(nsp, M_PCB);
 }
 
+void
 ns_setsockaddr(nsp, nam)
-	register struct nspcb *nsp;
+	struct nspcb *nsp;
 	struct mbuf *nam;
 {
-	register struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
+	struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
 	
 	nam->m_len = sizeof (*sns);
 	sns = mtod(nam, struct sockaddr_ns *);
 	bzero((caddr_t)sns, sizeof (*sns));
+	sns->sns_len = sizeof(*sns);
 	sns->sns_family = AF_NS;
 	sns->sns_addr = nsp->nsp_laddr;
 }
 
+void
 ns_setpeeraddr(nsp, nam)
-	register struct nspcb *nsp;
+	struct nspcb *nsp;
 	struct mbuf *nam;
 {
-	register struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
+	struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
 	
 	nam->m_len = sizeof (*sns);
 	sns = mtod(nam, struct sockaddr_ns *);
 	bzero((caddr_t)sns, sizeof (*sns));
+	sns->sns_len = sizeof(*sns);
 	sns->sns_family = AF_NS;
 	sns->sns_addr  = nsp->nsp_faddr;
 }
@@ -229,16 +283,18 @@ ns_setpeeraddr(nsp, nam)
  * Pass some notification to all connections of a protocol
  * associated with address dst.  Call the
  * protocol specific routine to handle each connection.
- * Also pass an extra paramter via the nspcb. (which may in fact
+ * Also pass an extra parameter via the nspcb. (which may in fact
  * be a parameter list!)
  */
+void
 ns_pcbnotify(dst, errno, notify, param)
-	register struct ns_addr *dst;
+	struct ns_addr *dst;
 	long param;
-	int errno, (*notify)();
+	int errno;
+	void (*notify) __P((struct nspcb *));
 {
-	register struct nspcb *nsp, *oinp;
-	int s = splimp();
+	struct nspcb *nsp, *oinp;
+	int s = splnet();
 
 	for (nsp = (&nspcb)->nsp_next; nsp != (&nspcb);) {
 		if (!ns_hosteq(*dst,nsp->nsp_faddr)) {
@@ -258,11 +314,11 @@ ns_pcbnotify(dst, errno, notify, param)
 	splx(s);
 }
 
-#ifdef notdef
 /*
  * After a routing change, flush old routing
  * and allocate a (hopefully) better one.
  */
+void
 ns_rtchange(nsp)
 	struct nspcb *nsp;
 {
@@ -276,16 +332,16 @@ ns_rtchange(nsp)
 	}
 	/* SHOULD NOTIFY HIGHER-LEVEL PROTOCOLS */
 }
-#endif
 
 struct nspcb *
 ns_pcblookup(faddr, lport, wildp)
-	struct ns_addr *faddr;
-	u_short lport;
+	const struct ns_addr *faddr;
+	u_int16_t lport;
+	int wildp;
 {
-	register struct nspcb *nsp, *match = 0;
+	struct nspcb *nsp, *match = 0;
 	int matchwild = 3, wildcard;
-	u_short fport;
+	u_int16_t fport;
 
 	fport = faddr->x_port;
 	for (nsp = (&nspcb)->nsp_next; nsp != (&nspcb); nsp = nsp->nsp_next) {
@@ -301,8 +357,8 @@ ns_pcblookup(faddr, lport, wildp)
 			else {
 				if (!ns_hosteq(nsp->nsp_faddr, *faddr))
 					continue;
-				if( nsp->nsp_fport != fport) {
-					if(nsp->nsp_fport != 0)
+				if (nsp->nsp_fport != fport) {
+					if (nsp->nsp_fport != 0)
 						continue;
 					else
 						wildcard++;
@@ -320,4 +376,3 @@ ns_pcblookup(faddr, lport, wildp)
 	}
 	return (match);
 }
-#endif

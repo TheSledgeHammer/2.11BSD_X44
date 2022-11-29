@@ -1,32 +1,62 @@
+/*	$NetBSD: ns_error.c,v 1.15 2003/08/07 16:33:45 agc Exp $	*/
+
 /*
- * Copyright (c) 1984, 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1984, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *      @(#)ns_error.c	7.5 (Berkeley) 2/4/88
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)ns_error.c	8.2 (Berkeley) 9/22/94
  */
 
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: ns_error.c,v 1.15 2003/08/07 16:33:45 agc Exp $");
+
 #include <sys/param.h>
-#ifdef	NS
 #include <sys/systm.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
 
+#include <net/if.h>
 #include <net/route.h>
 
 #include <netns/ns.h>
 #include <netns/ns_pcb.h>
+#include <netns/ns_if.h>
+#include <netns/ns_var.h>
 #include <netns/idp.h>
+#include <netns/idp_var.h>
 #include <netns/ns_error.h>
+#include <netns/sp.h>
+#include <netns/spidp.h>
+#include <netns/spp_timer.h>
+#include <netns/spp_var.h>
 
 #ifdef lint
 #define NS_ERRPRINTFS 1
@@ -40,10 +70,14 @@
 int	ns_errprintfs = 0;
 #endif
 
+struct	ns_errstat ns_errstat;
+
+int
 ns_err_x(c)
+	int c;
 {
-	register u_short *w, *lim, *base = ns_errstat.ns_es_codes;
-	u_short x = c;
+	u_int16_t *w, *lim, *base = ns_errstat.ns_es_codes;
+	u_int16_t x = c;
 
 	/*
 	 * zero is a legit error code, handle specially
@@ -64,15 +98,16 @@ ns_err_x(c)
  * Generate an error packet of type error
  * in response to bad packet.
  */
-
+void
 ns_error(om, type, param)
 	struct mbuf *om;
 	int type;
+	int param;
 {
-	register struct ns_epidp *ep;
+	struct ns_epidp *ep;
 	struct mbuf *m;
 	struct idp *nip;
-	register struct idp *oip = mtod(om, struct idp *);
+	struct idp *oip = mtod(om, struct idp *);
 	extern int idpcksum;
 
 	/*
@@ -80,9 +115,9 @@ ns_error(om, type, param)
 	 * and nobody was there, just echo it.
 	 * (Yes, this is a wart!)
 	 */
-	if (type==NS_ERR_NOSOCK &&
-	    oip->idp_dna.x_port==htons(2) &&
-	    (type = ns_echo(oip)==0))
+	if (type == NS_ERR_NOSOCK &&
+	    oip->idp_dna.x_port == htons(2) &&
+	    (type = ns_echo(om))==0)
 		return;
 
 #ifdef NS_ERRPRINTFS
@@ -93,7 +128,8 @@ ns_error(om, type, param)
 	 * Don't Generate error packets in response to multicasts.
 	 */
 	if (oip->idp_dna.x_host.c_host[0] & 1)
-		goto free;
+		goto freeit;
+
 	ns_errstat.ns_es_error++;
 	/*
 	 * Make sure that the old IDP packet had 30 bytes of data to return;
@@ -102,48 +138,49 @@ ns_error(om, type, param)
 	 */
 	if (oip->idp_len < sizeof(struct idp)) {
 		ns_errstat.ns_es_oldshort++;
-		goto free;
+		goto freeit;
 	}
 	if (oip->idp_pt == NSPROTO_ERROR) {
 		ns_errstat.ns_es_oldns_err++;
-		goto free;
+		goto freeit;
 	}
 
 	/*
 	 * First, formulate ns_err message
 	 */
-	m = m_get(M_DONTWAIT, MT_HEADER);
+	m = m_gethdr(M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
-		goto free;
+		goto freeit;
 	m->m_len = sizeof(*ep);
-	m->m_off = MMAXOFF - m->m_len;
+	MH_ALIGN(m, m->m_len);
 	ep = mtod(m, struct ns_epidp *);
 	if ((u_int)type > NS_ERR_TOO_BIG)
 		panic("ns_err_error");
 	ns_errstat.ns_es_outhist[ns_err_x(type)]++;
-	ep->ns_ep_errp.ns_err_num = htons((u_short)type);
-	ep->ns_ep_errp.ns_err_param = htons((u_short)param);
+	ep->ns_ep_errp.ns_err_num = htons((u_int16_t)type);
+	ep->ns_ep_errp.ns_err_param = htons((u_int16_t)param);
 	bcopy((caddr_t)oip, (caddr_t)&ep->ns_ep_errp.ns_err_idp, 42);
 	nip = &ep->ns_ep_idp;
 	nip->idp_len = sizeof(*ep);
-	nip->idp_len = htons((u_short)nip->idp_len);
+	nip->idp_len = htons((u_int16_t)nip->idp_len);
 	nip->idp_pt = NSPROTO_ERROR;
 	nip->idp_tc = 0;
 	nip->idp_dna = oip->idp_sna;
 	nip->idp_sna = oip->idp_dna;
 	if (idpcksum) {
 		nip->idp_sum = 0;
-		nip->idp_sum = ns_cksum(dtom(nip), sizeof(*ep));
+		nip->idp_sum = ns_cksum(m, sizeof(*ep));
 	} else 
 		nip->idp_sum = 0xffff;
-	(void) ns_output(dtom(nip), (struct route *)0, 0);
+	(void) ns_output(m, (struct route *)0, 0);
 
-free:
-	m_freem(dtom(oip));
+freeit:
+	m_freem(om);
 }
 
+void
 ns_printhost(p)
-register struct ns_addr *p;
+struct ns_addr *p;
 {
 
 	printf("<net:%x%x,host:%x%x%x,port:%x>",
@@ -159,13 +196,17 @@ register struct ns_addr *p;
 /*
  * Process a received NS_ERR message.
  */
+void
 ns_err_input(m)
 	struct mbuf *m;
 {
-	register struct ns_errp *ep;
-	register struct ns_epidp *epidp = mtod(m, struct ns_epidp *);
-	register int i;
-	int type, code, param;
+	struct ns_errp *ep;
+#ifdef NS_ERRPRINTFS
+	struct ns_epidp *epidp = mtod(m, struct ns_epidp *);
+	int param;
+#endif
+	int i;
+	int type, code;
 
 	/*
 	 * Locate ns_err structure in mbuf, and check
@@ -179,14 +220,16 @@ ns_err_input(m)
 	}
 #endif
 	i = sizeof (struct ns_epidp);
- 	if ((m->m_off > MMAXOFF || m->m_len < i) &&
+ 	if (((m->m_flags & M_EXT) || m->m_len < i) &&
  		(m = m_pullup(m, i)) == 0)  {
 		ns_errstat.ns_es_tooshort++;
 		return;
 	}
 	ep = &(mtod(m, struct ns_epidp *)->ns_ep_errp);
 	type = ntohs(ep->ns_err_num);
+#ifdef NS_ERRPRINTFS
 	param = ntohs(ep->ns_err_param);
+#endif
 	ns_errstat.ns_es_inhist[ns_err_x(type)]++;
 
 #ifdef NS_ERRPRINTFS
@@ -236,35 +279,35 @@ ns_err_input(m)
 #ifdef NS_ERRPRINTFS
 		if (ns_errprintfs)
 			printf("deliver to protocol %d\n",
-				       ep->ns_err_idp.idp_pt);
+			    ep->ns_err_idp.idp_pt);
 #endif
 		switch(ep->ns_err_idp.idp_pt) {
 		case NSPROTO_SPP:
-			spp_ctlinput(code, (caddr_t)ep);
+			spp_ctlinput(code, NULL, ep);
 			break;
 
 		default:
-			idp_ctlinput(code, (caddr_t)ep);
+			idp_ctlinput(code, NULL, ep);
 		}
 		
-		goto free;
+		goto freeit;
 
 	default:
 	badcode:
 		ns_errstat.ns_es_badcode++;
-		goto free;
+		goto freeit;
 
 	}
-free:
+freeit:
 	m_freem(m);
 }
 
 #ifdef notdef
-u_long
+u_int32_t
 nstime()
 {
 	int s = splclock();
-	u_long t;
+	u_int32_t t;
 
 	t = (time.tv_sec % (24*60*60)) * 1000 + time.tv_usec / 1000;
 	splx(s);
@@ -272,13 +315,14 @@ nstime()
 }
 #endif
 
-ns_echo(idp)
-register struct idp *idp;
+int
+ns_echo(m)
+struct mbuf *m;
 {
-	struct mbuf *m = dtom(idp);
-	register struct echo {
+	struct idp *idp = mtod(m, struct idp *);
+	struct echo {
 	    struct idp	ec_idp;
-	    u_short		ec_op; /* Operation, 1 = request, 2 = reply */
+	    u_int16_t		ec_op; /* Operation, 1 = request, 2 = reply */
 	} *ec = (struct echo *)idp;
 	struct ns_addr temp;
 
@@ -299,4 +343,3 @@ register struct idp *idp;
 	(void) ns_output(m, (struct route *)0, NS_FORWARDING);
 	return(0);
 }
-#endif

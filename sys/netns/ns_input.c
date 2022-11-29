@@ -1,20 +1,42 @@
+/*	$NetBSD: ns_input.c,v 1.20 2003/09/30 00:01:18 christos Exp $	*/
+
 /*
- * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1984, 1985, 1986, 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *      @(#)ns_input.c	7.2 (Berkeley) 1/20/88
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)ns_input.c	8.2 (Berkeley) 9/22/94
  */
 
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: ns_input.c,v 1.20 2003/09/30 00:01:18 christos Exp $");
+
 #include <sys/param.h>
-#ifdef	NS
 #include <sys/systm.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
@@ -31,9 +53,14 @@
 #include <netns/ns.h>
 #include <netns/ns_pcb.h>
 #include <netns/ns_if.h>
+#include <netns/ns_var.h>
 #include <netns/idp.h>
 #include <netns/idp_var.h>
 #include <netns/ns_error.h>
+#include <netns/sp.h>
+#include <netns/spidp.h>
+#include <netns/spp_timer.h>
+#include <netns/spp_var.h>
 
 /*
  * NS initialization.
@@ -43,11 +70,14 @@ union ns_host	ns_zerohost;
 union ns_host	ns_broadhost;
 union ns_net	ns_zeronet;
 union ns_net	ns_broadnet;
+struct sockaddr_ns ns_netmask, ns_hostmask;
 
-static u_short allones[] = {-1, -1, -1};
+static u_int16_t allones[] = {-1, -1, -1};
 
 struct nspcb nspcb;
 struct nspcb nsrawpcb;
+
+struct idpstat idpstat;
 
 struct ifqueue	nsintrq;
 int	nsqmaxlen = IFQ_MAXLEN;
@@ -55,16 +85,22 @@ int	nsqmaxlen = IFQ_MAXLEN;
 int	idpcksum = 1;
 long	ns_pexseq;
 
+void
 ns_init()
 {
-	extern struct timeval time;
 
 	ns_broadhost = * (union ns_host *) allones;
 	ns_broadnet = * (union ns_net *) allones;
 	nspcb.nsp_next = nspcb.nsp_prev = &nspcb;
 	nsrawpcb.nsp_next = nsrawpcb.nsp_prev = &nsrawpcb;
 	nsintrq.ifq_maxlen = nsqmaxlen;
+	TAILQ_INIT(&ns_ifaddr);
 	ns_pexseq = time.tv_usec;
+	ns_netmask.sns_len = 6;
+	ns_netmask.sns_addr.x_net = ns_broadnet;
+	ns_hostmask.sns_len = 12;
+	ns_hostmask.sns_addr.x_net = ns_broadnet;
+	ns_hostmask.sns_addr.x_host = ns_broadhost;
 }
 
 /*
@@ -72,14 +108,13 @@ ns_init()
  */
 int nsintr_getpck = 0;
 int nsintr_swtch = 0;
+void
 nsintr()
 {
-	register struct idp *idp;
-	register struct mbuf *m;
-	register struct nspcb *nsp;
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	register int i;
+	struct idp *idp;
+	struct mbuf *m;
+	struct nspcb *nsp;
+	int i;
 	int len, s, error;
 	char oddpacketp;
 
@@ -88,13 +123,13 @@ next:
 	 * Get next datagram off input queue and get IDP header
 	 * in first mbuf.
 	 */
-	s = splimp();
-	IF_DEQUEUEIF(&nsintrq, m, ifp);
+	s = splnet();
+	IF_DEQUEUE(&nsintrq, m);
 	splx(s);
 	nsintr_getpck++;
 	if (m == 0)
 		return;
-	if ((m->m_off > MMAXOFF || m->m_len < sizeof (struct idp)) &&
+	if ((m->m_flags & M_EXT || m->m_len < sizeof (struct idp)) &&
 	    (m = m_pullup(m, sizeof (struct idp))) == 0) {
 		idpstat.idps_toosmall++;
 		goto next;
@@ -105,12 +140,12 @@ next:
 	 */
 	for (nsp = nsrawpcb.nsp_next; nsp != &nsrawpcb; nsp = nsp->nsp_next) {
 		struct mbuf *m1 = m_copy(m, 0, (int)M_COPYALL);
-		if (m1) idp_input(m1, nsp, ifp);
+		if (m1) idp_input(m1, nsp);
 	}
 
 	idp = mtod(m, struct idp *);
 	len = ntohs(idp->idp_len);
-	if (oddpacketp == len & 1) {
+	if ((oddpacketp = len & 1) != 0) {
 		len++;		/* If this packet is of odd length,
 				   preserve garbage byte for checksum */
 	}
@@ -121,29 +156,20 @@ next:
 	 * Trim mbufs if longer than we expect.
 	 * Drop packet if shorter than we expect.
 	 */
-	i = -len;
-	m0 = m;
-	for (;;) {
-		i += m->m_len;
-		if (m->m_next == 0)
-			break;
-		m = m->m_next;
+	if (m->m_pkthdr.len < len) {
+		idpstat.idps_tooshort++;
+		goto bad;
 	}
-	if (i != 0) {
-		if (i < 0) {
-			idpstat.idps_tooshort++;
-			m = m0;
-			goto bad;
-		}
-		if (i <= m->m_len)
-			m->m_len -= i;
-		else
-			m_adj(m0, -i);
+	if (m->m_pkthdr.len > len) {
+		if (m->m_len == m->m_pkthdr.len) {
+			m->m_len = len;
+			m->m_pkthdr.len = len;
+		} else
+			m_adj(m, len - m->m_pkthdr.len);
 	}
-	m = m0;
 	if (idpcksum && ((i = idp->idp_sum)!=0xffff)) {
 		idp->idp_sum = 0;
-		if (i != (idp->idp_sum = ns_cksum(m,len))) {
+		if (i != (idp->idp_sum = ns_cksum(m, len))) {
 			idpstat.idps_badsum++;
 			idp->idp_sum = i;
 			if (ns_hosteqnh(ns_thishost, idp->idp_dna.x_host))
@@ -173,7 +199,7 @@ next:
 			 * Suggestion of Bill Nesheim, Cornell U.
 			 */
 			if (idp->idp_tc < NS_MAXHOPS) {
-				idp_forward(idp);
+				idp_forward(m);
 				goto next;
 			}
 		}
@@ -181,7 +207,7 @@ next:
 	 * Is this our packet? If not, forward.
 	 */
 	} else if (!ns_hosteqnh(ns_thishost,idp->idp_dna.x_host)) {
-		idp_forward(idp);
+		idp_forward(m);
 		goto next;
 	}
 	/*
@@ -194,20 +220,20 @@ next:
 	nsintr_swtch++;
 	if (nsp) {
 		if (oddpacketp) {
-			m_adj(m0, -1);
+			m_adj(m, -1);
 		}
 		if ((nsp->nsp_flags & NSP_ALL_PACKETS)==0)
 			switch (idp->idp_pt) {
 
 			    case NSPROTO_SPP:
-				    spp_input(m, nsp, ifp);
+				    spp_input(m, nsp);
 				    goto next;
 
 			    case NSPROTO_ERROR:
 				    ns_err_input(m);
 				    goto next;
 			}
-		idp_input(m, nsp, ifp);
+		idp_input(m, nsp);
 	} else {
 		ns_error(m, NS_ERR_NOSOCK, 0);
 	}
@@ -226,23 +252,23 @@ u_char nsctlerrmap[PRC_NCMDS] = {
 	0,		0,		0,		0
 };
 
-idp_donosocks = 1;
+int idp_donosocks = 1;
 
-idp_ctlinput(cmd, arg)
+void *
+idp_ctlinput(cmd, sa, arg)
 	int cmd;
-	caddr_t arg;
+	struct sockaddr *sa;
+	void *arg;
 {
 	struct ns_addr *ns;
 	struct nspcb *nsp;
-	struct ns_errp *errp;
-	int idp_abort();
-	extern struct nspcb *idp_drop();
+	struct ns_errp *errp = NULL;
 	int type;
 
-	if (cmd < 0 || cmd > PRC_NCMDS)
-		return;
+	if ((unsigned)cmd >= PRC_NCMDS)
+		return NULL;
 	if (nsctlerrmap[cmd] == 0)
-		return;		/* XXX */
+		return NULL;		/* XXX */
 	type = NS_ERR_UNREACH_HOST;
 	switch (cmd) {
 		struct sockaddr_ns *sns;
@@ -250,17 +276,17 @@ idp_ctlinput(cmd, arg)
 	case PRC_IFDOWN:
 	case PRC_HOSTDEAD:
 	case PRC_HOSTUNREACH:
-		sns = (struct sockaddr_ns *)arg;
-		if (sns->sns_family != AF_INET)
-			return;
+		sns = (struct sockaddr_ns *) sa;
+		if (sns->sns_family != AF_NS)
+			return NULL;
 		ns = &sns->sns_addr;
 		break;
 
 	default:
-		errp = (struct ns_errp *)arg;
+		errp = arg;
 		ns = &errp->ns_err_idp.idp_dna;
 		type = errp->ns_err_num;
-		type = ntohs((u_short)type);
+		type = ntohs((u_int16_t)type);
 	}
 	switch (type) {
 
@@ -270,10 +296,11 @@ idp_ctlinput(cmd, arg)
 
 	case NS_ERR_NOSOCK:
 		nsp = ns_pcblookup(ns, errp->ns_err_idp.idp_sna.x_port,
-			NS_WILDCARD);
+				   NS_WILDCARD);
 		if(nsp && idp_donosocks && ! ns_nullhost(nsp->nsp_faddr))
 			(void) idp_drop(nsp, (int)nsctlerrmap[cmd]);
 	}
+	return NULL;
 }
 
 int	idpprintfs = 0;
@@ -287,10 +314,12 @@ int	idpforwarding = 1;
 struct route idp_droute;
 struct route idp_sroute;
 
-idp_forward(idp)
-	register struct idp *idp;
+void
+idp_forward(m)
+	struct mbuf *m;
 {
-	register int error, type, code;
+	struct idp *idp = mtod(m, struct idp *);
+	int error, type, code;
 	struct mbuf *mcopy = NULL;
 	int agedelta = 1;
 	int flags = NS_FORWARDING;
@@ -318,7 +347,7 @@ idp_forward(idp)
 	 * Save at most 42 bytes of the packet in case
 	 * we need to generate an NS error message to the src.
 	 */
-	mcopy = m_copy(dtom(idp), 0, imin((int)ntohs(idp->idp_len), 42));
+	mcopy = m_copy(m, 0, imin((int)ntohs(idp->idp_len), 42));
 
 	if ((ok_there = idp_do_route(&idp->idp_dna,&idp_droute))==0) {
 		type = NS_ERR_UNREACH_HOST, code = 0;
@@ -341,7 +370,7 @@ idp_forward(idp)
 		}
 		if ((ok_back = idp_do_route(&idp->idp_sna,&idp_sroute))==0) {
 			/* error = ENETUNREACH; He'll never get it! */
-			m_freem(dtom(idp));
+			m_freem(m);
 			goto cleanup;
 		}
 		if (idp_droute.ro_rt &&
@@ -355,21 +384,21 @@ idp_forward(idp)
 		}
 	}
 	/* need to adjust checksum */
-	if (idp->idp_sum!=0xffff) {
+	if (idp->idp_sum != 0xffff) {
 		union bytes {
-			u_char c[4];
-			u_short s[2];
-			long l;
+			u_int8_t c[4];
+			u_int16_t s[2];
+			u_int32_t l;
 		} x;
-		register int shift;
+		int shift;
 		x.l = 0; x.c[0] = agedelta;
 		shift = (((((int)ntohs(idp->idp_len))+1)>>1)-2) & 0xf;
-		x.l = idp->idp_sum + (x.l << shift);
+		x.l = idp->idp_sum + (x.s[0] << shift);
 		x.l = x.s[0] + x.s[1];
 		x.l = x.s[0] + x.s[1];
 		if (x.l==0xffff) idp->idp_sum = 0; else idp->idp_sum = x.l;
 	}
-	if ((error = ns_output(dtom(idp), &idp_droute, flags)) && 
+	if ((error = ns_output(m, &idp_droute, flags)) != 0 && 
 	    (mcopy!=NULL)) {
 		idp = mtod(mcopy, struct idp *);
 		type = NS_ERR_UNSPEC_T, code = 0;
@@ -394,7 +423,7 @@ idp_forward(idp)
 		}
 		mcopy = NULL;
 	senderror:
-		ns_error(dtom(idp), type, code);
+		ns_error(m, type, code);
 	}
 cleanup:
 	if (ok_there)
@@ -405,16 +434,18 @@ cleanup:
 		m_freem(mcopy);
 }
 
+int
 idp_do_route(src, ro)
-struct ns_addr *src;
-struct route *ro;
+	struct ns_addr *src;
+	struct route *ro;
 {
 	
 	struct sockaddr_ns *dst;
 
 	bzero((caddr_t)ro, sizeof (*ro));
-	dst = (struct sockaddr_ns *)&ro->ro_dst;
+	dst = satosns(&ro->ro_dst);
 
+	dst->sns_len = sizeof(*dst);
 	dst->sns_family = AF_NS;
 	dst->sns_addr = *src;
 	dst->sns_addr.x_port = 0;
@@ -426,52 +457,44 @@ struct route *ro;
 	return (1);
 }
 
+void
 idp_undo_route(ro)
-register struct route *ro;
+	struct route *ro;
 {
 	if (ro->ro_rt) {RTFREE(ro->ro_rt);}
 }
-static union ns_net
-ns_zeronet;
 
+void
 ns_watch_output(m, ifp)
-struct mbuf *m;
-struct ifnet *ifp;
+	struct mbuf *m;
+	struct ifnet *ifp;
 {
-	register struct nspcb *nsp;
-	register struct ifaddr *ia;
+	struct nspcb *nsp;
+	struct ifaddr *ifa;
 	/*
 	 * Give any raw listeners a crack at the packet
 	 */
 	for (nsp = nsrawpcb.nsp_next; nsp != &nsrawpcb; nsp = nsp->nsp_next) {
 		struct mbuf *m0 = m_copy(m, 0, (int)M_COPYALL);
 		if (m0) {
-			struct mbuf *m1 = m_get(M_DONTWAIT, MT_DATA);
+			struct idp *idp;
 
-			if(m1 == NULL)
-				m_freem(m0);
-			else {
-				register struct idp *idp;
-
-				m1->m_off = MMINOFF;
-				m1->m_len = sizeof (*idp);
-				m1->m_next = m0;
-				idp = mtod(m1, struct idp *);
-				idp->idp_sna.x_net = ns_zeronet;
-				idp->idp_sna.x_host = ns_thishost;
-				if (ifp && (ifp->if_flags & IFF_POINTOPOINT))
-				    for(ia = ifp->if_addrlist; ia;
-							ia = ia->ifa_next) {
-					if (ia->ifa_addr.sa_family==AF_NS) {
-					    idp->idp_sna = 
-						satons_addr(ia->ifa_dstaddr);
-					    break;
+			M_PREPEND(m0, sizeof (*idp), M_DONTWAIT);
+			if (m0 == NULL)
+				continue;
+			idp = mtod(m0, struct idp *);
+			idp->idp_sna.x_net = ns_zeronet;
+			idp->idp_sna.x_host = ns_thishost;
+			if (ifp && (ifp->if_flags & IFF_POINTOPOINT))
+				for (ifa = ifp->if_addrlist.tqh_first; ifa != 0;
+				    ifa = ifa->ifa_list.tqe_next) {
+					if (ifa->ifa_addr->sa_family == AF_NS) {
+						idp->idp_sna = IA_SNS(ifa)->sns_addr;
+						break;
 					}
-				    }
-				idp->idp_len = 0xffff;
-				idp_input(m1, nsp, ifp);
-			}
+				}
+			idp->idp_len = ntohs((u_int16_t)m0->m_pkthdr.len);
+			idp_input(m0, nsp);
 		}
 	}
 }
-#endif	NS

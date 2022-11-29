@@ -1,48 +1,85 @@
+/*	$NetBSD: ns_output.c,v 1.12 2003/08/07 16:33:46 agc Exp $	*/
+
 /*
- * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1984, 1985, 1986, 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *      @(#)ns_output.c	7.2 (Berkeley) 1/20/88
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)ns_output.c	8.1 (Berkeley) 6/10/93
  */
 
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: ns_output.c,v 1.12 2003/08/07 16:33:46 agc Exp $");
+
 #include <sys/param.h>
-#ifdef	NS
+#include <sys/systm.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
+#include <sys/errno.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#include <sys/errno.h>
 
 #include <net/if.h>
 #include <net/route.h>
 
 #include <netns/ns.h>
 #include <netns/ns_if.h>
+#include <netns/ns_var.h>
 #include <netns/idp.h>
 #include <netns/idp_var.h>
+
+#include <machine/stdarg.h>
 
 int ns_hold_output = 0;
 int ns_copy_output = 0;
 int ns_output_cnt = 0;
 struct mbuf *ns_lastout;
 
-ns_output(m0, ro, flags)
+int
+#if __STDC__
+ns_output(struct mbuf *m0, ...)
+#else
+ns_output(m0, va_alist)
 	struct mbuf *m0;
+	va_dcl
+#endif
+{
 	struct route *ro;
 	int flags;
-{
-	register struct idp *idp = mtod(m0, struct idp *);
-	register struct ifnet *ifp = 0;
+	struct idp *idp = mtod(m0, struct idp *);
+	struct ifnet *ifp = 0;
 	int error = 0;
 	struct route idproute;
 	struct sockaddr_ns *dst;
-	extern int idpcksum;
+	va_list ap;
+
+	va_start(ap, m0);
+	ro = va_arg(ap, struct route *);
+	flags = va_arg(ap, int);
+	va_end(ap);
 
 	if (ns_hold_output) {
 		if (ns_lastout) {
@@ -57,9 +94,10 @@ ns_output(m0, ro, flags)
 		ro = &idproute;
 		bzero((caddr_t)ro, sizeof (*ro));
 	}
-	dst = (struct sockaddr_ns *)&ro->ro_dst;
+	dst = satosns(&ro->ro_dst);
 	if (ro->ro_rt == 0) {
 		dst->sns_family = AF_NS;
+		dst->sns_len = sizeof (*dst);
 		dst->sns_addr = idp->idp_dna;
 		dst->sns_addr.x_port = 0;
 		/*
@@ -91,7 +129,7 @@ ns_output(m0, ro, flags)
 	}
 	ro->ro_rt->rt_use++;
 	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
-		dst = (struct sockaddr_ns *)&ro->ro_rt->rt_gateway;
+		dst = satosns(ro->ro_rt->rt_gateway);
 gotif:
 
 	/*
@@ -110,12 +148,12 @@ gotif:
 		}
 	}
 
-	if (htons(idp->idp_len) <= ifp->if_mtu) {
+	if (ntohs(idp->idp_len) <= ifp->if_mtu) {
 		ns_output_cnt++;
 		if (ns_copy_output) {
 			ns_watch_output(m0, ifp);
 		}
-		error = (*ifp->if_output)(ifp, m0, (struct sockaddr *)dst);
+		error = (*ifp->if_output)(ifp, m0, snstosa(dst), ro->ro_rt);
 		goto done;
 	} else error = EMSGSIZE;
 
@@ -126,8 +164,9 @@ bad:
 	}
 	m_freem(m0);
 done:
-	if (ro == &idproute && (flags & NS_ROUTETOIF) == 0 && ro->ro_rt)
+	if (ro == &idproute && (flags & NS_ROUTETOIF) == 0 && ro->ro_rt) {
 		RTFREE(ro->ro_rt);
+		ro->ro_rt = 0;
+	}
 	return (error);
 }
-#endif

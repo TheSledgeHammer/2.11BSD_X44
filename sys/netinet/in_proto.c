@@ -1,16 +1,74 @@
+/*	$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $	*/
+
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the project nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)in_proto.c	7.2.1 (2.11BSD) 1995/10/09
+ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
+
+/*
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)in_proto.c	8.2 (Berkeley) 2/9/95
+ */
+
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $");
+
+#include "opt_mrouting.h"
+#include "opt_eon.h"			/* ISO CLNL over IP */
+#include "opt_iso.h"			/* ISO TP tunneled over IP */
+#include "opt_ns.h"			/* NSIP: XNS tunneled over IP */
+#include "opt_inet.h"
+#include "opt_ipsec.h"
 
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -18,36 +76,70 @@
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 
+#include <net/if.h>
+#include <net/radix.h>
+#include <net/route.h>
+
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/in_pcb.h>
 
+#ifdef INET6
+#ifndef INET
+#include <netinet/in.h>
+#endif
+#include <netinet/ip6.h>
+#endif
+
+#include <netinet/igmp_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
+#include <netinet/tcp_debug.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
+#include <netinet/ip_encap.h>
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
-int	ip_output(),ip_ctloutput();
-int	ip_init(),ip_slowtimo(),ip_drain(), ip_sysctl();
-int	icmp_input(), icmp_sysctl();
-int	udp_input(),udp_ctlinput(), udp_sysctl();
-int	udp_usrreq();
-int	udp_init();
-int	tcp_input(),tcp_ctlinput();
-int	tcp_usrreq(),tcp_ctloutput();
-int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_input(),rip_output(),rip_ctloutput();
-extern	int raw_usrreq();
-/*
- * IMP protocol family: raw interface.
- * Using the raw interface entry to get the timer routine
- * in is a kludge.
- */
-//#include "imp.h"
-#if NIMP > 0
-int	rimp_output(), hostslowtimo();
+
+#ifdef IPSEC
+#include <netinet6/ipsec.h>
+#include <netinet6/ah.h>
+#ifdef IPSEC_ESP
+#include <netinet6/esp.h>
 #endif
+#include <netinet6/ipcomp.h>
+#endif /* IPSEC */
+
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#include <netipsec/key.h>
+#endif	/* FAST_IPSEC */
 
 #ifdef NSIP
-int	idpip_input(), nsip_ctlinput();
+#include <netns/ns_var.h>
+#include <netns/idp_var.h>
+#endif /* NSIP */
+
+#ifdef TPIP
+#include <netiso/tp_param.h>
+#include <netiso/tp_var.h>
+#endif /* TPIP */
+
+#ifdef EON
+#include <netiso/eonvar.h>
+#endif /* EON */
+
+#include "gre.h"
+#if NGRE > 0
+#include <netinet/ip_gre.h>
 #endif
 
 extern	struct domain inetdomain;
@@ -56,106 +148,138 @@ struct protosw inetsw[] = {
 { 0,		&inetdomain,	0,		0,
   0,		ip_output,	0,		0,
   0,
-  ip_init,	0,		ip_slowtimo,	ip_drain,	ip_sysctl
+  ip_init,	0,		ip_slowtimo,	ip_drain,	NULL
 },
 { SOCK_DGRAM,	&inetdomain,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
   udp_input,	0,		udp_ctlinput,	ip_ctloutput,
   udp_usrreq,
-  udp_init,	0,		0,		0,		udp_sysctl
+  udp_init,	0,		0,		0,		NULL
 },
-{ SOCK_STREAM,	&inetdomain,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD,
+{ SOCK_STREAM,	&inetdomain,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD|PR_LISTEN|PR_ABRTACPTDIS,
   tcp_input,	0,		tcp_ctlinput,	tcp_ctloutput,
   tcp_usrreq,
-  tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
+  tcp_init,	0,		tcp_slowtimo,	tcp_drain,	NULL
 },
 { SOCK_RAW,	&inetdomain,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,		rip_ctloutput,
-  raw_usrreq,
+  rip_input,	rip_output,	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,
   0,		0,		0,		0,
 },
-{ SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
-  icmp_input,	rip_output,	0,		rip_ctloutput,
-  raw_usrreq,
-  0,		0,		0,		0,		icmp_sysctl
+{ SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  icmp_input,	rip_output,	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,
+  icmp_init,	0,		0,		0,		NULL
 },
-#ifdef NSIP
-{ SOCK_RAW,	&inetdomain,	IPPROTO_IDP,	PR_ATOMIC|PR_ADDR,
-  idpip_input,	rip_output,	nsip_ctlinput,	0,
-  raw_usrreq,
-  0,		0,		0,		0,
+#ifdef IPSEC
+{ SOCK_RAW,	&inetdomain,	IPPROTO_AH,	PR_ATOMIC|PR_ADDR,
+  ah4_input,	0,	 	ah4_ctlinput,	0,
+  0,
+  0,		0,		0,		0,		NULL
+},
+#ifdef IPSEC_ESP
+{ SOCK_RAW,	&inetdomain,	IPPROTO_ESP,	PR_ATOMIC|PR_ADDR,
+  esp4_input,
+	0,	 	esp4_ctlinput,	0,
+  0,
+  0,		0,		0,		0,		NULL
 },
 #endif
-	/* raw wildcard */
-{ SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,		rip_ctloutput,
-  raw_usrreq,
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IPCOMP,	PR_ATOMIC|PR_ADDR,
+  ipcomp4_input,
+ 0,	 	0,		0,
+  0,
+  0,		0,		0,		0,		NULL
+},
+#endif /* IPSEC */
+#ifdef FAST_IPSEC
+{ SOCK_RAW,	&inetdomain,	IPPROTO_AH,	PR_ATOMIC|PR_ADDR,
+  ipsec4_common_input,	0,	 	ah4_ctlinput,	0,
+  0,
+  0,		0,		0,		0,		NULL
+},
+{ SOCK_RAW,	&inetdomain,	IPPROTO_ESP,	PR_ATOMIC|PR_ADDR,
+  ipsec4_common_input,    0,	 	esp4_ctlinput,	0,
+  0,
+  0,		0,		0,		0,		NULL
+},
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IPCOMP,	PR_ATOMIC|PR_ADDR,
+  ipsec4_common_input,    0,	 	0,		0,
+  0,
+  0,		0,		0,		0,		NULL
+},
+#endif /* FAST_IPSEC */
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IPV4,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  encap4_input,	rip_output, 	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,	/*XXX*/
+  encap_init,	0,		0,		0,
+},
+#ifdef INET6
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IPV6,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  encap4_input,	rip_output, 	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,	/*XXX*/
+  encap_init,	0,		0,		0,
+},
+#endif /* INET6 */
+#if NGRE > 0
+{ SOCK_RAW,	&inetdomain,	IPPROTO_GRE,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  gre_input,	rip_output,	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,
   0,		0,		0,		0,
+},
+{ SOCK_RAW,	&inetdomain,	IPPROTO_MOBILE,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  gre_mobile_input,	rip_output,	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,
+  0,		0,		0,		0,
+},
+#endif /* NGRE > 0 */
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IGMP,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  igmp_input,	rip_output,	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,
+  igmp_init,	igmp_fasttimo,	igmp_slowtimo,	0,
+},
+#ifdef TPIP
+{ SOCK_SEQPACKET,&inetdomain,	IPPROTO_TP,	PR_CONNREQUIRED|PR_WANTRCVD|PR_LISTEN|PR_LASTHDR|PR_ABRTACPTDIS,
+  tpip_input,	0,		tpip_ctlinput,	tp_ctloutput,
+  tp_usrreq,
+  tp_init,	0,		tp_slowtimo,	tp_drain,
+},
+#endif /* TPIP */
+#ifdef ISO
+/* EON (ISO CLNL over IP) */
+#ifdef EON
+{ SOCK_RAW,	&inetdomain,	IPPROTO_EON,	PR_LASTHDR,
+  eoninput,	0,		eonctlinput,	0,
+  0,
+  eonprotoinit,	0,		0,		0,
+},
+#else
+{ SOCK_RAW,	&inetdomain,	IPPROTO_EON,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  encap4_input,	rip_output,	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,	/*XXX*/
+  encap_init,	0,		0,		0,
+},
+#endif /* EON */
+#endif /* ISO */
+#ifdef NSIP
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IDP,	PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  idpip_input,	NULL,		nsip_ctlinput,	0,
+  rip_usrreq,
+  0,		0,		0,		0,
+},
+#endif /* NSIP */
+/* raw wildcard */
+{ SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR|PR_LASTHDR,
+  rip_input,	rip_output,	rip_ctlinput,	rip_ctloutput,
+  rip_usrreq,
+  rip_init,	0,		0,		0,
 },
 };
 
 struct domain inetdomain =
-    { AF_INET, "internet", 0, 0, 0, 
-      inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])] };
+    { PF_INET, "internet", 0, 0, 0,
+      inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])], 0,
+      rn_inithead, 32, sizeof(struct sockaddr_in) };
 
-#if NIMP > 0
-extern	struct domain impdomain;
+u_char	ip_protox[IPPROTO_MAX];
 
-struct protosw impsw[] = {
-{ SOCK_RAW,	&impdomain,	0,		PR_ATOMIC|PR_ADDR,
-  0,		rimp_output,	0,		0,
-  raw_usrreq,
-  0,		0,		hostslowtimo,	0,
-},
-};
-
-struct domain impdomain =
-    { AF_IMPLINK, "imp", 0, 0, 0,
-      impsw, &impsw[sizeof (impsw)/sizeof(impsw[0])] };
-#endif
-
-//#include "hy.h"
-#if NHY > 0
-/*
- * HYPERchannel protocol family: raw interface.
- */
-int	rhy_output();
-extern	struct domain hydomain;
-
-struct protosw hysw[] = {
-{ SOCK_RAW,	&hydomain,	0,		PR_ATOMIC|PR_ADDR,
-  0,		rhy_output,	0,		0,
-  raw_usrreq,
-  0,		0,		0,		0,
-},
-};
-
-struct domain hydomain =
-    { AF_HYLINK, "hy", 0, 0, 0, hysw, &hysw[sizeof (hysw)/sizeof(hysw[0])] };
-#endif
-
-#ifndef	IPFORWARDING
-#define	IPFORWARDING	1
-#endif
-
-#ifndef	IPSENDREDIRECTS
-#define	IPSENDREDIRECTS	1
-#endif
-
-#ifndef	IPFORWARDSRCRT
-#if	!defined(IPFORWARDING)
-#define	IPFORWARDSRCRT	0
-#else
-#define	IPFORWARDSRCRT	1
-#endif
-#endif
-
-int	ipforwarding = IPFORWARDING;
-int	ipsendredirects = IPSENDREDIRECTS;
-int	ipforward_srcrt = IPFORWARDSRCRT;
-int	ip_defttl = IPDEFTTL;
-
-#ifdef	GATEWAY
-int	icmpmaskrepl = 1;
-#else
-int	icmpmaskrepl = 0;
-#endif
+int icmperrppslim = 100;			/* 100pps */
