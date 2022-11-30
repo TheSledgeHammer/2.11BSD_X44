@@ -633,7 +633,8 @@ ufs_dirbadentry(dp, ep, entryoffsetinblock)
 	if (ep->d_name[i])
 		goto bad;
 	return (0);
-	bad: return (1);
+bad:
+	return (1);
 }
 
 /*
@@ -1011,7 +1012,8 @@ int ufs_checkpath(source, target, cred)
 		}
 	}
 
-	out: if (error == ENOTDIR)
+out:
+	if (error == ENOTDIR)
 		printf("checkpath: .. not a directory\n");
 	if (vp != NULL)
 		vput(vp);

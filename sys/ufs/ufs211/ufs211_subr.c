@@ -20,6 +20,11 @@
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
 
+struct ufs211_bufmap *ufs211buf;
+
+static void *bufmap_alloc(void *data, long size);
+static void *bufmap_free(void *data);
+
 /*
  * Flush all the blocks associated with an inode.
  * There are two strategies based on the size of the file;
@@ -93,67 +98,6 @@ ufs211_badblock(fp, bn)
 	return (0);
 }
 
-#ifdef notyet
-/*
- * Getfs maps a device number into a pointer to the incore super block.
- *
- * The algorithm is a linear search through the mount table. A
- * consistency check of the super block magic number is performed.
- *
- * panic: no fs -- the device is not mounted.
- *	this "cannot happen"
- */
-struct ufs211_fs *
-ufs211_getfs(dev)
-	dev_t dev;
-{
-	register struct ufs211_mount *mp;
-	register struct ufs211_fs *fs;
-
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_inodp == NULL || mp->m_dev != dev)
-			continue;
-		fs = &mp->m_filsys;
-		if (fs->fs_nfree > UFS211_NICFREE || fs->fs_ninode > UFS211_NICINOD) {
-			ufs211_fserr(fs, "bad count");
-			fs->fs_nfree = fs->fs_ninode = 0;
-		}
-		return(fs);
-	}
-	printf("no fs on dev %u/%u\n", major(dev), minor(dev));
-	return((struct ufs211_fs *) NULL);
-}
-
-
-/*
- * Getfsx returns the index in the file system
- * table of the specified device.  The swap device
- * is also assigned a pseudo-index.  The index may
- * be used as a compressed indication of the location
- * of a block, recording
- *	<getfsx(dev),blkno>
- * rather than
- *	<dev, blkno>
- * provided the information need remain valid only
- * as long as the file system is mounted.
- */
-int
-ufs211_getfsx(dev)
-	dev_t dev;
-{
-	register struct ufs211_mount *mp;
-
-	if (dev == swapdev)
-		return (0377);
-	for(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_dev == dev)
-			return (mp - &mount[0]);
-	return (-1);
-}
-#endif
-
-struct ufs211_bufmap *ufs211buf;
-
 void
 ufs211_bufmap_init(void)
 {
@@ -163,7 +107,7 @@ ufs211_bufmap_init(void)
 /* mapin buf */
 void
 ufs211_mapin(bp)
-    struct buf *bp;
+    void *bp;
 {
     if (bufmap_alloc(bp, sizeof(bp))) {
         printf("buf allocated\n");
@@ -173,7 +117,7 @@ ufs211_mapin(bp)
 /* mapout buf */
 void
 ufs211_mapout(bp)
-    struct buf *bp;
+	void *bp;
 {
     if (bufmap_free(bp) == NULL) {
         printf("buf freed\n");

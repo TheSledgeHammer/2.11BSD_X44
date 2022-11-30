@@ -45,13 +45,6 @@ struct ufs211_mount {
 	char					m_qflags[MAXQUOTAS];			/* quota specific flags */
 };
 
-struct ufs211_xmount {
-	char					xm_mntfrom[UFS211_MNAMELEN];	/* /dev/xxxx mounted from */
-	char					xm_mnton[UFS211_MNAMELEN];		/* directory mounted on - this is the full(er) version of fs_fsmnt. */
-};
-
-#define	XMOUNTDESC		(((btoc(sizeof (struct ufs211_xmount)) - 1) << 8) | RW)
-
 /*
  * Flags describing the state of quotas.
  */

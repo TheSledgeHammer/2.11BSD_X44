@@ -72,6 +72,18 @@ struct direct {
 #define	IFTODT(mode)	(((mode) & 0170000) >> 12)
 #define	DTTOIF(dirtype)	((dirtype) << 12)
 
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+#define DIRSIZ(oldfmt, dp) 														\
+    ((oldfmt) ? 																\
+    ((sizeof(struct direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_type+1 + 3) &~ 3)) : 	\
+    ((sizeof(struct direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3)))
+#else
+#define DIRSIZ(oldfmt, dp) 														\
+    ((sizeof(struct direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3));
+#endif
+#define OLDDIRFMT	1
+#define NEWDIRFMT	0
+
 /*
  * Definitions for library routines operating on directories.
  */

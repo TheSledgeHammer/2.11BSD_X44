@@ -49,8 +49,6 @@
  * Routines used in checking limits on file system usage.
  */
 
-#include <sys/cdefs.h>
-//#include <sys/errno.h>
 
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -63,11 +61,11 @@
 #include <sys/mount.h>
 #include <sys/user.h>
 
-#include <ufs/ufs211/ufs211_extern.h>
-#include <ufs/ufs211/ufs211_fs.h>
+//#include <ufs/ufs211/ufs211_fs.h>
+#include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_mount.h>
-#include <ufs/ufs211/ufs211_quota.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
 static char *quotatypes[] = INITQFNAMES;
 
@@ -81,10 +79,11 @@ u_long ufs211_qhash;
 LIST_HEAD(ufs211_dqhash, ufs211_dquot) *ufs211_dqhashtbl;
 u_long ufs211_dqhash;
 
-#define	QUOTINC	5	/* minimum free quots desired */
+#define	DQUOTINC	5	/* minimum free dquots desired */
+#define	QUOTINC		5	/* minimum free quots desired */
 TAILQ_HEAD(ufs211_qfreelist, ufs211_quota) 	ufs211_qfreelist;
 TAILQ_HEAD(ufs211_dqfreelist, ufs211_dquot) ufs211_dqfreelist;
-long numdquot, desiredquot = QUOTINC;
+long numdquot, desiredquot = DQUOTINC;
 
 void
 quotainit()
@@ -973,7 +972,7 @@ dowarn(mp, id, type)
 	ump = VFSTOUFS211(mp);
 	dqvp = ump->m_quotas[type];
 	if (dqvp == NULLVP || (ump->m_qflags[type] & QTF_CLOSING)) {
-		*dqp = NODQUOT;
+		*dq = NODQUOT;
 		return (EINVAL);
 	}
 

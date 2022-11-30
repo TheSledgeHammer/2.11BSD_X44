@@ -6,25 +6,27 @@
  *	@(#)ufs_namei.c	1.5 (2.11BSD GTE) 1997/1/30
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
-
 #include <sys/systm.h>
-#include <sys/user.h>
-#include <sys/mount.h>
-#include <sys/buf.h>
 #include <sys/namei.h>
+#include <sys/buf.h>
+#include <sys/file.h>
+#include <sys/mount.h>
 #include <sys/vnode.h>
+#include <sys/user.h>
 
-#include <ufs/ufs211/ufs211_dir.h>
-#include <ufs/ufs211/ufs211_extern.h>
-#include <ufs/ufs211/ufs211_fs.h>
-#include <ufs/ufs211/ufs211_inode.h>
-#include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
+#include <ufs/ufs211/ufs211_inode.h>
+#include <ufs/ufs211/ufs211_dir.h>
+#include <ufs/ufs211/ufs211_mount.h>
+#include <ufs/ufs211/ufs211_extern.h>
+//#include <ufs/ufs211/ufs211_fs.h>
 
 int	ufs211_direnter2(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
 
 int	dirchk = 0;
+#define FSFMT(vp)	((vp)->v_mount->mnt_maxsymlinklen <= 0)
 
 int
 ufs211_lookup(ap)
@@ -145,7 +147,7 @@ ufs211_lookup(ap)
 	if ((nameiop == CREATE || nameiop == RENAME) && (flags & ISLASTCN)) {
 		slotstatus = NONE;
 		slotfreespace = 0;
-		slotneeded = DIRSIZ(ep);
+		slotneeded = (sizeof(struct direct) - MAXNAMLEN + cnp->cn_namelen + 3) & ~3;
 	}
 
 	/*
@@ -172,7 +174,7 @@ ufs211_lookup(ap)
 		nchstats.ncs_2passes++;
 	}
 	prevoff = dp->i_offset;
-	endsearch = roundup(dp->i_size, DIRBLKSIZ);
+	endsearch = roundup(dp->i_size, UFS211_DIRBLKSIZ);
 	enduseful = 0;
 
 searchloop:
@@ -191,7 +193,7 @@ searchloop:
 		 * If still looking for a slot, and at a DIRBLKSIZE
 		 * boundary, have to start looking for free space again.
 		 */
-		if (slotstatus == NONE && (entryoffsetinblock & (DIRBLKSIZ - 1)) == 0) {
+		if (slotstatus == NONE && (entryoffsetinblock & (UFS211_DIRBLKSIZ - 1)) == 0) {
 			slotoffset = -1;
 			slotfreespace = 0;
 		}
@@ -207,7 +209,7 @@ searchloop:
 			int i;
 
 			ufs211_dirbad(dp, dp->i_offset, "mangled entry");
-			i = DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1));
+			i = UFS211_DIRBLKSIZ - (entryoffsetinblock & (UFS211_DIRBLKSIZ - 1));
 			dp->i_offset += i;
 			entryoffsetinblock += i;
 			continue;
@@ -223,7 +225,7 @@ searchloop:
 			int size = ep->d_reclen;
 
 			if (ep->d_ino != 0)
-				size -= DIRSIZ(ep);
+				size -= DIRSIZ(FSFMT(vdp), ep);
 			if (size > 0) {
 				if (size >= slotneeded) {
 					slotstatus = FOUND;
@@ -316,12 +318,12 @@ notfound:
 		 * dp->i_offset + dp->i_count.
 		 */
 		if (slotstatus == NONE) {
-			dp->i_offset = roundup(dp->i_size, DIRBLKSIZ);
+			dp->i_offset = roundup(dp->i_size, UFS211_DIRBLKSIZ);
 			dp->i_count = 0;
 			enduseful = dp->i_offset;
 		} else if (nameiop == DELETE) {
 			dp->i_offset = slotoffset;
-			if ((dp->i_offset & (DIRBLKSIZ - 1)) == 0)
+			if ((dp->i_offset & (UFS211_DIRBLKSIZ - 1)) == 0)
 				dp->i_count = 0;
 			else
 				dp->i_count = dp->i_offset - prevoff;
@@ -331,7 +333,7 @@ notfound:
 			if (enduseful < slotoffset + slotsize)
 				enduseful = slotoffset + slotsize;
 		}
-		dp->i_endoff = roundup(enduseful, DIRBLKSIZ);
+		dp->i_endoff = roundup(enduseful, UFS211_DIRBLKSIZ);
 		dp->i_flag |= IN_CHANGE | IN_UPDATE;
 		/*
 		 * We return with the directory locked, so that
@@ -364,9 +366,9 @@ notfound:
 	 * Check that directory length properly reflects presence
 	 * of this entry.
 	 */
-	if (entryoffsetinblock + DIRSIZ(ep) > dp->i_size) {
+	if (entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep) > dp->i_size) {
 		ufs211_dirbad(dp, dp->i_offset, "i_size too small");
-		dp->i_size = entryoffsetinblock + DIRSIZ(ep);
+		dp->i_size = entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep);
 		dp->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
 
@@ -376,7 +378,7 @@ notfound:
 	 * in the cache as to where the entry was found.
 	 */
 	if ((flags & ISLASTCN) && nameiop == LOOKUP)
-		dp->i_diroff = dp->i_offset & ~(DIRBLKSIZ - 1);
+		dp->i_diroff = dp->i_offset & ~(UFS211_DIRBLKSIZ - 1);
 
 	/*
 	 * If deleting, and at end of pathname, return
@@ -397,7 +399,7 @@ notfound:
 		 * is a previous entry in this block) in dp->i_count.
 		 * Save directory inode pointer in ndp->ni_dvp for dirremove().
 		 */
-		if ((dp->i_offset & (DIRBLKSIZ - 1)) == 0)
+		if ((dp->i_offset & (UFS211_DIRBLKSIZ - 1)) == 0)
 			dp->i_count = 0;
 		else
 			dp->i_count = dp->i_offset - prevoff;
@@ -523,21 +525,38 @@ ufs211_dirbad(ip, offset, how)
  *	name must be as long as advertised, and null terminated
  */
 int
-ufs211_dirbadentry(ep, entryoffsetinblock)
+ufs211_dirbadentry(dp, ep, entryoffsetinblock)
+	struct vnode *dp;
 	register struct direct *ep;
 	int entryoffsetinblock;
 {
 	register int i;
 	int namlen;
 
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+	if (dp->v_mount->mnt_maxsymlinklen > 0)
+		namlen = ep->d_namlen;
+	else
+		namlen = ep->d_type;
+#else
+		namlen = ep->d_namlen;
+#endif
 	if ((ep->d_reclen & 0x3) != 0
-			|| ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1))
-			|| ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
+			|| ep->d_reclen > UFS211_DIRBLKSIZ - (entryoffsetinblock & (UFS211_DIRBLKSIZ - 1))
+			|| ep->d_reclen < DIRSIZ(FSFMT(dp), ep) || namlen > UFS211_MAXNAMLEN)
+		/*return (1); */
+		printf("First bad\n");
 		return (1);
-	for (i = 0; i < ep->d_namlen; i++)
-		if (ep->d_name[i] == '\0')
+	for (i = 0; i < namlen; i++)
+		if (ep->d_name[i] == '\0') {
+			/*return (1); */
+			printf("Second bad\n");
 			return (1);
-	return (ep->d_name[i]);
+		}
+	if (ep->d_name[i]) {
+		return (1);
+	}
+	return (0);
 }
 
 /*
@@ -603,7 +622,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 		panic("direnter: missing name");
 #endif
 	dp = UFS211_VTOI(dvp);
-	newentrysize = GENERIC_DIRSIZ(ep);
+	newentrysize = DIRSIZ(FSFMT(dvp), dirp);
 
 	ep->d_ino = ip->i_number;
 	ep->d_namlen = cnp->cn_namelen;
@@ -673,7 +692,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	 * entry.  Should return error by result instead of u.u_error.
 	 */
 	if (error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, &dirbuf, &bp))
-			return (u->u_error);
+			return (u.u_error);
 
 	/*
 	 * Find space for the new entry.  In the simple case, the
@@ -683,7 +702,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	 */
 
 	ep = (struct direct *)dirbuf;
-	dsize = DIRSIZ(ep);
+	dsize = DIRSIZ(FSFMT(dvp), ep);
 	spacefree = ep->d_reclen - dsize;
 	for (loc = ep->d_reclen; loc < dp->i_count;) {
 		nep = (struct direct*) (dirbuf + loc);
@@ -695,7 +714,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 			/* overwrite; nothing there; header is ours */
 			spacefree += dsize;
 		}
-		dsize = DIRSIZ(nep);
+		dsize = DIRSIZ(FSFMT(dvp), nep);
 		spacefree += nep->d_reclen - dsize;
 		loc += nep->d_reclen;
 		bcopy((caddr_t) nep, (caddr_t) ep, dsize);
@@ -750,35 +769,35 @@ ufs211_dirremove(dvp, cnp)
 		/*
 		 * Whiteout entry: set d_ino to WINO.
 		 */
-		if(u->u_error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
-			return (u->u_error);
+		if(u.u_error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
+			return (u.u_error);
 		ep->d_ino = WINO;
 		ep->d_type = DT_WHT;
-		u->u_error = VOP_BWRITE(bp);
+		u.u_error = VOP_BWRITE(bp);
 		dp->i_flag |= IN_CHANGE | IN_UPDATE;
-		return (u->u_error);
+		return (u.u_error);
 	}
 	if (dp->i_count == 0) {
 
 		/*
 		 * First entry in block: set d_ino to zero.
 		 */
-		if(u->u_error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
-			return (u->u_error);
+		if(u.u_error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
+			return (u.u_error);
 		ep->d_ino = 0;
-		u->u_error = VOP_BWRITE(bp);
+		u.u_error = VOP_BWRITE(bp);
 		dp->i_flag |= IN_CHANGE | IN_UPDATE;
-		return (u->u_error);
+		return (u.u_error);
 	}
 	/*
 	 * Collapse new free space into previous entry.
 	 */
-	if (u->u_error == VOP_BLKATOFF(dvp, (off_t)(dp->i_offset - dp->i_count), (char **)&ep, &bp))
-		return (u->u_error);
+	if (u.u_error == VOP_BLKATOFF(dvp, (off_t)(dp->i_offset - dp->i_count), (char **)&ep, &bp))
+		return (u.u_error);
 	ep->d_reclen += dp->i_reclen;
 	error = VOP_BWRITE(bp);
 	dp->i_flag |= IN_CHANGE | IN_UPDATE;
-	return (u->u_error);
+	return (u.u_error);
 }
 
 /*
@@ -795,16 +814,16 @@ ufs211_dirrewrite(dp, ip, cnp)
 	struct direct *ep;
 	struct vnode *vdp = UFS211_ITOV(dp);
 
-	if (u->u_error == VOP_BLKATOFF(vdp, (off_t)dp->i_offset, (char **)&ep, &bp)) {
-		return (u->u_error);
+	if (u.u_error == VOP_BLKATOFF(vdp, (off_t)dp->i_offset, (char **)&ep, &bp)) {
+		return (u.u_error);
 	}
 	ep->d_ino = ip->i_number;
 	if (vdp->v_mount->mnt_maxsymlinklen > 0)
 		ep->d_type = IFTODT(ip->i_mode);
 
-	u->u_error = VOP_BWRITE(bp);
+	u.u_error = VOP_BWRITE(bp);
 	dp->i_flag |= IN_CHANGE | IN_UPDATE;
-	return (u->u_error);
+	return (u.u_error);
 }
 
 /*
@@ -824,7 +843,7 @@ ufs211_dirempty(ip, parentino)
 	register off_t off;
 	struct ufs211_dirtemplate dbuf;
 	register struct direct *dp = (struct direct *)&dbuf;
-	int error, count;
+	int error, count, namlen;
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
@@ -842,7 +861,15 @@ ufs211_dirempty(ip, parentino)
 		if (dp->d_ino == 0)
 			continue;
 		/* accept only "." and ".." */
-		if (dp->d_namlen > 2)
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+		if (UFS211_ITOV(ip)->v_mount->mnt_maxsymlinklen > 0)
+			namlen = dp->d_namlen;
+		else
+			namlen = dp->d_type;
+#else
+			namlen = dp->d_namlen;
+#endif
+		if (namlen > 2)
 			return (0);
 		if (dp->d_name[0] != '.')
 			return (0);
@@ -851,7 +878,7 @@ ufs211_dirempty(ip, parentino)
 		 * 1 implies ".", 2 implies ".." if second
 		 * char is also "."
 		 */
-		if (dp->d_namlen == 1)
+		if (namlen == 1)
 			continue;
 		if (dp->d_name[1] == '.' && dp->d_ino == parentino)
 			continue;
@@ -871,14 +898,17 @@ ufs211_checkpath(source, target)
 {
 	struct ufs211_dirtemplate dirbuf;
 	struct vnode *vp;
-	register int error;
+	register int error, rootino, namlen;
 
 	vp = UFS211_ITOV(target);
 	if (target->i_number == source->i_number) {
 		error = EEXIST;
 		goto out;
 	}
-	if (target->i_number == UFS211_ROOTINO)
+
+	rootino = UFS211_ROOTINO;
+	error = 0;
+	if (target->i_number == rootino)
 		goto out;
 
 	for (;;) {
@@ -888,9 +918,18 @@ ufs211_checkpath(source, target)
 		}
 		error = vn_rdwr(UIO_READ, vp, (caddr_t) & dirbuf,
 				sizeof(struct ufs211_dirtemplate), (off_t) 0, UIO_SYSSPACE,
-				IO_NODELOCKED, u->u_ucred, (int*) 0, (struct proc*) 0);
+				IO_NODELOCKED, u.u_ucred, (int*) 0, (struct proc*) 0);
 		if (error != 0)
 			break;
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+		if (vp->v_mount->mnt_maxsymlinklen > 0) {
+			namlen = dirbuf.dotdot_namlen;
+		} else {
+			namlen = dirbuf.dotdot_type;
+#else
+			namlen = dirbuf.dotdot_namlen;
+#endif
+		}
 		if (dirbuf.dotdot_namlen != 2 || dirbuf.dotdot_name[0] != '.'
 				|| dirbuf.dotdot_name[1] != '.') {
 			error = ENOTDIR;
@@ -900,11 +939,11 @@ ufs211_checkpath(source, target)
 			error = EINVAL;
 			break;
 		}
-		if (dirbuf.dotdot_ino == UFS211_ROOTINO)
+		if (dirbuf.dotdot_ino == rootino)
 			break;
 		vput(vp);
 		if (error == VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp)) {
-			error = u->u_error;
+			error = u.u_error;
 			vp = NULL;
 			break;
 		}

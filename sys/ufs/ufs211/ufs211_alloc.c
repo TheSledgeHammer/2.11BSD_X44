@@ -182,3 +182,145 @@ ufs211_fserr(fp, cp)
 {
 	printf("%s: %s\n", fp->fs_fsmnt, cp);
 }
+
+/*
+ * Free an inode.
+ *
+ * Free the specified I node on the specified device.  The algorithm
+ * stores up to NICINOD I nodes in the super block and throws away any more.
+ */
+void
+ufs211_ifree(ip, ino)
+	struct ufs211_inode *ip;
+	ino_t ino;
+{
+	struct ufs211_fs *fs;
+
+	fs = ip->i_fs;
+	fs->fs_tinode++;
+	if (fs->fs_ilock)
+		return;
+	if (fs->fs_ninode >= UFS211_NICINOD) {
+		if (fs->fs_lasti > ino)
+			fs->fs_nbehind++;
+		return;
+	}
+	fs->fs_inode[fs->fs_ninode++] = ino;
+	fs->fs_fmod = 1;
+}
+
+
+/*
+ * Allocate an inode in the file system.
+ *
+ * Allocate an unused I node on the specified device.  Used with file
+ * creation.  The algorithm keeps up to NICINOD spare I nodes in the
+ * super block.  When this runs out, a linear search through the I list
+ * is instituted to pick up NICINOD more.
+ */
+struct ufs211_inode *
+ufs211_ialloc(pip)
+	struct ufs211_inode *pip;
+{
+	register struct ufs211_inode *ip;
+	register struct ufs211_fs *fs;
+	register struct buf *bp;
+	struct ufs211_dinode *dp;
+	struct vnode *vp;
+	ino_t ino;
+	daddr_t adr;
+	ino_t inobas;
+	int first;
+	char *emsg = "no inodes free";
+
+	fs = pip->i_fs;
+	while (fs->fs_ilock) {
+		sleep((caddr_t)&fs->fs_ilock, PINOD);
+	}
+#ifdef QUOTA
+	u.u_error = chkdq(pip, NULL, u.u_ucred, 0);
+	if (u.u_error) {
+		return (NULL);
+	}
+#endif
+loop:
+	if (fs->fs_ninode > 0) {
+		ino = fs->fs_inode[--fs->fs_ninode];
+		if (ino <= UFS211_ROOTINO) {
+			goto loop;
+		}
+		vp = ufs211_ihashget(pip->i_dev, ino);
+		ip = UFS211_VTOI(vp);
+		if (ip == NULL)
+			return (NULL);
+		if (ip->i_mode == 0) {
+			bzero((caddr_t) ip->i_addr, sizeof(ip->i_addr));
+			ip->i_flags = 0;
+			fs->fs_fmod = 1;
+			fs->fs_tinode--;
+			return (ip);
+		}
+		/*
+		 * Inode was allocated after all.
+		 * Look some more.
+		 */
+		vput(vp);
+		goto loop;
+	}
+	fs->fs_ilock++;
+	if (fs->fs_nbehind < 4 * UFS211_NICINOD) {
+		first = 1;
+		ino = fs->fs_lasti;
+#ifdef DIAGNOSTIC
+			if (itoo(ino))
+				panic("ialloc");
+	#endif DIAGNOSTIC
+		adr = itod(ino);
+	} else {
+fromtop:
+		first = 0;
+		ino = 1;
+		adr = UFS211_SUPERB + 1;
+		fs->fs_nbehind = 0;
+	}
+	for (; adr < fs->fs_isize; adr++) {
+		inobas = ino;
+		bp = bread(pip->i_devvp, fsbtodb(adr), u.u_ucred, &bp);
+		if ((bp->b_flags & B_ERROR) || bp->b_resid) {
+			brelse(bp);
+			ino += INOPB;
+			continue;
+		}
+		ufs211_mapin(bp);
+		dp = (struct ufs211_dinode *)bp;
+		for (i = 0; i < INOPB; i++) {
+			if (dp->di_mode != 0) {
+				goto cont;
+			}
+			if (ufs211_ihashfind(pip->i_dev, ino)) {
+				goto cont;
+			}
+			fs->fs_inode[fs->fs_ninode++] = ino;
+			if (fs->fs_ninode >= UFS211_NICINOD)
+				break;
+	cont:
+			ino++;
+			dp++;
+		}
+		ufs211_mapout(bp);
+		brelse(bp);
+		if (fs->fs_ninode >= UFS211_NICINOD)
+			break;
+	}
+	if (fs->fs_ninode < UFS211_NICINOD && first)
+		goto fromtop;
+	fs->fs_lasti = inobas;
+	fs->fs_ilock = 0;
+	wakeup((caddr_t) & fs->fs_ilock);
+	if (fs->fs_ninode > 0)
+		goto loop;
+	ufs211_fserr(fs, emsg);
+	uprintf("\n%s: %s\n", fs->fs_fsmnt, emsg);
+	u.u_error = ENOSPC;
+	return (NULL);
+}

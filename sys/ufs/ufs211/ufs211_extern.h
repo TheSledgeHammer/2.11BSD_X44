@@ -38,7 +38,7 @@ struct ufs211_args {
 	struct vnode 	    *ufs211_rootvp;	    /* block device mounted vnode */
 };
 
-/* see ufs211_bufmap.c */
+/* buffer map */
 struct ufs211_bufmap {
 	void 				*bm_data;			/* data */
 	long				bm_size;			/* sizeof data */
@@ -63,27 +63,25 @@ struct vfsconf;
 struct vnode;
 struct ufs211_inode;
 struct ufs211_mount;
-struct ufs211_xmount;
 struct ufs211_args;
 struct ufs211_fs;
 __BEGIN_DECLS
 /* ufs211 bufmap */
 void 		ufs211_buffmap_init(void);
-void 		ufs211_mapin(struct buf *);		/* allocate to the buffer (* buffer only) */
-void 		ufs211_mapout(struct buf *); 	/* free from the buffer (* buffer only) */
-static void *bufmap_alloc(void *, long);	/* allocate to dedicated ufs211 space (generic) */
-static void *bufmap_free(void *);			/* free from the dedicated ufs211 space (generic) */
+void 		ufs211_mapin(void *);			/* allocate to the buffer (* buffer only) */
+void 		ufs211_mapout(void *); 			/* free from the buffer (* buffer only) */
 
 /* ufs211 */
 struct buf 	*ufs211_balloc(struct ufs211_inode *, int);
 void		ufs211_bfree(struct ufs211_inode *, daddr_t);
 void		ufs211_fserr(struct ufs211_fs *, char *);
 daddr_t		ufs211_bmap1(struct ufs211_inode *, daddr_t, int, int);
-int		ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
+int			ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
 void 		ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 void 		ufs211_dirbad(struct ufs211_inode *, off_t, char *);
-int 		ufs211_dirbadentry(struct direct *, int);
-int 		ufs211_direnter(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
+int 		ufs211_dirbadentry(struct vnode *, struct direct *, int);
+int 		ufs211_direnter(struct ufs211_inode *, struct vnode *, struct componentname *);
+int			ufs211_direnter2(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
 int 		ufs211_dirremove(struct vnode *, struct componentname *);
 int 		ufs211_dirrewrite(struct ufs211_inode *, struct ufs211_inode *, struct componentname *);
 int 		ufs211_dirempty(struct ufs211_inode *, ino_t);
@@ -91,9 +89,12 @@ int 		ufs211_checkpath(struct ufs211_inode *, struct ufs211_inode *);
 void	 	ufs211_syncip(struct vnode *);
 int			ufs211_badblock(struct ufs211_fs *, daddr_t);
 int 		ufs211_init(struct vfsconf *);
-void		ufs211_ihinit();
+struct vnode *ufs211_ihashget(dev_t, ino_t);
+void		ufs211_ihinit(void);
 void		ufs211_ihashins(struct ufs211_inode *);
 void		ufs211_ihashrem(struct ufs211_inode *);
+struct vnode *ufs211_ihashfind(dev_t, ino_t);
+//void		quotainit(void);
 
 int ufs211_lookup(struct vop_lookup_args *);
 int ufs211_create(struct vop_create_args *);
@@ -138,4 +139,4 @@ extern struct vnodeops ufs211_specops;
 extern struct vnodeops ufs211_fifoops;
 #endif
 
-#endif /* _UFS_UFS_EXTERN_H_ */
+#endif /* _UFS_UFS211_EXTERN_H_ */

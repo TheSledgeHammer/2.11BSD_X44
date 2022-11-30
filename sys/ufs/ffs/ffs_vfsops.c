@@ -690,10 +690,8 @@ ffs_statfs(mp, sbp, p)
 	sbp->f_bsize = fs->fs_fsize;
 	sbp->f_iosize = fs->fs_bsize;
 	sbp->f_blocks = fs->fs_dsize;
-	sbp->f_bfree = fs->fs_cstotal.cs_nbfree * fs->fs_frag
-			+ fs->fs_cstotal.cs_nffree;
-	sbp->f_bavail = (fs->fs_dsize * (100 - fs->fs_minfree) / 100)
-			- (fs->fs_dsize - sbp->f_bfree);
+	sbp->f_bfree = fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree;
+	sbp->f_bavail = (fs->fs_dsize * (100 - fs->fs_minfree) / 100) - (fs->fs_dsize - sbp->f_bfree);
 	sbp->f_files = fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
 	if (sbp != &mp->mnt_stat) {
