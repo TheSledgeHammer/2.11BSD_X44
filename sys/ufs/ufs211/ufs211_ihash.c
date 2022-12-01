@@ -40,6 +40,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 
+#include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_extern.h>
 

@@ -27,6 +27,7 @@
 #define	UFS211_SUPERB		    ((daddr_t)1)	    	/* block number of the super block */
 #define	UFS211_ROOTINO		    ((ino_t)2)	    		/* i number of all roots */
 #define	UFS211_LOSTFOUNDINO	    (UFS211_ROOTINO + 1)
+#define	UFS211_WINO		    ((ino_t)1)
 
 #define	UFS211_NICINOD		    100						/* number of superblock inodes */
 #define	UFS211_NICFREE		    50						/* number of superblock free blocks */

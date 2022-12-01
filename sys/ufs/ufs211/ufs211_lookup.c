@@ -18,12 +18,10 @@
 
 #include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
-#include <ufs/ufs211/ufs211_dir.h>
+//#include <ufs/ufs211/ufs211_dir.h>
+#include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_extern.h>
-//#include <ufs/ufs211/ufs211_fs.h>
-
-int	ufs211_direnter2(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
 
 int	dirchk = 0;
 #define FSFMT(vp)	((vp)->v_mount->mnt_maxsymlinklen <= 0)
@@ -147,7 +145,7 @@ ufs211_lookup(ap)
 	if ((nameiop == CREATE || nameiop == RENAME) && (flags & ISLASTCN)) {
 		slotstatus = NONE;
 		slotfreespace = 0;
-		slotneeded = (sizeof(struct direct) - MAXNAMLEN + cnp->cn_namelen + 3) & ~3;
+		slotneeded = (sizeof(struct direct) - UFS211_MAXNAMLEN + cnp->cn_namelen + 3) & ~3;
 	}
 
 	/*
@@ -334,7 +332,7 @@ notfound:
 				enduseful = slotoffset + slotsize;
 		}
 		dp->i_endoff = roundup(enduseful, UFS211_DIRBLKSIZ);
-		dp->i_flag |= IN_CHANGE | IN_UPDATE;
+		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
 		/*
 		 * We return with the directory locked, so that
 		 * the parameters we set up above will still be
@@ -360,7 +358,8 @@ notfound:
 		cache_enter(vdp, *vpp, cnp);
 	return (ENOENT);
 
-	found: if (numdirpasses == 2)
+    found: 
+	if (numdirpasses == 2)
 		nchstats.ncs_pass2++;
 	/*
 	 * Check that directory length properly reflects presence
@@ -369,7 +368,7 @@ notfound:
 	if (entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep) > dp->i_size) {
 		ufs211_dirbad(dp, dp->i_offset, "i_size too small");
 		dp->i_size = entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep);
-		dp->i_flag |= IN_CHANGE | IN_UPDATE;
+		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
 	}
 
 	/*
@@ -510,8 +509,7 @@ ufs211_dirbad(ip, offset, how)
 {
 	struct mount *mp;
 	mp = UFS211_ITOV(ip)->v_mount;
-	printf("%s: bad dir I=%u off %ld: %s\n", ip->i_fs->fs_fsmnt, ip->i_number,
-			offset, how);
+	//printf("%s: bad dir I=%u off %ld: %s\n", ip->i_fs.fs_fsmnt, ip->i_number, offset, how);
 	if ((mp->mnt_stat.f_flags & MNT_RDONLY) == 0)
 		panic("bad dir");
 }
@@ -580,7 +578,7 @@ ufs211_direnter(ip, dvp, cnp)
 	if ((cnp->cn_flags & SAVENAME) == 0)
 		panic("direnter: missing name");
 #endif
-	dp = VTOI(dvp);
+	dp = UFS211_VTOI(dvp);
 	newdir.d_ino = ip->i_number;
 	newdir.d_namlen = cnp->cn_namelen;
 	bcopy(cnp->cn_nameptr, newdir.d_name, (unsigned) cnp->cn_namelen + 1);
@@ -596,7 +594,8 @@ ufs211_direnter(ip, dvp, cnp)
 		}
 #endif
 	}
-	return (ufs211_direnter2(dvp, &newdir, cnp->cn_cred, cnp->cn_proc));
+	//return (ufs211_direnter2(dvp, &newdir, cnp->cn_cred, cnp->cn_proc));
+	return (ufs211_direnter2(ip, &newdir, dvp, cnp));
 }
 
 int
@@ -664,7 +663,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 			panic("ufs_direnter: frag size");
 		} else if (!error) {
 			dp->i_size = roundup(dp->i_size, UFS211_DIRBLKSIZ);
-			dp->i_flag |= IN_CHANGE;
+			dp->i_flag |= UFS211_INCHANGE;
 		}
 		return (error);
 	}
@@ -723,7 +722,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	 * Update the pointer fields in the previous entry (if any),
 	 * copy in the new entry, and write out the block.
 	 */
-	if (ep->d_ino == 0|| (ep->d_ino == WINO && bcmp(ep->d_name, dirp->d_name, dirp->d_namlen) == 0)) {
+	if (ep->d_ino == 0|| (ep->d_ino == UFS211_WINO && bcmp(ep->d_name, dirp->d_name, dirp->d_namlen) == 0)) {
 		if (spacefree + dsize < newentrysize)
 			panic("wdir: compact1");
 		dirp->d_reclen = spacefree + dsize;
@@ -736,7 +735,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	}
 	bcopy((caddr_t)&dirp, (caddr_t)ep, (u_int)newentrysize);
 	error = VOP_BWRITE(bp);
-	dp->i_flag |= IN_CHANGE | IN_UPDATE;
+	dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
 	if (!error && dp->i_endoff && dp->i_endoff < dp->i_size)
 		error = VOP_TRUNCATE(dvp, (off_t)dp->i_endoff, IO_SYNC, cnp->cn_cred, cnp->cn_proc);
 	return (error);
@@ -760,7 +759,7 @@ ufs211_dirremove(dvp, cnp)
 	struct componentname *cnp;
 {
 	register struct ufs211_inode *dp;
-	register struct buf *bp;
+	struct buf *bp;
 	struct direct *ep;
 
 	dp = UFS211_VTOI(dvp);
@@ -771,10 +770,10 @@ ufs211_dirremove(dvp, cnp)
 		 */
 		if(u.u_error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
 			return (u.u_error);
-		ep->d_ino = WINO;
+		ep->d_ino = UFS211_WINO;
 		ep->d_type = DT_WHT;
 		u.u_error = VOP_BWRITE(bp);
-		dp->i_flag |= IN_CHANGE | IN_UPDATE;
+		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
 		return (u.u_error);
 	}
 	if (dp->i_count == 0) {
@@ -786,7 +785,7 @@ ufs211_dirremove(dvp, cnp)
 			return (u.u_error);
 		ep->d_ino = 0;
 		u.u_error = VOP_BWRITE(bp);
-		dp->i_flag |= IN_CHANGE | IN_UPDATE;
+		dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
 		return (u.u_error);
 	}
 	/*
@@ -795,8 +794,8 @@ ufs211_dirremove(dvp, cnp)
 	if (u.u_error == VOP_BLKATOFF(dvp, (off_t)(dp->i_offset - dp->i_count), (char **)&ep, &bp))
 		return (u.u_error);
 	ep->d_reclen += dp->i_reclen;
-	error = VOP_BWRITE(bp);
-	dp->i_flag |= IN_CHANGE | IN_UPDATE;
+	u.u_error = VOP_BWRITE(bp);
+	dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
 	return (u.u_error);
 }
 
@@ -807,7 +806,7 @@ ufs211_dirremove(dvp, cnp)
  */
 int
 ufs211_dirrewrite(dp, ip, cnp)
-	struct ufs211_inode *dp, ip;
+	struct ufs211_inode *dp, *ip;
 	struct componentname *cnp;
 {
 	struct buf *bp;
@@ -822,7 +821,7 @@ ufs211_dirrewrite(dp, ip, cnp)
 		ep->d_type = IFTODT(ip->i_mode);
 
 	u.u_error = VOP_BWRITE(bp);
-	dp->i_flag |= IN_CHANGE | IN_UPDATE;
+	dp->i_flag |= UFS211_INCHANGE | UFS211_INUPDATE;
 	return (u.u_error);
 }
 
@@ -844,10 +843,10 @@ ufs211_dirempty(ip, parentino)
 	struct ufs211_dirtemplate dbuf;
 	register struct direct *dp = (struct direct *)&dbuf;
 	int error, count, namlen;
-#define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
+#define	MINDIRSIZ (sizeof (struct ufs211_dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
-		error = vn_rdwri(UIO_READ, ip, (caddr_t)dp, MINDIRSIZ, off, UIO_SYSSPACE, IO_UNIT, &count);
+		error = vn_rdwr(UIO_READ, UFS211_ITOV(ip), (caddr_t)dp, MINDIRSIZ, off, UIO_SYSSPACE, IO_NODELOCKED, u.u_ucred, &count, (struct proc*) 0);
 		/*
 		 * Since we read MINDIRSIZ, residual must
 		 * be 0 unless we're at end of file.

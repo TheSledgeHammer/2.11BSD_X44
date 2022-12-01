@@ -6,21 +6,23 @@
  *	@(#)ufs_inode.c	1.7 (2.11BSD GTE) 1997/2/7
  */
 
+
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
-
-#include <sys/user.h>
-#include <sys/proc.h>
-#include <sys/mount.h>
-#include <sys/kernel.h>
-#include <sys/buf.h>
 #include <sys/systm.h>
-#include <sys/syslog.h>
+#include <sys/proc.h>
 #include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/namei.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
 
-#include <ufs/ufs211/ufs211_extern.h>
+#include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_inode.h>
-#include <ufs/ufs211/ufs211_quota.h>
+#include <ufs/ufs211/ufs211_mount.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
 #define	SINGLE				0	/* index of single indirect block */
 #define	DOUBLE				1	/* index of double indirect block */

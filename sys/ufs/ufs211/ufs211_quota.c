@@ -49,7 +49,6 @@
  * Routines used in checking limits on file system usage.
  */
 
-
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
@@ -61,7 +60,6 @@
 #include <sys/mount.h>
 #include <sys/user.h>
 
-//#include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_mount.h>
@@ -358,8 +356,8 @@ quotaon(p, mp, type, fname)
 	 */
 	crhold(p->p_ucred);
 	ump->m_cred[type] = p->p_ucred;
-	ump->m_bwarn[type] = MAX_DQ_TIME;
-	ump->m_iwarn[type] = MAX_IQ_TIME;
+	ump->m_bwarn[type] = MAX_DQ_WARN;
+	ump->m_iwarn[type] = MAX_IQ_WARN;
 	if (dqget(NULLVP, 0, ump, type, &dq) == 0) {
 		if (dq->dq_bwarn > 0) {
 			ump->m_bwarn[type] = dq->dq_bwarn;
@@ -375,7 +373,7 @@ quotaon(p, mp, type, fname)
 	 * NB: only need to add dquot's for inodes being modified.
 	 */
 again:
-	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
+	for (vp = LIST_FIRST(&mp->mnt_vnodelist); vp != NULL; vp = nextvp) {
 		nextvp = LIST_NEXT(vp, v_mntvnodes);
 		if (vp->v_writecount == 0)
 			continue;
@@ -683,7 +681,7 @@ dqget(vp, id, ump, type, dqp)
 		 * the structure off the free list.
 		 */
 		if (dq->dq_cnt == 0)
-			TAILQ_REMOVE(&dqfreelist, dq, dq_freelist);
+			TAILQ_REMOVE(&ufs211_dqfreelist, dq, dq_freelist);
 		DQREF(dq);
 		*dqp = dq;
 		return (0);
@@ -693,8 +691,8 @@ dqget(vp, id, ump, type, dqp)
 	 */
 	if (TAILQ_FIRST(&ufs211_dqfreelist) == NODQUOT &&
 	    numdquot < MAXQUOTAS * desiredvnodes)
-		desireddquot += DQUOTINC;
-	if (numdquot < desireddquot) {
+		desiredquot += DQUOTINC;
+	if (numdquot < desiredquot) {
 		dq = (struct ufs211_dquot *)malloc(sizeof *dq, M_DQUOT, M_WAITOK);
 		bzero((char *)dq, sizeof *dq);
 		numdquot++;
@@ -923,17 +921,17 @@ qwarn(ump, dq)
 	if (dq->dq_isoftlimit && dq->dq_curinodes >= dq->dq_isoftlimit) {
 		dq->dq_flags |= DQ_MOD;
 		if (dq->dq_iwarn && --dq->dq_iwarn) {
-			uprintf(
+			/* uprintf(
 			    "Warning: too many files on %s, %d warning%s left\n"
 			    , fs->fs_fsmnt
 			    , dq->dq_iwarn
 			    , dq->dq_iwarn > 1 ? "s" : ""
-			);
+			); */
 		} else {
-			uprintf(
+			/* uprintf(
 			    "WARNING: too many files on %s, NO MORE!!\n"
 			    , fs->fs_fsmnt
-			);
+			); */
 		}
 	} else {
 		dq->dq_iwarn = MAX_IQ_WARN;
@@ -941,17 +939,17 @@ qwarn(ump, dq)
 	if (dq->dq_bsoftlimit && dq->dq_curblocks >= dq->dq_bsoftlimit) {
 		dq->dq_flags |= DQ_MOD;
 		if (dq->dq_bwarn && --dq->dq_bwarn) {
-			uprintf(
+			/* uprintf(
 				"Warning: too much disc space on %s, %d warning%s left\n"
 				, fs->fs_fsmnt
 				, dq->dq_bwarn
 				, dq->dq_bwarn > 1 ? "s" : ""
-			);
+			); */
 		} else {
-			uprintf(
+			/* uprintf(
 				"WARNING: too much disc space on %s, NO MORE!!\n"
 				, fs->fs_fsmnt
-			);
+			); */
 		}
 	} else {
 		dq->dq_bwarn = MAX_DQ_WARN;
@@ -966,13 +964,13 @@ dowarn(mp, id, type)
 {
 	struct ufs211_mount *ump;
 	struct ufs211_dquot *dq;
-	struct dqhash *dqh;
+	struct ufs211_dqhash *dqh;
 	struct vnode *dqvp;
 
 	ump = VFSTOUFS211(mp);
 	dqvp = ump->m_quotas[type];
 	if (dqvp == NULLVP || (ump->m_qflags[type] & QTF_CLOSING)) {
-		*dq = NODQUOT;
+		//*dq = NODQUOT;
 		return (EINVAL);
 	}
 

@@ -7,19 +7,21 @@
  */
 
 #include <sys/param.h>
-
-#include <sys/user.h>
-#include <sys/mount.h>
-#include <sys/buf.h>
 #include <sys/systm.h>
-#include <sys/conf.h>
-#include <sys/uio.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
 #include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/resourcevar.h>
+#include <sys/trace.h>
+#include <sys/user.h>
 
-#include <ufs/ufs211/ufs211_dir.h>
 #include <ufs/ufs211/ufs211_fs.h>
+#include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
+#include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_extern.h>
+#include <miscfs/specfs/specdev.h>
 
 /*
  * Bmap defines the structure of file system storage

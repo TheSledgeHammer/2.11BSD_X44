@@ -224,13 +224,13 @@ ufs211_ialloc(pip)
 {
 	register struct ufs211_inode *ip;
 	register struct ufs211_fs *fs;
-	register struct buf *bp;
+	struct buf *bp;
 	struct ufs211_dinode *dp;
 	struct vnode *vp;
 	ino_t ino;
 	daddr_t adr;
 	ino_t inobas;
-	int first;
+	int first, i;
 	char *emsg = "no inodes free";
 
 	fs = pip->i_fs;
@@ -274,7 +274,7 @@ loop:
 #ifdef DIAGNOSTIC
 			if (itoo(ino))
 				panic("ialloc");
-	#endif DIAGNOSTIC
+#endif
 		adr = itod(ino);
 	} else {
 fromtop:
@@ -285,8 +285,8 @@ fromtop:
 	}
 	for (; adr < fs->fs_isize; adr++) {
 		inobas = ino;
-		bp = bread(pip->i_devvp, fsbtodb(adr), u.u_ucred, &bp);
-		if ((bp->b_flags & B_ERROR) || bp->b_resid) {
+		u.u_error = bread(pip->i_devvp, fsbtodb(adr), (int)fs->fs_fsize, u.u_ucred, &bp);
+		if ((bp->b_flags & B_ERROR) || bp->b_resid || u.u_error == 0) {
 			brelse(bp);
 			ino += INOPB;
 			continue;
