@@ -29,23 +29,30 @@
  */
 
 #include <sys/param.h>
-#include <sys/mbuf.h>
-#include <sys/mount.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
 #include <sys/proc.h>
-#include <sys/buf.h>
+#include <sys/kernel.h>
 #include <sys/vnode.h>
-#include <sys/malloc.h>
+#include <sys/socket.h>
+#include <sys/mount.h>
+#include <sys/buf.h>
+#include <sys/mbuf.h>
+#include <sys/file.h>
+#include <sys/disklabel.h>
+#include <sys/ioctl.h>
 #include <sys/errno.h>
+#include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <miscfs/specfs/specdev.h>
+//#include <ufs/ufs211/ufs211_dir.h>
 
-#include <ufs/ufs211/ufs211_dir.h>
-#include <ufs/ufs211/ufs211_extern.h>
-#include <ufs/ufs211/ufs211_fs.h>
+#include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_mount.h>
-#include <ufs/ufs211/ufs211_quota.h>
+#include <ufs/ufs211/ufs211_fs.h>
+#include <ufs/ufs211/ufs211_extern.h>
+#include <miscfs/specfs/specdev.h>
 
 struct vfsops ufs211_vfsops = {
 		.vfs_mount = ufs211_mount,
@@ -251,11 +258,11 @@ ufs211_statfs(mp, sbp, p)
 	ufs211_mapin(fbp);
 	fbp = (struct ufs211_fblk *)bp;
 	sbp->f_bsize = fs->fs_fsize;
-	sbp->f_iosize = fs->fs_step;
-	sbp->f_blocks = btodb(fs->fs_isize + MAXBSIZE - 1);
+	//sbp->f_iosize = fs->fs_step;
+	//sbp->f_blocks = btodb(fs->fs_isize + MAXBSIZE - 1);
 	sbp->f_bfree = fs->fs_tfree;
-	sbp->f_bavail =  (fs->fs_isize * (100 - fs->fs_minfree) / 100) - (fs->fs_isize - sbp->f_bfree);
-	sbp->f_files = fs->fs_ncg * fs->fs_ipg - UFS211_ROOTINO;
+	//sbp->f_bavail =  (fs->fs_isize * (100 - fs->fs_minfree) / 100) - (fs->fs_isize - sbp->f_bfree);
+	//sbp->f_files = fs->fs_ncg * fs->fs_ipg - UFS211_ROOTINO;
 	sbp->f_ffree =  fs->fs_inode;
 	*((struct ufs211_fblk *) &fs->fs_nfree) = *fbp;
 	ufs211_mapout(bp);
@@ -312,7 +319,7 @@ loop:
 		nvp = LIST_NEXT(vp, v_mntvnodes);
 		ip = VTOI(vp);
 		if ((ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE))
-				== 0 && vp->v_dirtyblkhd.lh_first == NULL) {
+				== 0 && LIST_FIRST(&vp->v_dirtyblkhd) == NULL) {
 			simple_unlock(&vp->v_interlock);
 			continue;
 		}

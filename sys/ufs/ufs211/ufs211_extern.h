@@ -52,10 +52,12 @@ struct componentname;
 struct direct;
 struct disklabel;
 struct ufid;
+struct fid;
 struct flock;
 struct mbuf;
 struct nameidata;
 struct proc;
+struct statfs;
 struct ucred;
 struct uio;
 struct vattr;
@@ -68,7 +70,7 @@ struct ufs211_fs;
 
 __BEGIN_DECLS
 /* ufs211 bufmap */
-void 		ufs211_buffmap_init(void);
+void            ufs211_bufmap_init(void);
 void 		ufs211_mapin(void *);			/* allocate to the buffer (* buffer only) */
 void 		ufs211_mapout(void *); 			/* free from the buffer (* buffer only) */
 
@@ -77,7 +79,7 @@ struct buf 	*ufs211_balloc(struct ufs211_inode *, int);
 void		ufs211_bfree(struct ufs211_inode *, daddr_t);
 void		ufs211_fserr(struct ufs211_fs *, char *);
 daddr_t		ufs211_bmap1(struct ufs211_inode *, daddr_t, int, int);
-int			ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
+int		ufs211_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
 void 		ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 void 		ufs211_dirbad(struct ufs211_inode *, off_t, char *);
 int 		ufs211_dirbadentry(struct vnode *, struct direct *, int);
@@ -95,7 +97,22 @@ void		ufs211_ihinit(void);
 void		ufs211_ihashins(struct ufs211_inode *);
 void		ufs211_ihashrem(struct ufs211_inode *);
 struct vnode *ufs211_ihashfind(dev_t, ino_t);
-//void		quotainit(void);
+void		quotainit(void);
+
+int	 	ufs211_init(struct vfsconf *);
+int	 	ufs211_root(struct mount *, struct vnode **);
+int	 	ufs211_start(struct mount *, int, struct proc *);
+int	 	ufs211_vinit(struct mount *, struct vnodeops *, struct vnodeops *, struct vnode **);
+int		ufs211_mount(struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
+int		ufs211_mountfs(struct vnode *, struct mount *, struct proc *);
+int		ufs211_mountroot(void);
+int		ufs211_statfs(struct mount *, struct statfs *, struct proc *);
+int		ufs211_sync(struct mount *, int, struct ucred *, struct proc *);
+int		ufs211_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
+int		ufs211_unmount(struct mount *, int, struct proc *);
+int		ufs211_vget(struct mount *, ino_t, struct vnode **);
+int		ufs211_vptofh(struct vnode *, struct fid *);
+int		ufs211_fhtovp(struct mount *, struct fid *, struct mbuf *, struct vnode **, int *, struct ucred **);
 
 int ufs211_lookup(struct vop_lookup_args *);
 int ufs211_create(struct vop_create_args *);

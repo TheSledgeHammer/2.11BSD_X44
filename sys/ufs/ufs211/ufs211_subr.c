@@ -19,7 +19,7 @@
 #include <ufs/ufs211/ufs211_fs.h>
 #include <ufs/ufs211/ufs211_extern.h>
 
-struct ufs211_bufmap ufs211buf;
+struct ufs211_bufmap *ufs211buf;
 
 static void *bufmap_alloc(void *data, long size);
 static void *bufmap_free(void *data);
@@ -59,7 +59,7 @@ ufs211_syncip(vp)
 			blkflush(vp, blkno, ip->i_dev);
 		}
 	} else {
-		for (bp = LIST_FIRST(vp->v_dirtyblkhd); bp; bp = lastbufp) {
+		for (bp = LIST_FIRST(&vp->v_dirtyblkhd); bp; bp = lastbufp) {
 			lastbufp = LIST_NEXT(bp, b_vnbufs);
 			if (bp->b_dev != ip->i_dev || (bp->b_flags & B_DELWRI) == 0) {
 				continue;
@@ -73,7 +73,7 @@ ufs211_syncip(vp)
 				continue;
 			}
 			splx(s);
-			notavail(bp, vp->v_dirtyblkhd, b_vnbufs);
+			notavail(bp, &vp->v_dirtyblkhd, b_vnbufs);
 			bwrite(bp);
 		}
 	}
@@ -100,7 +100,7 @@ ufs211_badblock(fp, bn)
 void
 ufs211_bufmap_init(void)
 {
-	&ufs211buf = (struct ufs211_bufmap *)malloc(sizeof(struct ufs211_bufmap *), M_UFS211, M_WAITOK);
+	MALLOC(ufs211buf, struct ufs211_bufmap *, sizeof(struct ufs211_bufmap), M_UFS211, M_WAITOK);
 }
 
 /* mapin buf */
@@ -133,11 +133,12 @@ bufmap_alloc(data, size)
 {
     struct ufs211_bufmap *bm;
 
-    bm = &ufs211buf;
+    bm = ufs211buf;
     if (bm) {
     	bm->bm_data = data;
     	bm->bm_size = size;
         printf("data allocated \n");
+        ufs211buf = bm;
     }
     return (bm->bm_data);
 }
@@ -151,12 +152,13 @@ bufmap_free(data)
 {
     struct ufs211_bufmap *bm;
 
-    bm = &ufs211buf;
+    bm = ufs211buf;
     if (bm->bm_data == data) {
     	if (bm->bm_data != NULL && bm->bm_size == sizeof(data)) {
     		bm->bm_data = NULL;
     		bm->bm_size = 0;
     		printf("data freed\n");
+    		ufs211buf = bm;
     	}
     }
     return (bm->bm_data);
