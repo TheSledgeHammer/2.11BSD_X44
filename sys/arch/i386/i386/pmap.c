@@ -600,7 +600,7 @@ pmap_isvalidphys(addr)
 }
 
 /*
- * pmap_bootstrap_allocate: allocate vm space in bootstrap.
+ * pmap_bootstrap_allocate: allocate vm space into bootstrap area.
  * va: is taken from virtual_avail.
  * size: is the size of the virtual address to allocate
  */

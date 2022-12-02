@@ -7,20 +7,19 @@
  */
 
 #include <sys/param.h>
-#include <sys/proc.h>
+
 #include <sys/systm.h>
+#include <sys/vnode.h>
 #include <sys/user.h>
-#include <sys/mount.h>
-#include <sys/kernel.h>
 #include <sys/buf.h>
+#include <sys/malloc.h>
 
-#include <ufs/ufs211/ufs211_extern.h>
-#include <ufs/ufs211/ufs211_fs.h>
-#include <ufs/ufs211/ufs211_inode.h>
-#include <ufs/ufs211/ufs211_mount.h>
 #include <ufs/ufs211/ufs211_quota.h>
+#include <ufs/ufs211/ufs211_inode.h>
+#include <ufs/ufs211/ufs211_fs.h>
+#include <ufs/ufs211/ufs211_extern.h>
 
-struct ufs211_bufmap *ufs211buf;
+struct ufs211_bufmap ufs211buf;
 
 static void *bufmap_alloc(void *data, long size);
 static void *bufmap_free(void *data);
@@ -60,7 +59,7 @@ ufs211_syncip(vp)
 			blkflush(vp, blkno, ip->i_dev);
 		}
 	} else {
-		for (bp = LIST_FIRST(&vp->v_dirtyblkhd); bp; bp = lastbufp) {
+		for (bp = LIST_FIRST(vp->v_dirtyblkhd); bp; bp = lastbufp) {
 			lastbufp = LIST_NEXT(bp, b_vnbufs);
 			if (bp->b_dev != ip->i_dev || (bp->b_flags & B_DELWRI) == 0) {
 				continue;
@@ -74,7 +73,7 @@ ufs211_syncip(vp)
 				continue;
 			}
 			splx(s);
-			notavail(bp, &vp->v_dirtyblkhd, b_vnbufs);
+			notavail(bp, vp->v_dirtyblkhd, b_vnbufs);
 			bwrite(bp);
 		}
 	}
@@ -101,7 +100,7 @@ ufs211_badblock(fp, bn)
 void
 ufs211_bufmap_init(void)
 {
-	MALLOC(&ufs211buf, struct ufs211_bufmap, sizeof(struct ufs211_bufmap *), M_UFS211, M_WAITOK);
+	&ufs211buf = (struct ufs211_bufmap *)malloc(sizeof(struct ufs211_bufmap *), M_UFS211, M_WAITOK);
 }
 
 /* mapin buf */

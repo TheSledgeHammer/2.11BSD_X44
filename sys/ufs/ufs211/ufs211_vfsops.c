@@ -240,19 +240,25 @@ ufs211_statfs(mp, sbp, p)
 {
 	register struct ufs211_mount *ump;
 	register struct ufs211_fs *fs;
+	register struct ufs211_fblk *fbp;
+	struct buf *bp;
 
 	ump = VFSTOUFS211(mp);
 	fs = ump->m_filsys;
 	if (fs->fs_magic != FS_UFS211_MAGIC) {
 		panic("ufs211_statfs");
 	}
+	ufs211_mapin(fbp);
+	fbp = (struct ufs211_fblk *)bp;
 	sbp->f_bsize = fs->fs_fsize;
-	//sbp->f_iosize = fs->fs_iosize;
-	//sbp->f_blocks = fs->fs_dsize;
+	sbp->f_iosize = fs->fs_step;
+	sbp->f_blocks = btodb(fs->fs_isize + MAXBSIZE - 1);
 	sbp->f_bfree = fs->fs_tfree;
-	//sbp->f_bavail = fs->
-	//sbp->f_files = fs->
+	sbp->f_bavail =  (fs->fs_isize * (100 - fs->fs_minfree) / 100) - (fs->fs_isize - sbp->f_bfree);
+	sbp->f_files = fs->fs_ncg * fs->fs_ipg - UFS211_ROOTINO;
 	sbp->f_ffree =  fs->fs_inode;
+	*((struct ufs211_fblk *) &fs->fs_nfree) = *fbp;
+	ufs211_mapout(bp);
 	if (sbp != &mp->mnt_stat) {
 		sbp->f_type = mp->mnt_vfc->vfc_typenum;
 		bcopy((caddr_t) mp->mnt_stat.f_mntonname,
@@ -489,7 +495,7 @@ ufs211_init(vfsp)
 	ufs211_bufmap_init();
 	ufs211_ihinit();
 #ifdef QUOTA
-//	dqinit();
+	quotainit();
 #endif
 	return (0);
 }

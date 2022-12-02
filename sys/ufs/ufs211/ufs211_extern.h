@@ -65,6 +65,7 @@ struct ufs211_inode;
 struct ufs211_mount;
 struct ufs211_args;
 struct ufs211_fs;
+
 __BEGIN_DECLS
 /* ufs211 bufmap */
 void 		ufs211_buffmap_init(void);
