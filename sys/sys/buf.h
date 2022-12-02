@@ -226,7 +226,6 @@ extern struct bqueues 	bufqueues[];
 	KASSERT(LIST_FIRST(dp) != NULL); 		\
 	KASSERT(LIST_PREV(bp, field) != NULL); 	\
 	KASSERT(LIST_FIRST(dp) != (bp)); 		\
-	KASSERT(LIST_PREV(bp, field) != &(bp)); \
 	LIST_REMOVE(bp, field);					\
 	(bp)->b_flags |= B_BUSY; 				\
 	LIST_FIRST(dp) = NULL;					\
