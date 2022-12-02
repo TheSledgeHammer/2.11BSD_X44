@@ -34,7 +34,7 @@ int	slinput(int, struct tty *);
 int	slstart(struct tty *);
 #endif
 
-#include "ppp.h"
+//#include "ppp.h"
 #if NPPP > 0
 int	pppopen(dev_t, struct tty *);
 int	pppclose(struct tty *, int);
