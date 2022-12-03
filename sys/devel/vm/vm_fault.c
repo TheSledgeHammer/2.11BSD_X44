@@ -388,7 +388,6 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_prot_t	fault_type;
 	bool_t		change_wiring;
 {
-	vm_page_t 			old_page;
 	int					error, result;
 	bool_t				page_exists;
 	struct vm_faultinfo vfi;
@@ -478,7 +477,7 @@ RetryFault: ;
 #endif
 
 RetryCopy:
-	error = vm_fault_copy(&vfi, fault_type, change_wiring, page_exists, vfi.page);
+	error = vm_fault_copy(&vfi, fault_type, change_wiring, page_exists);
 	switch (error) {
 	case 0:
 		break;
@@ -539,17 +538,17 @@ RetryCopy:
 
 /* TODO: better segment & page workings */
 int
-vm_fault_copy(vfi, fault_type, change_wiring, page_exists, old_page)
+vm_fault_copy(vfi, fault_type, change_wiring, page_exists)
 	struct vm_faultinfo *vfi;
 	vm_prot_t fault_type;
 	bool_t	change_wiring, page_exists;
-	vm_page_t old_page;
 {
 	vm_object_t 	copy_object;
 	vm_offset_t 	copy_offset;
 	vm_segment_t 	copy_segment;
-	vm_page_t 		copy_page;
+	vm_page_t 		copy_page, old_page;
 
+	old_page = vfi->page;
 	if (vfi->first_object->copy != NULL) {
 		copy_object = vfi->first_object->copy;
 		if ((fault_type & VM_PROT_WRITE) == 0) {
@@ -639,6 +638,9 @@ vm_fault_cow(vfi, fault_type)
 	struct vm_faultinfo *vfi;
 	vm_prot_t fault_type;
 {
+	vm_page_t old_page;
+
+	old_page = vfi->page;
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
 			if ((vfi->first_segment != NULL && !TAILQ_EMPTY(vfi->first_segment->sg_memq)) ||

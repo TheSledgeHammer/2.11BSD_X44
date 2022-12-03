@@ -365,18 +365,18 @@ void
 vm_segment_free(segment)
 	register vm_segment_t segment;
 {
-	KASSERT(TAILQ_EMPTY(segment->sg_memq));
-
-	vm_segment_remove(segment);
-	if(segment->sg_flags & SEG_ACTIVE) {
-		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
-		segment->sg_flags &= SEG_ACTIVE;
-		cnt.v_segment_active_count--;
-	}
-	if(segment->sg_flags & SEG_INACTIVE) {
-		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
-		segment->sg_flags &= SEG_INACTIVE;
-		cnt.v_segment_inactive_count--;
+	if (TAILQ_EMPTY(segment->sg_memq)) {
+		vm_segment_remove(segment);
+		if (segment->sg_flags & SEG_ACTIVE) {
+			CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
+			segment->sg_flags &= SEG_ACTIVE;
+			cnt.v_segment_active_count--;
+		}
+		if (segment->sg_flags & SEG_INACTIVE) {
+			CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
+			segment->sg_flags &= SEG_INACTIVE;
+			cnt.v_segment_inactive_count--;
+		}
 	}
 }
 

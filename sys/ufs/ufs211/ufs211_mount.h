@@ -9,6 +9,8 @@
 #ifndef _UFS211_MOUNT_H_
 #define	_UFS211_MOUNT_H_
 
+#include <sys/mount.h>
+
 #define UFS211_MNAMELEN 	90				    			/* length of buffer for returned name */
 
 struct ufs211_statfs {
@@ -43,6 +45,7 @@ struct ufs211_mount {
 	time_t					m_bwarn[MAXQUOTAS];				/* block quota time limit */
 	time_t					m_iwarn[MAXQUOTAS];				/* inode quota time limit */
 	char					m_qflags[MAXQUOTAS];			/* quota specific flags */
+	struct netexport		m_export;						/* export information */
 };
 
 /*

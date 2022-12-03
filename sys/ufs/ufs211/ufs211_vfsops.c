@@ -90,8 +90,100 @@ ufs211_mount(mp, path, data, ndp, p)
 	int error, flags;
 	mode_t accessmode;
 
-	ump = VFSTOUFS211(mp);
+	if (error == copyin(data, (caddr_t)&args, sizeof (struct ufs211_args))) {
+		return (error);
+	}
+	if (mp->mnt_flag & MNT_UPDATE) {
+		ump = VFSTOUFS211(mp);
+		fs = ump->m_filsys;
+		if (fs->fs_ronly == 0 && (mp->mnt_flag & MNT_RDONLY)) {
+			flags = WRITECLOSE;
+			if (mp->mnt_flag & MNT_FORCE)
+				flags |= FORCECLOSE;
+			if (error == ffs_flushfiles(mp, flags, p)) {
+				return (error);
+			}
+			fs->fs_clean = 1;
+			fs->fs_ronly = 1;
+		}
+		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR)) {
+			/*
+			 * If upgrade to read-write by non-root, then verify
+			 * that user has necessary permissions on the device.
+			 */
+			if (p->p_ucred->cr_uid != 0) {
+				devvp = ump->m_devvp;
+				vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
+				if (error == VOP_ACCESS(devvp, VREAD | VWRITE, p->p_ucred, p)) {
+					VOP_UNLOCK(devvp, 0, p);
+					return (error);
+				}
+				VOP_UNLOCK(devvp, 0, p);
+			}
+			fs->fs_ronly = 0;
+			fs->fs_clean = 0;
+		}
+		if (args.fspec == 0) {
+			/*
+			 * Process export requests.
+			 */
+			return (vfs_export(mp, &ump->m_export, &args.export));
+		}
+	}
+	/*
+	 * Not an update, or updating the name: look up the name
+	 * and verify that it refers to a sensible block device.
+	 */
+	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, args.fspec, p);
+	if (error == namei(ndp))
+		return (error);
+	devvp = ndp->ni_vp;
 
+	if (devvp->v_type != VBLK) {
+		vrele(devvp);
+		return (ENOTBLK);
+	}
+	if (major(devvp->v_rdev) >= nblkdev) {
+		vrele(devvp);
+		return (ENXIO);
+	}
+	/*
+	 * If mount by non-root, then verify that user has necessary
+	 * permissions on the device.
+	 */
+	if (p->p_ucred->cr_uid != 0) {
+		accessmode = VREAD;
+		if ((mp->mnt_flag & MNT_RDONLY) == 0)
+			accessmode |= VWRITE;
+		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
+		if (error == VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
+			vput(devvp);
+			return (error);
+		}
+		VOP_UNLOCK(devvp, 0, p);
+	}
+	if ((mp->mnt_flag & MNT_UPDATE) == 0) {
+		error = ffs_mountfs(devvp, mp, p);
+	} else {
+		if (devvp != ump->m_devvp) {
+			error = EINVAL; /* needs translation */
+		} else {
+			vrele(devvp);
+		}
+	}
+	if (error) {
+		vrele(devvp);
+		return (error);
+	}
+	ump = VFSTOUFS211(mp);
+	fs = ump->m_filsys;
+	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
+	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
+	bcopy((caddr_t) fs->fs_fsmnt, (caddr_t) mp->mnt_stat.f_mntonname,
+	MNAMELEN);
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, &size);
+	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) ufs211_statfs(mp, &mp->mnt_stat, p);
 	return (0);
 }
 
@@ -106,10 +198,61 @@ ufs211_unmount(mp, mntflags, p)
 	int error, flags;
 
 	ump = VFSTOUFS211(mp);
-
-	return (0);
+	flags = 0;
+	if (mntflags & MNT_FORCE)
+		flags |= FORCECLOSE;
+	if (error == ufs211_flushfiles(mp, flags, p))
+		return (error);
+	ump = VFSTOUFS(mp);
+	fs = ump->m_filsys;
+	/*
+	if (fs->fs_ronly == 0) {
+		fs->fs_clean = 1;
+		if (error == ffs_sbupdate(ump, MNT_WAIT)) {
+			fs->fs_clean = 0;
+			return (error);
+		}
+	}
+	*/
+	ump->m_devvp->v_specflags &= ~SI_MOUNTEDON;
+	error = VOP_CLOSE(ump->m_devvp, fs->fs_ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
+	vrele(ump->m_devvp);
+	free(fs->fs_csp[0], M_UFSMNT);
+	free(fs, M_UFSMNT);
+	free(ump, M_UFSMNT);
+	mp->mnt_data = (qaddr_t)0;
+	return (error);
 }
 
+/*
+ * Flush out all the files in a filesystem.
+ */
+int
+ufs211_flushfiles(mp, flags, p)
+	struct mount *mp;
+	int flags;
+	struct proc *p;
+{
+	register struct ufs211_mount *ump;
+	int i, error;
+
+	ump = VFSTOUFS211(mp);
+#ifdef QUOTA
+	if (mp->mnt_flag & MNT_QUOTA) {
+		if (error == vflush(mp, NULLVP, SKIPSYSTEM | flags)) {
+			return (error);
+		}
+		for (i = 0; i < MAXQUOTAS; i++) {
+			if (ump->m_quotas[i] == NULLVP) {
+				continue;
+			}
+			quotaoff(p, mp, i);
+		}
+	}
+#endif
+	error = vflush(mp, NULLVP, flags);
+	return (error);
+}
 
 /*
  * Make a filesystem operational.
@@ -439,7 +582,9 @@ ufs211_vget(mp, ino, vpp)
 	VREF(ip->i_devvp);
 
 	if (fs->fs_magic == FS_UFS211_MAGIC) {
-		ip->i_din  = *((struct ufs211_dinode *)bp->b_data + itod(ino));
+		ip->i_uid = ip->di_uid;
+		ip->i_gid = ip->di_gid;
+		//ip->i_din  = *((struct ufs211_dinode *)bp->b_data + itod(ino));
 	}
 	*vpp = vp;
 	return (0);

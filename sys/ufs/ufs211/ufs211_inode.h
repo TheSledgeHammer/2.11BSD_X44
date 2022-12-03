@@ -72,10 +72,10 @@ struct ufs211_inode {
 			u_char			I_shlockc;				/* count of shared locks */
 			u_char			I_exlockc;				/* count of exclusive locks */
 		} i_l;
-		struct	proc 		*I_rsel;				/* pipe read select */
+		//struct	proc 		*I_rsel;				/* pipe read select */
 	} i_un0;
 	union {
-		struct	proc 		*I_wsel;				/* pipe write select */
+		//struct	proc 		*I_wsel;				/* pipe write select */
 	} i_un1;
 	union {
 		daddr_t				I_addr[NADDR];			/* normal file/directory */
@@ -140,9 +140,9 @@ struct ufs211_dinode {
 #define	i_ctimensec		i_ic2.ic_ctimensec
 #define	i_shlockc		i_un0.i_l.I_shlockc
 #define	i_exlockc		i_un0.i_l.I_exlockc
-#define	i_rsel			i_un0.I_rsel
-#define	i_text			i_un1.I_text
-#define	i_wsel			i_un1.I_wsel
+//#define	i_rsel			i_un0.I_rsel
+//#define	i_text			i_un1.I_text
+//#define	i_wsel			i_un1.I_wsel
 #define	i_db			i_un2.i_f.I_db
 #define	i_ib			i_un2.i_f.I_ib
 #define	i_rdev			i_un2.i_d.I_rdev
@@ -155,27 +155,27 @@ struct ufs211_dinode {
 
 #define di_ic1			di_icom1
 #define di_ic2			di_icom2
-#define	di_mode		        di_ic1.ic_mode
-#define	di_nlink	        di_ic1.ic_nlink
-#define	di_uid		        di_ic1.ic_uid
-#define	di_gid		        di_ic1.ic_gid
-#define	di_size		        di_ic1.ic_size
-#define	di_atime	        di_ic2.ic_atime
-#define	di_mtime	        di_ic2.ic_mtime
-#define	di_ctime	        di_ic2.ic_ctime
+#define	di_mode		    di_ic1.ic_mode
+#define	di_nlink	    di_ic1.ic_nlink
+#define	di_uid		    di_ic1.ic_uid
+#define	di_gid		    di_ic1.ic_gid
+#define	di_size		    di_ic1.ic_size
+#define	di_atime	    di_ic2.ic_atime
+#define	di_mtime	    di_ic2.ic_mtime
+#define	di_ctime	    di_ic2.ic_ctime
 
 /* i_flag */
-#define	UFS211_ILOCKED	0x00001			/* inode is locked */
-#define	UFS211_IUPD	0x00002			/* file has been modified */
-#define	UFS211_IACC	0x00004			/* inode access time to be updated */
-#define	UFS211_IMOUNT	0x00008			/* inode is mounted on */
+#define	UFS211_ILOCKED	0x00001		/* inode is locked */
+#define	UFS211_IUPD		0x00002		/* file has been modified */
+#define	UFS211_IACC		0x00004		/* inode access time to be updated */
+#define	UFS211_IMOUNT	0x00008		/* inode is mounted on */
 #define	UFS211_IWANT	0x00010		/* some process waiting on lock */
 #define	UFS211_ITEXT	0x00020		/* inode is pure text prototype */
-#define	UFS211_ICHG	0x00040		/* inode has been changed */
+#define	UFS211_ICHG		0x00040		/* inode has been changed */
 #define	UFS211_ISHLOCK	0x00080		/* file has shared lock */
 #define	UFS211_IEXLOCK	0x00100		/* file has exclusive lock */
 #define	UFS211_ILWAIT	0x00200		/* someone waiting on file lock */
-#define	UFS211_IMOD	0x00400		/* inode has been modified */
+#define	UFS211_IMOD		0x00400		/* inode has been modified */
 #define	UFS211_IRENAME	0x00800		/* inode is being renamed */
 #define	UFS211_IPIPE	0x01000		/* inode is a pipe */
 #define	UFS211_IRCOLL	0x02000		/* read select collision on pipe */

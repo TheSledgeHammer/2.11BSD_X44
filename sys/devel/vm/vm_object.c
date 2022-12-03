@@ -334,27 +334,12 @@ vm_object_terminate(object)
 {
 	register vm_segment_t	seg;
 	register vm_page_t		page;
-	vm_object_t				shadow_object;
 
 	/*
 	 *	Detach the object from its shadow if we are the shadow's
 	 *	copy.
 	 */
-	shadow_object = object->shadow;
-	if (shadow_object != NULL) {
-		vm_object_lock(shadow_object);
-		if (shadow_object->copy == object) {
-			shadow_object->copy = NULL;
-		}
-#if 0
-		else if (shadow_object->copy != NULL) {
-			panic("vm_object_terminate: copy/shadow inconsistency");
-		}
-#endif
-		vm_object_unlock(shadow_object);
-	}
-
-	//vm_object_shadow_detach(object);
+	vm_object_shadow_detach(object);
 
 	/*
 	 * Wait until the pageout daemon is through with the object.
@@ -397,8 +382,9 @@ vm_object_terminate(object)
 	 * Let the pager know object is dead.
 	 */
 
-	if (object->pager != NULL)
+	if (object->pager != NULL) {
 		vm_pager_deallocate(object->pager);
+	}
 
 	simple_lock(&vm_object_tree_lock);
 	RB_REMOVE(objectrbt, &vm_object_tree, object);
@@ -902,6 +888,11 @@ vm_object_shadow_detach(object)
         if (aobject->u_obj.shadow->copy == object) {
 			aobject->u_obj.shadow->copy = NULL;
 		}
+#if 0
+		else if (shadow_object->copy != NULL) {
+			panic("vm_object_terminate: copy/shadow inconsistency");
+		}
+#endif
         vm_object_unlock(aobject->u_obj.shadow);
     }
     vm_object_shadow_remove(aobject, object);
@@ -952,7 +943,7 @@ vm_object_shadow(object, offset, length)
 
 	result->shadow_offset = *offset;
 
-	//vm_object_shadow_attach(result, result->shadow_offset);
+	vm_object_shadow_attach(result, result->shadow_offset);
 
 	/*
 	 *	Return the new things
