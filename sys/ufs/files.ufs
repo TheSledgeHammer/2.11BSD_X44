@@ -42,15 +42,15 @@ file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
 
 # UFS211 Sources
-file	ufs/ufs211/ufs211_alloc.c			ufs211
-file	ufs/ufs211/ufs211_bmap.c			ufs211
-file	ufs/ufs211/ufs211_ihash.c			ufs211
-file	ufs/ufs211/ufs211_inode.c			ufs211
-file	ufs/ufs211/ufs211_lookup.c			ufs211
-file	ufs/ufs211/ufs211_quota.c			quota & ufs211
-file	ufs/ufs211/ufs211_subr.c			ufs211
-file	ufs/ufs211/ufs211_vfsops.c			ufs211
-file	ufs/ufs211/ufs211_vnops.c			ufs211
+#file	ufs/ufs211/ufs211_alloc.c			ufs211
+#file	ufs/ufs211/ufs211_bmap.c			ufs211
+#file	ufs/ufs211/ufs211_ihash.c			ufs211
+#file	ufs/ufs211/ufs211_inode.c			ufs211
+#file	ufs/ufs211/ufs211_lookup.c			ufs211
+#file	ufs/ufs211/ufs211_quota.c			quota & ufs211
+#file	ufs/ufs211/ufs211_subr.c			ufs211
+#file	ufs/ufs211/ufs211_vfsops.c			ufs211
+#file	ufs/ufs211/ufs211_vnops.c			ufs211
 
 # UFML Sources
 file	ufs/ufml/ufml_archive.c				ufml

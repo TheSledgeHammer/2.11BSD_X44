@@ -3,8 +3,8 @@
 .include <bsd.own.mk>
 
 SUBDIR=	arch dev fs miscfs 				\
-		net net80211 netatalk netinet 	\
-		netinet6 netipsec netns netsmb 	\
+		net net80211 netinet netinet6 	\
+		netipsec netkey netns 			\
 		sys ufs vm
 
 .include <bsd.kinc.mk>
