@@ -32,20 +32,10 @@
 #include <sys/signalvar.h>
 #include <sys/sysctl.h>
 
-#include <vm/include/vm.h>	/* XXX: High Suspect for linker multiple definitions. To solve user.h has a lot of dependents */
+#include <vm/include/vm.h>
 
 #include <machine/param.h>
 #include <machine/pcb.h>
-
-//#include <sys/cdefs.h>
-//#include <sys/param.h>
-//#include <sys/errno.h>
-//#include <sys/signal.h>
-//#include <sys/types.h>
-//#include <sys/ucred.h>
-//#include <sys/dirent.h>
-//#include <sys/syslimits.h>
-//#include <machine/types.h>
 
 /*
  * data that doesn't need to be referenced while the process is swapped.
