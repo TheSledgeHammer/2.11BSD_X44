@@ -68,8 +68,8 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include "opt_gateway.h"
 #include "opt_pfil_hooks.h"
 //#include "vlan.h"
-#include "pppoe.h"
-#include "bridge.h"
+//#include "pppoe.h"
+//#include "bridge.h"
 #include "bpfilter.h"
 #include "arp.h"
 
@@ -137,38 +137,9 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include <netns/ns_if.h>
 #endif
 
-#ifdef IPX
-#include <netipx/ipx.h>
-#include <netipx/ipx_if.h>
-#endif
-
-#ifdef ISO
-#include <netiso/argo_debug.h>
-#include <netiso/iso.h>
-#include <netiso/iso_var.h>
-#include <netiso/iso_snpac.h>
-#endif
-
-#ifdef LLC
-#include <netccitt/dll.h>
-#include <netccitt/llc_var.h>
-#endif
-
 #if defined(LLC) && defined(CCITT)
 extern struct ifqueue pkintrq;
 #endif
-
-#ifdef NETATALK
-#include <netatalk/at.h>
-#include <netatalk/at_var.h>
-#include <netatalk/at_extern.h>
-
-#define llc_snap_org_code llc_un.type_snap.org_code
-#define llc_snap_ether_type llc_un.type_snap.ether_type
-
-extern u_char	at_org_code[3];
-extern u_char	aarp_org_code[3];
-#endif /* NETATALK */
 
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 #define senderr(e) { error = (e); goto bad;}
