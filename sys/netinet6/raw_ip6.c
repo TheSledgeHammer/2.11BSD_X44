@@ -100,7 +100,7 @@ __KERNEL_RCSID(0, "$NetBSD: raw_ip6.c,v 1.63.2.2 2004/09/11 12:09:08 he Exp $");
 
 #include <machine/stdarg.h>
 
-#include "faith.h"
+//#include "faith.h"
 #if defined(NFAITH) && 0 < NFAITH
 #include <net/if_faith.h>
 #endif

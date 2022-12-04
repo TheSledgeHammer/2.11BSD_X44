@@ -101,7 +101,7 @@ __KERNEL_RCSID(0, "$NetBSD: icmp6.c,v 1.106.2.1.4.1 2005/10/28 23:10:38 riz Exp 
 #include <netkey/key.h>
 #endif
 
-#include "faith.h"
+//#include "faith.h"
 #if defined(NFAITH) && 0 < NFAITH
 #include <net/if_faith.h>
 #endif
@@ -2444,9 +2444,11 @@ icmp6_redirect_output(m0, rt)
 	 * we almost always ask for an mbuf cluster for simplicity.
 	 * (MHLEN < IPV6_MMTU is almost always true)
 	 */
+	 /*
 #if IPV6_MMTU >= MCLBYTES
 # error assumption failed about IPV6_MMTU and MCLBYTES
 #endif
+*/
 	MGETHDR(m, M_DONTWAIT, MT_HEADER);
 	if (m && IPV6_MMTU >= MHLEN)
 		MCLGET(m, M_DONTWAIT);

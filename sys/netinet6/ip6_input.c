@@ -114,7 +114,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 
 /* we need it for NLOOP. */
 #include "loop.h"
-#include "faith.h"
+//#include "faith.h"
 #include "gif.h"
 #include "bpfilter.h"
 
