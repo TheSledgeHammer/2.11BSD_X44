@@ -104,8 +104,8 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_subr.c,v 1.160.2.5 2004/09/19 15:38:01 he Exp $"
 #include "opt_ipsec.h"
 #include "opt_tcp_compat_42.h"
 #include "opt_inet_csum.h"
-#include "opt_mbuftrace.h"
-#include "rnd.h"
+//#include "opt_mbuftrace.h"
+//#include "rnd.h"
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -117,7 +117,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_subr.c,v 1.160.2.5 2004/09/19 15:38:01 he Exp $"
 #include <sys/protosw.h>
 #include <sys/errno.h>
 #include <sys/kernel.h>
-#include <sys/pool.h>
+//#include <sys/pool.h>
 #if NRND > 0
 #include <sys/md5.h>
 #include <sys/rnd.h>

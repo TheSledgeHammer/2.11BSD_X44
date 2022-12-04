@@ -175,7 +175,7 @@ struct ipflow {
 
 #ifdef _KERNEL_OPT
 #include "opt_gateway.h"
-#include "opt_mbuftrace.h"
+//#include "opt_mbuftrace.h"
 #endif
 
 /* flags passed to ip_output as last parameter */

@@ -2,7 +2,7 @@
 
 defflag		IPFILTER_LOG		# logging of ip packets
 
-defpseudo ipfilter: ifnet		# XXX not really an ifnet
+#defpseudo ipfilter: ifnet		# XXX not really an ifnet
 
 file	netpfil/ipf/netinet/fil.c			ipfilter
 file	netpfil/ipf/netinet/ip_auth.c		ipfilter

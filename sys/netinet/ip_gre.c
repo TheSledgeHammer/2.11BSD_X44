@@ -52,7 +52,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip_gre.c,v 1.29.4.1 2005/05/08 18:01:19 snj Exp $");
 
 #include "opt_inet.h"
 #include "opt_ns.h"
-#include "opt_atalk.h"
 #include "bpfilter.h"
 
 #include <sys/param.h>
@@ -87,12 +86,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip_gre.c,v 1.29.4.1 2005/05/08 18:01:19 snj Exp $");
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
-#endif
-
-#ifdef NETATALK
-#include <netatalk/at.h>
-#include <netatalk/at_var.h>
-#include <netatalk/at_extern.h>
 #endif
 
 /* Needs IP headers. */

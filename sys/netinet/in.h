@@ -39,7 +39,7 @@
 #ifndef _NETINET_IN_H_
 #define	_NETINET_IN_H_
 
-#include <machine/int_types.h>
+//#include <machine/int_types.h>
 
 #ifndef uint8_t
 typedef __uint8_t	uint8_t;

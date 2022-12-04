@@ -34,7 +34,7 @@
 #ifndef _NETINET_TCP_H_
 #define _NETINET_TCP_H_
 
-#include <sys/featuretest.h>
+//#include <sys/featuretest.h>
 
 #if defined(_NETBSD_SOURCE)
 
