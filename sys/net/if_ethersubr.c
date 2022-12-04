@@ -64,16 +64,10 @@
 __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron Exp $");
 
 #include "opt_inet.h"
-#include "opt_atalk.h"
-#include "opt_ccitt.h"
-#include "opt_llc.h"
-#include "opt_iso.h"
-#include "opt_ipx.h"
-#include "opt_mbuftrace.h"
 #include "opt_ns.h"
 #include "opt_gateway.h"
 #include "opt_pfil_hooks.h"
-#include "vlan.h"
+//#include "vlan.h"
 #include "pppoe.h"
 #include "bridge.h"
 #include "bpfilter.h"

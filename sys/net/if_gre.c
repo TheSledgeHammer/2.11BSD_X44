@@ -62,9 +62,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_gre.c,v 1.49.2.1.2.2 2005/05/24 19:34:16 riz Exp 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
-#if __NetBSD__
 #include <sys/systm.h>
-#endif
 
 #include <machine/cpu.h>
 
@@ -87,12 +85,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_gre.c,v 1.49.2.1.2.2 2005/05/24 19:34:16 riz Exp 
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
-#endif
-
-#ifdef NETATALK
-#include <netatalk/at.h>
-#include <netatalk/at_var.h>
-#include <netatalk/at_extern.h>
 #endif
 
 #if NBPFILTER > 0
@@ -293,11 +285,6 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 			ip_tos = ip->ip_tos;
 			etype = ETHERTYPE_IP;
 			break;
-#ifdef NETATALK
-		case AF_APPLETALK:
-			etype = ETHERTYPE_ATALK;
-			break;
-#endif
 #ifdef NS
 		case AF_NS:
 			etype = ETHERTYPE_NS;

@@ -82,14 +82,6 @@
 #include <net/pfil.h>
 
 /*
- * Always include ALTQ glue here -- we use the ALTQ interface queue
- * structure even when ALTQ is not configured into the kernel so that
- * the size of struct ifnet does not changed based on the option.  The
- * ALTQ queue structure is API-compatible with the legacy ifqueue.
- */
-#include <altq/if_altq.h>
-
-/*
  * Structures defining a network interface, providing a packet
  * transport mechanism (ala level 0 of the PUP protocols).
  *
@@ -115,10 +107,6 @@
  */
 /*  XXX fast fix for SNMP, going away soon */
 #include <sys/time.h>
-
-#if defined(_KERNEL_OPT)
-#include "opt_compat_netbsd.h"
-#endif
 
 struct mbuf;
 struct proc;
@@ -231,7 +219,6 @@ struct ifnet {							/* and the entries */
 	void	(*if_stop)(struct ifnet *, int);				/* stop routine */
 	void	(*if_watchdog)(struct ifnet *);		/* timer routine */
 	void	(*if_drain)(struct ifnet *);		/* routine to release resources */
-	struct ifaltq if_snd;						/* output queue (includes altq) */
 	struct	sockaddr_dl *if_sadl;				/* pointer to our sockaddr_dl */
 	u_int8_t	 		*if_broadcastaddr;		/* linklevel broadcast bytestring */
 	void				*if_bridge;				/* bridge glue */
@@ -572,71 +559,6 @@ do {															\
 #endif /* DIAGNOSTIC */
 #endif /* IFAREF_DEBUG */
 
-#ifdef ALTQ
-#define	ALTQ_DECL(x)		x
-
-#define IFQ_ENQUEUE(ifq, m, pattr, err)							\
-do {															\
-	if (ALTQ_IS_ENABLED((ifq)))									\
-		ALTQ_ENQUEUE((ifq), (m), (pattr), (err));				\
-	else {														\
-		if (IF_QFULL((ifq))) {									\
-			m_freem((m));										\
-			(err) = ENOBUFS;									\
-		} else {												\
-			IF_ENQUEUE((ifq), (m));								\
-			(err) = 0;											\
-		}														\
-	}															\
-	if ((err))													\
-		(ifq)->ifq_drops++;										\
-} while (/*CONSTCOND*/ 0)
-
-#define IFQ_DEQUEUE(ifq, m)										\
-do {															\
-	if (TBR_IS_ENABLED((ifq)))									\
-		(m) = tbr_dequeue((ifq), ALTDQ_REMOVE);					\
-	else if (ALTQ_IS_ENABLED((ifq)))							\
-		ALTQ_DEQUEUE((ifq), (m));								\
-	else														\
-		IF_DEQUEUE((ifq), (m));									\
-} while (/*CONSTCOND*/ 0)
-
-#define	IFQ_POLL(ifq, m)										\
-do {															\
-	if (TBR_IS_ENABLED((ifq)))									\
-		(m) = tbr_dequeue((ifq), ALTDQ_POLL);					\
-	else if (ALTQ_IS_ENABLED((ifq)))							\
-		ALTQ_POLL((ifq), (m));									\
-	else														\
-		IF_POLL((ifq), (m));									\
-} while (/*CONSTCOND*/ 0)
-
-#define	IFQ_PURGE(ifq)											\
-do {															\
-	if (ALTQ_IS_ENABLED((ifq)))									\
-		ALTQ_PURGE((ifq));										\
-	else														\
-		IF_PURGE((ifq));										\
-} while (/*CONSTCOND*/ 0)
-
-#define	IFQ_SET_READY(ifq)										\
-do {															\
-	(ifq)->altq_flags |= ALTQF_READY;							\
-} while (/*CONSTCOND*/ 0)
-
-#define	IFQ_CLASSIFY(ifq, m, af, pa)							\
-do {															\
-	if (ALTQ_IS_ENABLED((ifq))) {								\
-		if (ALTQ_NEEDS_CLASSIFY((ifq)))							\
-			(pa)->pattr_class = (*(ifq)->altq_classify)			\
-				((ifq)->altq_clfier, (m), (af));				\
-		(pa)->pattr_af = (af);									\
-		(pa)->pattr_hdr = mtod((m), caddr_t);					\
-	}															\
-} while (/*CONSTCOND*/ 0)
-#else /* ! ALTQ */
-#define	ALTQ_DECL(x)		/* nothing */
 
 #define	IFQ_ENQUEUE(ifq, m, pattr, err)							\
 do {															\
@@ -660,8 +582,6 @@ do {															\
 #define	IFQ_SET_READY(ifq)	/* nothing */
 
 #define	IFQ_CLASSIFY(ifq, m, af, pa) /* nothing */
-
-#endif /* ALTQ */
 
 #define	IFQ_IS_EMPTY(ifq)		IF_IS_EMPTY((ifq))
 #define	IFQ_INC_LEN(ifq)		((ifq)->ifq_len++)

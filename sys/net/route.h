@@ -295,16 +295,16 @@ void	 rt_timer_queue_remove_all(struct rttimer_queue *, int);
 void	 rt_timer_queue_destroy(struct rttimer_queue *, int);
 void	 rt_timer_remove_all(struct rtentry *, int);
 unsigned long	rt_timer_count(struct rttimer_queue *);
-void	 rt_timer_timer(void *);
-void	 rtable_init(void **);
-void	 rtalloc(struct route *);
-struct rtentry *rtalloc1(struct sockaddr *, int);
-void	 rtfree(struct rtentry *);
-int	 rt_getifa(struct rt_addrinfo *);
-int	 rtinit(struct ifaddr *, int, int);
-int	 rtioctl(u_long, caddr_t, struct proc *);
-void	 rtredirect(struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct sockaddr *, struct rtentry **);
-int	 rtrequest(int, struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct rtentry **);
-int	 rtrequest1(int, struct rt_addrinfo *, struct rtentry **);
+void	rt_timer_timer(void *);
+void	rtable_init(void **);
+void	rtalloc(struct route *);
+struct 	rtentry *rtalloc1(struct sockaddr *, int);
+void	rtfree(struct rtentry *);
+int	 	rt_getifa(struct rt_addrinfo *);
+int	 	rtinit(struct ifaddr *, int, int);
+int	 	rtioctl(u_long, caddr_t, struct proc *);
+void	rtredirect(struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct sockaddr *, struct rtentry **);
+int	 	rtrequest(int, struct sockaddr *, struct sockaddr *, struct sockaddr *, int, struct rtentry **);
+int	 	rtrequest1(int, struct rt_addrinfo *, struct rtentry **);
 #endif /* _KERNEL */
 #endif /* _NET_ROUTE_H_ */

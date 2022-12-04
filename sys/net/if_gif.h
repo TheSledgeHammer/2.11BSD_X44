@@ -39,7 +39,7 @@
 
 #include <sys/queue.h>
 
-#if defined(_KERNEL) && !defined(_LKM)
+#if defined(_KERNEL)
 #include "opt_inet.h"
 #endif
 

@@ -2,6 +2,7 @@
 
 # Common Kernel Conf Files
 include 									"conf/ddb.conf"
+include										"conf/crypto.conf"
 include										"conf/devices.conf"
 include 									"conf/filesystems.conf"
 include 									"conf/network.conf"
@@ -9,6 +10,6 @@ include 									"conf/kernel.conf"
 include 									"conf/vm.conf"
 
 #
-# Device Config Files
+# Config Files
 #
 include 									"dev/files.dev"

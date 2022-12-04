@@ -4,7 +4,7 @@
 
 SUBDIR=	arch dev fs miscfs 				\
 		net net80211 netinet netinet6 	\
-		netipsec netkey netns 			\
+		netipsec netkey netns netpfil	\
 		sys ufs vm
 
 .include <bsd.kinc.mk>

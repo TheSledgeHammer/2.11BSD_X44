@@ -1,17 +1,17 @@
 #	$NetBSD: files.netinet,v 1.5 2003/11/26 21:26:56 itojun Exp $
 
-defflag opt_tcp_debug.h		TCP_DEBUG
-defparam opt_tcp_debug.h	TCP_NDEBUG
-defflag opt_inet.h			INET INET6 INET6_MD_CKSUM
-defparam opt_inet_conf.h	SUBNETSARELOCAL HOSTZEROBROADCAST
+defflag 	opt_tcp_debug.h		TCP_DEBUG
+defparam 	opt_tcp_debug.h		TCP_NDEBUG
+defflag 	opt_inet.h			INET INET6 INET6_MD_CKSUM
+defparam 	opt_inet_conf.h		SUBNETSARELOCAL HOSTZEROBROADCAST
 
-defflag						MROUTING
-defflag						TCP_COMPAT_42
+defflag							MROUTING
+defflag							TCP_COMPAT_42
 
-defparam opt_tcp_space.h	TCP_RECVSPACE TCP_SENDSPACE
+defparam 	opt_tcp_space.h		TCP_RECVSPACE TCP_SENDSPACE
 
-defflag opt_inet_csum.h		INET_CSUM_COUNTERS TCP_CSUM_COUNTERS
-							UDP_CSUM_COUNTERS
+defflag 	opt_inet_csum.h		INET_CSUM_COUNTERS TCP_CSUM_COUNTERS
+								UDP_CSUM_COUNTERS
 							
 file	netinet/if_arp.c		arp									needs-flag
 file	netinet/if_atm.c		atm

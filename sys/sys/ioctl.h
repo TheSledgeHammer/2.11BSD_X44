@@ -277,6 +277,21 @@ struct ttysize {
 #define	SIOCADDMULTI		_IOW('i', 49, struct ifreq)		/* add m'cast addr */
 #define	SIOCDELMULTI	 	_IOW('i', 50, struct ifreq)		/* del m'cast addr */
 
+#define	SIOCSIFMTU	 		_IOW('i', 127, struct ifreq)	/* set ifnet mtu */
+#define	SIOCGIFMTU			_IOWR('i', 126, struct ifreq)	/* get ifnet mtu */
+
+#define	SIOCIFCREATE	  	_IOW('i', 122, struct ifreq)	/* create clone if */
+#define	SIOCIFDESTROY	 	_IOW('i', 121, struct ifreq)	/* destroy clone if */
+#define	SIOCIFGCLONERS		_IOWR('i', 120, struct if_clonereq) /* get cloners */
+
+#define	SIOCIFCREATE	 	_IOW('i', 122, struct ifreq)	/* create clone if */
+#define	SIOCIFDESTROY	 	_IOW('i', 121, struct ifreq)	/* destroy clone if */
+#define	SIOCIFGCLONERS		_IOWR('i', 120, struct if_clonereq) /* get cloners */
+
+#define	SIOCGIFDLT			_IOWR('i', 119, struct ifreq)	/* get DLT */
+#define	SIOCGIFCAP			_IOWR('i', 118, struct ifcapreq)/* get capabilities */
+#define	SIOCSIFCAP	 		_IOW('i', 117, struct ifcapreq)/* set capabilities */
+
 #ifndef _KERNEL
 #include <sys/cdefs.h>
 

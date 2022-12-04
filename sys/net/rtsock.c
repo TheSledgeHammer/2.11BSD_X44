@@ -129,14 +129,9 @@ rt_adjustcount(af, cnt)
 		route_cb.ip6_count += cnt;
 		return;
 #endif
-	case AF_IPX:
-		route_cb.ipx_count += cnt;
-		return;
 	case AF_NS:
 		route_cb.ns_count += cnt;
 		return;
-	case AF_ISO:
-		route_cb.iso_count += cnt;
 		return;
 	}
 }

@@ -75,19 +75,7 @@
 #ifdef NS
 #include <netns/ns_var.h>
 #endif
-#ifdef ISO
-#include <netiso/iso.h>
-#include <netiso/clnp.h>
-#endif
-#ifdef CCITT
-#include <netccitt/x25isr.h>
-#endif
-#ifdef NATM
-#include <netnatm/natm.h>
-#endif
-#ifdef NETATALK
-#include <netatalk/at_extern.h>
-#endif
+
 
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS		/* XXX XXX XXX */
 #if NSL > 0
@@ -149,18 +137,6 @@ extern	int netisr;			/* scheduling bits for network */
 #endif
 #ifdef NS
 	DONET(NETISR_NS, nsintr)
-#endif
-#ifdef ISO
-	DONET(NETISR_ISO, clnlintr)
-#endif
-#ifdef CCITT
-	DONET(NETISR_CCITT, ccittintr)
-#endif
-#ifdef NATM
-	DONET(NETISR_NATM, natmintr)
-#endif
-#ifdef NETATALK
-	DONET(NETISR_ATALK, atintr)
 #endif
 #if NSL > 0
 	DONET(NETISR_SLIP, slintr);

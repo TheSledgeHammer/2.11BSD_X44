@@ -34,14 +34,12 @@
 __KERNEL_RCSID(0, "$NetBSD: if_gif.c,v 1.44.4.1 2005/05/24 19:34:14 riz Exp $");
 
 #include "opt_inet.h"
-#include "opt_iso.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
@@ -89,8 +87,8 @@ void gifnetisr(void);
 #endif
 void gifintr(void *);
 #ifdef ISO
-static struct mbuf *gif_eon_encap __P((struct mbuf *));
-static struct mbuf *gif_eon_decap __P((struct ifnet *, struct mbuf *));
+static struct mbuf *gif_eon_encap(struct mbuf *);
+static struct mbuf *gif_eon_decap(struct ifnet *, struct mbuf *);
 #endif
 
 /*
@@ -301,15 +299,6 @@ gif_output(ifp, m, dst, rt)
 
 	/* inner AF-specific encapsulation */
 	switch (dst->sa_family) {
-#ifdef ISO
-	case AF_ISO:
-		m = gif_eon_encap(m);
-		if (!m) {
-			error = ENOBUFS;
-			goto end;
-		}
-		break;
-#endif
 	default:
 		break;
 	}
@@ -495,15 +484,6 @@ gif_input(m, af, ifp)
 	case AF_INET6:
 		ifq = &ip6intrq;
 		isr = NETISR_IPV6;
-		break;
-#endif
-#ifdef ISO
-	case AF_ISO:
-		m = gif_eon_decap(ifp, m);
-		if (!m)
-			return;
-		ifq = &clnlintrq;
-		isr = NETISR_ISO;
 		break;
 #endif
 	default:

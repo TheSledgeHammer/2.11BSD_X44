@@ -41,7 +41,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_atmsubr.c,v 1.32 2003/01/19 23:14:42 simonb Exp $
 
 #include "opt_inet.h"
 #include "opt_gateway.h"
-#include "opt_natm.h"
 
 #include "bpfilter.h"
 

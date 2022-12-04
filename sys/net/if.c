@@ -101,9 +101,6 @@ __KERNEL_RCSID(0, "$NetBSD: if.c,v 1.139.2.1.4.1 2006/11/19 17:30:11 bouyer Exp 
 
 #include "opt_inet.h"
 
-#include "opt_atalk.h"
-#include "opt_ccitt.h"
-#include "opt_natm.h"
 #include "opt_pfil_hooks.h"
 
 #include <sys/param.h>
@@ -129,10 +126,6 @@ __KERNEL_RCSID(0, "$NetBSD: if.c,v 1.139.2.1.4.1 2006/11/19 17:30:11 bouyer Exp 
 #include <net/radix.h>
 #include <net/route.h>
 #include <net/netisr.h>
-#ifdef NETATALK
-#include <netatalk/at_extern.h>
-#include <netatalk/at.h>
-#endif
 
 #ifdef INET6
 #include <netinet/in.h>
@@ -153,8 +146,7 @@ int if_clone_list(struct if_clonereq *);
 LIST_HEAD(, if_clone) if_cloners = LIST_HEAD_INITIALIZER(if_cloners);
 int if_cloners_count;
 
-#if defined(INET) || defined(INET6) || defined(NETATALK) || defined(NS) || \
-    defined(ISO) || defined(CCITT) || defined(NATM)
+#if defined(INET) || defined(INET6) || defined(NS)
 static void if_detach_queues(struct ifnet *, struct ifqueue *));
 #endif
 
@@ -443,14 +435,6 @@ if_attach(ifp)
 	ifp->if_csum_flags_tx = 0;
 	ifp->if_csum_flags_rx = 0;
 
-#ifdef ALTQ
-	ifp->if_snd.altq_type = 0;
-	ifp->if_snd.altq_disc = NULL;
-	ifp->if_snd.altq_flags &= ALTQF_CANTCHANGE;
-	ifp->if_snd.altq_tbr  = NULL;
-	ifp->if_snd.altq_ifp  = ifp;
-#endif
-
 #ifdef PFIL_HOOKS
 	ifp->if_pfil.ph_type = PFIL_TYPE_IFNET;
 	ifp->if_pfil.ph_ifnet = ifp;
@@ -559,13 +543,6 @@ if_detach(ifp)
 	 */
 	if_down(ifp);
 
-#ifdef ALTQ
-	if (ALTQ_IS_ENABLED(&ifp->if_snd))
-		altq_disable(&ifp->if_snd);
-	if (ALTQ_IS_ATTACHED(&ifp->if_snd))
-		altq_detach(&ifp->if_snd);
-#endif
-
 #ifdef PFIL_HOOKS
 	(void) pfil_head_unregister(&ifp->if_pfil);
 #endif
@@ -642,9 +619,9 @@ if_detach(ifp)
 	 * net/netisr_dispatch.h is not usable, as some of them use
 	 * strange queue names.
 	 */
-#define IF_DETACH_QUEUES(x) \
-do { \
-	extern struct ifqueue x; \
+#define IF_DETACH_QUEUES(x) 	\
+do { 							\
+	extern struct ifqueue x; 	\
 	if_detach_queues(ifp, & x); \
 } while (/*CONSTCOND*/ 0)
 #ifdef INET
@@ -656,33 +633,15 @@ do { \
 #ifdef INET6
 	IF_DETACH_QUEUES(ip6intrq);
 #endif
-#ifdef NETATALK
-	IF_DETACH_QUEUES(atintrq1);
-	IF_DETACH_QUEUES(atintrq2);
-#endif
 #ifdef NS
 	IF_DETACH_QUEUES(nsintrq);
-#endif
-#ifdef ISO
-	IF_DETACH_QUEUES(clnlintrq);
-#endif
-#ifdef CCITT
-	IF_DETACH_QUEUES(llcintrq);
-	IF_DETACH_QUEUES(hdintrq);
-#endif
-#ifdef NATM
-	IF_DETACH_QUEUES(natmintrq);
-#endif
-#ifdef DECNET
-	IF_DETACH_QUEUES(decnetintrq);
 #endif
 #undef IF_DETACH_QUEUES
 
 	splx(s);
 }
 
-#if defined(INET) || defined(INET6) || defined(NETATALK) || defined(NS) || \
-    defined(ISO) || defined(CCITT) || defined(NATM) || defined(DECNET)
+#if defined(INET) || defined(INET6) || defined(NS)
 static void
 if_detach_queues(ifp, q)
 	struct ifnet *ifp;
@@ -979,28 +938,6 @@ ifa_ifwithnet(addr)
 		    ifindex2ifnet[sdl->sdl_index]->if_output != if_nulloutput)
 			return (ifnet_addrs[sdl->sdl_index]);
 	}
-#ifdef NETATALK
-	if (af == AF_APPLETALK) {
-		struct sockaddr_at *sat, *sat2;
-		sat = (struct sockaddr_at *)addr;
-		for (ifp = TAILQ_FIRST(&ifnet); ifp != NULL;
-		     ifp = TAILQ_NEXT(ifp, if_list)) {
-			if (ifp->if_output == if_nulloutput)
-				continue;
-			ifa = at_ifawithnet((struct sockaddr_at *)addr, ifp);
-			if (ifa == NULL)
-				continue;
-			sat2 = (struct sockaddr_at *)ifa->ifa_addr;
-			if (sat2->sat_addr.s_net == sat->sat_addr.s_net)
-				return (ifa); /* exact match */
-			if (ifa_maybe == NULL) {
-				/* else keep the if with the right range */
-				ifa_maybe = ifa;
-			}
-		}
-		return (ifa_maybe);
-	}
-#endif
 	for (ifp = TAILQ_FIRST(&ifnet); ifp != NULL;
 	     ifp = TAILQ_NEXT(ifp, if_list)) {
 		if (ifp->if_output == if_nulloutput)
@@ -1329,9 +1266,7 @@ ifioctl(so, cmd, data, p)
 	switch (cmd) {
 
 	case SIOCGIFCONF:
-	case OSIOCGIFCONF:
-		return (ifconf(cmd, data));
-	}
+
 	ifr = (struct ifreq *)data;
 	ifcr = (struct ifcapreq *)data;
 	ifdr = (struct ifdatareq *)data;
@@ -1374,12 +1309,12 @@ ifioctl(so, cmd, data, p)
 	case SIOCSIFFLAGS:
 		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
-		if (ifp->if_flags & IFF_UP && (ifr->ifr_flags & IFF_UP) == 0) {
+		if ((ifp->if_flags & IFF_UP) && (ifr->ifr_flags & IFF_UP) == 0) {
 			s = splnet();
 			if_down(ifp);
 			splx(s);
 		}
-		if (ifr->ifr_flags & IFF_UP && (ifp->if_flags & IFF_UP) == 0) {
+		if ((ifr->ifr_flags & IFF_UP) && (ifp->if_flags & IFF_UP) == 0) {
 			s = splnet();
 			if_up(ifp);
 			splx(s);
@@ -1454,7 +1389,7 @@ ifioctl(so, cmd, data, p)
 		break;
 
 	case SIOCSIFMETRIC:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
 		ifp->if_metric = ifr->ifr_metric;
 		break;
@@ -1464,7 +1399,7 @@ ifioctl(so, cmd, data, p)
 		break;
 
 	case SIOCZIFDATA:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
 		ifdr->ifdr_data = ifp->if_data;
 		/*
@@ -1505,7 +1440,7 @@ ifioctl(so, cmd, data, p)
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
 	case SIOCSIFMEDIA:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
 		/* FALLTHROUGH */
 	case SIOCGIFPSRCADDR:
@@ -1524,7 +1459,7 @@ ifioctl(so, cmd, data, p)
 	case SIOCS80211BSSID:
 	case SIOCS80211CHANNEL:
 		/* XXX:  need to pass proc pointer through to driver... */
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
 	/* FALLTHROUGH */
 	default:
@@ -1646,23 +1581,6 @@ ifconf(cmd, data)
 
 		for (; ifa != 0; ifa = TAILQ_NEXT(ifa, ifa_list)) {
 			struct sockaddr *sa = ifa->ifa_addr;
-#if defined(COMPAT_43) || defined(COMPAT_LINUX) || defined(COMPAT_SVR4) || defined(COMPAT_ULTRIX)
-			if (cmd == OSIOCGIFCONF) {
-				struct osockaddr *osa =
-					 (struct osockaddr *)&ifr.ifr_addr;
-				/*
-				 * If it does not fit, we don't bother with it
-				 */
-				if (sa->sa_len > sizeof(*osa))
-					continue;
-				ifr.ifr_addr = *sa;
-				osa->sa_family = sa->sa_family;
-				if (ifrp != NULL && space >= sz) {
-					error = copyout(&ifr, ifrp, sz);
-					ifrp++;
-				}
-			} else
-#endif
 			if (sa->sa_len <= sizeof(*sa)) {
 				ifr.ifr_addr = *sa;
 				if (ifrp != NULL && space >= sz) {

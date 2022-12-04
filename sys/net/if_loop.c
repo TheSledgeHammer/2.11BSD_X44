@@ -68,11 +68,7 @@
 __KERNEL_RCSID(0, "$NetBSD: if_loop.c,v 1.49 2003/11/13 01:48:13 jonathan Exp $");
 
 #include "opt_inet.h"
-#include "opt_atalk.h"
-#include "opt_iso.h"
 #include "opt_ns.h"
-#include "opt_ipx.h"
-#include "opt_mbuftrace.h"
 
 #include "bpfilter.h"
 #include "loop.h"
@@ -111,21 +107,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_loop.c,v 1.49 2003/11/13 01:48:13 jonathan Exp $"
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
-#endif
-
-#ifdef IPX
-#include <netipx/ipx.h>
-#include <netipx/ipx_if.h>
-#endif
-
-#ifdef ISO
-#include <netiso/iso.h>
-#include <netiso/iso_var.h>
-#endif
-
-#ifdef NETATALK
-#include <netatalk/at.h>
-#include <netatalk/at_var.h>
 #endif
 
 #if NBPFILTER > 0
@@ -177,12 +158,6 @@ loopattach(n)
 #if NBPFILTER > 0
 		bpfattach(ifp, DLT_NULL, sizeof(u_int));
 #endif
-#ifdef MBUFTRACE
-		ifp->if_mowner = &lomowner[i];
-		strlcpy(ifp->if_mowner->mo_name, ifp->if_xname,
-		    sizeof(ifp->if_mowner->mo_name));
-		MOWNER_ATTACH(&lomowner[i]);
-#endif
 	}
 }
 
@@ -221,7 +196,7 @@ looutput(ifp, m, dst, rt)
 #endif
 	m->m_pkthdr.rcvif = ifp;
 
-	if (rt && rt->rt_flags & (RTF_REJECT|RTF_BLACKHOLE)) {
+	if (rt && (rt->rt_flags & (RTF_REJECT|RTF_BLACKHOLE))) {
 		m_freem(m);
 		return (rt->rt_flags & RTF_BLACKHOLE ? 0 :
 			rt->rt_flags & RTF_HOST ? EHOSTUNREACH : ENETUNREACH);
@@ -282,24 +257,6 @@ looutput(ifp, m, dst, rt)
 		isr = NETISR_NS;
 		break;
 #endif
-#ifdef ISO
-	case AF_ISO:
-		ifq = &clnlintrq;
-		isr = NETISR_ISO;
-		break;
-#endif
-#ifdef IPX
-	case AF_IPX:
-		ifq = &ipxintrq;
-		isr = NETISR_IPX;
-		break;
-#endif
-#ifdef NETATALK
-	case AF_APPLETALK:
-	        ifq = &atintrq2;
-		isr = NETISR_ATALK;
-		break;
-#endif
 	default:
 		printf("%s: can't handle af%d\n", ifp->if_xname,
 		    dst->sa_family);
@@ -352,28 +309,10 @@ lostart(struct ifnet *ifp)
 			isr = NETISR_IPV6;
 			break;
 #endif
-#ifdef IPX
-		case AF_IPX:
-			ifq = &ipxintrq;
-			isr = NETISR_IPX;
-			break;
-#endif
 #ifdef NS
 		case AF_NS:
 			ifq = &nsintrq;
 			isr = NETISR_NS;
-			break;
-#endif
-#ifdef ISO
-		case AF_ISO:
-			ifq = &clnlintrq;
-			isr = NETISR_ISO;
-			break;
-#endif
-#ifdef NETATALK
-		case AF_APPLETALK:
-			ifq = &atintrq2;
-			isr = NETISR_ATALK;
 			break;
 #endif
 		default:

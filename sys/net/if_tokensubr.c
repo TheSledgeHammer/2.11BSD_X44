@@ -68,10 +68,6 @@
 __KERNEL_RCSID(0, "$NetBSD: if_tokensubr.c,v 1.25 2004/03/22 18:02:12 matt Exp $");
 
 #include "opt_inet.h"
-#include "opt_atalk.h"
-#include "opt_ccitt.h"
-#include "opt_llc.h"
-#include "opt_iso.h"
 #include "opt_ns.h"
 #include "opt_gateway.h"
 
@@ -119,19 +115,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_tokensubr.c,v 1.25 2004/03/22 18:02:12 matt Exp $
 #include <netdnet/dn.h>
 #endif
 
-#ifdef ISO
-#include <netiso/argo_debug.h>
-#include <netiso/iso.h>
-#include <netiso/iso_var.h>
-#include <netiso/iso_snpac.h>
-#endif
-
 #include "bpfilter.h"
-
-#ifdef LLC
-#include <netccitt/dll.h>
-#include <netccitt/llc_var.h>
-#endif
 
 /*
  * TODO:

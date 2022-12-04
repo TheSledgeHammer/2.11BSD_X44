@@ -45,15 +45,6 @@ int	pppread(struct tty *, struct uio *, int);
 int	pppwrite(struct tty *, struct uio *, int);
 #endif
 
-#include "strip.h"
-#if NSTRIP > 0
-int	stripopen(dev_t, struct tty *);
-int	stripclose(struct tty *, int);
-int	striptioctl(struct tty *, u_long, caddr_t, int, struct proc *);
-int	stripinput(int, struct tty *);
-int	stripstart(struct tty *);
-#endif
-
 /* 0- TTYDISC (Termios) */
 const struct linesw ttydisc = {
 	.l_open = ttyopen,
@@ -148,25 +139,8 @@ const struct linesw slipdisc = {
 };
 #endif
 
-#if NSTRIP > 0
-/* 6- STRIPDISC */
-const struct linesw strip_disc = {
-	.l_open = stripopen,
-	.l_close = stripclose,
-	.l_read = nottyread,
-	.l_write = nottywrite,
-	.l_ioctl = striptioctl,
-	.l_rint = stripinput,
-	.l_rend = norend,
-	.l_meta = nometa,
-	.l_start = stripstart,
-	.l_modem = nullmodem,
-	.l_poll = nottypoll
-};
-#endif
-
 #if NPPP > 0
-/* 7- PPPDISC */
+/* 6- PPPDISC */
 const struct linesw pppdisc = {
 	.l_open = pppopen,
 	.l_close = pppclose,
