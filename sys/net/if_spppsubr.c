@@ -44,21 +44,19 @@
 __KERNEL_RCSID(0, "$NetBSD: if_spppsubr.c,v 1.75.2.1.4.1 2006/08/23 20:19:17 tron Exp $");
 
 #include "opt_inet.h"
-#include "opt_ipx.h"
-#include "opt_iso.h"
 #include "opt_ns.h"
 
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <sys/sockio.h>
+//#include <sys/sockio.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/callout.h>
-#include <sys/md5.h>
+//#include <sys/md5.h>
 #include <sys/inttypes.h>
 
 #include <net/if.h>
@@ -78,21 +76,9 @@ __KERNEL_RCSID(0, "$NetBSD: if_spppsubr.c,v 1.75.2.1.4.1 2006/08/23 20:19:17 tro
 #endif
 #include <net/ethertypes.h>
 
-#ifdef IPX
-#include <netipx/ipx.h>
-#include <netipx/ipx_if.h>
-#endif
-
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
-#endif
-
-#ifdef ISO
-#include <netiso/argo_debug.h>
-#include <netiso/iso.h>
-#include <netiso/iso_var.h>
-#include <netiso/iso_snpac.h>
 #endif
 
 #include <net/if_sppp.h>

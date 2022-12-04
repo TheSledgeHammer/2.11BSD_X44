@@ -73,7 +73,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_sl.c,v 1.84 2003/08/07 16:32:53 agc Exp $");
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/buf.h>
-#include <sys/dkstat.h>
+#include <sys/dk.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
