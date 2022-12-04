@@ -66,7 +66,6 @@ __KERNEL_RCSID(0, "$NetBSD: in6_proto.c,v 1.56 2003/12/04 19:38:24 atatat Exp $"
 
 #include "opt_inet.h"
 #include "opt_ipsec.h"
-#include "opt_iso.h"
 
 #include <sys/param.h>
 #include <sys/socket.h>

@@ -128,7 +128,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_mroute.c,v 1.60 2003/12/10 11:46:33 itojun Exp $
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#include <sys/sockio.h>
 #include <sys/protosw.h>
 #include <sys/errno.h>
 #include <sys/time.h>

@@ -50,7 +50,6 @@ __KERNEL_RCSID(0, "$NetBSD: ieee80211_proto.c,v 1.7 2004/01/13 23:37:30 dyoung E
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/endian.h>
 #include <sys/errno.h>
 #ifdef __FreeBSD__

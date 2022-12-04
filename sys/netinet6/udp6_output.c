@@ -97,7 +97,7 @@ __KERNEL_RCSID(0, "$NetBSD: udp6_output.c,v 1.17.2.1 2004/06/14 18:00:48 tron Ex
 #include <netinet/icmp6.h>
 #include <netinet6/ip6protosw.h>
 
-#include "faith.h"
+//#include "faith.h"
 
 #include <net/net_osdep.h>
 

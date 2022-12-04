@@ -41,7 +41,6 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_nbr.c,v 1.53 2004/02/10 20:57:20 itojun Exp $");
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/errno.h>

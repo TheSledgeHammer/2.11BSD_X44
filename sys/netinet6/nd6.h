@@ -305,8 +305,8 @@ struct nd_pfxrouter {
 
 LIST_HEAD(nd_prhead, nd_prefix);
 
-#include <sys/mallocvar.h>
-MALLOC_DECLARE(M_IP6NDP);
+//#include <sys/mallocvar.h>
+//MALLOC_DECLARE(M_IP6NDP);
 
 /* nd6.c */
 extern int nd6_prune;

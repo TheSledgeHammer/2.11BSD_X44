@@ -50,7 +50,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_spppsubr.c,v 1.75.2.1.4.1 2006/08/23 20:19:17 tro
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-//#include <sys/sockio.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/malloc.h>

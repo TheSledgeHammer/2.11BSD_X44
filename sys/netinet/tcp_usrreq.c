@@ -103,7 +103,7 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_usrreq.c,v 1.87.2.1 2004/05/28 07:23:55 tron Exp
 #include "opt_inet.h"
 #include "opt_ipsec.h"
 #include "opt_tcp_debug.h"
-#include "opt_mbuftrace.h"
+//#include "opt_mbuftrace.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>

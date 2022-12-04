@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	arch dev fs miscfs 				\
+SUBDIR=	arch crypto dev fs miscfs 		\
 		net net80211 netinet netinet6 	\
 		netipsec netkey netns netpfil	\
 		sys ufs vm

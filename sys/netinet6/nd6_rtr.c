@@ -38,7 +38,6 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_rtr.c,v 1.47 2003/12/10 11:46:33 itojun Exp $");
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/errno.h>

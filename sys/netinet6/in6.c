@@ -72,7 +72,6 @@ __KERNEL_RCSID(0, "$NetBSD: in6.c,v 1.86 2004/03/28 08:28:06 christos Exp $");
 #include <sys/malloc.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#include <sys/sockio.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/time.h>

@@ -46,7 +46,6 @@ __KERNEL_RCSID(0, "$NetBSD: ieee80211_crypto.c,v 1.5 2003/12/14 09:56:53 dyoung 
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/endian.h>
 #include <sys/errno.h>
 #ifdef __FreeBSD__

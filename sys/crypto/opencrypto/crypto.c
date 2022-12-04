@@ -34,7 +34,6 @@ __KERNEL_RCSID(0, "$NetBSD: crypto.c,v 1.8.2.1 2004/04/30 03:53:18 jmc Exp $");
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
-#include <sys/pool.h>
 #include <opencrypto/cryptodev.h>
 #include <opencrypto/cryptosoft.h>		/* swcr_init() */
 #include <sys/kthread.h>

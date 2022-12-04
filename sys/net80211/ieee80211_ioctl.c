@@ -46,7 +46,6 @@ __KERNEL_RCSID(0, "$NetBSD: ieee80211_ioctl.c,v 1.8 2004/01/16 14:07:32 onoe Exp
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
  

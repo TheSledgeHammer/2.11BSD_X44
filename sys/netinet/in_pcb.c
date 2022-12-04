@@ -113,7 +113,6 @@ __KERNEL_RCSID(0, "$NetBSD: in_pcb.c,v 1.94 2004/03/02 02:26:28 thorpej Exp $");
 #include <sys/ioctl.h>
 #include <sys/errno.h>
 #include <sys/time.h>
-#include <sys/pool.h>
 #include <sys/proc.h>
 
 #include <net/if.h>

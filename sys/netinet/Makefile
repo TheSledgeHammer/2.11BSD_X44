@@ -16,4 +16,4 @@ INCS+=	ip_auth.h ip_compat.h ip_fil.h ip_frag.h ip_htable.h ip_nat.h 	\
 
 .include <bsd.kinc.mk>
 
-.PATH: ${NETBSDSRCDIR}/netinet/ipf
+.PATH: ${NETBSDSRCDIR}/sys/netpfil/ipf/netinet

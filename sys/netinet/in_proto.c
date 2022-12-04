@@ -64,8 +64,6 @@
 __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $");
 
 #include "opt_mrouting.h"
-#include "opt_eon.h"			/* ISO CLNL over IP */
-#include "opt_iso.h"			/* ISO TP tunneled over IP */
 #include "opt_ns.h"			/* NSIP: XNS tunneled over IP */
 #include "opt_inet.h"
 #include "opt_ipsec.h"
@@ -127,15 +125,6 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
 #include <netns/ns_var.h>
 #include <netns/idp_var.h>
 #endif /* NSIP */
-
-#ifdef TPIP
-#include <netiso/tp_param.h>
-#include <netiso/tp_var.h>
-#endif /* TPIP */
-
-#ifdef EON
-#include <netiso/eonvar.h>
-#endif /* EON */
 
 #include "gre.h"
 #if NGRE > 0
@@ -237,13 +226,6 @@ struct protosw inetsw[] = {
   rip_usrreq,
   igmp_init,	igmp_fasttimo,	igmp_slowtimo,	0,
 },
-#ifdef TPIP
-{ SOCK_SEQPACKET,&inetdomain,	IPPROTO_TP,	PR_CONNREQUIRED|PR_WANTRCVD|PR_LISTEN|PR_LASTHDR|PR_ABRTACPTDIS,
-  tpip_input,	0,		tpip_ctlinput,	tp_ctloutput,
-  tp_usrreq,
-  tp_init,	0,		tp_slowtimo,	tp_drain,
-},
-#endif /* TPIP */
 #ifdef ISO
 /* EON (ISO CLNL over IP) */
 #ifdef EON

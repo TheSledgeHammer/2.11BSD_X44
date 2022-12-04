@@ -41,7 +41,6 @@ __KERNEL_RCSID(0, "$NetBSD: nd6.c,v 1.89.4.1 2005/04/07 15:25:59 he Exp $");
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/protosw.h>
@@ -55,7 +54,7 @@ __KERNEL_RCSID(0, "$NetBSD: nd6.c,v 1.89.4.1 2005/04/07 15:25:59 he Exp $");
 #include <net/if_types.h>
 #include <net/route.h>
 #include <net/if_ether.h>
-#include <net/if_fddi.h>
+//#include <net/if_fddi.h>
 #include <net/if_arc.h>
 
 #include <netinet/in.h>

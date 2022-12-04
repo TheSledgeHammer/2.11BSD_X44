@@ -50,7 +50,6 @@ __KERNEL_RCSID(0, "$NetBSD: ieee80211_input.c,v 1.21.2.1 2004/08/03 16:54:42 jmc
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/endian.h>
 #include <sys/errno.h>
 #ifdef __FreeBSD__

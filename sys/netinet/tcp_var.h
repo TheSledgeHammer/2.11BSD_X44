@@ -142,7 +142,7 @@
 
 #if defined(_KERNEL_OPT)
 #include "opt_inet.h"
-#include "opt_mbuftrace.h"
+//#include "opt_mbuftrace.h"
 #endif
 
 /*

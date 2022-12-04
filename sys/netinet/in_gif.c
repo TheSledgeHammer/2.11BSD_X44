@@ -38,7 +38,6 @@ __KERNEL_RCSID(0, "$NetBSD: in_gif.c,v 1.34 2003/11/11 20:25:26 jonathan Exp $")
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
-//#include <sys/sockio.h>
 #include <sys/mbuf.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>

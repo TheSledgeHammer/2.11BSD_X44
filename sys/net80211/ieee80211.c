@@ -51,7 +51,6 @@ __KERNEL_RCSID(0, "$NetBSD: ieee80211.c,v 1.9.2.2 2004/07/23 23:28:59 he Exp $")
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/endian.h>
 #include <sys/errno.h>
 #ifdef __FreeBSD__

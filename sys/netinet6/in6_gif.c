@@ -34,12 +34,10 @@
 __KERNEL_RCSID(0, "$NetBSD: in6_gif.c,v 1.37 2003/10/30 01:43:09 simonb Exp $");
 
 #include "opt_inet.h"
-#include "opt_iso.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/socket.h>
-#include <sys/sockio.h>
 #include <sys/mbuf.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>

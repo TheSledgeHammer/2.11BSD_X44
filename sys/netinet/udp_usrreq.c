@@ -66,8 +66,6 @@ __KERNEL_RCSID(0, "$NetBSD: udp_usrreq.c,v 1.116.2.4 2004/05/28 07:24:17 tron Ex
 #include "opt_inet.h"
 #include "opt_ipsec.h"
 #include "opt_inet_csum.h"
-#include "opt_ipkdb.h"
-#include "opt_mbuftrace.h"
 
 #include <sys/param.h>
 #include <sys/malloc.h>

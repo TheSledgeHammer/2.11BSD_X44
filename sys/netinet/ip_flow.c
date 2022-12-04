@@ -50,7 +50,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip_flow.c,v 1.27 2003/12/12 21:17:59 scw Exp $");
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
-#include <sys/pool.h>
 #include <sys/sysctl.h>
 
 #include <net/if.h>
