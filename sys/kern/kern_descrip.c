@@ -589,12 +589,15 @@ fdexpand(lim)
 	 * and zero the new portion of each array.
 	 */
 	copylen = sizeof(struct file*) * u.u_nfiles;
-	memcpy(newofile, u.u_ofile, copylen);
-	memset((char*) newofile + copylen, 0,
-			nfiles * sizeof(struct file*) - copylen);
+	bcopy(u.u_ofile, newofile, copylen);
+	bzero((char*) newofile + copylen, nfiles * sizeof(struct file*) - copylen);
+	//memcpy(newofile, u.u_ofile, copylen);
+	//memset((char*) newofile + copylen, 0, nfiles * sizeof(struct file*) - copylen);
 	copylen = sizeof(char) * u.u_nfiles;
-	memcpy(newofileflags, u.u_pofile, copylen);
-	memset(newofileflags + copylen, 0, nfiles * sizeof(char) - copylen);
+	bcopy(u.u_pofile, newofileflags, copylen);
+	bzero(newofileflags + copylen, nfiles * sizeof(char) - copylen);
+	//memcpy(newofileflags, u.u_pofile, copylen);
+	//memset(newofileflags + copylen, 0, nfiles * sizeof(char) - copylen);
 	if (u.u_nfiles > NDFILE) {
 		FREE(u.u_ofile, M_FILEDESC);
 	}
@@ -1149,4 +1152,21 @@ getfiledesc(fdp, fd, fpp, type)
 	}
 	*fpp = fp;
 	return (0);
+}
+
+/*
+ * Send signal to descriptor owner, either process or process group.
+ */
+void
+fownsignal(pgid, signo)
+	pid_t pgid;
+	int signo;
+{
+	struct proc *p1;
+
+	if (pgid > 0 && (p1 = pfind(pgid))) {
+		gsignal(pgid, signo);
+	} else if (pgid < 0) {
+		gsignal(-pgid, signo);
+	}
 }

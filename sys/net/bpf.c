@@ -52,6 +52,7 @@ __KERNEL_RCSID(0, "$NetBSD: bpf.c,v 1.90.2.2 2004/05/28 07:24:55 tron Exp $");
 #include <sys/user.h>
 #include <sys/ioctl.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 
 #include <sys/file.h>
@@ -538,8 +539,9 @@ bpf_wakeup(d)
 	struct bpf_d *d;
 {
 	wakeup((caddr_t)d);
-	if (d->bd_async)
-		fownsignal(d->bd_pgid, SIGIO, 0, 0, NULL);
+	if (d->bd_async) {
+		fownsignal(d->bd_pgid, SIGIO);
+	}
 
 	selnotify(&d->bd_sel, 0);
 }
@@ -559,7 +561,6 @@ bpf_timed_out(arg)
 	}
 	splx(s);
 }
-
 
 int
 bpfwrite(dev, uio, ioflag)
@@ -929,12 +930,14 @@ bpfioctl(dev, cmd, addr, flag, p)
 
 	case TIOCSPGRP:		/* Process or group to send signals to */
 	case FIOSETOWN:
-		error = fsetown(p, &d->bd_pgid, cmd, addr);
+		//error = fsetown(p, &d->bd_pgid, cmd, addr);
+		error = fsetown(&d->bd_pgid, &d->bd_file, (int)addr);
 		break;
 
 	case TIOCGPGRP:
 	case FIOGETOWN:
-		error = fgetown(p, d->bd_pgid, cmd, addr);
+		//error = fgetown(p, d->bd_pgid, cmd, addr);
+		error = fgetown(&d->bd_file, d->bd_pgid);
 		break;
 	}
 	return (error);

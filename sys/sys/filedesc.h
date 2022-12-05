@@ -124,5 +124,6 @@ int					fdrelease(int);
 void				fdunshare(void);
 void				fdcloseexec(void);
 int					getfiledesc(struct filedesc *, int, struct file **, int);
+void				fownsignal(pid_t, int);
 #endif
 #endif

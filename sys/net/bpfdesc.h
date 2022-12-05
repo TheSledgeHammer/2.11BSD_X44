@@ -85,6 +85,7 @@ struct bpf_d {
 	//int			bd_timedout;
 	//struct proc *bd_selproc;/* process that last selected us */
 //#else
+	struct file		*bd_file;	/* bpf file */
 	u_char			bd_pad;		/* explicit alignment */
 	struct selinfo	bd_sel;		/* bsd select info */
 //#endif
