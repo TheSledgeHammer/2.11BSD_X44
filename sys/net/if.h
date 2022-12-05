@@ -87,7 +87,7 @@
  * the size of struct ifnet does not changed based on the option.  The
  * ALTQ queue structure is API-compatible with the legacy ifqueue.
  */
-#include <altq/if_altq.h>
+#include <netpfil/altq/if_altq.h>
 
 /*
  * Structures defining a network interface, providing a packet

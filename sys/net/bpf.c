@@ -902,14 +902,19 @@ bpfioctl(dev, cmd, addr, flag, p)
 	case BIOCGSEESENT:
 		*(u_int *)addr = d->bd_seesent;
 		break;
-
+		
 	/*
 	 * Set "see sent" packets flag
 	 */
 	case BIOCSSEESENT:
 		d->bd_seesent = *(u_int *)addr;
 		break;
+	}	
+        switch (cmd) {
 
+	default:
+		error = EINVAL;
+		break;
 	case FIONBIO:		/* Non-blocking I/O */
 		/*
 		 * No need to do anything special as we use IO_NDELAY in
@@ -1581,7 +1586,7 @@ bpf_setdlt(d, dlt)
 }
 
 int
-bpf_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+bpf_sysctl(int *name, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
 {
 	int newsize, error;
 
@@ -1593,11 +1598,11 @@ bpf_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, si
 	bpf_maxbufsize = newsize;
 	switch(name[0]) {
 	case BPF_MINBUFSIZE:
-		error = sysctl_int(oldp, oldlenp, newp, newlen, &bpf_bufsize, BPF_MINBUFSIZE, bpf_maxbufsize);
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &bpf_bufsize);
 		break;
 
 	case BPF_MAXBUFSIZE:
-		error = sysctl_int(oldp, oldlenp, newp, newlen, &bpf_maxbufsize, BPF_MINBUFSIZE, INT_MAX);
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &bpf_maxbufsize);
 		break;
 	}
 
