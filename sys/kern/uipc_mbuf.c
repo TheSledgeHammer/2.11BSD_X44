@@ -227,6 +227,15 @@ m_get(canwait, type)
 }
 
 struct mbuf *
+m_gethdr(int nowait, int type)
+{
+	struct mbuf *m;
+
+	MGETHDR(m, nowait, type);
+        return (m);
+}
+
+struct mbuf *
 m_getclr(canwait, type)
 	int canwait, type;
 {
@@ -237,6 +246,13 @@ m_getclr(canwait, type)
 		return (0);
 	bzero(mtod(m, caddr_t), MLEN);
 	return (m);
+}
+
+void
+m_clget(struct mbuf *m, int nowait)
+{
+
+	MCLGET(m, nowait);
 }
 
 struct mbuf *
