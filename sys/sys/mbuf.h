@@ -156,6 +156,44 @@ struct mbuf {
 /* length to m_copy to copy all */
 #define	M_COPYALL		1000000000
 
+/* Checksumming flags (csum_flags). */
+#define M_CSUM_TCPv4		0x00000001	/* TCP header/payload */
+#define M_CSUM_UDPv4		0x00000002	/* UDP header/payload */
+#define M_CSUM_TCP_UDP_BAD	0x00000004	/* TCP/UDP checksum bad */
+#define M_CSUM_DATA			0x00000008	/* consult csum_data */
+#define M_CSUM_TCPv6		0x00000010	/* IPv6 TCP header/payload */
+#define M_CSUM_UDPv6		0x00000020	/* IPv6 UDP header/payload */
+#define M_CSUM_IPv4			0x00000040	/* IPv4 header */
+#define M_CSUM_IPv4_BAD		0x00000080	/* IPv4 header checksum bad */
+#define M_CSUM_TSOv4		0x00000100	/* TCPv4 segmentation offload */
+#define M_CSUM_TSOv6		0x00000200	/* TCPv6 segmentation offload */
+
+/* Checksum-assist quirks: keep separate from jump-table bits. */
+#define M_CSUM_BLANK		0x40000000	/* csum is missing */
+#define M_CSUM_NO_PSEUDOHDR	0x80000000	/* Rx csum_data does not include
+						 * the UDP/TCP pseudo-hdr, and
+						 * is not yet 1s-complemented.
+						 */
+
+#define M_CSUM_BITS \
+    "\20\1TCPv4\2UDPv4\3TCP_UDP_BAD\4DATA\5TCPv6\6UDPv6\7IPv4\10IPv4_BAD" \
+    "\11TSOv4\12TSOv6\39BLANK\40NO_PSEUDOHDR"
+
+
+/*
+ * Macros for manipulating csum_data on outgoing packets. These are
+ * used to pass information down from the L4/L3 to the L2.
+ *
+ *   _IPHL:   Length of the IPv{4/6} header, plus the options; in other
+ *            words the offset of the UDP/TCP header in the packet.
+ *   _OFFSET: Offset of the checksum field in the UDP/TCP header.
+ */
+#define M_CSUM_DATA_IPv4_IPHL(x)	((x) >> 16)
+#define M_CSUM_DATA_IPv4_OFFSET(x)	((x) & 0xffff)
+#define M_CSUM_DATA_IPv6_IPHL(x)	((x) >> 16)
+#define M_CSUM_DATA_IPv6_OFFSET(x)	((x) & 0xffff)
+#define M_CSUM_DATA_IPv6_SET(x, v)	(x) = ((x) & 0xffff) | ((v) << 16)
+
 /*
  * mbuf utility macros:
  */

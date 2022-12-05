@@ -52,13 +52,13 @@ typedef	u_int bpf_u_int32;
  * Alignment macros.  BPF_WORDALIGN rounds up to the next 
  * even multiple of BPF_ALIGNMENT. 
  */
-#define BPF_ALIGNMENT sizeof(long)
-#define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
+#define BPF_ALIGNMENT 		sizeof(long)
+#define BPF_WORDALIGN(x) 	(((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
 
-#define BPF_MAXINSNS 512
-#define BPF_DFLTBUFSIZE (1024*1024)	/* default static upper limit */
-#define BPF_MAXBUFSIZE (1024*1024*16)	/* hard limit on sysctl'able value */
-#define BPF_MINBUFSIZE 32
+#define BPF_MAXINSNS 		512
+#define BPF_DFLTBUFSIZE 	(1024*1024)	/* default static upper limit */
+#define BPF_MAXBUFSIZE 		(1024*1024*16)	/* hard limit on sysctl'able value */
+#define BPF_MINBUFSIZE 		32
 
 /*
  *  Structure for BIOCSETF.
@@ -112,28 +112,28 @@ struct bpf_version {
  * header files.  If your using gcc, we assume that you
  * have run fixincludes so the latter set should work.
  */
-#define BIOCGBLEN	 _IOR('B',102, u_int)
-#define BIOCSBLEN	_IOWR('B',102, u_int)
-#define BIOCSETF	 _IOW('B',103, struct bpf_program)
-#define BIOCFLUSH	  _IO('B',104)
-#define BIOCPROMISC	  _IO('B',105)
-#define BIOCGDLT	 _IOR('B',106, u_int)
-#define BIOCGETIF	 _IOR('B',107, struct ifreq)
-#define BIOCSETIF	 _IOW('B',108, struct ifreq)
-#define BIOCSRTIMEOUT	 _IOW('B',109, struct timeval)
-#define BIOCGRTIMEOUT	 _IOR('B',110, struct timeval)
-#define BIOCGSTATS	 _IOR('B',111, struct bpf_stat)
-#define BIOCGSTATSOLD	 _IOR('B',111, struct bpf_stat_old)
-#define BIOCIMMEDIATE	 _IOW('B',112, u_int)
-#define BIOCVERSION	 _IOR('B',113, struct bpf_version)
-#define BIOCSTCPF	 _IOW('B',114, struct bpf_program)
-#define BIOCSUDPF	 _IOW('B',115, struct bpf_program)
-#define BIOCGHDRCMPLT	 _IOR('B',116, u_int)
-#define BIOCSHDRCMPLT	 _IOW('B',117, u_int)
-#define BIOCSDLT	 _IOW('B',118, u_int)
+#define BIOCGBLEN		_IOR('B',102, u_int)
+#define BIOCSBLEN		_IOWR('B',102, u_int)
+#define BIOCSETF	 	_IOW('B',103, struct bpf_program)
+#define BIOCFLUSH	 	_IO('B',104)
+#define BIOCPROMISC	 	_IO('B',105)
+#define BIOCGDLT	 	_IOR('B',106, u_int)
+#define BIOCGETIF	 	_IOR('B',107, struct ifreq)
+#define BIOCSETIF	 	_IOW('B',108, struct ifreq)
+#define BIOCSRTIMEOUT	_IOW('B',109, struct timeval)
+#define BIOCGRTIMEOUT	_IOR('B',110, struct timeval)
+#define BIOCGSTATS	 	_IOR('B',111, struct bpf_stat)
+#define BIOCGSTATSOLD	_IOR('B',111, struct bpf_stat_old)
+#define BIOCIMMEDIATE	_IOW('B',112, u_int)
+#define BIOCVERSION	 	_IOR('B',113, struct bpf_version)
+#define BIOCSTCPF	 	_IOW('B',114, struct bpf_program)
+#define BIOCSUDPF	 	_IOW('B',115, struct bpf_program)
+#define BIOCGHDRCMPLT	_IOR('B',116, u_int)
+#define BIOCSHDRCMPLT	_IOW('B',117, u_int)
+#define BIOCSDLT	 	_IOW('B',118, u_int)
 #define BIOCGDLTLIST	_IOWR('B',119, struct bpf_dltlist)
-#define BIOCGSEESENT	 _IOR('B',120, u_int)
-#define BIOCSSEESENT	 _IOW('B',121, u_int)
+#define BIOCGSEESENT	_IOR('B',120, u_int)
+#define BIOCSSEESENT	_IOW('B',121, u_int)
 
 /*
  * Structure prepended to each packet.
@@ -247,7 +247,7 @@ struct bpf_dltlist {
 };
 
 #ifdef _KERNEL
-int	 	bpf_validate(struct bpf_insn *, int);
+int	 	 bpf_validate(struct bpf_insn *, int);
 void	 bpf_tap(caddr_t, u_char *, u_int);
 void	 bpf_mtap(caddr_t, struct mbuf *);
 void	 bpfattach(struct ifnet *, u_int, u_int);

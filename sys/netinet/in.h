@@ -39,7 +39,7 @@
 #ifndef _NETINET_IN_H_
 #define	_NETINET_IN_H_
 
-//#include <machine/int_types.h>
+#include <machine/types.h>
 
 #ifndef uint8_t
 typedef __uint8_t	uint8_t;
@@ -71,39 +71,39 @@ typedef __sa_family_t	sa_family_t;
 /*
  * Protocols
  */
-#define	IPPROTO_IP		0		/* dummy for IP */
+#define	IPPROTO_IP			0		/* dummy for IP */
 #define	IPPROTO_HOPOPTS		0		/* IP6 hop-by-hop options */
 #define	IPPROTO_ICMP		1		/* control message protocol */
 #define	IPPROTO_IGMP		2		/* group mgmt protocol */
-#define	IPPROTO_GGP		3		/* gateway^2 (deprecated) */
+#define	IPPROTO_GGP			3		/* gateway^2 (deprecated) */
 #define	IPPROTO_IPV4		4 		/* IP header */
 #define	IPPROTO_IPIP		4		/* IP inside IP */
-#define	IPPROTO_TCP		6		/* tcp */
-#define	IPPROTO_EGP		8		/* exterior gateway protocol */
-#define	IPPROTO_PUP		12		/* pup */
-#define	IPPROTO_UDP		17		/* user datagram protocol */
-#define	IPPROTO_IDP		22		/* xns idp */
-#define	IPPROTO_TP		29 		/* tp-4 w/ class negotiation */
+#define	IPPROTO_TCP			6		/* tcp */
+#define	IPPROTO_EGP			8		/* exterior gateway protocol */
+#define	IPPROTO_PUP			12		/* pup */
+#define	IPPROTO_UDP			17		/* user datagram protocol */
+#define	IPPROTO_IDP			22		/* xns idp */
+#define	IPPROTO_TP			29 		/* tp-4 w/ class negotiation */
 #define	IPPROTO_IPV6		41		/* IP6 header */
 #define	IPPROTO_ROUTING		43		/* IP6 routing header */
 #define	IPPROTO_FRAGMENT	44		/* IP6 fragmentation header */
 #define	IPPROTO_RSVP		46		/* resource reservation */
-#define	IPPROTO_GRE		47		/* GRE encaps RFC 1701 */
-#define	IPPROTO_ESP		50 		/* encap. security payload */
-#define	IPPROTO_AH		51 		/* authentication header */
+#define	IPPROTO_GRE			47		/* GRE encaps RFC 1701 */
+#define	IPPROTO_ESP			50 		/* encap. security payload */
+#define	IPPROTO_AH			51 		/* authentication header */
 #define	IPPROTO_MOBILE		55		/* IP Mobility RFC 2004 */
 #define	IPPROTO_IPV6_ICMP	58		/* IPv6 ICMP */
 #define	IPPROTO_ICMPV6		58		/* ICMP6 */
 #define	IPPROTO_NONE		59		/* IP6 no next header */
 #define	IPPROTO_DSTOPTS		60		/* IP6 destination option */
-#define	IPPROTO_EON		80		/* ISO cnlp */
+#define	IPPROTO_EON			80		/* ISO cnlp */
 #define	IPPROTO_ENCAP		98		/* encapsulation header */
-#define	IPPROTO_PIM		103		/* Protocol indep. multicast */
+#define	IPPROTO_PIM			103		/* Protocol indep. multicast */
 #define	IPPROTO_IPCOMP		108		/* IP Payload Comp. Protocol */
 #define	IPPROTO_VRRP		112		/* VRRP RFC 2338 */
 
-#define	IPPROTO_RAW		255		/* raw IP packet */
-#define	IPPROTO_MAX		256
+#define	IPPROTO_RAW			255		/* raw IP packet */
+#define	IPPROTO_MAX			256
 
 /* last return value of *_input(), meaning "all job for this pkt is done".  */
 #define	IPPROTO_DONE		257
@@ -204,19 +204,19 @@ struct in_addr {
 #define	IN_LOCAL_GROUP(i)	(((uint32_t)(i) & __IPADDR(0xffffff00)) == \
 				 __IPADDR(0xe0000000))
 
-#define	INADDR_ANY		__IPADDR(0x00000000)
-#define	INADDR_LOOPBACK		__IPADDR(0x7f000001)
-#define	INADDR_BROADCAST	__IPADDR(0xffffffff)	/* must be masked */
+#define	INADDR_ANY				__IPADDR(0x00000000)
+#define	INADDR_LOOPBACK			__IPADDR(0x7f000001)
+#define	INADDR_BROADCAST		__IPADDR(0xffffffff)	/* must be masked */
 #ifndef _KERNEL
-#define	INADDR_NONE		__IPADDR(0xffffffff)	/* -1 return */
+#define	INADDR_NONE				__IPADDR(0xffffffff)	/* -1 return */
 #endif
 
-#define	INADDR_UNSPEC_GROUP	__IPADDR(0xe0000000)	/* 224.0.0.0 */
+#define	INADDR_UNSPEC_GROUP		__IPADDR(0xe0000000)	/* 224.0.0.0 */
 #define	INADDR_ALLHOSTS_GROUP	__IPADDR(0xe0000001)	/* 224.0.0.1 */
 #define	INADDR_ALLRTRS_GROUP	__IPADDR(0xe0000002)	/* 224.0.0.2 */
 #define	INADDR_MAX_LOCAL_GROUP	__IPADDR(0xe00000ff)	/* 224.0.0.255 */
 
-#define	IN_LOOPBACKNET		127			/* official! */
+#define	IN_LOOPBACKNET			127			/* official! */
 
 /*
  * Socket address, internet style.
@@ -229,7 +229,7 @@ struct sockaddr_in {
 	__int8_t	sin_zero[8];
 };
 
-#define	INET_ADDRSTRLEN                 16
+#define	INET_ADDRSTRLEN        16
 
 /*
  * Structure used to describe IP options.
@@ -251,22 +251,22 @@ struct ip_opts {
  * Options for use with [gs]etsockopt at the IP level.
  * First word of comment is data type; bool is stored in int.
  */
-#define	IP_OPTIONS		1    /* buf/ip_opts; set/get IP options */
-#define	IP_HDRINCL		2    /* int; header is included with data */
-#define	IP_TOS			3    /* int; IP type of service and preced. */
-#define	IP_TTL			4    /* int; IP time to live */
-#define	IP_RECVOPTS		5    /* bool; receive all IP opts w/dgram */
+#define	IP_OPTIONS			1    /* buf/ip_opts; set/get IP options */
+#define	IP_HDRINCL			2    /* int; header is included with data */
+#define	IP_TOS				3    /* int; IP type of service and preced. */
+#define	IP_TTL				4    /* int; IP time to live */
+#define	IP_RECVOPTS			5    /* bool; receive all IP opts w/dgram */
 #define	IP_RECVRETOPTS		6    /* bool; receive IP opts for response */
 #define	IP_RECVDSTADDR		7    /* bool; receive IP dst addr w/dgram */
-#define	IP_RETOPTS		8    /* ip_opts; set/get IP options */
+#define	IP_RETOPTS			8    /* ip_opts; set/get IP options */
 #define	IP_MULTICAST_IF		9    /* in_addr; set/get IP multicast i/f  */
 #define	IP_MULTICAST_TTL	10   /* u_char; set/get IP multicast ttl */
 #define	IP_MULTICAST_LOOP	11   /* u_char; set/get IP multicast loopback */
 #define	IP_ADD_MEMBERSHIP	12   /* ip_mreq; add an IP group membership */
 #define	IP_DROP_MEMBERSHIP	13   /* ip_mreq; drop an IP group membership */
 #define	IP_PORTRANGE		19   /* int; range to use for ephemeral port */
-#define	IP_RECVIF		20   /* bool; receive reception if w/dgram */
-#define	IP_ERRORMTU		21   /* int; get MTU of last xmit = EMSGSIZE */
+#define	IP_RECVIF			20   /* bool; receive reception if w/dgram */
+#define	IP_ERRORMTU			21   /* int; get MTU of last xmit = EMSGSIZE */
 #if 1 /*IPSEC*/
 #define	IP_IPSEC_POLICY		22 /* struct; get/set security policy */
 #endif
@@ -274,9 +274,9 @@ struct ip_opts {
 /*
  * Defaults and limits for options
  */
-#define	IP_DEFAULT_MULTICAST_TTL  1	/* normally limit m'casts to 1 hop  */
-#define	IP_DEFAULT_MULTICAST_LOOP 1	/* normally hear sends if a member  */
-#define	IP_MAX_MEMBERSHIPS	20	/* per socket; must fit in one mbuf */
+#define	IP_DEFAULT_MULTICAST_TTL  	1	/* normally limit m'casts to 1 hop  */
+#define	IP_DEFAULT_MULTICAST_LOOP 	1	/* normally hear sends if a member  */
+#define	IP_MAX_MEMBERSHIPS			20	/* per socket; must fit in one mbuf */
 
 /*
  * Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.
@@ -294,7 +294,7 @@ struct ip_mreq {
 #define	IP_PORTRANGE_HIGH	1	/* same as DEFAULT (FreeBSD compat) */
 #define	IP_PORTRANGE_LOW	2	/* use privileged range */
 
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 /*
  * Definitions for inet sysctl operations.
  *
@@ -361,31 +361,31 @@ struct ip_mreq {
 /*
  * Names for IP sysctl objects
  */
-#define	IPCTL_FORWARDING	1	/* act as router */
-#define	IPCTL_SENDREDIRECTS	2	/* may send redirects when forwarding */
-#define	IPCTL_DEFTTL		3	/* default TTL */
+#define	IPCTL_FORWARDING		1	/* act as router */
+#define	IPCTL_SENDREDIRECTS		2	/* may send redirects when forwarding */
+#define	IPCTL_DEFTTL			3	/* default TTL */
 #ifdef notyet
-#define	IPCTL_DEFMTU		4	/* default MTU */
+#define	IPCTL_DEFMTU			4	/* default MTU */
 #endif
-#define	IPCTL_FORWSRCRT		5	/* forward source-routed packets */
-#define	IPCTL_DIRECTEDBCAST	6	/* default broadcast behavior */
-#define	IPCTL_ALLOWSRCRT	7	/* allow/drop all source-routed pkts */
+#define	IPCTL_FORWSRCRT			5	/* forward source-routed packets */
+#define	IPCTL_DIRECTEDBCAST		6	/* default broadcast behavior */
+#define	IPCTL_ALLOWSRCRT		7	/* allow/drop all source-routed pkts */
 #define	IPCTL_SUBNETSARELOCAL	8	/* treat subnets as local addresses */
-#define	IPCTL_MTUDISC		9	/* allow path MTU discovery */
-#define	IPCTL_ANONPORTMIN      10	/* minimum ephemeral port */
-#define	IPCTL_ANONPORTMAX      11	/* maximum ephemeral port */
-#define	IPCTL_MTUDISCTIMEOUT   12	/* allow path MTU discovery */
-#define	IPCTL_MAXFLOWS         13	/* maximum ip flows allowed */
+#define	IPCTL_MTUDISC			9	/* allow path MTU discovery */
+#define	IPCTL_ANONPORTMIN      	10	/* minimum ephemeral port */
+#define	IPCTL_ANONPORTMAX      	11	/* maximum ephemeral port */
+#define	IPCTL_MTUDISCTIMEOUT   	12	/* allow path MTU discovery */
+#define	IPCTL_MAXFLOWS         	13	/* maximum ip flows allowed */
 #define	IPCTL_HOSTZEROBROADCAST 14	/* is host zero a broadcast addr? */
-#define	IPCTL_GIF_TTL 	       15	/* default TTL for gif encap packet */
-#define	IPCTL_LOWPORTMIN       16	/* minimum reserved port */
-#define	IPCTL_LOWPORTMAX       17	/* maximum reserved port */
-#define	IPCTL_MAXFRAGPACKETS   18	/* max packets reassembly queue */
-#define	IPCTL_GRE_TTL          19	/* default TTL for gre encap packet */
-#define	IPCTL_CHECKINTERFACE   20	/* drop pkts in from 'wrong' iface */
-#define	IPCTL_IFQ	       21	/* ipintrq node */
-#define	IPCTL_RANDOMID	       22	/* use random IP ids (if configured) */
-#define	IPCTL_MAXID	       23
+#define	IPCTL_GIF_TTL 	       	15	/* default TTL for gif encap packet */
+#define	IPCTL_LOWPORTMIN       	16	/* minimum reserved port */
+#define	IPCTL_LOWPORTMAX       	17	/* maximum reserved port */
+#define	IPCTL_MAXFRAGPACKETS   	18	/* max packets reassembly queue */
+#define	IPCTL_GRE_TTL          	19	/* default TTL for gre encap packet */
+#define	IPCTL_CHECKINTERFACE   	20	/* drop pkts in from 'wrong' iface */
+#define	IPCTL_IFQ	       		21	/* ipintrq node */
+#define	IPCTL_RANDOMID	       	22	/* use random IP ids (if configured) */
+#define	IPCTL_MAXID	       		23
 
 #define	IPCTL_NAMES { \
 	{ 0, 0 }, \
@@ -470,18 +470,18 @@ in_cksum_addword(u_int16_t a, u_int16_t b)
 extern	struct in_addr zeroin_addr;
 extern	u_char	ip_protox[];
 
-int	in_broadcast __P((struct in_addr, struct ifnet *));
-int	in_canforward __P((struct in_addr));
-int	in_cksum __P((struct mbuf *, int));
-int	in4_cksum __P((struct mbuf *, u_int8_t, int, int));
+int		in_broadcast __P((struct in_addr, struct ifnet *));
+int		in_canforward __P((struct in_addr));
+int		in_cksum __P((struct mbuf *, int));
+int		in4_cksum __P((struct mbuf *, u_int8_t, int, int));
 void	in_delayed_cksum __P((struct mbuf *));
-int	in_localaddr __P((struct in_addr));
+int		in_localaddr __P((struct in_addr));
 void	in_socktrim __P((struct sockaddr_in *));
 
 #define	in_hosteq(s,t)	((s).s_addr == (t).s_addr)
 #define	in_nullhost(x)	((x).s_addr == INADDR_ANY)
 
-#define	satosin(sa)	((struct sockaddr_in *)(sa))
+#define	satosin(sa)		((struct sockaddr_in *)(sa))
 #define	sintosa(sin)	((struct sockaddr *)(sin))
 #define	ifatoia(ifa)	((struct in_ifaddr *)(ifa))
 #endif /* _KERNEL */

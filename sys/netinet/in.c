@@ -129,7 +129,7 @@ __KERNEL_RCSID(0, "$NetBSD: in.c,v 1.93.2.1.4.1 2006/04/02 17:48:18 riz Exp $");
 #include <netinet/ip_mroute.h>
 #include <netinet/igmp_var.h>
 
-#ifdef INET
+//#ifdef INET
 
 static u_int in_mask2len __P((struct in_addr *));
 static void in_len2mask __P((struct in_addr *, u_int));
@@ -405,7 +405,7 @@ in_control(so, cmd, data, ifp, p)
 		break;
 
 	case SIOCSIFBRDADDR:
-		if (p == 0 || (error = suser(p->p_ucred, &p->p_acflag)))
+		if (p == 0 || (error = suser1(p->p_ucred, &p->p_acflag)))
 			return (EPERM);
 		/* FALLTHROUGH */
 

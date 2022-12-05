@@ -134,13 +134,13 @@ __KERNEL_RCSID(0, "$NetBSD: if_bridge.c,v 1.22.2.1.4.2 2006/02/12 16:29:54 tron 
 /*
  * Spanning tree defaults.
  */
-#define	BSTP_DEFAULT_MAX_AGE		(20 * 256)
-#define	BSTP_DEFAULT_HELLO_TIME		(2 * 256)
-#define	BSTP_DEFAULT_FORWARD_DELAY	(15 * 256)
-#define	BSTP_DEFAULT_HOLD_TIME		(1 * 256)
+#define	BSTP_DEFAULT_MAX_AGE			(20 * 256)
+#define	BSTP_DEFAULT_HELLO_TIME			(2 * 256)
+#define	BSTP_DEFAULT_FORWARD_DELAY		(15 * 256)
+#define	BSTP_DEFAULT_HOLD_TIME			(1 * 256)
 #define	BSTP_DEFAULT_BRIDGE_PRIORITY	0x8000
-#define	BSTP_DEFAULT_PORT_PRIORITY	0x80
-#define	BSTP_DEFAULT_PATH_COST		55
+#define	BSTP_DEFAULT_PORT_PRIORITY		0x80
+#define	BSTP_DEFAULT_PATH_COST			55
 
 /*
  * Timeout (in seconds) for entries learned dynamically.

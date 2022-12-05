@@ -82,6 +82,14 @@
 #include <net/pfil.h>
 
 /*
+ * Always include ALTQ glue here -- we use the ALTQ interface queue
+ * structure even when ALTQ is not configured into the kernel so that
+ * the size of struct ifnet does not changed based on the option.  The
+ * ALTQ queue structure is API-compatible with the legacy ifqueue.
+ */
+#include <altq/if_altq.h>
+
+/*
  * Structures defining a network interface, providing a packet
  * transport mechanism (ala level 0 of the PUP protocols).
  *
@@ -219,7 +227,8 @@ struct ifnet {							/* and the entries */
 	void	(*if_stop)(struct ifnet *, int);				/* stop routine */
 	void	(*if_watchdog)(struct ifnet *);		/* timer routine */
 	void	(*if_drain)(struct ifnet *);		/* routine to release resources */
-	struct	sockaddr_dl *if_sadl;				/* pointer to our sockaddr_dl */
+	struct ifaltq 		if_snd;					/* output queue (includes altq) */
+	struct sockaddr_dl *if_sadl;				/* pointer to our sockaddr_dl */
 	u_int8_t	 		*if_broadcastaddr;		/* linklevel broadcast bytestring */
 	void				*if_bridge;				/* bridge glue */
 	int				 	if_dlt;					/* data link type (<net/dlt.h>) */
@@ -235,7 +244,6 @@ struct ifnet {							/* and the entries */
 	int	if_csum_flags_rx;	/* M_CSUM_* flags for Rx */
 
 	void	*if_afdata[AF_MAX];
-	struct	mowner *if_mowner;	/* who owns mbufs for this interface */
 };
 #define	if_mtu			if_data.ifi_mtu
 #define	if_type			if_data.ifi_type
@@ -510,12 +518,12 @@ struct	ifconf {
  * Structure for SIOC[AGD]LIFADDR
  */
 struct if_laddrreq {
-	char iflr_name[IFNAMSIZ];
-	unsigned int flags;
-#define IFLR_PREFIX		0x8000	/* in: prefix given  out: kernel fills id */
-	unsigned int prefixlen;		/* in/out */
-	struct sockaddr_storage addr;	/* in/out */
-	struct sockaddr_storage dstaddr; /* out */
+	char 					iflr_name[IFNAMSIZ];
+	unsigned int 			flags;
+#define IFLR_PREFIX			0x8000			/* in: prefix given  out: kernel fills id */
+	unsigned int 			prefixlen;		/* in/out */
+	struct sockaddr_storage addr;			/* in/out */
+	struct sockaddr_storage dstaddr; 		/* out */
 };
 
 #include <net/if_arp.h>
@@ -559,6 +567,72 @@ do {															\
 #endif /* DIAGNOSTIC */
 #endif /* IFAREF_DEBUG */
 
+#ifdef ALTQ
+#define	ALTQ_DECL(x)		x
+
+#define IFQ_ENQUEUE(ifq, m, pattr, err)							\
+do {															\
+	if (ALTQ_IS_ENABLED((ifq)))									\
+		ALTQ_ENQUEUE((ifq), (m), (pattr), (err));				\
+	else {														\
+		if (IF_QFULL((ifq))) {									\
+			m_freem((m));										\
+			(err) = ENOBUFS;									\
+		} else {												\
+			IF_ENQUEUE((ifq), (m));								\
+			(err) = 0;											\
+		}														\
+	}															\
+	if ((err))													\
+		(ifq)->ifq_drops++;										\
+} while (/*CONSTCOND*/ 0)
+
+#define IFQ_DEQUEUE(ifq, m)										\
+do {															\
+	if (TBR_IS_ENABLED((ifq)))									\
+		(m) = tbr_dequeue((ifq), ALTDQ_REMOVE);					\
+	else if (ALTQ_IS_ENABLED((ifq)))							\
+		ALTQ_DEQUEUE((ifq), (m));								\
+	else														\
+		IF_DEQUEUE((ifq), (m));									\
+} while (/*CONSTCOND*/ 0)
+
+#define	IFQ_POLL(ifq, m)										\
+do {															\
+	if (TBR_IS_ENABLED((ifq)))									\
+		(m) = tbr_dequeue((ifq), ALTDQ_POLL);					\
+	else if (ALTQ_IS_ENABLED((ifq)))							\
+		ALTQ_POLL((ifq), (m));									\
+	else														\
+		IF_POLL((ifq), (m));									\
+} while (/*CONSTCOND*/ 0)
+
+#define	IFQ_PURGE(ifq)											\
+do {															\
+	if (ALTQ_IS_ENABLED((ifq)))									\
+		ALTQ_PURGE((ifq));										\
+	else														\
+		IF_PURGE((ifq));										\
+} while (/*CONSTCOND*/ 0)
+
+#define	IFQ_SET_READY(ifq)										\
+do {															\
+	(ifq)->altq_flags |= ALTQF_READY;							\
+} while (/*CONSTCOND*/ 0)
+
+#define	IFQ_CLASSIFY(ifq, m, af, pa)							\
+do {															\
+	if (ALTQ_IS_ENABLED((ifq))) {								\
+		if (ALTQ_NEEDS_CLASSIFY((ifq)))							\
+			(pa)->pattr_class = (*(ifq)->altq_classify)			\
+				((ifq)->altq_clfier, (m), (af));				\
+		(pa)->pattr_af = (af);									\
+		(pa)->pattr_hdr = mtod((m), caddr_t);					\
+	}															\
+} while (/*CONSTCOND*/ 0)
+
+#else /* ! ALTQ */
+#define	ALTQ_DECL(x)		/* nothing */
 
 #define	IFQ_ENQUEUE(ifq, m, pattr, err)							\
 do {															\
@@ -582,6 +656,8 @@ do {															\
 #define	IFQ_SET_READY(ifq)	/* nothing */
 
 #define	IFQ_CLASSIFY(ifq, m, af, pa) /* nothing */
+
+#endif /* ALTQ */
 
 #define	IFQ_IS_EMPTY(ifq)		IF_IS_EMPTY((ifq))
 #define	IFQ_INC_LEN(ifq)		((ifq)->ifq_len++)
@@ -668,11 +744,11 @@ __END_DECLS
  */
 int	sysctl_ifq(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen, struct ifqueue *ifq);
 /* symbolic names for terminal (per-protocol) CTL_IFQ_ nodes */
-#define IFQCTL_LEN 1
-#define IFQCTL_MAXLEN 2
-#define IFQCTL_PEAK 3
-#define IFQCTL_DROPS 4
-#define IFQCTL_MAXID 5
+#define IFQCTL_LEN 		1
+#define IFQCTL_MAXLEN 	2
+#define IFQCTL_PEAK 	3
+#define IFQCTL_DROPS 	4
+#define IFQCTL_MAXID 	5
 
 #endif /* _KERNEL */
 

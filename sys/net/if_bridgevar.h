@@ -192,9 +192,9 @@ struct ifbrparam {
 		uint8_t ifbrpu_int8;
 	} ifbrp_ifbrpu;
 };
-#define	ifbrp_csize	ifbrp_ifbrpu.ifbrpu_int32	/* cache size */
-#define	ifbrp_ctime	ifbrp_ifbrpu.ifbrpu_int32	/* cache time (sec) */
-#define	ifbrp_prio	ifbrp_ifbrpu.ifbrpu_int16	/* bridge priority */
+#define	ifbrp_csize		ifbrp_ifbrpu.ifbrpu_int32	/* cache size */
+#define	ifbrp_ctime		ifbrp_ifbrpu.ifbrpu_int32	/* cache time (sec) */
+#define	ifbrp_prio		ifbrp_ifbrpu.ifbrpu_int16	/* bridge priority */
 #define	ifbrp_hellotime	ifbrp_ifbrpu.ifbrpu_int8	/* hello time (sec) */
 #define	ifbrp_fwddelay	ifbrp_ifbrpu.ifbrpu_int8	/* fwd time (sec) */
 #define	ifbrp_maxage	ifbrp_ifbrpu.ifbrpu_int8	/* max age (sec) */

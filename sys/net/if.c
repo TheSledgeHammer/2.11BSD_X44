@@ -435,6 +435,14 @@ if_attach(ifp)
 	ifp->if_csum_flags_tx = 0;
 	ifp->if_csum_flags_rx = 0;
 
+#ifdef ALTQ
+	ifp->if_snd.altq_type = 0;
+	ifp->if_snd.altq_disc = NULL;
+	ifp->if_snd.altq_flags &= ALTQF_CANTCHANGE;
+	ifp->if_snd.altq_tbr  = NULL;
+	ifp->if_snd.altq_ifp  = ifp;
+#endif
+
 #ifdef PFIL_HOOKS
 	ifp->if_pfil.ph_type = PFIL_TYPE_IFNET;
 	ifp->if_pfil.ph_ifnet = ifp;
@@ -542,6 +550,13 @@ if_detach(ifp)
 	 * Do an if_down() to give protocols a chance to do something.
 	 */
 	if_down(ifp);
+
+#ifdef ALTQ
+	if (ALTQ_IS_ENABLED(&ifp->if_snd))
+		altq_disable(&ifp->if_snd);
+	if (ALTQ_IS_ATTACHED(&ifp->if_snd))
+		altq_detach(&ifp->if_snd);
+#endif
 
 #ifdef PFIL_HOOKS
 	(void) pfil_head_unregister(&ifp->if_pfil);

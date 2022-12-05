@@ -94,13 +94,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include <net/if_dl.h>
 #include <net/if_types.h>
 
-#if NARP == 0
-/*
- * XXX there should really be a way to issue this warning from within config(8)
- */
-#error You have included NETATALK or a pseudo-device in your configuration that depends on the presence of ethernet interfaces, but have no such interfaces configured. Check if you really need pseudo-device bridge, pppoe, vlan or options NETATALK.
-#endif
-
 #if NBPFILTER > 0 
 #include <net/bpf.h>
 #endif
@@ -137,10 +130,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include <netns/ns_if.h>
 #endif
 
-#if defined(LLC) && defined(CCITT)
-extern struct ifqueue pkintrq;
-#endif
-
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 #define senderr(e) { error = (e); goto bad;}
 
@@ -170,14 +159,8 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 #ifdef INET
 	struct arphdr *ah;
 #endif /* INET */
-#ifdef NETATALK
-	struct at_ifaddr *aa;
-#endif /* NETATALK */
 	short mflags;
 
-#ifdef MBUFTRACE
-	m_claimm(m, ifp->if_mowner);
-#endif
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING))
 		senderr(ENETDOWN);
 	if ((rt = rt0) != NULL) {
@@ -267,43 +250,6 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 		etype = htons(ETHERTYPE_IPV6);
 		break;
 #endif
-#ifdef NETATALK
-    case AF_APPLETALK:
-		if (!aarpresolve(ifp, m, (struct sockaddr_at *)dst, edst)) {
-#ifdef NETATALKDEBUG
-			printf("aarpresolv failed\n");
-#endif /* NETATALKDEBUG */
-			return (0);
-		}
-		/*
-		 * ifaddr is the first thing in at_ifaddr
-		 */
-		aa = (struct at_ifaddr *) at_ifawithnet(
-		    (struct sockaddr_at *)dst, ifp);
-		if (aa == NULL)
-		    goto bad;
-		
-		/*
-		 * In the phase 2 case, we need to prepend an mbuf for the
-		 * llc header.  Since we must preserve the value of m,
-		 * which is passed to us by value, we m_copy() the first
-		 * mbuf, and use it for our llc header.
-		 */
-		if (aa->aa_flags & AFA_PHASE2) {
-			struct llc llc;
-
-			M_PREPEND(m, sizeof(struct llc), M_DONTWAIT);
-			llc.llc_dsap = llc.llc_ssap = LLC_SNAP_LSAP;
-			llc.llc_control = LLC_UI;
-			bcopy(at_org_code, llc.llc_snap_org_code,
-			    sizeof(llc.llc_snap_org_code));
-			llc.llc_snap_ether_type = htons(ETHERTYPE_ATALK);
-			bcopy(&llc, mtod(m, caddr_t), sizeof(struct llc));
-		} else {
-			etype = htons(ETHERTYPE_ATALK);
-		}
-		break;
-#endif /* NETATALK */
 #ifdef NS
 	case AF_NS:
 		etype = htons(ETHERTYPE_NS);
@@ -316,62 +262,7 @@ ether_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		break;
 #endif
-#ifdef IPX
-	case AF_IPX:
-		etype = htons(ETHERTYPE_IPX);
- 		bcopy((caddr_t)&(((struct sockaddr_ipx *)dst)->sipx_addr.x_host),
-		    (caddr_t)edst, sizeof (edst));
-		/* If broadcasting on a simplex interface, loopback a copy */
-		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX))
-			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		break;
-#endif
-#ifdef	ISO
-	case AF_ISO: {
-		int	snpalen;
-		struct	llc *l;
-		struct sockaddr_dl *sdl;
 
-		if (rt && (sdl = (struct sockaddr_dl *)rt->rt_gateway) &&
-		    sdl->sdl_family == AF_LINK && sdl->sdl_alen > 0) {
-			bcopy(LLADDR(sdl), (caddr_t)edst, sizeof(edst));
-		} else {
-			error = iso_snparesolve(ifp, (struct sockaddr_iso *)dst,
-						(char *)edst, &snpalen);
-			if (error)
-				goto bad; /* Not Resolved */
-		}
-		/* If broadcasting on a simplex interface, loopback a copy */
-		if (*edst & 1)
-			m->m_flags |= (M_BCAST|M_MCAST);
-		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX) &&
-		    (mcopy = m_copy(m, 0, (int)M_COPYALL))) {
-			M_PREPEND(mcopy, sizeof (*eh), M_DONTWAIT);
-			if (mcopy) {
-				eh = mtod(mcopy, struct ether_header *);
-				bcopy((caddr_t)edst,
-				      (caddr_t)eh->ether_dhost, sizeof (edst));
-				bcopy(LLADDR(ifp->if_sadl),
-				      (caddr_t)eh->ether_shost, sizeof (edst));
-			}
-		}
-		M_PREPEND(m, 3, M_DONTWAIT);
-		if (m == NULL)
-			return (0);
-		l = mtod(m, struct llc *);
-		l->llc_dsap = l->llc_ssap = LLC_ISO_LSAP;
-		l->llc_control = LLC_UI;
-#ifdef ARGO_DEBUG
-		if (argo_debug[D_ETHER]) {
-			int i;
-			printf("unoutput: sending pkt to: ");
-			for (i=0; i<6; i++)
-				printf("%x ", edst[i] & 0xff);
-			printf("\n");
-		}
-#endif
-		} break;
-#endif /* ISO */
 #ifdef	LLC
 /*	case AF_NSAP: */
 	case AF_CCITT: {
@@ -842,22 +733,6 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		break;
 
 #endif
-#ifdef IPX
-	case ETHERTYPE_IPX:
-		schednetisr(NETISR_IPX);
-		inq = &ipxintrq;
-		break;
-#endif
-#ifdef NETATALK
-        case ETHERTYPE_ATALK:
-                schednetisr(NETISR_ATALK);
-                inq = &atintrq1;
-                break;
-        case ETHERTYPE_AARP:
-		/* probably this should be done with a NETISR as well */
-                aarpinput(ifp, m); /* XXX */
-                return;
-#endif /* NETATALK */
 	default:
 #if defined (ISO) || defined (LLC) || defined (NETATALK)
 		if (etype > ETHERMTU)
@@ -1053,19 +928,6 @@ ether_ifattach(struct ifnet *ifp, const u_int8_t *lla)
 #if NBPFILTER > 0
 	bpfattach(ifp, DLT_EN10MB, sizeof(struct ether_header));
 #endif
-#ifdef MBUFTRACE
-	strlcpy(ec->ec_tx_mowner.mo_name, ifp->if_xname,
-	    sizeof(ec->ec_tx_mowner.mo_name));
-	strlcpy(ec->ec_tx_mowner.mo_descr, "tx",
-	    sizeof(ec->ec_tx_mowner.mo_descr));
-	strlcpy(ec->ec_rx_mowner.mo_name, ifp->if_xname,
-	    sizeof(ec->ec_rx_mowner.mo_name));
-	strlcpy(ec->ec_rx_mowner.mo_descr, "rx",
-	    sizeof(ec->ec_rx_mowner.mo_descr));
-	MOWNER_ATTACH(&ec->ec_tx_mowner);
-	MOWNER_ATTACH(&ec->ec_rx_mowner);
-	ifp->if_mowner = &ec->ec_tx_mowner;
-#endif
 }
 
 void
@@ -1100,9 +962,6 @@ ether_ifdetach(struct ifnet *ifp)
 #if 0	/* done in if_detach() */
 	if_free_sadl(ifp);
 #endif
-
-	MOWNER_DETACH(&ec->ec_rx_mowner);
-	MOWNER_DETACH(&ec->ec_tx_mowner);
 }
 
 #if 0

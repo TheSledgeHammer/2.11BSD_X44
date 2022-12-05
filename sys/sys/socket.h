@@ -20,6 +20,34 @@
  */
 
 /*
+ * Data types.
+ */
+#include <sys/ansi.h>
+#ifndef sa_family_t
+typedef __sa_family_t	sa_family_t;
+#define sa_family_t		__sa_family_t
+#endif
+
+#ifndef socklen_t
+typedef __socklen_t		socklen_t;
+#define socklen_t		__socklen_t
+#endif
+
+#include <machine/ansi.h>
+
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
+#endif
+
+#ifdef	_BSD_SSIZE_T_
+typedef	_BSD_SSIZE_T_	ssize_t;
+#undef	_BSD_SSIZE_T_
+#endif
+
+#include <sys/uio.h>
+
+/*
  * Types
  */
 #define	SOCK_STREAM		1		/* stream socket */
@@ -86,7 +114,7 @@ struct	linger {
 #define AF_DLI			13		/* Direct data link interface */
 #define AF_LAT			14		/* LAT */
 #define	AF_HYLINK		15		/* NSC Hyperchannel */
-#define	AF_APPLETALK		16		/* Apple Talk */
+#define	AF_APPLETALK	16		/* Apple Talk */
 
 #define	AF_MAX			17
 
@@ -95,9 +123,9 @@ struct	linger {
  * addresses.
  */
 struct sockaddr {
-	u_short	sa_len;				/* total length */
-	u_short	sa_family;			/* address family */
-	char	sa_data[14];		/* up to 14 bytes of direct address */
+	u_short			sa_len;				/* total length */
+	sa_family_t		sa_family;			/* address family */
+	char			sa_data[14];		/* up to 14 bytes of direct address */
 };
 
 /*
@@ -105,8 +133,24 @@ struct sockaddr {
  * information in raw sockets.
  */
 struct sockproto {
-	u_short	sp_family;			/* address family */
-	u_short	sp_protocol;		/* protocol */
+	u_short			sp_family;			/* address family */
+	u_short			sp_protocol;		/* protocol */
+};
+
+/*
+ * RFC 2553: protocol-independent placeholder for socket addresses
+ */
+#define _SS_MAXSIZE		128
+#define _SS_ALIGNSIZE	(sizeof(__int64_t))
+#define _SS_PAD1SIZE	(_SS_ALIGNSIZE - 2)
+#define _SS_PAD2SIZE	(_SS_MAXSIZE - 2 - _SS_PAD1SIZE - _SS_ALIGNSIZE)
+
+struct sockaddr_storage {
+	__uint8_t		ss_len;		/* address length */
+	sa_family_t		ss_family;	/* address family */
+	char			__ss_pad1[_SS_PAD1SIZE];
+	__int64_t   	__ss_align;/* force desired structure storage alignment */
+	char			__ss_pad2[_SS_PAD2SIZE];
 };
 
 /*

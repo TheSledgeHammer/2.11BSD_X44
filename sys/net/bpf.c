@@ -76,19 +76,15 @@ __KERNEL_RCSID(0, "$NetBSD: bpf.c,v 1.90.2.2 2004/05/28 07:24:55 tron Exp $");
 #include <netinet/in.h>
 #include <netinet/if_inarp.h>
 
-#if defined(_KERNEL_OPT)
-#include "opt_bpf.h"
-#endif
-
 #ifndef BPF_BUFSIZE
 /*
  * 4096 is too small for FDDI frames. 8192 is too small for gigabit Ethernet
  * jumbos (circa 9k), ATM, or Intel gig/10gig ethernet jumbos (16k).
  */
-# define BPF_BUFSIZE 32768
+# define BPF_BUFSIZE 	32768
 #endif
 
-#define PRINET  26			/* interruptible */
+#define PRINET  		26			/* interruptible */
 
 /*
  * The default read buffer size, and limit for BIOCSBLEN, is sysctl'able.
@@ -546,10 +542,7 @@ bpf_wakeup(d)
 		fownsignal(d->bd_pgid, SIGIO, 0, 0, NULL);
 
 	selnotify(&d->bd_sel, 0);
-	/* XXX */
-	d->bd_sel.sel_pid = 0;
 }
-
 
 static void
 bpf_timed_out(arg)
@@ -1135,7 +1128,7 @@ filt_bpfrdetach(struct knote *kn)
 	int s;
 
 	s = splnet();
-	SLIST_REMOVE(&d->bd_sel.sel_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&d->bd_sel.si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -1164,7 +1157,7 @@ bpfkqfilter(dev, kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &d->bd_sel.sel_klist;
+		klist = &d->bd_sel.si_klist;
 		kn->kn_fop = &bpfread_filtops;
 		break;
 
@@ -1175,7 +1168,7 @@ bpfkqfilter(dev, kn)
 	kn->kn_hook = d;
 
 	s = splnet();
-	SLIST_INSERT_HEAD(klist, kn, kn_selnext);
+	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
 	splx(s);
 
 	return (0);
@@ -1586,51 +1579,27 @@ bpf_setdlt(d, dlt)
 	splx(s);
 	return 0;
 }
-#ifdef notyet
-static int
-sysctl_net_bpf_maxbufsize(SYSCTLFN_ARGS)
+
+int
+bpf_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen)
 {
 	int newsize, error;
-	struct sysctlnode node;
 
-	node = *rnode;
-	node.sysctl_data = &newsize;
 	newsize = bpf_maxbufsize;
-	error = sysctl_lookup(SYSCTLFN_CALL(&node));
-	if (error || newp == NULL)
-		return (error);
-
-	if (newsize < BPF_MINBUFSIZE || newsize > BPF_MAXBUFSIZE)
+	if (newsize < BPF_MINBUFSIZE || newsize > BPF_MAXBUFSIZE) {
 		return (EINVAL);
+	}
 
 	bpf_maxbufsize = newsize;
+	switch(name[0]) {
+	case BPF_MINBUFSIZE:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &bpf_bufsize, BPF_MINBUFSIZE, bpf_maxbufsize);
+		break;
 
-	return (0);
+	case BPF_MAXBUFSIZE:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &bpf_maxbufsize, BPF_MINBUFSIZE, INT_MAX);
+		break;
+	}
+
+	return (error);
 }
-
-SYSCTL_SETUP(sysctl_net_bfp_setup, "sysctl net.bpf subtree setup")
-{
-	struct sysctlnode *node;
-
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "net", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_EOL);
-
-	node = NULL;
-	sysctl_createv(clog, 0, NULL, &node,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "bpf",
-		       SYSCTL_DESCR("BPF options"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_CREATE, CTL_EOL);
-	if (node != NULL)
-		sysctl_createv(clog, 0, NULL, NULL,
-			CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-			CTLTYPE_INT, "maxbufsize",
-			SYSCTL_DESCR("Maximum size for data capture buffer"),
-			sysctl_net_bpf_maxbufsize, 0, &bpf_maxbufsize, 0,
-			CTL_NET, node->sysctl_num, CTL_CREATE, CTL_EOL);
-}
-#endif

@@ -65,7 +65,7 @@ struct ether_addr {
 /*
  * Structure of a 10Mb/s Ethernet header.
  */
-struct	ether_header {
+struct ether_header {
 	u_int8_t  ether_dhost[ETHER_ADDR_LEN];
 	u_int8_t  ether_shost[ETHER_ADDR_LEN];
 	u_int16_t ether_type;
@@ -76,16 +76,16 @@ struct	ether_header {
 #define	ETHER_IS_MULTICAST(addr) (*(addr) & 0x01) /* is address mcast/bcast? */
 
 #define	ETHERMTU_JUMBO	(ETHER_MAX_LEN_JUMBO - ETHER_HDR_LEN - ETHER_CRC_LEN)
-#define	ETHERMTU	(ETHER_MAX_LEN - ETHER_HDR_LEN - ETHER_CRC_LEN)
-#define	ETHERMIN	(ETHER_MIN_LEN - ETHER_HDR_LEN - ETHER_CRC_LEN)
+#define	ETHERMTU		(ETHER_MAX_LEN - ETHER_HDR_LEN - ETHER_CRC_LEN)
+#define	ETHERMIN		(ETHER_MIN_LEN - ETHER_HDR_LEN - ETHER_CRC_LEN)
 
 /*
  * Compute the maximum frame size based on ethertype (i.e. possible
  * encapsulation) and whether or not an FCS is present.
  */
-#define	ETHER_MAX_FRAME(ifp, etype, hasfcs)				\
-	((ifp)->if_mtu + ETHER_HDR_LEN +				\
-	 ((hasfcs) ? ETHER_CRC_LEN : 0) +				\
+#define	ETHER_MAX_FRAME(ifp, etype, hasfcs)						\
+	((ifp)->if_mtu + ETHER_HDR_LEN +							\
+	 ((hasfcs) ? ETHER_CRC_LEN : 0) +							\
 	 (((etype) == ETHERTYPE_VLAN) ? ETHER_VLAN_ENCAP_LEN : 0))
 
 /*
@@ -109,15 +109,15 @@ struct	ether_header {
  * and the low-order 23 bits are taken from the low end of the IP address.
  */
 #define ETHER_MAP_IP_MULTICAST(ipaddr, enaddr)				\
-	/* struct in_addr *ipaddr; */					\
-	/* u_int8_t enaddr[ETHER_ADDR_LEN]; */				\
-{									\
-	(enaddr)[0] = 0x01;						\
-	(enaddr)[1] = 0x00;						\
-	(enaddr)[2] = 0x5e;						\
+	/* struct in_addr *ipaddr; */							\
+	/* u_int8_t enaddr[ETHER_ADDR_LEN]; */					\
+{															\
+	(enaddr)[0] = 0x01;										\
+	(enaddr)[1] = 0x00;										\
+	(enaddr)[2] = 0x5e;										\
 	(enaddr)[3] = ((u_int8_t *)ipaddr)[1] & 0x7f;			\
-	(enaddr)[4] = ((u_int8_t *)ipaddr)[2];				\
-	(enaddr)[5] = ((u_int8_t *)ipaddr)[3];				\
+	(enaddr)[4] = ((u_int8_t *)ipaddr)[2];					\
+	(enaddr)[5] = ((u_int8_t *)ipaddr)[3];					\
 }
 /*
  * Macro to map an IP6 multicast address to an Ethernet multicast address.
@@ -125,15 +125,15 @@ struct	ether_header {
  * and the low-order 32 bits are taken from the low end of the IP6 address.
  */
 #define ETHER_MAP_IPV6_MULTICAST(ip6addr, enaddr)			\
-	/* struct in6_addr *ip6addr; */					\
-	/* u_int8_t enaddr[ETHER_ADDR_LEN]; */				\
-{                                                                       \
-	(enaddr)[0] = 0x33;						\
-	(enaddr)[1] = 0x33;						\
-	(enaddr)[2] = ((u_int8_t *)ip6addr)[12];			\
-	(enaddr)[3] = ((u_int8_t *)ip6addr)[13];			\
-	(enaddr)[4] = ((u_int8_t *)ip6addr)[14];			\
-	(enaddr)[5] = ((u_int8_t *)ip6addr)[15];			\
+	/* struct in6_addr *ip6addr; */							\
+	/* u_int8_t enaddr[ETHER_ADDR_LEN]; */					\
+{                                                           \
+	(enaddr)[0] = 0x33;										\
+	(enaddr)[1] = 0x33;										\
+	(enaddr)[2] = ((u_int8_t *)ip6addr)[12];				\
+	(enaddr)[3] = ((u_int8_t *)ip6addr)[13];				\
+	(enaddr)[4] = ((u_int8_t *)ip6addr)[14];				\
+	(enaddr)[5] = ((u_int8_t *)ip6addr)[15];				\
 }
 #endif
 
@@ -142,22 +142,14 @@ struct	ether_header {
  * the multicast list code.  For example, each ec_softc or il_softc
  * begins with this structure.
  */
-struct	ethercom {
+struct ethercom {
 	struct	ifnet ec_if;			/* network-visible interface */
-	LIST_HEAD(, ether_multi) ec_multiaddrs;	/* list of ether multicast
-						   addrs */
-	int	ec_multicnt;			/* length of ec_multiaddrs
-						   list */
-	int	ec_capabilities;		/* capabilities, provided by
-						   driver */
-	int	ec_capenable;			/* tells hardware which
-						   capabilities to enable */
+	LIST_HEAD(, ether_multi) ec_multiaddrs;	/* list of ether multicast addrs */
+	int	ec_multicnt;			/* length of ec_multiaddrs list */
+	int	ec_capabilities;		/* capabilities, provided by driver */
+	int	ec_capenable;			/* tells hardware which capabilities to enable */
 
-	int	ec_nvlans;			/* # VLANs on this interface */
-#ifdef MBUFTRACE
-	struct	mowner ec_rx_mowner;		/* mbufs received */
-	struct	mowner ec_tx_mowner;		/* mbufs transmitted */
-#endif
+	int	ec_nvlans;				/* # VLANs on this interface */
 };
 
 #define	ETHERCAP_VLAN_MTU	0x00000001	/* VLAN-compatible MTU */
@@ -170,9 +162,9 @@ extern u_int8_t ether_ipmulticast_min[ETHER_ADDR_LEN];
 extern u_int8_t ether_ipmulticast_max[ETHER_ADDR_LEN];
 
 int	ether_ioctl(struct ifnet *, u_long, caddr_t);
-int	ether_addmulti (struct ifreq *, struct ethercom *);
-int	ether_delmulti (struct ifreq *, struct ethercom *);
-int	ether_changeaddr (struct ifreq *, struct ethercom *);
+int	ether_addmulti(struct ifreq *, struct ethercom *);
+int	ether_delmulti(struct ifreq *, struct ethercom *);
+int	ether_changeaddr(struct ifreq *, struct ethercom *);
 int	ether_multiaddr(struct sockaddr *, u_int8_t[], u_int8_t[]);
 #endif /* _KERNEL */
 
@@ -203,17 +195,17 @@ struct ether_multistep {
  * multicast addresses connected to a given ethercom structure.  If no matching
  * record is found, "enm" returns NULL.
  */
-#define ETHER_LOOKUP_MULTI(addrlo, addrhi, ec, enm)			\
-	/* u_int8_t addrlo[ETHER_ADDR_LEN]; */				\
-	/* u_int8_t addrhi[ETHER_ADDR_LEN]; */				\
-	/* struct ethercom *ec; */					\
-	/* struct ether_multi *enm; */					\
-{									\
-	for ((enm) = LIST_FIRST(&(ec)->ec_multiaddrs);			\
-	    (enm) != NULL &&						\
+#define ETHER_LOOKUP_MULTI(addrlo, addrhi, ec, enm)					\
+	/* u_int8_t addrlo[ETHER_ADDR_LEN]; */							\
+	/* u_int8_t addrhi[ETHER_ADDR_LEN]; */							\
+	/* struct ethercom *ec; */										\
+	/* struct ether_multi *enm; */									\
+{																	\
+	for ((enm) = LIST_FIRST(&(ec)->ec_multiaddrs);					\
+	    (enm) != NULL &&											\
 	    (bcmp((enm)->enm_addrlo, (addrlo), ETHER_ADDR_LEN) != 0 ||	\
 	     bcmp((enm)->enm_addrhi, (addrhi), ETHER_ADDR_LEN) != 0);	\
-		(enm) = LIST_NEXT((enm), enm_list));			\
+		(enm) = LIST_NEXT((enm), enm_list));						\
 }
 
 /*
@@ -223,21 +215,21 @@ struct ether_multistep {
  * and get the first record.  Both macros return a NULL "enm" when there
  * are no remaining records.
  */
-#define ETHER_NEXT_MULTI(step, enm) \
-	/* struct ether_multistep step; */  \
-	/* struct ether_multi *enm; */  \
-{ \
-	if (((enm) = (step).e_enm) != NULL) \
-		(step).e_enm = LIST_NEXT((enm), enm_list); \
+#define ETHER_NEXT_MULTI(step, enm) 				\
+	/* struct ether_multistep step; */  			\
+	/* struct ether_multi *enm; */  				\
+{ 													\
+	if (((enm) = (step).e_enm) != NULL) 			\
+		(step).e_enm = LIST_NEXT((enm), enm_list); 	\
 }
 
-#define ETHER_FIRST_MULTI(step, ec, enm) \
-	/* struct ether_multistep step; */ \
-	/* struct ethercom *ec; */ \
-	/* struct ether_multi *enm; */ \
-{ \
+#define ETHER_FIRST_MULTI(step, ec, enm) 			\
+	/* struct ether_multistep step; */ 				\
+	/* struct ethercom *ec; */ 						\
+	/* struct ether_multi *enm; */ 					\
+{ 													\
 	(step).e_enm = LIST_FIRST(&(ec)->ec_multiaddrs); \
-	ETHER_NEXT_MULTI((step), (enm)); \
+	ETHER_NEXT_MULTI((step), (enm)); 				\
 }
 
 #ifdef _KERNEL
@@ -255,8 +247,8 @@ u_int32_t ether_crc32_be(const u_int8_t *, size_t);
  */
 #include <sys/cdefs.h>
 __BEGIN_DECLS
-char *	ether_ntoa(const struct ether_addr *);
-struct ether_addr *ether_aton (const char *);
+char *ether_ntoa(const struct ether_addr *);
+struct ether_addr *ether_aton(const char *);
 int	ether_ntohost(char *, const struct ether_addr *);
 int	ether_hostton(const char *, struct ether_addr *);
 int	ether_line(const char *, struct ether_addr *, char *);

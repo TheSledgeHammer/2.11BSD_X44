@@ -43,32 +43,32 @@
 /*
  * Data-link level type codes.
  */
-#define DLT_NULL	0	/* no link-layer encapsulation */
-#define DLT_EN10MB	1	/* Ethernet (10Mb) */
-#define DLT_EN3MB	2	/* Experimental Ethernet (3Mb) */
-#define DLT_AX25	3	/* Amateur Radio AX.25 */
-#define DLT_PRONET	4	/* Proteon ProNET Token Ring */
-#define DLT_CHAOS	5	/* Chaos */
-#define DLT_IEEE802	6	/* IEEE 802 Networks */
-#define DLT_ARCNET	7	/* ARCNET */
-#define DLT_SLIP	8	/* Serial Line IP */
-#define DLT_PPP		9	/* Point-to-point Protocol */
-#define DLT_FDDI	10	/* FDDI */
-#define DLT_ATM_RFC1483	11	/* LLC/SNAP encapsulated atm */
-#define DLT_RAW		12	/* raw IP */
-#define DLT_SLIP_BSDOS	13	/* BSD/OS Serial Line IP */
-#define DLT_PPP_BSDOS	14	/* BSD/OS Point-to-point Protocol */
-#define DLT_HIPPI	15	/* HIPPI */
-#define DLT_HDLC	16	/* HDLC framing */
+#define DLT_NULL				0	/* no link-layer encapsulation */
+#define DLT_EN10MB				1	/* Ethernet (10Mb) */
+#define DLT_EN3MB				2	/* Experimental Ethernet (3Mb) */
+#define DLT_AX25				3	/* Amateur Radio AX.25 */
+#define DLT_PRONET				4	/* Proteon ProNET Token Ring */
+#define DLT_CHAOS				5	/* Chaos */
+#define DLT_IEEE802				6	/* IEEE 802 Networks */
+#define DLT_ARCNET				7	/* ARCNET */
+#define DLT_SLIP				8	/* Serial Line IP */
+#define DLT_PPP					9	/* Point-to-point Protocol */
+#define DLT_FDDI				10	/* FDDI */
+#define DLT_ATM_RFC1483			11	/* LLC/SNAP encapsulated atm */
+#define DLT_RAW					12	/* raw IP */
+#define DLT_SLIP_BSDOS			13	/* BSD/OS Serial Line IP */
+#define DLT_PPP_BSDOS			14	/* BSD/OS Point-to-point Protocol */
+#define DLT_HIPPI				15	/* HIPPI */
+#define DLT_HDLC				16	/* HDLC framing */
 
 /* NetBSD-specific types */
-#define	DLT_PPP_SERIAL	50	/* PPP over serial (async and sync) */
-#define	DLT_PPP_ETHER	51	/* XXX - deprecated! PPP over Ethernet; session only, w/o ether header */
+#define	DLT_PPP_SERIAL			50	/* PPP over serial (async and sync) */
+#define	DLT_PPP_ETHER			51	/* XXX - deprecated! PPP over Ethernet; session only, w/o ether header */
 
-#define DLT_IEEE802_11		105	/* IEEE 802.11 wireless */
-#define DLT_ECONET		115	/* Acorn Econet */
-#define DLT_PRISM_HEADER	119	/* 802.11 header plus Prism II info. */
-#define DLT_AIRONET_HEADER 	120	/* 802.11 header plus Aironet info. */
+#define DLT_IEEE802_11			105	/* IEEE 802.11 wireless */
+#define DLT_ECONET				115	/* Acorn Econet */
+#define DLT_PRISM_HEADER		119	/* 802.11 header plus Prism II info. */
+#define DLT_AIRONET_HEADER 		120	/* 802.11 header plus Aironet info. */
 #define DLT_IEEE802_11_RADIO 	127	/* 802.11 header plus radio info. */
 
 /*

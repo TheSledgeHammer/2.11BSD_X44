@@ -64,9 +64,9 @@ struct bpf_d {
 	int 		bd_slen;	/* current length of store buffer */
 	int 		bd_hlen;	/* current length of hold buffer */
 
-	int		bd_bufsize;	/* absolute length of buffers */
+	int			bd_bufsize;	/* absolute length of buffers */
 
-	struct bpf_if *	bd_bif;		/* interface descriptor */
+	struct bpf_if *bd_bif;		/* interface descriptor */
 	u_long		bd_rtout;	/* Read timeout in 'ticks' */
 	struct bpf_insn *bd_filter; 	/* filter code */
 	u_long		bd_rcount;	/* number of packets received */
@@ -76,37 +76,36 @@ struct bpf_d {
 	u_char		bd_promisc;	/* true if listening promiscuously */
 	u_char		bd_state;	/* idle, waiting, or timed out */
 	u_char		bd_immediate;	/* true to return on packet arrival */
-	int		bd_hdrcmplt;	/* false to fill in src lladdr */
-	int		bd_seesent;	/* true if bpf should see sent packets */
-	int		bd_async;	/* non-zero if packet reception should generate signal */
+	int			bd_hdrcmplt;	/* false to fill in src lladdr */
+	int			bd_seesent;	/* true if bpf should see sent packets */
+	int			bd_async;	/* non-zero if packet reception should generate signal */
 	pid_t		bd_pgid;	/* process or group id for signal */
-#if BSD < 199103
-	u_char		bd_selcoll;	/* true if selects collide */
-	int		bd_timedout;
-	struct proc *	bd_selproc;	/* process that last selected us */
-#else
-	u_char		bd_pad;		/* explicit alignment */
+//#if BSD < 199103
+	//u_char		bd_selcoll;	/* true if selects collide */
+	//int			bd_timedout;
+	//struct proc *bd_selproc;/* process that last selected us */
+//#else
+	u_char			bd_pad;		/* explicit alignment */
 	struct selinfo	bd_sel;		/* bsd select info */
-#endif
+//#endif
 	struct callout	bd_callout;	/* for BPF timeouts with select */
 };
 
-
 /* Values for bd_state */
-#define BPF_IDLE	0		/* no select in progress */
-#define BPF_WAITING	1		/* waiting for read timeout in select */
+#define BPF_IDLE		0		/* no select in progress */
+#define BPF_WAITING		1		/* waiting for read timeout in select */
 #define BPF_TIMED_OUT	2		/* read timeout has expired in select */
 
 /*
  * Descriptor associated with each attached hardware interface.
  */
 struct bpf_if {
-	struct bpf_if *bif_next;	/* list of all interfaces */
-	struct bpf_d *bif_dlist;	/* descriptor list */
-	struct bpf_if **bif_driverp;	/* pointer into softc */
-	u_int bif_dlt;			/* link layer type */
-	u_int bif_hdrlen;		/* length of header (with padding) */
-	struct ifnet *bif_ifp;		/* correspoding interface */
+	struct bpf_if 	*bif_next;		/* list of all interfaces */
+	struct bpf_d 	*bif_dlist;		/* descriptor list */
+	struct bpf_if 	**bif_driverp;	/* pointer into softc */
+	u_int 			bif_dlt;		/* link layer type */
+	u_int 			bif_hdrlen;		/* length of header (with padding) */
+	struct ifnet 	*bif_ifp;		/* correspoding interface */
 };
 
 #ifdef _KERNEL

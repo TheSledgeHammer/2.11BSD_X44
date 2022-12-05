@@ -105,9 +105,9 @@
  */
 
 #if defined(_NETBSD_SOURCE)
-#define	IPV6PORT_RESERVED	1024
-#define	IPV6PORT_ANONMIN	49152
-#define	IPV6PORT_ANONMAX	65535
+#define	IPV6PORT_RESERVED		1024
+#define	IPV6PORT_ANONMIN		49152
+#define	IPV6PORT_ANONMAX		65535
 #define	IPV6PORT_RESERVEDMIN	600
 #define	IPV6PORT_RESERVEDMAX	(IPV6PORT_RESERVED-1)
 #endif
@@ -401,15 +401,15 @@ struct route_in6 {
 #define IPV6_NEXTHOP		21 /* bool; next hop addr */
 #define IPV6_HOPOPTS		22 /* bool; hop-by-hop option */
 #define IPV6_DSTOPTS		23 /* bool; destination option */
-#define IPV6_RTHDR		24 /* bool; routing header */
+#define IPV6_RTHDR			24 /* bool; routing header */
 #define IPV6_PKTOPTIONS		25 /* buf/cmsghdr; set/get IPv6 options */
 #define IPV6_CHECKSUM		26 /* int; checksum offset for raw socket */
-#define IPV6_V6ONLY		27 /* bool; make AF_INET6 sockets v6 only */
+#define IPV6_V6ONLY			27 /* bool; make AF_INET6 sockets v6 only */
 
 #if 1 /* IPSEC */
 #define IPV6_IPSEC_POLICY	28 /* struct; get/set security policy */
 #endif
-#define IPV6_FAITH		29 /* bool; accept FAITH'ed connections */
+#define IPV6_FAITH			29 /* bool; accept FAITH'ed connections */
 #define IPV6_USE_MIN_MTU	42 /* bool; send packets at the minimum MTU */
 /* to define items, should talk with KAME guys first, for *BSD compatibility */
 
@@ -444,8 +444,8 @@ struct in6_pktinfo {
  * - which range to search when port is unspecified at bind() or connect()
  */
 #define	IPV6_PORTRANGE_DEFAULT	0	/* default range */
-#define	IPV6_PORTRANGE_HIGH	1	/* "high" - request firewall bypass */
-#define	IPV6_PORTRANGE_LOW	2	/* "low" - vouchsafe security */
+#define	IPV6_PORTRANGE_HIGH		1	/* "high" - request firewall bypass */
+#define	IPV6_PORTRANGE_LOW		2	/* "low" - vouchsafe security */
 
 #if defined(_NETBSD_SOURCE)
 /*
@@ -520,18 +520,18 @@ struct in6_pktinfo {
 #define IPV6CTL_SOURCECHECK	10	/* verify source route and intf */
 #define IPV6CTL_SOURCECHECK_LOGINT 11	/* minimume logging interval */
 #define IPV6CTL_ACCEPT_RTADV	12
-#define IPV6CTL_KEEPFAITH	13
+#define IPV6CTL_KEEPFAITH		13
 #define IPV6CTL_LOG_INTERVAL	14
 #define IPV6CTL_HDRNESTLIMIT	15
-#define IPV6CTL_DAD_COUNT	16
+#define IPV6CTL_DAD_COUNT		16
 #define IPV6CTL_AUTO_FLOWLABEL	17
 #define IPV6CTL_DEFMCASTHLIM	18
-#define IPV6CTL_GIF_HLIM	19	/* default HLIM for gif encap packet */
+#define IPV6CTL_GIF_HLIM		19	/* default HLIM for gif encap packet */
 #define IPV6CTL_KAME_VERSION	20
 #define IPV6CTL_USE_DEPRECATED	21	/* use deprecated addr (RFC2462 5.5.4) */
-#define IPV6CTL_RR_PRUNE	22	/* walk timer for router renumbering */
+#define IPV6CTL_RR_PRUNE		22	/* walk timer for router renumbering */
 /* 23: reserved */
-#define IPV6CTL_V6ONLY		24
+#define IPV6CTL_V6ONLY			24
 /* 25 to 27: reserved */
 #define IPV6CTL_ANONPORTMIN	28	/* minimum ephemeral port */
 #define IPV6CTL_ANONPORTMAX	29	/* maximum ephemeral port */
