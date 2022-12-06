@@ -368,7 +368,7 @@ extern const struct in6_addr in6addr_linklocal_allrouters;
 /*
  * IP6 route structure
  */
-#if __BSD_VISIBLE
+#if !defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE)
 struct route_in6 {
 	struct	rtentry *ro_rt;
 	struct	sockaddr_in6 ro_dst;
@@ -447,7 +447,7 @@ struct in6_pktinfo {
 #define	IPV6_PORTRANGE_HIGH		1	/* "high" - request firewall bypass */
 #define	IPV6_PORTRANGE_LOW		2	/* "low" - vouchsafe security */
 
-#if __BSD_VISIBLE
+#if !defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE)
 /*
  * Definitions for inet6 sysctl operations.
  *
@@ -659,7 +659,7 @@ extern	u_char	ip6_protox[];
 #define	ifatoia6(ifa)	((struct in6_ifaddr *)(ifa))
 #endif /* _KERNEL */
 
-#if __BSD_VISIBLE
+#if !defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE)
 
 #include <machine/ansi.h>
 
