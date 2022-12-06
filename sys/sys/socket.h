@@ -117,10 +117,13 @@ struct	linger {
 #define	AF_APPLETALK		16		/* Apple Talk */
 #define	AF_ROUTE	        17		/* Internal Routing Protocol */
 #define	AF_LINK		        18		/* Link layer interface */
-#define	pseudo_AF_HDRCMPLT      19		/* Used by BPF to not rewrite hdrs
+#define	AF_INET6			19		/* IP version 6 */
+#define AF_ARP				20		/* (rev.) addr. res. prot. (RFC 826) */
+#define pseudo_AF_KEY		21		/* Internal key management protocol  */
+#define	pseudo_AF_HDRCMPLT 	22		/* Used by BPF to not rewrite hdrs
 					          in interface output routine */
 
-#define	AF_MAX			20
+#define	AF_MAX			23
 
 /*
  * Structure used by kernel to store most

@@ -147,7 +147,7 @@ LIST_HEAD(, if_clone) if_cloners = LIST_HEAD_INITIALIZER(if_cloners);
 int if_cloners_count;
 
 #if defined(INET) || defined(INET6) || defined(NS)
-static void if_detach_queues(struct ifnet *, struct ifqueue *));
+static void if_detach_queues(struct ifnet *, struct ifqueue *);
 #endif
 
 /*
@@ -591,9 +591,7 @@ if_detach(ifp)
 		     pr < dp->dom_protoswNPROTOSW; pr++) {
 			so.so_proto = pr;
 			if (pr->pr_usrreq != NULL) {
-				(void) (*pr->pr_usrreq)(&so,
-				    PRU_PURGEIF, NULL, NULL,
-				    (struct mbuf *) ifp, curproc);
+				(void) (*pr->pr_usrreq)(&so, PRU_PURGEIF, NULL, NULL, (struct mbuf *) ifp);
 				purged = 1;
 			}
 		}
@@ -1421,8 +1419,7 @@ ifioctl(so, cmd, data, p)
 		 * Assumes that the volatile counters that can be
 		 * zero'ed are at the end of if_data.
 		 */
-		memset(&ifp->if_data.ifi_ipackets, 0, sizeof(ifp->if_data) -
-		    offsetof(struct if_data, ifi_ipackets));
+		memset(&ifp->if_data.ifi_ipackets, 0, sizeof(ifp->if_data) - offsetof(struct if_data, ifi_ipackets));
 		break;
 
 	case SIOCSIFMTU:
@@ -1629,6 +1626,7 @@ ifconf(cmd, data)
 	return (error);
 }
 
+#ifdef notyet
 #if defined(INET) || defined(INET6)
 static void
 sysctl_net_ifq_setup(struct sysctllog **clog,
@@ -1709,3 +1707,4 @@ SYSCTL_SETUP(sysctl_net_inet6_ip6_ifq_setup,
 }
 #endif /* INET6 */
 #endif /* INET || INET6 */
+#eendif

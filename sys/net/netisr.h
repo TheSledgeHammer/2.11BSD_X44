@@ -47,6 +47,15 @@
  */
 
 #if defined(_KERNEL)
+#include "opt_inet.h"
+#include "opt_ns.h"
+#include "arp.h"
+#ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
+#include "sl.h"
+#include "strip.h"
+#include "ppp.h"
+#endif
+
 #if !defined(_LOCORE)
 
 /* XXX struct sockaddr defn for for if.h, if_arp.h */
@@ -75,6 +84,7 @@
 #ifdef NS
 #include <netns/ns_var.h>
 #endif
+
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS		/* XXX XXX XXX */
 #if NSL > 0
 extern void slnetisr(void);
@@ -120,24 +130,24 @@ extern	int netisr;			/* scheduling bits for network */
 
 #ifdef INET
 #if NARP > 0
-	DONET(NETISR_ARP, arpintr)
+	DONET(NETISR_ARP,arpintr)
 #endif
-	DONET(NETISR_IP, ipintr)
+	DONET(NETISR_IP,ipintr)
 #endif
-#ifdef IMP
-	DONET(NETISR_IMP, impintr)
+#ifdef INET6
+	DONETISR(NETISR_IPV6,ip6intr);
 #endif
 #ifdef NS
-	DONET(NETISR_NS, nsintr)
+	DONET(NETISR_NS,nsintr)
 #endif
-#if NSL > 0
-	DONET(NETISR_SLIP, slintr);
+#if NSL > 0 && !defined(__HAVE_GENERIC_SOFT_INTERRUPTS)
+	DONET(NETISR_SLIP,slnetisr);
 #endif
-#if NSTRIP > 0
-	DONET(NETISR_STRIP, stripintr);
+#if NSTRIP > 0 && !defined(__HAVE_GENERIC_SOFT_INTERRUPTS)
+	DONET(NETISR_STRIP,stripnetisr);
 #endif
-#if NPPP > 0
-	DONET(NETISR_PPP, pppintr)
+#if NPPP > 0 && !defined(__HAVE_GENERIC_SOFT_INTERRUPTS)
+	DONET(NETISR_PPP,pppnetisr)
 #endif
 
 #endif /* _NET_NETISR_H_ */

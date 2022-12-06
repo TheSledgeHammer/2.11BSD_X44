@@ -75,6 +75,8 @@ struct m_hdr {
 struct	pkthdr {
 	struct	ifnet 		*rcvif;			/* rcv interface */
 	int					len;			/* total packet length */
+	int					csum_flags;		/* checksum flags */
+	u_int32_t 			csum_data;		/* checksum data */
 };
 
 /* description of external storage mapped into mbuf, valid if M_EXT set */
@@ -178,7 +180,6 @@ struct mbuf {
 #define M_CSUM_BITS \
     "\20\1TCPv4\2UDPv4\3TCP_UDP_BAD\4DATA\5TCPv6\6UDPv6\7IPv4\10IPv4_BAD" \
     "\11TSOv4\12TSOv6\39BLANK\40NO_PSEUDOHDR"
-
 
 /*
  * Macros for manipulating csum_data on outgoing packets. These are

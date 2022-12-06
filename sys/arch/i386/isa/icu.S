@@ -160,7 +160,7 @@ IDTVEC(softclock)
 		movl	%eax,_C_LABEL(cpl)
 		call	_C_LABEL(softclock)
 		movl	%ebx,_C_LABEL(cpl)
-		jmp	*%esi
+		jmp		*%esi
 
 IDTVEC(softserial)
 		movl	_C_LABEL(imask) + IPL_SOFTSERIAL * 4,%eax
@@ -175,10 +175,12 @@ IDTVEC(softserial)
 		jmp		*%esi
 
 IDTVEC(softnet)
+		movl	$IPL_SOFTNET, _C_LABEL(cpl)
+		incl	_C_LABEL(idepth)
 		movl	_C_LABEL(imask) + IPL_SOFTNET * 4,%eax
 		movl	%eax,_C_LABEL(cpl)
+
 		xorl	%edi,%edi
-#if 0
 		xchgl	_C_LABEL(netisr),%edi
 
 #define DONET(s, c) 			\
@@ -187,11 +189,9 @@ IDTVEC(softnet)
 		jz		1f				;\
 		call	_C_LABEL(c)		;\
 1:
-
 #include <net/netisr.h>
 
-#undef DONET
-#endif
 		movl	%ebx,_C_LABEL(cpl)
+		decl	_C_LABEL(idepth)
 		jmp		*%esi
 

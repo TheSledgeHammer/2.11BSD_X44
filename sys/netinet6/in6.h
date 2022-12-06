@@ -74,7 +74,7 @@
  * has the table of implementation/integration differences.
  */
 #define __KAME__
-#define __KAME_VERSION		"NetBSD-current"
+//#define __KAME_VERSION		"NetBSD-current"
 
 /*
  * Local port number conventions:
@@ -104,7 +104,7 @@
  * The range is IPPORT_RESERVEDMIN to IPPORT_RESERVEDMAX.
  */
 
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 #define	IPV6PORT_RESERVED		1024
 #define	IPV6PORT_ANONMIN		49152
 #define	IPV6PORT_ANONMAX		65535
@@ -135,7 +135,7 @@ struct in6_addr {
 /*
  * Socket address for IPv6
  */
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 #define SIN6_LEN
 #endif
 struct sockaddr_in6 {
@@ -368,7 +368,7 @@ extern const struct in6_addr in6addr_linklocal_allrouters;
 /*
  * IP6 route structure
  */
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 struct route_in6 {
 	struct	rtentry *ro_rt;
 	struct	sockaddr_in6 ro_dst;
@@ -393,7 +393,7 @@ struct route_in6 {
 #define IPV6_JOIN_GROUP		12 /* ip6_mreq; join a group membership */
 #define IPV6_LEAVE_GROUP	13 /* ip6_mreq; leave a group membership */
 #define IPV6_PORTRANGE		14 /* int; range to choose for unspec port */
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 #define ICMP6_FILTER		18 /* icmp6_filter; icmp6 filter */
 #endif
 #define IPV6_PKTINFO		19 /* bool; send/rcv if, src/dst addr */
@@ -447,7 +447,7 @@ struct in6_pktinfo {
 #define	IPV6_PORTRANGE_HIGH		1	/* "high" - request firewall bypass */
 #define	IPV6_PORTRANGE_LOW		2	/* "low" - vouchsafe security */
 
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 /*
  * Definitions for inet6 sysctl operations.
  *
@@ -506,18 +506,18 @@ struct in6_pktinfo {
 /*
  * Names for IP sysctl objects
  */
-#define IPV6CTL_FORWARDING	1	/* act as router */
+#define IPV6CTL_FORWARDING		1	/* act as router */
 #define IPV6CTL_SENDREDIRECTS	2	/* may send redirects when forwarding*/
-#define IPV6CTL_DEFHLIM		3	/* default Hop-Limit */
+#define IPV6CTL_DEFHLIM			3	/* default Hop-Limit */
 #ifdef notyet
-#define IPV6CTL_DEFMTU		4	/* default MTU */
+#define IPV6CTL_DEFMTU			4	/* default MTU */
 #endif
-#define IPV6CTL_FORWSRCRT	5	/* forward source-routed dgrams */
-#define IPV6CTL_STATS		6	/* stats */
-#define IPV6CTL_MRTSTATS	7	/* multicast forwarding stats */
-#define IPV6CTL_MRTPROTO	8	/* multicast routing protocol */
+#define IPV6CTL_FORWSRCRT		5	/* forward source-routed dgrams */
+#define IPV6CTL_STATS			6	/* stats */
+#define IPV6CTL_MRTSTATS		7	/* multicast forwarding stats */
+#define IPV6CTL_MRTPROTO		8	/* multicast routing protocol */
 #define IPV6CTL_MAXFRAGPACKETS	9	/* max packets reassembly queue */
-#define IPV6CTL_SOURCECHECK	10	/* verify source route and intf */
+#define IPV6CTL_SOURCECHECK		10	/* verify source route and intf */
 #define IPV6CTL_SOURCECHECK_LOGINT 11	/* minimume logging interval */
 #define IPV6CTL_ACCEPT_RTADV	12
 #define IPV6CTL_KEEPFAITH		13
@@ -533,16 +533,16 @@ struct in6_pktinfo {
 /* 23: reserved */
 #define IPV6CTL_V6ONLY			24
 /* 25 to 27: reserved */
-#define IPV6CTL_ANONPORTMIN	28	/* minimum ephemeral port */
-#define IPV6CTL_ANONPORTMAX	29	/* maximum ephemeral port */
-#define IPV6CTL_LOWPORTMIN	30	/* minimum reserved port */
-#define IPV6CTL_LOWPORTMAX	31	/* maximum reserved port */
+#define IPV6CTL_ANONPORTMIN		28	/* minimum ephemeral port */
+#define IPV6CTL_ANONPORTMAX		29	/* maximum ephemeral port */
+#define IPV6CTL_LOWPORTMIN		30	/* minimum reserved port */
+#define IPV6CTL_LOWPORTMAX		31	/* maximum reserved port */
 /* 32 to 40: resrved */
-#define IPV6CTL_MAXFRAGS	41	/* max fragments */
-#define IPV6CTL_IFQ		42	/* ip6intrq node */
+#define IPV6CTL_MAXFRAGS		41	/* max fragments */
+#define IPV6CTL_IFQ				42	/* ip6intrq node */
 /* New entries should be added here from current IPV6CTL_MAXID value. */
 /* to define items, should talk with KAME guys first, for *BSD compatibility */
-#define IPV6CTL_MAXID		43
+#define IPV6CTL_MAXID			43
 
 #define IPV6CTL_NAMES { \
 	{ 0, 0 }, \
@@ -659,7 +659,7 @@ extern	u_char	ip6_protox[];
 #define	ifatoia6(ifa)	((struct in6_ifaddr *)(ifa))
 #endif /* _KERNEL */
 
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 
 #include <machine/ansi.h>
 
@@ -676,8 +676,7 @@ struct cmsghdr;
 
 extern int inet6_option_space __P((int));
 extern int inet6_option_init __P((void *, struct cmsghdr **, int));
-extern int inet6_option_append __P((struct cmsghdr *, const uint8_t *,
-	int, int));
+extern int inet6_option_append __P((struct cmsghdr *, const uint8_t *, int, int));
 extern uint8_t *inet6_option_alloc __P((struct cmsghdr *, int, int, int));
 extern int inet6_option_next __P((const struct cmsghdr *, uint8_t **));
 extern int inet6_option_find __P((const struct cmsghdr *, uint8_t **, int));
@@ -694,6 +693,6 @@ extern int inet6_rthdr_segments __P((const struct cmsghdr *));
 extern struct in6_addr *inet6_rthdr_getaddr __P((struct cmsghdr *, int));
 extern int inet6_rthdr_getflags __P((const struct cmsghdr *, int));
 __END_DECLS
-#endif /* _NETBSD_SOURCE */
+#endif /* __BSD_VISIBLE */
 
 #endif /* !_NETINET6_IN6_H_ */

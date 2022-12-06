@@ -125,8 +125,9 @@ struct protosw {
 #define	PRU_SLOWTIMO	19	/* 500ms timeout */
 #define	PRU_PROTORCV	20	/* receive from below */
 #define	PRU_PROTOSEND	21	/* send to below */
+#define PRU_PURGEIF		22	/* purge specified if */
 
-#define	PRU_NREQ		21
+#define	PRU_NREQ		23
 
 #ifdef PRUREQUESTS
 char *prurequests[] = {
@@ -135,7 +136,7 @@ char *prurequests[] = {
 	"RCVD",		"SEND",		"ABORT",	"CONTROL",
 	"SENSE",	"RCVOOB",	"SENDOOB",	"SOCKADDR",
 	"PEERADDR",	"CONNECT2",	"FASTTIMO",	"SLOWTIMO",
-	"PROTORCV",	"PROTOSEND",
+	"PROTORCV",	"PROTOSEND", "PURGEIF",
 };
 #endif
 
@@ -205,6 +206,11 @@ char	*prcorequests[] = {
 #endif
 
 #ifdef _KERNEL
-extern	struct protosw *pffindproto(int, int, int), *pffindtype(int, int);
+struct sockaddr;
+struct protosw 	*pffindproto(int, int, int);
+struct protosw 	*pffindtype(int, int);
+struct domain 	*pffinddomain(int);
+void 			pfctlinput(int, struct sockaddr *);
+//extern	struct protosw *pffindproto(int, int, int), *pffindtype(int, int);
 #endif
 #endif /* _SYS_PROTOSW_H_ */

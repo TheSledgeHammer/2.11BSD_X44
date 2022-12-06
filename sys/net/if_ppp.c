@@ -1193,7 +1193,7 @@ ppp_dequeue(sc)
 	m->m_data += 2;
 	m->m_len -= 2;
     }
-    if (sc->sc_flags & SC_COMP_PROT && protocol < 0xFF) {
+    if ((sc->sc_flags & SC_COMP_PROT) && protocol < 0xFF) {
 	/* can compress protocol */
 	if (mtod(m, u_char *) == cp) {
 	    cp[2] = cp[1];	/* move address/control up */

@@ -134,27 +134,27 @@ struct ip6_dest {
 } __attribute__((__packed__));
 
 /* Option types and related macros */
-#define IP6OPT_PAD1		0x00	/* 00 0 00000 */
-#define IP6OPT_PADN		0x01	/* 00 0 00001 */
-#define IP6OPT_JUMBO		0xC2	/* 11 0 00010 = 194 */
-#define IP6OPT_NSAP_ADDR	0xC3	/* 11 0 00011 */
-#define IP6OPT_TUNNEL_LIMIT	0x04	/* 00 0 00100 */
-#define IP6OPT_RTALERT		0x05	/* 00 0 00101 (KAME definition) */
-#define IP6OPT_ROUTER_ALERT	0x05	/* (2292bis def, recommended) */
+#define IP6OPT_PAD1				0x00	/* 00 0 00000 */
+#define IP6OPT_PADN				0x01	/* 00 0 00001 */
+#define IP6OPT_JUMBO			0xC2	/* 11 0 00010 = 194 */
+#define IP6OPT_NSAP_ADDR		0xC3	/* 11 0 00011 */
+#define IP6OPT_TUNNEL_LIMIT		0x04	/* 00 0 00100 */
+#define IP6OPT_RTALERT			0x05	/* 00 0 00101 (KAME definition) */
+#define IP6OPT_ROUTER_ALERT		0x05	/* (2292bis def, recommended) */
 
-#define IP6OPT_RTALERT_LEN	4
-#define IP6OPT_RTALERT_MLD	0	/* Datagram contains an MLD message */
-#define IP6OPT_RTALERT_RSVP	1	/* Datagram contains an RSVP message */
+#define IP6OPT_RTALERT_LEN		4
+#define IP6OPT_RTALERT_MLD		0	/* Datagram contains an MLD message */
+#define IP6OPT_RTALERT_RSVP		1	/* Datagram contains an RSVP message */
 #define IP6OPT_RTALERT_ACTNET	2 	/* contains an Active Networks msg */
-#define IP6OPT_MINLEN		2
+#define IP6OPT_MINLEN			2
 
-#define IP6OPT_TYPE(o)		((o) & 0xC0)
-#define IP6OPT_TYPE_SKIP	0x00
-#define IP6OPT_TYPE_DISCARD	0x40
+#define IP6OPT_TYPE(o)			((o) & 0xC0)
+#define IP6OPT_TYPE_SKIP		0x00
+#define IP6OPT_TYPE_DISCARD		0x40
 #define IP6OPT_TYPE_FORCEICMP	0x80
-#define IP6OPT_TYPE_ICMP	0xC0
+#define IP6OPT_TYPE_ICMP		0xC0
 
-#define IP6OPT_MUTABLE		0x20
+#define IP6OPT_MUTABLE			0x20
 
 /* IPv6 options: common part */
 struct ip6_opt {
@@ -264,41 +264,41 @@ struct ip6_frag {
  *
  * XXX we're now testing this, needs m_pulldown()
  */
-#define IP6_EXTHDR_GET(val, typ, m, off, len) \
-do {									\
-	struct mbuf *t;							\
-	int tmp;							\
-	if ((m)->m_len >= (off) + (len))				\
+#define IP6_EXTHDR_GET(val, typ, m, off, len) 			\
+do {													\
+	struct mbuf *t;										\
+	int tmp;											\
+	if ((m)->m_len >= (off) + (len))					\
 		(val) = (typ)(mtod((m), caddr_t) + (off));		\
-	else {								\
+	else {												\
 		t = m_pulldown((m), (off), (len), &tmp);		\
-		if (t) {						\
-			if (t->m_len < tmp + (len))			\
-				panic("m_pulldown malfunction");	\
+		if (t) {										\
+			if (t->m_len < tmp + (len))					\
+				panic("m_pulldown malfunction");		\
 			(val) = (typ)(mtod(t, caddr_t) + tmp);		\
-		} else {						\
-			(val) = (typ)NULL;				\
-			(m) = NULL;					\
-		}							\
-	}								\
+		} else {										\
+			(val) = (typ)NULL;							\
+			(m) = NULL;									\
+		}												\
+	}													\
 } while (/*CONSTCOND*/ 0)
 
-#define IP6_EXTHDR_GET0(val, typ, m, off, len) \
-do {									\
-	struct mbuf *t;							\
+#define IP6_EXTHDR_GET0(val, typ, m, off, len) 			\
+do {													\
+	struct mbuf *t;										\
 	if ((off) == 0 && (m)->m_len >= len)				\
-		(val) = (typ)mtod((m), caddr_t);			\
-	else {								\
+		(val) = (typ)mtod((m), caddr_t);				\
+	else {												\
 		t = m_pulldown((m), (off), (len), NULL);		\
-		if (t) {						\
-			if (t->m_len < (len))				\
-				panic("m_pulldown malfunction");	\
-			(val) = (typ)mtod(t, caddr_t);			\
-		} else {						\
-			(val) = (typ)NULL;				\
-			(m) = NULL;					\
-		}							\
-	}								\
+		if (t) {										\
+			if (t->m_len < (len))						\
+				panic("m_pulldown malfunction");		\
+			(val) = (typ)mtod(t, caddr_t);				\
+		} else {										\
+			(val) = (typ)NULL;							\
+			(m) = NULL;									\
+		}												\
+	}													\
 } while (/*CONSTCOND*/ 0)
 #endif /*_KERNEL*/
 

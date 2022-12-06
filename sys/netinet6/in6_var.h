@@ -446,15 +446,15 @@ struct	in6_rrenumreq {
 #endif
 
 #ifdef _KERNEL
-MALLOC_DECLARE(M_IP6OPT);
+//MALLOC_DECLARE(M_IP6OPT);
 
 extern struct in6_ifaddr *in6_ifaddr;
 
 extern struct icmp6stat icmp6stat;
-#define in6_ifstat_inc(ifp, tag) \
-do {								\
-	if (ifp)						\
-		((struct in6_ifextra *)((ifp)->if_afdata[AF_INET6]))->in6_ifstat->tag++; \
+#define in6_ifstat_inc(ifp, tag) 													\
+do {																				\
+	if (ifp)																		\
+		((struct in6_ifextra *)((ifp)->if_afdata[AF_INET6]))->in6_ifstat->tag++; 	\
 } while (/*CONSTCOND*/ 0)
 
 extern struct ifqueue ip6intrq;		/* IP6 packet input queue */
@@ -467,18 +467,18 @@ extern unsigned long in6_maxmtu;
  * to a given interface (ifnet structure).
  */
 
-#define IFP_TO_IA6(ifp, ia)				\
-/* struct ifnet *ifp; */				\
-/* struct in6_ifaddr *ia; */				\
-do {									\
-	struct ifaddr *ifa;						\
+#define IFP_TO_IA6(ifp, ia)															\
+/* struct ifnet *ifp; */															\
+/* struct in6_ifaddr *ia; */														\
+do {																				\
+	struct ifaddr *ifa;																\
 	for (ifa = (ifp)->if_addrlist.tqh_first; ifa; ifa = ifa->ifa_list.tqe_next) {	\
-		if (!ifa->ifa_addr)					\
-			continue;					\
-		if (ifa->ifa_addr->sa_family == AF_INET6)		\
-			break;						\
-	}								\
-	(ia) = (struct in6_ifaddr *)ifa;				\
+		if (!ifa->ifa_addr)															\
+			continue;																\
+		if (ifa->ifa_addr->sa_family == AF_INET6)									\
+			break;																	\
+	}																				\
+	(ia) = (struct in6_ifaddr *)ifa;												\
 } while (/*CONSTCOND*/ 0)
 
 #endif /* _KERNEL */
