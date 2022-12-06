@@ -52,7 +52,7 @@
 #include "arp.h"
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
 #include "sl.h"
-#include "strip.h"
+//#include "strip.h"
 #include "ppp.h"
 #endif
 
@@ -100,7 +100,6 @@ extern void pppnetisr(void);
 #endif /* !defined(_LOCORE) */
 #endif /* defined(_KERNEL) */
 
-
 /*
  * Each ``pup-level-1'' input queue has a bit in a ``netisr'' status
  * word which is used to de-multiplex a single software
@@ -127,27 +126,4 @@ extern void pppnetisr(void);
 
 extern	int netisr;			/* scheduling bits for network */
 #endif /* defined(_KERNEL) && !defined(_LOCORE) */
-
-#ifdef INET
-#if NARP > 0
-	DONET(NETISR_ARP,arpintr)
-#endif
-	DONET(NETISR_IP,ipintr)
-#endif
-#ifdef INET6
-	DONETISR(NETISR_IPV6,ip6intr);
-#endif
-#ifdef NS
-	DONET(NETISR_NS,nsintr)
-#endif
-#if NSL > 0 && !defined(__HAVE_GENERIC_SOFT_INTERRUPTS)
-	DONET(NETISR_SLIP,slnetisr);
-#endif
-#if NSTRIP > 0 && !defined(__HAVE_GENERIC_SOFT_INTERRUPTS)
-	DONET(NETISR_STRIP,stripnetisr);
-#endif
-#if NPPP > 0 && !defined(__HAVE_GENERIC_SOFT_INTERRUPTS)
-	DONET(NETISR_PPP,pppnetisr)
-#endif
-
 #endif /* _NET_NETISR_H_ */

@@ -45,6 +45,11 @@
 #include <machine/segments.h>
 #include <machine/trap.h>
 
+#include "opt_inet.h"
+#include "opt_ns.h"
+
+#include <net/netisr.h>
+
 		.data
 		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(idepth)
 		.globl	_C_LABEL(netisr)
@@ -175,11 +180,8 @@ IDTVEC(softserial)
 		jmp		*%esi
 
 IDTVEC(softnet)
-		movl	$IPL_SOFTNET, _C_LABEL(cpl)
-		incl	_C_LABEL(idepth)
 		movl	_C_LABEL(imask) + IPL_SOFTNET * 4,%eax
 		movl	%eax,_C_LABEL(cpl)
-
 		xorl	%edi,%edi
 		xchgl	_C_LABEL(netisr),%edi
 
@@ -189,9 +191,10 @@ IDTVEC(softnet)
 		jz		1f				;\
 		call	_C_LABEL(c)		;\
 1:
-#include <net/netisr.h>
+
+#include <net/netisr_dispatch.h>
+#undef DONET
 
 		movl	%ebx,_C_LABEL(cpl)
-		decl	_C_LABEL(idepth)
 		jmp		*%esi
 
