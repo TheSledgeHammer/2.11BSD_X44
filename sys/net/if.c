@@ -1277,8 +1277,8 @@ ifioctl(so, cmd, data, p)
 	short oif_flags;
 
 	switch (cmd) {
-
 	case SIOCGIFCONF:
+	}
 
 	ifr = (struct ifreq *)data;
 	ifcr = (struct ifcapreq *)data;
@@ -1320,7 +1320,7 @@ ifioctl(so, cmd, data, p)
 		break;
 
 	case SIOCSIFFLAGS:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
 		if ((ifp->if_flags & IFF_UP) && (ifr->ifr_flags & IFF_UP) == 0) {
 			s = splnet();
@@ -1344,7 +1344,7 @@ ifioctl(so, cmd, data, p)
 		break;
 
 	case SIOCSIFCAP:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
 		if ((ifcr->ifcr_capenable & ~ifp->if_capabilities) != 0)
 			return (EINVAL);
@@ -1475,63 +1475,12 @@ ifioctl(so, cmd, data, p)
 			return (error);
 	/* FALLTHROUGH */
 	default:
-		if (so->so_proto == 0)
+		if (so->so_proto == 0) {
 			return (EOPNOTSUPP);
-#if !defined(COMPAT_43) && !defined(COMPAT_LINUX) && !defined(COMPAT_SVR4) && !defined(COMPAT_ULTRIX) && !defined(LKM)
+		}
 		error = ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
 		    (struct mbuf *)cmd, (struct mbuf *)data,
-		    (struct mbuf *)ifp, p));
-#else
-	    {
-		int ocmd = cmd;
-
-		switch (cmd) {
-
-		case SIOCSIFADDR:
-		case SIOCSIFDSTADDR:
-		case SIOCSIFBRDADDR:
-		case SIOCSIFNETMASK:
-#if BYTE_ORDER != BIG_ENDIAN
-			if (ifr->ifr_addr.sa_family == 0 &&
-			    ifr->ifr_addr.sa_len < 16) {
-				ifr->ifr_addr.sa_family = ifr->ifr_addr.sa_len;
-				ifr->ifr_addr.sa_len = 16;
-			}
-#else
-			if (ifr->ifr_addr.sa_len == 0)
-				ifr->ifr_addr.sa_len = 16;
-#endif
-			break;
-
-		case OSIOCGIFADDR:
-			cmd = SIOCGIFADDR;
-			break;
-
-		case OSIOCGIFDSTADDR:
-			cmd = SIOCGIFDSTADDR;
-			break;
-
-		case OSIOCGIFBRDADDR:
-			cmd = SIOCGIFBRDADDR;
-			break;
-
-		case OSIOCGIFNETMASK:
-			cmd = SIOCGIFNETMASK;
-		}
-
-		error = ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
-		    (struct mbuf *)cmd, (struct mbuf *)data,
-		    (struct mbuf *)ifp, p));
-
-		switch (ocmd) {
-		case OSIOCGIFADDR:
-		case OSIOCGIFDSTADDR:
-		case OSIOCGIFBRDADDR:
-		case OSIOCGIFNETMASK:
-			*(u_int16_t *)&ifr->ifr_addr = ifr->ifr_addr.sa_family;
-		}
-	    }
-#endif /* COMPAT_43 */
+		    (struct mbuf *)ifp));
 		break;
 	}
 
@@ -1555,6 +1504,7 @@ ifioctl(so, cmd, data, p)
  * other information.
  */
 /*ARGSUSED*/
+
 int
 ifconf(cmd, data)
 	u_long cmd;
@@ -1575,16 +1525,17 @@ ifconf(cmd, data)
 		sign = 1;
 	}
 	TAILQ_FOREACH(ifp, &ifnet, if_list) {
-		(void)strncpy(ifr.ifr_name, ifp->if_xname,
-		    sizeof(ifr.ifr_name));
-		if (ifr.ifr_name[sizeof(ifr.ifr_name) - 1] != '\0')
-			return ENAMETOOLONG; 
+		(void)strncpy(ifr.ifr_name, ifp->if_xname, sizeof(ifr.ifr_name));
+		if (ifr.ifr_name[sizeof(ifr.ifr_name) - 1] != '\0') {
+			return ENAMETOOLONG;
+		}
 		if ((ifa = TAILQ_FIRST(&ifp->if_addrlist)) == 0) {
 			memset(&ifr.ifr_addr, 0, sizeof(ifr.ifr_addr));
 			if (ifrp != NULL && space >= sz) {
 				error = copyout(&ifr, ifrp, sz);
-				if (error)
+				if (error) {
 					break;
+				}
 				ifrp++;
 			}
 			space -= sizeof(ifr) * sign;
@@ -1593,6 +1544,7 @@ ifconf(cmd, data)
 
 		for (; ifa != 0; ifa = TAILQ_NEXT(ifa, ifa_list)) {
 			struct sockaddr *sa = ifa->ifa_addr;
+
 			if (sa->sa_len <= sizeof(*sa)) {
 				ifr.ifr_addr = *sa;
 				if (ifrp != NULL && space >= sz) {
@@ -1602,27 +1554,24 @@ ifconf(cmd, data)
 			} else {
 				space -= (sa->sa_len - sizeof(*sa)) * sign;
 				if (ifrp != NULL && space >= sz) {
-					error = copyout(&ifr, ifrp,
-					    sizeof(ifr.ifr_name));
+					error = copyout(&ifr, ifrp, sizeof(ifr.ifr_name));
 					if (error == 0) {
-						error = copyout(sa,
-						    &ifrp->ifr_addr,
-						    sa->sa_len);
+						error = copyout(sa, &ifrp->ifr_addr, sa->sa_len);
 					}
-					ifrp = (struct ifreq *)
-						(sa->sa_len +
-						 (caddr_t)&ifrp->ifr_addr);
+					ifrp = (struct ifreq*) (sa->sa_len + (caddr_t)& ifrp->ifr_addr);
 				}
 			}
-			if (error)
+			if (error) {
 				break;
+			}
 			space -= sz * sign;
 		}
 	}
-	if (ifrp != NULL)
+	if (ifrp != NULL) {
 		ifc->ifc_len -= space;
-	else
+	} else {
 		ifc->ifc_len = space;
+	}
 	return (error);
 }
 
@@ -1707,4 +1656,4 @@ SYSCTL_SETUP(sysctl_net_inet6_ip6_ifq_setup,
 }
 #endif /* INET6 */
 #endif /* INET || INET6 */
-#eendif
+#endif

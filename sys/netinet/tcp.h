@@ -36,7 +36,7 @@
 
 //#include <sys/featuretest.h>
 
-#if defined(_NETBSD_SOURCE)
+#if __BSD_VISIBLE
 
 typedef u_int32_t tcp_seq;
 /*
@@ -102,7 +102,7 @@ struct tcphdr {
 
 #define	TCP_MAXBURST	4	/* maximum segments in a burst */
 
-#endif /* _NETBSD_SOURCE */
+#endif /* __BSD_VISIBLE */
 
 /*
  * User-settable options (used with setsockopt).

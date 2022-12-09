@@ -590,7 +590,7 @@ struct in6_pktinfo {
 	{ "ifq", CTLTYPE_NODE }, \
 }
 
-#endif /* _NETBSD_SOURCE */
+#endif /* __BSD_VISIBLE */
 
 #ifdef _KERNEL
 struct cmsghdr;

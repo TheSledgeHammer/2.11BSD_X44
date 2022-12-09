@@ -412,7 +412,7 @@ struct ip_mreq {
 	{ "ifq", CTLTYPE_NODE }, \
 	{ "random_id", CTLTYPE_INT }, \
 }
-#endif /* _NETBSD_SOURCE */
+#endif /* __BSD_VISIBLE */
 
 /* INET6 stuff */
 #define	__KAME_NETINET_IN_H_INCLUDED_

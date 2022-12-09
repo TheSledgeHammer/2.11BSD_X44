@@ -87,7 +87,7 @@
  * the size of struct ifnet does not changed based on the option.  The
  * ALTQ queue structure is API-compatible with the legacy ifqueue.
  */
-#include <netpfil/altq/if_altq.h>
+#include <net/altq/if_altq.h>
 
 /*
  * Structures defining a network interface, providing a packet
@@ -752,7 +752,7 @@ int	sysctl_ifq(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp
 
 #endif /* _KERNEL */
 
-#ifdef _NETBSD_SOURCE
+#ifdef __BSD_VISIBLE
 /*
  * sysctl for ifq (per-protocol packet input queue variant of ifqueue) 
  */
@@ -763,5 +763,5 @@ int	sysctl_ifq(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp
 	{ "peak", CTLTYPE_INT }, 	\
 	{ "drops", CTLTYPE_INT }, 	\
 }
-#endif /* _NETBSD_SOURCE */
+#endif /* __BSD_VISIBLE */
 #endif /* !_NET_IF_H_ */
