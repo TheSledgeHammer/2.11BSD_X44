@@ -153,10 +153,10 @@ extern struct pic			lapic_template;
 extern struct pic			softintr_template;
 
 /* apic intrmaps */
-extern struct apic          i8259_intrmap;
-extern struct apic          ioapic_intrmap;
-extern struct apic          lapic_intrmap;
-extern struct apic 			softintr_intrmap;
+extern struct apic          	i8259_intrmap;
+extern struct apic          	ioapic_intrmap;
+extern struct apic          	lapic_intrmap;
+extern struct apic 	 	softintr_intrmap;
 
 /* intr.c */
 void 			*intr_establish(int, int, int, int (*)(void *), void *, bool_t, int);
