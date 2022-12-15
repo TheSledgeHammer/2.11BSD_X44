@@ -234,7 +234,7 @@ void 	i386_multicast_ipi(int, int);
 void 	i386_ipi_handler(void);
 
 #endif /* !_LOCORE */
-
+#ifdef notyet
 /*
  * Generic software interrupt support.
  */
@@ -294,4 +294,5 @@ do {														\
 } while (/*CONSTCOND*/ 0)
 
 #endif /* _LOCORE */
+#endif /* notyet */
 #endif /* !_I386_INTR_H_ */
