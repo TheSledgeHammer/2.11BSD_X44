@@ -32,7 +32,7 @@
 #define	_PATH_PASSWDCONF	_PATH_PASSWD_CONF	/* XXX: compat */
 #define	_PATH_USERMGMT_CONF	"/etc/usermgmt.conf"
 
-#define	_PATH_MP_DB		"/etc/pwd.db"
+#define	_PATH_MP_DB			"/etc/pwd.db"
 #define	_PATH_SMP_DB		"/etc/spwd.db"
 
 #define	_PATH_PWD_MKDB		"/usr/sbin/pwd_mkdb"

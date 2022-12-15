@@ -49,21 +49,21 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-__dead void	err (int, const char *, ...) __attribute__((format (printf, 2, 3), __dead));
+__dead void	err(int, const char *, ...) __attribute__((format (printf, 2, 3), __dead));
 __dead void	errc(int, int, const char *, ...) __attribute__((format (printf, 3, 4), __dead));
-__dead void	errx (int, const char *, ...)  __attribute__((format (printf, 2, 3), __dead));
+__dead void	errx(int, const char *, ...)  __attribute__((format (printf, 2, 3), __dead));
 
-__dead void	verr (int, const char *, va_list)  __attribute__((format (printf, 2, 0), __dead));
+__dead void	verr(int, const char *, va_list)  __attribute__((format (printf, 2, 0), __dead));
 __dead void	verrc(int, int, const char *, va_list)  __attribute__((format (printf, 3, 0), __dead));
-__dead void	verrx (int, const char *, va_list)  __attribute__((format (printf, 2, 0), __dead));
+__dead void	verrx(int, const char *, va_list)  __attribute__((format (printf, 2, 0), __dead));
 
-void		warn (const char *, ...) __attribute__((format (printf, 1, 2)));
+void		warn(const char *, ...) __attribute__((format (printf, 1, 2)));
 void 		warnc(int, const char *, ...) __attribute__((format (printf, 2, 3)));
-void		warnx (const char *, ...) __attribute__((format (printf, 1, 2)));
+void		warnx(const char *, ...) __attribute__((format (printf, 1, 2)));
 
-void		vwarn (const char *, va_list) __attribute__((format (printf, 1, 0)));
+void		vwarn(const char *, va_list) __attribute__((format (printf, 1, 0)));
 void		vwarnc(int, const char *, va_list) __attribute__((format (printf, 2, 0)));
-void		vwarnx (const char *, va_list) __attribute__((format (printf, 1, 0)));
+void		vwarnx(const char *, va_list) __attribute__((format (printf, 1, 0)));
 __END_DECLS
 
 #endif /* !_ERR_H_ */

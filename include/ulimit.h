@@ -38,7 +38,7 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-long int ulimit (int, ...);
+long int ulimit(int, ...);
 __END_DECLS
 
 #endif /* !_ULIMIT_H_ */

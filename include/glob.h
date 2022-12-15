@@ -87,8 +87,8 @@ typedef struct {
 #define	GLOB_NOSYS	 	(-4)	 /* Implementation does not support function. */
 
 __BEGIN_DECLS
-int		glob (const char *, int, int (*)(const char *, int), glob_t *);
-void 	globfree (glob_t *);
+int		glob(const char *, int, int (*)(const char *, int), glob_t *);
+void 	globfree(glob_t *);
 __END_DECLS
 
 #endif /* !_GLOB_H_ */

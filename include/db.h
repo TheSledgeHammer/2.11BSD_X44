@@ -207,13 +207,13 @@ typedef struct {
 #endif
 
 __BEGIN_DECLS
-DB 		*dbopen (const char *, int, mode_t, DBTYPE, const void *);
+DB 		*dbopen(const char *, int, mode_t, DBTYPE, const void *);
 
 #ifdef __DBINTERFACE_PRIVATE
-DB		*__bt_open (const char *, int, mode_t, const BTREEINFO *, int);
-DB		*__hash_open (const char *, int, mode_t, const HASHINFO *, int);
-DB		*__rec_open (const char *, int, mode_t, const RECNOINFO *, int);
-void	 __dbpanic (DB *);
+DB		*__bt_open(const char *, int, mode_t, const BTREEINFO *, int);
+DB		*__hash_open(const char *, int, mode_t, const HASHINFO *, int);
+DB		*__rec_open(const char *, int, mode_t, const RECNOINFO *, int);
+void	 __dbpanic(DB *);
 #endif
 __END_DECLS
 #endif /* !_DB_H_ */

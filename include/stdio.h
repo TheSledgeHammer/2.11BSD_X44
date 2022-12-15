@@ -239,28 +239,28 @@ __END_DECLS
  * Functions defined in ANSI C standard.
  */
 __BEGIN_DECLS
-void 	clearerr (FILE *);
-int	 	fclose (FILE *);
-int	 	feof (FILE *);
-int	 	ferror (FILE *);
-int	 	fflush (FILE *);
-int	 	fgetc (FILE *);
+void 	clearerr(FILE *);
+int	 	fclose(FILE *);
+int	 	feof(FILE *);
+int	 	ferror(FILE *);
+int	 	fflush(FILE *);
+int	 	fgetc(FILE *);
 int	    fgetpos(FILE * __restrict, fpos_t * __restrict);
 char	*fgets(char * __restrict, int, FILE * __restrict);
 FILE	*fopen(const char * __restrict , const char * __restrict);
 int	    fprintf(FILE * __restrict, const char * __restrict, ...);
-int	 	fputc (int, FILE *);
+int	 	fputc(int, FILE *);
 int	    fputs(const char * __restrict, FILE * __restrict);
 size_t	fread(void * __restrict, size_t, size_t, FILE * __restrict);
 FILE	*freopen(const char * __restrict, const char * __restrict, FILE * __restrict);
 int	    fscanf(FILE * __restrict, const char * __restrict, ...);
-int	 	fseek (FILE *, long, int);
-int	 	fsetpos (FILE *, const fpos_t *);
-long 	ftell (FILE *);
-size_t	fwrite (const void * __restrict, size_t, size_t, FILE * __restrict);
-int	 	getc (FILE *);
-int	 	getchar (void);
-char 	*gets (char *);
+int	 	fseek(FILE *, long, int);
+int	 	fsetpos(FILE *, const fpos_t *);
+long 	ftell(FILE *);
+size_t	fwrite(const void * __restrict, size_t, size_t, FILE * __restrict);
+int	 	getc(FILE *);
+int	 	getchar(void);
+char 	*gets(char *);
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 extern int sys_nerr;			/* perror(3) external variables */
 extern __const char *__const sys_errlist[];
@@ -271,7 +271,7 @@ int	 	putc(int, FILE *);
 int	 	putchar(int);
 int	 	puts(const char *);
 int	 	remove(const char *);
-int	 	rename (const char *, const char *);
+int	 	rename(const char *, const char *);
 void 	rewind(FILE *);
 int	 	scanf(const char * __restrict, ...);
 void	setbuf(FILE * __restrict, char * __restrict);
@@ -294,9 +294,9 @@ __END_DECLS
 #define	L_ctermid	1024	/* size for ctermid(); PATH_MAX */
 
 __BEGIN_DECLS
-char	*ctermid (char *);
-FILE	*fdopen (int, const char *);
-int	 	fileno (FILE *);
+char	*ctermid(char *);
+FILE	*fdopen(int, const char *);
+int	 	fileno(FILE *);
 
 /*
  * These are normally used through macros as defined below, but POSIX

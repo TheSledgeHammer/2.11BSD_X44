@@ -42,58 +42,25 @@
 
 #include <vm/include/vm_extern.h>
 
+static void softintr_register_pic(struct pic *, struct apic *);
+
 /*
  * Generic software interrupt support.
  */
-static void	softintr_hwmask(struct softpic *, int);
-static void	softintr_hwunmask(struct softpic *, int);
-static void	softintr_addroute(struct softpic *, struct cpu_info *, int, int, int);
-static void	softintr_delroute(struct softpic *, struct cpu_info *, int, int, int);
-static void	softintr_register_pic(struct pic *, struct apic *);
-
 struct pic softintr_template = {
 		.pic_type = PIC_SOFT,
-		.pic_hwmask = softintr_hwmask,
-		.pic_hwunmask = softintr_hwunmask,
-		.pic_addroute = softintr_addroute,
-		.pic_delroute = softintr_delroute,
+		.pic_hwmask = NULL,
+		.pic_hwunmask = NULL,
+		.pic_addroute = NULL,
+		.pic_delroute = NULL,
 		.pic_register = softintr_register_pic
 };
 
-static void
-softintr_hwmask(spic, pin)
-	struct softpic *spic;
-	int pin;
-{
-	/* Do Nothing */
-}
-
-static void
-softintr_hwunmask(spic, pin)
-	struct softpic *spic;
-	int pin;
-{
-	/* Do Nothing */
-}
-
-static void
-softintr_addroute(spic, ci, pin, idtvec, type)
-	struct softpic *spic;
-	struct cpu_info *ci;
-	int pin, idtvec, type;
-{
-	/* Do Nothing */
-}
-
-
-static void
-softintr_delroute(spic, ci, pin, idtvec, type)
-	struct softpic *spic;
-	struct cpu_info *ci;
-	int pin, idtvec, type;
-{
-	/* Do Nothing */
-}
+struct apic softintr_intrmap = {
+		.apic_pic_type = PIC_SOFT,
+		.apic_edge = NULL,
+		.apic_level = NULL
+};
 
 static void
 softintr_register_pic(pic, apic)
@@ -101,72 +68,69 @@ softintr_register_pic(pic, apic)
 	struct apic *apic;
 {
 	pic = &softintr_template;
-	apic = NULL;
+	apic = &softintr_intrmap;
 	softpic_register(pic, apic);
 }
 
-/* XXX: incomplete */
-#if defined(__HAVE_FAST_SOFTINTS)
-struct intrhand fake_softclock_intrhand;
-struct intrhand fake_softnet_intrhand;
-struct intrhand fake_softserial_intrhand;
-struct intrhand fake_softbio_intrhand;
+#ifdef notyet
+struct i386_soft_intr i386_soft_intrs[I386_NSOFTINTR];
+const int i386_soft_intr_to_ssir[I386_NSOFTINTR] = {
+		SIR_CLOCK,
+		SIR_NET,
+		SIR_SERIAL,
+};
 
 void
-softint_init_md(struct proc *p, u_int level, uintptr_t *machdep)
+softintr_distpatch(which)
+	int which;
 {
-	struct softpic *spic;
-	struct intrsource *isp;
-	struct cpu_info *ci;
-	u_int sir;
+	struct i386_soft_intr 		*si;
+	struct i386_soft_intrhand 	*sih;
+	int s;
 
-	//ci = p->p_cpuinfo;
+	si = &i386_soft_intrs[which];
+	for (;;) {
+		i386_softintr_lock(si, s);
+		sih = TAILQ_FIRST(&si->softintr_q);
+		if (sih == NULL) {
+			i386_softintr_unlock(si, s);
+			break;
+		}
+		TAILQ_REMOVE(&si->softintr_q, sih, sih_q);
+		sih->sih_pending = 0;
+		i386_softintr_unlock(si, s);
 
-	spic = &intrspic;
-	//isp->is_recurse = Xsoftintr;
-	//isp->is_resume = Xsoftintr;
-	isp = &spic->sp_intsrc;
-	isp->is_pic = &softintr_template;
+		(*sih->sih_fn)(sih->sih_arg);
+	}
+}
+
+void *
+softintr_establish(level, func, arg)
+	int level;
+	void (*func)(void *);
+	void *arg;
+{
+	struct i386_soft_intr *si;
+	struct i386_soft_intrhand *sih;
+	int which;
 
 	switch (level) {
-	case SOFTINT_BIO:
-		sir = SIR_BIO;
-		fake_softbio_intrhand->ih_pic = &softintr_template;
-		fake_softbio_intrhand->ih_level = IPL_SOFTBIO;
-		isp->is_handlers = &fake_softbio_intrhand;
+	case IPL_SOFTCLOCK:
+		which = I386_SOFTINTR_SOFTCLOCK;
 		break;
 
-	case SOFTINT_NET:
-		sir = SIR_NET;
-		fake_softnet_intrhand->ih_pic = &softintr_template;
-		fake_softnet_intrhand->ih_level = IPL_SOFTNET;
-		isp->is_handlers = &fake_softnet_intrhand;
+	case IPL_SOFTNET:
+		which = I386_SOFTINTR_SOFTNET;
 		break;
 
-	case SOFTINT_SERIAL:
-		sir = SIR_SERIAL;
-		fake_softserial_intrhand->ih_pic = &softintr_template;
-		fake_softserial_intrhand->ih_level = IPL_SOFTSERIAL;
-		isp->is_handlers = &fake_softserial_intrhand;
-		break;
-
-	case SOFTINT_CLOCK:
-		sir = SIR_CLOCK;
-		fake_softclock_intrhand->ih_pic = &softintr_template;
-		fake_softclock_intrhand->ih_level = IPL_SOFTCLOCK;
-		isp->is_handlers = &fake_softclock_intrhand;
+	case IPL_SOFTSERIAL:
+		which = I386_SOFTINTR_SOFTSERIAL;
 		break;
 
 	default:
-		panic("softint_init_md");
+		panic("softintr_establish");
 	}
 
-	KASSERT(spic->sp_intsrc[sir] == NULL);
-
-	*machdep = (1 << sir);
-	spic->sp_intsrc[sir] = isp;
-	spic->sp_cpu = ci;
-
-	intr_calculatemasks();
+	return (sih);
 }
-#endif /* __HAVE_FAST_SOFTINTS */
+#endif

@@ -47,7 +47,9 @@ struct	group { /* see getgrent(3) */
 };
 
 __BEGIN_DECLS
-struct group *getgrent(), *getgrgid(), *getgrnam();
+struct group *getgrent(void);
+struct group *getgrgid(gid_t);
+struct group *getgrnam(const char *);
 __END_DECLS
 
 #endif /* !_GRP_H_ */

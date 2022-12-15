@@ -88,7 +88,7 @@ __BEGIN_DECLS
 char *nl_langinfo(nl_item);
 __END_DECLS
 
-#if defined(_NETBSD_SOURCE)
+#if defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
 typedef struct _locale		*locale_t;
 #  define __LOCALE_T_DECLARED
