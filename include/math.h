@@ -14,7 +14,7 @@ __BEGIN_DECLS
 
 extern	double	fabs(double), floor(double), ceil(double), fmod(double, double), ldexp(double, int);
 extern	double	sqrt(double), hypot(double, double), atof(const char *);
-extern	double	sin(), cos(double), tan(double), asin(double), acos(double), atan(double), atan2(double, double);
+extern	double	sin(double), cos(double), tan(double), asin(double), acos(double), atan(double), atan2(double, double);
 extern	double	exp(double), log(double), log10(double), pow(double, double);
 extern	double	sinh(double), cosh(double), tanh(double);
 extern	double	gamma(double);
