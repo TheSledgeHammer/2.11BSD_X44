@@ -115,13 +115,14 @@ struct mbuf {
 #define	m_dat			M_dat.M_databuf
 
 /* mbuf flags */
-#define	M_EXT			0x0001	/* has associated external storage */
-#define	M_PKTHDR		0x0002	/* start of record */
-#define	M_EOR			0x0004	/* end of record */
+#define	M_EXT		    0x00000001	/* has associated external storage */
+#define	M_PKTHDR	    0x00000002	/* start of record */
+#define	M_EOR		    0x00000004	/* end of record */
 
 /* mbuf pkthdr flags, also in m_flags */
-#define	M_BCAST			0x0100	/* send/received as link-level broadcast */
-#define	M_MCAST			0x0200	/* send/received as link-level multicast */
+#define M_LOOP		    0x00000040	/* received on loopback */
+#define	M_BCAST		    0x00000100	/* send/received as link-level broadcast */
+#define	M_MCAST		    0x00000200	/* send/received as link-level multicast */
 
 /* flags copied when copying m_pkthdr */
 #define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST)

@@ -50,7 +50,7 @@
  * we restrict parameters to at most 256 bytes (disklabels are 216 bytes).
  */
 #ifdef COMPAT_211BSD
-#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
+//#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
 #endif
 #define	IOCPARM_MASK		0x1fff		/* parameter length, at most 13 bits */
 #define	IOCPARM_SHIFT		16
@@ -60,16 +60,16 @@
 #define	IOCGROUP(x)			(((x) >> IOCGROUP_SHIFT) & 0xff)
 
 #define	IOCPARM_MAX			NBPG		/* max size of ioctl, mult. of NBPG */
-#define	IOC_VOID			0x20000000	/* no parameters */
-#define	IOC_OUT				0x40000000	/* copy out parameters */
-#define	IOC_IN				0x80000000	/* copy in parameters */
+#define	IOC_VOID			(unsigned long)0x20000000	/* no parameters */
+#define	IOC_OUT				(unsigned long)0x40000000	/* copy out parameters */
+#define	IOC_IN				(unsigned long)0x80000000	/* copy in parameters */
 #define	IOC_INOUT			(IOC_IN|IOC_OUT)
-#define	IOC_DIRMASK			0xe0000000	/* mask for IN/OUT/VOID */
+#define	IOC_DIRMASK			(unsigned long)0xe0000000	/* mask for IN/OUT/VOID */
 /* the 0x20000000 is so we can distinguish new ioctl's from old */
 
 #define	_IOC(inout, group, num, len) \
-	(inout | ((len & IOCPARM_MASK) << IOCPARM_SHIFT) | ((group) << IOCGROUP_SHIFT) | (num))
-
+    ((inout) | (((len) & IOCPARM_MASK) << IOCPARM_SHIFT) | ((group) << IOCGROUP_SHIFT) | (num))
+    
 #define	_IO(x,y)			_IOC(IOC_VOID, 	(x), (y), 0)
 #define	_IOR(x,y,t)			_IOC(IOC_OUT, 	(x), (y), sizeof(t))
 #define	_IOW(x,y,t)			_IOC(IOC_IN,	(x), (y), sizeof(t))
