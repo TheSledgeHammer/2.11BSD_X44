@@ -1276,10 +1276,6 @@ ifioctl(so, cmd, data, p)
 	int s, error = 0;
 	short oif_flags;
 
-	switch (cmd) {
-	case SIOCGIFCONF:
-	}
-
 	ifr = (struct ifreq *)data;
 	ifcr = (struct ifcapreq *)data;
 	ifdr = (struct ifdatareq *)data;

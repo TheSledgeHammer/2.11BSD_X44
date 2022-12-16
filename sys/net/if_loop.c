@@ -171,7 +171,7 @@ looutput(ifp, m, dst, rt)
 	int s, isr;
 	struct ifqueue *ifq = 0;
 
-	MCLAIM(m, ifp->if_mowner);
+	//MCLAIM(m, ifp->if_mowner);
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("looutput: no header mbuf");
 #if NBPFILTER > 0
@@ -234,7 +234,7 @@ looutput(ifp, m, dst, rt)
 	}
 #endif /* ALTQ */
 
-	m_tag_delete_nonpersistent(m);
+//	m_tag_delete_nonpersistent(m);
 
 	switch (dst->sa_family) {
 

@@ -175,8 +175,7 @@ gre_clone_destroy(ifp)
  * given by sc->g_proto. See also RFC 1701 and RFC 2004
  */
 int
-gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
-	   struct rtentry *rt)
+gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtentry *rt)
 {
 	int error = 0;
 	struct gre_softc *sc = ifp->if_softc;
