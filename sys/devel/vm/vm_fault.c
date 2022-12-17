@@ -137,6 +137,8 @@ static struct vm_advice vmadvice[] = {
  * private prototypes
  */
 static int				vm_fault_map_lookup(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
+static void				vm_fault_amap(struct vm_faultinfo *, vm_anon_t *);
+static int				vm_fault_anon(struct vm_faultinfo *, vm_prot_t);
 static void 			vm_fault_amapcopy(struct vm_faultinfo *);
 static __inline void 	vm_fault_anonflush(vm_anon_t *, int);
 static __inline void 	vm_fault_unlockall(struct vm_faultinfo *, vm_amap_t, vm_object_t, vm_anon_t);
@@ -388,11 +390,12 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_prot_t	fault_type;
 	bool_t		change_wiring;
 {
+	vm_anon_t			anons;
 	int					error, result;
 	bool_t				page_exists;
 	struct vm_faultinfo vfi;
 
-	//vfi.anon = NULL;
+	vfi.anon = NULL;
 
 	cnt.v_faults++;
 
@@ -408,16 +411,16 @@ RetryFault: ;
 	}
 
 	vfi.lookup_still_valid = TRUE;
-#ifdef notyet
+
 	if ((vfi.entry->protection & fault_type) != fault_type) {
 		vm_fault_unlockmaps(&vfi, FALSE);
 		return (KERN_PROTECTION_FAILURE);
 	}
-#endif
+
 	if (vfi.wired) {
 		fault_type = vfi.prot;
 	}
-#ifdef notyet
+
 	if (vfi.entry->needs_copy) {
 		if ((fault_type & VM_PROT_WRITE) || (vfi.entry->object.vm_object == NULL)) {
 			vm_fault_unlockmaps(&vfi, FALSE);
@@ -427,7 +430,7 @@ RetryFault: ;
 			vfi.prot &= ~VM_PROT_WRITE;
 		}
 	}
-#endif
+
 	vfi.first_segment = NULL;
 	vfi.first_page = NULL;
 
@@ -436,17 +439,16 @@ RetryFault: ;
 	vfi.first_object->ref_count++;
 	vfi.first_object->paging_in_progress++;
 
-	//vfi.amap = vfi.entry->aref.ar_amap;
+	vfi.amap = vfi.entry->aref.ar_amap;
 	vfi.object = vfi.first_object;
 	vfi.offset = vfi.first_offset;
 
-#ifdef notyet
 	if(vfi->amap && vfi->object == NULL) {
 		vm_fault_unlockmaps(&vfi, FALSE);
-		//return (KERN_PROTECTION_FAILURE);
+		return (KERN_PROTECTION_FAILURE);
 	}
-	vm_fault_amap(&vfi);
-#endif
+	vm_fault_advice(&vfi);
+	vm_fault_amap(&vfi, &anons);
 
 	/*
 	 *	See whether this page is resident
@@ -462,7 +464,8 @@ RetryFault: ;
 	vm_fault_cow(&vfi, fault_type);
 	vm_fault_handler_check(&vfi, FHDOBJCOPY);
 
-#ifdef notyet
+	vfi->anon = &anons[vfi->centeridx];
+
 	error = vm_fault_anonget(&vfi, vfi.amap, vfi.anon);
 	switch (error) {
 	case 0:
@@ -474,7 +477,17 @@ RetryFault: ;
 	default:
 		return (error);
 	}
-#endif
+
+	error = vm_fault_anon(&vfi, fault_type);
+	if (error != 0) {
+		switch (error) {
+		case EFAULTRETRY:
+			goto RetryFault;
+
+		default:
+			return (KERN_RESOURCE_SHORTAGE);
+		}
+	}
 
 RetryCopy:
 	error = vm_fault_copy(&vfi, fault_type, change_wiring, page_exists);
@@ -506,12 +519,10 @@ RetryCopy:
 		if (vfi.wired) {
 			vm_page_wire(vfi.page);
 			vm_segment_wire(vfi.segment);
-#ifdef notyet
 			if (vfi.page->flags & PG_AOBJ) {
 				vfi.page->flags &= ~(PG_CLEAN);
 				vm_aobject_dropswap(vfi.object, vfi.page->offset >> PAGE_SHIFT);
 			}
-#endif
 		} else {
 			vm_page_unwire(vfi.page);
 			vm_segment_unwire(vfi.segment);
@@ -528,9 +539,7 @@ RetryCopy:
 	if (vfi.page->flags & PG_WANTED) {
 		PAGE_WAKEUP(vfi.page);
 	}
-#ifdef notyet
 	vm_fault_unlockall(&vfi, &vfi.amap, &vfi.object, NULL);
-#endif
 	unlock_and_deallocate(&vfi);
 
 	return (KERN_SUCCESS);
@@ -852,6 +861,111 @@ vm_fault_advice(vfi)
 	vfi->npages = vfi->nback + vfi->nforw + 1;
     vfi->nsegments = num_segments(vfi->npages);
     vfi->centeridx = vfi->nback;
+}
+
+static void
+vm_fault_amap(vfi, anons)
+	struct vm_faultinfo *vfi;
+	vm_anon_t	*anons;
+{
+	vm_anon_t anons_store[VM_MAXRANGE];
+	vm_page_t pages[VM_MAXRANGE];
+	vm_offset_t start, end;
+	int lcv;
+
+	if (vfi->amap) {
+		amap_lock(vfi->amap);
+		anons = anons_store;
+		vm_amap_lookups(vfi->entry->aref, vfi->startva - vfi->entry->start, anons, vfi->npages);
+	} else {
+		anons = NULL;
+	}
+
+	/*
+	 * for MADV_SEQUENTIAL mappings we want to deactivate the back pages
+	 * now and then forget about them (for the rest of the fault).
+	 */
+	if (vfi->entry->advice == MADV_SEQUENTIAL && vfi->nback != 0) {
+		if (vfi->amap) {
+			vm_fault_anonflush(anons, vfi->nback);
+		}
+		/* flush object? */
+		if (vfi->object) {
+			start = (vfi->startva - vfi->entry->start) + vfi->entry->offset;
+			end = start + (vfi->nback << PAGE_SHIFT);
+			simple_lock(&vfi->object->Lock);
+			(void)vm_object_page_clean(vfi->object, start, end, TRUE, TRUE);
+		}
+		if (vfi->amap) {
+			anons += vfi->nback;
+		}
+		vfi->startva += (vfi->nback << PAGE_SHIFT);
+		vfi->npages -= vfi->nback;
+		vfi->nback = vfi->centeridx = 0;
+	}
+
+	vfi->currva = vfi->startva;
+	for (lcv = 0 ; lcv < vfi->npages ; lcv++, vfi->currva += PAGE_SIZE) {
+		vfi->anon = anons[lcv];
+	}
+
+	pmap_update(vfi->orig_map->pmap);
+}
+
+static int
+vm_fault_anon(vfi, fault_type)
+	struct vm_faultinfo *vfi;
+	vm_prot_t fault_type;
+{
+	vm_anon_t 		oanon;
+
+	if ((fault_type & VM_PROT_WRITE) != 0 && vfi->anon->an_ref > 1) {
+		cnt.v_flt_acow++;
+		oanon = vfi->anon;
+		vfi->anon = vm_anon_alloc();
+		if (vfi->anon) {
+			vfi->segment = vm_segment_anon_alloc(vfi->object, vfi->offset, vfi->anon);
+			if (vfi->segment) {
+				vfi->page = vm_page_anon_alloc(vfi->segment, vfi->segment->sg_offset, vfi->anon);
+			}
+		}
+		if (vfi->anon == NULL || vfi->segment == NULL || vfi->page == NULL) {
+			if (vfi->anon) {
+				vm_anon_free(vfi->anon);
+			}
+			vm_fault_unlockall(vfi, vfi->amap, vfi->object, oanon);
+			if (vfi->anon == NULL || cnt.v_swpgonly == cnt.v_swpages) {
+				cnt.v_fltnoanon++;
+				return (KERN_RESOURCE_SHORTAGE);
+			}
+			cnt.v_fltnoram++;
+			VM_WAIT;
+			return (EFAULTRETRY);
+		}
+
+		vm_segment_copy(oanon->u.an_segment, vfi->segment);
+		vm_segment_lock_lists();
+		vm_segment_activate(vfi->segment);
+		 vfi->segment->sg_flags &= ~SEG_BUSY;
+		vm_page_copy(oanon->u.an_page, vfi->page);
+		vm_page_lock_queues();
+		vm_page_activate(vfi->page);
+		vfi->page->flags &= ~(PG_BUSY|PG_FAKE);
+		vm_page_unlock_queues();
+		vm_segment_ulock_lists();
+		vm_amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 1);
+		oanon->an_ref--;
+	} else {
+		cnt.v_flt_anon++;
+		oanon = vfi->anon;
+		vfi->segment = vfi->anon->u.an_segment;
+		vfi->page = vfi->anon->u.an_page;
+		if (vfi->anon->an_ref > 1) {
+			vfi->prot = vfi->prot & ~VM_PROT_WRITE;
+		}
+	}
+	vm_fault_unlockall(vfi, vfi->amap, vfi->object, oanon);
+	return (0);
 }
 
 static __inline void
