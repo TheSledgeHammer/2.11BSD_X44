@@ -126,6 +126,7 @@ static struct vm_advice vmadvice[] = {
 #define EFAULTRETRY 	1	/* error fault retry */
 #define EFAULTCOPY 		2	/* error fault copy */
 #define EFAULTPROT 		3	/* error fault protection */
+#define EFAULTRESOURCE	4	/* error fault resource shortage */
 
 /* fault handler check flags */
 #define FHDMLOOP		0x01	/* handler active | inactive | busy after main loop */
@@ -272,7 +273,7 @@ vm_fault_pager(vfi, change_wiring)
 		if (rv == VM_PAGER_OK) {
 			vfi->segment = vm_segment_lookup(vfi->object, vfi->offset);
 			vfi->page = vm_page_lookup(vfi->segment, vfi->segment->sg_offset);
-			if(VM_PAGE_TO_PHYS(vfi->page) == VM_SEGMENT_TO_PHYS(vfi->segment)) {
+			if (VM_PAGE_TO_PHYS(vfi->page) == VM_SEGMENT_TO_PHYS(vfi->segment)) {
 				pmap_clear_modify(VM_PAGE_TO_PHYS(vfi->page));
 				return (rv);
 			}
@@ -455,8 +456,21 @@ RetryFault: ;
 	 */
 	while (TRUE) {
 		error = vm_fault_object(&vfi, change_wiring);
-		if (error == EFAULTRETRY) {
+		switch (error) {
+		case 0:
+			break;
+
+		case EFAULTRETRY:
 			goto RetryFault;
+
+		case VM_PAGER_OK:
+			break;
+
+		case VM_PAGER_ERROR:
+			return (KERN_PROTECTION_FAILURE);
+
+		case VM_PAGER_BAD:
+			return (KERN_PROTECTION_FAILURE);
 		}
 		vm_fault_zerofill(&vfi);
 	}
@@ -464,29 +478,27 @@ RetryFault: ;
 	vm_fault_cow(&vfi, fault_type);
 	vm_fault_handler_check(&vfi, FHDOBJCOPY);
 
-	vfi->anon = &anons[vfi->centeridx];
+	vfi.anon = &anons[vfi.centeridx];
 
 	error = vm_fault_anonget(&vfi, vfi.amap, vfi.anon);
 	switch (error) {
 	case 0:
 		break;
 
-	case ERESTART:
+	case EFAULTRETRY:
 		goto RetryFault;
-
-	default:
-		return (error);
 	}
 
 	error = vm_fault_anon(&vfi, fault_type);
-	if (error != 0) {
-		switch (error) {
-		case EFAULTRETRY:
-			goto RetryFault;
+	switch (error) {
+	case 0:
+		break;
 
-		default:
-			return (KERN_RESOURCE_SHORTAGE);
-		}
+	case EFAULTRETRY:
+		goto RetryFault;
+
+	case EFAULTRESOURCE:
+		return (KERN_RESOURCE_SHORTAGE);
 	}
 
 RetryCopy:
@@ -1155,11 +1167,11 @@ vm_fault_anonget(vfi, amap, anon)
 			}
 		}
 		if (!locked) {
-			return (ERESTART);
+			return (EFAULTRETRY);
 		}
 		if (vfi != NULL && vm_amap_lookup(&vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start) != anon) {
 			vm_fault_unlockall(vfi, amap, NULL, anon);
-			return (ERESTART);
+			return (EFAULTRETRY);
 		}
 		cnt.v_fltanretry++;
 
