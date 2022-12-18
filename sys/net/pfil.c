@@ -189,10 +189,11 @@ pfil_list_add(pfil_list_t *list,
 	 * insert the input list in reverse order of the output list
 	 * so that the same path is followed in or out of the kernel.
 	 */
-	if (flags & PFIL_IN)
+	if (flags & PFIL_IN) {
 		TAILQ_INSERT_HEAD(list, pfh, pfil_link);
-	else
+	} else {
 		TAILQ_INSERT_TAIL(list, pfh, pfil_link);
+	}
 
 	return 0;
 }

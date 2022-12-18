@@ -74,7 +74,7 @@ extern int ifqmaxlen;
 void	tunattach(int);
 LIST_HEAD(, tun_softc) tun_softc_list;
 LIST_HEAD(, tun_softc) tunz_softc_list;
-static struct simplelock tun_softc_lock;
+static struct lock_object tun_softc_lock;
 
 int	tun_ioctl(struct ifnet *, u_long, caddr_t);
 int	tun_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *rt);
@@ -101,8 +101,20 @@ dev_type_poll(tunpoll);
 dev_type_kqfilter(tunkqfilter);
 
 const struct cdevsw tun_cdevsw = {
-	tunopen, tunclose, tunread, tunwrite, tunioctl,
-	nostop, notty, tunpoll, nommap, tunkqfilter,
+		.d_open = tunopen,
+		.d_close = tunclose,
+		.d_read = tunread,
+		.d_write = tunwrite,
+		.d_ioctl = tunioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_select = noselect,
+		.d_poll = tunpoll,
+		.d_mmap = nommap,
+		.d_kqfilter = tunkqfilter,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
 };
 
 void
@@ -110,7 +122,7 @@ tunattach(unused)
 	int unused;
 {
 
-	simple_lock_init(&tun_softc_lock);
+	simple_lock_init(&tun_softc_lock, "tun_softc_lock");
 	LIST_INIT(&tun_softc_list);
 	LIST_INIT(&tunz_softc_list);
 	if_clone_attach(&tun_cloner);
@@ -178,7 +190,7 @@ tun_clone_create(ifc, unit)
 		(void)memset(tp, 0, sizeof(struct tun_softc));
 
 		tp->tun_unit = unit;
-		simple_lock_init(&tp->tun_lock);
+		simple_lock_init(&tp->tun_lock, "tun_lock");
 	} else {
 		/* Revive tunnel instance; clear ifp part */
 		(void)memset(&tp->tun_if, 0, sizeof(struct ifnet));
@@ -256,9 +268,9 @@ tun_clone_destroy(ifp)
 		wakeup((caddr_t)tp);
 	}
 	if (tp->tun_flags & TUN_ASYNC && tp->tun_pgid)
-		fownsignal(tp->tun_pgid, SIGIO, POLL_HUP, 0, NULL);
+		fownsignal(tp->tun_pgid, SIGIO);
 
-	selwakeup(&tp->tun_rsel);
+	selwakeup1(&tp->tun_rsel);
 
 	simple_unlock(&tp->tun_lock);
 	splx(s);
@@ -576,8 +588,7 @@ tun_output(ifp, m0, dst, rt)
 		wakeup((caddr_t)tp);
 	}
 	if (tp->tun_flags & TUN_ASYNC && tp->tun_pgid)
-		fownsignal(tp->tun_pgid, SIGIO, POLL_IN, POLLIN|POLLRDNORM,
-		    NULL);
+		fownsignal(tp->tun_pgid, SIGIO);
 
 	selnotify(&tp->tun_rsel, 0);
 out:
@@ -666,12 +677,12 @@ tunioctl(dev, cmd, data, flag, p)
 
 	case TIOCSPGRP:
 	case FIOSETOWN:
-		error = fsetown(p, &tp->tun_pgid, cmd, data);
+		error = fsetown((long)&tp->tun_pgid, tp->tun_file, (int)data);
 		break;
 
 	case TIOCGPGRP:
 	case FIOGETOWN:
-		error = fgetown(p, tp->tun_pgid, cmd, data);
+		error = fgetown(tp->tun_file, (int *)data);
 		break;
 
 	default:
@@ -729,7 +740,7 @@ tunread(dev, uio, ioflag)
 				goto out;
 			}
 			tp->tun_flags |= TUN_RWAIT;
-			if (ltsleep((caddr_t)tp, PZERO|PCATCH|PNORELOCK,
+			if (ltsleep((caddr_t)tp, PZERO|PCATCH,
 					"tunread", 0, &tp->tun_lock) != 0) {
 				error = EINTR;
 				goto out_nolock;
@@ -1024,7 +1035,7 @@ filt_tunrdetach(struct knote *kn)
 	int s;
 
 	s = splnet();
-	SLIST_REMOVE(&tp->tun_rsel.sel_klist, kn, knote, kn_selnext);
+	SIMPLEQ_REMOVE(&tp->tun_rsel.si_klist, kn, knote, kn_selnext);
 	splx(s);
 }
 
@@ -1070,12 +1081,12 @@ tunkqfilter(dev_t dev, struct knote *kn)
 
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
-		klist = &tp->tun_rsel.sel_klist;
+		klist = &tp->tun_rsel.si_klist;
 		kn->kn_fop = &tunread_filtops;
 		break;
 
 	case EVFILT_WRITE:
-		klist = &tp->tun_rsel.sel_klist;
+		klist = &tp->tun_rsel.si_klist;
 		kn->kn_fop = &tun_seltrue_filtops;
 		break;
 
@@ -1086,7 +1097,7 @@ tunkqfilter(dev_t dev, struct knote *kn)
 
 	kn->kn_hook = tp;
 
-	SLIST_INSERT_HEAD(klist, kn, kn_selnext);
+	SIMPLEQ_INSERT_HEAD(klist, kn, kn_selnext);
 
 out:
 	simple_unlock(&tp->tun_lock);

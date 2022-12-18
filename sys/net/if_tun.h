@@ -37,10 +37,11 @@ struct tun_softc {
 #define	TUN_READY	(TUN_OPEN | TUN_INITED | TUN_IASET)
 
 	pid_t	tun_pgid;		/* PID or process group ID */
+	struct file *tun_file;
 	struct	selinfo	tun_rsel;	/* read select */
 	struct	selinfo	tun_wsel;	/* write select (not used) */
 	int	tun_unit;		/* the tunnel unit number */
-	struct	simplelock tun_lock;	/* lock for this tunnel */
+	struct	lock_object tun_lock;	/* lock for this tunnel */
 	LIST_ENTRY(tun_softc) tun_list;	/* list of all tuns */
 };
 #endif	/* _KERNEL */

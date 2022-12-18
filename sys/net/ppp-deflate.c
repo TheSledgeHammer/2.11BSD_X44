@@ -291,7 +291,7 @@ z_compress(arg, mret, mp, orig_len, maxolen)
     state->strm.next_in = rptr;
     state->strm.avail_in = mtod(mp, u_char *) + mp->m_len - rptr;
     mp = mp->m_next;
-    flush = (mp == NULL)? Z_PACKET_FLUSH: Z_NO_FLUSH;
+    flush = (mp == NULL)? Z_PARTIAL_FLUSH: Z_NO_FLUSH;
     olen = 0;
     for (;;) {
 	r = deflate(&state->strm, flush);
@@ -307,7 +307,7 @@ z_compress(arg, mret, mp, orig_len, maxolen)
 	    state->strm.avail_in = mp->m_len;
 	    mp = mp->m_next;
 	    if (mp == NULL)
-		flush = Z_PACKET_FLUSH;
+		flush = Z_PARTIAL_FLUSH;
 	}
 	if (state->strm.avail_out == 0) {
 	    if (m != NULL) {
@@ -541,7 +541,7 @@ z_decompress(arg, mi, mop)
     state->strm.next_in = rptr;
     state->strm.avail_in = rlen;
     mi = mi->m_next;
-    flush = (mi == NULL)? Z_PACKET_FLUSH: Z_NO_FLUSH;
+    flush = (mi == NULL)? Z_PARTIAL_FLUSH: Z_NO_FLUSH;
     rlen += PPP_HDRLEN + DEFLATE_OVHD;
     state->strm.next_out = wptr + 3;
     state->strm.avail_out = 1;
@@ -570,7 +570,7 @@ z_decompress(arg, mi, mop)
 	    rlen += mi->m_len;
 	    mi = mi->m_next;
 	    if (mi == NULL)
-		flush = Z_PACKET_FLUSH;
+		flush = Z_PARTIAL_FLUSH;
 	}
 	if (state->strm.avail_out == 0) {
 	    if (decode_proto) {
@@ -654,7 +654,7 @@ z_incomp(arg, mi)
 	++state->strm.avail_in;
     }
     for (;;) {
-	r = inflateIncomp(&state->strm);
+	r = inflateInit(&state->strm);
 	if (r != Z_OK) {
 	    /* gak! */
 #if !DEFLATE_DEBUG

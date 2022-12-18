@@ -935,7 +935,7 @@ bpfioctl(dev, cmd, addr, flag, p)
 
 	case TIOCGPGRP:
 	case FIOGETOWN:
-		error = fgetown(d->bd_file, (int *)&d->bd_pgid);
+		error = fgetown(d->bd_file, (int *)addr);
 		break;
 	}
 	return (error);
