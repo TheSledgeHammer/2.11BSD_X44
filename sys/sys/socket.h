@@ -180,6 +180,7 @@ struct sockaddr_storage {
 #define PF_LAT			AF_LAT
 #define	PF_HYLINK		AF_HYLINK
 #define	PF_APPLETALK	AF_APPLETALK
+#define	PF_ROUTE	AF_ROUTE
 
 #define	PF_MAX			AF_MAX
 
