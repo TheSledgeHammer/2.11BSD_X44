@@ -790,7 +790,7 @@ ReStart:
 					vm_anon_free(nanon);
 				simple_unlock(&anon->an_lock);
 				amap_unlock(amap);
-				vm_wait("cownowpage");
+				vm_wait();
 				goto ReStart;
 			}
 

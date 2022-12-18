@@ -31,7 +31,7 @@ int	slopen(dev_t, struct tty *);
 int	slclose(struct tty *, int);
 int	sltioctl(struct tty *, u_long, caddr_t, int, struct proc *);
 int	slinput(int, struct tty *);
-int	slstart(struct tty *);
+int	slstarts(struct tty *);
 #endif
 
 #include "ppp.h"
@@ -133,7 +133,7 @@ const struct linesw slipdisc = {
 	.l_rint = slinput,
 	.l_rend = norend,
 	.l_meta = nullmeta,
-	.l_start = slstart,
+	.l_start = slstarts,
 	.l_modem = nomodem,
 	.l_poll = nottypoll
 };

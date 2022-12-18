@@ -172,7 +172,7 @@ kmem_alloc(map, size)
 
 		while ((mem = vm_page_alloc(kernel_object, offset+i)) == NULL) {
 			vm_object_unlock(kernel_object);
-			VM_WAIT;
+			vm_wait();
 			vm_object_lock(kernel_object);
 		}
 		vm_page_zero_fill(mem);
@@ -366,8 +366,7 @@ kmem_malloc(map, size, canwait)
 		vm_object_lock(kmem_object);
 		m = vm_page_lookup(kmem_object, offset + i);
 		vm_object_unlock(kmem_object);
-		pmap_enter(map->pmap, addr + i, VM_PAGE_TO_PHYS(m),
-			   VM_PROT_DEFAULT, TRUE);
+		pmap_enter(map->pmap, addr + i, VM_PAGE_TO_PHYS(m), VM_PROT_DEFAULT, TRUE);
 	}
 	vm_map_unlock(map);
 

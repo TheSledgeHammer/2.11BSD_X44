@@ -569,3 +569,14 @@ vm_pageout(void)
 		thread_wakeup(&cnt.v_free_count);
 	}
 }
+
+/*
+ *	Signal pageout-daemon and wait for it.
+ */
+void
+vm_wait(void)
+{
+	simple_lock(&vm_pages_needed_lock);
+	thread_wakeup(&vm_pages_needed);
+	thread_sleep(&cnt.v_free_count, &vm_pages_needed_lock, FALSE);
+}

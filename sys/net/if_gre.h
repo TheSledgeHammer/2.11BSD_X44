@@ -152,8 +152,7 @@ LIST_HEAD(gre_softc_head, gre_softc);
 extern struct gre_softc_head gre_softc_list;
 
 int	gre_ioctl(struct ifnet *, u_long, caddr_t);
-int	gre_output(struct ifnet *, struct mbuf *, struct sockaddr *,
-	    struct rtentry *);
+int	gre_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
 u_int16_t gre_in_cksum(u_short *, u_int);
 #endif /* _KERNEL */
 

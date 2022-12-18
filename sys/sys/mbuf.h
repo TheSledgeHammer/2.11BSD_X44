@@ -124,8 +124,17 @@ struct mbuf {
 #define	M_BCAST		    0x00000100	/* send/received as link-level broadcast */
 #define	M_MCAST		    0x00000200	/* send/received as link-level multicast */
 
+#define M_LINK0			0x00001000	/* link layer specific flag */
+#define M_LINK1			0x00002000	/* link layer specific flag */
+#define M_LINK2			0x00004000	/* link layer specific flag */
+#define M_LINK3			0x00008000	/* link layer specific flag */
+#define M_LINK4			0x00010000	/* link layer specific flag */
+#define M_LINK5			0x00020000	/* link layer specific flag */
+#define M_LINK6			0x00040000	/* link layer specific flag */
+#define M_LINK7			0x00080000	/* link layer specific flag */
+
 /* flags copied when copying m_pkthdr */
-#define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST)
+#define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST|M_LINK0|M_LINK1|M_LINK2|M_LOOP)
 
 /* mbuf types */
 #define	MT_FREE			M_FREE  	/* 0 should be on free list */

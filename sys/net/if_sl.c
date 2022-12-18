@@ -78,11 +78,10 @@ __KERNEL_RCSID(0, "$NetBSD: if_sl.c,v 1.84 2003/08/07 16:32:53 agc Exp $");
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/tty.h>
 #include <sys/kernel.h>
-#if __NetBSD__
 #include <sys/systm.h>
-#endif
 
 #include <machine/cpu.h>
 #include <machine/intr.h>
@@ -252,15 +251,19 @@ slopen(dev, tp)
 {
 	struct proc *p = curproc;		/* XXX */
 	struct sl_softc *sc;
+	const struct linesw *line;
 	int nsl;
 	int error;
 	int s;
 
-	if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 		return (error);
 
+	line = linesw_lookup(dev);
+	/*
 	if (tp->t_linesw->l_no == SLIPDISC)
 		return (0);
+	*/
 
 	for (nsl = NSL, sc = sl_softc; --nsl >= 0; sc++)
 		if (sc->sc_ttyp == NULL) {
@@ -283,7 +286,7 @@ slopen(dev, tp)
 			tp->t_state |= TS_ISOPEN | TS_XCLUDE;
 			splx(s);
 			ttyflush(tp, FREAD | FWRITE);
-#ifdef __NetBSD__
+
 			/*
 			 * make sure tty output queue is large enough
 			 * to hold a full-sized packet (including frame
@@ -297,24 +300,12 @@ slopen(dev, tp)
 				sc->sc_oldbufsize = tp->t_outq.c_cn;
 				sc->sc_oldbufquot = tp->t_outq.c_cq != 0;
 
-				clfree(&tp->t_outq);
-				error = clalloc(&tp->t_outq, 2*SLMAX+2, 0);
-				if (error) {
-					splx(s);
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
-					softintr_disestablish(sc->sc_si);
-#endif
-					/*
-					 * clalloc() might return -1 which
-					 * is no good, so we need to return
-					 * something else.
-					 */
-					return (ENOMEM); /* XXX ?! */
-				}
-			} else
+				clist_free_cblocks(&tp->t_outq);
+				clist_alloc_cblocks(&tp->t_outq, 2*SLMAX+2, 0);
+			} else {
 				sc->sc_oldbufsize = sc->sc_oldbufquot = 0;
+			}
 			splx(s);
-#endif /* __NetBSD__ */
 			return (0);
 		}
 	return (ENXIO);
@@ -329,6 +320,7 @@ slclose(tp)
 	struct tty *tp;
 {
 	struct sl_softc *sc;
+	const struct linesw *line;
 	int s;
 
 	ttywflush(tp);
@@ -344,7 +336,7 @@ slclose(tp)
 		splx(s);
 
 		s = spltty();
-		tp->t_linesw = linesw[0];	/* default line disc. */
+		line = linesw_lookup(0);	/* default line disc. */
 		tp->t_state = 0;
 
 		sc->sc_ttyp = NULL;
@@ -360,9 +352,8 @@ slclose(tp)
 		 * appropriate size.
 		 */
 		if (sc->sc_oldbufsize != 0) {
-			clfree(&tp->t_outq);
-			clalloc(&tp->t_outq, sc->sc_oldbufsize,
-			    sc->sc_oldbufquot);
+			clist_free_cblocks(&tp->t_outq);
+			clist_alloc_cblocks(&tp->t_outq, sc->sc_oldbufsize, sc->sc_oldbufquot);
 		}
 		splx(s);
 	}
@@ -436,7 +427,7 @@ sloutput(ifp, m, dst, rtp)
 		return (EHOSTUNREACH);
 	}
 	ip = mtod(m, struct ip *);
-	if (sc->sc_if.if_flags & SC_NOICMP && ip->ip_p == IPPROTO_ICMP) {
+	if ((sc->sc_if.if_flags & SC_NOICMP) && ip->ip_p == IPPROTO_ICMP) {
 		m_freem(m);
 		return (ENETRESET);		/* XXX ? */
 	}
@@ -517,11 +508,20 @@ slstart(tp)
 	softintr_schedule(sc->sc_si);
 #else
     {
-	int s = splhigh();
-	schednetisr(NETISR_SLIP);
-	splx(s);
-    }
+		int s = splhigh();
+		schednetisr(NETISR_SLIP);
+		splx(s);
+	}
 #endif
+}
+
+int
+slstarts(tp)
+	struct tty *tp;
+{
+	slstart(tp);
+
+	return (0);
 }
 
 /*
@@ -754,7 +754,7 @@ slintr(void *arg)
 			 * copy should be negligible cost compared
 			 * to the packet transmission time).
 			 */
-			bpf_m = m_dup(m, 0, M_COPYALL, M_DONTWAIT);
+			bpf_m = m_copy(m, 0, M_COPYALL);
 		} else
 			bpf_m = NULL;
 #endif

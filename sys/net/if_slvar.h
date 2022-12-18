@@ -60,10 +60,10 @@ struct sl_softc {
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 	void	*sc_si;			/* softintr handle */
 #endif
-#ifdef __NetBSD__
+
 	int	sc_oldbufsize;		/* previous output buffer size */
 	int	sc_oldbufquot;		/* previous output buffer quoting */
-#endif
+
 #ifdef INET				/* XXX */
 	struct	slcompress sc_comp;	/* tcp compression data */
 #endif
@@ -85,7 +85,8 @@ void	slinput(int, struct tty *);
 int		slioctl(struct ifnet *, u_long, caddr_t);
 int		slopen(dev_t, struct tty *);
 int		sloutput(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
-int		slstart(struct tty *);
+void	slstart(struct tty *);
+int		slstarts(struct tty *);
 int		sltioctl(struct tty *, u_long, caddr_t, int);
 #endif /* _KERNEL */
 

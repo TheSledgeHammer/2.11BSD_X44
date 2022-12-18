@@ -389,6 +389,7 @@ m_copy(m, off0, len)
 	if (top == 0)
 		MCFail++;
 	return (top);
+
 nospace:
 	m_freem(top);
 	MCFail++;

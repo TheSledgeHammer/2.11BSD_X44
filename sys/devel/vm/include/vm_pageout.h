@@ -79,17 +79,7 @@ simple_lock_data_t	vm_pages_needed_lock;
  *	Exported routines.
  */
 
-/*
- *	Signal pageout-daemon and wait for it.
- */
-
-#define	VM_WAIT		{ 					\
-	simple_lock(&vm_pages_needed_lock); \
-	thread_wakeup(&vm_pages_needed); 	\
-	thread_sleep(&cnt.v_free_count, 	\
-	&vm_pages_needed_lock, FALSE); 		\
-}
-
+void		vm_wait(void);
 #ifdef _KERNEL
 void		vm_pageout(void);
 void		vm_pageout_scan_segment(vm_object_t, int, int);
