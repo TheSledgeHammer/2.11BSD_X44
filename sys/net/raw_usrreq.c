@@ -208,7 +208,7 @@ raw_usrreq(so, req, m, nam, control, p)
 	 * the appropriate raw interface routine.
 	 */
 	case PRU_ATTACH:
-		if (p == 0 || (error = suser(p->p_ucred, &p->p_acflag))) {
+		if (p == 0 || (error = suser1(p->p_ucred, &p->p_acflag))) {
 			error = EACCES;
 			break;
 		}
@@ -269,7 +269,7 @@ raw_usrreq(so, req, m, nam, control, p)
 				goto die;
 			}
 			error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
-			    (struct mbuf *)0, nam, (struct mbuf *)0, p);
+			    (struct mbuf *)0, nam, (struct mbuf *)0);
 			if (error) {
 			die:
 				m_freem(m);

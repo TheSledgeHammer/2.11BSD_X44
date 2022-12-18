@@ -150,7 +150,7 @@ route_usrreq(so, req, m, nam, control, p)
 
 	if (req == PRU_ATTACH) {
 		MALLOC(rp, struct rawcb *, sizeof(*rp), M_PCB, M_WAITOK);
-		if ((so->so_pcb = rp) != NULL)
+		if ((so->so_pcb = (caddr_t)rp) != NULL)
 			memset(so->so_pcb, 0, sizeof(*rp));
 
 	}
@@ -1013,6 +1013,15 @@ again:
 	return (error);
 }
 
+int
+route_usrreq1(so, req, m, nam, control)
+	struct socket *so;
+	int req;
+	struct mbuf *m, *nam, *control;
+{
+  return (route_usrreq(so, req, m, nam, control, u.u_procp));
+}
+
 /*
  * Definitions of protocols supported in the ROUTE domain.
  */
@@ -1020,7 +1029,7 @@ again:
 struct protosw routesw[] = {
 		{ SOCK_RAW,	&routedomain,	0,		PR_ATOMIC|PR_ADDR,
 				raw_input,	route_output,	raw_ctlinput,	0,
-				route_usrreq,
+				route_usrreq1,
 				raw_init,	0,		0,		0,
 				NULL /* @@@ */, }
 };
