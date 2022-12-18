@@ -111,6 +111,7 @@ __KERNEL_RCSID(0, "$NetBSD: ppp_tty.c,v 1.34 2003/09/01 16:51:27 christos Exp $"
 #include <sys/tty.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 #include <sys/systm.h>
 
@@ -136,8 +137,7 @@ int	pppopen(dev_t dev, struct tty *tp);
 int	pppclose(struct tty *tp, int flag);
 int	pppread(struct tty *tp, struct uio *uio, int flag);
 int	pppwrite(struct tty *tp, struct uio *uio, int flag);
-int	ppptioctl(struct tty *tp, u_long cmd, caddr_t data, int flag,
-		       struct proc *);
+int	ppptioctl(struct tty *tp, u_long cmd, caddr_t data, int flag, struct proc *);
 int	pppinput(int c, struct tty *tp);
 int	pppstart(struct tty *tp);
 
@@ -158,12 +158,12 @@ static void	pppdumpframe(struct ppp_softc *sc, struct mbuf* m, int xmit);
  */
 #define M_IS_CLUSTER(m)	((m)->m_flags & M_EXT)
 
-#define M_DATASTART(m)	\
-	(M_IS_CLUSTER(m) ? (m)->m_ext.ext_buf : \
+#define M_DATASTART(m)							\
+	(M_IS_CLUSTER(m) ? (m)->m_ext.ext_buf : 	\
 	    (m)->m_flags & M_PKTHDR ? (m)->m_pktdat : (m)->m_dat)
 
-#define M_DATASIZE(m)	\
-	(M_IS_CLUSTER(m) ? (m)->m_ext.ext_size : \
+#define M_DATASIZE(m)							\
+	(M_IS_CLUSTER(m) ? (m)->m_ext.ext_size : 	\
 	    (m)->m_flags & M_PKTHDR ? MHLEN: MLEN)
 
 /*
@@ -196,51 +196,49 @@ pppopen(dev, tp)
     struct ppp_softc *sc;
     int error, s;
 
-    if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+    if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 	return (error);
 
     s = spltty();
 
-    if (tp->t_linesw->l_no == PPPDISC) {
-	sc = (struct ppp_softc *) tp->t_sc;
-	if (sc != NULL && sc->sc_devp == (void *) tp) {
-	    splx(s);
-	    return (0);
+    sc = (struct ppp_softc*) tp->t_sc;
+	if (sc != NULL && sc->sc_devp == (void*) tp) {
+		splx(s);
+		return (0);
 	}
-    }
 
-    if ((sc = pppalloc(p->p_pid)) == NULL) {
-	splx(s);
-	return ENXIO;
-    }
+	if ((sc = pppalloc(p->p_pid)) == NULL) {
+		splx(s);
+		return ENXIO;
+	}
 
-    if (sc->sc_relinq)
-	(*sc->sc_relinq)(sc);	/* get previous owner to relinquish the unit */
+	if (sc->sc_relinq)
+		(*sc->sc_relinq)(sc); /* get previous owner to relinquish the unit */
 
 #if NBPFILTER > 0
     /* Switch DLT to PPP-over-serial. */
     bpf_change_type(&sc->sc_if, DLT_PPP_SERIAL, PPP_HDRLEN);
 #endif
 
-    sc->sc_ilen = 0;
-    sc->sc_m = NULL;
-    memset(sc->sc_asyncmap, 0, sizeof(sc->sc_asyncmap));
-    sc->sc_asyncmap[0] = 0xffffffff;
-    sc->sc_asyncmap[3] = 0x60000000;
-    sc->sc_rasyncmap = 0;
-    sc->sc_devp = (void *) tp;
-    sc->sc_start = pppasyncstart;
-    sc->sc_ctlp = pppasyncctlp;
-    sc->sc_relinq = pppasyncrelinq;
-    sc->sc_outm = NULL;
-    pppgetm(sc);
-    sc->sc_if.if_flags |= IFF_RUNNING;
-    sc->sc_if.if_baudrate = tp->t_ospeed;
+	sc->sc_ilen = 0;
+	sc->sc_m = NULL;
+	memset(sc->sc_asyncmap, 0, sizeof(sc->sc_asyncmap));
+	sc->sc_asyncmap[0] = 0xffffffff;
+	sc->sc_asyncmap[3] = 0x60000000;
+	sc->sc_rasyncmap = 0;
+	sc->sc_devp = (void*) tp;
+	sc->sc_start = pppasyncstart;
+	sc->sc_ctlp = pppasyncctlp;
+	sc->sc_relinq = pppasyncrelinq;
+	sc->sc_outm = NULL;
+	pppgetm(sc);
+	sc->sc_if.if_flags |= IFF_RUNNING;
+	sc->sc_if.if_baudrate = tp->t_ospeed;
 
-    tp->t_sc = (caddr_t) sc;
-    ttyflush(tp, FREAD | FWRITE);
+	tp->t_sc = (caddr_t) sc;
+	ttyflush(tp, FREAD | FWRITE);
 
-    splx(s);
+	splx(s);
     return (0);
 }
 
@@ -256,21 +254,22 @@ pppclose(tp, flag)
     int flag;
 {
     struct ppp_softc *sc;
+    const struct linesw *line;
     int s;
 
-    s = spltty();
-    ttyflush(tp, FREAD|FWRITE);
-    tp->t_linesw = linesw[0]; /* default line discipline */
-    sc = (struct ppp_softc *) tp->t_sc;
-    if (sc != NULL) {
-	tp->t_sc = NULL;
-	if (tp == (struct tty *) sc->sc_devp) {
-	    pppasyncrelinq(sc);
-	    pppdealloc(sc);
+	s = spltty();
+	ttyflush(tp, FREAD | FWRITE);
+	line = linesw_lookup(0); /* default line discipline */
+	sc = (struct ppp_softc*) tp->t_sc;
+	if (sc != NULL) {
+		tp->t_sc = NULL;
+		if (tp == (struct tty*) sc->sc_devp) {
+			pppasyncrelinq(sc);
+			pppdealloc(sc);
+		}
 	}
-    }
-    splx(s);
-    return 0;
+	splx(s);
+	return 0;
 }
 
 /*
@@ -287,20 +286,20 @@ pppasyncrelinq(sc)
     bpf_change_type(&sc->sc_if, DLT_NULL, 0);
 #endif
 
-    s = spltty();
-    if (sc->sc_outm) {
-	m_freem(sc->sc_outm);
-	sc->sc_outm = NULL;
-    }
-    if (sc->sc_m) {
-	m_freem(sc->sc_m);
-	sc->sc_m = NULL;
-    }
-    if (sc->sc_flags & SC_TIMEOUT) {
-	callout_stop(&sc->sc_timo_ch);
-	sc->sc_flags &= ~SC_TIMEOUT;
-    }
-    splx(s);
+	s = spltty();
+	if (sc->sc_outm) {
+		m_freem(sc->sc_outm);
+		sc->sc_outm = NULL;
+	}
+	if (sc->sc_m) {
+		m_freem(sc->sc_m);
+		sc->sc_m = NULL;
+	}
+	if (sc->sc_flags & SC_TIMEOUT) {
+		callout_stop(&sc->sc_timo_ch);
+		sc->sc_flags &= ~SC_TIMEOUT;
+	}
+	splx(s);
 }
 
 /*
@@ -317,49 +316,48 @@ pppread(tp, uio, flag)
     int s;
     int error = 0;
 
-    if (sc == NULL)
-	return 0;
-    /*
-     * Loop waiting for input, checking that nothing disasterous
-     * happens in the meantime.
-     */
-    s = spltty();
-    for (;;) {
-	if (tp != (struct tty *) sc->sc_devp ||
-	    tp->t_linesw->l_no != PPPDISC) {
-	    splx(s);
-	    return 0;
+	if (sc == NULL)
+		return 0;
+	/*
+	 * Loop waiting for input, checking that nothing disasterous
+	 * happens in the meantime.
+	 */
+	s = spltty();
+	for (;;) {
+		if (tp != (struct tty*) sc->sc_devp) {
+			splx(s);
+			return 0;
+		}
+		if (sc->sc_inq.ifq_head != NULL)
+			break;
+		if ((tp->t_state & TS_CARR_ON) == 0 && (tp->t_cflag & CLOCAL) == 0
+				&& (tp->t_state & TS_ISOPEN)) {
+			splx(s);
+			return 0; /* end of file */
+		}
+		if ((tp->t_state & TS_ASYNC) || (flag & IO_NDELAY)) {
+			splx(s);
+			return (EWOULDBLOCK);
+		}
+		error = ttysleep(tp, (caddr_t) & tp->t_rawq, TTIPRI | PCATCH, ttyin, 0);
+		if (error) {
+			splx(s);
+			return error;
+		}
 	}
-	if (sc->sc_inq.ifq_head != NULL)
-	    break;
-	if ((tp->t_state & TS_CARR_ON) == 0 && (tp->t_cflag & CLOCAL) == 0
-	    && (tp->t_state & TS_ISOPEN)) {
-	    splx(s);
-	    return 0;		/* end of file */
-	}
-	if ((tp->t_state & TS_ASYNC) || (flag & IO_NDELAY)) {
-	    splx(s);
-	    return (EWOULDBLOCK);
-	}
-	error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI|PCATCH, ttyin, 0);
-	if (error) {
-	    splx(s);
-	    return error;
-	}
-    }
 
-    /* Pull place-holder byte out of canonical queue */
-    getc(&tp->t_canq);
+	/* Pull place-holder byte out of canonical queue */
+	getc(&tp->t_canq);
 
-    /* Get the packet from the input queue */
-    IF_DEQUEUE(&sc->sc_inq, m0);
-    splx(s);
+	/* Get the packet from the input queue */
+	IF_DEQUEUE(&sc->sc_inq, m0);
+	splx(s);
 
-    for (m = m0; m && uio->uio_resid; m = m->m_next)
-	if ((error = uiomove(mtod(m, u_char *), m->m_len, uio)) != 0)
-	    break;
-    m_freem(m0);
-    return (error);
+	for (m = m0; m && uio->uio_resid; m = m->m_next)
+		if ((error = uiomove(mtod(m, u_char*), m->m_len, uio)) != 0)
+			break;
+	m_freem(m0);
+	return (error);
 }
 
 /*
@@ -376,38 +374,37 @@ pppwrite(tp, uio, flag)
     struct sockaddr dst;
     int len, error;
 
-    if ((tp->t_state & TS_CARR_ON) == 0 && (tp->t_cflag & CLOCAL) == 0)
-	return 0;		/* wrote 0 bytes */
-    if (tp->t_linesw->l_no != PPPDISC)
-	return (EINVAL);
-    if (sc == NULL || tp != (struct tty *) sc->sc_devp)
-	return EIO;
-    if (uio->uio_resid > sc->sc_if.if_mtu + PPP_HDRLEN ||
-	uio->uio_resid < PPP_HDRLEN)
-	return (EMSGSIZE);
-    for (mp = &m0; uio->uio_resid; mp = &m->m_next) {
-	m = m_get(M_WAIT, MT_DATA);
-	if ((*mp = m) == NULL) {
-	    m_freem(m0);
-	    return (ENOBUFS);
+	if ((tp->t_state & TS_CARR_ON) == 0 && (tp->t_cflag & CLOCAL) == 0)
+		return 0; /* wrote 0 bytes */
+
+	if (sc == NULL || tp != (struct tty*) sc->sc_devp)
+		return EIO;
+	if (uio->uio_resid > sc->sc_if.if_mtu + PPP_HDRLEN
+			|| uio->uio_resid < PPP_HDRLEN)
+		return (EMSGSIZE);
+	for (mp = &m0; uio->uio_resid; mp = &m->m_next) {
+		m = m_get(M_WAIT, MT_DATA);
+		if ((*mp = m) == NULL) {
+			m_freem(m0);
+			return (ENOBUFS);
+		}
+		m->m_len = 0;
+		if (uio->uio_resid >= MCLBYTES / 2)
+			MCLGET(m, M_DONTWAIT);
+		len = M_TRAILINGSPACE(m);
+		if (len > uio->uio_resid)
+			len = uio->uio_resid;
+		if ((error = uiomove(mtod(m, u_char*), len, uio)) != 0) {
+			m_freem(m0);
+			return (error);
+		}
+		m->m_len = len;
 	}
-	m->m_len = 0;
-	if (uio->uio_resid >= MCLBYTES / 2)
-	    MCLGET(m, M_DONTWAIT);
-	len = M_TRAILINGSPACE(m);
-	if (len > uio->uio_resid)
-	    len = uio->uio_resid;
-	if ((error = uiomove(mtod(m, u_char *), len, uio)) != 0) {
-	    m_freem(m0);
-	    return (error);
-	}
-	m->m_len = len;
-    }
-    dst.sa_family = AF_UNSPEC;
-    bcopy(mtod(m0, u_char *), dst.sa_data, PPP_HDRLEN);
-    m0->m_data += PPP_HDRLEN;
-    m0->m_len -= PPP_HDRLEN;
-    return ((*sc->sc_if.if_output)(&sc->sc_if, m0, &dst, (struct rtentry *)0));
+	dst.sa_family = AF_UNSPEC;
+	bcopy(mtod(m0, u_char*), dst.sa_data, PPP_HDRLEN);
+	m0->m_data += PPP_HDRLEN;
+	m0->m_len -= PPP_HDRLEN;
+	return ((*sc->sc_if.if_output)(&sc->sc_if, m0, &dst, (struct rtentry*) 0));
 }
 
 /*
@@ -427,57 +424,57 @@ ppptioctl(tp, cmd, data, flag, p)
     struct ppp_softc *sc = (struct ppp_softc *) tp->t_sc;
     int error, s;
 
-    if (sc == NULL || tp != (struct tty *) sc->sc_devp)
-	return (EPASSTHROUGH);
+	if (sc == NULL || tp != (struct tty*) sc->sc_devp)
+		return (EPASSTHROUGH);
 
-    error = 0;
-    switch (cmd) {
-    case TIOCRCVFRAME:
-    	ppprcvframe(sc,*((struct mbuf **)data));
-	break;
-	
-    case PPPIOCSASYNCMAP:
-	if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
-	    break;
-	sc->sc_asyncmap[0] = *(u_int *)data;
-	break;
+	error = 0;
+	switch (cmd) {
+	case TIOCRCVFRAME:
+		ppprcvframe(sc, *((struct mbuf**) data));
+		break;
 
-    case PPPIOCGASYNCMAP:
-	*(u_int *)data = sc->sc_asyncmap[0];
-	break;
+	case PPPIOCSASYNCMAP:
+		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+			break;
+		sc->sc_asyncmap[0] = *(u_int*) data;
+		break;
 
-    case PPPIOCSRASYNCMAP:
-	if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
-	    break;
-	sc->sc_rasyncmap = *(u_int *)data;
-	break;
+	case PPPIOCGASYNCMAP:
+		*(u_int*) data = sc->sc_asyncmap[0];
+		break;
 
-    case PPPIOCGRASYNCMAP:
-	*(u_int *)data = sc->sc_rasyncmap;
-	break;
+	case PPPIOCSRASYNCMAP:
+		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+			break;
+		sc->sc_rasyncmap = *(u_int*) data;
+		break;
 
-    case PPPIOCSXASYNCMAP:
-	if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
-	    break;
-	s = spltty();
-	bcopy(data, sc->sc_asyncmap, sizeof(sc->sc_asyncmap));
-	sc->sc_asyncmap[1] = 0;		    /* mustn't escape 0x20 - 0x3f */
-	sc->sc_asyncmap[2] &= ~0x40000000;  /* mustn't escape 0x5e */
-	sc->sc_asyncmap[3] |= 0x60000000;   /* must escape 0x7d, 0x7e */
-	splx(s);
-	break;
+	case PPPIOCGRASYNCMAP:
+		*(u_int*) data = sc->sc_rasyncmap;
+		break;
 
-    case PPPIOCGXASYNCMAP:
-	bcopy(sc->sc_asyncmap, data, sizeof(sc->sc_asyncmap));
-	break;
+	case PPPIOCSXASYNCMAP:
+		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+			break;
+		s = spltty();
+		bcopy(data, sc->sc_asyncmap, sizeof(sc->sc_asyncmap));
+		sc->sc_asyncmap[1] = 0; /* mustn't escape 0x20 - 0x3f */
+		sc->sc_asyncmap[2] &= ~0x40000000; /* mustn't escape 0x5e */
+		sc->sc_asyncmap[3] |= 0x60000000; /* must escape 0x7d, 0x7e */
+		splx(s);
+		break;
 
-    default:
-	error = pppioctl(sc, cmd, data, flag, p);
-	if (error == 0 && cmd == PPPIOCSMRU)
-	    pppgetm(sc);
-    }
+	case PPPIOCGXASYNCMAP:
+		bcopy(sc->sc_asyncmap, data, sizeof(sc->sc_asyncmap));
+		break;
 
-    return error;
+	default:
+		error = pppioctl(sc, cmd, data, flag, p);
+		if (error == 0 && cmd == PPPIOCSMRU)
+			pppgetm(sc);
+	}
+
+	return error;
 }
 
 /* receive a complete ppp frame from device in synchronous
@@ -493,34 +490,32 @@ ppprcvframe(sc, m)
 	u_char hdr[4];
 	int hlen,count;
 		
-	for (n=m,len=0;n != NULL;n = n->m_next)
+	for (n = m, len = 0; n != NULL; n = n->m_next)
 		len += n->m_len;
-	if (len==0) {
+	if (len == 0) {
 		m_freem(m);
 		return;
 	}
-	
+
 	/* extract PPP header from mbuf chain (1 to 4 bytes) */
-	for (n=m,hlen=0;n!=NULL && hlen<sizeof(hdr);n=n->m_next) {
-		count = (sizeof(hdr)-hlen) < n->m_len ?
-				sizeof(hdr)-hlen : n->m_len;
-		bcopy(mtod(n,u_char*),&hdr[hlen],count);
-		hlen+=count;
+	for (n = m, hlen = 0; n != NULL && hlen < sizeof(hdr); n = n->m_next) {
+		count = (sizeof(hdr) - hlen) < n->m_len ? sizeof(hdr) - hlen : n->m_len;
+		bcopy(mtod(n, u_char*), &hdr[hlen], count);
+		hlen += count;
 	}
-	
+
 	s = spltty();
-	
+
 	/* if AFCF compressed then prepend AFCF */
 	if (hdr[0] != PPP_ALLSTATIONS) {
 		if (sc->sc_flags & SC_REJ_COMP_AC) {
 			if (sc->sc_flags & SC_DEBUG)
-				printf(
-				    "%s: garbage received: 0x%x (need 0xFF)\n",
-				    sc->sc_if.if_xname, hdr[0]);
-				goto bail;
-			}
-		M_PREPEND(m,2,M_DONTWAIT);		
-		if (m==NULL) {
+				printf("%s: garbage received: 0x%x (need 0xFF)\n",
+						sc->sc_if.if_xname, hdr[0]);
+			goto bail;
+		}
+		M_PREPEND(m, 2, M_DONTWAIT);
+		if (m == NULL) {
 			splx(s);
 			return;
 		}
@@ -535,52 +530,51 @@ ppprcvframe(sc, m)
 	if (hdr[2] & 1) {
 		/* a compressed protocol */
 		(M_PREPEND(m,1,M_DONTWAIT));
-		if (m==NULL) {
+		if (m == NULL) {
 			splx(s);
 			return;
 		}
 		hdr[3] = hdr[2];
 		hdr[2] = 0;
 		len++;
-	} 
-	
+	}
+
 	/* valid LSB of protocol field has bit0 set */
 	if (!(hdr[3] & 1)) {
 		if (sc->sc_flags & SC_DEBUG)
 			printf("%s: bad protocol %x\n", sc->sc_if.if_xname,
-				(hdr[2] << 8) + hdr[3]);
-			goto bail;
+					(hdr[2] << 8) + hdr[3]);
+		goto bail;
 	}
-	
+
 	/* packet beyond configured mru? */
 	if (len > sc->sc_mru + PPP_HDRLEN) {
 		if (sc->sc_flags & SC_DEBUG)
 			printf("%s: packet too big\n", sc->sc_if.if_xname);
 		goto bail;
 	}
-	
+
 	/* add expanded 4 byte header to mbuf chain */
-	for (n=m,hlen=0;n!=NULL && hlen<sizeof(hdr);n=n->m_next) {
-		count = (sizeof(hdr)-hlen) < n->m_len ?
-				sizeof(hdr)-hlen : n->m_len;
-		bcopy(&hdr[hlen],mtod(n,u_char*),count);
-		hlen+=count;
+	for (n = m, hlen = 0; n != NULL && hlen < sizeof(hdr); n = n->m_next) {
+		count = (sizeof(hdr) - hlen) < n->m_len ? sizeof(hdr) - hlen : n->m_len;
+		bcopy(&hdr[hlen], mtod(n, u_char*), count);
+		hlen += count;
 	}
-	
+
 	/* if_ppp.c requires the PPP header and IP header */
 	/* to be contiguous */
 	count = len < MHLEN ? len : MHLEN;
 	if (m->m_len < count) {
-		m = m_pullup(m,count);
-		if (m==NULL)
+		m = m_pullup(m, count);
+		if (m == NULL)
 			goto bail;
 	}
-	
+
 	sc->sc_stats.ppp_ibytes += len;
-	
+
 	if (sc->sc_flags & SC_LOG_RAWIN)
-		pppdumpframe(sc,m,0);
-    
+		pppdumpframe(sc, m, 0);
+
 	ppppktin(sc, m, 0);
 	splx(s);
 	return;

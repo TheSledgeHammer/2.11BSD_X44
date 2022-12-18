@@ -103,12 +103,12 @@ struct ttysize {
 #define	TIOCM_DSR			0400								/* data set ready */
 #define	TIOCGETP			_IOR('t', 8,struct sgttyb)			/* get parameters -- gtty */
 #define	TIOCSETP			_IOW('t', 9,struct sgttyb)			/* set parameters -- stty */
-#define	TIOCSETN			_IOW('t',10,struct sgttyb)			/* as above, but no flushtty */
-#define	TIOCEXCL			_IO('t', 13)							/* set exclusive use of tty */
-#define	TIOCNXCL			_IO('t', 14)							/* reset exclusive use of tty */
+#define	TIOCSETN			_IOW('t', 10,struct sgttyb)			/* as above, but no flushtty */
+#define	TIOCEXCL			_IO('t', 13)						/* set exclusive use of tty */
+#define	TIOCNXCL			_IO('t', 14)						/* reset exclusive use of tty */
 #define	TIOCFLUSH			_IOW('t', 16, int)					/* flush buffers */
-#define	TIOCSETC			_IOW('t',17,struct tchars)			/* set special characters */
-#define	TIOCGETC			_IOR('t',18,struct tchars)			/* get special characters */
+#define	TIOCSETC			_IOW('t', 17,struct tchars)			/* set special characters */
+#define	TIOCGETC			_IOR('t', 18,struct tchars)			/* get special characters */
 #define	TIOCGETA			_IOR('t', 19, struct termios) 		/* get termios struct */
 #define	TIOCSETA			_IOW('t', 20, struct termios) 		/* set termios struct */
 #define	TIOCSETAW			_IOW('t', 21, struct termios) 		/* drain output, set */
@@ -168,17 +168,17 @@ struct ttysize {
 #define	LPENDIN				((int)(PENDIN>>16))
 #define	LDECCTQ				((int)(DECCTQ>>16))
 #define	LNOFLSH				((int)(NOFLSH>>16))
-#define	TIOCSBRK			_IO('t', 123)							/* set break bit */
-#define	TIOCCBRK			_IO('t', 122)							/* clear break bit */
-#define	TIOCSDTR			_IO('t', 121)							/* set data terminal ready */
-#define	TIOCCDTR			_IO('t', 120)							/* clear data terminal ready */
+#define	TIOCSBRK			_IO('t', 123)						/* set break bit */
+#define	TIOCCBRK			_IO('t', 122)						/* clear break bit */
+#define	TIOCSDTR			_IO('t', 121)						/* set data terminal ready */
+#define	TIOCCDTR			_IO('t', 120)						/* clear data terminal ready */
 #define	TIOCGPGRP			_IOR('t', 119, int)					/* get pgrp of tty */
 #define	TIOCSPGRP			_IOW('t', 118, int)					/* set pgrp of tty */
-#define	TIOCSLTC			_IOW('t',117,struct ltchars)			/* set local special chars */
-#define	TIOCGLTC			_IOR('t',116,struct ltchars)			/* get local special chars */
+#define	TIOCSLTC			_IOW('t', 117,struct ltchars)		/* set local special chars */
+#define	TIOCGLTC			_IOR('t', 116,struct ltchars)		/* get local special chars */
 #define	TIOCOUTQ			_IOR('t', 115, int)					/* output queue size */
-#define	TIOCSTI				_IOW('t', 114, char)					/* simulate terminal input */
-#define	TIOCNOTTY			_IO('t', 113)							/* void tty association */
+#define	TIOCSTI				_IOW('t', 114, char)				/* simulate terminal input */
+#define	TIOCNOTTY			_IO('t', 113)						/* void tty association */
 #define	TIOCPKT				_IOW('t', 112, int)					/* pty: set/clear packet mode */
 #define	TIOCPKT_DATA		0x000								/* data packet */
 #define	TIOCPKT_FLUSHREAD	0x001								/* flush packet */
@@ -188,8 +188,8 @@ struct ttysize {
 #define	TIOCPKT_NOSTOP		0x010								/* no more ^S, ^Q */
 #define	TIOCPKT_DOSTOP		0x020								/* now do ^S ^Q */
 #define	TIOCPKT_IOCTL		0x040								/* state change of pty driver */
-#define	TIOCSTOP			_IO('t', 111)							/* stop output, like ^S */
-#define	TIOCSTART			_IO('t', 110)							/* start output, like ^Q */
+#define	TIOCSTOP			_IO('t', 111)						/* stop output, like ^S */
+#define	TIOCSTART			_IO('t', 110)						/* start output, like ^Q */
 #define	TIOCMSET			_IOW('t', 109, int)					/* set all modem bits */
 #define	TIOCMBIS			_IOW('t', 108, int)					/* bis modem bits */
 #define	TIOCMBIC			_IOW('t', 107, int)					/* bic modem bits */
@@ -220,6 +220,9 @@ struct ttysize {
 #define	TIOCFLAG_CRTSCTS	0x120								/* set crtscts on open */
 #define	TIOCFLAG_MDMBUF		0x140								/* set mdmbuf on open */
 #define	TIOCFLAG_PPS		0x180								/* call hardpps on carrier up */
+
+#define	TIOCRCVFRAME		_IOW('t', 69, struct mbuf *)		/* data frame received */
+#define	TIOCXMTFRAME		_IOW('t', 68, struct mbuf *)		/* data frame transmit */
 
 #define	TTYDISC				0									/* termios tty line discipline */
 #define	NTTYDISC			1									/* new tty discipline */
@@ -257,22 +260,22 @@ struct ttysize {
 #define	SIOCSIFADDR			_IOW('i', 12, struct ifreq)			/* set ifnet address */
 #define	SIOCGIFADDR			_IOWR('i',13, struct ifreq)			/* get ifnet address */
 #define	SIOCSIFDSTADDR		_IOW('i', 14, struct ifreq)			/* set p-p address */
-#define	SIOCGIFDSTADDR		_IOWR('i',15, struct ifreq)			/* get p-p address */
+#define	SIOCGIFDSTADDR		_IOWR('i', 15, struct ifreq)		/* get p-p address */
 #define	SIOCSIFFLAGS		_IOW('i', 16, struct ifreq)			/* set ifnet flags */
-#define	SIOCGIFFLAGS		_IOWR('i',17, struct ifreq)			/* get ifnet flags */
-#define	SIOCGIFBRDADDR		_IOWR('i',18, struct ifreq)			/* get broadcast addr */
-#define	SIOCSIFBRDADDR		_IOW('i',19, struct ifreq)			/* set broadcast addr */
-#define	SIOCGIFCONF			_IOWR('i',20, struct ifconf)			/* get ifnet list */
-#define	SIOCGIFNETMASK		_IOWR('i',21, struct ifreq)			/* get net addr mask */
-#define	SIOCSIFNETMASK		_IOW('i',22, struct ifreq)			/* set net addr mask */
-#define	SIOCGIFMETRIC		_IOWR('i',23, struct ifreq)			/* get IF metric */
-#define	SIOCSIFMETRIC		_IOW('i',24, struct ifreq)			/* set IF metric */
+#define	SIOCGIFFLAGS		_IOWR('i', 17, struct ifreq)		/* get ifnet flags */
+#define	SIOCGIFBRDADDR		_IOWR('i', 18, struct ifreq)		/* get broadcast addr */
+#define	SIOCSIFBRDADDR		_IOW('i', 19, struct ifreq)			/* set broadcast addr */
+#define	SIOCGIFCONF			_IOWR('i', 20, struct ifconf)		/* get ifnet list */
+#define	SIOCGIFNETMASK		_IOWR('i', 21, struct ifreq)		/* get net addr mask */
+#define	SIOCSIFNETMASK		_IOW('i', 22, struct ifreq)			/* set net addr mask */
+#define	SIOCGIFMETRIC		_IOWR('i', 23, struct ifreq)		/* get IF metric */
+#define	SIOCSIFMETRIC		_IOW('i', 24, struct ifreq)			/* set IF metric */
 #define	SIOCDIFADDR	 		_IOW('i', 25, struct ifreq)			/* delete IF addr */
 #define	SIOCAIFADDR	 		_IOW('i', 26, struct ifaliasreq)	/* add/chg IF alias */
 
-#define	SIOCSARP			_IOW('i', 30, struct arpreq)			/* set arp entry */
-#define	SIOCGARP			_IOWR('i',31, struct arpreq)			/* get arp entry */
-#define	SIOCDARP			_IOW('i', 32, struct arpreq)			/* delete arp entry */
+#define	SIOCSARP			_IOW('i', 30, struct arpreq)		/* set arp entry */
+#define	SIOCGARP			_IOWR('i', 31, struct arpreq)		/* get arp entry */
+#define	SIOCDARP			_IOW('i', 32, struct arpreq)		/* delete arp entry */
 
 #define	SIOCADDMULTI		_IOW('i', 49, struct ifreq)			/* add m'cast addr */
 #define	SIOCDELMULTI	 	_IOW('i', 50, struct ifreq)			/* del m'cast addr */

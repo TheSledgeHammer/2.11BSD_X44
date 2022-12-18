@@ -677,7 +677,7 @@ tunioctl(dev, cmd, data, flag, p)
 
 	case TIOCSPGRP:
 	case FIOSETOWN:
-		error = fsetown((long)&tp->tun_pgid, tp->tun_file, (int)data);
+		error = fsetown(tp->tun_file, (int)data);
 		break;
 
 	case TIOCGPGRP:

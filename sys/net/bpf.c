@@ -930,7 +930,7 @@ bpfioctl(dev, cmd, addr, flag, p)
 
 	case TIOCSPGRP:		/* Process or group to send signals to */
 	case FIOSETOWN:
-		error = fsetown((long)&d->bd_pgid, d->bd_file, (int)addr);
+		error = fsetown(d->bd_file, (int)addr);
 		break;
 
 	case TIOCGPGRP:

@@ -138,7 +138,7 @@ extern int 				nfiles;		/* actual number of open files */
 #ifdef _KERNEL
 int                 fset(struct file *, int, int);
 int                 fgetown(struct file *, int *);
-int                 fsetown(long, struct file *, int);
+int                 fsetown(struct file *, int);
 int                 fgetlk(struct file *, int);
 int                 fsetlk(struct file *, int, int);
 #endif /* _KERNEL */

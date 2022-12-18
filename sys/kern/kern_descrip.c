@@ -245,7 +245,7 @@ fcntl()
 		return (u.u_error);
 
 	case F_SETOWN:
-		u.u_error = fsetown((long)SCARG(uap, arg), fp, SCARG(uap, arg));
+		u.u_error = fsetown(fp, SCARG(uap, arg));
 		return (u.u_error);
 
 	case F_SETLKW:
@@ -279,6 +279,9 @@ fset(fp, bit, value)
 	return (fioctl(fp, (u_int)(bit == FNONBLOCK ? FIONBIO : FIOASYNC), (caddr_t)&value, u.u_procp));
 }
 
+/*
+ * fgetown(fp, data)
+ */
 int
 fgetown(fp, valuep)
 	register struct file *fp;
@@ -295,20 +298,23 @@ fgetown(fp, valuep)
 	return (error);
 }
 
+/*
+ * fsetown(fp, data)
+ */
 int
-fsetown(args, fp, value)
-	long args;
+fsetown(fp, value)
 	register struct file *fp;
 	int value;
 {
 	if (fp->f_type == DTYPE_SOCKET) {
-		((struct socket*) fp->f_socket)->so_pgrp = args;
+		((struct socket*) fp->f_socket)->so_pgrp = value;
 		return (0);
 	}
 	if (value > 0) {
 		register struct proc *p = pfind(value);
-		if (p == 0)
+		if (p == 0) {
 			return (ESRCH);
+		}
 		value = p->p_pgrp->pg_id;
 	} else {
 		value = -value;
