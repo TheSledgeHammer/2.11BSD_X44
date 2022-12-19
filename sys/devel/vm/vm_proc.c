@@ -35,7 +35,6 @@ sbrk()
 	register segsz_t n, d;
 
 	p = u.u_procp;
-
 	n = btoc(uap->size);
 	if (!SCARG(uap, sep)) {
 		SCARG(uap, sep) = PSEG_NOSEP;
@@ -46,10 +45,10 @@ sbrk()
 		n = 0;
 	}
 	//p->p_tsize;
-	if(vm_estabur(p->p_psegp, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
+	if(vm_estabur(p->p_vmspace->vm_psegment, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
 		return (0);
 	}
-	vm_segment_expand(p, p->p_psegp, n, S_DATA);
+	vm_segment_expand(p, p->p_vmspace->vm_psegment, n, S_DATA);
 	/* set d to (new - old) */
 	d = n - p->p_dsize;
 	if (d > 0) {
@@ -84,15 +83,19 @@ sstk()
  * stack segment will not have to be copied again after expansion.
  */
 void
-vm_segment_expand(p, pseg, newsize, type)
+vm_segment_expand(p, newsize, type)
 	struct proc 	*p;
-	vm_psegment_t 	pseg;
 	vm_size_t 	 	newsize;
 	int 			type;
 {
+	register vm_psegment_t 	pseg;
 	register vm_size_t i, n;
 	caddr_t a1, a2;
 
+	pseg = p->p_vmspace->vm_psegment;
+	if (pseg == NULL) {
+		return;
+	}
 	if (type == PSEG_DATA) {
 		n = pseg->ps_data.psx_dsize;
 		pseg->ps_data.psx_dsize = newsize;
@@ -173,11 +176,17 @@ vm_segment_expand(p, pseg, newsize, type)
  * read-write or read-only.
  */
 int
-vm_estabur(pseg, dsize, ssize, tsize, sep, flags)
-	vm_psegment_t	pseg;
-	segsz_t	 dsize, ssize, tsize;
-	int 	 sep, flags;
+vm_estabur(p, dsize, ssize, tsize, sep, flags)
+	struct proc		*p;
+	segsz_t	 		dsize, ssize, tsize;
+	int 	 		sep, flags;
 {
+	vm_psegment_t	pseg;
+
+	pseg = p->p_vmspace->vm_psegment;
+	if (pseg == NULL) {
+		return (1);
+	}
 	if (estabur(pseg->ps_data, pseg->ps_stack, pseg->ps_text, dsize, ssize, tsize, sep, flags)) {
 		return (0);
 	}

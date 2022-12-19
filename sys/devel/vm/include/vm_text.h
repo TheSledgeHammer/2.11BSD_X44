@@ -226,6 +226,6 @@ void	vm_xuntext(vm_text_t);
 void	vm_xuncore(size_t);
 int		vm_xpurge(void);
 void	vm_xrele(struct vnode *);
-void	vm_xswapin(struct proc *);
-void	vm_xswapout(struct proc *, int, u_int, u_int);
+void	vm_xswapin(struct proc *, vm_offset_t);
+void	vm_xswapout(struct proc *, vm_offset_t, vm_size_t, int, u_int, u_int);
 #endif /* _VM_TEXT_H_ */

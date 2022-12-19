@@ -692,37 +692,7 @@ vm_object_deactivate_pages(object)
 		}
 	}
 }
-#ifdef notyet
-void
-vm_object_deactivate_segments(object)
-	register vm_object_t	object;
-{
-	register vm_segment_t 	segment;
 
-	CIRCLEQ_FOREACH(segment, object->seglist, sg_list) {
-		if (segment->sg_object == object) {
-			vm_segment_lock_lists();
-			vm_segment_deactivate(segment);
-			vm_segment_unlock_lists();
-		}
-	}
-}
-
-void
-vm_object_deactivate_pages1(segment)
-	register vm_segment_t	segment;
-{
-	register vm_page_t	 	page;
-
-	TAILQ_FOREACH(page, segment->sg_memq, listq) {
-		if (page->segment == segment) {
-			vm_page_lock_queues();
-			vm_page_deactivate(page);
-			vm_page_unlock_queues();
-		}
-	}
-}
-#endif
 /*
  *	Trim the object cache to size.
  */

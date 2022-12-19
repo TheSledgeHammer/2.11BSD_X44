@@ -133,6 +133,7 @@ static struct vm_advice vmadvice[] = {
 #define FHDOBJCOPY		0x02	/* handler active | inactive before object copy*/
 #define FHDRETRY		0x04	/* handler active | inactive before retry */
 #define FHDPMAP			0x08	/* handler active | inactive before pmap  */
+#define FHDANON			0x10	/* handler active | inactive after anon  */
 
 /*
  * private prototypes
@@ -501,6 +502,8 @@ RetryFault: ;
 		return (KERN_RESOURCE_SHORTAGE);
 	}
 
+	vm_fault_handler_check(&vfi, FHDANON);
+
 RetryCopy:
 	error = vm_fault_copy(&vfi, fault_type, change_wiring, page_exists);
 	switch (error) {
@@ -787,6 +790,14 @@ vm_fault_handler_check(vfi, flag)
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
 		if (sgflag || pgflag) {
 			panic("vm_fault_handler_check: active or inactive before retrying lookup");
+		}
+		break;
+
+	case FHDANON:
+		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
+		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE | PG_BUSY);
+		if ((sgflag != SEG_BUSY) || (pgflag != PG_BUSY)) {
+			panic("vm_fault_handler_check: active or inactive or !busy after anon");
 		}
 		break;
 

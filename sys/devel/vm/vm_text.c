@@ -348,17 +348,15 @@ vm_xrele(vp)
  * that order, as that is likely to be in order of size.
  */
 void
-vm_xswapin(p)
+vm_xswapin(p, addr)
 	struct proc *p;
+	vm_offset_t addr;
 {
 	register struct vm_text *xp;
 	register memaddr_t x;
 	memaddr_t a[3];
-	vm_offset_t addr;
 
 	x = NULL;
-	addr = (vm_offset_t)p->p_addr;
-	vm_map_pageable(kernel_map, addr, addr + USPACE, FALSE);
 
 	/* Malloc the text segment first, as it tends to be largest. */
 	xp = p->p_textp;
@@ -404,13 +402,6 @@ vm_xswapin(p)
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	addr = a[2];
-	if (p->p_stat == SRUN) {
-		setrq(p);
-	}
-	p->p_flag |= SLOAD;
-	p->p_time = 0;
-
-	cnt.v_swpin++;
 }
 
 /*
@@ -424,23 +415,14 @@ vm_xswapin(p)
  * panic: out of swap space
  */
 void
-vm_xswapout(p, freecore, odata, ostack)
+vm_xswapout(p, addr, size, freecore, odata, ostack)
 	struct proc *p;
+	vm_offset_t addr;
+	vm_size_t size;
 	int freecore;
 	register u_int odata, ostack;
 {
-	vm_offset_t addr;
-	vm_size_t size;
 	memaddr_t a[3];
-
-	size = round_page(ctob(USIZE));
-	addr = (vm_offset_t)p->p_addr;
-
-	/*
-	 * Unwire the to-be-swapped process's user struct and kernel stack.
-	 */
-	vm_map_pageable(kernel_map, addr, addr + addr+size, TRUE);
-	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
 
 	if (odata == X_OLDSIZE) {
 		odata = p->p_dsize;
@@ -473,14 +455,6 @@ vm_xswapout(p, freecore, odata, ostack)
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	addr = a[2];
-	p->p_flag &= ~(P_SLOAD | P_SLOCK);
-	p->p_time = 0;
-
-	cnt.v_swpout++;
-	if (runout) {
-		runout = 0;
-		wakeup((caddr_t) &runout);
-	}
 }
 
 /*

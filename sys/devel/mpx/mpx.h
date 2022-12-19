@@ -113,5 +113,4 @@ struct mpx_channel 			*mpx_disconnect(struct mpx_channel *, int);
 
 /* syscall callback */
 int 						mpxcall(int, int, struct mpx *, int);
-
 #endif /* SYS_MPX_H_ */

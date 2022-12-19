@@ -53,6 +53,7 @@
 #include <sys/queue.h>
 #include <devel/sys/threadpool.h>
 
+#ifdef notyet
 /* Inter-Threadpool Communication (ITPC) */
 struct itpc_list;
 TAILQ_HEAD(itpc_list, itpc);
@@ -195,4 +196,5 @@ void	uthreadpool_schedule_job(struct uthreadpool *, struct threadpool_job *);
 void	uthreadpool_cancel_job(struct uthreadpool *, struct threadpool_job *);
 bool_t	uthreadpool_cancel_job_async(struct uthreadpool *, struct threadpool_job *);
 
+#endif
 #endif /* _SYS_ITPC_H_ */

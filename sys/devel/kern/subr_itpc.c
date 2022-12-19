@@ -575,9 +575,9 @@ ithreadpool_add_uthreadpool(itpc, utpool)
 
 SIMPLEQ_HEAD(, ithread) allithreads = SIMPLEQ_HEAD_INITIALIZER(allithreads);
 struct ithread {
-	void 					*ithread;
-	int 					ichannel;
-	SIMPLEQ_ENTRY(ithread)  ientry;
+	void 						*ithread;
+	int 						ichannel;
+	SIMPLEQ_ENTRY(ithread)  	ientry;
 };
 
 SIMPLEQ_HEAD(, ithreadpool) allithreadpools = SIMPLEQ_HEAD_INITIALIZER(allithreadpools);
@@ -588,16 +588,30 @@ struct ithreadpool {
 	struct job_head				ijobs;
 };
 
+/* mpx api's for threads & threadpools */
+#include <devel/mpx/mpx.h>
+
+struct itpmx {
+	struct mpx				*mpx;
+
+	struct ithread 			*ithread;
+	struct ithreadpool 		*ithreadpool;
+
+	struct threadpool_job	*job;
+};
+
 void
-ithread_init(struct itpc *itpc)
+ithread_init(struct itpmx *itpc)
 {
 	struct ithread *ith;
 
-	ith = (struct ithread *)malloc(sizeof(struct ithread *));
+	ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD);
 
 	ith->ithread = NULL;
 	ith->ichannel = 0;
 	itpc->ithread = ith;
+
+	SIMPLEQ_INSERT_HEAD(&allithreads, ith, ientry);
 }
 
 struct ithread *
@@ -628,32 +642,64 @@ ithread_put(struct ithread *ith, void *thread, int channel)
 	ith->ithread = thread;
 	ith->ichannel = channel;
 	SIMPLEQ_INSERT_HEAD(&allithreads, ith, ientry);
-	//return (mxthread_put(mx, channel));
 }
 
-/* mpx api's for threads & threadpools */
-#include <devel/mpx/mpx.h>
+void
+kthreadinit(p, kt)
+	register struct proc  	*p;
+	register struct kthread *kt;
+{
+	p->p_kthreado = &kthread0;
+	kt = p->p_kthreado;
 
-struct itpmx {
-	struct mpx				*itp_mpx;
+	/* set up kernel ithreads */
+	ithread_init(kt);
+}
 
-	struct ithread 			*itp_ithread;
-	struct ithreadpool 		*itp_ithreadpool;
-
-	struct threadpool_job	*itp_job;
-};
-
-ithreadpool_init(struct itpc *itpc)
+void
+ithreadpool_init(struct itpmx *itpc)
 {
 	struct ithreadpool *itp;
 
-	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *));
+	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL);
 
 	itp->ipool = NULL;
 	itp->igroup = 0;
 	itp->ijobs = NULL;
 	itpc->ithreadpool = itp;
-	itpc->ithreadpool.ijobs = itp->ijobs;
+	itpc->ithreadpool->ijobs = itp->ijobs;
+
+	SIMPLEQ_INSERT_HEAD(&allithreadpools, itp, ientry);
+}
+
+struct ithreadpool *
+ithreadpool_lookup(void *pool)
+{
+	struct ithreadpool *itp;
+	SIMPLEQ_FOREACH(itp, &allithreadpools, ientry) {
+		if (itp->ipool == pool) {
+			return (itp);
+		}
+	}
+	return (NULL);
+}
+
+void
+ithreadpool_remove(void *pool)
+{
+	struct ithreadpool *itp;
+	itp = ithreadpool_lookup(pool);
+	if (itp != NULL) {
+		SIMPLEQ_REMOVE(&allithreadpools, itp, ithreadpool, ientry);
+	}
+}
+
+void
+ithreadpool_put(struct ithreadpool *itp, void *pool, int group)
+{
+	itp->ipool = pool;
+	itp->igroup = group;
+	SIMPLEQ_INSERT_HEAD(&allithreadpools, itp, ientry);
 }
 
 int
@@ -661,6 +707,7 @@ mxthread_create(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
+
 	return (mpxcall(MPXCREATE, MPXCHANNEL, mpx, idx));
 }
 

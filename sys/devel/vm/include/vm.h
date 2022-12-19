@@ -138,6 +138,7 @@ typedef struct lock				*lock_t;
 struct vmspace {
 	struct	vm_map 	 		vm_map;				/* VM address map */
 	struct	pmap 	 		vm_pmap;			/* private physical map */
+	union vm_pseudo_segment	vm_psegment;		/* VM pseudo segments */
 
 	int				 		vm_refcnt;			/* number of references */
 	caddr_t			 		vm_shm;				/* SYS5 shared memory private data XXX */
