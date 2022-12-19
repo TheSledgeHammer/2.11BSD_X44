@@ -109,6 +109,7 @@ struct kthread {
 
 	//void				*kt_ctxlink;			/* uc_link {get,set}context */
     //struct sadata_vp 	*kt_savp; 				/* SA "virtual processor" */
+
 };
 #define	kt_session		kt_pgrp->pg_session
 #define	kt_tgid			kt_pgrp->pg_id

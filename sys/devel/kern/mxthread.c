@@ -42,9 +42,13 @@
 /* mpx api's for threads & threadpools */
 #include <devel/mpx/mpx.h>
 
+#define M_THREAD 		83
+#define M_THREADPOOL 	84
+
 LIST_HEAD(, ithread) allithreads = LIST_HEAD_INITIALIZER(allithreads);
 struct ithread {
 	struct mpx					*impx;
+
 	void 						*ithread;
 	int 						ichannel;
 	LIST_ENTRY(ithread)  		ientry;
@@ -53,9 +57,11 @@ struct ithread {
 LIST_HEAD(, ithreadpool) allithreadpools = LIST_HEAD_INITIALIZER(allithreadpools);
 struct ithreadpool {
 	struct mpx					*impx;
+
 	void 						*ipool;
 	int 						igroup;
 	LIST_ENTRY(ithreadpool)  	ientry;
+
 	struct job_head				ijobs;
 };
 
@@ -64,7 +70,7 @@ ithread_init()
 {
 	struct ithread *ith;
 
-	ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD);
+	ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD, NULL);
 
 	ithread_insert(ith, NULL, 0);
 }
@@ -104,7 +110,7 @@ ithreadpool_init()
 {
 	struct ithreadpool *itp;
 
-	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL);
+	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL, NULL);
 	itp->ijobs = NULL;
 	ithreadpool_insert(itp, NULL, 0);
 }
@@ -146,11 +152,11 @@ ithreadpool_create(struct ithreadpool *itp)
 	int group;
 
 	if (itp == NULL) {
-		itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL);
+		itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL, NULL);
 		group = 0;
 	}
 	ithreadpool_insert(itp, NULL, group);
-	return (mxthreadpool_create(itp->impx, group));
+	return (mpxthreadpool_create(itp->impx, group));
 }
 
 int
@@ -159,12 +165,12 @@ ithreadpool_destroy(struct ithreadpool *itp)
 	int group;
 
 	if (itp != NULL) {
-		LIST_FOREACH(itp, &allithreads, ientry) {
+		LIST_FOREACH(itp, &allithreadpools, ientry) {
 			group = itp->igroup--;
 			LIST_REMOVE(itp, ientry);
 		}
 	}
-	return (mxthreadpool_destroy(itp->impx, group));
+	return (mpxthreadpool_destroy(itp->impx, group));
 }
 
 int
@@ -174,7 +180,7 @@ ithreadpool_put(struct ithreadpool *itp, void *pool)
 
 	group = itp->igroup++;
 	ithreadpool_insert(itp, pool, group);
-	return (mxthreadpool_put(itp->impx, group));
+	return (mpxthreadpool_put(itp->impx, group));
 }
 
 int
@@ -187,7 +193,7 @@ ithreadpool_get(void *pool)
 	if (itp != NULL) {
 		group = itp->igroup;
 	}
-	return (mxthreadpool_get(itp->impx, group));
+	return (mpxthreadpool_get(itp->impx, group));
 }
 
 int
@@ -201,7 +207,7 @@ ithreadpool_remove(void *pool)
 		group = itp->igroup;
 		ithreadpool_delete(pool);
 	}
-	return (mxthreadpool_remove(itp->impx, group));
+	return (mpxthreadpool_remove(itp->impx, group));
 }
 
 /* ithread mpx api's */
@@ -211,12 +217,12 @@ ithread_create(struct ithread *ith)
 	int channel;
 
 	if (ith == NULL) {
-		ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD);
+		ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD, NULL);
 		channel = 0;
 	}
 	ithread_insert(ith, NULL, channel);
 
-	return (mxthread_create(ith->impx, channel));
+	return (mpxthread_create(ith->impx, channel));
 }
 
 int
@@ -229,7 +235,7 @@ ithread_destroy(struct ithread *ith)
 			LIST_REMOVE(ith, ientry);
 		}
 	}
-	return (mxthread_destroy(ith->impx, channel));
+	return (mpxthread_destroy(ith->impx, channel));
 }
 
 int
@@ -239,7 +245,7 @@ ithread_put(struct ithread *ith, void *thread)
 
 	channel = ith->ichannel++;
 	ithread_insert(ith, thread, channel);
-	return (mxthread_put(ith->impx, channel));
+	return (mpxthread_put(ith->impx, channel));
 }
 
 int
@@ -252,7 +258,7 @@ ithread_get(void *thread)
 	if (ith != NULL) {
 		channel = ith->ichannel;
 	}
-	return (mxthread_get(ith->impx, channel));
+	return (mpxthread_get(ith->impx, channel));
 }
 
 int
@@ -266,12 +272,12 @@ ithread_remove(void *thread)
 		channel = ith->ichannel;
 		ithread_delete(thread);
 	}
-	return (mxthread_remove(ith->impx, channel));
+	return (mpxthread_remove(ith->impx, channel));
 }
 
 /* mpx portion of ithread syscall */
 int
-mxthread_create(mpx, idx)
+mpxthread_create(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -279,7 +285,7 @@ mxthread_create(mpx, idx)
 }
 
 int
-mxthread_destroy(mpx, idx)
+mpxthread_destroy(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -287,7 +293,7 @@ mxthread_destroy(mpx, idx)
 }
 
 int
-mxthread_put(mpx, idx)
+mpxthread_put(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -295,7 +301,7 @@ mxthread_put(mpx, idx)
 }
 
 int
-mxthread_get(mpx, idx)
+mpxthread_get(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -303,7 +309,7 @@ mxthread_get(mpx, idx)
 }
 
 int
-mxthread_remove(mpx, idx)
+mpxthread_remove(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -312,7 +318,7 @@ mxthread_remove(mpx, idx)
 
 /* mpx portion of ithreadpool syscall */
 int
-mxthreadpool_create(mpx, idx)
+mpxthreadpool_create(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -320,7 +326,7 @@ mxthreadpool_create(mpx, idx)
 }
 
 int
-mxthreadpool_destroy(mpx, idx)
+mpxthreadpool_destroy(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -328,7 +334,7 @@ mxthreadpool_destroy(mpx, idx)
 }
 
 int
-mxthreadpool_put(mpx, idx)
+mpxthreadpool_put(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -336,7 +342,7 @@ mxthreadpool_put(mpx, idx)
 }
 
 int
-mxthreadpool_get(mpx, idx)
+mpxthreadpool_get(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {
@@ -344,7 +350,7 @@ mxthreadpool_get(mpx, idx)
 }
 
 int
-mxthreadpool_remove(mpx, idx)
+mpxthreadpool_remove(mpx, idx)
 	struct mpx *mpx;
 	int idx;
 {

@@ -39,7 +39,8 @@
 
 #include <vm/include/vm_param.h>
 
-#define M_THREADPOOL 83
+#define M_THREAD 		83
+#define M_THREADPOOL 	84
 
 struct threadpool {
 	void 								*tp_pool;

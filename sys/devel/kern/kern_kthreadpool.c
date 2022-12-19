@@ -158,10 +158,10 @@ kthreadpool_create(ktpool, pri)
 	ktpool->ktp_overseer.ktpt_job = NULL;
 
 	ktflags = 0;
-	if(pri) {
+	if (pri) {
 		error = kthread_create(&kthreadpool_overseer_thread, &ktpool->ktp_overseer, &p, "kthread pooloverseer/%d@%d");
 	}
-	if(error) {
+	if (error) {
 		goto fail;
 	}
 
