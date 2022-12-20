@@ -103,7 +103,7 @@ static int rt_msg2(int, struct rt_addrinfo *, caddr_t, struct walkarg *, int *);
 static int rt_xaddrs(u_char, caddr_t, caddr_t, struct rt_addrinfo *);
 static int sysctl_dumpentry(struct radix_node *, void *);
 static int sysctl_iflist(int, struct walkarg *, int);
-int sysctl_rtable(int *, u_int, void *, size_t, void *, size_t );
+int sysctl_rtable(int *, u_int, void *, size_t *, void *, size_t );
 static __inline void rt_adjustcount(int, int);
 
 /* Sleazy use of local variables throughout file, warning!!!! */
@@ -1027,7 +1027,7 @@ struct protosw routesw[] = {
 				.pr_output		= route_output,
 				.pr_ctlinput 	= raw_ctlinput,
 				.pr_ctloutput	= 0,
-				.pr_usrreq		= &route_usrreq,
+				.pr_usrreq		= route_usrreq,
 				.pr_attach		= 0,
 				.pr_detach		= 0,
 				.pr_init		= raw_init,

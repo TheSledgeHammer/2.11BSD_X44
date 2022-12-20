@@ -150,7 +150,7 @@ rtable_init(table)
 }
 
 void
-route_init()
+route_init(void)
 {
 	rn_init();	/* initialize all zeroes, all ones, mask table */
 	rtable_init((void **)rt_tables);
