@@ -35,7 +35,7 @@ struct socket {
 	short				so_options;	/* from socket call, see socket.h */
 	short				so_linger;	/* time to linger while closing */
 	short				so_state;	/* internal state flags SS_*, below */
-	caddr_t				so_pcb;		/* protocol control block */
+	void	  		*so_pcb;		/* protocol control block */
 	struct	protosw 	*so_proto;	/* protocol handle */
 /*
  * Variables for connection queueing.
@@ -78,6 +78,7 @@ struct socket {
 	caddr_t				so_tpcb;	/* Misc. protocol control block XXX */
 	void				(*so_upcall)(struct socket *so, caddr_t arg, int waitf);
 	caddr_t				so_upcallarg;/* Arg for above */
+	uid_t		                so_uid;		/* who opened the socket */
 };
 
 /*

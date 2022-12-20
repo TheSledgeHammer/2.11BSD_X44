@@ -55,9 +55,9 @@ struct protosw {
 	/* output to protocol (from above) */
 	int				(*pr_output)(struct mbuf *, ...);
 	/* control input (from below) */
-	void			(*pr_ctlinput)(int, struct sockaddr *, u_int, void *);
+	void			*(*pr_ctlinput)(int, struct sockaddr *, void *);
 	/* control output (from above) */
-	int				(*pr_ctloutput)(int, struct socket *, int, int, struct mbuf *);
+	int				(*pr_ctloutput)(int, struct socket *, int, int, struct mbuf **);
 	/* user-protocol hook */
 	/* user request: see list below */
 	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);

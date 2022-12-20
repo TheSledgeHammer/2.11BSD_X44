@@ -455,32 +455,41 @@ void 			mbinit2(void *, int, int);
 	(m_copydata(m, off, len, cp))
 
 /* Packet tag routines */
+/* Packet tag routines */
 struct	m_tag *m_tag_get(int, int, int);
 void	m_tag_free(struct m_tag *);
 void	m_tag_prepend(struct mbuf *, struct m_tag *);
 void	m_tag_unlink(struct mbuf *, struct m_tag *);
 void	m_tag_delete(struct mbuf *, struct m_tag *);
-void	m_tag_delete_chain(struct mbuf *);
-struct	m_tag *m_tag_find(const struct mbuf *, int);
+void	m_tag_delete_chain(struct mbuf *, struct m_tag *);
+void	m_tag_delete_nonpersistent(struct mbuf *);
+struct	m_tag *m_tag_find(struct mbuf *, int, struct m_tag *);
 struct	m_tag *m_tag_copy(struct m_tag *);
-int		m_tag_copy_chain(struct mbuf *, struct mbuf *);
+int	m_tag_copy_chain(struct mbuf *, struct mbuf *);
+void	m_tag_init(struct mbuf *);
+struct	m_tag *m_tag_first(struct mbuf *);
+struct	m_tag *m_tag_next(struct mbuf *, struct m_tag *);
 
 /* Packet tag types */
-#define PACKET_TAG_NONE					0  /* Nothing */
-#define PACKET_TAG_SO					4  /* sending socket pointer */
-#define PACKET_TAG_NPF					10 /* packet filter */
-#define PACKET_TAG_PF					11 /* packet filter */
-#define PACKET_TAG_ALTQ_QID				12 /* ALTQ queue id */
+#define PACKET_TAG_NONE				0  /* Nothing */
+#define PACKET_TAG_VLAN				1  /* VLAN ID */
+#define PACKET_TAG_ENCAP			2  /* encapsulation data */
+#define PACKET_TAG_ESP				3  /* ESP information */
+#define PACKET_TAG_PF_GENERATED			11 /* PF generated, pass always */
+#define PACKET_TAG_PF_ROUTED			12 /* PF routed, no route loops */
+#define PACKET_TAG_PF_FRAGCACHE			13 /* PF fragment cached */
+#define PACKET_TAG_PF_QID			14 /* PF queue id */
+#define PACKET_TAG_PF_TAG			15 /* PF tags */
+
+#define PACKET_TAG_IPSEC_IN_CRYPTO_DONE		16
+#define PACKET_TAG_IPSEC_IN_DONE		17
 #define PACKET_TAG_IPSEC_OUT_DONE		18
-#define PACKET_TAG_IPSEC_NAT_T_PORTS	25 /* two uint16_t */
-#define PACKET_TAG_INET6				26 /* IPv6 info */
-#define PACKET_TAG_TUNNEL_INFO			28 /* tunnel identification and
-					    					* protocol callback, for loop
-					    					* detection/recovery
-					    					*/
-#define PACKET_TAG_MPLS					29 /* Indicate it's for MPLS */
-#define PACKET_TAG_SRCROUTE				30 /* IPv4 source routing */
-#define PACKET_TAG_ETHERNET_SRC			31 /* Ethernet source address */
+#define	PACKET_TAG_IPSEC_OUT_CRYPTO_NEEDED	19  /* NIC IPsec crypto req'ed */
+#define	PACKET_TAG_IPSEC_IN_COULD_DO_CRYPTO	20  /* NIC notifies IPsec */
+#define	PACKET_TAG_IPSEC_PENDING_TDB		21  /* Reminder to do IPsec */
+
+#define	PACKET_TAG_IPSEC_SOCKET			22 /* IPSEC socket ref */
+#define	PACKET_TAG_IPSEC_HISTORY		23 /* IPSEC history */
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */
