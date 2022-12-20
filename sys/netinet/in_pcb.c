@@ -156,28 +156,15 @@ int	anonportmax = IPPORT_ANONMAX;
 int	lowportmin  = IPPORT_RESERVEDMIN;
 int	lowportmax  = IPPORT_RESERVEDMAX;
 
-struct pool inpcb_pool;
-
 void
 in_pcbinit(table, bindhashsize, connecthashsize)
 	struct inpcbtable *table;
 	int bindhashsize, connecthashsize;
 {
-	static int inpcb_pool_initialized;
-
-	if (inpcb_pool_initialized == 0) {
-		pool_init(&inpcb_pool, sizeof(struct inpcb), 0, 0, 0,
-		    "inpcbpl", NULL);
-		inpcb_pool_initialized = 1;
-	}
-
 	CIRCLEQ_INIT(&table->inpt_queue);
-	table->inpt_porthashtbl = hashinit(bindhashsize, HASH_LIST, M_PCB,
-	    M_WAITOK, &table->inpt_porthash);
-	table->inpt_bindhashtbl = hashinit(bindhashsize, HASH_LIST, M_PCB,
-	    M_WAITOK, &table->inpt_bindhash);
-	table->inpt_connecthashtbl = hashinit(connecthashsize, HASH_LIST,
-	    M_PCB, M_WAITOK, &table->inpt_connecthash);
+	table->inpt_porthashtbl = hashinit(bindhashsize, M_PCB, &table->inpt_porthash);
+	table->inpt_bindhashtbl = hashinit(bindhashsize, M_PCB, &table->inpt_bindhash);
+	table->inpt_connecthashtbl = hashinit(connecthashsize, M_PCB, &table->inpt_connecthash);
 	table->inpt_lastlow = IPPORT_RESERVEDMAX;
 	table->inpt_lastport = (u_int16_t)anonportmax;
 }
@@ -194,7 +181,7 @@ in_pcballoc(so, v)
 	int error;
 #endif
 
-	inp = pool_get(&inpcb_pool, PR_NOWAIT);
+	MALLOC(inp, struct inpcb *, sizeof(*inp), M_PCB, M_WAITOK);
 	if (inp == NULL)
 		return (ENOBUFS);
 	bzero((caddr_t)inp, sizeof(*inp));
@@ -205,7 +192,7 @@ in_pcballoc(so, v)
 #if defined(IPSEC) || defined(FAST_IPSEC)
 	error = ipsec_init_pcbpolicy(so, &inp->inp_sp);
 	if (error != 0) {
-		pool_put(&inpcb_pool, inp);
+		FREE(inp, M_PCB);
 		return error;
 	}
 #endif
@@ -279,7 +266,7 @@ in_pcbbind(v, nam, p)
 #ifndef IPNOPRIVPORTS
 		/* GROSS */
 		if (ntohs(lport) < IPPORT_RESERVED &&
-		    (p == 0 || suser(p->p_ucred, &p->p_acflag)))
+		    (p == 0 || suser1(p->p_ucred, &p->p_acflag)))
 			return (EACCES);
 #endif
 #ifdef INET6
@@ -320,7 +307,7 @@ noname:
 
 		if (inp->inp_flags & INP_LOWPORT) {
 #ifndef IPNOPRIVPORTS
-			if (p == 0 || suser(p->p_ucred, &p->p_acflag))
+			if (p == 0 || suser1(p->p_ucred, &p->p_acflag))
 				return (EACCES);
 #endif
 			min = lowportmin;
@@ -512,7 +499,7 @@ in_pcbdetach(v)
 	CIRCLEQ_REMOVE(&inp->inp_table->inpt_queue, &inp->inp_head,
 	    inph_queue);
 	splx(s);
-	pool_put(&inpcb_pool, inp);
+	FREE(inp, M_PCB);
 }
 
 void

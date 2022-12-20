@@ -79,6 +79,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_encap.c,v 1.17.4.1 2005/05/06 01:06:58 riz Exp $"
 #include <sys/systm.h>
 #include <sys/socket.h>
 #include <sys/mbuf.h>
+#include <sys/malloc.h>
 #include <sys/errno.h>
 #include <sys/protosw.h>
 #include <sys/queue.h>

@@ -78,8 +78,6 @@ void
 igmp_init()
 {
 	igmp_timers_are_running = 0;
-	pool_init(&igmp_rti_pool, sizeof(struct router_info), 0, 0, 0, "igmppl",
-	    NULL);
 }
 
 static int
