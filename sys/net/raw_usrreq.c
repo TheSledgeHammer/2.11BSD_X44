@@ -269,7 +269,7 @@ raw_usrreq(so, req, m, nam, control, p)
 				goto die;
 			}
 			error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
-			    (struct mbuf *)0, nam, (struct mbuf *)0);
+			    (struct mbuf *)0, nam, (struct mbuf *)0, p);
 			if (error) {
 			die:
 				m_freem(m);

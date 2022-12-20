@@ -47,6 +47,14 @@
 #define	MHLEN		(MLEN - sizeof(struct pkthdr))	/* data len w/pkthdr */
 #define	NMBPCL		(CLBYTES/MSIZE)					/* # mbufs per cluster */
 #define	MINCLSIZE	(MHLEN + MLEN)					/* smallest amount to put in cluster */
+
+/* Packet tags structure */
+struct m_tag {
+	SLIST_ENTRY(m_tag)	m_tag_link;	/* List of packet tags */
+	u_int16_t			m_tag_id;	/* Tag ID */
+	u_int16_t			m_tag_len;	/* Length of data */
+};
+
 /*
  * Macros for type conversion
  */
@@ -74,6 +82,7 @@ struct m_hdr {
 /* record/packet header in first mbuf of chain; valid if M_PKTHDR set */
 struct	pkthdr {
 	struct	ifnet 		*rcvif;			/* rcv interface */
+	SLIST_HEAD(packet_tags, m_tag) tags;	/* list of packet tags */
 	int					len;			/* total packet length */
 	int					csum_flags;		/* checksum flags */
 	u_int32_t 			csum_data;		/* checksum data */
@@ -444,6 +453,34 @@ void 			mbinit2(void *, int, int);
 
 #define m_copyback(m, off, len, cp)	\
 	(m_copydata(m, off, len, cp))
+
+/* Packet tag routines */
+struct	m_tag *m_tag_get(int, int, int);
+void	m_tag_free(struct m_tag *);
+void	m_tag_prepend(struct mbuf *, struct m_tag *);
+void	m_tag_unlink(struct mbuf *, struct m_tag *);
+void	m_tag_delete(struct mbuf *, struct m_tag *);
+void	m_tag_delete_chain(struct mbuf *);
+struct	m_tag *m_tag_find(const struct mbuf *, int);
+struct	m_tag *m_tag_copy(struct m_tag *);
+int		m_tag_copy_chain(struct mbuf *, struct mbuf *);
+
+/* Packet tag types */
+#define PACKET_TAG_NONE					0  /* Nothing */
+#define PACKET_TAG_SO					4  /* sending socket pointer */
+#define PACKET_TAG_NPF					10 /* packet filter */
+#define PACKET_TAG_PF					11 /* packet filter */
+#define PACKET_TAG_ALTQ_QID				12 /* ALTQ queue id */
+#define PACKET_TAG_IPSEC_OUT_DONE		18
+#define PACKET_TAG_IPSEC_NAT_T_PORTS	25 /* two uint16_t */
+#define PACKET_TAG_INET6				26 /* IPv6 info */
+#define PACKET_TAG_TUNNEL_INFO			28 /* tunnel identification and
+					    					* protocol callback, for loop
+					    					* detection/recovery
+					    					*/
+#define PACKET_TAG_MPLS					29 /* Indicate it's for MPLS */
+#define PACKET_TAG_SRCROUTE				30 /* IPv4 source routing */
+#define PACKET_TAG_ETHERNET_SRC			31 /* Ethernet source address */
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */

@@ -271,11 +271,17 @@ struct ttysize {
 #define	SIOCGIFMETRIC		_IOWR('i', 23, struct ifreq)		/* get IF metric */
 #define	SIOCSIFMETRIC		_IOW('i', 24, struct ifreq)			/* set IF metric */
 #define	SIOCDIFADDR	 		_IOW('i', 25, struct ifreq)			/* delete IF addr */
-#define	SIOCAIFADDR	 		_IOW('i', 26, struct ifaliasreq)	/* add/chg IF alias */
 
-#define	SIOCSARP			_IOW('i', 30, struct arpreq)		/* set arp entry */
-#define	SIOCGARP			_IOWR('i', 31, struct arpreq)		/* get arp entry */
-#define	SIOCDARP			_IOW('i', 32, struct arpreq)		/* delete arp entry */
+#define	SIOCAIFADDR	 		_IOW('i', 26, struct ifaliasreq)	/* add/chg IF alias */
+#define	SIOCGIFALIAS		_IOWR('i', 27, struct ifaliasreq)	/* get IF alias */
+
+#define	SIOCALIFADDR		_IOW('i', 28, struct if_laddrreq) 	/* add IF addr */
+#define	SIOCGLIFADDR		_IOWR('i', 29, struct if_laddrreq) 	/* get IF addr */
+#define	SIOCDLIFADDR	 	_IOW('i', 30, struct if_laddrreq) 	/* delete IF addr */
+
+#define	SIOCSARP			_IOW('i', 31, struct arpreq)		/* set arp entry */
+#define	SIOCGARP			_IOWR('i', 32, struct arpreq)		/* get arp entry */
+#define	SIOCDARP			_IOW('i', 33, struct arpreq)		/* delete arp entry */
 
 #define	SIOCADDMULTI		_IOW('i', 49, struct ifreq)			/* add m'cast addr */
 #define	SIOCDELMULTI	 	_IOW('i', 50, struct ifreq)			/* del m'cast addr */

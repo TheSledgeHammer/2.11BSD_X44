@@ -68,8 +68,7 @@ __KERNEL_RCSID(0, "$NetBSD: in_gif.c,v 1.34 2003/11/11 20:25:26 jonathan Exp $")
 
 #include <net/net_osdep.h>
 
-static int gif_validate4 __P((const struct ip *, struct gif_softc *,
-	struct ifnet *));
+static int gif_validate4 __P((const struct ip *, struct gif_softc *, struct ifnet *));
 
 #if NGIF > 0
 int ip_gif_ttl = GIF_TTL;
@@ -78,11 +77,23 @@ int ip_gif_ttl = 0;
 #endif
 
 extern struct domain inetdomain;
-struct protosw in_gif_protosw =
-{ SOCK_RAW,	&inetdomain,	0/* IPPROTO_IPV[46] */,	PR_ATOMIC|PR_ADDR,
-  in_gif_input, rip_output,	0,		rip_ctloutput,
-  rip_usrreq,
-  0,            0,              0,              0,
+struct protosw in_gif_protosw = {
+		.pr_type		= SOCK_RAW,
+		.pr_domain		= &inetdomain,
+		.pr_protocol 	= 0 /* IPPROTO_IPV[46] */,
+		.pr_flags		= PR_ATOMIC|PR_ADDR,
+		.pr_input 		= in_gif_input,
+		.pr_output		= rip_output,
+		.pr_ctlinput 	= 0,
+		.pr_ctloutput	= rip_ctloutput,
+		.pr_usrreq		= rip_usrreq,
+		.pr_attach		= 0,
+		.pr_detach		= 0,
+		.pr_init		= NULL,
+		.pr_fasttimo	= NULL,
+		.pr_slowtimo	= NULL,
+		.pr_drain		= NULL,
+		.pr_sysctl		= 0,
 };
 
 int

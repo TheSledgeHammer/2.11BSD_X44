@@ -721,6 +721,169 @@ m_devget(buf, totlen, off0, ifp, copy)
 	return (top);
 }
 
+/* Get a packet tag structure along with specified data following. */
+struct m_tag *
+m_tag_get(int type, int len, int wait)
+{
+	struct m_tag *t;
+
+	if (len < 0)
+		return (NULL);
+	t = malloc(len + sizeof(struct m_tag), M_PACKET_TAGS, wait);
+	if (t == NULL)
+		return (NULL);
+	t->m_tag_id = type;
+	t->m_tag_len = len;
+	return (t);
+}
+
+/* Free a packet tag. */
+void
+m_tag_free(struct m_tag *t)
+{
+
+	free(t, M_PACKET_TAGS);
+}
+
+/* Prepend a packet tag. */
+void
+m_tag_prepend(struct mbuf *m, struct m_tag *t)
+{
+
+	SLIST_INSERT_HEAD(&m->m_pkthdr.tags, t, m_tag_link);
+}
+
+/* Unlink a packet tag. */
+void
+m_tag_unlink(struct mbuf *m, struct m_tag *t)
+{
+
+	SLIST_REMOVE(&m->m_pkthdr.tags, t, m_tag, m_tag_link);
+}
+
+/* Unlink and free a packet tag. */
+void
+m_tag_delete(struct mbuf *m, struct m_tag *t)
+{
+
+	m_tag_unlink(m, t);
+	m_tag_free(t);
+}
+
+/* Unlink and free a packet tag chain, starting from given tag. */
+__inline void
+m_tag_delete_chain(struct mbuf *m, struct m_tag *t)
+{
+	struct m_tag *p, *q;
+
+	if (t != NULL)
+		p = t;
+	else
+		p = SLIST_FIRST(&m->m_pkthdr.tags);
+	if (p == NULL)
+		return;
+	while ((q = SLIST_NEXT(p, m_tag_link)) != NULL)
+		m_tag_delete(m, q);
+	m_tag_delete(m, p);
+}
+
+/*
+ * Strip off all tags that would normally vanish when
+ * passing through a network interface.  Only persistent
+ * tags will exist after this; these are expected to remain
+ * so long as the mbuf chain exists, regardless of the
+ * path the mbufs take.
+ */
+void
+m_tag_delete_nonpersistent(struct mbuf *m)
+{
+	/* NetBSD has no persistent tags yet, so just delete all tags. */
+	return m_tag_delete_chain(m, NULL);
+}
+
+
+/* Find a tag, starting from a given position. */
+struct m_tag *
+m_tag_find(struct mbuf *m, int type, struct m_tag *t)
+{
+	struct m_tag *p;
+
+	if (t == NULL)
+		p = SLIST_FIRST(&m->m_pkthdr.tags);
+	else
+		p = SLIST_NEXT(t, m_tag_link);
+	while (p != NULL) {
+		if (p->m_tag_id == type)
+			return (p);
+		p = SLIST_NEXT(p, m_tag_link);
+	}
+	return (NULL);
+}
+
+/* Copy a single tag. */
+struct m_tag *
+m_tag_copy(struct m_tag *t)
+{
+	struct m_tag *p;
+
+	p = m_tag_get(t->m_tag_id, t->m_tag_len, M_NOWAIT);
+	if (p == NULL)
+		return (NULL);
+	bcopy(t + 1, p + 1, t->m_tag_len); /* Copy the data */
+	return (p);
+}
+
+/*
+ * Copy two tag chains. The destination mbuf (to) loses any attached
+ * tags even if the operation fails. This should not be a problem, as
+ * m_tag_copy_chain() is typically called with a newly-allocated
+ * destination mbuf.
+ */
+int
+m_tag_copy_chain(struct mbuf *to, struct mbuf *from)
+{
+	struct m_tag *p, *t, *tprev = NULL;
+
+	m_tag_delete_chain(to, NULL);
+	SLIST_FOREACH(p, &from->m_pkthdr.tags, m_tag_link) {
+		t = m_tag_copy(p);
+		if (t == NULL) {
+			m_tag_delete_chain(to, NULL);
+			return (0);
+		}
+		if (tprev == NULL)
+			SLIST_INSERT_HEAD(&to->m_pkthdr.tags, t, m_tag_link);
+		else
+			SLIST_INSERT_AFTER(tprev, t, m_tag_link);
+		tprev = t;
+	}
+	return (1);
+}
+
+/* Initialize tags on an mbuf. */
+void
+m_tag_init(struct mbuf *m)
+{
+
+	SLIST_INIT(&m->m_pkthdr.tags);
+}
+
+/* Get first tag in chain. */
+struct m_tag *
+m_tag_first(struct mbuf *m)
+{
+
+	return (SLIST_FIRST(&m->m_pkthdr.tags));
+}
+
+/* Get next tag in chain. */
+struct m_tag *
+m_tag_next(struct mbuf *m, struct m_tag *t)
+{
+
+	return (SLIST_NEXT(t, m_tag_link));
+}
+
 #ifdef notyet
 memaddr_t miobase;			/* click address of dma region */
 							/* this is altered during allocation */

@@ -65,7 +65,6 @@ __KERNEL_RCSID(0, "$NetBSD: igmp.c,v 1.36 2003/08/22 21:53:02 itojun Exp $");
 
 #define IP_MULTICASTOPTS	0
 
-struct pool igmp_rti_pool;
 struct igmpstat igmpstat;
 int igmp_timers_are_running;
 static LIST_HEAD(, router_info) rti_head = LIST_HEAD_INITIALIZER(rti_head);
@@ -99,7 +98,7 @@ rti_fill(inm)
 		}
 	}
 
-	rti = pool_get(&igmp_rti_pool, PR_NOWAIT);
+	rti = (struct router_info *)malloc(sizeof(struct router_info), M_MRTABLE, M_NOWAIT);
 	if (rti == NULL)
 		return 0;
 	rti->rti_ifp = inm->inm_ifp;
@@ -120,7 +119,7 @@ rti_find(ifp)
 			return (rti);
 	}
 
-	rti = pool_get(&igmp_rti_pool, PR_NOWAIT);
+	rti = (struct router_info *)malloc(sizeof(struct router_info), M_MRTABLE, M_NOWAIT);
 	if (rti == NULL)
 		return NULL;
 	rti->rti_ifp = ifp;
@@ -138,7 +137,7 @@ rti_delete(ifp)
 	LIST_FOREACH(rti, &rti_head, rti_link) {
 		if (rti->rti_ifp == ifp) {
 			LIST_REMOVE(rti, rti_link);
-			pool_put(&igmp_rti_pool, rti);
+			free(rti, M_MRTABLE);
 			return;
 		}
 	}

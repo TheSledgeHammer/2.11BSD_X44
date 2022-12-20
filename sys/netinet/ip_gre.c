@@ -195,12 +195,6 @@ gre_input2(struct mbuf *m, int hlen, u_char proto)
 			isr = NETISR_NS;
 			break;
 #endif
-#ifdef NETATALK
-		case ETHERTYPE_ATALK:
-			ifq = &atintrq1;
-			isr = NETISR_ATALK;
-			break;
-#endif
 #ifdef INET6
 		case ETHERTYPE_IPV6:
 #ifdef GRE_DEBUG

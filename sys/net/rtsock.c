@@ -103,7 +103,7 @@ static int rt_msg2(int, struct rt_addrinfo *, caddr_t, struct walkarg *, int *);
 static int rt_xaddrs(u_char, caddr_t, caddr_t, struct rt_addrinfo *);
 static int sysctl_dumpentry(struct radix_node *, void *);
 static int sysctl_iflist(int, struct walkarg *, int);
-static int sysctl_rtable(SYSCTLFN_PROTO);
+int sysctl_rtable(int *, u_int, void *, size_t, void *, size_t );
 static __inline void rt_adjustcount(int, int);
 
 /* Sleazy use of local variables throughout file, warning!!!! */
@@ -1013,27 +1013,37 @@ again:
 	return (error);
 }
 
-int
-route_usrreq1(so, req, m, nam, control)
-	struct socket *so;
-	int req;
-	struct mbuf *m, *nam, *control;
-{
-  return (route_usrreq(so, req, m, nam, control, u.u_procp));
-}
-
 /*
  * Definitions of protocols supported in the ROUTE domain.
  */
 
 struct protosw routesw[] = {
-		{ SOCK_RAW,	&routedomain,	0,		PR_ATOMIC|PR_ADDR,
-				raw_input,	route_output,	raw_ctlinput,	0,
-				route_usrreq1,
-				raw_init,	0,		0,		0,
-				NULL /* @@@ */, }
+		{
+				.pr_type		= SOCK_RAW,
+				.pr_domain		= &routedomain,
+				.pr_protocol 	= 0,
+				.pr_flags		= PR_ATOMIC|PR_ADDR,
+				.pr_input 		= raw_input,
+				.pr_output		= route_output,
+				.pr_ctlinput 	= raw_ctlinput,
+				.pr_ctloutput	= 0,
+				.pr_usrreq		= &route_usrreq,
+				.pr_attach		= 0,
+				.pr_detach		= 0,
+				.pr_init		= raw_init,
+				.pr_fasttimo	= NULL,
+				.pr_slowtimo	= NULL,
+				.pr_drain		= NULL,
+				.pr_sysctl		= sysctl_rtable,
+		}
 };
 
-struct domain routedomain =
-    { PF_ROUTE, "route", route_init, 0, 0,
-      routesw, &routesw[sizeof(routesw)/sizeof(routesw[0])] };
+struct domain routedomain = {
+		.dom_family 			= PF_ROUTE,
+		.dom_name 				= "route",
+		.dom_init 				= route_init,
+		.dom_externalize 		= 0,
+		.dom_dispose 			= 0,
+		.dom_protosw 			= routesw,
+		.dom_protoswNPROTOSW 	= &routesw[nitems(routesw)]
+};

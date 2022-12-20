@@ -560,17 +560,16 @@ sl_uncompress_tcp_core(buf, buflen, total_len, type, comp, hdrp, hlenp)
 		th->th_flags &=~ TH_PUSH;
 
 	switch (changes & SPECIALS_MASK) {
-	case SPECIAL_I:
-		{
+	case SPECIAL_I: {
 		u_int i = ntohs(cs->cs_ip.ip_len) - cs->cs_hlen;
 		th->th_ack = htonl(ntohl(th->th_ack) + i);
 		th->th_seq = htonl(ntohl(th->th_seq) + i);
-		}
+	}
 		break;
 
 	case SPECIAL_D:
-		th->th_seq = htonl(ntohl(th->th_seq) + ntohs(cs->cs_ip.ip_len)
-				   - cs->cs_hlen);
+		th->th_seq = htonl(
+				ntohl(th->th_seq) + ntohs(cs->cs_ip.ip_len) - cs->cs_hlen);
 		break;
 
 	default:
@@ -578,7 +577,7 @@ sl_uncompress_tcp_core(buf, buflen, total_len, type, comp, hdrp, hlenp)
 			th->th_flags |= TH_URG;
 			DECODEU(th->th_urp)
 		} else
-			th->th_flags &=~ TH_URG;
+			th->th_flags &= ~TH_URG;
 		if (changes & NEW_W)
 			DECODES(th->th_win)
 		if (changes & NEW_A)

@@ -591,7 +591,7 @@ if_detach(ifp)
 		     pr < dp->dom_protoswNPROTOSW; pr++) {
 			so.so_proto = pr;
 			if (pr->pr_usrreq != NULL) {
-				(void) (*pr->pr_usrreq)(&so, PRU_PURGEIF, NULL, NULL, (struct mbuf *) ifp);
+				(void) (*pr->pr_usrreq)(&so, PRU_PURGEIF, NULL, NULL, (struct mbuf *) ifp, curproc);
 				purged = 1;
 			}
 		}
@@ -1476,7 +1476,7 @@ ifioctl(so, cmd, data, p)
 		}
 		error = ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
 		    (struct mbuf *)cmd, (struct mbuf *)data,
-		    (struct mbuf *)ifp));
+		    (struct mbuf *)ifp, p));
 		break;
 	}
 

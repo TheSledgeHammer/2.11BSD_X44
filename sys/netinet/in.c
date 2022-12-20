@@ -133,8 +133,7 @@ __KERNEL_RCSID(0, "$NetBSD: in.c,v 1.93.2.1.4.1 2006/04/02 17:48:18 riz Exp $");
 
 static u_int in_mask2len __P((struct in_addr *));
 static void in_len2mask __P((struct in_addr *, u_int));
-static int in_lifaddr_ioctl __P((struct socket *, u_long, caddr_t,
-	struct ifnet *, struct proc *));
+static int in_lifaddr_ioctl __P((struct socket *, u_long, caddr_t, struct ifnet *, struct proc *));
 
 static int in_addprefix __P((struct in_ifaddr *, int));
 static int in_scrubprefix __P((struct in_ifaddr *));
@@ -326,7 +325,7 @@ in_control(so, cmd, data, ifp, p)
 	switch (cmd) {
 	case SIOCALIFADDR:
 	case SIOCDLIFADDR:
-		if (p == 0 || (error = suser(p->p_ucred, &p->p_acflag)))
+		if (p == 0 || (error = suser1(p->p_ucred, &p->p_acflag)))
 			return (EPERM);
 		/*fall through*/
 	case SIOCGLIFADDR:
@@ -381,8 +380,7 @@ in_control(so, cmd, data, ifp, p)
 			return (EPERM);
 
 		if (ia == 0) {
-			MALLOC(ia, struct in_ifaddr *, sizeof(*ia),
-			       M_IFADDR, M_WAITOK);
+			MALLOC(ia, struct in_ifaddr *, sizeof(*ia), M_IFADDR, M_WAITOK);
 			if (ia == 0)
 				return (ENOBUFS);
 			bzero((caddr_t)ia, sizeof *ia);
@@ -1054,7 +1052,7 @@ in_addmulti(ap, ifp)
 		 * New address; allocate a new multicast record
 		 * and link it into the interface's multicast list.
 		 */
-		inm = pool_get(&inmulti_pool, PR_NOWAIT);
+		inm = (struct in_multi *)malloc(sizeof(*inm), M_IPMADDR, M_NOWAIT);
 		if (inm == NULL) {
 			splx(s);
 			return (NULL);
@@ -1075,7 +1073,7 @@ in_addmulti(ap, ifp)
 		if ((ifp->if_ioctl == NULL) ||
 		    (*ifp->if_ioctl)(ifp, SIOCADDMULTI,(caddr_t)&ifr) != 0) {
 			LIST_REMOVE(inm, inm_list);
-			pool_put(&inmulti_pool, inm);
+			free(inm, M_IPMADDR);
 			splx(s);
 			return (NULL);
 		}
@@ -1084,7 +1082,7 @@ in_addmulti(ap, ifp)
 		 */
 		if (igmp_joingroup(inm) != 0) {
 			LIST_REMOVE(inm, inm_list);
-			pool_put(&inmulti_pool, inm);
+			free(inm, M_IPMADDR);
 			splx(s);
 			return (NULL);
 		}
@@ -1123,7 +1121,7 @@ in_delmulti(inm)
 		satosin(&ifr.ifr_addr)->sin_addr = inm->inm_addr;
 		(*inm->inm_ifp->if_ioctl)(inm->inm_ifp, SIOCDELMULTI,
 							     (caddr_t)&ifr);
-		pool_put(&inmulti_pool, inm);
+		free(inm, M_IPMADDR);
 	}
 	splx(s);
 }

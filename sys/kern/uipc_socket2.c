@@ -150,7 +150,7 @@ sonewconn(head)
 	so->so_pgrp = head->so_pgrp;
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
-	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
+	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0, u.u_procp)) {
 		(void) soqremque(so, 0);
 		(void) m_free(m);
 		goto bad;

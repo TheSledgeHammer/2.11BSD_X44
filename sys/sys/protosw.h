@@ -51,29 +51,28 @@ struct protosw {
 	short			pr_flags;			/* see below */
 	/* protocol-protocol hooks */
 	/* input to protocol (from below) */
-	int				(*pr_input)(struct mbuf **, int *, int, int);
+	void			(*pr_input)(struct mbuf *, ...);
 	/* output to protocol (from above) */
-	int				(*pr_output)(struct mbuf *, struct socket *);
-	//int				(*pr_output)(struct mbuf *, struct socket *, struct sockaddr *, struct mbuf *);
+	int				(*pr_output)(struct mbuf *, ...);
 	/* control input (from below) */
-	int				(*pr_ctlinput)(int, struct sockaddr *, u_int, void *);
+	void			(*pr_ctlinput)(int, struct sockaddr *, u_int, void *);
 	/* control output (from above) */
 	int				(*pr_ctloutput)(int, struct socket *, int, int, struct mbuf *);
 	/* user-protocol hook */
 	/* user request: see list below */
-	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
+	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 
 	int				(*pr_attach)(struct socket *, int);
 	int				(*pr_detach)(struct socket *);
 	/* utility hooks */
 	/* initialization hook */
-	int				(*pr_init)(void);
+	void			(*pr_init)(void);
 	/* fast timeout (200ms) */
-	int				(*pr_fasttimo)(void);
+	void			(*pr_fasttimo)(void);
 	/* slow timeout (500ms) */
-	int				(*pr_slowtimo)(void);
+	void			(*pr_slowtimo)(void);
 	/* flush any excess space possible */
-	int				(*pr_drain)();
+	void			(*pr_drain)(void);
 	/* sysctl for protocol */
 	int				(*pr_sysctl)(int *, u_int, void *, size_t *, void *, size_t);
 };

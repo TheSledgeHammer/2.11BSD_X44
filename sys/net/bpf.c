@@ -337,9 +337,9 @@ bpf_detachd(d)
  * This is probably cheaper than marking with a constant since
  * the address should be in a register anyway.
  */
-#define D_ISFREE(d) ((d) == (d)->bd_next)
-#define D_MARKFREE(d) ((d)->bd_next = (d))
-#define D_MARKUSED(d) ((d)->bd_next = 0)
+#define D_ISFREE(d) 	((d) == (d)->bd_next)
+#define D_MARKFREE(d) 	((d)->bd_next = (d))
+#define D_MARKUSED(d) 	((d)->bd_next = 0)
 
 /*
  * bpfilterattach() is called at boot time.
@@ -423,11 +423,11 @@ bpfclose(dev, flag, mode, p)
  * into the hold slot, and the free buffer into the store slot.
  * Zero the length of the new store buffer.
  */
-#define ROTATE_BUFFERS(d) \
-	(d)->bd_hbuf = (d)->bd_sbuf; \
-	(d)->bd_hlen = (d)->bd_slen; \
-	(d)->bd_sbuf = (d)->bd_fbuf; \
-	(d)->bd_slen = 0; \
+#define ROTATE_BUFFERS(d) 			\
+	(d)->bd_hbuf = (d)->bd_sbuf; 	\
+	(d)->bd_hlen = (d)->bd_slen; 	\
+	(d)->bd_sbuf = (d)->bd_fbuf; 	\
+	(d)->bd_slen = 0; 				\
 	(d)->bd_fbuf = 0;
 /*
  *  bpfread - read next chunk of packets from buffers

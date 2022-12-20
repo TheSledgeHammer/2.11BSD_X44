@@ -126,8 +126,8 @@ struct cstate {
 		struct ip csu_ip;	/* ip/tcp hdr from most recent packet */
 	} slcs_u;
 };
-#define cs_ip slcs_u.csu_ip
-#define cs_hdr slcs_u.csu_hdr
+#define cs_ip 	slcs_u.csu_ip
+#define cs_hdr 	slcs_u.csu_hdr
 
 /*
  * all the state data for one serial line (we need one of these
