@@ -80,15 +80,15 @@ struct bpf_d {
 	int			bd_seesent;	/* true if bpf should see sent packets */
 	int			bd_async;	/* non-zero if packet reception should generate signal */
 	pid_t		bd_pgid;	/* process or group id for signal */
-//#if BSD < 199103
-	//u_char		bd_selcoll;	/* true if selects collide */
-	//int			bd_timedout;
-	//struct proc *bd_selproc;/* process that last selected us */
-//#else
-	struct file		*bd_file;	/* bpf file */
+	struct file	*bd_file;	/* bpf file */
+#ifdef BSD < 199103
+	u_char			bd_selcoll;	/* true if selects collide */
+	int				bd_timedout;
+	struct proc 	*bd_selproc;/* process that last selected us */
+#else
 	u_char			bd_pad;		/* explicit alignment */
 	struct selinfo	bd_sel;		/* bsd select info */
-//#endif
+#endif
 	struct callout	bd_callout;	/* for BPF timeouts with select */
 };
 

@@ -87,12 +87,10 @@ struct protosw in_gif_protosw = {
 		.pr_ctlinput 	= 0,
 		.pr_ctloutput	= rip_ctloutput,
 		.pr_usrreq		= rip_usrreq,
-		.pr_attach		= 0,
-		.pr_detach		= 0,
-		.pr_init		= NULL,
-		.pr_fasttimo	= NULL,
-		.pr_slowtimo	= NULL,
-		.pr_drain		= NULL,
+		.pr_init		= 0,
+		.pr_fasttimo	= 0,
+		.pr_slowtimo	= 0,
+		.pr_drain		= 0,
 		.pr_sysctl		= 0,
 };
 

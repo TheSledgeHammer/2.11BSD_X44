@@ -1028,12 +1028,10 @@ struct protosw routesw[] = {
 				.pr_ctlinput 	= raw_ctlinput,
 				.pr_ctloutput	= 0,
 				.pr_usrreq		= route_usrreq,
-				.pr_attach		= 0,
-				.pr_detach		= 0,
 				.pr_init		= raw_init,
-				.pr_fasttimo	= NULL,
-				.pr_slowtimo	= NULL,
-				.pr_drain		= NULL,
+				.pr_fasttimo	= 0,
+				.pr_slowtimo	= 0,
+				.pr_drain		= 0,
 				.pr_sysctl		= sysctl_rtable,
 		}
 };

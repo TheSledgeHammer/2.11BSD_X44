@@ -89,7 +89,7 @@ const struct linesw ottydisc = {
 };
 
 #if NBK > 0
-/* 3- NETLDISC */
+/* 3- NETLDISC: Berkeley Network */
 const struct linesw netldisc = {
 	.l_open = bkopen,
 	.l_close = bkclose,

@@ -34,8 +34,6 @@ struct protosw unixsw[] = {
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
 				.pr_usrreq		= uipc_usrreq,
-				.pr_attach		= 0,
-				.pr_detach		= 0,
 		},
 		{
 				.pr_type		= SOCK_SEQPACKET,
@@ -43,8 +41,6 @@ struct protosw unixsw[] = {
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_ATOMIC|PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
 				.pr_usrreq		= uipc_usrreq,
-				.pr_attach		= 0,
-				.pr_detach		= 0,
 		},
 		{
 				.pr_type		= SOCK_DGRAM,
@@ -52,15 +48,13 @@ struct protosw unixsw[] = {
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_RIGHTS,
 				.pr_usrreq		= uipc_usrreq,
-				.pr_attach		= 0,
-				.pr_detach		= 0,
 		},
 };
 
 struct domain unixdomain = {
   .dom_family = AF_UNIX,
   .dom_name = "unix",
-  .dom_init = NULL,
+  .dom_init = 0,
   .dom_externalize = unp_externalize,
   .dom_dispose = unp_dispose,
   .dom_protosw = unixsw,

@@ -308,7 +308,6 @@ icmp_error(n, type, code, dest, destifp)
 	}
 	if (m == NULL)
 		goto freeit;
-	MCLAIM(m, n->m_owner);
 	m->m_len = icmplen + ICMP_MINLEN;
 	if ((m->m_flags & M_EXT) == 0)
 		MH_ALIGN(m, m->m_len);
@@ -778,7 +777,6 @@ icmp_reflect(m)
 		cp = (u_char *) (ip + 1);
 		if ((opts = ip_srcroute()) == 0 &&
 		    (opts = m_gethdr(M_DONTWAIT, MT_HEADER))) {
-			MCLAIM(opts, m->m_owner);
 			opts->m_len = sizeof(struct in_addr);
 			*mtod(opts, struct in_addr *) = zeroin_addr;
 		}
@@ -898,15 +896,16 @@ iptime()
  * that the new value is in the correct range.
  */
 static int
-sysctl_net_inet_icmp_returndatabytes(SYSCTLFN_ARGS)
+sysctl_net_inet_icmp_returndatabytes(oldp, oldlenp, newp, newlen)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	int error, t;
-	struct sysctlnode node;
 
-	node = *rnode;
-	node.sysctl_data = &t;
 	t = icmpreturndatabytes;
-	error = sysctl_lookup(SYSCTLFN_CALL(&node));
+	error = sysctl_int(oldp, oldlenp, newp, newlen, &t);
 	if (error || newp == NULL)
 		return (error);
 
@@ -923,15 +922,16 @@ sysctl_net_inet_icmp_returndatabytes(SYSCTLFN_ARGS)
  * queue.
  */
 static int
-sysctl_net_inet_icmp_redirtimeout(SYSCTLFN_ARGS)
+sysctl_net_inet_icmp_redirtimeout(oldp, oldlenp, newp, newlen)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	int error, tmp;
-	struct sysctlnode node;
 
-	node = *rnode;
-	node.sysctl_data = &tmp;
 	tmp = icmp_redirtimeout;
-	error = sysctl_lookup(SYSCTLFN_CALL(&node));
+	error = sysctl_int(oldp, oldlenp, newp, newlen, &tmp);
 	if (error || newp == NULL)
 		return (error);
 	if (tmp < 0)
@@ -959,66 +959,28 @@ sysctl_net_inet_icmp_redirtimeout(SYSCTLFN_ARGS)
 	return (0);
 }
 
-SYSCTL_SETUP(sysctl_net_inet_icmp_setup, "sysctl net.inet.icmp subtree setup")
+int
+icmp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+    size_t newlen;
 {
+    int error;
 
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "net", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "inet", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "icmp",
-		       SYSCTL_DESCR("ICMPv4 related settings"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET, IPPROTO_ICMP, CTL_EOL);
+    switch (name[0]) {
+    case ICMPCTL_RETURNDATABYTES:
+    	error = sysctl_net_inet_icmp_returndatabytes(oldp, oldlenp, newp, newlen);
+    	break;
 
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "maskrepl",
-		       SYSCTL_DESCR("Respond to ICMP_MASKREQ messages"),
-		       NULL, 0, &icmpmaskrepl, 0,
-		       CTL_NET, PF_INET, IPPROTO_ICMP,
-		       ICMPCTL_MASKREPL, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "returndatabytes",
-		       SYSCTL_DESCR("Number of bytes to return in an ICMP "
-				    "error message"),
-		       sysctl_net_inet_icmp_returndatabytes, 0,
-		       &icmpreturndatabytes, 0,
-		       CTL_NET, PF_INET, IPPROTO_ICMP,
-		       ICMPCTL_RETURNDATABYTES, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "errppslimit",
-		       SYSCTL_DESCR("Maximum number of outgoing ICMP error "
-				    "messages per second"),
-		       NULL, 0, &icmperrppslim, 0,
-		       CTL_NET, PF_INET, IPPROTO_ICMP,
-		       ICMPCTL_ERRPPSLIMIT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "rediraccept",
-		       SYSCTL_DESCR("Accept ICMP_REDIRECT messages"),
-		       NULL, 0, &icmp_rediraccept, 0,
-		       CTL_NET, PF_INET, IPPROTO_ICMP,
-		       ICMPCTL_REDIRACCEPT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "redirtimeout",
-		       SYSCTL_DESCR("Lifetime of ICMP_REDIRECT generated "
-				    "routes"),
-		       sysctl_net_inet_icmp_redirtimeout, 0,
-		       &icmp_redirtimeout, 0,
-		       CTL_NET, PF_INET, IPPROTO_ICMP,
-		       ICMPCTL_REDIRTIMEOUT, CTL_EOL);
+    case ICMPCTL_REDIRTIMEOUT:
+    	error = sysctl_net_inet_icmp_redirtimeout(oldp, oldlenp, newp, newlen);
+    	break;
+    }
+
+    return (error);
 }
 
 /* Table of common MTUs: */

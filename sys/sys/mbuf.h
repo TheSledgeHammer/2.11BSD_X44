@@ -129,6 +129,8 @@ struct mbuf {
 #define	M_EOR		    0x00000004	/* end of record */
 
 /* mbuf pkthdr flags, also in m_flags */
+#define M_AUTHIPHDR		0x00000010	/* authenticated (IPsec) */
+#define M_DECRYPTED		0x00000020	/* decrypted (IPsec) */
 #define M_LOOP		    0x00000040	/* received on loopback */
 #define	M_BCAST		    0x00000100	/* send/received as link-level broadcast */
 #define	M_MCAST		    0x00000200	/* send/received as link-level multicast */

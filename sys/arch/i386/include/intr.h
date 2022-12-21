@@ -79,6 +79,7 @@
 #define	IPL_SOFTSERIAL		4	/* serial */
 #define	IPL_TTY				3	/* terminal */
 #define	IPL_IMP				3	/* memory allocation */
+#define	IPL_VM				IPL_IMP	/* memory allocation */
 #define	IPL_AUDIO			2	/* audio */
 #define	IPL_CLOCK			1	/* clock */
 #define	IPL_HIGH			1	/* everything */
@@ -200,9 +201,11 @@ extern void softintr(int);
 /*
  * Miscellaneous
  */
+#define	splvm()				splraise(imask[IPL_VM])
 #define	splimp()			splraise(imask[IPL_IMP])
 #define	splhigh()			splraise(imask[IPL_HIGH])
 #define	spl0()				spllower(0)
+#define spllock() 			splhigh()
 
 #define	setsoftast(p)		aston(p)
 #define	setsoftclock()		softintr(SIR_CLOCK)

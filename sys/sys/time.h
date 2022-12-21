@@ -161,6 +161,8 @@ int	gettimeofday(struct timeval *, struct timezone *);
 int	setitimer(int, const struct itimerval *, struct itimerval *);
 int	settimeofday(const struct timeval *, const struct timezone *);
 int	utimes(const char *, const struct timeval *);
+int ratecheck(struct timeval *, const struct timeval *);
+int	ppsratecheck(struct timeval *, int *, int);
 __END_DECLS
 #endif /* !POSIX */
 #endif /* !KERNEL */
