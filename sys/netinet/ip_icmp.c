@@ -126,6 +126,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_icmp.c,v 1.82.2.2 2004/08/03 22:37:09 jmc Exp $")
 #include <netinet/ip_icmp.h>
 #include <netinet/ip_var.h>
 #include <netinet/in_pcb.h>
+#include <netinet/in_proto.h>
 #include <netinet/icmp_var.h>
 
 #ifdef IPSEC
@@ -152,6 +153,7 @@ int	icmpprintfs = 0;
 #endif
 int	icmpreturndatabytes = 8;
 
+extern struct protosw inetsw[];
 struct icmpstat	icmpstat;
 
 /*

@@ -84,6 +84,7 @@ __KERNEL_RCSID(0, "$NetBSD: in_proto.c,v 1.62 2003/12/04 19:38:24 atatat Exp $")
 #include <netinet/ip_var.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/in_pcb.h>
+#include <netinet/in_proto.h>
 
 #ifdef INET6
 #ifndef INET
@@ -319,7 +320,7 @@ struct protosw inetsw[] = {
 		{
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inetdomain,
-				.pr_protocol 	= IPPROTO_IPV4|IPPROTO_EON,
+				.pr_protocol 	= IPPROTO_IPV4,
 				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_LASTHDR,
 				.pr_input 		= encap4_input,
 				.pr_output		= rip_output,
@@ -336,7 +337,7 @@ struct protosw inetsw[] = {
 		{
 				.pr_type		= SOCK_RAW,
 				.pr_domain		= &inetdomain,
-				.pr_protocol 	= IPPROTO_IPV6|IPPROTO_EON,
+				.pr_protocol 	= IPPROTO_IPV6,
 				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_LASTHDR,
 				.pr_input 		= encap4_input,
 				.pr_output		= rip_output,
