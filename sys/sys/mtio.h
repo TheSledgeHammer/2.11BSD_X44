@@ -119,10 +119,10 @@ struct	mtget	{
 #define	MT_DS_MOUNTED	0x03		/* tape mounted (for control opens) */
 
 /* mag tape io control commands */
-#define	MTIOCTOP	_IOW(m, 1, struct mtop)		/* do a mag tape op */
-#define	MTIOCGET	_IOR(m, 2, struct mtget)	/* get tape status */
-#define MTIOCIEOT	_IO(m, 3)			/* ignore EOT error */
-#define MTIOCEEOT	_IO(m, 4)			/* enable EOT error */
+#define	MTIOCTOP	_IOW('m', 1, struct mtop)	/* do a mag tape op */
+#define	MTIOCGET	_IOR('m', 2, struct mtget)	/* get tape status */
+#define MTIOCIEOT	_IO('m', 3)			/* ignore EOT error */
+#define MTIOCEEOT	_IO('m', 4)			/* enable EOT error */
 /*
  * When more SCSI-3 SSC (streaming device) devices are out there
  * that support the full 32 byte type 2 structure, we'll have to
