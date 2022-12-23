@@ -45,7 +45,7 @@
 #define M_THREAD 		83
 #define M_THREADPOOL 	84
 
-LIST_HEAD(, ithread) allithreads = LIST_HEAD_INITIALIZER(allithreads);
+LIST_HEAD(, ithread) allithreads;// = LIST_HEAD_INITIALIZER(allithreads);
 struct ithread {
 	struct mpx					*impx;
 
@@ -54,7 +54,7 @@ struct ithread {
 	LIST_ENTRY(ithread)  		ientry;
 };
 
-LIST_HEAD(, ithreadpool) allithreadpools = LIST_HEAD_INITIALIZER(allithreadpools);
+LIST_HEAD(, ithreadpool) allithreadpools;// = LIST_HEAD_INITIALIZER(allithreadpools);
 struct ithreadpool {
 	struct mpx					*impx;
 
@@ -66,13 +66,13 @@ struct ithreadpool {
 };
 
 void
-ithread_init()
+ithread_init(void *thread)
 {
 	struct ithread *ith;
 
-	ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD, NULL);
-
-	ithread_insert(ith, NULL, 0);
+	ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD, M_NOWAIT);
+	ith->impx = mpx_alloc();
+	ithread_insert(ith, thread, 0);
 }
 
 struct ithread *
@@ -105,123 +105,20 @@ ithread_insert(struct ithread *ith, void *thread, int channel)
 	LIST_INSERT_HEAD(&allithreads, ith, ientry);
 }
 
-void
-ithreadpool_init()
-{
-	struct ithreadpool *itp;
-
-	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL, NULL);
-	itp->ijobs = NULL;
-	ithreadpool_insert(itp, NULL, 0);
-}
-
-struct ithreadpool *
-ithreadpool_lookup(void *pool)
-{
-	struct ithreadpool *itp;
-	LIST_FOREACH(itp, &allithreadpools, ientry) {
-		if (itp->ipool == pool) {
-			return (itp);
-		}
-	}
-	return (NULL);
-}
-
-void
-ithreadpool_delete(void *pool)
-{
-	struct ithreadpool *itp;
-	itp = ithreadpool_lookup(pool);
-	if (itp != NULL) {
-		LIST_REMOVE(itp, ientry);
-	}
-}
-
-void
-ithreadpool_insert(struct ithreadpool *itp, void *pool, int group)
-{
-	itp->ipool = pool;
-	itp->igroup = group;
-	LIST_INSERT_HEAD(&allithreadpools, itp, ientry);
-}
-
-/* ithreadpool mpx api's */
-int
-ithreadpool_create(struct ithreadpool *itp)
-{
-	int group;
-
-	if (itp == NULL) {
-		itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL, NULL);
-		group = 0;
-	}
-	ithreadpool_insert(itp, NULL, group);
-	return (mpxthreadpool_create(itp->impx, group));
-}
-
-int
-ithreadpool_destroy(struct ithreadpool *itp)
-{
-	int group;
-
-	if (itp != NULL) {
-		LIST_FOREACH(itp, &allithreadpools, ientry) {
-			group = itp->igroup--;
-			LIST_REMOVE(itp, ientry);
-		}
-	}
-	return (mpxthreadpool_destroy(itp->impx, group));
-}
-
-int
-ithreadpool_put(struct ithreadpool *itp, void *pool)
-{
-	int group;
-
-	group = itp->igroup++;
-	ithreadpool_insert(itp, pool, group);
-	return (mpxthreadpool_put(itp->impx, group));
-}
-
-int
-ithreadpool_get(void *pool)
-{
-	struct ithreadpool *itp;
-	int group;
-
-	itp = ithreadpool_lookup(pool);
-	if (itp != NULL) {
-		group = itp->igroup;
-	}
-	return (mpxthreadpool_get(itp->impx, group));
-}
-
-int
-ithreadpool_remove(void *pool)
-{
-	struct ithreadpool *itp;
-	int group;
-
-	itp = ithreadpool_lookup(pool);
-	if (itp != NULL) {
-		group = itp->igroup;
-		ithreadpool_delete(pool);
-	}
-	return (mpxthreadpool_remove(itp->impx, group));
-}
-
 /* ithread mpx api's */
 int
-ithread_create(struct ithread *ith)
+ithread_create(struct ithread *ith, void *thread)
 {
 	int channel;
 
 	if (ith == NULL) {
-		ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD, NULL);
+		ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD, M_NOWAIT);
 		channel = 0;
+	} else {
+		channel = ith->ichannel;
 	}
-	ithread_insert(ith, NULL, channel);
 
+	ithread_insert(ith, thread, channel);
 	return (mpxthread_create(ith->impx, channel));
 }
 
@@ -314,6 +211,113 @@ mpxthread_remove(mpx, idx)
 	int idx;
 {
 	return (mpxcall(MPXREMOVE, MPXCHANNEL, mpx, idx));
+}
+
+void
+ithreadpool_init()
+{
+	struct ithreadpool *itp;
+
+	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL, NULL);
+	itp->impx = mpx_alloc();
+	itp->ijobs = NULL;
+	ithreadpool_insert(itp, NULL, 0);
+}
+
+struct ithreadpool *
+ithreadpool_lookup(void *pool, int group)
+{
+	struct ithreadpool *itp;
+	LIST_FOREACH(itp, &allithreadpools, ientry) {
+		if (itp->ipool == pool && itp->igroup == group) {
+			return (itp);
+		}
+	}
+	return (NULL);
+}
+
+void
+ithreadpool_delete(void *pool, int group)
+{
+	struct ithreadpool *itp;
+	LIST_FOREACH(itp, &allithreadpools, ientry) {
+		if (itp->ipool == pool && itp->igroup == group) {
+			LIST_REMOVE(itp, ientry);
+		}
+	}
+}
+
+void
+ithreadpool_insert(struct ithreadpool *itp, void *pool, int group)
+{
+	itp->ipool = pool;
+	itp->igroup = group;
+	LIST_INSERT_HEAD(&allithreadpools, itp, ientry);
+}
+
+/* ithreadpool mpx api's */
+int
+ithreadpool_create(struct ithreadpool *itp)
+{
+	int group;
+
+	if (itp == NULL) {
+		itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL, NULL);
+		group = 0;
+	}
+	ithreadpool_insert(itp, NULL, group);
+	return (mpxthreadpool_create(itp->impx, group));
+}
+
+int
+ithreadpool_destroy(struct ithreadpool *itp)
+{
+	int group;
+
+	if (itp != NULL) {
+		LIST_FOREACH(itp, &allithreadpools, ientry) {
+			group = itp->igroup--;
+			LIST_REMOVE(itp, ientry);
+		}
+	}
+	return (mpxthreadpool_destroy(itp->impx, group));
+}
+
+int
+ithreadpool_put(struct ithreadpool *itp, void *pool)
+{
+	int group;
+
+	group = itp->igroup++;
+	ithreadpool_insert(itp, pool, group);
+	return (mpxthreadpool_put(itp->impx, group));
+}
+
+int
+ithreadpool_get(void *pool)
+{
+	struct ithreadpool *itp;
+	int group;
+
+	itp = ithreadpool_lookup(pool);
+	if (itp != NULL) {
+		group = itp->igroup;
+	}
+	return (mpxthreadpool_get(itp->impx, group));
+}
+
+int
+ithreadpool_remove(void *pool)
+{
+	struct ithreadpool *itp;
+	int group;
+
+	itp = ithreadpool_lookup(pool);
+	if (itp != NULL) {
+		group = itp->igroup;
+		ithreadpool_delete(pool);
+	}
+	return (mpxthreadpool_remove(itp->impx, group));
 }
 
 /* mpx portion of ithreadpool syscall */

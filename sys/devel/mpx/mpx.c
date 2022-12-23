@@ -73,6 +73,7 @@ mpx_init(void)
 struct mpx *
 mpx_alloc(void)
 {
+	struct mpx *mpx;
 	mpx = (struct mpx *)malloc(sizeof(struct mpx *), M_MPX, M_WAITOK);
 
 	return (mpx);
