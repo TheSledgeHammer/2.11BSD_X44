@@ -55,8 +55,9 @@ __KERNEL_RCSID(0, "$NetBSD: if_spppsubr.c,v 1.75.2.1.4.1 2006/08/23 20:19:17 tro
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/callout.h>
-//#include <sys/md5.h>
 #include <sys/inttypes.h>
+
+#include <crypto/md5/md5.h>
 
 #include <net/if.h>
 #include <net/netisr.h>
