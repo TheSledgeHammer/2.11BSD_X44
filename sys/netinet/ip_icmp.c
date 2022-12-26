@@ -902,9 +902,7 @@ icmp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
     size_t newlen;
 {
-    int error;
-
-	int arg, error;
+    	int arg, error;
 
 	/* All sysctl names at this level are terminal. */
 	if (namelen != 1)
