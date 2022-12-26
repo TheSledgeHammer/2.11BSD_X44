@@ -98,11 +98,12 @@ __KERNEL_RCSID(0, "$NetBSD: if_strip.c,v 1.51 2004/01/19 16:12:51 atatat Exp $")
 #include <sys/proc.h>
 #include <sys/mbuf.h>
 #include <sys/buf.h>
-#include <sys/dkstat.h>
+#include <sys/dk.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/tty.h>
 #include <sys/kernel.h>
 //#if __NetBSD__
@@ -133,11 +134,8 @@ __KERNEL_RCSID(0, "$NetBSD: if_strip.c,v 1.51 2004/01/19 16:12:51 atatat Exp $")
 #include <net/if_stripvar.h>
 #include <net/slip.h>
 
-#ifdef __NetBSD__	/* XXX -- jrs */
-typedef u_char ttychar_t;
-#else
+
 typedef char ttychar_t;
-#endif
 
 #if NBPFILTER > 0
 #include <sys/time.h>
@@ -427,17 +425,19 @@ stripopen(dev, tp)
 {
 	struct proc *p = curproc;		/* XXX */
 	struct strip_softc *sc;
+	const struct linesw *line;
 	int nstrip;
 	int error;
-#ifdef __NetBSD__
 	int s;
-#endif
 
-	if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 		return (error);
-
+		
+	line = linesw_lookup(dev);
+	/*
 	if (tp->t_linesw->l_no == STRIPDISC)
 		return (0);
+	*/
 
 	for (nstrip = NSTRIP, sc = strip_softc; --nstrip >= 0; sc++) {
 		if (sc->sc_ttyp == NULL) {
@@ -455,7 +455,7 @@ stripopen(dev, tp)
 			sc->sc_ttyp = tp;
 			sc->sc_if.if_baudrate = tp->t_ospeed;
 			ttyflush(tp, FREAD | FWRITE);
-#ifdef __NetBSD__
+
 			/*
 			 * Make sure tty output queue is large enough
 			 * to hold a full-sized packet (including frame
@@ -469,24 +469,12 @@ stripopen(dev, tp)
 				sc->sc_oldbufsize = tp->t_outq.c_cn;
 				sc->sc_oldbufquot = tp->t_outq.c_cq != 0;
 
-				clfree(&tp->t_outq);
-				error = clalloc(&tp->t_outq, 3*SLMTU, 0);
-				if (error) {
-					splx(s);
-#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
-					softintr_disestablish(sc->sc_si);
-#endif
-					/*
-					 * clalloc() might return -1 which
-					 * is no good, so we need to return
-					 * something else.
-					 */
-					return (ENOMEM);
-				}
-			} else
+				clist_free_cblocks(&tp->t_outq);
+				clist_alloc_cblocks(&tp->t_outq, 3*SLMTU, 0);
+			} else {
 				sc->sc_oldbufsize = sc->sc_oldbufquot = 0;
+			}
 			splx(s);
-#endif /* __NetBSD__ */
 			s = spltty();
 			strip_resetradio(sc, tp);
 			splx(s);
@@ -512,6 +500,7 @@ stripclose(tp)
 	struct tty *tp;
 {
 	struct strip_softc *sc;
+	const struct linesw *line;
 	int s;
 
 	ttywflush(tp);
@@ -532,7 +521,7 @@ stripclose(tp)
 		splx(s);
 
 		s = spltty();
-		tp->t_linesw = linesw[0];	/* default line disc. */
+		line = linesw_lookup(0);	/* default line disc. */
 		tp->t_state = 0;
 
 		sc->sc_ttyp = NULL;
@@ -561,9 +550,8 @@ stripclose(tp)
 		 * appropriate size.
 		 */
 		if (sc->sc_oldbufsize != 0) {
-			clfree(&tp->t_outq);
-			clalloc(&tp->t_outq, sc->sc_oldbufsize,
-			    sc->sc_oldbufquot);
+			clist_free_cblocks(&tp->t_outq);
+			clist_alloc_cblocks(&tp->t_outq, sc->sc_oldbufsize, sc->sc_oldbufquot);
 		}
 		splx(s);
 	}
@@ -1150,7 +1138,7 @@ stripintr(void *arg)
 			 * copy should be negligible cost compared
 			 * to the packet transmission time).
 			 */
-			bpf_m = m_dup(m, 0, M_COPYALL, M_DONTWAIT);
+			bpf_m = m_copy(m, 0, M_COPYALL);
 		} else
 			bpf_m = NULL;
 #endif
@@ -1448,7 +1436,7 @@ strip_proberadio(sc, tp)
 	if (sc->sc_if.if_flags & IFF_DEBUG)
 		addlog("%s: attempting to probe radio\n", sc->sc_if.if_xname);
 
-	overflow = b_to_q((const ttychar_t *)strip_probestr, 2, &tp->t_outq);
+	overflow = b_to_q((ttychar_t *)&strip_probestr, 2, &tp->t_outq);
 	if (overflow == 0) {
 		if (sc->sc_if.if_flags & IFF_DEBUG)
 			addlog("%s:: sent probe  to radio\n",
