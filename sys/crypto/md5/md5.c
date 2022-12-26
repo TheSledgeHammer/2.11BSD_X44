@@ -29,8 +29,6 @@
  * documentation and/or software.
  */
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <crypto/md5/md5.h>

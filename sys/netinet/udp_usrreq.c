@@ -1110,46 +1110,32 @@ release:
 /*
  * Sysctl for udp variables.
  */
-SYSCTL_SETUP(sysctl_net_inet_udp_setup, "sysctl net.inet.udp subtree setup")
+int
+udp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
+	/* All sysctl names at this level are terminal. */
+	if (namelen != 1)
+		return (ENOTDIR);
 
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "net", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "inet", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "udp",
-		       SYSCTL_DESCR("UDPv4 related settings"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET, IPPROTO_UDP, CTL_EOL);
+	switch (name[0]) {
+	case UDPCTL_CHECKSUM:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &udpcksum));
 
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "checksum",
-		       SYSCTL_DESCR("Compute and check UDP checksums"),
-		       NULL, 0, &udpcksum, 0,
-		       CTL_NET, PF_INET, IPPROTO_UDP, UDPCTL_CHECKSUM,
-		       CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "sendspace",
-		       SYSCTL_DESCR("Default UDP send buffer size"),
-		       NULL, 0, &udp_sendspace, 0,
-		       CTL_NET, PF_INET, IPPROTO_UDP, UDPCTL_SENDSPACE,
-		       CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "recvspace",
-		       SYSCTL_DESCR("Default UDP receive buffer size"),
-		       NULL, 0, &udp_recvspace, 0,
-		       CTL_NET, PF_INET, IPPROTO_UDP, UDPCTL_RECVSPACE,
-		       CTL_EOL);
+	case UDPCTL_SENDSPACE:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &udp_sendspace));
+
+	case UDPCTL_RECVSPACE:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &udp_recvspace));
+
+	default:
+		return (ENOPROTOOPT);
+	}
+	/* NOTREACHED */
 }
 #endif

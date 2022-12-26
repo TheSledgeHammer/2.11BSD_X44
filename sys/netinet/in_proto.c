@@ -149,7 +149,7 @@ struct protosw inetsw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= ip_slowtimo,
 				.pr_drain		= ip_drain,
-				.pr_sysctl		= NULL/* ip_sysctl */,
+				.pr_sysctl		= ip_sysctl,
 		},
 		{
 				.pr_type		= SOCK_DGRAM,
@@ -165,7 +165,7 @@ struct protosw inetsw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= NULL/* udp_sysctl */,
+				.pr_sysctl		= udp_sysctl,
 		},
 		{
 				.pr_type		= SOCK_STREAM,
@@ -181,7 +181,7 @@ struct protosw inetsw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= tcp_slowtimo,
 				.pr_drain		= tcp_drain,
-				.pr_sysctl		= NULL/* tcp_sysctl */,
+				.pr_sysctl		= tcp_sysctl,
 		},
 		{
 				.pr_type		= SOCK_RAW,
@@ -213,7 +213,7 @@ struct protosw inetsw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= NULL/* icmp_sysctl */,
+				.pr_sysctl		= icmp_sysctl,
 		},
 #ifdef IPSEC
 		{
@@ -230,7 +230,7 @@ struct protosw inetsw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= NULL/* ah_sysctl */,
+				.pr_sysctl		= ipsec_sysctl,
 		},
 #ifdef IPSEC_ESP
 		{
@@ -247,7 +247,7 @@ struct protosw inetsw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= NULL/* esp_sysctl */,
+				.pr_sysctl		= ipsec_sysctl,
 		},
 #endif
 		{
@@ -264,7 +264,7 @@ struct protosw inetsw[] = {
 				.pr_fasttimo	= 0,
 				.pr_slowtimo	= 0,
 				.pr_drain		= 0,
-				.pr_sysctl		= NULL/* ipcomp_sysctl */,
+				.pr_sysctl		= ipsec_sysctl,
 		},
 #endif /* IPSEC */
 #ifdef FAST_IPSEC

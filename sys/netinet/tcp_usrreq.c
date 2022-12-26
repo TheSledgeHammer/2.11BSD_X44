@@ -919,6 +919,7 @@ tcp_usrclosed(tp)
 	return (tp);
 }
 
+#ifdef notyet
 /*
  * sysctl helper routine for net.inet.ip.mssdflt.  it can't be less
  * than 32.
@@ -1393,4 +1394,60 @@ SYSCTL_SETUP(sysctl_net_inet6_tcp6_setup, "sysctl net.inet6.tcp6 subtree setup")
 	sysctl_net_inet_tcp_setup2(clog, PF_INET6, "inet6", "tcp6");
 }
 #endif /* INET6 */
+#endif
 
+static const struct {
+	 unsigned int valid : 1;
+	 unsigned int rdonly : 1;
+	 int *var;
+	 int val;
+} tcp_ctlvars[] = TCPCTL_VARIABLES;
+
+/*
+ * Sysctl for tcp variables.
+ */
+int
+tcp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	int error, saved_value;
+
+	saved_value = 0;
+	/* All sysctl names at this level are terminal. */
+	if (namelen != 1) {
+		return (ENOTDIR);
+	}
+
+	if (name[0] < sizeof(tcp_ctlvars) / sizeof(tcp_ctlvars[0])
+			&& tcp_ctlvars[name[0]].valid) {
+		if (tcp_ctlvars[name[0]].rdonly) {
+			return (sysctl_rdint(oldp, oldlenp, newp, tcp_ctlvars[name[0]].val));
+		} else {
+			switch (name[0]) {
+			case TCPCTL_MSSDFLT:
+				saved_value = tcp_mssdflt;
+				break;
+			}
+			error = sysctl_int(oldp, oldlenp, newp, newlen, tcp_ctlvars[name[0]].var);
+			if (error)
+				return (error);
+
+			switch (name[0]) {
+			case TCPCTL_MSSDFLT:
+				if (tcp_mssdflt < 32) {
+					tcp_mssdflt = saved_value;
+					return (EINVAL);
+				}
+				break;
+			}
+			return (0);
+		}
+	}
+
+	return (ENOPROTOOPT);
+}

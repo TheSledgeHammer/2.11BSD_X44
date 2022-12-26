@@ -32,6 +32,9 @@
 #ifndef _SYS_MD5_H_
 #define _SYS_MD5_H_
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 /* MD5 context. */
 typedef struct MD5Context {
 	u_int32_t state[4];	/* state (ABCD) */

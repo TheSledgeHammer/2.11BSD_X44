@@ -87,6 +87,7 @@ __KERNEL_RCSID(0, "$NetBSD: raw_ip.c,v 1.78.2.1 2004/05/10 15:00:12 tron Exp $")
 #include <netinet/ip_mroute.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/in_pcb.h>
+#include <netinet/in_proto.h>
 #include <netinet/in_var.h>
 
 #include <machine/stdarg.h>
@@ -447,7 +448,6 @@ rip_ctloutput(op, so, level, optname, m)
 		switch (optname) {
 		case IP_HDRINCL:
 			*m = m_get(M_WAIT, MT_SOOPTS);
-			MCLAIM((*m), so->so_mowner);
 			(*m)->m_len = sizeof (int);
 			*mtod(*m, int *) = inp->inp_flags & INP_HDRINCL ? 1 : 0;
 			break;

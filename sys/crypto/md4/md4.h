@@ -32,6 +32,9 @@
 #ifndef _SYS_MD4_H_
 #define _SYS_MD4_H_
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 /* MD4 context. */
 typedef struct MD4Context {
 	u_int32_t state[4];	/* state (ABCD) */

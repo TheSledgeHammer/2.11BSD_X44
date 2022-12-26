@@ -893,74 +893,6 @@ iptime()
 	return (htonl(t));
 }
 
-/*
- * sysctl helper routine for net.inet.icmp.returndatabytes.  ensures
- * that the new value is in the correct range.
- */
-static int
-sysctl_net_inet_icmp_returndatabytes(oldp, oldlenp, newp, newlen)
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-{
-	int error, t;
-
-	t = icmpreturndatabytes;
-	error = sysctl_int(oldp, oldlenp, newp, newlen, &t);
-	if (error || newp == NULL)
-		return (error);
-
-	if (t < 8 || t > 512)
-		return (EINVAL);
-	icmpreturndatabytes = t;
-
-	return (0);
-}
-
-/*
- * sysctl helper routine for net.inet.icmp.redirtimeout.  ensures that
- * the given value is not less than zero and then resets the timeout
- * queue.
- */
-static int
-sysctl_net_inet_icmp_redirtimeout(oldp, oldlenp, newp, newlen)
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-{
-	int error, tmp;
-
-	tmp = icmp_redirtimeout;
-	error = sysctl_int(oldp, oldlenp, newp, newlen, &tmp);
-	if (error || newp == NULL)
-		return (error);
-	if (tmp < 0)
-		return (EINVAL);
-	icmp_redirtimeout = tmp;
-
-	/*
-	 * was it a *defined* side-effect that anyone even *reading*
-	 * this value causes these things to happen?
-	 */
-	if (icmp_redirect_timeout_q != NULL) {
-		if (icmp_redirtimeout == 0) {
-			rt_timer_queue_destroy(icmp_redirect_timeout_q,
-			    TRUE);
-			icmp_redirect_timeout_q = NULL;
-		} else {
-			rt_timer_queue_change(icmp_redirect_timeout_q,
-			    icmp_redirtimeout);
-		}
-	} else if (icmp_redirtimeout > 0) {
-		icmp_redirect_timeout_q =
-		    rt_timer_queue_create(icmp_redirtimeout);
-	}
-	
-	return (0);
-}
-
 int
 icmp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
@@ -972,17 +904,57 @@ icmp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 {
     int error;
 
-    switch (name[0]) {
-    case ICMPCTL_RETURNDATABYTES:
-    	error = sysctl_net_inet_icmp_returndatabytes(oldp, oldlenp, newp, newlen);
-    	break;
+	int arg, error;
 
-    case ICMPCTL_REDIRTIMEOUT:
-    	error = sysctl_net_inet_icmp_redirtimeout(oldp, oldlenp, newp, newlen);
-    	break;
-    }
+	/* All sysctl names at this level are terminal. */
+	if (namelen != 1)
+		return (ENOTDIR);
 
-    return (error);
+	switch (name[0]) {
+	case ICMPCTL_MASKREPL:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &icmpmaskrepl);
+		break;
+
+	case ICMPCTL_RETURNDATABYTES:
+		arg = icmpreturndatabytes;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &arg);
+		if (error)
+			break;
+		if ((arg >= 8) || (arg <= 512))
+			icmpreturndatabytes = arg;
+		else
+			error = EINVAL;
+		break;
+
+	case ICMPCTL_ERRPPSLIMIT:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &icmperrppslim);
+		break;
+
+	case ICMPCTL_REDIRACCEPT:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &icmp_rediraccept);
+		break;
+
+	case ICMPCTL_REDIRTIMEOUT:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &icmp_redirtimeout);
+		if (icmp_redirect_timeout_q != NULL) {
+			if (icmp_redirtimeout == 0) {
+				rt_timer_queue_destroy(icmp_redirect_timeout_q, TRUE);
+				icmp_redirect_timeout_q = NULL;
+			} else {
+				rt_timer_queue_change(icmp_redirect_timeout_q, icmp_redirtimeout);
+			}
+		} else if (icmp_redirtimeout > 0) {
+			icmp_redirect_timeout_q = rt_timer_queue_create(icmp_redirtimeout);
+		}
+		return (error);
+
+		break;
+
+	default:
+		error = ENOPROTOOPT;
+		break;
+	}
+	return (error);
 }
 
 /* Table of common MTUs: */

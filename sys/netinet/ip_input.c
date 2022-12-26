@@ -2091,55 +2091,6 @@ ip_savecontrol(inp, mp, ip, m)
 	}
 }
 
-/*
- * sysctl helper routine for net.inet.ip.mtudisctimeout.  checks the
- * range of the new value and tweaks timers if it changes.
- */
-static int
-sysctl_net_inet_ip_pmtudto(oldp, oldlenp, newp, newlen)
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-{
-	int error, tmp;
-
-	tmp = ip_mtudisc_timeout;
-	error = sysctl_int(oldp, oldlenp, newp, newlen, &tmp);
-	if (error || newp == NULL)
-		return (error);
-	if (tmp < 0)
-		return (EINVAL);
-
-	ip_mtudisc_timeout = tmp;
-	rt_timer_queue_change(ip_mtudisc_timeout_q, ip_mtudisc_timeout);
-
-	return (0);
-}
-
-#ifdef GATEWAY
-/*
- * sysctl helper routine for net.inet.ip.maxflows.  apparently if
- * maxflows is even looked up, we "reap flows".
- */
-static int
-sysctl_net_inet_ip_maxflows(SYSCTLFN_ARGS)
-{
-	int s;
-/*
-	s = sysctl_lookup(SYSCTLFN_CALL(rnode));
-	if (s) {
-		return (s);
-	}
-*/
-	s = splsoftnet();
-	ipflow_reap(0);
-	splx(s);
-
-	return (0);
-}
-#endif /* GATEWAY */
-
 int
 ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
@@ -2149,201 +2100,133 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	int error;
+	extern int subnetsarelocal, hostzeroisbroadcast;
+	int error, old;
+
+	/* All sysctl names at this level are terminal. */
+	if (namelen != 1) {
+		return (ENOTDIR);
+	}
 
 	switch (name[0]) {
-	case IPCTL_MTUDISCTIMEOUT:
-		error = sysctl_net_inet_ip_pmtudto(oldp, oldlenp, newp, newlen);
-		break;
-	}
-	return (error);
-}
+	case IPCTL_FORWARDING:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ipforwarding));
 
+	case IPCTL_SENDREDIRECTS:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ipsendredirects));
+
+	case IPCTL_DEFTTL:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_defttl));
 #ifdef notyet
-SYSCTL_SETUP(sysctl_net_inet_ip_setup, "sysctl net.inet.ip subtree setup")
-{
-	extern int subnetsarelocal, hostzeroisbroadcast;
-
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "net", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "inet",
-		       SYSCTL_DESCR("PF_INET related settings"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "ip",
-		       SYSCTL_DESCR("IPv4 related settings"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP, CTL_EOL);
-	
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "forwarding",
-		       SYSCTL_DESCR("Enable forwarding of INET datagrams"),
-		       NULL, 0, &ipforwarding, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_FORWARDING, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "redirect",
-		       SYSCTL_DESCR("Enable sending of ICMP redirect messages"),
-		       NULL, 0, &ipsendredirects, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_SENDREDIRECTS, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "ttl",
-		       SYSCTL_DESCR("Default TTL for an INET datagram"),
-		       NULL, 0, &ip_defttl, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_DEFTTL, CTL_EOL);
-#ifdef IPCTL_DEFMTU
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT /* |CTLFLAG_READWRITE? */,
-		       CTLTYPE_INT, "mtu",
-		       SYSCTL_DESCR("Default MTA for an INET route"),
-		       NULL, 0, &ip_mtu, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_DEFMTU, CTL_EOL);
-#endif /* IPCTL_DEFMTU */
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READONLY1,
-		       CTLTYPE_INT, "forwsrcrt",
-		       SYSCTL_DESCR("Enable forwarding of source-routed "
-				    "datagrams"),
-		       NULL, 0, &ip_forwsrcrt, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_FORWSRCRT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "directed-broadcast",
-		       SYSCTL_DESCR("Enable forwarding of broadcast datagrams"),
-		       NULL, 0, &ip_directedbcast, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_DIRECTEDBCAST, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "allowsrcrt",
-		       SYSCTL_DESCR("Accept source-routed datagrams"),
-		       NULL, 0, &ip_allowsrcrt, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_ALLOWSRCRT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "subnetsarelocal",
-		       SYSCTL_DESCR("Whether logical subnets are considered "
-				    "local"),
-		       NULL, 0, &subnetsarelocal, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_SUBNETSARELOCAL, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "mtudisc",
-		       SYSCTL_DESCR("Use RFC1191 Path MTU Discovery"),
-		       NULL, 0, &ip_mtudisc, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_MTUDISC, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "anonportmin",
-		       SYSCTL_DESCR("Lowest ephemeral port number to assign"),
-		       sysctl_net_inet_ip_ports, 0, &anonportmin, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_ANONPORTMIN, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "anonportmax",
-		       SYSCTL_DESCR("Highest ephemeral port number to assign"),
-		       sysctl_net_inet_ip_ports, 0, &anonportmax, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_ANONPORTMAX, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "mtudisctimeout",
-		       SYSCTL_DESCR("Lifetime of a Path MTU Discovered route"),
-		       sysctl_net_inet_ip_pmtudto, 0, &ip_mtudisc_timeout, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_MTUDISCTIMEOUT, CTL_EOL);
-#ifdef GATEWAY
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "maxflows",
-		       SYSCTL_DESCR("Number of flows for fast forwarding"),
-		       sysctl_net_inet_ip_maxflows, 0, &ip_maxflows, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_MAXFLOWS, CTL_EOL);
-#endif /* GATEWAY */
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "hostzerobroadcast",
-		       SYSCTL_DESCR("All zeroes address is broadcast address"),
-		       NULL, 0, &hostzeroisbroadcast, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_HOSTZEROBROADCAST, CTL_EOL);
-#if NGIF > 0
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "gifttl",
-		       SYSCTL_DESCR("Default TTL for a gif tunnel datagram"),
-		       NULL, 0, &ip_gif_ttl, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_GIF_TTL, CTL_EOL);
-#endif /* NGIF */
-#ifndef IPNOPRIVPORTS
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "lowportmin",
-		       SYSCTL_DESCR("Lowest privileged ephemeral port number "
-				    "to assign"),
-		       sysctl_net_inet_ip_ports, 0, &lowportmin, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_LOWPORTMIN, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "lowportmax",
-		       SYSCTL_DESCR("Highest privileged ephemeral port number "
-				    "to assign"),
-		       sysctl_net_inet_ip_ports, 0, &lowportmax, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_LOWPORTMAX, CTL_EOL);
-#endif /* IPNOPRIVPORTS */
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "maxfragpackets",
-		       SYSCTL_DESCR("Maximum number of fragments to retain for "
-				    "possible reassembly"),
-		       NULL, 0, &ip_maxfragpackets, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_MAXFRAGPACKETS, CTL_EOL);
-#if NGRE > 0
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "grettl",
-		       SYSCTL_DESCR("Default TTL for a gre tunnel datagram"),
-		       NULL, 0, &ip_gre_ttl, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_GRE_TTL, CTL_EOL);
-#endif /* NGRE */
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "checkinterface",
-		       SYSCTL_DESCR("Enable receive side of Strong ES model "
-				    "from RFC1122"),
-		       NULL, 0, &ip_checkinterface, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_CHECKINTERFACE, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "random_id",
-		       SYSCTL_DESCR("Assign random ip_id values"),
-		       NULL, 0, &ip_do_randomid, 0,
-		       CTL_NET, PF_INET, IPPROTO_IP,
-		       IPCTL_RANDOMID, CTL_EOL);
-}
+	case IPCTL_DEFMTU:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_mtu));
 #endif
+	case IPCTL_FORWSRCRT:
+		/* Don't allow this to change in a secure environment.  */
+		if (securelevel > 0)
+			return (sysctl_rdint(oldp, oldlenp, newp, ip_forwsrcrt));
+		else
+			return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_forwsrcrt));
+
+	case IPCTL_DIRECTEDBCAST:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_directedbcast));
+
+	case IPCTL_ALLOWSRCRT:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_allowsrcrt));
+
+	case IPCTL_SUBNETSARELOCAL:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &subnetsarelocal));
+
+	case IPCTL_MTUDISC:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip_mtudisc);
+		if (error == 0 && ip_mtudisc == 0)
+			rt_timer_queue_remove_all(ip_mtudisc_timeout_q, TRUE);
+		return error;
+
+	case IPCTL_ANONPORTMIN:
+		old = anonportmin;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &anonportmin);
+		if (anonportmin >= anonportmax || anonportmin < 0 || anonportmin > 65535
+#ifndef IPNOPRIVPORTS
+				|| anonportmin < IPPORT_RESERVED
+#endif
+		) {
+			anonportmin = old;
+			return (EINVAL);
+		}
+		return (error);
+
+	case IPCTL_ANONPORTMAX:
+		old = anonportmax;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &anonportmax);
+		if (anonportmin >= anonportmax || anonportmax < 0 || anonportmax > 65535
+#ifndef IPNOPRIVPORTS
+				|| anonportmax < IPPORT_RESERVED
+#endif
+		) {
+			anonportmax = old;
+			return (EINVAL);
+		}
+		return (error);
+
+	case IPCTL_MTUDISCTIMEOUT:
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip_mtudisc_timeout);
+		if (error == 0)
+			rt_timer_queue_change(ip_mtudisc_timeout_q, ip_mtudisc_timeout);
+		return (error);
+
+#ifdef GATEWAY
+	case IPCTL_MAXFLOWS:
+	    {
+	    	int s;
+
+	    	error = sysctl_int(oldp, oldlenp, newp, newlen, &ip_maxflows);
+	    	s = splsoftnet();
+	    	ipflow_reap(0);
+	    	splx(s);
+	    	return (error);
+	    }
+#endif
+
+	case IPCTL_HOSTZEROBROADCAST:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &hostzeroisbroadcast));
+
+#if NGIF > 0
+	case IPCTL_GIF_TTL:
+		return(sysctl_int(oldp, oldlenp, newp, newlen, &ip_gif_ttl));
+#endif
+
+#if NGRE > 0
+	case IPCTL_GRE_TTL:
+		return(sysctl_int(oldp, oldlenp, newp, newlen, &ip_gre_ttl));
+#endif
+
+#ifndef IPNOPRIVPORTS
+	case IPCTL_LOWPORTMIN:
+		old = lowportmin;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &lowportmin);
+		if (lowportmin >= lowportmax|| lowportmin > IPPORT_RESERVEDMAX || lowportmin < IPPORT_RESERVEDMIN) {
+			lowportmin = old;
+			return (EINVAL);
+		}
+		return (error);
+
+	case IPCTL_LOWPORTMAX:
+		old = lowportmax;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &lowportmax);
+		if (lowportmin >= lowportmax|| lowportmax > IPPORT_RESERVEDMAX || lowportmax < IPPORT_RESERVEDMIN) {
+			lowportmax = old;
+			return (EINVAL);
+		}
+		return (error);
+#endif
+
+	case IPCTL_MAXFRAGPACKETS:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_maxfragpackets));
+
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
+	return (0);
+}

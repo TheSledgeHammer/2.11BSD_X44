@@ -568,39 +568,39 @@ struct	tcpstat {
 /*
  * Names for TCP sysctl objects.
  */
-#define	TCPCTL_RFC1323		1	/* RFC1323 timestamps/scaling */
-#define	TCPCTL_SENDSPACE	2	/* default send buffer */
-#define	TCPCTL_RECVSPACE	3	/* default recv buffer */
-#define	TCPCTL_MSSDFLT		4	/* default seg size */
+#define	TCPCTL_RFC1323			1	/* RFC1323 timestamps/scaling */
+#define	TCPCTL_SENDSPACE		2	/* default send buffer */
+#define	TCPCTL_RECVSPACE		3	/* default recv buffer */
+#define	TCPCTL_MSSDFLT			4	/* default seg size */
 #define	TCPCTL_SYN_CACHE_LIMIT	5	/* max size of comp. state engine */
 #define	TCPCTL_SYN_BUCKET_LIMIT	6	/* max size of hash bucket */
 #if 0	/*obsoleted*/
 #define	TCPCTL_SYN_CACHE_INTER	7	/* interval of comp. state timer */
 #endif
-#define	TCPCTL_INIT_WIN		8	/* initial window */
-#define	TCPCTL_MSS_IFMTU	9	/* mss from interface, not in_maxmtu */
-#define	TCPCTL_SACK		10	/* RFC2018 selective acknowledgement */
-#define	TCPCTL_WSCALE		11	/* RFC1323 window scaling */
-#define	TCPCTL_TSTAMP		12	/* RFC1323 timestamps */
-#define	TCPCTL_COMPAT_42	13	/* 4.2BSD TCP bug work-arounds */
-#define	TCPCTL_CWM		14	/* Congestion Window Monitoring */
+#define	TCPCTL_INIT_WIN			8	/* initial window */
+#define	TCPCTL_MSS_IFMTU		9	/* mss from interface, not in_maxmtu */
+#define	TCPCTL_SACK				10	/* RFC2018 selective acknowledgement */
+#define	TCPCTL_WSCALE			11	/* RFC1323 window scaling */
+#define	TCPCTL_TSTAMP			12	/* RFC1323 timestamps */
+#define	TCPCTL_COMPAT_42		13	/* 4.2BSD TCP bug work-arounds */
+#define	TCPCTL_CWM				14	/* Congestion Window Monitoring */
 #define	TCPCTL_CWM_BURSTSIZE	15	/* burst size allowed by CWM */
-#define	TCPCTL_ACK_ON_PUSH	16	/* ACK immediately on PUSH */
-#define	TCPCTL_KEEPIDLE		17	/* keepalive idle time */
-#define	TCPCTL_KEEPINTVL	18	/* keepalive probe interval */
-#define	TCPCTL_KEEPCNT		19	/* keepalive count */
-#define	TCPCTL_SLOWHZ		20	/* PR_SLOWHZ (read-only) */
-#define	TCPCTL_NEWRENO		21	/* NewReno Congestion Control */
-#define TCPCTL_LOG_REFUSED	22	/* Log refused connections */
+#define	TCPCTL_ACK_ON_PUSH		16	/* ACK immediately on PUSH */
+#define	TCPCTL_KEEPIDLE			17	/* keepalive idle time */
+#define	TCPCTL_KEEPINTVL		18	/* keepalive probe interval */
+#define	TCPCTL_KEEPCNT			19	/* keepalive count */
+#define	TCPCTL_SLOWHZ			20	/* PR_SLOWHZ (read-only) */
+#define	TCPCTL_NEWRENO			21	/* NewReno Congestion Control */
+#define TCPCTL_LOG_REFUSED		22	/* Log refused connections */
 #if 0	/*obsoleted*/
-#define	TCPCTL_RSTRATELIMIT	23	/* RST rate limit */
+#define	TCPCTL_RSTRATELIMIT		23	/* RST rate limit */
 #endif
-#define	TCPCTL_RSTPPSLIMIT	24	/* RST pps limit */
-#define	TCPCTL_DELACK_TICKS	25	/* # ticks to delay ACK */
+#define	TCPCTL_RSTPPSLIMIT		24	/* RST pps limit */
+#define	TCPCTL_DELACK_TICKS		25	/* # ticks to delay ACK */
 #define	TCPCTL_INIT_WIN_LOCAL	26	/* initial window for local nets */
-#define	TCPCTL_IDENT		27	/* rfc 931 identd */
+#define	TCPCTL_IDENT			27	/* rfc 931 identd */
 #define	TCPCTL_ACKDROPRATELIMIT	28	/* SYN/RST -> ACK rate limit */
-#define	TCPCTL_MAXID		29
+#define	TCPCTL_MAXID			29
 
 #define	TCPCTL_NAMES { \
 	{ 0, 0 }, \
@@ -664,38 +664,32 @@ extern	u_long syn_cache_count;
 
 extern	struct pool tcpipqent_pool;
 
-#ifdef MBUFTRACE
-extern	struct mowner tcp_rx_mowner;
-extern	struct mowner tcp_tx_mowner;
-extern	struct mowner tcp_mowner;
-#endif
-
-#define	TCPCTL_VARIABLES { \
-	{ 0 },					\
-	{ 1, 0, &tcp_do_rfc1323 },		\
-	{ 1, 0, &tcp_sendspace },		\
-	{ 1, 0, &tcp_recvspace },		\
-	{ 1, 0, &tcp_mssdflt },			\
+#define	TCPCTL_VARIABLES { 				\
+	{ 0 },								\
+	{ 1, 0, &tcp_do_rfc1323 },			\
+	{ 1, 0, &tcp_sendspace },			\
+	{ 1, 0, &tcp_recvspace },			\
+	{ 1, 0, &tcp_mssdflt },				\
 	{ 1, 0, &tcp_syn_cache_limit },		\
 	{ 1, 0, &tcp_syn_bucket_limit },	\
-	{ 0 },					\
-	{ 1, 0, &tcp_init_win },		\
-	{ 1, 0, &tcp_mss_ifmtu },		\
-	{ 1, 0, &tcp_do_sack },			\
+	{ 0 },								\
+	{ 1, 0, &tcp_init_win },			\
+	{ 1, 0, &tcp_mss_ifmtu },			\
+	{ 1, 0, &tcp_do_sack },				\
 	{ 1, 0, &tcp_do_win_scale },		\
 	{ 1, 0, &tcp_do_timestamps },		\
-	{ 1, 0, &tcp_compat_42 },		\
-	{ 1, 0, &tcp_cwm },			\
+	{ 1, 0, &tcp_compat_42 },			\
+	{ 1, 0, &tcp_cwm },					\
 	{ 1, 0, &tcp_cwm_burstsize },		\
-	{ 1, 0, &tcp_ack_on_push },		\
-	{ 1, 0, &tcp_keepidle },		\
-	{ 1, 0, &tcp_keepintvl },		\
-	{ 1, 0, &tcp_keepcnt },			\
-	{ 1, 1, 0, PR_SLOWHZ },			\
-	{ 1, 0, &tcp_do_newreno },		\
-	{ 1, 0, &tcp_log_refused },		\
-	{ 0 },					\
-	{ 1, 0, &tcp_rst_ppslim },		\
+	{ 1, 0, &tcp_ack_on_push },			\
+	{ 1, 0, &tcp_keepidle },			\
+	{ 1, 0, &tcp_keepintvl },			\
+	{ 1, 0, &tcp_keepcnt },				\
+	{ 1, 1, 0, PR_SLOWHZ },				\
+	{ 1, 0, &tcp_do_newreno },			\
+	{ 1, 0, &tcp_log_refused },			\
+	{ 0 },								\
+	{ 1, 0, &tcp_rst_ppslim },			\
 	{ 1, 0, &tcp_delack_ticks },		\
 	{ 1, 0, &tcp_init_win_local },		\
 	{ 1, 0, &tcp_ackdrop_ppslim },		\

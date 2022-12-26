@@ -144,16 +144,16 @@ __KERNEL_RCSID(0, "$NetBSD: if_spppsubr.c,v 1.75.2.1.4.1 2006/08/23 20:19:17 tro
 #define IPV6CP_OPT_IFID		1	/* interface identifier */
 #define IPV6CP_OPT_COMPRESSION	2	/* IPv6 compression protocol */
 
-#define PAP_REQ			1	/* PAP name/password request */
-#define PAP_ACK			2	/* PAP acknowledge */
-#define PAP_NAK			3	/* PAP fail */
+#define PAP_REQ				1	/* PAP name/password request */
+#define PAP_ACK				2	/* PAP acknowledge */
+#define PAP_NAK				3	/* PAP fail */
 
 #define CHAP_CHALLENGE		1	/* CHAP challenge request */
 #define CHAP_RESPONSE		2	/* CHAP challenge response */
 #define CHAP_SUCCESS		3	/* CHAP response ok */
 #define CHAP_FAILURE		4	/* CHAP response failed */
 
-#define CHAP_MD5		5	/* hash algorithm - MD5 */
+#define CHAP_MD5			5	/* hash algorithm - MD5 */
 
 #define CISCO_MULTICAST		0x8f	/* Cisco multicast address */
 #define CISCO_UNICAST		0x0f	/* Cisco unicast address */
@@ -5375,11 +5375,11 @@ sppp_lcp_opt_name(u_char opt)
 {
 	static char buf[12];
 	switch (opt) {
-	case LCP_OPT_MRU:		return "mru";
+	case LCP_OPT_MRU:			return "mru";
 	case LCP_OPT_ASYNC_MAP:		return "async-map";
 	case LCP_OPT_AUTH_PROTO:	return "auth-proto";
 	case LCP_OPT_QUAL_PROTO:	return "qual-proto";
-	case LCP_OPT_MAGIC:		return "magic";
+	case LCP_OPT_MAGIC:			return "magic";
 	case LCP_OPT_PROTO_COMP:	return "proto-comp";
 	case LCP_OPT_ADDR_COMP:		return "addr-comp";
 	}
