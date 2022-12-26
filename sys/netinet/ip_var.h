@@ -189,7 +189,7 @@ struct ipflow {
 #ifdef __NO_STRICT_ALIGNMENT
 #define	IP_HDR_ALIGNED_P(ip)	1
 #else
-#define	IP_HDR_ALIGNED_P(ip)	((((caddr_t) (ip)) & 3) == 0)
+#define	IP_HDR_ALIGNED_P(ip)	((((u_long) (ip)) & 3) == 0)
 #endif
 
 extern struct ipstat ipstat;		/* ip statistics */

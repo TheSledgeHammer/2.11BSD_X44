@@ -2045,7 +2045,7 @@ ip_savecontrol(inp, mp, ip, m)
 
 		microtime(&tv);
 		*mp = sbcreatecontrol((caddr_t) &tv, sizeof(tv),
-		    SCM_TIMESTAMP, SOL_SOCKET);
+		    /*SCM_TIMESTAMP*/0, SOL_SOCKET);
 		if (*mp)
 			mp = &(*mp)->m_next;
 	}
@@ -2155,6 +2155,7 @@ ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case IPCTL_MTUDISCTIMEOUT:
 		error = sysctl_net_inet_ip_pmtudto(oldp, oldlenp, newp, newlen);
 		break;
+	}
 	return (error);
 }
 

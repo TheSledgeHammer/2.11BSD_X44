@@ -238,7 +238,7 @@ struct in_multi {
 	u_int	inm_state;		/* state of membership */
 };
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 /*
  * Structure used by macros below to remember position when stepping through
  * all of the in_multi records.
