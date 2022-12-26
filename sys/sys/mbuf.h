@@ -148,6 +148,12 @@ struct mbuf {
 #define M_LINK6			0x40000		/* link layer specific flag */
 #define M_LINK7			0x80000		/* link layer specific flag */
 
+/* additional flags for M_EXT mbufs */
+#define	M_EXT_CLUSTER	        0x01000000	/* ext is a cluster */
+
+/* for source-level compatibility */
+#define	M_CLUSTER	        M_EXT_CLUSTER
+
 /* flags copied when copying m_pkthdr */
 #define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST|M_CANFASTFWD|M_ANYCAST6|M_LINK0|M_LINK1|M_LINK2|M_LOOP)
 
