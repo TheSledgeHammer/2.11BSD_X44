@@ -69,6 +69,7 @@ typedef	_BSD_SSIZE_T_	ssize_t;
 #define	SO_LINGER		0x0080		/* linger on close if data present */
 #define	SO_OOBINLINE	0x0100		/* leave received OOB data in line */
 #define	SO_REUSEPORT	0x0200		/* allow local address & port reuse */
+#define	SO_TIMESTAMP	0x2000		/* timestamp received dgram traffic */
 
 /*
  * Additional options, not kept in so_options.

@@ -212,7 +212,6 @@ ip_output(m0, va_alist)
 		mtu_p = NULL;
 	va_end(ap);
 
-	MCLAIM(m, &ip_tx_mowner);
 #ifdef FAST_IPSEC
 	if (so != NULL && so->so_proto->pr_domain->dom_family == AF_INET)
 		inp = (struct inpcb *)so->so_pcb;
@@ -906,7 +905,6 @@ ip_fragment(struct mbuf *m, struct ifnet *ifp, u_long mtu)
 			ipstat.ips_odropped++;
 			goto sendorfree;
 		}
-		MCLAIM(m, m0->m_owner);
 		*mnext = m;
 		mnext = &m->m_nextpkt;
 		m->m_data += max_linkhdr;
@@ -1056,7 +1054,6 @@ ip_insertoptions(m, opt, phlen)
 		MGETHDR(n, M_DONTWAIT, MT_HEADER);
 		if (n == 0)
 			return (m);
-		MCLAIM(n, m->m_owner);
 		M_COPY_PKTHDR(n, m);
 		m_tag_delete_chain(m, NULL);
 		m->m_flags &= ~M_PKTHDR;
@@ -1274,7 +1271,6 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_OPTIONS:
 		case IP_RETOPTS:
 			*mp = m = m_get(M_WAIT, MT_SOOPTS);
-			MCLAIM(m, so->so_mowner);
 			if (inp->inp_options) {
 				m->m_len = inp->inp_options->m_len;
 				bcopy(mtod(inp->inp_options, caddr_t),
@@ -1291,7 +1287,6 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_RECVIF:
 		case IP_ERRORMTU:
 			*mp = m = m_get(M_WAIT, MT_SOOPTS);
-			MCLAIM(m, so->so_mowner);
 			m->m_len = sizeof(int);
 			switch (optname) {
 
@@ -1349,13 +1344,13 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_ADD_MEMBERSHIP:
 		case IP_DROP_MEMBERSHIP:
 			error = ip_getmoptions(optname, inp->inp_moptions, mp);
-			if (*mp)
-				MCLAIM(*mp, so->so_mowner);
+			if (*mp) {
+
+			}
 			break;
 
 		case IP_PORTRANGE:
 			*mp = m = m_get(M_WAIT, MT_SOOPTS);
-			MCLAIM(m, so->so_mowner);
 			m->m_len = sizeof(int);
 
 			if (inp->inp_flags & INP_LOWPORT)
@@ -1847,7 +1842,7 @@ ip_mloopback(ifp, m, dst)
 
 	copym = m_copy(m, 0, M_COPYALL);
 	if (copym != NULL
-	 && (copym->m_flags & M_EXT || copym->m_len < sizeof(struct ip)))
+	 && ((copym->m_flags & M_EXT) || copym->m_len < sizeof(struct ip)))
 		copym = m_pullup(copym, sizeof(struct ip));
 	if (copym != NULL) {
 		/*

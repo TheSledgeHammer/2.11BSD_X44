@@ -316,5 +316,6 @@ extern const struct linesw netldisc;
 extern const struct linesw tabldisc;
 extern const struct linesw slipdisc;
 extern const struct linesw pppdisc;
+extern const struct linesw stripdisc;
 
 #endif

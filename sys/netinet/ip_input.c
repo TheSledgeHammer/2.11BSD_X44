@@ -105,7 +105,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip_input.c,v 1.197.2.1 2004/05/28 07:25:05 tron Exp 
 #include "opt_pfil_hooks.h"
 #include "opt_ipsec.h"
 #include "opt_mrouting.h"
-//#include "opt_mbuftrace.h"
 #include "opt_inet_csum.h"
 
 #include <sys/param.h>
@@ -130,6 +129,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip_input.c,v 1.197.2.1 2004/05/28 07:25:05 tron Exp 
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/in_pcb.h>
+#include <netinet/in_proto.h>
 #include <netinet/in_var.h>
 #include <netinet/ip_var.h>
 #include <netinet/ip_icmp.h>
@@ -242,10 +242,10 @@ struct pfil_head inet_pfil_hook;
 static int	ip_nmbclusters;			/* copy of nmbclusters */
 static void	ip_nmbclusters_changed __P((void));	/* recalc limits */
 
-#define CHECK_NMBCLUSTER_PARAMS()				\
-do {								\
+#define CHECK_NMBCLUSTER_PARAMS()						\
+do {													\
 	if (__predict_false(ip_nmbclusters != nmbclusters))	\
-		ip_nmbclusters_changed();			\
+		ip_nmbclusters_changed();						\
 } while (/*CONSTCOND*/0)
 
 /* IP datagram reassembly queues (hashed) */
@@ -311,19 +311,19 @@ ipq_unlock()
 }
 
 #ifdef DIAGNOSTIC
-#define	IPQ_LOCK()							\
-do {									\
-	if (ipq_lock_try() == 0) {					\
-		printf("%s:%d: ipq already locked\n", __FILE__, __LINE__); \
-		panic("ipq_lock");					\
-	}								\
+#define	IPQ_LOCK()													\
+do {																\
+	if (ipq_lock_try() == 0) {										\
+		printf("%s:%d: ipq already locked\n", __FILE__, __LINE__); 	\
+		panic("ipq_lock");											\
+	}																\
 } while (/*CONSTCOND*/ 0)
-#define	IPQ_LOCK_CHECK()						\
-do {									\
-	if (ipq_locked == 0) {						\
-		printf("%s:%d: ipq lock not held\n", __FILE__, __LINE__); \
-		panic("ipq lock check");				\
-	}								\
+#define	IPQ_LOCK_CHECK()											\
+do {																\
+	if (ipq_locked == 0) {											\
+		printf("%s:%d: ipq lock not held\n", __FILE__, __LINE__); 	\
+		panic("ipq lock check");									\
+	}																\
 } while (/*CONSTCOND*/ 0)
 #else
 #define	IPQ_LOCK()		(void) ipq_lock_try()
@@ -331,9 +331,6 @@ do {									\
 #endif
 
 #define	IPQ_UNLOCK()		ipq_unlock()
-
-struct pool inmulti_pool;
-struct pool ipqent_pool;
 
 #ifdef INET_CSUM_COUNTERS
 #include <sys/device.h>
@@ -370,11 +367,6 @@ static	struct ip_srcrt {
 
 static void save_rte __P((u_char *, struct in_addr));
 
-#ifdef MBUFTRACE
-struct mowner ip_rx_mowner = { "internet", "rx" };
-struct mowner ip_tx_mowner = { "internet", "tx" };
-#endif
-
 /*
  * Compute IP limits derived from the value of nmbclusters.
  */
@@ -394,11 +386,6 @@ ip_init()
 {
 	struct protosw *pr;
 	int i;
-
-	pool_init(&inmulti_pool, sizeof(struct in_multi), 0, 0, 0, "inmltpl",
-	    NULL);
-	pool_init(&ipqent_pool, sizeof(struct ipqent), 0, 0, 0, "ipqepl",
-	    NULL);
 
 	pr = pffindproto(PF_INET, IPPROTO_RAW, SOCK_RAW);
 	if (pr == 0)
@@ -420,10 +407,8 @@ ip_init()
 	ip_nmbclusters_changed();
 
 	TAILQ_INIT(&in_ifaddrhead);
-	in_ifaddrhashtbl = hashinit(IN_IFADDR_HASH_SIZE, HASH_LIST, M_IFADDR,
-	    M_WAITOK, &in_ifaddrhash);
-	in_multihashtbl = hashinit(IN_IFADDR_HASH_SIZE, HASH_LIST, M_IPMADDR,
-	    M_WAITOK, &in_multihash);
+	in_ifaddrhashtbl = hashinit(IN_IFADDR_HASH_SIZE, M_IFADDR, &in_ifaddrhash);
+	in_multihashtbl = hashinit(IN_IFADDR_HASH_SIZE, M_IPMADDR, &in_multihash);
 	ip_mtudisc_timeout_q = rt_timer_queue_create(ip_mtudisc_timeout);
 #ifdef GATEWAY
 	ipflow_init();
@@ -444,11 +429,6 @@ ip_init()
 	evcnt_attach_static(&ip_hwcsum_ok);
 	evcnt_attach_static(&ip_swcsum);
 #endif /* INET_CSUM_COUNTERS */
-
-#ifdef MBUFTRACE
-	MOWNER_ATTACH(&ip_tx_mowner);
-	MOWNER_ATTACH(&ip_rx_mowner);
-#endif /* MBUFTRACE */
 }
 
 struct	sockaddr_in ipaddr = { sizeof(ipaddr), AF_INET };
@@ -469,7 +449,6 @@ ipintr()
 		splx(s);
 		if (m == 0)
 			return;
-		MCLAIM(m, &ip_rx_mowner);
 		ip_input(m);
 	}
 }
@@ -498,7 +477,6 @@ ip_input(struct mbuf *m)
 	int s, error;
 #endif /* FAST_IPSEC */
 
-	MCLAIM(m, &ip_rx_mowner);
 #ifdef	DIAGNOSTIC
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("ipintr no HDR");
@@ -939,7 +917,7 @@ found:
 		 */
 		if (mff || ip->ip_off != htons(0)) {
 			ipstat.ips_fragments++;
-			ipqe = pool_get(&ipqent_pool, PR_NOWAIT);
+			MALLOC(ipqe, struct ipqent *, sizeof (struct ipqent), M_IPQ, M_NOWAIT);
 			if (ipqe == NULL) {
 				ipstat.ips_rcvmemdrop++;
 				IPQ_UNLOCK();
@@ -1095,8 +1073,7 @@ ip_reass(ipqe, fp, ipqhead)
 		else if (ip_nfragpackets >= ip_maxfragpackets)
 			goto dropfrag;
 		ip_nfragpackets++;
-		MALLOC(fp, struct ipq *, sizeof (struct ipq),
-		    M_FTABLE, M_NOWAIT);
+		MALLOC(fp, struct ipq *, sizeof (struct ipq), M_FTABLE, M_NOWAIT);
 		if (fp == NULL)
 			goto dropfrag;
 		LIST_INSERT_HEAD(ipqhead, fp, ipq_q);
@@ -1160,7 +1137,7 @@ ip_reass(ipqe, fp, ipqhead)
 		nq = TAILQ_NEXT(q, ipqe_q);
 		m_freem(q->ipqe_m);
 		TAILQ_REMOVE(&fp->ipq_fragq, q, ipqe_q);
-		pool_put(&ipqent_pool, q);
+		FREE(q, M_IPQ);
 		fp->ipq_nfrags--;
 		ip_nfrags--;
 	}
@@ -1201,11 +1178,11 @@ insert:
 	m->m_next = 0;
 	m_cat(m, t);
 	nq = TAILQ_NEXT(q, ipqe_q);
-	pool_put(&ipqent_pool, q);
+	FREE(q, M_IPQ);
 	for (q = nq; q != NULL; q = nq) {
 		t = q->ipqe_m;
 		nq = TAILQ_NEXT(q, ipqe_q);
-		pool_put(&ipqent_pool, q);
+		FREE(q, M_IPQ);
 		m_cat(m, t);
 	}
 	ip_nfrags -= fp->ipq_nfrags;
@@ -1239,7 +1216,7 @@ dropfrag:
 	ip_nfrags--;
 	ipstat.ips_fragdropped++;
 	m_freem(m);
-	pool_put(&ipqent_pool, ipqe);
+	FREE(ipqe, M_IPQ);
 	return (0);
 }
 
@@ -1261,7 +1238,7 @@ ip_freef(fp)
 		m_freem(q->ipqe_m);
 		nfrags++;
 		TAILQ_REMOVE(&fp->ipq_fragq, q, ipqe_q);
-		pool_put(&ipqent_pool, q);
+		FREE(q, M_IPQ);
 	}
 
 	if (nfrags != fp->ipq_nfrags)
@@ -1723,7 +1700,6 @@ ip_srcroute()
 	if (m == 0)
 		return ((struct mbuf *)0);
 
-	MCLAIM(m, &inetdomain.dom_mowner);
 #define OPTSIZ	(sizeof(ip_srcrt.nop) + sizeof(ip_srcrt.srcopt))
 
 	/* length is (nhops+1)*sizeof(addr) + sizeof(nop + srcrt header) */
@@ -1846,7 +1822,6 @@ ip_forward(m, srcrt)
 	/*
 	 * We are now in the output path.
 	 */
-	MCLAIM(m, &ip_tx_mowner);
 
 	/*
 	 * Clear any in-bound checksum flags for this packet.
@@ -1860,7 +1835,7 @@ ip_forward(m, srcrt)
 		    ntohl(ip->ip_src.s_addr),
 		    ntohl(ip->ip_dst.s_addr), ip->ip_ttl);
 #endif
-	if (m->m_flags & (M_BCAST|M_MCAST) || in_canforward(ip->ip_dst) == 0) {
+	if ((m->m_flags & (M_BCAST|M_MCAST)) || in_canforward(ip->ip_dst) == 0) {
 		ipstat.ips_cantforward++;
 		m_freem(m);
 		return;
@@ -1895,7 +1870,7 @@ ip_forward(m, srcrt)
 	 * we need to generate an ICMP message to the src.
 	 * Pullup to avoid sharing mbuf cluster between m and mcopy.
 	 */
-	mcopy = m_copym(m, 0, imin(ntohs(ip->ip_len), 68), M_DONTWAIT);
+	mcopy = m_copy(m, 0, imin(ntohs(ip->ip_len), 68));
 	if (mcopy)
 		mcopy = m_pullup(mcopy, ip->ip_hl << 2);
 
@@ -2110,8 +2085,7 @@ ip_savecontrol(inp, mp, ip, m)
 		sdl.sdl_index = m->m_pkthdr.rcvif ?
 		    m->m_pkthdr.rcvif->if_index : 0;
 		sdl.sdl_nlen = sdl.sdl_alen = sdl.sdl_slen = 0;
-		*mp = sbcreatecontrol((caddr_t) &sdl, sdl.sdl_len,
-		    IP_RECVIF, IPPROTO_IP);
+		*mp = sbcreatecontrol((caddr_t) &sdl, sdl.sdl_len, IP_RECVIF, IPPROTO_IP);
 		if (*mp)
 			mp = &(*mp)->m_next;
 	}
@@ -2122,15 +2096,16 @@ ip_savecontrol(inp, mp, ip, m)
  * range of the new value and tweaks timers if it changes.
  */
 static int
-sysctl_net_inet_ip_pmtudto(SYSCTLFN_ARGS)
+sysctl_net_inet_ip_pmtudto(oldp, oldlenp, newp, newlen)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	int error, tmp;
-	struct sysctlnode node;
 
-	node = *rnode;
 	tmp = ip_mtudisc_timeout;
-	node.sysctl_data = &tmp;
-	error = sysctl_lookup(SYSCTLFN_CALL(&node));
+	error = sysctl_int(oldp, oldlenp, newp, newlen, &tmp);
 	if (error || newp == NULL)
 		return (error);
 	if (tmp < 0)
@@ -2151,11 +2126,12 @@ static int
 sysctl_net_inet_ip_maxflows(SYSCTLFN_ARGS)
 {
 	int s;
-
+/*
 	s = sysctl_lookup(SYSCTLFN_CALL(rnode));
-	if (s)
+	if (s) {
 		return (s);
-	
+	}
+*/
 	s = splsoftnet();
 	ipflow_reap(0);
 	splx(s);
@@ -2164,7 +2140,25 @@ sysctl_net_inet_ip_maxflows(SYSCTLFN_ARGS)
 }
 #endif /* GATEWAY */
 
+int
+ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	int error;
 
+	switch (name[0]) {
+	case IPCTL_MTUDISCTIMEOUT:
+		error = sysctl_net_inet_ip_pmtudto(oldp, oldlenp, newp, newlen);
+		break;
+	return (error);
+}
+
+#ifdef notyet
 SYSCTL_SETUP(sysctl_net_inet_ip_setup, "sysctl net.inet.ip subtree setup")
 {
 	extern int subnetsarelocal, hostzeroisbroadcast;
@@ -2351,3 +2345,4 @@ SYSCTL_SETUP(sysctl_net_inet_ip_setup, "sysctl net.inet.ip subtree setup")
 		       CTL_NET, PF_INET, IPPROTO_IP,
 		       IPCTL_RANDOMID, CTL_EOL);
 }
+#endif

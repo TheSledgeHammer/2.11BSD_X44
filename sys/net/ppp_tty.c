@@ -630,9 +630,9 @@ pppfcs(fcs, cp, len)
     u_char *cp;
     int len;
 {
-    while (len--)
-	fcs = PPP_FCS(fcs, *cp++);
-    return (fcs);
+	while (len--)
+		fcs = PPP_FCS(fcs, *cp++);
+	return (fcs);
 }
 
 /* This gets called at splsoftnet from pppasyncstart at various times
@@ -647,22 +647,22 @@ pppsyncstart(sc)
 	const struct cdevsw *cdev;
 	int len;
     
-	for(m = sc->sc_outm;;) {
+	for (m = sc->sc_outm;;) {
 		if (m == NULL) {
-			m = ppp_dequeue(sc);	/* get new packet */
+			m = ppp_dequeue(sc); /* get new packet */
 			if (m == NULL)
-				break;		/* no more packets */
+				break; /* no more packets */
 			if (sc->sc_flags & SC_DEBUG)
-				pppdumpframe(sc,m,1);
+				pppdumpframe(sc, m, 1);
 		}
-		for(n=m,len=0;n!=NULL;n=n->m_next)
+		for (n = m, len = 0; n != NULL; n = n->m_next)
 			len += n->m_len;
-			
+
 		/* call device driver IOCTL to transmit a frame */
 		cdev = cdevsw_lookup(tp->t_dev);
-		if (cdev == NULL ||
-		    (*cdev->d_ioctl)(tp->t_dev, TIOCXMTFRAME, (caddr_t)&m,
-				     0, 0)) {
+		if (cdev == NULL
+				|| (*cdev->d_ioctl)(tp->t_dev, TIOCXMTFRAME, (caddr_t) & m, 0,
+						0)) {
 			/* busy or error, set as current packet */
 			sc->sc_outm = m;
 			break;
@@ -688,177 +688,177 @@ pppasyncstart(sc)
     struct mbuf *m2;
     int s;
 
-    if (sc->sc_flags & SC_SYNC){
-	pppsyncstart(sc);
-	return;
-    }
+	if (sc->sc_flags & SC_SYNC) {
+		pppsyncstart(sc);
+		return;
+	}
     
     idle = 0;
-    while (CCOUNT(&tp->t_outq) < PPP_HIWAT) {
-	/*
-	 * See if we have an existing packet partly sent.
-	 * If not, get a new packet and start sending it.
-	 */
-	m = sc->sc_outm;
-	if (m == NULL) {
-	    /*
-	     * Get another packet to be sent.
-	     */
-	    m = ppp_dequeue(sc);
-	    if (m == NULL) {
-		idle = 1;
-		break;
-	    }
+	while (CCOUNT(&tp->t_outq) < PPP_HIWAT) {
+		/*
+		 * See if we have an existing packet partly sent.
+		 * If not, get a new packet and start sending it.
+		 */
+		m = sc->sc_outm;
+		if (m == NULL) {
+			/*
+			 * Get another packet to be sent.
+			 */
+			m = ppp_dequeue(sc);
+			if (m == NULL) {
+				idle = 1;
+				break;
+			}
 
-	    /*
-	     * The extra PPP_FLAG will start up a new packet, and thus
-	     * will flush any accumulated garbage.  We do this whenever
-	     * the line may have been idle for some time.
-	     */
-	    if (CCOUNT(&tp->t_outq) == 0) {
-		++sc->sc_stats.ppp_obytes;
-		(void) putc(PPP_FLAG, &tp->t_outq);
-	    }
+			/*
+			 * The extra PPP_FLAG will start up a new packet, and thus
+			 * will flush any accumulated garbage.  We do this whenever
+			 * the line may have been idle for some time.
+			 */
+			if (CCOUNT(&tp->t_outq) == 0) {
+				++sc->sc_stats.ppp_obytes;
+				(void) putc(PPP_FLAG, &tp->t_outq);
+			}
 
-	    /* Calculate the FCS for the first mbuf's worth. */
-	    sc->sc_outfcs = pppfcs(PPP_INITFCS, mtod(m, u_char *), m->m_len);
+			/* Calculate the FCS for the first mbuf's worth. */
+			sc->sc_outfcs = pppfcs(PPP_INITFCS, mtod(m, u_char*), m->m_len);
+		}
+
+		for (;;) {
+			start = mtod(m, u_char*);
+			len = m->m_len;
+			stop = start + len;
+			while (len > 0) {
+				/*
+				 * Find out how many bytes in the string we can
+				 * handle without doing something special.
+				 */
+				for (cp = start; cp < stop; cp++)
+					if (ESCAPE_P(*cp))
+						break;
+				n = cp - start;
+				if (n) {
+					/* NetBSD (0.9 or later), 4.3-Reno or similar. */
+					ndone = n - b_to_q(start, n, &tp->t_outq);
+					len -= ndone;
+					start += ndone;
+					sc->sc_stats.ppp_obytes += ndone;
+
+					if (ndone < n)
+						break; /* packet doesn't fit */
+				}
+				/*
+				 * If there are characters left in the mbuf,
+				 * the first one must be special.
+				 * Put it out in a different form.
+				 */
+				if (len) {
+					s = spltty();
+					if (putc(PPP_ESCAPE, &tp->t_outq)) {
+						splx(s);
+						break;
+					}
+					if (putc(*start ^ PPP_TRANS, &tp->t_outq)) {
+						(void) unputc(&tp->t_outq);
+						splx(s);
+						break;
+					}
+					splx(s);
+					sc->sc_stats.ppp_obytes += 2;
+					start++;
+					len--;
+				}
+			}
+
+			/*
+			 * If we didn't empty this mbuf, remember where we're up to.
+			 * If we emptied the last mbuf, try to add the FCS and closing
+			 * flag, and if we can't, leave sc_outm pointing to m, but with
+			 * m->m_len == 0, to remind us to output the FCS and flag later.
+			 */
+			done = len == 0;
+			if (done && m->m_next == NULL) {
+				u_char *p, *q;
+				int c;
+				u_char endseq[8];
+
+				/*
+				 * We may have to escape the bytes in the FCS.
+				 */
+				p = endseq;
+				c = ~sc->sc_outfcs & 0xFF;
+				if (ESCAPE_P(c)) {
+					*p++ = PPP_ESCAPE;
+					*p++ = c ^ PPP_TRANS;
+				} else
+					*p++ = c;
+				c = (~sc->sc_outfcs >> 8) & 0xFF;
+				if (ESCAPE_P(c)) {
+					*p++ = PPP_ESCAPE;
+					*p++ = c ^ PPP_TRANS;
+				} else
+					*p++ = c;
+				*p++ = PPP_FLAG;
+
+				/*
+				 * Try to output the FCS and flag.  If the bytes
+				 * don't all fit, back out.
+				 */
+				s = spltty();
+				for (q = endseq; q < p; ++q)
+					if (putc(*q, &tp->t_outq)) {
+						done = 0;
+						for (; q > endseq; --q)
+							unputc(&tp->t_outq);
+						break;
+					}
+				splx(s);
+				if (done)
+					sc->sc_stats.ppp_obytes += q - endseq;
+			}
+
+			if (!done) {
+				/* remember where we got to */
+				m->m_data = start;
+				m->m_len = len;
+				break;
+			}
+
+			/* Finished with this mbuf; free it and move on. */
+			MFREE(m, m2);
+			m = m2;
+			if (m == NULL) {
+				/* Finished a packet */
+				break;
+			}
+			sc->sc_outfcs = pppfcs(sc->sc_outfcs, mtod(m, u_char*), m->m_len);
+		}
+
+		/*
+		 * If m == NULL, we have finished a packet.
+		 * If m != NULL, we've either done as much work this time
+		 * as we need to, or else we've filled up the output queue.
+		 */
+		sc->sc_outm = m;
+		if (m)
+			break;
 	}
 
-	for (;;) {
-	    start = mtod(m, u_char *);
-	    len = m->m_len;
-	    stop = start + len;
-	    while (len > 0) {
-		/*
-		 * Find out how many bytes in the string we can
-		 * handle without doing something special.
-		 */
-		for (cp = start; cp < stop; cp++)
-		    if (ESCAPE_P(*cp))
-			break;
-		n = cp - start;
-		if (n) {
-		    /* NetBSD (0.9 or later), 4.3-Reno or similar. */
-		    ndone = n - b_to_q(start, n, &tp->t_outq);
-		    len -= ndone;
-		    start += ndone;
-		    sc->sc_stats.ppp_obytes += ndone;
-
-		    if (ndone < n)
-			break;	/* packet doesn't fit */
-		}
-		/*
-		 * If there are characters left in the mbuf,
-		 * the first one must be special.
-		 * Put it out in a different form.
-		 */
-		if (len) {
-		    s = spltty();
-		    if (putc(PPP_ESCAPE, &tp->t_outq)) {
-			splx(s);
-			break;
-		    }
-		    if (putc(*start ^ PPP_TRANS, &tp->t_outq)) {
-			(void) unputc(&tp->t_outq);
-			splx(s);
-			break;
-		    }
-		    splx(s);
-		    sc->sc_stats.ppp_obytes += 2;
-		    start++;
-		    len--;
-		}
-	    }
-
-	    /*
-	     * If we didn't empty this mbuf, remember where we're up to.
-	     * If we emptied the last mbuf, try to add the FCS and closing
-	     * flag, and if we can't, leave sc_outm pointing to m, but with
-	     * m->m_len == 0, to remind us to output the FCS and flag later.
-	     */
-	    done = len == 0;
-	    if (done && m->m_next == NULL) {
-		u_char *p, *q;
-		int c;
-		u_char endseq[8];
-
-		/*
-		 * We may have to escape the bytes in the FCS.
-		 */
-		p = endseq;
-		c = ~sc->sc_outfcs & 0xFF;
-		if (ESCAPE_P(c)) {
-		    *p++ = PPP_ESCAPE;
-		    *p++ = c ^ PPP_TRANS;
-		} else
-		    *p++ = c;
-		c = (~sc->sc_outfcs >> 8) & 0xFF;
-		if (ESCAPE_P(c)) {
-		    *p++ = PPP_ESCAPE;
-		    *p++ = c ^ PPP_TRANS;
-		} else
-		    *p++ = c;
-		*p++ = PPP_FLAG;
-
-		/*
-		 * Try to output the FCS and flag.  If the bytes
-		 * don't all fit, back out.
-		 */
-		s = spltty();
-		for (q = endseq; q < p; ++q)
-		    if (putc(*q, &tp->t_outq)) {
-			done = 0;
-			for (; q > endseq; --q)
-			    unputc(&tp->t_outq);
-			break;
-		    }
-		splx(s);
-		if (done)
-		    sc->sc_stats.ppp_obytes += q - endseq;
-	    }
-
-	    if (!done) {
-		/* remember where we got to */
-		m->m_data = start;
-		m->m_len = len;
-		break;
-	    }
-
-	    /* Finished with this mbuf; free it and move on. */
-	    MFREE(m, m2);
-	    m = m2;
-	    if (m == NULL) {
-		/* Finished a packet */
-		break;
-	    }
-	    sc->sc_outfcs = pppfcs(sc->sc_outfcs, mtod(m, u_char *), m->m_len);
-	}
+	/* Call pppstart to start output again if necessary. */
+	s = spltty();
+	pppstart(tp);
 
 	/*
-	 * If m == NULL, we have finished a packet.
-	 * If m != NULL, we've either done as much work this time
-	 * as we need to, or else we've filled up the output queue.
+	 * This timeout is needed for operation on a pseudo-tty,
+	 * because the pty code doesn't call pppstart after it has
+	 * drained the t_outq.
 	 */
-	sc->sc_outm = m;
-	if (m)
-	    break;
-    }
+	if (!idle && (sc->sc_flags & SC_TIMEOUT) == 0) {
+		callout_reset(&sc->sc_timo_ch, 1, ppp_timeout, sc);
+		sc->sc_flags |= SC_TIMEOUT;
+	}
 
-    /* Call pppstart to start output again if necessary. */
-    s = spltty();
-    pppstart(tp);
-
-    /*
-     * This timeout is needed for operation on a pseudo-tty,
-     * because the pty code doesn't call pppstart after it has
-     * drained the t_outq.
-     */
-    if (!idle && (sc->sc_flags & SC_TIMEOUT) == 0) {
-	callout_reset(&sc->sc_timo_ch, 1, ppp_timeout, sc);
-	sc->sc_flags |= SC_TIMEOUT;
-    }
-
-    splx(s);
+	splx(s);
 }
 
 /*
@@ -892,36 +892,36 @@ pppstart(tp)
 {
     struct ppp_softc *sc = (struct ppp_softc *) tp->t_sc;
 
-    /*
-     * If there is stuff in the output queue, send it now.
-     * We are being called in lieu of ttstart and must do what it would.
-     */
-    if (tp->t_oproc != NULL)
-	(*tp->t_oproc)(tp);
+	/*
+	 * If there is stuff in the output queue, send it now.
+	 * We are being called in lieu of ttstart and must do what it would.
+	 */
+	if (tp->t_oproc != NULL)
+		(*tp->t_oproc)(tp);
 
-    /*
-     * If the transmit queue has drained and the tty has not hung up
-     * or been disconnected from the ppp unit, then tell if_ppp.c that
-     * we need more output.
-     */
-    if ((CCOUNT(&tp->t_outq) >= PPP_LOWAT)
-	&& ((sc == NULL) || (sc->sc_flags & SC_TIMEOUT)))
-	return 0;
+	/*
+	 * If the transmit queue has drained and the tty has not hung up
+	 * or been disconnected from the ppp unit, then tell if_ppp.c that
+	 * we need more output.
+	 */
+	if ((CCOUNT(&tp->t_outq) >= PPP_LOWAT)
+			&& ((sc == NULL) || (sc->sc_flags & SC_TIMEOUT)))
+		return 0;
 #ifdef ALTQ
-    /*
-     * if ALTQ is enabled, don't invoke NETISR_PPP.
-     * pppintr() could loop without doing anything useful
-     * under rate-limiting.
-     */
-    if (ALTQ_IS_ENABLED(&sc->sc_if.if_snd))
-	return 0;
+	/*
+	 * if ALTQ is enabled, don't invoke NETISR_PPP.
+	 * pppintr() could loop without doing anything useful
+	 * under rate-limiting.
+	 */
+	if (ALTQ_IS_ENABLED(&sc->sc_if.if_snd))
+		return 0;
 #endif
-    if (!((tp->t_state & TS_CARR_ON) == 0 && (tp->t_cflag & CLOCAL) == 0)
-	&& sc != NULL && tp == (struct tty *) sc->sc_devp) {
-	ppp_restart(sc);
-    }
+	if (!((tp->t_state & TS_CARR_ON) == 0 && (tp->t_cflag & CLOCAL) == 0)
+			&& sc != NULL && tp == (struct tty*) sc->sc_devp) {
+		ppp_restart(sc);
+	}
 
-    return 0;
+	return 0;
 }
 
 /*
@@ -952,17 +952,17 @@ pppgetm(sc)
     int len;
 
     mp = &sc->sc_m;
-    for (len = sc->sc_mru + PPP_HDRLEN + PPP_FCSLEN; len > 0; ){
-	if ((m = *mp) == NULL) {
-	    MGETHDR(m, M_DONTWAIT, MT_DATA);
-	    if (m == NULL)
-		break;
-	    *mp = m;
-	    MCLGET(m, M_DONTWAIT);
+	for (len = sc->sc_mru + PPP_HDRLEN + PPP_FCSLEN; len > 0;) {
+		if ((m = *mp) == NULL) {
+			MGETHDR(m, M_DONTWAIT, MT_DATA);
+			if (m == NULL)
+				break;
+			*mp = m;
+			MCLGET(m, M_DONTWAIT);
+		}
+		len -= M_DATASIZE(m);
+		mp = &m->m_next;
 	}
-	len -= M_DATASIZE(m);
-	mp = &m->m_next;
-    }
 }
 
 /*
@@ -983,240 +983,238 @@ pppinput(c, tp)
     const struct cdevsw *cdev;
     int ilen, s;
 
-    sc = (struct ppp_softc *) tp->t_sc;
-    if (sc == NULL || tp != (struct tty *) sc->sc_devp)
-	return 0;
+	sc = (struct ppp_softc*) tp->t_sc;
+	if (sc == NULL || tp != (struct tty*) sc->sc_devp)
+		return 0;
 
-    ++tk_nin;
-    ++sc->sc_stats.ppp_ibytes;
+	++tk_nin;
+	++sc->sc_stats.ppp_ibytes;
 
-    if (c & TTY_FE) {
-	/* framing error or overrun on this char - abort packet */
-	if (sc->sc_flags & SC_DEBUG)
-	    printf("%s: bad char %x\n", sc->sc_if.if_xname, c);
-	goto flush;
-    }
-
-    c &= 0xff;
-
-    /*
-     * Handle software flow control of output.
-     */
-    if (tp->t_iflag & IXON) {
-	if (c == tp->t_cc[VSTOP] && tp->t_cc[VSTOP] != _POSIX_VDISABLE) {
-	    if ((tp->t_state & TS_TTSTOP) == 0) {
-		tp->t_state |= TS_TTSTOP;
-		cdev = cdevsw_lookup(tp->t_dev);
-		if (cdev != NULL)
-			(*cdev->d_stop)(tp, 0);
-	    }
-	    return 0;
+	if (c & TTY_FE) {
+		/* framing error or overrun on this char - abort packet */
+		if (sc->sc_flags & SC_DEBUG)
+			printf("%s: bad char %x\n", sc->sc_if.if_xname, c);
+		goto flush;
 	}
-	if (c == tp->t_cc[VSTART] && tp->t_cc[VSTART] != _POSIX_VDISABLE) {
-	    tp->t_state &= ~TS_TTSTOP;
-	    if (tp->t_oproc != NULL)
-		(*tp->t_oproc)(tp);
-	    return 0;
-	}
-    }
 
-    s = spltty();
-    if (c & 0x80)
-	sc->sc_flags |= SC_RCV_B7_1;
-    else
-	sc->sc_flags |= SC_RCV_B7_0;
-    if (paritytab[c >> 5] & (1 << (c & 0x1F)))
-	sc->sc_flags |= SC_RCV_ODDP;
-    else
-	sc->sc_flags |= SC_RCV_EVNP;
-    splx(s);
-
-    ppplogchar(sc, c);
-
-    if (c == PPP_FLAG) {
-	ilen = sc->sc_ilen;
-	sc->sc_ilen = 0;
-
-	if ((sc->sc_flags & SC_LOG_RAWIN) && sc->sc_rawin.count > 0) 
-	    ppplogchar(sc, -1);
+	c &= 0xff;
 
 	/*
-	 * If SC_ESCAPED is set, then we've seen the packet
-	 * abort sequence "}~".
+	 * Handle software flow control of output.
 	 */
-	if ((sc->sc_flags & (SC_FLUSH | SC_ESCAPED))
-	    || (ilen > 0 && sc->sc_fcs != PPP_GOODFCS)) {
-	    s = spltty();
-	    sc->sc_flags |= SC_PKTLOST;	/* note the dropped packet */
-	    if ((sc->sc_flags & (SC_FLUSH | SC_ESCAPED)) == 0){
-		if (sc->sc_flags & SC_DEBUG)
-		    printf("%s: bad fcs %x\n", sc->sc_if.if_xname,
-			sc->sc_fcs);
-		sc->sc_if.if_ierrors++;
-		sc->sc_stats.ppp_ierrors++;
-	    } else
-		sc->sc_flags &= ~(SC_FLUSH | SC_ESCAPED);
-	    splx(s);
-	    return 0;
+	if (tp->t_iflag & IXON) {
+		if (c == tp->t_cc[VSTOP] && tp->t_cc[VSTOP] != _POSIX_VDISABLE) {
+			if ((tp->t_state & TS_TTSTOP) == 0) {
+				tp->t_state |= TS_TTSTOP;
+				cdev = cdevsw_lookup(tp->t_dev);
+				if (cdev != NULL)
+					(*cdev->d_stop)(tp, 0);
+			}
+			return 0;
+		}
+		if (c == tp->t_cc[VSTART] && tp->t_cc[VSTART] != _POSIX_VDISABLE) {
+			tp->t_state &= ~TS_TTSTOP;
+			if (tp->t_oproc != NULL)
+				(*tp->t_oproc)(tp);
+			return 0;
+		}
 	}
 
-	if (ilen < PPP_HDRLEN + PPP_FCSLEN) {
-	    if (ilen) {
-		if (sc->sc_flags & SC_DEBUG)
-		    printf("%s: too short (%d)\n", sc->sc_if.if_xname, ilen);
-		s = spltty();
-		sc->sc_if.if_ierrors++;
-		sc->sc_stats.ppp_ierrors++;
-		sc->sc_flags |= SC_PKTLOST;
-		splx(s);
-	    }
-	    return 0;
-	}
-
-	/*
-	 * Remove FCS trailer.  Somewhat painful...
-	 */
-	ilen -= 2;
-	if (--sc->sc_mc->m_len == 0) {
-	    for (m = sc->sc_m; m->m_next != sc->sc_mc; m = m->m_next)
-		;
-	    sc->sc_mc = m;
-	}
-	sc->sc_mc->m_len--;
-
-	/* excise this mbuf chain */
-	m = sc->sc_m;
-	sc->sc_m = sc->sc_mc->m_next;
-	sc->sc_mc->m_next = NULL;
-
-	ppppktin(sc, m, sc->sc_flags & SC_PKTLOST);
-	if (sc->sc_flags & SC_PKTLOST) {
-	    s = spltty();
-	    sc->sc_flags &= ~SC_PKTLOST;
-	    splx(s);
-	}
-
-	pppgetm(sc);
-	return 0;
-    }
-
-    if (sc->sc_flags & SC_FLUSH) {
-	if (sc->sc_flags & SC_LOG_FLUSH)
-	    ppplogchar(sc, c);
-	return 0;
-    }
-
-    if (c < 0x20 && (sc->sc_rasyncmap & (1 << c)))
-	return 0;
-
-    s = spltty();
-    if (sc->sc_flags & SC_ESCAPED) {
-	sc->sc_flags &= ~SC_ESCAPED;
-	c ^= PPP_TRANS;
-    } else if (c == PPP_ESCAPE) {
-	sc->sc_flags |= SC_ESCAPED;
+	s = spltty();
+	if (c & 0x80)
+		sc->sc_flags |= SC_RCV_B7_1;
+	else
+		sc->sc_flags |= SC_RCV_B7_0;
+	if (paritytab[c >> 5] & (1 << (c & 0x1F)))
+		sc->sc_flags |= SC_RCV_ODDP;
+	else
+		sc->sc_flags |= SC_RCV_EVNP;
 	splx(s);
+
+	ppplogchar(sc, c);
+
+	if (c == PPP_FLAG) {
+		ilen = sc->sc_ilen;
+		sc->sc_ilen = 0;
+
+		if ((sc->sc_flags & SC_LOG_RAWIN) && sc->sc_rawin.count > 0)
+			ppplogchar(sc, -1);
+
+		/*
+		 * If SC_ESCAPED is set, then we've seen the packet
+		 * abort sequence "}~".
+		 */
+		if ((sc->sc_flags & (SC_FLUSH | SC_ESCAPED))
+				|| (ilen > 0 && sc->sc_fcs != PPP_GOODFCS)) {
+			s = spltty();
+			sc->sc_flags |= SC_PKTLOST; /* note the dropped packet */
+			if ((sc->sc_flags & (SC_FLUSH | SC_ESCAPED)) == 0) {
+				if (sc->sc_flags & SC_DEBUG)
+					printf("%s: bad fcs %x\n", sc->sc_if.if_xname, sc->sc_fcs);
+				sc->sc_if.if_ierrors++;
+				sc->sc_stats.ppp_ierrors++;
+			} else
+				sc->sc_flags &= ~(SC_FLUSH | SC_ESCAPED);
+			splx(s);
+			return 0;
+		}
+
+		if (ilen < PPP_HDRLEN + PPP_FCSLEN) {
+			if (ilen) {
+				if (sc->sc_flags & SC_DEBUG)
+					printf("%s: too short (%d)\n", sc->sc_if.if_xname, ilen);
+				s = spltty();
+				sc->sc_if.if_ierrors++;
+				sc->sc_stats.ppp_ierrors++;
+				sc->sc_flags |= SC_PKTLOST;
+				splx(s);
+			}
+			return 0;
+		}
+
+		/*
+		 * Remove FCS trailer.  Somewhat painful...
+		 */
+		ilen -= 2;
+		if (--sc->sc_mc->m_len == 0) {
+			for (m = sc->sc_m; m->m_next != sc->sc_mc; m = m->m_next)
+				;
+			sc->sc_mc = m;
+		}
+		sc->sc_mc->m_len--;
+
+		/* excise this mbuf chain */
+		m = sc->sc_m;
+		sc->sc_m = sc->sc_mc->m_next;
+		sc->sc_mc->m_next = NULL;
+
+		ppppktin(sc, m, sc->sc_flags & SC_PKTLOST);
+		if (sc->sc_flags & SC_PKTLOST) {
+			s = spltty();
+			sc->sc_flags &= ~SC_PKTLOST;
+			splx(s);
+		}
+
+		pppgetm(sc);
+		return 0;
+	}
+
+	if (sc->sc_flags & SC_FLUSH) {
+		if (sc->sc_flags & SC_LOG_FLUSH)
+			ppplogchar(sc, c);
+		return 0;
+	}
+
+	if (c < 0x20 && (sc->sc_rasyncmap & (1 << c)))
+		return 0;
+
+	s = spltty();
+	if (sc->sc_flags & SC_ESCAPED) {
+		sc->sc_flags &= ~SC_ESCAPED;
+		c ^= PPP_TRANS;
+	} else if (c == PPP_ESCAPE) {
+		sc->sc_flags |= SC_ESCAPED;
+		splx(s);
+		return 0;
+	}
+	splx(s);
+
+	/*
+	 * Initialize buffer on first octet received.
+	 * First octet could be address or protocol (when compressing
+	 * address/control).
+	 * Second octet is control.
+	 * Third octet is first or second (when compressing protocol)
+	 * octet of protocol.
+	 * Fourth octet is second octet of protocol.
+	 */
+	if (sc->sc_ilen == 0) {
+		/* reset the first input mbuf */
+		if (sc->sc_m == NULL) {
+			pppgetm(sc);
+			if (sc->sc_m == NULL) {
+				if (sc->sc_flags & SC_DEBUG)
+					printf("%s: no input mbufs!\n", sc->sc_if.if_xname);
+				goto flush;
+			}
+		}
+		m = sc->sc_m;
+		m->m_len = 0;
+		m->m_data = M_DATASTART(sc->sc_m);
+		sc->sc_mc = m;
+		sc->sc_mp = mtod(m, char*);
+		sc->sc_fcs = PPP_INITFCS;
+		if (c != PPP_ALLSTATIONS) {
+			if (sc->sc_flags & SC_REJ_COMP_AC) {
+				if (sc->sc_flags & SC_DEBUG)
+					printf("%s: garbage received: 0x%x (need 0xFF)\n",
+							sc->sc_if.if_xname, c);
+				goto flush;
+			}
+			*sc->sc_mp++ = PPP_ALLSTATIONS;
+			*sc->sc_mp++ = PPP_UI;
+			sc->sc_ilen += 2;
+			m->m_len += 2;
+		}
+	}
+	if (sc->sc_ilen == 1 && c != PPP_UI) {
+		if (sc->sc_flags & SC_DEBUG)
+			printf("%s: missing UI (0x3), got 0x%x\n", sc->sc_if.if_xname, c);
+		goto flush;
+	}
+	if (sc->sc_ilen == 2 && (c & 1) == 1) {
+		/* a compressed protocol */
+		*sc->sc_mp++ = 0;
+		sc->sc_ilen++;
+		sc->sc_mc->m_len++;
+	}
+	if (sc->sc_ilen == 3 && (c & 1) == 0) {
+		if (sc->sc_flags & SC_DEBUG)
+			printf("%s: bad protocol %x\n", sc->sc_if.if_xname,
+					(sc->sc_mp[-1] << 8) + c);
+		goto flush;
+	}
+
+	/* packet beyond configured mru? */
+	if (++sc->sc_ilen > sc->sc_mru + PPP_HDRLEN + PPP_FCSLEN) {
+		if (sc->sc_flags & SC_DEBUG)
+			printf("%s: packet too big\n", sc->sc_if.if_xname);
+		goto flush;
+	}
+
+	/* is this mbuf full? */
+	m = sc->sc_mc;
+	if (M_TRAILINGSPACE(m) <= 0) {
+		if (m->m_next == NULL) {
+			pppgetm(sc);
+			if (m->m_next == NULL) {
+				if (sc->sc_flags & SC_DEBUG)
+					printf("%s: too few input mbufs!\n", sc->sc_if.if_xname);
+				goto flush;
+			}
+		}
+		sc->sc_mc = m = m->m_next;
+		m->m_len = 0;
+		m->m_data = M_DATASTART(m);
+		sc->sc_mp = mtod(m, char*);
+	}
+
+	++m->m_len;
+	*sc->sc_mp++ = c;
+	sc->sc_fcs = PPP_FCS(sc->sc_fcs, c);
 	return 0;
-    }
-    splx(s);
-
-    /*
-     * Initialize buffer on first octet received.
-     * First octet could be address or protocol (when compressing
-     * address/control).
-     * Second octet is control.
-     * Third octet is first or second (when compressing protocol)
-     * octet of protocol.
-     * Fourth octet is second octet of protocol.
-     */
-    if (sc->sc_ilen == 0) {
-	/* reset the first input mbuf */
-	if (sc->sc_m == NULL) {
-	    pppgetm(sc);
-	    if (sc->sc_m == NULL) {
-		if (sc->sc_flags & SC_DEBUG)
-		    printf("%s: no input mbufs!\n", sc->sc_if.if_xname);
-		goto flush;
-	    }
-	}
-	m = sc->sc_m;
-	m->m_len = 0;
-	m->m_data = M_DATASTART(sc->sc_m);
-	sc->sc_mc = m;
-	sc->sc_mp = mtod(m, char *);
-	sc->sc_fcs = PPP_INITFCS;
-	if (c != PPP_ALLSTATIONS) {
-	    if (sc->sc_flags & SC_REJ_COMP_AC) {
-		if (sc->sc_flags & SC_DEBUG)
-		    printf("%s: garbage received: 0x%x (need 0xFF)\n",
-		    sc->sc_if.if_xname, c);
-		goto flush;
-	    }
-	    *sc->sc_mp++ = PPP_ALLSTATIONS;
-	    *sc->sc_mp++ = PPP_UI;
-	    sc->sc_ilen += 2;
-	    m->m_len += 2;
-	}
-    }
-    if (sc->sc_ilen == 1 && c != PPP_UI) {
-	if (sc->sc_flags & SC_DEBUG)
-	    printf("%s: missing UI (0x3), got 0x%x\n",
-		sc->sc_if.if_xname, c);
-	goto flush;
-    }
-    if (sc->sc_ilen == 2 && (c & 1) == 1) {
-	/* a compressed protocol */
-	*sc->sc_mp++ = 0;
-	sc->sc_ilen++;
-	sc->sc_mc->m_len++;
-    }
-    if (sc->sc_ilen == 3 && (c & 1) == 0) {
-	if (sc->sc_flags & SC_DEBUG)
-	    printf("%s: bad protocol %x\n", sc->sc_if.if_xname,
-		(sc->sc_mp[-1] << 8) + c);
-	goto flush;
-    }
-
-    /* packet beyond configured mru? */
-    if (++sc->sc_ilen > sc->sc_mru + PPP_HDRLEN + PPP_FCSLEN) {
-	if (sc->sc_flags & SC_DEBUG)
-	    printf("%s: packet too big\n", sc->sc_if.if_xname);
-	goto flush;
-    }
-
-    /* is this mbuf full? */
-    m = sc->sc_mc;
-    if (M_TRAILINGSPACE(m) <= 0) {
-	if (m->m_next == NULL) {
-	    pppgetm(sc);
-	    if (m->m_next == NULL) {
-		if (sc->sc_flags & SC_DEBUG)
-		    printf("%s: too few input mbufs!\n", sc->sc_if.if_xname);
-		goto flush;
-	    }
-	}
-	sc->sc_mc = m = m->m_next;
-	m->m_len = 0;
-	m->m_data = M_DATASTART(m);
-	sc->sc_mp = mtod(m, char *);
-    }
-
-    ++m->m_len;
-    *sc->sc_mp++ = c;
-    sc->sc_fcs = PPP_FCS(sc->sc_fcs, c);
-    return 0;
 
  flush:
     if (!(sc->sc_flags & SC_FLUSH)) {
-	s = spltty();
-	sc->sc_if.if_ierrors++;
-	sc->sc_stats.ppp_ierrors++;
-	sc->sc_flags |= SC_FLUSH;
-	splx(s);
-	if (sc->sc_flags & SC_LOG_FLUSH)
-	    ppplogchar(sc, c);
-    }
-    return 0;
+		s = spltty();
+		sc->sc_if.if_ierrors++;
+		sc->sc_stats.ppp_ierrors++;
+		sc->sc_flags |= SC_FLUSH;
+		splx(s);
+		if (sc->sc_flags & SC_LOG_FLUSH)
+			ppplogchar(sc, c);
+	}
+	return 0;
 }
 
 #define MAX_DUMP_BYTES	128
@@ -1226,21 +1224,21 @@ ppplogchar(sc, c)
     struct ppp_softc *sc;
     int c;
 {
-    if (c >= 0) {
-	sc->sc_rawin.buf[sc->sc_rawin_start++] = c;
-	if (sc->sc_rawin.count < sizeof(sc->sc_rawin.buf))
-	    sc->sc_rawin.count++;
-    }
-    if (sc->sc_rawin_start >= sizeof(sc->sc_rawin.buf)
-	|| (c < 0 && sc->sc_rawin_start > 0)) {
-	if (sc->sc_flags & (SC_LOG_FLUSH|SC_LOG_RAWIN)) {
-	    printf("%s input: ", sc->sc_if.if_xname);
-	    pppdumpb(sc->sc_rawin.buf, sc->sc_rawin_start);
+	if (c >= 0) {
+		sc->sc_rawin.buf[sc->sc_rawin_start++] = c;
+		if (sc->sc_rawin.count < sizeof(sc->sc_rawin.buf))
+			sc->sc_rawin.count++;
 	}
-	if (c < 0)
-	    sc->sc_rawin.count = 0;
-	sc->sc_rawin_start = 0;
-    }
+	if (sc->sc_rawin_start >= sizeof(sc->sc_rawin.buf)
+			|| (c < 0 && sc->sc_rawin_start > 0)) {
+		if (sc->sc_flags & (SC_LOG_FLUSH | SC_LOG_RAWIN)) {
+			printf("%s input: ", sc->sc_if.if_xname);
+			pppdumpb(sc->sc_rawin.buf, sc->sc_rawin_start);
+		}
+		if (c < 0)
+			sc->sc_rawin.count = 0;
+		sc->sc_rawin_start = 0;
+	}
 }
 
 static void
@@ -1252,18 +1250,18 @@ pppdumpb(b, l)
     char *bp = buf;
     static char digits[] = "0123456789abcdef";
 
-    while (l--) {
-	if (bp >= buf + sizeof(buf) - 3) {
-	    *bp++ = '>';
-	    break;
+	while (l--) {
+		if (bp >= buf + sizeof(buf) - 3) {
+			*bp++ = '>';
+			break;
+		}
+		*bp++ = digits[*b >> 4]; /* convert byte to ascii hex */
+		*bp++ = digits[*b++ & 0xf];
+		*bp++ = ' ';
 	}
-	*bp++ = digits[*b >> 4]; /* convert byte to ascii hex */
-	*bp++ = digits[*b++ & 0xf];
-	*bp++ = ' ';
-    }
 
-    *bp = 0;
-    printf("%s\n", buf);
+	*bp = 0;
+	printf("%s\n", buf);
 }
 
 static void
@@ -1279,33 +1277,32 @@ pppdumpframe(sc, m, xmit)
 	if (m == NULL)
 		return;
 		
-	for(count=m->m_len,data=mtod(m,char*);m != NULL;) {
+	for (count = m->m_len, data = mtod(m, char*); m != NULL;) {
 		/* build a line of output */
-		for(lcount=0;lcount < sizeof(lbuf);lcount += copycount) {
+		for (lcount = 0; lcount < sizeof(lbuf); lcount += copycount) {
 			if (!count) {
 				m = m->m_next;
 				if (m == NULL)
 					break;
 				count = m->m_len;
-				data  = mtod(m,char*);
+				data = mtod(m, char*);
 			}
-			copycount = (count > sizeof(lbuf)-lcount) ?
-					sizeof(lbuf)-lcount : count;
-			bcopy(data,&lbuf[lcount],copycount);
-			data  += copycount;
+			copycount =
+					(count > sizeof(lbuf) - lcount) ?
+							sizeof(lbuf) - lcount : count;
+			bcopy(data, &lbuf[lcount], copycount);
+			data += copycount;
 			count -= copycount;
 		}
 
-		/* output line (hex 1st, then ascii) */		
-		printf("%s %s:", sc->sc_if.if_xname,
-		    xmit ? "output" : "input ");
-		for(i=0;i<lcount;i++)
-			printf("%02x ",(u_char)lbuf[i]);
-		for(;i<sizeof(lbuf);i++)
+		/* output line (hex 1st, then ascii) */
+		printf("%s %s:", sc->sc_if.if_xname, xmit ? "output" : "input ");
+		for (i = 0; i < lcount; i++)
+			printf("%02x ", (u_char) lbuf[i]);
+		for (; i < sizeof(lbuf); i++)
 			printf("   ");
-		for(i=0;i<lcount;i++)
-			printf("%c",(lbuf[i] >= 040 && 
-			    lbuf[i] <= 0176) ? lbuf[i] : '.');
+		for (i = 0; i < lcount; i++)
+			printf("%c", (lbuf[i] >= 040 && lbuf[i] <= 0176) ? lbuf[i] : '.');
 		printf("\n");
 	}
 }

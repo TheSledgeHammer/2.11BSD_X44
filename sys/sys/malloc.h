@@ -134,8 +134,9 @@
 #define M_EVDEV			81	/* evdev structures */
 #define M_IFMEDIA       82  /* ifmedia interface media state */
 #define M_PACKET_TAGS	83	/* Packet-attached information */
-#define	M_TEMP			84	/* misc temporary data buffers */
-#define	M_LAST			85	/* Must be last type + 1 */
+#define	M_IPQ			84	/* IP packet queue entry */
+#define	M_TEMP			85	/* misc temporary data buffers */
+#define	M_LAST			86	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -222,7 +223,8 @@
 	"evdev",		/* 81 M_EVDEV */		\
 	"ifmedia",      /* 82 M_IFMEDIA */      \
 	"packet tags",	/* 83 M_PACKET_TAGS */	\
-	"temp",			/* 84 M_TEMP */ 		\
+	"IP queue ent", /* 84 M_IPQ */ 			\
+	"temp",			/* 85 M_TEMP */ 		\
 }
 
 struct kmemstats {

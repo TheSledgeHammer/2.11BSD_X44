@@ -237,7 +237,7 @@ void 	i386_multicast_ipi(int, int);
 void 	i386_ipi_handler(void);
 
 #endif /* !_LOCORE */
-#ifdef notyet
+//#ifdef notyet
 /*
  * Generic software interrupt support.
  */
@@ -256,12 +256,6 @@ struct i386_soft_intrhand {
 	void							(*sih_fn)(void *);
 	void							*sih_arg;
 	int								sih_pending;
-};
-
-struct i386_soft_intr {
-	TAILQ_HEAD(, x86_soft_intrhand) softintr_q;
-	int 							softintr_ssir;
-	struct lock_object 				softintr_slock;
 };
 
 #define	i386_softintr_lock(si, s)			\

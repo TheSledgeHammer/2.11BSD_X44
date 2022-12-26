@@ -268,6 +268,7 @@ void	sbappendrecord(struct sockbuf *, struct mbuf *);
 int		sbappendaddr(struct sockbuf *, struct sockaddr *, struct mbuf *, struct mbuf *);
 int		sbappendrights(struct sockbuf *, struct mbuf *, struct mbuf *);
 void	sbcompress(struct sockbuf *, struct mbuf *, struct mbuf *);
+struct mbuf *sbcreatecontrol(caddr_t, int, int, int);
 void	sbflush(struct sockbuf *);
 void	sbdrop(struct sockbuf *, int);
 void	sbdroprecord(struct sockbuf *);

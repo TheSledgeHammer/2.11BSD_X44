@@ -139,8 +139,8 @@ LIST_HEAD(in_multihashhead, in_multi);		/* Type of the hash head */
 
 extern	u_long in_ifaddrhash;			/* size of hash table - 1 */
 extern	int	in_ifaddrentries;		/* total number of addrs */
-extern  struct in_ifaddrhashhead *in_ifaddrhashtbl;	/* Hash table head */
-extern  struct in_ifaddrhead in_ifaddrhead;		/* List head (in ip_input) */
+extern  struct in_ifaddrhashhead 	*in_ifaddrhashtbl;	/* Hash table head */
+extern  struct in_ifaddrhead 		in_ifaddrhead;		/* List head (in ip_input) */
 
 extern	u_long in_multihash;			/* size of hash table - 1 */
 extern	int	in_multientries;		/* total number of addrs */
@@ -154,14 +154,14 @@ extern	const	int	inetctlerrmap[];
  * Macro for finding whether an internet address (in_addr) belongs to one
  * of our interfaces (in_ifaddr).  NULL if the address isn't ours.
  */
-#define INADDR_TO_IA(addr, ia) \
-	/* struct in_addr addr; */ \
-	/* struct in_ifaddr *ia; */ \
-{ \
-	LIST_FOREACH(ia, &IN_IFADDR_HASH((addr).s_addr), ia_hash) { \
-		if (in_hosteq(ia->ia_addr.sin_addr, (addr))) \
-			break; \
-	} \
+#define INADDR_TO_IA(addr, ia) 											\
+	/* struct in_addr addr; */ 											\
+	/* struct in_ifaddr *ia; */ 										\
+{ 																		\
+	LIST_FOREACH(ia, &IN_IFADDR_HASH((addr).s_addr), ia_hash) { 		\
+		if (in_hosteq(ia->ia_addr.sin_addr, (addr))) 					\
+			break; 														\
+	} 																	\
 }
 
 /*
@@ -170,45 +170,45 @@ extern	const	int	inetctlerrmap[];
  * Will set ia to NULL if none found.
  */
 
-#define NEXT_IA_WITH_SAME_ADDR(ia) \
-	/* struct in_ifaddr *ia; */ \
-{ \
-	struct in_addr addr; \
-	addr = ia->ia_addr.sin_addr; \
-	do { \
-		ia = LIST_NEXT(ia, ia_hash); \
-	} while ((ia != NULL) && !in_hosteq(ia->ia_addr.sin_addr, addr)); \
+#define NEXT_IA_WITH_SAME_ADDR(ia) 										\
+	/* struct in_ifaddr *ia; */ 										\
+{ 																		\
+	struct in_addr addr; 												\
+	addr = ia->ia_addr.sin_addr; 										\
+	do { 																\
+		ia = LIST_NEXT(ia, ia_hash); 									\
+	} while ((ia != NULL) && !in_hosteq(ia->ia_addr.sin_addr, addr)); 	\
 }
 
 /*
  * Macro for finding the interface (ifnet structure) corresponding to one
  * of our IP addresses.
  */
-#define INADDR_TO_IFP(addr, ifp) \
-	/* struct in_addr addr; */ \
-	/* struct ifnet *ifp; */ \
-{ \
-	struct in_ifaddr *ia; \
-\
-	INADDR_TO_IA(addr, ia); \
-	(ifp) = (ia == NULL) ? NULL : ia->ia_ifp; \
+#define INADDR_TO_IFP(addr, ifp)	 									\
+	/* struct in_addr addr; */ 											\
+	/* struct ifnet *ifp; */ 											\
+{ 																		\
+	struct in_ifaddr *ia; 												\
+																		\
+	INADDR_TO_IA(addr, ia); 											\
+	(ifp) = (ia == NULL) ? NULL : ia->ia_ifp; 							\
 }
 
 /*
  * Macro for finding an internet address structure (in_ifaddr) corresponding
  * to a given interface (ifnet structure).
  */
-#define IFP_TO_IA(ifp, ia) \
-	/* struct ifnet *ifp; */ \
-	/* struct in_ifaddr *ia; */ \
-{ \
-	struct ifaddr *ifa; \
-\
-	TAILQ_FOREACH(ifa, &(ifp)->if_addrlist, ifa_list) { \
-		if (ifa->ifa_addr->sa_family == AF_INET) \
-			break; \
-	} \
-	(ia) = ifatoia(ifa); \
+#define IFP_TO_IA(ifp, ia) 												\
+	/* struct ifnet *ifp; */ 											\
+	/* struct in_ifaddr *ia; */ 										\
+{ 																		\
+	struct ifaddr *ifa; 												\
+																		\
+	TAILQ_FOREACH(ifa, &(ifp)->if_addrlist, ifa_list) { 				\
+		if (ifa->ifa_addr->sa_family == AF_INET) 						\
+			break; 														\
+	} 																	\
+	(ia) = ifatoia(ifa); 												\
 }
 #endif
 
@@ -238,7 +238,7 @@ struct in_multi {
 	u_int	inm_state;		/* state of membership */
 };
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 /*
  * Structure used by macros below to remember position when stepping through
  * all of the in_multi records.
@@ -252,16 +252,16 @@ struct in_multistep {
  * Macro for looking up the in_multi record for a given IP multicast address
  * on a given interface.  If no matching record is found, "inm" returns NULL.
  */
-#define IN_LOOKUP_MULTI(addr, ifp, inm) \
-	/* struct in_addr addr; */ \
-	/* struct ifnet *ifp; */ \
-	/* struct in_multi *inm; */ \
-{ \
-	LIST_FOREACH((inm), &IN_MULTI_HASH(((addr).s_addr), (ifp)), inm_list) {\
-		if (in_hosteq((inm)->inm_addr, (addr)) && \
-		    (inm)->inm_ifp == (ifp)) \
-			break; \
-	} \
+#define IN_LOOKUP_MULTI(addr, ifp, inm) 									\
+	/* struct in_addr addr; */ 												\
+	/* struct ifnet *ifp; */ 												\
+	/* struct in_multi *inm; */ 											\
+{ 																			\
+	LIST_FOREACH((inm), &IN_MULTI_HASH(((addr).s_addr), (ifp)), inm_list) {	\
+		if (in_hosteq((inm)->inm_addr, (addr)) && 							\
+		    (inm)->inm_ifp == (ifp)) 										\
+			break; 															\
+	} 																		\
 }
 
 /*
@@ -271,23 +271,23 @@ struct in_multistep {
  * and get the first record.  Both macros return a NULL "inm" when there
  * are no remaining records.
  */
-#define IN_NEXT_MULTI(step, inm) \
-	/* struct in_multistep  step; */ \
-	/* struct in_multi *inm; */ \
-{ \
-	while ((step).i_inm == NULL && (step).i_n < IN_MULTI_HASH_SIZE) \
-		(step).i_inm = LIST_FIRST(&in_multihashtbl[++(step).i_n]); \
-	if (((inm) = (step).i_inm) != NULL) \
-		(step).i_inm = LIST_NEXT((inm), inm_list); \
+#define IN_NEXT_MULTI(step, inm) 											\
+	/* struct in_multistep  step; */ 										\
+	/* struct in_multi *inm; */ 											\
+{ 																			\
+	while ((step).i_inm == NULL && (step).i_n < IN_MULTI_HASH_SIZE) 		\
+		(step).i_inm = LIST_FIRST(&in_multihashtbl[++(step).i_n]); 			\
+	if (((inm) = (step).i_inm) != NULL) 									\
+		(step).i_inm = LIST_NEXT((inm), inm_list); 							\
 }
 
-#define IN_FIRST_MULTI(step, inm) \
-	/* struct in_multistep step; */ \
-	/* struct in_multi *inm; */ \
-{ \
-	(step).i_n = 0; \
-	(step).i_inm = LIST_FIRST(&in_multihashtbl[0]); \
-	IN_NEXT_MULTI((step), (inm)); \
+#define IN_FIRST_MULTI(step, inm) 											\
+	/* struct in_multistep step; */ 										\
+	/* struct in_multi *inm; */ 											\
+{ 																			\
+	(step).i_n = 0; 														\
+	(step).i_inm = LIST_FIRST(&in_multihashtbl[0]); 						\
+	IN_NEXT_MULTI((step), (inm)); 											\
 }
 
 struct ifaddr;
@@ -302,12 +302,11 @@ void	in_delmulti __P((struct in_multi *));
 void	in_ifscrub __P((struct ifnet *, struct in_ifaddr *));
 void	in_setmaxmtu __P((void));
 const char *in_fmtaddr __P((struct in_addr));
-int	in_control __P((struct socket *, u_long, caddr_t, struct ifnet *,
-	    struct proc *));
+int	in_control __P((struct socket *, u_long, caddr_t, struct ifnet *, struct proc *));
 void	in_purgeaddr __P((struct ifaddr *, struct ifnet *));
 void	in_purgeif __P((struct ifnet *));
 void	ip_input __P((struct mbuf *));
-int	ipflow_fastforward __P((struct mbuf *));
+int		ipflow_fastforward __P((struct mbuf *));
 
 #endif
 

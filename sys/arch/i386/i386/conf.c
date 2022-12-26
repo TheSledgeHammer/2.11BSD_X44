@@ -56,9 +56,12 @@
 #include "ksyms.h"
 #include "cmos.h"
 
-/*
 #include "bpfilter.h"
-
+#include "tb.h"
+#include "sl.h"
+#include "ppp.h"
+#include "strip.h"
+/*
 #include "usb.h"
 #include "uhid.h"
 #include "ugen.h"
@@ -66,7 +69,6 @@
 */
 #include "com.h"
 #include "pty.h"
-#include "tb.h"
 #include "video.h"
 
 #include "wsdisplay.h"
@@ -132,6 +134,7 @@ kernel_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
 	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
 	DEVSWIO_CONFIG_INIT(devsw, NPPP, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, NSTRIP, NULL, NULL, &stripdisc);				/* 7- STRIPDISC */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);				/* virtual console */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);				/* ctty controlling terminal */
 	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);				/* ptc pseudo-tty slave, pseudo-tty master  */

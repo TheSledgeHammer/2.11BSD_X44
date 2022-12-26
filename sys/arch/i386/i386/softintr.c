@@ -35,6 +35,7 @@
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/queue.h>
+#include <sys/lock.h>
 #include <sys/user.h>
 
 #include <machine/pic.h>
@@ -73,6 +74,44 @@ softintr_register_pic(pic, apic)
 }
 
 #ifdef notyet
+void
+i386_softintr_lock(si, s)
+	struct i386_soft_intr si;
+	int s;
+{
+	s = splhigh();
+	simple_lock(&si->softintr_slock);
+}
+
+void
+i386_softintr_unlock(si, s)
+	struct i386_soft_intr si;
+	int s;
+{
+	simple_unlock(&si->softintr_slock);
+	splx(s);
+}
+
+void
+softintr_schedule(arg)
+	void *arg;
+{
+	struct i386_soft_intrhand *sih;
+	struct i386_soft_intr *si;
+	int s;
+
+	sih = arg;
+	si = sih->sih_intrhead;
+	i386_softintr_lock(si, s);
+	if (sih->sih_pending == 0) {
+		TAILQ_INSERT_TAIL(&si->softintr_q, sih, sih_q);
+		sih->sih_pending = 1;
+		softintr(si->softintr_ssir);
+	}
+	i386_softintr_unlock(si, s);
+}
+
+//#ifdef notyet
 struct i386_soft_intr i386_soft_intrs[I386_NSOFTINTR];
 const int i386_soft_intr_to_ssir[I386_NSOFTINTR] = {
 		SIR_CLOCK,
@@ -80,6 +119,11 @@ const int i386_soft_intr_to_ssir[I386_NSOFTINTR] = {
 		SIR_SERIAL,
 };
 
+/*
+ * softintr_dispatch:
+ *
+ *	Process pending software interrupts.
+ */
 void
 softintr_distpatch(which)
 	int which;
@@ -104,6 +148,11 @@ softintr_distpatch(which)
 	}
 }
 
+/*
+ * softintr_establish:		[interface]
+ *
+ *	Register a software interrupt handler.
+ */
 void *
 softintr_establish(level, func, arg)
 	int level;
@@ -132,5 +181,29 @@ softintr_establish(level, func, arg)
 	}
 
 	return (sih);
+}
+
+/*
+ * softintr_disestablish:	[interface]
+ *
+ *	Unregister a software interrupt handler.
+ */
+void
+softintr_disestablish(void *arg)
+{
+	struct i386_soft_intrhand *sih;
+	struct i386_soft_intr *si;
+	int s;
+
+	sih = arg;
+	si = sih->sih_intrhead;
+	i386_softintr_lock(si, s);
+	if (sih->sih_pending) {
+		TAILQ_REMOVE(&si->softintr_q, sih, sih_q);
+		sih->sih_pending = 0;
+	}
+	i386_softintr_unlock(si, s);
+
+	free(sih, M_DEVBUF);
 }
 #endif

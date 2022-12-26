@@ -93,6 +93,8 @@ struct m_ext {
 	caddr_t				ext_buf;		/* start of buffer */
 	void				(*ext_free)();	/* free routine if not the usual */
 	u_int				ext_size;		/* size of buffer, for ext_free */
+	struct mbuf 		*ext_nextref;
+	struct mbuf 		*ext_prevref;
 };
 
 /* Contents of mbuf: */
@@ -124,28 +126,30 @@ struct mbuf {
 #define	m_dat			M_dat.M_databuf
 
 /* mbuf flags */
-#define	M_EXT		    0x00000001	/* has associated external storage */
-#define	M_PKTHDR	    0x00000002	/* start of record */
-#define	M_EOR		    0x00000004	/* end of record */
+#define	M_EXT		    0x00001		/* has associated external storage */
+#define	M_PKTHDR	    0x00002		/* start of record */
+#define	M_EOR		    0x00004		/* end of record */
 
 /* mbuf pkthdr flags, also in m_flags */
-#define M_AUTHIPHDR		0x00000010	/* authenticated (IPsec) */
-#define M_DECRYPTED		0x00000020	/* decrypted (IPsec) */
-#define M_LOOP		    0x00000040	/* received on loopback */
-#define	M_BCAST		    0x00000100	/* send/received as link-level broadcast */
-#define	M_MCAST		    0x00000200	/* send/received as link-level multicast */
+#define M_AUTHIPHDR		0x00010		/* authenticated (IPsec) */
+#define M_DECRYPTED		0x00020		/* decrypted (IPsec) */
+#define M_LOOP		    0x00040		/* received on loopback */
+#define	M_BCAST		    0x00100		/* send/received as link-level broadcast */
+#define	M_MCAST		    0x00200		/* send/received as link-level multicast */
+#define	M_CANFASTFWD	0x00400		/* used by filters to indicate packet can be fast-forwarded */
 
-#define M_LINK0			0x00001000	/* link layer specific flag */
-#define M_LINK1			0x00002000	/* link layer specific flag */
-#define M_LINK2			0x00004000	/* link layer specific flag */
-#define M_LINK3			0x00008000	/* link layer specific flag */
-#define M_LINK4			0x00010000	/* link layer specific flag */
-#define M_LINK5			0x00020000	/* link layer specific flag */
-#define M_LINK6			0x00040000	/* link layer specific flag */
-#define M_LINK7			0x00080000	/* link layer specific flag */
+#define M_ANYCAST6		0x00800		/* received as IPv6 anycast */
+#define M_LINK0			0x01000		/* link layer specific flag */
+#define M_LINK1			0x02000		/* link layer specific flag */
+#define M_LINK2			0x04000		/* link layer specific flag */
+#define M_LINK3			0x08000		/* link layer specific flag */
+#define M_LINK4			0x10000		/* link layer specific flag */
+#define M_LINK5			0x20000		/* link layer specific flag */
+#define M_LINK6			0x40000		/* link layer specific flag */
+#define M_LINK7			0x80000		/* link layer specific flag */
 
 /* flags copied when copying m_pkthdr */
-#define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST|M_LINK0|M_LINK1|M_LINK2|M_LOOP)
+#define	M_COPYFLAGS		(M_PKTHDR|M_EOR|M_BCAST|M_MCAST|M_CANFASTFWD|M_ANYCAST6|M_LINK0|M_LINK1|M_LINK2|M_LOOP)
 
 /* mbuf types */
 #define	MT_FREE			M_FREE  	/* 0 should be on free list */
@@ -265,6 +269,8 @@ struct mbuf {
 	splx(ms); 											\
 }
 
+//#define	MCLISREFERENCED(m)	((m)->m_ext.ext_nextref != (m))
+
 /*
  * Mbuf page cluster macros.
  * MCLALLOC allocates mbuf page clusters.
@@ -368,6 +374,15 @@ union mcluster {
 	{ (m)->m_data += (MHLEN - (len)) &~ (sizeof(long) - 1); }
 
 /*
+ * Determine if an mbuf's data area is read-only.  This is true
+ * for non-cluster external storage and for clusters that are
+ * being referenced by more than one mbuf.
+ */
+#define	M_READONLY(m)									\
+	(((m)->m_flags & M_EXT) != 0 &&						\
+	  (((m)->m_flags & M_CLUSTER) == 0 /*|| MCLISREFERENCED(m)*/))
+
+/*
  * Compute the amount of space available
  * before the current start of data in an mbuf.
  */
@@ -443,6 +458,7 @@ struct mbuf 	*m_getclr(int, int);
 void            m_clget(struct mbuf *, int);
 struct mbuf 	*m_prepend(struct mbuf *, int, int);
 struct mbuf 	*m_pullup(struct mbuf *, int);
+struct mbuf 	*m_copyup(struct mbuf *, int, int);
 struct mbuf 	*m_retry(int, int);
 struct mbuf 	*m_retryhdr(int, int);
 void			m_cat(struct mbuf *, struct mbuf *);

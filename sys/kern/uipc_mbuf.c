@@ -583,6 +583,49 @@ bad:
 	return (0);
 }
 
+struct mbuf *
+m_copyup(n, len, dstoff)
+	struct mbuf *n;
+	int len, dstoff;
+{
+	struct mbuf *m;
+	int count, space;
+
+	KASSERT(len != M_COPYALL);
+	if (len > ((int) MHLEN - dstoff))
+		goto bad;
+	m = m_get(M_DONTWAIT, n->m_type);
+	if (m == NULL)
+		goto bad;
+	if (n->m_flags & M_PKTHDR) {
+		m_move_pkthdr(m, n);
+	}
+	m->m_data += dstoff;
+	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
+	do {
+		count = uimin(uimin(uimax(len, max_protohdr), space), n->m_len);
+		memcpy(mtod(m, char *) + m->m_len, mtod(n, void*), (unsigned) count);
+		len -= count;
+		m->m_len += count;
+		n->m_len -= count;
+		space -= count;
+		if (n->m_len)
+			n->m_data += count;
+		else
+			n = m_free(n);
+	} while (len > 0 && n);
+	if (len > 0) {
+		(void) m_free(m);
+		goto bad;
+	}
+	m->m_next = n;
+	return m;
+ bad:
+	m_freem(n);
+	return NULL;
+}
+
+
 /*
  * Partition an mbuf chain in two pieces, returning the tail --
  * all but the first len0 bytes.  In case of failure, it returns NULL and

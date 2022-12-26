@@ -189,7 +189,7 @@ struct ipflow {
 #ifdef __NO_STRICT_ALIGNMENT
 #define	IP_HDR_ALIGNED_P(ip)	1
 #else
-#define	IP_HDR_ALIGNED_P(ip)	((((vaddr_t) (ip)) & 3) == 0)
+#define	IP_HDR_ALIGNED_P(ip)	((((caddr_t) (ip)) & 3) == 0)
 #endif
 
 extern struct ipstat ipstat;		/* ip statistics */
@@ -210,8 +210,8 @@ extern struct mowner ip_tx_mowner;
 #ifdef GATEWAY
 extern int ip_maxflows;
 #endif
-extern struct pool inmulti_pool;
-extern struct pool ipqent_pool;
+//extern struct pool inmulti_pool;
+//extern struct pool ipqent_pool;
 struct	 inpcb;
 
 int	 ip_ctloutput __P((int, struct socket *, int, int, struct mbuf **));
@@ -238,7 +238,7 @@ void	 ip_slowtimo __P((void));
 struct mbuf *
 	 ip_srcroute __P((void));
 void	 ip_stripoptions __P((struct mbuf *, struct mbuf *));
-int	 ip_sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
+int	 	ip_sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
 void	 ipintr __P((void));
 void *	 rip_ctlinput __P((int, struct sockaddr *, void *));
 int	 rip_ctloutput __P((int, struct socket *, int, int, struct mbuf **));

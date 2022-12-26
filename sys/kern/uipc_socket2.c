@@ -665,6 +665,42 @@ sbdroprecord(sb)
 	}
 }
 
+
+/*
+ * Create a "control" mbuf containing the specified data
+ * with the specified type for presentation on a socket buffer.
+ */
+struct mbuf *
+sbcreatecontrol(p, size, type, level)
+	caddr_t p;
+	int size, type, level;
+{
+	struct cmsghdr	*cp;
+	struct mbuf	*m;
+
+	if (CMSG_SPACE(size) > MCLBYTES) {
+		printf("sbcreatecontrol: message too large %d\n", size);
+		return NULL;
+	}
+
+	if ((m = m_get(M_DONTWAIT, MT_CONTROL)) == NULL)
+		return ((struct mbuf *) NULL);
+	if (CMSG_SPACE(size) > MLEN) {
+		MCLGET(m, M_DONTWAIT);
+		if ((m->m_flags & M_EXT) == 0) {
+			m_free(m);
+			return NULL;
+		}
+	}
+	cp = mtod(m, struct cmsghdr *);
+	memcpy(CMSG_DATA(cp), p, size);
+	m->m_len = CMSG_SPACE(size);
+	cp->cmsg_len = CMSG_LEN(size);
+	cp->cmsg_level = level;
+	cp->cmsg_type = type;
+	return (m);
+}
+
 static int
 sodopoll(so, events)
 	struct socket *so;
