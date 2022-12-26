@@ -294,7 +294,7 @@ struct ip_mreq {
 #define	IP_PORTRANGE_HIGH	1	/* same as DEFAULT (FreeBSD compat) */
 #define	IP_PORTRANGE_LOW	2	/* use privileged range */
 
-//#if __BSD_VISIBLE
+#if __BSD_VISIBLE
 /*
  * Definitions for inet sysctl operations.
  *
