@@ -164,12 +164,6 @@ static	void udp_notify __P((struct inpcb *, int));
 #endif
 int	udbhashsize = UDBHASHSIZE;
 
-#ifdef MBUFTRACE
-struct mowner udp_mowner = { "udp" };
-struct mowner udp_rx_mowner = { "udp", "rx" };
-struct mowner udp_tx_mowner = { "udp", "tx" };
-#endif
-
 #ifdef UDP_CSUM_COUNTERS
 #include <sys/device.h>
 
@@ -202,10 +196,6 @@ udp_init()
 	evcnt_attach_static(&udp_hwcsum_data);
 	evcnt_attach_static(&udp_swcsum);
 #endif /* UDP_CSUM_COUNTERS */
-
-	MOWNER_ATTACH(&udp_tx_mowner);
-	MOWNER_ATTACH(&udp_rx_mowner);
-	MOWNER_ATTACH(&udp_mowner);
 }
 
 #ifdef INET
@@ -232,7 +222,6 @@ udp_input(m, va_alist)
 	(void)va_arg(ap, int);		/* ignore value, advance ap */
 	va_end(ap);
 
-	MCLAIM(m, &udp_rx_mowner);
 	udpstat.udps_ipackets++;
 
 	/*
@@ -865,7 +854,6 @@ udp_output(m, va_alist)
 	int error = 0;
 	va_list ap;
 
-	MCLAIM(m, &udp_tx_mowner);
 	va_start(ap, m);
 	inp = va_arg(ap, struct inpcb *);
 	va_end(ap);

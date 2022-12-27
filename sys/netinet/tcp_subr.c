@@ -104,8 +104,6 @@ __KERNEL_RCSID(0, "$NetBSD: tcp_subr.c,v 1.160.2.5 2004/09/19 15:38:01 he Exp $"
 #include "opt_ipsec.h"
 #include "opt_tcp_compat_42.h"
 #include "opt_inet_csum.h"
-//#include "opt_mbuftrace.h"
-//#include "rnd.h"
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -225,8 +223,6 @@ void	tcp_mtudisc __P((struct inpcb *, int));
 void	tcp6_mtudisc __P((struct in6pcb *, int));
 #endif
 
-struct pool tcpcb_pool;
-
 #ifdef TCP_CSUM_COUNTERS
 #include <sys/device.h>
 
@@ -308,13 +304,6 @@ tcp_init()
 	/* Initialize the TCPCB template. */
 	tcp_tcpcb_template();
 
-	pool_init(&tcpcb_pool, sizeof(struct tcpcb), 0, 0, 0, "tcpcbpl",
-	    NULL);
-	in_pcbinit(&tcbtable, tcbhashsize, tcbhashsize);
-
-	pool_init(&tcpipqent_pool, sizeof(struct ipqent), 0, 0, 0, "tcpipqepl",
-	    NULL);
-
 	hlen = sizeof(struct ip) + sizeof(struct tcphdr);
 #ifdef INET6
 	if (sizeof(struct ip) < sizeof(struct ip6_hdr))
@@ -376,10 +365,6 @@ tcp_init()
 	evcnt_attach_static(&tcp_reass_segdup);
 	evcnt_attach_static(&tcp_reass_fragdup);
 #endif /* TCP_REASS_COUNTERS */
-
-	MOWNER_ATTACH(&tcp_tx_mowner);
-	MOWNER_ATTACH(&tcp_rx_mowner);
-	MOWNER_ATTACH(&tcp_mowner);
 }
 
 /*
@@ -448,7 +433,6 @@ tcp_template(tp)
 		}
 		if (m == NULL)
 			return NULL;
-		MCLAIM(m, &tcp_mowner);
 		m->m_pkthdr.len = m->m_len = hlen + sizeof(struct tcphdr);
 	}
 
@@ -618,7 +602,6 @@ tcp_respond(tp, template, m, th0, ack, seq, flags)
 
 		MGETHDR(m, M_DONTWAIT, MT_HEADER);
 		if (m) {
-			MCLAIM(m, &tcp_tx_mowner);
 			MCLGET(m, M_DONTWAIT);
 			if ((m->m_flags & M_EXT) == 0) {
 				m_free(m);
@@ -719,7 +702,6 @@ tcp_respond(tp, template, m, th0, ack, seq, flags)
 				return ENOBUFS;
 			}
 
-			MCLAIM(n, &tcp_tx_mowner);
 			n->m_data += max_linkhdr;
 			n->m_len = hlen + tlen;
 			m_copyback(n, 0, hlen, mtod(m, caddr_t));
@@ -960,7 +942,7 @@ tcp_newtcpcb(family, aux)
 	int i;
 
 	/* XXX Consider using a pool_cache for speed. */
-	tp = pool_get(&tcpcb_pool, PR_NOWAIT);
+	tp = malloc(sizeof(*tp), M_PCB, M_NOWAIT);
 	if (tp == NULL)
 		return (NULL);
 	memcpy(tp, &tcpcb_template, sizeof(*tp));
@@ -1002,7 +984,7 @@ tcp_newtcpcb(family, aux)
 	    }
 #endif /* INET6 */
 	default:
-		pool_put(&tcpcb_pool, tp);
+		free(tp, M_PCB);
 		return (NULL);
 	}
 
@@ -1078,7 +1060,7 @@ tcp_isdead(tp)
 				/* not quite there yet -- count separately? */
 			return dead;
 		tcpstat.tcps_delayed_free++;
-		pool_put(&tcpcb_pool, tp);
+		free(tp, M_PCB);
 	}
 	return dead;
 }
@@ -1204,7 +1186,7 @@ tcp_close(tp)
 	if (tcp_timers_invoking(tp))
 		tp->t_flags |= TF_DEAD;
 	else
-		pool_put(&tcpcb_pool, tp);
+		free(tp, M_PCB);
 
 	if (inp) {
 		inp->inp_ppcb = 0;
@@ -1243,7 +1225,7 @@ tcp_freeq(tp)
 		TAILQ_REMOVE(&tp->segq, qe, ipqe_q);
 		TAILQ_REMOVE(&tp->timeq, qe, ipqe_timeq);
 		m_freem(qe->ipqe_m);
-		pool_put(&tcpipqent_pool, qe);
+		free(qe, M_IPQ);
 		rv = 1;
 	}
 	return (rv);

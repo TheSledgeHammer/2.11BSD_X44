@@ -716,7 +716,6 @@ tcp_ctloutput(op, so, level, optname, mp)
 	case PRCO_GETOPT:
 		*mp = m = m_get(M_WAIT, MT_SOOPTS);
 		m->m_len = sizeof(int);
-		MCLAIM(m, so->so_mowner);
 
 		switch (optname) {
 		case TCP_NODELAY:

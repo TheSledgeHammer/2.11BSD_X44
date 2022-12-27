@@ -87,7 +87,7 @@ extern	struct	udpstat udpstat;
 #ifdef __NO_STRICT_ALIGNMENT
 #define	UDP_HDR_ALIGNED_P(uh)	1
 #else
-#define	UDP_HDR_ALIGNED_P(uh)	((((vaddr_t) (uh)) & 3) == 0)
+#define	UDP_HDR_ALIGNED_P(uh)	((((u_long) (uh)) & 3) == 0)
 #endif
 
 void	 *udp_ctlinput __P((int, struct sockaddr *, void *));
