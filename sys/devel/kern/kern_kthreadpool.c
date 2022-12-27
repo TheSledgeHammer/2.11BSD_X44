@@ -295,10 +295,13 @@ kthreadpool_overseer_thread(arg)
 	for (;;) {
 		/* Wait until there's a job.  */
 		while (TAILQ_EMPTY(&ktpool->ktp_jobs)) {
-
+			if (ktpool->ktp_flags & KTHREADPOOL_DYING) {
+				break;
+			}
 		}
-		if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_jobs)))
+		if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_jobs))) {
 			break;
+		}
 
 		/* If there are no threads, we'll have to try to start one.  */
 		if (TAILQ_EMPTY(&ktpool->ktp_idle_threads)) {
@@ -346,7 +349,7 @@ kthreadpool_overseer_thread(arg)
 
 		simple_lock(job->job_lock);
 		/* If the job was cancelled, we'll no longer be its thread. */
-		if (__predict_true(job->job_kthread == overseer)) {
+		if (__predict_true(job->job_thread == overseer)) {
 			simple_lock(&ktpool->ktp_lock);
 			if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_idle_threads))) {
 				/*
@@ -366,7 +369,7 @@ kthreadpool_overseer_thread(arg)
 				KASSERT(thread->ktpt_job == NULL);
 				TAILQ_REMOVE(&ktpool->ktp_idle_threads, thread, ktpt_entry);
 				thread->ktpt_job = job;
-				job->job_kthread = thread;
+				job->job_thread = thread;
 			}
 			simple_unlock(&ktpool->ktp_lock);
 		}
@@ -598,26 +601,34 @@ void
 kthreadpool_job_destroy(job)
 	struct threadpool_job *job;
 {
-	threadpool_job_destroy(job->job_kthread, job);
+	struct kthreadpool_thread *kthread;
+
+	kthread = job->job_thread;
+	threadpool_job_destroy(kthread, job);
+	job->job_thread = kthread;
 }
 
 void
 kthreadpool_job_done(job)
 	struct threadpool_job *job;
 {
-	KASSERT(job->job_kthread != NULL);
-	KASSERT(job->job_kthread->ktpt_proc == curproc);
+	struct kthreadpool_thread *kthread;
+
+	kthread = job->job_thread;
+	KASSERT(kthread != NULL);
+	KASSERT(kthread->ktpt_proc == curproc);
 	/*
 	 * We can safely read this field; it's only modified right before
 	 * we call the job work function, and we are only preserving it
 	 * to use here; no one cares if it contains junk afterward.
 	 */
 	PROC_LOCK(curproc);
-	curproc->p_name = job->job_kthread->ktpt_kthread_savedname;
+	curproc->p_name = kthread->ktpt_kthread_savedname;
 	PROC_UNLOCK(curproc);
 
 	threadpool_job_done(job);
-	job->job_kthread = NULL;
+	kthread = NULL;
+	job->job_thread = kthread;
 }
 
 void
@@ -625,18 +636,21 @@ kthreadpool_schedule_job(ktpool, job)
 	struct kthreadpool *ktpool;
 	struct threadpool_job *job;
 {
-	if (__predict_true(job->job_kthread != NULL)) {
+	struct kthreadpool_thread *kthread;
+
+	kthread = job->job_thread;
+	if (__predict_true(kthread != NULL)) {
 		return;
 	}
-
 	if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_idle_threads))) {
-		job->job_kthread = &ktpool->ktp_overseer;
+		kthread = &ktpool->ktp_overseer;
 		threadpool_job_schedule(&ktpool->ktp_jobs, job, &ktpool->ktp_lock, TPJ_TAIL);
-	} else {
+	}  else {
 		/* Assign it to the first idle thread.  */
-		job->job_kthread = TAILQ_FIRST(&ktpool->ktp_idle_threads);
-		job->job_kthread->ktpt_job = job;
+		kthread = TAILQ_FIRST(&ktpool->ktp_idle_threads);
+		kthread->ktpt_job = job;
 	}
+	job->job_thread = kthread;
 }
 
 bool_t
@@ -644,6 +658,11 @@ kthreadpool_cancel_job_async(ktpool, job)
 	struct kthreadpool 		*ktpool;
 	struct threadpool_job 	*job;
 {
+
+	struct kthreadpool_thread *kthread;
+
+	kthread = job->job_thread;
+
 	/*
 	 * XXXJRT This fails (albeit safely) when all of the following
 	 * are true:
@@ -664,13 +683,14 @@ kthreadpool_cancel_job_async(ktpool, job)
 	 * The overseer will eventually get to it and the job will
 	 * proceed as if it had been already running.
 	 */
-	if (job->job_kthread == NULL) {
+	if (kthread == NULL) {
 		/* Nothing to do.  Guaranteed not running.  */
 		return (TRUE);
-	} else if (job->job_kthread == &ktpool->ktp_overseer) {
+	} else if (kthread == &ktpool->ktp_overseer) {
 		/* Take it off the list to guarantee it won't run.  */
-		job->job_kthread = NULL;
+		kthread = NULL;
 		threadpool_job_cancel(&ktpool->ktp_jobs, job, &ktpool->ktp_lock);
+		job->job_thread = kthread;
 		return (TRUE);
 	} else {
 		return (FALSE);

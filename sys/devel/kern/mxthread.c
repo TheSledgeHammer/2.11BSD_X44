@@ -45,7 +45,7 @@
 #define M_THREAD 		83
 #define M_THREADPOOL 	84
 
-LIST_HEAD(, ithread) allithreads;// = LIST_HEAD_INITIALIZER(allithreads);
+LIST_HEAD(, ithread) allithreads;
 struct ithread {
 	struct mpx					*impx;
 
@@ -54,15 +54,13 @@ struct ithread {
 	LIST_ENTRY(ithread)  		ientry;
 };
 
-LIST_HEAD(, ithreadpool) allithreadpools;// = LIST_HEAD_INITIALIZER(allithreadpools);
+LIST_HEAD(, ithreadpool) allithreadpools;
 struct ithreadpool {
 	struct mpx					*impx;
 
 	void 						*ipool;
 	int 						igroup;
 	LIST_ENTRY(ithreadpool)  	ientry;
-
-	struct job_head				ijobs;
 };
 
 void
@@ -71,6 +69,9 @@ ithread_init(void *thread)
 	struct ithread *ith;
 
 	ith = (struct ithread *)malloc(sizeof(struct ithread *), M_THREAD, M_NOWAIT);
+
+	LIST_INIT(&allithreads);
+
 	ith->impx = mpx_alloc();
 	ithread_insert(ith, thread, 0);
 }
@@ -219,8 +220,9 @@ ithreadpool_init()
 	struct ithreadpool *itp;
 
 	itp = (struct ithreadpool *)malloc(sizeof(struct ithreadpool *), M_THREADPOOL, NULL);
+
+	LIST_INIT(&allithreadpools);
 	itp->impx = mpx_alloc();
-	itp->ijobs = NULL;
 	ithreadpool_insert(itp, NULL, 0);
 }
 
