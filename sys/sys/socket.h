@@ -183,7 +183,7 @@ struct sockaddr_storage {
 #define	PF_HYLINK		AF_HYLINK
 #define	PF_APPLETALK	AF_APPLETALK
 #define	PF_ROUTE	AF_ROUTE
-
+#define	PF_INET6	AF_INET6
 #define	PF_MAX			AF_MAX
 
 /*
