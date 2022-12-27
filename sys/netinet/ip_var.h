@@ -175,7 +175,6 @@ struct ipflow {
 
 #ifdef _KERNEL_OPT
 #include "opt_gateway.h"
-//#include "opt_mbuftrace.h"
 #endif
 
 /* flags passed to ip_output as last parameter */
@@ -203,15 +202,10 @@ extern int   anonportmax;		/* maximum ephemeral port */
 extern int   lowportmin;		/* minimum reserved port */
 extern int   lowportmax;		/* maximum reserved port */
 extern struct rttimer_queue *ip_mtudisc_timeout_q;
-#ifdef MBUFTRACE
-extern struct mowner ip_rx_mowner;
-extern struct mowner ip_tx_mowner;
-#endif
+
 #ifdef GATEWAY
 extern int ip_maxflows;
 #endif
-//extern struct pool inmulti_pool;
-//extern struct pool ipqent_pool;
 struct	 inpcb;
 
 int	 ip_ctloutput __P((int, struct socket *, int, int, struct mbuf **));

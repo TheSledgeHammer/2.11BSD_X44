@@ -445,7 +445,6 @@ tcp_build_datapkt(struct tcpcb *tp, struct socket *so, int off,
 	MGETHDR(m, M_DONTWAIT, MT_HEADER);
 	if (__predict_false(m == NULL))
 		return (ENOBUFS);
-	MCLAIM(m, &tcp_tx_mowner);
 
 	/*
 	 * XXX Because other code assumes headers will fit in
@@ -946,7 +945,6 @@ send:
 			error = ENOBUFS;
 			goto out;
 		}
-		MCLAIM(m, &tcp_tx_mowner);
 		m->m_data += max_linkhdr;
 		m->m_len = hdrlen;
 	}

@@ -464,6 +464,7 @@ struct mbuf 	*m_getclr(int, int);
 void            m_clget(struct mbuf *, int);
 struct mbuf 	*m_prepend(struct mbuf *, int, int);
 struct mbuf 	*m_pullup(struct mbuf *, int);
+struct	mbuf 	*m_pulldown(struct mbuf *, int, int, int *);
 struct mbuf 	*m_copyup(struct mbuf *, int, int);
 struct mbuf 	*m_retry(int, int);
 struct mbuf 	*m_retryhdr(int, int);

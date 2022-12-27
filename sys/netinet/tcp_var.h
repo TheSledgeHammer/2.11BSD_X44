@@ -142,7 +142,6 @@
 
 #if defined(_KERNEL_OPT)
 #include "opt_inet.h"
-//#include "opt_mbuftrace.h"
 #endif
 
 /*
@@ -167,10 +166,10 @@ struct tcpcb {
 	u_short t_segsz;		/* current segment size in use */
 	char	t_force;		/* 1 if forcing out a byte */
 	u_int	t_flags;
-#define	TF_ACKNOW	0x0001		/* ack peer immediately */
-#define	TF_DELACK	0x0002		/* ack, but try to delay it */
-#define	TF_NODELAY	0x0004		/* don't delay packets to coalesce */
-#define	TF_NOOPT	0x0008		/* don't use tcp options */
+#define	TF_ACKNOW		0x0001		/* ack peer immediately */
+#define	TF_DELACK		0x0002		/* ack, but try to delay it */
+#define	TF_NODELAY		0x0004		/* don't delay packets to coalesce */
+#define	TF_NOOPT		0x0008		/* don't use tcp options */
 #define	TF_REQ_SCALE	0x0020		/* have/will request window scaling */
 #define	TF_RCVD_SCALE	0x0040		/* other side has requested scaling */
 #define	TF_REQ_TSTMP	0x0080		/* have/will request timestamps */
@@ -181,7 +180,7 @@ struct tcpcb {
 #define	TF_CANT_TXSACK	0x1000		/* other side said I could not SACK */
 #define	TF_IGNR_RXSACK	0x2000		/* ignore received SACK blocks */
 #define	TF_REASSEMBLING	0x4000		/* we're busy reassembling */
-#define	TF_DEAD		0x8000		/* dead and to-be-released */
+#define	TF_DEAD			0x8000		/* dead and to-be-released */
 
 
 	struct	mbuf *t_template;	/* skeletal packet for transmit */
@@ -307,21 +306,21 @@ tcp_reass_unlock(tp)
 }
 
 #ifdef DIAGNOSTIC
-#define	TCP_REASS_LOCK(tp)						\
-do {									\
-	if (tcp_reass_lock_try(tp) == 0) {				\
+#define	TCP_REASS_LOCK(tp)									\
+do {														\
+	if (tcp_reass_lock_try(tp) == 0) {						\
 		printf("%s:%d: tcpcb %p reass already locked\n",	\
-		    __FILE__, __LINE__, tp);				\
-		panic("tcp_reass_lock");				\
-	}								\
+		    __FILE__, __LINE__, tp);						\
+		panic("tcp_reass_lock");							\
+	}														\
 } while (/*CONSTCOND*/ 0)
-#define	TCP_REASS_LOCK_CHECK(tp)					\
-do {									\
+#define	TCP_REASS_LOCK_CHECK(tp)							\
+do {														\
 	if (((tp)->t_flags & TF_REASSEMBLING) == 0) {			\
 		printf("%s:%d: tcpcb %p reass lock not held\n",		\
-		    __FILE__, __LINE__, tp);				\
-		panic("tcp reass lock check");				\
-	}								\
+		    __FILE__, __LINE__, tp);						\
+		panic("tcp reass lock check");						\
+	}														\
 } while (/*CONSTCOND*/ 0)
 #else
 #define	TCP_REASS_LOCK(tp)	(void) tcp_reass_lock_try((tp))
@@ -342,20 +341,20 @@ void	tcp_delack(void *);
 	callout_reset(&(tp)->t_delack_ch, tcp_delack_ticks,		\
 	    tcp_delack, tp)
 
-#define	TCP_SET_DELACK(tp)						\
-do {									\
-	if (((tp)->t_flags & TF_DELACK) == 0) {				\
-		(tp)->t_flags |= TF_DELACK;				\
-		TCP_RESTART_DELACK(tp);					\
-	}								\
+#define	TCP_SET_DELACK(tp)							\
+do {												\
+	if (((tp)->t_flags & TF_DELACK) == 0) {			\
+		(tp)->t_flags |= TF_DELACK;					\
+		TCP_RESTART_DELACK(tp);						\
+	}												\
 } while (/*CONSTCOND*/0)
 
 #define	TCP_CLEAR_DELACK(tp)						\
-do {									\
+do {												\
 	if ((tp)->t_flags & TF_DELACK) {				\
 		(tp)->t_flags &= ~TF_DELACK;				\
 		callout_stop(&(tp)->t_delack_ch);			\
-	}								\
+	}												\
 } while (/*CONSTCOND*/0)
 #endif /* _KERNEL */
 
@@ -698,7 +697,7 @@ extern	struct pool tcpipqent_pool;
 #ifdef __NO_STRICT_ALIGNMENT
 #define	TCP_HDR_ALIGNED_P(th)	1
 #else
-#define	TCP_HDR_ALIGNED_P(th)	((((vaddr_t) (th)) & 3) == 0)
+#define	TCP_HDR_ALIGNED_P(th)	((((u_long) (th)) & 3) == 0)
 #endif
 
 int	 tcp_attach __P((struct socket *));

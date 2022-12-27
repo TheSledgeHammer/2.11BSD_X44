@@ -297,12 +297,6 @@ struct evcnt tcp_reass_fragdup = EVCNT_INITIALIZER(EVCNT_TYPE_MISC,
 
 #endif /* TCP_REASS_COUNTERS */
 
-#ifdef MBUFTRACE
-struct mowner tcp_mowner = { "tcp" };
-struct mowner tcp_rx_mowner = { "tcp", "rx" };
-struct mowner tcp_tx_mowner = { "tcp", "tx" };
-#endif
-
 /*
  * Tcp initialization
  */

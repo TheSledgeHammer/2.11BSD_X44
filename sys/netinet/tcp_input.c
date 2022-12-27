@@ -245,12 +245,12 @@ static struct timeval tcp_ackdrop_ppslim_last;
  * Neighbor Discovery, Neighbor Unreachability Detection Upper layer hint.
  */
 #ifdef INET6
-#define ND6_HINT(tp) \
-do { \
-	if (tp && tp->t_in6pcb && tp->t_family == AF_INET6 && \
-	    tp->t_in6pcb->in6p_route.ro_rt) { \
-		nd6_nud_hint(tp->t_in6pcb->in6p_route.ro_rt, NULL, 0); \
-	} \
+#define ND6_HINT(tp) 											\
+do { 															\
+	if (tp && tp->t_in6pcb && tp->t_family == AF_INET6 && 		\
+	    tp->t_in6pcb->in6p_route.ro_rt) { 						\
+		nd6_nud_hint(tp->t_in6pcb->in6p_route.ro_rt, NULL, 0); 	\
+	} 															\
 } while (/*CONSTCOND*/ 0)
 #else
 #define ND6_HINT(tp)
@@ -262,20 +262,20 @@ do { \
  * We also ACK immediately if we received a PUSH and the ACK-on-PUSH
  * option is enabled.
  */
-#define	TCP_SETUP_ACK(tp, th) \
-do { \
-	if ((tp)->t_flags & TF_DELACK || \
-	    (tcp_ack_on_push && (th)->th_flags & TH_PUSH)) \
-		tp->t_flags |= TF_ACKNOW; \
-	else \
-		TCP_SET_DELACK(tp); \
+#define	TCP_SETUP_ACK(tp, th) 							\
+do { 													\
+	if ((tp)->t_flags & TF_DELACK || 					\
+	    (tcp_ack_on_push && (th)->th_flags & TH_PUSH)) 	\
+		tp->t_flags |= TF_ACKNOW; 						\
+	else 												\
+		TCP_SET_DELACK(tp); 							\
 } while (/*CONSTCOND*/ 0)
 
 /*
  * Convert TCP protocol fields to host order for easier processing.
  */
-#define	TCP_FIELDS_TO_HOST(th)						\
-do {									\
+#define	TCP_FIELDS_TO_HOST(th)					\
+do {											\
 	NTOHL((th)->th_seq);						\
 	NTOHL((th)->th_ack);						\
 	NTOHS((th)->th_win);						\
@@ -285,8 +285,8 @@ do {									\
 /*
  * ... and reverse the above.
  */
-#define	TCP_FIELDS_TO_NET(th)						\
-do {									\
+#define	TCP_FIELDS_TO_NET(th)					\
+do {											\
 	HTONL((th)->th_seq);						\
 	HTONL((th)->th_ack);						\
 	HTONS((th)->th_win);						\
@@ -341,8 +341,6 @@ static void tcp4_log_refused __P((const struct ip *, const struct tcphdr *));
 static void tcp6_log_refused
     __P((const struct ip6_hdr *, const struct tcphdr *));
 #endif
-
-struct pool tcpipqent_pool;
 
 int
 tcp_reass(tp, th, m, tlen)
@@ -491,7 +489,7 @@ tcp_reass(tp, th, m, tlen)
 			tcpstat.tcps_rcvdupbyte += pkt_len;
 			m_freem(m);
 			if (tiqe != NULL)
-				pool_put(&tcpipqent_pool, tiqe);
+				FREE(tiqe, M_IPQ);
 			TCP_REASS_COUNTER_INCR(&tcp_reass_segdup);
 			return (0);
 		}
@@ -570,7 +568,7 @@ tcp_reass(tp, th, m, tlen)
 			if (tiqe == NULL)
 				tiqe = q;
 			else
-				pool_put(&tcpipqent_pool, q);
+				FREE(q, M_IPQ);
 			TCP_REASS_COUNTER_INCR(&tcp_reass_prepend);
 			break;
 		}
@@ -595,7 +593,7 @@ tcp_reass(tp, th, m, tlen)
 		if (tiqe == NULL)
 			tiqe = q;
 		else
-			pool_put(&tcpipqent_pool, q);
+			FREE(q, M_IPQ);
 	}
 
 #ifdef TCP_REASS_COUNTERS
@@ -615,7 +613,7 @@ tcp_reass(tp, th, m, tlen)
 	 * XXX If we can't, just drop the packet.  XXX
 	 */
 	if (tiqe == NULL) {
-		tiqe = pool_get(&tcpipqent_pool, PR_NOWAIT);
+		MALLOC(tiqe, struct ipqent *, sizeof (struct ipqent), M_IPQ, M_NOWAIT);
 		if (tiqe == NULL) {
 			tcpstat.tcps_rcvmemdrop++;
 			m_freem(m);
@@ -683,7 +681,7 @@ present:
 		m_freem(q->ipqe_m);
 	else
 		sbappendstream(&so->so_rcv, q->ipqe_m);
-	pool_put(&tcpipqent_pool, q);
+	FREE(q, M_IPQ);
 	sorwakeup(so);
 	return (pkt_flags);
 }
@@ -804,7 +802,6 @@ tcp_input(m, va_alist)
 	int af;		/* af on the wire */
 	struct mbuf *tcp_saveti = NULL;
 
-	MCLAIM(m, &tcp_rx_mowner);
 	va_start(ap, m);
 	toff = va_arg(ap, int);
 	(void)va_arg(ap, int);		/* ignore value, advance ap */
@@ -1212,14 +1209,13 @@ findpcb:
 				goto nosave;
 
 			if (m->m_len > iphlen && (m->m_flags & M_EXT) == 0) {
-				tcp_saveti = m_copym(m, 0, iphlen, M_DONTWAIT);
+				tcp_saveti = m_copy(m, 0, iphlen);
 				if (!tcp_saveti)
 					goto nosave;
 			} else {
 				MGETHDR(tcp_saveti, M_DONTWAIT, MT_HEADER);
 				if (!tcp_saveti)
 					goto nosave;
-				MCLAIM(m, &tcp_mowner);
 				tcp_saveti->m_len = iphlen;
 				m_copydata(m, 0, iphlen,
 				    mtod(tcp_saveti, caddr_t));
@@ -2842,75 +2838,73 @@ tcp_newreno(tp, th)
 u_long	syn_cache_count;
 u_int32_t syn_hash1, syn_hash2;
 
-#define SYN_HASH(sa, sp, dp) \
+#define SYN_HASH(sa, sp, dp) 							\
 	((((sa)->s_addr^syn_hash1)*(((((u_int32_t)(dp))<<16) + \
 				     ((u_int32_t)(sp)))^syn_hash2)))
 #ifndef INET6
-#define	SYN_HASHALL(hash, src, dst) \
-do {									\
+#define	SYN_HASHALL(hash, src, dst) 					\
+do {													\
 	hash = SYN_HASH(&((struct sockaddr_in *)(src))->sin_addr,	\
 		((struct sockaddr_in *)(src))->sin_port,		\
 		((struct sockaddr_in *)(dst))->sin_port);		\
 } while (/*CONSTCOND*/ 0)
 #else
-#define SYN_HASH6(sa, sp, dp) \
+#define SYN_HASH6(sa, sp, dp) 						\
 	((((sa)->s6_addr32[0] ^ (sa)->s6_addr32[3] ^ syn_hash1) * \
 	  (((((u_int32_t)(dp))<<16) + ((u_int32_t)(sp)))^syn_hash2)) \
 	 & 0x7fffffff)
 
-#define SYN_HASHALL(hash, src, dst) \
-do {									\
-	switch ((src)->sa_family) {					\
-	case AF_INET:							\
+#define SYN_HASHALL(hash, src, dst) 				\
+do {												\
+	switch ((src)->sa_family) {						\
+	case AF_INET:									\
 		hash = SYN_HASH(&((struct sockaddr_in *)(src))->sin_addr, \
 			((struct sockaddr_in *)(src))->sin_port,	\
 			((struct sockaddr_in *)(dst))->sin_port);	\
-		break;							\
-	case AF_INET6:							\
+		break;										\
+	case AF_INET6:									\
 		hash = SYN_HASH6(&((struct sockaddr_in6 *)(src))->sin6_addr, \
 			((struct sockaddr_in6 *)(src))->sin6_port,	\
 			((struct sockaddr_in6 *)(dst))->sin6_port);	\
-		break;							\
-	default:							\
-		hash = 0;						\
-	}								\
+		break;										\
+	default:										\
+		hash = 0;									\
+	}												\
 } while (/*CONSTCOND*/0)
 #endif /* INET6 */
 
-#define	SYN_CACHE_RM(sc)						\
-do {									\
+#define	SYN_CACHE_RM(sc)							\
+do {												\
 	TAILQ_REMOVE(&tcp_syn_cache[(sc)->sc_bucketidx].sch_bucket,	\
-	    (sc), sc_bucketq);						\
-	(sc)->sc_tp = NULL;						\
-	LIST_REMOVE((sc), sc_tpq);					\
-	tcp_syn_cache[(sc)->sc_bucketidx].sch_length--;			\
+	    (sc), sc_bucketq);							\
+	(sc)->sc_tp = NULL;								\
+	LIST_REMOVE((sc), sc_tpq);						\
+	tcp_syn_cache[(sc)->sc_bucketidx].sch_length--;	\
 	callout_stop(&(sc)->sc_timer);					\
-	syn_cache_count--;						\
+	syn_cache_count--;								\
 } while (/*CONSTCOND*/0)
 
-#define	SYN_CACHE_PUT(sc)						\
-do {									\
-	if ((sc)->sc_ipopts)						\
+#define	SYN_CACHE_PUT(sc)							\
+do {												\
+	if ((sc)->sc_ipopts)							\
 		(void) m_free((sc)->sc_ipopts);				\
 	if ((sc)->sc_route4.ro_rt != NULL)				\
 		RTFREE((sc)->sc_route4.ro_rt);				\
-	if (callout_invoking(&(sc)->sc_timer))				\
-		(sc)->sc_flags |= SCF_DEAD;				\
-	else								\
-		pool_put(&syn_cache_pool, (sc));			\
+	if (callout_invoking(&(sc)->sc_timer))			\
+		(sc)->sc_flags |= SCF_DEAD;					\
+	else											\
+		FREE(sc, M_PCB);							\
 } while (/*CONSTCOND*/0)
-
-struct pool syn_cache_pool;
 
 /*
  * We don't estimate RTT with SYNs, so each packet starts with the default
  * RTT and each timer step has a fixed timeout value.
  */
 #define	SYN_CACHE_TIMER_ARM(sc)						\
-do {									\
+do {												\
 	TCPT_RANGESET((sc)->sc_rxtcur,					\
 	    TCPTV_SRTTDFLT * tcp_backoff[(sc)->sc_rxtshift], TCPTV_MIN,	\
-	    TCPTV_REXMTMAX);						\
+	    TCPTV_REXMTMAX);							\
 	callout_reset(&(sc)->sc_timer,					\
 	    (sc)->sc_rxtcur * (hz / PR_SLOWHZ), syn_cache_timer, (sc));	\
 } while (/*CONSTCOND*/0)
@@ -2925,10 +2919,6 @@ syn_cache_init()
 	/* Initialize the hash buckets. */
 	for (i = 0; i < tcp_syn_cache_size; i++)
 		TAILQ_INIT(&tcp_syn_cache[i].sch_bucket);
-
-	/* Initialize the syn cache pool. */
-	pool_init(&syn_cache_pool, sizeof(struct syn_cache), 0, 0, 0,
-	    "synpl", NULL);
 }
 
 void
@@ -3046,7 +3036,7 @@ syn_cache_timer(void *arg)
 
 	if (__predict_false(sc->sc_flags & SCF_DEAD)) {
 		tcpstat.tcps_sc_delayed_free++;
-		pool_put(&syn_cache_pool, sc);
+		FREE(sc, M_PCB);
 		splx(s);
 		return;
 	}
@@ -3226,7 +3216,7 @@ syn_cache_get(src, dst, th, hlen, tlen, so, m)
 	 * to the new one.
 	 */
 	oso = so;
-	so = sonewconn(so, SS_ISCONNECTED);
+	so = sonewconn1(so, SS_ISCONNECTED);
 	if (so == NULL)
 		goto resetandabort;
 
@@ -3332,7 +3322,6 @@ syn_cache_get(src, dst, th, hlen, tlen, so, m)
 	am = m_get(M_DONTWAIT, MT_SONAME);	/* XXX */
 	if (am == NULL)
 		goto resetandabort;
-	MCLAIM(am, &tcp_mowner);
 	am->m_len = src->sa_len;
 	bcopy(src, mtod(am, caddr_t), src->sa_len);
 	if (inp) {
@@ -3621,7 +3610,7 @@ syn_cache_add(src, dst, th, hlen, so, m, optp, optlen, oi)
 		return (1);
 	}
 
-	sc = pool_get(&syn_cache_pool, PR_NOWAIT);
+	MALLOC(sc, struct syn_cache *, sizeof(*sc), M_PCB, M_NOWAIT);
 	if (sc == NULL) {
 		if (ipopts)
 			(void) m_free(ipopts);
@@ -3759,7 +3748,6 @@ syn_cache_respond(sc, m)
 	}
 	if (m == NULL)
 		return (ENOBUFS);
-	MCLAIM(m, &tcp_tx_mowner);
 
 	/* Fixup the mbuf. */
 	m->m_data += max_linkhdr;

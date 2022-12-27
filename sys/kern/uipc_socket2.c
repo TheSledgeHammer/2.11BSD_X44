@@ -148,6 +148,7 @@ sonewconn(head)
 	so->so_proto = head->so_proto;
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
+	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat);
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
 	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0, u.u_procp)) {
@@ -158,6 +159,24 @@ sonewconn(head)
 	return (so);
 bad:
 	return ((struct socket *)0);
+}
+
+struct socket *
+sonewconn1(head, connstatus)
+	register struct socket *head;
+	int connstatus;
+{
+	struct socket	*so;
+	int		soqueue;
+
+	soqueue = connstatus ? 1 : 0;
+	so = sonewconn(head);
+	if (connstatus) {
+		sorwakeup(head);
+		wakeup((caddr_t) &head->so_timeo);
+		so->so_state |= connstatus;
+	}
+	return (so);
 }
 
 void
@@ -548,6 +567,22 @@ sbappendrights(sb, m0, rights)
 	return (1);
 }
 
+void
+sbappendstream(sb, m)
+	struct sockbuf *sb;
+	struct mbuf *m;
+{
+	KDASSERT(m->m_nextpkt == NULL);
+	KASSERT(sb->sb_mb == sb->sb_lastrecord);
+
+	SBLASTMBUFCHK(sb, __func__);
+
+	sbcompress(sb, m, sb->sb_mbtail);
+
+	sb->sb_lastrecord = sb->sb_mb;
+	SBLASTRECORDCHK(sb, __func__);
+}
+
 /*
  * Compress mbuf chain m into the socket
  * buffer sb following mbuf n.  If n
@@ -883,3 +918,103 @@ sokqfilter(fp, kn)
 	sb->sb_flags |= SB_KNOTE;
 	return (0);
 }
+
+/*
+ * Routines to add and remove
+ * data from an mbuf queue.
+ *
+ * The routines sbappend() or sbappendrecord() are normally called to
+ * append new mbufs to a socket buffer, after checking that adequate
+ * space is available, comparing the function sbspace() with the amount
+ * of data to be added.  sbappendrecord() differs from sbappend() in
+ * that data supplied is treated as the beginning of a new record.
+ * To place a sender's address, optional access rights, and data in a
+ * socket receive buffer, sbappendaddr() should be used.  To place
+ * access rights and data in a socket receive buffer, sbappendrights()
+ * should be used.  In either case, the new data begins a new record.
+ * Note that unlike sbappend() and sbappendrecord(), these routines check
+ * for the caller that there will be enough space to store the data.
+ * Each fails if there is not enough space, or if it cannot find mbufs
+ * to store additional information in.
+ *
+ * Reliable protocols may use the socket send buffer to hold data
+ * awaiting acknowledgement.  Data is normally copied from a socket
+ * send buffer in a protocol with m_copy for output to a peer,
+ * and then removing the data from the socket buffer with sbdrop()
+ * or sbdroprecord() when the data is acknowledged by the peer.
+ */
+
+#ifdef SOCKBUF_DEBUG
+void
+sbcheck(sb)
+	struct sockbuf *sb;
+{
+	struct mbuf	*m;
+	u_long		len, mbcnt;
+
+	len = 0;
+	mbcnt = 0;
+	for (m = sb->sb_mb; m; m = m->m_next) {
+		len += m->m_len;
+		mbcnt += MSIZE;
+		if (m->m_flags & M_EXT)
+			mbcnt += m->m_ext.ext_size;
+		if (m->m_nextpkt)
+			panic("sbcheck nextpkt");
+	}
+	if (len != sb->sb_cc || mbcnt != sb->sb_mbcnt) {
+		printf("cc %lu != %lu || mbcnt %lu != %lu\n", len, sb->sb_cc,
+		    mbcnt, sb->sb_mbcnt);
+		panic("sbcheck");
+	}
+}
+
+void
+sblastrecordchk(sb, where)
+	struct sockbuf *sb;
+	const char *where;
+{
+	struct mbuf *m;
+
+	m = sb->sb_mb;
+	while (m && m->m_nextpkt)
+		m = m->m_nextpkt;
+
+	if (m != sb->sb_lastrecord) {
+		printf("sblastrecordchk: sb_mb %p sb_lastrecord %p last %p\n",
+				sb->sb_mb, sb->sb_lastrecord, m);
+		printf("packet chain:\n");
+		for (m = sb->sb_mb; m != NULL; m = m->m_nextpkt)
+			printf("\t%p\n", m);
+		panic("sblastrecordchk from %s", where);
+	}
+}
+
+void
+sblastmbufchk(sb, where)
+	struct sockbuf *sb;
+	const char *where;
+{
+	struct mbuf *m, *n;
+
+	m = sb->sb_mb;
+	while (m && m->m_nextpkt)
+		m = m->m_nextpkt;
+
+	while (m && m->m_next)
+		m = m->m_next;
+
+	if (m != sb->sb_mbtail) {
+		printf("sblastmbufchk: sb_mb %p sb_mbtail %p last %p\n", sb->sb_mb,
+				sb->sb_mbtail, m);
+		printf("packet tree:\n");
+		for (m = sb->sb_mb; m != NULL; m = m->m_nextpkt) {
+			printf("\t");
+			for (n = m; n != NULL; n = n->m_next)
+				printf("%p ", n);
+			printf("\n");
+		}
+		panic("sblastmbufchk from %s", where);
+	}
+}
+#endif /* SOCKBUF_DEBUG */
