@@ -240,7 +240,7 @@ struct pfil_head inet_pfil_hook;
  * recalculate IP parameters derived from nmbclusters.
  */
 static int	ip_nmbclusters;			/* copy of nmbclusters */
-static void	ip_nmbclusters_changed(void));	/* recalc limits */
+static void	ip_nmbclusters_changed(void);	/* recalc limits */
 
 #define CHECK_NMBCLUSTER_PARAMS()						\
 do {													\

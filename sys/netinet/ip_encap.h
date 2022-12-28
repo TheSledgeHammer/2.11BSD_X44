@@ -61,9 +61,7 @@ int	encap6_input(struct mbuf **, int *, int);
 const struct encaptab *encap_attach(int, int, const struct sockaddr *,
 	const struct sockaddr *, const struct sockaddr *,
 	const struct sockaddr *, const struct protosw *, void *);
-const struct encaptab *encap_attach_func(int, int,
-	int (*)(const struct mbuf *, int, int, void *)),
-	const struct protosw *, void *);
+const struct encaptab *encap_attach_func(int, int, int (*)(const struct mbuf *, int, int, void *), const struct protosw *, void *);
 void	encap6_ctlinput(int, struct sockaddr *, void *);
 int	encap_detach(const struct encaptab *);
 void	*encap_getarg(struct mbuf *);

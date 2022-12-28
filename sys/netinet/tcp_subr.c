@@ -1345,7 +1345,7 @@ tcp6_ctlinput(cmd, sa, d)
 	void *d;
 {
 	struct tcphdr th;
-	void (*notify)(struct in6pcb *, int)) = tcp6_notify;
+	void (*notify)(struct in6pcb *, int) = tcp6_notify;
 	int nmatch;
 	struct ip6_hdr *ip6;
 	const struct sockaddr_in6 *sa6_src = NULL;
