@@ -205,7 +205,7 @@ struct cryptostats {
 	struct cryptotstat cs_finis;	/* callback -> callback return */
 };
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 /* Standard initialization structure beginning */
 struct cryptoini {
 	int		cri_alg;	/* Algorithm to use */
