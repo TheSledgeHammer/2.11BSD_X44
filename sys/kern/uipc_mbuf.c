@@ -913,6 +913,46 @@ ok:
 	return n;
 }
 
+/*
+ * Apply function f to the data in an mbuf chain starting "off" bytes from the
+ * beginning, continuing for "len" bytes.
+ */
+int
+m_apply(m, off, len, f, arg)
+  struct mbuf *m;
+  int off, len;
+  int (*f)(void *, caddr_t, unsigned int);
+  void *arg;
+{
+	unsigned int count;
+	int rval;
+
+	KASSERT(len >= 0);
+	KASSERT(off >= 0);
+
+	while (off > 0) {
+		KASSERT(m != NULL);
+		if (off < m->m_len)
+			break;
+		off -= m->m_len;
+		m = m->m_next;
+	}
+	while (len > 0) {
+		KASSERT(m != NULL);
+		count = min(m->m_len - off, len);
+
+		rval = (*f)(arg, mtod(m, caddr_t) + off, count);
+		if (rval)
+			return (rval);
+
+		len -= count;
+		off = 0;
+		m = m->m_next;
+	}
+
+	return (0);
+}
+
 /* Get a packet tag structure along with specified data following. */
 struct m_tag *
 m_tag_get(int type, int len, int wait)
