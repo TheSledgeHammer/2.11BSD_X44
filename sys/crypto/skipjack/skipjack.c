@@ -20,7 +20,7 @@ __KERNEL_RCSID(0, "$NetBSD: skipjack.c,v 1.1 2003/11/16 12:07:50 tls Exp $");
 #include <sys/param.h>
 #include <crypto/skipjack/skipjack.h>
 #include <sys/malloc.h>
-#include <opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptodev.h>
 
 static const u_int8_t ftable[0x100] =
 { 
