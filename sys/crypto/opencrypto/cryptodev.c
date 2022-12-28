@@ -45,13 +45,13 @@ __KERNEL_RCSID(0, "$NetBSD: cryptodev.c,v 1.10 2003/11/19 04:14:07 jonathan Exp 
 #include <sys/file.h>
 #include <sys/filedesc.h>
 #include <sys/errno.h>
-#include <sys/md5.h>
-#include <sys/sha1.h>
 #include <sys/conf.h>
 #include <sys/device.h>
 
-#include <opencrypto/cryptodev.h>
-#include <opencrypto/xform.h>
+#include <crypto/md5/md5.h>
+#include <crypto/sha1/sha1.h>
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/xform.h>
 
 #ifdef __NetBSD__
   #define splcrypto splnet

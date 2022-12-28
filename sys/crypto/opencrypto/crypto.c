@@ -34,13 +34,16 @@ __KERNEL_RCSID(0, "$NetBSD: crypto.c,v 1.8.2.1 2004/04/30 03:53:18 jmc Exp $");
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
-#include <opencrypto/cryptodev.h>
-#include <opencrypto/cryptosoft.h>		/* swcr_init() */
-#include <sys/kthread.h>
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptosoft.h>		/* swcr_init() */
+//#include <sys/kthread.h>
 
-#include <opencrypto/xform.h>			/* XXX for M_XDATA */
+#include <crypto/opencrypto/xform.h>			/* XXX for M_XDATA */
 
+#define splcrypto splnet
+#define setsoftcrypto(x)
 
+#ifdef notyet
 #ifdef __NetBSD__
   #define splcrypto splnet
   /* below is kludges to check whats still missing */
@@ -49,6 +52,8 @@ __KERNEL_RCSID(0, "$NetBSD: crypto.c,v 1.8.2.1 2004/04/30 03:53:18 jmc Exp $");
   softintr_establish(IPL_SOFTNET, (void (*)(void*))fn, NULL)
   #define unregister_swi(lvl, fn)  softintr_disestablish(softintr_cookie)
   #define setsoftcrypto(x) softintr_schedule(x)
+#endif
+#endif
 
 static void nanouptime(struct timespec *);
 static void
@@ -58,8 +63,6 @@ nanouptime(struct timespec *tp)
 	microtime(&tv);
 	TIMEVAL_TO_TIMESPEC(&tv, tp);
 }
-
-#endif
 
 #define	SESID2HID(sid)	(((sid) >> 32) & 0xffffffff)
 
@@ -93,9 +96,6 @@ static	TAILQ_HEAD(,cryptkop) crp_ret_kq;
  * Crypto op and desciptor data structures are allocated
  * from separate private zones(FreeBSD)/pools(netBSD/OpenBSD) .
  */
-struct pool cryptop_pool;
-struct pool cryptodesc_pool;
-int crypto_pool_initialized = 0;
 
 #ifdef __NetBSD__
 void	cryptoattach(int);
@@ -129,8 +129,6 @@ SYSCTL_INT(_kern, OID_AUTO, cryptodevallowsoft, CTLFLAG_RW,
 	   &crypto_devallowsoft, 0,
 	   "Enable/disable use of software asym crypto support");
 #endif
-
-MALLOC_DEFINE(M_CRYPTO_DATA, "crypto", "crypto session records");
 
 /*
  * Synchronization: read carefully, this is non-trivial.
@@ -205,7 +203,7 @@ crypto_init(void)
 	TAILQ_INIT(&crp_ret_q);
 	TAILQ_INIT(&crp_ret_kq);
 
-	softintr_cookie = register_swi(SWI_CRYPTO, cryptointr);
+	//softintr_cookie = register_swi(SWI_CRYPTO, cryptointr);
 #ifdef __FreeBSD__
 	error = kthread_create((void (*)(void *)) cryptoret, NULL,
 		    &cryptoproc, "cryptoret");
@@ -216,7 +214,7 @@ crypto_init(void)
 	}
 #else
 	/* defer thread creation until after boot */
-	kthread_create( deferred_crypto_thread, NULL);
+	//kthread_create( deferred_crypto_thread, NULL);
 	error = 0;
 #endif
 	return error;
@@ -228,7 +226,7 @@ crypto_destroy(void)
 	/* XXX no wait to reclaim zones */
 	if (crypto_drivers != NULL)
 		free(crypto_drivers, M_CRYPTO_DATA);
-	unregister_swi(SWI_CRYPTO, cryptointr);
+	//unregister_swi(SWI_CRYPTO, cryptointr);
 }
 
 /*
@@ -879,10 +877,11 @@ crypto_freereq(struct cryptop *crp)
 
 	while ((crd = crp->crp_desc) != NULL) {
 		crp->crp_desc = crd->crd_next;
-		pool_put(&cryptodesc_pool, crd);
+		free(crd, M_CRYPTO_DATA);
+      
 	}
 
-	pool_put(&cryptop_pool, crp);
+	free(crp, M_CRYPTO_DATA);
 	splx(s);
 }
 
@@ -898,15 +897,7 @@ crypto_getreq(int num)
 
 	s = splcrypto();
 
-	if (crypto_pool_initialized == 0) {
-		pool_init(&cryptop_pool, sizeof(struct cryptop), 0, 0,
-		    0, "cryptop", NULL);
-		pool_init(&cryptodesc_pool, sizeof(struct cryptodesc), 0, 0,
-		    0, "cryptodesc", NULL);
-		crypto_pool_initialized = 1;
-	}
-
-	crp = pool_get(&cryptop_pool, 0);
+	crp = malloc(sizeof(struct cryptop), M_CRYPTO_DATA, M_WAITOK);
 	if (crp == NULL) {
 		splx(s);
 		return NULL;
@@ -914,7 +905,7 @@ crypto_getreq(int num)
 	bzero(crp, sizeof(struct cryptop));
 
 	while (num--) {
-		crd = pool_get(&cryptodesc_pool, 0);
+		crd = malloc(sizeof(struct cryptodesc), M_CRYPTO_DATA, M_WAITOK);
 		if (crd == NULL) {
 			splx(s);
 			crypto_freereq(crp);
@@ -983,7 +974,7 @@ crypto_done(struct cryptop *crp)
 		wasempty = TAILQ_EMPTY(&crp_ret_q);
 		TAILQ_INSERT_TAIL(&crp_ret_q, crp, crp_next);
 		if (wasempty)
-			wakeup_one(&crp_ret_q);
+			//wakeup_one(&crp_ret_q);
 		splx(s);
 	}
 }
@@ -1008,7 +999,7 @@ crypto_kdone(struct cryptkop *krp)
 	wasempty = TAILQ_EMPTY(&crp_ret_kq);
 	TAILQ_INSERT_TAIL(&crp_ret_kq, krp, krp_next);
 	if (wasempty)
-		wakeup_one(&crp_ret_q);
+		//wakeup_one(&crp_ret_q);
 	splx(s);
 }
 
@@ -1192,7 +1183,8 @@ cryptoret(void)
 		}
 	}
 }
-
+
+#ifdef notyet
 static void
 deferred_crypto_thread(void *arg)
 {
@@ -1212,7 +1204,7 @@ deferred_crypto_thread(void *arg)
 	 */
 	swcr_init();
 }
-
+#endif
 void
 cryptoattach(int n)
 {

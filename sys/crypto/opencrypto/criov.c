@@ -39,9 +39,9 @@ __KERNEL_RCSID(0, "$NetBSD: criov.c,v 1.2 2003/07/30 17:27:23 lha Exp $");
 #include <sys/kernel.h>
 #include <sys/mbuf.h>
 
-#include <uvm/uvm_extern.h>
+#include <vm/include/vm_extern.h>
 
-#include <opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptodev.h>
 int cuio_getindx(struct uio *uio, int loc, int *off);
 
 

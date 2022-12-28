@@ -58,13 +58,13 @@ __KERNEL_RCSID(0, "$NetBSD: xform.c,v 1.13 2003/11/18 23:01:39 jonathan Exp $");
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
 
-#include <opencrypto/deflate.h>
+#include <crypto/opencrypto/deflate.h>
 
-#include <sys/md5.h>
-#include <sys/sha1.h>
+#include <crypto/md5/md5.h>
+#include <crypto/sha1/sha1.h>
 
-#include <opencrypto/cryptodev.h>
-#include <opencrypto/xform.h>
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/xform.h>
 
 static void null_encrypt(caddr_t, u_int8_t *);
 static void null_decrypt(caddr_t, u_int8_t *);
@@ -116,8 +116,6 @@ static	int SHA512Update_int(void *, const u_int8_t *, u_int16_t);
 
 static u_int32_t deflate_compress(u_int8_t *, u_int32_t, u_int8_t **);
 static u_int32_t deflate_decompress(u_int8_t *, u_int32_t, u_int8_t **);
-
-MALLOC_DEFINE(M_XDATA, "xform", "xform data buffers");
 
 /* Encryption instances */
 struct enc_xform enc_xform_null = {

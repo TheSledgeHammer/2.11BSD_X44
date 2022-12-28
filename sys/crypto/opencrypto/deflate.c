@@ -41,10 +41,10 @@ __KERNEL_RCSID(0, "$NetBSD: deflate.c,v 1.2 2003/08/27 00:12:37 thorpej Exp $");
 #include <sys/malloc.h>
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <net/zlib.h>
+#include <lib/libz/zlib.h>
 
-#include <opencrypto/cryptodev.h>
-#include <opencrypto/deflate.h>
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/deflate.h>
 
 int window_inflate = -1 * MAX_WBITS;
 int window_deflate = -12;

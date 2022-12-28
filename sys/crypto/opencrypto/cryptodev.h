@@ -342,8 +342,6 @@ struct cryptocap {
 #define	CRYPTO_SESID2CAPS(_sid)	(((_sid) >> 56) & 0xff)
 #define	CRYPTO_SESID2LID(_sid)	(((u_int32_t) (_sid)) & 0xffffffff)
 
-MALLOC_DECLARE(M_CRYPTO_DATA);
-
 extern	int crypto_newsession(u_int64_t *sid, struct cryptoini *cri, int hard);
 extern	int crypto_freesession(u_int64_t sid);
 extern	int32_t crypto_get_driverid(u_int32_t flags);

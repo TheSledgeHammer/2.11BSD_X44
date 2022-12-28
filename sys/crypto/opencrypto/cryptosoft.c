@@ -33,9 +33,9 @@ __KERNEL_RCSID(0, "$NetBSD: cryptosoft.c,v 1.8 2003/08/27 00:20:56 thorpej Exp $
 #include <sys/sysctl.h>
 #include <sys/errno.h>
 
-#include <opencrypto/cryptodev.h>
-#include <opencrypto/cryptosoft.h>
-#include <opencrypto/xform.h>
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptosoft.h>
+#include <crypto/opencrypto/xform.h>
 
 const u_int8_t hmac_ipad_buffer[64] = {
 	0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,

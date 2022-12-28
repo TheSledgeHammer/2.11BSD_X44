@@ -26,8 +26,8 @@
 #ifndef _CRYPTO_XFORM_H_
 #define _CRYPTO_XFORM_H_
 
-#include <sys/md5.h>
-#include <sys/sha1.h>
+#include <crypto/md5/md5.h>
+#include <crypto/sha1/sha1.h>
 #include <crypto/sha2/sha2.h>
 #include <crypto/ripemd160/rmd160.h>
 
@@ -100,6 +100,5 @@ extern struct comp_algo comp_algo_deflate;
 
 #ifdef _KERNEL
 #include <sys/malloc.h>
-MALLOC_DECLARE(M_XDATA);
 #endif
 #endif /* _CRYPTO_XFORM_H_ */
