@@ -92,9 +92,9 @@
 #define CRYPTO_SHA1_KPDK	10
 #define CRYPTO_RIJNDAEL128_CBC	11 /* 128 bit blocksize */
 #define CRYPTO_AES_CBC		11 /* 128 bit blocksize -- the same as above */
-#define CRYPTO_ARC4		12
-#define CRYPTO_MD5		13
-#define CRYPTO_SHA1		14
+#define CRYPTO_ARC4			12
+#define CRYPTO_MD5			13
+#define CRYPTO_SHA1			14
 #define	CRYPTO_SHA2_HMAC	15
 #define CRYPTO_NULL_HMAC	16
 #define CRYPTO_NULL_CBC		17
@@ -167,13 +167,13 @@ struct crypt_kop {
  * done against open of /dev/crypto, to get a cloned descriptor.
  * Please use F_SETFD against the cloned descriptor.
  */
-#define	CRIOGET		_IOWR('c', 100, u_int32_t)
+#define	CRIOGET			_IOWR('c', 100, u_int32_t)
 
 /* the following are done against the cloned descriptor */
 #define	CIOCGSESSION	_IOWR('c', 101, struct session_op)
 #define	CIOCFSESSION	_IOW('c', 102, u_int32_t)
-#define CIOCCRYPT	_IOWR('c', 103, struct crypt_op)
-#define CIOCKEY		_IOWR('c', 104, struct crypt_kop)
+#define CIOCCRYPT		_IOWR('c', 103, struct crypt_op)
+#define CIOCKEY			_IOWR('c', 104, struct crypt_kop)
 
 #define CIOCASYMFEAT	_IOR('c', 105, u_int32_t)
 
@@ -205,7 +205,7 @@ struct cryptostats {
 	struct cryptotstat cs_finis;	/* callback -> callback return */
 };
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 /* Standard initialization structure beginning */
 struct cryptoini {
 	int		cri_alg;	/* Algorithm to use */
@@ -367,8 +367,7 @@ extern	int crypto_getfeat(int *);
 
 void	cuio_copydata(struct uio *, int, int, caddr_t);
 void	cuio_copyback(struct uio *, int, int, caddr_t);
-int	cuio_apply(struct uio *, int, int,
-	    int (*f)(caddr_t, caddr_t, unsigned int), caddr_t);
+int		cuio_apply(struct uio *, int, int, int (*f)(caddr_t, caddr_t, unsigned int), caddr_t);
 
 extern	void crypto_freereq(struct cryptop *crp);
 extern	struct cryptop *crypto_getreq(int num);
@@ -399,17 +398,6 @@ struct	mbuf	*m_getptr(struct mbuf *, int, int *);
 struct uio;
 extern	void cuio_copydata(struct uio* uio, int off, int len, caddr_t cp);
 extern	void cuio_copyback(struct uio* uio, int off, int len, caddr_t cp);
-#ifdef __FreeBSD__
-extern struct iovec *cuio_getptr(struct uio *uio, int loc, int *off);
-#else
 extern int	cuio_getptr(struct uio *, int loc, int *off);
-#endif
-
-#ifdef __FreeBSD__	/* Standalone m_apply()/m_getptr() */
-extern  int m_apply(struct mbuf *m, int off, int len,
-                    int (*f)(caddr_t, caddr_t, unsigned int), caddr_t fstate);
-extern  struct mbuf * m_getptr(struct mbuf *m, int loc, int *off);
-#endif	/* Standalone m_apply()/m_getptr() */
-
 #endif /* _KERNEL */
 #endif /* _CRYPTO_CRYPTO_H_ */

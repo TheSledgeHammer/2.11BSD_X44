@@ -307,6 +307,8 @@ extern const struct cdevsw wsmouse_cdevsw;
 extern const struct cdevsw wsmux_cdevsw;
 extern const struct cdevsw wsfont_cdevsw;
 extern const struct cdevsw mm_cdevsw;
+extern const struct cdevsw crypto_cdevsw;
+extern const struct cdevsw tun_cdevsw;
 
 /* linesw */
 extern const struct linesw ttydisc;

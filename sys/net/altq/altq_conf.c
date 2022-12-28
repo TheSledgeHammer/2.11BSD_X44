@@ -203,8 +203,20 @@ static struct cdevsw altq_cdevsw =
 
 #if defined(__NetBSD__)
 const struct cdevsw altq_cdevsw = {
-	altqopen, altqclose, noread, nowrite, altqioctl,
-	nostop, notty, nopoll, nommap, nokqfilter
+		.d_open = altqopen,
+		.d_close = altqclose,
+		.d_read = noread,
+		.d_write = nowrite,
+		.d_ioctl = altqioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_select = noselect,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_kqfilter = nokqfilter,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
 };
 #endif
 

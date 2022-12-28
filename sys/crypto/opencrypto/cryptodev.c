@@ -53,9 +53,7 @@ __KERNEL_RCSID(0, "$NetBSD: cryptodev.c,v 1.10 2003/11/19 04:14:07 jonathan Exp 
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 
-#ifdef __NetBSD__
-  #define splcrypto splnet
-#endif
+#define splcrypto splnet
 
 struct csession {
 	TAILQ_ENTRY(csession) next;
@@ -246,8 +244,7 @@ cryptof_ioctl(struct file *fp, u_long cmd, void* data, struct proc *p)
 				goto bail;
 			}
 
-			MALLOC(crie.cri_key, u_int8_t *,
-			    crie.cri_klen / 8, M_XDATA, M_WAITOK);
+			MALLOC(crie.cri_key, u_int8_t *, crie.cri_klen / 8, M_XDATA, M_WAITOK);
 			if ((error = copyin(sop->key, crie.cri_key,
 			    crie.cri_klen / 8)))
 				goto bail;
@@ -264,8 +261,7 @@ cryptof_ioctl(struct file *fp, u_long cmd, void* data, struct proc *p)
 			}
 
 			if (cria.cri_klen) {
-				MALLOC(cria.cri_key, u_int8_t *,
-				    cria.cri_klen / 8, M_XDATA, M_WAITOK);
+				MALLOC(cria.cri_key, u_int8_t *, cria.cri_klen / 8, M_XDATA, M_WAITOK);
 				if ((error = copyin(sop->mackey, cria.cri_key,
 				    cria.cri_klen / 8)))
 					goto bail;
@@ -683,8 +679,7 @@ csecreate(struct fcrypt *fcr, u_int64_t sid, caddr_t key, u_int64_t keylen,
 {
 	struct csession *cse;
 
-	MALLOC(cse, struct csession *, sizeof(struct csession),
-	    M_XDATA, M_NOWAIT);
+	MALLOC(cse, struct csession *, sizeof(struct csession), M_XDATA, M_NOWAIT);
 	if (cse == NULL)
 		return NULL;
 	cse->key = key;
@@ -743,8 +738,7 @@ cryptoioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 
 	switch (cmd) {
 	case CRIOGET:
-		MALLOC(fcr, struct fcrypt *,
-		    sizeof(struct fcrypt), M_XDATA, M_WAITOK);
+		MALLOC(fcr, struct fcrypt *, sizeof(struct fcrypt), M_XDATA, M_WAITOK);
 		TAILQ_INIT(&fcr->csessions);
 		fcr->sesn = 0;
 
@@ -775,16 +769,18 @@ cryptoselect(dev_t dev, int rw, struct proc *p)
 }
 
 /*static*/
-struct cdevsw crypto_cdevsw = {
-	/* open */	cryptoopen,
-	/* close */	nullclose,
-	/* read */	cryptoread,
-	/* write */	cryptowrite,
-	/* ioctl */	cryptoioctl,
-	/* ttstop?*/	nostop,
-	/* ??*/		notty,
-	/* poll */	cryptoselect /*nopoll*/,
-	/* mmap */	nommap,
-	/* kqfilter */	nokqfilter,
+const struct cdevsw crypto_cdevsw = {
+		.d_open = cryptoopen,
+		.d_close = nullclose,
+		.d_read = cryptoread,
+		.d_write = cryptowrite,
+		.d_ioctl = cryptoioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_select = noselect,
+		.d_poll = cryptoselect, /*nopoll*/
+		.d_mmap = nommap,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
 };
-

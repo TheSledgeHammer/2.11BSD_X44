@@ -61,6 +61,8 @@
 #include "sl.h"
 #include "ppp.h"
 #include "strip.h"
+#include "tun.h"
+
 /*
 #include "usb.h"
 #include "uhid.h"
@@ -214,6 +216,8 @@ network_init(devsw)
 	struct devswtable *devsw;
 {
 	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
+	DEVSWIO_CONFIG_INIT(devsw, NTUN, NULL, &tun_cdevsw, NULL);				/* network tunnel */
+	DEVSWIO_CONFIG_INIT(devsw, NCRYPTO, NULL, &crypto_cdevsw, NULL);		/* Opencrypto */
 }
 
 /* Add usb driver configuration */

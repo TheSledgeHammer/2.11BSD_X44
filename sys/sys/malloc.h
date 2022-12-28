@@ -135,8 +135,8 @@
 #define M_IFMEDIA       82  /* ifmedia interface media state */
 #define M_PACKET_TAGS	83	/* Packet-attached information */
 #define	M_IPQ			84	/* IP packet queue entry */
-#define	M_CRYPTO_DATA		85	/* crypto session records */
-#define M_XDATA                 86      /* xform data buffers */
+#define	M_CRYPTO_DATA	85	/* crypto session records */
+#define M_XDATA         86  /* xform data buffers */
 #define	M_TEMP			87	/* misc temporary data buffers */
 #define	M_LAST			88	/* Must be last type + 1 */
 
