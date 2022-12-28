@@ -50,23 +50,23 @@ struct encaptab {
 	struct sockaddr *srcmask;
 	struct sockaddr *dst;		/* remote addr */
 	struct sockaddr *dstmask;
-	int (*func) __P((const struct mbuf *, int, int, void *));
+	int (*func)(const struct mbuf *, int, int, void *);
 	const struct protosw *psw;	/* only pr_input will be used */
 	void *arg;			/* passed via PACKET_TAG_ENCAP */
 };
 
-void	encap_init __P((void));
-void	encap4_input __P((struct mbuf *, ...));
-int	encap6_input __P((struct mbuf **, int *, int));
-const struct encaptab *encap_attach __P((int, int, const struct sockaddr *,
+void	encap_init(void);
+void	encap4_input(struct mbuf *, ...);
+int	encap6_input(struct mbuf **, int *, int);
+const struct encaptab *encap_attach(int, int, const struct sockaddr *,
 	const struct sockaddr *, const struct sockaddr *,
-	const struct sockaddr *, const struct protosw *, void *));
-const struct encaptab *encap_attach_func __P((int, int,
-	int (*) __P((const struct mbuf *, int, int, void *)),
-	const struct protosw *, void *));
-void	encap6_ctlinput __P((int, struct sockaddr *, void *));
-int	encap_detach __P((const struct encaptab *));
-void	*encap_getarg __P((struct mbuf *));
+	const struct sockaddr *, const struct protosw *, void *);
+const struct encaptab *encap_attach_func(int, int,
+	int (*)(const struct mbuf *, int, int, void *)),
+	const struct protosw *, void *);
+void	encap6_ctlinput(int, struct sockaddr *, void *);
+int	encap_detach(const struct encaptab *);
+void	*encap_getarg(struct mbuf *);
 #endif
 
 #endif /*_NETINET_IP_ENCAP_H_*/

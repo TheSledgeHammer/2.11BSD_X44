@@ -161,16 +161,16 @@ struct icmpstat	icmpstat;
  */
 struct icmp_mtudisc_callback {
 	LIST_ENTRY(icmp_mtudisc_callback) mc_list;
-	void (*mc_func) __P((struct in_addr));
+	void (*mc_func)(struct in_addr);
 };
 
 LIST_HEAD(, icmp_mtudisc_callback) icmp_mtudisc_callbacks =
     LIST_HEAD_INITIALIZER(&icmp_mtudisc_callbacks);
 
 #if 0
-static int	ip_next_mtu __P((int, int));
+static int	ip_next_mtu(int, int);
 #else
-/*static*/ int	ip_next_mtu __P((int, int));
+/*static*/ int	ip_next_mtu(int, int);
 #endif
 
 extern int icmperrppslim;
@@ -180,10 +180,10 @@ static int icmp_rediraccept = 1;
 static int icmp_redirtimeout = 600;
 static struct rttimer_queue *icmp_redirect_timeout_q = NULL;
 
-static void icmp_mtudisc_timeout __P((struct rtentry *, struct rttimer *));
-static void icmp_redirect_timeout __P((struct rtentry *, struct rttimer *));
+static void icmp_mtudisc_timeout(struct rtentry *, struct rttimer *);
+static void icmp_redirect_timeout(struct rtentry *, struct rttimer *);
 
-static int icmp_ratelimit __P((const struct in_addr *, const int, const int));
+static int icmp_ratelimit(const struct in_addr *, const int, const int);
 
 
 void
@@ -204,7 +204,7 @@ icmp_init()
  */
 void
 icmp_mtudisc_callback_register(func)
-	void (*func) __P((struct in_addr));
+	void (*func)(struct in_addr);
 {
 	struct icmp_mtudisc_callback *mc;
 
@@ -388,7 +388,7 @@ icmp_input(m, va_alist)
 	int icmplen;
 	int i;
 	struct in_ifaddr *ia;
-	void *(*ctlfunc) __P((int, struct sockaddr *, void *));
+	void *(*ctlfunc)(int, struct sockaddr *, void *);
 	int code;
 	int hlen;
 	va_list ap;

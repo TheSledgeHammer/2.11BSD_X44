@@ -39,8 +39,7 @@
  * if_atm.h
  */
 
-void atm_rtrequest __P((int, struct rtentry *, struct rt_addrinfo *));
-int atmresolve __P((struct rtentry *, struct mbuf *, struct sockaddr *,
-		struct atm_pseudohdr *));
+void atm_rtrequest(int, struct rtentry *, struct rt_addrinfo *);
+int atmresolve(struct rtentry *, struct mbuf *, struct sockaddr *, struct atm_pseudohdr *);
 
 #endif /* _NETINET_IF_ATM_H_ */

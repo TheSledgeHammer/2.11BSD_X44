@@ -170,9 +170,9 @@ static	d_close_t	altqclose;
 static	d_ioctl_t	altqioctl;
 #endif
 #ifdef __FreeBSD__
-static void altq_drvinit __P((void *));
+static void altq_drvinit(void *);
 #else
-void	altqattach __P((int));
+void	altqattach(int);
 #endif
 
 #if defined(__FreeBSD__)
@@ -368,8 +368,8 @@ SYSINIT(altqdev,SI_SUB_DRIVERS,SI_ORDER_MIDDLE+CDEV_MAJOR,altq_drvinit,NULL)
 /*
  * KLD support
  */
-static int altq_module_register __P((struct altq_module_data *));
-static int altq_module_deregister __P((struct altq_module_data *));
+static int altq_module_register(struct altq_module_data *);
+static int altq_module_deregister(struct altq_module_data *);
 
 static struct altq_module_data *altq_modules[ALTQT_MAX];
 static struct altqsw noqdisc = {"noq", noopen, noclose, noioctl};

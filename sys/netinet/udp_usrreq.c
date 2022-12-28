@@ -144,19 +144,19 @@ struct	inpcbtable udbtable;
 struct	udpstat udpstat;
 
 #ifdef INET
-static void udp4_sendup __P((struct mbuf *, int, struct sockaddr *,
-	struct socket *));
-static int udp4_realinput __P((struct sockaddr_in *, struct sockaddr_in *,
-	struct mbuf *, int));
+static void udp4_sendup(struct mbuf *, int, struct sockaddr *,
+	struct socket *);
+static int udp4_realinput(struct sockaddr_in *, struct sockaddr_in *,
+	struct mbuf *, int);
 #endif
 #ifdef INET6
-static void udp6_sendup __P((struct mbuf *, int, struct sockaddr *,
-	struct socket *));
-static int udp6_realinput __P((int, struct sockaddr_in6 *,
-	struct sockaddr_in6 *, struct mbuf *, int));
+static void udp6_sendup(struct mbuf *, int, struct sockaddr *,
+	struct socket *);
+static int udp6_realinput(int, struct sockaddr_in6 *,
+	struct sockaddr_in6 *, struct mbuf *, int);
 #endif
 #ifdef INET
-static	void udp_notify __P((struct inpcb *, int));
+static	void udp_notify(struct inpcb *, int);
 #endif
 
 #ifndef UDBHASHSIZE
@@ -812,7 +812,7 @@ udp_ctlinput(cmd, sa, v)
 {
 	struct ip *ip = v;
 	struct udphdr *uh;
-	void (*notify) __P((struct inpcb *, int)) = udp_notify;
+	void (*notify)(struct inpcb *, int) = udp_notify;
 	int errno;
 
 	if (sa->sa_family != AF_INET

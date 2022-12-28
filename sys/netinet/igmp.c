@@ -69,9 +69,9 @@ struct igmpstat igmpstat;
 int igmp_timers_are_running;
 static LIST_HEAD(, router_info) rti_head = LIST_HEAD_INITIALIZER(rti_head);
 
-void igmp_sendpkt __P((struct in_multi *, int));
-static int rti_fill __P((struct in_multi *));
-static struct router_info *rti_find __P((struct ifnet *));
+void igmp_sendpkt(struct in_multi *, int);
+static int rti_fill(struct in_multi *);
+static struct router_info *rti_find(struct ifnet *);
 static void rti_delete(struct ifnet *);
 
 void

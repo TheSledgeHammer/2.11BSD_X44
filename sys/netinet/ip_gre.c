@@ -97,9 +97,9 @@ __KERNEL_RCSID(0, "$NetBSD: ip_gre.c,v 1.29.4.1 2005/05/08 18:01:19 snj Exp $");
 void gre_inet_ntoa(struct in_addr in); 	/* XXX */
 #endif
 
-struct gre_softc *gre_lookup __P((struct mbuf *, u_int8_t));
+struct gre_softc *gre_lookup(struct mbuf *, u_int8_t);
 
-int	gre_input2 __P((struct mbuf *, int, u_char));
+int	gre_input2(struct mbuf *, int, u_char);
 
 /*
  * De-encapsulate a packet and feed it back through ip input (this

@@ -335,11 +335,11 @@ extern struct evcnt tcp_reass_fragdup;
 #endif /* TCP_REASS_COUNTERS */
 
 #ifdef INET
-static void tcp4_log_refused __P((const struct ip *, const struct tcphdr *));
+static void tcp4_log_refused(const struct ip *, const struct tcphdr *);
 #endif
 #ifdef INET6
 static void tcp6_log_refused
-    __P((const struct ip6_hdr *, const struct tcphdr *));
+   (const struct ip6_hdr *, const struct tcphdr *);
 #endif
 
 int

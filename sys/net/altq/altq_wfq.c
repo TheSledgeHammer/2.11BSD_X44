@@ -82,7 +82,7 @@ static int		wfq_getqid(struct wfq_getqid *);
 static int		wfq_setweight(struct wfq_setweight *);
 static int		wfq_getstats(struct wfq_getstats *);
 static int		wfq_config(struct wfq_conf *);
-static int		wfq_request __P((struct ifaltq *, int, void *));
+static int		wfq_request(struct ifaltq *, int, void *);
 static int		wfq_flush(struct ifaltq *);
 static void		*wfq_classify(void *, struct mbuf *, int);
 

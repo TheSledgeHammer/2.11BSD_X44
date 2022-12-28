@@ -43,13 +43,13 @@ typedef struct MD4Context {
 } MD4_CTX;
 
 __BEGIN_DECLS
-void	MD4Init __P((MD4_CTX *));
-void	MD4Update __P((MD4_CTX *, const unsigned char *, unsigned int));
-void	MD4Final __P((unsigned char[16], MD4_CTX *));
+void	MD4Init(MD4_CTX *);
+void	MD4Update(MD4_CTX *, const unsigned char *, unsigned int);
+void	MD4Final(unsigned char[16], MD4_CTX *);
 #ifndef _KERNEL
-char	*MD4End __P((MD4_CTX *, char *));
-char	*MD4File __P((const char *, char *));
-char	*MD4Data __P((const unsigned char *, unsigned int, char *));
+char	*MD4End(MD4_CTX *, char *);
+char	*MD4File(const char *, char *);
+char	*MD4Data(const unsigned char *, unsigned int, char *);
 #endif /* _KERNEL */
 __END_DECLS
 

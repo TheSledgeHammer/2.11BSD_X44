@@ -52,10 +52,10 @@ typedef u_int32_t UINT4;
 #define S33 11
 #define S34 15
 
-static void MD4Transform __P((UINT4 [4], const unsigned char [64]));
+static void MD4Transform(UINT4 [4], const unsigned char [64]);
 
-static void Encode __P((unsigned char *, UINT4 *, unsigned int));
-static void Decode __P((UINT4 *, const unsigned char *, unsigned int));
+static void Encode(unsigned char *, UINT4 *, unsigned int);
+static void Decode(UINT4 *, const unsigned char *, unsigned int);
 
 static const unsigned char PADDING[64] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

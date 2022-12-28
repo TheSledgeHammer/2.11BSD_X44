@@ -113,12 +113,12 @@ extern	struct igmpstat igmpstat;
 #define	IGMP_HDR_ALIGNED_P(ig)	((((vaddr_t) (ig)) & 3) == 0)
 #endif
 
-void	igmp_init __P((void));
-void	igmp_input __P((struct mbuf *, ...));
-int	igmp_joingroup __P((struct in_multi *));
-void	igmp_leavegroup __P((struct in_multi *));
-void	igmp_fasttimo __P((void));
-void	igmp_slowtimo __P((void));
+void	igmp_init(void);
+void	igmp_input(struct mbuf *, ...);
+int	igmp_joingroup(struct in_multi *);
+void	igmp_leavegroup(struct in_multi *);
+void	igmp_fasttimo(void);
+void	igmp_slowtimo(void);
 extern void igmp_purgeif(struct ifnet *);
 #endif
 

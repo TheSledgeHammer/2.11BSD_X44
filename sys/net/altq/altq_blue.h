@@ -109,10 +109,10 @@ typedef struct blue_queue {
 	blue_t *rq_blue;
 } blue_queue_t;
 
-extern int blue_init __P((blue_t *, int, int, int, int));
-extern int blue_addq __P((blue_t *, class_queue_t *, struct mbuf *,
-			 struct altq_pktattr *));
-extern struct mbuf *blue_getq __P((blue_t *, class_queue_t *));
+extern int blue_init(blue_t *, int, int, int, int);
+extern int blue_addq(blue_t *, class_queue_t *, struct mbuf *,
+			 struct altq_pktattr *);
+extern struct mbuf *blue_getq(blue_t *, class_queue_t *);
 
 #endif /* _KERNEL */
 

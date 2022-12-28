@@ -147,10 +147,9 @@ __KERNEL_RCSID(0, "$NetBSD: ip_output.c,v 1.130 2004/03/02 02:28:28 thorpej Exp 
 #include <netipsec/xform.h>
 #endif	/* FAST_IPSEC*/
 
-static struct mbuf *ip_insertoptions __P((struct mbuf *, struct mbuf *, int *));
-static struct ifnet *ip_multicast_if __P((struct in_addr *, int *));
-static void ip_mloopback
-	__P((struct ifnet *, struct mbuf *, struct sockaddr_in *));
+static struct mbuf *ip_insertoptions(struct mbuf *, struct mbuf *, int *);
+static struct ifnet *ip_multicast_if(struct in_addr *, int *);
+static void ip_mloopback(struct ifnet *, struct mbuf *, struct sockaddr_in *);
 
 #ifdef PFIL_HOOKS
 extern struct pfil_head inet_pfil_hook;			/* XXX */

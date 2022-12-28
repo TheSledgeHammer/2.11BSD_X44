@@ -557,7 +557,7 @@ in_pcbnotify(table, faddr, fport_arg, laddr, lport_arg, errno, notify)
 	struct in_addr faddr, laddr;
 	u_int fport_arg, lport_arg;
 	int errno;
-	void (*notify) __P((struct inpcb *, int));
+	void (*notify)(struct inpcb *, int);
 {
 	struct inpcbhead *head;
 	struct inpcb *inp, *ninp;
@@ -589,7 +589,7 @@ in_pcbnotifyall(table, faddr, errno, notify)
 	struct inpcbtable *table;
 	struct in_addr faddr;
 	int errno;
-	void (*notify) __P((struct inpcb *, int));
+	void (*notify)(struct inpcb *, int);
 {
 	struct inpcb *inp, *ninp;
 

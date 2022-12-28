@@ -170,8 +170,8 @@ extern int rsvp_on;
 
 /* vif attachment using sys/netinet/ip_encap.c */
 extern struct domain inetdomain;
-static void vif_input __P((struct mbuf *, ...));
-static int vif_encapcheck __P((const struct mbuf *, int, int, void *));
+static void vif_input(struct mbuf *, ...);
+static int vif_encapcheck(const struct mbuf *, int, int, void *);
 static struct protosw vif_protosw =
 { SOCK_RAW,	&inetdomain,	IPPROTO_IPV4,	PR_ATOMIC|PR_ADDR,
   vif_input,	rip_output,	0,		rip_ctloutput,
@@ -188,40 +188,40 @@ static struct protosw vif_protosw =
 
 #define		TBF_REPROCESS	(hz / 100)	/* 100x / second */
 
-static int get_sg_cnt __P((struct sioc_sg_req *));
-static int get_vif_cnt __P((struct sioc_vif_req *));
-static int ip_mrouter_init __P((struct socket *, struct mbuf *));
-static int get_version __P((struct mbuf *));
-static int set_assert __P((struct mbuf *));
-static int get_assert __P((struct mbuf *));
-static int add_vif __P((struct mbuf *));
-static int del_vif __P((struct mbuf *));
-static void update_mfc __P((struct mfcctl *, struct mfc *));
-static void expire_mfc __P((struct mfc *));
-static int add_mfc __P((struct mbuf *));
+static int get_sg_cnt(struct sioc_sg_req *);
+static int get_vif_cnt(struct sioc_vif_req *);
+static int ip_mrouter_init(struct socket *, struct mbuf *);
+static int get_version(struct mbuf *);
+static int set_assert(struct mbuf *);
+static int get_assert(struct mbuf *);
+static int add_vif(struct mbuf *);
+static int del_vif(struct mbuf *);
+static void update_mfc(struct mfcctl *, struct mfc *);
+static void expire_mfc(struct mfc *);
+static int add_mfc(struct mbuf *);
 #ifdef UPCALL_TIMING
-static void collate __P((struct timeval *));
+static void collate(struct timeval *);
 #endif
-static int del_mfc __P((struct mbuf *));
-static int socket_send __P((struct socket *, struct mbuf *,
-			    struct sockaddr_in *));
-static void expire_upcalls __P((void *));
+static int del_mfc(struct mbuf *);
+static int socket_send(struct socket *, struct mbuf *,
+			    struct sockaddr_in *);
+static void expire_upcalls(void *);
 #ifdef RSVP_ISI
-static int ip_mdq __P((struct mbuf *, struct ifnet *, struct mfc *, vifi_t));
+static int ip_mdq(struct mbuf *, struct ifnet *, struct mfc *, vifi_t);
 #else
-static int ip_mdq __P((struct mbuf *, struct ifnet *, struct mfc *));
+static int ip_mdq(struct mbuf *, struct ifnet *, struct mfc *);
 #endif
-static void phyint_send __P((struct ip *, struct vif *, struct mbuf *));
-static void encap_send __P((struct ip *, struct vif *, struct mbuf *));
-static void tbf_control __P((struct vif *, struct mbuf *, struct ip *,
-			     u_int32_t));
-static void tbf_queue __P((struct vif *, struct mbuf *));
-static void tbf_process_q __P((struct vif *));
-static void tbf_reprocess_q __P((void *));
-static int tbf_dq_sel __P((struct vif *, struct ip *));
-static void tbf_send_packet __P((struct vif *, struct mbuf *));
-static void tbf_update_tokens __P((struct vif *));
-static int priority __P((struct vif *, struct ip *));
+static void phyint_send(struct ip *, struct vif *, struct mbuf *);
+static void encap_send(struct ip *, struct vif *, struct mbuf *);
+static void tbf_control(struct vif *, struct mbuf *, struct ip *,
+			     u_int32_t);
+static void tbf_queue(struct vif *, struct mbuf *);
+static void tbf_process_q(struct vif *);
+static void tbf_reprocess_q(void *);
+static int tbf_dq_sel(struct vif *, struct ip *);
+static void tbf_send_packet(struct vif *, struct mbuf *);
+static void tbf_update_tokens(struct vif *);
+static int priority(struct vif *, struct ip *);
 
 /*
  * 'Interfaces' associated with decapsulator (so we can tell

@@ -49,11 +49,11 @@
 #define ECN_NOCARE	(-1)	/* no consideration to ECN */
 
 #if defined(KERNEL) || defined(_KERNEL)
-extern void ip_ecn_ingress __P((int, u_int8_t *, const u_int8_t *));
-extern void ip_ecn_egress __P((int, const u_int8_t *, u_int8_t *));
+extern void ip_ecn_ingress(int, u_int8_t *, const u_int8_t *);
+extern void ip_ecn_egress(int, const u_int8_t *, u_int8_t *);
 #ifdef INET6
-extern void ip6_ecn_ingress __P((int, u_int32_t *, const u_int32_t *));
-extern void ip6_ecn_egress __P((int, const u_int32_t *, u_int32_t *));
+extern void ip6_ecn_ingress(int, u_int32_t *, const u_int32_t *);
+extern void ip6_ecn_egress(int, const u_int32_t *, u_int32_t *);
 #endif
 #endif
 #endif

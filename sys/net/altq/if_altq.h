@@ -144,19 +144,19 @@ struct tb_regulator {
 #define	ALTQ_IS_EMPTY(ifq)		((ifq)->ifq_len == 0)
 #define	TBR_IS_ENABLED(ifq)		((ifq)->altq_tbr != NULL)
 
-extern int altq_attach __P((struct ifaltq *, int, void *,
+extern int altq_attach(struct ifaltq *, int, void *,
 			    int (*)(struct ifaltq *, struct mbuf *,
 				    struct altq_pktattr *),
 			    struct mbuf *(*)(struct ifaltq *, int), 
 			    int (*)(struct ifaltq *, int, void *),
 			    void *,
-			    void *(*)(void *, struct mbuf *, int)));
-extern int altq_detach __P((struct ifaltq *));
-extern int altq_enable __P((struct ifaltq *));
-extern int altq_disable __P((struct ifaltq *));
-extern struct mbuf *tbr_dequeue __P((struct ifaltq *, int));
-extern int (*altq_input) __P((struct mbuf *, int));
-void altq_etherclassify __P((struct ifaltq *, struct mbuf *, struct altq_pktattr *));
+			    void *(*)(void *, struct mbuf *, int));
+extern int altq_detach(struct ifaltq *);
+extern int altq_enable(struct ifaltq *);
+extern int altq_disable(struct ifaltq *);
+extern struct mbuf *tbr_dequeue(struct ifaltq *, int);
+extern int (*altq_input)(struct mbuf *, int);
+void altq_etherclassify(struct ifaltq *, struct mbuf *, struct altq_pktattr *);
 #endif /* _KERNEL */
 
 #endif /* _ALTQ_IF_ALTQ_H_ */

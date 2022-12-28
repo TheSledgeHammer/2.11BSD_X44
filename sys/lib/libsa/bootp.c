@@ -75,7 +75,7 @@ static	ssize_t bootpsend (struct iodesc *, void *, size_t);
 static	ssize_t bootprecv (struct iodesc *, void *, size_t, time_t);
 static	int 	vend_rfc1048 (u_char *, u_int);
 #ifdef BOOTP_VEND_CMU
-static	void vend_cmu __P((u_char *));
+static	void vend_cmu(u_char *);
 #endif
 
 #ifdef SUPPORT_DHCP

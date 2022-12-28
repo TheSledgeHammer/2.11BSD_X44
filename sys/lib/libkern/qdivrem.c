@@ -61,7 +61,7 @@ typedef unsigned short digit;
 typedef u_int digit;
 #endif
 
-static void shl __P((digit *p, int len, int sh));
+static void shl(digit *p, int len, int sh);
 
 /*
  * __qdivrem(u, v, rem) returns u/v and, optionally, sets *rem to u%v.

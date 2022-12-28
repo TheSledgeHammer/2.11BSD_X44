@@ -112,13 +112,13 @@ __KERNEL_RCSID(0, "$NetBSD: altq_blue.c,v 1.9.2.1 2004/06/27 13:25:27 he Exp $")
 static blue_queue_t *blue_list = NULL;
 
 /* internal function prototypes */
-static int blue_enqueue __P((struct ifaltq *, struct mbuf *,
-			     struct altq_pktattr *));
-static struct mbuf *blue_dequeue __P((struct ifaltq *, int));
-static int drop_early __P((blue_t *));
-static int mark_ecn __P((struct mbuf *, struct altq_pktattr *, int));
-static int blue_detach __P((blue_queue_t *));
-static int blue_request __P((struct ifaltq *, int, void *));
+static int blue_enqueue(struct ifaltq *, struct mbuf *,
+			     struct altq_pktattr *);
+static struct mbuf *blue_dequeue(struct ifaltq *, int);
+static int drop_early(blue_t *);
+static int mark_ecn(struct mbuf *, struct altq_pktattr *, int);
+static int blue_detach(blue_queue_t *);
+static int blue_request(struct ifaltq *, int, void *);
 
 /*
  * blue device interface

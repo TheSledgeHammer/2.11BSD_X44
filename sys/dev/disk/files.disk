@@ -1,4 +1,5 @@
 # $211BSD:
+
 #
 # Disk Configuration Files
 #
@@ -7,4 +8,4 @@ include		"dev/disk/scsi/files.scsi"
 
 # pseudo disks
 file 		dev/disk/ccd/ccd.c			ccd			needs-flag
-file 		dev/disk/vnd/vnd.c			vnd			needs-flag	
+file 		dev/disk/vnd/vnd.c			vnd			needs-flag

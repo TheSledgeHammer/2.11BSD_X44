@@ -141,13 +141,13 @@ int	arpt_down = 20;		/* once declared down, don't send for 20 secs */
 
 extern	struct domain arpdomain;
 
-static	void arprequest __P((struct ifnet *,
-	    struct in_addr *, struct in_addr *, u_int8_t *));
-static	void arptfree __P((struct llinfo_arp *));
-static	void arptimer __P((void *));
-static	struct llinfo_arp *arplookup __P((struct mbuf *, struct in_addr *,
-					  int, int));
-static	void in_arpinput __P((struct mbuf *));
+static	void arprequest(struct ifnet *,
+	    struct in_addr *, struct in_addr *, u_int8_t *);
+static	void arptfree(struct llinfo_arp *);
+static	void arptimer(void *);
+static	struct llinfo_arp *arplookup(struct mbuf *, struct in_addr *,
+					  int, int);
+static	void in_arpinput(struct mbuf *);
 
 #if NLOOP > 0
 extern	struct ifnet loif[NLOOP];
@@ -170,10 +170,10 @@ static int	revarp_in_progress = 0;
 static struct	ifnet *myip_ifp = NULL;
 
 #ifdef DDB
-static void db_print_sa __P((struct sockaddr *));
-static void db_print_ifa __P((struct ifaddr *));
-static void db_print_llinfo __P((caddr_t));
-static int db_show_radix_node __P((struct radix_node *, void *));
+static void db_print_sa(struct sockaddr *);
+static void db_print_ifa(struct ifaddr *);
+static void db_print_llinfo(caddr_t);
+static int db_show_radix_node(struct radix_node *, void *);
 #endif
 
 /*
@@ -181,7 +181,7 @@ static int db_show_radix_node __P((struct radix_node *, void *));
  */
 
 static char *
-lla_snprintf __P((u_int8_t *, int));
+lla_snprintf(u_int8_t *, int);
 
 static char *
 lla_snprintf(adrp, len)
@@ -245,8 +245,8 @@ struct domain arpdomain =
  */
 
 static int	arp_locked;
-static __inline int arp_lock_try __P((int));
-static __inline void arp_unlock __P((void));
+static __inline int arp_lock_try(int);
+static __inline void arp_unlock(void);
 
 static __inline int
 arp_lock_try(int recurse)

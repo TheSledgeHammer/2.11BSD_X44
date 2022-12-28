@@ -52,7 +52,7 @@ struct	udpiphdr {
 #define	ui_sum		ui_u.uh_sum
 
 struct	udpstat {
-					/* input statistics: */
+								/* input statistics: */
 	u_quad_t udps_ipackets;		/* total input packets */
 	u_quad_t udps_hdrops;		/* packet shorter than header */
 	u_quad_t udps_badsum;		/* checksum error */
@@ -61,7 +61,7 @@ struct	udpstat {
 	u_quad_t udps_noportbcast;	/* of above, arrived as broadcast */
 	u_quad_t udps_fullsock;		/* not delivered, input socket full */
 	u_quad_t udps_pcbhashmiss;	/* input packets missing pcb hash */
-					/* output statistics: */
+								/* output statistics: */
 	u_quad_t udps_opackets;		/* total output packets */
 };
 
@@ -73,11 +73,11 @@ struct	udpstat {
 #define	UDPCTL_RECVSPACE	3	/* default recv buffer */
 #define	UDPCTL_MAXID		4
 
-#define UDPCTL_NAMES { \
-	{ 0, 0 }, \
-	{ "checksum", CTLTYPE_INT }, \
-	{ "sendspace", CTLTYPE_INT }, \
-	{ "recvspace", CTLTYPE_INT }, \
+#define UDPCTL_NAMES { 				\
+	{ 0, 0 }, 						\
+	{ "checksum", CTLTYPE_INT }, 	\
+	{ "sendspace", CTLTYPE_INT }, 	\
+	{ "recvspace", CTLTYPE_INT }, 	\
 }
 
 #ifdef _KERNEL
@@ -90,13 +90,12 @@ extern	struct	udpstat udpstat;
 #define	UDP_HDR_ALIGNED_P(uh)	((((u_long) (uh)) & 3) == 0)
 #endif
 
-void	 *udp_ctlinput __P((int, struct sockaddr *, void *));
-void	 udp_init __P((void));
-void	 udp_input __P((struct mbuf *, ...));
-int	 udp_output __P((struct mbuf *, ...));
-int	 udp_sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
-int	 udp_usrreq __P((struct socket *,
-	    int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *));
+void	 *udp_ctlinput(int, struct sockaddr *, void *);
+void	 udp_init(void);
+void	 udp_input(struct mbuf *, ...);
+int	 	udp_output(struct mbuf *, ...);
+int	 	udp_sysctl(int *, u_int, void *, size_t *, void *, size_t);
+int	 	udp_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 #endif
 
 #endif /* _NETINET_UDP_VAR_H_ */

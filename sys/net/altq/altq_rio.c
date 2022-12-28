@@ -182,12 +182,12 @@ static struct redparams default_rio_params[RIO_NDROPPREC] = {
 };
 
 /* internal function prototypes */
-static int rio_enqueue __P((struct ifaltq *, struct mbuf *,
-			    struct altq_pktattr *));
-static struct mbuf *rio_dequeue __P((struct ifaltq *, int));
-static int rio_request __P((struct ifaltq *, int, void *));
-static int rio_detach __P((rio_queue_t *));
-static int dscp2index __P((u_int8_t));
+static int rio_enqueue(struct ifaltq *, struct mbuf *,
+			    struct altq_pktattr *);
+static struct mbuf *rio_dequeue(struct ifaltq *, int);
+static int rio_request(struct ifaltq *, int, void *);
+static int rio_detach(rio_queue_t *);
+static int dscp2index(u_int8_t);
 
 /*
  * rio device interface

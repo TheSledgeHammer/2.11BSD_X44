@@ -44,7 +44,7 @@ __RCSID("$NetBSD: mcount.c,v 1.12 2003/08/07 16:32:08 agc Exp $");
 #include <sys/param.h>
 #include <sys/gmon.h>
 
-_MCOUNT_DECL __P((u_long, u_long)) __attribute__((__unused__));	/* see below. */
+_MCOUNT_DECL(u_long, u_long) __attribute__((__unused__));	/* see below. */
 
 /*
  * mcount is called on entry to each function compiled with the profiling

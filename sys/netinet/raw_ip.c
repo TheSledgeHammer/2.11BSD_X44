@@ -103,11 +103,10 @@ __KERNEL_RCSID(0, "$NetBSD: raw_ip.c,v 1.78.2.1 2004/05/10 15:00:12 tron Exp $")
 
 struct inpcbtable rawcbtable;
 
-int	 rip_pcbnotify __P((struct inpcbtable *, struct in_addr,
-    struct in_addr, int, int, void (*) __P((struct inpcb *, int))));
-int	 rip_bind __P((struct inpcb *, struct mbuf *));
-int	 rip_connect __P((struct inpcb *, struct mbuf *));
-void	 rip_disconnect __P((struct inpcb *));
+int	 rip_pcbnotify(struct inpcbtable *, struct in_addr, struct in_addr, int, int, void (*)(struct inpcb *, int));
+int	 rip_bind(struct inpcb *, struct mbuf *);
+int	 rip_connect(struct inpcb *, struct mbuf *);
+void	 rip_disconnect(struct inpcb *);
 
 /*
  * Nominal space allocated to a raw ip socket.
@@ -194,7 +193,7 @@ rip_input(m, va_alist)
 			} else
 #endif /*IPSEC*/
 			if ((n = m_copy(m, 0, (int)M_COPYALL)) != NULL) {
-				if (last->inp_flags & INP_CONTROLOPTS ||
+				if ((last->inp_flags & INP_CONTROLOPTS) ||
 				    last->inp_socket->so_options & SO_TIMESTAMP)
 					ip_savecontrol(last, &opts, ip, n);
 				if (sbappendaddr(&last->inp_socket->so_rcv,
@@ -220,8 +219,8 @@ rip_input(m, va_alist)
 	} else
 #endif /*IPSEC*/
 	if (last) {
-		if (last->inp_flags & INP_CONTROLOPTS ||
-		    last->inp_socket->so_options & SO_TIMESTAMP)
+		if ((last->inp_flags & INP_CONTROLOPTS) ||
+		    (last->inp_socket->so_options & SO_TIMESTAMP))
 			ip_savecontrol(last, &opts, ip, m);
 		if (sbappendaddr(&last->inp_socket->so_rcv,
 		    sintosa(&ripsrc), m, opts) == 0) {
@@ -248,7 +247,7 @@ rip_pcbnotify(table, faddr, laddr, proto, errno, notify)
 	struct in_addr faddr, laddr;
 	int proto;
 	int errno;
-	void (*notify) __P((struct inpcb *, int));
+	void (*notify)(struct inpcb *, int);
 {
 	struct inpcb *inp, *ninp;
 	int nmatch;
@@ -279,7 +278,7 @@ rip_ctlinput(cmd, sa, v)
 	void *v;
 {
 	struct ip *ip = v;
-	void (*notify) __P((struct inpcb *, int)) = in_rtchange;
+	void (*notify)(struct inpcb *, int) = in_rtchange;
 	int errno;
 
 	if (sa->sa_family != AF_INET ||

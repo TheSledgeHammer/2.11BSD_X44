@@ -68,7 +68,7 @@ __KERNEL_RCSID(0, "$NetBSD: in_gif.c,v 1.34 2003/11/11 20:25:26 jonathan Exp $")
 
 #include <net/net_osdep.h>
 
-static int gif_validate4 __P((const struct ip *, struct gif_softc *, struct ifnet *));
+static int gif_validate4(const struct ip *, struct gif_softc *, struct ifnet *);
 
 #if NGIF > 0
 int ip_gif_ttl = GIF_TTL;

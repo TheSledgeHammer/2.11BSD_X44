@@ -65,10 +65,10 @@ __weak_alias(MD5Update,_MD5Update);
 __weak_alias(MD5Final,_MD5Final);
 #endif
 
-static void MD5Transform __P((UINT4 [4], const unsigned char [64]));
+static void MD5Transform(UINT4 [4], const unsigned char [64]);
 
-static void Encode __P((unsigned char *, UINT4 *, unsigned int));
-static void Decode __P((UINT4 *, const unsigned char *, unsigned int));
+static void Encode(unsigned char *, UINT4 *, unsigned int);
+static void Decode(UINT4 *, const unsigned char *, unsigned int);
 
 /*
  * Encodes input (UINT4) into output (unsigned char).  Assumes len is

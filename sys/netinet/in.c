@@ -131,12 +131,12 @@ __KERNEL_RCSID(0, "$NetBSD: in.c,v 1.93.2.1.4.1 2006/04/02 17:48:18 riz Exp $");
 
 #ifdef INET
 
-static u_int in_mask2len __P((struct in_addr *));
-static void in_len2mask __P((struct in_addr *, u_int));
-static int in_lifaddr_ioctl __P((struct socket *, u_long, caddr_t, struct ifnet *, struct proc *));
+static u_int in_mask2len(struct in_addr *);
+static void in_len2mask(struct in_addr *, u_int);
+static int in_lifaddr_ioctl(struct socket *, u_long, caddr_t, struct ifnet *, struct proc *);
 
-static int in_addprefix __P((struct in_ifaddr *, int));
-static int in_scrubprefix __P((struct in_ifaddr *));
+static int in_addprefix(struct in_ifaddr *, int);
+static int in_scrubprefix(struct in_ifaddr *);
 
 #ifndef SUBNETSARELOCAL
 #define	SUBNETSARELOCAL	1
