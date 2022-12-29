@@ -165,7 +165,7 @@ cfs_update(p, priweight)
 	register struct proc *p;
 	u_char priweight;
 {
-	return (cpu_update(p));
+	cpu_update(p);
 }
 
 /*
