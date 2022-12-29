@@ -173,13 +173,17 @@ mpxchan(cmd, idx, mpx, nchans)
 			idx = 0;
 		}
 		mpx_create_channel(mpx, idx, nchans);
+		printf("create channel: %d\n", idx);
 		break;
 
 	case MPXDESTROY:
 		if (channelcount <= 0) {
 			idx = -1;
 		}
-		mpx_destroy_channel(mpx, idx);
+        if (idx >= 0) {
+            mpx_destroy_channel(mpx, idx);
+        }
+        printf("destroy channel: %d\n", idx);
 		break;
 
 	case MPXPUT:
@@ -188,7 +192,10 @@ mpxchan(cmd, idx, mpx, nchans)
 				idx = 0;
 				mpx_add_channel(mpx->mpx_channel, idx);
 			} else {
-				idx = channelcount + 1;
+				if (mpx->mpx_channel->mpc_index == idx) {
+		             printf("add channel: channel %d already exists\n", idx);
+		             break;
+				}
 				mpx_add_channel(mpx->mpx_channel, idx);
 			}
 		} else {
@@ -198,20 +205,25 @@ mpxchan(cmd, idx, mpx, nchans)
 		if (mpx->mpx_group != NULL) {
 			mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
 		}
+		printf("add channel: %d\n", idx);
 		break;
 
 	case MPXREMOVE:
 		if (mpx->mpx_channel != NULL) {
 			mpx_remove_channel(mpx->mpx_channel, idx);
 		}
+		printf("remove channel: %d\n", idx);
 		break;
 
 	case MPXGET:
 		if(idx >= 0) {
 			mpx->mpx_channel = mpx_get_channel(idx);
-		} else {
+		}
+		if (idx < 0 || mpx->mpx_channel == NULL) {
+			printf("get channel: no channel %d found\n", idx);
 			return (ENOMEM);
 		}
+		printf("get channel: %d\n", idx);
 		break;
 	}
 	return (0);
@@ -227,14 +239,17 @@ mpxgroup(cmd, idx, mpx, ngroups)
 		if (groupcount < 0) {
 			idx = 0;
 		}
-		mpx_create_group(mpx, idx, ngroups);
+		printf("create group: %d\n", idx);
 		break;
 
 	case MPXDESTROY:
 		if (groupcount <= 0) {
 			idx = -1;
 		}
-		mpx_destroy_group(mpx, idx);
+		if (idx >= 0) {
+			mpx_destroy_group(mpx, idx);
+		}
+		printf("destroy group: %d\n", idx);
 		break;
 
 	case MPXPUT:
@@ -243,7 +258,10 @@ mpxgroup(cmd, idx, mpx, ngroups)
 				idx = 0;
 				mpx_add_group(mpx->mpx_group, idx);
 			} else {
-				idx = groupcount + 1;
+				if (mpx->mpx_group->mpg_index == idx) {
+		             printf("add group: group %d already exists\n", idx);
+		             break;
+				}
 				mpx_add_group(mpx->mpx_group, idx);
 			}
 		} else {
@@ -253,20 +271,25 @@ mpxgroup(cmd, idx, mpx, ngroups)
 		if (mpx->mpx_channel != NULL) {
 			mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
 		}
+		printf("add group: %d\n", idx);
 		break;
 
 	case MPXREMOVE:
 		if (mpx->mpx_group != NULL) {
 			mpx_remove_group(mpx->mpx_group, idx);
 		}
+		printf("remove group: %d\n", idx);
 		break;
 
 	case MPXGET:
 		if(idx >= 0) {
 			mpx->mpx_group = mpx_get_group(idx);
-		} else {
+		}
+		if (idx < 0 || mpx->mpx_group == NULL) {
+			printf("get group: no group %d found\n", idx);
 			return (ENOMEM);
 		}
+		printf("get group: %d\n", idx);
 		break;
 	}
 	return (0);
