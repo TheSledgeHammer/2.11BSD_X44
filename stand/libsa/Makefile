@@ -1,9 +1,26 @@
 #	$211BSD: Makefile,v 1.0 2021/05/25 23:59:27 Exp $
 
-.include <bsd.loader.mk>
+.include <bsd.obj.mk>		# Pull in OBJDIR name rules.
+.include <bsd.own.mk>
+#.include <bsd.klinks.mk>
 
-.PATH: ${LIBSA}
+LIBISPRIVATE?=	yes
+LIB=	sa
 
-INCSDIR= /usr/include/stand/libsa
+S= ${NETBSDSRCDIR}/sys
+CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${S}
+CPPFLAGS+= -D_STANDALONE
 
-.include "${LIBSA}/Makefile"
+COPTS+=	-ffreestanding
+COPTS+=	-fno-stack-protector
+COPTS+=	-fno-unwind-tables
+CWARNFLAGS+= -Werror
+CWARNFLAGS+= -Wall -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith
+
+### find out what to use for libsa
+KERN_AS=	library
+KERNDIR=	${S}/lib/libsa
+
+.include "${KERNDIR}/Makefile.libsa"
+
+.include <bsd.lib.mk>

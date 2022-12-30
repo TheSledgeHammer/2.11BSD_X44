@@ -13,7 +13,7 @@
 
 .include <bsd.obj.mk>		# Pull in OBJDIR name rules.
 .include <bsd.own.mk>
-.include <bsd.klinks.mk>
+#.include <bsd.klinks.mk>
 
 LIBISPRIVATE?=	yes
 LIB=			kern
