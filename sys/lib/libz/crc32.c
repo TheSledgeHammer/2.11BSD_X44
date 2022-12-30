@@ -56,9 +56,9 @@
 #ifdef BYFOUR
 #  define REV(w) (((w)>>24)+(((w)>>8)&0xff00)+ \
                 (((w)&0xff00)<<8)+(((w)&0xff)<<24))
-   local unsigned long crc32_little OF((unsigned long,
+   local unsigned long crc32_little __P((unsigned long,
                         const unsigned char FAR *, unsigned));
-   local unsigned long crc32_big OF((unsigned long,
+   local unsigned long crc32_big __P((unsigned long,
                         const unsigned char FAR *, unsigned));
 #  define TBLS 8
 #else
@@ -66,17 +66,17 @@
 #endif /* BYFOUR */
 
 /* Local functions for crc concatenation */
-local unsigned long gf2_matrix_times OF((unsigned long *mat,
+local unsigned long gf2_matrix_times __P((unsigned long *mat,
                                          unsigned long vec));
-local void gf2_matrix_square OF((unsigned long *square, unsigned long *mat));
+local void gf2_matrix_square __P((unsigned long *square, unsigned long *mat));
 
 #ifdef DYNAMIC_CRC_TABLE
 
 local volatile int crc_table_empty = 1;
 local unsigned long FAR crc_table[TBLS][256];
-local void make_crc_table OF((void));
+local void make_crc_table __P((void));
 #ifdef MAKECRCH
-   local void write_table OF((FILE *, const unsigned long FAR *));
+   local void write_table __P((FILE *, const unsigned long FAR *));
 #endif /* MAKECRCH */
 /*
   Generate tables for a byte-wise 32-bit CRC calculation on the polynomial:

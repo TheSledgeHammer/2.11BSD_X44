@@ -171,9 +171,9 @@
 
 #ifndef OF /* function prototypes */
 #  ifdef STDC
-#    define OF(args)  args
+#    define __P(args)  args
 #  else
-#    define OF(args)  ()
+#    define __P(args)  ()
 #  endif
 #endif
 

@@ -244,16 +244,16 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #    define zmemzero(dest, len) memset(dest, 0, len)
 #  endif
 #else
-   extern void zmemcpy  OF((Bytef* dest, const Bytef* source, uInt len));
-   extern int  zmemcmp  OF((const Bytef* s1, const Bytef* s2, uInt len));
-   extern void zmemzero OF((Bytef* dest, uInt len));
+   extern void zmemcpy  __P((Bytef* dest, const Bytef* source, uInt len));
+   extern int  zmemcmp  __P((const Bytef* s1, const Bytef* s2, uInt len));
+   extern void zmemzero __P((Bytef* dest, uInt len));
 #endif
 
 /* Diagnostic functions */
 #ifdef DEBUG_LIBZ
 #  include <stdio.h>
    extern int z_verbose;
-   extern void z_error    OF((char *m));
+   extern void z_error    __P((char *m));
 #  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
 #  define Trace(x) {if (z_verbose>=0) fprintf x ;}
 #  define Tracev(x) {if (z_verbose>0) fprintf x ;}
@@ -270,8 +270,8 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #endif
 
 
-voidpf zcalloc OF((voidpf opaque, unsigned items, unsigned size));
-void   zcfree  OF((voidpf opaque, voidpf ptr));
+voidpf zcalloc __P((voidpf opaque, unsigned items, unsigned size));
+void   zcfree  __P((voidpf opaque, voidpf ptr));
 
 #define ZALLOC(strm, items, size) \
            (*((strm)->zalloc))((strm)->opaque, (items), (size))

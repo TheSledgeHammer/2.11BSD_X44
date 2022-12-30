@@ -9,4 +9,4 @@
    subject to change. Applications should only use zlib.h.
  */
 
-void inflate_fast OF((z_streamp strm, unsigned start));
+void inflate_fast __P((z_streamp strm, unsigned start));
