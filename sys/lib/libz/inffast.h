@@ -1,8 +1,7 @@
-/* $NetBSD: inffast.h,v 1.5 2003/03/18 20:00:48 mycroft Exp $ */
-
+/*	$OpenBSD: inffast.h,v 1.6 2003/12/16 23:57:48 millert Exp $	*/
 /* inffast.h -- header to use inffast.c
- * Copyright (C) 1995-2002 Mark Adler
- * For conditions of distribution and use, see copyright notice in zlib.h 
+ * Copyright (C) 1995-2003 Mark Adler
+ * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
 /* WARNING: this file should *not* be used by applications. It is
@@ -10,10 +9,4 @@
    subject to change. Applications should only use zlib.h.
  */
 
-extern int inflate_fast __P((
-    uInt,
-    uInt,
-    const inflate_huft *,
-    const inflate_huft *,
-    inflate_blocks_statef *,
-    z_streamp ));
+void inflate_fast OF((z_streamp strm, unsigned start));
