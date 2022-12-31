@@ -37,7 +37,7 @@
  */
 
 /*
- * Generic soft interrupt implementation for 211BSD/i86.
+ * Generic soft interrupt implementation for 211BSD/i386 & x86.
  */
 
 #include <sys/cdefs.h>
