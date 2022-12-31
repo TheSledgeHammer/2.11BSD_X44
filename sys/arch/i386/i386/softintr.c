@@ -147,7 +147,7 @@ softintr_init(void)
 	for (i = 0; i < I386_NSOFTINTR; i++) {
 		si = &i386_soft_intrs[i];
 		TAILQ_INIT(&si->softintr_q);
-		simple_lock_init(&si->softintr_slock);
+		simple_lock_init(si->softintr_slock, "softintr_slock");
 		si->softintr_ssir = i386_soft_intr_to_ssir[i];
 	}
 }
