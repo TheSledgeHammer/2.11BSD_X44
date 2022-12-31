@@ -262,18 +262,18 @@ struct i386_soft_intrhand {
 struct i386_soft_intr {
 	TAILQ_HEAD(, i386_soft_intrhand) 	softintr_q;
 	int 								softintr_ssir;
-	struct lock_object					softintr_slock;
+	struct lock_object					*softintr_slock;
 };
 
 #define	i386_softintr_lock(si, s)			\
 do {										\
 	(s) = splhigh();						\
-	simple_lock(&si->softintr_slock);		\
+	simple_lock(si->softintr_slock);		\
 } while (/*CONSTCOND*/ 0)
 
 #define	i386_softintr_unlock(si, s)			\
 do {										\
-	simple_unlock(&si->softintr_slock);		\
+	simple_unlock(si->softintr_slock);		\
 	splx((s));								\
 } while (/*CONSTCOND*/ 0)
 
