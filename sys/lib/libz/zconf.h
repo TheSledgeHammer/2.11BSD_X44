@@ -168,13 +168,14 @@
 */
 
                         /* Type declarations */
-
+#ifdef notyet
 #ifndef OF /* function prototypes */
 #  ifdef STDC
 #    define __P(args)  args
 #  else
 #    define __P(args)  ()
 #  endif
+#endif
 #endif
 
 /* The following definitions for FAR are needed only for MSDOS mixed
