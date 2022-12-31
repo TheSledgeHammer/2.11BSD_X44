@@ -705,8 +705,9 @@ evcnt_attach(dev, name, ev)
 	struct evcnt *ev;
 {
 #ifdef DIAGNOSTIC
-	if (strlen(name) >= sizeof(ev->ev_name))
+	if (strlen(name) >= sizeof(ev->ev_name)) {
 		panic("evcnt_attach");
+	}
 #endif
 	ev->ev_dev = dev;
 	/* ev->ev_count = 0; */

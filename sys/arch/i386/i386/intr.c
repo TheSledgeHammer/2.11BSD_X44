@@ -503,25 +503,29 @@ fakeintr(spic, fakehand, level)
 	struct intrhand *fakehand;
 	u_int level;
 {
-	fakehand->ih_pic = softpic_handle_pic(spic);
-
 	switch (level) {
 	case IPL_SOFTBIO:
-		fakehand->ih_level = IPL_SOFTBIO;
+		level = I386_SOFTINTR_SOFTBIO;
 		break;
 
 	case IPL_SOFTCLOCK:
-		fakehand->ih_level = IPL_SOFTCLOCK;
+		level = I386_SOFTINTR_SOFTCLOCK;
 		break;
 
 	case IPL_SOFTNET:
-		fakehand->ih_level = IPL_SOFTNET;
+		level = I386_SOFTINTR_SOFTNET;
 		break;
 
 	case IPL_SOFTSERIAL:
-		fakehand->ih_level = IPL_SOFTSERIAL;
+		level = I386_SOFTINTR_SOFTSERIAL;
 		break;
+
+	default:
+		panic("fakeintr");
 	}
+
+	fakehand->ih_pic = softpic_handle_pic(spic);
+	fakehand->ih_level = level;
 }
 
 void *

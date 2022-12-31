@@ -236,12 +236,13 @@ void 	i386_broadcast_ipi(int);
 void 	i386_multicast_ipi(int, int);
 void 	i386_ipi_handler(void);
 
+extern void (*ipifunc[I386_NIPI])(struct cpu_info *);
+
 #endif /* !_LOCORE */
-#ifdef notyet
+
 /*
  * Generic software interrupt support.
  */
-
 #define	I386_SOFTINTR_SOFTCLOCK		0
 #define	I386_SOFTINTR_SOFTNET		1
 #define	I386_SOFTINTR_SOFTSERIAL	2
@@ -251,11 +252,17 @@ void 	i386_ipi_handler(void);
 #include <sys/queue.h>
 
 struct i386_soft_intrhand {
-	TAILQ_ENTRY(i386_soft_intrhand) sih_q;
-	struct i386_soft_intr 			*sih_intrhead;
-	void							(*sih_fn)(void *);
-	void							*sih_arg;
-	int								sih_pending;
+	TAILQ_ENTRY(i386_soft_intrhand) 	sih_q;
+	struct i386_soft_intr 				*sih_intrhead;
+	void								(*sih_fn)(void *);
+	void								*sih_arg;
+	int									sih_pending;
+};
+
+struct i386_soft_intr {
+	TAILQ_HEAD(, i386_soft_intrhand) 	softintr_q;
+	int 								softintr_ssir;
+	struct lock_object					softintr_slock;
 };
 
 #define	i386_softintr_lock(si, s)			\
@@ -291,5 +298,4 @@ do {														\
 } while (/*CONSTCOND*/ 0)
 
 #endif /* _LOCORE */
-#endif /* notyet */
 #endif /* !_I386_INTR_H_ */
