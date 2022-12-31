@@ -86,45 +86,6 @@ softintr_register_pic(pic, apic)
 	softpic_register(pic, apic);
 }
 
-#ifdef notyet
-void
-i386_softintr_lock(si, s)
-	struct i386_soft_intr si;
-	int s;
-{
-	s = splhigh();
-	simple_lock(&si->softintr_slock);
-}
-
-void
-i386_softintr_unlock(si, s)
-	struct i386_soft_intr si;
-	int s;
-{
-	simple_unlock(&si->softintr_slock);
-	splx(s);
-}
-
-void
-softintr_schedule(arg)
-	void *arg;
-{
-	struct i386_soft_intrhand *sih;
-	struct i386_soft_intr *si;
-	int s;
-
-	sih = arg;
-	si = sih->sih_intrhead;
-	i386_softintr_lock(si, s);
-	if (sih->sih_pending == 0) {
-		TAILQ_INSERT_TAIL(&si->softintr_q, sih, sih_q);
-		sih->sih_pending = 1;
-		softintr(si->softintr_ssir);
-	}
-	i386_softintr_unlock(si, s);
-}
-#endif
-
 //#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
 struct i386_soft_intr i386_soft_intrs[I386_NSOFTINTR];
 const int i386_soft_intr_to_ssir[I386_NSOFTINTR] = {
