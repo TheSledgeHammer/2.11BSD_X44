@@ -53,6 +53,16 @@ __KERNEL_RCSID(0, "$NetBSD: cryptodev.c,v 1.10 2003/11/19 04:14:07 jonathan Exp 
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 
+
+#define DTYPE_CRYPTO 4
+
+/* syslimits */
+/*
+ * X/Open CAE Specification Issue 5 Version 2
+ */
+//#if defined(_XOPEN_SOURCE) || defined(_NETBSD_SOURCE)
+#define	IOV_MAX			 1024	/* max # of iovec's for readv(2) etc. */
+
 #define splcrypto splnet
 
 struct csession {
@@ -102,6 +112,16 @@ static int	cryptof_stat(struct file *, struct stat *, struct proc *);
 static int	cryptof_close(struct file *, struct proc *);
 
 static struct fileops cryptofops = {
+    .fo_rw = NULL,
+    .fo_read = cryptof_read,
+    .fo_write = cryptof_write,
+    .fo_ioctl = cryptof_ioctl,
+    .fo_poll = cryptof_poll,
+    .fo_close = cryptof_close,
+    .fo_kqfilter = cryptof_kqfilter
+};
+/*
+static struct fileops cryptofops = {
     cryptof_read,
     cryptof_write,
     cryptof_ioctl,
@@ -111,6 +131,7 @@ static struct fileops cryptofops = {
     cryptof_close,
     cryptof_kqfilter
 };
+*/
 
 static struct	csession *csefind(struct fcrypt *, u_int);
 static int	csedelete(struct fcrypt *, struct csession *);
@@ -484,7 +505,7 @@ cryptodev_cb(void *op)
 	cse->error = crp->crp_etype;
 	if (crp->crp_etype == EAGAIN)
 		return crypto_dispatch(crp);
-	wakeup_one(crp);
+	//wakeup_one(crp);
 	return (0);
 }
 
@@ -493,7 +514,7 @@ cryptodevkey_cb(void *op)
 {
 	struct cryptkop *krp = (struct cryptkop *) op;
 
-	wakeup_one(krp);
+	//wakeup_one(krp);
 	return (0);
 }
 
@@ -741,8 +762,10 @@ cryptoioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		MALLOC(fcr, struct fcrypt *, sizeof(struct fcrypt), M_XDATA, M_WAITOK);
 		TAILQ_INIT(&fcr->csessions);
 		fcr->sesn = 0;
-
-		error = falloc(p, &f, &fd);
+		
+		f = falloc();
+		fd = ufdalloc(f);
+		error = fd;
 		if (error) {
 			FREE(fcr, M_XDATA);
 			return (error);
@@ -752,7 +775,7 @@ cryptoioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		f->f_ops = &cryptofops;
 		f->f_data = (caddr_t) fcr;
 		*(u_int32_t *)data = fd;
-		FILE_SET_MATURE(f);
+		//FILE_SET_MATURE(f);
 		FILE_UNUSE(f, p);
 		break;
 	default:
