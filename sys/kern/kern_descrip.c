@@ -597,13 +597,9 @@ fdexpand(lim)
 	copylen = sizeof(struct file*) * u.u_nfiles;
 	bcopy(u.u_ofile, newofile, copylen);
 	bzero((char*) newofile + copylen, nfiles * sizeof(struct file*) - copylen);
-	//memcpy(newofile, u.u_ofile, copylen);
-	//memset((char*) newofile + copylen, 0, nfiles * sizeof(struct file*) - copylen);
 	copylen = sizeof(char) * u.u_nfiles;
 	bcopy(u.u_pofile, newofileflags, copylen);
 	bzero(newofileflags + copylen, nfiles * sizeof(char) - copylen);
-	//memcpy(newofileflags, u.u_pofile, copylen);
-	//memset(newofileflags + copylen, 0, nfiles * sizeof(char) - copylen);
 	if (u.u_nfiles > NDFILE) {
 		FREE(u.u_ofile, M_FILEDESC);
 	}
@@ -802,6 +798,23 @@ flock()
 		return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK));
 	}
 	return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK|F_WAIT));
+}
+
+/*
+ * Send signal to descriptor owner, either process or process group.
+ */
+void
+fownsignal(pgid, signo)
+	pid_t pgid;
+	int signo;
+{
+	struct proc *p1;
+
+	if (pgid > 0 && (p1 = pfind(pgid))) {
+		gsignal(pgid, signo);
+	} else if (pgid < 0) {
+		gsignal(-pgid, signo);
+	}
 }
 
 /*
@@ -1158,21 +1171,4 @@ getfiledesc(fdp, fd, fpp, type)
 	}
 	*fpp = fp;
 	return (0);
-}
-
-/*
- * Send signal to descriptor owner, either process or process group.
- */
-void
-fownsignal(pgid, signo)
-	pid_t pgid;
-	int signo;
-{
-	struct proc *p1;
-
-	if (pgid > 0 && (p1 = pfind(pgid))) {
-		gsignal(pgid, signo);
-	} else if (pgid < 0) {
-		gsignal(-pgid, signo);
-	}
 }

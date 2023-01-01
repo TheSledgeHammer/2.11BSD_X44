@@ -36,6 +36,12 @@
 #include <sys/types.h>
 #include <sys/uuid.h>
 
+/*
+ * This implementation mostly conforms to the DCE 1.1 specification.
+ * See Also:
+ *	uuidgen(1), uuidgen(2), uuid(3)
+ */
+
 /* Status codes returned by the functions. */
 #define	uuid_s_ok					0
 #define	uuid_s_bad_version			1

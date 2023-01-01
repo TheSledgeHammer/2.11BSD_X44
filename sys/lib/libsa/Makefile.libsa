@@ -26,7 +26,7 @@ SRCS+=	loadfile_aout.c
 .endif
 
 # boot filesystems
-SRCS+=	ufs.c
+SRCS+=	lfs.c ufs.c
 
 .if (${SA_INCLUDE_NET} == "yes")
 # network routines

@@ -53,46 +53,35 @@ __KERNEL_RCSID(0, "$NetBSD: cryptodev.c,v 1.10 2003/11/19 04:14:07 jonathan Exp 
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 
-
-#define DTYPE_CRYPTO 4
-
-/* syslimits */
-/*
- * X/Open CAE Specification Issue 5 Version 2
- */
-//#if defined(_XOPEN_SOURCE) || defined(_NETBSD_SOURCE)
-#define	IOV_MAX			 1024	/* max # of iovec's for readv(2) etc. */
-
 #define splcrypto splnet
 
 struct csession {
 	TAILQ_ENTRY(csession) next;
-	u_int64_t	sid;
-	u_int32_t	ses;
+	u_int64_t			sid;
+	u_int32_t			ses;
 
-	u_int32_t	cipher;
-	struct enc_xform *txform;
-	u_int32_t	mac;
-	struct auth_hash *thash;
+	u_int32_t			cipher;
+	struct enc_xform 	*txform;
+	u_int32_t			mac;
+	struct auth_hash 	*thash;
 
-	caddr_t		key;
-	int		keylen;
-	u_char		tmp_iv[EALG_MAX_BLOCK_LEN];
+	caddr_t				key;
+	int					keylen;
+	u_char				tmp_iv[EALG_MAX_BLOCK_LEN];
 
-	caddr_t		mackey;
-	int		mackeylen;
-	u_char		tmp_mac[CRYPTO_MAX_MAC_LEN];
+	caddr_t				mackey;
+	int					mackeylen;
+	u_char				tmp_mac[CRYPTO_MAX_MAC_LEN];
 
-	struct iovec	iovec[IOV_MAX];
-	struct uio	uio;
-	int		error;
+	struct iovec		iovec[IOV_MAX];
+	struct uio			uio;
+	int					error;
 };
 
 struct fcrypt {
 	TAILQ_HEAD(csessionlist, csession) csessions;
 	int		sesn;
 };
-
 
 /* Declaration of master device (fd-cloning/ctxt-allocating) entrypoints */
 static int	cryptoopen(dev_t dev, int flag, int mode, struct proc *p);
@@ -102,9 +91,10 @@ static int	cryptoioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct pro
 static int	cryptoselect(dev_t dev, int rw, struct proc *p);
 
 /* Declaration of cloned-device (per-ctxt) entrypoints */
-static int	cryptof_read(struct file *, off_t *, struct uio *, struct ucred *, int);
-static int	cryptof_write(struct file *, off_t *, struct uio *, struct ucred *, int);
-static int	cryptof_ioctl(struct file *, u_long, void*, struct proc *p);
+static int	cryptof_rw(struct file *, struct uio *, struct ucred *);
+static int	cryptof_read(struct file *, struct uio *, struct ucred *);
+static int	cryptof_write(struct file *, struct uio *, struct ucred *);
+static int	cryptof_ioctl(struct file *, u_long, caddr_t, struct proc *p);
 static int	cryptof_fcntl(struct file *, u_int, void*, struct proc *p);
 static int	cryptof_poll(struct file *, int, struct proc *);
 static int	cryptof_kqfilter(struct file *, struct knote *);
@@ -112,26 +102,16 @@ static int	cryptof_stat(struct file *, struct stat *, struct proc *);
 static int	cryptof_close(struct file *, struct proc *);
 
 static struct fileops cryptofops = {
-    .fo_rw = NULL,
-    .fo_read = cryptof_read,
-    .fo_write = cryptof_write,
-    .fo_ioctl = cryptof_ioctl,
-    .fo_poll = cryptof_poll,
-    .fo_close = cryptof_close,
-    .fo_kqfilter = cryptof_kqfilter
+		.fo_rw = cryptof_rw,
+		.fo_read = cryptof_read,
+		.fo_write = cryptof_write,
+		.fo_ioctl = cryptof_ioctl,
+		//.fo_fcntl = cryptof_fcntl,
+		.fo_poll = cryptof_poll,
+		//.fo_stat = cryptof_stat,
+		.fo_close = cryptof_close,
+		.fo_kqfilter = cryptof_kqfilter
 };
-/*
-static struct fileops cryptofops = {
-    cryptof_read,
-    cryptof_write,
-    cryptof_ioctl,
-    cryptof_fcntl,
-    cryptof_poll,
-    cryptof_stat,
-    cryptof_close,
-    cryptof_kqfilter
-};
-*/
 
 static struct	csession *csefind(struct fcrypt *, u_int);
 static int	csedelete(struct fcrypt *, struct csession *);
@@ -152,26 +132,30 @@ static int	cryptodevkey_cb(void *);
  * sysctl-able control variables for /dev/crypto now defined in crypto.c:
  * crypto_usercrypto, crypto_userasmcrypto, crypto_devallowsoft.
  */
-
 /* ARGSUSED */
 int
-cryptof_read(struct file *fp, off_t *poff, struct uio *uio,
-	     struct ucred *cred, int flags)
+cryptof_rw(struct file *fp, struct uio *uio, struct ucred *cred)
 {
 	return (EIO);
 }
 
 /* ARGSUSED */
 int
-cryptof_write(struct file *fp, off_t *poff, struct uio *uio,
-	      struct ucred *cred, int flags)
+cryptof_read(struct file *fp, struct uio *uio, struct ucred *cred)
 {
 	return (EIO);
 }
 
 /* ARGSUSED */
 int
-cryptof_ioctl(struct file *fp, u_long cmd, void* data, struct proc *p)
+cryptof_write(struct file *fp, struct uio *uio, struct ucred *cred)
+{
+	return (EIO);
+}
+
+/* ARGSUSED */
+int
+cryptof_ioctl(struct file *fp, u_long cmd, caddr_t data, struct proc *p)
 {
 	struct cryptoini cria, crie;
 	struct fcrypt *fcr = (struct fcrypt *)fp->f_data;

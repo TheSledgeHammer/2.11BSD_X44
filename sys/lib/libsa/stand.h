@@ -103,6 +103,7 @@ extern struct fs_ops	*exclusive_file_system;
  * libstand-supplied filesystems
  */
 extern struct fs_ops 	ufs_fsops;
+extern struct fs_ops 	lfs_fsops;
 extern struct fs_ops 	cd9660_fsops;
 extern struct fs_ops 	dosfs_fsops;
 

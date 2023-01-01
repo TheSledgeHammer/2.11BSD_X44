@@ -52,7 +52,7 @@ struct fileops {
 	int (*fo_read)		(struct file *, struct uio *, struct ucred *);
 	int (*fo_write)		(struct file *, struct uio *, struct ucred *);
 	int	(*fo_ioctl)		(struct file *, u_long, caddr_t, struct proc *);
-	int	(*fo_select) 	(struct file *, int, struct proc *);	/* deprecated */
+	//int	(*fo_select) 	(struct file *, int, struct proc *);	/* deprecated */
 	int	(*fo_poll)		(struct file *, int, struct proc *);
 	int	(*fo_close)		(struct file *, struct proc *);
 	int (*fo_kqfilter)	(struct file *, struct knote *);
@@ -95,6 +95,10 @@ extern int 				nfiles;		/* actual number of open files */
 #define	FILE_IS_USABLE(fp)	(((fp)->f_iflags &							\
 		(FIF_WANTCLOSE|FIF_LARVAL)) == 0)
 
+#define	FILE_SET_MATURE(fp)	do {										\
+	(fp)->f_iflags &= ~FIF_LARVAL;										\
+} while (/*CONSTCOND*/0)
+
 #ifdef DIAGNOSTIC
 #define	FILE_USE_CHECK(fp, str) do {									\
 	if ((fp)->f_usecount < 0)											\
@@ -133,6 +137,7 @@ extern int 				nfiles;		/* actual number of open files */
 #define	DTYPE_SOCKET	2	/* communications endpoint */
 #define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
 #define	DTYPE_KQUEUE	4	/* event queue */
+#define DTYPE_CRYPTO 	5	/* crypto */
 #endif
 
 #ifdef _KERNEL
