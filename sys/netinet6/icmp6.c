@@ -293,7 +293,7 @@ icmp6_error(m, type, code, param)
 	 *   in the option type field.  This check has been done in
 	 *   ip6_unknown_opt(), so we can just check the type and code.
 	 */
-	if ((m->m_flags & (M_BCAST|M_MCAST) ||
+	if (((m->m_flags & (M_BCAST|M_MCAST)) ||
 	     IN6_IS_ADDR_MULTICAST(&oip6->ip6_dst)) &&
 	    (type != ICMP6_PACKET_TOO_BIG &&
 	     (type != ICMP6_PARAM_PROB ||
@@ -317,8 +317,7 @@ icmp6_error(m, type, code, param)
 	if (off >= 0 && nxt == IPPROTO_ICMPV6) {
 		struct icmp6_hdr *icp;
 
-		IP6_EXTHDR_GET(icp, struct icmp6_hdr *, m, off,
-			sizeof(*icp));
+		IP6_EXTHDR_GET(icp, struct icmp6_hdr *, m, off, sizeof(*icp));
 		if (icp == NULL) {
 			icmp6stat.icp6s_tooshort++;
 			return;
@@ -563,7 +562,7 @@ icmp6_input(mp, offp, proto)
 		 * and to the querier (echo reply).
 		 * m: a copy for socket, n: a copy for querier
 		 */
-		if ((n = m_copym(m, 0, M_COPYALL, M_DONTWAIT)) == NULL) {
+		if ((n = m_copy(m, 0, M_COPYALL)) == NULL) {
 			/* Give up local */
 			n = m;
 			m = NULL;
@@ -654,7 +653,7 @@ icmp6_input(mp, offp, proto)
 			icmp6_ifstat_inc(m->m_pkthdr.rcvif, ifs6_in_mldquery);
 		else
 			icmp6_ifstat_inc(m->m_pkthdr.rcvif, ifs6_in_mldreport);
-		if ((n = m_copym(m, 0, M_COPYALL, M_DONTWAIT)) == NULL) {
+		if ((n = m_copy(m, 0, M_COPYALL)) == NULL) {
 			/* give up local */
 			mld6_input(m, off);
 			m = NULL;
@@ -691,7 +690,7 @@ icmp6_input(mp, offp, proto)
 			goto badlen;
 
 		if (mode == FQDN) {
-			n = m_copym(m, 0, M_COPYALL, M_DONTWAIT);
+			n = m_copy(m, 0, M_COPYALL);
 			if (n)
 				n = ni6_input(n, off);
 			/* XXX meaningless if n == NULL */
@@ -764,7 +763,7 @@ icmp6_input(mp, offp, proto)
 			goto badcode;
 		if (icmp6len < sizeof(struct nd_router_solicit))
 			goto badlen;
-		if ((n = m_copym(m, 0, M_COPYALL, M_DONTWAIT)) == NULL) {
+		if ((n = m_copy(m, 0, M_COPYALL)) == NULL) {
 			/* give up local */
 			nd6_rs_input(m, off, icmp6len);
 			m = NULL;
@@ -780,7 +779,7 @@ icmp6_input(mp, offp, proto)
 			goto badcode;
 		if (icmp6len < sizeof(struct nd_router_advert))
 			goto badlen;
-		if ((n = m_copym(m, 0, M_COPYALL, M_DONTWAIT)) == NULL) {
+		if ((n = m_copy(m, 0, M_COPYALL)) == NULL) {
 			/* give up local */
 			nd6_ra_input(m, off, icmp6len);
 			m = NULL;
@@ -796,7 +795,7 @@ icmp6_input(mp, offp, proto)
 			goto badcode;
 		if (icmp6len < sizeof(struct nd_neighbor_solicit))
 			goto badlen;
-		if ((n = m_copym(m, 0, M_COPYALL, M_DONTWAIT)) == NULL) {
+		if ((n = m_copy(m, 0, M_COPYALL)) == NULL) {
 			/* give up local */
 			nd6_ns_input(m, off, icmp6len);
 			m = NULL;
@@ -812,7 +811,7 @@ icmp6_input(mp, offp, proto)
 			goto badcode;
 		if (icmp6len < sizeof(struct nd_neighbor_advert))
 			goto badlen;
-		if ((n = m_copym(m, 0, M_COPYALL, M_DONTWAIT)) == NULL) {
+		if ((n = m_copy(m, 0, M_COPYALL)) == NULL) {
 			/* give up local */
 			nd6_na_input(m, off, icmp6len);
 			m = NULL;
@@ -828,7 +827,7 @@ icmp6_input(mp, offp, proto)
 			goto badcode;
 		if (icmp6len < sizeof(struct nd_redirect))
 			goto badlen;
-		if ((n = m_copym(m, 0, M_COPYALL, M_DONTWAIT)) == NULL) {
+		if ((n = m_copy(m, 0, M_COPYALL)) == NULL) {
 			/* give up local */
 			icmp6_redirect_input(m, off);
 			m = NULL;

@@ -750,7 +750,7 @@ cryptoioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		f = falloc();
 		fd = ufdalloc(f);
 		error = fd;
-		if (error) {
+		if (error != 0) {
 			FREE(fcr, M_XDATA);
 			return (error);
 		}
@@ -759,7 +759,7 @@ cryptoioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		f->f_ops = &cryptofops;
 		f->f_data = (caddr_t) fcr;
 		*(u_int32_t *)data = fd;
-		//FILE_SET_MATURE(f);
+		FILE_SET_MATURE(f);
 		FILE_UNUSE(f, p);
 		break;
 	default:

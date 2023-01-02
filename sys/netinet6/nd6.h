@@ -212,7 +212,7 @@ struct	in6_ndifreq {
 /* Prefix status */
 #define NDPRF_ONLINK		0x1
 #define NDPRF_DETACHED		0x2
-#define NDPRF_HOME		0x4
+#define NDPRF_HOME			0x4
 
 /* protocol constants */
 #define MAX_RTR_SOLICITATION_DELAY	1	/* 1sec */

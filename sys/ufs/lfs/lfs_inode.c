@@ -134,15 +134,12 @@ lfs_update(ap)
 		return (0);
 	if (ip->i_flag & IN_ACCESS)
 		DIP_SET(ip, atime, ap->a_access->tv_sec);
-		//ip->i_ffs1_atime = ap->a_access->tv_sec;
 	if (ip->i_flag & IN_UPDATE) {
 		DIP_SET(ip, mtime, ap->a_modify->tv_sec);
-		//ip->i_ffs1_mtime = ap->a_modify->tv_sec;
 		(ip)->i_modrev++;
 	}
 	if (ip->i_flag & IN_CHANGE)
 		DIP_SET(ip, ctime, time.tv_sec);
-		//ip->i_ffs1_ctime = time.tv_sec;
 	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);
 
 	if (!(ip->i_flag & IN_MODIFIED))

@@ -200,12 +200,12 @@ struct	ip6stat {
 /* flags passed to ip6_output as last parameter */
 #define	IPV6_UNSPECSRC		0x01	/* allow :: as the source address */
 #define	IPV6_FORWARDING		0x02	/* most of IPv6 header exists */
-#define	IPV6_MINMTU		0x04	/* use minimum MTU (IPV6_USE_MIN_MTU) */
+#define	IPV6_MINMTU			0x04	/* use minimum MTU (IPV6_USE_MIN_MTU) */
 
 #ifdef __NO_STRICT_ALIGNMENT
 #define	IP6_HDR_ALIGNED_P(ip)	1
 #else
-#define	IP6_HDR_ALIGNED_P(ip)	((((vaddr_t) (ip)) & 3) == 0)
+#define	IP6_HDR_ALIGNED_P(ip)	((((u_long) (ip)) & 3) == 0)
 #endif
 
 extern struct	ip6stat ip6stat;	/* statistics */

@@ -59,7 +59,6 @@ struct fileops vnops = {
 		.fo_read = vn_read,
 		.fo_write = vn_write,
 		.fo_ioctl = vn_ioctl,
-		.fo_select = vn_select,
 		.fo_poll = vn_poll,
 		.fo_close = vn_closefile,
 		.fo_kqfilter = vn_kqfilter

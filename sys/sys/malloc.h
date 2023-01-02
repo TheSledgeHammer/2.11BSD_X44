@@ -137,8 +137,9 @@
 #define	M_IPQ			84	/* IP packet queue entry */
 #define	M_CRYPTO_DATA	85	/* crypto session records */
 #define M_XDATA         86  /* xform data buffers */
-#define	M_TEMP			87	/* misc temporary data buffers */
-#define	M_LAST			88	/* Must be last type + 1 */
+#define	M_IP6OPT		87	/* IPv6 options */
+#define	M_TEMP			88	/* misc temporary data buffers */
+#define	M_LAST			89	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -226,9 +227,10 @@
 	"ifmedia",      /* 82 M_IFMEDIA */      \
 	"packet tags",	/* 83 M_PACKET_TAGS */	\
 	"IP queue ent", /* 84 M_IPQ */ 			\
-	"crypto session records",  /* 85 M_CRYPTO_DATA */                  \
-	"xform data buffers",  /* 86 M_XDATA */                  \
-	"temp",			/* 87 M_TEMP */ 		\
+	"crypto session records",  	/* 85 M_CRYPTO_DATA */     \
+	"xform data buffers",  		/* 86 M_XDATA */           \
+	"ip6_options",	/* 87 IP6OPT */			\
+	"temp",			/* 88 M_TEMP */ 		\
 }
 
 struct kmemstats {

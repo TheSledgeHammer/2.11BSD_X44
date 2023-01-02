@@ -444,6 +444,8 @@ struct mbstat {
 };
 
 #ifdef	_KERNEL
+struct ifnet;
+
 extern struct mbuf *mbutl;		/* virtual address of net free mem */
 extern struct mbuf *mbfree;
 extern struct mbstat mbstat;
@@ -466,11 +468,13 @@ struct mbuf 	*m_prepend(struct mbuf *, int, int);
 struct mbuf 	*m_pullup(struct mbuf *, int);
 struct	mbuf 	*m_pulldown(struct mbuf *, int, int, int *);
 struct mbuf 	*m_copyup(struct mbuf *, int, int);
+struct mbuf 	*m_split(struct mbuf *, int, int);
+struct mbuf 	*m_devget(char *, int, int, struct ifnet *, void (*)());
 struct mbuf 	*m_retry(int, int);
 struct mbuf 	*m_retryhdr(int, int);
 void			m_cat(struct mbuf *, struct mbuf *);
 void			m_adj(struct mbuf *, int);
-int	        m_apply(struct mbuf *, int, int, int (*)(void *, caddr_t, unsigned int), void *);
+int	        	m_apply(struct mbuf *, int, int, int (*)(void *, caddr_t, unsigned int), void *);
 int			    m_clalloc(int, int);
 void			m_copydata(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
