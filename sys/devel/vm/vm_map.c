@@ -136,21 +136,38 @@
  *	These restrictions are necessary since malloc() uses the
  *	maps and requires map entries.
  */
-static struct vm_hat 	kmap_store, kentry_store;
-static vm_hat_t			kmap_hat, kentry_hat;
-vm_map_t 				kmap_free;
-vm_map_entry_t 			kentry_free;
 
 static void	_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
 static void	_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
 
+vm_map_t 		kmap_free;
+vm_map_entry_t 	kentry_free;
+vm_offset_t		kentry_data;
+vm_size_t		kentry_data_size;
+
 void
 vm_map_startup()
 {
-	kmap_hat = &kmap_store;
-	vm_hbootinit(kmap_hat, "KMAP", HAT_VM, kmap_free, MAX_KMAP, sizeof(struct vm_map));
-	kentry_hat = &kentry_store;
-	vm_hbootinit(kentry_hat, "KENTRY", HAT_VM, kentry_free, MAX_KMAPENT, sizeof(struct vm_map_entry));
+    register int i;
+    register vm_map_entry_t mep;
+    vm_map_t mp;
+
+    kmap_free = mp = (vm_map_t) kentry_data;
+    i = MAX_KMAP;
+
+    while (--i > 0) {
+        CIRCLEQ_NEXT(mep, cl_entry) = (vm_map_entry_t) (mp + 1);
+        mp++;
+    }
+    CIRCLEQ_FIRST(&mp->cl_header)++->cl_entry.cqe_next = NULL;
+
+    kentry_free = mep = (vm_map_entry_t) mp;
+    i = (kentry_data_size - MAX_KMAP * sizeof * mp) / sizeof *mep;
+    while (--i > 0) {
+        CIRCLEQ_NEXT(mep, cl_entry) = mep + 1;
+        mep++;
+    }
+    CIRCLEQ_NEXT(mep, cl_entry) = NULL;
 }
 
 /*

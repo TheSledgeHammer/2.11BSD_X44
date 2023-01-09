@@ -112,6 +112,19 @@ vm_offset_t				ovl_last_phys_addr;
 struct vpage_hash_head 	*ovl_vpage_hashtable;
 
 void
+omap_bootstrap(void)
+{
+	extern vm_offset_t	oentry_data;
+	extern vm_size_t	oentry_data_size;
+	vm_size_t 			omap_size, oentry_size;
+
+	omap_size = (MAX_OMAP * sizeof(struct ovl_map));
+	oentry_size = (MAX_OMAPENT * sizeof(struct ovl_map_entry));
+	oentry_data_size = round_page(omap_size + oentry_size);
+	oentry_data = (vm_offset_t)pmap_bootstrap_overlay_alloc(oentry_data_size);
+}
+
+void
 ovl_page_init(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
@@ -141,6 +154,19 @@ ovl_page_init(start, end)
 	simple_lock_init(&ovl_page_bucket_lock, "ovl_page_bucket_lock");
 
 	*end = trunc_page(*end);
+
+	/*
+	 *	Pre-allocate maps and map entries that cannot be dynamically
+	 *	allocated via malloc().  The maps include the kernel_map and
+	 *	kmem_map which must be initialized before malloc() will
+	 *	work (obviously).  Also could include pager maps which would
+	 *	be allocated before kmeminit.
+	 *
+	 *	Allow some kernel map entries... this should be plenty
+	 *	since people shouldn't be cluttering up the kernel
+	 *	map (they should use their own maps).
+	 */
+	omap_bootstrap();
 
 	npages = (*end - *start + sizeof(struct ovl_page)) / (PAGE_SIZE + sizeof(struct ovl_page));
 

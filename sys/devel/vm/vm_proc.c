@@ -35,6 +35,7 @@ sbrk()
 	register segsz_t n, d;
 
 	p = u.u_procp;
+
 	n = btoc(uap->size);
 	if (!SCARG(uap, sep)) {
 		SCARG(uap, sep) = PSEG_NOSEP;
@@ -45,10 +46,10 @@ sbrk()
 		n = 0;
 	}
 	//p->p_tsize;
-	if(vm_estabur(p->p_vmspace->vm_psegment, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
+	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
 		return (0);
 	}
-	vm_segment_expand(p, p->p_vmspace->vm_psegment, n, S_DATA);
+	vm_segment_expand(p, n, S_DATA);
 	/* set d to (new - old) */
 	d = n - p->p_dsize;
 	if (d > 0) {

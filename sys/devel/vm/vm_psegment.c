@@ -64,14 +64,14 @@ vm_psegment_startup(pseg, start, end)
 }
 
 void
-vm_psegment_init(seg, start, end)
-	vm_segment_t 	seg;
+vm_psegment_init(pseg, start, end)
+	vm_psegment_t 	*pseg;
 	vm_offset_t 	*start, *end;
 {
-	if (&seg->sg_psegment == NULL) {
-		&seg->sg_psegment = vm_psegment_allocate();
+	if (pseg == NULL) {
+		pseg = vm_psegment_allocate();
 	}
-	vm_psegment_startup(&seg->sg_psegment, start, end);
+	vm_psegment_startup(pseg, start, end);
 }
 
 vm_psegment_t *

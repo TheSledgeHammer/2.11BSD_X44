@@ -118,20 +118,34 @@ static void	_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
 RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 
-static struct vm_hat 	omap_store, oentry_store;
-static vm_hat_t			omap_hat, oentry_hat;
-ovl_map_entry_t 		oentry_free;
-ovl_map_t 				omap_free;
+vm_map_t 		omap_free;
+vm_map_entry_t 	oentry_free;
+vm_offset_t		oentry_data;
+vm_size_t		oentry_data_size;
 
 void
 ovl_map_startup()
 {
-	omap_hat = &omap_store;
-	vm_hbootinit(omap_hat, "OMAP", HAT_OVL, omap_free, MAX_OMAP,
-			sizeof(struct ovl_map));
-	oentry_hat = &oentry_store;
-	vm_hbootinit(oentry_hat, "OENTRY", HAT_OVL, oentry_free, MAX_OMAPENT,
-			sizeof(struct ovl_map_entry));
+    register int i;
+    register ovl_map_entry_t oep;
+    ovl_map_t op;
+
+    omap_free = op = (ovl_map_t) oentry_data;
+    i = MAX_OMAP;
+
+    while (--i > 0) {
+        CIRCLEQ_NEXT(oep, ovl_cl_entry) = (ovl_map_entry_t) (op + 1);
+        op++;
+    }
+    CIRCLEQ_FIRST(&op->ovl_header)++->ovl_cl_entry.cqe_next = NULL;
+
+    oentry_free = oep = (ovl_map_entry_t) op;
+    i = (oentry_data_size - MAX_OMAP * sizeof * op) / sizeof *oep;
+    while (--i > 0) {
+        CIRCLEQ_NEXT(oep, ovl_cl_entry) = oep + 1;
+        oep++;
+    }
+    CIRCLEQ_NEXT(oep, ovl_cl_entry) = NULL;
 }
 
 struct ovlspace *

@@ -138,7 +138,7 @@ typedef struct lock				*lock_t;
 struct vmspace {
 	struct	vm_map 	 		vm_map;				/* VM address map */
 	struct	pmap 	 		vm_pmap;			/* private physical map */
-	union vm_pseudo_segment	vm_psegment;		/* VM pseudo segments */
+	union   vm_pseudo_segment	vm_psegment;	/* VM pseudo segments */
 
 	int				 		vm_refcnt;			/* number of references */
 	caddr_t			 		vm_shm;				/* SYS5 shared memory private data XXX */
@@ -173,45 +173,4 @@ struct vmspace {
 #define MADV_MASK				0x7	/* mask */
 #define VM_ADVICE(X)			(((X) >> 12) & MADV_MASK)
 
-/*
- * redesign of vmspace structure.
- * - All segments now point to the pseudo segment.
- * Pros:
- * - Unifies the vm's usage of text, data & stack segments with the pseudo-segments.
- * - Makes memory management of pseudo-segments easier & potentially more efficient.
- * - Improves vmspace pseudo-segment accessibility.
- * - Reduces need for providing pseudo-segment pointer in proc structure.
- *
- * Cons:
- * - Unknown affect on other infrastructure that relies on the following: vm_tsize,
- * vm_dsize, vm_ssize, vm_taddr, vm_saddr & vm_daddr.
- * i.e. executables
- */
-struct vmspace2 {
-	struct vm_map 	 		vm_map;					/* VM address map */
-	struct pmap 	 		vm_pmap;				/* private physical map */
-
-	int				 		vm_refcnt;				/* number of references */
-	caddr_t			 		vm_shm;					/* SYS5 shared memory private data XXX */
-
-	/* we copy from vm_startcopy to the end of the structure on fork */
-	#define vm_startcopy 	vm_rssize
-	segsz_t 		 		vm_rssize; 				/* current resident set size in pages */
-	segsz_t 		 		vm_swrss;				/* resident set size before last swap */
-
-	union vm_pseudo_segment	vm_psegment;			/* VM pseudo segment */
-#ifdef notyet
-#define vm_data				vm_psegment.ps_data		/* VM data segment */
-#define vm_stack			vm_psegment.ps_stack 	/* VM stack segment */
-#define vm_text				vm_psegment.ps_text		/* VM text segment */
-#define vm_tsize			vm_text.psx_tsize;		/* text size (pages) XXX */
-#define vm_dsize			vm_data.psx_dsize		/* data size (pages) XXX */
-#define vm_ssize			vm_stack.psx_ssize		/* stack size (pages) */
-#define vm_taddr			vm_text.psx_taddr;		/* user virtual address of text XXX */
-#define vm_saddr			vm_stack.psx_saddr; 	/* user virtual address of stack XXX */
-#define vm_daddr			vm_data.psx_daddr;		/* user virtual address of data XXX */
-#endif
-	caddr_t 		 		vm_minsaddr;			/* user VA at min stack growth */
-	caddr_t 		 		vm_maxsaddr;			/* user VA at max stack growth */
-};
 #endif /* _VM_H */
