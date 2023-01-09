@@ -462,7 +462,7 @@ intr_allocate_slot(spic, cip, pin, level, index, idtslot, isapic)
 #endif
     	}
     	KASSERT(ci != NULL);
-    	error = intr_allocate_slot_cpu(ci, pin, &slot, TRUE);
+    	error = intr_allocate_slot_cpu(spic, ci, pin, &slot, TRUE);
 		/*
 		 * If that did not work, allocate anywhere.
 		 */
@@ -503,21 +503,23 @@ fakeintr(spic, fakehand, level)
 	struct intrhand *fakehand;
 	u_int level;
 {
+	u_int which;
+
 	switch (level) {
 	case IPL_SOFTBIO:
-		level = I386_SOFTINTR_SOFTBIO;
+		which = I386_SOFTINTR_SOFTBIO;
 		break;
 
 	case IPL_SOFTCLOCK:
-		level = I386_SOFTINTR_SOFTCLOCK;
+		which = I386_SOFTINTR_SOFTCLOCK;
 		break;
 
 	case IPL_SOFTNET:
-		level = I386_SOFTINTR_SOFTNET;
+		which = I386_SOFTINTR_SOFTNET;
 		break;
 
 	case IPL_SOFTSERIAL:
-		level = I386_SOFTINTR_SOFTSERIAL;
+		which = I386_SOFTINTR_SOFTSERIAL;
 		break;
 
 	default:
@@ -525,7 +527,7 @@ fakeintr(spic, fakehand, level)
 	}
 
 	fakehand->ih_pic = softpic_handle_pic(spic);
-	fakehand->ih_level = level;
+	fakehand->ih_level = which;
 }
 
 void *
