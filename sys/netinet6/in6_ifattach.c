@@ -39,7 +39,8 @@ __KERNEL_RCSID(0, "$NetBSD: in6_ifattach.c,v 1.60 2004/02/11 20:51:24 itojun Exp
 #include <sys/socket.h>
 #include <sys/kernel.h>
 #include <sys/syslog.h>
-//#include <sys/md5.h>
+
+#include <crypto/md5/md5.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>

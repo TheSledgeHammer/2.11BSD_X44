@@ -129,21 +129,11 @@ int ip6_anonportmax = IPV6PORT_ANONMAX;
 int ip6_lowportmin  = IPV6PORT_RESERVEDMIN;
 int ip6_lowportmax  = IPV6PORT_RESERVEDMAX;
 
-struct pool in6pcb_pool;
-
 void
 in6_pcbinit(table, bindhashsize, connecthashsize)
 	struct inpcbtable *table;
 	int bindhashsize, connecthashsize;
 {
-	static int in6pcb_pool_initialized;
-
-	if (in6pcb_pool_initialized == 0) {
-		pool_init(&in6pcb_pool, sizeof(struct in6pcb), 0, 0, 0,
-		    "in6pcbpl", NULL);
-		in6pcb_pool_initialized = 1;
-	}
-
 	in_pcbinit(table, bindhashsize, connecthashsize);
 	table->inpt_lastport = (u_int16_t)ip6_anonportmax;
 }
@@ -160,7 +150,7 @@ in6_pcballoc(so, v)
 	int error;
 #endif
 
-	in6p = pool_get(&in6pcb_pool, PR_NOWAIT);
+	MALLOC(in6p, struct in6pcb *, sizeof(*in6p), M_PCB, M_NOWAIT);
 	if (in6p == NULL)
 		return (ENOBUFS);
 	bzero((caddr_t)in6p, sizeof(*in6p));
@@ -172,7 +162,7 @@ in6_pcballoc(so, v)
 #if defined(IPSEC) || defined(FAST_IPSEC)
 	error = ipsec_init_pcbpolicy(so, &in6p->in6p_sp);
 	if (error != 0) {
-		pool_put(&in6pcb_pool, in6p);
+	        FREE(in6p, M_PCB);
 		return error;
 	}
 #endif /* IPSEC */
@@ -526,7 +516,7 @@ in6_pcbdetach(in6p)
 	CIRCLEQ_REMOVE(&in6p->in6p_table->inpt_queue, &in6p->in6p_head,
 	    inph_queue);
 	splx(s);
-	pool_put(&in6pcb_pool, in6p);
+	FREE(in6p, M_PCB);
 }
 
 void
