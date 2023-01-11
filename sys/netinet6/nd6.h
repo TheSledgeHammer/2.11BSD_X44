@@ -228,7 +228,7 @@ struct	in6_ndifreq {
 #define RETRANS_TIMER			1000	/* msec */
 #define MIN_RANDOM_FACTOR		512	/* 1024 * 0.5 */
 #define MAX_RANDOM_FACTOR		1536	/* 1024 * 1.5 */
-#define ND_COMPUTE_RTIME(x) \
+#define ND_COMPUTE_RTIME(x) 								\
 		(((MIN_RANDOM_FACTOR * (x >> 10)) + (arc4random() & \
 		((MAX_RANDOM_FACTOR - MIN_RANDOM_FACTOR) * (x >> 10)))) /1000)
 
@@ -305,9 +305,6 @@ struct nd_pfxrouter {
 
 LIST_HEAD(nd_prhead, nd_prefix);
 
-//#include <sys/mallocvar.h>
-//MALLOC_DECLARE(M_IP6NDP);
-
 /* nd6.c */
 extern int nd6_prune;
 extern int nd6_delay;
@@ -321,7 +318,7 @@ extern struct nd_drhead nd_defrouter;
 extern struct nd_prhead nd_prefix;
 extern int nd6_debug;
 
-#define nd6log(x)	do { if (nd6_debug) log x; } while (/*CONSTCOND*/ 0)
+#define nd6log(x) do { if (nd6_debug) log x; } while (/*CONSTCOND*/ 0)
 
 extern struct callout nd6_timer_ch;
 

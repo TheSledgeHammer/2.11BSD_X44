@@ -96,8 +96,6 @@ __KERNEL_RCSID(0, "$NetBSD: in6.c,v 1.86 2004/03/28 08:28:06 christos Exp $");
 
 #include <net/net_osdep.h>
 
-//MALLOC_DEFINE(M_IP6OPT, "ip6_options", "IPv6 options");
-
 /* enable backward compatibility code for obsoleted ioctls */
 #define COMPAT_IN6IFIOCTL
 

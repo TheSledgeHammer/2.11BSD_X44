@@ -119,8 +119,6 @@ struct callout nd6_timer_ch = CALLOUT_INITIALIZER;
 static int fill_drlist __P((void *, size_t *, size_t));
 static int fill_prlist __P((void *, size_t *, size_t));
 
-MALLOC_DEFINE(M_IP6NDP, "NDP", "IPv6 Neighbour Discovery");
-
 void
 nd6_init()
 {
