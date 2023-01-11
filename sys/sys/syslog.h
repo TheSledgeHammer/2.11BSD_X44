@@ -182,8 +182,8 @@ __BEGIN_DECLS
 void	closelog(void);
 void	openlog(const char *, int, int);
 int		setlogmask(int);
-void	syslog(int, const char *, ...);
-void	vsyslog(int, const char *, _BSD_VA_LIST_);
+void	syslog(int, const char *, ...) __attribute__((__format__(__printf__,2,3)));
+void	vsyslog(int, const char *, _BSD_VA_LIST_) __attribute__((__format__(__printf__,2,0)));
 __END_DECLS
 
 #endif /* !KERNEL */
