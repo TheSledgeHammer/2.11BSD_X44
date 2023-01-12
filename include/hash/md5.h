@@ -32,9 +32,6 @@
 #ifndef _MD5_H_
 #define _MD5_H_
 
-#include <crypto/md5/md5.h>
-
-#ifdef notyet
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
@@ -59,5 +56,5 @@ char	*MD5File(const char *, char *);
 char	*MD5Data(const unsigned char *, unsigned int, char *);
 #endif /* _KERNEL */
 __END_DECLS
-#endif
+	
 #endif /* _SYS_MD5_H_ */
