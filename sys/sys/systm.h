@@ -154,6 +154,7 @@ char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 void 	bcopy(const void *, void *, u_int);
 void 	ovbcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
+int	bcmp(const void *, const void *, size_t);
 
 int		copystr(const void *, void *, size_t, size_t *);
 int		copyinstr(const void *, void *, size_t, size_t *);
@@ -185,7 +186,7 @@ void    startprofclock(struct proc *);
 void    stopprofclock(struct proc *);
 
 /* internal syscalls related */
-void    syscall();
+//void    syscall();
 
 /* kern_environment.c / kenv.h */
 char	*kern_getenv(const char *);

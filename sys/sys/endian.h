@@ -36,7 +36,7 @@
 #ifndef _SYS_ENDIAN_H_
 #define	_SYS_ENDIAN_H_
 
-#include <lib/libkern/libkern.h>
+//#include <lib/libkern/libkern.h>
 
 /*
  * Definitions for byte order, according to byte significance from low
@@ -61,6 +61,7 @@
 #define _QUAD_LOWWORD 	1
 #endif
 
+#if defined(_XOPEN_SOURCE) || defined(__BSD_VISIBLE)
 /*
  *  Traditional names for byteorder.  These are defined as the numeric
  *  sequences so that third party code can "#define XXX_ENDIAN" and not
@@ -71,6 +72,7 @@
 #define	PDP_ENDIAN		3412		/* LSB first in word, MSW first in long */
 #define BYTE_ORDER		_BYTE_ORDER
 
+#ifndef _LOCORE
 /* C-family endian-ness definitions */
 #include <sys/ansi.h>
 #include <sys/cdefs.h>
@@ -110,39 +112,58 @@ __END_DECLS
  * Macros to convert to a specific endianness.
  */
 
+#include <machine/bswap.h>
+
 #if BYTE_ORDER == BIG_ENDIAN
 
-#define	htobe16(x)	((uint16_t)(x))
-#define	htobe32(x)	((uint32_t)(x))
-#define	htobe64(x)	((uint64_t)(x))
-#define	htole16(x)	bswap16((x))
-#define	htole32(x)	bswap32((x))
-#define	htole64(x)	bswap64((x))
+#define htobe16(x)	(x)
+#define htobe32(x)	(x)
+#define htobe64(x)	(x)
+#define htole16(x)	bswap16((u_int16_t)(x))
+#define htole32(x)	bswap32((u_int32_t)(x))
+#define htole64(x)	bswap64((u_int64_t)(x))
 
-#define	be16toh(x)	((uint16_t)(x))
-#define	be32toh(x)	((uint32_t)(x))
-#define	be64toh(x)	((uint64_t)(x))
-#define	le16toh(x)	bswap16((x))
-#define	le32toh(x)	bswap32((x))
-#define	le64toh(x)	bswap64((x))
+#define HTOBE16(x)	(void) (x)
+#define HTOBE32(x)	(void) (x)
+#define HTOBE64(x)	(void) (x)
+#define HTOLE16(x)	(x) = bswap16((u_int16_t)(x))
+#define HTOLE32(x)	(x) = bswap32((u_int32_t)(x))
+#define HTOLE64(x)	(x) = bswap64((u_int64_t)(x))
 
 #else	/* LITTLE_ENDIAN */
 
-#define	htobe16(x)	bswap16((x))
-#define	htobe32(x)	bswap32((x))
-#define	htobe64(x)	bswap64((x))
-#define	htole16(x)	((uint16_t)(x))
-#define	htole32(x)	((uint32_t)(x))
-#define	htole64(x)	((uint64_t)(x))
+#define htobe16(x)	bswap16((u_int16_t)(x))
+#define htobe32(x)	bswap32((u_int32_t)(x))
+#define htobe64(x)	bswap64((u_int64_t)(x))
+#define htole16(x)	(x)
+#define htole32(x)	(x)
+#define htole64(x)	(x)
 
-#define	be16toh(x)	bswap16((x))
-#define	be32toh(x)	bswap32((x))
-#define	be64toh(x)	bswap64((x))
-#define	le16toh(x)	((uint16_t)(x))
-#define	le32toh(x)	((uint32_t)(x))
-#define	le64toh(x)	((uint64_t)(x))
+#define HTOBE16(x)	(x) = bswap16((u_int16_t)(x))
+#define HTOBE32(x)	(x) = bswap32((u_int32_t)(x))
+#define HTOBE64(x)	(x) = bswap64((u_int64_t)(x))
+#define HTOLE16(x)	(void) (x)
+#define HTOLE32(x)	(void) (x)
+#define HTOLE64(x)	(void) (x)
 
 #endif	/* LITTLE_ENDIAN */
+
+#define be16toh(x)	htobe16(x)
+#define be32toh(x)	htobe32(x)
+#define be64toh(x)	htobe64(x)
+#define le16toh(x)	htole16(x)
+#define le32toh(x)	htole32(x)
+#define le64toh(x)	htole64(x)
+
+#define BE16TOH(x)	HTOBE16(x)
+#define BE32TOH(x)	HTOBE32(x)
+#define BE64TOH(x)	HTOBE64(x)
+#define LE16TOH(x)	HTOLE16(x)
+#define LE32TOH(x)	HTOLE32(x)
+#define LE64TOH(x)	HTOLE64(x)
+
+#endif /* !_LOCORE */
+#endif /* !_POSIX_SOURCE */
 
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 

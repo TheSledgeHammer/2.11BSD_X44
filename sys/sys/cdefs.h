@@ -215,7 +215,6 @@
  * these work for GNU C++ (modulo a slight glitch in the C++ grammar
  * in the distribution version of 2.5.5).
  */
-
 #if !__GNUC_PREREQ__(2, 0) && !defined(__lint__)
 #define __attribute__(x)
 #endif
@@ -234,6 +233,42 @@
 #define	__pure		__const
 #else
 #define	__pure
+#endif
+
+#if __GNUC_PREREQ__(2, 5) || defined(__lint__)
+#define	__constfunc	__attribute__((__const__))
+#else
+#define	__constfunc
+#endif
+
+#if __GNUC_PREREQ__(3, 0) || defined(__lint__)
+#define	__noinline	__attribute__((__noinline__))
+#else
+#define	__noinline	/* nothing */
+#endif
+
+#if __GNUC_PREREQ__(3, 0) || defined(__lint__)
+#define	__always_inline	__attribute__((__always_inline__))
+#else
+#define	__always_inline	/* nothing */
+#endif
+
+#if __GNUC_PREREQ__(4, 0) || defined(__lint__)
+#define	__null_sentinel	__attribute__((__sentinel__))
+#else
+#define	__null_sentinel	/* nothing */
+#endif
+
+#if __GNUC_PREREQ__(4, 1) || defined(__lint__)
+#define	__returns_twice	__attribute__((__returns_twice__))
+#else
+#define	__returns_twice	/* nothing */
+#endif
+
+#if __GNUC_PREREQ__(4, 5) || defined(__lint__)
+#define	__noclone	__attribute__((__noclone__))
+#else
+#define	__noclone	/* nothing */
 #endif
 
 /*
@@ -265,7 +300,6 @@
 #define	__diagused	__unused
 #endif
 
-
 /*
  * Non-static C99 inline functions are optional bodies.  They don't
  * create global symbols if not used, but can be replaced if desirable.
@@ -275,20 +309,16 @@
  *
  * For C99 compilers other than GCC, the C99 behavior is expected.
  */
-
-#if defined(__lint__)
-#define __thread		/* delete */
-#define	__packed		__packed
-#define	__aligned(x)	/* delete */
-#define	__section(x)	/* delete */
-#elif __GNUC_PREREQ__(2, 7) || defined(__PCC__) || defined(__lint__)
-#define	__packed		__attribute__((__packed__))
+#if __GNUC_PREREQ__(2, 7)
+#define	__packed	__attribute__((__packed__))
 #define	__aligned(x)	__attribute__((__aligned__(x)))
 #define	__section(x)	__attribute__((__section__(x)))
-#elif defined(_MSC_VER)
-#define	__packed		/* ignore */
+#elif defined(__lint__)
+#define	__packed	/* delete */
+#define	__aligned(x)	/* delete */
+#define	__section(x)	/* delete */
 #else
-#define	__packed		error: no __packed for this compiler
+#define	__packed	error: no __packed for this compiler
 #define	__aligned(x)	error: no __aligned for this compiler
 #define	__section(x)	error: no __section for this compiler
 #endif
@@ -322,6 +352,32 @@
 #define	__KERNEL_RCSID(_n, _s)	/* nothing */
 #undef	__RCSID
 #define	__RCSID(_s)		/* nothing */
+#endif
+
+
+#if !defined(_STANDALONE) && !defined(_KERNEL)
+#ifdef __GNUC__
+#define	__RENAME(x)	___RENAME(x)
+#else
+#ifdef __lint__
+#define	__RENAME(x)	__symbolrename(x)
+#else
+#error "No function renaming possible"
+#endif /* __lint__ */
+#endif /* __GNUC__ */
+#else /* _STANDALONE || _KERNEL */
+#define	__RENAME(x)	no renaming in kernel or standalone environment
+#endif
+
+/*
+ * A barrier to stop the optimizer from moving code or assume live
+ * register values. This is gcc specific, the version is more or less
+ * arbitrary, might work with older compilers.
+ */
+#if __GNUC_PREREQ__(2, 95)
+#define	__insn_barrier()	__asm __volatile("":::"memory")
+#else
+#define	__insn_barrier()	/* */
 #endif
 
 /*
@@ -382,6 +438,15 @@
 #define __scanflike(fmtarg, firstvararg)	/* nothing */
 #define __sysloglike(fmtarg, firstvararg)	/* nothing */
 #define __format_arg(fmtarg)				/* nothing */
+#endif
+
+/*
+ * Return the natural alignment in bytes for the given type
+ */
+#if __GNUC_PREREQ__(4, 1) || defined(__lint__)
+#define	__alignof(__t)  __alignof__(__t)
+#else
+#define __alignof(__t) (sizeof(struct { char __x; __t __y; }) - sizeof(__t))
 #endif
 
 /*
