@@ -470,12 +470,15 @@ in_cksum_addword(u_int16_t a, u_int16_t b)
 extern	struct in_addr zeroin_addr;
 extern	u_char	ip_protox[];
 
-int		in_broadcast(struct in_addr, struct ifnet *);
-int		in_canforward(struct in_addr);
-int		in_cksum(struct mbuf *, int);
-int		in4_cksum(struct mbuf *, u_int8_t, int, int);
+struct ifnet;
+struct mbuf;
+
+int	in_broadcast(struct in_addr, struct ifnet *);
+int	in_canforward(struct in_addr);
+int	in_cksum(struct mbuf *, int);
+int	in4_cksum(struct mbuf *, u_int8_t, int, int);
 void	in_delayed_cksum(struct mbuf *);
-int		in_localaddr(struct in_addr);
+int	in_localaddr(struct in_addr);
 void	in_socktrim(struct sockaddr_in *);
 
 #define	in_hosteq(s,t)	((s).s_addr == (t).s_addr)
@@ -485,5 +488,11 @@ void	in_socktrim(struct sockaddr_in *);
 #define	sintosa(sin)	((struct sockaddr *)(sin))
 #define	ifatoia(ifa)	((struct in_ifaddr *)(ifa))
 #endif /* _KERNEL */
+
+#if defined(_KERNEL) || defined(_TEST)
+int	in_print(char *, size_t, const struct in_addr *);
+#define IN_PRINT(b, a)	(in_print((b), sizeof(b), a), (b))
+int	sin_print(char *, size_t, const void *);
+#endif
 
 #endif /* !_NETINET_IN_H_ */
