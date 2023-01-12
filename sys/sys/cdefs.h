@@ -173,17 +173,6 @@
 #endif
 
 /*
- * The following macro is used to remove const cast-away warnings
- * from gcc -Wcast-qual; it should be used with caution because it
- * can hide valid errors; in particular most valid uses are in
- * situations where the API requires it, not to cast away string
- * constants. We don't use *intptr_t on purpose here and we are
- * explicit about unsigned long so that we don't have additional
- * dependencies.
- */
-#define __UNCONST(a)	((void *)(unsigned long)(const void *)(a))
-
-/*
  * Compile Time Assertion.
  */
 #ifdef __COUNTER__
@@ -200,6 +189,25 @@
 	} y ## z ## _struct __unused
 
 /*
+ * The following macro is used to remove const cast-away warnings
+ * from gcc -Wcast-qual; it should be used with caution because it
+ * can hide valid errors; in particular most valid uses are in
+ * situations where the API requires it, not to cast away string
+ * constants. We don't use *intptr_t on purpose here and we are
+ * explicit about unsigned long so that we don't have additional
+ * dependencies.
+ */
+#define __UNCONST(a)	((void *)(unsigned long)(const void *)(a))
+
+/*
+ * GCC2 provides __extension__ to suppress warnings for various GNU C
+ * language extensions under "-ansi -pedantic".
+ */
+#if !__GNUC_PREREQ__(2, 0)
+#define	__extension__		/* delete __extension__ if non-gcc or gcc1 */
+#endif
+
+/*
  * GCC1 and some versions of GCC2 declare dead (non-returning) and
  * pure (no side effects) functions using "volatile" and "const";
  * unfortunately, these then cause warnings under "-ansi -pedantic".
@@ -207,37 +215,26 @@
  * these work for GNU C++ (modulo a slight glitch in the C++ grammar
  * in the distribution version of 2.5.5).
  */
-#if !defined(__GNUC__) || __GNUC__ < 2 || \
-	(__GNUC__ == 2 && __GNUC_MINOR__ < 5)
-#define	__attribute__(x)	/* delete __attribute__ if non-gcc or gcc1 */
-#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
-#define	__dead		__volatile
-#define	__pure		__const
-#endif
+
+#if !__GNUC_PREREQ__(2, 0) && !defined(__lint__)
+#define __attribute__(x)
 #endif
 
-/* Delete pseudo-keywords wherever they are not available or needed. */
-#ifndef __dead
+#if __GNUC_PREREQ__(2, 5) || defined(__lint__)
+#define	__dead		__attribute__((__noreturn__))
+#elif defined(__GNUC__)
+#define	__dead		__volatile
+#else
 #define	__dead
+#endif
+
+#if __GNUC_PREREQ__(2, 96) || defined(__lint__)
+#define	__pure		__attribute__((__pure__))
+#elif defined(__GNUC__)
+#define	__pure		__const
+#else
 #define	__pure
 #endif
-
-#if defined(__lint__)
-#define	__packed		__packed
-#define	__aligned(x)	/* delete */
-#define	__section(x)	/* delete */
-#elif defined(__PCC__) || defined(__lint__)
-#define	__packed		__attribute__((__packed__))
-#define	__aligned(x)	__attribute__((__aligned__(x)))
-#define	__section(x)	__attribute__((__section__(x)))
-#endif
-
-#if defined(_KERNEL)
-#if defined(NO_KERNEL_RCSIDS)
-#undef __KERNEL_RCSID
-#define	__KERNEL_RCSID(_n, _s)		/* nothing */
-#endif /* NO_KERNEL_RCSIDS */
-#endif /* _KERNEL */
 
 /*
  * __unused: Note that item or function might be unused.
@@ -251,7 +248,7 @@
 /*
  * __used: Note that item is needed, even if it appears to be unused.
  */
-#if __GNUC_PREREQ__(3, 1)
+#if __GNUC_PREREQ__(3, 1) || defined(__lint__)
 #define	__used		__attribute__((__used__))
 #else
 #define	__used		__unused
@@ -269,11 +266,97 @@
 #endif
 
 
+/*
+ * Non-static C99 inline functions are optional bodies.  They don't
+ * create global symbols if not used, but can be replaced if desirable.
+ * This differs from the behavior of GCC before version 4.3.  The nearest
+ * equivalent for older GCC is `extern inline'.  For newer GCC, use the
+ * gnu_inline attribute additionally to get the old behavior.
+ *
+ * For C99 compilers other than GCC, the C99 behavior is expected.
+ */
+
+#if defined(__lint__)
+#define __thread		/* delete */
+#define	__packed		__packed
+#define	__aligned(x)	/* delete */
+#define	__section(x)	/* delete */
+#elif __GNUC_PREREQ__(2, 7) || defined(__PCC__) || defined(__lint__)
+#define	__packed		__attribute__((__packed__))
+#define	__aligned(x)	__attribute__((__aligned__(x)))
+#define	__section(x)	__attribute__((__section__(x)))
+#elif defined(_MSC_VER)
+#define	__packed		/* ignore */
+#else
+#define	__packed		error: no __packed for this compiler
+#define	__aligned(x)	error: no __aligned for this compiler
+#define	__section(x)	error: no __section for this compiler
+#endif
+
+/*
+ * C99 defines the restrict type qualifier keyword, which was made available
+ * in GCC 2.92.
+ */
+#if __STDC_VERSION__ >= 199901L
+#define	__restrict	restrict
+#elif __GNUC_PREREQ__(2, 92)
+#define	__restrict	__restrict__
+#else
+#define	__restrict	/* delete __restrict when not supported */
+#endif
+
+/*
+ * C99 and C++11 define __func__ predefined identifier, which was made
+ * available in GCC 2.95.
+ */
+#if !(__STDC_VERSION__ >= 199901L) && !(__cplusplus - 0 >= 201103L)
+#if __GNUC_PREREQ__(2, 4) || defined(__lint__)
+#define	__func__	__FUNCTION__
+#else
+#define	__func__	""
+#endif
+#endif /* !(__STDC_VERSION__ >= 199901L) && !(__cplusplus - 0 >= 201103L) */
+
+#if defined(_KERNEL) && defined(NO_KERNEL_RCSIDS)
+#undef	__KERNEL_RCSID
+#define	__KERNEL_RCSID(_n, _s)	/* nothing */
+#undef	__RCSID
+#define	__RCSID(_s)		/* nothing */
+#endif
+
+/*
+ * GNU C version 2.96 adds explicit branch prediction so that
+ * the CPU back-end can hint the processor and also so that
+ * code blocks can be reordered such that the predicted path
+ * sees a more linear flow, thus improving cache behavior, etc.
+ *
+ * The following two macros provide us with a way to use this
+ * compiler feature.  Use __predict_true() if you expect the expression
+ * to evaluate to true, and __predict_false() if you expect the
+ * expression to evaluate to false.
+ *
+ * A few notes about usage:
+ *
+ *	* Generally, __predict_false() error condition checks (unless
+ *	  you have some _strong_ reason to do otherwise, in which case
+ *	  document it), and/or __predict_true() `no-error' condition
+ *	  checks, assuming you want to optimize for the no-error case.
+ *
+ *	* Other than that, if you don't know the likelihood of a test
+ *	  succeeding from empirical or other `hard' evidence, don't
+ *	  make predictions.
+ *
+ *	* These are meant to be used in places that are run `a lot'.
+ *	  It is wasteful to make predictions in code that is run
+ *	  seldomly (e.g. at subsystem initialization time) as the
+ *	  basic block reordering that this affects can often generate
+ *	  larger code.
+ */
 #if __GNUC_PREREQ__(2, 96) || defined(__lint__)
-#define	__predict_true(exp)		__builtin_expect((exp) != 0, 1)
+#define	__predict_true(exp)	__builtin_expect((exp) != 0, 1)
 #define	__predict_false(exp)	__builtin_expect((exp) != 0, 0)
 #else
-#define	__predict_true(exp)		(exp)
+#define	__predict_true(exp)	(exp)
 #define	__predict_false(exp)	(exp)
 #endif
 

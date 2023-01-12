@@ -32,6 +32,9 @@
 #ifndef _MD4_H_
 #define _MD4_H_
 
+#include <crypto/md4/md4.h>
+
+#ifdef notyet
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
@@ -56,5 +59,5 @@ char	*MD4File(const char *, char *);
 char	*MD4Data(const unsigned char *, unsigned int, char *);
 #endif /* _KERNEL */
 __END_DECLS
-
+#endif
 #endif /* _SYS_MD4_H_ */

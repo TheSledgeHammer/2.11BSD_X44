@@ -107,7 +107,12 @@ AC_CHECK_TYPES([id_t, long long, u_long, u_char, u_short, u_int, u_quad_t])
 AC_CHECK_TYPES([uchar_t, ushort_t, uint_t, ulong_t])
 AC_CHECK_TYPE(socklen_t, [AC_DEFINE([HAVE_SOCKLEN_T], 1,
 			  [Define if you have the socklen_t type.])],,
-	[#include <sys/types.h> #include <sys/socket.h>])
+[#include <sys/types.h>
+#ifdef HAVE_RPC_TYPES_H
+#include <rpc/types.h>
+#endif
+#include <sys/socket.h>])
+
 AC_MSG_CHECKING([for enum uio_rw])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
@@ -163,7 +168,7 @@ AC_CHECK_MEMBERS([struct stat.st_flags, struct stat.st_gen,
 	struct stat.st_birthtime, struct stat.st_birthtime.tv_nsec,
 	struct stat.st_atim, struct stat.st_mtime.tv_nsec],,, 
 	[#include <sys/stat.h>])
-AC_CHECK_MEMBERS(struct statvfs.f_iosize,,, [#include <sys/statvfs.h>])
+#AC_CHECK_MEMBERS(struct statvfs.f_iosize,,, [#include <sys/statvfs.h>])
 AC_CHECK_MEMBERS(struct tm.tm_gmtoff,,, [#include <time.h>])
 
 # Global variable decls.
@@ -311,5 +316,6 @@ main(void)
 ])
 
 # Variables substituted via @VARNAME@ in defs.mk.in
-#AC_SUBST(HAVE_PTHREAD_H, $ac_cv_header_pthread_h)
+AC_SUBST(HAVE_PTHREAD_H, $ac_cv_header_pthread_h)
+
 AC_OUTPUT

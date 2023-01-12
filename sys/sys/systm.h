@@ -88,6 +88,10 @@ struct execa_args {
 	syscallarg(char	**) envp;
 };
 
+int 				execa(struct execa_args *);
+void				execa_set(struct execa_args *, char *, char **, char **);
+struct execa_args 	*execa_get(void);
+
 /*
  * Structure of the system-entry table
  */
@@ -99,10 +103,6 @@ extern struct sysent {
 extern int nsysent;
 
 /* Initialize the world */
-int 				execa(struct execa_args *);
-void				execa_set(struct execa_args *, char *, char **, char **);
-struct execa_args 	*execa_get(void);
-
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
 extern void cinit(void);			/* clist startup */
