@@ -107,7 +107,7 @@
 ./usr/pkg						type=dir  mode=0755 ignore optional
 ./usr/sbin						type=dir  mode=0755 ignore
 ./usr/share						type=dir  mode=0755 ignore
-./usr/ucb						type=dir  mode=0755 ignore
+./usr/ucb						type=dir  mode=0755 ignore optional
 
 ./var							type=dir  mode=0755
 ./var/account					type=dir  mode=0755
