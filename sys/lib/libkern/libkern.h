@@ -254,11 +254,11 @@ int	 		ffs(int);
 #define	ffs(x)				__builtin_ffs(x)
 #endif
 int	 		ffsl(long);
-
+/*
 u_int16_t	bswap16(u_int16_t);
 u_int32_t	bswap32(u_int32_t);
 u_int64_t	bswap64(u_int64_t);
-
+*/
 void	 	__assert(const char *, const char *, int, const char *) __attribute__((__noreturn__));
 void		kern_assert(const char *, ...);
 u_int32_t 	inet_addr(const char *);
