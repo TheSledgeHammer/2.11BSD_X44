@@ -235,42 +235,6 @@
 #define	__pure
 #endif
 
-#if __GNUC_PREREQ__(2, 5) || defined(__lint__)
-#define	__constfunc	__attribute__((__const__))
-#else
-#define	__constfunc
-#endif
-
-#if __GNUC_PREREQ__(3, 0) || defined(__lint__)
-#define	__noinline	__attribute__((__noinline__))
-#else
-#define	__noinline	/* nothing */
-#endif
-
-#if __GNUC_PREREQ__(3, 0) || defined(__lint__)
-#define	__always_inline	__attribute__((__always_inline__))
-#else
-#define	__always_inline	/* nothing */
-#endif
-
-#if __GNUC_PREREQ__(4, 0) || defined(__lint__)
-#define	__null_sentinel	__attribute__((__sentinel__))
-#else
-#define	__null_sentinel	/* nothing */
-#endif
-
-#if __GNUC_PREREQ__(4, 1) || defined(__lint__)
-#define	__returns_twice	__attribute__((__returns_twice__))
-#else
-#define	__returns_twice	/* nothing */
-#endif
-
-#if __GNUC_PREREQ__(4, 5) || defined(__lint__)
-#define	__noclone	__attribute__((__noclone__))
-#else
-#define	__noclone	/* nothing */
-#endif
-
 /*
  * __unused: Note that item or function might be unused.
  */
@@ -309,7 +273,7 @@
  *
  * For C99 compilers other than GCC, the C99 behavior is expected.
  */
-#if __GNUC_PREREQ__(2, 7)
+#if __GNUC_PREREQ__(2, 7) || defined(__PCC__) || defined(__lint__)
 #define	__packed	__attribute__((__packed__))
 #define	__aligned(x)	__attribute__((__aligned__(x)))
 #define	__section(x)	__attribute__((__section__(x)))
