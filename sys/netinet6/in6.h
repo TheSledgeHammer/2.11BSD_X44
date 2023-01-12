@@ -646,6 +646,9 @@ in6_cksum_phdr(const struct in6_addr *src, const struct in6_addr *dst,
 	return (sum);
 }
 
+struct ifnet;
+struct mbuf;
+
 int	in6_cksum __P((struct mbuf *, u_int8_t, u_int32_t, u_int32_t));
 int	in6_localaddr __P((struct in6_addr *));
 int	in6_addrscope __P((struct in6_addr *));

@@ -495,7 +495,7 @@ in6_pcbdetach(in6p)
 #if defined(IPSEC) || defined(FAST_IPSEC)
 	ipsec6_delete_pcbpolicy(in6p);
 #endif /* IPSEC */
-	sotoin6pcb(so) = 0;
+	//sotoin6pcb(so) = 0;
 	sofree(so);
 	if (in6p->in6p_options)
 		m_freem(in6p->in6p_options);

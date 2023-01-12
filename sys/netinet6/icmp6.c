@@ -2758,8 +2758,7 @@ icmp6_ratelimit(dst, type, code)
 	ret = 0;	/* okay to send */
 
 	/* PPS limit */
-	if (!ppsratecheck(&icmp6errppslim_last, &icmp6errpps_count,
-	    icmp6errppslim)) {
+	if (!ppsratecheck(&icmp6errppslim_last, &icmp6errpps_count, icmp6errppslim)) {
 		/* The packet is subject to rate limit */
 		ret++;
 	}
