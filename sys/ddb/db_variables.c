@@ -31,8 +31,10 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <vm/include/vm.h>
 #include <sys/sysctl.h>
+#include <sys/systm.h>
+
+#include <vm/include/vm.h>
 
 #include <machine/db_machdep.h>
 
