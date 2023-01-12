@@ -4,7 +4,7 @@
 
 CPPFLAGS=	-I${SADIR} ${SACPPFLAGS} ${SAMISCCPPFLAGS} -DCOMPAT_UFS ${DEBUGCPPFLAGS}
 
-.PATH.c: 	${SADIR} ${.PARSEDIR}/../../../lib/libc/string
+#.PATH.c: 	${SADIR} ${.PARSEDIR}/../../../lib/libc/string
 
 # stand routines
 SRCS+=	alloc.c bcopy.c bzero.c errno.c exit.c getfile.c \ 
