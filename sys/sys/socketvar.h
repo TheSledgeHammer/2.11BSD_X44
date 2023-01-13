@@ -237,8 +237,7 @@ extern	char netio[], netcon[], netcls[];
 
 /* File Operations on sockets */
 int		soo_ioctl(struct file *, u_long, caddr_t, struct proc *);
-int		soo_select(struct file *, int, struct proc *);
-int		soo_stat(struct socket *, struct stat *);
+int		soo_stat(struct socket *, struct stat *, struct proc *);
 int		soo_rw(struct file *, struct uio *, struct ucred *);
 int		soo_read(struct file *, struct uio *, struct ucred *);
 int		soo_write(struct file *, struct uio *, struct ucred *);

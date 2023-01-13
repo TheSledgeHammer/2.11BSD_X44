@@ -94,8 +94,8 @@ static int	cryptoselect(dev_t dev, int rw, struct proc *p);
 static int	cryptof_rw(struct file *, struct uio *, struct ucred *);
 static int	cryptof_read(struct file *, struct uio *, struct ucred *);
 static int	cryptof_write(struct file *, struct uio *, struct ucred *);
-static int	cryptof_ioctl(struct file *, u_long, caddr_t, struct proc *p);
-static int	cryptof_fcntl(struct file *, u_int, void*, struct proc *p);
+static int	cryptof_ioctl(struct file *, u_long, void *, struct proc *p);
+static int	cryptof_fcntl(struct file *, u_int, void *, struct proc *p);
 static int	cryptof_poll(struct file *, int, struct proc *);
 static int	cryptof_kqfilter(struct file *, struct knote *);
 static int	cryptof_stat(struct file *, struct stat *, struct proc *);
@@ -108,7 +108,7 @@ static struct fileops cryptofops = {
 		.fo_ioctl = cryptof_ioctl,
 		//.fo_fcntl = cryptof_fcntl,
 		.fo_poll = cryptof_poll,
-		//.fo_stat = cryptof_stat,
+		.fo_stat = cryptof_stat,
 		.fo_close = cryptof_close,
 		.fo_kqfilter = cryptof_kqfilter
 };
@@ -155,7 +155,7 @@ cryptof_write(struct file *fp, struct uio *uio, struct ucred *cred)
 
 /* ARGSUSED */
 int
-cryptof_ioctl(struct file *fp, u_long cmd, caddr_t data, struct proc *p)
+cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 {
 	struct cryptoini cria, crie;
 	struct fcrypt *fcr = (struct fcrypt *)fp->f_data;

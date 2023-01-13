@@ -1144,7 +1144,7 @@ int
 kqueue_ioctl(fp, com, data, p)
 	struct file *fp;
 	u_long com;
-	caddr_t data;
+	void *data;
 	struct proc *p;
 {
 	struct kfilter_mapping	*km;

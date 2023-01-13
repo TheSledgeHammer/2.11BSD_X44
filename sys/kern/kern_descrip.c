@@ -447,7 +447,7 @@ fstat()
 		break;
 
 	case DTYPE_SOCKET:
-		u.u_error = soo_stat((struct socket *)fp->f_socket, &ub);
+		u.u_error = soo_stat((struct socket *)fp->f_socket, &ub, u.u_procp);
 		break;
 	default:
 		panic("fstat");

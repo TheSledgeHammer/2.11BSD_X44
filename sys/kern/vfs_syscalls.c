@@ -777,7 +777,8 @@ open()
 	p = u.u_procp;
 	fdp = p->p_fd;
 	nfp = falloc();
-	if(error = ufdalloc(nfp)) {
+	error = ufdalloc(nfp);
+	if (error != 0) {
 	    return (error);
 	}
 	fp = nfp;

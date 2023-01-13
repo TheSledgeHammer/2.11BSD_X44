@@ -394,7 +394,6 @@ int		vn_marktext(struct vnode *);
 int 	vn_open(struct nameidata *, int, int);
 int 	vn_rdwr(enum uio_rw, struct vnode *, caddr_t, int, off_t, enum uio_seg, int, struct ucred *, int *, struct proc *);
 int		vn_read(struct file *, struct uio *, struct ucred *);
-int		vn_select(struct file *, int, struct proc *);
 int		vn_poll(struct file *, int, struct proc *);
 int		vn_kqfilter(struct file *, struct knote *);
 int		vn_stat(struct vnode *, struct stat *, struct proc *);

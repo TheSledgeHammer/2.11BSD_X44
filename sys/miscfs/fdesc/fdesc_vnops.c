@@ -354,7 +354,7 @@ fdesc_attr(fd, vap, cred, p)
 		break;
 
 	case DTYPE_SOCKET:
-		error = soo_stat((struct socket *)fp->f_data, &stb);
+		error = soo_stat((struct socket *)fp->f_socket, &stb, p);
 		if (error == 0) {
 			vattr_null(vap);
 			vap->va_type = VSOCK;

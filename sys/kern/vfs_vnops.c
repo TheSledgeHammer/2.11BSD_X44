@@ -60,6 +60,7 @@ struct fileops vnops = {
 		.fo_write = vn_write,
 		.fo_ioctl = vn_ioctl,
 		.fo_poll = vn_poll,
+		.fo_stat = vn_stat,
 		.fo_close = vn_closefile,
 		.fo_kqfilter = vn_kqfilter
 };
@@ -390,7 +391,7 @@ int
 vn_ioctl(fp, com, data, p)
 	struct file *fp;
 	u_long com;
-	caddr_t data;
+	void *data;
 	struct proc *p;
 {
 	register struct vnode *vp = ((struct vnode *)fp->f_data);
@@ -425,18 +426,6 @@ vn_ioctl(fp, com, data, p)
 		break;
 	}
 	return (error);
-}
-
-/*
- * File table vnode select routine.
- */
-int
-vn_select(fp, which, p)
-	struct file *fp;
-	int which;
-	struct proc *p;
-{
-	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag, fp->f_cred, p));
 }
 
 /*
