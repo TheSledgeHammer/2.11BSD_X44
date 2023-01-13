@@ -343,7 +343,7 @@ wsmouse*		at mms? mux 0
 
 # Pseudo-Devices
 
-#pseudo-device 	crypto						# opencrypto framework
+pseudo-device 	crypto						# opencrypto framework
 
 # disk/mass storage pseudo-devices
 pseudo-device	ccd				4			# concatenated/striped disk devices
