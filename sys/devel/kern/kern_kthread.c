@@ -1,7 +1,11 @@
-/*
- * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+/*	$NetBSD: kern_kthread.c,v 1.3 1998/12/22 21:21:36 kleink Exp $	*/
+/*-
+ * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Jason R. Thorpe of the Numerical Aerospace Simulation Facility,
+ * NASA Ames Research Center.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,19 +15,25 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/cdefs.h>
@@ -31,53 +41,12 @@
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include <sys/lock.h>
-#include <sys/rwlock.h>
 #include <sys/wait.h>
 #include <sys/queue.h>
-#include <sys/mutex.h>
 
 #include <devel/sys/kthread.h>
-#include <devel/sys/threadpool.h>
-
-#include <vm/include/vm_param.h>
-
-extern struct kthread 		 kthread0;
-struct kthread *curkthread = &kthread0;
 
 int	kthread_create_now;
-
-void
-kthread_init(p, kt)
-	register struct proc  	*p;
-	register struct kthread *kt;
-{
-	register_t 	rval[2];
-	int 		error;
-
-	/* initialize current kthread & proc overseer from kthread0 */
-	p->p_kthreado = &kthread0;
-	kt = p->p_kthreado;
-    curkthread = kt;
-
-	/* Initialize kthread and kthread group structures. */
-    threadinit();
-
-	/* set up kernel thread */
-    LIST_INSERT_HEAD(&allkthread, kt, kt_list);
-    kt->kt_pgrp = &pgrp0;
-    LIST_INSERT_HEAD(TGRPHASH(0), &pgrp0, pg_hash);
-	p->p_kthreado = kt;
-
-	/* give the kthread the same creds as the initial thread */
-	kt->kt_ucred = p->p_ucred;
-	crhold(kt->kt_ucred);
-
-    /* setup kthread locks */
-    mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid, kt->kt_pgrp);
-
-    /* initialize kthreadpools */
-    kthreadpool_init();
-}
 
 /*
  * Fork a kernel thread.  Any process can request this to be done.
@@ -96,18 +65,17 @@ kthread_create(func, arg, newpp, name)
 
 	/* First, create the new process. */
 	error = newproc(0);
-	if(__predict_false(error != 0)) {
+	if (__predict_false(error != 0)) {
 		panic("kthread_create");
 		return (error);
 	}
 
-	if(rval[1]) {
-		p->p_flag |= P_SYSTEM | P_NOCLDWAIT;
-		p->p_kthreado->kt_flag |= KT_INMEM | KT_SYSTEM;
+	if (rval[1]) {
+		p->p_flag |= P_INMEM | P_SYSTEM | P_NOCLDWAIT;
 	}
 
 	/* Name it as specified. */
-	bcopy(p->p_kthreado->kt_comm, name, MAXCOMLEN);
+	bcopy(p->p_comm, name, MAXCOMLEN);
 
 	if (newpp != NULL) {
 		*newpp = p;
@@ -153,7 +121,7 @@ kthread_create_deferred(void (*func)(void *), void *arg)
 		return;
 	}
 
-	kq = malloc(sizeof *kq, M_TEMP, M_NOWAIT | M_ZERO);
+	kq = malloc(sizeof(*kq), M_TEMP, M_NOWAIT | M_ZERO);
 	if (kq == NULL) {
 		panic("unable to allocate kthread_queue");
 	}
@@ -175,35 +143,6 @@ kthread_run_deferred_queue(void)
 	while ((kq = SIMPLEQ_FIRST(&kthread_queue)) != NULL) {
 		SIMPLEQ_REMOVE_HEAD(&kthread_queue, kq_q);
 		(*kq->kq_func)(kq->kq_arg);
-		free(kq, M_TEMP, sizeof(*kq));
+		free(kq, M_TEMP);
 	}
-}
-
-/*
- * Locate a kthread by number
- */
-struct kthread *
-ktfind(tid)
-	register pid_t tid;
-{
-	register struct kthread *kt;
-	for (kt = LIST_FIRST(TIDHASH(tid)); kt != 0; kt = LIST_NEXT(kt, kt_hash))
-		if(kt->kt_tid == tid)
-			return (kt);
-	return (NULL);
-}
-
-/*
- * remove kthread from thread group
- */
-int
-leavektgrp(kt)
-	register struct kthread *kt;
-{
-	LIST_REMOVE(kt, kt_pglist);
-	if (LIST_FIRST(&kt->kt_pgrp->pg_mem) == 0) {
-		pgdelete(kt->kt_pgrp);
-	}
-	kt->kt_pgrp = 0;
-	return (0);
 }

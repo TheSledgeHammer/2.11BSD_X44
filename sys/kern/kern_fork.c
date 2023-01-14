@@ -77,13 +77,14 @@ fork1(isvfork)
 	 *  not su and too many procs owned; or
 	 *  not su and would take last slot.
 	 */
-	//p2 = freeproc;
-	/* Allocate new proc. */
-	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
-	
+	p2 = LIST_FIRST(&freeproc);
+	if (p2 == NULL) {
+		tablefull("proc");
+		/* Allocate new proc. */
+		MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
+	}
 	uid = p1->p_cred->p_ruid;
 	if (p2 == NULL || (nproc >= maxproc - 1 && uid != 0) || nproc >= maxproc) {
-		tablefull("proc");
 		u.u_error = EAGAIN;
 		goto out;
 	}
@@ -161,11 +162,11 @@ again:
 			goto again;
 		}
 	}
-	/*
-	if ((rpp = freeproc) == NULL)
-			panic("no procs");
-	 */
-	//freeproc = rpp->p_nxt;				/* off freeproc */
+	rpp = LIST_FIRST(&freeproc);
+	if (rpp == NULL) {
+		panic("no procs");
+	}
+	LIST_REMOVE(rpp, p_list);				/* off freeproc */
 
 	/*
 	 * Make a proc table entry for the new process.
@@ -197,9 +198,15 @@ again:
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
 
-	/* onto allproc */
-	LIST_INSERT_HEAD(&allproc, rpp, p_list); 	/* (allproc is never NULL) */
 	LIST_INSERT_HEAD(PIDHASH(rpp->p_pid), rpp, p_hash);
+
+	/*
+	 * some shuffling here -- in most UNIX kernels, the allproc assign
+	 * is done after grabbing the struct off of the freeproc list.  We
+	 * wait so that if the clock interrupts us and vmtotal walks allproc
+	 * the text pointer isn't garbage.
+	 */
+	LIST_INSERT_HEAD(&allproc, rpp, p_list); 		 	/* onto allproc: (allproc is never NULL) */
 
 	/*
 	 * Make a proc table entry for the new process.
@@ -325,9 +332,11 @@ again:
 	 * child to exec or exit, set P_PPWAIT on child, and sleep on our
 	 * proc (in case of exit).
 	 */
-	if (isvfork)
-		while (rpp->p_flag & P_PPWAIT)
+	if (isvfork) {
+		while (rpp->p_flag & P_PPWAIT) {
 			tsleep(rip, PWAIT, "ppwait", 0);
+		}
+	}
 
 	/*
 	 * Return child pid to parent process,

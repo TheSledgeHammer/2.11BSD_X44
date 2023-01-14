@@ -343,7 +343,7 @@ main(framep)
 	if (rval[1]) {
 		p = curproc;
 		p->p_flag |= P_INMEM | P_SYSTEM;	/* XXX */
-		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
+		bcopy("pagedaemon", curproc->p_comm, sizeof("pagedaemon"));
 		vm_pageout();
 	}
 

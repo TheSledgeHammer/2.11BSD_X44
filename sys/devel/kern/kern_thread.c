@@ -33,8 +33,13 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
+#include <sys/mutex.h>
+
 #include <devel/sys/kthread.h>
+#include <devel/sys/threadpool.h>
 #include <devel/libuthread/uthread.h>
+
+#include <vm/include/vm_param.h>
 
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
@@ -73,6 +78,71 @@ utqinit()
 {
 	LIST_INIT(&alluthread);
 	LIST_INIT(&zombuthread);
+}
+
+extern struct kthread 		 kthread0;
+struct kthread *curkthread = &kthread0;
+
+void
+kthread_init(p, kt)
+	register struct proc  	*p;
+	register struct kthread *kt;
+{
+	register_t 	rval[2];
+	int 		error;
+
+	/* initialize current kthread & proc overseer from kthread0 */
+	p->p_kthreado = &kthread0;
+	kt = p->p_kthreado;
+    curkthread = kt;
+
+	/* Initialize kthread and kthread group structures. */
+    threadinit();
+
+	/* set up kernel thread */
+    LIST_INSERT_HEAD(&allkthread, kt, kt_list);
+    kt->kt_pgrp = &pgrp0;
+    LIST_INSERT_HEAD(TGRPHASH(0), &pgrp0, pg_hash);
+	p->p_kthreado = kt;
+
+	/* give the kthread the same creds as the initial thread */
+	kt->kt_ucred = p->p_ucred;
+	crhold(kt->kt_ucred);
+
+    /* setup kthread locks */
+    mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid, kt->kt_pgrp);
+
+    /* initialize kthreadpools */
+    kthreadpool_init();
+}
+
+/*
+ * Locate a kthread by number
+ */
+struct kthread *
+ktfind(tid)
+	register pid_t tid;
+{
+	register struct kthread *kt;
+	for (kt = LIST_FIRST(TIDHASH(tid)); kt != 0; kt = LIST_NEXT(kt, kt_hash))
+		if(kt->kt_tid == tid)
+			return (kt);
+	return (NULL);
+}
+
+/*
+ * remove kthread from thread group
+ */
+int
+leavektgrp(kt)
+	register struct kthread *kt;
+{
+	LIST_REMOVE(kt, kt_pglist);
+	if (LIST_FIRST(&kt->kt_pgrp->pg_mem) == 0) {
+		pgdelete(kt->kt_pgrp);
+	}
+	kt->kt_pgrp = 0;
+	return (0);
 }
 
 /*

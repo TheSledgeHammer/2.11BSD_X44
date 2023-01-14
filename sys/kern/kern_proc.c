@@ -84,7 +84,7 @@ u_long 				pgrphash;
 
 struct proclist 	allproc;
 struct proclist 	zombproc;
-//struct proclist 	freeproc;
+struct proclist 	freeproc;
 struct lock_holder 	proc_loholder;
 
 void	pqinit(void);
@@ -112,11 +112,10 @@ proc_init(p)
 void
 pqinit(void)
 {
-	//register struct proc *p;
-
 	LIST_INIT(&allproc);
 	LIST_INIT(&zombproc);
-	//LIST_INIT(&freeproc);
+	LIST_INIT(&freeproc);
+	//register struct proc *p;
 
 	/*
 	 * most procs are initially on freequeue
