@@ -116,7 +116,7 @@ int					page_shift;
  *	map (they should use their own maps).
  */
 void
-kmap_bootstrap(void)
+vm_page_bootstrap(void)
 {
 	extern vm_offset_t	kentry_data;
 	extern vm_size_t	kentry_data_size;
@@ -236,7 +236,7 @@ vm_page_startup(start, end)
 	 *	since people shouldn't be cluttering up the kernel
 	 *	map (they should use their own maps).
 	 */
-	kmap_bootstrap();
+	vm_page_bootstrap();
 
 	/*
  	 *	Compute the number of pages of memory that will be

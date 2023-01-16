@@ -87,22 +87,18 @@ struct proclist 	zombproc;
 struct proclist 	freeproc;
 struct lock_holder 	proc_loholder;
 
-void	pqinit(void);
+void	pqinit(struct proc *);
 
 void
-procinit()
+procinit(p)
+	struct proc *p;
 {
-	pqinit();
+	pqinit(p);
 	pidhashtbl = hashinit(maxproc / 4, M_PROC, &pidhash);
 	pgrphashtbl = hashinit(maxproc / 4, M_PROC, &pgrphash);
 	uihashtbl = hashinit(maxproc / 16, M_PROC, &uihash);
-}
 
-/* init proc lock (mutex) */
-void
-proc_init(p)
-	struct proc *p;
-{
+	/* init proc lock (mutex) */
 	mtx_init(p->p_mtx, &proc_loholder, "proc_mutex", (struct proc *)p, p->p_pid, p->p_pgrp);
 }
 
@@ -110,32 +106,25 @@ proc_init(p)
  * init the process queues
  */
 void
-pqinit(void)
+pqinit(p)
+	register struct proc *p;
 {
 	LIST_INIT(&allproc);
 	LIST_INIT(&zombproc);
 	LIST_INIT(&freeproc);
-	//register struct proc *p;
 
 	/*
 	 * most procs are initially on freequeue
 	 *	nb: we place them there in their "natural" order.
 	 */
-/*
-	freeproc = NULL;
-	for (p = procNPROC; --p > proc0; freeproc = p)
-		p->p_nxt = freeproc;
-*/
+	LIST_INSERT_HEAD(&freeproc, p, p_list);
+
 	/*
 	 * but proc0 is special ...
 	 */
-	/*
-	allproc = p;
-	p->p_nxt = NULL;
-	p->p_prev = allproc;
+	LIST_INSERT_HEAD(&allproc, p, p_list);
 
-	zombproc = NULL;
-	*/
+	LIST_FIRST(&zombproc) = NULL;
 }
 
 /*

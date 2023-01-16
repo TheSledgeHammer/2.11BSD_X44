@@ -167,8 +167,7 @@ main(framep)
 	/*
 	 * Initialize process and pgrp structures.
 	 */
-	procinit();
-	proc_init(p);
+	procinit(p);
 
 	/*
 	 * Initialize device switch tables & kernel environment
