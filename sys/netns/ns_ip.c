@@ -201,7 +201,7 @@ idpip_input(va_alist)
 		if (nsip_lastin) {
 			m_freem(nsip_lastin);
 		}
-		nsip_lastin = m_copym(m, 0, (int)M_COPYALL, M_DONTWAIT);
+		nsip_lastin = m_copy(m, 0, (int)M_COPYALL);
 	}
 	/*
 	 * Get IP and IDP header together in first mbuf.

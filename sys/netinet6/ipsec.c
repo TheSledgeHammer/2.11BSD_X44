@@ -3397,8 +3397,7 @@ ipsec_copypkt(m)
 					/* XXX: convert to m_tag or delete? */
 					if (n->m_pkthdr.aux) {
 						mnew->m_pkthdr.aux =
-						    m_copym(n->m_pkthdr.aux,
-						    0, M_COPYALL, M_DONTWAIT);
+						    m_copym(n->m_pkthdr.aux, 0, M_COPYALL);
 					}
 #endif
 					M_COPY_PKTHDR(mnew, n);

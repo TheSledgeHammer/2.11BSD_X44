@@ -211,6 +211,7 @@ struct protosw 	*pffindproto(int, int, int);
 struct protosw 	*pffindtype(int, int);
 struct domain 	*pffinddomain(int);
 void 			pfctlinput(int, struct sockaddr *);
+void			pfctlinput2(int, struct sockaddr *, void *);
 //extern	struct protosw *pffindproto(int, int, int), *pffindtype(int, int);
 #endif
 #endif /* _SYS_PROTOSW_H_ */

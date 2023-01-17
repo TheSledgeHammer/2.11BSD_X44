@@ -945,10 +945,11 @@ insert:
 		if (rtpref(n) > rtpref(dr))
 			break;
 	}
-	if (dr)
+	if (dr) {
 		TAILQ_INSERT_BEFORE(dr, n, dr_entry);
-	else
+	} else {
 		TAILQ_INSERT_TAIL(&nd_defrouter, n, dr_entry);
+	}
 
 	defrouter_select();
 

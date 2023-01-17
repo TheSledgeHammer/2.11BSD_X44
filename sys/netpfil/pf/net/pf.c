@@ -5081,7 +5081,7 @@ pf_route(struct mbuf **m, struct pf_rule *r, int dir, struct ifnet *oifp,
 	}
 
 	if (r->rt == PF_DUPTO) {
-		if ((m0 = m_copym2(*m, 0, M_COPYALL, M_NOWAIT)) == NULL)
+		if ((m0 = m_copym2(*m, 0, M_COPYALL)) == NULL)
 			return;
 		if ((mtag = m_tag_copy(mtag)) == NULL)
 			goto bad;
@@ -5294,7 +5294,7 @@ pf_route6(struct mbuf **m, struct pf_rule *r, int dir, struct ifnet *oifp,
 	}
 
 	if (r->rt == PF_DUPTO) {
-		if ((m0 = m_copym2(*m, 0, M_COPYALL, M_NOWAIT)) == NULL)
+		if ((m0 = m_copym2(*m, 0, M_COPYALL)) == NULL)
 			return;
 		if ((mtag = m_tag_copy(mtag)) == NULL)
 			goto bad;

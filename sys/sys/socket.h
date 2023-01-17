@@ -274,6 +274,23 @@ struct cmsghdr {
 	/* followed by	u_char  cmsg_data[]; */
 };
 
+/*
+ * Alignment requirement for CMSG struct manipulation.
+ * This basically behaves the same as ALIGN() ARCH/include/param.h.
+ * We declare it separately for two reasons:
+ * (1) avoid dependency between machine/param.h, and (2) to sync with kernel's
+ * idea of ALIGNBYTES at runtime.
+ * without (2), we can't guarantee binary compatibility in case of future
+ * changes in ALIGNBYTES.
+ */
+#define __CMSG_ALIGN(n)	(((n) + __ALIGNBYTES) & ~__ALIGNBYTES)
+
+#ifdef _KERNEL
+#define CMSG_ALIGN(n)	__CMSG_ALIGN(n)
+#endif
+
+#define __CMSG_ASIZE	__CMSG_ALIGN(sizeof(struct cmsghdr))
+
 /* given pointer to struct cmsghdr, return pointer to data */
 #define	CMSG_DATA(cmsg)		((u_char *)((cmsg) + 1))
 
@@ -286,6 +303,12 @@ struct cmsghdr {
 
 #define	CMSG_FIRSTHDR(mhdr)	((struct cmsghdr *)(mhdr)->msg_control)
 
+#define CMSG_SPACE(l)	(__CMSG_ASIZE + __CMSG_ALIGN(l))
+#define CMSG_LEN(l)		(__CMSG_ASIZE + (l))
+
 /* "Socket"-level control message types: */
-#define	SCM_RIGHTS	0x01		/* access rights (array of int) */
+#define	SCM_RIGHTS		0x01		/* access rights (array of int) */
+#define	SCM_TIMESTAMP	0x08		/* timestamp (struct timeval) */
+#define	SCM_CREDS		0x10		/* credentials (struct sockcred) */
+
 #endif	/* _SYS_SOCKET_H_ */

@@ -99,6 +99,7 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 #include <netinet/ip_icmp.h>
 #endif /* INET */
 #include <netinet/ip6.h>
+//#include <netinet6/in6.h>
 #include <netinet6/in6_var.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/in6_pcb.h>
@@ -1440,265 +1441,111 @@ u_char	inet6ctlerrmap[PRC_NCMDS] = {
 	ENOPROTOOPT
 };
 
-static int
-sysctl_net_inet6_ip6_rht0(SYSCTLFN_ARGS)
-{  
-	int error, tmp;
-	struct sysctlnode node;
-
-	node = *rnode;
-	tmp = ip6_rht0;
-	node.sysctl_data = &tmp;
-	error = sysctl_lookup(SYSCTLFN_CALL(&node));
-	if (error || newp == NULL)
-		return error;
-
-	switch (tmp) {
-	case -1:	/* disable processing */
-	case 0:		/* disable for host, enable for router */
-	case 1:		/* enable for all */
-		break;
-	default:
-		return EINVAL;
-	}
-	ip6_rht0 = tmp;
-	return 0;
-}
-
-SYSCTL_SETUP(sysctl_net_inet6_ip6_setup, "sysctl net.inet6.ip6 subtree setup")
+int
+ip6_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
+	int old, error;
 
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "net", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "inet6",
-		       SYSCTL_DESCR("PF_INET6 related settings"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET6, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "ip6",
-		       SYSCTL_DESCR("IPv6 related settings"),
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6, CTL_EOL);
+	/* All sysctl names at this level are terminal. */
+	if (namelen != 1)
+		return ENOTDIR;
 
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "forwarding",
-		       SYSCTL_DESCR("Enable forwarding of INET6 datagrams"),
-		       NULL, 0, &ip6_forwarding, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_FORWARDING, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "redirect",
-		       SYSCTL_DESCR("Enable sending of ICMPv6 redirect messages"),
-		       NULL, 0, &ip6_sendredirects, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_SENDREDIRECTS, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "hlim",
-		       SYSCTL_DESCR("Hop limit for an INET6 datagram"),
-		       NULL, 0, &ip6_defhlim, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_DEFHLIM, CTL_EOL);
-#ifdef notyet
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "mtu", NULL,
-		       NULL, 0, &, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_DEFMTU, CTL_EOL);
-#endif
-#ifdef __no_idea__
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "forwsrcrt", NULL,
-		       NULL, 0, &?, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_FORWSRCRT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_STRUCT, "stats", NULL,
-		       NULL, 0, &?, sizeof(?),
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_STATS, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_STRUCT, "mrtstats", NULL,
-		       NULL, 0, &?, sizeof(?),
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_MRTSTATS, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_?, "mrtproto", NULL,
-		       NULL, 0, &?, sizeof(?),
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_MRTPROTO, CTL_EOL);
-#endif
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "maxfragpackets",
-		       SYSCTL_DESCR("Maximum number of fragments to buffer "
-				    "for reassembly"),
-		       NULL, 0, &ip6_maxfragpackets, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_MAXFRAGPACKETS, CTL_EOL);
-#ifdef __no_idea__
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "sourcecheck", NULL,
-		       NULL, 0, &?, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_SOURCECHECK, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "sourcecheck_logint", NULL,
-		       NULL, 0, &?, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_SOURCECHECK_LOGINT, CTL_EOL);
-#endif
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "accept_rtadv",
-		       SYSCTL_DESCR("Accept router advertisements"),
-		       NULL, 0, &ip6_accept_rtadv, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_ACCEPT_RTADV, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "keepfaith",
-		       SYSCTL_DESCR("Activate faith interface"),
-		       NULL, 0, &ip6_keepfaith, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_KEEPFAITH, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "log_interval",
-		       SYSCTL_DESCR("Minumum interval between logging "
-				    "unroutable packets"),
-		       NULL, 0, &ip6_log_interval, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_LOG_INTERVAL, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "hdrnestlimit",
-		       SYSCTL_DESCR("Maximum number of nested IPv6 headers"),
-		       NULL, 0, &ip6_hdrnestlimit, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_HDRNESTLIMIT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "dad_count",
-		       SYSCTL_DESCR("Number of Duplicate Address Detection "
-				    "probes to send"),
-		       NULL, 0, &ip6_dad_count, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_DAD_COUNT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "auto_flowlabel",
-		       SYSCTL_DESCR("Assign random IPv6 flow labels"),
-		       NULL, 0, &ip6_auto_flowlabel, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_AUTO_FLOWLABEL, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "defmcasthlim",
-		       SYSCTL_DESCR("Default multicast hop limit"),
-		       NULL, 0, &ip6_defmcasthlim, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_DEFMCASTHLIM, CTL_EOL);
+	switch (name[0]) {
+
+	case IPV6CTL_FORWARDING:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_forwarding);
+	case IPV6CTL_SENDREDIRECTS:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_sendredirects);
+	case IPV6CTL_DEFHLIM:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_defhlim);
+	case IPV6CTL_MAXFRAGPACKETS:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_maxfragpackets);
+	case IPV6CTL_ACCEPT_RTADV:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_accept_rtadv);
+	case IPV6CTL_KEEPFAITH:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_keepfaith);
+	case IPV6CTL_LOG_INTERVAL:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_log_interval);
+	case IPV6CTL_HDRNESTLIMIT:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_hdrnestlimit);
+	case IPV6CTL_DAD_COUNT:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_dad_count);
+	case IPV6CTL_AUTO_FLOWLABEL:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_auto_flowlabel);
+	case IPV6CTL_DEFMCASTHLIM:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_defmcasthlim);
 #if NGIF > 0
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "gifhlim",
-		       SYSCTL_DESCR("Default hop limit for a gif tunnel datagram"),
-		       NULL, 0, &ip6_gif_hlim, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_GIF_HLIM, CTL_EOL);
-#endif /* NGIF */
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_STRING, "kame_version",
-		       SYSCTL_DESCR("KAME Version"),
-		       NULL, 0, __KAME_VERSION, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_KAME_VERSION, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "use_deprecated",
-		       SYSCTL_DESCR("Allow use of deprecated addresses as "
-				    "source addresses"),
-		       NULL, 0, &ip6_use_deprecated, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_USE_DEPRECATED, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "rr_prune", NULL,
-		       NULL, 0, &ip6_rr_prune, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_RR_PRUNE, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT
-#ifndef INET6_BINDV6ONLY
-		       |CTLFLAG_READWRITE,
+	case IPV6CTL_GIF_HLIM:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_gif_hlim);
 #endif
-		       CTLTYPE_INT, "v6only",
-		       SYSCTL_DESCR("Disallow PF_INET6 sockets from connecting "
-				    "to PF_INET sockets"),
-		       NULL, 0, &ip6_v6only, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_V6ONLY, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "anonportmin",
-		       SYSCTL_DESCR("Lowest ephemeral port number to assign"),
-		       sysctl_net_inet_ip_ports, 0, &ip6_anonportmin, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_ANONPORTMIN, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "anonportmax",
-		       SYSCTL_DESCR("Highest ephemeral port number to assign"),
-		       sysctl_net_inet_ip_ports, 0, &ip6_anonportmax, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_ANONPORTMAX, CTL_EOL);
+	case IPV6CTL_KAME_VERSION:
+		return sysctl_rdstring(oldp, oldlenp, newp, __KAME_VERSION);
+	case IPV6CTL_USE_DEPRECATED:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_use_deprecated);
+	case IPV6CTL_RR_PRUNE:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_rr_prune);
+	case IPV6CTL_V6ONLY:
+#ifdef INET6_BINDV6ONLY
+		return sysctl_rdint(oldp, oldlenp, newp, ip6_v6only);
+#else
+		return sysctl_int(oldp, oldlenp, newp, newlen, &ip6_v6only);
+#endif
+	case IPV6CTL_ANONPORTMIN:
+		old = ip6_anonportmin;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip6_anonportmin);
+		if (ip6_anonportmin >= ip6_anonportmax || ip6_anonportmin < 0 ||
+		    ip6_anonportmin > 65535
 #ifndef IPNOPRIVPORTS
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "lowportmin",
-		       SYSCTL_DESCR("Lowest privileged ephemeral port number "
-				    "to assign"),
-		       sysctl_net_inet_ip_ports, 0, &ip6_lowportmin, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_LOWPORTMIN, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "lowportmax",
-		       SYSCTL_DESCR("Highest privileged ephemeral port number "
-				    "to assign"),
-		       sysctl_net_inet_ip_ports, 0, &ip6_lowportmax, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_LOWPORTMAX, CTL_EOL);
-#endif /* IPNOPRIVPORTS */
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "maxfrags",
-		       SYSCTL_DESCR("Maximum fragments in reassembly queue"),
-		       NULL, 0, &ip6_maxfrags, 0,
-		       CTL_NET, PF_INET6, IPPROTO_IPV6,
-		       IPV6CTL_MAXFRAGS, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-			CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-			CTLTYPE_INT, "rht0",
-			SYSCTL_DESCR("Processing of routing header type 0 (IPv6)"),
-			sysctl_net_inet6_ip6_rht0, 0, &ip6_rht0, 0,
-			CTL_NET, PF_INET6, IPPROTO_IPV6,
-			CTL_CREATE, CTL_EOL);
+		    || ip6_anonportmin < IPV6PORT_RESERVED
+#endif
+		    ) {
+			ip6_anonportmin = old;
+			return (EINVAL);
+		}
+		return (error);
+	case IPV6CTL_ANONPORTMAX:
+		old = ip6_anonportmax;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip6_anonportmax);
+		if (ip6_anonportmin >= ip6_anonportmax || ip6_anonportmax < 0 ||
+		    ip6_anonportmax > 65535
+#ifndef IPNOPRIVPORTS
+		    || ip6_anonportmax < IPV6PORT_RESERVED
+#endif
+		    ) {
+			ip6_anonportmax = old;
+			return (EINVAL);
+		}
+		return (error);
+#ifndef IPNOPRIVPORTS
+	case IPV6CTL_LOWPORTMIN:
+		old = ip6_lowportmin;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip6_lowportmin);
+		if (ip6_lowportmin >= ip6_lowportmax ||
+		    ip6_lowportmin > IPV6PORT_RESERVEDMAX ||
+		    ip6_lowportmin < IPV6PORT_RESERVEDMIN) {
+			ip6_lowportmin = old;
+			return (EINVAL);
+		}
+		return (error);
+	case IPV6CTL_LOWPORTMAX:
+		old = ip6_lowportmax;
+		error = sysctl_int(oldp, oldlenp, newp, newlen, &ip6_lowportmax);
+		if (ip6_lowportmin >= ip6_lowportmax ||
+		    ip6_lowportmax > IPV6PORT_RESERVEDMAX ||
+		    ip6_lowportmax < IPV6PORT_RESERVEDMIN) {
+			ip6_lowportmax = old;
+			return (EINVAL);
+		}
+		return (error);
+#endif
+	default:
+		return EOPNOTSUPP;
+	}
+	/* NOTREACHED */
 }

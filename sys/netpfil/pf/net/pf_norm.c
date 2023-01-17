@@ -647,9 +647,9 @@ pf_fragcache(struct mbuf **m0, struct ip *h, struct pf_fragment **frag, int mff,
 				 * I'll pull a rabbit out of my laptop.
 				 */
 #ifdef __OpenBSD__
-				*m0 = m_copym2(m, 0, h->ip_hl << 2, M_NOWAIT);
+				*m0 = m_copym2(m, 0, h->ip_hl << 2);
 #else
-				*m0 = m_dup(m, 0, h->ip_hl << 2, M_NOWAIT);
+				*m0 = m_copy(m, 0, h->ip_hl << 2);
 #endif
 				if (*m0 == NULL)
 					goto no_mem;

@@ -814,7 +814,7 @@ spp_output(m0, va_alist)
 					 * from usrreq(), so it is OK to
 					 * block.
 					 */
-					m = m_copym(m0, 0, mtu, M_WAIT);
+					m = m_copy(m0, 0, mtu);
 					if (cb->s_flags & SF_NEWCALL) {
 					    struct mbuf *mm = m;
 					    while (mm) {

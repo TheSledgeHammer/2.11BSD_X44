@@ -1199,8 +1199,7 @@ ip6_insertfraghdr(m0, m, hlen, frghdrp)
 	struct mbuf *n, *mlast;
 
 	if (hlen > sizeof(struct ip6_hdr)) {
-		n = m_copym(m0, sizeof(struct ip6_hdr),
-		    hlen - sizeof(struct ip6_hdr), M_DONTWAIT);
+		n = m_copy(m0, sizeof(struct ip6_hdr), hlen - sizeof(struct ip6_hdr));
 		if (n == 0)
 			return (ENOBUFS);
 		m->m_next = n;
@@ -1507,8 +1506,7 @@ do { \
 
 			case IPV6_PKTOPTIONS:
 				if (in6p->in6p_options) {
-					*mp = m_copym(in6p->in6p_options, 0,
-					    M_COPYALL, M_WAIT);
+					*mp = m_copy(in6p->in6p_options, 0, M_COPYALL);
 				} else {
 					*mp = m_get(M_WAIT, MT_SOOPTS);
 					(*mp)->m_len = 0;
@@ -1517,7 +1515,7 @@ do { \
 
 			case IPV6_HOPOPTS:
 			case IPV6_DSTOPTS:
-				if (p == 0 || suser(p->p_ucred, &p->p_acflag)) {
+				if (p == 0 || suser1(p->p_ucred, &p->p_acflag)) {
 					error = EPERM;
 					break;
 				}

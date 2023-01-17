@@ -1502,8 +1502,7 @@ key_gather_mbuf(m, mhp, ndeep, nitem, va_alist)
 			m_copydata(m, mhp->extoff[idx], mhp->extlen[idx],
 			    mtod(n, caddr_t));
 		} else {
-			n = m_copym(m, mhp->extoff[idx], mhp->extlen[idx],
-			    M_DONTWAIT);
+			n = m_copy(m, mhp->extoff[idx], mhp->extlen[idx]);
 		}
 		if (n == NULL)
 			goto fail;
@@ -2077,8 +2076,8 @@ key_spddelete2(so, m, mhp)
 		panic("length inconsistency in key_spddelete2");
 #endif
 
-	n->m_next = m_copym(m, mhp->extoff[SADB_X_EXT_POLICY],
-	    mhp->extlen[SADB_X_EXT_POLICY], M_DONTWAIT);
+	n->m_next = m_copy(m, mhp->extoff[SADB_X_EXT_POLICY],
+	    mhp->extlen[SADB_X_EXT_POLICY]);
 	if (!n->m_next) {
 		m_freem(n);
 		return key_senderror(so, m, ENOBUFS);

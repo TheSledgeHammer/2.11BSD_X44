@@ -1514,7 +1514,7 @@ getmicrouptime(struct timeval *tvp)
 	splx(s);
 }
 #define	time_second	time.tv_sec
-#define	m_copym2	m_dup
+#define	m_copym2	m_copy
 #define	pool_allocator_oldnointr	pool_allocator_nointr
 #endif
 #endif /* _KERNEL */

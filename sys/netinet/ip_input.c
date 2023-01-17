@@ -2044,8 +2044,7 @@ ip_savecontrol(inp, mp, ip, m)
 		struct timeval tv;
 
 		microtime(&tv);
-		*mp = sbcreatecontrol((caddr_t) &tv, sizeof(tv),
-		    /*SCM_TIMESTAMP*/0, SOL_SOCKET);
+		*mp = sbcreatecontrol((caddr_t) &tv, sizeof(tv), SCM_TIMESTAMP, SOL_SOCKET);
 		if (*mp)
 			mp = &(*mp)->m_next;
 	}

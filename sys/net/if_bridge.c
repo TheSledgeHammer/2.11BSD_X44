@@ -1246,7 +1246,7 @@ bridge_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,
 				used = 1;
 				mc = m;
 			} else {
-				mc = m_copym(m, 0, M_COPYALL, M_NOWAIT);
+				mc = m_copy(m, 0, M_COPYALL);
 				if (mc == NULL) {
 					sc->sc_if.if_oerrors++;
 					continue;
@@ -1464,7 +1464,7 @@ bridge_input(struct ifnet *ifp, struct mbuf *m)
 		 * for bridge processing; return the original packet for
 		 * local processing.
 		 */
-		mc = m_dup(m, 0, M_COPYALL, M_NOWAIT);
+		mc = m_copy(m, 0, M_COPYALL);
 		if (mc == NULL)
 			return (m);
 
@@ -1552,7 +1552,7 @@ bridge_broadcast(struct bridge_softc *sc, struct ifnet *src_if,
 			mc = m;
 			used = 1;
 		} else {
-			mc = m_copym(m, 0, M_COPYALL, M_DONTWAIT);
+			mc = m_copy(m, 0, M_COPYALL);
 			if (mc == NULL) {
 				sc->sc_if.if_oerrors++;
 				continue;

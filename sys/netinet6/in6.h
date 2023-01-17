@@ -74,7 +74,7 @@
  * has the table of implementation/integration differences.
  */
 #define __KAME__
-//#define __KAME_VERSION		"NetBSD-current"
+#define __KAME_VERSION		"NetBSD-current"
 
 /*
  * Local port number conventions:
