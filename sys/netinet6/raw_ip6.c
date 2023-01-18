@@ -495,13 +495,13 @@ rip6_output(m, va_alist)
 		off += sizeof(struct ip6_hdr);
 
 		sum = 0;
-		m = m_pulldown(m, off, sizeof(sum), (caddr_t)&sum);
+		m = m_pulldown(m, off, sizeof(sum), (int *)&sum);
 		if (m == NULL) {
 			error = ENOBUFS;
 			goto bad;
 		}
 		sum = in6_cksum(m, ip6->ip6_nxt, sizeof(*ip6), plen);
-		m = m_pulldown(m, off, sizeof(sum), (caddr_t)&sum);
+		m = m_pulldown(m, off, sizeof(sum), (int *)&sum);
 		if (m == NULL) {
 			error = ENOBUFS;
 			goto bad;

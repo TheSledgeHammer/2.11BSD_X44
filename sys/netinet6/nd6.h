@@ -318,13 +318,14 @@ extern struct nd_drhead nd_defrouter;
 extern struct nd_prhead nd_prefix;
 extern int nd6_debug;
 
-#define nd6log(x)	do {	\
+/*
+#define nd6log(level, fmt, args...)	do {	\
 	if (nd6_debug) {		\
-		log x;				\
+		log(level, "%s: " fmt, __func__, ##args);				\
 	}						\
 } while (0)
-
-//#define nd6log(x) do { if (nd6_debug) log x; } while (0)
+*/
+#define nd6log(x) do { if (nd6_debug) log x; } while (0)
 
 extern struct callout nd6_timer_ch;
 
