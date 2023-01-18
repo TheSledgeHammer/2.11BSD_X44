@@ -80,7 +80,7 @@ struct	arphdr {
 	(ntohs((ap)->ar_hrd) == ARPHRD_IEEE1394 \
 		? (((caddr_t)((ap)+1))+(ap)->ar_hln+(ap)->ar_pln) \
 		: (((caddr_t)((ap)+1))+(ap)->ar_hln+(ap)->ar_pln+(ap)->ar_hln))
-} __attribute__((__packed__));
+};
 
 
 /*

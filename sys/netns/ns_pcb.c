@@ -291,7 +291,7 @@ ns_pcbnotify(dst, errno, notify, param)
 	struct ns_addr *dst;
 	long param;
 	int errno;
-	void (*notify) __P((struct nspcb *));
+	void (*notify)(struct nspcb *);
 {
 	struct nspcb *nsp, *oinp;
 	int s = splnet();

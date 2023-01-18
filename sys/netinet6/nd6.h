@@ -319,13 +319,17 @@ extern struct nd_prhead nd_prefix;
 extern int nd6_debug;
 
 /*
-#define nd6log(level, fmt, args...)	do {	\
-	if (nd6_debug) {		\
-		log(level, "%s: " fmt, __func__, ##args);				\
-	}						\
+#define nd6log(level, fmt, args...)	do {			\
+	if (nd6_debug) {								\
+		log(level, "%s: " fmt, __func__, ##args);	\
+	}												\
 } while (0)
 */
-#define nd6log(x) do { if (nd6_debug) log x; } while (0)
+#define nd6log(x) do { 	\
+	if (nd6_debug) {	\
+		log x; 			\
+	}					\
+} while (0)
 
 extern struct callout nd6_timer_ch;
 
@@ -349,78 +353,69 @@ union nd_opts {
 };
 #define nd_opts_src_lladdr	nd_opt_each.src_lladdr
 #define nd_opts_tgt_lladdr	nd_opt_each.tgt_lladdr
-#define nd_opts_pi		nd_opt_each.pi_beg
+#define nd_opts_pi			nd_opt_each.pi_beg
 #define nd_opts_pi_end		nd_opt_each.pi_end
-#define nd_opts_rh		nd_opt_each.rh
-#define nd_opts_mtu		nd_opt_each.mtu
+#define nd_opts_rh			nd_opt_each.rh
+#define nd_opts_mtu			nd_opt_each.mtu
 #define nd_opts_search		nd_opt_each.search
 #define nd_opts_last		nd_opt_each.last
 #define nd_opts_done		nd_opt_each.done
 
 /* XXX: need nd6_var.h?? */
 /* nd6.c */
-void nd6_init __P((void));
-struct nd_ifinfo *nd6_ifattach __P((struct ifnet *));
-void nd6_ifdetach __P((struct nd_ifinfo *));
-int nd6_is_addr_neighbor __P((struct sockaddr_in6 *, struct ifnet *));
-void nd6_option_init __P((void *, int, union nd_opts *));
-struct nd_opt_hdr *nd6_option __P((union nd_opts *));
-int nd6_options __P((union nd_opts *));
-struct	rtentry *nd6_lookup __P((struct in6_addr *, int, struct ifnet *));
-void nd6_setmtu __P((struct ifnet *));
-void nd6_llinfo_settimer __P((struct llinfo_nd6 *, long));
-void nd6_timer __P((void *));
-void nd6_purge __P((struct ifnet *));
-void nd6_nud_hint __P((struct rtentry *, struct in6_addr *, int));
-int nd6_resolve __P((struct ifnet *, struct rtentry *,
-	struct mbuf *, struct sockaddr *, u_char *));
-void nd6_rtrequest __P((int, struct rtentry *, struct rt_addrinfo *));
-int nd6_ioctl __P((u_long, caddr_t, struct ifnet *));
-struct rtentry *nd6_cache_lladdr __P((struct ifnet *, struct in6_addr *,
-	char *, int, int, int));
-int nd6_output __P((struct ifnet *, struct ifnet *, struct mbuf *,
-	struct sockaddr_in6 *, struct rtentry *));
-int nd6_storelladdr __P((struct ifnet *, struct rtentry *, struct mbuf *,
-	struct sockaddr *, u_char *));
-int nd6_sysctl __P((int, void *, size_t *, void *, size_t));
-int nd6_need_cache __P((struct ifnet *));
-int ip6_getpmtu __P((struct route_in6 *, struct route_in6 *, struct ifnet *,
-	struct in6_addr *, u_long *, int *));
+void nd6_init(void);
+struct nd_ifinfo *nd6_ifattach(struct ifnet *);
+void nd6_ifdetach(struct nd_ifinfo *);
+int nd6_is_addr_neighbor(struct sockaddr_in6 *, struct ifnet *);
+void nd6_option_init(void *, int, union nd_opts *);
+struct nd_opt_hdr *nd6_option(union nd_opts *);
+int nd6_options(union nd_opts *);
+struct	rtentry *nd6_lookup(struct in6_addr *, int, struct ifnet *);
+void nd6_setmtu(struct ifnet *);
+void nd6_llinfo_settimer(struct llinfo_nd6 *, long);
+void nd6_timer(void *);
+void nd6_purge(struct ifnet *);
+void nd6_nud_hint(struct rtentry *, struct in6_addr *, int);
+int nd6_resolve(struct ifnet *, struct rtentry *, struct mbuf *, struct sockaddr *, u_char *);
+void nd6_rtrequest(int, struct rtentry *, struct rt_addrinfo *);
+int nd6_ioctl(u_long, caddr_t, struct ifnet *);
+struct rtentry *nd6_cache_lladdr(struct ifnet *, struct in6_addr *, char *, int, int, int);
+int nd6_output(struct ifnet *, struct ifnet *, struct mbuf *, struct sockaddr_in6 *, struct rtentry *);
+int nd6_storelladdr(struct ifnet *, struct rtentry *, struct mbuf *, struct sockaddr *, u_char *);
+int nd6_sysctl(int, void *, size_t *, void *, size_t);
+int nd6_need_cache(struct ifnet *);
+int ip6_getpmtu(struct route_in6 *, struct route_in6 *, struct ifnet *, struct in6_addr *, u_long *, int *);
 
 /* nd6_nbr.c */
-void nd6_na_input __P((struct mbuf *, int, int));
-void nd6_na_output __P((struct ifnet *, const struct in6_addr *,
-	const struct in6_addr *, u_long, int, struct sockaddr *));
-void nd6_ns_input __P((struct mbuf *, int, int));
-void nd6_ns_output __P((struct ifnet *, const struct in6_addr *,
-	const struct in6_addr *, struct llinfo_nd6 *, int));
-caddr_t nd6_ifptomac __P((struct ifnet *));
-void nd6_dad_start __P((struct ifaddr *, int *));
-void nd6_dad_stop __P((struct ifaddr *));
-void nd6_dad_duplicated __P((struct ifaddr *));
+void nd6_na_input(struct mbuf *, int, int);
+void nd6_na_output(struct ifnet *, const struct in6_addr *, const struct in6_addr *, u_long, int, struct sockaddr *);
+void nd6_ns_input(struct mbuf *, int, int);
+void nd6_ns_output(struct ifnet *, const struct in6_addr *, const struct in6_addr *, struct llinfo_nd6 *, int);
+caddr_t nd6_ifptomac(struct ifnet *);
+void nd6_dad_start(struct ifaddr *, int *);
+void nd6_dad_stop(struct ifaddr *);
+void nd6_dad_duplicated(struct ifaddr *);
 
 /* nd6_rtr.c */
-void nd6_rs_input __P((struct mbuf *, int, int));
-void nd6_ra_input __P((struct mbuf *, int, int));
-void prelist_del __P((struct nd_prefix *));
-void defrouter_addreq __P((struct nd_defrouter *));
-void defrouter_reset __P((void));
-void defrouter_select __P((void));
-void defrtrlist_del __P((struct nd_defrouter *));
-void prelist_remove __P((struct nd_prefix *));
-int prelist_update __P((struct nd_prefix *, struct nd_defrouter *,
-	struct mbuf *));
-int nd6_prelist_add __P((struct nd_prefix *, struct nd_defrouter *,
-	struct nd_prefix **));
-int nd6_prefix_onlink __P((struct nd_prefix *));
-int nd6_prefix_offlink __P((struct nd_prefix *));
-void pfxlist_onlink_check __P((void));
-struct nd_defrouter *defrouter_lookup __P((struct in6_addr *, struct ifnet *));
-struct nd_prefix *nd6_prefix_lookup __P((struct nd_prefix *));
-int in6_ifdel __P((struct ifnet *, struct in6_addr *));
-int in6_init_prefix_ltimes __P((struct nd_prefix *ndpr));
-void rt6_flush __P((struct in6_addr *, struct ifnet *));
-int nd6_setdefaultiface __P((int));
+void nd6_rs_input(struct mbuf *, int, int);
+void nd6_ra_input(struct mbuf *, int, int);
+void prelist_del(struct nd_prefix *);
+void defrouter_addreq(struct nd_defrouter *);
+void defrouter_reset(void);
+void defrouter_select(void);
+void defrtrlist_del(struct nd_defrouter *);
+void prelist_remove(struct nd_prefix *);
+int prelist_update(struct nd_prefix *, struct nd_defrouter *, struct mbuf *);
+int nd6_prelist_add(struct nd_prefix *, struct nd_defrouter *, struct nd_prefix **);
+int nd6_prefix_onlink(struct nd_prefix *);
+int nd6_prefix_offlink(struct nd_prefix *);
+void pfxlist_onlink_check(void);
+struct nd_defrouter *defrouter_lookup(struct in6_addr *, struct ifnet *);
+struct nd_prefix *nd6_prefix_lookup(struct nd_prefix *);
+int in6_ifdel(struct ifnet *, struct in6_addr *);
+int in6_init_prefix_ltimes(struct nd_prefix *ndpr);
+void rt6_flush(struct in6_addr *, struct ifnet *);
+int nd6_setdefaultiface(int);
 
 #endif /* _KERNEL */
 

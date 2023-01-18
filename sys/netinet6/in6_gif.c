@@ -67,8 +67,7 @@ __KERNEL_RCSID(0, "$NetBSD: in6_gif.c,v 1.37 2003/10/30 01:43:09 simonb Exp $");
 
 #include <net/net_osdep.h>
 
-static int gif_validate6 __P((const struct ip6_hdr *, struct gif_softc *,
-	struct ifnet *));
+static int gif_validate6(const struct ip6_hdr *, struct gif_softc *, struct ifnet *);
 
 int	ip6_gif_hlim = GIF_HLIM;
 

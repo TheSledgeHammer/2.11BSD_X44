@@ -34,8 +34,8 @@
 #define _NETINET6_IN6_IFATTACH_H_
 
 #ifdef _KERNEL
-void in6_ifattach __P((struct ifnet *, struct ifnet *));
-void in6_ifdetach __P((struct ifnet *));
+void in6_ifattach(struct ifnet *, struct ifnet *);
+void in6_ifdetach(struct ifnet *);
 int in6_nigroup(struct ifnet *, const char *, int, struct sockaddr_in6 *);
 #endif /* _KERNEL */
 

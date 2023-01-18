@@ -74,8 +74,7 @@ __KERNEL_RCSID(0, "$NetBSD: esp_output.c,v 1.18 2003/09/07 15:59:36 itojun Exp $
 
 #include <net/net_osdep.h>
 
-static int esp_output __P((struct mbuf *, u_char *, struct mbuf *,
-	struct ipsecrequest *, int));
+static int esp_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *, int);
 
 /*
  * compute ESP header size.

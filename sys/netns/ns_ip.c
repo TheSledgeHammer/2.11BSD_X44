@@ -76,12 +76,12 @@ struct ifnet_en {
 	struct ifnet_en *ifen_next;
 };
 
-int	nsipoutput __P((struct ifnet *, struct mbuf *m, struct sockaddr *,
-    struct rtentry *));
-int	nsipioctl __P((struct ifnet *, u_long, caddr_t));
-void	nsipstart __P((struct ifnet *));
-int	nsip_route __P((struct mbuf *));
-void	nsip_rtchange __P((struct in_addr *));
+int	nsipoutput(struct ifnet *, struct mbuf *m, struct sockaddr *,
+    struct rtentry *);
+int	nsipioctl(struct ifnet *, u_long, caddr_t);
+void	nsipstart(struct ifnet *);
+int	nsip_route(struct mbuf *);
+void	nsip_rtchange(struct in_addr *);
 #define LOMTU	(1024+512);
 
 int	nsipif_unit;			/* XXX */

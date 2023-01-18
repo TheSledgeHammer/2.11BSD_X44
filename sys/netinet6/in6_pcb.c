@@ -580,7 +580,7 @@ in6_pcbnotify(table, dst, fport_arg, src, lport_arg, cmd, cmdarg, notify)
 	u_int fport_arg, lport_arg;
 	int cmd;
 	void *cmdarg;
-	void (*notify) __P((struct in6pcb *, int));
+	void (*notify)(struct in6pcb *, int);
 {
 	struct in6pcb *in6p, *nin6p;
 	struct sockaddr_in6 sa6_src, *sa6_dst;

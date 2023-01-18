@@ -30,12 +30,12 @@
  * SUCH DAMAGE.
  */
 
-extern int esp_aesctr_mature __P((struct secasvar *));
-extern size_t esp_aesctr_schedlen __P((const struct esp_algorithm *));
-extern int esp_aesctr_schedule __P((const struct esp_algorithm *,
-	struct secasvar *));
-extern int esp_aesctr_decrypt __P((struct mbuf *, size_t,
-	struct secasvar *, const struct esp_algorithm *, int));
-extern int esp_aesctr_encrypt __P((struct mbuf *, size_t, size_t,
-	struct secasvar *, const struct esp_algorithm *, int));
+extern int esp_aesctr_mature(struct secasvar *);
+extern size_t esp_aesctr_schedlen(const struct esp_algorithm *);
+extern int esp_aesctr_schedule(const struct esp_algorithm *,
+	struct secasvar *);
+extern int esp_aesctr_decrypt(struct mbuf *, size_t,
+	struct secasvar *, const struct esp_algorithm *, int);
+extern int esp_aesctr_encrypt(struct mbuf *, size_t, size_t,
+	struct secasvar *, const struct esp_algorithm *, int);
 

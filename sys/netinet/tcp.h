@@ -68,7 +68,7 @@ struct tcphdr {
 	u_int16_t th_win;			/* window */
 	u_int16_t th_sum;			/* checksum */
 	u_int16_t th_urp;			/* urgent pointer */
-} __attribute__((__packed__));
+};
 
 #define	TCPOPT_EOL		0
 #define	TCPOPT_NOP		1

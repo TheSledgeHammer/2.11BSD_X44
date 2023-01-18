@@ -180,7 +180,7 @@ struct igmpmsg {
 	u_int8_t  im_vif;		/* vif rec'd on */
 	u_int8_t  unused3;
 	struct	  in_addr im_src, im_dst;
-} __attribute__((__packed__));
+};
 
 /*
  * Argument structure used for pkt info. while upcall is made.

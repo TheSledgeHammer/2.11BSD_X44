@@ -154,14 +154,14 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_mroute.c,v 1.60 2003/12/10 11:46:33 itojun Exp $
 
 #include <net/net_osdep.h>
 
-static int ip6_mdq __P((struct mbuf *, struct ifnet *, struct mf6c *));
-static void phyint_send __P((struct ip6_hdr *, struct mif6 *, struct mbuf *));
+static int ip6_mdq(struct mbuf *, struct ifnet *, struct mf6c *);
+static void phyint_send(struct ip6_hdr *, struct mif6 *, struct mbuf *);
 
-static int set_pim6 __P((int *));
-static int get_pim6 __P((struct mbuf *));
-static int socket_send __P((struct socket *, struct mbuf *,
-	    struct sockaddr_in6 *));
-static int register_send __P((struct ip6_hdr *, struct mif6 *, struct mbuf *));
+static int set_pim6(int *);
+static int get_pim6(struct mbuf *);
+static int socket_send(struct socket *, struct mbuf *,
+	    struct sockaddr_in6 *);
+static int register_send(struct ip6_hdr *, struct mif6 *, struct mbuf *);
 
 /*
  * Globals.  All but ip6_mrouter, ip6_mrtproto and mrt6stat could be static,
@@ -188,7 +188,7 @@ u_int		mrt6debug = 0;	  /* debug level 	*/
 #define DEBUG_PIM	0x40
 #endif
 
-static void	expire_upcalls __P((void *));
+static void	expire_upcalls(void *);
 #define	EXPIRE_TIMEOUT	(hz / 4)	/* 4x / second */
 #define	UPCALL_EXPIRE	6		/* number of timeouts */
 
@@ -232,44 +232,44 @@ static int pim6;
  * Quality of service parameter to be added in the future!!!
  */
 
-#define MF6CFIND(o, g, rt) do { \
+#define MF6CFIND(o, g, rt) do { 				\
 	struct mf6c *_rt = mf6ctable[MF6CHASH(o,g)]; \
-	rt = NULL; \
-	mrt6stat.mrt6s_mfc_lookups++; \
-	while (_rt) { \
+	rt = NULL; 									\
+	mrt6stat.mrt6s_mfc_lookups++; 				\
+	while (_rt) { 								\
 		if (IN6_ARE_ADDR_EQUAL(&_rt->mf6c_origin.sin6_addr, &(o)) && \
 		    IN6_ARE_ADDR_EQUAL(&_rt->mf6c_mcastgrp.sin6_addr, &(g)) && \
-		    (_rt->mf6c_stall == NULL)) { \
-			rt = _rt; \
-			break; \
-		} \
-		_rt = _rt->mf6c_next; \
-	} \
-	if (rt == NULL) { \
-		mrt6stat.mrt6s_mfc_misses++; \
-	} \
+		    (_rt->mf6c_stall == NULL)) { 		\
+			rt = _rt; 							\
+			break; 								\
+		} 										\
+		_rt = _rt->mf6c_next; 					\
+	} 											\
+	if (rt == NULL) { 							\
+		mrt6stat.mrt6s_mfc_misses++; 			\
+	} 											\
 } while (/*CONSTCOND*/ 0)
 
 /*
  * Macros to compute elapsed time efficiently
  * Borrowed from Van Jacobson's scheduling code
  */
-#define TV_DELTA(a, b, delta) do { \
-	    int xxs; \
-		\
-	    delta = (a).tv_usec - (b).tv_usec; \
-	    if ((xxs = (a).tv_sec - (b).tv_sec)) { \
-	       switch (xxs) { \
-		      case 2: \
-			  delta += 1000000; \
-			      /* FALLTHROUGH */ \
-		      case 1: \
-			  delta += 1000000; \
-			  break; \
-		      default: \
-			  delta += (1000000 * xxs); \
-	       } \
-	    } \
+#define TV_DELTA(a, b, delta) do { 				\
+	    int xxs; 								\
+												\
+	    delta = (a).tv_usec - (b).tv_usec; 		\
+	    if ((xxs = (a).tv_sec - (b).tv_sec)) { 	\
+	       switch (xxs) { 						\
+		      case 2: 							\
+			  delta += 1000000; 				\
+			      /* FALLTHROUGH */ 			\
+		      case 1: 							\
+			  delta += 1000000; 				\
+			  break; 							\
+		      default: 							\
+			  delta += (1000000 * xxs); 		\
+	       } 									\
+	    } 										\
 } while (/*CONSTCOND*/ 0)
 
 #define TV_LT(a, b) (((a).tv_usec < (b).tv_usec && \
@@ -281,13 +281,13 @@ u_long upcall_data[UPCALL_MAX + 1];
 static void collate();
 #endif /* UPCALL_TIMING */
 
-static int get_sg_cnt __P((struct sioc_sg_req6 *));
-static int get_mif6_cnt __P((struct sioc_mif_req6 *));
-static int ip6_mrouter_init __P((struct socket *, int, int));
-static int add_m6if __P((struct mif6ctl *));
-static int del_m6if __P((mifi_t *));
-static int add_m6fc __P((struct mf6cctl *));
-static int del_m6fc __P((struct mf6cctl *));
+static int get_sg_cnt(struct sioc_sg_req6 *);
+static int get_mif6_cnt(struct sioc_mif_req6 *);
+static int ip6_mrouter_init(struct socket *, int, int);
+static int add_m6if(struct mif6ctl *);
+static int del_m6if(mifi_t *);
+static int add_m6fc(struct mf6cctl *);
+static int del_m6fc(struct mf6cctl *);
 
 static struct callout expire_upcalls_ch = CALLOUT_INITIALIZER;
 

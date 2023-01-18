@@ -46,43 +46,42 @@ struct llc {
 	u_int8_t llc_dsap;
 	u_int8_t llc_ssap;
 	union {
-	    struct {
-		u_int8_t control;
-		u_int8_t format_id;
-		u_int8_t class;
-		u_int8_t window_x2;
-	    } type_u __attribute__((__packed__));
-	    struct {
-		u_int8_t num_snd_x2;
-		u_int8_t num_rcv_x2;
-	    } type_i __attribute__((__packed__));
-	    struct {
-		u_int8_t control;
-		u_int8_t num_rcv_x2;
-	    } type_s __attribute__((__packed__));
-	    struct {
-	        u_int8_t control;
-		/*
-		 * We cannot put the following fields in a structure because
-		 * the structure rounding might cause padding.
-		 */
-		u_int8_t frmr_rej_pdu0;
-		u_int8_t frmr_rej_pdu1;
-		u_int8_t frmr_control;
-		u_int8_t frmr_control_ext;
-		u_int8_t frmr_cause;
-	    } type_frmr __attribute__((__packed__));
-	    struct {
-		u_int8_t  control;
-		u_int8_t  org_code[3];
-		u_int16_t ether_type;
-	    } type_snap __attribute__((__packed__));
-	    struct {
-		u_int8_t control;
-		u_int8_t control_ext;
-	    } type_raw __attribute__((__packed__));
+		struct {
+			u_int8_t control;
+			u_int8_t format_id;u_int8_t class;
+			u_int8_t window_x2;
+		} type_u;
+		struct {
+			u_int8_t num_snd_x2;
+			u_int8_t num_rcv_x2;
+		} type_i;
+		struct {
+			u_int8_t control;
+			u_int8_t num_rcv_x2;
+		} type_s;
+		struct {
+			u_int8_t control;
+			/*
+			 * We cannot put the following fields in a structure because
+			 * the structure rounding might cause padding.
+			 */
+			u_int8_t frmr_rej_pdu0;
+			u_int8_t frmr_rej_pdu1;
+			u_int8_t frmr_control;
+			u_int8_t frmr_control_ext;
+			u_int8_t frmr_cause;
+		} type_frmr;
+		struct {
+			u_int8_t control;
+			u_int8_t org_code[3];
+			u_int16_t ether_type;
+		} type_snap __packed;
+		struct {
+			u_int8_t control;
+			u_int8_t control_ext;
+		} type_raw;// __attribute__((__packed__));
 	} llc_un /* XXX __attribute__((__packed__)) ??? */;
-} __attribute__((__packed__));
+};
 
 struct frmrinfo {
 	u_int8_t frmr_rej_pdu0;
@@ -90,7 +89,7 @@ struct frmrinfo {
 	u_int8_t frmr_control;
 	u_int8_t frmr_control_ext;
 	u_int8_t frmr_cause;
-} __attribute__((__packed__));
+};
 
 #define	llc_control		llc_un.type_u.control
 #define	llc_control_ext		llc_un.type_raw.control_ext

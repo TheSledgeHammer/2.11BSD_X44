@@ -46,7 +46,7 @@ struct ipovly {
 	u_int16_t ih_len;		/* protocol length */
 	struct	  in_addr ih_src;	/* source internet address */
 	struct	  in_addr ih_dst;	/* destination internet address */
-} __attribute__((__packed__));
+};
 
 /*
  * Ip (reassembly or sequence) queue structures.

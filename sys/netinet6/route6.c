@@ -50,8 +50,7 @@ __KERNEL_RCSID(0, "$NetBSD: route6.c,v 1.13.24.1 2007/06/04 19:26:08 bouyer Exp 
 
 int ip6_rht0 = -1;	/* disabled by default */
 
-static int ip6_rthdr0 __P((struct mbuf *, struct ip6_hdr *,
-    struct ip6_rthdr0 *));
+static int ip6_rthdr0(struct mbuf *, struct ip6_hdr *, struct ip6_rthdr0 *);
 
 int
 route6_input(mp, offp, proto)

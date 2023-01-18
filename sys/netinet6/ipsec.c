@@ -121,56 +121,50 @@ int ip6_ipsec_ecn = 0;		/* ECN ignore(-1)/forbidden(0)/allowed(1) */
 u_int ipsec_spdgen = 1;		/* SPD generation # */
 
 #ifdef SADB_X_EXT_TAG
-static struct pf_tag *ipsec_get_tag __P((struct mbuf *));
+static struct pf_tag *ipsec_get_tag(struct mbuf *);
 #endif
-static struct secpolicy *ipsec_checkpcbcache __P((struct mbuf *,
-	struct inpcbpolicy *, int));
-static int ipsec_fillpcbcache __P((struct inpcbpolicy *, struct mbuf *,
-	struct secpolicy *, int));
-static int ipsec_invalpcbcache __P((struct inpcbpolicy *, int));
-static int ipsec_setspidx_mbuf
-	__P((struct secpolicyindex *, int, struct mbuf *, int));
-static int ipsec_setspidx __P((struct mbuf *, struct secpolicyindex *, int));
-static void ipsec4_get_ulp __P((struct mbuf *, struct secpolicyindex *, int));
-static int ipsec4_setspidx_ipaddr __P((struct mbuf *, struct secpolicyindex *));
+static struct secpolicy *ipsec_checkpcbcache(struct mbuf *, struct inpcbpolicy *, int);
+static int ipsec_fillpcbcache(struct inpcbpolicy *, struct mbuf *, struct secpolicy *, int);
+static int ipsec_invalpcbcache(struct inpcbpolicy *, int);
+static int ipsec_setspidx_mbuf(struct secpolicyindex *, int, struct mbuf *, int);
+static int ipsec_setspidx(struct mbuf *, struct secpolicyindex *, int);
+static void ipsec4_get_ulp(struct mbuf *, struct secpolicyindex *, int);
+static int ipsec4_setspidx_ipaddr(struct mbuf *, struct secpolicyindex *);
 #ifdef INET6
-static void ipsec6_get_ulp __P((struct mbuf *, struct secpolicyindex *, int));
-static int ipsec6_setspidx_ipaddr __P((struct mbuf *, struct secpolicyindex *));
+static void ipsec6_get_ulp(struct mbuf *, struct secpolicyindex *, int);
+static int ipsec6_setspidx_ipaddr(struct mbuf *, struct secpolicyindex *);
 #endif
-static struct inpcbpolicy *ipsec_newpcbpolicy __P((void));
-static void ipsec_delpcbpolicy __P((struct inpcbpolicy *));
+static struct inpcbpolicy *ipsec_newpcbpolicy(void);
+static void ipsec_delpcbpolicy(struct inpcbpolicy *);
 #if 0
-static int ipsec_deepcopy_pcbpolicy __P((struct inpcbpolicy *));
+static int ipsec_deepcopy_pcbpolicy(struct inpcbpolicy *);
 #endif
-static struct secpolicy *ipsec_deepcopy_policy __P((struct secpolicy *));
-static int ipsec_set_policy
-	__P((struct secpolicy **, int, caddr_t, size_t, int));
-static int ipsec_get_policy __P((struct secpolicy *, struct mbuf **));
-static void vshiftl __P((unsigned char *, int, int));
-static int ipsec_in_reject __P((struct secpolicy *, struct mbuf *));
-static size_t ipsec_hdrsiz __P((struct secpolicy *));
+static struct secpolicy *ipsec_deepcopy_policy(struct secpolicy *);
+static int ipsec_set_policy(struct secpolicy **, int, caddr_t, size_t, int);
+static int ipsec_get_policy(struct secpolicy *, struct mbuf **);
+static void vshiftl(unsigned char *, int, int);
+static int ipsec_in_reject(struct secpolicy *, struct mbuf *);
+static size_t ipsec_hdrsiz(struct secpolicy *);
 #ifdef INET
-static struct mbuf *ipsec4_splithdr __P((struct mbuf *));
+static struct mbuf *ipsec4_splithdr(struct mbuf *);
 #endif
 #ifdef INET6
-static struct mbuf *ipsec6_splithdr __P((struct mbuf *));
+static struct mbuf *ipsec6_splithdr(struct mbuf *);
 #endif
 #ifdef INET
-static int ipsec4_encapsulate __P((struct mbuf *, struct secasvar *));
+static int ipsec4_encapsulate(struct mbuf *, struct secasvar *);
 #endif
 #ifdef INET6
-static int ipsec6_encapsulate __P((struct mbuf *, struct secasvar *));
+static int ipsec6_encapsulate(struct mbuf *, struct secasvar *);
 #endif
-static struct m_tag *ipsec_addaux __P((struct mbuf *));
-static struct m_tag *ipsec_findaux __P((struct mbuf *));
-static void ipsec_optaux __P((struct mbuf *, struct m_tag *));
+static struct m_tag *ipsec_addaux(struct mbuf *);
+static struct m_tag *ipsec_findaux(struct mbuf *);
+static void ipsec_optaux(struct mbuf *, struct m_tag *);
 #ifdef INET
-static int ipsec4_checksa __P((struct ipsecrequest *,
-	struct ipsec_output_state *));
+static int ipsec4_checksa(struct ipsecrequest *, struct ipsec_output_state *);
 #endif
 #ifdef INET6
-static int ipsec6_checksa __P((struct ipsecrequest *,
-	struct ipsec_output_state *, int));
+static int ipsec6_checksa(struct ipsecrequest *, struct ipsec_output_state *, int);
 #endif
 
 /*

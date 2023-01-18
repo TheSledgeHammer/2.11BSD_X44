@@ -65,7 +65,7 @@ struct ip {
 	u_int8_t  ip_p;			/* protocol */
 	u_int16_t ip_sum;		/* checksum */
 	struct	  in_addr ip_src, ip_dst; /* source and dest address */
-} __attribute__((__packed__));
+};
 
 #define	IP_MAXPACKET	65535		/* maximum packet size */
 
@@ -154,9 +154,9 @@ struct	ip_timestamp {
 		 struct	ipt_ta {
 			struct in_addr ipt_addr;
 			n_time ipt_time;
-		 } ipt_ta[1] __attribute__((__packed__));
-	} ipt_timestamp __attribute__((__packed__));
-} __attribute__((__packed__));
+		 } ipt_ta[1];
+	} ipt_timestamp;
+};
 
 /* flag bits for ipt_flg */
 #define	IPOPT_TS_TSONLY		0		/* timestamps only */

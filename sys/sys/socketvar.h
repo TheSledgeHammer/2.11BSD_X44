@@ -236,8 +236,8 @@ extern u_long	sb_max;
 extern	char netio[], netcon[], netcls[];
 
 /* File Operations on sockets */
-int		soo_ioctl(struct file *, u_long, caddr_t, struct proc *);
-int		soo_stat(struct socket *, struct stat *, struct proc *);
+int		soo_ioctl(struct file *, u_long, void *, struct proc *);
+int		soo_stat(struct file *, struct stat *, struct proc *);
 int		soo_rw(struct file *, struct uio *, struct ucred *);
 int		soo_read(struct file *, struct uio *, struct ucred *);
 int		soo_write(struct file *, struct uio *, struct ucred *);

@@ -98,15 +98,15 @@ struct	udp6stat {
 #ifdef _KERNEL
 extern	struct	udp6stat udp6stat;
 
-void	udp6_ctlinput __P((int, struct sockaddr *, void *));
-void	udp6_init __P((void));
-int	udp6_input __P((struct mbuf **, int *, int));
-int	udp6_output __P((struct in6pcb *, struct mbuf *, struct mbuf *,
-	struct mbuf *, struct proc *));
-int	udp6_sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
-int	udp6_usrreq __P((struct socket *,
+void	udp6_ctlinput(int, struct sockaddr *, void *);
+void	udp6_init(void);
+int	udp6_input(struct mbuf **, int *, int);
+int	udp6_output(struct in6pcb *, struct mbuf *, struct mbuf *,
+	struct mbuf *, struct proc *);
+int	udp6_sysctl(int *, u_int, void *, size_t *, void *, size_t));
+int	udp6_usrreq(struct socket *,
 			 int, struct mbuf *, struct mbuf *, struct mbuf *,
-			 struct proc *));
+			 struct proc *);
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_UDP6_VAR_H_ */

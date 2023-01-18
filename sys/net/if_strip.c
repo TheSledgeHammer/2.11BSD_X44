@@ -434,16 +434,11 @@ stripopen(dev, tp)
 		return (error);
 		
 	line = linesw_lookup(dev);
-	/*
-	if (tp->t_linesw->l_no == STRIPDISC)
-		return (0);
-	*/
 
 	for (nstrip = NSTRIP, sc = strip_softc; --nstrip >= 0; sc++) {
 		if (sc->sc_ttyp == NULL) {
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
-			sc->sc_si = softintr_establish(IPL_SOFTNET,
-			    stripintr, sc);
+			sc->sc_si = softintr_establish(IPL_SOFTNET, stripintr, sc);
 #endif
 			if (stripinit(sc) == 0) {
 #ifdef __HAVE_GENERIC_SOFT_INTERRUPTS

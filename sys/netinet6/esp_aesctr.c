@@ -63,7 +63,7 @@ union cblock {
 		u_int8_t nonce[4];
 		u_int8_t iv[8];
 		u_int32_t ctr;
-	} v __attribute__((__packed__));
+	} v __packed;
 	u_int8_t cblock[16];
 };
 

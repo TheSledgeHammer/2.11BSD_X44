@@ -66,49 +66,49 @@ __KERNEL_RCSID(0, "$NetBSD: esp_core.c,v 1.33 2003/08/27 00:08:31 thorpej Exp $"
 
 #include <net/net_osdep.h>
 
-static int esp_null_mature __P((struct secasvar *));
-static int esp_null_decrypt __P((struct mbuf *, size_t,
-	struct secasvar *, const struct esp_algorithm *, int));
-static int esp_null_encrypt __P((struct mbuf *, size_t, size_t,
-	struct secasvar *, const struct esp_algorithm *, int));
-static int esp_descbc_mature __P((struct secasvar *));
-static int esp_descbc_ivlen __P((const struct esp_algorithm *,
-	struct secasvar *));
-static int esp_des_schedule __P((const struct esp_algorithm *,
-	struct secasvar *));
-static size_t esp_des_schedlen __P((const struct esp_algorithm *));
-static int esp_des_blockdecrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_des_blockencrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_cbc_mature __P((struct secasvar *));
-static int esp_blowfish_schedule __P((const struct esp_algorithm *,
-	struct secasvar *));
-static size_t esp_blowfish_schedlen __P((const struct esp_algorithm *));
-static int esp_blowfish_blockdecrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_blowfish_blockencrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_cast128_schedule __P((const struct esp_algorithm *,
-	struct secasvar *));
-static size_t esp_cast128_schedlen __P((const struct esp_algorithm *));
-static int esp_cast128_blockdecrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_cast128_blockencrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_3des_schedule __P((const struct esp_algorithm *,
-	struct secasvar *));
-static size_t esp_3des_schedlen __P((const struct esp_algorithm *));
-static int esp_3des_blockdecrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_3des_blockencrypt __P((const struct esp_algorithm *,
-	struct secasvar *, u_int8_t *, u_int8_t *));
-static int esp_common_ivlen __P((const struct esp_algorithm *,
-	struct secasvar *));
-static int esp_cbc_decrypt __P((struct mbuf *, size_t,
-	struct secasvar *, const struct esp_algorithm *, int));
-static int esp_cbc_encrypt __P((struct mbuf *, size_t, size_t,
-	struct secasvar *, const struct esp_algorithm *, int));
+static int esp_null_mature(struct secasvar *);
+static int esp_null_decrypt(struct mbuf *, size_t,
+	struct secasvar *, const struct esp_algorithm *, int);
+static int esp_null_encrypt(struct mbuf *, size_t, size_t,
+	struct secasvar *, const struct esp_algorithm *, int);
+static int esp_descbc_mature(struct secasvar *);
+static int esp_descbc_ivlen(const struct esp_algorithm *,
+	struct secasvar *);
+static int esp_des_schedule(const struct esp_algorithm *,
+	struct secasvar *);
+static size_t esp_des_schedlen(const struct esp_algorithm *);
+static int esp_des_blockdecrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_des_blockencrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_cbc_mature(struct secasvar *);
+static int esp_blowfish_schedule(const struct esp_algorithm *,
+	struct secasvar *);
+static size_t esp_blowfish_schedlen(const struct esp_algorithm *);
+static int esp_blowfish_blockdecrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_blowfish_blockencrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_cast128_schedule(const struct esp_algorithm *,
+	struct secasvar *);
+static size_t esp_cast128_schedlen(const struct esp_algorithm *);
+static int esp_cast128_blockdecrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_cast128_blockencrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_3des_schedule(const struct esp_algorithm *,
+	struct secasvar *);
+static size_t esp_3des_schedlen(const struct esp_algorithm *);
+static int esp_3des_blockdecrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_3des_blockencrypt(const struct esp_algorithm *,
+	struct secasvar *, u_int8_t *, u_int8_t *);
+static int esp_common_ivlen(const struct esp_algorithm *,
+	struct secasvar *);
+static int esp_cbc_decrypt(struct mbuf *, size_t,
+	struct secasvar *, const struct esp_algorithm *, int);
+static int esp_cbc_encrypt(struct mbuf *, size_t, size_t,
+	struct secasvar *, const struct esp_algorithm *, int);
 
 #define MAXIVLEN	16
 

@@ -143,10 +143,10 @@ struct pfil_head inet6_pfil_hook;
 
 struct ip6stat ip6stat;
 
-static void ip6_init2 __P((void *));
+static void ip6_init2(void *);
 
-static int ip6_hopopts_input __P((u_int32_t *, u_int32_t *, struct mbuf **, int *));
-static struct mbuf *ip6_pullexthdr __P((struct mbuf *, size_t, int));
+static int ip6_hopopts_input(u_int32_t *, u_int32_t *, struct mbuf **, int *);
+static struct mbuf *ip6_pullexthdr(struct mbuf *, size_t, int);
 
 /*
  * IP6 initialization: fill in IP6 protocol switch table.
@@ -553,27 +553,26 @@ ip6_input(m)
 #endif
 
 #if 0
-    {
-	/*
-	 * Last resort: check in6_ifaddr for incoming interface.
-	 * The code is here until I update the "goto ours hack" code above
-	 * working right.
-	 */
-	struct ifaddr *ifa;
-	for (ifa = m->m_pkthdr.rcvif->if_addrlist.tqh_first;
-	     ifa;
-	     ifa = ifa->ifa_list.tqe_next) {
-		if (ifa->ifa_addr == NULL)
-			continue;	/* just for safety */
-		if (ifa->ifa_addr->sa_family != AF_INET6)
-			continue;
-		if (IN6_ARE_ADDR_EQUAL(IFA_IN6(ifa), &ip6->ip6_dst)) {
-			ours = 1;
-			deliverifp = ifa->ifa_ifp;
-			goto hbhcheck;
+	{
+		/*
+		 * Last resort: check in6_ifaddr for incoming interface.
+		 * The code is here until I update the "goto ours hack" code above
+		 * working right.
+		 */
+		struct ifaddr *ifa;
+		for (ifa = m->m_pkthdr.rcvif->if_addrlist.tqh_first; ifa;
+				ifa = ifa->ifa_list.tqe_next) {
+			if (ifa->ifa_addr == NULL)
+				continue; /* just for safety */
+			if (ifa->ifa_addr->sa_family != AF_INET6)
+				continue;
+			if (IN6_ARE_ADDR_EQUAL(IFA_IN6(ifa), &ip6->ip6_dst)) {
+				ours = 1;
+				deliverifp = ifa->ifa_ifp;
+				goto hbhcheck;
+			}
 		}
 	}
-    }
 #endif
 
 	/*
@@ -625,8 +624,7 @@ ip6_input(m)
 				    (caddr_t)&ip6->ip6_plen - (caddr_t)ip6);
 			return;
 		}
-		IP6_EXTHDR_GET(hbh, struct ip6_hbh *, m, sizeof(struct ip6_hdr),
-			sizeof(struct ip6_hbh));
+		IP6_EXTHDR_GET(hbh, struct ip6_hbh *, m, sizeof(struct ip6_hdr), sizeof(struct ip6_hbh));
 		if (hbh == NULL) {
 			ip6stat.ip6s_tooshort++;
 			return;

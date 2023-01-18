@@ -88,7 +88,7 @@ struct igmp {
 	u_int8_t	igmp_code;	/* code for routing sub-messages   */
 	u_int16_t	igmp_cksum;	/* IP-style checksum               */
 	struct in_addr	igmp_group;	/* group address being reported    */
-} __attribute__((__packed__));		/*  (zero for queries)             */
+};		/*  (zero for queries)             */
 
 #define	IGMP_MINLEN		     8
 

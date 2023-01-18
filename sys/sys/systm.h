@@ -135,8 +135,8 @@ int		ureadc(int, struct uio *);
 void 	panic(const char *, ...) __attribute__((__noreturn__,__format__(__printf__,1,2)));
 void	tablefull(const char *);
 void	addlog(const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void	log(int, const char *, ...)  __attribute__((__format__(__printf__,2,3)));
-void	vlog(int, const char *, va_list) __attribute__((__format__(__printf__,2,0)));
+void	log(int, const char *, ...);//  __attribute__((__format__(__printf__,2,3)));
+void	vlog(int, const char *, va_list);// __attribute__((__format__(__printf__,2,0)));
 
 /* subr_prf.c */
 void	printf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
@@ -151,10 +151,10 @@ void	uprintf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 void    printn(long, u_int, int, struct tty *);
 char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
-void 	bcopy(const void *, void *, u_int);
 void 	ovbcopy(const void *, void *, u_int);
+void 	bcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
-int	bcmp(const void *, const void *, size_t);
+int		bcmp(const void *, const void *, size_t);
 
 int		copystr(const void *, void *, size_t, size_t *);
 int		copyinstr(const void *, void *, size_t, size_t *);

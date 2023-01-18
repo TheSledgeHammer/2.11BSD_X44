@@ -57,19 +57,18 @@ struct ipcomp {
 
 #if defined(KERNEL) || defined(_KERNEL)
 struct ipcomp_algorithm {
-	int (*compress) __P((struct mbuf *, struct mbuf *, size_t *));
-	int (*decompress) __P((struct mbuf *, struct mbuf *, size_t *));
+	int (*compress)(struct mbuf *, struct mbuf *, size_t *);
+	int (*decompress)(struct mbuf *, struct mbuf *, size_t *);
 	size_t minplen;		/* minimum required length for compression */
 };
 
 struct ipsecrequest;
-extern const struct ipcomp_algorithm *ipcomp_algorithm_lookup __P((int));
-extern void ipcomp4_input __P((struct mbuf *, ...));
-extern int ipcomp4_output __P((struct mbuf *, struct ipsecrequest *));
+extern const struct ipcomp_algorithm *ipcomp_algorithm_lookup(int);
+extern void ipcomp4_input(struct mbuf *, ...);
+extern int ipcomp4_output(struct mbuf *, struct ipsecrequest *);
 #ifdef INET6
-extern int ipcomp6_input __P((struct mbuf **, int *, int));
-extern int ipcomp6_output __P((struct mbuf *, u_char *, struct mbuf *,
-	struct ipsecrequest *));
+extern int ipcomp6_input(struct mbuf **, int *, int);
+extern int ipcomp6_output(struct mbuf *, u_char *, struct mbuf *, struct ipsecrequest *);
 #endif
 #endif /* KERNEL */
 

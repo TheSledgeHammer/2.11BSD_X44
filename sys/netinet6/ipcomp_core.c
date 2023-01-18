@@ -65,11 +65,11 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 
 #include <net/net_osdep.h>
 
-static void *deflate_alloc __P((void *, u_int, u_int));
-static void deflate_free __P((void *, void *));
-static int deflate_common __P((struct mbuf *, struct mbuf *, size_t *, int));
-static int deflate_compress __P((struct mbuf *, struct mbuf *, size_t *));
-static int deflate_decompress __P((struct mbuf *, struct mbuf *, size_t *));
+static void *deflate_alloc(void *, u_int, u_int);
+static void deflate_free(void *, void *);
+static int deflate_common(struct mbuf *, struct mbuf *, size_t *, int);
+static int deflate_compress(struct mbuf *, struct mbuf *, size_t *);
+static int deflate_decompress(struct mbuf *, struct mbuf *, size_t *);
 
 /*
  * We need to use default window size (2^15 = 32Kbytes as of writing) for

@@ -109,7 +109,7 @@ __KERNEL_RCSID(0, "$NetBSD: udp6_usrreq.c,v 1.62.2.1 2004/05/28 07:23:40 tron Ex
 extern struct inpcbtable udbtable;
 struct	udp6stat udp6stat;
 
-static	void udp6_notify __P((struct in6pcb *, int));
+static	void udp6_notify(struct in6pcb *, int);
 
 void
 udp6_init()
@@ -145,7 +145,7 @@ udp6_ctlinput(cmd, sa, d)
 	void *cmdarg;
 	struct ip6ctlparam *ip6cp = NULL;
 	const struct sockaddr_in6 *sa6_src = NULL;
-	void (*notify) __P((struct in6pcb *, int)) = udp6_notify;
+	void (*notify)(struct in6pcb *, int) = udp6_notify;
 	struct udp_portonly {
 		u_int16_t uh_sport;
 		u_int16_t uh_dport;

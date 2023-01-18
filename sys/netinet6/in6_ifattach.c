@@ -63,22 +63,22 @@ unsigned long in6_maxmtu = 0;
 
 int ip6_auto_linklocal = 1;	/* enable by default */
 
-static int get_rand_ifid __P((struct ifnet *, struct in6_addr *));
-static int get_hw_ifid __P((struct ifnet *, struct in6_addr *));
-static int get_ifid __P((struct ifnet *, struct ifnet *, struct in6_addr *));
-static int in6_ifattach_linklocal __P((struct ifnet *, struct ifnet *));
-static int in6_ifattach_loopback __P((struct ifnet *));
+static int get_rand_ifid(struct ifnet *, struct in6_addr *);
+static int get_hw_ifid(struct ifnet *, struct in6_addr *);
+static int get_ifid(struct ifnet *, struct ifnet *, struct in6_addr *);
+static int in6_ifattach_linklocal(struct ifnet *, struct ifnet *);
+static int in6_ifattach_loopback(struct ifnet *);
 
 #define EUI64_GBIT	0x01
 #define EUI64_UBIT	0x02
-#define EUI64_TO_IFID(in6)	do {(in6)->s6_addr[8] ^= EUI64_UBIT; } while (/*CONSTCOND*/ 0)
-#define EUI64_GROUP(in6)	((in6)->s6_addr[8] & EUI64_GBIT)
+#define EUI64_TO_IFID(in6)		do {(in6)->s6_addr[8] ^= EUI64_UBIT; } while (/*CONSTCOND*/ 0)
+#define EUI64_GROUP(in6)		((in6)->s6_addr[8] & EUI64_GBIT)
 #define EUI64_INDIVIDUAL(in6)	(!EUI64_GROUP(in6))
-#define EUI64_LOCAL(in6)	((in6)->s6_addr[8] & EUI64_UBIT)
+#define EUI64_LOCAL(in6)		((in6)->s6_addr[8] & EUI64_UBIT)
 #define EUI64_UNIVERSAL(in6)	(!EUI64_LOCAL(in6))
 
-#define IFID_LOCAL(in6)		(!EUI64_LOCAL(in6))
-#define IFID_UNIVERSAL(in6)	(!EUI64_UNIVERSAL(in6))
+#define IFID_LOCAL(in6)			(!EUI64_LOCAL(in6))
+#define IFID_UNIVERSAL(in6)		(!EUI64_UNIVERSAL(in6))
 
 /*
  * Generate a last-resort interface identifier, when the machine has no

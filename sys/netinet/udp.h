@@ -43,6 +43,6 @@ struct udphdr {
 	u_int16_t uh_dport;		/* destination port */
 	u_int16_t uh_ulen;		/* udp length */
 	u_int16_t uh_sum;		/* udp checksum */
-} __attribute__((__packed__));
+};
 
 #endif /* _NETINET_UDP_H_ */

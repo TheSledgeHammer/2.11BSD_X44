@@ -260,10 +260,6 @@ slopen(dev, tp)
 		return (error);
 
 	line = linesw_lookup(dev);
-	/*
-	if (tp->t_linesw->l_no == SLIPDISC)
-		return (0);
-	*/
 
 	for (nsl = NSL, sc = sl_softc; --nsl >= 0; sc++)
 		if (sc->sc_ttyp == NULL) {

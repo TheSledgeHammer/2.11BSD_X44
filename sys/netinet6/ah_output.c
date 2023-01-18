@@ -75,7 +75,7 @@ __KERNEL_RCSID(0, "$NetBSD: ah_output.c,v 1.24 2003/09/07 15:59:36 itojun Exp $"
 #include <net/net_osdep.h>
 
 #ifdef INET
-static struct in_addr *ah4_finaldst __P((struct mbuf *));
+static struct in_addr *ah4_finaldst(struct mbuf *);
 #endif
 
 /*

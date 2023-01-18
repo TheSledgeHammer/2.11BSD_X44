@@ -127,7 +127,7 @@ struct pvctxreq {
 struct atmllc {
   u_int8_t llchdr[6];	/* aa.aa.03.00.00.00 */
   u_int8_t type[2];	/* "ethernet" type */
-} __attribute__((__packed__));
+} __packed;
 
 /* ATM_LLC macros: note type code in host byte order */
 #define ATM_LLC_TYPE(X) (((X)->type[0] << 8) | ((X)->type[1]))

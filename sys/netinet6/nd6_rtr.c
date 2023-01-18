@@ -61,24 +61,21 @@ __KERNEL_RCSID(0, "$NetBSD: nd6_rtr.c,v 1.47 2003/12/10 11:46:33 itojun Exp $");
 
 #define SDL(s)	((struct sockaddr_dl *)s)
 
-static int rtpref __P((struct nd_defrouter *));
-static struct nd_defrouter *defrtrlist_update __P((struct nd_defrouter *));
-static struct in6_ifaddr *in6_ifadd __P((struct nd_prefix *));
-static struct nd_pfxrouter *pfxrtr_lookup __P((struct nd_prefix *,
-	struct nd_defrouter *));
-static void pfxrtr_add __P((struct nd_prefix *, struct nd_defrouter *));
-static void pfxrtr_del __P((struct nd_pfxrouter *));
-static struct nd_pfxrouter *find_pfxlist_reachable_router
-	__P((struct nd_prefix *));
-static void defrouter_delreq __P((struct nd_defrouter *));
-static void defrouter_addifreq __P((struct ifnet *));
-static void defrouter_delifreq __P((void));
-static void nd6_rtmsg __P((int, struct rtentry *));
+static int rtpref(struct nd_defrouter *);
+static struct nd_defrouter *defrtrlist_update(struct nd_defrouter *);
+static struct in6_ifaddr *in6_ifadd(struct nd_prefix *);
+static struct nd_pfxrouter *pfxrtr_lookup(struct nd_prefix *, struct nd_defrouter *);
+static void pfxrtr_add(struct nd_prefix *, struct nd_defrouter *);
+static void pfxrtr_del(struct nd_pfxrouter *);
+static struct nd_pfxrouter *find_pfxlist_reachable_router(struct nd_prefix *);
+static void defrouter_delreq(struct nd_defrouter *);
+static void defrouter_addifreq(struct ifnet *);
+static void defrouter_delifreq(void);
+static void nd6_rtmsg(int, struct rtentry *);
 
-static void in6_init_address_ltimes __P((struct nd_prefix *ndpr,
-	struct in6_addrlifetime *lt6));
+static void in6_init_address_ltimes(struct nd_prefix *ndpr, struct in6_addrlifetime *lt6);
 
-static int rt6_deleteroute __P((struct radix_node *, void *));
+static int rt6_deleteroute(struct radix_node *, void *);
 
 extern int nd6_recalc_reachtm_interval;
 

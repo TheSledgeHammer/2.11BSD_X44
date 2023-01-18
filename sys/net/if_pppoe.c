@@ -72,12 +72,12 @@ struct pppoehdr {
 	u_int8_t code;
 	u_int16_t session;
 	u_int16_t plen;
-} __attribute__((__packed__));
+} __packed;
 
 struct pppoetag {
 	u_int16_t tag;
 	u_int16_t len;
-} __attribute__((__packed__));
+} __packed;
 
 #define PPPOE_HEADERLEN	sizeof(struct pppoehdr)
 #define	PPPOE_VERTYPE	0x11	/* VER=1, TYPE = 1 */

@@ -30,10 +30,7 @@
  * SUCH DAMAGE.
  */
 
-extern int ah_aes_xcbc_mac_init __P((struct ah_algorithm_state *,
-	struct secasvar *));
-extern void ah_aes_xcbc_mac_loop __P((struct ah_algorithm_state *, u_int8_t *,
-	size_t));
-extern void ah_aes_xcbc_mac_result __P((struct ah_algorithm_state *,
-	u_int8_t *, size_t));
+extern int ah_aes_xcbc_mac_init(struct ah_algorithm_state *, struct secasvar *);
+extern void ah_aes_xcbc_mac_loop(struct ah_algorithm_state *, u_int8_t *, size_t);
+extern void ah_aes_xcbc_mac_result(struct ah_algorithm_state *, u_int8_t *, size_t);
 

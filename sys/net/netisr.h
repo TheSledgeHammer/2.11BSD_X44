@@ -52,7 +52,7 @@
 #include "arp.h"
 #ifndef __HAVE_GENERIC_SOFT_INTERRUPTS
 #include "sl.h"
-//#include "strip.h"
+#include "strip.h"
 #include "ppp.h"
 #endif
 

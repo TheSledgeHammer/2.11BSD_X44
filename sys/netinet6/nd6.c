@@ -108,16 +108,16 @@ struct nd_prhead nd_prefix = { 0 };
 int nd6_recalc_reachtm_interval = ND6_RECALC_REACHTM_INTERVAL;
 static struct sockaddr_in6 all1_sa;
 
-static void nd6_setmtu0 __P((struct ifnet *, struct nd_ifinfo *));
-static void nd6_slowtimo __P((void *));
-static struct llinfo_nd6 *nd6_free __P((struct rtentry *, int));
-static void nd6_llinfo_timer __P((void *));
+static void nd6_setmtu0(struct ifnet *, struct nd_ifinfo *);
+static void nd6_slowtimo(void *);
+static struct llinfo_nd6 *nd6_free(struct rtentry *, int);
+static void nd6_llinfo_timer(void *);
 
 struct callout nd6_slowtimo_ch = CALLOUT_INITIALIZER;
 struct callout nd6_timer_ch = CALLOUT_INITIALIZER;
 
-static int fill_drlist __P((void *, size_t *, size_t));
-static int fill_prlist __P((void *, size_t *, size_t));
+static int fill_drlist(void *, size_t *, size_t);
+static int fill_prlist(void *, size_t *, size_t);
 
 void
 nd6_init()
