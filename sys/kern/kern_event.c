@@ -55,7 +55,7 @@
 int     kqueue_rw(struct file *, struct uio *, struct ucred *);
 int     kqueue_read(struct file *, struct uio *, struct ucred *);
 int     kqueue_write(struct file *, struct uio *, struct ucred *);
-int     kqueue_ioctl(struct file *, u_long, caddr_t, struct proc *);
+int     kqueue_ioctl(struct file *, u_long, void *, struct proc *);
 int     kqueue_poll(struct file *, int, struct proc *);
 int     kqueue_close(struct file *, struct proc *);
 int     kqueue_kqfilter(struct file *, struct knote *);
