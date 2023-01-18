@@ -61,7 +61,7 @@ __KERNEL_RCSID(0, "$NetBSD: spp_usrreq.c,v 1.35 2003/09/30 00:01:18 christos Exp
 
 #include <machine/stdarg.h>
 
-MALLOC_DEFINE(M_SPIDPQ, "SP queue ent", "SP packet queue entry");
+//MALLOC_DEFINE(M_SPIDPQ, "SP queue ent", "SP packet queue entry");
 
 /*
  * SP protocol implementation.
@@ -134,7 +134,7 @@ spp_input(m, va_alist)
 	if (so->so_options & SO_ACCEPTCONN) {
 		struct sppcb *ocb = cb;
 
-		so = sonewconn(so, 0);
+		so = sonewconns(so, 0);
 		if (so == 0) {
 			goto drop;
 		}
