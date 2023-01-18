@@ -133,9 +133,9 @@
 #define M_XDATA         86  /* xform data buffers */
 #define	M_IP6OPT		87	/* IPv6 options */
 #define M_IP6NDP		88	/* IPv6 Neighbour Discovery */
-
-#define	M_TEMP			89	/* misc temporary data buffers */
-#define	M_LAST 			90 	/* Must be last type + 1 */
+#define M_SPIDPQ                89      /* SP packet queue entry */
+#define	M_TEMP			90	/* misc temporary data buffers */
+#define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -227,7 +227,8 @@
 	"xform data buffers",  		/* 86 M_XDATA */           \
 	"ip6_options",	/* 87 M_IP6OPT */		\
 	"NDP",			/* 88 M_IP6NDP */		\
-	"temp",			/* 89 M_TEMP */ 		\
+	"SP queue ent",         /* 89 M_SPIDPQ */       \
+	"temp",			/* 90 M_TEMP */ 		\
 }
 
 #endif /* _SYS_MALLOCTYPES_H_ */

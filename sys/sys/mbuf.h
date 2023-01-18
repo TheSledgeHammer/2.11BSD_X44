@@ -311,7 +311,7 @@ union mcluster {
 	  MCLALLOC((m)->m_ext.ext_buf, i);					\
 	  if ((m)->m_ext.ext_buf != NULL) { 				\
 		  (m)->m_data = (m)->m_ext.ext_buf; 			\
-		  ((m)->m_flags & ~M_EXTCOPYFLAGS)|M_EXT|M_CLUSTER;	\
+		  (m)->m_flags |= M_EXT|M_CLUSTER;	\
 		  (m)->m_ext.ext_size = MCLBYTES;  				\
 	  }													\
 }
@@ -395,7 +395,7 @@ union mcluster {
  * before the current start of data in an mbuf.
  */
 #define	M_LEADINGSPACE(m) 								\
-	((m)->m_flags & M_EXT ? (m)->m_data - (m)->m_ext.ext_buf */ 0 : \
+	((m)->m_flags & M_EXT ? /* (m)->m_data - (m)->m_ext.ext_buf */ 0 : \
 	    (m)->m_flags & M_PKTHDR ? (m)->m_data - (m)->m_pktdat : \
 	    (m)->m_data - (m)->m_dat)
 

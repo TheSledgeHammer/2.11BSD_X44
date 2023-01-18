@@ -211,9 +211,12 @@ int		getenv_array(const char *, void *, int, int *, int, bool_t);
 #include <lib/libkern/libkern.h>
 #endif
 
+extern	void	_insque(void *, void *);
+extern	void	_remque(void *);
+
 /* casts to keep lint happy */
-#ifdef lint
-#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
-#define	remque(q)	_remque((caddr_t)q)
-#endif
+//#ifdef lint
+#define	insque(q,p)	_insque(q, p)
+#define	remque(q)	_remque(q)
+//#endif
 #endif /* !_SYS_SYSTEM_H_ */
