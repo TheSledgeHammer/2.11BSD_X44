@@ -292,8 +292,7 @@ struct in_multistep {
 
 struct ifaddr;
 
-int	in_ifinit(struct ifnet *,
-	    struct in_ifaddr *, struct sockaddr_in *, int);
+int		in_ifinit(struct ifnet *, struct in_ifaddr *, struct sockaddr_in *, int);
 void	in_savemkludge(struct in_ifaddr *);
 void	in_restoremkludge(struct in_ifaddr *, struct ifnet *);
 void	in_purgemkludge(struct ifnet *);
@@ -301,8 +300,9 @@ struct	in_multi *in_addmulti(struct in_addr *, struct ifnet *);
 void	in_delmulti(struct in_multi *);
 void	in_ifscrub(struct ifnet *, struct in_ifaddr *);
 void	in_setmaxmtu(void);
-const char *in_fmtaddr(struct in_addr);
-int	in_control(struct socket *, u_long, caddr_t, struct ifnet *, struct proc *);
+//const char *in_fmtaddr(struct in_addr);
+int		in_fmtaddr(const struct *in_addr);
+int		in_control(struct socket *, u_long, caddr_t, struct ifnet *, struct proc *);
 void	in_purgeaddr(struct ifaddr *, struct ifnet *);
 void	in_purgeif(struct ifnet *);
 void	ip_input(struct mbuf *);

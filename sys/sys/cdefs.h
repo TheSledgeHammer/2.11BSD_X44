@@ -274,15 +274,15 @@
  * For C99 compilers other than GCC, the C99 behavior is expected.
  */
 #if __GNUC_PREREQ__(2, 7) || defined(__PCC__) || defined(__lint__)
-#define	__packed	__attribute__((__packed__))
+#define	__packed		__attribute__((__packed__))
 #define	__aligned(x)	__attribute__((__aligned__(x)))
 #define	__section(x)	__attribute__((__section__(x)))
 #elif defined(__lint__)
-#define	__packed	/* delete */
+#define	__packed		__packed
 #define	__aligned(x)	/* delete */
 #define	__section(x)	/* delete */
 #else
-#define	__packed	error: no __packed for this compiler
+#define	__packed		error: no __packed for this compiler
 #define	__aligned(x)	error: no __aligned for this compiler
 #define	__section(x)	error: no __section for this compiler
 #endif

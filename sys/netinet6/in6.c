@@ -2037,6 +2037,7 @@ in6ifa_ifpwithaddr(ifp, addr)
 /*
  * Convert IP6 address to printable (loggable) representation.
  */
+/*
 static char digits[] = "0123456789abcdef";
 static int ip6round = 0;
 char *
@@ -2086,6 +2087,17 @@ ip6_sprintf(addr)
 	}
 	*--cp = 0;
 	return (ip6buf[ip6round]);
+}
+*/
+
+/* converts ip6_sprintf to use in6_print */
+int
+ip6_sprintf(addr)
+	const struct in6_addr *addr;
+{
+	char ip6buf[INET6_ADDRSTRLEN];
+
+	return (in6_print(ip6buf, sizeof(ip6buf), addr));
 }
 
 /*

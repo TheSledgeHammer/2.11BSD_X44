@@ -685,7 +685,7 @@ arpresolve(ifp, rt, m, dst, desten)
 		arpstat.as_allocfail++;
 		log(LOG_DEBUG,
 		    "arpresolve: can't allocate llinfo on %s for %s\n",
-		    ifp->if_xname, in_fmtaddr(SIN(dst)->sin_addr));
+		    ifp->if_xname, in_fmtaddr(&SIN(dst)->sin_addr));
 		m_freem(m);
 		return (0);
 	}
@@ -948,7 +948,7 @@ in_arpinput(m)
 		arpstat.as_rcvbcastsha++;
 		log(LOG_ERR,
 		    "%s: arp: link address is broadcast for IP address %s!\n",
-		    ifp->if_xname, in_fmtaddr(isaddr));
+		    ifp->if_xname, in_fmtaddr(&isaddr));
 		goto out;
 	}
 
@@ -956,7 +956,7 @@ in_arpinput(m)
 		arpstat.as_rcvlocalspa++;
 		log(LOG_ERR,
 		   "duplicate IP address %s sent from link address %s\n",
-		   in_fmtaddr(isaddr), lla_snprintf(ar_sha(ah), ah->ar_hln));
+		   in_fmtaddr(&isaddr), lla_snprintf(ar_sha(ah), ah->ar_hln));
 		itaddr = myaddr;
 		goto reply;
 	}
@@ -970,7 +970,7 @@ in_arpinput(m)
 				    "%s tried to overwrite permanent arp info"
 				    " for %s\n",
 				    lla_snprintf(ar_sha(ah), ah->ar_hln),
-				    in_fmtaddr(isaddr));
+				    in_fmtaddr(&isaddr));
 				goto out;
 			} else if (rt->rt_ifp != ifp) {
 				arpstat.as_rcvoverint++;
@@ -978,14 +978,14 @@ in_arpinput(m)
 				    "%s on %s tried to overwrite "
 				    "arp info for %s on %s\n",
 				    lla_snprintf(ar_sha(ah), ah->ar_hln),
-				    ifp->if_xname, in_fmtaddr(isaddr),
+				    ifp->if_xname, in_fmtaddr(&isaddr),
 				    rt->rt_ifp->if_xname);
 				    goto out;
 			} else {
 				arpstat.as_rcvover++;
 				log(LOG_INFO,
 				    "arp info overwritten for %s by %s\n",
-				    in_fmtaddr(isaddr),
+				    in_fmtaddr(&isaddr),
 				    lla_snprintf(ar_sha(ah), ah->ar_hln));
 			}
 		}
@@ -999,13 +999,13 @@ in_arpinput(m)
 			arpstat.as_rcvlenchg++;
 			log(LOG_WARNING,
 			    "arp from %s: new addr len %d, was %d",
-			    in_fmtaddr(isaddr), ah->ar_hln, sdl->sdl_alen);
+			    in_fmtaddr(&isaddr), ah->ar_hln, sdl->sdl_alen);
 		}
 		if (ifp->if_addrlen != ah->ar_hln) {
 			arpstat.as_rcvbadlen++;
 			log(LOG_WARNING,
 			    "arp from %s: addr len: new %d, i/f %d (ignored)",
-			    in_fmtaddr(isaddr), ah->ar_hln,
+			    in_fmtaddr(&isaddr), ah->ar_hln,
 			    ifp->if_addrlen);
 			goto reply;
 		}

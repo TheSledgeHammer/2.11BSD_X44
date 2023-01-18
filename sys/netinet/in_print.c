@@ -41,9 +41,11 @@ int
 in_print(char *buf, size_t len, const struct in_addr *ia)
 {
 	const in_addr_t a = ntohl(ia->s_addr);
-	return snprintf(buf, len, "%d.%d.%d.%d", 
-	    (a >> 24) & 0xff, (a >> 16) & 0xff,
-	    (a >>  8) & 0xff, (a >>  0) & 0xff);
+	return (snprintf(buf, len, "%d.%d.%d.%d",
+			(a >> 24) & 0xff,
+			(a >> 16) & 0xff,
+			(a >>  8) & 0xff,
+			(a >>  0) & 0xff));
 }
 
 int
@@ -57,5 +59,5 @@ sin_print(char *buf, size_t len, const void *v)
 		return in_print(buf, len, ia);
 
 	in_print(abuf, sizeof(abuf), ia);
-	return snprintf(buf, len, "%s:%hu", abuf, ntohs(sin->sin_port));
+	return (snprintf(buf, len, "%s:%hu", abuf, ntohs(sin->sin_port)));
 }

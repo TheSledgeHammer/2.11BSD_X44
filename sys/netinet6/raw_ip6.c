@@ -483,10 +483,11 @@ rip6_output(m, va_alist)
 		u_int16_t sum;
 
 		/* compute checksum */
-		if (so->so_proto->pr_protocol == IPPROTO_ICMPV6)
+		if (so->so_proto->pr_protocol == IPPROTO_ICMPV6) {
 			off = offsetof(struct icmp6_hdr, icmp6_cksum);
-		else
+		} else {
 			off = in6p->in6p_cksum;
+		}
 		if (plen < off + 1) {
 			error = EINVAL;
 			goto bad;
@@ -494,15 +495,13 @@ rip6_output(m, va_alist)
 		off += sizeof(struct ip6_hdr);
 
 		sum = 0;
-		m = m_copyback_cow(m, off, sizeof(sum), (caddr_t)&sum,
-		    M_DONTWAIT);
+		m = m_pulldown(m, off, sizeof(sum), (caddr_t)&sum);
 		if (m == NULL) {
 			error = ENOBUFS;
 			goto bad;
 		}
 		sum = in6_cksum(m, ip6->ip6_nxt, sizeof(*ip6), plen);
-		m = m_copyback_cow(m, off, sizeof(sum), (caddr_t)&sum,
-		    M_DONTWAIT);
+		m = m_pulldown(m, off, sizeof(sum), (caddr_t)&sum);
 		if (m == NULL) {
 			error = ENOBUFS;
 			goto bad;

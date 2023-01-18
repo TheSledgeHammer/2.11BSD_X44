@@ -151,7 +151,7 @@ typedef __sa_family_t	sa_family_t;
  */
 struct in_addr {
 	in_addr_t s_addr;
-} __attribute__((__packed__));
+};
 
 /*
  * Definitions of bits in internet address integers.

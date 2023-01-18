@@ -223,6 +223,7 @@ in_socktrim(ap)
  *  Routine to take an Internet address and convert into a
  *  "dotted quad" representation for printing.
  */
+/*
 const char *
 in_fmtaddr(addr)
 	struct in_addr addr;
@@ -237,6 +238,17 @@ in_fmtaddr(addr)
 		(addr.s_addr >>  8) & 0xFF,
 		(addr.s_addr >>  0) & 0xFF);
 	return buf;
+}
+*/
+
+/* converts in_fmtaddr to use in_print */
+int
+in_fmtaddr(addr)
+	const struct in_addr *addr;
+{
+	char ipbuf[INET_ADDRSTRLEN];
+
+	return (in_print(ipbuf, sizeof(ipbuf), addr));
 }
 
 /*
