@@ -67,7 +67,7 @@ void ns_purgeif(struct ifnet *);
 u_int16_t ns_cksum(struct mbuf *, int);
 
 /* ns_error.c */
-int ns_err_x(int));
+int ns_err_x(int);
 void ns_error(struct mbuf *, int, int );
 void ns_printhost(struct ns_addr *);
 void ns_err_input(struct mbuf *);
