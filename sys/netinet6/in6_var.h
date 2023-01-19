@@ -471,7 +471,7 @@ extern unsigned long in6_maxmtu;
 /* struct in6_ifaddr *ia; */														\
 do {																				\
 	struct ifaddr *ifa;																\
-	for (ifa = TAILQ_FIRST(&(ifp)->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list) {	\
+	for (ifa = TAILQ_FIRST(&(ifp)->if_addrlist); ifa; ifa = TAILQ_NEXT(ifa, ifa_list)) {	\
 		if (!ifa->ifa_addr)															\
 			continue;																\
 		if (ifa->ifa_addr->sa_family == AF_INET6)									\
@@ -532,7 +532,7 @@ do {															\
 		for ((in6m) = LIST_FIRST(&ia->ia6_multiaddrs);			\
 		     (in6m) != NULL &&									\
 		     !IN6_ARE_ADDR_EQUAL(&(in6m)->in6m_addr, &(addr));	\
-		     (in6m) = LIST_NEXT(in6m, in6m_entry)				\
+		     (in6m) = LIST_NEXT(in6m, in6m_entry))				\
 			continue;											\
 } while (/*CONSTCOND*/ 0)
 

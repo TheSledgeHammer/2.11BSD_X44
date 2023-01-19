@@ -103,7 +103,7 @@ void	udp6_init(void);
 int	udp6_input(struct mbuf **, int *, int);
 int	udp6_output(struct in6pcb *, struct mbuf *, struct mbuf *,
 	struct mbuf *, struct proc *);
-int	udp6_sysctl(int *, u_int, void *, size_t *, void *, size_t));
+int	udp6_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 int	udp6_usrreq(struct socket *,
 			 int, struct mbuf *, struct mbuf *, struct mbuf *,
 			 struct proc *);
