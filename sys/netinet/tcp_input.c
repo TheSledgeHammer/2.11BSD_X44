@@ -751,8 +751,8 @@ tcp6_log_refused(ip6, th)
 	char dst[INET6_ADDRSTRLEN];
 
 	if (ip6) {
-		strlcpy(src, ip6_sprintf(&ip6->ip6_src), sizeof(src));
-		strlcpy(dst, ip6_sprintf(&ip6->ip6_dst), sizeof(dst));
+		strlcpy(src, (const char *)ip6_sprintf(&ip6->ip6_src), sizeof(src));
+		strlcpy(dst, (const char *)ip6_sprintf(&ip6->ip6_dst), sizeof(dst));
 	}
 	else {
 		strlcpy(src, "(unknown v6)", sizeof(src));
