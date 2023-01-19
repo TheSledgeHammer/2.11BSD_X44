@@ -103,6 +103,7 @@ __KERNEL_RCSID(0, "$NetBSD: if_bridge.c,v 1.22.2.1.4.2 2006/02/12 16:29:54 tron 
 
 #include <net/if_ether.h>
 #include <net/if_bridgevar.h>
+#include <net/radix.h>
 
 #ifdef BRIDGE_IPF /* Used for bridge_ip[6]_checkbasic */
 #include <netinet/in.h>
