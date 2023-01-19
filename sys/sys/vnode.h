@@ -396,7 +396,7 @@ int 	vn_rdwr(enum uio_rw, struct vnode *, caddr_t, int, off_t, enum uio_seg, int
 int		vn_read(struct file *, struct uio *, struct ucred *);
 int		vn_poll(struct file *, int, struct proc *);
 int		vn_kqfilter(struct file *, struct knote *);
-int		vn_stat(struct vnode *, struct stat *, struct proc *);
+int		vn_stat(struct file *, struct stat *, struct proc *);
 int		vn_write(struct file *, struct uio *, struct ucred *);
 int		vn_writechk(struct vnode *);
 struct 	vnode *checkalias(struct vnode *, dev_t, struct mount *);

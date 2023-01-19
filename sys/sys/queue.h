@@ -190,6 +190,13 @@ struct {																\
 	(elm)->field.le_prev = &(listelm)->field.le_next;					\
 }
 
+#define LIST_INSERT_BEFORE(listelm, elm, field) {						\
+        (elm)->field.le_prev = (listelm)->field.le_prev;                    \
+        (elm)->field.le_next = (listelm);				\
+	*(listelm)->field.le_prev = (elm);					\
+	(listelm)->field.le_prev = &(elm)->field.le_next;					\
+}
+
 #define LIST_INSERT_HEAD(head, elm, field) {							\
 	if (((elm)->field.le_next = (head)->lh_first) != NULL)				\
 		(head)->lh_first->field.le_prev = &(elm)->field.le_next;		\
