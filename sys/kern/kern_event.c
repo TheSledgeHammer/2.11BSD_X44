@@ -1222,7 +1222,7 @@ kqueue_stat(fp, ub, p)
 {
 	struct kqueue	*kq;
 	kq = (struct kqueue *)fp->f_data;
-	bzero((void *)st, sizeof(*st));
+	bzero((void *)ub, sizeof(*ub));
 	ub->st_size = kq->kq_count;
 	ub->st_blksize = sizeof(struct kevent);
 	ub->st_mode = S_IFIFO;

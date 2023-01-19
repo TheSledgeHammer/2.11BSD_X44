@@ -323,16 +323,18 @@ vn_write(fp, uio, cred)
  * File table vnode stat routine.
  */
 int
-vn_stat(vp, sb, p)
-	struct vnode *vp;
+vn_stat(fp, sb, p)
+	struct file *fp;
 	register struct stat *sb;
 	struct proc *p;
 {
+        struct vnode *vp;
 	struct vattr vattr;
 	register struct vattr *vap;
 	int error;
 	u_short mode;
-
+        
+        vp = (struct vnode *)fp->f_data;
 	vap = &vattr;
 	error = VOP_GETATTR(vp, vap, p->p_ucred, p);
 	if (error)
