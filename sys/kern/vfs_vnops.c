@@ -328,13 +328,13 @@ vn_stat(fp, sb, p)
 	register struct stat *sb;
 	struct proc *p;
 {
-        struct vnode *vp;
+    struct vnode *vp;
 	struct vattr vattr;
 	register struct vattr *vap;
 	int error;
 	u_short mode;
         
-        vp = (struct vnode *)fp->f_data;
+    vp = (struct vnode *)fp->f_data;
 	vap = &vattr;
 	error = VOP_GETATTR(vp, vap, p->p_ucred, p);
 	if (error)

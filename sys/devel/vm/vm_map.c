@@ -136,10 +136,14 @@
  *	These restrictions are necessary since malloc() uses the
  *	maps and requires map entries.
  */
-static struct vm_hat 	kmap_store, kentry_store;
-static vm_hat_t			kmap_hat, kentry_hat;
-vm_map_t 				kmap_free;
-vm_map_entry_t 			kentry_free;
+
+vm_map_t 						kmap_free;
+vm_map_entry_t 					kentry_free;
+vm_offset_t						kentry_data;
+vm_size_t						kentry_data_size;
+
+static struct vm_map			kmap_init[MAX_KMAP];
+static struct vm_map_entry		kentry_init[MAX_KMAPENT];
 
 static void	_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
 static void	_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
@@ -147,10 +151,8 @@ static void	_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
 void
 vm_map_startup()
 {
-	kmap_hat = &kmap_store;
-	vm_hbootinit(kmap_hat, "KMAP", HAT_VM, kmap_free, MAX_KMAP, sizeof(struct vm_map));
-	kentry_hat = &kentry_store;
-	vm_hbootinit(kentry_hat, "KENTRY", HAT_VM, kentry_free, MAX_KMAPENT, sizeof(struct vm_map_entry));
+	kmap_free 	= vm_pbootinit(kmap_init, sizeof(struct vm_map), MAX_KMAP);
+	kentry_free	= vm_pbootinit(kentry_init, sizeof(struct vm_map_entry), MAX_KMAPENT);
 }
 
 /*
