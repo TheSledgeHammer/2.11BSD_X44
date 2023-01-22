@@ -158,7 +158,7 @@ vfsconf_find_by_name(name)
 {
 	struct vfsconf *vfsp;
 	LIST_FOREACH(vfsp, &vfsconflist, vfc_next) {
-		if (strcmp(name, vfsp->vfc_name) == 0) {
+		if (name == vfsp->vfc_name) {
 			break;
 		}
 	}

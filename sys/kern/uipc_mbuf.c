@@ -603,6 +603,7 @@ m_copyup(n, len, dstoff)
 	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
 	do {
 		count = min(min(max(len, max_protohdr), space), n->m_len);
+		
 		memcpy(mtod(m, char *) + m->m_len, mtod(n, void*), (unsigned) count);
 		len -= count;
 		m->m_len += count;
@@ -950,7 +951,7 @@ m_apply(m, off, len, f, arg)
 
 	return (0);
 }
-
+/*
 void
 m_remove_pkthdr(m)
 	struct mbuf *m;
@@ -978,7 +979,7 @@ m_copy_pkthdr(to, from)
 	SLIST_INIT(&to->m_pkthdr.tags);
 	m_tag_copy_chain(to, from);
 }
-
+*/
 void
 m_move_pkthdr(to, from)
 	struct mbuf *to, *from;
