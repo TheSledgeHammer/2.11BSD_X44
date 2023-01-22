@@ -482,6 +482,9 @@ void			m_copydata(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
 void 			mbinit2(void *, int, int);
+void			m_remove_pkthdr(struct mbuf *);
+void			m_copy_pkthdr(struct mbuf *, struct mbuf *);
+void			m_move_pkthdr(struct mbuf *, struct mbuf *);
 
 #define m_copyback(m, off, len, cp)	\
 	(m_copydata(m, off, len, cp))

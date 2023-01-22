@@ -40,19 +40,16 @@ __KERNEL_RCSID(0, "$NetBSD: crypto.c,v 1.8.2.1 2004/04/30 03:53:18 jmc Exp $");
 
 #include <crypto/opencrypto/xform.h>			/* XXX for M_XDATA */
 
-#define splcrypto splnet
-#define setsoftcrypto(x)
+#define splcrypto 					splnet
+#define setsoftcrypto(x)			softintr_schedule(x)
 
-#ifdef notyet
 #ifdef __NetBSD__
-  #define splcrypto splnet
+  #define splcrypto 				splnet
   /* below is kludges to check whats still missing */
   #define SWI_CRYPTO 17
-  #define register_swi(lvl, fn)  \
-  softintr_establish(IPL_SOFTNET, (void (*)(void*))fn, NULL)
-  #define unregister_swi(lvl, fn)  softintr_disestablish(softintr_cookie)
-  #define setsoftcrypto(x) softintr_schedule(x)
-#endif
+  #define register_swi(lvl, fn)  	softintr_establish(IPL_SOFTNET, (void (*)(void*))fn, NULL)
+  #define unregister_swi(lvl, fn)  	softintr_disestablish(softintr_cookie)
+  #define setsoftcrypto(x) 			softintr_schedule(x)
 #endif
 
 static void nanouptime(struct timespec *);

@@ -251,7 +251,6 @@ m_getclr(canwait, type)
 void
 m_clget(struct mbuf *m, int nowait)
 {
-
 	MCLGET(m, nowait);
 }
 
@@ -603,7 +602,7 @@ m_copyup(n, len, dstoff)
 	m->m_data += dstoff;
 	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
 	do {
-		count = uimin(uimin(uimax(len, max_protohdr), space), n->m_len);
+		count = min(min(max(len, max_protohdr), space), n->m_len);
 		memcpy(mtod(m, char *) + m->m_len, mtod(n, void*), (unsigned) count);
 		len -= count;
 		m->m_len += count;
@@ -624,7 +623,6 @@ m_copyup(n, len, dstoff)
 	m_freem(n);
 	return NULL;
 }
-
 
 /*
  * Partition an mbuf chain in two pieces, returning the tail --
@@ -951,6 +949,50 @@ m_apply(m, off, len, f, arg)
 	}
 
 	return (0);
+}
+
+void
+m_remove_pkthdr(m)
+	struct mbuf *m;
+{
+	KASSERT(m->m_flags & M_PKTHDR);
+
+	m_tag_delete_chain(m);
+	m->m_flags &= ~M_PKTHDR;
+	bzero(&m->m_pkthdr, sizeof(m->m_pkthdr));
+}
+
+void
+m_copy_pkthdr(to, from)
+	struct mbuf *to, *from;
+{
+	KASSERT((to->m_flags & M_EXT) == 0);
+	KASSERT((to->m_flags & M_PKTHDR) == 0 ||
+	    SLIST_FIRST(&to->m_pkthdr.tags) == NULL);
+	KASSERT((from->m_flags & M_PKTHDR) != 0);
+
+	to->m_pkthdr = from->m_pkthdr;
+	to->m_flags = from->m_flags & M_COPYFLAGS;
+	to->m_data = to->m_pktdat;
+
+	SLIST_INIT(&to->m_pkthdr.tags);
+	m_tag_copy_chain(to, from);
+}
+
+void
+m_move_pkthdr(to, from)
+	struct mbuf *to, *from;
+{
+	KASSERT((to->m_flags & M_EXT) == 0);
+	KASSERT((to->m_flags & M_PKTHDR) == 0 ||
+	    SLIST_FIRST(&to->m_pkthdr.tags) == NULL);
+	KASSERT((from->m_flags & M_PKTHDR) != 0);
+
+	to->m_pkthdr = from->m_pkthdr;
+	to->m_flags = from->m_flags & M_COPYFLAGS;
+	to->m_data = to->m_pktdat;
+
+	from->m_flags &= ~M_PKTHDR;
 }
 
 /* Get a packet tag structure along with specified data following. */

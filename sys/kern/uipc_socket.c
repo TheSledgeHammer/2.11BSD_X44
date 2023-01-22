@@ -750,7 +750,7 @@ sosetopt(so, level, optname, m0)
 	if (level != SOL_SOCKET) {
 		if (so->so_proto && so->so_proto->pr_ctloutput)
 			return ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level,
-					optname, m0));
+					optname, &m0));
 		error = ENOPROTOOPT;
 	} else {
 		switch (optname) {
@@ -875,7 +875,7 @@ sosetopt(so, level, optname, m0)
 	}
 
 	if (error == 0 && so->so_proto && so->so_proto->pr_ctloutput) {
-		(void) ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level, optname, m0));
+		(void) ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level, optname, &m0));
 		m = NULL;	/* freed by protocol */
 	}
 
@@ -896,7 +896,7 @@ sogetopt(so, level, optname, mp)
 	if (level != SOL_SOCKET) {
 		if (so->so_proto && so->so_proto->pr_ctloutput) {
 			return ((*so->so_proto->pr_ctloutput)(PRCO_GETOPT, so, level,
-					optname, mp));
+					optname, &mp));
 		} else
 			return (ENOPROTOOPT);
 	} else {

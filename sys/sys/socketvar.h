@@ -71,7 +71,7 @@ struct socket {
 		u_short			sb_lowat;	/* low water mark (not used yet) */
 		struct mbuf 	*sb_mb;		/* the mbuf chain */
 		struct mbuf 	*sb_mbtail;		/* the last mbuf in the chain */
-		struct mbuf 	*sb_lastrecord;	/* first mbuf of last record in
+		struct mbuf 	*sb_lastrecord;	/* first mbuf of last record in */
 		struct selinfo 	sb_sel;		/* process selecting read/write */
 		short			sb_timeo;	/* timeout (not used yet) */
 		short			sb_flags;	/* flags, see below */

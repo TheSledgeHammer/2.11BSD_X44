@@ -36,10 +36,11 @@ ino_t 			unp_ino;					/* prototype for fake inode numbers */
 
 /*ARGSUSED*/
 int
-uipc_usrreq(so, req, m, nam, rights)
+uipc_usrreq(so, req, m, nam, rights, p)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *rights;
+	struct proc *p;
 {
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
