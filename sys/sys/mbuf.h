@@ -365,6 +365,8 @@ union mcluster {
 #define	M_COPY_PKTHDR(to, from) { 						\
 	(to)->m_pkthdr = (from)->m_pkthdr; 					\
 	(to)->m_flags = (from)->m_flags & M_COPYFLAGS; 		\
+	SLIST_INIT(&(to)->m_pkthdr.tags);				\
+	m_tag_copy_chain((to), (from));					\
 	(to)->m_data = (to)->m_pktdat; 						\
 }
 
@@ -482,8 +484,8 @@ void			m_copydata(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
 void 			mbinit2(void *, int, int);
-void			m_remove_pkthdr(struct mbuf *);
-void			m_copy_pkthdr(struct mbuf *, struct mbuf *);
+//void			m_remove_pkthdr(struct mbuf *);
+//void			m_copy_pkthdr(struct mbuf *, struct mbuf *);
 void			m_move_pkthdr(struct mbuf *, struct mbuf *);
 
 #define m_copyback(m, off, len, cp)	\

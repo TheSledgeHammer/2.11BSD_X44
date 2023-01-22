@@ -108,7 +108,7 @@ struct socket {
 #define	SS_CANTSENDMORE		0x020	/* can't send more data to peer */
 #define	SS_CANTRCVMORE		0x040	/* can't receive more data from peer */
 #define	SS_RCVATMARK		0x080	/* at mark on input */
-#define	SS_MORETOCOME		0x400	/* hint from sosend to lower layer; more data coming
+#define	SS_MORETOCOME		0x400	/* hint from sosend to lower layer; more data coming */
 
 #define	SS_PRIV				0x100	/* privileged for broadcast, raw... */
 #define	SS_NBIO				0x200	/* non-blocking ops */
