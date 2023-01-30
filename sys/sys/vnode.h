@@ -388,7 +388,7 @@ int		vn_bwrite(struct vop_bwrite_args *);
 int 	vn_close(struct vnode *, int, struct ucred *, struct proc *);
 int		vn_rw(struct file *, struct uio *, struct ucred *);
 int 	vn_closefile(struct file *, struct proc *);
-int		vn_ioctl(struct file *, u_long, caddr_t, struct proc *);
+int		vn_ioctl(struct file *, u_long, void *, struct proc *);
 int		vn_lock(struct vnode *, int, struct proc *);
 int		vn_marktext(struct vnode *);
 int 	vn_open(struct nameidata *, int, int);
