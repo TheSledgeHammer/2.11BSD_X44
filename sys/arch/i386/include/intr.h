@@ -243,10 +243,11 @@ extern void (*ipifunc[I386_NIPI])(struct cpu_info *);
 /*
  * Generic software interrupt support.
  */
-#define	I386_SOFTINTR_SOFTCLOCK		0
-#define	I386_SOFTINTR_SOFTNET		1
-#define	I386_SOFTINTR_SOFTSERIAL	2
-#define	I386_NSOFTINTR				3
+#define	I386_SOFTINTR_SOFTBIO	        0
+#define	I386_SOFTINTR_SOFTCLOCK		1
+#define	I386_SOFTINTR_SOFTNET		2
+#define	I386_SOFTINTR_SOFTSERIAL	3
+#define	I386_NSOFTINTR			4
 
 #ifndef _LOCORE
 #include <sys/queue.h>
