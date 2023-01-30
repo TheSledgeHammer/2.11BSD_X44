@@ -92,6 +92,7 @@ const int i386_soft_intr_to_ssir[I386_NSOFTINTR] = {
 		SIR_CLOCK,
 		SIR_NET,
 		SIR_SERIAL,
+		SIR_BIO,
 };
 
 /*
@@ -158,6 +159,10 @@ softintr_establish(level, func, arg)
 	int which;
 
 	switch (level) {
+	case IPL_SOFTBIO:
+		which = I386_SOFTINTR_SOFTBIO;
+		break;
+		
 	case IPL_SOFTCLOCK:
 		which = I386_SOFTINTR_SOFTCLOCK;
 		break;
@@ -169,7 +174,7 @@ softintr_establish(level, func, arg)
 	case IPL_SOFTSERIAL:
 		which = I386_SOFTINTR_SOFTSERIAL;
 		break;
-
+		
 	default:
 		panic("softintr_establish");
 	}
