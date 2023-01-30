@@ -105,18 +105,12 @@ vm_size_t			page_mask;
 int					page_shift;
 
 /*
- *	Pre-allocate maps and map entries that cannot be dynamically
- *	allocated via malloc().  The maps include the kernel_map and
- *	kmem_map which must be initialized before malloc() will
- *	work (obviously).  Also could include pager maps which would
- *	be allocated before kmeminit.
+ * vm_pbootstrap:
  *
- *	Allow some kernel map entries... this should be plenty
- *	since people shouldn't be cluttering up the kernel
- *	map (they should use their own maps).
+ * Allocates virtual address space from pmap_bootstrap_alloc.
  */
 void
-vm_page_bootstrap(void)
+vm_pbootstrap(void)
 {
 	extern vm_offset_t	kentry_data;
 	extern vm_size_t	kentry_data_size;
@@ -126,6 +120,35 @@ vm_page_bootstrap(void)
 	kentry_size = (MAX_KMAPENT * sizeof(struct vm_map_entry));
 	kentry_data_size = round_page(kmap_size + kentry_size);
 	kentry_data = (vm_offset_t)pmap_bootstrap_alloc(kentry_data_size);
+}
+
+/*
+ * vm_pbootinit:
+ *
+ * Allocates item from space made available by vm_pbootstrap.
+ */
+void *
+vm_pbootinit(item, size, nitems)
+	void 		*item;
+	vm_size_t 	size;
+	int 		nitems;
+{
+	extern vm_offset_t	kentry_data;
+	vm_size_t 			free;
+	vm_size_t 			totsize;
+	vm_size_t 			result;
+
+	free = kentry_data;
+	totsize = (size * nitems);
+	result = free - totsize;
+	if (free < totsize) {
+		panic("vm_pbootinit: not enough space allocated");
+	}
+	bzero(item, totsize);
+	item = (item + size);
+	kentry_data = result;
+
+	return (item);
 }
 
 /*
@@ -236,7 +259,7 @@ vm_page_startup(start, end)
 	 *	since people shouldn't be cluttering up the kernel
 	 *	map (they should use their own maps).
 	 */
-	vm_page_bootstrap();
+	vm_pbootstrap();
 
 	/*
  	 *	Compute the number of pages of memory that will be

@@ -111,6 +111,53 @@ vm_offset_t				ovl_last_phys_addr;
 
 struct vpage_hash_head 	*ovl_vpage_hashtable;
 
+/*
+ * ovl_pbootstrap:
+ *
+ * Allocates virtual address space from pmap_bootstrap_alloc.
+ */
+void
+ovl_pbootstrap(void)
+{
+	extern vm_offset_t	oentry_data;
+	extern vm_size_t	oentry_data_size;
+	vm_size_t 			omap_size, oentry_size;
+
+	omap_size = (MAX_OMAP * sizeof(struct ovl_map));
+	kentry_size = (MAX_OMAPENT * sizeof(struct ovl_map_entry));
+	oentry_data_size = round_page(omap_size + oentry_size);
+	oentry_data = (vm_offset_t)pmap_bootstrap_overlay_alloc(oentry_data_size);
+}
+
+/*
+ * ovl_pbootinit:
+ *
+ * Allocates item from space made available by ovl_pbootstrap.
+ */
+void *
+ovl_pbootinit(item, size, nitems)
+	void 		*item;
+	vm_size_t 	size;
+	int 		nitems;
+{
+	extern vm_offset_t	oentry_data;
+	vm_size_t 			free;
+	vm_size_t 			totsize;
+	vm_size_t 			result;
+
+	free = oentry_data;
+	totsize = (size * nitems);
+	result = free - totsize;
+	if (free < totsize) {
+		panic("ovl_pbootinit: not enough space allocated");
+	}
+	bzero(item, totsize);
+	item = (item + size);
+	oentry_data = result;
+
+	return (item);
+}
+
 void
 ovl_page_init(start, end)
 	vm_offset_t	*start;
@@ -141,6 +188,8 @@ ovl_page_init(start, end)
 	simple_lock_init(&ovl_page_bucket_lock, "ovl_page_bucket_lock");
 
 	*end = trunc_page(*end);
+
+	ovl_pbootstrap();
 
 	npages = (*end - *start + sizeof(struct ovl_page)) / (PAGE_SIZE + sizeof(struct ovl_page));
 

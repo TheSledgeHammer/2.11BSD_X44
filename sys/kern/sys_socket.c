@@ -34,7 +34,7 @@ struct fileops socketops = {
 		.fo_write = soo_write,
 		.fo_ioctl = soo_ioctl,
 		.fo_poll = soo_poll,
-		.fo_stat = soo_stat,
+		.fo_stat = soo_fstat,
 		.fo_close = soo_close,
 		.fo_kqfilter = soo_kqfilter
 };
@@ -112,17 +112,26 @@ soo_poll(fp, events, p)
 
 /*ARGSUSED*/
 int
-soo_stat(fp, ub, p)
+soo_stat(so, ub, p)
+	struct socket *so;
+	struct stat *ub;
+	struct proc *p;
+{
+	bzero((caddr_t) ub, sizeof(*ub));
+	ub->st_mode = S_IFSOCK;
+	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0, p));
+}
+
+int
+soo_fstat(fp, ub, p)
 	struct file *fp;
 	struct stat *ub;
 	struct proc *p;
 {
 	struct socket *so;
-
 	so = (struct socket *)fp->f_socket;
-	bzero((caddr_t) ub, sizeof(*ub));
-	ub->st_mode = S_IFSOCK;
-	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0, p));
+
+	return (soo_stat(so, ub, p));
 }
 
 int

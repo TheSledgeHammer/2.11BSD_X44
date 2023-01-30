@@ -93,7 +93,6 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_hat.h>
 
 #include <devel/sys/malloctypes.h>
 #include <devel/ovl/include/ovl.h>
@@ -122,16 +121,17 @@ static struct vm_hat 	omap_store, oentry_store;
 static vm_hat_t			omap_hat, oentry_hat;
 ovl_map_entry_t 		oentry_free;
 ovl_map_t 				omap_free;
+vm_offset_t				oentry_data;
+vm_size_t				oentry_data_size;
+
+static struct ovl_map			omap_init[MAX_OMAP];
+static struct ovl_map_entry		oentry_init[MAX_OMAPENT];
 
 void
 ovl_map_startup()
 {
-	omap_hat = &omap_store;
-	vm_hbootinit(omap_hat, "OMAP", HAT_OVL, omap_free, MAX_OMAP,
-			sizeof(struct ovl_map));
-	oentry_hat = &oentry_store;
-	vm_hbootinit(oentry_hat, "OENTRY", HAT_OVL, oentry_free, MAX_OMAPENT,
-			sizeof(struct ovl_map_entry));
+	omap_free 	= ovl_pbootinit(omap_init, sizeof(struct ovl_map), MAX_OMAP);
+	oentry_free	= ovl_pbootinit(oentry_init, sizeof(struct ovl_map_entry), MAX_OMAPENT);
 }
 
 struct ovlspace *

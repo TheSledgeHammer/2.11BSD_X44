@@ -443,11 +443,11 @@ fstat()
 	switch (fp->f_type) {
 
 	case DTYPE_VNODE:
-		u.u_error = vn_stat(fp, &ub, u.u_procp);
+		u.u_error = vn_fstat(fp, &ub, u.u_procp);
 		break;
 
 	case DTYPE_SOCKET:
-		u.u_error = soo_stat(fp, &ub, u.u_procp);
+		u.u_error = soo_fstat(fp, &ub, u.u_procp);
 		break;
 	default:
 		panic("fstat");

@@ -1257,8 +1257,7 @@ stat()
 	struct nameidata nd;
 
 	p = u.u_procp;
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
-	    SCARG(uap, path), p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, SCARG(uap, path), p);
 	if (error == namei(&nd))
 		return (error);
 	error = vn_stat(nd.ni_vp, &sb, p);
