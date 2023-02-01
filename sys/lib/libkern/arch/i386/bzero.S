@@ -14,7 +14,7 @@ ENTRY(bzero)
 	movl	8(%esp),%edi
 	movl	12(%esp),%edx
 
-	cld				/* set fill direction forward */
+	cld						/* set fill direction forward */
 	xorl	%eax,%eax		/* set fill data to 0 */
 
 	/*
@@ -29,7 +29,7 @@ ENTRY(bzero)
 	negl	%ecx
 	andl	$3,%ecx
 	subl	%ecx,%edx
-	rep				/* zero until word aligned */
+	rep						/* zero until word aligned */
 	stosb
 
 	movl	%edx,%ecx		/* zero by words */

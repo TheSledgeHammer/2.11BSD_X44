@@ -1,11 +1,11 @@
-/*	$NetBSD: byte_swap.h,v 1.6 2001/11/29 02:46:55 lukem Exp $	*/
+/*	$NetBSD: memset.S,v 1.5 2003/04/15 22:49:50 dsl Exp $	*/
 
 /*-
- * Copyright (c) 1998 The NetBSD Foundation, Inc.
+ * Copyright (c) 2003 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Charles M. Hannum.
+ * by David Laight.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,57 +36,84 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _I386_BYTE_SWAP_H_
-#define	_I386_BYTE_SWAP_H_
+#include <machine/asm.h>
 
-//#include <sys/cdefs.h>
-#include <sys/types.h>
-
-static __inline u_int32_t __byte_swap_long_variable(u_int32_t);
-static __inline u_int16_t __byte_swap_word_variable(u_int16_t);
-
-static __inline u_int32_t
-__byte_swap_long_variable(u_int32_t x)
-{
-	__asm __volatile (
-#if defined(_KERNEL) && !defined(I386_CPU)
-	    "bswap %1"
-#else
-	    "rorw $8, %w1\n\trorl $16, %1\n\trorw $8, %w1"
+#if defined(LIBC_SCCS)
+	RCSID("$NetBSD: memset.S,v 1.5 2003/04/15 22:49:50 dsl Exp $")
 #endif
-	    : "=r" (x) : "0" (x));
-	return (x);
-}
 
-static __inline u_int16_t
-__byte_swap_word_variable(u_int16_t x)
-{
-	__asm __volatile ("rorw $8, %w1" : "=r" (x) : "0" (x)); 
-	return (x);
-}
+#ifdef BZERO
+ENTRY(bzero)
+#else
+ENTRY(memset)
+#endif
+#ifdef BZERO
+	movl	8(%esp),%ecx
+	xor	%eax,%eax
+#else
+	movl	12(%esp),%ecx
+	movzbl	8(%esp),%eax		/* unsigned char, zero extend */
+#endif
+#ifndef LIBKERN_OPTIMISE_SPACE
+	cmpl	$0x0f,%ecx		/* avoid mispredicted branch... */
+#endif
 
-#ifdef __OPTIMIZE__
+	pushl	%edi
+	movl	8(%esp),%edi
 
-#define	__byte_swap_long_constant(x) \
-	((((x) & 0xff000000) >> 24) | \
-	 (((x) & 0x00ff0000) >>  8) | \
-	 (((x) & 0x0000ff00) <<  8) | \
-	 (((x) & 0x000000ff) << 24))
-#define	__byte_swap_word_constant(x) \
-	((((x) & 0xff00) >> 8) | \
-	 (((x) & 0x00ff) << 8))
-#define	__byte_swap_long(x) \
-	(__builtin_constant_p((x)) ? \
-	 __byte_swap_long_constant(x) : __byte_swap_long_variable(x))
-#define	__byte_swap_word(x) \
-	(__builtin_constant_p((x)) ? \
-	 __byte_swap_word_constant(x) : __byte_swap_word_variable(x))
+	cld				/* set fill direction forward */
 
-#else /* __OPTIMIZE__ */
+#ifndef LIBKERN_OPTIMISE_SPACE
+	/*
+	 * if the string is too short, it's really not worth the overhead
+	 * of aligning to word boundries, etc.  So we jump to a plain
+	 * unaligned set.
+	 *
+	 * NB aligning the transfer is actually pointless on my athlon 700,
+	 * It does make a difference to a PII though.
+	 *
+	 * The PII, PIII and PIV allseem to have a massive performance
+	 * drop when the initial target address is an odd multiple of 4.
+	 */
+	jbe	by_bytes
 
-#define	__byte_swap_long(x)	__byte_swap_long_variable(x)
-#define	__byte_swap_word(x)	__byte_swap_word_variable(x)
+#ifndef BZERO
+	movb	%al,%ah			/* copy char to all bytes in word */
+	movl	%eax,%edx
+	sall	$16,%eax
+	orl	%edx,%eax
+#endif
 
-#endif /* __OPTIMIZE__ */
+	movl	%edi,%edx		/* detect misalignment */
+	neg	%edx
+	andl	$7,%edx
+	jnz	align
+aligned:
+	movl	%eax,-4(%edi,%ecx)	/* zap last 4 bytes */
+	shrl	$2,%ecx			/* zero by words */
+	rep
+	stosl
+done:
+#ifndef BZERO
+	movl	8(%esp),%eax		/* return address of buffer */
+#endif
+	pop	%edi
+	ret
 
-#endif /* !_I386_BYTE_SWAP_H_ */
+align:
+	movl	%eax,(%edi)		/* zap first 8 bytes */
+	movl	%eax,4(%edi)
+	subl	%edx,%ecx		/* remove from main count */
+	add	%edx,%edi
+	jmp	aligned
+
+by_bytes:
+#endif	/* LIBKERN_OPTIMISE_SPACE */
+	rep
+	stosb
+
+#ifndef BZERO
+	movl	8(%esp),%eax		/* return address of buffer */
+#endif
+	popl	%edi
+	ret

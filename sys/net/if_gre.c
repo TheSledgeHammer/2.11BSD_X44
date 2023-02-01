@@ -184,6 +184,7 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtent
 	u_int8_t ip_tos = 0;
 	u_int16_t etype = 0;
 	struct mobile_h mob_h;
+	u_int16_t cksum;
 
 	if ((ifp->if_flags & (IFF_UP | IFF_RUNNING)) == 0 ||
 	    sc->g_src.s_addr == INADDR_ANY || sc->g_dst.s_addr == INADDR_ANY) {
@@ -237,7 +238,8 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst, struct rtent
 				msiz = MOB_H_SIZ_L;
 			}
 			HTONS(mob_h.proto);
-			mob_h.hcrc = gre_in_cksum((u_int16_t *)&mob_h, msiz);
+			cksum = gre_in_cksum(&mob_h, msiz);
+			mob_h.hcrc = cksum;
 
 			if ((m->m_data - msiz) < m->m_pktdat) {
 				/* need new mbuf */
@@ -586,19 +588,25 @@ gre_compute_route(struct gre_softc *sc)
 	return 0;
 }
 
+struct mobile_h {
+	u_int16_t proto;		/* protocol and S-bit */
+	u_int16_t hcrc;			/* header checksum */
+	u_int32_t odst;			/* original destination address */
+	u_int32_t osrc;			/* original source addr, if S-bit set */
+} __packed;
 /*
  * do a checksum of a buffer - much like in_cksum, which operates on
  * mbufs.
  */
 u_int16_t
-gre_in_cksum(u_int16_t *p, u_int len)
+gre_do_cksum(u_int16_t *p, u_int len)
 {
 	u_int32_t sum = 0;
 	int nwords = len >> 1;
 
-	while (nwords-- != 0)
+	while (nwords-- != 0) {
 		sum += *p++;
-
+	}
 	if (len & 1) {
 		union {
 			u_short w;
@@ -612,5 +620,14 @@ gre_in_cksum(u_int16_t *p, u_int len)
 	/* end-around-carry */
 	sum = (sum >> 16) + (sum & 0xffff);
 	sum += (sum >> 16);
+
 	return (~sum);
+}
+
+u_int16_t
+gre_in_cksum(struct mobile_h *mob_h, u_int len)
+{
+	u_int16_t p = (u_int16_t *)mob_h;
+	u_int16_t cksum = gre_do_cksum(&p, len);
+	return (cksum);
 }

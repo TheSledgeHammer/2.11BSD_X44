@@ -79,10 +79,10 @@
 #include <sys/types.h>
 
 __BEGIN_DECLS
-uint32_t	htonl (uint32_t) __attribute__((__const__));
-uint16_t	htons (uint16_t) __attribute__((__const__));
-uint32_t	ntohl (uint32_t) __attribute__((__const__));
-uint16_t	ntohs (uint16_t) __attribute__((__const__));
+uint32_t	htonl(uint32_t) __attribute__((__const__));
+uint16_t	htons(uint16_t) __attribute__((__const__));
+uint32_t	ntohl(uint32_t) __attribute__((__const__));
+uint16_t	ntohs(uint16_t) __attribute__((__const__));
 __END_DECLS
 
 /*

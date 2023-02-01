@@ -1,11 +1,8 @@
-/*	$NetBSD: byte_swap.h,v 1.6 2001/11/29 02:46:55 lukem Exp $	*/
+/*	$NetBSD: _que.c,v 1.1 2001/08/12 08:35:34 jdolecek Exp $	*/
 
 /*-
- * Copyright (c) 1998 The NetBSD Foundation, Inc.
+ * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
- *
- * This code is derived from software contributed to The NetBSD Foundation
- * by Charles M. Hannum.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -17,8 +14,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
  * 4. Neither the name of The NetBSD Foundation nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
@@ -36,57 +33,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _I386_BYTE_SWAP_H_
-#define	_I386_BYTE_SWAP_H_
+/*
+ * Use <sys/queue.h> macros for new code, queue functions provided here
+ * are obsolete. Once the remaining code using this would be converted
+ * to use <sys/queue.h>, this would be removed.
+ */
 
-//#include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/systm.h>
 
-static __inline u_int32_t __byte_swap_long_variable(u_int32_t);
-static __inline u_int16_t __byte_swap_word_variable(u_int16_t);
+struct queue {
+	struct queue *q_next, *q_prev;
+};
 
-static __inline u_int32_t
-__byte_swap_long_variable(u_int32_t x)
+/*
+ * insert an element into a queue
+ */
+
+void
+_insque(v1, v2)
+	void *v1;
+	void *v2;
 {
-	__asm __volatile (
-#if defined(_KERNEL) && !defined(I386_CPU)
-	    "bswap %1"
-#else
-	    "rorw $8, %w1\n\trorl $16, %1\n\trorw $8, %w1"
-#endif
-	    : "=r" (x) : "0" (x));
-	return (x);
+	struct queue *elem = v1, *head = v2;
+	struct queue *next;
+
+	next = head->q_next;
+	elem->q_next = next;
+	head->q_next = elem;
+	elem->q_prev = head;
+	next->q_prev = elem;
 }
 
-static __inline u_int16_t
-__byte_swap_word_variable(u_int16_t x)
+/*
+ * remove an element from a queue
+ */
+
+void
+_remque(v)
+	void *v;
 {
-	__asm __volatile ("rorw $8, %w1" : "=r" (x) : "0" (x)); 
-	return (x);
+	struct queue *elem = v;
+	struct queue *next, *prev;
+
+	next = elem->q_next;
+	prev = elem->q_prev;
+	next->q_prev = prev;
+	prev->q_next = next;
+	elem->q_prev = 0;
 }
-
-#ifdef __OPTIMIZE__
-
-#define	__byte_swap_long_constant(x) \
-	((((x) & 0xff000000) >> 24) | \
-	 (((x) & 0x00ff0000) >>  8) | \
-	 (((x) & 0x0000ff00) <<  8) | \
-	 (((x) & 0x000000ff) << 24))
-#define	__byte_swap_word_constant(x) \
-	((((x) & 0xff00) >> 8) | \
-	 (((x) & 0x00ff) << 8))
-#define	__byte_swap_long(x) \
-	(__builtin_constant_p((x)) ? \
-	 __byte_swap_long_constant(x) : __byte_swap_long_variable(x))
-#define	__byte_swap_word(x) \
-	(__builtin_constant_p((x)) ? \
-	 __byte_swap_word_constant(x) : __byte_swap_word_variable(x))
-
-#else /* __OPTIMIZE__ */
-
-#define	__byte_swap_long(x)	__byte_swap_long_variable(x)
-#define	__byte_swap_word(x)	__byte_swap_word_variable(x)
-
-#endif /* __OPTIMIZE__ */
-
-#endif /* !_I386_BYTE_SWAP_H_ */

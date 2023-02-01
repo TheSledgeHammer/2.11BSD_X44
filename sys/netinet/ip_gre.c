@@ -48,7 +48,7 @@
 __KERNEL_RCSID(0, "$NetBSD: ip_gre.c,v 1.29.4.1 2005/05/08 18:01:19 snj Exp $");
 
 #include "gre.h"
-#if NGRE > 0
+//#if NGRE > 0
 
 #include "opt_inet.h"
 #include "opt_ns.h"
@@ -271,7 +271,7 @@ gre_mobile_input(m, va_alist)
 	struct gre_softc *sc;
 	int hlen, s;
 	va_list ap;
-	int msiz;
+	int msiz, error;
 
 	va_start(ap, m);
 	hlen = va_arg(ap, int);
@@ -311,7 +311,8 @@ gre_mobile_input(m, va_alist)
 	mip->mi.ip_dst.s_addr = mip->mh.odst;
 	mip->mi.ip_p = (ntohs(mip->mh.proto) >> 8);
 
-	if (gre_in_cksum((u_int16_t *)&mip->mh, msiz) != 0) {
+	error = gre_in_cksum(&mip->mh, msiz);
+	if (error != 0) {
 		m_freem(m);
 		return;
 	}
