@@ -35,6 +35,7 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/mbuf.h>
 
 #include <netinet/in.h>
