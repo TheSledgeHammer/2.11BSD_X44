@@ -121,12 +121,12 @@ struct mobile_h {
 	u_int16_t hcrc;			/* header checksum */
 	u_int32_t odst;			/* original destination address */
 	u_int32_t osrc;			/* original source addr, if S-bit set */
-} __packed;
+};
 
 struct mobip_h {
 	struct ip	mi;
 	struct mobile_h	mh;
-} __packed;
+};
 
 #define MOB_H_SIZ_S		(sizeof(struct mobile_h) - sizeof(u_int32_t))
 #define MOB_H_SIZ_L		(sizeof(struct mobile_h))
@@ -152,7 +152,7 @@ extern struct gre_softc_head gre_softc_list;
 
 int	gre_ioctl(struct ifnet *, u_long, caddr_t);
 int	gre_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
-u_int16_t gre_in_cksum(struct mobile_h *mob_h, u_int len)
+u_int16_t gre_in_cksum(struct mobile_h *mob_h, u_int len);
 #endif /* _KERNEL */
 
 #endif
