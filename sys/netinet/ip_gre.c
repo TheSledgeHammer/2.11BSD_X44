@@ -48,7 +48,7 @@
 __KERNEL_RCSID(0, "$NetBSD: ip_gre.c,v 1.29.4.1 2005/05/08 18:01:19 snj Exp $");
 
 #include "gre.h"
-//#if NGRE > 0
+#if NGRE > 0
 
 #include "opt_inet.h"
 #include "opt_ns.h"
