@@ -588,12 +588,6 @@ gre_compute_route(struct gre_softc *sc)
 	return 0;
 }
 
-struct mobile_h {
-	u_int16_t proto;		/* protocol and S-bit */
-	u_int16_t hcrc;			/* header checksum */
-	u_int32_t odst;			/* original destination address */
-	u_int32_t osrc;			/* original source addr, if S-bit set */
-} __packed;
 /*
  * do a checksum of a buffer - much like in_cksum, which operates on
  * mbufs.
@@ -627,7 +621,7 @@ gre_do_cksum(u_int16_t *p, u_int len)
 u_int16_t
 gre_in_cksum(struct mobile_h *mob_h, u_int len)
 {
-	u_int16_t p = (u_int16_t *)mob_h;
-	u_int16_t cksum = gre_do_cksum(&p, len);
+	u_int16_t *p = (u_int16_t *)mob_h;
+	u_int16_t cksum = gre_do_cksum(p, len);
 	return (cksum);
 }
