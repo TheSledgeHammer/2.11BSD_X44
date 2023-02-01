@@ -152,7 +152,7 @@ extern struct gre_softc_head gre_softc_list;
 
 int	gre_ioctl(struct ifnet *, u_long, caddr_t);
 int	gre_output(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
-u_int16_t gre_in_cksum(struct mobile_h *mob_h, u_int len);
+u_int16_t gre_in_cksum(struct mobile_h *, u_int);
 #endif /* _KERNEL */
 
 #endif
