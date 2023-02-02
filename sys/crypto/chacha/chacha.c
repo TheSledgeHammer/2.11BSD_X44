@@ -52,7 +52,7 @@ hchacha20(u32 derived_key[8], const u8 nonce[16], const u8 key[32])
 }
 
 void
-chacha_keysetup(chacha_ctx *x,const u8 *k,u32 kbits)
+chacha_keysetup(chacha_ctx *x, const u8 *k, u32 kbits)
 {
 	const char *constants;
 

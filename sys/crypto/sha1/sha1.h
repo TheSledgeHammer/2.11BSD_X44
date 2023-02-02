@@ -9,7 +9,6 @@
 #ifndef _SYS_SHA1_H_
 #define	_SYS_SHA1_H_
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
 
 typedef struct {
