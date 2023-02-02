@@ -68,31 +68,31 @@ typedef enum {
     finish_done     /* finish done, accept no more input or output */
 } block_state;
 
-typedef block_state (*compress_func) OF((deflate_state *s, int flush));
+typedef block_state (*compress_func) __P((deflate_state *s, int flush));
 /* Compression function. Returns the block state after the call. */
 
-local void fill_window    OF((deflate_state *s));
-local block_state deflate_stored OF((deflate_state *s, int flush));
-local block_state deflate_fast   OF((deflate_state *s, int flush));
+local void fill_window    __P((deflate_state *s));
+local block_state deflate_stored __P((deflate_state *s, int flush));
+local block_state deflate_fast   __P((deflate_state *s, int flush));
 #ifndef FASTEST
-local block_state deflate_slow   OF((deflate_state *s, int flush));
+local block_state deflate_slow   __P((deflate_state *s, int flush));
 #endif
-local void lm_init        OF((deflate_state *s));
-local void putShortMSB    OF((deflate_state *s, uInt b));
-local void flush_pending  OF((z_streamp strm));
-local int read_buf        OF((z_streamp strm, Bytef *buf, unsigned size));
+local void lm_init        __P((deflate_state *s));
+local void putShortMSB    __P((deflate_state *s, uInt b));
+local void flush_pending  __P((z_streamp strm));
+local int read_buf        __P((z_streamp strm, Bytef *buf, unsigned size));
 #ifndef FASTEST
 #ifdef ASMV
-      void match_init OF((void)); /* asm code initialization */
-      uInt longest_match  OF((deflate_state *s, IPos cur_match));
+      void match_init __P((void)); /* asm code initialization */
+      uInt longest_match  __P((deflate_state *s, IPos cur_match));
 #else
-local uInt longest_match  OF((deflate_state *s, IPos cur_match));
+local uInt longest_match  __P((deflate_state *s, IPos cur_match));
 #endif
 #endif
-local uInt longest_match_fast OF((deflate_state *s, IPos cur_match));
+local uInt longest_match_fast __P((deflate_state *s, IPos cur_match));
 
 #ifdef DEBUG_LIBZ
-local  void check_match OF((deflate_state *s, IPos start, IPos match,
+local  void check_match __P((deflate_state *s, IPos start, IPos match,
                             int length));
 #endif
 

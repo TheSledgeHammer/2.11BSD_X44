@@ -219,18 +219,18 @@ void		*memcpy (void *, const void *, size_t);
 int	 		memcmp (const void *, const void *, size_t);
 void		*memset (void *, int, size_t);
 #if __GNUC_PREREQ__(2, 95) && !defined(__vax__)
-#define	memcpy(d, s, l)		__builtin_memcpy(d, s, l)
-#define	memcmp(a, b, l)		__builtin_memcmp(a, b, l)
-#define	memset(d, v, l)		__builtin_memset(d, v, l)
+#define		memcpy(d, s, l)		__builtin_memcpy(d, s, l)
+#define		memcmp(a, b, l)		__builtin_memcmp(a, b, l)
+#define		memset(d, v, l)		__builtin_memset(d, v, l)
 #endif
 
 char		*strcpy (char *, const char *);
 int	 		strcmp (const char *, const char *);
 size_t	 	strlen (const char *);
 #if __GNUC_PREREQ__(2, 95)
-#define	strcpy(d, s)		__builtin_strcpy(d, s)
-#define	strcmp(a, b)		__builtin_strcmp(a, b)
-#define	strlen(a)			__builtin_strlen(a)
+#define		strcpy(d, s)		__builtin_strcpy(d, s)
+#define		strcmp(a, b)		__builtin_strcmp(a, b)
+#define		strlen(a)			__builtin_strlen(a)
 #endif
 
 /* Functions for which we always use built-ins. */
@@ -251,14 +251,12 @@ char		*strstr (const char *, const char *);
  */
 int	 		ffs(int);
 #if __GNUC_PREREQ__(2, 95) && (!defined(__vax__) || __GNUC_PREREQ__(4,1))
-#define	ffs(x)				__builtin_ffs(x)
+#define		ffs(x)				__builtin_ffs(x)
 #endif
 int	 		ffsl(long);
-/*
-u_int16_t	bswap16(u_int16_t);
-u_int32_t	bswap32(u_int32_t);
-u_int64_t	bswap64(u_int64_t);
-*/
+int	 		flsl(long);
+int			flsll(long long mask);
+
 void	 	__assert(const char *, const char *, int, const char *) __attribute__((__noreturn__));
 void		kern_assert(const char *, ...);
 u_int32_t 	inet_addr(const char *);
@@ -285,7 +283,7 @@ u_long	 	strtoul(const char *, char **, int);
 quad_t		strtoq(const char *, char **, int);
 void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 
-/* hash Functions */
+/* Hash Functions */
 uint32_t 	prospector32(uint32_t);
 uint32_t 	lowbias32(uint32_t);
 uint32_t 	lowbias32_r(uint32_t);
@@ -297,72 +295,3 @@ uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
 uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
 
 #endif /* _LIB_LIBKERN_LIBKERN_H_ */
-/*
-static __inline int 	imax (int, int) __attribute__ ((unused));
-static __inline int 	imin (int, int) __attribute__ ((unused));
-static __inline u_int 	max (u_int, u_int) __attribute__ ((unused));
-static __inline u_int 	min (u_int, u_int) __attribute__ ((unused));
-static __inline long 	lmax (long, long) __attribute__ ((unused));
-static __inline long 	lmin (long, long) __attribute__ ((unused));
-static __inline u_long 	ulmax (u_long, u_long) __attribute__ ((unused));
-static __inline u_long 	ulmin (u_long, u_long) __attribute__ ((unused));
-static __inline int 	abs (int) __attribute__ ((unused));
-
-static __inline int 	isspace (int) __attribute__((__unused__));
-static __inline int 	isascii (int) __attribute__((__unused__));
-static __inline int 	isupper (int) __attribute__((__unused__));
-static __inline int 	islower (int) __attribute__((__unused__));
-static __inline int 	isalpha (int) __attribute__((__unused__));
-static __inline int 	isdigit (int) __attribute__((__unused__));
-static __inline int 	isxdigit (int) __attribute__((__unused__));
-static __inline int 	toupper (int) __attribute__((__unused__));
-static __inline int 	tolower (int) __attribute__((__unused__));
-
-static __inline int
-imax(int a, int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline int
-imin(int a, int b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline u_int
-max(u_int a, u_int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_int
-min(u_int a, u_int b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline long
-lmax(long a, long b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline long
-lmin(long a, long b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline u_long
-ulmax(u_long a, u_long b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_long
-ulmin(u_long a, u_long b)
-{
-	return (a < b ? a : b);
-}
-*/

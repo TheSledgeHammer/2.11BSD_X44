@@ -49,6 +49,7 @@ __KERNEL_RCSID(0, "$NetBSD: xform.c,v 1.13 2003/11/18 23:01:39 jonathan Exp $");
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
+
 #include <machine/cpu.h>
 
 #include <crypto/blowfish/blowfish.h>
@@ -60,8 +61,8 @@ __KERNEL_RCSID(0, "$NetBSD: xform.c,v 1.13 2003/11/18 23:01:39 jonathan Exp $");
 
 #include <crypto/opencrypto/deflate.h>
 
-#include <crypto/md5/md5.h>
-#include <crypto/sha1/sha1.h>
+//#include <crypto/md5/md5.h>
+//#include <crypto/sha1/sha1.h>
 
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
@@ -100,13 +101,12 @@ static	void null_init(void *);
 static	int null_update(void *, const u_int8_t *, u_int16_t);
 static	void null_final(u_int8_t *, void *);
 
-static int	MD5Update_int(void *, const u_int8_t *, u_int16_t);
-static void	SHA1Init_int(void *);
+static 	int	MD5Update_int(void *, const u_int8_t *, u_int16_t);
+static 	void SHA1Init_int(void *);
 static	int SHA1Update_int(void *, const u_int8_t *, u_int16_t);
 static	void SHA1Final_int(u_int8_t *, void *);
 
-
-static int RMD160Update_int(void *, const u_int8_t *, u_int16_t);
+static 	int RMD160Update_int(void *, const u_int8_t *, u_int16_t);
 static	int SHA1Update_int(void *, const u_int8_t *, u_int16_t);
 static	void SHA1Final_int(u_int8_t *, void *);
 static	int RMD160Update_int(void *, const u_int8_t *, u_int16_t);
@@ -547,8 +547,7 @@ rijndael128_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 {
 	int err;
 
-	MALLOC(*sched, u_int8_t *, sizeof(rijndael_ctx), M_CRYPTO_DATA,
-	    M_WAITOK);
+	MALLOC(*sched, u_int8_t *, sizeof(rijndael_ctx), M_CRYPTO_DATA, M_WAITOK);
 	if (*sched != NULL) {
 		bzero(*sched, sizeof(rijndael_ctx));
 		rijndael_set_key((rijndael_ctx *) *sched, key, len * 8);

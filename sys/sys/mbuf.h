@@ -484,6 +484,7 @@ void			m_copydata(struct mbuf *, int, int, caddr_t);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
 void 			mbinit2(void *, int, int);
+struct mbuf 	*m_getptr(struct mbuf *, int, int *);
 //void			m_remove_pkthdr(struct mbuf *);
 //void			m_copy_pkthdr(struct mbuf *, struct mbuf *);
 void			m_move_pkthdr(struct mbuf *, struct mbuf *);

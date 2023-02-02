@@ -43,6 +43,7 @@ __KERNEL_RCSID(0, "$NetBSD: sha2.c,v 1.2 2003/09/04 00:11:49 itojun Exp $");
 #include <sys/time.h>
 #include <sys/systm.h>
 #include <machine/endian.h>
+
 #include <crypto/sha2/sha2.h>
 
 /*

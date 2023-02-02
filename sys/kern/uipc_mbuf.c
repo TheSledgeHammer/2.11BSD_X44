@@ -951,6 +951,43 @@ m_apply(m, off, len, f, arg)
 
 	return (0);
 }
+
+
+/*
+ * Return a pointer to mbuf/offset of location in mbuf chain.
+ */
+struct mbuf *
+m_getptr(m, loc, off)
+	struct mbuf *m;
+	int loc;
+	int *off;
+{
+
+	while (loc >= 0) {
+		/* Normal end of search */
+		if (m->m_len > loc) {
+			*off = loc;
+			return (m);
+		} else {
+			loc -= m->m_len;
+
+			if (m->m_next == NULL) {
+				if (loc == 0) {
+					/* Point at the end of valid data */
+					*off = m->m_len;
+					return (m);
+				} else {
+					return (NULL);
+				}
+			} else {
+				m = m->m_next;
+			}
+		}
+	}
+
+	return (NULL);
+}
+
 /*
 void
 m_remove_pkthdr(m)

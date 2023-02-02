@@ -45,14 +45,14 @@ struct swcr_data {
 		} SWCR_COMP;
 	} SWCR_UN;
 
-#define sw_ictx		SWCR_UN.SWCR_AUTH.SW_ictx
-#define sw_octx		SWCR_UN.SWCR_AUTH.SW_octx
-#define sw_klen		SWCR_UN.SWCR_AUTH.SW_klen
-#define sw_axf		SWCR_UN.SWCR_AUTH.SW_axf
+#define sw_ictx			SWCR_UN.SWCR_AUTH.SW_ictx
+#define sw_octx			SWCR_UN.SWCR_AUTH.SW_octx
+#define sw_klen			SWCR_UN.SWCR_AUTH.SW_klen
+#define sw_axf			SWCR_UN.SWCR_AUTH.SW_axf
 #define sw_kschedule	SWCR_UN.SWCR_ENC.SW_kschedule
-#define sw_exf		SWCR_UN.SWCR_ENC.SW_exf
-#define sw_size		SWCR_UN.SWCR_COMP.SW_size
-#define sw_cxf		SWCR_UN.SWCR_COMP.SW_cxf
+#define sw_exf			SWCR_UN.SWCR_ENC.SW_exf
+#define sw_size			SWCR_UN.SWCR_COMP.SW_size
+#define sw_cxf			SWCR_UN.SWCR_COMP.SW_cxf
 
 	struct swcr_data *sw_next;
 };

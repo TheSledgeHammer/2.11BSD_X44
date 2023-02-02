@@ -64,13 +64,18 @@
 
 #include <lib/libkern/libkern.h>
 
-#if NRND > 0
-#include <sys/rnd.h>
-#endif
-
 #define	ARC4_MAXRUNS 		16384
 #define	ARC4_RESEED_SECONDS 300
 #define	ARC4_KEYBYTES 		32 /* 256 bit key */
+
+struct arc4_data {
+	uint8_t			arc4_i;
+	uint8_t			arc4_j;
+	int				arc4_numruns;
+	time_t			arc4_nextreseed;
+	uint8_t			arc4_sbox[256];
+};
+
 
 static u_int8_t arc4_i, arc4_j;
 static int arc4_initialized = 0;

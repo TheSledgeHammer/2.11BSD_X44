@@ -72,8 +72,7 @@ int32_t swcr_id = -1;
 	: cuio_copydata((struct uio *)a,b,c,d)
 
 static	int swcr_encdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
-static	int swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
-			     struct swcr_data *sw, caddr_t buf, int outtype);
+static	int swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf, int outtype);
 static	int swcr_compdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
 static	int swcr_process(void *, struct cryptop *, int);
 static	int swcr_newsession(void *, u_int32_t *, struct cryptoini *);
