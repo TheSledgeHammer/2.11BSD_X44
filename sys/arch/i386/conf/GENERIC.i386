@@ -364,6 +364,7 @@ pseudo-device	bridge			# simple inter-network bridging
 #pseudo-device	pflog			# PF log if
 
 # miscellaneous pseudo-devices
+pseudo-device	rnd						# /dev/random and in-kernel generator
 pseudo-device	ksyms							# kernel symbols
 pseudo-device	pty				1			# pseudo-terminals
 pseudo-device	sequencer		1			# MIDI sequencer

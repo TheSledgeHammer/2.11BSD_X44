@@ -309,6 +309,7 @@ extern const struct cdevsw wsfont_cdevsw;
 extern const struct cdevsw mm_cdevsw;
 extern const struct cdevsw crypto_cdevsw;
 extern const struct cdevsw tun_cdevsw;
+extern const struct cdevsw rnd_cdevsw;
 
 /* linesw */
 extern const struct linesw ttydisc;

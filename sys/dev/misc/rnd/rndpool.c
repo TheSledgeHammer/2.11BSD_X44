@@ -147,7 +147,6 @@ rndpool_extract_data(rndpool_t *rp, void *p, u_int32_t len)
 	SHA512_CTX hash;
 	u_int32_t remain, count;
 	u_int8_t *buf;
-	int good;
 
 	buf = p;
 	remain = len;

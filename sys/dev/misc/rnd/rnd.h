@@ -33,6 +33,8 @@
 #ifndef _DEV_RND_H_
 #define _DEV_RND_H_
 
+#include <crypto/chacha/chacha.h>
+
 /*
  * Size of entropy pool in 32-bit words.  This _MUST_ be a power of 2.  Don't
  * change this unless you really know what you are doing...
@@ -53,7 +55,7 @@
  * Size of the event queue.  This _MUST_ be a power of 2.
  */
 #ifndef RND_EVENTQSIZE
-#define	RND_EVENTQSIZE	128
+#define	RND_EVENTQSIZE			128
 #endif
 
 typedef struct {
@@ -68,5 +70,9 @@ u_int32_t 	*rndpool_get_pool(rndpool_t *);
 u_int32_t	rndpool_get_poolsize(void);
 void		rndpool_add_data(rndpool_t *, void *, u_int32_t);
 u_int32_t	rndpool_extract_data(rndpool_t *, void *, u_int32_t);
+
+u_int32_t	rnd_extract_data(void *, u_int32_t);
+//u_int32_t	arc4random(void);
+//void		arc4random_buf(void *, size_t);
 
 #endif /* _DEV_RND_H_ */

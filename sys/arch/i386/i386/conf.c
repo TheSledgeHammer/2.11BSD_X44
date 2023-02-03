@@ -133,7 +133,7 @@ kernel_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &nttydisc);					/* 1- NTTYDISC */
 	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);					/* 2- OTTYDISC */
 //	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);					/* 3- NETLDISC */
-	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
+//	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
 	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
 	DEVSWIO_CONFIG_INIT(devsw, NPPP, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
 	DEVSWIO_CONFIG_INIT(devsw, NSTRIP, NULL, NULL, &stripdisc);				/* 7- STRIPDISC */
@@ -208,6 +208,7 @@ misc_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);				/* CMOS Interface */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &mm_cdevsw, NULL);					/* /dev/{null,mem,kmem,...} */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */
+	DEVSWIO_CONFIG_INIT(devsw, NRND, NULL, &rnd_cdevsw, NULL);				/* Random device */
 }
 
 /* Add network driver configuration */

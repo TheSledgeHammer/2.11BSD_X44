@@ -51,7 +51,7 @@ SRCS+= udivmoddi4.c divmoddi4.c
 .endif
 
 # Other stuff
-SRCS+=	__assert.c __main.c _que.c
+SRCS+=	__assert.c __main.c _que.c arc4random.c
 SRCS+=	inet_addr.c intoa.c
 SRCS+=	murmur3_32.c prospectorhash.c
 SRCS+=	pmatch.c mcount.c bcd.c
@@ -62,11 +62,6 @@ SRCS+=	strstr.c strlcpy.c strlcat.c
 SRCS+=	bcmp.c bcopy.c max.c min.c locc.c
 SRCS+=	imax.c imin.c lmax.c lmin.c ulmax.c ulmin.c
 SRCS+=	memmove.c memcmp.c
-
-SRCS+=	memcpy.c
-.if empty(SRCS:Mmemset2.*)
-SRCS+=	memset.c
-.endif
 
 SRCS+=	strtoul.c
 
@@ -81,6 +76,16 @@ SRCS+=	strcasecmp.c strncasecmp.c
 SRCS+=	qsort.c
 
 SRCS+=	hexdump.c
+
+# if no machine specific memcpy(3), build one out of bcopy(3) based stub.
+.if empty(SRCS:Mmemcpy.S)
+SRCS+=	memcpy.c
+.endif
+
+# if no machine specific memmove(3), build one out of bcopy(3) based stub.
+.if empty(SRCS:Mmemmove.S)
+SRCS+=	memmove.c
+.endif
 
 # Files to clean up
 CLEANFILES+= lib${LIB}.o lib${LIB}.po

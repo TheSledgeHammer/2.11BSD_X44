@@ -64,18 +64,13 @@
 
 #include <lib/libkern/libkern.h>
 
+#if NRND > 0
+#include <dev/misc/rnd/rnd.h>
+#endif
+
 #define	ARC4_MAXRUNS 		16384
 #define	ARC4_RESEED_SECONDS 300
 #define	ARC4_KEYBYTES 		32 /* 256 bit key */
-
-struct arc4_data {
-	uint8_t			arc4_i;
-	uint8_t			arc4_j;
-	int				arc4_numruns;
-	time_t			arc4_nextreseed;
-	uint8_t			arc4_sbox[256];
-};
-
 
 static u_int8_t arc4_i, arc4_j;
 static int arc4_initialized = 0;
@@ -111,21 +106,20 @@ arc4_randrekey(void)
 	int r;
 #endif
 
-	if(!arc4_initialized)
+	if(!arc4_initialized) {
 		/* The first time through, we must take what we can get */
 		byteswanted = 0;
-	else
+	} else {
 		/* Don't rekey with less entropy than we already have */
 		byteswanted = cur_keybytes;
+	}
 
 #if NRND > 0	/* XXX without rnd, we will key from the stack, ouch! */
-	r = rnd_extract_data(key, ARC4_KEYBYTES, RND_EXTRACT_GOOD);
+	r = rnd_extract_data(key, ARC4_KEYBYTES);
 
 	if (r < ARC4_KEYBYTES) {
 		if (r >= byteswanted) {
-			(void)rnd_extract_data(key + r,
-					       ARC4_KEYBYTES - r,
-					       RND_EXTRACT_ANY);
+			(void)rnd_extract_data(key + r, ARC4_KEYBYTES - r);
 		} else {
 			/* don't replace a good key with a bad one! */
 			arc4_tv_nextreseed = mono_time;
@@ -139,8 +133,9 @@ arc4_randrekey(void)
 
 	cur_keybytes = r;
 
-	for (n = ARC4_KEYBYTES; n < sizeof(key); n++)
-			key[n] = key[n % ARC4_KEYBYTES];
+	for (n = ARC4_KEYBYTES; n < sizeof(key); n++) {
+		key[n] = key[n % ARC4_KEYBYTES];
+	}
 #endif
 	for (n = 0; n < 256; n++) {
 		arc4_j = (arc4_j + arc4_sbox[n] + key[n]) % 256;
@@ -157,8 +152,9 @@ arc4_randrekey(void)
 	 * paper "Weaknesses in the Key Scheduling Algorithm of RC4"
 	 * by Fluher, Mantin, and Shamir.  (N = 256 in our case.)
 	 */
-	for (n = 0; n < 256 * 4; n++)
+	for (n = 0; n < 256 * 4; n++) {
 		arc4_randbyte();
+	}
 }
 
 /*
@@ -201,8 +197,9 @@ arc4random(void)
 	int i;
 
 	/* Initialize array if needed. */
-	if (!arc4_initialized)
+	if (!arc4_initialized) {
 		arc4_init();
+	}
 
 	if ((++arc4_numruns > ARC4_MAXRUNS) || 
 	    (mono_time.tv_sec > arc4_tv_nextreseed.tv_sec)) {
@@ -211,7 +208,7 @@ arc4random(void)
 
 	for (i = 0, ret = 0; i <= 24; ret |= arc4_randbyte() << i, i += 8)
 		;
-	return ret;
+	return (ret);
 }
 
 void
