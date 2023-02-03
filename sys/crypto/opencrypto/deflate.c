@@ -95,8 +95,7 @@ deflate_global(data, size, decomp, out)
 	zbuf.avail_in = size;	/* Total length of data to be processed */
 
 	if (!decomp) {
-		MALLOC(buf[i].out, u_int8_t *, (u_long) size, M_CRYPTO_DATA, 
-		    M_NOWAIT);
+		MALLOC(buf[i].out, u_int8_t *, (u_long) size, M_CRYPTO_DATA, M_NOWAIT);
 		if (buf[i].out == NULL)
 			goto bad;
 		buf[i].size = size;

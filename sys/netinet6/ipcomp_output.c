@@ -54,7 +54,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_output.c,v 1.18 2004/02/13 11:36:23 wiz Exp $
 #include <net/if.h>
 #include <net/route.h>
 #include <net/netisr.h>
-#include <net/zlib.h>
+#include <lib/libz/zlib.h>
 #include <machine/cpu.h>
 
 #include <netinet/in.h>

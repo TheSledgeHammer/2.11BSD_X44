@@ -55,7 +55,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 #include <net/if.h>
 #include <net/route.h>
 #include <net/netisr.h>
-#include <net/zlib.h>
+#include <lib/libz/zlib.h>
 #include <machine/cpu.h>
 
 #include <netinet6/ipcomp.h>
@@ -130,40 +130,40 @@ deflate_common(m, md, lenp, mode)
 	int zerror;
 	size_t offset;
 
-#define MOREBLOCK() \
-do { \
+#define MOREBLOCK() 								\
+do { 												\
 	/* keep the reply buffer into our chain */		\
-	if (n) {						\
-		n->m_len = zs.total_out - offset;		\
-		offset = zs.total_out;				\
-		*np = n;					\
-		np = &n->m_next;				\
-		n = NULL;					\
-	}							\
-								\
-	/* get a fresh reply buffer */				\
-	MGET(n, M_DONTWAIT, MT_DATA);				\
-	if (n) {						\
-		MCLGET(n, M_DONTWAIT);				\
-	}							\
-	if (!n) {						\
-		error = ENOBUFS;				\
-		goto fail;					\
-	}							\
-	n->m_len = 0;						\
-	n->m_len = M_TRAILINGSPACE(n);				\
-	n->m_next = NULL;					\
-	/*							\
-	 * if this is the first reply buffer, reserve		\
-	 * region for ipcomp header.				\
-	 */							\
-	if (*np == NULL) {					\
-		n->m_len -= sizeof(struct ipcomp);		\
-		n->m_data += sizeof(struct ipcomp);		\
-	}							\
-								\
-	zs.next_out = mtod(n, u_int8_t *);			\
-	zs.avail_out = n->m_len;				\
+	if (n) {										\
+		n->m_len = zs.total_out - offset;			\
+		offset = zs.total_out;						\
+		*np = n;									\
+		np = &n->m_next;							\
+		n = NULL;									\
+	}												\
+													\
+	/* get a fresh reply buffer */					\
+	MGET(n, M_DONTWAIT, MT_DATA);					\
+	if (n) {										\
+		MCLGET(n, M_DONTWAIT);						\
+	}												\
+	if (!n) {										\
+		error = ENOBUFS;							\
+		goto fail;									\
+	}												\
+	n->m_len = 0;									\
+	n->m_len = M_TRAILINGSPACE(n);					\
+	n->m_next = NULL;								\
+	/*												\
+	 * if this is the first reply buffer, reserve	\
+	 * region for ipcomp header.					\
+	 */												\
+	if (*np == NULL) {								\
+		n->m_len -= sizeof(struct ipcomp);			\
+		n->m_data += sizeof(struct ipcomp);			\
+	}												\
+													\
+	zs.next_out = mtod(n, u_int8_t *);				\
+	zs.avail_out = n->m_len;						\
 } while (/*CONSTCOND*/ 0)
 
 	for (mprev = m; mprev && mprev->m_next != md; mprev = mprev->m_next)

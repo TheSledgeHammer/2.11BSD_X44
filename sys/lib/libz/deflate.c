@@ -92,8 +92,7 @@ local uInt longest_match  __P((deflate_state *s, IPos cur_match));
 local uInt longest_match_fast __P((deflate_state *s, IPos cur_match));
 
 #ifdef DEBUG_LIBZ
-local  void check_match __P((deflate_state *s, IPos start, IPos match,
-                            int length));
+local  void check_match __P((deflate_state *s, IPos start, IPos match, int length));
 #endif
 
 /* ===========================================================================

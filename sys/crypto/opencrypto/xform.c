@@ -52,20 +52,18 @@ __KERNEL_RCSID(0, "$NetBSD: xform.c,v 1.13 2003/11/18 23:01:39 jonathan Exp $");
 
 #include <machine/cpu.h>
 
+#include <crypto/md5/md5.h>
+#include <crypto/sha1/sha1.h>
+#include <crypto/sha2/sha2.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/cast128/cast128.h>
 #include <crypto/des/des.h>
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
-
-#include <crypto/opencrypto/deflate.h>
-
-//#include <crypto/md5/md5.h>
-//#include <crypto/sha1/sha1.h>
-
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
+
 
 static void null_encrypt(caddr_t, u_int8_t *);
 static void null_decrypt(caddr_t, u_int8_t *);
@@ -320,8 +318,7 @@ des1_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 	des_key_schedule *p;
 	int err;
 
-	MALLOC(p, des_key_schedule *, sizeof (des_key_schedule),
-		M_CRYPTO_DATA, M_NOWAIT);
+	MALLOC(p, des_key_schedule *, sizeof (des_key_schedule), M_CRYPTO_DATA, M_NOWAIT);
 	if (p != NULL) {
 		bzero(p, sizeof(des_key_schedule));
 		des_set_key((des_cblock *) key, p[0]);
@@ -364,8 +361,7 @@ des3_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 	des_key_schedule *p;
 	int err;
 
-	MALLOC(p, des_key_schedule *, 3*sizeof (des_key_schedule),
-		M_CRYPTO_DATA, M_NOWAIT);
+	MALLOC(p, des_key_schedule *, 3*sizeof (des_key_schedule), M_CRYPTO_DATA, M_NOWAIT);
 	if (p != NULL) {
 		bzero(p, 3*sizeof(des_key_schedule));
 		des_set_key((des_cblock *)(key +  0), p[0]);

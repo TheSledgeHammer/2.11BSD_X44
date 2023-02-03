@@ -16,7 +16,7 @@ file	crypto/opencrypto/xform.c			opencrypto
 file	crypto/opencrypto/crypto.c			opencrypto
 
 # wrapper around zlib functions
-file	crypto/opencrypto/deflate.c		opencrypto
+#file	crypto/opencrypto/deflate.c		opencrypto
 
 
 # Pseudo-device for userspace access to opencrypto

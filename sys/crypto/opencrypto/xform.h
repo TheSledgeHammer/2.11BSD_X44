@@ -48,8 +48,8 @@ struct auth_hash {
 #define	AH_ALEN_MAX	20	/* max authenticator hash length */
 
 struct enc_xform {
-	int type;
-	char *name;
+	int 	type;
+	char 	*name;
 	u_int16_t blocksize;
 	u_int16_t minkey, maxkey;
 	void 	(*encrypt)(caddr_t, u_int8_t *);
