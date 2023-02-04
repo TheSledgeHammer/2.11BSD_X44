@@ -499,6 +499,7 @@ _rs_stir_if_needed(rndpool_t *rp, size_t len)
 	}
 }
 
+#ifdef notyet
 static inline void
 _rs_random_buf(rndpool_t *rp, void *_buf, size_t n)
 {
@@ -533,7 +534,6 @@ _rs_random_u32(rndpool_t *rp, u_int32_t *val)
 	rs_have -= sizeof(*val);
 }
 
-#ifdef notyet
 /* Return one word of randomness from a ChaCha20 generator */
 u_int32_t
 arc4random(void)

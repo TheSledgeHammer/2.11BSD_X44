@@ -49,19 +49,19 @@ ENTRY(memset)
 #endif
 #ifdef BZERO
 	movl	8(%esp),%ecx
-	xor	%eax,%eax
+	xor		%eax,%eax
 #else
 	movl	12(%esp),%ecx
 	movzbl	8(%esp),%eax		/* unsigned char, zero extend */
 #endif
 #ifndef LIBKERN_OPTIMISE_SPACE
-	cmpl	$0x0f,%ecx		/* avoid mispredicted branch... */
+	cmpl	$0x0f,%ecx			/* avoid mispredicted branch... */
 #endif
 
 	pushl	%edi
 	movl	8(%esp),%edi
 
-	cld				/* set fill direction forward */
+	cld							/* set fill direction forward */
 
 #ifndef LIBKERN_OPTIMISE_SPACE
 	/*
@@ -75,19 +75,19 @@ ENTRY(memset)
 	 * The PII, PIII and PIV allseem to have a massive performance
 	 * drop when the initial target address is an odd multiple of 4.
 	 */
-	jbe	by_bytes
+	jbe		by_bytes
 
 #ifndef BZERO
 	movb	%al,%ah			/* copy char to all bytes in word */
 	movl	%eax,%edx
 	sall	$16,%eax
-	orl	%edx,%eax
+	orl		%edx,%eax
 #endif
 
 	movl	%edi,%edx		/* detect misalignment */
-	neg	%edx
+	neg		%edx
 	andl	$7,%edx
-	jnz	align
+	jnz		align
 aligned:
 	movl	%eax,-4(%edi,%ecx)	/* zap last 4 bytes */
 	shrl	$2,%ecx			/* zero by words */
@@ -97,15 +97,15 @@ done:
 #ifndef BZERO
 	movl	8(%esp),%eax		/* return address of buffer */
 #endif
-	pop	%edi
+	pop		%edi
 	ret
 
 align:
 	movl	%eax,(%edi)		/* zap first 8 bytes */
 	movl	%eax,4(%edi)
 	subl	%edx,%ecx		/* remove from main count */
-	add	%edx,%edi
-	jmp	aligned
+	add		%edx,%edi
+	jmp		aligned
 
 by_bytes:
 #endif	/* LIBKERN_OPTIMISE_SPACE */

@@ -166,8 +166,9 @@ arc4_init(void)
 	int n;
 
 	arc4_i = arc4_j = 0;
-	for (n = 0; n < 256; n++)
+	for (n = 0; n < 256; n++) {
 		arc4_sbox[n] = (u_int8_t) n;
+	}
 
 	arc4_randrekey();
 	arc4_initialized = 1;

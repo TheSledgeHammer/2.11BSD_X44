@@ -44,15 +44,15 @@
 #include <sys/null.h>
 
 /* BCD conversions. */
-extern u_char const	bcd2bin_data[];
-extern u_char const	bin2bcd_data[];
-extern char const	hex2ascii_data[];
+u_char const	bcd2bin_data[];
+u_char const	bin2bcd_data[];
+char const		hex2ascii_data[];
 
 #define	bcd2bin(bcd)	(bcd2bin_data[bcd])
 #define	bin2bcd(bin)	(bin2bcd_data[bin])
 #define	hex2ascii(hex)	(hex2ascii_data[hex])
 
-extern const char hexdigits[];	/* "0123456789abcdef" */
+const char hexdigits[];	/* "0123456789abcdef" */
 
 int 	imax(int, int);
 int 	imin(int, int);
@@ -211,22 +211,23 @@ isprint(int ch)
 
 /* Prototypes for non-quad routines. */
 /* XXX notyet #ifdef _STANDALONE */
-int	 		bcmp (const void *, const void *, size_t);
-void	 	bzero (void *, size_t);
+int	 		bcmp(const void *, const void *, size_t);
+void	 	bzero(void *, size_t);
 /* #endif */
+
 /* Prototypes for which GCC built-ins exist. */
-void		*memcpy (void *, const void *, size_t);
-int	 		memcmp (const void *, const void *, size_t);
-void		*memset (void *, int, size_t);
+void		*memcpy(void *, const void *, size_t);
+int	 		memcmp(const void *, const void *, size_t);
+void		*memset(void *, int, size_t);
 #if __GNUC_PREREQ__(2, 95) && !defined(__vax__)
 #define		memcpy(d, s, l)		__builtin_memcpy(d, s, l)
 #define		memcmp(a, b, l)		__builtin_memcmp(a, b, l)
 #define		memset(d, v, l)		__builtin_memset(d, v, l)
 #endif
 
-char		*strcpy (char *, const char *);
-int	 		strcmp (const char *, const char *);
-size_t	 	strlen (const char *);
+char		*strcpy(char *, const char *);
+int	 		strcmp(const char *, const char *);
+size_t	 	strlen(const char *);
 #if __GNUC_PREREQ__(2, 95)
 #define		strcpy(d, s)		__builtin_strcpy(d, s)
 #define		strcmp(a, b)		__builtin_strcmp(a, b)
@@ -239,12 +240,12 @@ size_t	 	strlen (const char *);
 #endif
 
 /* These exist in GCC 3.x, but we don't bother. */
-char		*strcat (char *, const char *);
-char		*strncpy (char *, const char *, size_t);
-int	 		strncmp (const char *, const char *, size_t);
-char		*strchr (const char *, int);
-char		*strrchr (const char *, int);
-char		*strstr (const char *, const char *);
+char		*strcat(char *, const char *);
+char		*strncpy(char *, const char *, size_t);
+int	 		strncmp(const char *, const char *, size_t);
+char		*strchr(const char *, int);
+char		*strrchr(const char *, int);
+char		*strstr(const char *, const char *);
 
 /*
  * ffs is an instruction on vax.
@@ -255,7 +256,7 @@ int	 		ffs(int);
 #endif
 int	 		ffsl(long);
 int	 		flsl(long);
-int			flsll(long long mask);
+int			flsll(long long);
 
 void	 	__assert(const char *, const char *, int, const char *) __attribute__((__noreturn__));
 void		kern_assert(const char *, ...);
@@ -281,6 +282,7 @@ int	 		strncasecmp(const char *, const char *, size_t);
 char        *strsep(char **, const char *);
 u_long	 	strtoul(const char *, char **, int);
 quad_t		strtoq(const char *, char **, int);
+
 void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 
 /* Hash Functions */
