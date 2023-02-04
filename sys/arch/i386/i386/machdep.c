@@ -71,7 +71,7 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
-//#include <net/netisr.h>
+#include <net/netisr.h>
 
 #include <dev/core/ic/i8042reg.h>
 #include <dev/core/isa/isareg.h>
@@ -81,6 +81,7 @@
 #include <dev/core/ic/mc146818reg.h>
 
 #include <machine/bus.h>
+#include <machine/bios.h>
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
@@ -1810,6 +1811,61 @@ cpu_setmcontext(p, mcp, flags)
 	}
 	return (0);
 }
+
+#ifdef notyet
+/* bios smap */
+static int
+add_smap_entry(struct bios_smap *smap)
+{
+	if (boothowto & RB_VERBOSE) {
+		printf("SMAP type=%02x base=%016llx len=%016llx\n", smap->type, smap->base, smap->length);
+	}
+
+	if (smap->type != SMAP_TYPE_MEMORY) {
+		return (1);
+	}
+
+	return (add_mem_cluster(smap->base, smap->length));
+}
+
+static void
+add_smap_entries(struct bios_smap *smapbase)
+{
+	struct bios_smap *smap, *smapend;
+	u_int32_t smapsize;
+
+	/*
+	 * Memory map from INT 15:E820.
+	 *
+	 * subr_module.c says:
+	 * "Consumer may safely assume that size value precedes data."
+	 * ie: an int32_t immediately precedes SMAP.
+	 */
+	smapsize = *((u_int32_t *)smapbase - 1);
+	smapend = (struct bios_smap *)((uintptr_t)smapbase + smapsize);
+
+	for (smap = smapbase; smap < smapend; smap++) {
+		if (!add_smap_entry(smap)) {
+			break;
+		}
+	}
+}
+
+int
+has_smapbase(smapbase)
+	struct bios_smap *smapbase;
+{
+	int has_smap;
+
+	has_smap = 0;
+	if (smapbase != NULL) {
+		add_smap_entries(smapbase);
+		has_smap = 1;
+		return (has_smap);
+	}
+	return (has_smap);
+}
+#endif
 
 /*
  * Add a mask to cpl, and return the old value of cpl.
