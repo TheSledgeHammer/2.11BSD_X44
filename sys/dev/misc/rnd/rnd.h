@@ -34,6 +34,7 @@
 #define _DEV_RND_H_
 
 #include <crypto/chacha/chacha.h>
+#include <crypto/sha2/sha2.h>
 
 /*
  * Size of entropy pool in 32-bit words.  This _MUST_ be a power of 2.  Don't
@@ -62,7 +63,7 @@ typedef struct {
 	u_int32_t		cursor;					/* current add point in the pool */
 	u_int32_t		rotate;					/* how many bits to rotate by */
 	u_int32_t		pool[RND_POOLWORDS]; 	/* random pool data */
-	chacha_ctx		chacha;
+	chacha_ctx		*chacha;
 } rndpool_t;
 
 void		rndpool_init(rndpool_t *);

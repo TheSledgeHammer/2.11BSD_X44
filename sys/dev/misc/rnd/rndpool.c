@@ -34,7 +34,8 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 
-#include <crypto/sha2/sha2.h>
+//#include <crypto/chacha/chacha.h>
+//#include <crypto/sha2/sha2.h>
 
 #include <dev/misc/rnd/rnd.h>
 

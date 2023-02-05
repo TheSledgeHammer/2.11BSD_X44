@@ -82,10 +82,12 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
+#include <sys/vnode.h>
 
 #include <vm/include/vm_extern.h>
 
 #include <dev/misc/rnd/rnd.h>
+//#include <crypto/chacha/chacha.h>
 
 #ifdef RND_DEBUG
 #define	DPRINTF(l,x)      if (rnd_debug & (l)) printf x
@@ -109,6 +111,7 @@ struct selinfo rnd_selq;
  */
 #define	RND_READWAITING 0x00000001
 volatile u_int32_t rnd_status;
+
 
 rndpool_t 	rnd_pool;
 static int	rnd_ready = 0;
@@ -205,7 +208,7 @@ rndopen(dev, flag, mode, p)
 		return (ENXIO);
 	}
 
-	return (ENXIO);
+	return (0);
 }
 
 int
@@ -214,7 +217,7 @@ rndclose(dev, flag, mode, p)
 	int flag, mode;
 	struct proc *p;
 {
-	return (ENXIO);
+	return (0);
 }
 
 int
@@ -300,7 +303,7 @@ rndwrite(dev, uio, flag)
 		 * Mix in the bytes.
 		 */
 		s = splsoftclock();
-		rndpool_add_data(&rnd_pool, bf, n, 0);
+		rndpool_add_data(&rnd_pool, bf, n);
 		splx(s);
 	}
 
@@ -424,8 +427,8 @@ _rs_init(rndpool_t *rp, u_char *buf, size_t n)
 {
 	KASSERT(n >= KEYSZ + IVSZ);
 	rndpool_init(rp);
-	chacha_keysetup(&rp->chacha, buf, KEYSZ * 8);
-	chacha_ivsetup(&rp->chacha, buf + KEYSZ, NULL);
+	chacha_keysetup(rp->chacha, buf, KEYSZ * 8);
+	chacha_ivsetup(rp->chacha, buf + KEYSZ, NULL);
 }
 
 static void
@@ -444,6 +447,7 @@ static void
 _rs_stir(rndpool_t *rp)
 {
 	u_int32_t c;
+	u_char  *d;
 
 	/*
 	 * take a counter early, hoping that there's some variance in
@@ -455,15 +459,16 @@ _rs_stir(rndpool_t *rp)
 		c = rnd_counter();
 		rndpool_add_data(rp, &c, sizeof(u_int32_t));
 	}
-	_rs_seed(rp, c, sizeof(u_int32_t));
-	memset(c, 0, sizeof(u_int32_t));
+	d = (u_char *)&c;
+	_rs_seed(rp, d, sizeof(u_int32_t));
+	memset(d, 0, sizeof(u_int32_t));
 }
 
 static inline void
 _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen)
 {
 	/* fill rs_buf with the keystream */
-	chacha_encrypt_bytes(&rp->chacha, rs_buf, rs_buf, sizeof(rs_buf));
+	chacha_encrypt_bytes(rp->chacha, rs_buf, rs_buf, sizeof(rs_buf));
 	/* mix in optional user provided data */
 	if (dat) {
 		size_t i, m;
