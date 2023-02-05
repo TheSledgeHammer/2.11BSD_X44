@@ -51,31 +51,28 @@ SRCS+= udivmoddi4.c divmoddi4.c
 .endif
 
 # Other stuff
-SRCS+=	__assert.c __main.c _que.c arc4random.c
+SRCS+=	__assert.c __main.c _que.c 
 SRCS+=	inet_addr.c intoa.c
-SRCS+=	murmur3_32.c prospectorhash.c
-SRCS+=	pmatch.c mcount.c bcd.c
+SRCS+=	murmur3_32.c prospectorhash.c arc4random.c
+SRCS+=	pmatch.c mcount.c bcd.c hexdump.c
 SRCS+=	ffs.c ffsl.c flsl.c flsll.c
 
-SRCS+=	strstr.c strlcpy.c strlcat.c
+SRCS+=	bcmp.c bcopy.c bzero.c
+#SRCS+=	memmove.c memcmp.c
+SRCS+=	memchr.c
 
-SRCS+=	bcmp.c bcopy.c max.c min.c locc.c
+SRCS+= 	max.c min.c locc.c
 SRCS+=	imax.c imin.c lmax.c lmin.c ulmax.c ulmin.c
-SRCS+=	memmove.c memcmp.c
 
-SRCS+=	strtoul.c
+SRCS+=	random.c qsort.c
 
 SRCS+=	scanc.c skpc.c
-SRCS+=	random.c
-
-SRCS+=	memchr.c
 SRCS+=	strcat.c strchr.c strcmp.c strcpy.c strlen.c
 SRCS+=	strrchr.c strncmp.c strncpy.c strsep.c
 SRCS+=	strcasecmp.c strncasecmp.c
 
-SRCS+=	qsort.c
-
-SRCS+=	hexdump.c
+SRCS+=	strstr.c strlcpy.c strlcat.c
+SRCS+=	strtoul.c
 
 # if no machine specific memcpy(3), build one out of bcopy(3) based stub.
 .if empty(SRCS:Mmemcpy.S)
