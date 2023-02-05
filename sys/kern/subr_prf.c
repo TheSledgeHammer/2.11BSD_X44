@@ -64,6 +64,8 @@
 
 #include <dev/misc/cons/cons.h>
 
+#include <net/if.h>
+
 #ifdef DDB
 #include <ddb/ddbvar.h>		/* db_panic */
 #include <ddb/db_output.h>	/* db_printf, db_putchar prototypes */
@@ -86,6 +88,9 @@ void (*v_flush)(void) = cnflush;	/* start with cnflush (normal cons) */
  * call to panic.
  */
 const char	*panicstr;
+
+const char hexdigits[] = "0123456789abcdef";
+const char HEXDIGITS[] = "0123456789ABCDEF";
 
 /* internal methods */
 static void logpri(int);
