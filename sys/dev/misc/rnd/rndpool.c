@@ -49,6 +49,36 @@ rndpool_init(rndpool_t *rp)
 {
 	rp->cursor = 0;
 	rp->rotate = 1;
+
+	memset(&rp->stats, 0, sizeof(rp->stats));
+
+	rp->stats.curentropy = 0;
+	rp->stats.poolsize = RND_POOLWORDS;
+	rp->stats.threshold = RND_ENTROPY_THRESHOLD;
+	rp->stats.maxentropy = RND_POOLBITS;
+}
+
+u_int32_t
+rndpool_get_entropy_count(rndpool_t *rp)
+{
+	return (rp->stats.curentropy);
+}
+
+void
+rndpool_get_stats(rndpool_t *rp, void *rsp, int size)
+{
+	memcpy(rsp, &rp->stats, size);
+}
+
+void
+rndpool_increment_entropy_count(rndpool_t *rp, u_int32_t entropy)
+{
+	rp->stats.curentropy += entropy;
+	rp->stats.added += entropy;
+	if (rp->stats.curentropy > RND_POOLBITS) {
+		rp->stats.discarded += (rp->stats.curentropy - RND_POOLBITS);
+		rp->stats.curentropy = RND_POOLBITS;
+	}
 }
 
 u_int32_t *
@@ -95,7 +125,7 @@ rndpool_add_one_word(rndpool_t *rp, u_int32_t  val)
  * Add a buffer's worth of data to the pool.
  */
 void
-rndpool_add_data(rndpool_t *rp, void *p, u_int32_t len)
+rndpool_add_data(rndpool_t *rp, void *p, u_int32_t len, u_int32_t entropy)
 {
 	u_int32_t val;
 	u_int8_t *buf;
@@ -122,6 +152,14 @@ rndpool_add_data(rndpool_t *rp, void *p, u_int32_t len)
 
 		rndpool_add_one_word(rp, val);
 	}
+
+	rp->stats.curentropy += entropy;
+	rp->stats.added += entropy;
+
+	if (rp->stats.curentropy > RND_POOLBITS) {
+		rp->stats.discarded += (rp->stats.curentropy - RND_POOLBITS);
+		rp->stats.curentropy = RND_POOLBITS;
+	}
 }
 
 /*
@@ -141,34 +179,67 @@ u_int32_t
 rndpool_extract_data(rndpool_t *rp, void *p, u_int32_t len)
 {
 	u_int i;
+	static u_int32_t extract_pool[RND_POOLWORDS];
 	u_char digest[SHA512_DIGEST_LENGTH];
 	SHA512_CTX hash;
-	u_int32_t remain, count;
+	u_int32_t remain, count, deltae;
 	u_int8_t *buf;
 
 	buf = p;
 	remain = len;
 
-	SHA512_Init(&hash);
-	SHA512_Update(&hash, (u_int8_t *)rp->pool, RND_POOLBYTES);
-	SHA512_Final(digest, &hash);
+	while (remain != 0) {
 
-	for (i = 0; i < 4; i++) {
-		u_int32_t word;
-		memcpy(&word, &digest[i * 16], 4);
-		rndpool_add_one_word(rp, word);
+		memcpy(extract_pool, rp->pool, sizeof(extract_pool));
+
+		/*
+		 * While bytes are requested, compute the hash of the pool,
+		 * and then "fold" the hash in half with XOR, keeping the
+		 * exact hash value secret, as it will be stirred back into
+		 * the pool.
+		 *
+		 * XXX this approach needs examination by competant
+		 * cryptographers!  It's rather expensive per bit but
+		 * also involves every bit of the pool in the
+		 * computation of every output bit..
+		 */
+		SHA512_Init(&hash);
+		SHA512_Update(&hash, (u_int8_t *)extract_pool, sizeof(extract_pool));
+		SHA512_Final(digest, &hash);
+
+		/*
+		 * Stir the hash back into the pool.  This guarantees
+		 * that the next hash will generate a different value
+		 * if no new values were added to the pool.
+		 */
+		for (i = 0; i < 4; i++) {
+			u_int32_t word;
+			memcpy(&word, &digest[i * 4], 4);
+			rndpool_add_one_word(rp, word);
+		}
+
+		count = min(remain, RND_ENTROPY_THRESHOLD);
+
+		for (i = 0; i < count; i++) {
+			buf[i] = digest[i] ^ digest[i + RND_ENTROPY_THRESHOLD];
+		}
+
+		buf += count;
+		deltae = count * 8;
+		remain -= count;
+
+		deltae = min(deltae, rp->stats.curentropy);
+
+		rp->stats.removed += deltae;
+		rp->stats.curentropy -= deltae;
+
+		if (rp->stats.curentropy == 0) {
+			rp->stats.generated += (count * 8) - deltae;
+		}
 	}
-
-	count = min(remain, RND_ENTROPY_THRESHOLD);
-
-	for (i = 0; i < count; i++) {
-		buf[i] = digest[i] ^ digest[i + RND_ENTROPY_THRESHOLD];
-	}
-
-	buf += count;
-	remain -= count;
 
 	memset(&hash, 0, sizeof(hash));
+	memset(extract_pool, 0, sizeof(extract_pool));
 	memset(digest, 0, sizeof(digest));
 
 	return (len - remain);

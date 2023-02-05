@@ -60,13 +60,29 @@
 #endif
 
 typedef struct {
+	u_int32_t		poolsize;
+	u_int32_t 		threshold;
+	u_int32_t		maxentropy;
+
+	u_int32_t		added;
+	u_int32_t		curentropy;
+	u_int32_t		removed;
+	u_int32_t		discarded;
+	u_int32_t		generated;
+} rndpoolstat_t;
+
+typedef struct {
 	u_int32_t		cursor;					/* current add point in the pool */
 	u_int32_t		rotate;					/* how many bits to rotate by */
+	rndpoolstat_t	stats;					/* current statistics */
 	u_int32_t		pool[RND_POOLWORDS]; 	/* random pool data */
 	chacha_ctx		*chacha;
 } rndpool_t;
 
 void		rndpool_init(rndpool_t *);
+u_int32_t	rndpool_get_entropy_count(rndpool_t *);
+void		rndpool_get_stats(rndpool_t *, void *, int);
+void		rndpool_increment_entropy_count(rndpool_t *, u_int32_t);
 u_int32_t 	*rndpool_get_pool(rndpool_t *);
 u_int32_t	rndpool_get_poolsize(void);
 void		rndpool_add_data(rndpool_t *, void *, u_int32_t);

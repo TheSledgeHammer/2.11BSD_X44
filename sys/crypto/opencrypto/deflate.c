@@ -109,8 +109,7 @@ deflate_global(data, size, decomp, out)
 	 	 * updated while the decompression is going on
 	 	 */
 
-		MALLOC(buf[i].out, u_int8_t *, (u_long) (size * 4), 
-		    M_CRYPTO_DATA, M_NOWAIT);
+		MALLOC(buf[i].out, u_int8_t *, (u_long) (size * 4), M_CRYPTO_DATA, M_NOWAIT);
 		if (buf[i].out == NULL)
 			goto bad;
 		buf[i].size = size * 4;

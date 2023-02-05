@@ -61,9 +61,10 @@ __KERNEL_RCSID(0, "$NetBSD: xform.c,v 1.13 2003/11/18 23:01:39 jonathan Exp $");
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
+
+#include <crypto/opencrypto/deflate.h>
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
-
 
 static void null_encrypt(caddr_t, u_int8_t *);
 static void null_decrypt(caddr_t, u_int8_t *);

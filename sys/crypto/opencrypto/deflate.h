@@ -49,9 +49,9 @@ void *z_alloc(void *, u_int, u_int);
 void z_free(void *, void *);
 
 struct deflate_buf {
-	u_int8_t *out;
-	u_int32_t size;
-	int flag;
+	u_int8_t 	*out;
+	u_int32_t 	size;
+	int 		flag;
 };
 
 #endif /* _CRYPTO_DEFLATE_H_ */

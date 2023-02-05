@@ -86,8 +86,8 @@
 
 #include <vm/include/vm_extern.h>
 
+#define KEYSTREAM_ONLY
 #include <dev/misc/rnd/rnd.h>
-//#include <crypto/chacha/chacha.h>
 
 #ifdef RND_DEBUG
 #define	DPRINTF(l,x)      if (rnd_debug & (l)) printf x
@@ -100,6 +100,10 @@ int	rnd_debug = 0;
 #define	RND_DEBUG_READ		0x0002
 #define	RND_DEBUG_IOCTL		0x0004
 #define	RND_DEBUG_SNOOZE	0x0008
+
+#define	CHACHA20_KEYBYTES		32
+#define	CHACHA20_BUFFER_SIZE	64
+#define CHACHA20_EBUF_SIZE		40
 
 /*
  * our select/poll queue
@@ -177,7 +181,7 @@ rndattach(int num)
 
 	/* mix in another counter */
 	c = rnd_counter();
-	rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t));
+	rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
 }
 
 /*
@@ -225,21 +229,39 @@ rndread(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	u_int8_t *bf;
-	u_int32_t n, nread;
-	int ret;
+	u_int8_t *buf;
+	u_int32_t entcnt, n, nread;
+	int ret, s;
 
 	if (uio->uio_resid == 0) {
 		return (0);
 	}
 
 	ret = 0;
-	bf = malloc(RND_POOLWORDS, M_TEMP, M_WAITOK);
+	buf = malloc(RND_POOLWORDS, M_TEMP, M_WAITOK);
 
 	while (uio->uio_resid > 0) {
 		n = min(RND_POOLWORDS, uio->uio_resid);
 
+		/*
+		 * Make certain there is data available.  If there
+		 * is, do the I/O even if it is partial.  If not,
+		 * sleep unless the user has requested non-blocking
+		 * I/O.
+		 */
 		for (;;) {
+
+			/*
+			 * How much entropy do we have?  If it is enough for
+			 * one hash, we can read.
+			 */
+			s = splsoftclock();
+			entcnt = rndpool_get_entropy_count(&rnd_pool);
+			splx(s);
+			if (entcnt >= RND_ENTROPY_THRESHOLD * 8) {
+				break;
+			}
+
 			/*
 			 * Data is not available.
 			 */
@@ -255,21 +277,21 @@ rndread(dev, uio, flag)
 				goto out;
 			}
 		}
-		nread = rnd_extract_data(bf, n);
+		nread = rnd_extract_data(buf, n);
 
 		/*
 		 * Copy (possibly partial) data to the user.
 		 * If an error occurs, or this is a partial
 		 * read, bail out.
 		 */
-		ret = uiomove((void *)bf, nread, uio);
+		ret = uiomove((void *)buf, nread, uio);
 		if (ret != 0 || nread != n) {
 			goto out;
 		}
 	}
 
 out:
-	free(bf, M_TEMP);
+	free(buf, M_TEMP);
 	return (ret);
 }
 
@@ -279,7 +301,7 @@ rndwrite(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	u_int8_t *bf;
+	u_int8_t *buf;
 	int n, ret, s;
 
 	if (uio->uio_resid == 0) {
@@ -288,12 +310,12 @@ rndwrite(dev, uio, flag)
 
 	ret = 0;
 
-	bf = malloc(RND_POOLWORDS, M_TEMP, M_WAITOK);
+	buf = malloc(RND_POOLWORDS, M_TEMP, M_WAITOK);
 
 	while (uio->uio_resid > 0) {
 		n = min(RND_POOLWORDS, uio->uio_resid);
 
-		ret = uiomove((void *)bf, n, uio);
+		ret = uiomove((void *)buf, n, uio);
 		if (ret != 0) {
 			break;
 		}
@@ -302,11 +324,11 @@ rndwrite(dev, uio, flag)
 		 * Mix in the bytes.
 		 */
 		s = splsoftclock();
-		rndpool_add_data(&rnd_pool, bf, n);
+		rndpool_add_data(&rnd_pool, buf, n, 0);
 		splx(s);
 	}
 
-	free(bf, M_TEMP);
+	free(buf, M_TEMP);
 	return (ret);
 }
 
@@ -347,8 +369,14 @@ filt_rndread(kn, hint)
 	struct knote *kn;
 	long hint;
 {
-	kn->kn_data = RND_POOLWORDS;
-	return (1);
+	uint32_t entcnt;
+
+	entcnt = rndpool_get_entropy_count(&rnd_pool);
+	if (entcnt >= RND_ENTROPY_THRESHOLD * 8) {
+		kn->kn_data = RND_POOLWORDS;
+		return (1);
+	}
+	return (0);
 }
 
 static int
@@ -401,13 +429,19 @@ rndkqfilter(dev, kn)
 u_int32_t
 rnd_extract_data(void *p, u_int32_t len)
 {
-	int retval;
+	int retval, s;
+	u_int32_t c;
 
+	s = splsoftclock();
 	if (!rnd_have_entropy) {
 		/* Try once again to put something in the pool */
-		_rs_stir(&rnd_pool);
+		//_rs_stir(&rnd_pool);
+
+		c = rnd_counter();
+		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
 	}
 	retval = rndpool_extract_data(&rnd_pool, p, len);
+	splx(s);
 	return (retval);
 }
 
@@ -455,10 +489,16 @@ _rs_stir(rndpool_t *rp)
 	 * the following operations
 	 */
 	c = rnd_counter();
+
+	/* Mix *something*, *anything* into the pool to help it get started.
+	 * However, it's not safe for rnd_counter() to call microtime() yet,
+	 * so on some platforms we might just end up with zeros anyway.
+	 * XXX more things to add would be nice.
+	 */
 	if (c) {
-		rndpool_add_data(rp, &c, sizeof(u_int32_t));
+		rndpool_add_data(rp, &c, sizeof(u_int32_t), 1);
 		c = rnd_counter();
-		rndpool_add_data(rp, &c, sizeof(u_int32_t));
+		rndpool_add_data(rp, &c, sizeof(u_int32_t), 1);
 	}
 	d = (u_char *)&c;
 	_rs_seed(rp, d, sizeof(u_int32_t));
@@ -483,8 +523,6 @@ _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen)
 			rs_buf[i] ^= dat[i];
 		}
 	}
-
-	rndpool_add_data(rp, rs_buf, KEYSZ + IVSZ);
 
 	/* immediately reinit for backtracking resistance */
 	_rs_init(rp, rs_buf, KEYSZ + IVSZ);
