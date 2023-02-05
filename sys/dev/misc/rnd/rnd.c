@@ -87,6 +87,9 @@
 #include <vm/include/vm_extern.h>
 
 #define KEYSTREAM_ONLY
+#include <crypto/chacha/chacha.h>
+#include <crypto/sha2/sha2.h>
+
 #include <dev/misc/rnd/rnd.h>
 
 #ifdef RND_DEBUG
@@ -121,8 +124,8 @@ static int	rnd_ready = 0;
 static int	rnd_have_entropy = 0;
 
 static inline u_int32_t rnd_counter(void);
-static void	_rs_stir(rndpool_t *rp);
-static inline void _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen);
+//static void	_rs_stir(rndpool_t *rp);
+//static inline void _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen);
 
 void	rndattach(int);
 
@@ -192,11 +195,30 @@ rndattach(int num)
 void
 rnd_init(void *null)
 {
+        u_int32_t c;
+        
 	if (rnd_ready) {
 		return;
 	}
+	
+	/*
+	 * take a counter early, hoping that there's some variance in
+	 * the following operations
+	 */
+	c = rnd_counter();
 
-	_rs_stir(&rnd_pool);
+	/* Mix *something*, *anything* into the pool to help it get started.
+	 * However, it's not safe for rnd_counter() to call microtime() yet,
+	 * so on some platforms we might just end up with zeros anyway.
+	 * XXX more things to add would be nice.
+	 */
+	if (c) {
+		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
+		c = rnd_counter();
+		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
+	}
+	
+	//_rs_stir(&rnd_pool);
 
 	rnd_ready = 1;
 }
@@ -435,15 +457,15 @@ rnd_extract_data(void *p, u_int32_t len)
 	s = splsoftclock();
 	if (!rnd_have_entropy) {
 		/* Try once again to put something in the pool */
-		//_rs_stir(&rnd_pool);
-
 		c = rnd_counter();
 		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
+		//_rs_stir(&rnd_pool);
 	}
 	retval = rndpool_extract_data(&rnd_pool, p, len);
 	splx(s);
 	return (retval);
 }
+#ifdef notyet
 
 #define KEYSZ		32
 #define IVSZ		8
@@ -461,7 +483,7 @@ _rs_init(rndpool_t *rp, u_char *buf, size_t n)
 {
 	KASSERT(n >= KEYSZ + IVSZ);
 	rndpool_init(rp);
-	rp->chacha = &rs;
+	//rp->chacha = &rs;
 	chacha_keysetup(&rs, buf, KEYSZ * 8);
 	chacha_ivsetup(&rs, buf + KEYSZ, NULL);
 }
@@ -513,7 +535,7 @@ _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen)
 #endif
 
 	/* fill rs_buf with the keystream */
-	chacha_encrypt_bytes(rp->chacha, rs_buf, rs_buf, sizeof(rs_buf));
+	chacha_encrypt_bytes(&rs, rs_buf, rs_buf, sizeof(rs_buf));
 	/* mix in optional user provided data */
 	if (dat) {
 		size_t i, m;
@@ -547,7 +569,6 @@ _rs_stir_if_needed(rndpool_t *rp, size_t len)
 	}
 }
 
-#ifdef notyet
 static inline void
 _rs_random_buf(rndpool_t *rp, void *_buf, size_t n)
 {
