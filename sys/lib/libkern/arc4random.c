@@ -146,19 +146,19 @@ arc4_randrekey(struct arc4_data *ctx)
 		arc4_swap(&ctx->arc4_sbox[n], &ctx->arc4_sbox[ctx->arc4_j]);
 	}
 
-	/* Reset for next reseed cycle. */
-	ctx->arc4_tv_nextreseed = mono_time;
-	ctx->arc4_tv_nextreseed.tv_sec += ARC4_RESEED_SECONDS;
-	ctx->arc4_numruns = 0;
-
 	/*
 	 * Throw away the first N words of output, as suggested in the
 	 * paper "Weaknesses in the Key Scheduling Algorithm of RC4"
 	 * by Fluher, Mantin, and Shamir.  (N = 256 in our case.)
 	 */
-	for (n = 0; n < 256 * 4; n++) {
+	for (n = 0; n < 768 * 4; n++) {
 		arc4_randbyte(ctx);
 	}
+	
+	/* Reset for next reseed cycle. */
+	ctx->arc4_tv_nextreseed = mono_time;
+	ctx->arc4_tv_nextreseed.tv_sec += ARC4_RESEED_SECONDS;
+	ctx->arc4_numruns = 0;
 }
 
 /*
@@ -175,6 +175,10 @@ arc4_init(struct arc4_data *ctx)
 	}
 
 	arc4_randrekey(ctx);
+	
+	for (n = 0; n < 768 * 4; n++) {
+		arc4_randbyte(ctx);
+	}
 	arc4_initialized = 1;
 }
 
@@ -216,6 +220,35 @@ arc4random(void)
 	ret |= arc4_randbyte(ctx) << 8;
 	ret |= arc4_randbyte(ctx) << 16;
 	ret |= arc4_randbyte(ctx) << 24;
+	return (ret);
+}
+
+u_int64_t
+arc4random64(void)
+{
+	struct arc4_data *ctx;
+	u_int64_t ret;
+	int i;
+
+	ctx = &arc4_ctx;
+
+	/* Initialize array if needed. */
+	if (!arc4_initialized) {
+		arc4_init(ctx);
+	}
+
+	if ((++ctx->arc4_numruns > ARC4_MAXRUNS) || (mono_time.tv_sec > ctx->arc4_tv_nextreseed.tv_sec)) {
+		arc4_randrekey(ctx);
+	}
+	
+	ret = arc4_randbyte(ctx);
+	ret |= arc4_randbyte(ctx) << 8;
+	ret |= arc4_randbyte(ctx) << 16;
+	ret |= arc4_randbyte(ctx) << 24;
+	ret |= (u_int64_t)arc4_randbyte(ctx) << 32;
+	ret |= (u_int64_t)arc4_randbyte(ctx) << 40;
+	ret |= (u_int64_t)arc4_randbyte(ctx) << 48;
+	ret |= (u_int64_t)arc4_randbyte(ctx) << 56;
 	return (ret);
 }
 
