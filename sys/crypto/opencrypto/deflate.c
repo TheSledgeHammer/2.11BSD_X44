@@ -41,7 +41,7 @@ __KERNEL_RCSID(0, "$NetBSD: deflate.c,v 1.2 2003/08/27 00:12:37 thorpej Exp $");
 #include <sys/malloc.h>
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <lib/libz/zlib.h>
+#include <net/zlib.h>
 
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/deflate.h>

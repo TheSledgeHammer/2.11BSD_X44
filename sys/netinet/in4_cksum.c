@@ -68,9 +68,10 @@ __KERNEL_RCSID(0, "$NetBSD: in4_cksum.c,v 1.10 2003/08/07 16:33:10 agc Exp $");
 #include <sys/systm.h>
 #include <sys/socket.h>
 #include <net/route.h>
+
 #include <netinet/in.h>
-#include <netinet/in_systm.h>
 #include <netinet/ip.h>
+//#include <netinet/in_systm.h>
 #include <netinet/ip_var.h>
 
 /*

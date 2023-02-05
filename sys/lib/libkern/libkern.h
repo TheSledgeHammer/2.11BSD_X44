@@ -46,13 +46,11 @@
 /* BCD conversions. */
 extern u_char const	bcd2bin_data[];
 extern u_char const	bin2bcd_data[];
-extern char const		hex2ascii_data[];
+extern char const	hex2ascii_data[];
 
 #define	bcd2bin(bcd)	(bcd2bin_data[bcd])
 #define	bin2bcd(bin)	(bin2bcd_data[bin])
 #define	hex2ascii(hex)	(hex2ascii_data[hex])
-
-extern const char hexdigits[];	/* "0123456789abcdef" */
 
 int 	imax(int, int);
 int 	imin(int, int);

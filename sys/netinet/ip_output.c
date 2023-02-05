@@ -1002,12 +1002,13 @@ in_delayed_cksum(struct mbuf *m)
 
 	if ((offset + sizeof(u_int16_t)) > m->m_len) {
 		/* This happen when ip options were inserted
-		printf("in_delayed_cksum: pullup len %d off %d proto %d\n",
-		    m->m_len, offset, ip->ip_p);
+		 printf("in_delayed_cksum: pullup len %d off %d proto %d\n",
+		 m->m_len, offset, ip->ip_p);
 		 */
-		m_copyback(m, offset, sizeof(csum), (caddr_t) &csum);
-	} else
-		*(u_int16_t *)(mtod(m, caddr_t) + offset) = csum;
+		m_copyback(m, offset, sizeof(csum), (caddr_t) & csum);
+	} else {
+		*(u_int16_t*) (mtod(m, caddr_t) + offset) = csum;
+	}
 }
 
 /*

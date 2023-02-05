@@ -54,7 +54,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_input.c,v 1.22.16.1 2007/12/01 17:30:36 bouye
 #include <net/if.h>
 #include <net/route.h>
 #include <net/netisr.h>
-#include <lib/libz/zlib.h>
+#include <net/zlib.h>
 #include <machine/cpu.h>
 
 #include <netinet/in.h>

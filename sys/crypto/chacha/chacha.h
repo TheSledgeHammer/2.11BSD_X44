@@ -5,11 +5,8 @@ D. J. Bernstein
 Public domain.
 */
 
-typedef uint8_t  u8;
-typedef uint32_t u32;
-
 typedef struct {
-	u32 input[16]; /* could be compressed */
+	uint32_t input[16]; /* could be compressed */
 } chacha_ctx;
 
 #define ROTL32(v,n) \
@@ -34,7 +31,7 @@ typedef struct {
 static const char sigma[16] = "expand 32-byte k";
 static const char tau[16] = "expand 16-byte k";
 
-void 	hchacha20(u32 derived_key[8], const u8 nonce[16], const u8 key[32]);
-void	chacha_keysetup(chacha_ctx *x, const u8 *k, u32 kbits);
-void	chacha_ivsetup(chacha_ctx *x, const u8 *iv, const u8 *counter);
-void	chacha_encrypt_bytes(chacha_ctx *x,const u8 *m,u8 *c, u32 bytes);
+void 	hchacha20(uint32_t derived_key[8], const uint8_t nonce[16], const uint8_t key[32]);
+void	chacha_keysetup(chacha_ctx *x, const uint8_t *k, uint32_t kbits);
+void	chacha_ivsetup(chacha_ctx *x, const uint8_t *iv, const uint8_t *counter);
+void	chacha_encrypt_bytes(chacha_ctx *x, const uint8_t *m, uint8_t *c, uint32_t bytes);

@@ -55,7 +55,7 @@ __KERNEL_RCSID(0, "$NetBSD: ipcomp_core.c,v 1.20 2002/11/02 07:30:59 perry Exp $
 #include <net/if.h>
 #include <net/route.h>
 #include <net/netisr.h>
-#include <lib/libz/zlib.h>
+#include <net/zlib.h>
 #include <machine/cpu.h>
 
 #include <netinet6/ipcomp.h>

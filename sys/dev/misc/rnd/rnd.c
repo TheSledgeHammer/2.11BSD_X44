@@ -112,7 +112,6 @@ struct selinfo rnd_selq;
 #define	RND_READWAITING 0x00000001
 volatile u_int32_t rnd_status;
 
-
 rndpool_t 	rnd_pool;
 static int	rnd_ready = 0;
 static int	rnd_have_entropy = 0;
@@ -418,6 +417,7 @@ rnd_extract_data(void *p, u_int32_t len)
 #define RSBUFSZ		(16*BLOCKSZ)
 #define EBUFSIZE 	KEYSZ + IVSZ
 
+static chacha_ctx 	rs;				/* chacha context for random keystream */
 static u_char 		rs_buf[RSBUFSZ];
 static size_t 		rs_have;		/* valid bytes at end of rs_buf */
 static size_t 		rs_count;		/* bytes till reseed */
@@ -427,8 +427,9 @@ _rs_init(rndpool_t *rp, u_char *buf, size_t n)
 {
 	KASSERT(n >= KEYSZ + IVSZ);
 	rndpool_init(rp);
-	chacha_keysetup(rp->chacha, buf, KEYSZ * 8);
-	chacha_ivsetup(rp->chacha, buf + KEYSZ, NULL);
+	rp->chacha = &rs;
+	chacha_keysetup(&rs, buf, KEYSZ * 8);
+	chacha_ivsetup(&rs, buf + KEYSZ, NULL);
 }
 
 static void
@@ -467,6 +468,10 @@ _rs_stir(rndpool_t *rp)
 static inline void
 _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen)
 {
+#ifndef KEYSTREAM_ONLY
+	memset(rs_buf, 0, sizeof(rs_buf));
+#endif
+
 	/* fill rs_buf with the keystream */
 	chacha_encrypt_bytes(rp->chacha, rs_buf, rs_buf, sizeof(rs_buf));
 	/* mix in optional user provided data */

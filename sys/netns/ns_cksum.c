@@ -63,14 +63,14 @@ ns_cksum(m, len)
 		int32_t l;
 	} l_util;
 
-	for (;m && len; m = m->m_next) {
+	for (; m && len; m = m->m_next) {
 		if (m->m_len == 0)
 			continue;
 		/*
 		 * Each trip around loop adds in
 		 * word from one mbuf segment.
 		 */
-		w = mtod(m, u_int16_t *);
+		w = mtod(m, u_int16_t*);
 		if (mlen == -1) {
 			/*
 			 * There is a byte left from the last segment;
@@ -79,10 +79,10 @@ ns_cksum(m, len)
 #if BYTE_ORDER == BIG_ENDIAN
 			sum  += *(u_int8_t *)w;
 #else
-			sum  += *(u_int8_t *)w << 8;
+			sum += *(u_int8_t*) w << 8;
 #endif
 			sum += sum;
-			w = (u_int16_t *)(1 + (char *)w);
+			w = (u_int16_t*) (1 + (char*) w);
 			mlen = m->m_len - 1;
 			len--;
 			FOLD(sum);
@@ -186,14 +186,14 @@ commoncase:
 #if BYTE_ORDER == BIG_ENDIAN
 			sum += *(u_int8_t *)w << 8;
 #else
-			sum += *(u_int8_t *)w;
+			sum += *(u_int8_t*) w;
 #endif
 		}
 		FOLD(sum);
 	}
 	if (mlen == -1) {
 		/* We had an odd number of bytes to sum; assume a garbage
-		   byte of zero and clean up */
+		 byte of zero and clean up */
 		sum += sum;
 		FOLD(sum);
 	}
@@ -201,6 +201,7 @@ commoncase:
 	 * sum has already been kept to low sixteen bits.
 	 * just examine result and exit.
 	 */
-	if(sum==0xffff) sum = 0;
+	if (sum == 0xffff)
+		sum = 0;
 	return (sum);
 }

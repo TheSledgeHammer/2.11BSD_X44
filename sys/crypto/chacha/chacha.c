@@ -14,7 +14,7 @@ Public domain.
 #include <crypto/chacha/chacha.h>
 
 void
-hchacha20(u32 derived_key[8], const u8 nonce[16], const u8 key[32])
+hchacha20(uint32_t derived_key[8], const uint8_t nonce[16], const uint8_t key[32])
 {
 	int i;
 	uint32_t x[];
@@ -47,12 +47,12 @@ hchacha20(u32 derived_key[8], const u8 nonce[16], const u8 key[32])
 		QUARTERROUND(x[3], x[4], x[9], x[14]);
 	}
 
-	memcpy(derived_key + 0, x + 0, sizeof(u32) * 4);
-	memcpy(derived_key + 4, x + 12, sizeof(u32) * 4);
+	memcpy(derived_key + 0, x + 0, sizeof(uint32_t) * 4);
+	memcpy(derived_key + 4, x + 12, sizeof(uint32_t) * 4);
 }
 
 void
-chacha_keysetup(chacha_ctx *x, const u8 *k, u32 kbits)
+chacha_keysetup(chacha_ctx *x, const uint8_t *k, uint32_t kbits)
 {
 	const char *constants;
 
@@ -77,7 +77,7 @@ chacha_keysetup(chacha_ctx *x, const u8 *k, u32 kbits)
 }
 
 void
-chacha_ivsetup(chacha_ctx *x, const u8 *iv, const u8 *counter)
+chacha_ivsetup(chacha_ctx *x, const uint8_t *iv, const uint8_t *counter)
  {
 	U8TO32_LITTLE(x->input[12], counter == NULL ? 0 : counter + 0);
 	U8TO32_LITTLE(x->input[13], counter == NULL ? 0 : counter + 4);
@@ -86,12 +86,12 @@ chacha_ivsetup(chacha_ctx *x, const u8 *iv, const u8 *counter)
 }
 
 void
-chacha_encrypt_bytes(chacha_ctx *x, const u8 *m, u8 *c, u32 bytes)
+chacha_encrypt_bytes(chacha_ctx *x, const uint8_t *m, uint8_t *c, uint32_t bytes)
 {
-	u32 x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
-	u32 j0, j1, j2, j3, j4, j5, j6, j7, j8, j9, j10, j11, j12, j13, j14, j15;
-	u8 *ctarget = NULL;
-	u8 tmp[64];
+	uint32_t x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
+	uint32_t j0, j1, j2, j3, j4, j5, j6, j7, j8, j9, j10, j11, j12, j13, j14, j15;
+	uint8_t *ctarget = NULL;
+	uint8_t tmp[64];
 	u_int i;
 
 	if (!bytes) {

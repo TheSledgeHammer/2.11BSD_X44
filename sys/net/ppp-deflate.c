@@ -45,7 +45,7 @@ __KERNEL_RCSID(0, "$NetBSD: ppp-deflate.c,v 1.12 2002/09/13 14:32:11 itojun Exp 
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <net/ppp_defs.h>
-#include <lib/libz/zlib.h>
+#include <net/zlib.h>
 
 #define PACKETPTR	struct mbuf *
 #include <net/ppp-comp.h>

@@ -54,11 +54,9 @@ struct in_addr;
 struct sockaddr;
 
 /* ns.c */
-int ns_control(struct socket *, u_long, caddr_t, struct ifnet *,
-		    struct proc *);
+int ns_control(struct socket *, u_long, caddr_t, struct ifnet *, struct proc *);
 void ns_ifscrub(struct ifnet *, struct ns_ifaddr *);
-int ns_ifinit(struct ifnet *, struct ns_ifaddr *, struct sockaddr_ns *,
-		   int);
+int ns_ifinit(struct ifnet *, struct ns_ifaddr *, struct sockaddr_ns *, int);
 struct ns_ifaddr *ns_iaonnetof(struct ns_addr *);
 void ns_purgeaddr(struct ifaddr *, struct ifnet *);
 void ns_purgeif(struct ifnet *);
