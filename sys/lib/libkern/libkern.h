@@ -265,8 +265,6 @@ char		*intoa(u_int32_t);
 void		*memchr(const void *, int, size_t);
 void		*memmove(void *, const void *, size_t);
 int	 		pmatch(const char *, const char *, const char **);
-u_int32_t 	arc4random(void);
-void	 	arc4randbytes(void *, size_t);
 void		qsort(void *, size_t, size_t, int (*)(const void *, const void *));
 void		qsort_r(void *, size_t, size_t, void *, int (*)(void *, const void *, const void *));
 u_long	 	random(void);
@@ -282,6 +280,10 @@ u_long	 	strtoul(const char *, char **, int);
 quad_t		strtoq(const char *, char **, int);
 
 void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
+
+u_int32_t 	arc4random(void);
+u_int64_t	arc4random64(void);
+void	 	arc4randbytes(void *, size_t);
 
 /* Hash Functions */
 uint32_t 	prospector32(uint32_t);
