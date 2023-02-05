@@ -211,6 +211,9 @@ int		getenv_array(const char *, void *, int, int *, int, bool_t);
 #include <lib/libkern/libkern.h>
 #endif
 
+extern const char hexdigits[];	/* "0123456789abcdef" in subr_prf.c */
+extern const char HEXDIGITS[];	/* "0123456789ABCDEF" in subr_prf.c */
+
 extern	void	_insque(void *, void *);
 extern	void	_remque(void *);
 
