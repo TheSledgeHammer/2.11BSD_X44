@@ -429,7 +429,7 @@ _rs_init(rndpool_t *rp, u_char *buf, size_t n)
 }
 
 static void
-_rs_seed(rndpool_t *rp, void *buf, size_t n)
+_rs_seed(rndpool_t *rp, u_char *buf, size_t n)
 {
 	_rs_rekey(rp, buf, n);
 

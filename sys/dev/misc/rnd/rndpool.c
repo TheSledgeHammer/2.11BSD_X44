@@ -151,13 +151,13 @@ rndpool_extract_data(rndpool_t *rp, void *p, u_int32_t len)
 	buf = p;
 	remain = len;
 
-	SHA512Init(&hash);
-	SHA512Update(&hash, (u_int8_t *)rp->pool, RND_POOLBYTES);
-	SHA512Final(digest, &hash);
+	SHA512_Init(&hash);
+	SHA512_Update(&hash, (u_int8_t *)rp->pool, RND_POOLBYTES);
+	SHA512_Final(digest, &hash);
 
 	for (i = 0; i < 4; i++) {
 		u_int32_t word;
-		memcpy(&word, &digest[i * 16], 16);
+		memcpy(&word, &digest[i * 16], 4);
 		rndpool_add_one_word(rp, word);
 	}
 

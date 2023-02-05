@@ -1,0 +1,17 @@
+#	$NetBSD: Makefile,v 1.13 2003/03/25 22:48:43 mycroft Exp $
+
+file lib/libz/adler32.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/compress.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/crc32.c 		(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/deflate.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/infback.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/infblock.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/infcodes.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/inffast.c		(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/inflate.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/inftrees.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/infutil.c 	(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/trees.c 		(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/uncompr.c		(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/zalloc.c 		(ppp & ppp_deflate) | ipsec | opencrypto
+file lib/libz/zutil.c		(ppp & ppp_deflate) | ipsec | opencrypto
