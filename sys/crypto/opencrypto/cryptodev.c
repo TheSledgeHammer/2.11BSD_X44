@@ -206,22 +206,40 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 		case 0:
 			break;
 		case CRYPTO_MD5_HMAC:
-			thash = &auth_hash_hmac_md5_96;
+			thash = &auth_hash_hmac_md5;
 			break;
 		case CRYPTO_SHA1_HMAC:
+			thash = &auth_hash_hmac_sha1;
+			break;
+		case CRYPTO_MD5_HMAC_96:
+			thash = &auth_hash_hmac_md5_96;
+			break;
+		case CRYPTO_SHA1_HMAC_96:
 			thash = &auth_hash_hmac_sha1_96;
 			break;
 		case CRYPTO_SHA2_HMAC:
-			if (sop->mackeylen == auth_hash_hmac_sha2_256.keysize)
+			/* XXX switching on key length seems questionable */
+			if (sop->mackeylen == auth_hash_hmac_sha2_256.keysize) {
 				thash = &auth_hash_hmac_sha2_256;
-			else if (sop->mackeylen == auth_hash_hmac_sha2_384.keysize)
+			} else if (sop->mackeylen == auth_hash_hmac_sha2_384.keysize) {
 				thash = &auth_hash_hmac_sha2_384;
-			else if (sop->mackeylen == auth_hash_hmac_sha2_512.keysize)
+			} else if (sop->mackeylen == auth_hash_hmac_sha2_512.keysize) {
 				thash = &auth_hash_hmac_sha2_512;
-			else
-				return (EINVAL);
+			} else {
+				DPRINTF("Invalid mackeylen %d\n", sop->mackeylen);
+				return EINVAL;
+			}
+			break;
+		case CRYPTO_SHA2_384_HMAC:
+			thash = &auth_hash_hmac_sha2_384;
+			break;
+		case CRYPTO_SHA2_512_HMAC:
+			thash = &auth_hash_hmac_sha2_512;
 			break;
 		case CRYPTO_RIPEMD160_HMAC:
+			thash = &auth_hash_hmac_ripemd_160;
+			break;
+		case CRYPTO_RIPEMD160_HMAC_96:
 			thash = &auth_hash_hmac_ripemd_160_96;
 			break;
 		case CRYPTO_MD5:

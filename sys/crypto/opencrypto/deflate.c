@@ -60,7 +60,7 @@ ocf_zalloc(void *nil, u_int type, u_int size)
 	void *ptr;
 
 	ptr = malloc(type *size, M_CRYPTO_DATA, M_NOWAIT);
-	return ptr;
+	return (ptr);
 }
 
 static void
@@ -80,13 +80,14 @@ deflate_global(data, size, decomp, out)
 
 	z_stream zbuf;
 	u_int8_t *output;
-	u_int32_t count, result;
-	int error, i = 0, j;
+	u_int32_t count, result, tocopy;
+	int error, i, j;
 	struct deflate_buf buf[ZBUF];
 
 	bzero(&zbuf, sizeof(z_stream));
-	for (j = 0; j < ZBUF; j++)
+	for (j = 0; j < ZBUF; j++) {
 		buf[j].flag = 0;
+	}
 
 	zbuf.next_in = data;	/* data that is going to be processed */
 	zbuf.zalloc = ocf_zalloc;
@@ -95,94 +96,111 @@ deflate_global(data, size, decomp, out)
 	zbuf.avail_in = size;	/* Total length of data to be processed */
 
 	if (!decomp) {
-		MALLOC(buf[i].out, u_int8_t *, (u_long) size, M_CRYPTO_DATA, M_NOWAIT);
-		if (buf[i].out == NULL)
-			goto bad;
-		buf[i].size = size;
+		buf[0].size = size;
 		buf[i].flag = 1;
 		i++;
 	} else {
 		/*
-	 	 * Choose a buffer with 4x the size of the input buffer
-	 	 * for the size of the output buffer in the case of
-	 	 * decompression. If it's not sufficient, it will need to be
-	 	 * updated while the decompression is going on
-	 	 */
+		 * Choose a buffer with 4x the size of the input buffer
+		 * for the size of the output buffer in the case of
+		 * decompression. If it's not sufficient, it will need to be
+		 * updated while the decompression is going on
+		 */
 
-		MALLOC(buf[i].out, u_int8_t *, (u_long) (size * 4), M_CRYPTO_DATA, M_NOWAIT);
-		if (buf[i].out == NULL)
-			goto bad;
-		buf[i].size = size * 4;
+		buf[0].size = size * 4;
 		buf[i].flag = 1;
 		i++;
 	}
 
+	buf[0].out = malloc(buf[0].size, M_CRYPTO_DATA, M_NOWAIT);
+	if (buf[i].out == NULL) {
+		return (0);
+	}
+	i = 1;
+
 	zbuf.next_out = buf[0].out;
 	zbuf.avail_out = buf[0].size;
 
-	error = decomp ? inflateInit2(&zbuf, window_inflate) :
-	    deflateInit2(&zbuf, Z_DEFAULT_COMPRESSION, Z_METHOD,
-		    window_deflate, Z_MEMLEVEL, Z_DEFAULT_STRATEGY);
+	error = decomp ?
+			inflateInit2(&zbuf, window_inflate) :
+			deflateInit2(&zbuf, Z_DEFAULT_COMPRESSION, Z_METHOD, window_deflate,
+					Z_MEMLEVEL, Z_DEFAULT_STRATEGY);
 
-	if (error != Z_OK)
-		goto bad;
-	for (;;) {
-		error = decomp ? inflate(&zbuf, Z_PARTIAL_FLUSH) :
-				 deflate(&zbuf, Z_PARTIAL_FLUSH);
-		if (error != Z_OK && error != Z_STREAM_END)
-			goto bad;
-		else if (zbuf.avail_in == 0 && zbuf.avail_out != 0)
-			goto end;
-		else if (zbuf.avail_out == 0 && i < (ZBUF - 1)) {
-			/* we need more output space, allocate size */
-			MALLOC(buf[i].out, u_int8_t *, (u_long) size,
-			    M_CRYPTO_DATA, M_NOWAIT);
-			if (buf[i].out == NULL)
-				goto bad;
-			zbuf.next_out = buf[i].out;
-			buf[i].size = size;
-			buf[i].flag = 1;
-			zbuf.avail_out = buf[i].size;
-			i++;
-		} else
-			goto bad;
+	if (error != Z_OK) {
+		goto bad2;
 	}
-
-end:
-	result = count = zbuf.total_out;
-
-	MALLOC(*out, u_int8_t *, (u_long) result, M_CRYPTO_DATA, M_NOWAIT);
-	if (*out == NULL)
-		goto bad;
-	if (decomp)
-		inflateEnd(&zbuf);
-	else
-		deflateEnd(&zbuf);
-	output = *out;
-	for (j = 0; buf[j].flag != 0; j++) {
-		if (count > buf[j].size) {
-			bcopy(buf[j].out, *out, buf[j].size);
-			*out += buf[j].size;
-			FREE(buf[j].out, M_CRYPTO_DATA);
-			count -= buf[j].size;
-		} else {
-			/* it should be the last buffer */
-			bcopy(buf[j].out, *out, count);
-			*out += count;
-			FREE(buf[j].out, M_CRYPTO_DATA);
-			count = 0;
+	for (;;) {
+		error = decomp ?
+				inflate(&zbuf, Z_SYNC_FLUSH) : deflate(&zbuf, Z_FINISH);
+		if (error == Z_STREAM_END) { /* success */
+			break;
+			/*
+			 * XXX compensate for two problems:
+			 * -Former versions of this code didn't set Z_FINISH
+			 *  on compression, so the compressed data are not correctly
+			 *  terminated and the decompressor doesn't get Z_STREAM_END.
+			 *  Accept such packets for interoperability.
+			 * -sys/net/zlib.c has a bug which makes that Z_BUF_ERROR is
+			 *  set after successful decompression under rare conditions.
+			 */
+		} else if (decomp && (error == Z_OK || error == Z_BUF_ERROR)
+				&& zbuf.avail_in == 0 && zbuf.avail_out != 0) {
+			break;
+		} else if (error != Z_OK) {
+			goto bad;
+		} else if (zbuf.avail_out == 0) {
+			/* we need more output space, allocate size */
+			int nextsize = buf[i - 1].size * 2;
+			if (i == ZBUF || nextsize > 1000000) {
+				goto bad;
+			}
+			buf[i].out = malloc(nextsize, M_CRYPTO_DATA, M_NOWAIT);
+			if (buf[i].out == NULL) {
+				goto bad;
+			}
+			zbuf.next_out = buf[i].out;
+			zbuf.avail_out = buf[i].size = nextsize;
+			i++;
 		}
 	}
-	*out = output;
-	return result;
+
+	result = count = zbuf.total_out;
+
+	if (i != 1) { /* copy everything into one buffer */
+		output = malloc(result, M_CRYPTO_DATA, M_NOWAIT);
+		if (output == NULL) {
+			goto bad;
+		}
+		*out = output;
+		for (j = 0; j < i; j++) {
+			tocopy = MIN(count, buf[j].size);
+			/* XXX the last buf can be empty */
+			KASSERT(tocopy || j == (i - 1));
+			memcpy(output, buf[j].out, tocopy);
+			output += tocopy;
+			free(buf[j].out, M_CRYPTO_DATA);
+			count -= tocopy;
+		}
+		KASSERT(count == 0);
+	} else {
+		*out = buf[0].out;
+	}
+	if (decomp) {
+		inflateEnd(&zbuf);
+	} else {
+		deflateEnd(&zbuf);
+	}
+	return (result);
 
 bad:
-	*out = NULL;
-	for (j = 0; buf[j].flag != 0; j++)
-		FREE(buf[j].out, M_CRYPTO_DATA);
-	if (decomp)
+	if (decomp) {
 		inflateEnd(&zbuf);
-	else
+	} else {
 		deflateEnd(&zbuf);
-	return 0;
+	}
+bad2:
+	for (j = 0; j < i; j++) {
+		free(buf[j].out, M_CRYPTO_DATA);
+	}
+	return (0);
 }

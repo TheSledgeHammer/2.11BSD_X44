@@ -58,8 +58,8 @@ struct swcr_data {
 };
 
 #ifdef _KERNEL
-extern const u_int8_t hmac_ipad_buffer[64];
-extern const u_int8_t hmac_opad_buffer[64];
+//extern const u_int8_t hmac_ipad_buffer[64];
+//extern const u_int8_t hmac_opad_buffer[64];
 void	swcr_init(void);
 #endif /* _KERNEL */
 

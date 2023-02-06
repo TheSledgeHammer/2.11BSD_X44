@@ -13,15 +13,16 @@ define	opencrypto: blowfish, des, cast128, md5, rijndael, ripemd160, sha1, sha2,
 file	crypto/opencrypto/criov.c			opencrypto		needs-flag
 file	crypto/opencrypto/cryptosoft.c		opencrypto
 file	crypto/opencrypto/xform.c			opencrypto
+file	crypto/opencrypto/xform_wrapper.c	opencrypto
 file	crypto/opencrypto/crypto.c			opencrypto
 
 # wrapper around zlib functions
-#file	crypto/opencrypto/deflate.c		opencrypto
+#file	crypto/opencrypto/deflate.c			opencrypto
 
 
 # Pseudo-device for userspace access to opencrypto
 # (and thus crypto hardware accelerators).
 
-defpseudo crypto:  					opencrypto
+defpseudo crypto:  							opencrypto
 
 file	crypto/opencrypto/cryptodev.c		crypto

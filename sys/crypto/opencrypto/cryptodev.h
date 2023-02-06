@@ -60,46 +60,52 @@
 
 /* Some initial values */
 #define CRYPTO_DRIVERS_INITIAL	4
-#define CRYPTO_SW_SESSIONS	32
+#define CRYPTO_SW_SESSIONS		32
 
 /* HMAC values */
-#define HMAC_BLOCK_LEN		64
-#define HMAC_IPAD_VAL		0x36
-#define HMAC_OPAD_VAL		0x5C
+#define HMAC_BLOCK_LEN			64
+#define HMAC_IPAD_VAL			0x36
+#define HMAC_OPAD_VAL			0x5C
 
 /* Encryption algorithm block sizes */
-#define DES_BLOCK_LEN		8
-#define DES3_BLOCK_LEN		8
-#define BLOWFISH_BLOCK_LEN	8
-#define SKIPJACK_BLOCK_LEN	8
-#define CAST128_BLOCK_LEN	8
+#define DES_BLOCK_LEN			8
+#define DES3_BLOCK_LEN			8
+#define BLOWFISH_BLOCK_LEN		8
+#define SKIPJACK_BLOCK_LEN		8
+#define CAST128_BLOCK_LEN		8
 #define RIJNDAEL128_BLOCK_LEN	16
-#define EALG_MAX_BLOCK_LEN	16 /* Keep this updated */
+#define EALG_MAX_BLOCK_LEN		16 /* Keep this updated */
 
 /* Maximum hash algorithm result length */
-#define AALG_MAX_RESULT_LEN	64 /* Keep this updated */
+#define AALG_MAX_RESULT_LEN		64 /* Keep this updated */
 
 #define	CRYPTO_ALGORITHM_MIN	1
-#define CRYPTO_DES_CBC		1
-#define CRYPTO_3DES_CBC		2
-#define CRYPTO_BLF_CBC		3
-#define CRYPTO_CAST_CBC		4
-#define CRYPTO_SKIPJACK_CBC	5
-#define CRYPTO_MD5_HMAC		6
-#define CRYPTO_SHA1_HMAC	7
+#define CRYPTO_DES_CBC			1
+#define CRYPTO_3DES_CBC			2
+#define CRYPTO_BLF_CBC			3
+#define CRYPTO_CAST_CBC			4
+#define CRYPTO_SKIPJACK_CBC		5
+#define CRYPTO_MD5_HMAC			6
+#define CRYPTO_SHA1_HMAC		7
 #define CRYPTO_RIPEMD160_HMAC	8
-#define CRYPTO_MD5_KPDK		9
-#define CRYPTO_SHA1_KPDK	10
+#define CRYPTO_MD5_KPDK			9
+#define CRYPTO_SHA1_KPDK		10
 #define CRYPTO_RIJNDAEL128_CBC	11 /* 128 bit blocksize */
-#define CRYPTO_AES_CBC		11 /* 128 bit blocksize -- the same as above */
-#define CRYPTO_ARC4			12
-#define CRYPTO_MD5			13
-#define CRYPTO_SHA1			14
-#define	CRYPTO_SHA2_HMAC	15
-#define CRYPTO_NULL_HMAC	16
-#define CRYPTO_NULL_CBC		17
-#define CRYPTO_DEFLATE_COMP	18 /* Deflate compression algorithm */
-#define CRYPTO_ALGORITHM_MAX	18 /* Keep updated - see below */
+#define CRYPTO_AES_CBC			11 /* 128 bit blocksize -- the same as above */
+#define CRYPTO_ARC4				12
+#define CRYPTO_MD5				13
+#define CRYPTO_SHA1				14
+#define	CRYPTO_SHA2_HMAC		15
+#define CRYPTO_SHA2_256_HMAC	CRYPTO_SHA2_HMAC  /* for compatibility */
+#define CRYPTO_NULL_HMAC		16
+#define CRYPTO_NULL_CBC			17
+#define CRYPTO_DEFLATE_COMP		18 /* Deflate compression algorithm */
+#define CRYPTO_MD5_HMAC_96		19
+#define CRYPTO_SHA1_HMAC_96		20
+#define CRYPTO_RIPEMD160_HMAC_96	21
+#define CRYPTO_SHA2_384_HMAC	22
+#define CRYPTO_SHA2_512_HMAC	23
+#define CRYPTO_ALGORITHM_MAX	23 /* Keep updated - see below */
 
 /* Algorithm flags */
 #define	CRYPTO_ALG_FLAG_SUPPORTED	0x01 /* Algorithm is supported */
@@ -112,7 +118,7 @@ struct session_op {
 
 	u_int32_t	keylen;		/* cipher key */
 	caddr_t		key;
-	int		mackeylen;	/* mac key */
+	int			mackeylen;	/* mac key */
 	caddr_t		mackey;
 
   	u_int32_t	ses;		/* returns: session # */ 
