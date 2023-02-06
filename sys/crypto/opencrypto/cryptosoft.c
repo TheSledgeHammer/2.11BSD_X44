@@ -33,6 +33,11 @@ __KERNEL_RCSID(0, "$NetBSD: cryptosoft.c,v 1.8 2003/08/27 00:20:56 thorpej Exp $
 #include <sys/sysctl.h>
 #include <sys/errno.h>
 
+#include <crypto/md5/md5.h>
+#include <crypto/sha1/sha1.h>
+#include <crypto/sha2/sha2.h>
+#include <crypto/ripemd160/rmd160.h>
+
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
@@ -47,6 +52,15 @@ int32_t swcr_id = -1;
 #define COPYDATA(x, a, b, c, d) \
 	(x) == CRYPTO_BUF_MBUF ? m_copydata((struct mbuf *)a,b,c,d) \
 	: cuio_copydata((struct uio *)a,b,c,d)
+
+union authctx {
+	MD5_CTX 	md5ctx;
+	SHA1_CTX 	sha1ctx;
+	RMD160_CTX 	rmd160ctx;
+	SHA256_CTX 	sha256ctx;
+	SHA384_CTX 	sha384ctx;
+	SHA512_CTX 	sha512ctx;
+};
 
 static	int swcr_encdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
 static	int swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf, int outtype);
@@ -64,7 +78,7 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 {
 	unsigned char iv[EALG_MAX_BLOCK_LEN], blk[EALG_MAX_BLOCK_LEN], *idat;
 	unsigned char *ivp, piv[EALG_MAX_BLOCK_LEN];
-	struct enc_xform *exf;
+	const struct enc_xform *exf;
 	int i, k, j, blks;
 	int count, ind;
 
@@ -523,7 +537,7 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
     struct swcr_data *sw, caddr_t buf, int outtype)
 {
 	unsigned char aalg[AALG_MAX_RESULT_LEN];
-	struct auth_hash *axf;
+	const struct auth_hash *axf;
 	union authctx ctx;
 	int err;
 
@@ -619,7 +633,7 @@ swcr_compdec(struct cryptodesc *crd, struct swcr_data *sw,
     caddr_t buf, int outtype)
 {
 	u_int8_t *data, *out;
-	struct comp_algo *cxf;
+	const struct comp_algo *cxf;
 	int adj;
 	u_int32_t result;
 
@@ -694,9 +708,9 @@ static int
 swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 {
 	struct swcr_data **swd;
-	struct auth_hash *axf;
-	struct enc_xform *txf;
-	struct comp_algo *cxf;
+	const struct auth_hash *axf;
+	const struct enc_xform *txf;
+	const struct comp_algo *cxf;
 	u_int32_t i;
 	int k, error;
 
@@ -744,8 +758,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 	*sid = i;
 
 	while (cri) {
-		MALLOC(*swd, struct swcr_data *, sizeof(struct swcr_data),
-		    M_CRYPTO_DATA, M_NOWAIT);
+		MALLOC(*swd, struct swcr_data *, sizeof(struct swcr_data), M_CRYPTO_DATA, M_NOWAIT);
 		if (*swd == NULL) {
 			swcr_freesession(NULL, i);
 			return ENOBUFS;
@@ -917,9 +930,9 @@ static int
 swcr_freesession(void *arg, u_int64_t tid)
 {
 	struct swcr_data *swd;
-	struct enc_xform *txf;
-	struct auth_hash *axf;
-	struct comp_algo *cxf;
+	const struct enc_xform *txf;
+	const struct auth_hash *axf;
+	const struct comp_algo *cxf;
 	u_int32_t sid = ((u_int32_t) tid) & 0xffffffff;
 
 	if (sid > swcr_sesnum || swcr_sessions == NULL ||

@@ -61,9 +61,9 @@ struct csession {
 	u_int32_t			ses;
 
 	u_int32_t			cipher;
-	struct enc_xform 	*txform;
+	const struct enc_xform 	*txform;
 	u_int32_t			mac;
-	struct auth_hash 	*thash;
+	const struct auth_hash 	*thash;
 
 	caddr_t				key;
 	int					keylen;
@@ -117,8 +117,8 @@ static struct	csession *csefind(struct fcrypt *, u_int);
 static int	csedelete(struct fcrypt *, struct csession *);
 static struct	csession *cseadd(struct fcrypt *, struct csession *);
 static struct	csession *csecreate(struct fcrypt *, u_int64_t, caddr_t, u_int64_t,
-    caddr_t, u_int64_t, u_int32_t, u_int32_t, struct enc_xform *,
-    struct auth_hash *);
+    caddr_t, u_int64_t, u_int32_t, u_int32_t, const struct enc_xform *,
+    const struct auth_hash *);
 static int	csefree(struct csession *);
 
 static int	cryptodev_op(struct csession *, struct crypt_op *, struct proc *);
@@ -162,8 +162,8 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 	struct csession *cse;
 	struct session_op *sop;
 	struct crypt_op *cop;
-	struct enc_xform *txform = NULL;
-	struct auth_hash *thash = NULL;
+	const struct enc_xform *txform = NULL;
+	const struct auth_hash *thash = NULL;
 	u_int64_t sid;
 	u_int32_t ses;
 	int error = 0;
@@ -226,7 +226,7 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 			} else if (sop->mackeylen == auth_hash_hmac_sha2_512.keysize) {
 				thash = &auth_hash_hmac_sha2_512;
 			} else {
-				DPRINTF("Invalid mackeylen %d\n", sop->mackeylen);
+				printf("Invalid mackeylen %d\n", sop->mackeylen);
 				return EINVAL;
 			}
 			break;
@@ -698,7 +698,7 @@ cseadd(struct fcrypt *fcr, struct csession *cse)
 static struct csession *
 csecreate(struct fcrypt *fcr, u_int64_t sid, caddr_t key, u_int64_t keylen,
     caddr_t mackey, u_int64_t mackeylen, u_int32_t cipher, u_int32_t mac,
-    struct enc_xform *txform, struct auth_hash *thash)
+    const struct enc_xform *txform, const struct auth_hash *thash)
 {
 	struct csession *cse;
 

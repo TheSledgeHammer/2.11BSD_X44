@@ -45,6 +45,16 @@
 #include <sys/param.h>
 #include <sys/malloc.h>
 
+#include <crypto/md5/md5.h>
+#include <crypto/sha1/sha1.h>
+#include <crypto/sha2/sha2.h>
+#include <crypto/blowfish/blowfish.h>
+#include <crypto/cast128/cast128.h>
+#include <crypto/des/des.h>
+#include <crypto/rijndael/rijndael.h>
+#include <crypto/ripemd160/rmd160.h>
+#include <crypto/skipjack/skipjack.h>
+
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 #include <crypto/opencrypto/xform_wrapper.h>
@@ -225,11 +235,11 @@ const struct auth_hash auth_hash_hmac_md5 = {
 	.authsize	= 16,
 	.blocksize	= 64,
 	.ctxsize	= sizeof(MD5_CTX),
-	.Init		= MD5Init,
+	.Init		= (void (*)(void *))MD5Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= MD5Update_int,
-	.Final		= MD5Final,
+	.Final		= (void (*)(u_int8_t *, void *))MD5Final,
 };
 
 const struct auth_hash auth_hash_hmac_sha1 = {
@@ -255,11 +265,11 @@ const struct auth_hash auth_hash_hmac_ripemd_160 = {
 	.authsize	= 20,
 	.blocksize	= 64,
 	.ctxsize	= sizeof(RMD160_CTX),
-	.Init		= RMD160Init,
+	.Init		= (void (*)(void *))RMD160Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= RMD160Update_int,
-	.Final		= RMD160Final,
+	.Final		= (void (*)(u_int8_t *, void *))RMD160Final,
 };
 
 const struct auth_hash auth_hash_hmac_md5_96 = {
@@ -270,11 +280,11 @@ const struct auth_hash auth_hash_hmac_md5_96 = {
 	.authsize	= 12,
 	.blocksize	= 64,
 	.ctxsize	= sizeof(MD5_CTX),
-	.Init		= MD5Init,
+	.Init		= (void (*)(void *))MD5Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= MD5Update_int,
-	.Final		= MD5Final,
+	.Final		= (void (*)(u_int8_t *, void *))MD5Final,
 };
 
 const struct auth_hash auth_hash_hmac_sha1_96 = {
@@ -300,11 +310,11 @@ const struct auth_hash auth_hash_hmac_ripemd_160_96 = {
 	.authsize	= 12,
 	.blocksize	= 64,
 	.ctxsize	= sizeof(RMD160_CTX),
-	.Init		= RMD160Init,
+	.Init		= (void (*)(void *))RMD160Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= RMD160Update_int,
-	.Final		= RMD160Final,
+	.Final		= (void (*)(u_int8_t *, void *))RMD160Final,
 };
 
 const struct auth_hash auth_hash_key_md5 = {
@@ -315,11 +325,11 @@ const struct auth_hash auth_hash_key_md5 = {
 	.authsize	= 16,
 	.blocksize	= 0,
 	.ctxsize	= sizeof(MD5_CTX),
-	.Init		= MD5Init,
+	.Init		= (void (*)(void *))MD5Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= MD5Update_int,
-	.Final		= MD5Final,
+	.Final		= (void (*)(u_int8_t *, void *))MD5Final,
 };
 
 const struct auth_hash auth_hash_key_sha1 = {
@@ -345,11 +355,11 @@ const struct auth_hash auth_hash_md5 = {
 	.authsize	= 16,
 	.blocksize	= 0,
 	.ctxsize	= sizeof(MD5_CTX),
-	.Init		= MD5Init,
+	.Init		= (void (*)(void *))MD5Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= MD5Update_int,
-	.Final		= MD5Final,
+	.Final		= (void (*)(u_int8_t *, void *))MD5Final,
 };
 
 const struct auth_hash auth_hash_sha1 = {
@@ -360,11 +370,11 @@ const struct auth_hash auth_hash_sha1 = {
 	.authsize	= 20,
 	.blocksize	= 0,
 	.ctxsize	= sizeof(SHA1_CTX),
-	.Init		= SHA1Init,
+	.Init		= (void (*)(void *))SHA1Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= SHA1Update_int,
-	.Final		= SHA1Final,
+	.Final		= (void (*)(u_int8_t *, void *))SHA1Final,
 };
 
 const struct auth_hash auth_hash_hmac_sha2_256 = {
@@ -375,11 +385,11 @@ const struct auth_hash auth_hash_hmac_sha2_256 = {
 	.authsize	= 16,
 	.blocksize	= 64,
 	.ctxsize	= sizeof(SHA256_CTX),
-	.Init		= SHA256_Init,
+	.Init		= (void (*)(void *))(void *)SHA256_Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= SHA256Update_int,
-	.Final		= SHA256_Final,
+	.Final		= (void (*)(u_int8_t *, void *))(void *)SHA256_Final,
 };
 
 const struct auth_hash auth_hash_hmac_sha2_384 = {
@@ -390,11 +400,11 @@ const struct auth_hash auth_hash_hmac_sha2_384 = {
 	.authsize	= 24,
 	.blocksize	= 128,
 	.ctxsize	= sizeof(SHA384_CTX),
-	.Init		= SHA384_Init,
+	.Init		= (void (*)(void *))(void *)SHA384_Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= SHA384Update_int,
-	.Final		= SHA384_Final,
+	.Final		= (void (*)(u_int8_t *, void *))(void *)SHA384_Final,
 };
 
 const struct auth_hash auth_hash_hmac_sha2_512 = {
@@ -405,11 +415,11 @@ const struct auth_hash auth_hash_hmac_sha2_512 = {
 	.authsize	= 32,
 	.blocksize	= 128,
 	.ctxsize	= sizeof(SHA512_CTX),
-	.Init		= SHA512_Init,
+	.Init		= (void (*)(void *))(void *)SHA512_Init,
 	.Setkey		= NULL,
 	.Reinit		= NULL,
 	.Update		= SHA512Update_int,
-	.Final		= SHA512_Final,
+	.Final		= (void (*)(u_int8_t *, void *))(void *)SHA512_Final,
 };
 
 /* Compression instance */

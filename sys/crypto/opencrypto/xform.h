@@ -67,15 +67,6 @@ struct comp_algo {
 	u_int32_t 	(*decompress)(u_int8_t *, u_int32_t, u_int8_t **);
 };
 
-union authctx {
-	MD5_CTX 	md5ctx;
-	SHA1_CTX 	sha1ctx;
-	RMD160_CTX 	rmd160ctx;
-	SHA256_CTX 	sha256ctx;
-	SHA384_CTX 	sha384ctx;
-	SHA512_CTX 	sha512ctx;
-};
-
 extern const u_int8_t hmac_ipad_buffer[128];
 extern const u_int8_t hmac_opad_buffer[128];
 
