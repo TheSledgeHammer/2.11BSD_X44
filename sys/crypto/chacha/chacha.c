@@ -17,7 +17,7 @@ void
 hchacha20(uint32_t derived_key[8], const uint8_t nonce[16], const uint8_t key[32])
 {
 	int i;
-	uint32_t x[];
+	uint32_t x[16];
 
 	U8TO32_LITTLE(x[0], sigma + 0);
 	U8TO32_LITTLE(x[1], sigma + 4);
