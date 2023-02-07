@@ -2,4 +2,4 @@
 
 define	chacha
 
-file	crypto/chacha/chacha.c	chacha
+file	crypto/chacha/chacha.c
