@@ -78,6 +78,7 @@ rndpool_increment_entropy_count(rndpool_t *rp, u_int32_t entropy)
 {
 	rp->stats.curentropy += entropy;
 	rp->stats.added += entropy;
+
 	if (rp->stats.curentropy > RND_POOLBITS) {
 		rp->stats.discarded += (rp->stats.curentropy - RND_POOLBITS);
 		rp->stats.curentropy = RND_POOLBITS;
@@ -156,13 +157,7 @@ rndpool_add_data(rndpool_t *rp, void *p, u_int32_t len, u_int32_t entropy)
 		rndpool_add_one_word(rp, val);
 	}
 
-	rp->stats.curentropy += entropy;
-	rp->stats.added += entropy;
-
-	if (rp->stats.curentropy > RND_POOLBITS) {
-		rp->stats.discarded += (rp->stats.curentropy - RND_POOLBITS);
-		rp->stats.curentropy = RND_POOLBITS;
-	}
+	rndpool_increment_entropy_count(rp, entropy);
 }
 
 /*
@@ -215,7 +210,7 @@ rndpool_extract_data(rndpool_t *rp, void *p, u_int32_t len)
 		 * that the next hash will generate a different value
 		 * if no new values were added to the pool.
 		 */
-		for (i = 0; i < 4; i++) {
+		for (i = 0; i < 5; i++) {
 			u_int32_t word;
 			memcpy(&word, &digest[i * 4], 4);
 			rndpool_add_one_word(rp, word);

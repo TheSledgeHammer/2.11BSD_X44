@@ -42,52 +42,52 @@
 #ifndef _CRYPTO_XFORM_WRAPPER_H_
 #define _CRYPTO_XFORM_WRAPPER_H_
 
-void null_encrypt(caddr_t, u_int8_t *);
-void null_decrypt(caddr_t, u_int8_t *);
-int null_setkey(u_int8_t **, const u_int8_t *, int);
-void null_zerokey(u_int8_t **);
+void 	null_encrypt(caddr_t, u_int8_t *);
+void 	null_decrypt(caddr_t, u_int8_t *);
+int 	null_setkey(u_int8_t **, const u_int8_t *, int);
+void 	null_zerokey(u_int8_t **);
 
-int des1_setkey(u_int8_t **, const u_int8_t *, int);
-int des3_setkey(u_int8_t **, const u_int8_t *, int);
-int blf_setkey(u_int8_t **, const u_int8_t *, int);
-int cast5_setkey(u_int8_t **, const u_int8_t *, int);
-int skipjack_setkey(u_int8_t **, const u_int8_t *, int);
-int rijndael128_setkey(u_int8_t **, const u_int8_t *, int);
-void des1_encrypt(caddr_t, u_int8_t *);
-void des3_encrypt(caddr_t, u_int8_t *);
-void blf_encrypt(caddr_t, u_int8_t *);
-void cast5_encrypt(caddr_t, u_int8_t *);
-void skipjack_encrypt(caddr_t, u_int8_t *);
-void rijndael128_encrypt(caddr_t, u_int8_t *);
-void des1_decrypt(caddr_t, u_int8_t *);
-void des3_decrypt(caddr_t, u_int8_t *);
-void blf_decrypt(caddr_t, u_int8_t *);
-void cast5_decrypt(caddr_t, u_int8_t *);
-void skipjack_decrypt(caddr_t, u_int8_t *);
-void rijndael128_decrypt(caddr_t, u_int8_t *);
-void des1_zerokey(u_int8_t **);
-void des3_zerokey(u_int8_t **);
-void blf_zerokey(u_int8_t **);
-void cast5_zerokey(u_int8_t **);
-void skipjack_zerokey(u_int8_t **);
-void rijndael128_zerokey(u_int8_t **);
+int 	des1_setkey(u_int8_t **, const u_int8_t *, int);
+int 	des3_setkey(u_int8_t **, const u_int8_t *, int);
+int 	blf_setkey(u_int8_t **, const u_int8_t *, int);
+int 	cast5_setkey(u_int8_t **, const u_int8_t *, int);
+int 	skipjack_setkey(u_int8_t **, const u_int8_t *, int);
+int 	rijndael128_setkey(u_int8_t **, const u_int8_t *, int);
+void 	des1_encrypt(caddr_t, u_int8_t *);
+void 	des3_encrypt(caddr_t, u_int8_t *);
+void 	blf_encrypt(caddr_t, u_int8_t *);
+void 	cast5_encrypt(caddr_t, u_int8_t *);
+void 	skipjack_encrypt(caddr_t, u_int8_t *);
+void 	rijndael128_encrypt(caddr_t, u_int8_t *);
+void 	des1_decrypt(caddr_t, u_int8_t *);
+void 	des3_decrypt(caddr_t, u_int8_t *);
+void 	blf_decrypt(caddr_t, u_int8_t *);
+void 	cast5_decrypt(caddr_t, u_int8_t *);
+void 	skipjack_decrypt(caddr_t, u_int8_t *);
+void 	rijndael128_decrypt(caddr_t, u_int8_t *);
+void 	des1_zerokey(u_int8_t **);
+void 	des3_zerokey(u_int8_t **);
+void 	blf_zerokey(u_int8_t **);
+void 	cast5_zerokey(u_int8_t **);
+void 	skipjack_zerokey(u_int8_t **);
+void 	rijndael128_zerokey(u_int8_t **);
 
-void null_init(void *);
-int null_update(void *, const u_int8_t *, u_int16_t);
-void null_final(u_int8_t *, void *);
+void 	null_init(void *);
+int 	null_update(void *, const u_int8_t *, u_int16_t);
+void 	null_final(u_int8_t *, void *);
 
-int	MD5Update_int(void *, const u_int8_t *, u_int16_t);
-void SHA1Init_int(void *);
-int SHA1Update_int(void *, const u_int8_t *, u_int16_t);
-void SHA1Final_int(u_int8_t *, void *);
+int		MD5Update_int(void *, const u_int8_t *, u_int16_t);
+void 	SHA1Init_int(void *);
+int 	SHA1Update_int(void *, const u_int8_t *, u_int16_t);
+void 	SHA1Final_int(u_int8_t *, void *);
 
-int RMD160Update_int(void *, const u_int8_t *, u_int16_t);
-int SHA1Update_int(void *, const u_int8_t *, u_int16_t);
-void SHA1Final_int(u_int8_t *, void *);
-int RMD160Update_int(void *, const u_int8_t *, u_int16_t);
-int SHA256Update_int(void *, const u_int8_t *, u_int16_t);
-int SHA384Update_int(void *, const u_int8_t *, u_int16_t);
-int SHA512Update_int(void *, const u_int8_t *, u_int16_t);
+int 	RMD160Update_int(void *, const u_int8_t *, u_int16_t);
+int 	SHA1Update_int(void *, const u_int8_t *, u_int16_t);
+void 	SHA1Final_int(u_int8_t *, void *);
+int 	RMD160Update_int(void *, const u_int8_t *, u_int16_t);
+int 	SHA256Update_int(void *, const u_int8_t *, u_int16_t);
+int 	SHA384Update_int(void *, const u_int8_t *, u_int16_t);
+int 	SHA512Update_int(void *, const u_int8_t *, u_int16_t);
 
 u_int32_t deflate_compress(u_int8_t *, u_int32_t, u_int8_t **);
 u_int32_t deflate_decompress(u_int8_t *, u_int32_t, u_int8_t **);

@@ -55,40 +55,40 @@
  * processing.
  */
 struct tdb_ident {
-	u_int32_t spi;
-	union sockaddr_union dst;
-	u_int8_t proto;
+	u_int32_t 				spi;
+	union sockaddr_union 	dst;
+	u_int8_t 				proto;
 };
 
 /*
  * Opaque data structure hung off a crypto operation descriptor.
  */
 struct tdb_crypto {
-	struct ipsecrequest	*tc_isr;	/* ipsec request state */
-	u_int32_t		tc_spi;		/* associated SPI */
+	struct ipsecrequest		*tc_isr;	/* ipsec request state */
+	u_int32_t				tc_spi;		/* associated SPI */
 	union sockaddr_union	tc_dst;		/* dst addr of packet */
-	u_int8_t		tc_proto;	/* current protocol, e.g. AH */
-	u_int8_t		tc_nxt;		/* next protocol, e.g. IPV4 */
-	int			tc_protoff;	/* current protocol offset */
-	int			tc_skip;	/* data offset */
-	caddr_t			tc_ptr;		/* associated crypto data */
+	u_int8_t				tc_proto;	/* current protocol, e.g. AH */
+	u_int8_t				tc_nxt;		/* next protocol, e.g. IPV4 */
+	int						tc_protoff;	/* current protocol offset */
+	int						tc_skip;	/* data offset */
+	caddr_t					tc_ptr;		/* associated crypto data */
 };
 
 struct secasvar;
 struct ipescrequest;
 
 struct xformsw {
-	u_short	xf_type;		/* xform ID */
-#define	XF_IP4		1	/* IP inside IP */
-#define	XF_AH		2	/* AH */
-#define	XF_ESP		3	/* ESP */
+	u_short				xf_type;		/* xform ID */
+#define	XF_IP4			1	/* IP inside IP */
+#define	XF_AH			2	/* AH */
+#define	XF_ESP			3	/* ESP */
 #define	XF_TCPSIGNATURE	5	/* TCP MD5 Signature option, RFC 2358 */
-#define	XF_IPCOMP	6	/* IPCOMP */
-	u_short	xf_flags;
-#define	XFT_AUTH	0x0001
-#define	XFT_CONF	0x0100
-#define	XFT_COMP	0x1000
-	char	*xf_name;			/* human-readable name */
+#define	XF_IPCOMP		6	/* IPCOMP */
+	u_short				xf_flags;
+#define	XFT_AUTH		0x0001
+#define	XFT_CONF		0x0100
+#define	XFT_COMP		0x1000
+	char				*xf_name;			/* human-readable name */
 	int	(*xf_init)(struct secasvar*, struct xformsw*);	/* setup */
 	int	(*xf_zeroize)(struct secasvar*);		/* cleanup */
 	int	(*xf_input)(struct mbuf*, struct secasvar*,	/* input */

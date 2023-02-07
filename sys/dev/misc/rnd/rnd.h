@@ -73,7 +73,6 @@ typedef struct {
 	u_int32_t		rotate;					/* how many bits to rotate by */
 	rndpoolstat_t	stats;					/* current statistics */
 	u_int32_t		pool[RND_POOLWORDS]; 	/* random pool data */
-	//chacha_ctx		*chacha;
 } rndpool_t;
 
 void		rndpool_init(rndpool_t *);

@@ -141,8 +141,6 @@ vm_map_t 						kmap_free;
 vm_map_entry_t 					kentry_free;
 static struct vm_map			kmap_init[MAX_KMAP];
 static struct vm_map_entry		kentry_init[MAX_KMAPENT];
-vm_offset_t						kentry_data;
-vm_size_t						kentry_data_size;
 
 static void	_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
 static void	_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);

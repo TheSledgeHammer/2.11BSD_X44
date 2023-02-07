@@ -44,14 +44,14 @@
 #define MINCOMP		2	/* won't be used, but must be defined */
 #define ZBUF		10
 
-u_int32_t deflate_global(u_int8_t *, u_int32_t, int, u_int8_t **);
-void *z_alloc(void *, u_int, u_int);
-void z_free(void *, void *);
-
 struct deflate_buf {
 	u_int8_t 	*out;
 	u_int32_t 	size;
 	int 		flag;
 };
+
+u_int32_t 	deflate_global(u_int8_t *, u_int32_t, int, u_int8_t **);
+void 		*z_alloc(void *, u_int, u_int);
+void 		z_free(void *, void *);
 
 #endif /* _CRYPTO_DEFLATE_H_ */

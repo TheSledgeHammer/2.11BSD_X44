@@ -104,10 +104,6 @@ int	rnd_debug = 0;
 #define	RND_DEBUG_IOCTL		0x0004
 #define	RND_DEBUG_SNOOZE	0x0008
 
-#define	CHACHA20_KEYBYTES		32
-#define	CHACHA20_BUFFER_SIZE	64
-#define CHACHA20_EBUF_SIZE		40
-
 /*
  * our select/poll queue
  */
@@ -124,10 +120,23 @@ static int	rnd_ready = 0;
 static int	rnd_have_entropy = 0;
 
 static inline u_int32_t rnd_counter(void);
-//static void	_rs_stir(rndpool_t *rp);
-//static inline void _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen);
 
-void	rndattach(int);
+/* chacha20 stream info */
+#define	CHACHA20_KEY_SIZE		32
+#define	CHACHA20_IV_SIZE		8
+#define	CHACHA20_BLOCK_SIZE		64
+#define	CHACHA20_BUF_SIZE		(16 * CHACHA20_BLOCK_SIZE)
+#define CHACHA20_EBUF_SIZE		(CHACHA20_KEY_SIZE + CHACHA20_IV_SIZE)
+
+static chacha_ctx 	rs;				/* chacha context for random keystream */
+static u_char 		rs_buf[CHACHA20_BUF_SIZE];
+static size_t 		rs_have;		/* valid bytes at end of rs_buf */
+static size_t 		rs_count;		/* bytes till reseed */
+
+static inline void	_rs_init(u_char *, size_t);
+static void			_rs_stir(void);
+static inline void 	_rs_rekey(u_char *, size_t);
+static inline void	_rs_stir_if_needed(size_t);
 
 dev_type_open(rndopen);
 dev_type_close(rndclose);
@@ -195,7 +204,7 @@ rndattach(int num)
 void
 rnd_init(void *null)
 {
-        u_int32_t c;
+	u_int32_t c;
         
 	if (rnd_ready) {
 		return;
@@ -206,6 +215,8 @@ rnd_init(void *null)
 	 * the following operations
 	 */
 	c = rnd_counter();
+
+	rndpool_init(&rnd_pool);
 
 	/* Mix *something*, *anything* into the pool to help it get started.
 	 * However, it's not safe for rnd_counter() to call microtime() yet,
@@ -218,7 +229,7 @@ rnd_init(void *null)
 		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
 	}
 	
-	//_rs_stir(&rnd_pool);
+	_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
 
 	rnd_ready = 1;
 }
@@ -457,41 +468,30 @@ rnd_extract_data(void *p, u_int32_t len)
 	s = splsoftclock();
 	if (!rnd_have_entropy) {
 		/* Try once again to put something in the pool */
-		c = rnd_counter();
-		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
-		//_rs_stir(&rnd_pool);
+		//c = rnd_counter();
+		//rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
+
+		_rs_stir_if_needed(len);
 	}
 	retval = rndpool_extract_data(&rnd_pool, p, len);
 	splx(s);
 	return (retval);
 }
-#ifdef notyet
 
-#define KEYSZ		32
-#define IVSZ		8
-#define BLOCKSZ		64
-#define RSBUFSZ		(16*BLOCKSZ)
-#define EBUFSIZE 	KEYSZ + IVSZ
-
-static chacha_ctx 	rs;				/* chacha context for random keystream */
-static u_char 		rs_buf[RSBUFSZ];
-static size_t 		rs_have;		/* valid bytes at end of rs_buf */
-static size_t 		rs_count;		/* bytes till reseed */
+//#ifdef notyet
 
 static inline void
-_rs_init(rndpool_t *rp, u_char *buf, size_t n)
+_rs_init(u_char *buf, size_t n)
 {
-	KASSERT(n >= KEYSZ + IVSZ);
-	rndpool_init(rp);
-	//rp->chacha = &rs;
-	chacha_keysetup(&rs, buf, KEYSZ * 8);
-	chacha_ivsetup(&rs, buf + KEYSZ, NULL);
+	KASSERT(n >= CHACHA20_EBUF_SIZE);
+	chacha_keysetup(&rs, buf, CHACHA20_KEY_SIZE * 8);
+	chacha_ivsetup(&rs, buf + CHACHA20_KEY_SIZE, NULL);
 }
 
 static void
-_rs_seed(rndpool_t *rp, u_char *buf, size_t n)
+_rs_seed(u_char *buf, size_t n)
 {
-	_rs_rekey(rp, buf, n);
+	_rs_rekey(buf, n);
 
 	/* invalidate rs_buf */
 	rs_have = 0;
@@ -501,34 +501,23 @@ _rs_seed(rndpool_t *rp, u_char *buf, size_t n)
 }
 
 static void
-_rs_stir(rndpool_t *rp)
+_rs_stir(void)
 {
+	u_int8_t buf[CHACHA20_EBUF_SIZE], *p;
 	u_int32_t c;
-	u_char  *d;
+	int i;
 
-	/*
-	 * take a counter early, hoping that there's some variance in
-	 * the following operations
-	 */
-	c = rnd_counter();
+	 c = rndpool_extract_data(&rnd_pool, buf, sizeof(buf));
+	 for (p = (u_int8_t *)&c, i = 0; i < sizeof(c); i++) {
+		 buf[i] ^= p[i];
+	 }
 
-	/* Mix *something*, *anything* into the pool to help it get started.
-	 * However, it's not safe for rnd_counter() to call microtime() yet,
-	 * so on some platforms we might just end up with zeros anyway.
-	 * XXX more things to add would be nice.
-	 */
-	if (c) {
-		rndpool_add_data(rp, &c, sizeof(u_int32_t), 1);
-		c = rnd_counter();
-		rndpool_add_data(rp, &c, sizeof(u_int32_t), 1);
-	}
-	d = (u_char *)&c;
-	_rs_seed(rp, d, sizeof(u_int32_t));
-	memset(d, 0, sizeof(u_int32_t));
+	 _rs_seed(buf, sizeof(buf));
+	 memset(buf, 0, sizeof(buf));
 }
 
 static inline void
-_rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen)
+_rs_rekey(u_char *dat, size_t datlen)
 {
 #ifndef KEYSTREAM_ONLY
 	memset(rs_buf, 0, sizeof(rs_buf));
@@ -540,42 +529,43 @@ _rs_rekey(rndpool_t *rp, u_char *dat, size_t datlen)
 	if (dat) {
 		size_t i, m;
 
-		m = MIN(datlen, KEYSZ + IVSZ);
+		m = MIN(datlen, CHACHA20_EBUF_SIZE);
 		for (i = 0; i < m; i++) {
 			rs_buf[i] ^= dat[i];
 		}
 	}
 
 	/* immediately reinit for backtracking resistance */
-	_rs_init(rp, rs_buf, KEYSZ + IVSZ);
-	memset(rs_buf, 0, KEYSZ + IVSZ);
-	rs_have = sizeof(rs_buf) - KEYSZ - IVSZ;
+	_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
+	memset(rs_buf, 0, CHACHA20_EBUF_SIZE);
+	rs_have = sizeof(rs_buf) - CHACHA20_KEY_SIZE - CHACHA20_IV_SIZE;
 }
 
 static inline void
-_rs_stir_if_needed(rndpool_t *rp, size_t len)
+_rs_stir_if_needed(size_t len)
 {
 	static int rs_initialized;
 
 	if (!rs_initialized) {
 		/* seeds cannot be cleaned yet, random_start() will do so */
-		_rs_init(rp, rs_buf, KEYSZ + IVSZ);
+		_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
 		rs_count = 1024 * 1024 * 1024; /* until main() runs */
 		rs_initialized = 1;
 	} else if (rs_count <= len) {
-		_rs_stir(rp);
+		_rs_stir();
 	} else {
 		rs_count -= len;
 	}
 }
 
+#ifdef notyet
 static inline void
-_rs_random_buf(rndpool_t *rp, void *_buf, size_t n)
+_rs_random_buf(void *_buf, size_t n)
 {
 	u_char *buf = (u_char *)_buf;
 	size_t m;
 
-	_rs_stir_if_needed(rp, n);
+	_rs_stir_if_needed(n);
 	while (n > 0) {
 		if (rs_have > 0) {
 			m = MIN(n, rs_have);
@@ -586,7 +576,7 @@ _rs_random_buf(rndpool_t *rp, void *_buf, size_t n)
 			rs_have -= m;
 		}
 		if (rs_have == 0) {
-			_rs_rekey(rp, NULL, 0);
+			_rs_rekey(NULL, 0);
 		}
 	}
 }
@@ -594,9 +584,9 @@ _rs_random_buf(rndpool_t *rp, void *_buf, size_t n)
 static inline void
 _rs_random_u32(rndpool_t *rp, u_int32_t *val)
 {
-	_rs_stir_if_needed(rp, sizeof(*val));
+	_rs_stir_if_needed(sizeof(*val));
 	if (rs_have < sizeof(*val)) {
-		_rs_rekey(rp, NULL, 0);
+		_rs_rekey(NULL, 0);
 	}
 	memcpy(val, rs_buf + sizeof(rs_buf) - rs_have, sizeof(*val));
 	memset(rs_buf + sizeof(rs_buf) - rs_have, 0, sizeof(*val));

@@ -108,6 +108,7 @@ long					ovl_first_page;
 long					ovl_last_page;
 vm_offset_t				ovl_first_phys_addr;
 vm_offset_t				ovl_last_phys_addr;
+vm_offset_t				oentry_data;
 
 struct vpage_hash_head 	*ovl_vpage_hashtable;
 
@@ -120,7 +121,7 @@ void
 ovl_pbootstrap(void)
 {
 	extern vm_offset_t	oentry_data;
-	extern vm_size_t	oentry_data_size;
+	vm_size_t			oentry_data_size;
 	vm_size_t 			omap_size, oentry_size;
 
 	omap_size = (MAX_OMAP * sizeof(struct ovl_map));

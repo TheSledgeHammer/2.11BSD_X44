@@ -117,13 +117,8 @@ static void	_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
 RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 
-static struct vm_hat 	omap_store, oentry_store;
-static vm_hat_t			omap_hat, oentry_hat;
-ovl_map_entry_t 		oentry_free;
-ovl_map_t 				omap_free;
-vm_offset_t				oentry_data;
-vm_size_t				oentry_data_size;
-
+ovl_map_entry_t 				oentry_free;
+ovl_map_t 						omap_free;
 static struct ovl_map			omap_init[MAX_OMAP];
 static struct ovl_map_entry		oentry_init[MAX_OMAPENT];
 
