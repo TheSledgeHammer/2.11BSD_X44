@@ -4,6 +4,8 @@ chacha-merged.c version 20080118
 D. J. Bernstein
 Public domain.
 */
+#ifndef _CHACHA_H_
+#define _CHACHA_H_
 
 typedef struct {
 	uint32_t input[16]; /* could be compressed */
@@ -35,3 +37,5 @@ void 	hchacha20(uint32_t derived_key[8], const uint8_t nonce[16], const uint8_t 
 void	chacha_keysetup(chacha_ctx *x, const uint8_t *k, uint32_t kbits);
 void	chacha_ivsetup(chacha_ctx *x, const uint8_t *iv, const uint8_t *counter);
 void	chacha_encrypt_bytes(chacha_ctx *x, const uint8_t *m, uint8_t *c, uint32_t bytes);
+
+#endif /* _CHACHA_H_ */
