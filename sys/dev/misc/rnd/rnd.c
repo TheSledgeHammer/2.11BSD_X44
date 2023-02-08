@@ -77,6 +77,7 @@
 #include <sys/systm.h>
 #include <sys/event.h>
 #include <sys/ioctl.h>
+#include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
