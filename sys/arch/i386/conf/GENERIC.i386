@@ -356,16 +356,16 @@ pseudo-device	vnd				4			# disk-like interface to files
 
 # network pseudo-devices
 pseudo-device	bpfilter		8				# Berkeley packet filter
-pseudo-device	ipfilter						# IP filter (firewall) and NAT
+#pseudo-device	ipfilter						# IP filter (firewall) and NAT
 pseudo-device	loop			        			# network loopback
 pseudo-device	ppp		    2					# Point-to-Point Protocol
-pseudo-device	pppoe			  				# PPP over Ethernet (RFC 2516)
+#pseudo-device	pppoe			  				# PPP over Ethernet (RFC 2516)
 pseudo-device	sl		    2					# Serial Line IP
 pseudo-device	strip		  2					# Starmode Radio IP (Metricom)
 pseudo-device	tun		    2					# network tunneling over tty
 pseudo-device	gre		    2 				# generic L3 over IP tunnel
 pseudo-device	gif		    4					# IPv[46] over IPv[46] tunnel (RFC1933)
-pseudo-device	bridge						# simple inter-network bridging
+#pseudo-device	bridge						# simple inter-network bridging
 #options 		BRIDGE_IPF						# bridge uses IP/IPv6 pfil hooks too
 #pseudo-device	pf							# PF packet filter
 #pseudo-device	pflog							# PF log if
