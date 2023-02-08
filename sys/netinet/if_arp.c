@@ -117,10 +117,6 @@ __KERNEL_RCSID(0, "$NetBSD: if_arp.c,v 1.94 2003/09/24 06:52:47 itojun Exp $");
 #if NARC > 0
 #include <net/if_arc.h>
 #endif
-#include "fddi.h"
-#if NFDDI > 0
-#include <net/if_fddi.h>
-#endif
 #include "token.h"
 
 #define SIN(s) ((struct sockaddr_in *)s)
@@ -167,7 +163,7 @@ struct	callout arptimer_ch;
 static struct	in_addr myip, srv_ip;
 static int	myip_initialized = 0;
 static int	revarp_in_progress = 0;
-static struct	ifnet *myip_ifp = NULL;
+static struct ifnet *myip_ifp = NULL;
 
 #ifdef DDB
 static void db_print_sa(struct sockaddr *);

@@ -35,21 +35,21 @@
 #define _NETINET_IF_INARP_H_
 
 struct llinfo_arp {
-	LIST_ENTRY(llinfo_arp) la_list;
-	struct	rtentry *la_rt;
-	struct	mbuf *la_hold;		/* last packet until resolved/timeout */
-	long	la_asked;		/* last time we QUERIED for this addr */
+	LIST_ENTRY(llinfo_arp) 	la_list;
+	struct	rtentry 		*la_rt;
+	struct	mbuf 			*la_hold;		/* last packet until resolved/timeout */
+	long					la_asked;		/* last time we QUERIED for this addr */
 #define la_timer la_rt->rt_rmx.rmx_expire /* deletion time in seconds */
 };
 
 struct sockaddr_inarp {
-	u_int8_t  sin_len;
-	u_int8_t  sin_family;
-	u_int16_t sin_port;
-	struct	  in_addr sin_addr;
-	struct	  in_addr sin_srcaddr;
-	u_int16_t sin_tos;
-	u_int16_t sin_other;
+	u_int8_t  			sin_len;
+	u_int8_t  			sin_family;
+	u_int16_t 			sin_port;
+	struct	  in_addr 	sin_addr;
+	struct	  in_addr 	sin_srcaddr;
+	u_int16_t 			sin_tos;
+	u_int16_t 			sin_other;
 #define SIN_PROXY 1
 };
 

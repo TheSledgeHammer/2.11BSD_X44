@@ -80,6 +80,7 @@
 #include <sys/select.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
+#include <sys/lock.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
 #include <sys/vnode.h>
@@ -115,13 +116,14 @@ struct selinfo rnd_selq;
 #define	RND_READWAITING 0x00000001
 volatile u_int32_t rnd_status;
 
+static struct lock_object rnd_lock;
 rndpool_t 	rnd_pool;
 static int	rnd_ready = 0;
 static int	rnd_have_entropy = 0;
 
 static inline u_int32_t rnd_counter(void);
 
-/* chacha20 stream info */
+/* random keystream by ChaCha */
 #define	CHACHA20_KEY_SIZE		32
 #define	CHACHA20_IV_SIZE		8
 #define	CHACHA20_BLOCK_SIZE		64
@@ -134,26 +136,26 @@ static size_t 		rs_have;		/* valid bytes at end of rs_buf */
 static size_t 		rs_count;		/* bytes till reseed */
 
 static inline void	_rs_init(u_char *, size_t);
-static void			_rs_stir(void);
+static void			_rs_stir(int);
 static inline void 	_rs_rekey(u_char *, size_t);
 static inline void	_rs_stir_if_needed(size_t);
 
 dev_type_open(rndopen);
-dev_type_close(rndclose);
 dev_type_read(rndread);
 dev_type_write(rndwrite);
 dev_type_ioctl(rndioctl);
+dev_type_poll(rndpoll);
 dev_type_kqfilter(rndkqfilter);
 
 const struct cdevsw rnd_cdevsw = {
 		.d_open = rndopen,
-		.d_close = rndclose,
+		.d_close = nullclose,
 		.d_read = rndread,
 		.d_write = rndwrite,
 		.d_ioctl = rndioctl,
 		.d_stop = nullstop,
 		.d_tty = notty,
-		.d_poll = nopoll,
+		.d_poll = rndpoll,
 		.d_mmap = nommap,
 		.d_kqfilter = rndkqfilter,
 		.d_discard = nodiscard,
@@ -184,7 +186,8 @@ rnd_counter(void)
  * as another potential source of initial entropy.
  */
 void
-rndattach(int num)
+rndattach(num)
+	int num;
 {
 	u_int32_t c;
 
@@ -202,14 +205,16 @@ rndattach(int num)
  * the pool is ready for other devices to attach as sources.
  */
 void
-rnd_init(void *null)
+rnd_init(void)
 {
 	u_int32_t c;
-        
+
 	if (rnd_ready) {
 		return;
 	}
 	
+	simple_lock_init(&rnd_lock, "rnd_lock");
+
 	/*
 	 * take a counter early, hoping that there's some variance in
 	 * the following operations
@@ -232,6 +237,11 @@ rnd_init(void *null)
 	_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
 
 	rnd_ready = 1;
+
+
+#ifdef RND_VERBOSE
+	printf("rnd: initialised (%u)%s", RND_POOLBITS, c ? " with counter\n" : "\n");
+#endif
 }
 
 int
@@ -243,17 +253,24 @@ rndopen(dev, flag, mode, p)
 	if (rnd_ready == 0) {
 		return (ENXIO);
 	}
+	if (minor(dev) == RND_DEV_URANDOM) {
+		return (0);
+	}
 
-	return (0);
-}
+	/*
+	 * If this is the strong random device and we have never collected
+	 * entropy (or have not yet) don't allow it to be opened.  This will
+	 * prevent waiting forever for something that just will not appear.
+	 */
+	if (minor(dev) == RND_DEV_RANDOM) {
+		if (rnd_have_entropy == 0) {
+			return (ENXIO);
+		} else {
+			return (0);
+		}
+	}
 
-int
-rndclose(dev, flag, mode, p)
-	dev_t dev;
-	int flag, mode;
-	struct proc *p;
-{
-	return (0);
+	return (ENXIO);
 }
 
 int
@@ -265,6 +282,10 @@ rndread(dev, uio, flag)
 	u_int8_t *buf;
 	u_int32_t entcnt, n, nread;
 	int ret, s;
+
+	DPRINTF(RND_DEBUG_READ,
+			("Random:  Read of %d requested, flags 0x%08x\n",
+					uio->uio_resid, ioflag));
 
 	if (uio->uio_resid == 0) {
 		return (0);
@@ -337,6 +358,9 @@ rndwrite(dev, uio, flag)
 	u_int8_t *buf;
 	int n, ret, s;
 
+	DPRINTF(RND_DEBUG_WRITE,
+			("Random: Write of %d requested\n", uio->uio_resid));
+
 	if (uio->uio_resid == 0) {
 		return (0);
 	}
@@ -386,6 +410,51 @@ rndioctl(dev, cmd, addr, flag, p)
 	return (0);
 }
 
+int
+rndpoll(dev, events, p)
+	dev_t dev;
+	int events;
+	struct proc *p;
+{
+	u_int32_t entcnt;
+	int revents, s;
+
+	/*
+	 * We are always writable.
+	 */
+	revents = events & (POLLOUT | POLLWRNORM);
+
+	/*
+	 * Save some work if not checking for reads.
+	 */
+	if ((events & (POLLIN | POLLRDNORM)) == 0) {
+		return (revents);
+	}
+
+	/*
+	 * If the minor device is not /dev/random, we are always readable.
+	 */
+	if (minor(dev) != RND_DEV_RANDOM) {
+		revents |= events & (POLLIN | POLLRDNORM);
+		return (revents);
+	}
+
+	/*
+	 * Make certain we have enough entropy to be readable.
+	 */
+	s = splsoftclock();
+	entcnt = rndpool_get_entropy_count(&rnd_pool);
+	splx(s);
+
+	if (entcnt >= RND_ENTROPY_THRESHOLD * 8) {
+		revents |= events & (POLLIN | POLLRDNORM);
+	} else {
+		selrecord(p, &rnd_selq);
+	}
+
+	return (revents);
+}
+
 static void
 filt_rnddetach(kn)
 	struct knote *kn;
@@ -421,6 +490,9 @@ filt_rndwrite(kn, hint)
 	return (1);
 }
 
+static const struct filterops rnd_seltrue_filtops =
+	{ 1, NULL, filt_rnddetach, filt_seltrue };
+
 static const struct filterops rndwrite_filtops =
 	{ 1, NULL, filt_rnddetach, filt_rndwrite };
 
@@ -438,12 +510,20 @@ rndkqfilter(dev, kn)
 	switch (kn->kn_filter) {
 	case EVFILT_READ:
 		klist = &rnd_selq.si_klist;
-		kn->kn_fop = &rndread_filtops;
+		if (minor(dev) == RND_DEV_URANDOM) {
+			kn->kn_fop = &rnd_seltrue_filtops;
+		} else {
+			kn->kn_fop = &rndread_filtops;
+		}
 		break;
 
 	case EVFILT_WRITE:
 		klist = &rnd_selq.si_klist;
-		kn->kn_fop = &rndwrite_filtops;
+		if (minor(dev) == RND_DEV_URANDOM) {
+			kn->kn_fop = &rnd_seltrue_filtops;
+		} else {
+			kn->kn_fop = &rndwrite_filtops;
+		}
 		break;
 
 	default:
@@ -460,7 +540,9 @@ rndkqfilter(dev, kn)
 }
 
 u_int32_t
-rnd_extract_data(void *p, u_int32_t len)
+rnd_extract_data(p, len)
+	void *p;
+	u_int32_t len;
 {
 	int retval, s;
 	u_int32_t c;
@@ -468,9 +550,6 @@ rnd_extract_data(void *p, u_int32_t len)
 	s = splsoftclock();
 	if (!rnd_have_entropy) {
 		/* Try once again to put something in the pool */
-		//c = rnd_counter();
-		//rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
-
 		_rs_stir_if_needed(len);
 	}
 	retval = rndpool_extract_data(&rnd_pool, p, len);
@@ -478,10 +557,12 @@ rnd_extract_data(void *p, u_int32_t len)
 	return (retval);
 }
 
-//#ifdef notyet
+/* random keystream by ChaCha */
 
 static inline void
-_rs_init(u_char *buf, size_t n)
+_rs_init(buf, n)
+	u_char *buf;
+	size_t n;
 {
 	KASSERT(n >= CHACHA20_EBUF_SIZE);
 	chacha_keysetup(&rs, buf, CHACHA20_KEY_SIZE * 8);
@@ -489,7 +570,9 @@ _rs_init(u_char *buf, size_t n)
 }
 
 static void
-_rs_seed(u_char *buf, size_t n)
+_rs_seed(buf, n)
+	u_char *buf;
+	size_t n;
 {
 	_rs_rekey(buf, n);
 
@@ -501,7 +584,8 @@ _rs_seed(u_char *buf, size_t n)
 }
 
 static void
-_rs_stir(void)
+_rs_stir(do_lock)
+	int do_lock;
 {
 	u_int8_t buf[CHACHA20_EBUF_SIZE], *p;
 	u_int32_t c;
@@ -512,12 +596,38 @@ _rs_stir(void)
 		 buf[i] ^= p[i];
 	 }
 
+	 if (do_lock) {
+		 simple_lock(&rnd_lock);
+	 }
 	 _rs_seed(buf, sizeof(buf));
+	 if (do_lock) {
+		 simple_unlock(&rnd_lock);
+	 }
 	 memset(buf, 0, sizeof(buf));
 }
 
 static inline void
-_rs_rekey(u_char *dat, size_t datlen)
+_rs_stir_if_needed(len)
+	size_t len;
+{
+	static int rs_initialized;
+
+	if (!rs_initialized) {
+		/* seeds cannot be cleaned yet, random_start() will do so */
+		_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
+		rs_count = 1024 * 1024 * 1024; /* until main() runs */
+		rs_initialized = 1;
+	} else if (rs_count <= len) {
+		_rs_stir(0);
+	} else {
+		rs_count -= len;
+	}
+}
+
+static inline void
+_rs_rekey(dat, datlen)
+	u_char *dat;
+	size_t datlen;
 {
 #ifndef KEYSTREAM_ONLY
 	memset(rs_buf, 0, sizeof(rs_buf));
@@ -540,79 +650,3 @@ _rs_rekey(u_char *dat, size_t datlen)
 	memset(rs_buf, 0, CHACHA20_EBUF_SIZE);
 	rs_have = sizeof(rs_buf) - CHACHA20_KEY_SIZE - CHACHA20_IV_SIZE;
 }
-
-static inline void
-_rs_stir_if_needed(size_t len)
-{
-	static int rs_initialized;
-
-	if (!rs_initialized) {
-		/* seeds cannot be cleaned yet, random_start() will do so */
-		_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
-		rs_count = 1024 * 1024 * 1024; /* until main() runs */
-		rs_initialized = 1;
-	} else if (rs_count <= len) {
-		_rs_stir();
-	} else {
-		rs_count -= len;
-	}
-}
-
-#ifdef notyet
-static inline void
-_rs_random_buf(void *_buf, size_t n)
-{
-	u_char *buf = (u_char *)_buf;
-	size_t m;
-
-	_rs_stir_if_needed(n);
-	while (n > 0) {
-		if (rs_have > 0) {
-			m = MIN(n, rs_have);
-			memcpy(buf, rs_buf + sizeof(rs_buf) - rs_have, m);
-			memset(rs_buf + sizeof(rs_buf) - rs_have, 0, m);
-			buf += m;
-			n -= m;
-			rs_have -= m;
-		}
-		if (rs_have == 0) {
-			_rs_rekey(NULL, 0);
-		}
-	}
-}
-
-static inline void
-_rs_random_u32(rndpool_t *rp, u_int32_t *val)
-{
-	_rs_stir_if_needed(sizeof(*val));
-	if (rs_have < sizeof(*val)) {
-		_rs_rekey(NULL, 0);
-	}
-	memcpy(val, rs_buf + sizeof(rs_buf) - rs_have, sizeof(*val));
-	memset(rs_buf + sizeof(rs_buf) - rs_have, 0, sizeof(*val));
-	rs_have -= sizeof(*val);
-}
-
-/* Return one word of randomness from a ChaCha20 generator */
-u_int32_t
-arc4random(void)
-{
-	u_int32_t ret;
-
-	//mtx_enter(&rndlock);
-	_rs_random_u32(&rnd_pool, &ret);
-	//mtx_leave(&rndlock);
-	return (ret);
-}
-
-/*
- * Fill a buffer of arbitrary length with ChaCha20-derived randomness.
- */
-void
-arc4random_buf(void *buf, size_t n)
-{
-	//mtx_enter(&rndlock);
-	_rs_random_buf(&rnd_pool, buf, n);
-	//mtx_leave(&rndlock);
-}
-#endif

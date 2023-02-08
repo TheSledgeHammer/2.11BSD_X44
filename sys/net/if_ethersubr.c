@@ -68,8 +68,8 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include "opt_gateway.h"
 #include "opt_pfil_hooks.h"
 //#include "vlan.h"
-//#include "pppoe.h"
-//#include "bridge.h"
+#include "pppoe.h"
+#include "bridge.h"
 #include "bpfilter.h"
 #include "arp.h"
 
@@ -93,6 +93,13 @@ __KERNEL_RCSID(0, "$NetBSD: if_ethersubr.c,v 1.114.2.2 2004/07/14 11:08:01 tron 
 #include <net/if_llc.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
+
+#if NARP == 0
+/*
+ * XXX there should really be a way to issue this warning from within config(8)
+ */
+#error You have included NETATALK or a pseudo-device in your configuration that depends on the presence of ethernet interfaces, but have no such interfaces configured. Check if you really need pseudo-device bridge, pppoe, vlan or options NETATALK.
+#endif
 
 #if NBPFILTER > 0 
 #include <net/bpf.h>

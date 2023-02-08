@@ -82,6 +82,8 @@
 
 #include <machine/cpu.h>
 
+#include <dev/misc/rnd/rnd.h>
+
 extern char copyright[];// = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
 
 struct 	session session0;
@@ -291,9 +293,12 @@ main(framep)
 	 * until everything is ready.
 	 */
 	s = splimp();
-	//ifinit();
+	ifinit();
 	domaininit();
 	splx(s);
+
+	/* initialize entropy pool */
+	rnd_init();
 
 #ifdef GPROF
 	/* Initialize kernel profiling. */

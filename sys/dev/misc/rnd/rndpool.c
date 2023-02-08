@@ -48,7 +48,8 @@
 #define	POOL_TAP4	411
 
 void
-rndpool_init(rndpool_t *rp)
+rndpool_init(rp)
+	rndpool_t *rp;
 {
 	rp->cursor = 0;
 	rp->rotate = 1;
@@ -62,19 +63,25 @@ rndpool_init(rndpool_t *rp)
 }
 
 u_int32_t
-rndpool_get_entropy_count(rndpool_t *rp)
+rndpool_get_entropy_count(rp)
+	rndpool_t *rp;
 {
 	return (rp->stats.curentropy);
 }
 
 void
-rndpool_get_stats(rndpool_t *rp, void *rsp, int size)
+rndpool_get_stats(rp, rsp, size)
+	rndpool_t *rp;
+	void *rsp;
+	int size;
 {
 	memcpy(rsp, &rp->stats, size);
 }
 
 void
-rndpool_increment_entropy_count(rndpool_t *rp, u_int32_t entropy)
+rndpool_increment_entropy_count(rp, entropy)
+	rndpool_t *rp;
+	u_int32_t entropy;
 {
 	rp->stats.curentropy += entropy;
 	rp->stats.added += entropy;
@@ -86,7 +93,8 @@ rndpool_increment_entropy_count(rndpool_t *rp, u_int32_t entropy)
 }
 
 u_int32_t *
-rndpool_get_pool(rndpool_t *rp)
+rndpool_get_pool(rp)
+	rndpool_t *rp;
 {
 	return (rp->pool);
 }
@@ -98,7 +106,9 @@ rndpool_get_poolsize(void)
 }
 
 static inline void
-rndpool_add_one_word(rndpool_t *rp, u_int32_t  val)
+rndpool_add_one_word(rp, val)
+	rndpool_t *rp;
+	u_int32_t val;
 {
   	/*
 	 * Shifting is implemented using a cursor and taps as offsets,
@@ -129,7 +139,10 @@ rndpool_add_one_word(rndpool_t *rp, u_int32_t  val)
  * Add a buffer's worth of data to the pool.
  */
 void
-rndpool_add_data(rndpool_t *rp, void *p, u_int32_t len, u_int32_t entropy)
+rndpool_add_data(rp, p, len, entropy)
+	rndpool_t *rp;
+	void *p;
+	u_int32_t len, entropy;
 {
 	u_int32_t val;
 	u_int8_t *buf;
@@ -174,7 +187,10 @@ rndpool_add_data(rndpool_t *rp, void *p, u_int32_t len, u_int32_t entropy)
  * before we return anything in the high-quality modes.
  */
 u_int32_t
-rndpool_extract_data(rndpool_t *rp, void *p, u_int32_t len)
+rndpool_extract_data(rp, p, len)
+	rndpool_t *rp;
+	void *p;
+	u_int32_t len;
 {
 	u_int i;
 	static u_int32_t extract_pool[RND_POOLWORDS];

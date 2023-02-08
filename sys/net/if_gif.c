@@ -120,7 +120,6 @@ void
 gifattach(count)
 	int count;
 {
-
 	LIST_INIT(&gif_softc_list);
 	if_clone_attach(&gif_cloner);
 }

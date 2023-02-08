@@ -1022,10 +1022,11 @@ ip_optlen(inp)
 {
 	struct mbuf *m = inp->inp_options;
 
-	if (m && m->m_len > offsetof(struct ipoption, ipopt_dst))
+	if (m && m->m_len > offsetof(struct ipoption, ipopt_dst)) {
 		return (m->m_len - offsetof(struct ipoption, ipopt_dst));
-	else
+	} else {
 		return 0;
+	}
 }
 
 
