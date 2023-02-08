@@ -581,7 +581,7 @@ dsopen(disk, dev, mode, flags, lp)
 
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
-		printf("%s: invalid sector size %lu\n", devtoname(disk, dev), (u_long) lp->d_secsize);
+		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long) lp->d_secsize);
 		return (EINVAL);
 	}
 
@@ -904,11 +904,12 @@ devtoname(dev)
     dev_t dev;
 {
     struct dkdevice *diskp;
-    struct device 	*dv;
+    struct device   dv, *dvv;
     
     diskp = disk_find_by_dev(dev);
     if (diskp != NULL) {
-    	dv = *disk_device(diskp, dev);
+    	dv = disk_device(diskp, dev);
+    	dvv = &dv;
     }
-    return (dv->dv_xname);
+    return (dvv->dv_xname);
 }
