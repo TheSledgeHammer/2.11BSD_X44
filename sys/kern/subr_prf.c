@@ -806,7 +806,7 @@ kprintf(fmt0, oflags, vp, sbuf, ap)
 	int dprec;			/* a copy of prec if [diouxX], 0 otherwise */
 	int realsz;			/* field size expanded by dprec */
 	int size;			/* size of converted field or string */
-	char *xdigs;		/* digits for [xX] conversion */
+	const char *xdigs;		/* digits for [xX] conversion */
 	char buf[KPRINTF_BUFSIZE]; /* space for %c, %[diouxX] */
 	char *tailp;		/* tail pointer for snprintf */
 
