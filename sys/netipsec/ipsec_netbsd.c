@@ -62,7 +62,6 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec_netbsd.c,v 1.8.2.3 2004/08/16 05:51:01 jmc Exp
 #include <netinet/ip_ecn.h>
 #include <netinet/ip_icmp.h>
 
-
 #include <netipsec/ipsec.h>
 #include <netipsec/ipsec_var.h>
 #include <netipsec/key.h>
@@ -81,8 +80,6 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec_netbsd.c,v 1.8.2.3 2004/08/16 05:51:01 jmc Exp
 #endif
 
 #include <machine/stdarg.h>
-
-
 
 #include <netipsec/key.h>
 

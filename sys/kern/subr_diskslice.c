@@ -904,12 +904,12 @@ devtoname(dev)
     dev_t dev;
 {
     struct dkdevice *diskp;
-    struct device   dv, *dvv;
+    struct device   dv, *dvp;
     
     diskp = disk_find_by_dev(dev);
     if (diskp != NULL) {
     	dv = disk_device(diskp, dev);
-    	dvv = &dv;
+    	dvp = &dv;
     }
-    return (dvv->dv_xname);
+    return (dvp->dv_xname);
 }

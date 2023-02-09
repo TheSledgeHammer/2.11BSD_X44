@@ -26,10 +26,10 @@
  * $FreeBSD$
  */
 
-//#include <sys/hash.h>
 #include <sys/endian.h>
 #include <sys/stdint.h>
 #include <sys/types.h>
+#include <lib/libkern/libkern.h>
 
 #define rol32(i32, n) ((i32) << (n) | (i32) >> (32 - (n)))
 

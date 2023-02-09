@@ -30,6 +30,7 @@
  */
 
 #include <sys/types.h>
+#include <lib/libkern/libkern.h>
 
 /* prospector32 */
 uint32_t

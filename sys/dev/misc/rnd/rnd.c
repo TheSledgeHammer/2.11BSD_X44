@@ -550,7 +550,14 @@ rnd_extract_data(p, len)
 
 	s = splsoftclock();
 	if (!rnd_have_entropy) {
+#ifdef RND_VERBOSE
+		printf("rnd: WARNING! initial entropy low (%u).\n",
+		       rndpool_get_entropy_count(&rnd_pool));
+#endif
+
 		/* Try once again to put something in the pool */
+		c = rnd_counter();
+		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
 		_rs_stir_if_needed(len);
 	}
 	retval = rndpool_extract_data(&rnd_pool, p, len);

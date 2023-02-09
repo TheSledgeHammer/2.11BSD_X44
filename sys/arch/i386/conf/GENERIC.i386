@@ -16,6 +16,13 @@ options 			EXEC_ELF32			# exec ELF binaries
 #options 			EXEC_MACHO		# exec MACH-O binaries
 options			EXEC_SCRIPT		# exec #! scripts
 
+
+options 		INET6_MD_CKSUM		# machine-dependant code for in6_cksum
+#options 		CRYPTO_MD_DES_ENC	# machine-dependant code for DES
+#options 		CRYPTO_MD_DES_CBC	# machine-dependant DES CBC code
+#options 		CRYPTO_MD_BF_ENC	# machine-dependant code for BF_encrypt
+#options 		CRYPTO_MD_BF_CBC	# careful: uses bswapl, requires 486
+
 # CPU support.  At least one is REQUIRED.
 options 		I386_CPU
 options 		I486_CPU
