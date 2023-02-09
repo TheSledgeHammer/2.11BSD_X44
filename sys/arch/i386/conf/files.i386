@@ -28,7 +28,6 @@ file    arch/i386/i386/idt.c
 file    arch/i386/i386/initcpu.c
 file    arch/i386/i386/intr.c             
 file    arch/i386/i386/ipi.c
-file    arch/i386/i386/in_cksum.c			      inet | inet6
 file    arch/i386/i386/k6_mem.c           		#mtrr
 file    arch/i386/i386/kobj_machdep.c
 file    arch/i386/i386/machdep.c
@@ -46,13 +45,14 @@ file    arch/i386/i386/trap.c
 file    arch/i386/i386/vm_machdep.c
 file		arch/i386/i386/vm86.c				
 file		dev/misc/cons/cons.c
-file    netns/ns_cksum.c	          			ns
+file    netns/ns_cksum.c	          			  ns
 
 # Assembly Files
+file    arch/i386/i386/in_cksum.S			      inet | inet6
 file	  arch/i386/i386/bioscall.S
-file   arch/i386/i386/mpboot.S			        smp
-file   arch/i386/i386/support.S
-file   arch/i386/i386/vm86bios.S
+file    arch/i386/i386/mpboot.S			        smp
+file    arch/i386/i386/support.S
+file    arch/i386/i386/vm86bios.S
 
 # Crypto Files
 file	crypto/des/arch/i386/des_enc.S		des
