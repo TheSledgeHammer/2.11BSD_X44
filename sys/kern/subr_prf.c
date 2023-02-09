@@ -985,7 +985,7 @@ reswitch:
 			/* NOSTRICT */
 			_uquad = (u_long) va_arg(ap, void*);
 			base = HEX;
-			xdigs = hexdigits; //"0123456789abcdef";
+			xdigs = hexdigits; /* "0123456789abcdef"; */
 			flags |= HEXPREFIX;
 			ch = 'x';
 			goto nosign;
@@ -1018,10 +1018,10 @@ reswitch:
 			base = DEC;
 			goto nosign;
 		case 'X':
-			xdigs = HEXDIGITS; //"0123456789ABCDEF";
+			xdigs = HEXDIGITS; /* "0123456789ABCDEF"; */
 			goto hex;
 		case 'x':
-			xdigs = "0123456789abcdef";
+			xdigs = hexdigits; /* "0123456789abcdef"; */
 hex: 		_uquad = UARG();
 			base = HEX;
 			/* leading 0x/X only if non-zero */
