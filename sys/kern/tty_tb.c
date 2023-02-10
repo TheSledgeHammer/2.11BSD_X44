@@ -313,12 +313,12 @@ tbioctl(tp, cmd, data, flag, p)
 		tbp->tbflags &= ~TBMODE;
 		tbp->tbflags |= *(int *)data & TBMODE;
 		tc = &tbconf[tbp->tbflags & TBTYPE];
-		if (tbp->tbflags&TBSTOP) {
+		if (tbp->tbflags & TBSTOP) {
 			if (tc->tbc_stop)
 				ttyout(tc->tbc_stop, tp);
 		} else if (tc->tbc_start)
 			ttyout(tc->tbc_start, tp);
-		if (tbp->tbflags&TBPOINT) {
+		if (tbp->tbflags & TBPOINT) {
 			if (tc->tbc_point)
 				ttyout(tc->tbc_point, tp);
 		} else if (tc->tbc_run)
@@ -341,4 +341,11 @@ tbioctl(tp, cmd, data, flag, p)
 		return (ENOTTY);
 	}
 	return (0);
+}
+
+void
+tbattach(num)
+       int num;
+{
+    /* stub to handle side effect of new config */
 }

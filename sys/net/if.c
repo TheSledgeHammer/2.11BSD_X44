@@ -157,9 +157,8 @@ static void if_detach_queues(struct ifnet *, struct ifqueue *);
  * parameters.
  */
 void
-ifinit()
+ifinit(void)
 {
-
 	callout_init(&if_slowtimo_ch);
 	if_slowtimo(NULL);
 }

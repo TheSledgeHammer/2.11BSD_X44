@@ -82,6 +82,8 @@
 
 #include <machine/cpu.h>
 
+#include <net/if.h>
+
 #include <dev/misc/rnd/rnd.h>
 
 extern char copyright[];// = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
@@ -285,8 +287,9 @@ main(framep)
 	loginit();
 
 	/* Attach pseudo-devices. */
-	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++)
+	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++) {
 		(*pdev->pdev_attach)(pdev->pdev_count);
+	}
 
 	/*
 	 * Initialize protocols.  Block reception of incoming packets
@@ -313,13 +316,15 @@ main(framep)
 	schedcpu(NULL);
 
 	/* Mount the root file system. */
-	if (vfs_mountroot())
+	if (vfs_mountroot()) {
 		panic("cannot mount root");
+	}
 	CIRCLEQ_FIRST(&mountlist)->mnt_flag |= MNT_ROOTFS;
 
 	/* Get the vnode for '/'.  Set fdp->fd_fd.fd_cdir to reference it. */
-	if (VFS_ROOT(CIRCLEQ_FIRST(&mountlist), &rootvnode))
+	if (VFS_ROOT(CIRCLEQ_FIRST(&mountlist), &rootvnode)) {
 		panic("cannot find root vnode");
+	}
 	fdp->fd_fd.fd_cdir = rootvnode;
 	VREF(fdp->fd_fd.fd_cdir);
 	fdp->fd_fd.fd_rdir = rootvnode;
@@ -342,8 +347,9 @@ main(framep)
 	}
 
 	/* Create process 2 (the pageout daemon). */
-	if (newproc(0))
+	if (newproc(0)) {
 		panic("fork pager");
+	}
 	if (rval[1]) {
 		p = curproc;
 		p->p_flag |= P_INMEM | P_SYSTEM;	/* XXX */
@@ -406,14 +412,17 @@ start_init(p, framep)
 	}
 
 	for (path = initpaths; *path != '\0'; path = next) {
-		while (*path == ':')
+		while (*path == ':') {
 			path++;
-		if (*path == '\0')
+		}
+		if (*path == '\0') {
 			break;
+		}
 		for (next = path; *next != '\0' && *next != ':'; next++)
 			/* nothing */;
-		if (bootverbose)
+		if (bootverbose) {
 			printf("start_init: trying %.*s\n", (int) (next - path), path);
+		}
 
 		/*
 		 * Move out the boot flag argument.
@@ -436,8 +445,9 @@ start_init(p, framep)
 		(void) subyte(--ucp, 'C');
 		options = 1;
 #endif
-		if (options == 0)
+		if (options == 0) {
 			(void) subyte(--ucp, '-');
+		}
 		(void) subyte(--ucp, '-'); /* leading hyphen */
 		arg1 = ucp;
 
