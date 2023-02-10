@@ -44,8 +44,8 @@ struct	polpos {
 	char	p_key;					/* calculator input keyboard */
 };
 
-#define BIOSMODE	_IOW(b, 1, int)		/* set mode bit(s) */
-#define BIOGMODE	_IOR(b, 2, int)		/* get mode bit(s) */
+#define BIOSMODE	_IOW('b', 1, int)		/* set mode bit(s) */
+#define BIOGMODE	_IOR('b', 2, int)		/* get mode bit(s) */
 #define	TBMODE		0xfff0				/* mode bits: */
 #define	TBPOINT		0x0010				/* single point */
 #define	TBRUN		0x0000				/* runs contin. */
@@ -59,7 +59,7 @@ struct	polpos {
 #define	TBPOL		0x0004				/* polhemus 3space */
 #define	TBHDG		0x0005				/* hdg-1111b, low res */
 #define	TBHDGHIRES	0x0006				/* hdg-1111b, high res */
-#define BIOSTYPE	_IOW(b, 3, int)		/* set tablet type */
-#define BIOGTYPE	_IOR(b, 4, int)		/* get tablet type*/
+#define BIOSTYPE	_IOW('b', 3, int)		/* set tablet type */
+#define BIOGTYPE	_IOR('b', 4, int)		/* get tablet type*/
 
 #endif /* _SYS_TABLET_H_ */
