@@ -33,8 +33,8 @@
 #include <crypto/rijndael/rijndael-alg-fst.h>
 
 typedef struct {
-	int	decrypt;
-	int	Nr;		/* key-length-dependent number of rounds */
+	int		 decrypt;
+	int		 Nr;		/* key-length-dependent number of rounds */
 	uint32_t ek[4 * (RIJNDAEL_MAXNR + 1)];	/* encrypt key schedule */
 	uint32_t dk[4 * (RIJNDAEL_MAXNR + 1)];	/* decrypt key schedule */
 } rijndael_ctx;
