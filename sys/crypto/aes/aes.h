@@ -24,10 +24,6 @@
  * SOFTWARE.
  */
 
-/*
- * Modified AES encryption. Combines the rijndael keysetup with OpenBSD's aes keysetup.
- */
-
 #ifndef	_CRYPTO_AES_AES_H
 #define	_CRYPTO_AES_AES_H
 
