@@ -206,19 +206,19 @@ struct cryptostats {
 	 * crypto requests at various points during processing.
 	 */
 	struct cryptotstat cs_invoke;	/* crypto_dipsatch -> crypto_invoke */
-	struct cryptotstat cs_done;	/* crypto_invoke -> crypto_done */
-	struct cryptotstat cs_cb;	/* crypto_done -> callback */
+	struct cryptotstat cs_done;		/* crypto_invoke -> crypto_done */
+	struct cryptotstat cs_cb;		/* crypto_done -> callback */
 	struct cryptotstat cs_finis;	/* callback -> callback return */
 };
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 /* Standard initialization structure beginning */
 struct cryptoini {
-	int		cri_alg;	/* Algorithm to use */
-	int		cri_klen;	/* Key length, in bits */
-	int		cri_rnd;	/* Algorithm rounds, where relevant */
-	caddr_t		cri_key;	/* key to use */
-	u_int8_t	cri_iv[EALG_MAX_BLOCK_LEN];	/* IV to use */
+	int				cri_alg;	/* Algorithm to use */
+	int				cri_klen;	/* Key length, in bits */
+	int				cri_rnd;	/* Algorithm rounds, where relevant */
+	caddr_t			cri_key;	/* key to use */
+	u_int8_t		cri_iv[EALG_MAX_BLOCK_LEN];	/* IV to use */
 	struct cryptoini *cri_next;
 };
 
@@ -234,7 +234,7 @@ struct cryptodesc {
 					   place, so don't copy. */
 #define	CRD_F_IV_EXPLICIT	0x04	/* IV explicitly provided */
 #define	CRD_F_DSA_SHA_NEEDED	0x08	/* Compute SHA-1 of buffer for DSA */
-#define CRD_F_COMP		0x0f    /* Set when doing compression */
+#define CRD_F_COMP			0x0f    /* Set when doing compression */
 
 	struct cryptoini	CRD_INI; /* Initialization/context data */
 #define crd_iv		CRD_INI.cri_iv

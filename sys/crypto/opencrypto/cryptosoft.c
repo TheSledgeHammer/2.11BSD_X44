@@ -1,4 +1,4 @@
-/*	$NetBSD: cryptosoft.c,v 1.8 2003/08/27 00:20:56 thorpej Exp $ */
+/*	$NetBSD: cryptosoft.c,v 1.64 2022/05/22 11:39:27 riastradh Exp $ */
 /*	$FreeBSD: src/sys/opencrypto/cryptosoft.c,v 1.2.2.1 2002/11/21 23:34:23 sam Exp $	*/
 /*	$OpenBSD: cryptosoft.c,v 1.35 2002/04/26 08:43:50 deraadt Exp $	*/
 
@@ -23,8 +23,9 @@
  * PURPOSE.
  */
 
+
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: cryptosoft.c,v 1.8 2003/08/27 00:20:56 thorpej Exp $");
+__KERNEL_RCSID(0, "$NetBSD: cryptosoft.c,v 1.64 2022/05/22 11:39:27 riastradh Exp $");
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -42,6 +43,15 @@ __KERNEL_RCSID(0, "$NetBSD: cryptosoft.c,v 1.8 2003/08/27 00:20:56 thorpej Exp $
 #include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
 
+union authctx {
+	MD5_CTX 	md5ctx;
+	SHA1_CTX 	sha1ctx;
+	RMD160_CTX 	rmd160ctx;
+	SHA256_CTX 	sha256ctx;
+	SHA384_CTX 	sha384ctx;
+	SHA512_CTX 	sha512ctx;
+};
+
 struct swcr_data **swcr_sessions = NULL;
 u_int32_t swcr_sesnum = 0;
 int32_t swcr_id = -1;
@@ -53,54 +63,43 @@ int32_t swcr_id = -1;
 	(x) == CRYPTO_BUF_MBUF ? m_copydata((struct mbuf *)a,b,c,d) \
 	: cuio_copydata((struct uio *)a,b,c,d)
 
-union authctx {
-	MD5_CTX 	md5ctx;
-	SHA1_CTX 	sha1ctx;
-	RMD160_CTX 	rmd160ctx;
-	SHA256_CTX 	sha256ctx;
-	SHA384_CTX 	sha384ctx;
-	SHA512_CTX 	sha512ctx;
-};
-
-static	int swcr_encdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
-static	int swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf, int outtype);
-static	int swcr_compdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
-static	int swcr_process(void *, struct cryptop *, int);
-static	int swcr_newsession(void *, u_int32_t *, struct cryptoini *);
-static	int swcr_freesession(void *, u_int64_t);
-
 /*
  * Apply a symmetric encryption/decryption algorithm.
  */
-static int
-swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
-    int outtype)
+int
+swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf, int outtype)
 {
 	unsigned char iv[EALG_MAX_BLOCK_LEN], blk[EALG_MAX_BLOCK_LEN], *idat;
 	unsigned char *ivp, piv[EALG_MAX_BLOCK_LEN];
 	const struct enc_xform *exf;
-	int i, k, j, blks;
+	int i, k, j, blks, ivlen;
 	int count, ind;
 
 	exf = sw->sw_exf;
 	blks = exf->blocksize;
+	ivlen = exf->ivsize;
+	KASSERT(exf->reinit ? ivlen <= blks : ivlen == blks);
 
 	/* Check for non-padded data */
-	if (crd->crd_len % blks)
+	if (crd->crd_len % blks) {
 		return EINVAL;
+	}
 
 	/* Initialize the IV */
 	if (crd->crd_flags & CRD_F_ENCRYPT) {
 		/* IV explicitly provided ? */
-		if (crd->crd_flags & CRD_F_IV_EXPLICIT)
+		if (crd->crd_flags & CRD_F_IV_EXPLICIT) {
 			bcopy(crd->crd_iv, iv, blks);
-		else {
+			if (exf->reinit) {
+				exf->reinit(sw->sw_kschedule, iv, 0);
+			}
+		} else if (exf->reinit) {
+			exf->reinit(sw->sw_kschedule, 0, iv);
+		} else {
 			/* Get random IV */
-			for (i = 0;
-			    i + sizeof (u_int32_t) < EALG_MAX_BLOCK_LEN;
-			    i += sizeof (u_int32_t)) {
+			for (i = 0; i + sizeof(u_int32_t) < EALG_MAX_BLOCK_LEN; i +=
+					sizeof(u_int32_t)) {
 				u_int32_t temp = arc4random();
-
 				bcopy(&temp, iv + i, sizeof(u_int32_t));
 			}
 			/*
@@ -108,11 +107,10 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 			 * of sizeof (u_int32_t), which is the size of
 			 * what arc4random() returns ?
 			 */
-			if (EALG_MAX_BLOCK_LEN % sizeof (u_int32_t) != 0) {
+			if (EALG_MAX_BLOCK_LEN % sizeof(u_int32_t) != 0) {
 				u_int32_t temp = arc4random();
 
-				bcopy (&temp, iv + i,
-				    EALG_MAX_BLOCK_LEN - i);
+				bcopy(&temp, iv + i, EALG_MAX_BLOCK_LEN - i);
 			}
 		}
 
@@ -120,55 +118,69 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 		if (!(crd->crd_flags & CRD_F_IV_PRESENT)) {
 			COPYBACK(outtype, buf, crd->crd_inject, blks, iv);
 		}
-
 	} else {	/* Decryption */
-			/* IV explicitly provided ? */
-		if (crd->crd_flags & CRD_F_IV_EXPLICIT)
+		/* IV explicitly provided ? */
+		if (crd->crd_flags & CRD_F_IV_EXPLICIT) {
 			bcopy(crd->crd_iv, iv, blks);
-		else {
+		} else {
 			/* Get IV off buf */
 			COPYDATA(outtype, buf, crd->crd_inject, blks, iv);
+		}
+		if (exf->reinit) {
+			exf->reinit(sw->sw_kschedule, iv, 0);
 		}
 	}
 
 	ivp = iv;
 
 	if (outtype == CRYPTO_BUF_CONTIG) {
-		if (crd->crd_flags & CRD_F_ENCRYPT) {
-			for (i = crd->crd_skip;
-			    i < crd->crd_skip + crd->crd_len; i += blks) {
+		if (exf->reinit) {
+			for (i = crd->crd_skip; i < crd->crd_skip + crd->crd_len; i +=blks) {
+				if (crd->crd_flags & CRD_F_ENCRYPT) {
+					exf->encrypt(sw->sw_kschedule, buf + i);
+				} else {
+					exf->decrypt(sw->sw_kschedule, buf + i);
+				}
+			}
+		} else if (crd->crd_flags & CRD_F_ENCRYPT) {
+			for (i = crd->crd_skip; i < crd->crd_skip + crd->crd_len; i +=
+					blks) {
 				/* XOR with the IV/previous block, as appropriate. */
-				if (i == crd->crd_skip)
-					for (k = 0; k < blks; k++)
+				if (i == crd->crd_skip) {
+					for (k = 0; k < blks; k++) {
 						buf[i + k] ^= ivp[k];
-				else
-					for (k = 0; k < blks; k++)
+					}
+				} else {
+					for (k = 0; k < blks; k++) {
 						buf[i + k] ^= buf[i + k - blks];
-				exf->encrypt(sw->sw_kschedule, buf + i);
+					}
+					exf->encrypt(sw->sw_kschedule, buf + i);
+				}
 			}
 		} else {		/* Decrypt */
 			/*
 			 * Start at the end, so we don't need to keep the encrypted
 			 * block as the IV for the next block.
 			 */
-			for (i = crd->crd_skip + crd->crd_len - blks;
-			    i >= crd->crd_skip; i -= blks) {
+			for (i = crd->crd_skip + crd->crd_len - blks; i >= crd->crd_skip;
+					i -= blks) {
 				exf->decrypt(sw->sw_kschedule, buf + i);
 
 				/* XOR with the IV/previous block, as appropriate */
-				if (i == crd->crd_skip)
-					for (k = 0; k < blks; k++)
+				if (i == crd->crd_skip) {
+					for (k = 0; k < blks; k++) {
 						buf[i + k] ^= ivp[k];
-				else
-					for (k = 0; k < blks; k++)
+					}
+				} else {
+					for (k = 0; k < blks; k++) {
 						buf[i + k] ^= buf[i + k - blks];
+					}
+				}
 			}
 		}
-
-		return 0;
+		return (0);
 	} else if (outtype == CRYPTO_BUF_MBUF) {
 		struct mbuf *m = (struct mbuf *) buf;
-
 		/* Find beginning of data */
 		m = m_getptr(m, crd->crd_skip, &k);
 		if (m == NULL)
@@ -185,39 +197,48 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 				m_copydata(m, k, blks, blk);
 
 				/* Actual encryption/decryption */
-				if (crd->crd_flags & CRD_F_ENCRYPT) {
+				if (exf->reinit) {
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule, blk);
+					} else {
+						exf->decrypt(sw->sw_kschedule, blk);
+					}
+				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++) {
 						blk[j] ^= ivp[j];
-
+					}
 					exf->encrypt(sw->sw_kschedule, blk);
 
 					/*
 					 * Keep encrypted block for XOR'ing
 					 * with next block
 					 */
-					bcopy(blk, iv, blks);
+					bcopy(iv, blk, blks);
 					ivp = iv;
 				} else {	/* decrypt */
 					/*
 					 * Keep encrypted block for XOR'ing
 					 * with next block
 					 */
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(blk, piv, blks);
-					else
+					} else {
 						bcopy(blk, iv, blks);
+					}
 
 					exf->decrypt(sw->sw_kschedule, blk);
 
 					/* XOR with previous block */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++) {
 						blk[j] ^= ivp[j];
+					}
 
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(piv, iv, blks);
-					else
+					} else {
 						ivp = iv;
+					}
 				}
 
 				/* Copy back decrypted block */
@@ -225,27 +246,29 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 
 				/* Advance pointer */
 				m = m_getptr(m, k + blks, &k);
-				if (m == NULL)
+				if (m == NULL) {
 					return EINVAL;
+				}
 
 				i -= blks;
 
 				/* Could be done... */
-				if (i == 0)
+				if (i == 0) {
 					break;
+				}
 			}
-
 			/* Skip possibly empty mbufs */
 			if (k == m->m_len) {
-				for (m = m->m_next; m && m->m_len == 0;
-				    m = m->m_next)
+				for (m = m->m_next; m && m->m_len == 0; m = m->m_next) {
 					;
+				}
 				k = 0;
 			}
 
 			/* Sanity check */
-			if (m == NULL)
+			if (m == NULL) {
 				return EINVAL;
+			}
 
 			/*
 			 * Warning: idat may point to garbage here, but
@@ -255,33 +278,43 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 			idat = mtod(m, unsigned char *) + k;
 
 			while (m->m_len >= k + blks && i > 0) {
-				if (crd->crd_flags & CRD_F_ENCRYPT) {
+				if (exf->reinit) {
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule, idat);
+					} else {
+						exf->decrypt(sw->sw_kschedule, idat);
+					}
+				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block/IV */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++) {
 						idat[j] ^= ivp[j];
+					}
 
 					exf->encrypt(sw->sw_kschedule, idat);
 					ivp = idat;
-				} else {	/* decrypt */
+				} else { /* decrypt */
 					/*
 					 * Keep encrypted block to be used
 					 * in next block's processing.
 					 */
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(idat, piv, blks);
-					else
+					} else {
 						bcopy(idat, iv, blks);
+					}
 
 					exf->decrypt(sw->sw_kschedule, idat);
 
 					/* XOR with previous block/IV */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++) {
 						idat[j] ^= ivp[j];
+					}
 
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(piv, iv, blks);
-					else
+					} else {
 						ivp = iv;
+					}
 				}
 
 				idat += blks;
@@ -292,126 +325,14 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 
 		return 0; /* Done with mbuf encryption/decryption */
 	} else if (outtype == CRYPTO_BUF_IOV) {
-		struct uio *uio = (struct uio *) buf;
+		struct uio *uio = (struct uio*) buf;
 
-#ifdef __FreeBSD__
-		struct iovec *iov;
-		/* Find beginning of data */
-		iov = cuio_getptr(uio, crd->crd_skip, &k);
-		if (iov == NULL)
-			return EINVAL;
-
-		i = crd->crd_len;
-
-		while (i > 0) {
-			/*
-			 * If there's insufficient data at the end of
-			 * an iovec, we have to do some copying.
-			 */
-			if (iov->iov_len < k + blks && iov->iov_len != k) {
-				cuio_copydata(uio, k, blks, blk);
-
-				/* Actual encryption/decryption */
-				if (crd->crd_flags & CRD_F_ENCRYPT) {
-					/* XOR with previous block */
-					for (j = 0; j < blks; j++)
-						blk[j] ^= ivp[j];
-
-					exf->encrypt(sw->sw_kschedule, blk);
-
-					/*
-					 * Keep encrypted block for XOR'ing
-					 * with next block
-					 */
-					bcopy(blk, iv, blks);
-					ivp = iv;
-				} else {	/* decrypt */
-					/*	
-					 * Keep encrypted block for XOR'ing
-					 * with next block
-					 */
-					if (ivp == iv)
-						bcopy(blk, piv, blks);
-					else
-						bcopy(blk, iv, blks);
-
-					exf->decrypt(sw->sw_kschedule, blk);
-
-					/* XOR with previous block */
-					for (j = 0; j < blks; j++)
-						blk[j] ^= ivp[j];
-
-					if (ivp == iv)
-						bcopy(piv, iv, blks);
-					else
-						ivp = iv;
-				}
-
-				/* Copy back decrypted block */
-				cuio_copyback(uio, k, blks, blk);
-
-				/* Advance pointer */
-				iov = cuio_getptr(uio, k + blks, &k);
-				if (iov == NULL)
-					return EINVAL;
-
-				i -= blks;
-
-				/* Could be done... */
-				if (i == 0)
-					break;
-			}
-
-			/*
-			 * Warning: idat may point to garbage here, but
-			 * we only use it in the while() loop, only if
-			 * there are indeed enough data.
-			 */
-			idat = (char *)iov->iov_base + k;
-
-	   		while (iov->iov_len >= k + blks && i > 0) {
-				if (crd->crd_flags & CRD_F_ENCRYPT) {
-					/* XOR with previous block/IV */
-					for (j = 0; j < blks; j++)
-						idat[j] ^= ivp[j];
-
-					exf->encrypt(sw->sw_kschedule, idat);
-					ivp = idat;
-				} else {	/* decrypt */
-					/*
-					 * Keep encrypted block to be used
-					 * in next block's processing.
-					 */
-					if (ivp == iv)
-						bcopy(idat, piv, blks);
-					else
-						bcopy(idat, iv, blks);
-
-					exf->decrypt(sw->sw_kschedule, idat);
-
-					/* XOR with previous block/IV */
-					for (j = 0; j < blks; j++)
-						idat[j] ^= ivp[j];
-
-					if (ivp == iv)
-						bcopy(piv, iv, blks);
-					else
-						ivp = iv;
-				}
-
-				idat += blks;
-				k += blks;
-				i -= blks;
-			}
-		}
-
-		return 0; /* Done with mbuf encryption/decryption */
-#else  /* !freebsd iov */
 		/* Find beginning of data */
 		count = crd->crd_skip;
 		ind = cuio_getptr(uio, count, &k);
-		if (ind == -1)
+		if (ind == -1) {
 			return EINVAL;
+		}
 
 		i = crd->crd_len;
 
@@ -420,15 +341,22 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 			 * If there's insufficient data at the end,
 			 * we have to do some copying.
 			 */
-			if (uio->uio_iov[ind].iov_len < k + blks &&
-			    uio->uio_iov[ind].iov_len != k) {
+			if (uio->uio_iov[ind].iov_len < k + blks
+					&& uio->uio_iov[ind].iov_len != k) {
 				cuio_copydata(uio, k, blks, blk);
 
 				/* Actual encryption/decryption */
-				if (crd->crd_flags & CRD_F_ENCRYPT) {
+				if (exf->reinit) {
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule, blk);
+					} else {
+						exf->decrypt(sw->sw_kschedule, blk);
+					}
+				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++) {
 						blk[j] ^= ivp[j];
+					}
 
 					exf->encrypt(sw->sw_kschedule, blk);
 
@@ -438,26 +366,29 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 					 */
 					bcopy(blk, iv, blks);
 					ivp = iv;
-				} else {	/* decrypt */
+				} else { /* decrypt */
 					/*
 					 * Keep encrypted block for XOR'ing
 					 * with next block
 					 */
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(blk, piv, blks);
-					else
+					} else {
 						bcopy(blk, iv, blks);
+					}
 
 					exf->decrypt(sw->sw_kschedule, blk);
 
 					/* XOR with previous block */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++) {
 						blk[j] ^= ivp[j];
+					}
 
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(piv, iv, blks);
-					else
+					} else {
 						ivp = iv;
+					}
 				}
 
 				/* Copy back decrypted block */
@@ -467,14 +398,16 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 
 				/* Advance pointer */
 				ind = cuio_getptr(uio, count, &k);
-				if (ind == -1)
+				if (ind == -1) {
 					return (EINVAL);
+				}
 
 				i -= blks;
 
 				/* Could be done... */
-				if (i == 0)
+				if (i == 0) {
 					break;
+				}
 			}
 
 			/*
@@ -482,37 +415,46 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 			 * we only use it in the while() loop, only if
 			 * there are indeed enough data.
 			 */
-			idat = ((caddr_t)uio->uio_iov[ind].iov_base) + k;
+			idat = ((char*) uio->uio_iov[ind].iov_base) + k;
 
-			while (uio->uio_iov[ind].iov_len >= k + blks &&
-			    i > 0) {
-				if (crd->crd_flags & CRD_F_ENCRYPT) {
+			while (uio->uio_iov[ind].iov_len >= k + blks && i > 0) {
+				if (exf->reinit) {
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule, idat);
+					} else {
+						exf->decrypt(sw->sw_kschedule, idat);
+					}
+				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block/IV */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++){
 						idat[j] ^= ivp[j];
+					}
 
 					exf->encrypt(sw->sw_kschedule, idat);
 					ivp = idat;
-				} else {	/* decrypt */
+				} else { /* decrypt */
 					/*
 					 * Keep encrypted block to be used
 					 * in next block's processing.
 					 */
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(idat, piv, blks);
-					else
+					} else {
 						bcopy(idat, iv, blks);
+					}
 
 					exf->decrypt(sw->sw_kschedule, idat);
 
 					/* XOR with previous block/IV */
-					for (j = 0; j < blks; j++)
+					for (j = 0; j < blks; j++) {
 						idat[j] ^= ivp[j];
+					}
 
-					if (ivp == iv)
+					if (ivp == iv) {
 						bcopy(piv, iv, blks);
-					else
+					} else {
 						ivp = iv;
+					}
 				}
 
 				idat += blks;
@@ -521,7 +463,6 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 				i -= blks;
 			}
 		}
-#endif		
 		return 0; /* Done with mbuf encryption/decryption */
 	}
 
@@ -532,12 +473,11 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 /*
  * Compute keyed-hash authenticator.
  */
-static int
-swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
-    struct swcr_data *sw, caddr_t buf, int outtype)
+int
+swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, const struct swcr_data *sw, void *buf, int outtype)
 {
 	unsigned char aalg[AALG_MAX_RESULT_LEN];
-	const struct auth_hash *axf;
+	const struct swcr_auth_hash *axf;
 	union authctx ctx;
 	int err;
 
@@ -550,28 +490,22 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
 
 	switch (outtype) {
 	case CRYPTO_BUF_CONTIG:
-		axf->Update(&ctx, buf + crd->crd_skip, crd->crd_len);
+		axf->Update(&ctx, (char*) buf + crd->crd_skip, crd->crd_len);
 		break;
 	case CRYPTO_BUF_MBUF:
-		err = m_apply((struct mbuf *) buf, crd->crd_skip, crd->crd_len,
-		    (int (*)(void*, caddr_t, unsigned int)) axf->Update,
-		    (caddr_t) &ctx);
+		err = m_apply((struct mbuf*) buf, crd->crd_skip, crd->crd_len,
+				(int (*)(void*, void*, unsigned int)) (void*) axf->Update,
+				(void*) &ctx);
 		if (err)
 			return err;
 		break;
 	case CRYPTO_BUF_IOV:
-#ifdef __FreeBSD__
-		/*XXX FIXME: handle iov case*/
-		return EINVAL;
-#else
-		err = cuio_apply((struct uio *) buf, crd->crd_skip,
-		    crd->crd_len,
-		    (int (*)(caddr_t, caddr_t, unsigned int)) axf->Update,
-		    (caddr_t) &ctx);
+		err = cuio_apply((struct uio*) buf, crd->crd_skip, crd->crd_len,
+				(int (*)(void*, void*, unsigned int)) (void*) axf->Update,
+				(void*) &ctx);
 		if (err) {
 			return err;
 		}
-#endif
 		break;
 	default:
 		return EINVAL;
@@ -579,9 +513,14 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
 
 	switch (sw->sw_alg) {
 	case CRYPTO_MD5_HMAC:
+	case CRYPTO_MD5_HMAC_96:
 	case CRYPTO_SHA1_HMAC:
-	case CRYPTO_SHA2_HMAC:
+	case CRYPTO_SHA1_HMAC_96:
+	case CRYPTO_SHA2_256_HMAC:
+	case CRYPTO_SHA2_384_HMAC:
+	case CRYPTO_SHA2_512_HMAC:
 	case CRYPTO_RIPEMD160_HMAC:
+	case CRYPTO_RIPEMD160_HMAC_96:
 		if (sw->sw_octx == NULL)
 			return EINVAL;
 
@@ -605,16 +544,16 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
 	case CRYPTO_SHA1:
 		axf->Final(aalg, &ctx);
 		break;
+	//case CRYPTO_AES_XCBC_MAC_96:
 	}
 
 	/* Inject the authentication data */
 	switch (outtype) {
 	case CRYPTO_BUF_CONTIG:
-		bcopy(aalg, buf + crd->crd_inject, axf->authsize);
+		(void) memcpy((char*) buf + crd->crd_inject, aalg, axf->authsize);
 		break;
 	case CRYPTO_BUF_MBUF:
-		m_copyback((struct mbuf *) buf, crd->crd_inject,
-		    axf->authsize, aalg);
+		m_copyback((struct mbuf*) buf, crd->crd_inject, axf->authsize, aalg);
 		break;
 	case CRYPTO_BUF_IOV:
 		bcopy(aalg, crp->crp_mac, axf->authsize);
@@ -628,9 +567,8 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
 /*
  * Apply a compression/decompression algorithm
  */
-static int
-swcr_compdec(struct cryptodesc *crd, struct swcr_data *sw,
-    caddr_t buf, int outtype)
+int
+swcr_compdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf, int outtype)
 {
 	u_int8_t *data, *out;
 	const struct comp_algo *cxf;
@@ -644,7 +582,7 @@ swcr_compdec(struct cryptodesc *crd, struct swcr_data *sw,
 	 * copy in a buffer.
 	 */
 
-	MALLOC(data, u_int8_t *, crd->crd_len, M_CRYPTO_DATA,  M_NOWAIT);
+	MALLOC(data, u_int8_t *, crd->crd_len, M_CRYPTO_DATA, M_NOWAIT);
 	if (data == NULL)
 		return (EINVAL);
 	COPYDATA(outtype, buf, crd->crd_skip, crd->crd_len, data);
@@ -676,25 +614,7 @@ swcr_compdec(struct cryptodesc *crd, struct swcr_data *sw,
 		adj = result - crd->crd_len;
 		if (outtype == CRYPTO_BUF_MBUF) {
 			adj = result - crd->crd_len;
-			m_adj((struct mbuf *)buf, adj);
-		} else {
-			struct uio *uio = (struct uio *)buf;
-			int ind;
-
-			adj = crd->crd_len - result;
-			ind = uio->uio_iovcnt - 1;
-
-			while (adj > 0 && ind >= 0) {
-				if (adj < uio->uio_iov[ind].iov_len) {
-					uio->uio_iov[ind].iov_len -= adj;
-					break;
-				}
-
-				adj -= uio->uio_iov[ind].iov_len;
-				uio->uio_iov[ind].iov_len = 0;
-				ind--;
-				uio->uio_iovcnt--;
-			}
+			m_adj((struct mbuf*) buf, adj);
 		}
 	}
 	FREE(out, M_CRYPTO_DATA);
@@ -704,7 +624,7 @@ swcr_compdec(struct cryptodesc *crd, struct swcr_data *sw,
 /*
  * Generate a new software session.
  */
-static int
+int
 swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 {
 	struct swcr_data **swd;
@@ -722,7 +642,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 			if (swcr_sessions[i] == NULL)
 				break;
 	} else
-		i = 1;		/* NB: to silence compiler warning */
+		i = 1; /* NB: to silence compiler warning */
 
 	if (swcr_sessions == NULL || i == swcr_sesnum) {
 		if (swcr_sessions == NULL) {
@@ -731,8 +651,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		} else
 			swcr_sesnum *= 2;
 
-		swd = malloc(swcr_sesnum * sizeof(struct swcr_data *),
-		    M_CRYPTO_DATA, M_NOWAIT);
+		swd = malloc(swcr_sesnum * sizeof(struct swcr_data*), M_CRYPTO_DATA, M_NOWAIT);
 		if (swd == NULL) {
 			/* Reset session number */
 			if (swcr_sesnum == CRYPTO_SW_SESSIONS)
@@ -742,12 +661,12 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 			return ENOBUFS;
 		}
 
-		bzero(swd, swcr_sesnum * sizeof(struct swcr_data *));
+		bzero(swd, swcr_sesnum * sizeof(struct swcr_data*));
 
 		/* Copy existing sessions */
 		if (swcr_sessions) {
 			bcopy(swcr_sessions, swd,
-			    (swcr_sesnum / 2) * sizeof(struct swcr_data *));
+					(swcr_sesnum / 2) * sizeof(struct swcr_data*));
 			free(swcr_sessions, M_CRYPTO_DATA);
 		}
 
@@ -788,8 +707,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 			txf = &enc_xform_null;
 			goto enccommon;
 		enccommon:
-			error = txf->setkey(&((*swd)->sw_kschedule),
-					cri->cri_key, cri->cri_klen / 8);
+			error = txf->setkey(&((*swd)->sw_kschedule), cri->cri_key, cri->cri_klen / 8);
 			if (error) {
 				swcr_freesession(NULL, i);
 				return error;
@@ -821,15 +739,13 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_RIPEMD160_HMAC:
 			axf = &auth_hash_hmac_ripemd_160_96;
 		authcommon:
-			(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA,
-			    M_NOWAIT);
+			(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA, M_NOWAIT);
 			if ((*swd)->sw_ictx == NULL) {
 				swcr_freesession(NULL, i);
 				return ENOBUFS;
 			}
 
-			(*swd)->sw_octx = malloc(axf->ctxsize, M_CRYPTO_DATA,
-			    M_NOWAIT);
+			(*swd)->sw_octx = malloc(axf->ctxsize, M_CRYPTO_DATA, M_NOWAIT);
 			if ((*swd)->sw_octx == NULL) {
 				swcr_freesession(NULL, i);
 				return ENOBUFS;
@@ -839,19 +755,17 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 				cri->cri_key[k] ^= HMAC_IPAD_VAL;
 
 			axf->Init((*swd)->sw_ictx);
-			axf->Update((*swd)->sw_ictx, cri->cri_key,
-			    cri->cri_klen / 8);
+			axf->Update((*swd)->sw_ictx, cri->cri_key, cri->cri_klen / 8);
 			axf->Update((*swd)->sw_ictx, hmac_ipad_buffer,
-			    HMAC_BLOCK_LEN - (cri->cri_klen / 8));
+			HMAC_BLOCK_LEN - (cri->cri_klen / 8));
 
 			for (k = 0; k < cri->cri_klen / 8; k++)
 				cri->cri_key[k] ^= (HMAC_IPAD_VAL ^ HMAC_OPAD_VAL);
 
 			axf->Init((*swd)->sw_octx);
-			axf->Update((*swd)->sw_octx, cri->cri_key,
-			    cri->cri_klen / 8);
+			axf->Update((*swd)->sw_octx, cri->cri_key, cri->cri_klen / 8);
 			axf->Update((*swd)->sw_octx, hmac_opad_buffer,
-			    HMAC_BLOCK_LEN - (cri->cri_klen / 8));
+			HMAC_BLOCK_LEN - (cri->cri_klen / 8));
 
 			for (k = 0; k < cri->cri_klen / 8; k++)
 				cri->cri_key[k] ^= HMAC_OPAD_VAL;
@@ -865,8 +779,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_SHA1_KPDK:
 			axf = &auth_hash_key_sha1;
 		auth2common:
-			(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA,
-			    M_NOWAIT);
+				(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA, M_NOWAIT);
 			if ((*swd)->sw_ictx == NULL) {
 				swcr_freesession(NULL, i);
 				return ENOBUFS;
@@ -874,7 +787,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 
 			/* Store the key so we can "append" it to the payload */
 			(*swd)->sw_octx = malloc(cri->cri_klen / 8, M_CRYPTO_DATA,
-			    M_NOWAIT);
+			M_NOWAIT);
 			if ((*swd)->sw_octx == NULL) {
 				swcr_freesession(NULL, i);
 				return ENOBUFS;
@@ -883,8 +796,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 			(*swd)->sw_klen = cri->cri_klen / 8;
 			bcopy(cri->cri_key, (*swd)->sw_octx, cri->cri_klen / 8);
 			axf->Init((*swd)->sw_ictx);
-			axf->Update((*swd)->sw_ictx, cri->cri_key,
-			    cri->cri_klen / 8);
+			axf->Update((*swd)->sw_ictx, cri->cri_key, cri->cri_klen / 8);
 			axf->Final(NULL, (*swd)->sw_ictx);
 			(*swd)->sw_axf = axf;
 			break;
@@ -897,7 +809,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 			axf = &auth_hash_sha1;
 		auth3common:
 			(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA,
-			    M_NOWAIT);
+			M_NOWAIT);
 			if ((*swd)->sw_ictx == NULL) {
 				swcr_freesession(NULL, i);
 				return ENOBUFS;
@@ -926,7 +838,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 /*
  * Free a session.
  */
-static int
+int
 swcr_freesession(void *arg, u_int64_t tid)
 {
 	struct swcr_data *swd;
@@ -953,6 +865,13 @@ swcr_freesession(void *arg, u_int64_t tid)
 		case CRYPTO_CAST_CBC:
 		case CRYPTO_SKIPJACK_CBC:
 		case CRYPTO_RIJNDAEL128_CBC:
+		case CRYPTO_AES_CBC:
+		/*
+		case CRYPTO_CAMELLIA_CBC:
+		case CRYPTO_AES_CTR:
+		case CRYPTO_AES_GCM_16:
+		case CRYPTO_AES_GMAC:
+		*/
 		case CRYPTO_NULL_CBC:
 			txf = swd->sw_exf;
 
@@ -961,9 +880,14 @@ swcr_freesession(void *arg, u_int64_t tid)
 			break;
 
 		case CRYPTO_MD5_HMAC:
+		case CRYPTO_MD5_HMAC_96:
 		case CRYPTO_SHA1_HMAC:
-		case CRYPTO_SHA2_HMAC:
+		case CRYPTO_SHA1_HMAC_96:
+		case CRYPTO_SHA2_256_HMAC:
+		case CRYPTO_SHA2_384_HMAC:
+		case CRYPTO_SHA2_512_HMAC:
 		case CRYPTO_RIPEMD160_HMAC:
+		case CRYPTO_RIPEMD160_HMAC_96:
 		case CRYPTO_NULL_HMAC:
 			axf = swd->sw_axf;
 
@@ -998,6 +922,12 @@ swcr_freesession(void *arg, u_int64_t tid)
 			if (swd->sw_ictx)
 				free(swd->sw_ictx, M_CRYPTO_DATA);
 			break;
+		/*
+		case CRYPTO_AES_XCBC_MAC_96:
+		case CRYPTO_AES_128_GMAC:
+		case CRYPTO_AES_192_GMAC:
+		case CRYPTO_AES_256_GMAC:
+		*/
 
 		case CRYPTO_DEFLATE_COMP:
 			cxf = swd->sw_cxf;
@@ -1012,7 +942,7 @@ swcr_freesession(void *arg, u_int64_t tid)
 /*
  * Process a software request.
  */
-static int
+int
 swcr_process(void *arg, struct cryptop *crp, int hint)
 {
 	struct cryptodesc *crd;
@@ -1072,6 +1002,8 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_BLF_CBC:
 		case CRYPTO_CAST_CBC:
 		case CRYPTO_SKIPJACK_CBC:
+		case CRYPTO_AES_CBC:
+		//case CRYPTO_CAMELLIA_CBC:
 		case CRYPTO_RIJNDAEL128_CBC:
 			if ((crp->crp_etype = swcr_encdec(crd, sw,
 			    crp->crp_buf, type)) != 0)
@@ -1081,9 +1013,14 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 			crp->crp_etype = 0;
 			break;
 		case CRYPTO_MD5_HMAC:
+		case CRYPTO_MD5_HMAC_96:
 		case CRYPTO_SHA1_HMAC:
-		case CRYPTO_SHA2_HMAC:
+		case CRYPTO_SHA1_HMAC_96:
+		case CRYPTO_SHA2_256_HMAC:
+		case CRYPTO_SHA2_384_HMAC:
+		case CRYPTO_SHA2_512_HMAC:
 		case CRYPTO_RIPEMD160_HMAC:
+		case CRYPTO_RIPEMD160_HMAC_96:
 		case CRYPTO_NULL_HMAC:
 		case CRYPTO_MD5_KPDK:
 		case CRYPTO_SHA1_KPDK:
@@ -1093,9 +1030,16 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 			    crp->crp_buf, type)) != 0)
 				goto done;
 			break;
+		/*
+		case CRYPTO_AES_GCM_16:
+		case CRYPTO_AES_GMAC:
+		case CRYPTO_AES_128_GMAC:
+		case CRYPTO_AES_192_GMAC:
+		case CRYPTO_AES_256_GMAC:
+		*/
 
 		case CRYPTO_DEFLATE_COMP:
-			if ((crp->crp_etype = swcr_compdec(crd, sw, 
+			if ((crp->crp_etype = swcr_compdec(crd, sw,
 			    crp->crp_buf, type)) != 0)
 				goto done;
 			else
@@ -1117,7 +1061,6 @@ done:
 /*
  * Initialize the driver, called from the kernel main().
  */
-/*static*/
 void
 swcr_init(void)
 {
@@ -1126,7 +1069,6 @@ swcr_init(void)
 		/* This should never happen */
 		panic("Software crypto device cannot initialize!");
 	}
-
 	crypto_register(swcr_id, CRYPTO_DES_CBC,
 	    0, 0, swcr_newsession, swcr_freesession, swcr_process, NULL);
 #define	REGISTER(alg) \
@@ -1136,21 +1078,35 @@ swcr_init(void)
 	REGISTER(CRYPTO_BLF_CBC);
 	REGISTER(CRYPTO_CAST_CBC);
 	REGISTER(CRYPTO_SKIPJACK_CBC);
+	/*
+	REGISTER(CRYPTO_CAMELLIA_CBC);
+	REGISTER(CRYPTO_AES_CTR);
+	REGISTER(CRYPTO_AES_GCM_16);
+	REGISTER(CRYPTO_AES_GMAC);
+	*/
 	REGISTER(CRYPTO_NULL_CBC);
 	REGISTER(CRYPTO_MD5_HMAC);
+	REGISTER(CRYPTO_MD5_HMAC_96);
 	REGISTER(CRYPTO_SHA1_HMAC);
-	REGISTER(CRYPTO_SHA2_HMAC);
+	REGISTER(CRYPTO_SHA1_HMAC_96);
+	REGISTER(CRYPTO_SHA2_256_HMAC);
+	REGISTER(CRYPTO_SHA2_384_HMAC);
+	REGISTER(CRYPTO_SHA2_512_HMAC);
 	REGISTER(CRYPTO_RIPEMD160_HMAC);
+	REGISTER(CRYPTO_RIPEMD160_HMAC_96);
 	REGISTER(CRYPTO_NULL_HMAC);
 	REGISTER(CRYPTO_MD5_KPDK);
 	REGISTER(CRYPTO_SHA1_KPDK);
 	REGISTER(CRYPTO_MD5);
 	REGISTER(CRYPTO_SHA1);
 	REGISTER(CRYPTO_RIJNDAEL128_CBC);
+	/*
+	REGISTER(CRYPTO_AES_XCBC_MAC_96);
+	REGISTER(CRYPTO_AES_128_GMAC);
+	REGISTER(CRYPTO_AES_192_GMAC);
+	REGISTER(CRYPTO_AES_256_GMAC);
+	*/
+	REGISTER(CRYPTO_AES_CBC);
 	REGISTER(CRYPTO_DEFLATE_COMP);
 #undef REGISTER
 }
-
-#ifdef __FreeBSD__
-SYSINIT(cryptosoft_init, SI_SUB_PSEUDO, SI_ORDER_ANY, swcr_init, NULL)
-#endif

@@ -237,13 +237,17 @@ struct ttysize {
 #define	FIONCLEX			_IO('f', 2)							/* remove exclusive use */
 /* another local */
 /* should use off_t for FIONREAD but that would require types.h */
-#define	FIONREAD			_IOR('f', 127, long)					/* get # bytes to read */
+#define	FIONREAD			_IOR('f', 127, long)				/* get # bytes to read */
 #define	FIONBIO				_IOW('f', 126, int)					/* set/clear non-blocking i/o */
 #define	FIOASYNC			_IOW('f', 125, int)					/* set/clear async i/o */
 #define	FIOSETOWN			_IOW('f', 124, int)					/* set owner */
 #define	FIOGETOWN			_IOR('f', 123, int)					/* get owner */
 #define	FIODTYPE			_IOR('f', 122, int)					/* get d_flags type part */
 #define	FIOGETLBA			_IOR('f', 121, int)					/* get start blk # */
+#define	FIOGETBMAP			_IOWR('f', 122, daddr_t) 			/* get underlying block no. */
+
+/* Ugly symbol for compatibility with other operating systems */
+#define	FIBMAP				FIOGETBMAP
 
 /* Socket ioctl's. */
 #define	SIOCSHIWAT			_IOW('s',  0, int)					/* set high watermark */

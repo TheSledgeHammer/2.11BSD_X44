@@ -58,8 +58,12 @@ struct swcr_data {
 };
 
 #ifdef _KERNEL
-//extern const u_int8_t hmac_ipad_buffer[64];
-//extern const u_int8_t hmac_opad_buffer[64];
+int		swcr_encdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
+int		swcr_authcompute(struct cryptop *, struct cryptodesc *, struct swcr_data *, void *, int);
+int		swcr_compdec(struct cryptodesc *, struct swcr_data *, caddr_t, int);
+int		swcr_process(void *, struct cryptop *, int);
+int		swcr_newsession(void *, u_int32_t *, struct cryptoini *);
+int		swcr_freesession(void *, u_int64_t);
 void	swcr_init(void);
 #endif /* _KERNEL */
 

@@ -83,14 +83,18 @@ tbopen(dev, tp)
 {
 	register struct tb *tbp;
 
-	if (tp->t_line == TABLDISC)
+	if (tp->t_line == TABLDISC) {
 		return (ENODEV);
+	}
 	ttywflush(tp);
-	for (tbp = tb; tbp < &tb[NTBS]; tbp++)
-		if (tbp->tbflags == 0)
+	for (tbp = tb; tbp < &tb[NTBS]; tbp++) {
+		if (tbp->tbflags == 0) {
 			break;
-	if (tbp >= &tb[NTBS])
+		}
+	}
+	if (tbp >= &tb[NTBS]) {
 		return (EBUSY);
+	}
 	tbp->tbflags = TBTIGER|TBPOINT;		/* default */
 	tp->t_cp = tbp->cbuf;
 	tp->t_inbuf = 0;
@@ -110,13 +114,13 @@ tbclose(tp, flag)
 {
 	int modebits = TBPOINT|TBSTOP;
 
-	tbioctl(tp, (u_int)(BIOSMODE), &modebits, 0, curproc);
+	tbioctl(tp, BIOSMODE, (caddr_t) &modebits, 0, curproc);
 	((struct tb *)tp->T_LINEP)->tbflags = 0;
 	tp->t_cp = 0;
 	tp->t_inbuf = 0;
 	tp->t_rawq.c_cc = 0;		/* clear queues -- paranoid */
 	tp->t_canq.c_cc = 0;
-	tp->t_line = 0;			/* paranoid: avoid races */
+	tp->t_line = 0;				/* paranoid: avoid races */
 	return (0);
 }
 
@@ -134,11 +138,13 @@ tbread(tp, uio, flag)
 	register struct tbconf *tc = &tbconf[tbp->tbflags & TBTYPE];
 	int ret;
 
-	if ((tp->t_state&TS_CARR_ON) == 0)
+	if ((tp->t_state&TS_CARR_ON) == 0) {
 		return (EIO);
+	}
 	ret = uiomove(&tbp->rets, tc->tbc_uiosize, uio);
-	if (tc->tbc_flags&TBF_POL)
+	if (tc->tbc_flags&TBF_POL) {
 		tbp->rets.polpos.p_key = ' ';
+	}
 	return (ret);
 }
 
@@ -158,8 +164,9 @@ tbinput(c, tp)
 	register struct tb *tbp = (struct tb *)tp->T_LINEP;
 	register struct tbconf *tc = &tbconf[tbp->tbflags & TBTYPE];
 
-	if (tc->tbc_recsize == 0 || tc->tbc_decode == 0)	/* paranoid? */
+	if (tc->tbc_recsize == 0 || tc->tbc_decode == 0) {	/* paranoid? */
 		return (EIO);
+	}
 	/*
 	 * Locate sync bit/byte or reset input buffer.
 	 */
@@ -171,8 +178,9 @@ tbinput(c, tp)
 	/*
 	 * Call decode routine only if a full record has been collected.
 	 */
-	if (++tp->t_inbuf == tc->tbc_recsize)
+	if (++tp->t_inbuf == tc->tbc_recsize) {
 		(*tc->tbc_decode)(tbp->cbuf, &tbp->rets);
+	}
 	return (0);
 }
 
@@ -210,17 +218,18 @@ tbdecode(cp, tbpos)
 	byte = *cp++;
 	tbpos->status = (byte&0100) ? TBINPROX : 0;
 	byte &= ~0100;
-	if (byte > 036)
+	if (byte > 036) {
 		tbpos->status |= 1 << ((byte-040)/2);
+	}
 	tbpos->xpos = *cp++ << 7;
 	tbpos->xpos |= *cp++;
-	if (tbpos->xpos < 256)			/* tablet wraps around at 256 */
-		tbpos->status &= ~TBINPROX;	/* make it out of proximity */
+	if (tbpos->xpos < 256) {			/* tablet wraps around at 256 */
+		tbpos->status &= ~TBINPROX;		/* make it out of proximity */
+	}
 	tbpos->ypos = *cp++ << 7;
 	tbpos->ypos |= *cp++;
 	tbpos->scount++;
 }
-
 
 /*
  * Decode new Hitach 5-byte format (low res).
@@ -230,7 +239,6 @@ tblresdecode(cp, tbpos)
 	register char *cp;
 	register struct tbpos *tbpos;
 {
-
 	*cp &= ~0100;		/* mask sync bit */
 	tbpos->status = (*cp++ >> 2) | TBINPROX;
 	tbpos->xpos = *cp++;
@@ -277,8 +285,9 @@ poldecode(cp, polpos)
 	polpos->p_pit = cp[13] | cp[12]<<7 | (cp[16] & 0x0c) << 12;
 	polpos->p_rol = cp[15] | cp[14]<<7 | (cp[16] & 0x30) << 10;
 	polpos->p_stat = cp[1] | cp[0]<<7;
-	if (cp[2] != ' ')
+	if (cp[2] != ' ') {
 		polpos->p_key = cp[2];
+	}
 }
 
 /*ARGSUSED*/
@@ -300,8 +309,9 @@ tbioctl(tp, cmd, data, flag, p)
 
 	case BIOSTYPE:
 		if (tbconf[*(int *)data & TBTYPE].tbc_recsize == 0 ||
-		    tbconf[*(int *)data & TBTYPE].tbc_decode == 0)
+		    tbconf[*(int *)data & TBTYPE].tbc_decode == 0) {
 			return (EINVAL);
+		}
 		tbp->tbflags &= ~TBTYPE;
 		tbp->tbflags |= *(int *)data & TBTYPE;
 		break;
@@ -314,15 +324,18 @@ tbioctl(tp, cmd, data, flag, p)
 		tbp->tbflags |= *(int *)data & TBMODE;
 		tc = &tbconf[tbp->tbflags & TBTYPE];
 		if (tbp->tbflags & TBSTOP) {
-			if (tc->tbc_stop)
-				ttyout(tc->tbc_stop, tp);
-		} else if (tc->tbc_start)
-			ttyout(tc->tbc_start, tp);
+			if (tc->tbc_stop) {
+				ttyoutput(tc->tbc_stop, tp);
+			}
+		} else if (tc->tbc_start) {
+			ttyoutput(tc->tbc_start, tp);
+		}
 		if (tbp->tbflags & TBPOINT) {
-			if (tc->tbc_point)
-				ttyout(tc->tbc_point, tp);
-		} else if (tc->tbc_run)
-			ttyout(tc->tbc_run, tp);
+			if (tc->tbc_point) {
+				ttyoutput(tc->tbc_point, tp);
+		} else if (tc->tbc_run) {
+			ttyoutput(tc->tbc_run, tp);
+		}
 		ttstart(tp);
 		break;
 	}
