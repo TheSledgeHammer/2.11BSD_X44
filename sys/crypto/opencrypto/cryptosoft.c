@@ -477,7 +477,7 @@ int
 swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, const struct swcr_data *sw, void *buf, int outtype)
 {
 	unsigned char aalg[AALG_MAX_RESULT_LEN];
-	const struct swcr_auth_hash *axf;
+	const struct auth_hash *axf;
 	union authctx ctx;
 	int err;
 
@@ -494,15 +494,15 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, const struct swcr_
 		break;
 	case CRYPTO_BUF_MBUF:
 		err = m_apply((struct mbuf*) buf, crd->crd_skip, crd->crd_len,
-				(int (*)(void*, void*, unsigned int)) (void*) axf->Update,
-				(void*) &ctx);
+				(int (*)(void*, caddr_t, unsigned int)) axf->Update,
+				(caddr_t) &ctx);
 		if (err)
 			return err;
 		break;
 	case CRYPTO_BUF_IOV:
 		err = cuio_apply((struct uio*) buf, crd->crd_skip, crd->crd_len,
-				(int (*)(void*, void*, unsigned int)) (void*) axf->Update,
-				(void*) &ctx);
+				(int (*)(caddr_t, caddr_t, unsigned int))axf->Update,
+				(caddr_t) &ctx);
 		if (err) {
 			return err;
 		}
@@ -550,7 +550,7 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, const struct swcr_
 	/* Inject the authentication data */
 	switch (outtype) {
 	case CRYPTO_BUF_CONTIG:
-		(void) memcpy((char*) buf + crd->crd_inject, aalg, axf->authsize);
+		(void) bcopy(aalg, (char*) buf + crd->crd_inject, axf->authsize);
 		break;
 	case CRYPTO_BUF_MBUF:
 		m_copyback((struct mbuf*) buf, crd->crd_inject, axf->authsize, aalg);
@@ -865,8 +865,8 @@ swcr_freesession(void *arg, u_int64_t tid)
 		case CRYPTO_CAST_CBC:
 		case CRYPTO_SKIPJACK_CBC:
 		case CRYPTO_RIJNDAEL128_CBC:
-		case CRYPTO_AES_CBC:
 		/*
+		case CRYPTO_AES_CBC:
 		case CRYPTO_CAMELLIA_CBC:
 		case CRYPTO_AES_CTR:
 		case CRYPTO_AES_GCM_16:
@@ -1002,8 +1002,10 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_BLF_CBC:
 		case CRYPTO_CAST_CBC:
 		case CRYPTO_SKIPJACK_CBC:
+		/*
 		case CRYPTO_AES_CBC:
-		//case CRYPTO_CAMELLIA_CBC:
+		case CRYPTO_CAMELLIA_CBC:
+		*/
 		case CRYPTO_RIJNDAEL128_CBC:
 			if ((crp->crp_etype = swcr_encdec(crd, sw,
 			    crp->crp_buf, type)) != 0)
@@ -1026,8 +1028,7 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_SHA1_KPDK:
 		case CRYPTO_MD5:
 		case CRYPTO_SHA1:
-			if ((crp->crp_etype = swcr_authcompute(crp, crd, sw,
-			    crp->crp_buf, type)) != 0)
+			if ((crp->crp_etype = swcr_authcompute(crp, crd, sw, crp->crp_buf, type)) != 0)
 				goto done;
 			break;
 		/*
