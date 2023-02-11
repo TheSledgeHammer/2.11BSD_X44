@@ -109,7 +109,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## miscfs:
 
 ## net / net80211 / netinet / netinet6 / netipsec / netkey / netns / netpfil :
-- netipsec: Update and fix, so it can, to compile.
+- netipsec: Update and fix, to compile.
 - netpfil: Update and fix IPFilter & PF, to compile.
 		
 ## ufs:
