@@ -54,8 +54,8 @@
   - Implement Preemptive capabilities
   - Bug Testing
 - Networking:
-  - Firewall/ Packet Filter: NPF, PF & IPFilter
-  - IPv6
+  - Network: Complete
+  - Firewall/ Packet Filter: NPF, PF & IPFilter (Work in Progress)
 - Filesystem Updates:
   - UFS/FFS/LFS:
     - LFS1/LFS2: (Work in Progress: See TODO.md for more)
@@ -124,11 +124,12 @@ Cross-Compiler Compatability Table:
 ---------------
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
-|  GCC  | Yes   |  i386  | Yes (without networking) | Yes | 
-|  CLANG  | Partial **   |  i386  | No | No | 
+|  GCC  | Yes   |  i386  | Yes | Yes | 
+|  CLANG  | Partial ***   |  i386  | No | No | 
 |  PCC  | No   |  i386  | No | No | 
 
-** Clang: Library needs updating and fixing along with the relevent toolchain components.
+** GCC: No IPFilter and/ or PF
+*** Clang: Library needs updating and fixing along with the relevent toolchain components.
 
 ## Contribution:
 
