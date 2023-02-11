@@ -41,11 +41,11 @@
 #include <vm/include/vm.h>
 
 /* Symbolic sleep message strings. */
-const char ttclos[]	= "ttycls";
-const char ttopen[]	= "ttyopn";
-const char ttybg[]	= "ttybg";
-const char ttyin[]	= "ttyin";
-const char ttyout[]	= "ttyout";
+char ttclos[]	= "ttycls";
+char ttopen[]	= "ttyopn";
+char ttybg[]	= "ttybg";
+char ttyin[]	= "ttyin";
+char ttyout[]	= "ttyout";
 
 #define	CONNECTED(tp)	(ISSET(tp->t_state, TS_CARR_ON) ||	\
 			 ISSET(tp->t_cflag, CLOCAL | MDMBUF))

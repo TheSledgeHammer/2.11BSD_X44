@@ -325,16 +325,17 @@ tbioctl(tp, cmd, data, flag, p)
 		tc = &tbconf[tbp->tbflags & TBTYPE];
 		if (tbp->tbflags & TBSTOP) {
 			if (tc->tbc_stop) {
-				ttyoutput(tc->tbc_stop, tp);
+				ttyoutput((int)tc->tbc_stop, tp);
 			}
 		} else if (tc->tbc_start) {
-			ttyoutput(tc->tbc_start, tp);
+			ttyoutput((int)tc->tbc_start, tp);
 		}
 		if (tbp->tbflags & TBPOINT) {
 			if (tc->tbc_point) {
-				ttyoutput(tc->tbc_point, tp);
+				ttyoutput((int)tc->tbc_point, tp);
+			}
 		} else if (tc->tbc_run) {
-			ttyoutput(tc->tbc_run, tp);
+			ttyoutput((int)tc->tbc_run, tp);
 		}
 		ttstart(tp);
 		break;
