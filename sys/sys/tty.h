@@ -208,7 +208,7 @@ struct devswtable;
 extern struct ttychars  ttydefaults;
 
 /* Symbolic sleep message strings. */
-extern const char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
+extern char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 
 void clist_alloc_cblocks(struct clist *, int, int);
 void clist_free_cblocks(struct clist *);
@@ -265,7 +265,7 @@ int	tbclose(struct tty *, int);
 int	tbread(struct tty *, struct uio *, int);
 int	tbinput(int, struct tty *);
 int	tbioctl(struct tty *, u_long, caddr_t, int, struct proc *);
-int	tbattach(int);
+void	tbattach(int);
 
 /* From tty_ctty.c. */
 int	cttyioctl(dev_t, u_long, caddr_t, int, struct proc *);
