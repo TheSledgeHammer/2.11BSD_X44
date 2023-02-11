@@ -124,11 +124,12 @@ Cross-Compiler Compatability Table:
 ---------------
 | Compiler | Toolchain | Arch's | Kernel | VM |
 | -------- | --------- | ------ | ------ | -- |
-|  GCC  | Yes   |  i386  | Yes | Yes | 
-|  CLANG  | Partial ***   |  i386  | No | No | 
+|  GCC  | Yes   |  i386  | Yes ** | Yes | 
+|  CLANG  | Partial *** |  i386  | No | No | 
 |  PCC  | No   |  i386  | No | No | 
 
 ** GCC: No IPFilter and/ or PF
+
 *** Clang: Library needs updating and fixing along with the relevent toolchain components.
 
 ## Contribution:
