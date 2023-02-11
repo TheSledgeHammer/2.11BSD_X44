@@ -108,14 +108,9 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## miscfs:
 
-## net / netimp / netinet / netns:
-- Update to fix compiler issues.
-Of Interest Todo:
-- 2.11BSD's networking stack
-	- To Support:
-		- ipv6
-		- firewall/packet filter
-		- plus much more
+## net / netimp(deprecated) / net80211 / netinet / netinet6 / netipsec / netkey / netns / netpfil :
+- netipsec: Update and fix, so it can, to compile.
+- netpfil: Update and fix IPFilter & PF, to compile.
 		
 ## ufs:
 - implement Extended Attributes
