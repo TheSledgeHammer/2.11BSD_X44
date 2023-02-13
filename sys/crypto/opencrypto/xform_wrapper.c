@@ -53,11 +53,11 @@
 #include <crypto/sha2/sha2.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/cast128/cast128.h>
-#include <crypto/aes/aes.h>
 #include <crypto/des/des.h>
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
+#include <crypto/aes/aes.h>
 #include <crypto/gmac/gmac.h>
 
 #include <crypto/opencrypto/deflate.h>
@@ -417,13 +417,10 @@ aes_ctr_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 	if (len < AESCTR_NONCESIZE) {
 		return -1;
 	}
-
-	MALLOC(*sched, u_int8_t *, sizeof(aes_ctr_ctx), M_CRYPTO_DATA, M_WAITOK);
+	
 	ctx = (struct aes_ctr_ctx *)sched;
+	//MALLOC(*sched, u_int8_t *, sizeof(aes_ctr_ctx), M_CRYPTO_DATA, M_WAITOK);
 	AES_Setkey(&ctx->ac_key, key, len - AESCTR_NONCESIZE);
-	if (ctx->ac_key != 0) {
-		return -1;
-	}
 	bcopy(key + len - AESCTR_NONCESIZE, ctx->ac_block, AESCTR_NONCESIZE);
 	return 0;
 }
@@ -437,7 +434,7 @@ aes_ctr_zerokey(u_int8_t **sched)
 }
 
 void
-aes_ctr_reinit(caddr_t key, u_int8_t *iv)
+aes_ctr_reinit(void *key, const u_int8_t *iv, u_int8_t *ivout)
 {
 	struct aes_ctr_ctx *ctx;
 
@@ -500,7 +497,7 @@ aes_xts_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 		return -1;
 	}
 
-	MALLOC(*sched, u_int8_t *, sizeof(aes_xts_ctx), M_CRYPTO_DATA, M_WAITOK);
+	//(*sched, u_int8_t *, sizeof(aes_xts_ctx), M_CRYPTO_DATA, M_WAITOK);
 	ctx = (struct aes_xts_ctx *)sched;
 	rijndael_set_key(&ctx->key1, key, len * 4);
 	rijndael_set_key(&ctx->key2, key + (len / 2), len * 4);
@@ -517,12 +514,13 @@ aes_xts_zerokey(u_int8_t **sched)
 }
 
 void
-aes_xts_reinit(caddr_t key, u_int8_t *iv)
+aes_xts_reinit(void *key, const u_int8_t *iv, u_int8_t *ivout)
 {
-	struct aes_xts_ctx *ctx = (struct aes_xts_ctx *)key;
+	struct aes_xts_ctx *ctx;
 	u_int64_t blocknum;
 	u_int i;
-
+	
+	ctx = (struct aes_xts_ctx *)key;
 	bcopy(iv, &blocknum, AES_XTS_IVSIZE);
 	for (i = 0; i < AES_XTS_IVSIZE; i++) {
 		ctx->tweak[i] = blocknum & 0xff;
@@ -535,7 +533,7 @@ aes_xts_reinit(caddr_t key, u_int8_t *iv)
 }
 
 void
-aes_gcm_reinit(caddr_t key, u_int8_t *iv)
+aes_gcm_reinit(void *key, const u_int8_t *iv, u_int8_t *ivout)
 {
 	struct aes_ctr_ctx *ctx;
 

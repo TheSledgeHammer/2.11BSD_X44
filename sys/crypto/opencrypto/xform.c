@@ -50,6 +50,7 @@
 #include <crypto/sha2/sha2.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/cast128/cast128.h>
+#include <crypto/aes/aes.h>
 #include <crypto/des/des.h>
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>

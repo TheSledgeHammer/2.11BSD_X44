@@ -93,15 +93,15 @@ void	aes_zerokey(u_int8_t **);
 int 	aes_ctr_setkey(u_int8_t **, const u_int8_t *, int);
 void	aes_ctr_crypt(caddr_t, u_int8_t *);
 void	aes_ctr_zerokey(u_int8_t **);
-void	aes_ctr_reinit(caddr_t, u_int8_t *);
+void	aes_ctr_reinit(void *, const u_int8_t *, u_int8_t *);
 
 int 	aes_xts_setkey(u_int8_t **, const u_int8_t *, int);
 void	aes_xts_encrypt(caddr_t, u_int8_t *);
 void	aes_xts_decrypt(caddr_t, u_int8_t *);
 void	aes_xts_zerokey(u_int8_t **);
-void	aes_xts_reinit(caddr_t, u_int8_t *);
+void	aes_xts_reinit(void *, const u_int8_t *, u_int8_t *);
 
-void	aes_gcm_reinit(caddr_t, u_int8_t *);
+void	aes_gcm_reinit(void *, const u_int8_t *, u_int8_t *);
 
 void 	null_init(void *);
 int 	null_update(void *, const u_int8_t *, u_int16_t);
