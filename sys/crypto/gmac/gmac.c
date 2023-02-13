@@ -24,8 +24,8 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/endian.h>
 
-#include <crypto/aes/aes.h>
 #include <crypto/gmac/gmac.h>
 
 void	ghash_gfmul(uint32_t *, uint32_t *, uint32_t *);
@@ -40,10 +40,10 @@ ghash_gfmul(uint32_t *X, uint32_t *Y, uint32_t *product)
 	uint32_t	mask;
 	int		i;
 
-	v[0] = betoh32(Y[0]);
-	v[1] = betoh32(Y[1]);
-	v[2] = betoh32(Y[2]);
-	v[3] = betoh32(Y[3]);
+	v[0] = be32toh(Y[0]);
+	v[1] = be32toh(Y[1]);
+	v[2] = be32toh(Y[2]);
+	v[3] = be32toh(Y[3]);
 
 	for (i = 0; i < GMAC_BLOCK_LEN * 8; i++) {
 		/* update Z */
