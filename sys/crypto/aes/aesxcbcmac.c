@@ -39,6 +39,14 @@ __KERNEL_RCSID(0, "$NetBSD: aesxcbcmac.c,v 1.3 2020/06/29 23:34:48 riastradh Exp
 #include <crypto/aes/aesxcbcmac.h>
 
 int
+aes_xcbc_mac_setkey(aes_ctx *ctx, const uint8_t *key, int len)
+{
+  	ctx->aes_rounds = AES_KeySetup_Encrypt(ctx->aes_ek, key, len);
+	AES_KeySetup_Decrypt(ctx->aes_dk, key, len);
+	return (ctx->aes_rounds);
+}
+
+int
 aes_xcbc_mac_init(void *vctx, const uint8_t *key, u_int16_t keylen)
 {
 	static const uint8_t k1seed[AES_BLOCKSIZE] =
@@ -56,13 +64,13 @@ aes_xcbc_mac_init(void *vctx, const uint8_t *key, u_int16_t keylen)
 	
 	switch (keylen) {
 	case 16:
-		ctx->r_nr = AES_SetkeyEnc(&r_ks, key, 128);
+		ctx->r_nr = aes_xcbc_mac_setkey(&r_ks, key, 128);
 		break;
 	case 24:
-		ctx->r_nr = AES_SetkeyEnc(&r_ks, key, 192);
+		ctx->r_nr = aes_xcbc_mac_setkey(&r_ks, key, 192);
 		break;
 	case 32:
-		ctx->r_nr = AES_SetkeyEnc(&r_ks, key, 256);
+		ctx->r_nr = aes_xcbc_mac_setkey(&r_ks, key, 256);
 		break;
 	}
 

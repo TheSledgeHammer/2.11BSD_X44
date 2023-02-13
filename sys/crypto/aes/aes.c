@@ -38,14 +38,6 @@ AES_Setkey(aes_ctx *ctx, const uint8_t *key, int len)
 	AES_KeySetup_Decrypt(ctx->aes_dk, key, len);
 }
 
-int
-AES_SetkeyEnc(aes_ctx *ctx, const uint8_t *key, int len)
-{
-  	ctx->aes_rounds = AES_KeySetup_Encrypt(ctx->aes_ek, key, len);
-	AES_KeySetup_Decrypt(ctx->aes_dk, key, len);
-	return (ctx->aes_rounds);
-}
-
 void
 AES_Encrypt(aes_ctx *ctx, const uint8_t *src, uint8_t *dst)
 {
