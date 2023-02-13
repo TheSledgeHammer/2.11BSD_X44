@@ -47,22 +47,22 @@ aes_xcbc_mac_init(void *vctx, const uint8_t *key, u_int16_t keylen)
 	    { 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2 };
 	static const uint8_t k3seed[AES_BLOCKSIZE] =
 	    { 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3 };
-	struct aes_ctx r_ks;
+	aes_ctx r_ks;
 	aesxcbc_ctx *ctx;
 	uint8_t k1[AES_BLOCKSIZE];
 
 	ctx = vctx;
 	bzero(ctx, sizeof(*ctx));
-
+	
 	switch (keylen) {
 	case 16:
-		ctx->r_nr = AES_Setkey(&r_ks, key, 128);
+		ctx->r_nr = AES_SetkeyEnc(&r_ks, key, 128);
 		break;
 	case 24:
-		ctx->r_nr = AES_Setkey(&r_ks, key, 192);
+		ctx->r_nr = AES_SetkeyEnc(&r_ks, key, 192);
 		break;
 	case 32:
-		ctx->r_nr = AES_Setkey(&r_ks, key, 256);
+		ctx->r_nr = AES_SetkeyEnc(&r_ks, key, 256);
 		break;
 	}
 

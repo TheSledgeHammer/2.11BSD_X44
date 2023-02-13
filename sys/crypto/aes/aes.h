@@ -37,11 +37,13 @@ typedef struct {
 	unsigned 		aes_rounds;
 } aes_ctx;
 
+typedef aes_ctx AES_CTX;
+
 void	AES_Setkey(aes_ctx *, const uint8_t *, int);
 void	AES_Encrypt(aes_ctx *, const uint8_t *, uint8_t *);
 void	AES_Decrypt(aes_ctx *, const uint8_t *, uint8_t *);
-
-int		AES_KeySetup_Encrypt(uint32_t *, const uint8_t *, int);
-int		AES_KeySetup_Decrypt(uint32_t *, const uint8_t *, int);
+int     AES_SetkeyEnc(aes_ctx *, const uint8_t *, int);
+int	AES_KeySetup_Encrypt(uint32_t *, const uint8_t *, int);
+int	AES_KeySetup_Decrypt(uint32_t *, const uint8_t *, int);
 
 #endif /* _CRYPTO_AES_AES_H */
