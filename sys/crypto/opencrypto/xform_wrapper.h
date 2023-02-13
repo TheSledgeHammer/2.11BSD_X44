@@ -42,35 +42,66 @@
 #ifndef _CRYPTO_XFORM_WRAPPER_H_
 #define _CRYPTO_XFORM_WRAPPER_H_
 
+#define AESCTR_NONCESIZE	4
+#define AESCTR_IVSIZE		8
+#define AESCTR_BLOCKSIZE	16
+
+#define AES_XTS_BLOCKSIZE	16
+#define AES_XTS_IVSIZE		8
+#define AES_XTS_ALPHA		0x87	/* GF(2^128) generator polynomial */
+
 void 	null_encrypt(caddr_t, u_int8_t *);
 void 	null_decrypt(caddr_t, u_int8_t *);
 int 	null_setkey(u_int8_t **, const u_int8_t *, int);
 void 	null_zerokey(u_int8_t **);
 
 int 	des1_setkey(u_int8_t **, const u_int8_t *, int);
-int 	des3_setkey(u_int8_t **, const u_int8_t *, int);
-int 	blf_setkey(u_int8_t **, const u_int8_t *, int);
-int 	cast5_setkey(u_int8_t **, const u_int8_t *, int);
-int 	skipjack_setkey(u_int8_t **, const u_int8_t *, int);
-int 	rijndael128_setkey(u_int8_t **, const u_int8_t *, int);
 void 	des1_encrypt(caddr_t, u_int8_t *);
-void 	des3_encrypt(caddr_t, u_int8_t *);
-void 	blf_encrypt(caddr_t, u_int8_t *);
-void 	cast5_encrypt(caddr_t, u_int8_t *);
-void 	skipjack_encrypt(caddr_t, u_int8_t *);
-void 	rijndael128_encrypt(caddr_t, u_int8_t *);
 void 	des1_decrypt(caddr_t, u_int8_t *);
-void 	des3_decrypt(caddr_t, u_int8_t *);
-void 	blf_decrypt(caddr_t, u_int8_t *);
-void 	cast5_decrypt(caddr_t, u_int8_t *);
-void 	skipjack_decrypt(caddr_t, u_int8_t *);
-void 	rijndael128_decrypt(caddr_t, u_int8_t *);
 void 	des1_zerokey(u_int8_t **);
+
+int 	des3_setkey(u_int8_t **, const u_int8_t *, int);
+void 	des3_encrypt(caddr_t, u_int8_t *);
+void 	des3_decrypt(caddr_t, u_int8_t *);
 void 	des3_zerokey(u_int8_t **);
+
+int 	blf_setkey(u_int8_t **, const u_int8_t *, int);
+void 	blf_encrypt(caddr_t, u_int8_t *);
+void 	blf_decrypt(caddr_t, u_int8_t *);
 void 	blf_zerokey(u_int8_t **);
+
+int 	cast5_setkey(u_int8_t **, const u_int8_t *, int);
+void 	cast5_encrypt(caddr_t, u_int8_t *);
+void 	cast5_decrypt(caddr_t, u_int8_t *);
 void 	cast5_zerokey(u_int8_t **);
+
+int 	skipjack_setkey(u_int8_t **, const u_int8_t *, int);
+void 	skipjack_encrypt(caddr_t, u_int8_t *);
+void 	skipjack_decrypt(caddr_t, u_int8_t *);
 void 	skipjack_zerokey(u_int8_t **);
+
+int 	rijndael128_setkey(u_int8_t **, const u_int8_t *, int);
+void 	rijndael128_encrypt(caddr_t, u_int8_t *);
+void 	rijndael128_decrypt(caddr_t, u_int8_t *);
 void 	rijndael128_zerokey(u_int8_t **);
+
+int 	aes_setkey(u_int8_t **, const u_int8_t *, int);
+void 	aes_encrypt(caddr_t, u_int8_t *);
+void 	aes_decrypt(caddr_t, u_int8_t *);
+void	aes_zerokey(u_int8_t **);
+
+int 	aes_ctr_setkey(u_int8_t **, const u_int8_t *, int);
+void	aes_ctr_crypt(caddr_t, u_int8_t *);
+void	aes_ctr_zerokey(u_int8_t **);
+void	aes_ctr_reinit(caddr_t, u_int8_t *);
+
+int 	aes_xts_setkey(u_int8_t **, const u_int8_t *, int);
+void	aes_xts_encrypt(caddr_t, u_int8_t *);
+void	aes_xts_decrypt(caddr_t, u_int8_t *);
+void	aes_xts_zerokey(u_int8_t **);
+void	aes_xts_reinit(caddr_t, u_int8_t *);
+
+void	aes_gcm_reinit(caddr_t, u_int8_t *);
 
 void 	null_init(void *);
 int 	null_update(void *, const u_int8_t *, u_int16_t);

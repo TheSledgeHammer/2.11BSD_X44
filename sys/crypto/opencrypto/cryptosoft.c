@@ -542,9 +542,9 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, const struct swcr_
 	case CRYPTO_NULL_HMAC:
 	case CRYPTO_MD5:
 	case CRYPTO_SHA1:
+	case CRYPTO_AES_XCBC_MAC_96:
 		axf->Final(aalg, &ctx);
 		break;
-	//case CRYPTO_AES_XCBC_MAC_96:
 	}
 
 	/* Inject the authentication data */
@@ -562,6 +562,154 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd, const struct swcr_
 		return EINVAL;
 	}
 	return 0;
+}
+
+/*
+ * Apply a combined encryption-authentication transformation
+ */
+int
+swcr_combined(struct cryptop *crp, int outtype)
+{
+	uint32_t blkbuf[howmany(EALG_MAX_BLOCK_LEN, sizeof(uint32_t))];
+	u_char *blk = (u_char *)blkbuf;
+	u_char aalg[AALG_MAX_RESULT_LEN];
+	u_char iv[EALG_MAX_BLOCK_LEN];
+	union authctx ctx;
+	struct cryptodesc *crd, *crda = NULL, *crde = NULL;
+	struct swcr_data *sw, *swa, *swe = NULL;
+	const struct auth_hash *axf = NULL;
+	const struct enc_xform *exf = NULL;
+	void *buf = (void *)crp->crp_buf;
+	uint32_t *blkp;
+	int i, blksz = 0, ivlen = 0, len;
+
+	for (crd = crp->crp_desc; crd; crd = crd->crd_next) {
+		for (sw = swcr_sessions[crp->crp_sid & 0xffffffff];
+				sw && sw->sw_alg != crd->crd_alg; sw = sw->sw_next) {
+			;
+		}
+
+		if (sw == NULL) {
+			return (EINVAL);
+		}
+
+		switch (sw->sw_alg) {
+		case CRYPTO_AES_GCM_16:
+		case CRYPTO_AES_GMAC:
+			swe = sw;
+			crde = crd;
+			exf = swe->sw_exf;
+			ivlen = exf->ivsize;
+			break;
+		case CRYPTO_AES_128_GMAC:
+		case CRYPTO_AES_192_GMAC:
+		case CRYPTO_AES_256_GMAC:
+			swa = sw;
+			crda = crd;
+			axf = swa->sw_axf;
+			if (swa->sw_ictx == 0) {
+				return (EINVAL);
+			}
+			bcopy(swa->sw_ictx, &ctx, axf->ctxsize);
+			blksz = axf->blocksize;
+			break;
+		default:
+			return (EINVAL);
+		}
+	}
+
+	if (crde == NULL || crda == NULL) {
+		return (EINVAL);
+	}
+	if (outtype == CRYPTO_BUF_CONTIG) {
+		return (EINVAL);
+	}
+
+	/* Initialize the IV */
+	if (crde->crd_flags & CRD_F_ENCRYPT) {
+		/* IV explicitly provided ? */
+		if (crde->crd_flags & CRD_F_IV_EXPLICIT) {
+			bcopy(crde->crd_iv, iv, ivlen);
+			if (exf->reinit) {
+				exf->reinit(swe->sw_kschedule, iv, 0);
+			}
+		} else if (exf->reinit) {
+			exf->reinit(swe->sw_kschedule, 0, iv);
+		} else {
+			arc4randbytes(iv, ivlen);
+		}
+
+		/* Do we need to write the IV */
+		if (!(crde->crd_flags & CRD_F_IV_PRESENT)) {
+			COPYBACK(outtype, buf, crde->crd_inject, ivlen, iv);
+		}
+
+	} else {	/* Decryption */
+			/* IV explicitly provided ? */
+		if (crde->crd_flags & CRD_F_IV_EXPLICIT) {
+			bcopy(crde->crd_iv, iv, ivlen);
+		} else {
+			/* Get IV off buf */
+			COPYDATA(outtype, buf, crde->crd_inject, ivlen, iv);
+		}
+		if (exf->reinit) {
+			exf->reinit(swe->sw_kschedule, iv, 0);
+		}
+	}
+
+	/* Supply MAC with IV */
+	if (axf->Reinit) {
+		axf->Reinit(&ctx, iv, ivlen);
+	}
+
+	/* Supply MAC with AAD */
+	for (i = 0; i < crda->crd_len; i += blksz) {
+		len = MIN(crda->crd_len - i, blksz);
+		COPYDATA(outtype, buf, crda->crd_skip + i, len, blk);
+		axf->Update(&ctx, blk, len);
+	}
+
+	/* Do encryption/decryption with MAC */
+	for (i = 0; i < crde->crd_len; i += blksz) {
+		len = MIN(crde->crd_len - i, blksz);
+		if (len < blksz) {
+			bzero(blk, blksz);
+		}
+		COPYDATA(outtype, buf, crde->crd_skip + i, len, blk);
+		if (crde->crd_flags & CRD_F_ENCRYPT) {
+			exf->encrypt(swe->sw_kschedule, blk);
+			axf->Update(&ctx, blk, len);
+		} else {
+			axf->Update(&ctx, blk, len);
+			exf->decrypt(swe->sw_kschedule, blk);
+		}
+		COPYBACK(outtype, buf, crde->crd_skip + i, len, blk);
+	}
+
+	/* Do any required special finalization */
+	switch (crda->crd_alg) {
+	case CRYPTO_AES_128_GMAC:
+	case CRYPTO_AES_192_GMAC:
+	case CRYPTO_AES_256_GMAC:
+		/* length block */
+		bzero(blk, blksz);
+		blkp = (uint32_t*) blk + 1;
+		*blkp = htobe32(crda->crd_len * 8);
+		blkp = (uint32_t*) blk + 3;
+		*blkp = htobe32(crde->crd_len * 8);
+		axf->Update(&ctx, blk, blksz);
+		break;
+	}
+
+	/* Finalize MAC */
+	axf->Final(aalg, &ctx);
+	/* Inject the authentication data */
+	if (outtype == CRYPTO_BUF_MBUF) {
+		COPYBACK(outtype, buf, crda->crd_inject, axf->authsize, aalg);
+	} else {
+		bcopy(aalg, crp->crp_mac, axf->authsize);
+	}
+	return (0);
 }
 
 /*
@@ -703,6 +851,18 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_RIJNDAEL128_CBC:
 			txf = &enc_xform_rijndael128;
 			goto enccommon;
+		case CRYPTO_AES_XTS:
+			txf = &enc_xform_aes_xts;
+			goto enccommon;
+		case CRYPTO_AES_CTR:
+			txf = &enc_xform_aes_ctr;
+			goto enccommon;
+		case CRYPTO_AES_GCM_16:
+			txf = &enc_xform_aes_gcm;
+			goto enccommon;
+		case CRYPTO_AES_GMAC:
+			txf = &enc_xform_aes_gmac;
+			goto enccommon;
 		case CRYPTO_NULL_CBC:
 			txf = &enc_xform_null;
 			goto enccommon;
@@ -808,14 +968,36 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_SHA1:
 			axf = &auth_hash_sha1;
 		auth3common:
-			(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA,
-			M_NOWAIT);
+			(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA, M_NOWAIT);
 			if ((*swd)->sw_ictx == NULL) {
 				swcr_freesession(NULL, i);
 				return ENOBUFS;
 			}
 
 			axf->Init((*swd)->sw_ictx);
+			(*swd)->sw_axf = axf;
+			break;
+
+		case CRYPTO_AES_XCBC_MAC_96:
+			axf = &auth_hash_aes_xcbc_mac_96;
+			goto auth4common;
+		case CRYPTO_AES_128_GMAC:
+			axf = &auth_hash_gmac_aes_128;
+			goto auth4common;
+		case CRYPTO_AES_192_GMAC:
+			axf = &auth_hash_gmac_aes_192;
+			goto auth4common;
+		case CRYPTO_AES_256_GMAC:
+			axf = &auth_hash_gmac_aes_256;
+		auth4common:
+			(*swd)->sw_ictx = malloc(axf->ctxsize, M_CRYPTO_DATA, M_NOWAIT);
+			if ((*swd)->sw_ictx == NULL) {
+				swcr_freesession(NULL, i);
+				return ENOBUFS;
+			}
+			axf->Init((*swd)->sw_ictx);
+			axf->Setkey((*swd)->sw_ictx,
+				cri->cri_key, cri->cri_klen / 8);
 			(*swd)->sw_axf = axf;
 			break;
 
@@ -868,10 +1050,11 @@ swcr_freesession(void *arg, u_int64_t tid)
 		/*
 		case CRYPTO_AES_CBC:
 		case CRYPTO_CAMELLIA_CBC:
+		*/
+		case CRYPTO_AES_XTS:
 		case CRYPTO_AES_CTR:
 		case CRYPTO_AES_GCM_16:
 		case CRYPTO_AES_GMAC:
-		*/
 		case CRYPTO_NULL_CBC:
 			txf = swd->sw_exf;
 
@@ -917,18 +1100,17 @@ swcr_freesession(void *arg, u_int64_t tid)
 
 		case CRYPTO_MD5:
 		case CRYPTO_SHA1:
-			axf = swd->sw_axf;
-
-			if (swd->sw_ictx)
-				free(swd->sw_ictx, M_CRYPTO_DATA);
-			break;
-		/*
 		case CRYPTO_AES_XCBC_MAC_96:
 		case CRYPTO_AES_128_GMAC:
 		case CRYPTO_AES_192_GMAC:
 		case CRYPTO_AES_256_GMAC:
-		*/
+			axf = swd->sw_axf;
 
+			if (swd->sw_ictx) {
+				bzero(swd->sw_ictx, axf->ctxsize);
+				free(swd->sw_ictx, M_CRYPTO_DATA);
+			}
+			break;
 		case CRYPTO_DEFLATE_COMP:
 			cxf = swd->sw_cxf;
 			break;
@@ -1002,18 +1184,22 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_BLF_CBC:
 		case CRYPTO_CAST_CBC:
 		case CRYPTO_SKIPJACK_CBC:
-		/*
-		case CRYPTO_AES_CBC:
-		case CRYPTO_CAMELLIA_CBC:
-		*/
 		case CRYPTO_RIJNDAEL128_CBC:
-			if ((crp->crp_etype = swcr_encdec(crd, sw,
-			    crp->crp_buf, type)) != 0)
+		case CRYPTO_AES_XTS:
+
+			/*
+			case CRYPTO_AES_CBC:
+			case CRYPTO_CAMELLIA_CBC:
+			*/
+		case CRYPTO_AES_CTR:
+			if ((crp->crp_etype = swcr_encdec(crd, sw, crp->crp_buf, type))
+					!= 0)
 				goto done;
 			break;
 		case CRYPTO_NULL_CBC:
 			crp->crp_etype = 0;
 			break;
+
 		case CRYPTO_MD5_HMAC:
 		case CRYPTO_MD5_HMAC_96:
 		case CRYPTO_SHA1_HMAC:
@@ -1028,16 +1214,18 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_SHA1_KPDK:
 		case CRYPTO_MD5:
 		case CRYPTO_SHA1:
+		case CRYPTO_AES_XCBC_MAC_96:
 			if ((crp->crp_etype = swcr_authcompute(crp, crd, sw, crp->crp_buf, type)) != 0)
 				goto done;
 			break;
-		/*
+
 		case CRYPTO_AES_GCM_16:
 		case CRYPTO_AES_GMAC:
 		case CRYPTO_AES_128_GMAC:
 		case CRYPTO_AES_192_GMAC:
 		case CRYPTO_AES_256_GMAC:
-		*/
+			crp->crp_etype = swcr_combined(crp, type);
+			goto done;
 
 		case CRYPTO_DEFLATE_COMP:
 			if ((crp->crp_etype = swcr_compdec(crd, sw,
@@ -1079,12 +1267,13 @@ swcr_init(void)
 	REGISTER(CRYPTO_BLF_CBC);
 	REGISTER(CRYPTO_CAST_CBC);
 	REGISTER(CRYPTO_SKIPJACK_CBC);
-	/*
-	REGISTER(CRYPTO_CAMELLIA_CBC);
+	REGISTER(CRYPTO_RIJNDAEL128_CBC);
+	REGISTER(CRYPTO_AES_CBC);
+	//REGISTER(CRYPTO_CAMELLIA_CBC);
+	REGISTER(CRYPTO_AES_XTS);
 	REGISTER(CRYPTO_AES_CTR);
 	REGISTER(CRYPTO_AES_GCM_16);
 	REGISTER(CRYPTO_AES_GMAC);
-	*/
 	REGISTER(CRYPTO_NULL_CBC);
 	REGISTER(CRYPTO_MD5_HMAC);
 	REGISTER(CRYPTO_MD5_HMAC_96);
@@ -1100,14 +1289,10 @@ swcr_init(void)
 	REGISTER(CRYPTO_SHA1_KPDK);
 	REGISTER(CRYPTO_MD5);
 	REGISTER(CRYPTO_SHA1);
-	REGISTER(CRYPTO_RIJNDAEL128_CBC);
-	/*
 	REGISTER(CRYPTO_AES_XCBC_MAC_96);
 	REGISTER(CRYPTO_AES_128_GMAC);
 	REGISTER(CRYPTO_AES_192_GMAC);
 	REGISTER(CRYPTO_AES_256_GMAC);
-	*/
-	REGISTER(CRYPTO_AES_CBC);
 	REGISTER(CRYPTO_DEFLATE_COMP);
 #undef REGISTER
 }

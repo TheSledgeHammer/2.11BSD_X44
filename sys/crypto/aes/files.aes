@@ -1,3 +1,4 @@
 #	$211BSD: files.aes,v 1.0 2023/01/02
 
-file	crypto/aes/aes.c
+file	crypto/aes/aes.c			rijndael
+file	crypto/aes/aesxcbcmac.c		rijndael

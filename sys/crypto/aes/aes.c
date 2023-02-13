@@ -32,25 +32,21 @@
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/aes/aes.h>
 
-int
-AES_Setkey(AES_CTX *ctx, const uint8_t *key, int len)
+void
+AES_Setkey(aes_ctx *ctx, const uint8_t *key, int len)
 {
 	ctx->aes_rounds = AES_KeySetup_Encrypt(ctx->aes_ek, key, len);
-	if (ctx->aes_rounds == 0) {
-		return (-1);
-	}
 	AES_KeySetup_Decrypt(ctx->aes_dk, key, len);
-	return (0);
 }
 
 void
-AES_Encrypt(AES_CTX *ctx, const uint8_t *src, uint8_t *dst)
+AES_Encrypt(aes_ctx *ctx, const uint8_t *src, uint8_t *dst)
 {
 	rijndaelEncrypt(ctx->aes_ek, ctx->aes_rounds, src, dst);
 }
 
 void
-AES_Decrypt(AES_CTX *ctx, const uint8_t *src, uint8_t *dst)
+AES_Decrypt(aes_ctx *ctx, const uint8_t *src, uint8_t *dst)
 {
 	rijndaelDecrypt(ctx->aes_dk, ctx->aes_rounds, src, dst);
 }
@@ -58,7 +54,7 @@ AES_Decrypt(AES_CTX *ctx, const uint8_t *src, uint8_t *dst)
 int
 AES_KeySetup_Encrypt(uint32_t *skey, const uint8_t *key, int len)
 {
-	unsigned r, u;
+	int r;
 
 	r = rijndaelKeySetupEnc(skey, key, len);
 	if (r == 0) {
@@ -70,7 +66,7 @@ AES_KeySetup_Encrypt(uint32_t *skey, const uint8_t *key, int len)
 int
 AES_KeySetup_Decrypt(uint32_t *skey, const uint8_t *key, int len)
 {
-	unsigned r;
+	int r;
 
 	r = rijndaelKeySetupDec(skey, key, len);
 	if (r == 0) {

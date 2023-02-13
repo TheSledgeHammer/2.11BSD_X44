@@ -77,7 +77,12 @@ extern const struct enc_xform enc_xform_blf;
 extern const struct enc_xform enc_xform_cast5;
 extern const struct enc_xform enc_xform_skipjack;
 extern const struct enc_xform enc_xform_rijndael128;
+extern const struct enc_xform enc_xform_aes;
 extern const struct enc_xform enc_xform_arc4;
+extern const struct enc_xform enc_xform_aes_ctr;
+extern const struct enc_xform enc_xform_aes_xts;
+extern const struct enc_xform enc_xform_aes_gcm;
+extern const struct enc_xform enc_xform_aes_gmac;
 
 extern const struct auth_hash auth_hash_null;
 extern const struct auth_hash auth_hash_md5;
@@ -93,6 +98,10 @@ extern const struct auth_hash auth_hash_hmac_ripemd_160_96;
 extern const struct auth_hash auth_hash_hmac_sha2_256;
 extern const struct auth_hash auth_hash_hmac_sha2_384;
 extern const struct auth_hash auth_hash_hmac_sha2_512;
+extern const struct auth_hash auth_hash_aes_xcbc_mac_96;
+extern const struct auth_hash auth_hash_gmac_aes_128;
+extern const struct auth_hash auth_hash_gmac_aes_192;
+extern const struct auth_hash auth_hash_gmac_aes_256;
 
 extern const struct comp_algo comp_algo_deflate;
 

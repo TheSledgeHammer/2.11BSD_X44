@@ -53,15 +53,28 @@
 #include <crypto/sha2/sha2.h>
 #include <crypto/blowfish/blowfish.h>
 #include <crypto/cast128/cast128.h>
+#include <crypto/aes/aes.h>
 #include <crypto/des/des.h>
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
+#include <crypto/gmac/gmac.h>
 
 #include <crypto/opencrypto/deflate.h>
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
 #include <crypto/opencrypto/xform_wrapper.h>
+
+struct aes_ctr_ctx {
+	aes_ctx			ac_key;
+	u_int8_t		ac_block[AESCTR_BLOCKSIZE];
+};
+
+struct aes_xts_ctx {
+	rijndael_ctx 	key1;
+	rijndael_ctx 	key2;
+	u_int8_t 		tweak[AES_XTS_BLOCKSIZE];
+};
 
 /*
  * Encryption wrapper routines.
@@ -204,8 +217,9 @@ blf_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 		bzero(*sched, BLF_SIZ);
 		BF_set_key((BF_KEY *) *sched, len, key);
 		err = 0;
-	} else
+	} else {
 		err = ENOMEM;
+	}
 	return err;
 }
 
@@ -336,6 +350,201 @@ rijndael128_zerokey(u_int8_t **sched)
 	bzero(*sched, sizeof(rijndael_ctx));
 	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
+}
+
+void
+aes_encrypt(caddr_t key, u_int8_t *blk)
+{
+	AES_Encrypt((aes_ctx *)key, blk, blk);
+}
+
+void
+aes_decrypt(caddr_t key, u_int8_t *blk)
+{
+	AES_Decrypt((aes_ctx *)key, blk, blk);
+}
+
+int
+aes_setkey(u_int8_t **sched, const u_int8_t *key, int len)
+{
+	int err;
+
+	MALLOC(*sched, u_int8_t *, sizeof(aes_ctx), M_CRYPTO_DATA, M_WAITOK);
+	if (*sched != NULL) {
+		bzero(*sched, sizeof(aes_ctx));
+		AES_Setkey((aes_ctx *)sched, key, len * 8);
+		err = 0;
+	} else {
+		err = ENOMEM;
+	}
+	return err;
+}
+
+void
+aes_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(aes_ctx));
+	FREE(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+aes_ctr_crypt(caddr_t key, u_int8_t *blk)
+{
+	struct aes_ctr_ctx *ctx;
+	u_int8_t keystream[AESCTR_BLOCKSIZE];
+	int i;
+
+	ctx = (struct aes_ctr_ctx *)key;
+	/* increment counter */
+	for (i = AESCTR_BLOCKSIZE - 1; i >= AESCTR_NONCESIZE + AESCTR_IVSIZE; i--) {
+		if (++ctx->ac_block[i]) { /* continue on overflow */
+			break;
+		}
+	}
+	AES_Encrypt(&ctx->ac_key, ctx->ac_block, keystream);
+	for (i = 0; i < AESCTR_BLOCKSIZE; i++) {
+		blk[i] ^= keystream[i];
+	}
+	bzero(keystream, sizeof(keystream));
+}
+
+int
+aes_ctr_setkey(u_int8_t **sched, const u_int8_t *key, int len)
+{
+	struct aes_ctr_ctx *ctx;
+
+	if (len < AESCTR_NONCESIZE) {
+		return -1;
+	}
+
+	MALLOC(*sched, u_int8_t *, sizeof(aes_ctr_ctx), M_CRYPTO_DATA, M_WAITOK);
+	ctx = (struct aes_ctr_ctx *)sched;
+	AES_Setkey(&ctx->ac_key, key, len - AESCTR_NONCESIZE);
+	if (ctx->ac_key != 0) {
+		return -1;
+	}
+	bcopy(key + len - AESCTR_NONCESIZE, ctx->ac_block, AESCTR_NONCESIZE);
+	return 0;
+}
+
+void
+aes_ctr_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(struct aes_ctr_ctx));
+	free(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+aes_ctr_reinit(caddr_t key, u_int8_t *iv)
+{
+	struct aes_ctr_ctx *ctx;
+
+	ctx = (struct aes_ctr_ctx *)key;
+	bcopy(iv, ctx->ac_block + AESCTR_NONCESIZE, AESCTR_IVSIZE);
+
+	/* reset counter */
+	bcopy(iv, ctx->ac_block + AESCTR_NONCESIZE, AESCTR_IVSIZE);
+}
+
+void
+aes_xts_crypt(struct aes_xts_ctx *ctx, u_int8_t *data, u_int do_encrypt)
+{
+	u_int8_t block[AES_XTS_BLOCKSIZE];
+	u_int i, carry_in, carry_out;
+
+	for (i = 0; i < AES_XTS_BLOCKSIZE; i++) {
+		block[i] = data[i] ^ ctx->tweak[i];
+	}
+
+	if (do_encrypt) {
+		rijndael_encrypt(&ctx->key1, block, data);
+	} else {
+		rijndael_decrypt(&ctx->key1, block, data);
+	}
+
+	for (i = 0; i < AES_XTS_BLOCKSIZE; i++) {
+		data[i] ^= ctx->tweak[i];
+	}
+
+	/* Exponentiate tweak */
+	carry_in = 0;
+	for (i = 0; i < AES_XTS_BLOCKSIZE; i++) {
+		carry_out = ctx->tweak[i] & 0x80;
+		ctx->tweak[i] = (ctx->tweak[i] << 1) | carry_in;
+		carry_in = carry_out >> 7;
+	}
+	ctx->tweak[0] ^= (AES_XTS_ALPHA & -carry_in);
+	bzero(block, sizeof(block));
+}
+
+void
+aes_xts_encrypt(caddr_t key, u_int8_t *blk)
+{
+	aes_xts_crypt((struct aes_xts_ctx *)key, blk, 1);
+}
+
+void
+aes_xts_decrypt(caddr_t key, u_int8_t *blk)
+{
+	aes_xts_crypt((struct aes_xts_ctx *)key, blk, 0);
+}
+
+int
+aes_xts_setkey(u_int8_t **sched, const u_int8_t *key, int len)
+{
+	struct aes_xts_ctx *ctx;
+
+	if (len != 32 && len != 64) {
+		return -1;
+	}
+
+	MALLOC(*sched, u_int8_t *, sizeof(aes_xts_ctx), M_CRYPTO_DATA, M_WAITOK);
+	ctx = (struct aes_xts_ctx *)sched;
+	rijndael_set_key(&ctx->key1, key, len * 4);
+	rijndael_set_key(&ctx->key2, key + (len / 2), len * 4);
+
+	return 0;
+}
+
+void
+aes_xts_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(struct aes_xts_ctx));
+	free(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+aes_xts_reinit(caddr_t key, u_int8_t *iv)
+{
+	struct aes_xts_ctx *ctx = (struct aes_xts_ctx *)key;
+	u_int64_t blocknum;
+	u_int i;
+
+	bcopy(iv, &blocknum, AES_XTS_IVSIZE);
+	for (i = 0; i < AES_XTS_IVSIZE; i++) {
+		ctx->tweak[i] = blocknum & 0xff;
+		blocknum >>= 8;
+	}
+	/* Last 64 bits of IV are always zero */
+	bzero(ctx->tweak + AES_XTS_IVSIZE, AES_XTS_IVSIZE);
+
+	rijndael_encrypt(&ctx->key2, ctx->tweak, ctx->tweak);
+}
+
+void
+aes_gcm_reinit(caddr_t key, u_int8_t *iv)
+{
+	struct aes_ctr_ctx *ctx;
+
+	ctx = (struct aes_ctr_ctx *)key;
+	bcopy(iv, ctx->ac_block + AESCTR_NONCESIZE, AESCTR_IVSIZE);
+
+	/* reset counter */
+	bzero(ctx->ac_block + AESCTR_NONCESIZE + AESCTR_IVSIZE, 4);
+	ctx->ac_block[AESCTR_BLOCKSIZE - 1] = 1; /* GCM starts with 1 */
 }
 
 /*

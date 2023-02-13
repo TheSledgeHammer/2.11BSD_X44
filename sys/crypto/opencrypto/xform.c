@@ -54,6 +54,8 @@
 #include <crypto/rijndael/rijndael.h>
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
+#include <crypto/aes/aesxcbcmac.h>
+#include <crypto/gmac/gmac.h>
 
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/xform.h>
@@ -197,6 +199,20 @@ const struct enc_xform enc_xform_rijndael128 = {
 	.reinit		= NULL,
 };
 
+const struct enc_xform enc_xform_aes = {
+	.type		= CRYPTO_AES_CBC,
+	.name		= "AES",
+	.blocksize	= 16,
+	.ivsize		= 16,
+	.minkey		= 16,
+	.maxkey		= 32,
+	.encrypt	= aes_encrypt,
+	.decrypt	= aes_decrypt,
+	.setkey		= aes_setkey,
+	.zerokey	= aes_zerokey,
+	.reinit		= NULL,
+};
+
 const struct enc_xform enc_xform_arc4 = {
 	.type		= CRYPTO_ARC4,
 	.name		= "ARC4",
@@ -204,6 +220,62 @@ const struct enc_xform enc_xform_arc4 = {
 	.ivsize		= 0,
 	.minkey		= 1,
 	.maxkey		= 32,
+	.encrypt	= NULL,
+	.decrypt	= NULL,
+	.setkey		= NULL,
+	.zerokey	= NULL,
+	.reinit		= NULL,
+};
+
+const struct enc_xform enc_xform_aes_ctr = {
+	.type		= CRYPTO_AES_CTR,
+	.name		= "AES-CTR",
+	.blocksize	= 16,
+	.ivsize		= 8,
+	.minkey		= 16 + 4,
+	.maxkey		= 32 + 4,
+	.encrypt	= aes_ctr_crypt,
+	.decrypt	= aes_ctr_crypt,
+	.setkey		= aes_ctr_setkey,
+	.zerokey	= aes_ctr_zerokey,
+	.reinit		= aes_ctr_reinit,
+};
+
+const struct enc_xform enc_xform_aes_xts = {
+	.type		= CRYPTO_AES_XTS,
+	.name		= "AES-XTS",
+	.blocksize	= 16,
+	.ivsize		= 8,
+	.minkey		= 32,
+	.maxkey		= 64,
+	.encrypt	= aes_xts_encrypt,
+	.decrypt	= aes_xts_decrypt,
+	.setkey		= aes_xts_setkey,
+	.zerokey	= aes_xts_zerokey,
+	.reinit		= aes_xts_reinit,
+};
+
+const struct enc_xform enc_xform_aes_gcm = {
+	.type		= CRYPTO_AES_GCM_16,
+	.name		= "AES-GCM",
+	.blocksize	= 4, /* ??? */
+	.ivsize		= 8,
+	.minkey		= 16 + 4,
+	.maxkey		= 32 + 4,
+	.encrypt	= aes_ctr_crypt,
+	.decrypt	= aes_ctr_crypt,
+	.setkey		= aes_ctr_setkey,
+	.zerokey	= aes_ctr_zerokey,
+	.reinit		= aes_gcm_reinit,
+};
+
+const struct enc_xform enc_xform_aes_gmac = {
+	.type		= CRYPTO_AES_GMAC,
+	.name		= "AES-GMAC",
+	.blocksize	= 4, /* ??? */
+	.ivsize		= 8,
+	.minkey		= 16 + 4,
+	.maxkey		= 32 + 4,
 	.encrypt	= NULL,
 	.decrypt	= NULL,
 	.setkey		= NULL,
@@ -420,6 +492,66 @@ const struct auth_hash auth_hash_hmac_sha2_512 = {
 	.Reinit		= NULL,
 	.Update		= SHA512Update_int,
 	.Final		= (void (*)(u_int8_t *, void *))(void *)SHA512_Final,
+};
+
+const struct auth_hash auth_hash_aes_xcbc_mac_96 = {
+	.type		= CRYPTO_AES_XCBC_MAC_96,
+	.name		= "AES-XCBC-MAC-96",
+	.keysize	= 16,
+	.hashsize	= 16,
+	.authsize	= 12,
+	.blocksize	= 0,
+	.ctxsize	= sizeof(aesxcbc_ctx),
+	.Init		= null_init,
+	.Setkey		= (void (*)(void *, const u_int8_t *, u_int16_t))(void *)aes_xcbc_mac_init,
+	.Reinit		= NULL,
+	.Update		= aes_xcbc_mac_loop,
+	.Final		= aes_xcbc_mac_result,
+};
+
+const struct auth_hash auth_hash_gmac_aes_128 = {
+	.type		= CRYPTO_AES_128_GMAC,
+	.name		= "GMAC-AES-128",
+	.keysize	= 16 + 4,
+	.hashsize	= 16,
+	.authsize	= 16,
+	.blocksize	= 16, /* ??? */
+	.ctxsize	= sizeof(AES_GMAC_CTX),
+	.Init		= (void (*)(void *))AES_GMAC_Init,
+	.Setkey		= (void (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Setkey,
+	.Reinit		= (void (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Reinit,
+	.Update		= (int (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Update,
+	.Final		= (void (*)(u_int8_t *, void *))AES_GMAC_Final,
+};
+
+const struct auth_hash auth_hash_gmac_aes_192 = {
+	.type		= CRYPTO_AES_192_GMAC,
+	.name		= "GMAC-AES-192",
+	.keysize	= 24 + 4,
+	.hashsize	= 16,
+	.authsize	= 16,
+	.blocksize	= 16, /* ??? */
+	.ctxsize	= sizeof(AES_GMAC_CTX),
+	.Init		= (void (*)(void *))AES_GMAC_Init,
+	.Setkey		= (void (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Setkey,
+	.Reinit		= (void (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Reinit,
+	.Update		= (int (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Update,
+	.Final		= (void (*)(u_int8_t *, void *))AES_GMAC_Final,
+};
+
+const struct auth_hash auth_hash_gmac_aes_256 = {
+	.type		= CRYPTO_AES_256_GMAC,
+	.name		= "GMAC-AES-256",
+	.keysize	= 32 + 4,
+	.hashsize	= 16,
+	.authsize	= 16,
+	.blocksize	= 16, /* ??? */
+	.ctxsize	= sizeof(AES_GMAC_CTX),
+	.Init		= (void (*)(void *))AES_GMAC_Init,
+	.Setkey		= (void (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Setkey,
+	.Reinit		= (void (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Reinit,
+	.Update		= (int (*)(void *, const u_int8_t *, u_int16_t))AES_GMAC_Update,
+	.Final		= (void (*)(u_int8_t *, void *))AES_GMAC_Final,
 };
 
 /* Compression instance */

@@ -35,11 +35,11 @@ typedef struct {
 	uint32_t		aes_ek[60]; 	/* encrypt key schedule */
 	uint32_t		aes_dk[60];		/* decrypt key schedule */
 	unsigned 		aes_rounds;
-} AES_CTX;
+} aes_ctx;
 
-int		AES_Setkey(AES_CTX *, const uint8_t *, int);
-void	AES_Encrypt(AES_CTX *, const uint8_t *, uint8_t *);
-void	AES_Decrypt(AES_CTX *, const uint8_t *, uint8_t *);
+void	AES_Setkey(aes_ctx *, const uint8_t *, int);
+void	AES_Encrypt(aes_ctx *, const uint8_t *, uint8_t *);
+void	AES_Decrypt(aes_ctx *, const uint8_t *, uint8_t *);
 
 int		AES_KeySetup_Encrypt(uint32_t *, const uint8_t *, int);
 int		AES_KeySetup_Decrypt(uint32_t *, const uint8_t *, int);
