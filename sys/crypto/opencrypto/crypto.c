@@ -160,31 +160,10 @@ static	int crypto_kinvoke(struct cryptkop *krp, int hint);
 static struct cryptostats cryptostats;
 static	int crypto_timing = 0;
 
-#ifdef __FreeBSD__
-SYSCTL_STRUCT(_kern, OID_AUTO, crypto_stats, CTLFLAG_RW, &cryptostats,
-	    cryptostats, "Crypto system statistics");
-
-SYSCTL_INT(_debug, OID_AUTO, crypto_timing, CTLFLAG_RW,
-	   &crypto_timing, 0, "Enable/disable crypto timing support");
-SYSCTL_STRUCT(_kern, OID_AUTO, crypto_stats, CTLFLAG_RW, &cryptostats,
-	    cryptostats, "Crypto system statistics");
-#endif /* __FreeBSD__ */
-
 int
 crypto_init(void)
 {
 	int error;
-
-#ifdef __FreeBSD__
-
-	cryptop_zone = zinit("cryptop", sizeof (struct cryptop), 0, 0, 1);
-	cryptodesc_zone = zinit("cryptodesc", sizeof (struct cryptodesc),
-				0, 0, 1);
-	if (cryptodesc_zone == NULL || cryptop_zone == NULL) {
-		printf("crypto_init: cannot setup crypto zones\n");
-		return ENOMEM;
-	}
-#endif
 
 	crypto_drivers_num = CRYPTO_DRIVERS_INITIAL;
 	crypto_drivers = malloc(crypto_drivers_num *
@@ -201,19 +180,9 @@ crypto_init(void)
 	TAILQ_INIT(&crp_ret_kq);
 
 	//softintr_cookie = register_swi(SWI_CRYPTO, cryptointr);
-#ifdef __FreeBSD__
-	error = kthread_create((void (*)(void *)) cryptoret, NULL,
-		    &cryptoproc, "cryptoret");
-	if (error) {
-		printf("crypto_init: cannot start cryptoret thread; error %d",
-			error);
-		crypto_destroy();
-	}
-#else
 	/* defer thread creation until after boot */
 	//kthread_create( deferred_crypto_thread, NULL);
 	error = 0;
-#endif
 	return error;
 }
 
@@ -1207,38 +1176,5 @@ cryptoattach(int n)
 {
 	/* Nothing to do. */
 }
-
-#ifdef __FreeBSD__
-/*
- * Initialization code, both for static and dynamic loading.
- */
-static int
-crypto_modevent(module_t mod, int type, void *unused)
-{
-	int error = EINVAL;
-
-	switch (type) {
-	case MOD_LOAD:
-		error = crypto_init();
-		if (error == 0 && bootverbose)
-			printf("crypto: <crypto core>\n");
-		break;
-	case MOD_UNLOAD:
-		/*XXX disallow if active sessions */
-		error = 0;
-		crypto_destroy();
-		break;
-	}
-	return error;
-}
-static moduledata_t crypto_mod = {
-	"crypto",
-	crypto_modevent,
-	0
-};
-
-MODULE_VERSION(crypto, 1);
-DECLARE_MODULE(crypto, crypto_mod, SI_SUB_DRIVERS, SI_ORDER_FIRST);
-#endif /* __FreeBSD__ */
 
 

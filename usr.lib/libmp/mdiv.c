@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)mdiv.c	5.1 (Berkeley) 4/30/85";
 
 #include <mp.h>
 
+void
 mdiv(a, b, q, r)
 	MINT *a, *b, *q, *r;
 {
@@ -38,6 +39,7 @@ mdiv(a, b, q, r)
 	return;
 }
 
+int
 m_dsb(q, n, a, b)
 	short *a, *b;
 	long q;
@@ -72,6 +74,7 @@ m_dsb(q, n, a, b)
 	}
 }
 
+long int
 m_trq( v1, v2, u1, u2, u3)
 {
 	long int d;
@@ -91,6 +94,7 @@ m_trq( v1, v2, u1, u2, u3)
 	}
 }
 
+void
 m_div(a, b, q, r)
 	MINT *a, *b, *q, *r;
 {

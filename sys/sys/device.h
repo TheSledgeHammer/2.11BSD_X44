@@ -89,8 +89,48 @@ struct evcnt {
 	TAILQ_ENTRY(evcnt)	ev_list;				/* linked list */
 	struct device 		*ev_dev;				/* associated device */
 	int					ev_count;				/* how many have occurred */
-	char				ev_name[8];				/* what to call them (systat display) */
+	const char			*ev_name;				/* what to call them (systat display) */
+	unsigned char		ev_type;				/* counter type; see below */
+	unsigned char		ev_grouplen;			/* 'group' len, excluding NUL */
+	unsigned char		ev_namelen;				/* 'name' len, excluding NUL */
+	const struct evcnt 	*ev_parent;				/* parent, for hierarchical ctrs */
+	const char			*ev_group;				/* name of group */
 };
+
+/* ev_type values */
+#define	EVCNT_TYPE_MISC		0	/* miscellaneous; catch all */
+#define	EVCNT_TYPE_INTR		1	/* interrupt; count with vmstat -i */
+#define	EVCNT_TYPE_TRAP		2	/* processor trap/execption */
+
+/*
+ * initializer for an event count structure.  the lengths are initted and
+ * it is added to the evcnt list at attach time.
+ */
+#define	EVCNT_INITIALIZER(type, parent, group, name) 		\
+	{								                    	\
+        { 0 },				/* ev_list */					\
+		NULL,				/* ev_dev */					\
+		0,					/* ev_count */					\
+		name, 				/* ev_name */					\
+		type, 	    		/* ev_type */					\
+		0,			    	/* ev_grouplen */				\
+		0,					/* ev_namelen */				\
+		parent,				/* ev_parent */					\
+		group, 				/* ev_group */					\
+	}
+
+#define	EVCNT_INITIALIZER1(type, dev, parent, group, name) 	\
+	{								                    	\
+        { 0 },				/* ev_list */					\
+		dev,				/* ev_dev */					\
+		0,					/* ev_count */					\
+		name, 				/* ev_name */					\
+		type, 	    		/* ev_type */					\
+		0,			    	/* ev_grouplen */				\
+		0,					/* ev_namelen */				\
+		parent,				/* ev_parent */					\
+		group, 				/* ev_group */					\
+	}
 
 /*
  * Configuration data (i.e., data placed in ioconf.c).
@@ -223,8 +263,10 @@ void 			config_defer(struct device *, void (*)(struct device *));
 void 			config_interrupts(struct device *, void (*)(struct device *));
 void 			config_pending_incr(void);
 void 			config_pending_decr(void);
-void 			evcnt_attach(struct device *, const char *, struct evcnt *);
+void 			evcnt_attach(struct evcnt *, struct device *, const char *, const char *);
 void 			evcnt_detach(struct evcnt *);
+void 			evcnt_attach_static(struct evcnt *);
+void 			evcnt_attach_dynamic(struct evcnt *, int, const struct evcnt *, const char *, const char *);
 int     		config_hint_enabled(struct device *);
 int     		config_hint_disabled(struct device *);
 

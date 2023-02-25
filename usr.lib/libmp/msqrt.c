@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)msqrt.c	5.1 (Berkeley) 4/30/85";
 
 #include <mp.h>
 
+int
 msqrt(a, b, r)
 	MINT *a, *b, *r;
 {
@@ -36,7 +37,8 @@ msqrt(a, b, r)
 		x.val[x.len - 1] = 1;
 	xfree(b);
 	xfree(r);
-	loop: mdiv(a, &x, &y, &junk);
+loop:
+	mdiv(a, &x, &y, &junk);
 	xfree(&junk);
 	madd(&x, &y, &y);
 	sdiv(&y, 2, &y, (short*) &j);

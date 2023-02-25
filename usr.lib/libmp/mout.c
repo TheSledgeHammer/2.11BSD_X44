@@ -9,8 +9,10 @@ static char sccsid[] = "@(#)mout.c	5.2 (Berkeley) 3/13/86";
 #endif not lint
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <mp.h>
 
+int
 m_in(a, b, f)
 	MINT *a;
 	FILE *f;
@@ -19,6 +21,7 @@ m_in(a, b, f)
 	MINT x, y, ten;
 	int sign, c;
 	short qten, qy;
+
 	xfree(a);
 	sign = 1;
 	ten.len = 1;
@@ -50,7 +53,7 @@ m_in(a, b, f)
 				move(a, &x);
 				continue;
 			} else {
-				VOID ungetc(c, stdin);
+				(void) ungetc(c, stdin);
 				a->len *= sign;
 				return (0);
 			}
@@ -58,6 +61,7 @@ m_in(a, b, f)
 	return (EOF);
 }
 
+void
 m_out(a, b, f)
 	MINT *a;
 	FILE *f;
@@ -66,8 +70,9 @@ m_out(a, b, f)
 	int sign, xlen, i;
 	short r;
 	MINT x;
-	char *obuf,* malloc();
+	char *obuf;
 	register char *bp;
+
 	sign = 1;
 	xlen = a->len;
 	if (xlen < 0) {
@@ -101,6 +106,7 @@ m_out(a, b, f)
 	return;
 }
 
+void
 sdiv(a, n, q, r)
 	MINT *a, *q;
 	short n;
@@ -108,6 +114,7 @@ sdiv(a, n, q, r)
 {
 	MINT x, y;
 	int sign;
+
 	sign = 1;
 	x.len = a->len;
 	x.val = a->val;
@@ -127,6 +134,7 @@ sdiv(a, n, q, r)
 	return;
 }
 
+void
 s_div(a, n, q, r)
 	MINT *a, *q;
 	short n;
@@ -135,6 +143,7 @@ s_div(a, n, q, r)
 	int qlen, i;
 	long int x;
 	short *qval;
+
 	x = 0;
 	qlen = a->len;
 	qval = xalloc(qlen, "s_div");
@@ -153,30 +162,35 @@ s_div(a, n, q, r)
 	return;
 }
 
+int
 min(a)
 	MINT *a;
 {
 	return (m_in(a, 10, stdin));
 }
 
+int
 omin(a)
 	MINT *a;
 {
 	return (m_in(a, 8, stdin));
 }
 
+void
 mout(a)
 	MINT *a;
 {
 	m_out(a, 10, stdout);
 }
 
+void
 omout(a)
 	MINT *a;
 {
 	m_out(a, 8, stdout);
 }
 
+void
 fmout(a, f)
 	MINT *a;
 	FILE *f;
@@ -184,6 +198,7 @@ fmout(a, f)
 	m_out(a, 10, f);
 }
 
+int
 fmin(a, f)
 	MINT *a;
 	FILE *f;
