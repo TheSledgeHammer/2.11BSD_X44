@@ -58,6 +58,9 @@
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
 #include <crypto/aes/aes.h>
+#include <crypto/camellia/camellia.h>
+#include <crypto/twofish/twofish.h>
+#include <crypto/serpent/serpent.h>
 #include <crypto/gmac/gmac.h>
 
 #include <crypto/opencrypto/deflate.h>
@@ -543,6 +546,310 @@ aes_gcm_reinit(void *key, const u_int8_t *iv, u_int8_t *ivout)
 	/* reset counter */
 	bzero(ctx->ac_block + AESCTR_NONCESIZE + AESCTR_IVSIZE, 4);
 	ctx->ac_block[AESCTR_BLOCKSIZE - 1] = 1; /* GCM starts with 1 */
+}
+
+void
+cml_encrypt(caddr_t key, u_int8_t *blk)
+{
+	camellia_encrypt(key, blk, blk);
+}
+
+void
+cml_decrypt(caddr_t key, u_int8_t *blk)
+{
+	camellia_decrypt(key, blk, blk);
+}
+
+int
+cml_setkey(u_int8_t **sched, const u_int8_t *key, int len)
+{
+	int err;
+
+	if (len != 16 && len != 24 && len != 32) {
+		return (EINVAL);
+	}
+	*sched = malloc(sizeof(camellia_ctx), M_CRYPTO_DATA, M_NOWAIT|M_ZERO);
+	if (*sched != NULL) {
+		bzero(*sched, sizeof(camellia_ctx));
+		camellia_set_key((camellia_ctx *) *sched, key, len * 8);
+		err = 0;
+	} else {
+		err = ENOMEM;
+	}
+
+	return err;
+}
+
+void
+cml_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(camellia_ctx));
+	free(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+twofish128_encrypt(caddr_t key, u_int8_t *blk, u_int8_t *iv)
+{
+	twofish_encrypt((twofish_ctx *) key, blk, blk);
+}
+
+void
+twofish128_decrypt(caddr_t key, u_int8_t *blk, u_int8_t *iv)
+{
+	twofish_decrypt(((twofish_ctx *) key), blk, blk);
+}
+
+int
+twofish128_setkey(u_int8_t **sched, u_int8_t *key, int len)
+{
+	int err;
+
+	if (len != 16 && len != 24 && len != 32)
+		return (EINVAL);
+	*sched = malloc(sizeof(twofish_ctx), M_CRYPTO_DATA, M_NOWAIT|M_ZERO);
+	if (*sched != NULL) {
+		twofish_set_key((twofish_ctx *) *sched, key, len * 8);
+		err = 0;
+	} else {
+		err = ENOMEM;
+	}
+	return err;
+}
+
+void
+twofish128_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(twofish_ctx));
+	free(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+void
+serpent128_encrypt(caddr_t key, u_int8_t *blk, u_int8_t *iv)
+{
+	serpent_encrypt((serpent_ctx *) key, blk, blk);
+}
+
+void
+serpent128_decrypt(caddr_t key, u_int8_t *blk, u_int8_t *iv)
+{
+	serpent_decrypt(((serpent_ctx *) key), blk, blk);
+}
+
+int
+serpent128_setkey(u_int8_t **sched, u_int8_t *key, int len)
+{
+	int err;
+
+	if (len != 16 && len != 24 && len != 32)
+		return (EINVAL);
+	*sched = malloc(sizeof(serpent_ctx), M_CRYPTO_DATA, M_NOWAIT|M_ZERO);
+	if (*sched != NULL) {
+		serpent_set_key((serpent_ctx *) *sched, key, len * 8);
+		err = 0;
+	} else {
+		err = ENOMEM;
+	}
+	return err;
+}
+
+void
+serpent128_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(serpent_ctx));
+	free(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+struct twofish_xts_ctx {
+	twofish_ctx key1;
+	twofish_ctx key2;
+};
+
+void
+twofish_xts_reinit(caddr_t key, u_int8_t *iv)
+{
+	struct twofish_xts_ctx *ctx = (struct twofish_xts_ctx *)key;
+#if 0
+	u_int64_t blocknum;
+#endif
+
+#if 0
+	/*
+	 * Prepare tweak as E_k2(IV). IV is specified as LE representation
+	 * of a 64-bit block number which we allow to be passed in directly.
+	 */
+	/* XXX: possibly use htole64? */
+#endif
+	/* Last 64 bits of IV are always zero */
+	bzero(iv + 8, 8);
+
+	twofish_encrypt(&ctx->key2, iv, iv);
+}
+
+void
+twofish_xts_crypt(struct twofish_xts_ctx *ctx, u_int8_t *data, u_int8_t *iv,
+    u_int do_encrypt)
+{
+	u_int8_t block[16];
+	u_int i, carry_in, carry_out;
+
+	for (i = 0; i < 16; i++)
+		block[i] = data[i] ^ iv[i];
+
+	if (do_encrypt)
+		twofish_encrypt(&ctx->key1, block, data);
+	else
+		twofish_decrypt(&ctx->key1, block, data);
+
+	for (i = 0; i < 16; i++)
+		data[i] ^= iv[i];
+
+	/* Exponentiate tweak */
+	carry_in = 0;
+	for (i = 0; i < 16; i++) {
+		carry_out = iv[i] & 0x80;
+		iv[i] = (iv[i] << 1) | (carry_in ? 1 : 0);
+		carry_in = carry_out;
+	}
+	if (carry_in) {
+		iv[0] ^= AES_XTS_ALPHA;
+	}
+	bzero(block, sizeof(block));
+}
+
+void
+twofish_xts_encrypt(caddr_t key, u_int8_t *data, u_int8_t *iv)
+{
+	twofish_xts_crypt((struct twofish_xts_ctx *)key, data, iv, 1);
+}
+
+void
+twofish_xts_decrypt(caddr_t key, u_int8_t *data, u_int8_t *iv)
+{
+	twofish_xts_crypt((struct twofish_xts_ctx *)key, data, iv, 0);
+}
+
+int
+twofish_xts_setkey(u_int8_t **sched, u_int8_t *key, int len)
+{
+	struct twofish_xts_ctx *ctx;
+
+	if (len != 32 && len != 64)
+		return -1;
+
+	*sched = malloc(sizeof(struct twofish_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	ctx = (struct twofish_xts_ctx *)*sched;
+
+	twofish_set_key(&ctx->key1, key, len * 4);
+	twofish_set_key(&ctx->key2, key + (len / 2), len * 4);
+
+	return 0;
+}
+
+void
+twofish_xts_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(struct twofish_xts_ctx));
+	free(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
+}
+
+struct serpent_xts_ctx {
+	serpent_ctx key1;
+	serpent_ctx key2;
+};
+
+void
+serpent_xts_reinit(caddr_t key, u_int8_t *iv)
+{
+	struct serpent_xts_ctx *ctx = (struct serpent_xts_ctx *)key;
+#if 0
+	u_int64_t blocknum;
+	u_int i;
+#endif
+
+#if 0
+	/*
+	 * Prepare tweak as E_k2(IV). IV is specified as LE representation
+	 * of a 64-bit block number which we allow to be passed in directly.
+	 */
+	/* XXX: possibly use htole64? */
+#endif
+	/* Last 64 bits of IV are always zero */
+	bzero(iv + 8, 8);
+
+	serpent_encrypt(&ctx->key2, iv, iv);
+}
+
+void
+serpent_xts_crypt(struct serpent_xts_ctx *ctx, u_int8_t *data, u_int8_t *iv, u_int do_encrypt)
+{
+	u_int8_t block[16];
+	u_int i, carry_in, carry_out;
+
+	for (i = 0; i < 16; i++)
+		block[i] = data[i] ^ iv[i];
+
+	if (do_encrypt) {
+		serpent_encrypt(&ctx->key1, block, data);
+	} else {
+		serpent_decrypt(&ctx->key1, block, data);
+	}
+
+	for (i = 0; i < 16; i++) {
+		data[i] ^= iv[i];
+	}
+
+	/* Exponentiate tweak */
+	carry_in = 0;
+	for (i = 0; i < 16; i++) {
+		carry_out = iv[i] & 0x80;
+		iv[i] = (iv[i] << 1) | (carry_in ? 1 : 0);
+		carry_in = carry_out;
+	}
+	if (carry_in) {
+		iv[0] ^= AES_XTS_ALPHA;
+	}
+	bzero(block, sizeof(block));
+}
+
+void
+serpent_xts_encrypt(caddr_t key, u_int8_t *data, u_int8_t *iv)
+{
+	serpent_xts_crypt((struct serpent_xts_ctx *)key, data, iv, 1);
+}
+
+void
+serpent_xts_decrypt(caddr_t key, u_int8_t *data, u_int8_t *iv)
+{
+	serpent_xts_crypt((struct serpent_xts_ctx *)key, data, iv, 0);
+}
+
+int
+serpent_xts_setkey(u_int8_t **sched, u_int8_t *key, int len)
+{
+	struct serpent_xts_ctx *ctx;
+
+	if (len != 32 && len != 64)
+		return -1;
+
+	*sched = malloc(sizeof(struct serpent_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	ctx = (struct serpent_xts_ctx *)*sched;
+
+	serpent_set_key(&ctx->key1, key, len * 4);
+	serpent_set_key(&ctx->key2, key + (len / 2), len * 4);
+
+	return 0;
+}
+
+void
+serpent_xts_zerokey(u_int8_t **sched)
+{
+	bzero(*sched, sizeof(struct serpent_xts_ctx));
+	free(*sched, M_CRYPTO_DATA);
+	*sched = NULL;
 }
 
 /*

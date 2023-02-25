@@ -46,9 +46,6 @@ __KERNEL_RCSID(0, "$NetBSD: ipsec_input.c,v 1.8 2004/03/20 02:57:48 jonathan Exp
  */
 
 #include "opt_inet.h"
-#ifdef __FreeBSD__
-#include "opt_inet6.h"
-#endif
 #include "opt_ipsec.h"
 
 #include <sys/param.h>

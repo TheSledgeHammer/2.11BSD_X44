@@ -113,7 +113,12 @@
 #define CRYPTO_AES_192_GMAC			29
 #define CRYPTO_AES_256_GMAC			30
 #define CRYPTO_AES_GMAC				31
-#define CRYPTO_ALGORITHM_MAX		31 /* Keep updated - see below */
+#define CRYPTO_CAMELLIA_CBC			32
+#define CRYPTO_TWOFISH_CBC			33
+#define CRYPTO_SERPENT_CBC			34
+#define CRYPTO_TWOFISH_XTS			35
+#define CRYPTO_SERPENT_XTS			36
+#define CRYPTO_ALGORITHM_MAX		36 /* Keep updated - see below */
 
 /* Algorithm flags */
 #define	CRYPTO_ALG_FLAG_SUPPORTED	0x01 /* Algorithm is supported */

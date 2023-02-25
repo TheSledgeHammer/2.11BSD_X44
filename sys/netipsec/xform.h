@@ -107,8 +107,7 @@ struct cryptoini;
 /* XF_IP4 */
 extern	int ip4_input6(struct mbuf **m, int *offp, int proto);
 extern	void ip4_input(struct mbuf *m, ...);
-extern	int ipip_output(struct mbuf *, struct ipsecrequest *,
-			struct mbuf **, int, int);
+extern	int ipip_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int, int);
 
 /* XF_AH */
 extern int ah_init0(struct secasvar *, struct xformsw *, struct cryptoini *);

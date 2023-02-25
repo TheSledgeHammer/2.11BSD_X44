@@ -198,6 +198,21 @@ cryptof_ioctl(struct file *fp, u_long cmd, void *data, struct proc *p)
 		case CRYPTO_ARC4:
 			txform = &enc_xform_arc4;
 			break;
+		case CRYPTO_CAMELLIA_CBC:
+			txform = &enc_xform_camellia;
+			break;
+		case CRYPTO_TWOFISH_CBC:
+			txform = &enc_xform_twofish;
+			break;
+		case CRYPTO_SERPENT_CBC:
+			txform = &enc_xform_serpent;
+			break;
+		case CRYPTO_TWOFISH_XTS:
+			txform = &enc_xform_twofish_xts;
+			break;
+		case CRYPTO_SERPENT_XTS:
+			txform = &enc_xform_serpent_xts;
+			break;
 		default:
 			return (EINVAL);
 		}

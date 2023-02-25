@@ -863,6 +863,21 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_AES_GMAC:
 			txf = &enc_xform_aes_gmac;
 			goto enccommon;
+		case CRYPTO_CAMELLIA_CBC:
+			txf = &enc_xform_camellia;
+			goto enccommon;
+		case CRYPTO_TWOFISH_CBC:
+			txf = &enc_xform_twofish;
+			goto enccommon;
+		case CRYPTO_SERPENT_CBC:
+			txf = &enc_xform_serpent;
+			goto enccommon;
+		case CRYPTO_TWOFISH_XTS:
+			txf = &enc_xform_twofish_xts;
+			goto enccommon;
+		case CRYPTO_SERPENT_XTS:
+			txf = &enc_xform_serpent_xts;
+			goto enccommon;
 		case CRYPTO_NULL_CBC:
 			txf = &enc_xform_null;
 			goto enccommon;
@@ -1055,6 +1070,11 @@ swcr_freesession(void *arg, u_int64_t tid)
 		case CRYPTO_AES_CTR:
 		case CRYPTO_AES_GCM_16:
 		case CRYPTO_AES_GMAC:
+		case CRYPTO_CAMELLIA_CBC:
+		case CRYPTO_TWOFISH_CBC:
+		case CRYPTO_SERPENT_CBC:
+		case CRYPTO_TWOFISH_XTS:
+		case CRYPTO_SERPENT_XTS:
 		case CRYPTO_NULL_CBC:
 			txf = swd->sw_exf;
 
@@ -1185,13 +1205,14 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case CRYPTO_CAST_CBC:
 		case CRYPTO_SKIPJACK_CBC:
 		case CRYPTO_RIJNDAEL128_CBC:
+		//case CRYPTO_AES_CBC:
 		case CRYPTO_AES_XTS:
-
-			/*
-			case CRYPTO_AES_CBC:
-			case CRYPTO_CAMELLIA_CBC:
-			*/
 		case CRYPTO_AES_CTR:
+		case CRYPTO_CAMELLIA_CBC:
+		case CRYPTO_TWOFISH_CBC:
+		case CRYPTO_SERPENT_CBC:
+		case CRYPTO_TWOFISH_XTS:
+		case CRYPTO_SERPENT_XTS:
 			if ((crp->crp_etype = swcr_encdec(crd, sw, crp->crp_buf, type))
 					!= 0)
 				goto done;
@@ -1269,7 +1290,6 @@ swcr_init(void)
 	REGISTER(CRYPTO_SKIPJACK_CBC);
 	REGISTER(CRYPTO_RIJNDAEL128_CBC);
 	REGISTER(CRYPTO_AES_CBC);
-	//REGISTER(CRYPTO_CAMELLIA_CBC);
 	REGISTER(CRYPTO_AES_XTS);
 	REGISTER(CRYPTO_AES_CTR);
 	REGISTER(CRYPTO_AES_GCM_16);
@@ -1293,6 +1313,11 @@ swcr_init(void)
 	REGISTER(CRYPTO_AES_128_GMAC);
 	REGISTER(CRYPTO_AES_192_GMAC);
 	REGISTER(CRYPTO_AES_256_GMAC);
+	REGISTER(CRYPTO_CAMELLIA_CBC);
+	REGISTER(CRYPTO_TWOFISH_CBC);
+	REGISTER(CRYPTO_SERPENT_CBC);
+	REGISTER(CRYPTO_TWOFISH_XTS);
+	REGISTER(CRYPTO_SERPENT_XTS);
 	REGISTER(CRYPTO_DEFLATE_COMP);
 #undef REGISTER
 }

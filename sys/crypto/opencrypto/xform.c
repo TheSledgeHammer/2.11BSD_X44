@@ -56,6 +56,9 @@
 #include <crypto/ripemd160/rmd160.h>
 #include <crypto/skipjack/skipjack.h>
 #include <crypto/aes/aesxcbcmac.h>
+#include <crypto/camellia/camellia.h>
+#include <crypto/twofish/twofish.h>
+#include <crypto/serpent/serpent.h>
 #include <crypto/gmac/gmac.h>
 
 #include <crypto/opencrypto/cryptodev.h>
@@ -282,6 +285,76 @@ const struct enc_xform enc_xform_aes_gmac = {
 	.setkey		= NULL,
 	.zerokey	= NULL,
 	.reinit		= NULL,
+};
+
+const struct enc_xform enc_xform_camellia = {
+	.type		= CRYPTO_CAMELLIA_CBC,
+	.name		= "Camellia",
+	.blocksize	= 16,
+	.ivsize		= 16,
+	.minkey		= 8,
+	.maxkey		= 32,
+	.encrypt	= cml_encrypt,
+	.decrypt	= cml_decrypt,
+	.setkey		= cml_setkey,
+	.zerokey	= cml_zerokey,
+	.reinit		= NULL,
+};
+
+const struct enc_xform enc_xform_twofish  = {
+	.type		= CRYPTO_TWOFISH_CBC,
+	.name		= "Twofish",
+	.blocksize	= 16,
+	.ivsize		= 16,
+	.minkey		= 8,
+	.maxkey		= 32,
+	.encrypt	= twofish128_encrypt,
+	.decrypt	= twofish128_decrypt,
+	.setkey		= twofish128_setkey,
+	.zerokey	= twofish128_zerokey,
+	.reinit		= NULL,
+};
+
+const struct enc_xform enc_xform_twofish_xts  = {
+	.type		= CRYPTO_TWOFISH_XTS,
+	.name		= "TWOFISH-XTS",
+	.blocksize	= 16,
+	.ivsize		= 8,
+	.minkey		= 32,
+	.maxkey		= 64,
+	.encrypt	= twofish_xts_encrypt,
+	.decrypt	= twofish_xts_decrypt,
+	.setkey		= twofish_xts_setkey,
+	.zerokey	= twofish_xts_zerokey,
+	.reinit		= twofish_xts_reinit,
+};
+
+const struct enc_xform enc_xform_serpent  = {
+	.type		= CRYPTO_SERPENT_CBC,
+	.name		= "Serpent",
+	.blocksize	= 16,
+	.ivsize		= 16,
+	.minkey		= 8,
+	.maxkey		= 32,
+	.encrypt	= serpent128_encrypt,
+	.decrypt	= serpent128_decrypt,
+	.setkey		= serpent128_setkey,
+	.zerokey	= serpent128_zerokey,
+	.reinit		= NULL,
+};
+
+const struct enc_xform enc_xform_serpent_xts  = {
+	.type		= CRYPTO_SERPENT_XTS,
+	.name		= "SERPENT-XTS",
+	.blocksize	= 16,
+	.ivsize		= 8,
+	.minkey		= 32,
+	.maxkey		= 64,
+	.encrypt	= serpent_xts_encrypt,
+	.decrypt	= serpent_xts_decrypt,
+	.setkey		= serpent_xts_setkey,
+	.zerokey	= serpent_xts_zerokey,
+	.reinit		= serpent_xts_reinit,
 };
 
 /* Authentication instances */

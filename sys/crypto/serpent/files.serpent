@@ -1,0 +1,5 @@
+# $211BSD: files.serpent,v 1.0 2023/02/25 
+
+define serpent
+
+file crypto/serpent/serpent.c		serpent

@@ -44,7 +44,6 @@ struct advvm_tag_directory {
 };
 typedef struct advvm_tag_directory  advvm_tag_dir_t;
 
-/* should be filedirectory structure within bsd "system" */
 struct advvm_file_directory {
     advvm_tag_dir_t                 fdr_tag;
     const char                      *fdr_name;
@@ -56,9 +55,11 @@ struct advvm_fileset {
     TAILQ_ENTRY(advvm_fileset)      fst_entries;                    /* list of fileset entries per domain */
     char                            fst_name[MAXFILESETNAME];       /* fileset name */
     uint32_t                        fst_id;                         /* fileset id */
+    uint32_t						fst_hash;						/* tag/file directory hash */
 
     /* fileset tag information */
     advvm_tag_dir_t                 fst_tags;
+    /* fileset directory information */
     advvm_file_dir_t		   		fst_file_directory;
 
     /* domain-related fields */
@@ -73,8 +74,8 @@ typedef struct advvm_fileset        advvm_fileset_t;
 void			advvm_fileset_init(advvm_fileset_t *);
 void			advvm_fileset_set_domain(advvm_fileset_t *, advvm_domain_t *);
 void			advvm_filset_set_tag_directory(advvm_tag_dir_t *, char *, uint32_t);
-void			advvm_filset_set_file_directory(advvm_file_dir_t *, advvm_tag_dir_t *, char *);
-void			advvm_fileset_create(advvm_domain_t *, advvm_fileset_t *, char *, uint32_t, advvm_tag_dir_t *,  char *, uint32_t, advvm_file_dir_t *, char *);
+void			advvm_filset_set_file_directory(advvm_file_dir_t *, advvm_tag_dir_t *, char *, struct dkdevice *);
+void			advvm_fileset_create(advvm_domain_t *, advvm_fileset_t *, char *, uint32_t, char *, uint32_t, char *, struct dkdevice *);
 advvm_volume_t 	*advvm_filset_find(advvm_domain_t *, char *, uint32_t);
 void			advvm_filset_insert(advvm_domain_t *, advvm_fileset_t *, char *, uint32_t);
 void			advvm_filset_remove(advvm_domain_t *, char *, uint32_t);

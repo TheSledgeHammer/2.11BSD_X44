@@ -52,7 +52,7 @@ struct advvm_block 		*advblk;
 struct advvm_softc {
 	struct device		*sc_dev;		/* Self. */
 	struct dkdevice		sc_dkdev;		/* hook for generic disk handling */
-	//struct lock		sc_lock;
+	char				*sc_name;		/* device name *
 	struct buf 			*sc_buflist;
 	char			 	sc_dying;		/* device detached */
 
@@ -99,17 +99,13 @@ const struct cdevsw advvm_cdev = {
 		.d_type = D_DISK
 };
 
-CFDRIVER_DECL(NULL, advvm, &advvm_cops, DV_DISK, sizeof(struct advvm_softc));
-CFOPS_DECL(advvm, advvm_match, advvm_attach, advvm_detach, advvm_activate);
-
-struct dkdriver advvm_dkdriver = {
-		.d_open = advvm_open,
-		.d_close = advvm_close,
-		.d_strategy = advvm_strategy,
-		.d_minphys = advvm_minphys,
-		.d_start = advvm_start,
-		.d_mklabel = advvm_mklabel,
+const struct dkdriver advvmdkdriver = {
+		.d_strategy = advvm_strategy
 };
+
+CFOPS_DECL(advvm, advvm_match, advvm_attach, advvm_detach, advvm_activate);
+CFDRIVER_DECL(NULL, advvm, DV_DISK);
+CFATTACH_DECL(advvm, &advvm_cd, &advvm_cops, sizeof(struct advvm_softc));
 
 struct advvm_header *
 advvm_set_header(magic, label, block)
@@ -118,7 +114,7 @@ advvm_set_header(magic, label, block)
 	struct advvm_block *block;
 {
 	struct advvm_header *header;
-	if(header == NULL) {
+	if (header == NULL) {
 		advvm_malloc((struct advvm_header *) header, sizeof(struct advvm_header *));
 	}
 	header->ahd_magic = magic;
@@ -131,9 +127,9 @@ advvm_set_header(magic, label, block)
 int
 advvm_match(struct device *parent, struct cfdata *match, void *aux)
 {
-	struct advvm_attach_args *adv = (struct advvm_attach_args *)aux;
+	struct advvm_softc *adv = (struct advvm_softc *)aux;
 
-	if (strcmp(adv->ada_name, match->cf_driver->cd_name)) {
+	if (strcmp(adv->sc_name, match->cf_driver->cd_name)) {
 		return (0);
 	}
 	return (1);
@@ -147,7 +143,7 @@ advvm_attach(struct device *parent, struct device *self, void *aux)
 
 	sc->sc_dev = self;
 
-	sc->sc_header = advvm_set_header(129, &advlab, &advblk); /* TODO: generate magic number */
+	sc->sc_header = advvm_set_header(ADVVM_MAGIC, &advlab, &advblk);
 	adv->ada_name = sc->sc_header->ahd_label->alb_name;
 	self->dv_xname = adv->ada_name;
 

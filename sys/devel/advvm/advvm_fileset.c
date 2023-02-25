@@ -77,7 +77,7 @@ advvm_tag_hash(tag_name, tag_id)
  * file directory hash: from tag & file directory name pair
  */
 uint32_t
-advvm_fdr_hash(tag_dir, fdr_name)
+advvm_fdir_hash(tag_dir, fdr_name)
 	advvm_tag_dir_t   *tag_dir;
 	const char        *fdr_name;
 {
@@ -96,7 +96,7 @@ advvm_filset_set_tag_directory(tag, name, id)
   uint32_t        id;
 {
 	if (tag == NULL) {
-		advvm_malloc((struct advvm_tag_directory*) tag,	sizeof(struct advvm_tag_directory*));
+		advvm_malloc((struct advvm_tag_directory *) tag, sizeof(struct advvm_tag_directory *));
 	}
 	tag->tag_name = name;
 	tag->tag_id = id;
@@ -107,55 +107,55 @@ advvm_filset_set_tag_directory(tag, name, id)
  * name.
  */
 void
-advvm_filset_set_file_directory(fdir, tag, name)
+advvm_filset_set_file_directory(fdir, tag, name, disk)
 	advvm_file_dir_t  *fdir;
 	advvm_tag_dir_t   *tag;
 	char              *name;
+	struct dkdevice	  *disk;
 {
 	if (fdir == NULL) {
-		advvm_malloc((struct advvm_file_directory*) fdir,
-				sizeof(struct advvm_file_directory*));
+		advvm_malloc((struct advvm_file_directory *) fdir,
+				sizeof(struct advvm_file_directory *));
 	}
-	register struct dkdevice *disk;
-
-	disk = &disktable[advvm_fdr_hash(tag, name)];
 
 	fdir->fdr_tag = tag;
 	fdir->fdr_name = name;
-	fdir->fdr_disk = disk;
+	fdir->fdr_disk = disk; //= &disktable[advvm_fdir_hash(tag, fdir_name)];
 }
 
 void
-advvm_fileset_create(adom, adfst, fst_name, fst_id, tag, tag_name, tag_id, fdir, fdr_name)
+advvm_fileset_create(adom, adfst, fst_name, fst_id, tag_name, tag_id, fdir_name, fdir_disk)
 	advvm_domain_t 		*adom;
 	advvm_fileset_t 	*adfst;
-	advvm_tag_dir_t 	*tag;
-	advvm_file_dir_t 	*fdir;
-	char 				*fst_name, *tag_name, *fdr_name;
+	char 				*fst_name, *tag_name, *fdir_name;
 	uint32_t 			fst_id, tag_id;
+	struct dkdevice	  	*fdir_disk;
 {
-	//advvm_malloc((advvm_fileset_t*) adfst, sizeof(advvm_fileset_t*)); /* setup in advvm_attach */
-	advvm_filset_set_tag_directory(tag, tag_name, tag_id);
-	advvm_filset_set_file_directory(fdir, tag, fdr_name);
+	register advvm_tag_dir_t 	tag;
+	register advvm_file_dir_t 	fdir;
 
-	if(tag == NULL) {
+	advvm_filset_set_tag_directory(&tag, tag_name, tag_id);
+	advvm_filset_set_file_directory(&fdir, &tag, fdir_name, fdir_disk);
+
+	if (tag == NULL) {
 		panic("advvm_fileset_create: no tag directory set");
 		return;
 	}
-	if(fdir == NULL) {
+	if (fdir == NULL) {
 		panic("advvm_fileset_create: no file directory set");
 		return;
 	}
 
 	adfst->fst_domain = adom;
-	adfst->fst_name = name;
+	adfst->fst_name = fst_name;
 	adfst->fst_id = fst_id;
-	adfst->fst_tags = tag;
-	adfst->fst_file_directory = fdir;
+	adfst->fst_tags = &tag;
+	adfst->fst_file_directory = &fdir;
+	adfst->fst_hash = advvm_fdir_hash(&tag, fdir_name);
 	advvm_storage_create(adfst->fst_storage, adfst->fst_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
 }
 
-advvm_volume_t *
+advvm_fileset_t *
 advvm_filset_find(adom, name, id)
 	advvm_domain_t 	*adom;
 	char 		    *name;
@@ -168,7 +168,7 @@ advvm_filset_find(adom, name, id)
 	TAILQ_FOREACH(adfst, bucket, fst_entries) {
 		if (adfst->fst_domain == adom) {
 			if (adfst->fst_name == name && adfst->fst_id == id) {
-        return (adfst);
+				return (adfst);
 			}
 		}
 	}
@@ -194,7 +194,7 @@ advvm_filset_insert(adom, adfst, name, id)
 	fdir = adfst->fst_file_directory;
 
 	advvm_fileset_set_domain(adfst, adom);
-	advvm_fileset_create(adom, adfst, name, id, tags, tags->tag_name, tags->tag_id, fdir, fdir->fdr_tag, fdir->fdr_name);
+	advvm_fileset_create(adom, adfst, name, id, tags->tag_name, tags->tag_id, fdir->fdr_tag, fdir->fdr_name, fdir->fdr_disk);
 
 	bucket = &domain_list[advvm_hash(adom)];
 
