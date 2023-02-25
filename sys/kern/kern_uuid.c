@@ -47,10 +47,6 @@ __KERNEL_RCSID(0, "$NetBSD: kern_uuid.c,v 1.1 2004/01/29 02:00:03 tsarna Exp $")
 #include <net/if_dl.h>
 #include <net/if_types.h>
 
-#define CTASSERT(x)
-
-CTASSERT(sizeof(struct uuid) == 16);
-
 /*
  * See also:
  *	http://www.opengroup.org/dce/info/draft-leach-uuids-guids-01.txt
