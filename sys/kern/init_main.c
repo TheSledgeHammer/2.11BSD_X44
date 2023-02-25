@@ -77,6 +77,7 @@
 #include <sys/stdint.h>
 #include <sys/null.h>
 #include <sys/domain.h>
+#include <sys/uuid.h>
 
 #include <vm/include/vm.h>
 
@@ -302,6 +303,9 @@ main(framep)
 
 	/* initialize entropy pool */
 	rnd_init();
+
+	/* Initialize the UUID system calls. */
+	uuid_init();
 
 #ifdef GPROF
 	/* Initialize kernel profiling. */

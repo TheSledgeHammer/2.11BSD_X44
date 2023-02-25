@@ -65,8 +65,15 @@ void be_uuid_dec(void const *, struct uuid *);
 void be_uuid_enc(void *, struct uuid const *);
 void le_uuid_dec(void const *, struct uuid *);
 void le_uuid_enc(void *, struct uuid const *);
+void uuid_init(void);
+int	 uuidgenerate(struct uuid *, int);
 
 #else	/* _KERNEL */
+
 typedef struct uuid uuid_t;
+
+__BEGIN_DECLS
+int	uuidgenerate(struct uuid *, int);
+__END_DECLS
 #endif	/* _KERNEL */
 #endif /* SYS_SYS_UUID_H_ */

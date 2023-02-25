@@ -147,8 +147,8 @@ void	microtime(struct timeval *);
 void	timevaladd(struct timeval *, struct timeval *);
 void	timevalfix(struct timeval *);
 void	timevalsub(struct timeval *, struct timeval *);
-int ratecheck(struct timeval *, const struct timeval *);
-int	ppsratecheck(struct timeval *, int *, int);
+int 	ratecheck(struct timeval *, const struct timeval *);
+int		ppsratecheck(struct timeval *, int *, int);
 #else /* !KERNEL */
 
 #include <time.h>
