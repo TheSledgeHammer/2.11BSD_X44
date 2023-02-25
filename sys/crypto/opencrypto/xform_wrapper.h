@@ -42,14 +42,6 @@
 #ifndef _CRYPTO_XFORM_WRAPPER_H_
 #define _CRYPTO_XFORM_WRAPPER_H_
 
-#define AESCTR_NONCESIZE	4
-#define AESCTR_IVSIZE		8
-#define AESCTR_BLOCKSIZE	16
-
-#define AES_XTS_BLOCKSIZE	16
-#define AES_XTS_IVSIZE		8
-#define AES_XTS_ALPHA		0x87	/* GF(2^128) generator polynomial */
-
 void 	null_encrypt(caddr_t, u_int8_t *);
 void 	null_decrypt(caddr_t, u_int8_t *);
 int 	null_setkey(u_int8_t **, const u_int8_t *, int);
@@ -108,27 +100,27 @@ void 	cml_encrypt(caddr_t, u_int8_t *);
 void 	cml_decrypt(caddr_t, u_int8_t *);
 void	cml_zerokey(u_int8_t **);
 
-int 	twofish128_setkey(u_int8_t **, u_int8_t *, int);
-void 	twofish128_encrypt(caddr_t, u_int8_t *, u_int8_t *);
-void 	twofish128_decrypt(caddr_t, u_int8_t *, u_int8_t *);
+int 	twofish128_setkey(u_int8_t **, const u_int8_t *, int);
+void 	twofish128_encrypt(caddr_t, u_int8_t *);
+void 	twofish128_decrypt(caddr_t, u_int8_t *);
 void 	twofish128_zerokey(u_int8_t **);
 
-int 	twofish_xts_setkey(u_int8_t **, u_int8_t *, int);
-void 	twofish_xts_encrypt(caddr_t, u_int8_t *, u_int8_t *);
-void 	twofish_xts_decrypt(caddr_t, u_int8_t *, u_int8_t *);
+int 	twofish_xts_setkey(u_int8_t **, const u_int8_t *, int);
+void 	twofish_xts_encrypt(caddr_t, u_int8_t *);
+void 	twofish_xts_decrypt(caddr_t, u_int8_t *);
 void 	twofish_xts_zerokey(u_int8_t **);
-void	twofish_xts_reinit(caddr_t, u_int8_t *);
+void	twofish_xts_reinit(void *, const u_int8_t *, u_int8_t *);
 
-int 	serpent128_setkey(u_int8_t **, u_int8_t *, int);
-void 	serpent128_encrypt(caddr_t, u_int8_t *, u_int8_t *);
-void 	serpent128_decrypt(caddr_t, u_int8_t *, u_int8_t *);
+int 	serpent128_setkey(u_int8_t **, const u_int8_t *, int);
+void 	serpent128_encrypt(caddr_t, u_int8_t *);
+void 	serpent128_decrypt(caddr_t, u_int8_t *);
 void 	serpent128_zerokey(u_int8_t **);
 
-int 	serpent_xts_setkey(u_int8_t **, u_int8_t *, int);
-void 	serpent_xts_encrypt(caddr_t, u_int8_t *, u_int8_t *);
-void 	serpent_xts_decrypt(caddr_t, u_int8_t *, u_int8_t *);
+int 	serpent_xts_setkey(u_int8_t **, const u_int8_t *, int);
+void 	serpent_xts_encrypt(caddr_t, u_int8_t *);
+void 	serpent_xts_decrypt(caddr_t, u_int8_t *);
 void 	serpent_xts_zerokey(u_int8_t **);
-void	serpent_xts_reinit(caddr_t, u_int8_t *);
+void	serpent_xts_reinit(void *, const u_int8_t *, u_int8_t *);
 
 void 	null_init(void *);
 int 	null_update(void *, const u_int8_t *, u_int16_t);
