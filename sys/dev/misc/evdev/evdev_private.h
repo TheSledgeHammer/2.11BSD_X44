@@ -36,7 +36,6 @@
 #include <sys/queue.h>
 #include <sys/sysctl.h>
 
-#include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/input.h>
 #include <dev/misc/evdev/freebsd-bitstring.h>
@@ -197,6 +196,8 @@ struct evdev_softc {
 	int					sc_refcnt;
 	u_char				sc_dying;
 };
+
+#include "locators.h"
 
 #define EVDEVDEVCF_MUX 	0
 
