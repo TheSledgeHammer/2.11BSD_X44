@@ -343,20 +343,23 @@ lint: ${LOBJS}
 	${LINT} ${KERNLINTFLAGS} ${CPPFLAGS:M-[IDU]*} ${LOBJS}
 .endif
 
+
 .if !target(install)
 # The install target can be redefined by putting a
 # install-kernel-${MACHINE_NAME} target into /etc/mk.conf
-MACHINE_NAME!=  uname -n
-install: install-kernel-${MACHINE_NAME}
-.if !target(install-kernel-${MACHINE_NAME})
-.include "kern.post.mk"
+
+#MACHINE_NAME!=  uname -n
+
+#install: install-kernel-${MACHINE_NAME}
+#.if !target(install-kernel-${MACHINE_NAME})	
+.include "kern.boot.mk"
 
 #install-kernel-${MACHINE_NAME}:
 #	rm -f ${DESTDIR}/onetbsd
 #	ln ${DESTDIR}/netbsd ${DESTDIR}/onetbsd
 #	cp netbsd ${DESTDIR}/nnetbsd
 #	mv ${DESTDIR}/nnetbsd ${DESTDIR}/netbsd
-.endif
+#.endif
 .endif
 
 .if !target(tags)
