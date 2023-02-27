@@ -508,7 +508,7 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 	}
 
 #ifdef EVDEV_SUPPORT
-	evdev_wsmouse_write(sc, x, y, z, btns)
+	evdev_wsmouse_write(sc, x, y, z, btns);
 #endif
 
 out:
