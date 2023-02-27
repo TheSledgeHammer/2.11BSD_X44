@@ -85,7 +85,6 @@ struct fcrypt {
 };
 
 /* Declaration of master device (fd-cloning/ctxt-allocating) entrypoints */
-void		cryptoattach(int);
 static int	cryptoopen(dev_t dev, int flag, int mode, struct proc *p);
 static int	cryptoread(dev_t dev, struct uio *uio, int ioflag);
 static int	cryptowrite(dev_t dev, struct uio *uio, int ioflag);
@@ -747,12 +746,6 @@ csefree(struct csession *cse)
 		FREE(cse->mackey, M_XDATA);
 	FREE(cse, M_XDATA);
 	return (error);
-}
-
-void
-cryptoattach(int num)
-{
-	swcr_init();
 }
 
 static int
