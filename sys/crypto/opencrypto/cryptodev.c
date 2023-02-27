@@ -51,6 +51,7 @@ __KERNEL_RCSID(0, "$NetBSD: cryptodev.c,v 1.10 2003/11/19 04:14:07 jonathan Exp 
 #include <crypto/md5/md5.h>
 #include <crypto/sha1/sha1.h>
 #include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptosoft.h>
 #include <crypto/opencrypto/xform.h>
 
 #define splcrypto splnet
@@ -84,6 +85,7 @@ struct fcrypt {
 };
 
 /* Declaration of master device (fd-cloning/ctxt-allocating) entrypoints */
+void		cryptoattach(int);
 static int	cryptoopen(dev_t dev, int flag, int mode, struct proc *p);
 static int	cryptoread(dev_t dev, struct uio *uio, int ioflag);
 static int	cryptowrite(dev_t dev, struct uio *uio, int ioflag);
@@ -745,6 +747,12 @@ csefree(struct csession *cse)
 		FREE(cse->mackey, M_XDATA);
 	FREE(cse, M_XDATA);
 	return (error);
+}
+
+void
+cryptoattach(int num)
+{
+	swcr_init();
 }
 
 static int
