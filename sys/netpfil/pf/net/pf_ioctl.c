@@ -51,22 +51,15 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-#include <sys/filio.h>
+//#include <sys/filio.h>
 #include <sys/fcntl.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/kernel.h>
 #include <sys/time.h>
-#ifdef __OpenBSD__
-#include <sys/timeout.h>
-#else
 #include <sys/callout.h>
-#endif
-#include <sys/pool.h>
 #include <sys/malloc.h>
-#ifdef __NetBSD__
 #include <sys/conf.h>
-#endif
 
 #include <net/if.h>
 #include <net/if_types.h>
@@ -78,10 +71,6 @@
 #include <netinet/ip.h>
 #include <netinet/ip_var.h>
 #include <netinet/ip_icmp.h>
-
-#ifdef __OpenBSD__
-#include <dev/rndvar.h>
-#endif
 #include <net/pfvar.h>
 
 #if NPFSYNC > 0
@@ -103,8 +92,7 @@ void			 pfdetach(void);
 #endif
 int			 pfopen(dev_t, int, int, struct proc *);
 int			 pfclose(dev_t, int, int, struct proc *);
-struct pf_pool		*pf_get_pool(char *, u_int32_t, u_int8_t, u_int32_t,
-			    u_int8_t, u_int8_t, u_int8_t);
+struct pf_pool		*pf_get_pool(char *, u_int32_t, u_int8_t, u_int32_t, u_int8_t, u_int8_t, u_int8_t);
 int			 pf_get_ruleset_number(u_int8_t);
 void			 pf_init_ruleset(struct pf_ruleset *);
 int			 pf_anchor_setup(struct pf_rule *,
@@ -127,23 +115,30 @@ int			 pf_begin_rules(u_int32_t *, int, const char *);
 int			 pf_rollback_rules(u_int32_t, int, char *);
 int			 pf_commit_rules(u_int32_t, int, char *);
 
-#ifdef __NetBSD__
 const struct cdevsw pf_cdevsw = {
-	pfopen, pfclose, noread, nowrite, pfioctl,
-	nostop, notty, nopoll, nommap, nokqfilter,
+		.d_open = pfopen,
+		.d_close = pfclose,
+		.d_read = noread,
+		.d_write = nowrite,
+		.d_ioctl = pfioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_select = noselect,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_kqfilter = nokqfilter,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
 };
+
 
 static int pf_pfil_attach(void);
 static int pf_pfil_detach(void);
 
 static int pf_pfil_attached = 0;
-#endif
 
-#ifdef __OpenBSD__
-extern struct timeout	 pf_expire_to;
-#else
 extern struct callout	 pf_expire_to;
-#endif
 
 struct pf_rule		 pf_default_rule;
 #ifdef ALTQ
@@ -157,37 +152,30 @@ TAILQ_HEAD(pf_tags, pf_tagname)	pf_tags = TAILQ_HEAD_INITIALIZER(pf_tags),
 #if (PF_QNAME_SIZE != PF_TAG_NAME_SIZE)
 #error PF_QNAME_SIZE must be equal to PF_TAG_NAME_SIZE
 #endif
-static u_int16_t	 tagname2tag(struct pf_tags *, char *);
-static void		 tag2tagname(struct pf_tags *, u_int16_t, char *);
-static void		 tag_unref(struct pf_tags *, u_int16_t);
+static u_int16_t	 	tagname2tag(struct pf_tags *, char *);
+static void		 		tag2tagname(struct pf_tags *, u_int16_t, char *);
+static void		 		tag_unref(struct pf_tags *, u_int16_t);
 
 #define DPFPRINTF(n, x) if (pf_status.debug >= (n)) printf x
 
-#ifdef __NetBSD__
 extern struct pfil_head if_pfil;
-#endif
 
 void
 pfattach(int num)
 {
 	u_int32_t *timeout = pf_default_rule.timeout;
-
-	pool_init(&pf_rule_pl, sizeof(struct pf_rule), 0, 0, 0, "pfrulepl",
-	    &pool_allocator_nointr);
-	pool_init(&pf_src_tree_pl, sizeof(struct pf_src_node), 0, 0, 0,
-	    "pfsrctrpl", NULL);
-	pool_init(&pf_state_pl, sizeof(struct pf_state), 0, 0, 0, "pfstatepl",
-	    NULL);
-	pool_init(&pf_altq_pl, sizeof(struct pf_altq), 0, 0, 0, "pfaltqpl",
-	    &pool_allocator_nointr);
-	pool_init(&pf_pooladdr_pl, sizeof(struct pf_pooladdr), 0, 0, 0,
-	    "pfpooladdrpl", &pool_allocator_nointr);
+/*
+	pool_init(&pf_rule_pl, sizeof(struct pf_rule), 0, 0, 0, "pfrulepl", &pool_allocator_nointr);
+	pool_init(&pf_src_tree_pl, sizeof(struct pf_src_node), 0, 0, 0, "pfsrctrpl", NULL);
+	pool_init(&pf_state_pl, sizeof(struct pf_state), 0, 0, 0, "pfstatepl", NULL);
+	pool_init(&pf_altq_pl, sizeof(struct pf_altq), 0, 0, 0, "pfaltqpl", &pool_allocator_nointr);
+	pool_init(&pf_pooladdr_pl, sizeof(struct pf_pooladdr), 0, 0, 0, "pfpooladdrpl", &pool_allocator_nointr);
+*/
 	pfr_initialize();
 	pfi_initialize();
 	pf_osfp_initialize();
 
-	pool_sethardlimit(pf_pool_limits[PF_LIMIT_STATES].pp,
-	    pf_pool_limits[PF_LIMIT_STATES].limit, NULL, 0);
+//	pool_sethardlimit(pf_pool_limits[PF_LIMIT_STATES].pp, pf_pool_limits[PF_LIMIT_STATES].limit, NULL, 0);
 
 	RB_INIT(&tree_src_tracking);
 	RB_INIT(&pf_anchors);
@@ -224,14 +212,8 @@ pfattach(int num)
 	timeout[PFTM_SRC_NODE] = 0;			/* Source tracking */
 	timeout[PFTM_TS_DIFF] = 30;			/* Allowed TS diff */
 
-#ifdef __OpenBSD__
-	timeout_set(&pf_expire_to, pf_purge_timeout, &pf_expire_to);
-	timeout_add(&pf_expire_to, timeout[PFTM_INTERVAL] * hz);
-#else
 	callout_init(&pf_expire_to);
-	callout_reset(&pf_expire_to, timeout[PFTM_INTERVAL] * hz,
-	    pf_purge_timeout, &pf_expire_to);
-#endif
+	callout_reset(&pf_expire_to, timeout[PFTM_INTERVAL] * hz, pf_purge_timeout, &pf_expire_to);
 
 	pf_normalize_init();
 	bzero(&pf_status, sizeof(pf_status));
@@ -686,7 +668,7 @@ pf_empty_pool(struct pf_palist *poola)
 		pf_tbladdr_remove(&empty_pool_pa->addr);
 		pfi_detach_rule(empty_pool_pa->kif);
 		TAILQ_REMOVE(poola, empty_pool_pa, entries);
-		pool_put(&pf_pooladdr_pl, empty_pool_pa);
+		free(empty_pool_pa, M_PF);
 	}
 }
 
@@ -727,7 +709,7 @@ pf_rm_rule(struct pf_rulequeue *rulequeue, struct pf_rule *rule)
 	pfi_detach_rule(rule->kif);
 	pf_anchor_remove(rule);
 	pf_empty_pool(&rule->rpool.list);
-	pool_put(&pf_rule_pl, rule);
+	free(rule, M_PF);
 }
 
 static	u_int16_t
@@ -858,7 +840,7 @@ pf_begin_altq(u_int32_t *ticket)
 			error = altq_remove(altq);
 		} else
 			pf_qid_unref(altq->qid);
-		pool_put(&pf_altq_pl, altq);
+		free(altq, M_PF);
 	}
 	if (error)
 		return (error);
@@ -883,7 +865,7 @@ pf_rollback_altq(u_int32_t ticket)
 			error = altq_remove(altq);
 		} else
 			pf_qid_unref(altq->qid);
-		pool_put(&pf_altq_pl, altq);
+		free(altq, M_PF);
 	}
 	altqs_inactive_open = 0;
 	return (error);
@@ -935,7 +917,7 @@ pf_commit_altq(u_int32_t ticket)
 				error = err;
 		} else
 			pf_qid_unref(altq->qid);
-		pool_put(&pf_altq_pl, altq);
+		free(altq, M_PF);
 	}
 	splx(s);
 
@@ -1237,7 +1219,8 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EBUSY;
 			break;
 		}
-		rule = pool_get(&pf_rule_pl, PR_NOWAIT);
+
+		rule = (struct pf_rule *)pf_malloc(sizeof(struct pf_rule *), M_NOWAIT);
 		if (rule == NULL) {
 			error = ENOMEM;
 			break;
@@ -1252,14 +1235,14 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		rule->entries.tqe_prev = NULL;
 #ifndef INET
 		if (rule->af == AF_INET) {
-			pool_put(&pf_rule_pl, rule);
+			free(rule, M_PF);
 			error = EAFNOSUPPORT;
 			break;
 		}
 #endif /* INET */
 #ifndef INET6
 		if (rule->af == AF_INET6) {
-			pool_put(&pf_rule_pl, rule);
+			free(rule, M_PF);
 			error = EAFNOSUPPORT;
 			break;
 		}
@@ -1273,7 +1256,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		if (rule->ifname[0]) {
 			rule->kif = pfi_attach_rule(rule->ifname);
 			if (rule->kif == NULL) {
-				pool_put(&pf_rule_pl, rule);
+				free(rule, M_PF);
 				error = EINVAL;
 				break;
 			}
@@ -1452,7 +1435,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		}
 
 		if (pcr->action != PF_CHANGE_REMOVE) {
-			newrule = pool_get(&pf_rule_pl, PR_NOWAIT);
+			newrule = (struct pf_rule *)pf_malloc(sizeof(struct pf_rule *), M_NOWAIT);
 			if (newrule == NULL) {
 				error = ENOMEM;
 				break;
@@ -1464,14 +1447,14 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			newrule->entries.tqe_prev = NULL;
 #ifndef INET
 			if (newrule->af == AF_INET) {
-				pool_put(&pf_rule_pl, newrule);
+				free(newrule, M_PF);
 				error = EAFNOSUPPORT;
 				break;
 			}
 #endif /* INET */
 #ifndef INET6
 			if (newrule->af == AF_INET6) {
-				pool_put(&pf_rule_pl, newrule);
+				free(newrule, M_PF);
 				error = EAFNOSUPPORT;
 				break;
 			}
@@ -1479,7 +1462,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			if (newrule->ifname[0]) {
 				newrule->kif = pfi_attach_rule(newrule->ifname);
 				if (newrule->kif == NULL) {
-					pool_put(&pf_rule_pl, newrule);
+					free(newrule, M_PF);
 					error = EINVAL;
 					break;
 				}
@@ -1660,14 +1643,14 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EINVAL;
 			break;
 		}
-		state = pool_get(&pf_state_pl, PR_NOWAIT);
+		state = (struct pf_state *)malloc(sizeof(struct pf_state *), M_PF, M_NOWAIT);
 		if (state == NULL) {
 			error = ENOMEM;
 			break;
 		}
 		kif = pfi_lookup_create(ps->state.u.ifname);
 		if (kif == NULL) {
-			pool_put(&pf_state_pl, state);
+			free(state, M_PF);
 			error = ENOENT;
 			break;
 		}
@@ -1684,7 +1667,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 
 		if (pf_insert_state(kif, state)) {
 			pfi_maybe_destroy(kif);
-			pool_put(&pf_state_pl, state);
+			free(state, M_PF);
 			error = ENOMEM;
 		}
 		break;
@@ -1980,7 +1963,8 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EBUSY;
 			break;
 		}
-		altq = pool_get(&pf_altq_pl, PR_NOWAIT);
+
+		altq = (struct pf_altq *)malloc(sizeof(struct pf_altq *), M_PF, M_NOWAIT);
 		if (altq == NULL) {
 			error = ENOMEM;
 			break;
@@ -1994,7 +1978,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		if (altq->qname[0] != 0) {
 			if ((altq->qid = pf_qname2qid(altq->qname)) == 0) {
 				error = EBUSY;
-				pool_put(&pf_altq_pl, altq);
+				free(altq, M_PF);
 				break;
 			}
 			TAILQ_FOREACH(a, pf_altqs_inactive, entries) {
@@ -2008,7 +1992,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 
 		error = altq_add(altq);
 		if (error) {
-			pool_put(&pf_altq_pl, altq);
+			free(altq, M_PF);
 			break;
 		}
 
@@ -2115,7 +2099,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EINVAL;
 			break;
 		}
-		pa = pool_get(&pf_pooladdr_pl, PR_NOWAIT);
+		pa = (struct pf_pooladdr *)malloc(sizeof(struct pf_pooladdr *), M_PF, M_NOWAIT);
 		if (pa == NULL) {
 			error = ENOMEM;
 			break;
@@ -2124,7 +2108,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		if (pa->ifname[0]) {
 			pa->kif = pfi_attach_rule(pa->ifname);
 			if (pa->kif == NULL) {
-				pool_put(&pf_pooladdr_pl, pa);
+				free(pa, M_PF);
 				error = EINVAL;
 				break;
 			}
@@ -2132,7 +2116,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		if (pfi_dynaddr_setup(&pa->addr, pp->af)) {
 			pfi_dynaddr_remove(&pa->addr);
 			pfi_detach_rule(pa->kif);
-			pool_put(&pf_pooladdr_pl, pa);
+			free(pa, M_PF);
 			error = EINVAL;
 			break;
 		}
@@ -2209,7 +2193,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			break;
 		}
 		if (pca->action != PF_CHANGE_REMOVE) {
-			newpa = pool_get(&pf_pooladdr_pl, PR_NOWAIT);
+			newpa = (struct pf_pooladdr *)malloc(sizeof(struct pf_pooladdr *), M_PF, M_NOWAIT);
 			if (newpa == NULL) {
 				error = ENOMEM;
 				break;
@@ -2217,14 +2201,14 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			bcopy(&pca->addr, newpa, sizeof(struct pf_pooladdr));
 #ifndef INET
 			if (pca->af == AF_INET) {
-				pool_put(&pf_pooladdr_pl, newpa);
+				free(newpa, M_PF);
 				error = EAFNOSUPPORT;
 				break;
 			}
 #endif /* INET */
 #ifndef INET6
 			if (pca->af == AF_INET6) {
-				pool_put(&pf_pooladdr_pl, newpa);
+				free(newpa, M_PF);
 				error = EAFNOSUPPORT;
 				break;
 			}
@@ -2232,7 +2216,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			if (newpa->ifname[0]) {
 				newpa->kif = pfi_attach_rule(newpa->ifname);
 				if (newpa->kif == NULL) {
-					pool_put(&pf_pooladdr_pl, newpa);
+					free(newpa, M_PF);
 					error = EINVAL;
 					break;
 				}
@@ -2242,7 +2226,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			    pf_tbladdr_setup(ruleset, &newpa->addr)) {
 				pfi_dynaddr_remove(&newpa->addr);
 				pfi_detach_rule(newpa->kif);
-				pool_put(&pf_pooladdr_pl, newpa);
+				free(newpa, M_PF);
 				error = EINVAL;
 				break;
 			}
@@ -2271,7 +2255,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			pfi_dynaddr_remove(&oldpa->addr);
 			pf_tbladdr_remove(&oldpa->addr);
 			pfi_detach_rule(oldpa->kif);
-			pool_put(&pf_pooladdr_pl, oldpa);
+			free(oldpa, M_PF);
 		} else {
 			if (oldpa == NULL)
 				TAILQ_INSERT_TAIL(&pool->list, newpa, entries);

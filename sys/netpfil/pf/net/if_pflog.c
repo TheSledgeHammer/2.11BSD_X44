@@ -80,12 +80,8 @@
 struct pflog_softc pflogif[NPFLOG];
 
 void	pflogattach(int);
-#ifdef _LKM
-void	pflogdetach(void);
-#endif
-int	pflogoutput(struct ifnet *, struct mbuf *, struct sockaddr *,
-	    	       struct rtentry *);
-int	pflogioctl(struct ifnet *, u_long, caddr_t);
+int		pflogoutput(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
+int		pflogioctl(struct ifnet *, u_long, caddr_t);
 void	pflogrtrequest(int, struct rtentry *, struct sockaddr *);
 void	pflogstart(struct ifnet *);
 
@@ -114,30 +110,10 @@ pflogattach(int npflog)
 		if_alloc_sadl(ifp);
 
 #if NBPFILTER > 0
-#ifdef __OpenBSD__
-		bpfattach(&pflogif[i].sc_if.if_bpf, ifp, DLT_PFLOG,
-			  PFLOG_HDRLEN);
-#else
 		bpfattach(ifp, DLT_PFLOG, PFLOG_HDRLEN);
 #endif
-#endif
 	}
 }
-
-#ifdef _LKM
-void
-pflogdetach(void)
-{
-	struct ifnet *ifp;
-	int i;
-
-	for (i = 0; i < NPFLOG; i++) {
-		ifp = &pflogif[i].sc_if;
-		bpfdetach(ifp);
-		if_detach(ifp);
-	}
-}
-#endif
 
 /*
  * Start output on the pflog interface.
@@ -149,11 +125,7 @@ pflogstart(struct ifnet *ifp)
 	int s;
 
 	for (;;) {
-#ifdef __OpenBSD__
-		s = splimp();
-#else
 		s = splnet();
-#endif
 		IF_DROP(&ifp->if_snd);
 		IF_DEQUEUE(&ifp->if_snd, m);
 		splx(s);
@@ -210,9 +182,7 @@ pflog_packet(struct pfi_kif *kif, struct mbuf *m, sa_family_t af, u_int8_t dir,
 #if NBPFILTER > 0
 	struct ifnet *ifn;
 	struct pfloghdr hdr;
-#ifndef __NetBSD__
 	struct mbuf m1;
-#endif
 
 	if (kif == NULL || m == NULL || rm == NULL)
 		return (-1);
@@ -246,20 +216,14 @@ pflog_packet(struct pfi_kif *kif, struct mbuf *m, sa_family_t af, u_int8_t dir,
 	}
 #endif /* INET */
 
-#ifndef __NetBSD__
 	m1.m_next = m;
 	m1.m_len = PFLOG_HDRLEN;
 	m1.m_data = (char *) &hdr;
-#endif
 
 	ifn = &(pflogif[0].sc_if);
 
 	if (ifn->if_bpf)
-#ifndef __NetBSD__
 		bpf_mtap(ifn->if_bpf, &m1);
-#else
-		bpf_mtap2(ifn->if_bpf, &hdr, PFLOG_HDRLEN, m);
-#endif
 #endif
 
 	return (0);

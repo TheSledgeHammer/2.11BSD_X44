@@ -38,7 +38,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-#include <sys/filio.h>
+#include <sys/power.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/kernel.h>
@@ -74,18 +74,16 @@ struct pfi_kif		 *pfi_self;
 int			  pfi_indexlim;
 struct pfi_ifhead	  pfi_ifs;
 struct pfi_statehead	  pfi_statehead;
-int			  pfi_ifcnt;
-struct pool		  pfi_addr_pl;
-long			  pfi_update = 1;
-struct pfr_addr		 *pfi_buffer;
-int			  pfi_buffer_cnt;
-int			  pfi_buffer_max;
+int			  		pfi_ifcnt;
+//struct pool		  	pfi_addr_pl;
+long			  	pfi_update = 1;
+struct pfr_addr		*pfi_buffer;
+int			  		pfi_buffer_cnt;
+int			  		pfi_buffer_max;
 
 void		 pfi_dynaddr_update(void *);
 void		 pfi_kifaddr_update(void *);
-#ifdef __NetBSD__
 void		 pfi_kifaddr_update_if(struct ifnet *);
-#endif
 void		 pfi_table_update(struct pfr_ktable *, struct pfi_kif *,
 		    int, int);
 void		 pfi_instance_add(struct ifnet *, int, int);
@@ -102,17 +100,7 @@ RB_PROTOTYPE(pfi_ifhead, pfi_kif, pfik_tree, pfi_if_compare);
 RB_GENERATE(pfi_ifhead, pfi_kif, pfik_tree, pfi_if_compare);
 
 #define PFI_BUFFER_MAX		0x10000
-#define PFI_MTYPE		M_IFADDR
-
-#ifdef __NetBSD__
-static void	*hook_establish(struct hook_desc_head *, int, void (*)(void *),
-			void *);
-static void	hook_disestablish(struct hook_desc_head *, void *);
-static void	dohooks(struct hook_desc_head *, int);
-
-#define HOOK_REMOVE	0x01
-#define HOOK_FREE	0x02
-#endif
+#define PFI_MTYPE			M_IFADDR
 
 void
 pfi_initialize(void)
@@ -121,23 +109,11 @@ pfi_initialize(void)
 		return;
 
 	TAILQ_INIT(&pfi_statehead);
-	pool_init(&pfi_addr_pl, sizeof(struct pfi_dynaddr), 0, 0, 0,
-	    "pfiaddrpl", &pool_allocator_nointr);
+	//pool_init(&pfi_addr_pl, sizeof(struct pfi_dynaddr), 0, 0, 0, "pfiaddrpl", &pool_allocator_nointr);
 	pfi_buffer_max = 64;
-	pfi_buffer = malloc(pfi_buffer_max * sizeof(*pfi_buffer),
-	    PFI_MTYPE, M_WAITOK);
+	pfi_buffer = malloc(pfi_buffer_max * sizeof(*pfi_buffer), PFI_MTYPE, M_WAITOK);
 	pfi_self = pfi_if_create("self", NULL, PFI_IFLAG_GROUP);
 }
-
-#ifdef _LKM
-void
-pfi_destroy(void)
-{
-	pool_destroy(&pfi_addr_pl);
-
-	free(pfi_buffer, PFI_MTYPE);
-}
-#endif
 
 void
 pfi_attach_clone(struct if_clone *ifc)
@@ -205,13 +181,9 @@ pfi_attach_ifnet(struct ifnet *ifp)
 		q = p->pfik_parent;
 	p->pfik_ifp = ifp;
 	p->pfik_flags |= PFI_IFLAG_ATTACHED;
-#ifdef __OpenBSD__
-	p->pfik_ah_cookie =
-	    hook_establish(ifp->if_addrhooks, 1, pfi_kifaddr_update, p);
-#else
-	p->pfik_ah_cookie =
-	    hook_establish(&p->pfik_ifaddrhooks, 1, pfi_kifaddr_update, p);
-#endif
+
+	p->pfik_ah_cookie = hook_establish(&p->pfik_ifaddrhooks, pfi_kifaddr_update, p);
+
 	pfi_index2kif[ifp->if_index] = p;
 	pfi_dohooks(p);
 	splx(s);
@@ -233,11 +205,9 @@ pfi_detach_ifnet(struct ifnet *ifp)
 		splx(s);
 		return;
 	}
-#ifdef __OpenBSD__
-	hook_disestablish(p->pfik_ifp->if_addrhooks, p->pfik_ah_cookie);
-#else
+
 	hook_disestablish(&p->pfik_ifaddrhooks, p->pfik_ah_cookie);
-#endif
+
 	q = p->pfik_parent;
 	p->pfik_ifp = NULL;
 	p->pfik_flags &= ~PFI_IFLAG_ATTACHED;
@@ -324,7 +294,8 @@ pfi_dynaddr_setup(struct pf_addr_wrap *aw, sa_family_t af)
 
 	if (aw->type != PF_ADDR_DYNIFTL)
 		return (0);
-	dyn = pool_get(&pfi_addr_pl, PR_NOWAIT);
+	//dyn = pool_get(&pfi_addr_pl, PR_NOWAIT);
+	dyn = (struct pfi_dynaddr *)malloc(sizeof(struct pfi_dynaddr *), M_DEVBUF, M_NOWAIT);
 	if (dyn == NULL)
 		return (1);
 	bzero(dyn, sizeof(*dyn));
@@ -360,8 +331,7 @@ pfi_dynaddr_setup(struct pf_addr_wrap *aw, sa_family_t af)
 	dyn->pfid_kt->pfrkt_flags |= PFR_TFLAG_ACTIVE;
 	dyn->pfid_iflags = aw->iflags;
 	dyn->pfid_af = af;
-	dyn->pfid_hook_cookie = hook_establish(dyn->pfid_kif->pfik_ah_head, 1,
-	    pfi_dynaddr_update, dyn);
+	dyn->pfid_hook_cookie = hook_establish(dyn->pfid_kif->pfik_ah_head, 1, pfi_dynaddr_update, dyn);
 	if (dyn->pfid_hook_cookie == NULL)
 		senderr(1);
 
@@ -377,7 +347,8 @@ _bad:
 		pf_remove_if_empty_ruleset(ruleset);
 	if (dyn->pfid_kif != NULL)
 		pfi_detach_rule(dyn->pfid_kif);
-	pool_put(&pfi_addr_pl, dyn);
+	//pool_put(&pfi_addr_pl, dyn);
+	free(dyn, M_DEVBUF);
 	splx(s);
 	return (rv);
 }
@@ -544,13 +515,13 @@ pfi_dynaddr_remove(struct pf_addr_wrap *aw)
 		return;
 
 	s = splsoftnet();
-	hook_disestablish(aw->p.dyn->pfid_kif->pfik_ah_head,
-	    aw->p.dyn->pfid_hook_cookie);
+	hook_disestablish(aw->p.dyn->pfid_kif->pfik_ah_head, aw->p.dyn->pfid_hook_cookie);
 	pfi_detach_rule(aw->p.dyn->pfid_kif);
 	aw->p.dyn->pfid_kif = NULL;
 	pfr_detach_table(aw->p.dyn->pfid_kt);
 	aw->p.dyn->pfid_kt = NULL;
-	pool_put(&pfi_addr_pl, aw->p.dyn);
+	//pool_put(&pfi_addr_pl, aw->p.dyn);
+	free(aw->p.dyn, M_DEVBUF);
 	aw->p.dyn = NULL;
 	splx(s);
 }
@@ -575,7 +546,6 @@ pfi_kifaddr_update(void *v)
 	splx(s);
 }
 
-#ifdef __NetBSD__
 void
 pfi_kifaddr_update_if(struct ifnet *ifp)
 {
@@ -586,7 +556,6 @@ pfi_kifaddr_update_if(struct ifnet *ifp)
 		panic("can't find interface");
 	pfi_kifaddr_update(p);
 }
-#endif
 
 int
 pfi_if_compare(struct pfi_kif *p, struct pfi_kif *q)
@@ -612,10 +581,10 @@ pfi_if_create(const char *name, struct pfi_kif *q, int flags)
 	bzero(p->pfik_ah_head, sizeof(*p->pfik_ah_head));
 	TAILQ_INIT(p->pfik_ah_head);
 	TAILQ_INIT(&p->pfik_grouphead);
-#ifdef __NetBSD__
+
 	bzero(&p->pfik_ifaddrhooks, sizeof(p->pfik_ifaddrhooks));
 	TAILQ_INIT(&p->pfik_ifaddrhooks);
-#endif
+
 	strlcpy(p->pfik_name, name, sizeof(p->pfik_name));
 	RB_INIT(&p->pfik_lan_ext);
 	RB_INIT(&p->pfik_ext_gwy);
@@ -820,8 +789,9 @@ pfi_unmask(void *addr)
 void
 pfi_dohooks(struct pfi_kif *p)
 {
-	for (; p != NULL; p = p->pfik_parent)
+	for (; p != NULL; p = p->pfik_parent) {
 		dohooks(p->pfik_ah_head, 0);
+	}
 }
 
 int
@@ -858,63 +828,3 @@ pfi_match_addr(struct pfi_dynaddr *dyn, struct pf_addr *a, sa_family_t af)
 		return (0);
 	}
 }
-
-/* from openbsd/sys/kern/kern_subr.c */
-#ifdef __NetBSD__
-static void *
-hook_establish(struct hook_desc_head *head, int tail, void (*fn)(void *),
-    void *arg)
-{
-	struct hook_desc *hdp;
-
-	hdp = (struct hook_desc *)malloc(sizeof (*hdp), M_DEVBUF, M_NOWAIT);
-	if (hdp == NULL)
-		return (NULL);
-
-	hdp->hd_fn = fn;
-	hdp->hd_arg = arg;
-	if (tail)
-		TAILQ_INSERT_TAIL(head, hdp, hd_list);
-	else
-		TAILQ_INSERT_HEAD(head, hdp, hd_list);
-
-	return (hdp);
-}
-
-static void
-hook_disestablish(struct hook_desc_head *head, void *vhook)
-{
-	struct hook_desc *hdp;
-
-#ifdef DIAGNOSTIC
-	for (hdp = TAILQ_FIRST(head); hdp != NULL;
-	    hdp = TAILQ_NEXT(hdp, hd_list))
-                if (hdp == vhook)
-			break;
-	if (hdp == NULL)
-		panic("hook_disestablish: hook not established");
-#endif
-	hdp = vhook;
-	TAILQ_REMOVE(head, hdp, hd_list);
-	free(hdp, M_DEVBUF);
-}
-
-static void
-dohooks(struct hook_desc_head *head, int flags)
-{
-	struct hook_desc *hdp;
-
-	if ((flags & HOOK_REMOVE) == 0) {
-		TAILQ_FOREACH(hdp, head, hd_list) {
-			(*hdp->hd_fn)(hdp->hd_arg);
-		}
-	} else {
-		while ((hdp = TAILQ_FIRST(head)) != NULL) {
-			TAILQ_REMOVE(head, hdp, hd_list);
-			(*hdp->hd_fn)(hdp->hd_arg);
-			if ((flags & HOOK_FREE) != 0)
-				free(hdp, M_DEVBUF);
-		}
-	}
-}
-#endif

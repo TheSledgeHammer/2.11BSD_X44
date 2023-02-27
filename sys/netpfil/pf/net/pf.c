@@ -52,10 +52,10 @@
 #include <sys/socketvar.h>
 #include <sys/kernel.h>
 #include <sys/time.h>
-#include <sys/pool.h>
-#ifdef __NetBSD__
+#include <sys/malloc.h>
+//#ifdef __NetBSD__
 #include <sys/endian.h>
-#endif
+//#endif
 
 #include <net/if.h>
 #include <net/if_types.h>
@@ -97,9 +97,9 @@
 #ifdef INET6
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 #include <netinet6/in6_pcb.h>
-#endif
+//#endif
 #include <netinet/icmp6.h>
 #include <netinet6/nd6.h>
 #endif /* INET6 */
@@ -5429,7 +5429,7 @@ pf_check_proto_cksum(struct mbuf *m, int off, int len, u_int8_t p,
 		return (1);
 	if (m->m_pkthdr.len < off + len)
 		return (1);
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 	switch (p) {
 	case IPPROTO_TCP: {
 			struct tcphdr th; /* XXX */
@@ -5449,7 +5449,7 @@ pf_check_proto_cksum(struct mbuf *m, int off, int len, u_int8_t p,
 		}
 		break;
 	}
-#endif /* __NetBSD__ */
+//#endif /* __NetBSD__ */
 	switch (af) {
 #ifdef INET
 	case AF_INET:

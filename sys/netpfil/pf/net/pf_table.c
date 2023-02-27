@@ -44,9 +44,6 @@
 #include <net/if.h>
 #include <net/route.h>
 #include <netinet/in.h>
-#ifdef __OpenBSD__
-#include <netinet/ip_ipsp.h>
-#endif
 #include <net/pfvar.h>
 
 #define ACCEPT_FLAGS(oklist)			\
@@ -129,9 +126,10 @@ struct pfr_walktree {
 #define pfrw_cnt	pfrw_free
 
 #define senderr(e)	do { rv = (e); goto _bad; } while (0)
-
+/*
 struct pool		 pfr_ktable_pl;
 struct pool		 pfr_kentry_pl;
+*/
 struct sockaddr_in	 pfr_sin;
 struct sockaddr_in6	 pfr_sin6;
 union sockaddr_union	 pfr_mask;
@@ -187,17 +185,16 @@ RB_PROTOTYPE(pfr_ktablehead, pfr_ktable, pfrkt_tree, pfr_ktable_compare);
 RB_GENERATE(pfr_ktablehead, pfr_ktable, pfrkt_tree, pfr_ktable_compare);
 
 struct pfr_ktablehead	 pfr_ktables;
-struct pfr_table	 pfr_nulltable;
-int			 pfr_ktable_cnt;
+struct pfr_table	 	pfr_nulltable;
+int			 			pfr_ktable_cnt;
 
 void
 pfr_initialize(void)
 {
-	pool_init(&pfr_ktable_pl, sizeof(struct pfr_ktable), 0, 0, 0,
-	    "pfrktable", &pool_allocator_oldnointr);
-	pool_init(&pfr_kentry_pl, sizeof(struct pfr_kentry), 0, 0, 0,
-	    "pfrkentry", &pool_allocator_oldnointr);
-
+	/*
+	pool_init(&pfr_ktable_pl, sizeof(struct pfr_ktable), 0, 0, 0, "pfrktable", &pool_allocator_oldnointr);
+	pool_init(&pfr_kentry_pl, sizeof(struct pfr_kentry), 0, 0, 0, "pfrkentry", &pool_allocator_oldnointr);
+	*/
 	pfr_sin.sin_len = sizeof(pfr_sin);
 	pfr_sin.sin_family = AF_INET;
 	pfr_sin6.sin6_len = sizeof(pfr_sin6);
@@ -810,7 +807,7 @@ pfr_create_kentry(struct pfr_addr *ad)
 {
 	struct pfr_kentry	*ke;
 
-	ke = pool_get(&pfr_kentry_pl, PR_NOWAIT);
+	ke = malloc(sizeof(struct pfr_kentry *), M_PF, M_NOWAIT);
 	if (ke == NULL)
 		return (NULL);
 	bzero(ke, sizeof(*ke));
@@ -839,7 +836,7 @@ pfr_destroy_kentries(struct pfr_kentryworkq *workq)
 void
 pfr_destroy_kentry(struct pfr_kentry *ke)
 {
-	pool_put(&pfr_kentry_pl, ke);
+	free(ke, M_PF);
 }
 
 void
@@ -985,17 +982,9 @@ pfr_unroute_kentry(struct pfr_ktable *kt, struct pfr_kentry *ke)
 	s = splsoftnet();
 	if (KENTRY_NETWORK(ke)) {
 		pfr_prepare_network(&mask, ke->pfrke_af, ke->pfrke_net);
-#ifdef __OpenBSD__
-		rn = rn_delete(&ke->pfrke_sa, &mask, head, NULL);
-#else
 		rn = rn_delete(&ke->pfrke_sa, &mask, head);
-#endif
 	} else
-#ifdef __OpenBSD__
-		rn = rn_delete(&ke->pfrke_sa, NULL, head, NULL);
-#else
 		rn = rn_delete(&ke->pfrke_sa, NULL, head);
-#endif
 	splx(s);
 
 	if (rn == NULL) {
@@ -1830,7 +1819,7 @@ pfr_create_ktable(struct pfr_table *tbl, long tzero, int attachruleset)
 	struct pfr_ktable	*kt;
 	struct pf_ruleset	*rs;
 
-	kt = pool_get(&pfr_ktable_pl, PR_NOWAIT);
+	kt = malloc(sizeof(struct pfr_ktable *), M_PF, M_NOWAIT);
 	if (kt == NULL)
 		return (NULL);
 	bzero(kt, sizeof(*kt));
@@ -1889,7 +1878,7 @@ pfr_destroy_ktable(struct pfr_ktable *kt, int flushaddr)
 		kt->pfrkt_rs->tables--;
 		pf_remove_if_empty_ruleset(kt->pfrkt_rs);
 	}
-	pool_put(&pfr_ktable_pl, kt);
+	free(kt, M_PF);
 }
 
 int

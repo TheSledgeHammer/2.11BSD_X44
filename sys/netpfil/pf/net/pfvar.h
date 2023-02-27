@@ -40,55 +40,115 @@
 #include <sys/tree.h>
 
 #include <net/radix.h>
-#ifdef __OpenBSD__
-#include <netinet/ip_ipsp.h>
-#endif
 #include <netinet/tcp_fsm.h>
 
-#ifdef __NetBSD__
 union sockaddr_union {
 	struct sockaddr         sa;
 	struct sockaddr_in      sin;
 	struct sockaddr_in6     sin6;
 };
-#endif
 
 struct ip;
 
 #define	PF_TCPS_PROXY_SRC	((TCP_NSTATES)+0)
 #define	PF_TCPS_PROXY_DST	((TCP_NSTATES)+1)
 
-enum	{ PF_INOUT, PF_IN, PF_OUT };
-enum	{ PF_LAN_EXT, PF_EXT_GWY, PF_ID };
-enum	{ PF_PASS, PF_DROP, PF_SCRUB, PF_NAT, PF_NONAT,
-	  PF_BINAT, PF_NOBINAT, PF_RDR, PF_NORDR, PF_SYNPROXY_DROP };
-enum	{ PF_RULESET_SCRUB, PF_RULESET_FILTER, PF_RULESET_NAT,
-	  PF_RULESET_BINAT, PF_RULESET_RDR, PF_RULESET_MAX };
-enum	{ PF_OP_NONE, PF_OP_IRG, PF_OP_EQ, PF_OP_NE, PF_OP_LT,
-	  PF_OP_LE, PF_OP_GT, PF_OP_GE, PF_OP_XRG, PF_OP_RRG };
-enum	{ PF_DEBUG_NONE, PF_DEBUG_URGENT, PF_DEBUG_MISC, PF_DEBUG_NOISY };
-enum	{ PF_CHANGE_NONE, PF_CHANGE_ADD_HEAD, PF_CHANGE_ADD_TAIL,
-	  PF_CHANGE_ADD_BEFORE, PF_CHANGE_ADD_AFTER,
-	  PF_CHANGE_REMOVE, PF_CHANGE_GET_TICKET };
+enum {
+	PF_INOUT, PF_IN, PF_OUT
+};
+enum {
+	PF_LAN_EXT, PF_EXT_GWY, PF_ID
+};
+enum {
+	PF_PASS,
+	PF_DROP,
+	PF_SCRUB,
+	PF_NAT,
+	PF_NONAT,
+	PF_BINAT,
+	PF_NOBINAT,
+	PF_RDR,
+	PF_NORDR,
+	PF_SYNPROXY_DROP
+};
+enum {
+	PF_RULESET_SCRUB,
+	PF_RULESET_FILTER,
+	PF_RULESET_NAT,
+	PF_RULESET_BINAT,
+	PF_RULESET_RDR,
+	PF_RULESET_MAX
+};
+enum {
+	PF_OP_NONE,
+	PF_OP_IRG,
+	PF_OP_EQ,
+	PF_OP_NE,
+	PF_OP_LT,
+	PF_OP_LE,
+	PF_OP_GT,
+	PF_OP_GE,
+	PF_OP_XRG,
+	PF_OP_RRG
+};
+enum {
+	PF_DEBUG_NONE, PF_DEBUG_URGENT, PF_DEBUG_MISC, PF_DEBUG_NOISY
+};
+enum {
+	PF_CHANGE_NONE,
+	PF_CHANGE_ADD_HEAD,
+	PF_CHANGE_ADD_TAIL,
+	PF_CHANGE_ADD_BEFORE,
+	PF_CHANGE_ADD_AFTER,
+	PF_CHANGE_REMOVE,
+	PF_CHANGE_GET_TICKET
+};
 /*
  * Note about PFTM_*: real indices into pf_rule.timeout[] come before
  * PFTM_MAX, special cases afterwards. See pf_state_expires().
  */
-enum	{ PFTM_TCP_FIRST_PACKET, PFTM_TCP_OPENING, PFTM_TCP_ESTABLISHED,
-	  PFTM_TCP_CLOSING, PFTM_TCP_FIN_WAIT, PFTM_TCP_CLOSED,
-	  PFTM_UDP_FIRST_PACKET, PFTM_UDP_SINGLE, PFTM_UDP_MULTIPLE,
-	  PFTM_ICMP_FIRST_PACKET, PFTM_ICMP_ERROR_REPLY,
-	  PFTM_OTHER_FIRST_PACKET, PFTM_OTHER_SINGLE,
-	  PFTM_OTHER_MULTIPLE, PFTM_FRAG, PFTM_INTERVAL,
-	  PFTM_ADAPTIVE_START, PFTM_ADAPTIVE_END, PFTM_SRC_NODE,
-	  PFTM_TS_DIFF, PFTM_MAX, PFTM_PURGE, PFTM_UNTIL_PACKET };
-enum	{ PF_NOPFROUTE, PF_FASTROUTE, PF_ROUTETO, PF_DUPTO, PF_REPLYTO };
-enum	{ PF_LIMIT_STATES, PF_LIMIT_SRC_NODES, PF_LIMIT_FRAGS, PF_LIMIT_MAX };
+enum {
+	PFTM_TCP_FIRST_PACKET,
+	PFTM_TCP_OPENING,
+	PFTM_TCP_ESTABLISHED,
+	PFTM_TCP_CLOSING,
+	PFTM_TCP_FIN_WAIT,
+	PFTM_TCP_CLOSED,
+	PFTM_UDP_FIRST_PACKET,
+	PFTM_UDP_SINGLE,
+	PFTM_UDP_MULTIPLE,
+	PFTM_ICMP_FIRST_PACKET,
+	PFTM_ICMP_ERROR_REPLY,
+	PFTM_OTHER_FIRST_PACKET,
+	PFTM_OTHER_SINGLE,
+	PFTM_OTHER_MULTIPLE,
+	PFTM_FRAG,
+	PFTM_INTERVAL,
+	PFTM_ADAPTIVE_START,
+	PFTM_ADAPTIVE_END,
+	PFTM_SRC_NODE,
+	PFTM_TS_DIFF,
+	PFTM_MAX,
+	PFTM_PURGE,
+	PFTM_UNTIL_PACKET
+};
+enum {
+	PF_NOPFROUTE, PF_FASTROUTE, PF_ROUTETO, PF_DUPTO, PF_REPLYTO
+};
+enum {
+	PF_LIMIT_STATES, PF_LIMIT_SRC_NODES, PF_LIMIT_FRAGS, PF_LIMIT_MAX
+};
 #define PF_POOL_IDMASK		0x0f
-enum	{ PF_POOL_NONE, PF_POOL_BITMASK, PF_POOL_RANDOM,
-	  PF_POOL_SRCHASH, PF_POOL_ROUNDROBIN };
-enum	{ PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL,
-	  PF_ADDR_TABLE };
+enum {
+	PF_POOL_NONE,
+	PF_POOL_BITMASK,
+	PF_POOL_RANDOM,
+	PF_POOL_SRCHASH,
+	PF_POOL_ROUNDROBIN
+};
+enum {
+	PF_ADDR_ADDRMASK, PF_ADDR_NOROUTE, PF_ADDR_DYNIFTL, PF_ADDR_TABLE
+};
 #define PF_POOL_TYPEMASK	0x0f
 #define PF_POOL_STICKYADDR	0x20
 #define	PF_WSCALE_FLAG		0x80
@@ -136,15 +196,6 @@ struct pf_addr_wrap {
 	u_int8_t		 iflags;	/* PFI_AFLAG_* */
 };
 
-#ifdef __NetBSD__
-struct hook_desc {
-	TAILQ_ENTRY(hook_desc) hd_list;
-	void	(*hd_fn)(void *);
-	void	*hd_arg;
-};
-TAILQ_HEAD(hook_desc_head, hook_desc);
-#endif
-
 #ifdef _KERNEL
 
 struct pfi_dynaddr {
@@ -154,12 +205,12 @@ struct pfi_dynaddr {
 	struct pf_addr		 pfid_mask6;
 	struct pfr_ktable	*pfid_kt;
 	struct pfi_kif		*pfid_kif;
-	void			*pfid_hook_cookie;
-	int			 pfid_net;	/* optional mask, or 128 */
-	int			 pfid_acnt4;	/* address count, IPv4 */
-	int			 pfid_acnt6;	/* address count, IPv6 */
-	sa_family_t		 pfid_af;	/* rule address family */
-	u_int8_t		 pfid_iflags;	/* PFI_AFLAG_* */
+	void				*pfid_hook_cookie;
+	int				 	pfid_net;		/* optional mask, or 128 */
+	int			 		pfid_acnt4;		/* address count, IPv4 */
+	int			 		pfid_acnt6;		/* address count, IPv6 */
+	sa_family_t			pfid_af;		/* rule address family */
+	u_int8_t		 	pfid_iflags;	/* PFI_AFLAG_* */
 };
 
 /*
@@ -836,25 +887,24 @@ struct pfi_kif {
 	struct pfi_grouphead		 pfik_grouphead;
 	TAILQ_ENTRY(pfi_kif)		 pfik_instances;
 	TAILQ_ENTRY(pfi_kif)		 pfik_w_states;
-	struct hook_desc_head		*pfik_ah_head;
-	void				*pfik_ah_cookie;
-	struct pfi_kif			*pfik_parent;
-	struct ifnet			*pfik_ifp;
+	struct hook_head			*pfik_ah_head;
+	void						*pfik_ah_cookie;
+	struct pfi_kif				*pfik_parent;
+	struct ifnet				*pfik_ifp;
 	int				 pfik_states;
 	int				 pfik_rules;
-#ifdef __NetBSD__
-	struct hook_desc_head		 pfik_ifaddrhooks;
-#endif
+
+	struct hook_head		 pfik_ifaddrhooks;
 };
-#define pfik_name	pfik_if.pfif_name
+#define pfik_name		pfik_if.pfif_name
 #define pfik_packets	pfik_if.pfif_packets
-#define pfik_bytes	pfik_if.pfif_bytes
-#define pfik_tzero	pfik_if.pfif_tzero
-#define pfik_flags	pfik_if.pfif_flags
-#define pfik_addcnt	pfik_if.pfif_addcnt
-#define pfik_delcnt	pfik_if.pfif_delcnt
-#define pfik_states	pfik_if.pfif_states
-#define pfik_rules	pfik_if.pfif_rules
+#define pfik_bytes		pfik_if.pfif_bytes
+#define pfik_tzero		pfik_if.pfif_tzero
+#define pfik_flags		pfik_if.pfif_flags
+#define pfik_addcnt		pfik_if.pfif_addcnt
+#define pfik_delcnt		pfik_if.pfif_delcnt
+#define pfik_states		pfik_if.pfif_states
+#define pfik_rules		pfik_if.pfif_rules
 
 #define PFI_IFLAG_GROUP		0x0001	/* group of interfaces */
 #define PFI_IFLAG_INSTANCE	0x0002	/* single instance */
@@ -1303,8 +1353,7 @@ RB_PROTOTYPE(pf_src_tree, pf_src_node, entry, pf_src_compare);
 extern struct pf_src_tree tree_src_tracking;
 
 RB_HEAD(pf_state_tree_id, pf_state);
-RB_PROTOTYPE(pf_state_tree_id, pf_state,
-    entry_id, pf_state_compare_id);
+RB_PROTOTYPE(pf_state_tree_id, pf_state, entry_id, pf_state_compare_id);
 extern struct pf_state_tree_id tree_id;
 extern struct pf_state_queue state_updates;
 
@@ -1330,9 +1379,13 @@ extern int			 pf_tbladdr_setup(struct pf_ruleset *,
 extern void			 pf_tbladdr_remove(struct pf_addr_wrap *);
 extern void			 pf_tbladdr_copyout(struct pf_addr_wrap *);
 extern void			 pf_calc_skip_steps(struct pf_rulequeue *);
+
+/*
 extern struct pool		 pf_src_tree_pl, pf_rule_pl;
 extern struct pool		 pf_state_pl, pf_altq_pl, pf_pooladdr_pl;
 extern struct pool		 pf_state_scrub_pl;
+*/
+
 extern void			 pf_purge_timeout(void *);
 extern void			 pf_purge_expired_src_nodes(void);
 extern void			 pf_purge_expired_states(void);
@@ -1479,7 +1532,7 @@ void		pf_qid2qname(u_int32_t, char *);
 void		pf_qid_unref(u_int32_t);
 
 extern struct pf_status	pf_status;
-extern struct pool	pf_frent_pl, pf_frag_pl;
+//extern struct pool	pf_frent_pl, pf_frag_pl;
 
 struct pf_pool_limit {
 	void		*pp;
@@ -1487,13 +1540,13 @@ struct pf_pool_limit {
 };
 extern struct pf_pool_limit	pf_pool_limits[PF_LIMIT_MAX];
 
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 int pfil4_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil6_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil_ifnet_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil_ifaddr_wrapper(void *, struct mbuf **, struct ifnet *, int);
 
-#endif
+//#endif
 
 /*
  * misc compatibility stuffs
@@ -1523,8 +1576,7 @@ getmicrouptime(struct timeval *tvp)
 int	pf_osfp_add(struct pf_osfp_ioctl *);
 #ifdef _KERNEL
 struct pf_osfp_enlist *
-	pf_osfp_fingerprint(struct pf_pdesc *, struct mbuf *, int,
-	    const struct tcphdr *);
+	pf_osfp_fingerprint(struct pf_pdesc *, struct mbuf *, int, const struct tcphdr *);
 #endif /* _KERNEL */
 struct pf_osfp_enlist *
 	pf_osfp_fingerprint_hdr(const struct ip *, const struct tcphdr *);
@@ -1535,8 +1587,7 @@ void	pf_osfp_initialize(void);
 void	pf_osfp_destroy(void);
 #endif
 int	pf_osfp_match(struct pf_osfp_enlist *, pf_osfp_t);
-struct pf_os_fingerprint *
-	pf_osfp_validate(void);
+struct pf_os_fingerprint *pf_osfp_validate(void);
 
 
 #endif /* _NET_PFVAR_H_ */
