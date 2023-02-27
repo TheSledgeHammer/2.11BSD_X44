@@ -80,7 +80,7 @@
 
 #include <sys/cdefs.h>
 
-#include "opt_evdev.h"
+//#include "opt_evdev.h"
 #include "opt_wsdisplay_compat.h"
 
 #include "wsdisplay.h"
