@@ -29,10 +29,7 @@
 #ifndef	_DEV_EVDEV_EVDEV_H
 #define	_DEV_EVDEV_EVDEV_H
 
-#include <sys/types.h>
 #include <dev/misc/evdev/input.h>
-
-#define	NAMELEN		80
 
 struct evdev_dev;
 struct cdevsw;
