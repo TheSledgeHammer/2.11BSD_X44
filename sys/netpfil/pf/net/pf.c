@@ -46,16 +46,14 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/mbuf.h>
+//#include <sys/mbuf.h>
 #include <sys/filio.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/kernel.h>
 #include <sys/time.h>
 #include <sys/malloc.h>
-//#ifdef __NetBSD__
 #include <sys/endian.h>
-//#endif
 
 #include <net/if.h>
 #include <net/if_types.h>
@@ -76,17 +74,10 @@
 #include <netinet/tcp_var.h>
 #include <netinet/udp_var.h>
 #include <netinet/icmp_var.h>
-#ifdef __OpenBSD__
-#include <netinet/if_ether.h>
-#else
-#include <net/if_ether.h>
-#endif
 
-#ifdef __OpenBSD__
-#include <dev/rndvar.h>
-#else
-#include <sys/rnd.h>
-#endif
+#include <net/if_ether.h>
+
+#include <dev/misc/rnd/rnd.h>
 #include <net/pfvar.h>
 #include <net/if_pflog.h>
 
@@ -97,9 +88,7 @@
 #ifdef INET6
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
-//#ifdef __NetBSD__
 #include <netinet6/in6_pcb.h>
-//#endif
 #include <netinet/icmp6.h>
 #include <netinet6/nd6.h>
 #endif /* INET6 */
@@ -123,11 +112,7 @@ u_int32_t		 ticket_altqs_inactive;
 int			 altqs_inactive_open;
 u_int32_t		 ticket_pabuf;
 
-#ifdef __OpenBSD__
-struct timeout		 pf_expire_to;			/* expire timeout */
-#else
 struct callout		 pf_expire_to;			/* expire timeout */
-#endif
 
 struct pf_anchor_stackframe {
 	struct pf_ruleset			*rs;
@@ -136,8 +121,8 @@ struct pf_anchor_stackframe {
 	struct pf_anchor			*child;
 } pf_anchor_stack[64];
 
-struct pool		 pf_src_tree_pl, pf_rule_pl;
-struct pool		 pf_state_pl, pf_altq_pl, pf_pooladdr_pl;
+//struct pool		 pf_src_tree_pl, pf_rule_pl;
+//struct pool		 pf_state_pl, pf_altq_pl, pf_pooladdr_pl;
 
 void			 pf_print_host(struct pf_addr *, u_int16_t, u_int8_t);
 
