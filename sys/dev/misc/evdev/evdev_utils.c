@@ -313,6 +313,28 @@ evdev_push_repeats(struct evdev_dev *evdev, struct wskbd_keyrepeat_data *kbd)
 	}
 }
 
+int
+evdev_wskbd_ioctl(evdev, kbd, cmd, data)
+	struct evdev_dev 	*evdev;
+	struct wskbd_softc 	*kbd;
+	u_long 				cmd;
+	caddr_t 			data;
+{
+	switch (cmd) {
+	case WSKBDIO_SETKEYREPEAT:
+		if (evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_WSKBD)) {
+			evdev_push_repeats(evdev, kbd->sc_keyrepeat_data);
+		}
+		return (0);
+	case WSKBDIO_SETLEDS:
+		if (evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_WSKBD)) {
+			evdev_push_leds(evdev, *(int*) data);
+		}
+		return (0);
+	}
+	return (ENIVAL);
+}
+
 void
 evdev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t code, int32_t value)
 {
@@ -331,39 +353,17 @@ evdev_kbd_event(struct evdev_dev *evdev, void *softc, uint16_t type, uint16_t co
 				else
 					leds &= ~(1 << i);
 				if (leds != oleds)
-					evdev_wskbd_ioctl(kbd, WSKBDIO_SETLEDS, (caddr_t)&leds);
+					evdev_wskbd_ioctl(evdev, kbd, WSKBDIO_SETLEDS, (caddr_t)&leds);
 				break;
 			}
 		}
 	} else if (type == EV_REP && code == REP_DELAY) {
 		delay[0] = value;
 		delay[1] = rdat->delN;
-		evdev_wskbd_ioctl(kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
+		evdev_wskbd_ioctl(evdev, kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
 	}  else if (type == EV_REP && code == REP_PERIOD) {
 		delay[0] = rdat->del1;
 		delay[1] = value;
-		evdev_wskbd_ioctl(kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
+		evdev_wskbd_ioctl(evdev, kbd, WSKBDIO_SETKEYREPEAT, (caddr_t)delay);
 	}
-}
-
-int
-evdev_wskbd_ioctl(kbd, cmd, data)
-	struct wskbd_softc 	*kbd;
-	u_long 				cmd;
-	caddr_t 			data;
-{
-	struct evdev_softc *sc = kbd->sc_evsc;
-	switch(cmd) {
-	case WSKBDIO_SETKEYREPEAT:
-		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_WSKBD)) {
-			evdev_push_repeats(sc->sc_evdev, kbd->sc_keyrepeat_data);
-		}
-		return (0);
-	case WSKBDIO_SETLEDS:
-		if (sc->sc_evdev != NULL && (evdev_rcpt_mask & EVDEV_RCPT_WSKBD)) {
-			evdev_push_leds(sc->sc_evdev, *(int*)data);
-		}
-		return (0);
-	}
-	return (ENIVAL);
 }

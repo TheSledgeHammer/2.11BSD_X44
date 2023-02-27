@@ -76,6 +76,8 @@
 
 #include <sys/cdefs.h>
 
+#include "opt_evdev.h"
+
 #include "wsmouse.h"
 #include "wsdisplay.h"
 #include "wsmux.h"

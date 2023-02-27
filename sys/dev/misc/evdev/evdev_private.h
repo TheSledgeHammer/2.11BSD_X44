@@ -56,16 +56,14 @@ struct evdev_mt;
 #define	CURRENT_MT_SLOT(evdev)	((evdev)->ev_absinfo[ABS_MT_SLOT].value)
 #define	MAXIMAL_MT_SLOT(evdev)	((evdev)->ev_absinfo[ABS_MT_SLOT].maximum)
 
-enum evdev_key_events
-{
+enum evdev_key_events {
 	KEY_EVENT_UP,
 	KEY_EVENT_DOWN,
 	KEY_EVENT_REPEAT
 };
 
 /* evdev clock IDs in Linux semantic */
-enum evdev_clock_id
-{
+enum evdev_clock_id {
 	EV_CLOCK_REALTIME = 0,	/* UTC clock */
 	EV_CLOCK_MONOTONIC,	/* monotonic, stops on suspend */
 	EV_CLOCK_BOOTTIME	/* monotonic, suspend-awared */
@@ -173,8 +171,8 @@ struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
 	struct wsevsrc				ec_base;			/* input event to wscons event */
 
-	const struct evdev_accessops *ec_accessops;
-	void						*ec_accesscookie;
+	const struct wsmouse_accessops *ec_accessops;
+	void							*ec_accesscookie;
 
 	struct lock					ec_buffer_lock;
 	size_t						ec_buffer_size;
@@ -200,21 +198,12 @@ struct evdev_softc {
 	u_char				sc_dying;
 };
 
-/* evdev mux accessops  */
-struct evdev_accessops {
-	int		(*enable)(void *);
-	int		(*ioctl)(void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
-	void	(*disable)(void *);
-};
-
 #define EVDEVDEVCF_MUX 	0
 
-#ifdef notyet
 /* Client Mux */
 int		evdev_mux_open(struct wsevsrc *, struct wseventvar *);
 int		evdev_mux_close(struct wsevsrc *);
 int		evdev_add_mux(int, struct wsmux_softc *);
-#endif
 
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);

@@ -97,6 +97,9 @@ struct evcnt {
 	const char			*ev_group;				/* name of group */
 };
 
+/* maximum group/name lengths, including trailing NUL */
+#define	EVCNT_STRING_MAX	255
+
 /* ev_type values */
 #define	EVCNT_TYPE_MISC		0	/* miscellaneous; catch all */
 #define	EVCNT_TYPE_INTR		1	/* interrupt; count with vmstat -i */

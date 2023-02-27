@@ -2,11 +2,11 @@
 #
 # Evdev Protocol Support 
 
-defparam opt_evdev.h EVDEV_SUPPORT
+defflag opt_evdev.h EVDEV_SUPPORT
 
-device	evdev: wskbddev, wsmousedev
+device	evdev: wskbd & wsmouse
 
-file	dev/misc/evdev/evdev_mt.c		
+file	dev/misc/evdev/evdev.c			evdev		needs_flag
+file	dev/misc/evdev/evdev_mt.c		evdev
 file	dev/misc/evdev/evdev_support.c	evdev
-file	dev/misc/evdev/evdev_utils.c	
-file	dev/misc/evdev/evdev.c			evdev
+file	dev/misc/evdev/evdev_utils.c	evdev

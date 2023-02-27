@@ -707,7 +707,7 @@ evcnt_attach(ev, dev, group, name)
 	int len;
 	len = strlen(group);
 #ifdef DIAGNOSTIC
-	if (len >= sizeof(ev->ev_group)) {		/* ..._MAX includes NUL */
+	if (len >= EVCNT_STRING_MAX) {		/* ..._MAX includes NUL */
 		panic("evcnt_attach: group length (%s)", ev->ev_group);
 	}
 #endif
@@ -715,7 +715,7 @@ evcnt_attach(ev, dev, group, name)
 
 	len = strlen(name);
 #ifdef DIAGNOSTIC
-	if (len >= sizeof(ev->ev_name)) {		/* ..._MAX includes NUL */
+	if (len >= EVCNT_STRING_MAX) {		/* ..._MAX includes NUL */
 		panic("evcnt_attach: name length (%s)", ev->ev_name);
 	}
 #endif
@@ -744,7 +744,7 @@ void
 evcnt_attach_static(ev)
 	struct evcnt *ev;
 {
-	evcnt_attach(ev, NULL, ev->ev_name, ev->ev_group);
+	evcnt_attach(ev, NULL, ev->ev_group, ev->ev_name);
 }
 
 /*
@@ -761,9 +761,7 @@ evcnt_attach_dynamic(ev, type, parent, group, name)
 	bzero(ev, sizeof(*ev));
 	ev->ev_type = type;
 	ev->ev_parent = parent;
-	ev->ev_group = group;
-	ev->ev_name = name;
-	evcnt_attach_static(ev);
+	evcnt_attach(ev, NULL, group, name);
 }
 
 /*

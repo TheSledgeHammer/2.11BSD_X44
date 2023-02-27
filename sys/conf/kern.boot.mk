@@ -5,7 +5,7 @@
 KERNEL_KO?=		twobsd
 KERNEL?=		twobsd
 KODIR?=			/boot/${KERNEL}
-MACHINE_NAME!=  	uname -n
+MACHINE_NAME!=  uname -n
 
 install: install-kernel-${MACHINE_NAME}
 .if !target(install-kernel-${MACHINE_NAME})

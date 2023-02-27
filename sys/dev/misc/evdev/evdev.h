@@ -95,8 +95,6 @@ struct evdev_methods {
 	evdev_keycode_t 			*ev_get_keycode;
 };
 
-extern const struct cdevsw evdev_cdevsw;
-
 /* Input device interface: */
 struct evdev_dev *evdev_alloc(void);
 void evdev_free(struct evdev_dev *);
