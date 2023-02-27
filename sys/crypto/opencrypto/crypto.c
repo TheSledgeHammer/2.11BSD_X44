@@ -1174,7 +1174,7 @@ deferred_crypto_thread(void *arg)
 void
 cryptoattach(int n)
 {
-	/* Nothing to do. */
+	swcr_init();
 }
 
 
