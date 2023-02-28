@@ -67,7 +67,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - create seperate options file for each arch
 - i386/x86: (Merged under i386)
-	- pnpbios: both supported in i386/bios.c but not elsewhere
+	- pnpbios: add devices
 
 ## devel: (planned)
 - Code planned for future integration
