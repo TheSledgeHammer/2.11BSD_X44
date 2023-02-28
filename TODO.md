@@ -50,16 +50,12 @@ A General todo list. Don't hesitate to add to this list. :)
 # usr/sys/ (Kernel):
 ## conf:
 - Seperate file for conf options
-- Better intergration of kern.post.mk: Initial Port
 
 ## ddb:
 
 ## kern:
 - subr_hints.c: It's usefulness is in question...
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
-- setup: a new freeproc list. 
-	- To manage proc's that are not active or zombie's.
-	- Mimic 2.11BSD's original freeproc list.
 - RLimit (Minor Issue)
 	- 4.4BSD-Lite2 & 2.11BSD conflict.
 	- init_main.c: plimit pointer to rlimit and user pointer to rlimit
