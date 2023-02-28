@@ -261,4 +261,6 @@
 #define IFT_GIF		0xf0
 #define IFT_PVC		0xf1
 #define IFT_FAITH	0xf2
+#define IFT_PFLOG	0xf5		/* Packet filter logging */
+#define IFT_PFSYNC	0xf6		/* Packet filter state syncing */
 #endif /* _NET_IF_TYPES_H_ */
