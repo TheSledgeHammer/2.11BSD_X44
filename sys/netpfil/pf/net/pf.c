@@ -95,7 +95,7 @@
 /*
  * Global variables
  */
-
+ 
 struct pf_anchor_global	pf_anchors;
 struct pf_ruleset	 	pf_main_ruleset;
 struct pf_altqqueue	 	pf_altqs[2];
@@ -3606,7 +3606,7 @@ cleanup:
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, nsn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				free(nsm, M_PF);
+				free(nsn, M_PF);
 			}
 			REASON_SET(&reason, PFRES_MEMORY);
 			return (PF_DROP);

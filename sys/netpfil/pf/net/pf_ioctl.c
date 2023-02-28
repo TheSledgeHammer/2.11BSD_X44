@@ -36,11 +36,9 @@
  *
  */
 
-#ifdef _KERNEL_OPT
 #include "opt_inet.h"
 #include "opt_altq.h"
 #include "opt_pfil_hooks.h"
-#endif
 
 #define	NPFSYNC	0
 
@@ -60,6 +58,7 @@
 #include <net/if.h>
 #include <net/if_types.h>
 #include <net/route.h>
+#include <net/pfil.h>
 
 #include <netinet/in.h>
 #include <netinet/in_var.h>
@@ -67,6 +66,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip_var.h>
 #include <netinet/ip_icmp.h>
+
 #include <net/pfvar.h>
 
 #if NPFSYNC > 0
@@ -153,7 +153,7 @@ static void		 		tag_unref(struct pf_tags *, u_int16_t);
 
 #define DPFPRINTF(n, x) if (pf_status.debug >= (n)) printf x
 
-extern struct pfil_head if_pfil;
+struct pfil_head if_pfil;
 
 void
 pfattach(int num)
@@ -1858,11 +1858,12 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EINVAL;
 			goto fail;
 		}
-		pl->limit = pf_pool_limits[pl->index].limit;
+		//pl->limit = pf_pool_limits[pl->index].limit;
 		break;
 	}
 
 	case DIOCSETLIMIT: {
+	/*
 		struct pfioc_limit	*pl = (struct pfioc_limit *)addr;
 		int			 old_limit;
 
@@ -1875,6 +1876,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		old_limit = pf_pool_limits[pl->index].limit;
 		pf_pool_limits[pl->index].limit = pl->limit;
 		pl->limit = old_limit;
+		*/
 		break;
 	}
 
