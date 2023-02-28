@@ -457,8 +457,8 @@ m_makewritable(mp, off, len)
 	int off, len;
 {
 	int error;
-#if defined(DEBUG)
 	struct mbuf *n;
+#if defined(DEBUG)
 	int origlen, reslen;
 
 	origlen = m_length(*mp);
@@ -467,8 +467,14 @@ m_makewritable(mp, off, len)
 	if (len == M_COPYALL) {
 		len = m_length(*mp) - off; /* XXX */
 	}
-
-	error = m_copydata(mp, off, len, NULL);
+	
+	n = m_copy(*mp, off, len);
+	if (n != NULL) {
+		m_copydata(n, off, len, NULL);
+		error = 0;
+	} else {
+		error = ENOBUFS;
+	}
 
 #if defined(DEBUG)
 	reslen = 0;
