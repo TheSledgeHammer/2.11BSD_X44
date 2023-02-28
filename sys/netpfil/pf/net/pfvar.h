@@ -772,9 +772,18 @@ struct pfr_table {
 	u_int8_t		 pfrt_fback;
 };
 
-enum { PFR_FB_NONE, PFR_FB_MATCH, PFR_FB_ADDED, PFR_FB_DELETED,
-	PFR_FB_CHANGED, PFR_FB_CLEARED, PFR_FB_DUPLICATE,
-	PFR_FB_NOTMATCH, PFR_FB_CONFLICT, PFR_FB_MAX };
+enum {
+	PFR_FB_NONE,
+	PFR_FB_MATCH,
+	PFR_FB_ADDED,
+	PFR_FB_DELETED,
+	PFR_FB_CHANGED,
+	PFR_FB_CLEARED,
+	PFR_FB_DUPLICATE,
+	PFR_FB_NOTMATCH,
+	PFR_FB_CONFLICT,
+	PFR_FB_MAX
+};
 
 struct pfr_addr {
 	union {
@@ -789,8 +798,12 @@ struct pfr_addr {
 #define	pfra_ip4addr	pfra_u._pfra_ip4addr
 #define	pfra_ip6addr	pfra_u._pfra_ip6addr
 
-enum { PFR_DIR_IN, PFR_DIR_OUT, PFR_DIR_MAX };
-enum { PFR_OP_BLOCK, PFR_OP_PASS, PFR_OP_ADDR_MAX, PFR_OP_TABLE_MAX };
+enum {
+	PFR_DIR_IN, PFR_DIR_OUT, PFR_DIR_MAX
+};
+enum {
+	PFR_OP_BLOCK, PFR_OP_PASS, PFR_OP_ADDR_MAX, PFR_OP_TABLE_MAX
+};
 #define PFR_OP_XPASS	PFR_OP_ADDR_MAX
 
 struct pfr_astats {
@@ -800,7 +813,9 @@ struct pfr_astats {
 	long		 pfras_tzero;
 };
 
-enum { PFR_REFCNT_RULE, PFR_REFCNT_ANCHOR, PFR_REFCNT_MAX };
+enum {
+	PFR_REFCNT_RULE, PFR_REFCNT_ANCHOR, PFR_REFCNT_MAX
+};
 
 struct pfr_tstats {
 	struct pfr_table pfrts_t;
@@ -1209,7 +1224,7 @@ struct pfioc_qstats {
 	u_int32_t	 ticket;
 	u_int32_t	 nr;
 	void		*buf;
-	int		 nbytes;
+	int		 	nbytes;
 	u_int8_t	 scheduler;
 };
 
@@ -1336,8 +1351,8 @@ struct pfioc_iface {
 #define	DIOCRSETTFLAGS	_IOWR('D', 74, struct pfioc_table)
 #define DIOCRINADEFINE	_IOWR('D', 77, struct pfioc_table)
 #define DIOCOSFPFLUSH	_IO('D', 78)
-#define DIOCOSFPADD	_IOWR('D', 79, struct pf_osfp_ioctl)
-#define DIOCOSFPGET	_IOWR('D', 80, struct pf_osfp_ioctl)
+#define DIOCOSFPADD		_IOWR('D', 79, struct pf_osfp_ioctl)
+#define DIOCOSFPGET		_IOWR('D', 80, struct pf_osfp_ioctl)
 #define DIOCXBEGIN      _IOWR('D', 81, struct pfioc_trans)
 #define DIOCXCOMMIT     _IOWR('D', 82, struct pfioc_trans)
 #define DIOCXROLLBACK   _IOWR('D', 83, struct pfioc_trans)
@@ -1379,12 +1394,6 @@ extern int			 pf_tbladdr_setup(struct pf_ruleset *,
 extern void			 pf_tbladdr_remove(struct pf_addr_wrap *);
 extern void			 pf_tbladdr_copyout(struct pf_addr_wrap *);
 extern void			 pf_calc_skip_steps(struct pf_rulequeue *);
-
-/*
-extern struct pool		 pf_src_tree_pl, pf_rule_pl;
-extern struct pool		 pf_state_pl, pf_altq_pl, pf_pooladdr_pl;
-extern struct pool		 pf_state_scrub_pl;
-*/
 
 extern void			 pf_purge_timeout(void *);
 extern void			 pf_purge_expired_src_nodes(void);
@@ -1532,7 +1541,6 @@ void		pf_qid2qname(u_int32_t, char *);
 void		pf_qid_unref(u_int32_t);
 
 extern struct pf_status	pf_status;
-//extern struct pool	pf_frent_pl, pf_frag_pl;
 
 struct pf_pool_limit {
 	void		*pp;
@@ -1540,13 +1548,10 @@ struct pf_pool_limit {
 };
 extern struct pf_pool_limit	pf_pool_limits[PF_LIMIT_MAX];
 
-//#ifdef __NetBSD__
 int pfil4_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil6_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil_ifnet_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil_ifaddr_wrapper(void *, struct mbuf **, struct ifnet *, int);
-
-//#endif
 
 /*
  * misc compatibility stuffs

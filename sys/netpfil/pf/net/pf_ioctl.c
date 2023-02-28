@@ -51,7 +51,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-//#include <sys/filio.h>
+#include <sys/ioctl.h>
 #include <sys/fcntl.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -132,7 +132,6 @@ const struct cdevsw pf_cdevsw = {
 		.d_type = D_OTHER
 };
 
-
 static int pf_pfil_attach(void);
 static int pf_pfil_detach(void);
 
@@ -164,18 +163,10 @@ void
 pfattach(int num)
 {
 	u_int32_t *timeout = pf_default_rule.timeout;
-/*
-	pool_init(&pf_rule_pl, sizeof(struct pf_rule), 0, 0, 0, "pfrulepl", &pool_allocator_nointr);
-	pool_init(&pf_src_tree_pl, sizeof(struct pf_src_node), 0, 0, 0, "pfsrctrpl", NULL);
-	pool_init(&pf_state_pl, sizeof(struct pf_state), 0, 0, 0, "pfstatepl", NULL);
-	pool_init(&pf_altq_pl, sizeof(struct pf_altq), 0, 0, 0, "pfaltqpl", &pool_allocator_nointr);
-	pool_init(&pf_pooladdr_pl, sizeof(struct pf_pooladdr), 0, 0, 0, "pfpooladdrpl", &pool_allocator_nointr);
-*/
+
 	pfr_initialize();
 	pfi_initialize();
 	pf_osfp_initialize();
-
-//	pool_sethardlimit(pf_pool_limits[PF_LIMIT_STATES].pp, pf_pool_limits[PF_LIMIT_STATES].limit, NULL, 0);
 
 	RB_INIT(&tree_src_tracking);
 	RB_INIT(&pf_anchors);
@@ -1159,11 +1150,9 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		if (pf_status.running)
 			error = EEXIST;
 		else {
-#ifdef __NetBSD__
 			error = pf_pfil_attach();
 			if (error)
 				break;
-#endif
 			pf_status.running = 1;
 			pf_status.since = time_second;
 			if (pf_status.stateid == 0) {
@@ -1178,11 +1167,9 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		if (!pf_status.running)
 			error = ENOENT;
 		else {
-#ifdef __NetBSD__
 			error = pf_pfil_detach();
 			if (error)
 				break;
-#endif
 			pf_status.running = 0;
 			pf_status.since = time_second;
 			DPFPRINTF(PF_DEBUG_MISC, ("pf: stopped\n"));
@@ -1220,7 +1207,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			break;
 		}
 
-		rule = (struct pf_rule *)pf_malloc(sizeof(struct pf_rule *), M_NOWAIT);
+		rule = (struct pf_rule *)malloc(sizeof(struct pf_rule *), M_PF, M_NOWAIT);
 		if (rule == NULL) {
 			error = ENOMEM;
 			break;
@@ -1435,7 +1422,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		}
 
 		if (pcr->action != PF_CHANGE_REMOVE) {
-			newrule = (struct pf_rule *)pf_malloc(sizeof(struct pf_rule *), M_NOWAIT);
+			newrule = (struct pf_rule *)malloc(sizeof(struct pf_rule *), M_PF, M_NOWAIT);
 			if (newrule == NULL) {
 				error = ENOMEM;
 				break;
@@ -2825,7 +2812,6 @@ fail:
 	return (error);
 }
 
-#ifdef __NetBSD__
 int
 pfil4_wrapper(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 {
@@ -3036,4 +3022,3 @@ pf_pfil_detach(void)
 
 	return (0);
 }
-#endif

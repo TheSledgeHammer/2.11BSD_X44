@@ -47,7 +47,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-//#include <sys/filio.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/kernel.h>
@@ -99,20 +99,20 @@
  * Global variables
  */
 
-struct pf_anchor_global	 pf_anchors;
-struct pf_ruleset	 pf_main_ruleset;
-struct pf_altqqueue	 pf_altqs[2];
-struct pf_palist	 pf_pabuf;
-struct pf_altqqueue	*pf_altqs_active;
-struct pf_altqqueue	*pf_altqs_inactive;
-struct pf_status	 pf_status;
+struct pf_anchor_global	pf_anchors;
+struct pf_ruleset	 	pf_main_ruleset;
+struct pf_altqqueue	 	pf_altqs[2];
+struct pf_palist	 	pf_pabuf;
+struct pf_altqqueue		*pf_altqs_active;
+struct pf_altqqueue		*pf_altqs_inactive;
+struct pf_status		pf_status;
 
-u_int32_t		 ticket_altqs_active;
-u_int32_t		 ticket_altqs_inactive;
-int			 altqs_inactive_open;
-u_int32_t		 ticket_pabuf;
+u_int32_t		 		ticket_altqs_active;
+u_int32_t		 		ticket_altqs_inactive;
+int			 			altqs_inactive_open;
+u_int32_t		 		ticket_pabuf;
 
-struct callout		 pf_expire_to;			/* expire timeout */
+struct callout		 	pf_expire_to;			/* expire timeout */
 
 struct pf_anchor_stackframe {
 	struct pf_ruleset			*rs;
@@ -120,9 +120,6 @@ struct pf_anchor_stackframe {
 	struct pf_anchor_node			*parent;
 	struct pf_anchor			*child;
 } pf_anchor_stack[64];
-
-//struct pool		 pf_src_tree_pl, pf_rule_pl;
-//struct pool		 pf_state_pl, pf_altq_pl, pf_pooladdr_pl;
 
 void			 pf_print_host(struct pf_addr *, u_int16_t, u_int8_t);
 
@@ -598,7 +595,7 @@ pf_insert_src_node(struct pf_src_node **sn, struct pf_rule *rule,
 	if (*sn == NULL) {
 		if (!rule->max_src_nodes ||
 		    rule->src_nodes < rule->max_src_nodes)
-			(*sn) = pool_get(&pf_src_tree_pl, PR_NOWAIT);
+			(*sn) = malloc(sizeof(struct pf_src_node *), M_PF, M_WAITOK);
 		if ((*sn) == NULL)
 			return (-1);
 		bzero(*sn, sizeof(struct pf_src_node));
@@ -616,7 +613,7 @@ pf_insert_src_node(struct pf_src_node **sn, struct pf_rule *rule,
 				pf_print_host(&(*sn)->addr, 0, af);
 				printf("\n");
 			}
-			pool_put(&pf_src_tree_pl, *sn);
+			free(sn, M_PF);
 			return (-1);
 		}
 		(*sn)->creation = time_second;
@@ -788,7 +785,7 @@ pf_purge_expired_src_nodes(void)
 			 RB_REMOVE(pf_src_tree, &tree_src_tracking, cur);
 			 pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 			 pf_status.src_nodes--;
-			 pool_put(&pf_src_tree_pl, cur);
+			 free(cur, M_PF);
 		 }
 	 }
 }
@@ -850,7 +847,7 @@ pf_purge_expired_state(struct pf_state *cur)
 	pf_normalize_tcp_cleanup(cur);
 	pfi_detach_state(cur->u.s.kif);
 	TAILQ_REMOVE(&state_updates, cur, u.s.entry_updates);
-	pool_put(&pf_state_pl, cur);
+	free(cur, M_PF);
 	pf_status.fcounters[FCNT_STATE_REMOVALS]++;
 	pf_status.states--;
 }
@@ -2783,21 +2780,21 @@ pf_test_tcp(struct pf_rule **rm, struct pf_state **sm, int direction,
 		    pf_insert_src_node(&nsn, nr, &pd->baddr, af) != 0) ||
 		    (pf_insert_src_node(&nsn, nr, saddr, af) != 0)))
 			goto cleanup;
-		s = pool_get(&pf_state_pl, PR_NOWAIT);
+		s = malloc(sizeof(struct pf_state *), M_PF, M_WAITOK);
 		if (s == NULL) {
 cleanup:
 			if (sn != NULL && sn->states == 0 && sn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, sn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, sn);
+				free(sn, M_PF);
 			}
 			if (nsn != sn && nsn != NULL && nsn->states == 0 &&
 			    nsn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, nsn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, nsn);
+				free(nsn, M_PF);
 			}
 			REASON_SET(&reason, PFRES_MEMORY);
 			return (PF_DROP);
@@ -2889,7 +2886,7 @@ cleanup:
 		    off, pd, th, &s->src, &s->dst)) {
 			REASON_SET(&reason, PFRES_MEMORY);
 			pf_src_tree_remove_state(s);
-			pool_put(&pf_state_pl, s);
+			free(s, M_PF);
 			return (PF_DROP);
 		}
 		if ((pd->flags & PFDESC_TCP_NORM) && s->src.scrub &&
@@ -2900,14 +2897,14 @@ cleanup:
 			    ("pf_normalize_tcp_stateful failed on first pkt"));
 			pf_normalize_tcp_cleanup(s);
 			pf_src_tree_remove_state(s);
-			pool_put(&pf_state_pl, s);
+			free(s, M_PF);
 			return (PF_DROP);
 		}
 		if (pf_insert_state(BOUND_IFACE(r, kif), s)) {
 			pf_normalize_tcp_cleanup(s);
 			REASON_SET(&reason, PFRES_MEMORY);
 			pf_src_tree_remove_state(s);
-			pool_put(&pf_state_pl, s);
+			free(s, M_PF);
 			return (PF_DROP);
 		} else
 			*sm = s;
@@ -3124,21 +3121,21 @@ pf_test_udp(struct pf_rule **rm, struct pf_state **sm, int direction,
 		    pf_insert_src_node(&nsn, nr, &pd->baddr, af) != 0) ||
 		    (pf_insert_src_node(&nsn, nr, saddr, af) != 0)))
 			goto cleanup;
-		s = pool_get(&pf_state_pl, PR_NOWAIT);
+		s = malloc(sizeof(struct pf_state *), M_PF, M_WAITOK);
 		if (s == NULL) {
 cleanup:
 			if (sn != NULL && sn->states == 0 && sn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, sn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, sn);
+				free(sn, M_PF);
 			}
 			if (nsn != sn && nsn != NULL && nsn->states == 0 &&
 			    nsn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, nsn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, nsn);
+				free(nsn, M_PF);
 			}
 			REASON_SET(&reason, PFRES_MEMORY);
 			return (PF_DROP);
@@ -3200,7 +3197,7 @@ cleanup:
 		if (pf_insert_state(BOUND_IFACE(r, kif), s)) {
 			REASON_SET(&reason, PFRES_MEMORY);
 			pf_src_tree_remove_state(s);
-			pool_put(&pf_state_pl, s);
+			free(s, M_PF);
 			return (PF_DROP);
 		} else
 			*sm = s;
@@ -3410,21 +3407,21 @@ pf_test_icmp(struct pf_rule **rm, struct pf_state **sm, int direction,
 		    pf_insert_src_node(&nsn, nr, &pd->baddr, af) != 0) ||
 		    (pf_insert_src_node(&nsn, nr, saddr, af) != 0)))
 			goto cleanup;
-		s = pool_get(&pf_state_pl, PR_NOWAIT);
+		s = malloc(sizeof(struct pf_state *), M_PF, M_WAITOK);
 		if (s == NULL) {
 cleanup:
 			if (sn != NULL && sn->states == 0 && sn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, sn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, sn);
+				free(sn, M_PF);
 			}
 			if (nsn != sn && nsn != NULL && nsn->states == 0 &&
 			    nsn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, nsn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, nsn);
+				free(nsn, M_PF);
 			}
 			REASON_SET(&reason, PFRES_MEMORY);
 			return (PF_DROP);
@@ -3480,7 +3477,7 @@ cleanup:
 		if (pf_insert_state(BOUND_IFACE(r, kif), s)) {
 			REASON_SET(&reason, PFRES_MEMORY);
 			pf_src_tree_remove_state(s);
-			pool_put(&pf_state_pl, s);
+			free(s, M_PF);
 			return (PF_DROP);
 		} else
 			*sm = s;
@@ -3676,21 +3673,21 @@ pf_test_other(struct pf_rule **rm, struct pf_state **sm, int direction,
 		    pf_insert_src_node(&nsn, nr, &pd->baddr, af) != 0) ||
 		    (pf_insert_src_node(&nsn, nr, saddr, af) != 0)))
 			goto cleanup;
-		s = pool_get(&pf_state_pl, PR_NOWAIT);
+		s = malloc(sizeof(struct pf_state *), M_PF, M_WAITOK);
 		if (s == NULL) {
 cleanup:
 			if (sn != NULL && sn->states == 0 && sn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, sn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, sn);
+				free(sn, M_PF);
 			}
 			if (nsn != sn && nsn != NULL && nsn->states == 0 &&
 			    nsn->expire == 0) {
 				RB_REMOVE(pf_src_tree, &tree_src_tracking, nsn);
 				pf_status.scounters[SCNT_SRC_NODE_REMOVALS]++;
 				pf_status.src_nodes--;
-				pool_put(&pf_src_tree_pl, nsn);
+				free(nsm, M_PF);
 			}
 			REASON_SET(&reason, PFRES_MEMORY);
 			return (PF_DROP);
@@ -3742,7 +3739,7 @@ cleanup:
 		if (pf_insert_state(BOUND_IFACE(r, kif), s)) {
 			REASON_SET(&reason, PFRES_MEMORY);
 			pf_src_tree_remove_state(s);
-			pool_put(&pf_state_pl, s);
+			free(s, M_PF);
 			return (PF_DROP);
 		} else
 			*sm = s;
@@ -5414,7 +5411,6 @@ pf_check_proto_cksum(struct mbuf *m, int off, int len, u_int8_t p,
 		return (1);
 	if (m->m_pkthdr.len < off + len)
 		return (1);
-//#ifdef __NetBSD__
 	switch (p) {
 	case IPPROTO_TCP: {
 			struct tcphdr th; /* XXX */
@@ -5434,7 +5430,6 @@ pf_check_proto_cksum(struct mbuf *m, int off, int len, u_int8_t p,
 		}
 		break;
 	}
-//#endif /* __NetBSD__ */
 	switch (af) {
 #ifdef INET
 	case AF_INET:
@@ -5464,9 +5459,6 @@ pf_check_proto_cksum(struct mbuf *m, int off, int len, u_int8_t p,
 		return (1);
 	}
 	if (sum) {
-#ifdef __OpenBSD__
-		m->m_pkthdr.csum |= flag_bad;
-#endif
 		switch (p) {
 		case IPPROTO_TCP:
 			tcpstat.tcps_rcvbadsum++;
@@ -5485,9 +5477,6 @@ pf_check_proto_cksum(struct mbuf *m, int off, int len, u_int8_t p,
 		}
 		return (1);
 	}
-#ifdef __OpenBSD__
-	m->m_pkthdr.csum |= flag_ok;
-#endif
 	return (0);
 }
 
@@ -6136,12 +6125,5 @@ done:
 int
 pf_check_congestion(struct ifqueue *ifq)
 {
-#ifdef __OpenBSD__
-	if (ifq->ifq_congestion)
-		return (1);
-	else
-		return (0);
-#else
 	return 0;
-#endif
 }
