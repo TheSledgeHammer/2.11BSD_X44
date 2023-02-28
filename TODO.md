@@ -109,8 +109,11 @@ A General todo list. Don't hesitate to add to this list. :)
 ## miscfs:
 
 ## net / net80211 / netinet / netinet6 / netipsec / netkey / netns / netpfil :
+- Update to make use of tcp_checksum & udp_checksum
 - netipsec: Update and fix, to compile.
-- netpfil: Update and fix IPFilter & PF, to compile.
+- netpfil: 
+	- Remove IPFilter? (Any Benefits over using PF & NPF)
+	- Add NPF
 		
 ## ufs:
 - implement Extended Attributes
