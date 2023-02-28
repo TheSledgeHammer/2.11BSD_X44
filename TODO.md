@@ -80,7 +80,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - Improve directory structure
 - Essential Driver Support:
 	- Audio:
-		- Check that all audio devices available are also configured	
 	- Core:
 		- CARDBUS: to add
 		- ISAPNP: 
@@ -104,7 +103,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Add other supported filesystems.
 	- Add Networking
 - libkern:
-- x86emu:
+- x86emu: add makefile
 
 ## miscfs:
 
