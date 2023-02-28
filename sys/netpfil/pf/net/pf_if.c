@@ -109,7 +109,6 @@ pfi_initialize(void)
 		return;
 
 	TAILQ_INIT(&pfi_statehead);
-	//pool_init(&pfi_addr_pl, sizeof(struct pfi_dynaddr), 0, 0, 0, "pfiaddrpl", &pool_allocator_nointr);
 	pfi_buffer_max = 64;
 	pfi_buffer = malloc(pfi_buffer_max * sizeof(*pfi_buffer), PFI_MTYPE, M_WAITOK);
 	pfi_self = pfi_if_create("self", NULL, PFI_IFLAG_GROUP);
@@ -182,7 +181,7 @@ pfi_attach_ifnet(struct ifnet *ifp)
 	p->pfik_ifp = ifp;
 	p->pfik_flags |= PFI_IFLAG_ATTACHED;
 
-	p->pfik_ah_cookie = hook_establish(&p->pfik_ifaddrhooks, pfi_kifaddr_update, p);
+	p->pfik_ah_cookie = hook_establish(p->pfik_ifaddrhooks, pfi_kifaddr_update, p);
 
 	pfi_index2kif[ifp->if_index] = p;
 	pfi_dohooks(p);
@@ -206,7 +205,7 @@ pfi_detach_ifnet(struct ifnet *ifp)
 		return;
 	}
 
-	hook_disestablish(&p->pfik_ifaddrhooks, p->pfik_ah_cookie);
+	hook_disestablish(p->pfik_ifaddrhooks, p->pfik_ah_cookie);
 
 	q = p->pfik_parent;
 	p->pfik_ifp = NULL;
@@ -294,7 +293,6 @@ pfi_dynaddr_setup(struct pf_addr_wrap *aw, sa_family_t af)
 
 	if (aw->type != PF_ADDR_DYNIFTL)
 		return (0);
-	//dyn = pool_get(&pfi_addr_pl, PR_NOWAIT);
 	dyn = (struct pfi_dynaddr *)malloc(sizeof(struct pfi_dynaddr *), M_DEVBUF, M_NOWAIT);
 	if (dyn == NULL)
 		return (1);
@@ -331,7 +329,7 @@ pfi_dynaddr_setup(struct pf_addr_wrap *aw, sa_family_t af)
 	dyn->pfid_kt->pfrkt_flags |= PFR_TFLAG_ACTIVE;
 	dyn->pfid_iflags = aw->iflags;
 	dyn->pfid_af = af;
-	dyn->pfid_hook_cookie = hook_establish(dyn->pfid_kif->pfik_ah_head, 1, pfi_dynaddr_update, dyn);
+	dyn->pfid_hook_cookie = hook_establish(dyn->pfid_kif->pfik_ah_head, pfi_dynaddr_update, dyn);
 	if (dyn->pfid_hook_cookie == NULL)
 		senderr(1);
 
@@ -582,8 +580,8 @@ pfi_if_create(const char *name, struct pfi_kif *q, int flags)
 	TAILQ_INIT(p->pfik_ah_head);
 	TAILQ_INIT(&p->pfik_grouphead);
 
-	bzero(&p->pfik_ifaddrhooks, sizeof(p->pfik_ifaddrhooks));
-	TAILQ_INIT(&p->pfik_ifaddrhooks);
+	bzero(p->pfik_ifaddrhooks, sizeof(p->pfik_ifaddrhooks));
+	TAILQ_INIT(p->pfik_ifaddrhooks);
 
 	strlcpy(p->pfik_name, name, sizeof(p->pfik_name));
 	RB_INIT(&p->pfik_lan_ext);

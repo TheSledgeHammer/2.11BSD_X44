@@ -42,11 +42,7 @@
 #include "opt_pfil_hooks.h"
 #endif
 
-#ifdef __OpenBSD__
-#include "pfsync.h"
-#else
 #define	NPFSYNC	0
-#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -740,10 +736,11 @@ tagname2tag(struct pf_tags *head, char *tagname)
 	tag->tag = new_tagid;
 	tag->ref++;
 
-	if (p != NULL)	/* insert new entry before p */
+	if (p != NULL) {	/* insert new entry before p */
 		TAILQ_INSERT_BEFORE(p, tag, entries);
-	else	/* either list empty or no free slot in between */
+	} else {	/* either list empty or no free slot in between */
 		TAILQ_INSERT_TAIL(head, tag, entries);
+	}
 
 	return (tag->tag);
 }
@@ -1135,8 +1132,8 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 		case DIOCRDELADDRS:
 		case DIOCRSETADDRS:
 		case DIOCRSETTFLAGS:
-			if (((struct pfioc_table *)addr)->pfrio_flags &
-			    PFR_FLAG_DUMMY)
+			if (((struct pfioc_table*) addr)->pfrio_flags &
+			PFR_FLAG_DUMMY)
 				break; /* dummy operation ok */
 			return (EACCES);
 		default:
@@ -1530,20 +1527,21 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			}
 		}
 
-		if (pcr->action == PF_CHANGE_REMOVE)
+		if (pcr->action == PF_CHANGE_REMOVE) {
 			pf_rm_rule(ruleset->rules[rs_num].active.ptr, oldrule);
-		else {
-			if (oldrule == NULL)
+		} else {
+			if (oldrule == NULL) {
 				TAILQ_INSERT_TAIL(
 				    ruleset->rules[rs_num].active.ptr,
 				    newrule, entries);
-			else if (pcr->action == PF_CHANGE_ADD_HEAD ||
-			    pcr->action == PF_CHANGE_ADD_BEFORE)
+			} else if (pcr->action == PF_CHANGE_ADD_HEAD ||
+			    pcr->action == PF_CHANGE_ADD_BEFORE) {
 				TAILQ_INSERT_BEFORE(oldrule, newrule, entries);
-			else
+			} else {
 				TAILQ_INSERT_AFTER(
 				    ruleset->rules[rs_num].active.ptr,
 				    oldrule, newrule, entries);
+			}
 		}
 
 		nr = 0;
@@ -1873,16 +1871,7 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			error = EINVAL;
 			goto fail;
 		}
-#ifdef __OpenBSD__
-		if (pool_sethardlimit(pf_pool_limits[pl->index].pp,
-		    pl->limit, NULL, 0) != 0) {
-			error = EBUSY;
-			goto fail;
-		}
-#else
-		pool_sethardlimit(pf_pool_limits[pl->index].pp,
-		    pl->limit, NULL, 0);
-#endif
+		pool_sethardlimit(pf_pool_limits[pl->index].pp, pl->limit, NULL, 0);
 		old_limit = pf_pool_limits[pl->index].limit;
 		pf_pool_limits[pl->index].limit = pl->limit;
 		pl->limit = old_limit;
@@ -2244,14 +2233,15 @@ pfioctl(dev_t dev, u_long cmd, caddr_t addr, int flags, struct proc *p)
 			pfi_detach_rule(oldpa->kif);
 			free(oldpa, M_PF);
 		} else {
-			if (oldpa == NULL)
+			if (oldpa == NULL) {
 				TAILQ_INSERT_TAIL(&pool->list, newpa, entries);
-			else if (pca->action == PF_CHANGE_ADD_HEAD ||
-			    pca->action == PF_CHANGE_ADD_BEFORE)
+			} else if (pca->action == PF_CHANGE_ADD_HEAD ||
+			    pca->action == PF_CHANGE_ADD_BEFORE) {
 				TAILQ_INSERT_BEFORE(oldpa, newpa, entries);
-			else
+			} else {
 				TAILQ_INSERT_AFTER(&pool->list, oldpa,
 				    newpa, entries);
+			}
 		}
 
 		pool->cur = TAILQ_FIRST(&pool->list);
@@ -2823,7 +2813,7 @@ pfil4_wrapper(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 	 * ip hdr (60 bytes) + tcp hdr (60 bytes) should be enough.
 	 * XXX inefficient
 	 */
-	error = m_makewritable(mp, 0, 60 + 60, M_DONTWAIT);
+	error = m_makewritable(mp, 0, 60 + 60);
 	if (error) {
 		m_freem(*mp);
 		*mp = NULL;
@@ -2872,7 +2862,7 @@ pfil6_wrapper(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir)
 	 * as it's assumed by pf code.
 	 * XXX inefficient
 	 */
-	error = m_makewritable(mp, 0, M_COPYALL, M_DONTWAIT);
+	error = m_makewritable(mp, 0, M_COPYALL);
 	if (error) {
 		m_freem(*mp);
 		*mp = NULL;

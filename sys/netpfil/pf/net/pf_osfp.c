@@ -57,9 +57,9 @@ typedef struct pool pool_t;
 # include <stdlib.h>
 # include <string.h>
 # define pool_t			int
-# define pool_get(pool, flags)	malloc(*(pool))
-# define pool_put(pool, item)	free(item)
-# define pool_init(pool, size, a, ao, f, m, p)	(*(pool)) = (size)
+# define pool_get(pool, flags)		malloc(*(pool))
+# define pool_put(pool, item)		free(item)
+# define pool_init(pool, size)		(*(pool)) = (size)
 
 # ifdef PFDEBUG
 #  include <sys/stdarg.h>
@@ -71,8 +71,8 @@ typedef struct pool pool_t;
 
 
 SLIST_HEAD(pf_osfp_list, pf_os_fingerprint) pf_osfp_list;
-pool_t pf_osfp_entry_pl;
-pool_t pf_osfp_pl;
+pool_t  pf_osfp_entry_pl;
+pool_t  pf_osfp_pl;
 
 struct pf_os_fingerprint	*pf_osfp_find(struct pf_osfp_list *,
 				    struct pf_os_fingerprint *, u_int8_t);
@@ -80,7 +80,6 @@ struct pf_os_fingerprint	*pf_osfp_find_exact(struct pf_osfp_list *,
 				    struct pf_os_fingerprint *);
 void				 pf_osfp_insert(struct pf_osfp_list *,
 				    struct pf_os_fingerprint *);
-
 
 #ifdef _KERNEL
 /*
@@ -237,10 +236,8 @@ pf_osfp_match(struct pf_osfp_enlist *list, pf_osfp_t os)
 void
 pf_osfp_initialize(void)
 {
-	pool_init(&pf_osfp_entry_pl, sizeof(struct pf_osfp_entry), 0, 0, 0,
-	    "pfosfpen", &pool_allocator_nointr);
-	pool_init(&pf_osfp_pl, sizeof(struct pf_os_fingerprint), 0, 0, 0,
-	    "pfosfp", &pool_allocator_nointr);
+	pool_init(&pf_osfp_entry_pl, sizeof(struct pf_osfp_entry));
+	pool_init(&pf_osfp_pl, sizeof(struct pf_os_fingerprint));
 	SLIST_INIT(&pf_osfp_list);
 }
 

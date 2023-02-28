@@ -34,8 +34,6 @@
 #ifndef _NETINET_TCP_H_
 #define _NETINET_TCP_H_
 
-//#include <sys/featuretest.h>
-
 #if __BSD_VISIBLE
 
 typedef u_int32_t tcp_seq;
@@ -65,6 +63,8 @@ struct tcphdr {
 #define	TH_PUSH	  0x08
 #define	TH_ACK	  0x10
 #define	TH_URG	  0x20
+#define	TH_ECE	  0x40
+#define	TH_CWR	  0x80
 	u_int16_t th_win;			/* window */
 	u_int16_t th_sum;			/* checksum */
 	u_int16_t th_urp;			/* urgent pointer */

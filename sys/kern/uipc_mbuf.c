@@ -209,6 +209,24 @@ m_expand(canwait)
 	}
 }
 
+u_int
+m_length(m)
+	struct mbuf *m;
+{
+	struct mbuf *m0;
+	u_int pktlen;
+
+	if ((m->m_flags & M_PKTHDR) != 0) {
+		return (m->m_pkthdr.len);
+	}
+
+	pktlen = 0;
+	for (m0 = m; m0 != NULL; m0 = m0->m_next) {
+		pktlen += m0->m_len;
+	}
+	return (pktlen);
+}
+
 /* NEED SOME WAY TO RELEASE SPACE */
 
 /*
@@ -404,7 +422,7 @@ m_copydata(m, off, len, cp)
 	register struct mbuf *m;
 	register int off;
 	register int len;
-	caddr_t cp;
+	void *cp;
 {
 	register unsigned count;
 
@@ -428,6 +446,43 @@ m_copydata(m, off, len, cp)
 		off = 0;
 		m = m->m_next;
 	}
+}
+
+/*
+ * m_makewritable: ensure the specified range writable.
+ */
+int
+m_makewritable(mp, off, len)
+	struct mbuf **mp;
+	int off, len;
+{
+	int error;
+#if defined(DEBUG)
+	struct mbuf *n;
+	int origlen, reslen;
+
+	origlen = m_length(*mp);
+#endif /* defined(DEBUG) */
+
+	if (len == M_COPYALL) {
+		len = m_length(*mp) - off; /* XXX */
+	}
+
+	error = m_copydata(mp, off, len, NULL);
+
+#if defined(DEBUG)
+	reslen = 0;
+	for (n = *mp; n; n = n->m_next) {
+		reslen += n->m_len;
+	}
+	if (origlen != reslen) {
+		panic("m_makewritable: length changed");
+	}
+	if (((*mp)->m_flags & M_PKTHDR) != 0 && reslen != (*mp)->m_pkthdr.len) {
+		panic("m_makewritable: inconsist");
+	}
+#endif /* defined(DEBUG) */
+	return (error);
 }
 
 void

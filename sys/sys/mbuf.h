@@ -465,6 +465,7 @@ extern int m_want;
 struct mbuf 	*m_copy(struct mbuf *, int, int);
 struct mbuf 	*m_free(struct mbuf *);
 struct mbuf 	*m_get(int, int);
+u_int			m_length(struct mbuf *);
 struct mbuf 	*m_gethdr(int, int);
 struct mbuf 	*m_getclr(int, int);
 void            m_clget(struct mbuf *, int);
@@ -480,7 +481,8 @@ void			m_cat(struct mbuf *, struct mbuf *);
 void			m_adj(struct mbuf *, int);
 int	        	m_apply(struct mbuf *, int, int, int (*)(void *, caddr_t, unsigned int), void *);
 int			    m_clalloc(int, int);
-void			m_copydata(struct mbuf *, int, int, caddr_t);
+void			m_copydata(struct mbuf *, int, int, void *);
+int				m_makewritable(struct mbuf **, int, int);
 void			m_freem(struct mbuf *);
 void			m_reclaim(void);
 void 			mbinit2(void *, int, int);
@@ -527,6 +529,9 @@ struct m_tag 	*m_tag_next(struct mbuf *, struct m_tag *);
 
 #define	PACKET_TAG_IPSEC_SOCKET				22 /* IPSEC socket ref */
 #define	PACKET_TAG_IPSEC_HISTORY			23 /* IPSEC history */
+
+#define	PACKET_TAG_PF_TRANSLATE_LOCALHOST	24 /* translated to localhost */
+#define	PACKET_TAG_IPSEC_NAT_T_PORTS		25 /* two u_int16_t */
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */

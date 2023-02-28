@@ -138,18 +138,6 @@ int			 	 pf_nfrents, pf_ncache;
 void
 pf_normalize_init(void)
 {
-/*
-	pool_init(&pf_frent_pl, sizeof(struct pf_frent), 0, 0, 0, "pffrent", NULL);
-	pool_init(&pf_frag_pl, sizeof(struct pf_fragment), 0, 0, 0, "pffrag", NULL);
-	pool_init(&pf_cache_pl, sizeof(struct pf_fragment), 0, 0, 0, "pffrcache", NULL);
-	pool_init(&pf_cent_pl, sizeof(struct pf_frcache), 0, 0, 0, "pffrcent", NULL);
-	pool_init(&pf_state_scrub_pl, sizeof(struct pf_state_scrub), 0, 0, 0, "pfstscr", NULL);
-
-	pool_sethiwat(&pf_frag_pl, PFFRAG_FRAG_HIWAT);
-	pool_sethardlimit(&pf_frent_pl, PFFRAG_FRENT_HIWAT, NULL, 0);
-	pool_sethardlimit(&pf_cache_pl, PFFRAG_FRCACHE_HIWAT, NULL, 0);
-	pool_sethardlimit(&pf_cent_pl, PFFRAG_FRCENT_HIWAT, NULL, 0);
-*/
 	TAILQ_INIT(&pf_fragqueue);
 	TAILQ_INIT(&pf_cachequeue);
 }
@@ -442,10 +430,11 @@ pf_reassemble(struct mbuf **m0, struct pf_fragment **frag,
 	if (!mff)
 		(*frag)->fr_flags |= PFFRAG_SEENLAST;
 
-	if (frep == NULL)
+	if (frep == NULL) {
 		LIST_INSERT_HEAD(&(*frag)->fr_queue, frent, fr_next);
-	else
+	} else {
 		LIST_INSERT_AFTER(frep, frent, fr_next);
+	}
 
 	/* Check if we are completely reassembled */
 	if (!((*frag)->fr_flags & PFFRAG_SEENLAST))
@@ -639,11 +628,8 @@ pf_fragcache(struct mbuf **m0, struct ip *h, struct pf_fragment **frag, int mff,
 				 * than this mbuf magic.  For my next trick,
 				 * I'll pull a rabbit out of my laptop.
 				 */
-#ifdef __OpenBSD__
-				*m0 = m_copym2(m, 0, h->ip_hl << 2);
-#else
+
 				*m0 = m_copy(m, 0, h->ip_hl << 2);
-#endif
 				if (*m0 == NULL)
 					goto no_mem;
 				KASSERT((*m0)->m_next == NULL);
@@ -1323,7 +1309,7 @@ pf_normalize_tcp(int dir, struct pfi_kif *kif, struct mbuf *m, int ipoff,
 
 	/* copy back packet headers if we sanitized */
 	if (rewrite)
-		m_copyback(m, off, sizeof(*th), th);
+		m_copyback(m, off, sizeof(*th), (caddr_t)th);
 
 	return (PF_PASS);
 

@@ -57,6 +57,12 @@ struct packet_filter_hook {
 #define PFIL_OUT	0x00000002
 #define PFIL_WAITOK	0x00000004
 #define PFIL_ALL	(PFIL_IN|PFIL_OUT)
+#define PFIL_IFADDR	0x00000008
+#define PFIL_IFNET	0x00000010
+
+/* events notified by PFIL_IFNET */
+#define	PFIL_IFNET_ATTACH	0
+#define	PFIL_IFNET_DETACH	1
 
 typedef	TAILQ_HEAD(pfil_list, packet_filter_hook) pfil_list_t;
 
@@ -111,5 +117,10 @@ pfil_hook_get(int dir, struct pfil_head *ph)
 #endif
 #define PFIL_HOOKS
 #endif /* NIPFILTER */
+
+#ifdef _KERNEL
+/* in sys/net/if.c */
+extern struct pfil_head if_pfil; /* packet filtering hook for interfaces */
+#endif
 
 #endif /* _NET_PFIL_H_ */

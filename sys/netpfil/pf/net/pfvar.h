@@ -906,10 +906,10 @@ struct pfi_kif {
 	void						*pfik_ah_cookie;
 	struct pfi_kif				*pfik_parent;
 	struct ifnet				*pfik_ifp;
-	int				 pfik_states;
-	int				 pfik_rules;
+	int				 			pfik_states;
+	int				 			pfik_rules;
 
-	struct hook_head		 pfik_ifaddrhooks;
+	struct hook_head		 	*pfik_ifaddrhooks;
 };
 #define pfik_name		pfik_if.pfif_name
 #define pfik_packets	pfik_if.pfif_packets
@@ -1541,12 +1541,6 @@ void		pf_qid2qname(u_int32_t, char *);
 void		pf_qid_unref(u_int32_t);
 
 extern struct pf_status	pf_status;
-
-struct pf_pool_limit {
-	void		*pp;
-	unsigned	 limit;
-};
-extern struct pf_pool_limit	pf_pool_limits[PF_LIMIT_MAX];
 
 int pfil4_wrapper(void *, struct mbuf **, struct ifnet *, int);
 int pfil6_wrapper(void *, struct mbuf **, struct ifnet *, int);
