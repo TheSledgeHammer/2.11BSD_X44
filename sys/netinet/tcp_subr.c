@@ -194,6 +194,7 @@ int	tcp_compat_42 = 0;
 #endif
 int	tcp_rst_ppslim = 100;	/* 100pps */
 int	tcp_ackdrop_ppslim = 100;	/* 100pps */
+int	tcp_do_loopback_cksum = 0;
 
 /* tcb hash */
 #ifndef TCBHASHSIZE

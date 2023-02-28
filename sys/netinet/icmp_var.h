@@ -78,7 +78,7 @@ struct	icmpstat {
 }
 
 #ifdef _KERNEL
-struct	icmpstat icmpstat;
+extern struct	icmpstat icmpstat;
 
 #ifdef __NO_STRICT_ALIGNMENT
 #define	ICMP_HDR_ALIGNED_P(ic)	1

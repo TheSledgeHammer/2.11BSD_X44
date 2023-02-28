@@ -83,6 +83,7 @@ struct	udpstat {
 #ifdef _KERNEL
 extern	struct	inpcbtable udbtable;
 extern	struct	udpstat udpstat;
+extern	int	udp_do_loopback_cksum;
 
 #ifdef __NO_STRICT_ALIGNMENT
 #define	UDP_HDR_ALIGNED_P(uh)	1
@@ -96,6 +97,7 @@ void	 udp_input(struct mbuf *, ...);
 int	 	udp_output(struct mbuf *, ...);
 int	 	udp_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 int	 	udp_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
+int	 udp_input_checksum(int af, struct mbuf *, const struct udphdr *, int, int);
 #endif
 
 #endif /* _NETINET_UDP_VAR_H_ */

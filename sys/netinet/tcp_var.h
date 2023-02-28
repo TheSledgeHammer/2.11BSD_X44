@@ -653,6 +653,7 @@ extern	int tcp_ack_on_push;	/* ACK immediately on PUSH */
 extern	int tcp_syn_cache_limit; /* max entries for compressed state engine */
 extern	int tcp_syn_bucket_limit;/* max entries per hash bucket */
 extern	int tcp_log_refused;	/* log refused connections */
+extern	int tcp_do_loopback_cksum;/* do TCP checksum on loopback? */
 
 extern	int tcp_rst_ppslim;
 extern	int tcp_ackdrop_ppslim;
@@ -777,6 +778,8 @@ void	 syn_cache_timer(void *);
 void	 syn_cache_cleanup(struct tcpcb *);
 
 int	tcp_newreno(struct tcpcb *, struct tcphdr *);
+
+int	 tcp_input_checksum(int, struct mbuf *, const struct tcphdr *, int, int, int);
 #endif
 
 #endif /* _NETINET_TCP_VAR_H_ */
