@@ -78,23 +78,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - usb (Disabled): Has several compiler errors.
 
 - Improve directory structure
-- Essential Driver Support:
-	- Audio:
-	- Core:
-		- CARDBUS: to add
-		- ISAPNP: 
-			- add: com
-		- PCI:
-			- add: agp
-		- PCMCIA:
-			- add: com
-		- SDMMC: to add
-	- Disk:
-		- add: ahci & floppy
-	- Power:
-		- add: acpi
-	- USB:
-		- add: vhci, xhci
+- Essential Drivers
+	- To Support:
+		- AGP: Graphics
+		- USB: Fix compiler errors and add xhci
+		- ACPI
+		- Floppy Disks
 
 ## fs:
 
