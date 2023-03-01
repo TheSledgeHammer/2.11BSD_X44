@@ -80,13 +80,13 @@ options			QUOTA			# UFS quotas
 #options 		GATEWAY			# packet forwarding
 options 		INET			    	# IP + ICMP + TCP + UDP
 options 		INET6			    	# IPV6
-#options		FAST_IPSEC
-#options 		IPSEC				# IP security
+#options		FAST_IPSEC    # IP security with opencrypto
+options 		IPSEC				  # IP security
 #options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC)
 #options 		IPSEC_DEBUG		# debug for IP security
 #options 		MROUTING			# IP multicast routing
 options 		NS			     	# XNS
-#options 		NSIP				# XNS tunneling over IP
+#options 		NSIP				  # XNS tunneling over IP
 options 		PPP_BSDCOMP		# BSD-Compress compression support for PPP
 options 		PPP_DEFLATE		# Deflate compression support for PPP
 options 		PPP_FILTER			# Active filter support for PPP (requires bpf)
