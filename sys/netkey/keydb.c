@@ -57,8 +57,6 @@ __KERNEL_RCSID(0, "$NetBSD: keydb.c,v 1.15 2003/09/12 07:38:11 itojun Exp $");
 
 #include <net/net_osdep.h>
 
-MALLOC_DEFINE(M_SECA, "key mgmt", "security associations, key management");
-
 /*
  * secpolicy management
  */
@@ -190,10 +188,11 @@ again:
 
 	bzero(p, sizeof(*p));
 	p->id = said;
-	if (q)
+	if (q) {
 		TAILQ_INSERT_AFTER(&satailq, q, p, tailq);
-	else
+	} else {
 		TAILQ_INSERT_TAIL(&satailq, p, tailq);
+	}
 	return p;
 }
 

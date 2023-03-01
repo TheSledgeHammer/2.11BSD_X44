@@ -35,10 +35,10 @@
 
 #ifdef _KERNEL
 
-//#include <sys/mallocvar.h>
 #include <netkey/key_var.h>
 
-//MALLOC_DECLARE(M_SECA);
+#define M_SECA  93
+//MALLOC_DEFINE(M_SECA, "key mgmt", "security associations, key management");
 
 /* Security Assocciation Index */
 /* NOTE: Ensure to be same address family */
