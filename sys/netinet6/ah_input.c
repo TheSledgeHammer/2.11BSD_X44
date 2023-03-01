@@ -57,6 +57,7 @@ __KERNEL_RCSID(0, "$NetBSD: ah_input.c,v 1.44 2004/02/11 10:47:28 itojun Exp $")
 #include <machine/cpu.h>
 
 #include <netinet/in.h>
+#include <netinet/in_proto.h>
 #include <netinet/in_systm.h>
 #include <netinet/in_var.h>
 #include <netinet/ip.h>

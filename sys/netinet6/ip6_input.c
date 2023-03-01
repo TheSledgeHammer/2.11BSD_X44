@@ -99,7 +99,6 @@ __KERNEL_RCSID(0, "$NetBSD: ip6_input.c,v 1.73.2.1.4.3 2007/06/04 19:26:07 bouye
 #include <netinet/ip_icmp.h>
 #endif /* INET */
 #include <netinet/ip6.h>
-//#include <netinet6/in6.h>
 #include <netinet6/in6_var.h>
 #include <netinet6/ip6_var.h>
 #include <netinet6/in6_pcb.h>

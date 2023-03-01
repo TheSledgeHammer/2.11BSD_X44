@@ -75,9 +75,9 @@ __KERNEL_RCSID(0, "$NetBSD: ah_core.c,v 1.36 2004/03/10 03:45:04 itojun Exp $");
 #endif
 #include <net/pfkeyv2.h>
 #include <netkey/keydb.h>
-#include <sys/md5.h>
+#include <crypto/md5/md5.h>
 #define MD5_RESULTLEN	16
-#include <sys/sha1.h>
+#include <crypto/sha1/sha1.h>
 #define SHA1_RESULTLEN	20
 #include <crypto/sha2/sha2.h>
 #include <crypto/ripemd160/rmd160.h>
