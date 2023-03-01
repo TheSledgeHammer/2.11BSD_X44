@@ -136,6 +136,7 @@ struct mbuf {
 #define M_AUTHIPHDR		0x00010		/* authenticated (IPsec) */
 #define M_DECRYPTED		0x00020		/* decrypted (IPsec) */
 #define M_LOOP		    0x00040		/* received on loopback */
+#define M_AUTHIPDGM         0x0080              /* data origin authentication */
 #define	M_BCAST		    0x00100		/* send/received as link-level broadcast */
 #define	M_MCAST		    0x00200		/* send/received as link-level multicast */
 #define	M_CANFASTFWD	0x00400		/* used by filters to indicate packet can be fast-forwarded */
