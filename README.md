@@ -60,7 +60,7 @@
 	- PF: Complete
 	- IPSEC_FAST (aka netipsec folder): WIP
 	- NPF: To Port
-	- IPFILTER: Depreated (Planned for removal)
+	- IPFILTER: Deprecated (Planned for removal)
 - Filesystem Updates:
   - UFS/FFS/LFS:
     - LFS1/LFS2: (Work in Progress: See TODO.md for more)
