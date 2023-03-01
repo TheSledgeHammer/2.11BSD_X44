@@ -55,7 +55,12 @@
   - Bug Testing
 - Networking:
   - Network: Complete
-  - Firewall/ Packet Filter: NPF, PF & IPFilter (Work in Progress)
+  - Firewall/ Packet Filter:
+  	- IPSEC: Complete
+	- PF: Complete
+	- IPSEC_FAST (aka netipsec folder): WIP
+	- NPF: To Port
+	- IPFILTER: Depreated (Planned for removal)
 - Filesystem Updates:
   - UFS/FFS/LFS:
     - LFS1/LFS2: (Work in Progress: See TODO.md for more)
@@ -128,7 +133,7 @@ Cross-Compiler Compatability Table:
 |  CLANG  | Partial *** |  i386  | No | No | 
 |  PCC  | No   |  i386  | No | No | 
 
-** GCC: No Netipsec, IPFilter and/ or NPF
+** GCC: No netipsec and NPF
 
 *** Clang: Library needs updating and fixing along with the relevent toolchain components.
 
