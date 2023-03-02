@@ -37,9 +37,6 @@
 
 #include <netkey/key_var.h>
 
-#define M_SECA  93
-//MALLOC_DEFINE(M_SECA, "key mgmt", "security associations, key management");
-
 /* Security Assocciation Index */
 /* NOTE: Ensure to be same address family */
 struct secasindex {
