@@ -39,7 +39,6 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 
 #include "opt_inet.h"
 #include "opt_ipsec.h"
-#include "fs_kernfs.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -100,7 +99,7 @@ __KERNEL_RCSID(0, "$NetBSD: key.c,v 1.113.2.1 2004/05/11 14:54:52 tron Exp $");
 
 #include "rnd.h"
 #if NRND > 0
-#include <sys/rnd.h>
+#include <dev/misc/rnd/rnd.h>
 #endif
 
 #include <net/net_osdep.h>
@@ -7776,7 +7775,13 @@ key_alloc_mbuf(l)
 }
 
 static int
-sysctl_net_key_dumpsa(SYSCTLFN_ARGS)
+sysctl_net_key_dumpsa(name, namelen, oldp, oldlenp, newp, newlen)
+        int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	struct mbuf *m, *n;
 	int err2 = 0;
@@ -7822,7 +7827,12 @@ sysctl_net_key_dumpsa(SYSCTLFN_ARGS)
 }
 
 static int
-sysctl_net_key_dumpsp(SYSCTLFN_ARGS)
+sysctl_net_key_dumpsp(namelen, oldp, oldlenp, newp, newlen)
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
 	struct mbuf *m, *n;
 	int err2 = 0;
@@ -7867,83 +7877,58 @@ sysctl_net_key_dumpsp(SYSCTLFN_ARGS)
 	return (error);
 }
 
-SYSCTL_SETUP(sysctl_net_key_setup, "sysctl net.key subtree setup")
+int
+key_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
-
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "net", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_NODE, "key", NULL,
-		       NULL, 0, NULL, 0,
-		       CTL_NET, PF_KEY, CTL_EOL);
-
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "debug", NULL,
-		       NULL, 0, &key_debug_level, 0,
-		       CTL_NET, PF_KEY, KEYCTL_DEBUG_LEVEL, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "spi_try", NULL,
-		       NULL, 0, &key_spi_trycnt, 0,
-		       CTL_NET, PF_KEY, KEYCTL_SPI_TRY, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "spi_min_value", NULL,
-		       NULL, 0, &key_spi_minval, 0,
-		       CTL_NET, PF_KEY, KEYCTL_SPI_MIN_VALUE, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "spi_max_value", NULL,
-		       NULL, 0, &key_spi_maxval, 0,
-		       CTL_NET, PF_KEY, KEYCTL_SPI_MAX_VALUE, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "random_int", NULL,
-		       NULL, 0, &key_int_random, 0,
-		       CTL_NET, PF_KEY, KEYCTL_RANDOM_INT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "larval_lifetime", NULL,
-		       NULL, 0, &key_larval_lifetime, 0,
-		       CTL_NET, PF_KEY, KEYCTL_LARVAL_LIFETIME, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "blockacq_count", NULL,
-		       NULL, 0, &key_blockacq_count, 0,
-		       CTL_NET, PF_KEY, KEYCTL_BLOCKACQ_COUNT, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "blockacq_lifetime", NULL,
-		       NULL, 0, &key_blockacq_lifetime, 0,
-		       CTL_NET, PF_KEY, KEYCTL_BLOCKACQ_LIFETIME, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "esp_keymin", NULL,
-		       NULL, 0, &ipsec_esp_keymin, 0,
-		       CTL_NET, PF_KEY, KEYCTL_ESP_KEYMIN, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "esp_auth", NULL,
-		       NULL, 0, &ipsec_esp_auth, 0,
-		       CTL_NET, PF_KEY, KEYCTL_ESP_AUTH, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT|CTLFLAG_READWRITE,
-		       CTLTYPE_INT, "ah_keymin", NULL,
-		       NULL, 0, &ipsec_ah_keymin, 0,
-		       CTL_NET, PF_KEY, KEYCTL_AH_KEYMIN, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_STRUCT, "dumpsa", NULL,
-		       sysctl_net_key_dumpsa, 0, NULL, 0,
-		       CTL_NET, PF_KEY, KEYCTL_DUMPSA, CTL_EOL);
-	sysctl_createv(clog, 0, NULL, NULL,
-		       CTLFLAG_PERMANENT,
-		       CTLTYPE_STRUCT, "dumpsp", NULL,
-		       sysctl_net_key_dumpsp, 0, NULL, 0,
-		       CTL_NET, PF_KEY, KEYCTL_DUMPSP, CTL_EOL);
+	if (name[0] >= KEYCTL_MAXID)
+		return EOPNOTSUPP;
+	switch (name[0]) {
+	case KEYCTL_DEBUG_LEVEL:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_debug_level);
+	case KEYCTL_SPI_TRY:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_spi_trycnt);
+	case KEYCTL_SPI_MIN_VALUE:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_spi_minval);
+	case KEYCTL_SPI_MAX_VALUE:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_spi_maxval);
+	case KEYCTL_RANDOM_INT:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_int_random);
+	case KEYCTL_LARVAL_LIFETIME:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_larval_lifetime);
+	case KEYCTL_BLOCKACQ_COUNT:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_blockacq_count);
+	case KEYCTL_BLOCKACQ_LIFETIME:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &key_blockacq_lifetime);
+	case KEYCTL_ESP_KEYMIN:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &ipsec_esp_keymin);
+	case KEYCTL_ESP_AUTH:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &ipsec_esp_auth);
+	case KEYCTL_AH_KEYMIN:
+		return sysctl_int(oldp, oldlenp, newp, newlen,
+		    &ipsec_ah_keymin);
+	case KEYCTL_DUMPSA:
+	        return sysctl_net_key_dumpsa(name, namelen, oldp, oldlenp, newp, newlen);
+	
+	case KEYCTL_DUMPSP:
+	        return sysctl_net_key_dumpsp(namelen, oldp, oldlenp, newp, newlen);
+	default:
+		return EOPNOTSUPP;
+	}
+	/* NOTREACHED */
 }
