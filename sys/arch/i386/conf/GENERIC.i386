@@ -82,7 +82,7 @@ options 		INET			    	# IP + ICMP + TCP + UDP
 options 		INET6			    	# IPV6
 #options		FAST_IPSEC    # IP security with opencrypto
 options 		IPSEC				  # IP security
-#options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC)
+options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC)
 #options 		IPSEC_DEBUG		# debug for IP security
 #options 		MROUTING			# IP multicast routing
 options 		NS			     	# XNS
