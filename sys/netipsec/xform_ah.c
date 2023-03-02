@@ -80,7 +80,7 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ah.c,v 1.6.2.1.4.1 2007/12/01 17:32:28 bouyer 
 #include <netipsec/key_debug.h>
 #include <netipsec/ipsec_osdep.h>
 
-#include <opencrypto/cryptodev.h>
+#include <crypto/opencrypto/cryptodev.h>
 
 /*
  * Return header size in bytes.  The old protocol did not support

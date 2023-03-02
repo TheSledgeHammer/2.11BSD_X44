@@ -86,13 +86,13 @@
 #endif /* __FreeBSD__ */
 
 #ifdef	__NetBSD__
-#include <sys/rnd.h>
+#include <dev/misc/rnd/rnd.h>
 static __inline u_int read_random(void *p, u_int len);
 
 static __inline u_int
 read_random(void *bufp, u_int len) 
 { 
-	return rnd_extract_data(bufp, len, RND_EXTRACT_ANY /*XXX FIXME */);
+	return rnd_extract_data(bufp, len);
 }
 #endif	/* __NetBSD__ */
 
@@ -138,10 +138,11 @@ static __inline struct mbuf *
 m_getcl(int how, short type, int flags)
 {
 	struct mbuf *mp;
-	if (flags & M_PKTHDR) 
+	if (flags & M_PKTHDR) {
 		MGETHDR(mp, how, type);
-	else
+	} else {
 		MGET(mp, how,  type);
+	}
 	if (mp == NULL)
 		return NULL;
 

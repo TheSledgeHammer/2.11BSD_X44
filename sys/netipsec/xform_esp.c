@@ -52,7 +52,6 @@ __KERNEL_RCSID(0, "$NetBSD: xform_esp.c,v 1.5.18.1 2006/03/30 15:31:10 riz Exp $
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/kernel.h>
-/*#include <sys/random.h>*/
 #include <sys/sysctl.h>
 
 #include <net/if.h>
@@ -84,8 +83,8 @@ __KERNEL_RCSID(0, "$NetBSD: xform_esp.c,v 1.5.18.1 2006/03/30 15:31:10 riz Exp $
 
 #include <netipsec/ipsec_osdep.h>
 
-#include <opencrypto/cryptodev.h>
-#include <opencrypto/xform.h>
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/xform.h>
 
 int	esp_enable = 1;
 struct	espstat espstat;

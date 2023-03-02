@@ -44,7 +44,7 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
-#include <opencrypto/xform.h>
+#include <crypto/opencrypto/xform.h>
 
 #define	AH_HMAC_HASHLEN		12	/* 96 bits of authenticator */
 #define	AH_HMAC_INITIAL_RPL	1	/* replay counter initial value */

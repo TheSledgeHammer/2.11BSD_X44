@@ -68,9 +68,9 @@ __KERNEL_RCSID(0, "$NetBSD: xform_ipcomp.c,v 1.4 2003/10/06 22:05:15 tls Exp $")
 
 #include <netipsec/ipsec_osdep.h>
 
-#include <opencrypto/cryptodev.h>
-#include <opencrypto/deflate.h>
-#include <opencrypto/xform.h>
+#include <crypto/opencrypto/cryptodev.h>
+#include <crypto/opencrypto/deflate.h>
+#include <crypto/opencrypto/xform.h>
 
 int	ipcomp_enable = 0;
 struct	ipcompstat ipcompstat;
