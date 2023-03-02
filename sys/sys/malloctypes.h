@@ -135,7 +135,8 @@
 #define M_IP6NDP		88	/* IPv6 Neighbour Discovery */
 #define M_SPIDPQ        89  /* SP packet queue entry */
 #define	M_PF			90	/* Network Packet Filter (PF) */
-#define	M_TEMP			91	/* misc temporary data buffers */
+#define M_SECA                  91      /* security associations, key management */
+#define	M_TEMP			92	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
@@ -230,6 +231,7 @@
 	"NDP",			/* 88 M_IP6NDP */		\
 	"SP queue ent", /* 89 M_SPIDPQ */       \
 	"PF",			/* 90 M_PF */ 			\
+	"key mgmt",            /* 91 M_SECA */                 \
 	"temp",			/* 91 M_TEMP */ 		\
 }
 
