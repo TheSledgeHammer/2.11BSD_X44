@@ -120,7 +120,7 @@ extern const struct enc_xform *esp_algorithm_lookup(int alg);
 extern size_t esp_hdrsiz(struct secasvar *sav);
 
 /* XF_COMP */
-extern struct comp_algo *ipcomp_algorithm_lookup(int alg);
+extern const struct comp_algo *ipcomp_algorithm_lookup(int alg);
 
 #endif /* _KERNEL */
 #endif /* _NETIPSEC_XFORM_H_ */

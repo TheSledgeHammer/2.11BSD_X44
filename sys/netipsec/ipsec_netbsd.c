@@ -333,7 +333,6 @@ sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen)
 	case IPSECCTL_DEF_ESP_NETLEV:
 	case IPSECCTL_DEF_AH_TRANSLEV:
 	case IPSECCTL_DEF_AH_NETLEV:
-	case IPSECCTL_DEF_AH_NETLEV:
 		if (newp != NULL && newlen == sizeof(int)) {
 			switch (*(int *)newp) {
 			case IPSEC_LEVEL_USE:
@@ -362,20 +361,6 @@ sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen)
 	}
 
 	return (0);
-}
-
-int
-sysctl_net_inet_fast_ipsec_setup(name, namelen, oldp, oldlenp, newp, newlen)
-	int *name;
-	u_int namelen;
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-{
-	int ipproto_ipsec;
-
-	return (sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen));
 }
 
 #ifdef notyet

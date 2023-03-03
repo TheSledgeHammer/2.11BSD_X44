@@ -106,9 +106,5 @@ extern void key_sa_recordxfer(struct secasvar *, struct mbuf *);
 extern void key_sa_routechange(struct sockaddr *);
 extern void key_sa_stir_iv(struct secasvar *);
 
-#ifdef MALLOC_DECLARE
-MALLOC_DECLARE(M_SECA);
-#endif /* MALLOC_DECLARE */
-
 #endif /* defined(_KERNEL) */
 #endif /* _NETIPSEC_KEY_H_ */

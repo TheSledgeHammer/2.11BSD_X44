@@ -300,7 +300,7 @@ do { \
 	}								\
 } while (0)
 
-MALLOC_DEFINE(M_SECA, "key mgmt", "security associations, key management");
+//MALLOC_DEFINE(M_SECA, "key mgmt", "security associations, key management");
 
 #if 1
 #define KMALLOC(p, t, n)                                                     \
@@ -520,7 +520,6 @@ struct callout key_timehandler_ch;
 		("SP refcnt underflow at %s:%u", __FILE__, __LINE__));	\
 	(p)->refcnt--;							\
 } while (0)
-
 
 static __inline void
 key_sp_dead(struct secpolicy *sp)
@@ -2519,15 +2518,15 @@ key_spddump(so, m0, mhp)
 	 * list of records, then   appends the entire resulting
 	 * list to the requesting socket.
 	 */
-	ok = sbappendaddrchain(&so->so_rcv, (struct sockaddr *)&key_src,
-	        n, SB_PRIO_ONESHOT_OVERFLOW);
+/*
+	ok = sbappendaddrchain(&so->so_rcv, (struct sockaddr *)&key_src, n, SB_PRIO_ONESHOT_OVERFLOW);
 
 	if (!ok) {
 		pfkeystat.in_nomem++;
 		m_freem(n);
 		return key_senderror(so, m0, ENOBUFS);
 	}
-
+*/
 	m_freem(m0);
 	return error;
 }
@@ -5576,7 +5575,7 @@ static struct mbuf *
 key_getcomb_esp()
 {
 	struct sadb_comb *comb;
-	struct enc_xform *algo;
+	const struct enc_xform *algo;
 	struct mbuf *result = NULL, *m, *n;
 	int encmin;
 	int i, off, o;
@@ -5680,7 +5679,7 @@ static struct mbuf *
 key_getcomb_ah()
 {
 	struct sadb_comb *comb;
-	struct auth_hash *algo;
+	const struct auth_hash *algo;
 	struct mbuf *m;
 	u_int16_t minkeysize, maxkeysize;
 	int i;
@@ -5735,7 +5734,7 @@ static struct mbuf *
 key_getcomb_ipcomp()
 {
 	struct sadb_comb *comb;
-	struct comp_algo *algo;
+	const struct comp_algo *algo;
 	struct mbuf *m;
 	int i;
 	const int l = PFKEY_ALIGN8(sizeof(struct sadb_comb));
@@ -6335,7 +6334,7 @@ key_register(so, m, mhp)
 		off += PFKEY_ALIGN8(sizeof(*sup));
 
 		for (i = 1; i <= SADB_AALG_MAX; i++) {
-			struct auth_hash *aalgo;
+			const struct auth_hash *aalgo;
 			u_int16_t minkeysize, maxkeysize;
 
 			aalgo = ah_algorithm_lookup(i);
@@ -6359,7 +6358,7 @@ key_register(so, m, mhp)
 		off += PFKEY_ALIGN8(sizeof(*sup));
 
 		for (i = 1; i <= SADB_EALG_MAX; i++) {
-			struct enc_xform *ealgo;
+			const struct enc_xform *ealgo;
 
 			ealgo = esp_algorithm_lookup(i);
 			if (!ealgo)
@@ -6790,15 +6789,15 @@ key_dump(so, m0, mhp)
 	 * list of records, then   appends the entire resulting
 	 * list to the requesting socket.
 	 */
-	ok = sbappendaddrchain(&so->so_rcv, (struct sockaddr *)&key_src,
-	        n, SB_PRIO_ONESHOT_OVERFLOW);
+	 /*
+	ok = sbappendaddrchain(&so->so_rcv, (struct sockaddr *)&key_src, n, SB_PRIO_ONESHOT_OVERFLOW);
 
 	if (!ok) {
 		pfkeystat.in_nomem++;
 		m_freem(n);
 		return key_senderror(so, m0, ENOBUFS);
 	}
-
+*/
 	m_freem(m0);
 	return 0;
 }
@@ -6858,8 +6857,8 @@ key_promisc(so, m, mhp)
 	}
 }
 
-static int (*key_typesw[]) __P((struct socket *, struct mbuf *,
-		const struct sadb_msghdr *)) = {
+static int (*key_typesw[])(struct socket *, struct mbuf *,
+		const struct sadb_msghdr *) = {
 	NULL,		/* SADB_RESERVED */
 	key_getspi,	/* SADB_GETSPI */
 	key_update,	/* SADB_UPDATE */
@@ -7725,7 +7724,7 @@ key_setspddump(int *errorp, pid_t pid)
 	*errorp = 0;
 	return (m);
 }
-
+#ifdef notyet
 static int
 sysctl_net_key_dumpsa(SYSCTLFN_ARGS)
 {
@@ -7859,7 +7858,7 @@ keyv2_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 }
 
 
-#ifdef notyet
+
 
 SYSCTL_SETUP(sysctl_net_keyv2_setup, "sysctl net.keyv2 subtree setup")
 {
