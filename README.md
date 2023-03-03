@@ -133,7 +133,7 @@ Cross-Compiler Compatability Table:
 |  CLANG  | Partial *** |  i386  | No | No | 
 |  PCC  | No   |  i386  | No | No | 
 
-** GCC: No netipsec and NPF
+** GCC: No NPF
 
 *** Clang: Library needs updating and fixing along with the relevent toolchain components.
 
