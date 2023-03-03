@@ -2079,7 +2079,7 @@ inet_ntoa4(struct in_addr ina)
 
 /* Return a printable string for the address. */
 char *
-ipsec_address(union sockaddr_union* sa)
+ipsec_address(union sockaddr_union *sa)
 {
 	switch (sa->sa.sa_family) {
 #if INET
@@ -2089,7 +2089,7 @@ ipsec_address(union sockaddr_union* sa)
 
 #if INET6
 	case AF_INET6:
-		return ip6_sprintf(&sa->sin6.sin6_addr);
+		return (char *)ip6_sprintf(&sa->sin6.sin6_addr);
 #endif /* INET6 */
 
 	default:

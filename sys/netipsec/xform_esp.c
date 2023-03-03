@@ -106,7 +106,7 @@ static int esp_output_cb(struct cryptop *crp);
  * NB: this is public for use by the PF_KEY support.
  * NB: if you add support here; be sure to add code to esp_attach below!
  */
-struct enc_xform *
+const struct enc_xform *
 esp_algorithm_lookup(int alg)
 {
 	if (alg >= ESP_ALG_MAX)
@@ -167,7 +167,7 @@ esp_hdrsiz(struct secasvar *sav)
 static int
 esp_init(struct secasvar *sav, struct xformsw *xsp)
 {
-	struct enc_xform *txform;
+	const struct enc_xform *txform;
 	struct cryptoini cria, crie;
 	int keylen;
 	int error;
@@ -272,8 +272,8 @@ esp_zeroize(struct secasvar *sav)
 static int
 esp_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 {
-	struct auth_hash *esph;
-	struct enc_xform *espx;
+	const struct auth_hash *esph;
+	const struct enc_xform *espx;
 	struct tdb_ident *tdbi;
 	struct tdb_crypto *tc;
 	int plen, alen, hlen;
@@ -461,8 +461,8 @@ esp_input_cb(struct cryptop *crp)
 	int s, hlen, skip, protoff, error;
 	struct mbuf *m;
 	struct cryptodesc *crd;
-	struct auth_hash *esph;
-	struct enc_xform *espx;
+	const struct auth_hash *esph;
+	const struct enc_xform *espx;
 	struct tdb_crypto *tc;
 	struct m_tag *mtag;
 	struct secasvar *sav;
@@ -665,8 +665,8 @@ esp_output(
 	int protoff
 )
 {
-	struct enc_xform *espx;
-	struct auth_hash *esph;
+	const struct enc_xform *espx;
+	const struct auth_hash *esph;
 	int hlen, rlen, plen, padding, blks, alen, i, roff;
 	struct mbuf *mo = (struct mbuf *) NULL;
 	struct tdb_crypto *tc;

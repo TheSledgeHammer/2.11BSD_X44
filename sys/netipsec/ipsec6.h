@@ -65,12 +65,11 @@ struct in6pcb;
 #define	out_polvio		ips_out_polvio
 #define	key_freesp(_x)		KEY_FREESP(&_x)
 
-extern int ipsec6_delete_pcbpolicy __P((struct in6pcb *));
-extern int ipsec6_set_policy __P((struct in6pcb *inp, int optname,
-	caddr_t request, size_t len, int priv));
-extern int ipsec6_get_policy
-	__P((struct in6pcb *inp, caddr_t request, size_t len, struct mbuf **mp));
-extern int ipsec6_in_reject __P((struct mbuf *, struct in6pcb *));
+extern int ipsec6_delete_pcbpolicy(struct in6pcb *);
+extern int ipsec6_set_policy(struct in6pcb *inp, int optname,
+	caddr_t request, size_t len, int priv);
+extern int ipsec6_get_policy(struct in6pcb *inp, caddr_t request, size_t len, struct mbuf **mp);
+extern int ipsec6_in_reject(struct mbuf *, struct in6pcb *);
 /*
  * KAME ipsec6_in_reject_so(struct mbuf*, struct so)  compatibility shim
  */
@@ -79,29 +78,26 @@ extern int ipsec6_in_reject __P((struct mbuf *, struct in6pcb *));
 
 struct tcp6cb;
 
-extern size_t ipsec6_hdrsiz __P((struct mbuf *, u_int, struct in6pcb *));
-extern size_t ipsec6_hdrsiz_tcp __P((struct tcpcb*));
+extern size_t ipsec6_hdrsiz(struct mbuf *, u_int, struct in6pcb *);
+extern size_t ipsec6_hdrsiz_tcp(struct tcpcb*);
 
 struct ip6_hdr;
-extern const char *ipsec6_logpacketstr __P((struct ip6_hdr *, u_int32_t));
+extern const char *ipsec6_logpacketstr(struct ip6_hdr *, u_int32_t);
 
 #ifdef __NetBSD__
 /* NetBSD protosw ctlin entrypoint */
-extern void esp6_ctlinput __P((int, struct sockaddr *, void *));
-extern void ah6_ctlinput __P((int, struct sockaddr *, void *));
+extern void esp6_ctlinput(int, struct sockaddr *, void *);
+extern void ah6_ctlinput(int, struct sockaddr *, void *);
 #endif /* __NetBSD__ */
 
 struct m_tag;
 extern int ipsec6_common_input(struct mbuf **mp, int *offp, int proto);
-extern int ipsec6_common_input_cb(struct mbuf *m, struct secasvar *sav,
-			int skip, int protoff, struct m_tag *mt);
+extern int ipsec6_common_input_cb(struct mbuf *m, struct secasvar *sav, int skip, int protoff, struct m_tag *mt);
 extern void esp6_ctlinput(int, struct sockaddr *, void *);
 
 struct ipsec_output_state;
-extern int ipsec6_output_trans __P((struct ipsec_output_state *, u_char *,
-	struct mbuf *, struct secpolicy *, int, int *));
-extern int ipsec6_output_tunnel __P((struct ipsec_output_state *,
-	struct secpolicy *, int));
+extern int ipsec6_output_trans(struct ipsec_output_state *, u_char *, struct mbuf *, struct secpolicy *, int, int *);
+extern int ipsec6_output_tunnel(struct ipsec_output_state *, struct secpolicy *, int);
 #endif /*_KERNEL*/
 
 #endif /*_NETIPSEC_IPSEC6_H_*/

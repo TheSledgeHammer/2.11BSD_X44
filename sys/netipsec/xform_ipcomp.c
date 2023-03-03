@@ -86,7 +86,7 @@ SYSCTL_STRUCT(_net_inet_ipcomp, IPSECCTL_STATS,
 static int ipcomp_input_cb(struct cryptop *crp);
 static int ipcomp_output_cb(struct cryptop *crp);
 
-struct comp_algo *
+const struct comp_algo *
 ipcomp_algorithm_lookup(int alg)
 {
 	if (alg >= IPCOMP_ALG_MAX)
@@ -104,7 +104,7 @@ ipcomp_algorithm_lookup(int alg)
 static int
 ipcomp_init(struct secasvar *sav, struct xformsw *xsp)
 {
-	struct comp_algo *tcomp;
+	const struct comp_algo *tcomp;
 	struct cryptoini cric;
 
 	/* NB: algorithm really comes in alg_enc and not alg_comp! */
@@ -342,7 +342,7 @@ ipcomp_output(
 )
 {
 	struct secasvar *sav;
-	struct comp_algo *ipcompx;
+	const struct comp_algo *ipcompx;
 	int error, ralen, hlen, maxpacketsize, roff;
 	u_int8_t prot;
 	struct cryptodesc *crdc;

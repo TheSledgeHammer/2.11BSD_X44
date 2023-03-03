@@ -121,9 +121,9 @@ struct secasvar {
 	 *     to distinguish this code from the mainline KAME code.
 	 */
 	struct xformsw *tdb_xform;	/* transform */
-	struct enc_xform *tdb_encalgxform;	/* encoding algorithm */
-	struct auth_hash *tdb_authalgxform;	/* authentication algorithm */
-	struct comp_algo *tdb_compalgxform;	/* compression algorithm */
+	const struct enc_xform *tdb_encalgxform;	/* encoding algorithm */
+	const struct auth_hash *tdb_authalgxform;	/* authentication algorithm */
+	const struct comp_algo *tdb_compalgxform;	/* compression algorithm */
 	u_int64_t tdb_cryptoid;		/* crypto session id */
 };
 
@@ -163,21 +163,21 @@ struct secacq {
 #define SADB_KILL_INTERVAL	600	/* six seconds */
 
 /* secpolicy */
-extern struct secpolicy *keydb_newsecpolicy __P((void));
-extern void keydb_delsecpolicy __P((struct secpolicy *));
+extern struct secpolicy *keydb_newsecpolicy(void);
+extern void keydb_delsecpolicy(struct secpolicy *);
 /* secashead */
-extern struct secashead *keydb_newsecashead __P((void));
-extern void keydb_delsecashead __P((struct secashead *));
+extern struct secashead *keydb_newsecashead(void);
+extern void keydb_delsecashead(struct secashead *);
 /* secasvar */
-extern struct secasvar *keydb_newsecasvar __P((void));
-extern void keydb_refsecasvar __P((struct secasvar *));
-extern void keydb_freesecasvar __P((struct secasvar *));
+extern struct secasvar *keydb_newsecasvar(void);
+extern void keydb_refsecasvar(struct secasvar *);
+extern void keydb_freesecasvar(struct secasvar *);
 /* secreplay */
-extern struct secreplay *keydb_newsecreplay __P((size_t));
-extern void keydb_delsecreplay __P((struct secreplay *));
+extern struct secreplay *keydb_newsecreplay(size_t);
+extern void keydb_delsecreplay(struct secreplay *);
 /* secreg */
-extern struct secreg *keydb_newsecreg __P((void));
-extern void keydb_delsecreg __P((struct secreg *));
+extern struct secreg *keydb_newsecreg(void);
+extern void keydb_delsecreg(struct secreg *);
 
 #endif /* _KERNEL */
 

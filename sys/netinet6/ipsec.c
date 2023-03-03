@@ -3617,8 +3617,7 @@ ipsec_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	switch (name[0]) {
 
 	case IPSECCTL_STATS:
-		return sysctl_struct(oldp, oldlenp, newp, newlen,
-				     &ipsecstat, sizeof(ipsecstat));
+		return sysctl_struct(oldp, oldlenp, newp, newlen, &ipsecstat, sizeof(ipsecstat));
 
 	case IPSECCTL_DEF_POLICY:
 		if (newp != NULL && newlen == sizeof(int)) {

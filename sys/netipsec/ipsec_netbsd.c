@@ -318,44 +318,67 @@ esp6_ctlinput(cmd, sa, d)
 }
 #endif /* INET6 */
 
+/* same as sysctl_ipsec from netinet6/ipsec.c ? */
 static int
-sysctl_fast_ipsec(SYSCTLFN_ARGS)
+sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
 {
-	int error, t;
-	struct sysctlnode node;
-
-	node = *rnode;
-	t = *(int*)rnode->sysctl_data;
-	node.sysctl_data = &t;
-	error = sysctl_lookup(SYSCTLFN_CALL(&node));
-	if (error || newp == NULL)
-		return (error);
-
-	switch (rnode->sysctl_num) {
+	switch (name[0]) {
 	case IPSECCTL_DEF_ESP_TRANSLEV:
 	case IPSECCTL_DEF_ESP_NETLEV:
 	case IPSECCTL_DEF_AH_TRANSLEV:
 	case IPSECCTL_DEF_AH_NETLEV:
-		if (t != IPSEC_LEVEL_USE && 
-		    t != IPSEC_LEVEL_REQUIRE)
-			return (EINVAL);
+	case IPSECCTL_DEF_AH_NETLEV:
+		if (newp != NULL && newlen == sizeof(int)) {
+			switch (*(int *)newp) {
+			case IPSEC_LEVEL_USE:
+			case IPSEC_LEVEL_REQUIRE:
+				break;
+			default:
+				return EINVAL;
+			}
+		}
 		ipsec_invalpcbcacheall();
 		break;
-      	case IPSECCTL_DEF_POLICY:
-		if (t != IPSEC_POLICY_DISCARD &&
-		    t != IPSEC_POLICY_NONE)
-			return (EINVAL);
+	case IPSECCTL_DEF_POLICY:
+		if (newp != NULL && newlen == sizeof(int)) {
+			switch (*(int *)newp) {
+			case IPSEC_POLICY_DISCARD:
+			case IPSEC_POLICY_NONE:
+				break;
+			default:
+				return EINVAL;
+			}
+		}
 		ipsec_invalpcbcacheall();
 		break;
 	default:
 		return (EINVAL);
 	}
 
-	*(int*)rnode->sysctl_data = t;
-
 	return (0);
 }
 
+int
+sysctl_net_inet_fast_ipsec_setup(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	int ipproto_ipsec;
+
+	return (sysctl_fast_ipsec(name, namelen, oldp, oldlenp, newp, newlen));
+}
+
+#ifdef notyet
 /* XXX will need a different oid at parent */
 SYSCTL_SETUP(sysctl_net_inet_fast_ipsec_setup, "sysctl net.inet.ipsec subtree setup")
 {
@@ -549,3 +572,4 @@ SYSCTL_SETUP(sysctl_net_inet_fast_ipsec_setup, "sysctl net.inet.ipsec subtree se
 		       CTL_NET, PF_INET, ipproto_ipsec,
 		       CTL_CREATE, CTL_EOL);
 }
+#endif

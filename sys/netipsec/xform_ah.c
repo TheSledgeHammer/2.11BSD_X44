@@ -120,7 +120,7 @@ static int ah_output_cb(struct cryptop*);
 /*
  * NB: this is public for use by the PF_KEY support.
  */
-struct auth_hash *
+const struct auth_hash *
 ah_algorithm_lookup(int alg)
 {
 	if (alg >= AH_ALG_MAX)
@@ -173,7 +173,7 @@ ah_hdrsiz(struct secasvar *sav)
 int
 ah_init0(struct secasvar *sav, struct xformsw *xsp, struct cryptoini *cria)
 {
-	struct auth_hash *thash;
+	const struct auth_hash *thash;
 	int keylen;
 
 	thash = ah_algorithm_lookup(sav->alg_auth);
@@ -589,7 +589,7 @@ ah_massage_headers(struct mbuf **m0, int proto, int skip, int alg, int out)
 static int
 ah_input(struct mbuf *m, struct secasvar *sav, int skip, int protoff)
 {
-	struct auth_hash *ahx;
+	const struct auth_hash *ahx;
 	struct tdb_ident *tdbi;
 	struct tdb_crypto *tc;
 	struct m_tag *mtag;
@@ -785,7 +785,7 @@ ah_input_cb(struct cryptop *crp)
 	unsigned char calc[AH_ALEN_MAX];
 	struct mbuf *m;
 	struct cryptodesc *crd;
-	struct auth_hash *ahx;
+	const struct auth_hash *ahx;
 	struct tdb_crypto *tc;
 	struct m_tag *mtag;
 	struct secasvar *sav;
@@ -820,7 +820,7 @@ ah_input_cb(struct cryptop *crp)
 		("ah_input_cb: unexpected protocol family %u",
 		 saidx->dst.sa.sa_family));
 
-	ahx = (struct auth_hash *) sav->tdb_authalgxform;
+	ahx = (const struct auth_hash *) sav->tdb_authalgxform;
 
 	/* Check for crypto errors. */
 	if (crp->crp_etype) {
@@ -962,7 +962,7 @@ ah_output(
 	int protoff)
 {
 	struct secasvar *sav;
-	struct auth_hash *ahx;
+	const struct auth_hash *ahx;
 	struct cryptodesc *crda;
 	struct tdb_crypto *tc;
 	struct mbuf *mi;

@@ -7839,6 +7839,28 @@ sysctl_net_key_dumpsp(SYSCTLFN_ARGS)
 # define FAST_IPSEC_PFKEY_NAME "key"
 #endif
 
+/* same as key_sysctl from netkey/key.c ? */
+int
+keyv2_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	if (name[0] >= KEYCTL_MAXID) {
+		return EOPNOTSUPP;
+	}
+	switch (name[0]) {
+	default:
+		return EOPNOTSUPP;
+	}
+}
+
+
+#ifdef notyet
+
 SYSCTL_SETUP(sysctl_net_keyv2_setup, "sysctl net.keyv2 subtree setup")
 {
 
@@ -7947,3 +7969,4 @@ SYSCTL_SETUP(sysctl_net_key_compat_setup, "sysctl net.key subtree setup for FAST
 		       sysctl_net_key_dumpsp, 0, NULL, 0,
 		       CTL_NET, PF_KEY, KEYCTL_DUMPSP, CTL_EOL);
 }
+#endif

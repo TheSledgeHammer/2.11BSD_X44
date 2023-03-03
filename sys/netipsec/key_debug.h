@@ -36,23 +36,23 @@
 
 #ifdef _KERNEL
 /* debug flags */
-#define KEYDEBUG_STAMP		0x00000001 /* path */
-#define KEYDEBUG_DATA		0x00000002 /* data */
-#define KEYDEBUG_DUMP		0x00000004 /* dump */
+#define KEYDEBUG_STAMP			0x00000001 /* path */
+#define KEYDEBUG_DATA			0x00000002 /* data */
+#define KEYDEBUG_DUMP			0x00000004 /* dump */
 
-#define KEYDEBUG_KEY		0x00000010 /* key processing */
-#define KEYDEBUG_ALG		0x00000020 /* ciph & auth algorithm */
-#define KEYDEBUG_IPSEC		0x00000040 /* ipsec processing */
+#define KEYDEBUG_KEY			0x00000010 /* key processing */
+#define KEYDEBUG_ALG			0x00000020 /* ciph & auth algorithm */
+#define KEYDEBUG_IPSEC			0x00000040 /* ipsec processing */
 
-#define KEYDEBUG_KEY_STAMP	(KEYDEBUG_KEY | KEYDEBUG_STAMP)
-#define KEYDEBUG_KEY_DATA	(KEYDEBUG_KEY | KEYDEBUG_DATA)
-#define KEYDEBUG_KEY_DUMP	(KEYDEBUG_KEY | KEYDEBUG_DUMP)
-#define KEYDEBUG_ALG_STAMP	(KEYDEBUG_ALG | KEYDEBUG_STAMP)
-#define KEYDEBUG_ALG_DATA	(KEYDEBUG_ALG | KEYDEBUG_DATA)
-#define KEYDEBUG_ALG_DUMP	(KEYDEBUG_ALG | KEYDEBUG_DUMP)
+#define KEYDEBUG_KEY_STAMP		(KEYDEBUG_KEY | KEYDEBUG_STAMP)
+#define KEYDEBUG_KEY_DATA		(KEYDEBUG_KEY | KEYDEBUG_DATA)
+#define KEYDEBUG_KEY_DUMP		(KEYDEBUG_KEY | KEYDEBUG_DUMP)
+#define KEYDEBUG_ALG_STAMP		(KEYDEBUG_ALG | KEYDEBUG_STAMP)
+#define KEYDEBUG_ALG_DATA		(KEYDEBUG_ALG | KEYDEBUG_DATA)
+#define KEYDEBUG_ALG_DUMP		(KEYDEBUG_ALG | KEYDEBUG_DUMP)
 #define KEYDEBUG_IPSEC_STAMP	(KEYDEBUG_IPSEC | KEYDEBUG_STAMP)
-#define KEYDEBUG_IPSEC_DATA	(KEYDEBUG_IPSEC | KEYDEBUG_DATA)
-#define KEYDEBUG_IPSEC_DUMP	(KEYDEBUG_IPSEC | KEYDEBUG_DUMP)
+#define KEYDEBUG_IPSEC_DATA		(KEYDEBUG_IPSEC | KEYDEBUG_DATA)
+#define KEYDEBUG_IPSEC_DUMP		(KEYDEBUG_IPSEC | KEYDEBUG_DUMP)
 
 #define KEYDEBUG(lev,arg) \
 	do { if ((key_debug_level & (lev)) == (lev)) { arg; } } while (/*CONSTCOND*/ 0)
@@ -62,8 +62,8 @@ extern u_int32_t key_debug_level;
 
 struct sadb_msg;
 struct sadb_ext;
-extern void kdebug_sadb __P((struct sadb_msg *));
-extern void kdebug_sadb_x_policy __P((struct sadb_ext *));
+extern void kdebug_sadb(struct sadb_msg *);
+extern void kdebug_sadb_x_policy(struct sadb_ext *);
 
 #ifdef _KERNEL
 struct secpolicy;
@@ -72,18 +72,18 @@ struct secasindex;
 struct secasvar;
 struct secreplay;
 struct mbuf;
-extern void kdebug_secpolicy __P((struct secpolicy *));
-extern void kdebug_secpolicyindex __P((struct secpolicyindex *));
-extern void kdebug_secasindex __P((struct secasindex *));
-extern void kdebug_secasv __P((struct secasvar *));
-extern void kdebug_mbufhdr __P((struct mbuf *));
-extern void kdebug_mbuf __P((struct mbuf *));
+extern void kdebug_secpolicy(struct secpolicy *);
+extern void kdebug_secpolicyindex(struct secpolicyindex *);
+extern void kdebug_secasindex(struct secasindex *);
+extern void kdebug_secasv(struct secasvar *);
+extern void kdebug_mbufhdr(struct mbuf *);
+extern void kdebug_mbuf(struct mbuf *);
 #endif /*_KERNEL*/
 
 struct sockaddr;
-extern void kdebug_sockaddr __P((struct sockaddr *));
+extern void kdebug_sockaddr(struct sockaddr *);
 
-extern void ipsec_hexdump __P((caddr_t, int));
-extern void ipsec_bindump __P((caddr_t, int));
+extern void ipsec_hexdump(caddr_t, int);
+extern void ipsec_bindump(caddr_t, int);
 
 #endif /* _NETIPSEC_KEY_DEBUG_H_ */

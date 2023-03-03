@@ -112,11 +112,11 @@ extern	int ipip_output(struct mbuf *, struct ipsecrequest *, struct mbuf **, int
 /* XF_AH */
 extern int ah_init0(struct secasvar *, struct xformsw *, struct cryptoini *);
 extern int ah_zeroize(struct secasvar *sav);
-extern struct auth_hash *ah_algorithm_lookup(int alg);
+extern const struct auth_hash *ah_algorithm_lookup(int alg);
 extern size_t ah_hdrsiz(struct secasvar *);
 
 /* XF_ESP */
-extern struct enc_xform *esp_algorithm_lookup(int alg);
+extern const struct enc_xform *esp_algorithm_lookup(int alg);
 extern size_t esp_hdrsiz(struct secasvar *sav);
 
 /* XF_COMP */
