@@ -308,7 +308,7 @@ extern void *ah4_ctlinput(int, struct sockaddr *, void *);
 struct m_tag;
 extern void ipsec4_common_input(struct mbuf *m, ...);
 extern int ipsec4_common_input_cb(struct mbuf *m, struct secasvar *sav, int skip, int protoff, struct m_tag *mt);
-extern int ipsec4_process_packet(struct mbuf *, struct ipsecrequest *, int, int));
+extern int ipsec4_process_packet(struct mbuf *, struct ipsecrequest *, int, int);
 extern int ipsec_process_done(struct mbuf *, struct ipsecrequest *);
 #define ipsec_indone(m)	\
 	(m_tag_find((m), PACKET_TAG_IPSEC_IN_DONE, NULL) != NULL)

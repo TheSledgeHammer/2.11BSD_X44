@@ -29,6 +29,8 @@
 #ifndef NETIPSEC_OSDEP_H
 #define NETIPSEC_OSDEP_H
 
+#include <sys/systm.h>
+
 #ifdef _KERNEL
 /* 
  *  Hide porting differences across different 4.4BSD-derived platforms.

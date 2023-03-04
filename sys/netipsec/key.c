@@ -425,7 +425,7 @@ static int key_cmpsaidx(const struct secasindex *, const struct secasindex *, in
 
 static int key_sockaddrcmp(const struct sockaddr *, const struct sockaddr *, int);
 static int key_bbcmp(const void *, const void *, u_int);
-static void key_srandom(void));
+static void key_srandom(void);
 static u_int16_t key_satype2proto(u_int8_t);
 static u_int8_t key_proto2satype(u_int16_t);
 
