@@ -537,6 +537,111 @@ sbappendaddr(sb, asa, m0, rights0)
 	return (1);
 }
 
+/*
+ * Helper for sbappendchainaddr: prepend a struct sockaddr* to
+ * an mbuf chain.
+ */
+static __inline struct mbuf *
+m_prepend_sockaddr(sb, m0, asa)
+	struct sockbuf *sb;
+	struct mbuf *m0;
+	const struct sockaddr *asa;
+{
+	struct mbuf *m;
+	const int salen = asa->sa_len;
+
+	/* only the first in each chain need be a pkthdr */
+	MGETHDR(m, M_DONTWAIT, MT_SONAME);
+	if (m == 0) {
+		return (0);
+	}
+
+	KASSERT(salen <= MHLEN);
+
+	m->m_len = salen;
+	bcopy((caddr_t)asa, mtod(m, caddr_t), salen);
+	m->m_next = m0;
+	m->m_pkthdr.len = salen + m0->m_pkthdr.len;
+
+	return m;
+}
+
+int
+sbappendaddrchain(sb, asa, m0, sbprio)
+	struct sockbuf *sb;
+	const struct sockaddr *asa;
+	struct mbuf *m0;
+	int sbprio;
+{
+	struct mbuf *m, *n, *n0, *nlast;
+	int space;
+	int error;
+
+	(void)sbprio;
+
+	if (m0 && (m0->m_flags & M_PKTHDR) == 0) {
+		panic("sbappendaddrchain");
+	}
+
+	space = sbspace(sb);
+	n0 = NULL;
+	nlast = NULL;
+	for (m = m0; m; m = m->m_nextpkt) {
+		struct mbuf *np;
+
+		/* Prepend sockaddr to this record (m) of input chain m0 */
+		n = m_prepend_sockaddr(sb, m, asa);
+		if (n == NULL) {
+			error = ENOBUFS;
+			goto bad;
+		}
+
+		/* Append record (asa+m) to end of new chain n0 */
+		if (n0 == NULL) {
+			n0 = n;
+		} else {
+			nlast->m_nextpkt = n;
+		}
+		/* Keep track of last record on new chain */
+		nlast = n;
+
+		for (np = n; np; np = np->m_next) {
+			sballoc(sb, np);
+		}
+	}
+
+	SBLASTRECORDCHK(sb, "sbappendaddrchain 1");
+
+	/* Drop the entire chain of (asa+m) records onto the socket */
+	SBLINKRECORDCHAIN(sb, n0, nlast);
+
+	SBLASTRECORDCHK(sb, "sbappendaddrchain 2");
+
+	for (m = nlast; m->m_next; m = m->m_next)
+		;
+	sb->sb_mbtail = m;
+	SBLASTMBUFCHK(sb, "sbappendaddrchain");
+
+	return (1);
+bad:
+	/*
+	 * On error, free the prepended addreseses. For consistency
+	 * with sbappendaddr(), leave it to our caller to free
+	 * the input record chain passed to us as m0.
+	 */
+	while ((n = n0) != NULL) {
+		struct mbuf *np;
+
+		/* Undo the sballoc() of this record */
+		for (np = n; np; np = np->m_next)
+			sbfree(sb, np);
+
+		n0 = n->m_nextpkt; 	/* iterate at next prepended address */
+		MFREE(n, np); 		/* free prepended address (not data) */
+	}
+	return 0;
+}
+
 int
 sbappendrights(sb, m0, rights)
 	struct sockbuf *sb;
@@ -919,6 +1024,7 @@ sokqfilter(fp, kn)
 	return (0);
 }
 
+
 /*
  * Routines to add and remove
  * data from an mbuf queue.
@@ -1018,3 +1124,16 @@ sblastmbufchk(sb, where)
 	}
 }
 #endif /* SOCKBUF_DEBUG */
+
+#define	SBLINKRECORDCHAIN(sb, m0, mlast)			\
+	do {											\
+		if ((sb)->sb_lastrecord != NULL) {			\
+			(sb)->sb_lastrecord->m_nextpkt = (m0);	\
+		} else {									\
+			(sb)->sb_mb = (m0);						\
+		} 											\
+	(sb)->sb_lastrecord = (mlast);					\
+} while (/*CONSTCOND*/0)
+
+#define	SBLINKRECORD(sb, m0)						\
+	SBLINKRECORDCHAIN(sb, m0, m0)

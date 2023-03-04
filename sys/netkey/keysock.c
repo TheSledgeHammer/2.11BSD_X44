@@ -64,7 +64,7 @@ __KERNEL_RCSID(0, "$NetBSD: keysock.c,v 1.26 2003/12/04 19:38:25 atatat Exp $");
 struct sockaddr key_dst = { 2, PF_KEY, };
 struct sockaddr key_src = { 2, PF_KEY, };
 
-static int key_sendup0 __P((struct rawcb *, struct mbuf *, int));
+static int key_sendup0(struct rawcb *, struct mbuf *, int);
 
 struct pfkeystat pfkeystat;
 

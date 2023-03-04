@@ -119,29 +119,29 @@ struct ip6protosw {
 
 /* protocol-protocol hooks */
 	int	(*pr_input)		/* input to protocol (from below) */
-			__P((struct mbuf **, int *, int));
+			(struct mbuf **, int *, int);
 	int	(*pr_output)		/* output to protocol (from above) */
-			__P((struct mbuf *, ...));
+			(struct mbuf *, ...);
 	void	(*pr_ctlinput)		/* control input (from below) */
-			__P((int, struct sockaddr *, void *));
+			(int, struct sockaddr *, void *);
 	int	(*pr_ctloutput)		/* control output (from above) */
-			__P((int, struct socket *, int, int, struct mbuf **));
+			(int, struct socket *, int, int, struct mbuf **);
 
 /* user-protocol hook */
 	int	(*pr_usrreq)		/* user request: see list below */
-			__P((struct socket *, int, struct mbuf *,
-			     struct mbuf *, struct mbuf *, struct proc *));
+			(struct socket *, int, struct mbuf *,
+			     struct mbuf *, struct mbuf *, struct proc *);
 
 /* utility hooks */
 	void	(*pr_init)		/* initialization hook */
-			__P((void));
+			(void);
 
 	void	(*pr_fasttimo)		/* fast timeout (200ms) */
-			__P((void));
+			(void);
 	void	(*pr_slowtimo)		/* slow timeout (500ms) */
-			__P((void));
+			(void);
 	void	(*pr_drain)		/* flush any excess space possible */
-			__P((void));
+			(void);
 	int	*pr_wassysctl;		/* @@@ used to be sysctl for protocol */
 };
 

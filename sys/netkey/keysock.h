@@ -71,16 +71,16 @@ struct keycb {
 
 extern struct pfkeystat pfkeystat;
 
-extern int key_output __P((struct mbuf *, ...));
+extern int key_output(struct mbuf *, ...);
 #ifndef __NetBSD__
-extern int key_usrreq __P((struct socket *,
-	int, struct mbuf *, struct mbuf *, struct mbuf *));
+extern int key_usrreq(struct socket *,
+	int, struct mbuf *, struct mbuf *, struct mbuf *);
 #else
-extern int key_usrreq __P((struct socket *,
-	int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *));
+extern int key_usrreq(struct socket *,
+	int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 #endif
 
-extern int key_sendup_mbuf __P((struct socket *, struct mbuf *, int));
+extern int key_sendup_mbuf(struct socket *, struct mbuf *, int);
 #endif /* _KERNEL */
 
 #endif /*_NETKEY_KEYSOCK_H_*/

@@ -64,23 +64,23 @@ struct typestr {
 };
 #define TYPESTR(x)	{ "SADB_" #x, SADB_ ## x }
 
-static const char *kdebug_typestr __P((u_int, const struct typestr *));
-static const char *kdebug_sadb_msg_typestr __P((u_int));
-static const char *kdebug_sadb_ext_typestr __P((u_int));
-static void kdebug_sadb_prop __P((struct sadb_ext *));
-static void kdebug_sadb_identity __P((struct sadb_ext *));
-static void kdebug_sadb_supported __P((struct sadb_ext *));
-static void kdebug_sadb_lifetime __P((struct sadb_ext *));
-static void kdebug_sadb_sa __P((struct sadb_ext *));
-static void kdebug_sadb_address __P((struct sadb_ext *));
-static void kdebug_sadb_key __P((struct sadb_ext *));
-static void kdebug_sadb_x_sa2 __P((struct sadb_ext *));
+static const char *kdebug_typestr(u_int, const struct typestr *);
+static const char *kdebug_sadb_msg_typestr(u_int);
+static const char *kdebug_sadb_ext_typestr(u_int);
+static void kdebug_sadb_prop(struct sadb_ext *);
+static void kdebug_sadb_identity(struct sadb_ext *);
+static void kdebug_sadb_supported(struct sadb_ext *);
+static void kdebug_sadb_lifetime(struct sadb_ext *);
+static void kdebug_sadb_sa(struct sadb_ext *);
+static void kdebug_sadb_address(struct sadb_ext *);
+static void kdebug_sadb_key(struct sadb_ext *);
+static void kdebug_sadb_x_sa2(struct sadb_ext *);
 #ifdef SADB_X_EXT_TAG
-static void kdebug_sadb_x_tag __P((struct sadb_ext *));
+static void kdebug_sadb_x_tag(struct sadb_ext *);
 #endif
 
 #ifdef _KERNEL
-static void kdebug_secreplay __P((struct secreplay *));
+static void kdebug_secreplay(struct secreplay *);
 #endif
 
 #ifndef _KERNEL

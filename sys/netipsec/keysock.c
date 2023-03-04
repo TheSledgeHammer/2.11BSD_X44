@@ -75,7 +75,7 @@ static struct key_cb key_cb;
 static struct sockaddr key_dst = { 2, PF_KEY, };
 static struct sockaddr key_src = { 2, PF_KEY, };
 
-static int key_sendup0 __P((struct rawcb *, struct mbuf *, int));
+static int key_sendup0(struct rawcb *, struct mbuf *, int);
 
 struct pfkeystat pfkeystat;
 

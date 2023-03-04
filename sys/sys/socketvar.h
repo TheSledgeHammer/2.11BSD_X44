@@ -219,6 +219,7 @@ void	sblastrecordchk(struct sockbuf *, const char *);
 
 void	sblastmbufchk(struct sockbuf *, const char *);
 #define	SBLASTMBUFCHK(sb, where)	sblastmbufchk((sb), (where))
+void	sbcheck(struct sockbuf *);
 #define	SBCHECK(sb)					sbcheck(sb)
 #else
 #define	SBLASTRECORDCHK(sb, where)	/* nothing */
@@ -290,6 +291,7 @@ void	sbrelease(struct sockbuf *);
 void	sbappend(struct sockbuf *, struct mbuf *);
 void	sbappendrecord(struct sockbuf *, struct mbuf *);
 int		sbappendaddr(struct sockbuf *, struct sockaddr *, struct mbuf *, struct mbuf *);
+int		sbappendaddrchain(struct sockbuf *, const struct sockaddr *, struct mbuf *, int);
 int		sbappendrights(struct sockbuf *, struct mbuf *, struct mbuf *);
 void	sbappendstream(struct sockbuf *, struct mbuf *);
 void	sbcheck(struct sockbuf *);
@@ -316,6 +318,33 @@ int		unpbind(char *, int, struct vnode **, struct socket *);
 int		unpconn(char *, int, struct socket **, struct vnode **);
 void	unpgc1(struct file **, struct file **);
 int		unpdisc(struct file *);
-#endif
 
+/*
+ * Values for socket-buffer-append priority argument to sbappendaddrchain().
+ * The following flags are reserved for future implementation:
+ *
+ *  SB_PRIO_NONE:  honour normal socket-buffer limits.
+ *
+ *  SB_PRIO_ONESHOT_OVERFLOW:  if the socket has any space,
+ *	deliver the entire chain. Intended for large requests
+ *      that should be delivered in their entirety, or not at all.
+ *
+ * SB_PRIO_OVERDRAFT:  allow a small (2*MLEN) overflow, over and
+ *	aboce normal socket limits. Intended messages indicating
+ *      buffer overflow in earlier normal/lower-priority messages .
+ *
+ * SB_PRIO_BESTEFFORT: Ignore  limits entirely.  Intended only for
+ * 	kernel-generated messages to specially-marked scokets which
+ *	require "reliable" delivery, nd where the source socket/protocol
+ *	message generator enforce some hard limit (but possibly well
+ *	above kern.sbmax). It is entirely up to the in-kernel source to
+ *	avoid complete mbuf exhaustion or DoS scenarios.
+ */
+
+#define SB_PRIO_NONE 	 			0
+#define SB_PRIO_ONESHOT_OVERFLOW 	1
+#define SB_PRIO_OVERDRAFT			2
+#define SB_PRIO_BESTEFFORT			3
+
+#endif
 #endif /* _SYS_SOCKETVAR_H_ */
