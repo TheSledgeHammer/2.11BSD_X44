@@ -537,6 +537,19 @@ sbappendaddr(sb, asa, m0, rights0)
 	return (1);
 }
 
+#define	SBLINKRECORDCHAIN(sb, m0, mlast)			\
+	do {											\
+		if ((sb)->sb_lastrecord != NULL) {			\
+			(sb)->sb_lastrecord->m_nextpkt = (m0);	\
+		} else {									\
+			(sb)->sb_mb = (m0);						\
+		} 											\
+	(sb)->sb_lastrecord = (mlast);					\
+} while (/*CONSTCOND*/0)
+
+#define	SBLINKRECORD(sb, m0)						\
+	SBLINKRECORDCHAIN(sb, m0, m0)
+
 /*
  * Helper for sbappendchainaddr: prepend a struct sockaddr* to
  * an mbuf chain.
@@ -1124,16 +1137,3 @@ sblastmbufchk(sb, where)
 	}
 }
 #endif /* SOCKBUF_DEBUG */
-
-#define	SBLINKRECORDCHAIN(sb, m0, mlast)			\
-	do {											\
-		if ((sb)->sb_lastrecord != NULL) {			\
-			(sb)->sb_lastrecord->m_nextpkt = (m0);	\
-		} else {									\
-			(sb)->sb_mb = (m0);						\
-		} 											\
-	(sb)->sb_lastrecord = (mlast);					\
-} while (/*CONSTCOND*/0)
-
-#define	SBLINKRECORD(sb, m0)						\
-	SBLINKRECORDCHAIN(sb, m0, m0)
