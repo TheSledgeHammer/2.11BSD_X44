@@ -45,8 +45,7 @@ struct workqueue_queue {
 	struct lock_object 		*q_lock;
 	int 					q_savedipl;
 	struct workqhead 		q_queue;
-	//struct proc 			*q_worker;
-	void					*q_worker;
+	struct proc 			*q_worker;
 };
 
 struct workqueue {
