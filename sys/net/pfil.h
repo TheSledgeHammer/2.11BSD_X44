@@ -106,11 +106,6 @@ pfil_hook_get(int dir, struct pfil_head *ph)
 	}
 }
 
-/* XXX */
-#if defined(_KERNEL_OPT)
-#include "ipfilter.h"
-#endif
-
 #if NIPFILTER > 0
 #ifdef PFIL_HOOKS
 #undef PFIL_HOOKS
