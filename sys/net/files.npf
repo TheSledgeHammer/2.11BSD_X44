@@ -1,0 +1,38 @@
+# $NetBSD: files.npf,v 1.6.2.4 2013/02/11 21:49:49 riz Exp $
+#
+# Public Domain.
+#
+
+#
+# NPF pseudo device and modules.
+#
+
+defpseudo	npf:	ifnet
+
+# Core
+file	netpfil/npf/npf.c					npf
+file	netpfil/npf/npf_conf.c				npf
+file	netpfil/npf/npf_ctl.c				npf
+file	netpfil/npf/npf_handler.c			npf
+file	netpfil/npf/npf_instr.c				npf
+file	netpfil/npf/npf_mbuf.c				npf
+file	netpfil/npf/npf_processor.c			npf
+file	netpfil/npf/npf_ruleset.c			npf
+file	netpfil/npf/npf_rproc.c				npf
+file	netpfil/npf/npf_tableset.c			npf
+file	netpfil/npf/npf_tableset_ptree.c	npf
+file	netpfil/npf/npf_inet.c				npf
+file	netpfil/npf/npf_session.c			npf
+file	netpfil/npf/npf_state.c				npf
+file	netpfil/npf/npf_state_tcp.c			npf
+file	netpfil/npf/npf_nat.c				npf
+file	netpfil/npf/npf_alg.c				npf
+file	netpfil/npf/npf_sendpkt.c			npf
+
+# Built-in extensions.
+file	netpfil/npf/npf_ext_log.c			npf
+file	netpfil/npf/npf_ext_normalise.c		npf
+file	netpfil/npf/npf_ext_rndblock.c		npf
+
+# ALGs
+file	netpfil/npf/npf_alg_icmp.c			npf
