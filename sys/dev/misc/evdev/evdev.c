@@ -160,6 +160,7 @@ evdev_attach(parent, self, aux)
 	struct evdev_client *client;
 	size_t buffer_size;
 	int ret;
+
 #if NWSMUX > 0
 	int mux, error;
 #endif
@@ -822,8 +823,8 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (evdev_ioctl_eviocgbit(evdev, type_num, len, data, p));
 	}
 
-	error = (*client->ec_accessops->ioctl)(client->ec_accesscookie, cmd, data, fflag, p);
-	return (error);
+	//error = (*client->ec_accessops->ioctl)(client->ec_accesscookie, cmd, data, fflag, p);
+	return (0);
 }
 
 static int
@@ -1123,3 +1124,59 @@ evdev_add_mux(unit, muxsc)
 	return (wsmux_attach_sc(muxsc, &client->ec_base));
 }
 #endif
+
+static void
+evdev_init(evdev, mux_loc)
+    struct evdev_dev        *evdev;
+	int mux_loc;
+{
+    struct evdev_client     *client;
+    size_t buffer_size;
+    int ret;
+#if NWSMUX > 0
+	int mux, error;
+#endif
+
+    /* Initialize internal structures */
+    if (evdev == NULL) {
+        evdev = evdev_alloc();
+    }
+    ret = evdev_register(evdev);
+    if (ret != 0) {
+        printf("evdev_attach: evdev_register error", ret);
+    }
+    /* Initialize ring buffer */
+    buffer_size = evdev_buffer_size(evdev);
+	client = evdev_client_alloc(evdev, buffer_size);
+    client->ec_buffer_size = buffer_size;
+	client->ec_buffer_ready = 0;
+
+    client->ec_evdev = evdev;
+
+#if NWSMUX > 0
+	client->ec_base.me_ops = &evdev_srcops;
+	mux = client->ec_base.me_dv.dv_cfdata->cf_loc[mux_loc];
+	if (mux >= 0) {
+		error = wsmux_attach_sc(wsmux_getmux(mux), &client->ec_base);
+		if (error) {
+			printf(" attach error=%d", error);
+		} else {
+			printf(" mux %d", mux);
+		}
+	}
+#else
+	if (client->ec_base.me_dv.dv_cfdata->cf_loc[mux_loc] >= 0) {
+		printf(" (mux ignored)");
+	}
+#endif
+	printf("\n");
+    lockinit(&client->ec_buffer_lock, "evclient", 0, LK_CANRECURSE);
+}
+
+void
+evdev_attach_subr(sc, mux_loc)
+    struct evdev_softc  *sc;
+	int mux_loc;
+{
+    evdev_init(sc->sc_evdev, mux_loc);
+}

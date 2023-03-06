@@ -170,8 +170,8 @@ struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
 	struct wsevsrc				ec_base;			/* input event to wscons event */
 
-	const struct wsmouse_accessops *ec_accessops;
-	void							*ec_accesscookie;
+	//const struct wsmouse_accessops *ec_accessops;
+	//void							*ec_accesscookie;
 
 	struct lock					ec_buffer_lock;
 	size_t						ec_buffer_size;
