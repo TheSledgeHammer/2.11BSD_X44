@@ -34,7 +34,7 @@
 typedef struct {
 	uint32_t		aes_ek[60]; 	/* encrypt key schedule */
 	uint32_t		aes_dk[60];		/* decrypt key schedule */
-	unsigned 		aes_rounds;
+	unsigned int	aes_rounds;
 } aes_ctx;
 
 typedef aes_ctx AES_CTX;

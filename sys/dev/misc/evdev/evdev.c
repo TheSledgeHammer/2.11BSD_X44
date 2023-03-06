@@ -524,7 +524,7 @@ evdev_kqfilter(dev, kn)
 	int unit, error;
 
 	unit = minor(dev);
-	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	sc = (struct evdev_softc *) evdev_cd.cd_devs[unit];
 	if (sc == NULL) {
 		return (ENXIO);
 	}

@@ -42,7 +42,6 @@ int
 aes_xcbc_mac_setkey(aes_ctx *ctx, const uint8_t *key, int len)
 {
   	ctx->aes_rounds = AES_KeySetup_Encrypt(ctx->aes_ek, key, len);
-	AES_KeySetup_Decrypt(ctx->aes_dk, key, len);
 	return (ctx->aes_rounds);
 }
 
