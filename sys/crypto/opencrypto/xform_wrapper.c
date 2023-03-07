@@ -763,7 +763,7 @@ twofish_xts_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 		return -1;
 	}
 
-	MALLOC(*sched, u_int8_t *, sizeof(twofish_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	MALLOC(*sched, u_int8_t *, sizeof(struct twofish_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
 	ctx = (struct twofish_xts_ctx *)*sched;
 
 	twofish_set_key(&ctx->key1, key, len * 4);
@@ -852,7 +852,7 @@ serpent_xts_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 	if (len != 32 && len != 64) {
 		return -1;
 	}
-	MALLOC(*sched, u_int8_t *, sizeof(serpent_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	MALLOC(*sched, u_int8_t *, sizeof(struct serpent_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
 	ctx = (struct serpent_xts_ctx *)*sched;
 
 	serpent_set_key(&ctx->key1, key, len * 4);
