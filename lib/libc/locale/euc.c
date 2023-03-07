@@ -1,3 +1,5 @@
+/*	$NetBSD: citrus_euc.c,v 1.17 2014/01/18 15:21:41 christos Exp $	*/
+
 /*-
  * Copyright (c)2002 Citrus Project,
  * All rights reserved.
@@ -109,6 +111,9 @@ typedef _Encoding_Info				_EUCEncodingInfo;
 typedef _Encoding_TypeInfo 			_EUCCTypeInfo;
 typedef _Encoding_State				_EUCState;
 
+#define	_SS2						0x008e
+#define	_SS3						0x008f
+
 #define _FUNCNAME(m)				_EUC_citrus_ctype_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	3
 
@@ -116,6 +121,8 @@ rune_t	_EUC_sgetrune(const char *, size_t, char const **);
 int		_EUC_sputrune(rune_t, char *, size_t, char **);
 int		_EUC_sgetmbrune(_EUCEncodingInfo *, wchar_t *, const char **, size_t, _EUCState *, size_t *);
 int 	_EUC_sputmbrune(_EUCEncodingInfo *, char *, wchar_t, _EUCState *, size_t *);
+static int _EUC_set(u_int);
+static int parse_variable(_RuneLocale *, _EUCEncodingInfo *);
 
 int
 _EUC_init(rl)
@@ -134,73 +141,19 @@ _EUC_init(rl)
 
 	_citrus_ctype_encoding_init(info, state);
 
-	err = _EUC_parse_variable(rl, info);
-	if(err != 0) {
+	err = parse_variable(rl, info);
+	if (err != 0) {
 		return (err);
 	}
 
 	return (0);
 }
-
-static int
-_EUC_parse_variable(_RuneLocale *rl, _EUCEncodingInfo *ei)
-{
-	int x;
-	char *v, *e;
-
-	if (!rl->variable) {
-		free(rl);
-		return (EFTYPE);
-	}
-	v = (char*) rl->variable;
-
-	while (*v == ' ' || *v == '\t') {
-		++v;
-	}
-	ei = malloc(sizeof(_EUCEncodingInfo));
-	if (ei == NULL) {
-		free(rl);
-		return (ENOMEM);
-	}
-	for (x = 0; x < 4; ++x) {
-		ei->count[x] = (int) strtol(v, &e, 0);
-		if (v == e || !(v = e)) {
-			free(rl);
-			free(ei);
-			return (EFTYPE);
-		}
-		while (*v == ' ' || *v == '\t')
-			++v;
-		ei->bits[x] = (int) strtol(v, &e, 0);
-		if (v == e || !(v = e)) {
-			free(rl);
-			free(ei);
-			return (EFTYPE);
-		}
-		while (*v == ' ' || *v == '\t') {
-			++v;
-		}
-	}
-	ei->mask = (int) strtol(v, &e, 0);
-	if (v == e || !(v = e)) {
-		free(rl);
-		free(ei);
-		return (EFTYPE);
-	}
-	if (sizeof(_EUCEncodingInfo) <= rl->variable_len) {
-		memcpy(rl->variable, ei, sizeof(_EUCEncodingInfo));
-		free(ei);
-	} else {
-		rl->variable = &ei;
-	}
-	rl->variable_len = sizeof(_EUCEncodingInfo);
-	return (0);
-}
-
 int
-_EUC_sgetmbrune(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
+_EUC_sgetmbrune(_EUCEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
 {
 	wchar_t wchar;
+	int c, cs, len;
+	int chlenbak;
 	const char *s0, *s1 = NULL;
 
 	_DIAGASSERT(nresult != 0);
@@ -213,132 +166,201 @@ _EUC_sgetmbrune(_EUCEncodingInfo  *ei, wchar_t *pwc, const char **s, size_t n, _
 	if (s0 == NULL) {
 		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0; /* state independent */
-		return 0;
+		return (0);
 	}
 
-	wchar = (wchar_t) _EUC_sgetrune(s, n, nresult);
+	chlenbak = psenc->chlen;
 
+	/* make sure we have the first byte in the buffer */
+	switch (psenc->chlen) {
+	case 0:
+		if (n < 1) {
+			goto restart;
+		}
+		psenc->ch[0] = *s0++;
+		psenc->chlen = 1;
+		n--;
+		break;
+	case 1:
+	case 2:
+		break;
+	default:
+		/* illgeal state */
+		goto encoding_error;
+	}
+
+	c = ei->count[cs = _EUC_set(psenc->ch[0] & 0xff)];
+	if (c == 0) {
+		goto encoding_error;
+	}
+	while (psenc->chlen < c) {
+		if (n < 1) {
+			goto restart;
+		}
+		psenc->ch[psenc->chlen] = *s0++;
+		psenc->chlen++;
+		n--;
+	}
+	*s = s0;
+
+	switch (cs) {
+	case 3:
+	case 2:
+		/* skip SS2/SS3 */
+		len = c - 1;
+		s1 = &psenc->ch[1];
+		break;
+	case 1:
+	case 0:
+		len = c;
+		s1 = &psenc->ch[0];
+		break;
+	default:
+		goto encoding_error;
+	}
+	wchar = 0;
+	while (len-- > 0) {
+		wchar = (wchar << 8) | (*s1++ & 0xff);
+	}
+	wchar = (wchar & ~ei->mask) | ei->bits[cs];
+
+	psenc->chlen = 0;
 	if (pwc) {
 		*pwc = wchar;
 	}
+
 	if (!wchar) {
 		*nresult = 0;
+	} else {
+		*nresult = (size_t)(c - chlenbak);
 	}
 
+	return 0;
+
+encoding_error:
+	psenc->chlen = 0;
+	*nresult = (size_t) - 1;
+	return (EILSEQ);
+
+restart:
+	*nresult = (size_t) - 2;
+	*s = s0;
 	return (0);
 }
 
 int
 _EUC_sputmbrune(_EUCEncodingInfo  *ei, char *s, size_t n, wchar_t wc, _EUCState *psenc, size_t *nresult)
 {
+	wchar_t m, nm;
+	int cs, i, ret;
+
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(s != NULL);
 
-	return (_EUC_sputrune(wc, s, n, nresult));
+	m = wc & ei->mask;
+	nm = wc & ~m;
+
+	for (cs = 0; cs < sizeof(ei->count) / sizeof(ei->count[0]); cs++) {
+		if (m == ei->bits[cs])
+			break;
+	}
+	/* fallback case - not sure if it is necessary */
+	if (cs == sizeof(ei->count) / sizeof(ei->count[0])) {
+		cs = 1;
+	}
+
+	i = ei->count[cs];
+	if (n < i) {
+		ret = E2BIG;
+		goto err;
+	}
+	m = (cs) ? 0x80 : 0x00;
+	switch (cs) {
+	case 2:
+		*s++ = _SS2;
+		i--;
+		break;
+	case 3:
+		*s++ = _SS3;
+		i--;
+		break;
+	}
+
+	while (i-- > 0) {
+		*s++ = ((nm >> (i << 3)) & 0xff) | m;
+	}
+
+	*nresult = (size_t) ei->count[cs];
+	return 0;
+
+err:
+	*nresult = (size_t)-1;
+	return ret;
 }
 
-#define	CEI	((_EUCEncodingInfo *)(_CurrentRuneLocale->variable))
+rune_t
+_EUC_sgetrune(const char *string, size_t n, char const **result)
+{
+	return (emulated_sgetrune(string, n, result));
+}
 
-#define	_SS2	0x008e
-#define	_SS3	0x008f
+int
+_EUC_sputrune(rune_t c, char *string, size_t n, char **result)
+{
+	return (emulated_sputrune(c, string, n, result));
+}
 
-static inline int
-_euc_set(c)
-	u_int c;
+static int
+_EUC_set(u_int c)
 {
 	c &= 0xff;
 
 	return ((c & 0x80) ? c == _SS3 ? 3 : c == _SS2 ? 2 : 1 : 0);
 }
 
-rune_t
-_EUC_sgetrune(string, n, result)
-	const char *string;
-	size_t n;
-	char const **result;
+static int
+parse_variable(_RuneLocale *rl, _EUCEncodingInfo *ei)
 {
-	rune_t rune = 0;
-	int len, set;
+	const char *v, *e;
+	size_t lenvar;
+	int x;
 
-	if (n < 1 || (len = CEI->count[set = _euc_set(*string)]) > n) {
-		if (result)
-			*result = string;
-		return (_INVALID_RUNE);
+	/* parse variable string */
+	if (!rl->variable) {
+		return (EFTYPE);
 	}
-	switch (set) {
-	case 3:
-	case 2:
-		--len;
-		++string;
-		/* FALLTHROUGH */
-	case 1:
-	case 0:
-		while (len-- > 0)
-			rune = (rune << 8) | ((u_int)(*string++) & 0xff);
-		break;
-	}
-	if (result)
-		*result = string;
-	return ((rune & ~CEI->mask) | CEI->bits[set]);
-}
 
-int
-_EUC_sputrune(c, string, n, result)
-	rune_t c;
-	char *string, **result;
-	size_t n;
-{
-	rune_t m = c & CEI->mask;
-	rune_t nm = c & ~m;
-	int i, len;
+	v = rl->variable;
+	lenvar = rl->variable_len;
 
-	if (m == CEI->bits[1]) {
-CodeSet1:
-		/* Codeset 1: The first byte must have 0x80 in it. */
-		i = len = CEI->count[1];
-		if (n >= len) {
-			if (result)
-				*result = string + len;
-			while (i-- > 0)
-				*string++ = (nm >> (i << 3)) | 0x80;
-		} else
-			if (result)
-				*result = (char *) 0;
-	} else {
-		if (m == CEI->bits[0]) {
-			i = len = CEI->count[0];
-			if (n < len) {
-				if (result)
-					*result = NULL;
-				return (len);
-			}
-		} else
-			if (m == CEI->bits[2]) {
-				i = len = CEI->count[2];
-				if (n < len) {
-					if (result)
-						*result = NULL;
-					return (len);
-				}
-				*string++ = _SS2;
-				--i;
-			} else
-				if (m == CEI->bits[3]) {
-					i = len = CEI->count[3];
-					if (n < len) {
-						if (result)
-							*result = NULL;
-						return (len);
-					}
-					*string++ = _SS3;
-					--i;
-				} else
-					goto CodeSet1;	/* Bletch */
-		while (i-- > 0)
-			*string++ = (nm >> (i << 3)) & 0xff;
-		if (result)
-			*result = string;
+	while (*v == ' ' || *v == '\t') {
+		++v;
 	}
-	return (len);
+
+	ei->mb_cur_max = 1;
+	for (x = 0; x < 4; ++x) {
+		ei->count[x] = (int)strtol(v, (char**) &e, 0);
+		if (v == e || !(v = e) || ei->count[x] < 1 || ei->count[x] > 4) {
+			return (EFTYPE);
+		}
+		if (ei->mb_cur_max < ei->count[x])
+			ei->mb_cur_max = ei->count[x];
+		while (*v == ' ' || *v == '\t') {
+			++v;
+		}
+		ei->bits[x] = (int)strtol(v, (char**) &e, 0);
+		if (v == e || !(v = e)) {
+			return (EFTYPE);
+		}
+		while (*v == ' ' || *v == '\t') {
+			++v;
+		}
+	}
+	ei->mask = (int)strtol(v, (char**) &e, 0);
+	if (v == e || !(v = e)) {
+		return (EFTYPE);
+	}
+
+	return 0;
 }

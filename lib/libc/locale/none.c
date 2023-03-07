@@ -100,20 +100,22 @@ int
 _none_sgetmbrune(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if (s == NULL) {
-		*nresult = 0;
+		*nresult = 0; /* state independent */
 		return (0);
 	}
 	if (n == 0) {
-		*nresult = (size_t) -2;
+		return (EILSEQ);
+	}
+	if (pwc == NULL) {
+		if (*s == '\0') {
+			*nresult = 0;
+		} else {
+			*nresult = 1;
+		}
 		return (0);
 	}
 
-	pwc = (wchar_t) _none_sgetrune(s, n, nresult);
-
-	if (pwc != NULL) {
-		*pwc = (wchar_t) (unsigned char) *s;
-	}
-
+	*pwc = (wchar_t) (unsigned char) *s;
 	*nresult = *s == '\0' ? 0 : 1;
 
 	return (0);
@@ -123,8 +125,8 @@ int
 _none_sputmbrune(void * __restrict cl, char * __restrict s, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult)
 {
 	if ((wc & ~0xFFU) != 0) {
-		*nresult = (size_t) -1;
-		return (_none_sputrune(wc, s, 1, nresult));
+		*nresult = (size_t) - 1;
+		return (EILSEQ);
 	}
 
 	*nresult = 1;
@@ -132,39 +134,17 @@ _none_sputmbrune(void * __restrict cl, char * __restrict s, wchar_t wc, void * _
 		*s = (char) wc;
 	}
 
-	return (_none_sputrune(wc, s, 0, nresult));
+	return (0);
 }
 
 rune_t
-_none_sgetrune(string, n, result)
-	const char *string;
-	size_t n;
-	char const **result;
+_none_sgetrune(const char *string, size_t n, char const **result)
 {
-	int c;
-
-	if (n < 1) {
-		if (result)
-			*result = string;
-		return (_INVALID_RUNE);
-	}
-	if (result)
-		*result = string + 1;
-	return (*string & 0xff);
+	return (emulated_sgetrune(string, n, result));
 }
 
 int
-_none_sputrune(c, string, n, result)
-	rune_t c;
-	char *string, **result;
-	size_t n;
+_none_sputrune(rune_t c, char *string, size_t n, char **result)
 {
-	if (n >= 1) {
-		if (string)
-			*string = c;
-		if (result)
-			*result = string + 1;
-	} else if (result)
-		*result = (char *)0;
-	return (1);
+	return (emulated_sputrune(c, string, n, result));
 }

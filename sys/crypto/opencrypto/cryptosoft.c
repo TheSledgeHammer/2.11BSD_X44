@@ -1062,10 +1062,7 @@ swcr_freesession(void *arg, u_int64_t tid)
 		case CRYPTO_CAST_CBC:
 		case CRYPTO_SKIPJACK_CBC:
 		case CRYPTO_RIJNDAEL128_CBC:
-		/*
-		case CRYPTO_AES_CBC:
-		case CRYPTO_CAMELLIA_CBC:
-		*/
+		//case CRYPTO_AES_CBC:
 		case CRYPTO_AES_XTS:
 		case CRYPTO_AES_CTR:
 		case CRYPTO_AES_GCM_16:

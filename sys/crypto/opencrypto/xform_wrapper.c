@@ -68,41 +68,41 @@
 #include <crypto/opencrypto/xform.h>
 #include <crypto/opencrypto/xform_wrapper.h>
 
-#define AESCTR_NONCESIZE	4
-#define AESCTR_IVSIZE		8
-#define AESCTR_BLOCKSIZE	16
+#define AESCTR_NONCESIZE		4
+#define AESCTR_IVSIZE			8
+#define AESCTR_BLOCKSIZE		16
 
-#define AES_XTS_BLOCKSIZE	16
-#define AES_XTS_IVSIZE		8
-#define AES_XTS_ALPHA		0x87	/* GF(2^128) generator polynomial */
+#define AES_XTS_BLOCKSIZE		16
+#define AES_XTS_IVSIZE			8
+#define AES_XTS_ALPHA			0x87	/* GF(2^128) generator polynomial */
 
 #define TWOFISH_XTS_BLOCKSIZE	16
-#define TWOFISH_XTS_IVSIZE	8
+#define TWOFISH_XTS_IVSIZE		8
 
 #define SERPENT_XTS_BLOCKSIZE	16
-#define SERPENT_XTS_IVSIZE	8
+#define SERPENT_XTS_IVSIZE		8
 
 struct aes_ctr_ctx {
-	aes_ctx		ac_key;
-	u_int8_t	ac_block[AESCTR_BLOCKSIZE];
+	aes_ctx			ac_key;
+	u_int8_t		ac_block[AESCTR_BLOCKSIZE];
 };
 
 struct aes_xts_ctx {
 	rijndael_ctx 	key1;
 	rijndael_ctx 	key2;
-	u_int8_t 	tweak[AES_XTS_BLOCKSIZE];
+	u_int8_t 		tweak[AES_XTS_BLOCKSIZE];
 };
 
 struct twofish_xts_ctx {
-	twofish_ctx   key1;
-	twofish_ctx   key2;
-	u_int8_t      tweak[TWOFISH_XTS_BLOCKSIZE];
+	twofish_ctx   	key1;
+	twofish_ctx   	key2;
+	u_int8_t      	tweak[TWOFISH_XTS_BLOCKSIZE];
 };
 
 struct serpent_xts_ctx {
-	serpent_ctx   key1;
-	serpent_ctx   key2;
-	u_int8_t      tweak[SERPENT_XTS_BLOCKSIZE];
+	serpent_ctx   	key1;
+	serpent_ctx   	key2;
+	u_int8_t      	tweak[SERPENT_XTS_BLOCKSIZE];
 };
 
 /*
@@ -457,7 +457,7 @@ void
 aes_ctr_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(struct aes_ctr_ctx));
-	free(*sched, M_CRYPTO_DATA);
+	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }
 
@@ -536,7 +536,7 @@ void
 aes_xts_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(struct aes_xts_ctx));
-	free(*sched, M_CRYPTO_DATA);
+	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }
 
@@ -592,7 +592,8 @@ cml_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 	if (len != 16 && len != 24 && len != 32) {
 		return (EINVAL);
 	}
-	*sched = malloc(sizeof(camellia_ctx), M_CRYPTO_DATA, M_NOWAIT|M_ZERO);
+
+	MALLOC(*sched, u_int8_t *, sizeof(camellia_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
 	if (*sched != NULL) {
 		bzero(*sched, sizeof(camellia_ctx));
 		camellia_set_key((camellia_ctx *) *sched, key, len * 8);
@@ -608,7 +609,7 @@ void
 cml_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(camellia_ctx));
-	free(*sched, M_CRYPTO_DATA);
+	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }
 
@@ -629,9 +630,11 @@ twofish128_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 {
 	int err;
 
-	if (len != 16 && len != 24 && len != 32)
+	if (len != 16 && len != 24 && len != 32) {
 		return (EINVAL);
-	*sched = malloc(sizeof(twofish_ctx), M_CRYPTO_DATA, M_NOWAIT|M_ZERO);
+	}
+
+	MALLOC(*sched, u_int8_t *, sizeof(twofish_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
 	if (*sched != NULL) {
 		twofish_set_key((twofish_ctx *) *sched, key, len * 8);
 		err = 0;
@@ -645,7 +648,7 @@ void
 twofish128_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(twofish_ctx));
-	free(*sched, M_CRYPTO_DATA);
+	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }
 
@@ -669,7 +672,7 @@ serpent128_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 	if (len != 16 && len != 24 && len != 32) {
 		return (EINVAL);
 	}
-	*sched = malloc(sizeof(serpent_ctx), M_CRYPTO_DATA, M_NOWAIT|M_ZERO);
+	MALLOC(*sched, u_int8_t *, sizeof(serpent_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
 	if (*sched != NULL) {
 		serpent_set_key((serpent_ctx *) *sched, key, len * 8);
 		err = 0;
@@ -683,7 +686,7 @@ void
 serpent128_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(serpent_ctx));
-	free(*sched, M_CRYPTO_DATA);
+	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }
 
@@ -716,10 +719,11 @@ twofish_xts_crypt(struct twofish_xts_ctx *ctx, u_int8_t *data, u_int do_encrypt)
 	for (i = 0; i < TWOFISH_XTS_BLOCKSIZE; i++)
 		block[i] = data[i] ^ ctx->tweak[i];
 
-	if (do_encrypt)
+	if (do_encrypt) {
 		twofish_encrypt(&ctx->key1, block, data);
-	else
+	} else {
 		twofish_decrypt(&ctx->key1, block, data);
+	}
 
 	for (i = 0; i < TWOFISH_XTS_BLOCKSIZE; i++) {
 		data[i] ^= ctx->tweak[i];
@@ -759,7 +763,7 @@ twofish_xts_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 		return -1;
 	}
 
-	*sched = malloc(sizeof(struct twofish_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	MALLOC(*sched, u_int8_t *, sizeof(twofish_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
 	ctx = (struct twofish_xts_ctx *)*sched;
 
 	twofish_set_key(&ctx->key1, key, len * 4);
@@ -772,7 +776,7 @@ void
 twofish_xts_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(struct twofish_xts_ctx));
-	free(*sched, M_CRYPTO_DATA);
+	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }
 
@@ -847,8 +851,8 @@ serpent_xts_setkey(u_int8_t **sched, const u_int8_t *key, int len)
 
 	if (len != 32 && len != 64) {
 		return -1;
-        }
-	*sched = malloc(sizeof(struct serpent_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
+	}
+	MALLOC(*sched, u_int8_t *, sizeof(serpent_xts_ctx), M_CRYPTO_DATA, M_WAITOK | M_ZERO);
 	ctx = (struct serpent_xts_ctx *)*sched;
 
 	serpent_set_key(&ctx->key1, key, len * 4);
@@ -861,7 +865,7 @@ void
 serpent_xts_zerokey(u_int8_t **sched)
 {
 	bzero(*sched, sizeof(struct serpent_xts_ctx));
-	free(*sched, M_CRYPTO_DATA);
+	FREE(*sched, M_CRYPTO_DATA);
 	*sched = NULL;
 }
 
