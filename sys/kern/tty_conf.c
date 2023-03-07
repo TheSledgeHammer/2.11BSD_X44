@@ -16,7 +16,7 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
-//#include "tb.h"
+#include "tb.h"
 #if NTB > 0
 int	tbopen(dev_t, struct tty *);
 int	tbclose(struct tty *, int);
@@ -25,7 +25,7 @@ int	tbtioctl(struct tty *, u_long, caddr_t, int, struct proc *);
 int	tbinput(int, struct tty *);
 #endif
 
-//#include "sl.h"
+#include "sl.h"
 #if NSL > 0
 int	slopen(dev_t, struct tty *);
 int	slclose(struct tty *, int);
@@ -34,7 +34,7 @@ int	slinput(int, struct tty *);
 int	slstarts(struct tty *);
 #endif
 
-//#include "ppp.h"
+#include "ppp.h"
 #if NPPP > 0
 int	pppopen(dev_t, struct tty *);
 int	pppclose(struct tty *, int);
@@ -45,7 +45,7 @@ int	pppread(struct tty *, struct uio *, int);
 int	pppwrite(struct tty *, struct uio *, int);
 #endif
 
-//#include "strip.h"
+#include "strip.h"
 #if NSTRIP > 0
 int	stripopen(dev_t, struct tty *);
 int	stripclose(struct tty *, int);
