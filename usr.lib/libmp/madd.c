@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)madd.c	5.1 (Berkeley) 4/30/85";
 
 #include <mp.h>
 
+void
 m_add(a,b,c)
 	struct mint *a,*b,*c;
 {
@@ -49,6 +50,7 @@ m_add(a,b,c)
 	return;
 }
 
+void
 madd(a,b,c)
 	struct mint *a,*b,*c;
 {
@@ -85,6 +87,7 @@ madd(a,b,c)
 	return;
 }
 
+void
 m_sub(a,b,c)
 	struct mint *a,*b,*c;
 {
@@ -134,6 +137,7 @@ m_sub(a,b,c)
 	return;
 }
 
+void
 msub(a,b,c)
 	struct mint *a,*b,*c;
 {

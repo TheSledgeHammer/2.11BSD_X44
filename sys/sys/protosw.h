@@ -51,28 +51,25 @@ struct protosw {
 	short			pr_flags;			/* see below */
 	/* protocol-protocol hooks */
 	/* input to protocol (from below) */
-	int				(*pr_input)(struct mbuf **, int *, int, int);
+	void			(*pr_input)(struct mbuf *, ...);
 	/* output to protocol (from above) */
-	int				(*pr_output)(struct mbuf *, struct socket *, struct sockaddr *, struct mbuf *);
+	int				(*pr_output)(struct mbuf *, ...);
 	/* control input (from below) */
-	int				(*pr_ctlinput)(int, struct sockaddr *, u_int, void *);
+	void			*(*pr_ctlinput)(int, struct sockaddr *, void *);
 	/* control output (from above) */
-	int				(*pr_ctloutput)(int, struct socket *, int, int, struct mbuf *);
+	int				(*pr_ctloutput)(int, struct socket *, int, int, struct mbuf **);
 	/* user-protocol hook */
 	/* user request: see list below */
-	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
-
-	int				(*pr_attach)(struct socket *, int);
-	int				(*pr_detach)(struct socket *);
+	int				(*pr_usrreq)(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 	/* utility hooks */
 	/* initialization hook */
-	int				(*pr_init)(void);
+	void			(*pr_init)(void);
 	/* fast timeout (200ms) */
-	int				(*pr_fasttimo)(void);
+	void			(*pr_fasttimo)(void);
 	/* slow timeout (500ms) */
-	int				(*pr_slowtimo)(void);
+	void			(*pr_slowtimo)(void);
 	/* flush any excess space possible */
-	int				(*pr_drain)();
+	void			(*pr_drain)(void);
 	/* sysctl for protocol */
 	int				(*pr_sysctl)(int *, u_int, void *, size_t *, void *, size_t);
 };
@@ -89,6 +86,9 @@ struct protosw {
 #define	PR_CONNREQUIRED	0x04		/* connection required by protocol */
 #define	PR_WANTRCVD		0x08		/* want PRU_RCVD calls */
 #define	PR_RIGHTS		0x10		/* passes capabilities */
+#define	PR_LISTEN		0x20		/* supports listen(2) and accept(2) */
+#define	PR_LASTHDR		0x40		/* enforce ipsec policy; last header */
+#define	PR_ABRTACPTDIS	0x80		/* abort on accept(2) to disconnected socket */
 
 /*
  * The arguments to usrreq are:
@@ -125,8 +125,9 @@ struct protosw {
 #define	PRU_SLOWTIMO	19	/* 500ms timeout */
 #define	PRU_PROTORCV	20	/* receive from below */
 #define	PRU_PROTOSEND	21	/* send to below */
+#define PRU_PURGEIF		22	/* purge specified if */
 
-#define	PRU_NREQ		21
+#define	PRU_NREQ		23
 
 #ifdef PRUREQUESTS
 char *prurequests[] = {
@@ -135,7 +136,7 @@ char *prurequests[] = {
 	"RCVD",		"SEND",		"ABORT",	"CONTROL",
 	"SENSE",	"RCVOOB",	"SENDOOB",	"SOCKADDR",
 	"PEERADDR",	"CONNECT2",	"FASTTIMO",	"SLOWTIMO",
-	"PROTORCV",	"PROTOSEND",
+	"PROTORCV",	"PROTOSEND", "PURGEIF",
 };
 #endif
 
@@ -205,6 +206,12 @@ char	*prcorequests[] = {
 #endif
 
 #ifdef _KERNEL
-extern	struct protosw *pffindproto(int, int, int), *pffindtype(int, int);
+struct sockaddr;
+struct protosw 	*pffindproto(int, int, int);
+struct protosw 	*pffindtype(int, int);
+struct domain 	*pffinddomain(int);
+void 			pfctlinput(int, struct sockaddr *);
+void			pfctlinput2(int, struct sockaddr *, void *);
+//extern	struct protosw *pffindproto(int, int, int), *pffindtype(int, int);
 #endif
 #endif /* _SYS_PROTOSW_H_ */

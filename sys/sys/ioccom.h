@@ -50,36 +50,30 @@
  * we restrict parameters to at most 256 bytes (disklabels are 216 bytes).
  */
 #ifdef COMPAT_211BSD
-#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
+//#define	IOCPARM_MASK		0xff		/* parameters must be < 256 bytes */
 #endif
 #define	IOCPARM_MASK		0x1fff		/* parameter length, at most 13 bits */
-#define	IOCPARM_LEN(x)		(((x) >> 16) & IOCPARM_MASK)
-#define	IOCBASECMD(x)		((x) & ~(IOCPARM_MASK << 16))
-#define	IOCGROUP(x)			(((x) >> 8) & 0xff)
+#define	IOCPARM_SHIFT		16
+#define	IOCGROUP_SHIFT		8
+#define	IOCPARM_LEN(x)		(((x) >> IOCPARM_SHIFT) & IOCPARM_MASK)
+#define	IOCBASECMD(x)		((x) & ~(IOCPARM_MASK << IOCPARM_SHIFT))
+#define	IOCGROUP(x)			(((x) >> IOCGROUP_SHIFT) & 0xff)
 
 #define	IOCPARM_MAX			NBPG		/* max size of ioctl, mult. of NBPG */
-#define	IOC_VOID			0x20000000	/* no parameters */
-#define	IOC_OUT				0x40000000	/* copy out parameters */
-#define	IOC_IN				0x80000000	/* copy in parameters */
+#define	IOC_VOID			(unsigned long)0x20000000	/* no parameters */
+#define	IOC_OUT				(unsigned long)0x40000000	/* copy out parameters */
+#define	IOC_IN				(unsigned long)0x80000000	/* copy in parameters */
 #define	IOC_INOUT			(IOC_IN|IOC_OUT)
-#define	IOC_DIRMASK			0xe0000000	/* mask for IN/OUT/VOID */
+#define	IOC_DIRMASK			(unsigned long)0xe0000000	/* mask for IN/OUT/VOID */
 /* the 0x20000000 is so we can distinguish new ioctl's from old */
 
 #define	_IOC(inout, group, num, len) \
-	(inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num))
-
-#ifdef KERNEL
-#define	_IO(x,y)			(('x'<<8)|y)
-#define	_IOR(x,y,t)			(('x'<<8)|y)
-#define	_IOW(x,y,t)			(('x'<<8)|y)
+    ((inout) | (((len) & IOCPARM_MASK) << IOCPARM_SHIFT) | ((group) << IOCGROUP_SHIFT) | (num))
+    
+#define	_IO(x,y)			_IOC(IOC_VOID, 	(x), (y), 0)
+#define	_IOR(x,y,t)			_IOC(IOC_OUT, 	(x), (y), sizeof(t))
+#define	_IOW(x,y,t)			_IOC(IOC_IN,	(x), (y), sizeof(t))
 /* this should be _IORW, but stdio got there first */
-#define	_IOWR(x,y,t)		(('x'<<8)|y)
-#else
-#define	_IO(x,y)			(IOC_VOID|('x'<<8)|y)
-#define	_IOR(x,y,t)			(IOC_OUT|((long)(sizeof(t) & IOCPARM_MASK)<<16)|('x'<<8)|y)
-#define	_IOW(x,y,t)			(IOC_IN|((long)(sizeof(t) & IOCPARM_MASK)<<16)|('x'<<8)|y)
-/* this should be _IORW, but stdio got there first */
-#define	_IOWR(x,y,t)		(IOC_INOUT|((long)(sizeof(t) & IOCPARM_MASK)<<16)|('x'<<8)|y)
-#endif
+#define	_IOWR(x,y,t)		_IOC(IOC_INOUT,	(x), (y), sizeof(t))
 
 #endif /* !_SYS_IOCCOM_H_ */

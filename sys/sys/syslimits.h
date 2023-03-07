@@ -61,4 +61,6 @@
 
 #define	LOGIN_NAME_MAX		17		/* max login name length incl. NUL */
 
+#define	IOV_MAX			  1024		/* max # of iovec's for readv(2) etc. */
+
 #endif

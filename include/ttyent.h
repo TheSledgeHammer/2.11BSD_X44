@@ -44,10 +44,10 @@ struct	ttyent { 			/* see getttyent(3) */
 #define TTY_DTRCTS  0x40    /* set 'CDTRCTS' on open (dev. specific) */
 
 __BEGIN_DECLS
-struct ttyent *getttyent (void);
-struct ttyent *getttynam (const char *);
-int setttyent (void);
-int endttyent (void);
+struct ttyent *getttyent(void);
+struct ttyent *getttynam(const char *);
+int setttyent(void);
+int endttyent(void);
 __END_DECLS
 
 #endif /* !_TTYENT_H_ */

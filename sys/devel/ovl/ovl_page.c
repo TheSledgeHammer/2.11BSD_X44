@@ -108,20 +108,55 @@ long					ovl_first_page;
 long					ovl_last_page;
 vm_offset_t				ovl_first_phys_addr;
 vm_offset_t				ovl_last_phys_addr;
+vm_offset_t				oentry_data;
 
 struct vpage_hash_head 	*ovl_vpage_hashtable;
 
+/*
+ * ovl_pbootstrap:
+ *
+ * Allocates virtual address space from pmap_bootstrap_alloc.
+ */
 void
-omap_bootstrap(void)
+ovl_pbootstrap(void)
 {
 	extern vm_offset_t	oentry_data;
-	extern vm_size_t	oentry_data_size;
+	vm_size_t			oentry_data_size;
 	vm_size_t 			omap_size, oentry_size;
 
 	omap_size = (MAX_OMAP * sizeof(struct ovl_map));
-	oentry_size = (MAX_OMAPENT * sizeof(struct ovl_map_entry));
+	kentry_size = (MAX_OMAPENT * sizeof(struct ovl_map_entry));
 	oentry_data_size = round_page(omap_size + oentry_size);
 	oentry_data = (vm_offset_t)pmap_bootstrap_overlay_alloc(oentry_data_size);
+}
+
+/*
+ * ovl_pbootinit:
+ *
+ * Allocates item from space made available by ovl_pbootstrap.
+ */
+void *
+ovl_pbootinit(item, size, nitems)
+	void 		*item;
+	vm_size_t 	size;
+	int 		nitems;
+{
+	extern vm_offset_t	oentry_data;
+	vm_size_t 			free;
+	vm_size_t 			totsize;
+	vm_size_t 			result;
+
+	free = oentry_data;
+	totsize = (size * nitems);
+	result = free - totsize;
+	if (free < totsize) {
+		panic("ovl_pbootinit: not enough space allocated");
+	}
+	bzero(item, totsize);
+	item = (item + size);
+	oentry_data = result;
+
+	return (item);
 }
 
 void
@@ -155,18 +190,7 @@ ovl_page_init(start, end)
 
 	*end = trunc_page(*end);
 
-	/*
-	 *	Pre-allocate maps and map entries that cannot be dynamically
-	 *	allocated via malloc().  The maps include the kernel_map and
-	 *	kmem_map which must be initialized before malloc() will
-	 *	work (obviously).  Also could include pager maps which would
-	 *	be allocated before kmeminit.
-	 *
-	 *	Allow some kernel map entries... this should be plenty
-	 *	since people shouldn't be cluttering up the kernel
-	 *	map (they should use their own maps).
-	 */
-	omap_bootstrap();
+	ovl_pbootstrap();
 
 	npages = (*end - *start + sizeof(struct ovl_page)) / (PAGE_SIZE + sizeof(struct ovl_page));
 

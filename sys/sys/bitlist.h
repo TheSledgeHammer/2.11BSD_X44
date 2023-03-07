@@ -49,7 +49,7 @@ typedef union cpu_top 		ctop_t;
 
 void		ctop_set(ctop_t *, uint32_t);
 uint32_t	ctop_get(ctop_t *);
-int		ctop_isset(ctop_t *, uint32_t);
+int			ctop_isset(ctop_t *, uint32_t);
 
 /* ctop macros */
 #define CPU_SET(top, val) 	(ctop_set(top, val))

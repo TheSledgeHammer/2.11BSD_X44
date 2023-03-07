@@ -13,7 +13,7 @@
 
 
 ## Filesets:
-
+- Fix fileset's tag & file directory associative hash.
 
 ## Virtual_Disks: (advvm_vdisk.c/.h)
 - To implement routines & functions

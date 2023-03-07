@@ -29,10 +29,7 @@
 #ifndef	_DEV_EVDEV_EVDEV_H
 #define	_DEV_EVDEV_EVDEV_H
 
-#include <sys/types.h>
 #include <dev/misc/evdev/input.h>
-
-#define	NAMELEN		80
 
 struct evdev_dev;
 struct cdevsw;
@@ -94,8 +91,6 @@ struct evdev_methods {
 	evdev_keycode_t				*ev_set_keycode;
 	evdev_keycode_t 			*ev_get_keycode;
 };
-
-extern const struct cdevsw evdev_cdevsw;
 
 /* Input device interface: */
 struct evdev_dev *evdev_alloc(void);

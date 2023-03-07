@@ -50,16 +50,12 @@ A General todo list. Don't hesitate to add to this list. :)
 # usr/sys/ (Kernel):
 ## conf:
 - Seperate file for conf options
-- Better intergration of kern.post.mk: Initial Port
 
 ## ddb:
 
 ## kern:
 - subr_hints.c: It's usefulness is in question...
 - replace use of spl with something more like DragonflyBSD's lwkt tokens.
-- setup: a new freeproc list. 
-	- To manage proc's that are not active or zombie's.
-	- Mimic 2.11BSD's original freeproc list.
 - RLimit (Minor Issue)
 	- 4.4BSD-Lite2 & 2.11BSD conflict.
 	- init_main.c: plimit pointer to rlimit and user pointer to rlimit
@@ -67,7 +63,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - create seperate options file for each arch
 - i386/x86: (Merged under i386)
-	- pnpbios: both supported in i386/bios.c but not elsewhere
+	- pnpbios: add devices
 
 ## devel: (planned)
 - Code planned for future integration
@@ -78,24 +74,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - usb (Disabled): Has several compiler errors.
 
 - Improve directory structure
-- Essential Driver Support:
-	- Audio:
-		- Check that all audio devices available are also configured	
-	- Core:
-		- CARDBUS: to add
-		- ISAPNP: 
-			- add: com
-		- PCI:
-			- add: agp
-		- PCMCIA:
-			- add: com
-		- SDMMC: to add
-	- Disk:
-		- add: ahci & floppy
-	- Power:
-		- add: acpi
-	- USB:
-		- add: vhci, xhci
+- Essential Drivers
+	- To Support:
+		- AGP: Graphics
+		- USB: Fix compiler errors and add xhci
+		- ACPI
+		- Floppy Disks
 
 ## fs:
 
@@ -104,18 +88,16 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Add other supported filesystems.
 	- Add Networking
 - libkern:
-- x86emu:
+- x86emu: add makefile
 
 ## miscfs:
 
-## net / netimp / netinet / netns:
-- Update to fix compiler issues.
-Of Interest Todo:
-- 2.11BSD's networking stack
-	- To Support:
-		- ipv6
-		- firewall/packet filter
-		- plus much more
+## net / net80211 / netinet / netinet6 / netipsec / netkey / netns / netpfil :
+- Update to make use of tcp_checksum & udp_checksum
+- netipsec: Update and fix, to compile.
+- netpfil: 
+	- Remove IPFilter? (Any Benefits over using PF & NPF)
+	- Add NPF
 		
 ## ufs:
 - implement Extended Attributes

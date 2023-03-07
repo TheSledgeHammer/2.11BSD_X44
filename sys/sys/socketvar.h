@@ -35,7 +35,7 @@ struct socket {
 	short				so_options;	/* from socket call, see socket.h */
 	short				so_linger;	/* time to linger while closing */
 	short				so_state;	/* internal state flags SS_*, below */
-	caddr_t				so_pcb;		/* protocol control block */
+	void	  			*so_pcb;		/* protocol control block */
 	struct	protosw 	*so_proto;	/* protocol handle */
 /*
  * Variables for connection queueing.
@@ -70,6 +70,8 @@ struct socket {
 		u_short			sb_mbmax;	/* max chars of mbufs to use */
 		u_short			sb_lowat;	/* low water mark (not used yet) */
 		struct mbuf 	*sb_mb;		/* the mbuf chain */
+		struct mbuf 	*sb_mbtail;		/* the last mbuf in the chain */
+		struct mbuf 	*sb_lastrecord;	/* first mbuf of last record in */
 		struct selinfo 	sb_sel;		/* process selecting read/write */
 		short			sb_timeo;	/* timeout (not used yet) */
 		short			sb_flags;	/* flags, see below */
@@ -78,6 +80,7 @@ struct socket {
 	caddr_t				so_tpcb;	/* Misc. protocol control block XXX */
 	void				(*so_upcall)(struct socket *so, caddr_t arg, int waitf);
 	caddr_t				so_upcallarg;/* Arg for above */
+	uid_t		        so_uid;		/* who opened the socket */
 };
 
 /*
@@ -105,6 +108,7 @@ struct socket {
 #define	SS_CANTSENDMORE		0x020	/* can't send more data to peer */
 #define	SS_CANTRCVMORE		0x040	/* can't receive more data from peer */
 #define	SS_RCVATMARK		0x080	/* at mark on input */
+#define	SS_MORETOCOME		0x400	/* hint from sosend to lower layer; more data coming */
 
 #define	SS_PRIV				0x100	/* privileged for broadcast, raw... */
 #define	SS_NBIO				0x200	/* non-blocking ops */
@@ -202,6 +206,27 @@ sbunlock(sb)
 #define	sorwakeup(so)	sowakeup((so), &(so)->so_rcv)
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
+#ifdef SOCKBUF_DEBUG
+/*
+ * SBLASTRECORDCHK: check sb->sb_lastrecord is maintained correctly.
+ * SBLASTMBUFCHK: check sb->sb_mbtail is maintained correctly.
+ *
+ * => panic if the socket buffer is inconsistent.
+ * => 'where' is used for a panic message.
+ */
+void	sblastrecordchk(struct sockbuf *, const char *);
+#define	SBLASTRECORDCHK(sb, where)	sblastrecordchk((sb), (where))
+
+void	sblastmbufchk(struct sockbuf *, const char *);
+#define	SBLASTMBUFCHK(sb, where)	sblastmbufchk((sb), (where))
+void	sbcheck(struct sockbuf *);
+#define	SBCHECK(sb)					sbcheck(sb)
+#else
+#define	SBLASTRECORDCHK(sb, where)	/* nothing */
+#define	SBLASTMBUFCHK(sb, where)	/* nothing */
+#define	SBCHECK(sb)					/* nothing */
+#endif /* SOCKBUF_DEBUG */
+
 #ifdef _KERNEL
 struct msghdr;
 
@@ -212,9 +237,9 @@ extern u_long	sb_max;
 extern	char netio[], netcon[], netcls[];
 
 /* File Operations on sockets */
-int		soo_ioctl(struct file *, u_long, caddr_t, struct proc *);
-int		soo_select(struct file *, int, struct proc *);
-int		soo_stat(struct socket *, struct stat *);
+int		soo_ioctl(struct file *, u_long, void *, struct proc *);
+int		soo_stat(struct socket *, struct stat *, struct proc *);
+int		soo_fstat(struct file *, struct stat *, struct proc *);
 int		soo_rw(struct file *, struct uio *, struct ucred *);
 int		soo_read(struct file *, struct uio *, struct ucred *);
 int		soo_write(struct file *, struct uio *, struct ucred *);
@@ -249,6 +274,7 @@ void	soisconnected(struct socket *);
 void	soisdisconnecting(struct socket *);
 void	soisdisconnected(struct socket *);
 struct socket *sonewconn(struct socket *);
+struct socket *sonewconn1(struct socket *, int);
 void	soqinsque(struct socket *, struct socket *, int);
 int		soqremque(struct socket *, int);
 void	socantsendmore(struct socket *);
@@ -265,8 +291,12 @@ void	sbrelease(struct sockbuf *);
 void	sbappend(struct sockbuf *, struct mbuf *);
 void	sbappendrecord(struct sockbuf *, struct mbuf *);
 int		sbappendaddr(struct sockbuf *, struct sockaddr *, struct mbuf *, struct mbuf *);
+int		sbappendaddrchain(struct sockbuf *, const struct sockaddr *, struct mbuf *, int);
 int		sbappendrights(struct sockbuf *, struct mbuf *, struct mbuf *);
+void	sbappendstream(struct sockbuf *, struct mbuf *);
+void	sbcheck(struct sockbuf *);
 void	sbcompress(struct sockbuf *, struct mbuf *, struct mbuf *);
+struct mbuf *sbcreatecontrol(caddr_t, int, int, int);
 void	sbflush(struct sockbuf *);
 void	sbdrop(struct sockbuf *, int);
 void	sbdroprecord(struct sockbuf *);
@@ -288,6 +318,33 @@ int		unpbind(char *, int, struct vnode **, struct socket *);
 int		unpconn(char *, int, struct socket **, struct vnode **);
 void	unpgc1(struct file **, struct file **);
 int		unpdisc(struct file *);
-#endif
 
+/*
+ * Values for socket-buffer-append priority argument to sbappendaddrchain().
+ * The following flags are reserved for future implementation:
+ *
+ *  SB_PRIO_NONE:  honour normal socket-buffer limits.
+ *
+ *  SB_PRIO_ONESHOT_OVERFLOW:  if the socket has any space,
+ *	deliver the entire chain. Intended for large requests
+ *      that should be delivered in their entirety, or not at all.
+ *
+ * SB_PRIO_OVERDRAFT:  allow a small (2*MLEN) overflow, over and
+ *	aboce normal socket limits. Intended messages indicating
+ *      buffer overflow in earlier normal/lower-priority messages .
+ *
+ * SB_PRIO_BESTEFFORT: Ignore  limits entirely.  Intended only for
+ * 	kernel-generated messages to specially-marked scokets which
+ *	require "reliable" delivery, nd where the source socket/protocol
+ *	message generator enforce some hard limit (but possibly well
+ *	above kern.sbmax). It is entirely up to the in-kernel source to
+ *	avoid complete mbuf exhaustion or DoS scenarios.
+ */
+
+#define SB_PRIO_NONE 	 			0
+#define SB_PRIO_ONESHOT_OVERFLOW 	1
+#define SB_PRIO_OVERDRAFT			2
+#define SB_PRIO_BESTEFFORT			3
+
+#endif
 #endif /* _SYS_SOCKETVAR_H_ */

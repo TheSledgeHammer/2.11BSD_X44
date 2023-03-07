@@ -1,0 +1,5 @@
+# $211BSD: files.twofish,v 1.0 2023/02/25 
+
+define twofish
+
+file crypto/twofish/twofish.c		twofish

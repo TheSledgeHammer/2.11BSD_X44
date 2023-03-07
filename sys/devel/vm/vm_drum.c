@@ -206,6 +206,7 @@ vm_vstodb(vsbase, vssize, dmp, dbp, rev)
 	dbp->db_size = imin(vssize, blk - vsbase);
 	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
 }
+
 /* ARGUNUSED */
 /*
  * Convert a virtual page number

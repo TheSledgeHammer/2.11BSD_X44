@@ -323,11 +323,11 @@ ioctl()
 		break;
 
 	case FIOSETOWN:
-		u.u_error = fsetown((long)SCARG(uap, cmarg), fp, *(int*) data);
+		u.u_error = fsetown(fp, *(int*)data);
 		break;
 
 	case FIOGETOWN:
-		u.u_error = fgetown(fp, (int*) data);
+		u.u_error = fgetown(fp, (int*)data);
 		break;
 
 	default:

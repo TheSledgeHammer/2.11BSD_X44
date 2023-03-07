@@ -57,7 +57,7 @@ typedef struct {
 
 imaxdiv_t	imaxdiv(intmax_t, intmax_t);
 
-#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(_NETBSD_SOURCE)
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 #  ifndef __LOCALE_T_DECLARED
 typedef struct _locale		*locale_t;
 #  define __LOCALE_T_DECLARED
@@ -73,7 +73,7 @@ uintmax_t	wcstoumax_l(const wchar_t * __restrict,
 #endif
 
 
-#if defined(_NETBSD_SOURCE)
+#if defined(__BSD_VISIBLE)
 intmax_t	strtoi(const char * __restrict, char ** __restrict, int,
 	               intmax_t, intmax_t, int *);
 uintmax_t	strtou(const char * __restrict, char ** __restrict, int,
@@ -82,7 +82,7 @@ uintmax_t	strtou(const char * __restrict, char ** __restrict, int,
 /* i18n variations */
 intmax_t	strtoi_l(const char * __restrict, char ** __restrict, int, intmax_t, intmax_t, int *, locale_t);
 uintmax_t	strtou_l(const char * __restrict, char ** __restrict, int, uintmax_t, uintmax_t, int *, locale_t);
-#endif /* defined(_NETBSD_SOURCE) */
+#endif /* defined(__BSD_VISIBLE) */
 
 __END_DECLS
 

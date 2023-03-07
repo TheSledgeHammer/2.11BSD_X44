@@ -93,7 +93,6 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_hat.h>
 
 #include <devel/sys/malloctypes.h>
 #include <devel/ovl/include/ovl.h>
@@ -118,34 +117,16 @@ static void	_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
 RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 
-vm_map_t 		omap_free;
-vm_map_entry_t 	oentry_free;
-vm_offset_t		oentry_data;
-vm_size_t		oentry_data_size;
+ovl_map_entry_t 				oentry_free;
+ovl_map_t 						omap_free;
+static struct ovl_map			omap_init[MAX_OMAP];
+static struct ovl_map_entry		oentry_init[MAX_OMAPENT];
 
 void
 ovl_map_startup()
 {
-    register int i;
-    register ovl_map_entry_t oep;
-    ovl_map_t op;
-
-    omap_free = op = (ovl_map_t) oentry_data;
-    i = MAX_OMAP;
-
-    while (--i > 0) {
-        CIRCLEQ_NEXT(oep, ovl_cl_entry) = (ovl_map_entry_t) (op + 1);
-        op++;
-    }
-    CIRCLEQ_FIRST(&op->ovl_header)++->ovl_cl_entry.cqe_next = NULL;
-
-    oentry_free = oep = (ovl_map_entry_t) op;
-    i = (oentry_data_size - MAX_OMAP * sizeof * op) / sizeof *oep;
-    while (--i > 0) {
-        CIRCLEQ_NEXT(oep, ovl_cl_entry) = oep + 1;
-        oep++;
-    }
-    CIRCLEQ_NEXT(oep, ovl_cl_entry) = NULL;
+	omap_free 	= ovl_pbootinit(omap_init, sizeof(struct ovl_map), MAX_OMAP);
+	oentry_free	= ovl_pbootinit(oentry_init, sizeof(struct ovl_map_entry), MAX_OMAPENT);
 }
 
 struct ovlspace *

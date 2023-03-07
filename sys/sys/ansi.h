@@ -40,7 +40,7 @@
 #define	_SYS_ANSI_H_
 
 #include <sys/cdefs.h>
-#include <machine/ansi.h>
+//#include <machine/ansi.h>
 #include <machine/types.h>
 
 typedef char *				__caddr_t;		/* core address */

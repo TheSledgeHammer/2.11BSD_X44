@@ -1,7 +1,11 @@
-/*
- * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+/*	$NetBSD: softintr.c,v 1.1 2003/02/26 21:26:12 fvdl Exp $	*/
+
+/*-
+ * Copyright (c) 2000, 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Jason R. Thorpe.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,30 +15,40 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Generic soft interrupt implementation for 211BSD/i386 & x86.
  */
 
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/syslog.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
-#include <sys/queue.h>
+//#include <sys/queue.h>
+#include <sys/lock.h>
 #include <sys/user.h>
 
 #include <machine/pic.h>
@@ -42,58 +56,25 @@
 
 #include <vm/include/vm_extern.h>
 
+static void softintr_register_pic(struct pic *, struct apic *);
+
 /*
  * Generic software interrupt support.
  */
-static void	softintr_hwmask(struct softpic *, int);
-static void	softintr_hwunmask(struct softpic *, int);
-static void	softintr_addroute(struct softpic *, struct cpu_info *, int, int, int);
-static void	softintr_delroute(struct softpic *, struct cpu_info *, int, int, int);
-static void	softintr_register_pic(struct pic *, struct apic *);
-
 struct pic softintr_template = {
 		.pic_type = PIC_SOFT,
-		.pic_hwmask = softintr_hwmask,
-		.pic_hwunmask = softintr_hwunmask,
-		.pic_addroute = softintr_addroute,
-		.pic_delroute = softintr_delroute,
+		.pic_hwmask = NULL,
+		.pic_hwunmask = NULL,
+		.pic_addroute = NULL,
+		.pic_delroute = NULL,
 		.pic_register = softintr_register_pic
 };
 
-static void
-softintr_hwmask(spic, pin)
-	struct softpic *spic;
-	int pin;
-{
-	/* Do Nothing */
-}
-
-static void
-softintr_hwunmask(spic, pin)
-	struct softpic *spic;
-	int pin;
-{
-	/* Do Nothing */
-}
-
-static void
-softintr_addroute(spic, ci, pin, idtvec, type)
-	struct softpic *spic;
-	struct cpu_info *ci;
-	int pin, idtvec, type;
-{
-	/* Do Nothing */
-}
-
-
-static void
-softintr_delroute(spic, ci, pin, idtvec, type)
-	struct softpic *spic;
-	struct cpu_info *ci;
-	int pin, idtvec, type;
-{
-	/* Do Nothing */
-}
+struct apic softintr_intrmap = {
+		.apic_pic_type = PIC_SOFT,
+		.apic_edge = NULL,
+		.apic_level = NULL
+};
 
 static void
 softintr_register_pic(pic, apic)
@@ -101,72 +82,134 @@ softintr_register_pic(pic, apic)
 	struct apic *apic;
 {
 	pic = &softintr_template;
-	apic = NULL;
+	apic = &softintr_intrmap;
 	softpic_register(pic, apic);
 }
 
-/* XXX: incomplete */
-#if defined(__HAVE_FAST_SOFTINTS)
-struct intrhand fake_softclock_intrhand;
-struct intrhand fake_softnet_intrhand;
-struct intrhand fake_softserial_intrhand;
-struct intrhand fake_softbio_intrhand;
+//#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+struct i386_soft_intr i386_soft_intrs[I386_NSOFTINTR];
+const int i386_soft_intr_to_ssir[I386_NSOFTINTR] = {
+		SIR_CLOCK,
+		SIR_NET,
+		SIR_SERIAL,
+		SIR_BIO,
+};
 
+/*
+ * softintr_init:
+ *
+ *	Initialize the software interrupt system.
+ */
 void
-softint_init_md(struct proc *p, u_int level, uintptr_t *machdep)
+softintr_init(void)
 {
-	struct softpic *spic;
-	struct intrsource *isp;
-	struct cpu_info *ci;
-	u_int sir;
+	struct i386_soft_intr *si;
+	int i;
 
-	//ci = p->p_cpuinfo;
+	for (i = 0; i < I386_NSOFTINTR; i++) {
+		si = &i386_soft_intrs[i];
+		TAILQ_INIT(&si->softintr_q);
+		simple_lock_init(si->softintr_slock, "softintr_slock");
+		si->softintr_ssir = i386_soft_intr_to_ssir[i];
+	}
+}
 
-	spic = &intrspic;
-	//isp->is_recurse = Xsoftintr;
-	//isp->is_resume = Xsoftintr;
-	isp = &spic->sp_intsrc;
-	isp->is_pic = &softintr_template;
+/*
+ * softintr_dispatch:
+ *
+ *	Process pending software interrupts.
+ */
+void
+softintr_distpatch(which)
+	int which;
+{
+	struct i386_soft_intr 		*si;
+	struct i386_soft_intrhand 	*sih;
+	int s;
+
+	si = &i386_soft_intrs[which];
+	for (;;) {
+		i386_softintr_lock(si, s);
+		sih = TAILQ_FIRST(&si->softintr_q);
+		if (sih == NULL) {
+			i386_softintr_unlock(si, s);
+			break;
+		}
+		TAILQ_REMOVE(&si->softintr_q, sih, sih_q);
+		sih->sih_pending = 0;
+		i386_softintr_unlock(si, s);
+
+		(*sih->sih_fn)(sih->sih_arg);
+	}
+}
+
+/*
+ * softintr_establish:		[interface]
+ *
+ *	Register a software interrupt handler.
+ */
+void *
+softintr_establish(level, func, arg)
+	int level;
+	void (*func)(void *);
+	void *arg;
+{
+	struct i386_soft_intr 		*si;
+	struct i386_soft_intrhand 	*sih;
+	int which;
 
 	switch (level) {
-	case SOFTINT_BIO:
-		sir = SIR_BIO;
-		fake_softbio_intrhand->ih_pic = &softintr_template;
-		fake_softbio_intrhand->ih_level = IPL_SOFTBIO;
-		isp->is_handlers = &fake_softbio_intrhand;
+	case IPL_SOFTBIO:
+		which = I386_SOFTINTR_SOFTBIO;
+		break;
+		
+	case IPL_SOFTCLOCK:
+		which = I386_SOFTINTR_SOFTCLOCK;
 		break;
 
-	case SOFTINT_NET:
-		sir = SIR_NET;
-		fake_softnet_intrhand->ih_pic = &softintr_template;
-		fake_softnet_intrhand->ih_level = IPL_SOFTNET;
-		isp->is_handlers = &fake_softnet_intrhand;
+	case IPL_SOFTNET:
+		which = I386_SOFTINTR_SOFTNET;
 		break;
 
-	case SOFTINT_SERIAL:
-		sir = SIR_SERIAL;
-		fake_softserial_intrhand->ih_pic = &softintr_template;
-		fake_softserial_intrhand->ih_level = IPL_SOFTSERIAL;
-		isp->is_handlers = &fake_softserial_intrhand;
+	case IPL_SOFTSERIAL:
+		which = I386_SOFTINTR_SOFTSERIAL;
 		break;
-
-	case SOFTINT_CLOCK:
-		sir = SIR_CLOCK;
-		fake_softclock_intrhand->ih_pic = &softintr_template;
-		fake_softclock_intrhand->ih_level = IPL_SOFTCLOCK;
-		isp->is_handlers = &fake_softclock_intrhand;
-		break;
-
+		
 	default:
-		panic("softint_init_md");
+		panic("softintr_establish");
 	}
-
-	KASSERT(spic->sp_intsrc[sir] == NULL);
-
-	*machdep = (1 << sir);
-	spic->sp_intsrc[sir] = isp;
-	spic->sp_cpu = ci;
-
-	intr_calculatemasks();
+	si = &i386_soft_intrs[which];
+	sih = malloc(sizeof(*sih), M_DEVBUF, M_NOWAIT);
+	if (__predict_true(sih != NULL)) {
+		sih->sih_intrhead = si;
+		sih->sih_fn = func;
+		sih->sih_arg = arg;
+		sih->sih_pending = 0;
+	}
+	return (sih);
 }
-#endif /* __HAVE_FAST_SOFTINTS */
+
+/*
+ * softintr_disestablish:	[interface]
+ *
+ *	Unregister a software interrupt handler.
+ */
+void
+softintr_disestablish(void *arg)
+{
+	struct i386_soft_intrhand *sih;
+	struct i386_soft_intr *si;
+	int s;
+
+	sih = arg;
+	si = sih->sih_intrhead;
+	i386_softintr_lock(si, s);
+	if (sih->sih_pending) {
+		TAILQ_REMOVE(&si->softintr_q, sih, sih_q);
+		sih->sih_pending = 0;
+	}
+	i386_softintr_unlock(si, s);
+
+	free(sih, M_DEVBUF);
+}
+//#endif

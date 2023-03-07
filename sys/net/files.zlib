@@ -1,0 +1,3 @@
+#	$211BSD: files.zlib Sources v 1.0
+
+file	net/zlib.c			(ppp & ppp_deflate) | ipsec | opencrypto

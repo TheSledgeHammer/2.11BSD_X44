@@ -640,3 +640,80 @@ again:
 		object->paging_in_progress--;
 	}
 }
+
+/*
+ *	vm_pageout is the high level pageout daemon.
+ */
+
+void
+vm_pageout(void)
+{
+	(void) spl0();
+
+	/*
+	 *	Initialize some paging parameters.
+	 */
+
+	if (cnt.v_free_min == 0) {
+		cnt.v_free_min = VM_PAGE_FREE_MIN;
+		vm_page_free_min_min /= cnt.v_page_size;
+		vm_page_free_min_max /= cnt.v_page_size;
+		if (cnt.v_free_min < vm_page_free_min_min)
+			cnt.v_free_min = vm_page_free_min_min;
+		if (cnt.v_free_min > vm_page_free_min_max)
+			cnt.v_free_min = vm_page_free_min_max;
+	}
+
+	if (cnt.v_free_target == 0)
+		cnt.v_free_target = VM_PAGE_FREE_TARGET;
+
+	if (cnt.v_free_target <= cnt.v_free_min)
+		cnt.v_free_target = cnt.v_free_min + 1;
+
+	/* XXX does not really belong here */
+	if (vm_page_max_wired == 0)
+		vm_page_max_wired = cnt.v_free_count / 3;
+
+	/*
+	 *	The pageout daemon is never done, so loop
+	 *	forever.
+	 */
+
+	simple_lock(&vm_pages_needed_lock);
+	while (TRUE) {
+		thread_sleep(&vm_pages_needed, &vm_pages_needed_lock, FALSE);
+		/*
+		 * Compute the inactive target for this scan.
+		 * We need to keep a reasonable amount of memory in the
+		 * inactive list to better simulate LRU behavior.
+		 */
+		cnt.v_inactive_target =
+			(cnt.v_page_active_count + cnt.v_page_inactive_count) / 3;
+		if (cnt.v_inactive_target <= cnt.v_free_target)
+			cnt.v_inactive_target = cnt.v_free_target + 1;
+
+		/*
+		 * Only make a scan if we are likely to do something.
+		 * Otherwise we might have been awakened by a pager
+		 * to clean up async pageouts.
+		 */
+		if (cnt.v_free_count < cnt.v_free_target ||
+		    cnt.v_page_inactive_count < cnt.v_inactive_target)
+			vm_pageout_scan();
+		vm_pager_sync();
+		simple_lock(&vm_pages_needed_lock);
+		thread_wakeup(&cnt.v_free_count);
+	}
+}
+
+/*
+ *	Signal pageout-daemon and wait for it.
+ */
+
+void
+vm_wait(void)
+{
+	simple_lock(&vm_pages_needed_lock);
+	thread_wakeup(&vm_pages_needed);
+	thread_sleep(&cnt.v_free_count, &vm_pages_needed_lock, FALSE);
+}

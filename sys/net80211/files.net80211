@@ -1,0 +1,12 @@
+#	$211BSD: files.net80211 Sources v 1.0
+
+# Net80211 Sources
+file	net80211/ieee80211.c			wlan
+file	net80211/ieee80211_compat.c		wlan
+file	net80211/ieee80211_crypto.c		wlan
+file	net80211/ieee80211_input.c		wlan
+file	net80211/ieee80211_ioctl.c		wlan
+file	net80211/ieee80211_node.c		wlan
+file	net80211/ieee80211_output.c		wlan
+file	net80211/ieee80211_proto.c		wlan
+file	net80211/ieee80211_rssadapt.c	wlan

@@ -15,7 +15,7 @@ INCS=		a.out.h ar.h assert.h atomic.h bitstring.h complex.h cpio.h ctype.h \
 			errno.h fmtmsg.h fnmatch.h fstab.h fts.h ftw.h getopt.h glob.h      \
 			grp.h ident.h inttypes.h iso646.h kenv.h kvm.h langinfo.h 			\
 			lastlog.h libgen.h limits.h link_aout.h link_elf.h 					\
-			link.h locale.h login_cap.h math.h memory.h mpool.h mtab.h 			\
+			link.h locale.h login_cap.h math.h memory.h mp.h mpool.h mtab.h 	\
 			nl_types.h ndbm.h netdb.h nlist.h paths.h pwd.h ranlib.h regex.c 	\
 			regexp.h resolv.h rune.h runetype.h setjmp.h sgtty.h signal.h 		\
 			stab.h stdio.h stdlib.h string.h stringlist.h strings.h struct.h 	\

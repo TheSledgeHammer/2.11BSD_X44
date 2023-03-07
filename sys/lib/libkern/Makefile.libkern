@@ -51,37 +51,38 @@ SRCS+= udivmoddi4.c divmoddi4.c
 .endif
 
 # Other stuff
-SRCS+=	__assert.c __main.c
+SRCS+=	__assert.c __main.c _que.c 
 SRCS+=	inet_addr.c intoa.c
-SRCS+=	bswap16.c bswap32.c bswap64.c
-SRCS+=	murmur3_32.c prospectorhash.c
-SRCS+=	pmatch.c mcount.c bcd.c ffs.c \
-		ffsl.c
+SRCS+=	murmur3_32.c prospectorhash.c arc4random.c
+SRCS+=	pmatch.c mcount.c bcd.c hexdump.c
+SRCS+=	ffs.c ffsl.c flsl.c flsll.c
 
-SRCS+=	strstr.c strlcpy.c strlcat.c
+SRCS+=	bcmp.c bcopy.c bzero.c
+#SRCS+=	memmove.c memcmp.c
+SRCS+=	memchr.c
 
-SRCS+=	bcmp.c bcopy.c max.c min.c locc.c
+SRCS+= 	max.c min.c locc.c
 SRCS+=	imax.c imin.c lmax.c lmin.c ulmax.c ulmin.c
-SRCS+=	memmove.c memcmp.c
 
-SRCS+=	memcpy.c
-.if empty(SRCS:Mmemset2.*)
-SRCS+=	memset.c
-.endif
-
-SRCS+=	strtoul.c #strtoq.c 
+SRCS+=	random.c qsort.c
 
 SRCS+=	scanc.c skpc.c
-SRCS+=	random.c
-
-SRCS+=	memchr.c
 SRCS+=	strcat.c strchr.c strcmp.c strcpy.c strlen.c
 SRCS+=	strrchr.c strncmp.c strncpy.c strsep.c
 SRCS+=	strcasecmp.c strncasecmp.c
 
-SRCS+=	qsort.c
+SRCS+=	strstr.c strlcpy.c strlcat.c
+SRCS+=	strtoul.c
 
-SRCS+=	hexdump.c
+# if no machine specific memcpy(3), build one out of bcopy(3) based stub.
+.if empty(SRCS:Mmemcpy.S)
+SRCS+=	memcpy.c
+.endif
+
+# if no machine specific memmove(3), build one out of bcopy(3) based stub.
+.if empty(SRCS:Mmemmove.S)
+SRCS+=	memmove.c
+.endif
 
 # Files to clean up
 CLEANFILES+= lib${LIB}.o lib${LIB}.po

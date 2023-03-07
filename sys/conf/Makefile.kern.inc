@@ -1,4 +1,3 @@
-#	$NetBSD: Makefile.kern.inc,v 1.51.2.3 2004/09/13 17:32:31 tron Exp $
 #
 # This file contains common `MI' targets and definitions and it is included
 # at the bottom of each `MD' ${MACHINE}/conf/Makefile.${MACHINE}.
@@ -343,23 +342,43 @@ lint: ${LOBJS}
 	${LINT} ${KERNLINTFLAGS} ${CPPFLAGS:M-[IDU]*} ${LOBJS}
 .endif
 
-
 .if !target(install)
 # The install target can be redefined by putting a
 # install-kernel-${MACHINE_NAME} target into /etc/mk.conf
+# Can be overridden by makeoptions or /etc/make.conf
 
-#MACHINE_NAME!=  uname -n
+KERNEL_KO?=		twobsd
+KERNEL?=		kernel
+KODIR?=			/boot/${KERNEL}
+MACHINE_NAME!=  	uname -n
 
-#install: install-kernel-${MACHINE_NAME}
-#.if !target(install-kernel-${MACHINE_NAME})	
-.include "kern.boot.mk"
-
-#install-kernel-${MACHINE_NAME}:
-#	rm -f ${DESTDIR}/onetbsd
-#	ln ${DESTDIR}/netbsd ${DESTDIR}/onetbsd
-#	cp netbsd ${DESTDIR}/nnetbsd
-#	mv ${DESTDIR}/nnetbsd ${DESTDIR}/netbsd
-#.endif
+install: install-kernel-${MACHINE_NAME}
+.if !target(install-kernel-${MACHINE_NAME})
+	install-kernel-${MACHINE_NAME}:
+		@if [ ! -f ${KERNEL_KO} ] ; then \
+			echo "You must build a kernel first." ; \
+			exit 1 ; \
+		fi
+	.if exists(${DESTDIR}${KODIR})
+		-thiskernel=`sysctl -n kern.bootfile || echo ${KODIR}/${KERNEL}/${KERNEL_KO}` ; \
+		if [ ! "`dirname "$$thiskernel"`" -ef ${DESTDIR}${KODIR} ] ; then \
+			chflags -R noschg ${DESTDIR}${KODIR} ; \
+			rm -rf ${DESTDIR}${KODIR} ; \
+			rm -rf ${DESTDIR}${KERN_DEBUGDIR}${KODIR} ; \
+		else \
+			if [ -d ${DESTDIR}${KODIR}.old ] ; then \
+				chflags -R noschg ${DESTDIR}${KODIR}.old ; \
+				rm -rf ${DESTDIR}${KODIR}.old ; \
+			fi ; \
+			mv ${DESTDIR}${KODIR} ${DESTDIR}${KODIR}.old ; \
+			if [ -n "${KERN_DEBUGDIR}" -a \
+		    	 -d ${DESTDIR}${KERN_DEBUGDIR}${KODIR} ]; then \
+				rm -rf ${DESTDIR}${KERN_DEBUGDIR}${KODIR}.old ; \
+				mv ${DESTDIR}${KERN_DEBUGDIR}${KODIR} ${DESTDIR}${KERN_DEBUGDIR}${KODIR}.old ; \
+			fi ; \
+			sysctl kern.bootfile=${DESTDIR}${KODIR}.old/"`basename "$$thiskernel"`" ; \
+		fi
+.endif
 .endif
 
 .if !target(tags)

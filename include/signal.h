@@ -129,7 +129,7 @@ struct	sigcontext {
 #define sigmask(m)	((long)1 << ((m)-1))
 
 #ifndef KERNEL
-extern long	sigblock(), sigsetmask();
+extern long	sigblock(int), sigsetmask(int);
 #endif
 
 #endif	/* !_SIGNAL_H_ */

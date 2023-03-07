@@ -141,7 +141,7 @@ unsigned long int wcstoul(const wchar_t * __restrict, wchar_t ** __restrict, int
 long int wcstol(const wchar_t * __restrict, wchar_t ** __restrict, int);
 double wcstod(const wchar_t * __restrict, wchar_t ** __restrict);
 
-#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) > 199901L || defined(_NETBSD_SOURCE)
+#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) > 199901L || defined(__BSD_VISIBLE)
 /* LONGLONG */
 long long int wcstoll(const wchar_t * __restrict, wchar_t ** __restrict, int);
 /* LONGLONG */
@@ -158,7 +158,6 @@ int 	fputws(const wchar_t * __restrict, FILE * __restrict);
 //wint_t 	putwc(wchar_t, FILE *);
 //wint_t 	putwchar(wchar_t);
 int 	fwide (FILE *, int);
-
 __END_DECLS
 
 #endif /* !_WCHAR_H_ */

@@ -55,6 +55,7 @@
 enum constants {
 	ADVVM_VERSION = 1,
 	ADVVM_HEADER = 512,
+	ADVVM_MAGIC = 0x11081953,				/* magic number */
 
 	ADVVM_BDEV_MAJOR = 162,					/* major number for block device */
 	ADVVM_CDEV_MAJOR = 162,					/* major number for character device */
@@ -63,6 +64,8 @@ enum constants {
 	ADVVM_VOLUME_TYPE = 0,
 	ADVVM_DOMAIN_TYPE = 1,
 	ADVVM_FILESET_TYPE = 2,
+
+
 
     /*
      * Define a minor device number.
@@ -130,10 +133,6 @@ struct advvm_header {
 	long					ahd_magic;
 	struct advvm_label		ahd_label;
 	struct advvm_block		ahd_block;
-};
-
-struct advvm_attach_args {
-	char					*ada_name;
 };
 
 /* see: advvm.c */

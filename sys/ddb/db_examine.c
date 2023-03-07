@@ -32,6 +32,7 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
+#include <sys/systm.h>
 
 #include <machine/db_machdep.h>		/* type definitions */
 

@@ -148,9 +148,10 @@ sonewconn(head)
 	so->so_proto = head->so_proto;
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
+	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat);
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
-	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
+	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0, u.u_procp)) {
 		(void) soqremque(so, 0);
 		(void) m_free(m);
 		goto bad;
@@ -158,6 +159,24 @@ sonewconn(head)
 	return (so);
 bad:
 	return ((struct socket *)0);
+}
+
+struct socket *
+sonewconn1(head, connstatus)
+	register struct socket *head;
+	int connstatus;
+{
+	struct socket	*so;
+	int		soqueue;
+
+	soqueue = connstatus ? 1 : 0;
+	so = sonewconn(head);
+	if (connstatus) {
+		sorwakeup(head);
+		wakeup((caddr_t) &head->so_timeo);
+		so->so_state |= connstatus;
+	}
+	return (so);
 }
 
 void
@@ -518,6 +537,124 @@ sbappendaddr(sb, asa, m0, rights0)
 	return (1);
 }
 
+#define	SBLINKRECORDCHAIN(sb, m0, mlast)			\
+	do {											\
+		if ((sb)->sb_lastrecord != NULL) {			\
+			(sb)->sb_lastrecord->m_nextpkt = (m0);	\
+		} else {									\
+			(sb)->sb_mb = (m0);						\
+		} 											\
+	(sb)->sb_lastrecord = (mlast);					\
+} while (/*CONSTCOND*/0)
+
+#define	SBLINKRECORD(sb, m0)						\
+	SBLINKRECORDCHAIN(sb, m0, m0)
+
+/*
+ * Helper for sbappendchainaddr: prepend a struct sockaddr* to
+ * an mbuf chain.
+ */
+static __inline struct mbuf *
+m_prepend_sockaddr(sb, m0, asa)
+	struct sockbuf *sb;
+	struct mbuf *m0;
+	const struct sockaddr *asa;
+{
+	struct mbuf *m;
+	const int salen = asa->sa_len;
+
+	/* only the first in each chain need be a pkthdr */
+	MGETHDR(m, M_DONTWAIT, MT_SONAME);
+	if (m == 0) {
+		return (0);
+	}
+
+	KASSERT(salen <= MHLEN);
+
+	m->m_len = salen;
+	bcopy((caddr_t)asa, mtod(m, caddr_t), salen);
+	m->m_next = m0;
+	m->m_pkthdr.len = salen + m0->m_pkthdr.len;
+
+	return m;
+}
+
+int
+sbappendaddrchain(sb, asa, m0, sbprio)
+	struct sockbuf *sb;
+	const struct sockaddr *asa;
+	struct mbuf *m0;
+	int sbprio;
+{
+	struct mbuf *m, *n, *n0, *nlast;
+	int space;
+	int error;
+
+	(void)sbprio;
+
+	if (m0 && (m0->m_flags & M_PKTHDR) == 0) {
+		panic("sbappendaddrchain");
+	}
+
+	space = sbspace(sb);
+	n0 = NULL;
+	nlast = NULL;
+	for (m = m0; m; m = m->m_nextpkt) {
+		struct mbuf *np;
+
+		/* Prepend sockaddr to this record (m) of input chain m0 */
+		n = m_prepend_sockaddr(sb, m, asa);
+		if (n == NULL) {
+			error = ENOBUFS;
+			goto bad;
+		}
+
+		/* Append record (asa+m) to end of new chain n0 */
+		if (n0 == NULL) {
+			n0 = n;
+		} else {
+			nlast->m_nextpkt = n;
+		}
+		/* Keep track of last record on new chain */
+		nlast = n;
+
+		for (np = n; np; np = np->m_next) {
+			sballoc(sb, np);
+		}
+	}
+
+	SBLASTRECORDCHK(sb, "sbappendaddrchain 1");
+
+	/* Drop the entire chain of (asa+m) records onto the socket */
+	SBLINKRECORDCHAIN(sb, n0, nlast);
+
+	SBLASTRECORDCHK(sb, "sbappendaddrchain 2");
+
+	for (m = nlast; m->m_next; m = m->m_next)
+		;
+	sb->sb_mbtail = m;
+	SBLASTMBUFCHK(sb, "sbappendaddrchain");
+
+	return (1);
+bad:
+	/*
+	 * On error, free the prepended addreseses. For consistency
+	 * with sbappendaddr(), leave it to our caller to free
+	 * the input record chain passed to us as m0.
+	 */
+	while ((n = n0) != NULL) {
+		struct mbuf *np;
+
+		/* Undo the sballoc() of this record */
+		for (np = n; np; np = np->m_next)
+			sbfree(sb, np);
+
+		n0 = n->m_nextpkt; 	/* iterate at next prepended address */
+		MFREE(n, np); 		/* free prepended address (not data) */
+	}
+	return 0;
+}
+
 int
 sbappendrights(sb, m0, rights)
 	struct sockbuf *sb;
@@ -546,6 +683,22 @@ sbappendrights(sb, m0, rights)
 	if (m0)
 		sbcompress(sb, m0, m);
 	return (1);
+}
+
+void
+sbappendstream(sb, m)
+	struct sockbuf *sb;
+	struct mbuf *m;
+{
+	KDASSERT(m->m_nextpkt == NULL);
+	KASSERT(sb->sb_mb == sb->sb_lastrecord);
+
+	SBLASTMBUFCHK(sb, __func__);
+
+	sbcompress(sb, m, sb->sb_mbtail);
+
+	sb->sb_lastrecord = sb->sb_mb;
+	SBLASTRECORDCHK(sb, __func__);
 }
 
 /*
@@ -663,6 +816,42 @@ sbdroprecord(sb)
 			MFREE(m, mn);
 		} while (m == mn);
 	}
+}
+
+
+/*
+ * Create a "control" mbuf containing the specified data
+ * with the specified type for presentation on a socket buffer.
+ */
+struct mbuf *
+sbcreatecontrol(p, size, type, level)
+	caddr_t p;
+	int size, type, level;
+{
+	struct cmsghdr	*cp;
+	struct mbuf	*m;
+
+	if (CMSG_SPACE(size) > MCLBYTES) {
+		printf("sbcreatecontrol: message too large %d\n", size);
+		return NULL;
+	}
+
+	if ((m = m_get(M_DONTWAIT, MT_CONTROL)) == NULL)
+		return ((struct mbuf *) NULL);
+	if (CMSG_SPACE(size) > MLEN) {
+		MCLGET(m, M_DONTWAIT);
+		if ((m->m_flags & M_EXT) == 0) {
+			m_free(m);
+			return NULL;
+		}
+	}
+	cp = mtod(m, struct cmsghdr *);
+	memcpy(CMSG_DATA(cp), p, size);
+	m->m_len = CMSG_SPACE(size);
+	cp->cmsg_len = CMSG_LEN(size);
+	cp->cmsg_level = level;
+	cp->cmsg_type = type;
+	return (m);
 }
 
 static int
@@ -847,3 +1036,104 @@ sokqfilter(fp, kn)
 	sb->sb_flags |= SB_KNOTE;
 	return (0);
 }
+
+
+/*
+ * Routines to add and remove
+ * data from an mbuf queue.
+ *
+ * The routines sbappend() or sbappendrecord() are normally called to
+ * append new mbufs to a socket buffer, after checking that adequate
+ * space is available, comparing the function sbspace() with the amount
+ * of data to be added.  sbappendrecord() differs from sbappend() in
+ * that data supplied is treated as the beginning of a new record.
+ * To place a sender's address, optional access rights, and data in a
+ * socket receive buffer, sbappendaddr() should be used.  To place
+ * access rights and data in a socket receive buffer, sbappendrights()
+ * should be used.  In either case, the new data begins a new record.
+ * Note that unlike sbappend() and sbappendrecord(), these routines check
+ * for the caller that there will be enough space to store the data.
+ * Each fails if there is not enough space, or if it cannot find mbufs
+ * to store additional information in.
+ *
+ * Reliable protocols may use the socket send buffer to hold data
+ * awaiting acknowledgement.  Data is normally copied from a socket
+ * send buffer in a protocol with m_copy for output to a peer,
+ * and then removing the data from the socket buffer with sbdrop()
+ * or sbdroprecord() when the data is acknowledged by the peer.
+ */
+
+#ifdef SOCKBUF_DEBUG
+void
+sbcheck(sb)
+	struct sockbuf *sb;
+{
+	struct mbuf	*m;
+	u_long		len, mbcnt;
+
+	len = 0;
+	mbcnt = 0;
+	for (m = sb->sb_mb; m; m = m->m_next) {
+		len += m->m_len;
+		mbcnt += MSIZE;
+		if (m->m_flags & M_EXT)
+			mbcnt += m->m_ext.ext_size;
+		if (m->m_nextpkt)
+			panic("sbcheck nextpkt");
+	}
+	if (len != sb->sb_cc || mbcnt != sb->sb_mbcnt) {
+		printf("cc %lu != %lu || mbcnt %lu != %lu\n", len, sb->sb_cc,
+		    mbcnt, sb->sb_mbcnt);
+		panic("sbcheck");
+	}
+}
+
+void
+sblastrecordchk(sb, where)
+	struct sockbuf *sb;
+	const char *where;
+{
+	struct mbuf *m;
+
+	m = sb->sb_mb;
+	while (m && m->m_nextpkt)
+		m = m->m_nextpkt;
+
+	if (m != sb->sb_lastrecord) {
+		printf("sblastrecordchk: sb_mb %p sb_lastrecord %p last %p\n",
+				sb->sb_mb, sb->sb_lastrecord, m);
+		printf("packet chain:\n");
+		for (m = sb->sb_mb; m != NULL; m = m->m_nextpkt)
+			printf("\t%p\n", m);
+		panic("sblastrecordchk from %s", where);
+	}
+}
+
+void
+sblastmbufchk(sb, where)
+	struct sockbuf *sb;
+	const char *where;
+{
+	struct mbuf *m, *n;
+
+	m = sb->sb_mb;
+	while (m && m->m_nextpkt)
+		m = m->m_nextpkt;
+
+	while (m && m->m_next)
+		m = m->m_next;
+
+	if (m != sb->sb_mbtail) {
+		printf("sblastmbufchk: sb_mb %p sb_mbtail %p last %p\n", sb->sb_mb,
+				sb->sb_mbtail, m);
+		printf("packet tree:\n");
+		for (m = sb->sb_mb; m != NULL; m = m->m_nextpkt) {
+			printf("\t");
+			for (n = m; n != NULL; n = n->m_next)
+				printf("%p ", n);
+			printf("\n");
+		}
+		panic("sblastmbufchk from %s", where);
+	}
+}
+#endif /* SOCKBUF_DEBUG */

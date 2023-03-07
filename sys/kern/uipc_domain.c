@@ -13,6 +13,12 @@
  */
 
 #include <sys/cdefs.h>
+
+#include "opt_inet.h"
+#include "opt_ipsec.h"
+#include "opt_ns.h"
+#include "arp.h"
+
 #include <sys/param.h>
 //#ifdef INET
 #include <sys/socket.h>
@@ -47,14 +53,22 @@ domaininit(void)
 #ifdef INET
 	ADDDOMAIN(inet);
 #endif
+#ifdef INET6
+	ADDDOMAIN(inet6);
+#endif
 #ifdef NS
 	ADDDOMAIN(ns);
 #endif
-//#include "imp.h"
-#if NIMP > 0
-	ADDDOMAIN(imp);
+#if defined(IPSEC) || defined(FAST_IPSEC)
+	ADDDOMAIN(key);
+#endif
+#ifdef INET
+#if NARP > 0
+	ADDDOMAIN(arp);
 #endif
 #endif
+	ADDDOMAIN(route);
+#endif /* ! lint */
 
 	for (dp = domains; dp; dp = dp->dom_next) {
 		if (dp->dom_init)
@@ -74,6 +88,20 @@ domaininit(void)
 
 	timeout(pffasttimo, NULL, 1);
 	timeout(pfslowtimo, NULL, 1);
+}
+
+struct domain *
+pffinddomain(family)
+	int family;
+{
+	register struct domain *dp;
+
+	for (dp = domains; dp != NULL; dp = dp->dom_next) {
+		if (dp->dom_family == family) {
+			return (dp);
+		}
+	}
+	return (NULL);
 }
 
 struct protosw *
@@ -168,7 +196,32 @@ pfctlinput(cmd, sa)
 	for (dp = domains; dp; dp = dp->dom_next)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_ctlinput)
-				(*pr->pr_ctlinput)(cmd, sa, 0, NULL);
+				(*pr->pr_ctlinput)(cmd, sa, NULL);
+}
+
+void
+pfctlinput2(cmd, sa, ctlparam)
+	int cmd;
+	struct sockaddr *sa;
+	void *ctlparam;
+{
+	register struct domain *dp;
+	register struct protosw *pr;
+
+	if (sa == NULL) {
+		return;
+	}
+
+	for (dp = domains; dp; dp = dp->dom_next) {
+		if (dp->dom_family != sa->sa_family) {
+			continue;
+		}
+		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++) {
+			if (pr->pr_ctlinput) {
+				(*pr->pr_ctlinput)(cmd, sa, ctlparam);
+			}
+		}
+	}
 }
 
 void

@@ -80,6 +80,7 @@
 
 #include <sys/cdefs.h>
 
+//#include "opt_evdev.h"
 #include "opt_wsdisplay_compat.h"
 
 #include "wsdisplay.h"
@@ -508,7 +509,7 @@ wskbd_evdev_init(sc)
 	/* register as evdev provider */
 	wskbd_evdev = evdev_alloc();
 	evdev_set_name(wskbd_evdev, "wskbd evdev");
-	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME"%d", unit);
+	snprintf(phys_loc, NAMELEN, KEYBOARD_NAME, unit);
 	evdev_set_phys(wskbd_evdev, phys_loc);
 	evdev_set_id(wskbd_evdev, BUS_VIRTUAL, 0, 0, 0);
 	evdev_set_methods(wskbd_evdev, sc, &wskbd_evdev_methods);
@@ -1786,11 +1787,12 @@ wskbd_translate(id, type, value)
 		/* right place ??? */
 #ifdef EVDEV_SUPPORT
 		struct evdev_softc *evsc = sc->sc_evsc;
+		keysym_t scancode = wskbd_ksym_scanode(ksym);
+			
 		if ((evdev_rcpt_mask & EVDEV_RCPT_WSKBD) && evsc->sc_evdev != NULL) {
-			keysym_t scancode = wskbd_ksym_scanode(ksym);
 			res = evdev_scancode2key(&evsc->sc_evdev_state, scancode);
 			if(res != KEY_RESERVED) {
-				evdev_push_event(evsc->sc_evdev, EV_KEY, key, scancode & 0x80 ? 0 : 1);
+				evdev_push_event(evsc->sc_evdev, EV_KEY, res, scancode & 0x80 ? 0 : 1);
 				evdev_sync(evsc->sc_evdev);
 				update_modifier(id, 1, 0, MOD_COMPOSE);
 				return (0);

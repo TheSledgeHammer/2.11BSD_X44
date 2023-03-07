@@ -109,6 +109,7 @@ mpboot.o: assym.h
 .include "$S/conf/Makefile.kern.inc"
 
 ##
-## (10) Appending make options.
+## (10) Other Make flags & options needed for various source directories
 ##
-%MAKEOPTIONSAPPEND
+#CPPFLAGS+= -I$S/netpfil/npf
+CPPFLAGS+= -I$S/netpfil/pf

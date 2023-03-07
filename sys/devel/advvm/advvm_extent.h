@@ -59,6 +59,7 @@ u_long 			*advvm_get_storage_pool(advvm_storage_t *);
 
 /* generic malloc & free */
 void			advvm_malloc(void *, u_long);
+void			advvm_calloc(int, void *, u_long);
 void			advvm_free(void *);
 
 #endif /* _ADVVM_EXTENT_H_ */

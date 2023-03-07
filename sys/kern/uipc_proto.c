@@ -14,6 +14,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/protosw.h>
@@ -34,8 +35,6 @@ struct protosw unixsw[] = {
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
 				.pr_usrreq		= uipc_usrreq,
-				.pr_attach		= 0,
-				.pr_detach		= 0,
 		},
 		{
 				.pr_type		= SOCK_SEQPACKET,
@@ -43,8 +42,6 @@ struct protosw unixsw[] = {
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_ATOMIC|PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
 				.pr_usrreq		= uipc_usrreq,
-				.pr_attach		= 0,
-				.pr_detach		= 0,
 		},
 		{
 				.pr_type		= SOCK_DGRAM,
@@ -52,8 +49,6 @@ struct protosw unixsw[] = {
 				.pr_protocol	= PF_UNIX,
 				.pr_flags		= PR_ATOMIC|PR_ADDR|PR_RIGHTS,
 				.pr_usrreq		= uipc_usrreq,
-				.pr_attach		= 0,
-				.pr_detach		= 0,
 		},
 };
 

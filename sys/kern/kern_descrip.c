@@ -245,7 +245,7 @@ fcntl()
 		return (u.u_error);
 
 	case F_SETOWN:
-		u.u_error = fsetown((long)SCARG(uap, arg), fp, SCARG(uap, arg));
+		u.u_error = fsetown(fp, SCARG(uap, arg));
 		return (u.u_error);
 
 	case F_SETLKW:
@@ -279,6 +279,9 @@ fset(fp, bit, value)
 	return (fioctl(fp, (u_int)(bit == FNONBLOCK ? FIONBIO : FIOASYNC), (caddr_t)&value, u.u_procp));
 }
 
+/*
+ * fgetown(fp, data)
+ */
 int
 fgetown(fp, valuep)
 	register struct file *fp;
@@ -295,20 +298,23 @@ fgetown(fp, valuep)
 	return (error);
 }
 
+/*
+ * fsetown(fp, data)
+ */
 int
-fsetown(args, fp, value)
-	long args;
+fsetown(fp, value)
 	register struct file *fp;
 	int value;
 {
 	if (fp->f_type == DTYPE_SOCKET) {
-		((struct socket*) fp->f_socket)->so_pgrp = args;
+		((struct socket*) fp->f_socket)->so_pgrp = value;
 		return (0);
 	}
 	if (value > 0) {
 		register struct proc *p = pfind(value);
-		if (p == 0)
+		if (p == 0) {
 			return (ESRCH);
+		}
 		value = p->p_pgrp->pg_id;
 	} else {
 		value = -value;
@@ -437,11 +443,11 @@ fstat()
 	switch (fp->f_type) {
 
 	case DTYPE_VNODE:
-		u.u_error = vn_stat((struct vnode *)fp->f_data, &ub, u.u_procp);
+		u.u_error = vn_fstat(fp, &ub, u.u_procp);
 		break;
 
 	case DTYPE_SOCKET:
-		u.u_error = soo_stat((struct socket *)fp->f_socket, &ub);
+		u.u_error = soo_fstat(fp, &ub, u.u_procp);
 		break;
 	default:
 		panic("fstat");
@@ -589,12 +595,11 @@ fdexpand(lim)
 	 * and zero the new portion of each array.
 	 */
 	copylen = sizeof(struct file*) * u.u_nfiles;
-	memcpy(newofile, u.u_ofile, copylen);
-	memset((char*) newofile + copylen, 0,
-			nfiles * sizeof(struct file*) - copylen);
+	bcopy(u.u_ofile, newofile, copylen);
+	bzero((char*) newofile + copylen, nfiles * sizeof(struct file*) - copylen);
 	copylen = sizeof(char) * u.u_nfiles;
-	memcpy(newofileflags, u.u_pofile, copylen);
-	memset(newofileflags + copylen, 0, nfiles * sizeof(char) - copylen);
+	bcopy(u.u_pofile, newofileflags, copylen);
+	bzero(newofileflags + copylen, nfiles * sizeof(char) - copylen);
 	if (u.u_nfiles > NDFILE) {
 		FREE(u.u_ofile, M_FILEDESC);
 	}
@@ -613,7 +618,7 @@ ufdalloc(fp)
 	lim = min((int) u.u_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
 	if (fp == NULL) {
 		u.u_error = ENFILE;
-		return (-1);
+		return (ENFILE);
 	}
 
 	/*
@@ -621,7 +626,7 @@ ufdalloc(fp)
 	 */
 	fdexpand(lim);
 	if (u.u_error == EMFILE) {
-		return (-1);
+		return (EMFILE);
 	}
 	return (0);
 }
@@ -793,6 +798,23 @@ flock()
 		return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK));
 	}
 	return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK|F_WAIT));
+}
+
+/*
+ * Send signal to descriptor owner, either process or process group.
+ */
+void
+fownsignal(pgid, signo)
+	pid_t pgid;
+	int signo;
+{
+	struct proc *p1;
+
+	if (pgid > 0 && (p1 = pfind(pgid))) {
+		gsignal(pgid, signo);
+	} else if (pgid < 0) {
+		gsignal(-pgid, signo);
+	}
 }
 
 /*

@@ -42,7 +42,7 @@ mtx_init(mtx, holder, name, data, pid, pgrp)
 	pid_t 				pid;
 	struct pgrp 		*pgrp;
 {
-	memset(mtx, 0, sizeof(struct mtx));
+	bzero(mtx, sizeof(struct mtx));
 	simple_lock_init(mtx->mtx_lock, name);
 	mtx->mtx_name = name;
 	holder = lockholder_create(data, pid, pgrp);
@@ -62,7 +62,7 @@ mtx_unlock(mtx, holder)
 	struct mtx 			*mtx;
 	struct lock_holder 	*holder;
 {
-	if(mtx->mtx_holder == holder) {
+	if (mtx->mtx_holder == holder) {
 		simple_unlock(mtx->mtx_lock);
 	}
 }

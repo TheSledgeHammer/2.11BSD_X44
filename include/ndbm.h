@@ -41,22 +41,18 @@
 #include <stdint.h>
 #include <db.h>
 
-#if defined(_NETBSD_SOURCE)
 /* Map dbm interface onto db(3). */
 #define DBM_RDONLY	O_RDONLY
-#endif
 
 /* Flags to dbm_store(). */
 #define DBM_INSERT      0
 #define DBM_REPLACE     1
 
-#if defined(_NETBSD_SOURCE)
 /*
  * The db(3) support for ndbm(3) always appends this suffix to the
  * file name to avoid overwriting the user's original database.
  */
 #define	DBM_SUFFIX	".db"
-#endif
 
 typedef struct {
 	void 	*dptr;
@@ -64,26 +60,20 @@ typedef struct {
 } datum;
 
 typedef DB DBM;
-#if defined(_NETBSD_SOURCE)
 #define	dbm_pagfno(a)	DBM_PAGFNO_NOT_AVAILABLE
-#endif
 
 __BEGIN_DECLS
-void	 dbm_close (DBM *);
-int		 dbm_delete (DBM *, datum);
-datum	 dbm_fetch (DBM *, datum);
-datum	 dbm_firstkey (DBM *);
-#if defined(_NETBSD_SOURCE)
-long	 dbm_forder (DBM *, datum);
-#endif
-datum	 dbm_nextkey (DBM *);
-DBM		 *dbm_open (const char *, int, mode_t);
-int		 dbm_store (DBM *, datum, datum, int);
-int		 dbm_error (DBM *);
-int		 dbm_clearerr (DBM *);
-#if defined(_NETBSD_SOURCE)
-int		 dbm_dirfno (DBM *);
-#endif
+void	 dbm_close(DBM *);
+int		 dbm_delete(DBM *, datum);
+datum	 dbm_fetch(DBM *, datum);
+datum	 dbm_firstkey(DBM *);
+long	 dbm_forder(DBM *, datum);
+datum	 dbm_nextkey(DBM *);
+DBM		 *dbm_open(const char *, int, mode_t);
+int		 dbm_store(DBM *, datum, datum, int);
+int		 dbm_error(DBM *);
+int		 dbm_clearerr(DBM *);
+int		 dbm_dirfno(DBM *);
 __END_DECLS
 
 #endif /* !_NDBM_H_ */

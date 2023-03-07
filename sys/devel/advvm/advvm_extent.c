@@ -33,7 +33,7 @@
  */
 
 #include <sys/user.h>
-
+#include <sys/malloc.h>
 #include <devel/sys/malloctypes.h>
 #include <devel/advvm/advvm_extent.h>
 #include <devel/advvm/advvm_var.h>
@@ -150,6 +150,15 @@ advvm_malloc(addr, size)
 	u_long 	size;
 {
 	addr = (void *)malloc(addr, size, M_ADVVM, M_WAITOK);
+}
+
+void
+advvm_calloc(num, addr, size)
+	int 	num;
+	void 	*addr;
+	u_long 	size;
+{
+	addr = (void *)calloc(num, addr, size, M_ADVVM, M_WAITOK);
 }
 
 void

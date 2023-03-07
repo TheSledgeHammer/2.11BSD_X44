@@ -57,7 +57,7 @@ socreate(dom, aso, type, proto)
 		prp = pffindproto(dom, proto, type);
 	else
 		prp = pffindtype(dom, type);
-	if (prp == 0 || prp->pr_attach == NULL)
+	if (prp == 0)
 		return (EPROTONOSUPPORT);
 	if (prp->pr_type != type)
 		return (EPROTOTYPE);
@@ -75,7 +75,7 @@ socreate(dom, aso, type, proto)
 		so->so_uid = u.u_ucred->cr_uid;
 	}*/
 	error = (*prp->pr_usrreq)(so, PRU_ATTACH, (struct mbuf*) 0,
-			(struct mbuf*) (long) proto, (struct mbuf*) 0);
+			(struct mbuf*) (long) proto, (struct mbuf*) 0, u.u_procp);
 	if (error) {
 		so->so_state |= SS_NOFDREF;
 		sofree(so);
@@ -94,7 +94,7 @@ sobind(so, nam)
 
 	s = splnet();
 	error = (*so->so_proto->pr_usrreq)(so, PRU_BIND, (struct mbuf*) 0, nam,
-			(struct mbuf*) 0);
+			(struct mbuf*) 0, u.u_procp);
 	splx(s);
 	return (error);
 }
@@ -108,7 +108,7 @@ solisten(so, backlog)
 
 	s = splnet();
 	error = (*so->so_proto->pr_usrreq)(so, PRU_LISTEN, (struct mbuf*) 0,
-			(struct mbuf*) 0, (struct mbuf*) 0);
+			(struct mbuf*) 0, (struct mbuf*) 0, u.u_procp);
 	if (error) {
 		splx(s);
 		return (error);
@@ -188,7 +188,7 @@ soclose(so)
 drop:
 	if (so->so_pcb) {
 		int error2 = (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
-				(struct mbuf*) 0, (struct mbuf*) 0, (struct mbuf*) 0);
+				(struct mbuf*) 0, (struct mbuf*) 0, (struct mbuf*) 0, u.u_procp);
 		if (error == 0)
 			error = error2;
 	}
@@ -209,7 +209,7 @@ soabort(so)
 	struct socket *so;
 {
 	return ((*so->so_proto->pr_usrreq)(so, PRU_ABORT, (struct mbuf*) 0,
-			(struct mbuf*) 0, (struct mbuf*) 0));
+			(struct mbuf*) 0, (struct mbuf*) 0, u.u_procp));
 }
 
 int
@@ -226,7 +226,7 @@ soaccept(so, nam)
 	so->so_state &= ~SS_NOFDREF;
 	if ((so->so_state & SS_ISDISCONNECTED) == 0) {
 		error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT, (struct mbuf*) 0, nam,
-					(struct mbuf*) 0);
+					(struct mbuf*) 0, u.u_procp);
 	} else {
 		error = ECONNABORTED;
 	}
@@ -264,7 +264,7 @@ soconnect(so, nam)
 		error = EISCONN;
 	else
 		error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT, (struct mbuf*) 0,
-				nam, (struct mbuf*) 0);
+				nam, (struct mbuf*) 0, u.u_procp);
 	/*
 	 * this is done here because the kernel mode can't get at this info without
 	 * a lot of trouble.
@@ -287,7 +287,7 @@ soconnect2(so1, so2)
 
 	s = splnet();
 	error = (*so1->so_proto->pr_usrreq)(so1, PRU_CONNECT2, (struct mbuf*) 0,
-			(struct mbuf*) so2, (struct mbuf*) 0);
+			(struct mbuf*) so2, (struct mbuf*) 0, u.u_procp);
 	splx(s);
 	return (error);
 }
@@ -308,7 +308,7 @@ sodisconnect(so)
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, (struct mbuf*) 0,
-			(struct mbuf*) 0, (struct mbuf*) 0);
+			(struct mbuf*) 0, (struct mbuf*) 0, u.u_procp);
 bad:
 	splx(s);
 	return (error);
@@ -476,7 +476,7 @@ nopages:
 			s = splnet(); /* XXX */
 			error = (*so->so_proto->pr_usrreq)(so,
 					(flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND, top, nam,
-					rights);
+					rights, u.u_procp);
 			splx(s);
 			rights = 0;
 			rlen = 0;
@@ -534,7 +534,7 @@ soreceive(so, aname, uio, flags, rightsp)
 	if (flags & MSG_OOB) {
 		m = m_get(M_WAIT, MT_DATA);
 		error = (*pr->pr_usrreq)(so, PRU_RCVOOB, m,
-				(struct mbuf*) (flags & MSG_PEEK), (struct mbuf*) 0);
+				(struct mbuf*) (flags & MSG_PEEK), (struct mbuf*) 0, u.u_procp);
 		if (error)
 			goto bad;
 		do {
@@ -680,7 +680,7 @@ restart:
 			(void) sbdroprecord(&so->so_rcv);
 		if ((pr->pr_flags & PR_WANTRCVD) && so->so_pcb)
 			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf*) 0, (struct mbuf*) 0,
-					(struct mbuf*) 0);
+					(struct mbuf*) 0, u.u_procp);
 		if (error == 0 && rightsp && *rightsp && pr->pr_domain->dom_externalize)
 			error = (*pr->pr_domain->dom_externalize)(*rightsp);
 	}
@@ -703,7 +703,7 @@ soshutdown(so, how)
 		sorflush(so);
 	if (how & FWRITE)
 		return ((*pr->pr_usrreq)(so, PRU_SHUTDOWN,
-		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0));
+		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0, u.u_procp));
 	return (0);
 }
 
@@ -750,7 +750,7 @@ sosetopt(so, level, optname, m0)
 	if (level != SOL_SOCKET) {
 		if (so->so_proto && so->so_proto->pr_ctloutput)
 			return ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level,
-					optname, m0));
+					optname, &m0));
 		error = ENOPROTOOPT;
 	} else {
 		switch (optname) {
@@ -875,7 +875,7 @@ sosetopt(so, level, optname, m0)
 	}
 
 	if (error == 0 && so->so_proto && so->so_proto->pr_ctloutput) {
-		(void) ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level, optname, m0));
+		(void) ((*so->so_proto->pr_ctloutput)(PRCO_SETOPT, so, level, optname, &m0));
 		m = NULL;	/* freed by protocol */
 	}
 
@@ -896,7 +896,7 @@ sogetopt(so, level, optname, mp)
 	if (level != SOL_SOCKET) {
 		if (so->so_proto && so->so_proto->pr_ctloutput) {
 			return ((*so->so_proto->pr_ctloutput)(PRCO_GETOPT, so, level,
-					optname, mp));
+					optname, &mp));
 		} else
 			return (ENOPROTOOPT);
 	} else {
@@ -1054,7 +1054,7 @@ sogetnam(so, m)
 	register struct	socket	*so;
 	struct	mbuf	*m;
 {
-	return (u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0));
+	return (u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0, u.u_procp));
 }
 
 int
@@ -1065,6 +1065,6 @@ sogetpeer(so, m)
 
 	if ((so->so_state & SS_ISCONNECTED) == 0)
 		return (u.u_error = ENOTCONN);
-	return (u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0));
+	return (u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0, u.u_procp));
 }
 //#endif

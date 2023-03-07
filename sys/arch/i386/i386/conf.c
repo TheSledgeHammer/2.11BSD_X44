@@ -53,12 +53,18 @@
 #include "vnd.h"
 #include "ccd.h"
 
+#include "rnd.h"
 #include "ksyms.h"
 #include "cmos.h"
 
-/*
 #include "bpfilter.h"
+//#include "tb.h"
+#include "sl.h"
+#include "ppp.h"
+#include "strip.h"
+#include "tun.h"
 
+/*
 #include "usb.h"
 #include "uhid.h"
 #include "ugen.h"
@@ -66,7 +72,6 @@
 */
 #include "com.h"
 #include "pty.h"
-#include "tb.h"
 #include "video.h"
 
 #include "wsdisplay.h"
@@ -130,8 +135,9 @@ kernel_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);					/* 2- OTTYDISC */
 //	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);					/* 3- NETLDISC */
 //	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
-//	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
-//	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, NPPP, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, NSTRIP, NULL, NULL, &stripdisc);				/* 7- STRIPDISC */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);				/* virtual console */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);				/* ctty controlling terminal */
 	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);				/* ptc pseudo-tty slave, pseudo-tty master  */
@@ -203,6 +209,7 @@ misc_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);				/* CMOS Interface */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &mm_cdevsw, NULL);					/* /dev/{null,mem,kmem,...} */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */
+	DEVSWIO_CONFIG_INIT(devsw, NRND, NULL, &rnd_cdevsw, NULL);				/* Random device */
 }
 
 /* Add network driver configuration */
@@ -210,7 +217,9 @@ void
 network_init(devsw)
 	struct devswtable *devsw;
 {
-//	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
+	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
+	DEVSWIO_CONFIG_INIT(devsw, NTUN, NULL, &tun_cdevsw, NULL);				/* network tunnel */
+	//DEVSWIO_CONFIG_INIT(devsw, NOPENCRYPTO, NULL, &crypto_cdevsw, NULL);		/* Opencrypto */
 }
 
 /* Add usb driver configuration */

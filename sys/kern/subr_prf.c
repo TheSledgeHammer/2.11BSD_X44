@@ -64,6 +64,8 @@
 
 #include <dev/misc/cons/cons.h>
 
+#include <net/if.h>
+
 #ifdef DDB
 #include <ddb/ddbvar.h>		/* db_panic */
 #include <ddb/db_output.h>	/* db_printf, db_putchar prototypes */
@@ -86,6 +88,9 @@ void (*v_flush)(void) = cnflush;	/* start with cnflush (normal cons) */
  * call to panic.
  */
 const char	*panicstr;
+
+const char hexdigits[] = "0123456789abcdef";
+const char HEXDIGITS[] = "0123456789ABCDEF";
 
 /* internal methods */
 static void logpri(int);
@@ -801,7 +806,7 @@ kprintf(fmt0, oflags, vp, sbuf, ap)
 	int dprec;			/* a copy of prec if [diouxX], 0 otherwise */
 	int realsz;			/* field size expanded by dprec */
 	int size;			/* size of converted field or string */
-	char *xdigs;		/* digits for [xX] conversion */
+	const char *xdigs;		/* digits for [xX] conversion */
 	char buf[KPRINTF_BUFSIZE]; /* space for %c, %[diouxX] */
 	char *tailp;		/* tail pointer for snprintf */
 
@@ -980,7 +985,7 @@ reswitch:
 			/* NOSTRICT */
 			_uquad = (u_long) va_arg(ap, void*);
 			base = HEX;
-			xdigs = "0123456789abcdef";
+			xdigs = hexdigits; /* "0123456789abcdef"; */
 			flags |= HEXPREFIX;
 			ch = 'x';
 			goto nosign;
@@ -1013,10 +1018,10 @@ reswitch:
 			base = DEC;
 			goto nosign;
 		case 'X':
-			xdigs = "0123456789ABCDEF";
+			xdigs = HEXDIGITS; /* "0123456789ABCDEF"; */
 			goto hex;
 		case 'x':
-			xdigs = "0123456789abcdef";
+			xdigs = hexdigits; /* "0123456789abcdef"; */
 hex: 		_uquad = UARG();
 			base = HEX;
 			/* leading 0x/X only if non-zero */

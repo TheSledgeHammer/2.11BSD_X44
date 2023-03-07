@@ -373,6 +373,7 @@ int sysctl_long(void *, size_t *, void *, size_t, long *);
 int sysctl_rdlong(void *, size_t *, void *, long);
 int sysctl_string(void *, size_t *, void *, size_t, char *, int);
 int sysctl_rdstring(void *, size_t *, void *, char *);
+int sysctl_struct(void *, size_t *, void *, size_t, void *, int);
 int sysctl_rdstruct(void *, size_t *, void *, void *, int);
 int sysctl_quad(void *, size_t *, void *, size_t, quad_t *);
 int sysctl_rdquad(void *, size_t *, void *, quad_t);

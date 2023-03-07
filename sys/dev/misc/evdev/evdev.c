@@ -29,6 +29,8 @@
 
 #include <sys/cdefs.h>
 
+#include "evdev.h"
+
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
@@ -53,7 +55,7 @@
 #include <dev/misc/evdev/freebsd-bitstring.h>
 
 #if defined(WSMUX_DEBUG) && NWSMUX > 0
-#define DPRINTF(x)	if (wsmuxdebug) printf x
+#define DPRINTF(x)		if (wsmuxdebug) printf x
 #define DPRINTFN(n,x)	if (wsmuxdebug > (n)) printf x
 extern int wsmuxdebug;
 #else
@@ -79,6 +81,8 @@ CFOPS_DECL(evdev, evdev_match, evdev_attach, evdev_detach, evdev_activate);
 CFDRIVER_DECL(NULL, evdev, DV_DULL);
 CFATTACH_DECL(evdev, &evdev_cd, &evdev_cops, sizeof(struct evdev_softc));
 
+extern struct cfdriver evdev_cd;
+
 #define	DEF_RING_REPORTS	8
 
 dev_type_open(evdev_open);
@@ -89,7 +93,6 @@ dev_type_ioctl(evdev_ioctl);
 dev_type_poll(evdev_poll);
 dev_type_kqfilter(evdev_kqfilter);
 
-//extern struct cdevsw evdev_cdevsw;
 const struct cdevsw evdev_cdevsw = {
 		.d_open = evdev_open,
 		.d_close = evdev_close,
@@ -104,6 +107,19 @@ const struct cdevsw evdev_cdevsw = {
 		.d_discard = nodiscard,
 		.d_type = D_OTHER
 };
+/*
+const struct wskbd_accessops evdev_kbdops = {
+        .enable = evdev_enable,
+		.ioctl = evdev_ioctl,
+		.set_leds = evdev_set_leds,
+};
+
+const struct wsmouse_accessops evdev_mouseops = {
+		.enable = evdev_enable,
+		.ioctl = evdev_ioctl,
+		.disable = evdev_disable,
+};
+*/
 
 #if NWSMUX > 0
 struct wssrcops evdev_srcops = {
@@ -144,6 +160,7 @@ evdev_attach(parent, self, aux)
 	struct evdev_client *client;
 	size_t buffer_size;
 	int ret;
+
 #if NWSMUX > 0
 	int mux, error;
 #endif
@@ -508,7 +525,7 @@ evdev_kqfilter(dev, kn)
 	int unit, error;
 
 	unit = minor(dev);
-	sc = (struct evdev_softc*) evdev_cd.cd_devs[unit];
+	sc = (struct evdev_softc *) evdev_cd.cd_devs[unit];
 	if (sc == NULL) {
 		return (ENXIO);
 	}
@@ -806,8 +823,8 @@ evdev_do_ioctl_sc(evdev, cmd, data, fflag, p)
 		return (evdev_ioctl_eviocgbit(evdev, type_num, len, data, p));
 	}
 
-	error = (*client->ec_accessops->ioctl)(client->ec_accesscookie, cmd, data, fflag, p);
-	return (error);
+	//error = (*client->ec_accessops->ioctl)(client->ec_accesscookie, cmd, data, fflag, p);
+	return (0);
 }
 
 static int
@@ -1107,3 +1124,59 @@ evdev_add_mux(unit, muxsc)
 	return (wsmux_attach_sc(muxsc, &client->ec_base));
 }
 #endif
+
+static void
+evdev_init(evdev, mux_loc)
+    struct evdev_dev        *evdev;
+	int mux_loc;
+{
+    struct evdev_client     *client;
+    size_t buffer_size;
+    int ret;
+#if NWSMUX > 0
+	int mux, error;
+#endif
+
+    /* Initialize internal structures */
+    if (evdev == NULL) {
+        evdev = evdev_alloc();
+    }
+    ret = evdev_register(evdev);
+    if (ret != 0) {
+        printf("evdev_attach: evdev_register error", ret);
+    }
+    /* Initialize ring buffer */
+    buffer_size = evdev_buffer_size(evdev);
+	client = evdev_client_alloc(evdev, buffer_size);
+    client->ec_buffer_size = buffer_size;
+	client->ec_buffer_ready = 0;
+
+    client->ec_evdev = evdev;
+
+#if NWSMUX > 0
+	client->ec_base.me_ops = &evdev_srcops;
+	mux = client->ec_base.me_dv.dv_cfdata->cf_loc[mux_loc];
+	if (mux >= 0) {
+		error = wsmux_attach_sc(wsmux_getmux(mux), &client->ec_base);
+		if (error) {
+			printf(" attach error=%d", error);
+		} else {
+			printf(" mux %d", mux);
+		}
+	}
+#else
+	if (client->ec_base.me_dv.dv_cfdata->cf_loc[mux_loc] >= 0) {
+		printf(" (mux ignored)");
+	}
+#endif
+	printf("\n");
+    lockinit(&client->ec_buffer_lock, "evclient", 0, LK_CANRECURSE);
+}
+
+void
+evdev_attach_subr(sc, mux_loc)
+    struct evdev_softc  *sc;
+	int mux_loc;
+{
+    evdev_init(sc->sc_evdev, mux_loc);
+}

@@ -327,8 +327,6 @@ fillmapentry(kp, len, mapentry)
 	}
 }
 
-//#define SCANCODE_TO_KEYCODE(ks) ((ks) & 0x07F)
-
 keysym_t
 wskbd_ksym_scancode(ksym)
 	keysym_t ksym;

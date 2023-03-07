@@ -31,7 +31,7 @@ int	slopen(dev_t, struct tty *);
 int	slclose(struct tty *, int);
 int	sltioctl(struct tty *, u_long, caddr_t, int, struct proc *);
 int	slinput(int, struct tty *);
-int	slstart(struct tty *);
+int	slstarts(struct tty *);
 #endif
 
 //#include "ppp.h"
@@ -51,7 +51,7 @@ int	stripopen(dev_t, struct tty *);
 int	stripclose(struct tty *, int);
 int	striptioctl(struct tty *, u_long, caddr_t, int, struct proc *);
 int	stripinput(int, struct tty *);
-int	stripstart(struct tty *);
+int	stripstarts(struct tty *);
 #endif
 
 /* 0- TTYDISC (Termios) */
@@ -98,7 +98,7 @@ const struct linesw ottydisc = {
 };
 
 #if NBK > 0
-/* 3- NETLDISC */
+/* 3- NETLDISC: Berkeley Network */
 const struct linesw netldisc = {
 	.l_open = bkopen,
 	.l_close = bkclose,
@@ -138,35 +138,18 @@ const struct linesw slipdisc = {
 	.l_close = slclose,
 	.l_read = nottyread,
 	.l_write = nottywrite,
-	.l_ioctl = slioctl,
+	.l_ioctl = sltioctl,
 	.l_rint = slinput,
 	.l_rend = norend,
 	.l_meta = nullmeta,
-	.l_start = slstart,
+	.l_start = slstarts,
 	.l_modem = nomodem,
 	.l_poll = nottypoll
 };
 #endif
 
-#if NSTRIP > 0
-/* 6- STRIPDISC */
-const struct linesw strip_disc = {
-	.l_open = stripopen,
-	.l_close = stripclose,
-	.l_read = nottyread,
-	.l_write = nottywrite,
-	.l_ioctl = striptioctl,
-	.l_rint = stripinput,
-	.l_rend = norend,
-	.l_meta = nometa,
-	.l_start = stripstart,
-	.l_modem = nullmodem,
-	.l_poll = nottypoll
-};
-#endif
-
 #if NPPP > 0
-/* 7- PPPDISC */
+/* 6- PPPDISC */
 const struct linesw pppdisc = {
 	.l_open = pppopen,
 	.l_close = pppclose,
@@ -179,6 +162,23 @@ const struct linesw pppdisc = {
 	.l_start = pppstart,
 	.l_modem = ttymodem,
 	.l_poll = ttpoll
+};
+#endif
+
+#if NSTRIP > 0
+/* 7- STRIPDISC */
+const struct linesw stripdisc = {
+	.l_open = stripopen,
+	.l_close = stripclose,
+	.l_read = nottyread,
+	.l_write = nottywrite,
+	.l_ioctl = striptioctl,
+	.l_rint = stripinput,
+	.l_rend = norend,
+	.l_meta = nullmeta,
+	.l_start = stripstarts,
+	.l_modem = nomodem,
+	.l_poll = nottypoll
 };
 #endif
 /*

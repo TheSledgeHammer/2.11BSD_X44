@@ -56,6 +56,7 @@ static void set_ds_label(struct diskslices *, int, struct disklabel *);
 static void set_ds_labeldevs(dev_t, struct diskslices *);
 static void set_ds_wlabel(struct diskslices *, int, int);
 static void set_ds_klabel(struct diskslices *, int, int);
+static char *devtoname(dev_t);
 
 static struct disklabel *
 clone_label(lp)
@@ -118,8 +119,9 @@ dscheck(bp, ssp)
 	struct diskslice *sp;
 
 	blkno = bp->b_blkno;
+
 	if (blkno < 0) {
-		//printf("dscheck(%s): negative b_blkno %ld\n", devtoname(bp->b_dev), (long)blkno);
+		printf("dscheck(%s): negative b_blkno %ld\n", devtoname(bp->b_dev), (long)blkno);
 		bp->b_error = EINVAL;
 		goto bad;
 	}
@@ -231,7 +233,7 @@ dscheck(bp, ssp)
 					(struct disklabel*) (bp->b_data + ic->ic_args[0].ia_long),
 					TRUE);
 			if (msg != NULL) {
-				//printf("dscheck(%s): %s\n", devtoname(bp->b_dev), msg);
+				printf("dscheck(%s): %s\n", devtoname(bp->b_dev), msg);
 				bp->b_error = EROFS;
 				goto bad;
 			}
@@ -240,12 +242,12 @@ dscheck(bp, ssp)
 	return (1);
 
 bad_bcount:
-    //printf("dscheck(%s): bio_bcount %ld is not on a sector boundary (ssize %d)\n", devtoname(bp->b_dev), bp->b_bcount, ssp->dss_secsize);
+    printf("dscheck(%s): bio_bcount %ld is not on a sector boundary (ssize %d)\n", devtoname(bp->b_dev), bp->b_bcount, ssp->dss_secsize);
 	bp->b_error = EINVAL;
 	goto bad;
 
 bad_blkno:
-	//printf("dscheck(%s): bio_blkno %ld is not on a sector boundary (ssize %d)\n", devtoname(bp->b_dev), (long)blkno, ssp->dss_secsize);
+	printf("dscheck(%s): bio_blkno %ld is not on a sector boundary (ssize %d)\n", devtoname(bp->b_dev), (long)blkno, ssp->dss_secsize);
 	bp->b_error = EINVAL;
 	goto bad;
 
@@ -579,7 +581,7 @@ dsopen(disk, dev, mode, flags, lp)
 
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
-		//printf("%s: invalid sector size %lu\n", devtoname(disk, dev), (u_long) lp->d_secsize);
+		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long) lp->d_secsize);
 		return (EINVAL);
 	}
 
@@ -597,16 +599,6 @@ dsopen(disk, dev, mode, flags, lp)
 		 * or if we can't find any real slices.
 		 */
 		ssp = dsmakeslicestruct(BASE_SLICE, lp);
-/*
-		if (!(flags & DSO_ONESLICE)) {
-			TRACE(("dsinit\n"));
-			error = dsinit(dev, lp, ssp);
-			if (error != 0) {
-				dsgone(ssp);
-				return (error);
-			}
-		}
-*/
 		ssp->dss_oflags = flags;
 
 		/*
@@ -906,50 +898,18 @@ set_ds_klabel(ssp, slice, klabel)
 	else if (slice == ssp->dss_first_bsd_slice)
 		ssp->dss_slices[COMPATIBILITY_SLICE].ds_klabel = klabel;
 }
-/*
+
 static char *
-devtoname(diskp, dev)
+devtoname(dev)
+    dev_t dev;
+{
     struct dkdevice *diskp;
-    dev_t dev;
-{
-    struct device *dv;
+    struct device   dv, *dvp;
     
-    TAILQ_FOREACH(dv, &alldevs, dv_list) {
-        if(dv == *disk_device(diskp, dev)) {
-            return (dv->dv_xname);
-        }
+    diskp = disk_find_by_dev(dev);
+    if (diskp != NULL) {
+    	dv = disk_device(diskp, dev);
+    	dvp = &dv;
     }
-    return (NULL);
+    return (dvp->dv_xname);
 }
-
-
-char *	
-ds_label(disk, dev, writeflag)
-    struct dkdevice *disk;
-    dev_t dev;
-    int writeflag;
-{
-    struct diskslices   *ssp;
-    struct diskslice    *sp;
-    struct disklabel    *lp;
-   	int		            unit;
-	int		            slice;
-	int		            part;
-	char	            *pname;
-    char                *sname;
-    static char         *flabel;
-    
-    unit = dkunit(dev);
-    slice = dkslice(dev);
-    part = dkpart(dev);
-    pname = '\0';
-    sname = dsname(disk, dev, unit, slice, part, pname);
-    ssp = disk_slices(disk, dev);
-    sp = ssp->dss_slices[slice];
-    lp = disk_label(disk, dev);
-    
-    flabel = fixlabel(sname, sp, lp, writeflag);
-    
-    return (flabel);    
-}
-*/

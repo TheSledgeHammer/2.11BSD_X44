@@ -851,7 +851,6 @@ vm_fault_zerofill(vfi)
 		vfi->object = next_object;
 		vfi->object->paging_in_progress++;
 	}
-	//vm_amap_add ?
 }
 
 static int

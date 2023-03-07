@@ -285,7 +285,7 @@ extern int	nproc, maxproc;				/* Current and max number of procs. */
 LIST_HEAD(proclist, proc);
 extern struct proclist allproc;			/* List of active procs. */
 extern struct proclist zombproc;		/* List of zombie procs. */
-//extern struct proclist freeproc;		/* List of free procs. */
+extern struct proclist freeproc;		/* List of free procs. */
 extern struct proc *initproc, *pageproc;/* Process slots for init, pager. */
 
 #define	NQS	32							/* 32 run queues. */
@@ -311,8 +311,7 @@ void        endtsleep(struct proc *);
 void		unsleep(struct proc *);
 void		wakeup(const void *);
 void		reschedule(struct proc *);
-void		procinit(void);
-void		proc_init(struct proc *);
+void		procinit(struct proc *);
 void		rqinit(void);
 void		sqinit(void);
 int 		chgproccnt(uid_t, int);

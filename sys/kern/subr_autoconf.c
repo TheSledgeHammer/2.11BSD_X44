@@ -699,18 +699,33 @@ config_pending_decr(void)
  * device instance variables.
  */
 void
-evcnt_attach(dev, name, ev)
-	struct device *dev;
-	const char *name;
+evcnt_attach(ev, dev, group, name)
 	struct evcnt *ev;
+	struct device *dev;
+	const char *name, *group;
 {
+	int len;
+	len = strlen(group);
 #ifdef DIAGNOSTIC
-	if (strlen(name) >= sizeof(ev->ev_name))
-		panic("evcnt_attach");
+	if (len >= EVCNT_STRING_MAX) {		/* ..._MAX includes NUL */
+		panic("evcnt_attach: group length (%s)", ev->ev_group);
+	}
 #endif
+	ev->ev_grouplen = len;
+
+	len = strlen(name);
+#ifdef DIAGNOSTIC
+	if (len >= EVCNT_STRING_MAX) {		/* ..._MAX includes NUL */
+		panic("evcnt_attach: name length (%s)", ev->ev_name);
+	}
+#endif
+	ev->ev_namelen = len;
+
 	ev->ev_dev = dev;
-	/* ev->ev_count = 0; */
-	strcpy(ev->ev_name, name);
+	ev->ev_count = 0;
+	ev->ev_name = name;
+	ev->ev_group = group;
+
 	TAILQ_INSERT_TAIL(&allevents, ev, ev_list);
 }
 
@@ -719,6 +734,34 @@ evcnt_detach(ev)
 	struct evcnt *ev;
 {
 	TAILQ_REMOVE(&allevents, ev, ev_list);
+}
+
+/*
+ * Attach a statically-initialized event.  The type and string pointers
+ * are already set up.
+ */
+void
+evcnt_attach_static(ev)
+	struct evcnt *ev;
+{
+	evcnt_attach(ev, NULL, ev->ev_group, ev->ev_name);
+}
+
+/*
+ * Attach a dynamically-initialized event.  Zero it, set up the type
+ * and string pointers and then act like it was statically initialized.
+ */
+void
+evcnt_attach_dynamic(ev, type, parent, group, name)
+	struct evcnt *ev;
+	int type;
+	const struct evcnt *parent;
+	const char *group, *name;
+{
+	bzero(ev, sizeof(*ev));
+	ev->ev_type = type;
+	ev->ev_parent = parent;
+	evcnt_attach(ev, NULL, group, name);
 }
 
 /*

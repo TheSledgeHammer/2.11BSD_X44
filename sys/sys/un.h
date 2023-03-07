@@ -28,7 +28,7 @@ struct	sockaddr_un {
 };
 
 #ifdef _KERNEL
-int     uipc_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
+int     uipc_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 int     unp_attach(struct socket *);
 void    unp_detach(struct unpcb *);
 int     unp_bind(struct unpcb *,struct mbuf *);

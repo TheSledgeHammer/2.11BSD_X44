@@ -20,6 +20,34 @@
  */
 
 /*
+ * Data types.
+ */
+#include <sys/ansi.h>
+#ifndef sa_family_t
+typedef __sa_family_t	sa_family_t;
+#define sa_family_t		__sa_family_t
+#endif
+
+#ifndef socklen_t
+typedef __socklen_t		socklen_t;
+#define socklen_t		__socklen_t
+#endif
+
+#include <machine/ansi.h>
+
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
+#endif
+
+#ifdef	_BSD_SSIZE_T_
+typedef	_BSD_SSIZE_T_	ssize_t;
+#undef	_BSD_SSIZE_T_
+#endif
+
+#include <sys/uio.h>
+
+/*
  * Types
  */
 #define	SOCK_STREAM		1		/* stream socket */
@@ -40,6 +68,8 @@
 #define	SO_USELOOPBACK	0x0040		/* bypass hardware when possible */
 #define	SO_LINGER		0x0080		/* linger on close if data present */
 #define	SO_OOBINLINE	0x0100		/* leave received OOB data in line */
+#define	SO_REUSEPORT	0x0200		/* allow local address & port reuse */
+#define	SO_TIMESTAMP	0x2000		/* timestamp received dgram traffic */
 
 /*
  * Additional options, not kept in so_options.
@@ -87,17 +117,24 @@ struct	linger {
 #define AF_LAT			14		/* LAT */
 #define	AF_HYLINK		15		/* NSC Hyperchannel */
 #define	AF_APPLETALK		16		/* Apple Talk */
+#define	AF_ROUTE	        17		/* Internal Routing Protocol */
+#define	AF_LINK		        18		/* Link layer interface */
+#define	AF_INET6			19		/* IP version 6 */
+#define AF_ARP				20		/* (rev.) addr. res. prot. (RFC 826) */
+#define pseudo_AF_KEY		21		/* Internal key management protocol  */
+#define	pseudo_AF_HDRCMPLT 	22		/* Used by BPF to not rewrite hdrs
+					          in interface output routine */
 
-#define	AF_MAX			17
+#define	AF_MAX			23
 
 /*
  * Structure used by kernel to store most
  * addresses.
  */
 struct sockaddr {
-	u_short	sa_len;				/* total length */
-	u_short	sa_family;			/* address family */
-	char	sa_data[14];		/* up to 14 bytes of direct address */
+	u_short			sa_len;				/* total length */
+	sa_family_t		sa_family;			/* address family */
+	char			sa_data[14];		/* up to 14 bytes of direct address */
 };
 
 /*
@@ -105,8 +142,24 @@ struct sockaddr {
  * information in raw sockets.
  */
 struct sockproto {
-	u_short	sp_family;			/* address family */
-	u_short	sp_protocol;		/* protocol */
+	u_short			sp_family;			/* address family */
+	u_short			sp_protocol;		/* protocol */
+};
+
+/*
+ * RFC 2553: protocol-independent placeholder for socket addresses
+ */
+#define _SS_MAXSIZE		128
+#define _SS_ALIGNSIZE	(sizeof(__int64_t))
+#define _SS_PAD1SIZE	(_SS_ALIGNSIZE - 2)
+#define _SS_PAD2SIZE	(_SS_MAXSIZE - 2 - _SS_PAD1SIZE - _SS_ALIGNSIZE)
+
+struct sockaddr_storage {
+	__uint8_t		ss_len;		/* address length */
+	sa_family_t		ss_family;	/* address family */
+	char			__ss_pad1[_SS_PAD1SIZE];
+	__int64_t   	__ss_align;/* force desired structure storage alignment */
+	char			__ss_pad2[_SS_PAD2SIZE];
 };
 
 /*
@@ -129,7 +182,9 @@ struct sockproto {
 #define PF_LAT			AF_LAT
 #define	PF_HYLINK		AF_HYLINK
 #define	PF_APPLETALK	AF_APPLETALK
-
+#define	PF_ROUTE	AF_ROUTE
+#define	PF_INET6	AF_INET6
+#define PF_KEY 		        pseudo_AF_KEY	/* like PF_ROUTE, only for key mgmt */
 #define	PF_MAX			AF_MAX
 
 /*
@@ -220,8 +275,13 @@ struct cmsghdr {
 	/* followed by	u_char  cmsg_data[]; */
 };
 
+/* Round len up to next alignment boundary */
+#ifdef _KERNEL
+#define CMSG_ALIGN(n)		_ALIGN(n)
+#endif
+
 /* given pointer to struct cmsghdr, return pointer to data */
-#define	CMSG_DATA(cmsg)		((u_char *)((cmsg) + 1))
+#define	CMSG_DATA(cmsg)		((u_char *)((cmsg) + _ALIGN(sizeof(struct cmsghdr))))
 
 /* given pointer to struct cmsghdr, return pointer to next cmsghdr */
 #define	CMSG_NXTHDR(mhdr, cmsg)										\
@@ -232,6 +292,15 @@ struct cmsghdr {
 
 #define	CMSG_FIRSTHDR(mhdr)	((struct cmsghdr *)(mhdr)->msg_control)
 
+/* Length of the contents of a control message of length len */
+#define	CMSG_LEN(len)	(_ALIGN(sizeof(struct cmsghdr)) + (len))
+
+/* Length of the space taken up by a padded control message of length len */
+#define	CMSG_SPACE(len)	(_ALIGN(sizeof(struct cmsghdr)) + _ALIGN(len))
+
 /* "Socket"-level control message types: */
-#define	SCM_RIGHTS	0x01		/* access rights (array of int) */
+#define	SCM_RIGHTS		0x01		/* access rights (array of int) */
+#define	SCM_TIMESTAMP	0x08		/* timestamp (struct timeval) */
+#define	SCM_CREDS		0x10		/* credentials (struct sockcred) */
+
 #endif	/* _SYS_SOCKET_H_ */

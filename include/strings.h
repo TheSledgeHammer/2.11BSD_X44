@@ -27,24 +27,24 @@ typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
 #endif
 
-#if defined(_NETBSD_SOURCE)
+#if defined(__BSD_VISIBLE)
 #include <sys/null.h>
 #endif
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	 	bcmp (const void *, const void *, size_t);
-void	bcopy (const void *, void *, size_t);
-void	bzero (void *, size_t);
-int	 	ffs (int);
-char	*index (const char *, int);
-char	*rindex (const char *, int);
-int	 	strcasecmp (const char *, const char *);
-int	 	strncasecmp (const char *, const char *, size_t);
+int	 	bcmp(const void *, const void *, size_t);
+void	bcopy(const void *, void *, size_t);
+void	bzero(void *, size_t);
+int	 	ffs(int);
+char	*index(const char *, int);
+char	*rindex(const char *, int);
+int	 	strcasecmp(const char *, const char *);
+int	 	strncasecmp(const char *, const char *, size_t);
 __END_DECLS
 
-#if defined(_NETBSD_SOURCE)
+#if defined(__BSD_VISIBLE)
 #include <string.h>
 #endif
 

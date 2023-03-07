@@ -56,5 +56,5 @@ char	*MD5File(const char *, char *);
 char	*MD5Data(const unsigned char *, unsigned int, char *);
 #endif /* _KERNEL */
 __END_DECLS
-
+	
 #endif /* _SYS_MD5_H_ */

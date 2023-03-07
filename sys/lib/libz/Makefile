@@ -11,10 +11,10 @@ CPPFLAGS=	-I${ZDIR} ${ZCPPFLAGS} ${ZMISCCPPFLAGS} -D_ZLIB_PRIVATE
 .PATH.c: ${ZDIR}
 
 # files to be copied down from libz.
-LIBZSRCS= 	crc32.c infblock.c infcodes.c inffast.c \
-        	inflate.c inftrees.c infutil.c uncompr.c
-LIBZHDRS= 	infblock.h infcodes.h inffast.h inftrees.h infutil.h \
-			zconf.h zlib.h zutil.h
+LIBZSRCS= 	adler32.c compress.c crc32.c deflate.c infback.c infblock.c infcodes.c inffast.c \
+        	inflate.c inftrees.c infutil.c trees.c uncompr.c zutil.c
+LIBZHDRS= 	crc32.h deflate.h infblock.h infcodes.h inffast.h inflate.h inftrees.h infutil.h \
+			trees.h zconf.h zlib.h zutil.h
 
 # Other stuff
 SRCS=	${LIBZSRCS} zalloc.c

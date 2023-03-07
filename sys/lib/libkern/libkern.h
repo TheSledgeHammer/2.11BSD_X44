@@ -52,8 +52,6 @@ extern char const	hex2ascii_data[];
 #define	bin2bcd(bin)	(bin2bcd_data[bin])
 #define	hex2ascii(hex)	(hex2ascii_data[hex])
 
-extern const char hexdigits[];	/* "0123456789abcdef" */
-
 int 	imax(int, int);
 int 	imin(int, int);
 u_int	max(u_int, u_int);
@@ -211,26 +209,27 @@ isprint(int ch)
 
 /* Prototypes for non-quad routines. */
 /* XXX notyet #ifdef _STANDALONE */
-int	 		bcmp (const void *, const void *, size_t);
-void	 	bzero (void *, size_t);
+int	 		bcmp(const void *, const void *, size_t);
+void	 	bzero(void *, size_t);
 /* #endif */
+
 /* Prototypes for which GCC built-ins exist. */
-void		*memcpy (void *, const void *, size_t);
-int	 		memcmp (const void *, const void *, size_t);
-void		*memset (void *, int, size_t);
+void		*memcpy(void *, const void *, size_t);
+int	 		memcmp(const void *, const void *, size_t);
+void		*memset(void *, int, size_t);
 #if __GNUC_PREREQ__(2, 95) && !defined(__vax__)
-#define	memcpy(d, s, l)		__builtin_memcpy(d, s, l)
-#define	memcmp(a, b, l)		__builtin_memcmp(a, b, l)
-#define	memset(d, v, l)		__builtin_memset(d, v, l)
+#define		memcpy(d, s, l)		__builtin_memcpy(d, s, l)
+#define		memcmp(a, b, l)		__builtin_memcmp(a, b, l)
+#define		memset(d, v, l)		__builtin_memset(d, v, l)
 #endif
 
-char		*strcpy (char *, const char *);
-int	 		strcmp (const char *, const char *);
-size_t	 	strlen (const char *);
+char		*strcpy(char *, const char *);
+int	 		strcmp(const char *, const char *);
+size_t	 	strlen(const char *);
 #if __GNUC_PREREQ__(2, 95)
-#define	strcpy(d, s)		__builtin_strcpy(d, s)
-#define	strcmp(a, b)		__builtin_strcmp(a, b)
-#define	strlen(a)			__builtin_strlen(a)
+#define		strcpy(d, s)		__builtin_strcpy(d, s)
+#define		strcmp(a, b)		__builtin_strcmp(a, b)
+#define		strlen(a)			__builtin_strlen(a)
 #endif
 
 /* Functions for which we always use built-ins. */
@@ -239,25 +238,23 @@ size_t	 	strlen (const char *);
 #endif
 
 /* These exist in GCC 3.x, but we don't bother. */
-char		*strcat (char *, const char *);
-char		*strncpy (char *, const char *, size_t);
-int	 		strncmp (const char *, const char *, size_t);
-char		*strchr (const char *, int);
-char		*strrchr (const char *, int);
-char		*strstr (const char *, const char *);
+char		*strcat(char *, const char *);
+char		*strncpy(char *, const char *, size_t);
+int	 		strncmp(const char *, const char *, size_t);
+char		*strchr(const char *, int);
+char		*strrchr(const char *, int);
+char		*strstr(const char *, const char *);
 
 /*
  * ffs is an instruction on vax.
  */
 int	 		ffs(int);
 #if __GNUC_PREREQ__(2, 95) && (!defined(__vax__) || __GNUC_PREREQ__(4,1))
-#define	ffs(x)				__builtin_ffs(x)
+#define		ffs(x)				__builtin_ffs(x)
 #endif
 int	 		ffsl(long);
-
-u_int16_t	bswap16(u_int16_t);
-u_int32_t	bswap32(u_int32_t);
-u_int64_t	bswap64(u_int64_t);
+int	 		flsl(long);
+int			flsll(long long);
 
 void	 	__assert(const char *, const char *, int, const char *) __attribute__((__noreturn__));
 void		kern_assert(const char *, ...);
@@ -268,8 +265,6 @@ char		*intoa(u_int32_t);
 void		*memchr(const void *, int, size_t);
 void		*memmove(void *, const void *, size_t);
 int	 		pmatch(const char *, const char *, const char **);
-u_int32_t 	arc4random(void);
-void	 	arc4randbytes(void *, size_t);
 void		qsort(void *, size_t, size_t, int (*)(const void *, const void *));
 void		qsort_r(void *, size_t, size_t, void *, int (*)(void *, const void *, const void *));
 u_long	 	random(void);
@@ -283,9 +278,14 @@ int	 		strncasecmp(const char *, const char *, size_t);
 char        *strsep(char **, const char *);
 u_long	 	strtoul(const char *, char **, int);
 quad_t		strtoq(const char *, char **, int);
+
 void	 	hexdump(void (*)(const char *, ...), const char *, const void *, size_t);
 
-/* hash Functions */
+u_int32_t 	arc4random(void);
+u_int64_t	arc4random64(void);
+void	 	arc4randbytes(void *, size_t);
+
+/* Hash Functions */
 uint32_t 	prospector32(uint32_t);
 uint32_t 	lowbias32(uint32_t);
 uint32_t 	lowbias32_r(uint32_t);
@@ -297,72 +297,3 @@ uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
 uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
 
 #endif /* _LIB_LIBKERN_LIBKERN_H_ */
-/*
-static __inline int 	imax (int, int) __attribute__ ((unused));
-static __inline int 	imin (int, int) __attribute__ ((unused));
-static __inline u_int 	max (u_int, u_int) __attribute__ ((unused));
-static __inline u_int 	min (u_int, u_int) __attribute__ ((unused));
-static __inline long 	lmax (long, long) __attribute__ ((unused));
-static __inline long 	lmin (long, long) __attribute__ ((unused));
-static __inline u_long 	ulmax (u_long, u_long) __attribute__ ((unused));
-static __inline u_long 	ulmin (u_long, u_long) __attribute__ ((unused));
-static __inline int 	abs (int) __attribute__ ((unused));
-
-static __inline int 	isspace (int) __attribute__((__unused__));
-static __inline int 	isascii (int) __attribute__((__unused__));
-static __inline int 	isupper (int) __attribute__((__unused__));
-static __inline int 	islower (int) __attribute__((__unused__));
-static __inline int 	isalpha (int) __attribute__((__unused__));
-static __inline int 	isdigit (int) __attribute__((__unused__));
-static __inline int 	isxdigit (int) __attribute__((__unused__));
-static __inline int 	toupper (int) __attribute__((__unused__));
-static __inline int 	tolower (int) __attribute__((__unused__));
-
-static __inline int
-imax(int a, int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline int
-imin(int a, int b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline u_int
-max(u_int a, u_int b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_int
-min(u_int a, u_int b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline long
-lmax(long a, long b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline long
-lmin(long a, long b)
-{
-	return (a < b ? a : b);
-}
-
-static __inline u_long
-ulmax(u_long a, u_long b)
-{
-	return (a > b ? a : b);
-}
-
-static __inline u_long
-ulmin(u_long a, u_long b)
-{
-	return (a < b ? a : b);
-}
-*/

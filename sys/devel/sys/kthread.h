@@ -211,12 +211,12 @@ struct pgrp 	*tgfind(pid_t);
 void			tgdelete(struct pgrp *);
 
 /* KThread */
-void 			kthread_init(struct proc *, struct kthread *);
 int	 			kthread_create(void (*)(void *), void *, struct proc **, const char *);
 int 			kthread_exit(int);
 void			kthread_create_deferred(void (*)(void *), void *);
 void			kthread_run_deferred_queue(void);
 
+void 			kthread_init(struct proc *, struct kthread *);
 struct kthread *ktfind(pid_t);				/* Find kthread by id. */
 int				leavektgrp(kthread_t);		/* leave thread group */
 

@@ -55,8 +55,9 @@
 int     kqueue_rw(struct file *, struct uio *, struct ucred *);
 int     kqueue_read(struct file *, struct uio *, struct ucred *);
 int     kqueue_write(struct file *, struct uio *, struct ucred *);
-int     kqueue_ioctl(struct file *, u_long, caddr_t, struct proc *);
+int     kqueue_ioctl(struct file *, u_long, void *, struct proc *);
 int     kqueue_poll(struct file *, int, struct proc *);
+int		kqueue_stat(struct file *, struct stat *, struct proc *);
 int     kqueue_close(struct file *, struct proc *);
 int     kqueue_kqfilter(struct file *, struct knote *);
 
@@ -67,6 +68,7 @@ struct fileops kqueueops = {
 		.fo_write = kqueue_write,
 		.fo_ioctl = kqueue_ioctl,
 		.fo_poll = kqueue_poll,
+		.fo_stat = kqueue_stat,
 		.fo_close = kqueue_close,
 		.fo_kqfilter = kqueue_kqfilter
 };
@@ -1144,7 +1146,7 @@ int
 kqueue_ioctl(fp, com, data, p)
 	struct file *fp;
 	u_long com;
-	caddr_t data;
+	void *data;
 	struct proc *p;
 {
 	struct kfilter_mapping	*km;
@@ -1210,6 +1212,21 @@ kqueue_poll(fp, events, p)
 		}
 	}
 	return (revents);
+}
+
+int
+kqueue_stat(fp, ub, p)
+	struct file *fp;
+	struct stat *ub;
+	struct proc *p;
+{
+	struct kqueue	*kq;
+	kq = (struct kqueue *)fp->f_data;
+	bzero((void *)ub, sizeof(*ub));
+	ub->st_size = kq->kq_count;
+	ub->st_blksize = sizeof(struct kevent);
+	ub->st_mode = S_IFIFO;
+	return (0);
 }
 
 /*

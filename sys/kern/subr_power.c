@@ -41,21 +41,10 @@
 #include <sys/power.h>
 #include <sys/null.h>
 
-struct hook_desc {
-	TAILQ_ENTRY(hook_desc) 	hk_list;
-	void 					(*hk_fn)(void *);
-	void					*hk_arg;
-};
-typedef TAILQ_HEAD(hook_head, hook_desc) hook_list_t;
-
-struct hook_list {
-	hook_list_t	 			hl_list;
-};
-
 int	powerhook_debug = 0;
 
-static void *
-hook_establish(hook_list_t *list, void (*fn)(void *), void *arg)
+void *
+hook_establish(struct hook_head *list, void (*fn)(void *), void *arg)
 {
 	struct hook_desc *hd;
 	hd = malloc(sizeof(*hd), M_DEVBUF, M_NOWAIT);
@@ -70,8 +59,8 @@ hook_establish(hook_list_t *list, void (*fn)(void *), void *arg)
 	return (hd);
 }
 
-static void
-hook_disestablish(hook_list_t *list, void *vhook)
+void
+hook_disestablish(struct hook_head *list, void *vhook)
 {
 #ifdef DIAGNOSTIC
 	struct hook_desc *hd;
@@ -90,8 +79,28 @@ found:
 	free(vhook, M_DEVBUF);
 }
 
-static void
-hook_destroy(hook_list_t *list)
+void
+dohooks(struct hook_head *list, int flags)
+{
+	struct hook_desc *hd;
+
+	if ((flags & HOOK_REMOVE) == 0) {
+		TAILQ_FOREACH(hd, list, hk_list) {
+			(*hd->hk_fn)(hd->hk_arg);
+		}
+	} else {
+		while ((hd = TAILQ_FIRST(list)) != NULL) {
+			TAILQ_REMOVE(list, hd, hk_list);
+			(*hd->hk_fn)(hd->hk_arg);
+			if ((flags & HOOK_FREE) != 0) {
+				free(hd, M_DEVBUF);
+			}
+		}
+	}
+}
+
+void
+hook_destroy(struct hook_head *list)
 {
 	struct hook_desc *hd;
 
@@ -112,7 +121,7 @@ hook_destroy(hook_list_t *list)
  * it won't be run again.
  */
 
-static hook_list_t shutdownhook_list = TAILQ_HEAD_INITIALIZER(shutdownhook_list);
+static struct hook_head shutdownhook_list = TAILQ_HEAD_INITIALIZER(shutdownhook_list);
 
 void *
 shutdownhook_establish(void (*fn)(void *), void *arg)

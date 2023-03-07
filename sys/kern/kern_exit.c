@@ -215,7 +215,6 @@ again:
 		FREE(p->p_limit, M_SUBPROC);
 	}
 
-	//swtch();
 	cpu_exit(p);
 	/* NOTREACHED */
 }
@@ -305,7 +304,6 @@ loop:
 		}
 
 		ruadd(&u.u_cru, &p->p_kru);
-//		&q->p_stats->p_cru = u.u_cru;
 		(void) chgproccnt(p->p_cred->p_ruid, -1);
 		FREE(&p->p_kru, M_ZOMBIE);
 
@@ -327,7 +325,7 @@ loop:
 		leavepgrp(p);
 		LIST_REMOVE(p, p_list);					/* off zombproc */
 		LIST_REMOVE(p, p_sibling);
-		//LIST_INSERT_HEAD(&freeproc, p, p_list);/* onto freeproc */
+		LIST_INSERT_HEAD(&freeproc, p, p_list);	/* onto freeproc */
 		p->p_pptr = 0;
 		p->p_sigacts = 0;
 		p->p_sigcatch = 0;

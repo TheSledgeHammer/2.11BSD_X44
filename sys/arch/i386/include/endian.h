@@ -36,19 +36,19 @@
 #ifndef _I386_ENDIAN_H_
 #define	_I386_ENDIAN_H_
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
 #include <sys/endian.h>
 
-#define _BYTE_ORDER 	_LITTLE_ENDIAN
+#define _BYTE_ORDER _LITTLE_ENDIAN
 
-#define	__bswap16(x)	__builtin_bswap16(x)
-#define	__bswap32(x)	__builtin_bswap32(x)
-#define	__bswap64(x)	__builtin_bswap64(x)
+#ifdef __GNUC__
 
-#define	__htonl(x)		__bswap32(x)
-#define	__htons(x)		__bswap16(x)
-#define	__ntohl(x)		__bswap32(x)
-#define	__ntohs(x)		__bswap16(x)
+#include <machine/byte_swap.h>
+
+#define	ntohl(x)	((uint32_t)__byte_swap_long((uint32_t)(x)))
+#define	ntohs(x)	((uint16_t)__byte_swap_word((uint16_t)(x)))
+#define	htonl(x)	((uint32_t)__byte_swap_long((uint32_t)(x)))
+#define	htons(x)	((uint16_t)__byte_swap_word((uint16_t)(x)))
+
+#endif
 
 #endif /* !_I386_ENDIAN_H_ */

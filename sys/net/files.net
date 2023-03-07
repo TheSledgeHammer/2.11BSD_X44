@@ -1,0 +1,32 @@
+#	$211BSD: files.net Sources v 1.0
+
+# Net Sources
+file	net/bpf.c				bpfilter						needs-count
+file	net/bpf_filter.c		bpf_filter
+file	net/bsd-comp.c			ppp & ppp_bsdcomp
+file	net/if.c
+file	net/if_arcsubr.c		arc								needs-flag
+file	net/if_atmsubr.c		atm
+file	net/if_bridge.c			bridge							needs-flag
+file	net/bridgestp.c			bridge
+file	net/if_ethersubr.c		ether | token | wlan
+file	net/if_gif.c			gif								needs-flag
+file	net/if_gre.c			gre								needs-flag
+file	net/if_loop.c			loop							needs-count
+file	net/if_media.c
+file	net/if_ppp.c			ppp								needs-count
+file	net/if_sl.c				sl								needs-count
+file	net/if_spppsubr.c		sppp
+file	net/if_strip.c			strip							needs-count
+file	net/if_tokensubr.c		token							needs-flag
+file	net/if_tun.c			tun								needs-flag
+file	net/if_pppoe.c			pppoe							needs-flag
+file	net/pfil.c				pfil_hooks
+file	net/ppp-deflate.c		ppp & ppp_deflate
+file	net/ppp_tty.c			ppp
+file	net/radix.c
+file	net/raw_cb.c
+file	net/raw_usrreq.c
+file	net/route.c
+file	net/rtsock.c
+file	net/slcompress.c		sl | ppp | strip

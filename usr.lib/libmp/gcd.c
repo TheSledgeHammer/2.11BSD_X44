@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)gcd.c	5.2 (Berkeley) 3/13/86";
 
 #include <mp.h>
 
+void
 gcd(a,b,c)
 	MINT *a,*b,*c;
 {
@@ -30,6 +31,7 @@ gcd(a,b,c)
 	return;
 }
 
+void
 invert(a, b, c)
 	MINT *a, *b, *c;
 {

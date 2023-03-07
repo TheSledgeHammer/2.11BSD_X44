@@ -98,9 +98,9 @@ int			pms_ioctl(void *, u_long, caddr_t, int, struct proc *);
 void		pms_disable(void *);
 
 const struct wsmouse_accessops pms_accessops = {
-	pms_enable,
-	pms_ioctl,
-	pms_disable,
+		.enable = pms_enable,
+		.ioctl = pms_ioctl,
+		.disable = pms_disable,
 };
 
 static int

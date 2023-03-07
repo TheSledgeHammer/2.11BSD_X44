@@ -87,15 +87,15 @@ typedef struct MPOOL {
 } MPOOL;
 
 __BEGIN_DECLS
-MPOOL	*mpool_open (void *, int, pgno_t, pgno_t);
-void	 mpool_filter (MPOOL *, void (*)(void *, pgno_t, void *),void (*)(void *, pgno_t, void *), void *);
-void	*mpool_new (MPOOL *, pgno_t *);
-void	*mpool_get (MPOOL *, pgno_t, u_int);
-int	 	mpool_put (MPOOL *, void *, u_int);
-int	 	mpool_sync (MPOOL *);
-int	 	mpool_close (MPOOL *);
+MPOOL	*mpool_open(void *, int, pgno_t, pgno_t);
+void	 mpool_filter(MPOOL *, void (*)(void *, pgno_t, void *),void (*)(void *, pgno_t, void *), void *);
+void	*mpool_new(MPOOL *, pgno_t *);
+void	*mpool_get(MPOOL *, pgno_t, u_int);
+int	 	mpool_put(MPOOL *, void *, u_int);
+int	 	mpool_sync(MPOOL *);
+int	 	mpool_close(MPOOL *);
 #ifdef STATISTICS
-void	mpool_stat (MPOOL *);
+void	mpool_stat(MPOOL *);
 #endif
 __END_DECLS
 

@@ -40,7 +40,6 @@
 #include <devel/sys/workqueue.h>
 
 SIMPLEQ_HEAD(workqhead, work);
-
 struct workqueue_queue {
 	struct lock_object 		*q_lock;
 	int 					q_savedipl;

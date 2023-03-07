@@ -90,6 +90,7 @@ struct tty {
 	char					t_rocount, t_rocol;								/* tty */
 	struct	ttychars 		t_chars;										/* tty */
 	struct	winsize 		t_winsize;										/* window size */
+	void					*t_sc;											/* XXX: net/if_sl.c:sl_softc. */
 
 	void					(*t_oproc)(struct tty *);						/* device *//* Start output. */
 	void					(*t_stop)(struct tty *, int);					/* Stop output. */
@@ -264,6 +265,7 @@ int	tbclose(struct tty *, int);
 int	tbread(struct tty *, struct uio *, int);
 int	tbinput(int, struct tty *);
 int	tbioctl(struct tty *, u_long, caddr_t, int, struct proc *);
+void	tbattach(int);
 
 /* From tty_ctty.c. */
 int	cttyioctl(dev_t, u_long, caddr_t, int, struct proc *);

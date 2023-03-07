@@ -106,7 +106,6 @@ advvm_volume_create(advol, block, name, id, flags)
 	uint32_t 			id;
 	int 				flags;
 {
-	//advvm_malloc((advvm_volume_t *)advol, sizeof(advvm_volume_t *)); /* setup in advvm_attach */
 	advol->vol_name = name;
 	advol->vol_id = id;				/* generate a random uuid */
 	advol->vol_flags = flags;

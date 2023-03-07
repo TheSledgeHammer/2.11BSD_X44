@@ -337,6 +337,12 @@ softpic_handle_apic(spic)
                 return (apic);
             }
             break;
+    	case PIC_SOFT:
+    		apic = softpic_lookup_apic(PIC_SOFT);
+    		if(apic == &softintr_intrmap && spic->sp_template == apic->apic_pic_type) {
+    			return (apic);
+    		}
+    		break;
     }
     return (NULL);
 }
@@ -469,7 +475,6 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
         ;
     }
 
-
     fakeintr(spic, &fakehand, level);
     *p = &fakehand;
 
@@ -482,7 +487,6 @@ softpic_establish(spic, ci, irq, type, level, ih_fun, ih_arg, slot, idtvec, isap
     ih->ih_apic = softpic_handle_apic(spic);
 	ih->ih_fun = ih_fun;
 	ih->ih_arg = ih_arg;
-//	ih->ih_prev = p;
 	ih->ih_next = *p;
 	ih->ih_level = level;
 	ih->ih_irq = irq;

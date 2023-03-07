@@ -88,6 +88,10 @@ struct execa_args {
 	syscallarg(char	**) envp;
 };
 
+int 				execa(struct execa_args *);
+void				execa_set(struct execa_args *, char *, char **, char **);
+struct execa_args 	*execa_get(void);
+
 /*
  * Structure of the system-entry table
  */
@@ -99,10 +103,6 @@ extern struct sysent {
 extern int nsysent;
 
 /* Initialize the world */
-int 				execa(struct execa_args *);
-void				execa_set(struct execa_args *, char *, char **, char **);
-struct execa_args 	*execa_get(void);
-
 extern void startup(void);			/* cpu startup */
 extern void consinit(void);			/* console startup */
 extern void cinit(void);			/* clist startup */
@@ -132,28 +132,29 @@ void 	*hashfree(void *, int, int, u_long *);
 
 int		ureadc(int, struct uio *);
 
-void 	panic(const char *, ...);
+void 	panic(const char *, ...) __attribute__((__noreturn__,__format__(__printf__,1,2)));
 void	tablefull(const char *);
-void	addlog(const char *, ...);
-void	log(int, const char *, ...);
-void	vlog(int, const char *, va_list);
+void	addlog(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+void	log(int, const char *, ...);//  __attribute__((__format__(__printf__,2,3)));
+void	vlog(int, const char *, va_list);// __attribute__((__format__(__printf__,2,0)));
 
 /* subr_prf.c */
-void	printf(const char *, ...);
-int		sprintf(char *, const char *, ...);
-int		snprintf(char *, size_t, const char *, ...);
+void	printf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
+int		sprintf(char *, const char *, ...)  __attribute__((__format__(__printf__,2,3)));
+int		snprintf(char *, size_t, const char *, ...) __attribute__((__format__(__printf__,3,4)));
 void	vprintf(const char *, va_list);
 int		vsprintf(char *, const char *, va_list);
 int		vsnprintf(char *, size_t, const char *, va_list);
 
-void	ttyprintf(struct tty *, const char *, ...);
-void	uprintf(const char *, ...);
+void	ttyprintf(struct tty *, const char *, ...);// _attribute__((__format__(__printf__,2,3)));
+void	uprintf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 void    printn(long, u_int, int, struct tty *);
 char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
-void 	bcopy(const void *, void *, u_int);
 void 	ovbcopy(const void *, void *, u_int);
+void 	bcopy(const void *, void *, u_int);
 void 	bzero(void *, u_int);
+int		bcmp(const void *, const void *, size_t);
 
 int		copystr(const void *, void *, size_t, size_t *);
 int		copyinstr(const void *, void *, size_t, size_t *);
@@ -185,7 +186,7 @@ void    startprofclock(struct proc *);
 void    stopprofclock(struct proc *);
 
 /* internal syscalls related */
-void    syscall();
+//void    syscall();
 
 /* kern_environment.c / kenv.h */
 char	*kern_getenv(const char *);
@@ -210,9 +211,15 @@ int		getenv_array(const char *, void *, int, int *, int, bool_t);
 #include <lib/libkern/libkern.h>
 #endif
 
+extern const char hexdigits[];	/* "0123456789abcdef" in subr_prf.c */
+extern const char HEXDIGITS[];	/* "0123456789ABCDEF" in subr_prf.c */
+
+extern	void	_insque(void *, void *);
+extern	void	_remque(void *);
+
 /* casts to keep lint happy */
-#ifdef lint
-#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
-#define	remque(q)	_remque((caddr_t)q)
-#endif
+//#ifdef lint
+#define	insque(q,p)	_insque(q, p)
+#define	remque(q)	_remque(q)
+//#endif
 #endif /* !_SYS_SYSTEM_H_ */

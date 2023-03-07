@@ -275,20 +275,12 @@ swfree(p, index, nslots)
 	}
 
 	if (nblks == 0) {
-		if (swap_sanity(nblks, npages) == 0) {
-			startslot = swap_search(swp, sdp, nblks, npages);
-			vm_swap_free(startslot, nslots);
-		}
+		startslot = swap_search(swp, sdp, nblks, npages);
+		vm_swap_free(startslot, nslots);
 		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
 		swp->sw_flags &= ~SW_FREED;
 		return (0);
 	}
-	/*
-	 * 1st: free swap extents.
-	 * 2nd: free swapmap.
-	 */
-//	startslot = swap_search(swp, sdp);
-//	vm_swap_free(startslot, nslots);
 
 #ifdef SEQSWAP
 	if (swp->sw_flags & SW_SEQUENTIAL) {
@@ -345,9 +337,18 @@ swap_search(swp, sdp, nblks, npages)
 	struct swapdev 	*sdp;
 	int nblks, npages;
 {
+	long blk;
 	int pageno, startslot;
+	swblk_t dvbase;
 
-	pageno = btodb(npages << PAGE_SHIFT);
+	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+		blk = nblks - dvbase;
+		break;
+	}
+
+	if (btodb(npages << PAGE_SHIFT) == blk) {
+		pageno = btodb(npages << PAGE_SHIFT);
+	}
 	if (pageno == 0) {
 		for(pageno = 1; pageno <= npages; pageno++) {
 			if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
@@ -362,31 +363,6 @@ swap_search(swp, sdp, nblks, npages)
 		}
 	}
 	return (startslot);
-}
-
-/* sanity check npages and nblks align */
-int
-swap_sanity(nblks, npages)
-	int nblks, npages;
-{
-	long blk;
-	swblk_t dvbase;
-	int i, page;
-	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
-		blk = nblks - dvbase;
-		break;
-	}
-    for(i = 0; i <= npages; i++) {
-        if(i != 0) {
-            page = i;
-            break;
-        }
-    }
-
-    if(btodb(page << PAGE_SHIFT) == blk) {
-    	return (0);
-    }
-    return (1);
 }
 
 /* to be placed machine autoconf.c */

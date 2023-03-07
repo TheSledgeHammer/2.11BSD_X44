@@ -109,7 +109,7 @@ int *__errno(void);
 #endif
 
 #ifndef errno
-#define errno (*__errno())
+#define errno(*__errno())
 #endif
  __END_DECLS
 #endif /* !_ERRNO_H_ */

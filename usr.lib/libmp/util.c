@@ -8,14 +8,12 @@
 static char sccsid[] = "@(#)util.c	5.1 (Berkeley) 4/30/85";
 #endif not lint
 
-char* malloc();
-#ifdef lint
-int xv_oid;
-#endif
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <mp.h>
 
+void
 move(a, b)
 	MINT *a, *b;
 {
@@ -27,8 +25,9 @@ move(a, b)
 	if (i == 0)
 		return;
 	b->val = xalloc(i, "move");
-	for (j = 0; j < i; j++)
+	for (j = 0; j < i; j++) {
 		b->val[j] = a->val[j];
+	}
 	return;
 }
 
@@ -37,10 +36,10 @@ dummy()
 
 }
 
-short*
+short *
 xalloc(nint, s)
-	char *s;
 	int nint;
+	char *s;
 {
 	short *i;
 	i = (short*) malloc(2 * (unsigned) nint + 4);
@@ -53,15 +52,17 @@ xalloc(nint, s)
 	return (0);
 }
 
+void
 fatal(s)
 	char *s;
 {
 	fprintf(stderr, "%s\n", s);
-	VOID fflush(stdout);
+	(void)fflush(stdout);
 	sleep(2);
 	abort();
 }
 
+void
 xfree(c)
 	MINT *c;
 {
@@ -75,6 +76,7 @@ xfree(c)
 	return;
 }
 
+void
 mcan(a)
 	MINT *a;
 {
@@ -97,8 +99,9 @@ mcan(a)
 		a->len = -j;
 }
 
-MINT
-*itom(n)
+MINT *
+itom(n)
+	int n;
 {
 	MINT *a;
 	a = (MINT*) xalloc(2, "itom");
@@ -118,6 +121,7 @@ MINT
 	}
 }
 
+int
 mcmp(a, b)
 	MINT *a, *b;
 {

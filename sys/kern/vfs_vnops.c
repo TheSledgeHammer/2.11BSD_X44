@@ -59,8 +59,8 @@ struct fileops vnops = {
 		.fo_read = vn_read,
 		.fo_write = vn_write,
 		.fo_ioctl = vn_ioctl,
-		.fo_select = vn_select,
 		.fo_poll = vn_poll,
+		.fo_stat = vn_fstat,
 		.fo_close = vn_closefile,
 		.fo_kqfilter = vn_kqfilter
 };
@@ -332,7 +332,7 @@ vn_stat(vp, sb, p)
 	register struct vattr *vap;
 	int error;
 	u_short mode;
-
+        
 	vap = &vattr;
 	error = VOP_GETATTR(vp, vap, p->p_ucred, p);
 	if (error)
@@ -381,7 +381,23 @@ vn_stat(vp, sb, p)
 	sb->st_flags = vap->va_flags;
 	sb->st_gen = vap->va_gen;
 	sb->st_blocks = vap->va_bytes / S_BLKSIZE;
+
 	return (0);
+}
+
+/*
+ * File table vnode stat compat routine.
+ */
+int
+vn_fstat(fp, sb, p)
+	struct file *fp;
+	register struct stat *sb;
+	struct proc *p;
+{
+	struct vnode *vp;
+	vp = (struct vnode *)fp->f_data;
+
+	return (vn_stat(vp, sb, p));
 }
 
 /*
@@ -391,7 +407,7 @@ int
 vn_ioctl(fp, com, data, p)
 	struct file *fp;
 	u_long com;
-	caddr_t data;
+	void *data;
 	struct proc *p;
 {
 	register struct vnode *vp = ((struct vnode *)fp->f_data);
@@ -426,18 +442,6 @@ vn_ioctl(fp, com, data, p)
 		break;
 	}
 	return (error);
-}
-
-/*
- * File table vnode select routine.
- */
-int
-vn_select(fp, which, p)
-	struct file *fp;
-	int which;
-	struct proc *p;
-{
-	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag, fp->f_cred, p));
 }
 
 /*

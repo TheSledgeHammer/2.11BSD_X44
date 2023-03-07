@@ -79,6 +79,7 @@
 #define	IPL_SOFTSERIAL		4	/* serial */
 #define	IPL_TTY				3	/* terminal */
 #define	IPL_IMP				3	/* memory allocation */
+#define	IPL_VM				IPL_IMP	/* memory allocation */
 #define	IPL_AUDIO			2	/* audio */
 #define	IPL_CLOCK			1	/* clock */
 #define	IPL_HIGH			1	/* everything */
@@ -200,9 +201,11 @@ extern void softintr(int);
 /*
  * Miscellaneous
  */
+#define	splvm()				splraise(imask[IPL_VM])
 #define	splimp()			splraise(imask[IPL_IMP])
 #define	splhigh()			splraise(imask[IPL_HIGH])
 #define	spl0()				spllower(0)
+#define spllock() 			splhigh()
 
 #define	setsoftast(p)		aston(p)
 #define	setsoftclock()		softintr(SIR_CLOCK)
@@ -218,6 +221,10 @@ extern void softintr(int);
 #define I386_IPI_MTRR		0x00000020
 #define I386_IPI_GDT		0x00000040
 
+extern void Xsoftclock(void);
+extern void Xsoftnet(void);
+extern void Xsoftserial(void);
+
 struct cpu_info;
 
 extern int (*i386_ipi)(int, int, int);
@@ -229,5 +236,67 @@ void 	i386_broadcast_ipi(int);
 void 	i386_multicast_ipi(int, int);
 void 	i386_ipi_handler(void);
 
+extern void (*ipifunc[I386_NIPI])(struct cpu_info *);
+
 #endif /* !_LOCORE */
+
+/*
+ * Generic software interrupt support.
+ */
+#define	I386_SOFTINTR_SOFTBIO	        0
+#define	I386_SOFTINTR_SOFTCLOCK		1
+#define	I386_SOFTINTR_SOFTNET		2
+#define	I386_SOFTINTR_SOFTSERIAL	3
+#define	I386_NSOFTINTR			4
+
+#ifndef _LOCORE
+#include <sys/queue.h>
+
+struct i386_soft_intrhand {
+	TAILQ_ENTRY(i386_soft_intrhand) 	sih_q;
+	struct i386_soft_intr 				*sih_intrhead;
+	void								(*sih_fn)(void *);
+	void								*sih_arg;
+	int									sih_pending;
+};
+
+struct i386_soft_intr {
+	TAILQ_HEAD(, i386_soft_intrhand) 	softintr_q;
+	int 								softintr_ssir;
+	struct lock_object					*softintr_slock;
+};
+
+#define	i386_softintr_lock(si, s)			\
+do {										\
+	(s) = splhigh();						\
+	simple_lock(si->softintr_slock);		\
+} while (/*CONSTCOND*/ 0)
+
+#define	i386_softintr_unlock(si, s)			\
+do {										\
+	simple_unlock(si->softintr_slock);		\
+	splx((s));								\
+} while (/*CONSTCOND*/ 0)
+
+void	*softintr_establish(int, void (*)(void *), void *);
+void	softintr_disestablish(void *);
+void	softintr_init(void);
+void	softintr_dispatch(int);
+
+#define	softintr_schedule(arg)								\
+do {														\
+	struct i386_soft_intrhand *__sih = (arg);				\
+	struct i386_soft_intr *__si = __sih->sih_intrhead;		\
+	int __s;												\
+															\
+	i386_softintr_lock(__si, __s);							\
+	if (__sih->sih_pending == 0) {							\
+		TAILQ_INSERT_TAIL(&__si->softintr_q, __sih, sih_q);	\
+		__sih->sih_pending = 1;								\
+		softintr(__si->softintr_ssir);						\
+	}														\
+	i386_softintr_unlock(__si, __s);						\
+} while (/*CONSTCOND*/ 0)
+
+#endif /* _LOCORE */
 #endif /* !_I386_INTR_H_ */

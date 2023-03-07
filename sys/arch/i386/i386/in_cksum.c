@@ -35,12 +35,12 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/mbuf.h>
 
-#ifdef notyet
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
-#endif
+
 /*
  * Checksum routine for Internet Protocol family headers.
  *

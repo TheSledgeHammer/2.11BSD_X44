@@ -405,7 +405,7 @@ loop:
 		printf("scheduler: no room for pid %d(%s), free %d\n", p->p_pid, p->p_comm, cnt.v_free_count);
 #endif
 	(void) splhigh();
-	VM_WAIT;
+	vm_wait();
 	(void) spl0();
 #ifdef DEBUG
 	if (swapdebug & SDB_FOLLOW)

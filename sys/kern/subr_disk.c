@@ -554,8 +554,8 @@ disk_find_by_dev(dev)
 {
     struct dkdevice *diskp;
     
-    for (diskp = TAILQ_FIRST(&disklist); diskp != NULL; diskp = TAILQ_NEXT(diskp, dk_link)) {
-        if(&diskp[dkunit(dev)] == diskp) {
+    TAILQ_FOREACH(diskp, &disklist, dk_link) {
+        if (&diskp[dkunit(dev)] == diskp) {
             return (diskp);
         }
     }
@@ -568,7 +568,7 @@ disk_find_by_slice(slicep)
 {
     struct dkdevice *diskp;
     
-    for (diskp = TAILQ_FIRST(&disklist); diskp != NULL; diskp = TAILQ_NEXT(diskp, dk_link)) {
+    TAILQ_FOREACH(diskp, &disklist, dk_link) {
         if(diskp->dk_slices == slicep) {
             return (diskp);
         }

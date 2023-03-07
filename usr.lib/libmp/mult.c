@@ -10,6 +10,12 @@ static char sccsid[] = "@(#)mult.c	5.1 (Berkeley) 4/30/85";
 
 #include <mp.h>
 
+union mult {
+	long 		xx;
+	struct half yy;
+};
+
+void
 mult(a, b, c)
 	struct mint *a, *b, *c;
 {
@@ -44,57 +50,57 @@ mult(a, b, c)
 		c->val = z.val;
 	return;
 }
-#define S2 x=a->val[j];
-#define S3 x=x*b->val[i-j];
-#define S4 tradd(&carry,&sum,x);
-#define S5 c->val[i]=sum.yy.low&077777;
-#define S6 sum.xx=sum.xx>>15;
-#define S7 sum.yy.high=carry;
 
+#define S2(x, a, j)			((x) = (a)->val[(j)])
+#define S3(x, b, i, j)		((x) = (x) * (b)->val[(i) - (j)])
+#define S4(carry, sum, x)	(tradd(carry, sum, x))
+#define S5(c, i, sum) 		((c)->val[(i)] = (sum).yy.low & 077777)
+#define S6(sum) 			((sum).xx = (sum).xx >> 15)
+#define S7(sum, carry) 		((sum).yy.high = (carry))
+
+void
 m_mult(a, b, c)
 	struct mint *a, *b, *c;
 {
 	long x;
-	union {
-		long xx;
-		struct half yy;
-	} sum;
+	union mult sum;
 	int carry;
 	int i, j;
+
 	c->val = xalloc(a->len + b->len, "m_mult");
 	sum.xx = 0;
 	for (i = 0; i < b->len; i++) {
 		carry = 0;
 		for (j = 0; j < i + 1; j++) {
-			S2
-			S3
-			S4
+			S2(x, a, j);
+			S3(x, b, i, j);
+			S4(&carry, &sum, x);
 		}
-		S5
-		S6
-		S7
+		S5(c, i, sum);
+		S6(sum);
+		S7(sum, carry);
 	}
 	for (; i < a->len; i++) {
 		carry = 0;
 		for (j = i - b->len + 1; j < i + 1; j++) {
-			S2
-			S3
-			S4
+			S2(x, a, j);
+			S3(x, b, i, j);
+			S4(&carry, &sum, x);
 		}
-		S5
-		S6
-		S7
+		S5(c, i, sum);
+		S6(sum);
+		S7(sum, carry);
 	}
 	for (; i < a->len + b->len; i++) {
 		carry = 0;
 		for (j = i - b->len + 1; j < a->len; j++) {
-			S2
-			S3
-			S4
+			S2(x, a, j);
+			S3(x, b, i, j);
+			S4(&carry, &sum, x);
 		}
-		S5
-		S6
-		S7
+		S5(c, i, sum);
+		S6(sum);
+		S7(sum, carry);
 	}
 	if (c->val[i - 1] != 0)
 		c->len = a->len + b->len;
@@ -103,13 +109,11 @@ m_mult(a, b, c)
 	return;
 }
 
+void
 tradd(a, b, c)
 	long c;
 	int *a;
-	union g {
-		long xx;
-		struct half yy;
-	} *b;
+	union mult *b;
 {
 	b->xx = b->xx + c;
 	if (b->yy.high & 0100000) {

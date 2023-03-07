@@ -31,6 +31,22 @@
 #ifndef _SYS_POWER_H_
 #define _SYS_POWER_H_
 
+struct hook_head;
+TAILQ_HEAD(hook_head, hook_desc);
+struct hook_desc {
+	TAILQ_ENTRY(hook_desc) 	hk_list;
+	void 					(*hk_fn)(void *);
+	void					*hk_arg;
+};
+
+void 	*hook_establish(struct hook_head *, void (*)(void *), void *);
+void	hook_disestablish(struct hook_head *, void *);
+void	dohooks(struct hook_head *, int);
+void	hook_destroy(struct hook_head *);
+
+#define HOOK_REMOVE	0x01
+#define HOOK_FREE	0x02
+
 /*
  * Power management hooks.
  */
@@ -50,10 +66,10 @@
 	"softstandby"	/* 5 */	\
 
 
-void	*powerhook_establish(const char *name, void (*fn)(int, void *), void *arg);
+void	*powerhook_establish(const char *, void (*)(int, void *), void *);
 void	powerhook_disestablish(void *);
 void	dopowerhooks(int);
-void	*shutdownhook_establish(void (*fn)(void *), void *);
+void	*shutdownhook_establish(void (*)(void *), void *);
 void	shutdownhook_disestablish(void *);
 void	doshutdownhooks(void);
 

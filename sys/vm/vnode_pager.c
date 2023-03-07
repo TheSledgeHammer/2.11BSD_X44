@@ -78,7 +78,7 @@ static int		 	vnode_pager_getpage (vm_pager_t, vm_page_t *, int, bool_t);
 static bool_t		vnode_pager_haspage (vm_pager_t, vm_offset_t);
 static void		 	vnode_pager_init (void);
 static int		 	vnode_pager_io (vn_pager_t, vm_page_t *, int, bool_t, enum uio_rw);
-static int		vnode_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
+static int			vnode_pager_putpage (vm_pager_t, vm_page_t *, int, bool_t);
 
 struct pagerops vnodepagerops = {
 	vnode_pager_init,

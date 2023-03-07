@@ -106,6 +106,7 @@ typedef struct lock				*lock_t;
 #include <sys/tree.h>
 #include <sys/user.h>
 #include <sys/vmmeter.h>
+#include <sys/vmsystm.h>
 
 #include <vm/include/pmap.h>
 #include <vm/include/swap_pager.h>
@@ -113,9 +114,6 @@ typedef struct lock				*lock_t;
 #include <vm/include/vm_extern.h>
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_prot.h>
-#include <vm/include/vm_systm.h>
-
-#include <devel/vm/include/vm_hat.h>
 #include <devel/vm/include/vm_mac.h>
 #include <devel/vm/include/vm_map.h>
 #include <devel/vm/include/vm_page.h>
@@ -138,7 +136,7 @@ typedef struct lock				*lock_t;
 struct vmspace {
 	struct	vm_map 	 		vm_map;				/* VM address map */
 	struct	pmap 	 		vm_pmap;			/* private physical map */
-	union   vm_pseudo_segment	vm_psegment;	/* VM pseudo segments */
+	union vm_pseudo_segment	vm_psegment;		/* VM pseudo segment */
 
 	int				 		vm_refcnt;			/* number of references */
 	caddr_t			 		vm_shm;				/* SYS5 shared memory private data XXX */

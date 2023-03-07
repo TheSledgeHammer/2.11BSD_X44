@@ -1,23 +1,77 @@
+/*	$NetBSD: tcp_debug.c,v 1.19 2003/08/07 16:33:15 agc Exp $	*/
+
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the project nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)tcp_debug.c	7.2.1 (2.11BSD) 1995/10/11
+ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
-#ifdef	TCPDEBUG
+/*
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)tcp_debug.c	8.1 (Berkeley) 6/10/93
+ */
+
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: tcp_debug.c,v 1.19 2003/08/07 16:33:15 agc Exp $");
+
+#include "opt_inet.h"
+#include "opt_tcp_debug.h"
+
+#ifdef TCP_DEBUG
+/* load symbolic names */
+#define	PRUREQUESTS
+#define	TCPSTATES
 #define	TCPTIMERS
 #define	TANAMES
-#define PRUREQUESTS
-#define TCPSTATES
-#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -30,35 +84,43 @@
 #include <net/route.h>
 #include <net/if.h>
 
-#include <sys/domain.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
-#include <netinet/ip_var.h>
-#include <netinet/tcp_debug.h>
 #include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+
+#ifdef INET6
+#ifndef INET
+#include <netinet/in.h>
+#endif
+#include <netinet/ip6.h>
+#endif
+
 #include <netinet/tcp.h>
 #include <netinet/tcp_fsm.h>
 #include <netinet/tcp_seq.h>
 #include <netinet/tcp_timer.h>
 #include <netinet/tcp_var.h>
 #include <netinet/tcpip.h>
+#include <netinet/tcp_debug.h>
 
-#ifdef	TCPDEBUG
+struct	tcp_debug tcp_debug[TCP_NDEBUG];
+int	tcp_debx;
 int	tcpconsdebug = 0;
-#endif
-
 /*
  * Tcp debug routines
  */
-tcp_trace(act, ostate, tp, ti, req)
+void
+tcp_trace(act, ostate, tp, m, req)
 	short act, ostate;
 	struct tcpcb *tp;
-	struct tcpiphdr *ti;
+	struct mbuf *m;
 	int req;
 {
 	tcp_seq seq, ack;
 	int len, flags;
+	struct tcphdr *th;
 	struct tcp_debug *td = &tcp_debug[tcp_debx++];
 
 	if (tcp_debx == TCP_NDEBUG)
@@ -71,16 +133,38 @@ tcp_trace(act, ostate, tp, ti, req)
 		td->td_cb = *tp;
 	else
 		bzero((caddr_t)&td->td_cb, sizeof (*tp));
-	if (ti)
-		td->td_ti = *ti;
-	else
-		bzero((caddr_t)&td->td_ti, sizeof (*ti));
+	td->td_family = tp->t_family;
+	bzero((caddr_t)&td->td_ti, sizeof (td->td_ti));
+#ifdef INET6
+	bzero((caddr_t)&td->td_ti6, sizeof (td->td_ti6));
+#endif
+	th = NULL;
+	if (m) {
+		struct ip *ip;
+		ip = mtod(m, struct ip *);
+		switch (ip->ip_v) {
+		case 4:
+			if (m->m_len < sizeof(td->td_ti))
+				break;
+			bcopy(mtod(m, caddr_t), &td->td_ti, sizeof(td->td_ti));
+			th = (struct tcphdr *)((caddr_t)&td->td_ti + sizeof(struct ip));
+			break;
+#ifdef INET6
+		case 6:
+			if (m->m_len < sizeof(td->td_ti6))
+				break;
+			bcopy(mtod(m, caddr_t), &td->td_ti6,
+				sizeof(td->td_ti6));
+			th = (struct tcphdr *)((caddr_t)&td->td_ti6 + sizeof(struct ip6_hdr));
+			break;
+#endif
+		}
+	}
 	td->td_req = req;
-#ifdef	TCPDEBUG
 	if (tcpconsdebug == 0)
 		return;
 	if (tp)
-		printf("%x %s:", tp, tcpstates[ostate]);
+		printf("%p %s:", tp, tcpstates[ostate]);
 	else
 		printf("???????? ");
 	printf("%s ", tanames[act]);
@@ -89,28 +173,28 @@ tcp_trace(act, ostate, tp, ti, req)
 	case TA_INPUT:
 	case TA_OUTPUT:
 	case TA_DROP:
-		if (ti == 0)
+		if (th == 0)
 			break;
-		seq = ti->ti_seq;
-		ack = ti->ti_ack;
-		len = ti->ti_len;
+		seq = th->th_seq;
+		ack = th->th_ack;
+		len = m->m_pkthdr.len;
 		if (act == TA_OUTPUT) {
 			seq = ntohl(seq);
 			ack = ntohl(ack);
-			len = ntohs((u_short)len);
+			len = ntohs((u_int16_t)len);
 		}
 		if (act == TA_OUTPUT)
 			len -= sizeof (struct tcphdr);
 		if (len)
-			printf("[%X..%X)", seq, seq+len);
+			printf("[%x..%x)", seq, seq+len);
 		else
-			printf("%X", seq);
-		printf("@%X, urp=%X", ack, ti->ti_urp);
-		flags = ti->ti_flags;
+			printf("%x", seq);
+		printf("@%x, urp=%x", ack, th->th_urp);
+		flags = th->th_flags;
 		if (flags) {
 #ifndef lint
 			char *cp = "<";
-#define pf(f) { if (ti->ti_flags&TH_/**/f) { printf("%s%s", cp, "f"); cp = ","; } }
+#define pf(f) { if (th->th_flags&__CONCAT(TH_,f)) { printf("%s%s", cp, "f"); cp = ","; } }
 			pf(SYN); pf(ACK); pf(FIN); pf(RST); pf(PUSH); pf(URG);
 #endif
 			printf(">");
@@ -129,10 +213,10 @@ tcp_trace(act, ostate, tp, ti, req)
 	printf("\n");
 	if (tp == 0)
 		return;
-	printf("\trcv_(nxt,wnd,up) (%X,%x,%x) snd_(una,nxt,max) (%X,%X,%X)\n",
+	printf("\trcv_(nxt,wnd,up) (%x,%lx,%x) snd_(una,nxt,max) (%x,%x,%x)\n",
 	    tp->rcv_nxt, tp->rcv_wnd, tp->rcv_up, tp->snd_una, tp->snd_nxt,
 	    tp->snd_max);
-	printf("\tsnd_(wl1,wl2,wnd) (%X,%X,%x)\n",
+	printf("\tsnd_(wl1,wl2,wnd) (%x,%x,%lx)\n",
 	    tp->snd_wl1, tp->snd_wl2, tp->snd_wnd);
-#endif /* TCPDEBUG */
 }
+#endif /* TCP_DEBUG */

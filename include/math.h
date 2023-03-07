@@ -12,13 +12,13 @@
 
 __BEGIN_DECLS
 
-extern	double	fabs(), floor(), ceil(), fmod(), ldexp();
-extern	double	sqrt(), hypot(), atof();
-extern	double	sin(), cos(), tan(), asin(), acos(), atan(), atan2();
-extern	double	exp(), log(), log10(), pow();
-extern	double	sinh(), cosh(), tanh();
-extern	double	gamma();
-extern	double	j0(), j1(), jn(), y0(), y1(), yn();
+extern	double	fabs(double), floor(double), ceil(double), fmod(double, double), ldexp(double, int);
+extern	double	sqrt(double), hypot(double, double), atof(const char *);
+extern	double	sin(double), cos(double), tan(double), asin(double), acos(double), atan(double), atan2(double, double);
+extern	double	exp(double), log(double), log10(double), pow(double, double);
+extern	double	sinh(double), cosh(double), tanh(double);
+extern	double	gamma(double);
+extern	double	j0(double), j1(double), jn(int, double), y0(double), y1(double), yn(int, double);
 
 #define	HUGE	1.701411733192644270e38
 #define	LOGHUGE	39

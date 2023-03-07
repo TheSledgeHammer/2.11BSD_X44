@@ -302,7 +302,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 			if (m == NULL) {
 				UNLOCK_AND_DEALLOCATE;
-				VM_WAIT;
+				vm_wait();
 				goto RetryFault;
 			}
 		}
@@ -634,7 +634,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 					copy_object->ref_count--;
 					vm_object_unlock(copy_object);
 					UNLOCK_AND_DEALLOCATE;
-					VM_WAIT;
+					vm_wait();
 					goto RetryFault;
 				}
 
@@ -995,7 +995,7 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 			dst_m = vm_page_alloc(dst_object, dst_offset);
 			if (dst_m == NULL) {
 				vm_object_unlock(dst_object);
-				VM_WAIT;
+				vm_wait();
 				vm_object_lock(dst_object);
 			}
 		} while (dst_m == NULL);

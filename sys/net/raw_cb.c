@@ -1,16 +1,38 @@
+/*	$NetBSD: raw_cb.c,v 1.14 2003/08/07 16:32:56 agc Exp $	*/
+
 /*
- * Copyright (c) 1980, 1986 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)raw_cb.c	7.4 (Berkeley) 12/30/87
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)raw_cb.c	8.1 (Berkeley) 6/10/93
  */
+
+#include <sys/cdefs.h>
+__KERNEL_RCSID(0, "$NetBSD: raw_cb.c,v 1.14 2003/08/07 16:32:56 agc Exp $");
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -35,116 +57,73 @@
  *	redo address binding to allow wildcards
  */
 
+struct	rawcbhead rawcb = LIST_HEAD_INITIALIZER(rawcb);
+
+u_long	raw_sendspace = RAWSNDQ;
+u_long	raw_recvspace = RAWRCVQ;
+
 /*
  * Allocate a control block and a nominal amount
  * of buffer space for the socket.
  */
+int
 raw_attach(so, proto)
-	register struct socket *so;
+	struct socket *so;
 	int proto;
 {
-	struct mbuf *m;
-	register struct rawcb *rp;
+	struct rawcb *rp = sotorawcb(so);
+	int error;
 
-	m = m_getclr(M_DONTWAIT, MT_PCB);
-	if (m == 0)
+	/*
+	 * It is assumed that raw_attach is called
+	 * after space has been allocated for the
+	 * rawcb.
+	 */
+	if (rp == 0)
 		return (ENOBUFS);
-	if (sbreserve(&so->so_snd, RAWSNDQ) == 0)
-		goto bad;
-	if (sbreserve(&so->so_rcv, RAWRCVQ) == 0)
-		goto bad2;
-	rp = mtod(m, struct rawcb *);
+	if ((error = soreserve(so, raw_sendspace, raw_recvspace)) != 0)
+		return (error);
 	rp->rcb_socket = so;
-	so->so_pcb = (caddr_t)rp;
-	rp->rcb_pcb = 0;
 	rp->rcb_proto.sp_family = so->so_proto->pr_domain->dom_family;
 	rp->rcb_proto.sp_protocol = proto;
-	insque(rp, &rawcb);
+	LIST_INSERT_HEAD(&rawcb, rp, rcb_list);
 	return (0);
-bad2:
-	sbrelease(&so->so_snd);
-bad:
-	(void) m_free(m);
-	return (ENOBUFS);
 }
 
 /*
  * Detach the raw connection block and discard
  * socket resources.
  */
+void
 raw_detach(rp)
-	register struct rawcb *rp;
+	struct rawcb *rp;
 {
 	struct socket *so = rp->rcb_socket;
 
-	if (rp->rcb_route.ro_rt)
-		rtfree(rp->rcb_route.ro_rt);
 	so->so_pcb = 0;
 	sofree(so);
-	remque(rp);
-	if (rp->rcb_options)
-		m_freem(rp->rcb_options);
-	m_freem(dtom(rp));
+	LIST_REMOVE(rp, rcb_list);
+#ifdef notdef
+	if (rp->rcb_laddr)
+		m_freem(dtom(rp->rcb_laddr));
+	rp->rcb_laddr = 0;
+#endif
+	free((caddr_t)rp, M_PCB);
 }
 
 /*
  * Disconnect and possibly release resources.
  */
+void
 raw_disconnect(rp)
 	struct rawcb *rp;
 {
 
-	rp->rcb_flags &= ~RAW_FADDR;
+#ifdef notdef
+	if (rp->rcb_faddr)
+		m_freem(dtom(rp->rcb_faddr));
+	rp->rcb_faddr = 0;
+#endif
 	if (rp->rcb_socket->so_state & SS_NOFDREF)
 		raw_detach(rp);
-}
-
-raw_bind(so, nam)
-	register struct socket *so;
-	struct mbuf *nam;
-{
-	struct sockaddr *addr = mtod(nam, struct sockaddr *);
-	register struct rawcb *rp;
-
-	if (ifnet == 0)
-		return (EADDRNOTAVAIL);
-/* BEGIN DUBIOUS */
-	/*
-	 * Should we verify address not already in use?
-	 * Some say yes, others no.
-	 */
-	switch (addr->sa_family) {
-
-#ifdef INET
-	case AF_IMPLINK:
-	case AF_INET: {
-		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
-		    ifa_ifwithaddr(addr) == 0)
-			return (EADDRNOTAVAIL);
-		break;
-	}
-#endif
-
-	default:
-		return (EAFNOSUPPORT);
-	}
-/* END DUBIOUS */
-	rp = sotorawcb(so);
-	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof (*addr));
-	rp->rcb_flags |= RAW_LADDR;
-	return (0);
-}
-
-/*
- * Associate a peer's address with a
- * raw connection block.
- */
-raw_connaddr(rp, nam)
-	struct rawcb *rp;
-	struct mbuf *nam;
-{
-	struct sockaddr *addr = mtod(nam, struct sockaddr *);
-
-	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_faddr, sizeof(*addr));
-	rp->rcb_flags |= RAW_FADDR;
 }

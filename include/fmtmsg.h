@@ -74,8 +74,7 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	fmtmsg(long, const char *, int, const char *, const char *,
-	    const char *);
+int	fmtmsg(long, const char *, int, const char *, const char *, const char *);
 __END_DECLS
 
 #endif /* !_FMTMSG_H_ */
