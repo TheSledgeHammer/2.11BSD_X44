@@ -247,7 +247,7 @@ vm_amap_alloc(sz, padsz, waitf)
 
 	amap = vm_amap_alloc1(slots, padslots, waitf);
 	if (amap)
-		memset(amap->am_anon, 0, (slots + padslots) * sizeof(struct vm_anon*));
+		bzero(amap->am_anon, (slots + padslots) * sizeof(struct vm_anon*));
 		vm_amap_list_insert(amap);
 	return (amap);
 }
@@ -394,27 +394,27 @@ vm_amap_extend(entry, addsize)
 
 	/* do am_slots */
 	oldsl = amap->am_slots;
-	memcpy(newsl, oldsl, sizeof(int) * amap->am_nused);
+	bcopy(oldsl, newsl, sizeof(int) * amap->am_nused);
 	amap->am_slots = newsl;
 
 	/* do am_anon */
 	oldover = amap->am_anon;
-	memcpy(newover, oldover, sizeof(struct vm_anon*) * amap->am_nslot);
-	memset(newover + amap->am_nslot, 0, sizeof(struct vm_anon*) * slotadded);
+	bcopy(oldover, newover, sizeof(struct vm_anon*) * amap->am_nslot);
+	bzero(newover + amap->am_nslot, sizeof(struct vm_anon*) * slotadded);
 	amap->am_anon = newover;
 
 	/* do am_bckptr */
 	oldbck = amap->am_bckptr;
-	memcpy(newbck, oldbck, sizeof(int) * amap->am_nslot);
-	memset(newbck + amap->am_nslot, 0, sizeof(int) * slotadded); /* XXX: needed? */
+	bcopy(oldbck, newbck, sizeof(int) * amap->am_nslot);
+	bzero(newbck + amap->am_nslot, sizeof(int) * slotadded); /* XXX: needed? */
 	amap->am_bckptr = newbck;
 
 #ifdef VM_AMAP_PPREF
 	/* do ppref */
 	oldppref = amap->am_ppref;
 	if (newppref) {
-		memcpy(newppref, oldppref, sizeof(int) * amap->am_nslot);
-		memset(newppref + amap->am_nslot, 0, sizeof(int) * slotadded);
+		bcopy(oldppref, newppref, sizeof(int) * amap->am_nslot);
+		bzero(newppref + amap->am_nslot, sizeof(int) * slotadded);
 		amap->am_ppref = newppref;
 		if ((slotoff + slotmapped) < amap->am_nslot)
 			amap_pp_adjref(amap, slotoff + slotmapped,
@@ -776,7 +776,7 @@ ReStart:
 			 */
 			nanon = vm_anon_alloc();
 			if (nanon)
-				npg = vm_page_alloc(NULL, 0, nanon, 0);	/* XXX: Not correct */
+				npg = vm_page_anon_alloc(NULL, 0, nanon);
 			else
 				npg = NULL;	/* XXX: quiet gcc warning */
 
@@ -893,7 +893,7 @@ vm_amap_pp_establish(amap)
 	/*
 	 * init ppref
 	 */
-	memset(amap->am_ppref, 0, sizeof(int) * amap->am_maxslot);
+	bzero(amap->am_ppref, sizeof(int) * amap->am_maxslot);
 	pp_setreflen(amap->am_ppref, 0, amap->am_ref, amap->am_nslot);
 	return;
 }
@@ -1089,7 +1089,7 @@ vm_amap_lookups(aref, offset, anons, npages)
 		panic("amap_lookups: offset out of range");
 	}
 
-	memcpy(anons, &amap->am_anon[slot], npages * sizeof(struct vm_anon *));
+	bcopy(&amap->am_anon[slot], anons, npages * sizeof(struct vm_anon *));
 
 	return;
 }

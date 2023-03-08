@@ -112,7 +112,7 @@ swapout(p)
 	vm_offset_t addr;
 	vm_size_t size;
 	int s;
-#ifdef IDSEPERATION
+#ifdef IDSEPERATE
 	int freecore;
 	u_int odata, ostack;
 #endif
@@ -132,7 +132,7 @@ swapout(p)
 	vm_map_pageable(kernel_map, addr, addr + addr+size, TRUE);
 	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
 
-#ifdef IDSEPERATION
+#ifdef IDSEPERATE
 	vm_xswapout(p, addr, size, freecore, odata, ostack);
 #endif
 

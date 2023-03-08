@@ -103,6 +103,7 @@ vm_offset_t			first_phys_addr;
 vm_offset_t			last_phys_addr;
 vm_size_t			page_mask;
 int					page_shift;
+vm_offset_t			kentry_data;
 
 /*
  * vm_pbootstrap:
@@ -113,7 +114,7 @@ void
 vm_pbootstrap(void)
 {
 	extern vm_offset_t	kentry_data;
-	extern vm_size_t	kentry_data_size;
+	vm_size_t			kentry_data_size;
 	vm_size_t 			kmap_size, kentry_size;
 
 	kmap_size = (MAX_KMAP * sizeof(struct vm_map));

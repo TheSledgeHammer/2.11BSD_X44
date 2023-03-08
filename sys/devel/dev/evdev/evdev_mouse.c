@@ -26,6 +26,19 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* TODO:
+ * - Fix evdev mouse mux & ioctls
+ */
+
+#include <sys/conf.h>
+#include <sys/device.h>
+
+#include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmousevar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
+
+#include <dev/misc/evdev/evdev_private.h>
+
 struct evdev_mouse_softc {
 	struct evdev_softc 				sc_evdev;
     const struct wsmouse_accessops  *sc_accessops;
@@ -33,11 +46,10 @@ struct evdev_mouse_softc {
 
 };
 
-const struct wsmouse_accessops evmouse_accessops = {
-		.enable = evdev_mouse_enable,
-		.ioctl = evdev_ioctl,
-		.disable = evdev_mouse_disable,
-};
+extern struct cfdriver evdev_cd;
+CFOPS_DECL(evdev_mouse, evdev_mouse_match, evdev_mouse_attach, NULL, NULL);
+//CFDRIVER_DECL(NULL, evdev_mouse, DV_DULL);
+CFATTACH_DECL(evdev_mouse, &evdev_cd, &evdev_mouse_cops, sizeof(struct evdev_mouse_softc));
 
 int
 evdev_mouse_match(parent, match, aux)
@@ -45,6 +57,7 @@ evdev_mouse_match(parent, match, aux)
 	struct cfdata *match;
 	void *aux;
 {
+	struct wsmousedev_attach_args 	*ap;
 	return (1);
 }
 
@@ -54,20 +67,122 @@ evdev_mouse_attach(parent, self, aux)
 	void *aux;
 {
 	struct evdev_mouse_softc 		*msc;
+	struct evdev_softc				*sc;
 	struct wsmousedev_attach_args 	*ap;
 
 	msc = (struct evdev_mouse_softc *)self;
+	sc = &msc->sc_evdev;
 	ap = (struct wsmousedev_attach_args)aux;
 
 	msc->sc_accessops = ap->accessops;
 	msc->sc_accesscookie = ap->accesscookie;
 
-	evdev_attach_subr(&msc->sc_evdev, WSMOUSEDEVCF_MUX);
+	evdev_attach_subr(sc, WSMOUSEDEVCF_MUX);
+}
+
+int
+evdev_mouse_activate(self, act)
+	struct device *self;
+	enum devact act;
+{
+	struct evdev_mouse_softc *msc;
+
+	return (evdev_doactivate(&msc->sc_evdev, self, act));
+}
+
+int
+evdev_mouse_detach(self, flags)
+	struct device *self;
+	int flags;
+{
+	struct evdev_mouse_softc *msc;
+
+	return (evdev_dodetach(&msc->sc_evdev, self, flags));
+}
+
+int
+evdev_mouse_open(dev, flags, mode, p)
+	dev_t dev;
+	int flags, mode;
+	struct proc *p;
+{
+	struct evdev_mouse_softc *msc;
+	struct evdev_dev *evdev;
+
+	return (evdev_doopen(evdev, p));
+}
+
+int
+evdev_mouse_close(dev, flags, mode, p)
+	dev_t dev;
+	int flags, mode;
+	struct proc *p;
+{
+	struct evdev_mouse_softc *msc;
+	struct evdev_dev *evdev;
+
+	return (evdev_doclose(evdev, p));
+}
+
+int
+evdev_mouse_read(dev, uio, flags)
+	dev_t dev;
+	struct uio *uio;
+	int flags;
+{
+	struct evdev_mouse_softc *msc;
+
+	return (evdev_doread(&msc->sc_evdev, dev, uio, flags));
+}
+
+int
+evdev_mouse_write(dev, uio, flags)
+	dev_t dev;
+	struct uio *uio;
+	int flags;
+{
+	struct evdev_mouse_softc *msc;
+
+	return (evdev_dowrite(&msc->sc_evdev, dev, uio, flags));
+}
+
+int
+evdev_mouse_poll(dev, events, p)
+	dev_t dev;
+	int events;
+	struct proc *p;
+{
+	struct evdev_mouse_softc *msc;
+
+	return (evdev_dopoll(&msc->sc_evdev, dev, events, p));
+}
+
+int
+evdev_mouse_kqfilter(dev, kn)
+	dev_t dev;
+	struct knote *kn;
+{
+	struct evdev_mouse_softc *msc;
+
+	return (evdev_dokqfilter(&msc->sc_evdev, dev, kn));
+}
+
+int
+evdev_mouse_ioctl(dev, cmd, data, flag, p)
+	dev_t dev;
+	u_long cmd;
+	caddr_t data;
+	int flag;
+	struct proc *p;
+{
+	struct evdev_mouse_softc *msc;
+
+	return (evdev_doioctl(&msc->sc_evdev, cmd, data, flag, p));
 }
 
 int
 evdev_mouse_enable(v)
-	void 	*v;
+	void *v;
 {
 	struct evdev_mouse_softc *msc;
 
@@ -77,7 +192,7 @@ evdev_mouse_enable(v)
 
 void
 evdev_mouse_disable(v)
-	void 	*v;
+	void *v;
 {
 	struct evdev_mouse_softc *msc;
 
@@ -86,14 +201,22 @@ evdev_mouse_disable(v)
 }
 
 int
-evdev_mouse_ioctl(v, cmd, data, flag, p)
+evdev_mouse_ioctl_sc(v, cmd, data, flag, p)
 	void *v;
 	u_long cmd;
 	caddr_t data;
 	int flag;
 	struct proc *p;
 {
+	struct evdev_mouse_softc *msc;
+	struct evdev_softc *sc;
+	struct device *dv;
+	int error;
 
+	msc = (struct evdev_mouse_softc *)v;
+	sc = &msc->sc_evdev;
+	error = evdev_doioctl(sc, cmd, data, flag, p);
+	return (error);
 }
 
 #if NWSMUX > 0

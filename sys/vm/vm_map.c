@@ -153,34 +153,16 @@ RB_GENERATE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
  *	maps and requires map entries.
  */
 
-vm_map_t 		kmap_free;
-vm_map_entry_t 	kentry_free;
-vm_offset_t		kentry_data;
-vm_size_t		kentry_data_size;
+vm_map_t 						kmap_free;
+vm_map_entry_t 					kentry_free;
+static struct vm_map			kmap_init[MAX_KMAP];
+static struct vm_map_entry		kentry_init[MAX_KMAPENT];
 
 void
-vm_map_startup()
+vm_map_startup(void)
 {
-    register int i;
-    register vm_map_entry_t mep;
-    vm_map_t mp;
-
-    kmap_free = mp = (vm_map_t) kentry_data;
-    i = MAX_KMAP;
-
-    while (--i > 0) {
-        CIRCLEQ_NEXT(mep, cl_entry) = (vm_map_entry_t) (mp + 1);
-        mp++;
-    }
-    CIRCLEQ_FIRST(&mp->cl_header)++->cl_entry.cqe_next = NULL;
-
-    kentry_free = mep = (vm_map_entry_t) mp;
-    i = (kentry_data_size - MAX_KMAP * sizeof * mp) / sizeof *mep;
-    while (--i > 0) {
-        CIRCLEQ_NEXT(mep, cl_entry) = mep + 1;
-        mep++;
-    }
-    CIRCLEQ_NEXT(mep, cl_entry) = NULL;
+    kmap_free 	= vm_pbootinit(kmap_init, sizeof(struct vm_map), MAX_KMAP);
+    kentry_free	= vm_pbootinit(kentry_init, sizeof(struct vm_map_entry), MAX_KMAPENT);
 }
 
 /*

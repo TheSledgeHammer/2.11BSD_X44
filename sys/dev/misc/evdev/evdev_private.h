@@ -170,9 +170,6 @@ struct evdev_client {
 	struct evdev_dev 			*ec_evdev;			/* evdev pointer */
 	struct wsevsrc				ec_base;			/* input event to wscons event */
 
-	//const struct wsmouse_accessops *ec_accessops;
-	//void							*ec_accesscookie;
-
 	struct lock					ec_buffer_lock;
 	size_t						ec_buffer_size;
 	size_t						ec_buffer_ready;	/* (q) */
@@ -189,12 +186,11 @@ struct evdev_client {
 
 /* softc */
 struct evdev_softc {
-	struct device 		sc_dv;
-	struct evdev_dev 	*sc_evdev;
-	int			 		sc_evdev_state;
-
-	int					sc_refcnt;
-	u_char				sc_dying;
+	struct device 				sc_device;
+	struct evdev_dev 			*sc_evdev;
+	int			 				sc_evdev_state;
+	int							sc_refcnt;
+	u_char						sc_dying;
 };
 
 #include "locators.h"
@@ -237,4 +233,16 @@ void 	evdev_send_mt_autorel(struct evdev_dev *);
 
 /* Utility functions: */
 void 	evdev_client_dumpqueue(struct evdev_client *);
+
+/* evdev common routines */
+void	evdev_attach_subr(struct evdev_softc *, int);
+int		evdev_doactivate(struct evdev_softc *, struct device *, enum devact);
+int		evdev_dodetach(struct evdev_softc *, struct device *, int);
+int		evdev_doopen(struct evdev_dev *, struct proc *);
+int		evdev_doclose(struct evdev_dev *, struct proc *);
+int		evdev_doread(struct evdev_softc *, dev_t, struct uio *, int);
+int		evdev_dowrite(struct evdev_softc *, dev_t, struct uio *, int);
+int		evdev_dopoll(struct evdev_softc *, dev_t, int, struct proc *);
+int		evdev_dokqfilter(struct evdev_softc *, dev_t, struct knote *);
+int		evdev_doioctl(struct evdev_softc *, int, caddr_t, int, struct proc *);
 #endif	/* _DEV_EVDEV_EVDEV_PRIVATE_H */
