@@ -193,14 +193,10 @@ struct evdev_softc {
 	u_char						sc_dying;
 };
 
-#include "locators.h"
-
-#define EVDEVDEVCF_MUX 	0
-
-/* Client Mux */
-int		evdev_mux_open(struct wsevsrc *, struct wseventvar *);
-int		evdev_mux_close(struct wsevsrc *);
-int		evdev_add_mux(int, struct wsmux_softc *);
+/* Common functions */
+void	evdev_attach_subr(struct evdev_softc *, int);
+int		evdev_doopen(struct evdev_dev *);
+int		evdev_doclose(struct evdev_dev *);
 
 /* Input device interface: */
 void 	evdev_send_event(struct evdev_dev *, uint16_t, uint16_t, int32_t);
@@ -233,16 +229,4 @@ void 	evdev_send_mt_autorel(struct evdev_dev *);
 
 /* Utility functions: */
 void 	evdev_client_dumpqueue(struct evdev_client *);
-
-/* evdev common routines */
-void	evdev_attach_subr(struct evdev_softc *, int);
-int		evdev_doactivate(struct evdev_softc *, struct device *, enum devact);
-int		evdev_dodetach(struct evdev_softc *, struct device *, int);
-int		evdev_doopen(struct evdev_dev *, struct proc *);
-int		evdev_doclose(struct evdev_dev *, struct proc *);
-int		evdev_doread(struct evdev_softc *, dev_t, struct uio *, int);
-int		evdev_dowrite(struct evdev_softc *, dev_t, struct uio *, int);
-int		evdev_dopoll(struct evdev_softc *, dev_t, int, struct proc *);
-int		evdev_dokqfilter(struct evdev_softc *, dev_t, struct knote *);
-int		evdev_doioctl(struct evdev_softc *, int, caddr_t, int, struct proc *);
 #endif	/* _DEV_EVDEV_EVDEV_PRIVATE_H */

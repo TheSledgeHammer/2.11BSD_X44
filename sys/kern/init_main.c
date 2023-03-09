@@ -83,11 +83,11 @@
 
 #include <machine/cpu.h>
 
-#include <net/if.h>
-
+#if NRND > 0
 #include <dev/misc/rnd/rnd.h>
+#endif
 
-extern char copyright[];// = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
+extern char copyright[];
 
 struct 	session session0;
 struct 	pgrp pgrp0;
@@ -138,7 +138,6 @@ main(framep)
 	register struct filedesc0 *fdp;
 	register struct pdevinit *pdev;
 	register int i;
-	int s;
 	register_t rval[2];
 	extern struct pdevinit pdevinit[];
 	extern void roundrobin(void *);
@@ -296,10 +295,7 @@ main(framep)
 	 * Initialize protocols.  Block reception of incoming packets
 	 * until everything is ready.
 	 */
-	s = splimp();
-	ifinit();
-	domaininit();
-	splx(s);
+	netstart();
 
 	/* initialize entropy pool */
 	rnd_init();

@@ -132,7 +132,7 @@ void		npf_config_enter(void);
 void		npf_config_exit(void);
 void		npf_config_sync(void);
 bool		npf_config_locked_p(void);
-int		npf_config_read_enter(void);
+int			npf_config_read_enter(void);
 void		npf_config_read_exit(int);
 
 void		npf_config_reload(prop_dictionary_t, npf_ruleset_t *,

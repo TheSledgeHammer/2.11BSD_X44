@@ -1,4 +1,0 @@
-defflag	x86emu
-
-file	x86emu.c		x86emu
-file	x86emu_util.c	x86emu

@@ -450,22 +450,24 @@ if_attach(ifp)
 		    ifp->if_xname);
 #endif
 
-	if (domains)
+	if (domains) {
 		if_attachdomain1(ifp);
+	}
 
 	/* Announce the interface. */
 	rt_ifannouncemsg(ifp, IFAN_ARRIVAL);
 }
 
 void
-if_attachdomain()
+if_attachdomain(void)
 {
 	struct ifnet *ifp;
 	int s;
 
 	s = splnet();
-	for (ifp = TAILQ_FIRST(&ifnet); ifp; ifp = TAILQ_NEXT(ifp, if_list))
+	for (ifp = TAILQ_FIRST(&ifnet); ifp; ifp = TAILQ_NEXT(ifp, if_list)) {
 		if_attachdomain1(ifp);
+	}
 	splx(s);
 }
 

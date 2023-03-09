@@ -26,10 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* TODO:
- * - Fix evdev kbd mux & ioctls
- */
-
 #include <sys/conf.h>
 #include <sys/device.h>
 
@@ -43,6 +39,7 @@ struct evdev_kbd_softc {
 	struct evdev_softc 				sc_evdev;
     const struct wskbd_accessops  	*sc_accessops;
 	void							*sc_accesscookie;
+	int								sc_dying;
 	int 							sc_on;
 };
 
@@ -50,6 +47,17 @@ extern struct cfdriver evdev_cd;
 CFOPS_DECL(evdev_kbd, evdev_kbd_match, evdev_kbd_attach, NULL, NULL);
 //CFDRIVER_DECL(NULL, evdev_kbd, DV_DULL);
 CFATTACH_DECL(evdev_kbd, &evdev_cd, &evdev_kbd_cops, sizeof(struct evdev_kbd_softc));
+
+#if NWSMUX > 0
+struct wssrcops evmouse_srcops = {
+		.type = WSMUX_EVKBD,
+		.dopen = evdev_kbd_mux_open,
+		.dclose = evdev_kbd_mux_close,
+		.dioctl = evdev_do_ioctl,
+		.ddispioctl = NULL,
+		.dsetdisplay = NULL,
+};
+#endif
 
 int
 evdev_kbd_match(parent, match, aux)
@@ -81,123 +89,11 @@ evdev_kbd_attach(parent, self, aux)
 }
 
 int
-evdev_kbd_activate(self, act)
-	struct device *self;
-	enum devact act;
-{
+evdev_kbd_enable(ksc, on)
 	struct evdev_kbd_softc *ksc;
-
-	return (evdev_doactivate(&ksc->sc_evdev, self, act));
-}
-
-int
-evdev_kbd_detach(self, flags)
-	struct device *self;
-	int flags;
+	int on;
 {
-	struct evdev_kbd_softc *ksc;
-
-	return (evdev_dodetach(&ksc->sc_evdev, self, flags));
-}
-
-int
-evdev_kbd_open(dev, flags, mode, p)
-	dev_t dev;
-	int flags, mode;
-	struct proc *p;
-{
-	struct evdev_kbd_softc *ksc;
-	struct evdev_dev *evdev;
-
-	return (evdev_doopen(evdev, p));
-}
-
-int
-evdev_kbd_close(dev, flags, mode, p)
-	dev_t dev;
-	int flags, mode;
-	struct proc *p;
-{
-	struct evdev_kbd_softc *ksc;
-	struct evdev_dev *evdev;
-
-	return (evdev_doclose(evdev, p));
-}
-
-int
-evdev_kbd_read(dev, uio, flags)
-	dev_t dev;
-	struct uio *uio;
-	int flags;
-{
-	struct evdev_kbd_softc *ksc;
-
-	return (evdev_doread(&ksc->sc_evdev, dev, uio, flags));
-}
-
-int
-evdev_kbd_write(dev, uio, flags)
-	dev_t dev;
-	struct uio *uio;
-	int flags;
-{
-	struct evdev_kbd_softc *ksc;
-
-	return (evdev_dowrite(&ksc->sc_evdev, dev, uio, flags));
-}
-
-int
-evdev_kbd_poll(dev, events, p)
-	dev_t dev;
-	int events;
-	struct proc *p;
-{
-	struct evdev_kbd_softc *ksc;
-
-	return (evdev_dopoll(&ksc->sc_evdev, dev, events, p));
-}
-
-int
-evdev_kbd_kqfilter(dev, kn)
-	dev_t dev;
-	struct knote *kn;
-{
-	struct evdev_kbd_softc *ksc;
-
-	return (evdev_dokqfilter(&ksc->sc_evdev, dev, kn));
-}
-
-int
-evdev_kbd_ioctl(dev, cmd, data, flag, p)
-	dev_t dev;
-	u_long cmd;
-	caddr_t data;
-	int flag;
-	struct proc *p;
-{
-	struct evdev_kbd_softc *ksc;
-
-	return (evdev_doioctl(&ksc->sc_evdev, cmd, data, flag, p));
-}
-
-int
-evdev_kbd_enable(v)
-	void 	*v;
-{
-	struct evdev_kbd_softc *ksc;
-
-	ksc = (struct evdev_kbd_softc *)v;
-	return ((*ksc->sc_accessops->enable)(ksc->sc_accesscookie, ksc->sc_on));
-}
-
-void
-evdev_kbd_set_leds(v)
-	void 	*v;
-{
-	struct evdev_kbd_softc *ksc;
-
-	ksc = (struct evdev_kbd_softc *)v;
-	return ((*ksc->sc_accessops->set_leds)(ksc->sc_accesscookie, ksc->sc_on));
+	return ((*ksc->sc_accessops->enable)(ksc->sc_accesscookie, on));
 }
 
 #if NWSMUX > 0
@@ -206,35 +102,40 @@ evdev_kbd_mux_open(me, evp)
 	struct wsevsrc *me;
 	struct wseventvar *evp;
 {
-	struct evdev_mouse_softc 	*ksc;
+	struct evdev_kbd_softc 	*ksc;
 	struct evdev_dev 			*evdev;
 	struct evdev_client			*client;
 
-	ksc = (struct evdev_mouse_softc *)me;
+	ksc = (struct evdev_kbd_softc *)me;
 	evdev = &ksc->sc_evdev;
 	client = evdev->ev_client;
+
+	if (ksc->sc_dying) {
+		return (EIO);
+	}
 
 	if (client->ec_base.me_evp != NULL) {
 		return (EBUSY);
 	}
 
-	evdev_kbd_enable(ksc);
-	return (0);
+	return (evdev_doopen(evdev));
 }
 
 int
 evdev_kbd_mux_close(me)
 	struct wsevsrc *me;
 {
-	struct evdev_mouse_softc 	*ksc;
-	struct evdev_dev 			*evdev;
-	struct evdev_client			*client;
+	struct evdev_kbd_softc 	*ksc;
+	struct evdev_dev 		*evdev;
+	struct evdev_client		*client;
 
-	ksc = (struct evdev_mouse_softc *)me;
+	ksc = (struct evdev_kbd_softc *)me;
 	evdev = &ksc->sc_evdev;
 	client = evdev->ev_client;
 
-	//evdev_kbd_disable(msc);
+	client->ec_base.me_evp = NULL;
+	(void)evdev_kbd_enable(ksc, 0);
+
 	return (0);
 }
 

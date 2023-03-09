@@ -80,15 +80,15 @@ options			QUOTA			# UFS quotas
 #options 		GATEWAY			# packet forwarding
 options 		INET			    	# IP + ICMP + TCP + UDP
 options 		INET6			    	# IPV6
-#options		FAST_IPSEC    # IP security with opencrypto
-options 		IPSEC				  # IP security
-options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC)
-#options 		IPSEC_DEBUG		# debug for IP security
+options		FAST_IPSEC    		# IP security with opencrypto
+#options 		IPSEC				# IP security
+#options 		IPSEC_ESP			# IP security (encryption part; define w/IPSEC)
+#options 		IPSEC_DEBUG			# debug for IP security
 #options 		MROUTING			# IP multicast routing
 options 		NS			     	# XNS
 #options 		NSIP				  # XNS tunneling over IP
-options 		PPP_BSDCOMP		# BSD-Compress compression support for PPP
-options 		PPP_DEFLATE		# Deflate compression support for PPP
+options 		PPP_BSDCOMP			# BSD-Compress compression support for PPP
+options 		PPP_DEFLATE			# Deflate compression support for PPP
 options 		PPP_FILTER			# Active filter support for PPP (requires bpf)
 options 		PFIL_HOOKS			# pfil(9) packet filter hooks
 options 		IPFILTER_LOG		# ipmon(8) log support
@@ -102,7 +102,7 @@ options 		IPFILTER_LOG		# ipmon(8) log support
 #options 		ALTQ_FIFOQ			# First-In First-Out Queue
 #options 		ALTQ_FLOWVALVE		# RED/flow-valve (red-penalty-box)
 #options 		ALTQ_HFSC			# Hierarchical Fair Service Curve
-#options 		ALTQ_LOCALQ		# Local queueing discipline
+#options 		ALTQ_LOCALQ			# Local queueing discipline
 #options 		ALTQ_PRIQ			# Priority Queueing
 #options 		ALTQ_RED			# Random Early Detection
 #options 		ALTQ_RIO			# RED with IN/OUT

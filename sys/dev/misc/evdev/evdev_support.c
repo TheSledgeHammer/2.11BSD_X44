@@ -809,7 +809,7 @@ evdev_register_client(struct evdev_dev *evdev, struct evdev_client *client)
 	EVDEV_LOCK_ASSERT(evdev);
 	if (evdev->ev_client && evdev->ev_methods != NULL) {
 		debugf(evdev, "adding new client for device %s", evdev->ev_shortname);
-		ret = evdev_doopen(evdev, evdev->ev_softc);
+		ret = evdev_doopen(evdev);
 	}
 	if (ret == 0) {
 		client = evdev->ev_client;
@@ -829,7 +829,7 @@ evdev_dispose_client(struct evdev_dev *evdev, struct evdev_client *client)
 	evdev->ev_client = client;
 	if(evdev->ev_client == NULL) {
 		if (evdev->ev_methods != NULL) {
-			ret = evdev_doclose(evdev, evdev->ev_softc);
+			ret = evdev_doclose(evdev);
 			if(ret == 0) {
 				continue;
 			}

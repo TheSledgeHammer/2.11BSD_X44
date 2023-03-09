@@ -20,7 +20,30 @@
 #include <sys/map.h>
 #include <sys/stat.h>
 
+#include <net/if.h>
+
+#ifdef FAST_IPSEC
+#include <netipsec/ipsec.h>
+#endif
+
 int knetisr;
+
+void
+netstart(void)
+{
+	int s;
+
+#ifdef	FAST_IPSEC
+	/* Attach network crypto subsystem */
+	ipsec_attach();
+#endif
+
+	s = splimp();
+	ifinit();
+	domaininit();
+	if_attachdomain();
+	splx(s);
+}
 
 void
 netcrash()

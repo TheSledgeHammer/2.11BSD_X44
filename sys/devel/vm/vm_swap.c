@@ -315,8 +315,7 @@ swfree(p, index, nslots)
 			 * Don't use the first cluster of the device
 			 * in case it starts with a label or boot block.
 			 */
-			rminit(swapmap, blk - ctod(CLSIZE), vsbase + ctod(CLSIZE), "swap",
-			M_SWAPMAP, nswapmap);
+			rminit(swapmap, blk - ctod(CLSIZE), vsbase + ctod(CLSIZE), "swap", M_SWAPMAP, nswapmap);
 		} else if (dvbase == 0) {
 			/*
 			 * Don't use the first cluster of the device

@@ -109,6 +109,7 @@ extern void cinit(void);			/* clist startup */
 extern void kmstartup(void);		/* gprof startup */
 extern void kmeminit(void);			/* kmem startup (malloc) */
 extern void mbinit(void);			/* mbuf startup */
+extern void netstart(void);			/* network startup */
 extern void rmapinit(void);			/* rmap startup (map) */
 extern void vfsinit(void);			/* vfs startup */
 
