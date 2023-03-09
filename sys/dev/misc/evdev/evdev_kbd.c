@@ -26,13 +26,18 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+#include <sys/param.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/device.h>
+#include <sys/proc.h>
 
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wskbdvar.h>
 #include <dev/misc/wscons/wsmuxvar.h>
 
+#include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 
 struct evdev_kbd_softc {

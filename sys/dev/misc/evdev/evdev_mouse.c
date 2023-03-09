@@ -26,17 +26,18 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* TODO:
- * - Fix evdev mouse mux & ioctls
- */
-
+#include <sys/cdefs.h>
+#include <sys/param.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/device.h>
+#include <sys/proc.h>
 
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wsmousevar.h>
 #include <dev/misc/wscons/wsmuxvar.h>
 
+#include <dev/misc/evdev/evdev.h>
 #include <dev/misc/evdev/evdev_private.h>
 
 struct evdev_mouse_softc {
@@ -92,14 +93,14 @@ evdev_mouse_attach(parent, self, aux)
 }
 
 int
-evdev_kbd_enable(msc)
+evdev_mouse_enable(msc)
 	struct evdev_mouse_softc *msc;
 {
 	return ((*msc->sc_accessops->enable)(msc->sc_accesscookie));
 }
 
 int
-evdev_kbd_disable(msc)
+evdev_mouse_disable(msc)
 	struct evdev_mouse_softc *msc;
 {
 	return ((*msc->sc_accessops->disable)(msc->sc_accesscookie));
@@ -139,7 +140,7 @@ evdev_mouse_mux_close(me)
 	client = evdev->ev_client;
 
 	client->ec_base.me_evp = NULL;
-	(void)evdev_kbd_disable(msc);
+	(void)evdev_mouse_disable(msc);
 
 	return (0);
 }
