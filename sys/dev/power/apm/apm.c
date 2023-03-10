@@ -665,13 +665,6 @@ apm_attach(struct apm_softc *sc)
 }
 
 void
-apm_create_thread(arg)
-	void *arg;
-{
-
-}
-
-void
 apm_thread(void *arg)
 {
 	struct apm_softc *apmsc = arg;
