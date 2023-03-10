@@ -58,6 +58,7 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/proc.h>
+#include <sys/kthread.h>
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <sys/vnode.h>
@@ -83,7 +84,9 @@
 
 #include <machine/cpu.h>
 
+#if NRND > 0
 #include <dev/misc/rnd/rnd.h>
+#endif
 
 extern char copyright[];
 
@@ -296,7 +299,9 @@ main(framep)
 	netstart();
 
 	/* initialize entropy pool */
+#if NRND > 0
 	rnd_init();
+#endif
 
 	/* Initialize the UUID system calls. */
 	uuid_init();
@@ -337,22 +342,23 @@ main(framep)
 	siginit(p);
 
 	/* Create process 1 (init(8)). */
-	if (newproc(0))
+	if (newproc(0)) {
 		panic("fork init");
+	}
 	if (rval[1]) {
 		start_init(curproc, framep);
 		return;
 	}
 
-	/* Create process 2 (the pageout daemon). */
-	if (newproc(0)) {
+	/*
+	 * Create any kernel threads who's creation was deferred because
+	 * initproc had not yet been created.
+	 */
+	kthread_run_deferred_queue();
+
+	/* Create kernel thread (the pageout daemon). */
+	if (kthread_create(vm_pageout, NULL, NULL, "pagedaemon")) {
 		panic("fork pager");
-	}
-	if (rval[1]) {
-		p = curproc;
-		p->p_flag |= P_INMEM | P_SYSTEM;	/* XXX */
-		bcopy("pagedaemon", curproc->p_comm, sizeof("pagedaemon"));
-		vm_pageout();
 	}
 
 	/* Initialize exec structures */
