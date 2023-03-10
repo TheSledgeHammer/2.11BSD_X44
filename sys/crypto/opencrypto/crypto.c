@@ -36,7 +36,7 @@ __KERNEL_RCSID(0, "$NetBSD: crypto.c,v 1.8.2.1 2004/04/30 03:53:18 jmc Exp $");
 #include <sys/proc.h>
 #include <crypto/opencrypto/cryptodev.h>
 #include <crypto/opencrypto/cryptosoft.h>		/* swcr_init() */
-//#include <sys/kthread.h>
+#include <sys/kthread.h>
 
 #include <crypto/opencrypto/xform.h>			/* XXX for M_XDATA */
 
@@ -181,7 +181,7 @@ crypto_init(void)
 
 	//softintr_cookie = register_swi(SWI_CRYPTO, cryptointr);
 	/* defer thread creation until after boot */
-	//kthread_create( deferred_crypto_thread, NULL);
+	kthread_create_deferred(deferred_crypto_thread, NULL);
 	error = 0;
 	return error;
 }
@@ -1150,17 +1150,14 @@ cryptoret(void)
 	}
 }
 
-#ifdef notyet
 static void
 deferred_crypto_thread(void *arg)
 {
 	int error;
 
-	error = kthread_create1((void (*)(void*)) cryptoret, NULL,
-				&cryptoproc, "cryptoret");
+	error = kthread_create((void (*)(void*)) cryptoret, NULL, &cryptoproc, "cryptoret");
 	if (error) {
-		printf("crypto_init: cannot start cryptoret thread; error %d",
-		    error);
+		printf("crypto_init: cannot start cryptoret thread; error %d", error);
 		crypto_destroy();
 	}
 
@@ -1170,11 +1167,9 @@ deferred_crypto_thread(void *arg)
 	 */
 	swcr_init();
 }
-#endif
+
 void
 cryptoattach(int n)
 {
 	swcr_init();
 }
-
-

@@ -40,7 +40,7 @@
 #include <sys/malloc.h>
 #include <sys/device.h>
 #include <sys/proc.h>
-//#include <sys/kthread.h>
+#include <sys/kthread.h>
 #include <sys/errno.h>
 
 #include <machine/intr.h>
@@ -112,7 +112,6 @@ ataprint(void *aux, const char *pnp)
  *
  *	Worker thread for the ATA bus.
  */
-#ifdef notyet
 static void
 atabus_thread(void *arg)
 {
@@ -180,11 +179,11 @@ atabus_create_thread(void *arg)
 	int error;
 
 	if ((error = kthread_create(atabus_thread, sc, &chp->ch_thread, "%s",
-			sc->sc_dev.dv_xname)) != 0)
+			sc->sc_dev.dv_xname)) != 0) {
 		printf("%s: unable to create kernel thread: error %d\n",
 				sc->sc_dev.dv_xname, error);
+	}
 }
-#endif
 
 /*
  * atabus_match:
@@ -227,7 +226,7 @@ atabus_attach(struct device *parent, struct device *self, void *aux)
 	initq->atabus_sc = sc;
 	TAILQ_INSERT_TAIL(&atabus_initq_head, initq, atabus_initq);
 	config_pending_incr();
-	//kthread_create(atabus_create_thread, sc);
+	kthread_create_deferred(atabus_create_thread, sc);
 }
 
 /*

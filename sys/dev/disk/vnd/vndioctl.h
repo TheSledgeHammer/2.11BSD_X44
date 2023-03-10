@@ -138,7 +138,7 @@ struct vnd_ioctl {
 #define	VNDIOF_READONLY	0x02		/* as read-only device */
 #define	VNDIOF_FORCE	0x04		/* force close */
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 
 struct vnode;
 struct ucred;

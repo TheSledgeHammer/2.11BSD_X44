@@ -51,7 +51,7 @@ __KERNEL_RCSID(0, "$NetBSD: scsipi_base.c,v 1.104.2.2 2004/09/11 12:53:16 he Exp
 #include <sys/errno.h>
 #include <sys/device.h>
 #include <sys/proc.h>
-//#include <sys/kthread.h>
+#include <sys/kthread.h>
 #include <sys/fnv_hash.h>
 
 #include <vm/include/vm_extern.h>
@@ -129,7 +129,7 @@ scsipi_channel_init(chan)
 	/*
 	 * Create the asynchronous completion thread.
 	 */
-	//kthread_create(scsipi_create_completion_thread, chan);
+	kthread_create_deferred(scsipi_create_completion_thread, chan);
 	return (0);
 }
 
@@ -2127,7 +2127,6 @@ scsipi_execute_xs(xs)
 	return (error);
 }
 
-#ifdef notyet
 /*
  * scsipi_completion_thread:
  *
@@ -2226,11 +2225,10 @@ scsipi_create_completion_thread(arg)
 	struct scsipi_channel *chan = arg;
 	struct scsipi_adapter *adapt = chan->chan_adapter;
 
-	if (kthread_create(scsipi_completion_thread, chan,
-	    &chan->chan_thread, "%s", chan->chan_name)) {
+	if (kthread_create(scsipi_completion_thread, chan, &chan->chan_thread, "%s",
+			chan->chan_name)) {
 		printf("%s: unable to create completion thread for "
-		    "channel %d\n", adapt->adapt_dev->dv_xname,
-		    chan->chan_channel);
+				"channel %d\n", adapt->adapt_dev->dv_xname, chan->chan_channel);
 		panic("scsipi_create_completion_thread");
 	}
 }
@@ -2267,7 +2265,6 @@ scsipi_thread_call_callback(chan, callback, arg)
 	splx(s);
 	return(0);
 }
-#endif
 
 /*
  * scsipi_async_event:

@@ -47,6 +47,7 @@
 #include <sys/signalvar.h>
 #include <sys/kernel.h>
 #include <sys/proc.h>
+#include <sys/kthread.h>
 #include <sys/malloc.h>
 #include <sys/device.h>
 #include <sys/fcntl.h>
@@ -593,7 +594,7 @@ int
 apm_match(void)
 {
 	static int got;
-	return !got++;
+	return (!got++);
 }
 
 void
@@ -644,28 +645,37 @@ apm_attach(struct apm_softc *sc)
 	 * Create a kernel thread to periodically check for APM events,
 	 * and notify other subsystems when they occur.
 	 */
-	/*
+
 	if (kthread_create(PRI_NONE, 0, NULL, apm_thread, sc, &sc->sc_thread, "%s", device_xname(sc->sc_dev)) != 0) {
-	*/
+
 		/*
 		 * We were unable to create the APM thread; bail out.
 		 */
-	/*
-		if (sc->sc_ops->aa_disconnect)
-			(*sc->sc_ops->aa_disconnect)(sc->sc_cookie);
-		printf(sc->sc_dev, "unable to create thread, "
-		    "kernel APM support disabled\n");
-	}
-	*/
 
-	if (!pmf_device_register(sc->sc_dev, NULL, NULL))
+		if (sc->sc_ops->aa_disconnect) {
+			(*sc->sc_ops->aa_disconnect)(sc->sc_cookie);
+		}
+		printf(sc->sc_dev, "unable to create thread, "
+				"kernel APM support disabled\n");
+	}
+
+	if (!pmf_device_register(sc->sc_dev, NULL, NULL)) {
 		printf(sc->sc_dev, "couldn't establish power handler\n");
+	}
+}
+
+void
+apm_create_thread(arg)
+	void *arg;
+{
+
 }
 
 void
 apm_thread(void *arg)
 {
 	struct apm_softc *apmsc = arg;
+	int error;
 
 	/*
 	 * Loop forever, doing a periodic check for APM events.

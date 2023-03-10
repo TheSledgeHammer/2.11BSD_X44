@@ -38,7 +38,7 @@ __KERNEL_RCSID(0, "$NetBSD: atapiconf.c,v 1.63 2003/10/17 00:19:46 mycroft Exp $
 #include <sys/device.h>
 #include <sys/buf.h>
 #include <sys/proc.h>
-//#include <sys/kthread.h>
+#include <sys/kthread.h>
 
 #include <dev/disk/scsi/scsipi_all.h>
 #include <dev/disk/scsi/scsipiconf.h>

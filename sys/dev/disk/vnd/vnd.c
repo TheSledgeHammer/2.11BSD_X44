@@ -212,9 +212,7 @@ void	vndgetdisklabel(dev_t);
 
 static	int vndlock(struct vnd_softc *);
 static	void vndunlock(struct vnd_softc *);
-#ifdef notyet
 void vndthread(void *);
-#endif
 
 static dev_type_open(vndopen);
 static dev_type_close(vndclose);
@@ -477,7 +475,6 @@ done:
 	splx(s);
 }
 
-#ifdef notyet
 void
 vndthread(void *arg)
 {
@@ -690,7 +687,6 @@ done:
 	splx(s);
 	kthread_exit(0);
 }
-#endif
 
 void
 vndiodone(bp)
@@ -963,16 +959,14 @@ vndioctl_sc(vnd, dev, cmd, data, flag, p)
 		vndthrottle(vnd, vnd->sc_vp);
 		vio->vnd_size = dbtob(vnd->sc_size);
 		vnd->sc_flags |= VNF_INITED;
-#ifdef notyet
 		/* create the kernel thread, wait for it to be up */
-		error = kthread_create1(vndthread, vnd, &vnd->sc_kthread,
-				vnd->sc_xname);
-		if (error)
+		error = kthread_create(vndthread, vnd, &vnd->sc_kthread, vnd->sc_xname);
+		if (error) {
 			goto close_and_exit;
+		}
 		while ((vnd->sc_flags & VNF_KTHREAD) == 0) {
 			tsleep(&vnd->sc_kthread, PRIBIO, "vndthr", 0);
 		}
-#endif
 #ifdef DEBUG
 		if (vnddebug & VDB_INIT)
 			printf("vndioctl: SET vp %p size 0x%lx %d/%d/%d/%d\n",

@@ -246,9 +246,10 @@ vm_amap_alloc(sz, padsz, waitf)
 	AMAP_B2SLOT(padslots, padsz);
 
 	amap = vm_amap_alloc1(slots, padslots, waitf);
-	if (amap)
+	if (amap) {
 		bzero(amap->am_anon, (slots + padslots) * sizeof(struct vm_anon*));
 		vm_amap_list_insert(amap);
+	}
 	return (amap);
 }
 

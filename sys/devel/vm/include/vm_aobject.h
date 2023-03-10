@@ -106,6 +106,7 @@ struct vm_aobject {
 	struct aobjectswhash		*u_swhash;
 	u_long 						u_swhashmask;	/* mask for hashtable */
 	LIST_ENTRY(vm_aobject) 		u_list;			/* global list of aobjs */
+	LIST_ENTRY(vm_aobject)		u_shadows;		/* global list of shadow objects */
 };
 
 /*

@@ -813,11 +813,10 @@ vm_object_shadow_add(aobject, shadow, offset)
 {
     if (shadow) {
         shadow->ref_count++;
-        LIST_INSERT_HEAD(&aobject_list, aobject, u_list);
+        LIST_INSERT_HEAD(&aobject_list, aobject, u_shadows);
     }
     aobject->u_obj.shadow = shadow;
     aobject->u_obj.shadow_offset = offset;
-    //aobject->u_obj.flags |= flags;
 }
 
 void
@@ -830,7 +829,7 @@ vm_object_shadow_remove(aobject, shadow)
     }
     if (aobject->u_obj.shadow) {
         aobject->u_obj.shadow->ref_count--;
-        LIST_REMOVE(aobject, u_list);
+        LIST_REMOVE(aobject, u_shadows);
     }
 }
 

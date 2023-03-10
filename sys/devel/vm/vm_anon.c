@@ -112,7 +112,7 @@ vm_anon_add(pages)
 	anon = vm_anon_allocate(pages);
 
 	simple_lock(&anon->u.an_freelock);
-	memset(anon, 0, sizeof(*anon) * pages);
+	bzero(anon, sizeof(*anon) * pages);
 	cnt.v_nanon += pages;
 	cnt.v_nfreeanon += pages;
 	for (lcv = 0; lcv < pages; lcv++) {

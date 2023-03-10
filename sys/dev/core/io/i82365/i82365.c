@@ -37,7 +37,9 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/extent.h>
+#include <sys/kernel.h>
 #include <sys/malloc.h>
+#include <sys/kthread.h>
 #include <sys/power.h>
 
 #include <machine/bus.h>
@@ -389,7 +391,7 @@ pcic_attach_socket(h)
 		panic("pcic_attach_socket: event thread");
 #endif
 	config_pending_incr();
-	//kthread_create(pcic_create_event_thread, h);
+	kthread_create_deferred(pcic_create_event_thread, h);
 }
 
 /*
@@ -505,14 +507,13 @@ pcic_create_event_thread(arg)
 	default:
 		panic("pcic_create_event_thread: unknown pcic socket");
 	}
-/*
-	if (kthread_create1(pcic_event_thread, h, &h->event_thread,
-	    "%s,%s", h->ph_parent->dv_xname, cs)) {
+
+	if (kthread_create(pcic_event_thread, h, &h->event_thread, "%s,%s",
+			h->ph_parent->dv_xname, cs)) {
 		printf("%s: unable to create event thread for sock 0x%02x\n",
-		    h->ph_parent->dv_xname, h->sock);
+				h->ph_parent->dv_xname, h->sock);
 		panic("pcic_create_event_thread");
 	}
-	*/
 }
 
 void
@@ -619,7 +620,7 @@ pcic_event_thread(arg)
 	/* In case parent is waiting for us to exit. */
 	wakeup(sc);
 
-	//kthread_exit(0);
+	kthread_exit(0);
 }
 
 int
