@@ -19,6 +19,7 @@
 #include <sys/mbuf.h>
 #include <sys/map.h>
 #include <sys/stat.h>
+#include <sys/domain.h>
 
 #include <net/if.h>
 
