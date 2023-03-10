@@ -83,9 +83,7 @@
 
 #include <machine/cpu.h>
 
-#if NRND > 0
 #include <dev/misc/rnd/rnd.h>
-#endif
 
 extern char copyright[];
 
