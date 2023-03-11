@@ -2225,10 +2225,8 @@ scsipi_create_completion_thread(arg)
 	struct scsipi_channel *chan = arg;
 	struct scsipi_adapter *adapt = chan->chan_adapter;
 
-	if (kthread_create(scsipi_completion_thread, chan, &chan->chan_thread, "%s",
-			chan->chan_name)) {
-		printf("%s: unable to create completion thread for "
-				"channel %d\n", adapt->adapt_dev->dv_xname, chan->chan_channel);
+	if (kthread_create(scsipi_completion_thread, chan, &chan->chan_thread, (char *)chan->chan_name)) {
+		printf("%s: unable to create completion thread for channel %d\n", adapt->adapt_dev->dv_xname, chan->chan_channel);
 		panic("scsipi_create_completion_thread");
 	}
 }
