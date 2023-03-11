@@ -60,7 +60,7 @@ kthread_create(func, arg, newpp, name)
 	void (*func)(void *);
 	void *arg;
 	struct proc **newpp;
-	const char *name;
+	char *name;
 {
 	struct proc *p;
 	register_t 	rval[2];
