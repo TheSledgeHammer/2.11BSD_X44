@@ -207,15 +207,18 @@ extern int						vttoif_tab[];
 #define	DOCLOSE			0x0008		/* vclean: close active files */
 #define	V_SAVE			0x0001		/* vinvalbuf: sync file first */
 #define	V_SAVEMETA		0x0002		/* vinvalbuf: leave indirect blocks */
+
+#define	V_WAIT		        0x0001		/*  sleep for suspend */
+
 #define	REVOKEALL		0x0001		/* vop_revoke: revoke all aliases */
 
 #define	UPDATE_WAIT		0x0001		/* update: wait for completion */
-#define	UPDATE_DIROP	0x0002		/* update: hint to fs to wait or not */
-#define	UPDATE_CLOSE	0x0004		/* update: clean up on close */
+#define	UPDATE_DIROP		0x0002		/* update: hint to fs to wait or not */
+#define	UPDATE_CLOSE		0x0004		/* update: clean up on close */
 
 #ifdef DIAGNOSTIC
-#define	HOLDRELE(vp)	holdrele(vp)
-#define	VATTR_NULL(vap)	vattr_null(vap)
+#define	HOLDRELE(vp)		holdrele(vp)
+#define	VATTR_NULL(vap)		vattr_null(vap)
 #define	VHOLD(vp)		vhold(vp)
 #define	VREF(vp)		vref(vp)
 
