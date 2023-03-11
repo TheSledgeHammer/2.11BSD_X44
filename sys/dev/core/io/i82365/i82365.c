@@ -508,10 +508,8 @@ pcic_create_event_thread(arg)
 		panic("pcic_create_event_thread: unknown pcic socket");
 	}
 
-	if (kthread_create(pcic_event_thread, h, &h->event_thread, "%s,%s",
-			h->ph_parent->dv_xname, cs)) {
-		printf("%s: unable to create event thread for sock 0x%02x\n",
-				h->ph_parent->dv_xname, h->sock);
+	if (kthread_create(pcic_event_thread, h, &h->event_thread, h->ph_parent->dv_xname)) {
+		printf("%s: unable to create event thread for sock 0x%02x\n", h->ph_parent->dv_xname, h->sock);
 		panic("pcic_create_event_thread");
 	}
 }
