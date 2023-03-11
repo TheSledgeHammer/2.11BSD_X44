@@ -79,7 +79,7 @@ extern simple_lock_data_t	vm_pages_needed_lock;
 
 void	vm_wait(void);
 #ifdef _KERNEL
-void	vm_pageout(void);
+void	vm_pageout(void *arg);
 void	vm_pageout_scan(void);
 void	vm_pageout_page(vm_page_t, vm_object_t);
 void	vm_pageout_cluster(vm_page_t, vm_object_t);
