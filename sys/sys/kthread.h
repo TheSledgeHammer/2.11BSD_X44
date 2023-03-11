@@ -47,7 +47,7 @@
 #ifdef _KERNEL
 #include <sys/proc.h>
 
-void	kthread_create(void (*)(void *), void *, struct proc **, const char *);
+int	  kthread_create(void (*)(void *), void *, struct proc **, char *);
 void	kthread_exit(int) __attribute__((__noreturn__));
 void	kthread_create_deferred(void (*)(void *), void *);
 void	kthread_run_deferred_queue(void);
