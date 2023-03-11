@@ -137,6 +137,7 @@
 #include <sys/systm.h>
 #include <sys/namei.h>
 #include <sys/proc.h>
+#include <sys/kthread.h>
 #include <sys/errno.h>
 #include <sys/buf.h>
 #include <sys/bufq.h>
@@ -549,10 +550,10 @@ vndthread(void *arg)
 		vnx->vx_error = 0;
 		vnx->vx_pending = 0;
 		vnx->vx_bp = bp;
-
+/*
 		if ((flags & B_READ) == 0)
 			vn_start_write(vnd->sc_vp, &mp, V_WAIT);
-
+*/
 		/*
 		 * Feed requests sequentially.
 		 * We do it this way to keep from flooding NFS servers if we
@@ -655,7 +656,7 @@ vndthread(void *arg)
 
 			if ((nbp->vb_buf.b_flags & B_READ) == 0)
 				nbp->vb_buf.b_vp->v_numoutput++;
-			VOP_STRATEGY(nbp->vb_buf.b_vp, &nbp->vb_buf);
+			VOP_STRATEGY(&nbp->vb_buf);
 
 			splx(s);
 			bn += sz;
@@ -665,8 +666,10 @@ vndthread(void *arg)
 		s = splbio();
 
 out: /* Arrive here at splbio */
+/*
 		if ((flags & B_READ) == 0)
 			vn_finished_write(mp, 0);
+			*/
 		vnx->vx_flags &= ~VX_BUSY;
 		if (vnx->vx_pending == 0) {
 			if (vnx->vx_error != 0) {
