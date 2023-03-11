@@ -94,10 +94,8 @@ static	TAILQ_HEAD(,cryptkop) crp_ret_kq;
  * from separate private zones(FreeBSD)/pools(netBSD/OpenBSD) .
  */
 
-#ifdef __NetBSD__
 void	cryptoattach(int);
 static void deferred_crypto_thread(void *arg);
-#endif
 
 int	crypto_usercrypto = 1;		/* userland may open /dev/crypto */
 int	crypto_userasymcrypto = 1;	/* userland may do asym crypto reqs */
@@ -151,7 +149,7 @@ SYSCTL_INT(_kern, OID_AUTO, cryptodevallowsoft, CTLFLAG_RW,
  * This scheme is not intended for SMP machines.
  */ 
 static	void cryptointr(void);		/* swi thread to dispatch ops */
-static	void cryptoret(void);		/* kernel thread for callbacks*/
+static	void cryptoret(void *);		/* kernel thread for callbacks*/
 static	struct proc *cryptoproc;
 static	void crypto_destroy(void);
 static	int crypto_invoke(struct cryptop *crp, int hint);
@@ -1107,7 +1105,7 @@ cryptointr(void)
  * Kernel thread to do callbacks.
  */
 static void
-cryptoret(void)
+cryptoret(void *arg)
 {
 	struct cryptop *crp;
 	struct cryptkop *krp;
@@ -1155,7 +1153,7 @@ deferred_crypto_thread(void *arg)
 {
 	int error;
 
-	error = kthread_create((void (*)(void*)) cryptoret, NULL, &cryptoproc, "cryptoret");
+	error = kthread_create(cryptoret, NULL, &cryptoproc, "cryptoret");
 	if (error) {
 		printf("crypto_init: cannot start cryptoret thread; error %d", error);
 		crypto_destroy();
