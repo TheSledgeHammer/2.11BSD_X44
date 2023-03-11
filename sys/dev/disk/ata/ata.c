@@ -178,10 +178,8 @@ atabus_create_thread(void *arg)
 	struct wdc_channel *chp = sc->sc_chan;
 	int error;
 
-	if ((error = kthread_create(atabus_thread, sc, &chp->ch_thread, "%s",
-			sc->sc_dev.dv_xname)) != 0) {
-		printf("%s: unable to create kernel thread: error %d\n",
-				sc->sc_dev.dv_xname, error);
+	if ((error = kthread_create(atabus_thread, sc, &chp->ch_thread, sc->sc_dev.dv_xname)) != 0) {
+		printf("%s: unable to create kernel thread: error %d\n", sc->sc_dev.dv_xname, error);
 	}
 }
 
