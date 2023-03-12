@@ -107,11 +107,10 @@ struct inode {
 		struct ufs2_dinode 	*ffs2_din;			/* 128 bytes of the on-disk dinode. */
 	} i_din;
 
-	//union {
-	//	struct dirhash 		*dirhash; 			/* Hashing for large directories. */
-//	} i_un;
+	union {
+//		struct dirhash 		*dirhash; 			/* Hashing for large directories. */
+	} i_un;
 //#define i_dirhash 			i_un.dirhash
-
 };
 
 #define	i_ffs1_atime		i_din.ffs1_din->di_atime

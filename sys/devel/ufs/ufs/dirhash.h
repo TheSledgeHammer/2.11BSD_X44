@@ -31,9 +31,6 @@
 #define	_UFS_UFS_DIRHASH_H_
 
 #include <sys/lock.h>
-#include <sys/queue.h>
-
-#include <ufs/ufs/dir.h>
 
 /*
  * For fast operations on large directories, we maintain a hash
@@ -87,26 +84,26 @@
     ((dh)->dh_hash[(slot) >> DH_BLKOFFSHIFT][(slot) & DH_BLKOFFMASK])
 
 struct dirhash {
-	struct lock	dh_lock;
+	struct lock_object	dh_lock;
 	int			dh_refcount;
 
-	doff_t		**dh_hash;	/* the hash array (2-level) */
-	int			dh_narrays;	/* number of entries in dh_hash */
-	int			dh_hlen;	/* total slots in the 2-level hash array */
-	int			dh_hused;	/* entries in use */
-	int			dh_memreq;	/* Memory used. */
+	doff_t		**dh_hash;		/* the hash array (2-level) */
+	int			dh_narrays;		/* number of entries in dh_hash */
+	int			dh_hlen;		/* total slots in the 2-level hash array */
+	int			dh_hused;		/* entries in use */
+	int			dh_memreq;		/* Memory used. */
 
 	/* Free space statistics. XXX assumes DIRBLKSIZ is 512. */
 	u_int8_t 	*dh_blkfree;	/* free DIRALIGN words in each dir block */
-	int			dh_nblk;	/* size of dh_blkfree array */
-	int			dh_dirblks;	/* number of DIRBLKSIZ blocks in dir */
+	int			dh_nblk;		/* size of dh_blkfree array */
+	int			dh_dirblks;		/* number of DIRBLKSIZ blocks in dir */
 	int			dh_firstfree[DH_NFSTATS + 1]; /* first blk with N words free */
 
-	doff_t		dh_seqoff;	/* sequential access optimisation offset */
+	doff_t		dh_seqoff;		/* sequential access optimisation offset */
 
-	int			dh_score;	/* access count for this dirhash */
+	int			dh_score;		/* access count for this dirhash */
 
-	int			dh_onlist;	/* true if on the ufsdirhash_list chain */
+	int			dh_onlist;		/* true if on the ufsdirhash_list chain */
 
 	time_t		dh_lastused;	/* time the dirhash was last read or written*/
 	/* Protected by ufsdirhash_mtx. */
@@ -128,6 +125,6 @@ void	ufsdirhash_remove(struct inode *, struct direct *, doff_t);
 void	ufsdirhash_move(struct inode *, struct direct *, doff_t, doff_t);
 void	ufsdirhash_dirtrunc(struct inode *, doff_t);
 void	ufsdirhash_free(struct inode *);
-
 void	ufsdirhash_checkblock(struct inode *, char *, doff_t);
+
 #endif /* _UFS_UFS_DIRHASH_H_ */
