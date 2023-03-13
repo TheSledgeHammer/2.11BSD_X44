@@ -472,59 +472,6 @@ vm_segment_zero_fill(s)
 }
 
 /*
- *	vm_segment_sanity_check:
- *
- *	Checks the number of pages align to the number of segments.
- *	This will always occur in the last segment. Due to how they are
- *	currently allocated & initialized.
- *
- *	Return:
- *	True: The segment contains empty pages.
- *	False: The segment is full (no empty pages found).
- */
-
-/* check alignment of segment size to page size */
-static int npages_per_segment = (SEGMENT_SIZE/ PAGE_SIZE);
-
-bool_t
-vm_segment_sanity_check(pgs, segs)
-    vm_size_t pgs, segs;
-{
-    vm_size_t nsegment;
-
-    /* check per single segment */
-    if(segs > 1) {
-        nsegment = 1;
-    } else {
-        nsegment = segs;
-    }
-
-    /* get the difference between a single segment & the default npages per segment (default pages: 1024) */
-    vm_size_t diff = nsegment * npages_per_segment;
-    vm_size_t emptyspace;
-    if(pgs > npages_per_segment) {
-        emptyspace = pgs - npages_per_segment;
-    }
-
-    /* sanity check above */
-    int count = 0;
-    while(diff < pgs) {
-        diff++;
-        count++;
-        if(diff == pgs) {
-            break;
-        }
-    }
-
-    if((diff == pgs) && (count == emptyspace)) {
-    	 printf("this segment contains empty pages %lu\n", emptyspace);
-        return (TRUE);
-    } else {
-        return (FALSE);
-    }
-}
-
-/*
  *	vm_segment_copy:
  *
  *	Copy one segment to another. Checks if destination segment isn't null and
@@ -594,4 +541,58 @@ vm_segment_anon_free(segment)
 		return;
 	}
 	vm_segment_free(segment);
+}
+
+
+/*
+ *	vm_segment_sanity_check:
+ *
+ *	Checks the number of pages align to the number of segments.
+ *	This will always occur in the last segment. Due to how they are
+ *	currently allocated & initialized.
+ *
+ *	Return:
+ *	True: The segment contains empty pages.
+ *	False: The segment is full (no empty pages found).
+ */
+
+/* check alignment of segment size to page size */
+static int npages_per_segment = (SEGMENT_SIZE/ PAGE_SIZE);
+
+bool_t
+vm_segment_sanity_check(pgs, segs)
+    vm_size_t pgs, segs;
+{
+    vm_size_t nsegment;
+
+    /* check per single segment */
+    if(segs > 1) {
+        nsegment = 1;
+    } else {
+        nsegment = segs;
+    }
+
+    /* get the difference between a single segment & the default npages per segment (default pages: 1024) */
+    vm_size_t diff = nsegment * npages_per_segment;
+    vm_size_t emptyspace;
+    if(pgs > npages_per_segment) {
+        emptyspace = pgs - npages_per_segment;
+    }
+
+    /* sanity check above */
+    int count = 0;
+    while(diff < pgs) {
+        diff++;
+        count++;
+        if(diff == pgs) {
+            break;
+        }
+    }
+
+    if((diff == pgs) && (count == emptyspace)) {
+    	 printf("this segment contains empty pages %lu\n", emptyspace);
+        return (TRUE);
+    } else {
+        return (FALSE);
+    }
 }

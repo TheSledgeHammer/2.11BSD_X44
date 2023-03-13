@@ -237,7 +237,7 @@ threadpool_destroy(pool)
 
 	simple_lock(&pool->tp_lock);
 	KASSERT(TAILQ_EMPTY(&pool->tp_jobs));
-	pool->tp_flags |= KTHREADPOOL_DYING;
+	pool->tp_flags |= THREADPOOL_DYING;
 	//cv_broadcast
 	TAILQ_FOREACH(thread, &pool->tp_idle_threads, tpt_entry) {
 		//cv_broadcast
@@ -247,7 +247,7 @@ threadpool_destroy(pool)
 	}
 	KASSERT(pool->tp_overseer.tpt_job == NULL);
 	KASSERT(pool->tp_overseer.tpt_pool == pool);
-	KASSERT(pool->tp_flags == KTHREADPOOL_DYING);
+	KASSERT(pool->tp_flags == THREADPOOL_DYING);
 	KASSERT(pool->tp_refcnt == 0);
 	KASSERT(TAILQ_EMPTY(&pool->tp_idle_threads));
 	KASSERT(TAILQ_EMPTY(&pool->tp_jobs));

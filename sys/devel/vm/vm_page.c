@@ -102,6 +102,8 @@ vm_size_t			page_mask;
 int					page_shift;
 vm_offset_t			kentry_data;
 
+void i386_vm_page_startup(vm_page_t);
+
 /*
  * vm_pbootstrap:
  *
@@ -296,13 +298,7 @@ vm_page_startup(start, end)
 		m->segment = NULL;
 		m->phys_addr = pa;
 #ifdef i386
-		if (pmap_isvalidphys(m->phys_addr)) {
-			TAILQ_INSERT_TAIL(&vm_page_queue_free, m, pageq);
-		} else {
-			/* perhaps iomem needs it's own type, or dev pager? */
-			m->flags |= PG_FICTITIOUS | PG_BUSY;
-			cnt.v_free_count--;
-		}
+		i386_vm_page_startup(m);
 #else /* i386 */
 		TAILQ_INSERT_TAIL(&vm_page_queue_free, m, pageq);
 #endif /* i386 */
@@ -318,6 +314,19 @@ vm_page_startup(start, end)
 
 	/* from now on, pmap_bootstrap_alloc can't be used */
 	vm_page_startup_initialized = TRUE;
+}
+
+void
+i386_vm_page_startup(page)
+	register vm_page_t		page;
+{
+	if (pmap_isvalidphys(page->phys_addr)) {
+		TAILQ_INSERT_TAIL(&vm_page_queue_free, page, pageq);
+	} else {
+		/* perhaps iomem needs it's own type, or dev pager? */
+		page->flags |= PG_FICTITIOUS | PG_BUSY;
+		cnt.v_free_count--;
+	}
 }
 
 /*
@@ -446,7 +455,7 @@ vm_page_lookup(segment, offset)
 
 	spl = splimp();
 	simple_lock(&page_bucket_lock);
-	for (mem = TAILQ_FIRST(bucket); mem != NULL; mem = TAILQ_NEXT(mem, hashq)) {
+	TAILQ_FOREACH(mem, bucket, hashq) {
 		VM_PAGE_CHECK(mem);
 		if ((mem->segment == segment) && (mem->offset == offset)) {
 			simple_unlock(&page_bucket_lock);
@@ -474,8 +483,9 @@ vm_page_rename(mem, new_segment, new_offset)
 	register vm_segment_t	new_segment;
 	vm_offset_t				new_offset;
 {
-	if (mem->segment == new_segment)
+	if (mem->segment == new_segment) {
 		return;
+	}
 
 	vm_page_lock_queues(); /* keep page from moving out from under pageout daemon */
 	vm_page_remove(mem);

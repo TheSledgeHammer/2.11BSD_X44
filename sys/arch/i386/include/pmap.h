@@ -146,8 +146,8 @@ typedef uint64_t 			pt_entry_t;
  * One page directory, shared between
  * kernel and user modes.
  */
-#define I386_PAGE_SIZE			NBPG
-#define I386_PDR_SIZE			NBPDR
+#define I386_PAGE_SIZE		NBPG
+#define I386_PDR_SIZE		NBPDR
 
 #define I386_KPDES			8 										/* KPT page directory size */
 #define I386_UPDES			(NBPDR/sizeof(pd_entry_t) - I386_KPDES) /* UPT page directory size */
@@ -260,9 +260,6 @@ extern u_long 				tramp_idleptd;
 extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
 extern pv_entry_t			pv_table;		/* array of entries, one per page */
-
-//#define pa_index(pa)		atop(pa - vm_first_phys)
-//#define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
 
 #define	pmap_resident_count(pmap)	\
 	((pmap)->pm_stats.resident_count)

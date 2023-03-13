@@ -72,7 +72,6 @@
 #include <sys/mman.h>
 
 #include <devel/vm/include/vm_amap.h>
-#include <devel/vm/include/vm_hat.h>
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm.h>
 
@@ -1032,7 +1031,6 @@ vm_map_simplify_entry(map, entry)
 				(prev->object.vm_object == entry->object.vm_object) &&
 				(!prev->object.vm_object ||
 						(prev->offset + prevsize == entry->offset)) &&
-						/* (prev->eflags == entry->eflags) && */
 						(prev->protection == entry->protection) &&
 						(prev->max_protection == entry->max_protection) &&
 						(prev->inheritance == entry->inheritance) &&
@@ -1060,7 +1058,6 @@ vm_map_simplify_entry(map, entry)
 				(next->object.vm_object == entry->object.vm_object) &&
 				(!entry->object.vm_object ||
 						(entry->offset + esize == next->offset)) &&
-						/* (next->eflags == entry->eflags) && */
 						(next->protection == entry->protection) &&
 						(next->max_protection == entry->max_protection) &&
 						(next->inheritance == entry->inheritance) &&
@@ -1767,6 +1764,33 @@ vm_map_pageable(map, start, end, new_pageable)
 	return(KERN_SUCCESS);
 }
 
+void
+vm_amap_clean(current, size, offset)
+	vm_map_entry_t current;
+	vm_size_t 	   size;
+	vm_offset_t    offset;
+{
+	vm_amap_t amap;
+	vm_anon_t anon;
+	vm_page_t page;
+
+	amap = current->aref.ar_amap;
+	amap_lock(amap);
+
+	for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
+		anon = vm_amap_lookup(&current->aref, offset);
+		if (anon == NULL) {
+			continue;
+		}
+		simple_lock(&anon->an_lock);
+		page = anon->u.an_page;
+		if (page == NULL) {
+			simple_unlock(&anon->an_lock);
+			continue;
+		}
+	}
+}
+
 /*
  * vm_map_clean
  *
@@ -1823,23 +1847,7 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	 */
 
 	for (current = entry; current->start < end; current = CIRCLEQ_NEXT(current, cl_entry)) {
-/*
-		amap = current->aref.ar_amap;
-		amap_lock(amap);
-
-		for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
-			anon = vm_amap_lookup(&current->aref, offset);
-			if (anon == NULL) {
-				continue;
-			}
-			simple_lock(&anon->an_lock);
-			pg = anon->u.an_page;
-			if (pg == NULL) {
-				simple_unlock(&anon->an_lock);
-				continue;
-			}
-		}
-*/
+		vm_amap_clean(current, size, offset);
 		offset = current->offset + (start - current->start);
 		size = (end <= current->end ? end : current->end) - start;
 		if (current->is_a_map) {

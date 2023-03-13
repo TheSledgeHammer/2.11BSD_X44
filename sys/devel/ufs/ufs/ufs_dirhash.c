@@ -54,8 +54,6 @@
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
 
-#define UFS_DIRSIZ(fmt, dp)		DIRSIZ(fmt, dp)
-
 #define	DIRHASH_DEFAULT_DIVIDER	64
 #define	MIN_DEFAULT_DIRHASH_MEM	(2 * 1024 * 1024)
 #define	MAX_DEFAULT_DIRHASH_MEM	(32 * 1024 * 1024)
@@ -109,8 +107,9 @@ ufsdirhash_free(struct inode *ip)
 	ip->i_dirhash = NULL;
 
 	DIRHASHLIST_LOCK();
-	if (dh->dh_onlist)
+	if (dh->dh_onlist) {
 		TAILQ_REMOVE(&ufsdirhash_list, dh, dh_list);
+	}
 	DIRHASHLIST_UNLOCK();
 
 	/* The dirhash pointed to by 'dh' is exclusively ours now. */
@@ -273,7 +272,7 @@ restart:
 			/* Check for sequential access, and update offset. */
 			if (seqoff == 0 && dh->dh_seqoff == offset)
 				seqoff = 1;
-			dh->dh_seqoff = offset + UFS_DIRSIZ(0, dp);
+			dh->dh_seqoff = offset + DIRSIZ(0, dp);
 			DIRHASH_UNLOCK(dh);
 
 			*bpp = bp;
@@ -380,7 +379,7 @@ ufsdirhash_findfree(struct inode *ip, int slotneeded, int *slotsize)
 	while (i < DIRBLKSIZ && freebytes < slotneeded) {
 		freebytes += dp->d_reclen;
 		if (dp->d_ino != 0)
-			freebytes -= UFS_DIRSIZ(0, dp);
+			freebytes -= DIRSIZ(0, dp);
 		if (dp->d_reclen == 0) {
 			DIRHASH_UNLOCK(dh);
 			brelse(bp, 0);

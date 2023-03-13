@@ -732,18 +732,27 @@ vm_object_pmap_copy(object, start, end)
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
-	register vm_segment_t 	seg;
+	register vm_segment_t 	segment;
 	register vm_page_t		page;
 
-	if (object == NULL)
+	if (object == NULL) {
 		return;
+	}
 
 	vm_object_lock(object);
-	for (seg = CIRCLEQ_FIRST(object->seglist); seg != NULL;	seg = CIRCLEQ_NEXT(seg, sg_list)) {
-		if (seg->sg_object == object && seg != NULL) {
-			for (page = TAILQ_FIRST(seg->sg_memq); page != NULL; page =	TAILQ_NEXT(page, listq)) {
-				if ((start <= page->offset) && (page->offset < end)) {
-					pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_READ);
+	CIRCLEQ_FOREACH(segment, &object->seglist, sg_list) {
+		if (segment->sg_object == object && segment != NULL) {
+			if (!TAILQ_EMPYY(segment->sg_memq)) {
+				TAILQ_FOREACH(page, &segment->sg_memq, listq) {
+					if ((start <= page->offset) && (page->offset < end)) {
+						pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_READ);
+						page->flags |= PG_COPYONWRITE;
+					}
+				}
+			} else {
+				if ((start <= segment->sg_offset) && (segment->sg_offset < end)) {
+					pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_READ);
+					page = vm_page_alloc(segment, segment->sg_offset);
 					page->flags |= PG_COPYONWRITE;
 				}
 			}
@@ -776,30 +785,20 @@ vm_object_pmap_remove(object, start, end)
 	vm_object_lock(object);
 	CIRCLEQ_FOREACH(segment, &object->seglist, sg_list) {
 		if (segment->sg_object == object && segment != NULL) {
-			TAILQ_FOREACH(page, &segment->sg_memq, listq) {
-				if ((start <= page->offset) && (page->offset < end)) {
-					pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+			if (!TAILQ_EMPYY(segment->sg_memq)) {
+				TAILQ_FOREACH(page, &segment->sg_memq, listq) {
+					if ((start <= page->offset) && (page->offset < end)) {
+						pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+					}
+				}
+			} else {
+				if ((start <= segment->sg_offset) && (segment->sg_offset < end)) {
+					pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_NONE);
 				}
 			}
 		}
 	}
 	vm_object_unlock(object);
-}
-
-/*
- * shadow slot hash function
- * TODO:
- * - determine a shadow object from shadow slot.
- * - validate/consistency check of shadow object.
- */
-u_long
-vm_object_shadow_index(object, offset)
-	vm_object_t object;
-	vm_offset_t offset;
-{
-	Fnv32_t slot = fnv_32_buf(&object, (sizeof(&object)+offset), FNV1_32_INIT)%(sizeof(&object)+offset);
-
-	return (slot);
 }
 
 /*
@@ -967,12 +966,11 @@ vm_object_lookup(pager)
 
 	vm_object_cache_lock();
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
+	RB_FOREACH(entry, vm_object_hash_head, bucket) {
 		object = entry->object;
 		if (object->pager == pager) {
 			vm_object_lock(object);
 			if (object->ref_count == 0) {
-				//SPLAY_REMOVE(object_spt, &vm_object_cached_tree, object);
 				TAILQ_REMOVE(&vm_object_cached_list, object, cached_list);
 				vm_object_cached--;
 			}
@@ -1037,7 +1035,7 @@ vm_object_remove(pager)
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
 
-	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
+	RB_FOREACH(entry, vm_object_hash_head, bucket) {
 		object = entry->object;
 		if (object->pager == pager) {
 			RB_REMOVE(vm_object_hash_head, bucket, entry);
@@ -1061,7 +1059,6 @@ vm_object_cache_clear()
 	 *	list of cached objects.
 	 */
 	vm_object_cache_lock();
-	//while((object = SPLAY_FIND(object_spt, &vm_object_cached_tree, object)) != NULL) {
 	while ((object = TAILQ_FIRST(&vm_object_cached_list)) != NULL) {
 		vm_object_cache_unlock();
 
@@ -1179,7 +1176,7 @@ vm_object_collapse(object)
 			 *	pages that shadow them.
 			 */
 			while ((segment = CIRCLEQ_FIRST(backing_object->seglist)) != NULL) {
-				if(segment->sg_object == backing_object) {
+				if (segment->sg_object == backing_object) {
 					while ((p = TAILQ_FIRST(segment->sg_memq)) != NULL) {
 						new_offset = (p->offset - backing_offset);
 
