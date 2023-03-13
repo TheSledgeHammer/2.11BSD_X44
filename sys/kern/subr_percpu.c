@@ -262,3 +262,18 @@ percpu_create(ci, size, count, ncpus)
 	}
 	return (pc);
 }
+
+
+void
+percpu_foreach(pc, size, count, ncpus)
+	struct percpu 	*pc;
+	size_t size;
+	int count, ncpus;
+{
+	CPU_INFO_ITERATOR 	cii;
+	struct cpu_info 	*ci;
+
+	for (CPU_INFO_FOREACH(cii, ci)) {
+		pc = percpu_create(ci, size, count, ncpus);
+	}
+}

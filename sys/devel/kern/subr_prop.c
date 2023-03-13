@@ -68,8 +68,7 @@ int propdebug = 0;
 
 typedef LIST_HEAD(kobj_head, kdbobj) kobj_bucket_t;
 
-static LIST_HEAD(propdb_list, propdb) propdbs =
-	LIST_HEAD_INITIALIZER(propdbs);
+static LIST_HEAD(propdb_list, propdb) propdbs =	LIST_HEAD_INITIALIZER(propdbs);
 
 struct propdb {
 	LIST_ENTRY(propdb)	kd_link;
@@ -104,7 +103,8 @@ static void kdb_rehash(struct propdb *db);
 static struct kdbobj *kdbobj_find(propdb_t db, opaque_t object, int create, int wait);
 static int prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int type, int wait);
 
-MALLOC_DEFINE(M_PROP, "prop", "Kernel properties structures");
+#define M_PROP 93
+//MALLOC_DEFINE(M_PROP, "prop", "Kernel properties structures");
 
 /* 
  * Allocate a prop structure large enough to hold

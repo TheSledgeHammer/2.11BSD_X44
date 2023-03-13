@@ -40,23 +40,25 @@ typedef struct propdb *propdb_t;
 
 #define	MAX_KDBNAME		32
 
-#define	PROP_INT	0x10000000
-#define	PROP_STRING	0x20000000
-#define	PROP_AGGREGATE	0x30000000
-#define	PROP_TYPE(x)	((x)&0x30000000)
+#define	PROP_BOOL		0x010000000
+#define	PROP_NUMBER		0x020000000
+#define	PROP_STRING		0x030000000
+#define	PROP_DATA		0x040000000
+#define	PROP_AGGREGATE	0x050000000
+#define	PROP_TYPE(x)	((x) & PROP_AGGREGATE)
 
-#define	PROP_ARRAY	0x40000000
-#define	PROP_CONST	0x80000000
-#define	PROP_ELSZ(x)	0x0fffffff
+#define	PROP_ARRAY		0x070000000
+#define	PROP_CONST		0x140000000
+#define	PROP_ELSZ(x)	0x0ffffffff
 
-propdb_t propdb_create(const char *);
-void propdb_destroy(propdb_t);
+propdb_t 	propdb_create(const char *);
+void 		propdb_destroy(propdb_t);
 
-int prop_set(propdb_t, opaque_t, const char *, void *, size_t, int, int);
-size_t prop_objs(propdb_t, opaque_t *, size_t);
-size_t prop_list(propdb_t, opaque_t, char *, size_t);
-size_t prop_get(propdb_t, opaque_t, const char *, void *, size_t, int *);
-int prop_delete(propdb_t, opaque_t, const char *);
-int prop_copy(propdb_t, opaque_t, opaque_t, int);
+int 	prop_set(propdb_t, opaque_t, const char *, void *, size_t, int, int);
+size_t 	prop_objs(propdb_t, opaque_t *, size_t);
+size_t 	prop_list(propdb_t, opaque_t, char *, size_t);
+size_t 	prop_get(propdb_t, opaque_t, const char *, void *, size_t, int *);
+int 	prop_delete(propdb_t, opaque_t, const char *);
+int 	prop_copy(propdb_t, opaque_t, opaque_t, int);
 
 #endif

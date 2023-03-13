@@ -32,14 +32,11 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
-#include <sys/kthread.h>
-#include <libuthread/uthread.h>
-
 /* Threadpool Jobs */
-struct kthreadpool;
+struct threadpool;
 struct threadpool_job;
-struct kthreadpool_percpu;
-struct kthreadpool_thread;
+struct threadpool_percpu;
+struct threadpool_thread;
 
 typedef void threadpool_job_fn_t(struct threadpool_job *);
 
@@ -51,7 +48,7 @@ struct threadpool_job  {
 	const char							*job_name;
 	struct lock							*job_lock;
 	volatile unsigned int				job_refcnt;
-	void								*job_thread;
+	struct proc							*job_thread;
 };
 
 /* threadpool job queue flags */

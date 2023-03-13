@@ -84,6 +84,7 @@ struct percpu 			*percpu_start(struct cpu_info *, size_t, int);
 void					percpu_remove(struct cpu_info *);
 struct percpu 			*percpu_lookup(struct cpu_info *);
 struct percpu 			*percpu_create(struct cpu_info *, size_t, int, int);
+void					percpu_foreach(struct percpu *, size_t, int, int);
 void					percpu_malloc(struct percpu *, size_t);
 void					percpu_free(struct percpu *);
 void					percpu_destroy(struct percpu *);

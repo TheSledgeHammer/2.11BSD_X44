@@ -116,6 +116,8 @@ typedef	u_short				mode_t;		/* permissions */
 typedef char				bool_t;		/* boolean */
 typedef long				memaddr_t;	/* core & swap address */
 
+typedef u_char 				pri_t;		/* priority */
+
 #include <sys/select.h>
 
 /*
