@@ -1,3 +1,5 @@
+/*	$NetBSD: nfs.h,v 1.7 2003/08/18 15:45:28 dsl Exp $	*/
+
 /*-
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -29,54 +27,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)disklabel.c	8.1 (Berkeley) 6/11/93
  */
 
-#include <sys/param.h>
-#include <sys/disklabel.h>
-#include "stand.h"
+int		nfs_open(char *, struct open_file *);
+int		nfs_close(struct open_file *);
+int		nfs_read(struct open_file *, char *, u_int, u_int *);
+int		nfs_write(struct open_file *, char *, u_int, u_int *);
+off_t	nfs_seek(struct open_file *, off_t, int);
+int		nfs_stat(struct open_file *, struct stat *);
 
-char *
-getdisklabel(buf, lp)
-	const char *buf;
-	struct disklabel *lp;
-{
-	register struct buf *bp;
-	struct disklabel *dlp, *elp;
-	char *msg = (char *)0;
-
-	elp = (struct disklabel *)(buf + DEV_BSIZE - sizeof(*dlp));
-	for (dlp = (struct disklabel *)buf; dlp <= elp;
-	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
-		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
-			if (msg == (char *)0)
-				msg = "no disk label";
-		} else if (dlp->d_npartitions > MAXPARTITIONS ||
-			   dkcksum(dlp) != 0) {
-			msg = "disk label corrupted";
-		} else {
-			bcopy(dlp, lp, sizeof *lp);
-			msg = (char *)0;
-			break;
-		}
-	}
-	return (msg);
-}
-
-/*
- * Compute checksum for disk label.
- */
-u_short
-dkcksum(lp)
-	register struct disklabel *lp;
-{
-	register u_short *start, *end;
-	register u_short sum = 0;
-
-	start = (u_short *)lp;
-	end = (u_short *)&lp->d_partitions[lp->d_npartitions];
-	while (start < end)
-		sum ^= *start++;
-	return (sum);
-}
+int nfs_mount(int, struct in_addr, char *);

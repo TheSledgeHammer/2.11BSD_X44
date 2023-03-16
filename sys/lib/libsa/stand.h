@@ -90,20 +90,13 @@ struct fs_ops {
 extern struct fs_ops 	file_system[];
 extern struct fs_ops	*exclusive_file_system;
 
-#define FS_DEF(fs) 																		\
-	extern int		__CONCAT(fs,_open)(char *, struct open_file *); 					\
-	extern int		__CONCAT(fs,_close)(struct open_file *); 							\
-	extern int		__CONCAT(fs,_read)(struct open_file *, char *, u_int, u_int *); 	\
-	extern int		__CONCAT(fs,_write)(struct open_file *, char *, u_int, u_int *); 	\
-	extern off_t	__CONCAT(fs,_seek)(struct open_file *, off_t, int); 				\
-	extern int		__CONCAT(fs,_stat)(struct open_file *, struct stat *);				\
-	extern int		__CONCAT(fs,_readdir)(struct open_file *, struct dirent *)
-
 /*
  * libstand-supplied filesystems
  */
 extern struct fs_ops 	ufs_fsops;
 extern struct fs_ops 	lfs_fsops;
+extern struct fs_ops 	tftp_fsops;
+extern struct fs_ops 	nfs_fsops;
 extern struct fs_ops 	cd9660_fsops;
 extern struct fs_ops 	dosfs_fsops;
 

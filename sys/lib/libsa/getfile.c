@@ -33,6 +33,10 @@
  *	@(#)getfile.c	8.1 (Berkeley) 6/11/93
  */
 
+#include "stand.h"
+
+#define CTRL(x) (x&037)
+
 int
 getfile(prompt, mode)
 	char *prompt;
@@ -44,6 +48,9 @@ getfile(prompt, mode)
 	do {
 		printf("%s: ", prompt);
 		gets(buf);
+		if (buf[0] == CTRL('d') && buf[1] == 0) {
+			return (-1);
+		}
 	} while ((fd = open(buf, mode)) < 0);
 
 	return (fd);

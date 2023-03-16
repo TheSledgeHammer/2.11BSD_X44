@@ -1,3 +1,5 @@
+/*	$NetBSD: checkpasswd.c,v 1.5 2003/04/15 22:26:42 dsl Exp $	*/
+
 /*-
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,13 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -33,21 +28,31 @@
  *	@(#)gets.c	8.1 (Berkeley) 6/11/93
  */
 
+#ifdef _STANDALONE
+#include <lib/libkern/libkern.h>
+#else
+#include <string.h>
+#endif
+
 #include "stand.h"
 
-void
-gets(buf)
-	char *buf;
+char *
+getpass(prompt)
+	const char *prompt;
 {
-	register int c;
-	register char *lp;
+	int c;
+	char *lp;
+	static char buf[128]; /* == _PASSWORD_LEN */
 
-	for (lp = buf;;) {
+	printf(prompt);
+
+	for (lp = buf;;)
 		switch (c = getchar() & 0177) {
 		case '\n':
 		case '\r':
 			*lp = '\0';
-			return;
+			putchar('\n');
+			return (buf);
 		case '\b':
 		case '\177':
 			if (lp > buf) {
@@ -57,101 +62,69 @@ gets(buf)
 				putchar('\b');
 			}
 			break;
+#if HASH_ERASE
 		case '#':
 			if (lp > buf)
 				--lp;
 			break;
-		case 'r' & 037: {
-			register char *p;
+#endif
+		case 'r'&037: {
+			char *p;
 
 			putchar('\n');
 			for (p = buf; p < lp; ++p)
-				putchar(*p);
+				putchar('*');
 			break;
 		}
+#if AT_ERASE
 		case '@':
-		case 'u' & 037:
-		case 'w' & 037:
+#endif
+		case 'u'&037:
+		case 'w'&037:
 			lp = buf;
 			putchar('\n');
 			break;
 		default:
 			*lp++ = c;
+			putchar('*');
 		}
-	}
 	/*NOTREACHED*/
 }
 
-/* gets() with constrained input length */
-void
-ngets(char *buf, int n)
+#include <crypto/md5/md5.h>
+
+char bootpasswd[16] = {'\0'}; /* into data segment! */
+
+int
+checkpasswd(void)
 {
-    int c;
-    char *lp;
-
-	for (lp = buf;;) {
-		switch (c = getchar() & 0177) {
-		case '\n':
-		case '\r':
-			*lp = '\0';
-			putchar('\n');
-			return;
-		case '\b':
-		case '\177':
-			if (lp > buf) {
-				lp--;
-				putchar('\b');
-				putchar(' ');
-				putchar('\b');
-			}
-			break;
-		case 'r' & 037: {
-			char *p;
-
-			putchar('\n');
-			for (p = buf; p < lp; ++p)
-				putchar(*p);
-			break;
-		}
-		case 'u' & 037:
-		case 'w' & 037:
-			lp = buf;
-			putchar('\n');
-			break;
-		default:
-			if ((n < 1) || ((lp - buf) < n)) {
-				*lp++ = c;
-				putchar(c);
-			}
-		}
-	}
-	/*NOTREACHED*/
+	return check_password(bootpasswd);
 }
 
 int
-fgetstr(char *buf, int size, int fd)
+check_password(const char *password)
 {
-    char	c;
-    int		err, len;
+	int i;
+	char *passwd;
+	MD5_CTX md5ctx;
+	char pwdigest[16];
 
-	size--; /* leave space for terminator */
-	len = 0;
-	while (size != 0) {
-		err = read(fd, &c, sizeof(c));
-		if (err < 0) /* read error */
-			return (-1);
-		if (err == 0) { /* EOF */
-			if (len == 0)
-				return (-1); /* nothing to read */
+	for (i = 0; i < 16; i++)
+		if (password[i])
 			break;
-		}
-		if ((c == '\r') || /* line terminators */
-		(c == '\n'))
-			break;
-		*buf++ = c; /* keep char */
-		size--;
-		len++;
+	if (i == 16)
+		return (1); /* no password set */
+
+	for (i = 0; i < 3; i++) {
+		passwd = getpass("Password: ");
+		MD5Init(&md5ctx);
+		MD5Update(&md5ctx, passwd, strlen(passwd));
+		MD5Final(pwdigest, &md5ctx);
+		if (bcmp(pwdigest, password, 16) == 0)
+			return (1);
 	}
-	*buf = 0;
-	return (len);
+
+	/* failed */
+	return (0);
 }
+

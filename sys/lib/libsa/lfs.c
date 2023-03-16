@@ -405,26 +405,24 @@ lfs_open(path, f)
 		if ((rc = read_inode(inumber, f)) != 0)
 			goto out;
 
-#if 0
 		/*
 		 * Check for symbolic link.
 		 */
 		if ((DIP(fp->f_ip, mode) & IFMT) == IFLNK) {
-			int link_len = DIP(fp->f_ip, size);//fp->f_di.di_size;
+			int link_len = DIP(fp->f_ip, size);
 			int len;
 
 			len = strlen(cp) + 1;
 
-			if (DIP(fp->f_ip, size) >= MAXPATHLEN - 1 ||
-			    ++nlinks > MAXSYMLINKS) {
+			if (link_len + len > MAXPATHLEN - 1 || ++nlinks > MAXSYMLINKS) {
 				rc = ENOENT;
 				goto out;
 			}
 
-			strcpy(&namebuf[link_len], cp);
+			bcopy(cp, &namebuf[link_len], len + 1);
 
-			if ((fp->i_flags & IC_FASTLINK) != 0) {
-				bcopy(fp->i_symlink, namebuf, (unsigned) link_len);
+			if (link_len < fs->lfs_maxsymlinklen) {
+				bcopy(DIP(fp->f_ip, db), namebuf, (unsigned) link_len);
 			} else {
 				/*
 				 * Read file for symbolic link
@@ -432,18 +430,22 @@ lfs_open(path, f)
 				char *buf;
 				u_int buf_size;
 				daddr_t	disk_block;
-				register struct lfs *fs = fp->f_lfs;
+				register struct lfs *fs;
 
-				(void) block_map(f, (daddr_t)0, &disk_block);
-				rc = device_read(&fp->f_dev,
-						 fsbtodb(fs, disk_block),
-						 blksize(fs, fp, 0),
-						 &buf, &buf_size);
-				if (rc)
+				fs = fp->f_lfs;
+				if (!buf) {
+					buf = malloc(fs->lfs_bsize);
+				}
+				rc = block_map(f, (ufs2_daddr_t)0, &disk_block);
+				if (rc) {
 					goto out;
-
+				}
+				twiddle(1);
+				rc = (f->f_dev->dv_strategy)(f->f_devdata, F_READ, fsbtodb(fs, disk_block), fs->lfs_bsize, buf, &buf_size);
+				if (rc) {
+					goto out;
+				}
 				bcopy((char *)buf, namebuf, (unsigned)link_len);
-				free(buf, buf_size);
 			}
 
 			/*
@@ -451,24 +453,29 @@ lfs_open(path, f)
 			 * If absolute pathname, restart at root.
 			 */
 			cp = namebuf;
-			if (*cp != '/')
+			if (*cp != '/') {
 				inumber = parent_inumber;
-			else
+			} else {
 				inumber = (ino_t)ROOTINO;
+			}
 
-			if ((rc = read_inode(inumber, fp)) != 0)
+			if ((rc = read_inode(inumber, fp)) != 0) {
 				goto out;
+			}
 		}
-#endif
 	}
 
 	/*
 	 * Found terminal component.
 	 */
 	rc = 0;
+	fp->f_seekp = 0;
 out:
-	if (rc)
+	free(buf);
+	free(path);
+	if (rc) {
 		free(fp, sizeof(struct file));
+	}
 	return (rc);
 }
 

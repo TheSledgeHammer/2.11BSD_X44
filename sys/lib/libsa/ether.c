@@ -1,4 +1,4 @@
-/*	$NetBSD: rpc.h,v 1.8 1996/09/26 23:22:03 cgd Exp $	*/
+/*	$NetBSD: ether.c,v 1.18 2003/08/31 22:40:48 fvdl Exp $	*/
 
 /*
  * Copyright (c) 1992 Regents of the University of California.
@@ -35,34 +35,99 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * @(#) Header: net.c,v 1.9 93/08/06 19:32:15 leres Exp  (LBL)
  */
 
-/* XXX defines we can't easily get from system includes */
-#define	PMAPPORT			111
-#define	PMAPPROG			100000
-#define	PMAPVERS			2
-#define	PMAPPROC_NULL		0
-#define	PMAPPROC_SET		1
-#define	PMAPPROC_UNSET		2
-#define	PMAPPROC_GETPORT	3
-#define	PMAPPROC_DUMP		4
-#define	PMAPPROC_CALLIT		5
+#include <sys/param.h>
+#include <sys/socket.h>
+#ifdef _STANDALONE
+#include <lib/libkern/libkern.h>
+#else
+#include <string.h>
+#endif
 
-/* RPC functions: */
-ssize_t	rpc_call(struct iodesc *, n_long, n_long, n_long,
-		     void *, size_t, void *, size_t);
-void	rpc_fromaddr(void *, struct in_addr *, u_short *);
-int		rpc_pmap_getcache(struct in_addr, u_int, u_int);
-void	rpc_pmap_putcache(struct in_addr, u_int, u_int, int);
+#include <net/if.h>
+#include <net/if_ether.h>
 
-extern int rpc_port;	/* decrement before bind */
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+
+#include "stand.h"
+#include "net.h"
+
+/* Caller must leave room for ethernet header in front!! */
+ssize_t
+sendether(d, pkt, len, dea, etype)
+	struct iodesc *d;
+	void *pkt;
+	size_t len;
+	u_char *dea;
+	int etype;
+{
+	ssize_t n;
+	struct ether_header *eh;
+
+#ifdef ETHER_DEBUG
+ 	if (debug)
+		printf("sendether: called\n");
+#endif
+
+	eh = (struct ether_header *)pkt - 1;
+	len += sizeof(*eh);
+
+	MACPY(d->myea, eh->ether_shost);		/* by byte */
+	MACPY(dea, eh->ether_dhost);			/* by byte */
+	eh->ether_type = htons(etype);
+
+	n = netif_put(d, eh, len);
+	if (n == -1 || (size_t)n < sizeof(*eh))
+		return (-1);
+
+	n -= sizeof(*eh);
+	return (n);
+}
 
 /*
- * How much space to leave in front of RPC requests.
- * In 32-bit words (alignment) we have:
- * 12: Ether + IP + UDP + padding
- *  6: RPC call header
- *  7: Auth UNIX
- *  2: Auth NULL
+ * Get a packet of any Ethernet type, with our address or
+ * the broadcast address.  Save the Ether type in arg 5.
+ * NOTE: Caller must leave room for the Ether header.
  */
-#define	RPC_HEADER_WORDS 28
+ssize_t
+readether(d, pkt, len, tleft, etype)
+	struct iodesc *d;
+	void *pkt;
+	size_t len;
+	time_t tleft;
+	u_int16_t *etype;
+{
+	ssize_t n;
+	struct ether_header *eh;
+
+#ifdef ETHER_DEBUG
+ 	if (debug)
+		printf("readether: called\n");
+#endif
+
+	eh = (struct ether_header *)pkt - 1;
+	len += sizeof(*eh);
+
+	n = netif_get(d, eh, len, tleft);
+	if (n == -1 || (size_t)n < sizeof(*eh))
+		return (-1);
+
+	/* Validate Ethernet address. */
+	if (bcmp(d->myea, eh->ether_dhost, 6) != 0 &&
+	    bcmp(bcea, eh->ether_dhost, 6) != 0) {
+#ifdef ETHER_DEBUG
+		if (debug)
+			printf("readether: not ours (ea=%s)\n",
+			    ether_sprintf(eh->ether_dhost));
+#endif
+		return (-1);
+	}
+	*etype = ntohs(eh->ether_type);
+
+	n -= sizeof(*eh);
+	return (n);
+}

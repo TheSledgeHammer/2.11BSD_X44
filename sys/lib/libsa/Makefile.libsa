@@ -7,16 +7,17 @@ CPPFLAGS=	-I${SADIR} ${SACPPFLAGS} ${SAMISCCPPFLAGS} -DCOMPAT_UFS ${DEBUGCPPFLAG
 #.PATH.c: 	${SADIR} ${.PARSEDIR}/../../../lib/libc/string
 
 # stand routines
-SRCS+=	alloc.c bcopy.c bzero.c errno.c exit.c getfile.c \ 
-		gets.c memcmp.c memcpy.c memmove.c memset.c panic.c \
-		printf.c snprintf.c strdup.c strspn.c strtol.c twiddle.c \
+SRCS+=	alloc.c bcopy.c bzero.c errno.c getfile.c 			\ 
+		gets.c globals.c panic.c printf.c snprintf.c 		\
+		strdup.c strspn.c strtol.c twiddle.c 				\
 		zalloc_malloc.c zalloc.c
-		
-#SRCS+= 	uuid_from_string.c uuid_to_string.c 
 
 # io routines
-SRCS+=	close.c closeall.c dev.c ls.c lseek.c open.c read.c stat.c \
-		write.c
+SRCS+= 	closeall.c dev.c disklabel.c ioctl.c ls.c stat.c
+SRCS+=	close.c lseek.c open.c read.c write.c
+
+# filesystems
+SRCS+=	lfs.c ufs.c cd9660.c ustarfs.c dosfs.c
 
 .if (${SA_USE_LOADFILE} == "yes")
 SRCS+=	loadfile.c loadfile_ecoff.c loadfile_elf32.c loadfile_elf64.c lookup_elf32.c loadfile_xcoff32.c loadfile_xcoff64.c
@@ -25,15 +26,15 @@ SRCS+=	loadfile_aout.c
 .endif
 .endif
 
-# boot filesystems
-SRCS+=	lfs.c ufs.c
-
 .if (${SA_INCLUDE_NET} == "yes")
 # network routines
-SRCS+=	net.c netif.c rpc.c
+SRCS+=	arp.c ether.c ether_sprintf.c in_cksum.c net.c netif.c rpc.c udp.c
 
 # network info services:
-SRCS+=	bootp.c bootparam.c
+SRCS+=	bootp.c rarp.c bootparam.c
+
+# boot filesystems
+SRCS+=	nfs.c tftp.c
 .endif
 
 .if (${SA_ENABLE_BIENDIAN} == "yes")

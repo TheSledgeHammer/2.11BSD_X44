@@ -36,11 +36,11 @@
 #ifndef _LIBSA_LFS_H_
 #define _LIBSA_LFS_H_
 
-int		lfs_open(char *path, struct open_file *f);
-int		lfs_close(struct open_file *f);
-int		lfs_read(struct open_file *f, char *buf, u_int size, u_int *resid);
-int		lfs_write(struct open_file *f, char *buf, u_int size, u_int *resid);
-off_t	lfs_seek(struct open_file *f, off_t offset, int where);
-int		lfs_stat(struct open_file *f, struct stat *sb);
+int		lfs_open(char *, struct open_file *);
+int		lfs_close(struct open_file *);
+int		lfs_read(struct open_file *, char *, u_int, u_int *);
+int		lfs_write(struct open_file *, char *, u_int, u_int *);
+off_t	lfs_seek(struct open_file *, off_t, int);
+int		lfs_stat(struct open_file *, struct stat *);
 
 #endif /* _LIBSA_LFS_H_ */

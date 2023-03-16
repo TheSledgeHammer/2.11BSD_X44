@@ -208,7 +208,6 @@ mxthread_free(mx)
 	struct mxthread *mx;
 {
 	free(mx, M_MXTHREAD);
-	mx->mx_channel = -1;
 }
 
 void
@@ -264,3 +263,4 @@ mxthread_remove(kt, channel)
 	}
 	KTHREAD_UNLOCK(kt);
 }
+

@@ -1,4 +1,4 @@
-/*	$NetBSD: rpc.h,v 1.8 1996/09/26 23:22:03 cgd Exp $	*/
+/*	$NetBSD: in_cksum.c,v 1.6 2000/03/31 19:55:09 castor Exp $	*/
 
 /*
  * Copyright (c) 1992 Regents of the University of California.
@@ -35,34 +35,74 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * @(#) Header: in_cksum.c,v 1.1 92/09/11 01:15:55 leres Exp  (LBL)
  */
 
-/* XXX defines we can't easily get from system includes */
-#define	PMAPPORT			111
-#define	PMAPPROG			100000
-#define	PMAPVERS			2
-#define	PMAPPROC_NULL		0
-#define	PMAPPROC_SET		1
-#define	PMAPPROC_UNSET		2
-#define	PMAPPROC_GETPORT	3
-#define	PMAPPROC_DUMP		4
-#define	PMAPPROC_CALLIT		5
+#include <sys/types.h>
+#include <sys/socket.h>
 
-/* RPC functions: */
-ssize_t	rpc_call(struct iodesc *, n_long, n_long, n_long,
-		     void *, size_t, void *, size_t);
-void	rpc_fromaddr(void *, struct in_addr *, u_short *);
-int		rpc_pmap_getcache(struct in_addr, u_int, u_int);
-void	rpc_pmap_putcache(struct in_addr, u_int, u_int, int);
+#include <net/if.h>
+#include <net/if_ether.h>
 
-extern int rpc_port;	/* decrement before bind */
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
+
+#include <machine/endian.h>
+
+#include "stand.h"
+#include "net.h"
 
 /*
- * How much space to leave in front of RPC requests.
- * In 32-bit words (alignment) we have:
- * 12: Ether + IP + UDP + padding
- *  6: RPC call header
- *  7: Auth UNIX
- *  2: Auth NULL
+ * Checksum routine for Internet Protocol family headers.
+ * This routine is very heavily used in the network
+ * code and should be modified for each CPU to be as fast as possible.
+ * In particular, it should not be this one.
  */
-#define	RPC_HEADER_WORDS 28
+int
+in_cksum(p, len)
+	void *p;
+	int len;
+{
+	int sum = 0, oddbyte = 0, v = 0;
+	u_char *cp = p;
+
+	/* we assume < 2^16 bytes being summed */
+	while (len > 0) {
+		if (oddbyte) {
+			sum += v + *cp++;
+			len--;
+		}
+		if (((long)cp & 1) == 0) {
+			while ((len -= 2) >= 0) {
+				sum += *(u_short *)cp;
+				cp += 2;
+			}
+		} else {
+			while ((len -= 2) >= 0) {
+#if BYTE_ORDER == BIG_ENDIAN
+				sum += *cp++ << 8;
+				sum += *cp++;
+#else
+				sum += *cp++;
+				sum += *cp++ << 8;
+#endif
+			}
+		}
+		if ((oddbyte = len & 1) != 0)
+#if BYTE_ORDER == BIG_ENDIAN
+			v = *cp << 8;
+#else
+			v = *cp;
+#endif
+	}
+	if (oddbyte)
+		sum += v;
+	sum = (sum >> 16) + (sum & 0xffff); /* add in accumulated carries */
+	sum += sum >> 16;		/* add potential last carry */
+	return (0xffff & ~sum);
+}

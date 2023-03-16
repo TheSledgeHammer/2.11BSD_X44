@@ -496,7 +496,7 @@ threadpool_job_enqueue(pool, job, flag)
 	struct threadpool_job 	*job;
 	int 					flag;
 {
-	threadpool_job_lock(job->job_lock);
+	//threadpool_job_lock(job->job_lock);
 	switch (flag) {
 	case TPJ_HEAD:
 		TAILQ_INSERT_HEAD(&pool->tp_jobs, job, job_entry);
@@ -505,7 +505,7 @@ threadpool_job_enqueue(pool, job, flag)
 		 TAILQ_INSERT_TAIL(&pool->tp_jobs, job, job_entry);
 		 break;
 	}
-	threadpool_job_unlock(job->job_lock);
+	//threadpool_job_unlock(job->job_lock);
 }
 
 void
@@ -513,9 +513,9 @@ threadpool_job_dequeue(pool, job)
     struct threadpool       *pool;
     struct threadpool_job   *job;
 {
-    threadpool_job_lock(job->job_lock);
+    //threadpool_job_lock(job->job_lock);
     TAILQ_REMOVE(&pool->tp_jobs, job, job_entry);
-    threadpool_job_unlock(job->job_lock);
+    //threadpool_job_unlock(job->job_lock);
 }
 
 struct threadpool_job *
@@ -611,9 +611,10 @@ threadpool_job_done(job)
 }
 
 void
-threadpool_schedule_job(pool, job)
+threadpool_schedule_job(pool, job, flags)
 	struct threadpool 		*pool;
 	struct threadpool_job 	*job;
+	int 					flags;
 {
 	/*
 	 * If the job's already running, let it keep running.  The job
@@ -632,11 +633,11 @@ threadpool_schedule_job(pool, job)
 	if (__predict_false(TAILQ_EMPTY(&pool->tp_idle_threads))) {
 		/* Nobody's idle.  Give it to the dispatcher.  */
 		job->job_thread = &pool->tp_overseer;
-		threadpool_job_enqueue(&pool->tp_jobs, job, TPJ_TAIL);
+		threadpool_job_enqueue(pool, job, flags);
 	} else {
 		/* Assign it to the first idle thread.  */
 		job->job_thread = TAILQ_FIRST(&pool->tp_idle_threads);
-		threadpool_job_dequeue(&pool->tp_jobs, job);
+		threadpool_job_dequeue(pool, job);
 		job->job_thread->tpt_job = job;
 	}
 	/* Notify whomever we gave it to, dispatcher or idle thread.  */
@@ -657,7 +658,7 @@ threadpool_cancel_job_async(pool, job)
 		/* Take it off the list to guarantee it won't run.  */
 		job->job_thread = NULL;
 		simple_lock(&pool->tp_lock);
-		threadpool_job_dequeue(&pool->tp_jobs, job);
+		threadpool_job_dequeue(pool, job);
 		simple_unlock(&pool->tp_lock);
 		threadpool_job_rele(job);
 		return (TRUE);

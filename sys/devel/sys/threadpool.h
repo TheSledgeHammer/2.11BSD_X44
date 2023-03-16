@@ -67,7 +67,7 @@ void	threadpool_job_destroy(struct threadpool_job *, int);
 void	threadpool_job_hold(struct threadpool_job *);
 void	threadpool_job_rele(struct threadpool_job *);
 void	threadpool_job_done(struct threadpool_job *);
-void	threadpool_schedule_job(struct threadpool *, struct threadpool_job *);
+void	threadpool_schedule_job(struct threadpool *, struct threadpool_job *, int);
 bool_t	threadpool_cancel_job_async(struct threadpool *, struct threadpool_job *);
 void	threadpool_cancel_job(struct threadpool *, struct threadpool_job *);
 #endif /* SYS_THREADPOOL_H_ */

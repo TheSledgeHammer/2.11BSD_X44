@@ -32,7 +32,7 @@
  */
 
 
-#include <stand.h>
+#include <lib/libsa/stand.h>
 #include <uuid.h>
 
 static int

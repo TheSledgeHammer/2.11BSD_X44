@@ -475,7 +475,6 @@ ufs_open(path, f)
 		if ((rc = read_inode(inumber, f)) != 0)
 			goto out;
 
-#if 0
 		/*
 		 * Check for symbolic link.
 		 */
@@ -493,7 +492,7 @@ ufs_open(path, f)
 			bcopy(cp, &namebuf[link_len], len + 1);
 
 			if (link_len < fs->fs_maxsymlinklen) {
-				bcopy(DIP(fp, shortlink), namebuf, (unsigned) link_len);
+				bcopy(DIP(fp, db), namebuf, (unsigned) link_len);
 			} else {
 				/*
 				 * Read file for symbolic link
@@ -501,8 +500,9 @@ ufs_open(path, f)
 				char *buf;
 				u_int buf_size;
 				daddr_t	disk_block;
-				register struct fs *fs = fp->f_fs;
+				register struct fs *fs;
 
+				fs = fp->f_fs;
 				if (!buf) {
 					buf = malloc(fs->fs_bsize);
 				}
@@ -512,8 +512,7 @@ ufs_open(path, f)
 				}
 
 				twiddle(1);
-				rc = (f->f_dev->dv_strategy)(f->f_devdata,
-				F_READ, fsbtodb(fs, disk_block), fs->fs_bsize, buf, &buf_size);
+				rc = (f->f_dev->dv_strategy)(f->f_devdata, F_READ, fsbtodb(fs, disk_block), fs->fs_bsize, buf, &buf_size);
 				if (rc) {
 					goto out;
 				}
@@ -526,15 +525,16 @@ ufs_open(path, f)
 			 * If absolute pathname, restart at root.
 			 */
 			cp = namebuf;
-			if (*cp != '/')
+			if (*cp != '/') {
 				inumber = parent_inumber;
-			else
+			} else {
 				inumber = (ino_t)ROOTINO;
+			}
 
-			if ((rc = read_inode(inumber, fp)) != 0)
+			if ((rc = read_inode(inumber, fp)) != 0) {
 				goto out;
+			}
 		}
-#endif
 	}
 
 	/*
@@ -546,7 +546,6 @@ out:
 	free(buf);
 	free(path);
 	if (rc) {
-
 		free(fp, sizeof(struct file));
 	}
 	return (rc);
