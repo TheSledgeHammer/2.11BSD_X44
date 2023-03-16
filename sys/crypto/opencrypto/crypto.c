@@ -938,7 +938,7 @@ crypto_done(struct cryptop *crp)
 		wasempty = TAILQ_EMPTY(&crp_ret_q);
 		TAILQ_INSERT_TAIL(&crp_ret_q, crp, crp_next);
 		if (wasempty)
-			//wakeup_one(&crp_ret_q);
+			wakeup_one(&crp_ret_q);
 		splx(s);
 	}
 }
@@ -963,7 +963,7 @@ crypto_kdone(struct cryptkop *krp)
 	wasempty = TAILQ_EMPTY(&crp_ret_kq);
 	TAILQ_INSERT_TAIL(&crp_ret_kq, krp, krp_next);
 	if (wasempty)
-		//wakeup_one(&crp_ret_q);
+		wakeup_one(&crp_ret_q);
 	splx(s);
 }
 

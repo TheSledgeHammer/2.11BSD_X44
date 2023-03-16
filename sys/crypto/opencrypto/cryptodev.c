@@ -523,7 +523,7 @@ cryptodev_cb(void *op)
 	cse->error = crp->crp_etype;
 	if (crp->crp_etype == EAGAIN)
 		return crypto_dispatch(crp);
-	//wakeup_one(crp);
+	wakeup_one(crp);
 	return (0);
 }
 
@@ -532,7 +532,7 @@ cryptodevkey_cb(void *op)
 {
 	struct cryptkop *krp = (struct cryptkop *) op;
 
-	//wakeup_one(krp);
+	wakeup_one(krp);
 	return (0);
 }
 

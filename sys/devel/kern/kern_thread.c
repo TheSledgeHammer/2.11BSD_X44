@@ -41,45 +41,6 @@
 
 #include <vm/include/vm_param.h>
 
-struct tidhashhead *tidhashtbl;
-u_long tidhash;
-struct tgrphashhead *tgrphashtbl;
-u_long tgrphash;
-
-int	maxthread;// = NTHREAD;
-
-struct kthreadlist allkthread;
-struct kthreadlist zombkthread;
-
-void
-threadinit()
-{
-	ktqinit();
-	utqinit();
-	tidhashtbl = hashinit(maxthread / 4, M_PROC, &tidhash);
-	tgrphashtbl = hashinit(maxthread / 4, M_PROC, &tgrphash);
-}
-
-/*
- * init the kthread queues
- */
-void
-ktqinit()
-{
-	LIST_INIT(&allkthread);
-	LIST_INIT(&zombkthread);
-}
-
-/*
- * init the uthread queues
- */
-void
-utqinit()
-{
-	LIST_INIT(&alluthread);
-	LIST_INIT(&zombuthread);
-}
-
 extern struct kthread 		 kthread0;
 struct kthread *curkthread = &kthread0;
 
@@ -97,7 +58,7 @@ kthread_init(p, kt)
     curkthread = kt;
 
 	/* Initialize kthread and kthread group structures. */
-    threadinit();
+    kthreadinit(kt);
 
 	/* set up kernel thread */
     LIST_INSERT_HEAD(&allkthread, kt, kt_list);
@@ -108,12 +69,52 @@ kthread_init(p, kt)
 	/* give the kthread the same creds as the initial thread */
 	kt->kt_ucred = p->p_ucred;
 	crhold(kt->kt_ucred);
+}
 
-    /* setup kthread locks */
+
+int	maxthread;// = NTHREAD;
+
+struct tidhashhead *tidhashtbl;
+u_long tidhash;
+struct tgrphashhead *tgrphashtbl;
+u_long tgrphash;
+
+struct kthreadlist 	allkthread;
+struct kthreadlist 	zombkthread;
+struct kthreadlist 	freekthread;
+
+struct lock_holder 	kthread_loholder;
+
+void
+kthreadinit(kt)
+	struct kthread *kt;
+{
+	ktqinit(kt);
+	tidhashtbl = hashinit(maxthread / 4, M_PROC, &tidhash);
+	tgrphashtbl = hashinit(maxthread / 4, M_PROC, &tgrphash);
+
+    /* setup kthread mutex */
     mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid, kt->kt_pgrp);
+}
 
-    /* initialize kthreadpools */
-    kthreadpool_init();
+/*
+ * init the kthread queues
+ */
+void
+ktqinit(kt)
+	register struct kthread *kt;
+{
+	LIST_INIT(&allkthread);
+	LIST_INIT(&zombkthread);
+	LIST_INIT(&freekthread);
+
+	/*
+	 * most procs are initially on freequeue
+	 *	nb: we place them there in their "natural" order.
+	 */
+	LIST_INSERT_HEAD(&freekthread, kt, kt_list);
+	LIST_INSERT_HEAD(&allkthread, kt, kt_list);
+	LIST_FIRST(&zombkthread) = NULL;
 }
 
 /*
@@ -124,9 +125,12 @@ ktfind(tid)
 	register pid_t tid;
 {
 	register struct kthread *kt;
-	for (kt = LIST_FIRST(TIDHASH(tid)); kt != 0; kt = LIST_NEXT(kt, kt_hash))
-		if(kt->kt_tid == tid)
+
+	LIST_FOREACH(kt, TIDHASH(tid), kt_hash) {
+		if (kt->kt_tid == tid) {
 			return (kt);
+		}
+	}
 	return (NULL);
 }
 
@@ -153,10 +157,88 @@ tgfind(pgid)
 	register pid_t pgid;
 {
 	register struct pgrp *tgrp;
-	for (tgrp = LIST_FIRST(TGRPHASH(pgid)); tgrp != NULL; tgrp = LIST_NEXT(tgrp, pg_hash)) {
+	LIST_FOREACH(tgrp, TGRPHASH(pgid), pg_hash) {
 		if (tgrp->pg_id == pgid) {
 			return (tgrp);
 		}
 	}
 	return (NULL);
+}
+
+/*
+ * An mxthread is a multiplexed kernel thread.
+ * Mxthreads are confined to the kthread which created it.
+ * A single kthread can create a limited number (TBA) of mxthreads.
+ */
+
+#define M_MXTHREAD 95
+
+struct mxthread {
+	LIST_ENTRY(mxthread) 	mx_list;
+	struct kthread			*mx_kthread; /* kernel thread */
+
+	pid_t 					mx_tid;
+	struct pgrp 			*mx_pgrp;
+
+	int 					mx_channel;
+};
+
+void
+mxthread_init(kt)
+	struct kthread *kt;
+{
+	KASSERT(kt != NULL);
+
+	LIST_INIT(kt->kt_mxthreads);
+}
+
+void
+mxthread_add(kt, channel)
+	struct kthread 	*kt;
+	int channel;
+{
+	register struct mxthread *mx;
+
+	mx = (struct mxthread *)calloc(channel, sizeof(struct mxthread), M_MXTHREAD, M_WAITOK);
+	mx->mx_kthread = kt;
+	mx->mx_tid	= kt->kt_tid;
+	mx->mx_pgrp = kt->kt_pgrp;
+	mx->mx_channel = channel;
+
+	KTHREAD_LOCK(kt);
+	LIST_INSERT_HEAD(kt->kt_mxthreads, mx, mx_list);
+	KTHREAD_UNLOCK(kt);
+}
+
+struct mxthread *
+mxthread_find(kt, channel)
+	struct kthread 	*kt;
+	int channel;
+{
+	register struct mxthread *mx;
+
+	KTHREAD_LOCK(kt);
+	LIST_FOREACH(mx, kt->kt_mxthreads, mx_list) {
+		if (mx->mx_kthread == kt && mx->mx_channel == channel) {
+			KTHREAD_UNLOCK(kt);
+			return (mx);
+		}
+	}
+	KTHREAD_UNLOCK(kt);
+	return (NULL);
+}
+
+void
+mxthread_remove(kt, channel)
+	struct kthread 	*kt;
+	int channel;
+{
+	register struct mxthread *mx;
+
+	KTHREAD_LOCK(kt);
+	mx = mxthread_find(kt, channel);
+	if (mx != NULL) {
+		LIST_REMOVE(mx, mx_list);
+	}
+	KTHREAD_UNLOCK(kt);
 }

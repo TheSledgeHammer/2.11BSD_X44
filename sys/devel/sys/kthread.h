@@ -35,8 +35,6 @@
 /* kernel threads */
 typedef struct kthread 	*kthread_t;
 struct kthread {
-	struct kthread 		*kt_forw;				/* Doubly-linked run/sleep queue. */
-	struct kthread 		*kt_back;
 
 	LIST_ENTRY(kthread)	kt_list;				/* List of all kernel threads */
 
@@ -110,6 +108,7 @@ struct kthread {
 	//void				*kt_ctxlink;			/* uc_link {get,set}context */
     //struct sadata_vp 	*kt_savp; 				/* SA "virtual processor" */
 
+	LIST_HEAD(, mxthread)kt_mxthreads;			/* list of mxthreads */
 };
 #define	kt_session		kt_pgrp->pg_session
 #define	kt_tgid			kt_pgrp->pg_id
@@ -144,42 +143,6 @@ struct kthread {
 #define	KTHREAD_TS			0x08			/* Time-sharing priority range */
 #define	KTHREAD_MUSTJOIN	0x10			/* Must join on exit */
 
-/* Kernel Threadpool Threads */
-TAILQ_HEAD(kthread_head, kthreadpool_thread);
-struct kthreadpool_thread {
-	struct proc							*ktpt_proc;					/* proc */
-	struct kthread						*ktpt_kthread;				/* kernel threads */
-    char				                *ktpt_kthread_savedname;
-	struct kthreadpool					*ktpt_pool;
-	struct threadpool_job				*ktpt_job;
-
-	TAILQ_ENTRY(kthreadpool_thread) 	ktpt_entry;					/* list kthread entries */
-};
-
-/* Kernel Threadpool */
-struct kthreadpool {
-	struct lock							*ktp_lock;
-	struct kthreadpool_thread			ktp_overseer;
-    struct job_head					    ktp_jobs;
-    struct kthread_head		            ktp_idle_threads;
-    struct kthread_head		            ktp_active_threads;
-
-    int 								ktp_refcnt;			/* total thread count in pool */
-    int 								ktp_active;			/* active thread count */
-    int									ktp_inactive;		/* inactive thread count */
-
-#define	KTHREADPOOL_DYING				0x01
-    int									ktp_flags;
-    u_char								ktp_pri;			/* priority */
-
-    /* Inter Threadpool Communication */
-    struct threadpool_itpc				ktp_itpc;			/* threadpool ipc ptr */
-    bool_t								ktp_issender;		/* is itpc sender */
-    bool_t								ktp_isreciever;		/* is itpc reciever */
-    int									ktp_retcnt;			/* retry count in itpc pool */
-    bool_t								ktp_initcq;			/* check if in itpc queue */
-};
-
 #define	TIDHSZ							16
 #define	TIDHASH(tid)					(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
 extern 	LIST_HEAD(tidhashhead, proc) 	*tidhashtbl;
@@ -192,53 +155,30 @@ extern u_long tgrphash;
 LIST_HEAD(kthreadlist, kthread);
 extern struct kthreadlist				allkthread;				/* List of active kthreads. */
 extern struct kthreadlist				zombkthread;			/* List of zombie kthreads. */
-//extern struct kthreadlist 				freekthread;			/* List of free kthreads. */
+extern struct kthreadlist 				freekthread;			/* List of free kthreads. */
 
 struct lock								*kthread_lkp; 			/* lock */
 struct rwlock							*kthread_rwl;			/* reader-writers lock */
 
 extern struct kthread 					kthread0;
-extern struct kthreadpool_thread 		ktpool_thread;
-extern struct lock 						*kthreadpool_lock;
 
 /* KThread Lock */
 struct lock_holder 			kthread_loholder;
 #define KTHREAD_LOCK(kt)	(mtx_lock(&(kt)->kt_mtx, &kthread_loholder))
 #define KTHREAD_UNLOCK(kt) 	(mtx_unlock(&(kt)->kt_mtx, &kthread_loholder))
 
-void			threadinit (void);
+void			threadinit(void);
 struct pgrp 	*tgfind(pid_t);
 void			tgdelete(struct pgrp *);
-
-/* KThread */
-int	 			kthread_create(void (*)(void *), void *, struct proc **, const char *);
-int 			kthread_exit(int);
-void			kthread_create_deferred(void (*)(void *), void *);
-void			kthread_run_deferred_queue(void);
 
 void 			kthread_init(struct proc *, struct kthread *);
 struct kthread *ktfind(pid_t);				/* Find kthread by id. */
 int				leavektgrp(kthread_t);		/* leave thread group */
 
 /* KThread ITPC */
-extern void 	kthreadpool_itpc_send(struct threadpool_itpc *, struct kthreadpool *);
-extern void 	kthreadpool_itpc_receive(struct threadpool_itpc *, struct kthreadpool *);
 extern void		itpc_add_kthreadpool(struct threadpool_itpc *, struct kthreadpool *);
 extern void		itpc_remove_kthreadpool(struct threadpool_itpc *, struct kthreadpool *);
 void 			itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
 void 			itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
 
-/* kthreadpools */
-void	kthreadpool_init(void);
-int		kthreadpool_get(struct kthreadpool **, pid_t);
-void	kthreadpool_put(struct kthreadpool *, pid_t);
-void	kthreadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, struct lock *, char *, const char *, ...);
-void	kthreadpool_job_destroy(struct threadpool_job *);
-void	kthreadpool_job_done(struct threadpool_job *);
-void	kthreadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
-void	kthreadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
-bool_t	kthreadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
-
-int		kthreadpool_percpu_get(struct kthreadpool_percpu **, pid_t);
-void	kthreadpool_percpu_put(struct kthreadpool_percpu *, pid_t);
 #endif /* SYS_KTHREADS_H_ */

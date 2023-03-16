@@ -480,21 +480,20 @@ ufs_open(path, f)
 		 * Check for symbolic link.
 		 */
 		if ((DIP(fp->f_ip, mode) & IFMT) == IFLNK) {
-			int link_len = DIP(fp->f_ip, size);//fp->f_di.di_size;
+			int link_len = DIP(fp->f_ip, size);
 			int len;
 
 			len = strlen(cp) + 1;
 
-			if (DIP(fp->f_ip, size) >= MAXPATHLEN - 1 ||
-			    ++nlinks > MAXSYMLINKS) {
+			if (link_len + len > MAXPATHLEN || ++nlinks > MAXSYMLINKS) {
 				rc = ENOENT;
 				goto out;
 			}
 
-			strcpy(&namebuf[link_len], cp);
+			bcopy(cp, &namebuf[link_len], len + 1);
 
-			if ((fp->i_flags & IC_FASTLINK) != 0) {
-				bcopy(fp->i_symlink, namebuf, (unsigned) link_len);
+			if (link_len < fs->fs_maxsymlinklen) {
+				bcopy(DIP(fp, shortlink), namebuf, (unsigned) link_len);
 			} else {
 				/*
 				 * Read file for symbolic link
@@ -504,16 +503,22 @@ ufs_open(path, f)
 				daddr_t	disk_block;
 				register struct fs *fs = fp->f_fs;
 
-				(void) block_map(f, (daddr_t)0, &disk_block);
-				rc = device_read(&fp->f_dev,
-						 fsbtodb(fs, disk_block),
-						 blksize(fs, fp, 0),
-						 &buf, &buf_size);
-				if (rc)
+				if (!buf) {
+					buf = malloc(fs->fs_bsize);
+				}
+				rc = block_map(f, (ufs2_daddr_t)0, &disk_block);
+				if (rc) {
 					goto out;
+				}
+
+				twiddle(1);
+				rc = (f->f_dev->dv_strategy)(f->f_devdata,
+				F_READ, fsbtodb(fs, disk_block), fs->fs_bsize, buf, &buf_size);
+				if (rc) {
+					goto out;
+				}
 
 				bcopy((char *)buf, namebuf, (unsigned)link_len);
-				free(buf, buf_size);
 			}
 
 			/*
@@ -536,9 +541,14 @@ ufs_open(path, f)
 	 * Found terminal component.
 	 */
 	rc = 0;
+	fp->f_seekp = 0;
 out:
-	if (rc)
+	free(buf);
+	free(path);
+	if (rc) {
+
 		free(fp, sizeof(struct file));
+	}
 	return (rc);
 }
 

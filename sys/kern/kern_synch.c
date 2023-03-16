@@ -465,6 +465,28 @@ restart:
 }
 
 /*
+ * Wake up one process sleeping on chan.
+ */
+void
+wakeup_one(chan)
+	register const void *chan;
+{
+	register struct proc *p;
+	struct sleepque *qp;
+	int s;
+
+	s = splclock();
+	qp = &slpque[HASH(chan)];
+	while ((p = TAILQ_FIRST(qp)) != NULL) {
+		KASSERT(p->p_wchan == chan);
+		if ((p->p_flag & P_SINTR) == 0) {
+			unsleep(p);
+		}
+	}
+	splx(s);
+}
+
+/*
  * Set the process running;
  * arrange for it to be swapped in if necessary.
  */

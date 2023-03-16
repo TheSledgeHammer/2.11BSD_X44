@@ -63,6 +63,24 @@ struct ithreadpool {
 	LIST_ENTRY(ithreadpool)  	ientry;
 };
 
+
+int
+mxthread_create(func, arg, kt, name)
+	void (*func)(void *);
+	void *arg;
+	struct kthread *kt;
+	char *name;
+{
+	int error;
+
+	error = kthread_create(func, arg, &kt->kt_procp, name);
+	if (error != 0) {
+
+	}
+
+	return (error);
+}
+
 void
 ithread_init(void *thread)
 {

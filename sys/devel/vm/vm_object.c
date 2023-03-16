@@ -210,24 +210,6 @@ _vm_object_allocate(size, object)
 	simple_unlock(&vm_object_tree_lock);
 }
 
-/* vm object splay tree comparator */
-/*
-int
-vm_object_spt_compare(obj1, obj2)
-	vm_object_t obj1, obj2;
-{
-	if(obj1->size < obj2->size) {
-		return (-1);
-	} else if(obj1->size > obj2->size) {
-		return (1);
-	}
-	return (0);
-}
-
-SPLAY_PROTOTYPE(object_spt, vm_object, cached_tree, vm_object_spt_compare);
-SPLAY_GENERATE(object_spt, vm_object, cached_tree, vm_object_spt_compare);
-*/
-
 /*
  *	vm_object_reference:
  *
@@ -297,7 +279,6 @@ vm_object_deallocate(object)
 		 */
 
 		if (object->flags & OBJ_CANPERSIST) {
-			//SPLAY_INSERT(object_spt, &vm_object_cached_tree, object);
 			TAILQ_INSERT_TAIL(&vm_object_cached_list, object, cached_list);
 			vm_object_cached++;
 			vm_object_cache_unlock();
@@ -703,7 +684,6 @@ vm_object_cache_trim()
 
 	vm_object_cache_lock();
 	while (vm_object_cached > vm_cache_max) {
-		//object = SPLAY_FIRST(&vm_object_cached_tree);
 		object = TAILQ_FIRST(vm_object_cached_list);
 		vm_object_cache_unlock();
 
@@ -742,7 +722,7 @@ vm_object_pmap_copy(object, start, end)
 	vm_object_lock(object);
 	CIRCLEQ_FOREACH(segment, &object->seglist, sg_list) {
 		if (segment->sg_object == object && segment != NULL) {
-			if (!TAILQ_EMPYY(segment->sg_memq)) {
+			if (!TAILQ_EMPTY(segment->sg_memq)) {
 				TAILQ_FOREACH(page, &segment->sg_memq, listq) {
 					if ((start <= page->offset) && (page->offset < end)) {
 						pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_READ);
@@ -785,7 +765,7 @@ vm_object_pmap_remove(object, start, end)
 	vm_object_lock(object);
 	CIRCLEQ_FOREACH(segment, &object->seglist, sg_list) {
 		if (segment->sg_object == object && segment != NULL) {
-			if (!TAILQ_EMPYY(segment->sg_memq)) {
+			if (!TAILQ_EMPTY(segment->sg_memq)) {
 				TAILQ_FOREACH(page, &segment->sg_memq, listq) {
 					if ((start <= page->offset) && (page->offset < end)) {
 						pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);

@@ -103,7 +103,7 @@ rwlockmgr(rwl, flags, interlkp, pid)
 	LOCKHOLDER_PID(rwl->rwl_lockholder) = pid;
 	rwlock_lock(rwl);
 	if (flags & RW_INTERLOCK) {
-		rwlock_unlock(rwl);
+		simple_unlock(interlkp);
 	}
 	extflags = (flags | rwl->rwl_flags) & RW_EXTFLG_MASK;
 

@@ -48,22 +48,22 @@ struct threadpool_job  {
 	const char							*job_name;
 	struct lock							*job_lock;
 	volatile unsigned int				job_refcnt;
-	struct proc							*job_thread;
+	struct threadpool_thread			*job_thread;
 };
 
 /* threadpool job queue flags */
-#define TPJ_HEAD 0	/* add to head of job queue */
-#define TPJ_TAIL 1	/* add to tail of job queue */
+#define TPJ_HEAD 	0	/* add to head of job queue */
+#define TPJ_TAIL 	1	/* add to tail of job queue */
 
-#define threadpool_lock(lock) 	(simple_lock((lock)->lk_lnterlock))
-#define threadpool_unlock(lock) (simple_unlock((lock)->lk_lnterlock))
+#define threadpool_job_lock(lock) 	(simple_lock((lock)->lk_lnterlock))
+#define threadpool_job_unlock(lock) (simple_unlock((lock)->lk_lnterlock))
 
 void	threadpool_job_init(void *, struct threadpool_job *, threadpool_job_fn_t, struct lock *, const char *);
 void	threadpool_job_enqueue(struct job_head *, struct threadpool_job *, struct lock *, int);
 void	threadpool_job_dequeue(struct job_head *, struct threadpool_job *, struct lock *);
-struct threadpool_job *threadpool_job_search(struct job_head *, void *, void *, struct lock *);
+struct threadpool_job *threadpool_job_search(struct job_head *, struct threadpool_thread *, void *, struct lock *);
 void	threadpool_job_dead(struct threadpool_job *);
-void	threadpool_job_destroy(void *, struct threadpool_job *);
+void	threadpool_job_destroy(struct threadpool_job *, int);
 void	threadpool_job_hold(struct threadpool_job *);
 void	threadpool_job_rele(struct threadpool_job *);
 void	threadpool_job_done(struct threadpool_job *);

@@ -66,3 +66,62 @@ mtx_unlock(mtx, holder)
 		simple_unlock(mtx->mtx_lock);
 	}
 }
+
+/*
+ * Lock Holder:
+ */
+/* init lockholder with empty parameters */
+void
+lockholder_init(holder)
+	struct lock_holder 	*holder;
+{
+	bzero(holder, sizeof(struct lock_holder));
+	holder->lh_data = NULL;
+	holder->lh_pid = LK_NOPROC;
+	holder->lh_pgrp = NULL;
+}
+
+/* create a new lockholder */
+struct lock_holder 	*
+lockholder_create(data, pid, pgrp)
+	void 				*data;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
+{
+	struct lock_holder 	*holder;
+
+	bzero(holder, sizeof(struct lock_holder));
+	holder->lh_data = data;
+	holder->lh_pid = pid;
+	holder->lh_pgrp = pgrp;
+
+	return (holder);
+}
+
+/* set lockholder parameters */
+void
+lockholder_set(holder, data, pid, pgrp)
+	struct lock_holder 	*holder;
+	void 				*data;
+	pid_t 				pid;
+	struct pgrp 		*pgrp;
+{
+	if(holder != NULL) {
+		holder->lh_data = data;
+		holder->lh_pid = pid;
+		holder->lh_pgrp = pgrp;
+	} else {
+		lockholder_init(holder);
+	}
+}
+
+/* get lockholder */
+struct lock_holder *
+lockholder_get(holder)
+	struct lock_holder 	*holder;
+{
+	if(holder != NULL) {
+		return (holder);
+	}
+	return (NULL);
+}

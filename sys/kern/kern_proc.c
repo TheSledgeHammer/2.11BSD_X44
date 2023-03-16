@@ -85,6 +85,7 @@ u_long 				pgrphash;
 struct proclist 	allproc;
 struct proclist 	zombproc;
 struct proclist 	freeproc;
+
 struct lock_holder 	proc_loholder;
 
 void	pqinit(struct proc *);

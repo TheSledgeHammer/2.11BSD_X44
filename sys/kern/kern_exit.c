@@ -395,7 +395,7 @@ endvfork()
 	rpp->p_flag &= ~P_SVFORK;
 	rpp->p_flag |= P_SLOCK;
 	wakeup((caddr_t)rpp);
-	while(!(rpp->p_flag&P_SVFDONE))
+	while (!(rpp->p_flag & P_SVFDONE))
 		sleep((caddr_t)rip, PZERO-1);
 	/*
 	 * The parent has taken back our data+stack, set our sizes to 0.

@@ -310,6 +310,7 @@ int 		ltsleep(void *, int, char *, u_short, __volatile struct lock_object *);
 void        endtsleep(struct proc *);
 void		unsleep(struct proc *);
 void		wakeup(const void *);
+void		wakeup_one(const void *);
 void		reschedule(struct proc *);
 void		procinit(struct proc *);
 void		rqinit(void);
