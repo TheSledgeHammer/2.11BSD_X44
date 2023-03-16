@@ -59,14 +59,15 @@ struct threadpool_job  {
 #define threadpool_job_unlock(lock) (simple_unlock((lock)->lk_lnterlock))
 
 void	threadpool_job_init(void *, struct threadpool_job *, threadpool_job_fn_t, struct lock *, const char *);
-void	threadpool_job_enqueue(struct job_head *, struct threadpool_job *, struct lock *, int);
-void	threadpool_job_dequeue(struct job_head *, struct threadpool_job *, struct lock *);
-struct threadpool_job *threadpool_job_search(struct job_head *, struct threadpool_thread *, void *, struct lock *);
+void	threadpool_job_enqueue(struct threadpool *, struct threadpool_job *, int);
+void	threadpool_job_dequeue(struct threadpool *, struct threadpool_job *);
+struct threadpool_job *threadpool_job_search(struct threadpool *, struct threadpool_thread *);
 void	threadpool_job_dead(struct threadpool_job *);
 void	threadpool_job_destroy(struct threadpool_job *, int);
 void	threadpool_job_hold(struct threadpool_job *);
 void	threadpool_job_rele(struct threadpool_job *);
 void	threadpool_job_done(struct threadpool_job *);
-void	threadpool_job_schedule(struct job_head *, struct threadpool_job *, struct lock *, int);
-void	threadpool_job_cancel(struct job_head *, struct threadpool_job *, struct lock *);
+void	threadpool_schedule_job(struct threadpool *, struct threadpool_job *);
+bool_t	threadpool_cancel_job_async(struct threadpool *, struct threadpool_job *);
+void	threadpool_cancel_job(struct threadpool *, struct threadpool_job *);
 #endif /* SYS_THREADPOOL_H_ */

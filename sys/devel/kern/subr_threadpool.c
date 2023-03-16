@@ -1,7 +1,11 @@
-/*
- * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+/*	$NetBSD: kern_threadpool.c,v 1.23 2021/01/23 16:33:49 riastradh Exp $	*/
+
+/*-
+ * Copyright (c) 2014, 2018 The NetBSD Foundation, Inc.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Taylor R. Campbell and Jason R. Thorpe.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,19 +15,18 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/cdefs.h>
@@ -95,7 +98,6 @@ static void	threadpool_percpu_fini(void);
 static void	threadpool_overseer_thread(void *);
 static void	threadpool_thread(void *);
 
-static void	threadpool_broadcast(const void *);
 static void threadpool_wait(struct proc *, const void *, int);
 
 static LIST_HEAD(, threadpool_unbound) 	unbound_threadpools;
@@ -211,7 +213,7 @@ threadpool_create(pool, pri)
 	}
 	simple_lock(&pool->tp_lock);
 	pool->tp_overseer.tpt_proc = p;
-	threadpool_broadcast(&pool->tp_overseer);
+	wakeup(&pool->tp_overseer);
 	simple_unlock(&pool->tp_lock);
 
 	return (0);
@@ -237,7 +239,7 @@ threadpool_destroy(pool)
 	pool->tp_flags |= THREADPOOL_DYING;
 	wakeup(&pool->tp_overseer);
 	TAILQ_FOREACH(thread, &pool->tp_idle_threads, tpt_entry) {
-		threadpool_broadcast(&thread);
+		wakeup(&thread);
 	}
 	while (0 < pool->tp_refcnt) {
 		threadpool_wait(&pool->tp_overseer.tpt_proc, &pool->tp_overseer, &pool->tp_pri);
@@ -268,7 +270,7 @@ threadpool_rele(struct threadpool *pool)
 	//KASSERT(mutex_owned(&pool->tp_lock));
 	KASSERT(0 < pool->tp_refcnt);
 	if (--pool->tp_refcnt == 0) {
-		threadpool_broadcast(&pool->tp_overseer);
+		wakeup(&pool->tp_overseer);
 	}
 }
 
@@ -489,52 +491,49 @@ threadpool_job_init(job, func, lock, name)
 }
 
 void
-threadpool_job_enqueue(jobpool, job, lock, flag)
-	struct job_head 		*jobpool;
+threadpool_job_enqueue(pool, job, flag)
+	struct threadpool 		*pool;
 	struct threadpool_job 	*job;
-	struct lock				*lock;
 	int 					flag;
 {
-	threadpool_job_lock(lock);
+	threadpool_job_lock(job->job_lock);
 	switch (flag) {
 	case TPJ_HEAD:
-		TAILQ_INSERT_HEAD(jobpool, job, job_entry);
+		TAILQ_INSERT_HEAD(&pool->tp_jobs, job, job_entry);
 		break;
 	case TPJ_TAIL:
-		 TAILQ_INSERT_TAIL(jobpool, job, job_entry);
+		 TAILQ_INSERT_TAIL(&pool->tp_jobs, job, job_entry);
 		 break;
 	}
-    threadpool_job_unlock(lock);
+	threadpool_job_unlock(job->job_lock);
 }
 
 void
-threadpool_job_dequeue(jobpool, job, lock)
-    struct job_head         *jobpool;
+threadpool_job_dequeue(pool, job)
+    struct threadpool       *pool;
     struct threadpool_job   *job;
-    struct lock			 	*lock;
 {
-    threadpool_job_lock(lock);
-    TAILQ_REMOVE(jobpool, job, job_entry);
-    threadpool_job_unlock(lock);
+    threadpool_job_lock(job->job_lock);
+    TAILQ_REMOVE(&pool->tp_jobs, job, job_entry);
+    threadpool_job_unlock(job->job_lock);
 }
 
 struct threadpool_job *
-threadpool_job_search(jobpool, thread, lock)
-	struct job_head  			*jobpool;
+threadpool_job_search(pool, thread)
+	struct threadpool 			*pool;
 	struct threadpool_thread 	*thread;
-	struct lock		 			*lock;
 {
 	struct threadpool_job   *job;
 
 	KASSERT(thread != NULL);
-	threadpool_job_lock(lock);
-	TAILQ_FOREACH(job, jobpool, job_entry) {
+	threadpool_job_lock(job->job_lock);
+	TAILQ_FOREACH(job, &pool->tp_jobs, job_entry) {
 		if(job->job_thread == thread) {
-			threadpool_job_unlock(lock);
+			threadpool_job_unlock(job->job_lock);
 			return (job);
 		}
 	}
-	threadpool_job_unlock(lock);
+	threadpool_job_unlock(job->job_lock);
 	return (NULL);
 }
 
@@ -582,7 +581,7 @@ threadpool_job_rele(job)
 	refcnt = atomic_dec_uint_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
 	if (refcnt == 0) {
-		threadpool_broadcast(&job->job_thread);
+		wakeup(&job->job_thread);
 	}
 }
 
@@ -607,29 +606,79 @@ threadpool_job_done(job)
 	KASSERT(0 < atomic_load_relaxed(&job->job_refcnt));
 	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
-	threadpool_broadcast(&job->job_thread);
+	wakeup(&job->job_thread);
 	job->job_thread = NULL;
 }
 
 void
-threadpool_job_schedule(jobpool, job, lock, flag)
-	struct job_head       *jobpool;
-	struct threadpool_job *job;
-	struct lock			  *lock;
-	int 				  flag;
+threadpool_schedule_job(pool, job)
+	struct threadpool 		*pool;
+	struct threadpool_job 	*job;
 {
+	/*
+	 * If the job's already running, let it keep running.  The job
+	 * is guaranteed by the interlock not to end early -- if it had
+	 * ended early, threadpool_job_done would have set job_thread
+	 * to NULL under the interlock.
+	 */
+	if (__predict_true(job->job_thread != NULL)) {
+		return;
+	}
+
 	threadpool_job_hold(job);
-	threadpool_job_enqueue(jobpool, job, lock, flag);
+
+	/* Otherwise, try to assign a thread to the job.  */
+	simple_lock(&pool->tp_lock);
+	if (__predict_false(TAILQ_EMPTY(&pool->tp_idle_threads))) {
+		/* Nobody's idle.  Give it to the dispatcher.  */
+		job->job_thread = &pool->tp_overseer;
+		threadpool_job_enqueue(&pool->tp_jobs, job, TPJ_TAIL);
+	} else {
+		/* Assign it to the first idle thread.  */
+		job->job_thread = TAILQ_FIRST(&pool->tp_idle_threads);
+		threadpool_job_dequeue(&pool->tp_jobs, job);
+		job->job_thread->tpt_job = job;
+	}
+	/* Notify whomever we gave it to, dispatcher or idle thread.  */
+	KASSERT(job->job_thread != NULL);
+	wakeup(&job->job_thread);
+	simple_unlock(&pool->tp_lock);
+}
+
+bool_t
+threadpool_cancel_job_async(pool, job)
+	struct threadpool *pool;
+	struct threadpool_job *job;
+{
+	if (job->job_thread == NULL) {
+		/* Nothing to do.  Guaranteed not running.  */
+		return (TRUE);
+	} else if (job->job_thread == &pool->tp_overseer) {
+		/* Take it off the list to guarantee it won't run.  */
+		job->job_thread = NULL;
+		simple_lock(&pool->tp_lock);
+		threadpool_job_dequeue(&pool->tp_jobs, job);
+		simple_unlock(&pool->tp_lock);
+		threadpool_job_rele(job);
+		return (TRUE);
+	} else {
+		return (FALSE);
+	}
 }
 
 void
-threadpool_job_cancel(jobpool, job, lock)
- 	struct job_head       *jobpool;
+threadpool_cancel_job(pool, job)
+	struct threadpool *pool;
 	struct threadpool_job *job;
-	struct lock			  *lock;
 {
-	threadpool_job_dequeue(jobpool, job, lock);
-	threadpool_job_rele(job);
+	if (threadpool_cancel_job_async(pool, job)) {
+		return;
+	}
+
+	/* Already running.  Wait for it to complete.  */
+	while (job->job_thread != NULL) {
+		threadpool_wait(&job->job_thread->tpt_proc, &job->job_thread, &pool->tp_pri);
+	}
 }
 
 static void
@@ -690,7 +739,7 @@ threadpool_overseer_thread(arg)
 			TAILQ_INSERT_TAIL(&pool->tp_idle_threads, thread, tpt_entry);
 			thread->tpt_proc = p;
 			p = NULL;
-			threadpool_broadcast(&thread);
+			wakeup(&thread);
 			continue;
 		}
 
@@ -801,13 +850,6 @@ threadpool_thread(arg)
 	simple_unlock(&pool->tp_lock);
 
 	kthread_exit(0);
-}
-
-static void
-threadpool_broadcast(chan)
-	register const void *chan;
-{
-	wakeup(chan);
 }
 
 static void

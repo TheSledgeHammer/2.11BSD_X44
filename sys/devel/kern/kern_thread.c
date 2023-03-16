@@ -192,6 +192,25 @@ mxthread_init(kt)
 	LIST_INIT(kt->kt_mxthreads);
 }
 
+struct mxthread *
+mxthread_alloc(channel)
+	int channel;
+{
+	register struct mxthread *mx;
+
+	mx = (struct mxthread *)calloc(channel, sizeof(struct mxthread), M_MXTHREAD, M_WAITOK);
+	mx->mx_channel = channel;
+	return (mx);
+}
+
+void
+mxthread_free(mx)
+	struct mxthread *mx;
+{
+	free(mx, M_MXTHREAD);
+	mx->mx_channel = -1;
+}
+
 void
 mxthread_add(kt, channel)
 	struct kthread 	*kt;
@@ -199,11 +218,10 @@ mxthread_add(kt, channel)
 {
 	register struct mxthread *mx;
 
-	mx = (struct mxthread *)calloc(channel, sizeof(struct mxthread), M_MXTHREAD, M_WAITOK);
+	mx = mxthread_alloc(channel);
 	mx->mx_kthread = kt;
 	mx->mx_tid	= kt->kt_tid;
 	mx->mx_pgrp = kt->kt_pgrp;
-	mx->mx_channel = channel;
 
 	KTHREAD_LOCK(kt);
 	LIST_INSERT_HEAD(kt->kt_mxthreads, mx, mx_list);
@@ -238,7 +256,11 @@ mxthread_remove(kt, channel)
 	KTHREAD_LOCK(kt);
 	mx = mxthread_find(kt, channel);
 	if (mx != NULL) {
+		mx->mx_channel = -1;
 		LIST_REMOVE(mx, mx_list);
+	}
+	if (mx == NULL) {
+		mxthread_free(mx);
 	}
 	KTHREAD_UNLOCK(kt);
 }

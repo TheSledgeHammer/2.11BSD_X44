@@ -48,7 +48,10 @@
 int mpxchan(int, int, struct mpx *, int);
 int mpxgroup(int, int, struct mpx *, int);
 
-struct grouplist   	mpx_groups[NGROUPS];
+RB_PROTOTYPE(grouprbtree, mpx_group, mpg_node, mpx_compare_groups);
+RB_GENERATE(grouprbtree, mpx_group, mpg_node, mpx_compare_groups);
+
+struct grouprbtree  mpx_groups[NGROUPS];
 struct channellist  mpx_channels[NCHANS];
 int groupcount;
 int channelcount;
@@ -59,7 +62,7 @@ mpx_init(void)
 	register int i, j;
 
     for(i = 0; i < NGROUPS; i++) {
-    	LIST_INIT(&mpx_groups[i]);
+    	RB_INIT(&mpx_groups[i]);
     }
 
 	for(j = 0; j < NCHANS; j++) {
@@ -351,14 +354,14 @@ mpx_add_group(gp, idx)
 	struct mpx_group *gp;
 	int idx;
 {
-	struct grouplist *group;
+	struct grouprbtree *group;
 
 	if(gp == NULL) {
 	        return;
 	}
 	group = &mpx_groups[idx];
     gp->mpg_index = idx;
-    LIST_INSERT_HEAD(group, gp, mpg_node);
+    RB_INSERT(grouprbtree, group, gp);
     groupcount++;
 }
 
@@ -389,13 +392,13 @@ struct mpx_group *
 mpx_get_group(idx)
     int idx;
 {
-    struct grouplist *group;
+    struct grouprbtree *group;
     struct mpx_group *gp;
 
     KASSERT(idx < NGROUPS);
     group = &mpx_groups[idx];
-    LIST_FOREACH(gp, group, mpg_node) {
-        if(gp->mpg_index == idx) {
+    RB_FOREACH(gp, grouprbtree, group) {
+        if (gp->mpg_index == idx) {
             return (gp);
         }
     }
@@ -427,11 +430,14 @@ mpx_remove_group(gp, idx)
 	struct mpx_group *gp;
 	int idx;
 {
+	struct grouprbtree *group;
+
+	group = &mpx_groups[idx];
 	if(gp->mpg_index == idx) {
-		LIST_REMOVE(gp, mpg_node);
+		RB_REMOVE(grouprbtree, group, gp);
 	} else {
 		gp = mpx_get_group(idx);
-		LIST_REMOVE(gp, mpg_node);
+		RB_REMOVE(grouprbtree, group, gp);
 	}
 	groupcount--;
 }
@@ -473,7 +479,7 @@ mpx_add_channel(cp, idx)
 	int idx;
 {
 	struct channellist *chan;
-    if(cp == NULL) {
+    if (cp == NULL) {
         return;
     }
     chan = &mpx_channels[idx];
@@ -570,7 +576,7 @@ mpx_attach(cp, gp)
 
 	KASSERT(cp != NULL);
 	for (i = 0; i < NGROUPS; i++) {
-		 LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
+		 RB_FOREACH(gp, grouprbtree, &mpx_groups[i]) {
 			 if (gp->mpg_channel == NULL) {
 				 gp->mpg_channel = cp;
 			 }
@@ -590,7 +596,7 @@ mpx_detach(cp, gp)
 	register int i;
 
 	for (i = 0; i < NGROUPS; i++) {
-		LIST_FOREACH(gp, &mpx_groups[i], mpg_node) {
+		 RB_FOREACH(gp, grouprbtree, &mpx_groups[i]) {
 			 if (gp->mpg_channel == cp && cp != NULL) {
 				 gp->mpg_channel = NULL;
 			 }
@@ -632,11 +638,12 @@ mpx_connect(cp1, cp2)
 
 	/* check channels used */
 	cnt = 0;
-	for(i = 0; i < NCHANS; i++) {
+	for (i = 0; i < NCHANS; i++) {
 		cp1 = mpx_get_channel(i);
 		cp2 = mpx_get_channel(i);
 		if (mpx_compare_channels(cp1, cp2) != 0) {
-			if((cp1->mpc_index == i && cp1 != NULL) || (cp2->mpc_index == i && cp2 != NULL)) {
+			if ((cp1->mpc_index == i && cp1 != NULL)
+					|| (cp2->mpc_index == i && cp2 != NULL)) {
 				cnt++;
 			}
 		} else {
@@ -648,7 +655,7 @@ mpx_connect(cp1, cp2)
 	total = cnt;
 	if (total < NCHANS) {
 		cp3 = mpx_merge_channels(cp1, cp2);
-		if(cp3) {
+		if (cp3) {
 			return (0);
 		}
 	}
@@ -667,20 +674,20 @@ mpx_split_channels(cp, idx)
     struct mpx_channel *other;
     int i;
 
-    for(i = 0; i < NCHANS; i++) {
-        LIST_FOREACH(cp, &mpx_channels[i], mpc_node) {
-        	other = mpx_get_channel(i);
-        }
-        if(other != NULL) {
-            if(idx == i) {
-                LIST_INSERT_HEAD(&mpx_channels[idx], other, mpc_node);
-                mpx_remove_channel(cp, idx);
-            } else {
-                LIST_REMOVE(other, mpc_node);
-            }
-            break;
-        }
-    }
+	for (i = 0; i < NCHANS; i++) {
+		LIST_FOREACH(cp, &mpx_channels[i], mpc_node) {
+			other = mpx_get_channel(i);
+		}
+		if (other != NULL) {
+			if (idx == i) {
+				LIST_INSERT_HEAD(&mpx_channels[idx], other, mpc_node);
+				mpx_remove_channel(cp, idx);
+			} else {
+				LIST_REMOVE(other, mpc_node);
+			}
+			break;
+		}
+	}
     return (other);
 }
 
