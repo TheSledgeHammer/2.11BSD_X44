@@ -214,6 +214,7 @@ startup(void)
 	
 	/* Initialize user */
 	u = u;
+	proc0paddr = &u;
 
 	/*
 	 * Initialize error message buffer (at end of core).

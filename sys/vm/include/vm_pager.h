@@ -62,6 +62,7 @@ struct pager_struct {
 #define	PG_SWAP			0
 #define	PG_VNODE		1
 #define PG_DEVICE		2
+#define PG_OVERLAY		3
 
 /* flags */
 #define PG_CLUSTERGET	1

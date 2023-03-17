@@ -40,11 +40,6 @@
 #ifndef _VM_SEGMENT_H_
 #define _VM_SEGMENT_H_
 
-#include <devel/vm/include/vm_object.h>
-#include <devel/vm/include/vm_page.h>
-#include <devel/vm/include/vm_param.h>
-#include <devel/vm/include/vm_text.h>
-
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
 struct vm_segment {
@@ -60,7 +55,7 @@ struct vm_segment {
 
 	vm_anon_t					sg_anon;				/* anon (O,S) */
 
-	int							sg_resident_page_count;	/* number of resident pages */
+	int							sg_resident_page_count;/* number of resident pages */
 
 	vm_offset_t					sg_log_addr;			/* segment logical address */
 
@@ -94,7 +89,7 @@ struct vm_segment {
 #define	VM_SEGMENT_CHECK(seg)
 #endif /* VM_SEGMENT_DEBUG */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 extern
 struct seglist  	vm_segment_list;			/* free list */
 extern
@@ -173,5 +168,6 @@ void			vm_segment_copy(vm_segment_t, vm_segment_t);
 vm_segment_t	vm_segment_anon_alloc(vm_object_t, vm_offset_t, vm_anon_t);
 void			vm_segment_anon_free(vm_segment_t);
 bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
-//#endif /* KERNEL */
-#endif /* VM_SEGMENT_H_ */
+
+#endif /* _KERNEL */
+#endif /* _VM_SEGMENT_H_ */
