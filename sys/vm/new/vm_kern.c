@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -40,17 +40,17 @@
  * All rights reserved.
  *
  * Authors: Avadis Tevanian, Jr., Michael Wayne Young
- *
+ * 
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
  * notice and this permission notice appear in all copies of the
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
- *
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
- * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND
+ * 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
  * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
- *
+ * 
  * Carnegie Mellon requests users of this software to return to
  *
  *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
@@ -69,11 +69,10 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 
-#include <devel/vm/include/vm.h>
+#include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
-#include <devel/vm/include/vm_page.h>
-#include <devel/vm/include/vm_pageout.h>
-#include <devel/vm/include/vm_segment.h>
+#include <vm/include/vm_page.h>
+#include <vm/include/vm_pageout.h>
 
 vm_map_t	kernel_map;
 
@@ -126,6 +125,17 @@ kmem_alloc(map, size)
 	size = round_page(size);
 	sgsize = round_segment(size);
 
+	/*
+	 *	Use the kernel object for wired-down kernel pages.
+	 *	Assume that no region of the kernel object is
+	 *	referenced more than once.
+	 */
+
+	/*
+	 * Locate sufficient space in the map.  This will give us the
+	 * final virtual address for the new memory, and thus will tell
+	 * us the offset within the kernel map.
+	 */
 	vm_map_lock(map);
 	if (vm_map_findspace(map, 0, size, &addr)) {
 		vm_map_unlock(map);
@@ -136,6 +146,29 @@ kmem_alloc(map, size)
 	vm_map_insert(map, kernel_object, offset, addr, addr + size);
 	vm_map_unlock(map);
 
+	/*
+	 *	Guarantee that there are pages already in this object
+	 *	before calling vm_map_pageable.  This is to prevent the
+	 *	following scenario:
+	 *
+	 *		1) Threads have swapped out, so that there is a
+	 *		   pager for the kernel_object.
+	 *		2) The kmsg zone is empty, and so we are kmem_allocing
+	 *		   a new page for it.
+	 *		3) vm_map_pageable calls vm_fault; there is no page,
+	 *		   but there is a pager, so we call
+	 *		   pager_data_request.  But the kmsg zone is empty,
+	 *		   so we must kmem_alloc.
+	 *		4) goto 1
+	 *		5) Even if the kmsg zone is not empty: when we get
+	 *		   the data back from the pager, it will be (very
+	 *		   stale) non-zero data.  kmem_alloc is defined to
+	 *		   return zero-filled memory.
+	 *
+	 *	We're intentionally not activating the pages we allocate
+	 *	to prevent a race with page-out.  vm_map_pageable will wire
+	 *	the pages.
+	 */
 	vm_object_lock(kernel_object);
 	for (i = 0 ; i < sgsize; i+= SEGMENT_SIZE) {
 		segment = vm_segment_alloc(kernel_object, offset+i);
@@ -164,11 +197,76 @@ kmem_alloc(map, size)
 	}
 	vm_object_unlock(kernel_object);
 
+	/*
+	 *	And finally, mark the data as non-pageable.
+	 */
+
 	(void) vm_map_pageable(map, (vm_offset_t) addr, addr + size, FALSE);
+
+	/*
+	 *	Try to coalesce the map
+	 */
 
 	vm_map_simplify(map, addr);
 
 	return (addr);
+}
+
+/*
+ *	kmem_free:
+ *
+ *	Release a region of kernel virtual memory allocated
+ *	with kmem_alloc, and return the physical pages
+ *	associated with that region.
+ */
+void
+kmem_free(map, addr, size)
+	vm_map_t				map;
+	register vm_offset_t	addr;
+	vm_size_t				size;
+{
+	(void) vm_map_remove(map, trunc_page(addr), round_page(addr + size));
+}
+
+/*
+ *	kmem_suballoc:
+ *
+ *	Allocates a map to manage a subrange
+ *	of the kernel virtual address space.
+ *
+ *	Arguments are as follows:
+ *
+ *	parent		Map to take range from
+ *	size		Size of range to find
+ *	min, max	Returned endpoints of map
+ *	pageable	Can the region be paged
+ */
+vm_map_t
+kmem_suballoc(parent, min, max, size, pageable)
+	register vm_map_t	parent;
+	vm_offset_t			*min, *max;
+	register vm_size_t	size;
+	bool_t			pageable;
+{
+	register int	ret;
+	vm_map_t		result;
+
+	size = round_page(size);
+
+	*min = (vm_offset_t) vm_map_min(parent);
+	ret = vm_map_find(parent, NULL, (vm_offset_t) 0, min, size, TRUE);
+	if (ret != KERN_SUCCESS) {
+		printf("kmem_suballoc: bad status return of %d.\n", ret);
+		panic("kmem_suballoc");
+	}
+	*max = *min + size;
+	pmap_reference(vm_map_pmap(parent));
+	result = vm_map_create(vm_map_pmap(parent), *min, *max, pageable);
+	if (result == NULL)
+		panic("kmem_suballoc: cannot create submap");
+	if ((ret = vm_map_submap(parent, *min, *max, result)) != KERN_SUCCESS)
+		panic("kmem_suballoc: unable to change range to submap");
+	return(result);
 }
 
 /*
@@ -208,6 +306,11 @@ kmem_malloc(map, size, canwait)
 	sgsize = round_segment(size);
 	addr = vm_map_min(map);
 
+	/*
+	 * Locate sufficient space in the map.  This will give us the
+	 * final virtual address for the new memory, and thus will tell
+	 * us the offset within the kernel map.
+	 */
 	vm_map_lock(map);
 	if (vm_map_findspace(map, 0, size, &addr)) {
 		vm_map_unlock(map);
@@ -241,6 +344,12 @@ kmem_malloc(map, size, canwait)
 		if (segment != NULL) {
 			for (j = 0 ; j < size; j+= PAGE_SIZE) {
 				page = vm_page_alloc(segment, offset+j);
+
+				/*
+				 * Ran out of space, free everything up and return.
+				 * Don't need to lock page queues here as we know
+				 * that the pages we got aren't on any queues.
+				 */
 				if (page == NULL) {
 					while (j != 0) {
 						i -= PAGE_SIZE;
@@ -258,6 +367,12 @@ kmem_malloc(map, size, canwait)
 				page->flags &= ~PG_BUSY;
 			}
 		} else {
+
+			/*
+			 * Ran out of space, free everything up and return.
+			 * Don't need to lock page queues here as we know
+			 * that the pages we got aren't on any queues.
+			 */
 			if (segment == NULL) {
 				while (i != 0) {
 					i -= SEGMENT_SIZE;
@@ -277,6 +392,12 @@ kmem_malloc(map, size, canwait)
 	}
 	vm_object_unlock(kmem_object);
 
+	/*
+	 * Mark map entry as non-pageable.
+	 * Assert: vm_map_insert() will never be able to extend the previous
+	 * entry so there will be a new entry exactly corresponding to this
+	 * address range and it will have wired_count == 0.
+	 */
 	if (!vm_map_lookup_entry(map, addr, &entry) ||
 	    entry->start != addr || entry->end != addr + size ||
 	    entry->wired_count) {
@@ -284,6 +405,11 @@ kmem_malloc(map, size, canwait)
 	}
 	entry->wired_count++;
 
+	/*
+	 * Loop thru pages, entering them in the pmap.
+	 * (We cannot add them to the wired count without
+	 * wrapping the vm_page_queue_lock in splimp...)
+	 */
 	for (i = 0; i < sgsize; i += SEGMENT_SIZE) {
 		vm_object_lock(kmem_object);
 		segment = vm_segment_lookup(kmem_object, offset + i);
@@ -301,4 +427,81 @@ kmem_malloc(map, size, canwait)
 
 	vm_map_simplify(map, addr);
 	return (addr);
+}
+
+/*
+ *	kmem_alloc_wait
+ *
+ *	Allocates pageable memory from a sub-map of the kernel.  If the submap
+ *	has no room, the caller sleeps waiting for more memory in the submap.
+ *
+ */
+vm_offset_t
+kmem_alloc_wait(map, size)
+	vm_map_t	map;
+	vm_size_t	size;
+{
+	vm_offset_t	addr;
+
+	size = round_page(size);
+
+	for (;;) {
+		/*
+		 * To make this work for more than one map,
+		 * use the map's lock to lock out sleepers/wakers.
+		 */
+		vm_map_lock(map);
+		if (vm_map_findspace(map, 0, size, &addr) == 0)
+			break;
+		/* no space now; see if we can ever get space */
+		if (vm_map_max(map) - vm_map_min(map) < size) {
+			vm_map_unlock(map);
+			return (0);
+		}
+		assert_wait(map, TRUE);
+		vm_map_unlock(map);
+		thread_block();
+	}
+	vm_map_insert(map, NULL, (vm_offset_t)0, addr, addr + size);
+	vm_map_unlock(map);
+	return (addr);
+}
+
+/*
+ *	kmem_free_wakeup
+ *
+ *	Returns memory to a submap of the kernel, and wakes up any threads
+ *	waiting for memory in that map.
+ */
+void
+kmem_free_wakeup(map, addr, size)
+	vm_map_t	map;
+	vm_offset_t	addr;
+	vm_size_t	size;
+{
+	vm_map_lock(map);
+	(void) vm_map_delete(map, trunc_page(addr), round_page(addr + size));
+	thread_wakeup(map);
+	vm_map_unlock(map);
+}
+
+/*
+ * Create the kernel map; insert a mapping covering kernel text, data, bss,
+ * and all space allocated thus far (`boostrap' data).  The new map will thus
+ * map the range between VM_MIN_KERNEL_ADDRESS and `start' as allocated, and
+ * the range between `start' and `end' as free.
+ */
+void
+kmem_init(start, end)
+	vm_offset_t start, end;
+{
+	register vm_map_t m;
+
+	m = vm_map_create(kernel_pmap, VM_MIN_KERNEL_ADDRESS, end, FALSE);
+	vm_map_lock(m);
+	/* N.B.: cannot use kgdb to debug, starting with this assignment ... */
+	kernel_map = m;
+	(void) vm_map_insert(m, NULL, (vm_offset_t)0, VM_MIN_KERNEL_ADDRESS, start);
+	/* ... and ending with the completion of the above `insert' */
+	vm_map_unlock(m);
 }

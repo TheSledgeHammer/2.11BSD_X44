@@ -35,7 +35,6 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-//#include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/types.h>
 #include <sys/conf.h>
@@ -44,7 +43,6 @@
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
 #include <sys/vnode.h>
-//#include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/file.h>
 #include <sys/sysdecl.h>

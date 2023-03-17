@@ -40,6 +40,7 @@ typedef struct propdb *propdb_t;
 
 #define	MAX_KDBNAME		32
 
+#define	PROP_UNKNOWN	0x000000000
 #define	PROP_BOOL		0x010000000
 #define	PROP_NUMBER		0x020000000
 #define	PROP_STRING		0x030000000

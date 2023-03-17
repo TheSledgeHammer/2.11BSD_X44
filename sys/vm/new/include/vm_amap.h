@@ -235,6 +235,7 @@ struct vm_amap {
  * prototypes for the amap interface
  */
 AMAP_INLINE
+void			vm_amap_init(void);
 vm_amap_t		vm_amap_alloc(caddr_t, caddr_t, int); 								/* allocate a new amap */
 void			vm_amap_copy(vm_map_t, vm_map_entry_t, int, caddr_t, caddr_t); 		/* clear amap needs-copy flag */
 void			vm_amap_cow_now(vm_map_t, vm_map_entry_t); 							/* resolve all COW faults now */

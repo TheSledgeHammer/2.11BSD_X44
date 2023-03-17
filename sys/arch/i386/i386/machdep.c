@@ -519,7 +519,6 @@ sendsig(catcher, sig, mask, code)
 		frame.sf_sc.sc_es = tf->tf_vm86_es;
 		frame.sf_sc.sc_ds = tf->tf_vm86_ds;
 		if (vm86->vm86_has_vme == 0) {
-			//frame.sf_sc.sc_eflags = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
 			frame.sf_sc.sc_eflags = get_vm86flags(tf, vm86);
 		}
 		/*
@@ -641,16 +640,6 @@ sigreturn()
 			trapsignal(p, SIGBUS, 0);
 		}
 		set_vm86flags(tf, vm86, context.sc_eflags);
-#ifdef notyet
-		if (vm86->vm86_has_vme) {
-			context.sc_eflags = (tf->tf_eflags & ~VME_USERCHANGE)
-					| (context.sc_eflags & VME_USERCHANGE) | PSL_VM;
-		} else {
-			vm86->vm86_eflags = context.sc_eflags; /* save VIF, VIP */
-			context.sc_eflags = (tf->tf_eflags & ~VM_USERCHANGE)
-					| (context.sc_eflags & VM_USERCHANGE) | PSL_VM;
-		}
-#endif
 		tf->tf_vm86_gs = context.sc_gs;
 		tf->tf_vm86_fs = context.sc_fs;
 		tf->tf_vm86_es = context.sc_es;

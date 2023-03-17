@@ -45,7 +45,7 @@ sbrk()
 	if (n < 0) {
 		n = 0;
 	}
-	//p->p_tsize;
+
 	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
 		return (0);
 	}

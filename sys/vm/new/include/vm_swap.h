@@ -1,6 +1,7 @@
+/*	$NetBSD: uvm_swap.h,v 1.8 2003/08/11 16:33:31 pk Exp $	*/
+
 /*
- * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 1997 Matthew R. Green
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,18 +13,21 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
+ *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
  * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * from: Id: uvm_swap.h,v 1.1.2.6 1997/12/15 05:39:31 mrg Exp
  */
 
 #ifndef _VM_SWAP_H_
@@ -109,22 +113,27 @@ struct vm_page;
 #define SWAP_DUMPDEV		7		/* use this device as dump device */
 #define SWAP_GETDUMPDEV		8		/* use this device as dump device */
 
-#define	SW_FREED			0x01
-#define	SW_SEQUENTIAL		0x02
-#define SW_INUSE			0x04		/* in use: we have swapped here */
-#define SW_ENABLE			0x08		/* enabled: we can swap here */
-#define SW_BUSY				0x10		/* busy: I/O happening here */
-#define SW_FAKE				0x20		/* fake: still being built */
-#define sw_freed			sw_flags	/* XXX compat */
+
+#define SW_INUSE			0x04	/* in use: we have swapped here */
+#define SW_ENABLE			0x08	/* enabled: we can swap here */
+#define SW_BUSY				0x10	/* busy: I/O happening here */
+#define SW_FAKE				0x20	/* fake: still being built */
 
 struct lock 				swap_syscall_lock;
 simple_lock_data_t 			swap_data_lock;
-extern struct swdevt 		swdevt[];
 
-int				swalloc(int, int *, bool_t);
+#ifdef _KERNEL
+void			swapdrum_init(struct swdevt *);
+int				vm_swap_alloc(struct swdevt *, int *, bool_t);
+void			vm_swap_free(int, int);
+void			vm_swap_markbad(int, int);
+void			vm_swap_stats(int, struct swdevt *, int, register_t *);
+
+/* swap buf */
 void			vm_swapbuf_init(struct buf *, struct proc *);
 struct buf 		*vm_getswapbuf(struct swapbuf *);
 void			vm_putswapbuf(struct swapbuf *, struct buf*);
 
-void			vm_swap_markbad(int, int);
+#endif /* _KERNEL */
+
 #endif /* _VM_SWAP_H_ */

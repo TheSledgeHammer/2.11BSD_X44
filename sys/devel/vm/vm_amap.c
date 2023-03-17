@@ -164,7 +164,7 @@ pp_setreflen(ppref, offset, ref, len)
 #endif
 
 void
-vm_amap_init()
+vm_amap_init(void)
 {
 	register vm_amap_t amap;
 
