@@ -77,6 +77,7 @@
 
 vm_map_t	kernel_map;
 
+
 /*
  *	kmem_alloc_pageable:
  *
@@ -170,6 +171,7 @@ kmem_alloc(map, size)
 
 	return (addr);
 }
+
 
 /*
  * Allocate wired-down memory in the kernel's address map for the higher
@@ -301,4 +303,85 @@ kmem_malloc(map, size, canwait)
 
 	vm_map_simplify(map, addr);
 	return (addr);
+}
+
+vm_size_t kmem_round(vm_size_t, int);
+vm_size_t kmem_trunc(vm_size_t, int);
+
+/*
+ * kmem_round:
+ * Rounds segment size to page size or vice versa.
+ * Type:
+ * 0 : page size to segment size
+ * 1 : segment size to page size
+ */
+vm_size_t
+kmem_round(vm_size_t size, int type)
+{
+    vm_size_t newsize = 0;
+    vm_size_t sgsize = round_segment(size);
+    vm_size_t pgsize = round_page(size);
+
+	switch (type) {
+	case 0:
+		if (size == pgsize) {
+			newsize = round_segment(pgsize);
+			if (newsize == sgsize) {
+				break;
+			}
+		}
+		break;
+
+	case 1:
+		if (size == sgsize) {
+			newsize = round_page(sgsize / size);
+			if (newsize == pgsize) {
+				break;
+			}
+		}
+		break;
+
+	default:
+		 return (size);
+	}
+	return (newsize);
+}
+
+/*
+ * kmem_trunc:
+ * Truncates segment size to page size or vice versa.
+ * Type:
+ * 0 : page size to segment size
+ * 1 : segment size to page size
+ */
+vm_size_t
+kmem_trunc(vm_size_t size, int type)
+{
+    vm_size_t newsize = 0;
+    vm_size_t sgsize = trunc_segment(size);
+    vm_size_t pgsize = trunc_page(size);
+
+	switch (type) {
+	case 0:
+		if (size == pgsize) {
+			newsize = trunc_segment(pgsize);
+			if (newsize == sgsize) {
+				break;
+			}
+		}
+		break;
+
+	case 1:
+		if (size == sgsize) {
+			newsize = trunc_page(sgsize / size);
+			if (newsize == pgsize) {
+				break;
+			}
+		}
+		break;
+
+	default:
+		 return (size);
+	}
+	return (newsize);
 }

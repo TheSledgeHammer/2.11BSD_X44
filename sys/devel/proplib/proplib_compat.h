@@ -30,12 +30,13 @@
 #ifndef _PROPLIB_PROPLIB_COMPAT_H_
 #define _PROPLIB_PROPLIB_COMPAT_H_
 
-/* prop names */
+/* prop type names */
 #define PROP_NAME_BOOL			"PROP_BOOL"
 #define PROP_NAME_NUMBER		"PROP_NUMBER"
 #define	PROP_NAME_STRING		"PROP_STRING"
 #define	PROP_NAME_DATA			"PROP_DATA"
 #define PROP_NAME_DICTIONARY	"PROP_DICTIONARY"
+#define PROP_NAME_DICT_KEYSYM	"PROP_DICT_KEYSYM"
 #define PROP_NAME_ARRAY			"PROP_ARRAY"
 
 /* prop types */
@@ -45,7 +46,13 @@
 #define	PROP_TYPE_STRING		PROP_STRING
 #define	PROP_TYPE_DATA			PROP_DATA
 #define PROP_TYPE_DICTIONARY	PROP_DICTIONARY
+#define PROP_TYPE_DICT_KEYSYM	PROP_DICT_KEYSYM
 #define PROP_TYPE_ARRAY			PROP_ARRAY
+
+/* prop tags */
+#define PROP_TAG_TYPE_START		0
+#define PROP_TAG_TYPE_END		1
+#define PROP_TAG_TYPE_EITHER	2
 
 /* prop malloc types */
 #define M_PROP_DATA				96
@@ -53,11 +60,31 @@
 #define M_PROP_STRING			98
 #define M_PROP_ARRAY			99
 
-#define prop_malloc(size, type) 			malloc(size, type, M_WAITOK)
-#define prop_calloc(nitems, size, type) 	calloc(nitems, size, type, M_WAITOK)
-#define prop_free(size, type)				free(size, type)
+opaque_t propdb_opaque_malloc(size_t, int);
+opaque_t propdb_opaque_calloc(u_int, size_t, int);
+opaque_t propdb_opaque_realloc(opaque_t, size_t, int);
+opaque_t propdb_opaque_free(opaque_t, int);
 
-typedef struct prop_object				*prop_object_t;
+int	propdb_opaque_set(propdb_t, opaque_t, const char *, void *, size_t, int);
+int propdb_opaque_get(propdb_t, opaque_t, const char *, void *, size_t, int);
+
+#define propdb_malloc(size, type) 					\
+	propdb_opaque_malloc(size, type)
+
+#define propdb_calloc(cap, size, type) 				\
+	propdb_opaque_calloc(cap, size, type)
+
+#define propdb_realloc(obj, size, type) 			\
+	propdb_opaque_realloc(obj, size, type)
+
+#define propdb_free(obj, type) 						\
+	propdb_opaque_free(obj, type)
+
+#define propdb_set(db, obj, name, val, len, type) 	\
+	propdb_opaque_set(db, obj, name, val, len, type)
+
+#define propdb_get(db, obj, name, val, len, type) 	\
+	propdb_opaque_get(db, obj, name, val, len, type)
 
 typedef struct prop_array				*prop_array_t;
 typedef struct prop_bool				*prop_bool_t;
@@ -67,48 +94,41 @@ typedef struct prop_data				*prop_data_t;
 typedef struct prop_dictionary 			*prop_dictionary_t;
 typedef struct prop_dictionary_keysym 	*prop_dictionary_keysym_t;
 
-struct prop_object {
-	propdb_t 				po_db;
-	//opaque_t				po_obj;
-	const char 				*po_name;
-	void 					*po_val;
-	size_t					po_len;
-	int						po_type;
-};
-
 struct prop_array {
 	propdb_t				pa_db;
-	prop_object_t 			*pa_array;
+	struct prop_object		pa_obj;
+
+	opaque_t 				*pa_array;
 	unsigned int			pa_capacity;
 	unsigned int			pa_count;
 	int						pa_flags;
 	uint32_t				pa_version;
+
+	size_t					pa_len;
 };
 
 struct prop_bool {
-	propdb_t				pb_db;
-	struct prop_object		db_obj;
+	struct prop_object		pb_obj;
 	bool_t					pb_value;
-};
-
-struct prop_number_value {
-	union {
-		int64_t  			pnu_signed;
-		uint64_t 			pnu_unsigned;
-	} pnv_un;
-#define	pnv_signed			pnv_un.pnu_signed
-#define	pnv_unsigned		pnv_un.pnu_unsigned
-	unsigned int			pnv_is_unsigned	:1, :31;
+	size_t					pb_len;
 };
 
 struct prop_number {
-	prop_object_t			pn_obj;
+	struct prop_object		pn_obj;
 	struct rb_node			pn_link;
-	struct prop_number_value pn_value;
+	struct prop_number_value {
+		union {
+			int64_t  		pnu_signed;
+			uint64_t 		pnu_unsigned;
+		} pnv_un;
+#define	pnv_signed			pnv_un.pnu_signed
+#define	pnv_unsigned		pnv_un.pnu_unsigned
+		unsigned int		pnv_is_unsigned	:1, :31;
+	} pn_value;
 };
 
 struct prop_string {
-	prop_object_t			ps_obj;
+	struct prop_object		ps_obj;
 	union {
 		char 				*psu_mutable;
 		const char 			*psu_immutable;
@@ -121,7 +141,7 @@ struct prop_string {
 };
 
 struct prop_data {
-	prop_object_t			pd_obj;
+	struct prop_object		pd_obj;
 	union {
 		void 				*pdu_mutable;
 		const void 			*pdu_immutable;
@@ -133,7 +153,7 @@ struct prop_data {
 };
 
 struct prop_dictionary_keysym {
-	prop_object_t			pdk_obj;
+	struct prop_object		pdk_obj;
 	size_t					pdk_size;
 	struct rb_node			pdk_link;
 	char 					pdk_key[1];
@@ -141,11 +161,11 @@ struct prop_dictionary_keysym {
 
 struct prop_dict_entry {
 	prop_dictionary_keysym_t pde_key;
-	prop_object_t			pde_objref;
+	opaque_t			 	 pde_objref;
 };
 
 struct prop_dictionary {
-	prop_object_t			pd_obj;
+	struct prop_object		pd_obj;
 	struct prop_dict_entry 	*pd_array;
 	u_int					pd_capacity;
 	u_int					pd_count;
@@ -153,8 +173,5 @@ struct prop_dictionary {
 
 	u_int32_t				pd_version;
 };
-
-void	propdb_opaque_alloc(opaque_t, size_t, u_int, int);
-void	propdb_opaque_free(opaque_t, int);
 
 #endif /* _PROPLIB_PROPLIB_COMPAT_H_ */

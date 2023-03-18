@@ -105,6 +105,43 @@ kmem_alloc_pageable(map, size)
 	return (addr);
 }
 
+void
+kmem_alloc_object(object, size, offset)
+	vm_object_t object;
+	vm_size_t   size;
+	vm_offset_t	offset;
+{
+	vm_segment_t segment;
+	vm_page_t	 page;
+	vm_offset_t	 i, j;
+
+	vm_object_lock(object);
+	for (i = 0; i < round_segment(size); i += SEGMENT_SIZE) {
+		segment = vm_segment_alloc(object, offset + i);
+		if (segment != NULL) {
+			for (j = 0; j < round_page(size); j += PAGE_SIZE) {
+				page = vm_page_alloc(segment, offset + j);
+				while (page == NULL) {
+					vm_object_unlock(object);
+					vm_wait();
+					vm_object_lock(object);
+				}
+				vm_page_zero_fill(page);
+				page->flags &= ~PG_BUSY;
+			}
+		} else {
+			while (segment == NULL) {
+				vm_object_unlock(object);
+				vm_wait();
+				vm_object_lock(object);
+			}
+			vm_segment_zero_fill(segment);
+			segment->sg_flags &= ~PG_BUSY;
+		}
+	}
+	vm_object_unlock(object);
+}
+
 /*
  *	Allocate wired-down memory in the kernel's address map
  *	or a submap.
@@ -116,14 +153,11 @@ kmem_alloc(map, size)
 {
 	vm_offset_t				addr;
 	register vm_offset_t	offset;
-	vm_segment_t 			segment;
-	vm_page_t	 			page;
-	vm_size_t				sgsize;
-	vm_offset_t 			i, j;
+	vm_size_t				ksize;
 	extern vm_object_t		kernel_object;
 
+	ksize = size;
 	size = round_page(size);
-	sgsize = round_segment(size);
 
 	/*
 	 *	Use the kernel object for wired-down kernel pages.
@@ -169,33 +203,7 @@ kmem_alloc(map, size)
 	 *	to prevent a race with page-out.  vm_map_pageable will wire
 	 *	the pages.
 	 */
-	vm_object_lock(kernel_object);
-	for (i = 0 ; i < sgsize; i+= SEGMENT_SIZE) {
-		segment = vm_segment_alloc(kernel_object, offset+i);
-		if (segment != NULL) {
-			while (segment != NULL) {
-				for (j = 0 ; j < size; j+= PAGE_SIZE) {
-					page = vm_page_alloc(segment, offset+j);
-					while (page == NULL) {
-						vm_object_unlock(kernel_object);
-						vm_wait();
-						vm_object_lock(kernel_object);
-					}
-					vm_page_zero_fill(page);
-					page->flags &= ~PG_BUSY;
-				}
-			}
-		} else {
-			while (segment == NULL) {
-				vm_object_unlock(kernel_object);
-				vm_wait();
-				vm_object_lock(kernel_object);
-			}
-			vm_segment_zero_fill(segment);
-			segment->sg_flags &= ~SEG_BUSY;
-		}
-	}
-	vm_object_unlock(kernel_object);
+	kmem_alloc_object(kernel_object, ksize, offset);
 
 	/*
 	 *	And finally, mark the data as non-pageable.
@@ -246,7 +254,7 @@ kmem_suballoc(parent, min, max, size, pageable)
 	register vm_map_t	parent;
 	vm_offset_t			*min, *max;
 	register vm_size_t	size;
-	bool_t			pageable;
+	bool_t				pageable;
 {
 	register int	ret;
 	vm_map_t		result;
@@ -286,24 +294,120 @@ kmem_suballoc(parent, min, max, size, pageable)
  * for wired maps are statically allocated.
  */
 vm_offset_t
+kmem_malloc_all(map, addr, object, size, offset)
+	vm_map_t	map;
+	vm_offset_t	addr;
+	vm_object_t object;
+	vm_size_t 	size;
+	vm_offset_t	offset;
+{
+	vm_segment_t segment;
+	vm_page_t	 page;
+	vm_offset_t i, j;
+
+	vm_object_unlock(object);
+	for (i = 0; i < round_segment(size); i += SEGMENT_SIZE) {
+		segment = vm_segment_alloc(object, offset + i);
+		if (segment != NULL) {
+			for (j = 0; j < round_page(size); i += PAGE_SIZE) {
+				page = vm_page_alloc(segment, offset + j);
+
+				/*
+				 * Ran out of space, free everything up and return.
+				 * Don't need to lock page queues here as we know
+				 * that the pages we got aren't on any queues.
+				 */
+				if (page == NULL) {
+					while (j != 0) {
+						j -= PAGE_SIZE;
+						page = vm_page_lookup(segment, offset + j);
+						vm_page_free(page);
+					}
+					vm_object_unlock(object);
+					vm_map_delete(map, addr, addr + size);
+					vm_map_unlock(map);
+					return (0);
+				}
+#if 0
+				vm_page_zero_fill(page);
+#endif
+				page->flags &= ~PG_BUSY;
+			}
+		} else {
+
+			/*
+			 * Ran out of space, free everything up and return.
+			 * Don't need to lock segment queues here as we know
+			 * that the segments we got aren't on any queues.
+			 */
+			if (segment == NULL) {
+				while (i != 0) {
+					i -= SEGMENT_SIZE;
+					segment = vm_segment_lookup(object, offset + i);
+					vm_segment_free(segment);
+				}
+				vm_object_unlock(object);
+				vm_map_delete(map, addr, addr + size);
+				vm_map_unlock(map);
+				return (0);
+			}
+#if 0
+			vm_segment_zero_fill(segment);
+#endif
+			segment->sg_flags &= ~SEG_BUSY;
+		}
+	}
+	vm_object_unlock(object);
+	return (addr);
+}
+
+void
+kmem_malloc_lru(map, addr, object, size, offset)
+	vm_map_t	map;
+	vm_offset_t	addr;
+	vm_object_t object;
+	vm_size_t 	size;
+	vm_offset_t	offset;
+{
+	vm_segment_t segment;
+	vm_page_t	 page;
+	vm_offset_t i, j;
+
+	for (i = 0; i < round_segment(size); i += SEGMENT_SIZE) {
+		vm_object_lock(object);
+		segment = vm_segment_lookup(object, offset + i);
+		if (segment != NULL) {
+			for (j = 0; j < round_page(size); j += PAGE_SIZE) {
+				page = vm_page_lookup(segment, offset + j);
+			}
+			vm_object_unlock(object);
+			pmap_enter(map->pmap, addr + j, VM_PAGE_TO_PHYS(page),
+					VM_PROT_DEFAULT, TRUE);
+		} else {
+			vm_object_unlock(object);
+			pmap_enter(map->pmap, addr + i, VM_SEGMENT_TO_PHYS(segment),
+					VM_PROT_DEFAULT, TRUE);
+		}
+	}
+}
+
+vm_offset_t
 kmem_malloc(map, size, canwait)
 	register vm_map_t	map;
 	register vm_size_t	size;
 	bool_t				canwait;
 {
-	register vm_offset_t	offset, i, j;
+	register vm_offset_t	offset;
 	vm_map_entry_t			entry;
 	vm_offset_t				addr;
-	vm_segment_t 			segment;
-	vm_page_t				page;
-	vm_size_t				sgsize;
+	vm_size_t				ksize;
 	extern vm_object_t		kmem_object;
 
 	if (map != kmem_map && map != mb_map) {
 		panic("kern_malloc_alloc: map != {kmem,mb}_map");
 	}
+	ksize = size;
 	size = round_page(size);
-	sgsize = round_segment(size);
 	addr = vm_map_min(map);
 
 	/*
@@ -338,59 +442,10 @@ kmem_malloc(map, size, canwait)
 	 * If we cannot wait then we must allocate all memory up front,
 	 * pulling it off the active queue to prevent pageout.
 	 */
-	vm_object_lock(kmem_object);
-	for (i = 0; i < sgsize; i += SEGMENT_SIZE) {
-		segment = vm_segment_alloc(kernel_object, offset+i);
-		if (segment != NULL) {
-			for (j = 0 ; j < size; j+= PAGE_SIZE) {
-				page = vm_page_alloc(segment, offset+j);
-
-				/*
-				 * Ran out of space, free everything up and return.
-				 * Don't need to lock page queues here as we know
-				 * that the pages we got aren't on any queues.
-				 */
-				if (page == NULL) {
-					while (j != 0) {
-						i -= PAGE_SIZE;
-						page = vm_page_lookup(segment, offset + j);
-						vm_page_free(page);
-					}
-					vm_object_unlock(kmem_object);
-					vm_map_delete(map, addr, addr + size);
-					vm_map_unlock(map);
-					return (0);
-				}
-#if 0
-				vm_page_zero_fill(page);
-#endif
-				page->flags &= ~PG_BUSY;
-			}
-		} else {
-
-			/*
-			 * Ran out of space, free everything up and return.
-			 * Don't need to lock page queues here as we know
-			 * that the pages we got aren't on any queues.
-			 */
-			if (segment == NULL) {
-				while (i != 0) {
-					i -= SEGMENT_SIZE;
-					segment = vm_segment_lookup(kmem_object, offset + i);
-					vm_segment_free(segment);
-				}
-				vm_object_unlock(kmem_object);
-				vm_map_delete(map, addr, addr + size);
-				vm_map_unlock(map);
-				return (0);
-			}
-#if 0
-			vm_segment_zero_fill(segment);
-#endif
-			segment->sg_flags &= ~SEG_BUSY;
-		}
+	addr = kmem_malloc_all(map, addr, kmem_object, ksize, offset);
+	if (addr == 0) {
+		return (0);
 	}
-	vm_object_unlock(kmem_object);
 
 	/*
 	 * Mark map entry as non-pageable.
@@ -410,19 +465,7 @@ kmem_malloc(map, size, canwait)
 	 * (We cannot add them to the wired count without
 	 * wrapping the vm_page_queue_lock in splimp...)
 	 */
-	for (i = 0; i < sgsize; i += SEGMENT_SIZE) {
-		vm_object_lock(kmem_object);
-		segment = vm_segment_lookup(kmem_object, offset + i);
-		if (segment != NULL) {
-			for (j = 0; j < size; j += PAGE_SIZE) {
-				page = vm_page_lookup(segment, offset + j);
-			}
-			vm_object_unlock(kmem_object);
-			pmap_enter(map->pmap, addr + j, VM_PAGE_TO_PHYS(page), VM_PROT_DEFAULT, TRUE);
-		} else {
-			panic("kmem_malloc: segment not found or empty");
-		}
-	}
+	kmem_malloc_lru(map, addr, kmem_object, ksize, offset);
 	vm_map_unlock(map);
 
 	vm_map_simplify(map, addr);

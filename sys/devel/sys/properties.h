@@ -38,20 +38,21 @@ typedef void *opaque_t;		/* Value large enough to hold a pointer */
 struct propdb;
 typedef struct propdb *propdb_t;
 
-#define	MAX_KDBNAME		32
+#define	MAX_KDBNAME			32
 
-#define	PROP_UNKNOWN	0x000000000
-#define	PROP_BOOL		0x010000000
-#define	PROP_NUMBER		0x020000000
-#define	PROP_STRING		0x030000000
-#define	PROP_DATA		0x040000000
-#define PROP_DICTIONARY	0x050000000
-#define	PROP_AGGREGATE	0x060000000
-#define	PROP_TYPE(x)	((x) & PROP_AGGREGATE)
+#define	PROP_UNKNOWN		0x000000000
+#define	PROP_BOOL			0x010000000
+#define	PROP_NUMBER			0x020000000
+#define	PROP_STRING			0x030000000
+#define	PROP_DATA			0x040000000
+#define PROP_DICTIONARY		0x050000000
+#define PROP_DICT_KEYSYM	0x060000000
+#define	PROP_AGGREGATE		0x070000000
+#define	PROP_TYPE(x)		((x) & PROP_AGGREGATE)
 
-#define	PROP_ARRAY		0x070000000
-#define	PROP_CONST		0x140000000
-#define	PROP_ELSZ(x)	0x0ffffffff
+#define	PROP_ARRAY			0x080000000
+#define	PROP_CONST			0x160000000
+#define	PROP_ELSZ(x)		0x0ffffffff
 
 propdb_t 	propdb_create(const char *);
 void 		propdb_destroy(propdb_t);

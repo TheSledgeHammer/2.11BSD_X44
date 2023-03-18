@@ -32,123 +32,74 @@
 
 #include "proplib_compat.h"
 
-void
-propdb_opaque_alloc(opaque_t obj, size_t size, u_int capacity, int type)
+opaque_t
+propdb_opaque_malloc(size_t size, int mtype)
 {
-	if (capacity != 0 && capacity != -1) {
-		obj = prop_calloc(capacity, size, type);
-		if (obj == NULL) {
-			return;
-		}
-	} else if (capacity == -1) {
-		obj = prop_malloc(size, type);
-		if (obj == NULL) {
-			return;
-		}
-	} else {
-		obj = NULL;
-	}
-}
+	opaque_t obj;
 
-void
-propdb_opaque_free(opaque_t obj, int type)
-{
-	if (obj != NULL) {
-		prop_free(obj, type);
-	}
-}
-
-/* prop object */
-prop_object_t
-prop_object_create(const char *name, void *val, size_t len, int type)
-{
-	propdb_t db;
-	prop_object_t po;
-
-	db = propdb_create(name);
-	propdb_opaque_alloc(po, sizeof(prop_object_t), -1, type);
-	if (po == NULL) {
+	obj = malloc(size, mtype, M_WAITOK);
+	if (obj == NULL) {
 		return (NULL);
 	}
-	po->po_db = db;
-	po->po_name = name;
-	po->po_val = val;
-	po->po_len = len;
-	po->po_type = type;
+	return (obj);
+}
 
-	return (po);
+opaque_t
+propdb_opaque_calloc(u_int capacity, size_t size, int mtype)
+{
+	opaque_t obj;
+
+	obj = calloc(capacity, size, mtype, M_WAITOK);
+	if (obj == NULL) {
+		return (NULL);
+	}
+	return (obj);
+}
+
+opaque_t
+propdb_opaque_realloc(opaque_t obj, size_t size, int mtype)
+{
+	opaque_t newobj;
+
+	newobj = realloc(obj, size, mtype, M_WAITOK);
+	if (newobj == NULL) {
+		return (NULL);
+	}
+	return (newobj);
+}
+
+void
+propdb_opaque_free(opaque_t obj, int mtype)
+{
+	if (obj != NULL) {
+		free(obj, mtype);
+	}
 }
 
 int
-prop_object_set(prop_object_t po, int wait)
+propdb_opaque_set(propdb_t db, opaque_t obj, const char *name, void *val, size_t len, int type)
 {
 	int ret;
 
-	ret = prop_set(po->po_db, po, po->po_name, po->po_val, po->po_len, po->po_type, wait);
-	return (ret);
+	if (prop_object_type(obj) == type) {
+		ret = prop_set(db, obj, name, val, len, type, M_WAITOK);
+	}
+	if (ret != 0) {
+		return (ret);
+	}
+	return (0);
 }
 
 int
-prop_object_get(prop_object_t po)
+propdb_opaque_get(propdb_t db, opaque_t obj, const char *name, void *val, size_t len, int type)
 {
 	size_t ret;
 
-	ret = prop_get(po->po_db, po, po->po_name, po->po_val, po->po_len, po->po_type);
-	return (ret);
-}
-
-int
-prop_object_type(prop_object_t obj)
-{
-	prop_object_t po = obj;
-
-	if (obj == NULL) {
-		return (PROP_TYPE_UNKNOWN);
+	if (prop_object_type(obj) == type) {
+		ret = prop_get(db, obj, name, val, len, type);
 	}
-	return (po->po_type);
-}
-
-/* prop array */
-prop_array_t
-prop_array_create(const char *name, u_int capacity)
-{
-	propdb_t 		db;
-	prop_array_t 	pa;
-	prop_object_t 	*po;
-
-	db = propdb_create(name);
-	propdb_opaque_alloc(po, sizeof(prop_object_t), capacity, M_PROP_ARRAY);
-	propdb_opaque_alloc(pa, sizeof(prop_array_t), -1, M_PROP_ARRAY);
-	if (po == NULL || pa == NULL) {
-		return (NULL);
+	if (ret != 0) {
+		return (ret);
 	}
-	if (pa != NULL) {
-		pa->pa_db = db;
-		pa->pa_array = po;
-		pa->pa_capacity = capacity;
-		pa->pa_count = 0;
-		pa->pa_flags = 0;
-		pa->pa_version = 0;
-	} else if (po != NULL) {
-		propdb_opaque_free(po, M_PROP_ARRAY);
-	}
-	return (pa);
-}
-
-/* prop bool */
-static struct prop_bool _prop_bool_true;
-static struct prop_bool _prop_bool_false;
-
-prop_bool_t
-prop_bool_create(const char *name, bool_t val)
-{
-	propdb_t 	db;
-	prop_bool_t pb;
-
-	db = propdb_create(name);
-	pb = val ? &_prop_bool_true : &_prop_bool_false;
-	pb->pb_db = db;
-	pb->pb_value = val;
-
-	return (pb);
+	return (0);
 }

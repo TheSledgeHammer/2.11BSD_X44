@@ -88,24 +88,34 @@ struct kdbobj {
 	 * There should only be a dozen props for each object,
 	 * so we can keep them in a list.
 	 */
-	LIST_HEAD(kprops, kdbprop) ko_props;
+	RB_HEAD(kprop_root, kdbprop) ko_props;
 };
 
 struct kdbprop {
-	LIST_ENTRY(kdbprop)	kp_link;
+	RB_ENTRY(kdbprop)	kp_link;
 	const char			*kp_name;
 	const char			*kp_val;
 	int					kp_len;
 	int					kp_type;
 };
 
+/* kdbobj rbtree */
 RB_PROTOTYPE(kobj_root, kdbobj, ko_link, kdbobj_compare);
 RB_GENERATE(kobj_root, kdbobj, ko_link, kdbobj_compare);
+/* kdbprop rbtree */
+RB_PROTOTYPE(kprop_root, kdbprop, kp_link, kdbprop_compare);
+RB_GENERATE(kprop_root, kdbprop, kp_link, kdbprop_compare);
 
 static struct kdbprop *allocprop(const char *name, size_t len, int wait);
 static void kdb_rehash(struct propdb *db);
 static struct kdbobj *kdbobj_find(propdb_t db, opaque_t object, int create, int wait);
 static int prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int type, int wait);
+
+static int opaque_object_compare(opaque_t, opaque_t);
+static int kdbprop_compare_name(const char *, const char *);
+static int kdbprop_compare_val(const char *, const char *);
+static int kdbprop_compare_len(int, int);
+static int kdbprop_compare_type(int, int);
 
 #define M_PROP 93
 //MALLOC_DEFINE(M_PROP, "prop", "Kernel properties structures");
@@ -231,8 +241,8 @@ propdb_destroy(propdb_t db)
 		obj = RB_FIRST(kobj_root, &db->kd_obj[i]);
 		while (obj) {
 			RB_REMOVE(kobj_root, &db->kd_obj[i], obj);
-			while ((prop = LIST_FIRST(&obj->ko_props))) {
-				LIST_REMOVE(prop, kp_link);
+			while ((prop = RB_FIRST(kprop_root, &obj->ko_props))) {
+				RB_REMOVE(kprop_root, &obj->ko_props, prop);
 				free(prop, M_PROP);
 			}
 			free(obj, M_PROP);
@@ -278,7 +288,7 @@ kdbobj_find(propdb_t db, opaque_t object, int create, int wait)
 
 		/* Initialize object */
 		obj->ko_object = object;
-		LIST_INIT(&obj->ko_props);
+		RB_INIT(&obj->ko_props);
 		RB_INSERT(kobj_root, &db->kd_obj[hash], obj);
 	}
 	return (obj);
@@ -289,7 +299,7 @@ prop_exist(struct kdbobj *obj, const char *name, size_t len, int type)
 {
 	struct kdbprop *oprop;
 	/* Does the prop exist already? */
-	LIST_FOREACH(oprop, &obj->ko_props, kp_link) {
+	RB_FOREACH(oprop, kprop_root, &obj->ko_props) {
 		if (strcmp(oprop->kp_name, name) == 0) {
 			break;
 		}
@@ -339,9 +349,9 @@ prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int typ
 
 	/* Now clean up if necessary */
 	if (prop != oprop) {
-		LIST_INSERT_HEAD(&obj->ko_props, prop, kp_link);
+		RB_INSERT(kprop_root, &obj->ko_props, prop);
 		if (oprop) {
-			LIST_REMOVE(oprop, kp_link);
+			RB_REMOVE(kprop_root, &obj->ko_props, oprop);
 			free(oprop, M_PROP);
 		}
 	}
@@ -390,7 +400,7 @@ prop_get(propdb_t db, opaque_t object, const char *name, void *val, size_t len, 
 	}
 
 	/* find our prop */
-	LIST_FOREACH(prop, &obj->ko_props, kp_link)	{
+	RB_FOREACH(prop, kprop_root, &obj->ko_props) {
 		if (strcmp(prop->kp_name, name) == 0)
 			break;
 	}
@@ -403,7 +413,7 @@ prop_get(propdb_t db, opaque_t object, const char *name, void *val, size_t len, 
 	/* Copy out our prop */
 	len = min(len, prop->kp_len);
 	if (val && len) {
-		memcpy(val, prop->kp_val, len);
+		bcopy(prop->kp_val, val, len);
 	}
 	if (type)
 		*type = prop->kp_type;
@@ -464,7 +474,7 @@ prop_list(propdb_t db, opaque_t object, char *names, size_t len)
 
 	sp = names;
 	ep = names + len;
-	LIST_FOREACH(prop, &obj->ko_props, kp_link) {
+	RB_FOREACH(prop, kprop_root, &obj->ko_props) {
 		i = strlen(prop->kp_name) + 1;
 		if (names + i + 1 < ep) {
 			strlcpy(names, prop->kp_name, ep - names);
@@ -497,7 +507,7 @@ prop_delete(propdb_t db, opaque_t object, const char *name)
 
 	if (name) {
 		/* Find our prop */
-		LIST_FOREACH(prop, &obj->ko_props, kp_link) {
+		RB_FOREACH(prop, kprop_root, &obj->ko_props) {
 			if (strcmp(prop->kp_name, name) == 0)
 				break;
 		}
@@ -505,17 +515,17 @@ prop_delete(propdb_t db, opaque_t object, const char *name)
 			splx(s);
 			return (0);
 		}
-		LIST_REMOVE(prop, kp_link);
+		RB_REMOVE(kprop_root, &obj->ko_props, prop);
 		free(prop, M_PROP);
 		i++;
 	} else {
-		while ((prop = LIST_FIRST(&obj->ko_props))) {
-			LIST_REMOVE(prop, kp_link);
+		while ((prop = RB_FIRST(kprop_root, &obj->ko_props))) {
+			RB_REMOVE(kprop_root, &obj->ko_props, prop);
 			free(prop, M_PROP);
 			i++;
 		}
 	}
-	if (LIST_EMPTY(&obj->ko_props)) {
+	if (RB_EMPTY(&obj->ko_props)) {
 		/* Free up the empty container. */
 		RB_REMOVE(kobj_root, &db->kd_obj[i], obj);
 		free(obj, M_PROP);
@@ -549,7 +559,7 @@ prop_copy(propdb_t db, opaque_t source, opaque_t dest, int wait)
 	}
 
 	/* Copy these properties over now */
-	LIST_FOREACH(srcp, &oobj->ko_props, kp_link) {
+	RB_FOREACH(srcp, kprop_root, &oobj->ko_props) {
 
 		DPRINTF(x, ("prop_copy: copying prop %s\n", srcp->kp_name));
 
@@ -573,6 +583,85 @@ kdbobj_compare(struct kdbobj *obj1, struct kdbobj *obj2)
 	if (obj1 < obj2) {
 		return (-1);
 	} else if (obj1 > obj2) {
+		return (1);
+	} else {
+		return (opaque_object_compare(obj1->ko_object, obj2->ko_object));
+	}
+}
+
+int
+kdbprop_compare(struct kdbprop *pr1, struct kdbprop *pr2)
+{
+	int comp_name, comp_val, comp_len, comp_type;
+
+	comp_name = kdbprop_compare_name(pr1->kp_name, pr2->kp_name);
+	comp_val = kdbprop_compare_val(pr1->kp_val, pr2->kp_val);
+	comp_len = kdbprop_compare_len(pr1->kp_len, pr2->kp_len);
+	comp_type = kdbprop_compare_type(pr1->kp_type, pr2->kp_type);
+
+	if (op1 < op2 || (comp_name & comp_val & comp_type) == -1) {
+		return (-1);
+	} else if (op1 > op2 || (comp_name & comp_val & comp_type) == 1) {
+		return (1);
+	} else {
+		return (0);
+	}
+}
+
+static int
+opaque_object_compare(opaque_t op1, opaque_t op2)
+{
+	if (op1 < op2) {
+		return (-1);
+	} else if (op1 > op2) {
+		return (1);
+	} else {
+		return (0);
+	}
+}
+
+static int
+kdbprop_compare_name(const char	*name1, const char *name2)
+{
+	if (strcmp(name1, name2) < 0) {
+		return (-1);
+	} else if (strcmp(name1, name2) > 0) {
+		return (1);
+	} else {
+		return (0);
+	}
+}
+
+static int
+kdbprop_compare_val(const char *val1, const char *val2)
+{
+	if (strcmp(val1, val2) < 0) {
+		return (-1);
+	} else if (strcmp(val1, val2) > 0) {
+		return (1);
+	} else {
+		return (0);
+	}
+}
+
+static int
+kdbprop_compare_len(int len1, int len2)
+{
+	if (len1 < len2) {
+		return (-1);
+	} else if (len1 > len2) {
+		return (1);
+	} else {
+		return (0);
+	}
+}
+
+static int
+kdbprop_compare_type(int type1, int type2)
+{
+	if (type1 < type2) {
+		return (-1);
+	} else if (type1 > type2) {
 		return (1);
 	} else {
 		return (0);
