@@ -324,7 +324,7 @@ kmem_malloc_all(map, addr, object, size, offset)
 						vm_page_free(page);
 					}
 					vm_object_unlock(object);
-					vm_map_delete(map, addr, addr + size);
+					vm_map_delete(map, addr, addr + round_page(size));
 					vm_map_unlock(map);
 					return (0);
 				}
@@ -347,7 +347,7 @@ kmem_malloc_all(map, addr, object, size, offset)
 					vm_segment_free(segment);
 				}
 				vm_object_unlock(object);
-				vm_map_delete(map, addr, addr + size);
+				vm_map_delete(map, addr, addr + round_segment(size));
 				vm_map_unlock(map);
 				return (0);
 			}
