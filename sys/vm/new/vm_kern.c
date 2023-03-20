@@ -153,10 +153,8 @@ kmem_alloc(map, size)
 {
 	vm_offset_t				addr;
 	register vm_offset_t	offset;
-	vm_size_t				ksize;
 	extern vm_object_t		kernel_object;
 
-	ksize = size;
 	size = round_page(size);
 
 	/*
@@ -203,7 +201,7 @@ kmem_alloc(map, size)
 	 *	to prevent a race with page-out.  vm_map_pageable will wire
 	 *	the pages.
 	 */
-	kmem_alloc_object(kernel_object, ksize, offset);
+	kmem_alloc_object(kernel_object, size, offset);
 
 	/*
 	 *	And finally, mark the data as non-pageable.
@@ -362,7 +360,7 @@ kmem_malloc_all(map, addr, object, size, offset)
 }
 
 void
-kmem_malloc_lru(map, addr, object, size, offset)
+kmem_malloc_lthru(map, addr, object, size, offset)
 	vm_map_t	map;
 	vm_offset_t	addr;
 	vm_object_t object;
@@ -400,13 +398,12 @@ kmem_malloc(map, size, canwait)
 	register vm_offset_t	offset;
 	vm_map_entry_t			entry;
 	vm_offset_t				addr;
-	vm_size_t				ksize;
 	extern vm_object_t		kmem_object;
 
 	if (map != kmem_map && map != mb_map) {
 		panic("kern_malloc_alloc: map != {kmem,mb}_map");
 	}
-	ksize = size;
+
 	size = round_page(size);
 	addr = vm_map_min(map);
 
@@ -442,7 +439,7 @@ kmem_malloc(map, size, canwait)
 	 * If we cannot wait then we must allocate all memory up front,
 	 * pulling it off the active queue to prevent pageout.
 	 */
-	addr = kmem_malloc_all(map, addr, kmem_object, ksize, offset);
+	addr = kmem_malloc_all(map, addr, kmem_object, size, offset);
 	if (addr == 0) {
 		return (0);
 	}
@@ -465,7 +462,7 @@ kmem_malloc(map, size, canwait)
 	 * (We cannot add them to the wired count without
 	 * wrapping the vm_page_queue_lock in splimp...)
 	 */
-	kmem_malloc_lru(map, addr, kmem_object, ksize, offset);
+	kmem_malloc_lthru(map, addr, kmem_object, size, offset);
 	vm_map_unlock(map);
 
 	vm_map_simplify(map, addr);

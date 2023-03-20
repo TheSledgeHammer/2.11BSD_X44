@@ -144,11 +144,14 @@ static simple_lock_data_t 		aobject_list_lock; 		/* lock for aobject lists */
 #define VAO_FLAG_NOSWAP			0x8	/* aobj can't swap (kernel obj only!) */
 
 #ifdef _KERNEL
+
 void 							vm_aobject_init(vm_size_t, vm_object_t, int);
 void							vm_aobject_deallocate(vm_object_t);
 void							vm_aobject_swhash_allocate(vm_aobject_t, int, int);
 int 							vm_aobject_set_swslot(vm_object_t, int, int);
 void							vm_aobject_dropswap(vm_object_t, int);
 bool_t							vm_aobject_swap_off(int, int);
+
 #endif /* _KERNEL */
+
 #endif /* _VM_AOBJECT_H_ */

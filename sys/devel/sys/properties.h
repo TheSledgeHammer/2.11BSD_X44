@@ -57,11 +57,11 @@ typedef struct propdb *propdb_t;
 propdb_t 	propdb_create(const char *);
 void 		propdb_destroy(propdb_t);
 
-int 		prop_set(propdb_t, opaque_t, const char *, void *, size_t, int, int);
-size_t 		prop_objs(propdb_t, opaque_t *, size_t);
-size_t 		prop_list(propdb_t, opaque_t, char *, size_t);
-size_t 		prop_get(propdb_t, opaque_t, const char *, void *, size_t, int *);
-int 		prop_delete(propdb_t, opaque_t, const char *);
-int 		prop_copy(propdb_t, opaque_t, opaque_t, int);
+int 		propdb_set(propdb_t, opaque_t, const char *, void *, size_t, int, int);
+size_t 		propdb_objs(propdb_t, opaque_t *, size_t);
+size_t 		propdb_list(propdb_t, opaque_t, char *, size_t);
+size_t 		propdb_get(propdb_t, opaque_t, const char *, void *, size_t, int *);
+int 		propdb_delete(propdb_t, opaque_t, const char *);
+int 		propdb_copy(propdb_t, opaque_t, opaque_t, int);
 
 #endif

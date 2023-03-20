@@ -111,11 +111,13 @@ static void kdb_rehash(struct propdb *db);
 static struct kdbobj *kdbobj_find(propdb_t db, opaque_t object, int create, int wait);
 static int prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int type, int wait);
 
+/*
 static int opaque_object_compare(opaque_t, opaque_t);
 static int kdbprop_compare_name(const char *, const char *);
 static int kdbprop_compare_val(const char *, const char *);
 static int kdbprop_compare_len(int, int);
 static int kdbprop_compare_type(int, int);
+*/
 
 #define M_PROP 93
 //MALLOC_DEFINE(M_PROP, "prop", "Kernel properties structures");
@@ -359,7 +361,7 @@ prop_insert(struct kdbobj *obj, const char *name, void *val, size_t len, int typ
 }
 
 int 
-prop_set(propdb_t db, opaque_t object, const char *name, void *val, size_t len, int type, int wait)
+propdb_set(propdb_t db, opaque_t object, const char *name, void *val, size_t len, int type, int wait)
 {
 	struct kdbobj *obj;
 	struct kdbprop *prop = NULL, *oprop;
@@ -382,7 +384,7 @@ prop_set(propdb_t db, opaque_t object, const char *name, void *val, size_t len, 
 }
 
 size_t 
-prop_get(propdb_t db, opaque_t object, const char *name, void *val, size_t len, int *type)
+propdb_get(propdb_t db, opaque_t object, const char *name, void *val, size_t len, int *type)
 {
 	struct kdbobj *obj;
 	struct kdbprop *prop = NULL;
@@ -427,7 +429,7 @@ prop_get(propdb_t db, opaque_t object, const char *name, void *val, size_t len, 
  * many as fit in the buffer.
  */
 size_t
-prop_objs(propdb_t db, opaque_t *objects, size_t len) 
+propdb_objs(propdb_t db, opaque_t *objects, size_t len)
 {
 	struct kdbobj *obj;
 	size_t i, j, nelem = (len / sizeof(opaque_t));
@@ -454,7 +456,7 @@ prop_objs(propdb_t db, opaque_t *objects, size_t len)
  * and as many as fit in the buffer.
  */
 size_t
-prop_list(propdb_t db, opaque_t object, char *names, size_t len) 
+propdb_list(propdb_t db, opaque_t object, char *names, size_t len)
 {
 	struct kdbobj *obj;
 	struct kdbprop *prop = NULL;
@@ -488,7 +490,7 @@ prop_list(propdb_t db, opaque_t object, char *names, size_t len)
 }
 
 int 
-prop_delete(propdb_t db, opaque_t object, const char *name)
+propdb_delete(propdb_t db, opaque_t object, const char *name)
 {
 	struct kdbobj *obj;
 	struct kdbprop *prop = NULL;
@@ -535,7 +537,7 @@ prop_delete(propdb_t db, opaque_t object, const char *name)
 }
 
 int 
-prop_copy(propdb_t db, opaque_t source, opaque_t dest, int wait)
+propdb_copy(propdb_t db, opaque_t source, opaque_t dest, int wait)
 {
 	struct kdbobj *nobj, *oobj;
 	struct kdbprop *prop, *oprop, *srcp;
@@ -585,25 +587,19 @@ kdbobj_compare(struct kdbobj *obj1, struct kdbobj *obj2)
 	} else if (obj1 > obj2) {
 		return (1);
 	} else {
-		return (opaque_object_compare(obj1->ko_object, obj2->ko_object));
+		return (0);
 	}
 }
 
 int
 kdbprop_compare(struct kdbprop *pr1, struct kdbprop *pr2)
 {
-	int comp_name, comp_val, comp_len, comp_type;
-
-	comp_name = kdbprop_compare_name(pr1->kp_name, pr2->kp_name);
-	comp_val = kdbprop_compare_val(pr1->kp_val, pr2->kp_val);
-	comp_len = kdbprop_compare_len(pr1->kp_len, pr2->kp_len);
-	comp_type = kdbprop_compare_type(pr1->kp_type, pr2->kp_type);
-
-	if (op1 < op2 || (comp_name & comp_val & comp_type) == -1) {
+	if (op1 < op2) {
 		return (-1);
-	} else if (op1 > op2 || (comp_name & comp_val & comp_type) == 1) {
+	} else if (op1 > op2) {
 		return (1);
 	} else {
+		if ()
 		return (0);
 	}
 }

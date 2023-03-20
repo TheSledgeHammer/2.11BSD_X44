@@ -212,8 +212,10 @@ swfree(p, index, nslots)
 	}
 
 	if (nblks == 0) {
-		startslot = swap_search(swp, sdp, nblks, npages);
-		vm_swap_free(startslot, nslots);
+		if (sdp != NULL) {
+			startslot = swap_search(swp, sdp, nblks, npages);
+			vm_swap_free(startslot, nslots);
+		}
 		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
 		swp->sw_flags &= ~SW_FREED;
 		return (0);

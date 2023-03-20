@@ -82,6 +82,7 @@ typedef struct lock			*lock_t;
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_object.h>
+#include <vm/include/vm_aobject.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
 
@@ -111,5 +112,9 @@ struct vmspace {
 	caddr_t 					vm_minsaddr;	/* user VA at min stack growth */
 	caddr_t 					vm_maxsaddr;	/* user VA at max stack growth */
 };
+
+/* doesn't belong here */
+#define MADV_MASK				0x7	/* mask */
+#define VM_ADVICE(X)			(((X) >> 12) & MADV_MASK)
 
 #endif /* _VM_H_ */

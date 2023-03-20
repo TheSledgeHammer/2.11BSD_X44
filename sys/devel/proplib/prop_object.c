@@ -16,16 +16,6 @@
 #define atomic_inc_32(x)		atomic_add_int(x, 1)
 #define atomic_dec_32(x)		atomic_add_int(x, 1)
 
-void
-prop_object_init(struct prop_object *po, opaque_t obj, const char *name, void *val, size_t len, uint32_t type)
-{
-	po->po_obj = obj;
-	po->po_name = name;
-	po->po_value = val;
-	po->po_length = len;
-	po->po_type = type;
-	po->po_refcnt = 1;
-}
 
 int
 prop_object_type(opaque_t obj)
@@ -113,34 +103,4 @@ prop_object_release(opaque_t obj)
 	if (ret == _PROP_OBJECT_FREE_FAILED) {
 		prop_object_release_emergency(obj);
 	}
-}
-
-void
-prop_object_create(struct prop_object *npo, opaque_t obj, const char *name, void *val, size_t len, uint32_t type)
-{
-	struct prop_object *po;
-
-	po = npo;
-	po->po_obj = obj;
-	po->po_name = name;
-	po->po_value = val;
-	po->po_length = len;
-	po->po_type = type;
-	po->po_refcnt = 1;
-}
-
-int
-prop_object_set(propdb_t db, struct prop_object *po)
-{
-	int ret;
-	ret = propdb_opaque_set(db, po->po_obj, po->po_name, po->po_value, po->po_length, po->po_type);
-	return (ret);
-}
-
-int
-prop_object_get(propdb_t db, struct prop_object *po)
-{
-	int ret;
-	ret = propdb_opaque_get(db, po->po_obj, po->po_name, po->po_value, po->po_length, po->po_type);
-	return (ret);
 }

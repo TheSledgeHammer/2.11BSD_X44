@@ -42,11 +42,13 @@
 
 #define M_VMAMAP 		73	/* VM amap structures */
 #define M_VMAOBJ 		74	/* VM aobject structure */
+
 #define M_VMPSEG		93	/* pseudo-segment structure */
 #define M_OVLMAP		75	/* OVL map structures */
 #define	M_OVLMAPENT		76	/* OVL map entry structures */
 #define M_OVLOBJ		77	/* OVL object structure */
 #define M_OVLOBJHASH	78	/* OVL object hash structure */
+
 #define M_KTPOOLTHREAD  79	/* kernel threadpool */
 #define M_UTPOOLTHREAD  80	/* user threadpool */
 #define M_ITPC			81	/* inter-threadpool communication */

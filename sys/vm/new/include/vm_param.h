@@ -111,15 +111,17 @@ extern int						page_shift;
  */
 #define	VM_METER		1		/* struct vmmeter */
 #define	VM_LOADAVG		2		/* struct loadavg */
-#define	VM_SWAPMAP		3		/* struct mapent swapmap[] */
-#define	VM_COREMAP		4		/* struct mapent coremap[] */
+#define	VM_TEXT			3		/* struct vm_text */
+#define	VM_SWAPMAP		4		/* struct mapent swapmap[] */
+#define	VM_COREMAP		5		/* struct mapent coremap[] */
 
-#define	VM_MAXID		5		/* number of valid vm ids */
+#define	VM_MAXID		6		/* number of valid vm ids */
 
 #define	CTL_VM_NAMES { 					\
 	{ 0, 0 }, 							\
 	{ "vmmeter", CTLTYPE_STRUCT }, 		\
 	{ "loadavg", CTLTYPE_STRUCT }, 		\
+	{ "vmtext",	 CTLTYPE_STRUCT },		\
 	{ "swapmap", CTLTYPE_STRUCT }, 		\
 	{ "coremap", CTLTYPE_STRUCT }, 		\
 }

@@ -15,31 +15,26 @@ typedef enum {
 } _prop_object_free_rv_t;
 
 struct prop_object_type {
-	/* type indicator */
+	/* name & type indicator */
+	const char 						*pot_name;
 	uint32_t						pot_type;
 
-	_prop_object_free_rv_t 			(*pot_free)(opaque_t *);
+	/* propdb */
+	int 							(*pot_db_set)(opaque_t);
+	int 							(*pot_db_get)(opaque_t);
+
+	_prop_object_free_rv_t 			(*pot_free)(propdb_t, opaque_t *);
 	void							(*pot_emergency_free)(opaque_t);
 };
 
 struct prop_object {
-//	const struct prop_object_type 	*po_type;
-	//propdb_t						po_db;
+	const struct prop_object_type 	*po_type;
 	opaque_t 						po_obj;
-	const char 						*po_name;
-	void 							*po_value;
-	size_t							po_length;
-
-	uint32_t						po_type;
 	uint32_t						po_refcnt;		/* reference count */
 };
 
-
-void prop_object_init(struct prop_object *, propdb_t, opaque_t, void *val, size_t len);
-int	 prop_object_type(opaque_t);
-void prop_object_retain(opaque_t);
-void prop_object_release(opaque_t);
-
-int	prop_object_set(propdb_t, struct prop_object *);
+int	 	 prop_object_type(opaque_t);
+void 	 prop_object_retain(opaque_t);
+void 	 prop_object_release(opaque_t);
 
 #endif /* SYS_DEVEL_PROPLIB_PROP_OBJECT_H_ */

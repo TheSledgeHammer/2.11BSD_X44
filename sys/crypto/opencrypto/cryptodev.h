@@ -200,7 +200,7 @@ struct cryptotstat {
 	struct timespec	acc;		/* total accumulated time */
 	struct timespec	min;		/* max time */
 	struct timespec	max;		/* max time */
-	u_int32_t	count;		/* number of observations */
+	u_int32_t		count;		/* number of observations */
 };
 
 struct cryptostats {
@@ -242,21 +242,21 @@ struct cryptodesc {
 	int		crd_inject;	/* Where to inject results, if applicable */
 	int		crd_flags;
 
-#define	CRD_F_ENCRYPT		0x01	/* Set when doing encryption */
-#define	CRD_F_IV_PRESENT	0x02	/* When encrypting, IV is already in
-					   place, so don't copy. */
-#define	CRD_F_IV_EXPLICIT	0x04	/* IV explicitly provided */
+#define	CRD_F_ENCRYPT			0x01	/* Set when doing encryption */
+#define	CRD_F_IV_PRESENT		0x02	/* When encrypting, IV is already in
+					   	   	   	   	   	   place, so don't copy. */
+#define	CRD_F_IV_EXPLICIT		0x04	/* IV explicitly provided */
 #define	CRD_F_DSA_SHA_NEEDED	0x08	/* Compute SHA-1 of buffer for DSA */
-#define CRD_F_COMP			0x0f    /* Set when doing compression */
+#define CRD_F_COMP				0x0f    /* Set when doing compression */
 
 	struct cryptoini	CRD_INI; /* Initialization/context data */
-#define crd_iv		CRD_INI.cri_iv
-#define crd_key		CRD_INI.cri_key
-#define crd_rnd		CRD_INI.cri_rnd
-#define crd_alg		CRD_INI.cri_alg
-#define crd_klen	CRD_INI.cri_klen
+#define crd_iv			CRD_INI.cri_iv
+#define crd_key			CRD_INI.cri_key
+#define crd_rnd			CRD_INI.cri_rnd
+#define crd_alg			CRD_INI.cri_alg
+#define crd_klen		CRD_INI.cri_klen
 
-	struct cryptodesc *crd_next;
+	struct cryptodesc 	*crd_next;
 };
 
 /* Structure describing complete operation */
@@ -377,7 +377,7 @@ extern	int crypto_unregister(u_int32_t driverid, int alg);
 extern	int crypto_unregister_all(u_int32_t driverid);
 extern	int crypto_dispatch(struct cryptop *crp);
 extern	int crypto_kdispatch(struct cryptkop *);
-#define	CRYPTO_SYMQ	0x1
+#define	CRYPTO_SYMQ		0x1
 #define	CRYPTO_ASYMQ	0x2
 extern	int crypto_unblock(u_int32_t, int);
 extern	void crypto_done(struct cryptop *crp);
@@ -395,7 +395,6 @@ extern	int crypto_usercrypto;		/* userland may do crypto requests */
 extern	int crypto_userasymcrypto;	/* userland may do asym crypto reqs */
 extern	int crypto_devallowsoft;	/* only use hardware crypto */
 
-
 /*
  * initialize the crypto framework subsystem (not the pseudo-device).
  * This must be called very early in boot, so the framework is ready
@@ -412,7 +411,7 @@ int	crypto_init(void);
  *     kept apart from the rest of the system.
  */
 struct mbuf;
-struct	mbuf	*m_getptr(struct mbuf *, int, int *);
+struct mbuf	*m_getptr(struct mbuf *, int, int *);
 
 struct uio;
 extern	void cuio_copydata(struct uio* uio, int off, int len, caddr_t cp);

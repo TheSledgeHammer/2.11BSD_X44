@@ -43,23 +43,26 @@
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
 struct vm_segment {
-	struct pglist				sg_memq;				/* list of all pages in segment */
+	struct pglist				memq;				/* list of all pages in segment */
 
-	CIRCLEQ_ENTRY(vm_segment)	sg_hlist;				/* hash table links (O) */
-	CIRCLEQ_ENTRY(vm_segment)	sg_list;				/* segments in same object (O) */
+	CIRCLEQ_ENTRY(vm_segment)	segmentq;			/* queue info for FIFO queue or free list (S) */
+	CIRCLEQ_ENTRY(vm_segment)	hashq;				/* hash table links (O) */
+	CIRCLEQ_ENTRY(vm_segment)	listq;				/* segments in same object (O) */
 
-	vm_object_t					sg_object;				/* which object am I in (O,S)*/
-	vm_offset_t 				sg_offset;				/* offset into object (O,S) */
-	vm_size_t					sg_size;				/* size of segment */
-	int							sg_flags;				/* see below */
+	vm_object_t					object;				/* which object am I in (O,S)*/
+	vm_offset_t 				offset;				/* offset into object (O,S) */
+	vm_size_t					size;				/* size of segment */
 
-	vm_anon_t					sg_anon;				/* anon (O,S) */
+	u_short						wire_tracker;		/* records number of pages with a wire count greater than 0 */
+	int							flags;				/* see below */
 
-	int							sg_resident_page_count;/* number of resident pages */
+	vm_anon_t					anon;				/* anon (O,S) */
 
-	vm_offset_t					sg_log_addr;			/* segment logical address */
+	int							resident_page_count;/* number of resident pages */
 
-	vm_psegment_t				sg_psegment;			/* pointer to pseudo segment register */
+	vm_offset_t					log_addr;			/* segment logical address */
+
+	vm_psegment_t				psegment;			/* pointer to pseudo segment register */
 };
 
 /*
@@ -81,7 +84,7 @@ struct vm_segment {
 	if ((((unsigned int) seg) < ((unsigned int) &vm_segment_array[0])) || 	\
 	    (((unsigned int) seg) > 											\
 		((unsigned int) &vm_segment_array[last_segment-first_segment])) || 	\
-	    ((seg->sg_flags & (SEG_ACTIVE | SEG_INACTIVE)) == 					\
+	    ((seg->flags & (SEG_ACTIVE | SEG_INACTIVE)) == 					\
 		(SEG_ACTIVE | SEG_INACTIVE))) 										\
 		panic("vm_segment_check: not valid!"); 								\
 }
@@ -89,9 +92,9 @@ struct vm_segment {
 #define	VM_SEGMENT_CHECK(seg)
 #endif /* VM_SEGMENT_DEBUG */
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 extern
-struct seglist  	vm_segment_list;			/* free list */
+struct seglist  	vm_segment_list_free;		/* free list */
 extern
 struct seglist		vm_segment_list_active;		/* active list */
 extern
@@ -116,12 +119,7 @@ simple_lock_data_t	vm_segment_list_lock;
 extern
 simple_lock_data_t	vm_segment_list_activity_lock;
 
-#define	VM_SEGMENT_INIT(seg, object, offset) { 			\
-	(seg)->sg_flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 	\
-	vm_segment_insert((seg), (object), (offset)); 		\
-}
-
-#define VM_SEGMENT_TO_PHYS(entry)	((entry)->sg_log_addr)
+#define VM_SEGMENT_TO_PHYS(entry)	((entry)->log_addr)
 
 #define IS_VM_LOGICALADDR(pa) 							\
 		((pa) >= first_logical_addr && (pa) <= last_logical_addr)
@@ -133,14 +131,14 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 		(&vm_segment_array[VM_SEGMENT_INDEX(pa)])
 
 #define SEGMENT_ASSERT_WAIT(s, interruptible)	{ 		\
-	(s)->sg_flags |= SEG_WANTED; 						\
+	(s)->flags |= SEG_WANTED; 							\
 	assert_wait((s), (interruptible)); 					\
 }
 
 #define SEGMENT_WAKEUP(s) {             				\
-    (s)->sg_flags &= ~SEG_BUSY; 						\
-    if ((s)->sg_flags & SEG_WANTED) { 					\
-        (s)->sg_flags &= ~SEG_WANTED; 					\
+    (s)->flags &= ~SEG_BUSY; 							\
+    if ((s)->flags & SEG_WANTED) { 						\
+        (s)->flags &= ~SEG_WANTED; 						\
 		thread_wakeup((s)); 							\
 	} 													\
 }
@@ -148,7 +146,13 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 #define	vm_segment_lock_lists()		simple_lock(&vm_segment_list_lock)
 #define	vm_segment_unlock_lists()	simple_unlock(&vm_segment_list_lock)
 
-#define vm_segment_set_modified(m)	{ (m)->sg_flags &= ~SEG_CLEAN; }
+#define vm_segment_set_modified(m)	{ (m)->flags &= ~SEG_CLEAN; }
+
+#define	VM_SEGMENT_INIT(seg, object, offset) { 			\
+	(seg)->flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 		\
+	vm_segment_insert((seg), (object), (offset)); 		\
+	(seg)->wire_tracker = 0;							\
+}
 
 void		 	vm_segment_activate(vm_segment_t);
 vm_segment_t 	vm_segment_alloc(vm_object_t, vm_offset_t);
@@ -167,7 +171,8 @@ void 			vm_segment_unwire(vm_segment_t);
 void			vm_segment_copy(vm_segment_t, vm_segment_t);
 vm_segment_t	vm_segment_anon_alloc(vm_object_t, vm_offset_t, vm_anon_t);
 void			vm_segment_anon_free(vm_segment_t);
-bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
+void			vm_segment_wire_tracker(vm_segment_t);
+//bool_t			vm_segment_sanity_check(vm_size_t, vm_size_t);
 
 #endif /* _KERNEL */
 #endif /* _VM_SEGMENT_H_ */

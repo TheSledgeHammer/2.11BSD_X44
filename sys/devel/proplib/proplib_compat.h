@@ -31,60 +31,48 @@
 #define _PROPLIB_PROPLIB_COMPAT_H_
 
 /* prop type names */
-#define PROP_NAME_BOOL			"PROP_BOOL"
-#define PROP_NAME_NUMBER		"PROP_NUMBER"
-#define	PROP_NAME_STRING		"PROP_STRING"
-#define	PROP_NAME_DATA			"PROP_DATA"
-#define PROP_NAME_DICTIONARY	"PROP_DICTIONARY"
-#define PROP_NAME_DICT_KEYSYM	"PROP_DICT_KEYSYM"
-#define PROP_NAME_ARRAY			"PROP_ARRAY"
+#define PROP_NAME_BOOL					"PROP_BOOL"
+#define PROP_NAME_NUMBER				"PROP_NUMBER"
+#define	PROP_NAME_STRING				"PROP_STRING"
+#define	PROP_NAME_DATA					"PROP_DATA"
+#define PROP_NAME_DICTIONARY			"PROP_DICTIONARY"
+#define PROP_NAME_DICT_KEYSYM			"PROP_DICT_KEYSYM"
+#define PROP_NAME_ARRAY					"PROP_ARRAY"
 
 /* prop types */
-#define PROP_TYPE_UNKNOWN		PROP_UNKNOWN
-#define	PROP_TYPE_BOOL			PROP_BOOL
-#define	PROP_TYPE_NUMBER		PROP_NUMBER
-#define	PROP_TYPE_STRING		PROP_STRING
-#define	PROP_TYPE_DATA			PROP_DATA
-#define PROP_TYPE_DICTIONARY	PROP_DICTIONARY
-#define PROP_TYPE_DICT_KEYSYM	PROP_DICT_KEYSYM
-#define PROP_TYPE_ARRAY			PROP_ARRAY
+#define PROP_TYPE_UNKNOWN				PROP_UNKNOWN
+#define	PROP_TYPE_BOOL					PROP_BOOL
+#define	PROP_TYPE_NUMBER				PROP_NUMBER
+#define	PROP_TYPE_STRING				PROP_STRING
+#define	PROP_TYPE_DATA					PROP_DATA
+#define PROP_TYPE_DICTIONARY			PROP_DICTIONARY
+#define PROP_TYPE_DICT_KEYSYM			PROP_DICT_KEYSYM
+#define PROP_TYPE_ARRAY					PROP_ARRAY
 
 /* prop tags */
-#define PROP_TAG_TYPE_START		0
-#define PROP_TAG_TYPE_END		1
-#define PROP_TAG_TYPE_EITHER	2
+#define PROP_TAG_TYPE_START				0
+#define PROP_TAG_TYPE_END				1
+#define PROP_TAG_TYPE_EITHER			2
 
 /* prop malloc types */
-#define M_PROP_DATA				96
-#define M_PROP_DICT				97
-#define M_PROP_STRING			98
-#define M_PROP_ARRAY			99
+#define M_PROP_DATA						96
+#define M_PROP_DICT						97
+#define M_PROP_STRING					98
+#define M_PROP_ARRAY					99
 
-opaque_t propdb_opaque_malloc(size_t, int);
-opaque_t propdb_opaque_calloc(u_int, size_t, int);
-opaque_t propdb_opaque_realloc(opaque_t, size_t, int);
-opaque_t propdb_opaque_free(opaque_t, int);
+#define	_PROP_ASSERT(x)					KASSERT(x)
 
-int	propdb_opaque_set(propdb_t, opaque_t, const char *, void *, size_t, int);
-int propdb_opaque_get(propdb_t, opaque_t, const char *, void *, size_t, int);
+#define	_PROP_MALLOC(s, t)				malloc((s), (t), M_WAITOK)
+#define	_PROP_CALLOC(n, s, t)			calloc((n), (s), (t), M_WAITOK | M_ZERO)
+#define	_PROP_REALLOC(v, s, t)			realloc((v), (s), (t), M_WAITOK)
+#define	_PROP_FREE(v, t)				free((v), (t))
 
-#define propdb_malloc(size, type) 					\
-	propdb_opaque_malloc(size, type)
+#define	_PROP_POOL_GET(p, t)			_PROP_MALLOC((p), (t), M_WAITOK)
+#define	_PROP_POOL_PUT(p, v)			_PROP_FREE((p), (v))
 
-#define propdb_calloc(cap, size, type) 				\
-	propdb_opaque_calloc(cap, size, type)
-
-#define propdb_realloc(obj, size, type) 			\
-	propdb_opaque_realloc(obj, size, type)
-
-#define propdb_free(obj, type) 						\
-	propdb_opaque_free(obj, type)
-
-#define propdb_set(db, obj, name, val, len, type) 	\
-	propdb_opaque_set(db, obj, name, val, len, type)
-
-#define propdb_get(db, obj, name, val, len, type) 	\
-	propdb_opaque_get(db, obj, name, val, len, type)
+#define	_PROP_RWLOCK_RDLOCK(x)			//rw_enter(&(x), RW_READER)
+#define	_PROP_RWLOCK_WRLOCK(x)			//rw_enter(&(x), RW_WRITER)
+#define	_PROP_RWLOCK_UNLOCK(x)			//rw_exit(&(x))
 
 typedef struct prop_array				*prop_array_t;
 typedef struct prop_bool				*prop_bool_t;
@@ -94,26 +82,8 @@ typedef struct prop_data				*prop_data_t;
 typedef struct prop_dictionary 			*prop_dictionary_t;
 typedef struct prop_dictionary_keysym 	*prop_dictionary_keysym_t;
 
-struct prop_array {
-	propdb_t				pa_db;
-	struct prop_object		pa_obj;
-
-	opaque_t 				*pa_array;
-	unsigned int			pa_capacity;
-	unsigned int			pa_count;
-	int						pa_flags;
-	uint32_t				pa_version;
-
-	size_t					pa_len;
-};
-
-struct prop_bool {
-	struct prop_object		pb_obj;
-	bool_t					pb_value;
-	size_t					pb_len;
-};
-
 struct prop_number {
+	propdb_t				pn_db;
 	struct prop_object		pn_obj;
 	struct rb_node			pn_link;
 	struct prop_number_value {
@@ -128,6 +98,7 @@ struct prop_number {
 };
 
 struct prop_string {
+	propdb_t				ps_db;
 	struct prop_object		ps_obj;
 	union {
 		char 				*psu_mutable;
@@ -141,6 +112,7 @@ struct prop_string {
 };
 
 struct prop_data {
+	propdb_t				pd_db;
 	struct prop_object		pd_obj;
 	union {
 		void 				*pdu_mutable;
@@ -153,6 +125,7 @@ struct prop_data {
 };
 
 struct prop_dictionary_keysym {
+	propdb_t				pdk_db;
 	struct prop_object		pdk_obj;
 	size_t					pdk_size;
 	struct rb_node			pdk_link;
@@ -165,6 +138,7 @@ struct prop_dict_entry {
 };
 
 struct prop_dictionary {
+	propdb_t				pd_db;
 	struct prop_object		pd_obj;
 	struct prop_dict_entry 	*pd_array;
 	u_int					pd_capacity;

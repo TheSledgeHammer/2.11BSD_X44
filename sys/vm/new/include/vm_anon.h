@@ -93,15 +93,18 @@ struct vm_aref {
  * locked by vm_map lock.
  */
 #ifdef _KERNEL
+
 /*
  * prototypes
  */
+
 vm_anon_t 	vm_anon_alloc(void);
 void 		vm_anon_free(vm_anon_t);
 void 		vm_anon_init(void);
 void 		vm_anon_add(int);
 void 		vm_anon_dropswap(vm_anon_t);
-bool_t		vm_anon_pagein(vm_amap_t, vm_anon_t);
 void		vm_anon_release(vm_anon_t);
+bool_t		vm_anon_pagein(vm_amap_t, vm_anon_t);
 #endif /* _KERNEL */
+
 #endif /* _VM_ANON_H_ */

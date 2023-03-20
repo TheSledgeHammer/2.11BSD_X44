@@ -32,74 +32,51 @@
 
 #include "proplib_compat.h"
 
-opaque_t
-propdb_opaque_malloc(size_t size, int mtype)
+propdb_t
+proplib_create(opaque_t obj, struct prop_object *po, struct prop_object_type *type)
 {
-	opaque_t obj;
+	propdb_t db;
+	db = propdb_create(type->pot_name);
 
-	obj = malloc(size, mtype, M_WAITOK);
-	if (obj == NULL) {
-		return (NULL);
-	}
-	return (obj);
-}
+	po->po_type = type;
+	po->po_obj = obj;
+	po->po_refcnt = 1;
 
-opaque_t
-propdb_opaque_calloc(u_int capacity, size_t size, int mtype)
-{
-	opaque_t obj;
-
-	obj = calloc(capacity, size, mtype, M_WAITOK);
-	if (obj == NULL) {
-		return (NULL);
-	}
-	return (obj);
-}
-
-opaque_t
-propdb_opaque_realloc(opaque_t obj, size_t size, int mtype)
-{
-	opaque_t newobj;
-
-	newobj = realloc(obj, size, mtype, M_WAITOK);
-	if (newobj == NULL) {
-		return (NULL);
-	}
-	return (newobj);
-}
-
-void
-propdb_opaque_free(opaque_t obj, int mtype)
-{
-	if (obj != NULL) {
-		free(obj, mtype);
-	}
+	return (db);
 }
 
 int
-propdb_opaque_set(propdb_t db, opaque_t obj, const char *name, void *val, size_t len, int type)
+proplib_set(propdb_t db, opaque_t obj, struct prop_object *po, struct prop_object_type *type, void *val, size_t len)
 {
-	int ret;
+	return (propdb_set(db, obj, type->pot_name, val, len, type->pot_type, M_WAITOK));
+}
 
-	if (prop_object_type(obj) == type) {
-		ret = prop_set(db, obj, name, val, len, type, M_WAITOK);
-	}
-	if (ret != 0) {
-		return (ret);
-	}
-	return (0);
+size_t
+proplib_get(propdb_t db, opaque_t obj, struct prop_object *po, struct prop_object_type *type, void *val, size_t len)
+{
+	return (propdb_get(db, obj, type->pot_name, val, len, type->pot_type));
+}
+
+size_t
+proplib_objs(propdb_t db, struct prop_object *po, size_t len)
+{
+	return (propdb_objs(db, &po->po_obj, len));
+}
+
+size_t
+proplib_list(propdb_t db, struct prop_object *po, struct prop_object_type *type, size_t len)
+{
+	return (propdb_list(db, po->po_obj, type->pot_name, len));
 }
 
 int
-propdb_opaque_get(propdb_t db, opaque_t obj, const char *name, void *val, size_t len, int type)
+proplib_delete(propdb_t db, struct prop_object *po, struct prop_object_type *type)
 {
-	size_t ret;
+	return (propdb_delete(db, po->po_obj, type->pot_name));
+}
 
-	if (prop_object_type(obj) == type) {
-		ret = prop_get(db, obj, name, val, len, type);
-	}
-	if (ret != 0) {
-		return (ret);
-	}
-	return (0);
+int
+proplib_copy(propdb_t db, struct prop_object *source, struct prop_object *dest)
+{
+	return (propdb_copy(db, source->po_obj, dest->po_obj, M_WAITOK));
 }

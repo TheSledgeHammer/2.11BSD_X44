@@ -162,7 +162,7 @@ vm_fault_free(segment, page)
 	if (segment != NULL) {
 		SEGMENT_WAKEUP(segment);
 		vm_segment_lock_lists();
-		ps = vm_page_lookup(segment, segment->sg_offset);
+		ps = vm_page_lookup(segment, segment->offset);
 		if (page != NULL) {
 			PAGE_WAKEUP(page);
 			vm_page_lock_queues();
@@ -190,7 +190,7 @@ vm_fault_release(segment, page)
 	if (segment != NULL) {
 		SEGMENT_WAKEUP(segment);
 		vm_segment_lock_lists();
-		ps = vm_page_lookup(segment, segment->sg_offset);
+		ps = vm_page_lookup(segment, segment->offset);
 		if (page != NULL) {
 			PAGE_WAKEUP(page);
 			vm_page_lock_queues();
@@ -252,13 +252,13 @@ vm_fault_pager(vfi, change_wiring)
 		vfi->segment = vm_segment_alloc(vfi->object, vfi->offset);
 		if(vfi->segment == NULL) {
 			unlock_and_deallocate(vfi);
-			VM_WAIT;
+			vm_wait();
 			return (EFAULTRETRY);
 		}
-		vfi->page = vm_page_alloc(vfi->segment, vfi->segment->sg_offset);
+		vfi->page = vm_page_alloc(vfi->segment, vfi->segment->offset);
 		if(vfi->page == NULL) {
 			unlock_and_deallocate(vfi);
-			VM_WAIT;
+			vm_wait();
 			return (EFAULTRETRY);
 		}
 	}
@@ -273,7 +273,7 @@ vm_fault_pager(vfi, change_wiring)
 
 		if (rv == VM_PAGER_OK) {
 			vfi->segment = vm_segment_lookup(vfi->object, vfi->offset);
-			vfi->page = vm_page_lookup(vfi->segment, vfi->segment->sg_offset);
+			vfi->page = vm_page_lookup(vfi->segment, vfi->segment->offset);
 			if (VM_PAGE_TO_PHYS(vfi->page) == VM_SEGMENT_TO_PHYS(vfi->segment)) {
 				pmap_clear_modify(VM_PAGE_TO_PHYS(vfi->page));
 				return (rv);
@@ -302,7 +302,7 @@ vm_fault_object(vfi, change_wiring)
 
 	vfi->segment = vm_segment_lookup(vfi->object, vfi->offset);
 	if(vfi->segment != NULL) {
-		vfi->page = vm_page_lookup(vfi->segment, vfi->segment->sg_offset);
+		vfi->page = vm_page_lookup(vfi->segment, vfi->segment->offset);
 		if(vfi->page != NULL) {
 			error = vm_fault_page(vfi, change_wiring);
 			if(error != 0) {
@@ -329,7 +329,7 @@ vm_fault_segment(vfi, change_wiring)
 	struct vm_faultinfo *vfi;
 	bool_t		change_wiring;
 {
-	if (vfi->segment->sg_flags & SEG_BUSY) {
+	if (vfi->segment->flags & SEG_BUSY) {
 		SEGMENT_ASSERT_WAIT(vfi->segment, !change_wiring);
 		unlock_things(vfi);
 		cnt.v_intrans++;
@@ -338,19 +338,19 @@ vm_fault_segment(vfi, change_wiring)
 	}
 
 	vm_segment_lock_lists();
-	if (vfi->segment->sg_flags & SEG_INACTIVE) {
-		CIRCLEQ_REMOVE(&vm_segment_list_inactive, vfi->segment, sg_list);
-		vfi->segment->sg_flags &= ~SEG_INACTIVE;
+	if (vfi->segment->flags & SEG_INACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_inactive, vfi->segment, segmentq);
+		vfi->segment->flags &= ~SEG_INACTIVE;
 		cnt.v_segment_active_count--;
 	}
-	if (vfi->segment->sg_flags & SEG_ACTIVE) {
-		CIRCLEQ_REMOVE(&vm_segment_list_active, vfi->segment, sg_list);
-		vfi->segment->sg_flags &= ~SEG_ACTIVE;
+	if (vfi->segment->flags & SEG_ACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_active, vfi->segment, segmentq);
+		vfi->segment->flags &= ~SEG_ACTIVE;
 		cnt.v_segment_active_count--;
 	}
 	vm_segment_unlock_lists();
 
-	vfi->segment->sg_flags |= SEG_BUSY;
+	vfi->segment->flags |= SEG_BUSY;
 	return (0);
 }
 
@@ -617,7 +617,7 @@ RetryCopy:
 	}
 	vm_page_unlock_queues();
 
-	if (vfi.segment->sg_flags & SEG_WANTED) {
+	if (vfi.segment->flags & SEG_WANTED) {
 		SEGMENT_WAKEUP(vfi.segment);
 	}
 	if (vfi.page->flags & PG_WANTED) {
@@ -657,9 +657,9 @@ vm_fault_copy(vfi, fault_type, change_wiring, page_exists)
 			copy_offset = vfi->first_offset - copy_object->shadow_offset;
 			copy_segment = vm_segment_lookup(copy_object, copy_offset);
 			if(copy_segment != NULL) {
-				if(copy_segment->sg_flags & SEG_BUSY) {
+				if(copy_segment->flags & SEG_BUSY) {
 					SEGMENT_ASSERT_WAIT(copy_segment, !change_wiring);
-					copy_page = vm_page_lookup(copy_segment, copy_segment->sg_offset);
+					copy_page = vm_page_lookup(copy_segment, copy_segment->offset);
 					if (page_exists == (copy_page != NULL)) {
 						if (copy_page->flags & PG_BUSY) {
 							PAGE_ASSERT_WAIT(copy_page, !change_wiring);
@@ -672,13 +672,13 @@ vm_fault_copy(vfi, fault_type, change_wiring, page_exists)
 						}
 					}
 					if (!page_exists) {
-						copy_page = vm_page_alloc(copy_segment, copy_segment->sg_offset);
+						copy_page = vm_page_alloc(copy_segment, copy_segment->offset);
 						if(copy_page == NULL) {
 							vm_fault_release(vfi->segment, vfi->page);
 							copy_object->ref_count--;
 							vm_object_unlock(copy_object);
 							unlock_and_deallocate(&vfi);
-							VM_WAIT;
+							vm_wait();
 							return (EFAULTRETRY);
 						}
 
@@ -735,10 +735,10 @@ vm_fault_cow(vfi, fault_type)
 	old_page = vfi->page;
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
-			if ((vfi->first_segment != NULL && !TAILQ_EMPTY(vfi->first_segment->sg_memq)) ||
-					(vfi->first_segment == NULL && TAILQ_EMPTY(vfi->first_segment->sg_memq))) {
+			if ((vfi->first_segment != NULL && !TAILQ_EMPTY(vfi->first_segment->memq)) ||
+					(vfi->first_segment == NULL && TAILQ_EMPTY(vfi->first_segment->memq))) {
 				vm_segment_copy(vfi->segment, vfi->first_segment);
-				vfi->first_page = vm_page_lookup(vfi->first_segment, vfi->first_segment->sg_offset);
+				vfi->first_page = vm_page_lookup(vfi->first_segment, vfi->first_segment->offset);
 				if (vfi->first_page) {
 					vfi->first_page->flags &= ~PG_FAKE;
 				}
@@ -838,7 +838,7 @@ vm_fault_handler_check(vfi, flag)
 
 	switch (flag) {
 	case FHDMLOOP:
-		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
+		sgflag = segment->flags & (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE | PG_BUSY);
 		if((sgflag != SEG_BUSY) || (pgflag != PG_BUSY)) {
 			panic("vm_fault_handler_check: active, inactive or !busy after main loop");
@@ -846,7 +846,7 @@ vm_fault_handler_check(vfi, flag)
 		break;
 
 	case FHDOBJCOPY:
-		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
+		sgflag = segment->flags & (SEG_ACTIVE | SEG_INACTIVE);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
 		if (sgflag || pgflag) {
 			panic("vm_fault_handler_check: active or inactive before copy object handling");
@@ -854,7 +854,7 @@ vm_fault_handler_check(vfi, flag)
 		break;
 
 	case FHDRETRY:
-		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
+		sgflag = segment->flags & (SEG_ACTIVE | SEG_INACTIVE);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
 		if (sgflag || pgflag) {
 			panic("vm_fault_handler_check: active or inactive before retrying lookup");
@@ -862,7 +862,7 @@ vm_fault_handler_check(vfi, flag)
 		break;
 
 	case FHDANON:
-		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
+		sgflag = segment->flags & (SEG_ACTIVE | SEG_INACTIVE | SEG_BUSY);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE | PG_BUSY);
 		if ((sgflag != SEG_BUSY) || (pgflag != PG_BUSY)) {
 			panic("vm_fault_handler_check: active or inactive or !busy after anon");
@@ -870,7 +870,7 @@ vm_fault_handler_check(vfi, flag)
 		break;
 
 	case FHDPMAP:
-		sgflag = segment->sg_flags & (SEG_ACTIVE | SEG_INACTIVE);
+		sgflag = segment->flags & (SEG_ACTIVE | SEG_INACTIVE);
 		pgflag = page->flags & (PG_ACTIVE | PG_INACTIVE);
 		if (sgflag || pgflag) {
 			panic("vm_fault_handler_check: active or inactive before pmap_enter");
@@ -1016,7 +1016,7 @@ vm_fault_anon(vfi, fault_type)
 		if (vfi->anon) {
 			vfi->segment = vm_segment_anon_alloc(vfi->object, vfi->offset, vfi->anon);
 			if (vfi->segment) {
-				vfi->page = vm_page_anon_alloc(vfi->segment, vfi->segment->sg_offset, vfi->anon);
+				vfi->page = vm_page_anon_alloc(vfi->segment, vfi->segment->offset, vfi->anon);
 			}
 		}
 		if (vfi->anon == NULL || vfi->segment == NULL || vfi->page == NULL) {
@@ -1029,14 +1029,14 @@ vm_fault_anon(vfi, fault_type)
 				return (KERN_RESOURCE_SHORTAGE);
 			}
 			cnt.v_fltnoram++;
-			VM_WAIT;
+			vm_wait();
 			return (EFAULTRETRY);
 		}
 
 		vm_segment_copy(oanon->u.an_segment, vfi->segment);
 		vm_segment_lock_lists();
 		vm_segment_activate(vfi->segment);
-		 vfi->segment->sg_flags &= ~SEG_BUSY;
+		 vfi->segment->flags &= ~SEG_BUSY;
 		vm_page_copy(oanon->u.an_page, vfi->page);
 		vm_page_lock_queues();
 		vm_page_activate(vfi->page);
@@ -1101,7 +1101,7 @@ vm_fault_amapcopy(vfi)
 
 		if (vfi->entry->needs_copy) {
 			vm_fault_unlockmaps(vfi, TRUE);
-			VM_WAIT;
+			vm_wait();
 			continue;
 		}
 
@@ -1132,11 +1132,11 @@ vm_fault_anonget(vfi, amap, anon)
 		page = anon->u.an_page;
 
 		if(segment) {
-			if ((segment->sg_flags & SEG_BUSY) == 0) {
+			if ((segment->flags & SEG_BUSY) == 0) {
 				return (0);
 			}
 
-			segment->sg_flags |= SEG_WANTED;
+			segment->flags |= SEG_WANTED;
 
 			if (page) {
 				if ((page->flags & PG_BUSY) == 0) {
@@ -1144,16 +1144,16 @@ vm_fault_anonget(vfi, amap, anon)
 				}
 				page->flags |= PG_WANTED;
 
-				if(segment->sg_object) {
+				if(segment->object) {
 					vm_fault_unlockall(vfi, amap, NULL, anon);
 				} else {
 					vm_fault_unlockall(vfi, amap, NULL, NULL);
 				}
 			} else {
-				page = vm_page_anon_alloc(segment, segment->sg_offset, anon);
+				page = vm_page_anon_alloc(segment, segment->offset, anon);
 				if(page == NULL) {
 					vm_fault_unlockall(vfi, amap, NULL, anon);
-					VM_WAIT;
+					vm_wait();
 				} else {
 					we_own = TRUE;
 					vm_fault_unlockall(vfi, amap, NULL, anon);
@@ -1165,12 +1165,12 @@ vm_fault_anonget(vfi, amap, anon)
 			segment = vm_segment_anon_alloc(vfi->object, vfi->offset, anon);
 			if(segment == NULL) {
 				vm_fault_unlockall(vfi, amap, NULL, anon);
-				VM_WAIT;
+				vm_wait();
 			} else {
-				page = vm_page_anon_alloc(segment, segment->sg_offset, anon);
+				page = vm_page_anon_alloc(segment, segment->offset, anon);
 				if (page == NULL) {
 					vm_fault_unlockall(vfi, amap, NULL, anon);
-					VM_WAIT;
+					vm_wait();
 				} else {
 					we_own = TRUE;
 					vm_fault_unlockall(vfi, amap, NULL, anon);
@@ -1187,13 +1187,13 @@ vm_fault_anonget(vfi, amap, anon)
 			simple_lock(&anon->an_lock);
 		}
 		if (we_own) {
-			if (segment->sg_flags & SEG_WANTED) {
+			if (segment->flags & SEG_WANTED) {
 				wakeup(segment);
 			}
 			if (page->flags & PG_WANTED) {
 				wakeup(page);
 			}
-			segment->sg_flags &= ~(SEG_WANTED|SEG_BUSY);
+			segment->flags &= ~(SEG_WANTED|SEG_BUSY);
 			page->flags &= ~(PG_WANTED|PG_BUSY|PG_FAKE);
 
 			if (page->flags & PG_RELEASED) {
@@ -1419,4 +1419,192 @@ vm_fault_relock(vfi)
 	}
 	cnt.v_fltrelckok++;
 	return (TRUE);
+}
+
+/*
+ *	vm_fault_wire:
+ *
+ *	Wire down a range of virtual addresses in a map.
+ */
+int
+vm_fault_wire(map, start, end)
+	vm_map_t	map;
+	vm_offset_t	start, end;
+{
+	register vm_offset_t	va;
+	register pmap_t		pmap;
+	int			rv;
+
+	pmap = vm_map_pmap(map);
+
+	/*
+	 *	Inform the physical mapping system that the
+	 *	range of addresses may not fault, so that
+	 *	page tables and such can be locked down as well.
+	 */
+
+	pmap_pageable(pmap, start, end, FALSE);
+
+	/*
+	 *	We simulate a fault to get the page and enter it
+	 *	in the physical map.
+	 */
+
+	for (va = start; va < end; va += PAGE_SIZE) {
+		rv = vm_fault(map, va, VM_PROT_NONE, TRUE);
+		if (rv) {
+			if (va != start) {
+				vm_fault_unwire(map, start, va);
+			}
+			return (rv);
+		}
+	}
+	return (KERN_SUCCESS);
+}
+
+
+/*
+ *	vm_fault_unwire:
+ *
+ *	Unwire a range of virtual addresses in a map.
+ */
+void
+vm_fault_unwire(map, start, end)
+	vm_map_t	map;
+	vm_offset_t	start, end;
+{
+
+	register vm_offset_t	va, pa;
+	register pmap_t		pmap;
+
+	pmap = vm_map_pmap(map);
+
+	/*
+	 *	Since the pages are wired down, we must be able to
+	 *	get their mappings from the physical map system.
+	 */
+
+	vm_page_lock_queues();
+
+	for (va = start; va < end; va += PAGE_SIZE) {
+		pa = pmap_extract(pmap, va);
+		if (pa == (vm_offset_t) 0) {
+			panic("unwire: page not in pmap");
+		}
+		pmap_change_wiring(pmap, va, FALSE);
+		vm_page_unwire(PHYS_TO_VM_PAGE(pa));
+	}
+	vm_page_unlock_queues();
+
+	/*
+	 *	Inform the physical mapping system that the range
+	 *	of addresses may fault, so that page tables and
+	 *	such may be unwired themselves.
+	 */
+
+	pmap_pageable(pmap, start, end, TRUE);
+
+}
+
+/*
+ *	Routine:
+ *		vm_fault_copy_entry
+ *	Function:
+ *		Copy all of the pages from a wired-down map entry to another.
+ *
+ *	In/out conditions:
+ *		The source and destination maps must be locked for write.
+ *		The source map entry must be wired down (or be a sharing map
+ *		entry corresponding to a main map entry that is wired down).
+ */
+
+void
+vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
+	vm_map_t	dst_map;
+	vm_map_t	src_map;
+	vm_map_entry_t	dst_entry;
+	vm_map_entry_t	src_entry;
+{
+
+	vm_object_t	dst_object;
+	vm_object_t	src_object;
+	vm_offset_t	dst_offset;
+	vm_offset_t	src_offset;
+	vm_prot_t	prot;
+	vm_offset_t	vaddr;
+	vm_page_t	dst_m;
+	vm_page_t	src_m;
+
+#ifdef	lint
+	src_map++;
+#endif
+
+	src_object = src_entry->object.vm_object;
+	src_offset = src_entry->offset;
+
+	/*
+	 *	Create the top-level object for the destination entry.
+	 *	(Doesn't actually shadow anything - we copy the pages
+	 *	directly.)
+	 */
+	dst_object = vm_object_allocate(
+			(vm_size_t) (dst_entry->end - dst_entry->start));
+
+	dst_entry->object.vm_object = dst_object;
+	dst_entry->offset = 0;
+
+	prot  = dst_entry->max_protection;
+
+	/*
+	 *	Loop through all of the pages in the entry's range, copying
+	 *	each one from the source object (it should be there) to the
+	 *	destination object.
+	 */
+	for (vaddr = dst_entry->start, dst_offset = 0;
+	     vaddr < dst_entry->end;
+	     vaddr += PAGE_SIZE, dst_offset += PAGE_SIZE) {
+
+		/*
+		 *	Allocate a page in the destination object
+		 */
+		vm_object_lock(dst_object);
+		do {
+			dst_m = vm_page_alloc(dst_object, dst_offset);
+			if (dst_m == NULL) {
+				vm_object_unlock(dst_object);
+				vm_wait();
+				vm_object_lock(dst_object);
+			}
+		} while (dst_m == NULL);
+
+		/*
+		 *	Find the page in the source object, and copy it in.
+		 *	(Because the source is wired down, the page will be
+		 *	in memory.)
+		 */
+		vm_object_lock(src_object);
+		src_m = vm_page_lookup(src_object, dst_offset + src_offset);
+		if (src_m == NULL)
+			panic("vm_fault_copy_wired: page missing");
+
+		vm_page_copy(src_m, dst_m);
+
+		/*
+		 *	Enter it in the pmap...
+		 */
+		vm_object_unlock(src_object);
+		vm_object_unlock(dst_object);
+
+		pmap_enter(dst_map->pmap, vaddr, VM_PAGE_TO_PHYS(dst_m), prot, FALSE);
+
+		/*
+		 *	Mark it no longer busy, and put it on the active list.
+		 */
+		vm_object_lock(dst_object);
+		vm_page_lock_queues();
+		vm_page_activate(dst_m);
+		vm_page_unlock_queues();
+		PAGE_WAKEUP(dst_m);
+		vm_object_unlock(dst_object);
+	}
 }

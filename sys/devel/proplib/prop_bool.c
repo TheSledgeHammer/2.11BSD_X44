@@ -10,7 +10,13 @@
 #include "proplib_compat.h"
 #include "prop_object.h"
 
-/* prop bool */
+struct prop_bool {
+	propdb_t				pb_db;
+	struct prop_object		pb_obj;
+	bool_t					pb_value;
+	size_t					pb_len;
+};
+
 static struct prop_bool _prop_bool_true;
 static struct prop_bool _prop_bool_false;
 
