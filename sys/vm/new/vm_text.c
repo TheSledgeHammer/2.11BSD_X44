@@ -154,7 +154,7 @@ vm_xfree()
 {
 	register vm_text_t xp;
 	register struct vnode *vp;
-	struct vattr *vattr;
+	struct vattr vattr;
 
 	if ((xp = u.u_procp->p_textp) == NULL) {
 		return;
@@ -163,7 +163,7 @@ vm_xfree()
 
 	vm_xlock(xp);
 	vp = xp->psx_vptr;
-	if (xp->psx_count-- == 0 && (VOP_GETATTR(vp, vattr, u->u_cred, u.u_procp) != 0 || (vattr->va_mode & VSVTX) == 0)) {
+	if (xp->psx_count-- == 0 && (VOP_GETATTR(vp, &vattr, u->u_cred, u.u_procp) != 0 || (vattr->va_mode & VSVTX) == 0)) {
 		if ((xp->psx_flag & XTRC) || vattr->va_nlink == 0) {
 			xp->psx_flag &= ~XLOCK;
 			vm_xuntext(xp);

@@ -1384,11 +1384,11 @@ vm_object_coalesce(prev_object, next_object,
 #endif
 
 	if (next_object != NULL) {
-		return(FALSE);
+		return (FALSE);
 	}
 
 	if (prev_object == NULL) {
-		return(TRUE);
+		return (TRUE);
 	}
 
 	vm_object_lock(prev_object);
@@ -1413,7 +1413,7 @@ vm_object_coalesce(prev_object, next_object,
 		prev_object->shadow != NULL ||
 		prev_object->copy != NULL) {
 		vm_object_unlock(prev_object);
-		return(FALSE);
+		return (FALSE);
 	}
 
 	/*
@@ -1433,7 +1433,7 @@ vm_object_coalesce(prev_object, next_object,
 		prev_object->size = newsize;
 
 	vm_object_unlock(prev_object);
-	return(TRUE);
+	return (TRUE);
 }
 
 /*

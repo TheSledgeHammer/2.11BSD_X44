@@ -1245,3 +1245,99 @@ vm_amap_unref(entry, all)
 #endif
 	amap_unlock(amap);
 }
+
+/*
+ *	vm_amap_cleaner:		[ internal use only ]
+ */
+void
+vm_amap_cleaner(amap, anon)
+	vm_amap_t 	 	amap;
+	vm_anon_t 		anon;
+{
+	vm_segment_t 	segment;
+	vm_page_t 		page;
+
+	if (anon == NULL) {
+		continue;
+	}
+	simple_lock(&anon->an_lock);
+	segment = anon->u.an_segment;
+	page = anon->u.an_page;
+	if (page != NULL) {
+		KASSERT(!TAILQ_EMPTY(segment->memq));
+		KASSERT(page->segment == segment);
+
+		if (page->flags & PG_BUSY) {
+			continue;
+		}
+		if (amap_refs(amap) > 1) {
+			vm_page_lock_queues();
+			if (page->wire_count != 0) {
+				vm_page_unlock_queues();
+				simple_unlock(&anon->an_lock);
+				continue;
+			}
+			KASSERT(page->anon == anon);
+
+			vm_page_lock_queues();
+			vm_page_deactivate(page);
+			vm_page_unlock_queues();
+			continue;
+		}
+		if (page->wire_count != 0) {
+			simple_unlock(&anon->an_lock);
+			continue;
+		}
+	} else {
+		KASSERT(TAILQ_EMPTY(segment->memq));
+
+		if (segment == NULL) {
+			simple_unlock(&anon->an_lock);
+			continue;
+		}
+		if (segment->flags & SEG_BUSY) {
+			continue;
+		}
+		if (amap_refs(amap) > 1) {
+			KASSERT(segment->anon == anon);
+
+			vm_segment_lock_lists();
+			vm_segment_deactivate(segment);
+			vm_segment_unlock_lists();
+		}
+	}
+}
+
+/*
+ *	vm_amap_clean:
+ *
+ *	Clean anonymous memory. Primarily used to help vm_map_clean
+ *	when dealing with amaps and anons.
+ */
+void
+vm_amap_clean(current, size, offset, amap)
+	vm_map_entry_t 	current;
+	vm_size_t 		size;
+	vm_offset_t 	offset;
+	vm_amap_t 	 	amap;
+
+{
+	vm_segment_t 	segment;
+	vm_page_t 		page;
+	vm_anon_t 		anon;
+	int 			refs;
+
+	amap_lock(amap);
+	for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
+		anon = amap_lookup(&current->aref, offset);
+		vm_amap_cleaner(amap, anon);
+		vm_amap_unadd(&current->aref, offset);
+		refs = --anon->an_ref;
+		simple_unlock(&anon->an_lock);
+		if (refs == 0) {
+			vm_anon_free(anon);
+		}
+		continue;
+	}
+	amap_unlock(amap);
+}

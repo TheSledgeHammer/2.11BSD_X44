@@ -83,6 +83,7 @@ caddr_t			vm_amap_add(vm_aref_t, caddr_t, vm_anon_t, int);
 void			vm_amap_unadd(vm_amap_t, caddr_t);
 void			vm_amap_ref(vm_map_entry_t, int);
 void			vm_amap_unref(vm_map_entry_t, int);
+void			vm_amap_clean(vm_map_entry_t, vm_size_t, vm_offset_t, vm_amap_t);
 
 /*
  * amap flag values
