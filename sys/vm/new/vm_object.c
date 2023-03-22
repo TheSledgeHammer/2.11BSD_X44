@@ -146,137 +146,139 @@ again:
 	 * Loop through the object segment list cleaning as necessary.
 	 */
 	CIRCLEQ_FOREACH(segment, object->seglist, listq) {
-		/*
-		 * Check if the segment page list is empty.
-		 */
-		if (!TAILQ_EMPTY(segment->sg_memq)) {
+		if ((start == end || (segment->offset >= start && segment->offset < end))) {
 			/*
-			 * Loop through the segment page list cleaning as necessary.
+			 * Check if the segment page list is empty.
 			 */
-			TAILQ_FOREACH(page, segment->sg_memq, listq) {
-				if (!(page->flags & PG_FICTITIOUS)) {
-					ismod = pmap_is_modified(VM_PAGE_TO_PHYS(page));
-					if ((page->flags & PG_CLEAN) && ismod) {
-						page->flags &= ~PG_CLEAN;
-					}
-					/*
-					 * Remove the page from any paging queue.
-					 * This needs to be done if either we have been
-					 * explicitly asked to do so or it is about to
-					 * be cleaned (see comment below).
-					 */
-					if (de_queue || !(page->flags & PG_CLEAN)) {
-						vm_page_lock_queues();
-						if (page->flags & PG_ACTIVE) {
-							TAILQ_REMOVE(&vm_page_queue_active, page, pageq);
-							page->flags &= ~PG_ACTIVE;
-							cnt.v_page_active_count--;
-							onqueue = 1;
-						} else if (page->flags & PG_INACTIVE) {
-							TAILQ_REMOVE(&vm_page_queue_inactive, page, pageq);
-							page->flags &= ~PG_INACTIVE;
-							cnt.v_page_inactive_count--;
-							onqueue = -1;
-						} else {
-							onqueue = 0;
+			if (!TAILQ_EMPTY(segment->memq)) {
+				/*
+				 * Loop through the segment page list cleaning as necessary.
+				 */
+				TAILQ_FOREACH(page, segment->memq, listq) {
+					if (page->segment == segment && !(page->flags & PG_FICTITIOUS)) {
+						ismod = pmap_is_modified(VM_PAGE_TO_PHYS(page));
+						if ((page->flags & PG_CLEAN) && ismod) {
+							page->flags &= ~PG_CLEAN;
 						}
-						vm_page_unlock_queues();
-					}
-					/*
-					 * To ensure the state of the page doesn't change
-					 * during the clean operation we do two things.
-					 * First we set the busy bit and write-protect all
-					 * mappings to ensure that write accesses to the
-					 * page block (in vm_fault).  Second, we remove
-					 * the page from any paging queue to foil the
-					 * pageout daemon (vm_pageout_scan).
-					 */
-					pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_READ);
-					if (!(page->flags & PG_CLEAN)) {
-						page->flags |= PG_BUSY;
-						object->paging_in_progress++;
-						vm_object_unlock(object);
 						/*
-						 * XXX if put fails we mark the page as
-						 * clean to avoid an infinite loop.
-						 * Will loose changes to the page.
+						 * Remove the page from any paging queue.
+						 * This needs to be done if either we have been
+						 * explicitly asked to do so or it is about to
+						 * be cleaned (see comment below).
 						 */
-						if (vm_pager_put(object->pager, page, syncio)) {
-							printf("%s: pager_put error\n vm_object_page_clean");
-							page->flags |= PG_CLEAN;
-							noerror = FALSE;
-						}
-						vm_object_lock(object);
-						object->paging_in_progress--;
-						if (!de_queue && onqueue) {
+						if (de_queue || !(page->flags & PG_CLEAN)) {
 							vm_page_lock_queues();
-							if (onqueue > 0) {
-								vm_page_activate(page);
+							if (page->flags & PG_ACTIVE) {
+								TAILQ_REMOVE(&vm_page_queue_active, page, pageq);
+								page->flags &= ~PG_ACTIVE;
+								cnt.v_page_active_count--;
+								onqueue = 1;
+							} else if (page->flags & PG_INACTIVE) {
+								TAILQ_REMOVE(&vm_page_queue_inactive, page, pageq);
+								page->flags &= ~PG_INACTIVE;
+								cnt.v_page_inactive_count--;
+								onqueue = -1;
 							} else {
-								vm_page_deactivate(page);
+								onqueue = 0;
 							}
 							vm_page_unlock_queues();
 						}
-						page->flags &= ~PG_BUSY;
-						PAGE_WAKEUP(page);
-						goto again;
+						/*
+						 * To ensure the state of the page doesn't change
+						 * during the clean operation we do two things.
+						 * First we set the busy bit and write-protect all
+						 * mappings to ensure that write accesses to the
+						 * page block (in vm_fault).  Second, we remove
+						 * the page from any paging queue to foil the
+						 * pageout daemon (vm_pageout_scan).
+						 */
+						pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_READ);
+						if (!(page->flags & PG_CLEAN)) {
+							page->flags |= PG_BUSY;
+							object->paging_in_progress++;
+							vm_object_unlock(object);
+							/*
+							 * XXX if put fails we mark the page as
+							 * clean to avoid an infinite loop.
+							 * Will loose changes to the page.
+							 */
+							if (vm_pager_put(object->pager, page, syncio)) {
+								printf("%s: pager_put error\n vm_object_page_clean");
+								page->flags |= PG_CLEAN;
+								noerror = FALSE;
+							}
+							vm_object_lock(object);
+							object->paging_in_progress--;
+							if (!de_queue && onqueue) {
+								vm_page_lock_queues();
+								if (onqueue > 0) {
+									vm_page_activate(page);
+								} else {
+									vm_page_deactivate(page);
+								}
+								vm_page_unlock_queues();
+							}
+							page->flags &= ~PG_BUSY;
+							PAGE_WAKEUP(page);
+							goto again;
+						}
 					}
 				}
-			}
-		} else {
-			if ((start == end || (segment->offset >= start && segment->offset < end))) {
+			} else {
 				ismod = pmap_is_modified(VM_SEGMENT_TO_PHYS(segment));
-			}
-
-			/*
-			 * Remove the segment from any paging queue.
-			 * This needs to be done if either we have been
-			 * explicitly asked to do so or it is about to
-			 * be cleaned (see comment below).
-			 */
-			if (de_queue || !(segment->sg_flags & SEG_CLEAN)) {
-				vm_segment_lock_lists();
-				if (segment->sg_flags & SEG_ACTIVE) {
-					CIRCLEQ_REMOVE(&vm_segment_list_active, segment, segmentq);
-					segment->sg_flags &= ~SEG_ACTIVE;
-					cnt.v_segment_active_count--;
-					onqueue = 1;
-				} else if (segment->sg_flags & SEG_INACTIVE) {
-					CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, segmentq);
-					segment->sg_flags &= ~SEG_INACTIVE;
-					cnt.v_segment_inactive_count--;
-					onqueue = -1;
-				} else {
-					onqueue = 0;
+				if ((segment->flags & SEG_CLEAN) && ismod) {
+					segment->flags &= ~SEG_CLEAN;
 				}
-				vm_segment_unlock_lists();
-			}
-
-			/* protect entire segment & allocate new pages */
-			pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_READ);
-			page = vm_page_alloc(segment, segment->sg_offset);
-			vm_page_insert(segment, page, page->offset);
-
-			if (!(segment->flags & SEG_CLEAN)) {
-				segment->flags |= SEG_BUSY;
 				/*
-				 * Pager access should not be required for segments.
-				 * As empty pages are unmodified pages,
-				 * which are usually clean. If pages aren't empty,
-				 * they should have already been dealt with before getting here.
+				 * Remove the segment from any paging queue.
+				 * This needs to be done if either we have been
+				 * explicitly asked to do so or it is about to
+				 * be cleaned (see comment below).
 				 */
-				if (!de_queue && onqueue) {
+				if (de_queue || !(segment->flags & SEG_CLEAN)) {
 					vm_segment_lock_lists();
-					if (onqueue > 0) {
-						vm_segment_activate(segment);
+					if (segment->flags & SEG_ACTIVE) {
+						CIRCLEQ_REMOVE(&vm_segment_list_active, segment, segmentq);
+						segment->flags &= ~SEG_ACTIVE;
+						cnt.v_segment_active_count--;
+						onqueue = 1;
+					} else if (segment->flags & SEG_INACTIVE) {
+						CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, segmentq);
+						segment->flags &= ~SEG_INACTIVE;
+						cnt.v_segment_inactive_count--;
+						onqueue = -1;
 					} else {
-						vm_segment_deactivate(segment);
+						onqueue = 0;
 					}
 					vm_segment_unlock_lists();
 				}
-				segment->flags &= ~SEG_BUSY;
-				SEGMENT_WAKEUP(segment);
-				goto again;
+
+				/* protect entire segment & allocate new pages */
+				pmap_page_protect(VM_SEGMENT_TO_PHYS(segment), VM_PROT_READ);
+//				page = vm_page_alloc(segment, segment->sg_offset);
+//				vm_page_insert(segment, page, page->offset);
+
+				if (!(segment->flags & SEG_CLEAN)) {
+					segment->flags |= SEG_BUSY;
+					/*
+					 * Pager access should not be required for segments.
+					 * As empty pages are unmodified pages,
+					 * which are usually clean. If pages aren't empty,
+					 * they should have already been dealt with before getting here.
+					 */
+					if (!de_queue && onqueue) {
+						vm_segment_lock_lists();
+						if (onqueue > 0) {
+							vm_segment_activate(segment);
+						} else {
+							vm_segment_deactivate(segment);
+						}
+						vm_segment_unlock_lists();
+					}
+					segment->flags &= ~SEG_BUSY;
+					SEGMENT_WAKEUP(segment);
+					goto again;
+				}
 			}
 		}
 	}
