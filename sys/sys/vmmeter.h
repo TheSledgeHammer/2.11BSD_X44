@@ -51,24 +51,6 @@ struct vmrate {
 	unsigned 	v_zfod;						/* pages zero filled on demand */
 	unsigned 	v_nzfod;					/* number of zfod's created */
 
-	/* Distribution of page usages. */
-	unsigned 	v_page_size;				/* page size in bytes */
-	unsigned 	v_kernel_pages;				/* total number of pages in system */
-	unsigned 	v_free_target;				/* number of pages desired free */
-	unsigned 	v_free_min;					/* minimum number of pages desired free */
-	unsigned 	v_free_count;				/* number of pages free */
-	unsigned 	v_wire_count;				/* number of pages wired down */
-	unsigned 	v_page_active_count;		/* number of pages active */
-	unsigned 	v_inactive_target; 			/* number of pages desired inactive */
-	unsigned 	v_page_inactive_count;  	/* number of pages inactive */
-
-	/* Distribution of segment usages */
-	unsigned 	v_segment_size;				/* segment size in bytes */
-	unsigned 	v_kernel_segments;			/* total number of segments in system */
-	unsigned 	v_segment_count;			/* number of segments */
-	unsigned 	v_segment_active_count;		/* number of segments active */
-	unsigned 	v_segment_inactive_count;  	/* number of segments inactive */
-
 	/* Distribution of swap usages */
 	unsigned	v_nswapdev;					/* number of configured swap devices in system */
 	unsigned	v_swpages;					/* number of PAGE_SIZE'ed swap pages */
@@ -80,6 +62,24 @@ struct vmrate {
 	/* Distribution of anon usages. */
 	unsigned	v_nanon;					/* total number of anons in system */
 	unsigned	v_nfreeanon;				/* number of anons free */
+
+	/* Distribution of page usages. */
+	unsigned 	v_page_size;				/* page size in bytes */
+	//unsigned 	v_page_in_kernel;			/* total number of pages in system */
+	unsigned 	v_page_free_target;			/* number of pages desired free */
+	unsigned 	v_page_free_min;			/* minimum number of pages desired free */
+	unsigned 	v_page_free_count;			/* number of pages free */
+	unsigned 	v_page_wire_count;			/* number of pages wired down */
+	unsigned 	v_page_active_count;		/* number of pages active */
+	unsigned 	v_page_inactive_target; 	/* number of pages desired inactive */
+	unsigned 	v_page_inactive_count;  	/* number of pages inactive */
+
+	/* Distribution of segment usages */
+	unsigned 	v_segment_size;				/* segment size in bytes */
+	//unsigned 	v_segment_in_kernel;		/* total number of segments in system */
+	unsigned 	v_segment_free_count;		/* number of segments free */
+	unsigned 	v_segment_active_count;		/* number of segments active */
+	unsigned 	v_segment_inactive_count;  	/* number of segments inactive */
 };
 
 struct vmsum {

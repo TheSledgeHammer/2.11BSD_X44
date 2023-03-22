@@ -287,7 +287,7 @@ vm_init_limits(p)
     p->p_rlimit[RLIMIT_STACK].rlim_max = MAXSSIZ;
     p->p_rlimit[RLIMIT_DATA].rlim_cur = DFLDSIZ;
     /* limit the limit to no less than 128K */
-    rss_limit = max(cnt.v_free_count / 2, 32);
+    rss_limit = max(cnt.v_page_free_count / 2, 32);
     p->p_rlimit[RLIMIT_DATA].rlim_max = RLIM_INFINITY;
 	p->p_rlimit[RLIMIT_RSS].rlim_cur = ptoa(rss_limit);
 }
@@ -354,7 +354,7 @@ loop:
 			 * enough space, then select this process instead
 			 * of the previous selection.
 			 */
-			if (pri > ppri && (((cnt.v_free_count + (mempri * (4*PAGE_SIZE) / PAGE_SIZE) >= (p->p_vmspace->vm_swrss))))) {
+			if (pri > ppri && (((cnt.v_page_free_count + (mempri * (4*PAGE_SIZE) / PAGE_SIZE) >= (p->p_vmspace->vm_swrss))))) {
 				pp = p;
 				ppri = pri;
 			}
@@ -381,10 +381,10 @@ loop:
 	 */
 	size = round_page(ctob(UPAGES));
 	addr = (vm_offset_t) p->p_addr;
-	if (cnt.v_free_count > atop(size)) {
+	if (cnt.v_page_free_count > atop(size)) {
 #ifdef DEBUG
 		if (swapdebug & SDB_SWAPIN)
-			printf("swapin: pid %d(%s)@%p, pri %d free %d\n", p->p_pid, p->p_comm, p->p_addr, ppri, cnt.v_free_count);
+			printf("swapin: pid %d(%s)@%p, pri %d free %d\n", p->p_pid, p->p_comm, p->p_addr, ppri, cnt.v_page_free_count);
 #endif
 		swapin(p);
 		goto loop;
@@ -396,14 +396,14 @@ loop:
 	 */
 #ifdef DEBUG
 	if (swapdebug & SDB_FOLLOW)
-		printf("scheduler: no room for pid %d(%s), free %d\n", p->p_pid, p->p_comm, cnt.v_free_count);
+		printf("scheduler: no room for pid %d(%s), free %d\n", p->p_pid, p->p_comm, cnt.v_page_free_count);
 #endif
 	(void) splhigh();
 	vm_wait();
 	(void) spl0();
 #ifdef DEBUG
 	if (swapdebug & SDB_FOLLOW)
-		printf("scheduler: room again, free %d\n", cnt.v_free_count);
+		printf("scheduler: room again, free %d\n", cnt.v_page_free_count);
 #endif
 	goto loop;
 }
@@ -465,7 +465,7 @@ swapout_threads()
 	 * it (UPAGES pages).
 	 */
 	if (didswap == 0 &&
-	    cnt.v_free_count <= atop(round_page(ctob(UPAGES)))) {
+	    cnt.v_page_free_count <= atop(round_page(ctob(UPAGES)))) {
 		if ((p = outp) == 0) {
 			p = outp2;
 		}
@@ -517,7 +517,7 @@ xswapout(p, freecore, odata, ostack)
 	if (swapdebug & SDB_SWAPOUT) {
 		printf("swapout: pid %d(%s)@%x, stat %x pri %d free %d\n", p->p_pid,
 				p->p_comm, p->p_addr, p->p_stat, p->p_slptime,
-				cnt.v_free_count);
+				cnt.v_page_free_count);
 	}
 #endif
 	size = round_page(ctob(USIZE));

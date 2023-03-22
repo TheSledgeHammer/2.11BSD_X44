@@ -94,7 +94,7 @@ kthreadinit(kt)
 	tgrphashtbl = hashinit(maxthread / 4, M_PROC, &tgrphash);
 
     /* setup kthread mutex */
-    mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid, kt->kt_pgrp);
+    mtx_init(kt->kt_mtx, &kthread_loholder, "kthread mutex", (struct kthread *)kt, kt->kt_tid);
 }
 
 /*

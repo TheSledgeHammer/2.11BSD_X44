@@ -400,7 +400,7 @@ again:
 		if ((start == end || (segment->sg_offset >= start && segment->sg_offset < end))) {
 			issgmod = pmap_is_modified(VM_SEGMENT_TO_PHYS(segment));
 			if ((segment->sg_flags & SEG_CLEAN) && issgmod) {
-				segment->sg_flags &= ~PG_CLEAN;
+				segment->sg_flags &= ~SEG_CLEAN;
 			}
 			if (de_queue || !(segment->sg_flags & SEG_CLEAN)) {
 				vm_segment_lock_lists();

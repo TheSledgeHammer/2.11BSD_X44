@@ -120,7 +120,7 @@ vm_segment_startup(start, end)
 	/*
  	 *	Compute the number of segments.
 	 */
-	cnt.v_segment_count = nsegments = (*end - *start + sizeof(struct vm_segment)) / (SEGMENT_SIZE + sizeof(struct vm_segment));
+	cnt.v_segment_free_count = nsegments = (*end - *start + sizeof(struct vm_segment)) / (SEGMENT_SIZE + sizeof(struct vm_segment));
 	vm_segment_array_size = nsegments;
 
 	/*
@@ -306,7 +306,7 @@ vm_segment_alloc(object, offset)
 	seg = CIRCLEQ_FIRST(&vm_segment_list_free);
 	CIRCLEQ_REMOVE(&vm_segment_list_free, seg, segmentq);
 
-	cnt.v_segment_count--;
+	cnt.v_segment_free_count--;
 	simple_unlock(&vm_segment_list_free_lock);
 
 	VM_SEGMENT_INIT(seg, object, offset)
@@ -318,19 +318,22 @@ void
 vm_segment_free(segment)
 	register vm_segment_t segment;
 {
-	if (TAILQ_EMPTY(segment->memq)) {
-		vm_segment_remove(segment);
-		if (segment->flags & SEG_ACTIVE) {
-			CIRCLEQ_REMOVE(&vm_segment_list_active, segment, segmentq);
-			segment->flags &= SEG_ACTIVE;
-			cnt.v_segment_active_count--;
-		}
-		if (segment->flags & SEG_INACTIVE) {
-			CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, segmentq);
-			segment->flags &= SEG_INACTIVE;
-			cnt.v_segment_inactive_count--;
-		}
+	vm_segment_remove(segment);
+	if (segment->flags & SEG_ACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, segmentq);
+		segment->flags &= SEG_ACTIVE;
+		cnt.v_segment_active_count--;
 	}
+	if (segment->flags & SEG_INACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, segmentq);
+		segment->flags &= SEG_INACTIVE;
+		cnt.v_segment_inactive_count--;
+	}
+
+	simple_lock(&vm_segment_list_free_lock);
+	CIRCLEQ_INSERT_TAIL(&vm_segment_list_free, segment, segmentq);
+	cnt.v_segment_free_count++;
+	simple_unlock(&vm_segment_list_free_lock);
 }
 
 void

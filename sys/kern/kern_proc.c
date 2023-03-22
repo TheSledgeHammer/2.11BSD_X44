@@ -100,7 +100,7 @@ procinit(p)
 	uihashtbl = hashinit(maxproc / 16, M_PROC, &uihash);
 
 	/* init proc lock (mutex) */
-	mtx_init(p->p_mtx, &proc_loholder, "proc_mutex", (struct proc *)p, p->p_pid, p->p_pgrp);
+	mtx_init(p->p_mtx, &proc_loholder, "proc_mutex", (struct proc *)p, p->p_pid);
 }
 
 /*

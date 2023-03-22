@@ -307,6 +307,6 @@ active:
 	totalp->t_avm += totalp->t_avmtxt;
 	totalp->t_rm += totalp->t_rmtxt;
 	totalp->t_arm += totalp->t_armtxt;
-	totalp->t_free = (long)cnt.v_free_count;
-	avefree = cnt.v_free_count;
+	totalp->t_free = (long)cnt.v_page_free_count;
+	avefree = cnt.v_page_free_count;
 }

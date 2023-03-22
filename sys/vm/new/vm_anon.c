@@ -65,7 +65,7 @@ vm_anon_init(void)
 	int nanon;
 	int lcv;
 
-	nanon = cnt.v_free_count - (cnt.v_free_count / 16); /* XXXCDC ??? */
+	nanon = cnt.v_page_free_count - (cnt.v_page_free_count / 16); /* XXXCDC ??? */
 	simple_lock_init(&anon->u.an_freelock);
 
 	/*

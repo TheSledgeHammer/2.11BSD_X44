@@ -34,7 +34,7 @@
 #include <sys/mutex.h>
 
 void
-mtx_init(mtx, holder, name, data, pid, pgrp)
+mtx_init1(mtx, holder, name, data, pid, pgrp)
 	struct mtx 			*mtx;
 	struct lock_holder 	*holder;
 	char 				*name;
@@ -46,6 +46,17 @@ mtx_init(mtx, holder, name, data, pid, pgrp)
 	simple_lock_init(mtx->mtx_lock, name);
 	mtx->mtx_name = name;
 	holder = lockholder_create(data, pid, pgrp);
+}
+
+void
+mtx_init(mtx, holder, name, data, pid)
+	struct mtx 			*mtx;
+	struct lock_holder 	*holder;
+	char 				*name;
+	void 				*data;
+	pid_t 				pid;
+{
+	mtx_init1(mtx, holder, name, data, pid, NULL);
 }
 
 void

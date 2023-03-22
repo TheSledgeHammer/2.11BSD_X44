@@ -82,8 +82,6 @@ void		vm_wait(void);
 void		vm_pageout(void *arg);
 void		vm_pageout_scan_segment(vm_object_t, int, int);
 void		vm_pageout_scan_page(struct pglist *, vm_segment_t, vm_object_t, int, int);
-vm_offset_t	vm_pageout_phys(vm_page_t, vm_segment_t);
-void		vm_pageout_inactive_scanner(vm_page_t, vm_segment_t, vm_object_t, int);
 void		vm_pageout_active(vm_page_t, vm_segment_t, vm_object_t);
 void		vm_pageout_cluster(vm_page_t, vm_segment_t, vm_object_t);
 #endif

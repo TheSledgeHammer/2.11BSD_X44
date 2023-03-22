@@ -40,7 +40,7 @@ struct lock_holder;
 struct lock_object;
 struct pgrp;
 
-void mtx_init(struct mtx *, struct lock_holder *, char *, void *, pid_t, struct pgrp *);
+void mtx_init(struct mtx *, struct lock_holder *, char *, void *, pid_t);
 void mtx_lock(struct mtx *, struct lock_holder *);
 void mtx_unlock(struct mtx *, struct lock_holder *);
 #endif /* _KERNEL */

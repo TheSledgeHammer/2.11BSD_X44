@@ -234,7 +234,7 @@ main(framep)
 	}
 	u.u_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
 	u.u_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
-	i = ptoa(cnt.v_free_count);
+	i = ptoa(cnt.v_page_free_count);
 	u.u_rlimit[RLIMIT_RSS].rlim_max = i;
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
 	u.u_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;

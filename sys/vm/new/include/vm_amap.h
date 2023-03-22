@@ -50,7 +50,7 @@
  * amap implementation-specific definitions.
  */
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 
 /*
  * part 1: amap interface
