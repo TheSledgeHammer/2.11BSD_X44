@@ -1350,19 +1350,3 @@ vm_putswapbuf(sbp, bp)
 	free(bp, M_TEMP);
 	splx(s);
 }
-
-/* kern_physio.c */
-struct swapbuf physbuf;
-
-struct buf *
-getphysbuf(void)
-{
-	return (vm_getswapbuf(&physbuf));
-}
-
-void
-putphysbuf(bp)
-	struct buf *bp;
-{
-	vm_putswapbuf(&physbuf, bp);
-}

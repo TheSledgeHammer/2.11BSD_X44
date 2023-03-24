@@ -98,6 +98,10 @@ struct swdevt {
 
 #define	SW_FREED		0x01
 #define	SW_SEQUENTIAL	0x02
+#define SW_INUSE		0x04		/* in use: we have swapped here */
+#define SW_ENABLE		0x08		/* enabled: we can swap here */
+#define SW_BUSY			0x10		/* busy: I/O happening here */
+#define SW_FAKE			0x20		/* fake: still being built */
 #define sw_freed		sw_flags	/* XXX compat */
 
 #ifdef _KERNEL

@@ -405,7 +405,7 @@ vnode_pager_setsize(vp, nsize)
 	 */
 	if (nsize < vnp->vnp_size) {
 		vm_object_lock(object);
-		vm_object_page_remove(object,(vm_offset_t)nsize, vnp->vnp_size);
+		vm_object_segment_page_remove(object,(vm_offset_t)nsize, vnp->vnp_size);
 		vm_object_unlock(object);
 	}
 	vnp->vnp_size = (vm_offset_t)nsize;

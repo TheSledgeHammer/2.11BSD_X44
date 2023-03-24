@@ -72,40 +72,58 @@
 #include <machine/vmparam.h>
 
 /*
- *	The machine independent pages are refered to as PAGES.  A page
+ *	The machine independent segments are referred to as SEGMENTS.
+ *	Note: All Segment information presented here is derived from
+ *	4.4BSD-Lite2 HP300.
+ */
+#define	DEFAULT_SEGMENT_SIZE	4194304					/* 4 mib segments */
+
+#define SEGMENT_SIZE 			cnt.v_segment_size		/* size of segment */
+#define SEGMENT_MASK			segment_mask			/* size of segment - 1 */
+#define	SEGMENT_SHIFT			segment_shift			/* bits to shift for segments */
+#ifdef _KERNEL
+extern vm_size_t				segment_mask;
+extern int						segment_shift;
+#endif
+
+/*
+ *	The machine independent pages are referred to as PAGES.  A page
  *	is some number of hardware pages, depending on the target machine.
  */
-#define	DEFAULT_PAGE_SIZE	4096
+#define	DEFAULT_PAGE_SIZE		4096					/* 4 kib pages per segment */
 
 /*
  *	All references to the size of a page should be done with PAGE_SIZE
  *	or PAGE_SHIFT.  The fact they are variables is hidden here so that
  *	we can easily make them constant if we so desire.
  */
-#define	PAGE_SIZE	cnt.v_page_size		/* size of page */
-#define	PAGE_MASK	page_mask			/* size of page - 1 */
-#define	PAGE_SHIFT	page_shift			/* bits to shift for pages */
+
+#define	PAGE_SIZE				cnt.v_page_size			/* size of page */
+#define	PAGE_MASK				page_mask				/* size of page - 1 */
+#define	PAGE_SHIFT				page_shift				/* bits to shift for pages */
 #ifdef _KERNEL
-extern vm_size_t	page_mask;
-extern int			page_shift;
+extern vm_size_t				page_mask;
+extern int						page_shift;
 #endif
 
 /*
  * CTL_VM identifiers
  */
-#define	VM_METER	1		/* struct vmmeter */
-#define	VM_LOADAVG	2		/* struct loadavg */
-#define	VM_SWAPMAP	3		/* struct mapent _swapmap[] */
-#define	VM_COREMAP	4		/* struct mapent _coremap[] */
+#define	VM_METER		1		/* struct vmmeter */
+#define	VM_LOADAVG		2		/* struct loadavg */
+#define	VM_TEXT			3		/* struct vm_text */
+#define	VM_SWAPMAP		4		/* struct mapent swapmap[] */
+#define	VM_COREMAP		5		/* struct mapent coremap[] */
 
-#define	VM_MAXID	5		/* number of valid vm ids */
+#define	VM_MAXID		6		/* number of valid vm ids */
 
-#define	CTL_VM_NAMES { \
-	{ 0, 0 }, \
-	{ "vmmeter", CTLTYPE_STRUCT }, \
-	{ "loadavg", CTLTYPE_STRUCT }, \
-	{ "swapmap", CTLTYPE_STRUCT }, \
-	{ "coremap", CTLTYPE_STRUCT }, \
+#define	CTL_VM_NAMES { 					\
+	{ 0, 0 }, 							\
+	{ "vmmeter", CTLTYPE_STRUCT }, 		\
+	{ "loadavg", CTLTYPE_STRUCT }, 		\
+	{ "vmtext",	 CTLTYPE_STRUCT },		\
+	{ "swapmap", CTLTYPE_STRUCT }, 		\
+	{ "coremap", CTLTYPE_STRUCT }, 		\
 }
 
 /* 
@@ -123,12 +141,24 @@ extern int			page_shift;
 
 #ifndef ASSEMBLER
 /*
- *	Convert addresses to pages and vice versa.
+ *	Convert addresses to segments & pages and vice versa.
  *	No rounding is used.
  */
 #ifdef _KERNEL
-#define	atop(x)		(((unsigned long)(x)) >> PAGE_SHIFT)
+#define atos(x)		(((vm_offset_t)(x)) >> SEGMENT_SHIFT)
+#define	stoa(x)		((vm_offset_t)((x) << SEGMENT_SHIFT))
+#define	atop(x)		(((vm_offset_t)(x)) >> PAGE_SHIFT)
 #define	ptoa(x)		((vm_offset_t)((x) << PAGE_SHIFT))
+
+/*
+ * Round off or truncate to the nearest segment.
+ */
+#define	round_segment(x) \
+	((vm_offset_t)((((vm_offset_t)(x)) + SEGMENT_MASK) & ~SEGMENT_MASK))
+#define	trunc_segment(x) \
+	((vm_offset_t)(((vm_offset_t)(x)) & ~SEGMENT_MASK))
+#define	num_segments(x) \
+	((vm_offset_t)((((vm_offset_t)(x)) + SEGMENT_MASK) >> SEGMENT_SHIFT))
 
 /*
  * Round off or truncate to the nearest page.  These will work
@@ -146,13 +176,21 @@ extern vm_offset_t	first_addr;	/* first physical page */
 extern vm_offset_t	last_addr;	/* last physical page */
 
 #else
-/* out-of-kernel versions of round_page and trunc_page */
+/* out-of-kernel versions of round_segment, trunc_segment, round_page & trunc_page */
 #define	round_page(x) \
-	((((vm_offset_t)(x) + (vm_page_size - 1)) / vm_page_size) * \
-	    vm_page_size)
+	((((vm_offset_t)(x) + (vm_page_size - 1)) / vm_page_size) * vm_page_size)
 #define	trunc_page(x) \
 	((((vm_offset_t)(x)) / vm_page_size) * vm_page_size)
+#define	num_pages(x) \
+	((((vm_offset_t)(x)) + (vm_page_size - 1)) / vm_page_size)
+
+#define	round_segment(x) \
+	((((vm_offset_t)(x) + (vm_segment_size - 1)) / vm_segment_size) * vm_segment_size)
+#define	trunc_segment(x) \
+	((((vm_offset_t)(x)) / vm_segment_size) * vm_segment_size)
+#define	num_segments(x) \
+	((((vm_offset_t)(x)) + (vm_segment_size - 1)) / vm_segment_size)
 
 #endif /* KERNEL */
 #endif /* ASSEMBLER */
-#endif /* _VM_PARAM_H_ */
+#endif /* _VM_PARAM_ */

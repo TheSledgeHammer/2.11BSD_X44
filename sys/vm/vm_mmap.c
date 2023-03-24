@@ -39,6 +39,13 @@
  *
  *	@(#)vm_mmap.c	8.10 (Berkeley) 2/19/95
  */
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vm_proc.c	1.2 (2.11BSD GTE) 12/24/92
+ */
 
 /*
  * Mapped file (mmap) interface to VM
@@ -54,7 +61,6 @@
 #include <sys/mman.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
-//#include <sys/user.h>
 #include <sys/mount.h>
 #include <sys/sysdecl.h>
 
@@ -63,6 +69,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_pager.h>
 #include <vm/include/vm_prot.h>
+#include <vm/include/vm_text.h>
 
 #ifdef DEBUG
 int mmapdebug = 0;
@@ -84,8 +91,32 @@ sbrk()
 		syscallarg(int) incr;
 	} *uap = (struct sbrk_args *) u.u_ap;
 
-	/* Not yet implemented */
-	return (EOPNOTSUPP);
+	struct proc *p;
+	register_t *retval;
+	register segsz_t n, d;
+
+	p = u.u_procp;
+	n = btoc(SCARG(uap, size));
+	if (!SCARG(uap, sep)) {
+		SCARG(uap, sep) = PSEG_NOSEP;
+	} else {
+		n -= ctos(p->p_tsize) * stoc(1);
+	}
+	if (n < 0) {
+		n = 0;
+	}
+
+	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
+		return (0);
+	}
+	vm_expand(p, n, S_DATA);
+	/* set d to (new - old) */
+	d = n - p->p_dsize;
+	if (d > 0) {
+		bzero(p->p_daddr + p->p_dsize, d);
+	}
+	p->p_dsize = n;
+	return (0);
 }
 
 /* ARGSUSED */
@@ -98,6 +129,98 @@ sstk()
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
+}
+
+/*
+ * Change the size of the data+stack regions of the process.
+ * If the size is shrinking, it's easy -- just release the extra core.
+ * If it's growing, and there is core, just allocate it and copy the
+ * image, taking care to reset registers to account for the fact that
+ * the system's stack has moved.  If there is no core, arrange for the
+ * process to be swapped out after adjusting the size requirement -- when
+ * it comes in, enough core will be allocated.  After the expansion, the
+ * caller will take care of copying the user's stack towards or away from
+ * the data area.  The data and stack segments are separated from each
+ * other.  The second argument to expand specifies which to change.  The
+ * stack segment will not have to be copied again after expansion.
+ */
+void
+vm_expand(p, newsize, type)
+	struct proc 	*p;
+	vm_size_t 	 	newsize;
+	int 			type;
+{
+	register vm_psegment_t 	pseg;
+	register vm_size_t i, n;
+	caddr_t a1, a2;
+
+	pseg = p->p_vmspace->vm_psegment;
+	if (pseg == NULL) {
+		return;
+	}
+	if (type == PSEG_DATA) {
+		n = pseg->ps_data.psx_dsize;
+		pseg->ps_data.psx_dsize = newsize;
+		p->p_dsize = pseg->ps_data.psx_dsize;
+		a1 = pseg->ps_data.psx_daddr;
+		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
+		if (n >= newsize) {
+			n -= newsize;
+			vm_psegment_extent_free(pseg, n + newsize, a1, PSEG_DATA, 0);
+			rmfree(coremap, n, a1 + newsize);
+			return;
+		}
+	} else {
+		n = pseg->ps_stack.psx_ssize;
+		pseg->ps_stack.psx_ssize = newsize;
+		p->p_ssize = pseg->ps_stack.psx_ssize;
+		a1 = pseg->ps_stack.psx_saddr;
+		vm_psegment_expand(pseg, newsize, a1, PSEG_STACK);
+		if (n >= newsize) {
+			n -= newsize;
+			pseg->ps_stack.psx_saddr += n;
+			p->p_saddr = pseg->ps_stack.psx_saddr;
+			vm_psegment_extent_free(pseg, n, a1, PSEG_STACK, 0);
+			rmfree(coremap, n, a1);
+			return;
+		}
+	}
+	if (type == PSEG_STACK) {
+		a1 = pseg->ps_stack.psx_saddr;
+		i = newsize - n;
+		a2 = a1 + i;
+		/*
+		 * i is the amount of growth.  Copy i clicks
+		 * at a time, from the top; do the remainder
+		 * (n % i) separately.
+		 */
+		while (n >= i) {
+			n -= i;
+			bcopy(a1 + n, a2 + n, i);
+		}
+		bcopy(a1, a2, n);
+	}
+	a2 = rmalloc(coremap, newsize);
+	if (a2 == NULL) {
+		if (type == PSEG_DATA) {
+			vm_xswapout(p, X_FREECORE, n, X_OLDSIZE);
+		} else {
+			vm_xswapout(p, X_FREECORE, X_OLDSIZE, n);
+		}
+	}
+	if (type == PSEG_STACK) {
+		pseg->ps_stack.psx_saddr = a2;
+		p->p_saddr = pseg->ps_stack.psx_saddr;
+		/*
+		 * Make the copy put the stack at the top of the new area.
+		 */
+		a2 += newsize - n;
+	} else {
+		pseg->ps_data.psx_daddr = a2;
+		p->p_daddr = pseg->ps_data.psx_daddr;
+	}
+	bcopy(a1, a2, n);
+	rmfree(coremap, n, a1);
 }
 
 int

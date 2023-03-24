@@ -70,6 +70,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_segment.h>
 
 #include <net/netisr.h>
 
@@ -121,6 +122,10 @@ void cpu_reset(void);
 void cpu_halt(void);
 void identify_cpu(void);
 caddr_t allocsys(caddr_t);
+
+static int 	add_smap_entry(struct bios_smap *);
+static void add_smap_entries(struct bios_smap *);
+static int 	has_smapbase(struct bios_smap *);
 
 void (*delay_func)(int) = i8254_delay;
 void (*microtime_func)(struct timeval *) = i386_microtime;
@@ -1393,6 +1398,7 @@ init386(first)
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
 	vm86_initialize();
 	getmemsize(&i386boot);
+	vm_set_segment_size();
 	vm_set_page_size();
 
 	/* call pmap initialization to make new kernel address space */
@@ -1802,10 +1808,10 @@ cpu_setmcontext(p, mcp, flags)
 	return (0);
 }
 
-#ifdef notyet
 /* bios smap */
-static int
-add_smap_entry(struct bios_smap *smap)
+int
+add_smap_entry(smap)
+	struct bios_smap *smap;
 {
 	if (boothowto & RB_VERBOSE) {
 		printf("SMAP type=%02x base=%016llx len=%016llx\n", smap->type, smap->base, smap->length);
@@ -1818,8 +1824,9 @@ add_smap_entry(struct bios_smap *smap)
 	return (add_mem_cluster(smap->base, smap->length));
 }
 
-static void
-add_smap_entries(struct bios_smap *smapbase)
+void
+add_smap_entries(smapbase)
+	struct bios_smap *smapbase;
 {
 	struct bios_smap *smap, *smapend;
 	u_int32_t smapsize;
@@ -1855,7 +1862,6 @@ has_smapbase(smapbase)
 	}
 	return (has_smap);
 }
-#endif
 
 /*
  * Add a mask to cpl, and return the old value of cpl.

@@ -48,8 +48,12 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 
-struct buf *getphysbuf(void);
-void putphysbuf(struct buf *bp);
+#include <vm/include/vm_swap.h>
+
+struct swapbuf physbuf;
+
+struct buf 	*getphysbuf(void);
+void 		putphysbuf(struct buf *bp);
 
 /*
  * Do "physical I/O" on behalf of a user.  "Physical I/O" is I/O directly
@@ -249,27 +253,7 @@ done:
 struct buf *
 getphysbuf(void)
 {
-	struct buf *bp;
-	int s;
-
-	s = splbio();
-	while((bp = TAILQ_FIRST(&bswlist)) == NULL) {
-		bp->b_flags |= B_WANTED;
-		sleep((caddr_t)&bp, BPRIO_DEFAULT);
-	}
-	TAILQ_REMOVE(&bswlist, bp, b_freelist);
-	splx(s);
-
-	if (bp == NULL) {
-		bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_WAITOK);
-	}
-	bzero(bp, sizeof(*bp));
-	BUF_INIT(bp);
-
-	bp->b_rcred = bp->b_wcred = NOCRED;
-	LIST_NEXT(bp, b_vnbufs) = NOLIST;
-
-	return (bp);
+	return (vm_getswapbuf(&physbuf));
 }
 
 /*
@@ -279,20 +263,7 @@ void
 putphysbuf(bp)
 	struct buf *bp;
 {
-	int s;
-
-	s = splbio();
-	if (bp->b_vp) {
-		brelvp(bp);
-	}
-	if (bp->b_flags & B_WANTED) {
-		bp->b_flags &= ~B_WANTED;
-		wakeup((caddr_t)bp);
-		//wakeup((caddr_t)pageproc);
-	}
-	TAILQ_INSERT_HEAD(&bswlist, bp, b_freelist);
-	free(bp, M_TEMP);
-	splx(s);
+	vm_putswapbuf(&physbuf, bp);
 }
 
 /*

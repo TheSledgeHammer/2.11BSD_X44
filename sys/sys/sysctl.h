@@ -383,7 +383,7 @@ int sysctl_file(char *, size_t *);
 int	sysctl_clockrate(char *, size_t *);
 int	sysctl_doproc(int *, u_int, char *, size_t *);
 int	sysctl_vnode(char *, size_t *, struct proc *);
-//int sysctl_text(char *, size_t *);
+int sysctl_text(char *, size_t *);
 void fill_eproc(struct proc *, struct eproc *);
 
 #else	/* !KERNEL */

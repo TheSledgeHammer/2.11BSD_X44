@@ -113,12 +113,6 @@ struct vm_page;
 #define SWAP_DUMPDEV		7		/* use this device as dump device */
 #define SWAP_GETDUMPDEV		8		/* use this device as dump device */
 
-
-#define SW_INUSE			0x04	/* in use: we have swapped here */
-#define SW_ENABLE			0x08	/* enabled: we can swap here */
-#define SW_BUSY				0x10	/* busy: I/O happening here */
-#define SW_FAKE				0x20	/* fake: still being built */
-
 struct lock 				swap_syscall_lock;
 simple_lock_data_t 			swap_data_lock;
 

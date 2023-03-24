@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -40,17 +40,17 @@
  * All rights reserved.
  *
  * Authors: Avadis Tevanian, Jr., Michael Wayne Young
- * 
+ *
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
  * notice and this permission notice appear in all copies of the
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
- * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
- * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ *
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND
  * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
- * 
+ *
  * Carnegie Mellon requests users of this software to return to
  *
  *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
@@ -72,6 +72,7 @@
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_segment.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_pageout.h>
 
@@ -83,20 +84,18 @@
 struct pglist		*vm_page_buckets;			/* Array of buckets */
 int					vm_page_bucket_count = 0;	/* How big is array? */
 int					vm_page_hash_mask;			/* Mask for hash function */
-simple_lock_data_t	bucket_lock;				/* lock for all buckets XXX */
+simple_lock_data_t	page_bucket_lock;			/* lock for all page buckets XXX */
 
 struct pglist		vm_page_queue_free;
 struct pglist		vm_page_queue_active;
 struct pglist		vm_page_queue_inactive;
 simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
-simple_lock_data_t	vm_pages_needed_lock;
 
 /* has physical page allocation been initialized? */
 bool_t 				vm_page_startup_initialized;
 
 vm_page_t			vm_page_array;
-long				vm_page_array_size;
 long				first_page;
 long				last_page;
 vm_offset_t			first_phys_addr;
@@ -104,6 +103,8 @@ vm_offset_t			last_phys_addr;
 vm_size_t			page_mask;
 int					page_shift;
 vm_offset_t			kentry_data;
+
+void i386_vm_page_startup(vm_page_t);
 
 /*
  * vm_pbootstrap:
@@ -163,15 +164,19 @@ vm_pbootinit(item, size, nitems)
  */
 void
 vm_set_page_size(void)
-{
-	if (cnt.v_page_size == 0)
+ {
+	if (cnt.v_page_size == 0) {
 		cnt.v_page_size = DEFAULT_PAGE_SIZE;
+	}
 	page_mask = cnt.v_page_size - 1;
-	if ((page_mask & cnt.v_page_size) != 0)
+	if ((page_mask & cnt.v_page_size) != 0) {
 		panic("vm_set_page_size: page size not a power of two");
-	for (page_shift = 0; ; page_shift++)
-		if ((1 << page_shift) == cnt.v_page_size)
+	}
+	for (page_shift = 0;; page_shift++) {
+		if ((1 << page_shift) == cnt.v_page_size) {
 			break;
+		}
+	}
 }
 
 /*
@@ -223,8 +228,9 @@ vm_page_startup(start, end)
 
 	if (vm_page_bucket_count == 0) {
 		vm_page_bucket_count = 1;
-		while (vm_page_bucket_count < atop(*end - *start))
+		while (vm_page_bucket_count < atop(*end - *start)) {
 			vm_page_bucket_count <<= 1;
+		}
 	}
 
 	vm_page_hash_mask = vm_page_bucket_count - 1;
@@ -232,8 +238,7 @@ vm_page_startup(start, end)
 	/*
 	 *	Allocate (and initialize) the hash table buckets.
 	 */
-	vm_page_buckets = (struct pglist *)
-	    pmap_bootstrap_alloc(vm_page_bucket_count * sizeof(struct pglist));
+	vm_page_buckets = (struct pglist *)pmap_bootstrap_alloc(vm_page_bucket_count * sizeof(struct pglist));
 	bucket = vm_page_buckets;
 
 	for (i = vm_page_bucket_count; i--;) {
@@ -241,7 +246,7 @@ vm_page_startup(start, end)
 		bucket++;
 	}
 
-	simple_lock_init(&bucket_lock, "vm_page_bucket_lock");
+	simple_lock_init(&page_bucket_lock, "page_bucket_lock");
 
 	/*
 	 *	Truncate the remainder of physical memory to our page size.
@@ -276,7 +281,7 @@ vm_page_startup(start, end)
 	 */
 
 	first_page = *start;
-	first_page += npages * sizeof(struct vm_page);
+	first_page += npages*sizeof(struct vm_page);
 	first_page = atop(round_page(first_page));
 	last_page  = first_page + npages - 1;
 
@@ -286,8 +291,8 @@ vm_page_startup(start, end)
 	/*
 	 *	Allocate and clear the mem entry structures.
 	 */
-	vm_page_array_size = npages;
-	m = vm_page_array = (vm_page_t) pmap_bootstrap_alloc(npages * sizeof(struct vm_page));
+
+	m = vm_page_array = (vm_page_t)pmap_bootstrap_alloc(npages * sizeof(struct vm_page));
 
 	/*
 	 *	Initialize the mem entry structures now, and
@@ -297,16 +302,10 @@ vm_page_startup(start, end)
 	pa = first_phys_addr;
 	while (npages--) {
 		m->flags = 0;
-		m->object = NULL;
+		m->segment = NULL;
 		m->phys_addr = pa;
 #ifdef i386
-		if (pmap_isvalidphys(m->phys_addr)) {
-			TAILQ_INSERT_TAIL(&vm_page_queue_free, m, pageq);
-		} else {
-			/* perhaps iomem needs it's own type, or dev pager? */
-			m->flags |= PG_FICTITIOUS | PG_BUSY;
-			cnt.v_page_free_count--;
-		}
+		i386_vm_page_startup(m);
 #else /* i386 */
 		TAILQ_INSERT_TAIL(&vm_page_queue_free, m, pageq);
 #endif /* i386 */
@@ -324,87 +323,78 @@ vm_page_startup(start, end)
 	vm_page_startup_initialized = TRUE;
 }
 
+void
+i386_vm_page_startup(page)
+	register vm_page_t		page;
+{
+	if (pmap_isvalidphys(page->phys_addr)) {
+		TAILQ_INSERT_TAIL(&vm_page_queue_free, page, pageq);
+	} else {
+		/* perhaps iomem needs it's own type, or dev pager? */
+		page->flags |= PG_FICTITIOUS | PG_BUSY;
+		cnt.v_page_free_count--;
+	}
+}
+
 /*
  *	vm_page_hash:
  *
- *	Distributes the object/offset key pair among hash buckets.
+ *	Distributes the segment/offset key pair among hash buckets.
  *
  *	NOTE:  This macro depends on vm_page_bucket_count being a power of 2.
  */
 unsigned long
-vm_page_hash(object, offset)
-    vm_object_t    	object;
+vm_page_hash(segment, offset)
+    vm_segment_t    segment;
     vm_offset_t     offset;
 {
-    Fnv32_t hash1 = fnv_32_buf(&object, (sizeof(&object) + offset)&vm_page_hash_mask, FNV1_32_INIT)%vm_page_hash_mask;
-    Fnv32_t hash2 = (((unsigned long)object+(unsigned long)offset)&vm_page_hash_mask);
+    Fnv32_t hash1 = fnv_32_buf(&segment, (sizeof(&segment) + offset)&vm_page_hash_mask, FNV1_32_INIT)%vm_page_hash_mask;
+    Fnv32_t hash2 = (((unsigned long)segment+(unsigned long)offset)&vm_page_hash_mask);
     return (hash1^hash2);
 }
 
 /*
  *	vm_page_insert:		[ internal use only ]
  *
- *	Inserts the given mem entry into the object/object-page
+ *	Inserts the given mem entry into the segment/segment-page
  *	table and object list.
  *
- *	The object and page must be locked.
+ *	The object, segment and page must be locked.
  */
 
 void
-vm_page_insert(mem, object, offset)
+vm_page_insert(mem, segment, offset)
 	register vm_page_t		mem;
-	register vm_object_t	object;
+	register vm_segment_t	segment;
 	register vm_offset_t	offset;
 {
 	register struct pglist	*bucket;
 	int						spl;
 
-	VM_PAGE_CHECK(mem);
-
-	if (mem->flags & PG_TABLED)
-		panic("vm_page_insert: already inserted");
-
-	/*
-	 *	Record the object/offset pair in this page
-	 */
-
-	mem->object = object;
+	mem->segment = segment;
 	mem->offset = offset;
 
-	/*
-	 *	Insert it into the object_object/offset hash table
-	 */
-
-	bucket = &vm_page_buckets[vm_page_hash(object, offset)];
+	bucket = &vm_page_buckets[vm_page_hash(segment, offset)];
 	spl = splimp();
-	simple_lock(&bucket_lock);
+	simple_lock(&page_bucket_lock);
 	TAILQ_INSERT_TAIL(bucket, mem, hashq);
-	simple_unlock(&bucket_lock);
+	simple_unlock(&page_bucket_lock);
 	(void) splx(spl);
 
-	/*
-	 *	Now link into the object's list of backed pages.
-	 */
-
-	TAILQ_INSERT_TAIL(&object->memq, mem, listq);
+	TAILQ_INSERT_TAIL(&segment->memq, mem, listq);
 	mem->flags |= PG_TABLED;
 
-	/*
-	 *	And show that the object has one more resident
-	 *	page.
-	 */
-
-	object->resident_page_count++;
+	segment->resident_page_count++;
 }
 
 /*
  *	vm_page_remove:		[ internal use only ]
  *				NOTE: used by device pager as well -wfj
  *
- *	Removes the given mem entry from the object/offset-page
- *	table and the object page list.
+ *	Removes the given mem entry from the segment/offset-page
+ *	table and the segment page list.
  *
- *	The object and page must be locked.
+ *	The object, segment and page must be locked.
  */
 
 void
@@ -420,28 +410,28 @@ vm_page_remove(mem)
 		return;
 
 	/*
-	 *	Remove from the object_object/offset hash table
+	 *	Remove from the object_segment/offset hash table
 	 */
 
-	bucket = &vm_page_buckets[vm_page_hash(mem->object, mem->offset)];
+	bucket = &vm_page_buckets[vm_page_hash(mem->segment, mem->offset)];
 	spl = splimp();
-	simple_lock(&bucket_lock);
+	simple_lock(&page_bucket_lock);
 	TAILQ_REMOVE(bucket, mem, hashq);
-	simple_unlock(&bucket_lock);
+	simple_unlock(&page_bucket_lock);
 	(void) splx(spl);
 
 	/*
-	 *	Now remove from the object's list of backed pages.
+	 *	Now remove from the segment's list of backed pages.
 	 */
 
-	TAILQ_REMOVE(&mem->object->memq, mem, listq);
+	TAILQ_REMOVE(&mem->segment->memq, mem, listq);
 
 	/*
-	 *	And show that the object has one fewer resident
+	 *	And show that the segment has one fewer resident
 	 *	page.
 	 */
 
-	mem->object->resident_page_count--;
+	mem->segment->resident_page_count--;
 
 	mem->flags &= ~PG_TABLED;
 }
@@ -449,15 +439,15 @@ vm_page_remove(mem)
 /*
  *	vm_page_lookup:
  *
- *	Returns the page associated with the object/offset
+ *	Returns the page associated with the segment/offset
  *	pair specified; if none is found, NULL is returned.
  *
  *	The object must be locked.  No side effects.
  */
 
 vm_page_t
-vm_page_lookup(object, offset)
-	register vm_object_t	object;
+vm_page_lookup(segment, offset)
+	register vm_segment_t	segment;
 	register vm_offset_t	offset;
 {
 	register vm_page_t		mem;
@@ -465,47 +455,48 @@ vm_page_lookup(object, offset)
 	int						spl;
 
 	/*
-	 *	Search the hash table for this object/offset pair
+	 *	Search the hash table for this segment/offset pair
 	 */
 
-	bucket = &vm_page_buckets[vm_page_hash(object, offset)];
+	bucket = &vm_page_buckets[vm_page_hash(segment, offset)];
 
 	spl = splimp();
-	simple_lock(&bucket_lock);
-	for (mem = TAILQ_FIRST(bucket); mem != NULL; mem = TAILQ_NEXT(mem, hashq)) {
+	simple_lock(&page_bucket_lock);
+	TAILQ_FOREACH(mem, bucket, hashq) {
 		VM_PAGE_CHECK(mem);
-		if ((mem->object == object) && (mem->offset == offset)) {
-			simple_unlock(&bucket_lock);
+		if ((mem->segment == segment) && (mem->offset == offset)) {
+			simple_unlock(&page_bucket_lock);
 			splx(spl);
-			return(mem);
+			return (mem);
 		}
 	}
 
-	simple_unlock(&bucket_lock);
+	simple_unlock(&page_bucket_lock);
 	splx(spl);
-	return(NULL);
+	return (NULL);
 }
 
 /*
  *	vm_page_rename:
  *
  *	Move the given memory entry from its
- *	current object to the specified target object/offset.
+ *	current segment to the specified target segment/offset.
  *
- *	The object must be locked.
+ *	The segment must be locked.
  */
 void
-vm_page_rename(mem, new_object, new_offset)
+vm_page_rename(mem, new_segment, new_offset)
 	register vm_page_t		mem;
-	register vm_object_t	new_object;
+	register vm_segment_t	new_segment;
 	vm_offset_t				new_offset;
 {
-	if (mem->object == new_object)
+	if (mem->segment == new_segment) {
 		return;
+	}
 
 	vm_page_lock_queues(); /* keep page from moving out from under pageout daemon */
 	vm_page_remove(mem);
-	vm_page_insert(mem, new_object, new_offset);
+	vm_page_insert(mem, new_segment, new_offset);
 	vm_page_unlock_queues();
 }
 
@@ -513,13 +504,13 @@ vm_page_rename(mem, new_object, new_offset)
  *	vm_page_alloc:
  *
  *	Allocate and return a memory cell associated
- *	with this VM object/offset pair.
+ *	with this VM segment/offset pair.
  *
- *	Object must be locked.
+ *	Segment must be locked.
  */
 vm_page_t
-vm_page_alloc(object, offset)
-	vm_object_t	object;
+vm_page_alloc(segment, offset)
+	vm_segment_t segment;
 	vm_offset_t	offset;
 {
 	register vm_page_t	mem;
@@ -540,7 +531,7 @@ vm_page_alloc(object, offset)
 	simple_unlock(&vm_page_queue_free_lock);
 	splx(spl);
 
-	VM_PAGE_INIT(mem, object, offset);
+	VM_PAGE_INIT(mem, segment, offset);
 
 	/*
 	 *	Decide if we should poke the pageout daemon.
@@ -555,8 +546,9 @@ vm_page_alloc(object, offset)
 
 	if (cnt.v_page_free_count < cnt.v_page_free_min ||
 	    (cnt.v_page_free_count < cnt.v_page_free_target &&
-	     cnt.v_page_inactive_count < cnt.v_page_inactive_target))
+	     cnt.v_page_inactive_count < cnt.v_page_inactive_target)) {
 		thread_wakeup(&vm_pages_needed);
+	}
 	return (mem);
 }
 
@@ -566,7 +558,7 @@ vm_page_alloc(object, offset)
  *	Returns the given page to the free list,
  *	disassociating it with any VM object.
  *
- *	Object and page must be locked prior to entry.
+ *	Segment and page must be locked prior to entry.
  */
 void
 vm_page_free(mem)
@@ -586,7 +578,7 @@ vm_page_free(mem)
 	}
 
 	if (!(mem->flags & PG_FICTITIOUS)) {
-		int	spl;
+		int spl;
 
 		spl = splimp();
 		simple_lock(&vm_page_queue_free_lock);
@@ -671,7 +663,6 @@ vm_page_deactivate(m)
 	 *	Only move active pages -- ignore locked or already
 	 *	inactive ones.
 	 */
-
 	if (m->flags & PG_ACTIVE) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
 		TAILQ_REMOVE(&vm_page_queue_active, m, pageq);
@@ -680,12 +671,14 @@ vm_page_deactivate(m)
 		m->flags |= PG_INACTIVE;
 		cnt.v_page_active_count--;
 		cnt.v_page_inactive_count++;
-		if (pmap_is_modified(VM_PAGE_TO_PHYS(m)))
+		if (pmap_is_modified(VM_PAGE_TO_PHYS(m))) {
 			m->flags &= ~PG_CLEAN;
-		if (m->flags & PG_CLEAN)
+		}
+		if (m->flags & PG_CLEAN) {
 			m->flags &= ~PG_LAUNDRY;
-		else
+		} else {
 			m->flags |= PG_LAUNDRY;
+		}
 	}
 }
 
@@ -709,9 +702,9 @@ vm_page_activate(m)
 		m->flags &= ~PG_INACTIVE;
 	}
 	if (m->wire_count == 0) {
-		if (m->flags & PG_ACTIVE)
+		if (m->flags & PG_ACTIVE) {
 			panic("vm_page_activate: already active");
-
+		}
 		TAILQ_INSERT_TAIL(&vm_page_queue_active, m, pageq);
 		m->flags |= PG_ACTIVE;
 		cnt.v_page_active_count++;
@@ -734,7 +727,7 @@ vm_page_zero_fill(m)
 
 	m->flags &= ~PG_CLEAN;
 	pmap_zero_page(VM_PAGE_TO_PHYS(m));
-	return(TRUE);
+	return (TRUE);
 }
 
 /*
@@ -742,6 +735,7 @@ vm_page_zero_fill(m)
  *
  *	Copy one page to another
  */
+
 void
 vm_page_copy(src_m, dest_m)
 	vm_page_t	src_m;
@@ -754,17 +748,59 @@ vm_page_copy(src_m, dest_m)
 	pmap_copy_page(VM_PAGE_TO_PHYS(src_m), VM_PAGE_TO_PHYS(dest_m));
 }
 
+/* page anon management */
+vm_page_t
+vm_page_anon_alloc(segment, offset, anon)
+	vm_segment_t segment;
+	vm_offset_t	offset;
+	vm_anon_t anon;
+{
+	vm_page_t	mem;
+
+	mem = vm_page_alloc(segment, offset);
+
+	mem->segment = segment;
+	mem->offset = offset;
+	mem->anon = anon;
+	mem->flags = PG_BUSY|PG_CLEAN|PG_FAKE;
+	mem->wire_count = 0;
+	if (anon) {
+		anon->u.an_page = mem;
+		mem->flags = PG_ANON;
+	} else {
+		if (segment) {
+			vm_page_insert(mem, segment, offset);
+		}
+	}
+	return (mem);
+}
+
+void
+vm_page_anon_free(mem)
+	vm_page_t mem;
+{
+	if (mem->flags & PG_TABLED) {
+		vm_page_remove(mem);
+	} else if (mem->flags & PG_ANON) {
+		mem->flags &= ~PG_ANON;
+		mem->anon = NULL;
+		return;
+	}
+	vm_page_free(mem);
+}
+
 #define	VM_PAGE_ALLOC_MEMORY_STATS
 
 #ifdef VM_PAGE_ALLOC_MEMORY_STATS
 #define	STAT_INCR(v)	(v)++
-#define	STAT_DECR(v)	do { 									\
-	if ((v) == 0) {												\
-		printf("%s:%d -- Already 0!\n", __FILE__, __LINE__); 	\
-	} else { 													\
-		(v)--; 													\
-	}															\
-} while (0);
+#define	STAT_DECR(v)												\
+	do { 															\
+		if ((v) == 0) {												\
+			printf("%s:%d -- Already 0!\n", __FILE__, __LINE__); 	\
+		} else {													\
+			(v)--; 													\
+		}															\
+	} while (0);
 
 u_long	vm_page_alloc_memory_npages;
 #else
@@ -806,8 +842,7 @@ u_long	vm_page_alloc_memory_npages;
  *	XXX allocates a single segment.
  */
 int
-vm_page_alloc_memory(size, low, high, alignment, boundary,
-    rlist, nsegs, waitok)
+vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
 	vm_size_t size;
 	vm_offset_t low, high, alignment, boundary;
 	struct pglist *rlist;
@@ -823,25 +858,29 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 #endif
 
 #ifdef DIAGNOSTIC
-	if ((alignment & (alignment - 1)) != 0)
+	if ((alignment & (alignment - 1)) != 0) {
 		panic("vm_page_alloc_memory: alignment must be power of 2");
+	}
 
-	if ((boundary & (boundary - 1)) != 0)
+	if ((boundary & (boundary - 1)) != 0) {
 		panic("vm_page_alloc_memory: boundary must be power of 2");
+	}
 #endif
 
 	/*
 	 * Our allocations are always page granularity, so our alignment
 	 * must be, too.
 	 */
-	if (alignment < PAGE_SIZE)
+	if (alignment < PAGE_SIZE) {
 		alignment = PAGE_SIZE;
+	}
 
 	size = round_page(size);
 	try = roundup(low, alignment);
 
-	if (boundary != 0 && boundary < size)
+	if (boundary != 0 && boundary < size) {
 		return (EINVAL);
+	}
 
 	pagemask = ~(boundary - 1);
 
@@ -855,8 +894,9 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 	simple_lock(&vm_page_queue_free_lock);
 
 	/* Are there even any free pages? */
-	if (TAILQ_FIRST(&vm_page_queue_free) == NULL)
+	if (TAILQ_FIRST(&vm_page_queue_free) == NULL) {
 		goto out;
+	}
 
 	for (;; try += alignment) {
 		if (try + size > high) {
@@ -869,8 +909,9 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 		/*
 		 * Make sure this is a managed physical page.
 		 */
-		if (IS_VM_PHYSADDR(try) == 0)
+		if (IS_VM_PHYSADDR(try) == 0) {
 			continue;
+		}
 
 		tryidx = idx = VM_PAGE_INDEX(try);
 		end = idx + (size / PAGE_SIZE);
@@ -900,8 +941,9 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 			 * XXX Necessary?  I guess only if there
 			 * XXX are holes in the vm_page_array[].
 			 */
-			if (IS_VM_PHYSADDR(idxpa) == 0)
+			if (IS_VM_PHYSADDR(idxpa) == 0) {
 				break;
+			}
 
 			if (idx > tryidx) {
 				lastidxpa =
@@ -939,13 +981,14 @@ vm_page_alloc_memory(size, low, high, alignment, boundary,
 	while (idx < end) {
 		m = &vm_page_array[idx];
 #ifdef DEBUG
-		for (tp = TAILQ_FIRST(&vm_page_queue_free); tp != NULL;
-		    tp = TAILQ_NEXT(tp, pageq)) {
-			if (tp == m)
+		TAILQ_FOREACH(tp, &vm_page_queue_free, pageq) {
+			if (tp == m) {
 				break;
+			}
 		}
-		if (tp == NULL)
+		if (tp == NULL) {
 			panic("vm_page_alloc_memory: page not on freelist");
+		}
 #endif
 		TAILQ_REMOVE(&vm_page_queue_free, m, pageq);
 		cnt.v_page_free_count--;

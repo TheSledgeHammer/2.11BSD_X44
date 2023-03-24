@@ -87,7 +87,7 @@ struct vnode {
 		struct proc		*vu_proc;		/* ptr to proc */
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;		/* unix ipc (VSOCK) */
-		//struct text		*vu_text;		/* text/mapped region (VREG) */
+		struct vm_text	*vu_text;		/* text/mapped region (VREG) */
 		caddr_t			vu_vmdata;		/* private data for vm (VREG) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */

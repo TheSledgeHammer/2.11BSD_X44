@@ -738,9 +738,10 @@ ReStart:
 		 * page must be resident since parent is wired
 		 */
 
-		if (pg == NULL)
+		if (pg == NULL) {
 		    panic("amap_cow_now: non-resident wired page in anon %p",
 			anon);
+		}
 
 		/*
 		 * if the anon ref count is one and the page is not loaned,
@@ -768,19 +769,20 @@ ReStart:
 			 * ok, time to do a copy-on-write to a new anon
 			 */
 			nanon = vm_anon_alloc();
-			if (nanon)
+			if (nanon) {
 				npg = vm_page_anon_alloc(NULL, 0, nanon);
-			else
+			} else {
 				npg = NULL;	/* XXX: quiet gcc warning */
-
+			}
 			if (nanon == NULL || npg == NULL) {
 				/* out of memory */
 				/*
 				 * XXXCDC: we should cause fork to fail, but
 				 * we can't ...
 				 */
-				if (nanon)
+				if (nanon) {
 					vm_anon_free(nanon);
+				}
 				simple_unlock(&anon->an_lock);
 				amap_unlock(amap);
 				vm_wait();
@@ -831,8 +833,9 @@ vm_amap_splitref(origref, splitref, offset)
 	int leftslots;
 
 	AMAP_B2SLOT(leftslots, offset);
-	if (leftslots == 0)
+	if (leftslots == 0) {
 		panic("amap_splitref: split at zero offset");
+	}
 
 	/*
 	 * lock the amap
@@ -843,15 +846,17 @@ vm_amap_splitref(origref, splitref, offset)
 	 * now: amap is locked and we have a valid am_mapped array.
 	 */
 
-	if (origref->ar_amap->am_nslot - origref->ar_pageoff - leftslots <= 0)
+	if (origref->ar_amap->am_nslot - origref->ar_pageoff - leftslots <= 0) {
 		panic("amap_splitref: map size check failed");
+	}
 
 #ifdef VM_AMAP_PPREF
         /*
 	 * establish ppref before we add a duplicate reference to the amap
 	 */
-	if (origref->ar_amap->am_ppref == NULL)
+	if (origref->ar_amap->am_ppref == NULL) {
 		vm_amap_pp_establish(origref->ar_amap);
+	}
 #endif
 
 	splitref->ar_amap = origref->ar_amap;
@@ -934,8 +939,9 @@ vm_amap_pp_adjref(amap, curslot, bytelen, adjval)
 	 * now adjust reference counts in range (make sure we dont overshoot)
 	 */
 
-	if (lcv != curslot)
+	if (lcv != curslot) {
 		panic("amap_pp_adjref: overshot target");
+	}
 
 	for (/* lcv already set */; lcv < stopslot ; lcv += len) {
 		pp_getreflen(ppref, lcv, &ref, &len);
@@ -946,11 +952,13 @@ vm_amap_pp_adjref(amap, curslot, bytelen, adjval)
 			len = stopslot - lcv;
 		}
 		ref = ref + adjval;    /* ADJUST! */
-		if (ref < 0)
+		if (ref < 0) {
 			panic("amap_pp_adjref: negative reference count");
+		}
 		pp_setreflen(ppref, lcv, ref, len);
-		if (ref == 0)
+		if (ref == 0) {
 			vm_amap_wiperange(amap, lcv, len);
+		}
 	}
 
 }
@@ -1000,8 +1008,9 @@ vm_amap_wiperange(amap, slotoff, slots)
 			curslot = lcv;
 		} else {
 			curslot = amap->am_slots[lcv];
-			if (curslot < slotoff || curslot >= stop)
+			if (curslot < slotoff || curslot >= stop) {
 				continue;
+			}
 		}
 		anon = amap->am_anon[curslot];
 
@@ -1109,13 +1118,15 @@ vm_amap_add(aref, offset, anon, replace)
 	AMAP_B2SLOT(slot, offset);
 	slot += aref->ar_pageoff;
 
-	if (slot >= amap->am_nslot)
+	if (slot >= amap->am_nslot) {
 		panic("amap_add: offset out of range");
+	}
 
 	if (replace) {
 
-		if (amap->am_anon[slot] == NULL)
+		if (amap->am_anon[slot] == NULL) {
 			panic("amap_add: replacing null anon");
+		}
 		if (amap->am_anon[slot]->u.an_page != NULL && (amap->am_flags & AMAP_SHARED) != 0) {
 			pmap_page_protect(VM_PAGE_TO_PHYS(amap->am_anon[slot]->u.an_page), VM_PROT_NONE);
 			/*
@@ -1123,8 +1134,9 @@ vm_amap_add(aref, offset, anon, replace)
 			 */
 		}
 	} else {   /* !replace */
-		if (amap->am_anon[slot] != NULL)
+		if (amap->am_anon[slot] != NULL) {
 			panic("amap_add: slot in use");
+		}
 
 		amap->am_bckptr[slot] = amap->am_nused;
 		amap->am_slots[amap->am_nused] = slot;
@@ -1132,7 +1144,7 @@ vm_amap_add(aref, offset, anon, replace)
 	}
 	amap->am_anon[slot] = anon;
 
-	return(slot);
+	return (slot);
 }
 
 /*
@@ -1147,11 +1159,13 @@ vm_amap_unadd(amap, slot)
 {
 	int ptr;
 
-	if (slot >= amap->am_nslot)
+	if (slot >= amap->am_nslot) {
 		panic("amap_add: offset out of range");
+	}
 
-	if (amap->am_anon[slot] == NULL)
+	if (amap->am_anon[slot] == NULL) {
 		panic("amap_unadd: nothing there");
+	}
 
 	amap->am_anon[slot] = NULL;
 	ptr = amap->am_bckptr[slot];
@@ -1179,16 +1193,19 @@ vm_amap_ref(entry, flags)
 	amap = entry->aref.ar_amap;
 	amap_lock(amap);
 	amap->am_ref++;
-	if (flags & AMAP_SHARED)
+	if (flags & AMAP_SHARED) {
 		amap->am_flags |= AMAP_SHARED;
-#ifdef UVM_AMAP_PPREF
-	if (amap->am_ppref == NULL && (flags & AMAP_REFALL) == 0 && (entry->start - entry->end) >> PAGE_SHIFT != amap->am_nslot)
+	}
+#ifdef VM_AMAP_PPREF
+	if (amap->am_ppref == NULL && (flags & AMAP_REFALL) == 0 && (entry->start - entry->end) >> PAGE_SHIFT != amap->am_nslot) {
 		vm_amap_pp_establish(amap);
+	}
 	if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
-		if (flags & AMAP_REFALL)
+		if (flags & AMAP_REFALL) {
 			vm_amap_pp_adjref(amap, 0, amap->am_nslot << PAGE_SHIFT, 1);
-		else
+		} else {
 			vm_amap_pp_adjref(amap, entry->aref.ar_pageoff, entry->end - entry->start, 1);
+		}
 	}
 #endif
 	amap_unlock(amap);
@@ -1231,16 +1248,19 @@ vm_amap_unref(entry, all)
 	 */
 
 	amap->am_ref--;
-	if (amap->am_ref == 1 && (amap->am_flags & AMAP_SHARED) != 0)
+	if (amap->am_ref == 1 && (amap->am_flags & AMAP_SHARED) != 0) {
 		amap->am_flags &= ~AMAP_SHARED;	/* clear shared flag */
-#ifdef UVM_AMAP_PPREF
-	if (amap->am_ppref == NULL && all == 0 && (entry->start - entry->end) >> PAGE_SHIFT != amap->am_nslot)
+	}
+#ifdef VM_AMAP_PPREF
+	if (amap->am_ppref == NULL && all == 0 && (entry->start - entry->end) >> PAGE_SHIFT != amap->am_nslot) {
 		vm_amap_pp_establish(amap);
+	}
 	if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
-		if (all)
+		if (all) {
 			vm_amap_pp_adjref(amap, 0, amap->am_nslot << PAGE_SHIFT, -1);
-		else
+		} else {
 			vm_amap_pp_adjref(amap, entry->aref.ar_pageoff, entry->end - entry->start, -1);
+		}
 	}
 #endif
 	amap_unlock(amap);
@@ -1257,46 +1277,33 @@ vm_amap_cleaner(amap, anon)
 	vm_segment_t 	segment;
 	vm_page_t 		page;
 
-	if (anon == NULL) {
-		continue;
-	}
 	simple_lock(&anon->an_lock);
 	segment = anon->u.an_segment;
 	page = anon->u.an_page;
 	if (page != NULL) {
-		KASSERT(!TAILQ_EMPTY(segment->memq));
+		KASSERT(!TAILQ_EMPTY(&segment->memq));
 		KASSERT(page->segment == segment);
 
-		if (page->flags & PG_BUSY) {
-			continue;
-		}
 		if (amap_refs(amap) > 1) {
 			vm_page_lock_queues();
 			if (page->wire_count != 0) {
 				vm_page_unlock_queues();
 				simple_unlock(&anon->an_lock);
-				continue;
 			}
 			KASSERT(page->anon == anon);
 
 			vm_page_lock_queues();
 			vm_page_deactivate(page);
 			vm_page_unlock_queues();
-			continue;
 		}
 		if (page->wire_count != 0) {
 			simple_unlock(&anon->an_lock);
-			continue;
 		}
 	} else {
-		KASSERT(TAILQ_EMPTY(segment->memq));
+		KASSERT(TAILQ_EMPTY(&segment->memq));
 
 		if (segment == NULL) {
 			simple_unlock(&anon->an_lock);
-			continue;
-		}
-		if (segment->flags & SEG_BUSY) {
-			continue;
 		}
 		if (amap_refs(amap) > 1) {
 			KASSERT(segment->anon == anon);
@@ -1329,9 +1336,9 @@ vm_amap_clean(current, size, offset, amap)
 
 	amap_lock(amap);
 	for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
-		anon = amap_lookup(&current->aref, offset);
+		anon = vm_amap_lookup(&current->aref, offset);
 		vm_amap_cleaner(amap, anon);
-		vm_amap_unadd(&current->aref, offset);
+		vm_amap_unadd(&current->aref.ar_amap, offset);
 		refs = --anon->an_ref;
 		simple_unlock(&anon->an_lock);
 		if (refs == 0) {

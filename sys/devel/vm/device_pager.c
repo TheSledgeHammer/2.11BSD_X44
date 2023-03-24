@@ -246,6 +246,25 @@ dev_pager_dealloc(pager)
 }
 
 static int
+dev_pager_getsegment(pager, slist, nsegments, sync)
+	vm_pager_t 		pager;
+	vm_segment_t 	*slist;
+	int				nsegments;
+	bool_t			sync;
+{
+	register vm_object_t object;
+	vm_offset_t offset;
+	vm_segment_t s, segment;
+
+	s = *slist;
+
+	object = s->object;
+
+	offset = s->offset + object->paging_offset;
+
+}
+
+static int
 dev_pager_getpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;
@@ -298,8 +317,9 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	vm_page_insert(page, object, offset);
 	vm_page_unlock_queues();
 	PAGE_WAKEUP(m);
-	if (offset + PAGE_SIZE > object->size)
+	if (offset + PAGE_SIZE > object->size) {
 		object->size = offset + PAGE_SIZE;	/* XXX anal */
+	}
 	vm_object_unlock(object);
 
 	return(VM_PAGER_OK);
@@ -365,16 +385,4 @@ dev_pager_putfake(m)
 		panic("dev_pager_putfake: bad page");
 #endif
 	TAILQ_INSERT_TAIL(&dev_pager_fakelist, m, pageq);
-}
-
-dev_pager_getfake()
-{
-  vm_segment_t s;
-  vm_page_t    m;
-  
-    s =  (vm_segment_t)malloc(SEGMENT_SIZE, M_VMPGDATA, M_WAITOK);
-    for (i = SEGMENT_SIZE / sizeof(*s); i > 0; i--) {
-    
-    }
-    m = vm_page_alloc(s, i);
 }

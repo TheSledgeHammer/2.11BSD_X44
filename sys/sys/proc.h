@@ -152,7 +152,7 @@ struct	proc {
 
 	char				*p_name;		/* (: name, optional */
 
-	//struct vm_text		*p_textp;		/* text */
+	struct vm_text		*p_textp;		/* text */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id

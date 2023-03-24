@@ -191,8 +191,6 @@ struct txtlist              vm_text_list;
 	(text)->psx_taddr -= (taddr);						\
 };
 
-/* vm text sysctl */
-extern int sysctl_text(char *, size_t *);
 #ifdef _KERNEL
 /* vm_drum */
 int		vm_vsxalloc(vm_text_t);

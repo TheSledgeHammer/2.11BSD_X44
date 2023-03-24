@@ -12,6 +12,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/extent.h>
+#include <sys/sysctl.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/user.h>

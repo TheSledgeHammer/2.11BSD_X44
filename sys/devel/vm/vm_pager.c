@@ -73,8 +73,8 @@
 
 #include <vm/include/vm_kern.h>
 #include <devel/vm/include/vm_page.h>
-#include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_pager.h>
+#include <vm/include/vm.h>
+#include <vm/include/vm_pager.h>
 
 #ifdef SWAPPAGER
 extern struct pagerops swappagerops;

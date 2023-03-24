@@ -135,104 +135,110 @@
 #define M_IP6NDP		88	/* IPv6 Neighbour Discovery */
 #define M_SPIDPQ        89  /* SP packet queue entry */
 #define	M_PF			90	/* Network Packet Filter (PF) */
-#define M_SECA                  91      /* security associations, key management */
-#define	M_TEMP			92	/* misc temporary data buffers */
+#define M_SECA          91  /* security associations, key management */
+#define M_VMAMAP		92	/* VM amap structures */
+#define M_VMAOBJ 		93	/* VM aobject structure */
+#define M_VMPSEG		94	/* pseudo-segment structure */
+#define	M_TEMP			95	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
-#define INITKMEMNAMES {						\
-	"free",			/* 0 M_FREE */ 			\
-	"mbuf",			/* 1 M_MBUF */ 			\
-	"devbuf",		/* 2 M_DEVBUF */ 		\
-	"socket",		/* 3 M_SOCKET */ 		\
-	"pcb",			/* 4 M_PCB */ 			\
-	"routetbl",		/* 5 M_RTABLE */ 		\
-	"hosttbl",		/* 6 M_HTABLE */ 		\
-	"fragtbl",		/* 7 M_FTABLE */ 		\
-	"zombie",		/* 8 M_ZOMBIE */ 		\
-	"ifaddr",		/* 9 M_IFADDR */ 		\
-	"soopts",		/* 10 M_SOOPTS */ 		\
-	"soname",		/* 11 M_SONAME */ 		\
-	"namei",		/* 12 M_NAMEI */ 		\
-	"gprof",		/* 13 M_GPROF */ 		\
-	"ioctlops",		/* 14 M_IOCTLOPS */ 	\
-	"mapmem",		/* 15 M_MAPMEM */ 		\
-	"cred",			/* 16 M_CRED */ 		\
-	"pgrp",			/* 17 M_PGRP */ 		\
-	"session",		/* 18 M_SESSION */ 		\
-	"iov",			/* 19 M_IOV */ 			\
-	"mount",		/* 20 M_MOUNT */ 		\
-	"fhandle",		/* 21 M_FHANDLE */ 		\
-	"NFS req",		/* 22 M_NFSREQ */ 		\
-	"NFS mount",	/* 23 M_NFSMNT */ 		\
-	"NFS node",		/* 24 M_NFSNODE */ 		\
-	"vnodes",		/* 25 M_VNODE */ 		\
-	"namecache",	/* 26 M_CACHE */ 		\
-	"UFS quota",	/* 27 M_DQUOT */ 		\
-	"UFS mount",	/* 28 M_UFSMNT */ 		\
-	"shm",			/* 29 M_SHM */ 			\
-	"VM map",		/* 30 M_VMMAP */ 		\
-	"VM mapent",	/* 31 M_VMMAPENT */ 	\
-	"VM object",	/* 32 M_VMOBJ */ 		\
-	"VM objhash",	/* 33 M_VMOBJHASH */	\
-	"VM pmap",		/* 34 M_VMPMAP */ 		\
-	"VM pvmap",		/* 35 M_VMPVENT */ 		\
-	"VM pager",		/* 36 M_VMPAGER */ 		\
-	"VM pgdata",	/* 37 M_VMPGDATA */ 	\
-	"file",			/* 38 M_FILE */ 		\
-	"file desc",	/* 39 M_FILEDESC */ 	\
-	"lockf",		/* 40 M_LOCKF */ 		\
-	"proc",			/* 41 M_PROC */ 		\
-	"subproc",		/* 42 M_SUBPROC */ 		\
-	"LFS segment",	/* 43 M_SEGMENT */ 		\
-	"LFS node",		/* 44 M_LFSNODE */ 		\
-	"FFS node",		/* 45 M_FFSNODE */ 		\
-	"MFS node",		/* 46 M_MFSNODE */ 		\
-	"NQNFS Lease",	/* 47 M_NQLEASE */ 		\
-	"NQNFS Host",	/* 48 M_NQMHOST */ 		\
-	"Export Host",	/* 49 M_NETADDR */ 		\
-	"NFS srvsock",	/* 50 M_NFSSVC */ 		\
-	"NFS uid",		/* 51 M_NFSUID */ 		\
-	"NFS daemon",	/* 52 M_NFSD */ 		\
-	"ip_moptions",	/* 53 M_IPMOPTS */ 		\
-	"in_multi",		/* 54 M_IPMADDR */ 		\
-	"ether_multi",	/* 55 M_IFMADDR */ 		\
-	"mrt",			/* 56 M_MRTABLE */ 		\
-	"ISOFS mount",	/* 57 M_ISOFSMNT */ 	\
-	"ISOFS node",	/* 58 M_ISOFSNODE */ 	\
-	"NFSV3 srvdesc",/* 59 M_NFSRVDESC */ 	\
-	"NFSV3 diroff",	/* 60 M_NFSDIROFF */	\
-	"NFSV3 bigfh",	/* 61 M_NFSBIGFH */ 	\
-	"MSDOSFS mount"	/* 62 M_MSDOSFSMNT */	\
-	"MSDOSFS fat",	/* 63 M_MSDOSFSFAT */ 	\
-	"MSDOSFS node",	/* 64 M_MSDOSFSNODE */ 	\
-	"kern envir" 	/* 65 M_KENV */			\
-	"exec",			/* 66 M_EXEC */			\
-	"coremap",		/* 67 M_COREMAP */		\
-	"swapmap",		/* 68 M_SWAPMAP */		\
-	"memdesc",		/* 69 M_MEMDESC */		\
-	"devsw",		/* 70 M_DEVSW */		\
-	"devswhash",	/* 71 M_DEVSWHASH */	\
-	"usb",			/* 72 M_USB */			\
-	"tty",			/* 73 M_TTY */			\
-	"kevent",		/* 74 M_KEVENT */		\
-	"cpu topo",		/* 75 M_TOPO */			\
-	"bitmap",		/* 76 M_BITMAP */		\
-	"percpu",		/* 77 M_PERCPU */		\
-	"ufs211 buf",	/* 78 M_UFS211 */		\
-	"ufml uops",	/* 79 M_UFMLOPS */		\
-	"gscheduler",	/* 80 M_GSCHED */		\
-	"evdev",		/* 81 M_EVDEV */		\
-	"ifmedia",      /* 82 M_IFMEDIA */      \
-	"packet tags",	/* 83 M_PACKET_TAGS */	\
-	"IP queue ent", /* 84 M_IPQ */ 			\
-	"crypto session records",  	/* 85 M_CRYPTO_DATA */     \
-	"xform data buffers",  		/* 86 M_XDATA */           \
-	"ip6_options",	/* 87 M_IP6OPT */		\
-	"NDP",			/* 88 M_IP6NDP */		\
-	"SP queue ent", /* 89 M_SPIDPQ */       \
-	"PF",			/* 90 M_PF */ 			\
-	"key mgmt",            /* 91 M_SECA */                 \
-	"temp",			/* 91 M_TEMP */ 		\
+#define INITKMEMNAMES {									\
+	"free",						/* 0 M_FREE */ 			\
+	"mbuf",						/* 1 M_MBUF */ 			\
+	"devbuf",					/* 2 M_DEVBUF */ 		\
+	"socket",					/* 3 M_SOCKET */ 		\
+	"pcb",						/* 4 M_PCB */ 			\
+	"routetbl",					/* 5 M_RTABLE */ 		\
+	"hosttbl",					/* 6 M_HTABLE */ 		\
+	"fragtbl",					/* 7 M_FTABLE */ 		\
+	"zombie",					/* 8 M_ZOMBIE */ 		\
+	"ifaddr",					/* 9 M_IFADDR */ 		\
+	"soopts",					/* 10 M_SOOPTS */ 		\
+	"soname",					/* 11 M_SONAME */ 		\
+	"namei",					/* 12 M_NAMEI */ 		\
+	"gprof",					/* 13 M_GPROF */ 		\
+	"ioctlops",					/* 14 M_IOCTLOPS */ 	\
+	"mapmem",					/* 15 M_MAPMEM */ 		\
+	"cred",						/* 16 M_CRED */ 		\
+	"pgrp",						/* 17 M_PGRP */ 		\
+	"session",					/* 18 M_SESSION */ 		\
+	"iov",						/* 19 M_IOV */ 			\
+	"mount",					/* 20 M_MOUNT */ 		\
+	"fhandle",					/* 21 M_FHANDLE */ 		\
+	"NFS req",					/* 22 M_NFSREQ */ 		\
+	"NFS mount",				/* 23 M_NFSMNT */ 		\
+	"NFS node",					/* 24 M_NFSNODE */ 		\
+	"vnodes",					/* 25 M_VNODE */ 		\
+	"namecache",				/* 26 M_CACHE */ 		\
+	"UFS quota",				/* 27 M_DQUOT */ 		\
+	"UFS mount",				/* 28 M_UFSMNT */ 		\
+	"shm",						/* 29 M_SHM */ 			\
+	"VM map",					/* 30 M_VMMAP */ 		\
+	"VM mapent",				/* 31 M_VMMAPENT */ 	\
+	"VM object",				/* 32 M_VMOBJ */ 		\
+	"VM objhash",				/* 33 M_VMOBJHASH */	\
+	"VM pmap",					/* 34 M_VMPMAP */ 		\
+	"VM pvmap",					/* 35 M_VMPVENT */ 		\
+	"VM pager",					/* 36 M_VMPAGER */ 		\
+	"VM pgdata",				/* 37 M_VMPGDATA */ 	\
+	"file",						/* 38 M_FILE */ 		\
+	"file desc",				/* 39 M_FILEDESC */ 	\
+	"lockf",					/* 40 M_LOCKF */ 		\
+	"proc",						/* 41 M_PROC */ 		\
+	"subproc",					/* 42 M_SUBPROC */ 		\
+	"LFS segment",				/* 43 M_SEGMENT */ 		\
+	"LFS node",					/* 44 M_LFSNODE */ 		\
+	"FFS node",					/* 45 M_FFSNODE */ 		\
+	"MFS node",					/* 46 M_MFSNODE */ 		\
+	"NQNFS Lease",				/* 47 M_NQLEASE */ 		\
+	"NQNFS Host",				/* 48 M_NQMHOST */ 		\
+	"Export Host",				/* 49 M_NETADDR */ 		\
+	"NFS srvsock",				/* 50 M_NFSSVC */ 		\
+	"NFS uid",					/* 51 M_NFSUID */ 		\
+	"NFS daemon",				/* 52 M_NFSD */ 		\
+	"ip_moptions",				/* 53 M_IPMOPTS */ 		\
+	"in_multi",					/* 54 M_IPMADDR */ 		\
+	"ether_multi",				/* 55 M_IFMADDR */ 		\
+	"mrt",						/* 56 M_MRTABLE */ 		\
+	"ISOFS mount",				/* 57 M_ISOFSMNT */ 	\
+	"ISOFS node",				/* 58 M_ISOFSNODE */ 	\
+	"NFSV3 srvdesc",			/* 59 M_NFSRVDESC */ 	\
+	"NFSV3 diroff",				/* 60 M_NFSDIROFF */	\
+	"NFSV3 bigfh",				/* 61 M_NFSBIGFH */ 	\
+	"MSDOSFS mount"				/* 62 M_MSDOSFSMNT */	\
+	"MSDOSFS fat",				/* 63 M_MSDOSFSFAT */ 	\
+	"MSDOSFS node",				/* 64 M_MSDOSFSNODE */ 	\
+	"kern envir" 				/* 65 M_KENV */			\
+	"exec",						/* 66 M_EXEC */			\
+	"coremap",					/* 67 M_COREMAP */		\
+	"swapmap",					/* 68 M_SWAPMAP */		\
+	"memdesc",					/* 69 M_MEMDESC */		\
+	"devsw",					/* 70 M_DEVSW */		\
+	"devswhash",				/* 71 M_DEVSWHASH */	\
+	"usb",						/* 72 M_USB */			\
+	"tty",						/* 73 M_TTY */			\
+	"kevent",					/* 74 M_KEVENT */		\
+	"cpu topo",					/* 75 M_TOPO */			\
+	"bitmap",					/* 76 M_BITMAP */		\
+	"percpu",					/* 77 M_PERCPU */		\
+	"ufs211 buf",				/* 78 M_UFS211 */		\
+	"ufml uops",				/* 79 M_UFMLOPS */		\
+	"gscheduler",				/* 80 M_GSCHED */		\
+	"evdev",					/* 81 M_EVDEV */		\
+	"ifmedia",      			/* 82 M_IFMEDIA */      \
+	"packet tags",				/* 83 M_PACKET_TAGS */	\
+	"IP queue ent", 			/* 84 M_IPQ */ 			\
+	"crypto session records",  	/* 85 M_CRYPTO_DATA */  \
+	"xform data buffers",  		/* 86 M_XDATA */        \
+	"ip6_options",				/* 87 M_IP6OPT */		\
+	"NDP",						/* 88 M_IP6NDP */		\
+	"SP queue ent", 			/* 89 M_SPIDPQ */       \
+	"PF",						/* 90 M_PF */ 			\
+	"key mgmt",     			/* 91 M_SECA */         \
+	"vm amap",					/* 92 M_VMAMAP */		\
+	"vm aobject",				/* 93 M_VMAOBJ */		\
+	"vm psegment", 				/* 94 M_VMPSEG */		\
+	"temp",						/* 95 M_TEMP */ 		\
 }
 
 #endif /* _SYS_MALLOCTYPES_H_ */

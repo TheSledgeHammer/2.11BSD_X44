@@ -50,7 +50,6 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-//#include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/map.h>
 #include <sys/vnode.h>
@@ -61,6 +60,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>
+#include <vm/include/vm_segment.h>
 #include <vm/include/swap_pager.h>
 
 #define NSWSIZES	16	/* size of swtab */
@@ -93,6 +93,7 @@ struct swpagerclean {
 	struct buf					*spc_bp;
 	sw_pager_t					spc_swp;
 	vm_offset_t					spc_kva;
+	vm_segment_t				spc_s;
 	vm_page_t					spc_m;
 	int							spc_npages;
 } swcleanlist[NPENDINGIO];
@@ -536,6 +537,8 @@ swap_pager_io(swp, mlist, npages, flags)
 	bool_t rv;
 	vm_offset_t kva, off;
 	swp_clean_t spc;
+	vm_object_t object;
+	vm_segment_t seg;
 	vm_page_t m;
 
 #ifdef DEBUG
@@ -559,7 +562,9 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * with the page.
 	 */
 	m = *mlist;
-	off = m->offset + m->object->paging_offset;
+	seg = m->segment;
+	object = seg->object;
+	off = m->offset + seg->object->paging_offset;
 	ix = off / dbtob(swp->sw_bsize);
 	if (swp->sw_blocks == NULL || ix >= swp->sw_nblocks) {
 #ifdef DEBUG
@@ -805,6 +810,7 @@ swap_pager_clean(rw)
 	register swp_clean_t spc;
 	register int s, i;
 	vm_object_t object;
+	vm_segment_t seg;
 	vm_page_t m;
 
 #ifdef DEBUG
@@ -833,7 +839,7 @@ swap_pager_clean(rw)
 			 * Is there something better we could do?
 			 */
 			if ((spc->spc_flags & SPC_DONE) &&
-			    vm_object_lock_try(spc->spc_m->object)) {
+			    vm_object_lock_try(spc->spc_s->object)) {
 				TAILQ_REMOVE(&swap_pager_inuse, spc, spc_list);
 				break;
 			}
@@ -851,7 +857,8 @@ swap_pager_clean(rw)
 		 * Note: no longer at splbio since entry is off the list.
 		 */
 		m = spc->spc_m;
-		object = m->object;
+		seg = m->segment;
+		object = seg->object;
 
 		/*
 		 * Process each page in the cluster.

@@ -89,6 +89,8 @@ struct pagerops {
 	int			(*pgo_getsegments)(vm_pager_t, vm_segment_t *, int, bool_t);
 	/* Put (write) segment. */
 	int			(*pgo_putsegments)(vm_pager_t, vm_segment_t *, int, bool_t);
+	/* Does pager have page? */
+	bool_t  	(*pgo_hassegment)(vm_pager_t, vm_offset_t);
 };
 
 /*

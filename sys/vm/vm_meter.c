@@ -37,8 +37,8 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <sys/map.h>
 #include <sys/sysctl.h>
+#include <sys/map.h>
 #include <sys/tree.h>
 
 #include <vm/include/vm.h>
@@ -60,7 +60,7 @@ int nrun;
 int	avenrun[3];
 
 void
-vmmeter()
+vmmeter(void)
 {
 	register u_int *cp, *rp;
 	register long *sp;
@@ -112,7 +112,7 @@ loadav(avg)
 	register int i;
 	register struct proc *p;
 
-	for(nrun = 0, p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
+	for (nrun = 0, p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 		switch (p->p_stat) {
 		case SSLEEP:
 			if (p->p_pri > PZERO || p->p_slptime != 0)
@@ -170,6 +170,8 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case VM_METER:
 		vmtotal(&vmtotals);
 		return (sysctl_rdstruct(oldp, oldlenp, newp, &vmtotals, sizeof(vmtotals)));
+	case VM_TEXT:
+		return (sysctl_text(oldp, oldlenp));
 	case VM_SWAPMAP:
 		if (oldp == NULL) {
 			*oldlenp = (char *)swapmap[0].m_limit - (char *)swapmap[0].m_map;
@@ -220,7 +222,7 @@ vmtotal(totalp)
 	/*
 	 * Calculate process statistics.
 	 */
-	for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
+	LIST_FOREACH(p, &allproc, p_list) {
 		if (p->p_flag & P_SYSTEM)
 			continue;
 		if (p->p_stat) {

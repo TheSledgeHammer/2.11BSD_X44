@@ -49,10 +49,12 @@
 
 #include <miscfs/specfs/specdev.h>
 
+#include <vm/include/vm.h>
+#include <vm/include/vm_swap.h>
+
 /*
  * Indirect driver for multi-controller paging.
  */
-
 dev_type_read(swread);
 dev_type_write(swwrite);
 dev_type_strategy(swstrategy);
@@ -87,7 +89,11 @@ int	nswap, nswdev;
 #ifdef SEQSWAP
 int	niswdev;		/* number of interleaved swap devices */
 int	niswap;			/* size of interleaved swap area */
+static void swap_sequential(struct swdevt *, int, int);
+#else
+static void	swap_interleaved(struct swdevt *, int, int);
 #endif
+static int 	swap_search(struct swdevt *, struct swapdev *, int, int);
 
 /*
  * Set up swap devices.
@@ -97,7 +103,7 @@ int	niswap;			/* size of interleaved swap area */
  * are being swapped in and out.
  */
 void
-swapinit()
+swapinit(void)
 {
 	register int i;
 	register struct buf *sp;
@@ -120,243 +126,28 @@ swapinit()
 #ifdef SEQSWAP
 	nswdev = niswdev = 0;
 	nswap = niswap = 0;
-	/*
-	 * All interleaved devices must come first
-	 */
-	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
-		if (swp->sw_flags & SW_SEQUENTIAL)
-			break;
-		niswdev++;
-		if (swp->sw_nblks > niswap)
-			niswap = swp->sw_nblks;
-	}
-	niswap = roundup(niswap, dmmax);
-	niswap *= niswdev;
-	if (swdevt[0].sw_vp == NULL &&
-	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
-		panic("swapvp");
-	/*
-	 * The remainder must be sequential
-	 */
-	for ( ; swp->sw_dev != NODEV; swp++) {
-		if ((swp->sw_flags & SW_SEQUENTIAL) == 0)
-			panic("binit: mis-ordered swap devices");
-		nswdev++;
-		if (swp->sw_nblks > 0) {
-			if (swp->sw_nblks % dmmax)
-				swp->sw_nblks -= (swp->sw_nblks % dmmax);
-			nswap += swp->sw_nblks;
-		}
-	}
-	nswdev += niswdev;
-	if (nswdev == 0)
-		panic("swapinit");
-	nswap += niswap;
+	swap_sequential(swp, niswdev, niswap);
 #else
 	nswdev = 0;
 	nswap = 0;
-	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
-		nswdev++;
-		if (swp->sw_nblks > nswap)
-			nswap = swp->sw_nblks;
-	}
-	if (nswdev == 0)
-		panic("swapinit");
-	if (nswdev > 1)
-		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
-	nswap *= nswdev;
-	if (swdevt[0].sw_vp == NULL && bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
-		panic("swapvp");
+	swap_interleaved(swp, nswdev, nswap);
 #endif
-	if (nswap == 0)
+	if (nswap == 0) {
 		printf("WARNING: no swap space found\n");
-	else if (error == swfree(p, 0)) {
-		printf("swfree errno %d\n", error);	/* XXX */
+	} else if (error == swfree(p, 0, 1)) {
+		printf("swfree errno %d\n", error); /* XXX */
 		panic("swapinit swfree 0");
 	}
 
 	/*
+	 * Initialize swapdrum dev
+	 */
+	swapdrum_init(swp);
+
+	/*
 	 * Now set up swap buffer headers.
 	 */
-	TAILQ_INIT(&bswlist);
-	for (i = 0; i < nswbuf - 1; i++, sp++) {
-		TAILQ_INSERT_HEAD(&bswlist, sp, b_freelist);
-		sp->b_rcred = sp->b_wcred = p->p_ucred;
-		LIST_NEXT(sp, b_vnbufs) = NOLIST;
-	}
-	sp->b_rcred = sp->b_wcred = p->p_ucred;
-	LIST_NEXT(sp, b_vnbufs) = NOLIST;
-	TAILQ_REMOVE(&bswlist, sp, b_actq);
-}
-
-void
-swstrategy(bp)
-	register struct buf *bp;
-{
-	int sz, off, seg, index;
-	register struct swdevt *sp;
-	struct vnode *vp;
-
-#ifdef GENERIC
-	/*
-	 * A mini-root gets copied into the front of the swap
-	 * and we run over top of the swap area just long
-	 * enough for us to do a mkfs and restor of the real
-	 * root (sure beats rewriting standalone restor).
-	 */
-#define	MINIROOTSIZE	4096
-	if (rootdev == dumpdev)
-		bp->b_blkno += MINIROOTSIZE;
-#endif
-	sz = howmany(bp->b_bcount, DEV_BSIZE);
-	if (bp->b_blkno + sz > nswap) {
-		bp->b_error = EINVAL;
-		bp->b_flags |= B_ERROR;
-		biodone(bp);
-		return;
-	}
-	if (nswdev > 1) {
-#ifdef SEQSWAP
-		if (bp->b_blkno < niswap) {
-			if (niswdev > 1) {
-				off = bp->b_blkno % dmmax;
-				if (off+sz > dmmax) {
-					bp->b_error = EINVAL;
-					bp->b_flags |= B_ERROR;
-					biodone(bp);
-					return;
-				}
-				seg = bp->b_blkno / dmmax;
-				index = seg % niswdev;
-				seg /= niswdev;
-				bp->b_blkno = seg*dmmax + off;
-			} else
-				index = 0;
-		} else {
-			register struct swdevt *swp;
-
-			bp->b_blkno -= niswap;
-			for (index = niswdev, swp = &swdevt[niswdev]; swp->sw_dev != NODEV; swp++, index++) {
-				if (bp->b_blkno < swp->sw_nblks)
-					break;
-				bp->b_blkno -= swp->sw_nblks;
-			}
-			if (swp->sw_dev == NODEV ||
-			    bp->b_blkno+sz > swp->sw_nblks) {
-				bp->b_error = swp->sw_dev == NODEV ?
-					ENODEV : EINVAL;
-				bp->b_flags |= B_ERROR;
-				biodone(bp);
-				return;
-			}
-		}
-#else
-		off = bp->b_blkno % dmmax;
-		if (off+sz > dmmax) {
-			bp->b_error = EINVAL;
-			bp->b_flags |= B_ERROR;
-			biodone(bp);
-			return;
-		}
-		seg = bp->b_blkno / dmmax;
-		index = seg % nswdev;
-		seg /= nswdev;
-		bp->b_blkno = seg * dmmax + off;
-#endif
-	} else
-		index = 0;
-	sp = &swdevt[index];
-	if ((bp->b_dev = sp->sw_dev) == NODEV)
-		panic("swstrategy");
-	if (sp->sw_vp == NULL) {
-		bp->b_error = ENODEV;
-		bp->b_flags |= B_ERROR;
-		biodone(bp);
-		return;
-	}
-	VHOLD(sp->sw_vp);
-	if ((bp->b_flags & B_READ) == 0) {
-		if (vp == bp->b_vp) {
-			vp->v_numoutput--;
-			if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
-				vp->v_flag &= ~VBWAIT;
-				wakeup((caddr_t)&vp->v_numoutput);
-			}
-		}
-		sp->sw_vp->v_numoutput++;
-	}
-	if (bp->b_vp != NULL)
-		brelvp(bp);
-	bp->b_vp = sp->sw_vp;
-	VOP_STRATEGY(bp);
-}
-
-/*
- * System call swapon(name) enables swapping on device name,
- * which must be in the swdevsw.  Return EBUSY
- * if already swapping on this device.
- */
-struct swapon_args {
-	syscallarg(char *) name;
-};
-
-/* ARGSUSED */
-int
-swapon()
-{
-	register struct swapon_args *uap = (struct swapon_args *)u.u_ap;
-	struct proc *p;
-	int *retval;
-	register struct vnode *vp;
-	register struct swdevt *sp;
-	dev_t dev;
-	int error;
-	struct nameidata nd;
-
-	p = u.u_procp;
-	if (error == suser1(p->p_ucred, &p->p_acflag)) {
-		return (error);
-	}
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, name), p);
-	if (error == namei(&nd)) {
-		return (error);
-	}
-	vp = nd.ni_vp;
-	if (vp->v_type != VBLK) {
-		vrele(vp);
-		return (ENOTBLK);
-	}
-	dev = (dev_t)vp->v_rdev;
-	if (major(dev) >= nblkdev) {
-		vrele(vp);
-		return (ENXIO);
-	}
-	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++) {
-		if (sp->sw_dev == dev) {
-			if (sp->sw_flags & SW_FREED) {
-				vrele(vp);
-				return (EBUSY);
-			}
-			sp->sw_vp = vp;
-			if (error == swfree(p, sp - swdevt)) {
-				vrele(vp);
-				return (error);
-			}
-			return (0);
-		}
-#ifdef SEQSWAP
-		/*
-		 * If we have reached a non-freed sequential device without
-		 * finding what we are looking for, it is an error.
-		 * That is because all interleaved devices must come first
-		 * and sequential devices must be freed in order.
-		 */
-		if ((sp->sw_flags & (SW_SEQUENTIAL|SW_FREED)) == SW_SEQUENTIAL)
-			break;
-#endif
-	}
-	vrele(vp);
-	return (EINVAL);
+	vm_swapbuf_init(sp, p);
 }
 
 /*
@@ -366,38 +157,36 @@ swapon()
  * among the devices.
  */
 int
-swfree(p, index)
+swfree(p, index, nslots)
 	struct proc *p;
-	int index;
+	int index, nslots;
 {
-	register struct swdevt 	*sp;
-	register swblk_t 		vsbase;
-	register long 			blk;
-	struct vnode 			*vp;
+	register struct swdevt 	*swp;
+	register struct swapdev *sdp;
+	register struct vnode 	*vp;
 	const struct bdevsw		*bdev;
-	register swblk_t 		dvbase;
-	register int 			nblks;
-	int 					error;
+	register swblk_t vsbase, dvbase;
+	register long blk;
+	register int nblks, npages, startslot;
+	dev_t dev;
+	int error, perdev;
 
-	sp = &swdevt[index];
-	vp = sp->sw_vp;
+	swp = &swdevt[index];
+	sdp = swp->sw_swapdev;
+	vp = swp->sw_vp;
 	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p)) {
 		return (error);
 	}
-	sp->sw_flags |= SW_FREED;
-	nblks = sp->sw_nblks;
-	/*
-	 * Some devices may not exist til after boot time.
-	 * If so, their nblk count will be 0.
-	 */
+	swp->sw_flags |= SW_FREED;
+	nblks = swp->sw_nblks;
+	npages = dbtob(nblks) >> PAGE_SHIFT;
 	if (nblks <= 0) {
-		int perdev;
-		dev_t dev = sp->sw_dev;
+		perdev = nswap / nswdev;
+		dev = swp->sw_dev;
 		bdev = bdevsw_lookup(dev);
-
 		if (bdev->d_psize == 0 || (nblks = (*bdev->d_psize)(dev)) == -1) {
 			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
-			sp->sw_flags &= ~SW_FREED;
+			swp->sw_flags &= ~SW_FREED;
 			return (ENXIO);
 		}
 #ifdef SEQSWAP
@@ -413,24 +202,30 @@ swfree(p, index)
 			nswap += nblks;
 		}
 #else
-		perdev = nswap / nswdev;
 		if (nblks > perdev) {
 			nblks = perdev;
 		}
 #endif
-		sp->sw_nblks = nblks;
+		swp->sw_nblks = nblks;
+		npages = dbtob(nblks) >> PAGE_SHIFT;
 	}
+
 	if (nblks == 0) {
+		if (sdp != NULL) {
+			startslot = swap_search(swp, sdp, nblks, npages);
+			vm_swap_free(startslot, nslots);
+		}
 		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
-		sp->sw_flags &= ~SW_FREED;
-		return (0);	/* XXX error? */
+		swp->sw_flags &= ~SW_FREED;
+		return (0);
 	}
+
 #ifdef SEQSWAP
-	if (sp->sw_flags & SW_SEQUENTIAL) {
+	if (swp->sw_flags & SW_SEQUENTIAL) {
 		register struct swdevt *swp;
 
 		blk = niswap;
-		for (swp = &swdevt[niswdev]; swp != sp; swp++) {
+		for (swp = &swdevt[niswdev]; swp != swp; swp++) {
 			blk += swp->sw_nblks;
 		}
 		rmfree(swapmap, nblks, blk);
@@ -439,15 +234,19 @@ swfree(p, index)
 #endif
 	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
 		blk = nblks - dvbase;
+
 #ifdef SEQSWAP
-		if ((vsbase = index*dmmax + dvbase*niswdev) >= niswap)
+		if ((vsbase = index*dmmax + dvbase*niswdev) >= niswap) {
 			panic("swfree");
+		}
 #else
-		if ((vsbase = index*dmmax + dvbase*nswdev) >= nswap)
+		if ((vsbase = index * dmmax + dvbase * nswdev) >= nswap) {
 			panic("swfree");
+		}
 #endif
-		if (blk > dmmax)
+		if (blk > dmmax) {
 			blk = dmmax;
+		}
 		if (vsbase == 0) {
 			/*
 			 * First of all chunks... initialize the swapmap.
@@ -461,10 +260,118 @@ swfree(p, index)
 			 * in case it starts with a label or boot block.
 			 */
 			rmfree(swapmap, blk - ctod(CLSIZE), vsbase + ctod(CLSIZE));
-		} else
+		} else {
 			rmfree(swapmap, blk, vsbase);
+		}
 	}
 	return (0);
+}
+
+#ifdef SEQSWAP
+
+static void
+swap_sequential(swp, niswdev, niswap)
+	struct swdevt *swp;
+	int	niswdev, niswap;
+{
+	/*
+	 * All interleaved devices must come first
+	 */
+	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
+		if (swp->sw_flags & SW_SEQUENTIAL) {
+			break;
+		}
+		niswdev++;
+		if (swp->sw_nblks > niswap) {
+			niswap = swp->sw_nblks;
+		}
+	}
+	niswap = roundup(niswap, dmmax);
+	niswap *= niswdev;
+	if (swdevt[0].sw_vp == NULL &&
+	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp)) {
+		panic("swapvp");
+	}
+	/*
+	 * The remainder must be sequential
+	 */
+	for ( ; swp->sw_dev != NODEV; swp++) {
+		if ((swp->sw_flags & SW_SEQUENTIAL) == 0) {
+			panic("binit: mis-ordered swap devices");
+		}
+		nswdev++;
+		if (swp->sw_nblks > 0) {
+			if (swp->sw_nblks % dmmax) {
+				swp->sw_nblks -= (swp->sw_nblks % dmmax);
+			}
+			nswap += swp->sw_nblks;
+		}
+	}
+	nswdev += niswdev;
+	if (nswdev == 0) {
+		panic("swapinit");
+	}
+	nswap += niswap;
+}
+
+#else
+
+static void
+swap_interleaved(swp, nswdev, nswap)
+	struct swdevt *swp;
+	int	nswdev, nswap;
+{
+	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
+		nswdev++;
+		if (swp->sw_nblks > nswap) {
+			nswap = swp->sw_nblks;
+		}
+	}
+	if (nswdev == 0) {
+		panic("swapinit");
+	}
+	if (nswdev > 1) {
+		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
+	}
+	nswap *= nswdev;
+	if (swdevt[0].sw_vp == NULL && bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp)) {
+		panic("swapvp");
+	}
+}
+
+#endif
+
+/* find startslot for /dev/drum */
+static int
+swap_search(swp, sdp, nblks, npages)
+	struct swdevt 	*swp;
+	struct swapdev 	*sdp;
+	int nblks, npages;
+{
+	long blk;
+	int pageno, startslot;
+	swblk_t dvbase;
+
+	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+		blk = nblks - dvbase;
+		break;
+	}
+
+	pageno = btodb(npages << PAGE_SHIFT);
+	if (pageno == 0 && blk == pageno) {
+		for(pageno = 1; pageno <= npages; pageno++) {
+			if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
+				startslot = sdp->swd_drumoffset;
+				break;
+			}
+		}
+	} else {
+		if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
+			startslot = sdp->swd_drumoffset;
+			break;
+		}
+	}
+	return (startslot);
 }
 
 int
