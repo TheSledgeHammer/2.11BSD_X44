@@ -103,6 +103,11 @@ struct pagerops *pagertab[] = {
 #else
 	NULL,
 #endif
+#ifdef OVERLAYPAGER
+	&overlaypagerops, 	/* PG_OVERLAY */
+#else
+	NULL,
+#endif
 };
 int npagers = sizeof (pagertab) / sizeof (pagertab[0]);
 
@@ -123,7 +128,7 @@ bool_t pager_map_wanted;
 vm_offset_t pager_sva, pager_eva;
 
 void
-vm_pager_init()
+vm_pager_init(void)
 {
 	struct pagerops **pgops;
 
@@ -134,11 +139,14 @@ vm_pager_init()
 	/*
 	 * Initialize known pagers
 	 */
-	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
-		if (pgops)
+	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++) {
+		if (pgops) {
 			(*(*pgops)->pgo_init)();
-	if (dfltpagerops == NULL)
+		}
+	}
+	if (dfltpagerops == NULL) {
 		panic("no default pager");
+	}
 }
 
 /*
@@ -167,8 +175,9 @@ void
 vm_pager_deallocate(pager)
 	vm_pager_t	pager;
 {
-	if (pager == NULL)
+	if (pager == NULL) {
 		panic("vm_pager_deallocate: null pager");
+	}
 
 	(*pager->pg_ops->pgo_dealloc)(pager);
 }
@@ -204,8 +213,9 @@ vm_pager_put_pages(pager, mlist, npages, sync)
 	int			npages;
 	bool_t	sync;
 {
-	if (pager == NULL)
+	if (pager == NULL) {
 		panic("vm_pager_put_pages: null pager");
+	}
 	return ((*pager->pg_ops->pgo_putpages)(pager, mlist, npages, sync));
 }
 
@@ -234,8 +244,9 @@ vm_pager_has_page(pager, offset)
 	vm_pager_t	pager;
 	vm_offset_t	offset;
 {
-	if (pager == NULL)
+	if (pager == NULL) {
 		panic("vm_pager_has_page: null pager");
+	}
 	return ((*pager->pg_ops->pgo_haspage)(pager, offset));
 }
 
@@ -244,13 +255,15 @@ vm_pager_has_page(pager, offset)
  * Gives pagers a chance to clean up any completed async pageing operations.
  */
 void
-vm_pager_sync()
+vm_pager_sync(void)
 {
 	struct pagerops **pgops;
 
-	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
-		if (pgops)
+	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++) {
+		if (pgops) {
 			(*(*pgops)->pgo_putpages)(NULL, NULL, 0, FALSE);
+		}
+	}
 }
 
 void
@@ -260,8 +273,9 @@ vm_pager_cluster(pager, offset, loff, hoff)
 	vm_offset_t	*loff;
 	vm_offset_t	*hoff;
 {
-	if (pager == NULL)
+	if (pager == NULL) {
 		panic("vm_pager_cluster: null pager");
+	}
 	((*pager->pg_ops->pgo_cluster)(pager, offset, loff, hoff));
 }
 
@@ -308,10 +322,12 @@ vm_pager_map_pages(mlist, npages, canwait)
 	for (va = kva; npages--; va += PAGE_SIZE) {
 		m = *mlist++;
 #ifdef DEBUG
-		if ((m->flags & PG_BUSY) == 0)
+		if ((m->flags & PG_BUSY) == 0) {
 			panic("vm_pager_map_pages: page not busy");
-		if (m->flags & PG_PAGEROWNED)
+		}
+		if (m->flags & PG_PAGEROWNED) {
 			panic("vm_pager_map_pages: page already in pager");
+		}
 #endif
 #ifdef DEBUG
 		m->flags |= PG_PAGEROWNED;
@@ -335,18 +351,20 @@ vm_pager_unmap_pages(kva, npages)
 
 	for (va = kva; np--; va += PAGE_SIZE) {
 		m = vm_pager_atop(va);
-		if (m->flags & PG_PAGEROWNED)
+		if (m->flags & PG_PAGEROWNED) {
 			m->flags &= ~PG_PAGEROWNED;
-		else
+		} else {
 			printf("vm_pager_unmap_pages: %x(%x/%x) not owned\n",
 			       m, va, VM_PAGE_TO_PHYS(m));
+		}
 	}
 #endif
 	pmap_remove(vm_map_pmap(pager_map), kva, kva + size);
 	vm_map_lock(pager_map);
 	(void) vm_map_delete(pager_map, kva, kva + size);
-	if (pager_map_wanted)
+	if (pager_map_wanted) {
 		wakeup(pager_map);
+	}
 	vm_map_unlock(pager_map);
 }
 
@@ -357,8 +375,9 @@ vm_pager_atop(kva)
 	vm_offset_t pa;
 
 	pa = pmap_extract(vm_map_pmap(pager_map), kva);
-	if (pa == 0)
+	if (pa == 0) {
 		panic("vm_pager_atop");
+	}
 	return (PHYS_TO_VM_PAGE(pa));
 }
 
@@ -369,7 +388,7 @@ vm_pager_lookup(pglist, handle)
 {
 	register vm_pager_t pager;
 
-	for (pager = TAILQ_FIRST(pglist); pager; pager = TAILQ_NEXT(pager, pg_list)) {
+	TAILQ_FOREACH(pager, pglist, pg_list) {
 		if (pager->pg_handle == handle) {
 			return (pager);
 		}
@@ -386,15 +405,17 @@ pager_cache(object, should_cache)
 	vm_object_t	object;
 	bool_t	should_cache;
 {
-	if (object == NULL)
+	if (object == NULL) {
 		return (KERN_INVALID_ARGUMENT);
+	}
 
 	vm_object_cache_lock();
 	vm_object_lock(object);
-	if (should_cache)
+	if (should_cache) {
 		object->flags |= OBJ_CANPERSIST;
-	else
+	} else {
 		object->flags &= ~OBJ_CANPERSIST;
+	}
 	vm_object_unlock(object);
 	vm_object_cache_unlock();
 

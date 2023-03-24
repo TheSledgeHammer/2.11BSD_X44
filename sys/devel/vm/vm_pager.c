@@ -118,68 +118,14 @@ int npagers = sizeof (pagertab) / sizeof (pagertab[0]);
 
 struct pagerops *dfltpagerops = NULL;	/* default pager */
 
-/*
- * Kernel address space for mapping pages.
- * Used by pagers where KVAs are needed for IO.
- *
- * XXX needs to be large enough to support the number of pending async
- * cleaning requests (NPENDINGIO == 64) * the maximum swap cluster size
- * (MAXPHYS == 64k) if you want to get the most efficiency.
- */
-#define PAGER_MAP_SIZE	(4 * 1024 * 1024)
-
-vm_map_t pager_map;
-bool_t pager_map_wanted;
-vm_offset_t pager_sva, pager_eva;
-
-void
-vm_pager_init(void)
-{
-	struct pagerops **pgops;
-
-	/*
-	 * Allocate a kernel submap for tracking get/put page mappings
-	 */
-	pager_map = kmem_suballoc(kernel_map, &pager_sva, &pager_eva, PAGER_MAP_SIZE, FALSE);
-
-	/*
-	 * Initialize known pagers
-	 */
-	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++) {
-		if (pgops) {
-			(*(*pgops)->pgo_init)();
-		}
-	if (dfltpagerops == NULL) {
-		panic("no default pager");
-	}
-}
-
-vm_pager_t
-vm_pager_allocate(type, handle, size, prot, off)
-	int type;
-	caddr_t handle;
-	vm_size_t size;
-	vm_prot_t prot;
-	vm_offset_t off;
-{
-	struct pagerops *ops;
-
-	ops = (type == PG_DFLT) ? dfltpagerops : pagertab[type];
-	if (ops) {
-		return ((*ops->pgo_alloc)(handle, size, prot, off));
-	}
-	return (NULL);
-}
-
-void
-vm_pager_deallocate(pager)
-	vm_pager_t	pager;
-{
-	if (pager == NULL) {
-		panic("vm_pager_deallocate: null pager");
-	}
-	(*pager->pg_ops->pgo_dealloc)(pager);
-}
+struct pagerops {
+	/* Get (read) segment. */
+	int			(*pgo_getsegments)(vm_pager_t, vm_segment_t *, int, bool_t);
+	/* Put (write) segment. */
+	int			(*pgo_putsegments)(vm_pager_t, vm_segment_t *, int, bool_t);
+	/* Does pager have segment? */
+	bool_t  	(*pgo_hassegment)(vm_pager_t, vm_offset_t);
+};
 
 int
 vm_pager_get_segments(pager, slist, nsegments, sync)
@@ -188,10 +134,21 @@ vm_pager_get_segments(pager, slist, nsegments, sync)
 	int			nsegments;
 	bool_t		sync;
 {
+	int rv;
+
 	if (pager == NULL) {
-		panic("vm_pager_get_segments: null pager");
+		rv = VM_PAGER_OK;
+		while (nsegments--) {
+			if (!vm_segment_zero_fill(*slist)) {
+				rv = VM_PAGER_FAIL;
+				break;
+			} else {
+				slist++;
+			}
+		}
+		return (rv);
 	}
-	return ((*pager->pg_ops->pgo_gettsegments)(pager, slist, nsegments, sync));
+	return ((*pager->pg_ops->pgo_getsegments)(pager, slist, nsegments, sync));
 }
 
 int
@@ -205,4 +162,28 @@ vm_pager_put_segments(pager, slist, nsegments, sync)
 		panic("vm_pager_put_segments: null pager");
 	}
 	return ((*pager->pg_ops->pgo_putsegments)(pager, slist, nsegments, sync));
+}
+
+bool_t
+vm_pager_has_segment(pager, offset)
+	vm_pager_t	pager;
+	vm_offset_t	offset;
+{
+	if (pager == NULL) {
+		panic("vm_pager_has_segment: null pager");
+	}
+	return ((*pager->pg_ops->pgo_hassegment)(pager, offset));
+}
+
+vm_segment_t
+vm_pager_atos(kva)
+	vm_offset_t	kva;
+{
+	vm_offset_t pa;
+
+	pa = pmap_extract(vm_map_pmap(pager_map), kva);
+	if (pa == 0) {
+		panic("vm_pager_atos");
+	}
+	return (PHYS_TO_VM_SEGMENT(pa));
 }

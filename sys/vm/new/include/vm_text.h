@@ -194,6 +194,13 @@ struct txtlist              vm_text_list;
 /* vm text sysctl */
 extern int sysctl_text(char *, size_t *);
 
+/* vm_drum */
+int		vm_vsxalloc(vm_text_t);
+void	vm_vsxfree(vm_text_t, long);
+
+/* vm_mmap */
+void 	vm_expand(struct proc *, vm_size_t, int);
+
 /* vm_psegment */
 vm_psegment_t *vm_psegment_alloc(void);
 void	vm_psegment_free(vm_psegment_t *);
@@ -221,4 +228,9 @@ int		vm_xpurge(void);
 void	vm_xrele(struct vnode *);
 void	vm_xswapin(struct proc *, vm_offset_t);
 void	vm_xswapout(struct proc *, vm_offset_t, vm_size_t, int, u_int, u_int);
+
+/* vm_unix */
+void	sureg(void);
+int	 	vm_estabur(struct proc *, segsz_t, segsz_t, segsz_t, int, int);
+
 #endif /* _VM_TEXT_H_ */

@@ -3119,11 +3119,12 @@ _vm_map_print(map, full, pr)
  		(int) map, (int) (map->pmap), map->ref_count, map->nentries,
 		map->timestamp);
 
-	if (!full && indent)
+	if (!full && indent) {
 		return;
+	}
 
 	indent += 2;
-	for (entry = CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next; entry != CIRCLEQ_FIRST(&map->cl_header); entry = CIRCLEQ_NEXT(entry, cl_entry)) {
+	CIRCLEQ_FOREACH(entry, &map->cl_header, cl_entry) {
 		iprintf("map entry 0x%x: start=0x%x, end=0x%x, ",
 			(int) entry, (int) entry->start, (int) entry->end);
 		if (map->is_main_map) {
@@ -3133,8 +3134,9 @@ _vm_map_print(map, full, pr)
 				entry->protection,
 				entry->max_protection,
 				inheritance_name[entry->inheritance]);
-			if (entry->wired_count != 0)
+			if (entry->wired_count != 0) {
 				(*pr)("wired, ");
+			}
 		}
 
 		if (entry->is_a_map || entry->is_sub_map) {
@@ -3150,14 +3152,14 @@ _vm_map_print(map, full, pr)
 				indent -= 2;
 			}
 
-		}
-		else {
+		} else {
 			(*pr)("object=0x%x, offset=0x%x",
 				(int) entry->object.vm_object,
 				(int) entry->offset);
-			if (entry->copy_on_write)
+			if (entry->copy_on_write) {
 				(*pr)(", copy (%s)",
 				       entry->needs_copy ? "needed" : "done");
+			}
 			(*pr)("\n");
 
 			if ((CIRCLEQ_PREV(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header)) ||

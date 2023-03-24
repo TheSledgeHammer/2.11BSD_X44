@@ -35,11 +35,12 @@
  */
 int
 vm_vsxalloc(xp)
-	struct vm_text *xp;
+	vm_text_t xp;
 {
 	register long blk;
 	register swblk_t *dp;
 	swblk_t vsbase;
+
 	if (ctod(xp->psx_size) > NXDAD * dmtext) {
 		return (0);
 	}
@@ -70,12 +71,12 @@ vm_vsxalloc(xp)
  */
 void
 vm_vsxfree(xp, ts)
-	struct vm_text *xp;
+	vm_text_t xp;
 	long ts;
 {
 	register long blk;
 	register swblk_t *dp;
-	swblk_t 		vsbase;
+	swblk_t vsbase;
 
 	ts = ctod(ts);
 	dp = xp->psx_daddr;

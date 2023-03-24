@@ -652,7 +652,8 @@ again:
  */
 
 void
-vm_pageout(void)
+vm_pageout(arg)
+	void *arg;
 {
 	(void) spl0();
 

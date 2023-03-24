@@ -369,7 +369,7 @@ vm_object_terminate(object)
 			}
 		} else {
 			vm_segment_free(segment);
-			vm_segment_unlock_list();
+			vm_segment_unlock_lists();
 		}
 	}
 	vm_object_unlock(object);
@@ -1725,13 +1725,15 @@ _vm_object_print(object, full, pr)
 	bool_t		full;
 	void		(*pr)(const char *, ...);
 {
+	register vm_segment_t	s;
 	register vm_page_t	p;
 	extern int indent;
 
 	register int count;
 
-	if (object == NULL)
+	if (object == NULL) {
 		return;
+	}
 
 	iprintf("Object 0x%x: size=0x%x, res=%d, ref=%d, ",
 		(int) object, (int) object->size,
@@ -1741,25 +1743,29 @@ _vm_object_print(object, full, pr)
 	       (int) object->shadow, (int) object->shadow_offset);
 	(*pr)("cache: next=0x%x, prev=0x%x\n", TAILQ_NEXT(object, cached_list), TAILQ_PREV(object, object_q, cached_list));
 
-	if (!full)
+	if (!full) {
 		return;
+	}
 
 	indent += 2;
 	count = 0;
-	for (p = TAILQ_FIRST(&object->memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
-		if (count == 0)
-			iprintf("memory:=");
-		else if (count == 6) {
-			(*pr)("\n");
-			iprintf(" ...");
-			count = 0;
-		} else
-			(*pr)(",");
-		count++;
-
-		(*pr)("(off=0x%x,page=0x%x)", p->offset, VM_PAGE_TO_PHYS(p));
+	CIRCLEQ_FOREACH(s, &object->seglist, listq) {
+		TAILQ_FOREACH(p, &s->memq, listq) {
+			if (count == 0) {
+				iprintf("memory:=");
+			} else if (count == 6) {
+				(*pr)("\n");
+				iprintf(" ...");
+				count = 0;
+			} else {
+				(*pr)(",");
+			}
+			count++;
+			(*pr)("(off=0x%x,page=0x%x)", p->offset, VM_PAGE_TO_PHYS(p));
+		}
 	}
-	if (count != 0)
+	if (count != 0) {
 		(*pr)("\n");
+	}
 	indent -= 2;
 }

@@ -35,8 +35,7 @@ sbrk()
 	register segsz_t n, d;
 
 	p = u.u_procp;
-
-	n = btoc(uap->size);
+	n = btoc(SCARG(uap, size));
 	if (!SCARG(uap, sep)) {
 		SCARG(uap, sep) = PSEG_NOSEP;
 	} else {
@@ -56,8 +55,7 @@ sbrk()
 		bzero(p->p_daddr + p->p_dsize, d);
 	}
 	p->p_dsize = n;
-	/* Not yet implemented */
-	return (EOPNOTSUPP);	/* return (0) */
+	return (0);
 }
 
 int

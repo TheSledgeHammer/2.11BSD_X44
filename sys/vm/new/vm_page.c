@@ -163,7 +163,7 @@ vm_pbootinit(item, size, nitems)
  *	Sets page_shift and page_mask from cnt.v_page_size.
  */
 void
-vm_set_page_size()
+vm_set_page_size(void)
  {
 	if (cnt.v_page_size == 0) {
 		cnt.v_page_size = DEFAULT_PAGE_SIZE;
