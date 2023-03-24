@@ -32,11 +32,12 @@
 #include <sys/systm.h>
 #include <sys/fnv_hash.h>
 
-#include <vm/new/include/vm.h>
-#include <vm/new/include/vm_page.h>
-#include <vm/new/include/vm_segment.h>
-#include <vm/new/include/vm_map.h>
-#include <vm/new/include/vm_pageout.h>
+#include <vm/include/vm.h>
+#include <vm/include/vm_text.h>
+#include <vm/include/vm_page.h>
+#include <vm/include/vm_segment.h>
+#include <vm/include/vm_map.h>
+#include <vm/include/vm_pageout.h>
 
 struct seglist  	*vm_segment_buckets;
 int					vm_segment_bucket_count = 0;	/* How big is array? */

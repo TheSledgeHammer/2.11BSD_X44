@@ -101,7 +101,7 @@ extern int						segment_shift;
 #define	PAGE_SIZE				cnt.v_page_size			/* size of page */
 #define	PAGE_MASK				page_mask				/* size of page - 1 */
 #define	PAGE_SHIFT				page_shift				/* bits to shift for pages */
-#ifdef _KERNEL_H_
+#ifdef _KERNEL
 extern vm_size_t				page_mask;
 extern int						page_shift;
 #endif

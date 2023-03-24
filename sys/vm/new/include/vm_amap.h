@@ -50,7 +50,7 @@
  * amap implementation-specific definitions.
  */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 /*
  * part 1: amap interface
@@ -73,7 +73,7 @@ void			vm_amap_copy(vm_map_t, vm_map_entry_t, int, caddr_t, caddr_t); 		/* clear
 void			vm_amap_cow_now(vm_map_t, vm_map_entry_t); 							/* resolve all COW faults now */
 int				vm_amap_extend(vm_map_entry_t, size_t); 							/* make amap larger */
 void			vm_amap_free(vm_amap_t); 											/* free amap */
-void			vm_amap_ref(vm_amap_t, vm_offset_t, size_t, int);					/* add a reference to an amap */
+void			vm_amap_ref(vm_map_entry_t, int);					/* add a reference to an amap */
 void			vm_amap_share_protect(vm_map_entry_t, vm_prot_t); 					/* protect pages in a shared amap */
 void			vm_amap_splitref(struct vm_aref *, struct vm_aref *, caddr_t); 		/* split reference to amap into two */
 void			vm_amap_wipeout(vm_amap_t); 										/* remove all anons from amap */
@@ -81,7 +81,6 @@ vm_anon_t		vm_amap_lookup(vm_aref_t, caddr_t);
 void			vm_amap_lookups(vm_aref_t, caddr_t, vm_anon_t *, int);
 caddr_t			vm_amap_add(vm_aref_t, caddr_t, vm_anon_t, int);
 void			vm_amap_unadd(vm_amap_t, caddr_t);
-void			vm_amap_ref(vm_map_entry_t, int);
 void			vm_amap_unref(vm_map_entry_t, int);
 void			vm_amap_clean(vm_map_entry_t, vm_size_t, vm_offset_t, vm_amap_t);
 
@@ -253,6 +252,6 @@ void			vm_amap_wiperange(vm_amap_t, int, int, vm_anon_t *); 				/* wipe part of 
 
 #endif	/* VM_AMAP_PPREF */
 
-#ifdef _KERNEL
+#endif /* _KERNEL */
 
 #endif /* _VM_AMAP_H_ */

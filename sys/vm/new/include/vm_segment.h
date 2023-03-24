@@ -40,6 +40,9 @@
 #ifndef _VM_SEGMENT_H_
 #define _VM_SEGMENT_H_
 
+#include <vm/include/vm_page.h>
+#include <vm/include/vm_text.h>
+
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
 struct vm_segment {
@@ -92,7 +95,7 @@ struct vm_segment {
 #define	VM_SEGMENT_CHECK(seg)
 #endif /* VM_SEGMENT_DEBUG */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 extern
 struct seglist  	vm_segment_list_free;		/* free list */
 extern

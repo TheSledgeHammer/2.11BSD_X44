@@ -117,6 +117,9 @@ typedef struct lock			*lock_t;
 #include <vm/include/vm_object.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
+#include <vm/include/vm_amap.h>
+#include <vm/include/vm_anon.h>
+#include <vm/include/vm_text.h>
 
 /*
  * Shareable process virtual address space.

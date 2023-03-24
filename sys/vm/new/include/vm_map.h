@@ -116,7 +116,7 @@ struct vm_map_entry {
 	vm_inherit_t				inheritance;	/* inheritance */
 	int							wired_count;	/* can be paged if = 0 */
 	int							advice;			/* madvise advice */
-	struct vm_aref				aref;			/* anonymous overlay */
+	vm_aref_t				aref;			/* anonymous overlay */
 };
 
 /*
@@ -236,7 +236,8 @@ void		vm_map_lookup_done(vm_map_t, vm_map_entry_t);
 bool_t		vm_map_lookup_entry(vm_map_t, vm_offset_t, vm_map_entry_t *);
 int		 	vm_map_pageable(vm_map_t, vm_offset_t, vm_offset_t, bool_t);
 int		 	vm_map_clean(vm_map_t, vm_offset_t, vm_offset_t, bool_t, bool_t);
-void		vm_map_print(vm_map_t, bool_t);
+void		vm_map_print (vm_map_t, bool_t);
+void		 _vm_map_print (vm_map_t, bool_t, void (*)(const char *, ...));
 int		 	vm_map_protect(vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
 void		vm_map_reference(vm_map_t);
 int		 	vm_map_remove(vm_map_t, vm_offset_t, vm_offset_t);
