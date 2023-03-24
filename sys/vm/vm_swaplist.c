@@ -1270,9 +1270,6 @@ vm_swap_free(startslot, nslots)
 	simple_unlock(&swap_data_lock);
 }
 
-/* place in buf struct */
-struct swapbuf		*b_swbuf;			/* swapbuf back pointer */
-
 void
 vm_swapbuf_init(bp, p)
 	struct buf  	*bp;

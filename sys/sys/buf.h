@@ -105,7 +105,7 @@ struct buf {
 	int					b_validoff;			/* Offset in buffer of valid region. */
 	int					b_validend;			/* Offset of end of valid region. */
 	//void				*b_fsdata;			/* fs private data */
-
+	struct swapbuf		*b_swbuf;			/* swapbuf back pointer */
 	void				*b_private;
 
 	struct lock_object	b_lnterlock;		/* buf lock */
