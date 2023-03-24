@@ -112,7 +112,7 @@ loadav(avg)
 	register int i;
 	register struct proc *p;
 
-	for(nrun = 0, p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
+	for (nrun = 0, p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
 		switch (p->p_stat) {
 		case SSLEEP:
 			if (p->p_pri > PZERO || p->p_slptime != 0)
@@ -220,7 +220,7 @@ vmtotal(totalp)
 	/*
 	 * Calculate process statistics.
 	 */
-	for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
+	LIST_FOREACH(p, &allproc, p_list) {
 		if (p->p_flag & P_SYSTEM)
 			continue;
 		if (p->p_stat) {
