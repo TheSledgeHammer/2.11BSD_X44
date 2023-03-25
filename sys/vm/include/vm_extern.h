@@ -45,6 +45,12 @@ struct vmtotal;
 struct mount;
 struct vnode;
 
+/* advice: matches MADV_* from sys/mman.h and POSIX_FADV_* from sys/fcntl.h */
+#define MADV_MASK		0x7	/* mask */
+
+/* macros to extract info */
+#define VM_ADVICE(X)	(((X) >> 12) & MADV_MASK)
+
 #ifdef KGDB
 void		 	chgkprot(caddr_t, int, int);
 #endif

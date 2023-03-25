@@ -103,8 +103,8 @@ struct vm_map_entry {
 	RB_ENTRY(vm_map_entry) 		rb_entry;		/* tree information */
 	vm_offset_t					start;			/* start address */
 	vm_offset_t					end;			/* end address */
-	caddr_t						ownspace;		/* free space after */
-	caddr_t						space;			/* space in subtree */
+	vm_offset_t					ownspace;		/* free space after */
+	vm_offset_t					space;			/* space in subtree */
 	union vm_map_object			object;			/* object I point to */
 	vm_offset_t					offset;			/* offset into object */
 	bool_t						is_a_map;		/* Is "object" a map? */
@@ -203,6 +203,7 @@ typedef struct {
 	(map)->lk_flags &= ~LK_CANRECURSE; 							\
 	simple_unlock(&(map)->lk_lnterlock); 						\
 }
+
 /*
  *	Functions implemented as macros
  */
@@ -244,11 +245,11 @@ int		 	vm_map_remove(vm_map_t, vm_offset_t, vm_offset_t);
 void		vm_map_simplify(vm_map_t, vm_offset_t);
 void		vm_map_simplify_entry(vm_map_t, vm_map_entry_t);
 void		vm_map_startup(void);
-int		vm_map_submap(vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
-int		vm_map_advice(vm_map_t, vm_offset_t, vm_offset_t, int);
-int		vm_map_willneed(vm_map_t, vm_offset_t, vm_offset_t);
-void            vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
-void            vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
+int			vm_map_submap(vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
+int			vm_map_advice(vm_map_t, vm_offset_t, vm_offset_t, int);
+int			vm_map_willneed(vm_map_t, vm_offset_t, vm_offset_t);
+void        vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
+void        vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
 
 #endif
 #endif /* _VM_MAP_ */

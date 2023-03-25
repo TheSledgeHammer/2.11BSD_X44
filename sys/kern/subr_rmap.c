@@ -38,6 +38,8 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
+#include <vm/include/vm_text.h>
+
 extern struct mapent _coremap[];
 
 static struct mapent *rmcreate(struct map *, memaddr_t, size_t, int);
@@ -202,11 +204,13 @@ retry:
 			bp->m_size = first;
 			if (rest) {
 				printf("short of swap\n");
-				rmfree(swapmap, rest, addr+size);
+				//rmfree(swapmap, rest, addr+size);
+				vm_xumount(NODEV);
 			}
 			goto again;
 		} else if (mp == coremap) {
-			rmfree(mp, size, addr);
+			//rmfree(mp, size, addr);
+			vm_xuncore(size);
 			goto again;
 		}
 	}
@@ -367,16 +371,20 @@ again:
     				bp->m_size = first;
     				if (rest) {
 					    printf("short of swap\n");
-					    rmfree(swapmap, rest, addr + sizes[next]);
+					    //rmfree(swapmap, rest, addr + sizes[next]);
+					    vm_xumount(NODEV);
 				    }
 				    goto again;
 	            }
 	        }
 	    }
 	    if (mp == coremap) {
-	        rmfree(mp, sizes[2], addr); /* smallest to largest; */
-			rmfree(mp, sizes[1], addr); /* free up minimum space */
-			rmfree(mp, sizes[0], addr);
+	        //rmfree(mp, sizes[2], addr); /* smallest to largest; */
+			//rmfree(mp, sizes[1], addr); /* free up minimum space */
+			//rmfree(mp, sizes[0], addr);
+			vm_xuncore(sizes[2]);	/* smallest to largest; */
+			vm_xuncore(sizes[1]);	/* free up minimum space */
+			vm_xuncore(sizes[0]);
 			goto again;
 		}
 	}

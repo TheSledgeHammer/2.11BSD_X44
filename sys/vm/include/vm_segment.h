@@ -156,7 +156,6 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 	(seg)->wire_tracker = 0;							\
 }
 
-void            vm_set_segment_size(void);
 void		 	vm_segment_activate(vm_segment_t);
 vm_segment_t 	vm_segment_alloc(vm_object_t, vm_offset_t);
 void			vm_segment_deactivate(vm_segment_t);

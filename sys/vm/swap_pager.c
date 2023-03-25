@@ -663,16 +663,16 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * Get a swap buffer header and initialize it.
 	 */
 	s = splbio();
-	while (TAILQ_FIRST(swbuf->sw_bswlist) == NULL) {
+	while (TAILQ_FIRST(&swbuf->sw_bswlist) == NULL) {
 #ifdef DEBUG
 		if (swpagerdebug & SDB_ANOM)
 			printf("swap_pager_io: wait on swbuf for %x (%d)\n", m, flags);
 #endif
-		TAILQ_INIT(swbuf->sw_bswlist);
-		TAILQ_FIRST(swbuf->sw_bswlist)->b_flags |= B_WANTED;
-		tsleep((caddr_t)swbuf->sw_bswlist, PSWP+1, "swpgiobuf", 0);
+		TAILQ_INIT(&swbuf->sw_bswlist);
+		TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags |= B_WANTED;
+		tsleep((caddr_t)&swbuf->sw_bswlist, PSWP+1, "swpgiobuf", 0);
 	}
-	TAILQ_INSERT_HEAD(swbuf->sw_bswlist, bp, b_actq);
+	TAILQ_INSERT_HEAD(&swbuf->sw_bswlist, bp, b_actq);
 	splx(s);
 	bp->b_flags = B_BUSY | (flags & B_READ);
 	bp->b_proc = &proc0;	/* XXX (but without B_PHYS set this is ok) */
@@ -783,12 +783,12 @@ swap_pager_io(swp, mlist, npages, flags)
 #endif
 	rv = (bp->b_flags & B_ERROR) ? VM_PAGER_ERROR : VM_PAGER_OK;
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	TAILQ_INSERT_HEAD(swbuf->sw_bswlist, bp, b_actq);
+	TAILQ_INSERT_HEAD(&swbuf->sw_bswlist, bp, b_actq);
 	if (bp->b_vp)
 		brelvp(bp);
-	if (TAILQ_FIRST(swbuf->sw_bswlist)->b_flags & B_WANTED) {
-		TAILQ_FIRST(swbuf->sw_bswlist)->b_flags &= ~B_WANTED;
-		wakeup(swbuf->sw_bswlist);
+	if (TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags & B_WANTED) {
+		TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags &= ~B_WANTED;
+		wakeup(&swbuf->sw_bswlist);
 	}
 	if ((flags & B_READ) == 0 && rv == VM_PAGER_OK) {
 		m->flags |= PG_CLEAN;
@@ -1000,12 +1000,12 @@ swap_pager_iodone(bp)
 	}
 		
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	TAILQ_INSERT_HEAD(swbuf->sw_bswlist, bp, b_actq);
+	TAILQ_INSERT_HEAD(&swbuf->sw_bswlist, bp, b_actq);
 	if (bp->b_vp)
 		brelvp(bp);
-	if (TAILQ_FIRST(swbuf->sw_bswlist)->b_flags & B_WANTED) {
-		TAILQ_FIRST(swbuf->sw_bswlist)->b_flags &= ~B_WANTED;
-		wakeup(swbuf->sw_bswlist);
+	if (TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags & B_WANTED) {
+		TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags &= ~B_WANTED;
+		wakeup(&swbuf->sw_bswlist);
 	}
 	wakeup(&vm_pages_needed);
 	splx(s);

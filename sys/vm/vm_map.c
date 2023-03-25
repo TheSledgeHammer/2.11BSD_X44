@@ -130,8 +130,6 @@ static void vm_rb_remove(vm_map_t, vm_map_entry_t);
 static vm_size_t vm_cl_space(const vm_map_t, const vm_map_entry_t);
 static void vm_cl_insert(vm_map_t, vm_map_entry_t);
 static void vm_cl_remove(vm_map_t, vm_map_entry_t);
-static __inline void vm_map_reference_amap(vm_map_entry_t, int);
-static __inline void vm_map_unreference_amap(vm_map_entry_t, int);
 static bool_t vm_map_search_next_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
 static bool_t vm_map_search_prev_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
 static void	_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
@@ -428,28 +426,6 @@ vm_cl_remove(map, entry)
     if(tail && vm_cl_space(map, entry)) {
         CIRCLEQ_REMOVE(&map->cl_header, tail, cl_entry);
     }
-}
-
-/*
- * wrapper for calling amap_ref()
- */
-static __inline void
-vm_map_reference_amap(entry, flags)
-	vm_map_entry_t entry;
-	int flags;
-{
-	vm_amap_ref(entry->aref.ar_amap, entry->aref.ar_pageoff, (entry->end - entry->start) >> PAGE_SHIFT, flags);
-}
-
-/*
- * wrapper for calling amap_unref()
- */
-static __inline void
-vm_map_unreference_amap(entry, flags)
-	vm_map_entry_t entry;
-	int flags;
-{
-	vm_amap_unref(entry->aref.ar_amap, entry->aref.ar_pageoff, (entry->end - entry->start) >> PAGE_SHIFT, flags);
 }
 
 /*
@@ -851,7 +827,7 @@ vm_map_lookup_entry(map, address, entry)
 	simple_unlock(&map->hint_lock);
 
 	if(address < cur->start) {
-		if(vm_map_search_prev_entry(map, address, cur)) {
+		if (vm_map_search_prev_entry(map, address, cur)) {
 			SAVE_HINT(map, cur);
 			KDASSERT((*entry)->start <= address);
 	        KDASSERT(address < (*entry)->end);
@@ -1137,10 +1113,16 @@ vm_map_simplify_entry(map, entry)
  *	the specified address; if necessary,
  *	it splits the entry into two.
  */
-#define vm_map_clip_start(map, entry, startaddr) 	\
-{ 													\
-	if (startaddr > entry->start) 					\
-		_vm_map_clip_start(map, entry, startaddr); 	\
+
+void
+vm_map_clip_start(map, entry, startaddr)
+	register vm_map_t		map;
+	register vm_map_entry_t	entry;
+	register vm_offset_t	startaddr;
+{
+	if (startaddr > entry->start) {
+		_vm_map_clip_start(map, entry, startaddr);
+	}
 }
 
 /*
@@ -1154,7 +1136,7 @@ _vm_map_clip_start(map, entry, start)
 	register vm_offset_t	start;
 {
 	register vm_map_entry_t	new_entry;
-	caddr_t new_adj;
+	vm_offset_t new_adj;
 
 	/*
 	 *	See if we can simplify this entry first
@@ -1207,11 +1189,15 @@ _vm_map_clip_start(map, entry, start)
  *	the specified address; if necessary,
  *	it splits the entry into two.
  */
-
-#define vm_map_clip_end(map, entry, endaddr) 	\
-{ 												\
-	if (endaddr < entry->end) 					\
-		_vm_map_clip_end(map, entry, endaddr); 	\
+void
+vm_map_clip_end(map, entry, endaddr)
+	register vm_map_t		map;
+	register vm_map_entry_t	entry;
+	register vm_offset_t	endaddr;
+{
+	if (endaddr < entry->end) {
+		_vm_map_clip_end(map, entry, endaddr);
+	}
 }
 
 /*
@@ -1225,7 +1211,7 @@ _vm_map_clip_end(map, entry, end)
 	register vm_offset_t	end;
 {
 	register vm_map_entry_t	new_entry;
-	caddr_t new_adj;
+	vm_offset_t new_adj;
 
 	vm_tree_sanity(map, "clip_end entry");
 
@@ -1370,7 +1356,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 	current = entry;
 	while ((current != CIRCLEQ_FIRST(&map->cl_header)) && (current->start < end)) {
 		if (current->is_sub_map) {
-			return(KERN_INVALID_ARGUMENT);
+			return (KERN_INVALID_ARGUMENT);
 		}
 		if ((new_prot & current->max_protection) != new_prot) {
 			vm_map_unlock(map);
@@ -2665,7 +2651,7 @@ vmspace_fork(vm1)
 
 				if (new_entry->aref.ar_amap) {
 					/* share reference */
-					vm_map_reference_amap(new_entry, AMAP_SHARED);
+					vm_amap_ref(new_entry, AMAP_SHARED);
 				}
 
 				/*
@@ -2719,7 +2705,7 @@ vmspace_fork(vm1)
 
 			new_entry = vm_map_entry_create(new_map);
 			if (new_entry->aref.ar_amap) {
-				vm_map_reference_amap(new_entry, 0);
+				vm_amap_ref(new_entry, 0);
 			}
 			*new_entry = *old_entry;
 			new_entry->wired_count = 0;

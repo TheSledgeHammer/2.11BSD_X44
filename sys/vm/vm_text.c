@@ -53,6 +53,17 @@ vm_xunlock(xp)
 }
 
 /*
+ * Wait for xp to be unlocked if it is currently locked.
+ */
+void
+vm_xwait(xp)
+	vm_text_t 	xp;
+{
+	vm_xlock(xp);
+	vm_xunlock(xp);
+}
+
+/*
  * initialize text table
  */
 void
@@ -82,7 +93,7 @@ vm_xalloc(vp, tsize, toff)
 	p = vp->v_proc;
 	while ((xp == vp->v_text) != NULL) {
 		if (xp->psx_flag & XLOCK) {
-			xwait(xp);
+			vm_xwait(xp);
 			continue;
 		}
 		vm_xlock(xp);
@@ -105,6 +116,7 @@ vm_xalloc(vp, tsize, toff)
 	}
 	xp = TAILQ_FIRST(&vm_text_list);
 	if (xp == NULL) {
+		tablefull("vm_text");
 		psignal(p, SIGKILL);
 		return;
 	}
@@ -136,6 +148,7 @@ vm_xalloc(vp, tsize, toff)
 	vp->v_text = xp;
 	VREF(vp);
 	p->p_textp = xp;
+	vm_xexpand(xp);
 
 	(void) vn_rdwr(UIO_READ, vp, (caddr_t)ctob(tptov(p, 0)), tsize, toff, UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), p->p_cred, (int *)0, p);
 	p->p_flag &= ~P_SLOCK;
@@ -150,7 +163,7 @@ vm_xalloc(vp, tsize, toff)
  * inode has a hard link count of zero, otherwise at the tail.
  */
 void
-vm_xfree()
+vm_xfree(void)
 {
 	register vm_text_t xp;
 	register struct vnode *vp;
@@ -207,7 +220,7 @@ vm_xexpand(p, xp)
 	}
 	vm_xswapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 	vm_xunlock(xp);
-	p->p_flag |= SSWAP;
+	p->p_flag |= P_SSWAP;
 	swtch();
 	/* NOTREACHED */
 }
@@ -289,7 +302,7 @@ vm_xuncore(size)
 	register vm_text_t xp;
 
 	TAILQ_FOREACH(xp, &vm_text_list, psx_list) {
-    	if(!xp->psx_vptr) {
+    	if (!xp->psx_vptr) {
     		continue;
     	}
     	vm_xlock(xp);
