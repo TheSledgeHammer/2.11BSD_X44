@@ -90,8 +90,4 @@ struct vm_advice {
 	int 			nforw;
 };
 
-void	vm_fault_free(vm_segment_t, vm_page_t);
-void	vm_fault_release(vm_segment_t, vm_page_t);
-int     vm_fault_anonget(struct vm_faultinfo *, vm_amap_t, vm_anon_t);
-
 #endif /* _VM_FAULT_H_ */

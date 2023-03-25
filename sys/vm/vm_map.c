@@ -75,8 +75,6 @@
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_segment.h>
 
-#include <vm/include/vm_pager.h>
-
 /*
  *	Virtual memory maps provide for the mapping, protection,
  *	and sharing of virtual memory objects.  In addition,

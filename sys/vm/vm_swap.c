@@ -84,7 +84,7 @@ const struct cdevsw swap_cdevsw = {
 		.d_type = D_OTHER,
 };
 
-struct swqueue bswlist;
+//struct swqueue bswlist;
 int	nswap, nswdev;
 #ifdef SEQSWAP
 int	niswdev;		/* number of interleaved swap devices */

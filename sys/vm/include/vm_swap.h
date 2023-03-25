@@ -108,8 +108,7 @@ void			vm_swap_stats(int, struct swdevt *, int, register_t *);
 
 /* swap buf */
 void			vm_swapbuf_init(struct buf *, struct proc *);
-struct buf 		*vm_getswapbuf(struct swapbuf *);
-void			vm_putswapbuf(struct swapbuf *, struct buf*);
+struct swapbuf 	*vm_swapbuf_get(struct buf *);
 
 #endif /* _KERNEL */
 

@@ -138,18 +138,18 @@ static struct vm_advice vmadvice[] = {
 /*
  * private prototypes
  */
-void                  vm_fault_advice(struct vm_faultinfo *);
-int                   vm_fault_copy(struct vm_faultinfo *, vm_prot_t, bool_t, bool_t);
-void                  vm_fault_cow(struct vm_faultinfo *, vm_prot_t);
-int                   vm_fault_retry(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
-void                  vm_fault_handler_check(struct vm_faultinfo *, int);
-void                  vm_fault_zerofill(struct vm_faultinfo *);
 
-static int             vm_fault_pager(struct vm_faultinfo *, bool_t);
+static int             	vm_fault_pager(struct vm_faultinfo *, bool_t);
 static int              vm_fault_object(struct vm_faultinfo *, bool_t);
 static int              vm_fault_segment(struct vm_faultinfo *, bool_t);
 static int              vm_fault_page(struct vm_faultinfo *, bool_t);
+static int             	vm_fault_copy(struct vm_faultinfo *, vm_prot_t, bool_t, bool_t);
+static void            	vm_fault_cow(struct vm_faultinfo *, vm_prot_t);
+static int             	vm_fault_retry(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
+static void            	vm_fault_handler_check(struct vm_faultinfo *, int);
+static void            	vm_fault_zerofill(struct vm_faultinfo *);
 static int				vm_fault_map_lookup(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
+static void            	vm_fault_advice(struct vm_faultinfo *);
 static void				vm_fault_amap(struct vm_faultinfo *, vm_anon_t *);
 static int				vm_fault_anon(struct vm_faultinfo *, vm_prot_t);
 static void 			vm_fault_amapcopy(struct vm_faultinfo *);
@@ -630,7 +630,7 @@ RetryCopy:
 	return (KERN_SUCCESS);
 }
 
-int
+static int
 vm_fault_copy(vfi, fault_type, change_wiring, page_exists)
 	struct vm_faultinfo *vfi;
 	vm_prot_t fault_type;
@@ -726,7 +726,7 @@ vm_fault_copy(vfi, fault_type, change_wiring, page_exists)
 	return (0);
 }
 
-void
+static void
 vm_fault_cow(vfi, fault_type)
 	struct vm_faultinfo *vfi;
 	vm_prot_t fault_type;
@@ -780,7 +780,7 @@ vm_fault_cow(vfi, fault_type)
 	}
 }
 
-int
+static int
 vm_fault_retry(vfi, vaddr, fault_type)
 	struct vm_faultinfo *vfi;
 	vm_offset_t	vaddr;
@@ -825,7 +825,7 @@ vm_fault_retry(vfi, vaddr, fault_type)
 	return (0);
 }
 
-void
+static void
 vm_fault_handler_check(vfi, flag)
 	struct vm_faultinfo *vfi;
 	int flag;
@@ -880,7 +880,7 @@ vm_fault_handler_check(vfi, flag)
 	}
 }
 
-void
+static void
 vm_fault_zerofill(vfi)
 	struct vm_faultinfo *vfi;
 {
@@ -941,7 +941,7 @@ vm_fault_map_lookup(vfi, vaddr, fault_type)
 /*
  * amap, anon & aobject related
  */
-void
+static void
 vm_fault_advice(vfi)
 	struct vm_faultinfo *vfi;
 {
@@ -1480,6 +1480,7 @@ vm_fault_unwire(map, start, end)
 
 	pmap = vm_map_pmap(map);
 
+
 	/*
 	 *	Since the pages are wired down, we must be able to
 	 *	get their mappings from the physical map system.
@@ -1518,25 +1519,18 @@ vm_fault_unwire(map, start, end)
  *		The source map entry must be wired down (or be a sharing map
  *		entry corresponding to a main map entry that is wired down).
  */
-
 void
 vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
-	vm_map_t	dst_map;
-	vm_map_t	src_map;
+	vm_map_t		dst_map;
+	vm_map_t		src_map;
 	vm_map_entry_t	dst_entry;
 	vm_map_entry_t	src_entry;
 {
-
-	vm_object_t	dst_object;
-	vm_object_t	src_object;
-	vm_offset_t	dst_offset;
-	vm_offset_t	src_offset;
-	vm_prot_t	prot;
-	vm_offset_t	vaddr;
-	vm_segment_t	dst_segment;
-	vm_segment_t	src_segment;
-	vm_page_t	dst_page;
-	vm_page_t	src_page;
+	vm_object_t		dst_object, src_object;
+	vm_segment_t	dst_segment, src_segment;
+	vm_page_t		dst_page, src_page;
+	vm_offset_t		vaddr, dst_offset, src_offset;
+	vm_prot_t		prot;
 
 #ifdef	lint
 	src_map++;
@@ -1550,8 +1544,7 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 	 *	(Doesn't actually shadow anything - we copy the pages
 	 *	directly.)
 	 */
-	dst_object = vm_object_allocate(
-			(vm_size_t) (dst_entry->end - dst_entry->start));
+	dst_object = vm_object_allocate((vm_size_t) (dst_entry->end - dst_entry->start));
 
 	dst_entry->object.vm_object = dst_object;
 	dst_entry->offset = 0;
@@ -1563,31 +1556,16 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 	 *	each one from the source object (it should be there) to the
 	 *	destination object.
 	 */
-	for (vaddr = dst_entry->start, dst_offset = 0;
-	     vaddr < dst_entry->end;
-	     vaddr += PAGE_SIZE, dst_offset += PAGE_SIZE) {
-
-		/*
-		 *	Allocate a page in the destination object
-		 */
+	for (vaddr = dst_entry->start, dst_offset = 0; vaddr < dst_entry->end; vaddr += PAGE_SIZE, dst_offset += PAGE_SIZE) {
 		vm_object_lock(dst_object);
-		do {
-			dst_segment = vm_segment_alloc(dst_object, dst_offset);
-			if (dst_segment == NULL) {
-				vm_object_unlock(dst_object);
-				vm_wait();
-				vm_object_lock(dst_object);
-			} else {
-			        dst_page = vm_page_alloc(dst_segment, dst_segment->offset);
-			        if (dst_page == NULL) {
-			              vm_object_unlock(dst_object);
-				      vm_wait();
-				      vm_object_lock(dst_object);
-			        }
-			}
-			
-
-		} while (dst_page == NULL);
+retry:
+		dst_segment = vm_segment_alloc(dst_object, round_segment(dst_offset));
+		if (dst_segment == NULL) {
+			vm_object_unlock(dst_object);
+			vm_wait();
+			vm_object_lock(dst_object);
+			goto retry;
+		}
 
 		/*
 		 *	Find the page in the source object, and copy it in.
@@ -1595,29 +1573,67 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 		 *	in memory.)
 		 */
 		vm_object_lock(src_object);
-		src_segment = vm_segment_lookup(src_object, dst_offset + src_offset);
-		src_page = vm_page_lookup(src_segment, src_segment->offset);
-		if (src_page == NULL)
-			panic("vm_fault_copy_wired: page missing");
+		src_segment = vm_segment_lookup(src_object, round_segment(dst_offset) + src_offset);
+		if (src_segment == NULL) {
+			panic("vm_fault_copy_wired: segment missing");
+		}
 
-		vm_page_copy(src_page, dst_page);
+		/* look through segment for page. */
+		dst_page = vm_page_lookup(dst_segment, dst_offset);
+		if (dst_page != NULL) {
+			/* page found; copy pages */
+			src_page = vm_page_lookup(src_segment, dst_offset);
+			if (src_page == NULL) {
+				panic("vm_fault_copy_wired: page missing");
+			}
 
-		/*
-		 *	Enter it in the pmap...
-		 */
-		vm_object_unlock(src_object);
-		vm_object_unlock(dst_object);
+			vm_page_copy(src_page, dst_page);
 
-		pmap_enter(dst_map->pmap, vaddr, VM_PAGE_TO_PHYS(dst_page), prot, FALSE);
+			/*
+			 *	Enter it in the pmap...
+			 */
+			vm_object_unlock(src_object);
+			vm_object_unlock(dst_object);
 
-		/*
-		 *	Mark it no longer busy, and put it on the active list.
-		 */
-		vm_object_lock(dst_object);
-		vm_page_lock_queues();
-		vm_page_activate(dst_page);
-		vm_page_unlock_queues();
-		PAGE_WAKEUP(dst_page);
+			pmap_enter(dst_map->pmap, vaddr, VM_PAGE_TO_PHYS(dst_page), prot, FALSE);
+
+
+			/*
+			 *	Mark it no longer busy, and put it on the active list.
+			 */
+			vm_object_lock(dst_object);
+			vm_segment_lock_lists();
+			vm_page_lock_queues();
+			vm_page_activate(dst_page);
+			vm_page_unlock_queues();
+			PAGE_WAKEUP(dst_page);
+			vm_segment_unlock_lists();
+			goto out;
+
+		} else {
+			/* page not found in segment, copy the segment */
+
+			vm_segment_copy(src_segment, dst_segment);
+
+			/*
+			 *	Enter it in the pmap...
+			 */
+			vm_object_unlock(src_object);
+			vm_object_unlock(dst_object);
+
+			pmap_enter(dst_map->pmap, vaddr, VM_SEGMENT_TO_PHYS(dst_segment), prot, FALSE);
+
+			/*
+			 *	Mark it no longer busy, and put it on the active list.
+			 */
+			vm_object_lock(dst_object);
+			vm_segment_lock_lists();
+			vm_segment_activate(dst_segment);
+			vm_segment_unlock_lists();
+			SEGMENT_WAKEUP(dst_segment);
+			goto out;
+		}
+out:
 		vm_object_unlock(dst_object);
 	}
 }

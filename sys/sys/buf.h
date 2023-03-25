@@ -247,8 +247,8 @@ struct cluster_save {
 };
 
 #ifdef _KERNEL
-TAILQ_HEAD(swqueue, buf); 			/* Head of swap I/O buffer headers free list. */
-extern struct 	swqueue bswlist;
+//TAILQ_HEAD(swqueue, buf); 			/* Head of swap I/O buffer headers free list. */
+//extern struct 	swqueue bswlist;
 extern int		nbuf;				/* number of buffer headers */
 extern struct	buf *buf;			/* the buffer pool itself */
 extern char		*buffers;			/* The buffer contents. */

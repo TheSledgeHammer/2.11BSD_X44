@@ -50,6 +50,7 @@
 #include <sys/types.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
+#include <sys/sysdecl.h>
 
 #include <miscfs/specfs/specdev.h>
 
@@ -1353,7 +1354,7 @@ vm_putswapbuf(sbp, bp)
 	int s;
 
 	if(sbp == NULL) {
-		sbp = bp->b_swbuf;
+		sbp = vm_swapbuf_get(bp);
 	}
 	s = splbio();
 	if (bp->b_vp) {
@@ -1364,7 +1365,21 @@ vm_putswapbuf(sbp, bp)
 		wakeup((caddr_t) bp);
 	}
 	sbp->sw_buf = bp;
+	//bp->b_swbuf = sbp;
 	TAILQ_INSERT_HEAD(sbp->sw_bswlist, bp, b_freelist);
 	free(bp, M_TEMP);
 	splx(s);
+}
+
+struct swapbuf *
+vm_swapbuf_get(bp)
+	struct buf 	*bp;
+{
+	register struct swapbuf *sbp;
+
+	if (bp->b_swbuf == NULL) {
+		bp->b_swbuf = swapbuf_alloc();
+	}
+	sbp = bp->b_swbuf;
+	return (sbp);
 }
