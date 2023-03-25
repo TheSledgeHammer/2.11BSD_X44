@@ -509,9 +509,7 @@ vm86_initial_bioscalls(basemem, extmem)
 	bzero(&vmf, sizeof(struct vm86frame));		/* safety */
 
 	smapbase = (struct bios_smap *)NULL;
-	if (smapbase != NULL) {
-		add_smap_entries(smapbase);
-		has_smap = 1;
+	if (has_smapbase(smapbase)) {
 		goto have_smap;
 	}
 
