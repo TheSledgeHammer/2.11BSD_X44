@@ -41,7 +41,6 @@
 #define _VM_SEGMENT_H_
 
 #include <vm/include/vm_page.h>
-#include <vm/include/vm_text.h>
 
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
@@ -157,6 +156,7 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 	(seg)->wire_tracker = 0;							\
 }
 
+void            vm_set_segment_size(void);
 void		 	vm_segment_activate(vm_segment_t);
 vm_segment_t 	vm_segment_alloc(vm_object_t, vm_offset_t);
 void			vm_segment_deactivate(vm_segment_t);
@@ -167,7 +167,7 @@ vm_segment_t	vm_segment_lookup(vm_object_t, vm_offset_t);
 void			vm_segment_page_insert(vm_object_t, vm_offset_t, vm_page_t, vm_offset_t);
 vm_page_t		vm_segment_page_lookup(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_page_remove(vm_object_t, vm_offset_t, vm_offset_t);
-void			vm_segment_startup(vm_offset_t, vm_offset_t);
+void			vm_segment_startup(vm_offset_t *, vm_offset_t *);
 bool_t			vm_segment_zero_fill(vm_segment_t);
 void 			vm_segment_wire(vm_segment_t);
 void 			vm_segment_unwire(vm_segment_t);

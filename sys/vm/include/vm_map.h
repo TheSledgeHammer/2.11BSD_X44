@@ -244,8 +244,11 @@ int		 	vm_map_remove(vm_map_t, vm_offset_t, vm_offset_t);
 void		vm_map_simplify(vm_map_t, vm_offset_t);
 void		vm_map_simplify_entry(vm_map_t, vm_map_entry_t);
 void		vm_map_startup(void);
-int		 	vm_map_submap(vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
-int			vm_map_advice(vm_map_t, vm_offset_t, vm_offset_t, int);
-int			vm_map_willneed(vm_map_t, vm_offset_t, vm_offset_t);
+int		vm_map_submap(vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
+int		vm_map_advice(vm_map_t, vm_offset_t, vm_offset_t, int);
+int		vm_map_willneed(vm_map_t, vm_offset_t, vm_offset_t);
+void            vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
+void            vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
+
 #endif
 #endif /* _VM_MAP_ */

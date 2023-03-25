@@ -69,18 +69,18 @@ struct vm_amap;
  */
 void			vm_amap_init(void);
 vm_amap_t		vm_amap_alloc(vm_offset_t, vm_offset_t, int); 							/* allocate a new amap */
-void			vm_amap_copy(vm_map_t, vm_map_entry_t, int, vm_offset_t, vm_offset_t); 	/* clear amap needs-copy flag */
+void			vm_amap_copy(vm_map_t, vm_map_entry_t, int, bool_t, vm_offset_t, vm_offset_t); 	/* clear amap needs-copy flag */
 void			vm_amap_cow_now(vm_map_t, vm_map_entry_t); 								/* resolve all COW faults now */
-int				vm_amap_extend(vm_map_entry_t, vm_size_t); 								/* make amap larger */
+void				vm_amap_extend(vm_map_entry_t, vm_size_t); 								/* make amap larger */
 void			vm_amap_free(vm_amap_t); 												/* free amap */
 void			vm_amap_ref(vm_map_entry_t, int);										/* add a reference to an amap */
 void			vm_amap_share_protect(vm_map_entry_t, vm_prot_t); 						/* protect pages in a shared amap */
 void			vm_amap_splitref(vm_aref_t, vm_aref_t, vm_offset_t); 					/* split reference to amap into two */
 void			vm_amap_wipeout(vm_amap_t); 											/* remove all anons from amap */
-vm_anon_t		vm_amap_lookup(vm_aref_t, caddr_t);
-void			vm_amap_lookups(vm_aref_t, caddr_t, vm_anon_t *, int);
-caddr_t			vm_amap_add(vm_aref_t, caddr_t, vm_anon_t, int);
-void			vm_amap_unadd(vm_amap_t, caddr_t);
+vm_anon_t		vm_amap_lookup(vm_aref_t, vm_offset_t);
+void			vm_amap_lookups(vm_aref_t, vm_offset_t, vm_anon_t *, int);
+int			vm_amap_add(vm_aref_t, vm_offset_t, vm_anon_t, int);
+void			vm_amap_unadd(vm_amap_t, vm_offset_t);
 void			vm_amap_unref(vm_map_entry_t, int);
 void			vm_amap_clean(vm_map_entry_t, vm_size_t, vm_offset_t, vm_amap_t);
 
@@ -129,7 +129,7 @@ void			vm_amap_clean(vm_map_entry_t, vm_size_t, vm_offset_t, vm_amap_t);
  */
 
 struct vm_amap {
-	simple_lock_data_t 	am_lock; 		/* simple lock [locks all vm_amap fields] */
+	simple_lock_data_t 	        am_lock; 		/* simple lock [locks all vm_amap fields] */
 	int 				am_ref;			/* reference count */
 	int 				am_flags;		/* flags */
 	int 				am_maxslot;		/* max # of slots allocated */
@@ -224,7 +224,7 @@ struct vm_amap {
 
 /* AMAP_B2SLOT: convert byte offset to slot */
 #define AMAP_B2SLOT(S,B) {						\
-	KASSERT(((B) & (PAGE_SIZE - 1)) == 0);		\
+	KASSERT(((B) && (PAGE_SIZE - 1)) == 0);		\
 	(S) = (B) >> PAGE_SHIFT;					\
 }
 

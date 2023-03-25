@@ -33,6 +33,9 @@
 #ifndef _VM_SWAP_H_
 #define _VM_SWAP_H_
 
+#include <sys/buf.h>
+#include <sys/bufq.h>
+
 #define	SWSLOT_BAD						(-1)
 
 /*
@@ -82,27 +85,7 @@ struct swapbuf {
 	int 								sw_nswbuf;
 };
 
-/*
-* The following two structures are used to keep track of data transfers
-* on swap devices associated with regular files.
-* NOTE: this code is more or less a copy of vnd.c; we use the same
-* structure names here to ease porting..
-*/
-struct vndxfer {
-	struct buf							*vx_bp;			/* Pointer to parent buffer */
-	struct swapdev						*vx_sdp;
-	int									vx_error;
-	int									vx_pending;		/* # of pending aux buffers */
-	int									vx_flags;
-#define VX_BUSY							1
-#define VX_DEAD							2
-};
-
-struct vndbuf {
-	struct buf							vb_buf;
-	struct vndxfer						*vb_xfer;
-};
-
+struct buf;
 struct vm_page;
 
 #define SWAP_ON				1		/* begin swapping on device */
