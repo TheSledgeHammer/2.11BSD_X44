@@ -62,6 +62,14 @@ struct vmrate {
 	/* Distribution of anon usages. */
 	unsigned	v_nanon;					/* total number of anons in system */
 	unsigned	v_nfreeanon;				/* number of anons free */
+	unsigned        v_flt_acow;
+	unsigned        v_fltnoanon;
+	unsigned        v_fltnoram;
+	unsigned        v_flt_anon;
+	unsigned        v_fltanget;
+	unsigned        v_fltanretry;
+	unsigned        v_fltrelck;
+	unsigned        v_fltrelckok;
 
 	/* Distribution of page usages. */
 	unsigned 	v_page_size;				/* page size in bytes */

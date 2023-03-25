@@ -110,7 +110,7 @@ struct vnode {
 #define	v_mountedhere	v_un.vu_mountedhere
 #define v_proc			v_un.vu_proc
 #define	v_socket		v_un.vu_socket
-//#define v_text			v_un.vu_text
+#define v_text			v_un.vu_text
 #define	v_vmdata		v_un.vu_vmdata
 #define	v_specinfo		v_un.vu_specinfo
 #define	v_fifoinfo		v_un.vu_fifoinfo
