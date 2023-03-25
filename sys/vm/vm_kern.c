@@ -136,7 +136,7 @@ kmem_alloc_object(object, size, offset)
 				vm_object_lock(object);
 			}
 			vm_segment_zero_fill(segment);
-			segment->sg_flags &= ~PG_BUSY;
+			segment->flags &= ~SEG_BUSY;
 		}
 	}
 	vm_object_unlock(object);
@@ -352,7 +352,7 @@ kmem_malloc_all(map, addr, object, size, offset)
 #if 0
 			vm_segment_zero_fill(segment);
 #endif
-			segment->sg_flags &= ~SEG_BUSY;
+			segment->flags &= ~SEG_BUSY;
 		}
 	}
 	vm_object_unlock(object);

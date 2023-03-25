@@ -36,8 +36,8 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/user.h>
-#include <sys/buf.h>
-#include <sys/bufq.h>
+//#include <sys/buf.h>
+//#include <sys/bufq.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
@@ -55,6 +55,27 @@
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_swap.h>
+
+/*
+* The following two structures are used to keep track of data transfers
+* on swap devices associated with regular files.
+* NOTE: this code is more or less a copy of vnd.c; we use the same
+* structure names here to ease porting..
+*/
+struct vndxfer {
+	struct buf							*vx_bp;			/* Pointer to parent buffer */
+	struct swapdev						*vx_sdp;
+	int									vx_error;
+	int									vx_pending;		/* # of pending aux buffers */
+	int									vx_flags;
+#define VX_BUSY							1
+#define VX_DEAD							2
+};
+
+struct vndbuf {
+	struct buf							vb_buf;
+	struct vndxfer						*vb_xfer;
+};
 
 /*
  * local variables

@@ -54,11 +54,12 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_page.h>
-#include <vm/include/vm_amap.h>
+#include <vm/include/vm_pageout.h>
+//#include <vm/include/vm_amap.h>
 
 static vm_amap_t vm_amap_alloc1(int, int, int);
 
-static struct lock_object amap_list_lock;
+struct lock_object amap_list_lock;
 static LIST_HEAD(, vm_amap) amap_list;
 
 /*
@@ -185,7 +186,7 @@ vm_amap_alloc1(slots, padslots, waitf)
 	if (amap == NULL) {
 		return (NULL);
 	}
-	totalslots = slots + padslots
+	totalslots = slots + padslots;
 	amap->am_ref = 1;
 	amap->am_flags = 0;
 #ifdef VM_AMAP_PPREF
@@ -335,7 +336,7 @@ vm_amap_extend(entry, addsize)
 #ifdef VM_AMAP_PPREF
 		if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
 			if ((slotoff + slotmapped) < amap->am_nslot)
-				amap_pp_adjref(amap, slotoff + slotmapped,
+				vm_amap_pp_adjref(amap, slotoff + slotmapped,
 				    (amap->am_nslot - (slotoff + slotmapped)) <<
 				    PAGE_SHIFT, 1);
 			pp_setreflen(amap->am_ppref, amap->am_nslot, 1, slotneed - amap->am_nslot);
@@ -410,7 +411,7 @@ vm_amap_extend(entry, addsize)
 		bzero(newppref + amap->am_nslot, sizeof(int) * slotadded);
 		amap->am_ppref = newppref;
 		if ((slotoff + slotmapped) < amap->am_nslot)
-			amap_pp_adjref(amap, slotoff + slotmapped,
+			vm_amap_pp_adjref(amap, slotoff + slotmapped,
 					(amap->am_nslot - (slotoff + slotmapped)) <<
 					PAGE_SHIFT, 1);
 		pp_setreflen(newppref, amap->am_nslot, 1, slotadded);
@@ -464,8 +465,9 @@ vm_amap_share_protect(entry, prot)
 		for (lcv = entry->aref.ar_pageoff ; lcv < stop ; lcv++) {
 			if (amap->am_anon[lcv] == NULL)
 				continue;
-			if (amap->am_anon[lcv]->u.an_page != NULL)
-				pmap_page_protect(amap->am_anon[lcv]->u.an_page, prot);
+			if (amap->am_anon[lcv]->u.an_page != NULL) {
+				pmap_page_protect(amap->am_anon[lcv]->u.an_page->offset, prot);
+			}
 		}
 		return;
 	}
@@ -476,7 +478,7 @@ vm_amap_share_protect(entry, prot)
 		if (slot < entry->aref.ar_pageoff || slot >= stop)
 			continue;
 		if (amap->am_anon[slot]->u.an_page != NULL)
-			pmap_page_protect(amap->am_anon[slot]->u.an_page, prot);
+			pmap_page_protect(amap->am_anon[slot]->u.an_page->offset, prot);
 	}
 	return;
 }
@@ -793,7 +795,7 @@ ReStart:
 			 * got it... now we can copy the data and replace anon
 			 * with our new one...
 			 */
-			vm_pagecopy(pg, npg);			/* old -> new */
+			vm_page_copy(pg, npg);			/* old -> new */
 			anon->an_ref--;					/* can't drop to zero */
 			amap->am_anon[slot] = nanon;	/* replace */
 
@@ -940,7 +942,7 @@ vm_amap_pp_adjref(amap, curslot, bytelen, adjval)
 	 */
 
 	if (lcv != curslot) {
-		panic("amap_pp_adjref: overshot target");
+		panic("vm_amap_pp_adjref: overshot target");
 	}
 
 	for (/* lcv already set */; lcv < stopslot ; lcv += len) {
@@ -953,7 +955,7 @@ vm_amap_pp_adjref(amap, curslot, bytelen, adjval)
 		}
 		ref = ref + adjval;    /* ADJUST! */
 		if (ref < 0) {
-			panic("amap_pp_adjref: negative reference count");
+			panic("vm_amap_pp_adjref: negative reference count");
 		}
 		pp_setreflen(ppref, lcv, ref, len);
 		if (ref == 0) {
@@ -1051,7 +1053,7 @@ vm_amap_wiperange(amap, slotoff, slots)
 vm_anon_t
 vm_amap_lookup(aref, offset)
 	vm_aref_t aref;
-	caddr_t offset;
+	vm_offset_t offset;
 {
 	int slot;
 	vm_amap_t amap;
@@ -1076,7 +1078,7 @@ vm_amap_lookup(aref, offset)
 void
 vm_amap_lookups(aref, offset, anons, npages)
 	vm_aref_t aref;
-	caddr_t offset;
+	vm_offset_t offset;
 	vm_anon_t *anons;
 	int npages;
 {
@@ -1104,10 +1106,10 @@ vm_amap_lookups(aref, offset, anons, npages)
  *	pmap_page_protect on the anon's page.
  * => returns an "offset" which is meaningful to amap_unadd().
  */
-caddr_t
+int
 vm_amap_add(aref, offset, anon, replace)
 	vm_aref_t aref;
-	caddr_t offset;
+	vm_offset_t offset;
 	vm_anon_t anon;
 	int replace;
 {
@@ -1155,7 +1157,7 @@ vm_amap_add(aref, offset, anon, replace)
 void
 vm_amap_unadd(amap, slot)
 	vm_amap_t 	amap;
-	caddr_t 	slot;
+	vm_offset_t 	slot;
 {
 	int ptr;
 
@@ -1338,7 +1340,7 @@ vm_amap_clean(current, size, offset, amap)
 	for ( ; size != 0; size -= PAGE_SIZE, offset += PAGE_SIZE) {
 		anon = vm_amap_lookup(&current->aref, offset);
 		vm_amap_cleaner(amap, anon);
-		vm_amap_unadd(&current->aref.ar_amap, offset);
+		vm_amap_unadd(current->aref.ar_amap, offset);
 		refs = --anon->an_ref;
 		simple_unlock(&anon->an_lock);
 		if (refs == 0) {

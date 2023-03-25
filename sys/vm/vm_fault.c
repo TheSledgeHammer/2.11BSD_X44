@@ -138,6 +138,17 @@ static struct vm_advice vmadvice[] = {
 /*
  * private prototypes
  */
+void                  vm_fault_advice(struct vm_faultinfo *);
+int                   vm_fault_copy(struct vm_faultinfo *, vm_prot_t, bool_t, bool_t);
+void                  vm_fault_cow(struct vm_faultinfo *, vm_prot_t);
+int                   vm_fault_retry(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
+void                  vm_fault_handler_check(struct vm_faultinfo *, int);
+void                  vm_fault_zerofill(struct vm_faultinfo *);
+
+static int             vm_fault_pager(struct vm_faultinfo *, bool_t);
+static int              vm_fault_object(struct vm_faultinfo *, bool_t);
+static int              vm_fault_segment(struct vm_faultinfo *, bool_t);
+static int              vm_fault_page(struct vm_faultinfo *, bool_t);
 static int				vm_fault_map_lookup(struct vm_faultinfo *, vm_offset_t, vm_prot_t);
 static void				vm_fault_amap(struct vm_faultinfo *, vm_anon_t *);
 static int				vm_fault_anon(struct vm_faultinfo *, vm_prot_t);
@@ -514,7 +525,7 @@ RetryFault: ;
 	vfi.object = vfi.first_object;
 	vfi.offset = vfi.first_offset;
 
-	if(vfi->amap && vfi->object == NULL) {
+	if(vfi.amap && vfi.object == NULL) {
 		vm_fault_unlockmaps(&vfi, FALSE);
 		return (KERN_PROTECTION_FAILURE);
 	}
@@ -526,21 +537,12 @@ RetryFault: ;
 	 */
 	while (TRUE) {
 		error = vm_fault_object(&vfi, change_wiring);
-		switch (error) {
-		case 0:
-			break;
-
-		case EFAULTRETRY:
-			goto RetryFault;
-
-		case VM_PAGER_OK:
-			break;
-
-		case VM_PAGER_ERROR:
-			return (KERN_PROTECTION_FAILURE);
-
-		case VM_PAGER_BAD:
-			return (KERN_PROTECTION_FAILURE);
+		if (error == (0 | VM_PAGER_OK)) {
+		    break;
+		} else if (error == (VM_PAGER_ERROR | VM_PAGER_BAD)) {
+		  return (KERN_PROTECTION_FAILURE);
+		} else {
+		    goto RetryFault;
 		}
 		vm_fault_zerofill(&vfi);
 	}
@@ -554,23 +556,22 @@ RetryFault: ;
 	switch (error) {
 	case 0:
 		break;
-
-	case EFAULTRETRY:
-		goto RetryFault;
+		
+        case EFAULTRETRY:
+	        goto RetryFault;
 	}
 
 	error = vm_fault_anon(&vfi, fault_type);
 	switch (error) {
 	case 0:
 		break;
-
-	case EFAULTRETRY:
-		goto RetryFault;
-
+		
 	case EFAULTRESOURCE:
-		return (KERN_RESOURCE_SHORTAGE);
+	        return (KERN_RESOURCE_SHORTAGE);
+	        
+        case EFAULTRETRY:
+	        goto RetryFault;
 	}
-
 	vm_fault_handler_check(&vfi, FHDANON);
 
 RetryCopy:
@@ -623,7 +624,7 @@ RetryCopy:
 	if (vfi.page->flags & PG_WANTED) {
 		PAGE_WAKEUP(vfi.page);
 	}
-	vm_fault_unlockall(&vfi, &vfi.amap, &vfi.object, NULL);
+	vm_fault_unlockall(&vfi, vfi.amap, vfi.object, NULL);
 	unlock_and_deallocate(&vfi);
 
 	return (KERN_SUCCESS);
@@ -735,8 +736,8 @@ vm_fault_cow(vfi, fault_type)
 	old_page = vfi->page;
 	if (vfi->object != vfi->first_object) {
 		if (fault_type & VM_PROT_WRITE) {
-			if ((vfi->first_segment != NULL && !TAILQ_EMPTY(vfi->first_segment->memq)) ||
-					(vfi->first_segment == NULL && TAILQ_EMPTY(vfi->first_segment->memq))) {
+			if ((vfi->first_segment != NULL && !TAILQ_EMPTY(&vfi->first_segment->memq)) ||
+					(vfi->first_segment == NULL && TAILQ_EMPTY(&vfi->first_segment->memq))) {
 				vm_segment_copy(vfi->segment, vfi->first_segment);
 				vfi->first_page = vm_page_lookup(vfi->first_segment, vfi->first_segment->offset);
 				if (vfi->first_page) {
@@ -966,7 +967,7 @@ vm_fault_amap(vfi, anons)
 	if (vfi->amap) {
 		amap_lock(vfi->amap);
 		anons = anons_store;
-		vm_amap_lookups(vfi->entry->aref, vfi->startva - vfi->entry->start, anons, vfi->npages);
+		vm_amap_lookups(&vfi->entry->aref, vfi->startva - vfi->entry->start, anons, vfi->npages);
 	} else {
 		anons = NULL;
 	}
@@ -999,7 +1000,7 @@ vm_fault_amap(vfi, anons)
 		vfi->anon = anons[lcv];
 	}
 
-	pmap_update(vfi->orig_map->pmap);
+	pmap_update();
 }
 
 static int
@@ -1042,8 +1043,8 @@ vm_fault_anon(vfi, fault_type)
 		vm_page_activate(vfi->page);
 		vfi->page->flags &= ~(PG_BUSY|PG_FAKE);
 		vm_page_unlock_queues();
-		vm_segment_ulock_lists();
-		vm_amap_add(vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 1);
+		vm_segment_unlock_lists();
+		vm_amap_add(&vfi->entry->aref, vfi->orig_rvaddr - vfi->entry->start, vfi->anon, 1);
 		oanon->an_ref--;
 	} else {
 		cnt.v_flt_anon++;
@@ -1532,8 +1533,10 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 	vm_offset_t	src_offset;
 	vm_prot_t	prot;
 	vm_offset_t	vaddr;
-	vm_page_t	dst_m;
-	vm_page_t	src_m;
+	vm_segment_t	dst_segment;
+	vm_segment_t	src_segment;
+	vm_page_t	dst_page;
+	vm_page_t	src_page;
 
 #ifdef	lint
 	src_map++;
@@ -1569,13 +1572,22 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 		 */
 		vm_object_lock(dst_object);
 		do {
-			dst_m = vm_page_alloc(dst_object, dst_offset);
-			if (dst_m == NULL) {
+			dst_segment = vm_segment_alloc(dst_object, dst_offset);
+			if (dst_segment == NULL) {
 				vm_object_unlock(dst_object);
 				vm_wait();
 				vm_object_lock(dst_object);
+			} else {
+			        dst_page = vm_page_alloc(dst_segment, dst_segment->offset);
+			        if (dst_page == NULL) {
+			              vm_object_unlock(dst_object);
+				      vm_wait();
+				      vm_object_lock(dst_object);
+			        }
 			}
-		} while (dst_m == NULL);
+			
+
+		} while (dst_page == NULL);
 
 		/*
 		 *	Find the page in the source object, and copy it in.
@@ -1583,11 +1595,12 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 		 *	in memory.)
 		 */
 		vm_object_lock(src_object);
-		src_m = vm_page_lookup(src_object, dst_offset + src_offset);
-		if (src_m == NULL)
+		src_segment = vm_segment_lookup(src_object, dst_offset + src_offset);
+		src_page = vm_page_lookup(src_segment, src_segment->offset);
+		if (src_page == NULL)
 			panic("vm_fault_copy_wired: page missing");
 
-		vm_page_copy(src_m, dst_m);
+		vm_page_copy(src_page, dst_page);
 
 		/*
 		 *	Enter it in the pmap...
@@ -1595,16 +1608,16 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 		vm_object_unlock(src_object);
 		vm_object_unlock(dst_object);
 
-		pmap_enter(dst_map->pmap, vaddr, VM_PAGE_TO_PHYS(dst_m), prot, FALSE);
+		pmap_enter(dst_map->pmap, vaddr, VM_PAGE_TO_PHYS(dst_page), prot, FALSE);
 
 		/*
 		 *	Mark it no longer busy, and put it on the active list.
 		 */
 		vm_object_lock(dst_object);
 		vm_page_lock_queues();
-		vm_page_activate(dst_m);
+		vm_page_activate(dst_page);
 		vm_page_unlock_queues();
-		PAGE_WAKEUP(dst_m);
+		PAGE_WAKEUP(dst_page);
 		vm_object_unlock(dst_object);
 	}
 }

@@ -48,6 +48,7 @@
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_swap.h>
+#include <vm/include/vm_fault.h>
 
 vm_anon_t vm_anon_allocate(int);
 static void vm_anon_release_segment(vm_anon_t, vm_segment_t);
@@ -66,7 +67,7 @@ vm_anon_init(void)
 	int lcv;
 
 	nanon = cnt.v_page_free_count - (cnt.v_page_free_count / 16); /* XXXCDC ??? */
-	simple_lock_init(&anon->u.an_freelock);
+	simple_lock_init(&anon->u.an_freelock, "anon_freelock");
 
 	/*
 	 * Allocate the initial anons.
@@ -117,7 +118,7 @@ vm_anon_add(pages)
 	cnt.v_nanon += pages;
 	cnt.v_nfreeanon += pages;
 	for (lcv = 0; lcv < pages; lcv++) {
-		simple_lock_init(&anon->an_lock);
+		simple_lock_init(&anon->an_lock, "anon_lock");
 		anon[lcv].u.an_nxt = anon->u.an_free;
 		anon->u.an_free = &anon[lcv];
 	}
@@ -132,7 +133,7 @@ vm_anon_alloc(void)
 {
 	vm_anon_t anon;
 
-	simple_lock(&anon->u->an_freelock);
+	simple_lock(&anon->u.an_freelock);
 	anon = anon->u.an_free;
 	if (anon) {
 		anon->u.an_free = anon->u.an_nxt;
@@ -260,7 +261,7 @@ vm_anon_pagein(amap, anon)
 	vm_object_t object;
 	int rv;
 
-	KASSERT(anon->an_lock == amap->am_lock);
+	//KASSERT(anon->an_lock == amap->am_lock);
 
 	/* locked: anon */
 	rv = vm_fault_anonget(NULL, amap, anon);
@@ -365,7 +366,7 @@ vm_anon_free_segment(segment, anon)
 			vm_segment_lock_lists();
 			segment->anon = NULL;
 			vm_segment_unlock_lists();
-			simple_lock(segment->object->Lock);
+			//simple_lock(&segment->object->Lock);
 		} else {
 
 			KASSERT((segment->flags & SEG_RELEASED) == 0);

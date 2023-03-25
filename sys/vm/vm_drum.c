@@ -44,7 +44,7 @@ vm_vsxalloc(xp)
 	if (ctod(xp->psx_size) > NXDAD * dmtext) {
 		return (0);
 	}
-	dp = xp->psx_daddr;
+	dp = (swblk_t *)xp->psx_daddr;
 	for (vsbase = 0; vsbase < ctod(xp->psx_size); vsbase += dmtext) {
 		blk = ctod(xp->psx_size) - vsbase;
 		if (blk > dmtext) {
@@ -79,7 +79,7 @@ vm_vsxfree(xp, ts)
 	swblk_t vsbase;
 
 	ts = ctod(ts);
-	dp = xp->psx_daddr;
+	dp = (swblk_t *)xp->psx_daddr;
 	for (vsbase = 0; vsbase < ts; vsbase += dmtext) {
 		blk = ts - vsbase;
 		if (blk > dmtext) {

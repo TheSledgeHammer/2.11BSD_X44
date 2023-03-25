@@ -57,6 +57,10 @@
 #include <vm/include/vm_pager.h>
 #include <vm/include/vm_aobject.h>
 
+static void vm_aobject_allocate(vm_size_t, vm_object_t, int);
+static bool_t vm_aobject_pagein(vm_aobject_t, int, int);
+static bool_t vm_aobject_pagein_page(vm_aobject_t, int);
+
 /*
  * an aobj manages anonymous-memory backed vm_objects.   in addition
  * to keeping the list of resident pages, it also keeps a list of
@@ -132,7 +136,7 @@ vm_aobject_free(aobj)
 		for (i = 0; i < hashbuckets; i++) {
 			struct vao_swhash_elt *elt, *next;
 
-			for (elt = LIST_FIRST(aobj->u_swhash[i]); elt != NULL; elt = next) {
+			for (elt = LIST_FIRST(&aobj->u_swhash[i]); elt != NULL; elt = next) {
 				int j;
 
 				for (j = 0; j < VAO_SWHASH_CLUSTER_SIZE; j++) {
@@ -218,9 +222,9 @@ vm_aobject_deallocate(object)
  	 * free all the pages that aren't PG_BUSY, mark for release any that are.
  	 */
 	busybody = FALSE;
-	CIRCLEQ_FOREACH(segment, object->seglist, listq) {
-		segment->sg_object = object;
-		if (TAILQ_EMPTY(segment->memq)) {
+	CIRCLEQ_FOREACH(segment, &object->seglist, listq) {
+		segment->object = object;
+		if (TAILQ_EMPTY(&segment->memq)) {
 			if (segment->flags & SEG_BUSY) {
 				segment->flags |= SEG_RELEASED;
 				busybody = TRUE;
@@ -233,7 +237,7 @@ vm_aobject_deallocate(object)
 			vm_segment_unlock_lists();
 		} else {
 			page->segment = segment;
-			TAILQ_FOREACH(page, segment->memq, listq) {
+			TAILQ_FOREACH(page, &segment->memq, listq) {
 				if (page->flags & PG_BUSY) {
 					page->flags |= PG_RELEASED;
 					busybody = TRUE;
@@ -278,16 +282,13 @@ vm_aobject_swhash_allocate(aobject, pages, flags)
 	int 				pages;
 	int 				flags;
 {
-	const int kernswap;
-
-	kernswap = (flags & VAO_FLAG_KERNSWAP) != 0;
-	if (flags == 0 || kernswap) {
+	if (flags == 0 || (flags & VAO_FLAG_KERNSWAP) != 0) {
 		if (VAO_USES_SWHASH(aobject)) {
 			/* allocate hash table or array depending on object size */
 			aobject->u_swhash = hashinit(VAO_SWHASH_BUCKETS(aobject), M_VMAOBJ, &aobject->u_swhashmask);
 		} else {
 			aobject->u_swhash = calloc(pages, sizeof(int), M_VMAOBJ, flags);
-			memset(aobject->u_swslots, 0, pages * sizeof(int));
+			bzero(aobject->u_swslots, pages * sizeof(int));
 		}
 		if (flags) {
 			aobject->u_flags &= ~VAO_FLAG_NOSWAP; /* clear noswap */
@@ -333,11 +334,11 @@ vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	 * allocate a new entry for the bucket and init/insert it in
 	 */
 
-	elt = (struct vao_swhash_elt *)malloc(elt, sizeof(struct vao_swhash_elt *), M_VMAOBJ, M_NOWAIT);
+	elt = (struct vao_swhash_elt *)malloc(sizeof(struct vao_swhash_elt *), M_VMAOBJ, M_NOWAIT);
 	LIST_INSERT_HEAD(swhash, elt, list);
 	elt->tag = page_tag;
 	elt->count = 0;
-	memset(elt->slots, 0, sizeof(elt->slots));
+	bzero(elt->slots, sizeof(elt->slots));
 
 	return (elt);
 }
@@ -556,7 +557,7 @@ restart:
 
 		rv = vm_aobject_pagein(aobj, startslot, endslot);
 		if (rv) {
-			vm_aobject_detach(&aobj->u_obj);
+			//vm_aobject_detach(&aobj->u_obj);
 			return (rv);
 		}
 
@@ -567,7 +568,7 @@ restart:
 
 		simple_lock(&aobject_list_lock);
 		nextaobj = LIST_NEXT(aobj, u_list);
-		vm_aobject_detach(&aobj->u_obj);
+		//vm_aobject_detach(&aobj->u_obj);
 	}
 
 	/*
@@ -666,7 +667,7 @@ vm_aobject_pagein_page(aobj, pageidx)
 	pg = NULL;
 	npages = 1;
 	/* locked: aobj */
-	rv = vm_pager_get_pages(&aobj->u_obj.pager, &pg, npages, TRUE);
+	rv = vm_pager_get_pages(aobj->u_obj.pager, &pg, npages, TRUE);
 	/* unlocked: aobj */
 
 	/*

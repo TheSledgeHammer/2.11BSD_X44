@@ -497,7 +497,7 @@ xswapin(p)
 	if (p->p_stat == SRUN) {
 		setrq(p);
 	}
-	p->p_flag |= SLOAD | P_INMEM;
+	p->p_flag |= P_SLOAD | P_INMEM;
 	splx(s);
 	p->p_time = 0;
 	p->p_swtime = 0;
