@@ -50,6 +50,7 @@
 #include <machine/cpuinfo.h>
 #include <machine/tss.h>
 
+struct bios_smap;
 struct pmap;
 /*
  * definitions of cpu-dependent requirements
