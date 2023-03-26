@@ -219,7 +219,7 @@
 	"tty",						/* 73 M_TTY */			\
 	"kevent",					/* 74 M_KEVENT */		\
 	"cpu topo",					/* 75 M_TOPO */			\
-	"bitmap",					/* 76 M_BITMAP */		\
+	"bitlist",					/* 76 M_BITLIST */		\
 	"percpu",					/* 77 M_PERCPU */		\
 	"ufs211 buf",				/* 78 M_UFS211 */		\
 	"ufml uops",				/* 79 M_UFMLOPS */		\
