@@ -80,7 +80,10 @@ struct vm_object {
 	simple_lock_data_t		Lock;					/* Synchronization */
 	int						ref_count;				/* How many refs?? */
 	vm_size_t				size;					/* Object size */
+
 	int						resident_segment_count;	/* number of resident segments */
+	int						resident_page_count;	/* number of resident pages */
+
 	struct vm_object		*copy;					/* Object that holds copies of my changed pages */
 	vm_pager_t				pager;					/* Where to get data */
 	vm_offset_t				paging_offset;			/* Offset into paging space */

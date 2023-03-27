@@ -60,11 +60,9 @@ struct vm_segment {
 
 	vm_anon_t					anon;				/* anon (O,S) */
 
-	int							resident_page_count;/* number of resident pages */
-
 	vm_offset_t					log_addr;			/* segment logical address */
 
-	vm_psegment_t				psegment;			/* pointer to pseudo segment register */
+	union vm_pseudo_segment		psegment;			/* pointer to pseudo segment register */
 };
 
 /*

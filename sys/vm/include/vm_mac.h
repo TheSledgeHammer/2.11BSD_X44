@@ -13,7 +13,6 @@
  *	@(#)vmmac.h	1.1 (2.10 Berkeley) 12/1/86
  */
 
-
 #ifndef _VM_MAC_H_
 #define _VM_MAC_H_
 
