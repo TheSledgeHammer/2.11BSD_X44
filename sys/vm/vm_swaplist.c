@@ -64,18 +64,18 @@
 * structure names here to ease porting..
 */
 struct vndxfer {
-	struct buf							*vx_bp;			/* Pointer to parent buffer */
-	struct swapdev						*vx_sdp;
-	int									vx_error;
-	int									vx_pending;		/* # of pending aux buffers */
-	int									vx_flags;
-#define VX_BUSY							1
-#define VX_DEAD							2
+	struct buf				*vx_bp;			/* Pointer to parent buffer */
+	struct swapdev			*vx_sdp;
+	int						vx_error;
+	int						vx_pending;		/* # of pending aux buffers */
+	int						vx_flags;
+#define VX_BUSY				1
+#define VX_DEAD				2
 };
 
 struct vndbuf {
-	struct buf							vb_buf;
-	struct vndxfer						*vb_xfer;
+	struct buf				vb_buf;
+	struct vndxfer			*vb_xfer;
 };
 
 /*

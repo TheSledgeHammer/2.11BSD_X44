@@ -164,9 +164,11 @@ vm_estabur(p, dsize, ssize, tsize, sep, flags)
 	segsz_t	 		dsize, ssize, tsize;
 	int 	 		sep, flags;
 {
+	register struct vmspace *vm;
 	vm_psegment_t	pseg;
 
-	pseg = p->p_vmspace->vm_psegment;
+	vm = p->p_vmspace;
+	pseg = &vm->vm_psegment;
 	if (pseg == NULL) {
 		return (1);
 	}

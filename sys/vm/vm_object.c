@@ -203,6 +203,7 @@ _vm_object_allocate(size, object)
 	vm_object_lock_init(object);
 	object->ref_count = 1;
 	object->resident_segment_count = 0;
+	object->resident_page_count = 0;
 	object->size = size;
 	object->flags = OBJ_INTERNAL;	/* vm_allocate_with_segment will reset */
 	object->copy = NULL;

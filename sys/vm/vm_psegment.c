@@ -38,7 +38,7 @@
 
 void
 vm_psegment_startup(pseg, start, end)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 	vm_offset_t 	*start, *end;
 {
 	pseg->ps_start = start;
@@ -64,27 +64,28 @@ vm_psegment_startup(pseg, start, end)
 
 void
 vm_psegment_init(pseg, start, end)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 	vm_offset_t 	*start, *end;
 {
 	if (pseg == NULL) {
 		pseg = vm_psegment_allocate();
+		bzero(pseg, sizeof(union vm_pseudo_segment));
 	}
 	vm_psegment_startup(pseg, start, end);
 }
 
-vm_psegment_t *
+vm_psegment_t
 vm_psegment_alloc(void)
 {
-	register vm_psegment_t 	*pseg;
+	register vm_psegment_t 	pseg;
 
-	pseg = (union vm_pseudo_segment *)rmalloc(&coremap, sizeof(*pseg));
+	pseg = (vm_psegment_t)rmalloc(&coremap, sizeof(union vm_pseudo_segment));
 	return (pseg);
 }
 
 void
 vm_psegment_free(pseg)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 {
 	rmfree(&coremap, sizeof(*pseg), pseg);
 }
@@ -94,7 +95,7 @@ vm_psegment_free(pseg)
  */
 void
 vm_psegment_expand(pseg, newsize, newaddr, type)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
 	int 			type;
@@ -130,7 +131,7 @@ vm_psegment_expand(pseg, newsize, newaddr, type)
  */
 void
 vm_psegment_shrink(pseg, newsize, newaddr, type)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
 	int	 			type;
@@ -163,7 +164,7 @@ vm_psegment_shrink(pseg, newsize, newaddr, type)
 
 void
 vm_psegment_extent_create(pseg, name, start, end, mtype, storage, storagesize, flags)
-	vm_psegment_t *pseg;
+	vm_psegment_t pseg;
 	char *name;
 	u_long start, end;
 	caddr_t storage;
@@ -176,7 +177,7 @@ vm_psegment_extent_create(pseg, name, start, end, mtype, storage, storagesize, f
 
 void
 vm_psegment_extent_alloc(pseg, start, size, flags)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 	u_long 			start, size;
 	int 			flags;
 {
@@ -199,7 +200,7 @@ out:
 
 void
 vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 	u_long			size;
 	u_long 			boundary;
 	int 			type, flags;
@@ -253,7 +254,7 @@ out:
 
 void
 vm_psegment_extent_free(pseg, size, addr, type, flags)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 	caddr_t addr;
 	u_long	size;
 	int type, flags;
@@ -305,7 +306,7 @@ out:
 
 void
 vm_psegment_extent_destroy(pseg)
-	vm_psegment_t 	*pseg;
+	vm_psegment_t 	pseg;
 {
 	register struct extent ex;
 

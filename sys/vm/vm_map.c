@@ -180,7 +180,6 @@ vmspace_alloc(min, max, pageable)
 
 	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
-	bzero(&vm->vm_psegment, sizeof(union vm_pseudo_segment));
 	vm_map_init(&vm->vm_map, min, max, pageable);
 	pmap_pinit(&vm->vm_pmap);
 	vm->vm_map.pmap = &vm->vm_pmap;		/* XXX */
@@ -1841,7 +1840,7 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	/*
 	 * Make a first pass to check for holes.
 	 */
-	CIRCLEQ_FOREACH(current, map->cl_header, cl_entry) {
+	CIRCLEQ_FOREACH(current, &map->cl_header, cl_entry) {
 		if (current == entry) {
 			if (current->start < end || end > current->end) {
 				if (current->is_sub_map) {
@@ -1864,7 +1863,7 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	 * Make a second pass, cleaning/uncaching pages from the indicated
 	 * objects as we go.
 	 */
-	CIRCLEQ_FOREACH(current, map->cl_header, cl_entry) {
+	CIRCLEQ_FOREACH(current, &map->cl_header, cl_entry) {
 		if (current == entry) {
 			if (current->start < end || end > current->end) {
 				amap = current->aref.ar_amap;

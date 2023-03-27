@@ -155,8 +155,6 @@ vm_segment_startup(start, end)
 		seg++;
 		la += SEGMENT_SIZE;
 	}
-
-	seg->resident_page_count = 0;
 }
 
 unsigned long
@@ -192,6 +190,8 @@ vm_segment_insert(segment, object, offset)
 
 	CIRCLEQ_INSERT_TAIL(&object->seglist, segment, listq);
 	segment->flags |= SEG_ALLOCATED;
+
+	object->resident_segment_count++;
 }
 
 void
@@ -213,6 +213,8 @@ vm_segment_remove(segment)
 	simple_unlock(&segment_bucket_lock);
 
 	CIRCLEQ_REMOVE(&segment->object->seglist, segment, listq);
+
+	segment->object->resident_segment_count--;
 
 	segment->flags &= ~SEG_ALLOCATED;
 }

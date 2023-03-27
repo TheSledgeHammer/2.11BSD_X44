@@ -384,7 +384,7 @@ vm_page_insert(mem, segment, offset)
 	TAILQ_INSERT_TAIL(&segment->memq, mem, listq);
 	mem->flags |= PG_TABLED;
 
-	segment->resident_page_count++;
+	segment->object->resident_page_count++;
 }
 
 /*
@@ -431,7 +431,7 @@ vm_page_remove(mem)
 	 *	page.
 	 */
 
-	mem->segment->resident_page_count--;
+	mem->segment->object->resident_page_count--;
 
 	mem->flags &= ~PG_TABLED;
 }

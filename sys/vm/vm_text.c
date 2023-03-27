@@ -8,7 +8,6 @@
  *	@(#)vm_text.c	1.2 (2.11BSD GTE) 11/26/94
  */
 
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/extent.h>
@@ -89,6 +88,7 @@ vm_xalloc(vp, tsize, toff)
 {
 	register vm_text_t xp;
 	register struct proc *p;
+	u_long ts;
 
 	p = vp->v_proc;
 	while ((xp == vp->v_text) != NULL) {
@@ -128,11 +128,8 @@ vm_xalloc(vp, tsize, toff)
 		vm_xuntext(xp);
 	}
 	xp->psx_flag = XLOAD | XLOCK;
-	if (p->p_flag & SPAGV) {
-		xp->psx_flag |= XPAGV;
-	}
-
-	xp->psx_size = clrnd(btoc(tsize));
+	ts = btoc(tsize);
+	xp->psx_size = clrnd(ts);
 	/* 2.11BSD overlays were here */
 	if((xp->psx_daddr = vm_vsxalloc(xp)) == NULL) {
 		/* flush text cache and try again */
@@ -149,8 +146,8 @@ vm_xalloc(vp, tsize, toff)
 	VREF(vp);
 	p->p_textp = xp;
 	vm_xexpand(xp);
-
-	(void) vn_rdwr(UIO_READ, vp, (caddr_t)ctob(tptov(p, 0)), tsize, toff, UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), p->p_cred, (int *)0, p);
+	(void)vm_estabur(p, ts, 0, 0, 0, SEG_RW);
+	(void)vn_rdwr(UIO_READ, vp, (caddr_t)ctob(tptov(p, 0)), tsize & ~1, toff, UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), p->p_cred, (int *)0, p);
 	p->p_flag &= ~P_SLOCK;
 	xp->psx_flag |= XWRIT;
 	xp->psx_flag &= ~XLOAD;
@@ -216,6 +213,10 @@ vm_xexpand(p, xp)
 		}
 		vm_xunlock(xp);
 		xp->psx_ccount++;
+		return;
+	}
+	if (setjmp(&u.u_ssave)) {
+		//sureg();
 		return;
 	}
 	vm_xswapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
