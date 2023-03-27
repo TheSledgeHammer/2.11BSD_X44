@@ -1608,8 +1608,7 @@ retry:
 			vm_page_unlock_queues();
 			PAGE_WAKEUP(dst_page);
 			vm_segment_unlock_lists();
-			goto out;
-
+			vm_object_unlock(dst_object);
 		} else {
 			/* page not found in segment, copy the segment */
 
@@ -1631,9 +1630,7 @@ retry:
 			vm_segment_activate(dst_segment);
 			vm_segment_unlock_lists();
 			SEGMENT_WAKEUP(dst_segment);
-			goto out;
+			vm_object_unlock(dst_object);
 		}
-out:
-		vm_object_unlock(dst_object);
 	}
 }
