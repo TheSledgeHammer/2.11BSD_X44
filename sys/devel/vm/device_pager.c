@@ -246,25 +246,6 @@ dev_pager_dealloc(pager)
 }
 
 static int
-dev_pager_getsegment(pager, slist, nsegments, sync)
-	vm_pager_t 		pager;
-	vm_segment_t 	*slist;
-	int				nsegments;
-	bool_t			sync;
-{
-	register vm_object_t object;
-	vm_offset_t offset;
-	vm_segment_t s, segment;
-
-	s = *slist;
-
-	object = s->object;
-
-	offset = s->offset + object->paging_offset;
-
-}
-
-static int
 dev_pager_getpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
 	vm_page_t *mlist;

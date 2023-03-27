@@ -73,6 +73,8 @@ static void		 	dev_pager_init(void);
 static int		 	dev_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
 static vm_page_t	dev_pager_getfake(vm_offset_t);
 static void		 	dev_pager_putfake(vm_page_t);
+static int			dev_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
+
 
 struct pagerops devicepagerops = {
 	dev_pager_init,
@@ -326,9 +328,11 @@ dev_pager_putpage(pager, mlist, npages, sync)
 		printf("dev_pager_putpage(%x, %x, %x, %x)\n",
 		       pager, mlist, npages, sync);
 #endif
-	if (pager == NULL)
+	if (pager == NULL) {
 		return (0);
+	}
 	panic("dev_pager_putpage called");
+
 }
 
 static bool_t
@@ -340,7 +344,7 @@ dev_pager_haspage(pager, offset)
 	if (dpagerdebug & DDB_FOLLOW)
 		printf("dev_pager_haspage(%x, %x)\n", pager, offset);
 #endif
-	return(TRUE);
+	return (TRUE);
 }
 
 static vm_page_t

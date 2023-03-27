@@ -41,6 +41,7 @@ getxfile(elp)
 	struct exec *a_out = elp->el_image_hdr;
 	struct u_ovd sovdata;
 
+	u_int ds, ts, ss;
 	u_int ovhead[NOVL + 1];
 	int sep, overlay, ovflag, ovmax, resid;
 
@@ -72,9 +73,9 @@ getxfile(elp)
 	/*
 	 * if auto overlay get second header
 	 */
-	sovdata = u->u_ovdata;
-	u->u_ovdata.uo_ovbase = 0;
-	u->u_ovdata.uo_curov = 0;
+	sovdata = u.u_ovdata;
+	u.u_ovdata.uo_ovbase = 0;
+	u.u_ovdata.uo_curov = 0;
 
 	if (ovflag) {
 		if (resid != 0)
@@ -117,6 +118,31 @@ getxfile(elp)
 		}
 	}
 	if (overlay) {
+		vm_xfree();
+		vm_xalloc1(vp, elp);
+	} else {
+		if (vm_estabur()) {
+
+		}
+
+		vm_expand();
 
 	}
+
+	vm_estabur();
+}
+
+
+void
+vm_xalloc1(vp, elp)
+	struct vnode 		*vp;
+	struct exec_linker 	*elp;
+{
+	u_long tsize;
+	off_t toff;
+
+	tsize = elp->el_tsize;
+	toff = sizeof(struct exec_linker);
+
+	vm_xalloc(vp, tsize, toff);
 }
