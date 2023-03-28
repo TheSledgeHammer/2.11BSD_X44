@@ -79,8 +79,8 @@ struct swappri {
  * swapbuf, swapbuffer plus async i/o info
  */
 struct swapbuf {
-	struct buf 							sw_buf;			/* a buffer structure */
-	SIMPLEQ_ENTRY(swapbuf) 				sw_sq;			/* free list pointer */
+	struct buf 							*sw_buf;			/* a buffer structure */
+	SIMPLEQ_ENTRY(swapbuf) 				                sw_sq;			/* free list pointer */
 	TAILQ_HEAD(, buf)					sw_bswlist;		/* Head of swap I/O buffer headers free list. */
 	int 								sw_nswbuf;
 };

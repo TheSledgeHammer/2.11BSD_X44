@@ -90,7 +90,7 @@ int		 		swapctl();
 void		 	swapin(struct proc *);
 void		 	swapout(struct proc *);
 void		 	swapout_threads(void);
-int			 	swfree(struct proc *, int);
+int			 	swfree(struct proc *, int, int);
 void		 	swstrategy(struct buf *);
 struct buf 		*vm_getswapbuf(struct swapbuf *);
 void			vm_putswapbuf(struct swapbuf *, struct buf*);
@@ -129,6 +129,7 @@ void		 	vnode_pager_umount(struct mount *);
 bool_t	 		vnode_pager_uncache(struct vnode *);
 void		 	vslock(caddr_t, u_int);
 void		 	vsunlock(caddr_t, u_int, int);
+
 void	xswapin(struct proc *);
 void    xswapout(struct proc *, int, u_int, u_int);
 #endif
