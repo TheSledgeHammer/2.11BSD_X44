@@ -26,10 +26,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/systm.h>
-#include <sys/extent.h>
+#include <sys/param.h>
+#include <sys/user.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+#include <sys/extent.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_segment.h>

@@ -117,7 +117,7 @@ vm_pageout_scan(void)
 	simple_unlock(&vm_page_queue_free_lock);
 	splx(s);
 
-	if (free < cnt.v_page_free_target) {
+	if (pages_free < cnt.v_page_free_target) {
 		swapout_threads();
 
 		/*
@@ -157,7 +157,7 @@ vm_pageout_scan_segment(object, pages_free, pages_freed)
 	register struct pglist 		*pglst;
 
 	/* scan segment inactive list */
-	for (segment = CIRCLEQ_FIRST(vm_segment_list_inactive); segment != NULL; segment = next) {
+	for (segment = CIRCLEQ_FIRST(&vm_segment_list_inactive); segment != NULL; segment = next) {
 
 		next = CIRCLEQ_NEXT(segment, listq);
 
@@ -165,17 +165,17 @@ vm_pageout_scan_segment(object, pages_free, pages_freed)
 		 * If segments pglist equals the inactive pages.
 		 * Run through inactive queues
 		 */
-		pglst = segment->sg_memq;
+		pglst = &segment->memq;
 		if (pglst == &vm_page_queue_inactive) {
 			/* Scan top-down on a per segment basis. */
-			vm_pageout_scan_page(pglst, segment, object, free, pages_freed);
+			vm_pageout_scan_page(pglst, segment, object, pages_free, pages_freed);
 		} else {
 			/* Scan bottom-up on a per page basis. */
 			pglst = &vm_page_queue_inactive;
-			vm_pageout_scan_page(pglst, NULL, object, free, pages_freed);
+			vm_pageout_scan_page(pglst, NULL, object, pages_free, pages_freed);
 		}
-		if (next && (next->sg_flags & SEG_INACTIVE) == 0) {
-			next = CIRCLEQ_FIRST(vm_segment_list_inactive);
+		if (next && (next->flags & SEG_INACTIVE) == 0) {
+			next = CIRCLEQ_FIRST(&vm_segment_list_inactive);
 		}
 	}
 }
@@ -258,10 +258,9 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 	 */
 	phys = vm_pageout_phys(page, segment);
 	if (pmap_is_referenced(phys)) {
-		vm_page_active(page);
-		vm_segment_active(segment);
+		vm_page_activate(page);
+		vm_segment_activate(segment);
 		cnt.v_reactivated++;
-		continue;
 	}
 	anon = page->anon;
 	object = segment->object;
@@ -279,11 +278,9 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 		if (vm_object_lock_try(object)) {
 			if (phys != NULL) {
 				pmap_page_protect(phys, VM_PROT_NONE);
-				if (pmap_clear_modify(phys)) {
-					page->flags &= ~(PG_CLEAN);
-					segment->sg_flags &= ~(SEG_CLEAN);
-					continue;
-				}
+				pmap_clear_modify(phys);
+				page->flags &= ~(PG_CLEAN);
+				segment->flags &= ~(SEG_CLEAN);
 				vm_page_free(page);
 				vm_segment_free(segment);
 				pages_freed++;
@@ -295,20 +292,20 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 				 * pagefree did that for us.
 				 */
 				if (anon) {
-					KASSERT(anon->an_swslot != 0);
+					//KASSERT(anon->an_swslot != 0);
 					anon->u.an_page = NULL;
 				}
 				vm_object_unlock(object);
 			}
 		}
-		continue;
+		//continue;
 	}
 
 	/*
 	 * If the page is dirty but already being washed, skip it.
 	 */
 	if ((page->flags & PG_LAUNDRY) == 0) {
-		continue;
+		//continue;
 	}
 
 	/*
@@ -328,7 +325,7 @@ vm_pageout_inactive_scanner(page, segment, object, pages_freed)
 	 * the laundry.
 	 */
 	if (!vm_object_lock_try(object)) {
-		continue;
+		//continue;
 	}
 	cnt.v_pageouts++;
 #ifdef CLUSTERED_PAGEOUT
@@ -374,6 +371,7 @@ vm_pageout_active(page, segment, object)
 	vm_pager_t pager;
 	vm_offset_t phys;
 	int pageout_status;
+	extern int lbolt;
 
 	/*
 	 * We set the busy bit to cause potential page faults on
@@ -435,7 +433,6 @@ vm_pageout_active(page, segment, object)
 		pmap_clear_modify(phys);
 		break;
 	case VM_PAGER_AGAIN:
-		extern int lbolt;
 		/*
 		 * FAIL on a write is interpreted to mean a resource
 		 * shortage, so we put pause for awhile and try again.
@@ -444,7 +441,7 @@ vm_pageout_active(page, segment, object)
 		vm_page_unlock_queues();
 		vm_segment_unlock_lists();
 		vm_object_unlock(object);
-		(void) tsleep((caddr_t) & lbolt, PZERO | PCATCH, "pageout", 0);
+		(void) tsleep((caddr_t) &lbolt, PZERO | PCATCH, "pageout", 0);
 		vm_object_lock(object);
 		vm_segment_lock_lists();
 		vm_page_lock_queues();

@@ -76,9 +76,6 @@
 
 #include <machine/cpu.h>
 
-static void	xswapin(struct proc *);
-static void xswapout(struct proc *, int, u_int, u_int);
-
 unsigned maxdmap = MAXDSIZ;	/* XXX */
 int	readbuffers = 0;		/* XXX allow kgdb to read kernel buffer pool */
 
@@ -480,7 +477,7 @@ swapout_threads()
 	}
 }
 
-static void
+void
 xswapin(p)
 	struct proc *p;
 {
@@ -504,7 +501,7 @@ xswapin(p)
 	cnt.v_swpin++;
 }
 
-static void
+void
 xswapout(p, freecore, odata, ostack)
 	struct proc *p;
 	int freecore;

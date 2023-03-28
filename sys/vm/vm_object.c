@@ -103,8 +103,8 @@
 
 static struct vm_object	kernel_object_store;
 static struct vm_object	kmem_object_store;
-struct vm_object		kernel_object_store;
-struct vm_object		kmem_object_store;
+vm_object_t	kernel_object;
+vm_object_t	kmem_object;
 
 #define	VM_OBJECT_HASH_COUNT	157
 
@@ -125,6 +125,8 @@ long				vm_object_count;
 simple_lock_data_t	vm_object_tree_lock;
 
 static void _vm_object_allocate(vm_size_t, vm_object_t);
+static void vm_object_shadow_attach(vm_object_t, vm_offset_t);
+static void vm_object_shadow_detach(vm_object_t);
 
 /*
  *	vm_object_init:
@@ -217,7 +219,7 @@ _vm_object_allocate(size, object)
 	object->shadow_offset = (vm_offset_t) 0;
 
 	vm_object_tree_lock();
-	RB_INSERT(objectrbt, &vm_object_tree, object);
+	RB_INSERT(object_rbt, &vm_object_tree, object);
 	vm_object_count++;
 	cnt.v_nzfod += atop(size);
 	vm_object_tree_unlock();
@@ -464,16 +466,16 @@ again:
 	/*
 	 * Loop through the object segment list cleaning as necessary.
 	 */
-	CIRCLEQ_FOREACH(segment, object->seglist, listq) {
+	CIRCLEQ_FOREACH(segment, &object->seglist, listq) {
 		if ((start == end || (segment->offset >= start && segment->offset < end))) {
 			/*
 			 * Check if the segment page list is empty.
 			 */
-			if (!TAILQ_EMPTY(segment->memq)) {
+			if (!TAILQ_EMPTY(&segment->memq)) {
 				/*
 				 * Loop through the segment page list cleaning as necessary.
 				 */
-				TAILQ_FOREACH(page, segment->memq, listq) {
+				TAILQ_FOREACH(page, &segment->memq, listq) {
 					if (page->segment == segment && !(page->flags & PG_FICTITIOUS)) {
 						ismod = pmap_is_modified(VM_PAGE_TO_PHYS(page));
 						if ((page->flags & PG_CLEAN) && ismod) {
@@ -619,13 +621,13 @@ vm_object_deactivate_segment_pages(object)
 	register vm_segment_t 	segment;
 	register vm_page_t	 	page;
 
-	CIRCLEQ_FOREACH(segment, object->seglist, listq) {
+	CIRCLEQ_FOREACH(segment, &object->seglist, listq) {
 		if (segment->object == object) {
 			vm_segment_lock_lists();
-			if (TAILQ_EMPTY(segment->memq)) {
+			if (TAILQ_EMPTY(&segment->memq)) {
 				vm_segment_deactivate(segment);
 			} else {
-				TAILQ_FOREACH(page, segment->memq, listq) {
+				TAILQ_FOREACH(page, &segment->memq, listq) {
 					if (page->segment == segment) {
 						vm_page_lock_queues();
 						vm_page_deactivate(page);
@@ -684,7 +686,7 @@ vm_object_pmap(object, start, end, prot, flags)
 	vm_object_lock(object);
 	CIRCLEQ_FOREACH(segment, &object->seglist, listq) {
 		if ((start <= segment->offset) && (segment->offset < end)) {
-			if (!TAILQ_EMPTY(segment->sg_memq)) {
+			if (!TAILQ_EMPTY(&segment->memq)) {
 				TAILQ_FOREACH(page, &segment->memq, listq) {
 					pmap_page_protect(VM_PAGE_TO_PHYS(page), prot);
 					if (flags == PG_COPYONWRITE) {
@@ -984,7 +986,7 @@ vm_object_shadow_remove(aobject, shadow)
     }
 }
 
-void
+static void
 vm_object_shadow_attach(object, offset)
     vm_object_t object;
 	vm_offset_t offset;
@@ -995,7 +997,7 @@ vm_object_shadow_attach(object, offset)
     vm_object_shadow_add(aobject, object, offset);
 }
 
-void
+static void
 vm_object_shadow_detach(object)
 	vm_object_t object;
 {
@@ -1556,7 +1558,7 @@ vm_object_segment_page_remove(object, start, end)
 
 	CIRCLEQ_FOREACH(segment, &object->seglist, listq) {
 		if ((start <= segment->offset) && (segment->offset < end)) {
-			if (!TAILQ_EMPTY(segment->memq)) {
+			if (!TAILQ_EMPTY(&segment->memq)) {
 				TAILQ_FOREACH(page, &segment->memq, listq) {
 					if (page->segment == segment) {
 						pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);

@@ -875,7 +875,7 @@ search_tree:
     }
 
 failed:
-	SAVE_HINT(map, entry);
+    SAVE_HINT(map, *entry);
     KDASSERT((*entry) == CIRCLEQ_FIRST(&map->cl_header) || (*entry)->end <= address);
     KDASSERT(CIRCLEQ_NEXT(*entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) || address < CIRCLEQ_NEXT(*entry, cl_entry)->start);
     return (FALSE);
@@ -1546,7 +1546,7 @@ vm_map_willneed(map, start, end)
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
-	register vm_map_entry_t	entry;
+	vm_map_entry_t	entry;
 
 	vm_map_lock_read(map);
 	VM_MAP_RANGE_CHECK(map, start, end);

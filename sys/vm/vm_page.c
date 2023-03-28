@@ -84,18 +84,20 @@
 struct pglist		*vm_page_buckets;			/* Array of buckets */
 int					vm_page_bucket_count = 0;	/* How big is array? */
 int					vm_page_hash_mask;			/* Mask for hash function */
-simple_lock_data_t	page_bucket_lock;			/* lock for all page buckets XXX */
+simple_lock_data_t	bucket_lock;			/* lock for all page buckets XXX */
 
 struct pglist		vm_page_queue_free;
 struct pglist		vm_page_queue_active;
 struct pglist		vm_page_queue_inactive;
 simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
+simple_lock_data_t	vm_pages_needed_lock;
 
 /* has physical page allocation been initialized? */
 bool_t 				vm_page_startup_initialized;
 
 vm_page_t			vm_page_array;
+long				vm_page_array_size;
 long				first_page;
 long				last_page;
 vm_offset_t			first_phys_addr;
@@ -246,7 +248,7 @@ vm_page_startup(start, end)
 		bucket++;
 	}
 
-	simple_lock_init(&page_bucket_lock, "page_bucket_lock");
+	simple_lock_init(&bucket_lock, "page_bucket_lock");
 
 	/*
 	 *	Truncate the remainder of physical memory to our page size.
@@ -376,9 +378,9 @@ vm_page_insert(mem, segment, offset)
 
 	bucket = &vm_page_buckets[vm_page_hash(segment, offset)];
 	spl = splimp();
-	simple_lock(&page_bucket_lock);
+	simple_lock(&bucket_lock);
 	TAILQ_INSERT_TAIL(bucket, mem, hashq);
-	simple_unlock(&page_bucket_lock);
+	simple_unlock(&bucket_lock);
 	(void) splx(spl);
 
 	TAILQ_INSERT_TAIL(&segment->memq, mem, listq);
@@ -415,9 +417,9 @@ vm_page_remove(mem)
 
 	bucket = &vm_page_buckets[vm_page_hash(mem->segment, mem->offset)];
 	spl = splimp();
-	simple_lock(&page_bucket_lock);
+	simple_lock(&bucket_lock);
 	TAILQ_REMOVE(bucket, mem, hashq);
-	simple_unlock(&page_bucket_lock);
+	simple_unlock(&bucket_lock);
 	(void) splx(spl);
 
 	/*
@@ -461,17 +463,17 @@ vm_page_lookup(segment, offset)
 	bucket = &vm_page_buckets[vm_page_hash(segment, offset)];
 
 	spl = splimp();
-	simple_lock(&page_bucket_lock);
+	simple_lock(&bucket_lock);
 	TAILQ_FOREACH(mem, bucket, hashq) {
 		VM_PAGE_CHECK(mem);
 		if ((mem->segment == segment) && (mem->offset == offset)) {
-			simple_unlock(&page_bucket_lock);
+			simple_unlock(&bucket_lock);
 			splx(spl);
 			return (mem);
 		}
 	}
 
-	simple_unlock(&page_bucket_lock);
+	simple_unlock(&bucket_lock);
 	splx(spl);
 	return (NULL);
 }
@@ -993,7 +995,7 @@ vm_page_alloc_memory(size, low, high, alignment, boundary, rlist, nsegs, waitok)
 		TAILQ_REMOVE(&vm_page_queue_free, m, pageq);
 		cnt.v_page_free_count--;
 		m->flags = PG_CLEAN;
-		m->object = NULL;
+		m->segment->object = NULL;
 		m->wire_count = 0;
 		TAILQ_INSERT_TAIL(rlist, m, pageq);
 		idx++;

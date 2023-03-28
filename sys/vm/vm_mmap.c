@@ -57,6 +57,7 @@
 #include <sys/resourcevar.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
+#include <sys/map.h>
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/conf.h>
@@ -154,7 +155,7 @@ vm_expand(p, newsize, type)
 	register vm_size_t i, n;
 	caddr_t a1, a2;
 
-	pseg = p->p_vmspace->vm_psegment;
+	pseg = &p->p_vmspace->vm_psegment;
 	if (pseg == NULL) {
 		return;
 	}
@@ -166,8 +167,8 @@ vm_expand(p, newsize, type)
 		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
 		if (n >= newsize) {
 			n -= newsize;
-			vm_psegment_extent_free(pseg, n + newsize, a1, PSEG_DATA, 0);
-			rmfree(coremap, n, a1 + newsize);
+			vm_psegment_extent_free(pseg, (caddr_t)n + newsize, (u_long)a1, PSEG_DATA, 0);
+			rmfree(coremap, n, (memaddr_t)a1 + newsize);
 			return;
 		}
 	} else {
@@ -175,13 +176,13 @@ vm_expand(p, newsize, type)
 		pseg->ps_stack.psx_ssize = newsize;
 		p->p_ssize = pseg->ps_stack.psx_ssize;
 		a1 = pseg->ps_stack.psx_saddr;
-		vm_psegment_expand(pseg, newsize, a1, PSEG_STACK);
+		vm_psegment_expand(pseg, newsize, (caddr_t)a1, PSEG_STACK);
 		if (n >= newsize) {
 			n -= newsize;
 			pseg->ps_stack.psx_saddr += n;
 			p->p_saddr = pseg->ps_stack.psx_saddr;
-			vm_psegment_extent_free(pseg, n, a1, PSEG_STACK, 0);
-			rmfree(coremap, n, a1);
+			vm_psegment_extent_free(pseg, (caddr_t)n, (u_long)a1, PSEG_STACK, 0);
+			rmfree(coremap, n,  (memaddr_t)a1);
 			return;
 		}
 	}
@@ -200,12 +201,12 @@ vm_expand(p, newsize, type)
 		}
 		bcopy(a1, a2, n);
 	}
-	a2 = rmalloc(coremap, newsize);
+	a2 = (caddr_t)rmalloc(coremap, newsize);
 	if (a2 == NULL) {
 		if (type == PSEG_DATA) {
-			vm_xswapout(p, X_FREECORE, n, X_OLDSIZE);
+			xswapout(p, X_FREECORE, n, X_OLDSIZE);
 		} else {
-			vm_xswapout(p, X_FREECORE, X_OLDSIZE, n);
+			xswapout(p, X_FREECORE, X_OLDSIZE, n);
 		}
 	}
 	if (type == PSEG_STACK) {
@@ -220,7 +221,7 @@ vm_expand(p, newsize, type)
 		p->p_daddr = pseg->ps_data.psx_daddr;
 	}
 	bcopy(a1, a2, n);
-	rmfree(coremap, n, a1);
+	rmfree(coremap, n,  (memaddr_t)a1);
 }
 
 int
@@ -750,7 +751,7 @@ mlock()
 	if ((addr & PAGE_MASK) || SCARG(uap, addr) + SCARG(uap, len) < SCARG(uap, addr))
 		return (EINVAL);
 	size = round_page((vm_size_t)SCARG(uap, len));
-	if (atop(size) + cnt.v_wire_count > vm_page_max_wired)
+	if (atop(size) + cnt.v_page_wire_count > vm_page_max_wired)
 		return (EAGAIN);
 #ifdef pmap_wired_count
 	if (size + ptoa(pmap_wired_count(vm_map_pmap(&p->p_vmspace->vm_map))) >
