@@ -107,7 +107,7 @@ struct vm_page {
 	vm_anon_t				anon;		/* anon (O,(S,P)) */
 
 	u_short					wire_count;	/* wired down maps refs (P) */
-	int					flags;		/* see below */
+	int						flags;		/* see below */
 
 	vm_offset_t				phys_addr;	/* physical address of page */
 };
@@ -131,7 +131,7 @@ struct vm_page {
 #define	PG_DIRTY		0x00800		/* client flag to set when dirty */
 #define	PG_RELEASED		0x01000		/* page to be freed when unbusied */
 #define PG_FREE			0x02000		/* page is on free list */
-#define	PG_PAGEROWNED	        0x04000		/* DEBUG: async paging op in progress */
+#define	PG_PAGEROWNED	0x04000		/* DEBUG: async paging op in progress */
 #define	PG_PTPAGE		0x08000		/* DEBUG: is a user page table page */
 #define	PG_SEGPAGE		0x10000		/* DEBUG: is a user segment page */
 #define PG_ANON			0x20000		/* page is part of an anon, rather than an vm_object */

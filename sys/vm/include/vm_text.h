@@ -124,8 +124,8 @@ union vm_pseudo_segment {
     struct vm_text      	ps_text;
 
     struct extent 			*ps_extent;				/* segments extent allocator */
-    vm_offset_t         	*ps_start;				/* start of space */
-    vm_offset_t         	*ps_end;				/* end of space */
+    vm_offset_t         	ps_start;				/* start of space */
+    vm_offset_t         	ps_end;				/* end of space */
     size_t					ps_size;				/* total size (data + stack + text) */
     int 					ps_flags;				/* flags */
 };
@@ -203,12 +203,13 @@ void 	vm_expand(struct proc *, vm_size_t, int);
 vm_psegment_t vm_psegment_alloc(void);
 void	vm_psegment_free(vm_psegment_t);
 void	vm_psegment_init(vm_psegment_t, vm_offset_t *, vm_offset_t *);
+
 void	vm_psegment_expand(vm_psegment_t, segsz_t, caddr_t, int);
 void	vm_psegment_shrink(vm_psegment_t, segsz_t, caddr_t, int);
 void	vm_psegment_extent_create(vm_psegment_t, char *, u_long, u_long, int, caddr_t, size_t, int);
 void	vm_psegment_extent_alloc(vm_psegment_t, u_long, u_long, int);
 void	vm_psegment_extent_suballoc(vm_psegment_t, u_long, u_long, int, int);
-void	vm_psegment_extent_free(vm_psegment_t, caddr_t, u_long, int, int);
+void	vm_psegment_extent_free(vm_psegment_t, u_long, caddr_t, int, int);
 void	vm_psegment_extent_destroy(vm_psegment_t);
 
 /* vm_text */

@@ -13,6 +13,7 @@
 #include <sys/extent.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
+#include <sys/map.h>
 #include <sys/vnode.h>
 #include <sys/user.h>
 

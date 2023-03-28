@@ -59,6 +59,9 @@ vm_offset_t			last_logical_addr;
 vm_size_t			segment_mask;
 int					segment_shift;
 
+static vm_segment_t vm_segment_search_next(vm_object_t, vm_offset_t);
+static vm_segment_t vm_segment_search_prev(vm_object_t, vm_offset_t);
+
 void
 vm_set_segment_size(void)
 {
@@ -175,7 +178,7 @@ vm_segment_insert(segment, object, offset)
 {
 	register struct seglist *bucket;
 
-	if (segment->sg_flags & SEG_ALLOCATED) {
+	if (segment->flags & SEG_ALLOCATED) {
 		panic("vm_segment_insert: already inserted");
 	}
 
@@ -232,27 +235,36 @@ vm_segment_lookup(object, offset)
 	last = CIRCLEQ_LAST(bucket);
 
 	simple_lock(&segment_bucket_lock);
-	if(first->offset != last->offset) {
-		if(first->offset >= offset) {
+	if (first->object == object) {
+		if (first->offset == last->offset) {
+			simple_unlock(&segment_bucket_lock);
+			return (first);
+		}
+	}
+	if (last->object == object) {
+		if (first->offset == last->offset) {
+			simple_unlock(&segment_bucket_lock);
+			return (last);
+		}
+	}
+
+	if (first->offset != last->offset) {
+		if (first->offset >= offset) {
 			segment = vm_segment_search_next(object, offset);
 			simple_unlock(&segment_bucket_lock);
 			return (segment);
 		}
-		if(last->offset >= offset) {
+		if (last->offset <= offset) {
 			segment = vm_segment_search_prev(object, offset);
 			simple_unlock(&segment_bucket_lock);
 			return (segment);
 		}
 	}
-	if (first->offset == last->offset && first->object == object) {
-		simple_unlock(&segment_bucket_lock);
-		return (first);
-	}
 	simple_unlock(&segment_bucket_lock);
 	return (NULL);
 }
 
-vm_segment_t
+static vm_segment_t
 vm_segment_search_next(object, offset)
 	vm_object_t	object;
 	vm_offset_t offset;
@@ -263,7 +275,7 @@ vm_segment_search_next(object, offset)
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
 	simple_lock(&segment_bucket_lock);
-	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, hashq)) {
+	CIRCLEQ_FOREACH(segment, bucket, hashq) {
 		if (segment->object == object && segment->offset == offset) {
 			simple_unlock(&segment_bucket_lock);
 			return (segment);
@@ -273,7 +285,7 @@ vm_segment_search_next(object, offset)
 	return (NULL);
 }
 
-vm_segment_t
+static vm_segment_t
 vm_segment_search_prev(object, offset)
 	vm_object_t	object;
 	vm_offset_t offset;
@@ -284,7 +296,7 @@ vm_segment_search_prev(object, offset)
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
 	simple_lock(&segment_bucket_lock);
-	for (segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_PREV(segment, hashq)) {
+	CIRCLEQ_FOREACH_REVERSE(segment, bucket, hashq) {
 		if (segment->object == object && segment->offset == offset) {
 			simple_unlock(&segment_bucket_lock);
 			return (segment);
@@ -302,7 +314,7 @@ vm_segment_alloc(object, offset)
 	register vm_segment_t seg;
 
 	simple_lock(&vm_segment_list_free_lock);
-	if(CIRCLEQ_FIRST(&vm_segment_list_free) == NULL) {
+	if (CIRCLEQ_FIRST(&vm_segment_list_free) == NULL) {
 		simple_unlock(&vm_segment_list_free_lock);
 		return (NULL);
 	}
@@ -312,7 +324,7 @@ vm_segment_alloc(object, offset)
 	cnt.v_segment_free_count--;
 	simple_unlock(&vm_segment_list_free_lock);
 
-	VM_SEGMENT_INIT(seg, object, offset)
+	VM_SEGMENT_INIT(seg, object, offset);
 
 	return (seg);
 }
@@ -345,8 +357,8 @@ vm_segment_wire_tracker(segment)
 {
 	vm_page_t page;
 
-	if (!TAILQ_EMPTY(segment->memq)) {
-		TAILQ_FOREACH(page, segment->memq, pageq) {
+	if (!TAILQ_EMPTY(&segment->memq)) {
+		TAILQ_FOREACH(page, &segment->memq, pageq) {
 			if (page->segment == segment) {
 				if (page->wire_count > 0) {
 					segment->wire_tracker++;
@@ -437,7 +449,7 @@ vm_segment_activate(segment)
  */
 bool_t
 vm_segment_zero_fill(s)
-    vm_segment_t 	s;
+    vm_segment_t s;
 {
 	register vm_page_t 	p;
 
@@ -470,13 +482,13 @@ vm_segment_copy(src_seg, dest_seg)
 	VM_SEGMENT_CHECK(src_seg);
 	VM_SEGMENT_CHECK(dest_seg);
 
-	if (dest_seg != NULL && TAILQ_EMTPY(dest_seg->memq)) {
-		TAILQ_FOREACH(src_page, src_seg->memq, listq) {
-			if(src_page->segment == src_seg) {
+	if (dest_seg != NULL && TAILQ_EMTPY(&dest_seg->memq)) {
+		TAILQ_FOREACH(src_page, &src_seg->memq, listq) {
+			if (src_page->segment == src_seg) {
 				if (dest_page == NULL) {
 					dest_page = vm_page_alloc(src_page->segment, src_page->offset);
 				}
-				vm_copy_page(src_page, dest_page);
+				vm_page_copy(src_page, dest_page);
 			}
 		}
 	} else {
