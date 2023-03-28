@@ -87,6 +87,7 @@ int		 		pager_cache(vm_object_t, bool_t);
 void			scheduler(void);
 void			swapinit(void);
 int		 		swapctl();
+void		 	swapin(struct proc *);
 void		 	swapout(struct proc *);
 void		 	swapout_threads(void);
 int			 	swfree(struct proc *, int);
@@ -128,4 +129,6 @@ void		 	vnode_pager_umount(struct mount *);
 bool_t	 		vnode_pager_uncache(struct vnode *);
 void		 	vslock(caddr_t, u_int);
 void		 	vsunlock(caddr_t, u_int, int);
+void	xswapin(struct proc *);
+void    xswapout(struct proc *, int, u_int, u_int);
 #endif

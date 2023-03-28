@@ -140,7 +140,7 @@ vm_object_t			kmem_object;
 #define	vm_object_tree_unlock()		simple_unlock(&vm_object_tree_lock)
 #endif /* KERNEL */
 
-#define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock)
+#define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock, "vm_object_lock")
 #define	vm_object_lock(object)		simple_lock(&(object)->Lock)
 #define	vm_object_unlock(object)	simple_unlock(&(object)->Lock)
 #define	vm_object_lock_try(object)	simple_lock_try(&(object)->Lock)

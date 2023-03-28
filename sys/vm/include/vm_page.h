@@ -107,7 +107,7 @@ struct vm_page {
 	vm_anon_t				anon;		/* anon (O,(S,P)) */
 
 	u_short					wire_count;	/* wired down maps refs (P) */
-	u_short					flags;		/* see below */
+	int					flags;		/* see below */
 
 	vm_offset_t				phys_addr;	/* physical address of page */
 };
@@ -196,8 +196,13 @@ vm_offset_t		last_phys_addr;			/* physical address for last_page */
 #define IS_VM_PHYSADDR(pa) 							\
 		((pa) >= first_phys_addr && (pa) <= last_phys_addr)
 
-#define PHYS_TO_VM_PAGE(pa) 						\
-		(&vm_page_array[atop(pa) - first_page ])
+#define	VM_PAGE_INDEX(pa) 	\
+		(atop((pa)) - first_page)
+
+#define PHYS_TO_VM_PAGE(pa) \
+		(&vm_page_array[VM_PAGE_INDEX(pa)])
+
+#define VM_PAGE_IS_FREE(entry)  ((entry)->flags & PG_FREE)
 
 extern
 simple_lock_data_t	vm_page_queue_lock;			/* lock on active and inactive page queues */
