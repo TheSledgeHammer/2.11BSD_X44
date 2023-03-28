@@ -482,7 +482,7 @@ vm_segment_copy(src_seg, dest_seg)
 	VM_SEGMENT_CHECK(src_seg);
 	VM_SEGMENT_CHECK(dest_seg);
 
-	if (dest_seg != NULL && TAILQ_EMTPY(&dest_seg->memq)) {
+	if (dest_seg != NULL /*&& TAILQ_EMTPY(&dest_seg->memq)*/) {
 		TAILQ_FOREACH(src_page, &src_seg->memq, listq) {
 			if (src_page->segment == src_seg) {
 				if (dest_page == NULL) {

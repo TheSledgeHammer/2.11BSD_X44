@@ -92,6 +92,36 @@ sbrk()
 		syscallarg(int) incr;
 	} *uap = (struct sbrk_args *) u.u_ap;
 
+	/* Not yet implemented */
+	return (EOPNOTSUPP);
+}
+
+/* ARGSUSED */
+int
+sstk()
+{
+	register struct sstk_args {
+		syscallarg(int) incr;
+	} *uap = (struct sstk_args *) u.u_ap;
+
+	/* Not yet implemented */
+	return (EOPNOTSUPP);
+}
+
+#ifdef notyet
+/* ARGSUSED */
+int
+sbrk()
+{
+	register struct sbrk_args {
+		syscallarg(int)	type;
+		syscallarg(segsz_t)	size;
+		syscallarg(caddr_t)	addr;
+		syscallarg(int)	sep;
+		syscallarg(int)	flags;
+		syscallarg(int) incr;
+	} *uap = (struct sbrk_args *) u.u_ap;
+
 	struct proc *p;
 	register_t *retval;
 	register segsz_t n, d;
@@ -119,19 +149,6 @@ sbrk()
 	p->p_dsize = n;
 	return (0);
 }
-
-/* ARGSUSED */
-int
-sstk()
-{
-	register struct sstk_args {
-		syscallarg(int) incr;
-	} *uap = (struct sstk_args *) u.u_ap;
-
-	/* Not yet implemented */
-	return (EOPNOTSUPP);
-}
-
 /*
  * Change the size of the data+stack regions of the process.
  * If the size is shrinking, it's easy -- just release the extra core.
@@ -167,7 +184,7 @@ vm_expand(p, newsize, type)
 		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
 		if (n >= newsize) {
 			n -= newsize;
-			vm_psegment_extent_free(pseg, (caddr_t)n + newsize, (u_long)a1, PSEG_DATA, 0);
+			vm_psegment_extent_free(pseg, n + newsize, a1, PSEG_DATA, 0);
 			rmfree(coremap, n, (memaddr_t)a1 + newsize);
 			return;
 		}
@@ -181,7 +198,7 @@ vm_expand(p, newsize, type)
 			n -= newsize;
 			pseg->ps_stack.psx_saddr += n;
 			p->p_saddr = pseg->ps_stack.psx_saddr;
-			vm_psegment_extent_free(pseg, (caddr_t)n, (u_long)a1, PSEG_STACK, 0);
+			vm_psegment_extent_free(pseg, n, a1, PSEG_STACK, 0);
 			rmfree(coremap, n, (memaddr_t)a1);
 			return;
 		}
@@ -223,6 +240,7 @@ vm_expand(p, newsize, type)
 	bcopy(a1, a2, n);
 	rmfree(coremap, n, (memaddr_t)a1);
 }
+#endif
 
 int
 mmap()

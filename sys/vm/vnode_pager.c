@@ -493,12 +493,14 @@ vnode_pager_io(vnp, mlist, npages, sync, rw)
 	vm_offset_t kva, foff;
 	int error, size;
 	struct proc *p = curproc;		/* XXX */
+	vm_segment_t s;
 
 	/* XXX */
 	vm_page_t m;
 	if (npages != 1)
 		panic("vnode_pager_io: cannot handle multiple pages");
 	m = *mlist;
+	s = m->segment;
 	/* XXX */
 
 #ifdef DEBUG
@@ -506,7 +508,7 @@ vnode_pager_io(vnp, mlist, npages, sync, rw)
 		printf("vnode_pager_io(%x, %x, %c): vnode %x\n",
 		       vnp, m, rw == UIO_READ ? 'R' : 'W', vnp->vnp_vp);
 #endif
-	foff = m->offset + m->object->paging_offset;
+	foff = m->offset + s->object->paging_offset;
 	/*
 	 * Allocate a kernel virtual address and initialize so that
 	 * we can use VOP_READ/WRITE routines.

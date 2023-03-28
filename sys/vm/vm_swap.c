@@ -368,7 +368,6 @@ swap_search(swp, sdp, nblks, npages)
 	} else {
 		if (pageno >= sdp->swd_drumoffset && pageno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
 			startslot = sdp->swd_drumoffset;
-			break;
 		}
 	}
 	return (startslot);

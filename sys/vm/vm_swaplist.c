@@ -88,13 +88,18 @@ SIMPLEQ_HEAD(swapbufhead, swapbuf);
 LIST_HEAD(swap_priority, swappri);
 static struct swap_priority 	swap_priority;
 
+int swap_miniroot(struct proc *, struct swapdev *, struct vnode *, int, long);
+static void sw_reg_strategy(struct swdevt *, struct buf *, int);
+static void sw_reg_start(struct swdevt *);
+static void sw_reg_iodone(struct buf *);
+
 void
 swapdrum_init(swp)
 	struct swdevt *swp;
 {
 	register struct swapdev *sdp;
 
-	sdp = (struct swapdev *)rmalloc(&swapmap, sizeof(struct swapdev *));
+	sdp = (struct swapdev *)rmalloc(swapmap, sizeof(struct swapdev *));
 	swp->sw_swapdev = sdp;
 
 	/*
@@ -104,7 +109,7 @@ swapdrum_init(swp)
 	 */
 	LIST_INIT(&swap_priority);
 	cnt.v_nswapdev = 0;
-	simple_lock_init(&swap_data_lock);
+	simple_lock_init(&swap_data_lock, "swap_data_lock");
 
 	if (bdevvp(swapdev, &swapdev_vp)) {
 		panic("vm_swap_init: can't get vnode for swap device");
@@ -127,7 +132,7 @@ vndxfer_alloc(void)
 {
 	struct vndxfer *vndx;
 
-	vndx = (struct vndxfer *)rmalloc(&swapmap, sizeof(struct vndxfer *));
+	vndx = (struct vndxfer *)rmalloc(swapmap, sizeof(struct vndxfer *));
 	return (vndx);
 }
 
@@ -135,7 +140,7 @@ void
 vndxfer_free(vndx)
 	struct vndxfer *vndx;
 {
-	rmfree(&swapmap, sizeof(vndx), vndx);
+	rmfree(swapmap, sizeof(vndx), (memaddr_t)vndx);
 }
 
 struct vndbuf *
@@ -143,7 +148,7 @@ vndbuf_alloc(void)
 {
 	struct vndbuf *vndb;
 
-	vndb = (struct vndbuf *)rmalloc(&swapmap, sizeof(struct vndbuf *));
+	vndb = (struct vndbuf *)rmalloc(swapmap, sizeof(struct vndbuf *));
 	return (vndb);
 }
 
@@ -151,7 +156,7 @@ void
 vndbuf_free(vndb)
 	struct vndbuf *vndb;
 {
-	rmfree(&swapmap, sizeof(vndb), vndb);
+	rmfree(swapmap, sizeof(vndb), (memaddr_t)vndb);
 }
 
 struct swapbuf *
@@ -159,7 +164,7 @@ swapbuf_alloc(void)
 {
 	struct swapbuf *swbuf;
 
-	swbuf = (struct swapbuf *)rmalloc(&swapmap, sizeof(struct swapbuf *));
+	swbuf = (struct swapbuf *)rmalloc(swapmap, sizeof(struct swapbuf *));
 	return (swbuf);
 }
 
@@ -167,7 +172,7 @@ void
 swapbuf_free(swbuf)
 	struct swapbuf *swbuf;
 {
-	rmfree(&swapmap, sizeof(swbuf), swbuf);
+	rmfree(swapmap, sizeof(swbuf), (memaddr_t)swbuf);
 }
 
 void
@@ -218,6 +223,7 @@ swaplist_insert(sdp, newspp, priority)
 	/*
 	 * find entry at or after which to insert the new device.
 	 */
+
 	for (pspp = NULL, spp = LIST_FIRST(&swap_priority); spp != NULL; spp = LIST_NEXT(spp, spi_swappri)) {
 		if (priority <= spp->spi_priority) {
 			break;
@@ -241,7 +247,7 @@ swaplist_insert(sdp, newspp, priority)
 		}
 	} else {
 		/* we don't need a new priority structure, free it */
-		rmfree(&swapmap, sizeof(*newspp), newspp);
+		rmfree(swapmap, sizeof(*newspp), (memaddr_t)newspp);
 	}
 	sdp->swd_priority = priority;
 	CIRCLEQ_INSERT_TAIL(&spp->spi_swapdev, sdp, swd_next);
@@ -297,7 +303,7 @@ swaplist_trim(void)
 			continue;
 		}
 		LIST_REMOVE(spp, spi_swappri);
-		rmfree(&swapmap, sizeof(*spp), spp);
+		rmfree(swapmap, sizeof(*spp), (memaddr_t)spp);
 	}
 }
 
@@ -336,8 +342,8 @@ swapdrum_getsdp(pgno)
 	struct swapdev *sdp;
 	struct swappri *spp;
 
-	for (spp = LIST_FIRST(swap_priority); spp != NULL; spp = LIST_NEXT(spp, spi_swappri)) {
-		for (sdp = CIRCLEQ_FIRST(spp->spi_swapdev); sdp != (void *)&spp->spi_swapdev; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
+	for (spp = LIST_FIRST(&swap_priority); spp != NULL; spp = LIST_NEXT(spp, spi_swappri)) {
+		for (sdp = CIRCLEQ_FIRST(&spp->spi_swapdev); sdp != (void *)&spp->spi_swapdev; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
 			if (pgno >= sdp->swd_drumoffset && pgno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
 				return (sdp);
 			}
@@ -475,7 +481,7 @@ swapctl()
 		priority = SCARG(uap, misc);
 		sdp = (struct swapdev *)malloc(sizeof *sdp, M_SWAPMAP, M_WAITOK);
 		spp = (struct swappri *)malloc(sizeof *spp, M_SWAPMAP, M_WAITOK);
-		memset(sdp, 0, sizeof(*sdp));
+		bzero(sdp, sizeof(*sdp));
 		swp->sw_flags = SW_FAKE;
 		swp->sw_vp = vp;
 		swp->sw_dev = (vp->v_type == VBLK) ? vp->v_rdev : NODEV;
@@ -663,7 +669,7 @@ swapdrum_on(p, swp)
 	/*
 	 * now we need to allocate an extent to manage this swap device
 	 */
-	name = rmalloc(&swapmap, 12);
+	name = rmalloc(swapmap, 12);
 	sprintf(name, "swap0x%04x", count++);
 
 	/* note that extent_create's 3rd arg is inclusive, thus "- 1" */
@@ -762,10 +768,10 @@ swapdrum_off(p, swp)
 	 */
 	extent_free(swapextent, sdp->swd_drumoffset, sdp->swd_drumsize, EX_WAITOK);
 	extent_destroy(sdp->swd_ex);
-	rmfree(&swapmap, sizeof(name), name);
-	rmfree(&swapmap, sizeof(sdp->swd_ex), (caddr_t)sdp->swd_ex);
+	rmfree(swapmap, sizeof(name), (memaddr_t)name);
+	rmfree(swapmap, sizeof(sdp->swd_ex), (memaddr_t)sdp->swd_ex);
 	bufq_free(&sdp->swd_tab);
-	rmfree(&swapmap, sizeof(sdp), (caddr_t)sdp);
+	rmfree(swapmap, sizeof(sdp), (memaddr_t)sdp);
 
 	return (0);
 }
@@ -993,7 +999,7 @@ sw_reg_strategy(swp, bp, bn)
 		 * cast pointers between the two structure easily.
 		 */
 		nbp = vndbuf_alloc();
-		&nbp->vb_buf = &swbuf; /* XXX: FIX */
+		nbp->vb_buf = &swbuf; /* XXX: FIX */
 		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
 		nbp->vb_buf.b_bcount   = sz;
 		nbp->vb_buf.b_bufsize  = sz;
@@ -1022,7 +1028,7 @@ sw_reg_strategy(swp, bp, bn)
 
 		/* sort it in and start I/O if we are not over our limit */
 		BUFQ_PUT(&sdp->swd_tab, &nbp->vb_buf);
-		sw_reg_start(sdp);
+		sw_reg_start(swp);
 		splx(s);
 
 		/*
@@ -1077,9 +1083,9 @@ sw_reg_start(swp)
 		sdp->swd_active++;
 		vp = bp->b_vp;
 		if ((bp->b_flags & B_READ) == 0) {
-			simple_lock(vp->v_interlock);
+			simple_lock(&vp->v_interlock);
 			vp->v_numoutput++;
-			simple_unlock(vp->v_interlock);
+			simple_unlock(&vp->v_interlock);
 		}
 
 		VOP_STRATEGY(bp);
@@ -1185,8 +1191,8 @@ vm_swap_alloc(swp, nslots, lessok)
 	simple_lock(&swap_data_lock);
 
 ReTry: /* XXXMRG */
-	for (spp = LIST_FIRST(swap_priority); spp != NULL; spp = LIST_NEXT(spp, spi_swappri)) {
-		for (sdp = CIRCLEQ_FIRST(spp->spi_swapdev); sdp != (void*) &spp->spi_swapdev; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
+	for (spp = LIST_FIRST(&swap_priority); spp != NULL; spp = LIST_NEXT(spp, spi_swappri)) {
+		for (sdp = CIRCLEQ_FIRST(&spp->spi_swapdev); sdp != (void*) &spp->spi_swapdev; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
 			/* if it's not enabled, then we can't swap from it */
 			if ((swp->sw_flags & SW_ENABLE) == 0)
 				continue;
@@ -1301,18 +1307,18 @@ vm_swapbuf_init(bp, p)
 	int i;
 
 	sbp = swapbuf_alloc();
-	TAILQ_INIT(sbp->sw_bswlist);
+	TAILQ_INIT(&sbp->sw_bswlist);
 	sbp->sw_buf = bp;
 	sbp->sw_nswbuf = nswbuf;
 
 	for (i = 0; i < nswbuf - 1; i++, sbp->sw_buf++) {
-		TAILQ_INSERT_HEAD(sbp->sw_bswlist, sbp->sw_buf, b_freelist);
+		TAILQ_INSERT_HEAD(&sbp->sw_bswlist, sbp->sw_buf, b_freelist);
 		sbp->sw_buf->b_rcred = sbp->sw_buf->b_wcred = p->p_ucred;
 		LIST_NEXT(sbp->sw_buf, b_vnbufs) = NOLIST;
 	}
 	sbp->sw_buf->b_rcred = sbp->sw_buf->b_wcred = p->p_ucred;
 	LIST_NEXT(sbp->sw_buf, b_vnbufs) = NOLIST;
-	TAILQ_REMOVE(sbp->sw_bswlist, sbp->sw_buf, b_actq);
+	TAILQ_REMOVE(&sbp->sw_bswlist, sbp->sw_buf, b_actq);
 }
 
 struct buf *
@@ -1326,11 +1332,11 @@ vm_getswapbuf(sbp)
 		sbp = swapbuf_alloc();
 	}
 	s = splbio();
-	while((bp = TAILQ_FIRST(sbp->sw_bswlist)) == NULL) {
+	while((bp = TAILQ_FIRST(&sbp->sw_bswlist)) == NULL) {
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)&bp, BPRIO_DEFAULT);
 	}
-	TAILQ_REMOVE(sbp->sw_bswlist, bp, b_freelist);
+	TAILQ_REMOVE(&sbp->sw_bswlist, bp, b_freelist);
 	splx(s);
 
 	if (bp == NULL) {
@@ -1366,7 +1372,7 @@ vm_putswapbuf(sbp, bp)
 	}
 	sbp->sw_buf = bp;
 	//bp->b_swbuf = sbp;
-	TAILQ_INSERT_HEAD(sbp->sw_bswlist, bp, b_freelist);
+	TAILQ_INSERT_HEAD(&sbp->sw_bswlist, bp, b_freelist);
 	free(bp, M_TEMP);
 	splx(s);
 }
