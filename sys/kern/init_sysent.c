@@ -146,6 +146,7 @@ int	setrlimit();
 int	killpg();
 int	quotactl();
 int	getsockname();
+int	uuidgen();
 int	lfs_bmapv();
 int	lfs_markv();
 int	lfs_segclean();
@@ -154,7 +155,7 @@ int	sysarch();
 int	kenv();
 int	kevent();
 int	kqueue();
-int	swapon();
+int	swapctl();
 int	nosys();
 #ifdef KTRACE
 int	ktrace();
@@ -470,7 +471,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    getsockname },			/* 150 = getsockname */
 	{ 0, 0,
-	    nosys },				/* 151 = unused */
+	    uuidgen },				/* 151 = uuidgen */
 	{ 0, 0,
 	    nosys },				/* 152 = obsolete old nostk */
 	{ 0, 0,
@@ -496,7 +497,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    kqueue },				/* 163 = kqueue */
 	{ 0, 0,
-	    swapon },				/* 164 = swapon */
+	    swapctl },				/* 164 = swapctl */
 	{ 0, 0,
 	    nosys },				/* 165 = _syscall */
 #ifdef KTRACE
