@@ -110,6 +110,8 @@
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_segment.h>
 #include <vm/include/vm_pageout.h>
+#include <vm/include/vm_aobject.h>
+#include <vm/include/vm_swap.h>
 
 /*
  * local data structures

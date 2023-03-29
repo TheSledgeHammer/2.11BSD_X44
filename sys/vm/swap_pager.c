@@ -57,6 +57,7 @@
 
 #include <miscfs/specfs/specdev.h>
 
+#include <vm/include/vm_swap.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>

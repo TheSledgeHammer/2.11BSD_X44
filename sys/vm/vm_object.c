@@ -74,6 +74,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_segment.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_aobject.h>
 
 /*
  *	Virtual memory objects maintain the actual data

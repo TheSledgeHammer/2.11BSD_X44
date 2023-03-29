@@ -58,8 +58,8 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_text.h>
 
-int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
-int	ogrow(vm_offset_t);
+//int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
+//int	ogrow(vm_offset_t);
 
 struct obreak_args {
 	char	*nsiz;
@@ -151,6 +151,7 @@ ovadvise(p, uap, retval)
 	return (EINVAL);
 }
 
+#ifdef notyet
 /*
  * Set up software prototype segmentation registers to implement the 3
  * pseudo text, data, stack segment sizes passed as arguments.  The
@@ -281,3 +282,4 @@ ogrow(sp)
 	bzero(u.u_procp->p_saddr, si);
 	return (1);
 }
+#endif

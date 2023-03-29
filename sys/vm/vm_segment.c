@@ -33,7 +33,7 @@
 #include <sys/fnv_hash.h>
 
 #include <vm/include/vm.h>
-#include <vm/include/vm_text.h>
+//#include <vm/include/vm_text.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_segment.h>
 #include <vm/include/vm_map.h>
@@ -143,7 +143,7 @@ vm_segment_startup(start, end)
 	seg = vm_segment_array = (vm_segment_t)pmap_bootstrap_alloc(nsegments * sizeof(struct vm_segment));
 
 	/* Allocate and initialize pseudo-segments */
-	vm_psegment_init(&seg->psegment, start, end);
+	//vm_psegment_init(&seg->psegment, start, end);
 
 	/*
 	 *	Allocate and clear the mem entry structures.

@@ -44,6 +44,7 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+#include <sys/mount.h>
 #include <sys/extent.h>
 #include <sys/file.h>
 #include <sys/user.h>
@@ -88,6 +89,8 @@ SIMPLEQ_HEAD(swapbufhead, swapbuf);
 LIST_HEAD(swap_priority, swappri);
 static struct swap_priority 	swap_priority;
 
+int swapdrum_on(struct proc *, struct swdevt *);
+int swapdrum_off(struct proc *, struct swdevt *);
 int swap_miniroot(struct proc *, struct swapdev *, struct vnode *, int, long);
 static void sw_reg_strategy(struct swdevt *, struct buf *, int);
 static void sw_reg_start(struct swdevt *);
@@ -141,7 +144,7 @@ void
 vndxfer_free(vndx)
 	struct vndxfer *vndx;
 {
-	rmfree(swapmap, sizeof(vndx), vndx);
+	rmfree(swapmap, sizeof(vndx), (long)vndx);
 }
 
 struct vndbuf *
@@ -157,7 +160,7 @@ void
 vndbuf_free(vndb)
 	struct vndbuf *vndb;
 {
-	rmfree(swapmap, sizeof(vndb), vndb);
+	rmfree(swapmap, sizeof(vndb), (long)vndb);
 }
 
 struct swapbuf *
@@ -173,7 +176,7 @@ void
 swapbuf_free(swbuf)
 	struct swapbuf *swbuf;
 {
-	rmfree(swapmap, sizeof(swbuf), swbuf);
+	rmfree(swapmap, sizeof(swbuf), (long)swbuf);
 }
 
 void
@@ -239,7 +242,7 @@ swaplist_insert(sdp, newspp, priority)
 		spp = newspp;  /* use newspp! */
 
 		spp->spi_priority = priority;
-		CIRCLQ_INIT(&spp->spi_swapdev);
+		CIRCLEQ_INIT(&spp->spi_swapdev);
 
 		if (pspp) {
 			LIST_INSERT_AFTER(pspp, spp, spi_swappri);
@@ -248,7 +251,7 @@ swaplist_insert(sdp, newspp, priority)
 		}
 	} else {
 		/* we don't need a new priority structure, free it */
-		rmfree(swapmap, sizeof(*newspp), newspp);
+		rmfree(swapmap, sizeof(*newspp), (long)newspp);
 	}
 	sdp->swd_priority = priority;
 	CIRCLEQ_INSERT_TAIL(&spp->spi_swapdev, sdp, swd_next);
@@ -304,7 +307,7 @@ swaplist_trim(void)
 			continue;
 		}
 		LIST_REMOVE(spp, spi_swappri);
-		rmfree(swapmap, sizeof(*spp), (memaddr_t)spp);
+		rmfree(swapmap, sizeof(*spp), (long)spp);
 	}
 }
 
@@ -413,7 +416,7 @@ swapctl()
 	 */
 	if (SCARG(uap, arg) == NULL) {
 		vp = rootvp;		/* miniroot */
-		if (vget(vp, LK_EXCLUSIVE)) {
+		if (vget(vp, LK_EXCLUSIVE, p)) {
 			error = EBUSY;
 			goto out;
 		}
@@ -559,7 +562,7 @@ swapctl()
 	vput(vp);
 
 out:
-	lockmgr(&swap_syscall_lock, LK_RELEASE, NULL);
+	lockmgr(&swap_syscall_lock, LK_RELEASE, (void *)0, p->p_pid);
 	return (error);
 }
 
@@ -622,10 +625,13 @@ swapdrum_on(p, swp)
 			return (error);
 		}
 		nblks = (int)btodb(va.va_size);
+		/*
 		if ((error = VFS_STATFS(vp->v_mount, &vp->v_mount->mnt_stat, p)) != 0) {
 			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
 			return (error);
 		}
+		*/
+		
 		sdp->swd_bsize = vp->v_mount->mnt_stat.f_iosize;
 		/*
 		 * limit the max # of outstanding I/O requests we issue
@@ -672,11 +678,11 @@ swapdrum_on(p, swp)
 	/*
 	 * now we need to allocate an extent to manage this swap device
 	 */
-	name = rmalloc(swapmap, 12);
+	name = (char *)rmalloc(swapmap, 12);
 	sprintf(name, "swap0x%04x", count++);
 
 	/* note that extent_create's 3rd arg is inclusive, thus "- 1" */
-	sdp->swd_ex = extent_create(name, 0, npages - 1, &swapmap.m_type, 0, 0, EX_WAITOK);
+	sdp->swd_ex = extent_create(name, 0, npages - 1, M_SWAPMAP, 0, 0, EX_WAITOK);
 	/* allocate the `saved' region from the extent so it won't be used */
 	if (addr) {
 		if (extent_alloc_region(sdp->swd_ex, 0, addr, EX_WAITOK)) {
@@ -771,10 +777,10 @@ swapdrum_off(p, swp)
 	 */
 	extent_free(swapextent, sdp->swd_drumoffset, sdp->swd_drumsize, EX_WAITOK);
 	extent_destroy(sdp->swd_ex);
-	rmfree(swapmap, sizeof(name), (memaddr_t)name);
-	rmfree(swapmap, sizeof(sdp->swd_ex), (memaddr_t)sdp->swd_ex);
+	rmfree(swapmap, sizeof(name), (long)name);
+	rmfree(swapmap, sizeof(sdp->swd_ex), (long)sdp->swd_ex);
 	bufq_free(&sdp->swd_tab);
-	rmfree(swapmap, sizeof(sdp), (memaddr_t)sdp);
+	rmfree(swapmap, sizeof(sdp), (long)sdp);
 
 	return (0);
 }
@@ -1014,7 +1020,8 @@ sw_reg_strategy(swp, bp, bn)
 		 * cast pointers between the two structure easily.
 		 */
 		nbp = vndbuf_alloc();
-		nbp->vb_buf = &swbuf; /* XXX: FIX */
+		BUF_INIT(&nbp->vb_buf);
+		//nbp->vb_buf = swbuf; /* XXX: FIX */
 		nbp->vb_buf.b_flags    = bp->b_flags | B_CALL;
 		nbp->vb_buf.b_bcount   = sz;
 		nbp->vb_buf.b_bufsize  = sz;
@@ -1167,7 +1174,7 @@ sw_reg_iodone(bp)
 	 * done!   start next swapdev I/O if one is pending
 	 */
 	sdp->swd_active--;
-	sw_reg_start(sdp);
+	sw_reg_start(sdp->swd_swdevt);
 	splx(s);
 }
 

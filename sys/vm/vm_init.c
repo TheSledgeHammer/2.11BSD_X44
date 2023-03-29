@@ -72,6 +72,7 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_segment.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_aobject.h>
 
 /*
  *	vm_init initializes the virtual memory system.

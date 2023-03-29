@@ -72,6 +72,8 @@
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_segment.h>
 #include <vm/include/vm_pageout.h>
+#include <vm/include/vm_aobject.h>
+#include <vm/include/vm_swap.h>
 
 #ifndef VM_PAGE_FREE_MIN
 #define VM_PAGE_FREE_MIN	(cnt.v_page_free_count / 20)
