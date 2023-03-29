@@ -112,7 +112,7 @@ rmallocate(mp, addr, size, mapsize)
 
 	ep = rmcreate(mp, addr, size, mapsize);
 	if (rmalloc(mp, size) != 0) {
-		rmfree(mp, addr, size);
+		rmfree(mp, size, addr);
 	}
 }
 
@@ -220,16 +220,13 @@ retry:
  * map.  Sort addr into map and combine on one or both ends if possible.
  */
 void
-rmfree(mp, size, item)
+rmfree(mp, size, addr)
 	struct map *mp;
 	size_t size;
-	void *item;
+	register memaddr_t addr;
 {
 	register struct mapent *bp, *ep;
 	struct mapent *start;
-	register memaddr_t addr;
-
-	addr = (memaddr_t)item;
 
 	if (!size)
 		return;
