@@ -114,10 +114,6 @@ vm_offset_t			first_logical_addr;			/* logical address for first_segment */
 extern
 vm_offset_t			last_logical_addr;			/* logical address for last_segment */
 
-extern
-simple_lock_data_t	vm_segment_list_lock;
-extern
-simple_lock_data_t	vm_segment_list_activity_lock;
 
 #define VM_SEGMENT_TO_PHYS(entry)	((entry)->log_addr)
 
@@ -129,6 +125,11 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
 		(&vm_segment_array[VM_SEGMENT_INDEX(pa)])
+		
+extern
+simple_lock_data_t	vm_segment_list_lock;
+extern
+simple_lock_data_t	vm_segment_list_free_lock;
 
 #define SEGMENT_ASSERT_WAIT(s, interruptible)	{ 		\
 	(s)->flags |= SEG_WANTED; 							\

@@ -85,9 +85,6 @@ struct swapbuf {
 	int 								sw_nswbuf;
 };
 
-struct buf;
-struct vm_page;
-
 #define SWAP_ON				1		/* begin swapping on device */
 #define SWAP_OFF			2		/* stop swapping on device */
 #define SWAP_NSWAP			3		/* how many swap devices ? */
@@ -96,11 +93,14 @@ struct vm_page;
 #define SWAP_DUMPDEV		7		/* use this device as dump device */
 #define SWAP_GETDUMPDEV		8		/* use this device as dump device */
 
-struct lock 				swap_syscall_lock;
-simple_lock_data_t 			swap_data_lock;
-
 #ifdef _KERNEL
-int				vm_swap_alloc(struct swdevt *, int *, bool_t);
+extern
+simple_lock_data_t 	swap_data_lock;
+
+extern
+lock_data_t 		swap_syscall_lock;
+
+int			vm_swap_alloc(struct swdevt *, int *, bool_t);
 void			vm_swap_free(int, int);
 void			vm_swap_markbad(int, int);
 void			vm_swap_stats(int, struct swdevt *, int, register_t *);

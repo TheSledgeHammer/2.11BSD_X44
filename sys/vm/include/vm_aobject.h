@@ -128,9 +128,12 @@ LIST_HEAD(aobjectswhash, vao_swhash_elt);
 struct aobjectlist;
 LIST_HEAD(aobjectlist, vm_aobject);
 
-struct aobjectswhash			*aobjectswhash;			/* aobject's swhash list */
-struct aobjectlist 				aobject_list;			/* list of aobject's */
-static simple_lock_data_t 		aobject_list_lock; 		/* lock for aobject lists */
+extern
+struct aobjectswhash		*aobjectswhash;			/* aobject's swhash list */
+extern
+struct aobjectlist 		aobject_list;			/* list of aobject's */
+extern
+simple_lock_data_t 		aobject_list_lock; 		/* lock for aobject lists */
 
 /*
  * flags

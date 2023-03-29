@@ -84,6 +84,7 @@ typedef struct vm_aref 		*vm_aref_t;
 /*
  * VM Pseudo-Segmentation with Data, Stack & Text Management
  */
+/*
 union vm_pseudo_segment;
 typedef union vm_pseudo_segment	*vm_psegment_t;
 
@@ -95,7 +96,7 @@ typedef struct vm_stack  	*vm_stack_t;
 
 struct vm_text;
 typedef struct vm_text 		*vm_text_t;
-
+*/
 /*
  *	MACH VM locking type mappings to kernel types
  */
@@ -119,10 +120,6 @@ typedef struct lock			*lock_t;
 #include <vm/include/vm_object.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
-
-//#include <vm/include/vm_swap.h>
-//#include <vm/include/vm_text.h>
-//#include <vm/include/vm_aobject.h>
 
 /*
  * Shareable process virtual address space.
