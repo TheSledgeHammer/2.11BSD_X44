@@ -123,10 +123,6 @@ void cpu_halt(void);
 void identify_cpu(void);
 caddr_t allocsys(caddr_t);
 
-static int 	add_smap_entry(struct bios_smap *);
-static void add_smap_entries(struct bios_smap *);
-static int 	has_smapbase(struct bios_smap *);
-
 void (*delay_func)(int) = i8254_delay;
 void (*microtime_func)(struct timeval *) = i386_microtime;
 void (*initclocks_func)(void) = i8254_initclocks;
