@@ -100,6 +100,7 @@ swapdrum_init(swp)
 	register struct swapdev *sdp;
 
 	sdp = (struct swapdev *)rmalloc(swapmap, sizeof(struct swapdev *));
+	sdp->swd_swdevt = swp;
 	swp->sw_swapdev = sdp;
 
 	/*
@@ -140,7 +141,7 @@ void
 vndxfer_free(vndx)
 	struct vndxfer *vndx;
 {
-	rmfree(swapmap, sizeof(vndx), (memaddr_t)vndx);
+	rmfree(swapmap, sizeof(vndx), vndx);
 }
 
 struct vndbuf *
@@ -156,7 +157,7 @@ void
 vndbuf_free(vndb)
 	struct vndbuf *vndb;
 {
-	rmfree(swapmap, sizeof(vndb), (memaddr_t)vndb);
+	rmfree(swapmap, sizeof(vndb), vndb);
 }
 
 struct swapbuf *
@@ -172,7 +173,7 @@ void
 swapbuf_free(swbuf)
 	struct swapbuf *swbuf;
 {
-	rmfree(swapmap, sizeof(swbuf), (memaddr_t)swbuf);
+	rmfree(swapmap, sizeof(swbuf), swbuf);
 }
 
 void
@@ -190,8 +191,8 @@ vm_swap_stats(cmd, swp, sec, retval)
 		for (sdp = CIRCLEQ_FIRST(&spp->spi_swapdev);
 				sdp != (void*) &spp->spi_swapdev && sec-- > 0; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
 			sdp->swd_swdevt->sw_inuse = btodb((u_int64_t)sdp->swd_npginuse << PAGE_SHIFT);
-			(void)memcpy(swp, &sdp->swd_swdevt, sizeof(struct swdevt));
-			(void)memcpy(&swp->sw_path, sdp->swd_path, sdp->swd_pathlen);
+			bcopy(&sdp->swd_swdevt, swp, sizeof(struct swdevt));
+			bcopy(sdp->swd_path, &swp->sw_path, sdp->swd_pathlen);
 			count++;
 			swp++;
 		}
@@ -247,7 +248,7 @@ swaplist_insert(sdp, newspp, priority)
 		}
 	} else {
 		/* we don't need a new priority structure, free it */
-		rmfree(swapmap, sizeof(*newspp), (memaddr_t)newspp);
+		rmfree(swapmap, sizeof(*newspp), newspp);
 	}
 	sdp->swd_priority = priority;
 	CIRCLEQ_INSERT_TAIL(&spp->spi_swapdev, sdp, swd_next);
@@ -342,10 +343,12 @@ swapdrum_getsdp(pgno)
 	struct swapdev *sdp;
 	struct swappri *spp;
 
-	for (spp = LIST_FIRST(&swap_priority); spp != NULL; spp = LIST_NEXT(spp, spi_swappri)) {
-		for (sdp = CIRCLEQ_FIRST(&spp->spi_swapdev); sdp != (void *)&spp->spi_swapdev; sdp = CIRCLEQ_NEXT(sdp, swd_next)) {
-			if (pgno >= sdp->swd_drumoffset && pgno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
-				return (sdp);
+	LIST_FOREACH(spp, &swap_priority, spi_swappri) {
+		CIRCLEQ_FOREACH(sdp, &spp->spi_swapdev, swd_next) {
+			if (sdp != (void *)&spp->spi_swapdev) {
+				if (pgno >= sdp->swd_drumoffset && pgno < (sdp->swd_drumoffset + sdp->swd_drumsize)) {
+					return (sdp);
+				}
 			}
 		}
 	}
@@ -824,15 +827,13 @@ swap_miniroot(p, sdp, vp, npages, addr)
  * => we must map the i/o request from the drum to the correct swapdev.
  */
 void
-swstrategy(bp)
-	struct buf *bp;
-{
+swapdrum_strategy(swp, bp, vp)
 	struct swdevt	*swp;
-	struct swapdev 	*sdp;
+	struct buf 		*bp;
 	struct vnode 	*vp;
+{
+	struct swapdev 	*sdp;
 	int s, pageno, bn;
-
-	sdp = swp->sw_swapdev;
 
 	/*
 	 * convert block number to swapdev.   note that swapdev can't
@@ -848,6 +849,12 @@ swstrategy(bp)
 		bp->b_flags |= B_ERROR;
 		biodone(bp);
 		return;
+	}
+	if (sdp->swd_swdevt != swp) {
+		sdp->swd_swdevt = swp;
+	}
+	if (swp->sw_swapdev != sdp) {
+		swp->sw_swapdev = sdp;
 	}
 
 	/*
@@ -876,7 +883,6 @@ swstrategy(bp)
 		 */
 		s = splbio();
 		bp->b_blkno = bn;			/* swapdev block number */
-		vp = swp->sw_vp;			/* swapdev vnode pointer */
 		bp->b_dev = swp->sw_dev;	/* swapdev dev_t */
 
 		/*
@@ -884,14 +890,23 @@ swstrategy(bp)
 		 * drum's v_numoutput counter to the swapdevs.
 		 */
 		if ((bp->b_flags & B_READ) == 0) {
-			vwakeup(bp);		/* kills one 'v_numoutput' on drum */
-			vp->v_numoutput++;	/* put it on swapdev */
+			if (vp == bp->b_vp) {
+				vp->v_numoutput--;
+				if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
+					vp->v_flag &= ~VBWAIT;
+				}
+			}
+			vwakeup(bp);				/* kills one 'v_numoutput' on drum */
+			swp->sw_vp->v_numoutput++;	/* put it on swapdev */
+		}
+		if (bp->b_vp != NULL) {
+			brelvp(bp);
 		}
 
 		/*
 		 * finally plug in swapdev vnode and start I/O
 		 */
-		bp->b_vp = vp;
+		bp->b_vp = swp->sw_vp;
 		splx(s);
 		VOP_STRATEGY(bp);
 		return;

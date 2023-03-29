@@ -132,12 +132,10 @@ vm_xalloc(vp, tsize, toff)
 	ts = btoc(tsize);
 	xp->psx_size = clrnd(ts);
 	/* 2.11BSD overlays were here */
-	if((xp->psx_daddr = vm_vsxalloc(xp)) == NULL) {
+	if((xp->psx_daddr = rmalloc(swapmap, ctod(xp->psx_size))) == NULL) {
 		/* flush text cache and try again */
-		if (vm_xpurge() == 0 || vm_vsxalloc(xp) == NULL) {
-			vm_swkill(p, "xalloc: no swap space");
-			return;
-		}
+		vm_swkill(p, "xalloc: no swap space");
+		return;
 	}
 	xp->psx_count = 1;
 	xp->psx_ccount = 0;
@@ -282,7 +280,7 @@ vm_xuntext(xp)
 	if (xp->psx_count == 0) {
 		vp = xp->psx_vptr;
 		xp->psx_vptr = NULL;
-		vm_vsxfree(xp, (long)xp->psx_size); 	//rmfree(swapmap, ctod(xp->psx_size), xp->psx_daddr);
+		rmfree(swapmap, ctod(xp->psx_size), xp->psx_daddr);
 		if (xp->psx_caddr) {
 			rmfree(coremap, xp->psx_size, xp->psx_caddr);
 		}
@@ -413,10 +411,6 @@ vm_swkill(p, rout)
 	tprintf(u.u_ttyp, "sorry, pid %d killed in %s: no swap space\n", p->p_pid, rout);
 }
 
-/*
- * TODO:
- * Config for process segmentation to be enabled or disabled
- */
 /*
  * Swap a process in.
  * Allocate data and possible text separately.  It would be better

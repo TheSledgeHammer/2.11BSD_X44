@@ -52,8 +52,8 @@ vm_psegment_startup(pseg, start, end)
 	pseg->ps_text = (struct vm_text *)rmalloc(coremap, sizeof(struct vm_text *));
 
 	/* extents */
-	vm_psegment_extent_create(pseg, "vm_psegment", pseg->ps_start, pseg->ps_end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
-	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size, EX_WAITOK | EX_MALLOCOK);
+	vm_psegment_extent_create(pseg, "vm_psegment", start, end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	vm_psegment_extent_alloc(pseg, start, end - start, EX_WAITOK | EX_MALLOCOK);
 
 	/* extent regions (data, stack & text) */
 	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK);
@@ -88,7 +88,7 @@ void
 vm_psegment_free(pseg)
 	vm_psegment_t 	pseg;
 {
-	rmfree(coremap, sizeof(union vm_pseudo_segment), (memaddr_t)pseg);
+	rmfree(coremap, sizeof(union vm_pseudo_segment), pseg);
 }
 
 /*
@@ -101,9 +101,9 @@ vm_psegment_expand(pseg, newsize, newaddr, type)
 	caddr_t 		newaddr;
 	int 			type;
 {
-        vm_data_t data;
-        vm_stack_t stack;
-        vm_text_t text;
+	vm_data_t data;
+	vm_stack_t stack;
+	vm_text_t text;
         
 	if (pseg != NULL) {
 		switch (type) {
@@ -141,9 +141,9 @@ vm_psegment_shrink(pseg, newsize, newaddr, type)
 	caddr_t 		newaddr;
 	int	 			type;
 {
-        vm_data_t data;
-        vm_stack_t stack;
-        vm_text_t text;
+	vm_data_t 	data;
+	vm_stack_t 	stack;
+	vm_text_t 	text;
         
 	if (pseg != NULL) {
 		switch (type) {
@@ -214,11 +214,11 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	u_long 			boundary;
 	int 			type, flags;
 {
-	caddr_t addr;
-	int 	error;
 	vm_data_t data;
-        vm_stack_t stack;
-        vm_text_t text;
+	vm_stack_t stack;
+	vm_text_t text;
+	caddr_t addr;
+	int error;
         
 	switch (type) {
 	case PSEG_DATA:
@@ -273,8 +273,8 @@ vm_psegment_extent_free(pseg, size, addr, type, flags)
 {
 	register struct extent *ex;
 	vm_data_t data;
-        vm_stack_t stack;
-        vm_text_t text;
+    vm_stack_t stack;
+    vm_text_t text;
 	int error;
 
 	ex = pseg->ps_extent;
@@ -332,3 +332,4 @@ vm_psegment_extent_destroy(pseg)
 		printf("vm_psegment_extent_destroy: no extent to destroy");
 	}
 }
+

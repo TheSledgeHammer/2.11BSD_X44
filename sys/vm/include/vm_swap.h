@@ -79,8 +79,8 @@ struct swappri {
  * swapbuf, swapbuffer plus async i/o info
  */
 struct swapbuf {
-	struct buf 							*sw_buf;			/* a buffer structure */
-	SIMPLEQ_ENTRY(swapbuf) 				                sw_sq;			/* free list pointer */
+	struct buf 							*sw_buf;		/* a buffer structure */
+	SIMPLEQ_ENTRY(swapbuf) 				sw_sq;			/* free list pointer */
 	TAILQ_HEAD(, buf)					sw_bswlist;		/* Head of swap I/O buffer headers free list. */
 	int 								sw_nswbuf;
 };
@@ -100,13 +100,16 @@ struct lock 				swap_syscall_lock;
 simple_lock_data_t 			swap_data_lock;
 
 #ifdef _KERNEL
-void			swapdrum_init(struct swdevt *);
 int				vm_swap_alloc(struct swdevt *, int *, bool_t);
 void			vm_swap_free(int, int);
 void			vm_swap_markbad(int, int);
 void			vm_swap_stats(int, struct swdevt *, int, register_t *);
 
-/* swap buf */
+/* swapdrum */
+void			swapdrum_init(struct swdevt *);
+void			swapdrum_strategy(struct swdevt *, struct buf *, struct vnode *);
+
+/* swapbuf */
 void			vm_swapbuf_init(struct buf *, struct proc *);
 struct swapbuf 	*vm_swapbuf_get(struct buf *);
 

@@ -30,11 +30,11 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/map.h>
 #include <sys/dmap.h>		/* XXX */
-#include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
@@ -147,7 +147,7 @@ rmcreate(mp, addr, size, mapsize)
  * Algorithm is first-fit.
  */
 
-memaddr_t
+u_long
 rmalloc(mp, size)
 	struct map *mp;
 	size_t      size;
@@ -204,12 +204,10 @@ retry:
 			bp->m_size = first;
 			if (rest) {
 				printf("short of swap\n");
-				//rmfree(swapmap, rest, addr+size);
 				vm_xumount(NODEV);
 			}
 			goto again;
 		} else if (mp == coremap) {
-			//rmfree(mp, size, addr);
 			vm_xuncore(size);
 			goto again;
 		}
@@ -222,13 +220,16 @@ retry:
  * map.  Sort addr into map and combine on one or both ends if possible.
  */
 void
-rmfree(mp, size, addr)
+rmfree(mp, size, item)
 	struct map *mp;
 	size_t size;
-	register memaddr_t addr;
+	void *item;
 {
 	register struct mapent *bp, *ep;
 	struct mapent *start;
+	register memaddr_t addr;
+
+	addr = (memaddr_t)item;
 
 	if (!size)
 		return;
@@ -315,7 +316,7 @@ rmfree(mp, size, addr)
  * to be in decreasing order; generally, data, stack, then u. will be
  * best.  Returns NULL on failure, address of u. on success.
  */
-memaddr_t
+u_long
 rmalloc3(mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
@@ -371,7 +372,6 @@ again:
     				bp->m_size = first;
     				if (rest) {
 					    printf("short of swap\n");
-					    //rmfree(swapmap, rest, addr + sizes[next]);
 					    vm_xumount(NODEV);
 				    }
 				    goto again;
@@ -379,9 +379,6 @@ again:
 	        }
 	    }
 	    if (mp == coremap) {
-	        //rmfree(mp, sizes[2], addr); /* smallest to largest; */
-			//rmfree(mp, sizes[1], addr); /* free up minimum space */
-			//rmfree(mp, sizes[0], addr);
 			vm_xuncore(sizes[2]);	/* smallest to largest; */
 			vm_xuncore(sizes[1]);	/* free up minimum space */
 			vm_xuncore(sizes[0]);

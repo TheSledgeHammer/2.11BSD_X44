@@ -457,11 +457,13 @@ vwakeup(bp)
 
 	bp->b_flags &= ~B_WRITEINPROG;
 	if (vp == bp->b_vp) {
-		if (--vp->v_numoutput < 0)
+		if (--vp->v_numoutput < 0) {
 			panic("vwakeup: neg numoutput");
+		}
 		if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
-			if (vp->v_numoutput < 0)
+			if (vp->v_numoutput < 0) {
 				panic("vwakeup: neg numoutput 2");
+			}
 			vp->v_flag &= ~VBWAIT;
 			wakeup((caddr_t)&vp->v_numoutput);
 		}

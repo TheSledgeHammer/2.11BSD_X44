@@ -40,8 +40,8 @@
  * Data structure
  */
 struct vm_data {
-    segsz_t 				psx_dsize;				/* data size */
-	caddr_t					psx_daddr;				/* data addr */
+    vm_size_t 				psx_dsize;				/* data size */
+	vm_offset_t				psx_daddr;				/* data addr */
 	int 					psx_dflag;				/* data flags */
 	u_long					*psx_dresult;			/* data extent */
 };
@@ -50,8 +50,8 @@ struct vm_data {
  * Stack structure
  */
 struct vm_stack {
-	segsz_t 				psx_ssize;				/* stack size */
-	caddr_t					psx_saddr;				/* stack addr */
+	vm_size_t 				psx_ssize;				/* stack size */
+	vm_offset_t				psx_saddr;				/* stack addr */
     int 					psx_sflag;				/* stack flags */
     u_long					*psx_sresult;			/* stack extent */
 };
@@ -82,7 +82,7 @@ struct vm_text {
     struct vnode            *psx_vptr;    			/* vnode pointer */
     u_char	                psx_count;				/* reference count */
     u_char	                psx_ccount;				/* number of loaded references */
-    u_char	                psx_flag;				/* traced, written flags */
+    int	                	psx_flag;				/* traced, written flags */
     simple_lock_data_t		psx_lock;				/* text lock */
     char	                dummy;					/* room for one more */
 };
@@ -125,8 +125,8 @@ union vm_pseudo_segment {
 
     struct extent 			*ps_extent;				/* segments extent allocator */
     vm_offset_t         	ps_start;				/* start of space */
-    vm_offset_t         	ps_end;				/* end of space */
-    size_t					ps_size;				/* total size (data + stack + text) */
+    vm_offset_t         	ps_end;					/* end of space */
+    vm_size_t				ps_size;				/* total size (data + stack + text) */
     int 					ps_flags;				/* flags */
 };
 
@@ -148,12 +148,12 @@ union vm_pseudo_segment {
 
 #define DATA_EXPAND(data, dsize, daddr) {				\
 	(data)->psx_dsize += (dsize);						\
-	(data)->psx_daddr += (daddr);						\
+	(data)->psx_daddr = (daddr);						\
 };
 
 #define DATA_SHRINK(data, dsize, daddr) {				\
 	(data)->psx_dsize -= (dsize);						\
-	(data)->psx_daddr -= (daddr);						\
+	(data)->psx_daddr = (daddr);						\
 };
 
 #define STACK_SEGMENT(stack, ssize, saddr, sflag) {		\
@@ -164,12 +164,12 @@ union vm_pseudo_segment {
 
 #define STACK_EXPAND(stack, ssize, saddr) {				\
 	(stack)->psx_ssize += (ssize);						\
-	(stack)->psx_saddr += (saddr);						\
+	(stack)->psx_saddr = (saddr);						\
 };
 
 #define STACK_SHRINK(stack, ssize, saddr) {				\
 	(stack)->psx_ssize -= (ssize);						\
-	(stack)->psx_saddr -= (saddr);						\
+	(stack)->psx_saddr = (saddr);						\
 };
 
 #define TEXT_SEGMENT(text, tsize, taddr, tflag) {		\
@@ -180,12 +180,12 @@ union vm_pseudo_segment {
 
 #define TEXT_EXPAND(text, tsize, taddr) {				\
 	(text)->psx_tsize += (tsize);						\
-	(text)->psx_taddr += (taddr);						\
+	(text)->psx_taddr = (taddr);						\
 };
 
 #define TEXT_SHRINK(text, tsize, taddr) {				\
 	(text)->psx_tsize -= (tsize);						\
-	(text)->psx_taddr -= (taddr);						\
+	(text)->psx_taddr = (taddr);						\
 };
 
 extern

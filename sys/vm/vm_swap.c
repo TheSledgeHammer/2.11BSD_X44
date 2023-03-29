@@ -84,7 +84,6 @@ const struct cdevsw swap_cdevsw = {
 		.d_type = D_OTHER,
 };
 
-//struct swqueue bswlist;
 int	nswap, nswdev;
 #ifdef SEQSWAP
 int	niswdev;		/* number of interleaved swap devices */
@@ -93,7 +92,7 @@ static void swap_sequential(struct swdevt *, int, int);
 #else
 static void	swap_interleaved(struct swdevt *, int, int);
 #endif
-static int 	swap_search(struct swdevt *, struct swapdev *, int, int);
+static int 	swap_search(struct swapdev *, int, int);
 
 /*
  * Set up swap devices.
@@ -150,6 +149,98 @@ swapinit(void)
 	vm_swapbuf_init(sp, p);
 }
 
+void
+swstrategy(bp)
+	register struct buf *bp;
+{
+	register struct swdevt *sp;
+	struct vnode *vp;
+	int sz, off, seg, index;
+
+#ifdef GENERIC
+	/*
+	 * A mini-root gets copied into the front of the swap
+	 * and we run over top of the swap area just long
+	 * enough for us to do a mkfs and restor of the real
+	 * root (sure beats rewriting standalone restor).
+	 */
+#define	MINIROOTSIZE	4096
+	if (rootdev == dumpdev) {
+		bp->b_blkno += MINIROOTSIZE;
+	}
+#endif
+	sz = howmany(bp->b_bcount, DEV_BSIZE);
+	if (bp->b_blkno + sz > nswap) {
+		bp->b_error = EINVAL;
+		bp->b_flags |= B_ERROR;
+		biodone(bp);
+		return;
+	}
+	if (nswdev > 1) {
+#ifdef SEQSWAP
+		if (bp->b_blkno < niswap) {
+			if (niswdev > 1) {
+				off = bp->b_blkno % dmmax;
+				if (off + sz > dmmax) {
+					bp->b_error = EINVAL;
+					bp->b_flags |= B_ERROR;
+					biodone(bp);
+					return;
+				}
+				seg = bp->b_blkno / dmmax;
+				index = seg % niswdev;
+				seg /= niswdev;
+				bp->b_blkno = seg * dmmax + off;
+			} else {
+				index = 0;
+			}
+		} else {
+			register struct swdevt *swp;
+
+			bp->b_blkno -= niswap;
+			for (index = niswdev, swp = &swdevt[niswdev]; swp->sw_dev != NODEV; swp++, index++) {
+				if (bp->b_blkno < swp->sw_nblks) {
+					break;
+				}
+				bp->b_blkno -= swp->sw_nblks;
+			}
+			if (swp->sw_dev == NODEV || bp->b_blkno+sz > swp->sw_nblks) {
+				bp->b_error = swp->sw_dev == NODEV ? ENODEV : EINVAL;
+				bp->b_flags |= B_ERROR;
+				biodone(bp);
+				return;
+			}
+		}
+#else
+		off = bp->b_blkno % dmmax;
+		if (off + sz > dmmax) {
+			bp->b_error = EINVAL;
+			bp->b_flags |= B_ERROR;
+			biodone(bp);
+			return;
+		}
+		seg = bp->b_blkno / dmmax;
+		index = seg % nswdev;
+		seg /= nswdev;
+		bp->b_blkno = seg * dmmax + off;
+#endif
+	} else {
+		index = 0;
+	}
+	sp = &swdevt[index];
+	if ((bp->b_dev = sp->sw_dev) == NODEV) {
+		panic("swstrategy");
+	}
+	if (sp->sw_vp == NULL) {
+		bp->b_error = ENODEV;
+		bp->b_flags |= B_ERROR;
+		biodone(bp);
+		return;
+	}
+	VHOLD(sp->sw_vp);
+	swapdrum_strategy(sp, bp, vp);
+}
+
 /*
  * Swfree(index) frees the index'th portion of the swap map.
  * Each of the nswdev devices provides 1/nswdev'th of the swap
@@ -166,13 +257,14 @@ swfree(p, index, nslots)
 	register struct vnode 	*vp;
 	const struct bdevsw		*bdev;
 	register swblk_t vsbase, dvbase;
-	register long blk;
 	register int nblks, npages, startslot;
-	dev_t dev;
+	register long blk;
 	int error, perdev;
+	dev_t dev;
 
 	swp = &swdevt[index];
 	sdp = swp->sw_swapdev;
+	sdp->swd_swdevt = swp;
 	vp = swp->sw_vp;
 	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p)) {
 		return (error);
@@ -212,7 +304,7 @@ swfree(p, index, nslots)
 
 	if (nblks == 0) {
 		if (sdp != NULL) {
-			startslot = swap_search(swp, sdp, nblks, npages);
+			startslot = swap_search(sdp, nblks, npages);
 			vm_swap_free(startslot, nslots);
 		}
 		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
@@ -343,8 +435,7 @@ swap_interleaved(swp, nswdev, nswap)
 
 /* find startslot for /dev/drum */
 static int
-swap_search(swp, sdp, nblks, npages)
-	struct swdevt 	*swp;
+swap_search(sdp, nblks, npages)
 	struct swapdev 	*sdp;
 	int nblks, npages;
 {

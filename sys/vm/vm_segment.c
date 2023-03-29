@@ -109,7 +109,7 @@ vm_segment_startup(start, end)
 	vm_segment_buckets = (struct seglist *)pmap_bootstrap_alloc(vm_segment_bucket_count * sizeof(struct seglist));
 	bucket = vm_segment_buckets;
 
-	for(i = vm_segment_bucket_count; i--;) {
+	for (i = vm_segment_bucket_count; i--;) {
 		CIRCLEQ_INIT(bucket);
 		bucket++;
 	}

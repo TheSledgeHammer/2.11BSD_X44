@@ -185,7 +185,7 @@ vm_expand(p, newsize, type)
 		if (n >= newsize) {
 			n -= newsize;
 			vm_psegment_extent_free(pseg, n + newsize, a1, PSEG_DATA, 0);
-			rmfree(coremap, n, (memaddr_t)a1 + newsize);
+			rmfree(coremap, n, a1 + newsize);
 			return;
 		}
 	} else {
@@ -199,7 +199,7 @@ vm_expand(p, newsize, type)
 			pseg->ps_stack.psx_saddr += n;
 			p->p_saddr = pseg->ps_stack.psx_saddr;
 			vm_psegment_extent_free(pseg, n, a1, PSEG_STACK, 0);
-			rmfree(coremap, n, (memaddr_t)a1);
+			rmfree(coremap, n, a1);
 			return;
 		}
 	}
@@ -238,7 +238,7 @@ vm_expand(p, newsize, type)
 		p->p_daddr = pseg->ps_data.psx_daddr;
 	}
 	bcopy(a1, a2, n);
-	rmfree(coremap, n, (memaddr_t)a1);
+	rmfree(coremap, n, a1);
 }
 #endif
 

@@ -8,8 +8,6 @@
 #ifndef	 _SYS_MAP_H_
 #define	 _SYS_MAP_H_
 
-//#include <vm/include/vm.h>
-
 /*
  * Resource Allocation Maps.
  *
@@ -32,14 +30,12 @@ struct map {
 	struct mapent		*m_limit;	/* address of last slot in map */
 	char   				*m_name;	/* name of resource */
 	int					m_types;	/* kern_malloc type */
-	struct vmmapent		*m_vmmap;	/* vm kernel memory management */
-	//struct ovlmapent 	*m_ovlmap;	/* ovl kernel memory management */
 	/* we use m_name when the map overflows, in warning messages */
 };
 
 struct mapent {
 	size_t 				m_size;		/* size of this segment of the map */
-	memaddr_t			m_addr;		/* resource-space addr of start of segment */
+	u_long				m_addr;		/* resource-space addr of start of segment */
 };
 
 /* macros */
@@ -56,15 +52,15 @@ struct mapent {
 };
 
 #ifdef _KERNEL
-extern struct map coremap[1];																	/* space for core allocation */
-extern struct map swapmap[1];																	/* space for swap allocation */
+extern struct map coremap[1];														/* space for core allocation */
+extern struct map swapmap[1];														/* space for swap allocation */
 extern int nswapmap;
 
-void	    rmapinit(void);
-memaddr_t   rmalloc(struct map *, size_t); 											/* Allocate units from the given map. */
-void 	    rmfree(struct map *, size_t, memaddr_t); 									/* Free the previously allocated units at addr into the specified map.*/
-memaddr_t 	rmalloc3(struct map *, size_t, size_t, size_t, memaddr_t *);		/* Allocate resources for the three segments of a process.*/
-void	    rminit(struct map *, memaddr_t, size_t, char *, int, int);			/* Initialized resource malloc */
-void		rmallocate(struct map *, memaddr_t, size_t, int);					/* Allocate to an Initialized resource malloc */
+void	 		rmapinit(void);
+memaddr_t   	rmalloc(struct map *, size_t); 									/* Allocate units from the given map. */
+void 	 		rmfree(struct map *, size_t, void *); 							/* Free the previously allocated units at addr into the specified map.*/
+memaddr_t 		rmalloc3(struct map *, size_t, size_t, size_t, memaddr_t *);	/* Allocate resources for the three segments of a process.*/
+void	 		rminit(struct map *, memaddr_t, size_t, char *, int, int);		/* Initialized resource malloc */
+void	 		rmallocate(struct map *, memaddr_t, size_t, int);				/* Allocate to an Initialized resource malloc */
 #endif
 #endif /* _SYS_MAP_H_ */
