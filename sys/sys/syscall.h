@@ -151,6 +151,7 @@
 				/* 148 is obsolete old setquota */
 				/* 149 is obsolete old quota */
 #define	SYS_getsockname	150
+#define	SYS_uuidgen	151
 				/* 152 is obsolete old nostk */
 				/* 153 is obsolete old fetchi */
 				/* 154 is obsolete old ucall */
@@ -163,7 +164,7 @@
 #define	SYS_kenv	161
 #define	SYS_kevent	162
 #define	SYS_kqueue	163
-#define	SYS_swapon	164
+#define	SYS_swapctl	164
 #define	SYS__syscall	165
 #define	SYS_ktrace	166
 #define	SYS_vtrace	167
