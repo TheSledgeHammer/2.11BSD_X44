@@ -297,6 +297,9 @@ int		swapdebug = 0;
 #define SDB_SWAPOUT	4
 #endif
 
+void xswapin(struct proc *);
+void xswapout(struct proc *, int, u_int, u_int);
+
 /*
  * Swap in a process's u-area.
  */
@@ -314,7 +317,10 @@ void
 swapout(p)
 	register struct proc *p;
 {
-	xswapout(p/*, X_DONTFREE, X_OLDSIZE, X_OLDSIZE*/);
+#define X_DONTFREE  0
+#define X_OLDSIZE   0
+
+	xswapout(p, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
 }
 
 /*
@@ -502,10 +508,10 @@ xswapin(p)
 }
 
 void
-xswapout(p/*, freecore, odata, ostack*/)
+xswapout(p, freecore, odata, ostack)
 	struct proc *p;
-	/*int freecore;
-	u_int odata, ostack;*/
+	int freecore;
+	u_int odata, ostack;
 {
 	vm_offset_t addr;
 	vm_size_t size;
