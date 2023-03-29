@@ -113,15 +113,16 @@ typedef struct lock			*lock_t;
 #include <vm/include/vm_mac.h>
 #include <vm/include/vm_prot.h>
 #include <vm/include/vm_inherit.h>
-#include <vm/include/vm_swap.h>
 #include <vm/include/vm_amap.h>
 #include <vm/include/vm_anon.h>
-#include <vm/include/vm_text.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_object.h>
-#include <vm/include/vm_aobject.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
+
+//#include <vm/include/vm_swap.h>
+//#include <vm/include/vm_text.h>
+//#include <vm/include/vm_aobject.h>
 
 /*
  * Shareable process virtual address space.
@@ -131,7 +132,7 @@ typedef struct lock			*lock_t;
 struct vmspace {
 	struct vm_map				vm_map;			/* VM address map */
 	struct pmap 				vm_pmap;		/* private physical map */
-	union vm_pseudo_segment		vm_psegment;	/* VM pseudo segment */
+	//union vm_pseudo_segment		vm_psegment;	/* VM pseudo segment */
 
 	int							vm_refcnt;		/* number of references */
 

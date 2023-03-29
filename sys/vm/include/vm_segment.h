@@ -62,7 +62,7 @@ struct vm_segment {
 
 	vm_offset_t					log_addr;			/* segment logical address */
 
-	union vm_pseudo_segment		psegment;			/* pointer to pseudo segment register */
+	//union vm_pseudo_segment		psegment;			/* pointer to pseudo segment register */
 };
 
 /*
