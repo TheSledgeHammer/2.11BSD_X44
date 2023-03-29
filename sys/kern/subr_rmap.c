@@ -147,7 +147,7 @@ rmcreate(mp, addr, size, mapsize)
  * Algorithm is first-fit.
  */
 
-u_long
+memaddr_t
 rmalloc(mp, size)
 	struct map *mp;
 	size_t      size;
@@ -316,7 +316,7 @@ rmfree(mp, size, item)
  * to be in decreasing order; generally, data, stack, then u. will be
  * best.  Returns NULL on failure, address of u. on success.
  */
-u_long
+memaddr_t
 rmalloc3(mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;

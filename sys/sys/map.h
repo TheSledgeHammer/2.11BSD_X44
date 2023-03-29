@@ -35,7 +35,7 @@ struct map {
 
 struct mapent {
 	size_t 				m_size;		/* size of this segment of the map */
-	u_long				m_addr;		/* resource-space addr of start of segment */
+	memaddr_t			m_addr;		/* resource-space addr of start of segment */
 };
 
 /* macros */

@@ -40,8 +40,8 @@
  * Data structure
  */
 struct vm_data {
-    vm_size_t 				psx_dsize;				/* data size */
-	vm_offset_t				psx_daddr;				/* data addr */
+	segsz_t 				psx_dsize;				/* data size */
+    caddr_t					psx_daddr;				/* data addr */
 	int 					psx_dflag;				/* data flags */
 	u_long					*psx_dresult;			/* data extent */
 };
@@ -50,8 +50,8 @@ struct vm_data {
  * Stack structure
  */
 struct vm_stack {
-	vm_size_t 				psx_ssize;				/* stack size */
-	vm_offset_t				psx_saddr;				/* stack addr */
+	segsz_t 				psx_ssize;				/* stack size */
+	caddr_t					psx_saddr;				/* stack addr */
     int 					psx_sflag;				/* stack flags */
     u_long					*psx_sresult;			/* stack extent */
 };
