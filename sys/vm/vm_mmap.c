@@ -70,7 +70,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_pager.h>
 #include <vm/include/vm_prot.h>
-#include <vm/include/vm_text.h>
+//#include <vm/include/vm_text.h>
 
 #ifdef DEBUG
 int mmapdebug = 0;

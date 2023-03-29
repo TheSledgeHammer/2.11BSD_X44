@@ -51,12 +51,16 @@
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_object.h>
-#include <vm/include/vm_segment.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_segment.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_swap.h>
 #include <vm/include/vm_pager.h>
 #include <vm/include/vm_aobject.h>
+
+struct aobjectswhash		*aobjectswhash;
+struct aobjectlist 		aobject_list;
+simple_lock_data_t 		aobject_list_lock;
 
 static void vm_aobject_allocate(vm_size_t, vm_object_t, int);
 static bool_t vm_aobject_pagein(vm_aobject_t, int, int);

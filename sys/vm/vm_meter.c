@@ -171,8 +171,8 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case VM_METER:
 		vmtotal(&vmtotals);
 		return (sysctl_rdstruct(oldp, oldlenp, newp, &vmtotals, sizeof(vmtotals)));
-	case VM_TEXT:
-		return (sysctl_text(oldp, oldlenp));
+	//case VM_TEXT:
+	//	return (sysctl_text(oldp, oldlenp));
 	case VM_SWAPMAP:
 		if (oldp == NULL) {
 			*oldlenp = (char *)swapmap[0].m_limit - (char *)swapmap[0].m_map;

@@ -56,7 +56,7 @@
 #include <sys/resourcevar.h>
 
 #include <vm/include/vm.h>
-#include <vm/include/vm_text.h>
+//#include <vm/include/vm_text.h>
 
 //int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
 //int	ogrow(vm_offset_t);

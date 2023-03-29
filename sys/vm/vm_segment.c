@@ -48,7 +48,7 @@ struct seglist		vm_segment_list_free;
 struct seglist		vm_segment_list_active;
 struct seglist		vm_segment_list_inactive;
 simple_lock_data_t	vm_segment_list_free_lock;
-simple_lock_data_t	vm_segment_list_activity_lock;
+simple_lock_data_t	vm_segment_list_lock;
 
 vm_segment_t 		vm_segment_array;
 long				vm_segment_array_size;
@@ -91,7 +91,7 @@ vm_segment_startup(start, end)
 	vm_offset_t					la;
 
 	simple_lock_init(&vm_segment_list_free_lock, "vm_segment_list_free_lock");
-	simple_lock_init(&vm_segment_list_activity_lock, "vm_segment_list_activity_lock");
+	simple_lock_init(&vm_segment_list_lock, "vm_segment_list_lock");
 
 	CIRCLEQ_INIT(&vm_segment_list_free);
 	CIRCLEQ_INIT(&vm_segment_list_active);

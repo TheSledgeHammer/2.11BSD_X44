@@ -89,6 +89,9 @@ SIMPLEQ_HEAD(swapbufhead, swapbuf);
 LIST_HEAD(swap_priority, swappri);
 static struct swap_priority 	swap_priority;
 
+simple_lock_data_t 	swap_data_lock;
+lock_data_t 		swap_syscall_lock;
+
 int swapdrum_on(struct proc *, struct swdevt *);
 int swapdrum_off(struct proc *, struct swdevt *);
 int swap_miniroot(struct proc *, struct swapdev *, struct vnode *, int, long);
