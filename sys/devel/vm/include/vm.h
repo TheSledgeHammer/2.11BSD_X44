@@ -43,28 +43,11 @@
 #ifndef _VM_H
 #define _VM_H
 
-typedef char 					vm_inherit_t;		/* XXX: inheritance codes */
-
-union vm_map_object;
-typedef union vm_map_object 	vm_map_object_t;
-
-struct vm_map_entry;
-typedef struct vm_map_entry 	*vm_map_entry_t;
-
-struct vm_map;
-typedef struct vm_map 			*vm_map_t;
-
-struct vm_hat;
-typedef struct vm_hat			*vm_hat_t;
-
-struct vm_object;
-typedef struct vm_object 		*vm_object_t;
-
-struct vm_segment;
-typedef struct vm_segment 		*vm_segment_t;
-
+/*
+ * VM Pseudo-Segmentation with Data, Stack & Text Management
+ */
 union vm_pseudo_segment;
-typedef union vm_pseudo_segment	vm_psegment_t;
+typedef union vm_pseudo_segment	*vm_psegment_t;
 
 struct vm_data;
 typedef struct vm_data  		*vm_data_t;
@@ -75,24 +58,6 @@ typedef struct vm_stack  		*vm_stack_t;
 struct vm_text;
 typedef struct vm_text 			*vm_text_t;
 
-struct vm_page;
-typedef struct vm_page  		*vm_page_t;
-
-struct pager_struct;
-typedef struct pager_struct 	*vm_pager_t;
-
-struct vm_aobject;
-typedef struct vm_aobject 		*vm_aobject_t;
-
-struct vm_amap;
-typedef struct vm_amap 			*vm_amap_t;
-
-struct vm_anon;
-typedef struct vm_anon 			*vm_anon_t;
-
-struct vm_aref;
-typedef struct vm_aref 			*vm_aref_t;
-
 /*
  *	MACH VM locking type mappings to kernel types
  */
@@ -101,30 +66,21 @@ typedef struct lock_object		*simple_lock_t;
 typedef struct lock				lock_data_t;
 typedef struct lock				*lock_t;
 
-#include <sys/lock.h>
-#include <sys/queue.h>
-#include <sys/tree.h>
-#include <sys/user.h>
 #include <sys/vmmeter.h>
 #include <sys/vmsystm.h>
-
-#include <vm/include/pmap.h>
-#include <vm/include/swap_pager.h>
-
-#include <vm/include/vm_extern.h>
-#include <vm/include/vm_inherit.h>
+#include <sys/queue.h>
+#include <sys/tree.h>
+#include <vm/include/vm_param.h>
+#include <sys/lock.h>
+#include <vm/include/vm_mac.h>
 #include <vm/include/vm_prot.h>
-#include <devel/vm/include/vm_mac.h>
-#include <devel/vm/include/vm_map.h>
-#include <devel/vm/include/vm_page.h>
-#include <devel/vm/include/vm_object.h>
-#include <devel/vm/include/vm_param.h>
-#include <devel/vm/include/vm_segment.h>
-#include <devel/vm/include/vm_text.h>			/* Work in Progress */
-
-#include <devel/vm/include/vm_aobject.h>		/* Work in Progress */
-#include <devel/vm/include/vm_amap.h>			/* Work in Progress */
-#include <devel/vm/include/vm_anon.h>			/* Work in Progress */
+#include <vm/include/vm_inherit.h>
+#include <vm/include/vm_amap.h>
+#include <vm/include/vm_anon.h>
+#include <vm/include/vm_map.h>
+#include <vm/include/vm_object.h>
+#include <vm/include/pmap.h>
+#include <vm/include/vm_extern.h>
 
 #include <devel/ovl/include/ovl.h>
 
@@ -154,21 +110,5 @@ struct vmspace {
 	caddr_t 		 		vm_minsaddr;		/* user VA at min stack growth */
 	caddr_t 		 		vm_maxsaddr;		/* user VA at max stack growth */
 };
-
-/*
- * vm_map_entry etype bits:
- */
-#define VM_ET_OBJ				0x01	/* it is a vm_object */
-#define VM_ET_SUBMAP			0x02	/* it is a vm_map submap */
-#define VM_ET_COPYONWRITE 		0x04	/* copy_on_write */
-#define VM_ET_NEEDSCOPY			0x08	/* needs_copy */
-
-#define VM_ET_ISOBJ(E)			(((E)->etype & VM_ET_OBJ) != 0)
-#define VM_ET_ISSUBMAP(E)		(((E)->etype & VM_ET_SUBMAP) != 0)
-#define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
-#define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
-
-#define MADV_MASK				0x7	/* mask */
-#define VM_ADVICE(X)			(((X) >> 12) & MADV_MASK)
 
 #endif /* _VM_H */

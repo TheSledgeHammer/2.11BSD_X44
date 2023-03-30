@@ -36,19 +36,12 @@
 #ifndef _VM_TEXT_H_
 #define _VM_TEXT_H_
 
-#include <sys/queue.h>
-
-#include <arch/i386/include/param.h>
-#include <arch/i386/include/vmparam.h>
-#include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_mac.h>
-
 /*
  * Data structure
  */
 struct vm_data {
-    segsz_t 				psx_dsize;				/* data size */
-	caddr_t					psx_daddr;				/* data addr */
+	segsz_t 				psx_dsize;				/* data size */
+    caddr_t					psx_daddr;				/* data addr */
 	int 					psx_dflag;				/* data flags */
 	u_long					*psx_dresult;			/* data extent */
 };
@@ -89,7 +82,7 @@ struct vm_text {
     struct vnode            *psx_vptr;    			/* vnode pointer */
     u_char	                psx_count;				/* reference count */
     u_char	                psx_ccount;				/* number of loaded references */
-    u_char	                psx_flag;				/* traced, written flags */
+    int	                	psx_flag;				/* traced, written flags */
     simple_lock_data_t		psx_lock;				/* text lock */
     char	                dummy;					/* room for one more */
 };
@@ -131,19 +124,16 @@ union vm_pseudo_segment {
     struct vm_text      	ps_text;
 
     struct extent 			*ps_extent;				/* segments extent allocator */
-    vm_offset_t         	*ps_start;				/* start of space */
-    vm_offset_t         	*ps_end;				/* end of space */
-    size_t					ps_size;				/* total size (data + stack + text) */
+    vm_offset_t         	ps_start;				/* start of space */
+    vm_offset_t         	ps_end;					/* end of space */
+    vm_size_t				ps_size;				/* total size (data + stack + text) */
     int 					ps_flags;				/* flags */
 };
 
-extern
-struct txtlist              vm_text_list;
-
 /* pseudo-segment types */
-#define PSEG_DATA			1						/* data segment */
-#define PSEG_STACK			2						/* stack segment */
-#define PSEG_TEXT			3						/* text segment */
+#define PSEG_DATA			S_DATA					/* data segment */
+#define PSEG_STACK			S_STACK					/* stack segment */
+#define PSEG_TEXT			2						/* text segment */
 
 /* pseudo-segment flags */
 #define PSEG_SEP			(PSEG_DATA | PSEG_STACK)				/* I&D seperation */
@@ -158,12 +148,12 @@ struct txtlist              vm_text_list;
 
 #define DATA_EXPAND(data, dsize, daddr) {				\
 	(data)->psx_dsize += (dsize);						\
-	(data)->psx_daddr += (daddr);						\
+	(data)->psx_daddr = (daddr);						\
 };
 
 #define DATA_SHRINK(data, dsize, daddr) {				\
 	(data)->psx_dsize -= (dsize);						\
-	(data)->psx_daddr -= (daddr);						\
+	(data)->psx_daddr = (daddr);						\
 };
 
 #define STACK_SEGMENT(stack, ssize, saddr, sflag) {		\
@@ -174,12 +164,12 @@ struct txtlist              vm_text_list;
 
 #define STACK_EXPAND(stack, ssize, saddr) {				\
 	(stack)->psx_ssize += (ssize);						\
-	(stack)->psx_saddr += (saddr);						\
+	(stack)->psx_saddr = (saddr);						\
 };
 
 #define STACK_SHRINK(stack, ssize, saddr) {				\
 	(stack)->psx_ssize -= (ssize);						\
-	(stack)->psx_saddr -= (saddr);						\
+	(stack)->psx_saddr = (saddr);						\
 };
 
 #define TEXT_SEGMENT(text, tsize, taddr, tflag) {		\
@@ -190,28 +180,37 @@ struct txtlist              vm_text_list;
 
 #define TEXT_EXPAND(text, tsize, taddr) {				\
 	(text)->psx_tsize += (tsize);						\
-	(text)->psx_taddr += (taddr);						\
+	(text)->psx_taddr = (taddr);						\
 };
 
 #define TEXT_SHRINK(text, tsize, taddr) {				\
 	(text)->psx_tsize -= (tsize);						\
-	(text)->psx_taddr -= (taddr);						\
+	(text)->psx_taddr = (taddr);						\
 };
 
-/* vm text sysctl */
-extern int sysctl_text(char *, size_t *);
+extern
+struct txtlist  vm_text_list;
+
+#ifdef _KERNEL
+/* vm_drum */
+int		vm_vsxalloc(vm_text_t);
+void	vm_vsxfree(vm_text_t, long);
+
+/* vm_mmap */
+void 	vm_expand(struct proc *, vm_size_t, int);
 
 /* vm_psegment */
-vm_psegment_t *vm_psegment_alloc(void);
-void	vm_psegment_free(vm_psegment_t *);
+vm_psegment_t vm_psegment_alloc(void);
+void	vm_psegment_free(vm_psegment_t);
 void	vm_psegment_init(vm_psegment_t, vm_offset_t *, vm_offset_t *);
-void	vm_psegment_expand(vm_psegment_t *, int, segsz_t, caddr_t);
-void	vm_psegment_shrink(vm_psegment_t *, int, segsz_t, caddr_t);
-void	vm_psegment_extent_create(vm_psegment_t *, char *, u_long, u_long, int, caddr_t, size_t, int);
-void	vm_psegment_extent_alloc(vm_psegment_t *, u_long, u_long, int, int);
-void	vm_psegment_extent_suballoc(vm_psegment_t *, u_long, u_long, int, u_long *);
-void	vm_psegment_extent_free(vm_psegment_t *, caddr_t, u_long, int, int);
-void	vm_psegment_extent_destroy(vm_psegment_t *);
+
+void	vm_psegment_expand(vm_psegment_t, segsz_t, caddr_t, int);
+void	vm_psegment_shrink(vm_psegment_t, segsz_t, caddr_t, int);
+void	vm_psegment_extent_create(vm_psegment_t, char *, u_long, u_long, int, caddr_t, size_t, int);
+void	vm_psegment_extent_alloc(vm_psegment_t, u_long, u_long, int);
+void	vm_psegment_extent_suballoc(vm_psegment_t, u_long, u_long, int, int);
+void	vm_psegment_extent_free(vm_psegment_t, u_long, caddr_t, int, int);
+void	vm_psegment_extent_destroy(vm_psegment_t);
 
 /* vm_text */
 void	vm_xlock(vm_text_t);
@@ -228,4 +227,9 @@ int		vm_xpurge(void);
 void	vm_xrele(struct vnode *);
 void	vm_xswapin(struct proc *, vm_offset_t);
 void	vm_xswapout(struct proc *, vm_offset_t, vm_size_t, int, u_int, u_int);
+
+/* vm_unix */
+void	sureg(void);
+int	 	vm_estabur(struct proc *, segsz_t, segsz_t, segsz_t, int, int);
+#endif
 #endif /* _VM_TEXT_H_ */

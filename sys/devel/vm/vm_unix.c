@@ -1,72 +1,66 @@
 /*
+ * Copyright (c) 1988 University of Utah.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * from: Utah $Hdr: vm_unix.c 1.1 89/11/07$
+ *
+ *	@(#)vm_unix.c	8.2 (Berkeley) 1/9/95
+ */
+/*
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
+ *	@(#)kern_mman.c	1.3 (2.11BSD) 2000/2/20
  *	@(#)vm_proc.c	1.2 (2.11BSD GTE) 12/24/92
  */
 
+/*
+ * Traditional sbrk/grow interface to VM
+ */
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/map.h>
-#include <sys/user.h>
-#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
 
 #include <devel/vm/include/vm.h>
-#include <vm/include/vm_segment.h>
 #include <devel/vm/include/vm_text.h>
 
-/* ARGSUSED */
-int
-sbrk()
-{
-	register struct sbrk_args {
-		syscallarg(int)	type;
-		syscallarg(segsz_t)	size;
-		syscallarg(caddr_t)	addr;
-		syscallarg(int)	sep;
-		syscallarg(int)	flags;
-		syscallarg(int) incr;
-	} *uap = (struct sbrk_args *) u.u_ap;
-
-	struct proc *p;
-	register_t *retval;
-	register segsz_t n, d;
-
-	p = u.u_procp;
-	n = btoc(SCARG(uap, size));
-	if (!SCARG(uap, sep)) {
-		SCARG(uap, sep) = PSEG_NOSEP;
-	} else {
-		n -= ctos(p->p_tsize) * stoc(1);
-	}
-	if (n < 0) {
-		n = 0;
-	}
-
-	if(vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
-		return (0);
-	}
-	vm_segment_expand(p, n, S_DATA);
-	/* set d to (new - old) */
-	d = n - p->p_dsize;
-	if (d > 0) {
-		bzero(p->p_daddr + p->p_dsize, d);
-	}
-	p->p_dsize = n;
-	return (0);
-}
-
-int
-sstk()
-{
-	register struct sstk_args {
-		syscallarg(int) incr;
-	} *uap = (struct sstk_args *) u.u_ap;
-
-	return (EOPNOTSUPP);
-}
+int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
+int	ogrow(vm_offset_t);
 
 /*
  * Change the size of the data+stack regions of the process.
@@ -82,7 +76,7 @@ sstk()
  * stack segment will not have to be copied again after expansion.
  */
 void
-vm_segment_expand(p, newsize, type)
+vm_expand(p, newsize, type)
 	struct proc 	*p;
 	vm_size_t 	 	newsize;
 	int 			type;
@@ -91,7 +85,7 @@ vm_segment_expand(p, newsize, type)
 	register vm_size_t i, n;
 	caddr_t a1, a2;
 
-	pseg = p->p_vmspace->vm_psegment;
+	pseg = &p->p_vmspace->vm_psegment;
 	if (pseg == NULL) {
 		return;
 	}
@@ -137,12 +131,12 @@ vm_segment_expand(p, newsize, type)
 		}
 		bcopy(a1, a2, n);
 	}
-	a2 = rmalloc(coremap, newsize);
+	a2 = (caddr_t)rmalloc(coremap, newsize);
 	if (a2 == NULL) {
 		if (type == PSEG_DATA) {
-			vm_xswapout(p, X_FREECORE, n, X_OLDSIZE);
+			xswapout(p, X_FREECORE, n, X_OLDSIZE);
 		} else {
-			vm_xswapout(p, X_FREECORE, X_OLDSIZE, n);
+			xswapout(p, X_FREECORE, X_OLDSIZE, n);
 		}
 	}
 	if (type == PSEG_STACK) {
@@ -161,13 +155,6 @@ vm_segment_expand(p, newsize, type)
 }
 
 /*
- * Copyright (c) 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_mman.c	1.3 (2.11BSD) 2000/2/20
- */
-/*
  * Set up software prototype segmentation registers to implement the 3
  * pseudo text, data, stack segment sizes passed as arguments.  The
  * argument sep specifies if the text and data+stack segments are to be
@@ -180,9 +167,11 @@ vm_estabur(p, dsize, ssize, tsize, sep, flags)
 	segsz_t	 		dsize, ssize, tsize;
 	int 	 		sep, flags;
 {
+	register struct vmspace *vm;
 	vm_psegment_t	pseg;
 
-	pseg = p->p_vmspace->vm_psegment;
+	vm = p->p_vmspace;
+	pseg = &vm->vm_psegment;
 	if (pseg == NULL) {
 		return (1);
 	}
@@ -235,11 +224,17 @@ estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
 void
 sureg()
 {
+	vm_text_t tp;
 	int taddr, daddr, saddr;
 
 	taddr = u.u_procp->p_daddr;
 	daddr = u.u_procp->p_daddr;
 	saddr = u.u_procp->p_saddr;
+	tp = u.u_procp->p_textp;
+
+	if (tp != NULL) {
+		taddr = tp->psx_caddr;
+	}
 }
 
 /*
@@ -251,4 +246,41 @@ choverlay(flags)
 	int flags;
 {
 
+}
+
+/*
+ * grow the stack to include the SP
+ * true return if successful.
+ */
+int
+ogrow(sp)
+	vm_offset_t sp;
+{
+	register int si;
+
+	if (sp >= -ctob(u.u_ssize)) {
+		return (0);
+	}
+	si = (-sp) / ctob(1) - u.u_ssize + SINCR;
+	/*
+	 * Round the increment back to a segment boundary if necessary.
+	 */
+	if (ctos(si + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
+		si = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
+	}
+	if (si <= 0) {
+		return (0);
+	}
+	if (vm_estabur(u.u_procp, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
+		return (0);
+	}
+
+	/*
+	 *  expand will put the stack in the right place;
+	 *  no copy required here.
+	 */
+	vm_expand(u.u_procp, u.u_ssize + si, PSEG_STACK);
+	u.u_ssize += si;
+	bzero(u.u_procp->p_saddr, si);
+	return (1);
 }
