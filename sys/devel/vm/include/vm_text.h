@@ -118,16 +118,28 @@ struct vm_xstats {
 };
 
 /* pseudo segment registers */
-union vm_pseudo_segment {
+struct vm_pseudo_segment {
+	/* vmspace */
+    struct vmspace			*ps_vmspace;			/* vmspace pointer */
+	caddr_t 				ps_minaddr;				/* user VA at min stack growth */
+	caddr_t 				ps_maxaddr;				/* user VA at max stack growth */
+
+	/* memory management */
+    struct extent 			*ps_extent;				/* extent allocator */
+
+    vm_offset_t         	ps_start;				/* start of space */
+    vm_offset_t         	ps_end;					/* end of space */
+	vm_size_t				ps_size;				/* total size (data + stack + text) */
+	int						ps_nentries;			/* pseudo-segment counter */
+
+	vm_size_t 				ps_dmaxsize;
+	vm_size_t 				ps_smaxsize;
+	vm_size_t 				ps_tmaxsize;
+
+	/* pseudo segments */
     struct vm_data      	ps_data;
     struct vm_stack     	ps_stack;
     struct vm_text      	ps_text;
-
-    struct extent 			*ps_extent;				/* segments extent allocator */
-    vm_offset_t         	ps_start;				/* start of space */
-    vm_offset_t         	ps_end;					/* end of space */
-    vm_size_t				ps_size;				/* total size (data + stack + text) */
-    int 					ps_flags;				/* flags */
 };
 
 /* pseudo-segment types */
@@ -200,6 +212,16 @@ void	vm_vsxfree(vm_text_t, long);
 void 	vm_expand(struct proc *, vm_size_t, int);
 
 /* vm_psegment */
+#ifdef notyet
+void 		  vm_psegment_init(vm_psegment_t, vm_offset_t, vm_offset_t);
+vm_psegment_t vm_psegment_create(vm_offset_t, vm_offset_t);
+//void		  vm_psegment_alloc(vm_psegment_t, segsz_t, caddr_t, int);
+//void		  vm_psegment_free(vm_psegment_t, segsz_t, caddr_t, int);
+void		  vm_psegment_destroy(vm_psegment_t);
+void 		  vm_psegment_expand(vm_psegment_t, segsz_t, caddr_t, int);
+void 		  vm_psegment_shrink(vm_psegment_t, segsz_t, caddr_t, int);
+#endif
+
 vm_psegment_t vm_psegment_alloc(void);
 void	vm_psegment_free(vm_psegment_t);
 void	vm_psegment_init(vm_psegment_t, vm_offset_t *, vm_offset_t *);

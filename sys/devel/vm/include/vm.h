@@ -46,8 +46,8 @@
 /*
  * VM Pseudo-Segmentation with Data, Stack & Text Management
  */
-union vm_pseudo_segment;
-typedef union vm_pseudo_segment	*vm_psegment_t;
+struct vm_pseudo_segment;
+typedef struct vm_pseudo_segment *vm_psegment_t;
 
 struct vm_data;
 typedef struct vm_data  		*vm_data_t;
@@ -92,7 +92,7 @@ typedef struct lock				*lock_t;
 struct vmspace {
 	struct	vm_map 	 		vm_map;				/* VM address map */
 	struct	pmap 	 		vm_pmap;			/* private physical map */
-	union vm_pseudo_segment	vm_psegment;		/* VM pseudo segment */
+	struct  vm_pseudo_segment vm_psegment;		/* VM pseudo segment */
 
 	int				 		vm_refcnt;			/* number of references */
 	caddr_t			 		vm_shm;				/* SYS5 shared memory private data XXX */
@@ -101,6 +101,7 @@ struct vmspace {
 #define vm_startcopy 		vm_rssize
 	segsz_t 		 		vm_rssize; 			/* current resident set size in pages */
 	segsz_t 		 		vm_swrss;			/* resident set size before last swap */
+
 	segsz_t 				vm_tsize;			/* text size (pages) XXX */
 	segsz_t 				vm_dsize;			/* data size (pages) XXX */
 	segsz_t 				vm_ssize;			/* stack size (pages) */
