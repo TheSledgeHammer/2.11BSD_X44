@@ -121,19 +121,19 @@
 static void vm_rb_augment(vm_map_entry_t);
 #define	RB_AUGMENT(x)	vm_rb_augment(x)
 
-static int vm_rb_compare(vm_map_entry_t, vm_map_entry_t);
+static int 		vm_rb_compare(vm_map_entry_t, vm_map_entry_t);
 static vm_size_t vm_rb_space(const vm_map_t, const vm_map_entry_t);
 static vm_size_t vm_rb_subtree_space(vm_map_entry_t);
-static void vm_rb_fixup(vm_map_t, vm_map_entry_t);
-static void vm_rb_insert(vm_map_t, vm_map_entry_t);
-static void vm_rb_remove(vm_map_t, vm_map_entry_t);
+static void 	vm_rb_fixup(vm_map_t, vm_map_entry_t);
+static void 	vm_rb_insert(vm_map_t, vm_map_entry_t);
+static void 	vm_rb_remove(vm_map_t, vm_map_entry_t);
 static vm_size_t vm_cl_space(const vm_map_t, const vm_map_entry_t);
-static void vm_cl_insert(vm_map_t, vm_map_entry_t);
-static void vm_cl_remove(vm_map_t, vm_map_entry_t);
-static bool_t vm_map_search_next_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
-static bool_t vm_map_search_prev_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
-static void	_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
-static void	_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
+static void 	vm_cl_insert(vm_map_t, vm_map_entry_t);
+static void 	vm_cl_remove(vm_map_t, vm_map_entry_t);
+static bool_t 	vm_map_search_next_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
+static bool_t 	vm_map_search_prev_entry(vm_map_t, vm_offset_t, vm_map_entry_t);
+static void		_vm_map_clip_end(vm_map_t, vm_map_entry_t, vm_offset_t);
+static void		_vm_map_clip_start(vm_map_t, vm_map_entry_t, vm_offset_t);
 
 RB_PROTOTYPE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
 RB_GENERATE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
@@ -182,7 +182,9 @@ vmspace_alloc(min, max, pageable)
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
 	vm_map_init(&vm->vm_map, min, max, pageable);
 	pmap_pinit(&vm->vm_pmap);
+	//vm_psegment_init(&vm->vm_psegment);
 	vm->vm_map.pmap = &vm->vm_pmap;		/* XXX */
+	//vm->vm_psegment.ps_vmspace = vm;
 	vm->vm_refcnt = 1;
 	return (vm);
 }
@@ -198,9 +200,9 @@ vmspace_free(vm)
 		 * then call the pmap module to reclaim anything left.
 		 */
 		vm_map_lock(&vm->vm_map);
-		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset,
-		    vm->vm_map.max_offset);
+		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset, vm->vm_map.max_offset);
 		pmap_release(&vm->vm_pmap);
+		//vm_psegment_release(&vm->vm_psegment);
 		FREE(vm, M_VMMAP);
 	}
 }
@@ -246,14 +248,16 @@ vm_rb_subtree_space(entry)
 	space = entry->ownspace;
 	if (RB_LEFT(entry, rb_entry)) {
 		tmp = RB_LEFT(entry, rb_entry)->space;
-		if (tmp > space)
+		if (tmp > space) {
 			space = tmp;
+		}
 	}
 
 	if (RB_RIGHT(entry, rb_entry)) {
 		tmp = RB_RIGHT(entry, rb_entry)->space;
-		if (tmp > space)
+		if (tmp > space) {
 			space = tmp;
+		}
 	}
 
 	return (space);
@@ -283,12 +287,14 @@ vm_rb_insert(map, entry)
     entry->ownspace = entry->space = space;
     tmp = RB_INSERT(vm_map_rb_tree, &(map)->rb_root, entry);
 #ifdef DIAGNOSTIC
-    if (tmp != NULL)
+    if (tmp != NULL) {
 		panic("vm_rb_insert: duplicate entry?");
+    }
 #endif
     vm_rb_fixup(map, entry);
-    if (CIRCLEQ_PREV(entry, cl_entry) != RB_ROOT(&map->rb_root))
+    if (CIRCLEQ_PREV(entry, cl_entry) != RB_ROOT(&map->rb_root)) {
         vm_rb_fixup(map, CIRCLEQ_PREV(entry, cl_entry));
+    }
 }
 
 static void
@@ -300,10 +306,12 @@ vm_rb_remove(map, entry)
 
     parent = RB_PARENT(entry, rb_entry);
     RB_REMOVE(vm_map_rb_tree, &(map)->rb_root, entry);
-    if (CIRCLEQ_PREV(entry, cl_entry) != CIRCLEQ_FIRST(&map->cl_header))
+    if (CIRCLEQ_PREV(entry, cl_entry) != CIRCLEQ_FIRST(&map->cl_header)) {
         vm_rb_fixup(map, CIRCLEQ_PREV(entry, cl_entry));
-    if (parent)
+    }
+    if (parent) {
         vm_rb_fixup(map, parent);
+    }
 }
 
 #ifdef DEBUG
@@ -446,8 +454,9 @@ vm_map_create(pmap, min, max, pageable)
 
 	if (kmem_map == NULL) {
 		result = kmap_free;
-		if (result == NULL)
+		if (result == NULL) {
 			panic("vm_map_create: out of maps");
+		}
 		kentry = CIRCLEQ_FIRST(&result->cl_header);
 		kmap_free = (vm_map_t)CIRCLEQ_NEXT(kentry, cl_entry);
 	} else {
@@ -534,8 +543,9 @@ vm_map_entry_dispose(map, entry)
 	bool_t				isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
-	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable)
+	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable) {
 		panic("vm_map_entry_dispose: bogus map");
+	}
 #endif
 	if (map->entries_pageable) {
 		FREE(entry, M_VMMAPENT);
@@ -589,8 +599,9 @@ vm_map_reference(map)
 
 	simple_lock(&map->ref_lock);
 #ifdef DEBUG
-	if (map->ref_count == 0)
+	if (map->ref_count == 0) {
 		panic("vm_map_reference: zero ref_count");
+	}
 #endif
 	map->ref_count++;
 	simple_unlock(&map->ref_lock);
@@ -892,9 +903,9 @@ vm_map_search_next_entry(map, address, entry)
     register vm_map_entry_t	last = CIRCLEQ_LAST(&map->cl_header);
 
     CIRCLEQ_FOREACH(entry, &map->cl_header, cl_entry) {
-        if(address >= first->start) {
+        if (address >= first->start) {
             cur = CIRCLEQ_NEXT(first, cl_entry);
-            if((cur != last) && (cur->end > address)) {
+            if ((cur != last) && (cur->end > address)) {
                 cur = entry;
                 SAVE_HINT(map, cur);
                 return (TRUE);
@@ -915,9 +926,9 @@ vm_map_search_prev_entry(map, address, entry)
     register vm_map_entry_t	last = CIRCLEQ_LAST(&map->cl_header);
 
     CIRCLEQ_FOREACH(entry, &map->cl_header, cl_entry) {
-        if(address >= last->start) {
+        if (address >= last->start) {
             cur = CIRCLEQ_PREV(last, cl_entry);
-            if((cur != first) && (cur->end > address)) {
+            if ((cur != first) && (cur->end > address)) {
                 cur = entry;
                 SAVE_HINT(map, cur);
                 return (TRUE);
@@ -952,11 +963,13 @@ vm_map_findspace(map, start, length, addr)
 	 * something at this address, we have to start after it.
 	 */
 	if (start == map->min_offset) {
-		if ((entry = map->first_free) != CIRCLEQ_FIRST(&map->cl_header))
+		if ((entry = map->first_free) != CIRCLEQ_FIRST(&map->cl_header)) {
 			start = entry->end;
+		}
 	} else {
-		if (vm_map_lookup_entry(map, start, &tmp))
+		if (vm_map_lookup_entry(map, start, &tmp)) {
 			start = tmp->end;
+		}
 		entry = tmp;
 	}
 
@@ -980,11 +993,13 @@ vm_map_findspace(map, start, length, addr)
 		 * win.
 		 */
 		end = start + length;
-		if (end > map->max_offset || end < start)
+		if (end > map->max_offset || end < start) {
 			return (1);
+		}
 		next = CIRCLEQ_NEXT(entry, cl_entry);
-		if (next == CIRCLEQ_FIRST(&map->cl_header) || next->start >= end)
+		if (next == CIRCLEQ_FIRST(&map->cl_header) || next->start >= end) {
 			break;
+		}
 	}
 	SAVE_HINT(map, entry);
 	*addr = start;

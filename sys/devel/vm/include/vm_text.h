@@ -37,6 +37,14 @@
 #define _VM_TEXT_H_
 
 /*
+ * Text structure
+ * One allocated per pure
+ * procedure on swap device.
+ * Manipulated by text.c
+ */
+#define	NXDAD				12						/* param.h:MAXTSIZ / vmparam.h:DMTEXT */
+
+/*
  * Data structure
  */
 struct vm_data {
@@ -55,14 +63,6 @@ struct vm_stack {
     int 					psx_sflag;				/* stack flags */
     u_long					*psx_sresult;			/* stack extent */
 };
-
-/*
- * Text structure
- * One allocated per pure
- * procedure on swap device.
- * Manipulated by text.c
- */
-#define	NXDAD				12						/* param.h:MAXTSIZ / vmparam.h:DMTEXT */
 
 struct txtlist;
 TAILQ_HEAD(txtlist, vm_text);
@@ -116,40 +116,6 @@ struct vm_xstats {
     u_long	                psxs_free_cacheswap;	/* swapped out to place in cache */
     u_long					psxs_purge;				/* calls to xpurge */
 };
-
-/* pseudo segment registers */
-struct vm_pseudo_segment {
-	/* vmspace */
-    struct vmspace			*ps_vmspace;			/* vmspace pointer */
-	caddr_t 				ps_minaddr;				/* user VA at min stack growth */
-	caddr_t 				ps_maxaddr;				/* user VA at max stack growth */
-
-	/* memory management */
-    struct extent 			*ps_extent;				/* extent allocator */
-
-    vm_offset_t         	ps_start;				/* start of space */
-    vm_offset_t         	ps_end;					/* end of space */
-	vm_size_t				ps_size;				/* total size (data + stack + text) */
-	int						ps_nentries;			/* pseudo-segment counter */
-
-	vm_size_t 				ps_dmaxsize;
-	vm_size_t 				ps_smaxsize;
-	vm_size_t 				ps_tmaxsize;
-
-	/* pseudo segments */
-    struct vm_data      	ps_data;
-    struct vm_stack     	ps_stack;
-    struct vm_text      	ps_text;
-};
-
-/* pseudo-segment types */
-#define PSEG_DATA			S_DATA					/* data segment */
-#define PSEG_STACK			S_STACK					/* stack segment */
-#define PSEG_TEXT			2						/* text segment */
-
-/* pseudo-segment flags */
-#define PSEG_SEP			(PSEG_DATA | PSEG_STACK)				/* I&D seperation */
-#define PSEG_NOSEP			(PSEG_DATA | PSEG_STACK | PSEG_TEXT)	/* No I&D seperation */
 
 /* pseudo-segment macros */
 #define DATA_SEGMENT(data, dsize, daddr, dflag) {		\
@@ -210,29 +176,6 @@ void	vm_vsxfree(vm_text_t, long);
 
 /* vm_mmap */
 void 	vm_expand(struct proc *, vm_size_t, int);
-
-/* vm_psegment */
-#ifdef notyet
-void 		  vm_psegment_init(vm_psegment_t, vm_offset_t, vm_offset_t);
-vm_psegment_t vm_psegment_create(vm_offset_t, vm_offset_t);
-//void		  vm_psegment_alloc(vm_psegment_t, segsz_t, caddr_t, int);
-//void		  vm_psegment_free(vm_psegment_t, segsz_t, caddr_t, int);
-void		  vm_psegment_destroy(vm_psegment_t);
-void 		  vm_psegment_expand(vm_psegment_t, segsz_t, caddr_t, int);
-void 		  vm_psegment_shrink(vm_psegment_t, segsz_t, caddr_t, int);
-#endif
-
-vm_psegment_t vm_psegment_alloc(void);
-void	vm_psegment_free(vm_psegment_t);
-void	vm_psegment_init(vm_psegment_t, vm_offset_t *, vm_offset_t *);
-
-void	vm_psegment_expand(vm_psegment_t, segsz_t, caddr_t, int);
-void	vm_psegment_shrink(vm_psegment_t, segsz_t, caddr_t, int);
-void	vm_psegment_extent_create(vm_psegment_t, char *, u_long, u_long, int, caddr_t, size_t, int);
-void	vm_psegment_extent_alloc(vm_psegment_t, u_long, u_long, int);
-void	vm_psegment_extent_suballoc(vm_psegment_t, u_long, u_long, int, int);
-void	vm_psegment_extent_free(vm_psegment_t, u_long, caddr_t, int, int);
-void	vm_psegment_extent_destroy(vm_psegment_t);
 
 /* vm_text */
 void	vm_xlock(vm_text_t);

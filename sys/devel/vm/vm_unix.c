@@ -58,6 +58,7 @@
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_text.h>
+#include <devel/vm/include/vm_psegment.h>
 
 int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
 int	ogrow(vm_offset_t);
@@ -97,8 +98,8 @@ vm_expand(p, newsize, type)
 		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
 		if (n >= newsize) {
 			n -= newsize;
-			vm_psegment_extent_free(pseg, n + newsize, a1, PSEG_DATA, 0);
-			rmfree(coremap, n, a1 + newsize);
+			vm_psegment_free(pseg, coremap, n, a1 + newsize, PSEG_DATA);
+			//rmfree(coremap, n, a1 + newsize);
 			return;
 		}
 	} else {
@@ -111,8 +112,8 @@ vm_expand(p, newsize, type)
 			n -= newsize;
 			pseg->ps_stack.psx_saddr += n;
 			p->p_saddr = pseg->ps_stack.psx_saddr;
-			vm_psegment_extent_free(pseg, n, a1, PSEG_STACK, 0);
-			rmfree(coremap, n, a1);
+			vm_psegment_free(pseg, coremap, n, a1, PSEG_STACK);
+			//rmfree(coremap, n, a1);
 			return;
 		}
 	}
