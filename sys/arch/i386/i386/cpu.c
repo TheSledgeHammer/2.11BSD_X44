@@ -216,9 +216,10 @@ cpu_attach(parent, self, aux)
  */
 /* Runs in NetBSD mptramp.S */
 void
-cpu_hatch(void *v)
+cpu_hatch(void)
+	//void *v;
 {
-	struct cpu_info *ci = (struct cpu_info *)v;
+	//struct cpu_info *ci = (struct cpu_info *)v;
 	int s;
 
 #if NLAPIC > 0

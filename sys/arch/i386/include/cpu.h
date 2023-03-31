@@ -122,6 +122,7 @@ extern char		etext[];
 
 /* cpu.c */
 void 	cpu_init_first(void);
+void	cpu_hatch(void)
 
 /* cpu_topo.c */
 void	assign_cpu_ids(void);

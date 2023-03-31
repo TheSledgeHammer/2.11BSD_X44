@@ -227,6 +227,8 @@ init_secondary(ci)
 	lcr0(cr0);
 	CHECK_WRITE(0x38, 5);
 
+	cpu_hatch();
+
 	/* signal our startup to the BSP. */
 	mp_naps++;
 	CHECK_WRITE(0x39, 6);
