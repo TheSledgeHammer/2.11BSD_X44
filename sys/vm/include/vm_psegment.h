@@ -44,9 +44,9 @@ struct vm_pseudo_segment {
 	int						ps_nentries;			/* pseudo-segment counter */
 
 	/* pseudo segments */
-    struct vm_data      	ps_data;
-    struct vm_stack     	ps_stack;
-    struct vm_text      	ps_text;
+    struct vm_data      	*ps_data;
+    struct vm_stack     	*ps_stack;
+    struct vm_text      	*ps_text;
 };
 
 /* pseudo-segment types */
@@ -58,13 +58,15 @@ struct vm_pseudo_segment {
 #define PSEG_SEP			(PSEG_DATA | PSEG_STACK)				/* I&D seperation */
 #define PSEG_NOSEP			(PSEG_DATA | PSEG_STACK | PSEG_TEXT)	/* No I&D seperation */
 
+struct map;
+
 #ifdef _KERNEL
 
 void vm_psegment_init(vm_psegment_t);
 void vm_psegment_release(vm_psegment_t);
 void vm_psegment_expand(vm_psegment_t, segsz_t, caddr_t, int);
 void vm_psegment_shrink(vm_psegment_t, segsz_t, caddr_t, int);
-void vm_psegment_alloc(vm_psegment_t, struct map *, segsz_t, caddr_t, int);
+void vm_psegment_alloc(vm_psegment_t, struct map *, segsz_t, int);
 void vm_psegment_free(vm_psegment_t, struct map *, segsz_t, caddr_t, int);
 
 #endif /* _KERNEL */
