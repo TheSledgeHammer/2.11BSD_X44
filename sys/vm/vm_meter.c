@@ -50,6 +50,7 @@
 #include <sys/tree.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_text.h>
 
 #define	MINFINITY	-32767			/* minus infinity */
 
