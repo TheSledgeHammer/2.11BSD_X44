@@ -14,18 +14,21 @@
 #include <sys/sysctl.h>
 #include <sys/proc.h>
 #include <sys/map.h>
+#include <sys/tprintf.h>
 #include <sys/vnode.h>
 #include <sys/user.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_text.h>
 
+#include <machine/setjmp.h>
+
 struct txtlist      vm_text_list;
 struct vm_xstats 	*xstats;			/* cache statistics */
 int					xcache;				/* number of "sticky" texts retained */
 
 void vm_swkill(struct proc *, char *);
-void vm_xswap(swblk_t, caddr_t, int, struct vnode *, int);
+void vm_xswap(memaddr_t, memaddr_t, int, struct vnode *, int);
 
 /* lock a virtual text segment */
 void
@@ -132,7 +135,7 @@ vm_xalloc(vp, tsize, toff)
 	ts = btoc(tsize);
 	xp->psx_size = clrnd(ts);
 	/* 2.11BSD overlays were here */
-	if((xp->psx_daddr = rmalloc(swapmap, ctod(xp->psx_size))) == NULL) {
+	if((xp->psx_daddr = (caddr_t)rmalloc(swapmap, ctod(xp->psx_size))) == NULL) {
 		/* flush text cache and try again */
 		vm_swkill(p, "xalloc: no swap space");
 		return;
@@ -144,9 +147,9 @@ vm_xalloc(vp, tsize, toff)
 	vp->v_text = xp;
 	VREF(vp);
 	p->p_textp = xp;
-	vm_xexpand(xp);
+	vm_xexpand(p, xp);
 	(void)vm_estabur(p, ts, 0, 0, 0, SEG_RW);
-	(void)vn_rdwr(UIO_READ, vp, (caddr_t)ctob(tptov(p, 0)), tsize & ~1, toff, UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), p->p_cred, (int *)0, p);
+	(void)vn_rdwr(UIO_READ, vp, (caddr_t)ctob(tptov(p, 0)), tsize & ~1, toff, UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), u.u_ucred, (int *)0, p);
 	p->p_flag &= ~P_SLOCK;
 	xp->psx_flag |= XWRIT;
 	xp->psx_flag &= ~XLOAD;
@@ -172,8 +175,8 @@ vm_xfree(void)
 
 	vm_xlock(xp);
 	vp = xp->psx_vptr;
-	if (xp->psx_count-- == 0 && (VOP_GETATTR(vp, &vattr, u->u_cred, u.u_procp) != 0 || (vattr->va_mode & VSVTX) == 0)) {
-		if ((xp->psx_flag & XTRC) || vattr->va_nlink == 0) {
+	if (xp->psx_count-- == 0 && (VOP_GETATTR(vp, &vattr, u.u_ucred, u.u_procp) != 0 || (vattr.va_mode & VSVTX) == 0)) {
+		if ((xp->psx_flag & XTRC) || vattr.va_nlink == 0) {
 			xp->psx_flag &= ~XLOCK;
 			vm_xuntext(xp);
 			TAILQ_REMOVE(&vm_text_list, xp, psx_list);
@@ -206,9 +209,9 @@ vm_xexpand(p, xp)
 	vm_text_t xp;
 {
 	vm_xlock(xp);
-	if ((xp->psx_caddr = rmalloc(coremap, xp->psx_size)) != NULL) {
+	if ((xp->psx_caddr = (caddr_t)rmalloc(coremap, xp->psx_size)) != NULL) {
 		if ((xp->psx_flag & XLOAD) == 0) {
-			vm_xswap(xp->psx_daddr, xp->psx_caddr, xp->psx_size, xp->psx_vptr, B_READ);
+			vm_xswap((memaddr_t)xp->psx_daddr, (memaddr_t)xp->psx_caddr, xp->psx_size, xp->psx_vptr, B_READ);
 		}
 		vm_xunlock(xp);
 		xp->psx_ccount++;
@@ -218,7 +221,7 @@ vm_xexpand(p, xp)
 		//sureg();
 		return;
 	}
-	vm_xswapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
+	xswapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 	vm_xunlock(xp);
 	p->p_flag |= P_SSWAP;
 	swtch();
@@ -240,10 +243,10 @@ vm_xccdec(xp)
 	vm_xlock(xp);
 	if (--xp->psx_ccount == 0) {
 		if (xp->psx_flag & XWRIT) {
-			vm_xswap(xp->psx_daddr, xp->psx_caddr, xp->psx_size, &swapdev_vp, B_WRITE);
+			vm_xswap((memaddr_t)xp->psx_daddr, (memaddr_t)xp->psx_caddr, xp->psx_size, swapdev_vp, B_WRITE);
 			xp->psx_flag &= ~XWRIT;
 		}
-		rmfree(coremap, xp->psx_size, xp->psx_caddr);
+		rmfree(coremap, xp->psx_size, (memaddr_t)xp->psx_caddr);
 		xp->psx_caddr = NULL;
 	}
 	vm_xunlock(xp);
@@ -260,7 +263,7 @@ vm_xumount(dev)
 {
 	register vm_text_t xp;
 	TAILQ_FOREACH(xp, &vm_text_list, psx_list) {
-		if(xp->psx_vptr != NULL && (dev == xp->psx_vptr->v_mount->mnt_dev || dev == NODEV)) {
+		if (xp->psx_vptr != NULL || dev == NODEV) {
 			vm_xuntext(xp);
 		}
 	}
@@ -280,9 +283,9 @@ vm_xuntext(xp)
 	if (xp->psx_count == 0) {
 		vp = xp->psx_vptr;
 		xp->psx_vptr = NULL;
-		rmfree(swapmap, ctod(xp->psx_size), xp->psx_daddr);
+		rmfree(swapmap, ctod(xp->psx_size), (memaddr_t)xp->psx_daddr);
 		if (xp->psx_caddr) {
-			rmfree(coremap, xp->psx_size, xp->psx_caddr);
+			rmfree(coremap, xp->psx_size, (memaddr_t)xp->psx_caddr);
 		}
 		vp->v_flag &= ~VTEXT;
 		vp->v_text = NULL;
@@ -308,10 +311,10 @@ vm_xuncore(size)
     	vm_xlock(xp);
 		if (!xp->psx_ccount && xp->psx_caddr) {
 			if (xp->psx_flag & XWRIT) {
-				vm_xswap(xp->psx_daddr, xp->psx_caddr, xp->psx_size, xp->psx_vptr, B_WRITE);
+				vm_xswap((memaddr_t)xp->psx_daddr, (memaddr_t)xp->psx_caddr, xp->psx_size, xp->psx_vptr, B_WRITE);
 				xp->psx_flag &= ~XWRIT;
 			}
-			rmfree(coremap, xp->psx_size, xp->psx_caddr);
+			rmfree(coremap, xp->psx_size, (memaddr_t)xp->psx_caddr);
 			xp->psx_caddr = NULL;
 			if (xp->psx_size >= size) {
 				vm_xunlock(xp);
@@ -354,8 +357,7 @@ vm_xrele(vp)
  */
 void
 vm_xswap(blkno, coreaddr, count, vp, rdflg)
-	swblk_t blkno;
-	caddr_t coreaddr;
+	memaddr_t blkno, coreaddr;
 	struct vnode *vp;
 	int count, rdflg;
 {
@@ -408,7 +410,7 @@ vm_swkill(p, rout)
 	register struct proc *p;
 	char *rout;
 {
-	tprintf(u.u_ttyp, "sorry, pid %d killed in %s: no swap space\n", p->p_pid, rout);
+	tprintf(p->p_session, "sorry, pid %d killed in %s: no swap space\n", p->p_pid, rout);
 }
 
 /*
@@ -451,26 +453,26 @@ vm_xswapin(p, addr)
 	}
 	if (xp) {
 		if (x) {
-			xp->psx_caddr = x;
+			xp->psx_caddr = (caddr_t)x;
 			if ((xp->psx_flag & XLOAD) == 0) {
-				vm_xswap(xp->psx_daddr, x, xp->psx_size, p->p_textvp, B_READ);
+				vm_xswap((memaddr_t)xp->psx_daddr, x, xp->psx_size, p->p_textvp, B_READ);
 			}
 		}
 		xp->psx_ccount++;
 		vm_xunlock(xp);
 	}
 	if (p->p_dsize) {
-		vm_xswap(p->p_daddr, a[0], p->p_dsize, p->p_textvp, B_READ);
-		rmfree(swapmap, ctod(p->p_dsize), p->p_daddr);
+		vm_xswap((memaddr_t)p->p_daddr, a[0], p->p_dsize, p->p_textvp, B_READ);
+		rmfree(swapmap, ctod(p->p_dsize), (memaddr_t)p->p_daddr);
 	}
 	if (p->p_ssize) {
-		vm_xswap(p->p_saddr, a[1], p->p_ssize, p->p_textvp, B_READ);
-		rmfree(swapmap, ctod(p->p_ssize), p->p_saddr);
+		vm_xswap((memaddr_t)p->p_saddr, a[1], p->p_ssize, p->p_textvp, B_READ);
+		rmfree(swapmap, ctod(p->p_ssize), (memaddr_t)p->p_saddr);
 	}
 	vm_xswap(addr, a[2], USIZE, p->p_textvp, B_READ);
 	rmfree(swapmap, ctod(USIZE), addr);
-	p->p_daddr = a[0];
-	p->p_saddr = a[1];
+	p->p_daddr = (caddr_t)a[0];
+	p->p_saddr = (caddr_t)a[1];
 	addr = a[2];
 }
 
@@ -507,23 +509,23 @@ vm_xswapout(p, addr, size, freecore, odata, ostack)
 		vm_xccdec(p->p_textp);
 	}
 	if (odata) {
-		vm_xswap(a[0], p->p_daddr, odata, p->p_textvp, B_WRITE);
+		vm_xswap(a[0], (memaddr_t)p->p_daddr, odata, p->p_textvp, B_WRITE);
 		if (freecore == X_FREECORE) {
-			rmfree(coremap, odata, p->p_daddr);
+			rmfree(coremap, odata, (memaddr_t)p->p_daddr);
 		}
 	}
 	if (ostack) {
-		vm_xswap(a[1], p->p_saddr, ostack, p->p_textvp, B_WRITE);
+		vm_xswap(a[1], (memaddr_t)p->p_saddr, ostack, p->p_textvp, B_WRITE);
 		if (freecore == X_FREECORE) {
-			rmfree(coremap, ostack, p->p_saddr);
+			rmfree(coremap, ostack, (memaddr_t)p->p_saddr);
 		}
 	}
 	vm_xswap(a[2], addr, USIZE, p->p_textvp, B_WRITE);
 	if (freecore == X_FREECORE) {
 		rmfree(coremap, USIZE, addr);
 	}
-	p->p_daddr = a[0];
-	p->p_saddr = a[1];
+	p->p_daddr = (caddr_t)a[0];
+	p->p_saddr = (caddr_t)a[1];
 	addr = a[2];
 }
 

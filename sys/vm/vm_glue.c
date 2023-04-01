@@ -72,7 +72,7 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>
-//#include <vm/include/vm_text.h>
+#include <vm/include/vm_text.h>
 
 #include <machine/cpu.h>
 

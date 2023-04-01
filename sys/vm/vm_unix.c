@@ -55,6 +55,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/resourcevar.h>
+#include <sys/map.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_text.h>
@@ -181,10 +182,10 @@ vm_expand(p, newsize, type)
 		return;
 	}
 	if (type == PSEG_DATA) {
-		n = pseg->ps_data.psx_dsize;
-		pseg->ps_data.psx_dsize = newsize;
-		p->p_dsize = pseg->ps_data.psx_dsize;
-		a1 = pseg->ps_data.psx_daddr;
+		n = pseg->ps_data->psx_dsize;
+		pseg->ps_data->psx_dsize = newsize;
+		p->p_dsize = pseg->ps_data->psx_dsize;
+		a1 = pseg->ps_data->psx_daddr;
 		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
 		if (n >= newsize) {
 			n -= newsize;
@@ -193,22 +194,22 @@ vm_expand(p, newsize, type)
 			return;
 		}
 	} else {
-		n = pseg->ps_stack.psx_ssize;
-		pseg->ps_stack.psx_ssize = newsize;
-		p->p_ssize = pseg->ps_stack.psx_ssize;
-		a1 = pseg->ps_stack.psx_saddr;
+		n = pseg->ps_stack->psx_ssize;
+		pseg->ps_stack->psx_ssize = newsize;
+		p->p_ssize = pseg->ps_stack->psx_ssize;
+		a1 = pseg->ps_stack->psx_saddr;
 		vm_psegment_expand(pseg, newsize, a1, PSEG_STACK);
 		if (n >= newsize) {
 			n -= newsize;
-			pseg->ps_stack.psx_saddr += n;
-			p->p_saddr = pseg->ps_stack.psx_saddr;
+			pseg->ps_stack->psx_saddr += n;
+			p->p_saddr = pseg->ps_stack->psx_saddr;
 			vm_psegment_free(pseg, coremap, n, a1, PSEG_STACK);
 			//rmfree(coremap, n, a1);
 			return;
 		}
 	}
 	if (type == PSEG_STACK) {
-		a1 = pseg->ps_stack.psx_saddr;
+		a1 = pseg->ps_stack->psx_saddr;
 		i = newsize - n;
 		a2 = a1 + i;
 		/*
@@ -231,18 +232,18 @@ vm_expand(p, newsize, type)
 		}
 	}
 	if (type == PSEG_STACK) {
-		pseg->ps_stack.psx_saddr = a2;
-		p->p_saddr = pseg->ps_stack.psx_saddr;
+		pseg->ps_stack->psx_saddr = a2;
+		p->p_saddr = pseg->ps_stack->psx_saddr;
 		/*
 		 * Make the copy put the stack at the top of the new area.
 		 */
 		a2 += newsize - n;
 	} else {
-		pseg->ps_data.psx_daddr = a2;
-		p->p_daddr = pseg->ps_data.psx_daddr;
+		pseg->ps_data->psx_daddr = a2;
+		p->p_daddr = pseg->ps_data->psx_daddr;
 	}
 	bcopy(a1, a2, n);
-	rmfree(coremap, n, a1);
+	rmfree(coremap, n, (long)a1);
 }
 
 /*
@@ -316,7 +317,7 @@ void
 sureg()
 {
 	vm_text_t tp;
-	int taddr, daddr, saddr;
+	caddr_t taddr, daddr, saddr;
 
 	taddr = u.u_procp->p_daddr;
 	daddr = u.u_procp->p_daddr;

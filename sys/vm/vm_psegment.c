@@ -63,7 +63,7 @@ vm_psegment_init(pseg)
 	bzero(pseg->ps_stack, sizeof(struct vm_stack));
 	bzero(pseg->ps_text, sizeof(struct vm_text));
 
-	vm_text_init(&pseg->ps_text);
+	vm_text_init(pseg->ps_text);
 }
 
 /*
@@ -104,23 +104,23 @@ vm_psegment_expand(pseg, newsize, newaddr, type)
 
 	switch (type) {
 	case PSEG_DATA:
-		data = &pseg->ps_data;
+		data = pseg->ps_data;
 		DATA_EXPAND(data, newsize, newaddr);
-		pseg->ps_data = *data;
+		pseg->ps_data = data;
 		printf("vm_psegment_expand: data segment expanded: newsize %l newaddr %s\n", newsize, newaddr);
 		break;
 
 	case PSEG_STACK:
-		stack = &pseg->ps_stack;
+		stack = pseg->ps_stack;
 		STACK_EXPAND(stack, newsize, newaddr);
-		pseg->ps_stack = *stack;
+		pseg->ps_stack = stack;
 		printf("vm_psegment_expand: stack segment expanded: newsize %l newaddr %s\n", newsize, newaddr);
 		break;
 
 	case PSEG_TEXT:
-		text = &pseg->ps_text;
+		text = pseg->ps_text;
 		TEXT_EXPAND(text, newsize, newaddr);
-		pseg->ps_text = *text;
+		pseg->ps_text = text;
 		printf("vm_psegment_expand: text segment expanded: newsize %l newaddr %s\n", newsize, newaddr);
 		break;
 	}
@@ -147,23 +147,23 @@ vm_psegment_shrink(pseg, newsize, newaddr, type)
 
 	switch (type) {
 	case PSEG_DATA:
-		data = &pseg->ps_data;
+		data = pseg->ps_data;
 		DATA_SHRINK(data, newsize, newaddr);
-		pseg->ps_data = *data;
+		pseg->ps_data = data;
 		printf("vm_psegment_shrink: data segment shrunk: newsize %l newaddr %s\n", newsize, newaddr);
 		break;
 
 	case PSEG_STACK:
-		stack = &pseg->ps_stack;
+		stack = pseg->ps_stack;
 		STACK_SHRINK(stack, newsize, newaddr);
-		pseg->ps_stack = *stack;
+		pseg->ps_stack = stack;
 		printf("vm_psegment_shrink: stack segment shrunk: newsize %l newaddr %s\n", newsize, newaddr);
 		break;
 
 	case PSEG_TEXT:
-		text = &pseg->ps_text;
+		text = pseg->ps_text;
 		TEXT_SHRINK(text, newsize, newaddr);
-		pseg->ps_text = *text;
+		pseg->ps_text = text;
 		printf("vm_psegment_shrink: text segment shrunk: newsize %l newaddr %s\n", newsize, newaddr);
 		break;
 	}
@@ -186,21 +186,21 @@ vm_psegment_alloc(pseg, mp, size, type)
 
 	switch (type) {
 	case PSEG_DATA:
-		data = &pseg->ps_data;
+		data = pseg->ps_data;
 		if (data != NULL) {
 			data = (vm_data_t) rmalloc(mp, size);
 		}
 		break;
 
 	case PSEG_STACK:
-		stack = &pseg->ps_stack;
+		stack = pseg->ps_stack;
 		if (stack != NULL) {
 			stack = (vm_stack_t) rmalloc(mp, size);
 		}
 		break;
 
 	case PSEG_TEXT:
-		text = &pseg->ps_text;
+		text = pseg->ps_text;
 		if (text != NULL) {
 			text = (vm_text_t) rmalloc(mp, size);
 		}
@@ -226,28 +226,28 @@ vm_psegment_free(pseg, mp, size, addr, type)
 
 	switch (type) {
 	case PSEG_DATA:
-		data = &pseg->ps_data;
+		data = pseg->ps_data;
 		if (data != NULL) {
 			if (data->psx_dsize == size && data->psx_daddr == addr) {
-				rmfree(mp, size, addr);
+				rmfree(mp, size, (long)addr);
 			}
 		}
 		break;
 
 	case PSEG_STACK:
-		stack = &pseg->ps_stack;
+		stack = pseg->ps_stack;
 		if (stack != NULL) {
 			if (stack->psx_ssize == size && stack->psx_saddr == addr) {
-				rmfree(mp, size, addr);
+				rmfree(mp, size, (long)addr);
 			}
 		}
 		break;
 
 	case PSEG_TEXT:
-		text = &pseg->ps_text;
+		text = pseg->ps_text;
 		if (text != NULL) {
 			if (text->psx_tsize == size && text->psx_taddr == addr) {
-				rmfree(mp, size, addr);
+				rmfree(mp, size, (long)addr);
 			}
 		}
 		break;
