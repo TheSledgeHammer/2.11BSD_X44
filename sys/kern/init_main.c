@@ -81,6 +81,7 @@
 #include <sys/uuid.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_psegment.h>
 
 #include <machine/cpu.h>
 
@@ -248,6 +249,11 @@ main(framep)
 	pmap_pinit(&vmspace0.vm_pmap);
 	vm_map_init(&vmspace0.vm_map, round_page(VM_MIN_ADDRESS), trunc_page(VM_MAX_ADDRESS), TRUE);
 	vmspace0.vm_map.pmap = &vmspace0.vm_pmap;
+
+	/* Initialize pseudo-segmentation */
+	vm_psegment_init(&vmspace0.vm_psegment);
+	vmspace0.vm_psegment.ps_vmspace = &vmspace0;
+
 	p->p_addr = proc0paddr;				/* XXX */
 
 	/*

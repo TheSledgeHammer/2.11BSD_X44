@@ -130,14 +130,6 @@ void (*initclocks_func)(void) = i8254_initclocks;
 /*
  * Declare these as initialized data so we can patch them.
  */
-/*
-extern int	nswbuf = 0;
-#ifdef	NBUF
-extern int	nbuf = NBUF;
-#else
-extern int	nbuf = 0;
-#endif
-*/
 #ifdef	BUFPAGES
 int	bufpages = BUFPAGES;
 #else

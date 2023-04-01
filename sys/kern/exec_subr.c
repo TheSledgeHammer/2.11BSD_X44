@@ -92,7 +92,6 @@ vmcmd_extend(evsp)
 		nvcp = malloc(sizeof(struct exec_vmcmd), M_EXEC, M_WAITOK);
 		if (ocnt) {
 			bcopy(evsp->evs_cmds, nvcp, (ocnt * sizeof(struct exec_vmcmd)));
-			//memcpy(nvcp, evsp->evs_cmds, (ocnt * sizeof(struct exec_vmcmd)));
 			free(evsp->evs_cmds, M_EXEC);
 		}
 		evsp->evs_cmds = nvcp;
@@ -160,7 +159,6 @@ vmcmd_map_pagedvn(p, cmd)
 	if (vp->v_flag == 0) {
 		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 		vm_object_lock(vobj);
-		//vp->v_flag |= VMAPPED;
 		vm_object_unlock(vobj);
 		VOP_UNLOCK(vp, 0, p);
 	}

@@ -40,7 +40,6 @@
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
-//#include <vm/include/pmap.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
 
@@ -63,6 +62,10 @@
 #include <machine/vmparam.h>
 #include <machine/vm86.h>
 #include <machine/smp.h>
+
+#if NLAPIC > 0
+#include <machine/apic/lapicvar.h>
+#endif
 
 #define WARMBOOT_TARGET		0
 #define WARMBOOT_OFF		(PMAP_MAP_LOW + 0x0467)
@@ -227,7 +230,11 @@ init_secondary(ci)
 	lcr0(cr0);
 	CHECK_WRITE(0x38, 5);
 
-	cpu_hatch();
+#if NLAPIC > 0
+	lapic_enable();
+	lapic_set_lvt();
+	lapic_write_tpri(0);
+#endif
 
 	/* signal our startup to the BSP. */
 	mp_naps++;

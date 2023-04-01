@@ -45,7 +45,6 @@
 #include <machine/smp.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
-//#include <machine/percpu.h>
 
 /* lock region used by kernel profiling */
 int	mcount_lock;
@@ -56,7 +55,6 @@ int	boot_cpu_id = -1;	/* designated BSP */
 /* AP uses this during bootstrap.  Do not staticize.  */
 char *bootSTK;
 int bootAP;
-
 
 /* Free these after use */
 void *bootstacks[NCPUS];

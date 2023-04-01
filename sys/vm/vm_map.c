@@ -182,9 +182,7 @@ vmspace_alloc(min, max, pageable)
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
 	vm_map_init(&vm->vm_map, min, max, pageable);
 	pmap_pinit(&vm->vm_pmap);
-	//vm_psegment_init(&vm->vm_psegment);
 	vm->vm_map.pmap = &vm->vm_pmap;		/* XXX */
-	//vm->vm_psegment.ps_vmspace = vm;
 	vm->vm_refcnt = 1;
 	return (vm);
 }
@@ -202,7 +200,6 @@ vmspace_free(vm)
 		vm_map_lock(&vm->vm_map);
 		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset, vm->vm_map.max_offset);
 		pmap_release(&vm->vm_pmap);
-		//vm_psegment_release(&vm->vm_psegment);
 		FREE(vm, M_VMMAP);
 	}
 }

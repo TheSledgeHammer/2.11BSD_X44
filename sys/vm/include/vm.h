@@ -82,6 +82,21 @@ struct vm_aref;
 typedef struct vm_aref 		*vm_aref_t;
 
 /*
+ * VM Pseudo-Segmentation with Data, Stack & Text Management
+ */
+struct vm_pseudo_segment;
+typedef struct vm_pseudo_segment *vm_psegment_t;
+
+struct vm_data;
+typedef struct vm_data  		*vm_data_t;
+
+struct vm_stack;
+typedef struct vm_stack  		*vm_stack_t;
+
+struct vm_text;
+typedef struct vm_text 			*vm_text_t;
+
+/*
  *	MACH VM locking type mappings to kernel types
  */
 typedef struct lock_object	simple_lock_data_t;
@@ -104,6 +119,7 @@ typedef struct lock			*lock_t;
 #include <vm/include/vm_object.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
+#include <vm/include/vm_psegment.h>
 
 /*
  * Shareable process virtual address space.
@@ -113,9 +129,9 @@ typedef struct lock			*lock_t;
 struct vmspace {
 	struct vm_map				vm_map;			/* VM address map */
 	struct pmap 				vm_pmap;		/* private physical map */
+	struct vm_pseudo_segment 	vm_psegment;	/* VM pseudo segment */
 
 	int							vm_refcnt;		/* number of references */
-
 	caddr_t						vm_shm;			/* SYS5 shared memory private data XXX */
 
 /* we copy from vm_startcopy to the end of the structure on fork */

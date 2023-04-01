@@ -297,9 +297,6 @@ int		swapdebug = 0;
 #define SDB_SWAPOUT	4
 #endif
 
-void xswapin(struct proc *);
-void xswapout(struct proc *, int, u_int, u_int);
-
 /*
  * Swap in a process's u-area.
  */
@@ -317,9 +314,6 @@ void
 swapout(p)
 	register struct proc *p;
 {
-#define X_DONTFREE  0
-#define X_OLDSIZE   0
-
 	xswapout(p, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
 }
 
@@ -493,7 +487,7 @@ xswapin(p)
 	addr = (vm_offset_t)p->p_addr;
 	vm_map_pageable(kernel_map, addr, addr + USPACE, FALSE);
 
-	//vm_xswapin(p, addr);
+	vm_xswapin(p, addr);
 
 	cpu_swapin(p);
 	s = splstatclock();
@@ -532,7 +526,7 @@ xswapout(p, freecore, odata, ostack)
 	vm_map_pageable(kernel_map, addr, addr + addr+size, TRUE);
 	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
 
-	//vm_xswapout(p, addr, size, freecore, odata, ostack);
+	vm_xswapout(p, addr, size, freecore, odata, ostack);
 
 	s = splstatclock();
 	p->p_flag &= ~(P_SLOAD | P_SLOCK | P_INMEM);

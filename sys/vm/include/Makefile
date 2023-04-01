@@ -8,8 +8,6 @@ INCS+= 		device_pager.h pmap.h swap_pager.h vm_extern.h 	\
 			vm_param.h vm_prot.h vm.h vnode_pager.h
 			
 INCS+=		vm_amap.h vm_anon.h vm_aobject.h vm_segment.h 	\
-			vm_swap.h 
-			
-			#vm_text.h	
+			vm_swap.h vm_psegment.h vm_text.h	
 		
 .include <bsd.kinc.mk>
