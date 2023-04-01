@@ -34,19 +34,21 @@ struct vm_pseudo_segment {
 	/* vmspace */
     struct vmspace			*ps_vmspace;			/* vmspace pointer */
 
-	//caddr_t 				ps_minaddr;				/* user VA at min stack growth */
-	//caddr_t 				ps_maxaddr;				/* user VA at max stack growth */
-
-	/* memory management */
-    vm_offset_t         	ps_start;				/* start of space */
-    vm_offset_t         	ps_end;					/* end of space */
-	vm_size_t				ps_size;				/* total size (data + stack + text) */
-	int						ps_nentries;			/* pseudo-segment counter */
-
 	/* pseudo segments */
     struct vm_data      	*ps_data;
     struct vm_stack     	*ps_stack;
     struct vm_text      	*ps_text;
+#ifdef notyet
+#define ps_dsize 			ps_data->psx_dsize		/* data size (pages) XXX */
+#define ps_ssize 			ps_stack->psx_ssize		/* stack size (pages) */
+#define ps_tsize 			ps_text->psx_tsize		/* text size (pages) XXX */
+#define ps_daddr 			ps_data->psx_daddr		/* user virtual address of data XXX */
+#define ps_saddr 			ps_stack->psx_saddr		/* user virtual address of stack XXX */
+#define ps_taddr 			ps_text->psx_taddr		/* user virtual address of text XXX */
+
+	caddr_t 				ps_minaddr;				/* user VA at min stack growth */
+	caddr_t 				ps_maxaddr;				/* user VA at max stack growth */
+#endif
 };
 
 /* pseudo-segment types */

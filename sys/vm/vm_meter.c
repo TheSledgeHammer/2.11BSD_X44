@@ -32,6 +32,14 @@
  *
  *	@(#)vm_meter.c	8.7 (Berkeley) 5/10/95
  */
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vm_sched.c	1.2 (2.11BSD) 1999/9/10
+ */
+
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -171,8 +179,8 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case VM_METER:
 		vmtotal(&vmtotals);
 		return (sysctl_rdstruct(oldp, oldlenp, newp, &vmtotals, sizeof(vmtotals)));
-	//case VM_TEXT:
-	//	return (sysctl_text(oldp, oldlenp));
+	case VM_TEXT:
+		return (sysctl_text(oldp, oldlenp));
 	case VM_SWAPMAP:
 		if (oldp == NULL) {
 			*oldlenp = (char *)swapmap[0].m_limit - (char *)swapmap[0].m_map;
@@ -203,136 +211,10 @@ vmtotal(totalp)
 	register vm_map_entry_t	entry;
 	register vm_object_t object;
 	register vm_map_t map;
-	int paging;
-
-	totalp->t_vm = 0;
-	totalp->t_avm = 0;
-	totalp->t_rm = 0;
-	totalp->t_arm = 0;
-	totalp->t_rq = 0;
-	totalp->t_dw = 0;
-	totalp->t_sl = 0;
-	totalp->t_sw = 0;
-	bzero(totalp, sizeof *totalp);
-
-	/*
-	 * Mark all objects as inactive.
-	 */
-	vm_object_mark_inactive(object);
-
-	/*
-	 * Calculate process statistics.
-	 */
-	LIST_FOREACH(p, &allproc, p_list) {
-		if (p->p_flag & P_SYSTEM)
-			continue;
-		if (p->p_stat) {
-			totalp->t_vm += p->p_dsize + p->p_ssize + UPAGES;
-			if (p->p_flag & P_SLOAD)
-				totalp->t_rm += p->p_dsize + p->p_ssize + UPAGES;
-		}
-		switch (p->p_stat) {
-		case 0:
-			continue;
-
-		case SSLEEP:
-			if (p->p_slptime >= maxslp)
-				continue;
-			break;
-		case SSTOP:
-			if (!(p->p_flag & P_SINTR) && p->p_stat == SSLEEP) {
-				nrun++;
-			}
-			if (p->p_flag & (P_INMEM | P_SLOAD)) {
-				if (p->p_pri <= PZERO || !(p->p_flag & P_SINTR)) {
-					totalp->t_dw++;
-				} else if (p->p_slptime < maxslp) {
-					totalp->t_sl++;
-				}
-			} else if (p->p_slptime < maxslp) {
-				totalp->t_sw++;
-			}
-			if (p->p_slptime >= maxslp) {
-				goto active;
-			}
-			break;
-
-		case SRUN:
-		case SIDL:
-			nrun++;
-			if (p->p_flag & (P_INMEM | P_SLOAD)) {
-				totalp->t_rq++;
-			} else {
-				totalp->t_sw++;
-			}
-active:
-			totalp->t_avm += p->p_dsize + p->p_ssize + UPAGES;
-			if (p->p_flag & P_SLOAD) {
-				totalp->t_arm += p->p_dsize + p->p_ssize + UPAGES;
-			}
-			if (p->p_stat == SIDL) {
-				continue;
-			}
-			break;
-		}
-
-		/*
-		 * Note active objects.
-		 *
-		 * XXX don't count shadow objects with no resident pages.
-		 * This eliminates the forced shadows caused by MAP_PRIVATE.
-		 * Right now we require that such an object completely shadow
-		 * the original, to catch just those cases.
-		 */
-
-		paging = 0;
-		for (map = &p->p_vmspace->vm_map, entry =
-				CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next;
-				entry != CIRCLEQ_FIRST(&map->cl_header);
-				entry = CIRCLEQ_NEXT(entry, cl_entry)) {
-			if (entry->is_a_map || entry->is_sub_map
-					|| (object = entry->object.vm_object) == NULL) {
-				continue;
-			}
-			while (object->shadow && object->resident_page_count == 0
-					&& object->shadow_offset == 0
-					&& object->size == object->shadow->size) {
-				object = object->shadow;
-				object->flags |= OBJ_ACTIVE;
-				paging |= object->paging_in_progress;
-			}
-			if (paging) {
-				totalp->t_pw++;
-			}
-		}
-	}
-
-	/*
-	 * Calculate object memory usage statistics.
-	 */
-	vm_object_mem_stats(totalp, object);
-
-	totalp->t_vm += totalp->t_vmtxt;
-	totalp->t_avm += totalp->t_avmtxt;
-	totalp->t_rm += totalp->t_rmtxt;
-	totalp->t_arm += totalp->t_armtxt;
-	totalp->t_free = (long)cnt.v_page_free_count;
-	avefree = cnt.v_page_free_count;
-}
-
-#ifdef notyet
-void
-vmtotal(totalp)
-	register struct vmtotal *totalp;
-{
-	register struct proc *p;
-	register vm_map_entry_t	entry;
-	register vm_object_t object;
-	register vm_map_t map;
-	int paging;
 	char textcounted[100];
+	int paging;
 
-	nrun = 0;
+	//nrun = 0;
 
 	totalp->t_vmtxt = 0;
 	totalp->t_avmtxt = 0;
@@ -487,6 +369,6 @@ active:
 	totalp->t_arm += totalp->t_armtxt;
 	totalp->t_free = (long)cnt.v_page_free_count;
 	avefree = cnt.v_page_free_count;
+
 	loadav(avenrun, nrun);
 }
-#endif
