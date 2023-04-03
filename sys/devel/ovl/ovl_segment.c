@@ -67,12 +67,13 @@ ovl_segment_init(start, end)
 
 	if (ovl_segment_bucket_count == 0) {
 		ovl_segment_bucket_count = 1;
-		while (ovl_segment_bucket_count < atos(*end - *start))
+		while (ovl_segment_bucket_count < atos(*end - *start)) {
 			ovl_segment_bucket_count <<= 1;
+		}
 	}
 
 	ovl_segment_hash_mask = ovl_segment_bucket_count - 1;
-	ovl_segment_buckets = (struct ovseglist *)pmap_bootstrap_overlay_alloc(ovl_segment_bucket_count * sizeof(struct ovseglist));
+	ovl_segment_buckets = (struct ovseglist *)pmap_overlay_bootstrap_alloc(ovl_segment_bucket_count * sizeof(struct ovseglist));
 
 	for(i = 0; i < ovl_segment_hash_mask; i++) {
 		CIRCLEQ_INIT(&ovl_segment_buckets[i]);
@@ -90,13 +91,14 @@ ovl_segment_init(start, end)
 
 	ovl_first_logical_addr = stoa(ovl_first_segment);
 	ovl_last_logical_addr  = stoa(ovl_last_segment) + SEGMENT_MASK;
-	seg = (ovl_segment_t)pmap_bootstrap_overlay_alloc(nsegments * sizeof(struct ovl_segment));
+	seg = (ovl_segment_t)pmap_overlay_bootstrap_alloc(nsegments * sizeof(struct ovl_segment));
 
 	la = ovl_first_logical_addr;
 	while (nsegments--) {
 		seg->ovs_flags = 0;
 		seg->ovs_object = NULL;
 		seg->ovs_log_addr = la;
+		CIRCLEQ_INSERT_TAIL(&ovl_segment_list_free, seg, ovs_segmentq);
 		seg++;
 		la += SEGMENT_SIZE;
 	}

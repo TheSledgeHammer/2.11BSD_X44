@@ -39,6 +39,7 @@ CIRCLEQ_HEAD(ovseglist, ovl_segment);
 struct ovl_segment {
 	struct ovpglist					ovs_ovpglist; 				/* Pages in overlay pglist memory */
 
+	CIRCLEQ_ENTRY(vm_segment)		ovs_segmentq;				/* queue info for FIFO queue or free list (S) */
 	CIRCLEQ_ENTRY(ovl_segment) 		ovs_hashlist;				/* hash table links (O) */
 	CIRCLEQ_ENTRY(ovl_segment) 		ovs_seglist;				/* segments in same object (O) */
 
@@ -46,8 +47,8 @@ struct ovl_segment {
 	ovl_object_t					ovs_object;					/* which object am I in (O,S)*/
 	vm_offset_t 					ovs_offset;					/* offset into object (O,S) */
 
-	int								ovs_resident_page_count;	/* number of resident pages */
 	vm_offset_t						ovs_log_addr;				/* segment logical address */
+
 	TAILQ_ENTRY(ovl_segment)    	ovs_vsegment_hlist;			/* list of all associated vm_segments */
 
 #define ovs_vm						ovs_object->ovl_vm_map

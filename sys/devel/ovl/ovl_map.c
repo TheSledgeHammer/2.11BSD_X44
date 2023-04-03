@@ -92,7 +92,8 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
-#include <devel/vm/include/vm.h>
+
+#include <vm/include/vm.h>
 
 #include <devel/sys/malloctypes.h>
 #include <devel/ovl/include/ovl.h>

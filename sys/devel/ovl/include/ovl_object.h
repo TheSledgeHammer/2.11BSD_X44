@@ -75,6 +75,7 @@
 
 struct vobject_hash_head;
 TAILQ_HEAD(vobject_hash_head, ovl_object);
+
 struct ovl_object_rbt;
 RB_HEAD(ovl_object_rbt, ovl_object);
 struct ovl_object {
@@ -90,7 +91,8 @@ struct ovl_object {
 	int									ovo_ref_count;		/* How many refs?? */
 	vm_size_t							ovo_size;			/* Object size */
 
-	int									ovo_segment_count;
+	int									ovo_segment_count;	/* number of resident segments */
+	int									ovo_page_count;		/* number of resident pages */
 
 	union {
 		vm_object_t 					vm_object;			/* a vm_object being held */

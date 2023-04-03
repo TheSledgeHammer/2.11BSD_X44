@@ -39,17 +39,50 @@ vm_offset_t				overlay_avail;
 vm_offset_t 			overlay_end;
 
 void
-pmap_overlay(firstaddr)
+pmap_overlay_bootstrap(firstaddr, res)
+	vm_offset_t firstaddr;
+	u_long res;
 {
 	overlay_avail = (vm_offset_t)firstaddr;
 	overlay_end = 	OVL_MAX_ADDRESS;
+
+	/*
+	 * Set first available physical page to the end
+	 * of the overlay address space.
+	 */
+	res = atop(overlay_end - (vm_offset_t)KERNLOAD);
+
+	avail_start = overlay_end;
+
 	virtual_avail = (vm_offset_t)overlay_end;
 	virtual_end = 	VM_MAX_KERNEL_ADDRESS;
 }
 
 void *
-pmap_bootstrap_overlay_alloc(size)
+pmap_overlay_bootstrap_alloc(size)
 	u_long size;
 {
 	return (pmap_bootstrap_allocate(overlay_avail, size));
+}
+
+/* Example of pmap_bootstrap with overlays */
+void
+pmap_bootstrap(firstaddr)
+	vm_offset_t firstaddr;
+{
+	vm_offset_t va;
+	pt_entry_t *pte, *unused;
+	u_long res;
+	int i;
+
+#ifdef OVERLAYS
+	pmap_overlay_bootstrap(firstaddr, res);
+#else
+	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
+
+	avail_start = firstaddr;
+
+	virtual_avail = (vm_offset_t)firstaddr;
+	virtual_end = VM_MAX_KERNEL_ADDRESS;
+#endif
 }

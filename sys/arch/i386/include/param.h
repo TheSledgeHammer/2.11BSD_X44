@@ -170,8 +170,8 @@
  * Some macros for units conversion
  */
 /* Core clicks (4096 bytes) to segments and vice versa */
-#define	ctos(x)			(x)
-#define	stoc(x)			(x)
+#define	ctos(x)			(x)	//((x)<<SEGSHIFT)
+#define	stoc(x)			(x) //(((unsigned)(x)+(SEGOFSET))>>SEGSHIFT)
 
 /* Core clicks (4096 bytes) to disk blocks */
 #define	ctod(x)			((x)<<(PGSHIFT-DEV_BSHIFT))
@@ -182,7 +182,7 @@
 #define	ctob(x)			((x)<<PGSHIFT)
 
 /* bytes to clicks */
-#define	btoc(x)			(((unsigned)(x)+(NBPG-1))>>PGSHIFT)
+#define	btoc(x)			(((unsigned)(x)+(PGOFSET))>>PGSHIFT)
 
 #define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
 	((bytes) >> DEV_BSHIFT)

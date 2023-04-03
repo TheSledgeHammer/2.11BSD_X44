@@ -125,9 +125,9 @@ ovl_pbootstrap(void)
 	vm_size_t 			omap_size, oentry_size;
 
 	omap_size = (MAX_OMAP * sizeof(struct ovl_map));
-	kentry_size = (MAX_OMAPENT * sizeof(struct ovl_map_entry));
+	oentry_data = (MAX_OMAPENT * sizeof(struct ovl_map_entry));
 	oentry_data_size = round_page(omap_size + oentry_size);
-	oentry_data = (vm_offset_t)pmap_bootstrap_overlay_alloc(oentry_data_size);
+	oentry_data = (vm_offset_t)pmap_overlay_bootstrap_alloc(oentry_data_size);
 }
 
 /*
