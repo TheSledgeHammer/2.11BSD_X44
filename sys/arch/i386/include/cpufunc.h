@@ -392,6 +392,15 @@ sfence(void)
 	__asm __volatile("sfence" : : : "memory");
 }
 
+static __inline uint64_t
+rdtsc(void)
+{
+	uint64_t rv;
+
+	__asm __volatile("rdtsc" : "=A" (rv));
+	return (rv);
+}
+
 static __inline void
 ia32_pause(void)
 {
