@@ -69,8 +69,7 @@ void
 bios_getsmap(void)
 {
 	struct smap_buf		buf;
-	STAILQ_HEAD(smap_head, smap_buf) head =
-	    STAILQ_HEAD_INITIALIZER(head);
+	STAILQ_HEAD(smap_head, smap_buf) head = STAILQ_HEAD_INITIALIZER(head);
 	struct smap_buf		*cur, *next;
 	u_int				n, x;
 
@@ -145,7 +144,7 @@ bios_addsmapdata(struct preloaded_file *kfp)
 	}
 }
 
-static int
+int
 command_smap(int argc, char *argv[])
 {
 	u_int			i;

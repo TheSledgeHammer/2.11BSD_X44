@@ -97,6 +97,7 @@
 
 #include <devel/ovl/include/ovl.h>
 #include <devel/ovl/include/ovl_overlay.h>
+#include <devel/ovl/include/ovl_segment.h>
 #include <devel/ovl/include/ovl_page.h>
 
 void

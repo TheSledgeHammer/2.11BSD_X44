@@ -110,7 +110,6 @@ vm_object_t	kmem_object;
 #define	VM_OBJECT_HASH_COUNT	157
 
 struct vm_object_hash_head vm_object_hashtable[VM_OBJECT_HASH_COUNT];
-long vm_object_count;
 
 long object_collapses = 0;
 long object_bypasses  = 0;

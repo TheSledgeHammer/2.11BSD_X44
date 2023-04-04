@@ -31,7 +31,7 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 
-#include <devel/vm/include/vm.h>
+#include <vm/include/vm.h>
 
 #include <devel/ovl/include/ovl.h>
 

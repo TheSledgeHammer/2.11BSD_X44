@@ -29,58 +29,55 @@
 #ifndef _OVL_SEGMENT_H_
 #define _OVL_SEGMENT_H_
 
-#include <devel/ovl/include/ovl.h>
-#include <devel/ovl/include/ovl_object.h>
+#include <devel/ovl/include/ovl_page.h>
+#include <vm/include/vm_segment.h>
 
-struct vsegment_hash_head;
-TAILQ_HEAD(vsegment_hash_head , ovl_object);
-struct ovseglist;
-CIRCLEQ_HEAD(ovseglist, ovl_segment);
+struct vm_segment_hash_head;
+struct ovl_seglist;
+TAILQ_HEAD(vm_segment_hash_head , ovl_object);
+CIRCLEQ_HEAD(ovl_seglist, ovl_segment);
 struct ovl_segment {
-	struct ovpglist					ovs_ovpglist; 				/* Pages in overlay pglist memory */
+	struct ovl_pglist				pglist; 				/* Pages in overlay pglist memory */
 
-	CIRCLEQ_ENTRY(vm_segment)		ovs_segmentq;				/* queue info for FIFO queue or free list (S) */
-	CIRCLEQ_ENTRY(ovl_segment) 		ovs_hashlist;				/* hash table links (O) */
-	CIRCLEQ_ENTRY(ovl_segment) 		ovs_seglist;				/* segments in same object (O) */
+	CIRCLEQ_ENTRY(ovl_segment)		segmentq;				/* queue info for FIFO queue or free list (S) */
 
-	int								ovs_flags;
-	ovl_object_t					ovs_object;					/* which object am I in (O,S)*/
-	vm_offset_t 					ovs_offset;					/* offset into object (O,S) */
+	CIRCLEQ_ENTRY(ovl_segment) 		hashlist;				/* hash table links (O) */
+	CIRCLEQ_ENTRY(ovl_segment) 		seglist;				/* segments in same object (O) */
 
-	vm_offset_t						ovs_log_addr;				/* segment logical address */
+	int								flags;
+	ovl_object_t					object;					/* which object am I in (O,S)*/
+	vm_offset_t 					offset;					/* offset into object (O,S) */
 
-	TAILQ_ENTRY(ovl_segment)    	ovs_vsegment_hlist;			/* list of all associated vm_segments */
+	vm_offset_t						log_addr;				/* segment logical address */
 
-#define ovs_vm						ovs_object->ovl_vm_map
-#define ovs_vm_object           	ovs_object->ovo_vm_object
-#define ovs_vm_segment          	ovs_object->ovo_vm_segment
-#define ovs_vm_page             	ovs_object->ovo_vm_page
+	vm_segment_t					vm_segment;				/* a vm_segment being held */
+	TAILQ_ENTRY(ovl_segment)    	vm_segment_hlist;		/* list of all associated vm_segments */
 };
 
 /* flags */
 #define OVL_SEG_VM_SEG				0x16	/* overlay segment holds vm_segment */
 
 extern
-struct ovseglist  					ovl_segment_list;
+struct ovl_seglist 					ovl_segment_list;
 extern
 simple_lock_data_t					ovl_segment_list_lock;
 
 extern
-struct vsegment_hash_head       	ovl_vsegment_hashtable;
-long				           		ovl_vsegment_count;
+struct vm_segment_hash_head       	ovl_vm_segment_hashtable;
 extern
-simple_lock_data_t					ovl_vsegment_hash_lock;
+long				           		ovl_vm_segment_count;
+extern
+simple_lock_data_t					ovl_vm_segment_hash_lock;
 
 #define	ovl_segment_lock_lists()	simple_lock(&ovl_segment_list_lock)
 #define	ovl_segment_unlock_lists()	simple_unlock(&ovl_segment_list_lock)
+
+#define	ovl_vm_segment_hash_lock()		simple_lock(&ovl_vm_segment_hash_lock)
+#define	ovl_vm_segment_hash_unlock()	simple_unlock(&ovl_vm_segment_hash_lock)
 
 void				ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
 void				ovl_segment_remove(ovl_segment_t);
 ovl_segment_t		ovl_segment_lookup(ovl_object_t, vm_offset_t);
 void				ovl_segment_init(vm_offset_t, vm_offset_t);
-
-void				ovl_segment_insert_vm_segment(ovl_segment_t, vm_segment_t);
-vm_segment_t		ovl_segment_lookup_vm_segment(ovl_segment_t);
-void				ovl_segment_remove_vm_segment(vm_segment_t);
 
 #endif /* _OVL_SEGMENT_H_ */

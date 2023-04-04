@@ -29,56 +29,50 @@
 #ifndef	OVL_MAP_
 #define	OVL_MAP_
 
-#include <devel/ovl/include/ovl.h>
-
 struct ovl_map_clist;
 struct ovl_map_rb_tree;
 
 union ovl_map_object {
-	struct ovl_object					*ovl_object;		/* overlay_object object */
-	struct ovl_map						*ovl_share_map;		/* share map */
-	struct ovl_map						*ovl_sub_map;		/* belongs to another map */
+	struct ovl_object					*ovl_object;	/* overlay_object object */
+	struct ovl_map						*share_map;		/* share map */
+	struct ovl_map						*sub_map;		/* belongs to another map */
 };
 
 struct ovl_map_entry {
-  CIRCLEQ_ENTRY(ovl_map_entry)  		ovl_cl_entry;		/* entries in a circular list */
-  RB_ENTRY(ovl_map_entry) 				ovl_rb_entry;		/* tree information */
-  vm_offset_t		                	ovle_start;			/* start address */
-  vm_offset_t		                	ovle_end;			/* end address */
-  caddr_t								ovle_ownspace;		/* free space after */
-  caddr_t								ovle_space;			/* space in subtree */
-  union ovl_map_object			   		ovle_object;		/* object I point to */
-  vm_offset_t				          	ovle_offset;		/* offset into object */
-
-  bool_t								ovle_is_a_map;		/* Is "object" a map? */
-  bool_t								ovle_is_sub_map;	/* Is "object" a submap? */
-
-  vm_prot_t								ovle_protection;	/* protection code */
-  vm_prot_t								ovle_max_protection;/* maximum protection */
-  vm_inherit_t							ovle_inheritance;	/* inheritance */
+  CIRCLEQ_ENTRY(ovl_map_entry)  		cl_entry;		/* entries in a circular list */
+  RB_ENTRY(ovl_map_entry) 				rb_entry;		/* tree information */
+  vm_offset_t		                	start;			/* start address */
+  vm_offset_t		                	end;			/* end address */
+  vm_offset_t							ownspace;		/* free space after */
+  vm_offset_t							space;			/* space in subtree */
+  union ovl_map_object			   		object;			/* object I point to */
+  vm_offset_t				          	offset;			/* offset into object */
+  bool_t								is_a_map;		/* Is "object" a map? */
+  bool_t								is_sub_map;		/* Is "object" a submap? */
+  vm_prot_t								protection;		/* protection code */
+  vm_prot_t								max_protection;	/* maximum protection */
+  vm_inherit_t							inheritance;	/* inheritance */
 };
 
 CIRCLEQ_HEAD(ovl_map_clist, ovl_map_entry);
 RB_HEAD(ovl_map_rb_tree, ovl_map_entry);
 struct ovl_map {
-	struct ovl_map_clist         		ovl_header;        	/* Circular List of entries */
-	struct ovl_map_rb_tree				ovl_root;			/* Tree of entries */
-	struct pmap *		           		ovl_pmap;		    /* Physical map */
-    lock_data_t		                    ovl_lock;		    /* Lock for overlay data */
-    int			                        ovl_nentries;	    /* Number of entries */
-    vm_size_t		                    ovl_size;		    /* virtual size */
+	struct ovl_map_clist         		cl_header;      /* Circular List of entries */
+	struct ovl_map_rb_tree				rb_root;		/* Tree of entries */
+	struct pmap 						*pmap;		    /* Physical map */
+    lock_data_t		                    lock;		    /* Lock for overlay data */
+    int			                        nentries;	    /* Number of entries */
+    vm_size_t		                    size;		    /* virtual size */
+    bool_t								is_main_map;	/* Am I a main map? */
+    int			                        ref_count;	    /* Reference count */
+	simple_lock_data_t	                ref_lock;	    /* Lock for ref_count field */
+	ovl_map_entry_t						hint;			/* hint for quick lookups */
+    simple_lock_data_t	                hint_lock;	    /* lock for hint storage */
+	ovl_map_entry_t						first_free;		/* First free space hint */
+    unsigned int		                timestamp;	    /* Version number */
 
-    bool_t								ovl_is_main_map;	/* Am I a main map? */
-
-    int			                        ovl_ref_count;	    /* Reference count */
-	simple_lock_data_t	                ovl_ref_lock;	    /* Lock for ref_count field */
-	ovl_map_entry_t						ovl_hint;			/* hint for quick lookups */
-    simple_lock_data_t	                ovl_hint_lock;	    /* lock for hint storage */
-	ovl_map_entry_t						ovl_first_free;		/* First free space hint */
-    unsigned int		                ovl_timestamp;	    /* Version number */
-
-#define	ovl_min_offset			    		ovl_header.cqh_first->ovle_start
-#define ovl_max_offset			    		ovl_header.cqh_first->ovle_end
+#define	min_offset			    	cl_header.cqh_first->start
+#define max_offset			    	cl_header.cqh_first->end
 };
 
 #define	ovl_lock_drain_interlock(ovl) { 								\
@@ -111,9 +105,9 @@ struct ovl_map {
 /*
  *	Functions implemented as macros
  */
-#define	ovl_map_min(map)	((map)->ovl_min_offset)
-#define	ovl_map_max(map)	((map)->ovl_max_offset)
-#define	ovl_map_pmap(map)	((map)->ovl_pmap)
+#define	ovl_map_min(map)	((map)->min_offset)
+#define	ovl_map_max(map)	((map)->max_offset)
+#define	ovl_map_pmap(map)	((map)->pmap)
 
 /* XXX: number of overlay maps and entries to statically allocate */
 #define MAX_OMAP		64

@@ -69,7 +69,6 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/user.h>
 
 #include <devel/ovl/include/ovl.h>
 
@@ -129,7 +128,7 @@ ovl_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 	register int			result;
 
 	if (map == NULL)
-		return(KERN_INVALID_ARGUMENT);
+		return (KERN_INVALID_ARGUMENT);
 
 	/*
 	 *	Lookup the pager/paging-space in the object cache.
@@ -151,9 +150,9 @@ ovl_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 	}
 
 	if (internal) {
-		object->ovo_flags |= OBJ_INTERNAL;
+		object->flags |= OBJ_INTERNAL;
 	} else {
-		object->ovo_flags &= ~OBJ_INTERNAL;
+		object->flags &= ~OBJ_INTERNAL;
 	}
 
 	result = ovl_map_find(map, object, poffset, addr, size, anywhere);

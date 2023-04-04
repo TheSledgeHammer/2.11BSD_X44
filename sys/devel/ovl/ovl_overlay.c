@@ -69,7 +69,13 @@
  *	Overlay memory management.
  */
 
+#include <sys/param.h>
+#include <sys/systm.h>
+
 #include <devel/ovl/include/ovl.h>
+#include <devel/ovl/include/ovl_overlay.h>
+
+ovl_map_t overlay_map;
 
 vm_offset_t
 omem_alloc(map, size)
@@ -166,7 +172,7 @@ omem_malloc(map, size, canwait)
 	 * entry so there will be a new entry exactly corresponding to this
 	 * address range and it will have wired_count == 0.
 	 */
-	if (!ovl_map_lookup_entry(map, addr, &entry) || entry->ovle_start != addr || entry->ovle_end != addr + size)
+	if (!ovl_map_lookup_entry(map, addr, &entry) || entry->start != addr || entry->end != addr + size)
 		panic("ovl_malloc: entry not found or misaligned");
 
 	ovl_map_unlock(map);

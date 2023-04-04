@@ -34,8 +34,8 @@
 
 #include <sys/cdefs.h>
 
-#include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
+#include <lib/libsa/loadfile.h>
 #include <lib/libsa/stand.h>
 #include "bootstrap.h"
 #include "commands.h"

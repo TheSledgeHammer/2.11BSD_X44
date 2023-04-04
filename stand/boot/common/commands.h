@@ -117,14 +117,6 @@ int	command_menuitem(int argc, char **av);
 int	command_menuadd(int argc, char **av);
 int	command_menu(int argc, char **av);
 
-/* uboot/common/main.c */
-int	command_ubheap(int argc, char *argv[]);
-int	command_ubreboot(int argc, char *argv[]);
-int command_devinfo(int argc, char *argv[]);
-int command_sysinfo(int argc, char *argv[]);
-int command_ubenv(int argc, char *argv[]);
-int command_fdt(int argc, char *argv[]);
-
 #define COMMON_COMMANDS																		\
 		{ "help", "detailed help", command_help },											\
 		{ "commandlist", "list commands", command_commandlist },							\

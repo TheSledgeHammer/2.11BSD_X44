@@ -50,8 +50,9 @@ efi_autoload(void)
 	 * imply that we're on a platform where FDT is a requirement.  If we
 	 * fix this, then the error handling here should be fixed accordingly.
 	 */
-	if (fdt_is_setup() == 0)
+	if (fdt_is_setup() == 0) {
 		fdt_setup_fdtp();
+	}
 #endif
 	return (0);
 }

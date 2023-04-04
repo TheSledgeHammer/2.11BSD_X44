@@ -40,10 +40,6 @@
 
 /* XXX: Below are Still In Development */
 
-#define M_VMAMAP 		73	/* VM amap structures */
-#define M_VMAOBJ 		74	/* VM aobject structure */
-
-#define M_VMPSEG		93	/* pseudo-segment structure */
 #define M_OVLMAP		75	/* OVL map structures */
 #define	M_OVLMAPENT		76	/* OVL map entry structures */
 #define M_OVLOBJ		77	/* OVL object structure */
