@@ -371,5 +371,5 @@ active:
 	totalp->t_free = (long)cnt.v_page_free_count;
 	avefree = cnt.v_page_free_count;
 
-	loadav(avenrun, nrun);
+	//loadav(avenrun, nrun);
 }
