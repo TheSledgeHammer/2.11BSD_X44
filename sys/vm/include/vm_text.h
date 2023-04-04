@@ -166,10 +166,13 @@ struct vm_xstats {
 	(text)->psx_taddr = (taddr);						\
 };
 
+#ifdef _KERNEL
+
+int ntext;
+
 extern
 struct txtlist  vm_text_list;
 
-#ifdef _KERNEL
 /* vm_drum */
 //int		vm_vsxalloc(vm_text_t);
 //void	vm_vsxfree(vm_text_t, long);
