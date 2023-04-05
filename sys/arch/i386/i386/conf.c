@@ -83,6 +83,8 @@
 #include "scsibus.h"
 #include "pci.h"
 
+#include "apm.h"
+
 /* devsw switch table */
 const struct bdevsw *bdevsw0;
 const struct cdevsw *cdevsw0;
@@ -205,7 +207,7 @@ void
 misc_init(devsw)
 	struct devswtable *devsw;
 {
-	//DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &apm_cdevsw, NULL);					/* Power Management (APM) Interface */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &apm_cdevsw, NULL);					/* Power Management (APM) Interface */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);				/* CMOS Interface */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &mm_cdevsw, NULL);					/* /dev/{null,mem,kmem,...} */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */

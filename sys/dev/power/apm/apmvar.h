@@ -30,9 +30,10 @@
 #ifndef _DEV_APM_APMVAR_H_
 #define _DEV_APM_APMVAR_H_
 
+#include <sys/select.h>				/* for struct selinfo */
+
 #include <dev/power/apm/apmbios.h>
 #include <dev/power/apm/apmio.h>
-#include <sys/select.h>				/* for struct selinfo */
 
 struct apm_accessops {
 	void	(*aa_disconnect)(void *);
@@ -65,10 +66,8 @@ struct apm_softc {
 	void 					*sc_cookie;
 };
 
-#define	APM_F_DONT_RUN_HOOKS	0x01
-
-int apm_match(void);
-void apm_attach(struct apm_softc *);
+int apm_match(struct device *, struct cfdata *, void *);
+void apm_attach(struct device *, struct device *, void *);
 const char *apm_strerror(int);
 
 #endif /* _DEV_APM_APMVAR_H_ */

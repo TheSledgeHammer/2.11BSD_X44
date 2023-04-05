@@ -160,11 +160,18 @@ config			twobsd	root on ? type ?
 # Device configuration
 #
 
-mainbus0    		at root
+mainbus0    	at root
 cpu0 			at mainbus?
 ioapic* 		at mainbus?
 
-#apm0			at mainbus0		# Advanced power management
+# Tuning for power management, see apm(4) for more details.
+#options	APM_DISABLE
+#options	APM_V10_ONLY
+#options	APM_NO_V12
+#options	APMDEBUG
+#options	APM_POWER_PRINT
+
+#apm0		at mainbus0		# Advanced power management
 
 # PCI bus support
 pci*			at mainbus? bus ?

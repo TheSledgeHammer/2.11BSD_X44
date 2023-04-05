@@ -56,6 +56,7 @@
 #include <sys/poll.h>
 #include <sys/conf.h>
 #include <sys/errno.h>
+#include <sys/power.h>
 
 #include <dev/power/apm/apmvar.h>
 
@@ -134,6 +135,11 @@ CFDRIVER_DECL(NULL, apm, DV_DULL);
 CFATTACH_DECL(apm, &apm_cd, &apm_cops, sizeof(struct apm_softc));
 
 /* configurable variables */
+#ifdef APM_DISABLE
+int	apm_enabled = 0;
+#else
+int	apm_enabled = 1;
+#endif
 #ifdef APM_NO_STANDBY
 int	apm_do_standby = 0;
 #else
@@ -158,6 +164,18 @@ int	apm_damn_fool_bios, apm_op_inprog;
 int	apm_evindex;
 
 static int apm_spl;		/* saved spl while suspended */
+
+/*
+ * APM Accessops
+ */
+void apm_disconnect(struct apm_softc *);
+void apm_enable(struct apm_softc *, int);
+int apm_set_powstate(struct apm_softc *, u_int, u_int);
+int apm_get_powstate(struct apm_softc *, u_int, struct apm_power_info *);
+int apm_get_event(struct apm_softc *, u_int *, u_int *);
+void apm_cpu_busy(struct apm_softc *);
+void apm_cpu_idle(struct apm_softc *);
+void apm_get_capabilities(struct apm_softc *, u_int *, u_int *);
 
 const char *
 apm_strerror(int code)
@@ -295,18 +313,19 @@ apm_suspend(struct apm_softc *sc)
 	}
 	sc->sc_power_state = PWR_SUSPEND;
 
-	if (!(sc->sc_hwflags & APM_F_DONT_RUN_HOOKS)) {
-		pmf_system_suspend(PMF_Q_NONE);
-		apm_spl = splhigh();
-	}
+	dopowerhooks(PWR_SOFTSUSPEND);
 
-	error = (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie, APM_DEV_ALLDEVS,
-	    APM_SYS_SUSPEND);
+	apm_spl = splhigh();
 
-	if (error)
+	dopowerhooks(PWR_SUSPEND);
+
+	error = apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_SYS_SUSPEND);
+
+	if (error) {
 		apm_resume(sc, 0, 0);
-	else
+	} else {
 		apm_resume(sc, APM_SYS_STANDBY_RESUME, 0);
+	}
 }
 
 static void
@@ -323,16 +342,19 @@ apm_standby(struct apm_softc *sc)
 	}
 	sc->sc_power_state = PWR_STANDBY;
 
-	if (!(sc->sc_hwflags & APM_F_DONT_RUN_HOOKS)) {
-		pmf_system_suspend(PMF_Q_NONE);
-		apm_spl = splhigh();
-	}
-	error = (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie, APM_DEV_ALLDEVS,
-	    APM_SYS_STANDBY);
-	if (error)
+	dopowerhooks(PWR_SOFTSTANDBY);
+
+	apm_spl = splhigh();
+
+	dopowerhooks(PWR_STANDBY);
+
+	error = apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_SYS_STANDBY);
+
+	if (error) {
 		apm_resume(sc, 0, 0);
-	else
+	} else {
 		apm_resume(sc, APM_SYS_STANDBY_RESUME, 0);
+	}
 }
 
 static void
@@ -354,10 +376,12 @@ apm_resume(struct apm_softc *sc, u_int event_type, u_int event_info)
 #endif
 
 	inittodr(time_second);
-	if (!(sc->sc_hwflags & APM_F_DONT_RUN_HOOKS)) {
-		splx(apm_spl);
-		pmf_system_resume(PMF_Q_NONE);
-	}
+
+	dopowerhooks(PWR_RESUME);
+
+	splx(apm_spl);
+
+	dopowerhooks(PWR_SOFTRESUME);
 
 	apm_record_event(sc, event_type);
 }
@@ -399,13 +423,11 @@ apm_event_handle(struct apm_softc *sc, u_int event_code, u_int event_info)
 			if (apm_op_inprog == 0 && apm_record_event(sc, event_code))
 				apm_userstandbys++;
 			apm_op_inprog++;
-			(void) (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie,
-			APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
+			(void) apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
 		} else {
-			(void) (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie,
-			APM_DEV_ALLDEVS, APM_LASTREQ_REJECTED);
+			(void) apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_LASTREQ_REJECTED);
 			/* in case BIOS hates being spurned */
-			(*sc->sc_ops->aa_enable)(sc->sc_cookie, 1);
+			apm_enable(sc, 1);
 		}
 		break;
 
@@ -421,13 +443,11 @@ apm_event_handle(struct apm_softc *sc, u_int event_code, u_int event_info)
 			if (apm_op_inprog == 0 && apm_record_event(sc, event_code))
 				apm_standbys++;
 			apm_op_inprog++;
-			(void) (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie,
-			APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
+			(void) apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
 		} else {
-			(void) (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie,
-			APM_DEV_ALLDEVS, APM_LASTREQ_REJECTED);
+			(void) apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_LASTREQ_REJECTED);
 			/* in case BIOS hates being spurned */
-			(*sc->sc_ops->aa_enable)(sc->sc_cookie, 1);
+			apm_enable(sc, 1);
 		}
 		break;
 
@@ -436,8 +456,7 @@ apm_event_handle(struct apm_softc *sc, u_int event_code, u_int event_info)
 		if (apm_op_inprog == 0 && apm_record_event(sc, event_code))
 			apm_suspends++;
 		apm_op_inprog++;
-		(void) (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie,
-		APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
+		(void) apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
 		break;
 
 	case APM_SUSPEND_REQ:
@@ -451,13 +470,13 @@ apm_event_handle(struct apm_softc *sc, u_int event_code, u_int event_info)
 		if (apm_op_inprog == 0 && apm_record_event(sc, event_code))
 			apm_suspends++;
 		apm_op_inprog++;
-		(void) (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie,
+		(void) apm_set_powstate(sc,
 		APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
 		break;
 
 	case APM_POWER_CHANGE:
 		DPRINTF(APMDEBUG_EVENTS, ("apmev: power status change\n"));
-		error = (*sc->sc_ops->aa_get_powstat)(sc->sc_cookie, 0, &pi);
+		error = apm_get_powstate(sc, 0, &pi);
 #ifdef APM_POWER_PRINT
 		/* only print if nobody is catching events. */
 		if (error == 0 &&
@@ -507,9 +526,8 @@ apm_event_handle(struct apm_softc *sc, u_int event_code, u_int event_info)
 			DPRINTF(APMDEBUG_EVENTS, ("apm: unexpected event\n"));
 		} else {
 			u_int numbatts, capflags;
-			(*sc->sc_ops->aa_get_capabilities)(sc->sc_cookie, &numbatts,
-					&capflags);
-			(*sc->sc_ops->aa_get_powstat)(sc->sc_cookie, 0, &pi);
+			apm_get_capabilities(sc, &numbatts, &capflags);
+			apm_get_powstate(sc, 0, &pi);
 		}
 		break;
 
@@ -544,11 +562,9 @@ apm_periodic_check(struct apm_softc *sc)
 	 * suspend/standby
 	 */
 	if (apm_op_inprog)
-		(*sc->sc_ops->aa_set_powstate)(sc->sc_cookie, APM_DEV_ALLDEVS,
-		APM_LASTREQ_INPROG);
+		apm_set_powstate(sc, APM_DEV_ALLDEVS, APM_LASTREQ_INPROG);
 
-	while ((error = (*sc->sc_ops->aa_get_event)(sc->sc_cookie, &event_code,
-			&event_info)) == 0 && !apm_damn_fool_bios)
+	while ((error = apm_get_event(sc, &event_code, &event_info)) == 0 && !apm_damn_fool_bios)
 		apm_event_handle(sc, event_code, event_info);
 
 	if (error != APM_ERR_NOEVENTS)
@@ -586,20 +602,28 @@ apm_set_ver(struct apm_softc *sc)
 		apm_minver = 0;
 	}
 ok:
-printf("Power Management spec V%d.%d", apm_majver, apm_minver);
+ 	printf("Power Management spec V%d.%d", apm_majver, apm_minver);
 	apm_inited = 1;
 }
 
 int
-apm_match(void)
+apm_match(parent, match, aux)
+	struct device *parent;
+	struct cfdata *match;
+	void *aux;
 {
-	static int got;
-	return (!got++);
+	if (apm_inited) {
+		return (0);
+	}
+	return (apm_enabled);
 }
 
 void
-apm_attach(struct apm_softc *sc)
+apm_attach(parent, self, aux)
+	struct device *parent, *self;
+	void *aux;
 {
+	struct apm_softc *sc = (void *)self;
 	u_int numbatts, capflags;
 
 	printf(": ");
@@ -620,16 +644,15 @@ apm_attach(struct apm_softc *sc)
 	apm_set_ver(sc);	/* prints version info */
 	printf("\n");
 	if (apm_minver >= 2)
-		(*sc->sc_ops->aa_get_capabilities)(sc->sc_cookie, &numbatts,
-		    &capflags);
+		apm_get_capabilities(sc, &numbatts, &capflags);
 
 	/*
 	 * enable power management
 	 */
-	(*sc->sc_ops->aa_enable)(sc->sc_cookie, 1);
+	apm_enable(sc, 1);
 
 	if (sc->sc_ops->aa_cpu_busy)
-		(*sc->sc_ops->aa_cpu_busy)(sc->sc_cookie);
+		apm_cpu_busy(sc);
 
 	simple_lock_init(&sc->sc_lock, "apm_lock_init");
 
@@ -645,22 +668,45 @@ apm_attach(struct apm_softc *sc)
 	 * Create a kernel thread to periodically check for APM events,
 	 * and notify other subsystems when they occur.
 	 */
+	kthread_create_deferred(apm_thread_create, sc);
 
-	if (kthread_create(PRI_NONE, 0, NULL, apm_thread, sc, &sc->sc_thread, "%s", device_xname(sc->sc_dev)) != 0) {
+	if (kthread_create(apm_thread, sc, &sc->sc_thread, "%s", sc->sc_dev->dv_xname) != 0) {
 
 		/*
 		 * We were unable to create the APM thread; bail out.
 		 */
 
 		if (sc->sc_ops->aa_disconnect) {
-			(*sc->sc_ops->aa_disconnect)(sc->sc_cookie);
+			apm_disconnect(sc);
 		}
 		printf(sc->sc_dev, "unable to create thread, "
 				"kernel APM support disabled\n");
 	}
 
+	/*
 	if (!pmf_device_register(sc->sc_dev, NULL, NULL)) {
 		printf(sc->sc_dev, "couldn't establish power handler\n");
+	}
+	*/
+}
+
+/*
+ * Create a kernel thread to periodically check for APM events,
+ * and notify other subsystems when they occur.
+ */
+void
+apm_thread_create(void *v)
+{
+	struct apm_softc *sc = v;
+
+	if (kthread_create(apm_thread, sc, &sc->sc_thread, "%s", sc->sc_dev->dv_xname) != 0) {
+		/*
+		 * We were unable to create the APM thread; bail out.
+		 */
+		if (sc->sc_ops->aa_disconnect) {
+			apm_disconnect(sc);
+			printf(sc->sc_dev, "unable to create thread, kernel APM support disabled\n");
+		}
 	}
 }
 
@@ -792,8 +838,7 @@ apmioctl(dev_t dev, u_long cmd, void *data, int flag,
 #if 0
 		apm_get_powstate(actl->dev); /* XXX */
 #endif
-		error = (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie, actl->dev,
-		    actl->mode);
+		error = apm_set_powstate(sc, actl->dev,actl->mode);
 		apm_suspends++;
  		break;
 
@@ -820,8 +865,7 @@ apmioctl(dev_t dev, u_long cmd, void *data, int flag,
 	case OAPM_IOC_GETPOWER:
 	case APM_IOC_GETPOWER:
 		powerp = (struct apm_power_info *)data;
-		if ((error = (*sc->sc_ops->aa_get_powstat)(sc->sc_cookie, 0,
-		    powerp)) != 0) {
+		if ((error = apm_get_powstate(sc, 0, powerp)) != 0) {
 			apm_perror("ioctl get power status", error);
 			error = EIO;
 			break;
@@ -920,4 +964,64 @@ apmkqfilter(dev_t dev, struct knote *kn)
 	APM_UNLOCK(sc);
 
 	return (0);
+}
+
+/*
+ * APM Accessops
+ */
+void
+apm_disconnect(struct apm_softc *sc)
+{
+    (*sc->sc_ops->aa_disconnect)(sc->sc_cookie);
+}
+
+void
+apm_enable(struct apm_softc *sc, int on)
+{
+    (*sc->sc_ops->aa_enable)(sc->sc_cookie, on);
+}
+
+int
+apm_set_powstate(struct apm_softc *sc, u_int dev, u_int state)
+{
+	int error;
+
+	error = (*sc->sc_ops->aa_set_powstate)(sc->sc_cookie, dev, state);
+	return (error);
+}
+
+int
+apm_get_powstate(struct apm_softc *sc, u_int id, struct apm_power_info *pi)
+{
+	int error;
+
+	error = (*sc->sc_ops->aa_get_powstat)(sc->sc_cookie, id, pi);
+	return (error);
+}
+
+int
+apm_get_event(struct apm_softc *sc, u_int *code, u_int *info)
+{
+    int error;
+
+    error = (*sc->sc_ops->aa_get_event)(sc->sc_cookie, code, info);
+    return (error);
+}
+
+void
+apm_cpu_busy(struct apm_softc *sc)
+{
+    (*sc->sc_ops->aa_cpu_busy)(sc->sc_cookie);
+}
+
+void
+apm_cpu_idle(struct apm_softc *sc)
+{
+    (*sc->sc_ops->aa_cpu_idle)(sc->sc_cookie);
+}
+
+void
+apm_get_capabilities(struct apm_softc *sc, u_int *numbatts, u_int *capflags)
+{
+    (*sc->sc_ops->aa_get_capabilities)(sc->sc_cookie, numbatts, capflags);
 }
