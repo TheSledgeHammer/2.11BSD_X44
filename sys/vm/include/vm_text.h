@@ -168,6 +168,7 @@ struct vm_xstats {
 
 #ifdef _KERNEL
 
+extern
 int ntext;
 
 extern
