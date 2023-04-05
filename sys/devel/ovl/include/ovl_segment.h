@@ -39,8 +39,6 @@ CIRCLEQ_HEAD(ovl_seglist, ovl_segment);
 struct ovl_segment {
 	struct ovl_pglist				pglist; 				/* Pages in overlay pglist memory */
 
-	CIRCLEQ_ENTRY(ovl_segment)		segmentq;				/* queue info for FIFO queue or free list (S) */
-
 	CIRCLEQ_ENTRY(ovl_segment) 		hashlist;				/* hash table links (O) */
 	CIRCLEQ_ENTRY(ovl_segment) 		seglist;				/* segments in same object (O) */
 
@@ -56,6 +54,8 @@ struct ovl_segment {
 
 /* flags */
 #define OVL_SEG_VM_SEG				0x16	/* overlay segment holds vm_segment */
+
+#ifdef _KERNEL
 
 extern
 struct ovl_seglist 					ovl_segment_list;
@@ -80,4 +80,5 @@ void				ovl_segment_remove(ovl_segment_t);
 ovl_segment_t		ovl_segment_lookup(ovl_object_t, vm_offset_t);
 void				ovl_segment_init(vm_offset_t, vm_offset_t);
 
+#endif /* KERNEL */
 #endif /* _OVL_SEGMENT_H_ */

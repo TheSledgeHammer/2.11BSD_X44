@@ -112,7 +112,7 @@ ovl_object_init(size)
 
 	for (i = 0; i < OVL_OBJECT_HASH_COUNT; i++) {
 		RB_INIT(&ovl_object_hashtable[i]);
-		TAILQ_INIT(&vm_object_hashtable[i]);
+		TAILQ_INIT(&ovl_vm_object_hashtable[i]);
 	}
 
 	overlay_object = &overlay_object_store;
@@ -184,6 +184,50 @@ ovl_object_reference(object)
 }
 
 void
+ovl_object_deallocate(object)
+	register ovl_object_t	object;
+{
+	ovl_object_t temp;
+
+	while (object != NULL) {
+
+		ovl_object_lock(object);
+		if (--(object->ref_count) != 0) {
+			ovl_object_unlock(object);
+			return;
+		}
+
+		ovl_object_remove(object->pager);
+
+		ovl_object_terminate(object);
+		object = temp;
+	}
+}
+
+void
+ovl_object_terminate(object)
+	register ovl_object_t	object;
+{
+	while (object->paging_in_progress) {
+			ovl_object_sleep(object, object, FALSE);
+			ovl_object_lock(object);
+	}
+
+	ovl_object_unlock(object);
+
+	if (object->pager != NULL) {
+		vm_pager_deallocate(object->pager);
+	}
+
+	ovl_object_tree_lock();
+	RB_REMOVE(object_rbt, &ovl_object_tree, object);
+	ovl_object_count--;
+	ovl_object_tree_unlock();
+
+	overlay_free((caddr_t)object, M_OVLOBJ);
+}
+
+void
 ovl_object_setpager(object, pager, paging_offset, read_only)
 	ovl_object_t 	object;
 	vm_pager_t		pager;
@@ -240,7 +284,6 @@ ovl_object_lookup(pager)
 	ovl_object_t 						object;
 
 	bucket = &ovl_object_hashtable[ovl_object_hash(pager)];
-
 	RB_FOREACH(entry, ovl_object_hash_head, bucket) {
 		object = entry->object;
 		if (object->pager == pager) {
@@ -300,7 +343,6 @@ ovl_object_remove(pager)
 	register ovl_object_t				object;
 
 	bucket = &ovl_object_hashtable[ovl_object_hash(pager)];
-
 	RB_FOREACH(entry, ovl_object_hash_head, bucket) {
 		object = entry->object;
 		if (object->pager == pager) {

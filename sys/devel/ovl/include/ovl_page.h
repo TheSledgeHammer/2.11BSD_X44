@@ -115,6 +115,7 @@ struct ovl_page {
 /* flags */
 #define OVL_PG_VM_PG			0x16	/* overlay page holds vm_page */
 
+#ifdef _KERNEL
 extern
 struct ovl_pglist				ovl_page_list;
 extern
@@ -127,11 +128,12 @@ long				       		ovl_vm_page_count;
 extern
 simple_lock_data_t				ovl_vm_page_hash_lock;
 
-#define	ovl_page_lock_lists()	simple_lock(&ovl_page_list_lock)
-#define	ovl_page_unlock_lists()	simple_unlock(&ovl_page_list_lock)
+#define	ovl_page_lock_lists()		simple_lock(&ovl_page_list_lock)
+#define	ovl_page_unlock_lists()		simple_unlock(&ovl_page_list_lock)
 
 #define	ovl_vm_page_hash_lock()		simple_lock(&ovl_vm_page_hash_lock)
 #define	ovl_vm_page_hash_unlock()	simple_unlock(&ovl_vm_page_hash_lock)
+
 
 void		ovl_page_init(vm_offset_t, vm_offset_t);
 void		ovl_page_insert(ovl_page_t, ovl_segment_t, vm_offset_t);
@@ -142,5 +144,5 @@ void 		*ovl_pbootinit(void *, vm_size_t, int);
 
 //vm_page_copy_to_ovl_page		/* inserts into ovl_page hash list */
 //vm_page_copy_from_ovl_page	/* removes from ovl_page hash list */
-
+#endif /* KERNEL */
 #endif /* _OVL_PAGE_H_ */

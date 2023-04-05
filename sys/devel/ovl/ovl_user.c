@@ -145,8 +145,9 @@ ovl_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 		 * vm_allocate_with_pager to not do vm_object_enter if this
 		 * is an internal object ..."
 		 */
-		if (!internal)
+		if (!internal) {
 			ovl_object_enter(object, pager);
+		}
 	}
 
 	if (internal) {

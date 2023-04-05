@@ -274,8 +274,6 @@ ovl_page_remove(mem)
 {
 	register struct ovl_pglist  *bucket;
 
-	VM_PAGE_CHECK(mem);
-
 	if (!(mem->flags & PG_TABLED))
 		return;
 
@@ -361,6 +359,7 @@ ovl_page_insert_vm_page(opage, vpage)
     if(vpage == NULL) {
         return;
     }
+
     vbucket = &ovl_vm_page_hashtable[ovl_vpage_hash(opage, vpage)];
     opage->vm_page = vpage;
     opage->flags |= OVL_PG_VM_PG;
@@ -377,7 +376,7 @@ ovl_page_lookup_vm_page(opage)
 	ovl_page_t 	opage;
 {
 	register vm_page_t 			vpage;
-    struct vsegment_hash_head 	*vbucket;
+    struct vm_page_hash_head 	*vbucket;
 
     vbucket = &ovl_vm_page_hashtable[ovl_vpage_hash(opage, vpage)];
     ovl_vm_page_hash_lock();
@@ -397,7 +396,7 @@ ovl_page_remove_vm_page(vpage)
 	ovl_page_t 	vpage;
 {
 	register ovl_page_t 		opage;
-    struct vsegment_hash_head 	*vbucket;
+    struct vm_page_hash_head 	*vbucket;
 
     vbucket = &ovl_vm_page_hashtable[ovl_vpage_hash(opage, vpage)];
 

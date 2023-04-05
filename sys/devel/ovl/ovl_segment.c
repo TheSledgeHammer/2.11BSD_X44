@@ -112,7 +112,6 @@ ovl_segment_init(start, end)
 		seg->flags = 0;
 		seg->object = NULL;
 		seg->log_addr = la;
-		CIRCLEQ_INSERT_TAIL(&ovl_segment_list, seg, segmentq);
 		seg++;
 		la += SEGMENT_SIZE;
 	}
@@ -230,7 +229,7 @@ ovl_segment_search_next(object, offset)
 	register struct ovl_seglist 	*bucket;
 	ovl_segment_t 				segment;
 
-	bucket = &vm_segment_buckets[ovl_segment_hash(object, offset)];
+	bucket = &ovl_segment_buckets[ovl_segment_hash(object, offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
 	CIRCLEQ_FOREACH(segment, bucket, hashlist) {
@@ -251,7 +250,7 @@ ovl_segment_search_prev(object, offset)
 	register struct ovl_seglist *bucket;
 	ovl_segment_t segment;
 
-	bucket = &vm_segment_buckets[ovl_segment_hash(object, offset)];
+	bucket = &ovl_segment_buckets[ovl_segment_hash(object, offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
 	CIRCLEQ_FOREACH_REVERSE(segment, bucket, hashlist) {

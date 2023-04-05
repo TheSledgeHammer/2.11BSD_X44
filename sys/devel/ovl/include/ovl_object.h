@@ -80,6 +80,7 @@ struct ovl_object {
 
 	vm_pager_t							pager;				/* where to get data */
 	vm_offset_t							paging_offset;		/* Offset into paging space */
+	u_short								paging_in_progress;
 
 	u_short								flags;				/* see below */
 	simple_lock_data_t					lock;				/* Synchronization */
@@ -94,7 +95,7 @@ struct ovl_object {
 };
 
 /* Flags */
-#define OVL_OBJ_VM_OBJ		0x01	/* overlay object holds vm_object */
+#define OVL_OBJ_VM_OBJ					0x01	/* overlay object holds vm_object */
 
 RB_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
 struct ovl_object_hash_entry {
@@ -147,6 +148,8 @@ void		 	ovl_object_enter(ovl_object_t, vm_pager_t);
 void		 	ovl_object_init(vm_size_t);
 ovl_object_t	ovl_object_lookup(vm_pager_t);
 void		 	ovl_object_reference(ovl_object_t);
+void			ovl_object_deallocate(ovl_object_t);
+void			ovl_object_terminate(ovl_object_t);
 void			ovl_object_remove(vm_pager_t);
 
 #endif /* KERNEL */

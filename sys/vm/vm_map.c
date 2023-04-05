@@ -407,10 +407,10 @@ vm_cl_insert(map, entry)
 
     vm_offset_t space = vm_rb_space(map, entry);
     entry->ownspace = entry->space = space;
-    if(head->space == vm_cl_space(map, entry)) {
+    if (head->space == vm_cl_space(map, entry)) {
         CIRCLEQ_INSERT_HEAD(&map->cl_header, head, cl_entry);
     }
-    if(tail->space == vm_cl_space(map, entry)) {
+    if (tail->space == vm_cl_space(map, entry)) {
         CIRCLEQ_INSERT_TAIL(&map->cl_header, tail, cl_entry);
     }
 }
@@ -922,8 +922,8 @@ vm_map_search_prev_entry(map, address, entry)
     register vm_map_entry_t	first = CIRCLEQ_FIRST(&map->cl_header);
     register vm_map_entry_t	last = CIRCLEQ_LAST(&map->cl_header);
 
-    CIRCLEQ_FOREACH(entry, &map->cl_header, cl_entry) {
-        if (address >= last->start) {
+    CIRCLEQ_FOREACH_REVERSE(entry, &map->cl_header, cl_entry) {
+        if (address <= last->start) {
             cur = CIRCLEQ_PREV(last, cl_entry);
             if ((cur != first) && (cur->end > address)) {
                 cur = entry;

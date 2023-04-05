@@ -71,37 +71,46 @@ struct ovl_map {
 	ovl_map_entry_t						first_free;		/* First free space hint */
     unsigned int		                timestamp;	    /* Version number */
 
-#define	min_offset			    	cl_header.cqh_first->start
-#define max_offset			    	cl_header.cqh_first->end
+#define	min_offset			    		cl_header.cqh_first->start
+#define max_offset			    		cl_header.cqh_first->end
 };
 
-#define	ovl_lock_drain_interlock(ovl) { 								\
-	lockmgr(&(ovl)->lock, LK_DRAIN|LK_INTERLOCK, 						\
-		&(ovl)->ref_lock, curproc); 									\
-	(ovl)->timestamp++; 												\
+#define	ovl_map_lock_drain_interlock(ovl) { 								\
+	lockmgr(&(ovl)->lock, LK_DRAIN|LK_INTERLOCK, 							\
+		&(ovl)->ref_lock, curproc->p_pid); 									\
+	(ovl)->timestamp++; 													\
 }
 
 #ifdef DIAGNOSTIC
-#define	ovl_lock(ovl) { 												\
-	if (lockmgr(&(ovl)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0) { \
-		panic("ova_lock: failed to get lock"); 							\
-	} 																	\
-	(ova)->timestamp++; 												\
+#define	ovl_map_lock(ovl) { 												\
+	if (lockmgr(&(ovl)->lock, LK_EXCLUSIVE, (void *)0, curproc->p_pid) != 0) { \
+		panic("ova_lock: failed to get lock"); 								\
+	} 																		\
+	(ova)->timestamp++; 													\
 }
 #else
-#define	ovl_lock(ovl) {  												\
-    (lockmgr(&(ovl)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0); 	\
-    (ovl)->timestamp++; 												\
+#define	ovl_map_lock(ovl) {  												\
+    lockmgr(&(ovl)->lock, LK_EXCLUSIVE, (void *)0, curproc->p_pid); 		\
+    (ovl)->timestamp++; 													\
 }
 #endif /* DIAGNOSTIC */
 
-#define	ovl_unlock(ovl) \
-		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc)
-#define	ovl_lock_read(ovl) \
-		lockmgr(&(ovl)->lock, LK_SHARED, (void *)0, curproc)
-#define	ovl_unlock_read(ovl) \
-		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc)
-
+#define	ovl_map_unlock(ovl) 												\
+		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
+#define	ovl_map_lock_read(ovl) 												\
+		lockmgr(&(ovl)->lock, LK_SHARED, (void *)0, curproc->p_pid)
+#define	ovl_map_unlock_read(ovl) 											\
+		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
+#define ovl_map_set_recursive(map) { 										\
+	simple_lock(&(map)->lk_lnterlock); 										\
+	(map)->lk_flags |= LK_CANRECURSE; 										\
+	simple_unlock(&(map)->lk_lnterlock); 									\
+}
+#define ovl_map_clear_recursive(map) { 										\
+	simple_lock(&(map)->lk_lnterlock); 										\
+	(map)->lk_flags &= ~LK_CANRECURSE; 										\
+	simple_unlock(&(map)->lk_lnterlock); 									\
+}
 /*
  *	Functions implemented as macros
  */
