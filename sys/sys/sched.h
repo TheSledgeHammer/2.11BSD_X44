@@ -60,12 +60,12 @@
  *
  * For the implementation:
  * Please look at the following:
- *  - sys/gsched_cfs.h
- *  - sys/gsched_edf.h
- *  - kern/kern_gsched.c
+ *  - sys/sched_cfs.h
+ *  - sys/sched_edf.h
+ *  - kern/kern_sched.c
  *  - kern/kern_synch.c
- *  - kern/gsched_cfs.c
- *  - kern/gsched_edf.c
+ *  - kern/sched_cfs.c
+ *  - kern/sched_edf.c
  *
  * Scheduler Decision Tree:
  * 																						 --> Process Complete --> Process Exits

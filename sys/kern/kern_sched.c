@@ -41,9 +41,9 @@
 #include <sys/proc.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
-#include <sys/gsched.h>
-#include <sys/gsched_cfs.h>
-#include <sys/gsched_edf.h>
+#include <sys/sched.h>
+#include <sys/sched_cfs.h>
+#include <sys/sched_edf.h>
 
 #include <vm/include/vm.h>
 

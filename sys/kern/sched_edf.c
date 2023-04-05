@@ -40,8 +40,8 @@
 #include <sys/buf.h>
 #include <sys/signal.h>
 #include <sys/signalvar.h>
-#include <sys/gsched.h>
-#include <sys/gsched_edf.h>
+#include <sys/sched.h>
+#include <sys/sched_edf.h>
 
 #include <vm/include/vm.h>
 

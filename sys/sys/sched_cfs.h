@@ -42,7 +42,7 @@
 #ifndef _SYS_GSCHED_CFS_H
 #define _SYS_GSCHED_CFS_H
 
-#include <sys/gsched.h>
+#include <sys/sched.h>
 #include <sys/tree.h>
 
 /* Generic Base stats for CFS */

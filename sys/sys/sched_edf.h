@@ -29,7 +29,7 @@
 #ifndef _SYS_GSCHED_EDF_H
 #define _SYS_GSCHED_EDF_H
 
-#include <sys/gsched.h>
+#include <sys/sched.h>
 
 struct gsched_edf {
 	struct gsched 		*edf_gsched;		/* pointer to global scheduler */
@@ -65,7 +65,7 @@ int 	edf_utilization(char, char);
 int 	edf_demand(char, char, char, char);
 int 	edf_workload(char, char, char);
 int 	edf_test(struct gsched_edf *);
-int	edf_schedcpu(struct proc *);
+int		edf_schedcpu(struct proc *);
 
 
 /* Basic Concept */
