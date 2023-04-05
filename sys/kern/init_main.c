@@ -70,7 +70,7 @@
 #include <sys/protosw.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
-#include <sys/gsched.h>
+#include <sys/sched.h>
 #include <sys/ksyms.h>
 #include <sys/kenv.h>
 #include <sys/msgbuf.h>
