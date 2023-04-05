@@ -51,7 +51,6 @@ struct vm_data {
 	segsz_t 				psx_dsize;				/* data size */
     caddr_t					psx_daddr;				/* data addr */
 	int 					psx_dflag;				/* data flags */
-	u_long					*psx_dresult;			/* data extent */
 };
 
 /*
@@ -61,17 +60,14 @@ struct vm_stack {
 	segsz_t 				psx_ssize;				/* stack size */
 	caddr_t					psx_saddr;				/* stack addr */
     int 					psx_sflag;				/* stack flags */
-    u_long					*psx_sresult;			/* stack extent */
 };
 
 struct txtlist;
 TAILQ_HEAD(txtlist, vm_text);
 struct vm_text {
-    /* vm_text extents */
 	segsz_t 				psx_tsize;				/* text size */
 	caddr_t					psx_taddr;				/* text addr */
     int 					psx_tflag;				/* text flags */
-    u_long					psx_tresult;			/* text extent */
 
     /* vm_text generic */
     TAILQ_ENTRY(vm_text)  	psx_list;				/* text freelist */
