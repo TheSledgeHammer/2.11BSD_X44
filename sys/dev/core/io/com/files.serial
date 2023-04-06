@@ -1,10 +1,15 @@
 # $211BSD$ files.serial
 #
+# SERIAL Devices & Attributes
+#
+
+device	com { } : tty
+file	dev/core/io/com/com.c				com			needs-flag
 
 attach	com at upc with com_upc
 file	dev/core/io/com/com_upc.c			com_upc
 
-# Serial and parallel drivers #
+# Serial and parallel drivers
 attach	com at isa with com_isa
 file	dev/core/io/com/com_isa.c			com_isa
 

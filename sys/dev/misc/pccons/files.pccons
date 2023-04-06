@@ -1,7 +1,13 @@
 # $NetBSD: files.pckbport,v 1.1 2004/03/13 17:31:33 bjh21 Exp $
 # devices attached at pckbport, for use with wscons
 # and generic pc devices
+# PCCONS Devices & Attributes
 
+file	dev/misc/pccons/pcdisplay_subr.c	pcdisplayops
+file	dev/misc/pccons/pcdisplay_chars.c	pcdisplayops
+
+device	pckbc: pckbport
+file	dev/misc/pccons/pckbc.c				pckbc											needs-flag
 file	dev/misc/pccons/pckbport.c			pckbport | pckbport_machdep_cnattach			needs-flag
 
 device	pckbd: wskbddev
