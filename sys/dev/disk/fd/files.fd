@@ -1,9 +1,8 @@
 # $211BSD:
 
 # Floppy Disk Controller
-device	fdc {drive = -1}: isadma
+device	fdc {drive = -1}
 file	dev/disk/fd/fd.c				fdc 						needs-flag
 
 attach	fdc at isa with fdc_isa
-file	dev/disk/fd/fdc_isa.c			fdc_isa
-
+file	dev/disk/fd/fdc_isa.c				fdc_isa

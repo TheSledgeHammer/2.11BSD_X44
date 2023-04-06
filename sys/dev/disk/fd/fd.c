@@ -90,8 +90,10 @@
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: fd.c,v 1.51.2.1 2004/06/04 03:41:05 jmc Exp $");
 
-#include "rnd.h"
-#include "opt_ddb.h"
+//#include "rnd.h"
+//#include "opt_ddb.h"
+
+#include "isadma.h"
 
 /*
  * XXX This driver should be properly MI'd some day, but this allows us
@@ -156,7 +158,7 @@ __KERNEL_RCSID(0, "$NetBSD: fd.c,v 1.51.2.1 2004/06/04 03:41:05 jmc Exp $");
 
 #include "mca.h"
 #if NMCA > 0
-#include <machine/mca_machdep.h>				/* for MCA_system */
+#include <machine/mca/mca_machdep.h>				/* for MCA_system */
 #endif
 
 #endif /* i386 */
@@ -587,7 +589,7 @@ void
 fdstrategy(bp)
 	register struct buf *bp;	/* IO operation to perform */
 {
-	struct fd_softc *fd = device_lookup(&fd_cd, FDUNIT(bp->b_dev));
+	struct fd_softc *fd = fd_cd.cd_devs[FDUNIT(dev)];
 	int sz;
  	int s;
 
@@ -626,7 +628,7 @@ fdstrategy(bp)
 
 #ifdef FD_DEBUG
 	printf("fdstrategy: b_blkno %d b_bcount %ld blkno %d cylin %ld sz %d\n",
-	    bp->b_blkno, bp->b_bcount, fd->sc_blkno, bp->b_cylinder, sz);
+	    bp->b_blkno, bp->b_bcount, fd->sc_blkno, bp->b_cylin, sz);
 #endif
 
 	/* Queue transfer on drive, activate drive and controller if idle. */
@@ -832,7 +834,7 @@ fdopen(dev, flags, mode, p)
 	struct fd_softc *fd;
 	const struct fd_type *type;
 
-	fd = device_lookup(&fd_cd, FDUNIT(dev));
+	fd = fd_cd.cd_devs[FDUNIT(dev)];
 	if (fd == NULL)
 		return (ENXIO);
 
@@ -859,7 +861,7 @@ fdclose(dev, flags, mode, p)
 	int mode;
 	struct proc *p;
 {
-	struct fd_softc *fd = device_lookup(&fd_cd, FDUNIT(dev));
+	struct fd_softc *fd = fd_cd.cd_devs[FDUNIT(dev)];
 
 	fd->sc_flags &= ~FD_OPEN;
 	fd->sc_opts &= ~(FDOPT_NORETRY|FDOPT_SILENT);
@@ -1323,7 +1325,7 @@ fdioctl(dev, cmd, addr, flag, p)
 	int flag;
 	struct proc *p;
 {
-	struct fd_softc *fd = device_lookup(&fd_cd, FDUNIT(dev));
+	struct fd_softc *fd = fd_cd.cd_devs[FDUNIT(dev)];
 	struct fdformat_parms *form_parms;
 	struct fdformat_cmd *form_cmd;
 	struct ne7_fd_formb *fd_formb;
