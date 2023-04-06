@@ -332,6 +332,13 @@ sd*			at atapibus? drive ? flags 0x0000	# ATAPI disk drives
 st*			at atapibus? drive ? flags 0x0000	# ATAPI tape drives
 uk*			at atapibus? drive ? flags 0x0000	# ATAPI unknown
 
+# ISA floppy
+fdc0	at isa? port 0x3f0 irq 6 drq 2	# standard PC floppy controllers
+#fdc1	at isa? port 0x370 irq ? drq ?
+fd*	at fdc? drive ?				# the drives themselves
+# some machines need you to do this instead of fd*
+#fd0	at fdc0 drive 0
+
 # Audio Devices
 
 # Audio support
