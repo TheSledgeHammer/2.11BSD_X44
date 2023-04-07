@@ -101,7 +101,8 @@ struct fdc_isa_softc {
 extern struct cfdriver fd_cd;
 
 CFOPS_DECL(fdc_isa, fdc_isa_probe, fdc_isa_attach, NULL, NULL);
-CFATTACH_DECL(fdc_isa, &fd_cd, &fdc_isa_cops, sizeof(struct fdc_isa_softc));
+CFDRIVER_DECL(NULL, fdc, DV_DULL);
+CFATTACH_DECL(fdc_isa, &fdc_cd, &fdc_isa_cops, sizeof(struct fdc_isa_softc));
 
 #ifdef NEWCONFIG
 void	fdc_isa_forceintr(void *);
