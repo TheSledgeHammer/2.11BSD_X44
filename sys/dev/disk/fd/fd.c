@@ -129,16 +129,6 @@ __KERNEL_RCSID(0, "$NetBSD: fd.c,v 1.51.2.1 2004/06/04 03:41:05 jmc Exp $");
 
 #include "locators.h"
 
-#if defined(atari)
-/*
- * On the atari, it is configured as fdcisa
- */
-#define	FDCCF_DRIVE			FDCISACF_DRIVE
-#define	FDCCF_DRIVE_DEFAULT	FDCISACF_DRIVE_DEFAULT
-
-#define	fd_cd	fdisa_cd
-#endif /* atari */
-
 #include <machine/intr.h>
 
 #include <dev/core/isa/isavar.h>
@@ -202,15 +192,10 @@ void fdcfinishattach(struct device *);
 int fdprobe(struct device *, struct cfdata *, void *);
 void fdattach(struct device *, struct device *, void *);
 
-#ifdef atari
-CFOPS_DECL(fd, fdprobe, fdattach, NULL, NULL);
-CFDRIVER_DECL(NULL, fd, DV_DISK);
-CFATTACH_DECL(fdisa, &fd_cd, &fd_cops, sizeof(struct fd_softc));
-#else
+
 CFOPS_DECL(fd, fdprobe, fdattach, NULL, NULL);
 CFDRIVER_DECL(NULL, fd, DV_DISK);
 CFATTACH_DECL(fd, &fd_cd, &fd_cops, sizeof(struct fd_softc));
-#endif
 
 //extern struct cfdriver fd_cd;
 
@@ -250,7 +235,7 @@ int fd_get_parms(struct fd_softc *);
 void fdstart(struct fd_softc *);
 
 struct dkdriver fddkdriver = {
-		fd_strategy
+	fd_strategy
 };
 
 #if defined(i386)
@@ -1094,9 +1079,11 @@ loop:
 		}
 #endif
 		read = bp->b_flags & B_READ ? DMAMODE_READ : DMAMODE_WRITE;
+#ifdef isadma_unspported
 		isa_dmastart(fdc->sc_ic, fdc->sc_drq,
 		    bp->b_data + fd->sc_skip, fd->sc_nbytes,
 		    NULL, read | DMAMODE_DEMAND, BUS_DMA_NOWAIT);
+#endif
 		bus_space_write_1(iot, fdc->sc_fdctlioh, 0, type->rate);
 #ifdef FD_DEBUG
 		printf("fdcintr: %s drive %d track %d head %d sec %d nblks %d\n",
