@@ -37,8 +37,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	- efi:
 		- update missing.
 		- needs acpica.
-	- uboot:
-		- remove
 
 ## usr.bin:
 
@@ -72,31 +70,28 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## dev:
 - usb (Disabled): Has several compiler errors.
-
+- core:
+	- isadma: does not work with current device arrangement
+	
 - Improve directory structure
 - Essential Drivers
 	- To Support:
 		- AGP: Graphics
 		- USB: Fix compiler errors and add xhci
 		- ACPI
-		- Floppy Disks
 
 ## fs:
 
 ## lib:
 - libsa:
-	- Add other supported filesystems.
-	- Add Networking
+	- Add bzipfs, gzipfs, pkgfs, splitfs
 - libkern:
-- x86emu: add makefile
 
 ## miscfs:
 
 ## net / net80211 / netinet / netinet6 / netipsec / netkey / netns / netpfil :
 - Update to make use of tcp_checksum & udp_checksum
-- netipsec: Update and fix, to compile.
 - netpfil: 
-	- Remove IPFilter? (Any Benefits over using PF & NPF)
 	- Add NPF
 		
 ## ufs:

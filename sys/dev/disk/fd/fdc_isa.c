@@ -127,8 +127,9 @@ fdc_isa_probe(struct device *parent,
 	if (ia->ia_ndrq < 1)
 		return (0);
 
-	if (ISA_DIRECT_CONFIG(ia))
+	if (ISA_DIRECT_CONFIG(ia)) {
 		return (0);
+	}
 
 	/* Disallow wildcarded I/O addresses. */
 	if (ia->ia_iobase == IOBASEUNK)

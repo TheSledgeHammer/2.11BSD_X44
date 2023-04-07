@@ -36,12 +36,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rnd.h"
-
-#if NRND > 0
-#include <dev/misc/rnd/rnd.h>
-#endif
-
 /*
  * Floppies come in various flavors, e.g., 1.2MB vs 1.44MB; here is how
  * we tell them apart.

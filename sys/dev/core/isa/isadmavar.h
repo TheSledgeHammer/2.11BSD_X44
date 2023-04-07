@@ -49,13 +49,21 @@
 #define	DMAMODE_LOOP		0x04
 #define	DMAMODE_LOOPDEMAND	(DMAMODE_LOOP | DMAMODE_DEMAND)
 
+/*
+ * ISA DMA state.  This structure is provided by the ISA chipset
+ * DMA entry points to the generic back-end functions that actually
+ * from the controller.
+ */
+
 struct isa_mem {
 	struct device 			*isadev;
+	struct isa_softc		*isa;
 	int 					chan;
 	bus_size_t 				size;
 	bus_addr_t 				addr;
 	caddr_t 				kva;
 	struct isa_mem 			*next;
+	SIMPLEQ_ENTRY(isa_mem)	next1;
 };
 
 #ifdef _KERNEL
