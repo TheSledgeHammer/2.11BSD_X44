@@ -153,7 +153,7 @@ _isa_dmamask(sc, chan)
 /*
  * _isa_dmainit(): Initialize the isa_dma_state for this chipset.
  */
-void
+static void
 _isa_dmainit(sc, iot, dmat, dev)
 	struct isa_softc *sc;
 	bus_space_tag_t iot;
@@ -220,7 +220,7 @@ _isa_dmainit(sc, iot, dmat, dev)
  * isa_dmacascade(): program 8237 DMA controller channel to accept
  * external dma control by a board.
  */
-void
+static void
 _isa_dmacascade(sc, chan)
 	struct isa_softc *sc;
 	int chan;

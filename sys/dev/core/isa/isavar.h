@@ -269,13 +269,6 @@ struct isa_softc {
 
 /* ISA interrupt sharing types */
 
-#ifdef NEWCONFIG
-/*
- * Establish a device as being on the ISA bus (XXX NOT IMPLEMENTED).
- */
-void isa_establish(struct isadev *, struct device *);
-#endif
-
 /*
  * Some ISA devices (e.g. on a VLB) can perform 32-bit DMA.  This
  * flag is passed to bus_dmamap_create() to indicate that fact.
