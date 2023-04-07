@@ -98,6 +98,8 @@ struct fdc_isa_softc {
 	bus_space_handle_t sc_baseioh;	/* base I/O handle */
 };
 
+extern struct cfdriver fd_cd;
+
 CFOPS_DECL(fdc_isa, fdc_isa_probe, fdc_isa_attach, NULL, NULL);
 CFATTACH_DECL(fdc_isa, &fd_cd, &fdc_isa_cops, sizeof(struct fdc_isa_softc));
 

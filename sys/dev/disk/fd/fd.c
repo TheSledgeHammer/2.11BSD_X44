@@ -217,7 +217,7 @@ CFDRIVER_DECL(NULL, fd, DV_DISK);
 CFATTACH_DECL(fd, &fd_cd, &fd_cops, sizeof(struct fd_softc));
 #endif
 
-extern struct cfdriver fd_cd;
+//extern struct cfdriver fd_cd;
 
 dev_type_open(fd_open);
 dev_type_close(fd_close);
@@ -255,7 +255,7 @@ int fd_get_parms(struct fd_softc *);
 void fdstart(struct fd_softc *);
 
 struct dkdriver fddkdriver = {
-		fdstrategy
+		fd_strategy
 };
 
 #if defined(i386)
@@ -712,7 +712,7 @@ fd_read(dev, uio, flags)
 	int flags;
 {
 
-	return (physio(fdstrategy, NULL, dev, B_READ, minphys, uio));
+	return (physio(fd_strategy, NULL, dev, B_READ, minphys, uio));
 }
 
 int
@@ -722,7 +722,7 @@ fd_write(dev, uio, flags)
 	int flags;
 {
 
-	return (physio(fdstrategy, NULL, dev, B_WRITE, minphys, uio));
+	return (physio(fd_strategy, NULL, dev, B_WRITE, minphys, uio));
 }
 
 void
@@ -1540,7 +1540,7 @@ fdformat(dev, finfo, p)
 #endif
 
 	/* now do the format */
-	fdstrategy(bp);
+	fd_strategy(bp);
 
 	/* ...and wait for it to complete */
 	rv = biowait(bp);
