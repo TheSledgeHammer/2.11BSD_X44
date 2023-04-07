@@ -52,6 +52,7 @@
 #include "ses.h"
 #include "vnd.h"
 #include "ccd.h"
+#include "fd.h"
 
 #include "rnd.h"
 #include "ksyms.h"
@@ -185,6 +186,9 @@ disks_init(devsw)
 {
 	/* ATA Devices */
 	DEVSWIO_CONFIG_INIT(devsw, NWD, &wd_bdevsw, &wd_cdevsw, NULL);  		/* ATA: ST506/ESDI/IDE disk */
+
+	/* Floppy Devices */
+	DEVSWIO_CONFIG_INIT(devsw, NFD, &fd_bdevsw, &fd_cdevsw, NULL);			/* floppy diskette */
 
 	/* SCSI Devices */
 	DEVSWIO_CONFIG_INIT(devsw, NSD, &sd_bdevsw, &sd_cdevsw, NULL);			/* SCSI disk */

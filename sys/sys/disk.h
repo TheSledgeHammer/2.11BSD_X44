@@ -88,6 +88,7 @@
  * mounting a drive, assigning a label, running newfs, etc.
  */
 struct buf;
+struct bufq_state;
 struct disklabel;
 struct diskslices;
 

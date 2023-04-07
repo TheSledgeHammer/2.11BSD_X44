@@ -123,6 +123,7 @@ __KERNEL_RCSID(0, "$NetBSD: fd.c,v 1.51.2.1 2004/06/04 03:41:05 jmc Exp $");
 #include <sys/fdio.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
+#include <sys/power.h>
 
 #include <vm/include/vm_extern.h>
 
@@ -218,30 +219,29 @@ CFATTACH_DECL(fd, &fd_cd, &fd_cops, sizeof(struct fd_softc));
 
 extern struct cfdriver fd_cd;
 
-dev_type_open(fdopen);
-dev_type_close(fdclose);
-dev_type_read(fdread);
-dev_type_write(fdwrite);
-dev_type_ioctl(fdioctl);
-dev_type_strategy(fdstrategy);
-
+dev_type_open(fd_open);
+dev_type_close(fd_close);
+dev_type_read(fd_read);
+dev_type_write(fd_write);
+dev_type_ioctl(fd_ioctl);
+dev_type_strategy(fd_strategy);
 
 const struct bdevsw fd_bdevsw = {
-	.d_open = fdopen,
-	.d_close = fdclose,
-	.d_strategy = fdstrategy,
-	.d_ioctl = fdioctl,
+	.d_open = fd_open,
+	.d_close = fd_close,
+	.d_strategy = fd_strategy,
+	.d_ioctl = fd_ioctl,
 	.d_dump = nodump,
 	.d_psize = nosize,
 	.d_type = D_DISK
 };
 
 const struct cdevsw fd_cdevsw = {
-	.d_open = fdopen,
-	.d_close = fdclose,
-	.d_read = fdread,
-	.d_write = fdwrite,
-	.d_ioctl = fdioctl,
+	.d_open = fd_open,
+	.d_close = fd_close,
+	.d_read = fd_read,
+	.d_write = fd_write,
+	.d_ioctl = fd_ioctl,
 	.d_stop = nostop,
 	.d_tty = notty,
 	.d_poll = nopoll,
@@ -299,7 +299,7 @@ fdprint(aux, fdc)
 	register struct fdc_attach_args *fa = aux;
 
 	if (!fdc)
-		aprint_normal(" drive %d", fa->fa_drive);
+		printf(" drive %d", fa->fa_drive);
 	return QUIET;
 }
 
@@ -586,10 +586,10 @@ fd_dev_to_type(fd, dev)
 }
 
 void
-fdstrategy(bp)
+fd_strategy(bp)
 	register struct buf *bp;	/* IO operation to perform */
 {
-	struct fd_softc *fd = fd_cd.cd_devs[FDUNIT(dev)];
+	struct fd_softc *fd = fd_cd.cd_devs[FDUNIT(bp->b_dev)];
 	int sz;
  	int s;
 
@@ -706,7 +706,7 @@ fdfinish(fd, bp)
 }
 
 int
-fdread(dev, uio, flags)
+fd_read(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
 	int flags;
@@ -716,7 +716,7 @@ fdread(dev, uio, flags)
 }
 
 int
-fdwrite(dev, uio, flags)
+fd_write(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
 	int flags;
@@ -825,7 +825,7 @@ out_fdc(iot, ioh, x)
 }
 
 int
-fdopen(dev, flags, mode, p)
+fd_open(dev, flags, mode, p)
 	dev_t dev;
 	int flags;
 	int mode;
@@ -855,7 +855,7 @@ fdopen(dev, flags, mode, p)
 }
 
 int
-fdclose(dev, flags, mode, p)
+fd_close(dev, flags, mode, p)
 	dev_t dev;
 	int flags;
 	int mode;
@@ -1080,9 +1080,6 @@ loop:
 			if (block != fd->sc_blkno) {
 				printf("fdcintr: block %d != blkno "
 				    "%" PRId64 "\n", block, fd->sc_blkno);
-#ifdef DDB
-				 Debugger();
-#endif
 			}
 		}
 #endif
@@ -1139,7 +1136,7 @@ loop:
 
 	case SEEKCOMPLETE:
 		/* no data on seek */
-		disk_unbusy(&fd->sc_dk, 0, 0);
+		disk_unbusy(&fd->sc_dk, 0);
 
 		/* Make sure seek really happened. */
 		out_fdc(iot, ioh, NE7CMD_SENSEI);
@@ -1165,8 +1162,7 @@ loop:
 	case IOCOMPLETE: /* IO DONE, post-analyze */
 		callout_stop(&fdc->sc_timo_ch);
 
-		disk_unbusy(&fd->sc_dk, (bp->b_bcount - bp->b_resid),
-		    (bp->b_flags & B_READ));
+		disk_unbusy(&fd->sc_dk, (bp->b_bcount - bp->b_resid));
 
 		if (fdcresult(fdc) != 7 || (st0 & 0xf8) != 0) {
 			isa_dmaabort(fdc->sc_ic, fdc->sc_drq);
@@ -1318,7 +1314,7 @@ fdcretry(fdc)
 }
 
 int
-fdioctl(dev, cmd, addr, flag, p)
+fd_ioctl(dev, cmd, addr, flag, p)
 	dev_t dev;
 	u_long cmd;
 	caddr_t addr;
@@ -1343,7 +1339,7 @@ fdioctl(dev, cmd, addr, flag, p)
 		buffer.d_type = DTYPE_FLOPPY;
 		buffer.d_secsize = FDC_BSIZE;
 
-		if (readdisklabel(dev, fdstrategy, &buffer, NULL) != NULL)
+		if (readdisklabel(dev, fd_strategy, &buffer) != NULL)
 			return EINVAL;
 
 		*(struct disklabel *)addr = buffer;
@@ -1364,11 +1360,11 @@ fdioctl(dev, cmd, addr, flag, p)
 
 		lp = (struct disklabel *)addr;
 
-		error = setdisklabel(&buffer, lp, 0, NULL);
+		error = setdisklabel(&buffer, lp, 0);
 		if (error)
 			return error;
 
-		error = writedisklabel(dev, fdstrategy, &buffer, NULL);
+		error = writedisklabel(dev, fd_strategy, &buffer);
 		return error;
 	}
 
