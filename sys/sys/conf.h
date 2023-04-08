@@ -317,6 +317,7 @@ extern const struct cdevsw crypto_cdevsw;
 extern const struct cdevsw tun_cdevsw;
 extern const struct cdevsw rnd_cdevsw;
 extern const struct cdevsw fd_cdevsw;
+extern const struct cdevsw agp_cdevsw;
 
 /* linesw */
 extern const struct linesw ttydisc;

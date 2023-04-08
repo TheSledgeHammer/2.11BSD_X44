@@ -401,3 +401,302 @@ pci_devioctl(pc, tag, cmd, data, flag, p)
 
 	return (0);
 }
+
+int
+pci_probe_device(struct pci_softc *sc, pcitag_t tag,
+    int (*match)(struct pci_attach_args *), struct pci_attach_args *pap)
+{
+	pci_chipset_tag_t pc = sc->sc_pc;
+	struct pci_attach_args pa;
+	pcireg_t id, csr, class, intr, bhlcr;
+	int ret, pin, bus, device, function;
+
+	pci_decompose_tag(pc, tag, &bus, &device, &function);
+
+	bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
+	if (PCI_HDRTYPE_TYPE(bhlcr) > 2)
+		return (0);
+
+	id = pci_conf_read(pc, tag, PCI_ID_REG);
+	csr = pci_conf_read(pc, tag, PCI_COMMAND_STATUS_REG);
+	class = pci_conf_read(pc, tag, PCI_CLASS_REG);
+
+	/* Invalid vendor ID value? */
+	if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+		return (0);
+	/* XXX Not invalid, but we've done this ~forever. */
+	if (PCI_VENDOR(id) == 0)
+		return (0);
+
+	pa.pa_iot = sc->sc_iot;
+	pa.pa_memt = sc->sc_memt;
+	pa.pa_dmat = sc->sc_dmat;
+	pa.pa_dmat64 = sc->sc_dmat64;
+	pa.pa_pc = pc;
+	pa.pa_bus = bus;
+	pa.pa_device = device;
+	pa.pa_function = function;
+	pa.pa_tag = tag;
+	pa.pa_id = id;
+	pa.pa_class = class;
+
+	/*
+	 * Set up memory, I/O enable, and PCI command flags
+	 * as appropriate.
+	 */
+	pa.pa_flags = sc->sc_flags;
+	if ((csr & PCI_COMMAND_IO_ENABLE) == 0)
+		pa.pa_flags &= ~PCI_FLAGS_IO_ENABLED;
+	if ((csr & PCI_COMMAND_MEM_ENABLE) == 0)
+		pa.pa_flags &= ~PCI_FLAGS_MEM_ENABLED;
+
+	/*
+	 * If the cache line size is not configured, then
+	 * clear the MRL/MRM/MWI command-ok flags.
+	 */
+	if (PCI_CACHELINE(bhlcr) == 0)
+		pa.pa_flags &= ~(PCI_FLAGS_MRL_OKAY|
+		    PCI_FLAGS_MRM_OKAY|PCI_FLAGS_MWI_OKAY);
+
+	if (sc->sc_bridgetag == NULL) {
+		pa.pa_intrswiz = 0;
+		pa.pa_intrtag = tag;
+	} else {
+		pa.pa_intrswiz = sc->sc_intrswiz + device;
+		pa.pa_intrtag = sc->sc_intrtag;
+	}
+
+	intr = pci_conf_read(pc, tag, PCI_INTERRUPT_REG);
+
+	pin = PCI_INTERRUPT_PIN(intr);
+	pa.pa_rawintrpin = pin;
+	if (pin == PCI_INTERRUPT_PIN_NONE) {
+		/* no interrupt */
+		pa.pa_intrpin = 0;
+	} else {
+		/*
+		 * swizzle it based on the number of busses we're
+		 * behind and our device number.
+		 */
+		pa.pa_intrpin = 	/* XXX */
+		    ((pin + pa.pa_intrswiz - 1) % 4) + 1;
+	}
+	pa.pa_intrline = PCI_INTERRUPT_LINE(intr);
+
+	if (match != NULL) {
+		ret = (*match)(&pa);
+		if (ret != 0 && pap != NULL)
+			*pap = pa;
+	} else {
+		ret = config_found_sm(&sc->sc_dev, &pa, pciprint,
+		    pcisubmatch) != NULL;
+	}
+
+	return (ret);
+}
+int
+pci_get_capability(pc, tag, capid, offset, value)
+	pci_chipset_tag_t pc;
+	pcitag_t tag;
+	int capid;
+	int *offset;
+	pcireg_t *value;
+{
+	pcireg_t reg;
+	unsigned int ofs;
+
+	reg = pci_conf_read(pc, tag, PCI_COMMAND_STATUS_REG);
+	if (!(reg & PCI_STATUS_CAPLIST_SUPPORT))
+		return (0);
+
+	/* Determine the Capability List Pointer register to start with. */
+	reg = pci_conf_read(pc, tag, PCI_BHLC_REG);
+	switch (PCI_HDRTYPE_TYPE(reg)) {
+	case 0:	/* standard device header */
+		ofs = PCI_CAPLISTPTR_REG;
+		break;
+	case 2:	/* PCI-CardBus Bridge header */
+		ofs = PCI_CARDBUS_CAPLISTPTR_REG;
+		break;
+	default:
+		return (0);
+	}
+
+	ofs = PCI_CAPLIST_PTR(pci_conf_read(pc, tag, ofs));
+	while (ofs != 0) {
+#ifdef DIAGNOSTIC
+		if ((ofs & 3) || (ofs < 0x40))
+			panic("pci_get_capability");
+#endif
+		reg = pci_conf_read(pc, tag, ofs);
+		if (PCI_CAPLIST_CAP(reg) == capid) {
+			if (offset)
+				*offset = ofs;
+			if (value)
+				*value = reg;
+			return (1);
+		}
+		ofs = PCI_CAPLIST_NEXT(reg);
+	}
+
+	return (0);
+}
+
+int
+pci_find_device(struct pci_attach_args *pa,
+		int (*match)(struct pci_attach_args *))
+{
+	extern struct cfdriver pci_cd;
+	struct device *pcidev;
+	int i;
+
+	for (i = 0; i < pci_cd.cd_ndevs; i++) {
+		pcidev = pci_cd.cd_devs[i];
+		if (pcidev != NULL &&
+		    pci_enumerate_bus((struct pci_softc *) pcidev, match, pa) != 0)
+			return (1);
+	}
+	return (0);
+}
+
+/*
+ * Generic PCI bus enumeration routine.  Used unless machine-dependent
+ * code needs to provide something else.
+ */
+int
+pci_enumerate_bus_generic(struct pci_softc *sc, int (*match)(struct pci_attach_args *), struct pci_attach_args *pap)
+{
+	pci_chipset_tag_t pc = sc->sc_pc;
+	int device, function, nfunctions, ret;
+	const struct pci_quirkdata *qd;
+	pcireg_t id, bhlcr;
+	pcitag_t tag;
+#ifdef __PCI_BUS_DEVORDER
+	char devs[32];
+	int i;
+#endif
+
+#ifdef __PCI_BUS_DEVORDER
+	pci_bus_devorder(sc->sc_pc, sc->sc_bus, devs);
+	for (i = 0; (device = devs[i]) < 32 && device >= 0; i++)
+#else
+	for (device = 0; device < sc->sc_maxndevs; device++)
+#endif
+	{
+		tag = pci_make_tag(pc, sc->sc_bus, device, 0);
+
+		bhlcr = pci_conf_read(pc, tag, PCI_BHLC_REG);
+		if (PCI_HDRTYPE_TYPE(bhlcr) > 2)
+			continue;
+
+		id = pci_conf_read(pc, tag, PCI_ID_REG);
+
+		/* Invalid vendor ID value? */
+		if (PCI_VENDOR(id) == PCI_VENDOR_INVALID)
+			continue;
+		/* XXX Not invalid, but we've done this ~forever. */
+		if (PCI_VENDOR(id) == 0)
+			continue;
+
+		qd = pci_lookup_quirkdata(PCI_VENDOR(id), PCI_PRODUCT(id));
+
+		if (qd != NULL &&
+		      (qd->quirks & PCI_QUIRK_MULTIFUNCTION) != 0)
+			nfunctions = 8;
+		else if (qd != NULL &&
+		      (qd->quirks & PCI_QUIRK_MONOFUNCTION) != 0)
+			nfunctions = 1;
+		else
+			nfunctions = PCI_HDRTYPE_MULTIFN(bhlcr) ? 8 : 1;
+
+		for (function = 0; function < nfunctions; function++) {
+			if (qd != NULL &&
+			    (qd->quirks & PCI_QUIRK_SKIP_FUNC(function)) != 0)
+				continue;
+			tag = pci_make_tag(pc, sc->sc_bus, device, function);
+			ret = pci_probe_device(sc, tag, match, pap);
+			if (match != NULL && ret != 0)
+				return (ret);
+		}
+	}
+	return (0);
+}
+
+/*
+ * Power Management Capability (Rev 2.2)
+ */
+
+int
+pci_set_powerstate(pci_chipset_tag_t pc, pcitag_t tag, int newstate)
+{
+	int offset;
+	pcireg_t value, cap, now;
+
+	if (!pci_get_capability(pc, tag, PCI_CAP_PWRMGMT, &offset, &value))
+		return (EOPNOTSUPP);
+
+	cap = value >> 16;
+	value = pci_conf_read(pc, tag, offset + PCI_PMCSR);
+	now    = value & PCI_PMCSR_STATE_MASK;
+	value &= ~PCI_PMCSR_STATE_MASK;
+	switch (newstate) {
+	case PCI_PWR_D0:
+		if (now == PCI_PMCSR_STATE_D0)
+			return (0);
+		value |= PCI_PMCSR_STATE_D0;
+		break;
+	case PCI_PWR_D1:
+		if (now == PCI_PMCSR_STATE_D1)
+			return (0);
+		if (now == PCI_PMCSR_STATE_D2 || now == PCI_PMCSR_STATE_D3)
+			return (EINVAL);
+		if (!(cap & PCI_PMCR_D1SUPP))
+			return (EOPNOTSUPP);
+		value |= PCI_PMCSR_STATE_D1;
+		break;
+	case PCI_PWR_D2:
+		if (now == PCI_PMCSR_STATE_D2)
+			return (0);
+		if (now == PCI_PMCSR_STATE_D3)
+			return (EINVAL);
+		if (!(cap & PCI_PMCR_D2SUPP))
+			return (EOPNOTSUPP);
+		value |= PCI_PMCSR_STATE_D2;
+		break;
+	case PCI_PWR_D3:
+		if (now == PCI_PMCSR_STATE_D3)
+			return (0);
+		value |= PCI_PMCSR_STATE_D3;
+		break;
+	default:
+		return (EINVAL);
+	}
+	pci_conf_write(pc, tag, offset + PCI_PMCSR, value);
+	DELAY(1000);
+
+	return (0);
+}
+
+int
+pci_get_powerstate(pci_chipset_tag_t pc, pcitag_t tag)
+{
+	int offset;
+	pcireg_t value;
+
+	if (!pci_get_capability(pc, tag, PCI_CAP_PWRMGMT, &offset, &value))
+		return (PCI_PWR_D0);
+	value = pci_conf_read(pc, tag, offset + PCI_PMCSR);
+	value &= PCI_PMCSR_STATE_MASK;
+	switch (value) {
+	case PCI_PMCSR_STATE_D0:
+		return (PCI_PWR_D0);
+	case PCI_PMCSR_STATE_D1:
+		return (PCI_PWR_D1);
+	case PCI_PMCSR_STATE_D2:
+		return (PCI_PWR_D2);
+	case PCI_PMCSR_STATE_D3:
+		return (PCI_PWR_D3);
+	}
+
+	return (PCI_PWR_D0);
+}

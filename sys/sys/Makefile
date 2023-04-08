@@ -4,11 +4,11 @@
 
 INCSDIR= 	/usr/include/sys
 
-INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h bswap.h buf.h 	\
-			bufq.h callout.h cdefs_aout.h cdefs_elf.h cdefs_linker.h cdefs.h cdio.h 	\
-			chio.h clist.h conf.h cputopo.h device.h devsw.h dir.h dirent.h disk.h 		\
-			diskapm.h diskgpt.h disklabel.h diskmbr.h diskslice.h dk.h dkbad.h dmap.h 	\
-			domain.h dvdio.h endian.h errno.h event.h eventvar.h exec_aout.h 			\
+INCS=		acct.h agpio.h ansi.h ataio.h atomic.h audioio.h bitlist.h boot.h bswap.h 	\
+			buf.h bufq.h callout.h cdefs_aout.h cdefs_elf.h cdefs_linker.h cdefs.h 		\
+			cdio.h chio.h clist.h conf.h cputopo.h device.h devsw.h dir.h dirent.h 		\
+			disk.h diskapm.h diskgpt.h disklabel.h diskmbr.h diskslice.h dk.h dkbad.h 	\
+			dmap.h domain.h dvdio.h endian.h errno.h event.h eventvar.h exec_aout.h 	\
 			exec_coff.h exec_ecoff.h exec_elf.h exec_linker.h exec_macho.h 				\
 			exec_pecoff.h exec_script.h exec_xcoff.h exec.h	extent.h fcntl.h fdio.h 	\
 			file.h filedesc.h fnv_hash.h fperr.h gmon.h hint.h inttypes.h ioccom.h 		\

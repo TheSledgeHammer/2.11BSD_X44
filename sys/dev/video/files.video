@@ -3,6 +3,7 @@
 # Video Configuration Files
 #
 
+include "dev/video/agp/files.agp"
 include "dev/video/ega/files.ega"
 include "dev/video/generic/files.generic"
 include "dev/video/videomode/files.videomode"

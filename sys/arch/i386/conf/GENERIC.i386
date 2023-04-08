@@ -189,6 +189,8 @@ pcmb*			at pci? dev ? function ?	# PCI-MCA bridges
 ppb*			at pci? dev ? function ?	# PCI-PCI bridges
 puc*			at pci? dev ? function ?	# PCI "universal" comm. cards
 
+agp* 			at pchb?
+
 # EISA bus support
 eisa0			at mainbus?
 eisa0			at pceb?

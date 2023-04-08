@@ -138,7 +138,7 @@
 #define M_SECA          91  /* security associations, key management */
 #define M_VMAMAP		92	/* VM amap structures */
 #define M_VMAOBJ 		93	/* VM aobject structure */
-#define M_VMPSEG		94	/* pseudo-segment structure */
+#define M_AGP			94	/* AGP memory */
 #define	M_TEMP			95	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
@@ -237,7 +237,7 @@
 	"key mgmt",     			/* 91 M_SECA */         \
 	"vm amap",					/* 92 M_VMAMAP */		\
 	"vm aobject",				/* 93 M_VMAOBJ */		\
-	"vm psegment", 				/* 94 M_VMPSEG */		\
+	"AGP", 						/* 94 M_AGP */			\
 	"temp",						/* 95 M_TEMP */ 		\
 }
 

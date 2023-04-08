@@ -243,6 +243,7 @@ video_init(devsw)
 	struct devswtable *devsw;
 {
 	//DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
+	//DEVSWIO_CONFIG_INIT(devsw,  , NULL, &agp_cdevsw, NULL);				/* AGP Video */
 }
 
 /* Add wscon driver configuration */
