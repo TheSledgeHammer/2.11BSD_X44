@@ -104,7 +104,7 @@ struct isa_mem {
 struct proc;
 
 void	   	isa_dmainit(isa_chipset_tag_t, bus_space_tag_t, bus_dma_tag_t, struct device *);
-void	   	isa_dmacascade(isa_chipset_tag_t, int);
+int	   	isa_dmacascade(isa_chipset_tag_t, int);
 
 bus_size_t	isa_dmamaxsize(isa_chipset_tag_t, int);
 
@@ -132,7 +132,7 @@ int	   		isa_drq_isfree(isa_chipset_tag_t, int);
 
 void    	*isa_malloc(isa_chipset_tag_t, int, size_t, int, int);
 void		isa_free(void *, int);
-int	   		isa_mappage(void *, int, int);
+int	   	isa_mappage(void *, int, int);
 
 #endif /* _KERNEL */
 #endif /* _DEV_ISA_ISADMAVAR_H_ */

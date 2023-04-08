@@ -52,6 +52,7 @@
 
 #include <machine/bus.h>
 #include <machine/param.h>
+#include <machine/isa/isa_machdep.h>
 
 #include <dev/core/ic/i8237reg.h>
 #include <dev/core/isa/isadmareg.h>
@@ -85,6 +86,8 @@ static u_int8_t dmamode[] = {
 	DMA37MD_READ | DMA37MD_DEMAND | DMA37MD_LOOP,
 	DMA37MD_WRITE | DMA37MD_DEMAND | DMA37MD_LOOP,
 };
+
+SIMPLEQ_HEAD(isa_mem_list, isa_mem) isa_mem_head = SIMPLEQ_HEAD_INITIALIZER(isa_mem_head);
 
 static inline void
 isa_dmaunmask(ic, chan)
@@ -404,12 +407,10 @@ isa_dmastart(ic, chan, addr, nbytes, p, flags, busdmaflags)
 #endif
 
 	if (flags & DMAMODE_READ) {
-		bus_dmamap_sync(ids->ids_dmat, dmam, 0, dmam->dm_mapsize,
-		    BUS_DMASYNC_PREREAD);
+		bus_dmamap_sync(ids->ids_dmat, dmam, BUS_DMASYNC_PREREAD);
 		ids->ids_dmareads |= (1 << chan);
 	} else {
-		bus_dmamap_sync(ids->ids_dmat, dmam, 0, dmam->dm_mapsize,
-		    BUS_DMASYNC_PREWRITE);
+		bus_dmamap_sync(ids->ids_dmat, dmam, BUS_DMASYNC_PREWRITE);
 		ids->ids_dmareads &= ~(1 << chan);
 	}
 
@@ -585,9 +586,7 @@ isa_dmadone(ic, chan)
 		printf("%s: _isa_dmadone: channel %d not finished\n",
 		    ids->ids_dev->dv_xname, chan);
 
-	bus_dmamap_sync(ids->ids_dmat, dmam, 0, dmam->dm_mapsize,
-	    (ids->ids_dmareads & (1 << chan)) ? BUS_DMASYNC_POSTREAD :
-	    BUS_DMASYNC_POSTWRITE);
+	bus_dmamap_sync(ids->ids_dmat, dmam, (ids->ids_dmareads & (1 << chan)) ? BUS_DMASYNC_POSTREAD : BUS_DMASYNC_POSTWRITE);
 
 	bus_dmamap_unload(ids->ids_dmat, dmam);
 	ids->ids_dmareads &= ~(1 << chan);
@@ -736,8 +735,7 @@ isa_dmamem_mmap(ic, chan, addr, size, off, prot, flags)
 	int chan;
 	bus_addr_t addr;
 	bus_size_t size;
-	off_t off;
-	int prot, flags;
+	int off, prot, flags;
 {
 	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	bus_dma_segment_t seg;

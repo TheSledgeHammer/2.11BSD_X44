@@ -43,6 +43,7 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/isadmareg.h>
+#include <dev/core/isa/isadmavar.h>
 
 #include "isadma.h"
 
