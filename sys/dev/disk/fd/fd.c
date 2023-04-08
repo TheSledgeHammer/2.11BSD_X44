@@ -256,9 +256,7 @@ int fdformat(dev_t, struct ne7_fd_formb *, struct proc *);
 
 void	fd_mountroot_hook(struct device *);
 
-#ifdef isadma_unspported
 static void fdc_isa_dma_setup(struct fdc_softc *);
-#endif
 
 /*
  * Arguments passed between fdcattach and fdprobe.
@@ -297,14 +295,11 @@ fdcattach(fdc)
 	fdc->sc_state = DEVIDLE;
 	TAILQ_INIT(&fdc->sc_drives);
 
-#ifdef isadma_unspported
 	fdc_isa_dma_setup(fdc);
-#endif
 
 	config_interrupts(&fdc->sc_dev, fdcfinishattach);
 }
 
-#ifdef isadma_unspported
 static void
 fdc_isa_dma_setup(fdc)
 	struct fdc_softc *fdc;
@@ -324,7 +319,6 @@ fdc_isa_dma_setup(fdc)
 		return;
 	}
 }
-#endif
 
 void
 fdcfinishattach(self)
@@ -1079,11 +1073,9 @@ loop:
 		}
 #endif
 		read = bp->b_flags & B_READ ? DMAMODE_READ : DMAMODE_WRITE;
-#ifdef isadma_unspported
 		isa_dmastart(fdc->sc_ic, fdc->sc_drq,
 		    bp->b_data + fd->sc_skip, fd->sc_nbytes,
 		    NULL, read | DMAMODE_DEMAND, BUS_DMA_NOWAIT);
-#endif
 		bus_space_write_1(iot, fdc->sc_fdctlioh, 0, type->rate);
 #ifdef FD_DEBUG
 		printf("fdcintr: %s drive %d track %d head %d sec %d nblks %d\n",
@@ -1149,9 +1141,7 @@ loop:
 		goto doio;
 
 	case IOTIMEDOUT:
-#if isadma_unspported
 		isa_dmaabort(fdc->sc_ic, fdc->sc_drq);
-#endif
 	case SEEKTIMEDOUT:
 	case RECALTIMEDOUT:
 	case RESETTIMEDOUT:
@@ -1164,9 +1154,7 @@ loop:
 		disk_unbusy(&fd->sc_dk, (bp->b_bcount - bp->b_resid));
 
 		if (fdcresult(fdc) != 7 || (st0 & 0xf8) != 0) {
-#ifdef isadma_unspported
 			isa_dmaabort(fdc->sc_ic, fdc->sc_drq);
-#endif
 
 #ifdef FD_DEBUG
 			fdcstatus(&fd->sc_dev, 7, bp->b_flags & B_READ ?
@@ -1177,9 +1165,7 @@ loop:
 			fdcretry(fdc);
 			goto loop;
 		}
-#ifdef isadma_unspported
 		isa_dmadone(fdc->sc_ic, fdc->sc_drq);
-#endif
 		if (fdc->sc_errors) {
 			diskerr(bp, "fd", "soft error (corrected)", LOG_PRINTF,
 			    fd->sc_skip / FDC_BSIZE, (struct disklabel *)NULL);
