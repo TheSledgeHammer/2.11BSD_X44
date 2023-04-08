@@ -111,7 +111,7 @@ typedef struct _agp_allocate {
 	int key;		/* tag of allocation            */
 	size_t pg_count;	/* number of pages              */
 	u_int32_t type;		/* 0 == normal, other devspec   */
-   	paddr_t physical;	/* device specific (some devices
+   	u_long physical;	/* device specific (some devices
 				 * need a phys address of the
 				 * actual page behind the gatt
 				 * table)                        */
