@@ -51,7 +51,7 @@ typedef u_int32_t pcireg_t;		/* configuration space register XXX */
 struct pcibus_attach_args;
 struct pci_softc;
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 /*
  * Machine-dependent definitions.
  */
@@ -209,8 +209,6 @@ const struct pci_quirkdata *pci_lookup_quirkdata(pci_vendor_id_t, pci_product_id
 #define	pci_enumerate_bus(sc, m, p)					\
 	pci_enumerate_bus_generic((sc), (m), (p))
 
-void	set_pci_isa_bridge_callback(void (*)(void *), void *);
-
 /*
  * Helper functions for user access to the PCI bus.
  */
@@ -228,5 +226,11 @@ int		pci_devioctl(pci_chipset_tag_t, pcitag_t, u_long, caddr_t, int flag, struct
 int	pci_set_powerstate(pci_chipset_tag_t, pcitag_t, int);
 int	pci_get_powerstate(pci_chipset_tag_t, pcitag_t);
 
+/*
+ * Misc.
+ */
+int	pci_find_device(struct pci_attach_args *, int (*match)(struct pci_attach_args *));
+void	set_pci_isa_bridge_callback(void (*)(void *), void *);
+			
 #endif /* _KERNEL */
 #endif /* _DEV_PCI_PCIVAR_H_ */

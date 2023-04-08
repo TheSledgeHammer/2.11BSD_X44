@@ -44,6 +44,9 @@
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/pci/pciio.h>
+#include <dev/core/pci/pcidevs.h>
+
+#include "locators.h"
 
 dev_type_open(pciopen);
 dev_type_close(pciclose);
