@@ -247,7 +247,7 @@ wdc_isa_dma_init(v, channel, drive, databuf, datalen, read)
 	void *v;
 	void *databuf;
 	size_t datalen;
-	int read;
+	int channel, drive, read;
 {
 	struct wdc_isa_softc *sc = v;
 
