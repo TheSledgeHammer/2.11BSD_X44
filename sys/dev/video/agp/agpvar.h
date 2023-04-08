@@ -56,13 +56,13 @@ struct agp_info {
 	u_int32_t	ai_mode;
 	bus_addr_t	ai_aperture_base;
 	bus_size_t	ai_aperture_size;
-	vsize_t		ai_memory_allowed;
-	vsize_t		ai_memory_used;
+	vm_size_t		ai_memory_allowed;
+	vm_size_t		ai_memory_used;
 	u_int32_t	ai_devid;
 };
 
 struct agp_memory_info {
-	vsize_t		ami_size;		/* size in bytes */
+	vm_size_t		ami_size;		/* size in bytes */
 	bus_addr_t	ami_physical;	/* bogus hack for i810 */
 	off_t		ami_offset;		/* page offset if bound */
 	int			ami_is_bound;	/* non-zero if bound */
@@ -88,7 +88,7 @@ TAILQ_HEAD(agp_memory_list, agp_memory);
 struct agp_memory {
 	TAILQ_ENTRY(agp_memory) am_link;	/* wiring for the tailq */
 	int					am_id;			/* unique id for block */
-	vsize_t				am_size;		/* number of bytes allocated */
+	vm_size_t				am_size;		/* number of bytes allocated */
 	int					am_type;		/* chipset specific type */
 	off_t				am_offset;		/* page offset if bound */
 	int					am_is_bound;	/* non-zero if bound */
@@ -108,7 +108,7 @@ struct agp_methods {
 	int (*unbind_page)(struct agp_softc *, off_t);
 	void (*flush_tlb)(struct agp_softc *);
 	int (*enable)(struct agp_softc *, u_int32_t mode);
-	struct agp_memory *(*alloc_memory)(struct agp_softc *, int, vsize_t);
+	struct agp_memory *(*alloc_memory)(struct agp_softc *, int, vm_size_t);
 	int (*free_memory)(struct agp_softc *, struct agp_memory *);
 	int (*bind_memory)(struct agp_softc *, struct agp_memory *, off_t);
 	int (*unbind_memory)(struct agp_softc *, struct agp_memory *);
@@ -231,7 +231,7 @@ int agp_enable(void *, u_int32_t);
  * aperture.  The value returned is an opaque handle which can be
  * passed to agp_bind(), agp_unbind() or agp_deallocate().
  */
-void *agp_alloc_memory(void *, int, vsize_t);
+void *agp_alloc_memory(void *, int, vm_size_t);
 
 /*
  * Free memory which was allocated with agp_allocate().

@@ -82,7 +82,7 @@ static int agp_i810_unbind_page(struct agp_softc *, off_t);
 static void agp_i810_flush_tlb(struct agp_softc *);
 static int agp_i810_enable(struct agp_softc *, u_int32_t mode);
 static struct agp_memory *agp_i810_alloc_memory(struct agp_softc *, int,
-						vsize_t);
+						vm_size_t);
 static int agp_i810_free_memory(struct agp_softc *, struct agp_memory *);
 static int agp_i810_bind_memory(struct agp_softc *, struct agp_memory *, off_t);
 static int agp_i810_unbind_memory(struct agp_softc *, struct agp_memory *);
@@ -134,7 +134,7 @@ agp_i810_attach(struct device *parent, struct device *self, void *aux)
 
 	isc = malloc(sizeof *isc, M_AGP, M_NOWAIT|M_ZERO);
 	if (isc == NULL) {
-		aprint_error(": can't allocate chipset-specific softc\n");
+		printf(": can't allocate chipset-specific softc\n");
 		return ENOMEM;
 	}
 	sc->as_chipc = isc;
@@ -152,7 +152,7 @@ agp_i810_attach(struct device *parent, struct device *self, void *aux)
 			return agp_intel_attach(parent, self, aux);
 		}
 #endif
-		aprint_error(": can't find internal VGA device config space\n");
+		printf(": can't find internal VGA device config space\n");
 		free(isc, M_AGP);
 		return ENOENT;
 	}
@@ -162,7 +162,7 @@ agp_i810_attach(struct device *parent, struct device *self, void *aux)
 
 	error = agp_map_aperture(&isc->vga_pa, sc);
 	if (error != 0) {
-		aprint_error(": can't map aperture\n");
+		printf(": can't map aperture\n");
 		free(isc, M_AGP);
 		return error;
 	}
@@ -187,7 +187,7 @@ agp_i810_attach(struct device *parent, struct device *self, void *aux)
 	error = pci_mapreg_map(&isc->vga_pa, AGP_I810_MMADR,
 	    PCI_MAPREG_TYPE_MEM, 0, &isc->bst, &isc->bsh, NULL, NULL);
 	if (error != 0) {
-		aprint_error(": can't map mmadr registers\n");
+		printf(": can't map mmadr registers\n");
 		return error;
 	}
 
@@ -245,13 +245,13 @@ agp_i810_attach(struct device *parent, struct device *self, void *aux)
 			break;
 		default:
 			isc->stolen = 0;
-			aprint_error(
+			printf(
 			    ": unknown memory configuration, disabling\n");
 			agp_generic_detach(sc);
 			return EINVAL;
 		}
 		if (isc->stolen > 0) {
-			aprint_error(": detected %dk stolen memory\n%s",
+			printf(": detected %dk stolen memory\n%s",
 			    isc->stolen * 4, sc->as_dev.dv_xname);
 		}
 
@@ -287,13 +287,13 @@ agp_i810_attach(struct device *parent, struct device *self, void *aux)
 			break;
 		default:
 			isc->stolen = 0;
-			aprint_error(
+			printf(
 			    ": unknown memory configuration, disabling\n");
 			agp_generic_detach(sc);
 			return EINVAL;
 		}
 		if (isc->stolen > 0) {
-			aprint_error(": detected %dk stolen memory\n%s",
+			printf(": detected %dk stolen memory\n%s",
 			    isc->stolen * 4, sc->as_dev.dv_xname);
 		}
 
@@ -505,7 +505,7 @@ agp_i810_enable(struct agp_softc *sc, u_int32_t mode)
 }
 
 static struct agp_memory *
-agp_i810_alloc_memory(struct agp_softc *sc, int type, vsize_t size)
+agp_i810_alloc_memory(struct agp_softc *sc, int type, vm_size_t size)
 {
 	struct agp_i810_softc *isc = sc->as_chipc;
 	struct agp_memory *mem;

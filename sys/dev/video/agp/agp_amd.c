@@ -180,7 +180,7 @@ agp_amd_attach(struct device *parent, struct device *self, void *aux)
 
 	asc = malloc(sizeof *asc, M_AGP, M_NOWAIT|M_ZERO);
 	if (asc == NULL) {
-		aprint_error(": can't allocate softc\n");
+		printf(": can't allocate softc\n");
 		/* agp_generic_detach(sc) */
 		return ENOMEM;
 	}
@@ -188,13 +188,13 @@ agp_amd_attach(struct device *parent, struct device *self, void *aux)
 	error = pci_mapreg_map(pa, AGP_AMD751_REGISTERS, PCI_MAPREG_TYPE_MEM, 0,
 	    &asc->iot, &asc->ioh, NULL, NULL);
 	if (error != 0) {
-		aprint_error(": can't map AGP registers\n");
+		printf(": can't map AGP registers\n");
 		agp_generic_detach(sc);
 		return error;
 	}
 
 	if (agp_map_aperture(pa, sc) != 0) {
-		aprint_error(": can't map aperture\n");
+		printf(": can't map aperture\n");
 		agp_generic_detach(sc);
 		free(asc, M_AGP);
 		return ENXIO;
@@ -215,7 +215,7 @@ agp_amd_attach(struct device *parent, struct device *self, void *aux)
 		 * aperture so that the gatt size reduces.
 		 */
 		if (AGP_SET_APERTURE(sc, AGP_GET_APERTURE(sc) / 2)) {
-			aprint_error(": can't set aperture\n");
+			printf(": can't set aperture\n");
 			return ENOMEM;
 		}
 	}

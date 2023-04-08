@@ -87,14 +87,14 @@ agp_ali_attach(struct device *parent, struct device *self, void *aux)
 
 	asc = malloc(sizeof *asc, M_AGP, M_NOWAIT);
 	if (asc == NULL) {
-		aprint_error(": failed to allocate softc\n");
+		printf(": failed to allocate softc\n");
 		return ENOMEM;
 	}
 	sc->as_chipc = asc;
 	sc->as_methods = &agp_ali_methods;
 
 	if (agp_map_aperture(pa, sc) != 0) {
-		aprint_error(": failed to map aperture\n");
+		printf(": failed to map aperture\n");
 		free(asc, M_AGP);
 		return ENXIO;
 	}
@@ -115,7 +115,7 @@ agp_ali_attach(struct device *parent, struct device *self, void *aux)
 		 */
 		if (AGP_SET_APERTURE(sc, AGP_GET_APERTURE(sc) / 2)) {
 			agp_generic_detach(sc);
-			aprint_error(": failed to set aperture\n");
+			printf(": failed to set aperture\n");
 			return ENOMEM;
 		}
 	}

@@ -82,8 +82,8 @@ __KERNEL_RCSID(0, "$NetBSD: agp.c,v 1.32 2004/02/13 11:36:22 wiz Exp $");
 
 #include <dev/core/pci/pcireg.h>
 #include <dev/core/pci/pcivar.h>
-#include <devel/dev/pci/agp/agpvar.h>
-#include <devel/dev/pci/agp/agpreg.h>
+#include <dev/video/agp/agpvar.h>
+#include <dev/video/agp/agpreg.h>
 #include <dev/core/pci/pcidevs.h>
 
 #include <machine/bus.h>
@@ -273,7 +273,7 @@ agpattach(struct device *parent, struct device *self, void *aux)
 		panic("agpattach: impossible");
 	}
 
-	aprint_naive(": AGP controller\n");
+	printf(": AGP controller\n");
 
 	sc->as_dmat = pa->pa_dmat;
 	sc->as_pc = pa->pa_pc;
@@ -303,7 +303,7 @@ agpattach(struct device *parent, struct device *self, void *aux)
 
 	ret = (*ap->ap_attach)(parent, self, pa);
 	if (ret == 0)
-		aprint_normal(": aperture at 0x%lx, size 0x%lx\n",
+		printf(": aperture at 0x%lx, size 0x%lx\n",
 		    (unsigned long)sc->as_apaddr,
 		    (unsigned long)AGP_GET_APERTURE(sc));
 	else
@@ -364,7 +364,7 @@ agp_free_gatt(struct agp_softc *sc, struct agp_gatt *gatt)
 int
 agp_generic_detach(struct agp_softc *sc)
 {
-	lockmgr(&sc->as_lock, LK_DRAIN, 0);
+	lockmgr(&sc->as_lock, LK_DRAIN, NULL, 0);
 	agp_flush_cache();
 	return 0;
 }
@@ -505,11 +505,11 @@ agp_generic_bind_memory(struct agp_softc *sc, struct agp_memory *mem,
 	bus_addr_t pa;
 	int contigpages, nseg;
 
-	lockmgr(&sc->as_lock, LK_EXCLUSIVE, 0);
+	lockmgr(&sc->as_lock, LK_EXCLUSIVE, NULL, 0);
 
 	if (mem->am_is_bound) {
 		printf("%s: memory already bound\n", sc->as_dev.dv_xname);
-		lockmgr(&sc->as_lock, LK_RELEASE, 0);
+		lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 		return EINVAL;
 	}
 	
@@ -518,7 +518,7 @@ agp_generic_bind_memory(struct agp_softc *sc, struct agp_memory *mem,
 	    || offset + mem->am_size > AGP_GET_APERTURE(sc)) {
 		printf("%s: binding memory at bad offset %#lx\n",
 			      sc->as_dev.dv_xname, (unsigned long) offset);
-		lockmgr(&sc->as_lock, LK_RELEASE, 0);
+		lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 		return EINVAL;
 	}
 
@@ -541,7 +541,7 @@ agp_generic_bind_memory(struct agp_softc *sc, struct agp_memory *mem,
 		nseg = (mem->am_size / (contigpages * PAGE_SIZE)) + 1;
 		segs = malloc(nseg * sizeof *segs, M_AGP, M_WAITOK);
 		if (segs == NULL) {
-			lockmgr(&sc->as_lock, LK_RELEASE, 0);
+			lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 			return ENOMEM;
 		}
 		if (bus_dmamem_alloc(sc->as_dmat, mem->am_size, PAGE_SIZE, 0,
@@ -570,7 +570,7 @@ agp_generic_bind_memory(struct agp_softc *sc, struct agp_memory *mem,
 	}
 
 	if (contigpages == 0) {
-		lockmgr(&sc->as_lock, LK_RELEASE, 0);
+		lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 		return ENOMEM;
 	}
 
@@ -609,7 +609,7 @@ agp_generic_bind_memory(struct agp_softc *sc, struct agp_memory *mem,
 				bus_dmamem_free(sc->as_dmat, mem->am_dmaseg,
 						mem->am_nseg);
 				free(mem->am_dmaseg, M_AGP);
-				lockmgr(&sc->as_lock, LK_RELEASE, 0);
+				lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 				return error;
 			}
 		}
@@ -630,7 +630,7 @@ agp_generic_bind_memory(struct agp_softc *sc, struct agp_memory *mem,
 	mem->am_offset = offset;
 	mem->am_is_bound = 1;
 
-	lockmgr(&sc->as_lock, LK_RELEASE, 0);
+	lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 
 	return 0;
 }
@@ -640,11 +640,11 @@ agp_generic_unbind_memory(struct agp_softc *sc, struct agp_memory *mem)
 {
 	int i;
 
-	lockmgr(&sc->as_lock, LK_EXCLUSIVE, 0);
+	lockmgr(&sc->as_lock, LK_EXCLUSIVE, NULL, 0);
 
 	if (!mem->am_is_bound) {
 		printf("%s: memory is not bound\n", sc->as_dev.dv_xname);
-		lockmgr(&sc->as_lock, LK_RELEASE, 0);
+		lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 		return EINVAL;
 	}
 
@@ -668,7 +668,7 @@ agp_generic_unbind_memory(struct agp_softc *sc, struct agp_memory *mem)
 	mem->am_offset = 0;
 	mem->am_is_bound = 0;
 
-	lockmgr(&sc->as_lock, LK_RELEASE, 0);
+	lockmgr(&sc->as_lock, LK_RELEASE, NULL, 0);
 
 	return 0;
 }
@@ -762,7 +762,7 @@ agp_allocate_user(struct agp_softc *sc, agp_allocate *alloc)
 			       alloc->pg_count << AGP_PAGE_SHIFT);
 	if (mem) {
 		alloc->key = mem->am_id;
-		alloc->physical = mem->am_physical;
+		alloc->physical = (caddr_t)mem->am_physical;
 		return 0;
 	} else {
 		return ENOMEM;
@@ -904,9 +904,9 @@ agpmmap(dev_t dev, off_t offset, int prot)
 	struct agp_softc *sc = agp_cd.cd_devs[AGPUNIT(dev)];
 
 	if (offset > AGP_GET_APERTURE(sc))
-		return -1;
+		return ((caddr_t)-1);
 
-	return (bus_space_mmap(sc->as_apt, sc->as_apaddr, offset, prot, BUS_SPACE_MAP_LINEAR));
+	return ((caddr_t)bus_space_mmap(sc->as_apt, sc->as_apaddr, offset, prot, BUS_SPACE_MAP_LINEAR));
 }
 
 /* Implementation of the kernel api */
@@ -914,7 +914,7 @@ agpmmap(dev_t dev, off_t offset, int prot)
 void *
 agp_find_device(int unit)
 {
-	return device_lookup(&agp_cd, unit);
+	return agp_cd.cd_devs[unit];
 }
 
 enum agp_acquire_state
@@ -957,21 +957,24 @@ agp_enable(void *dev, u_int32_t mode)
 	return AGP_ENABLE(sc, mode);
 }
 
-void *agp_alloc_memory(void *dev, int type, vm_size_t bytes)
+void *
+agp_alloc_memory(void *dev, int type, vm_size_t bytes)
 {
 	struct agp_softc *sc = dev;
 
 	return (void *)AGP_ALLOC_MEMORY(sc, type, bytes);
 }
 
-void agp_free_memory(void *dev, void *handle)
+void 
+agp_free_memory(void *dev, void *handle)
 {
 	struct agp_softc *sc = dev;
 	struct agp_memory *mem = (struct agp_memory *) handle;
 	AGP_FREE_MEMORY(sc, mem);
 }
 
-int agp_bind_memory(void *dev, void *handle, off_t offset)
+int 
+agp_bind_memory(void *dev, void *handle, off_t offset)
 {
 	struct agp_softc *sc = dev;
 	struct agp_memory *mem = (struct agp_memory *) handle;
@@ -979,7 +982,8 @@ int agp_bind_memory(void *dev, void *handle, off_t offset)
 	return AGP_BIND_MEMORY(sc, mem, offset);
 }
 
-int agp_unbind_memory(void *dev, void *handle)
+int 
+agp_unbind_memory(void *dev, void *handle)
 {
 	struct agp_softc *sc = dev;
 	struct agp_memory *mem = (struct agp_memory *) handle;
@@ -987,7 +991,8 @@ int agp_unbind_memory(void *dev, void *handle)
 	return AGP_UNBIND_MEMORY(sc, mem);
 }
 
-void agp_memory_info(void *dev, void *handle, struct agp_memory_info *mi)
+void 
+agp_memory_info(void *dev, void *handle, struct agp_memory_info *mi)
 {
 	struct agp_memory *mem = (struct agp_memory *) handle;
 

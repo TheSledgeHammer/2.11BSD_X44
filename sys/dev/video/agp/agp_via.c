@@ -84,7 +84,7 @@ agp_via_attach(struct device *parent, struct device *self, void *aux)
 
 	asc = malloc(sizeof *asc, M_AGP, M_NOWAIT|M_ZERO);
 	if (asc == NULL) {
-		aprint_error(": can't allocate chipset-specific softc\n");
+		printf(": can't allocate chipset-specific softc\n");
 		return ENOMEM;
 	}
 	sc->as_chipc = asc;
@@ -93,7 +93,7 @@ agp_via_attach(struct device *parent, struct device *self, void *aux)
 	    NULL);
 
 	if (agp_map_aperture(pa, sc) != 0) {
-		aprint_error(": can't map aperture\n");
+		printf(": can't map aperture\n");
 		free(asc, M_AGP);
 		return ENXIO;
 	}
@@ -111,7 +111,7 @@ agp_via_attach(struct device *parent, struct device *self, void *aux)
 		 */
 		if (AGP_SET_APERTURE(sc, AGP_GET_APERTURE(sc) / 2)) {
 			agp_generic_detach(sc);
-			aprint_error(": can't set aperture size\n");
+			printf(": can't set aperture size\n");
 			return ENOMEM;
 		}
 	}

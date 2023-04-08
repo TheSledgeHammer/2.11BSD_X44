@@ -116,7 +116,7 @@ agp_intel_attach(struct device *parent, struct device *self, void *aux)
 
 	isc = malloc(sizeof *isc, M_AGP, M_NOWAIT|M_ZERO);
 	if (isc == NULL) {
-		aprint_error(": can't allocate chipset-specific softc\n");
+		printf(": can't allocate chipset-specific softc\n");
 		return ENOMEM;
 	}
 
@@ -124,8 +124,8 @@ agp_intel_attach(struct device *parent, struct device *self, void *aux)
 	sc->as_chipc = isc;
 
 	if (pci_find_device(&isc->vga_pa, agp_intel_vgamatch) == 0) {
-		aprint_normal(": using generic initialization for Intel AGP\n");
-		aprint_normal("%s", sc->as_dev.dv_xname);
+		printf(": using generic initialization for Intel AGP\n");
+		printf("%s", sc->as_dev.dv_xname);
 		isc->chiptype = CHIP_INTEL;
 	}
 
@@ -133,7 +133,7 @@ agp_intel_attach(struct device *parent, struct device *self, void *aux)
 	    NULL);
 
 	if (agp_map_aperture(pa, sc) != 0) {
-		aprint_error(": can't map aperture\n");
+		printf(": can't map aperture\n");
 		free(isc, M_AGP);
 		sc->as_chipc = NULL;
 		return ENXIO;
@@ -181,7 +181,7 @@ agp_intel_attach(struct device *parent, struct device *self, void *aux)
 		 */
 		if (AGP_SET_APERTURE(sc, AGP_GET_APERTURE(sc) / 2)) {
 			agp_generic_detach(sc);
-			aprint_error(": failed to set aperture\n");
+			printf(": failed to set aperture\n");
 			return ENOMEM;
 		}
 	}
