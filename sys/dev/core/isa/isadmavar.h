@@ -92,6 +92,7 @@ struct isa_dma_state {
  */
 struct isa_mem {
 	struct isa_dma_state	*ids;
+	isa_chipset_tag_t		ic;
 	int 					chan;
 	bus_size_t 				size;
 	bus_addr_t 				addr;
@@ -102,36 +103,36 @@ struct isa_mem {
 #ifdef _KERNEL
 struct proc;
 
-void	   	_isa_dmainit(struct isa_dma_state *, bus_space_tag_t, bus_dma_tag_t, struct device *);
-void	   	_isa_dmacascade(struct isa_dma_state *, int);
+void	   	isa_dmainit(isa_chipset_tag_t, bus_space_tag_t, bus_dma_tag_t, struct device *);
+void	   	isa_dmacascade(isa_chipset_tag_t, int);
 
-bus_size_t	_isa_dmamaxsize(struct isa_dma_state *, int);
+bus_size_t	isa_dmamaxsize(isa_chipset_tag_t, int);
 
-int	  		_isa_dmamap_create(struct isa_dma_state *, int, bus_size_t, int);
-void	   	_isa_dmamap_destroy(struct isa_dma_state *, int);
+int	  		isa_dmamap_create(isa_chipset_tag_t, int, bus_size_t, int);
+void	   	isa_dmamap_destroy(isa_chipset_tag_t, int);
 
-int	   		_isa_dmastart(struct isa_dma_state *, int, void *, bus_size_t, struct proc *, int, int);
-void	   	_isa_dmaabort(struct isa_dma_state *, int);
-bus_size_t 	_isa_dmacount(struct isa_dma_state *, int);
-int	   		_isa_dmafinished(struct isa_dma_state *, int);
-void		_isa_dmadone(struct isa_dma_state *, int);
+int	   		isa_dmastart(isa_chipset_tag_t, int, void *, bus_size_t, struct proc *, int, int);
+void	   	isa_dmaabort(isa_chipset_tag_t, int);
+bus_size_t 	isa_dmacount(isa_chipset_tag_t, int);
+int	   		isa_dmafinished(isa_chipset_tag_t, int);
+void		isa_dmadone(isa_chipset_tag_t, int);
 
-void	   	_isa_dmafreeze(struct isa_dma_state *);
-void	   	_isa_dmathaw(struct isa_dma_state *);
+void	   	isa_dmafreeze(isa_chipset_tag_t);
+void	   	isa_dmathaw(isa_chipset_tag_t);
 
-int	   		_isa_dmamem_alloc(struct isa_dma_state *, int, bus_size_t, bus_addr_t *, int);
-void		_isa_dmamem_free(struct isa_dma_state *, int, bus_addr_t, bus_size_t);
-int	   		_isa_dmamem_map(struct isa_dma_state *, int, bus_addr_t, bus_size_t, caddr_t *, int);
-void		_isa_dmamem_unmap(struct isa_dma_state *, int, caddr_t, size_t);
-int	   		_isa_dmamem_mmap(struct isa_dma_state *, int, bus_addr_t, bus_size_t, int, int, int);
+int	   		isa_dmamem_alloc(isa_chipset_tag_t, int, bus_size_t, bus_addr_t *, int);
+void		isa_dmamem_free(isa_chipset_tag_t, int, bus_addr_t, bus_size_t);
+int	   		isa_dmamem_map(isa_chipset_tag_t, int, bus_addr_t, bus_size_t, caddr_t *, int);
+void		isa_dmamem_unmap(isa_chipset_tag_t, int, caddr_t, size_t);
+int	   		isa_dmamem_mmap(isa_chipset_tag_t, int, bus_addr_t, bus_size_t, int, int, int);
 
-int	   		_isa_drq_alloc(struct isa_dma_state *, int);
-int	   		_isa_drq_free(struct isa_dma_state *, int);
-int	   		_isa_drq_isfree(struct isa_dma_state *, int);
+int	   		isa_drq_alloc(isa_chipset_tag_t, int);
+int	   		isa_drq_free(isa_chipset_tag_t, int);
+int	   		isa_drq_isfree(isa_chipset_tag_t, int);
 
-void    	*_isa_malloc(struct isa_dma_state *, int, size_t, int, int);
-void		_isa_free(void *, int);
-int	   		_isa_mappage(void *, int, int);
+void    	*isa_malloc(isa_chipset_tag_t, int, size_t, int, int);
+void		isa_free(void *, int);
+int	   		isa_mappage(void *, int, int);
 
 #endif /* _KERNEL */
 #endif /* _DEV_ISA_ISADMAVAR_H_ */

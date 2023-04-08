@@ -87,10 +87,11 @@ static u_int8_t dmamode[] = {
 };
 
 static inline void
-_isa_dmaunmask(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmaunmask(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int ochan = chan & 3;
 
 	ISA_DMA_MASK_CLR(ids, chan);
@@ -112,10 +113,11 @@ _isa_dmaunmask(ids, chan)
 }
 
 static inline void
-_isa_dmamask(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmamask(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int ochan = chan & 3;
 
 	ISA_DMA_MASK_SET(ids, chan);
@@ -144,12 +146,13 @@ _isa_dmamask(ids, chan)
  * _isa_dmainit(): Initialize the isa_dma_state for this chipset.
  */
 void
-_isa_dmainit(ids, bst, dmat, dev)
-	struct isa_dma_state *ids;
+isa_dmainit(ic, bst, dmat, dev)
+	isa_chipset_tag_t ic;
 	bus_space_tag_t bst;
 	bus_dma_tag_t dmat;
 	struct device *dev;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int chan;
 
 	ids->ids_dev = dev;
@@ -207,7 +210,7 @@ _isa_dmainit(ids, bst, dmat, dev)
 		 * sure it's always cascaded, and that it will be unmasked
 		 * when DMA is thawed.
 		 */
-		_isa_dmacascade(ids, 4);
+		isa_dmacascade(ic, 4);
 	}
 }
 
@@ -216,10 +219,11 @@ _isa_dmainit(ids, bst, dmat, dev)
  * external dma control by a board.
  */
 int
-_isa_dmacascade(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmacascade(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int ochan = chan & 3;
 
 	if (chan < 0 || chan > 7) {
@@ -243,15 +247,17 @@ _isa_dmacascade(ids, chan)
 		bus_space_write_1(ids->ids_bst, ids->ids_dma2h,
 		    DMA2_MODE, ochan | DMA37MD_CASCADE);
 
-	_isa_dmaunmask(ids, chan);
+	isa_dmaunmask(ids, chan);
 	return (0);
 }
 
 int
-_isa_drq_alloc(ids, chan)
-	struct isa_dma_state *ids;
+isa_drq_alloc(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
+
 	if (ISA_DMA_DRQ_ISFREE(ids, chan) == 0)
 		return EBUSY;
 	ISA_DMA_DRQ_ALLOC(ids, chan);
@@ -259,10 +265,12 @@ _isa_drq_alloc(ids, chan)
 }
 
 int
-_isa_drq_free(ids, chan)
-	struct isa_dma_state *ids;
+isa_drq_free(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
+
 	if (ISA_DMA_DRQ_ISFREE(ids, chan))
 		return EINVAL;
 	ISA_DMA_DRQ_FREE(ids, chan);
@@ -270,10 +278,11 @@ _isa_drq_free(ids, chan)
 }
 
 bus_size_t
-_isa_dmamaxsize(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmamaxsize(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", ids->ids_dev->dv_xname, chan);
@@ -284,12 +293,13 @@ _isa_dmamaxsize(ids, chan)
 }
 
 int
-_isa_dmamap_create(ids, chan, size, flags)
-	struct isa_dma_state *ids;
+isa_dmamap_create(ic, chan, size, flags)
+	isa_chipset_tag_t ic;
 	int chan;
 	bus_size_t size;
 	int flags;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int error;
 
 	if (chan < 0 || chan > 7) {
@@ -307,10 +317,11 @@ _isa_dmamap_create(ids, chan, size, flags)
 }
 
 void
-_isa_dmamap_destroy(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmamap_destroy(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", ids->ids_dev->dv_xname, chan);
@@ -329,8 +340,8 @@ _isa_dmamap_destroy(ids, chan)
  * in motion.
  */
 int
-_isa_dmastart(ids, chan, addr, nbytes, p, flags, busdmaflags)
-	struct isa_dma_state *ids;
+isa_dmastart(ic, chan, addr, nbytes, p, flags, busdmaflags)
+	isa_chipset_tag_t ic;
 	int chan;
 	void *addr;
 	bus_size_t nbytes;
@@ -338,6 +349,7 @@ _isa_dmastart(ids, chan, addr, nbytes, p, flags, busdmaflags)
 	int flags;
 	int busdmaflags;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	bus_dmamap_t dmam;
 	bus_addr_t dmaaddr;
 	int waport;
@@ -411,7 +423,7 @@ _isa_dmastart(ids, chan, addr, nbytes, p, flags, busdmaflags)
 
 	ids->ids_dmalength[chan] = nbytes;
 
-	_isa_dmamask(ids, chan);
+	isa_dmamask(ic, chan);
 	ids->ids_dmafinished &= ~(1 << chan);
 
 	if ((chan & 4) == 0) {
@@ -456,7 +468,7 @@ _isa_dmastart(ids, chan, addr, nbytes, p, flags, busdmaflags)
 		    (nbytes >> 8) & 0xff);
 	}
 
-	_isa_dmaunmask(ids, chan);
+	isa_dmaunmask(ic, chan);
 	return (0);
 
  lose:
@@ -464,26 +476,28 @@ _isa_dmastart(ids, chan, addr, nbytes, p, flags, busdmaflags)
 }
 
 void
-_isa_dmaabort(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmaabort(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", ids->ids_dev->dv_xname, chan);
 		panic("_isa_dmaabort");
 	}
 
-	_isa_dmamask(ids, chan);
+	isa_dmamask(ic, chan);
 	bus_dmamap_unload(ids->ids_dmat, ids->ids_dmamaps[chan]);
 	ids->ids_dmareads &= ~(1 << chan);
 }
 
 bus_size_t
-_isa_dmacount(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmacount(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int waport;
 	bus_size_t nbytes;
 	int ochan = chan & 3;
@@ -493,7 +507,7 @@ _isa_dmacount(ids, chan)
 		panic("isa_dmacount");
 	}
 
-	_isa_dmamask(ids, chan);
+	isa_dmamask(ic, chan);
 
 	/*
 	 * We have to shift the byte count by 1.  If we're in auto-initialize
@@ -523,15 +537,16 @@ _isa_dmacount(ids, chan)
 	if (nbytes == ids->ids_dmalength[chan])
 		nbytes = 0;
 
-	_isa_dmaunmask(ids, chan);
+	isa_dmaunmask(ic, chan);
 	return (nbytes);
 }
 
 int
-_isa_dmafinished(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmafinished(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", ids->ids_dev->dv_xname, chan);
@@ -550,10 +565,11 @@ _isa_dmafinished(ids, chan)
 }
 
 void
-_isa_dmadone(ids, chan)
-	struct isa_dma_state *ids;
+isa_dmadone(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	bus_dmamap_t dmam;
 
 	if (chan < 0 || chan > 7) {
@@ -563,9 +579,9 @@ _isa_dmadone(ids, chan)
 
 	dmam = ids->ids_dmamaps[chan];
 
-	_isa_dmamask(ids, chan);
+	isa_dmamask(ic, chan);
 
-	if (_isa_dmafinished(ids, chan) == 0)
+	if (isa_dmafinished(ic, chan) == 0)
 		printf("%s: _isa_dmadone: channel %d not finished\n",
 		    ids->ids_dev->dv_xname, chan);
 
@@ -578,9 +594,10 @@ _isa_dmadone(ids, chan)
 }
 
 void
-_isa_dmafreeze(ids)
-	struct isa_dma_state *ids;
+isa_dmafreeze(ic)
+	isa_chipset_tag_t ic;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int s;
 
 	s = splhigh();
@@ -600,9 +617,10 @@ _isa_dmafreeze(ids)
 }
 
 void
-_isa_dmathaw(ids)
-	struct isa_dma_state *ids;
+isa_dmathaw(ic)
+	isa_chipset_tag_t ic;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	int s;
 
 	s = splhigh();
@@ -622,13 +640,14 @@ _isa_dmathaw(ids)
 }
 
 int
-_isa_dmamem_alloc(ids, chan, size, addrp, flags)
-	struct isa_dma_state *ids;
+isa_dmamem_alloc(ic, chan, size, addrp, flags)
+	isa_chipset_tag_t ic;
 	int chan;
 	bus_size_t size;
 	bus_addr_t *addrp;
 	int flags;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	bus_dma_segment_t seg;
 	int error, boundary, rsegs;
 
@@ -651,12 +670,13 @@ _isa_dmamem_alloc(ids, chan, size, addrp, flags)
 }
 
 void
-_isa_dmamem_free(ids, chan, addr, size)
-	struct isa_dma_state *ids;
+isa_dmamem_free(ic, chan, addr, size)
+	isa_chipset_tag_t ic;
 	int chan;
 	bus_addr_t addr;
 	bus_size_t size;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	bus_dma_segment_t seg;
 
 	if (chan < 0 || chan > 7) {
@@ -671,19 +691,20 @@ _isa_dmamem_free(ids, chan, addr, size)
 }
 
 int
-_isa_dmamem_map(ids, chan, addr, size, kvap, flags)
-	struct isa_dma_state *ids;
+isa_dmamem_map(ic, chan, addr, size, kvap, flags)
+	isa_chipset_tag_t ic;
 	int chan;
 	bus_addr_t addr;
 	bus_size_t size;
 	caddr_t *kvap;
 	int flags;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	bus_dma_segment_t seg;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", ids->ids_dev->dv_xname, chan);
-		panic("_isa_dmamem_map");
+		panic("isa_dmamem_map");
 	}
 
 	seg.ds_addr = addr;
@@ -693,12 +714,13 @@ _isa_dmamem_map(ids, chan, addr, size, kvap, flags)
 }
 
 void
-_isa_dmamem_unmap(ids, chan, kva, size)
-	struct isa_dma_state *ids;
+isa_dmamem_unmap(ic, chan, kva, size)
+	isa_chipset_tag_t ic;
 	int chan;
 	caddr_t kva;
 	size_t size;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", ids->ids_dev->dv_xname, chan);
@@ -709,14 +731,15 @@ _isa_dmamem_unmap(ids, chan, kva, size)
 }
 
 int
-_isa_dmamem_mmap(ids, chan, addr, size, off, prot, flags)
-	struct isa_dma_state *ids;
+isa_dmamem_mmap(ic, chan, addr, size, off, prot, flags)
+	isa_chipset_tag_t ic;
 	int chan;
 	bus_addr_t addr;
 	bus_size_t size;
 	off_t off;
 	int prot, flags;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	bus_dma_segment_t seg;
 
 	if (chan < 0 || chan > 7) {
@@ -734,10 +757,11 @@ _isa_dmamem_mmap(ids, chan, addr, size, off, prot, flags)
 }
 
 int
-_isa_drq_isfree(ids, chan)
-	struct isa_dma_state *ids;
+isa_drq_isfree(ic, chan)
+	isa_chipset_tag_t ic;
 	int chan;
 {
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 
 	if (chan < 0 || chan > 7) {
 		printf("%s: bogus drq %d\n", ids->ids_dev->dv_xname, chan);
@@ -748,14 +772,14 @@ _isa_drq_isfree(ids, chan)
 }
 
 void *
-_isa_malloc(ids, chan, size, type, flags)
-	struct isa_dma_state *ids;
+isa_malloc(ic, chan, size, type, flags)
+	isa_chipset_tag_t ic;
 	int 			chan;
 	size_t 			size;
 	int 			type;
 	int 			flags;
 {
-
+	struct isa_dma_state *ids = (struct isa_dma_state *)ic;
 	struct isa_mem 	*m;
 	bus_addr_t 		addr;
 	caddr_t 		kva;
@@ -763,19 +787,20 @@ _isa_malloc(ids, chan, size, type, flags)
 
 	bflags = flags & M_WAITOK ? BUS_DMA_WAITOK : BUS_DMA_NOWAIT;
 
-	if (_isa_dmamem_alloc(ids, chan, size, &addr, bflags))
+	if (isa_dmamem_alloc(ic, chan, size, &addr, bflags))
 		return 0;
-	if (_isa_dmamem_map(ids, chan, addr, size, &kva, bflags)) {
-		_isa_dmamem_free(ids, chan, addr, size);
+	if (isa_dmamem_map(ic, chan, addr, size, &kva, bflags)) {
+		isa_dmamem_free(ic, chan, addr, size);
 		return 0;
 	}
 	m = malloc(sizeof(*m), type, flags);
 	if (m == 0) {
-		_isa_dmamem_unmap(ids, chan, kva, size);
-		_isa_dmamem_free(ids, chan, addr, size);
+		isa_dmamem_unmap(ic, chan, kva, size);
+		isa_dmamem_free(ic, chan, addr, size);
 		return 0;
 	}
 
+	m->ic = ic;
 	m->ids = ids;
 	m->chan = chan;
 	m->size = size;
@@ -786,7 +811,7 @@ _isa_malloc(ids, chan, size, type, flags)
 }
 
 void
-_isa_free(addr, type)
+isa_free(addr, type)
 	void *addr;
 	int type;
 {
@@ -803,13 +828,13 @@ _isa_free(addr, type)
 		return;
 	}
 	SIMPLEQ_REMOVE(&isa_mem_head, m, isa_mem, next);
-	_isa_dmamem_unmap(m->isa, m->chan, kva, m->size);
-	_isa_dmamem_free(m->isa, m->chan, m->addr, m->size);
+	isa_dmamem_unmap(m->ic, m->chan, kva, m->size);
+	isa_dmamem_free(m->ic, m->chan, m->addr, m->size);
 	free(m, type);
 }
 
 int
-_isa_mappage(mem, off, prot)
+isa_mappage(mem, off, prot)
 	void *mem;
 	int off;
 	int prot;
@@ -823,5 +848,5 @@ _isa_mappage(mem, off, prot)
 		printf("isa_mappage: mapping unallocted memory\n");
 		return (-1);
 	}
-	return (_isa_dmamem_mmap(m->isa, m->chan, m->addr, m->size, off, prot, BUS_DMA_WAITOK));
+	return (isa_dmamem_mmap(m->ic, m->chan, m->addr, m->size, off, prot, BUS_DMA_WAITOK));
 }
