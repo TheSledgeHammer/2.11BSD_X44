@@ -762,7 +762,7 @@ agp_allocate_user(struct agp_softc *sc, agp_allocate *alloc)
 			       alloc->pg_count << AGP_PAGE_SHIFT);
 	if (mem) {
 		alloc->key = mem->am_id;
-		alloc->physical = (caddr_t)mem->am_physical;
+		alloc->physical = mem->am_physical;
 		return 0;
 	} else {
 		return ENOMEM;
