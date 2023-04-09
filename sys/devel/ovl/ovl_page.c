@@ -186,7 +186,7 @@ ovl_page_init(start, end)
 
 	ovl_page_hash_mask = ovl_page_bucket_count - 1;
 
-	ovl_page_buckets = (struct ovl_pglist *)pmap_bootstrap_overlay_alloc(ovl_page_bucket_count * sizeof(struct ovl_pglist));
+	ovl_page_buckets = (struct ovl_pglist *)pmap_overlay_bootstrap_alloc(ovl_page_bucket_count * sizeof(struct ovl_pglist));
 	bucket = ovl_page_buckets;
 
 	for (i = ovl_page_bucket_count; i--;) {
@@ -214,9 +214,9 @@ ovl_page_init(start, end)
 	ovl_first_phys_addr = ptoa(ovl_first_page);
 	ovl_last_phys_addr  = ptoa(ovl_last_page) + PAGE_MASK;
 
-	m = (ovl_page_t)pmap_bootstrap_overlay_alloc(npages * sizeof(struct ovl_page));
+	m = (ovl_page_t)pmap_overlay_bootstrap_alloc(npages * sizeof(struct ovl_page));
 
-	pa = first_phys_addr;
+	pa = ovl_first_phys_addr;
 	while (npages--) {
 		m->flags = 0;
 		m->segment = NULL;

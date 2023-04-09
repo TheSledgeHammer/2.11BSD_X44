@@ -116,17 +116,27 @@ struct ovl_page {
 #define OVL_PG_VM_PG			0x16	/* overlay page holds vm_page */
 
 #ifdef _KERNEL
+
 extern
 struct ovl_pglist				ovl_page_list;
 extern
 simple_lock_data_t				ovl_page_list_lock;
-
 extern
 struct vm_page_hash_head     	ovl_vm_page_hashtable;
 extern
 long				       		ovl_vm_page_count;
 extern
 simple_lock_data_t				ovl_vm_page_hash_lock;
+
+extern
+long							ovl_first_page;
+extern
+long							ovl_last_page;
+
+extern
+vm_offset_t						ovl_first_phys_addr;
+extern
+vm_offset_t						ovl_last_phys_addr;
 
 #define	ovl_page_lock_lists()		simple_lock(&ovl_page_list_lock)
 #define	ovl_page_unlock_lists()		simple_unlock(&ovl_page_list_lock)

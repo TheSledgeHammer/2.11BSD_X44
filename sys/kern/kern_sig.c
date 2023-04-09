@@ -717,7 +717,7 @@ core(void)
 	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u.u_acflag & ASUGID) && !suser())) {
 			return (EFAULT);
 	}
-	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >= p->p_rlimit[RLIMIT_CORE].rlim_cur || ctob(USIZE + u.u_dsize+u.u_ssize) >= u.u_rlimit[RLIMIT_CORE].rlim_cur) {
+	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >= p->p_rlimit[RLIMIT_CORE].rlim_cur || ctob(USIZE + u.u_dsize + u.u_ssize) >= u.u_rlimit[RLIMIT_CORE].rlim_cur) {
 		return (EFAULT);
 	}
 	cp = u.u_comm;

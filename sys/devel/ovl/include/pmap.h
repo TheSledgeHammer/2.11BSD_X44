@@ -1,31 +1,4 @@
 /*
- * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-/*
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -60,13 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_init.c	8.1 (Berkeley) 6/11/93
+ *	@(#)pmap.h	8.1 (Berkeley) 6/11/93
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
- * Authors: Avadis Tevanian, Jr., Michael Wayne Young
+ * Author: Avadis Tevanian, Jr.
  *
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
@@ -90,39 +63,22 @@
  */
 
 /*
- *	Initialize the Overlay Memory subsystem.
+ *	Machine address mapping definitions -- machine-independent
+ *	section.  [For machine-dependent section, see "machine/pmap.h".]
  */
 
-#include <sys/param.h>
+#ifndef	_PMAP_OVL_H_
+#define	_PMAP_OVL_H_
 
-#include <devel/ovl/include/ovl.h>
-#include <devel/ovl/include/ovl_overlay.h>
-#include <devel/ovl/include/ovl_segment.h>
-#include <devel/ovl/include/ovl_page.h>
+#ifdef _KERNEL
+__BEGIN_DECLS
+void 		pmap_overlay_bootstrap(vm_offset_t, u_long);
+void 		*pmap_overlay_bootstrap_alloc(u_long);
+vm_offset_t pmap_overlay_map(vm_offset_t, vm_offset_t, vm_offset_t, int);
+void 		pmap_overlay_remove(pmap_t, vm_offset_t, vm_offset_t);
+void 		pmap_overlay_enter(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
+void 		pmap_overlay_init(vm_offset_t, vm_offset_t);
 
-void
-ovl_mem_init()
-{
-	extern vm_offset_t overlay_avail, overlay_end;
-
-	ovl_segment_init(&overlay_avail, &overlay_end);
-	ovl_page_init(&overlay_avail, &overlay_end);
-
-	/*
-	 * Initialize other OVL packages
-	 */
-	ovl_object_init(overlay_end - OVL_MIN_ADDRESS);
-	ovl_map_startup();
-	omem_init(overlay_avail, overlay_end);
-	pmap_overlay_init(avail_start, avail_end); /* not correct! */
-	overlay_pager_init();
-}
-
-/* Placeholder: Belongs in kern_malloc.c */
- char *omembase, *omemlimit;
-
- void
- omeminit()
- {
-	 omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&omembase, (vm_offset_t *)&omemlimit, (vm_size_t)OVL_MAX_ADDRESS);
- }
+__END_DECLS
+#endif
+#endif /* _PMAP_OVL_H_ */
