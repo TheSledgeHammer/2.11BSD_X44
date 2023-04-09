@@ -115,12 +115,12 @@ long				       	ovl_vm_page_count;
 simple_lock_data_t			ovl_vm_page_hash_lock;
 
 /*
- * ovl_pbootstrap:
+ * ovl_pmap_bootstrap:
  *
  * Allocates virtual address space from pmap_bootstrap_alloc.
  */
 void
-ovl_pbootstrap(void)
+ovl_pmap_bootstrap(void)
 {
 	extern vm_offset_t	oentry_data;
 	vm_size_t			oentry_data_size;
@@ -133,12 +133,12 @@ ovl_pbootstrap(void)
 }
 
 /*
- * ovl_pbootinit:
+ * ovl_pmap_bootinit:
  *
  * Allocates item from space made available by ovl_pbootstrap.
  */
 void *
-ovl_pbootinit(item, size, nitems)
+ovl_pmap_bootinit(item, size, nitems)
 	void 		*item;
 	vm_size_t 	size;
 	int 		nitems;
@@ -202,7 +202,7 @@ ovl_page_init(start, end)
 
 	*end = trunc_page(*end);
 
-	ovl_pbootstrap();
+	ovl_pmap_bootstrap();
 
 	npages = (*end - *start + sizeof(struct ovl_page)) / (PAGE_SIZE + sizeof(struct ovl_page));
 

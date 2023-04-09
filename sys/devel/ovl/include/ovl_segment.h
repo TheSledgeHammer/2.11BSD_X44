@@ -59,30 +59,22 @@ struct ovl_segment {
 
 extern
 struct ovl_seglist 					ovl_segment_list;
-
 extern
 simple_lock_data_t					ovl_segment_list_lock;
-
 extern
 struct vm_segment_hash_head       	ovl_vm_segment_hashtable;
-
 extern
 long				           		ovl_vm_segment_count;
-
 extern
 simple_lock_data_t					ovl_vm_segment_hash_lock;
-
 extern
 long								ovl_first_segment;
-
 extern
 long								ovl_last_segment;
-
 extern
-vm_offset_t							ovl_first_logical;
-
+vm_offset_t							ovl_first_logical_addr;
 extern
-vm_offset_t							ovl_last_logical;
+vm_offset_t							ovl_last_logical_addr;
 
 #define	ovl_segment_lock_lists()	simple_lock(&ovl_segment_list_lock)
 #define	ovl_segment_unlock_lists()	simple_unlock(&ovl_segment_list_lock)

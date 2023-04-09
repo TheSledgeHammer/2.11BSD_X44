@@ -126,8 +126,8 @@ static struct ovl_map_entry		oentry_init[MAX_OMAPENT];
 void
 ovl_map_startup()
 {
-	omap_free 	= ovl_pbootinit(omap_init, sizeof(struct ovl_map), MAX_OMAP);
-	oentry_free	= ovl_pbootinit(oentry_init, sizeof(struct ovl_map_entry), MAX_OMAPENT);
+	omap_free 	= ovl_pmap_bootinit(omap_init, sizeof(struct ovl_map), MAX_OMAP);
+	oentry_free	= ovl_pmap_bootinit(oentry_init, sizeof(struct ovl_map_entry), MAX_OMAPENT);
 }
 
 struct ovlspace *

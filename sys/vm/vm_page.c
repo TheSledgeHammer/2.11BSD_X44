@@ -109,30 +109,30 @@ vm_offset_t			kentry_data;
 void i386_vm_page_startup(vm_page_t);
 
 /*
- * vm_pbootstrap:
+ * vm_pmap_bootstrap:
  *
  * Allocates virtual address space from pmap_bootstrap_alloc.
  */
 void
-vm_pbootstrap(void)
+vm_pmap_bootstrap(void)
 {
-	extern vm_offset_t	kentry_data;
+    extern vm_offset_t	kentry_data;
 	vm_size_t			kentry_data_size;
 	vm_size_t 			kmap_size, kentry_size;
 
-	kmap_size = (MAX_KMAP * sizeof(struct vm_map));
+    kmap_size = (MAX_KMAP * sizeof(struct vm_map));
 	kentry_size = (MAX_KMAPENT * sizeof(struct vm_map_entry));
 	kentry_data_size = round_page(kmap_size + kentry_size);
 	kentry_data = (vm_offset_t)pmap_bootstrap_alloc(kentry_data_size);
 }
 
 /*
- * vm_pbootinit:
+ * vm_pmap_bootinit:
  *
  * Allocates item from space made available by vm_pbootstrap.
  */
 void *
-vm_pbootinit(item, size, nitems)
+vm_pmap_bootinit(item, size, nitems)
 	void 		*item;
 	vm_size_t 	size;
 	int 		nitems;
@@ -267,7 +267,7 @@ vm_page_startup(start, end)
 	 *	since people shouldn't be cluttering up the kernel
 	 *	map (they should use their own maps).
 	 */
-	vm_pbootstrap();
+	vm_pmap_bootstrap();
 
 	/*
  	 *	Compute the number of pages of memory that will be

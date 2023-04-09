@@ -162,8 +162,8 @@ static struct vm_map_entry		kentry_init[MAX_KMAPENT];
 void
 vm_map_startup(void)
 {
-    kmap_free 	= vm_pbootinit(kmap_init, sizeof(struct vm_map), MAX_KMAP);
-    kentry_free	= vm_pbootinit(kentry_init, sizeof(struct vm_map_entry), MAX_KMAPENT);
+    kmap_free 	= vm_pmap_bootinit(kmap_init, sizeof(struct vm_map), MAX_KMAP);
+    kentry_free	= vm_pmap_bootinit(kentry_init, sizeof(struct vm_map_entry), MAX_KMAPENT);
 }
 
 /*

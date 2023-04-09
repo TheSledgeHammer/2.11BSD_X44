@@ -237,7 +237,7 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 	(mem)->wire_count = 0; 							\
 }
 
-void 		 *vm_pbootinit(void *, vm_size_t, int);
+void 		 *vm_pmap_bootinit(void *, vm_size_t, int);
 void		 vm_page_activate(vm_page_t);
 vm_page_t	 vm_page_alloc(vm_segment_t, vm_offset_t);
 void		 vm_page_copy(vm_page_t, vm_page_t);
