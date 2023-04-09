@@ -87,8 +87,8 @@
 
 #define	SEGOFSET		(NBSEG-1)			/* byte offset into segment */
 #define	SEGSHIFT		22					/* LOG2(NBSEG) */
-#define	SEGSIZE			(1 << SEGSHIFT)		/* NBSEG */
-#define SEGMASK			(SEGSIZE - 1)		/* SEGOFSET */
+#define	SEGSIZE			(1 << SEGSHIFT)		/* bytes/segment (SEGMENT SIZE) */
+#define SEGMASK			SEGOFSET			/* SEGOFSET (SEGSIZE - 1) */
 
 /* pages */
 #define	NBPG			4096				/* bytes/page (PAGE SIZE) */

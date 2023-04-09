@@ -188,12 +188,12 @@ LIST_HEAD(pmap_head, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
 	LIST_ENTRY(pmap) 		pm_list;		/* List of all pmaps */
 #ifdef PMAP_PAE_COMP
-	uint64_t				*pm_pdir;		/* KVA of page directory */
-	uint64_t				*pm_ptab;		/* KVA of page table */
-	uint64_t				*pm_pdpt;		/* KVA of page director pointer table */
+	pd_entry_t				*pm_pdir;		/* KVA of page directory */
+	pt_entry_t				*pm_ptab;		/* KVA of page table */
+	pdpt_entry_t			*pm_pdpt;		/* KVA of page director pointer table */
 #else
-	uint32_t				*pm_pdir;		/* KVA of page directory */
-	uint32_t				*pm_ptab;		/* KVA of page table */
+	pd_entry_t				*pm_pdir;		/* KVA of page directory */
+	pt_entry_t				*pm_ptab;		/* KVA of page table */
 #endif
 	bool_t					pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */

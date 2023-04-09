@@ -533,7 +533,7 @@ pmap_bootstrap(firstaddr)
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
-	kernel_pmap->pm_ptab = (pd_entry_t *)(KERNBASE + IdlePTD + NBPG);
+	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
 #ifdef PMAP_PAE_COMP
 	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(KERNBASE + IdlePDPT);
 #endif
