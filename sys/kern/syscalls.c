@@ -159,7 +159,7 @@ char *syscallnames[] = {
 	"#148",		/* 148 = obsolete old setquota */
 	"#149",		/* 149 = obsolete old quota */
 	"getsockname",			/* 150 = getsockname */
-	"#151",		/* 151 = unused */
+	"uuidgen",			/* 151 = uuidgen */
 	"#152",		/* 152 = obsolete old nostk */
 	"#153",		/* 153 = obsolete old fetchi */
 	"#154",		/* 154 = obsolete old ucall */
@@ -172,7 +172,7 @@ char *syscallnames[] = {
 	"kenv",			/* 161 = kenv */
 	"kevent",			/* 162 = kevent */
 	"kqueue",			/* 163 = kqueue */
-	"swapon",			/* 164 = swapon */
+	"swapctl",			/* 164 = swapctl */
 	"_syscall",			/* 165 = _syscall */
 #ifdef KTRACE
 	"ktrace",			/* 166 = ktrace */

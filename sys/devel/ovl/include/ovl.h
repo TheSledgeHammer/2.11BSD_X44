@@ -65,15 +65,10 @@ typedef struct ovl_segment		*ovl_segment_t;
 struct ovl_page;
 typedef struct ovl_page			*ovl_page_t;
 
-#include <sys/tree.h>
-#include <sys/queue.h>
-#include <devel/vm/include/vm.h>
+#include <vm/include/vm.h>
 #include <devel/ovl/include/ovl_map.h>
 #include <devel/ovl/include/ovl_object.h>
-#include <devel/ovl/include/ovl_overlay.h>
-#include <devel/ovl/include/ovl_segment.h>
-
-#include <devel/sys/malloctypes.h>
+#include <devel/ovl/include/ovl_extern.h>
 
 /*
  * shareable overlay address space.
@@ -84,6 +79,7 @@ struct ovlspace {
 	int		        	ovl_refcnt;	   		/* number of references */
 #define ovl_startcopy 	ovl_rssize
 	segsz_t 			ovl_rssize; 		/* current resident set size in pages */
+
 	segsz_t 			ovl_tsize;			/* text size */
 	segsz_t 			ovl_ssize;			/* stack size */
 	segsz_t 			ovl_dsize;			/* data size */

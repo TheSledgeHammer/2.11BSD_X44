@@ -70,6 +70,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_segment.h>
 
 #include <net/netisr.h>
 
@@ -129,14 +130,6 @@ void (*initclocks_func)(void) = i8254_initclocks;
 /*
  * Declare these as initialized data so we can patch them.
  */
-/*
-extern int	nswbuf = 0;
-#ifdef	NBUF
-extern int	nbuf = NBUF;
-#else
-extern int	nbuf = 0;
-#endif
-*/
 #ifdef	BUFPAGES
 int	bufpages = BUFPAGES;
 #else
@@ -1393,6 +1386,7 @@ init386(first)
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
 	vm86_initialize();
 	getmemsize(&i386boot);
+	vm_set_segment_size();
 	vm_set_page_size();
 
 	/* call pmap initialization to make new kernel address space */
@@ -1802,10 +1796,10 @@ cpu_setmcontext(p, mcp, flags)
 	return (0);
 }
 
-#ifdef notyet
 /* bios smap */
-static int
-add_smap_entry(struct bios_smap *smap)
+int
+add_smap_entry(smap)
+	struct bios_smap *smap;
 {
 	if (boothowto & RB_VERBOSE) {
 		printf("SMAP type=%02x base=%016llx len=%016llx\n", smap->type, smap->base, smap->length);
@@ -1818,8 +1812,9 @@ add_smap_entry(struct bios_smap *smap)
 	return (add_mem_cluster(smap->base, smap->length));
 }
 
-static void
-add_smap_entries(struct bios_smap *smapbase)
+void
+add_smap_entries(smapbase)
+	struct bios_smap *smapbase;
 {
 	struct bios_smap *smap, *smapend;
 	u_int32_t smapsize;
@@ -1855,7 +1850,6 @@ has_smapbase(smapbase)
 	}
 	return (has_smap);
 }
-#endif
 
 /*
  * Add a mask to cpl, and return the old value of cpl.

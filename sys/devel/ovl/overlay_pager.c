@@ -90,13 +90,10 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
-#include <sys/uio.h>
-#include <sys/mount.h>
-
-#include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_page.h>
 
 #include <devel/ovl/include/ovl.h>
+#include <devel/ovl/include/ovl_overlay.h>
+#include <devel/ovl/include/ovl_segment.h>
 #include <devel/ovl/include/ovl_page.h>
 #include <devel/ovl/include/overlay_pager.h>
 
@@ -136,6 +133,7 @@ overlay_pager_alloc(handle, size, prot, foff)
 	register vm_pager_t  	pager;
 	register ovl_pager_t 	ovl;
 	ovl_object_t			ovl_object;
+	vm_object_t 			fake_vm_object;
 
 	if (handle) {
 		pager = vm_pager_lookup(&overlay_pager_list, handle);
@@ -149,9 +147,9 @@ overlay_pager_alloc(handle, size, prot, foff)
 
 	ovl = (ovl_pager_t)handle;
 	ovl_object = ovl->ovl_object;
-	pager = ovl_object->ovo_pager;
+	pager = ovl_object->pager;
 
-	vm_object_t fake_vm_object = ovl_object->ovo_vm_object;
+	fake_vm_object = ovl_object->vm_object;
 
 	if (ovl_object == NULL) {
 		ovl_object = ovl_object_allocate(0);
@@ -191,7 +189,7 @@ overlay_pager_dealloc(pager)
 
 	ovl = (ovl_pager_t) pager->pg_data;
 	ovl_object = ovl->ovl_object;
-	fake_vm_object = ovl_object->ovo_vm_object;
+	fake_vm_object = ovl_object->vm_object;
 
 	TAILQ_REMOVE(&overlay_pager_list, pager, pg_list);
 
@@ -207,9 +205,9 @@ overlay_pager_getpage(pager, mlist, npages, sync)
 	bool_t	sync;
 {
 	ovl_pager_t ovl = (ovl_pager_t) pager->pg_data;
-	vm_page_t 	vm_page = *mlist;
+	vm_page_t 	page = *mlist;
 
-	return (overlay_pager_io(ovl, vm_page, npages, OVL_PGR_GET));
+	return (overlay_pager_io(ovl, page, npages, OVL_PGR_GET));
 }
 
 static int
@@ -220,9 +218,9 @@ overlay_pager_putpage(pager, mlist, npages, sync)
 	bool_t	sync;
 {
 	ovl_pager_t ovl = (ovl_pager_t) pager->pg_data;
-	vm_page_t 	vm_page = *mlist;
+	vm_page_t 	page = *mlist;
 
-	return (overlay_pager_io(ovl, vm_page, npages, OVL_PGR_PUT));
+	return (overlay_pager_io(ovl, page, npages, OVL_PGR_PUT));
 }
 
 static bool_t
@@ -230,7 +228,7 @@ overlay_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;
 {
-	if(pager == NULL) {
+	if (pager == NULL) {
 		return (FALSE);
 	}
 
@@ -238,9 +236,9 @@ overlay_pager_haspage(pager, offset)
 }
 
 static int
-overlay_pager_io(ovl, vm_page, npages, flags)
+overlay_pager_io(ovl, vpage, npages, flags)
 	register ovl_pager_t ovl;
-	vm_page_t vm_page;
+	vm_page_t vpage;
 	int npages;
 	int flags;
 {
@@ -255,19 +253,19 @@ overlay_pager_io(ovl, vm_page, npages, flags)
 	 * check if overlay pager is not null. if overlay object is null,
 	 * allocate the overlay object and assign it to the overlay pager.
 	 */
-	if(ovl != NULL && ovl_object == NULL) {
+	if (ovl != NULL && ovl_object == NULL) {
 		ovl_object = ovl_object_allocate(0);
 		ovl->ovl_object = ovl_object;
 	} else {
-		if(ovl == NULL && ovl_object == NULL) {
+		if (ovl == NULL && ovl_object == NULL) {
 			goto fail;
 		}
 	}
 
 	/* determine number of pages, to find overlay segment & page offset */
 	if(npages == 1) {
-		ovl_segment = CIRCLEQ_FIRST(&ovl_object->ovo_ovseglist);
-		ovl_page = TAILQ_FIRST(&ovl_segment->ovs_ovpglist);
+		ovl_segment = CIRCLEQ_FIRST(&ovl_object->seglist);
+		ovl_page = TAILQ_FIRST(&ovl_segment->pglist);
 	} else {
 		while(npages--) {
 			segoffset = stoa(round_segment(npages) / SEGMENT_SIZE);
@@ -284,11 +282,11 @@ overlay_pager_io(ovl, vm_page, npages, flags)
 	}
 
 	/* check if overlay page contains a vm_page */
-	if(ovl_page->ovp_vm_page) {
+	if(ovl_page->vm_page) {
 		/* find vm page in list of overlaid pages */
-		vm_page = ovl_page_lookup_vm_page(ovl_page);
+		vpage = ovl_page_lookup_vm_page(ovl_page);
 		/* if vm_page is not null return depending on the flags set */
-		if(vm_page != NULL) {
+		if(vpage != NULL) {
 			if(flags == OVL_PGR_GET){
 				return (VM_PAGER_OK);
 			}

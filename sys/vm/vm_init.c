@@ -70,7 +70,9 @@
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
+#include <vm/include/vm_segment.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_aobject.h>
 
 /*
  *	vm_init initializes the virtual memory system.
@@ -90,15 +92,16 @@ vm_mem_init()
 	 *	From here on, all physical memory is accounted for,
 	 *	and we use only virtual addresses.
 	 */
+	vm_set_segment_size();
 	vm_set_page_size();
+	vm_segment_startup(&avail_start, &avail_end);
 	vm_page_startup(&avail_start, &avail_end);
 
 	/*
 	 * Initialize other VM packages
 	 */
-	vm_object_init(virtual_end - VM_MIN_KERNEL_ADDRESS);
+	vm_object_init(virtual_end - VM_MIN_KERNEL_ADDRESS, VAO_FLAG_KERNSWAP);
 	vm_map_startup();
-	//amap_init(); 	/* init the amap */
 	kmem_init(virtual_avail, virtual_end);
 	pmap_init(avail_start, avail_end);
 	vm_pager_init();
@@ -106,5 +109,6 @@ vm_mem_init()
 	/*
 	 * Init anonymous memory systems.
 	 */
-	//vm_anon_init();
+	vm_amap_init();
+	vm_anon_init();
 }

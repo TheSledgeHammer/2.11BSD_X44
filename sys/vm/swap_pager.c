@@ -50,7 +50,6 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-//#include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/map.h>
 #include <sys/vnode.h>
@@ -58,9 +57,11 @@
 
 #include <miscfs/specfs/specdev.h>
 
+#include <vm/include/vm_swap.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>
+#include <vm/include/vm_segment.h>
 #include <vm/include/swap_pager.h>
 
 #define NSWSIZES	16	/* size of swtab */
@@ -93,6 +94,7 @@ struct swpagerclean {
 	struct buf					*spc_bp;
 	sw_pager_t					spc_swp;
 	vm_offset_t					spc_kva;
+	vm_segment_t				spc_s;
 	vm_page_t					spc_m;
 	int							spc_npages;
 } swcleanlist[NPENDINGIO];
@@ -531,11 +533,14 @@ swap_pager_io(swp, mlist, npages, flags)
 {
 	register struct buf *bp;
 	register sw_blk_t swb;
+	register struct swapbuf *swbuf;
 	register int s;
 	int ix, mask;
 	bool_t rv;
 	vm_offset_t kva, off;
 	swp_clean_t spc;
+	vm_object_t object;
+	vm_segment_t seg;
 	vm_page_t m;
 
 #ifdef DEBUG
@@ -558,8 +563,11 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * following shadow chains looking for the top level object
 	 * with the page.
 	 */
+	swbuf = vm_swapbuf_get(bp);
 	m = *mlist;
-	off = m->offset + m->object->paging_offset;
+	seg = m->segment;
+	object = seg->object;
+	off = m->offset + seg->object->paging_offset;
 	ix = off / dbtob(swp->sw_bsize);
 	if (swp->sw_blocks == NULL || ix >= swp->sw_nblocks) {
 #ifdef DEBUG
@@ -656,16 +664,16 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * Get a swap buffer header and initialize it.
 	 */
 	s = splbio();
-	while (TAILQ_FIRST(&bswlist) == NULL) {
+	while (TAILQ_FIRST(&swbuf->sw_bswlist) == NULL) {
 #ifdef DEBUG
 		if (swpagerdebug & SDB_ANOM)
 			printf("swap_pager_io: wait on swbuf for %x (%d)\n", m, flags);
 #endif
-		TAILQ_INIT(&bswlist);
-		TAILQ_FIRST(&bswlist)->b_flags |= B_WANTED;
-		tsleep((caddr_t)&bswlist, PSWP+1, "swpgiobuf", 0);
+		TAILQ_INIT(&swbuf->sw_bswlist);
+		TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags |= B_WANTED;
+		tsleep((caddr_t)&swbuf->sw_bswlist, PSWP+1, "swpgiobuf", 0);
 	}
-	TAILQ_INSERT_HEAD(&bswlist, bp, b_actq);
+	TAILQ_INSERT_HEAD(&swbuf->sw_bswlist, bp, b_actq);
 	splx(s);
 	bp->b_flags = B_BUSY | (flags & B_READ);
 	bp->b_proc = &proc0;	/* XXX (but without B_PHYS set this is ok) */
@@ -776,12 +784,12 @@ swap_pager_io(swp, mlist, npages, flags)
 #endif
 	rv = (bp->b_flags & B_ERROR) ? VM_PAGER_ERROR : VM_PAGER_OK;
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	TAILQ_INSERT_HEAD(&bswlist, bp, b_actq);
+	TAILQ_INSERT_HEAD(&swbuf->sw_bswlist, bp, b_actq);
 	if (bp->b_vp)
 		brelvp(bp);
-	if (TAILQ_FIRST(&bswlist)->b_flags & B_WANTED) {
-		TAILQ_FIRST(&bswlist)->b_flags &= ~B_WANTED;
-		wakeup(&bswlist);
+	if (TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags & B_WANTED) {
+		TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags &= ~B_WANTED;
+		wakeup(&swbuf->sw_bswlist);
 	}
 	if ((flags & B_READ) == 0 && rv == VM_PAGER_OK) {
 		m->flags |= PG_CLEAN;
@@ -805,6 +813,7 @@ swap_pager_clean(rw)
 	register swp_clean_t spc;
 	register int s, i;
 	vm_object_t object;
+	vm_segment_t seg;
 	vm_page_t m;
 
 #ifdef DEBUG
@@ -833,7 +842,7 @@ swap_pager_clean(rw)
 			 * Is there something better we could do?
 			 */
 			if ((spc->spc_flags & SPC_DONE) &&
-			    vm_object_lock_try(spc->spc_m->object)) {
+			    vm_object_lock_try(spc->spc_s->object)) {
 				TAILQ_REMOVE(&swap_pager_inuse, spc, spc_list);
 				break;
 			}
@@ -851,7 +860,8 @@ swap_pager_clean(rw)
 		 * Note: no longer at splbio since entry is off the list.
 		 */
 		m = spc->spc_m;
-		object = m->object;
+		seg = m->segment;
+		object = seg->object;
 
 		/*
 		 * Process each page in the cluster.
@@ -946,9 +956,11 @@ swap_pager_iodone(bp)
 	register struct buf *bp;
 {
 	register swp_clean_t spc;
+	register struct swapbuf *swbuf;
 	daddr_t blk;
 	int s;
 
+	swbuf = vm_swapbuf_get(bp);
 #ifdef DEBUG
 	/* save panic time state */
 	if ((swpagerdebug & SDB_ANOMPANIC) && panicstr)
@@ -989,12 +1001,12 @@ swap_pager_iodone(bp)
 	}
 		
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	TAILQ_INSERT_HEAD(&bswlist, bp, b_actq);
+	TAILQ_INSERT_HEAD(&swbuf->sw_bswlist, bp, b_actq);
 	if (bp->b_vp)
 		brelvp(bp);
-	if (TAILQ_FIRST(&bswlist)->b_flags & B_WANTED) {
-		TAILQ_FIRST(&bswlist)->b_flags &= ~B_WANTED;
-		wakeup(&bswlist);
+	if (TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags & B_WANTED) {
+		TAILQ_FIRST(&swbuf->sw_bswlist)->b_flags &= ~B_WANTED;
+		wakeup(&swbuf->sw_bswlist);
 	}
 	wakeup(&vm_pages_needed);
 	splx(s);

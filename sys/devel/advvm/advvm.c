@@ -91,7 +91,6 @@ const struct cdevsw advvm_cdev = {
 		.d_ioctl = advvm_ioctl,
 		.d_stop = nostop,
 		.d_tty = notty,
-		.d_select = noselect,
 		.d_poll = nopoll,
 		.d_mmap = nommap,
 		.d_strategy = advvm_strategy,

@@ -46,12 +46,10 @@
 #include <machine/cpuvar.h>
 #include <machine/gdt.h>
 #include <machine/pcb.h>
-//#include <machine/psl.h>
 #include <machine/pte.h>
 #include <machine/specialreg.h>
 #include <machine/sysarch.h>
 #include <machine/pmap.h>
-//#include <machine/segments.h>
 #include <machine/vm86.h>
 
 #include <machine/isa/isa_machdep.h>
@@ -502,13 +500,18 @@ vm86_initial_bioscalls(basemem, extmem)
 {
 	struct vm86frame 	vmf;
 	struct vm86context 	vmc;
-	struct bios_smap 	*smap;
+	struct bios_smap 	*smap, *smapbase;
 	pt_entry_t *pte;
 	u_long pa;
 	int res, i, has_smap;
 
 	has_smap = 0;
 	bzero(&vmf, sizeof(struct vm86frame));		/* safety */
+
+	smapbase = (struct bios_smap *)NULL;
+	if (has_smapbase(smapbase)) {
+		goto have_smap;
+	}
 
    	/*
 	 * Perform "base memory" related probes & setup
@@ -582,13 +585,15 @@ vm86_initial_bioscalls(basemem, extmem)
 		if (i || vmf.vmf_eax != SMAP_SIG) {
 			break;
 		}
-#ifdef smap_not_ready
 		has_smap = 1;
         if (!add_smap_entry(smap)) {
             break;
         }
-#endif
 	} while (vmf.vmf_ebx != 0);
+
+have_smap:
+
+
 	/*
 	 * try memory map with INT 15:E801
 	 */

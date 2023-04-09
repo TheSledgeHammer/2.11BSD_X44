@@ -47,6 +47,7 @@
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/percpu.h>
 #include <arch/i386/include/specialreg.h>
+#include <arch/i386/include/smp.h>
 
 #include <arch/i386/include/ansi.h>
 #include <arch/i386/include/types.h>
@@ -69,6 +70,14 @@ static struct timecounter tsc_timecounter = {
 		.tc_name =					"TSC",
 		.tc_quality =				800,	/* adjusted in code */
 };
+
+/* Register to find out about changes in CPU frequency. */
+
+#include <sys/device.h>
+
+struct evcnt tsc_pre_tag = EVCNT_INITIALIZER(EVCNT_TYPE_MISC, NULL, "TSC", "cpufreq_pre_change");
+struct evcnt tsc_post_tag = EVCNT_INITIALIZER(EVCNT_TYPE_MISC, NULL, "TSC", "cpufreq_post_change");
+struct evcnt tsc_levels_tag = EVCNT_INITIALIZER(EVCNT_TYPE_MISC, NULL, "TSC", "cpufreq_levels_changed");
 
 /*
  * Calculate TSC frequency using information from the CPUID leaf 0x15
@@ -126,9 +135,11 @@ tsc_freq_intel(void)
 			p += sizeof(regs);
 		}
 		p = NULL;
-		for (i = 0; i < sizeof(brand) - 1; i++)
-			if (brand[i] == 'H' && brand[i + 1] == 'z')
+		for (i = 0; i < sizeof(brand) - 1; i++) {
+			if (brand[i] == 'H' && brand[i + 1] == 'z') {
 				p = brand + i;
+			}
+		}
 		if (p != NULL) {
 			p -= 5;
 			switch (p[4]) {
@@ -164,106 +175,19 @@ tsc_freq_intel(void)
 }
 
 static void
-probe_tsc_freq(void)
+tsc_freq_tc(u_int64_t *res)
 {
-	u_int64_t tmp_freq, tsc1, tsc2;
-	int no_cpuid_override;
+	u_int64_t tsc1, tsc2;
 
-	if (cpu_power_ecx & CPUID_PERF_STAT) {
-		/*
-		 * XXX Some emulators expose host CPUID without actual support
-		 * for these MSRs.  We must test whether they really work.
-		 */
-		wrmsr(MSR_MPERF, 0);
-		wrmsr(MSR_APERF, 0);
-		delay(10);
-		if (rdmsr(MSR_MPERF) > 0 && rdmsr(MSR_APERF) > 0)
-			tsc_perf_stat = 1;
-	}
-/*
-	if (vm_guest == VM_GUEST_VMWARE) {
-		tsc_freq_vmware();
-		return;
-	}
-*/
-	switch (cpu_vendor_id) {
-	case CPUVENDOR_AMD:
-	case CPUVENDOR_HYGON:
-		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0	|| (/*vm_guest == VM_GUEST_NO && */CPUID_TO_FAMILY(cpu_id) >= 0x10)) {
-			tsc_is_invariant = 1;
-		}
-		if (cpu_feature & CPUID_SSE2) {
-			tsc_timecounter.tc_get_timecount = tsc_get_timecount_mfence;
-		}
-		break;
-	case CPUVENDOR_INTEL:
-		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0	|| (/*vm_guest == VM_GUEST_NO && */((CPUID_TO_FAMILY(cpu_id) == 0x6 &&
-				CPUID_TO_MODEL(cpu_id) >= 0xe) || (CPUID_TO_FAMILY(cpu_id) == 0xf && CPUID_TO_MODEL(cpu_id) >= 0x3)))) {
-			tsc_is_invariant = 1;
-		}
-		if (cpu_feature & CPUID_SSE2) {
-			tsc_timecounter.tc_get_timecount = tsc_get_timecount_lfence;
-		}
-		break;
-	case CPUVENDOR_CENTAUR:
-		if (/* vm_guest == VM_GUEST_NO && */CPUID_TO_FAMILY(cpu_id) == 0x6 && CPUID_TO_MODEL(cpu_id) >= 0xf && (rdmsr(0x1203) & 0x100000000ULL) == 0) {
-			tsc_is_invariant = 1;
-		}
-		if (cpu_feature & CPUID_SSE2) {
-			tsc_timecounter.tc_get_timecount = tsc_get_timecount_lfence;
-		}
-		break;
-	}
-
-	if (tsc_skip_calibration) {
-		if (tsc_freq_cpuid(&tmp_freq)) {
-			tsc_freq = tmp_freq;
-		} else if (cpu_vendor_id == CPUVENDOR_INTEL) {
-			tsc_freq_intel();
-		}
-		if (tsc_freq == 0) {
-			tsc_disabled = 1;
-		}
-	} else {
-		if (bootverbose) {
-			printf("Calibrating TSC clock ... ");
-		}
-		tsc1 = rdtsc();
-		delay(1000000);
-		tsc2 = rdtsc();
-		tsc_freq = tsc2 - tsc1;
-
-		/*
-		 * If the difference between calibrated frequency and
-		 * the frequency reported by CPUID 0x15/0x16 leafs
-		 * differ significantly, this probably means that
-		 * calibration is bogus.  It happens on machines
-		 * without 8254 timer.  The BIOS rarely properly
-		 * reports it in FADT boot flags, so just compare the
-		 * frequencies directly.
-		 */
-		if (tsc_freq_cpuid(&tmp_freq) && qabs(tsc_freq - tmp_freq) > uqmin(tsc_freq, tmp_freq)) {
-			no_cpuid_override = 0;
-		//	TUNABLE_INT_FETCH("machdep.disable_tsc_cpuid_override", &no_cpuid_override);
-			if (!no_cpuid_override) {
-				if (bootverbose) {
-					printf("TSC clock: calibration freq %ju Hz, CPUID freq %ju Hz%s\n", (uintmax_t) tsc_freq, (uintmax_t) tmp_freq, no_cpuid_override ? "" : ", doing CPUID override");
-				}
-				tsc_freq = tmp_freq;
-			}
-		}
-	}
-	if (bootverbose) {
-		printf("TSC clock: %ju Hz\n", (intmax_t) tsc_freq);
-	}
+	tsc1 = rdtsc();
+	delay(1000000);
+	tsc2 = rdtsc();
+	tsc_freq = tsc2 - tsc1;
 }
 
-void
-init_TSC(void)
+static void
+probe_tsc_freq_early(void)
 {
-
-	if ((cpu_feature & CPUID_TSC) == 0 || tsc_disabled)
-		return;
 
 #ifdef __i386__
 	/* The TSC is known to be broken on certain CPUs. */
@@ -298,7 +222,116 @@ init_TSC(void)
 	}
 #endif
 
-	probe_tsc_freq();
+	switch (cpu_vendor_id) {
+	case CPUVENDOR_AMD:
+	case CPUVENDOR_HYGON:
+		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0
+				|| (/*vm_guest == VM_GUEST_NO && */CPUID_TO_FAMILY(cpu_id)
+						>= 0x10)) {
+			tsc_is_invariant = 1;
+		}
+		if (cpu_feature & CPUID_SSE2) {
+			tsc_timecounter.tc_get_timecount = tsc_get_timecount_mfence;
+		}
+		break;
+	case CPUVENDOR_INTEL:
+		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0
+				|| (/*vm_guest == VM_GUEST_NO && */((CPUID_TO_FAMILY(cpu_id)
+						== 0x6 &&
+				CPUID_TO_MODEL(cpu_id) >= 0xe)
+						|| (CPUID_TO_FAMILY(cpu_id) == 0xf
+								&& CPUID_TO_MODEL(cpu_id) >= 0x3)))) {
+			tsc_is_invariant = 1;
+		}
+		if (cpu_feature & CPUID_SSE2) {
+			tsc_timecounter.tc_get_timecount = tsc_get_timecount_lfence;
+		}
+		break;
+	case CPUVENDOR_CENTAUR:
+		if (/* vm_guest == VM_GUEST_NO && */CPUID_TO_FAMILY(cpu_id) == 0x6
+				&& CPUID_TO_MODEL(cpu_id) >= 0xf
+				&& (rdmsr(0x1203) & 0x100000000ULL) == 0) {
+			tsc_is_invariant = 1;
+		}
+		if (cpu_feature & CPUID_SSE2) {
+			tsc_timecounter.tc_get_timecount = tsc_get_timecount_lfence;
+		}
+		break;
+	}
+
+	if (tsc_freq_cpuid(&tsc_freq)) {
+		/*
+		 * If possible, use the value obtained from CPUID as the initial
+		 * frequency.  This will be refined later during boot but is
+		 * good enough for now.  The 8254 PIT is not functional on some
+		 * newer platforms anyway, so don't delay our boot for what
+		 * might be a garbage result.  Late calibration is required if
+		 * the initial frequency was obtained from CPUID.16H, as the
+		 * derived value may be off by as much as 1%.
+		 */
+		if (bootverbose) {
+			printf("Early TSC frequency %juHz derived from CPUID\n", (uintmax_t) tsc_freq);
+		}
+	}
+}
+
+/*
+ * If we were unable to determine the TSC frequency via CPU registers, try
+ * to calibrate against a known clock.
+ */
+static void
+probe_tsc_freq_late(void)
+{
+	if (tsc_freq != 0) {
+		return;
+	}
+	if (tsc_skip_calibration) {
+		/*
+		 * Try to parse the brand string to obtain the nominal TSC
+		 * frequency.
+		 */
+		if (cpu_vendor_id == CPUVENDOR_INTEL) {
+			tsc_freq_intel();
+			if (bootverbose) {
+				printf("Early TSC frequency %juHz derived from brand string\n", (uintmax_t) tsc_freq);
+			}
+		} else {
+			tsc_disabled = 1;
+		}
+	} else {
+		/*
+		 * Calibrate against a timecounter or the 8254 PIT.  This
+		 * estimate will be refined later in tsc_calib().
+		 */
+		tsc_freq_tc(&tsc_freq);
+		if (bootverbose) {
+			printf("Early TSC frequency %juHz calibrated from 8254 PIT\n", (uintmax_t) tsc_freq);
+		}
+	}
+}
+
+void
+start_TSC(void)
+{
+
+	if ((cpu_feature & CPUID_TSC) == 0 || tsc_disabled) {
+		return;
+	}
+
+	probe_tsc_freq_late();
+
+	if (cpu_power_ecx & CPUID_PERF_STAT) {
+		/*
+		 * XXX Some emulators expose host CPUID without actual support
+		 * for these MSRs.  We must test whether they really work.
+		 */
+		wrmsr(MSR_MPERF, 0);
+		wrmsr(MSR_APERF, 0);
+		delay(10);
+		if (rdmsr(MSR_MPERF) > 0 && rdmsr(MSR_APERF) > 0) {
+			tsc_perf_stat = 1;
+		}
+	}
 
 	/*
 	 * Inform CPU accounting about our boot-time clock rate.  This will
@@ -312,12 +345,8 @@ init_TSC(void)
 	if (tsc_is_invariant) {
 		return;
 	}
-
-	/* Register to find out about changes in CPU frequency. */
-//	tsc_pre_tag = EVENTHANDLER_REGISTER(cpufreq_pre_change, tsc_freq_changing, NULL, EVENTHANDLER_PRI_FIRST);
-//	tsc_post_tag = EVENTHANDLER_REGISTER(cpufreq_post_change, tsc_freq_changed, NULL, EVENTHANDLER_PRI_FIRST);
-//	tsc_levels_tag = EVENTHANDLER_REGISTER(cpufreq_levels_changed, tsc_levels_changed, NULL, EVENTHANDLER_PRI_ANY);
 }
+
 
 #ifdef SMP
 
@@ -358,7 +387,7 @@ comp_smp_tsc(void *arg)
 {
 	u_int64_t *tsc;
 	int64_t d1, d2;
-	u_int cpu = PCPU_GET(cpuid);
+	u_int cpu = PERCPU_GET(cpuid);
 	u_int i, j, size;
 
 	size = (mp_maxid + 1) * 3;
@@ -432,7 +461,7 @@ test_tsc(int adj_max_count)
 retry:
 	for (i = 0, tsc = data; i < N; i++, tsc += size)
 		smp_rendezvous(tsc_read_0, tsc_read_1, tsc_read_2, tsc);
-	smp_tsc = 1;	/* XXX */
+	smp_tsc = 1; /* XXX */
 	smp_rendezvous(smp_no_rendezvous_barrier, comp_smp_tsc, smp_no_rendezvous_barrier, data);
 	if (!smp_tsc && adj < adj_max_count) {
 		adj++;
@@ -504,8 +533,9 @@ init_TSC_tc(void)
 	 */
 	if (power_pm_get_type() == POWER_PM_TYPE_APM) {
 		tsc_timecounter.tc_quality = -1000;
-		if (bootverbose)
+		if (bootverbose) {
 			printf("TSC timecounter disabled: APM enabled.\n");
+		}
 		goto init;
 	}
 
@@ -524,8 +554,9 @@ init_TSC_tc(void)
 	if (cpu_vendor_id == CPUVENDOR_INTEL &&
 	    (amd_pminfo & AMDPM_TSC_INVARIANT) == 0) {
 		tsc_timecounter.tc_flags |= TC_FLAGS_C2STOP;
-		if (bootverbose)
+		if (bootverbose) {
 			printf("TSC timecounter disables C2 and C3.\n");
+		}
 	}
 
 	/*
@@ -536,12 +567,13 @@ init_TSC_tc(void)
 	 * environments, so it is set to a negative quality in those cases.
 	 */
 #ifdef SMP
-	if (mp_ncpus > 1)
+	if (mp_ncpus > 1) {
 		tsc_timecounter.tc_quality = test_tsc(smp_tsc_adjust);
-	else
+	} else
 #endif /* SMP */
-	if (tsc_is_invariant)
-		tsc_timecounter.tc_quality = 1000;
+		if (tsc_is_invariant) {
+			tsc_timecounter.tc_quality = 1000;
+		}
 	max_freq >>= tsc_shift;
 
 init:
@@ -573,6 +605,16 @@ init:
 		tsc_timecounter.tc_priv = (void *)(intptr_t)shift;
 		tc_init(&tsc_timecounter);
 	}
+}
+
+void
+tsc_init(void)
+{
+	if ((cpu_feature & CPUID_TSC) == 0 || tsc_disabled) {
+		return;
+	}
+
+	probe_tsc_freq_early();
 }
 
 void

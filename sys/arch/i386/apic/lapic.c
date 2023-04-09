@@ -76,7 +76,7 @@
 #define lapic_unlock(lock) 		simple_unlock(lock)
 
 void			lapic_clockintr(void *);
-void		lapic_delay(int);
+void			lapic_delay(int);
 static uint32_t lapic_gettick(void);
 static void		lapic_map(vm_offset_t);
 

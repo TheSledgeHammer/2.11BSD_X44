@@ -3,6 +3,12 @@
 #
 # CHIPS and Technologies 82C7[12][01] Universal Peripheral Controller
 #
+
+device	wdc: ata, wdc_base
+device	atabus: atapi, ata_hl
+attach	atabus at ata
+file	dev/core/io/wdc/wdc.c					(ata_dma | atabus) & atabus & wdc_base 	needs-flag
+
 attach	wdc at upc with wdc_upc
 file	dev/core/io/wdc/wdc_upc.c				wdc_upc
 
@@ -14,8 +20,8 @@ file	dev/core/io/wdc/wdc_isa.c				wdc_isa
 
 # IDE disks
 attach	wdc at isapnp with wdc_isapnp
-file	dev/core/io/wdc/wdc_isapnp.c			wdc_isapnp
+file	dev/core/io/wdc/wdc_isapnp.c				wdc_isapnp
 
 # PCMCIA IDE controller
 attach	wdc at pcmcia with wdc_pcmcia
-file	dev/core/io/wdc/wdc_pcmcia.c		wdc_pcmcia
+file	dev/core/io/wdc/wdc_pcmcia.c				wdc_pcmcia

@@ -4,6 +4,7 @@
 # Disk Configuration Files
 #
 include		"dev/disk/ata/files.ata"
+include		"dev/disk/fd/files.fd"
 include		"dev/disk/scsi/files.scsi"
 
 # pseudo disks

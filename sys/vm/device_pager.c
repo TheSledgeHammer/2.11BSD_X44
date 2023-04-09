@@ -73,6 +73,8 @@ static void		 	dev_pager_init(void);
 static int		 	dev_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
 static vm_page_t	dev_pager_getfake(vm_offset_t);
 static void		 	dev_pager_putfake(vm_page_t);
+static int			dev_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
+
 
 struct pagerops devicepagerops = {
 	dev_pager_init,
@@ -255,6 +257,7 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	register vm_object_t object;
 	const struct cdevsw *cdev;
 	vm_offset_t offset, paddr;
+	vm_segment_t s, segment;
 	vm_page_t m, page;
 	dev_t dev;
 	int prot;
@@ -268,8 +271,9 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	if (npages != 1)
 		panic("dev_pager_getpage: cannot handle multiple pages");
 	m = *mlist;
+	s = m->segment;
 
-	object = m->object;
+	object = s->object;
 	dev = (dev_t)pager->pg_handle;
 	offset = m->offset + object->paging_offset;
 	prot = PROT_READ;	/* XXX should pass in? */
@@ -287,16 +291,26 @@ dev_pager_getpage(pager, mlist, npages, sync)
 	 * Replace the passed in page with our own fake page and free
 	 * up the original.
 	 */
+	
 	page = dev_pager_getfake(paddr);
+	if (page->segment == NULL) {
+		page->segment = (vm_segment_t)malloc(SEGMENT_SIZE, M_VMPGDATA, M_WAITOK);
+	}
+	segment = page->segment;
 	TAILQ_INSERT_TAIL(&((dev_pager_t)pager->pg_data)->devp_pglist, page, pageq);
 	vm_object_lock(object);
+	vm_segment_lock_lists();
 	vm_page_lock_queues();
 	vm_page_free(m);
-	vm_page_insert(page, object, offset);
+	if (m == NULL && s != NULL) {
+		vm_segment_free(s);
+	}
+	vm_page_insert(page, segment, offset);
 	vm_page_unlock_queues();
 	PAGE_WAKEUP(m);
-	if (offset + PAGE_SIZE > object->size)
+	if (offset + PAGE_SIZE > object->size) {
 		object->size = offset + PAGE_SIZE;	/* XXX anal */
+	}
 	vm_object_unlock(object);
 
 	return(VM_PAGER_OK);
@@ -314,9 +328,11 @@ dev_pager_putpage(pager, mlist, npages, sync)
 		printf("dev_pager_putpage(%x, %x, %x, %x)\n",
 		       pager, mlist, npages, sync);
 #endif
-	if (pager == NULL)
+	if (pager == NULL) {
 		return (0);
+	}
 	panic("dev_pager_putpage called");
+
 }
 
 static bool_t
@@ -328,7 +344,7 @@ dev_pager_haspage(pager, offset)
 	if (dpagerdebug & DDB_FOLLOW)
 		printf("dev_pager_haspage(%x, %x)\n", pager, offset);
 #endif
-	return(TRUE);
+	return (TRUE);
 }
 
 static vm_page_t

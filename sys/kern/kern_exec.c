@@ -278,7 +278,6 @@ execve()
 		p->p_flag &= ~P_PPWAIT;
 		wakeup((caddr_t) p->p_pptr);
 	}
-	
 
 	/* Turn off kernel tracing for set-id programs, except for root. */
 #ifdef KTRACE

@@ -52,6 +52,7 @@
 #include "ses.h"
 #include "vnd.h"
 #include "ccd.h"
+#include "fdc.h"
 
 #include "rnd.h"
 #include "ksyms.h"
@@ -188,6 +189,9 @@ disks_init(devsw)
 	/* ATA Devices */
 	DEVSWIO_CONFIG_INIT(devsw, NWD, &wd_bdevsw, &wd_cdevsw, NULL);  		/* ATA: ST506/ESDI/IDE disk */
 
+	/* Floppy Devices */
+	DEVSWIO_CONFIG_INIT(devsw, NFDC, &fd_bdevsw, &fd_cdevsw, NULL);			/* floppy diskette */
+
 	/* SCSI Devices */
 	DEVSWIO_CONFIG_INIT(devsw, NSD, &sd_bdevsw, &sd_cdevsw, NULL);			/* SCSI disk */
 	DEVSWIO_CONFIG_INIT(devsw, NST, &st_bdevsw, &st_cdevsw, NULL);			/* SCSI tape */
@@ -241,6 +245,7 @@ video_init(devsw)
 	struct devswtable *devsw;
 {
 	//DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
+	//DEVSWIO_CONFIG_INIT(devsw,  , NULL, &agp_cdevsw, NULL);				/* AGP Video */
 }
 
 /* Add wscon driver configuration */

@@ -56,8 +56,8 @@
 #include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/signalvar.h>
-#include <sys/gsched_edf.h>
-#include <sys/gsched_cfs.h>
+#include <sys/sched_edf.h>
+#include <sys/sched_cfs.h>
 
 #include <machine/cpu.h>
 #include <machine/setjmp.h>

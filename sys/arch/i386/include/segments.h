@@ -189,39 +189,39 @@ struct region_descriptor {
 #endif /* !_LOCORE */
 
 /* global descriptor table */
-#define	GNULL_SEL		0	/* Null Descriptor */
-#define GUFS_SEL		1	/* %fs Descriptor */
-#define GUGS_SEL		2	/* %gs Descriptor */
-#define	GCODE_SEL		3	/* Kernel Code Descriptor */
-#define	GDATA_SEL		4	/* Kernel Data Descriptor */
-#define GUCODE_SEL		5	/* User Code Descriptor */
-#define GUDATA_SEL		6	/* User Data Descriptor */
-#define	GPROC0_SEL		7	/* Task state process slot zero and up */
-#define	GLDT_SEL		8	/* LDT - eventually one per process */
+#define	GNULL_SEL			0	/* Null Descriptor */
+#define GUFS_SEL			1	/* %fs Descriptor */
+#define GUGS_SEL			2	/* %gs Descriptor */
+#define	GCODE_SEL			3	/* Kernel Code Descriptor */
+#define	GDATA_SEL			4	/* Kernel Data Descriptor */
+#define GUCODE_SEL			5	/* User Code Descriptor */
+#define GUDATA_SEL			6	/* User Data Descriptor */
+#define	GPROC0_SEL			7	/* Task state process slot zero and up */
+#define	GLDT_SEL			8	/* LDT - eventually one per process */
 #define GUSERLDT_SEL		9	/* User LDT Descriptor */
-#define	GPANIC_SEL		10	/* Task state to consider panic from */
-#define	GTGATE_SEL		11	/* Process task switch gate */
-#define	GINVTSS_SEL		12	/* Task state to take invalid tss on */
-#define	GDBLFLT_SEL		13	/* Task state to take double fault on */
-#define	GEXIT_SEL		14	/* Task state to process cpu_texit() on */
+#define	GPANIC_SEL			10	/* Task state to consider panic from */
+#define	GTGATE_SEL			11	/* Process task switch gate */
+#define	GINVTSS_SEL			12	/* Task state to take invalid tss on */
+#define	GDBLFLT_SEL			13	/* Task state to take double fault on */
+#define	GEXIT_SEL			14	/* Task state to process cpu_texit() on */
 #define GBIOSCODE32_SEL 	15	/* BIOS interface (32bit Code) */
 #define GBIOSCODE16_SEL 	16	/* BIOS interface (16bit Code) */
 #define GBIOSDATA_SEL		17	/* BIOS interface (Data) */
 #define GBIOSUTIL_SEL		18	/* BIOS interface (Utility) */
 #define GBIOSARGS_SEL 		19	/* BIOS interface (Arguments) */
-#define	GPRIV_SEL		20	/* SMP Per-Processor Private Data */
+#define	GPRIV_SEL			20	/* SMP Per-Processor Private Data */
 
-#define NGDT 			21
+#define NGDT 				21
 
 /* local descriptor table */
-#define	LUNULL_SEL		0	/* Null Descriptor */
+#define	LUNULL_SEL			0	/* Null Descriptor */
 #define	LSYS5CALLS_SEL		1	/* forced by intel BCS */
 #define	LSYS5SIGR_SEL		2
-#define	LUCODE_SEL		3
-#define	LUDATA_SEL		4
+#define	LUCODE_SEL			3
+#define	LUDATA_SEL			4
 #define	L43BSDCALLS_SEL		5	/* notyet */
 
-#define NLDT			7
+#define NLDT				7
 
 /*
  * Segment Protection Exception code bits
@@ -231,7 +231,7 @@ struct region_descriptor {
 #define	SEGEX_IDT		0x02	/* interrupt descriptor table */
 #define	SEGEX_TI		0x04	/* local descriptor table */
 					/* ther bits are affected descriptor index */
-#define SEGEX_IDX(s)		((s)>>3)&0x1fff)
+#define SEGEX_IDX(s)	((s)>>3)&0x1fff)
 
 /*
  * Entries in the Interrupt Descriptor Table (IDT)

@@ -208,7 +208,7 @@
 161 STD			{ int kenv(); }
 162 STD         { int kevent(); }
 163 STD         { int kqueue(); }
-164 STD         { int swapon(); }
+164 STD         { int swapctl(); }
 165 STD		{ int nosys(); } _syscall
 #ifdef KTRACE
 166 STD			{ int ktrace(); }

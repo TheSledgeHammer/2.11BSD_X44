@@ -114,6 +114,7 @@ struct pci_attach_args {
 	pcitag_t			pa_intrtag;		/* intr. appears to come from here */
 	pci_intr_pin_t		pa_intrpin;		/* intr. appears on this pin */
 	pci_intr_line_t		pa_intrline;	/* intr. routing information */
+	pci_intr_pin_t  	pa_rawintrpin; 	/* unswizzled pin */
 };
 
 /*
@@ -170,20 +171,20 @@ struct pci_softc {
 /*
  * Locators devices that attach to 'pcibus', as specified to config.
  */
-//#define PCIBUSCF_BUS			0
-//#define PCIBUSCF_BUS_DEFAULT	-1
-#define	PCIBUS_UNK_BUS			PCIBUSCF_BUS_DEFAULT	/* wildcarded 'bus' */
+//#define PCIBUSCF_BUS				0
+//#define PCIBUSCF_BUS_DEFAULT		-1
+#define	PCIBUS_UNK_BUS				PCIBUSCF_BUS_DEFAULT	/* wildcarded 'bus' */
 
 /*
  * Locators for PCI devices, as specified to config.
  */
-//#define PCICF_DEV				1
-//#define PCICF_DEV_DEFAULT		-1
-#define	PCI_UNK_DEV				PCICF_DEV_DEFAULT		/* wildcarded 'dev' */
+//#define PCICF_DEV					1
+//#define PCICF_DEV_DEFAULT			-1
+#define	PCI_UNK_DEV					PCICF_DEV_DEFAULT		/* wildcarded 'dev' */
 
 //#define PCICF_FUNCTION			0
 //#define PCICF_FUNCTION_DEFAULT	-1
-#define	PCI_UNK_FUNCTION		PCICF_FUNCTION_DEFAULT /* wildcarded 'function' */
+#define	PCI_UNK_FUNCTION			PCICF_FUNCTION_DEFAULT /* wildcarded 'function' */
 
 /*
  * Configuration space access and utility functions.  (Note that most,
@@ -194,18 +195,42 @@ pcireg_t pci_mapreg_type(pci_chipset_tag_t, pcitag_t, int);
 int		pci_mapreg_info(pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
 int		pci_mapreg_map(struct pci_attach_args *, int, pcireg_t, int, bus_space_tag_t *, bus_space_handle_t *, bus_addr_t *, bus_size_t *);
 
+
+int 	pci_get_capability(pci_chipset_tag_t, pcitag_t, int, int *, pcireg_t *);
 /*
  * Helper functions for autoconfiguration.
  */
-const struct pci_quirkdata *pci_lookup_quirkdata(pci_vendor_id_t, pci_product_id_t);
+int		pci_enumerate_bus_generic(struct pci_softc *, int (*)(struct pci_attach_args *), struct pci_attach_args *);
+int		pci_probe_device(struct pci_softc *, pcitag_t tag, int (*)(struct pci_attach_args *), struct pci_attach_args *);
 void	pci_devinfo(pcireg_t, pcireg_t, int, char *);
 void	pci_conf_print(pci_chipset_tag_t, pcitag_t, void (*)(pci_chipset_tag_t, pcitag_t, const pcireg_t *));
-void	set_pci_isa_bridge_callback(void (*)(void *), void *);
+const struct pci_quirkdata *pci_lookup_quirkdata(pci_vendor_id_t, pci_product_id_t);
+
+#define	pci_enumerate_bus(sc, m, p)					\
+	pci_enumerate_bus_generic((sc), (m), (p))
 
 /*
  * Helper functions for user access to the PCI bus.
  */
 int		pci_devioctl(pci_chipset_tag_t, pcitag_t, u_long, caddr_t, int flag, struct proc *);
 
+/*
+ * Power Management (PCI 2.2)
+ */
+
+#define PCI_PWR_D0	0
+#define PCI_PWR_D1	1
+#define PCI_PWR_D2	2
+#define PCI_PWR_D3	3
+
+int	pci_set_powerstate(pci_chipset_tag_t, pcitag_t, int);
+int	pci_get_powerstate(pci_chipset_tag_t, pcitag_t);
+
+/*
+ * Misc.
+ */
+int	pci_find_device(struct pci_attach_args *, int (*match)(struct pci_attach_args *));
+void	set_pci_isa_bridge_callback(void (*)(void *), void *);
+			
 #endif /* _KERNEL */
 #endif /* _DEV_PCI_PCIVAR_H_ */

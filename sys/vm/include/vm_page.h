@@ -93,19 +93,21 @@
  *	object that the page belongs to (O) or by the lock on the page
  *	queues (P).
  */
-
+ 
+struct pglist;
 TAILQ_HEAD(pglist, vm_page);
 struct vm_page {
-	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO
-						 	 	 	 	 * queue or free list (P) */
-	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
-	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
+	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO queue or free list (P) */
+	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (S)*/
+	TAILQ_ENTRY(vm_page)	listq;		/* pages in same segment (S)*/
 
-	vm_object_t				object;		/* which object am I in (O,P)*/
-	vm_offset_t				offset;		/* offset into object (O,P) */
+	vm_segment_t			segment;	/* which segment am I in (O,(S,P))*/
+	vm_offset_t				offset;		/* offset into segment (O,(S,P)) */
+
+	vm_anon_t				anon;		/* anon (O,(S,P)) */
 
 	u_short					wire_count;	/* wired down maps refs (P) */
-	u_short					flags;		/* see below */
+	int						flags;		/* see below */
 
 	vm_offset_t				phys_addr;	/* physical address of page */
 };
@@ -115,21 +117,26 @@ struct vm_page {
  *
  * Note: PG_FILLED and PG_DIRTY are added for the filesystems.
  */
-#define	PG_INACTIVE		0x0001		/* page is in inactive list (P) */
-#define	PG_ACTIVE		0x0002		/* page is in active list (P) */
-#define	PG_LAUNDRY		0x0004		/* page is being cleaned now (P)*/
-#define	PG_CLEAN		0x0008		/* page has not been modified */
-#define	PG_BUSY			0x0010		/* page is in transit (O) */
-#define	PG_WANTED		0x0020		/* someone is waiting for page (O) */
-#define	PG_TABLED		0x0040		/* page is in VP table (O) */
-#define	PG_COPYONWRITE	0x0080		/* must copy page before changing (O) */
-#define	PG_FICTITIOUS	0x0100		/* physical page doesn't exist (O) */
-#define	PG_FAKE			0x0200		/* page is placeholder for pagein (O) */
-#define	PG_FILLED		0x0400		/* client flag to set when filled */
-#define	PG_DIRTY		0x0800		/* client flag to set when dirty */
-#define PG_FREE			0x1000		/* page is on free list */
-#define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
-#define	PG_PTPAGE		0x8000		/* DEBUG: is a user page table page */
+#define	PG_INACTIVE		0x00001		/* page is in inactive list (P) */
+#define	PG_ACTIVE		0x00002		/* page is in active list (P) */
+#define	PG_LAUNDRY		0x00004		/* page is being cleaned now (P)*/
+#define	PG_CLEAN		0x00008		/* page has not been modified */
+#define	PG_BUSY			0x00010		/* page is in transit (O) */
+#define	PG_WANTED		0x00020		/* someone is waiting for page (O) */
+#define	PG_TABLED		0x00040		/* page is in VP table (O) */
+#define	PG_COPYONWRITE	0x00080		/* must copy page before changing (O) */
+#define	PG_FICTITIOUS	0x00100		/* physical page doesn't exist (O) */
+#define	PG_FAKE			0x00200		/* page is placeholder for pagein (O) */
+#define	PG_FILLED		0x00400		/* client flag to set when filled */
+#define	PG_DIRTY		0x00800		/* client flag to set when dirty */
+#define	PG_RELEASED		0x01000		/* page to be freed when unbusied */
+#define PG_FREE			0x02000		/* page is on free list */
+#define	PG_PAGEROWNED	0x04000		/* DEBUG: async paging op in progress */
+#define	PG_PTPAGE		0x08000		/* DEBUG: is a user page table page */
+#define	PG_SEGPAGE		0x10000		/* DEBUG: is a user segment page */
+#define PG_ANON			0x20000		/* page is part of an anon, rather than an vm_object */
+#define PG_AOBJ			0x40000		/* page is part of an anonymous vm_object */
+#define PG_SWAPBACKED	(PG_ANON|PG_AOBJ)
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { 											\
@@ -148,7 +155,7 @@ struct vm_page {
 /*
  *	Each pageable resident page falls into one of three lists:
  *
- *	free	
+ *	free
  *		Available for allocation now.
  *	inactive
  *		Not referenced in any map, but still has an
@@ -170,10 +177,6 @@ struct pglist	vm_page_queue_inactive;	/* inactive memory queue */
 
 extern
 vm_page_t		vm_page_array;			/* First resident page in table */
-
-extern
-long			vm_page_array_size;		/* number of vm_page_t's */
-
 extern
 long			first_page;				/* first physical page number */
 										/* ... represented in vm_page_array */
@@ -186,9 +189,11 @@ vm_offset_t		first_phys_addr;		/* physical address for first_page */
 extern
 vm_offset_t		last_phys_addr;			/* physical address for last_page */
 
-#define VM_PAGE_TO_PHYS(entry)	((entry)->phys_addr)
+#define VM_PAGE_TO_VM_SEGMENT(entry) 	((entry)->segment)
 
-#define IS_VM_PHYSADDR(pa) 	\
+#define VM_PAGE_TO_PHYS(entry)			((entry)->phys_addr)
+
+#define IS_VM_PHYSADDR(pa) 							\
 		((pa) >= first_phys_addr && (pa) <= last_phys_addr)
 
 #define	VM_PAGE_INDEX(pa) 	\
@@ -200,9 +205,9 @@ vm_offset_t		last_phys_addr;			/* physical address for last_page */
 #define VM_PAGE_IS_FREE(entry)  ((entry)->flags & PG_FREE)
 
 extern
-simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive page queues */
+simple_lock_data_t	vm_page_queue_lock;			/* lock on active and inactive page queues */
 extern
-simple_lock_data_t	vm_page_queue_free_lock; /* lock on free page queue */
+simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 
 /*
  *	Functions implemented as macros
@@ -232,22 +237,24 @@ simple_lock_data_t	vm_page_queue_free_lock; /* lock on free page queue */
 	(mem)->wire_count = 0; 							\
 }
 
+void 		 *vm_pmap_bootinit(void *, vm_size_t, int);
 void		 vm_page_activate(vm_page_t);
-vm_page_t	 vm_page_alloc(vm_object_t, vm_offset_t);
+vm_page_t	 vm_page_alloc(vm_segment_t, vm_offset_t);
 void		 vm_page_copy(vm_page_t, vm_page_t);
 void		 vm_page_deactivate(vm_page_t);
 void		 vm_page_free(vm_page_t);
-void		 vm_page_insert(vm_page_t, vm_object_t, vm_offset_t);
-vm_page_t	 vm_page_lookup(vm_object_t, vm_offset_t);
+void		 vm_page_insert(vm_page_t, vm_segment_t, vm_offset_t);
+vm_page_t	 vm_page_lookup(vm_segment_t, vm_offset_t);
 void		 vm_page_remove(vm_page_t);
-void		 vm_page_rename(vm_page_t, vm_object_t, vm_offset_t);
+void		 vm_page_rename(vm_page_t, vm_segment_t, vm_offset_t);
 void		 vm_page_startup(vm_offset_t *, vm_offset_t *);
 void		 vm_page_unwire(vm_page_t);
 void		 vm_page_wire(vm_page_t);
 bool_t	 	 vm_page_zero_fill(vm_page_t);
+vm_page_t	 vm_page_anon_alloc(vm_segment_t, vm_offset_t, vm_anon_t);
+void		 vm_page_anon_free(vm_page_t);
 int		 	 vm_page_alloc_memory(vm_size_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, struct pglist *, int, int);
 void		 vm_page_free_memory(struct pglist *);
-void 		 *vm_pbootinit(void *, vm_size_t, int);
 
 #endif /* KERNEL */
-#endif /* !_VM_PAGE_H_ */
+#endif /* !_VM_PAGE_ */

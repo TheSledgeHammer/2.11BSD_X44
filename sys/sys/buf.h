@@ -105,7 +105,7 @@ struct buf {
 	int					b_validoff;			/* Offset in buffer of valid region. */
 	int					b_validend;			/* Offset of end of valid region. */
 	//void				*b_fsdata;			/* fs private data */
-
+	struct swapbuf		*b_swbuf;			/* swapbuf back pointer */
 	void				*b_private;
 
 	struct lock_object	b_lnterlock;		/* buf lock */
@@ -247,8 +247,8 @@ struct cluster_save {
 };
 
 #ifdef _KERNEL
-TAILQ_HEAD(swqueue, buf); 			/* Head of swap I/O buffer headers free list. */
-extern struct 	swqueue bswlist;
+//TAILQ_HEAD(swqueue, buf); 			/* Head of swap I/O buffer headers free list. */
+//extern struct 	swqueue bswlist;
 extern int		nbuf;				/* number of buffer headers */
 extern struct	buf *buf;			/* the buffer pool itself */
 extern char		*buffers;			/* The buffer contents. */

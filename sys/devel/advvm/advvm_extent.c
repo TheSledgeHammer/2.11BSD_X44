@@ -137,7 +137,7 @@ bool_t
 advvm_extent_check(pool)
 	advvm_storage_t *pool;
 {
-	if(pool->ads_extent) {
+	if (pool->ads_extent) {
 		return (TRUE);
 	}
 	return (FALSE);

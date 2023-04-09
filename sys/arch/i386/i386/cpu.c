@@ -206,28 +206,6 @@ cpu_attach(parent, self, aux)
 	return;
 }
 
-/*
- * The CPU ends up here when its ready to run
- * This is called from code in mptramp.s; at this point, we are running
- * in the idle pcb/idle stack of the new CPU.  When this function returns,
- * this processor will enter the idle loop and start looking for work.
- *
- * XXX should share some of this with init386 in machdep.c
- */
-/* Runs in NetBSD mptramp.S */
-void
-cpu_hatch(void *v)
-{
-	struct cpu_info *ci = (struct cpu_info *)v;
-	int s;
-
-#if NLAPIC > 0
-	lapic_enable();
-	lapic_set_lvt();
-	lapic_write_tpri(0);
-#endif
-}
-
 #ifdef SMP
 void
 cpu_smp_init(ci)

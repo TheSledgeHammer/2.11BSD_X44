@@ -69,9 +69,9 @@
 #include <sys/systm.h>
 #include <sys/atomic.h>
 
-#include <arch/i386/include/cpu.h>
-#include <arch/i386/include/segments.h>
-#include <arch/i386/include/intr.h>
+#include <machine/cpu.h>
+#include <machine/segments.h>
+#include <machine/intr.h>
 
 char idt_allocmap[NIDT];
 

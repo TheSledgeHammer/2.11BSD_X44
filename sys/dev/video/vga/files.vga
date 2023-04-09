@@ -8,10 +8,19 @@ defflag opt_vga.h 		VGA_CONSOLE_ATI_BROKEN_FONTSEL
 defflag opt_vga.h		VGA_RASTERCONSOLE
 defflag opt_vga.h		VGA_RESET
 
+#
+# VGA Devices & Attributes
+#
+device	vga: wsemuldisplaydev, pcdisplayops
+file	dev/video/vga/vga.c					vga & !vga_rasterconsole		needs-flag
+file	dev/video/vga/vga_raster.c			vga_rasterconsole				needs-flag
+file	dev/video/vga/vga_subr.c			vga | vga_rasterconsole
+file	dev/video/vga/vga_common.c			vga | vga_rasterconsole
+
 # generic ISA VGA
 attach	vga at isa with vga_isa
-file	dev/video/vga/vga_isa.c				vga_isa			needs-flag
+file	dev/video/vga/vga_isa.c				vga_isa							needs-flag
 
 # generic PCI VGA
 attach	vga at pci with vga_pci
-file	dev/video/vga/vga_pci.c				vga_pci			needs-flag
+file	dev/video/vga/vga_pci.c				vga_pci							needs-flag

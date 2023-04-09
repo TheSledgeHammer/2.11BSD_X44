@@ -97,6 +97,7 @@
 
 #include <devel/ovl/include/ovl.h>
 #include <devel/ovl/include/ovl_overlay.h>
+#include <devel/ovl/include/ovl_segment.h>
 #include <devel/ovl/include/ovl_page.h>
 
 void
@@ -113,6 +114,7 @@ ovl_mem_init()
 	ovl_object_init(overlay_end - OVL_MIN_ADDRESS);
 	ovl_map_startup();
 	omem_init(overlay_avail, overlay_end);
+	pmap_overlay_init(avail_start, avail_end); /* not correct! */
 	overlay_pager_init();
 }
 

@@ -68,70 +68,79 @@
 #ifndef _OVL_OBJECT_H_
 #define _OVL_OBJECT_H_
 
-#include <sys/queue.h>
-#include <sys/tree.h>
+#include <ovl/include/ovl_segment.h>
 
-#include <devel/ovl/include/ovl.h>
+#include <vm/include/vm_object.h>
+#include <vm/include/vm_pager.h>
 
-struct vobject_hash_head;
-TAILQ_HEAD(vobject_hash_head, ovl_object);
-struct ovl_object_rbt;
-RB_HEAD(ovl_object_rbt, ovl_object);
 struct ovl_object {
-	struct ovseglist					ovo_ovseglist;		/* list of segments */
+	struct ovl_seglist					seglist;			/* list of segments */
 
-	RB_ENTRY(ovl_object)				ovo_object_tree;	/* list of all objects */
+	RB_ENTRY(ovl_object)				object_tree;		/* list of all objects */
 
-	vm_pager_t							ovo_pager;			/* where to get data */
-	vm_offset_t							ovo_paging_offset;	/* Offset into paging space */
+	vm_pager_t							pager;				/* where to get data */
+	vm_offset_t							paging_offset;		/* Offset into paging space */
+	u_short								paging_in_progress;
 
-	u_short								ovo_flags;			/* see below */
-	simple_lock_data_t					ovo_lock;			/* Synchronization */
-	int									ovo_ref_count;		/* How many refs?? */
-	vm_size_t							ovo_size;			/* Object size */
+	u_short								flags;				/* see below */
+	simple_lock_data_t					lock;				/* Synchronization */
+	int									ref_count;			/* How many refs?? */
+	vm_size_t							size;				/* Object size */
 
-	int									ovo_segment_count;
+	int									segment_count;		/* number of resident segments */
+	int									page_count;			/* number of resident pages */
 
-	union {
-		vm_object_t 					vm_object;			/* a vm_object being held */
-		vm_segment_t 					vm_segment;			/* a vm_segment being held */
-		vm_page_t 						vm_page;			/* a vm_page being held */
-	} ovo_vm;
-#define ovo_vm_object					ovo_vm.vm_object
-#define ovo_vm_segment					ovo_vm.vm_segment
-#define ovo_vm_page						ovo_vm.vm_page
-
-	TAILQ_ENTRY(ovl_object)				ovo_vobject_hlist; 	/* list of all my associated vm_objects */
+	vm_object_t 						vm_object;			/* a vm_object being held */
+	TAILQ_ENTRY(ovl_object)				vm_object_hlist; 	/* list of all my associated vm_objects */
 };
 
 /* Flags */
-#define OVL_OBJ_VM_OBJ		0x01	/* overlay object holds vm_object */
+#define OVL_OBJ_VM_OBJ					0x01	/* overlay object holds vm_object */
 
 RB_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
 struct ovl_object_hash_entry {
-	RB_ENTRY(ovl_object_hash_entry)  	ovoe_hlinks;		/* hash chain links */
-	ovl_object_t						ovoe_object;
+	RB_ENTRY(ovl_object_hash_entry)  	hlinks;			/* hash chain links */
+	ovl_object_t						object;
 };
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
 #ifdef _KERNEL
-struct ovl_object_rbt		ovl_object_tree;				/* list of allocated objects */
-long						ovl_object_count;				/* count of all objects */
-simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
-
-ovl_object_t				overlay_object;					/* single overlay object */
-ovl_object_t				omem_object;
+struct vm_object_hash_head;
+struct ovl_object_rbt;
+TAILQ_HEAD(vm_object_hash_head, ovl_object);
+RB_HEAD(ovl_object_rbt, ovl_object);
 
 extern
-struct vobject_hash_head 	ovl_vobject_hashtable;
-long						ovl_vobject_count;
-simple_lock_data_t			ovl_vobject_hash_lock;
+struct ovl_object_rbt		ovl_object_tree;				/* list of allocated objects */
+extern
+long						ovl_object_count;				/* count of all objects */
+extern
+simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
+
+extern
+struct vm_object_hash_head 	ovl_vm_object_hashtable;
+extern
+long						ovl_vm_object_count;
+extern
+simple_lock_data_t			ovl_vm_object_hash_lock;
+
+extern
+ovl_object_t				overlay_object;				/* single overlay object */
+extern
+ovl_object_t				omem_object;
+
+
+#define	ovl_object_tree_lock()			simple_lock(&ovl_object_tree_lock)
+#define	ovl_object_tree_unlock()		simple_unlock(&ovl_object_tree_lock)
+
+#define	ovl_vm_object_hash_lock()		simple_lock(&ovl_vm_object_hash_lock)
+#define	ovl_vm_object_hash_unlock()		simple_unlock(&ovl_vm_object_hash_lock)
 
 #endif /* KERNEL */
 
-#define	ovl_object_lock_init(object)	simple_lock_init(&(object)->ovo_lock)
-#define	ovl_object_lock(object)			simple_lock(&(object)->ovo_lock)
-#define	ovl_object_unlock(object)		simple_unlock(&(object)->ovo_lock)
+#define	ovl_object_lock_init(object)	simple_lock_init(&(object)->lock)
+#define	ovl_object_lock(object)			simple_lock(&(object)->lock)
+#define	ovl_object_unlock(object)		simple_unlock(&(object)->lock)
 
 #ifdef _KERNEL
 ovl_object_t	ovl_object_allocate(vm_size_t);
@@ -139,11 +148,9 @@ void		 	ovl_object_enter(ovl_object_t, vm_pager_t);
 void		 	ovl_object_init(vm_size_t);
 ovl_object_t	ovl_object_lookup(vm_pager_t);
 void		 	ovl_object_reference(ovl_object_t);
+void			ovl_object_deallocate(ovl_object_t);
+void			ovl_object_terminate(ovl_object_t);
 void			ovl_object_remove(vm_pager_t);
-
-void			ovl_object_enter_vm_object(ovl_object_t, vm_object_t);
-vm_object_t		ovl_object_lookup_vm_object(ovl_object_t, vm_object_t);
-void			ovl_object_remove_vm_object(ovl_object_t, vm_object_t);
 
 #endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

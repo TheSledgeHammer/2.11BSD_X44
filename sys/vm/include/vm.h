@@ -57,11 +57,44 @@ typedef struct vm_map 		*vm_map_t;
 struct vm_object;
 typedef struct vm_object 	*vm_object_t;
 
+struct vm_segment;
+typedef struct vm_segment 	*vm_segment_t;
+
 struct vm_page;
 typedef struct vm_page  	*vm_page_t;
 
 struct pager_struct;
 typedef struct pager_struct *vm_pager_t;
+
+/*
+ * VM Anonymous Memory Management
+ */
+struct vm_aobject;
+typedef struct vm_aobject 	*vm_aobject_t;
+
+struct vm_amap;
+typedef struct vm_amap 		*vm_amap_t;
+
+struct vm_anon;
+typedef struct vm_anon 		*vm_anon_t;
+
+struct vm_aref;
+typedef struct vm_aref 		*vm_aref_t;
+
+/*
+ * VM Pseudo-Segmentation with Data, Stack & Text Management
+ */
+struct vm_pseudo_segment;
+typedef struct vm_pseudo_segment *vm_psegment_t;
+
+struct vm_data;
+typedef struct vm_data  		*vm_data_t;
+
+struct vm_stack;
+typedef struct vm_stack  		*vm_stack_t;
+
+struct vm_text;
+typedef struct vm_text 			*vm_text_t;
 
 /*
  *	MACH VM locking type mappings to kernel types
@@ -80,11 +113,13 @@ typedef struct lock			*lock_t;
 #include <vm/include/vm_mac.h>
 #include <vm/include/vm_prot.h>
 #include <vm/include/vm_inherit.h>
+#include <vm/include/vm_amap.h>
+#include <vm/include/vm_anon.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_object.h>
-#include <vm/include/vm_aobject.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
+#include <vm/include/vm_psegment.h>
 
 /*
  * Shareable process virtual address space.
@@ -94,15 +129,16 @@ typedef struct lock			*lock_t;
 struct vmspace {
 	struct vm_map				vm_map;			/* VM address map */
 	struct pmap 				vm_pmap;		/* private physical map */
+	struct vm_pseudo_segment 	vm_psegment;	/* VM pseudo segment */
 
 	int							vm_refcnt;		/* number of references */
-
 	caddr_t						vm_shm;			/* SYS5 shared memory private data XXX */
 
 /* we copy from vm_startcopy to the end of the structure on fork */
 #define vm_startcopy 			vm_rssize
 	segsz_t 					vm_rssize; 		/* current resident set size in pages */
 	segsz_t 					vm_swrss;		/* resident set size before last swap */
+
 	segsz_t 					vm_tsize;		/* text size (pages) XXX */
 	segsz_t 					vm_dsize;		/* data size (pages) XXX */
 	segsz_t 					vm_ssize;		/* stack size (pages) */
@@ -112,9 +148,5 @@ struct vmspace {
 	caddr_t 					vm_minsaddr;	/* user VA at min stack growth */
 	caddr_t 					vm_maxsaddr;	/* user VA at max stack growth */
 };
-
-/* doesn't belong here */
-#define MADV_MASK				0x7	/* mask */
-#define VM_ADVICE(X)			(((X) >> 12) & MADV_MASK)
 
 #endif /* _VM_H_ */

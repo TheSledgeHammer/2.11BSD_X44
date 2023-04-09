@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -38,17 +38,17 @@
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
- * 
+ *
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
  * notice and this permission notice appear in all copies of the
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
- * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
- * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ *
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND
  * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
- * 
+ *
  * Carnegie Mellon requests users of this software to return to
  *
  *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
@@ -66,17 +66,15 @@
 #include <sys/resourcevar.h>
 #include <sys/buf.h>
 #include <sys/user.h>
-//#include <sys/dk.h>
 
 #include <vm/include/vm.h>
 
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>
-//#include <vm/include/vm_extern.h>
+#include <vm/include/vm_text.h>
 
 #include <machine/cpu.h>
-//#include <machine/param.h>
 
 unsigned maxdmap = MAXDSIZ;	/* XXX */
 int	readbuffers = 0;		/* XXX allow kgdb to read kernel buffer pool */
@@ -150,8 +148,9 @@ chgkprot(addr, len, rw)
 		 * really matters...
 		 */
 		pa = pmap_extract(kernel_pmap, sva|1);
-		if (pa == 0)
+		if (pa == 0) {
 			panic("chgkprot: invalid page");
+		}
 		pmap_enter(kernel_pmap, sva, pa&~1, prot, TRUE);
 	}
 }
@@ -305,25 +304,17 @@ void
 swapin(p)
 	struct proc *p;
 {
-	vm_offset_t addr;
-	int s;
+	xswapin(p);
+}
 
-	addr = (vm_offset_t) p->p_addr;
-	vm_map_pageable(kernel_map, addr, addr + USPACE, FALSE);
-	/*
-	 * Some architectures need to be notified when the
-	 * user area has moved to new physical page(s) (e.g.
-	 * see pmax/pmax/vm_machdep.c).
-	 */
-	cpu_swapin(p);
-	s = splstatclock();
-	if (p->p_stat == SRUN) {
-		setrq(p);
-	}
-	p->p_flag |= P_INMEM;
-	splx(s);
-	p->p_swtime = 0;
-	++cnt.v_swpin;
+/*
+ * Swap out a process's u-area.
+ */
+void
+swapout(p)
+	register struct proc *p;
+{
+	xswapout(p, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
 }
 
 /*
@@ -351,7 +342,7 @@ loop:
 
 	pp = NULL;
 	ppri = INT_MIN;
-	for(p = LIST_FIRST(&allproc); p!= NULL; p = LIST_NEXT(p, p_list)) {
+	LIST_FOREACH(p, &allproc, p_list) {
 		if (p->p_stat == SRUN && (p->p_flag & (P_INMEM|P_SWAPPING)) == 0) {
 			pri = p->p_swtime + p->p_slptime - p->p_nice * 8;
 			int mempri = pri > 0 ? pri : 0;
@@ -440,7 +431,7 @@ swapout_threads()
 #endif
 	outp = outp2 = NULL;
 	outpri = outpri2 = 0;
-	for(p = LIST_FIRST(&allproc); p!= NULL; p = LIST_NEXT(p, p_list)) {
+	LIST_FOREACH(p, &allproc, p_list) {
 		if (!swappable(p))
 			continue;
 		switch (p->p_stat) {
@@ -450,7 +441,7 @@ swapout_threads()
 				outpri2 = p->p_swtime;
 			}
 			continue;
-			
+
 		case SSLEEP:
 		case SSTOP:
 			if (p->p_slptime >= maxslp) {
@@ -487,38 +478,70 @@ swapout_threads()
 }
 
 void
-swapout(p)
-	register struct proc *p;
+xswapin(p)
+	struct proc *p;
+{
+	vm_offset_t addr;
+	int s;
+
+	addr = (vm_offset_t)p->p_addr;
+	vm_map_pageable(kernel_map, addr, addr + USPACE, FALSE);
+
+	vm_xswapin(p, addr);
+
+	cpu_swapin(p);
+	s = splstatclock();
+	if (p->p_stat == SRUN) {
+		setrq(p);
+	}
+	p->p_flag |= P_SLOAD | P_INMEM;
+	splx(s);
+	p->p_time = 0;
+	p->p_swtime = 0;
+	cnt.v_swpin++;
+}
+
+void
+xswapout(p, freecore, odata, ostack)
+	struct proc *p;
+	int freecore;
+	u_int odata, ostack;
 {
 	vm_offset_t addr;
 	vm_size_t size;
 	int s;
-
 #ifdef DEBUG
-	if (swapdebug & SDB_SWAPOUT)
-		printf("swapout: pid %d(%s)@%x, stat %x pri %d free %d\n",
-		       p->p_pid, p->p_comm, p->p_addr, p->p_stat,
-		       p->p_slptime, cnt.v_page_free_count);
+	if (swapdebug & SDB_SWAPOUT) {
+		printf("swapout: pid %d(%s)@%x, stat %x pri %d free %d\n", p->p_pid,
+				p->p_comm, p->p_addr, p->p_stat, p->p_slptime,
+				cnt.v_page_free_count);
+	}
 #endif
-	size = round_page(ctob(UPAGES));
-	addr = (vm_offset_t) p->p_addr;
+	size = round_page(ctob(USIZE));
+	addr = (vm_offset_t)p->p_addr;
 
 	/*
 	 * Unwire the to-be-swapped process's user struct and kernel stack.
 	 */
 	vm_map_pageable(kernel_map, addr, addr + addr+size, TRUE);
 	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
-	/*
-	 * Mark it as (potentially) swapped out.
-	 */
+
+	vm_xswapout(p, addr, size, freecore, odata, ostack);
+
 	s = splstatclock();
-	p->p_flag &= ~P_INMEM;
+	p->p_flag &= ~(P_SLOAD | P_SLOCK | P_INMEM);
 	if (p->p_stat == SRUN) {
 		remrq(p);
 	}
 	splx(s);
+	p->p_time = 0;
 	p->p_swtime = 0;
-	++cnt.v_swpout;
+
+	cnt.v_swpout++;
+	if (runout) {
+		runout = 0;
+		wakeup((caddr_t) &runout);
+	}
 }
 
 /*
@@ -584,15 +607,8 @@ int indent = 0;
 
 #include <machine/stdarg.h>		/* see subr_prf.c */
 
-/*ARGSUSED2*/
 void
-#if __STDC__
 iprintf(const char *fmt, ...)
-#else
-iprintf(fmt /* , va_alist */)
-	char *fmt;
-	/* va_dcl */
-#endif
 {
 	register int i;
 	va_list ap;

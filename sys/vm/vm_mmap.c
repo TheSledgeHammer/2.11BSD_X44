@@ -39,6 +39,13 @@
  *
  *	@(#)vm_mmap.c	8.10 (Berkeley) 2/19/95
  */
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vm_proc.c	1.2 (2.11BSD GTE) 12/24/92
+ */
 
 /*
  * Mapped file (mmap) interface to VM
@@ -50,11 +57,11 @@
 #include <sys/resourcevar.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
+#include <sys/map.h>
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/conf.h>
 #include <sys/devsw.h>
-//#include <sys/user.h>
 #include <sys/mount.h>
 #include <sys/sysdecl.h>
 
@@ -63,6 +70,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_pager.h>
 #include <vm/include/vm_prot.h>
+#include <vm/include/vm_text.h>
 
 #ifdef DEBUG
 int mmapdebug = 0;
@@ -70,7 +78,7 @@ int mmapdebug = 0;
 #define MDB_SYNC	0x02
 #define MDB_MAPIT	0x04
 #endif
-
+#ifdef notyet
 /* ARGSUSED */
 int
 sbrk()
@@ -86,6 +94,48 @@ sbrk()
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
+}
+#endif
+
+/* ARGSUSED */
+int
+sbrk()
+{
+	register struct sbrk_args {
+		syscallarg(int)	type;
+		syscallarg(segsz_t)	size;
+		syscallarg(caddr_t)	addr;
+		syscallarg(int)	sep;
+		syscallarg(int)	flags;
+		syscallarg(int) incr;
+	} *uap = (struct sbrk_args *) u.u_ap;
+
+	struct proc *p;
+	register_t *retval;
+	register segsz_t n, d;
+
+	p = u.u_procp;
+	n = btoc(SCARG(uap, size));
+	if (!SCARG(uap, sep)) {
+		SCARG(uap, sep) = PSEG_NOSEP;
+	} else {
+		n -= ctos(p->p_tsize) * stoc(1);
+	}
+	if (n < 0) {
+		n = 0;
+	}
+
+	if (vm_estabur(p, n, p->p_ssize, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
+		return (0);
+	}
+	vm_expand(p, n, S_DATA);
+	/* set d to (new - old) */
+	d = n - p->p_dsize;
+	if (d > 0) {
+		bzero(p->p_daddr + p->p_dsize, d);
+	}
+	p->p_dsize = n;
+	return (0);
 }
 
 /* ARGSUSED */
@@ -627,7 +677,7 @@ mlock()
 	if ((addr & PAGE_MASK) || SCARG(uap, addr) + SCARG(uap, len) < SCARG(uap, addr))
 		return (EINVAL);
 	size = round_page((vm_size_t)SCARG(uap, len));
-	if (atop(size) + cnt.v_wire_count > vm_page_max_wired)
+	if (atop(size) + cnt.v_page_wire_count > vm_page_max_wired)
 		return (EAGAIN);
 #ifdef pmap_wired_count
 	if (size + ptoa(pmap_wired_count(vm_map_pmap(&p->p_vmspace->vm_map))) >

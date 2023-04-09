@@ -50,6 +50,7 @@
 #include <machine/cpuinfo.h>
 #include <machine/tss.h>
 
+struct bios_smap;
 struct pmap;
 /*
  * definitions of cpu-dependent requirements
@@ -128,7 +129,7 @@ void	init_secondary_tail(struct percpu *);
 void	set_interrupt_apic_ids(void);
 void	topo_probe(void);
 void	cpu_mp_setmaxid(void);
-int	cpu_mp_probe(void);
+int		cpu_mp_probe(void);
 void	cpu_mp_announce(void);
 
 /* machdep.c */
@@ -139,6 +140,10 @@ void	setidt(int, void *, int, int, int);
 void 	unsetidt(int);
 void	setregion(struct region_descriptor *, void *, size_t);
 void 	f00f_hack(void);
+
+int 	add_smap_entry(struct bios_smap *);
+void 	add_smap_entries(struct bios_smap *);
+int 	has_smapbase(struct bios_smap *);
 
 /* mp_machdep.c */
 void	cpu_mp_start(struct percpu *);

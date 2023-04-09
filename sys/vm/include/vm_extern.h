@@ -36,12 +36,20 @@
 struct buf;
 struct loadavg;
 struct proc;
+struct swapbuf;
+struct vm_faultinfo;
 struct vmspace;
 struct vmrate;
 struct vmsum;
 struct vmtotal;
 struct mount;
 struct vnode;
+
+/* advice: matches MADV_* from sys/mman.h and POSIX_FADV_* from sys/fcntl.h */
+#define MADV_MASK		0x7	/* mask */
+
+/* macros to extract info */
+#define VM_ADVICE(X)	(((X) >> 12) & MADV_MASK)
 
 #ifdef KGDB
 void		 	chgkprot(caddr_t, int, int);
@@ -78,11 +86,14 @@ void		 	munmapfd(struct proc *, int);
 int		 		pager_cache(vm_object_t, bool_t);
 void			scheduler(void);
 void			swapinit(void);
-int		 		swapon();
+int		 		swapctl();
+void		 	swapin(struct proc *);
 void		 	swapout(struct proc *);
 void		 	swapout_threads(void);
-int			 	swfree(struct proc *, int);
+int			 	swfree(struct proc *, int, int);
 void		 	swstrategy(struct buf *);
+struct buf 		*vm_getswapbuf(struct swapbuf *);
+void			vm_putswapbuf(struct swapbuf *, struct buf*);
 void		 	thread_block(void);
 void		 	thread_sleep(void *, simple_lock_t, bool_t);
 void			thread_wakeup(void *);
@@ -90,6 +101,9 @@ int		 		useracc(caddr_t, int, int);
 int		 		vm_allocate(vm_map_t, vm_offset_t *, vm_size_t, bool_t);
 int		 		vm_allocate_with_pager(vm_map_t, vm_offset_t *, vm_size_t, bool_t, vm_pager_t, vm_offset_t, bool_t);
 int		 		vm_deallocate(vm_map_t, vm_offset_t, vm_size_t);
+void			vm_fault_free(vm_segment_t, vm_page_t);
+void			vm_fault_release(vm_segment_t, vm_page_t);
+int     		vm_fault_anonget(struct vm_faultinfo *, vm_amap_t, vm_anon_t);
 int		 		vm_fault(vm_map_t, vm_offset_t, vm_prot_t, bool_t);
 void		 	vm_fault_copy_entry(vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t);
 void		 	vm_fault_unwire(vm_map_t, vm_offset_t, vm_offset_t);
@@ -101,6 +115,7 @@ void		 	vm_mem_init(void);
 int		 		vm_mmap(vm_map_t, vm_offset_t *, vm_size_t, vm_prot_t, vm_prot_t, int, caddr_t, vm_offset_t);
 int		 		vm_protect(vm_map_t, vm_offset_t, vm_size_t, bool_t, vm_prot_t);
 void		 	vm_set_page_size(void);
+void		 	vm_set_segment_size(void);
 int		 		vm_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 void		 	vmmeter(void);
 void			vmtotal(struct vmtotal *);
@@ -114,4 +129,8 @@ void		 	vnode_pager_umount(struct mount *);
 bool_t	 		vnode_pager_uncache(struct vnode *);
 void		 	vslock(caddr_t, u_int);
 void		 	vsunlock(caddr_t, u_int, int);
+
+void			xswapin(struct proc *);
+void    		xswapout(struct proc *, int, u_int, u_int);
+
 #endif

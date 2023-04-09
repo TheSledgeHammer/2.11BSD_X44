@@ -88,6 +88,7 @@
  * mounting a drive, assigning a label, running newfs, etc.
  */
 struct buf;
+struct bufq_state;
 struct disklabel;
 struct diskslices;
 
@@ -113,6 +114,8 @@ struct dkdevice {
 	struct dkdriver 	*dk_driver;				/* pointer to driver */
 	daddr_t				dk_labelsector;			/* sector containing label */
 	daddr_t				dk_badsector[127];		/* 126 plus trailing -1 marker */
+
+	//struct mtx			*dk_openlock;
 	struct disklabel 	*dk_label;				/* label */
 	struct diskslices	*dk_slices;				/* slices */
 	struct partition 	dk_parts[MAXPARTITIONS];/* in-kernel portion */

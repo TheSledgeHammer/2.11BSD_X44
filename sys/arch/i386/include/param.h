@@ -82,13 +82,23 @@
 #define	_ALIGN(p)				(((unsigned long)(p) + _ALIGNBYTES) &~ _ALIGNBYTES)
 #define	_ALIGNED_POINTER(p,t)	((((unsigned long)(p)) & (__alignof(t) - 1)) == 0)
 
+/* segments */
+#define	NBSEG			4194304				/* bytes/segment (SEGMENT SIZE) */
+
+#define	SEGOFSET		(NBSEG-1)			/* byte offset into segment */
+#define	SEGSHIFT		22					/* LOG2(NBSEG) */
+#define	SEGSIZE			(1 << SEGSHIFT)		/* NBSEG */
+#define SEGMASK			(SEGSIZE - 1)		/* SEGOFSET */
+
+/* pages */
 #define	NBPG			4096				/* bytes/page (PAGE SIZE) */
-#define NBPDE			1024				/* page directory size in bytes (PDE SIZE) */
 
 #define	PGOFSET			(NBPG-1)			/* byte offset into page */
 #define	PGSHIFT			12					/* LOG2(NBPG) */
 #define PGSIZE			(1 << PGSHIFT)		/* bytes/page (PAGE SIZE) */
 #define PGMASK			PGOFSET				/* PGOFSET (PGSIZE - 1) */
+
+#define NBPDE			1024				/* page directory size in bytes (PDE SIZE) */
 #define	NPTEPG			(NBPG / sizeof(pt_entry_t))
 
 /* Size in bytes of the page directory */
@@ -160,8 +170,8 @@
  * Some macros for units conversion
  */
 /* Core clicks (4096 bytes) to segments and vice versa */
-#define	ctos(x)			(x)
-#define	stoc(x)			(x)
+#define	ctos(x)			(x)	//((x)<<SEGSHIFT)
+#define	stoc(x)			(x) //(((unsigned)(x)+(SEGOFSET))>>SEGSHIFT)
 
 /* Core clicks (4096 bytes) to disk blocks */
 #define	ctod(x)			((x)<<(PGSHIFT-DEV_BSHIFT))
@@ -172,7 +182,7 @@
 #define	ctob(x)			((x)<<PGSHIFT)
 
 /* bytes to clicks */
-#define	btoc(x)			(((unsigned)(x)+(NBPG-1))>>PGSHIFT)
+#define	btoc(x)			(((unsigned)(x)+(PGOFSET))>>PGSHIFT)
 
 #define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
 	((bytes) >> DEV_BSHIFT)
@@ -190,12 +200,18 @@
 /*
  * Mach derived conversion macros
  */
-#define i386_round_pdr(x)	((((unsigned)(x)) + NBPDR - 1) & ~(NBPDR-1))
-#define i386_trunc_pdr(x)	((unsigned)(x) & ~(NBPDR-1))
-#define i386_round_page(x)	((((unsigned)(x)) + NBPG - 1) & ~(NBPG-1))
-#define i386_trunc_page(x)	((unsigned)(x) & ~(NBPG-1))
-#define i386_btod(x)		((unsigned)(x) >> PDRSHIFT)
-#define i386_dtob(x)		((unsigned)(x) << PDRSHIFT)
-#define i386_btop(x)		((unsigned)(x) >> PGSHIFT)
-#define i386_ptob(x)		((unsigned)(x) << PGSHIFT)
+#define i386_round_pdr(x)		((((unsigned)(x)) + NBPDR - 1) & ~(NBPDR-1))
+#define i386_trunc_pdr(x)		((unsigned)(x) & ~(NBPDR-1))
+#define i386_btod(x)			((unsigned)(x) >> PDRSHIFT)
+#define i386_dtob(x)			((unsigned)(x) << PDRSHIFT)
+
+#define i386_round_segment(x)	((((unsigned)(x)) + NBSEG - 1) & ~(NBSEG-1))
+#define i386_trunc_segment(x)	((unsigned)(x) & ~(NBSEG-1))
+#define i386_round_page(x)		((((unsigned)(x)) + NBPG - 1) & ~(NBPG-1))
+#define i386_trunc_page(x)		((unsigned)(x) & ~(NBPG-1))
+#define i386_btos(x)			((unsigned)(x) >> SEGSHIFT)
+#define i386_stob(x)			((unsigned)(x) << SEGSHIFT)
+#define i386_btop(x)			((unsigned)(x) >> PGSHIFT)
+#define i386_ptob(x)			((unsigned)(x) << PGSHIFT)
+
 #endif /* _I386_PARAM_H_ */

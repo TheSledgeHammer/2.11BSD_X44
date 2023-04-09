@@ -1,7 +1,7 @@
-/*	$NetBSD: isadmavar.h,v 1.10 1997/08/04 22:13:33 augustss Exp $	*/
+/*	$NetBSD: isadmavar.h,v 1.19 2003/05/09 23:51:29 fvdl Exp $	*/
 
 /*-
- * Copyright (c) 1997 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997, 1998, 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -49,48 +49,90 @@
 #define	DMAMODE_LOOP		0x04
 #define	DMAMODE_LOOPDEMAND	(DMAMODE_LOOP | DMAMODE_DEMAND)
 
+/*
+ * ISA DMA state.  This structure is provided by the ISA chipset
+ * DMA entry points to the generic back-end functions that actually
+ * from the controller.
+ */
+struct isa_dma_state {
+	struct device 		*ids_dev;			/* associated device (for dv_xname) */
+	bus_space_tag_t 	ids_bst;			/* bus space tag for DMA controller */
+	bus_space_handle_t 	ids_dma1h;			/* handle for DMA controller #1 */
+	bus_space_handle_t 	ids_dma2h;			/* handle for DMA controller #2 */
+	bus_space_handle_t 	ids_dmapgh;			/* handle for DMA page registers */
+	bus_dma_tag_t 		ids_dmat;			/* DMA tag for DMA controller */
+	bus_dmamap_t 		ids_dmamaps[8];		/* DMA maps for each channel */
+	bus_size_t 			ids_dmalength[8];	/* size of DMA transfer per channel */
+	bus_size_t 			ids_maxsize[8];		/* max size per channel */
+	int					ids_drqmap;			/* available DRQs (bitmap) */
+	int					ids_dmareads;		/* state for isa_dmadone() (bitmap) */
+	int					ids_dmafinished;	/* DMA completion state (bitmap) */
+	int					ids_masked;			/* masked channels (bitmap) */
+	int					ids_frozen;			/* `frozen' count */
+	int					ids_initialized;	/* only initialize once... */
+};
+
+#define	ISA_DMA_DRQ_ISFREE(state, drq)					\
+	(((state)->ids_drqmap & (1 << (drq))) == 0)
+
+#define	ISA_DMA_DRQ_ALLOC(state, drq)					\
+	(state)->ids_drqmap |= (1 << (drq))
+
+#define	ISA_DMA_DRQ_FREE(state, drq)					\
+	(state)->ids_drqmap &= ~(1 << (drq))
+
+#define	ISA_DMA_MASK_SET(state, drq)					\
+	(state)->ids_masked |= (1 << (drq))
+
+#define	ISA_DMA_MASK_CLR(state, drq)					\
+	(state)->ids_masked &= ~(1 << (drq))
+
+/*
+ * Memory list used by _isa_malloc().
+ */
 struct isa_mem {
-	struct device 			*isadev;
+	struct isa_dma_state	*ids;
+	isa_chipset_tag_t		ic;
 	int 					chan;
 	bus_size_t 				size;
 	bus_addr_t 				addr;
 	caddr_t 				kva;
-	struct isa_mem 			*next;
+	SIMPLEQ_ENTRY(isa_mem)	next;
 };
 
 #ifdef _KERNEL
-struct isa_softc;
 struct proc;
 
-void	   	isa_dmainit(struct isa_softc *, bus_space_tag_t, bus_dma_tag_t, struct device *);
-void	   	isa_dmacascade(struct device *, int);
+void	   	isa_dmainit(isa_chipset_tag_t, bus_space_tag_t, bus_dma_tag_t, struct device *);
+int	   	isa_dmacascade(isa_chipset_tag_t, int);
 
-bus_size_t	isa_dmamaxsize(struct device *, int);
+bus_size_t	isa_dmamaxsize(isa_chipset_tag_t, int);
 
-int	  		isa_dmamap_create(struct device *, int, bus_size_t, int);
-void	   	isa_dmamap_destroy(struct device *, int);
+int	  		isa_dmamap_create(isa_chipset_tag_t, int, bus_size_t, int);
+void	   	isa_dmamap_destroy(isa_chipset_tag_t, int);
 
-int	   		isa_dmastart(struct device *, int, void *, bus_size_t, struct proc *, int, int);
-void	   	isa_dmaabort(struct device *, int);
-bus_size_t 	isa_dmacount(struct device *, int);
-int	   		isa_dmafinished(struct device *, int);
-void		isa_dmadone(struct device *, int);
+int	   		isa_dmastart(isa_chipset_tag_t, int, void *, bus_size_t, struct proc *, int, int);
+void	   	isa_dmaabort(isa_chipset_tag_t, int);
+bus_size_t 	isa_dmacount(isa_chipset_tag_t, int);
+int	   		isa_dmafinished(isa_chipset_tag_t, int);
+void		isa_dmadone(isa_chipset_tag_t, int);
 
-void	   	isa_dmafreeze(struct device *);
-void	   	isa_dmathaw(struct device *);
+void	   	isa_dmafreeze(isa_chipset_tag_t);
+void	   	isa_dmathaw(isa_chipset_tag_t);
 
-int	   		isa_dmamem_alloc(struct device *, int, bus_size_t, bus_addr_t *, int);
-void		isa_dmamem_free(struct device *, int, bus_addr_t, bus_size_t);
-int	   		isa_dmamem_map(struct device *, int, bus_addr_t, bus_size_t, caddr_t *, int);
-void		isa_dmamem_unmap(struct device *, int, caddr_t, size_t);
-int	   		isa_dmamem_mmap(struct device *, int, bus_addr_t, bus_size_t, int, int, int);
+int	   		isa_dmamem_alloc(isa_chipset_tag_t, int, bus_size_t, bus_addr_t *, int);
+void		isa_dmamem_free(isa_chipset_tag_t, int, bus_addr_t, bus_size_t);
+int	   		isa_dmamem_map(isa_chipset_tag_t, int, bus_addr_t, bus_size_t, caddr_t *, int);
+void		isa_dmamem_unmap(isa_chipset_tag_t, int, caddr_t, size_t);
+int	   		isa_dmamem_mmap(isa_chipset_tag_t, int, bus_addr_t, bus_size_t, int, int, int);
 
-int	   		isa_drq_alloc(struct device *, int);
-int	   		isa_drq_free(struct device *, int);
-int	   		isa_drq_isfree(struct device *, int);
+int	   		isa_drq_alloc(isa_chipset_tag_t, int);
+int	   		isa_drq_free(isa_chipset_tag_t, int);
+int	   		isa_drq_isfree(isa_chipset_tag_t, int);
 
-void    	*isa_malloc(struct device *, int, size_t, int, int);
+void    	*isa_malloc(isa_chipset_tag_t, int, size_t, int, int);
 void		isa_free(void *, int);
-int	   		isa_mappage(void *, int, int);
+int	   	isa_mappage(void *, int, int);
+
 #endif /* _KERNEL */
 #endif /* _DEV_ISA_ISADMAVAR_H_ */

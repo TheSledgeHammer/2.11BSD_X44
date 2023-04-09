@@ -443,7 +443,9 @@ _isa_bus_dmamap_load_uio(t, map, uio, flags)
 	int flags;
 {
 
-	panic("_isa_bus_dmamap_load_uio: not implemented");
+	//panic("_isa_bus_dmamap_load_uio: not implemented");
+
+	return (_bus_dmamap_load_uio(t, map, uio, flags));
 }
 
 /*

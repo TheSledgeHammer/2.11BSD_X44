@@ -137,20 +137,6 @@ slabmeta(slab, size)
 	}
 }
 
-static struct kmemslabs *
-slab_object_by_size(cache, size)
-	struct kmemslabs_cache 	*cache;
-    long    		size;
-{
-    register struct kmemslabs *slab;
-    if(LARGE_OBJECT(size)) {
-        slab = CIRCLEQ_LAST(&cache->ksc_head);
-    } else {
-        slab = CIRCLEQ_FIRST(&cache->ksc_head);
-    }
-    return (slab);
-}
-
 struct kmemslabs *
 slab_get_by_size(cache, size, mtype)
 	struct kmemslabs_cache 	*cache;
@@ -159,30 +145,29 @@ slab_get_by_size(cache, size, mtype)
 {
     register struct kmemslabs *slab;
 
-    slab = &slabbucket[BUCKETINDX(size)];
+    //slab = &slabbucket[BUCKETINDX(size)];
     simple_lock(&malloc_slock);
-	for(slab = slab_object_by_size(cache, size); slab != NULL; slab = CIRCLEQ_NEXT(slab, ksl_list)) {
-		if(slab->ksl_size == size && slab->ksl_mtype == mtype) {
-			simple_unlock(&malloc_slock);
-			return (slab);
-		}
-	}
+    if (LARGE_OBJECT(size)) {
+    	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_head, ksl_list) {
+    		if (slab == &slabbucket[BUCKETINDX(size)]) {
+    			if (slab->ksl_size == size && slab->ksl_mtype == mtype) {
+    				simple_unlock(&malloc_slock);
+    	    		return (slab);
+    			}
+    		}
+    	}
+    } else {
+    	CIRCLEQ_FOREACH(slab, &cache->ksc_head, ksl_list) {
+    		if (slab == &slabbucket[BUCKETINDX(size)]) {
+    			if (slab->ksl_size == size && slab->ksl_mtype == mtype) {
+    				simple_unlock(&malloc_slock);
+    	    		return (slab);
+    			}
+    		}
+    	}
+    }
 	simple_unlock(&malloc_slock);
     return (NULL);
-}
-
-static struct kmemslabs *
-slab_object_by_index(cache, index)
-	struct kmemslabs_cache 	*cache;
-    u_long    		index;
-{
-    register struct kmemslabs *slab;
-    if(index >= 10) {
-        slab = CIRCLEQ_LAST(&cache->ksc_head);
-    } else {
-        slab = CIRCLEQ_FIRST(&cache->ksc_head);
-    }
-    return (slab);
 }
 
 struct kmemslabs *
@@ -193,14 +178,27 @@ slab_get_by_index(cache, index, mtype)
 {
     register struct kmemslabs *slab;
 
-    slab = &slabbucket[index];
+    //slab = &slabbucket[index];
     simple_lock(&malloc_slock);
-	for(slab = slab_object_by_index(cache, index); slab != NULL; slab = CIRCLEQ_NEXT(slab, ksl_list)) {
-		if(slab->ksl_size == BUCKETSIZE(index) && slab->ksl_mtype == mtype) {
-			simple_unlock(&malloc_slock);
-			return (slab);
-		}
-	}
+    if (index >= 10) {
+    	CIRCLEQ_FOREACH_REVERSE(slab, &cache->ksc_head, ksl_list) {
+    		if (slab == &slabbucket[index]) {
+    			if (slab->ksl_size == BUCKETSIZE(index) && slab->ksl_mtype == mtype) {
+    				simple_unlock(&malloc_slock);
+    				return (slab);
+    			}
+    		}
+    	}
+    } else {
+    	CIRCLEQ_FOREACH(slab, &cache->ksc_head, ksl_list) {
+    		if (slab == &slabbucket[index]) {
+    			if (slab->ksl_size == BUCKETSIZE(index) && slab->ksl_mtype == mtype) {
+    				simple_unlock(&malloc_slock);
+    				return (slab);
+    			}
+    		}
+    	}
+    }
 	simple_unlock(&malloc_slock);
     return (NULL);
 }

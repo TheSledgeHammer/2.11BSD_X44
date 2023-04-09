@@ -77,10 +77,11 @@ extern simple_lock_data_t	vm_pages_needed_lock;
  *	Exported routines.
  */
 
-void	vm_wait(void);
+void		vm_wait(void);
 #ifdef _KERNEL
-void	vm_pageout(void *arg);
-void	vm_pageout_scan(void);
-void	vm_pageout_page(vm_page_t, vm_object_t);
-void	vm_pageout_cluster(vm_page_t, vm_object_t);
+void		vm_pageout(void *arg);
+void		vm_pageout_scan_segment(vm_object_t, int, int);
+void		vm_pageout_scan_page(struct pglist *, vm_segment_t, vm_object_t, int, int);
+void		vm_pageout_active(vm_page_t, vm_segment_t, vm_object_t);
+void		vm_pageout_cluster(vm_page_t, vm_segment_t, vm_object_t);
 #endif
