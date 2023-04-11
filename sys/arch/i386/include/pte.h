@@ -92,9 +92,35 @@
 #define PGEX_RSV	0x08		/* reserved PTE field is non-zero */
 #define PGEX_I		0x10		/* during an instruction fetch */
 
+#ifndef _LOCORE
+/*
+ * Get PDEs and PTEs for user/kernel address space
+ */
 /*
  * Pte related macros
  */
-#define	dirty(pte)	((*(int *)pte & PG_M) != 0)
+#define pmap_pde_v(pte)		    ((*(int *)pte & PG_V) != 0)
 
+#define pmap_pte_pa(pte)		((*(int *)pte & PG_FRAME) != 0)
+#define pmap_pte_ci(pte)		((*(int *)pte & PG_CI) != 0)
+#define pmap_pte_w(pte)			((*(int *)pte & PG_W) != 0)
+#define pmap_pte_m(pte)			((*(int *)pte & PG_M) != 0)
+#define pmap_pte_u(pte)			((*(int *)pte & PG_A) != 0)
+#define pmap_pte_v(pte)			((*(int *)pte & PG_V) != 0)
+
+#define pmap_pte_set_w(pte, v) 		\
+	if (v) {						\
+		*(int *)(pte) |= PG_W;		\
+	} else {						\
+		*(int *)(pte) &= ~PG_W;		\
+	}								\
+
+#define pmap_pte_set_prot(pte, v) 	\
+	if (v) {						\
+		*(int *)(pte) |= PG_PROT;   \
+	} else { 						\
+		*(int *)(pte) &= ~PG_PROT	\
+	}								\
+
+#endif /* !_LOCORE */
 #endif /* _I386_PTE_H_ */

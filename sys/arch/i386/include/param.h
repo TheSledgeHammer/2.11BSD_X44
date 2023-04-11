@@ -98,9 +98,7 @@
 #define PGSIZE			(1 << PGSHIFT)		/* bytes/page (PAGE SIZE) */
 #define PGMASK			PGOFSET				/* PGOFSET (PGSIZE - 1) */
 
-#define NBPDE			1024				/* page directory size in bytes (PDE SIZE) */
 #define	NPTEPG			(NBPG / sizeof(pt_entry_t))
-
 /* Size in bytes of the page directory */
 #define NBPTD			(NPGPTD << PGSHIFT)
 /* Number of PDEs in page directory, 2048 for PAE, 1024 for non-PAE */

@@ -69,7 +69,7 @@
 #ifndef PMAP_PAE_COMP /* PMAP_NOPAE */									
 
 /* NOPAE Constants */
-#define	PD_SHIFT			22
+#define	PD_SHIFT			SEGSHIFT							/* LOG2(NBPDR) (22) */
 //#define	PG_FRAME		(~PAGE_MASK)
 #define	PG_PS_FRAME			(0xffc00000)							/* PD_MASK_NOPAE */
 
@@ -96,9 +96,9 @@ typedef uint32_t 			pt_entry_t;
 #else /* PMAP_PAE */							
 
 /* PAE Constants  */
-#define	PD_SHIFT			21									/* LOG2(NBPDR) */
-//#define	PG_FRAME			(0x000ffffffffff000ull)
-#define	PG_PS_FRAME			(0x000fffffffe00000ull)							/* PD_MASK_PAE */
+#define	PD_SHIFT			(SEGSHIFT-1)						/* LOG2(NBPDR) (21) */
+//#define	PG_FRAME		(0x000ffffffffff000ull)
+#define	PG_PS_FRAME			(0x000fffffffe00000ull)				/* PD_MASK_PAE */
 
 #define	NTRPPTD				2									/* Number of PTDs for trampoline mapping */
 #define	LOWPTDI				2									/* low memory map pde */

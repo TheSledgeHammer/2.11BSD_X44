@@ -1,10 +1,42 @@
+/*	$NetBSD: pmap.h,v 1.1 2003/04/26 18:39:46 fvdl Exp $	*/
+
 /*
- * Copyright (c) 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * the Systems Programming Group of the University of Utah Computer
- * Science Department and William Jolitz of UUNET Technologies Inc.
+ * Copyright (c) 1997 Charles D. Cranor and Washington University.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgment:
+ *      This product includes software developed by Charles D. Cranor and
+ *      Washington University.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Copyright (c) 2001 Wasabi Systems, Inc.
+ * All rights reserved.
+ *
+ * Written by Frank van der Linden for Wasabi Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -16,57 +48,95 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *      This product includes software developed for the NetBSD Project by
+ *      Wasabi Systems, Inc.
+ * 4. The name of Wasabi Systems, Inc. may not be used to endorse
+ *    or promote products derived from this software without specific prior
+ *    written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)pmap.h	8.1 (Berkeley) 6/11/93
- */
-
-/*
- * Derived from hp300 version by Mike Hibler, this version by William
- * Jolitz uses a recursive map [a pde points to the page directory] to
- * map the page tables using the pagetables themselves. This is done to
- * reduce the impact on kernel virtual memory for lots of sparse address
- * space, and to reduce the cost of memory to each process.
- *
- * from hp300:	@(#)pmap.h	7.2 (Berkeley) 12/16/90
+ * THIS SOFTWARE IS PROVIDED BY WASABI SYSTEMS, INC. ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL WASABI SYSTEMS, INC
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef _AMD64_PMAP_H_
 #define _AMD64_PMAP_H_
 
+#define L1_SHIFT	12
+#define	L2_SHIFT	21
+#define	L3_SHIFT	30
+#define	L4_SHIFT	39
+#define	NBPD_L1		(1ULL << L1_SHIFT) 		/* # bytes mapped by L1 ent (4K) */
+#define	NBPD_L2		(1ULL << L2_SHIFT) 		/* # bytes mapped by L2 ent (2MB) */
+#define	NBPD_L3		(1ULL << L3_SHIFT) 		/* # bytes mapped by L3 ent (1G) */
+#define	NBPD_L4		(1ULL << L4_SHIFT) 		/* # bytes mapped by L4 ent (512G) */
+
+#define L4_MASK		0x0000ff8000000000
+#define L3_MASK		0x0000007fc0000000
+#define L2_MASK		0x000000003fe00000
+#define L1_MASK		0x00000000001ff000
+
+#define L4_FRAME	L4_MASK
+#define L3_FRAME	(L4_FRAME|L3_MASK)
+#define L2_FRAME	(L3_FRAME|L2_MASK)
+#define L1_FRAME	(L2_FRAME|L1_MASK)
+
+typedef uint64_t 	pd_entry_t;				/* PDE */
+typedef uint64_t 	pt_entry_t;				/* PTE */
+
 /*
- * We use the same numbering of the page table pages for 5-level and
- * 4-level paging structures.
+ * Mask to get rid of the sign-extended part of addresses.
  */
-#define	NUPML5E		(NPML5EPG / 2)			/* number of userland PML5 pages */
-#define	NUPML4E		(NUPML5E * NPML4EPG)	/* number of userland PML4 pages */
-#define	NUPDPE		(NUPML4E * NPDPEPG)		/* number of userland PDPpages */
-#define	NUPDE		(NUPDPE * NPDEPG)		/* number of userland PD entries */
-#define	NUP4ML4E	(NPML4EPG / 2)
+#define VA_SIGN_MASK		0xffff000000000000
+#define VA_SIGN_NEG(va)		((va) | VA_SIGN_MASK)
 
+#define L4_SLOT_PTE			255
+#define L4_SLOT_APTE		510
+#define L4_SLOT_KERN		256
+#define L4_SLOT_KERNBASE	511
 
-typedef u_int64_t pd_entry_t;
-typedef u_int64_t pt_entry_t;
-typedef u_int64_t pdp_entry_t;
-typedef u_int64_t pml4_entry_t;
-typedef u_int64_t pml5_entry_t;
+#define PDIR_SLOT_KERN		L4_SLOT_KERN
+#define PDIR_SLOT_PTE		L4_SLOT_PTE
+#define PDIR_SLOT_APTE		L4_SLOT_APTE
 
+/*
+ * the following defines give the virtual addresses of various MMU
+ * data structures:
+ * PTE_BASE and APTE_BASE: the base VA of the linear PTE mappings
+ * PTD_BASE and APTD_BASE: the base VA of the recursive mapping of the PTD
+ * PDP_PDE and APDP_PDE: the VA of the PDE that points back to the PDP/APDP
+ *
+ */
+#define L1_BASE		((pt_entry_t *)(L4_SLOT_PTE * NBPD_L4))
+#define L2_BASE 	((pd_entry_t *)((char *)L1_BASE + L4_SLOT_PTE * NBPD_L3))
+#define L3_BASE 	((pd_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define L4_BASE 	((pd_entry_t *)((char *)L3_BASE + L4_SLOT_PTE * NBPD_L1))
+
+#define AL1_BASE	((pt_entry_t *) (VA_SIGN_NEG((L4_SLOT_APTE * NBPD_L4))))
+#define AL2_BASE 	((pd_entry_t *)((char *)AL1_BASE + L4_SLOT_PTE * NBPD_L3))
+#define AL3_BASE 	((pd_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define AL4_BASE 	((pd_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
+
+/*
+ * PL*_1: generate index into pde/pte arrays in virtual space
+ */
+#define PL1_I(VA)	(((VA_SIGN_POS(VA)) & L1_FRAME) >> L1_SHIFT)
+#define PL2_I(VA)	(((VA_SIGN_POS(VA)) & L2_FRAME) >> L2_SHIFT)
+#define PL3_I(VA)	(((VA_SIGN_POS(VA)) & L3_FRAME) >> L3_SHIFT)
+#define PL4_I(VA)	(((VA_SIGN_POS(VA)) & L4_FRAME) >> L4_SHIFT)
+
+#define	vtopte(va)	(PTmap + PL1_I(va))
+#define	kvtopte(va)	vtopte(va)
+
+#define	avtopte(va)	(APTmap + PL1_I(va))
 
 #ifndef LOCORE
 #include <sys/queue.h>
@@ -80,9 +150,6 @@ struct pmap {
 	LIST_ENTRY(pmap) 		pm_list;		/* List of all pmaps */
 	pd_entry_t 				*pm_pdir;		/* KVA of page directory */
 	pt_entry_t				*pm_ptab;		/* KVA of page table */
-	pdp_entry_t				*pm_pdp;		/* KVA of page directory page */
-	pml4_entry_t			*pm_pl4;		/* KVA of level 4 page table */
-	pml5_entry_t			*pm_pl5;		/* KVA of level 5 page table */
 
 	bool_t					pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
@@ -110,12 +177,23 @@ typedef struct pv_entry		*pv_entry_t;
 
 #define	PD_ENTRY_NULL		((pd_entry_t) 0)
 #define	PT_ENTRY_NULL		((pt_entry_t) 0)
-#define	PDP_ENTRY_NULL		((pdp_entry_t) 0)
-#define	PML4_ENTRY_NULL		((pml4_entry_t) 0)
-#define	PML5_ENTRY_NULL		((pml5_entry_t) 0)
 
-extern u_int64_t KPML4phys;	/* physical address of kernel level 4 */
-extern u_int64_t KPML5phys;	/* physical address of kernel level 5 */
+#define PTE_BASE			L1_BASE
+#define PTD_PDE				(L4_BASE + PDIR_SLOT_PTE)
+#define PDP_BASE			L4_BASE
 
+#define APTE_BASE			AL1_BASE
+#define APTD_PDE			(L4_BASE + PDIR_SLOT_APTE)
+#define APDP_BASE			AL4_BASE
+
+#define PTmap				PTE_BASE
+#define APTmap				APTE_BASE
+
+//#ifdef _KERNEL
+
+extern struct pmap  		kernel_pmap_store;
+#define kernel_pmap 		(&kernel_pmap_store)
+
+//#endif	/* KERNEL */
 #endif 	/* !_LOCORE */
 #endif /* _AMD64_PMAP_H_ */

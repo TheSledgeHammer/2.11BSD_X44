@@ -171,21 +171,6 @@ int pmapvacflush = 0;
  */
 #define	pmap_pde(m, v)		(&((m)->pm_pdir[((vm_offset_t)(v) >> PDRSHIFT)]))
 
-#define pmap_pte_pa(pte)	((*(int *)pte & PG_FRAME) != 0)
-
-#define pmap_pte_ci(pte)	((*(int *)pte & PG_CI) != 0)
-
-#define pmap_pde_v(pte)		((*(int *)pte & PG_V) != 0)
-#define pmap_pte_w(pte)		((*(int *)pte & PG_W) != 0)
-#define pmap_pte_m(pte)		((*(int *)pte & PG_M) != 0)
-#define pmap_pte_u(pte)		((*(int *)pte & PG_A) != 0)
-#define pmap_pte_v(pte)		((*(int *)pte & PG_V) != 0)
-
-#define pmap_pte_set_w(pte, v) 		\
-	if (v) *(int *)(pte) |= PG_W; else *(int *)(pte) &= ~PG_W
-#define pmap_pte_set_prot(pte, v) 	\
-	if (v) *(int *)(pte) |= PG_PROT; else *(int *)(pte) &= ~PG_PROT
-
 /*
  * Given a map and a machine independent protection code,
  * convert to a vax protection code.

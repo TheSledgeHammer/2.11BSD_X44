@@ -83,33 +83,25 @@
 #define PGSIZE			(1<<PGSHIFT)		/* bytes/page */
 #define PGMASK			PGOFSET				/* PGOFSET (PGSIZE - 1) */
 
-/* Size of the level 1 page table units */
-#define NPTEPG			(NBPG/(sizeof (pt_entry_t)))
-#define	NPTEPGSHIFT		9					/* LOG2(NPTEPG) */
+#define NPDLVL			4					/* page directory levels in page table */
+#define NPDLVL_SHIFT	9					/* bytes to shift per level */
+#define NPTEPG			(NBPG/(sizeof(pt_entry_t))) /* Size in bytes of the page directory */
+#define	NPDEPG			(NBPG/(sizeof(pd_entry_t)))
 
-/* Size of the level 2 page directory units */
-#define	NPDEPG			(NBPG/(sizeof (pd_entry_t)))
-#define	NPDEPGSHIFT		9					/* LOG2(NPDEPG) */
-#define	PDRSHIFT		21              	/* LOG2(NBPDR) */
-#define	NBPDR			(1<<PDRSHIFT)   	/* bytes/page dir */
-#define	PDRMASK			(NBPDR-1)
-/* Size of the level 3 page directory pointer table units */
-#define	NPDPEPG			(NBPG/(sizeof (pdp_entry_t)))
-#define	NPDPEPGSHIFT	9					/* LOG2(NPDPEPG) */
-#define	PDPSHIFT		30					/* LOG2(NBPDP) */
-#define	NBPDP			(1<<PDPSHIFT)		/* bytes/page dir ptr table */
-#define	PDPMASK			(NBPDP-1)
-/* Size of the level 4 page-map level-4 table units */
-#define	NPML4EPG		(NBPG/(sizeof (pml4_entry_t)))
-#define	NPML4EPGSHIFT	9					/* LOG2(NPML4EPG) */
-#define	PML4SHIFT		39					/* LOG2(NBPML4) */
-#define	NBPML4			(1UL<<PML4SHIFT)	/* bytes/page map lev4 table */
-#define	PML4MASK		(NBPML4-1)
-/* Size of the level 5 page-map level-5 table units */
-#define	NPML5EPG		(NBPG/(sizeof (pml5_entry_t)))
-#define	NPML5EPGSHIFT	9					/* LOG2(NPML5EPG) */
-#define	PML5SHIFT		48					/* LOG2(NBPML5) */
-#define	NBPML5			(1UL<<PML5SHIFT)	/* bytes/page map lev5 table */
-#define	PML5MASK		(NBPML5-1)
+#define	PD_SHIFT		(SEGSHIFT-1)		/* LOG2(NBPDR) (21) */
+#define NBPDR			(1 << PD_SHIFT)		/* bytes/page dir */
 
+#define amd64_round_pdr(x)		((((unsigned long)(x)) + NBPDR - 1) & ~(NBPDR - 1))
+#define amd64_trunc_pdr(x)		((unsigned long)(x) & ~(NBPDR - 1))
+#define amd64_btod(x)			((unsigned long)(x) >> (PD_SHIFT))
+#define amd64_dtob(x)			((unsigned long)(x) << (PD_SHIFT))
+
+#define amd64_round_segment(x)	((((unsigned long)(x)) + NBSEG - 1) & ~(NBSEG-1))
+#define amd64_trunc_segment(x)	((unsigned long)(x) & ~(NBSEG-1))
+#define amd64_round_page(x)		((((unsigned long)(x)) + NBPG - 1) & ~(NBPG-1))
+#define amd64_trunc_page(x)		((unsigned long)(x) & ~(NBPG-1))
+#define amd64_btos(x)			((unsigned long)(x) >> SEGSHIFT)
+#define amd64_stob(x)			((unsigned long)(x) << SEGSHIFT)
+#define amd64_btop(x)			((unsigned long)(x) >> PGSHIFT)
+#define amd64_ptob(x)			((unsigned long)(x) << PGSHIFT)
 #endif /* _AMD64_PARAM_H_ */
