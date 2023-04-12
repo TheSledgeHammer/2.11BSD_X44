@@ -20,6 +20,9 @@ A General todo list. Don't hesitate to add to this list. :)
 	- current examples: video, pc speaker, apm & tabldisc
 
 # usr/ (User & OS Libraries):
+## Contrib:
+	- Add Lua
+	
 ## lib:
 
 ## libexec:
@@ -33,7 +36,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## stand:
 - boot:
 	- setup configuration settings for elf & non-elf based kernels
-	- add gfx_fb
+	- add: lua interpreter support
 	- efi:
 		- update missing.
 		- needs acpica.
@@ -67,38 +70,46 @@ A General todo list. Don't hesitate to add to this list. :)
 - Code planned for future integration
 - update copyright headers
 - See devel folder: README.md
+	- AdvVM: add a device mapper, use NetBSD's dm as reference.
+	- Overlays: pmap's and map improvements
+	- Threads: add workqueues and threadpools into kernel
+	- MPX: mpx subroutines need improving, if mpx styled threads are to work!?
 
 ## dev:
 - usb (Disabled): Has several compiler errors.
 - core:
-	- isadma: does not work with current device arrangement
 	
 - Improve directory structure
 - Essential Drivers
 	- To Support:
-		- AGP: Graphics
 		- USB: Fix compiler errors and add xhci
-		- ACPI
+		- ACPI: To implement
 
 ## fs:
+- add UDF support
 
 ## lib:
 - libsa:
 	- Add bzipfs, gzipfs, pkgfs, splitfs
 - libkern:
+- tekken:
+	- Support FreeBSD's tekken library?
+	- Better Terminal Emulation support.
+		- Could work with wscons
 
 ## miscfs:
+- add NFS: Can actually support it now. With network functionality implemented!!
 
 ## net / net80211 / netinet / netinet6 / netipsec / netkey / netns / netpfil :
 - Update to make use of tcp_checksum & udp_checksum
 - netpfil: 
-	- Add NPF
+	- NPF: Ported from NetBSD 6.x
+		- Needs alot of changes to actually make it work. 
 		
 ## ufs:
 - implement Extended Attributes
 - lfs:
-	- update lfs structures for 64-bit.
-		- dip switching depending on if UFS1/UFS2 is complete
+	- update lfs structures for 64-bit. Some still only 32-Bit
 	- improve logging facilities (see: NetBSD)
 	- snapshots? 
 - ufs:
@@ -107,11 +118,13 @@ A General todo list. Don't hesitate to add to this list. :)
 - ufs211:
    	- fix quotas
 - ufml:
-	- adds User libs
+	- adds User library.
 	- improve fs support
 	- add fs-based routines
 
 ## vm:
+- Pseudo-Segment: take over of the vmspace stack management.
+	- Fixing grow to work with pseudo-segmentation or providing a temporary solution.
 
 ## Other:
 - Memory Segmentation (Software):
