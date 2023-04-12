@@ -119,7 +119,7 @@
 	if (v) {						\
 		*(int *)(pte) |= PG_PROT;   \
 	} else { 						\
-		*(int *)(pte) &= ~PG_PROT	\
+		*(int *)(pte) &= ~PG_PROT;	\
 	}								\
 
 #endif /* !_LOCORE */
