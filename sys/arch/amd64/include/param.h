@@ -78,6 +78,7 @@
 
 /* pages */
 #define	NBPG			4096				/* bytes/page (PAGE SIZE) */
+
 #define	PGOFSET			(NBPG-1)			/* byte offset into page */
 #define PGSHIFT			12					/* LOG2(PAGE_SIZE) */
 #define PGSIZE			(1<<PGSHIFT)		/* bytes/page */

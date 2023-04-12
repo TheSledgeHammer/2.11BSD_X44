@@ -115,28 +115,37 @@ typedef uint64_t 	pt_entry_t;				/* PTE */
  * PDP_PDE and APDP_PDE: the VA of the PDE that points back to the PDP/APDP
  *
  */
-#define L1_BASE		((pt_entry_t *)(L4_SLOT_PTE * NBPD_L4))
-#define L2_BASE 	((pd_entry_t *)((char *)L1_BASE + L4_SLOT_PTE * NBPD_L3))
-#define L3_BASE 	((pd_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
-#define L4_BASE 	((pd_entry_t *)((char *)L3_BASE + L4_SLOT_PTE * NBPD_L1))
+#define L1_BASE			((pt_entry_t *)(L4_SLOT_PTE * NBPD_L4))
+#define L2_BASE 		((pd_entry_t *)((char *)L1_BASE + L4_SLOT_PTE * NBPD_L3))
+#define L3_BASE 		((pd_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define L4_BASE 		((pd_entry_t *)((char *)L3_BASE + L4_SLOT_PTE * NBPD_L1))
 
-#define AL1_BASE	((pt_entry_t *) (VA_SIGN_NEG((L4_SLOT_APTE * NBPD_L4))))
-#define AL2_BASE 	((pd_entry_t *)((char *)AL1_BASE + L4_SLOT_PTE * NBPD_L3))
-#define AL3_BASE 	((pd_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
-#define AL4_BASE 	((pd_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
+#define AL1_BASE		((pt_entry_t *) (VA_SIGN_NEG((L4_SLOT_APTE * NBPD_L4))))
+#define AL2_BASE 		((pd_entry_t *)((char *)AL1_BASE + L4_SLOT_PTE * NBPD_L3))
+#define AL3_BASE 		((pd_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define AL4_BASE 		((pd_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
 
 /*
  * PL*_1: generate index into pde/pte arrays in virtual space
  */
-#define PL1_I(VA)	(((VA_SIGN_POS(VA)) & L1_FRAME) >> L1_SHIFT)
-#define PL2_I(VA)	(((VA_SIGN_POS(VA)) & L2_FRAME) >> L2_SHIFT)
-#define PL3_I(VA)	(((VA_SIGN_POS(VA)) & L3_FRAME) >> L3_SHIFT)
-#define PL4_I(VA)	(((VA_SIGN_POS(VA)) & L4_FRAME) >> L4_SHIFT)
+#define PL1_I(VA)		(((VA_SIGN_POS(VA)) & L1_FRAME) >> L1_SHIFT)
+#define PL2_I(VA)		(((VA_SIGN_POS(VA)) & L2_FRAME) >> L2_SHIFT)
+#define PL3_I(VA)		(((VA_SIGN_POS(VA)) & L3_FRAME) >> L3_SHIFT)
+#define PL4_I(VA)		(((VA_SIGN_POS(VA)) & L4_FRAME) >> L4_SHIFT)
+#define PL_I(va, lvl) 	(((VA_SIGN_POS(va)) & ptp_masks[(lvl)-1]) >> ptp_shifts[(lvl)-1])
 
-#define	vtopte(va)	(PTmap + PL1_I(va))
+#define PTP_MASK_INITIALIZER	{ L1_FRAME, L2_FRAME, L3_FRAME, L4_FRAME }
+#define PTP_SHIFT_INITIALIZER	{ L1_SHIFT, L2_SHIFT, L3_SHIFT, L4_SHIFT }
+#define NBPD_INITIALIZER		{ NBPD_L1, NBPD_L2, NBPD_L3, NBPD_L4 }
+#define PDES_INITIALIZER		{ L2_BASE, L3_BASE, L4_BASE }
+#define APDES_INITIALIZER		{ AL2_BASE, AL3_BASE, AL4_BASE }
+
+#define PTP_LEVELS	NPDLVL
+
+#define	vtopte(va)	(PTE_BASE + PL1_I(va))
 #define	kvtopte(va)	vtopte(va)
 
-#define	avtopte(va)	(APTmap + PL1_I(va))
+#define	avtopte(va)	(APTE_BASE + PL1_I(va))
 
 #ifndef LOCORE
 #include <sys/queue.h>
@@ -144,8 +153,8 @@ typedef uint64_t 	pt_entry_t;				/* PTE */
 /*
  * Pmap stuff
  */
-struct pmap_head;
-LIST_HEAD(pmap_head, pmap); 				/* struct pmap_head: head of a pmap list */
+struct pmap_list;
+LIST_HEAD(pmap_list, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
 	LIST_ENTRY(pmap) 		pm_list;		/* List of all pmaps */
 	pd_entry_t 				*pm_pdir;		/* KVA of page directory */
@@ -186,14 +195,29 @@ typedef struct pv_entry		*pv_entry_t;
 #define APTD_PDE			(L4_BASE + PDIR_SLOT_APTE)
 #define APDP_BASE			AL4_BASE
 
-#define PTmap				PTE_BASE
-#define APTmap				APTE_BASE
-
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
+extern bool_t 				pmap_initialized;		/* Has pmap_init completed? */
 
-//#endif	/* KERNEL */
+extern int 					nkpt;					/* Initial number of kernel page tables */
+extern uint64_t 			ptp_masks[];
+extern uint64_t				ptp_shifts[];
+extern uint64_t				nbpds[];
+extern pd_entry_t 			*pdes[];
+extern pd_entry_t 			*apdes[];
+
+#define	pmap_resident_count(pmap)	\
+	((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)		\
+	((pmap)->pm_stats.wired_count)
+
+#define pmap_lock_init(pmap, name) 	(simple_lock_init(&(pmap)->pm_lock, (name)))
+#define pmap_lock(pmap)				(simple_lock(&(pmap)->pm_lock))
+#define pmap_unlock(pmap)			(simple_unlock(&(pmap)->pm_lock))
+
+
+#endif	/* KERNEL */
 #endif 	/* !_LOCORE */
 #endif /* _AMD64_PMAP_H_ */

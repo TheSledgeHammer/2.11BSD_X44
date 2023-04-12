@@ -248,7 +248,7 @@ extern pdpt_entry_t 	*IdlePDPT;
 #endif
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
-extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */
+extern bool_t 				pmap_initialized;		/* Has pmap_init completed? */
 extern u_long 				physfree;		/* phys addr of next free page */
 extern u_long 				vm86phystk;		/* PA of vm86/bios stack */
 //extern u_long 				vm86paddr;		/* address of vm86 region */
