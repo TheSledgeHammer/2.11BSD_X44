@@ -125,7 +125,7 @@ typedef uint64_t 		pml4_entry_t;			/* L4 */
 #define L3_BASE 		((pdp_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
 #define L4_BASE 		((pml4_entry_t *)((char *)L3_BASE + L4_SLOT_PTE * NBPD_L1))
 
-#define AL1_BASE		((pt_entry_t *) (VA_SIGN_NEG((L4_SLOT_APTE * NBPD_L4))))
+#define AL1_BASE		((pt_entry_t *)(VA_SIGN_NEG((L4_SLOT_APTE * NBPD_L4))))
 #define AL2_BASE 		((pd_entry_t *)((char *)AL1_BASE + L4_SLOT_PTE * NBPD_L3))
 #define AL3_BASE 		((pdp_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
 #define AL4_BASE 		((pml4_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
