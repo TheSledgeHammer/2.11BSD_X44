@@ -27,7 +27,7 @@
 ## Architecture Support:
 
 - i386/x86 (In Development)
-- AMD64 (Planned)
+- AMD64 (In Development)
 - Arm 	(32-Bit/64-Bit) (Planned)
 - Riscv (32-Bit/64-Bit) (Planned)
 
@@ -58,9 +58,9 @@
   - Firewall/ Packet Filter:
   	- IPSEC: Complete
 	- PF: Complete
-	- IPSEC_FAST (aka netipsec folder): WIP
-	- NPF: To Port
-	- IPFILTER: Deprecated (Planned for removal)
+	- IPSEC_FAST (aka netipsec folder): Complete
+	- NPF: Ported (not working)
+	- IPFILTER: Removed
 - Filesystem Updates:
   - UFS/FFS/LFS:
     - LFS1/LFS2: (Work in Progress: See TODO.md for more)
