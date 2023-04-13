@@ -47,7 +47,7 @@ advvm_fileset_init(adfst)
 	adfst->fst_name = NULL;
 	adfst->fst_id = 0;
 	adfst->fst_tags = NULL;
-	adfst->fst_file_directory = NULL;
+	adfst->fst_file = NULL;
 }
 
 void
@@ -96,7 +96,7 @@ advvm_filset_set_tag_directory(tag, name, id)
   uint32_t        id;
 {
 	if (tag == NULL) {
-		advvm_malloc((struct advvm_tag_directory *) tag, sizeof(struct advvm_tag_directory *));
+		advvm_malloc((struct advvm_tag_directory *) tag, sizeof(struct advvm_tag_directory *), M_WAITOK);
 	}
 	tag->tag_name = name;
 	tag->tag_id = id;
@@ -115,7 +115,7 @@ advvm_filset_set_file_directory(fdir, tag, name, disk)
 {
 	if (fdir == NULL) {
 		advvm_malloc((struct advvm_file_directory *) fdir,
-				sizeof(struct advvm_file_directory *));
+				sizeof(struct advvm_file_directory *), M_WAITOK);
 	}
 
 	fdir->fdr_tag = tag;
@@ -150,7 +150,7 @@ advvm_fileset_create(adom, adfst, fst_name, fst_id, tag_name, tag_id, fdir_name,
 	adfst->fst_name = fst_name;
 	adfst->fst_id = fst_id;
 	adfst->fst_tags = &tag;
-	adfst->fst_file_directory = &fdir;
+	adfst->fst_file = &fdir;
 	adfst->fst_hash = advvm_fdir_hash(&tag, fdir_name);
 	advvm_storage_create(adfst->fst_storage, adfst->fst_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
 }
@@ -191,7 +191,7 @@ advvm_filset_insert(adom, adfst, name, id)
 	}
 
 	tags = adfst->fst_tags;
-	fdir = adfst->fst_file_directory;
+	fdir = adfst->fst_file;
 
 	advvm_fileset_set_domain(adfst, adom);
 	advvm_fileset_create(adom, adfst, name, id, tags->tag_name, tags->tag_id, fdir->fdr_tag, fdir->fdr_name, fdir->fdr_disk);

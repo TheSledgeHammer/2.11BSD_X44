@@ -53,14 +53,14 @@ typedef struct advvm_file_directory advvm_file_dir_t;
 
 struct advvm_fileset {
     TAILQ_ENTRY(advvm_fileset)      fst_entries;                    /* list of fileset entries per domain */
-    char                            fst_name[MAXFILESETNAME];       /* fileset name */
-    uint32_t                        fst_id;                         /* fileset id */
+    char                            fst_name[ADVVM_NAME_LEN];       /* fileset name */
+    uint32_t                        fst_id[ADVVM_UUID_LEN];         /* fileset id */
     uint32_t						fst_hash;						/* tag/file directory hash */
 
     /* fileset tag information */
-    advvm_tag_dir_t                 fst_tags;
+    advvm_tag_dir_t                 fst_tags;						/* tags */
     /* fileset directory information */
-    advvm_file_dir_t		   		fst_file_directory;
+    advvm_file_dir_t		   		fst_file;						/* file directory */
 
     /* domain-related fields */
     advvm_domain_t             	    *fst_domain;                    /* domain this fileset belongs too */

@@ -71,7 +71,7 @@ advvm_volume_set_label(label, sysname, name, creation, update, dsize)
 	off_t 				dsize;
 {
 	if (label == NULL) {
-		advvm_malloc((struct advvm_label*) label, sizeof(struct advvm_label*));
+		advvm_malloc((struct advvm_label*) label, sizeof(struct advvm_label*), M_WAITOK);
 	}
 	label->alb_sysname = sysname;
 	label->alb_name = name;
@@ -89,7 +89,7 @@ advvm_volume_set_block(block, start, end, size, addr, flags)
 	int 				flags;
 {
 	if (block == NULL) {
-		advvm_malloc((struct advvm_block*) block, sizeof(struct advvm_block*));
+		advvm_malloc((struct advvm_block*) block, sizeof(struct advvm_block*), M_WAITOK);
 	}
 	block->ablk_start = start;
 	block->ablk_end = end;

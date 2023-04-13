@@ -31,6 +31,7 @@
 #ifndef _ADVVM_EXTENT_H_
 #define _ADVVM_EXTENT_H_
 
+#include <sys/malloc.h>
 #include <sys/extent.h>
 
 struct advvm_storage {
@@ -58,8 +59,8 @@ void			advvm_destroy(advvm_storage_t *);
 u_long 			*advvm_get_storage_pool(advvm_storage_t *);
 
 /* generic malloc & free */
-void			advvm_malloc(void *, u_long);
-void			advvm_calloc(int, void *, u_long);
+void			advvm_malloc(void *, u_long, int);
+void			advvm_calloc(int, void *, u_long, int);
 void			advvm_free(void *);
 
 #endif /* _ADVVM_EXTENT_H_ */

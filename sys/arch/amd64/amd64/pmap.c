@@ -66,7 +66,7 @@ static int pmap_nx_enable = -1;		/* -1 = auto */
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
-#define pdlvlshift(lvl)         ((((lvl) * NPDLVL_SHIFT) + PGSHIFT) - NPDLVL_SHIFT)
+#define pdlvlshift(lvl)         ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT)
 #define	pmap_pde(m, v, lvl)		(&((m)->pm_pdir[((vm_offset_t)(v) >> pdlvlshift(lvl))]))
 
 #define	PAT_INDEX_SIZE	8
@@ -101,43 +101,31 @@ static pt_entry_t 	*pmap_ptetov(pmap_t, vm_offset_t);
 static pt_entry_t 	*pmap_aptetov(pmap_t, vm_offset_t);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
-static vm_offset_t
-pmap_index(va, lvl)
+pt_entry_t *
+pmap_vtopte(va)
 	vm_offset_t va;
-	int lvl;
 {
-	vm_offset_t index;
+	KASSERT(va < (L4_SLOT_KERN * NBPD_L4));
 
-	//KASSERT(lvl >= 1);
-	if (lvl == 0) {
-		lvl = 1;
-	}
-	index = (va >> pdlvlshift(lvl) & ((1ULL << NPDLVL_SHIFT) - 1));
-	return (index);
+	return (PTE_BASE + PL1_I(va));
 }
 
-vm_offset_t
-pmap_pte_index(vm_offset_t va)
+pt_entry_t *
+pmap_kvtopte(va)
+	vm_offset_t va;
 {
-	return (pmap_index(va, 1));
+	KASSERT(va >= (L4_SLOT_KERN * NBPD_L4));
+
+	return (PTE_BASE + PL1_I(va));
 }
 
-vm_offset_t
-pmap_pt_index(vm_offset_t va)
+pt_entry_t *
+pmap_avtopte(va)
+	vm_offset_t va;
 {
-	return (pmap_index(va, 2));
-}
+	KASSERT(va < (VA_SIGN_NEG(L4_SLOT_KERNBASE * NBPD_L4)));
 
-vm_offset_t
-pmap_pd_index(vm_offset_t va)
-{
-	return (pmap_index(va, 3));
-}
-
-vm_offset_t
-pmap_pdp_index(vm_offset_t va)
-{
-	return (pmap_index(va, 4));
+	return (APTE_BASE + PL1_I(va));
 }
 
 static uint64_t

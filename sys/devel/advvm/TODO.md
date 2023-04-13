@@ -3,8 +3,13 @@
 ## General:
 - Remove Hardcoded limits implemented from Vinum
 	- see how LVM2 does it
-- Port NetBSD/ DragonflyBSD device-mapper implementation
 - Implement device configuration in advvm.c
+
+## Device Mapper (aka dm):
+- Setup interfaces and api's between the dm and advvm.
+- Update the internal infrasture for improved interoperability between both the dm and advvm.
+- add target: delay, flakey, mirror, snapshot & stripe
+- device-mapper.c: merge with advvm.c
 
 ## Volumes:
 

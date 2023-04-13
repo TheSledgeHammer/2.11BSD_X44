@@ -60,12 +60,14 @@ enum constants {
 	ADVVM_BDEV_MAJOR = 162,					/* major number for block device */
 	ADVVM_CDEV_MAJOR = 162,					/* major number for character device */
 
-
 	ADVVM_VOLUME_TYPE = 0,
 	ADVVM_DOMAIN_TYPE = 1,
 	ADVVM_FILESET_TYPE = 2,
 
-
+	ADVVM_MAX_TYPE_NAME = 16,
+	ADVVM_NAME_LEN = 128,
+	ADVVM_UUID_LEN = 128,
+	ADVVM_MAX_DEV_NAME = 32,
 
     /*
      * Define a minor device number.
@@ -82,10 +84,11 @@ enum constants {
 
 	MAXDOMAIN = 8,
 	MAXFILESET = 256,
-	MAXDRIVENAME = 32,		    			/* maximum length of a device name */
-	MAXVOLUMENAME = 64,          			/* maximum length of a volume name */
-	MAXDOMAINNAME = 64,          			/* maximum length of a domain name */
-	MAXFILESETNAME = 64,          			/* maximum length of a fileset name */
+	MAXDRIVENAME = ADVVM_MAX_DEV_NAME,		    /* maximum length of a device name */
+	MAXVOLUMENAME = ADVVM_MAX_DEV_NAME,         /* maximum length of a volume name */
+	MAXDOMAINNAME = ADVVM_MAX_DEV_NAME,         /* maximum length of a domain name */
+	MAXFILESETNAME = ADVVM_MAX_DEV_NAME,        /* maximum length of a fileset name */
+
 
     /* Create device minor numbers */
     /* Character device */
@@ -110,7 +113,7 @@ enum constants {
 #define DEVTYPE(x) 				((minor (x) >> ADVVM_TYPE_SHIFT) & 3)
 
 
-	ADVVMHOSTNAMELEN = 32,		/* host name field in label */
+	ADVVMHOSTNAMELEN = ADVVM_NAME_LEN,		/* host name field in label */
 };
 
 struct advvm_label {

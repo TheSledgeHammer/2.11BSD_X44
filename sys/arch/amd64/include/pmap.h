@@ -74,6 +74,7 @@
 #define	L2_SHIFT	21
 #define	L3_SHIFT	30
 #define	L4_SHIFT	39
+
 #define	NBPD_L1		(1ULL << L1_SHIFT) 		/* # bytes mapped by L1 ent (4K) */
 #define	NBPD_L2		(1ULL << L2_SHIFT) 		/* # bytes mapped by L2 ent (2MB) */
 #define	NBPD_L3		(1ULL << L3_SHIFT) 		/* # bytes mapped by L3 ent (1G) */
@@ -89,14 +90,18 @@
 #define L2_FRAME	(L3_FRAME|L2_MASK)
 #define L1_FRAME	(L2_FRAME|L1_MASK)
 
-typedef uint64_t 	pd_entry_t;				/* PDE */
-typedef uint64_t 	pt_entry_t;				/* PTE */
+typedef uint64_t 	pt_entry_t;				/* PTE (L1) */
+typedef uint64_t 	pd_entry_t;				/* PDE (L2) */
+typedef uint64_t 	pdp_entry_t;			/* PDP (L3) */
+typedef uint64_t 	pml4_entry_t;			/* L4 */
 
 /*
  * Mask to get rid of the sign-extended part of addresses.
  */
 #define VA_SIGN_MASK		0xffff000000000000
 #define VA_SIGN_NEG(va)		((va) | VA_SIGN_MASK)
+
+#define VA_SIGN_POS(va)		((va) & ~VA_SIGN_MASK)
 
 #define L4_SLOT_PTE			255
 #define L4_SLOT_APTE		510
@@ -117,13 +122,13 @@ typedef uint64_t 	pt_entry_t;				/* PTE */
  */
 #define L1_BASE			((pt_entry_t *)(L4_SLOT_PTE * NBPD_L4))
 #define L2_BASE 		((pd_entry_t *)((char *)L1_BASE + L4_SLOT_PTE * NBPD_L3))
-#define L3_BASE 		((pd_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
-#define L4_BASE 		((pd_entry_t *)((char *)L3_BASE + L4_SLOT_PTE * NBPD_L1))
+#define L3_BASE 		((pdp_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define L4_BASE 		((pml4_entry_t *)((char *)L3_BASE + L4_SLOT_PTE * NBPD_L1))
 
 #define AL1_BASE		((pt_entry_t *) (VA_SIGN_NEG((L4_SLOT_APTE * NBPD_L4))))
 #define AL2_BASE 		((pd_entry_t *)((char *)AL1_BASE + L4_SLOT_PTE * NBPD_L3))
-#define AL3_BASE 		((pd_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
-#define AL4_BASE 		((pd_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
+#define AL3_BASE 		((pdp_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define AL4_BASE 		((pml4_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
 
 /*
  * PL*_1: generate index into pde/pte arrays in virtual space
@@ -140,7 +145,8 @@ typedef uint64_t 	pt_entry_t;				/* PTE */
 #define PDES_INITIALIZER		{ L2_BASE, L3_BASE, L4_BASE }
 #define APDES_INITIALIZER		{ AL2_BASE, AL3_BASE, AL4_BASE }
 
-#define PTP_LEVELS	NPDLVL
+#define PTP_LEVELS	4
+#define PTP_SHIFT	9
 
 #define	vtopte(va)	(PTE_BASE + PL1_I(va))
 #define	kvtopte(va)	vtopte(va)
@@ -184,15 +190,17 @@ struct pv_entry {
 };
 typedef struct pv_entry		*pv_entry_t;
 
-#define	PD_ENTRY_NULL		((pd_entry_t) 0)
 #define	PT_ENTRY_NULL		((pt_entry_t) 0)
+#define	PD_ENTRY_NULL		((pd_entry_t) 0)
+#define	PDP_ENTRY_NULL		((pdp_entry_t) 0)
+#define	PML4_ENTRY_NULL		((pml4_entry_t) 0)
 
 #define PTE_BASE			L1_BASE
-#define PTD_PDE				(L4_BASE + PDIR_SLOT_PTE)
+#define PDP_PDE				(L4_BASE + PDIR_SLOT_PTE)
 #define PDP_BASE			L4_BASE
 
 #define APTE_BASE			AL1_BASE
-#define APTD_PDE			(L4_BASE + PDIR_SLOT_APTE)
+#define APDP_PDE			(L4_BASE + PDIR_SLOT_APTE)
 #define APDP_BASE			AL4_BASE
 
 #ifdef _KERNEL

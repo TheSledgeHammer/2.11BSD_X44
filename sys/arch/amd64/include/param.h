@@ -84,10 +84,14 @@
 #define PGSIZE			(1<<PGSHIFT)		/* bytes/page */
 #define PGMASK			PGOFSET				/* PGOFSET (PGSIZE - 1) */
 
-#define NPDLVL			4					/* page directory levels in page table */
-#define NPDLVL_SHIFT	9					/* bytes to shift per level */
-#define NPTEPG			(NBPG/(sizeof(pt_entry_t))) /* Size in bytes of the page directory */
+/* Size of the level 1 page table units */
+#define NPTEPG			(NBPG/(sizeof(pt_entry_t)))
+/* Size of the level 2 page directory units */
 #define	NPDEPG			(NBPG/(sizeof(pd_entry_t)))
+/* Size of the level 3 page directory pointer table units */
+#define	NPDPEPG			(NBPG/(sizeof(pdp_entry_t)))
+/* Size of the level 4 page-map level-4 table units */
+#define	NPML4EPG		(NBPG/(sizeof(pml4_entry_t)))
 
 #define	PD_SHIFT		(SEGSHIFT-1)		/* LOG2(NBPDR) (21) */
 #define NBPDR			(1 << PD_SHIFT)		/* bytes/page dir */

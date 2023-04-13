@@ -48,7 +48,7 @@ advvm_storage_create(pool, name, start, end, storage, storagesize, flags)
 	size_t 	storagesize;
 	int flags;
 {
-	advvm_malloc((advvm_storage_t *) pool, sizeof(advvm_storage_t *));
+	advvm_malloc((advvm_storage_t *) pool, sizeof(advvm_storage_t *), M_WAITOK);
 	pool->ads_start = start;
 	pool->ads_end = end;
 	pool->ads_flags = flags;
@@ -145,20 +145,22 @@ advvm_extent_check(pool)
 
 /* a generic malloc for advvm with kern_malloc */
 void
-advvm_malloc(addr, size)
+advvm_malloc(addr, size, flags)
 	void 	*addr;
 	u_long 	size;
+	int 	flags;
 {
-	addr = (void *)malloc(addr, size, M_ADVVM, M_WAITOK);
+	addr = (void *)malloc(addr, size, M_ADVVM, flags);
 }
 
 void
-advvm_calloc(num, addr, size)
+advvm_calloc(num, addr, size, flags)
 	int 	num;
 	void 	*addr;
 	u_long 	size;
+	int 	flags;
 {
-	addr = (void *)calloc(num, addr, size, M_ADVVM, M_WAITOK);
+	addr = (void *)calloc(num, addr, size, M_ADVVM, flags);
 }
 
 void

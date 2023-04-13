@@ -46,6 +46,8 @@
 #include <sys/param.h>
 #include <sys/null.h>
 
+#include <devel/advvm/advvm_extent.h>
+#include <devel/advvm/advvm_var.h>
 #include <devel/advvm/advvm_domain.h>
 #include <devel/advvm/advvm_vdisk.h>
 
@@ -86,7 +88,7 @@ advvm_vdisk_set(advdsk, vindex, vsize, vsector, vcluster, vnumcluster)
 	advdsk->avd_vdcluster = vcluster;
 	advdsk->avd_numcluster = vnumcluster;
 
-	advvm_malloc((advvm_vdfree_t *)advfree, sizeof(advvm_vdfree_t *));
+	advvm_malloc((advvm_vdfree_t *)advfree, sizeof(advvm_vdfree_t *), M_WAITOK);
 	/* TODO: Calculate free space before adding to vdfree */
 	advvm_vdfree_add(advdsk, advfree, vsector, vcluster, vnumcluster);
 }
@@ -98,7 +100,7 @@ advvm_vdisk_insert(advdsk, adom)
 {
 
 	if(advdsk == NULL) {
-		advvm_malloc((advvm_vdisk_t *)advdsk, sizeof(advvm_vdisk_t *));
+		advvm_malloc((advvm_vdisk_t *)advdsk, sizeof(advvm_vdisk_t *), M_WAITOK);
 	}
 	advvm_vdisk_set_domain(advdsk, adom);
 }

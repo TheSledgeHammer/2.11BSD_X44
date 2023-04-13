@@ -114,7 +114,7 @@ advvm_set_header(magic, label, block)
 {
 	struct advvm_header *header;
 	if (header == NULL) {
-		advvm_malloc((struct advvm_header *) header, sizeof(struct advvm_header *));
+		advvm_malloc((struct advvm_header *) header, sizeof(struct advvm_header *), M_WAITOK);
 	}
 	header->ahd_magic = magic;
 	header->ahd_label = label;
@@ -147,9 +147,9 @@ advvm_attach(struct device *parent, struct device *self, void *aux)
 	self->dv_xname = adv->ada_name;
 
 	/* allocate domains, volumes & filesets */
-	advvm_malloc((advvm_domain_t *) sc->sc_domain, sizeof(advvm_domain_t *));
-	advvm_malloc((advvm_volume_t *) sc->sc_volume, sizeof(advvm_volume_t *));
-	advvm_malloc((advvm_fileset_t *) sc->sc_fileset, sizeof(advvm_fileset_t *));
+	advvm_malloc((advvm_domain_t *) sc->sc_domain, sizeof(advvm_domain_t *), M_WAITOK);
+	advvm_malloc((advvm_volume_t *) sc->sc_volume, sizeof(advvm_volume_t *), M_WAITOK);
+	advvm_malloc((advvm_fileset_t *) sc->sc_fileset, sizeof(advvm_fileset_t *), M_WAITOK);
 
 	/* initialize domains, volumes & filesets */
 	advvm_domain_init(sc->sc_domain);
