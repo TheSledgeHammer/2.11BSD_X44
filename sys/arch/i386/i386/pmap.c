@@ -759,6 +759,22 @@ pmap_init_pat(void)
 	lcr4(cr4);
 }
 
+static void
+pmap_pj_page_init(void)
+{
+	int i;
+
+	pj_page = (void *)kmem_alloc(kernel_map, PAGE_SIZE);
+	if (pj_page == NULL) {
+		panic("pmap_init: pj_page");
+	}
+	for (i = 0; i < (PAGE_SIZE / sizeof (union pmap_tlb_shootdown_job_al) - 1); i++) {
+		pj_page[i].pja_job.pj_nextfree = &pj_page[i + 1].pja_job;
+	}
+	pj_page[i].pja_job.pj_nextfree = NULL;
+	pj_free = &pj_page[0];
+}
+
 /*
  *	Initialize the pmap module.
  *	Called by vm_init, to initialize any structures that the pmap
@@ -799,15 +815,7 @@ pmap_init(phys_start, phys_end)
 		printf("pmap_init: %x bytes (%x pgs): tbl %x attr %x\n", s, npg, pv_table, pmap_attributes);
 #endif
 
-	pj_page = (void *)kmem_alloc(kernel_map, PAGE_SIZE);
-	if (pj_page == NULL) {
-		panic("pmap_init: pj_page");
-	}
-	for (i = 0; i < (PAGE_SIZE / sizeof (union pmap_tlb_shootdown_job_al) - 1); i++) {
-		pj_page[i].pja_job.pj_nextfree = &pj_page[i + 1].pja_job;
-	}
-	pj_page[i].pja_job.pj_nextfree = NULL;
-	pj_free = &pj_page[0];
+	pmap_pj_page_init();
 
 	/*
 	 * Now it is safe to enable pv_table recording.

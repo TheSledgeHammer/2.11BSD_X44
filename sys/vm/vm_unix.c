@@ -376,3 +376,65 @@ ogrow(sp)
 	bzero(u.u_procp->p_saddr, si);
 	return (1);
 }
+
+int
+ngrow(p, sp)
+	struct proc *p;
+	vm_offset_t sp;
+{
+	register struct vmspace *vm;
+	register int si;
+
+	vm = p->p_vmspace;
+
+	/*
+	 * For user defined stacks (from sendsig).
+	 */
+	if (sp < (vm_offset_t)vm->vm_maxsaddr || sp >= -ctob(u.u_ssize)) {
+		return (0);
+	}
+
+    /*
+	 * For common case of already allocated (from trap).
+	 */
+	if (sp >= USRSTACK - ctob(vm->vm_ssize)) {
+		return (1);
+	}
+
+    si = (-sp) / ctob(1) - u.u_ssize + SINCR;
+
+    /*
+	 * Round the increment back to a segment boundary if necessary.
+	 */
+	if (ctos(si + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
+		si = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
+	}
+
+	/*
+	 * Really need to check vs limit and increment stack size if ok.
+	 */
+    if (si == clrnd(btoc(USRSTACK-sp) - vm->vm_ssize)) {
+        if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
+            return (0);
+        }
+    } else {
+        if (si <= 0) {
+            return (0);
+        }
+    }
+
+    if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
+		return (0);
+	}
+
+    /*
+	 *  expand will put the stack in the right place;
+	 *  no copy required here.
+	 */
+	vm_expand(p, u.u_ssize + si, PSEG_STACK);
+
+	vm->vm_ssize += si;
+    u.u_ssize = vm->vm_ssize;
+    bzero(p->p_saddr, si);
+	return (1);
+}
