@@ -96,6 +96,10 @@
 #define	PD_SHIFT		(SEGSHIFT-1)		/* LOG2(NBPDR) (21) */
 #define NBPDR			(1 << PD_SHIFT)		/* bytes/page dir */
 
+#define	KERNBASE		0xFFFFFFFF80000000	/* start of kernel virtual (i.e. SYSTEM) */
+#define KERNLOAD		KERNBASE			/* Kernel physical load address */
+#define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
+
 #define amd64_round_pdr(x)		((((unsigned long)(x)) + NBPDR - 1) & ~(NBPDR - 1))
 #define amd64_trunc_pdr(x)		((unsigned long)(x) & ~(NBPDR - 1))
 #define amd64_btod(x)			((unsigned long)(x) >> (PD_SHIFT))

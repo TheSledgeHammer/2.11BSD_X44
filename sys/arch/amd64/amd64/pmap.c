@@ -67,7 +67,7 @@ static int pmap_nx_enable = -1;		/* -1 = auto */
  * Get PDEs and PTEs for user/kernel address space
  */
 #define pdlvlshift(lvl)         ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT)
-#define	pmap_pde(m, v, lvl)		(&((m)->pm_pdir[((vm_offset_t)(v) >> pdlvlshift(lvl))]))
+#define	pmap_pde(m, v, lvl)		(&((m)->pm_pdir[((vm_offset_t)(v) >> ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT))]))
 
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
@@ -148,6 +148,8 @@ create_pagetables(firstaddr)
 	vm_offset_t *firstaddr;
 {
 	pd_entry_t *pd_p;
+	pdp_entry_t *pdp_p;
+	pml4_entry_t *p4_p;
 	long nkpt, nkpd, nkpdpe, pt_pages;
 	vm_offset_t pax;
 	int i, j;
@@ -169,10 +171,26 @@ create_pagetables(firstaddr)
 	for (i = 0; i < nkpt; i++) {
 		pd_p[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
 	}
-	pd_p[0] = PG_V | PG_PS | pg_g | PG_M | PG_A | PG_RW | pg_nx;
 
+	pd_p[0] = PG_V | PG_PS | pg_g | PG_M | PG_A | PG_RW | pg_nx;
 	for (i = 1, pax = kernphys; pax < KERNend; i++, pax += NBPDR) {
 		pd_p[i] = pax | PG_V | PG_PS | pg_g | PG_M | PG_A | bootaddr_rwx(pax);
+	}
+
+	pdp_p = (pdp_entry_t *)(KPDPphys + ptoa(KPML4I - KPML4BASE));
+	for (i = 0; i < nkpdpe; i++) {
+		pdp_p[i + KPDPI] = (KPDphys + ptoa(i)) | PG_RW | PG_V;
+	}
+
+	/* And recursively map PML4 to itself in order to get PTmap */
+	p4_p = (pml4_entry_t *)KPML4phys;
+	p4_p[PML4PML4I] = KPML4phys;
+	p4_p[PML4PML4I] |= PG_RW | PG_V | pg_nx;
+
+	/* Connect the KVA slots up to the PML4 */
+	for (i = 0; i < NKPML4E; i++) {
+		p4_p[KPML4BASE + i] = KPDPphys + ptoa(i);
+		p4_p[KPML4BASE + i] |= PG_RW | PG_V;
 	}
 }
 
@@ -271,7 +289,30 @@ void
 pmap_init(phys_start, phys_end)
 	vm_offset_t	phys_start, phys_end;
 {
+	vm_offset_t addr;
+	vm_size_t npg, s;
+	int i;
 
+	addr = (vm_offset_t) KERNBASE + KPTphys;
+	vm_object_reference(kernel_object);
+	vm_map_find(kernel_map, kernel_object, addr, &addr, 2 * NBPG, FALSE);
+
+	npg = atop(phys_end - phys_start);
+	s = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
+	s = round_page(s);
+
+	pv_table = (pv_entry_t)kmem_alloc(kernel_map, s);
+	addr = (vm_offset_t) pv_table;
+	addr += sizeof(struct pv_entry) * npg;
+	pmap_attributes = (char *)addr;
+
+	/*
+	 * Now it is safe to enable pv_table recording.
+	 */
+	vm_first_phys = phys_start;
+	vm_last_phys = phys_end;
+
+	pmap_initialized = TRUE;
 }
 
 vm_offset_t
@@ -283,6 +324,14 @@ pmap_map(virt, start, end, prot)
 {
 	vm_offset_t va, sva;
 
+	va = sva = virt;
+	while (start < end) {
+		pmap_enter(kernel_pmap, va, start, prot, FALSE);
+		va += PAGE_SIZE;
+		start += PAGE_SIZE;
+	}
+	pmap_invalidate_range(kernel_pmap, sva, va);
+	virt = va;
 	return (sva);
 }
 
@@ -303,18 +352,57 @@ pmap_create(size)
 	return (pmap);
 }
 
+#define NKPML4E		4
+#define	PML4PML4I	(NPML4EPG / 2)		/* Index of recursive pml4 mapping */
+#define	KPML4BASE	(NPML4EPG-NKPML4E) 	/* KVM at highest addresses */
+
+void
+pmap_pinit_pml4(pml4)
+	pml4_entry_t *pml4;
+{
+	int i;
+
+	for (i = 0; i < PTP_LEVELS; i++) {
+		pml4[L4_SLOT_KERNBASE + i] =  (KPDPphys + ptoa(i)) | PG_RW | PG_V;
+	}
+
+	/* install self-referential address mapping entry(s) */
+	pml4[L4_SLOT_KERN] = VM_PAGE_TO_PHYS(pml4pg) | PG_V | PG_RW | PG_A | PG_M;
+}
+
 void
 pmap_pinit(pmap)
 	register pmap_t pmap;
 {
+	pmap_pinit_pml4(pmap->pm_pml4);
 
+	pmap->pm_active = 0;
+	pmap->pm_count = 1;
+	pmap_lock_init(pmap, "pmap_lock");
+	bzero(&pmap->pm_stats, sizeof(pmap->pm_stats));
+
+	pmap_lock(pmap);
+	pmap->pm_pdirpa = pmap->pm_pdir[PDIR_SLOT_PTE] & PG_FRAME;
+	LIST_INSERT_HEAD(&pmap_header, pmap, pm_list);
+	pmap_unlock(pmap);
 }
 
 void
 pmap_destroy(pmap)
 	register pmap_t pmap;
 {
+	if (pmap == NULL) {
+		return;
+	}
 
+	pmap_lock(pmap);
+	LIST_REMOVE(pmap, pm_list);
+	count = --pmap->pm_count;
+	pmap_unlock(pmap);
+	if (count == 0) {
+		pmap_release(pmap);
+		free((caddr_t)pmap, M_VMPMAP);
+	}
 }
 
 void
@@ -328,7 +416,11 @@ void
 pmap_reference(pmap)
 	pmap_t	pmap;
 {
-
+	if (pmap != NULL) {
+		pmap_lock(pmap);
+		pmap->pm_count++;
+		pmap_unlock(pmap);
+	}
 }
 
 void
@@ -336,7 +428,16 @@ pmap_remove(pmap, sva, eva)
 	register pmap_t pmap;
 	vm_offset_t sva, eva;
 {
+	register vm_offset_t pa, va;
+	register pt_entry_t *pte;
 
+	if (pmap == NULL) {
+		return;
+	}
+
+	for (va = sva; va < eva; va += PAGE_SIZE) {
+
+	}
 }
 
 void
@@ -378,26 +479,6 @@ pmap_pte(pmap, va)
 	register pmap_t pmap;
 	vm_offset_t va;
 {
-	pd_entry_t newpf;
-	pd_entry_t *pde, *apde;
-
-	pde = pmap_ptetov(pmap, va);
-	apde = pmap_aptetov(pmap, va);
-	if (pde != 0) {
-		if (pmap->pm_pdir == pde || pmap == kernel_pmap) {
-			return (pde);
-		}
-	}
-	if (apde != 0) {
-		if (pmap->pm_pdir != apde) {
-			tlbflush();
-		}
-		newpf = *pde & PG_FRAME;
-		if (newpf) {
-			//pmap_invalidate_page(kernel_pmap, PADDR2);
-		}
-		return (apde);
-	}
 	return (0);
 }
 
@@ -409,9 +490,10 @@ pmap_extract(pmap, va)
 	register vm_offset_t pa;
 
 	pa = 0;
-	if (pmap && pmap_pde_v(pmap_pte(pmap, va))) {
-		pa = *(int *)pmap_pte(pmap, va);
+	if (pmap && pmap_pde_v(pmap_pdpt1(pmap, va))) {
+		pa = *(int *) pmap_pdpt1(pmap, va);
 	}
+
 	if (pa) {
 		pa = (pa & PG_FRAME) | (va & ~PG_FRAME);
 	}

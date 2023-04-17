@@ -73,6 +73,7 @@ pd_entry_t 	*pdes[] = PDES_INITIALIZER;
 pd_entry_t 	*apdes[] = APDES_INITIALIZER;
 
 
+/* PL_I does the same thing as pmap_index */
 static vm_offset_t
 pmap_index(va, lvl)
 	vm_offset_t va;
@@ -80,12 +81,70 @@ pmap_index(va, lvl)
 {
 	vm_offset_t index;
 
-	//KASSERT(lvl >= 1);
-	if (lvl == 0) {
-		lvl = 1;
-	}
-	index = (va >> pdlvlshift(lvl) & ((1ULL << PTP_SHIFT) - 1));
+	KASSERT(lvl >= 1);
+
+	index = (va >> (((lvl * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT) & ((1ULL << PTP_SHIFT) - 1));
 	return (index);
+}
+
+vm_offset_t
+pmap_pte_index(vm_offset_t va)
+{
+	return (pmap_index(va, 1));
+}
+
+vm_offset_t
+pmap_pt_index(vm_offset_t va)
+{
+	return (pmap_index(va, 2));
+}
+
+vm_offset_t
+pmap_pd_index(vm_offset_t va)
+{
+	return (pmap_index(va, 3));
+}
+
+vm_offset_t
+pmap_pdp_index(vm_offset_t va)
+{
+	return (pmap_index(va, 4));
+}
+
+static pd_entry_t *
+pmap_pdei(va, lvl)
+	vm_offset_t va;
+	int lvl;
+{
+    pd_entry_t *pdei;
+	unsigned long index;
+
+	KASSERT(lvl > 1);
+
+	index = PL_I(va, lvl);
+    pdei = &pdes[lvl - 2][index];
+    if (pdei && pmap_pde_v(pdei)) {
+        return (pdei);
+    }
+	return (NULL);
+}
+
+static pd_entry_t *
+pmap_apdei(va, lvl)
+	vm_offset_t va;
+	int lvl;
+{
+    pd_entry_t *apdei;
+	unsigned long index;
+
+	KASSERT(lvl > 1);
+
+	index = PL_I(va, lvl);
+    apdei = &apdes[lvl - 2][index];
+    if (apdei && pmap_pde_v(apdei)) {
+        return (apdei);
+    }
+	return (NULL);
 }
 
 pd_entry_t *
@@ -97,11 +156,37 @@ pmap_find_pde(vm_offset_t va)
 
     for (i = PTP_LEVELS; i > 1; i--) {
         index = PL_I(va, i);
-        pde = &pdes[i - 2][index];
+        pde = pde_search(va, i);
         /* check if valid */
         if (pde && pmap_pde_v(pde)) {
         	return (pde);
         }
+    }
+    return (NULL);
+}
+
+pmap_pdp(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pd_entry_t *pde, *apde;
+    int i;
+
+    for (i = PTP_LEVELS; i > 1; i--) {
+    	 if (pmap && pmap_pde_v(pmap_pde(pmap, va, i))) {
+    		 pde = pde_search(va, i);
+    		 apde = apde_search(va, i);
+    		 if (pde <= PDP_PDE && apde <= APDP_PDE) {
+    			 if (pmap->pm_pdir == pde) {
+    				 return (pde);
+    			 } else {
+    				 if (pmap->pm_pdir != apde) {
+    					 tlbflush();
+    				 }
+    				 return (apde);
+    			 }
+    		 }
+    	 }
     }
     return (NULL);
 }
@@ -115,7 +200,7 @@ pmap_find_apde(vm_offset_t va)
 
     for (i = PTP_LEVELS; i > 1; i--) {
         index = PL_I(va, i);
-        apde = &apdes[i - 2][index];
+        apde = apde_search(va, i);
         /* check if valid */
         if (apde && pmap_pde_v(apde)) {
         	return (apde);
@@ -138,6 +223,7 @@ pmap_pte(pmap, va)
 			return (pde);
 		}
 	}
+
 	apde = pmap_find_apde(va);
 	if (apde != NULL) {
 		if (pmap->pm_pdir != apde) {
@@ -152,38 +238,44 @@ pmap_pte(pmap, va)
 	return (0);
 }
 
-vm_offset_t
-pmap_pte_index(vm_offset_t va)
-{
-	return (pmap_index(va, 1));
-}
+struct pmap {
+	pt_entry_t 		*pm_ptab;
+	pd_entry_t 		*pm_pdir;
+	pdp_entry_t 	*pm_pdp;
+	pml4_entry_t 	*pm_pml4;
+};
 
-vm_offset_t
-pmap_pde_index(vm_offset_t va)
+pml4_entry_t *
+pmap_pdp(pmap, va)
+	pmap_t pmap;
+	vm_offset_t va;
 {
-	return (pmap_index(va, 2));
-}
-
-vm_offset_t
-pmap_pdp_index(vm_offset_t va)
-{
-	return (pmap_index(va, 3));
-}
-
-vm_offset_t
-pmap_pml4_index(vm_offset_t va)
-{
-	return (pmap_index(va, 4));
+	pml4_entry_t *pml4;
+	pml4 = pde_search(va, 4);
+	return (&pmap->pm_pml4[pmap_pdp_index(va)]);
 }
 
 pdp_entry_t *
-pmap_pdpe(pmap, va)
+pmap_pdp_to_pd(pdp_pte, va)
+	pml4_entry_t pdp_pte;
+	vm_offset_t va;
 {
-	pdp_entry_t *pdpe;
+	pdp_entry_t *pd;
 
-	pdpe = pmap_pde(pmap, va, 3);
-	if (pdpe && pmap_pde_v(pdpe)) {
-		return (&pdpe[pmap_pdp_index(va)]);
+	pd = (pdp_entry_t *)PHYS_TO_DMAP(pdp_pte & PG_FRAME);
+	return (&pd[pmap_pd_index(va)]);
+}
+
+pdp_entry_t *
+pmap_pd(pmap, va)
+	pmap_t pmap;
+	vm_offset_t va;
+{
+	pml4_entry_t *pdp;
+
+	pdp = pmap_pdp(pmap, va);
+	if (pdp && pmap_pde_v(pdp)) {
+		return (pmap_pdp_to_pd(pdp, va));
 	}
 	return (NULL);
 }

@@ -92,8 +92,8 @@
 
 typedef uint64_t 		pt_entry_t;			/* PTE (L1) */
 typedef uint64_t 		pd_entry_t;			/* PDE (L2) */
-typedef uint64_t 		pdp_entry_t;			/* PDP (L3) */
-typedef uint64_t 		pml4_entry_t;			/* L4 */
+typedef uint64_t 		pdp_entry_t;		/* PDP (L3) */
+typedef uint64_t 		pml4_entry_t;		/* L4 */
 
 /*
  * Mask to get rid of the sign-extended part of addresses.
@@ -209,7 +209,7 @@ extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
 extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */
 
-extern int 			nkpt;				/* Initial number of kernel page tables */
+extern int 				nkpt;				/* Initial number of kernel page tables */
 extern uint64_t 		ptp_masks[];
 extern uint64_t			ptp_shifts[];
 extern uint64_t			nbpds[];

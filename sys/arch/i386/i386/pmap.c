@@ -313,6 +313,7 @@ pmap_remap_lower(enable)
 	lcr3(rcr3()); /* invalidate TLB */
 }
 
+#ifdef notyet
 static void
 pmap_bootinfo(boot)
 	struct bootinfo *boot;
@@ -324,6 +325,7 @@ pmap_bootinfo(boot)
 		physfree = boot->bi_kernend;
 	}
 }
+#endif
 
 void
 pmap_cold(void)
