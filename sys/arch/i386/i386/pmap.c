@@ -543,8 +543,9 @@ pmap_bootstrap(firstaddr)
 	/* XXX: allow for msgbuf */
 	avail_end -= i386_round_page(sizeof(struct msgbuf));
 
-	for (i = 0; i < NKPT; i++)
+	for (i = 0; i < NKPT; i++) {
 		KPTD[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
+	}
 
 	/*
 	 * PADDR1 and PADDR2 are used by pmap_pte_quick() and pmap_pte(),
@@ -924,7 +925,7 @@ pmap_pinit(pmap)
 	 * No need to allocate page table space yet but we do need a
 	 * valid page directory table.
 	 */
-	pmap->pm_pdir = (pd_entry_t *) kmem_alloc(kernel_map, NBPTD);
+	pmap->pm_pdir = (pd_entry_t *)kmem_alloc(kernel_map, NBPTD);
 #ifdef PMAP_PAE_COMP
 	pmap->pm_pdpt = (pdpt_entry_t *) kmem_alloc(kernel_map, (vm_offset_t)(NPGPTD * sizeof(pdpt_entry_t)));
 	KASSERT(((vm_offset_t)pmap->pm_pdpt & ((NPGPTD * sizeof(pdpt_entry_t)) - 1)) == 0/*, ("pmap_pinit: pdpt misaligned")*/);
@@ -1971,7 +1972,7 @@ pmap_is_referenced(pa)
 		return(rv);
 	}
 #endif
-	return(pmap_testbit(pa, PG_U));
+	return( pmap_testbit(pa, PG_U));
 }
 
 /*

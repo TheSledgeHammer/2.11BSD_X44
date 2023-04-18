@@ -141,7 +141,12 @@ allocpages(firstaddr, n)
 	return (ret);
 }
 
-#define	NKPDPE(ptpgs)		howmany(ptpgs, L4_SLOT_KERNBASE+1)
+#define NKPML4E				PTP_LEVELS
+#define	PML4PML4I			(NPML4EPG / 2)		/* Index of recursive pml4 mapping */
+#define	KPML4BASE			(NPML4EPG-NKPML4E) 	/* KVM at highest addresses */
+#define	NKPDPE(ptpgs)		howmany(ptpgs, L4_SLOT_KERNBASE+1) /* 512 slots */
+#define	KPML4I				(NPML4EPG-1)
+#define	KPDPI				(NPDPEPG-2)
 
 static void
 create_pagetables(firstaddr)
@@ -156,7 +161,7 @@ create_pagetables(firstaddr)
 
 	/* Allocate pages. */
 	KPML4phys = allocpages(firstaddr, 1);			/* recursive PML4 map */
-	KPDPphys = allocpages(firstaddr, PTP_LEVELS);	/* kernel PDP pages */
+	KPDPphys = allocpages(firstaddr, NKPML4E);		/* kernel PDP pages */
 
 	pt_pages = howmany(firstaddr - kernphys, NBPDR) + 1;
 	pt_pages += NKPDPE(pt_pages);
@@ -351,10 +356,35 @@ pmap_create(size)
 	pmap_pinit(pmap);
 	return (pmap);
 }
+void
+pmap_pinit_pdir(pdir, pdirpa)
+	pd_entry_t *pdir;
+	vm_offset_t pdirpa;
+{
+	int npde, i;
 
-#define NKPML4E		4
-#define	PML4PML4I	(NPML4EPG / 2)		/* Index of recursive pml4 mapping */
-#define	KPML4BASE	(NPML4EPG-NKPML4E) 	/* KVM at highest addresses */
+	pdir = (pd_entry_t *)kmem_alloc(kernel_map, PDIR_SLOT_PTE * sizeof(pd_entry_t));
+	pdirpa = pdir[PDIR_SLOT_PTE] & PG_FRAME;
+
+	/* zero init area */
+	bzero(pdir, PDIR_SLOT_PTE * sizeof(pd_entry_t));
+
+	/* put in recursive PDE to map the PTEs */
+	pdir[PDIR_SLOT_PTE] = pdirpa | PG_V | PG_KW;
+
+	npde = NKPTP[PTP_LEVELS - 1];
+
+	/* put in kernel VM PDEs */
+	bcopy(&PDP_BASE[PDIR_SLOT_KERN], &pdir[PDIR_SLOT_KERN], npde * sizeof(pd_entry_t));
+
+	/* install self-referential address mapping entry */
+	for (i = 0; i < PDIR_SLOT_PTE - 1; i++) {
+		pdir[i] = pmap_extract(kernel_pmap, (vm_offset_t)pdir[i]);
+	}
+
+	/* zero the rest */
+	bzero(&pdir[PDIR_SLOT_KERN + npde], (NPDEPG - (PDIR_SLOT_KERN + npde)) * sizeof(pd_entry_t));
+}
 
 void
 pmap_pinit_pml4(pml4)
@@ -374,6 +404,7 @@ void
 pmap_pinit(pmap)
 	register pmap_t pmap;
 {
+	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
 	pmap_pinit_pml4(pmap->pm_pml4);
 
 	pmap->pm_active = 0;
@@ -382,7 +413,6 @@ pmap_pinit(pmap)
 	bzero(&pmap->pm_stats, sizeof(pmap->pm_stats));
 
 	pmap_lock(pmap);
-	pmap->pm_pdirpa = pmap->pm_pdir[PDIR_SLOT_PTE] & PG_FRAME;
 	LIST_INSERT_HEAD(&pmap_header, pmap, pm_list);
 	pmap_unlock(pmap);
 }
@@ -490,13 +520,7 @@ pmap_extract(pmap, va)
 	register vm_offset_t pa;
 
 	pa = 0;
-	if (pmap && pmap_pde_v(pmap_pdpt1(pmap, va))) {
-		pa = *(int *) pmap_pdpt1(pmap, va);
-	}
 
-	if (pa) {
-		pa = (pa & PG_FRAME) | (va & ~PG_FRAME);
-	}
 	return (pa);
 }
 
@@ -617,4 +641,21 @@ amd64_protection_init(void)
 			break;
 		}
 	}
+}
+
+bool_t
+pmap_testbit(pa, bit)
+	register vm_offset_t pa;
+	int bit;
+{
+
+}
+
+void
+pmap_changebit(pa, bit, setem)
+	register vm_offset_t pa;
+	int bit;
+	bool_t setem;
+{
+
 }

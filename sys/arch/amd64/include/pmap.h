@@ -90,10 +90,10 @@
 #define L2_FRAME		(L3_FRAME|L2_MASK)
 #define L1_FRAME		(L2_FRAME|L1_MASK)
 
-typedef uint64_t 		pt_entry_t;			/* PTE (L1) */
-typedef uint64_t 		pd_entry_t;			/* PDE (L2) */
-typedef uint64_t 		pdp_entry_t;		/* PDP (L3) */
-typedef uint64_t 		pml4_entry_t;		/* L4 */
+typedef uint64_t 		pt_entry_t;			/* PTE  (L1) */
+typedef uint64_t 		pd_entry_t;			/* PDE  (L2) */
+typedef uint64_t 		pdp_entry_t;		/* PDP  (L3) */
+typedef uint64_t 		pml4_entry_t;		/* PML4 (L4) */
 
 /*
  * Mask to get rid of the sign-extended part of addresses.
@@ -190,10 +190,10 @@ struct pv_entry {
 };
 typedef struct pv_entry		*pv_entry_t;
 
-#define	PT_ENTRY_NULL		((pt_entry_t) 0)
-#define	PD_ENTRY_NULL		((pd_entry_t) 0)
-#define	PDP_ENTRY_NULL		((pdp_entry_t) 0)
-#define	PML4_ENTRY_NULL		((pml4_entry_t) 0)
+#define	PT_ENTRY_NULL		((pt_entry_t)0)
+#define	PD_ENTRY_NULL		((pd_entry_t)0)
+#define	PDP_ENTRY_NULL		((pdp_entry_t)0)
+#define	PML4_ENTRY_NULL		((pml4_entry_t)0)
 
 #define PTE_BASE		L1_BASE
 #define PDP_PDE			(L4_BASE + PDIR_SLOT_PTE)

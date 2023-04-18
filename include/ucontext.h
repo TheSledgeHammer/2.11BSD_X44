@@ -1,11 +1,11 @@
-/*	$NetBSD: ucontext.h,v 1.9 2006/08/20 08:02:21 skrll Exp $	*/
+/*	$NetBSD: ucontext.h,v 1.3 2003/01/21 17:45:04 kleink Exp $	*/
 
 /*-
- * Copyright (c) 1999, 2003 The NetBSD Foundation, Inc.
+ * Copyright (c) 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Klaus Klein, and by Jason R. Thorpe.
+ * by Klaus Klein.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,45 +36,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_UCONTEXT_H_
-#define _SYS_UCONTEXT_H_
+#ifndef _UCONTEXT_H_
+#define _UCONTEXT_H_
 
-#include <sys/signal.h>
-#include <machine/mcontext.h>
+#include <sys/cdefs.h>
+#include <sys/ucontext.h>
 
-struct __ucontext {
-	unsigned int			uc_flags;		/* properties */
-	struct __ucontext		*uc_link;		/* context to resume */
-	sigset_t				uc_sigmask;		/* signals blocked in this context */
-	stack_t					uc_stack;		/* the stack used by this context */
-	mcontext_t				uc_mcontext;	/* machine state */
-#if defined(_UC_MACHINE_PAD)
-	long					__uc_pad[_UC_MACHINE_PAD];
-#endif
-};
-typedef struct __ucontext	ucontext_t;
+__BEGIN_DECLS
+int		getcontext(ucontext_t *);
+int		setcontext(const ucontext_t *);
+void	makecontext(ucontext_t *, void (*)(), int, ...);
+int		swapcontext(ucontext_t * __restrict, const ucontext_t * __restrict);
+__END_DECLS
 
-#ifndef _UC_UCONTEXT_ALIGN
-#define _UC_UCONTEXT_ALIGN (~0)
-#endif
-
-/* uc_flags */
-#define _UC_SIGMASK			0x01			/* valid uc_sigmask */
-#define _UC_STACK			0x02			/* valid uc_stack */
-#define _UC_CPU				0x04			/* valid GPR context in uc_mcontext */
-#define _UC_FPU				0x08			/* valid FPU context in uc_mcontext */
-
-#ifdef _KERNEL
-struct proc;
-
-void	proc_getucontext(struct proc *, ucontext_t *);
-int		proc_setucontext(struct proc *, const ucontext_t *);
-void	cpu_getmcontext(struct proc *, mcontext_t *, unsigned int *);
-int		cpu_setmcontext(struct proc *, const mcontext_t *, unsigned int);
-
-#define getucontext(p, uc)	proc_getucontext(p, uc)
-#define setucontext(p, uc)	proc_setucontext(p, uc)
-
-//void	getucontext_sa(struct proc *, ucontext_t *);
-#endif /* _KERNEL */
-#endif /* !_SYS_UCONTEXT_H_ */
+#endif /* !_UCONTEXT_H_ */

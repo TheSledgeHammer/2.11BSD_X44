@@ -152,7 +152,6 @@ typedef uint64_t 			pt_entry_t;
 #define I386_KPDES			8 										/* KPT page directory size */
 #define I386_UPDES			(NBPDR/sizeof(pd_entry_t) - I386_KPDES) /* UPT page directory size */
 
-
 #define	UPTDI				0x3F6									/* ptd entry for u./kernel&user stack */
 #define	PTDPTDI				0x3F7									/* ptd entry that points to ptd! */
 #define	APTDPTDI			0x3FE									/* ptd entry that points to aptd! */
@@ -261,11 +260,8 @@ extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
 extern pv_entry_t			pv_table;		/* array of entries, one per page */
 
-#define	pmap_resident_count(pmap)	\
-	((pmap)->pm_stats.resident_count)
-#define	pmap_wired_count(pmap)		\
-	((pmap)->pm_stats.wired_count)
-
+#define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 #define pmap_lock_init(pmap, name) 	(simple_lock_init(&(pmap)->pm_lock, (name)))
 #define pmap_lock(pmap)				(simple_lock(&(pmap)->pm_lock))
 #define pmap_unlock(pmap)			(simple_unlock(&(pmap)->pm_lock))
