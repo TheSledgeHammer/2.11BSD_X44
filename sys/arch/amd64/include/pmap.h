@@ -130,6 +130,24 @@ typedef uint64_t 		pml4_entry_t;		/* PML4 (L4) */
 #define AL3_BASE 		((pdp_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
 #define AL4_BASE 		((pml4_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
 
+#define NKL4_MAX_ENTRIES	(unsigned long)1
+#define NKL3_MAX_ENTRIES	(unsigned long)(NKL4_MAX_ENTRIES * 512)
+#define NKL2_MAX_ENTRIES	(unsigned long)(NKL3_MAX_ENTRIES * 512)
+#define NKL1_MAX_ENTRIES	(unsigned long)(NKL2_MAX_ENTRIES * 512)
+
+#define NKL4_KIMG_ENTRIES 	1
+#define NKL3_KIMG_ENTRIES 	1
+#define NKL2_KIMG_ENTRIES 	8
+
+/*
+ * Since kva space is below the kernel in its entirety, we start off
+ * with zero entries on each level.
+ */
+#define NKL4_START_ENTRIES	0
+#define NKL3_START_ENTRIES	0
+#define NKL2_START_ENTRIES	0
+#define NKL1_START_ENTRIES	0	/* XXX */
+
 /*
  * PL*_1: generate index into pde/pte arrays in virtual space
  */
@@ -145,13 +163,12 @@ typedef uint64_t 		pml4_entry_t;		/* PML4 (L4) */
 #define PDES_INITIALIZER	{ L2_BASE, L3_BASE, L4_BASE }
 #define APDES_INITIALIZER	{ AL2_BASE, AL3_BASE, AL4_BASE }
 
+#define NKPTP_INITIALIZER	{ NKL1_START_ENTRIES, NKL2_START_ENTRIES, NKL3_START_ENTRIES, NKL4_START_ENTRIES }
+#define NKPTPMAX_INITIALIZER	{ NKL1_MAX_ENTRIES, NKL2_MAX_ENTRIES, NKL3_MAX_ENTRIES, NKL4_MAX_ENTRIES }
+
 #define PTP_LEVELS		4
 #define PTP_SHIFT		9
 
-#define	vtopte(va)		(PTE_BASE + PL1_I(va))
-#define	kvtopte(va)		vtopte(va)
-
-#define	avtopte(va)		(APTE_BASE + PL1_I(va))
 
 #ifndef LOCORE
 #include <sys/queue.h>
@@ -162,19 +179,22 @@ typedef uint64_t 		pml4_entry_t;		/* PML4 (L4) */
 struct pmap_list;
 LIST_HEAD(pmap_list, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
-	LIST_ENTRY(pmap) 	pm_list;		/* List of all pmaps */
-	pd_entry_t 		*pm_pdir;		/* KVA of page directory */
-	pt_entry_t		*pm_ptab;		/* KVA of page table */
+	LIST_ENTRY(pmap)		pm_list;		/* List of all pmaps */
+	pd_entry_t 				*pm_pdir;		/* KVA of page directory */
+	pt_entry_t				*pm_ptab;		/* KVA of page table */
+	pml4_entry_t   			*pm_pml4;       /* KVA of page map level 4 (top level) */
 
-	bool_t			pm_pdchanged;		/* pdir changed */
-	short			pm_dref;		/* page directory ref count */
-	short			pm_count;		/* pmap reference count */
-	simple_lock_data_t	pm_lock;		/* lock on pmap */
+	vm_offset_t				pm_pdirpa;		/* PA of PD (read-only after create) */
+
+	bool_t					pm_pdchanged;	/* pdir changed */
+	short					pm_dref;		/* page directory ref count */
+	short					pm_count;		/* pmap reference count */
+	simple_lock_data_t		pm_lock;		/* lock on pmap */
 	struct pmap_statistics	pm_stats;		/* pmap statistics */
-	long			pm_ptpages;		/* more stats: PT pages */
-	int 			pm_flags;		/* see below */
-	int			pm_active;		/* active on cpus */
-	u_int32_t 		pm_cpus;		/* mask of CPUs using pmap */
+	long					pm_ptpages;		/* more stats: PT pages */
+	int 					pm_flags;		/* see below */
+	int						pm_active;		/* active on cpus */
+	u_int32_t 				pm_cpus;		/* mask of CPUs using pmap */
 };
 typedef struct pmap 		*pmap_t;
 
@@ -183,10 +203,10 @@ typedef struct pmap 		*pmap_t;
  * mappings of that page.  An entry is a pv_entry_t, the list is pv_table.
  */
 struct pv_entry {
-	struct pv_entry		*pv_next;		/* next pv_entry */
-	struct pmap		*pv_pmap;		/* pmap where mapping lies */
-	vm_offset_t		pv_va;			/* virtual address for mapping */
-	int			pv_flags;		/* flags */
+	struct pv_entry			*pv_next;		/* next pv_entry */
+	struct pmap				*pv_pmap;		/* pmap where mapping lies */
+	vm_offset_t				pv_va;			/* virtual address for mapping */
+	int						pv_flags;		/* flags */
 };
 typedef struct pv_entry		*pv_entry_t;
 
@@ -195,15 +215,17 @@ typedef struct pv_entry		*pv_entry_t;
 #define	PDP_ENTRY_NULL		((pdp_entry_t)0)
 #define	PML4_ENTRY_NULL		((pml4_entry_t)0)
 
-#define PTE_BASE		L1_BASE
-#define PDP_PDE			(L4_BASE + PDIR_SLOT_PTE)
-#define PDP_BASE		L4_BASE
+#define PTE_BASE			L1_BASE
+#define PDP_PDE				(L4_BASE + PDIR_SLOT_PTE)
+#define PDP_BASE			L4_BASE
 
-#define APTE_BASE		AL1_BASE
-#define APDP_PDE		(L4_BASE + PDIR_SLOT_APTE)
-#define APDP_BASE		AL4_BASE
+#define APTE_BASE			AL1_BASE
+#define APDP_PDE			(L4_BASE + PDIR_SLOT_APTE)
+#define APDP_BASE			AL4_BASE
 
 #ifdef _KERNEL
+
+extern u_long 			KERNend;
 
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
@@ -212,20 +234,29 @@ extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */
 extern int 				nkpt;				/* Initial number of kernel page tables */
 extern uint64_t 		ptp_masks[];
 extern uint64_t			ptp_shifts[];
-extern uint64_t			nbpds[];
-extern pd_entry_t 		*pdes[];
-extern pd_entry_t 		*apdes[];
+extern pd_entry_t 		*NPDE[];
+extern pd_entry_t 		*APDE[];
+extern long 			NBPD[], NKPTP[], NKPTPMAX[];
 
-#define	pmap_resident_count(pmap)	\
-	((pmap)->pm_stats.resident_count)
-#define	pmap_wired_count(pmap)		\
-	((pmap)->pm_stats.wired_count)
+#define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
 #define pmap_lock_init(pmap, name) 	(simple_lock_init(&(pmap)->pm_lock, (name)))
-#define pmap_lock(pmap)			(simple_lock(&(pmap)->pm_lock))
-#define pmap_unlock(pmap)		(simple_unlock(&(pmap)->pm_lock))
+#define pmap_lock(pmap)				(simple_lock(&(pmap)->pm_lock))
+#define pmap_unlock(pmap)			(simple_unlock(&(pmap)->pm_lock))
 
+/* proto types */
+void 	    pmap_init_pat(void);
+void	    amd64_protection_init(void);
 
+pt_entry_t 	*pmap_vtopte(vm_offset_t);
+pt_entry_t 	*pmap_kvtopte(vm_offset_t);
+pt_entry_t 	*pmap_avtopte(vm_offset_t);
 #endif	/* KERNEL */
+
+#define	vtopte(va)		pmap_vtopte(va)
+#define	kvtopte(va)		pmap_kvtopte(va)
+#define	avtopte(va)		pmap_avtopte(va)
+
 #endif 	/* !_LOCORE */
 #endif /* _AMD64_PMAP_H_ */

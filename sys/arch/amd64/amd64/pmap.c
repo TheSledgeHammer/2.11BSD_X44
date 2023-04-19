@@ -61,13 +61,23 @@
 #include <amd64/include/param.h>
 #include <amd64/include/pmap.h>
 
+uint64_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
+uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
+long 		NBPD[] = NBPD_INITIALIZER;
+pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
+pd_entry_t 	*APDE[] = APDES_INITIALIZER;
+long 		NKPTP[] = NKPTP_INITIALIZER;
+long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
+
 static int pmap_nx_enable = -1;		/* -1 = auto */
 
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
 #define pdlvlshift(lvl)         ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT)
-#define	pmap_pde(m, v, lvl)		(&((m)->pm_pdir[((vm_offset_t)(v) >> ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT))]))
+#define pmap_ptab(m, v)         (&((m)->pm_ptab[((vm_offset_t)(v) >> PGSHIFT)]))
+//#define	pmap_pde(m, v, lvl)		(&((m)->pm_pdir[((vm_offset_t)(v) >> ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT))]))
+#define pmap_pde(m, v, lvl)     (&((m)->pm_pdir[PL_I(v, lvl)]))
 
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
@@ -91,14 +101,14 @@ static u_int64_t KPDphys;					/* phys addr of kernel level 2 */
 static u_int64_t KPDPphys;					/* phys addr of kernel level 3 */
 u_int64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
 
-
-
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
 static struct pmap_list pmap_header;
 
-static pt_entry_t 	*pmap_ptetov(pmap_t, vm_offset_t);
-static pt_entry_t 	*pmap_aptetov(pmap_t, vm_offset_t);
+static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
+static pml4_entry_t *pmap_pml4(pmap_t, vm_offset_t);
+static pdp_entry_t 	*pmap_pdp(pmap_t, vm_offset_t);
+static pd_entry_t 	*pmap_ptp(pmap_t, vm_offset_t);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
 pt_entry_t *
@@ -126,6 +136,116 @@ pmap_avtopte(va)
 	KASSERT(va < (VA_SIGN_NEG(L4_SLOT_KERNBASE * NBPD_L4)));
 
 	return (APTE_BASE + PL1_I(va));
+}
+
+__inline static void
+pmap_apte_flush(pmap)
+	pmap_t pmap;
+{
+#ifdef SMP
+	struct pmap_tlb_shootdown_q *pq;
+	struct cpu_info *ci, *self;
+	CPU_INFO_ITERATOR cii;
+	int s;
+
+	self = curcpu();
+#endif
+
+	tlbflush();		/* flush TLB on current processor */
+
+#ifdef SMP
+	for (CPU_INFO_FOREACH(cii, ci)) {
+		if (ci == self) {
+			continue;
+		}
+
+		if (pmap == kernel_pmap || pmap->pm_active == ci->cpu_cpumask) {
+			pq = &pmap_tlb_shootdown_q[ci->cpu_cpuid];
+			s = splipi();
+
+#ifdef SMP
+			cpu_lock();
+#endif
+			pq->pq_flushu++;
+#ifdef SMP
+			cpu_unlock();
+#endif
+			splx(s);
+			i386_send_ipi(ci, I386_IPI_TLB);
+		}
+	}
+#endif
+}
+
+pt_entry_t *
+pmap_map_pte(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pd_entry_t *pde, *apde;
+	pd_entry_t opde, npde;
+
+	if (pmap && pmap_pde_v(pmap_pde(pmap, va, 1))) {
+		/* are we current address space or kernel? */
+		if ((pmap->pm_pdir >= PTE_BASE && pmap->pm_pdir < L2_BASE)) {
+			pde = pmap_vtopte(va);
+			return (pde);
+		} else {
+			/* otherwise, we are alternate address space */
+			if (pmap->pm_pdir >= APTE_BASE && pmap->pm_pdir < AL2_BASE) {
+				apde = pmap_avtopte(va);
+				tlbflush();
+			}
+			opde = *APDP_PDE & PG_FRAME;
+			if (!(opde & PG_V) || opde != pmap->pm_pdirpa) {
+				npde = (pd_entry_t)(pmap->pm_pdirpa | PG_RW | PG_V | PG_A | PG_M);
+				apde = npde;
+				if ((opde & PG_V)) {
+					pmap_apte_flush(pmap);
+				}
+			}
+			return (apde);
+		}
+	}
+	return (NULL);
+}
+
+pd_entry_t *
+pmap_map_pde(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pd_entry_t *pde, *apde;
+	pd_entry_t opde, npde;
+	unsigned long index;
+	int i;
+
+	for (i = PTP_LEVELS; i > 1; i--) {
+		index = PL_I(va, i);
+		if (pmap && pmap_pde_v(pmap_pde(pmap, va, i))) {
+			/* are we current address space or kernel? */
+			if (pmap->pm_pdir <= PDP_PDE && pmap->pm_pdir == &NPDE[i - 2][index]) {
+				pde = &NPDE[i - 2][index];
+				return (pde);
+			} else {
+				/* otherwise, we are alternate address space */
+				if (pmap->pm_pdir != APDP_PDE && pmap->pm_pdir == &APDE[i - 2][index]) {
+					apde = &APDE[i - 2][index];
+					tlbflush();
+				}
+				opde = *APDP_PDE & PG_FRAME;
+				if (!(opde & PG_V) || opde != pmap->pm_pdirpa) {
+					npde = (pd_entry_t)(pmap->pm_pdirpa | PG_RW | PG_V | PG_A | PG_M);
+					apde = npde;
+					if ((opde & PG_V)) {
+						pmap_apte_flush(pmap);
+					}
+				}
+				return (apde);
+			}
+		}
+	}
+	return (NULL);
 }
 
 static uint64_t
@@ -204,16 +324,40 @@ pmap_bootstrap(firstaddr)
 	vm_offset_t firstaddr;
 {
 	vm_offset_t va;
+	pt_entry_t *pte;
+	u_long res;
+	int i;
 	uint64_t cr4;
 
-	avail_start = *firstaddr;
 	res = atop(KERNend - (vm_offset_t)kernphys);
+	avail_start = *firstaddr;
+	virtual_avail = (vm_offset_t)firstaddr;
 
 	create_pagetables(firstaddr);
 
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
 
+	/*
+	 * Initialize protection array.
+	 */
 	amd64_protection_init();
+
+	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
+	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
+	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + IdlePML4);
+	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
+	LIST_INIT(&pmap_header);
+	kernel_pmap->pm_count = 1;
+	kernel_pmap->pm_stats.resident_count = res;
+
+#define	SYSMAP(c, p, v, n)	\
+	v = (c)va; va += ((n)*PAGE_SIZE); p = pte; pte += (n);
+
+	va = virtual_avail;
+	pte = pmap_pte(kernel_pmap, va);
+
+
+	virtual_avail = va;
 
 	/*
 	 * Initialize the PAT MSR.
@@ -222,6 +366,33 @@ pmap_bootstrap(firstaddr)
 	 * have been created in our pre-boot environment.
 	 */
 	pmap_init_pat();
+}
+
+/*
+ * pmap_bootstrap_allocate: allocate vm space into bootstrap area.
+ * va: is taken from virtual_avail.
+ * size: is the size of the virtual address to allocate
+ */
+void *
+pmap_bootstrap_alloc(size)
+	u_long size;
+{
+	vm_offset_t va;
+	int i;
+	extern bool_t vm_page_startup_initialized;
+
+	if (vm_page_startup_initialized) {
+		panic("pmap_bootstrap_alloc: called after startup initialized");
+	}
+
+	size = round_page(size);
+
+	for (i = 0; i < size; i += PAGE_SIZE) {
+		va = pmap_map(va, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
+		avail_start += PAGE_SIZE;
+	}
+	bzero((caddr_t)va, size);
+	return ((void *)va);
 }
 
 /*
@@ -504,23 +675,113 @@ pmap_enter(pmap, va, pa, prot, wired)
 
 }
 
+static pd_entry_t *
+pmap_valid_entry(pmap, pdir, va)
+	register pmap_t pmap;
+	pd_entry_t *pdir;
+	vm_offset_t va;
+{
+	if (pdir && pmap_pte_v(pdir)) {
+		if (pdir == pmap_map_pte(pmap, va) || pmap == kernel_pmap) {
+			return ((pd_entry_t *)pmap_map_pte(pmap, va));
+		} else if (pdir == pmap_map_pde(pmap, va)) {
+			return (pmap_map_pde(pmap, va));
+		} else {
+			return (NULL);
+		}
+	}
+	return (NULL);
+}
+
+static pml4_entry_t *
+pmap_pml4(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pml4_entry_t *pml4;
+
+	pml4 = (pml4_entry_t *)pmap_pde(pmap, va, 4);
+	if (pmap_valid_entry(pmap, (pml4_entry_t *)pml4, va)) {
+		return (pml4);
+	}
+	return (NULL);
+}
+
+static pdp_entry_t *
+pmap_pdp(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pdp_entry_t *pdp;
+
+	pdp = (pdp_entry_t *)pmap_pde(pmap, va, 3);
+	if (pmap_valid_entry(pmap, (pdp_entry_t *)pdp, va)) {
+		return (pdp);
+	}
+	return (NULL);
+}
+
+static pd_entry_t *
+pmap_ptp(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pd_entry_t *ptp;
+
+	ptp = (pd_entry_t *)pmap_pde(pmap, va, 2);
+	if (pmap_valid_entry(pmap, ptp, va)) {
+		return (ptp);
+	}
+	return (NULL);
+}
+
+/*
+ *	Routine:	pmap_pte
+ *	Function:
+ *		Extract the page table entry associated
+ *		with the given map/virtual_address pair.
+ * [ what about induced faults -wfj]
+ */
 static pt_entry_t *
 pmap_pte(pmap, va)
 	register pmap_t pmap;
 	vm_offset_t va;
 {
-	return (0);
+	pt_entry_t *pte;
+
+	pte = (pt_entry_t *)pmap_pde(pmap, va, 1);
+	if (pmap_valid_entry(pmap, (pt_entry_t *)pte, va)) {
+		return (pte);
+	}
+	return (NULL);
 }
 
+/*
+ *	Routine:	pmap_extract
+ *	Function:
+ *		Extract the physical page address associated
+ *		with the given map/virtual_address pair.
+ */
 vm_offset_t
 pmap_extract(pmap, va)
-	register pmap_t	pmap;
+	register pmap_t pmap;
 	vm_offset_t va;
 {
 	register vm_offset_t pa;
 
 	pa = 0;
-
+	if (pmap && pmap == kernel_pmap) {
+		if (pmap_pde_v(pmap_map_pte(pmap, va))) {
+			pa = *(int *)pmap_map_pte(pmap, va);
+		}
+	} else {
+		if (pmap_pde_v(pmap_map_pde(pmap, va))) {
+			pa = *(int *)pmap_map_pde(pmap, va);
+		}
+	}
+	if (pa) {
+		pa = (pa & PG_FRAME) | (va & ~PG_FRAME);
+	}
 	return (pa);
 }
 
@@ -553,7 +814,13 @@ pmap_activate(pmap, pcbp)
 	register pmap_t pmap;
 	struct pcb *pcbp;
 {
-
+	if (pmap != NULL && pmap->pm_pdchanged) {
+		pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir); /* PML4?? */
+		if (pmap == &curproc->p_vmspace->vm_pmap) {
+			lcr3(pcbp->pcb_cr3);
+		}
+		pmap->pm_pdchanged = FALSE;
+	}
 }
 
 void
@@ -576,7 +843,18 @@ pmap_pageable(pmap, sva, eva, pageable)
 	vm_offset_t	sva, eva;
 	bool_t	pageable;
 {
-
+	/*
+	 * If we are making a PT page pageable then all valid
+	 * mappings must be gone from that page.  Hence it should
+	 * be all zeros and there is no need to clean it.
+	 * Assumptions:
+	 *	- we are called with only one page at a time
+	 *	- PT pages have only one pv_table entry
+	 */
+	if (pmap == kernel_pmap && pageable && sva + PAGE_SIZE == eva) {
+		register pv_entry_t pv;
+		register vm_offset_t pa;
+	}
 }
 
 void

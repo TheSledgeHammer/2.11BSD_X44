@@ -597,11 +597,9 @@ pmap_bootstrap_allocate(va, size)
 	vm_offset_t va;
 	u_long 		size;
 {
-	vm_offset_t val;
 	int i;
 
 	size = round_page(size);
-	val = va;
 
 	/* deal with "hole incursion" */
 	for (i = 0; i < size; i += PAGE_SIZE) {
@@ -611,8 +609,8 @@ pmap_bootstrap_allocate(va, size)
 		va = pmap_map(va, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
 		avail_start += PAGE_SIZE;
 	}
-	bzero((caddr_t) val, size);
-	return ((void *) val);
+	bzero((caddr_t) va, size);
+	return ((void *) va);
 }
 
 void *

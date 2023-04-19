@@ -68,10 +68,11 @@
 
 uint64_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
 uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
-uint64_t 	nbpds[] = NBPD_INITIALIZER;
-pd_entry_t 	*pdes[] = PDES_INITIALIZER;
-pd_entry_t 	*apdes[] = APDES_INITIALIZER;
-
+long 		NBPD[] = NBPD_INITIALIZER;
+pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
+pd_entry_t 	*APDE[] = APDES_INITIALIZER;
+long 		NKPTP[] = NKPTP_INITIALIZER;
+long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
 
 /* PL_I does the same thing as pmap_index */
 static vm_offset_t
