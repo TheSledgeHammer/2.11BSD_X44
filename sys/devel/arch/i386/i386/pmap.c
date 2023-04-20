@@ -265,8 +265,8 @@ pmap_map_pde(pmap, va)
 					tlbflush();
 				}
 				opde = *APDP_PDE & PG_FRAME;
-				if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, i)) {
-					npde = (pd_entry_t)(pmap_pdirpa(pmap, i) | PG_RW | PG_V | PG_A | PG_M);
+				if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, index)) {
+					npde = (pd_entry_t)(pmap_pdirpa(pmap, index) | PG_RW | PG_V | PG_A | PG_M);
 					apde = npde;
 					if ((opde & PG_V)) {
 						pmap_apte_flush(pmap);
@@ -501,7 +501,11 @@ pmap_pdpt(pmap, va)
 {
 	pdpt_entry_t *pdpt;
 
-	pdpt = (pdpt_entry_t *)
+	pdpt = (pdpt_entry_t *)pmap_pde(pmap, va, 2);
+	if (pmap_valid_entry(pmap, (pdpt_entry_t *)pdpt, va)) {
+		return (pdpt);
+	}
+	return (NULL);
 }
 
 /*
