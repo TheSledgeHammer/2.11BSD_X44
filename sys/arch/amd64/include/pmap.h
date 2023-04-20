@@ -1,4 +1,4 @@
-/*	$NetBSD: pmap.h,v 1.1 2003/04/26 18:39:46 fvdl Exp $	*/
+/*	$NetBSD: pmap.h,v 1.22 2008/10/26 00:08:15 mrg Exp $	*/
 
 /*
  *
@@ -69,6 +69,55 @@
 
 #ifndef _AMD64_PMAP_H_
 #define _AMD64_PMAP_H_
+
+/*
+ * The x86_64 pmap module closely resembles the i386 one. It uses
+ * the same recursive entry scheme, and the same alternate area
+ * trick for accessing non-current pmaps. See the i386 pmap.h
+ * for a description. The obvious difference is that 3 extra
+ * levels of page table need to be dealt with. The level 1 page
+ * table pages are at:
+ *
+ * l1: 0x00007f8000000000 - 0x00007fffffffffff     (39 bits, needs PML4 entry)
+ *
+ * The alternate space is at:
+ *
+ * l1: 0xffffff8000000000 - 0xffffffffffffffff     (39 bits, needs PML4 entry)
+ *
+ * The rest is kept as physical pages in 3 UVM objects, and is
+ * temporarily mapped for virtual access when needed.
+ *
+ * Note that address space is signed, so the layout for 48 bits is:
+ *
+ *  +---------------------------------+ 0xffffffffffffffff
+ *  |                                 |
+ *  |    alt.L1 table (PTE pages)     |
+ *  |                                 |
+ *  +---------------------------------+ 0xffffff8000000000
+ *  ~                                 ~
+ *  |                                 |
+ *  |         Kernel Space            |
+ *  |                                 |
+ *  |                                 |
+ *  +---------------------------------+ 0xffff800000000000 = 0x0000800000000000
+ *  |                                 |
+ *  |    alt.L1 table (PTE pages)     |
+ *  |                                 |
+ *  +---------------------------------+ 0x00007f8000000000
+ *  ~                                 ~
+ *  |                                 |
+ *  |         User Space              |
+ *  |                                 |
+ *  |                                 |
+ *  +---------------------------------+ 0x0000000000000000
+ *
+ * In other words, there is a 'VA hole' at 0x0000800000000000 -
+ * 0xffff800000000000 which will trap, just as on, for example,
+ * sparcv9.
+ *
+ * The unused space can be used if needed, but it adds a little more
+ * complexity to the calculations.
+ */
 
 #define L1_SHIFT		12
 #define	L2_SHIFT		21
@@ -168,7 +217,6 @@ typedef uint64_t 		pml4_entry_t;		/* PML4 (L4) */
 
 #define PTP_LEVELS		4
 #define PTP_SHIFT		9
-
 
 #ifndef LOCORE
 #include <sys/queue.h>

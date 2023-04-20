@@ -369,7 +369,7 @@ pmap_bootstrap(firstaddr)
 }
 
 /*
- * pmap_bootstrap_allocate: allocate vm space into bootstrap area.
+ * pmap_bootstrap_alloc: allocate vm space into bootstrap area.
  * va: is taken from virtual_avail.
  * size: is the size of the virtual address to allocate
  */
@@ -527,6 +527,7 @@ pmap_create(size)
 	pmap_pinit(pmap);
 	return (pmap);
 }
+
 void
 pmap_pinit_pdir(pdir, pdirpa)
 	pd_entry_t *pdir;
@@ -563,12 +564,12 @@ pmap_pinit_pml4(pml4)
 {
 	int i;
 
-	for (i = 0; i < PTP_LEVELS; i++) {
-		pml4[L4_SLOT_KERNBASE + i] =  (KPDPphys + ptoa(i)) | PG_RW | PG_V;
-	}
+	pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(L4_SLOT_KERNBASE * sizeof(pml4_entry_t)));
 
 	/* install self-referential address mapping entry(s) */
-	pml4[L4_SLOT_KERN] = VM_PAGE_TO_PHYS(pml4pg) | PG_V | PG_RW | PG_A | PG_M;
+	for (i = 0; i < L4_SLOT_KERNBASE; i++) {
+		pml4[i] =  pmap_extract(kernel_map, (vm_offset_t)pml4) | PG_RW | PG_V | PG_A;
+	}
 }
 
 void
