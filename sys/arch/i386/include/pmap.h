@@ -463,8 +463,8 @@ extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
 extern pv_entry_t			pv_table;		/* array of entries, one per page */
 
-extern uint64_t 			ptp_masks[];
-extern uint64_t				ptp_shifts[];
+extern uint32_t 			ptp_masks[];
+extern uint32_t				ptp_shifts[];
 extern pd_entry_t 			*NPDE[];
 extern pd_entry_t 			*APDE[];
 extern long 				NBPD[], NKPTP[], NKPTPMAX[];
