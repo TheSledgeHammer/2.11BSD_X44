@@ -166,8 +166,8 @@ int pmapvacflush = 0;
 #define	PVF_TOTAL	0x80
 #endif
 
-uint64_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
-uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
+uint32_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
+uint32_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
 long 		NBPD[] = NBPD_INITIALIZER;
 pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
 pd_entry_t 	*APDE[] = APDES_INITIALIZER;
