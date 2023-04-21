@@ -72,9 +72,10 @@ int		proc_setucontext(struct proc *, const ucontext_t *);
 void	cpu_getmcontext(struct proc *, mcontext_t *, unsigned int *);
 int		cpu_setmcontext(struct proc *, const mcontext_t *, unsigned int);
 
+/*
 #define getucontext(p, uc)	proc_getucontext(p, uc)
 #define setucontext(p, uc)	proc_setucontext(p, uc)
-
+*/
 //void	getucontext_sa(struct proc *, ucontext_t *);
 #endif /* _KERNEL */
 #endif /* !_SYS_UCONTEXT_H_ */
