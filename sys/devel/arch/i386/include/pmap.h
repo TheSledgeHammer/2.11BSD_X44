@@ -316,7 +316,7 @@ typedef uint64_t 				pdpt_entry_t;		/* PDPT */
 
 /* largest value (-1 for APTP space) */
 #define NKL2_MAX_ENTRIES		(KVA_PAGES - (KERNBASE/NBPD_L2) - 1)
-#define NKL1_MAX_ENTRIES		(unsigned long)(NKL2_MAX_ENTRIES * NPDPG)
+#define NKL1_MAX_ENTRIES		(unsigned long)(NKL2_MAX_ENTRIES * NPDEPG)
 
 #define NKL2_KIMG_ENTRIES		0	/* XXX unused */
 
@@ -338,8 +338,34 @@ typedef uint64_t 				pdpt_entry_t;		/* PDPT */
 #define NKPTP_INITIALIZER		{ NKL1_START_ENTRIES, NKL2_START_ENTRIES }
 #define NKPTPMAX_INITIALIZER	{ NKL1_MAX_ENTRIES, NKL2_MAX_ENTRIES }
 
-#define PTP_LEVELS	2
-#define PTP_SHIFT	9
+#define PTP_LEVELS			2
+#define PTP_SHIFT			9
+
+/*
+ * One page directory, shared between
+ * kernel and user modes.
+ */
+#define I386_PAGE_SIZE		NBPG
+#define I386_PDR_SIZE		NBPDR
+
+#define I386_KPDES			8 										/* KPT page directory size */
+#define I386_UPDES			(NBPDR/sizeof(pd_entry_t) - I386_KPDES) /* UPT page directory size */
+
+/*
+ * virtual address to page table entry and
+ * to physical address. Likewise for alternate address space.
+ * Note: these work recursively, thus vtopte of a pte will give
+ * the corresponding pde that in turn maps it.
+ */
+#define	vtopte(va)			(PTE_BASE + i386_btop(va))
+#define	kvtopte(va)			vtopte(va)
+#define	ptetov(pt)			(i386_ptob(pt - PTE_BASE))
+#define	vtophys(va)  		(i386_ptob(vtopte(va)) | ((int)(va) & PGOFSET))
+#define ispt(va)			((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
+
+#define	avtopte(va)			(APTE_BASE + i386_btop(va))
+#define	ptetoav(pt)	 		(i386_ptob(pt - APTE_BASE))
+#define	avtophys(va)  		(i386_ptob(avtopte(va)) | ((int)(va) & PGOFSET))
 
 #ifndef LOCORE
 #include <sys/queue.h>
@@ -389,26 +415,36 @@ typedef struct pv_entry		*pv_entry_t;
 #define	PD_ENTRY_NULL		((pd_entry_t)0)
 #define	PDPT_ENTRY_NULL		((pdpt_entry_t)0)
 
+/*
+ * PTmap is recursive pagemap at top of virtual address space.
+ * Within PTmap, the page directory can be found (third indirection).
+ */
 #define PTE_BASE			L1_BASE
 #define PDP_PDE				(L2_BASE + PDIR_SLOT_PTE)
 #define PDP_BASE			L2_BASE
 
+#define PTmap				PTE_BASE
+#define PTD					PDP_BASE
+#define PTDpde				PDP_PDE
+
+/*
+ * APTmap, APTD is the alternate recursive pagemap.
+ * It's used when modifying another process's page tables.
+ */
 #define APTE_BASE			AL1_BASE
 #define APDP_PDE			(L2_BASE + PDIR_SLOT_APTE)
 #define APDP_BASE			AL2_BASE
 
+#define APTmap      		APTE_BASE
+#define APTD        		APDP_BASE
+#define APTDpde				APDP_PDE
+
 #ifdef _KERNEL
 
-extern uint64_t 		ptp_masks[];
-extern uint64_t			ptp_shifts[];
-extern pd_entry_t 		*NPDE[];
-extern pd_entry_t 		*APDE[];
-extern long 			NBPD[], NKPTP[], NKPTPMAX[];
-
-extern pd_entry_t 		*IdlePTD;
-extern pt_entry_t 		*KPTmap;
+extern pd_entry_t 			*IdlePTD;
+extern pt_entry_t 			*KPTmap;
 #ifdef PMAP_PAE_COMP
-extern pdpt_entry_t 	*IdlePDPT;
+extern pdpt_entry_t 		*IdlePDPT;
 #endif
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
@@ -425,6 +461,12 @@ extern u_long 				tramp_idleptd;
 extern int 					pae_mode;
 extern int 					i386_pmap_PDRSHIFT;
 extern pv_entry_t			pv_table;		/* array of entries, one per page */
+
+extern uint64_t 			ptp_masks[];
+extern uint64_t				ptp_shifts[];
+extern pd_entry_t 			*NPDE[];
+extern pd_entry_t 			*APDE[];
+extern long 				NBPD[], NKPTP[], NKPTPMAX[];
 
 #ifdef PMAP_PAE_COMP
 #define pmap_pdirpa(pmap, index) 	((pmap)->pm_pdirpa[l2tol3(index)] + l2tol2(index) * sizeof(pd_entry_t))

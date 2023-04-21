@@ -180,6 +180,60 @@
 #include <arch/i386/include/pmap.h>
 #include <arch/i386/include/pmap_tlb.h>
 
+/*
+ * Allocate various and sundry SYSMAPs used in the days of old VM
+ * and not yet converted.  XXX.
+ */
+#ifdef DEBUG
+struct {
+	int kernel;		/* entering kernel mapping */
+	int user;		/* entering user mapping */
+	int overlay;	/* entering overlay mapping */
+	int ptpneeded;	/* needed to allocate a PT page */
+	int pwchange;	/* no mapping change, just wiring or protection */
+	int wchange;	/* no mapping change, just wiring */
+	int mchange;	/* was mapped but mapping to different page */
+	int managed;	/* a managed page */
+	int firstpv;	/* first mapping for this PA */
+	int secondpv;	/* second mapping for this PA */
+	int ci;			/* cache inhibited */
+	int unmanaged;	/* not a managed page */
+	int flushes;	/* cache flushes */
+} enter_stats;
+struct {
+	int calls;
+	int removes;
+	int pvfirst;
+	int pvsearch;
+	int ptinvalid;
+	int uflushes;
+	int sflushes;
+} remove_stats;
+
+int debugmap = 0;
+int pmapdebug = 0;
+#define PDB_FOLLOW	0x0001
+#define PDB_INIT	0x0002
+#define PDB_ENTER	0x0004
+#define PDB_REMOVE	0x0008
+#define PDB_CREATE	0x0010
+#define PDB_PTPAGE	0x0020
+#define PDB_CACHE	0x0040
+#define PDB_BITS	0x0080
+#define PDB_COLLECT	0x0100
+#define PDB_PROTECT	0x0200
+#define PDB_PDRTAB	0x0400
+#define PDB_PARANOIA	0x2000
+#define PDB_WIRING	0x4000
+#define PDB_PVDUMP	0x8000
+
+int pmapvacflush = 0;
+#define	PVF_ENTER	0x01
+#define	PVF_REMOVE	0x02
+#define	PVF_PROTECT	0x04
+#define	PVF_TOTAL	0x80
+#endif
+
 uint64_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
 uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
 long 		NBPD[] = NBPD_INITIALIZER;
@@ -188,17 +242,112 @@ pd_entry_t 	*APDE[] = APDES_INITIALIZER;
 long 		NKPTP[] = NKPTP_INITIALIZER;
 long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
 
-
+/*
+ * Get PDEs and PTEs for user/kernel address space
+ */
 #define pmap_ptab(m, v)         (&((m)->pm_ptab[((vm_offset_t)(v) >> PGSHIFT)]))
 #define pmap_pde(m, v, lvl)     (&((m)->pm_pdir[PL_I(v, lvl)]))
+
+/*
+ * Given a map and a machine independent protection code,
+ * convert to a vax protection code.
+ */
+#define pte_prot(m, p)	(protection_codes[p])
+int	protection_codes[8];
+
+/*
+ * LAPIC virtual address, and fake physical address.
+ */
+volatile vm_offset_t local_apic_va;
+vm_offset_t local_apic_pa;
+
+static int pgeflag = 0;			/* PG_G or-in */
+static int pseflag = 0;			/* PG_PS or-in */
+
+static int nkpt = NKPT;
+
+#ifdef PMAP_PAE_COMP
+pt_entry_t pg_nx;
+#else
+#define	pg_nx	0
+#endif
+
+int pat_works;
+int pg_ps_enabled;
+int elf32_nxstack;
+int i386_pmap_PDRSHIFT;
+
+#define	PAT_INDEX_SIZE	8
+static int 				pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
+
+extern char 			_end[]; 					/* boot.ldscript */
+vm_offset_t 			kernel_vm_end;
+u_long 					physfree;					/* phys addr of next free page */
+u_long 					vm86phystk;					/* PA of vm86/bios stack */
+u_long 					vm86paddr;					/* address of vm86 region */
+int 					vm86pa;						/* phys addr of vm86 region */
+u_long 					KPTphys;					/* phys addr of kernel page tables */
+u_long 					KERNend;
+u_long 					tramp_idleptd;
+
+vm_offset_t 			avail_start;				/* PA of first available physical page */
+vm_offset_t				avail_end;					/* PA of last available physical page */
+vm_offset_t				virtual_avail;  			/* VA of first avail page (after kernel bss)*/
+vm_offset_t				virtual_end;				/* VA of last avail page (end of kernel AS) */
+vm_offset_t				vm_first_phys;				/* PA of first managed page */
+vm_offset_t				vm_last_phys;				/* PA just past last managed page */
+
+int						i386pagesperpage;			/* PAGE_SIZE / I386_PAGE_SIZE */
+bool_t					pmap_initialized = FALSE;	/* Has pmap_init completed? */
+char					*pmap_attributes;			/* reference and modify bits */
+
+pd_entry_t 				*IdlePTD;					/* phys addr of kernel PTD */
+#ifdef PMAP_PAE_COMP
+pdpt_entry_t 			*IdlePDPT;					/* phys addr of kernel PDPT */
+#endif
+pt_entry_t 				*KPTmap;					/* address of kernel page tables */
+pv_entry_t				pv_table;					/* array of entries, one per page */
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
 static struct pmap_list pmap_header;
 
+/*
+ * All those kernel PT submaps that BSD is so fond of
+ */
+static pd_entry_t 	*KPTD;
+pt_entry_t			*CMAP1, *CMAP2, *CMAP3, *cmmap;
+caddr_t				CADDR1, CADDR2, CADDR3, cvmmap;
+pt_entry_t			*msgbufmap;
+struct msgbuf		*msgbufp;
+
+static pt_entry_t 	*PMAP1 = NULL, *PMAP2, *PMAP3;
+static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
+
+/* static methods */
+static vm_offset_t	pmap_bootstrap_valloc(size_t);
+static vm_offset_t	pmap_bootstrap_palloc(size_t);
 static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
+static pdpt_entry_t *pmap_pdpt(pmap_t, vm_offset_t);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
+static vm_offset_t
+pa_index(pa)
+	vm_offset_t pa;
+{
+	vm_offset_t index;
+	index = atop(pa - vm_first_phys);
+	return (index);
+}
+
+static pv_entry_t
+pa_to_pvh(pa)
+	vm_offset_t pa;
+{
+	pv_entry_t pvh;
+	pvh = &pv_table[pa_index(pa)];
+	return (pvh);
+}
 
 __inline static void
 pmap_apte_flush(pmap)
@@ -279,125 +428,7 @@ pmap_map_pde(pmap, va)
 	return (NULL);
 }
 
-void
-pmap_bootstrap(firstaddr)
-	vm_offset_t firstaddr;
-{
-	vm_offset_t va;
-	pt_entry_t *pte, *unused;
-	u_long res;
-	int i;
-
-	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
-
-	avail_start = firstaddr;
-
-	virtual_avail = (vm_offset_t)firstaddr;
-	virtual_end = VM_MAX_KERNEL_ADDRESS;
-	i386pagesperpage = PAGE_SIZE / I386_PAGE_SIZE;
-
-	/*
-	 * Initialize protection array.
-	 */
-	i386_protection_init();
-
-	/*
-	 * Initialize the kernel pmap (which is statically allocated).
-	 * Count bootstrap data as being resident in case any of this data is
-	 * later unmapped (using pmap_remove()) and freed.
-	 */
-	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
-	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
-#ifdef PMAP_PAE_COMP
-	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(KERNBASE + IdlePDPT);
-#endif
-	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
-	LIST_INIT(&pmaps);
-	kernel_pmap->pm_count = 1;
-	kernel_pmap->pm_stats.resident_count = res;
-
-#define	SYSMAP(c, p, v, n)	\
-	v = (c)va; va += ((n) * I386_PAGE_SIZE); p = pte; pte += (n);
-
-	va = virtual_avail;
-	pte = pmap_pte(kernel_pmap, va);
-
-	SYSMAP(caddr_t, CMAP1, CADDR1, 1)
-	SYSMAP(caddr_t, CMAP2, CADDR2, 1)
-	SYSMAP(caddr_t, CMAP3, CADDR3, 1)
-	SYSMAP(caddr_t, cmmap, cvmmap, 1)
-	SYSMAP(struct msgbuf *, msgbufmap, msgbufp, 1)
-	/* XXX: allow for msgbuf */
-	avail_end -= i386_round_page(sizeof(struct msgbuf));
-
-	for (i = 0; i < NKPT; i++) {
-		KPTD[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
-	}
-
-	/*
-	 * PADDR1 and PADDR2 are used by pmap_pte_quick() and pmap_pte(),
-	 * respectively.
-	 */
-	SYSMAP(pt_entry_t *, PMAP1, PADDR1, 1)
-	SYSMAP(pt_entry_t *, PMAP2, PADDR2, 1)
-	SYSMAP(pt_entry_t *, PMAP3, PADDR3, 1)
-
-	virtual_avail = va;
-
-	local_apic_va = pmap_bootstrap_valloc(1);
-	local_apic_pa = pmap_bootstrap_palloc(1);
-
-	/*
-	 * Initialize the TLB shootdown queues.
-	 */
-	pmap_tlb_init();
-
-	/*
-	 * Initialize the PAT MSR if present.
-	 * pmap_init_pat() clears and sets CR4_PGE, which, as a
-	 * side-effect, invalidates stale PG_G TLB entries that might
-	 * have been created in our pre-boot environment.  We assume
-	 * that PAT support implies PGE and in reverse, PGE presence
-	 * comes with PAT.  Both features were added for Pentium Pro.
-	 */
-	pmap_init_pat();
-}
-
-/*
- *	Create and return a physical map.
- *
- *	If the size specified for the map
- *	is zero, the map is an actual physical
- *	map, and may be referenced by the
- *	hardware.
- *
- *	If the size specified is non-zero,
- *	the map will be used in software only, and
- *	is bounded by that size.
- *
- * [ just allocate a ptd and mark it uninitialize -- should we track
- *   with a table which process has which ptd? -wfj ]
- */
-pmap_t
-pmap_create(size)
-	vm_size_t	size;
-{
-	register pmap_t pmap;
-
-	/*
-	 * Software use map does not need a pmap
-	 */
-	if (size) {
-		return (NULL);
-	}
-	pmap = (pmap_t) malloc(sizeof(*pmap), M_VMPMAP, M_WAITOK);
-	bzero(pmap, sizeof(*pmap));
-	pmap_pinit(pmap);
-
-	return (pmap);
-}
-
-void
+static void
 pmap_pinit_pdir(pdir, pdirpa)
 	pd_entry_t *pdir;
 	vm_offset_t pdirpa;
@@ -435,7 +466,7 @@ pmap_pinit_pdir(pdir, pdirpa)
 }
 
 #ifdef PMAP_PAE_COMP
-void
+static void
 pmap_pinit_pdpt(pdpt)
 	pdpt_entry_t *pdpt;
 {
@@ -527,4 +558,33 @@ pmap_pte(pmap, va)
 		return (pte);
 	}
 	return (NULL);
+}
+
+/*
+ *	Routine:	pmap_extract
+ *	Function:
+ *		Extract the physical page address associated
+ *		with the given map/virtual_address pair.
+ */
+vm_offset_t
+pmap_extract(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	register vm_offset_t pa;
+
+	pa = 0;
+	if (pmap && pmap == kernel_pmap) {
+		if (pmap_pde_v(pmap_map_pte(pmap, va))) {
+			pa = *(int *)pmap_map_pte(pmap, va);
+		}
+	} else {
+		if (pmap_pde_v(pmap_map_pde(pmap, va))) {
+			pa = *(int *)pmap_map_pde(pmap, va);
+		}
+	}
+	if (pa) {
+		pa = (pa & PG_FRAME) | (va & ~PG_FRAME);
+	}
+	return (pa);
 }

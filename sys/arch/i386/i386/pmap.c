@@ -2214,20 +2214,24 @@ pmap_check_wiring(str, va)
 	register int count, *pte;
 
 	va = trunc_page(va);
-	if (!pmap_pde_v(pmap_pde(kernel_pmap, va)) ||
-	!pmap_pte_v(pmap_pte(kernel_pmap, va)))
+	if (!pmap_pde_v(pmap_pde(kernel_pmap, va))
+			|| !pmap_pte_v(pmap_pte(kernel_pmap, va))) {
 		return;
+	}
 
 	if (!vm_map_lookup_entry(pt_map, va, &entry)) {
 		printf("wired_check: entry for %x not found\n", va);
 		return;
 	}
 	count = 0;
-	for (pte = (int*) va; pte < (int*) (va + PAGE_SIZE); pte++)
-		if (*pte)
+	for (pte = (int*) va; pte < (int*) (va + PAGE_SIZE); pte++) {
+		if (*pte) {
 			count++;
-	if (entry->wired_count != count)
+		}
+	}
+	if (entry->wired_count != count) {
 		printf("*%s*: %x: w%d/a%d\n", str, va, entry->wired_count, count);
+	}
 }
 #endif
 
@@ -2246,7 +2250,7 @@ pmap_pads(pm)
 		if (pmap_pde_v(pm->pm_pdir[i])) {
 			for (j = 0; j < 1024; j++) {
 				va = (i << 22) + (j << 12);
-				if (pm == kernel_pmap && va < 0xfe000000) {
+				if (pm == kernel_pmap && va < KERNBASE) {
 					continue;
 				}
 				if (pm != kernel_pmap && va > UPT_MAX_ADDRESS) {
