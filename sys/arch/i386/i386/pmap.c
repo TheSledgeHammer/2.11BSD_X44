@@ -166,10 +166,18 @@ int pmapvacflush = 0;
 #define	PVF_TOTAL	0x80
 #endif
 
+uint64_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
+uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
+long 		NBPD[] = NBPD_INITIALIZER;
+pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
+pd_entry_t 	*APDE[] = APDES_INITIALIZER;
+long 		NKPTP[] = NKPTP_INITIALIZER;
+long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
+
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
-#define	pmap_pde(m, v)		(&((m)->pm_pdir[((vm_offset_t)(v) >> PDRSHIFT)]))
+#define pmap_pde(m, v, lvl)     (&((m)->pm_pdir[PL_I(v, lvl)]))
 
 /*
  * Given a map and a machine independent protection code,
@@ -234,7 +242,7 @@ pv_entry_t		pv_table;			/* array of entries, one per page */
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
-static struct pmap_head pmaps;
+static struct pmap_list pmap_header;
 
 /*
  * All those kernel PT submaps that BSD is so fond of
@@ -251,6 +259,10 @@ static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
 /* static methods */
 static vm_offset_t	pmap_bootstrap_valloc(size_t);
 static vm_offset_t	pmap_bootstrap_palloc(size_t);
+static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
+#ifdef PMAP_PAE_COMP
+static pdpt_entry_t *pmap_pdpt(pmap_t, vm_offset_t);
+#endif
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
 static vm_offset_t
@@ -269,6 +281,85 @@ pa_to_pvh(pa)
 	pv_entry_t pvh;
 	pvh = &pv_table[pa_index(pa)];
 	return (pvh);
+}
+
+__inline static void
+pmap_apte_flush(pmap)
+	pmap_t pmap;
+{
+	pmap_tlb_shootdown(pmap, (vm_offset_t)-1LL, 0, 0);
+	pmap_tlb_shootnow(pmap, 0);
+}
+
+pt_entry_t *
+pmap_map_pte(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pd_entry_t *pde, *apde;
+	pd_entry_t opde, npde;
+
+	if (pmap && pmap_pde_v(pmap_pde(pmap, va, 1))) {
+		/* are we current address space or kernel? */
+		if ((pmap->pm_pdir >= PTE_BASE && pmap->pm_pdir < L2_BASE)) {
+			pde = vtopte(va);
+			return (pde);
+		} else {
+			/* otherwise, we are alternate address space */
+			if (pmap->pm_pdir >= APTE_BASE && pmap->pm_pdir < AL2_BASE) {
+				apde = avtopte(va);
+				tlbflush();
+			}
+			opde = *APDP_PDE & PG_FRAME;
+			if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, 0)) {
+				npde = (pd_entry_t)(pmap->pm_pdirpa | PG_RW | PG_V | PG_A | PG_M);
+				apde = &npde;
+				if ((opde & PG_V)) {
+					pmap_apte_flush(pmap);
+				}
+			}
+			return (apde);
+		}
+	}
+	return (NULL);
+}
+
+pd_entry_t *
+pmap_map_pde(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pd_entry_t *pde, *apde;
+	pd_entry_t opde, npde;
+	unsigned long index;
+	int i;
+
+	for (i = PTP_LEVELS; i > 1; i--) {
+		index = PL_I(va, i);
+		if (pmap && pmap_pde_v(pmap_pde(pmap, va, i))) {
+			/* are we current address space or kernel? */
+			if (pmap->pm_pdir <= PDP_PDE && pmap->pm_pdir == &NPDE[i - 2][index]) {
+				pde = &NPDE[i - 2][index];
+				return (pde);
+			} else {
+				/* otherwise, we are alternate address space */
+				if (pmap->pm_pdir != APDP_PDE && pmap->pm_pdir == &APDE[i - 2][index]) {
+					apde = &APDE[i - 2][index];
+					tlbflush();
+				}
+				opde = *APDP_PDE & PG_FRAME;
+				if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, index)) {
+					npde = (pd_entry_t)(pmap_pdirpa(pmap, index) | PG_RW | PG_V | PG_A | PG_M);
+					apde = &npde;
+					if ((opde & PG_V)) {
+						pmap_apte_flush(pmap);
+					}
+				}
+				return (apde);
+			}
+		}
+	}
+	return (NULL);
 }
 
 static u_long
@@ -473,11 +564,6 @@ pmap_cold(void)
 	pmap_remap_lower(FALSE);
 
 	kernel_vm_end = /* 0 + */NKPT * NBPDR;
-#ifdef PMAP_PAE_COMP
-	i386_pmap_PDRSHIFT = PD_SHIFT;
-#else
-	i386_pmap_PDRSHIFT = PD_SHIFT;
-#endif
 }
 
 void
@@ -525,7 +611,7 @@ pmap_bootstrap(firstaddr)
 	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(KERNBASE + IdlePDPT);
 #endif
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
-	LIST_INIT(&pmaps);
+	LIST_INIT(&pmap_header);
 	kernel_pmap->pm_count = 1;
 	kernel_pmap->pm_stats.resident_count = res;
 
@@ -881,8 +967,9 @@ pmap_create(size)
 	register pmap_t pmap;
 
 #ifdef DEBUG
-	if (pmapdebug & (PDB_FOLLOW|PDB_CREATE))
+	if (pmapdebug & (PDB_FOLLOW|PDB_CREATE)) {
 		printf("pmap_create(%x)\n", size);
+	}
 #endif
 	/*
 	 * Software use map does not need a pmap
@@ -904,6 +991,61 @@ pmap_create(size)
 	return (pmap);
 }
 
+static void
+pmap_pinit_pdir(pdir, pdirpa)
+	pd_entry_t *pdir;
+	vm_offset_t pdirpa;
+{
+	int i;
+	int npde;
+
+	/*
+	 * No need to allocate page table space yet but we do need a
+	 * valid page directory table.
+	 */
+	pdir = (pd_entry_t *)kmem_alloc(kernel_map, PDIR_SLOT_PTE * sizeof(pd_entry_t));
+	pdirpa = pdir[PDIR_SLOT_PTE] & PG_FRAME;
+
+	/* zero init area */
+	bzero(pdir, PDIR_SLOT_PTE * sizeof(pd_entry_t));
+
+	/* put in recursive PDE to map the PTEs */
+	pdir[PDIR_SLOT_PTE] = pdirpa | PG_V | PG_KW;
+
+	npde = NKPTP[PTP_LEVELS - 1];
+
+	bcopy(&PDP_BASE[PDIR_SLOT_KERN], &pdir[PDIR_SLOT_KERN], npde * sizeof(pd_entry_t));
+
+	/* install self-referential address mapping entry */
+	for (i = 0; i < NPGPTD; i++) {
+		pdir[PDIR_SLOT_PTE + i] = pmap_extract(kernel_pmap, (vm_offset_t)pdir[i]);
+#ifdef PMAP_PAE_COMP
+		pdirpa[i] = pdir[PDIR_SLOT_PTE + i] & PG_FRAME;
+#endif
+	}
+
+	/* zero the rest */
+	bzero(&pdir[PDIR_SLOT_KERN + npde], (NPDEPG - (PDIR_SLOT_KERN + npde)) * sizeof(pd_entry_t));
+}
+
+#ifdef PMAP_PAE_COMP
+static void
+pmap_pinit_pdpt(pdpt)
+	pdpt_entry_t *pdpt;
+{
+	int i;
+
+	pdpt = (pdpt_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NPGPTD * sizeof(pdpt_entry_t)));
+	KASSERT(((vm_offset_t)pdpt & ((NPGPTD * sizeof(pdpt_entry_t)) - 1)) == 0/*, ("pmap_pinit: pdpt misaligned")*/);
+	KASSERT(pmap_extract(kernel_pmap, (vm_offset_t)pdpt) < (4ULL<<30)/*, ("pmap_pinit: pdpt above 4g")*/);
+
+	/* install self-referential address mapping entry */
+	for (i = 0; i < NPGPTD; i++) {
+		pdpt[i] = pmap_extract(kernel_pmap, (vm_offset_t)pdpt) | PG_V;
+	}
+}
+#endif
+
 /*
  * Initialize a preallocated and zeroed pmap structure,
  * such as one in a vmspace structure.
@@ -912,34 +1054,11 @@ void
 pmap_pinit(pmap)
 	register pmap_t pmap;
 {
-	int i;
+	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
 
-#ifdef DEBUG
-	if (pmapdebug & (PDB_FOLLOW|PDB_CREATE))
-		printf("pmap_pinit(%x)\n", pmap);
-#endif
-
-	/*
-	 * No need to allocate page table space yet but we do need a
-	 * valid page directory table.
-	 */
-	pmap->pm_pdir = (pd_entry_t *)kmem_alloc(kernel_map, NBPTD);
 #ifdef PMAP_PAE_COMP
-	pmap->pm_pdpt = (pdpt_entry_t *) kmem_alloc(kernel_map, (vm_offset_t)(NPGPTD * sizeof(pdpt_entry_t)));
-	KASSERT(((vm_offset_t)pmap->pm_pdpt & ((NPGPTD * sizeof(pdpt_entry_t)) - 1)) == 0/*, ("pmap_pinit: pdpt misaligned")*/);
-	KASSERT(pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdpt) < (4ULL<<30)/*, ("pmap_pinit: pdpt above 4g")*/);
+	pmap_pinit_pdpt(pmap->pm_pdpt);
 #endif
-
-	/* wire in kernel global address entries */
-	bcopy(PTD + KPTDI_FIRST, pmap->pm_pdir + KPTDI_FIRST, (KPTDI_LAST - KPTDI_FIRST + 1)*4);
-
-	/* install self-referential address mapping entry */
-	for (i = 0; i < NPGPTD; i++) {
-		pmap->pm_pdir[PTDPTDI + i] = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir[i]) | PG_V | PG_URKW;
-#ifdef PMAP_PAE_COMP
-		pmap->pm_pdpt[i] = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdpt) | PG_V;
-#endif
-	}
 
 	pmap->pm_active = 0;
 	pmap->pm_count = 1;
@@ -947,7 +1066,7 @@ pmap_pinit(pmap)
 	bzero(&pmap->pm_stats, sizeof(pmap->pm_stats));
 
 	pmap_lock(pmap);
-	LIST_INSERT_HEAD(&pmaps, pmap, pm_list);
+	LIST_INSERT_HEAD(&pmap_header, pmap, pm_list);
 	pmap_unlock(pmap);
 }
 
@@ -1064,7 +1183,7 @@ pmap_remove(pmap, sva, eva)
 		 * Note: we assume that the page directory table is
 	 	 * always allocated, and in kernel virtual.
 		 */
-		if (!pmap_pde_v(pmap_pde(pmap, va)))
+		if (!pmap_pde_v(pmap_map_pde(pmap, va)))
 			continue;
 
 		pte = pmap_pte(pmap, va);
@@ -1195,7 +1314,7 @@ pmap_remove_all(pa)
 	 */
 	while (pv->pv_pmap != NULL) {
 #ifdef DEBUG
-		if (!pmap_pde_v(pmap_pde(pv->pv_pmap, pv->pv_va)) ||
+		if (!pmap_pde_v(pmap_map_pde(pv->pv_pmap, pv->pv_va)) ||
 		    pmap_pte_pa(pmap_pte(pv->pv_pmap, pv->pv_va)) != pa)
 			panic("pmap_remove_all: bad mapping");
 #endif
@@ -1258,7 +1377,7 @@ pmap_protect(pmap, sva, eva, prot)
 		 * Skip it, we don't want to force allocation
 		 * of unnecessary PTE pages just to set the protection.
 		 */
-		if (!pmap_pde_v(pmap_pde(pmap, va))) {
+		if (!pmap_pde_v(pmap_map_pde(pmap, va))) {
 			/* XXX: avoid address wrap around */
 			if (va >= i386_trunc_pdr((vm_offset_t )-1))
 				break;
@@ -1336,7 +1455,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 	/*
 	 * Page Directory table entry not valid, we need a new PT page
 	 */
-	if (!pmap_pde_v(pmap_pde(pmap, va))) {
+	if (!pmap_pde_v(pmap_map_pde(pmap, va))) {
 		printf("ptdi %x", pmap->pm_pdir[PTDPTDI]);
 	}
 
@@ -1547,7 +1666,7 @@ pmap_change_wiring(pmap, va, wired)
 	 * Should this ever happen?  Ignore it for now,
 	 * we don't want to force allocation of unnecessary PTE pages.
 	 */
-	if (!pmap_pde_v(pmap_pde(pmap, va))) {
+	if (!pmap_pde_v(pmap_map_pde(pmap, va))) {
 		if (pmapdebug & PDB_PARANOIA)
 			printf("pmap_change_wiring: invalid PDE for %x ", va);
 		return;
@@ -1577,6 +1696,40 @@ pmap_change_wiring(pmap, va, wired)
 	} while (++ix != i386pagesperpage);
 }
 
+static pd_entry_t *
+pmap_valid_entry(pmap, pdir, va)
+	register pmap_t pmap;
+	pd_entry_t *pdir;
+	vm_offset_t va;
+{
+	if (pdir && pmap_pte_v(pdir)) {
+		if (pdir == pmap_map_pte(pmap, va) || pmap == kernel_pmap) {
+			return ((pd_entry_t *)pmap_map_pte(pmap, va));
+		} else if (pdir == pmap_map_pde(pmap, va)) {
+			return (pmap_map_pde(pmap, va));
+		} else {
+			return (NULL);
+		}
+	}
+	return (NULL);
+}
+
+#ifdef PMAP_PAE_COMP
+static pdpt_entry_t *
+pmap_pdpt(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pdpt_entry_t *pdpt;
+
+	pdpt = (pdpt_entry_t *)pmap_pde(pmap, va, 2);
+	if (pmap_valid_entry(pmap, (pdpt_entry_t *)pdpt, va)) {
+		return (pdpt);
+	}
+	return (NULL);
+}
+#endif
+
 /*
  *	Routine:	pmap_pte
  *	Function:
@@ -1584,39 +1737,24 @@ pmap_change_wiring(pmap, va, wired)
  *		with the given map/virtual_address pair.
  * [ what about induced faults -wfj]
  */
-
 static pt_entry_t *
 pmap_pte(pmap, va)
-	register pmap_t	pmap;
+	register pmap_t pmap;
 	vm_offset_t va;
 {
-#ifdef DEBUGx
-	if (pmapdebug & PDB_FOLLOW)
-		printf("pmap_pte(%x, %x) ->\n", pmap, va);
-#endif
-	pd_entry_t newpf;
-	pd_entry_t *pde;
+	pt_entry_t *pte;
 
-	pde = pmap_pde(pmap, va);
-	if (pmap && pmap_pde_v(pmap_pde(pmap, va))) {
-		/* are we current address space or kernel? */
-		if (pmap->pm_pdir == PTDpde || pmap == kernel_pmap) {
-			return ((pt_entry_t *) vtopte(va));
-		} else {
-			/* otherwise, we are alternate address space */
-			if (pmap->pm_pdir != APTDpde) {
-				//APTDpde = pmap->pm_pdir;
-				tlbflush();
-			}
-			newpf = *pde & PG_FRAME;
-			if ((*PMAP2 & PG_FRAME) != newpf) {
-				*PMAP2 = newpf | PG_RW | PG_V | PG_A | PG_M;
-				pmap_invalidate_page(kernel_pmap, (vm_offset_t)PADDR2);
-			}
-			return ((pt_entry_t *)(avtopte(va)));
-		}
+#ifdef DEBUGx
+	if (pmapdebug & PDB_FOLLOW) {
+		printf("pmap_pte(%x, %x) ->\n", pmap, va);
 	}
-	return (0);
+#endif
+
+	pte = (pt_entry_t *)pmap_pde(pmap, va, 1);
+	if (pmap_valid_entry(pmap, (pt_entry_t *)pte, va)) {
+		return (pte);
+	}
+	return (NULL);
 }
 
 /*
@@ -1625,27 +1763,35 @@ pmap_pte(pmap, va)
  *		Extract the physical page address associated
  *		with the given map/virtual_address pair.
  */
-
 vm_offset_t
 pmap_extract(pmap, va)
-	register pmap_t	pmap;
+	register pmap_t pmap;
 	vm_offset_t va;
 {
 	register vm_offset_t pa;
-
+	
 #ifdef DEBUGx
-	if (pmapdebug & PDB_FOLLOW)
+	if (pmapdebug & PDB_FOLLOW) {
 		printf("pmap_extract(%x, %x) -> ", pmap, va);
+	}
 #endif
 	pa = 0;
-	if (pmap && pmap_pde_v(pmap_pde(pmap, va))) {
-		pa = *(int *) pmap_pte(pmap, va);
+	if (pmap && pmap == kernel_pmap) {
+		if (pmap_pde_v(pmap_map_pte(pmap, va))) {
+			pa = *(int *)pmap_map_pte(pmap, va);
+		}
+	} else {
+		if (pmap_pde_v(pmap_map_pde(pmap, va))) {
+			pa = *(int *)pmap_map_pde(pmap, va);
+		}
 	}
-	if (pa)
+	if (pa) {
 		pa = (pa & PG_FRAME) | (va & ~PG_FRAME);
+	}
 #ifdef DEBUGx
-	if (pmapdebug & PDB_FOLLOW)
+	if (pmapdebug & PDB_FOLLOW) {
 		printf("%x\n", pa);
+	}
 #endif
 	return (pa);
 }
@@ -2214,7 +2360,7 @@ pmap_check_wiring(str, va)
 	register int count, *pte;
 
 	va = trunc_page(va);
-	if (!pmap_pde_v(pmap_pde(kernel_pmap, va))
+	if (!pmap_pde_v(pmap_map_pde(kernel_pmap, va))
 			|| !pmap_pte_v(pmap_pte(kernel_pmap, va))) {
 		return;
 	}
