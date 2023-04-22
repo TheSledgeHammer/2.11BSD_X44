@@ -52,6 +52,7 @@ __KERNEL_RCSID(0, "$NetBSD: kern_tc.c,v 1.62 2021/06/02 21:34:58 riastradh Exp $
 #include <sys/syslog.h>
 #include <sys/systm.h>
 #include <sys/timepps.h>
+
 #include <devel/sys/timetc.h>
 
 /*
@@ -418,8 +419,8 @@ tc_init(struct timecounter *tc)
 	u /= 10;
 	if (u > hz && tc->tc_quality >= 0) {
 		tc->tc_quality = -2000;
-		printf("timecounter: Timecounter \"%s\" frequency %ju Hz",
-				tc->tc_name, (uintmax_t) tc->tc_frequency);
+		printf("timecounter: Timecounter \"%s\" frequency %ju Hz", tc->tc_name,
+				(uintmax_t) tc->tc_frequency);
 		printf(" -- Insufficient hz, needs at least %u\n", u);
 	} else if (tc->tc_quality >= 0 || bootverbose) {
 		printf("timecounter: Timecounter \"%s\" frequency %ju Hz "

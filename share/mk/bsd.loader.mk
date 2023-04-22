@@ -19,7 +19,7 @@ EFIINCMD=					${EFIINC}/${MACHINE}
 FDTSRC=						${BOOTSRC}/fdt
 LDRSRC=						${BOOTSRC}/common
 LIBLUASRC=					${BOOTSRC}/liblua
-LUASRC=						/contrib/lua/src
+LUASRC=						/contrib/lua/dist
 DLOADER=					${BOOTSRC}/dloader
 LUA=						${BOOTSRC}/lua
 UBOOTSRC=					${BOOTSRC}/uboot
@@ -89,12 +89,12 @@ CPPFLAGS+=		-D_STANDALONE
 
 ### find out what to use for libkern
 KERN_AS=		library
-.include 		"${LIBKERN}/Makefile.inc"
+.include 		"${LIBKERN}/Makefile"
 
 ### find out what to use for libsa
 SA_AS=			library
 SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
-.include 		"${LIBSA}/Makefile.inc"
+.include 		"${LIBSA}/Makefile"
 
 CLEANFILES+=	vers.c
 VERSION_FILE?=	${.CURDIR}/version

@@ -73,8 +73,8 @@ SUBDIR+=	../contrib/gnu/mpc/lib/libmpc
 #==================== 1st library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+=	../contrib/xz/lib		# depends on libpthread
-
+SUBDIR+=	../contrib/xz/lib			# depends on libpthread
+SUBDIR+=	../contrib/lua/lib 		# depends on libm
 SUBDIR+=	../contrib/elftoolchain/lib/libdwarf # depends on libelf
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo

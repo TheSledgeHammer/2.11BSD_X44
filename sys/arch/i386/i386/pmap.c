@@ -91,7 +91,6 @@
 #include <sys/cputopo.h>
 #include <sys/queue.h>
 #include <sys/lock.h>
-//#include <sys/vmmeter.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>

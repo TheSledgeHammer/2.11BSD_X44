@@ -74,9 +74,7 @@ static int pmap_nx_enable = -1;		/* -1 = auto */
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
-#define pdlvlshift(lvl)         ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT)
 #define pmap_ptab(m, v)         (&((m)->pm_ptab[((vm_offset_t)(v) >> PGSHIFT)]))
-//#define	pmap_pde(m, v, lvl)		(&((m)->pm_pdir[((vm_offset_t)(v) >> ((((lvl) * PTP_SHIFT) + PGSHIFT) - PTP_SHIFT))]))
 #define pmap_pde(m, v, lvl)     (&((m)->pm_pdir[PL_I(v, lvl)]))
 
 #define	PAT_INDEX_SIZE	8
