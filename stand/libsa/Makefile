@@ -21,6 +21,6 @@ CWARNFLAGS+= -Wall -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith
 KERN_AS=	library
 KERNDIR=	${S}/lib/libsa
 
-.include "${KERNDIR}/Makefile.libsa"
+.include "${KERNDIR}/Makefile"
 
 .include <bsd.lib.mk>
