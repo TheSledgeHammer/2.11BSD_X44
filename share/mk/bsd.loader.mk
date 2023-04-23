@@ -5,6 +5,7 @@
 _BSD_LOADER_MK_=1
 
 .include <bsd.own.mk>
+.include <bsd.kernobj.mk>
 
 # Directories
 BOOTSTAND?=					stand
