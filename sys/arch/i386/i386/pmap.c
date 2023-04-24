@@ -259,9 +259,6 @@ static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
 static vm_offset_t	pmap_bootstrap_valloc(size_t);
 static vm_offset_t	pmap_bootstrap_palloc(size_t);
 static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
-#ifdef PMAP_PAE_COMP
-static pdpt_entry_t *pmap_pdpt(pmap_t, vm_offset_t);
-#endif
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
 static vm_offset_t
@@ -311,7 +308,7 @@ pmap_map_pte(pmap, va)
 			}
 			opde = *APDP_PDE & PG_FRAME;
 			if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, 0)) {
-				npde = (pd_entry_t)(pmap->pm_pdirpa | PG_RW | PG_V | PG_A | PG_M);
+				npde = (pd_entry_t)(pmap_pdirpa(pmap, 0) | PG_RW | PG_V | PG_A | PG_M);
 				apde = &npde;
 				if ((opde & PG_V)) {
 					pmap_apte_flush(pmap);
@@ -1382,8 +1379,9 @@ pmap_protect(pmap, sva, eva, prot)
 				break;
 			va = i386_round_pdr(va + PAGE_SIZE) - PAGE_SIZE;
 			continue;
-		} else
+		} else {
 			pte = pmap_pte(pmap, va);
+		}
 
 		/*
 		 * Page not valid.  Again, skip it.
@@ -1713,22 +1711,6 @@ pmap_valid_entry(pmap, pdir, va)
 	return (NULL);
 }
 
-#ifdef PMAP_PAE_COMP
-static pdpt_entry_t *
-pmap_pdpt(pmap, va)
-	register pmap_t pmap;
-	vm_offset_t va;
-{
-	pdpt_entry_t *pdpt;
-
-	pdpt = (pdpt_entry_t *)pmap_pde(pmap, va, 2);
-	if (pmap_valid_entry(pmap, (pdpt_entry_t *)pdpt, va)) {
-		return (pdpt);
-	}
-	return (NULL);
-}
-#endif
-
 /*
  *	Routine:	pmap_pte
  *	Function:
@@ -2040,11 +2022,24 @@ pmap_pageable(pmap, sva, eva, pageable)
 		if ((pmapdebug & (PDB_FOLLOW|PDB_PTPAGE)) == PDB_PTPAGE)
 			printf("pmap_pageable(%x, %x, %x, %x)", pmap, sva, eva, pageable);
 #endif
-		if(pmap_pte(pmap, sva) == 0)
+
+		if ((pmap_map_pte(pmap, sva) == 0)
+				&& (pmap_map_pde(pmap, sva) == 0)) {
 			return;
-		pa = pmap_pte_pa(pmap_pte(pmap, sva));
-		if (pa < vm_first_phys || pa >= vm_last_phys)
+		}
+		if (pmap_map_pte(pmap, sva) != 0) {
+			pa = pmap_pte_pa(pmap_map_pte(pmap, sva));
+			if (pa < vm_first_phys || pa >= vm_last_phys) {
+				return;
+			}
+		} else if (pmap_map_pde(pmap, sva) != 0) {
+			pa = pmap_pte_pa(pmap_map_pde(pmap, sva));
+			if (pa < vm_first_phys || pa >= vm_last_phys) {
+				return;
+			}
+		} else {
 			return;
+		}
 		pv = pa_to_pvh(pa);
 #ifdef DEBUG
 		if (pv->pv_va != sva || pv->pv_next) {

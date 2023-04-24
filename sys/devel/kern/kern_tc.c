@@ -113,6 +113,7 @@ static struct timehands th4 = { .th_next = &th5, };
 static struct timehands th3 = { .th_next = &th4, };
 static struct timehands th2 = { .th_next = &th3, };
 static struct timehands th1 = { .th_next = &th2, };
+
 static struct timehands th0 = {
 	.th_counter = &dummy_timecounter,
 	.th_scale = (uint64_t)-1 / 1000000,
@@ -165,8 +166,7 @@ tc_delta(struct timehands *th)
 	struct timecounter *tc;
 
 	tc = th->th_counter;
-	return (tc->tc_get_timecount(tc) -
-		 th->th_offset_count) & tc->tc_counter_mask;
+	return (tc->tc_get_timecount(tc) - th->th_offset_count) & tc->tc_counter_mask;
 }
 
 /*
