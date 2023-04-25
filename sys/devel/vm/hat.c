@@ -31,72 +31,143 @@
 #include <sys/tree.h>
 
 #include <vm/include/pmap.h>
+#include <devel/vm/hat.h>
 
-typedef void *hat_object_t;
-typedef void *hat_map_t;
-
-struct hat_list;
-SIMPLEQ_HEAD(hat_list, hat);
-struct hat {
-	SIMPLEQ_ENTRY(hat)  h_next;
-    pmap_t              h_pmap;
-    pv_entry_t			h_table;
-    hat_map_t			h_map;
-    hat_object_t		h_object;
-
-    struct hat_ops		*h_ops;
-};
-typedef struct hat      *hat_t;
-
-struct hat_ops {
-    void        (*hops_bootstrap)(vm_offset_t);
-    void        *(*hops_bootstrap_alloc)(u_long);
-    void        (*hops_init)(vm_offset_t, vm_offset_t);
-    vm_offset_t (*hops_map)(vm_offset_t, vm_offset_t, vm_offset_t, int);
-    void	   	(*hops_enter)(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
-    void        (*hops_remove)(pmap_t, vm_offset_t, vm_offset_t);
-};
-
-struct hat_list hat_header = SIMPLEQ_HEAD_INITIALIZER(hat_header);
-
-void
-hat_attach(hat_t hat, hat_map_t map, hat_object_t object)
+vm_offset_t
+hat_pa_index(pa, first_phys)
+	vm_offset_t pa;
+	vm_offset_t first_phys;
 {
-    hat->h_map = map;
-    hat->h_object = object;
-    SIMPLEQ_INSERT_HEAD(&hat_header, hat, h_next);
+	vm_offset_t index;
+	index = atop(pa - first_phys);
+	return (index);
+}
+
+pv_entry_t
+hat_to_pvh(hatlist, map, object, pa, first_phys)
+	hat_list_t hatlist;
+	hat_map_t map;
+	hat_object_t object;
+	vm_offset_t pa;
+	vm_offset_t first_phys;
+{
+    hat_t hat;
+
+    hat = hat_find(hatlist, map, object);
+    return (&hat->h_table[hat_pa_index(pa, first_phys)]);
 }
 
 void
-hat_detach(hat_map_t map, hat_object_t object)
+hat_pv_remove(hatlist, pmap, map, object, sva, eva, first_phys, last_phys)
+	hat_list_t hatlist;
+	pmap_t pmap;
+	hat_map_t map;
+	hat_object_t object;
+	vm_offset_t sva, eva, first_phys, last_phys;
+{
+	register pv_entry_t pv, npv;
+	register vm_offset_t pa, va;
+	int s;
+
+	for (va = sva; va < eva; va += PAGE_SIZE) {
+		if (pa < first_phys || pa >= last_phys) {
+			continue;
+		}
+
+		pv = hat_to_pvh(hatlist, map, object, pa, first_phys);
+		s = splimp();
+		if (pmap == pv->pv_pmap && va == pv->pv_va) {
+			npv = pv->pv_next;
+			if (npv) {
+				*pv = *npv;
+				free((caddr_t) npv, M_VMPVENT);
+			} else {
+				pv->pv_pmap = NULL;
+			}
+		} else {
+			for (npv = pv->pv_next; npv; npv = npv->pv_next) {
+				if (pmap == npv->pv_pmap && va == npv->pv_va) {
+					break;
+				}
+				pv = npv;
+			}
+			pv->pv_next = npv->pv_next;
+			free((caddr_t) npv, M_VMPVENT);
+			pv = pa_to_pvh(pa);
+		}
+		splx(s);
+	}
+}
+
+void
+hat_pv_enter(hatlist, pmap, map, object, va, pa, first_phys, last_phys)
+	hat_list_t hatlist;
+	pmap_t pmap;
+	hat_map_t map;
+	hat_object_t object;
+	vm_offset_t va, first_phys, last_phys;
+	vm_offset_t pa;
+{
+	if (pa >= first_phys && pa < last_phys) {
+		register pv_entry_t pv, npv;
+		int s;
+
+		pv = hat_to_pvh(hatlist, map, object, pa, first_phys);
+		s = splimp();
+		if (pv->pv_pmap == NULL) {
+			pv->pv_va = va;
+			pv->pv_pmap = pmap;
+			pv->pv_next = NULL;
+			pv->pv_flags = 0;
+		} else {
+			npv = (pv_entry_t)malloc(sizeof *npv, M_VMPVENT, M_NOWAIT);
+		    npv->pv_pmap = pmap;
+		    npv->pv_va = va;
+		    npv->pv_next = pv->pv_next;
+		    pv->pv_next = npv;
+		}
+	}
+}
+
+void
+hat_attach(hatlist, hat, map, object)
+	hat_list_t hatlist;
+	hat_t hat;
+	hat_map_t map;
+	hat_object_t object;
+{
+    hat->h_map = map;
+    hat->h_object = object;
+    LIST_INSERT_HEAD(hatlist, hat, h_next);
+}
+
+void
+hat_detach(hatlist, map, object)
+	hat_list_t hatlist;
+	hat_map_t map;
+	hat_object_t object;
 {
 	hat_t hat;
-    SIMPLEQ_FOREACH(hat, &hat_header, h_next) {
+	LIST_FOREACH(hat, hatlist, h_next) {
         if (map == hat->h_map && object == hat->h_object) {
-            SIMPLEQ_REMOVE(&hat_header, hat, hat, h_next);
+        	LIST_REMOVE(hat, h_next);
         }
     }
 }
 
 hat_t
-hat_find(hat_map_t map, hat_object_t object)
+hat_find(hatlist, map, object)
+	hat_list_t hatlist;
+	hat_map_t map;
+	hat_object_t object;
 {
 	hat_t hat;
-    SIMPLEQ_FOREACH(hat, &hat_header, h_next) {
+	LIST_FOREACH(hat, hatlist, h_next) {
         if (map == hat->h_map && object == hat->h_object) {
             return (hat);
         }
     }
     return (NULL);
-}
-
-pv_entry_t
-hat_to_pv(hat_map_t map, hat_object_t object)
-{
-    hat_t hat;
-
-    hat = hat_find(map, object);
-    return (hat->h_table);
 }
 
 void
@@ -106,8 +177,8 @@ hat_bootstrap(hat, firstaddr)
 {
     struct hat_ops *hops;
 
-    hops = hat->h_ops;
-    return ((*hops->hops_bootstrap)(firstaddr));
+    hops = hat->h_op;
+    return ((*hops->hop_bootstrap)(firstaddr));
 }
 
 void *
@@ -117,8 +188,8 @@ hat_bootstrap_alloc(hat, size)
 {
 	struct hat_ops *hops;
 
-	hops = hat->h_ops;
-	return ((*hops->hops_bootstrap_alloc)(size));
+	hops = hat->h_op;
+	return ((*hops->hop_bootstrap_alloc)(size));
 }
 
 void
@@ -128,8 +199,8 @@ hat_init(hat, phys_start, phys_end)
 {
    struct hat_ops *hops;
 
-   hops = hat->h_ops;
-   return ((*hops->hops_init)(phys_start, phys_end));
+   hops = hat->h_op;
+   return ((*hops->hop_init)(phys_start, phys_end));
 }
 
 vm_offset_t
@@ -142,8 +213,8 @@ hat_map(hat, virt, start, end, prot)
 {
 	struct hat_ops *hops;
 
-	hops = hat->h_ops;
-	return ((*hops->hops_map)(virt, start, end, prot));
+	hops = hat->h_op;
+	return ((*hops->hop_map)(virt, start, end, prot));
 }
 
 void
@@ -157,8 +228,8 @@ hat_enter(hat, pmap, va, pa, prot, wired)
 {
 	struct hat_ops *hops;
 
-	hops = hat->h_ops;
-	return ((*hops->hops_enter)(pmap, va, pa, prot, wired));
+	hops = hat->h_op;
+	return ((*hops->hop_enter)(pmap, va, pa, prot, wired));
 }
 
 void
@@ -169,61 +240,7 @@ hat_remove(hat, pmap, sva, eva)
 {
 	struct hat_ops *hops;
 
-	hops = hat->h_ops;
-	return ((*hops->hops_remove)(pmap, sva, eva));
-}
+	hops = hat->h_op;
 
-/* static hat initializer */
-hat_t vm_hat;
-hat_t ovl_hat;
-
-void
-vm_hat_init(hat, offset, addr, length, find_space, phys_start, phys_end)
-	hat_t hat;
-	vm_offset_t	offset;
-	vm_offset_t	*addr;
-	vm_size_t	length;
-	bool_t		find_space;
-	vm_offset_t phys_start, phys_end;
-{
-	vm_size_t size, npg;
-
-    vm_object_reference(kernel_object);
-    vm_map_find(kernel_map, kernel_object, offset, addr, length, find_space);
-
-	npg = atop(phys_end - phys_start);
-	size = (vm_size_t)(sizeof(struct pv_entry) * npg + npg);
-
-	hat->h_table = (struct pv_entry *)kmem_alloc(kernel_map, size);
-	hat_attach(hat, kernel_map, kernel_object);
-}
-
-void
-ovl_hat_init(hat, offset, addr, length, find_space, phys_start, phys_end)
-	hat_t hat;
-	vm_offset_t	offset;
-	vm_offset_t	*addr;
-	vm_size_t	length;
-	bool_t		find_space;
-	vm_offset_t phys_start, phys_end;
-{
-	vm_size_t size, npg;
-
-	ovl_object_reference(overlay_object);
-	ovl_map_find(overlay_map, overlay_object, offset, addr, length, find_space);
-
-	npg = atop(phys_end - phys_start);
-	size = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
-
-	hat->h_table = (struct pv_entry *)omem_alloc(overlay_map, size);
-	hat_attach(hat, overlay_map, overlay_object);
-}
-
-void
-pmap_init(vm_offset_t phys_start, vm_offset_t phys_end)
-{
-    vm_offset_t addr;
-
-    vm_hat_init(&vm_hat, addr, &addr, 2 * NBPG, FALSE, phys_start, phys_end);
-    ovl_hat_init(&ovl_hat, addr, &addr, 2 * NBPG, FALSE, phys_start, phys_end);
+	return ((*hops->hop_remove)(pmap, sva, eva));
 }
