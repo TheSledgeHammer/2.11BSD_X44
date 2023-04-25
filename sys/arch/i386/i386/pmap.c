@@ -293,7 +293,7 @@ pmap_map_pte(pmap, va)
 	vm_offset_t va;
 {
 	pd_entry_t *pde, *apde;
-	pd_entry_t opde, npde;
+	pd_entry_t opde;
 
 	if (pmap && pmap_pde_v(pmap_pde(pmap, va, 1))) {
 		/* are we current address space or kernel? */
@@ -308,8 +308,7 @@ pmap_map_pte(pmap, va)
 			}
 			opde = *APDP_PDE & PG_FRAME;
 			if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, 0)) {
-				npde = (pd_entry_t)(pmap_pdirpa(pmap, 0) | PG_RW | PG_V | PG_A | PG_M);
-				apde = &npde;
+				apde = (pd_entry_t *)(pmap_pdirpa(pmap, 0) | PG_RW | PG_V | PG_A | PG_M);
 				if ((opde & PG_V)) {
 					pmap_apte_flush(pmap);
 				}
@@ -326,7 +325,7 @@ pmap_map_pde(pmap, va)
 	vm_offset_t va;
 {
 	pd_entry_t *pde, *apde;
-	pd_entry_t opde, npde;
+	pd_entry_t opde;
 	unsigned long index;
 	int i;
 
@@ -345,8 +344,7 @@ pmap_map_pde(pmap, va)
 				}
 				opde = *APDP_PDE & PG_FRAME;
 				if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, index)) {
-					npde = (pd_entry_t)(pmap_pdirpa(pmap, index) | PG_RW | PG_V | PG_A | PG_M);
-					apde = &npde;
+					apde = (pd_entry_t *)(pmap_pdirpa(pmap, index) | PG_RW | PG_V | PG_A | PG_M);
 					if ((opde & PG_V)) {
 						pmap_apte_flush(pmap);
 					}
