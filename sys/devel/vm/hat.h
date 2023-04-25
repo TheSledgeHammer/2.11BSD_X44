@@ -65,7 +65,7 @@ hat_t		hat_find(hat_list_t, hat_map_t, hat_object_t);
 /* hat pv entries */
 vm_offset_t	hat_pa_index(vm_offset_t, vm_offset_t);
 pv_entry_t 	hat_to_pvh(hat_list_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t);
-void		hat_pv_enter(pmap_t, hat_list_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t);
-void		hat_pv_remove(pmap_t, hat_list_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t);
+void		hat_pv_enter(hat_list_t, pmap_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t);
+void		hat_pv_remove(hat_list_t, pmap_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t);
 
 #endif /* _VM_HAT_H_ */
