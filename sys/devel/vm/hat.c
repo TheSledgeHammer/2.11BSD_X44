@@ -93,7 +93,7 @@ hat_pv_remove(hatlist, pmap, map, object, sva, eva, first_phys, last_phys)
 			}
 			pv->pv_next = npv->pv_next;
 			free((caddr_t) npv, M_VMPVENT);
-			pv = pa_to_pvh(pa);
+			pv = hat_to_pvh(hatlist, map, object, pa, first_phys);
 		}
 		splx(s);
 	}
