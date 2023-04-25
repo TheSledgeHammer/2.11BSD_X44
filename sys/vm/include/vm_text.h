@@ -165,9 +165,6 @@ struct vm_xstats {
 #ifdef _KERNEL
 
 extern
-int ntext;
-
-extern
 struct txtlist  vm_text_list;
 
 /* vm_drum */

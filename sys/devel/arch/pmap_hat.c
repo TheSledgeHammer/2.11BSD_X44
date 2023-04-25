@@ -26,63 +26,75 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <devel/vm/hat.h>
+/*
+ * TODO:
+ * Issue:
+ * - With Overlay's enabled pmap will run both hats, when only one is likely going to be accessed at any one time.
+ *
+ * Current Solution:
+ * - Pass the hat flags through to the machine dependent pmap, instead of embedding them in vm_hat & ovl_hat.
+ * This would have the benefit of carrying back over into the vm and ovl.
+ */
 
-/* Overlays */
-void
-ovl_hat_init(hatlist, phys_start, phys_end)
-	hat_list_t hatlist;
-	vm_offset_t phys_start, phys_end;
-{
-	hat_t hat;
-	vm_offset_t addr;
-	vm_size_t pvsize, size, npg;
+struct hat_list	ovlhat_list;
+struct hat_list vmhat_list;
 
-	ovl_object_reference(overlay_object);
-	ovl_map_find(overlay_map, overlay_object, addr, &addr, 2*NBPG, FALSE);
-
-	pvsize = (vm_size_t)(sizeof(struct pv_entry));
-	npg = atop(phys_end - phys_start);
-	size = (pvsize * npg + npg);
-
-	hat = LIST_FIRST(hatlist);
-	if (hat == NULL) {
-		hat = (struct hat *)omem_alloc(overlay_map, sizeof(struct hat));
-	}
-	hat->h_table = (struct pv_entry *)omem_alloc(overlay_map, size);
-	hat_attach(&ovlhat_list, hat, overlay_map, overlay_object, HAT_OVL);
-}
-
-vm_offset_t
-ovl_hat_pa_index(pa)
-	vm_offset_t pa;
-{
-	return (hat_pa_index(pa, ovl_first_phys));
-}
+/*
+ * pmap functions which use pa_to_pvh:
+ * pmap_remove
+ * pmap_enter
+ * pmap_remove_all: N/A (overlay does not use)
+ * pmap_collect: N/A (overlay does not use)
+ * pmap_pageable: N/A (overlay does not use)
+ */
 
 pv_entry_t
-ovl_hat_to_pvh(hatlist, pa)
-	hat_list_t hatlist;
+pa_to_pvh(pa)
 	vm_offset_t pa;
 {
-	return (hat_to_pvh(hatlist, overlay_map, overlay_object, pa, ovl_first_phys, HAT_OVL));
+	return (vm_hat_to_pvh(&vmhat_list, pa));
 }
 
 void
-ovl_hat_pv_enter(hatlist, pmap, va, pa)
-	hat_list_t hatlist;
+pmap_hat_bootstrap(firstaddr)
+	vm_offset_t firstaddr;
+{
+	LIST_INIT(&vmhat_list);
+#ifdef OVERLAY
+	LIST_INIT(&ovlhat_list);
+#endif
+}
+
+void
+pmap_hat_init(phys_start, phys_end)
+	vm_offset_t phys_start, phys_end;
+{
+	vm_hat_init(&vmhat_list, phys_start, phys_end);
+
+#ifdef OVERLAY
+	ovl_hat_init(&ovlhat_list, phys_start, phys_end);
+#endif
+}
+
+void
+pmap_hat_pv_enter(pmap, va, pa)
 	pmap_t pmap;
 	vm_offset_t va;
 	vm_offset_t pa;
 {
-	hat_pv_enter(hatlist, overlay_map, overlay_object, pmap, va, pa, ovl_first_phys, ovl_last_phys, HAT_OVL);
+	vm_hat_pv_enter(&vmhat_list, pmap, va, pa);
+#ifdef OVERLAY
+	ovl_hat_pv_enter(&ovlhat_list, pmap, va, pa);
+#endif
 }
 
 void
-ovl_hat_pv_remove(hatlist, pmap, sva, eva)
-	hat_list_t hatlist;
+pmap_hat_pv_remove(pmap, sva, eva)
 	pmap_t pmap;
 	vm_offset_t sva, eva;
 {
-	hat_pv_remove(hatlist, overlay_map, overlay_object, pmap, sva, eva, ovl_first_phys, ovl_last_phys, HAT_OVL);
+	vm_hat_pv_remove(&vmhat_list, pmap, sva, eva);
+#ifdef OVERLAY
+	ovl_hat_pv_remove(&ovlhat_list, pmap, sva, eva);
+#endif
 }

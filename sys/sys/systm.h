@@ -50,6 +50,7 @@ extern int nblkdev;					/* number of entries in bdevsw */
 extern int nchrdev;					/* number of entries in cdevsw */
 extern int nswdev;					/* number of swap devices */
 extern int nswap;					/* size of swap space */
+extern int ntext;					/* number of texts (object cache) */
 
 extern int boothowto;				/* reboot flags, from boot */
 extern int bootverbose;				/* nonzero to print verbose messages */

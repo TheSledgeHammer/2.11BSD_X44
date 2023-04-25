@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 2023 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,16 @@ struct hat {
     pv_entry_t			h_table;
     hat_map_t			h_map;
     hat_object_t		h_object;
+    int 				h_flags;
 
     struct hat_ops		*h_op;
 };
 typedef struct hat      *hat_t;
 typedef struct hat_list	*hat_list_t;
+
+/* hat flags */
+#define HAT_VM			0x01	/* vmspace */
+#define HAT_OVL			0x02	/* ovlspace */
 
 struct hat_ops {
     void        		(*hop_bootstrap)(vm_offset_t);
@@ -58,14 +63,14 @@ struct hat_ops {
 extern struct hat_list	ovlhat_list;
 extern struct hat_list 	vmhat_list;
 
-void 		hat_attach(hat_list_t, hat_t, hat_map_t, hat_object_t);
-void		hat_detach(hat_list_t, hat_map_t, hat_object_t);
-hat_t		hat_find(hat_list_t, hat_map_t, hat_object_t);
+void 		hat_attach(hat_list_t, hat_t, hat_map_t, hat_object_t, int);
+void		hat_detach(hat_list_t, hat_map_t, hat_object_t, int);
+hat_t		hat_find(hat_list_t, hat_map_t, hat_object_t, int);
 
 /* hat pv entries */
 vm_offset_t	hat_pa_index(vm_offset_t, vm_offset_t);
-pv_entry_t 	hat_to_pvh(hat_list_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t);
-void		hat_pv_enter(hat_list_t, pmap_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t);
-void		hat_pv_remove(hat_list_t, pmap_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t);
+pv_entry_t 	hat_to_pvh(hat_list_t, hat_map_t, hat_object_t, vm_offset_t, vm_offset_t, int);
+void		hat_pv_enter(hat_list_t, hat_map_t, hat_object_t, pmap_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, int);
+void		hat_pv_remove(hat_list_t, hat_map_t, hat_object_t, pmap_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_offset_t, int);
 
 #endif /* _VM_HAT_H_ */

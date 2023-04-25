@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 2023 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,13 +28,12 @@
 
 #include <devel/vm/hat.h>
 
-struct hat_list vmhat_list = LIST_HEAD_INITIALIZER(vmhat_list);
-
 void
-vm_hat_init(hat, phys_start, phys_end)
-	hat_t hat;
+vm_hat_init(hatlist, phys_start, phys_end)
+	hat_list_t hatlist;
 	vm_offset_t phys_start, phys_end;
 {
+	hat_t hat;
 	vm_offset_t addr;
 	vm_size_t pvsize, size, npg;
 
@@ -45,8 +44,13 @@ vm_hat_init(hat, phys_start, phys_end)
 	npg = atop(phys_end - phys_start);
 	size = (pvsize * npg + npg);
 
+	hat = LIST_FIRST(hatlist);
+	if (hat == NULL) {
+		hat = (struct hat *)kmem_alloc(kernel_map, sizeof(struct hat));
+	}
+
 	hat->h_table = (struct pv_entry *)kmem_alloc(kernel_map, size);
-	hat_attach(&vmhat_list, hat, kernel_map, kernel_object);
+	hat_attach(hatlist, hat, kernel_map, kernel_object, HAT_VM);
 }
 
 vm_offset_t
@@ -57,28 +61,28 @@ vm_hat_pa_index(pa)
 }
 
 pv_entry_t
-vm_hat_to_pvh(pa)
+vm_hat_to_pvh(hatlist, pa)
+	hat_list_t hatlist;
 	vm_offset_t pa;
 {
-	pv_entry_t pvh;
-
-	pvh = hat_to_pvh(&vmhat_list, kernel_map, kernel_object, pa, vm_first_phys);
-	return (pvh);
+	return (hat_to_pvh(hatlist, kernel_map, kernel_object, pa, vm_first_phys, HAT_VM));
 }
 
 void
-vm_hat_pv_enter(pmap, va, pa)
+vm_hat_pv_enter(hatlist, pmap, va, pa)
+	hat_list_t hatlist;
 	pmap_t pmap;
 	vm_offset_t va;
 	vm_offset_t pa;
 {
-	hat_pv_enter(&vmhat_list, pmap, kernel_map, kernel_object, va, pa, vm_first_phys, vm_last_phys);
+	hat_pv_enter(hatlist, kernel_map, kernel_object, pmap, va, pa, vm_first_phys, vm_last_phys, HAT_VM);
 }
 
 void
-vm_hat_pv_remove(pmap, sva, eva)
+vm_hat_pv_remove(hatlist, pmap, sva, eva)
+	hat_list_t hatlist;
 	pmap_t pmap;
 	vm_offset_t sva, eva;
 {
-	hat_pv_remove(&vmhat_list, pmap, kernel_map, kernel_object, sva, eva, vm_first_phys, vm_last_phys);
+	hat_pv_remove(hatlist, kernel_map, kernel_object, pmap, sva, eva, vm_first_phys, vm_last_phys, HAT_VM);
 }

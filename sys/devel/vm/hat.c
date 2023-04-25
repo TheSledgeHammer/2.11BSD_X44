@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 2023 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,51 @@
 #include <vm/include/pmap.h>
 #include <devel/vm/hat.h>
 
+void
+hat_attach(hatlist, hat, map, object, flags)
+	hat_list_t hatlist;
+	hat_t hat;
+	hat_map_t map;
+	hat_object_t object;
+	int flags;
+{
+    hat->h_map = map;
+    hat->h_object = object;
+    hat->h_flags = flags;
+    LIST_INSERT_HEAD(hatlist, hat, h_next);
+}
+
+void
+hat_detach(hatlist, map, object, flags)
+	hat_list_t hatlist;
+	hat_map_t map;
+	hat_object_t object;
+	int flags;
+{
+	hat_t hat;
+	LIST_FOREACH(hat, hatlist, h_next) {
+        if (map == hat->h_map && object == hat->h_object && flags == hat->h_flags) {
+        	LIST_REMOVE(hat, h_next);
+        }
+    }
+}
+
+hat_t
+hat_find(hatlist, map, object, flags)
+	hat_list_t hatlist;
+	hat_map_t map;
+	hat_object_t object;
+	int flags;
+{
+	hat_t hat;
+	LIST_FOREACH(hat, hatlist, h_next) {
+        if (map == hat->h_map && object == hat->h_object && flags == hat->h_flags) {
+            return (hat);
+        }
+    }
+    return (NULL);
+}
+
 vm_offset_t
 hat_pa_index(pa, first_phys)
 	vm_offset_t pa;
@@ -44,26 +89,28 @@ hat_pa_index(pa, first_phys)
 }
 
 pv_entry_t
-hat_to_pvh(hatlist, map, object, pa, first_phys)
+hat_to_pvh(hatlist, map, object, pa, first_phys, flags)
 	hat_list_t hatlist;
 	hat_map_t map;
 	hat_object_t object;
 	vm_offset_t pa;
 	vm_offset_t first_phys;
+	int flags;
 {
     hat_t hat;
 
-    hat = hat_find(hatlist, map, object);
+    hat = hat_find(hatlist, map, object, flags);
     return (&hat->h_table[hat_pa_index(pa, first_phys)]);
 }
 
 void
-hat_pv_remove(hatlist, pmap, map, object, sva, eva, first_phys, last_phys)
+hat_pv_remove(hatlist, map, object, pmap, sva, eva, first_phys, last_phys, flags)
 	hat_list_t hatlist;
-	pmap_t pmap;
 	hat_map_t map;
 	hat_object_t object;
+	pmap_t pmap;
 	vm_offset_t sva, eva, first_phys, last_phys;
+	int flags;
 {
 	register pv_entry_t pv, npv;
 	register vm_offset_t pa, va;
@@ -100,19 +147,20 @@ hat_pv_remove(hatlist, pmap, map, object, sva, eva, first_phys, last_phys)
 }
 
 void
-hat_pv_enter(hatlist, pmap, map, object, va, pa, first_phys, last_phys)
+hat_pv_enter(hatlist, map, object, pmap, va, pa, first_phys, last_phys, flags)
 	hat_list_t hatlist;
-	pmap_t pmap;
 	hat_map_t map;
 	hat_object_t object;
+	pmap_t pmap;
 	vm_offset_t va, first_phys, last_phys;
 	vm_offset_t pa;
+	int flags;
 {
 	if (pa >= first_phys && pa < last_phys) {
 		register pv_entry_t pv, npv;
 		int s;
 
-		pv = hat_to_pvh(hatlist, map, object, pa, first_phys);
+		pv = hat_to_pvh(hatlist, map, object, pa, first_phys, flags);
 		s = splimp();
 		if (pv->pv_pmap == NULL) {
 			pv->pv_va = va;
@@ -125,49 +173,10 @@ hat_pv_enter(hatlist, pmap, map, object, va, pa, first_phys, last_phys)
 		    npv->pv_va = va;
 		    npv->pv_next = pv->pv_next;
 		    pv->pv_next = npv;
+
+		    splx(s);
 		}
 	}
-}
-
-void
-hat_attach(hatlist, hat, map, object)
-	hat_list_t hatlist;
-	hat_t hat;
-	hat_map_t map;
-	hat_object_t object;
-{
-    hat->h_map = map;
-    hat->h_object = object;
-    LIST_INSERT_HEAD(hatlist, hat, h_next);
-}
-
-void
-hat_detach(hatlist, map, object)
-	hat_list_t hatlist;
-	hat_map_t map;
-	hat_object_t object;
-{
-	hat_t hat;
-	LIST_FOREACH(hat, hatlist, h_next) {
-        if (map == hat->h_map && object == hat->h_object) {
-        	LIST_REMOVE(hat, h_next);
-        }
-    }
-}
-
-hat_t
-hat_find(hatlist, map, object)
-	hat_list_t hatlist;
-	hat_map_t map;
-	hat_object_t object;
-{
-	hat_t hat;
-	LIST_FOREACH(hat, hatlist, h_next) {
-        if (map == hat->h_map && object == hat->h_object) {
-            return (hat);
-        }
-    }
-    return (NULL);
 }
 
 void

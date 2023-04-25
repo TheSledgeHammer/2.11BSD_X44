@@ -243,10 +243,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_doproc(name + 1, namelen - 1, oldp, oldlenp));
 	case KERN_FILE:
 		return (sysctl_file(oldp, oldlenp));
-#ifdef notyet
-	case KERN_TEXT:
-		return (sysctl_text(oldp, oldlenp));
-#endif
 #ifdef GPROF
 	case KERN_PROF:
 		return (sysctl_doprof(name + 1, namelen - 1, oldp, oldlenp,
@@ -699,7 +695,9 @@ sysctl_file(where, sizep)
  * This one is in kern_clock.c in 4.4 but placed here for the reasons
  * given earlier (back around line 367).
 */
-
+/*
+ * Return information about system clocks.
+ */
 int
 sysctl_clockrate(where, sizep)
 	char *where;
@@ -712,8 +710,8 @@ sysctl_clockrate(where, sizep)
 	*/
 	clkinfo.hz = hz;
 	clkinfo.tick = mshz;
-	clkinfo.profhz = 0;
-	clkinfo.stathz = hz;
+	clkinfo.profhz = profhz;
+	clkinfo.stathz = stathz ? stathz : hz;
 	return (sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof (clkinfo)));
 }
 #endif

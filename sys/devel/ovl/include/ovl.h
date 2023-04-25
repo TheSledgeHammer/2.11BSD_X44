@@ -76,10 +76,11 @@ typedef struct ovl_page			*ovl_page_t;
 struct ovlspace {
 	struct ovl_map 	    ovl_map;	    	/* overlay address */
 	struct pmap    		ovl_pmap;	    	/* private physical map */
+
 	int		        	ovl_refcnt;	   		/* number of references */
 #define ovl_startcopy 	ovl_rssize
 	segsz_t 			ovl_rssize; 		/* current resident set size in pages */
-
+#ifdef notyet
 	segsz_t 			ovl_tsize;			/* text size */
 	segsz_t 			ovl_ssize;			/* stack size */
 	segsz_t 			ovl_dsize;			/* data size */
@@ -88,6 +89,7 @@ struct ovlspace {
 	caddr_t	        	ovl_daddr;			/* user overlay address of data */
 	caddr_t         	ovl_minsaddr;		/* user OVA at min stack growth */
 	caddr_t         	ovl_maxsaddr;		/* user OVA at max stack growth */
+#endif
 };
 
 #endif /* _OVL_H_ */

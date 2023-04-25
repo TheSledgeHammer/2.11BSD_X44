@@ -152,7 +152,8 @@ ovadvise(p, uap, retval)
 }
 
 int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
-int	ogrow(vm_offset_t);
+int nbreak(struct proc *, struct obreak_args *, int *);
+int	ngrow(struct proc *, vm_offset_t);
 
 /*
  * Change the size of the data+stack regions of the process.
@@ -182,10 +183,10 @@ vm_expand(p, newsize, type)
 		return;
 	}
 	if (type == PSEG_DATA) {
-		n = pseg->ps_data->psx_dsize;
-		pseg->ps_data->psx_dsize = newsize;
-		p->p_dsize = pseg->ps_data->psx_dsize;
-		a1 = pseg->ps_data->psx_daddr;
+		n = pseg->ps_dsize;
+		pseg->ps_dsize = newsize;
+		p->p_dsize = pseg->ps_dsize;
+		a1 = pseg->ps_daddr;
 		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
 		if (n >= newsize) {
 			n -= newsize;
@@ -194,22 +195,22 @@ vm_expand(p, newsize, type)
 			return;
 		}
 	} else {
-		n = pseg->ps_stack->psx_ssize;
-		pseg->ps_stack->psx_ssize = newsize;
-		p->p_ssize = pseg->ps_stack->psx_ssize;
-		a1 = pseg->ps_stack->psx_saddr;
+		n = pseg->ps_ssize;
+		pseg->ps_ssize = newsize;
+		p->p_ssize = pseg->ps_ssize;
+		a1 = pseg->ps_saddr;
 		vm_psegment_expand(pseg, newsize, a1, PSEG_STACK);
 		if (n >= newsize) {
 			n -= newsize;
-			pseg->ps_stack->psx_saddr += n;
-			p->p_saddr = pseg->ps_stack->psx_saddr;
+			pseg->ps_saddr += n;
+			p->p_saddr = pseg->ps_saddr;
 			vm_psegment_free(pseg, coremap, n, a1, PSEG_STACK);
 			//rmfree(coremap, n, a1);
 			return;
 		}
 	}
 	if (type == PSEG_STACK) {
-		a1 = pseg->ps_stack->psx_saddr;
+		a1 = pseg->ps_saddr;
 		i = newsize - n;
 		a2 = a1 + i;
 		/*
@@ -232,15 +233,15 @@ vm_expand(p, newsize, type)
 		}
 	}
 	if (type == PSEG_STACK) {
-		pseg->ps_stack->psx_saddr = a2;
-		p->p_saddr = pseg->ps_stack->psx_saddr;
+		pseg->ps_saddr = a2;
+		p->p_saddr = pseg->ps_saddr;
 		/*
 		 * Make the copy put the stack at the top of the new area.
 		 */
 		a2 += newsize - n;
 	} else {
-		pseg->ps_data->psx_daddr = a2;
-		p->p_daddr = pseg->ps_data->psx_daddr;
+		pseg->ps_daddr = a2;
+		p->p_daddr = pseg->ps_daddr;
 	}
 	bcopy(a1, a2, n);
 	rmfree(coremap, n, (long)a1);
@@ -340,87 +341,98 @@ choverlay(flags)
 
 }
 
+int
+nbreak(p, uap, retval)
+	struct proc *p;
+	struct obreak_args *uap;
+	int *retval;
+{
+	register struct vmspace *vm;
+	register vm_psegment_t pseg;
+	vm_offset_t new, old;
+	int rv;
+	register int diff;
+
+	vm = p->p_vmspace;
+	pseg = vm->vm_psegment;
+	old = (vm_offset_t)pseg->ps_daddr;
+	new = round_page(uap->nsiz);
+	if ((int)(new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
+		return(ENOMEM);
+	old = round_page(old + ctob(pseg->ps_dsize));
+	diff = new - old;
+	if (diff > 0) {
+		rv = vm_allocate(&vm->vm_map, &old, diff, FALSE);
+		if (rv != KERN_SUCCESS) {
+			uprintf("sbrk: grow failed, return = %d\n", rv);
+			return(ENOMEM);
+		}
+		pseg->ps_dsize += btoc(diff);
+	} else if (diff < 0) {
+		diff = -diff;
+		rv = vm_deallocate(&vm->vm_map, new, diff);
+		if (rv != KERN_SUCCESS) {
+			uprintf("sbrk: shrink failed, return = %d\n", rv);
+			return(ENOMEM);
+		}
+		pseg->ps_dsize -= btoc(diff);
+	}
+	return(0);
+}
+
 /*
  * grow the stack to include the SP
  * true return if successful.
  */
-int
-ogrow(sp)
-	vm_offset_t sp;
-{
-	register int si;
-
-	if (sp >= -ctob(u.u_ssize)) {
-		return (0);
-	}
-	si = (-sp) / ctob(1) - u.u_ssize + SINCR;
-	/*
-	 * Round the increment back to a segment boundary if necessary.
-	 */
-	if (ctos(si + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
-		si = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
-	}
-	if (si <= 0) {
-		return (0);
-	}
-	if (vm_estabur(u.u_procp, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
-		return (0);
-	}
-
-	/*
-	 *  expand will put the stack in the right place;
-	 *  no copy required here.
-	 */
-	vm_expand(u.u_procp, u.u_ssize + si, PSEG_STACK);
-	u.u_ssize += si;
-	bzero(u.u_procp->p_saddr, si);
-	return (1);
-}
-
 int
 ngrow(p, sp)
 	struct proc *p;
 	vm_offset_t sp;
 {
 	register struct vmspace *vm;
-	register int si;
+	register vm_psegment_t pseg;
+	register int si, usi, vsi;
 
 	vm = p->p_vmspace;
+	pseg = vm->vm_psegment;
 
 	/*
 	 * For user defined stacks (from sendsig).
 	 */
-	if (sp < (vm_offset_t)vm->vm_maxsaddr || sp >= -ctob(u.u_ssize)) {
+	if (sp < (vm_offset_t)pseg->ps_maxsaddr || sp >= -ctob(u.u_ssize)) {
 		return (0);
 	}
 
     /*
 	 * For common case of already allocated (from trap).
 	 */
-	if (sp >= USRSTACK - ctob(vm->vm_ssize)) {
+	if (sp >= USRSTACK - ctob(pseg->ps_ssize)) {
 		return (1);
 	}
 
-    si = (-sp) / ctob(1) - u.u_ssize + SINCR;
+	usi = (-sp) / ctob(1) - u.u_ssize + SINCR;
 
     /*
 	 * Round the increment back to a segment boundary if necessary.
 	 */
-	if (ctos(si + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
-		si = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
+	if (ctos(usi + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
+		usi = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
 	}
 
 	/*
 	 * Really need to check vs limit and increment stack size if ok.
 	 */
-    if (si == clrnd(btoc(USRSTACK-sp) - vm->vm_ssize)) {
-        if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
-            return (0);
-        }
+	vsi = clrnd(btoc(USRSTACK - sp) - pseg->ps_ssize);
+    if (usi == vsi) {
+    	si = usi;
     } else {
-        if (si <= 0) {
-            return (0);
-        }
+    	si = vsi;
+    }
+    if (pseg->ps_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
+    	return (0);
+    }
+    if (si <= 0) {
+    	return (0);
     }
 
     if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
@@ -433,8 +445,8 @@ ngrow(p, sp)
 	 */
 	vm_expand(p, u.u_ssize + si, PSEG_STACK);
 
-	vm->vm_ssize += si;
-    u.u_ssize = vm->vm_ssize;
+	pseg->ps_ssize += si;
+    u.u_ssize = pseg->ps_ssize;
     bzero(p->p_saddr, si);
 	return (1);
 }
