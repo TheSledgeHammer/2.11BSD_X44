@@ -1224,8 +1224,9 @@ reduce wiring count on page table pages as references drop
 		 * Remove from the PV table (raise IPL since we
 		 * may be called at interrupt time).
 		 */
-		if (pa < vm_first_phys || pa >= vm_last_phys)
+		if (pa < vm_first_phys || pa >= vm_last_phys) {
 			continue;
+		}
 		pv = pa_to_pvh(pa);
 		s = splimp();
 		/*
@@ -1239,8 +1240,9 @@ reduce wiring count on page table pages as references drop
 			if (npv) {
 				*pv = *npv;
 				free((caddr_t)npv, M_VMPVENT);
-			} else
+			} else {
 				pv->pv_pmap = NULL;
+			}
 #ifdef DEBUG
 			remove_stats.pvfirst++;
 #endif
@@ -1249,8 +1251,9 @@ reduce wiring count on page table pages as references drop
 #ifdef DEBUG
 				remove_stats.pvsearch++;
 #endif
-				if (pmap == npv->pv_pmap && va == npv->pv_va)
+				if (pmap == npv->pv_pmap && va == npv->pv_va) {
 					break;
+				}
 				pv = npv;
 			}
 #ifdef DEBUG
@@ -1542,9 +1545,11 @@ pmap_enter(pmap, va, pa, prot, wired)
 		else {
 			/*printf("second time: ");*/
 #ifdef DEBUG
-			for (npv = pv; npv; npv = npv->pv_next)
-				if (pmap == npv->pv_pmap && va == npv->pv_va)
+			for (npv = pv; npv; npv = npv->pv_next) {
+				if (pmap == npv->pv_pmap && va == npv->pv_va) {
 					panic("pmap_enter: already in pv_tab");
+				}
+			}
 #endif
 			npv = (pv_entry_t) malloc(sizeof *npv, M_VMPVENT, M_NOWAIT);
 			npv->pv_va = va;
@@ -2306,7 +2311,7 @@ pmap_changebit(pa, bit, setem)
 			pte = (int*) pmap_pte(pv->pv_pmap, va);
 			ix = 0;
 			do {
-				if(setem) {
+				if (setem) {
 					npte = *pte | bit;
 					pmap_invalidate_page(pv->pv_pmap, pv->pv_va);
 				} else {

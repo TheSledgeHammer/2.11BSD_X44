@@ -26,6 +26,21 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/user.h>
+
+#include <vm/include/vm.h>
+#include <vm/include/vm_kern.h>
+#include <vm/include/vm_page.h>
+
+#include <ovl/include/ovl.h>
+#include <ovl/include/ovl_overlay.h>
+#include <ovl/include/ovl_page.h>
+
+#include <devel/arch/pmap_hat.h>
+
 /*
  * TODO:
  * Issue:
@@ -35,10 +50,6 @@
  * - Pass the hat flags through to the machine dependent pmap, instead of embedding them in vm_hat & ovl_hat.
  * This would have the benefit of carrying back over into the vm and ovl.
  */
-
-struct hat_list	ovlhat_list;
-struct hat_list vmhat_list;
-
 /*
  * pmap functions which use pa_to_pvh:
  * pmap_remove
@@ -48,53 +59,149 @@ struct hat_list vmhat_list;
  * pmap_pageable: N/A (overlay does not use)
  */
 
-pv_entry_t
-pa_to_pvh(pa)
+/* PMAP HAT */
+void
+pmap_hat_attach(hatlist, hat, map, object, flags)
+	pmap_hat_list_t hatlist;
+	pmap_hat_t hat;
+	pmap_hat_map_t map;
+	pmap_hat_object_t object;
+	int flags;
+{
+    hat->ph_map = map;
+    hat->ph_object = object;
+    hat->ph_flags = flags;
+    LIST_INSERT_HEAD(hatlist, hat, ph_next);
+}
+
+void
+pmap_hat_detach(hatlist, map, object, flags)
+	pmap_hat_list_t hatlist;
+	pmap_hat_map_t map;
+	pmap_hat_object_t object;
+	int flags;
+{
+	pmap_hat_t hat;
+	LIST_FOREACH(hat, hatlist, ph_next) {
+        if (map == hat->ph_map && object == hat->ph_object && flags == hat->ph_flags) {
+        	LIST_REMOVE(hat, ph_next);
+        }
+    }
+}
+
+pmap_hat_t
+pmap_hat_find(hatlist, map, object, flags)
+	pmap_hat_list_t hatlist;
+	pmap_hat_map_t map;
+	pmap_hat_object_t object;
+	int flags;
+{
+	pmap_hat_t hat;
+	LIST_FOREACH(hat, hatlist, ph_next) {
+        if (map == hat->ph_map && object == hat->ph_object && flags == hat->ph_flags) {
+            return (hat);
+        }
+    }
+    return (NULL);
+}
+
+vm_offset_t
+pmap_hat_to_pa_index(pa, first_phys)
 	vm_offset_t pa;
+	vm_offset_t first_phys;
 {
-	return (vm_hat_to_pvh(&vmhat_list, pa));
+	vm_offset_t index;
+	index = atop(pa - first_phys);
+	return (index);
 }
 
-void
-pmap_hat_bootstrap(firstaddr)
-	vm_offset_t firstaddr;
+pv_entry_t
+pmap_hat_to_pvh(hatlist, map, object, pa, first_phys, flags)
+	pmap_hat_list_t hatlist;
+	pmap_hat_map_t map;
+	pmap_hat_object_t object;
+	vm_offset_t pa;
+	vm_offset_t first_phys;
+	int flags;
 {
-	LIST_INIT(&vmhat_list);
-#ifdef OVERLAY
-	LIST_INIT(&ovlhat_list);
-#endif
+	pmap_hat_t hat;
+
+    hat = hat_find(hatlist, map, object, flags);
+    return (&hat->ph_pvtable[hat_pa_index(pa, first_phys)]);
 }
 
+/* VM HAT */
 void
-pmap_hat_init(phys_start, phys_end)
+vm_hat_init(hatlist, phys_start, phys_end)
+	pmap_hat_list_t hatlist;
 	vm_offset_t phys_start, phys_end;
 {
-	vm_hat_init(&vmhat_list, phys_start, phys_end);
+	pmap_hat_t hat;
+	vm_offset_t addr;
+	vm_size_t pvsize, size, npg;
 
-#ifdef OVERLAY
-	ovl_hat_init(&ovlhat_list, phys_start, phys_end);
-#endif
+    vm_object_reference(kernel_object);
+    vm_map_find(kernel_map, kernel_object, addr, &addr, 2*NBPG, FALSE);
+
+	pvsize = (vm_size_t)(sizeof(struct pv_entry));
+	npg = atop(phys_end - phys_start);
+	size = (pvsize * npg + npg);
+
+	LIST_INIT(hatlist);
+	hat = (struct pmap_hat *)kmem_alloc(kernel_map, sizeof(struct pmap_hat));
+	hat->ph_pvtable = (struct pv_entry *)kmem_alloc(kernel_map, size);
+	hat_attach(hatlist, hat, kernel_map, kernel_object, PMAP_HAT_VM);
 }
 
-void
-pmap_hat_pv_enter(pmap, va, pa)
-	pmap_t pmap;
-	vm_offset_t va;
+vm_offset_t
+vm_hat_pa_index(pa)
 	vm_offset_t pa;
 {
-	vm_hat_pv_enter(&vmhat_list, pmap, va, pa);
-#ifdef OVERLAY
-	ovl_hat_pv_enter(&ovlhat_list, pmap, va, pa);
-#endif
+	return (pmap_hat_to_pa_index(pa, vm_first_phys));
 }
 
-void
-pmap_hat_pv_remove(pmap, sva, eva)
-	pmap_t pmap;
-	vm_offset_t sva, eva;
+pv_entry_t
+vm_hat_to_pvh(hatlist, pa)
+	pmap_hat_list_t hatlist;
+	vm_offset_t pa;
 {
-	vm_hat_pv_remove(&vmhat_list, pmap, sva, eva);
-#ifdef OVERLAY
-	ovl_hat_pv_remove(&ovlhat_list, pmap, sva, eva);
-#endif
+	return (pmap_hat_to_pvh(hatlist, kernel_map, kernel_object, pa, vm_first_phys, PMAP_HAT_VM));
+}
+
+/* OVERLAY HAT */
+void
+ovl_hat_init(hatlist, phys_start, phys_end)
+	pmap_hat_list_t hatlist;
+	vm_offset_t phys_start, phys_end;
+{
+	pmap_hat_t hat;
+	vm_offset_t addr;
+	vm_size_t pvsize, size, npg;
+
+	ovl_object_reference(overlay_object);
+	ovl_map_find(overlay_map, overlay_object, addr, &addr, 2*NBPG, FALSE);
+
+	pvsize = (vm_size_t)(sizeof(struct pv_entry));
+	npg = atop(phys_end - phys_start);
+	size = (pvsize * npg + npg);
+
+	LIST_INIT(hatlist);
+	hat = (struct pmap_hat *)omem_alloc(overlay_map, sizeof(struct pmap_hat));
+	hat->ph_pvtable = (struct pv_entry *)omem_alloc(overlay_map, size);
+	hat_attach(hatlist, hat, overlay_map, overlay_object, PMAP_HAT_OVL);
+}
+
+vm_offset_t
+ovl_hat_pa_index(pa)
+	vm_offset_t pa;
+{
+	return (pmap_hat_to_pa_index(pa, ovl_first_phys));
+}
+
+pv_entry_t
+ovl_hat_to_pvh(hatlist, pa)
+	pmap_hat_list_t hatlist;
+	vm_offset_t pa;
+{
+	return (pmap_hat_to_pvh(hatlist, overlay_map, overlay_object, pa, ovl_first_phys, PMAP_HAT_OVL));
 }

@@ -76,7 +76,7 @@ pmap_bootstrap(firstaddr)
 	vm_offset_t firstaddr;
 {
 	vm_offset_t va;
-	pt_entry_t *pte, *unused;
+	pt_entry_t *pte;
 	u_long res;
 	int i;
 
