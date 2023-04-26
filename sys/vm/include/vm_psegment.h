@@ -46,8 +46,8 @@ struct vm_pseudo_segment {
 #define ps_saddr 			ps_stack->psx_saddr		/* user virtual address of stack XXX */
 #define ps_taddr 			ps_text->psx_taddr		/* user virtual address of text XXX */
 
-	caddr_t 				ps_minaddr;				/* user VA at min stack growth */
-	caddr_t 				ps_maxaddr;				/* user VA at max stack growth */
+	caddr_t 				ps_minsaddr;				/* user VA at min stack growth */
+	caddr_t 				ps_maxsaddr;				/* user VA at max stack growth */
 };
 
 /* pseudo-segment types */
