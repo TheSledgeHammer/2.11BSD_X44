@@ -354,7 +354,7 @@ nbreak(p, uap, retval)
 	register int diff;
 
 	vm = p->p_vmspace;
-	pseg = vm->vm_psegment;
+	pseg = &vm->vm_psegment;
 	old = (vm_offset_t)pseg->ps_daddr;
 	new = round_page(uap->nsiz);
 	if ((int)(new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
@@ -394,7 +394,7 @@ ngrow(p, sp)
 	register int si, usi, vsi;
 
 	vm = p->p_vmspace;
-	pseg = vm->vm_psegment;
+	pseg = &vm->vm_psegment;
 
 	/*
 	 * For user defined stacks (from sendsig).
