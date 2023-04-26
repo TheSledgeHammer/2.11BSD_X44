@@ -101,9 +101,9 @@ pmap_hat_map(virt, start, end, prot, flags)
 }
 
 void
-pmap_hat_remove(pmap, sva, eva, flags)
+pmap_hat_remove(pmap, sva, eva, flags, first_phys, last_phys)
 	register pmap_t pmap;
-	vm_offset_t sva, eva;
+	vm_offset_t sva, eva, first_phys, last_phys;
 	int flags;
 {
 	register vm_offset_t pa, va;
@@ -161,7 +161,7 @@ pmap_hat_remove(pmap, sva, eva, flags)
 		 * Remove from the PV table (raise IPL since we
 		 * may be called at interrupt time).
 		 */
-		if (pa < vm_first_phys || pa >= vm_last_phys) {
+		if (pa < first_phys || pa >= last_phys) {
 			continue;
 		}
 		pv = pmap_hat_pa_to_pvh(pa, flags);
@@ -201,9 +201,9 @@ pmap_hat_remove(pmap, sva, eva, flags)
 }
 
 void
-pmap_hat_enter(pmap, va, pa, prot, wired, flags)
+pmap_hat_enter(pmap, va, pa, prot, wired, flags, first_phys, last_phys)
 	register pmap_t pmap;
-	vm_offset_t va;
+	vm_offset_t va, first_phys, last_phys;
 	register vm_offset_t pa;
 	vm_prot_t prot;
 	bool_t wired;
@@ -260,7 +260,7 @@ pmap_hat_enter(pmap, va, pa, prot, wired, flags)
 	 * handle validating new mapping.
 	 */
 	if (opa) {
-		pmap_hat_remove(pmap, va, va + PAGE_SIZE, flags);
+		pmap_hat_remove(pmap, va, va + PAGE_SIZE, flags, first_phys, last_phys);
 	}
 
 	/*
@@ -268,7 +268,7 @@ pmap_hat_enter(pmap, va, pa, prot, wired, flags)
 	 * Note that we raise IPL while manipulating pv_table
 	 * since pmap_enter can be called at interrupt time.
 	 */
-	if (pa >= vm_first_phys && pa < vm_last_phys) {
+	if (pa >= first_phys && pa < last_phys) {
 		register pv_entry_t pv, npv;
 		int s;
 
@@ -370,7 +370,7 @@ pmap_remove(pmap, sva, eva)
 	pmap_t pmap;
 	vm_offset_t sva, eva;
 {
-	pmap_hat_remove(pmap, sva, eva, PMAP_HAT_VM);
+	pmap_hat_remove(pmap, sva, eva, PMAP_HAT_VM, vm_first_phys, vm_last_phys);
 }
 
 void
@@ -381,7 +381,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 	vm_prot_t prot;
 	bool_t wired;
 {
-	pmap_hat_enter(pmap, va, pa, prot, wired, PMAP_HAT_VM);
+	pmap_hat_enter(pmap, va, pa, prot, wired, PMAP_HAT_VM, vm_first_phys, vm_last_phys);
 }
 
 void
@@ -419,7 +419,7 @@ pmap_overlay_remove(pmap, sva, eva)
 	pmap_t pmap;
 	vm_offset_t sva, eva;
 {
-	pmap_hat_remove(pmap, sva, eva, PMAP_HAT_OVL);
+	pmap_hat_remove(pmap, sva, eva, PMAP_HAT_OVL, ovl_first_phys, ovl_last_phys);
 }
 
 void
@@ -430,5 +430,5 @@ pmap_overlay_enter(pmap, va, pa, prot, wired)
 	vm_prot_t prot;
 	bool_t wired;
 {
-	pmap_hat_enter(pmap, va, pa, prot, wired, PMAP_HAT_OVL);
+	pmap_hat_enter(pmap, va, pa, prot, wired, PMAP_HAT_OVL, ovl_first_phys, ovl_last_phys);
 }
