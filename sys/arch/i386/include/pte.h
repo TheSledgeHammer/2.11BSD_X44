@@ -50,23 +50,23 @@
 #ifndef _I386_PTE_H_
 #define _I386_PTE_H_
 
-#define	PG_RO		0x000		/* R/O	Read-Only		*/
-#define	PG_V		0x001		/* P	Valid			*/
-#define	PG_RW		0x002		/* R/W	Read/Write		*/
-#define	PG_u		0x004
-#define	PG_PROT		0x006 		/* all protection bits .*/
-#define	PG_NC_PWT	0x008		/* PWT	Write through	*/
-#define	PG_NC_PCD	0x010		/* PCD	Cache disable	*/
-#define PG_U		0x020		/* U/S  User/Supervisor	*/
-#define	PG_M		0x040		/* D	Dirty			*/
-#define PG_A		0x060		/* A	Accessed		*/
-#define	PG_PS		0x080		/* PS	Page size (0=4k,1=4M)	*/
-#define	PG_PTE_PAT	0x080		/* PAT	PAT index		*/
-#define	PG_G		0x100		/* G	Global			*/
-#define	PG_W		0x200		/* "Wired" pseudoflag 	*/
-#define	PG_SWAPM	0x400
-#define	PG_FOD		0x600
-#define PG_N		0x800 		/* Non-cacheable 		*/
+#define	PG_RO		0x0000		/* R/O	Read-Only		*/
+#define	PG_V		0x0001		/* P	Valid			*/
+#define	PG_RW		0x0002		/* R/W	Read/Write		*/
+#define	PG_u		0x0004
+#define	PG_PROT		0x0006 		/* all protection bits .*/
+#define	PG_NC_PWT	0x0008		/* PWT	Write through	*/
+#define	PG_NC_PCD	0x0010		/* PCD	Cache disable	*/
+#define PG_U		0x0020		/* U/S  User/Supervisor	*/
+#define	PG_M		0x0040		/* D	Dirty			*/
+#define PG_A		0x0060		/* A	Accessed		*/
+#define	PG_PS		0x0080		/* PS	Page size (0=4k,1=4M)	*/
+#define	PG_PTE_PAT	0x0080		/* PAT	PAT index		*/
+#define	PG_G		0x0100		/* G	Global			*/
+#define	PG_W		0x0200		/* "Wired" pseudoflag 	*/
+#define	PG_SWAPM	0x0400
+#define	PG_FOD		0x0600
+#define PG_N		0x0800 		/* Non-cacheable 		*/
 #define	PG_PDE_PAT	0x1000		/* PAT	PAT index		*/
 #define	PG_NX		(1ull<<63) 	/* No-execute 			*/
 
@@ -78,6 +78,8 @@
 #define	PG_URKR		0x6000
 #define	PG_URKW		0x6000
 #define	PG_UW		0x8000
+
+#define	PG_MANAGED	PG_SWAPM
 
 #define	PG_FZERO	0
 #define	PG_FTEXT	1

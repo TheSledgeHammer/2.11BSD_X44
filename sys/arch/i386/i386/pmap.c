@@ -1571,7 +1571,73 @@ pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
 	vm_size_t	len;
 	vm_offset_t	src_addr;
 {
+	pt_entry_t *src_pte, *dst_pte, ptetemp;
+	pd_entry_t srcptepaddr;
+	vm_offset_t addr, end_addr, pdnxt;
+	unsigned long ptepindex;
+	int i;
 
+	if (dst_addr != src_addr) {
+		return;
+	}
+
+	end_addr = src_addr + len;
+	if (dst_pmap < src_pmap) {
+		pmap_lock(dst_pmap);
+		pmap_lock(src_pmap);
+	} else {
+		pmap_lock(src_pmap);
+		pmap_lock(dst_pmap);
+	}
+
+	for (i = PTP_LEVELS; i > 1; i--) {
+		for (addr = src_addr; addr < end_addr; addr = pdnxt) {
+			pdnxt = (addr + NBPDR) & ~NBPDR-1;
+			if (pdnxt < addr) {
+				pdnxt = end_addr;
+			}
+			ptepindex = PL_I(addr, i);
+
+			srcptepaddr = src_pmap->pm_pdir[ptepindex];
+			if (srcptepaddr == 0) {
+				continue;
+			}
+			if (srcptepaddr & PG_PS) {
+				if ((addr & NBPDR-1) != 0 || addr + NBPDR > end_addr) {
+					continue;
+				}
+				if (dst_pmap->pm_pdir[ptepindex] == 0 && ((srcptepaddr & PG_MANAGED) == 0)) {
+					dst_pmap->pm_pdir[ptepindex] = srcptepaddr & ~PG_W;
+					dst_pmap->pm_stats.resident_count += NBPDR / PAGE_SIZE;
+				}
+				continue;
+			}
+			if (pdnxt > end_addr) {
+				pdnxt = end_addr;
+			}
+
+			src_pte = pmap_pte(src_pmap, addr);
+			while (addr < pdnxt) {
+				ptetemp = *src_pte;
+
+				if ((ptetemp & PG_MANAGED) != 0) {
+					dst_pte = pmap_pte(dst_pmap, addr);
+					if (*dst_pte == 0) {
+						*dst_pte = ptetemp & ~(PG_W | PG_M | PG_A);
+						dst_pmap->pm_stats.resident_count++;
+					} else {
+						goto out;
+					}
+				}
+				addr += PAGE_SIZE;
+				src_pte++;
+			}
+		}
+	}
+
+out:
+	pmap_lock(src_pmap);
+	pmap_lock(dst_pmap);
 }
 
 /*
@@ -1585,7 +1651,6 @@ pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
 void
 pmap_update(void)
 {
-
 	tlbflush();
 }
 

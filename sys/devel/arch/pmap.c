@@ -432,3 +432,65 @@ pmap_overlay_enter(pmap, va, pa, prot, wired)
 {
 	pmap_hat_enter(pmap, va, pa, prot, wired, PMAP_HAT_OVL, ovl_first_phys, ovl_last_phys);
 }
+
+void
+pmap_remove_pv(pmap, va, pv)
+	register pmap_t pmap;
+	vm_offset_t va;
+	pv_entry_t pv;
+{
+	register pv_entry_t npv;
+
+	/*
+	 * If it is the first entry on the list, it is actually
+	 * in the header and we must copy the following entry up
+	 * to the header.  Otherwise we must search the list for
+	 * the entry.  In either case we free the now unused entry.
+	 */
+	if (pmap == pv->pv_pmap && va == pv->pv_va) {
+		npv = pv->pv_next;
+		if (npv) {
+			*pv = *npv;
+			free((caddr_t)npv, M_VMPVENT);
+		} else {
+			pv->pv_pmap = NULL;
+			pv->pv_next = NULL;
+		}
+	} else {
+		for (npv = pv->pv_next; npv; pv = npv, npv = npv->pv_next) {
+			if (pmap == npv->pv_pmap && va == npv->pv_va) {
+				break;
+			}
+		}
+		if (npv) {
+			pv->pv_next = npv->pv_next;
+			free((caddr_t)npv, M_VMPVENT);
+		}
+	}
+}
+
+void
+pmap_enter_pv(pmap, va, pv)
+	register pmap_t pmap;
+	vm_offset_t va;
+	pv_entry_t pv;
+{
+	register pv_entry_t npv;
+
+	if (pv->pv_pmap == NULL) {
+		pv->pv_va = va;
+		pv->pv_pmap = pmap;
+		pv->pv_next = NULL;
+		pv->pv_flags = 0;
+	} else {
+		/*
+		 * There is at least one other VA mapping this page.
+		 * Place this entry after the header.
+		 */
+		npv = (pv_entry_t)malloc(sizeof(*npv), M_VMPVENT, M_NOWAIT);
+	    npv->pv_pmap = pmap;
+	    npv->pv_va = va;
+	    npv->pv_next = pv->pv_next;
+	    pv->pv_next = npv;
+	}
+}
