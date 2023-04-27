@@ -74,7 +74,7 @@ vm_anon_init(void)
 	 */
 	anon = vm_anon_allocate(nanon);
 
-	memset(anon, 0, sizeof(*anon) * nanon);
+	bzero(anon, sizeof(*anon) * nanon);
 	cnt.v_nanon = cnt.v_nfreeanon = nanon;
 
 	anon->u.an_free = NULL;
