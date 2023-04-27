@@ -140,8 +140,6 @@ vm_offset_t local_apic_pa;
 static int pgeflag = 0;			/* PG_G or-in */
 static int pseflag = 0;			/* PG_PS or-in */
 
-static int nkpt = NKPT;
-
 #ifdef PMAP_PAE_COMP
 pt_entry_t pg_nx;
 #else
@@ -151,13 +149,11 @@ pt_entry_t pg_nx;
 int pat_works;
 int pg_ps_enabled;
 int elf32_nxstack;
-int i386_pmap_PDRSHIFT;
 
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
 extern char 	_end[]; /* boot.ldscript */
-//char 			_end[];
 vm_offset_t 	kernel_vm_end;
 u_long 			physfree;			/* phys addr of next free page */
 u_long 			vm86phystk;			/* PA of vm86/bios stack */
@@ -174,9 +170,7 @@ vm_offset_t		virtual_end;		/* VA of last avail page (end of kernel AS) */
 vm_offset_t		vm_first_phys;		/* PA of first managed page */
 vm_offset_t		vm_last_phys;		/* PA just past last managed page */
 
-int				i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
 bool_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
-char			*pmap_attributes;	/* reference and modify bits */
 
 pd_entry_t 		*IdlePTD;			/* phys addr of kernel PTD */
 #ifdef PMAP_PAE_COMP
@@ -223,6 +217,82 @@ pa_to_pvh(pa)
 	pv_entry_t pvh;
 	pvh = &pv_table[pa_index(pa)];
 	return (pvh);
+}
+
+void
+pmap_remove_pv(pmap, va, pv, bits)
+	register pmap_t pmap;
+	vm_offset_t va;
+	pv_entry_t pv;
+	int bits;
+{
+	register pv_entry_t npv;
+	int s;
+
+	/*
+	 * Remove from the PV table (raise IPL since we
+	 * may be called at interrupt time).
+	 */
+	s = splimp();
+
+	/*
+	 * If it is the first entry on the list, it is actually
+	 * in the header and we must copy the following entry up
+	 * to the header.  Otherwise we must search the list for
+	 * the entry.  In either case we free the now unused entry.
+	 */
+	if (pmap == pv->pv_pmap && va == pv->pv_va) {
+		npv = pv->pv_next;
+		if (npv) {
+			*pv = *npv;
+			free((caddr_t)npv, M_VMPVENT);
+		} else {
+			pv->pv_pmap = NULL;
+			pv->pv_next = NULL;
+		}
+	} else {
+		for (npv = pv->pv_next; npv; pv = npv, npv = npv->pv_next) {
+			if (pmap == npv->pv_pmap && va == npv->pv_va) {
+				break;
+			}
+		}
+		if (npv) {
+			pv->pv_next = npv->pv_next;
+			free((caddr_t)npv, M_VMPVENT);
+		}
+	}
+
+	pv->pv_attr |= bits;
+	splx(s);
+}
+
+void
+pmap_enter_pv(pmap, va, pv)
+	register pmap_t pmap;
+	vm_offset_t va;
+	pv_entry_t pv;
+{
+	register pv_entry_t npv;
+	int s;
+
+	s = splimp();
+	if (pv->pv_pmap == NULL) {
+		pv->pv_va = va;
+		pv->pv_pmap = pmap;
+		pv->pv_next = NULL;
+		pv->pv_flags = 0;
+	} else {
+		/*
+		 * There is at least one other VA mapping this page.
+		 * Place this entry after the header.
+		 */
+		npv = (pv_entry_t)malloc(sizeof(*npv), M_VMPVENT, M_NOWAIT);
+	    npv->pv_pmap = pmap;
+	    npv->pv_va = va;
+	    npv->pv_next = pv->pv_next;
+	    pv->pv_next = npv;
+	}
+	splx(s);
 }
 
 __inline static void
@@ -533,7 +603,6 @@ pmap_bootstrap(firstaddr)
 
 	virtual_avail = (vm_offset_t)firstaddr;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
-	i386pagesperpage = PAGE_SIZE / I386_PAGE_SIZE;
 
 	/*
 	 * Initialize protection array.
@@ -830,7 +899,7 @@ pmap_init(phys_start, phys_end)
 	pv_table = (pv_entry_t)kmem_alloc(kernel_map, s);
 	addr = (vm_offset_t) pv_table;
 	addr += sizeof(struct pv_entry) * npg;
-	pmap_attributes = (char *) addr;
+	pv_table->pv_attr = (char *) addr;
 
 	pmap_pj_page_init();
 
@@ -1097,7 +1166,7 @@ pmap_remove(pmap, sva, eva)
 		do {
 			bits |= *(int *)pte & (PG_U|PG_M);
 			*(int *)pte++ = 0;
-		} while (++ix != i386pagesperpage);
+		} while (++ix != 1);
 		if (pmap == &curproc->p_vmspace->vm_pmap) {
 			pmap_activate(pmap, (struct pcb *)curproc->p_addr);
 		}
@@ -1111,37 +1180,7 @@ pmap_remove(pmap, sva, eva)
 			continue;
 		}
 		pv = pa_to_pvh(pa);
-		s = splimp();
-		/*
-		 * If it is the first entry on the list, it is actually
-		 * in the header and we must copy the following entry up
-		 * to the header.  Otherwise we must search the list for
-		 * the entry.  In either case we free the now unused entry.
-		 */
-		if (pmap == pv->pv_pmap && va == pv->pv_va) {
-			npv = pv->pv_next;
-			if (npv) {
-				*pv = *npv;
-				free((caddr_t)npv, M_VMPVENT);
-			} else {
-				pv->pv_pmap = NULL;
-			}
-		} else {
-			for (npv = pv->pv_next; npv; npv = npv->pv_next) {
-				if (pmap == npv->pv_pmap && va == npv->pv_va) {
-					break;
-				}
-				pv = npv;
-			}
-			pv->pv_next = npv->pv_next;
-			free((caddr_t)npv, M_VMPVENT);
-			pv = pa_to_pvh(pa);
-		}
-		/*
-		 * Update saved attributes for managed page
-		 */
-		pmap_attributes[pa_index(pa)] |= bits;
-		splx(s);
+		pmap_remove_pv(pmap, va, pv, bits);
 	}
 }
 
@@ -1253,7 +1292,7 @@ pmap_protect(pmap, sva, eva, prot)
 		do {
 			/* clear VAC here if PG_RO? */
 			pmap_pte_set_prot(pte++, i386prot);
-		} while (++ix != i386pagesperpage);
+		} while (++ix != 1);
 	}
 out:
 	if (pmap == &curproc->p_vmspace->vm_pmap) {
@@ -1339,35 +1378,12 @@ pmap_enter(pmap, va, pa, prot, wired)
 	 * since pmap_enter can be called at interrupt time.
 	 */
 	if (pa >= vm_first_phys && pa < vm_last_phys) {
-		register pv_entry_t pv, npv;
-		int s;
+		register pv_entry_t pv;
 
 		pv = pa_to_pvh(pa);
-		s = splimp();
-
-		/*
-		 * No entries yet, use header as the first entry
-		 */
-		if (pv->pv_pmap == NULL) {
-			pv->pv_va = va;
-			pv->pv_pmap = pmap;
-			pv->pv_next = NULL;
-			pv->pv_flags = 0;
-		}
-		/*
-		 * There is at least one other VA mapping this page.
-		 * Place this entry after the header.
-		 */
-		else {
-			/*printf("second time: ");*/
-			npv = (pv_entry_t) malloc(sizeof *npv, M_VMPVENT, M_NOWAIT);
-			npv->pv_va = va;
-			npv->pv_pmap = pmap;
-			npv->pv_next = pv->pv_next;
-			pv->pv_next = npv;
-			splx(s);
-		}
+		pmap_enter_pv(pmap, va, pv);
 	}
+
 	/*
 	 * Assumption: if it is not part of our managed memory
 	 * then it must be device memory which may be volitile.
@@ -1405,7 +1421,7 @@ validate:
 		*(int*) pte++ = npte;
 		npte += I386_PAGE_SIZE;
 		va += I386_PAGE_SIZE;
-	} while (++ix != i386pagesperpage);
+	} while (++ix != 1);
 	pte--;
 	pmap_invalidate_page(pmap, va);
 	tlbflush();
@@ -1469,7 +1485,7 @@ pmap_change_wiring(pmap, va, wired)
 	ix = 0;
 	do {
 		pmap_pte_set_w(pte++, wired);
-	} while (++ix != i386pagesperpage);
+	} while (++ix != 1);
 }
 
 static pd_entry_t *
@@ -1681,7 +1697,7 @@ pmap_zero_page(phys)
 	ix = 0;
 	do {
 		clearseg(phys++);
-	} while (++ix != i386pagesperpage);
+	} while (++ix != 1);
 }
 
 /*
@@ -1715,7 +1731,7 @@ pmap_copy_page(src, dst)
 	ix = 0;
 	do {
 		physcopyseg(src++, dst++);
-	} while (++ix != i386pagesperpage);
+	} while (++ix != 1);
 }
 
 /*
@@ -1810,7 +1826,7 @@ bool_t
 pmap_is_referenced(pa)
 	vm_offset_t	pa;
 {
-	return( pmap_testbit(pa, PG_U));
+	return (pmap_testbit(pa, PG_U));
 }
 
 /*
@@ -1917,10 +1933,11 @@ pmap_testbit(pa, bit)
 
 	pv = pa_to_pvh(pa);
 	s = splimp();
+
 	/*
 	 * Check saved info first
 	 */
-	if (pmap_attributes[pa_index(pa)] & bit) {
+	if (pv->pv_attr & bit) {
 		splx(s);
 		return (TRUE);
 	}
@@ -1937,7 +1954,7 @@ pmap_testbit(pa, bit)
 					splx(s);
 					return (TRUE);
 				}
-			} while (++ix != i386pagesperpage);
+			} while (++ix != 1);
 		}
 	}
 	splx(s);
@@ -1970,7 +1987,7 @@ pmap_changebit(pa, bit, setem)
 	 * Clear saved attributes (modify, reference)
 	 */
 	if (!setem) {
-		pmap_attributes[pa_index(pa)] &= ~bit;
+		pv->pv_attr &= ~bit;
 	}
 	/*
 	 * Loop over all current mappings setting/clearing as appropos
@@ -2006,7 +2023,7 @@ pmap_changebit(pa, bit, setem)
 				}
 				va += I386_PAGE_SIZE;
 				pte++;
-			} while (++ix != i386pagesperpage);
+			} while (++ix != 1);
 
 			if (pv->pv_pmap == &p->p_vmspace->vm_pmap) {
 				pmap_activate(pv->pv_pmap, (struct pcb*) &p->p_addr->u_pcb);
@@ -2014,6 +2031,45 @@ pmap_changebit(pa, bit, setem)
 		}
 	}
 	splx(s);
+}
+
+struct bios16_pmap_handle {
+	pt_entry_t	*pte;
+	pd_entry_t	*ptd;
+	pt_entry_t	orig_ptd;
+};
+
+void *
+pmap_bios16_enter(void)
+{
+	struct bios16_pmap_handle *h;
+	extern pd_entry_t *IdlePTD;
+
+	/*
+	 * no page table, so create one and install it.
+	 */
+	h = (struct bios16_pmap_handle *)malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
+	h->pte = (pt_entry_t *) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
+	h->ptd = IdlePTD;
+	*h->pte = vm86phystk | PG_RW | PG_V;
+	h->orig_ptd = *h->ptd;
+	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
+	pmap_invalidate_all(kernel_pmap); /* XXX insurance for now */
+	return (h);
+}
+
+void
+pmap_bios16_leave(void *arg)
+{
+	struct bios16_pmap_handle *h;
+
+	h = arg;
+	*h->ptd = h->orig_ptd; /* remove page table */
+	/*
+	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
+	 */
+	pmap_invalidate_all(kernel_pmap);
+	free(h->pte, M_TEMP); /* ... and free it */
 }
 
 #ifdef DEBUG
@@ -2092,42 +2148,3 @@ pmap_pads(pm)
 	}
 }
 #endif
-
-struct bios16_pmap_handle {
-	pt_entry_t	*pte;
-	pd_entry_t	*ptd;
-	pt_entry_t	orig_ptd;
-};
-
-void *
-pmap_bios16_enter(void)
-{
-	struct bios16_pmap_handle *h;
-	extern pd_entry_t *IdlePTD;
-
-	/*
-	 * no page table, so create one and install it.
-	 */
-	h = (struct bios16_pmap_handle *)malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
-	h->pte = (pt_entry_t *) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
-	h->ptd = IdlePTD;
-	*h->pte = vm86phystk | PG_RW | PG_V;
-	h->orig_ptd = *h->ptd;
-	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
-	pmap_invalidate_all(kernel_pmap); /* XXX insurance for now */
-	return (h);
-}
-
-void
-pmap_bios16_leave(void *arg)
-{
-	struct bios16_pmap_handle *h;
-
-	h = arg;
-	*h->ptd = h->orig_ptd; /* remove page table */
-	/*
-	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
-	 */
-	pmap_invalidate_all(kernel_pmap);
-	free(h->pte, M_TEMP); /* ... and free it */
-}

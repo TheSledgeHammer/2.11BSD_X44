@@ -476,6 +476,7 @@ vm_hat_init(hatlist, phys_start, phys_end)
 	LIST_INIT(hatlist);
 	hat = (struct pmap_hat *)kmem_alloc(kernel_map, sizeof(struct pmap_hat));
 	hat->ph_pvtable = (struct pv_entry *)kmem_alloc(kernel_map, size);
+	hat->ph_pvtable->pv_attr = (char *)addr;
 	pmap_hat_attach(hatlist, hat, kernel_map, kernel_object, PMAP_HAT_VM);
 }
 
@@ -493,7 +494,6 @@ vm_hat_to_pvh(hatlist, pa)
 {
 	return (pmap_hat_to_pvh(hatlist, kernel_map, kernel_object, pa, vm_first_phys, PMAP_HAT_VM));
 }
-
 
 #ifdef OVERLAYS
 /* OVERLAY HAT */

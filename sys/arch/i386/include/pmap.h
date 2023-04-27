@@ -409,6 +409,7 @@ struct pv_entry {
 	struct pmap				*pv_pmap;		/* pmap where mapping lies */
 	vm_offset_t				pv_va;			/* virtual address for mapping */
 	int						pv_flags;		/* flags */
+	char					*pv_attr;		/* attrs array */
 };
 typedef struct pv_entry		*pv_entry_t;
 
@@ -453,14 +454,12 @@ extern bool_t 				pmap_initialized;		/* Has pmap_init completed? */
 
 extern u_long 				physfree;		/* phys addr of next free page */
 extern u_long 				vm86phystk;		/* PA of vm86/bios stack */
-//extern u_long 				vm86paddr;		/* address of vm86 region */
 extern int 					vm86pa;			/* phys addr of vm86 region */
 extern u_long 				KPTphys;		/* phys addr of kernel page tables */
 extern u_long 				KERNend;
 extern vm_offset_t 			kernel_vm_end;
 extern u_long 				tramp_idleptd;
 extern int 					pae_mode;
-extern int 					i386_pmap_PDRSHIFT;
 extern pv_entry_t			pv_table;		/* array of entries, one per page */
 
 extern uint32_t 			ptp_masks[];

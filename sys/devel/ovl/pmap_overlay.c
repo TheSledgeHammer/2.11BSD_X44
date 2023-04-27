@@ -226,11 +226,9 @@ pmap_overlay_enter(pmap, va, pa, prot, wired)
 			nov->ov_pmap = pmap;
 			nov->ov_next = ov->ov_next;
 			ov->ov_next = nov;
-
             splx(s);
         }
     }
-    tlbflush();
 }
 
 void
