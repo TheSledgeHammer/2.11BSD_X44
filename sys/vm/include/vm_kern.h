@@ -75,4 +75,9 @@ extern vm_map_t	mb_map;
 extern vm_map_t pager_map;
 extern vm_map_t	phys_map;
 
+extern vm_offset_t  avail_start;
+extern vm_offset_t  avail_end;
+extern vm_offset_t  virtual_avail;
+extern vm_offset_t  virtual_end;
+
 #endif /* _VM_KERN_H_ */
