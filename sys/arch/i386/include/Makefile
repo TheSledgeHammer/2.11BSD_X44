@@ -9,7 +9,7 @@ INCS=		ansi.h aout_machdep.h asm.h atomic.h bios.h bootinfo.h bswap.h byte_swap.
 			macho_machdep.h npx.h param.h pcb.h pic.h pio.h pmap.h pmap_reg.h 		\
 			pmap_tlb.h proc.h profile.h psl.h pte.h reg.h segments.h setjmp.h 		\
 			signal.h softpic.h specialreg.h stdarg.h sysarch.h trap.h tss.h types.h \
-			vm86.h vmparam.h xcoff_machdep.h
+			vm86.h vmparam.h xcoff_machdep.h pmap_hat.h
 			
 # MP/SMP
 INCS+=		mcontext.h mpbiosreg.h mpbiosvar.h mpconfig.h percpu.h smp.h

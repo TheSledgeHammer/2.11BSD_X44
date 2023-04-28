@@ -173,7 +173,13 @@ struct kmemslabs_cache {
 #if defined(KMEMSTATS) || defined(DIAGNOSTIC)
 #define	MALLOC(space, cast, size, type, flags) 						\
 	(space) = (cast)malloc((u_long)(size), type, flags)
-#define FREE(addr, type) free((caddr_t)(addr), (type))
+#define FREE(addr, type) 			free((caddr_t)(addr), (type))
+
+#ifdef OVERLAY
+#define OVERLAY_MALLOC(space, cast, size, type, flags)				\
+	(space) = (cast)overlay_malloc((u_long)(size), type, flags)
+#define OVERLAY_FREE(addr, type)	overlay_free((caddr_t)(addr), type)
+#endif
 
 #else /* do not collect statistics */
 #define	MALLOC(space, cast, size, type, flags) { 					\
@@ -205,6 +211,7 @@ struct kmemslabs_cache {
 	} 																\
 	splx(s); 														\
 }
+
 #endif /* do not collect statistics */
 
 extern struct kmemslabs_cache   *slabCache;
@@ -217,6 +224,11 @@ extern void *malloc(unsigned long, int, int);
 extern void free(void *, int);
 extern void *realloc(void *, unsigned long, int, int);
 extern void *calloc(int, unsigned long, int, int);
+
+#ifdef OVERLAY
+extern void *overlay_malloc(unsigned long, int, int);
+extern void overlay_free(void *, int);
+#endif
 #endif /* KERNEL */
 
 #endif /* !_SYS_MALLOC_H_ */

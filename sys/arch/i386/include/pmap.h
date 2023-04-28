@@ -460,7 +460,7 @@ extern u_long 				KERNend;
 extern vm_offset_t 			kernel_vm_end;
 extern u_long 				tramp_idleptd;
 extern int 					pae_mode;
-extern pv_entry_t			pv_table;		/* array of entries, one per page */
+//extern pv_entry_t			pv_table;		/* array of entries, one per page */
 
 extern uint32_t 			ptp_masks[];
 extern uint32_t				ptp_shifts[];

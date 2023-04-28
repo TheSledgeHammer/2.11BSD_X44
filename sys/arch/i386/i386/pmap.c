@@ -96,6 +96,11 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
+#ifdef OVERLAY
+#include <ovl/include/ovl.h>
+#include <ovl/include/ovl_overlay.h>
+#endif
+
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
@@ -107,6 +112,7 @@
 #endif
 #include <machine/pmap.h>
 #include <machine/pmap_tlb.h>
+#include <machine/pmap_hat.h>
 
 #include <machine/apic/lapicvar.h>
 #include <machine/isa/isa_machdep.h>
@@ -165,10 +171,19 @@ u_long 			tramp_idleptd;
 
 vm_offset_t 	avail_start;		/* PA of first available physical page */
 vm_offset_t		avail_end;			/* PA of last available physical page */
+
 vm_offset_t		virtual_avail;  	/* VA of first avail page (after kernel bss)*/
 vm_offset_t		virtual_end;		/* VA of last avail page (end of kernel AS) */
 vm_offset_t		vm_first_phys;		/* PA of first managed page */
 vm_offset_t		vm_last_phys;		/* PA just past last managed page */
+
+struct pmap_hat_list 	vmhat_list;
+
+#ifdef OVERLAY
+vm_offset_t				ovl_first_phys;
+vm_offset_t				ovl_last_phys;
+struct pmap_hat_list	ovlhat_list;
+#endif
 
 bool_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
 
@@ -179,9 +194,12 @@ pdpt_entry_t 	*IdlePDPT;			/* phys addr of kernel PDPT */
 pt_entry_t 		*KPTmap;			/* address of kernel page tables */
 pv_entry_t		pv_table;			/* array of entries, one per page */
 
+
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
 static struct pmap_list pmap_header;
+
+
 
 /*
  * All those kernel PT submaps that BSD is so fond of
@@ -201,98 +219,18 @@ static vm_offset_t	pmap_bootstrap_palloc(size_t);
 static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
-static vm_offset_t
+vm_offset_t
 pa_index(pa)
 	vm_offset_t pa;
 {
-	vm_offset_t index;
-	index = atop(pa - vm_first_phys);
-	return (index);
+	return (pmap_hat_pa_index(pa, PMAP_HAT_VM));
 }
 
-static pv_entry_t
+pv_entry_t
 pa_to_pvh(pa)
 	vm_offset_t pa;
 {
-	pv_entry_t pvh;
-	pvh = &pv_table[pa_index(pa)];
-	return (pvh);
-}
-
-void
-pmap_remove_pv(pmap, va, pv, bits)
-	register pmap_t pmap;
-	vm_offset_t va;
-	pv_entry_t pv;
-	int bits;
-{
-	register pv_entry_t npv;
-	int s;
-
-	/*
-	 * Remove from the PV table (raise IPL since we
-	 * may be called at interrupt time).
-	 */
-	s = splimp();
-
-	/*
-	 * If it is the first entry on the list, it is actually
-	 * in the header and we must copy the following entry up
-	 * to the header.  Otherwise we must search the list for
-	 * the entry.  In either case we free the now unused entry.
-	 */
-	if (pmap == pv->pv_pmap && va == pv->pv_va) {
-		npv = pv->pv_next;
-		if (npv) {
-			*pv = *npv;
-			free((caddr_t)npv, M_VMPVENT);
-		} else {
-			pv->pv_pmap = NULL;
-			pv->pv_next = NULL;
-		}
-	} else {
-		for (npv = pv->pv_next; npv; pv = npv, npv = npv->pv_next) {
-			if (pmap == npv->pv_pmap && va == npv->pv_va) {
-				break;
-			}
-		}
-		if (npv) {
-			pv->pv_next = npv->pv_next;
-			free((caddr_t)npv, M_VMPVENT);
-		}
-	}
-
-	pv->pv_attr |= bits;
-	splx(s);
-}
-
-void
-pmap_enter_pv(pmap, va, pv)
-	register pmap_t pmap;
-	vm_offset_t va;
-	pv_entry_t pv;
-{
-	register pv_entry_t npv;
-	int s;
-
-	s = splimp();
-	if (pv->pv_pmap == NULL) {
-		pv->pv_va = va;
-		pv->pv_pmap = pmap;
-		pv->pv_next = NULL;
-		pv->pv_flags = 0;
-	} else {
-		/*
-		 * There is at least one other VA mapping this page.
-		 * Place this entry after the header.
-		 */
-		npv = (pv_entry_t)malloc(sizeof(*npv), M_VMPVENT, M_NOWAIT);
-	    npv->pv_pmap = pmap;
-	    npv->pv_va = va;
-	    npv->pv_next = pv->pv_next;
-	    pv->pv_next = npv;
-	}
-	splx(s);
+	return (pmap_hat_pa_to_pvh(pa, PMAP_HAT_VM));
 }
 
 __inline static void
@@ -597,6 +535,10 @@ pmap_bootstrap(firstaddr)
 	u_long res;
 	int i;
 
+#ifdef OVERLAY
+	pmap_overlay_bootstrap(firstaddr, res);
+#else
+
 	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
 
 	avail_start = firstaddr;
@@ -885,6 +827,32 @@ pmap_init(phys_start, phys_end)
 	int i;
 
 	addr = (vm_offset_t) KERNBASE + KPTphys;
+	vm_hat_init(&vmhat_list, phys_start, phys_end, addr);
+
+	pmap_pj_page_init();
+
+	/*
+	 * Now it is safe to enable pv_table recording.
+	 */
+	vm_first_phys = phys_start;
+	vm_last_phys = phys_end;
+
+#ifdef OVERLAY
+	ovl_hat_init(&ovlhat_list, phys_start, phys_end, addr);
+#endif
+
+	pmap_initialized = TRUE;
+}
+#ifdef notyet
+void
+pmap_init(phys_start, phys_end)
+	vm_offset_t	phys_start, phys_end;
+{
+	vm_offset_t addr;
+	vm_size_t npg, s;
+	int i;
+
+	addr = (vm_offset_t) KERNBASE + KPTphys;
 	vm_object_reference(kernel_object);
 	vm_map_find(kernel_map, kernel_object, addr, &addr, 2 * NBPG, FALSE);
 
@@ -911,7 +879,7 @@ pmap_init(phys_start, phys_end)
 
 	pmap_initialized = TRUE;
 }
-
+#endif
 /*
  *	Used to map a range of physical addresses into kernel
  *	virtual address space.
@@ -1176,11 +1144,7 @@ pmap_remove(pmap, sva, eva)
 		 * Remove from the PV table (raise IPL since we
 		 * may be called at interrupt time).
 		 */
-		if (pa < vm_first_phys || pa >= vm_last_phys) {
-			continue;
-		}
-		pv = pa_to_pvh(pa);
-		pmap_remove_pv(pmap, va, pv, bits);
+		pmap_hat_remove_pv(pmap, va, pa, bits, PMAP_HAT_VM, vm_first_phys, vm_last_phys);
 	}
 }
 

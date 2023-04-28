@@ -58,21 +58,34 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm.h>
 
+#ifdef OVERLAY
+#include <ovl/include/ovl_overlay.h>
+#include <ovl/include/ovl.h>
+#endif
+
 struct kmemslabs_cache  *slabCache;
 struct kmemslabs		slabbucket[MINBUCKET + 16];
 struct kmemstats 		kmemstats[M_LAST];
 struct kmemusage 		*kmemusage;
 int			        	kmemslab_count;
 struct lock_object 		malloc_slock;
-vm_map_t			kmem_map;
+vm_map_t				kmem_map;
 char *kmembase, 		*kmemlimit;
 char *memname[] = INITKMEMNAMES;
 
+#ifdef OVERLAY
+ovl_map_t				omem_map;
+char *omembase, 		*omemlimit;
+#endif
+
 /* [internal use only] */
 caddr_t	kmalloc(unsigned long, int);
-//caddr_t	omalloc(unsigned long, int);
 void	kfree(void *, short);
-//void	ofree(void *, short, int);
+
+#ifdef OVERLAY
+caddr_t	omalloc(unsigned long, int);
+void	ofree(void *, short, int);
+#endif
 
 #ifdef DIAGNOSTIC
 
@@ -372,16 +385,16 @@ malloc(size, type, flags)
 #endif
     if (kbp->kb_next == NULL) {
     	kbp->kb_last = NULL;
-    	/*
-		if(flags & M_OVERLAY) {
+    	simple_unlock(&malloc_slock);
+#ifdef OVERLAY
+		if (flags & M_OVERLAY) {
 			va = omalloc(size, flags);
 		} else {
 			va = kmalloc(size, flags);
 		}
-		*/
-    	simple_unlock(&malloc_slock);
+#else
     	va = kmalloc(size, flags);
-
+#endif
         if (va == NULL) {
         	splx(s);
 #ifdef DEBUG
@@ -520,14 +533,15 @@ free(addr, type)
 		panic("free: unaligned addr 0x%x, size %d, type %s, mask %d\n", addr, size, memname[type], alloc);
 #endif /* DIAGNOSTIC */
 	if (size > MAXALLOCSAVE) {
-		/*
+#ifdef OVERLAY
 		if(type & M_OVERLAY) {
 			ofree(addr, ctob(kup->ku_pagecnt), (type & M_OVERLAY));
 		} else {
 			kfree(addr, ctob(kup->ku_pagecnt));
 		}
-		*/
+#else
 		kfree(addr, ctob(kup->ku_pagecnt));
+#endif
 #ifdef KMEMSTATS
 		size = kup->ku_pagecnt << PGSHIFT;
 		ksp->ks_memuse -= size;
@@ -710,7 +724,7 @@ calloc(nitems, size, type, flags)
 
 /* Initialize the kernel memory allocator */
 void
-kmeminit()
+kmeminit(void)
 {
 	register long indx;
 	int npg;
@@ -778,8 +792,31 @@ kfree(addr, size)
 	kmem_free(kmem_map, (vm_offset_t) addr, size);
 }
 
+#ifdef OVERLAY
+
+void *
+overlay_malloc(size, type, flags)
+	unsigned long size;
+	int type, flags;
+{
+	return (malloc(size, type, flags | M_OVERLAY));
+}
+
+void
+overlay_free(addr, type)
+	void *addr;
+	int type;
+{
+	free(addr, type | M_OVERLAY);
+}
+
+ void
+ omeminit(void)
+ {
+	 omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&omembase, (vm_offset_t *)&omemlimit, (vm_size_t)OVL_MAX_ADDRESS);
+ }
+
 /* allocate memory to ovl [internal use only] */
-/*
 caddr_t
 omalloc(size, flags)
 	unsigned long size;
@@ -797,10 +834,9 @@ omalloc(size, flags)
 	va = (caddr_t)omem_malloc(omem_map, (vm_size_t)ctob(npg), (M_OVERLAY & !(flags & (M_NOWAIT | M_CANFAIL))));
 	return (va);
 }
-*/
+
 
 /* free memory from ovl [internal use only] */
-/*
 void
 ofree(addr, size, type)
 	void *addr;
@@ -811,4 +847,4 @@ ofree(addr, size, type)
 		omem_free(omem_map, (vm_offset_t) addr, size);
 	}
 }
-*/
+#endif

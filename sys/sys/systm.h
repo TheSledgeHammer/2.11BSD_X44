@@ -113,6 +113,9 @@ extern void mbinit(void);			/* mbuf startup */
 extern void netstart(void);			/* network startup */
 extern void rmapinit(void);			/* rmap startup (map) */
 extern void vfsinit(void);			/* vfs startup */
+#ifdef OVERLAY
+extern void omeminit(void);			/* omem startup (overlay malloc) */
+#endif
 
 /* General Function Declarations */
 struct clockframe;

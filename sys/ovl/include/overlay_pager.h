@@ -1,6 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2023 Martin Kelly
+ * Copyright (c) 2020 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,14 +24,20 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @(#)ovl_overlay.h	1.00
  */
 
-/* Overlay memory management definitions. */
+#ifndef OVERLAY_PAGER_H_
+#define OVERLAY_PAGER_H_
 
-extern ovl_map_t 			omem_map;
-extern ovl_map_t 			overlay_map;
+struct ovlpager {
+	ovl_object_t		ovl_object;
+	ovl_segment_t		ovl_segment;
+	ovl_page_t			ovl_page;
+};
+typedef struct ovlpager	*ovl_pager_t;
 
-extern vm_offset_t 			overlay_avail;
-extern vm_offset_t			overlay_end;
+/* flags */
+#define OVL_PGR_GET 0x01
+#define OVL_PGR_PUT 0x02
+
+#endif /* OVERLAY_PAGER_H_ */

@@ -139,7 +139,11 @@
 #define M_VMAMAP		92	/* VM amap structures */
 #define M_VMAOBJ 		93	/* VM aobject structure */
 #define M_AGP			94	/* AGP memory */
-#define	M_TEMP			95	/* misc temporary data buffers */
+#define M_OVLMAP		95	/* OVL map structures */
+#define	M_OVLMAPENT		96	/* OVL map entry structures */
+#define M_OVLOBJ		97	/* OVL object structure */
+#define M_OVLOBJHASH	98	/* OVL object hash structure */
+#define	M_TEMP			99	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {									\
@@ -235,9 +239,13 @@
 	"SP queue ent", 			/* 89 M_SPIDPQ */       \
 	"PF",						/* 90 M_PF */ 			\
 	"key mgmt",     			/* 91 M_SECA */         \
-	"vm amap",					/* 92 M_VMAMAP */		\
-	"vm aobject",				/* 93 M_VMAOBJ */		\
+	"VM amap",					/* 92 M_VMAMAP */		\
+	"VM aobject",				/* 93 M_VMAOBJ */		\
 	"AGP", 						/* 94 M_AGP */			\
+	"OVL map",					/* 30 M_OVLMAP */ 		\
+	"OVL mapent",				/* 31 M_OVLMAPENT */ 	\
+	"OVL object",				/* 32 M_OVLOBJ */ 		\
+	"OVL objhash",				/* 33 M_OVLOBJHASH */	\
 	"temp",						/* 95 M_TEMP */ 		\
 }
 

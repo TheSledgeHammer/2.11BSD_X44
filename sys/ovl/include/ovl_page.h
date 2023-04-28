@@ -60,7 +60,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_init.c	8.1 (Berkeley) 6/11/93
+ *	@(#)vm_page.h	8.3 (Berkeley) 1/9/95
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -89,29 +89,68 @@
  * rights to redistribute these changes.
  */
 
-/*
- *	Initialize the Overlay Memory subsystem.
- */
+#ifndef OVL_PAGE_H_
+#define OVL_PAGE_H_
 
-#include <sys/param.h>
+#include <vm/include/vm_page.h>
 
-#include <ovl/include/ovl.h>
-#include <ovl/include/ovl_overlay.h>
-#include <ovl/include/ovl_segment.h>
-#include <ovl/include/ovl_page.h>
+struct vm_page_hash_head;
+struct ovl_pglist;
+TAILQ_HEAD(vm_page_hash_head, ovl_page);
+TAILQ_HEAD(ovl_pglist, ovl_page);
+struct ovl_page {
+	TAILQ_ENTRY(ovl_page)	hashq;					/* hash table links (S)*/
+	TAILQ_ENTRY(ovl_page)	listq;					/* pages in same segment (S)*/
 
-void
-ovl_mem_init()
-{
-	ovl_segment_init(&overlay_avail, &overlay_end);
-	ovl_page_init(&overlay_avail, &overlay_end);
+	ovl_segment_t			segment;				/* which segment am I in (O,(S,P))*/
+	vm_offset_t				offset;					/* offset into segment (O,(S,P)) */
 
-	/*
-	 * Initialize other OVL packages
-	 */
-	ovl_object_init(overlay_end - OVL_MIN_ADDRESS);
-	ovl_map_startup();
-	omem_init(overlay_avail, overlay_end);
-	pmap_overlay_init(avail_start, avail_end); /* not correct! */
-	overlay_pager_init();
-}
+	u_short					flags;					/* see below */
+	vm_offset_t				phys_addr;				/* physical address of page */
+
+	vm_page_t				vm_page;				/* a vm_page being held */
+	TAILQ_ENTRY(ovl_page) 	vm_page_hlist;			/* list of all my associated vm_pages */
+};
+
+/* flags */
+#define OVL_PG_VM_PG			0x16	/* overlay page holds vm_page */
+
+#ifdef _KERNEL
+
+extern
+struct ovl_pglist				ovl_page_list;
+extern
+simple_lock_data_t				ovl_page_list_lock;
+extern
+struct vm_page_hash_head     	ovl_vm_page_hashtable;
+extern
+long				       		ovl_vm_page_count;
+extern
+simple_lock_data_t				ovl_vm_page_hash_lock;
+
+extern
+long							ovl_first_page;
+extern
+long							ovl_last_page;
+
+extern
+vm_offset_t						ovl_first_phys_addr;
+extern
+vm_offset_t						ovl_last_phys_addr;
+
+#define	ovl_page_lock_lists()		simple_lock(&ovl_page_list_lock)
+#define	ovl_page_unlock_lists()		simple_unlock(&ovl_page_list_lock)
+
+#define	ovl_vm_page_hash_lock()		simple_lock(&ovl_vm_page_hash_lock)
+#define	ovl_vm_page_hash_unlock()	simple_unlock(&ovl_vm_page_hash_lock)
+
+void 		*ovl_pmap_bootinit(void *, vm_size_t, int);
+void		ovl_page_init(vm_offset_t, vm_offset_t);
+void		ovl_page_insert(ovl_page_t, ovl_segment_t, vm_offset_t);
+void		ovl_page_remove(ovl_page_t);
+ovl_page_t	ovl_page_lookup(ovl_segment_t, vm_offset_t);
+
+//vm_page_copy_to_ovl_page		/* inserts into ovl_page hash list */
+//vm_page_copy_from_ovl_page	/* removes from ovl_page hash list */
+#endif /* KERNEL */
+#endif /* _OVL_PAGE_H_ */
