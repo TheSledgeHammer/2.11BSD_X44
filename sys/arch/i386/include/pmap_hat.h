@@ -70,7 +70,7 @@ vm_offset_t     pmap_hat_pa_index(vm_offset_t, int);
 pv_entry_t      pmap_hat_pa_to_pvh(vm_offset_t, int);
 
 void			pmap_hat_remove_pv(pmap_t, vm_offset_t, vm_offset_t, int, int, vm_offset_t, vm_offset_t);
-void			pmap_hat_enter_pv(pmap_t, vm_offset_t, vm_offset_t, bool_t, int, vm_offset_t, vm_offset_t);
+void			pmap_hat_enter_pv(pmap_t, vm_offset_t, vm_offset_t, int, vm_offset_t, vm_offset_t);
 
 /* VM HAT */
 void			vm_hat_init(pmap_hat_list_t, vm_offset_t, vm_offset_t, vm_offset_t);
