@@ -105,9 +105,9 @@ struct ovl_object_hash_entry {
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
 #ifdef _KERNEL
-struct vm_object_hash_head;
+struct ovl_vm_object_hash_head;
 struct ovl_object_rbt;
-TAILQ_HEAD(vm_object_hash_head, ovl_object);
+TAILQ_HEAD(ovl_vm_object_hash_head, ovl_object);
 RB_HEAD(ovl_object_rbt, ovl_object);
 
 extern
@@ -118,7 +118,7 @@ extern
 simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
 
 extern
-struct vm_object_hash_head 	ovl_vm_object_hashtable;
+struct ovl_vm_object_hash_head 	ovl_vm_object_hashtable;
 extern
 long						ovl_vm_object_count;
 extern

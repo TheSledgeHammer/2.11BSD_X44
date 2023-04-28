@@ -30,8 +30,13 @@
 
 /* Overlay memory management definitions. */
 
+#ifndef	_OVL_OVERLAY_H_
+#define	_OVL_OVERLAY_H_
+
 extern ovl_map_t 			omem_map;
 extern ovl_map_t 			overlay_map;
 
 extern vm_offset_t 			overlay_avail;
 extern vm_offset_t			overlay_end;
+
+#endif /* _OVL_OVERLAY_H_ */

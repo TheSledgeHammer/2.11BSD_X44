@@ -65,7 +65,9 @@ typedef struct ovl_segment		*ovl_segment_t;
 struct ovl_page;
 typedef struct ovl_page			*ovl_page_t;
 
-#include <vm/include/vm.h>
+
+//#include <vm/include/vm.h>
+
 #include <ovl/include/ovl_map.h>
 #include <ovl/include/ovl_object.h>
 #include <ovl/include/pmap.h>
