@@ -545,7 +545,7 @@ pmap_bootstrap(firstaddr)
 
 	virtual_avail = (vm_offset_t)firstaddr;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
-
+#endif
 	/*
 	 * Initialize protection array.
 	 */
@@ -1345,7 +1345,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 		register pv_entry_t pv;
 
 		pv = pa_to_pvh(pa);
-		pmap_enter_pv(pmap, va, pv);
+		pmap_hat_enter_pv(pmap, va, pa, PMAP_HAT_VM, vm_first_phys, vm_last_phys);
 	}
 
 	/*

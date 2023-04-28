@@ -117,17 +117,6 @@ pmap_hat_find(hatlist, map, object, flags)
     return (NULL);
 }
 
-void
-pmap_hat_init(hatlist, phys_start, phys_end)
-	pmap_hat_list_t hatlist;
-	vm_offset_t phys_start, phys_end;
-{
-	vm_hat_init(hatlist, phys_start, phys_end);
-#ifdef OVERLAY
-	ovl_hat_init(hatlist, phys_start, phys_end);
-#endif
-}
-
 static vm_offset_t
 pmap_hat_to_pa_index(pa, first_phys)
 	vm_offset_t pa;
@@ -288,16 +277,13 @@ pmap_hat_remove_pv(pmap, va, pa, bits, flags, first_phys, last_phys)
 }
 
 void
-pmap_hat_enter_pv(pmap, va, pa, wired, flags, first_phys, last_phys)
+pmap_hat_enter_pv(pmap, va, pa, flags, first_phys, last_phys)
 	pmap_t pmap;
 	vm_offset_t va, first_phys, last_phys;
 	vm_offset_t pa;
-	bool_t wired;
 	int flags;
 {
 	register pv_entry_t pv;
-	bool_t cacheable = TRUE;
-	bool_t checkpv = TRUE;
 
 	if (pa >= first_phys && pa < last_phys) {
 		pv = pmap_hat_pa_to_pvh(pa, flags);
