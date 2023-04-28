@@ -538,7 +538,6 @@ pmap_bootstrap(firstaddr)
 #ifdef OVERLAY
 	pmap_overlay_bootstrap(firstaddr, res);
 #else
-
 	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
 
 	avail_start = firstaddr;
@@ -546,6 +545,7 @@ pmap_bootstrap(firstaddr)
 	virtual_avail = (vm_offset_t)firstaddr;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
 #endif
+
 	/*
 	 * Initialize protection array.
 	 */
@@ -839,47 +839,13 @@ pmap_init(phys_start, phys_end)
 
 #ifdef OVERLAY
 	ovl_hat_init(&ovlhat_list, phys_start, phys_end, addr);
+	ovl_first_phys = phys_start; 	/* not correct */
+	ovl_last_phys = phys_end;		/* not correct */
 #endif
 
 	pmap_initialized = TRUE;
 }
-#ifdef notyet
-void
-pmap_init(phys_start, phys_end)
-	vm_offset_t	phys_start, phys_end;
-{
-	vm_offset_t addr;
-	vm_size_t npg, s;
-	int i;
 
-	addr = (vm_offset_t) KERNBASE + KPTphys;
-	vm_object_reference(kernel_object);
-	vm_map_find(kernel_map, kernel_object, addr, &addr, 2 * NBPG, FALSE);
-
-	/*
-	 * Allocate memory for random pmap data structures.  Includes the
-	 * pv_head_table and pmap_attributes.
-	 */
-	npg = atop(phys_end - phys_start);
-	s = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
-	s = round_page(s);
-
-	pv_table = (pv_entry_t)kmem_alloc(kernel_map, s);
-	addr = (vm_offset_t) pv_table;
-	addr += sizeof(struct pv_entry) * npg;
-	pv_table->pv_attr = addr;
-
-	pmap_pj_page_init();
-
-	/*
-	 * Now it is safe to enable pv_table recording.
-	 */
-	vm_first_phys = phys_start;
-	vm_last_phys = phys_end;
-
-	pmap_initialized = TRUE;
-}
-#endif
 /*
  *	Used to map a range of physical addresses into kernel
  *	virtual address space.
