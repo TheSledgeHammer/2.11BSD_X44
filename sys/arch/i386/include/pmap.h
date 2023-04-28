@@ -409,7 +409,7 @@ struct pv_entry {
 	struct pmap				*pv_pmap;		/* pmap where mapping lies */
 	vm_offset_t				pv_va;			/* virtual address for mapping */
 	int						pv_flags;		/* flags */
-	char					*pv_attr;		/* attrs array */
+	char					pv_attr;		/* attrs array */
 };
 typedef struct pv_entry		*pv_entry_t;
 
