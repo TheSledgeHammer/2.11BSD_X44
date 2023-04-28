@@ -474,7 +474,7 @@ check_exec(elp)
 	 *
 	 * XXX probably should be all done in the exec pakages.
 	 */
-	elp->el_vm_minaddr = VM_MIN_ADDRESS;
+	elp->el_vm_minaddr = (caddr_t)VM_MIN_ADDRESS;
 	elp->el_vm_maxaddr = (caddr_t)VM_MAXUSER_ADDRESS;
 	/*
 	 * set up the vmcmds for creation of the process
