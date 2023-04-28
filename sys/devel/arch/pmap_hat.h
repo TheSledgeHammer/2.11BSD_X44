@@ -61,24 +61,20 @@ __BEGIN_DECLS
 void 			pmap_hat_attach(pmap_hat_list_t, pmap_hat_t, pmap_hat_map_t, pmap_hat_object_t, int);
 void			pmap_hat_detach(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
 pmap_hat_t		pmap_hat_find(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, int);
-vm_offset_t		pmap_hat_to_pa_index(vm_offset_t, vm_offset_t);
-pv_entry_t 		pmap_hat_to_pvh(pmap_hat_list_t, pmap_hat_map_t, pmap_hat_object_t, vm_offset_t, vm_offset_t, int);
+
 vm_offset_t     pmap_hat_pa_index(vm_offset_t, int);
 pv_entry_t      pmap_hat_pa_to_pvh(vm_offset_t, int);
-vm_offset_t     pmap_hat_map(vm_offset_t, vm_offset_t, vm_offset_t, int, int, vm_offset_t, vm_offset_t);
-void            pmap_hat_remove(pmap_t, vm_offset_t, vm_offset_t, int, vm_offset_t, vm_offset_t);
-void            pmap_hat_enter(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t, int, vm_offset_t, vm_offset_t);
+
+void			pmap_hat_remove_pv(pmap_t, vm_offset_t, vm_offset_t, int, int, vm_offset_t, vm_offset_t);
+void			pmap_hat_enter_pv(pmap_t, vm_offset_t, vm_offset_t, bool_t, int, vm_offset_t, vm_offset_t);
 
 /* VM HAT */
-void		vm_hat_init(pmap_hat_list_t, vm_offset_t, vm_offset_t);
-vm_offset_t     vm_hat_pa_index(vm_offset_t);
-pv_entry_t	vm_hat_to_pvh(pmap_hat_list_t, vm_offset_t);
+void			vm_hat_init(pmap_hat_list_t, vm_offset_t, vm_offset_t);
 
 #ifdef OVERLAYS
 /* OVL HAT */
-void		ovl_hat_init(pmap_hat_list_t, vm_offset_t, vm_offset_t);
-vm_offset_t     ovl_hat_pa_index(vm_offset_t);
-pv_entry_t	ovl_hat_to_pvh(pmap_hat_list_t, vm_offset_t);
+void			ovl_hat_init(pmap_hat_list_t, vm_offset_t, vm_offset_t);
+
 #endif
 __END_DECLS
 #endif
