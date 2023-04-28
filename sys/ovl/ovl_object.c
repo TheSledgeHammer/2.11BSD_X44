@@ -87,7 +87,7 @@ struct ovl_object_rbt			ovl_object_tree;
 long							ovl_object_count;
 simple_lock_data_t				ovl_object_tree_lock;
 
-struct vm_object_hash_head 		ovl_vm_object_hashtable[OVL_OBJECT_HASH_COUNT];
+struct ovl_vm_object_hash_head 		ovl_vm_object_hashtable[OVL_OBJECT_HASH_COUNT];
 long							ovl_vm_object_count;
 simple_lock_data_t				ovl_vm_object_hash_lock;
 
@@ -369,7 +369,7 @@ ovl_object_enter_vm_object(oobject, vobject)
     ovl_object_t oobject;
     vm_object_t vobject;
 {
-    struct vm_object_hash_head  	*vbucket;
+    struct ovl_vm_object_hash_head  	*vbucket;
 
     if(vobject == NULL) {
         return;
@@ -390,7 +390,7 @@ ovl_object_lookup_vm_object(oobject)
 	ovl_object_t 	oobject;
 {
 	register vm_object_t 	vobject;
-    struct vobject_hash_head *vbucket;
+    struct ovl_vm_object_hash_head *vbucket;
 
     vbucket = &ovl_vm_object_hashtable[ovl_vobject_hash(oobject, vobject)];
     ovl_vm_object_hash_lock();
@@ -410,7 +410,7 @@ ovl_object_remove_vm_object(vobject)
 	vm_object_t  vobject;
 {
 	register ovl_object_t oobject;
-    struct vobject_hash_head *vbucket;
+    struct ovl_vm_object_hash_head *vbucket;
 
     vbucket = &ovl_vm_object_hashtable[ovl_vobject_hash(oobject, vobject)];
     TAILQ_FOREACH(oobject, vbucket, vm_object_hlist) {
