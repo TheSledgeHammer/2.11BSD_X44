@@ -6,6 +6,9 @@
 machine 		i386
 maxusers		32				# estimated number of users
 
+#options		OVERLAY			# enables overlay space
+#options		OVLPAGER			# overlay pager (required if using overlays!!)
+
 options			SWAPPAGER		# paging
 options 		VNODEPAGER		# mmap() of files
 options 		DEVPAGER		# mmap() of devices
