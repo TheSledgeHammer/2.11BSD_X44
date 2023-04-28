@@ -84,9 +84,6 @@
 void
 vm_mem_init()
 {
-	extern vm_offset_t	avail_start, avail_end;
-	extern vm_offset_t	virtual_avail, virtual_end;
-
 	/*
 	 *	Initializes resident memory structures.
 	 *	From here on, all physical memory is accounted for,
