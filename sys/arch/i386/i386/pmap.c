@@ -899,7 +899,7 @@ pmap_init(phys_start, phys_end)
 	pv_table = (pv_entry_t)kmem_alloc(kernel_map, s);
 	addr = (vm_offset_t) pv_table;
 	addr += sizeof(struct pv_entry) * npg;
-	pv_table->pv_attr = (char *) addr;
+	pv_table->pv_attr = addr;
 
 	pmap_pj_page_init();
 
