@@ -201,7 +201,7 @@ startup(void)
 	int mapaddr, j;
 	register caddr_t v;
 	int maxbufs, base, residual;
-	extern long Usrptsize;
+	//extern long Usrptsize;
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
 	

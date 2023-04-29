@@ -41,6 +41,9 @@
 #include <machine/pmap_hat.h>
 
 #ifdef OVERLAY
+//extern struct pmap  		overlay_pmap_store;
+//#define overlay_pmap 		(&overlay_pmap_store)
+
 void
 pmap_overlay_bootstrap(firstaddr, res)
 	vm_offset_t firstaddr;
@@ -102,6 +105,34 @@ pmap_overlay_map(virt, start, end)
 	}
 	virt = va;
 	return (sva);
+}
+
+void
+pmap_overlay_pinit(pmap)
+	register pmap_t pmap;
+{
+
+}
+
+void
+pmap_overlay_destroy(pmap)
+	register pmap_t pmap;
+{
+
+}
+
+void
+pmap_overlay_release(pmap)
+	pmap_t pmap;
+{
+	//omem_free(overlay_map, (vm_offset_t)pmap->pm_pdir, size);
+}
+
+void
+pmap_reference(pmap)
+	pmap_t	pmap;
+{
+
 }
 
 void

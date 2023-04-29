@@ -87,12 +87,6 @@
 #define	DMTEXT					1024			/* swap allocation for text */
 
 /*
- * Sizes of the system and user portions of the system page table.
- */
-#define	SYSPTSIZE 				(2*NPTEPG)
-#define	USRPTSIZE 				(2*NPTEPG)
-
-/*
  * Size of User Raw I/O map
  */
 #define	USRIOSIZE 				300
@@ -205,22 +199,23 @@
 #define UPT_MAX_ADDRESS			((vm_offset_t)0xFDFF7000)
 #define VM_MAX_ADDRESS			UPT_MAX_ADDRESS
 #define VM_MIN_KERNEL_ADDRESS	((vm_offset_t)0xFDFF7000)
-#define UPDT					VM_MIN_KERNEL_ADDRESS
-#define KPT_MIN_ADDRESS			((vm_offset_t)0xFDFF8000)
-#define KPT_MAX_ADDRESS			((vm_offset_t)0xFDFFF000)
 #define VM_MAX_KERNEL_ADDRESS	((vm_offset_t)0xFF7FF000)
 
+/* NetBSD Derived Addresses
+#define USRSTACK                (VM_MAXUSER_ADDRESS - PAGE_SIZE)
+
+#define	VM_MAXUSER_ADDRESS	    ((vm_offset_t)(PDIR_SLOT_PTE << L2_SHIFT))
+#define UPT_MIN_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PAGE_SIZE * 3))
+#define UPT_MAX_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PDIR_SLOT_PTE << L1_SHIFT)))
+#define VM_MAX_ADDRESS			((vm_offset_t)(UPT_MAX_ADDRESS))
+#define	VM_MIN_KERNEL_ADDRESS	((vm_offset_t)(PDIR_SLOT_KERN << L2_SHIFT))
+#define	VM_MAX_KERNEL_ADDRESS	((vm_offset_t)(PDIR_SLOT_APTE << L2_SHIFT))
+*/
 #define	PMAP_MAP_LOW			(4 * 1024 * 1024)
 
 /* virtual sizes (bytes) for various kernel submaps */
 #define VM_MBUF_SIZE			(NMBCLUSTERS*MCLBYTES)
 #define VM_KMEM_SIZE			(NKMEMCLUSTERS*CLBYTES)
 #define VM_PHYS_SIZE			(USRIOSIZE*CLBYTES)
-
-/* # of kernel PT pages (initial only, can grow dynamically) */
-#define VM_KERNEL_PT_PAGES		((vm_size_t)2)		/* XXX: SYSPTSIZE */
-
-/* pcb base */
-#define	pcbb(p)					((u_int)(p)->p_addr)
 
 #endif /* !_I386_VMPARAM_H_ */

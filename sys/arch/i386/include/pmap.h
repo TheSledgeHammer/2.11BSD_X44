@@ -234,21 +234,20 @@
 #define	NBPD_L1					(1ULL << L1_SHIFT) 	/* # bytes mapped by L1 ent (4K) */
 #define	NBPD_L2					(1ULL << L2_SHIFT) 	/* # bytes mapped by L2 ent (4MB) */
 
-#define L2_MASK					0xffc00000
+#define L2_MASK					0xffc00000			/* PG_PS_FRAME: large (4MB) page frame mask */
 #define L1_MASK					0x003ff000
 
 #define L2_FRAME				(L2_MASK)
-#define L1_FRAME				(L2_FRAME|L1_MASK)
-
-#define	PG_PS_FRAME				0xffc00000			/* large (4MB) page frame mask */
+#define L1_FRAME				(L2_FRAME | L1_MASK)
 
 #define L2_SLOT_PTE				(KERNBASE/NBPD_L2-1)/* 767: for recursive PDP map */
 #define L2_SLOT_KERN			(KERNBASE/NBPD_L2)  /* 768: start of kernel space */
 #define	L2_SLOT_KERNBASE 		L2_SLOT_KERN
-#define L2_SLOT_APTE			1007				/* 1008-1023 reserved by Xen */
+#define L2_SLOT_APTE			1007
 
 typedef uint32_t 				pt_entry_t;			/* PTE */
 typedef uint32_t 				pd_entry_t;			/* PDE */
+typedef	uint32_t 				pdpt_entry_t;		/* PDPT */
 
 #else /* PMAP_PAE */
 
@@ -287,7 +286,8 @@ typedef uint32_t 				pd_entry_t;			/* PDE */
 #define	L2_FRAME				(L3_FRAME | L2_MASK)
 #define	L1_FRAME				(L2_FRAME | L1_MASK)
 
-#define	PG_PS_FRAME				0x000fffffffe00000ull /* large (2MB) page frame mask */
+//#define	PG_FRAME_PAE			(0x000ffffffffff000ull)
+//#define	PG_PS_FRAME				(0x000fffffffe00000ull)
 
 /* macros to get real L2 and L3 index, from our "extended" L2 index */
 #define l2tol3(idx)				((idx) >> (L3_SHIFT - L2_SHIFT))
@@ -296,7 +296,7 @@ typedef uint32_t 				pd_entry_t;			/* PDE */
 #define L2_SLOT_PTE				(KERNBASE/NBPD_L2-4) /* 1532: for recursive PDP map */
 #define L2_SLOT_KERN			(KERNBASE/NBPD_L2)   /* 1536: start of kernel space */
 #define	L2_SLOT_KERNBASE 		L2_SLOT_KERN
-#define L2_SLOT_APTE			1960                 /* 1964-2047 reserved by Xen */
+#define L2_SLOT_APTE			1960
 
 typedef uint64_t 				pt_entry_t;			/* PTE */
 typedef uint64_t 				pd_entry_t;			/* PDE */
@@ -317,8 +317,6 @@ typedef uint64_t 				pdpt_entry_t;		/* PDPT */
 /* largest value (-1 for APTP space) */
 #define NKL2_MAX_ENTRIES		(KVA_PAGES - (KERNBASE/NBPD_L2) - 1)
 #define NKL1_MAX_ENTRIES		(unsigned long)(NKL2_MAX_ENTRIES * NPDEPG)
-
-#define NKL2_KIMG_ENTRIES		0	/* XXX unused */
 
 #define NKL2_START_ENTRIES		0	/* XXX computed on runtime */
 #define NKL1_START_ENTRIES		0	/* XXX unused */
@@ -348,8 +346,6 @@ typedef uint64_t 				pdpt_entry_t;		/* PDPT */
 #define I386_PAGE_SIZE		NBPG
 #define I386_PDR_SIZE		NBPDR
 
-#define I386_KPDES			8 										/* KPT page directory size */
-#define I386_UPDES			(NBPDR/sizeof(pd_entry_t) - I386_KPDES) /* UPT page directory size */
 #define	PTDPTDI		        (NPDEPTD - NTRPPTD - NPGPTD)            /* ptd entry that points to ptd */
 
 /*
@@ -362,7 +358,6 @@ typedef uint64_t 				pdpt_entry_t;		/* PDPT */
 #define	kvtopte(va)			vtopte(va)
 #define	ptetov(pt)			(i386_ptob(pt - PTE_BASE))
 #define	vtophys(va)  		(i386_ptob(vtopte(va)) | ((int)(va) & PGOFSET))
-#define ispt(va)			((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
 
 #define	avtopte(va)			(APTE_BASE + i386_btop(va))
 #define	ptetoav(pt)	 		(i386_ptob(pt - APTE_BASE))

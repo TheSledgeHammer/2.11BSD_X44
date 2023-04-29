@@ -91,7 +91,6 @@ vm_offset_t		vm_first_phys;				/* PA of first managed page */
 vm_offset_t		vm_last_phys;				/* PA just past last managed page */
 
 bool_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
-char			*pmap_attributes;			/* reference and modify bits */
 
 
 static u_int64_t KPTphys;					/* phys addr of kernel level 1 */
