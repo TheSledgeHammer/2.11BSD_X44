@@ -26,13 +26,46 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <devel/arch/pmap.h>
+/*
+ * Possible Issues: (OVLBASE = OVL_MAX_ADDRESS)
+ * - Adding OVLBASE onto KERNBASE may cause:
+ * - A conflict with the KERNLOAD address
+ * - Other unforeseen stack issues and conflicts
+ *
+ * Potential Alterations & Fixes to above:
+ * - Having the current KERNBASE = KERNBASE+OVLBASE i.e. 512mb (higher)
+ * Inverting the below to the following point:
+ * - i.e. Subtracting the OVLBASE from KERNBASE if OVERLAY have not been configured
+ * and allowing for that space to still be used
+ */
+#ifndef _I386_PMAP_H_
+#define _I386_PMAP_H_
 
-void
-pmap_pinit_ovl(ovl)
-	ovl_entry_t ovl;
-{
-	ovl = omem_alloc(overlay_map, sizeof(ovl_entry_t));
+#define OVL_MAX_ADDRESS         ((vm_offset_t)(VM_MAX_ADDRESS/10))
 
-	ovl = (ovl_entry_t *)OVLBASE;
-}
+#ifdef OVERLAY
+#define OVLBASE		 			OVL_MAX_ADDRESS
+#define SYSTEMBASE	 			KERNBASE+OVLBASE
+#else
+#define SYSTEMBASE	 			KERNBASE
+#endif
+
+#ifndef PMAP_PAE_COMP /* PMAP_NOPAE */
+#define L2_SLOT_PTE				(SYSTEMBASE/NBPD_L2-1)		/* 843: for recursive PDP map */
+#define L2_SLOT_KERN			(SYSTEMBASE/NBPD_L2)		/* 844: start of kernel space */
+#else /* PMAP_PAE */
+
+#define L2_SLOT_PTE				(SYSTEMBASE/NBPD_L2-4) 		/* 1685: for recursive PDP map */
+#define L2_SLOT_KERN			(SYSTEMBASE/NBPD_L2)   		/* 1689: start of kernel space */
+#endif
+
+#define NKL2_MAX_ENTRIES		(KVA_PAGES - (SYSTEMBASE/NBPD_L2) - 1)
+
+typedef uint64_t	ovl_entry_t;
+
+
+struct pmap {
+	ovl_entry_t		*pm_ovltab;		/* OVA Address- Direct access OVL mapped memory */
+};
+typedef struct pmap *pmap_t;
+#endif /* _I386_PMAP_H_ */

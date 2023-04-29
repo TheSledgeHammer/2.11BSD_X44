@@ -106,8 +106,8 @@
 /* Number of PDEs in one page of the page directory, 512 vs. 1024 */
 #define NPDEPG			(NBPG / sizeof(pd_entry_t))
 
-#define	KERNBASE		0xFE000000				/* start of kernel virtual (i.e. SYSTEM) */
-#define KERNLOAD		(KERNBASE)				/* Kernel physical load address */
+#define	KERNBASE		0xC0000000UL			/* start of kernel virtual (i.e. SYSTEM) */
+#define KERNLOAD		(KERNBASE + 0x100000)	/* Kernel physical load address */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
 #define	DEV_BSIZE		512

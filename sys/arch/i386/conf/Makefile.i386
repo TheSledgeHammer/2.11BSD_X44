@@ -65,7 +65,7 @@ vector.o: ${I386}/apic/vector.S assym.h
 ##
 ## (5) link settings
 ##
-TEXTADDR?=	FE000000
+TEXTADDR?=	C0100000
 LINKFLAGS_NORMAL=	-X
 KERN_LDSCRIPT?=	kern.ldscript
 LINKFORMAT=	-T ${I386}/conf/${KERN_LDSCRIPT}
