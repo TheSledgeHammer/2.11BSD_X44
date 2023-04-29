@@ -34,6 +34,10 @@
 
 #include <vm/include/vm.h>
 
+#ifdef OVERLAY
+#include <ovl/include/ovl.h>
+#endif
+
 #include <machine/param.h>
 #include <machine/pcb.h>
 

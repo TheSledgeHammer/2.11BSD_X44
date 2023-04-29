@@ -140,8 +140,8 @@ int		ureadc(int, struct uio *);
 void 	panic(const char *, ...) __attribute__((__noreturn__,__format__(__printf__,1,2)));
 void	tablefull(const char *);
 void	addlog(const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void	log(int, const char *, ...);//  __attribute__((__format__(__printf__,2,3)));
-void	vlog(int, const char *, va_list);// __attribute__((__format__(__printf__,2,0)));
+void	log(int, const char *, ...);
+void	vlog(int, const char *, va_list);
 
 /* subr_prf.c */
 void	printf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
@@ -151,7 +151,7 @@ void	vprintf(const char *, va_list);
 int		vsprintf(char *, const char *, va_list);
 int		vsnprintf(char *, size_t, const char *, va_list);
 
-void	ttyprintf(struct tty *, const char *, ...);// _attribute__((__format__(__printf__,2,3)));
+void	ttyprintf(struct tty *, const char *, ...);
 void	uprintf(const char *, ...) __attribute__((__format__(__printf__,1,2)));
 void    printn(long, u_int, int, struct tty *);
 char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);

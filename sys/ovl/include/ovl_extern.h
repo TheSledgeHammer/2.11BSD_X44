@@ -38,7 +38,7 @@ void			ovl_mem_init(void);
 vm_offset_t		omem_alloc(ovl_map_t, vm_size_t);
 void			omem_free(ovl_map_t, vm_offset_t, vm_size_t);
 void			omem_init(vm_offset_t , vm_offset_t );
-ovl_map_t		omem_suballoc(ovl_map_t, vm_offset_t, vm_offset_t, vm_size_t);
+ovl_map_t		omem_suballoc(ovl_map_t, vm_offset_t *, vm_offset_t *, vm_size_t);
 vm_offset_t		omem_malloc(ovl_map_t, vm_size_t, bool_t);
 vm_offset_t		omem_alloc_wait(ovl_map_t, vm_size_t);
 void			omem_free_wakeup(ovl_map_t, vm_offset_t, vm_size_t);

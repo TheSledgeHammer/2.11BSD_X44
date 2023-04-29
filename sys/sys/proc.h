@@ -53,9 +53,11 @@ struct	proc {
 	struct	filedesc 	*p_fd;			/* pointer to open files structure. */
 	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct	plimit 	 	*p_limit;		/* Process limits. */
-	struct	vmspace  	*p_vmspace;		/* Address space. */
+	struct	vmspace  	*p_vmspace;		/* VM Address space. */
 	struct 	sigacts 	*p_sigacts;		/* Signal actions, state (PROC ONLY). */
-
+#ifdef OVERLAY
+	struct 	ovlspace	*p_ovlspace;	/* OVL Address space. */
+#endif
 #define	p_ucred			p_cred->pc_ucred
 #define	p_rlimit		p_limit->pl_rlimit
 

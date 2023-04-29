@@ -83,6 +83,10 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_psegment.h>
 
+#ifdef OVERLAY
+#include <ovl/include/ovl.h>
+#endif
+
 #include <machine/cpu.h>
 
 #if NRND > 0
@@ -98,6 +102,9 @@ struct 	pcred cred0;
 struct 	filedesc0 filedesc0;
 struct 	plimit limit0;
 struct 	vmspace vmspace0;
+#ifdef OVERLAY
+struct ovlspace ovlspace0;
+#endif
 #ifndef curproc
 struct 	proc *curproc = &proc0;
 #endif
@@ -118,6 +125,11 @@ struct	timeval runtime;
 #endif
 int	bootverbose = BOOTVERBOSE;
 
+#ifdef OVERLAY
+static void ovlspace_init(struct proc *p);
+#endif
+
+static void	vmspace_init(struct proc *p);
 static void start_init(struct proc *p, void *framep);
 /*
  * Initialization code.
@@ -160,6 +172,9 @@ main(framep)
 	printf(copyright);
 
 	vm_mem_init();
+#ifdef OVERLAY
+	ovl_mem_init();
+#endif
 	kmeminit();
 	startup();
 	rmapinit();
@@ -244,11 +259,11 @@ main(framep)
 	bcopy("root", u.u_login, sizeof ("root"));
 
 	/* Allocate a prototype map so we have something to fork. */
-	p->p_vmspace = &vmspace0;
-	vmspace0.vm_refcnt = 1;
-	pmap_pinit(&vmspace0.vm_pmap);
-	vm_map_init(&vmspace0.vm_map, round_page(VM_MIN_ADDRESS), trunc_page(VM_MAX_ADDRESS), TRUE);
-	vmspace0.vm_map.pmap = &vmspace0.vm_pmap;
+	vmspace_init(p);
+
+#ifdef OVERLAY
+	ovlspace_init(p);
+#endif
 
 	/* Initialize pseudo-segmentation */
 	vm_psegment_init(&vmspace0.vm_psegment);
@@ -373,6 +388,36 @@ main(framep)
 	scheduler();
 	/* NOTREACHED */
 }
+
+/*
+ * Initialize Vmspace
+ */
+static void
+vmspace_init(p)
+	struct proc *p;
+{
+	p->p_vmspace = &vmspace0;
+	vmspace0.vm_refcnt = 1;
+	pmap_pinit(&vmspace0.vm_pmap);
+	vm_map_init(&vmspace0.vm_map, round_page(VM_MIN_ADDRESS), trunc_page(VM_MAX_ADDRESS), TRUE);
+	vmspace0.vm_map.pmap = &vmspace0.vm_pmap;
+}
+
+/*
+ * Initialize Ovlspace
+ */
+#ifdef OVERLAY
+static void
+ovlspace_init(p)
+	struct proc *p;
+{
+	p->p_ovlspace = &ovlspace0;
+	ovlspace0.ovl_refcnt = 1;
+	ovlspace0.ovl_pmap = vmspace0.vm_pmap;
+	ovl_map_init(&ovlspace0.ovl_map, round_page(OVL_MIN_ADDRESS), trunc_page(OVL_MAX_ADDRESS), TRUE);
+	ovlspace0.ovl_map.pmap = &ovlspace0.ovl_pmap;
+}
+#endif
 
 /*
  * List of paths to try when searching for "init".

@@ -157,8 +157,8 @@ struct kmemslabs_cache {
 					? (MINBUCKET + 14) 				\
 					: (MINBUCKET + 15))
 
-#define kmemxtob(alloc)	(kmembase + (alloc) * NBPG)
-#define btokmemx(addr)	(((caddr_t)(addr) - kmembase) / NBPG)
+//#define kmemxtob(alloc)	(kmembase + (alloc) * NBPG)
+//#define btokmemx(addr)	(((caddr_t)(addr) - kmembase) / NBPG)
 #define btokup(addr)	(&kmemusage[((caddr_t)(addr) - kmembase) >> CLSHIFT])
 
 /* slab object macros */
@@ -178,7 +178,7 @@ struct kmemslabs_cache {
 #ifdef OVERLAY
 #define OVERLAY_MALLOC(space, cast, size, type, flags)				\
 	(space) = (cast)overlay_malloc((u_long)(size), type, flags)
-#define OVERLAY_FREE(addr, type)	overlay_free((caddr_t)(addr), type)
+#define OVERLAY_FREE(addr, type)	overlay_free((caddr_t)(addr), (type))
 #endif
 
 #else /* do not collect statistics */
@@ -228,6 +228,8 @@ extern void *calloc(int, unsigned long, int, int);
 #ifdef OVERLAY
 extern void *overlay_malloc(unsigned long, int, int);
 extern void overlay_free(void *, int);
+extern void *overlay_realloc(void *, unsigned long, int, int);
+extern void *overlay_calloc(int, unsigned long, int, int);
 #endif
 #endif /* KERNEL */
 

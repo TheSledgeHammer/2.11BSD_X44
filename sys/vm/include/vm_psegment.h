@@ -54,6 +54,7 @@ struct vm_pseudo_segment {
 #define PSEG_DATA			S_DATA					/* data segment */
 #define PSEG_STACK			S_STACK					/* stack segment */
 #define PSEG_TEXT			2						/* text segment */
+#define	PSEG_OVLY			3						/* overlay segment */
 
 /* pseudo-segment flags */
 #define PSEG_SEP			(PSEG_DATA | PSEG_STACK)				/* I&D seperation */

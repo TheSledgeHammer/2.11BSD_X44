@@ -84,8 +84,8 @@ omem_alloc(map, size)
 {
 	vm_offset_t 			addr;
 	register vm_offset_t 	offset;
-	extern ovl_object_t		overlay_object;
 	vm_offset_t 			i;
+	extern ovl_object_t		overlay_object;
 
 	ovl_map_lock(map);
 	if (ovl_map_findspace(map, 0, size, &addr)) {

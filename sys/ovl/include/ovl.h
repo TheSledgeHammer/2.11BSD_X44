@@ -36,14 +36,6 @@
  * 3) Split into 2 spaces, VM & Kernel
  */
 
-/* TODO:
- * Size of Overlay Space is a smaller portion of VM Space.
- * Taken from VM_MAX_ADDRESS and VM_MIN_ADDRESS.
- *
- * OVA_MAX_ADDRESS = VM_MAX_ADDRESS - x amount
- * OVA_MIN_ADDRESS = VM_MIN_ADDRESS - x amount
- */
-
 #ifndef _OVL_H_
 #define _OVL_H_
 
@@ -65,24 +57,26 @@ typedef struct ovl_segment		*ovl_segment_t;
 struct ovl_page;
 typedef struct ovl_page			*ovl_page_t;
 
-
-//#include <vm/include/vm.h>
-
+#include <sys/queue.h>
+#include <sys/tree.h>
+#include <vm/include/vm_param.h>
+#include <sys/lock.h>
+#include <vm/include/vm_prot.h>
+#include <vm/include/vm_inherit.h>
 #include <ovl/include/ovl_map.h>
 #include <ovl/include/ovl_object.h>
 #include <ovl/include/pmap.h>
 #include <ovl/include/ovl_extern.h>
 
 /*
- * shareable overlay address space.
+ * Shareable overlay address space.
  */
 struct ovlspace {
 	struct ovl_map 	    ovl_map;	    	/* overlay address */
 	struct pmap    		ovl_pmap;	    	/* private physical map */
 
 	int		        	ovl_refcnt;	   		/* number of references */
-#define ovl_startcopy 	ovl_rssize
-	segsz_t 			ovl_rssize; 		/* current resident set size in pages */
+	segsz_t				ovl_startcopy;
 };
 
 #endif /* _OVL_H_ */

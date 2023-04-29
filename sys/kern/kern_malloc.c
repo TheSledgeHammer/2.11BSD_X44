@@ -70,12 +70,12 @@ struct kmemusage 		*kmemusage;
 int			        	kmemslab_count;
 struct lock_object 		malloc_slock;
 vm_map_t				kmem_map;
-char *kmembase, 		*kmemlimit;
+char 					*kmembase;
+char 					*kmemlimit;
 char *memname[] = INITKMEMNAMES;
 
 #ifdef OVERLAY
 ovl_map_t				omem_map;
-char *omembase, 		*omemlimit;
 #endif
 
 /* [internal use only] */
@@ -745,6 +745,10 @@ kmeminit(void)
 		kmemusage = (struct kmemusage *) kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
 		kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 
+#ifdef OVERLAY
+		omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG));
+#endif
+
 		CIRCLEQ_INIT(&slabCache->ksc_head);
 		kmemslab_count = 0;
 
@@ -810,11 +814,22 @@ overlay_free(addr, type)
 	free(addr, type | M_OVERLAY);
 }
 
- void
- omeminit(void)
- {
-	 omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&omembase, (vm_offset_t *)&omemlimit, (vm_size_t)OVL_MAX_ADDRESS);
- }
+void *
+overlay_realloc(curaddr, newsize, type, flags)
+	void *curaddr;
+	unsigned long newsize;
+	int type, flags;
+{
+	return (realloc(curaddr, newsize, type, flags | M_OVERLAY));
+}
+
+void *
+overlay_calloc(nitems, size, type, flags)
+	unsigned long size;
+	int nitems, type, flags;
+{
+	return (calloc(nitems, size, type, flags | M_OVERLAY));
+}
 
 /* allocate memory to ovl [internal use only] */
 caddr_t
@@ -834,7 +849,6 @@ omalloc(size, flags)
 	va = (caddr_t)omem_malloc(omem_map, (vm_size_t)ctob(npg), (M_OVERLAY & !(flags & (M_NOWAIT | M_CANFAIL))));
 	return (va);
 }
-
 
 /* free memory from ovl [internal use only] */
 void

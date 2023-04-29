@@ -124,7 +124,7 @@ struct exec {
 	unsigned long	a_flag; 	/* relocation info stripped */
 };
 
-#define	NOVL	15					/* number of overlays */
+#define	NOVL		15				/* number of overlays */
 struct	ovlhdr {
 	int				max_ovl;		/* maximum overlay size */
 	unsigned int	ov_siz[NOVL];	/* size of i'th overlay */
