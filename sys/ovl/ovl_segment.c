@@ -54,7 +54,7 @@ long				           	ovl_vm_segment_count;
 simple_lock_data_t				ovl_vm_segment_hash_lock;
 
 void
-ovl_segment_init(start, end)
+ovl_segment_startup(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {

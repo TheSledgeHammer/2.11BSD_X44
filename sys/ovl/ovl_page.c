@@ -162,7 +162,7 @@ ovl_pmap_bootinit(item, size, nitems)
 }
 
 void
-ovl_page_init(start, end)
+ovl_page_startup(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {

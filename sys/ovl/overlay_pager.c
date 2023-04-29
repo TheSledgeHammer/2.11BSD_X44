@@ -99,13 +99,13 @@
 
 struct pagerlst 	overlay_pager_list;
 
-static void			overlay_pager_init(void);
 static vm_pager_t	overlay_pager_alloc(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
-static bool_t		overlay_pager_dealloc(vm_pager_t);
-static int			overlay_pager_getpage(vm_pager_t, vm_page_t *, int, bool_t);
-static int			overlay_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
+static void		overlay_pager_dealloc(vm_pager_t);
+static int		overlay_pager_getpage(vm_pager_t, vm_page_t *, int, bool_t);
 static bool_t		overlay_pager_haspage(vm_pager_t, vm_offset_t);
-static int			overlay_pager_io(ovl_pager_t, vm_page_t, int, int);
+static void		overlay_pager_init(void);
+static int		overlay_pager_io(ovl_pager_t, vm_page_t, int, int);
+static int		overlay_pager_putpage(vm_pager_t, vm_page_t *, int, bool_t);
 
 struct pagerops overlaypagerops = {
 		overlay_pager_init,

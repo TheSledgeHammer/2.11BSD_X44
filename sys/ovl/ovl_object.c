@@ -395,7 +395,7 @@ ovl_object_lookup_vm_object(oobject)
     vbucket = &ovl_vm_object_hashtable[ovl_vobject_hash(oobject, vobject)];
     ovl_vm_object_hash_lock();
     TAILQ_FOREACH(oobject, vbucket, vm_object_hlist) {
-    	if(vobject == TAILQ_NEXT(oobject, vm_object_hlist)->vm_object) {
+    	if (vobject == TAILQ_NEXT(oobject, vm_object_hlist)->vm_object) {
     		vobject = TAILQ_NEXT(oobject, vm_object_hlist)->vm_object;
     		ovl_vm_object_hash_unlock();
     		return (vobject);
