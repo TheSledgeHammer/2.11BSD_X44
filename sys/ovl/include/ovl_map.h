@@ -75,6 +75,8 @@ struct ovl_map {
 #define max_offset			    		cl_header.cqh_first->end
 };
 
+#include <sys/proc.h>	/* XXX for curproc and p_pid */
+
 #define	ovl_map_lock_drain_interlock(ovl) { 								\
 	lockmgr(&(ovl)->lock, LK_DRAIN|LK_INTERLOCK, 							\
 		&(ovl)->ref_lock, curproc->p_pid); 									\
@@ -136,7 +138,6 @@ int		 		ovl_map_findspace(ovl_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
 void			ovl_map_init(ovl_map_t, vm_offset_t, vm_offset_t, bool_t);
 int				ovl_map_insert(ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
 bool_t			ovl_map_lookup_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
-//void			ovl_map_print (ovl_map_t, bool_t);
 void			ovl_map_reference(ovl_map_t);
 int		 		ovl_map_remove(ovl_map_t, vm_offset_t, vm_offset_t);
 void			ovl_map_startup(void);

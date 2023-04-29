@@ -145,7 +145,7 @@ vm_offset_t						ovl_last_phys_addr;
 #define	ovl_vm_page_hash_unlock()	simple_unlock(&ovl_vm_page_hash_lock)
 
 void 		*ovl_pmap_bootinit(void *, vm_size_t, int);
-void		ovl_page_init(vm_offset_t, vm_offset_t);
+void		ovl_page_startup(vm_offset_t *, vm_offset_t *);
 void		ovl_page_insert(ovl_page_t, ovl_segment_t, vm_offset_t);
 void		ovl_page_remove(ovl_page_t);
 ovl_page_t	ovl_page_lookup(ovl_segment_t, vm_offset_t);

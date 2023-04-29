@@ -151,6 +151,7 @@ void		 	ovl_object_reference(ovl_object_t);
 void			ovl_object_deallocate(ovl_object_t);
 void			ovl_object_terminate(ovl_object_t);
 void			ovl_object_remove(vm_pager_t);
+void		 ovl_object_setpager(ovl_object_t, vm_pager_t, vm_offset_t, bool_t);
 
 #endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

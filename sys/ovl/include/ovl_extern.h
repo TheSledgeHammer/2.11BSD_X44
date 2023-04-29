@@ -50,11 +50,11 @@ struct ovlspace *ovlspace_free(struct ovlspace *);
 
 /* vm objects */
 void			ovl_object_enter_vm_object(ovl_object_t, vm_object_t);
-vm_object_t		ovl_object_lookup_vm_object(ovl_object_t, vm_object_t);
-void			ovl_object_remove_vm_object(ovl_object_t, vm_object_t);
+vm_object_t		ovl_object_lookup_vm_object(ovl_object_t);
+void			ovl_object_remove_vm_object(vm_object_t);
 /* vm segments */
 void			ovl_segment_insert_vm_segment(ovl_segment_t, vm_segment_t);
-vm_segment_t	ovl_segment_lookup_vm_segment(ovl_segment_t);
+vm_segment_t	        ovl_segment_lookup_vm_segment(ovl_segment_t);
 void			ovl_segment_remove_vm_segment(vm_segment_t);
 /* vm pages */
 void			ovl_page_insert_vm_page(ovl_page_t, vm_page_t);

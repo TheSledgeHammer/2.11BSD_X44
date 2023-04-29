@@ -85,7 +85,7 @@ vm_offset_t							ovl_last_logical_addr;
 void				ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
 void				ovl_segment_remove(ovl_segment_t);
 ovl_segment_t		ovl_segment_lookup(ovl_object_t, vm_offset_t);
-void				ovl_segment_init(vm_offset_t, vm_offset_t);
+void				ovl_segment_startup(vm_offset_t *, vm_offset_t *);
 
 #endif /* KERNEL */
 #endif /* _OVL_SEGMENT_H_ */
