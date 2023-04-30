@@ -195,7 +195,7 @@
 #define VM_MIN_ADDRESS			    ((vm_offset_t)0)
 #endif
 #define	VM_MAXUSER_ADDRESS      ((vm_offset_t)(PDIR_SLOT_PTE << L2_SHIFT))
-#define UPT_MIN_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PAGE_SIZE * 3)))
+#define UPT_MIN_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PGSIZE * 3)))
 #define UPT_MAX_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PDIR_SLOT_PTE << L1_SHIFT)))
 #define VM_MAX_ADDRESS          ((vm_offset_t)(UPT_MAX_ADDRESS))
 #define	VM_MIN_KERNEL_ADDRESS   ((vm_offset_t)(PDIR_SLOT_KERN << L2_SHIFT))
