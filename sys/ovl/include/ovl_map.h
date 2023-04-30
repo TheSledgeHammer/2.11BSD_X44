@@ -88,7 +88,7 @@ struct ovl_map {
 	if (lockmgr(&(ovl)->lock, LK_EXCLUSIVE, (void *)0, curproc->p_pid) != 0) { \
 		panic("ova_lock: failed to get lock"); 								\
 	} 																		\
-	(ova)->timestamp++; 													\
+	(ovl)->timestamp++; 													\
 }
 #else
 #define	ovl_map_lock(ovl) {  												\
@@ -103,22 +103,22 @@ struct ovl_map {
 		lockmgr(&(ovl)->lock, LK_SHARED, (void *)0, curproc->p_pid)
 #define	ovl_map_unlock_read(ovl) 											\
 		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
-#define ovl_map_set_recursive(map) { 										\
-	simple_lock(&(map)->lk_lnterlock); 										\
-	(map)->lk_flags |= LK_CANRECURSE; 										\
-	simple_unlock(&(map)->lk_lnterlock); 									\
+#define ovl_map_set_recursive(ovl) { 										\
+	simple_lock(&(ovl)->lk_lnterlock); 										\
+	(ovl)->lk_flags |= LK_CANRECURSE; 										\
+	simple_unlock(&(ovl)->lk_lnterlock); 									\
 }
-#define ovl_map_clear_recursive(map) { 										\
-	simple_lock(&(map)->lk_lnterlock); 										\
-	(map)->lk_flags &= ~LK_CANRECURSE; 										\
-	simple_unlock(&(map)->lk_lnterlock); 									\
+#define ovl_map_clear_recursive(ovl) { 										\
+	simple_lock(&(ovl)->lk_lnterlock); 										\
+	(ovl)->lk_flags &= ~LK_CANRECURSE; 										\
+	simple_unlock(&(ovl)->lk_lnterlock); 									\
 }
 /*
  *	Functions implemented as macros
  */
-#define	ovl_map_min(map)	((map)->min_offset)
-#define	ovl_map_max(map)	((map)->max_offset)
-#define	ovl_map_pmap(map)	((map)->pmap)
+#define	ovl_map_min(ovl)	((ovl)->min_offset)
+#define	ovl_map_max(ovl)	((ovl)->max_offset)
+#define	ovl_map_pmap(ovl)	((ovl)->pmap)
 
 /* XXX: number of overlay maps and entries to statically allocate */
 #define MAX_OMAP		64
@@ -127,20 +127,21 @@ struct ovl_map {
 
 #ifdef _KERNEL
 struct pmap;
-vm_map_t		ovl_map_create(struct pmap *, vm_offset_t, vm_offset_t, bool_t);
+ovl_map_t		ovl_map_create(struct pmap *, vm_offset_t, vm_offset_t);
 void			ovl_map_deallocate(ovl_map_t);
 int		 		ovl_map_delete(ovl_map_t, vm_offset_t, vm_offset_t);
-vm_map_entry_t	ovl_map_entry_create(ovl_map_t);
+ovl_map_entry_t	ovl_map_entry_create(ovl_map_t);
 void			ovl_map_entry_delete(ovl_map_t, ovl_map_entry_t);
 void			ovl_map_entry_dispose(ovl_map_t, ovl_map_entry_t);
 int		 		ovl_map_find(ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
 int		 		ovl_map_findspace(ovl_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
-void			ovl_map_init(ovl_map_t, vm_offset_t, vm_offset_t, bool_t);
+void			ovl_map_init(ovl_map_t, vm_offset_t, vm_offset_t);
 int				ovl_map_insert(ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
 bool_t			ovl_map_lookup_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 void			ovl_map_reference(ovl_map_t);
 int		 		ovl_map_remove(ovl_map_t, vm_offset_t, vm_offset_t);
 void			ovl_map_startup(void);
+int				ovl_map_submap(ovl_map_t, vm_offset_t, vm_offset_t, ovl_map_t);
 
 void 			ovl_map_swapin(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 void 			ovl_map_swapout(ovl_map_t, vm_offset_t, ovl_map_entry_t *);

@@ -194,18 +194,18 @@
 #else
 #define VM_MIN_ADDRESS			    ((vm_offset_t)0)
 #endif
-#define	VM_MAXUSER_ADDRESS      ((vm_offset_t)(PDIR_SLOT_PTE << L2_SHIFT))
-#define UPT_MIN_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PGSIZE * 3)))
-#define UPT_MAX_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PDIR_SLOT_PTE << L1_SHIFT)))
-#define VM_MAX_ADDRESS          ((vm_offset_t)(UPT_MAX_ADDRESS))
-#define	VM_MIN_KERNEL_ADDRESS   ((vm_offset_t)(PDIR_SLOT_KERN << L2_SHIFT))
-#define	VM_MAX_KERNEL_ADDRESS   ((vm_offset_t)(PDIR_SLOT_APTE << L2_SHIFT))
+#define	VM_MAXUSER_ADDRESS      	((vm_offset_t)(PDIR_SLOT_PTE << L2_SHIFT))
+#define UPT_MIN_ADDRESS         	((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PGSIZE * 3)))
+#define UPT_MAX_ADDRESS         	((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PDIR_SLOT_PTE << L1_SHIFT)))
+#define VM_MAX_ADDRESS          	((vm_offset_t)(UPT_MAX_ADDRESS))
+#define	VM_MIN_KERNEL_ADDRESS   	((vm_offset_t)(PDIR_SLOT_KERN << L2_SHIFT))
+#define	VM_MAX_KERNEL_ADDRESS   	((vm_offset_t)(PDIR_SLOT_APTE << L2_SHIFT))
 
-#define	PMAP_MAP_LOW			      (4 * 1024 * 1024)
+#define	PMAP_MAP_LOW			    (4 * 1024 * 1024)
 
 /* virtual sizes (bytes) for various kernel submaps */
-#define VM_MBUF_SIZE			      (NMBCLUSTERS*MCLBYTES)
-#define VM_KMEM_SIZE			      (NKMEMCLUSTERS*CLBYTES)
-#define VM_PHYS_SIZE			      (USRIOSIZE*CLBYTES)
+#define VM_MBUF_SIZE			    (NMBCLUSTERS*MCLBYTES)
+#define VM_KMEM_SIZE			    (NKMEMCLUSTERS*CLBYTES)
+#define VM_PHYS_SIZE			    (USRIOSIZE*CLBYTES)
 
 #endif /* !_I386_VMPARAM_H_ */

@@ -49,9 +49,12 @@ long							ovl_last_segment;
 vm_offset_t						ovl_first_logical_addr;
 vm_offset_t						ovl_last_logical_addr;
 
-struct vm_segment_hash_head 	*ovl_vm_segment_hashtable;
+struct ovl_vm_segment_hash_head	*ovl_vm_segment_hashtable;
 long				           	ovl_vm_segment_count;
 simple_lock_data_t				ovl_vm_segment_hash_lock;
+
+static ovl_segment_t ovl_segment_search_next(ovl_object_t, vm_offset_t);
+static ovl_segment_t ovl_segment_search_prev(ovl_object_t, vm_offset_t);
 
 void
 ovl_segment_startup(start, end)
@@ -221,7 +224,7 @@ ovl_segment_lookup(object, offset)
 	return (NULL);
 }
 
-ovl_segment_t
+static ovl_segment_t
 ovl_segment_search_next(object, offset)
 	ovl_object_t	object;
 	vm_offset_t offset;
@@ -242,7 +245,7 @@ ovl_segment_search_next(object, offset)
 	return (NULL);
 }
 
-ovl_segment_t
+static ovl_segment_t
 ovl_segment_search_prev(object, offset)
 	ovl_object_t object;
 	vm_offset_t offset;
@@ -279,7 +282,7 @@ ovl_segment_insert_vm_segment(osegment, vsegment)
 	ovl_segment_t 	osegment;
 	vm_segment_t 	vsegment;
 {
-    struct vm_segment_hash_head 	*vbucket;
+    struct ovl_vm_segment_hash_head 	*vbucket;
 
     if(vsegment == NULL) {
         return;
@@ -301,7 +304,7 @@ ovl_segment_lookup_vm_segment(osegment)
 	ovl_segment_t 				osegment;
 {
 	register vm_segment_t 	  	vsegment;
-    struct vsegment_hash_head 	*vbucket;
+    struct ovl_vm_segment_hash_head 	*vbucket;
 
     vbucket = &ovl_vm_segment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
     ovl_vm_segment_hash_lock();
@@ -321,7 +324,7 @@ ovl_segment_remove_vm_segment(vsegment)
 	vm_segment_t 	  			vsegment;
 {
 	register ovl_segment_t 		osegment;
-    struct vsegment_hash_head 	*vbucket;
+    struct ovl_vm_segment_hash_head 	*vbucket;
 
     vbucket = &ovl_vm_segment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
 	TAILQ_FOREACH(osegment, vbucket, vm_segment_hlist) {

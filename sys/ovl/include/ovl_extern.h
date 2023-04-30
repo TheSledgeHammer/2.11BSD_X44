@@ -44,9 +44,9 @@ vm_offset_t		omem_alloc_wait(ovl_map_t, vm_size_t);
 void			omem_free_wakeup(ovl_map_t, vm_offset_t, vm_size_t);
 int 			ovl_allocate(ovl_map_t, vm_offset_t, vm_size_t, bool_t);
 int 			ovl_deallocate(ovl_map_t, vm_offset_t, vm_size_t);
-int				ovl_allocate_with_pager(ovl_map_t, vm_offset_t *, vm_size_t, bool_t, vm_pager_t, bool_t);
-struct ovlspace *ovlspace_alloc(vm_offset_t, vm_offset_t, bool_t);
-struct ovlspace *ovlspace_free(struct ovlspace *);
+int				ovl_allocate_with_pager(ovl_map_t, vm_offset_t *, vm_size_t, bool_t, vm_pager_t, vm_offset_t, bool_t);
+struct ovlspace *ovlspace_alloc(vm_offset_t, vm_offset_t);
+void			ovlspace_free(struct ovlspace *);
 
 /* vm objects */
 void			ovl_object_enter_vm_object(ovl_object_t, vm_object_t);

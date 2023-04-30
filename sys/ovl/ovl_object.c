@@ -79,17 +79,17 @@ struct ovl_object	omem_object_store;
 ovl_object_t		overlay_object;
 ovl_object_t		omem_object;
 
-#define	OVL_OBJECT_HASH_COUNT	157
+#define	OVL_OBJECT_HASH_COUNT		157
 
-struct ovl_object_hash_head 	ovl_object_hashtable[OVL_OBJECT_HASH_COUNT];
+struct ovl_object_hash_head 		ovl_object_hashtable[OVL_OBJECT_HASH_COUNT];
 
-struct ovl_object_rbt			ovl_object_tree;
-long							ovl_object_count;
-simple_lock_data_t				ovl_object_tree_lock;
+struct ovl_object_rbt				ovl_object_tree;
+long								ovl_object_count;
+simple_lock_data_t					ovl_object_tree_lock;
 
 struct ovl_vm_object_hash_head 		ovl_vm_object_hashtable[OVL_OBJECT_HASH_COUNT];
-long							ovl_vm_object_count;
-simple_lock_data_t				ovl_vm_object_hash_lock;
+long								ovl_vm_object_count;
+simple_lock_data_t					ovl_vm_object_hash_lock;
 
 static void _ovl_object_allocate(vm_size_t, ovl_object_t);
 
@@ -243,7 +243,7 @@ ovl_object_setpager(object, pager, paging_offset, read_only)
 /* ovl object rbtree comparator */
 int
 ovl_object_rb_compare(obj1, obj2)
-	struct ovl_object *obj1, *obj2;
+	ovl_object_t obj1, obj2;
 {
 	if (obj1->size < obj2->size) {
 		return (-1);

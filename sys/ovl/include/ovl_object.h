@@ -117,8 +117,8 @@ long						ovl_object_count;				/* count of all objects */
 extern
 simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
 
-extern
-struct ovl_vm_object_hash_head 	ovl_vm_object_hashtable;
+//extern
+//struct ovl_vm_object_hash_head 	ovl_vm_object_hashtable;
 extern
 long						ovl_vm_object_count;
 extern
@@ -138,7 +138,7 @@ ovl_object_t				omem_object;
 
 #endif /* KERNEL */
 
-#define	ovl_object_lock_init(object)	simple_lock_init(&(object)->lock)
+#define	ovl_object_lock_init(object)	simple_lock_init(&(object)->lock, "ovl_object_lock")
 #define	ovl_object_lock(object)			simple_lock(&(object)->lock)
 #define	ovl_object_unlock(object)		simple_unlock(&(object)->lock)
 
@@ -151,7 +151,7 @@ void		 	ovl_object_reference(ovl_object_t);
 void			ovl_object_deallocate(ovl_object_t);
 void			ovl_object_terminate(ovl_object_t);
 void			ovl_object_remove(vm_pager_t);
-void		 ovl_object_setpager(ovl_object_t, vm_pager_t, vm_offset_t, bool_t);
+void		 	ovl_object_setpager(ovl_object_t, vm_pager_t, vm_offset_t, bool_t);
 
 #endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

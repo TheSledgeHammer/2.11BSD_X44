@@ -32,9 +32,10 @@
 #include <ovl/include/ovl_page.h>
 #include <vm/include/vm_segment.h>
 
-struct vm_segment_hash_head;
+struct ovl_vm_segment_hash_head;
 struct ovl_seglist;
-TAILQ_HEAD(vm_segment_hash_head , ovl_object);
+TAILQ_HEAD(ovl_vm_segment_hash_head , ovl_object);
+
 CIRCLEQ_HEAD(ovl_seglist, ovl_segment);
 struct ovl_segment {
 	struct ovl_pglist				pglist; 				/* Pages in overlay pglist memory */
@@ -62,7 +63,7 @@ struct ovl_seglist 					ovl_segment_list;
 extern
 simple_lock_data_t					ovl_segment_list_lock;
 extern
-struct vm_segment_hash_head       	ovl_vm_segment_hashtable;
+struct ovl_vm_segment_hash_head    	ovl_vm_segment_hashtable;
 extern
 long				           		ovl_vm_segment_count;
 extern

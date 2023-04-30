@@ -63,7 +63,6 @@
 
 typedef uint64_t	ovl_entry_t;
 
-
 struct pmap {
 	ovl_entry_t		*pm_ovltab;		/* OVA Address- Direct access OVL mapped memory */
 };

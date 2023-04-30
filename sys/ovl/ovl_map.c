@@ -97,21 +97,22 @@
 #include <ovl/include/ovl_segment.h>
 
 #undef RB_AUGMENT
+static void ovl_rb_augment(ovl_map_entry_t);
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
 
-static int ovl_rb_compare(ovl_map_entry_t, ovl_map_entry_t);
-static vm_size_t ovl_rb_space(const ovl_map_t, const ovl_map_entry_t);
-static vm_size_t ovl_rb_subtree_space(ovl_map_entry_t);
-static void ovl_rb_fixup(ovl_map_t, ovl_map_entry_t);
-static void ovl_rb_insert(ovl_map_t, ovl_map_entry_t);
-static void ovl_rb_remove(ovl_map_t, ovl_map_entry_t);
-static vm_size_t ovl_cl_space(const ovl_map_t, const ovl_map_entry_t);
-static void ovl_cl_insert(ovl_map_t, ovl_map_entry_t);
-static void ovl_cl_remove(ovl_map_t, ovl_map_entry_t);
-static bool_t ovl_map_search_next_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
-static bool_t ovl_map_search_prev_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
-static void	_ovl_map_clip_end(ovl_map_t, ovl_map_entry_t, vm_offset_t);
-static void	_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
+static int 			ovl_rb_compare(ovl_map_entry_t, ovl_map_entry_t);
+static vm_size_t 	ovl_rb_space(const ovl_map_t, const ovl_map_entry_t);
+static vm_size_t 	ovl_rb_subtree_space(ovl_map_entry_t);
+static void 		ovl_rb_fixup(ovl_map_t, ovl_map_entry_t);
+static void 		ovl_rb_insert(ovl_map_t, ovl_map_entry_t);
+static void 		ovl_rb_remove(ovl_map_t, ovl_map_entry_t);
+static vm_size_t 	ovl_cl_space(const ovl_map_t, const ovl_map_entry_t);
+static void 		ovl_cl_insert(ovl_map_t, ovl_map_entry_t);
+static void 		ovl_cl_remove(ovl_map_t, ovl_map_entry_t);
+static bool_t 		ovl_map_search_next_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
+static bool_t 		ovl_map_search_prev_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t);
+static void			_ovl_map_clip_end(ovl_map_t, ovl_map_entry_t, vm_offset_t);
+static void			_ovl_map_clip_start(ovl_map_t, ovl_map_entry_t, vm_offset_t);
 
 RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, rb_entry, ovl_rb_compare);
 RB_GENERATE(ovl_map_rb_tree, ovl_map_entry, rb_entry, ovl_rb_compare);
@@ -187,8 +188,8 @@ ovl_rb_augment(entry)
 
 static vm_size_t
 ovl_rb_space(map, entry)
-    const struct ovl_map *map;
-    const struct ovl_map_entry *entry;
+    const ovl_map_t map;
+    const ovl_map_entry_t entry;
 {
     KASSERT(CIRCLEQ_NEXT(entry, cl_entry) != NULL);
     return (CIRCLEQ_NEXT(entry, cl_entry)->start - CIRCLEQ_FIRST(&map->cl_header)->end);
@@ -196,7 +197,7 @@ ovl_rb_space(map, entry)
 
 static vm_size_t
 ovl_rb_subtree_space(entry)
-	const struct ovl_map_entry *entry;
+	const ovl_map_entry_t entry;
 {
 	vm_offset_t space, tmp;
 
@@ -220,8 +221,8 @@ ovl_rb_subtree_space(entry)
 
 static void
 ovl_rb_fixup(map, entry)
-	struct ovl_map *map;
-	struct ovl_map_entry *entry;
+	ovl_map_t map;
+	ovl_map_entry_t entry;
 {
 	/* We need to traverse to the very top */
 	do {
@@ -232,8 +233,8 @@ ovl_rb_fixup(map, entry)
 
 static void
 ovl_rb_insert(map, entry)
-    struct ovl_map *map;
-    struct ovl_map_entry *entry;
+	ovl_map_t map;
+	ovl_map_entry_t entry;
 {
     vm_offset_t space;
     ovl_map_entry_t tmp;
@@ -253,8 +254,8 @@ ovl_rb_insert(map, entry)
 
 static void
 ovl_rb_remove(map, entry)
-    struct ovl_map *map;
-    struct ovl_map_entry *entry;
+	ovl_map_t map;
+	ovl_map_entry_t entry;
 {
     struct ovl_map_entry *parent;
 
@@ -279,10 +280,10 @@ int ovl_debug_check_rbtree = 0;
 
 int
 _ovl_tree_sanity(map, name)
-	struct ovl_map *map;
+	ovl_map_t map;
 	const char *name;
 {
-	struct ovl_map_entry *tmp, *trtmp;
+	ovl_map_entry_t tmp, trtmp;
 	int n = 0, i = 1;
 
 	RB_FOREACH(tmp, ovl_map_rb_tree, &map->rb_root) {
@@ -432,13 +433,13 @@ ovl_map_init(map, min, max)
 	map->hint = CIRCLEQ_FIRST(&map->cl_header);
 	map->timestamp = 0;
 	lockinit(&map->lock, PVM, "thrd_sleep", 0, 0);
-	simple_lock_init(&map->ref_lock);
-	simple_lock_init(&map->hint_lock);
+	simple_lock_init(&map->ref_lock, "ovl_map_ref_lock");
+	simple_lock_init(&map->hint_lock, "ovl_map_hint_lock");
 }
 
 ovl_map_entry_t
 ovl_map_entry_create(map)
-	ovl_map_t		map;
+	ovl_map_t	map;
 {
 	ovl_map_entry_t	entry;
 #ifdef DEBUG

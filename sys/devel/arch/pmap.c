@@ -28,11 +28,23 @@
 
 #include <devel/arch/pmap.h>
 
-void
-pmap_pinit_ovl(ovl)
-	ovl_entry_t ovl;
-{
-	ovl = omem_alloc(overlay_map, sizeof(ovl_entry_t));
+#define NPGOVL  126		/* Num of pages for overlay */
 
-	ovl = (ovl_entry_t *)OVLBASE;
+ovl_entry_t		*IdleOVL;
+
+pmap_cold(void)
+{
+	u_long a;
+
+	IdleOVL = (ovl_entry_t *)allocpages(NPGOVL, &physfree);
+}
+
+void
+pmap_pinit_ovl(ovltab)
+	ovl_entry_t *ovltab;
+{
+	int i;
+	 for (i = 0; i < NPGOVL+1; i++) {
+		 ovltab[i] = omem_alloc(overlay_map, i * sizeof(ovl_entry_t));
+	 }
 }

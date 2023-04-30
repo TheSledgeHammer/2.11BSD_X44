@@ -472,7 +472,7 @@ vm_map_create(pmap, min, max, pageable)
  */
 void
 vm_map_init(map, min, max, pageable)
-	register struct vm_map *map;
+	register vm_map_t map;
 	vm_offset_t	min, max;
 	bool_t	pageable;
 {

@@ -160,7 +160,7 @@ ovl_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 	if (result != KERN_SUCCESS) {
 		ovl_object_deallocate(object);
 	} else if (pager != NULL) {
-		ovl_object_setpager(object, pager, (vm_offset_t) 0);
+		ovl_object_setpager(object, pager, (vm_offset_t) 0, TRUE);
 	}
-	return(result);
+	return (result);
 }
