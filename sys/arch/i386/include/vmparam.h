@@ -54,11 +54,11 @@
  * Immediately after the user structure is the page table map, and then
  * kernal address space.
  */
-#define	USRTEXT					0
-#define	USRSTACK				(VM_MAXUSER_ADDRESS - PGSIZE)
+#define	USRTEXT         0
+#define	USRSTACK        (VM_MAXUSER_ADDRESS - PGSIZE)
 #define	BTOPUSRSTACK    (0xFDC00-(UPAGES))	/* btop(USRSTACK) */
-#define	LOWPAGES				0
-#define HIGHPAGES				UPAGES
+#define	LOWPAGES        0
+#define HIGHPAGES       UPAGES
 
 /*
  * Virtual memory related constants, all in bytes
