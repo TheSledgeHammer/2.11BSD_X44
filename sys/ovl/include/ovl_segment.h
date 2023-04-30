@@ -34,7 +34,7 @@
 
 struct ovl_vm_segment_hash_head;
 struct ovl_seglist;
-TAILQ_HEAD(ovl_vm_segment_hash_head , ovl_object);
+TAILQ_HEAD(ovl_vm_segment_hash_head , ovl_segment);
 
 CIRCLEQ_HEAD(ovl_seglist, ovl_segment);
 struct ovl_segment {
@@ -63,7 +63,7 @@ struct ovl_seglist 					ovl_segment_list;
 extern
 simple_lock_data_t					ovl_segment_list_lock;
 extern
-struct ovl_vm_segment_hash_head    	ovl_vm_segment_hashtable;
+struct ovl_vm_segment_hash_head    	*ovl_vm_segment_hashtable;
 extern
 long				           		ovl_vm_segment_count;
 extern

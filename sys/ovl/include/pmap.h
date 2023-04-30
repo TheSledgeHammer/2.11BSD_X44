@@ -76,9 +76,9 @@
 __BEGIN_DECLS
 void 		pmap_overlay_bootstrap(vm_offset_t, u_long);
 void 		*pmap_overlay_bootstrap_alloc(u_long);
-vm_offset_t pmap_overlay_map(vm_offset_t, vm_offset_t, vm_offset_t, int);
+vm_offset_t     pmap_overlay_map(vm_offset_t, vm_offset_t, vm_offset_t);
 void 		pmap_overlay_remove(pmap_t, vm_offset_t, vm_offset_t);
-void 		pmap_overlay_enter(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
+void 		pmap_overlay_enter(pmap_t, vm_offset_t, vm_offset_t);
 void 		pmap_overlay_init(vm_offset_t, vm_offset_t);
 __END_DECLS
 #endif

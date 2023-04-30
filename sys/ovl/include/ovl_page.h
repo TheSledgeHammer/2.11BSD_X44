@@ -94,9 +94,9 @@
 
 #include <vm/include/vm_page.h>
 
-struct vm_page_hash_head;
+struct ovl_vm_page_hash_head;
+TAILQ_HEAD(ovl_vm_page_hash_head, ovl_page);
 struct ovl_pglist;
-TAILQ_HEAD(vm_page_hash_head, ovl_page);
 TAILQ_HEAD(ovl_pglist, ovl_page);
 struct ovl_page {
 	TAILQ_ENTRY(ovl_page)	hashq;					/* hash table links (S)*/
@@ -122,7 +122,7 @@ struct ovl_pglist				ovl_page_list;
 extern
 simple_lock_data_t				ovl_page_list_lock;
 extern
-struct vm_page_hash_head     	ovl_vm_page_hashtable;
+struct ovl_vm_page_hash_head   	*ovl_vm_page_hashtable;
 extern
 long				       		ovl_vm_page_count;
 extern

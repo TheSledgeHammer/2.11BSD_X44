@@ -56,13 +56,16 @@ typedef struct ovl_segment		*ovl_segment_t;
 
 struct ovl_page;
 typedef struct ovl_page			*ovl_page_t;
-
+/*
 #include <sys/queue.h>
 #include <sys/tree.h>
 #include <vm/include/vm_param.h>
 #include <sys/lock.h>
 #include <vm/include/vm_prot.h>
 #include <vm/include/vm_inherit.h>
+*/
+#include <vm/include/vm.h>
+
 #include <ovl/include/ovl_map.h>
 #include <ovl/include/ovl_object.h>
 #include <ovl/include/pmap.h>

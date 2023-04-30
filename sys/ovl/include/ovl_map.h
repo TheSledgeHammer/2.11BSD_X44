@@ -26,8 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef	OVL_MAP_
-#define	OVL_MAP_
+#ifndef	_OVL_MAP_
+#define	_OVL_MAP_
 
 struct ovl_map_clist;
 struct ovl_map_rb_tree;
@@ -146,4 +146,4 @@ int				ovl_map_submap(ovl_map_t, vm_offset_t, vm_offset_t, ovl_map_t);
 void 			ovl_map_swapin(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 void 			ovl_map_swapout(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 #endif
-#endif /* OVL_MAP_ */
+#endif /* _OVL_MAP_ */
