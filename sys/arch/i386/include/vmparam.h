@@ -56,7 +56,7 @@
  */
 #define	USRTEXT					0
 #define	USRSTACK				(VM_MAXUSER_ADDRESS - PGSIZE)
-#define	BTOPUSRSTACK		(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
+#define	BTOPUSRSTACK    (0xFDC00-(UPAGES))	/* btop(USRSTACK) */
 #define	LOWPAGES				0
 #define HIGHPAGES				UPAGES
 
