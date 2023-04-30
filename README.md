@@ -41,8 +41,9 @@
 ## Project Aims:
 
 - Improve 2.11BSD's Dual Control (Proc & User)
-- Instruction & Data (I&D) Seperation (See devel/vm folder)
-- Pseudo Segmentation (See devel/vm folder)
+- Instruction & Data (I&D) Seperation (See VM)
+- Pseudo Segmentation (See VM)
+- Overlays (See OVL)
 - Threading (Hybrid N/M):  
   - Kernel Threads:
     - mcontext & ucontext
