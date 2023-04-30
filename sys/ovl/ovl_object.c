@@ -74,8 +74,8 @@
 #include <ovl/include/ovl_segment.h>
 #include <ovl/include/ovl_page.h>
 
-struct ovl_object	overlay_object_store;
-struct ovl_object	omem_object_store;
+static struct ovl_object	overlay_object_store;
+static struct ovl_object	omem_object_store;
 ovl_object_t		overlay_object;
 ovl_object_t		omem_object;
 
@@ -121,6 +121,22 @@ ovl_object_init(size)
 	omem_object = &omem_object_store;
 	_ovl_object_allocate(size, omem_object);
 }
+
+/* ovl object rbtree comparator */
+int
+ovl_object_rb_compare(obj1, obj2)
+	ovl_object_t obj1, obj2;
+{
+	if (obj1->size < obj2->size) {
+		return (-1);
+	} else if (obj1->size > obj2->size) {
+		return (1);
+	}
+	return (0);
+}
+
+RB_PROTOTYPE(ovl_object_rbt, ovl_object, object_tree, ovl_object_rb_compare);
+RB_GENERATE(ovl_object_rbt, ovl_object, object_tree, ovl_object_rb_compare);
 
 /*
  *	ovl_object_allocate:
@@ -209,7 +225,7 @@ ovl_object_terminate(object)
 	register ovl_object_t	object;
 {
 	while (object->paging_in_progress) {
-			ovl_object_sleep(object, object, FALSE);
+			//ovl_object_sleep(object, object, FALSE);
 			ovl_object_lock(object);
 	}
 
@@ -220,7 +236,7 @@ ovl_object_terminate(object)
 	}
 
 	ovl_object_tree_lock();
-	RB_REMOVE(object_rbt, &ovl_object_tree, object);
+	RB_REMOVE(ovl_object_rbt, &ovl_object_tree, object);
 	ovl_object_count--;
 	ovl_object_tree_unlock();
 
@@ -240,21 +256,6 @@ ovl_object_setpager(object, pager, paging_offset, read_only)
 	ovl_object_unlock(object);
 }
 
-/* ovl object rbtree comparator */
-int
-ovl_object_rb_compare(obj1, obj2)
-	ovl_object_t obj1, obj2;
-{
-	if (obj1->size < obj2->size) {
-		return (-1);
-	} else if (obj1->size > obj2->size) {
-		return (1);
-	}
-	return (0);
-}
-
-RB_PROTOTYPE(ovl_object_rbt, ovl_object, object_tree, ovl_object_rb_compare);
-RB_GENERATE(ovl_object_rbt, ovl_object, object_tree, ovl_object_rb_compare);
 RB_PROTOTYPE(ovl_object_hash_head, ovl_object_hash_entry, hlinks, ovl_object_rb_compare);
 RB_GENERATE(ovl_object_hash_head, ovl_object_hash_entry, hlinks, ovl_object_rb_compare);
 

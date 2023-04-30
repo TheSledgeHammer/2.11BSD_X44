@@ -119,7 +119,7 @@ omem_suballoc(parent, min, max, size)
 	ovl_map_t result;
 
 	*min = (vm_offset_t) ovl_map_min(parent);
-	ret = ovl_map_find(parent, NULL, (vm_offset_t) 0, min, size);
+	ret = ovl_map_find(parent, NULL, (vm_offset_t) 0, min, size, TRUE);
 	if (ret != KERN_SUCCESS) {
 		printf("ovl_suballoc: bad status return of %d.\n", ret);
 		panic("ovl_suballoc");

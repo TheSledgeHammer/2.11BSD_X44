@@ -110,7 +110,7 @@ vm_offset_t					ovl_first_phys_addr;
 vm_offset_t					ovl_last_phys_addr;
 vm_offset_t					oentry_data;
 
-struct vm_page_hash_head 	*ovl_vm_page_hashtable;
+struct ovl_vm_page_hash_head 	*ovl_vm_page_hashtable;
 long				       	ovl_vm_page_count;
 simple_lock_data_t			ovl_vm_page_hash_lock;
 
@@ -354,7 +354,7 @@ ovl_page_insert_vm_page(opage, vpage)
 	ovl_page_t 	opage;
 	vm_page_t 	vpage;
 {
-    struct vm_page_hash_head 	*vbucket;
+    struct ovl_vm_page_hash_head 	*vbucket;
 
     if(vpage == NULL) {
         return;
@@ -376,7 +376,7 @@ ovl_page_lookup_vm_page(opage)
 	ovl_page_t 	opage;
 {
 	register vm_page_t 			vpage;
-    struct vm_page_hash_head 	*vbucket;
+    struct ovl_vm_page_hash_head 	*vbucket;
 
     vbucket = &ovl_vm_page_hashtable[ovl_vpage_hash(opage, vpage)];
     ovl_vm_page_hash_lock();
@@ -393,10 +393,10 @@ ovl_page_lookup_vm_page(opage)
 
 void
 ovl_page_remove_vm_page(vpage)
-	ovl_page_t 	vpage;
+	vm_page_t 	vpage;
 {
 	register ovl_page_t 		opage;
-    struct vm_page_hash_head 	*vbucket;
+    struct ovl_vm_page_hash_head 	*vbucket;
 
     vbucket = &ovl_vm_page_hashtable[ovl_vpage_hash(opage, vpage)];
 
