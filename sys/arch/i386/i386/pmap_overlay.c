@@ -41,14 +41,14 @@
 #include <machine/pmap_hat.h>
 
 #ifdef OVERLAY
-//extern struct pmap  		overlay_pmap_store;
-//#define overlay_pmap 		(&overlay_pmap_store)
 
 void
 pmap_overlay_bootstrap(firstaddr, res)
 	vm_offset_t firstaddr;
 	u_long res;
 {
+      extern vm_offset_t avail_start, virtual_avail, virtual_end;
+      
 	overlay_avail = (vm_offset_t)firstaddr;
 	overlay_end = OVL_MAX_ADDRESS;
 
@@ -71,6 +71,7 @@ pmap_overlay_bootstrap_allocate(va, size)
 {
     vm_offset_t val;
 	int i;
+	extern vm_offset_t avail_start;
 
 	size = round_page(size);
 	val = va;
@@ -129,7 +130,7 @@ pmap_overlay_release(pmap)
 }
 
 void
-pmap_reference(pmap)
+pmap_overlay_reference(pmap)
 	pmap_t	pmap;
 {
 

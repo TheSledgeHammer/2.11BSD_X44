@@ -180,8 +180,10 @@ vm_offset_t		vm_last_phys;		/* PA just past last managed page */
 struct pmap_hat_list 	vmhat_list;
 
 #ifdef OVERLAY
-vm_offset_t				ovl_first_phys;
-vm_offset_t				ovl_last_phys;
+vm_offset_t		overlay_avail;  	/* VA of first avail page (after kernel bss)*/
+vm_offset_t		overlay_end;
+vm_offset_t		ovl_first_phys;
+vm_offset_t		ovl_last_phys;
 struct pmap_hat_list	ovlhat_list;
 #endif
 
