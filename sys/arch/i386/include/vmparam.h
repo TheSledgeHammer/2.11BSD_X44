@@ -55,8 +55,8 @@
  * kernal address space.
  */
 #define	USRTEXT					0
-#define	USRSTACK				0xFDBFE000
-#define	BTOPUSRSTACK			(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
+#define	USRSTACK				(VM_MAXUSER_ADDRESS - PGSIZE)
+#define	BTOPUSRSTACK		(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
 #define	LOWPAGES				0
 #define HIGHPAGES				UPAGES
 
@@ -188,34 +188,24 @@
  */
 /* user/kernel map constants */
 #ifdef OVERLAY
-#define OVL_MIN_ADDRESS 		((vm_offset_t)0)			/* put ovlspace before vmspace in memory stack */
-#define OVL_MAX_ADDRESS			((vm_offset_t)0x19665800)	/* Total Size of Overlay Address Space (10% of VM Address space size) */
-#define VM_MIN_ADDRESS			((vm_offset_t)OVL_MAX_ADDRESS)
+#define OVL_MIN_ADDRESS 		    ((vm_offset_t)0)			/* put ovlspace before vmspace in memory stack */
+#define OVL_MAX_ADDRESS			    ((vm_offset_t)0x19665800)	/* Total Size of Overlay Address Space (10% of VM Address space size) */
+#define VM_MIN_ADDRESS			    ((vm_offset_t)OVL_MAX_ADDRESS)
 #else
-#define VM_MIN_ADDRESS			((vm_offset_t)0)
+#define VM_MIN_ADDRESS			    ((vm_offset_t)0)
 #endif
-#define VM_MAXUSER_ADDRESS		((vm_offset_t)0xFDBFD000)
-#define UPT_MIN_ADDRESS			((vm_offset_t)0xFDC00000)
-#define UPT_MAX_ADDRESS			((vm_offset_t)0xFDFF7000)
-#define VM_MAX_ADDRESS			UPT_MAX_ADDRESS
-#define VM_MIN_KERNEL_ADDRESS	((vm_offset_t)0xFDFF7000)
-#define VM_MAX_KERNEL_ADDRESS	((vm_offset_t)0xFF7FF000)
-
-/* NetBSD Derived Addresses
-#define USRSTACK                (VM_MAXUSER_ADDRESS - PAGE_SIZE)
-
 #define	VM_MAXUSER_ADDRESS	    ((vm_offset_t)(PDIR_SLOT_PTE << L2_SHIFT))
 #define UPT_MIN_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PAGE_SIZE * 3))
 #define UPT_MAX_ADDRESS         ((vm_offset_t)((PDIR_SLOT_PTE << L2_SHIFT) + (PDIR_SLOT_PTE << L1_SHIFT)))
-#define VM_MAX_ADDRESS			((vm_offset_t)(UPT_MAX_ADDRESS))
-#define	VM_MIN_KERNEL_ADDRESS	((vm_offset_t)(PDIR_SLOT_KERN << L2_SHIFT))
-#define	VM_MAX_KERNEL_ADDRESS	((vm_offset_t)(PDIR_SLOT_APTE << L2_SHIFT))
-*/
-#define	PMAP_MAP_LOW			(4 * 1024 * 1024)
+#define VM_MAX_ADDRESS			    ((vm_offset_t)(UPT_MAX_ADDRESS))
+#define	VM_MIN_KERNEL_ADDRESS	  ((vm_offset_t)(PDIR_SLOT_KERN << L2_SHIFT))
+#define	VM_MAX_KERNEL_ADDRESS	  ((vm_offset_t)(PDIR_SLOT_APTE << L2_SHIFT))
+
+#define	PMAP_MAP_LOW			      (4 * 1024 * 1024)
 
 /* virtual sizes (bytes) for various kernel submaps */
-#define VM_MBUF_SIZE			(NMBCLUSTERS*MCLBYTES)
-#define VM_KMEM_SIZE			(NKMEMCLUSTERS*CLBYTES)
-#define VM_PHYS_SIZE			(USRIOSIZE*CLBYTES)
+#define VM_MBUF_SIZE			      (NMBCLUSTERS*MCLBYTES)
+#define VM_KMEM_SIZE			      (NKMEMCLUSTERS*CLBYTES)
+#define VM_PHYS_SIZE			      (USRIOSIZE*CLBYTES)
 
 #endif /* !_I386_VMPARAM_H_ */
