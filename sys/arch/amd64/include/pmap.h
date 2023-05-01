@@ -129,20 +129,21 @@
 #define	NBPD_L3			(1ULL << L3_SHIFT) 		/* # bytes mapped by L3 ent (1G) */
 #define	NBPD_L4			(1ULL << L4_SHIFT) 		/* # bytes mapped by L4 ent (512G) */
 
-#define L4_MASK			0x0000ff8000000000
-#define L3_MASK			0x0000007fc0000000
-#define L2_MASK			0x000000003fe00000
-#define L1_MASK			0x00000000001ff000
+#define L4_MASK			0x0000ff8000000000		/* 255TB */
+#define L3_MASK			0x0000007fc0000000		/* 511GB */
+#define L2_MASK			0x000000003fe00000		/* 1GB */
+#define L1_MASK			0x00000000001ff000		/* 2MB */
 
+#define L5_FRAME		L5_MASK
 #define L4_FRAME		L4_MASK
 #define L3_FRAME		(L4_FRAME|L3_MASK)
 #define L2_FRAME		(L3_FRAME|L2_MASK)
 #define L1_FRAME		(L2_FRAME|L1_MASK)
 
-typedef uint64_t 		pt_entry_t;			/* PTE  (L1) */
-typedef uint64_t 		pd_entry_t;			/* PDE  (L2) */
-typedef uint64_t 		pdp_entry_t;		/* PDP  (L3) */
-typedef uint64_t 		pml4_entry_t;		/* PML4 (L4) */
+typedef uint64_t 		pt_entry_t;				/* PTE  (L1) */
+typedef uint64_t 		pd_entry_t;				/* PDE  (L2) */
+typedef uint64_t 		pdp_entry_t;			/* PDP  (L3) */
+typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 
 /*
  * Mask to get rid of the sign-extended part of addresses.
@@ -152,7 +153,7 @@ typedef uint64_t 		pml4_entry_t;		/* PML4 (L4) */
 
 #define VA_SIGN_POS(va)		((va) & ~VA_SIGN_MASK)
 
-#define L4_SLOT_PTE		255
+#define L4_SLOT_PTE			255
 #define L4_SLOT_APTE		510
 #define L4_SLOT_KERN		256
 #define L4_SLOT_KERNBASE	511
