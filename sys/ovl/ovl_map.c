@@ -139,7 +139,7 @@ ovlspace_alloc(min, max)
 	OVERLAY_MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP, M_WAITOK);
 	bzero(ovl,(caddr_t)&ovl->ovl_startcopy - (caddr_t)ovl);
 	ovl_map_init(&ovl->ovl_map, min, max);
-	//pmap_pinit(&ovl->ovl_pmap);
+	pmap_pinit(&ovl->ovl_pmap);
 	ovl->ovl_map.pmap = &ovl->ovl_pmap;
 	ovl->ovl_refcnt = 1;
 	return (ovl);
@@ -158,7 +158,7 @@ ovlspace_free(ovl)
 		 */
 		ovl_map_lock(&ovl->ovl_map);
 		(void) ovl_map_delete(&ovl->ovl_map, ovl->ovl_map.min_offset, ovl->ovl_map.max_offset);
-		//pmap_release(&ovl->ovl_pmap);
+		pmap_overlay_release(&ovl->ovl_pmap);
 		OVERLAY_FREE(ovl, M_OVLMAP);
 	}
 }
@@ -545,7 +545,7 @@ ovl_map_deallocate(map)
 
 	(void) ovl_map_delete(map, map->min_offset, map->max_offset);
 
-	//pmap_destroy(map->pmap);
+	pmap_overlay_destroy(map->pmap);
 
 	ovl_map_unlock(map);
 

@@ -413,7 +413,7 @@ ovlspace_init(p)
 {
 	p->p_ovlspace = &ovlspace0;
 	ovlspace0.ovl_refcnt = 1;
-	ovlspace0.ovl_pmap = vmspace0.vm_pmap;
+	pmap_pinit(&ovlspace0.ovl_pmap);
 	ovl_map_init(&ovlspace0.ovl_map, round_page(OVL_MIN_ADDRESS), trunc_page(OVL_MAX_ADDRESS));
 	ovlspace0.ovl_map.pmap = &ovlspace0.ovl_pmap;
 }

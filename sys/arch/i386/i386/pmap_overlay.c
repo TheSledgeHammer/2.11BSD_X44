@@ -47,7 +47,7 @@ pmap_overlay_bootstrap(firstaddr, res)
 	vm_offset_t firstaddr;
 	u_long res;
 {
-      extern vm_offset_t avail_start, virtual_avail, virtual_end;
+    extern vm_offset_t avail_start, virtual_avail, virtual_end;
       
 	overlay_avail = (vm_offset_t)firstaddr;
 	overlay_end = OVL_MAX_ADDRESS;
@@ -79,8 +79,8 @@ pmap_overlay_bootstrap_allocate(va, size)
         va = pmap_overlay_map(va, avail_start, avail_start + PAGE_SIZE);
         avail_start += PAGE_SIZE;
     }
-    bzero((caddr_t) val, size);
-	return ((void *) val);
+    bzero((caddr_t)val, size);
+	return ((void *)val);
 }
 
 void *
@@ -109,31 +109,37 @@ pmap_overlay_map(virt, start, end)
 }
 
 void
-pmap_overlay_pinit(pmap)
-	register pmap_t pmap;
+pmap_pinit_ovltab(ovltab)
+	ovl_entry_t *ovltab;
 {
-
+	ovltab = (ovl_entry_t *)omem_alloc(overlay_map, (vm_offset_t)NPGOVL * sizeof(ovl_entry_t));
 }
 
 void
 pmap_overlay_destroy(pmap)
 	register pmap_t pmap;
 {
+	int count;
 
+	if (pmap == NULL) {
+		return;
+	}
+
+	pmap_lock(pmap);
+	LIST_REMOVE(pmap, pm_list);
+	count = --pmap->pm_count;
+	pmap_unlock(pmap);
+	if (count == 0) {
+		pmap_overlay_release(pmap);
+		//overlay_free((caddr_t)pmap, M_VMPMAP);
+	}
 }
 
 void
 pmap_overlay_release(pmap)
-	pmap_t pmap;
+	register pmap_t pmap;
 {
-	//omem_free(overlay_map, (vm_offset_t)pmap->pm_pdir, size);
-}
-
-void
-pmap_overlay_reference(pmap)
-	pmap_t	pmap;
-{
-
+	omem_free(overlay_map, (vm_offset_t)pmap->pm_ovltab, (vm_offset_t)NPGOVL * sizeof(ovl_entry_t));
 }
 
 void

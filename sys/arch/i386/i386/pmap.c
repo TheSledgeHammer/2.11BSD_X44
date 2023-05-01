@@ -180,6 +180,9 @@ vm_offset_t		vm_last_phys;		/* PA just past last managed page */
 struct pmap_hat_list 	vmhat_list;
 
 #ifdef OVERLAY
+u_long			OVLphys;
+ovl_entry_t		*IdleOVL;
+
 vm_offset_t		overlay_avail;  	/* VA of first avail page (after kernel bss)*/
 vm_offset_t		overlay_end;
 vm_offset_t		ovl_first_phys;
@@ -200,8 +203,6 @@ pv_entry_t		pv_table;			/* array of entries, one per page */
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
 static struct pmap_list pmap_header;
-
-
 
 /*
  * All those kernel PT submaps that BSD is so fond of
@@ -380,6 +381,12 @@ pmap_cold(void)
 	physfree = roundup(physfree, NBPDR);
 	KERNend = physfree;
 
+#ifdef OVERLAY
+	/* Allocate Overlay Space */
+	OVLphys	= allocpages(1, &physfree);
+	IdleOVL = (ovl_entry_t *)allocpages(NPGOVL, &physfree);
+#endif
+
 	/* Allocate Kernel Page Tables */
 	KPTphys = allocpages(NKPT, &physfree);
 	KPTmap = (pt_entry_t *)KPTphys;
@@ -405,6 +412,13 @@ pmap_cold(void)
 
 	/* pgtable + ext + IOPAGES */
 	vm86paddr = vm86pa = allocpages(3, &physfree);
+
+#ifdef OVERLAY
+	/* Install Overlay Space */
+	for (a = 0; a < NPGOVL; a++) {
+		IdleOVL[a] = (OVLphys + ptoa(a));
+	}
+#endif
 
 	/* Install page tables into PTD.  Page table page 1 is wasted. */
 	for (a = 0; a < NKPT; a++) {
@@ -558,6 +572,9 @@ pmap_bootstrap(firstaddr)
 	 * Count bootstrap data as being resident in case any of this data is
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
+#ifdef OVERLAY
+	kernel_pmap->pm_ovltab = (ovl_entry_t *)(KERNBASE + IdleOVL);
+#endif
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
 	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
 #ifdef PMAP_PAE_COMP
@@ -975,6 +992,10 @@ void
 pmap_pinit(pmap)
 	register pmap_t pmap;
 {
+#ifdef OVERLAY
+	pmap_pinit_ovltab(pmap->pm_ovltab);
+#endif
+
 	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
 
 #ifdef PMAP_PAE_COMP

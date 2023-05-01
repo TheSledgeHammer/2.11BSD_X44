@@ -248,6 +248,9 @@
 typedef uint32_t 				pt_entry_t;			/* PTE */
 typedef uint32_t 				pd_entry_t;			/* PDE */
 typedef	uint32_t 				pdpt_entry_t;		/* PDPT */
+#ifdef OVERLAY
+typedef uint32_t 				ovl_entry_t;		/* OVL */
+#endif
 
 #else /* PMAP_PAE */
 
@@ -301,7 +304,9 @@ typedef	uint32_t 				pdpt_entry_t;		/* PDPT */
 typedef uint64_t 				pt_entry_t;			/* PTE */
 typedef uint64_t 				pd_entry_t;			/* PDE */
 typedef uint64_t 				pdpt_entry_t;		/* PDPT */
-
+#ifdef OVERLAY
+typedef uint64_t 				ovl_entry_t;		/* OVL */
+#endif
 #endif
 
 #define PDIR_SLOT_KERN			L2_SLOT_KERN
@@ -373,6 +378,9 @@ struct pmap_list;
 LIST_HEAD(pmap_list, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
 	LIST_ENTRY(pmap) 		pm_list;		/* List of all pmaps */
+#ifdef OVERLAY
+	ovl_entry_t				*pm_ovltab;		/* KVA of Overlay */
+#endif
 #ifdef PMAP_PAE_COMP
 	pt_entry_t				*pm_ptab;		/* KVA of page table */
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
@@ -500,6 +508,13 @@ bool_t	    pmap_testbit(vm_offset_t, int);
 void        pmap_changebit(vm_offset_t, int, bool_t);
 void        *pmap_bios16_enter(void);
 void        pmap_bios16_leave(void *);
+/* Overlay */
+#ifdef OVERLAY
+extern u_long			OVLphys;
+extern ovl_entry_t		*IdleOVL;
+
+void		pmap_pinit_ovltab(ovl_entry_t *);
+#endif 	/* OVERLAY */
 #endif	/* KERNEL */
 #endif 	/* !_LOCORE */
 #endif /* _I386_PMAP_H_ */

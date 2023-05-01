@@ -188,8 +188,8 @@
  */
 /* user/kernel map constants */
 #ifdef OVERLAY
-#define OVL_MIN_ADDRESS 		    ((vm_offset_t)0)			/* put ovlspace before vmspace in memory stack */
-#define OVL_MAX_ADDRESS			    ((vm_offset_t)0x19665800)	/* Total Size of Overlay Address Space (10% of VM Address space size) */
+#define OVL_MIN_ADDRESS 		    ((vm_offset_t)0)
+#define OVL_MAX_ADDRESS			    ((vm_offset_t)(512 * 1024 * 1024))	/* 512mb of Overlay Space */
 #define VM_MIN_ADDRESS			    ((vm_offset_t)OVL_MAX_ADDRESS)
 #else
 #define VM_MIN_ADDRESS			    ((vm_offset_t)0)

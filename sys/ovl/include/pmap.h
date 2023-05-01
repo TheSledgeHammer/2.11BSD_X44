@@ -74,12 +74,13 @@
 
 #ifdef _KERNEL
 __BEGIN_DECLS
-void 		pmap_overlay_bootstrap(vm_offset_t, u_long);
-void 		*pmap_overlay_bootstrap_alloc(u_long);
+void 			*pmap_overlay_bootstrap_alloc(u_long);
+void 			pmap_overlay_init(vm_offset_t, vm_offset_t);
 vm_offset_t     pmap_overlay_map(vm_offset_t, vm_offset_t, vm_offset_t);
-void 		pmap_overlay_remove(pmap_t, vm_offset_t, vm_offset_t);
-void 		pmap_overlay_enter(pmap_t, vm_offset_t, vm_offset_t);
-void 		pmap_overlay_init(vm_offset_t, vm_offset_t);
+void 			pmap_overlay_remove(pmap_t, vm_offset_t, vm_offset_t);
+void 			pmap_overlay_enter(pmap_t, vm_offset_t, vm_offset_t);
+void        	pmap_overlay_destroy(pmap_t);
+void        	pmap_overlay_release(pmap_t);
 __END_DECLS
 #endif
 #endif /* _PMAP_OVL_H_ */

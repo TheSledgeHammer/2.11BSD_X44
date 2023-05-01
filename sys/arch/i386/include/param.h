@@ -82,6 +82,8 @@
 #define	_ALIGN(p)				(((unsigned long)(p) + _ALIGNBYTES) &~ _ALIGNBYTES)
 #define	_ALIGNED_POINTER(p,t)	((((unsigned long)(p)) & (__alignof(t) - 1)) == 0)
 
+
+
 /* segments */
 #define	NBSEG			4194304					/* bytes/segment (SEGMENT SIZE) */
 
@@ -97,6 +99,8 @@
 #define	PGSHIFT			12						/* LOG2(NBPG) */
 #define PGSIZE			(1 << PGSHIFT)			/* bytes/page (PAGE SIZE) */
 #define PGMASK			PGOFSET					/* PGOFSET (PGSIZE - 1) */
+
+#define NPGOVL  		129						/* Number of pages needed for overlay space */
 
 #define	NPTEPG			(NBPG / sizeof(pt_entry_t))
 /* Size in bytes of the page directory */
