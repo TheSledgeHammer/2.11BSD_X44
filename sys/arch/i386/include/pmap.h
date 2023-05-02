@@ -513,6 +513,7 @@ void        pmap_bios16_leave(void *);
 extern u_long			OVLphys;
 extern ovl_entry_t		*IdleOVL;
 
+void            pmap_overlay_bootstrap(vm_offset_t, u_long);
 void		pmap_pinit_ovltab(ovl_entry_t *);
 #endif 	/* OVERLAY */
 #endif	/* KERNEL */
