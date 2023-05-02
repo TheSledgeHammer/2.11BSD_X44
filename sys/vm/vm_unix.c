@@ -61,13 +61,11 @@
 #include <vm/include/vm_text.h>
 #include <vm/include/vm_psegment.h>
 
+static int 	estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
+
 struct obreak_args {
 	char	*nsiz;
 };
-
-static int 	estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
-int 		nbreak(struct proc *, struct obreak_args *, int *);
-int		ngrow(struct proc *, vm_offset_t);
 
 /* ARGSUSED */
 int
@@ -76,7 +74,6 @@ obreak(p, uap, retval)
 	struct obreak_args *uap;
 	int *retval;
 {
-#ifdef notyet
 	register struct vmspace *vm;
 	vm_offset_t new, old;
 	int rv;
@@ -106,47 +103,79 @@ obreak(p, uap, retval)
 		vm->vm_dsize -= btoc(diff);
 	}
 	return (0);
-#endif
-	return (nbreak(p, uap, retval));
 }
 
 /*
  * Enlarge the "stack segment" to include the specified
  * stack pointer for the process.
+ *
+ * grow the stack to include the SP
+ * true return if successful.
  */
 int
 grow(p, sp)
 	struct proc *p;
 	vm_offset_t sp;
 {
-#ifdef notyet
 	register struct vmspace *vm;
 	register int si;
+	int usi, vsi;
 
 	vm = p->p_vmspace;
+
 	/*
 	 * For user defined stacks (from sendsig).
 	 */
-	if (sp < (vm_offset_t)vm->vm_maxsaddr) {
+	if (sp < (vm_offset_t)vm->vm_maxsaddr || sp >= -ctob(u.u_ssize)) {
 		return (0);
 	}
-	/*
+
+    /*
 	 * For common case of already allocated (from trap).
 	 */
 	if (sp >= USRSTACK - ctob(vm->vm_ssize)) {
 		return (1);
 	}
+
+	usi = (-sp) / ctob(1) - u.u_ssize + SINCR;
+
+    /*
+	 * Round the increment back to a segment boundary if necessary.
+	 */
+	if (ctos(usi + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
+		usi = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
+	}
+
 	/*
 	 * Really need to check vs limit and increment stack size if ok.
 	 */
-	si = clrnd(btoc(USRSTACK-sp) - vm->vm_ssize);
-	if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
+	vsi = clrnd(btoc(USRSTACK - sp) - vm->vm_ssize);
+    if (usi == vsi) {
+    	si = usi;
+    } else {
+    	si = vsi;
+    }
+    if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
+    	return (0);
+    }
+    if (si <= 0) {
+    	return (0);
+    }
+
+    if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
 		return (0);
 	}
+
+    /*
+	 *  expand will put the stack in the right place;
+	 *  no copy required here.
+	 */
+	vm_expand(p, u.u_ssize + si, PSEG_STACK);
+
 	vm->vm_ssize += si;
+    u.u_ssize = vm->vm_ssize;
+    bzero(p->p_saddr, si);
 	return (1);
-#endif
-	return (ngrow(p, sp));
 }
 
 struct ovadvise_args {
@@ -344,114 +373,4 @@ choverlay(flags)
 	int flags;
 {
 
-}
-
-int
-nbreak(p, uap, retval)
-	struct proc *p;
-	struct obreak_args *uap;
-	int *retval;
-{
-	register struct vmspace *vm;
-	register vm_psegment_t pseg;
-	vm_offset_t new, old;
-	int rv;
-	register int diff;
-
-	vm = p->p_vmspace;
-	pseg = &vm->vm_psegment;
-	old = (vm_offset_t)pseg->ps_daddr;
-	new = round_page(uap->nsiz);
-	if ((int)(new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
-		return(ENOMEM);
-	old = round_page(old + ctob(pseg->ps_dsize));
-	diff = new - old;
-	if (diff > 0) {
-		rv = vm_allocate(&vm->vm_map, &old, diff, FALSE);
-		if (rv != KERN_SUCCESS) {
-			uprintf("sbrk: grow failed, return = %d\n", rv);
-			return(ENOMEM);
-		}
-		pseg->ps_dsize += btoc(diff);
-	} else if (diff < 0) {
-		diff = -diff;
-		rv = vm_deallocate(&vm->vm_map, new, diff);
-		if (rv != KERN_SUCCESS) {
-			uprintf("sbrk: shrink failed, return = %d\n", rv);
-			return(ENOMEM);
-		}
-		pseg->ps_dsize -= btoc(diff);
-	}
-	return(0);
-}
-
-/*
- * grow the stack to include the SP
- * true return if successful.
- */
-int
-ngrow(p, sp)
-	struct proc *p;
-	vm_offset_t sp;
-{
-	register struct vmspace *vm;
-	register vm_psegment_t pseg;
-	register int si, usi, vsi;
-
-	vm = p->p_vmspace;
-	pseg = &vm->vm_psegment;
-
-	/*
-	 * For user defined stacks (from sendsig).
-	 */
-	if (sp < (vm_offset_t)pseg->ps_maxsaddr || sp >= -ctob(u.u_ssize)) {
-		return (0);
-	}
-
-    /*
-	 * For common case of already allocated (from trap).
-	 */
-	if (sp >= USRSTACK - ctob(pseg->ps_ssize)) {
-		return (1);
-	}
-
-	usi = (-sp) / ctob(1) - u.u_ssize + SINCR;
-
-    /*
-	 * Round the increment back to a segment boundary if necessary.
-	 */
-	if (ctos(usi + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
-		usi = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
-	}
-
-	/*
-	 * Really need to check vs limit and increment stack size if ok.
-	 */
-	vsi = clrnd(btoc(USRSTACK - sp) - pseg->ps_ssize);
-    if (usi == vsi) {
-    	si = usi;
-    } else {
-    	si = vsi;
-    }
-    if (pseg->ps_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
-    	return (0);
-    }
-    if (si <= 0) {
-    	return (0);
-    }
-
-    if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
-		return (0);
-	}
-
-    /*
-	 *  expand will put the stack in the right place;
-	 *  no copy required here.
-	 */
-	vm_expand(p, u.u_ssize + si, PSEG_STACK);
-
-	pseg->ps_ssize += si;
-    u.u_ssize = pseg->ps_ssize;
-    bzero(p->p_saddr, si);
-	return (1);
 }
