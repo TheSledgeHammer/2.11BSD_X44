@@ -139,6 +139,7 @@ struct vmspace {
 	segsz_t 					vm_rssize; 		/* current resident set size in pages */
 	segsz_t 					vm_swrss;		/* resident set size before last swap */
 
+#ifdef notyet
 	segsz_t 					vm_tsize;		/* text size (pages) XXX */
 	segsz_t 					vm_dsize;		/* data size (pages) XXX */
 	segsz_t 					vm_ssize;		/* stack size (pages) */
@@ -147,6 +148,15 @@ struct vmspace {
 	caddr_t						vm_daddr;		/* user virtual address of data XXX */
 	caddr_t 					vm_minsaddr;	/* user VA at min stack growth */
 	caddr_t 					vm_maxsaddr;	/* user VA at max stack growth */
+#endif
+#define vm_dsize 				vm_psegment.ps_dsize		/* data size (pages) XXX */
+#define vm_ssize 				vm_psegment.ps_ssize		/* stack size (pages) */
+#define vm_tsize 				vm_psegment.ps_tsize		/* text size (pages) XXX */
+#define vm_daddr 				vm_psegment.ps_daddr		/* user virtual address of data XXX */
+#define vm_saddr 				vm_psegment.ps_saddr		/* user virtual address of stack XXX */
+#define vm_taddr 				vm_psegment.ps_taddr		/* user virtual address of text XXX */
+#define vm_minsaddr				vm_psegment.ps_minsaddr		/* user VA at min stack growth */
+#define vm_maxsaddr				vm_psegment.ps_maxsaddr		/* user VA at max stack growth */
 };
 
 #endif /* _VM_H_ */

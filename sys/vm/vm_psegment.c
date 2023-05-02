@@ -170,10 +170,11 @@ vm_psegment_shrink(pseg, newsize, newaddr, type)
 }
 
 void
-vm_psegment_alloc(pseg, mp, size, type)
+vm_psegment_alloc(pseg, mp, size, addr, type)
 	vm_psegment_t 	pseg;
 	struct map 		*mp;
 	segsz_t 		size;
+	caddr_t			addr;
 	int	 			type;
 {
 	vm_data_t data;
@@ -188,22 +189,34 @@ vm_psegment_alloc(pseg, mp, size, type)
 	case PSEG_DATA:
 		data = pseg->ps_data;
 		if (data != NULL) {
-			data = (vm_data_t) rmalloc(mp, size);
+			rmallocate(mp, (long)addr, size, 1);
+		} else {
+			data = (vm_data_t)rmalloc(mp, size);
 		}
+		data->psx_dsize = size;
+		data->psx_daddr = addr;
 		break;
 
 	case PSEG_STACK:
 		stack = pseg->ps_stack;
 		if (stack != NULL) {
-			stack = (vm_stack_t) rmalloc(mp, size);
+			rmallocate(mp, (long)addr, size, 1);
+		} else {
+			stack = (vm_stack_t)rmalloc(mp, size);
 		}
+		stack->psx_ssize = size;
+		stack->psx_saddr = addr;
 		break;
 
 	case PSEG_TEXT:
 		text = pseg->ps_text;
 		if (text != NULL) {
-			text = (vm_text_t) rmalloc(mp, size);
+			rmallocate(mp, (long)addr, size, 1);
+		} else {
+			text = (vm_text_t)rmalloc(mp, size);
 		}
+		text->psx_tsize = size;
+		text->psx_taddr = addr;
 		break;
 	}
 }

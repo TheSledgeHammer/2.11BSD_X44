@@ -61,6 +61,10 @@
 #include <vm/include/vm_text.h>
 #include <vm/include/vm_psegment.h>
 
+static int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
+int nbreak(struct proc *, struct obreak_args *, int *);
+int	ngrow(struct proc *, vm_offset_t);
+
 struct obreak_args {
 	char	*nsiz;
 };
@@ -71,6 +75,7 @@ obreak(p, uap, retval)
 	struct obreak_args *uap;
 	int *retval;
 {
+#ifdef notyet
 	register struct vmspace *vm;
 	vm_offset_t new, old;
 	int rv;
@@ -99,7 +104,9 @@ obreak(p, uap, retval)
 		}
 		vm->vm_dsize -= btoc(diff);
 	}
-	return(0);
+	return (0);
+#endif
+	return (nbreak(p, uap, retval));
 }
 
 /*
@@ -111,6 +118,7 @@ grow(p, sp)
 	struct proc *p;
 	vm_offset_t sp;
 {
+#ifdef notyet
 	register struct vmspace *vm;
 	register int si;
 
@@ -136,6 +144,8 @@ grow(p, sp)
 	}
 	vm->vm_ssize += si;
 	return (1);
+#endif
+	return (ngrow(p, sp));
 }
 
 struct ovadvise_args {
@@ -150,10 +160,6 @@ ovadvise(p, uap, retval)
 {
 	return (EINVAL);
 }
-
-int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
-int nbreak(struct proc *, struct obreak_args *, int *);
-int	ngrow(struct proc *, vm_offset_t);
 
 /*
  * Change the size of the data+stack regions of the process.
@@ -191,7 +197,6 @@ vm_expand(p, newsize, type)
 		if (n >= newsize) {
 			n -= newsize;
 			vm_psegment_free(pseg, coremap, n, a1 + newsize, PSEG_DATA);
-			//rmfree(coremap, n, a1 + newsize);
 			return;
 		}
 	} else {
@@ -205,7 +210,6 @@ vm_expand(p, newsize, type)
 			pseg->ps_saddr += n;
 			p->p_saddr = pseg->ps_saddr;
 			vm_psegment_free(pseg, coremap, n, a1, PSEG_STACK);
-			//rmfree(coremap, n, a1);
 			return;
 		}
 	}
@@ -274,7 +278,7 @@ vm_estabur(p, dsize, ssize, tsize, sep, flags)
 	return (1);
 }
 
-int
+static int
 estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
 	vm_data_t 		data;
 	vm_stack_t 		stack;
