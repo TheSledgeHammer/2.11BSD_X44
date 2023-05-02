@@ -57,15 +57,6 @@ void		 	chgkprot(caddr_t, int, int);
 
 #ifdef _KERNEL
 #ifdef TYPEDEF_FOR_UAP
-int		 		minherit();
-int		 		madvise();
-int		 		mincore();
-int		 		mprotect();
-int		 		msync();
-int		 		munmap();
-int				mmap();
-int				sbrk();
-int		 		sstk();
 int		 		obreak(struct proc *, void *, int *);
 #endif
 
