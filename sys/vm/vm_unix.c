@@ -61,13 +61,14 @@
 #include <vm/include/vm_text.h>
 #include <vm/include/vm_psegment.h>
 
-static int estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
-int nbreak(struct proc *, struct obreak_args *, int *);
-int	ngrow(struct proc *, vm_offset_t);
-
 struct obreak_args {
 	char	*nsiz;
 };
+
+static int 	estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
+int 		nbreak(struct proc *, struct obreak_args *, int *);
+int		ngrow(struct proc *, vm_offset_t);
+
 /* ARGSUSED */
 int
 obreak(p, uap, retval)
