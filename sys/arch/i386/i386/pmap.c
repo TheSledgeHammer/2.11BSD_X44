@@ -122,8 +122,6 @@ uint32_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
 long 		NBPD[] = NBPD_INITIALIZER;
 pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
 pd_entry_t 	*APDE[] = APDES_INITIALIZER;
-long 		NKPTP[] = NKPTP_INITIALIZER;
-long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
 
 /*
  * Get PDEs and PTEs for user/kernel address space
@@ -935,7 +933,6 @@ pmap_pinit_pdir(pdir, pdirpa)
 	vm_offset_t pdirpa;
 {
 	int i;
-	int npde;
 
 	/*
 	 * No need to allocate page table space yet but we do need a
@@ -950,9 +947,7 @@ pmap_pinit_pdir(pdir, pdirpa)
 	/* put in recursive PDE to map the PTEs */
 	pdir[PDIR_SLOT_PTE] = pdirpa | PG_V | PG_KW;
 
-	npde = NKPTP[PTP_LEVELS - 1];
-
-	bcopy(&PDP_BASE[PDIR_SLOT_KERN], &pdir[PDIR_SLOT_KERN], npde * sizeof(pd_entry_t));
+	bcopy(&PDP_BASE[PDIR_SLOT_KERN], &pdir[PDIR_SLOT_KERN], sizeof(pd_entry_t));
 
 	/* install self-referential address mapping entry */
 	for (i = 0; i < NPGPTD; i++) {
@@ -963,7 +958,7 @@ pmap_pinit_pdir(pdir, pdirpa)
 	}
 
 	/* zero the rest */
-	bzero(&pdir[PDIR_SLOT_KERN + npde], (NPDEPG - (PDIR_SLOT_KERN + npde)) * sizeof(pd_entry_t));
+	bzero(&pdir[PDIR_SLOT_KERN], (NPDEPG - (PDIR_SLOT_KERN)) * sizeof(pd_entry_t));
 }
 
 #ifdef PMAP_PAE_COMP

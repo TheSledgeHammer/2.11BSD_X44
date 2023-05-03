@@ -66,8 +66,8 @@ uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
 long 		NBPD[] = NBPD_INITIALIZER;
 pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
 pd_entry_t 	*APDE[] = APDES_INITIALIZER;
-long 		NKPTP[] = NKPTP_INITIALIZER;
-long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
+//long 		NKPTP[] = NKPTP_INITIALIZER;
+//long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
 
 static int pmap_nx_enable = -1;		/* -1 = auto */
 
@@ -265,6 +265,13 @@ allocpages(firstaddr, n)
 #define	KPML4I				(NPML4EPG-1)
 #define	KPDPI				(NPDPEPG-2)
 
+static inline pt_entry_t
+bootaddr_rwx(pa)
+	vm_offset_t pa;
+{
+	return (pg_nx);
+}
+
 static void
 create_pagetables(firstaddr)
 	vm_offset_t *firstaddr;
@@ -341,7 +348,7 @@ pmap_bootstrap(firstaddr)
 
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
 	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
-	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + IdlePML4);
+	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + KPML4phys);
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
 	LIST_INIT(&pmap_header);
 	kernel_pmap->pm_count = 1;
@@ -530,7 +537,7 @@ pmap_pinit_pdir(pdir, pdirpa)
 	pd_entry_t *pdir;
 	vm_offset_t pdirpa;
 {
-	int npde, i;
+	int i;
 
 	pdir = (pd_entry_t *)kmem_alloc(kernel_map, PDIR_SLOT_PTE * sizeof(pd_entry_t));
 	pdirpa = pdir[PDIR_SLOT_PTE] & PG_FRAME;
@@ -541,10 +548,8 @@ pmap_pinit_pdir(pdir, pdirpa)
 	/* put in recursive PDE to map the PTEs */
 	pdir[PDIR_SLOT_PTE] = pdirpa | PG_V | PG_KW;
 
-	npde = NKPTP[PTP_LEVELS - 1];
-
 	/* put in kernel VM PDEs */
-	bcopy(&PDP_BASE[PDIR_SLOT_KERN], &pdir[PDIR_SLOT_KERN], npde * sizeof(pd_entry_t));
+	bcopy(&PDP_BASE[PDIR_SLOT_KERN], &pdir[PDIR_SLOT_KERN], sizeof(pd_entry_t));
 
 	/* install self-referential address mapping entry */
 	for (i = 0; i < PDIR_SLOT_PTE - 1; i++) {
@@ -552,7 +557,7 @@ pmap_pinit_pdir(pdir, pdirpa)
 	}
 
 	/* zero the rest */
-	bzero(&pdir[PDIR_SLOT_KERN + npde], (NPDEPG - (PDIR_SLOT_KERN + npde)) * sizeof(pd_entry_t));
+	bzero(&pdir[PDIR_SLOT_KERN], (NPDEPG - (PDIR_SLOT_KERN)) * sizeof(pd_entry_t));
 }
 
 void
@@ -561,12 +566,14 @@ pmap_pinit_pml4(pml4)
 {
 	int i;
 
-	pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(L4_SLOT_KERNBASE * sizeof(pml4_entry_t)));
+	pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL4_MAX_ENTRIES * sizeof(pml4_entry_t)));
+
+	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
+		pml4[L4_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPDPphys + ptoa(i))) | PG_RW | PG_V;
+	}
 
 	/* install self-referential address mapping entry(s) */
-	for (i = 0; i < L4_SLOT_KERNBASE; i++) {
-		pml4[i] =  pmap_extract(kernel_map, (vm_offset_t)pml4) | PG_RW | PG_V | PG_A;
-	}
+	pml4[L4_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml4) | PG_RW | PG_V | PG_A | PG_M;
 }
 
 void
@@ -584,6 +591,13 @@ pmap_pinit(pmap)
 	pmap_lock(pmap);
 	LIST_INSERT_HEAD(&pmap_header, pmap, pm_list);
 	pmap_unlock(pmap);
+}
+
+void
+pmap_pinit0(pmap)
+	register pmap_t pmap;
+{
+
 }
 
 void

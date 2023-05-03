@@ -289,9 +289,6 @@ typedef uint32_t 				ovl_entry_t;		/* OVL */
 #define	L2_FRAME				(L3_FRAME | L2_MASK)
 #define	L1_FRAME				(L2_FRAME | L1_MASK)
 
-//#define	PG_FRAME_PAE			(0x000ffffffffff000ull)
-//#define	PG_PS_FRAME				(0x000fffffffe00000ull)
-
 /* macros to get real L2 and L3 index, from our "extended" L2 index */
 #define l2tol3(idx)				((idx) >> (L3_SHIFT - L2_SHIFT))
 #define l2tol2(idx)				((idx) & (L2_REALMASK >>  L2_SHIFT))
@@ -338,8 +335,6 @@ typedef uint64_t 				ovl_entry_t;		/* OVL */
 #define NBPD_INITIALIZER		{ NBPD_L1, NBPD_L2 }
 #define PDES_INITIALIZER		{ L2_BASE }
 #define APDES_INITIALIZER		{ AL2_BASE }
-#define NKPTP_INITIALIZER		{ NKL1_START_ENTRIES, NKL2_START_ENTRIES }
-#define NKPTPMAX_INITIALIZER	{ NKL1_MAX_ENTRIES, NKL2_MAX_ENTRIES }
 
 #define PTP_LEVELS			2
 #define PTP_SHIFT			9
@@ -469,7 +464,7 @@ extern uint32_t 			ptp_masks[];
 extern uint32_t				ptp_shifts[];
 extern pd_entry_t 			*NPDE[];
 extern pd_entry_t 			*APDE[];
-extern long 				NBPD[], NKPTP[], NKPTPMAX[];
+extern long 				NBPD[];
 
 #ifdef PMAP_PAE_COMP
 #define pmap_pdirpa(pmap, index) 	((pmap)->pm_pdirpa[l2tol3(index)] + l2tol2(index) * sizeof(pd_entry_t))

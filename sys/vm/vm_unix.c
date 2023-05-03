@@ -126,11 +126,11 @@ grow(p, sp)
 	/*
 	 * For user defined stacks (from sendsig).
 	 */
-	if (sp < (vm_offset_t)vm->vm_maxsaddr || sp >= -ctob(u.u_ssize)) {
+	if (sp < (vm_offset_t) vm->vm_maxsaddr || sp >= -ctob(u.u_ssize)) {
 		return (0);
 	}
 
-    /*
+	/*
 	 * For common case of already allocated (from trap).
 	 */
 	if (sp >= USRSTACK - ctob(vm->vm_ssize)) {
@@ -139,7 +139,7 @@ grow(p, sp)
 
 	usi = (-sp) / ctob(1) - u.u_ssize + SINCR;
 
-    /*
+	/*
 	 * Round the increment back to a segment boundary if necessary.
 	 */
 	if (ctos(usi + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1))) {
@@ -150,31 +150,31 @@ grow(p, sp)
 	 * Really need to check vs limit and increment stack size if ok.
 	 */
 	vsi = clrnd(btoc(USRSTACK - sp) - vm->vm_ssize);
-    if (usi == vsi) {
-    	si = usi;
-    } else {
-    	si = vsi;
-    }
-    if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
-    	return (0);
-    }
-    if (si <= 0) {
-    	return (0);
-    }
-
-    if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
+	if (usi == vsi) {
+		si = usi;
+	} else {
+		si = vsi;
+	}
+	if (vm->vm_ssize + si > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
+		return (0);
+	}
+	if (si <= 0) {
 		return (0);
 	}
 
-    /*
+	if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
+		return (0);
+	}
+
+	/*
 	 *  expand will put the stack in the right place;
 	 *  no copy required here.
 	 */
 	vm_expand(p, u.u_ssize + si, PSEG_STACK);
 
 	vm->vm_ssize += si;
-    u.u_ssize = vm->vm_ssize;
-    bzero(p->p_saddr, si);
+	u.u_ssize = vm->vm_ssize;
+	bzero(p->p_saddr, si);
 	return (1);
 }
 

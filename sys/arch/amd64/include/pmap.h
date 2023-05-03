@@ -134,7 +134,6 @@
 #define L2_MASK			0x000000003fe00000		/* 1GB */
 #define L1_MASK			0x00000000001ff000		/* 2MB */
 
-#define L5_FRAME		L5_MASK
 #define L4_FRAME		L4_MASK
 #define L3_FRAME		(L4_FRAME|L3_MASK)
 #define L2_FRAME		(L3_FRAME|L2_MASK)
@@ -153,10 +152,12 @@ typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 
 #define VA_SIGN_POS(va)		((va) & ~VA_SIGN_MASK)
 
-#define L4_SLOT_PTE			255
-#define L4_SLOT_APTE		510
-#define L4_SLOT_KERN		256
-#define L4_SLOT_KERNBASE	511
+#define L4_SLOT_INDEX		(NPML4EPG / 2)			/* Level 4: 256 */
+
+#define L4_SLOT_KERN		(L4_SLOT_INDEX)			/* default: 256 */
+#define L4_SLOT_KERNBASE	(NPML4EPG - 1)			/* default: 511 */
+#define L4_SLOT_PTE			(L4_SLOT_KERN -1)		/* default: 255 */
+#define L4_SLOT_APTE		(L4_SLOT_KERNBASE - 1) 	/* default: 510 */
 
 #define PDIR_SLOT_KERN		L4_SLOT_KERN
 #define PDIR_SLOT_PTE		L4_SLOT_PTE
@@ -185,10 +186,6 @@ typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 #define NKL2_MAX_ENTRIES	(unsigned long)(NKL3_MAX_ENTRIES * 512)
 #define NKL1_MAX_ENTRIES	(unsigned long)(NKL2_MAX_ENTRIES * 512)
 
-#define NKL4_KIMG_ENTRIES 	1
-#define NKL3_KIMG_ENTRIES 	1
-#define NKL2_KIMG_ENTRIES 	8
-
 /*
  * Since kva space is below the kernel in its entirety, we start off
  * with zero entries on each level.
@@ -212,9 +209,6 @@ typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 #define NBPD_INITIALIZER	{ NBPD_L1, NBPD_L2, NBPD_L3, NBPD_L4 }
 #define PDES_INITIALIZER	{ L2_BASE, L3_BASE, L4_BASE }
 #define APDES_INITIALIZER	{ AL2_BASE, AL3_BASE, AL4_BASE }
-
-#define NKPTP_INITIALIZER	{ NKL1_START_ENTRIES, NKL2_START_ENTRIES, NKL3_START_ENTRIES, NKL4_START_ENTRIES }
-#define NKPTPMAX_INITIALIZER	{ NKL1_MAX_ENTRIES, NKL2_MAX_ENTRIES, NKL3_MAX_ENTRIES, NKL4_MAX_ENTRIES }
 
 #define PTP_LEVELS		4
 #define PTP_SHIFT		9
@@ -256,6 +250,7 @@ struct pv_entry {
 	struct pmap				*pv_pmap;		/* pmap where mapping lies */
 	vm_offset_t				pv_va;			/* virtual address for mapping */
 	int						pv_flags;		/* flags */
+	char					pv_attr;		/* attrs array */
 };
 typedef struct pv_entry		*pv_entry_t;
 
@@ -285,7 +280,7 @@ extern uint64_t 		ptp_masks[];
 extern uint64_t			ptp_shifts[];
 extern pd_entry_t 		*NPDE[];
 extern pd_entry_t 		*APDE[];
-extern long 			NBPD[], NKPTP[], NKPTPMAX[];
+extern long 			NBPD[];
 
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)

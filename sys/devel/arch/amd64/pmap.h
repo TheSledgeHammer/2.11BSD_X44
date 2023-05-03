@@ -73,8 +73,17 @@
 /*
  * Place below in amd64 param.h (i.e. NPML5EPG)
  */
+/* Size of the level 1 page table units */
+#define NPTEPG			(NBPG/(sizeof(pt_entry_t)))
+/* Size of the level 2 page directory units */
+#define	NPDEPG			(NBPG/(sizeof(pd_entry_t)))
+/* Size of the level 3 page directory pointer table units */
+#define	NPDPEPG			(NBPG/(sizeof(pdp_entry_t)))
+/* Size of the level 4 page-map level-4 table units */
+#define	NPML4EPG		(NBPG/(sizeof(pml4_entry_t)))
 /* Size of the level 5 page-map level-5 table units */
 #define	NPML5EPG		(NBPG/(sizeof(pml5_entry_t)))
+
 
 /* Implementing 5-Level Page Tables */
 
@@ -108,6 +117,26 @@ typedef uint64_t 		pdp_entry_t;			/* PDP  (L3) */
 typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 
+/*
+ * Mask to get rid of the sign-extended part of addresses.
+ */
+#define L4_SLOT_INDEX		(NPML4EPG / 2)			/* Level 4: 256 */
+#define L5_SLOT_INDEX		(NPML5EPG / 2)			/* Level 5: 256 */
+
+#define L4_SLOT_KERN		(L4_SLOT_INDEX)			/* default: 256 */
+#define L4_SLOT_KERNBASE	(NPML4EPG - 1)			/* default: 511 */
+#define L4_SLOT_PTE			(L4_SLOT_KERN -1)		/* default: 255 */
+#define L4_SLOT_APTE		(L4_SLOT_KERNBASE - 1) 	/* default: 510 */
+
+
+/*
+ * the following defines give the virtual addresses of various MMU
+ * data structures:
+ * PTE_BASE and APTE_BASE: the base VA of the linear PTE mappings
+ * PTD_BASE and APTD_BASE: the base VA of the recursive mapping of the PTD
+ * PDP_PDE and APDP_PDE: the VA of the PDE that points back to the PDP/APDP
+ *
+ */
 #define L1_BASE			((pt_entry_t *)(L4_SLOT_PTE * NBPD_L5))
 #define L2_BASE 		((pd_entry_t *)((char *)L1_BASE + L4_SLOT_PTE * NBPD_L4))
 #define L3_BASE 		((pdp_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L3))
@@ -121,7 +150,10 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define AL5_BASE		((pml5_entry_t *)((char *)AL4_BASE + L4_SLOT_PTE * NBPD_L1))
 
 #define NKL5_MAX_ENTRIES	(unsigned long)1
-#define NKL4_MAX_ENTRIES	(unsigned long)(NKL5_MAX_ENTRIES * 512)
+#define NKL4_MAX_ENTRIES	(unsigned long)(NKL5_MAX_ENTRIES)
+#define NKL3_MAX_ENTRIES	(unsigned long)(NKL4_MAX_ENTRIES * 512)
+#define NKL2_MAX_ENTRIES	(unsigned long)(NKL3_MAX_ENTRIES * 512)
+#define NKL1_MAX_ENTRIES	(unsigned long)(NKL2_MAX_ENTRIES * 512)
 
 #define NKL5_START_ENTRIES	0
 
@@ -129,17 +161,16 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 
 #define PTP_MASK_INITIALIZER	{ L1_FRAME, L2_FRAME, L3_FRAME, L4_FRAME, L5_FRAME }
 #define PTP_SHIFT_INITIALIZER	{ L1_SHIFT, L2_SHIFT, L3_SHIFT, L4_SHIFT, L5_SHIFT }
-#define NBPD_INITIALIZER	{ NBPD_L1, NBPD_L2, NBPD_L3, NBPD_L4, NBPD_L5 }
-#define PDES_INITIALIZER	{ L2_BASE, L3_BASE, L4_BASE, L5_BASE }
-#define APDES_INITIALIZER	{ AL2_BASE, AL3_BASE, AL4_BASE, AL5_BASE }
-
-#define NKPTP_INITIALIZER	{ NKL1_START_ENTRIES, NKL2_START_ENTRIES, NKL3_START_ENTRIES, NKL4_START_ENTRIES, NKL5_START_ENTRIES }
-#define NKPTPMAX_INITIALIZER	{ NKL1_MAX_ENTRIES, NKL2_MAX_ENTRIES, NKL3_MAX_ENTRIES, NKL4_MAX_ENTRIES, NKL5_MAX_ENTRIES }
+#define NBPD_INITIALIZER		{ NBPD_L1, NBPD_L2, NBPD_L3, NBPD_L4, NBPD_L5 }
+#define PDES_INITIALIZER		{ L2_BASE, L3_BASE, L4_BASE, L5_BASE }
+#define APDES_INITIALIZER		{ AL2_BASE, AL3_BASE, AL4_BASE, AL5_BASE }
 
 #define PTP_LEVELS		5
 
 struct pmap {
 	pml5_entry_t   			*pm_pml5;       /* KVA of page map level 5 (top level) */
+
+	pml4_entry_t   			*pm_pml4;       /* KVA of page map level 4 (top level) */
 };
 
 #define	PML5_ENTRY_NULL		((pml5_entry_t)0)
