@@ -10,8 +10,8 @@ _BSD_LOADER_MK_=1
 # Directories
 BOOTSTAND?=					stand
 BOOTSRC?=					stand/boot
-LIBKERN?= 					${KERNSRCDIR}/lib/libkern
-LIBSA?=						${KERNSRCDIR}/lib/libsa
+#LIBKERN?= 					${KERNSRCDIR}/lib/libkern
+LIBSA?=						stand/libsa
 BOOTARCH?=					${BOOTSRC}/arch
 
 EFISRC=						${BOOTSRC}/efi
@@ -90,12 +90,12 @@ CPPFLAGS+=		-D_STANDALONE
 
 ### find out what to use for libkern
 KERN_AS=		library
-.include 		"${LIBKERN}/Makefile"
+#.include 		"${LIBKERN}/Makefile"
 
 ### find out what to use for libsa
 SA_AS=			library
 SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
-.include 		"${LIBSA}/Makefile"
+#.include 		"${LIBSA}/Makefile"
 
 CLEANFILES+=	vers.c
 VERSION_FILE?=	${.CURDIR}/version
