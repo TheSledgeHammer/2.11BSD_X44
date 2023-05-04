@@ -4,7 +4,11 @@
 
 SUBDIR= 	arch common
 
-.if ${MK_DLOADER} == "yes"
+.if ${MK_LOADER_LUA} == "yes"
+SUBDIR+=	lua
+.endif
+
+.if ${MK_LOADER_DLOADER} == "yes"
 SUBDIR+=	dloader
 .endif
 
