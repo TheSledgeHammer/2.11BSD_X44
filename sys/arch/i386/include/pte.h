@@ -68,7 +68,9 @@
 #define	PG_FOD		0x0600
 #define PG_N		0x0800 		/* Non-cacheable 		*/
 #define	PG_PDE_PAT	0x1000		/* PAT	PAT index		*/
-#define	PG_NX		(1ull<<63) 	/* No-execute 			*/
+#define	PG_AVAIL1	PG_SWAPM	/*    /	Available for system	*/
+#define	PG_AVAIL2	PG_FOD		/*   <	programmers use		*/
+#define	PG_NX		(1ULL << 63)/* No-execute 			*/
 
 #define	PG_FRAME	0xfffff000
 
@@ -79,7 +81,7 @@
 #define	PG_URKW		0x6000
 #define	PG_UW		0x8000
 
-#define	PG_MANAGED	PG_SWAPM
+#define	PG_MANAGED	PG_AVAIL1
 
 #define	PG_FZERO	0
 #define	PG_FTEXT	1

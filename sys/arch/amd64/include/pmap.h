@@ -123,18 +123,23 @@
 #define	L2_SHIFT		21
 #define	L3_SHIFT		30
 #define	L4_SHIFT		39
+#define L5_SHIFT		48
 
 #define	NBPD_L1			(1ULL << L1_SHIFT) 		/* # bytes mapped by L1 ent (4K) */
 #define	NBPD_L2			(1ULL << L2_SHIFT) 		/* # bytes mapped by L2 ent (2MB) */
 #define	NBPD_L3			(1ULL << L3_SHIFT) 		/* # bytes mapped by L3 ent (1G) */
 #define	NBPD_L4			(1ULL << L4_SHIFT) 		/* # bytes mapped by L4 ent (512G) */
+#define	NBPD_L5			(1ULL << L5_SHIFT)		/* # bytes mapped by L5 ent (256T) */
 
-#define L4_MASK			0x0000ff8000000000		/* 255TB */
+#define L5_MASK			0x01fe000000000000		/* 127PB */
+#define L4_REALMASK		0x0000ff8000000000		/* 255TB */
+#define L4_MASK         (L4_REALMASK|L5_MASK)
 #define L3_MASK			0x0000007fc0000000		/* 511GB */
 #define L2_MASK			0x000000003fe00000		/* 1GB */
 #define L1_MASK			0x00000000001ff000		/* 2MB */
 
-#define L4_FRAME		L4_MASK
+#define L5_FRAME		L5_MASK
+#define L4_FRAME		(L5_FRAME|L4_MASK)
 #define L3_FRAME		(L4_FRAME|L3_MASK)
 #define L2_FRAME		(L3_FRAME|L2_MASK)
 #define L1_FRAME		(L2_FRAME|L1_MASK)
@@ -143,6 +148,36 @@ typedef uint64_t 		pt_entry_t;				/* PTE  (L1) */
 typedef uint64_t 		pd_entry_t;				/* PDE  (L2) */
 typedef uint64_t 		pdp_entry_t;			/* PDP  (L3) */
 typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
+typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
+
+/* macros to get real L4 and L5 index, from our "extended" L4 index */
+#define l4tol5(idx)     ((idx) >> (L5_SHIFT - L4_SHIFT))
+#define l4tol4(idx)     ((idx) & (L4_REALMASK >> L4_SHIFT))
+
+/*
+ * Pte related macros
+ */
+#define KV4ADDR(l4, l3, l2, l1)      					\
+	((vm_offset_t)(((vm_offset_t)-1 << 47) | 			\
+			((vm_offset_t)(l4) << L4_SHIFT) | 			\
+			((vm_offset_t)(l3) << L3_SHIFT) | 			\
+			((vm_offset_t)(l2) << L2_SHIFT) | 			\
+			((vm_offset_t)(l1) << L1_SHIFT)))
+
+#define KV5ADDR(l5, l4, l3, l2, l1)  					\
+	((vm_offset_t)(((vm_offset_t)-1 << 56) | 			\
+			((vm_offset_t)(l5) << L5_SHIFT) | 			\
+			((vm_offset_t)(l4) << L4_SHIFT) | 			\
+			((vm_offset_t)(l3) << L3_SHIFT) | 			\
+			((vm_offset_t)(l2) << L2_SHIFT) | 			\
+			((vm_offset_t)(l1) << L1_SHIFT)))
+
+#define UVADDR(l5, l4, l3, l2, l1)  					\
+	((vm_offset_t)(((vm_offset_t)(l5) << L5_SHIFT) | 	\
+			((vm_offset_t)(l4) << L4_SHIFT) | 			\
+			((vm_offset_t)(l3) << L3_SHIFT) | 			\
+			((vm_offset_t)(l2) << L2_SHIFT) | 			\
+			((vm_offset_t)(l1) << L1_SHIFT)))
 
 /*
  * Mask to get rid of the sign-extended part of addresses.
@@ -152,6 +187,7 @@ typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 
 #define VA_SIGN_POS(va)		((va) & ~VA_SIGN_MASK)
 
+#define L5_SLOT_INDEX		(NPML5EPG / 2)			/* Level 5: 256 */
 #define L4_SLOT_INDEX		(NPML4EPG / 2)			/* Level 4: 256 */
 
 #define L4_SLOT_KERN		(L4_SLOT_INDEX)			/* default: 256 */
@@ -216,6 +252,12 @@ typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 #ifndef LOCORE
 #include <sys/queue.h>
 
+enum pmap_type {
+	PT_X86,			/* regular x86 page tables */
+	PT_EPT,			/* Intel's nested page tables */
+	PT_RVI,			/* AMD's nested page tables */
+};
+
 /*
  * Pmap stuff
  */
@@ -223,11 +265,16 @@ struct pmap_list;
 LIST_HEAD(pmap_list, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
 	LIST_ENTRY(pmap)		pm_list;		/* List of all pmaps */
+
 	pd_entry_t 				*pm_pdir;		/* KVA of page directory */
 	pt_entry_t				*pm_ptab;		/* KVA of page table */
+
 	pml4_entry_t   			*pm_pml4;       /* KVA of page map level 4 (top level) */
+	pml5_entry_t   			*pm_pml5;       /* KVA of page map level 5 (top level if la57 enabled) */
 
 	vm_offset_t				pm_pdirpa;		/* PA of PD (read-only after create) */
+
+	enum pmap_type			pm_type;		/* regular or nested tables */
 
 	bool_t					pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
@@ -258,6 +305,7 @@ typedef struct pv_entry		*pv_entry_t;
 #define	PD_ENTRY_NULL		((pd_entry_t)0)
 #define	PDP_ENTRY_NULL		((pdp_entry_t)0)
 #define	PML4_ENTRY_NULL		((pml4_entry_t)0)
+#define	PML5_ENTRY_NULL		((pml5_entry_t)0)
 
 #define PTE_BASE			L1_BASE
 #define PDP_PDE				(L4_BASE + PDIR_SLOT_PTE)
@@ -266,6 +314,8 @@ typedef struct pv_entry		*pv_entry_t;
 #define APTE_BASE			AL1_BASE
 #define APDP_PDE			(L4_BASE + PDIR_SLOT_APTE)
 #define APDP_BASE			AL4_BASE
+
+#define	PMAP_EMULATE_AD_BITS	(1 << 9)	/* needs A/D bits emulation */
 
 #ifdef _KERNEL
 
@@ -282,12 +332,16 @@ extern pd_entry_t 		*NPDE[];
 extern pd_entry_t 		*APDE[];
 extern long 			NBPD[];
 
-#define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
-#define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
-#define pmap_lock_init(pmap, name) 	(simple_lock_init(&(pmap)->pm_lock, (name)))
-#define pmap_lock(pmap)				(simple_lock(&(pmap)->pm_lock))
-#define pmap_unlock(pmap)			(simple_unlock(&(pmap)->pm_lock))
+#define pmap_pdirpa_la57(pmap, index)   ((pmap)->pm_pdirpa[l4tol5(index)] + l4tol4(index) * sizeof(pd_entry_t))
+#define pmap_pdirpa_la48(pmap, index)   ((pmap)->pm_pdirpa + index * sizeof(pd_entry_t))
+
+#define	pmap_resident_count(pmap)		((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)			((pmap)->pm_stats.wired_count)
+
+#define pmap_lock_init(pmap, name) 		(simple_lock_init(&(pmap)->pm_lock, (name)))
+#define pmap_lock(pmap)					(simple_lock(&(pmap)->pm_lock))
+#define pmap_unlock(pmap)				(simple_unlock(&(pmap)->pm_lock))
 
 /* proto types */
 void 	    pmap_init_pat(void);

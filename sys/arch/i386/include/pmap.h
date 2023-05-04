@@ -74,119 +74,6 @@
 #ifndef _I386_PMAP_H_
 #define _I386_PMAP_H_
 
-/*
- * see pte.h for a description of i386 MMU terminology and hardware
- * interface.
- *
- * a pmap describes a processes' 4GB virtual address space.  when PAE
- * is not in use, this virtual address space can be broken up into 1024 4MB
- * regions which are described by PDEs in the PDP.  the PDEs are defined as
- * follows:
- *
- * (ranges are inclusive -> exclusive, just like vm_map_entry start/end)
- * (the following assumes that KERNBASE is 0xc0000000)
- *
- * PDE#s	VA range		usage
- * 0->766	0x0 -> 0xbfc00000	user address space
- * 767		0xbfc00000->		recursive mapping of PDP (used for
- *			0xc0000000	linear mapping of PTPs)
- * 768->1023	0xc0000000->		kernel address space (constant
- *			0xffc00000	across all pmap's/processes)
- * 1023		0xffc00000->		"alternate" recursive PDP mapping
- *			<end>		(for other pmaps)
- *
- *
- * note: a recursive PDP mapping provides a way to map all the PTEs for
- * a 4GB address space into a linear chunk of virtual memory.  in other
- * words, the PTE for page 0 is the first int mapped into the 4MB recursive
- * area.  the PTE for page 1 is the second int.  the very last int in the
- * 4MB range is the PTE that maps VA 0xfffff000 (the last page in a 4GB
- * address).
- *
- * all pmap's PD's must have the same values in slots 768->1023 so that
- * the kernel is always mapped in every process.  these values are loaded
- * into the PD at pmap creation time.
- *
- * at any one time only one pmap can be active on a processor.  this is
- * the pmap whose PDP is pointed to by processor register %cr3.  this pmap
- * will have all its PTEs mapped into memory at the recursive mapping
- * point (slot #767 as show above).  when the pmap code wants to find the
- * PTE for a virtual address, all it has to do is the following:
- *
- * address of PTE = (767 * 4MB) + (VA / PAGE_SIZE) * sizeof(pt_entry_t)
- *                = 0xbfc00000 + (VA / 4096) * 4
- *
- * what happens if the pmap layer is asked to perform an operation
- * on a pmap that is not the one which is currently active?  in that
- * case we take the PA of the PDP of non-active pmap and put it in
- * slot 1023 of the active pmap.  this causes the non-active pmap's
- * PTEs to get mapped in the final 4MB of the 4GB address space
- * (e.g. starting at 0xffc00000).
- *
- * the following figure shows the effects of the recursive PDP mapping:
- *
- *   PDP (%cr3)
- *   +----+
- *   |   0| -> PTP#0 that maps VA 0x0 -> 0x400000
- *   |    |
- *   |    |
- *   | 767| -> points back to PDP (%cr3) mapping VA 0xbfc00000 -> 0xc0000000
- *   | 768| -> first kernel PTP (maps 0xc0000000 -> 0xc0400000)
- *   |    |
- *   |1023| -> points to alternate pmap's PDP (maps 0xffc00000 -> end)
- *   +----+
- *
- * note that the PDE#767 VA (0xbfc00000) is defined as "PTE_BASE"
- * note that the PDE#1023 VA (0xffc00000) is defined as "APTE_BASE"
- *
- * starting at VA 0xbfc00000 the current active PDP (%cr3) acts as a
- * PTP:
- *
- * PTP#767 == PDP(%cr3) => maps VA 0xbfc00000 -> 0xc0000000
- *   +----+
- *   |   0| -> maps the contents of PTP#0 at VA 0xbfc00000->0xbfc01000
- *   |    |
- *   |    |
- *   | 767| -> maps contents of PTP#767 (the PDP) at VA 0xbfeff000
- *   | 768| -> maps contents of first kernel PTP
- *   |    |
- *   |1023|
- *   +----+
- *
- * note that mapping of the PDP at PTP#767's VA (0xbfeff000) is
- * defined as "PDP_BASE".... within that mapping there are two
- * defines:
- *   "PDP_PDE" (0xbfeffbfc) is the VA of the PDE in the PDP
- *      which points back to itself.
- *   "APDP_PDE" (0xbfeffffc) is the VA of the PDE in the PDP which
- *      establishes the recursive mapping of the alternate pmap.
- *      to set the alternate PDP, one just has to put the correct
- *	PA info in *APDP_PDE.
- *
- * note that in the APTE_BASE space, the APDP appears at VA
- * "APDP_BASE" (0xfffff000).
- *
- * When PAE is in use, the L3 page directory breaks up the address space in
- * 4 1GB * regions, each of them broken in 512 2MB regions by the L2 PD
- * (the size of the pages at the L1 level is still 4K).
- * The kernel virtual space is mapped by the last entry in the L3 page,
- * the first 3 entries mapping the user VA space.
- * Because the L3 has only 4 entries of 1GB each, we can't use recursive
- * mappings at this level for PDP_PDE and APDP_PDE (this would eat 2 of the
- * 4GB virtual space). There's also restrictions imposed by Xen on the
- * last entry of the L3 PD, which makes it hard to use one L3 page per pmap
- * switch %cr3 to switch pmaps. So we use one static L3 page which is
- * always loaded in %cr3, and we use it as 2 virtual PD pointers: one for
- * kenrel space (L3[3], always loaded), and one for user space (in fact the
- * first 3 entries of the L3 PD), and we claim the VM has only a 2-level
- * PTP (with the L2 index extended by 2 bytes).
- * PTE_BASE and APTE_BASE will need 4 entries in the L2 page table.
- * In addition, we can't recursively map L3[3] (Xen wants the ref count on
- * this page to be exactly once), so we use a shadow PD page for the last
- * L2 PD. The shadow page could be static too, but to make pm_pdir[]
- * contigous we'll allocate/copy one page per pmap.
- */
-
 #ifdef PMAP_PAE_COMP
 #define PAE_MODE 	0	/* pae enabled */
 #else
@@ -240,7 +127,7 @@
 #define L2_FRAME				(L2_MASK)
 #define L1_FRAME				(L2_FRAME | L1_MASK)
 
-#define L2_SLOT_PTE				(KERNBASE/NBPD_L2-1)/* 767: for recursive PDP map */
+#define L2_SLOT_PTE				((KERNBASE/NBPD_L2)-1)/* 767: for recursive PDP map */
 #define L2_SLOT_KERN			(KERNBASE/NBPD_L2)  /* 768: start of kernel space */
 #define	L2_SLOT_KERNBASE 		L2_SLOT_KERN
 #define L2_SLOT_APTE			1007
@@ -293,8 +180,8 @@ typedef uint32_t 				ovl_entry_t;		/* OVL */
 #define l2tol3(idx)				((idx) >> (L3_SHIFT - L2_SHIFT))
 #define l2tol2(idx)				((idx) & (L2_REALMASK >>  L2_SHIFT))
 
-#define L2_SLOT_PTE				(KERNBASE/NBPD_L2-4) /* 1532: for recursive PDP map */
-#define L2_SLOT_KERN			(KERNBASE/NBPD_L2)   /* 1536: start of kernel space */
+#define L2_SLOT_PTE				((KERNBASE / NBPD_L2) - 4) 	/* 1532: for recursive PDP map */
+#define L2_SLOT_KERN			(KERNBASE / NBPD_L2)   		/* 1536: start of kernel space */
 #define	L2_SLOT_KERNBASE 		L2_SLOT_KERN
 #define L2_SLOT_APTE			1960
 
@@ -305,6 +192,10 @@ typedef uint64_t 				pdpt_entry_t;		/* PDPT */
 typedef uint64_t 				ovl_entry_t;		/* OVL */
 #endif
 #endif
+
+#define KV2ADDR(l2, l1)  								\
+	((vm_offset_t)(((vm_offset_t)(l2) << L2_SHIFT) | 	\
+			((vm_offset_t)(l1) << L1_SHIFT)))
 
 #define PDIR_SLOT_KERN			L2_SLOT_KERN
 #define PDIR_SLOT_PTE			L2_SLOT_PTE

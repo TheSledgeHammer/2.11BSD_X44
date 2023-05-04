@@ -100,7 +100,8 @@
 #define	NBPD_L5			(1ULL << L5_SHIFT)		/* # bytes mapped by L5 ent (256T) */
 
 #define L5_MASK			0x01fe000000000000		/* 127PB */
-#define L4_MASK			0x0000ff8000000000		/* 255TB */
+#define L4_REALMASK		0x0000ff8000000000		/* 255TB */
+#define L4_MASK         (L4_REALMASK|L5_MASK)
 #define L3_MASK			0x0000007fc0000000		/* 511GB */
 #define L2_MASK			0x000000003fe00000		/* 1GB */
 #define L1_MASK			0x00000000001ff000		/* 2MB */
@@ -116,6 +117,11 @@ typedef uint64_t 		pd_entry_t;				/* PDE  (L2) */
 typedef uint64_t 		pdp_entry_t;			/* PDP  (L3) */
 typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
+
+
+/* macros to get real L4 and L5 index, from our "extended" L4 index */
+#define l4tol5(idx)         ((idx) >> (L5_SHIFT - L4_SHIFT))
+#define l4tol4(idx)         ((idx) & (L4_REALMASK >> L4_SHIFT))
 
 /*
  * Mask to get rid of the sign-extended part of addresses.
@@ -150,7 +156,7 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define AL5_BASE		((pml5_entry_t *)((char *)AL4_BASE + L4_SLOT_PTE * NBPD_L1))
 
 #define NKL5_MAX_ENTRIES	(unsigned long)1
-#define NKL4_MAX_ENTRIES	(unsigned long)(NKL5_MAX_ENTRIES)
+#define NKL4_MAX_ENTRIES	(unsigned long)(NKL5_MAX_ENTRIES * 2)	/* 31 max before invalid L1 entries */
 #define NKL3_MAX_ENTRIES	(unsigned long)(NKL4_MAX_ENTRIES * 512)
 #define NKL2_MAX_ENTRIES	(unsigned long)(NKL3_MAX_ENTRIES * 512)
 #define NKL1_MAX_ENTRIES	(unsigned long)(NKL2_MAX_ENTRIES * 512)
@@ -167,12 +173,41 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 
 #define PTP_LEVELS		5
 
+/*
+ * Pte related macros
+ */
+/* amd64 */
+#define KV4ADDR(l4, l3, l2, l1)      			\
+	((vm_offset_t)(((vm_offset_t)-1 << 47) | 	\
+			((vm_offset_t)(l4) << L4_SHIFT) | 	\
+			((vm_offset_t)(l3) << L3_SHIFT) | 	\
+			((vm_offset_t)(l2) << L2_SHIFT) | 	\
+			((vm_offset_t)(l1) << L1_SHIFT)))
+
+#define KV5ADDR(l5, l4, l3, l2, l1)  \
+	((vm_offset_t)(((vm_offset_t)-1 << 56) | 	\
+			((vm_offset_t)(l5) << L5_SHIFT) | 	\
+			((vm_offset_t)(l4) << L4_SHIFT) | 	\
+			((vm_offset_t)(l3) << L3_SHIFT) | 	\
+			((vm_offset_t)(l2) << L2_SHIFT) | 	\
+			((vm_offset_t)(l1) << L1_SHIFT)))
+
+enum pmap_type {
+	PT_X86,			/* regular x86 page tables */
+	PT_EPT,			/* Intel's nested page tables */
+	PT_RVI,			/* AMD's nested page tables */
+};
+
 struct pmap {
 	pml5_entry_t   			*pm_pml5;       /* KVA of page map level 5 (top level) */
 
 	pml4_entry_t   			*pm_pml4;       /* KVA of page map level 4 (top level) */
+	enum pmap_type			pm_type;		/* regular or nested tables */
 };
 
 #define	PML5_ENTRY_NULL		((pml5_entry_t)0)
+
+#define pmap_pdirpa_la57(pmap, index)   ((pmap)->pm_pdirpa[l4tol5(index)] + l4tol4(index) * sizeof(pd_entry_t))
+#define pmap_pdirpa_la48(pmap, index)   ((pmap)->pm_pdirpa + index * sizeof(pd_entry_t))
 
 #endif /* _AMD64_PMAP_H_ */

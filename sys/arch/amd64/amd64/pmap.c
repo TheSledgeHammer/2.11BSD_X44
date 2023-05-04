@@ -56,7 +56,9 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
-#include <i386/include/pte.h>
+#include <amd64/include/pte.h>
+
+#include <amd64/include/vmparam.h>
 
 #include <amd64/include/param.h>
 #include <amd64/include/pmap.h>
@@ -66,10 +68,12 @@ uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
 long 		NBPD[] = NBPD_INITIALIZER;
 pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
 pd_entry_t 	*APDE[] = APDES_INITIALIZER;
-//long 		NKPTP[] = NKPTP_INITIALIZER;
-//long 		NKPTPMAX[] = NKPTPMAX_INITIALIZER;
 
+
+static int pg_ps_enabled = 1;
 static int pmap_nx_enable = -1;		/* -1 = auto */
+
+int la57 = 0;
 
 /*
  * Get PDEs and PTEs for user/kernel address space
@@ -97,12 +101,14 @@ static u_int64_t KPTphys;					/* phys addr of kernel level 1 */
 static u_int64_t KPDphys;					/* phys addr of kernel level 2 */
 static u_int64_t KPDPphys;					/* phys addr of kernel level 3 */
 u_int64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
+u_int64_t 		 KPML5phys;					/* phys addr of kernel level 5 */
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
 static struct pmap_list pmap_header;
 
 static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
+static pml5_entry_t *pmap_pml5(pmap_t, vm_offset_t);
 static pml4_entry_t *pmap_pml4(pmap_t, vm_offset_t);
 static pdp_entry_t 	*pmap_pdp(pmap_t, vm_offset_t);
 static pd_entry_t 	*pmap_ptp(pmap_t, vm_offset_t);
@@ -133,6 +139,55 @@ pmap_avtopte(va)
 	KASSERT(va < (VA_SIGN_NEG(L4_SLOT_KERNBASE * NBPD_L4)));
 
 	return (APTE_BASE + PL1_I(va));
+}
+
+static __inline bool_t
+pmap_emulate_ad_bits(pmap_t pmap)
+{
+	return ((pmap->pm_flags & PMAP_EMULATE_AD_BITS) != 0);
+}
+
+static __inline pt_entry_t
+pmap_valid_bit(pmap_t pmap)
+{
+	pt_entry_t mask;
+
+	switch (pmap->pm_type) {
+	case PT_X86:
+	case PT_RVI:
+		mask = PG_V;
+		break;
+	case PT_EPT:
+		if (pmap_emulate_ad_bits(pmap))
+			mask = EPT_PG_EMUL_V;
+		else
+			mask = EPT_PG_READ;
+		break;
+	default:
+		panic("pmap_valid_bit: invalid pm_type %d", pmap->pm_type);
+	}
+
+	return (mask);
+}
+
+static bool_t
+pmap_is_la57(pmap)
+	pmap_t pmap;
+{
+	if (pmap->pm_type == PT_X86)
+		return (la57);
+	return (FALSE);		/* XXXKIB handle EPT */
+}
+
+vm_offset_t
+pmap_pdirpa(pmap, index)
+	register pmap_t pmap;
+	unsigned long index;
+{
+	if (pmap_is_la57(pmap)) {
+		return (pmap_pdirpa_la57(pmap, index));
+	}
+	return (pmap_pdirpa_la48(pmap, index));
 }
 
 __inline static void
@@ -180,23 +235,22 @@ pmap_map_pte(pmap, va)
 	vm_offset_t va;
 {
 	pd_entry_t *pde, *apde;
-	pd_entry_t opde, npde;
+	pd_entry_t opde;
 
 	if (pmap && pmap_pde_v(pmap_pde(pmap, va, 1))) {
 		/* are we current address space or kernel? */
 		if ((pmap->pm_pdir >= PTE_BASE && pmap->pm_pdir < L2_BASE)) {
-			pde = pmap_vtopte(va);
+			pde = vtopte(va);
 			return (pde);
 		} else {
 			/* otherwise, we are alternate address space */
 			if (pmap->pm_pdir >= APTE_BASE && pmap->pm_pdir < AL2_BASE) {
-				apde = pmap_avtopte(va);
+				apde = avtopte(va);
 				tlbflush();
 			}
 			opde = *APDP_PDE & PG_FRAME;
-			if (!(opde & PG_V) || opde != pmap->pm_pdirpa) {
-				npde = (pd_entry_t)(pmap->pm_pdirpa | PG_RW | PG_V | PG_A | PG_M);
-				apde = npde;
+			if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, 0)) {
+				apde = (pd_entry_t *)(pmap_pdirpa(pmap, 0) | PG_RW | PG_V | PG_A | PG_M);
 				if ((opde & PG_V)) {
 					pmap_apte_flush(pmap);
 				}
@@ -213,7 +267,7 @@ pmap_map_pde(pmap, va)
 	vm_offset_t va;
 {
 	pd_entry_t *pde, *apde;
-	pd_entry_t opde, npde;
+	pd_entry_t opde;
 	unsigned long index;
 	int i;
 
@@ -231,9 +285,8 @@ pmap_map_pde(pmap, va)
 					tlbflush();
 				}
 				opde = *APDP_PDE & PG_FRAME;
-				if (!(opde & PG_V) || opde != pmap->pm_pdirpa) {
-					npde = (pd_entry_t)(pmap->pm_pdirpa | PG_RW | PG_V | PG_A | PG_M);
-					apde = npde;
+				if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, index)) {
+					apde = (pd_entry_t *)(pmap_pdirpa(pmap, index) | PG_RW | PG_V | PG_A | PG_M);
 					if ((opde & PG_V)) {
 						pmap_apte_flush(pmap);
 					}
@@ -577,11 +630,54 @@ pmap_pinit_pml4(pml4)
 }
 
 void
+pmap_pinit_pml5(pml5)
+	pml5_entry_t *pml5;
+{
+	int i;
+	pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL4_MAX_ENTRIES * sizeof(pml5_entry_t)));
+
+	/*
+	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
+	 * entering all existing kernel mappings into level 5 table.
+	 */
+	pml5[PL5_I(UPT_MAX_ADDRESS)] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys)) | PG_V | PG_RW | PG_A | PG_M | pg_g;
+
+	/* install self-referential address mapping entry(s) */
+	pml5[L4_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml5) | PG_RW | PG_V | PG_A | PG_M;
+}
+
+/*
+ * Initialize a preallocated and zeroed pmap structure,
+ * such as one in a vmspace structure.
+ */
+void
+pmap_pinit_type(pmap, pm_type)
+	pmap_t pmap;
+	enum pmap_type pm_type;
+{
+	pmap->pm_type = pm_type;
+
+	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
+
+	switch (pm_type) {
+	case PT_X86:
+		if (pmap_is_la57(pmap)) {
+			pmap_pinit_pml5(pmap->pm_pml5);
+		} else {
+			pmap_pinit_pml4(pmap->pm_pml4);
+		}
+		break;
+
+	case PT_EPT:
+	case PT_RVI:
+	}
+}
+
+void
 pmap_pinit(pmap)
 	register pmap_t pmap;
 {
-	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
-	pmap_pinit_pml4(pmap->pm_pml4);
+	pmap_pinit_type(pmap, PT_X86);
 
 	pmap->pm_active = 0;
 	pmap->pm_count = 1;
@@ -593,12 +689,6 @@ pmap_pinit(pmap)
 	pmap_unlock(pmap);
 }
 
-void
-pmap_pinit0(pmap)
-	register pmap_t pmap;
-{
-
-}
 
 void
 pmap_destroy(pmap)
@@ -701,6 +791,20 @@ pmap_valid_entry(pmap, pdir, va)
 		} else {
 			return (NULL);
 		}
+	}
+	return (NULL);
+}
+
+static pml5_entry_t *
+pmap_pml5(pmap, va)
+	register pmap_t pmap;
+	vm_offset_t va;
+{
+	pml5_entry_t *pml5;
+
+	pml5 = (pml5_entry_t *)pmap_pde(pmap, va, 5);
+	if (pmap_valid_entry(pmap, (pml5_entry_t *)pml5, va)) {
+		return (pml5);
 	}
 	return (NULL);
 }

@@ -92,6 +92,8 @@
 #define	NPDPEPG			(NBPG/(sizeof(pdp_entry_t)))
 /* Size of the level 4 page-map level-4 table units */
 #define	NPML4EPG		(NBPG/(sizeof(pml4_entry_t)))
+/* Size of the level 5 page-map level-5 table units */
+#define	NPML5EPG		(NBPG/(sizeof(pml5_entry_t)))
 
 #define	PD_SHIFT		(SEGSHIFT-1)		/* LOG2(NBPDR) (21) */
 #define NBPDR			(1 << PD_SHIFT)		/* bytes/page dir */
