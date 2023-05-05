@@ -306,6 +306,7 @@ vm_hat_init(hatlist, phys_start, phys_end, addr)
 	pvsize = (vm_size_t)(sizeof(struct pv_entry));
 	npg = atop(phys_end - phys_start);
 	size = (pvsize * npg + npg);
+	size = round_page(size);
 
 	LIST_INIT(hatlist);
 	hat = (struct pmap_hat *)kmem_alloc(kernel_map, sizeof(struct pmap_hat));
@@ -345,6 +346,7 @@ ovl_hat_init(hatlist, phys_start, phys_end, addr)
 	pvsize = (vm_size_t)(sizeof(struct pv_entry));
 	npg = atop(phys_end - phys_start);
 	size = (pvsize * npg + npg);
+	size = round_page(size);
 
 	LIST_INIT(hatlist);
 	hat = (struct pmap_hat *)omem_alloc(overlay_map, sizeof(struct pmap_hat));

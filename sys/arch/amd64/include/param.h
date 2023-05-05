@@ -84,6 +84,11 @@
 #define PGSIZE			(1<<PGSHIFT)		/* bytes/page */
 #define PGMASK			PGOFSET				/* PGOFSET (PGSIZE - 1) */
 
+/* Size in bytes of the page directory */
+#define NBPTD			(NPGPTD << PGSHIFT)
+/* Number of PDEs in page directory, AMD64: 512, X86 PAE: 2048, NOPAE: 1024 */
+#define NPDEPTD			(NBPTD/(sizeof(pd_entry_t)))
+
 /* Size of the level 1 page table units */
 #define NPTEPG			(NBPG/(sizeof(pt_entry_t)))
 /* Size of the level 2 page directory units */

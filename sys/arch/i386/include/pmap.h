@@ -127,8 +127,8 @@
 #define L2_FRAME				(L2_MASK)
 #define L1_FRAME				(L2_FRAME | L1_MASK)
 
-#define L2_SLOT_PTE				((KERNBASE/NBPD_L2)-1)/* 767: for recursive PDP map */
-#define L2_SLOT_KERN			(KERNBASE/NBPD_L2)  /* 768: start of kernel space */
+#define L2_SLOT_PTE				((KERNBASE / NBPD_L2)-1)/* 767: for recursive PDP map */
+#define L2_SLOT_KERN			(KERNBASE / NBPD_L2)  /* 768: start of kernel space */
 #define	L2_SLOT_KERNBASE 		L2_SLOT_KERN
 #define L2_SLOT_APTE			1007
 
@@ -148,7 +148,7 @@ typedef uint32_t 				ovl_entry_t;		/* OVL */
 #define	LOWPTDI					2					/* low memory map pde */
 #define	KERNPTDI				4					/* start of kernel text pde */
 
-#define NPGPTD					4					/* Num of pages for page directory */
+#define NPGPTD					4					/* Num of pages for page directory PDP_SIZE */
 #define NPGPTD_SHIFT			9
 
 #define	PDRSHIFT				PD_SHIFT
@@ -180,7 +180,7 @@ typedef uint32_t 				ovl_entry_t;		/* OVL */
 #define l2tol3(idx)				((idx) >> (L3_SHIFT - L2_SHIFT))
 #define l2tol2(idx)				((idx) & (L2_REALMASK >>  L2_SHIFT))
 
-#define L2_SLOT_PTE				((KERNBASE / NBPD_L2) - 4) 	/* 1532: for recursive PDP map */
+#define L2_SLOT_PTE				((KERNBASE / NBPD_L2)-4) 	/* 1532: for recursive PDP map */
 #define L2_SLOT_KERN			(KERNBASE / NBPD_L2)   		/* 1536: start of kernel space */
 #define	L2_SLOT_KERNBASE 		L2_SLOT_KERN
 #define L2_SLOT_APTE			1960

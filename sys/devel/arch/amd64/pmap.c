@@ -86,9 +86,6 @@
 #include <arch/amd64/include/pte.h>
 #include <devel/arch/amd64/pmap.h>
 
-static int pg_ps_enabled = 1;
-int la57 = 0;
-
 static u_int64_t KPTphys;					/* phys addr of kernel level 1 */
 static u_int64_t KPDphys;					/* phys addr of kernel level 2 */
 static u_int64_t KPDPphys;					/* phys addr of kernel level 3 */
@@ -96,171 +93,104 @@ u_int64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
 u_int64_t 		 KPML5phys;					/* phys addr of kernel level 5 */
 
 
-#define	PMAP_EMULATE_AD_BITS	(1 << 9)	/* needs A/D bits emulation */
+extern const char la57_trampoline[], la57_trampoline_gdt_desc[], la57_trampoline_gdt[], la57_trampoline_end[];
 
-static pml5_entry_t *pmap_pml5(pmap_t, vm_offset_t);
-
-
-static __inline bool_t
-pmap_emulate_ad_bits(pmap_t pmap)
+pmap_pmltop()
 {
-	return ((pmap->pm_flags & PMAP_EMULATE_AD_BITS) != 0);
+
 }
 
-static __inline pt_entry_t
-pmap_valid_bit(pmap_t pmap)
+static void
+pmap_bootstrap_la57(firstaddr)
+	vm_offset_t firstaddr;
 {
-	pt_entry_t mask;
+	pml5_entry_t *v_pml5;
+	pml4_entry_t *v_pml4;
+	pdp_entry_t *v_pdp;
+	pd_entry_t *v_pd;
+	pt_entry_t *v_pt;
 
-	switch (pmap->pm_type) {
-	case PT_X86:
-	case PT_RVI:
-		mask = PG_V;
-		break;
-	case PT_EPT:
-		if (pmap_emulate_ad_bits(pmap))
-			mask = EPT_PG_EMUL_V;
-		else
-			mask = EPT_PG_READ;
-		break;
-	default:
-		panic("pmap_valid_bit: invalid pm_type %d", pmap->pm_type);
+	void (*la57_tramp)(uint64_t pml5);
+
+	if ((cpu_stdext_feature2 & CPUID_STDEXT2_LA57) == 0) {
+		return;
 	}
 
-	return (mask);
-}
-
-static bool_t
-pmap_is_la57(pmap)
-	pmap_t pmap;
-{
-	if (pmap->pm_type == PT_X86)
-		return (la57);
-	return (FALSE);		/* XXXKIB handle EPT */
-}
-
-vm_offset_t
-pmap_pdirpa(pmap, index)
-	register pmap_t pmap;
-	unsigned long index;
-{
-	if (pmap_is_la57(pmap)) {
-		return (pmap_pdirpa_la57(pmap, index));
+	if (!la57) {
+		return;
 	}
-	return (pmap_pdirpa_la48(pmap, index));
+
+	KPML5phys = allocpages(firstaddr, 1);				/* recursive PML5 map */
+
+	v_pml5 = (pml5_entry_t *)(KPML5phys);
+	v_pml4 = (pml4_entry_t *)(KPML4phys) | PG_V | PG_RW | PG_A | PG_M;
+	v_pdp = (pdp_entry_t *)(KPDPphys) | PG_V | PG_RW | PG_A | PG_M;
+	v_pd = (pd_entry_t *)(KPDphys) | PG_V | PG_RW | PG_A | PG_M;
+	v_pt = (pt_entry_t *)(KPTphys) | PG_V | PG_RW | PG_A | PG_M;
 }
 
-pt_entry_t *
-pmap_map_pte(pmap, va)
-	register pmap_t pmap;
-	vm_offset_t va;
+/*
+ * FreeBSD Ported with a few modifications (Not correct)
+ * - Also relies on sysinit. which we do not implement.
+ */
+static void
+pmap_bootstrap_la57(void *arg/* __unused*/)
 {
-	pd_entry_t *pde, *apde;
-	pd_entry_t opde;
+	pml5_entry_t *v_pml5;
+	pml4_entry_t *v_pml4;
+	pdp_entry_t *v_pdp;
+	pd_entry_t *v_pd;
+	pt_entry_t *v_pt;
+	vm_offset_t firstaddr;
 
-	if (pmap && pmap_pde_v(pmap_pde(pmap, va, 1))) {
-		/* are we current address space or kernel? */
-		if ((pmap->pm_pdir >= PTE_BASE && pmap->pm_pdir < L2_BASE)) {
-			pde = vtopte(va);
-			return (pde);
-		} else {
-			/* otherwise, we are alternate address space */
-			if (pmap->pm_pdir >= APTE_BASE && pmap->pm_pdir < AL2_BASE) {
-				apde = avtopte(va);
-				tlbflush();
-			}
-			opde = *APDP_PDE & PG_FRAME;
-			if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, 0)) {
-				apde = (pd_entry_t *)(pmap_pdirpa(pmap, 0) | PG_RW | PG_V | PG_A | PG_M);
-				if ((opde & PG_V)) {
-					pmap_apte_flush(pmap);
-				}
-			}
-			return (apde);
-		}
+	firstaddr = (vm_offset_t)arg;
+	void (*la57_tramp)(uint64_t pml5);
+
+	if ((cpu_stdext_feature2 & CPUID_STDEXT2_LA57) == 0) {
+		return;
 	}
-	return (NULL);
-}
 
-pd_entry_t *
-pmap_map_pde(pmap, va)
-	register pmap_t pmap;
-	vm_offset_t va;
-{
-	pd_entry_t *pde, *apde;
-	pd_entry_t opde;
-	unsigned long index;
-	int i;
-
-	for (i = PTP_LEVELS; i > 1; i--) {
-		index = PL_I(va, i);
-		if (pmap && pmap_pde_v(pmap_pde(pmap, va, i))) {
-			/* are we current address space or kernel? */
-			if (pmap->pm_pdir <= PDP_PDE && pmap->pm_pdir == &NPDE[i - 2][index]) {
-				pde = &NPDE[i - 2][index];
-				return (pde);
-			} else {
-				/* otherwise, we are alternate address space */
-				if (pmap->pm_pdir != APDP_PDE && pmap->pm_pdir == &APDE[i - 2][index]) {
-					apde = &APDE[i - 2][index];
-					tlbflush();
-				}
-				opde = *APDP_PDE & PG_FRAME;
-				if (!(opde & PG_V) || opde != pmap_pdirpa(pmap, index)) {
-					apde = (pd_entry_t *)(pmap_pdirpa(pmap, index) | PG_RW | PG_V | PG_A | PG_M);
-					if ((opde & PG_V)) {
-						pmap_apte_flush(pmap);
-					}
-				}
-				return (apde);
-			}
-		}
+	if (!la57) {
+		return;
 	}
-	return (NULL);
-}
 
-pml5_entry_t *
-pmap_pml5(pmap, va)
-	register pmap_t pmap;
-	vm_offset_t va;
-{
-	pml5_entry_t *pml5;
+	v_pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, sizeof(pml5_entry_t));
+	v_pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, sizeof(pml4_entry_t));
+	v_pdp = (pdp_entry_t *)kmem_alloc(kernel_map, sizeof(pdp_entry_t));
+	v_pd = (pd_entry_t *)kmem_alloc(kernel_map, sizeof(pd_entry_t));
+	v_pt = (pt_entry_t *)kmem_alloc(kernel_map, sizeof(pt_entry_t));
 
-	pml5 = (pml5_entry_t *)pmap_pde(pmap, va, 5);
-	if (pmap_valid_entry(pmap, (pml5_entry_t *)pml5, va)) {
-		return (pml5);
-	}
-	return (NULL);
-}
+	kernel_pmap->pm_pml5 = (pml5_entry_t *)(KERNBASE + KPML5phys);
 
-void
-pmap_pinit_pml4(pml4)
-	pml4_entry_t *pml4;
-{
-	int i;
-
-	pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL4_MAX_ENTRIES * sizeof(pml4_entry_t)));
-
-	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
-		pml4[L4_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPDPphys + ptoa(i))) | PG_RW | PG_V;
-	}
-	/* install self-referential address mapping entry(s) */
-	pml4[L4_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml4) | PG_RW | PG_V | PG_A | PG_M;
-}
-
-void
-pmap_pinit_pml5(pml5)
-	pml5_entry_t *pml5;
-{
-	int i;
-	pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL5_MAX_ENTRIES * sizeof(pml5_entry_t)));
+	/*
+	 * Map m_code 1:1, it appears below 4G in KVA due to physical
+	 * address being below 4G.  Since kernel KVA is in upper half,
+	 * the pml4e should be zero and free for temporary use.
+	 */
+	v_pml4 = pmap_extract(kernel_pmap, (vm_offset_t)v_pml4) | PG_V | PG_RW | PG_A | PG_M;
+	v_pdp = pmap_extract(kernel_pmap, (vm_offset_t)v_pdp) | PG_V | PG_RW | PG_A | PG_M;
+	v_pd = pmap_extract(kernel_pmap, (vm_offset_t)v_pd) | PG_V | PG_RW | PG_A | PG_M;
+	v_pt = pmap_extract(kernel_pmap, (vm_offset_t)v_pt) | PG_V | PG_RW | PG_A | PG_M;
 
 	/*
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
 	 * entering all existing kernel mappings into level 5 table.
 	 */
-	pml5[PL5_I(UPT_MAX_ADDRESS)] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys)) | PG_V | PG_RW | PG_A | PG_M | pg_g;
+	v_pml5[pmap_pml5e_index(UPT_MAX_ADDRESS)] = KPML4phys | PG_V | PG_RW | PG_A | PG_M | pg_g;
 
-	/* install self-referential address mapping entry(s) */
-	pml5[L4_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml5) | PG_RW | PG_V | PG_A | PG_M;
+	/*
+	 * Add pml5 entry for 1:1 trampoline mapping after LA57 is turned on.
+	 */
+	v_pml5[pmap_pml5e_index(VM_PAGE_TO_PHYS(m_code))] = VM_PAGE_TO_PHYS(m_pml4) | PG_V | PG_RW | PG_A | PG_M;
+	v_pml4[pmap_pml4e_index(VM_PAGE_TO_PHYS(m_code))] = VM_PAGE_TO_PHYS(m_pdp) | PG_V | PG_RW | PG_A | PG_M;
+
+	/*
+	 * Copy and call the 48->57 trampoline, hope we return there, alive.
+	 */
+	bcopy(la57_trampoline, v_code, la57_trampoline_end - la57_trampoline);
+	*(u_long*) (v_code + 2 + (la57_trampoline_gdt_desc - la57_trampoline)) =
+			la57_trampoline_gdt - la57_trampoline + VM_PAGE_TO_PHYS(m_code);
+	la57_tramp = (void (*)(uint64_t))VM_PAGE_TO_PHYS(m_code);
+	invlpg((vm_offset_t)la57_tramp);
+	la57_tramp(KPML5phys);
 }

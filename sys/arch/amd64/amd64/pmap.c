@@ -69,10 +69,10 @@ long 		NBPD[] = NBPD_INITIALIZER;
 pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
 pd_entry_t 	*APDE[] = APDES_INITIALIZER;
 
-
+pt_entry_t pg_nx;
+static pt_entry_t pg_g;
 static int pg_ps_enabled = 1;
 static int pmap_nx_enable = -1;		/* -1 = auto */
-
 int la57 = 0;
 
 /*
@@ -311,17 +311,21 @@ allocpages(firstaddr, n)
 	return (ret);
 }
 
-#define NKPML4E				PTP_LEVELS
-#define	PML4PML4I			(NPML4EPG / 2)		/* Index of recursive pml4 mapping */
-#define	KPML4BASE			(NPML4EPG-NKPML4E) 	/* KVM at highest addresses */
-#define	NKPDPE(ptpgs)		howmany(ptpgs, L4_SLOT_KERNBASE+1) /* 512 slots */
-#define	KPML4I				(NPML4EPG-1)
-#define	KPDPI				(NPDPEPG-2)
+
 
 static inline pt_entry_t
 bootaddr_rwx(pa)
 	vm_offset_t pa;
 {
+	if (pa < amd64_trunc_pdr(kernphys + btext - KERNLOAD) || pa >= amd64_trunc_pdr(kernphys + _end - KERNLOAD)) {
+		return (PG_RW | pg_nx);
+	}
+	if (pa >= amd64_trunc_pdr(kernphys + brwsection - KERNLOAD)) {
+		return (PG_RW | pg_nx);
+	}
+	if (pa < amd64_trunc_pdr(kernphys + etext - KERNLOAD)) {
+		return (0);
+	}
 	return (pg_nx);
 }
 
@@ -337,9 +341,19 @@ create_pagetables(firstaddr)
 	int i, j;
 
 	/* Allocate pages. */
-	KPML4phys = allocpages(firstaddr, 1);			/* recursive PML4 map */
-	KPDPphys = allocpages(firstaddr, NKPML4E);		/* kernel PDP pages */
+	KPML4phys = allocpages(firstaddr, 1);					/* recursive PML4 map */
+	KPDPphys = allocpages(firstaddr, NKL4_MAX_ENTRIES);		/* kernel PDP pages */
 
+	/*
+	 * Allocate the initial number of kernel page table pages required to
+	 * bootstrap.  We defer this until after all memory-size dependent
+	 * allocations are done (e.g. direct map), so that we don't have to
+	 * build in too much slop in our estimate.
+	 *
+	 * Note that when NKPML4E > 1, we have an empty page underneath
+	 * all but the KPML4I'th one, so we need NKPML4E-1 extra (zeroed)
+	 * pages.  (pmap_enter requires a PD page to exist for each KPML4E.)
+	 */
 	pt_pages = howmany(firstaddr - kernphys, NBPDR) + 1;
 	pt_pages += NKPDPE(pt_pages);
 	pt_pages += 32;
@@ -349,6 +363,11 @@ create_pagetables(firstaddr)
 	KPTphys = allocpages(firstaddr, nkpt);			/* KVA start */
 	KPDphys = allocpages(firstaddr, nkpdpe);		/* kernel PD pages */
 
+	/*
+	 * Connect the zero-filled PT pages to their PD entries.  This
+	 * implicitly maps the PT pages at their correct locations within
+	 * the PTmap.
+	 */
 	pd_p = (pd_entry_t *)KPDphys;
 	for (i = 0; i < nkpt; i++) {
 		pd_p[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
@@ -359,21 +378,44 @@ create_pagetables(firstaddr)
 		pd_p[i] = pax | PG_V | PG_PS | pg_g | PG_M | PG_A | bootaddr_rwx(pax);
 	}
 
-	pdp_p = (pdp_entry_t *)(KPDPphys + ptoa(KPML4I - KPML4BASE));
+	pdp_p = (pdp_entry_t *)(KPDPphys + ptoa(0));
 	for (i = 0; i < nkpdpe; i++) {
-		pdp_p[i + KPDPI] = (KPDphys + ptoa(i)) | PG_RW | PG_V;
+		pdp_p[i + PDIR_SLOT_APTE] = (KPDphys + ptoa(i)) | PG_RW | PG_V;
 	}
 
 	/* And recursively map PML4 to itself in order to get PTmap */
 	p4_p = (pml4_entry_t *)KPML4phys;
-	p4_p[PML4PML4I] = KPML4phys;
-	p4_p[PML4PML4I] |= PG_RW | PG_V | pg_nx;
+	p4_p[PDIR_SLOT_KERN] = KPML4phys;
+	p4_p[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
 
 	/* Connect the KVA slots up to the PML4 */
-	for (i = 0; i < NKPML4E; i++) {
-		p4_p[KPML4BASE + i] = KPDPphys + ptoa(i);
-		p4_p[KPML4BASE + i] |= PG_RW | PG_V;
+	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
+		p4_p[PDIR_SLOT_KERNBASE + i] = KPDPphys + ptoa(i);
+		p4_p[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
 	}
+}
+
+/*
+ * Enable PG_G global pages, then switch to the kernel page
+ * table from the bootstrap page table.  After the switch, it
+ * is possible to enable SMEP and SMAP since PG_U bits are
+ * correct now.
+ */
+static void
+pmap_enable_pg_g(cr4)
+	uint64_t cr4;
+{
+	cr4 = rcr4();
+	cr4 |= CR4_PGE;
+	load_cr4(cr4);
+	load_cr3(KPML4phys);
+	if (cpu_stdext_feature & CPUID_STDEXT_SMEP) {
+		cr4 |= CR4_SMEP;
+	}
+	if (cpu_stdext_feature & CPUID_STDEXT_SMAP) {
+		cr4 |= CR4_SMAP;
+	}
+	load_cr4(cr4);
 }
 
 void
@@ -383,8 +425,8 @@ pmap_bootstrap(firstaddr)
 	vm_offset_t va;
 	pt_entry_t *pte;
 	u_long res;
-	int i;
 	uint64_t cr4;
+	int i;
 
 	res = atop(KERNend - (vm_offset_t)kernphys);
 	avail_start = *firstaddr;
@@ -394,14 +436,17 @@ pmap_bootstrap(firstaddr)
 
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
 
+	pmap_enable_pg_g(cr4);
+
 	/*
 	 * Initialize protection array.
 	 */
 	amd64_protection_init();
 
-	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
-	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
+	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + KPTphys);
+	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + KPTphys + NBPG);
 	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + KPML4phys);
+	kernel_pmap->pm_pdirpa = (vm_offset_t)KPTphys;
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
 	LIST_INIT(&pmap_header);
 	kernel_pmap->pm_count = 1;
@@ -523,21 +568,22 @@ pmap_init(phys_start, phys_end)
 	vm_offset_t	phys_start, phys_end;
 {
 	vm_offset_t addr;
-	vm_size_t npg, s;
+	vm_size_t pvsize, size, npg;
 	int i;
 
 	addr = (vm_offset_t) KERNBASE + KPTphys;
 	vm_object_reference(kernel_object);
 	vm_map_find(kernel_map, kernel_object, addr, &addr, 2 * NBPG, FALSE);
 
+	pvsize = (vm_size_t)(sizeof(struct pv_entry));
 	npg = atop(phys_end - phys_start);
-	s = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
-	s = round_page(s);
+	size = (pvsize * npg + npg);
+	size = round_page(size);
 
-	pv_table = (pv_entry_t)kmem_alloc(kernel_map, s);
+	pv_table = (pv_entry_t)kmem_alloc(kernel_map, size);
 	addr = (vm_offset_t) pv_table;
 	addr += sizeof(struct pv_entry) * npg;
-	pmap_attributes = (char *)addr;
+	pv_table->pv_attr = (char)addr;
 
 	/*
 	 * Now it is safe to enable pv_table recording.
@@ -592,7 +638,7 @@ pmap_pinit_pdir(pdir, pdirpa)
 {
 	int i;
 
-	pdir = (pd_entry_t *)kmem_alloc(kernel_map, PDIR_SLOT_PTE * sizeof(pd_entry_t));
+	pdir = (pd_entry_t *)kmem_alloc(kernel_map, NBPTD);
 	pdirpa = pdir[PDIR_SLOT_PTE] & PG_FRAME;
 
 	/* zero init area */
@@ -622,7 +668,7 @@ pmap_pinit_pml4(pml4)
 	pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL4_MAX_ENTRIES * sizeof(pml4_entry_t)));
 
 	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
-		pml4[L4_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPDPphys + ptoa(i))) | PG_RW | PG_V;
+		pml4[PDIR_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPDPphys + ptoa(i))) | PG_RW | PG_V;
 	}
 
 	/* install self-referential address mapping entry(s) */
@@ -640,10 +686,10 @@ pmap_pinit_pml5(pml5)
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
 	 * entering all existing kernel mappings into level 5 table.
 	 */
-	pml5[PL5_I(UPT_MAX_ADDRESS)] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys)) | PG_V | PG_RW | PG_A | PG_M | pg_g;
+	pml5[PL4_I(UPT_MAX_ADDRESS)] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys)) | PG_V | PG_RW | PG_A | PG_M | pg_g;
 
 	/* install self-referential address mapping entry(s) */
-	pml5[L4_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml5) | PG_RW | PG_V | PG_A | PG_M;
+	pml5[PDIR_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml5) | PG_RW | PG_V | PG_A | PG_M;
 }
 
 /*
@@ -708,11 +754,22 @@ pmap_destroy(pmap)
 	}
 }
 
+/* not correct */
 void
 pmap_release(pmap)
 	register pmap_t pmap;
 {
+	int i;
 
+	kmem_free(kernel_map, (vm_offset_t)pmap->pm_pdir, NBPTD);
+
+	if (pmap_is_la57(pmap)) {
+		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml5[PL4_I(UPT_MAX_ADDRESS)], PDIR_SLOT_KERN * sizeof(pml5_entry_t));
+	} else {
+		for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
+			kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4[PDIR_SLOT_KERNBASE + i], PDIR_SLOT_KERN * sizeof(pml4_entry_t));
+		}
+	}
 }
 
 void
@@ -931,7 +988,11 @@ pmap_activate(pmap, pcbp)
 	struct pcb *pcbp;
 {
 	if (pmap != NULL && pmap->pm_pdchanged) {
-		pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir); /* PML4?? */
+		if (pmap_is_la57(pmap)) {
+			pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pml5); /* PML5?? */
+		} else {
+			pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pml4); /* PML4?? */
+		}
 		if (pmap == &curproc->p_vmspace->vm_pmap) {
 			lcr3(pcbp->pcb_cr3);
 		}

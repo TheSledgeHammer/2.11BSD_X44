@@ -575,6 +575,7 @@ pmap_bootstrap(firstaddr)
 #endif
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
 	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
+	kernel_pmap->pm_pdirpa = (vm_offset_t)IdlePTD;
 #ifdef PMAP_PAE_COMP
 	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(KERNBASE + IdlePDPT);
 #endif
@@ -938,7 +939,8 @@ pmap_pinit_pdir(pdir, pdirpa)
 	 * No need to allocate page table space yet but we do need a
 	 * valid page directory table.
 	 */
-	pdir = (pd_entry_t *)kmem_alloc(kernel_map, PDIR_SLOT_PTE * sizeof(pd_entry_t));
+
+	pdir = (pd_entry_t *)kmem_alloc(kernel_map, NBPTD);
 	pdirpa = pdir[PDIR_SLOT_PTE] & PG_FRAME;
 
 	/* zero init area */
@@ -1116,7 +1118,7 @@ pmap_remove(pmap, sva, eva)
 		 */
 		bits = ix = 0;
 		do {
-			bits |= *(int *)pte & (PG_U|PG_M);
+			bits |= *(int *)pte & (PG_U | PG_M);
 			*(int *)pte++ = 0;
 		} while (++ix != 1);
 		if (pmap == &curproc->p_vmspace->vm_pmap) {

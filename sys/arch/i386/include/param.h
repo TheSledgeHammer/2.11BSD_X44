@@ -100,7 +100,8 @@
 #define PGSIZE			(1 << PGSHIFT)			/* bytes/page (PAGE SIZE) */
 #define PGMASK			PGOFSET					/* PGOFSET (PGSIZE - 1) */
 
-#define NPGOVL  		129						/* Number of pages needed for overlay space */
+/* Number of pages needed for overlay space */
+#define NPGOVL  		129
 
 #define	NPTEPG			(NBPG / sizeof(pt_entry_t))
 /* Size in bytes of the page directory */

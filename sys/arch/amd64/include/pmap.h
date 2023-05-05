@@ -119,6 +119,8 @@
  * complexity to the calculations.
  */
 
+#define NPGPTD			1						/* Num of pages for page directory */
+
 #define L1_SHIFT		12
 #define	L2_SHIFT		21
 #define	L3_SHIFT		30
@@ -196,6 +198,7 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define L4_SLOT_APTE		(L4_SLOT_KERNBASE - 1) 	/* default: 510 */
 
 #define PDIR_SLOT_KERN		L4_SLOT_KERN
+#define PDIR_SLOT_KERNBASE	L4_SLOT_KERNBASE
 #define PDIR_SLOT_PTE		L4_SLOT_PTE
 #define PDIR_SLOT_APTE		L4_SLOT_APTE
 
