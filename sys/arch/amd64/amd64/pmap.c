@@ -101,7 +101,7 @@ static u_int64_t KPTphys;					/* phys addr of kernel level 1 */
 static u_int64_t KPDphys;					/* phys addr of kernel level 2 */
 static u_int64_t KPDPphys;					/* phys addr of kernel level 3 */
 u_int64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
-u_int64_t 		 KPML5phys;					/* phys addr of kernel level 5 */
+u_int64_t 		 KPML5phys;					/* phys addr of kernel level 5, if supported */
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
@@ -110,7 +110,7 @@ static struct pmap_list pmap_header;
 static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
 static pml5_entry_t *pmap_pml5(pmap_t, vm_offset_t);
 static pml4_entry_t *pmap_pml4(pmap_t, vm_offset_t);
-static pdp_entry_t 	*pmap_pdp(pmap_t, vm_offset_t);
+static pdpt_entry_t *pmap_pdpt(pmap_t, vm_offset_t);
 static pd_entry_t 	*pmap_ptp(pmap_t, vm_offset_t);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
@@ -311,8 +311,6 @@ allocpages(firstaddr, n)
 	return (ret);
 }
 
-
-
 static inline pt_entry_t
 bootaddr_rwx(pa)
 	vm_offset_t pa;
@@ -329,12 +327,15 @@ bootaddr_rwx(pa)
 	return (pg_nx);
 }
 
+/* number of kernel PDP slots */
+#define	NKPDPE(ptpgs)		howmany(ptpgs, NPDEPG)
+
 static void
 create_pagetables(firstaddr)
 	vm_offset_t *firstaddr;
 {
 	pd_entry_t *pd_p;
-	pdp_entry_t *pdp_p;
+	pdpt_entry_t *pdp_p;
 	pml4_entry_t *p4_p;
 	long nkpt, nkpd, nkpdpe, pt_pages;
 	vm_offset_t pax;
@@ -378,7 +379,7 @@ create_pagetables(firstaddr)
 		pd_p[i] = pax | PG_V | PG_PS | pg_g | PG_M | PG_A | bootaddr_rwx(pax);
 	}
 
-	pdp_p = (pdp_entry_t *)(KPDPphys + ptoa(0));
+	pdp_p = (pdpt_entry_t *)(KPDPphys + ptoa(3));
 	for (i = 0; i < nkpdpe; i++) {
 		pdp_p[i + PDIR_SLOT_APTE] = (KPDphys + ptoa(i)) | PG_RW | PG_V;
 	}
@@ -571,7 +572,7 @@ pmap_init(phys_start, phys_end)
 	vm_size_t pvsize, size, npg;
 	int i;
 
-	addr = (vm_offset_t) KERNBASE + KPTphys;
+	addr = (vm_offset_t)KERNBASE + KPTphys;
 	vm_object_reference(kernel_object);
 	vm_map_find(kernel_map, kernel_object, addr, &addr, 2 * NBPG, FALSE);
 
@@ -680,12 +681,13 @@ pmap_pinit_pml5(pml5)
 	pml5_entry_t *pml5;
 {
 	int i;
-	pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL4_MAX_ENTRIES * sizeof(pml5_entry_t)));
+	pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL5_MAX_ENTRIES * sizeof(pml5_entry_t)));
 
 	/*
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
 	 * entering all existing kernel mappings into level 5 table.
 	 */
+	//l4tol5(PL4_I(UPT_MAX_ADDRESS))
 	pml5[PL4_I(UPT_MAX_ADDRESS)] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys)) | PG_V | PG_RW | PG_A | PG_M | pg_g;
 
 	/* install self-referential address mapping entry(s) */
@@ -734,7 +736,6 @@ pmap_pinit(pmap)
 	LIST_INSERT_HEAD(&pmap_header, pmap, pm_list);
 	pmap_unlock(pmap);
 }
-
 
 void
 pmap_destroy(pmap)
@@ -859,7 +860,7 @@ pmap_pml5(pmap, va)
 {
 	pml5_entry_t *pml5;
 
-	pml5 = (pml5_entry_t *)pmap_pde(pmap, va, 5);
+	pml5 = (pml5_entry_t *)pmap_pde(pmap, va, 4);
 	if (pmap_valid_entry(pmap, (pml5_entry_t *)pml5, va)) {
 		return (pml5);
 	}
@@ -880,16 +881,16 @@ pmap_pml4(pmap, va)
 	return (NULL);
 }
 
-static pdp_entry_t *
-pmap_pdp(pmap, va)
+static pdpt_entry_t *
+pmap_pdpt(pmap, va)
 	register pmap_t pmap;
 	vm_offset_t va;
 {
-	pdp_entry_t *pdp;
+	pdpt_entry_t *pdpt;
 
-	pdp = (pdp_entry_t *)pmap_pde(pmap, va, 3);
-	if (pmap_valid_entry(pmap, (pdp_entry_t *)pdp, va)) {
-		return (pdp);
+	pdpt = (pdpt_entry_t *)pmap_pde(pmap, va, 3);
+	if (pmap_valid_entry(pmap, (pdpt_entry_t *)pdpt, va)) {
+		return (pdpt);
 	}
 	return (NULL);
 }

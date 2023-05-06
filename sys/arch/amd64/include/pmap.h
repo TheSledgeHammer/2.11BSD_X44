@@ -148,7 +148,7 @@
 
 typedef uint64_t 		pt_entry_t;				/* PTE  (L1) */
 typedef uint64_t 		pd_entry_t;				/* PDE  (L2) */
-typedef uint64_t 		pdp_entry_t;			/* PDP  (L3) */
+typedef uint64_t 		pdpt_entry_t;			/* PDPT (L3) */
 typedef uint64_t 		pml4_entry_t;			/* PML4 (L4) */
 typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 
@@ -212,15 +212,16 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
  */
 #define L1_BASE			((pt_entry_t *)(L4_SLOT_PTE * NBPD_L4))
 #define L2_BASE 		((pd_entry_t *)((char *)L1_BASE + L4_SLOT_PTE * NBPD_L3))
-#define L3_BASE 		((pdp_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define L3_BASE 		((pdpt_entry_t *)((char *)L2_BASE + L4_SLOT_PTE * NBPD_L2))
 #define L4_BASE 		((pml4_entry_t *)((char *)L3_BASE + L4_SLOT_PTE * NBPD_L1))
 
 #define AL1_BASE		((pt_entry_t *)(VA_SIGN_NEG((L4_SLOT_APTE * NBPD_L4))))
 #define AL2_BASE 		((pd_entry_t *)((char *)AL1_BASE + L4_SLOT_PTE * NBPD_L3))
-#define AL3_BASE 		((pdp_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
+#define AL3_BASE 		((pdpt_entry_t *)((char *)AL2_BASE + L4_SLOT_PTE * NBPD_L2))
 #define AL4_BASE 		((pml4_entry_t *)((char *)AL3_BASE + L4_SLOT_PTE * NBPD_L1))
 
-#define NKL4_MAX_ENTRIES	(unsigned long)1
+#define NKL5_MAX_ENTRIES	(unsigned long)1
+#define NKL4_MAX_ENTRIES	(unsigned long)(NKL5_MAX_ENTRIES * 1)
 #define NKL3_MAX_ENTRIES	(unsigned long)(NKL4_MAX_ENTRIES * 512)
 #define NKL2_MAX_ENTRIES	(unsigned long)(NKL3_MAX_ENTRIES * 512)
 #define NKL1_MAX_ENTRIES	(unsigned long)(NKL2_MAX_ENTRIES * 512)
@@ -229,6 +230,7 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
  * Since kva space is below the kernel in its entirety, we start off
  * with zero entries on each level.
  */
+#define NKL5_START_ENTRIES	0
 #define NKL4_START_ENTRIES	0
 #define NKL3_START_ENTRIES	0
 #define NKL2_START_ENTRIES	0
@@ -241,6 +243,7 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define PL2_I(VA)		(((VA_SIGN_POS(VA)) & L2_FRAME) >> L2_SHIFT)
 #define PL3_I(VA)		(((VA_SIGN_POS(VA)) & L3_FRAME) >> L3_SHIFT)
 #define PL4_I(VA)		(((VA_SIGN_POS(VA)) & L4_FRAME) >> L4_SHIFT)
+#define PL5_I(VA)		(((VA_SIGN_POS(VA)) & L5_FRAME) >> L5_SHIFT)
 #define PL_I(va, lvl) 		(((VA_SIGN_POS(va)) & ptp_masks[(lvl)-1]) >> ptp_shifts[(lvl)-1])
 
 #define PTP_MASK_INITIALIZER	{ L1_FRAME, L2_FRAME, L3_FRAME, L4_FRAME }
@@ -306,7 +309,7 @@ typedef struct pv_entry		*pv_entry_t;
 
 #define	PT_ENTRY_NULL		((pt_entry_t)0)
 #define	PD_ENTRY_NULL		((pd_entry_t)0)
-#define	PDP_ENTRY_NULL		((pdp_entry_t)0)
+#define	PDPT_ENTRY_NULL		((pdpt_entry_t)0)
 #define	PML4_ENTRY_NULL		((pml4_entry_t)0)
 #define	PML5_ENTRY_NULL		((pml5_entry_t)0)
 

@@ -92,12 +92,53 @@ static u_int64_t KPDPphys;					/* phys addr of kernel level 3 */
 u_int64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
 u_int64_t 		 KPML5phys;					/* phys addr of kernel level 5 */
 
+extern int la57; /* amd64 md_var.h */
 
 extern const char la57_trampoline[], la57_trampoline_gdt_desc[], la57_trampoline_gdt[], la57_trampoline_end[];
 
-pmap_pmltop()
+/*
+ * Copy and call the 48->57 trampoline, hope we return there, alive.
+ */
+static void
+pmap_la57_tramp(void)
 {
+	char *v_code;
+	vm_offset_t *m_code, *temp;
+	void (*la57_tramp)(uint64_t pml5);
 
+	v_code = kmem_alloc(kernel_map, (la57_trampoline_end - la57_trampoline));
+
+	bcopy(la57_trampoline, v_code, (la57_trampoline_end - la57_trampoline));
+
+	*m_code = pmap_extract(kernel_pmap, v_code);
+
+	m_code = (v_code + 2 + (la57_trampoline_gdt_desc - la57_trampoline));
+	temp = (la57_trampoline_gdt - la57_trampoline) + m_code;
+	m_code = temp;
+	la57_tramp = (void (*)(uint64_t))pmap_extract(kernel_pmap, m_code);
+	invlpg((vm_offset_t)la57_tramp);
+	la57_tramp(KPML5phys);
+}
+
+static void
+create_5_level_pagetable(firstaddr)
+	vm_offset_t *firstaddr;
+{
+	pml5_entry_t *p5_p;
+	int i;
+
+	KPML5phys = allocpages(firstaddr, 1);				/* recursive PML5 map */
+
+	/* And recursively map PML5 to itself in order to get PTmap */
+	p5_p = (pml5_entry_t *)KPML5phys;
+	p5_p[PDIR_SLOT_KERN] = KPML5phys;
+	p5_p[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
+
+	/* Connect the KVA slots up to the PML5 */
+	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
+		p5_p[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
+		p5_p[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+	}
 }
 
 static void
@@ -106,7 +147,7 @@ pmap_bootstrap_la57(firstaddr)
 {
 	pml5_entry_t *v_pml5;
 	pml4_entry_t *v_pml4;
-	pdp_entry_t *v_pdp;
+	pdpt_entry_t *v_pdp;
 	pd_entry_t *v_pd;
 	pt_entry_t *v_pt;
 
@@ -120,13 +161,11 @@ pmap_bootstrap_la57(firstaddr)
 		return;
 	}
 
-	KPML5phys = allocpages(firstaddr, 1);				/* recursive PML5 map */
+	create_5_level_pagetable(firstaddr);
 
-	v_pml5 = (pml5_entry_t *)(KPML5phys);
-	v_pml4 = (pml4_entry_t *)(KPML4phys) | PG_V | PG_RW | PG_A | PG_M;
-	v_pdp = (pdp_entry_t *)(KPDPphys) | PG_V | PG_RW | PG_A | PG_M;
-	v_pd = (pd_entry_t *)(KPDphys) | PG_V | PG_RW | PG_A | PG_M;
-	v_pt = (pt_entry_t *)(KPTphys) | PG_V | PG_RW | PG_A | PG_M;
+	kernel_pmap->pm_pml5 = (pml5_entry_t *)(KERNBASE + KPML5phys);
+
+	pmap_la57_tramp();
 }
 
 /*
@@ -138,7 +177,7 @@ pmap_bootstrap_la57(void *arg/* __unused*/)
 {
 	pml5_entry_t *v_pml5;
 	pml4_entry_t *v_pml4;
-	pdp_entry_t *v_pdp;
+	pdpt_entry_t *v_pdp;
 	pd_entry_t *v_pd;
 	pt_entry_t *v_pt;
 	vm_offset_t firstaddr;
@@ -156,7 +195,7 @@ pmap_bootstrap_la57(void *arg/* __unused*/)
 
 	v_pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, sizeof(pml5_entry_t));
 	v_pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, sizeof(pml4_entry_t));
-	v_pdp = (pdp_entry_t *)kmem_alloc(kernel_map, sizeof(pdp_entry_t));
+	v_pdp = (pdpt_entry_t *)kmem_alloc(kernel_map, sizeof(pdp_entry_t));
 	v_pd = (pd_entry_t *)kmem_alloc(kernel_map, sizeof(pd_entry_t));
 	v_pt = (pt_entry_t *)kmem_alloc(kernel_map, sizeof(pt_entry_t));
 
@@ -167,10 +206,10 @@ pmap_bootstrap_la57(void *arg/* __unused*/)
 	 * address being below 4G.  Since kernel KVA is in upper half,
 	 * the pml4e should be zero and free for temporary use.
 	 */
-	v_pml4 = pmap_extract(kernel_pmap, (vm_offset_t)v_pml4) | PG_V | PG_RW | PG_A | PG_M;
-	v_pdp = pmap_extract(kernel_pmap, (vm_offset_t)v_pdp) | PG_V | PG_RW | PG_A | PG_M;
-	v_pd = pmap_extract(kernel_pmap, (vm_offset_t)v_pd) | PG_V | PG_RW | PG_A | PG_M;
-	v_pt = pmap_extract(kernel_pmap, (vm_offset_t)v_pt) | PG_V | PG_RW | PG_A | PG_M;
+	v_pml4 = pmap_extract(kernel_pmap, (vm_offset_t)KPML4phys) | PG_V | PG_RW | PG_A | PG_M;
+	v_pdp = pmap_extract(kernel_pmap, (vm_offset_t)KPDPphys) | PG_V | PG_RW | PG_A | PG_M;
+	v_pd = pmap_extract(kernel_pmap, (vm_offset_t)KPDphys) | PG_V | PG_RW | PG_A | PG_M;
+	v_pt = pmap_extract(kernel_pmap, (vm_offset_t)KPTphys) | PG_V | PG_RW | PG_A | PG_M;
 
 	/*
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
@@ -184,13 +223,7 @@ pmap_bootstrap_la57(void *arg/* __unused*/)
 	v_pml5[pmap_pml5e_index(VM_PAGE_TO_PHYS(m_code))] = VM_PAGE_TO_PHYS(m_pml4) | PG_V | PG_RW | PG_A | PG_M;
 	v_pml4[pmap_pml4e_index(VM_PAGE_TO_PHYS(m_code))] = VM_PAGE_TO_PHYS(m_pdp) | PG_V | PG_RW | PG_A | PG_M;
 
-	/*
-	 * Copy and call the 48->57 trampoline, hope we return there, alive.
-	 */
-	bcopy(la57_trampoline, v_code, la57_trampoline_end - la57_trampoline);
-	*(u_long*) (v_code + 2 + (la57_trampoline_gdt_desc - la57_trampoline)) =
-			la57_trampoline_gdt - la57_trampoline + VM_PAGE_TO_PHYS(m_code);
-	la57_tramp = (void (*)(uint64_t))VM_PAGE_TO_PHYS(m_code);
-	invlpg((vm_offset_t)la57_tramp);
-	la57_tramp(KPML5phys);
+	pmap_la57_tramp();
+
+	v_pml5[PML5PML5I] = KPML5phys | PG_RW | PG_V | pg_nx;
 }
