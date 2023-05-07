@@ -65,7 +65,6 @@
 
 uint64_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
 uint64_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
-long 		NBPD[] = NBPD_INITIALIZER;
 pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
 pd_entry_t 	*APDE[] = APDES_INITIALIZER;
 
@@ -97,11 +96,11 @@ vm_offset_t		vm_last_phys;				/* PA just past last managed page */
 bool_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
 
 
-static u_int64_t KPTphys;					/* phys addr of kernel level 1 */
-static u_int64_t KPDphys;					/* phys addr of kernel level 2 */
-static u_int64_t KPDPphys;					/* phys addr of kernel level 3 */
-u_int64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
-u_int64_t 		 KPML5phys;					/* phys addr of kernel level 5, if supported */
+static uint64_t  KPTphys;					/* phys addr of kernel level 1 */
+static uint64_t  KPDphys;					/* phys addr of kernel level 2 */
+static uint64_t  KPDPphys;					/* phys addr of kernel level 3 */
+uint64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
+uint64_t 		 KPML5phys;					/* phys addr of kernel level 5, if supported */
 
 /* linked list of all non-kernel pmaps */
 struct pmap	kernel_pmap_store;
@@ -681,14 +680,16 @@ pmap_pinit_pml5(pml5)
 	pml5_entry_t *pml5;
 {
 	int i;
+
 	pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL5_MAX_ENTRIES * sizeof(pml5_entry_t)));
 
 	/*
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
 	 * entering all existing kernel mappings into level 5 table.
 	 */
-	//l4tol5(PL4_I(UPT_MAX_ADDRESS))
-	pml5[PL4_I(UPT_MAX_ADDRESS)] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys)) | PG_V | PG_RW | PG_A | PG_M | pg_g;
+	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
+		pml5[UPT_MAX_ADDRESS + i] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys + ptoa(i))) | PG_V | PG_RW | PG_A | PG_M | pg_g;
+	}
 
 	/* install self-referential address mapping entry(s) */
 	pml5[PDIR_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml5) | PG_RW | PG_V | PG_A | PG_M;
@@ -765,11 +766,11 @@ pmap_release(pmap)
 	kmem_free(kernel_map, (vm_offset_t)pmap->pm_pdir, NBPTD);
 
 	if (pmap_is_la57(pmap)) {
-		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml5[PL4_I(UPT_MAX_ADDRESS)], PDIR_SLOT_KERN * sizeof(pml5_entry_t));
+		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml5, NBPTD * sizeof(pml5_entry_t));
 	} else {
-		for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
-			kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4[PDIR_SLOT_KERNBASE + i], PDIR_SLOT_KERN * sizeof(pml4_entry_t));
-		}
+	//	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
+			kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4, NBPTD * sizeof(pml4_entry_t));
+	//	}
 	}
 }
 

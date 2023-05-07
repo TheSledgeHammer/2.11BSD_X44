@@ -81,6 +81,9 @@
 #define PAE_MODE 	1	/* pae disabled */
 #endif
 
+#define PTP_LEVELS				2					/* Number of page table levels */
+#define PTP_SHIFT				9					/* bytes to shift for each page table level */
+
 /*
  * Mask to get rid of the sign-extended part of addresses.
  */
@@ -223,12 +226,8 @@ typedef uint64_t 				ovl_entry_t;		/* OVL */
 
 #define PTP_MASK_INITIALIZER	{ L1_FRAME, L2_FRAME }
 #define PTP_SHIFT_INITIALIZER	{ L1_SHIFT, L2_SHIFT }
-#define NBPD_INITIALIZER		{ NBPD_L1, NBPD_L2 }
 #define PDES_INITIALIZER		{ L2_BASE }
 #define APDES_INITIALIZER		{ AL2_BASE }
-
-#define PTP_LEVELS			2
-#define PTP_SHIFT			9
 
 /*
  * One page directory, shared between
@@ -355,7 +354,6 @@ extern uint32_t 			ptp_masks[];
 extern uint32_t				ptp_shifts[];
 extern pd_entry_t 			*NPDE[];
 extern pd_entry_t 			*APDE[];
-extern long 				NBPD[];
 
 #ifdef PMAP_PAE_COMP
 #define pmap_pdirpa(pmap, index) 	((pmap)->pm_pdirpa[l2tol3(index)] + l2tol2(index) * sizeof(pd_entry_t))

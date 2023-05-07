@@ -119,7 +119,6 @@
 
 uint32_t 	ptp_masks[] = PTP_MASK_INITIALIZER;
 uint32_t 	ptp_shifts[] = PTP_SHIFT_INITIALIZER;
-long 		NBPD[] = NBPD_INITIALIZER;
 pd_entry_t 	*NPDE[] = PDES_INITIALIZER;
 pd_entry_t 	*APDE[] = APDES_INITIALIZER;
 
@@ -157,7 +156,7 @@ int elf32_nxstack;
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
-extern char 	_end[]; /* boot.ldscript */
+extern char 	_end[]; 			/* boot.ldscript */
 vm_offset_t 	kernel_vm_end;
 u_long 			physfree;			/* phys addr of next free page */
 u_long 			vm86phystk;			/* PA of vm86/bios stack */

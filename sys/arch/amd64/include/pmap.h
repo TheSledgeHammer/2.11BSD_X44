@@ -119,6 +119,9 @@
  * complexity to the calculations.
  */
 
+#define PTP_LEVELS		4						/* Number of page table levels */
+#define PTP_SHIFT		9						/* bytes to shift for each page table level */
+
 #define NPGPTD			1						/* Num of pages for page directory */
 
 #define L1_SHIFT		12
@@ -189,6 +192,7 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 
 #define VA_SIGN_POS(va)		((va) & ~VA_SIGN_MASK)
 
+#define MAX_SLOT_INDEX		(NPDEPTD)				/* 512 slots */
 #define L5_SLOT_INDEX		(NPML5EPG / 2)			/* Level 5: 256 */
 #define L4_SLOT_INDEX		(NPML4EPG / 2)			/* Level 4: 256 */
 
@@ -244,16 +248,12 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define PL3_I(VA)		(((VA_SIGN_POS(VA)) & L3_FRAME) >> L3_SHIFT)
 #define PL4_I(VA)		(((VA_SIGN_POS(VA)) & L4_FRAME) >> L4_SHIFT)
 #define PL5_I(VA)		(((VA_SIGN_POS(VA)) & L5_FRAME) >> L5_SHIFT)
-#define PL_I(va, lvl) 		(((VA_SIGN_POS(va)) & ptp_masks[(lvl)-1]) >> ptp_shifts[(lvl)-1])
+#define PL_I(va, lvl) 	(((VA_SIGN_POS(va)) & ptp_masks[(lvl)-1]) >> ptp_shifts[(lvl)-1])
 
 #define PTP_MASK_INITIALIZER	{ L1_FRAME, L2_FRAME, L3_FRAME, L4_FRAME }
 #define PTP_SHIFT_INITIALIZER	{ L1_SHIFT, L2_SHIFT, L3_SHIFT, L4_SHIFT }
-#define NBPD_INITIALIZER	{ NBPD_L1, NBPD_L2, NBPD_L3, NBPD_L4 }
-#define PDES_INITIALIZER	{ L2_BASE, L3_BASE, L4_BASE }
-#define APDES_INITIALIZER	{ AL2_BASE, AL3_BASE, AL4_BASE }
-
-#define PTP_LEVELS		4
-#define PTP_SHIFT		9
+#define PDES_INITIALIZER		{ L2_BASE, L3_BASE, L4_BASE }
+#define APDES_INITIALIZER		{ AL2_BASE, AL3_BASE, AL4_BASE }
 
 #ifndef LOCORE
 #include <sys/queue.h>
@@ -332,12 +332,12 @@ extern struct pmap  		kernel_pmap_store;
 extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */
 
 extern int 				nkpt;				/* Initial number of kernel page tables */
+extern uint64_t 		KPML4phys;			/* physical address of kernel level 4 */
+
 extern uint64_t 		ptp_masks[];
 extern uint64_t			ptp_shifts[];
 extern pd_entry_t 		*NPDE[];
 extern pd_entry_t 		*APDE[];
-extern long 			NBPD[];
-
 
 #define pmap_pdirpa_la57(pmap, index)   ((pmap)->pm_pdirpa[l4tol5(index)] + l4tol4(index) * sizeof(pd_entry_t))
 #define pmap_pdirpa_la48(pmap, index)   ((pmap)->pm_pdirpa + index * sizeof(pd_entry_t))
