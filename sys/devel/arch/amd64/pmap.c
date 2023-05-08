@@ -86,34 +86,97 @@
 #include <arch/amd64/include/pte.h>
 #include <devel/arch/amd64/pmap.h>
 
-static u_int64_t KPTphys;					/* phys addr of kernel level 1 */
-static u_int64_t KPDphys;					/* phys addr of kernel level 2 */
-static u_int64_t KPDPphys;					/* phys addr of kernel level 3 */
-u_int64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
-u_int64_t 		 KPML5phys;					/* phys addr of kernel level 5 */
+static uint64_t KPTphys;					/* phys addr of kernel level 1 */
+static uint64_t KPDphys;					/* phys addr of kernel level 2 */
+static uint64_t KPDPTphys;					/* phys addr of kernel level 3 */
+uint64_t 		KPML4phys;					/* phys addr of kernel level 4 */
+uint64_t 		KPML5phys;					/* phys addr of kernel level 5 */
 
-extern const char la57_trampoline[], la57_trampoline_gdt_desc[], la57_trampoline_gdt[], la57_trampoline_end[];
+pd_entry_t 		*IdlePTD;
+pdpt_entry_t 	*IdlePDPT;
+pml4_entry_t 	*IdlePML4;
+pml5_entry_t 	*IdlePML5;
+
+static void
+create_pagetables(firstaddr)
+	vm_offset_t *firstaddr;
+{
+	vm_offset_t pax;
+	long nkpt, nkpd, nkpdpe, pt_pages;
+	int i, j;
+
+	/* Allocate pages. */
+	KPML4phys = allocpages(firstaddr, 1);	/* recursive PML4 map */
+	KPDPTphys = allocpages(firstaddr, NKL4_MAX_ENTRIES);	/* kernel PDPT pages */
+
+
+	KPTphys = allocpages(firstaddr, nkpt);					/* KVA start */
+	KPDphys = allocpages(firstaddr, nkpdpe);				/* kernel PD pages */
+
+	/*
+	 * Connect the zero-filled PT pages to their PD entries.  This
+	 * implicitly maps the PT pages at their correct locations within
+	 * the PTmap.
+	 */
+	IdlePTD = (pd_entry_t *)KPDphys;
+	for (i = 0; i < nkpt; i++) {
+		IdlePTD[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
+	}
+
+	IdlePTD[0] = (pd_entry_t *)PG_V | PG_PS | pg_g | PG_M | PG_A | PG_RW | pg_nx;
+	for (i = 1, pax = kernphys; pax < KERNend; i++, pax += NBPDR) {
+		IdlePTD[i] =  pax | PG_V | PG_PS | pg_g | PG_M | PG_A | bootaddr_rwx(pax);
+	}
+
+	IdlePDPT = (pdpt_entry_t *)KPDPTphys;
+	for (i = 0; i < nkpdpe; i++) {
+		IdlePDPT[PDIR_SLOT_APTE + i] = (KPDphys + ptoa(i)) | PG_RW | PG_V;
+	}
+
+	/* And recursively map PML4 to itself in order to get PTmap */
+	IdlePML4 = (pml4_entry_t *)KPML4phys;
+	IdlePML4[PDIR_SLOT_KERN] = KPML4phys;
+	IdlePML4[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
+
+	/* Connect the KVA slots up to the PML4 */
+	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
+		IdlePML4[PDIR_SLOT_KERNBASE + i] = KPDPTphys + ptoa(i);
+		IdlePML4[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+	}
+
+	/* And recursively map PML5 to itself in order to get PTmap */
+	IdlePML5 = (pml5_entry_t *)KPML5phys;
+	IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
+	IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
+
+	/* Connect the KVA slots up to the PML5 */
+	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
+		IdlePML5[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
+		IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+	}
+}
 
 static void
 create_5_level_pagetable(firstaddr)
 	vm_offset_t *firstaddr;
 {
-	pml5_entry_t *p5_p;
 	int i;
 
 	KPML5phys = allocpages(firstaddr, 1);				/* recursive PML5 map */
 
 	/* And recursively map PML5 to itself in order to get PTmap */
-	p5_p = (pml5_entry_t *)KPML5phys;
-	p5_p[PDIR_SLOT_KERN] = KPML5phys;
-	p5_p[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
+	IdlePML5 = (pml5_entry_t *)KPML5phys;
+	IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
+	IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
 
 	/* Connect the KVA slots up to the PML5 */
 	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-		p5_p[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
-		p5_p[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+		IdlePML5[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
+		IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
 	}
 }
+
+extern const char la57_trampoline[], la57_trampoline_gdt_desc[], la57_trampoline_gdt[], la57_trampoline_end[];
 
 /*
  * FreeBSD Ported with a modifications

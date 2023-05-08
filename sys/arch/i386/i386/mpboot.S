@@ -77,7 +77,7 @@ ENTRY(MPentry)
 	cpuid							/* Retrieve features */
 	movl	%cr4,%eax
 	testl	$CPUID_PSE,%edx
-	jz 1f
+	jz 		1f
 	orl		$CR4_PSE,%eax			/* Enable PSE  */
 1:	testl	$CPUID_PGE,%edx
 	jz 		2f

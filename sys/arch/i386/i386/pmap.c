@@ -1078,7 +1078,7 @@ pmap_remove(pmap, sva, eva)
 	register pt_entry_t *pte;
 	register pv_entry_t pv, npv;
 	register int ix;
-	int *pde, s, bits;
+	int bits;
 
 	if (pmap == NULL) {
 		return;
@@ -1120,6 +1120,7 @@ pmap_remove(pmap, sva, eva)
 			bits |= *(int *)pte & (PG_U | PG_M);
 			*(int *)pte++ = 0;
 		} while (++ix != 1);
+
 		if (pmap == &curproc->p_vmspace->vm_pmap) {
 			pmap_activate(pmap, (struct pcb *)curproc->p_addr);
 		}
@@ -1326,12 +1327,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 	 * Note that we raise IPL while manipulating pv_table
 	 * since pmap_enter can be called at interrupt time.
 	 */
-	if (pa >= vm_first_phys && pa < vm_last_phys) {
-		register pv_entry_t pv;
-
-		pv = pa_to_pvh(pa);
-		pmap_hat_enter_pv(pmap, va, pa, PMAP_HAT_VM, vm_first_phys, vm_last_phys);
-	}
+	pmap_hat_enter_pv(pmap, va, pa, PMAP_HAT_VM, vm_first_phys, vm_last_phys);
 
 	/*
 	 * Assumption: if it is not part of our managed memory
