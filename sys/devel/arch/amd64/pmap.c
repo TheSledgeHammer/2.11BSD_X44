@@ -86,15 +86,7 @@
 #include <arch/amd64/include/pte.h>
 #include <devel/arch/amd64/pmap.h>
 
-static uint64_t KPTphys;					/* phys addr of kernel level 1 */
-static uint64_t KPDphys;					/* phys addr of kernel level 2 */
-static uint64_t KPDPTphys;					/* phys addr of kernel level 3 */
-uint64_t 		KPML4phys;					/* phys addr of kernel level 4 */
 uint64_t 		KPML5phys;					/* phys addr of kernel level 5 */
-
-pd_entry_t 		*IdlePTD;
-pdpt_entry_t 	*IdlePDPT;
-pml4_entry_t 	*IdlePML4;
 pml5_entry_t 	*IdlePML5;
 
 #define	CR4_LA57                0x00001000	/* Enable 5-level paging */
