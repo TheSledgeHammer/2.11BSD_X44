@@ -167,10 +167,6 @@ struct vm_xstats {
 extern
 struct txtlist  vm_text_list;
 
-/* vm_drum */
-//int		vm_vsxalloc(vm_text_t);
-//void	vm_vsxfree(vm_text_t, long);
-
 /* vm_mmap */
 void 	vm_expand(struct proc *, vm_size_t, int);
 

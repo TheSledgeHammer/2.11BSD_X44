@@ -240,23 +240,39 @@ vm_expand(p, newsize, type)
 			pseg->ps_saddr += n;
 			p->p_saddr = pseg->ps_saddr;
 			vm_psegment_free(pseg, coremap, n, a1, PSEG_STACK);
+			/*
+			 *  Since the base of stack is different,
+			 *  segmentation registers must be repointed.
+			 */
+			sureg();
 			return;
 		}
 	}
-	if (type == PSEG_STACK) {
-		a1 = pseg->ps_saddr;
-		i = newsize - n;
-		a2 = a1 + i;
+	if (setjmp(&u.u_ssave)) {
 		/*
-		 * i is the amount of growth.  Copy i clicks
-		 * at a time, from the top; do the remainder
-		 * (n % i) separately.
+		 * If we had to swap, the stack needs moving up.
 		 */
-		while (n >= i) {
-			n -= i;
-			bcopy(a1 + n, a2 + n, i);
+		if (type == PSEG_STACK) {
+			a1 = pseg->ps_saddr;
+			i = newsize - n;
+			a2 = a1 + i;
+			/*
+			 * i is the amount of growth.  Copy i clicks
+			 * at a time, from the top; do the remainder
+			 * (n % i) separately.
+			 */
+			while (n >= i) {
+				n -= i;
+				bcopy(a1 + n, a2 + n, i);
+			}
+			bcopy(a1, a2, n);
 		}
-		bcopy(a1, a2, n);
+		sureg();
+		return;
+	}
+	if (u.u_fpsaved == 0) {
+		//savfp(&u.u_fps);
+		u.u_fpsaved = 1;
 	}
 	a2 = (caddr_t)rmalloc(coremap, newsize);
 	if (a2 == NULL) {
@@ -265,6 +281,9 @@ vm_expand(p, newsize, type)
 		} else {
 			xswapout(p, X_FREECORE, X_OLDSIZE, n);
 		}
+		p->p_flag |= P_SSWAP;
+		swtch();
+		/* NOTREACHED */
 	}
 	if (type == PSEG_STACK) {
 		pseg->ps_saddr = a2;
@@ -279,6 +298,7 @@ vm_expand(p, newsize, type)
 	}
 	bcopy(a1, a2, n);
 	rmfree(coremap, n, (long)a1);
+	sureg();
 }
 
 /*

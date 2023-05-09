@@ -257,7 +257,7 @@ again:
 	LIST_INIT(&rpp->p_children);
 
 	if (setjmp(&u.u_ssave)) {
-		//sureg();
+		sureg();
 		return (1);
 	}
 
