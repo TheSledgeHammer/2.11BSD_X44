@@ -122,7 +122,8 @@
 #define PTP_LEVELS		4						/* Number of page table levels */
 #define PTP_SHIFT		9						/* bytes to shift for each page table level */
 
-#define NPGPTD			1						/* Num of pages for page directory */
+#define NKPT			240						/* Enough for 16GB (2MB page tables) */
+#define NKPDPE			1						/* number of kernel PDP slots */
 
 #define L1_SHIFT		12
 #define	L2_SHIFT		21
@@ -331,7 +332,6 @@ extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
 extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */
 
-extern int 				nkpt;				/* Initial number of kernel page tables */
 extern uint64_t 		KPML4phys;			/* physical address of kernel level 4 */
 
 extern uint64_t 		ptp_masks[];

@@ -82,8 +82,6 @@
 #define	_ALIGN(p)				(((unsigned long)(p) + _ALIGNBYTES) &~ _ALIGNBYTES)
 #define	_ALIGNED_POINTER(p,t)	((((unsigned long)(p)) & (__alignof(t) - 1)) == 0)
 
-
-
 /* segments */
 #define	NBSEG			4194304					/* bytes/segment (SEGMENT SIZE) */
 

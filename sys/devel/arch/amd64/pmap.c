@@ -97,64 +97,11 @@ pdpt_entry_t 	*IdlePDPT;
 pml4_entry_t 	*IdlePML4;
 pml5_entry_t 	*IdlePML5;
 
-static void
-create_pagetables(firstaddr)
-	vm_offset_t *firstaddr;
-{
-	vm_offset_t pax;
-	long nkpt, nkpd, nkpdpe, pt_pages;
-	int i, j;
-
-	/* Allocate pages. */
-	KPML4phys = allocpages(firstaddr, 1);	/* recursive PML4 map */
-	KPDPTphys = allocpages(firstaddr, NKL4_MAX_ENTRIES);	/* kernel PDPT pages */
-
-
-	KPTphys = allocpages(firstaddr, nkpt);					/* KVA start */
-	KPDphys = allocpages(firstaddr, nkpdpe);				/* kernel PD pages */
-
-	/*
-	 * Connect the zero-filled PT pages to their PD entries.  This
-	 * implicitly maps the PT pages at their correct locations within
-	 * the PTmap.
-	 */
-	IdlePTD = (pd_entry_t *)KPDphys;
-	for (i = 0; i < nkpt; i++) {
-		IdlePTD[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
-	}
-
-	IdlePTD[0] = (pd_entry_t *)PG_V | PG_PS | pg_g | PG_M | PG_A | PG_RW | pg_nx;
-	for (i = 1, pax = kernphys; pax < KERNend; i++, pax += NBPDR) {
-		IdlePTD[i] =  pax | PG_V | PG_PS | pg_g | PG_M | PG_A | bootaddr_rwx(pax);
-	}
-
-	IdlePDPT = (pdpt_entry_t *)KPDPTphys;
-	for (i = 0; i < nkpdpe; i++) {
-		IdlePDPT[PDIR_SLOT_APTE + i] = (KPDphys + ptoa(i)) | PG_RW | PG_V;
-	}
-
-	/* And recursively map PML4 to itself in order to get PTmap */
-	IdlePML4 = (pml4_entry_t *)KPML4phys;
-	IdlePML4[PDIR_SLOT_KERN] = KPML4phys;
-	IdlePML4[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
-
-	/* Connect the KVA slots up to the PML4 */
-	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
-		IdlePML4[PDIR_SLOT_KERNBASE + i] = KPDPTphys + ptoa(i);
-		IdlePML4[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
-	}
-
-	/* And recursively map PML5 to itself in order to get PTmap */
-	IdlePML5 = (pml5_entry_t *)KPML5phys;
-	IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
-	IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
-
-	/* Connect the KVA slots up to the PML5 */
-	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-		IdlePML5[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
-		IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
-	}
-}
+#define	CR4_LA57                0x00001000	/* Enable 5-level paging */
+/*
+ * CPUID instruction 7 Structured Extended Features, leaf 0 ecx info
+ */
+#define	CPUID_STDEXT2_LA57		0x00010000
 
 static void
 create_5_level_pagetable(firstaddr)
@@ -162,7 +109,7 @@ create_5_level_pagetable(firstaddr)
 {
 	int i;
 
-	KPML5phys = allocpages(firstaddr, 1);				/* recursive PML5 map */
+	KPML5phys = allocpages(1, &physfree);			/* recursive PML5 map */
 
 	/* And recursively map PML5 to itself in order to get PTmap */
 	IdlePML5 = (pml5_entry_t *)KPML5phys;
