@@ -264,14 +264,12 @@ LIST_HEAD(pmap_list, pmap); 				/* struct pmap_head: head of a pmap list */
 struct pmap {
 	LIST_ENTRY(pmap) 		pm_list;		/* List of all pmaps */
 #ifdef OVERLAY
-	ovl_entry_t				*pm_ovltab;		/* KVA of Overlay */
+	ovl_entry_t				*pm_ovltab;		/* KVA of Overlay Table */
 #endif
 #ifdef PMAP_PAE_COMP
-	pt_entry_t				*pm_ptab;		/* KVA of page table */
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
 	pdpt_entry_t			*pm_pdpt;		/* KVA of page director pointer table */
 #else
-	pt_entry_t				*pm_ptab;		/* KVA of page table */
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
 #endif
 	vm_offset_t				pm_pdirpa;		/* PA of PD (read-only after create) */

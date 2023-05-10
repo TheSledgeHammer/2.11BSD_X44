@@ -77,14 +77,16 @@ int la57 = 0;
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
-#define pmap_ptab(m, v)         (&((m)->pm_ptab[((vm_offset_t)(v) >> PGSHIFT)]))
 #define pmap_pde(m, v, lvl)     (&((m)->pm_pdir[PL_I(v, lvl)]))
 
 #define	PAT_INDEX_SIZE	8
 static int 		pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
 vm_offset_t 	kernphys;					/* phys addr of kernel page tables */
-vm_offset_t 	KERNend;					/* and the end */
+
+vm_offset_t 	kernel_vm_end;
+vm_offset_t		physfree;					/* phys addr of next free page */
+vm_offset_t		KERNend;					/* and the end */
 
 vm_offset_t 	avail_start;				/* PA of first available physical page */
 vm_offset_t		avail_end;					/* PA of last available physical page */
@@ -379,21 +381,20 @@ create_pagetables(firstaddr)
 		IdlePML4[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
 	}
 
-    if (KPML5phys != NULL) {
+	if (KPML5phys != NULL) {
 
-    	IdlePML5 = (pml5_entry_t *)KPML5phys;
-    	if (IdlePML5 != NULL) {
-    		/* la57 enabled, recursively map PML5  */
-    		IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
-    		IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
+		IdlePML5 = (pml5_entry_t *)KPML5phys;
 
-    		/* Connect the KVA slots up to the PML5 */
-    		for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-    			IdlePML5[PDIR_SLOT_KERNBASE + i] = (IdlePML4 + ptoa(i));
-    			IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
-    		}
-    	}
-    }
+		/* la57 enabled, recursively map PML5  */
+		IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
+		IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
+
+		/* Connect the KVA slots up to the PML5 */
+		for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
+			IdlePML5[PDIR_SLOT_KERNBASE + i] = (IdlePML4 + ptoa(i));
+			IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+		}
+	}
 }
 
 /*
@@ -429,7 +430,9 @@ pmap_bootstrap(firstaddr)
 	uint64_t cr4;
 	int i;
 
-	res = atop(KERNend - (vm_offset_t)kernphys);
+	//res = atop(KERNend - (vm_offset_t)kernphys);
+	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
+
 	avail_start = *firstaddr;
 	virtual_avail = (vm_offset_t)firstaddr;
 
@@ -445,9 +448,8 @@ pmap_bootstrap(firstaddr)
 	amd64_protection_init();
 
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
-	kernel_pmap->pm_ptab = (pt_entry_t *)(KERNBASE + IdlePTD + NBPG);
 	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + IdlePML4);
-	kernel_pmap->pm_pdirpa = (vm_offset_t)KPTphys;
+	kernel_pmap->pm_pdirpa = (vm_offset_t)IdlePTD;
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
 	LIST_INIT(&pmap_header);
 	kernel_pmap->pm_count = 1;
@@ -625,7 +627,7 @@ pmap_create(size)
 		return (NULL);
 	}
 
-	pmap = (pmap_t) malloc(sizeof(*pmap), M_VMPMAP, M_WAITOK);
+	pmap = (pmap_t)malloc(sizeof(*pmap), M_VMPMAP, M_WAITOK);
 
 	bzero(pmap, sizeof(*pmap));
 	pmap_pinit(pmap);
@@ -769,9 +771,7 @@ pmap_release(pmap)
 	if (pmap_is_la57(pmap)) {
 		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml5, NBPTD * sizeof(pml5_entry_t));
 	} else {
-	//	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
-			kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4, NBPTD * sizeof(pml4_entry_t));
-	//	}
+		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4, NBPTD * sizeof(pml4_entry_t));
 	}
 }
 
@@ -886,6 +886,21 @@ pmap_valid_entry(pmap, pdir, va)
 	return (NULL);
 }
 
+static pd_entry_t *
+pmap_table(pmap, va, lvl)
+	register pmap_t pmap;
+	vm_offset_t va;
+	int lvl;
+{
+	pd_entry_t *ptab;
+
+	ptab = pmap_pde(pmap, va, lvl);
+	if (pmap_valid_entry(pmap, ptab, va)) {
+		return (ptab);
+	}
+	return (NULL);
+}
+
 /*
  *	Routine:	pmap_pte
  *	Function:
@@ -900,8 +915,8 @@ pmap_pte(pmap, va)
 {
 	pt_entry_t *pte;
 
-	pte = (pt_entry_t *)pmap_pde(pmap, va, 1);
-	if (pmap_valid_entry(pmap, (pt_entry_t *)pte, va)) {
+	pte = (pt_entry_t *)pmap_table(pmap, va, 1);
+	if (pte != NULL) {
 		return (pte);
 	}
 	return (NULL);

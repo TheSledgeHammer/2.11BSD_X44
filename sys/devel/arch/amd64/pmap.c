@@ -84,6 +84,8 @@
  */
 
 #include <arch/amd64/include/pte.h>
+
+#include <devel/arch/amd64/vmparam.h>
 #include <devel/arch/amd64/pmap.h>
 
 uint64_t 		KPML5phys;					/* phys addr of kernel level 5 */
@@ -204,4 +206,118 @@ pmap_bootstrap_la57(firstaddr)
 	v_pml5[PDIR_SLOT_KERN] = KPML5phys | PG_RW | PG_V | pg_nx;
 	kernel_pmap->pm_pml4 = (pml4_entry_t *)v_pml4;
 	kernel_pmap->pm_pml5 = (pml5_entry_t *)v_pml5;
+}
+
+
+/* Direct Map */
+
+static int ndmpdp;
+static vm_offset_t dmaplimit;
+
+static uint64_t	DMPDphys;	/* phys addr of direct mapped level 2 */
+static uint64_t	DMPDPTphys;	/* phys addr of direct mapped level 3 */
+
+void
+pmap_direct_map(void)
+{
+	int i;
+
+	ndmpdp = (ptoa(Maxmem) + NBPD_L3 - 1) >> L2_SHIFT;
+	if (ndmpdp < 4) {		/* Minimum 4GB of dirmap */
+		ndmpdp = 4;
+	}
+
+	DMPDPTphys = allocpages(L4_DMAP_SLOTS, &physfree);
+	DMPDphys = allocpages(ndmpdp, &physfree);
+	dmaplimit = (vm_offset_t)ndmpdp << L3_SHIFT;
+
+	/* Now set up the direct map space using 2MB pages */
+	for (i = 0; i < NPDEPG * ndmpdp; i++) {
+		((pd_entry_t *)DMPDphys)[i] = (vm_offset_t)i << L3_SHIFT;
+		((pd_entry_t *)DMPDphys)[i] |= PG_RW | PG_V | PG_PS | PG_G;
+	}
+
+	/* And the direct map space's PDP */
+	for (i = 0; i < ndmpdp; i++) {
+		((pdpt_entry_t *)DMPDPTphys)[i] = DMPDphys + (i << L1_SHIFT);
+		((pdpt_entry_t *)DMPDPTphys)[i] |= PG_RW | PG_V | PG_U;
+	}
+
+	/* Connect the Direct Map slot up to the PML4 */
+	((pdpt_entry_t *)KPML4phys)[PDIR_SLOT_DIRECT] = DMPDPTphys;
+	((pdpt_entry_t *)KPML4phys)[PDIR_SLOT_DIRECT] |= PG_RW | PG_V | PG_U;
+}
+
+/* FreeBSD / DragonFlyBSD compatibility */
+
+pml4_entry_t *
+pmap_pml4e(pmap_t pmap, vm_offset_t va)
+{
+	pml4_entry_t *pml4;
+
+	pml4 = pmap_table(pmap, va, 4);
+	return (&pml4[PL4_E(va)]);
+}
+
+pdpt_entry_t *
+pmap_pdpt(pmap_t pmap, vm_offset_t va)
+{
+	pml4_entry_t *pml4e;
+	pdpt_entry_t *pdpt;
+
+	pml4e = pmap_pml4e(pmap, va);
+	if (pml4e == NULL) {
+		return (NULL);
+	}
+	pdpt = (pdpt_entry_t *)PHYS_TO_DMAP(*pml4e & PG_FRAME);
+	return (&pdpt[PL3_E(va)]);
+}
+
+pd_entry_t *
+pmap_pde(pmap_t pmap, vm_offset_t va)
+{
+	pdpt_entry_t *pdpt;
+	pd_entry_t *pde;
+
+	pdpt = pmap_pdpt(pmap, va);
+	if (pdpt == NULL) {
+		return (NULL);
+	}
+	pde = (pd_entry_t *)PHYS_TO_DMAP(*pdpt & PG_FRAME);
+	return (&pde[PL2_E(va)]);
+}
+
+pt_entry_t *
+pmap_pte(pmap_t pmap, vm_offset_t va)
+{
+	pd_entry_t *pde;
+	pt_entry_t *pte;
+
+	pde = pmap_pde(pmap, va);
+	if (pde == NULL) {
+		return (NULL);
+	}
+	if ((*pde & PG_PS) != 0) {
+		return ((pt_entry_t *)pde);
+	}
+	pte = (pt_entry_t *)PHYS_TO_DMAP(*pde & PG_FRAME);
+	return (&pte[PL1_E(va)]);
+}
+
+pt_entry_t *
+pmap_pte_pde(pmap_t pmap, vm_offset_t va, pd_entry_t *ptepde)
+{
+	pd_entry_t *pde;
+	pt_entry_t *pte;
+
+	pde = pmap_pde(pmap, va);
+	if (pde == NULL) {
+		return NULL;
+	}
+	*ptepde = *pde;
+	if ((*pde & PG_PS) != 0) {	/* compat with i386 pmap_pte() */
+		return ((pt_entry_t *)pde);
+	}
+	pte = (pt_entry_t *)PHYS_TO_DMAP(*pde & PG_FRAME);
+	return (&pte[PL1_E(va)]);
 }

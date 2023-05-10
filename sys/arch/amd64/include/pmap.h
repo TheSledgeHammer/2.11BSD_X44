@@ -248,7 +248,6 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define PL2_I(VA)		(((VA_SIGN_POS(VA)) & L2_FRAME) >> L2_SHIFT)
 #define PL3_I(VA)		(((VA_SIGN_POS(VA)) & L3_FRAME) >> L3_SHIFT)
 #define PL4_I(VA)		(((VA_SIGN_POS(VA)) & L4_FRAME) >> L4_SHIFT)
-#define PL5_I(VA)		(((VA_SIGN_POS(VA)) & L5_FRAME) >> L5_SHIFT)
 #define PL_I(va, lvl) 	(((VA_SIGN_POS(va)) & ptp_masks[(lvl)-1]) >> ptp_shifts[(lvl)-1])
 
 #define PTP_MASK_INITIALIZER	{ L1_FRAME, L2_FRAME, L3_FRAME, L4_FRAME }
@@ -274,8 +273,6 @@ struct pmap {
 	LIST_ENTRY(pmap)		pm_list;		/* List of all pmaps */
 
 	pd_entry_t 				*pm_pdir;		/* KVA of page directory */
-	pt_entry_t				*pm_ptab;		/* KVA of page table */
-
 	pml4_entry_t   			*pm_pml4;       /* KVA of page map level 4 (top level) */
 	pml5_entry_t   			*pm_pml5;       /* KVA of page map level 5 (top level if la57 enabled) */
 
@@ -326,18 +323,28 @@ typedef struct pv_entry		*pv_entry_t;
 
 #ifdef _KERNEL
 
-extern u_long 			KERNend;
+extern pt_entry_t 			*KPTmap;
+extern pd_entry_t 			*IdlePTD;
+extern ptpd_entry_t 		*IdlePTPD;
+extern pml4_entry_t 		*IdlePML4;
+extern pml5_entry_t 		*IdlePML5;
 
 extern struct pmap  		kernel_pmap_store;
 #define kernel_pmap 		(&kernel_pmap_store)
-extern bool_t 			pmap_initialized;		/* Has pmap_init completed? */
+extern bool_t 				pmap_initialized;		/* Has pmap_init completed? */
 
-extern uint64_t 		KPML4phys;			/* physical address of kernel level 4 */
+extern vm_offset_t 			physfree;				/* phys addr of next free page */
+extern vm_offset_t 			KERNend;
+extern vm_offset_t 			kernel_vm_end;
 
-extern uint64_t 		ptp_masks[];
-extern uint64_t			ptp_shifts[];
-extern pd_entry_t 		*NPDE[];
-extern pd_entry_t 		*APDE[];
+//extern uint64_t 			KPTphys;
+extern uint64_t 			KPML4phys;
+extern uint64_t 			KPML5phys;
+
+extern uint64_t 			ptp_masks[];
+extern uint64_t				ptp_shifts[];
+extern pd_entry_t 			*NPDE[];
+extern pd_entry_t 			*APDE[];
 
 #define pmap_pdirpa_la57(pmap, index)   ((pmap)->pm_pdirpa[l4tol5(index)] + l4tol4(index) * sizeof(pd_entry_t))
 #define pmap_pdirpa_la48(pmap, index)   ((pmap)->pm_pdirpa + index * sizeof(pd_entry_t))
