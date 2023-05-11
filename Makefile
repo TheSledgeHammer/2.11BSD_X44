@@ -137,14 +137,11 @@ _SRC_TOP_OBJ_=
 # BUILD_${dir}=no, or that have no ${dir}/Makefile.
 #
 _SUBDIR=	tools .WAIT lib
-.if ${MKLLVM} != "no"
-_SUBDIR+=	contrib/compiler_rt
-.endif
 _SUBDIR+=	include contrib bin games 
 _SUBDIR+=	libexec sbin usr.bin usr.lib
-.if ${MKBOOT} != "no"
+#.if ${MKBOOT} != "no"
 _SUBDIR+=	stand
-.endif
+#.endif
 _SUBDIR+=	usr.sbin share sys etc tests compat
 _SUBDIR+=	.WAIT rescue .WAIT distrib regress
 
@@ -170,7 +167,7 @@ afterinstall: .PHONY .MAKE
 	${MAKEDIRTARGET} share/man makedb
 .endif
 .if (${MKUNPRIVED} != "no" && ${MKINFO} != "no")
-	${MAKEDIRTARGET} contrib/external/gnu/texinfo/bin/install-info infodir-meta
+	${MAKEDIRTARGET} contrib/gnu/texinfo/bin/install-info infodir-meta
 .endif
 .if !defined(NOPOSTINSTALL)
 	${MAKEDIRTARGET} . postinstall-check
