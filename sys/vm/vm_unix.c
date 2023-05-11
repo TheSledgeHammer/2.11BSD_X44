@@ -61,6 +61,8 @@
 #include <vm/include/vm_text.h>
 #include <vm/include/vm_psegment.h>
 
+#include <machine/setjmp.h>
+
 static int 	estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
 
 struct obreak_args {
