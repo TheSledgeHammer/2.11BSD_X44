@@ -1,12 +1,6 @@
 /*-
- * SPDX-License-Identifier: BSD-4-Clause
- *
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
- * Copyright (c) 1994 John S. Dyson
- * All rights reserved.
- * Copyright (c) 2003 Peter Wemm
- * All rights reserved.
+ * Copyright (c) 1982, 1987, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
@@ -39,28 +33,40 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)vmparam.h	5.9 (Berkeley) 5/12/91
- * $FreeBSD$
+ *	@(#)machdep.c	8.3 (Berkeley) 5/9/95
  */
 
-#ifndef _AMD64_VMPARAM_H_
-#define _AMD64_VMPARAM_H_
+void
+startup(void)
+{
 
-#define	USRSTACK        			(VM_MAXUSER_ADDRESS - PGSIZE)
+}
 
-#define	DMAP_MIN_ADDRESS			K4VADDR(PDIR_SLOT_DIRECT, 0, 0, 0)
-#define	DMAP_MAX_ADDRESS			K4VADDR(PDIR_SLOT_DIRECT+1, 0, 0, 0)
+void
+proc0pcb_setup(p)
+	struct proc *p;
+{
+	int sigcode, szsigcode;
 
-#define	PHYS_TO_DMAP(x)				((x) | DMAP_MIN_ADDRESS)
-#define	DMAP_TO_PHYS(x)				((x) & ~DMAP_MIN_ADDRESS)
+	bcopy(&sigcode, p->p_addr->u_pcb.pcb_sigc, szsigcode);
+	p->p_addr->u_pcb.pcb_flags = 0;
+	p->p_addr->u_pcb.pcb_ptd = (int)IdlePML4;
+}
 
-#define	VM_MAXUSER_ADDRESS_LA57		(UVADDR(PDIR_SLOT_PTE, 0, 0, 0, 0))
-#define	VM_MAXUSER_ADDRESS_LA48		(UVADDR(0, PDIR_SLOT_PTE, 0, 0, 0))
-#define	VM_MAXUSER_ADDRESS			((vm_offset_t)(VM_MAXUSER_ADDRESS_LA48))
-#define UPT_MIN_ADDRESS 			(KV4ADDR(PDIR_SLOT_PTE, PGSIZE * 3, 0, 0, 0))
-#define UPT_MAX_ADDRESS				(KV4ADDR(PDIR_SLOT_PTE, PDIR_SLOT_PTE, PDIR_SLOT_PTE, PDIR_SLOT_PTE))
-#define VM_MAX_ADDRESS          	((vm_offset_t)(UPT_MAX_ADDRESS))
-#define	VM_MIN_KERNEL_ADDRESS       (KV4ADDR(PDIR_SLOT_KERN, 0, 0, 0))
-#define	VM_MAX_KERNEL_ADDRESS       (KV4ADDR(PDIR_SLOT_APTE, PDIR_SLOT_APTE, PDIR_SLOT_APTE, PDIR_SLOT_APTE))
+void
+initamd64(first)
+	uint64_t first;
+{
+	vm_set_segment_size();
+	vm_set_page_size();
 
-#endif /* _AMD64_VMPARAM_H_ */
+	/* call pmap initialization to make new kernel address space */
+	pmap_bootstrap(first);
+
+	/* transfer to user mode */
+	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
+	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
+
+	/* setup proc0's pcb */
+	proc0pcb_setup(&proc0);
+}

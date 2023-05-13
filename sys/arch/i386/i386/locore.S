@@ -364,7 +364,7 @@ ENTRY(identify_cpu)
 		popfl
 
 		testl	%eax,%eax
-		jnz	try486
+		jnz		try486
 
 		/* NexGen CPU does not have aligment check flag. */
 		pushfl
@@ -402,7 +402,7 @@ try486:	/* Try to toggle identification flag; does not exist on early 486s. */
 		popfl
 
 		testl	%eax,%eax
-		jnz	trycpuid
+		jnz		trycpuid
 		movl	$CPU_486,_C_LABEL(cpu)
 
 		/*

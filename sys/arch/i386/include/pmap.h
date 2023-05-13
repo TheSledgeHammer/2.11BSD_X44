@@ -108,7 +108,6 @@
 #define	KERNPTDI				2
 
 #define NPGPTD					1
-#define NPGPTD_SHIFT			10
 
 #define	PDRSHIFT				PD_SHIFT
 #define NBPDR					(1 << PD_SHIFT)		/* bytes/page dir */
@@ -152,7 +151,6 @@ typedef uint32_t 				ovl_entry_t;		/* OVL */
 #define	KERNPTDI				4					/* start of kernel text pde */
 
 #define NPGPTD					4					/* Num of pages for page directory PDP_SIZE */
-#define NPGPTD_SHIFT			9
 
 #define	PDRSHIFT				PD_SHIFT
 #define NBPDR					(1 << PD_SHIFT)		/* bytes/page dir */

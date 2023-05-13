@@ -88,42 +88,112 @@
 #include <devel/arch/amd64/vmparam.h>
 #include <devel/arch/amd64/pmap.h>
 
-uint64_t 		KPML5phys;					/* phys addr of kernel level 5 */
-pml5_entry_t 	*IdlePML5;
-
 #define	CR4_LA57                0x00001000	/* Enable 5-level paging */
 /*
  * CPUID instruction 7 Structured Extended Features, leaf 0 ecx info
  */
 #define	CPUID_STDEXT2_LA57		0x00010000
 
+uint64_t 		KPML5phys;					/* phys addr of kernel level 5 */
+pml5_entry_t 	*IdlePML5;
+
+extern const char la57_trampoline[], la57_trampoline_gdt_desc[], la57_trampoline_gdt[], la57_trampoline_end[];
+
+static __inline bool_t
+pmap_emulate_ad_bits(pmap_t pmap)
+{
+	return ((pmap->pm_flags & PMAP_EMULATE_AD_BITS) != 0);
+}
+
+static __inline pt_entry_t
+pmap_valid_bit(pmap_t pmap)
+{
+	pt_entry_t mask;
+
+	switch (pmap->pm_type) {
+	case PT_X86:
+	case PT_RVI:
+		mask = PG_V;
+		break;
+	case PT_EPT:
+		if (pmap_emulate_ad_bits(pmap))
+			mask = EPT_PG_EMUL_V;
+		else
+			mask = EPT_PG_READ;
+		break;
+	default:
+		panic("pmap_valid_bit: invalid pm_type %d", pmap->pm_type);
+	}
+
+	return (mask);
+}
+
+static bool_t
+pmap_is_la57(pmap)
+	pmap_t pmap;
+{
+	if (pmap->pm_type == PT_X86) {
+		return (la57);
+	}
+	return (FALSE);		/* XXXKIB handle EPT */
+}
+
 static void
-create_5_level_pagetable(firstaddr)
+pmap_cold_la57(physfree)
+	vm_offset_t		physfree;
+{
+	uint64_t cr4;
+
+    /* Check if CR4_LA57 is present */
+	cr4 = rcr4();
+	cr4 |= CR4_LA57;
+	if (cr4 == 0) {
+		KPML5phys = NULL;
+		return;
+	}
+
+	/* Allocated Page Table Level 5 */
+	KPML5phys = allocpages(1, &physfree);
+}
+
+static void
+create_pagetables_la57(firstaddr)
 	vm_offset_t *firstaddr;
 {
 	int i;
 
-	KPML5phys = allocpages(1, &physfree);			/* recursive PML5 map */
+	if (KPML5phys != NULL) {
+		/* And recursively map PML5 to itself in order to get PTmap */
+		IdlePML5 = (pml5_entry_t *)KPML5phys;
+		IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
+		IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
 
-	/* And recursively map PML5 to itself in order to get PTmap */
-	IdlePML5 = (pml5_entry_t *)KPML5phys;
-	IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
-	IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
-
-	/* Connect the KVA slots up to the PML5 */
-	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-		IdlePML5[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
-		IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+		/* Connect the KVA slots up to the PML5 */
+		for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
+			IdlePML5[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
+			IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+		}
 	}
 }
 
-extern const char la57_trampoline[], la57_trampoline_gdt_desc[], la57_trampoline_gdt[], la57_trampoline_end[];
+static void
+pmap_enable_la57(cr4)
+	uint64_t cr4;
+{
+	cr4 = rcr4();
+	cr4 |= CR4_LA57;
+	if (cr4 != 0) {
+		load_cr4(cr4);
+		load_cr3(IdlePML5);
+	}
+}
 
 /*
  * FreeBSD Ported with a modifications
  */
 static void
-pmap_bootstrap_la57(firstaddr)
+pmap_bootstrap_la57(pmap, firstaddr)
+	pmap_t pmap;
 	vm_offset_t firstaddr;
 {
 	pml5_entry_t *v_pml5;
@@ -145,9 +215,9 @@ pmap_bootstrap_la57(firstaddr)
 
 	v_code = kmem_alloc(kernel_map, (la57_trampoline_end - la57_trampoline));
 
-	create_5_level_pagetable(firstaddr);
+	create_pagetables_la57(firstaddr);
 
-	v_pml5 = (pml5_entry_t *)(KERNBASE + KPML5phys);
+	pmap->pm_pml5 = (pml5_entry_t *)(KERNBASE + KPML5phys);
 
 	/*
 	 * Map m_code 1:1, it appears below 4G in KVA due to physical
@@ -159,21 +229,21 @@ pmap_bootstrap_la57(firstaddr)
 	v_pd = pmap_extract(kernel_pmap, (vm_offset_t)KPDphys);
 	v_pt = pmap_extract(kernel_pmap, (vm_offset_t)KPTphys);
 
-	v_pml4[PL4_E(m_code)] = v_pdp | PG_V | PG_RW | PG_A | PG_M;
-	v_pdp[PL3_E(m_code)] = v_pd | PG_V | PG_RW | PG_A | PG_M;
-	v_pd[PL2_E(m_code)] = v_pt | PG_V | PG_RW | PG_A | PG_M;
-	v_pt[PL1_E(m_code)] = m_code | PG_V | PG_RW | PG_A | PG_M;
+	v_pml4[PL4_E(v_code)] = v_pdp | PG_V | PG_RW | PG_A | PG_M;
+	v_pdp[PL3_E(v_code)] = v_pd | PG_V | PG_RW | PG_A | PG_M;
+	v_pd[PL2_E(v_code)] = v_pt | PG_V | PG_RW | PG_A | PG_M;
+	v_pt[PL1_E(v_code)] = v_code | PG_V | PG_RW | PG_A | PG_M;
 
 	/*
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
 	 * entering all existing kernel mappings into level 5 table.
 	 */
-	v_pml5[PL5_E(UPT_MAX_ADDRESS)] = KPML4phys | PG_V | PG_RW | PG_A | PG_M | pg_g;
+	v_pml5[l4etol5e(UPT_MAX_ADDRESS)] = KPML4phys | PG_V | PG_RW | PG_A | PG_M | pg_g;
 
 	/*
 	 * Add pml5 entry for 1:1 trampoline mapping after LA57 is turned on.
 	 */
-	v_pml5[PL5_E(m_code)] = v_pml4 | PG_V | PG_RW | PG_A | PG_M;
+	v_pml5[l4etol5e(m_code)] = v_pml4 | PG_V | PG_RW | PG_A | PG_M;
 	v_pml4[PL4_E(m_code)] = v_pdp | PG_V | PG_RW | PG_A | PG_M;
 
 	/*
@@ -191,7 +261,6 @@ pmap_bootstrap_la57(firstaddr)
 	invlpg((vm_offset_t)la57_tramp);
 	la57_tramp(KPML5phys);
 
-
 	/*
 	 * Now unmap the trampoline, and free the pages.
 	 * Clear pml5 entry used for 1:1 trampoline mapping.
@@ -204,50 +273,91 @@ pmap_bootstrap_la57(firstaddr)
 	 * PDmap.
 	 */
 	v_pml5[PDIR_SLOT_KERN] = KPML5phys | PG_RW | PG_V | pg_nx;
-	kernel_pmap->pm_pml4 = (pml4_entry_t *)v_pml4;
-	kernel_pmap->pm_pml5 = (pml5_entry_t *)v_pml5;
+	pmap->pm_pml4 = (pml4_entry_t *)v_pml4;
+	pmap->pm_pml5 = (pml5_entry_t *)v_pml5;
 }
 
-
-/* Direct Map */
-
-static int ndmpdp;
-static vm_offset_t dmaplimit;
-
-static uint64_t	DMPDphys;	/* phys addr of direct mapped level 2 */
-static uint64_t	DMPDPTphys;	/* phys addr of direct mapped level 3 */
-
 void
-pmap_direct_map(void)
+pmap_pinit_pml5(pml5)
+	pml5_entry_t *pml5;
 {
 	int i;
 
-	ndmpdp = (ptoa(Maxmem) + NBPD_L3 - 1) >> L2_SHIFT;
-	if (ndmpdp < 4) {		/* Minimum 4GB of dirmap */
-		ndmpdp = 4;
+	pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL5_MAX_ENTRIES * sizeof(pml5_entry_t)));
+
+	/*
+	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
+	 * entering all existing kernel mappings into level 5 table.
+	 */
+	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
+		pml5[PDIR_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys + ptoa(i))) | PG_V | PG_RW | PG_A | PG_M | pg_g;
 	}
 
-	DMPDPTphys = allocpages(L4_DMAP_SLOTS, &physfree);
-	DMPDphys = allocpages(ndmpdp, &physfree);
-	dmaplimit = (vm_offset_t)ndmpdp << L3_SHIFT;
-
-	/* Now set up the direct map space using 2MB pages */
-	for (i = 0; i < NPDEPG * ndmpdp; i++) {
-		((pd_entry_t *)DMPDphys)[i] = (vm_offset_t)i << L3_SHIFT;
-		((pd_entry_t *)DMPDphys)[i] |= PG_RW | PG_V | PG_PS | PG_G;
-	}
-
-	/* And the direct map space's PDP */
-	for (i = 0; i < ndmpdp; i++) {
-		((pdpt_entry_t *)DMPDPTphys)[i] = DMPDphys + (i << L1_SHIFT);
-		((pdpt_entry_t *)DMPDPTphys)[i] |= PG_RW | PG_V | PG_U;
-	}
-
-	/* Connect the Direct Map slot up to the PML4 */
-	((pdpt_entry_t *)KPML4phys)[PDIR_SLOT_DIRECT] = DMPDPTphys;
-	((pdpt_entry_t *)KPML4phys)[PDIR_SLOT_DIRECT] |= PG_RW | PG_V | PG_U;
+	/* install self-referential address mapping entry(s) */
+	pml5[PDIR_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml5) | PG_RW | PG_V | PG_A | PG_M;
 }
 
+/*
+ * Initialize a preallocated and zeroed pmap structure,
+ * such as one in a vmspace structure.
+ */
+void
+pmap_pinit_type(pmap, pm_type)
+	pmap_t pmap;
+	enum pmap_type pm_type;
+{
+	pmap->pm_type = pm_type;
+
+	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
+
+	switch (pm_type) {
+	case PT_X86:
+		if (pmap_is_la57(pmap)) {
+			pmap_pinit_pml5(pmap->pm_pml5);
+		} else {
+			pmap_pinit_pml4(pmap->pm_pml4);
+		}
+		break;
+
+	case PT_EPT:
+	case PT_RVI:
+	}
+}
+
+void
+pmap_release(pmap)
+	register pmap_t pmap;
+{
+	int i;
+
+	kmem_free(kernel_map, (vm_offset_t)pmap->pm_pdir, NBPTD);
+
+	if (pmap_is_la57(pmap)) {
+		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml5, NBPTD * sizeof(pml5_entry_t));
+	} else {
+		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4, NBPTD * sizeof(pml4_entry_t));
+	}
+}
+
+void
+pmap_activate(pmap, pcbp)
+	register pmap_t pmap;
+	struct pcb *pcbp;
+{
+	if (pmap != NULL && pmap->pm_pdchanged) {
+		if (pmap_is_la57(pmap)) {
+			pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pml5); /* PML5?? */
+		} else {
+			pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pml4); /* PML4?? */
+		}
+		if (pmap == &curproc->p_vmspace->vm_pmap) {
+			lcr3(pcbp->pcb_cr3);
+		}
+		pmap->pm_pdchanged = FALSE;
+	}
+}
+
+/* Direct Map */
 /* FreeBSD / DragonFlyBSD compatibility */
 
 pml4_entry_t *
@@ -320,4 +430,29 @@ pmap_pte_pde(pmap_t pmap, vm_offset_t va, pd_entry_t *ptepde)
 	}
 	pte = (pt_entry_t *)PHYS_TO_DMAP(*pde & PG_FRAME);
 	return (&pte[PL1_E(va)]);
+}
+
+pml4_entry_t *
+pmap_pml5e_to_pml4e(pml5_entry_t *pml5e, vm_offset_t va)
+{
+	pml4_entry_t *pml4e;
+
+	/* XXX MPASS(pmap_is_la57(pmap); */
+	pml4e = (pml4_entry_t *)PHYS_TO_DMAP(*pml5e & PG_FRAME);
+	return (&pml4e[PL4_E(va)]);
+}
+
+pml5_entry_t *
+pmap_pml4e_to_pml5e(pmap_t pmap, vm_offset_t va)
+{
+	pml4_entry_t *pml4;
+	pml5_entry_t *pml5;
+
+	pml4 = pmap_table(pmap, va, 4);
+	if (pmap_is_la57(pmap)) {
+		pml5 = &pml4[l4etol5e(PL4_E(va))];
+		PG_V = pmap_valid_bit(pmap);
+	}
+
+	return (pml5);
 }

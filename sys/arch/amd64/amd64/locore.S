@@ -63,13 +63,13 @@ ENTRY(start)
 		movq	$bootstack,%rsp
 
 		/* Grab metadata pointers from the loader. */
-		movl	4(%rbp),%edi		/* modulep (arg 1) */
-		movl	8(%rbp),%esi		/* kernend (arg 2) */
+		movl	4(%rbp),%edi			/* modulep (arg 1) */
+		movl	8(%rbp),%esi			/* kernend (arg 2) */
 		xorq	%rbp, %rbp
 
-		call	hammer_time			/* set up cpu for unix operation */
-		movq	%rax,%rsp			/* set up kstack for mi_startup() */
-		call	mi_startup			/* autoconfiguration, mountroot etc */
+		call	_C_LABEL(initamd64)		/* set up cpu for unix operation */
+		movq	%rax,%rsp				/* set up kstack for mi_startup() */
+		call	_C_LABEL(main)			/* autoconfiguration, mountroot etc */
 0:		hlt
 		jmp		0b
 

@@ -74,6 +74,9 @@ static int pg_ps_enabled = 1;
 static int pmap_nx_enable = -1;		/* -1 = auto */
 int la57 = 0;
 
+static int ndmpdp;
+static vm_offset_t dmaplimit;
+
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
@@ -103,6 +106,10 @@ static uint64_t  KPDPTphys;					/* phys addr of kernel level 3 */
 uint64_t 		 KPML4phys;					/* phys addr of kernel level 4 */
 uint64_t 		 KPML5phys;					/* phys addr of kernel level 5, if supported */
 
+static uint64_t	 DMPDphys;					/* phys addr of direct mapped level 2 */
+static uint64_t	 DMPDPTphys;				/* phys addr of direct mapped level 3 */
+
+/* Idle Maps */
 pt_entry_t 		*KPTmap;					/* address of kernel page tables */
 pd_entry_t 		*IdlePTD;
 pdpt_entry_t 	*IdlePDPT;
@@ -114,6 +121,7 @@ struct pmap	kernel_pmap_store;
 static struct pmap_list pmap_header;
 
 static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
+static pd_entry_t 	*pmap_table(pmap_t, vm_offset_t, int);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
 pt_entry_t *
@@ -143,53 +151,16 @@ pmap_avtopte(va)
 	return (APTE_BASE + PL1_I(va));
 }
 
-static __inline bool_t
-pmap_emulate_ad_bits(pmap_t pmap)
-{
-	return ((pmap->pm_flags & PMAP_EMULATE_AD_BITS) != 0);
-}
-
-static __inline pt_entry_t
-pmap_valid_bit(pmap_t pmap)
-{
-	pt_entry_t mask;
-
-	switch (pmap->pm_type) {
-	case PT_X86:
-	case PT_RVI:
-		mask = PG_V;
-		break;
-	case PT_EPT:
-		if (pmap_emulate_ad_bits(pmap))
-			mask = EPT_PG_EMUL_V;
-		else
-			mask = EPT_PG_READ;
-		break;
-	default:
-		panic("pmap_valid_bit: invalid pm_type %d", pmap->pm_type);
-	}
-
-	return (mask);
-}
-
-static bool_t
-pmap_is_la57(pmap)
-	pmap_t pmap;
-{
-	if (pmap->pm_type == PT_X86) {
-		return (la57);
-	}
-	return (FALSE);		/* XXXKIB handle EPT */
-}
-
 vm_offset_t
 pmap_pdirpa(pmap, index)
 	register pmap_t pmap;
 	unsigned long index;
 {
+	/*
 	if (pmap_is_la57(pmap)) {
 		return (pmap_pdirpa_la57(pmap, index));
 	}
+	*/
 	return (pmap_pdirpa_la48(pmap, index));
 }
 
@@ -326,13 +297,6 @@ pmap_cold(void)
     KPDphys = allocpages(NKPDPE, &physfree);
     KPDPTphys = allocpages(1, &physfree);
     KPML4phys = allocpages(1, &physfree);
-
-    /* Check if CR4_LA57 is present */
-    if ((cpu_stdext_feature2 & CPUID_STDEXT2_LA57) != 0) {
-    	if (la57) {
-    		KPML5phys = allocpages(1, &physfree);
-    	}
-    }
 }
 
 void
@@ -340,6 +304,15 @@ create_pagetables(firstaddr)
 	vm_offset_t firstaddr;
 {
 	int i;
+
+	ndmpdp = (ptoa(Maxmem) + NBPD_L3 - 1) >> L2_SHIFT;
+	if (ndmpdp < 4) {		/* Minimum 4GB of dirmap */
+		ndmpdp = 4;
+	}
+
+	DMPDPTphys = allocpages(L4_DMAP_SLOTS, &physfree);
+	DMPDphys = allocpages(ndmpdp, &physfree);
+	dmaplimit = (vm_offset_t)ndmpdp << L3_SHIFT;
 
     KPTmap = (pt_entry_t *)KPTphys;
     IdlePTD = (pd_entry_t *)KPDphys;
@@ -366,34 +339,36 @@ create_pagetables(firstaddr)
         IdlePTD[i] |= PG_RW | PG_V | PG_PS | PG_G;
     }
 
+    /* And connect up the PD to the PDPT */
     for (i = 0; i < NKPDPE; i++) {
-        IdlePDPT[i + L4_SLOT_APTE] = (IdlePTD + ptoa(i));
-        IdlePDPT[i + L4_SLOT_APTE] |= PG_RW | PG_V | PG_U;
+        IdlePDPT[i + PDIR_SLOT_APTE] = (IdlePTD + ptoa(i));
+        IdlePDPT[i + PDIR_SLOT_APTE] |= PG_RW | PG_V | PG_U;
     }
+
+	/* Now set up the direct map space using 2MB pages */
+	for (i = 0; i < NPDEPG * ndmpdp; i++) {
+		DMPDphys[i] = (vm_offset_t)i << L3_SHIFT;
+		DMPDphys[i] |= PG_RW | PG_V | PG_PS | PG_G;
+	}
+
+	/* And the direct map space's PDP */
+	for (i = 0; i < ndmpdp; i++) {
+		DMPDPTphys[i] = DMPDphys + (i << L1_SHIFT);
+		DMPDPTphys[i] |= PG_RW | PG_V | PG_U;
+	}
 
     /* And recursively map PML4 to itself in order to get PTmap */
     IdlePML4[PDIR_SLOT_KERN] = KPML4phys;
 	IdlePML4[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
 
+	/* Connect the Direct Map slot up to the PML4 */
+	KPML4phys[PDIR_SLOT_DIRECT] = DMPDPTphys;
+	KPML4phys[PDIR_SLOT_DIRECT] |= PG_RW | PG_V | PG_U;
+
     /* Connect the KVA slots up to the PML4 */
 	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
 		IdlePML4[PDIR_SLOT_KERNBASE + i] = (IdlePDPT + ptoa(i));
 		IdlePML4[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
-	}
-
-	if (KPML5phys != NULL) {
-
-		IdlePML5 = (pml5_entry_t *)KPML5phys;
-
-		/* la57 enabled, recursively map PML5  */
-		IdlePML5[PDIR_SLOT_KERN] = KPML5phys;
-		IdlePML5[PDIR_SLOT_KERN] |= PG_RW | PG_V | pg_nx;
-
-		/* Connect the KVA slots up to the PML5 */
-		for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-			IdlePML5[PDIR_SLOT_KERNBASE + i] = (IdlePML4 + ptoa(i));
-			IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
-		}
 	}
 }
 
@@ -463,6 +438,12 @@ pmap_bootstrap(firstaddr)
 
 
 	virtual_avail = va;
+
+
+	/*
+	 * Initialize the TLB shootdown queues.
+	 */
+	pmap_tlb_init();
 
 	/*
 	 * Initialize the PAT MSR.
@@ -679,57 +660,12 @@ pmap_pinit_pml4(pml4)
 }
 
 void
-pmap_pinit_pml5(pml5)
-	pml5_entry_t *pml5;
-{
-	int i;
-
-	pml5 = (pml5_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL5_MAX_ENTRIES * sizeof(pml5_entry_t)));
-
-	/*
-	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
-	 * entering all existing kernel mappings into level 5 table.
-	 */
-	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-		pml5[PDIR_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys + ptoa(i))) | PG_V | PG_RW | PG_A | PG_M | pg_g;
-	}
-
-	/* install self-referential address mapping entry(s) */
-	pml5[PDIR_SLOT_KERN] = pmap_extract(kernel_map, (vm_offset_t)pml5) | PG_RW | PG_V | PG_A | PG_M;
-}
-
-/*
- * Initialize a preallocated and zeroed pmap structure,
- * such as one in a vmspace structure.
- */
-void
-pmap_pinit_type(pmap, pm_type)
-	pmap_t pmap;
-	enum pmap_type pm_type;
-{
-	pmap->pm_type = pm_type;
-
-	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
-
-	switch (pm_type) {
-	case PT_X86:
-		if (pmap_is_la57(pmap)) {
-			pmap_pinit_pml5(pmap->pm_pml5);
-		} else {
-			pmap_pinit_pml4(pmap->pm_pml4);
-		}
-		break;
-
-	case PT_EPT:
-	case PT_RVI:
-	}
-}
-
-void
 pmap_pinit(pmap)
 	register pmap_t pmap;
 {
-	pmap_pinit_type(pmap, PT_X86);
+	pmap_pinit_pdir(pmap->pm_pdir, pmap->pm_pdirpa);
+	pmap_pinit_pml4(pmap->pm_pml4);
+	//pmap_pinit_type(pmap, PT_X86);
 
 	pmap->pm_active = 0;
 	pmap->pm_count = 1;
@@ -768,11 +704,7 @@ pmap_release(pmap)
 
 	kmem_free(kernel_map, (vm_offset_t)pmap->pm_pdir, NBPTD);
 
-	if (pmap_is_la57(pmap)) {
-		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml5, NBPTD * sizeof(pml5_entry_t));
-	} else {
-		kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4, NBPTD * sizeof(pml4_entry_t));
-	}
+	kmem_free(kernel_map, (vm_offset_t)pmap->pm_pml4, NBPTD * sizeof(pml4_entry_t));
 }
 
 void
@@ -838,14 +770,34 @@ void
 pmap_remove_all(pa)
 	vm_offset_t pa;
 {
+	register pv_entry_t pv;
+	int s;
 
+	/*
+	 * Not one of ours
+	 */
+	if (pa < vm_first_phys || pa >= vm_last_phys) {
+		return;
+	}
+
+	pv = pa_to_pvh(pa);
+	s = splimp();
+
+	/*
+	 * Do it the easy way for now
+	 */
+	while (pv->pv_pmap != NULL) {
+		pmap_invalidate_page(pv->pv_pmap, pv->pv_va);
+		pmap_remove(pv->pv_pmap, pv->pv_va, pv->pv_va + PAGE_SIZE);
+	}
+	splx(s);
 }
 
 void
 pmap_copy_on_write(pa)
 	vm_offset_t pa;
 {
-
+	pmap_changebit(pa, PG_RO, TRUE);
 }
 
 void
@@ -866,6 +818,55 @@ pmap_enter(pmap, va, pa, prot, wired)
 	bool_t wired;
 {
 
+}
+
+void
+pmap_page_protect(phys, prot)
+	vm_offset_t     phys;
+    vm_prot_t       prot;
+{
+	switch (prot) {
+	case VM_PROT_READ:
+	case VM_PROT_READ | VM_PROT_EXECUTE:
+		pmap_copy_on_write(phys);
+		break;
+	case VM_PROT_ALL:
+		break;
+	default:
+		pmap_remove_all(phys);
+		break;
+	}
+}
+
+void
+pmap_change_wiring(pmap, va, wired)
+	register pmap_t	pmap;
+	vm_offset_t	va;
+	bool_t	wired;
+{
+	register pt_entry_t *pte;
+	register int ix;
+
+	if (pmap == NULL) {
+		return;
+	}
+
+	pte = pmap_pte(pmap, va);
+	if ((wired && !pmap_pte_w(pte)) || (!wired && pmap_pte_w(pte))) {
+		if (wired) {
+			pmap->pm_stats.wired_count++;
+		} else {
+			pmap->pm_stats.wired_count--;
+		}
+	}
+	/*
+	 * Wiring is not a hardware characteristic so there is no need
+	 * to invalidate TLB.
+	 */
+	ix = 0;
+	do {
+		pmap_pte_set_w(pte++, wired);
+	} while (++ix != 1);
 }
 
 static pd_entry_t *
@@ -972,7 +973,44 @@ void
 pmap_collect(pmap)
 	pmap_t	pmap;
 {
+	register vm_offset_t pa;
+	register pv_entry_t pv;
+	register int *pte;
+	vm_offset_t kpa;
+	int s;
 
+	if (pmap != kernel_pmap) {
+		return;
+	}
+
+	s = splimp();
+	for (pa = vm_first_phys; pa < vm_last_phys; pa += PAGE_SIZE) {
+		/*
+		 * Locate physical pages which are being used as kernel
+		 * page table pages.
+		 */
+		pv = pa_to_pvh(pa);
+		if (pv->pv_pmap != kernel_pmap || !(pv->pv_flags & PG_PTPAGE)) {
+			continue;
+		}
+		do {
+			if (pv->pv_pmap == kernel_pmap) {
+				break;
+			}
+		} while (pv == pv->pv_next);
+		if (pv == NULL) {
+			continue;
+		}
+		pte = (int *)(pv->pv_va + PAGE_SIZE);
+		while (--pte >= (int*) pv->pv_va /* && *pte == PG_NV */)
+			;
+		if (pte >= (int*) pv->pv_va) {
+			continue;
+		}
+		kpa = pmap_extract(pmap, pv->pv_va);
+		pmap_remove_all(kpa);
+	}
+	splx(s);
 }
 
 void
@@ -981,11 +1019,7 @@ pmap_activate(pmap, pcbp)
 	struct pcb *pcbp;
 {
 	if (pmap != NULL && pmap->pm_pdchanged) {
-		if (pmap_is_la57(pmap)) {
-			pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pml5); /* PML5?? */
-		} else {
-			pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pml4); /* PML4?? */
-		}
+		pcbp->pcb_cr3 = pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pml4); /* PML4?? */
 		if (pmap == &curproc->p_vmspace->vm_pmap) {
 			lcr3(pcbp->pcb_cr3);
 		}
@@ -1009,7 +1043,7 @@ pmap_copy_page(src, dst)
 
 void
 pmap_pageable(pmap, sva, eva, pageable)
-	pmap_t pmap;
+	pmap_t		pmap;
 	vm_offset_t	sva, eva;
 	bool_t	pageable;
 {
@@ -1024,6 +1058,29 @@ pmap_pageable(pmap, sva, eva, pageable)
 	if (pmap == kernel_pmap && pageable && sva + PAGE_SIZE == eva) {
 		register pv_entry_t pv;
 		register vm_offset_t pa;
+
+		if ((pmap_map_pte(pmap, sva) == 0)
+				&& (pmap_map_pde(pmap, sva) == 0)) {
+			return;
+		}
+		if (pmap_map_pte(pmap, sva) != 0) {
+			pa = pmap_pte_pa(pmap_map_pte(pmap, sva));
+			if (pa < vm_first_phys || pa >= vm_last_phys) {
+				return;
+			}
+		} else if (pmap_map_pde(pmap, sva) != 0) {
+			pa = pmap_pte_pa(pmap_map_pde(pmap, sva));
+			if (pa < vm_first_phys || pa >= vm_last_phys) {
+				return;
+			}
+		} else {
+			return;
+		}
+		pv = pa_to_pvh(pa);
+		/*
+		 * Mark it unmodified to avoid pageout
+		 */
+		pmap_clear_modify(pa);
 	}
 }
 
@@ -1031,28 +1088,36 @@ void
 pmap_clear_modify(pa)
 	vm_offset_t	pa;
 {
-
+	pmap_changebit(pa, PG_M, FALSE);
 }
 
 void
 pmap_clear_reference(pa)
 	vm_offset_t	pa;
 {
-
+	pmap_changebit(pa, PG_U, FALSE);
 }
 
 bool_t
 pmap_is_referenced(pa)
 	vm_offset_t	pa;
 {
-
+	return (pmap_testbit(pa, PG_U));
 }
 
 bool_t
 pmap_is_modified(pa)
 	vm_offset_t	pa;
 {
+	return (pmap_testbit(pa, PG_M));
+}
 
+
+vm_offset_t
+pmap_phys_address(ppn)
+	unsigned long ppn;
+{
+	return (amd64_ptob(ppn));
 }
 
 void
@@ -1096,7 +1161,41 @@ pmap_testbit(pa, bit)
 	register vm_offset_t pa;
 	int bit;
 {
+	register pv_entry_t pv;
+	register int *pte, ix;
+	int s;
 
+	if (pa < vm_first_phys || pa >= vm_last_phys)
+		return (FALSE);
+
+	pv = pa_to_pvh(pa);
+	s = splimp();
+
+	/*
+	 * Check saved info first
+	 */
+	if (pv->pv_attr & bit) {
+		splx(s);
+		return (TRUE);
+	}
+	/*
+	 * Not found, check current mappings returning
+	 * immediately if found.
+	 */
+	if (pv->pv_pmap != NULL) {
+		for (; pv; pv = pv->pv_next) {
+			pte = (int*) pmap_pte(pv->pv_pmap, pv->pv_va);
+			ix = 0;
+			do {
+				if (*pte++ & bit) {
+					splx(s);
+					return (TRUE);
+				}
+			} while (++ix != 1);
+		}
+	}
+	splx(s);
+	return (FALSE);
 }
 
 void
@@ -1105,5 +1204,68 @@ pmap_changebit(pa, bit, setem)
 	int bit;
 	bool_t setem;
 {
+	register pv_entry_t pv;
+	register int *pte, npte, ix;
+	vm_offset_t va;
+	int s;
+	bool_t firstpage = TRUE;
 
+	struct proc *p;
+
+	p = curproc;
+
+	if (pa < vm_first_phys || pa >= vm_last_phys) {
+		return;
+	}
+
+	pv = pa_to_pvh(pa);
+	s = splimp();
+	/*
+	 * Clear saved attributes (modify, reference)
+	 */
+	if (!setem) {
+		pv->pv_attr &= ~bit;
+	}
+	/*
+	 * Loop over all current mappings setting/clearing as appropos
+	 * If setting RO do we need to clear the VAC?
+	 */
+	if (pv->pv_pmap != NULL) {
+		for (; pv; pv = pv->pv_next) {
+			va = pv->pv_va;
+
+			/*
+			 * XXX don't write protect pager mappings
+			 */
+			if (bit == PG_RO) {
+				extern vm_offset_t pager_sva, pager_eva;
+
+				if (va >= pager_sva && va < pager_eva) {
+					continue;
+				}
+			}
+
+			pte = (int*) pmap_pte(pv->pv_pmap, va);
+			ix = 0;
+			do {
+				if (setem) {
+					npte = *pte | bit;
+					pmap_invalidate_page(pv->pv_pmap, pv->pv_va);
+				} else {
+					npte = *pte & ~bit;
+					pmap_invalidate_page(pv->pv_pmap, pv->pv_va);
+				}
+				if (*pte != npte) {
+					*pte = npte;
+				}
+				va += PAGE_SIZE;
+				pte++;
+			} while (++ix != 1);
+
+			if (pv->pv_pmap == &p->p_vmspace->vm_pmap) {
+				pmap_activate(pv->pv_pmap, (struct pcb*) &p->p_addr->u_pcb);
+			}
+		}
+	}
+	splx(s);
 }

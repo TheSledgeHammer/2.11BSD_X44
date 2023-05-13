@@ -196,16 +196,19 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 #define MAX_SLOT_INDEX		(NPDEPTD)				/* 512 slots */
 #define L5_SLOT_INDEX		(NPML5EPG / 2)			/* Level 5: 256 */
 #define L4_SLOT_INDEX		(NPML4EPG / 2)			/* Level 4: 256 */
+#define L4_DMAP_SLOTS 		1						/* number of dmap Level 4 slots (i.e. NDMPML4E)  */
 
 #define L4_SLOT_KERN		(L4_SLOT_INDEX)			/* default: 256 */
 #define L4_SLOT_KERNBASE	(NPML4EPG - 1)			/* default: 511 */
 #define L4_SLOT_PTE			(L4_SLOT_KERN -1)		/* default: 255 */
 #define L4_SLOT_APTE		(L4_SLOT_KERNBASE - 1) 	/* default: 510 */
+#define L4_SLOT_DIRECT		L4_SLOT_APTE			/* Next 512GB down for direct map */
 
 #define PDIR_SLOT_KERN		L4_SLOT_KERN
 #define PDIR_SLOT_KERNBASE	L4_SLOT_KERNBASE
 #define PDIR_SLOT_PTE		L4_SLOT_PTE
 #define PDIR_SLOT_APTE		L4_SLOT_APTE
+#define PDIR_SLOT_DIRECT	L4_SLOT_DIRECT
 
 /*
  * the following defines give the virtual addresses of various MMU

@@ -70,7 +70,10 @@
 #ifndef _AMD64_PMAP_H_
 #define _AMD64_PMAP_H_
 
-#define l4etol5e(idx)   ((l4tol4(idx) + l4tol5(idx)) + ((PTP_SHIFT * 2) - 3))
+#define L4ETOL5E_SHIFT  (PTP_SHIFT * 2)-3)
+
+#define l4etol4e(idx)   (l4tol4(idx) & (L4_REALMASK >> L4_SHIFT))
+#define l4etol5e(idx)   (((l4tol4(idx) + l4tol5(idx)) + L4ETOL5E_SHIFT) & ((1UL << PTP_SHIFT)-1))
 
 #define PL5_I(VA)		(((VA_SIGN_POS(VA)) & L5_FRAME) >> L5_SHIFT)
 
