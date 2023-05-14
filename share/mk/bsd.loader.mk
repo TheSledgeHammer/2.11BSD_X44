@@ -4,9 +4,12 @@
 .if !defined(_BSD_LOADER_MK_)
 _BSD_LOADER_MK_=1
 
+.include <bsd.obj.mk>
 .include <bsd.own.mk>
 
 # Directories
+LIBSRC?= 					${NETBSDSRCDIR}/sys
+
 BOOTSTAND?=					stand
 BOOTSRC?=					stand/boot
 BOOTARCH?=					${BOOTSRC}/arch
@@ -73,40 +76,43 @@ LOADER_NET_SUPPORT?=		no
 
 # Standard options:
 # Options used when building standalone components
-#CFLAGS+=		-nostdinc
-#CFLAGS+=		-ffreestanding -fshort-wchar -Wformat -D_STANDALONE
-#LDFLAGS+=		#-nostdlib
-#CPPFLAGS+=		-D_STANDALONE
+CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${S}
+CPPFLAGS+= -D_STANDALONE
 
-#LIBSRC?=		${NETBSDSRCDIR}/sys
-#LIBKERN=		${LIBSRC}/lib/libkern
-#LIBSA=			${LIBSRC}/lib/libsa
+COPTS+=	-ffreestanding
+COPTS+=	-fno-stack-protector
+COPTS+=	-fno-unwind-tables
+CWARNFLAGS+= -Werror
+CWARNFLAGS+= -Wall -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith
 
 ### find out what to use for libkern
-#KERN_AS=		library
-#.include 		"${LIBKERN}/Makefile"
+KERN_AS=	library
+KERNDIR=	${LIBSRC}/lib/libkern
+
+#.include 	"${KERNDIR}/Makefile"
 
 ### find out what to use for libsa
-#SA_AS=			library
-#SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
-#.include 		"${LIBSA}/Makefile"
+SA_AS=		library
+SADIR=		${LIBSRC}/lib/libsa
 
-#CLEANFILES+=	vers.c
-#VERSION_FILE?=	${.CURDIR}/version
+#.include 	"${SADIR}/Makefile.libsa"
 
-#vers.c: ${LDRSRC}/newvers.sh ${VERSION_FILE}
-#	sh ${LDRSRC}/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
-#	    ${NEWVERSWHAT}
+CLEANFILES+=	vers.c
+VERSION_FILE?=	${.CURDIR}/version
 
-#.if !empty(HELP_FILES)
-#HELP_FILES+=	${LDRSRC}/help.common
+vers.c: ${LDRSRC}/newvers.sh ${VERSION_FILE}
+	sh ${LDRSRC}/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
+	    ${NEWVERSWHAT}
 
-#CLEANFILES+=	loader.help
-#FILES+=			loader.help
+.if !empty(HELP_FILES)
+HELP_FILES+=	${LDRSRC}/help.common
 
-#loader.help: ${HELP_FILES}
-#	cat ${HELP_FILES} | awk -f ${LDRSRC}/merge_help.awk > ${.TARGET}
-#.endif
+CLEANFILES+=	loader.help
+FILES+=			loader.help
+
+loader.help: ${HELP_FILES}
+	cat ${HELP_FILES} | awk -f ${LDRSRC}/merge_help.awk > ${.TARGET}
+.endif
 
 .include <bsd.sys.mk>
 
