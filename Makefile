@@ -240,22 +240,22 @@ BUILDTARGETS+=	includes
 .endif
 BUILDTARGETS+=	do-lib
 BUILDTARGETS+=	do-compat-lib
-#.if ${MKLLVM} != "no"
+.if ${MKLLVM} != "no"
 BUILDTARGETS+=	do-sanitizer
 .if ${MKSANITIZER:Uno} == "yes"
 BUILDTARGETS+=	do-sanitizer-tools
-#.endif
-#.endif
-#.if ${MKX11} != "no"
-#BUILDTARGETS+=	do-x11
+.endif
+.endif
+.if ${MKX11} != "no"
+BUILDTARGETS+=	do-x11
 .endif
 .if !defined(NOBINARIES)
 BUILDTARGETS+=	do-build
-#.if ${MKEXTSRC} != "no"
+.if ${MKEXTSRC} != "no"
 BUILDTARGETS+=	do-extsrc
 .endif
 BUILDTARGETS+=	do-obsolete
-#.endif
+.endif
 
 #
 # Enforce proper ordering of some rules.
