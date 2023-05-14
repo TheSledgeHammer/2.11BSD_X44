@@ -60,7 +60,7 @@ DISTRIBREV!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh -s
 ISO_VOLID!=	echo NETBSD_${DISTRIBREV} | tr a-z A-Z
 MKISOFS_FLAGS+= -J -l -hide-joliet-trans-tbl -r -T \
 		-V ${ISO_VOLID} \
-		-publisher "The NetBSD Project" \
+		-publisher "The 2.11BSD Project" \
 		-m "${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/cdrom"
 .if ${MKISOFS_FLAGS:N-v}
 MKISOFS_FLAGS+=	-quiet
@@ -155,7 +155,7 @@ distribution: .PHONY .MAKE check_DESTDIR distrib-dirs
 .endif	# !INSTALL_DONE
 	${MAKEDIRTARGET} . install-etc-files
 . if ${MKX11} != "no"
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/contrib/external/xorg distribution
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/contrib/xorg distribution
 . endif
 . if ${MKEXTSRC} != "no"
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/extsrc distribution
