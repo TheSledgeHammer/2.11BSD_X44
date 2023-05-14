@@ -3,7 +3,8 @@
 NO_OBJ=t
 
 .include <bsd.init.mk>
-.include <bsd.loader.mk>
+#.include <bsd.loader.mk>
+.include <stand.mk>
 
 .if ${LOADER_INTERP} == "dloader"
 LOADER_INTERP=	dloader

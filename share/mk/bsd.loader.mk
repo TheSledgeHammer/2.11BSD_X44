@@ -5,13 +5,10 @@
 _BSD_LOADER_MK_=1
 
 .include <bsd.own.mk>
-#.include <bsd.kernobj.mk>
 
 # Directories
 BOOTSTAND?=					stand
 BOOTSRC?=					stand/boot
-#LIBKERN?= 					${KERNSRCDIR}/lib/libkern
-LIBSA?=						stand/libsa
 BOOTARCH?=					${BOOTSRC}/arch
 
 EFISRC=						${BOOTSRC}/efi
@@ -23,7 +20,6 @@ LIBLUASRC=					${BOOTSRC}/liblua
 LUASRC=						/contrib/lua/dist
 DLOADER=					${BOOTSRC}/dloader
 LUA=						${BOOTSRC}/lua
-UBOOTSRC=					${BOOTSRC}/uboot
 LIBCSRC=					/lib/libc
 
 BOOTOBJ=					${BOOTSTAND}
@@ -59,14 +55,8 @@ LOADER_MACHINE?=			${MACHINE}
 LOADER_MACHINE_ARCH?=		${MACHINE_ARCH}
 
 # Machine Dependent
-MK_EFI=						no	
-MK_UBOOT=					no
-
-.if ${MK_UBOOT} == "yes"
-MK_FDT=						yes
-.else
+MK_EFI=						no
 MK_FDT=						no
-.endif
 
 # Filesystem support
 LOADER_CD9660_SUPPORT?=		yes
@@ -83,36 +73,40 @@ LOADER_NET_SUPPORT?=		no
 
 # Standard options:
 # Options used when building standalone components
-CFLAGS+=		-nostdinc
-CFLAGS+=		-ffreestanding -fshort-wchar -Wformat -D_STANDALONE
-LDFLAGS+=		#-nostdlib
-CPPFLAGS+=		-D_STANDALONE
+#CFLAGS+=		-nostdinc
+#CFLAGS+=		-ffreestanding -fshort-wchar -Wformat -D_STANDALONE
+#LDFLAGS+=		#-nostdlib
+#CPPFLAGS+=		-D_STANDALONE
+
+#LIBSRC?=		${NETBSDSRCDIR}/sys
+#LIBKERN=		${LIBSRC}/lib/libkern
+#LIBSA=			${LIBSRC}/lib/libsa
 
 ### find out what to use for libkern
-KERN_AS=		library
+#KERN_AS=		library
 #.include 		"${LIBKERN}/Makefile"
 
 ### find out what to use for libsa
-SA_AS=			library
-SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
+#SA_AS=			library
+#SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
 #.include 		"${LIBSA}/Makefile"
 
-CLEANFILES+=	vers.c
-VERSION_FILE?=	${.CURDIR}/version
+#CLEANFILES+=	vers.c
+#VERSION_FILE?=	${.CURDIR}/version
 
-vers.c: ${LDRSRC}/newvers.sh ${VERSION_FILE}
-	sh ${LDRSRC}/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
-	    ${NEWVERSWHAT}
+#vers.c: ${LDRSRC}/newvers.sh ${VERSION_FILE}
+#	sh ${LDRSRC}/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
+#	    ${NEWVERSWHAT}
 
-.if !empty(HELP_FILES)
-HELP_FILES+=	${LDRSRC}/help.common
+#.if !empty(HELP_FILES)
+#HELP_FILES+=	${LDRSRC}/help.common
 
-CLEANFILES+=	loader.help
-FILES+=			loader.help
+#CLEANFILES+=	loader.help
+#FILES+=			loader.help
 
-loader.help: ${HELP_FILES}
-	cat ${HELP_FILES} | awk -f ${LDRSRC}/merge_help.awk > ${.TARGET}
-.endif
+#loader.help: ${HELP_FILES}
+#	cat ${HELP_FILES} | awk -f ${LDRSRC}/merge_help.awk > ${.TARGET}
+#.endif
 
 .include <bsd.sys.mk>
 

@@ -21,7 +21,6 @@ DBG=			-Os
 
 S= ${NETBSDSRCDIR}/sys
 CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${S} -I${S}/arch
-
 CPPFLAGS+= -D_STANDALONE
 
 COPTS+=	-ffreestanding

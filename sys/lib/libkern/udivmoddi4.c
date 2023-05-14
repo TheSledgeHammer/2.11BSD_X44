@@ -35,7 +35,8 @@ u_quad_t
 __udivmoddi4(u_quad_t n, u_quad_t d, u_quad_t *r)
 {
 	u_quad_t q = __udivdi3(n, d);
-	if (r)
+	if (r) {
 		*r = n - d * q;
+	}
 	return (q);
 }

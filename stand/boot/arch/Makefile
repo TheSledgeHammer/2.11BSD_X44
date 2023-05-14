@@ -1,6 +1,7 @@
 #	$211BSD: Makefile,v 1.00
 
-.include <bsd.own.mk>
+#.include <bsd.loader.mk>
+.include <stand.mk>
 
 # TODO: Fix Me!!
 #ARCHSUBDIR= ${MACHINE_CPU}

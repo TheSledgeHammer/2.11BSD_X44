@@ -1,6 +1,7 @@
 # $FreeBSD$
 
-.include <bsd.loader.mk>
+#.include <bsd.loader.mk>
+.include <stand.mk>
 
 INCSDIR= 	/usr/include/stand/boot/common
 

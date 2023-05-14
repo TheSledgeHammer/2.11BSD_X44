@@ -443,9 +443,13 @@ swap_search(sdp, nblks, npages)
 	int pageno, startslot;
 	swblk_t dvbase;
 
-	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
-		blk = nblks - dvbase;
-		break;
+	if (nblks > 0) {
+		for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+			blk = nblks - dvbase;
+			break;
+		}
+	} else {
+		blk = 0;
 	}
 
 	pageno = btodb(npages << PAGE_SHIFT);

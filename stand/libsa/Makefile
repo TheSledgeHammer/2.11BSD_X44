@@ -2,10 +2,12 @@
 
 .include <bsd.obj.mk>		# Pull in OBJDIR name rules.
 .include <bsd.own.mk>
-#.include <bsd.klinks.mk>
 
 LIBISPRIVATE?=	yes
-LIB=	sa
+LIB=			sa
+
+SA_INCLUDE_NET?= 		YES		# Netboot via TFTP, NFS (No NFS Support)
+SA_USE_LOADFILE?= 		YES		# Generic executable loading support
 
 S= ${NETBSDSRCDIR}/sys
 CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${S}
@@ -18,9 +20,9 @@ CWARNFLAGS+= -Werror
 CWARNFLAGS+= -Wall -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith
 
 ### find out what to use for libsa
-KERN_AS=	library
-KERNDIR=	${S}/lib/libsa
+SA_AS=	library
+SADIR=	${S}/lib/libsa
 
-.include "${KERNDIR}/Makefile.libsa"
+.include "${SADIR}/Makefile.libsa"
 
 .include <bsd.lib.mk>

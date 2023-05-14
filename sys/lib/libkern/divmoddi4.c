@@ -47,11 +47,14 @@ __divmoddi4(quad_t n, quad_t d, quad_t *r)
 
 	q = __udivmoddi4(n, d, (u_quad_t *)&rr);
 
-	if (nn != nd)
+	if (nn != nd) {
 		q = -q;
-	if (nn)
+	}
+	if (nn) {
 		rr = -rr;
-	if (r)
+	}
+	if (r) {
 		*r = rr;
+	}
 	return (q);
 }
