@@ -19,7 +19,6 @@ SRCS=		basename.c dirname.c err.c fgetln.c flock.c fparseln.c 		\
 SRCS+= 		md2.c md2hl.c md4c.c md4hl.c md5c.c md5hl.c rmd160.c 		\
 			rmd160hl.c sha1.c sha1hl.c sha2.c sha256hl.c sha384hl.c 	\
 			sha512hl.c
-SRCS+=		bswap16.c bswap32.c bswap64.c
 
 BUILD_OSTYPE!=  uname -s
 
