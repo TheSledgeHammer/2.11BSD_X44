@@ -59,7 +59,6 @@ __RCSID("$NetBSD: newfs_msdos.c,v 1.14.2.2 2004/09/23 02:44:44 jmc Exp $");
 #include <time.h>
 #include <unistd.h>
 #ifdef __NetBSD__
-#include <disktab.h>
 #include <util.h>
 #endif
 
