@@ -102,14 +102,4 @@
 #define	EUSERS			68		/* Too many users */
 #define	EDQUOT			69		/* Disc quota exceeded */
 
-__BEGIN_DECLS
-#ifndef __errno
-int *__errno(void);
-#define __errno __errno
-#endif
-
-#ifndef errno
-#define errno(*__errno())
-#endif
- __END_DECLS
 #endif /* !_ERRNO_H_ */
