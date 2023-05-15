@@ -38,33 +38,4 @@
 #ifndef	_DISKTAB_H_
 #define	_DISKTAB_H_
 
-#include <sys/cdefs.h>
-
-/*
- * Disk description table, see disktab(5)
- */
-#define	DISKTAB		"/etc/disktab"
-
-struct	disktab {
-	char	*d_name;		/* drive name */
-	char	*d_type;		/* drive type */
-	int		d_secsize;		/* sector size in bytes */
-	int		d_ntracks;		/* # tracks/cylinder */
-	int		d_nsectors;		/* # sectors/track */
-	int		d_ncylinders;	/* # cylinders */
-	int		d_rpm;			/* revolutions/minute */
-	int		d_badsectforw;	/* supports DEC bad144 std */
-	int		d_sectoffset;	/* use sect rather than cyl offsets */
-	struct	partition {
-		int		p_size;		/* #sectors in partition */
-		short	p_bsize;	/* block size in bytes */
-		short	p_fsize;	/* frag size in bytes */
-	} d_partitions[8];
-};
-
-__BEGIN_DECLS
-int setdisktab(const char *);
-struct disklabel *getdiskbyname(const char *);
-__END_DECLS
-
 #endif /* !_DISKTAB_H_ */
