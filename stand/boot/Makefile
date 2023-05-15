@@ -12,7 +12,7 @@ SUBDIR+=	lua
 SUBDIR+=	dloader
 .endif
 
-.if ${MK_EFI} != "no"
+.if ${MK_EFI} == "yes"
 SUBDIR+=	efi fdt
 .endif
 
