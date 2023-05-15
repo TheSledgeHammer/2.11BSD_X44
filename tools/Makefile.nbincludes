@@ -24,6 +24,7 @@ _UFS_INCS!=	cd ${_UFSDIR} && find ffs ufs -name '*.h'
 _ARCH_INCS!=	${TOOL_SED} -e 's/^\#.*//' ${.CURDIR}/../headerlist
 .endif
 
+#_INCS=
 _SYSINCS=	boot.h 		\
 			disklabel.h diskslice.h diskapm.h diskgpt.h diskmbr.h \
 			dkbad.h 	\
