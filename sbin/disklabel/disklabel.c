@@ -54,7 +54,7 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <sys/signal.h>
+//#include <sys/signal.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #define DKTYPENAMES
@@ -62,13 +62,14 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 
 #include <ctype.h>
 #include <err.h>
-#include <errno.h>
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <unistd.h>
+#include <util.h>
+#include <fstab.h>
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
@@ -76,29 +77,29 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #if HAVE_NBTOOL_CONFIG_H
 #include <nbinclude/sys/disklabel.h>
 #include <nbinclude/sys/boot.h>
-#include "../../include/disktab.h"
 #else
 #include <sys/disklabel.h>
 #include <sys/boot.h>
-#include <util.h>
-#include <disktab.h>
 #endif /* HAVE_NBTOOL_CONFIG_H */
 
 #include "pathnames.h"
 
-int		writelabel(void);
+int		writelabel(int, char *, struct disklabel *);
 struct disklabel *readlabel(int flag);
+void  l_perror(char *);
 struct disklabel *makebootarea(char *, struct disklabel *, int);
-void	display(FILE *, const struct disklabel *);
-int		edit(void);
+void	display(FILE *, struct disklabel *);
+int		edit(struct disklabel *, int);
 int		editit(void);
-void	fixlabel(struct disklabel *);
+void	fixlabel(int, struct disklabel *, int);
+void    makelabel(char *, char *, struct disklabel *);
 char	*skip(char *);
 char	*word(char *);
 int		getasciilabel(FILE *, struct disklabel *);
 int		getasciipartspec(char *, struct disklabel *, int, int);
 int		checklabel(struct disklabel *);
 void	setbootflag(struct disklabel *);
+void  Warning(const char *fmt, ...);
 void 	usage(void);
 
 /*
@@ -280,9 +281,6 @@ main(argc, argv)
 		lp = readlabel(f);
 		display(stdout, lp);
 		error = checklabel(lp);
-		if (checkoldboot(f, NULL)) {
-			warnx("Warning, old bootblocks detected, install new bootblocks & reinstall the disklabel");
-		}
 		break;
 
 	case RESTORE:
@@ -350,7 +348,9 @@ main(argc, argv)
 }
 
 void
-fixlabel(struct disklabel *lp)
+fixlabel(f, lp, writeadj)
+  struct disklabel *lp;
+  int f, writeadj;
 {
 	struct partition *dp;
 	int i;
@@ -756,12 +756,12 @@ edit(lp, f)
 	struct disklabel *lp;
 	int f;
 {
-	register int c;
+	register int c, fp;
 	struct disklabel label;
 	FILE *fd;
 
-	if ((fd = mkstemp(tmpfil)) == -1 ||
-	    (fp = fdopen(fd, "w")) == NULL) {
+	if ((fp = mkstemp(tmpfil)) == -1 ||
+	    (fd = fdopen(fp, "w")) == NULL) {
 		warnx("can't create %s", tmpfil);
 		return (1);
 	}
@@ -780,13 +780,14 @@ edit(lp, f)
 		if (getasciilabel(fd, &label)) {
 			*lp = label;
 			if (writelabel(f, bootarea, lp) == 0) {
-				fclose(fp);
+				fclose(fd);
 				unlink(tmpfil);
 				return (0);
 			}
 		}
-		fclose(fp);
-		printf("re-edit the label? [y]: "); fflush(stdout);
+		fclose(fd);
+		printf("re-edit the label? [y]: "); 
+		fflush(stdout);
 		c = getchar();
 		if (c != EOF && c != (int) '\n')
 			while (getchar() != (int) '\n')
@@ -804,8 +805,14 @@ editit(void)
 	register int pid, xpid;
 	int stat, omask;
 	register char *ed;
+	sigset_t set, oset;
 
-	omask = sigblock(sigmask(SIGINT) | sigmask(SIGQUIT) | sigmask(SIGHUP));
+	//omask = sigblock(sigmask(SIGINT) | sigmask(SIGQUIT) | sigmask(SIGHUP));
+	sigemptyset(&set);
+	sigaddset(&set, SIGINT);
+	sigaddset(&set, SIGHUP);
+	sigaddset(&set, SIGQUIT);
+	sigprocmask(SIG_BLOCK, &set, &oset);
 	while ((pid = fork()) < 0) {
 		if (errno == EPROCLIM) {
 			warnx("you have too many processes");
@@ -819,7 +826,8 @@ editit(void)
 	}
 	if (pid == 0) {
 
-		sigsetmask(omask);
+		//sigsetmask(omask);
+		sigprocmask(SIG_SETMASK, &oset, NULL);
 		setgid(getgid());
 		setuid(getuid());
 		if ((ed = getenv("EDITOR")) == (char*) 0)
@@ -830,7 +838,8 @@ editit(void)
 	while ((xpid = wait(&stat)) >= 0)
 		if (xpid == pid)
 			break;
-	sigsetmask(omask);
+	//sigsetmask(omask);
+	sigprocmask(SIG_SETMASK, &oset, NULL);
 	return (!stat);
 }
 
@@ -1114,7 +1123,7 @@ getasciipartspec(tp, lp, part, lineno)
 {
 	struct partition *pp;
 	char *cp, *endp;
-	const char **cpp;
+	char **cpp;
 	u_long v;
 
 	pp = &lp->d_partitions[part];
@@ -1193,7 +1202,7 @@ checklabel(lp)
 	register struct disklabel *lp;
 {
 	register struct partition *pp, *pp2;
-	int i, errors = 0;
+	int i, j, errors = 0;
 	char part;
 	u_long base_offset, needed, total_size, total_percent, current_offset;
 	int seen_default_offset;
@@ -1566,7 +1575,7 @@ Warning(const char *fmt, ...)
 	va_end(ap);
 }
 
-static void
+void
 usage(void)
 {
 #if NUMBOOT > 0
