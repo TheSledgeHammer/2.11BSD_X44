@@ -54,7 +54,7 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-//#include <sys/signal.h>
+#include <sys/signal.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #define DKTYPENAMES
@@ -62,6 +62,7 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 
 #include <ctype.h>
 #include <err.h>
+#include <errno.h>
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
@@ -69,7 +70,6 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include <limits.h>
 #include <unistd.h>
 #include <util.h>
-#include <fstab.h>
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
@@ -250,7 +250,7 @@ main(argc, argv)
 	if (argc < 1)
 		usage();
 
-	dkname = getdevpath(argv[0], 0);
+	dkname = argv[0];
 	specname = dkname;
 	f = open(specname, op == READ ? O_RDONLY : O_RDWR);
 	if (f < 0) {
@@ -397,7 +397,6 @@ writelabel(f, boot, lp)
 	char *boot;
 	register struct disklabel *lp;
 {
-	const char *msg;
 	int flag;
 	int i;
 
@@ -429,11 +428,7 @@ writelabel(f, boot, lp)
 		flag = 1;
 		if (ioctl(f, DIOCWLABEL, &flag) < 0)
 			warn("ioctl DIOCWLABEL");
-		msg = fixlabel(f, lp, 1);
-		if (msg) {
-			warn("%s", msg);
-			return (1);
-		}
+		fixlabel(f, lp, 1);
 		i = write(f, boot, lp->d_bbsize);
 		fixlabel(f, lp, 0);
 		if (i != ((ssize_t)lp->d_bbsize)) {
@@ -504,7 +499,6 @@ readlabel(f)
 	int f;
 {
 	register struct disklabel *lp;
-	const char *msg;
 	int r;
 
 	if (rflag) {
@@ -523,9 +517,7 @@ readlabel(f)
 				|| lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC || dkcksum(lp) != 0) {
 			errx(1, "bad pack magic number (label is damaged, or pack is unlabeled)");
 		}
-		if ((msg = fixlabel(f, lp, 0)) != NULL) {
-			errx(1, "%s", msg);
-		}
+		fixlabel(f, lp, 0);
 	} else {
 		lp = &lab;
 		if (ioctl(f, DIOCGDINFO, lp) < 0) {
@@ -673,8 +665,8 @@ display(f, lp)
 		fprintf(f, "type: %s\n", dktypenames[lp->d_type]);
 	else
 		fprintf(f, "type: %d\n", lp->d_type);
-	fprintf(f, "disk: %.*s\n", sizeof(lp->d_typename), lp->d_typename);
-	fprintf(f, "label: %.*s\n", sizeof(lp->d_packname), lp->d_packname);
+	fprintf(f, "disk: %.*s\n", (int)sizeof(lp->d_typename), lp->d_typename);
+	fprintf(f, "label: %.*s\n", (int)sizeof(lp->d_packname), lp->d_packname);
 	fprintf(f, "flags:");
 	if (lp->d_flags & D_REMOVABLE)
 		fprintf(f, " removeable");
