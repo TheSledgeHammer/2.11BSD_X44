@@ -231,18 +231,17 @@ struct disklabel {
 #define	p_sgs	__partition_u1.sgs
 	} d_partitions[MAXPARTITIONS];		/* actually may be more */
 };
-
 #else /* LOCORE */
 /*
  * offsets for asm boot files.
  */
-.set	d_secsize,40
-.set	d_nsectors,44
-.set	d_ntracks,48
-.set	d_ncylinders,52
-.set	d_secpercyl,56
-.set	d_secperunit,60
-.set	d_end_,276			/* size of disk label */
+        .set	d_secsize,40
+        .set	d_nsectors,44
+        .set	d_ntracks,48
+        .set	d_ncylinders,52
+        .set	d_secpercyl,56
+        .set	d_secperunit,60
+        .set	d_end_,276			/* size of disk label */
 #endif /* LOCORE */
 
 /* d_type values: */
@@ -483,19 +482,27 @@ struct partinfo {
 
 #endif /* LOCORE */
 
+#ifdef _KERNEL
+
 struct dkdevice;
 char	*readdisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
-int		setdisklabel(struct disklabel *, struct disklabel *, u_long);
-int		writedisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
-int		ioctldisklabel(struct dkdevice *, void (*)(struct buf *), dev_t, int, void *, int);
+int	setdisklabel(struct disklabel *, struct disklabel *, u_long);
+int	writedisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
+int	ioctldisklabel(struct dkdevice *, void (*)(struct buf *), dev_t, int, void *, int);
 void	dkbadintern(struct dkdevice *);
-int		dkcksum(struct disklabel *);
-int		partition_check(struct buf *, struct dkdevice *);
-int		dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
+int	dkcksum(struct disklabel *);
+int	partition_check(struct buf *, struct dkdevice *);
+int	dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
+#endif
 
 #if !defined(KERNEL) && !defined(LOCORE)
 #define	LABELDESC	(((btoc(sizeof(struct disklabel)) - 1) << 8))
 #include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int setdisktab(const char *);
+struct disklabel *getdiskbyname(const char *);
+__END_DECLS
 #endif
 
 #endif	/* _SYS_DISKLABEL_H_ */
