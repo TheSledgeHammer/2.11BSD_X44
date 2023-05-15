@@ -97,7 +97,6 @@ procxmt(p)
 {
 	register int i, *poff, *paln;
 	extern vm_offset_t 	proc0kstack;
-	//extern char kstack[];
 
 	if (ipc.ip_lock != u.u_procp->p_pid)
 		return (0);
@@ -143,12 +142,12 @@ procxmt(p)
 					FALSE);
 
 			if (rv == KERN_SUCCESS) {
-				//estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RW);
+				//vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RW);
 				i = suiword((caddr_t) ipc.ip_addr, 0);
 				suiword((caddr_t) ipc.ip_addr, ipc.ip_data);
 				(void) vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
 						VM_PROT_READ | VM_PROT_EXECUTE, FALSE);
-				//estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RO);
+				//vm_estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RO);
 			}
 		}
 		if (i < 0)
@@ -213,16 +212,19 @@ procxmt(p)
 
 	case PT_DETACH: /* stop tracing the child */
 		u.u_ar0 = (int*) ((short*) u.u_ar0 + 1);
-		if ((unsigned) ipc.ip_data >= NSIG)
+		if ((unsigned) ipc.ip_data >= NSIG) {
 			goto error;
-		if ((int) ipc.ip_addr != 1)
+		}
+		if ((int) ipc.ip_addr != 1) {
 			u.u_ar0[PC] = (int) ipc.ip_addr;
+		}
 		u.u_procp->p_ptracesig = ipc.ip_data; /* see issignal */
 		p->p_flag &= ~P_TRACED;
 		if (p->p_oppid != p->p_pptr->p_pid) {
 			register struct proc *pp = pfind(p->p_oppid);
-			if (pp)
+			if (pp) {
 				proc_reparent(p, pp);
+			}
 		}
 		p->p_oppid = 0;
 		wakeup((caddr_t) & ipc);

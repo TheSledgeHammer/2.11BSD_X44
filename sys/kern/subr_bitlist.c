@@ -97,7 +97,7 @@ ctop_isset(top, val)
 	ctop_t *top;
 	uint32_t val;
 {
-	if(top->ct_mask != val) {
+	if (top->ct_mask != val) {
 		return (1);
 	}
 	return (0);
@@ -111,7 +111,7 @@ bitlist_init(void)
 
     bitlist_lock_init(&bitlist_lock);
 
-    for(i = 0; i < BITHASH_MASK; i++) {
+    for (i = 0; i < BITHASH_MASK; i++) {
     	LIST_INIT(&bitset[i]);
     }
 }
@@ -149,8 +149,8 @@ bitlist_search(value)
     register bitlist_t *mask;
     head = &bitset[bithash(value)];
     bitlist_lock(&bitlist_lock);
-    for(mask = LIST_FIRST(head); mask != NULL; mask = LIST_NEXT(mask, entry)) {
-        if(mask->value == value) {
+    for (mask = LIST_FIRST(head); mask != NULL; mask = LIST_NEXT(mask, entry)) {
+        if (mask->value == value) {
         	 bitlist_unlock(&bitlist_lock);
             return (mask);
         }
@@ -167,8 +167,8 @@ bitlist_remove(value)
     register bitlist_t       *map;
     head = &bitset[bithash(value)];
     bitlist_lock(&bitlist_lock);
-    for(map = LIST_FIRST(head); map != NULL; map = LIST_NEXT(map, entry)) {
-        if(map->value == value) {
+    for (map = LIST_FIRST(head); map != NULL; map = LIST_NEXT(map, entry)) {
+        if (map->value == value) {
         	LIST_REMOVE(map, entry);
             bitlist_unlock(&bitlist_lock);
             bitlist_counter--;

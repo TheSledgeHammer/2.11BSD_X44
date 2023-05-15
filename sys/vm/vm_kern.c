@@ -377,10 +377,10 @@ kmem_malloc_lthru(map, addr, object, size, offset)
 		if (segment != NULL) {
 			for (j = 0; j < round_page(size); j += PAGE_SIZE) {
 				page = vm_page_lookup(segment, offset + j);
+				vm_object_unlock(object);
+				pmap_enter(map->pmap, addr + j, VM_PAGE_TO_PHYS(page),
+						VM_PROT_DEFAULT, TRUE);
 			}
-			vm_object_unlock(object);
-			pmap_enter(map->pmap, addr + j, VM_PAGE_TO_PHYS(page),
-					VM_PROT_DEFAULT, TRUE);
 		} else {
 			vm_object_unlock(object);
 			pmap_enter(map->pmap, addr + i, VM_SEGMENT_TO_PHYS(segment),

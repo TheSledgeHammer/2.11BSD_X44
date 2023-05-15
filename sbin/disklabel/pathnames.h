@@ -37,5 +37,4 @@
 
 //#define	_PATH_BOOTDIR	"/usr/mdec"
 #define	_PATH_BOOTDIR	"/boot"
-#undef _PATH_TMP
-#define	_PATH_TMP		"/tmp/EdDk.aXXXXXX"
+#define	PATH_TMPFILE	"/tmp/EdDk.aXXXXXX"

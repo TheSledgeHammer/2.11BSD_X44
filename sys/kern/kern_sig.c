@@ -714,6 +714,7 @@ core(void)
 	pcred = p->p_cred;
 	cred = u.u_ucred;
 	vm = p->p_vmspace;
+
 	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u.u_acflag & ASUGID) && !suser())) {
 			return (EFAULT);
 	}
@@ -722,12 +723,14 @@ core(void)
 	}
 	cp = u.u_comm;
 	np = name;
-	while	(*np++ == *cp++)
+	while	(*np++ == *cp++) {
 		;
+	}
 	cp = ".core";
 	np--;
-	while	(*np++ == *cp++)
+	while	(*np++ == *cp++) {
 		;
+	}
 	u.u_error = 0;
 	sprintf(name, "%s.core", cp);
 	sprintf(name, "%s.core", p->p_comm);
@@ -751,6 +754,8 @@ core(void)
 	u.u_acflag |= ACORE;
 	bcopy(p, &p->p_addr->u_kproc.kp_eproc, sizeof(struct proc));
 	fill_eproc(p, &p->p_addr->u_kproc.kp_eproc);
+
+	vm_estabur(p, 0, u.u_dsize, u.u_ssize, 0, SEG_RO);
 	u.u_error = error;
 	error = cpu_coredump(p, vp, cred);
 	if (error == 0) {
