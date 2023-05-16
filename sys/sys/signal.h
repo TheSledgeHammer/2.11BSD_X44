@@ -18,7 +18,9 @@
 #define	SIGINT		2		/* interrupt */
 #define	SIGQUIT		3		/* quit */
 #define	SIGILL		4		/* illegal instruction (not reset when caught) */
-#define	ILL_RESAD_FAULT	0x0	/* reserved addressing fault */
+#define	ILL_RESAD_FAULT		0x0	/* reserved addressing fault */
+#define	ILL_PRIVIN_FAULT	0x1	/* privileged instruction fault */
+#define	ILL_RESOP_FAULT		0x2	/* reserved operand fault */
 /* CHME, CHMS, CHMU are not yet given back to users reasonably */
 #define	SIGTRAP		5		/* trace trap (not reset when caught) */
 #define	SIGIOT		6		/* IOT instruction */
@@ -138,10 +140,10 @@ struct osigcontext {
  * Macro for converting signal number to a mask suitable for
  * sigblock().
  */
-#define sigmask(m)		(1L << ((m)-1))
+#define sigmask(m)				(1L << ((m)-1))
 #define sigaddset(set, signo)	(*(set) |= 1L << ((signo) - 1), 0)
 #define sigdelset(set, signo)	(*(set) &= ~(1L << ((signo) - 1)), 0)
-#define sigemptyset(set)	(*(set) = (sigset_t)0, (int)0)
+#define sigemptyset(set)		(*(set) = (sigset_t)0, (int)0)
 #define sigfillset(set)         (*(set) = ~(sigset_t)0, (int)0)
 #define sigismember(set, signo) ((*(set) & (1L << ((signo) - 1))) != 0)
 

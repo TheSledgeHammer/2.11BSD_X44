@@ -502,9 +502,7 @@ int	dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int setdisktab(const char *);
 struct disklabel *getdiskbyname(const char *);
 __END_DECLS
 #endif
-
 #endif	/* _SYS_DISKLABEL_H_ */

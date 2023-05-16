@@ -73,77 +73,79 @@ static void	error(int);
 #endif
 static int	gettype(char *, const char *const *);
 
-#define getnumdflt(field, dname, dflt) 	\
-	(field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t) f)
-#define	getnum(field, dname) 			\
-	if (cgetnum(buf, dname, &f) != -1) field = (u_int32_t)f
+#define getnumdflt(field, dname, dflt) {                                    \
+    long f;                                                                 \
+    (field) = ((cgetnum(buf, dname, &f) == -1) ? (dflt) : (u_int32_t)f);    \
+}
+
+#define	getnum(field, dname)  {             \
+    long f;                                 \
+    if (cgetnum(buf, dname, &f) != -1) {    \
+        (field) = (u_int32_t)f;             \
+    }                                       \
+}
 
 static const char *db_array[2] = { _PATH_DISKTAB, 0 };
-
-int
-setdisktab(const char *name)
-{
-	if (!name || !*name)
-		return -1;
-
-	db_array[0] = name;
-	return 0;
-}
 
 struct disklabel *
 getdiskbyname(const char *name)
 {
-	static struct disklabel disk;
-	struct disklabel *dp = &disk;
-	struct partition *pp;
-	char *buf;
-	char *cp, *cq; /* can't be */
-	char p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
+    static struct disklabel disk;
+    register struct	disklabel *dp;
+    register struct partition *pp;
+    char	*buf;
+	char	*cp, *cq;	/* can't be register */
+	char	p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
 	u_int32_t *dx;
-	long f;
 
-	_DIAGASSERT(name != NULL);
+    dp = &disk;
 
-	if (cgetent(&buf, db_array, name) < 0)
-		return NULL;
+    _DIAGASSERT(name != NULL);
+    if (cgetent(&buf, db_array, name) < 0) {
+        return (NULL);
+    }
 
-	memset(&disk, 0, sizeof(disk));
+    memset(&disk, 0, sizeof(disk));
 	/*
 	 * typename
 	 */
 	cq = dp->d_typename;
 	cp = buf;
-	while (cq < dp->d_typename + sizeof(dp->d_typename) - 1 && (*cq = *cp)
-			&& *cq != '|' && *cq != ':')
-		cq++, cp++;
-	*cq = '\0';
-	/*
+    while (cq < dp->d_typename + sizeof(dp->d_typename) - 1 && (*cq = *cp) && *cq != '|' && *cq != ':') {
+        cq++;
+        cp++;
+    }
+    *cq = '\0';
+    /*
 	 * boot name (optional)  xxboot, bootxx
 	 */
 	cgetstr(buf, "b0", &dp->d_boot0);
 	cgetstr(buf, "b1", &dp->d_boot1);
 
 	if (cgetstr(buf, "ty", &cq) >= 0) {
-		if (strcmp(cq, "removable") == 0)
+		if (strcmp(cq, "removable") == 0) {
 			dp->d_flags |= D_REMOVABLE;
-		else if (strcmp(cq, "simulated") == 0)
+        } else if (strcmp(cq, "simulated") == 0) {
 			dp->d_flags |= D_RAMDISK;
+        }
 		free(cq);
 	}
-	if (cgetcap(buf, "sf", ':') != NULL)
-		dp->d_flags |= D_BADSECT;
+    if (cgetcap(buf, "sf", ':') != NULL) {
+        dp->d_flags |= D_BADSECT;
+    }
 
-	getnumdflt(dp->d_secsize, "se", DEV_BSIZE);
+    getnumdflt(dp->d_secsize, "se", DEV_BSIZE);
 	getnum(dp->d_ntracks, "nt");
 	getnum(dp->d_nsectors, "ns");
 	getnum(dp->d_ncylinders, "nc");
 
-	if (cgetstr(buf, "dt", &cq) >= 0) {
-		dp->d_type = gettype(cq, dktypenames);
+    if (cgetstr(buf, "dt", &cq) >= 0) {
+        dp->d_type = gettype(cq, dktypenames);
 		free(cq);
-	} else
-		getnumdflt(dp->d_type, "dt", 0);
-	getnumdflt(dp->d_secpercyl, "sc", dp->d_nsectors * dp->d_ntracks);
+    } else {
+        getnumdflt(dp->d_type, "dt", 0);
+    }
+    getnumdflt(dp->d_secpercyl, "sc", dp->d_nsectors * dp->d_ntracks);
 	getnumdflt(dp->d_secperunit, "su", dp->d_secpercyl * dp->d_ncylinders);
 	getnumdflt(dp->d_rpm, "rm", 3600);
 	getnumdflt(dp->d_interleave, "il", 1);
@@ -158,35 +160,36 @@ getdiskbyname(const char *name)
 	strcpy(pfsize, "fx"); 	/* XXX: strcpy is safe */
 	strcpy(poffset, "ox"); 	/* XXX: strcpy is safe */
 	strcpy(ptype, "tx"); 	/* XXX: strcpy is safe */
-	max = 'a' - 1;
+    max = 'a' - 1;
 	pp = &dp->d_partitions[0];
-	for (p = 'a'; p < 'a' + MAXPARTITIONS; p++, pp++) {
-		long ff;
+    for (p = 'a'; p < 'a' + MAXPARTITIONS; p++, pp++) {
+        long ff;
 
-		psize[1] = pbsize[1] = pfsize[1] = poffset[1] = ptype[1] = p;
-		if (cgetnum(buf, psize, &ff) == -1)
-			pp->p_size = 0;
-		else {
-			pp->p_size = (u_int32_t) ff;
+        psize[1] = pbsize[1] = pfsize[1] = poffset[1] = ptype[1] = p;
+        if (cgetnum(buf, psize, &ff) == -1) {
+            pp->p_size = 0;
+        } else {
+            pp->p_size = (u_int32_t) ff;
 			getnum(pp->p_offset, poffset);
 			getnumdflt(pp->p_fsize, pfsize, 0);
-			if (pp->p_fsize) {
-				long bsize;
-
-				if (cgetnum(buf, pbsize, &bsize) == -1)
-					pp->p_frag = 8;
-				else
-					pp->p_frag = (u_int8_t)(bsize / pp->p_fsize);
-			}
-			getnumdflt(pp->p_fstype, ptype, 0);
-			if (pp->p_fstype == 0)
-				if (cgetstr(buf, ptype, &cq) >= 0) {
-					pp->p_fstype = gettype(cq, fstypenames);
+            if (pp->p_fsize) {
+                long bsize;
+                if (cgetnum(buf, pbsize, &bsize) == -1) {
+                    pp->p_frag = 8;
+                } else {
+                    pp->p_frag = (u_int8_t)(bsize / pp->p_fsize);
+                }
+            }
+            getnumdflt(pp->p_fstype, ptype, 0);
+            if (pp->p_fstype == 0) {
+                if (cgetstr(buf, ptype, &cq) >= 0) {
+                    pp->p_fstype = gettype(cq, fstypenames);
 					free(cq);
-				}
-			max = p;
-		}
-	}
+                }
+            }
+            max = p;
+        }
+    }
 	dp->d_npartitions = max + 1 - 'a';
 	strcpy(psize, "dx"); /* XXX: strcpy is safe */
 	dx = dp->d_drivedata;
@@ -194,7 +197,7 @@ getdiskbyname(const char *name)
 		psize[1] = p;
 		getnumdflt(*dx, psize, 0);
 	}
-	dp->d_magic = DISKMAGIC;
+    dp->d_magic = DISKMAGIC;
 	dp->d_magic2 = DISKMAGIC;
 	free(buf);
 	return (dp);
@@ -208,11 +211,14 @@ gettype(char *t, const char *const *names)
 	_DIAGASSERT(t != NULL);
 	_DIAGASSERT(names != NULL);
 
-	for (nm = names; *nm; nm++)
-		if (strcasecmp(t, *nm) == 0)
+	for (nm = names; *nm; nm++) {
+		if (strcasecmp(t, *nm) == 0) {
 			return (int)(nm - names);
-	if (isdigit((unsigned char) *t))
+		}
+	}
+	if (isdigit((unsigned char) *t)) {
 		return (atoi(t));
+	}
 	return (0);
 }
 

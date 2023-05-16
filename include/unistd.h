@@ -58,6 +58,7 @@
 #include <sys/null.h>
 
 __BEGIN_DECLS
+
 void	 		_exit(int);
 int	 			access(const char *, int);
 unsigned int	alarm(int);
@@ -102,6 +103,15 @@ char			*ttyname(int);
 int	 			unlink(const char *);
 ssize_t			write(int, const void *, size_t);
 
+extern	char 	*sys_siglist[];
+extern	char	*optarg;		/* getopt(3) external variables */
+extern	int	    opterr, optind, optopt;
+
+#ifndef	_POSIX_SOURCE
+#ifdef	__STDC__
+struct timeval;				/* select(2) */
+#endif
+//int	 			acct(const char *);
 //char			*brk();
 char			*crypt(char *, char *);
 void	 		endusershell(void);
@@ -120,30 +130,7 @@ int	 			syscall(int, ...);
 unsigned int	ualarm(unsigned int, unsigned int);
 void	 		usleep(long);
 pid_t	 		vfork(void);
-
-extern	char 	*sys_siglist[];
-extern	char	*optarg;		/* getopt(3) external variables */
-extern	int	    opterr, optind, optopt;
-
-/*
- * The Open Group Base Specifications, Issue 5; IEEE Std 1003.1-2001 (POSIX)
- */
-#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 500 || \
-    defined(_NETBSD_SOURCE)
-#if __SSP_FORTIFY_LEVEL == 0
-ssize_t	 readlink(const char * __restrict, char * __restrict, size_t);
-#endif
-#endif
-
-/*
- * The Open Group Base Specifications, Issue 6; IEEE Std 1003.1-2001 (POSIX)
- */
-#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600 || \
-    defined(_NETBSD_SOURCE)
-int	 setegid(gid_t);
-int	 seteuid(uid_t);
-#endif
-
+#endif /* !_POSIX_SOURCE */
 __END_DECLS
 
 #endif /* !_UNISTD_H_ */
