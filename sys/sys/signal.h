@@ -19,8 +19,8 @@
 #define	SIGQUIT		3		/* quit */
 #define	SIGILL		4		/* illegal instruction (not reset when caught) */
 #define	ILL_RESAD_FAULT		0x0	/* reserved addressing fault */
-#define	ILL_PRIVIN_FAULT	0x1	/* privileged instruction fault */
-#define	ILL_RESOP_FAULT		0x2	/* reserved operand fault */
+//#define	ILL_PRIVIN_FAULT	0x1	/* privileged instruction fault */
+//#define	ILL_RESOP_FAULT		0x2	/* reserved operand fault */
 /* CHME, CHMS, CHMU are not yet given back to users reasonably */
 #define	SIGTRAP		5		/* trace trap (not reset when caught) */
 #define	SIGIOT		6		/* IOT instruction */
