@@ -67,12 +67,12 @@ int	 			close(int);
 //size_t		 	confstr(int, char *, size_t);
 int	 			dup(int);
 int	 			dup2(int, int);
-int	 			execl(const char *, const char *, ...);
-int	 			execle(const char *, const char *, ...);
-int	 			execlp(char *, char *);
-int	 			execv(const char *, char * const *);
-int	 			execve(const char *, char * const *, char * const *);
-int	 			execvp(char *, char *);
+int	                execl(const char *, const char *, ...) __null_sentinel;
+int	                execle(const char *, const char *, ...);
+int	                execlp(const char *, const char *, ...) __null_sentinel;;
+int	                execv(const char *, char * const *);
+int	                execve(const char *, char * const *, char * const *);
+int	                execvp(const char *, char * const *);
 pid_t	 		fork(void);
 long	 		fpathconf(int, int);
 gid_t	 		getegid(void);
@@ -80,7 +80,7 @@ uid_t			geteuid(void);
 gid_t	 		getegid(void);
 uid_t	 		geteuid(void);
 gid_t	 		getgid(void);
-int	 			getgroups(int, gid_t[]);
+int	 		getgroups(int, gid_t[]);
 char			*getlogin(void);
 pid_t	 		getpgrp(void);
 pid_t	 		getpid(void);
@@ -123,7 +123,26 @@ pid_t	 		vfork(void);
 
 extern	char 	*sys_siglist[];
 extern	char	*optarg;		/* getopt(3) external variables */
-extern	int		opterr, optind, optopt;
+extern	int	opterr, optind, optopt;
+
+/*
+ * The Open Group Base Specifications, Issue 5; IEEE Std 1003.1-2001 (POSIX)
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(_NETBSD_SOURCE)
+#if __SSP_FORTIFY_LEVEL == 0
+ssize_t	 readlink(const char * __restrict, char * __restrict, size_t);
+#endif
+#endif
+
+/*
+ * The Open Group Base Specifications, Issue 6; IEEE Std 1003.1-2001 (POSIX)
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600 || \
+    defined(_NETBSD_SOURCE)
+int	 setegid(gid_t);
+int	 seteuid(uid_t);
+#endif
 
 __END_DECLS
 

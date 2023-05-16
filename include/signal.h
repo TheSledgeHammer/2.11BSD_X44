@@ -9,10 +9,11 @@
 #ifndef _SIGNAL_H_
 #define _SIGNAL_H_
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <sys/signal.h>
 
+#ifdef notyet
 #ifndef	NSIG
 #define NSIG				32
 
@@ -69,58 +70,6 @@
 #define SIGUSR1 			30	/* user defined signal 1 */
 #define SIGUSR2 			31	/* user defined signal 2 */
 
-#ifndef KERNEL
-int	(*signal())();
-#endif
-
-/*
- * Signal vector "template" used in sigvec call.
- */
-struct	sigvec {
-	int		(*sv_handler)();	/* signal handler */
-	long	sv_mask;			/* signal mask to apply */
-	int		sv_flags;			/* see signal options below */
-};
-#define SV_ONSTACK		0x0001	/* take signal on signal stack */
-#define SV_INTERRUPT	0x0002	/* do not restart system on signal return */
-#define sv_onstack 		sv_flags /* isn't compatibility wonderful! */
-
-/*
- * Structure used in sigstack call.
- */
-struct	sigstack {
-	char	*ss_sp;			/* signal stack pointer */
-	int		ss_onstack;		/* current status */
-};
-
-/*
- * Information pushed on stack when a signal is delivered.
- * This is used by the kernel to restore state following
- * execution of the signal handler.  It is also made available
- * to the handler to allow it to properly restore state if
- * a non-standard exit is performed.
- */
-struct	sigcontext {
-	int		sc_onstack;		/* sigstack state to restore */
-	long	sc_mask;		/* signal mask to restore */
-	int		sc_sp;			/* sp to restore */
-	int		sc_fp;			/* fp to restore */
-	int		sc_r1;			/* r1 to restore */
-	int		sc_r0;			/* r0 to restore */
-	int		sc_pc;			/* pc to restore */
-	int		sc_ps;			/* psl to restore */
-	int		sc_ovno;		/* overlay to restore */
-};
-
-#define	BADSIG		(int (*)())-1
-#define	SIG_DFL		(int (*)())0
-#define	SIG_IGN		(int (*)())1
-
-#ifdef KERNEL
-#define	SIG_CATCH	(int (*)())2
-#define	SIG_HOLD	(int (*)())3
-#endif
-#endif
 
 /*
  * Macro for converting signal number to a mask suitable for
@@ -131,5 +80,33 @@ struct	sigcontext {
 #ifndef KERNEL
 extern long	sigblock(int), sigsetmask(int);
 #endif
+#endif
+
+__BEGIN_DECLS
+int	raise __P((int));
+#ifndef	_ANSI_SOURCE
+int	kill __P((pid_t, int));
+int	sigaction __P((int, const struct sigaction *, struct sigaction *));
+int	sigaddset __P((sigset_t *, int));
+int	sigdelset __P((sigset_t *, int));
+int	sigemptyset __P((sigset_t *));
+int	sigfillset __P((sigset_t *));
+int	sigismember __P((const sigset_t *, int));
+int	sigpending __P((sigset_t *));
+int	sigprocmask __P((int, const sigset_t *, sigset_t *));
+int	sigsuspend __P((const sigset_t *));
+#ifndef _POSIX_SOURCE
+int	killpg __P((pid_t, int));
+int	sigblock __P((int));
+int	siginterrupt __P((int, int));
+int	sigpause __P((int));
+int	sigreturn __P((struct sigcontext *));
+int	sigsetmask __P((int));
+int	sigstack __P((const struct sigstack *, struct sigstack *));
+int	sigvec __P((int, struct sigvec *, struct sigvec *));
+void	psignal __P((unsigned int, const char *));
+#endif	/* !_POSIX_SOURCE */
+#endif	/* !_ANSI_SOURCE */
+__END_DECLS
 
 #endif	/* !_SIGNAL_H_ */
