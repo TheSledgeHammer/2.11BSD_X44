@@ -169,7 +169,7 @@ retry: 	(void)execve(fname, argv, environ);
 			newargs[0] = "sh";
 			newargs[1] = fname;
 			bcopy(argv + 1, newargs + 2, cnt * sizeof(char *));
-			(void)execve(_PATH_BSHELL, memp, environ);
+			(void)execve(_PATH_BSHELL, newargs, environ);
 			return (-1);
 		case ETXTBSY:
 			if (++etxtbsy > 5)
