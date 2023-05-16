@@ -54,8 +54,6 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <sys/signal.h>
-#include <sys/errno.h>
 #include <sys/ioctl.h>
 #define DKTYPENAMES
 #define FSTYPENAMES
@@ -69,7 +67,6 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #include <stdlib.h>
 #include <limits.h>
 #include <unistd.h>
-#include <util.h>
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
@@ -80,28 +77,26 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #else
 #include <sys/disklabel.h>
 #include <sys/boot.h>
+#include <util.h>
 #endif /* HAVE_NBTOOL_CONFIG_H */
 
 #include "pathnames.h"
 #include "dkcksum.h"
 
-int		writelabel(int, char *, struct disklabel *);
-struct disklabel *readlabel(int flag);
-void  	l_perror(char *);
-struct disklabel *makebootarea(char *, struct disklabel *, int);
-void	display(FILE *, struct disklabel *);
-int		edit(struct disklabel *, int);
-int		editit(void);
-void	fixlabel(int, struct disklabel *, int);
-void    makelabel(char *, char *, struct disklabel *);
-char	*skip(char *);
-char	*word(char *);
-int		getasciilabel(FILE *, struct disklabel *);
-int		getasciipartspec(char *, struct disklabel *, int, int);
-int		checklabel(struct disklabel *);
-void	setbootflag(struct disklabel *);
-void  	Warning(const char *fmt, ...);
-void 	usage(void);
+static int		  writelabel(int, char *, struct disklabel *);
+static struct disklabel  *readlabel(int);
+static void  	          l_perror(char *);
+static void              makelabel(const char *, const char *, struct disklabel *);
+static struct disklabel  *makebootarea(char *, struct disklabel *, int);
+static void	          display(FILE *, struct disklabel *);
+static int		  edit(struct disklabel *, int);
+static int		  editit(void);
+static int               checklabel(struct disklabel *);
+static int		  getasciilabel(FILE *, struct disklabel *);
+static int		  getasciipartspec(char *, struct disklabel *, int, int);
+static void	          setbootflag(struct disklabel *);
+static void  	          Warning(const char *fmt, ...);
+static void 	          usage(void);
 
 /*
  * Disklabel: read and write disklabels.
@@ -121,13 +116,15 @@ void 	usage(void);
 #define	DEFEDITOR	_PATH_VI
 #define	streq(a,b)	(strcmp(a,b) == 0)
 
-char	*dkname;
-char	*specname;
-char	tmpfil[] = PATH_TMPFILE;
+static char	*dkname;
+static char	*specname;
+static char	tmpfil[] = PATH_TMPFILE;
 
-char	namebuf[BBSIZE];
-struct	disklabel lab;
-char	bootarea[BBSIZE];
+static struct	disklabel lab;
+static char	bootarea[BBSIZE];
+static int	rflag;
+static int	forceflag;
+static u_int32_t start_lba;
 
 #define MAX_PART ('z')
 #define MAX_NUM_PARTS (1 + MAX_PART - 'a')
@@ -136,22 +133,19 @@ static char    part_offset_type[MAX_NUM_PARTS];
 static int     part_set[MAX_NUM_PARTS];
 
 #if NUMBOOT > 0
-int		installboot;	/* non-zero if we should install a boot program */
-char	*bootbuf;		/* pointer to buffer with remainder of boot prog */
-int		bootsize;		/* size of remaining boot program */
-char	*xxboot;		/* primary boot */
-char	*bootxx;		/* secondary boot */
-char	boot0[MAXPATHLEN];
-char	boot1[MAXPATHLEN];
+static int		installboot;	/* non-zero if we should install a boot program */
+static char	*bootbuf;		/* pointer to buffer with remainder of boot prog */
+static int		bootsize;		/* size of remaining boot program */
+static char	*xxboot;		/* primary boot */
+static char	*bootxx;		/* secondary boot */
+static char	boot0[MAXPATHLEN];
+static char	boot1[MAXPATHLEN];
 #endif
 
-enum {
+static enum {
 	UNSPEC, EDIT, NOWRITE, READ, RESTORE, WRITE, WRITEABLE, WRITEBOOT
 } op = UNSPEC;
 
-int	rflag;
-int	forceflag;
-u_int32_t start_lba;
 #ifdef DEBUG
 int	debug;
 #define OPTIONS	"BNRWb:ders:w"
@@ -159,7 +153,7 @@ int	debug;
 #define OPTIONS	"BNRWb:ers:w"
 #endif
 
-void
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -170,6 +164,7 @@ main(argc, argv)
 	char *name;
 	extern char *optarg;
 	extern int optind;
+	//op = UNSPEC;
 
 	f = 0;
 	error = 0;
@@ -348,7 +343,7 @@ main(argc, argv)
 	exit(error);
 }
 
-void
+static void
 fixlabel(f, lp, writeadj)
   struct disklabel *lp;
   int f, writeadj;
@@ -373,12 +368,12 @@ fixlabel(f, lp, writeadj)
  * effect, set the names of the primary and secondary boot files
  * if specified.
  */
-void
+static void
 makelabel(type, name, lp)
-	char *type, *name;
+	const char *type, *name;
 	register struct disklabel *lp;
 {
-	register struct disklabel *dp;
+	struct disklabel *dp;
 
 	dp = getdiskbyname(type);
 	if (dp == NULL) {
@@ -392,7 +387,7 @@ makelabel(type, name, lp)
 	}
 }
 
-int
+static int
 writelabel(f, boot, lp)
 	int f;
 	char *boot;
@@ -459,7 +454,7 @@ writelabel(f, boot, lp)
 	return (0);
 }
 
-void
+static void
 l_perror(s)
 	char *s;
 {
@@ -495,7 +490,7 @@ l_perror(s)
  * Fetch disklabel for disk.
  * Use ioctl to get label unless -r flag is given.
  */
-struct disklabel *
+static struct disklabel *
 readlabel(f)
 	int f;
 {
@@ -533,7 +528,7 @@ readlabel(f)
  * Construct a bootarea (d_bbsize bytes) in the specified buffer ``boot''
  * Returns a pointer to the disklabel portion of the bootarea.
  */
-struct disklabel *
+static struct disklabel *
 makebootarea(boot, dp, f)
 	char *boot;
 	register struct disklabel *dp;
@@ -653,7 +648,7 @@ makebootarea(boot, dp, f)
 	return (lp);
 }
 
-void
+static void
 display(f, lp)
 	FILE *f;
 	register struct disklabel *lp;
@@ -744,7 +739,7 @@ display(f, lp)
 	fflush(f);
 }
 
-int
+static int
 edit(lp, f)
 	struct disklabel *lp;
 	int f;
@@ -792,11 +787,11 @@ edit(lp, f)
 	return (1);
 }
 
-int
+static int
 editit(void)
 {
 	register int pid, xpid;
-	int stat, omask;
+	int stat, omask, retval;
 	register char *ed;
 	sigset_t set, oset;
 
@@ -807,11 +802,14 @@ editit(void)
 	sigaddset(&set, SIGQUIT);
 	sigprocmask(SIG_BLOCK, &set, &oset);
 	while ((pid = fork()) < 0) {
+	/*
 		if (errno == EPROCLIM) {
 			warnx("you have too many processes");
 			return(0);
 		}
+		*/
 		if (errno != EAGAIN) {
+			sigprocmask(SIG_SETMASK, &oset, (sigset_t *)0);
 			warn("fork");
 			return(0);
 		}
@@ -825,8 +823,10 @@ editit(void)
 		setuid(getuid());
 		if ((ed = getenv("EDITOR")) == (char*) 0)
 			ed = DEFEDITOR;
-		execlp(ed, ed, tmpfil, 0);
-		err(1, "%s", ed);
+		retval = execlp(ed, ed, tmpfil, (void *)0);
+		if (retval == -1) {
+		  err(1, "%s", ed);
+		}
 	}
 	while ((xpid = wait(&stat)) >= 0)
 		if (xpid == pid)
@@ -836,7 +836,7 @@ editit(void)
 	return (!stat);
 }
 
-char *
+static char *
 skip(cp)
 	register char *cp;
 {
@@ -847,7 +847,7 @@ skip(cp)
 	return (cp);
 }
 
-char *
+static char *
 word(cp)
 	register char *cp;
 {
@@ -892,7 +892,7 @@ word(cp)
  * in the same format as that put out by display(),
  * and fill in lp.
  */
-int
+static int
 getasciilabel(f, lp)
 	FILE	*f;
 	register struct disklabel *lp;
@@ -1108,7 +1108,7 @@ getasciilabel(f, lp)
  * Read a partition line into partition `part' in the specified disklabel.
  * Return 0 on success, 1 on failure.
  */
-int
+static int
 getasciipartspec(tp, lp, part, lineno)
 	char *tp;
 	struct disklabel *lp;
@@ -1190,14 +1190,14 @@ getasciipartspec(tp, lp, part, lineno)
  * Check disklabel for errors and fill in
  * derived fields according to supplied values.
  */
-int
+static int
 checklabel(lp)
 	register struct disklabel *lp;
 {
 	register struct partition *pp, *pp2;
 	int i, j, errors = 0;
 	char part;
-	u_long base_offset, needed, total_size, total_percent, current_offset;
+	unsigned long base_offset, needed, total_size, total_percent, current_offset;
 	int seen_default_offset;
 	long free_space;
 	int hog_part;
@@ -1519,7 +1519,7 @@ checklabel(lp)
  * This allows newfs to prevent creation of a filesystem where it might
  * clobber bootstrap code.
  */
-void
+static void
 setbootflag(lp)
 	register struct disklabel *lp;
 {
@@ -1556,7 +1556,7 @@ setbootflag(lp)
 }
 
 /*VARARGS1*/
-void
+static void
 Warning(const char *fmt, ...)
 {
 	va_list ap;
@@ -1568,7 +1568,7 @@ Warning(const char *fmt, ...)
 	va_end(ap);
 }
 
-void
+static void
 usage(void)
 {
 #if NUMBOOT > 0
