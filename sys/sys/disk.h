@@ -56,6 +56,8 @@
 #include <sys/ioctl.h>
 #include <sys/ioccom.h>
 
+#include <machine/disklabel.h>
+
 /*
  * Disk device structures.
  *
