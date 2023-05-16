@@ -41,8 +41,6 @@
 #include <sys/null.h>
 #endif
 
-#include <machine/disklabel.h>
-
 /*
  * Disk description table, see disktab(5)
  */
@@ -101,10 +99,14 @@
 #endif
 
 /* Size of bootblock area in sector-size neutral bytes */
-#ifdef notyet
+#ifdef BBSIZE
 #define BBSIZE				BSD_BOOTBLOCK_SIZE
+#endif
+
+#ifdef SBSIZE
 #define SBSIZE				BSD_SUPERBLOCK_SIZE
 #endif
+
 #define	LABEL_PART			BSD_PART_RAW
 #define	RAW_PART			BSD_PART_RAW
 #define	SWAP_PART			BSD_PART_SWAP
