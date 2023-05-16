@@ -20,8 +20,8 @@ static char sccsid[] = "@(#)ualarm.c	5.2 (Berkeley) 3/9/86";
  */
 unsigned
 ualarm(usecs, reload)
-	register unsigned usecs;
-	register unsigned reload;
+	register unsigned int usecs;
+	register unsigned int reload;
 {
 	struct itimerval new, old;
 

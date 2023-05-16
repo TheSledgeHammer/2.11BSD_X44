@@ -121,12 +121,12 @@ struct dkdevice {
 	struct partition 	dk_parts[MAXPARTITIONS];/* in-kernel portion */
 	struct cpu_disklabel *dk_cpulabel;
 };
-
+/*
 struct cpu_disklabel {
 #define __HAVE_DISKLABEL_DKBAD
 	struct dkbad  		bad;
 };
-
+*/
 struct dkdriver {
 	void				(*d_strategy)(struct buf *);
 	void				(*d_minphys)(struct buf *);

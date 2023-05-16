@@ -47,6 +47,8 @@ static char sccsid[] = "@(#)dkcksum.c	8.1 (Berkeley) 6/5/93";
 #include <sys/disklabel.h>
 #endif /* HAVE_NBTOOL_CONFIG_H */
 
+#include "dkcksum.h"
+
 u_short
 dkcksum(lp)
 	register struct disklabel *lp;

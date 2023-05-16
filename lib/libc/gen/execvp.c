@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
 #include <errno.h>
 
 static	char shell[] =	"/bin/sh";
-char	*execat(), *getenv();
+char	*execat(char *, char *, char *);
 extern	errno;
 
 int
@@ -152,7 +152,7 @@ execl(const char *name, const char *arg, ...)
 	errno = sverrno;
 	return (-1);
 }
-
+/*
 int
 execl(const char *name, const char *arg, ...)
 {
@@ -170,6 +170,7 @@ execl(const char *name, const char *arg, ...)
 	errno = sverrno;
 	return (-1);
 }
+*/
 
 int
 execle(const char *name, const char *arg, ...)

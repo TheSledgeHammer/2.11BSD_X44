@@ -326,8 +326,8 @@ char *block;
 
 char *
 crypt(pw,salt)
-char *pw;
-char *salt;
+	char *pw;
+	char *salt;
 {
 	register i, j, c;
 	int temp;

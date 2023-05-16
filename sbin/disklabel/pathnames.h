@@ -38,5 +38,3 @@
 //#define	_PATH_BOOTDIR	"/usr/mdec"
 #define	_PATH_BOOTDIR	"/boot"
 #define	PATH_TMPFILE	"/tmp/EdDk.aXXXXXX"
-
-u_short dkcksum(struct disklabel *);

@@ -41,6 +41,8 @@
 #include <sys/null.h>
 #endif
 
+#include <machine/disklabel.h>
+
 /*
  * Disk description table, see disktab(5)
  */
@@ -483,8 +485,8 @@ struct partinfo {
 #endif /* LOCORE */
 
 #ifdef _KERNEL
-
 struct dkdevice;
+
 char	*readdisklabel(dev_t, void (*)(struct buf *), struct disklabel *);
 int	setdisklabel(struct disklabel *, struct disklabel *, u_long);
 int	writedisklabel(dev_t, void (*)(struct buf *), struct disklabel *);

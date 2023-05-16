@@ -83,10 +83,11 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 #endif /* HAVE_NBTOOL_CONFIG_H */
 
 #include "pathnames.h"
+#include "dkcksum.h"
 
 int		writelabel(int, char *, struct disklabel *);
 struct disklabel *readlabel(int flag);
-void  l_perror(char *);
+void  	l_perror(char *);
 struct disklabel *makebootarea(char *, struct disklabel *, int);
 void	display(FILE *, struct disklabel *);
 int		edit(struct disklabel *, int);
@@ -99,7 +100,7 @@ int		getasciilabel(FILE *, struct disklabel *);
 int		getasciipartspec(char *, struct disklabel *, int, int);
 int		checklabel(struct disklabel *);
 void	setbootflag(struct disklabel *);
-void  Warning(const char *fmt, ...);
+void  	Warning(const char *fmt, ...);
 void 	usage(void);
 
 /*

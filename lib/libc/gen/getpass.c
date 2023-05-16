@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)getpass.c	5.2 (Berkeley) 3/9/86";
 
 char *
 getpass(prompt)
-char *prompt;
+	char *prompt;
 {
 	struct sgttyb ttyb;
 	int flags;
