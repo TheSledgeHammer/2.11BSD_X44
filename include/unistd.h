@@ -64,15 +64,15 @@ unsigned int	alarm(int);
 int	 			chdir(const char *);
 int	 			chown(const char *, uid_t, gid_t);
 int	 			close(int);
-//size_t		 	confstr(int, char *, size_t);
+//size_t		confstr(int, char *, size_t);
 int	 			dup(int);
 int	 			dup2(int, int);
-int	                execl(const char *, const char *, ...) __null_sentinel;
-int	                execle(const char *, const char *, ...);
-int	                execlp(const char *, const char *, ...) __null_sentinel;;
-int	                execv(const char *, char * const *);
-int	                execve(const char *, char * const *, char * const *);
-int	                execvp(const char *, char * const *);
+int	            execl(const char *, const char *, ...) __null_sentinel;
+int	            execle(const char *, const char *, ...);
+int	            execlp(const char *, const char *, ...) __null_sentinel;
+int	            execv(const char *, char * const *);
+int	            execve(const char *, char * const *, char * const *);
+int	            execvp(const char *, char * const *);
 pid_t	 		fork(void);
 long	 		fpathconf(int, int);
 gid_t	 		getegid(void);
@@ -80,7 +80,7 @@ uid_t			geteuid(void);
 gid_t	 		getegid(void);
 uid_t	 		geteuid(void);
 gid_t	 		getgid(void);
-int	 		getgroups(int, gid_t[]);
+int	 		    getgroups(int, gid_t[]);
 char			*getlogin(void);
 pid_t	 		getpgrp(void);
 pid_t	 		getpid(void);
@@ -123,7 +123,7 @@ pid_t	 		vfork(void);
 
 extern	char 	*sys_siglist[];
 extern	char	*optarg;		/* getopt(3) external variables */
-extern	int	opterr, optind, optopt;
+extern	int	    opterr, optind, optopt;
 
 /*
  * The Open Group Base Specifications, Issue 5; IEEE Std 1003.1-2001 (POSIX)
