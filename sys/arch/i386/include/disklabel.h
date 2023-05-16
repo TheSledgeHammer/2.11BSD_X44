@@ -37,5 +37,5 @@ struct cpu_disklabel {
 #define __HAVE_DISKLABEL_DKBAD
 	struct dkbad  		bad;
 };
-#endif
+
 #endif /* _I386_DISKLABEL_H_ */
