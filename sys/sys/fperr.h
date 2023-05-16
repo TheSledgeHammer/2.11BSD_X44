@@ -33,9 +33,8 @@ struct fperr {
 #define	FPE_FLTDIV_FAULT	0x0D		/* divide by zero floating fault */
 #define	FPE_FLTUND_FAULT	0x0E		/* floating underflow fault */
 
-#define FPE_CRAZY			0x0F		/* illegal return code - FPU crazy */
-#define FPE_OPCODE_TRAP		0x10		/* bad floating point op code */
-#define FPE_OPERAND_TRAP	0x11		/* bad floating point operand */
+#define FPE_CRAZY		0x0F		/* illegal return code - FPU crazy */
+#define FPE_OPERAND_TRAP	0x10		/* bad floating point operand */
 
 /* SIGILL */
 #define	ILL_ILLOPC_TRAP		0x01		/* Illegal opcode */
