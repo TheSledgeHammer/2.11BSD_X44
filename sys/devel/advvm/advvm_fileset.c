@@ -32,6 +32,8 @@
 #include <sys/tree.h>
 #include <lib/libkern/libkern.h>
 
+#include <devel/advvm/dm/dm.h>
+
 #include <devel/sys/malloctypes.h>
 #include <devel/advvm/advvm_var.h>
 #include <devel/advvm/advvm_fileset.h>
@@ -41,11 +43,13 @@ struct advdomain_list 	domain_list[MAXDOMAIN];
 struct dkdevice 		disktable[HASH_MASK]; 		/* fileset's disk hash lookup */
 
 void
-advvm_fileset_init(adfst)
+advvm_fileset_init(adfst, name, id)
 	advvm_fileset_t *adfst;
+	char *name;
+	uint32_t id;
 {
-	adfst->fst_name = NULL;
-	adfst->fst_id = 0;
+	adfst->fst_name = name;
+	adfst->fst_id = id;
 	adfst->fst_tags = NULL;
 	adfst->fst_file = NULL;
 }
@@ -89,69 +93,63 @@ advvm_fdir_hash(tag_dir, fdr_name)
 /*
  * set fileset's tag directory name and id.
  */
-void
-advvm_filset_set_tag_directory(tag, name, id)
-  advvm_tag_dir_t *tag;
-  char            *name;
-  uint32_t        id;
+advvm_tag_dir_t *
+advvm_filset_allocate_tag_directory(name, id)
+	char            *name;
+	uint32_t        id;
 {
-	if (tag == NULL) {
-		advvm_malloc((struct advvm_tag_directory *) tag, sizeof(struct advvm_tag_directory *), M_WAITOK);
-	}
+	advvm_tag_dir_t *tag;
+
+	tag = malloc(sizeof(struct advvm_tag_directory *), M_ADVVM, M_WAITOK);
 	tag->tag_name = name;
 	tag->tag_id = id;
+
+	return (tag[advvm_tag_hash(name, id)]);
 }
 
 /*
  * set fileset's file directory: from the fileset's tag directory and file directory
  * name.
  */
-void
-advvm_filset_set_file_directory(fdir, tag, name, disk)
-	advvm_file_dir_t  *fdir;
-	advvm_tag_dir_t   *tag;
-	char              *name;
-	struct dkdevice	  *disk;
+advvm_file_dir_t *
+advvm_filset_allocate_file_directory(tag, name)
+	advvm_tag_dir_t *tag;
+	char            *name;
 {
-	if (fdir == NULL) {
-		advvm_malloc((struct advvm_file_directory *) fdir,
-				sizeof(struct advvm_file_directory *), M_WAITOK);
-	}
+	advvm_file_dir_t *fdir;
 
+	fdir = malloc(sizeof(struct advvm_file_dir_t *), M_ADVVM, M_WAITOK);
 	fdir->fdr_tag = tag;
 	fdir->fdr_name = name;
-	fdir->fdr_disk = disk; //= &disktable[advvm_fdir_hash(tag, fdir_name)];
+
+	return (fdir[advvm_fdir_hash(tag, name)]);
+}
+
+/*
+ * WIP
+ */
+void
+advvm_filset_create_mcell(adfst)
+	advvm_fileset_t *adfst;
+{
+	register advvm_tag_dir_t 	*tag;
+	register advvm_file_dir_t 	*fdir;
+
+	tag = advvm_filset_allocate_tag_directory(adfst->fst_name, adfst->fst_id);
+	fdir = advvm_filset_allocate_file_directory(tag, tag->tag_name);
+
+	adfst->fst_tags = tag;
+	adfst->fst_file = fdir;
 }
 
 void
-advvm_fileset_create(adom, adfst, fst_name, fst_id, tag_name, tag_id, fdir_name, fdir_disk)
+advvm_fileset_create(adom, adfst)
 	advvm_domain_t 		*adom;
 	advvm_fileset_t 	*adfst;
-	char 				*fst_name, *tag_name, *fdir_name;
-	uint32_t 			fst_id, tag_id;
-	struct dkdevice	  	*fdir_disk;
 {
-	register advvm_tag_dir_t 	tag;
-	register advvm_file_dir_t 	fdir;
-
-	advvm_filset_set_tag_directory(&tag, tag_name, tag_id);
-	advvm_filset_set_file_directory(&fdir, &tag, fdir_name, fdir_disk);
-
-	if (tag == NULL) {
-		panic("advvm_fileset_create: no tag directory set");
-		return;
-	}
-	if (fdir == NULL) {
-		panic("advvm_fileset_create: no file directory set");
-		return;
-	}
-
 	adfst->fst_domain = adom;
-	adfst->fst_name = fst_name;
-	adfst->fst_id = fst_id;
-	adfst->fst_tags = &tag;
-	adfst->fst_file = &fdir;
-	adfst->fst_hash = advvm_fdir_hash(&tag, fdir_name);
+
+	advvm_filset_create_mcell(adfst);
 	advvm_storage_create(adfst->fst_storage, adfst->fst_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
 }
 

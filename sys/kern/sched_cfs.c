@@ -214,18 +214,19 @@ int
 cfs_schedcpu(p)
 	struct proc *p;
 {
-	register struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
+	register struct gsched_cfs *cfs;
+	int cpticks;		/* p_cpticks counter (deadline) */
+	u_char slack;		/* slack/laxity time */
+	u_char priw;		/* priority weighting */
 
-	int cpticks = 0;			/* p_cpticks counter (deadline) */
-	u_char slack;				/* slack/laxity time */
-
+	cpticks = 0;
 	slack = p->p_gsched->gsc_slack;
-	if (p->p_gsched->gsc_priweight != 0) {
-		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
-	}
+	priw = p->p_gsched->gsc_priweight;
+	cfs = gsched_cfs(p->p_gsched);
 
 	/* add to cfs queue */
-	cfs->cfs_estcpu = cfs_decay(p, cfs->cfs_priweight);
+	cfs->cfs_estcpu = cfs_decay(p, priw);
+	cfs->cfs_priweight = priw;
 	gsched_estcpu(cfs->cfs_estcpu, p->p_estcpu);
 	RB_INSERT(gsched_cfs_rbtree, &cfs->cfs_parent, cfs);
 	/* add to run-queue */

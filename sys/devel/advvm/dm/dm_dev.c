@@ -320,7 +320,7 @@ dm_dev_alloc(void)
 	//dmv->diskp = kmem_zalloc(sizeof(struct disk), KM_SLEEP);
 	advvm_malloc(dmv, sizeof(dm_dev_t), M_WAITOK);
 	advvm_malloc(dmv->diskp, sizeof(struct dkdevice), M_WAITOK);
-	return dmv;
+	return (dmv);
 }
 
 /*

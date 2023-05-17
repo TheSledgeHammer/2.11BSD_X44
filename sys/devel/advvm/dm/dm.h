@@ -113,12 +113,10 @@ TAILQ_HEAD(dm_dev_head, dm_dev);
 
 struct dm_dev {
 	advvm_fileset_t				fileset;
-//#define name					fileset.fst_name
-//#define uuid					fileset.fst_id
 	char 						name[ADVVM_NAME_LEN];
 	char						uuid[ADVVM_UUID_LEN];
 
-	struct dkdevice				*devt;			 /* pointer to autoconf device_t structure */
+	struct device				*devt;			 /* pointer to autoconf device structure */
 	uint64_t 					minor; 			 /* Device minor number */
 	uint32_t 					flags; 			 /* store communication protocol flags */
 
@@ -126,7 +124,7 @@ struct dm_dev {
 	uint32_t 					ref_cnt;
 	dm_table_head_t 			table_head;
 
-#define diskp					fileset.fst_file.fdr_disk
+	 struct dkdevice			*diskp;
 
 	TAILQ_ENTRY(dm_dev) 		next_devlist; 	/* Major device list. */
 };
