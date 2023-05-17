@@ -119,7 +119,7 @@
  * 		1. Higher priority weighting equals a lower CPU decay.
  * 		2. Lower priority weighting equals a higher CPU decay.
  */
-#define	loadfactor(loadav)		        (2 * (loadav))
+#define	loadfactor(loadav)		(2 * (loadav))
 #define priwfactor(loadav, priweight)   (((2 * (loadav)) / (priweight)) * (priweight))
 #define	decay_cpu(loadfac, cpu)	        (((loadfac) * (cpu)) / ((loadfac) + FSCALE))
 
