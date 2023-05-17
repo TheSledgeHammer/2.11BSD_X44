@@ -152,7 +152,7 @@ cfs_decay(p, priweight)
 	if (p->p_estcpu == 0) {
 		p->p_estcpu = p->p_cpu;
 	}
-    newcpu = (u_int)decay_cpu(load, p->p_estcpu) + p->p_nice;
+	newcpu = (u_int)decay_cpu(load, p->p_estcpu) + p->p_nice;
 	return (newcpu);
 }
 
