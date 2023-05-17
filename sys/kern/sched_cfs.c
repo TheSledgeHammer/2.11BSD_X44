@@ -112,70 +112,6 @@
  *      power:  5.68    10.32   14.94   19.55
  */
 /* calculations for digital decay to forget 90% of usage in 5*loadav sec */
-#define	loadfactor(loadav)		        (2 * (loadav))
-#define	decay_cpu(loadfac, cpu)	        (((loadfac) * (cpu)) / ((loadfac) + FSCALE))
-
-/* cpu decay  */
-unsigned int
-cpu_decay(p)
-	register struct proc *p;
-{
-	register fixpt_t loadfac;
-	register unsigned int newcpu;
-
-	loadfac = loadfactor(averunnable.ldavg[0]);
-    if (p->p_estcpu == 0) {
-    	p->p_estcpu = p->p_cpu;
-    }
-    newcpu = (u_int)decay_cpu(loadfac, p->p_estcpu) + p->p_nice;
-    return (newcpu);
-}
-
-/* update cpu decay */
-void
-cpu_update(p)
-	register struct proc *p;
-{
-	register unsigned int newcpu;
-	register fixpt_t loadfac;
-
-	newcpu = p->p_estcpu;
-	loadfac = loadfactor(averunnable.ldavg[0]);
-	if (p->p_slptime > 5 * loadfac) {
-		p->p_estcpu = 0;
-	} else {
-		p->p_slptime--; /* 2nd round: (1st round in schedcpu) */
-		while (newcpu && --p->p_slptime) {
-			newcpu = (u_int)decay_cpu(loadfac, newcpu);
-		}
-		p->p_estcpu = min(newcpu, UCHAR_MAX);
-	}
-}
-
-unsigned int
-cfs_decay(p, priweight)
-	register struct proc *p;
-	u_char priweight;
-{
-	return (cpu_decay(p));
-}
-
-void
-cfs_update(p, priweight)
-	register struct proc *p;
-	u_char priweight;
-{
-	cpu_update(p);
-}
-
-/*
- * ISSUE:
- * - priority weighting breaks above cpu decay algorithm.
- *
- * TODO:
- * - change the priwfactor from being directly calculated of the
- * 		loadfactor in cfs_decay & cfs_update.
- */
 /*
  * Modified 4.4BSD-Lite2 CPU Decay Calculation:
  * - To account for a process's priority weighting.
@@ -183,27 +119,41 @@ cfs_update(p, priweight)
  * 		1. Higher priority weighting equals a lower CPU decay.
  * 		2. Lower priority weighting equals a higher CPU decay.
  */
-#ifdef notyet
-#define priwfactor(loadav, priweight)   (loadfactor(loadav) / (priweight))
+#define	loadfactor(loadav)		        (2 * (loadav))
+#define priwfactor(loadav, priweight)   (((2 * (loadav)) / (priweight)) * (priweight))
+#define	decay_cpu(loadfac, cpu)	        (((loadfac) * (cpu)) / ((loadfac) + FSCALE))
 
+/* cpu loadfactor */
+fixpt_t
+cfs_loadfactor(priweight)
+ 	 u_char priweight;
+{
+	 register fixpt_t loadfac, priwfac;
+
+	 loadfac = loadfactor(averunnable.ldavg[0]);
+	 priwfac = priwfactor(averunnable.ldavg[0], priweight);
+
+	 if (loadfac > priwfac && priweight != 0) {
+		 return (priwfac);
+	 }
+	 return (loadfac);
+}
+
+/* cpu decay  */
 unsigned int
 cfs_decay(p, priweight)
 	register struct proc *p;
 	u_char priweight;
 {
-	register fixpt_t loadfac;
+	register fixpt_t load;
 	register unsigned int newcpu;
 
-    if (priweight == 0) {
-        loadfac = loadfactor(averunnable.ldavg[0]);
-    } else {
-        loadfac = priwfactor(averunnable.ldavg[0], priweight);
-    }
-    if (p->p_estcpu == 0) {
-    	p->p_estcpu = p->p_cpu;
-    }
-    newcpu = (u_int)decay_cpu(loadfac, p->p_estcpu) + p->p_nice;
-    return (newcpu);
+	load = cfs_loadfactor(priweight);
+	if (p->p_estcpu == 0) {
+		p->p_estcpu = p->p_cpu;
+	}
+    newcpu = (u_int)decay_cpu(load, p->p_estcpu) + p->p_nice;
+	return (newcpu);
 }
 
 /* update cpu decay */
@@ -212,26 +162,21 @@ cfs_update(p, priweight)
 	register struct proc *p;
 	u_char priweight;
 {
-	register unsigned int newcpu = p->p_estcpu;
-	register fixpt_t loadfac;
+	register fixpt_t load;
+	register unsigned int newcpu;
 
-    if (priweight == 0) {
-        loadfac = loadfactor(averunnable.ldavg[0]);
-    } else {
-        loadfac = priwfactor(averunnable.ldavg[0], priweight);
-    }
-
-	if (p->p_slptime > 5 * loadfac) {
+	newcpu = p->p_estcpu;
+	load = cfs_loadfactor(priweight);
+	if (p->p_slptime > 5 * load) {
 		p->p_estcpu = 0;
 	} else {
-		p->p_slptime--;						/* 2nd round: (1st round in schedcpu) */
+		p->p_slptime--; /* 2nd round: (1st round in schedcpu) */
 		while (newcpu && --p->p_slptime) {
-			newcpu = (int)decay_cpu(loadfac, newcpu);
+			newcpu = (u_int)decay_cpu(load, newcpu);
 		}
 		p->p_estcpu = min(newcpu, UCHAR_MAX);
 	}
 }
-#endif
 
 int
 cfs_rb_compare(a, b)
