@@ -73,10 +73,8 @@ static char sccsid[] = "@(#)disklabel.c	8.4 (Berkeley) 5/4/95";
 
 #if HAVE_NBTOOL_CONFIG_H
 #include <nbinclude/sys/disklabel.h>
-#include <nbinclude/sys/boot.h>
 #else
 #include <sys/disklabel.h>
-#include <sys/boot.h>
 #include <util.h>
 #endif /* HAVE_NBTOOL_CONFIG_H */
 
@@ -108,7 +106,11 @@ static void 	          usage(void);
  */
 
 #ifndef BBSIZE
-#define	BBSIZE	8192			/* size of boot area, with label */
+#define	BBSIZE		BSD_BBSIZE			/* size of boot area, with label */
+#endif
+
+#ifndef SBSIZE
+#define SBSIZE		BSD_SBSIZE			/* size of super block */
 #endif
 
 #define	NUMBOOT	2
@@ -164,7 +166,6 @@ main(argc, argv)
 	char *name;
 	extern char *optarg;
 	extern int optind;
-	//op = UNSPEC;
 
 	f = 0;
 	error = 0;
@@ -791,23 +792,16 @@ static int
 editit(void)
 {
 	register int pid, xpid;
-	int stat, omask, retval;
+	int stat, retval;
 	register char *ed;
 	sigset_t set, oset;
 
-	//omask = sigblock(sigmask(SIGINT) | sigmask(SIGQUIT) | sigmask(SIGHUP));
 	sigemptyset(&set);
 	sigaddset(&set, SIGINT);
 	sigaddset(&set, SIGHUP);
 	sigaddset(&set, SIGQUIT);
 	sigprocmask(SIG_BLOCK, &set, &oset);
 	while ((pid = fork()) < 0) {
-	/*
-		if (errno == EPROCLIM) {
-			warnx("you have too many processes");
-			return(0);
-		}
-		*/
 		if (errno != EAGAIN) {
 			sigprocmask(SIG_SETMASK, &oset, (sigset_t *)0);
 			warn("fork");
@@ -816,8 +810,6 @@ editit(void)
 		sleep(1);
 	}
 	if (pid == 0) {
-
-		//sigsetmask(omask);
 		sigprocmask(SIG_SETMASK, &oset, NULL);
 		setgid(getgid());
 		setuid(getuid());
@@ -831,7 +823,6 @@ editit(void)
 	while ((xpid = wait(&stat)) >= 0)
 		if (xpid == pid)
 			break;
-	//sigsetmask(omask);
 	sigprocmask(SIG_SETMASK, &oset, NULL);
 	return (!stat);
 }

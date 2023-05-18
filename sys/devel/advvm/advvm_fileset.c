@@ -72,7 +72,7 @@ advvm_tag_hash(tag_name, tag_id)
 	const char  *tag_name;
 	uint32_t    tag_id;
 {
-	uint32_t hash1 = triple32(sizeof(tag_name)) % HASH_MASK;
+	uint32_t hash1 = triple32(strlen(tag_name) + sizeof(tag_name)) % HASH_MASK;
 	uint32_t hash2 = triple32(tag_id) % HASH_MASK;
 	return (hash1 ^ hash2);
 }
@@ -86,7 +86,7 @@ advvm_fdir_hash(tag_dir, fdr_name)
 	const char        *fdr_name;
 {
 	uint32_t hash1 = advvm_tag_hash(tag_dir->tag_name, tag_dir->tag_id);
-	uint32_t hash2 = triple32(sizeof(fdr_name)) % HASH_MASK;
+	uint32_t hash2 = triple32(strlen(fdr_name) + sizeof(fdr_name)) % HASH_MASK;
 	return (hash1 ^ hash2);
 }
 
@@ -174,25 +174,18 @@ advvm_filset_find(adom, name, id)
 }
 
 void
-advvm_filset_insert(adom, adfst, name, id)
+advvm_filset_insert(adom, adfst)
 	advvm_domain_t    	*adom;
 	advvm_fileset_t 	*adfst;
-	char 		        *name;
-	uint32_t 	        id;
 {
 	struct advdomain_list 		*bucket;
-	register advvm_tag_dir_t 	*tags;
-	register advvm_file_dir_t 	*fdir;
 	
 	if(adom == NULL || adfst == NULL) {
 		return;
 	}
 
-	tags = adfst->fst_tags;
-	fdir = adfst->fst_file;
-
 	advvm_fileset_set_domain(adfst, adom);
-	advvm_fileset_create(adom, adfst, name, id, tags->tag_name, tags->tag_id, fdir->fdr_tag, fdir->fdr_name, fdir->fdr_disk);
+	advvm_fileset_create(adom, adfst);
 
 	bucket = &domain_list[advvm_hash(adom)];
 

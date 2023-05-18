@@ -24,7 +24,7 @@ _UFS_INCS!=	cd ${_UFSDIR} && find ffs ufs -name '*.h'
 _ARCH_INCS!=	${TOOL_SED} -e 's/^\#.*//' ${.CURDIR}/../headerlist
 .endif
 
-#_INCS=		
+_INCS=		# empty		
 _SYSINCS=	boot.h 		\
 			disklabel.h diskslice.h diskapm.h diskgpt.h diskmbr.h \
 			dkbad.h 	\
@@ -39,8 +39,8 @@ beforedepend:
 	cd ${_ARCHDIR} && \
 	    ${TOOL_PAX} -s /include\\/// -rw ${_ARCH_INCS} \
 	    ${TOOLDIR}/include/nbinclude
-#	cd ${_INCDIR} && \
-#	    ${TOOL_PAX} -rw ${_INCS} ${TOOLDIR}/include/nbinclude
+	cd ${_INCDIR} && \
+	    ${TOOL_PAX} -rw ${_INCS} ${TOOLDIR}/include/nbinclude
 	cd ${_SYSDIR} && \
 	    ${TOOL_PAX} -rw ${_SYSINCS} ${TOOLDIR}/include/nbinclude/sys
 	cd ${_UFSDIR} && \
