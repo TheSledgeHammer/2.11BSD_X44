@@ -71,7 +71,7 @@ __weak_alias(getdiskbyname,_getdiskbyname)
 #if 0
 static void	error(int);
 #endif
-static int	gettype(char *, const char *const *);
+static int	gettype(char *, char **);
 
 #define getnumdflt(field, dname, dflt) {                                    \
     long f;                                                                 \
@@ -204,10 +204,10 @@ getdiskbyname(const char *name)
 }
 
 static int
-gettype(char *t, const char *const *names)
+gettype(char *t, char **names)
 {
-	const char *const *nm;
-
+	register char **nm;
+	
 	_DIAGASSERT(t != NULL);
 	_DIAGASSERT(names != NULL);
 
