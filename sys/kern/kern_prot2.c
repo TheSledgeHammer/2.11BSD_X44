@@ -56,13 +56,17 @@ int
 _setuid(uid)
 	register uid_t uid;
 {
-	if (uid != u.u_pcred->p_ruid && !suser())
-		return(u.u_error);
+	if (uid != u.u_pcred->p_ruid && !suser()) {
+		return (u.u_error);
+	}
+	(void)chgproccnt(u.u_pcred->p_ruid, -1);
+	(void)chgproccnt(uid, 1);
+	u.u_pcred->pc_ucred = crcopy(u.u_pcred->pc_ucred);
 	u.u_procp->p_uid = uid;
 	u.u_ucred->cr_uid = uid;
 	u.u_pcred->p_ruid = uid;
 	u.u_pcred->p_svuid = uid;
-	//u.u_acflag |= ASUGID;
+	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 }
 
@@ -72,8 +76,12 @@ setuid()
 	struct setuid_args {
 		syscallarg(uid_t) uid;
 	} *uap = (struct setuid_args *)u.u_ap;
-
-	return(_setuid(SCARG(uap, uid)));
+	register uid_t uid;
+	
+	uid = SCARG(uap, uid);
+	u.u_error = _setuid(uid);
+	u.u_procp->p_flag |= P_SUGID;
+	return (u.u_error);
 }
 
 int
@@ -81,11 +89,13 @@ _seteuid(euid)
 	register uid_t euid;
 {
 
-	if (euid != u.u_pcred->p_ruid && euid != u.u_pcred->p_svuid && !suser())
+	if (euid != u.u_pcred->p_ruid && euid != u.u_pcred->p_svuid && !suser()) {
 		return (u.u_error);
+	}
 	/*
 	 * Everything's okay, do it.
 	 */
+	u.u_pcred->pc_ucred = crcopy(u.u_pcred->pc_ucred);
 	u.u_ucred->cr_uid = euid;
 	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
@@ -97,20 +107,26 @@ seteuid()
 	struct seteuid_args {
 		syscallarg(uid_t) euid;
 	} *uap = (struct seteuid_args *)u.u_ap;
-
-	return(_seteuid(SCARG(uap, euid)));
+	register uid_t euid;
+	
+	euid = SCARG(uap, euid);
+	u.u_error = _seteuid(euid);
+	u.u_procp->p_flag |= P_SUGID;
+	return (u.u_error);
 }
 
 int 
 _setgid(gid)
 	register gid_t gid;
 {
-	if (gid != u.u_pcred->p_rgid && !suser())
+	if (gid != u.u_pcred->p_rgid && !suser()) {
 		return (u.u_error);	/* XXX */
+	}
+        u.u_pcred->pc_ucred = crcopy(u.u_pcred->pc_ucred);
 	u.u_ucred->cr_groups[0] = gid;		/* effective gid is u_groups[0] */
 	u.u_pcred->p_rgid = gid;
 	u.u_pcred->p_svgid = gid;
-	//u.u_acflag |= ASUGID;
+	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 }
 
@@ -120,8 +136,12 @@ setgid()
 	struct setgid_args {
 		syscallarg(gid_t) gid;
 	} *uap = (struct setgid_args *)u.u_ap;
-
-	return(_setgid(SCARG(uap, gid)));
+        register gid_t gid;
+        
+        gid = SCARG(uap, gid);
+        u.u_error = _setgid(gid);
+	u.u_procp->p_flag |= P_SUGID;
+	return(u.u_error);
 }
 
 int

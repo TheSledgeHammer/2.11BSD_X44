@@ -76,9 +76,11 @@ out:
 
 int
 getuid()
-{
+{ 
 	u.u_r.r_val1 = u.u_pcred->p_ruid;
+#if defined(COMPAT_43)
 	u.u_r.r_val2 = u.u_ucred->cr_uid;		/* XXX */
+#endif
 	return (0);
 }
 
@@ -93,7 +95,9 @@ int
 getgid()
 {
 	u.u_r.r_val1 = u.u_pcred->p_ruid;
+#if defined(COMPAT_43)
 	u.u_r.r_val2 = u.u_ucred->cr_groups[0];		/* XXX */
+#endif
 	return (0);
 }
 
