@@ -38,7 +38,6 @@ static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
 
 #include <sys/param.h>
 #include <sys/types.h>
-//#include <sys/errno.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
