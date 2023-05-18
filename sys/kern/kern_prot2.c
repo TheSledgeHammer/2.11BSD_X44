@@ -141,15 +141,17 @@ setgid()
         gid = SCARG(uap, gid);
         u.u_error = _setgid(gid);
 	u.u_procp->p_flag |= P_SUGID;
-	return(u.u_error);
+	return (u.u_error);
 }
 
 int
 _setegid(egid)
 	register gid_t egid;
 {
-	if (egid != u.u_pcred->p_rgid && egid != u.u_pcred->p_svgid && !suser())
+	if (egid != u.u_pcred->p_rgid && egid != u.u_pcred->p_svgid && !suser()) {
 		return (u.u_error);
+	}
+	u.u_pcred->pc_ucred = crcopy(u.u_pcred->pc_ucred);
 	u.u_ucred->cr_groups[0] = egid;
 	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
@@ -161,8 +163,12 @@ setegid()
 	struct setegid_args {
 		syscallarg(gid_t) egid;
 	} *uap = (struct setegid_args *)u.u_ap;
-
-	return(_setegid(SCARG(uap, egid)));
+	register gid_t egid;
+	
+	egid = SCARG(uap, egid);
+	u.u_error = _setegid(egid);
+	u.u_procp->p_flag |= P_SUGID;
+	return (u.u_error);
 }
 
 int
@@ -192,8 +198,11 @@ setsid()
 	register struct setsid_args {
 		syscallarg(pid_t) pid;
 	}*uap = (struct setsid_args *) u.u_ap;
-
-	return(_setsid(SCARG(uap, pid)));
+	register pid_t pid;
+	
+	pid = SCARG(uap, pid);
+	u.u_error = _setsid(pid);
+	return(u.u_error);
 }
 
 int
@@ -205,9 +214,11 @@ _groupmember(gid, cred)
 	gid_t *egp;
 
 	egp = &(cred->cr_groups[cred->cr_ngroups]);
-	for (gp = cred->cr_groups; gp < egp; gp++)
-		if (*gp == gid)
+	for (gp = cred->cr_groups; gp < egp; gp++) {
+		if (*gp == gid) {
 			return (1);
+		}
+	}
 	return (0);
 }
 
@@ -241,8 +252,8 @@ int
 suser()
 {
     u_short acflag;
+	
     acflag = u.u_acflag;
-    
 	if(_suser(u.u_ucred, &acflag) == EPERM) {
 		u.u_error = EPERM;
 	}
