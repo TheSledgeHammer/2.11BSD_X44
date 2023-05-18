@@ -202,7 +202,7 @@ setsid()
 	
 	pid = SCARG(uap, pid);
 	u.u_error = _setsid(pid);
-	return(u.u_error);
+	return (u.u_error);
 }
 
 int
