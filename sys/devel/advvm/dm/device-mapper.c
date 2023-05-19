@@ -234,7 +234,7 @@ dm_modcmd(modcmd_t cmd, void *arg)
  *	Autoconfiguration match function for pseudo-device glue.
  */
 static int
-dm_match(device_t parent, cfdata_t match, void *aux)
+dm_match(struct dkdevice *parent, struct cfdata *match, void *aux)
 {
 
 	/* Pseudo-device; always present. */
@@ -247,7 +247,7 @@ dm_match(device_t parent, cfdata_t match, void *aux)
  *	Autoconfiguration attach function for pseudo-device glue.
  */
 static void
-dm_attach(device_t parent, device_t self, void *aux)
+dm_attach(struct dkdevice *parent, struct dkdevice *self, void *aux)
 {
 
 	if (!pmf_device_register(self, NULL, NULL))

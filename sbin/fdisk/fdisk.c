@@ -27,7 +27,6 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD$"); */
 
-#include <sys/disk.h>
 #include <sys/disklabel.h>
 #include <sys/diskmbr.h>
 #include <sys/endian.h>

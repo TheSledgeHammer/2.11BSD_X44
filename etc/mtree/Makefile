@@ -3,7 +3,7 @@
 .include <bsd.own.mk>
 
 
-CONFIGFILES=	special
+CONFIGFILES=	211BSD.dist special
 FILESDIR=		/etc/mtree
 
 

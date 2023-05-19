@@ -17,6 +17,7 @@ tty04	"/usr/libexec/getty std.9600"	unknown off secure
 tty05	"/usr/libexec/getty std.9600"	unknown off secure
 tty06	"/usr/libexec/getty std.9600"	unknown off secure
 tty07	"/usr/libexec/getty std.9600"	unknown off secure
+
 ttyp0	none				network
 ttyp1	none				network
 ttyp2	none				network

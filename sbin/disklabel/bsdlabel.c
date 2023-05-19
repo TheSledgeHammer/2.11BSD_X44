@@ -92,7 +92,7 @@ static int		  editit(void);
 static int               checklabel(struct disklabel *);
 static int		  getasciilabel(FILE *, struct disklabel *);
 static int		  getasciipartspec(char *, struct disklabel *, int, int);
-static void	          setbootflag(struct disklabel *);
+static void	          	setbootflag(struct disklabel *);
 static void  	          Warning(const char *fmt, ...);
 static void 	          usage(void);
 

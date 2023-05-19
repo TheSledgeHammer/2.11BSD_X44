@@ -40,7 +40,6 @@
 
 #define HASH_MASK 		32							/* hash mask */
 struct advdomain_list 	domain_list[MAXDOMAIN];
-struct dkdevice 		disktable[HASH_MASK]; 		/* fileset's disk hash lookup */
 
 void
 advvm_fileset_init(adfst, name, id)

@@ -113,6 +113,7 @@ TAILQ_HEAD(dm_dev_head, dm_dev);
 
 struct dm_dev {
 	advvm_fileset_t				fileset;
+
 	char 						name[ADVVM_NAME_LEN];
 	char						uuid[ADVVM_UUID_LEN];
 

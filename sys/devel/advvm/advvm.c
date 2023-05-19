@@ -52,6 +52,7 @@ struct advvm_block 		*advblk;
 struct advvm_softc {
 	struct device		*sc_dev;		/* Self. */
 	struct dkdevice		sc_dkdev;		/* hook for generic disk handling */
+
 	char				*sc_name;		/* device name *
 	struct buf 			*sc_buflist;
 	char			 	sc_dying;		/* device detached */
