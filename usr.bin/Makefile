@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= bzip2 cap_mkdb cksum crunch ctags db genassym gencat gprof hexdump join ldd	lorder	\
+SUBDIR= bzip2 c11 c89 c99 cap_mkdb cksum crunch ctags db genassym gencat gprof hexdump join ldd	lorder	\
 		m4 make man menuc mkcsmapper mkdep mkesdb mklocale mktemp msgc rpcgen sed sortinfo 	\
 		stat tic time touch tsort uudecode uuencode vgrind write xinstall xlint
 												
