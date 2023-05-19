@@ -140,10 +140,10 @@ _SUBDIR=	tools .WAIT lib
 _SUBDIR+=	include contrib bin games 
 _SUBDIR+=	libexec sbin usr.bin usr.lib
 #.if ${MKBOOT} != "no"
-_SUBDIR+=	stand
+#_SUBDIR+=	stand
 #.endif
-_SUBDIR+=	usr.sbin share sys etc tests compat
-_SUBDIR+=	.WAIT rescue .WAIT distrib regress
+_SUBDIR+=	usr.sbin share sys etc #tests compat
+#_SUBDIR+=	.WAIT rescue .WAIT distrib regress
 
 .for dir in ${_SUBDIR}
 .if "${dir}" == ".WAIT" \
@@ -215,9 +215,9 @@ postinstall-fix-obsolete_stand: .NOTMAIN .PHONY
 # Targets (in order!) called by "make build".
 #
 BUILDTARGETS+=	check-tools
-#.if ${MKUPDATE} == "no" && !defined(NOCLEANDIR)
+.if ${MKUPDATE} == "no" && !defined(NOCLEANDIR)
 BUILDTARGETS+=	cleandir
-#.endif
+.endif
 .if ${MKOBJDIRS} != "no"
 BUILDTARGETS+=	do-top-obj
 .endif
