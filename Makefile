@@ -444,21 +444,21 @@ install-image: .PHONY
 #
 
 check-tools: .PHONY
-#.if ${TOOLCHAIN_MISSING} != "no" && !defined(EXTERNAL_TOOLCHAIN)
-#	@echo '*** WARNING:  Building on MACHINE=${MACHINE} with missing toolchain.'
-#	@echo '*** May result in a failed build or corrupt binaries!'
-#.elif defined(EXTERNAL_TOOLCHAIN)
-#	@echo '*** Using external toolchain rooted at ${EXTERNAL_TOOLCHAIN}.'
-#.endif
+.if ${TOOLCHAIN_MISSING} != "no" && !defined(EXTERNAL_TOOLCHAIN)
+	@echo '*** WARNING:  Building on MACHINE=${MACHINE} with missing toolchain.'
+	@echo '*** May result in a failed build or corrupt binaries!'
+.elif defined(EXTERNAL_TOOLCHAIN)
+	@echo '*** Using external toolchain rooted at ${EXTERNAL_TOOLCHAIN}.'
+.endif
 .if defined(NBUILDJOBS)
 	@echo '*** WARNING: NBUILDJOBS is obsolete; use -j directly instead!'
 .endif
 
 # Delete or sanitise a leftover METALOG from a previous build.
 clean_METALOG: .PHONY .MAKE
-#.if ${MKUPDATE} != "no"
-#	${MAKEDIRTARGET} distrib/sets clean_METALOG
-#.endif
+.if ${MKUPDATE} != "no"
+	${MAKEDIRTARGET} distrib/sets clean_METALOG
+.endif
 
 do-distrib-dirs: .PHONY .MAKE
 .if !defined(DESTDIR) || ${DESTDIR} == ""
