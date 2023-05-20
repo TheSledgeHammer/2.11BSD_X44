@@ -64,7 +64,7 @@ struct advvm_fileset {
     /* fileset tag information */
     advvm_tag_dir_t                 fst_tags;						/* tags */
     /* fileset directory information */
-    advvm_file_dir_t		   		fst_file;						/* file directory */
+    //advvm_file_dir_t		   		fst_file;						/* file directory */
 
     /* domain-related fields */
     advvm_domain_t             	    *fst_domain;                    /* domain this fileset belongs too */

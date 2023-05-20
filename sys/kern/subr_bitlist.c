@@ -27,10 +27,6 @@
  */
 
 /*
- * Cpu_top (MI & MD related) is an interface to the underlying bitlist/hash array.
- * With the main goal of transferring information about the smp topology (topo_node)
- * to the cpu (cpu_info).
- *
  * Backing Store:
  * bitlist/hash array uses a list with an integer hash function (triple32) to store
  * information.
@@ -51,57 +47,10 @@
 struct bitlist_header   		bitset[BITHASH_MASK];
 int 				 			bitlist_counter;
 struct lock_object   			bitlist_lock;
-ctop_t 							*ctop;
 
-#define bitlist_lock_init(lock) 		(simple_lock_init(lock, "bitlist_slock"))
-#define bitlist_lock(lock) 				(simple_lock(lock))
-#define bitlist_unlock(lock) 			(simple_unlock(lock))
-
-void	bitlist_init(void);
-
-void
-ctop_init(void)
-{
-	ctop = (ctop_t *)malloc(sizeof(ctop_t *), M_TOPO, M_WAITOK);
-	bitlist_init();
-}
-
-void
-ctop_set(top, val)
-	ctop_t 	*top;
-	uint32_t val;
-{
-    top = ctop;
-    top->ct_mask = val;
-    bitlist_insert(val);
-}
-
-uint32_t
-ctop_get(top)
-	ctop_t *top;
-{
-    top = ctop;
-    return (bitlist_search(top->ct_mask)->value);
-}
-
-void
-ctop_remove(top)
-	ctop_t *top;
-{
-    top = ctop;
-    bitlist_remove(top->ct_mask);
-}
-
-int
-ctop_isset(top, val)
-	ctop_t *top;
-	uint32_t val;
-{
-	if (top->ct_mask != val) {
-		return (1);
-	}
-	return (0);
-}
+#define bitlist_lock_init(lock) (simple_lock_init(lock, "bitlist_slock"))
+#define bitlist_lock(lock) 		(simple_lock(lock))
+#define bitlist_unlock(lock) 	(simple_unlock(lock))
 
 void
 bitlist_init(void)

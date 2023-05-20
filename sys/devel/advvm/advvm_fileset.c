@@ -30,6 +30,7 @@
 
 #include <sys/extent.h>
 #include <sys/tree.h>
+#include <sys/fnv_hash.h>
 #include <lib/libkern/libkern.h>
 
 #include <devel/advvm/dm/dm.h>
@@ -41,6 +42,8 @@
 #define HASH_MASK 		32							/* hash mask */
 struct advdomain_list 	domain_list[MAXDOMAIN];
 
+void	advvm_mcell_init(advvm_fileset_t *);
+
 void
 advvm_fileset_init(adfst, name, id)
 	advvm_fileset_t *adfst;
@@ -50,7 +53,6 @@ advvm_fileset_init(adfst, name, id)
 	adfst->fst_name = name;
 	adfst->fst_id = id;
 	adfst->fst_tags = NULL;
-	adfst->fst_file = NULL;
 }
 
 void
@@ -124,23 +126,6 @@ advvm_filset_allocate_file_directory(tag, name)
 	return (fdir[advvm_fdir_hash(tag, name)]);
 }
 
-/*
- * WIP
- */
-void
-advvm_filset_create_mcell(adfst)
-	advvm_fileset_t *adfst;
-{
-	register advvm_tag_dir_t 	*tag;
-	register advvm_file_dir_t 	*fdir;
-
-	tag = advvm_filset_allocate_tag_directory(adfst->fst_name, adfst->fst_id);
-	fdir = advvm_filset_allocate_file_directory(tag, tag->tag_name);
-
-	adfst->fst_tags = tag;
-	adfst->fst_file = fdir;
-}
-
 void
 advvm_fileset_create(adom, adfst)
 	advvm_domain_t 		*adom;
@@ -148,7 +133,7 @@ advvm_fileset_create(adom, adfst)
 {
 	adfst->fst_domain = adom;
 
-	advvm_filset_create_mcell(adfst);
+	advvm_mcell_init(adfst);
 	advvm_storage_create(adfst->fst_storage, adfst->fst_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
 }
 
@@ -219,4 +204,98 @@ advvm_fileset_destroy(adfst)
 		advvm_storage_delete(adfst->fst_storage);
 	}
 	advvm_free((advvm_fileset_t *)adfst);
+}
+
+/*
+ * mcell functions:
+ * used to location advvm file directory from fileset id and tag
+ */
+struct advcell_list;
+LIST_HEAD(advcell_list, advvm_cell);
+struct advvm_cell {
+	advvm_tag_dir_t 		*ac_tag;
+	advvm_file_dir_t		*ac_fdir;
+	LIST_ENTRY(advvm_cell)	ac_next;
+};
+typedef struct advvm_cell advvm_cell_t;
+
+struct advcell_list advcell_table;
+
+void
+advvm_mcell_init(adfst)
+	advvm_fileset_t 	*adfst;
+{
+	LIST_INIT(&advcell_table);
+
+	advvm_mcell_add(adfst);
+}
+
+unsigned long
+advvm_mcell_hash(adfst)
+	advvm_fileset_t *adfst;
+{
+	Fnv32_t hash = fnv_32_buf(&adfst, sizeof(*adfst), FNV1_32_INIT) % HASH_MASK;
+	return (hash);
+}
+
+void
+advvm_mcell_add(adfst)
+	advvm_fileset_t 	*adfst;
+{
+	struct advcell_list  *cell;
+	advvm_cell_t		*admc;
+
+	KASSERT(adfst != NULL);
+	cell = &advcell_table[mcell_hash(adfst)];
+	admc = (struct advvm_cell *)malloc(sizeof(struct advvm_cell), M_ADVVM, M_WAITOK);
+	admc->ac_tag = advvm_filset_allocate_tag_directory(adfst->fst_name, adfst->fst_id);
+	admc->ac_fdir = advvm_filset_allocate_file_directory(admc->ac_tag, admc->ac_tag->tag_name);
+
+	LIST_INSERT_HEAD(cell, admc, ac_next);
+}
+
+advvm_cell_t *
+advvm_mcell_find(adfst)
+	advvm_fileset_t 	*adfst;
+{
+	struct advcell_list  *cell;
+	advvm_cell_t		*admc;
+
+	KASSERT(adfst != NULL);
+	cell = &advcell_table[mcell_hash(adfst)];
+	LIST_FOREACH(admc, cell, ac_next) {
+		if (admc->ac_tag == adfst->fst_tags) {
+			return (admc);
+		}
+	}
+	return (NULL);
+}
+
+void
+advvm_mcell_remove(adfst)
+	advvm_fileset_t 	*adfst;
+{
+	struct advcell_list  *cell;
+	advvm_cell_t		*admc;
+
+	KASSERT(adfst != NULL);
+	cell = &advcell_table[mcell_hash(adfst)];
+	LIST_FOREACH(admc, cell, ac_next) {
+		if (admc->ac_tag == adfst->fst_tags) {
+			LIST_REMOVE(admc, ac_next);
+		}
+	}
+}
+
+advvm_file_dir_t *
+advvm_mcell_get_fdir(adfst)
+	advvm_fileset_t 	*adfst;
+{
+	advvm_cell_t *admc;
+
+	admc = advvm_mcell_find(adfst);
+	if (admc != NULL) {
+		return (admc->ac_fdir);
+	}
+	return (NULL);
 }

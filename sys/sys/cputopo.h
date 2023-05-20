@@ -48,6 +48,21 @@
 
 #include <machine/cpu.h>
 
+union cpu_top {
+    uint32_t 				ct_mask;
+};
+typedef union cpu_top 		ctop_t;
+
+void		ctop_set(ctop_t *, uint32_t);
+uint32_t	ctop_get(ctop_t *);
+int			ctop_isset(ctop_t *, uint32_t);
+
+/* ctop macros */
+#define CPU_SET(top, val) 	(ctop_set(top, val))
+#define CPU_GET(top) 		(ctop_get(top))
+#define CPU_ISSET(top, val)	(ctop_isset(top, val))
+#define CPU_EMPTY(top)		((top) == NULL)
+
 /*
  * Types of nodes in the topological tree.
  */

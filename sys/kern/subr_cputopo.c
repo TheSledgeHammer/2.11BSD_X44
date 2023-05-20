@@ -25,11 +25,6 @@
  * SUCH DAMAGE.
  */
 
-/*
- * This module holds the global variables and machine independent functions
- * used for the kernel SMP support.
- */
-
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -39,6 +34,63 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 #include <sys/cputopo.h>
+
+/*
+ * Cpu_top (MI & MD related) is an interface to the underlying bitlist/hash array.
+ * With the main goal of transferring information about the smp topology (topo_node)
+ * to the cpu (cpu_info).
+ *
+ */
+ctop_t	*ctop;
+
+void
+ctop_init(void)
+{
+	ctop = (ctop_t *)malloc(sizeof(ctop_t *), M_TOPO, M_WAITOK);
+	bitlist_init();
+}
+
+void
+ctop_set(top, val)
+	ctop_t 	*top;
+	uint32_t val;
+{
+    top = ctop;
+    top->ct_mask = val;
+    bitlist_insert(val);
+}
+
+uint32_t
+ctop_get(top)
+	ctop_t *top;
+{
+    top = ctop;
+    return (bitlist_search(top->ct_mask)->value);
+}
+
+void
+ctop_remove(top)
+	ctop_t *top;
+{
+    top = ctop;
+    bitlist_remove(top->ct_mask);
+}
+
+int
+ctop_isset(top, val)
+	ctop_t *top;
+	uint32_t val;
+{
+	if (top->ct_mask != val) {
+		return (1);
+	}
+	return (0);
+}
+
+/*
+ * This module holds the global variables and machine independent functions
+ * used for the kernel SMP support.
+ */
 
 #ifdef SMP
 void

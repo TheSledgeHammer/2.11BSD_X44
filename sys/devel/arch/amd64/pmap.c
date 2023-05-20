@@ -468,7 +468,7 @@ pmap_pml4e_to_pml5e(pmap_t pmap, vm_offset_t va)
 	pml4_entry_t *pml4;
 	pml5_entry_t *pml5;
 
-	pml4 = pmap_table(pmap, va, 4);
+	pml4 = pmap_pml4e(pmap, va);
 	if (pmap_is_la57(pmap)) {
 		pml5 = &pml4[l4etol5e(PL4_E(va))];
 		PG_V = pmap_valid_bit(pmap);

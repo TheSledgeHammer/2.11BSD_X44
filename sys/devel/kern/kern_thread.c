@@ -190,6 +190,8 @@ mxthread_init(kt)
 	KASSERT(kt != NULL);
 
 	LIST_INIT(kt->kt_mxthreads);
+
+
 }
 
 struct mxthread *
@@ -219,8 +221,8 @@ mxthread_add(kt, channel)
 
 	mx = mxthread_alloc(channel);
 	mx->mx_kthread = kt;
-	mx->mx_tid	= kt->kt_tid;
-	mx->mx_pgrp = kt->kt_pgrp;
+	//mx->mx_tid	= kt->kt_tid;
+	//mx->mx_pgrp = kt->kt_pgrp;
 
 	KTHREAD_LOCK(kt);
 	LIST_INSERT_HEAD(kt->kt_mxthreads, mx, mx_list);
