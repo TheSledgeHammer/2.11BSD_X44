@@ -70,7 +70,7 @@
 #ifndef _AMD64_PMAP_H_
 #define _AMD64_PMAP_H_
 
-#define L4ETOL5E_SHIFT  (PTP_SHIFT * 2)-3)
+#define L4ETOL5E_SHIFT  (PTP_SHIFT * 2)- 3)
 
 #define l4etol4e(idx)   (l4tol4(idx) & (L4_REALMASK >> L4_SHIFT))
 #define l4etol5e(idx)   (((l4tol4(idx) + l4tol5(idx)) + L4ETOL5E_SHIFT) & ((1UL << PTP_SHIFT)-1))
@@ -85,7 +85,7 @@
 #define PL2_E(va)       ((((va)) >> L2_SHIFT) & ((1UL << PTP_SHIFT)-1))
 #define PL3_E(va)       ((((va)) >> L3_SHIFT) & ((1UL << PTP_SHIFT)-1))
 #define PL4_E(va)       ((((va)) >> L4_SHIFT) & ((1UL << PTP_SHIFT)-1))
-#define PL5_E(va)       ((((va)) >> L5_SHIFT) & ((1UL << PTP_SHIFT)-1))
+//#define PL5_E(va)       ((((va)) >> L5_SHIFT) & ((1UL << PTP_SHIFT)-1))
 #define PL_E(va, lvl)   ((((va)) >> ptp_shifts[(lvl)-1]) & ((1UL << PTP_SHIFT)-1))
 
 #define PTP_LEVELS_LA57	5						/* 5 level page tables (la57 enabled) */

@@ -238,12 +238,12 @@ pmap_bootstrap_la57(firstaddr)
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
 	 * entering all existing kernel mappings into level 5 table.
 	 */
-	v_pml5[l4etol5e(UPT_MAX_ADDRESS)] = IdlePML4 | PG_V | PG_RW | PG_A | PG_M | pg_g;
+	v_pml5[l4etol5e(PL4_E(UPT_MAX_ADDRESS))] = IdlePML4 | PG_V | PG_RW | PG_A | PG_M | pg_g;
 
 	/*
 	 * Add pml5 entry for 1:1 trampoline mapping after LA57 is turned on.
 	 */
-	v_pml5[l4etol5e(m_code)] = v_pml4 | PG_V | PG_RW | PG_A | PG_M;
+	v_pml5[l4etol5e(PL4_E(m_code))] = v_pml4 | PG_V | PG_RW | PG_A | PG_M;
 	v_pml4[PL4_E(m_code)] = v_pdpt | PG_V | PG_RW | PG_A | PG_M;
 
 	/*
@@ -276,7 +276,7 @@ pmap_bootstrap_la57(firstaddr)
 	 * Now unmap the trampoline, and free the pages.
 	 * Clear pml5 entry used for 1:1 trampoline mapping.
 	 */
-	//pte_clear(&v_pml5[PL5_E(m_code)]);
+	//pte_clear(&v_pml5[l4etol5e(PL4_E(m_code))]);
 	invlpg(m_code);
 
 	/*
