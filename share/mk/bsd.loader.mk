@@ -35,7 +35,6 @@ INTERP_MENU=				dloader.menu
 INTERP_RC=					dloader.rc
 
 # Interpreter Support
-MK_LOADER_DLOADER=			yes
 MK_LOADER_LUA=				no
 
 #
@@ -43,10 +42,8 @@ MK_LOADER_LUA=				no
 #
 .if ${MK_LOADER_LUA} == "yes"
 LOADER_DEFAULT_INTERP?=lua
-.elif ${MK_LOADER_DLOADER} == "yes"
-LOADER_DEFAULT_INTERP?=dloader
 .else
-LOADER_DEFAULT_INTERP?=simp
+LOADER_DEFAULT_INTERP?=dloader
 .endif
 LOADER_INTERP?=	${LOADER_DEFAULT_INTERP}
 

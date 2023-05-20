@@ -2,14 +2,10 @@
 
 .include <bsd.loader.mk>
 
-SUBDIR= 	arch common
+SUBDIR= 	arch common dloader
 
 .if ${MK_LOADER_LUA} == "yes"
 SUBDIR+=	lua
-.endif
-
-.if ${MK_LOADER_DLOADER} == "yes"
-SUBDIR+=	dloader
 .endif
 
 .if ${MK_EFI} == "yes"

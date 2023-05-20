@@ -1,7 +1,6 @@
 # $FreeBSD$
 
-#.include <bsd.loader.mk>
-.include <stand.mk>
+.include <bsd.loader.mk>
 
 INCSDIR= 	/usr/include/stand/boot/common
 
@@ -13,8 +12,6 @@ SRCS+=		boot.c commands.c console.c devopen.c environment.c 	\
 			
 .if ${LOADER_INTERP} == "dloader"
 SRCS+=	interp_dloader.c
-.elif ${LOADER_INTERP} == "simp"
-SRCS+=	interp_simple.c
 .else
 .error Unknown interpreter ${LOADER_INTERP}
 .endif

@@ -1,7 +1,6 @@
 # $FreeBSD$
 
-#.include <bsd.loader.mk>
-.include <stand.mk>
+.include <bsd.loader.mk>
 
 #INCSDIR= 		/usr/include/${BOOTSRC}/boot/dloader
 

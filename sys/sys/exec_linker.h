@@ -118,6 +118,7 @@ struct exec_vmcmd {
     int                 ev_flags;
     struct vnode        *ev_vnodep;
     u_long 				ev_offset;
+    int 				ev_resid;
 
 #define	VMCMD_RELATIVE	0x0001	/* ev_addr is relative to base entry */
 #define	VMCMD_BASE		0x0002	/* marks a base entry */

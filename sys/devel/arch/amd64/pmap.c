@@ -88,11 +88,11 @@
 #include <devel/arch/amd64/vmparam.h>
 #include <devel/arch/amd64/pmap.h>
 
-#define	CR4_LA57                0x00001000	/* Enable 5-level paging */
 /*
  * CPUID instruction 7 Structured Extended Features, leaf 0 ecx info
  */
 #define	CPUID_STDEXT2_LA57		0x00010000
+#define	CR4_LA57                0x00001000	/* Enable 5-level paging */
 
 uint64_t 		KPML5phys;					/* phys addr of kernel level 5 */
 pml5_entry_t 	*IdlePML5;
@@ -170,7 +170,7 @@ create_pagetables_la57(firstaddr)
 
 		/* Connect the KVA slots up to the PML5 */
 		for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-			IdlePML5[PDIR_SLOT_KERNBASE + i] = KPML4phys + ptoa(i);
+			IdlePML5[PDIR_SLOT_KERNBASE + i] = IdlePML4 + ptoa(i);
 			IdlePML5[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
 		}
 	}
@@ -192,15 +192,15 @@ pmap_enable_la57(cr4)
  * FreeBSD Ported with a modifications
  */
 static void
-pmap_bootstrap_la57(pmap, firstaddr)
-	pmap_t pmap;
+pmap_bootstrap_la57(firstaddr)
 	vm_offset_t firstaddr;
 {
 	pml5_entry_t *v_pml5;
 	pml4_entry_t *v_pml4;
-	pdpt_entry_t *v_pdp;
-	pd_entry_t *v_pd;
-	pt_entry_t *v_pt;
+	pdpt_entry_t *v_pdpt;
+	pd_entry_t *v_pde;
+	pt_entry_t *v_pte;
+	struct region_descriptor region;
 	char *v_code;
 	vm_offset_t *m_code, *temp;
 	void (*la57_tramp)(uint64_t pml5);
@@ -213,38 +213,38 @@ pmap_bootstrap_la57(pmap, firstaddr)
 		return;
 	}
 
+	setregion(&region, gdt, NGDT * sizeof(gdt)-1);
+
 	v_code = kmem_alloc(kernel_map, (la57_trampoline_end - la57_trampoline));
 
 	create_pagetables_la57(firstaddr);
-
-	pmap->pm_pml5 = (pml5_entry_t *)(KERNBASE + KPML5phys);
 
 	/*
 	 * Map m_code 1:1, it appears below 4G in KVA due to physical
 	 * address being below 4G.  Since kernel KVA is in upper half,
 	 * the pml4e should be zero and free for temporary use.
 	 */
-	v_pml4 = pmap_extract(kernel_pmap, (vm_offset_t)KPML4phys);
-	v_pdp = pmap_extract(kernel_pmap, (vm_offset_t)KPDPphys);
-	v_pd = pmap_extract(kernel_pmap, (vm_offset_t)KPDphys);
-	v_pt = pmap_extract(kernel_pmap, (vm_offset_t)KPTphys);
+	v_pml4 = pmap_extract(kernel_pmap, (vm_offset_t)IdlePML4);
+	v_pdpt = pmap_extract(kernel_pmap, (vm_offset_t)IdlePDPT);
+	v_pde = pmap_extract(kernel_pmap, (vm_offset_t)IdlePTD);
+	v_pte = pmap_extract(kernel_pmap, (vm_offset_t)KPTmap);
 
-	v_pml4[PL4_E(v_code)] = v_pdp | PG_V | PG_RW | PG_A | PG_M;
-	v_pdp[PL3_E(v_code)] = v_pd | PG_V | PG_RW | PG_A | PG_M;
-	v_pd[PL2_E(v_code)] = v_pt | PG_V | PG_RW | PG_A | PG_M;
-	v_pt[PL1_E(v_code)] = v_code | PG_V | PG_RW | PG_A | PG_M;
+	v_pml4[PL4_E(v_code)] = v_pdpt | PG_V | PG_RW | PG_A | PG_M;
+	v_pdpt[PL3_E(v_code)] = v_pde | PG_V | PG_RW | PG_A | PG_M;
+	v_pde[PL2_E(v_code)] = v_pte | PG_V | PG_RW | PG_A | PG_M;
+	v_pte[PL1_E(v_code)] = v_code | PG_V | PG_RW | PG_A | PG_M;
 
 	/*
 	 * Add pml5 entry at top of KVA pointing to existing pml4 table,
 	 * entering all existing kernel mappings into level 5 table.
 	 */
-	v_pml5[l4etol5e(UPT_MAX_ADDRESS)] = KPML4phys | PG_V | PG_RW | PG_A | PG_M | pg_g;
+	v_pml5[l4etol5e(UPT_MAX_ADDRESS)] = IdlePML4 | PG_V | PG_RW | PG_A | PG_M | pg_g;
 
 	/*
 	 * Add pml5 entry for 1:1 trampoline mapping after LA57 is turned on.
 	 */
 	v_pml5[l4etol5e(m_code)] = v_pml4 | PG_V | PG_RW | PG_A | PG_M;
-	v_pml4[PL4_E(m_code)] = v_pdp | PG_V | PG_RW | PG_A | PG_M;
+	v_pml4[PL4_E(m_code)] = v_pdpt | PG_V | PG_RW | PG_A | PG_M;
 
 	/*
 	 * Copy and call the 48->57 trampoline, hope we return there, alive.
@@ -262,6 +262,17 @@ pmap_bootstrap_la57(pmap, firstaddr)
 	la57_tramp(KPML5phys);
 
 	/*
+	 * gdt was necessary reset, switch back to our gdt.
+	 */
+	lgdt(&region);
+	wrmsr(MSR_GSBASE, (uint64_t)&__pcpu[0]);
+	load_ds(_udatasel);
+	load_es(_udatasel);
+	load_fs(_ufssel);
+	//ssdtosyssd(&gdt_segs[GPROC0_SEL], (struct system_segment_descriptor *)&__pcpu[0].pc_gdt[GPROC0_SEL]);
+	//ltr(GSEL(GPROC0_SEL, SEL_KPL));
+
+	/*
 	 * Now unmap the trampoline, and free the pages.
 	 * Clear pml5 entry used for 1:1 trampoline mapping.
 	 */
@@ -272,9 +283,18 @@ pmap_bootstrap_la57(pmap, firstaddr)
 	 * Recursively map PML5 to itself in order to get PTmap and
 	 * PDmap.
 	 */
-	v_pml5[PDIR_SLOT_KERN] = KPML5phys | PG_RW | PG_V | pg_nx;
-	pmap->pm_pml4 = (pml4_entry_t *)v_pml4;
-	pmap->pm_pml5 = (pml5_entry_t *)v_pml5;
+	v_pml5[PDIR_SLOT_KERN] = IdlePML5 | PG_RW | PG_V | pg_nx;
+
+	IdlePML5 = (pml5_entry_t *)v_pml5;
+	IdlePML4 = (pml4_entry_t *)v_pml4;
+	IdlePDPT = (pdpt_entry_t *)v_pdpt;
+	IdlePTD = (pd_entry_t *)v_pde;
+	KPTmap = (pt_entry_t *)v_pte;
+
+	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
+	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + IdlePML4);
+	kernel_pmap->pm_pml5 = (pml5_entry_t *)(KERNBASE + IdlePML5);
+	kernel_pmap->pm_pdirpa = (vm_offset_t)IdlePTD;
 }
 
 void
@@ -290,7 +310,7 @@ pmap_pinit_pml5(pml5)
 	 * entering all existing kernel mappings into level 5 table.
 	 */
 	for (i = 0; i < NKL5_MAX_ENTRIES; i++) {
-		pml5[PDIR_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPML4phys + ptoa(i))) | PG_V | PG_RW | PG_A | PG_M | pg_g;
+		pml5[PDIR_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(IdlePML4 + ptoa(i))) | PG_V | PG_RW | PG_A | PG_M | pg_g;
 	}
 
 	/* install self-referential address mapping entry(s) */

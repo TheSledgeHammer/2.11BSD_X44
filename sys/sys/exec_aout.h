@@ -133,7 +133,7 @@ struct	ovlhdr {
 /*
  * eXtended header definition for use with the new macros in a.out.h
 */
-struct	xexec {
+struct xexec {
 	struct	exec	e;
 	struct	ovlhdr	o;
 };

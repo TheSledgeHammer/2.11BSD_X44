@@ -42,8 +42,6 @@
 #include <sys/exec_aout.h>
 #include <sys/resourcevar.h>
 
-//#include <vm/include/vm_extern.h>
-
 int
 exec_aout_linker(elp)
 	struct exec_linker *elp;

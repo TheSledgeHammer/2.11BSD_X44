@@ -36,10 +36,27 @@
  *	@(#)machdep.c	8.3 (Berkeley) 5/9/95
  */
 
+union descriptor		gdt[NGDT];
+struct gate_descriptor 	idt[NIDT];
+union descriptor 		ldt[NLDT];
+
 void
 startup(void)
 {
 
+}
+
+/*
+ * Initialize 386 and configure to run kernel
+ */
+void
+setregion(rd, base, limit)
+	struct region_descriptor *rd;
+	void *base;
+	uint16_t limit;
+{
+	rd->rd_base = (uint64_t)base;
+	rd->rd_limit = (uint64_t)limit;
 }
 
 void

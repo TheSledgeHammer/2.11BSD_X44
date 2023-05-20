@@ -652,7 +652,7 @@ pmap_pinit_pml4(pml4)
 	pml4 = (pml4_entry_t *)kmem_alloc(kernel_map, (vm_offset_t)(NKL4_MAX_ENTRIES * sizeof(pml4_entry_t)));
 
 	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
-		pml4[PDIR_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(KPDPTphys + ptoa(i))) | PG_RW | PG_V;
+		pml4[PDIR_SLOT_KERNBASE + i] = pmap_extract(kernel_map, (vm_offset_t)(IdlePDPT + ptoa(i))) | PG_RW | PG_V;
 	}
 
 	/* install self-referential address mapping entry(s) */
