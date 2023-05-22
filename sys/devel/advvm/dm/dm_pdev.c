@@ -36,7 +36,6 @@ __KERNEL_RCSID(0, "$NetBSD: dm_pdev.c,v 1.23 2021/08/21 22:23:33 andvar Exp $");
 #include <sys/param.h>
 #include <sys/disk.h>
 #include <sys/fcntl.h>
-//#include <sys/kmem.h>
 #include <sys/namei.h>
 
 //#include <dev/dkvar.h>

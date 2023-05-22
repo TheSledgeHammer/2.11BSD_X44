@@ -45,12 +45,15 @@ struct advvm_volume {
     uint32_t 						vol_id;						/* volume id */
     int                             vol_flags;                  /* volume flags */
 
+    advvm_storage_t					*vol_storage;				/* volume storage allocation */
 
-    advvm_storage_t					*vol_storage;				/* volume allocation */
+    u_long 							vol_start;					/* volume start */
+    u_long 							vol_end;					/* volume end */
+    u_long							vol_size;					/* volume size */
 
     /* device or drive fields */
     struct advvm_label              *vol_label;                 /* label information */
-    struct advvm_block             	*vol_block;                 /* block information */
+    struct advvm_block             	*vol_block;                 /* block information (deprecation pending!!) */
 
     /* domain-related fields */
     advvm_domain_t             		*vol_domain;                /* domain this volume belongs too */

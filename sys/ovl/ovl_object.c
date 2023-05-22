@@ -79,7 +79,7 @@ static struct ovl_object	omem_object_store;
 ovl_object_t		overlay_object;
 ovl_object_t		omem_object;
 
-#define	OVL_OBJECT_HASH_COUNT		157
+#define	OVL_OBJECT_HASH_COUNT		24
 
 struct ovl_object_hash_head 		ovl_object_hashtable[OVL_OBJECT_HASH_COUNT];
 

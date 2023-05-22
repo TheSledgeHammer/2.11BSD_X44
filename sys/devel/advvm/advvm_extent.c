@@ -48,7 +48,7 @@ advvm_storage_create(pool, name, start, end, storage, storagesize, flags)
 	size_t 	storagesize;
 	int flags;
 {
-	advvm_malloc((advvm_storage_t *) pool, sizeof(advvm_storage_t *), M_WAITOK);
+	pool = (advvm_storage_t *)malloc(sizeof(advvm_storage_t *), M_ADVVM, M_WAITOK);
 	pool->ads_start = start;
 	pool->ads_end = end;
 	pool->ads_flags = flags;
@@ -56,6 +56,8 @@ advvm_storage_create(pool, name, start, end, storage, storagesize, flags)
 	pool->ads_storagesize = storagesize;
 
 	pool->ads_extent = extent_create(name, pool->ads_start, pool->ads_end, M_ADVVM, pool->ads_storage, pool->ads_storagesize, pool->ads_flags);
+
+	//return (pool);
 }
 
 int
@@ -66,9 +68,9 @@ advvm_allocate_region(pool, start, size, flags)
 {
 	int error;
 
-	if(advvm_extent_check(pool)) {
-		if((start >= pool->ads_start) && (start <= pool->ads_end) && (start >= pool->ads_end)) {
-			if(size <= (pool->ads_end - pool->ads_start)) {
+	if (advvm_extent_check(pool)) {
+		if ((start >= pool->ads_start) && (start <= pool->ads_end)) {
+			if (size <= (pool->ads_end - pool->ads_start)) {
 				error = extent_alloc_region(pool->ads_extent, start, size, flags);
 			} else {
 				panic("advvm_allocate_region: extent region size too big");
@@ -81,18 +83,22 @@ advvm_allocate_region(pool, start, size, flags)
 }
 
 int
-advvm_allocate_subregion(pool, size, alignment, boundary, flags)
+advvm_allocate_subregion(pool, substart, subend, size, alignment, boundary, flags)
 	advvm_storage_t 	*pool;
-	u_long 				size, alignment, boundary;
+	u_long 				substart, subend, size, alignment, boundary;
 	int 				flags;
 {
 	int error;
+	u_long result;
 
-	if(advvm_extent_check(pool)) {
-		error = extent_alloc(pool->ads_extent, size, alignment, boundary, flags, pool->ads_pool);
+	if (advvm_extent_check(pool)) {
+		if ((substart >= pool->ads_start) && (subend <= pool->ads_end) && (subend > substart)) {
+			error = extent_alloc_subregion(pool->ads_extent, substart, subend, size, alignment, boundary, flags, &result);
+		}
 	} else {
 		return (ADVVM_NOEXTENT);
 	}
+	pool->ads_pool = &result;
 	return (error);
 }
 
@@ -104,7 +110,7 @@ advvm_free(pool, start, size, flags)
 	int 			flags;
 {
 	int error;
-	if(advvm_extent_check(pool)) {
+	if (advvm_extent_check(pool)) {
 		error = extent_free(pool->ads_extent, start, size, flags);
 	} else {
 		return (ADVVM_NOEXTENT);
@@ -117,7 +123,7 @@ void
 advvm_destroy(pool)
 	advvm_storage_t *pool;
 {
-	if(advvm_extent_check(pool)) {
+	if (advvm_extent_check(pool)) {
 		extent_destroy(pool->ads_extent);
 		advvm_free((advvm_storage_t *) pool);
 	} else {

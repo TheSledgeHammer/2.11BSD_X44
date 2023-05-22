@@ -38,14 +38,18 @@
 #include <devel/advvm/advvm_var.h>
 #include <devel/advvm/advvm_volume.h>
 
+static long fixed_volume_extent[EXTENT_FIXED_STORAGE_SIZE(128)/sizeof(long)];
+
 struct advdomain_list 	domain_list[MAXDOMAIN];
 
 void
-advvm_volume_init(advol)
+advvm_volume_init(advol, name, id)
 	advvm_volume_t *advol;
+	char *name;
+	uint32_t id;
 {
-	advol->vol_name = NULL;
-	advol->vol_id = 0;
+	advol->vol_name = advvm_strcat(name, "_volume");
+	advol->vol_id = id;
 	advol->vol_block = NULL;
 	advol->vol_label = NULL;
 	advol->vol_domain = NULL;
@@ -54,9 +58,9 @@ advvm_volume_init(advol)
 }
 
 void
-advvm_volume_set_domain(advol, adom)
-	advvm_volume_t *advol;
+advvm_volume_set_domain(adom, advol)
 	advvm_domain_t *adom;
+	advvm_volume_t *advol;
 {
 	advol->vol_domain = adom;
 	advol->vol_domain_name = adom->dom_name;
@@ -80,37 +84,35 @@ advvm_volume_set_label(label, sysname, name, creation, update, dsize)
 	label->alb_drive_size = dsize;
 }
 
-void
-advvm_volume_set_block(block, start, end, size, addr, flags)
-	struct advvm_block 	*block;
+struct advvm_block *
+advvm_volume_create_block(storage, start, end, size, addr, flags)
+	advvm_storage_t *storage;
 	uint64_t 			start, end;
 	uint32_t 			size;
 	caddr_t 			addr;
 	int 				flags;
 {
-	if (block == NULL) {
-		advvm_malloc((struct advvm_block*) block, sizeof(struct advvm_block*), M_WAITOK);
-	}
+	struct advvm_block 	*block;
+
+	advvm_malloc((struct advvm_block*) block, sizeof(struct advvm_block*), M_WAITOK);
 	block->ablk_start = start;
 	block->ablk_end = end;
 	block->ablk_size = size;
 	block->ablk_addr = addr;
 	block->ablk_flags = flags;
+	advvm_storage_create(storage, start, end, size, addr, flags);
+	return (block);
 }
 
 void
-advvm_volume_create(advol, block, name, id, flags)
+advvm_volume_create(adom, advol, flags)
+	advvm_domain_t *adom;
 	advvm_volume_t 		*advol;
-	struct advvm_block 	*block;
-	char 				*name;
-	uint32_t 			id;
 	int 				flags;
 {
-	advol->vol_name = name;
-	advol->vol_id = id;				/* generate a random uuid */
 	advol->vol_flags = flags;
-
-	advvm_storage_create(advol->vol_storage, block->ablk_start, block->ablk_end, block->ablk_size, block->ablk_addr, block->ablk_flags);
+	advvm_volume_set_domain(adom, advol);
+	//advol->vol_block = advvm_storage_create(advol->vol_storage, advol->vol_block->ablk_start, advol->vol_block->ablk_end, advol->vol_block->ablk_size, advol->vol_block->ablk_addr, advol->vol_block->ablk_flags);
 }
 
 advvm_volume_t *

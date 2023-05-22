@@ -48,8 +48,8 @@ struct advvm_file_directory {
     advvm_tag_dir_t                 fdr_tag;
     const char                      *fdr_name;
 
-    struct device					*fdr_dev;						/* pointer to autoconf device structure */
-    struct dkdevice	                *fdr_disk;
+    //struct device					*fdr_dev;						/* pointer to autoconf device structure */
+    //struct dkdevice	                *fdr_disk;
 
     dm_dev_t 						*fdr_dmv;						/* device mapper */
 };
@@ -66,12 +66,19 @@ struct advvm_fileset {
     /* fileset directory information */
     //advvm_file_dir_t		   		fst_file;						/* file directory */
 
+    /* fileset allocation */
+    advvm_storage_t 		    	*fst_storage;					/* deprecation pending!! */
+
+    u_long							fst_start;						/* region substart within domain */
+    u_long							fst_end;						/* region subend within domain */
+    u_long							fst_size;						/* region size within domain */
+    u_long 							fst_boundary;					/* region boundary within domain */
+    u_long							fst_alignment;					/* region alignment within domain */
+
     /* domain-related fields */
     advvm_domain_t             	    *fst_domain;                    /* domain this fileset belongs too */
 #define fst_domain_name             fst_domain->dom_name            /* domain name */
 #define fst_domain_id               fst_domain->dom_id              /* domain id */
-	
-    advvm_storage_t 		    	*fst_storage;
 };
 typedef struct advvm_fileset        advvm_fileset_t;
 

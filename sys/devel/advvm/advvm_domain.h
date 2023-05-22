@@ -38,6 +38,9 @@
 
 #include <advvm_volume.h>
 
+struct advdomain_list;
+struct advvolume_list;
+struct advfileset_list;
 TAILQ_HEAD(advdomain_list, advvm_domain);
 struct advvm_domain {
     TAILQ_ENTRY(advvm_domain)           		dom_entries;                /* list of domains */
@@ -52,13 +55,18 @@ struct advvm_domain {
     TAILQ_HEAD(advfileset_list, advvm_fileset)  dom_filesets;               /* head list of filesets */
 
     /* domain allocation */
-    advvm_storage_t								*dom_storage;
-    u_long										dom_start;
-    u_long										dom_end;
+    advvm_storage_t								*dom_storage;				/* deprecation pending!! */
+
+    u_long										dom_start;					/* region substart within volume */
+    u_long										dom_end;					/* region subend within volume */
+    u_long										dom_size;					/* region size within volume */
+    u_long 										dom_boundary;				/* region boundary within volume */
+    u_long										dom_alignment;				/* region alignment within volume */
 };
 typedef struct advvm_domain               		advvm_domain_t;
 
 extern struct advdomain_list              		domain_list;
+
 uint32_t        advvm_hash(advvm_domain_t *);
 void			advvm_domain_create(advvm_domain_t, char *, uint32_t, u_long, u_long, int);
 advvm_domain_t 	*advvm_domain_find(char *, uint32_t);

@@ -77,7 +77,7 @@ enum constants {
 #define ADVVM_MINOR(o, t)  (o | (t << ADVVM_TYPE_SHIFT))
 
 	ADVVM_TYPE_SHIFT = 18,
-	ADVVM_MAXVOL = 0x3fffd,				    /* highest numbered volume */
+	ADVVM_MAXVOL = 0x3fffd,				    	/* highest numbered volume */
 
 	ADVVM_MAXFILESET = 0x3ffff,
 	ADVVM_MAXDOMAIN = 0x7ffff,
@@ -141,5 +141,7 @@ struct advvm_header {
 /* see: advvm.c */
 extern struct advvm_label 	*advlab;
 extern struct advvm_block 	*advblk;
+
+char *advvm_strcat(char *, char *);
 
 #endif /* _DEV_ADVVM_VAR_H_ */

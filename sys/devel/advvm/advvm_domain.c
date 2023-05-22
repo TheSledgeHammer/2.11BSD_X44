@@ -42,9 +42,6 @@ void
 advvm_domain_init(adom)
 	advvm_domain_t *adom;
 {
-	adom->dom_name = NULL;
-	adom->dom_id = 0;
-	adom->dom_refcnt = 0;
 	TAILQ_INIT(&adom->dom_volumes);
 	TAILQ_INIT(&adom->dom_filesets);
 
@@ -59,11 +56,12 @@ advvm_domain_create(adom, name, id, start, end, flags)
 	u_long start, end;
 	int flags;
 {
-	adom->dom_name = name;
-	adom->dom_id = id;		/* generate a random uuid */
+	adom->dom_name = advvm_strcat(name, "_domain");
+	adom->dom_id = id;
 	adom->dom_start = start;
 	adom->dom_end = end;
 	adom->dom_flags = flags;
+	adom->dom_refcnt = 0;
 	advvm_storage_create(adom->dom_storage, adom->dom_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags);
 }
 

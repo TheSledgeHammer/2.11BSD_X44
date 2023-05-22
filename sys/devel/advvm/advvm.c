@@ -154,8 +154,8 @@ advvm_attach(struct device *parent, struct device *self, void *aux)
 
 	/* initialize domains, volumes & filesets */
 	advvm_domain_init(sc->sc_domain);
-	advvm_volume_init(sc->sc_volume);
-	advvm_fileset_init(sc->sc_fileset);
+	advvm_volume_init(sc->sc_volume, name, id);
+	advvm_fileset_init(sc->sc_fileset, name, id);
 
 	/*
 	 * Initialize and attach the disk structure.
@@ -220,24 +220,26 @@ advvm_close(dev_t dev, int fflag, int devtype, struct proc *p)
 }
 
 int
+advvm_strategy(struct buf *bp)
+{
+
+	return (0);
+}
+
+int
 advvm_read(dev_t dev, struct uio *uio, int ioflag)
 {
 	struct advvm_softc *sc;
-	return (0);
+
+	return physio(advvm_strategy, NULL, dev, B_READ, advvm_minphys, uio);
 }
 
 int
 advvm_write(dev_t dev, struct uio *uio, int ioflag)
 {
 	struct advvm_softc *sc;
-	return (0);
-}
 
-int
-advvm_strategy(dev_t dev, int fflag, int devtype, struct proc *p)
-{
-
-	return (0);
+	return physio(advvm_strategy, NULL, dev, B_WRITE, advvm_minphys, uio);
 }
 
 int
@@ -266,8 +268,14 @@ advvm_size(dev_t dev)
 	return (size);
 }
 
-int
-advvm_mklabel()
+
+char *
+advvm_strcat(to, from)
+    char *to, *from;
 {
-	return (0);
+    char res[ADVVM_NAME_LEN];
+    strcat(res, to);
+    strcat(res, from);
+
+    return (res);
 }
