@@ -50,6 +50,7 @@ struct advvm_volume {
     u_long 							vol_start;					/* volume start */
     u_long 							vol_end;					/* volume end */
     u_long							vol_size;					/* volume size */
+    caddr_t							vol_addr;					/* volume address */
 
     /* device or drive fields */
     struct advvm_label              *vol_label;                 /* label information */
@@ -65,10 +66,13 @@ struct advvm_volume {
 typedef struct advvm_volume         advvm_volume_t;
 
 void			advvm_volume_init(advvm_volume_t *);
-void			advvm_volume_set_domain(advvm_volume_t *, advvm_domain_t *);
+void			advvm_volume_set_domain(advvm_domain_t *, advvm_volume_t *);
+#ifdef notyet
 void			advvm_volume_set_label(struct advvm_label *, char *, char *, struct timeval, struct timeval, off_t);
 void 			advvm_volume_set_block(struct advvm_block *, uint64_t, uint64_t, uint32_t, caddr_t, int);
-void			advvm_volume_create(advvm_volume_t *, struct advvm_block *,  char *, uint32_t, int);
+#endif
+void			advvm_volume_init_storage(advvm_volume_t *, uint64_t, uint64_t, uint64_t, caddr_t);
+void			advvm_volume_create(advvm_domain_t *, advvm_volume_t *);
 advvm_volume_t 	*advvm_volume_find(advvm_volume_t *, char *, uint32_t);
 void			advvm_volume_insert(advvm_domain_t *, advvm_volume_t *, char *, uint32_t, int);
 void			advvm_volume_remove(advvm_domain_t *, char *, uint32_t);

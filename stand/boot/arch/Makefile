@@ -3,17 +3,15 @@
 .include <bsd.loader.mk>
 
 # TODO: Fix Me!!
-#ARCHSUBDIR= ${MACHINE_CPU}
+ARCHSUBDIR= ${MACHINE_CPU}
 
-#SUBDIR=	${LOADER_MACHINE}
+SUBDIR=	${MACHINE}
 
-#.if (${LOADER_MACHINE} || ${LOADER_MACHINE_ARCH}) != ${ARCHSUBDIR}
-#.if exists(${ARCHSUBDIR})
-#SUBDIR+= ${ARCHSUBDIR}
-#.endif
-#.endif
-
-SUBDIR= i386
+.if ${MACHINE} != ${ARCHSUBDIR}
+.if exists(${ARCHSUBDIR})
+SUBDIR+= ${ARCHSUBDIR}
+.endif
+.endif
 
 INCSDIR= 	/usr/include/stand/boot/arch
 

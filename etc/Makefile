@@ -318,6 +318,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR MAKEDEV
 		daemon staff			664	/var/msgs/bounds 			\
 		${BINOWN} ${UTMPGRP}	664	/var/run/utmp 				\
 		${BINOWN} ${UTMPGRP}	664	/var/run/utmpx 				\
+	
 #		games games				664	/var/games/atc_score 		\
 #		games games				664	/var/games/battlestar.log 	\
 #		games games				664	/var/games/cfscores 		\
@@ -348,9 +349,9 @@ install-etc-files: .PHONY .MAKE check_DESTDIR MAKEDEV
 #	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.sbin/pf configinstall
 #.endif
 #	${MAKEDIRTARGET} ${NETBSDSRCDIR}/crypto/external/bsd/openssh/bin configinstall
-#.if (${MKPOSTFIX} != "no")
-#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/ibm-public/postfix configinstall
-#.endif
+.if (${MKPOSTFIX} != "no")
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/contrib/postfix configinstall
+.endif
 #.if (${MKATF} != "no")
 #	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/bsd/atf/etc/atf configinstall
 #.endif

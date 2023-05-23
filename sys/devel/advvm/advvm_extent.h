@@ -34,29 +34,18 @@
 #include <sys/malloc.h>
 #include <sys/extent.h>
 
-struct advvm_storage {
-	struct extent 				*ads_extent;
-	u_long						ads_start;				/* start of extent */
-	u_long						ads_end;				/* end of extent */
-	caddr_t 					ads_storage;			/* fixed storage */
-	size_t						ads_storagesize;		/* fixed storage size */
-	int 						ads_flags;				/* see below */
-
-	u_long						*ads_pool;				/* sub-region resulting pool */
-};
-typedef struct advvm_storage 	advvm_storage_t;
+typedef struct extent			advvm_storage_t;
 
 /* advvm flags */
 #define ADVVM_NOEXTENT			0x01
 
 /* prototypes */
 
-void 			advvm_storage_create(char *, u_long, u_long, caddr_t, size_t, int);
-int				advvm_allocate_region(advvm_storage_t *, u_long, u_long, int);
-int				advvm_allocate_subregion(advvm_storage_t *, u_long, u_long, u_long, u_long, u_long, int);
-int				advvm_free(advvm_storage_t *, u_long, u_long, int);
-void			advvm_destroy(advvm_storage_t *);
-u_long 			*advvm_get_storage_pool(advvm_storage_t *);
+advvm_storage_t *advvm_extent_create(char *, u_long, u_long, caddr_t, size_t, int);
+int				advvm_extent_allocate_region(advvm_storage_t *, u_long, u_long, int);
+int				advvm_extent_allocate_subregion(advvm_storage_t *, u_long, u_long, u_long, u_long, u_long, int);
+int				advvm_extent_free(advvm_storage_t *, u_long, u_long, int);
+void			advvm_extent_destroy(advvm_storage_t *);
 
 /* generic malloc & free */
 void			advvm_malloc(void *, u_long, int);

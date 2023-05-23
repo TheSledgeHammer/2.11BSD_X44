@@ -53,9 +53,9 @@ advvm_fileset_init(adfst, name, id)
 }
 
 void
-advvm_fileset_set_domain(adfst, adom)
-	advvm_fileset_t *adfst;
+advvm_fileset_set_domain(adom, adfst)
 	advvm_domain_t *adom;
+	advvm_fileset_t *adfst;
 {
 	adfst->fst_domain = adom;
 	adfst->fst_domain_name = adom->dom_name;
@@ -128,7 +128,7 @@ advvm_fileset_create(adom, adfst)
 	advvm_domain_t 		*adom;
 	advvm_fileset_t 	*adfst;
 {
-	advvm_fileset_set_domain(adfst, adom);
+	advvm_fileset_set_domain(adom, adfst);
 	advvm_mcell_init(adfst);
 	advvm_storage_create(adfst->fst_storage, adfst->fst_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
 }
@@ -197,7 +197,7 @@ advvm_fileset_destroy(adfst)
 	advvm_fileset_t *adfst;
 {
 	if(adfst->fst_storage) {
-		advvm_storage_delete(adfst->fst_storage);
+		advvm_extent_destroy(adfst->fst_storage);
 	}
 	advvm_free((advvm_fileset_t *)adfst);
 }

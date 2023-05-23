@@ -83,7 +83,7 @@ struct advvm_fileset {
 typedef struct advvm_fileset        advvm_fileset_t;
 
 void				advvm_fileset_init(advvm_fileset_t *, char *, uint32_t);
-void				advvm_fileset_set_domain(advvm_fileset_t *, advvm_domain_t *);
+void				advvm_fileset_set_domain(advvm_domain_t *, advvm_fileset_t *);
 advvm_tag_dir_t 	*advvm_filset_allocate_tag_directory(char *, uint32_t);
 advvm_file_dir_t 	*advvm_filset_allocate_file_directory(advvm_tag_dir_t *, char *);
 void				advvm_fileset_create(advvm_domain_t *, advvm_fileset_t *);

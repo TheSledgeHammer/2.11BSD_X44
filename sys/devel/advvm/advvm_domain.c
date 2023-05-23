@@ -138,7 +138,7 @@ advvm_domain_destroy(adom)
 	advvm_domain_t *adom;
 {
 	if(adom->dom_storage) {
-		advvm_storage_delete(adom->dom_storage);
+		advvm_extent_destroy(adom->dom_storage);
 	}
 	advvm_free((advvm_domain_t *)adom);
 }

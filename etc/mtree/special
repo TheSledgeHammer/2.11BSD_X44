@@ -17,8 +17,6 @@
 
 .								type=dir  mode=0755 uname=root gname=wheel
 
-./adm							type=dir  mode=0644	
-
 ./boot							type=dir  mode=0644 uname=root gname=wheel
 ./boot/defaults					type=dir  mode=0644
 ./boot/efi						type=dir  mode=0644

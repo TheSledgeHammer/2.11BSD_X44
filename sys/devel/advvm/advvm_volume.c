@@ -36,6 +36,7 @@
 #include <devel/sys/malloctypes.h>
 #include <devel/advvm/advvm_domain.h>
 #include <devel/advvm/advvm_var.h>
+#include <devel/advvm/advvm_extent.h>
 #include <devel/advvm/advvm_volume.h>
 
 static long fixed_volume_extent[EXTENT_FIXED_STORAGE_SIZE(128)/sizeof(long)];
@@ -50,9 +51,8 @@ advvm_volume_init(advol, name, id)
 {
 	advol->vol_name = advvm_strcat(name, "_volume");
 	advol->vol_id = id;
-	advol->vol_block = NULL;
-	advol->vol_label = NULL;
 	advol->vol_domain = NULL;
+	advol->vol_flags = 0;
 	advol->vol_domain_allocated = 0;
 	advol->vol_domain_used = 0;
 }
@@ -67,6 +67,7 @@ advvm_volume_set_domain(adom, advol)
 	advol->vol_domain_id = adom->dom_id;
 }
 
+#ifdef notyet
 void
 advvm_volume_set_label(label, sysname, name, creation, update, dsize)
 	struct advvm_label 	*label;
@@ -103,17 +104,27 @@ advvm_volume_create_block(storage, start, end, size, addr, flags)
 	advvm_storage_create(storage, start, end, size, addr, flags);
 	return (block);
 }
+#endif
 
 void
-advvm_volume_create(adom, advol, flags)
+advvm_volume_init_storage(advol, start, end, size, addr)
+	advvm_volume_t 		*advol;
+	uint64_t 			start, end;
+	uint64_t 			size;
+	caddr_t 			addr;
+{
+	advol->vol_storage = advvm_extent_create(advol->vol_name, start, end, size, addr, EX_WAITOK | EX_MALLOCOK);
+}
+
+void
+advvm_volume_create(adom, advol)
 	advvm_domain_t *adom;
 	advvm_volume_t 		*advol;
-	int 				flags;
 {
-	advol->vol_flags = flags;
 	advvm_volume_set_domain(adom, advol);
-	//advol->vol_block = advvm_storage_create(advol->vol_storage, advol->vol_block->ablk_start, advol->vol_block->ablk_end, advol->vol_block->ablk_size, advol->vol_block->ablk_addr, advol->vol_block->ablk_flags);
+	advvm_volume_init_storage(advol, advol->vol_start, advol->vol_end, advol->vol_size, advol->vol_addr);
 }
+
 
 advvm_volume_t *
 advvm_volume_find(adom, name, id)
@@ -136,29 +147,18 @@ advvm_volume_find(adom, name, id)
 }
 
 void
-advvm_volume_insert(adom, advol, name, id, flags)
+advvm_volume_insert(adom, advol)
 	advvm_domain_t *adom;
 	advvm_volume_t 	*advol;
-	char 			*name;
-	uint32_t 		id;
-	int 			flags;
 {
 	struct advdomain_list 	*bucket;
 	
-	if(adom == NULL || advol == NULL) {
+	if (adom == NULL || advol == NULL) {
 		return;
 	}
 
-	if(advol->vol_block == NULL) {
-		panic("advvm_volume_insert: no volume block set");
-		return;
-	} else if(advol->vol_label == NULL) {
-		panic("advvm_volume_insert: no volume label set");
-		return;
-	} else {
-		advvm_volume_create(advol, advol->vol_block, name, id, flags);
-	}
 	advvm_volume_set_domain(advol, adom);
+	advvm_volume_create(adom, advol);
 	
 	bucket = &domain_list[advvm_hash(adom)];
 
@@ -192,7 +192,7 @@ advvm_volume_destroy(advol)
 	advvm_volume_t *advol;
 {
 	if(advol->vol_storage) {
-		advvm_storage_delete(advol->vol_storage);
+		advvm_extent_destroy(advol->vol_storage);
 	}
 	advvm_free((advvm_volume_t *)advol);
 }
