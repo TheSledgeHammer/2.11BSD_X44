@@ -140,7 +140,7 @@ _SUBDIR=	tools .WAIT lib
 _SUBDIR+=	include contrib bin games 
 _SUBDIR+=	libexec sbin usr.bin usr.lib
 #.if ${MKBOOT} != "no"
-#_SUBDIR+=	stand
+_SUBDIR+=	stand
 #.endif
 _SUBDIR+=	usr.sbin share sys etc #tests compat
 #_SUBDIR+=	.WAIT rescue .WAIT distrib regress
@@ -504,10 +504,10 @@ do-build: .PHONY .MAKE
 
 #do-x11: .PHONY .MAKE
 #.if ${MKX11} != "no"
-#	${MAKEDIRTARGET} external/mit/xorg/tools all
-#	${MAKEDIRTARGET} external/mit/xorg/lib build_install
+#	${MAKEDIRTARGET} contrib/xorg/tools all
+#	${MAKEDIRTARGET} contrib/xorg/lib build_install
 #.if ${MKCOMPATX11} != "no"
-#	${MAKEDIRTARGET} compat build_install BOOTSTRAP_SUBDIRS="../../../external/mit/xorg/lib"
+#	${MAKEDIRTARGET} compat build_install BOOTSTRAP_SUBDIRS="../../../contrib/xorg/lib"
 #.endif
 #.else
 #	@echo "MKX11 is not enabled"

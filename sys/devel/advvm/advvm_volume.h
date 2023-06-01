@@ -45,12 +45,17 @@ struct advvm_volume {
     uint32_t 						vol_id;						/* volume id */
     int                             vol_flags;                  /* volume flags */
 
-    advvm_storage_t					*vol_storage;				/* volume storage allocation */
-
+    /* Extent Regions */
+    advvm_storage_t					*vol_extent;				/* volume extent allocation */
     u_long 							vol_start;					/* volume start */
     u_long 							vol_end;					/* volume end */
     u_long							vol_size;					/* volume size */
-    caddr_t							vol_addr;					/* volume address */
+    //u_long							vol_alignment;				/* volume alignment */
+    //u_long							vol_boundary;				/* volume boundary */
+
+    /* Fixed Extent Regions */
+    u_long							vol_storagesize;			/* volume fixed storage size */
+    caddr_t							vol_storage;				/* volume fixed storage address */
 
     /* device or drive fields */
     struct advvm_label              *vol_label;                 /* label information */
@@ -71,10 +76,13 @@ void			advvm_volume_set_domain(advvm_domain_t *, advvm_volume_t *);
 void			advvm_volume_set_label(struct advvm_label *, char *, char *, struct timeval, struct timeval, off_t);
 void 			advvm_volume_set_block(struct advvm_block *, uint64_t, uint64_t, uint32_t, caddr_t, int);
 #endif
-void			advvm_volume_init_storage(advvm_volume_t *, uint64_t, uint64_t, uint64_t, caddr_t);
-void			advvm_volume_create(advvm_domain_t *, advvm_volume_t *);
+void			advvm_volume_create(advvm_domain_t *, advvm_volume_t *, uint64_t, uint64_t);
 advvm_volume_t 	*advvm_volume_find(advvm_volume_t *, char *, uint32_t);
 void			advvm_volume_insert(advvm_domain_t *, advvm_volume_t *, char *, uint32_t, int);
 void			advvm_volume_remove(advvm_domain_t *, char *, uint32_t);
 void			advvm_volume_destroy(advvm_domain_t *);
+
+void			advvm_volume_init_storage(advvm_volume_t *, uint64_t, uint64_t, uint64_t, caddr_t, int);
+int				advvm_volume_allocate_region(advvm_volume_t *, uint64_t, uint64_t, int);
+int				advvm_volume_allocate_subregion(advvm_volume_t *, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, int);
 #endif /* _DEV_ADVVM_VOLUME_H_ */

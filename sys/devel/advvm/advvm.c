@@ -268,13 +268,13 @@ advvm_size(dev_t dev)
 	return (size);
 }
 
-
 char *
 advvm_strcat(to, from)
-    char *to, *from;
+    char *to;
+	const char *from;
 {
     char res[ADVVM_NAME_LEN];
-    strcat(res, to);
+    strcpy(res, to);
     strcat(res, from);
 
     return (res);

@@ -570,5 +570,5 @@ tc_detach(struct timecounter *target)
 uint64_t
 tc_getfrequency(void)
 {
-	return timehands->th_counter->tc_frequency;
+	return (timehands->th_counter->tc_frequency);
 }

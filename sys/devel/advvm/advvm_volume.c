@@ -107,24 +107,15 @@ advvm_volume_create_block(storage, start, end, size, addr, flags)
 #endif
 
 void
-advvm_volume_init_storage(advol, start, end, size, addr)
-	advvm_volume_t 		*advol;
-	uint64_t 			start, end;
-	uint64_t 			size;
-	caddr_t 			addr;
-{
-	advol->vol_storage = advvm_extent_create(advol->vol_name, start, end, size, addr, EX_WAITOK | EX_MALLOCOK);
-}
-
-void
-advvm_volume_create(adom, advol)
+advvm_volume_create(adom, advol, start, end)
 	advvm_domain_t *adom;
-	advvm_volume_t 		*advol;
+	advvm_volume_t 	*advol;
+	uint64_t 		start, end;
 {
 	advvm_volume_set_domain(adom, advol);
-	advvm_volume_init_storage(advol, advol->vol_start, advol->vol_end, advol->vol_size, advol->vol_addr);
+	/* Fixed Regions Currently Disabled */
+	advvm_volume_init_storage(advol, start, end, NULL, 0, EX_WAITOK | EX_MALLOCOK);
 }
-
 
 advvm_volume_t *
 advvm_volume_find(adom, name, id)
@@ -156,9 +147,6 @@ advvm_volume_insert(adom, advol)
 	if (adom == NULL || advol == NULL) {
 		return;
 	}
-
-	advvm_volume_set_domain(advol, adom);
-	advvm_volume_create(adom, advol);
 	
 	bucket = &domain_list[advvm_hash(adom)];
 
@@ -195,4 +183,78 @@ advvm_volume_destroy(advol)
 		advvm_extent_destroy(advol->vol_storage);
 	}
 	advvm_free((advvm_volume_t *)advol);
+}
+
+/*
+ * Volume Storage Allocator
+ */
+void
+advvm_volume_init_storage(advol, start, end, storage, storagesize, flags)
+	advvm_volume_t 		*advol;
+	uint64_t 			start, end, storagesize;
+	caddr_t 			storage;
+	int 				flags;
+{
+	advvm_storage_t *volstore;
+
+	volstore = advvm_extent_create(advol->vol_name, start, end, storage, storagesize, flags);
+	if (volstore != NULL) {
+		advol->vol_extent = volstore;
+		advol->vol_start = start;
+		advol->vol_end = end;
+		advol->vol_size = (end - start);
+		advol->vol_storage = storage;
+		advol->vol_storagesize = storagesize;
+	} else {
+		advvm_extent_destroy(volstore);
+	}
+}
+
+int
+advvm_volume_allocate_region(advol, start, size, flags)
+	advvm_volume_t 		*advol;
+	uint64_t 			start, size;
+	int 				flags;
+{
+	int error;
+	if (size <= advol->vol_size) {
+		error = advvm_extent_allocate_region(advol->vol_extent, start, size, flags);
+	} else {
+		size = advol->vol_size;
+		error = advvm_extent_allocate_region(advol->vol_extent, start, size, flags);
+	}
+	if (error != 0) {
+		error = advvm_extent_free(advol->vol_extent, start, size, flags);
+		return (error);
+	}
+	advvm_volume_insert(advol->vol_domain, advol);
+	return (0);
+}
+
+int
+advvm_volume_allocate_subregion(advol, substart, subend, size, alignment, boundary, flags)
+	advvm_volume_t 		*advol;
+	uint64_t 			substart, subend, size, alignment, boundary;
+	int 				flags;
+{
+	int error;
+
+	if ((substart == advol->vol_start) && (subend == advol->vol_end)) {
+		if (size <= advol->vol_size) {
+			error = advvm_extent_allocate_subregion(advol->vol_extent, substart, subend, size, alignment, boundary, flags);
+		} else {
+			size = advol->vol_size;
+			error = advvm_extent_allocate_subregion(advol->vol_extent, substart, subend, size, alignment, boundary, flags);
+		}
+	} else {
+		error = advvm_extent_allocate_subregion(advol->vol_extent, substart, subend, size, alignment, boundary, flags);
+	}
+	if (error != 0) {
+		error = advvm_extent_free(advol->vol_extent, start, size, flags);
+		return (error);
+	}
+
+	//advol->vol_alignment = alignment;
+	//advol->vol_boundary = boundary;
+	return (0);
 }
