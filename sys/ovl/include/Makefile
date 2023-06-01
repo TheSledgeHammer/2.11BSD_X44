@@ -3,6 +3,6 @@
 INCSDIR= 	/usr/include/ovl/include
 
 INCS= 		overlay_pager.h ovl_extern.h ovl_map.h ovl_object.h \
-			ovl_overlay.h ovl_page.h ovl_segment.h ovl.h
+			ovl_overlay.h ovl_page.h ovl_segment.h ovl.h pmap.h
 		
 .include <bsd.kinc.mk>
