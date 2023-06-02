@@ -59,7 +59,7 @@ scheck(string, format)
 	result = "";
 	if (string == NULL || format == NULL)
 		return result;
-	fbuf = imalloc(2 * strlen(format) + 4);
+	fbuf = malloc(2 * strlen(format) + 4);
 	if (fbuf == NULL)
 		return result;
 	fp = format;
@@ -87,8 +87,8 @@ scheck(string, format)
 	*(tp - 1) = '%';
 	*tp++ = 'c';
 	*tp = '\0';
-	if (sscanf(string, fbuf, &dummy) != 1)
-		result = format;
+	if (sscanf((char *)string, fbuf, &dummy) != 1)
+		result = (char *)format;
 	free(fbuf);
 	return result;
 }

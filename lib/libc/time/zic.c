@@ -46,6 +46,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifndef BUFSIZ
 #define BUFSIZ	1024
@@ -118,7 +119,7 @@ extern void	perror(const char * string);
 extern char *scheck(const char * string, const char * format);
 
 static void	addtt(time_t starttime, int type);
-static int	addtype(long gmtoff, const char * abbr, int isdst, int ttisstd);
+static int	addtype(long gmtoff, const char * abbr, int isdst);
 static void	addleap(time_t t, int positive, int rolling);
 static void	adjleap(void);
 static void	associate(void);
@@ -130,7 +131,7 @@ static void	eats(const char * name, int num, const char * rname, int rnum);
 static long	eitol(int i);
 static void	error(const char * message);
 static char **getfields(char * buf);
-static long	gethms(char * string, const char * errstrng,int signable);
+static long	gethms(const char * string, const char * errstrng, int signable);
 static void	infile(const char * filename);
 static void	inleap(char ** fields, int nfields);
 static void	inlink(char ** fields, int nfields);
@@ -276,7 +277,7 @@ struct lookup {
 	const int		l_value;
 };
 
-static struct lookup *byword(const char * string, const struct lookup * lp);
+static struct lookup const *byword(const char * string, const struct lookup * lp);
 
 static struct lookup const	line_codes[] = {
 	"Rule",		LC_RULE,
@@ -334,6 +335,12 @@ static struct lookup const	end_years[] = {
 	"minimum",		YR_MINIMUM,
 	"maximum",		YR_MAXIMUM,
 	"only",			YR_ONLY,
+	NULL,			0
+};
+
+static struct lookup const	leap_types[] = {
+	"Rolling",		TRUE,
+	"Stationary",		FALSE,
 	NULL,			0
 };
 
@@ -435,6 +442,7 @@ static const char *directory = NULL;
 static const char *leapsec = NULL;
 static int		  sflag = FALSE;
 
+int
 main(argc, argv)
 	int	argc;
 	char *argv[];
@@ -1207,7 +1215,7 @@ writezone(name)
 	const char * const	name;
 {
 	register FILE 		*fp;
-	register int		i;
+	register int		i, j;
 	char			fullname[BUFSIZ];
 
 	if (strlen(directory) + 1 + strlen(name) >= sizeof fullname) {

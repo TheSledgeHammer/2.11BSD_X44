@@ -44,7 +44,7 @@
 #include <stdlib.h>
 
 #ifndef alloc_t
-#define alloc_t	unsigned
+#define alloc_t	size_t
 #endif /* !alloc_t */
 
 #ifdef MAL
@@ -55,28 +55,24 @@
 
 #define nonzero(n)	(((n) == 0) ? 1 : (n))
 
-char 	*icalloc(int, int);
-char 	*icatalloc(char *, const char *);
-char 	*icpyalloc(const char *);
-char 	*imalloc(int);
-char 	*irealloc(char *, int);
-void	ifree(char *);
+char 	*icalloc(int nelem, int elsize);
+char 	*icatalloc(char *old, const char *new);
+char 	*icpyalloc(const char *string);
+char 	*imalloc(int n);
+char 	*irealloc(char * pointer, int size);
+void	ifree(char *pointer);
 
 char *
 imalloc(n)
-	int n;
+      const int n;
 {
 #ifdef MAL
 	register char *	result;
-
-	if (n == 0)
-		n = 1;
-	result = malloc((alloc_t)  nonzero(n));
+	
+	result = malloc((alloc_t)nonzero(n));
 	return (result == MAL) ? NULL : result;
 #else /* !MAL */
-	if (n == 0)
-		n = 1;
-	return malloc((alloc_t)  nonzero(n));
+	return malloc((alloc_t)nonzero(n));
 #endif /* !MAL */
 }
 
@@ -86,7 +82,7 @@ icalloc(nelem, elsize)
 {
 	if (nelem == 0 || elsize == 0)
 		nelem = elsize = 1;
-	return calloc((alloc_t) nelem, (alloc_t) elsize);
+	return calloc((alloc_t)nelem, (alloc_t)elsize);
 }
 
 char *
@@ -96,9 +92,7 @@ irealloc(pointer, size)
 {
 	if (NULLMAL(pointer))
 		return imalloc(size);
-	if (size == 0)
-		size = 1;
-	return realloc(pointer, (alloc_t)nonzero(n));
+	return realloc((void *)pointer, (alloc_t)nonzero(size));
 }
 
 char *
@@ -107,10 +101,11 @@ icatalloc(old, new)
 	const char * const new;
 {
 	register char *result;
-	register	oldsize, newsize;
+	register int oldsize, newsize;
 
 	oldsize = NULLMAL(old) ? 0 : strlen(old);
 	newsize = NULLMAL(new) ? 0 : strlen(new);
+	
 	if ((result = irealloc(old, oldsize + newsize + 1)) != NULL)
 		if (!NULLMAL(new))
 			(void) strcpy(result + oldsize, new);
@@ -119,14 +114,14 @@ icatalloc(old, new)
 
 char *
 icpyalloc(string)
-	const char *string;
+        const char * const	string;
 {
 	return icatalloc((char *) NULL, string);
 }
 
 void
 ifree(p)
-	char *p;
+	char * const	p;
 {
 	if (!NULLMAL(p))
 		free(p);
