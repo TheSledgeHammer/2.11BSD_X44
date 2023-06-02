@@ -23,11 +23,13 @@
  * - setup vmcmds for overlay space access
  */
 
-#define	INDMAGIC	A_MAGIC3	/* separated I&D */
-#define	OVLMAGIC	A_MAGIC4	/* overlay */
-#define NSEPMAGIC	A_MAGIC5	/* auto-overlay (nonseparate) */
-#define SEPMAGIC	A_MAGIC6	/* auto-overlay (separate) */
-
+int exec_aout_prep_zmagic(struct exec_linker *, int, int, int);	/* ZMAGIC */
+int exec_aout_prep_magic1(struct exec_linker *, int, int, int);	/* OMAGIC */
+int exec_aout_prep_magic2(struct exec_linker *, int, int, int); /* NMAGIC */
+int exec_aout_prep_magic3(struct exec_linker *, int, int, int); /* Separated I&D */
+int exec_aout_prep_magic4(struct exec_linker *, int, int, int); /* Overlay */
+int exec_aout_prep_magic5(struct exec_linker *, int, int, int); /* Auto-Overlay (Non-Separate) */
+int exec_aout_prep_magic6(struct exec_linker *, int, int, int); /* Auto-Overlay (Separate) */
 void getxfile(struct exec_linker *, u_long, int, int, int);
 
 int
@@ -39,21 +41,54 @@ exec_aout_prep_overlay(elp)
 
 	a_out = elp->el_image_hdr;
 	overlay = sep = ovflag = 0;
-	switch((int)(a_out->a_magic & 0xffff)) {
+	switch ((int)(a_out->a_magic & 0xffff)) {
+	case ZMAGIC:
+		error = exec_aout_prep_zmagic(elp, overlay, ovflag, sep);
+		break;
+	case A_MAGIC1:
+		error = exec_aout_prep_magic1(elp, overlay, ovflag, sep);
+		break;
+	case A_MAGIC2:
+		error = exec_aout_prep_magic2(elp, overlay, ovflag, sep);
+		break;
 	case A_MAGIC3:
-		error = exec_aout_prep_indmagic(elp, overlay, ovflag, sep);
+		error = exec_aout_prep_magic3(elp, overlay, ovflag, sep);
 		break;
 	case A_MAGIC4:
-		error = exec_aout_prep_ovlmagic(elp, overlay, ovflag, sep);
+		error = exec_aout_prep_magic4(elp, overlay, ovflag, sep);
 		break;
 	case A_MAGIC5:
-		error = exec_aout_prep_nsepmagic(elp, overlay, ovflag, sep);
+		error = exec_aout_prep_magic5(elp, overlay, ovflag, sep);
 		break;
 	case A_MAGIC6:
-		error = exec_aout_prep_sepmagic(elp, overlay, ovflag, sep);
+		error = exec_aout_prep_magic6(elp, overlay, ovflag, sep);
 		break;
 	default:
-		error = cpu_exec_aout_linker(elp); /* For CPU Architecture */
+		switch ((int)(ntohl(a_out->a_magic) & 0xffff)) {
+		case ZMAGIC:
+			error = exec_aout_prep_zmagic(elp, overlay, ovflag, sep);
+			break;
+		case A_MAGIC1:
+			error = exec_aout_prep_magic1(elp, overlay, ovflag, sep);
+			break;
+		case A_MAGIC2:
+			error = exec_aout_prep_magic2(elp, overlay, ovflag, sep);
+			break;
+		case A_MAGIC3:
+			error = exec_aout_prep_magic3(elp, overlay, ovflag, sep);
+			break;
+		case A_MAGIC4:
+			error = exec_aout_prep_magic4(elp, overlay, ovflag, sep);
+			break;
+		case A_MAGIC5:
+			error = exec_aout_prep_magic5(elp, overlay, ovflag, sep);
+			break;
+		case A_MAGIC6:
+			error = exec_aout_prep_magic6(elp, overlay, ovflag, sep);
+			break;
+		default:
+			error = cpu_exec_aout_linker(elp); /* For CPU Architecture */
+		}
 	}
 	if (error) {
 		kill_vmcmd(&elp->el_vmcmds);
@@ -62,7 +97,43 @@ exec_aout_prep_overlay(elp)
 }
 
 int
-exec_aout_prep_indmagic(elp, overlay, ovflag, sep)
+exec_aout_prep_zmagic(elp, overlay, ovflag, sep)
+	struct exec_linker *elp;
+	int overlay, ovflag, sep;
+{
+	struct exec *a_out;
+
+	a_out = elp->el_image_hdr;
+	a_out->a_magic = ZMAGIC;
+	return (exec_aout_prep_zmagic(elp));
+}
+
+int
+exec_aout_prep_magic1(elp, overlay, ovflag, sep)
+	struct exec_linker *elp;
+	int overlay, ovflag, sep;
+{
+	struct exec *a_out;
+
+	a_out = elp->el_image_hdr;
+	a_out->a_magic = OMAGIC;
+	return (exec_aout_prep_omagic(elp));
+}
+
+int
+exec_aout_prep_magic2(elp, overlay, ovflag, sep)
+	struct exec_linker *elp;
+	int overlay, ovflag, sep;
+{
+	struct exec *a_out;
+
+	a_out = elp->el_image_hdr;
+	a_out->a_magic = NMAGIC;
+	return (exec_aout_prep_nmagic(elp));
+}
+
+int
+exec_aout_prep_magic3(elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
@@ -72,7 +143,7 @@ exec_aout_prep_indmagic(elp, overlay, ovflag, sep)
 }
 
 int
-exec_aout_prep_ovlmagic(elp, overlay, ovflag, sep)
+exec_aout_prep_magic4(elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
@@ -82,7 +153,7 @@ exec_aout_prep_ovlmagic(elp, overlay, ovflag, sep)
 }
 
 int
-exec_aout_prep_nsepmagic(elp, overlay, ovflag, sep)
+exec_aout_prep_magic5(elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
@@ -92,7 +163,7 @@ exec_aout_prep_nsepmagic(elp, overlay, ovflag, sep)
 }
 
 int
-exec_aout_prep_sepmagic(elp, overlay, ovflag, sep)
+exec_aout_prep_magic6(elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
@@ -122,24 +193,6 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 	int ovmax;//, resid;
 
 	a_out = elp->el_image_hdr;
-	/*
-	overlay = sep = ovflag = 0;
-	switch (a_out->a_magic) {
-	case A_MAGIC3:
-		sep++;
-		break;
-	case A_MAGIC4:
-		overlay++;
-		break;
-	case A_MAGIC5:
-		ovflag++;
-		break;
-	case A_MAGIC6:
-		sep++;
-		ovflag++;
-		break;
-	}
-	*/
 	elp->el_taddr = USRTEXT;
 	elp->el_tsize = a_out->a_text;
 	elp->el_daddr = elp->el_taddr + a_out->a_text;
@@ -262,7 +315,6 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 				elp->el_daddr, (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
 				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
 				elp->el_vnodep, offset);
-		//rdwri(UIO_READ, ip, (caddr_t) 0, a_out->a_data, offset, UIO_USERSPACE, IO_UNIT, (int *)0);
 #ifdef notyet
 		/*
 		 * set SUID/SGID protections, if no tracing

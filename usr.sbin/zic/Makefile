@@ -6,15 +6,9 @@
 COPTS.zic.c	+= -Wno-format-nonliteral
 
 PROG=	zic
-SRCS=	zic.c
+SRCS=	zic.c scheck.c ialloc.c
 MAN=	zic.8
-.if !empty(TOOL_CAT:M*/*) && !exists(${TOOL_CAT})
-TZVERSION=0
-.else
-TZVERSION!= ${TOOL_CAT} ${NETBSDSRCDIR}/lib/libc/time/version
-.endif
-CPPFLAGS+=-DPKGVERSION='"(tzcode) "' -DTZVERSION='"${TZVERSION}"'
-CPPFLAGS+=-DZIC_BLOAT_DEFAULT='"slim"'
+CPPFLAGS+=-Dunix
 
 .PATH: ${NETBSDSRCDIR}/lib/libc/time
 
@@ -22,8 +16,5 @@ CPPFLAGS+=-DZIC_BLOAT_DEFAULT='"slim"'
 LDADD+=-lutil
 DPADD+=${LIBUTIL}
 .endif
-
-foo:
-	echo ${TZVERSION}
 
 .include <bsd.prog.mk>

@@ -19,13 +19,41 @@ static char sccsid[] = "@(#)ctime.c	1.1 (Berkeley) 3/25/87";
 #include <stdio.h>
 #include <unistd.h>
 
+struct ttinfo {					/* time type information */
+	long			tt_gmtoff;	/* GMT offset in seconds */
+	int				tt_isdst;	/* used to set tm_isdst */
+	int				tt_abbrind;	/* abbreviation list index */
+};
+
+struct state {
+	int				timecnt;
+	int				typecnt;
+	int				charcnt;
+	time_t			ats[TZ_MAX_TIMES];
+	unsigned char	types[TZ_MAX_TIMES];
+	struct ttinfo	ttis[TZ_MAX_TYPES];
+	char			chars[TZ_MAX_CHARS + 1];
+};
+
+char *tzname[2] = {
+		"GMT",
+		"GMT"
+};
+
+#ifdef USG_COMPAT
+time_t		timezone = 0;
+int			daylight = 0;
+#endif /* USG_COMPAT */
+
+static struct state	s;
+static int	tz_is_set;
+
+struct tm 	*offtime(time_t *, long);
+
 char *
 ctime(t)
 	const time_t *t;
 {
-	//struct tm	*localtime();
-	//char		*asctime();
-
 	return (asctime(localtime(t)));
 }
 
@@ -35,7 +63,7 @@ ctime(t)
 
 char *
 asctime(timeptr)
-	register const struct tm *	timeptr;
+	register const struct tm *timeptr;
 {
 	static char	wday_name[DAYS_PER_WEEK][3] = {
 		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
@@ -55,41 +83,6 @@ asctime(timeptr)
 	return result;
 }
 
-extern char 		*getenv();
-extern char 		*strcpy();
-extern char 		*strcat();
-struct tm 			*offtime();
-
-struct ttinfo {					/* time type information */
-	long			tt_gmtoff;	/* GMT offset in seconds */
-	int				tt_isdst;	/* used to set tm_isdst */
-	int				tt_abbrind;	/* abbreviation list index */
-};
-
-struct state {
-	int				timecnt;
-	int				typecnt;
-	int				charcnt;
-	time_t			ats[TZ_MAX_TIMES];
-	unsigned char	types[TZ_MAX_TIMES];
-	struct ttinfo	ttis[TZ_MAX_TYPES];
-	char			chars[TZ_MAX_CHARS + 1];
-};
-
-static struct state	s;
-
-static int		tz_is_set;
-
-char *tzname[2] = {
-		"GMT",
-		"GMT"
-};
-
-#ifdef USG_COMPAT
-time_t			timezone = 0;
-int			daylight = 0;
-#endif /* USG_COMPAT */
-
 static long
 detzcode(codep)
 	char *	codep;
@@ -103,7 +96,7 @@ detzcode(codep)
 	return result;
 }
 
-static
+static int
 tzload(name)
 	register char *	name;
 {
@@ -219,8 +212,8 @@ tzload(name)
 	return 0;
 }
 
-static
-tzsetkernel()
+static int
+tzsetkernel(void)
 {
 	struct timeval	tv;
 	struct timezone	tz;
@@ -240,8 +233,8 @@ tzsetkernel()
 	return 0;
 }
 
-static
-tzsetgmt()
+static void
+tzsetgmt(void)
 {
 	s.timecnt = 0;
 	s.ttis[0].tt_gmtoff = 0;
@@ -255,7 +248,7 @@ tzsetgmt()
 }
 
 void
-tzset()
+tzset(void)
 {
 	register char *	name;
 
@@ -274,7 +267,7 @@ tzset()
 
 struct tm *
 localtime(timep)
-	const time_t *	timep;
+	const time_t *timep;
 {
 	register struct ttinfo *	ttisp;
 	register struct tm *		tmp;

@@ -53,7 +53,7 @@
 int
 XCOFFNAMEEND(check)(int fd, const char *filename)
 {
-	struct xcoff_exechdr eh;
+	xcoff_exechdr eh;
 	struct stat sb;
 
 	/*

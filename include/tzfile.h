@@ -91,15 +91,17 @@ struct tzhead {
 */
 #define	TZ_MAX_TIMES	370
 
-#define	NOSOLAR				/* We currently don't handle solar time */
+//#define	NOSOLAR				/* We currently don't handle solar time */
 
 #ifndef	NOSOLAR
 #define	TZ_MAX_TYPES	256	/* Limited by what (unsigned char)'s can hold */
 #else /* !NOSOLAR */
-#define	TZ_MAX_TYPES	10	/* Maximum number of local time types */
+#define	TZ_MAX_TYPES	20	/* Maximum number of local time types */
 #endif /* !NOSOLAR */
 
 #define	TZ_MAX_CHARS	50	/* Maximum number of abbreviation characters */
+
+#define	TZ_MAX_LEAPS	50	/* Maximum number of leap second corrections */
 
 /* 211BSD & SysV Compatibility */
 #define	SECS_PER_MIN	60

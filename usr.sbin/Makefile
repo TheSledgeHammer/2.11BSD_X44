@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	boot0cfg btxld chown chroot config link mtree postinstall pwd_mkdb unlink zic
+SUBDIR=	boot0cfg btxld chown chroot config link mtree postinstall pwd_mkdb unlink zdump zic
 
 .if ${TOOLCHAIN_MISSING} != "no"
 SUBDIR+= mdsetimage

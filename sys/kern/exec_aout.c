@@ -84,8 +84,9 @@ exec_aout_linker(elp)
 			error = cpu_exec_aout_linker(elp); /* For CPU Architecture */
 		}
 	}
-	if (error)
+	if (error) {
 		kill_vmcmd(&elp->el_vmcmds);
+	}
 	return (error);
 }
 
