@@ -69,6 +69,8 @@ extern int wsmuxdebug;
 #define	debugf(client, fmt, args...)
 #endif
 
+CFDRIVER_DECL(NULL, evdev, DV_DULL);
+
 extern struct cfdriver evdev_cd;
 
 #define	DEF_RING_REPORTS	8
@@ -159,6 +161,12 @@ evdev_attach_subr(sc, mux_loc)
 	int mux_loc;
 {
     evdev_init(sc->sc_evdev, mux_loc);
+}
+
+void
+evdev_attach(int num)
+{
+
 }
 
 int

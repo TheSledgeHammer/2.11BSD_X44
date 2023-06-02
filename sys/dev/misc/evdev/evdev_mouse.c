@@ -68,8 +68,6 @@ evdev_mouse_match(parent, match, aux)
 	struct cfdata *match;
 	void *aux;
 {
-	struct wsmousedev_attach_args 	*ap;
-
 	return (1);
 }
 

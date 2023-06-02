@@ -44,8 +44,6 @@ struct evdev_kbd_softc {
 	struct evdev_softc 				sc_evdev;
     const struct wskbd_accessops  	*sc_accessops;
 	void							*sc_accesscookie;
-	int								sc_dying;
-	int 							sc_on;
 };
 
 extern struct cfdriver evdev_cd;
@@ -70,7 +68,6 @@ evdev_kbd_match(parent, match, aux)
 	struct cfdata *match;
 	void *aux;
 {
-	struct wskbddev_attach_args 	*ap;
 	return (1);
 }
 
@@ -114,10 +111,6 @@ evdev_kbd_mux_open(me, evp)
 	ksc = (struct evdev_kbd_softc *)me;
 	evdev = &ksc->sc_evdev;
 	client = evdev->ev_client;
-
-	if (ksc->sc_dying) {
-		return (EIO);
-	}
 
 	if (client->ec_base.me_evp != NULL) {
 		return (EBUSY);

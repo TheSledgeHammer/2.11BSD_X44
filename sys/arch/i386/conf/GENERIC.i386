@@ -154,6 +154,8 @@ options 		PCDISPLAY_SOFTCURSOR
 # enable VGA raster mode capable of displaying multilingual text on console
 #options 		VGA_RASTERCONSOLE
 
+#options 		EVDEV_SUPPORT
+
 # Kernel root file system and dump configuration.
 config			twobsd	root on ? type ?
 #config			twobsd	root on sd0a type ffs
