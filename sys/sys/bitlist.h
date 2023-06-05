@@ -44,7 +44,6 @@ typedef struct bitlist   	bitlist_t;
 
 extern struct bitlist_header bitset[];
 extern int 					bitlist_counter;
-extern ctop_t 				*ctop;
 
 void		bitlist_init(void);
 void		bitlist_insert(uint64_t);
