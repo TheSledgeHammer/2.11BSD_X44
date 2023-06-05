@@ -53,6 +53,8 @@ union cpu_top {
 };
 typedef union cpu_top 		ctop_t;
 
+extern ctop_t 				*ctop;
+
 void		ctop_set(ctop_t *, uint32_t);
 uint32_t	ctop_get(ctop_t *);
 int			ctop_isset(ctop_t *, uint32_t);
