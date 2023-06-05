@@ -17,3 +17,7 @@ BUILD_KERNELS+=		GENERIC_SMP.i386
 INSTALLATION_DIRS+=	installation/misc
 INSTALLATION_DIRS+=	installation/cdrom
 INSTALLATION_DIRS+=	installation/floppy
+
+# i386 specific distrib stuff
+#snap_md_post:
+#	cd stand/boot/arch/i386

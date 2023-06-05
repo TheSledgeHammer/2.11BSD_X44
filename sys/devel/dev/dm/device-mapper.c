@@ -43,10 +43,8 @@
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
 #include <sys/ioccom.h>
-//#include <sys/kmem.h>
-//#include <sys/kauth.h>
+#include <sys/malloc.h>
 
-#include "advvm_extent.h"
 #include "netbsd-dm.h"
 #include "dm.h"
 #include "ioconf.h"

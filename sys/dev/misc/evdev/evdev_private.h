@@ -40,7 +40,7 @@
 #include <dev/misc/evdev/input.h>
 #include <dev/misc/evdev/freebsd-bitstring.h>
 
-#define M_EVDEV		91
+//#define M_EVDEV		91
 #define	NAMELEN		80
 
 /*

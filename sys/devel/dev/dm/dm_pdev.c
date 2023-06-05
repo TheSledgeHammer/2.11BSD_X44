@@ -37,10 +37,9 @@ __KERNEL_RCSID(0, "$NetBSD: dm_pdev.c,v 1.23 2021/08/21 22:23:33 andvar Exp $");
 #include <sys/disk.h>
 #include <sys/fcntl.h>
 #include <sys/namei.h>
-
+#include <sys/malloc.h>
 //#include <dev/dkvar.h>
 
-#include "advvm_extent.h"
 #include "dm.h"
 
 static SLIST_HEAD(dm_pdevs, dm_pdev) dm_pdev_list;
@@ -122,7 +121,7 @@ dm_pdev_insert(const char *dev_name)
 		printf("%s: lookup on device: %s (error %d)\n",
 		    __func__, dev_name, error);
 		mutex_exit(&dm_pdev_mutex);
-		advvm_free(dmp);
+		dm_free(dmp);
 		return NULL;
 	}
 	getdisksize(dmp->pdev_vnode, &dmp->pdev_numsec, &dmp->pdev_secsize);
@@ -161,7 +160,7 @@ dm_pdev_alloc(const char *name)
 {
 	dm_pdev_t *dmp;
 
-	advvm_malloc(dmp, sizeof(*dmp), M_WAITOK);
+	dm_malloc(dmp, sizeof(*dmp), M_WAITOK);
 	strlcpy(dmp->name, name, sizeof(dmp->name));
 	dmp->ref_cnt = 0;
 	dmp->pdev_vnode = NULL;
@@ -181,11 +180,11 @@ dm_pdev_rem(dm_pdev_t *dmp)
 	if (dmp->pdev_vnode != NULL) {
 		int error = vn_close(dmp->pdev_vnode, FREAD | FWRITE, FSCRED);
 		if (error != 0) {
-			advvm_free(dmp);
+			dm_free(dmp);
 			return error;
 		}
 	}
-	advvm_free(dmp);
+	dm_free(dmp);
 
 	return 0;
 }

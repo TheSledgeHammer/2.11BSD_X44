@@ -50,8 +50,6 @@ struct advvm_volume {
     u_long 							vol_start;					/* volume start */
     u_long 							vol_end;					/* volume end */
     u_long							vol_size;					/* volume size */
-    //u_long							vol_alignment;				/* volume alignment */
-    //u_long							vol_boundary;				/* volume boundary */
 
     /* Fixed Extent Regions */
     u_long							vol_storagesize;			/* volume fixed storage size */

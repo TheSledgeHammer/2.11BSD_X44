@@ -2,7 +2,6 @@
 
 .include <bsd.loader.mk>
 
-# TODO: Fix Me!!
 ARCHSUBDIR= ${MACHINE_CPU}
 
 SUBDIR=	${MACHINE}

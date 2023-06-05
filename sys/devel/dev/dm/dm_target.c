@@ -33,8 +33,7 @@ __KERNEL_RCSID(0, "$NetBSD: dm_target.c,v 1.42 2021/08/21 22:23:33 andvar Exp $"
 
 #include <sys/types.h>
 #include <sys/param.h>
-//#include <sys/kmem.h>
-//#include <sys/module.h>
+
 
 #include "advvm_extent.h"
 #include "netbsd-dm.h"
@@ -216,7 +215,7 @@ dm_target_rem(const char *dm_target_name)
 
 	mutex_exit(&dm_target_mutex);
 
-	advvm_free(dmt);
+	dm_free(dmt);
 
 	return 0;
 }
@@ -235,7 +234,7 @@ dm_target_destroy(void)
 
 	while ((dm_target = TAILQ_FIRST(&dm_target_list)) != NULL) {
 		TAILQ_REMOVE(&dm_target_list, dm_target, dm_target_next);
-		advvm_free(dm_target);
+		dm_free(dm_target);
 	}
 	KASSERT(TAILQ_EMPTY(&dm_target_list));
 
@@ -258,7 +257,7 @@ dm_target_alloc(const char *name)
 	dm_target_t *dmt;
 
 	//dmt = kmem_zalloc(sizeof(dm_target_t), KM_SLEEP);
-	advvm_malloc(dmt, sizeof(dm_target_t), M_WAITOK);
+	dm_malloc(dmt, sizeof(dm_target_t), M_WAITOK);
 	if (dmt == NULL)
 		return NULL;
 

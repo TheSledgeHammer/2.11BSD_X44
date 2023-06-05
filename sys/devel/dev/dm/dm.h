@@ -177,6 +177,27 @@ struct dm_target {
 	TAILQ_ENTRY(dm_target) 		dm_target_next;
 };
 
+#define M_DM 98
+/*
+__inline void
+dm_malloc(addr, size, flags)
+	void 	*addr;
+	u_long 	size;
+	int 	flags;
+{
+	addr = (void *)malloc(addr, size, M_DM, flags);
+}
+
+__inline void
+dm_free(addr)
+	void 	*addr;
+{
+	free(addr, M_DM);
+}
+*/
+#define dm_malloc(addr, size, flags)	((addr) = (void *)malloc((addr), (size), M_DM, (flags)))
+#define dm_free(addr)					(free((addr), M_DM))
+
 /* device-mapper */
 void dmgetproperties(struct disk *, dm_table_head_t *);
 

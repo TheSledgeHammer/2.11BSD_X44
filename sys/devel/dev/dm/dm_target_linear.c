@@ -38,12 +38,11 @@ __KERNEL_RCSID(0, "$NetBSD: dm_target_linear.c,v 1.37 2020/01/21 16:27:53 tkusum
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/buf.h>
-//#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <sys/proc.h>
 
 #include <machine/types.h>
 
-#include "advvm_extent.h"
 #include "dm.h"
 
 /*
@@ -72,7 +71,7 @@ dm_target_linear_init(dm_table_entry_t *table_en, int argc, char **argv)
 		return ENOENT;
 
 	//tlc = kmem_alloc(sizeof(dm_target_linear_config_t), KM_SLEEP);
-	advvm_malloc(tlc, sizeof(dm_target_linear_config_t), M_WAITOK);
+	dm_malloc(tlc, sizeof(dm_target_linear_config_t), M_WAITOK);
 	tlc->pdev = dmp;
 	tlc->offset = atoi64(argv[1]);
 
@@ -97,7 +96,7 @@ dm_target_linear_table(void *target_config)
 	printf("Linear target table function called\n");
 
 	//params = kmem_alloc(DM_MAX_PARAMS_SIZE, KM_SLEEP);
-	advvm_malloc(params, DM_MAX_PARAMS_SIZE, M_WAITOK);
+	dm_malloc(params, DM_MAX_PARAMS_SIZE, M_WAITOK);
 	snprintf(params, DM_MAX_PARAMS_SIZE, "%s %" PRIu64, tlc->pdev->udev_name, tlc->offset);
 
 	return params;
@@ -156,7 +155,7 @@ dm_target_linear_destroy(dm_table_entry_t *table_en)
 	dm_pdev_decr(tlc->pdev);
 
 	//kmem_free(tlc, sizeof(*tlc));
-	advvm_free(tlc);
+	dm_free(tlc);
 
 out:
 	/* Unbusy target so we can unload it */

@@ -34,8 +34,8 @@ __KERNEL_RCSID(0, "$NetBSD: dm_table.c,v 1.21 2021/08/21 22:23:33 andvar Exp $")
 
 #include <sys/types.h>
 #include <sys/param.h>
+#include <sys/malloc.h>
 
-#include "advvm_extent.h"
 #include "dm.h"
 
 /*
@@ -353,7 +353,7 @@ dm_table_add_deps(dm_table_entry_t *table_en, dm_pdev_t *pdev)
 		}
 	}
 
-	advvm_malloc(map, sizeof(*map));
+	dm_malloc(map, sizeof(*map), M_WAITOK);
 	map->data.pdev = pdev;
 	printf("%s: %s\n", __func__, pdev->name);
 	TAILQ_INSERT_TAIL(&table_en->pdev_maps, map, next);
@@ -372,7 +372,7 @@ dm_table_free_deps(dm_table_entry_t *table_en)
 	while ((map = TAILQ_FIRST(&table_en->pdev_maps)) != NULL) {
 		TAILQ_REMOVE(&table_en->pdev_maps, map, next);
 		printf("%s: %s\n", __func__, map->data.pdev->name);
-		advvm_free(map);
+		dm_free(map);
 	}
 	KASSERT(TAILQ_EMPTY(&table_en->pdev_maps));
 }

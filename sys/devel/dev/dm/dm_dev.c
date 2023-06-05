@@ -38,8 +38,8 @@ __KERNEL_RCSID(0, "$NetBSD: dm_dev.c,v 1.19 2021/08/21 22:23:33 andvar Exp $");
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
 #include <sys/ioccom.h>
+#include <sys/malloc.h>
 
-#include "advvm_extent.h"
 #include "netbsd-dm.h"
 #include "dm.h"
 
@@ -300,7 +300,7 @@ dm_dev_destroy(void)
 		mutex_destroy(&dmv->dev_mtx);
 		cv_destroy(&dmv->dev_cv);
 
-		advvm_free(dmv);
+		dm_free(dmv);
 	}
 	mutex_exit(&dm_dev_mutex);
 
@@ -318,8 +318,8 @@ dm_dev_alloc(void)
 
 	//dmv = kmem_zalloc(sizeof(dm_dev_t), KM_SLEEP);
 	//dmv->diskp = kmem_zalloc(sizeof(struct disk), KM_SLEEP);
-	advvm_malloc(dmv, sizeof(dm_dev_t), M_WAITOK);
-	advvm_malloc(dmv->diskp, sizeof(struct dkdevice), M_WAITOK);
+	dm_malloc(dmv, sizeof(dm_dev_t), M_WAITOK);
+	dm_malloc(dmv->diskp, sizeof(struct dkdevice), M_WAITOK);
 	return (dmv);
 }
 
@@ -338,11 +338,11 @@ dm_dev_free(dm_dev_t *dmv)
 
 	if (dmv->diskp != NULL) {
 		//kmem_free(dmv->diskp, sizeof(struct disk));
-		advvm_free(dmv->diskp);
+		dm_free(dmv->diskp);
 	}
 
 	//kmem_free(dmv, sizeof(dm_dev_t));
-	advvm_free(dmv);
+	dm_free(dmv);
 
 	return 0;
 }
