@@ -706,6 +706,14 @@ twoelevenbsd_elf_signature(elp, eh)
 			isnetbsd = 1;
 			break;
 
+		case ELF_NOTE_TYPE_PAX_TAG:
+			if (np->n_namesz != ELF_NOTE_PAX_NAMESZ ||
+			    np->n_descsz != ELF_NOTE_PAX_DESCSZ ||
+			    memcmp(ndata, ELF_NOTE_PAX_NAME, ELF_NOTE_PAX_NAMESZ))
+				goto next;
+			(void)memcpy(&elp->el_pax_flags, ndata + ELF_NOTE_PAX_NAMESZ, sizeof(elp->el_pax_flags));
+			break;
+
 		default:
 			break;
 		}

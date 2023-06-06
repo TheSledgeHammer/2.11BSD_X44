@@ -270,7 +270,7 @@ struct pmap {
 #else
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
 #endif
-	vm_offset_t				pm_pdirpa;		/* PA of PD (read-only after create) */
+	vm_offset_t				*pm_pdirpa;		/* PA of PD (read-only after create) */
 
 	bool_t					pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
@@ -354,7 +354,7 @@ extern pd_entry_t 			*APDE[];
 #ifdef PMAP_PAE_COMP
 #define pmap_pdirpa(pmap, index) 	((pmap)->pm_pdirpa[l2tol3(index)] + l2tol2(index) * sizeof(pd_entry_t))
 #else
-#define pmap_pdirpa(pmap, index) 	((pmap)->pm_pdirpa + (index) * sizeof(pd_entry_t))
+#define pmap_pdirpa(pmap, index) 	((pmap)->pm_pdirpa[0] + (index) * sizeof(pd_entry_t))
 #endif
 
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)

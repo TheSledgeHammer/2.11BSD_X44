@@ -92,6 +92,8 @@ struct exec_linker {
 	int						el_fd;					/* a file descriptor we're holding */
 	char					**el_fa;				/* a fake args vector for scripts */
 
+	uint32_t 				el_pax_flags;			/* pax flags */
+
 	char 				    *el_stringbase;			/* base address of tmp string storage */
 	char 				    *el_stringp;			/* current 'end' pointer of tmp strings */
 	int 				    el_stringspace;			/* space left in tmp string storage area */

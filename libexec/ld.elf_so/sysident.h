@@ -57,27 +57,27 @@
  */
 
 /* XXX: NetBSD 1.5 compatibility only! */
-#if __NetBSD_Version__ < 105010000
-#define	ELF_NOTE_TYPE_NETBSD_TAG	1
+#if __211BSD_Version__ < 105010000
+#define	ELF_NOTE_TYPE_211BSD_TAG	1
 #endif
 
 #define	__S(x)	__STRING(x)
 __asm(
-	".section\t\".note.netbsd.ident\", \"a\"\n"
+	".section\t\".note.211bsd.ident\", \"a\"\n"
 	"\t.p2align\t2\n\n"
 
-	"\t.long\t" __S(ELF_NOTE_NETBSD_NAMESZ) "\n"
-	"\t.long\t" __S(ELF_NOTE_NETBSD_DESCSZ) "\n"
-	"\t.long\t" __S(ELF_NOTE_TYPE_NETBSD_TAG) "\n"
-	"\t.ascii\t" __S(ELF_NOTE_NETBSD_NAME) "\n"
-	"\t.long\t" __S(__NetBSD_Version__) "\n\n"
+	"\t.long\t" __S(ELF_NOTE_211BSD_NAMESZ) "\n"
+	"\t.long\t" __S(ELF_NOTE_211BSD_DESCSZ) "\n"
+	"\t.long\t" __S(ELF_NOTE_TYPE_211BSD_TAG) "\n"
+	"\t.ascii\t" __S(ELF_NOTE_211BSD_NAME) "\n"
+	"\t.long\t" __S(__211BSD_Version__) "\n\n"
 
 	"\t.previous\n"
 	"\t.p2align\t2\n"
 );
 
 __asm(
-	".section\t\".note.netbsd.pax\", \"a\"\n"
+	".section\t\".note.211bsd.pax\", \"a\"\n"
 	"\t.p2align\t2\n\n"
 
 	"\t.long\t" __S(ELF_NOTE_PAX_NAMESZ) "\n"
@@ -89,3 +89,4 @@ __asm(
 	"\t.previous\n"
 	"\t.p2align\t2\n"
 );
+

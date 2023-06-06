@@ -573,7 +573,7 @@ pmap_bootstrap(firstaddr)
 	kernel_pmap->pm_ovltab = (ovl_entry_t *)(KERNBASE + IdleOVL);
 #endif
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
-	kernel_pmap->pm_pdirpa = (vm_offset_t)IdlePTD;
+	kernel_pmap->pm_pdirpa = (vm_offset_t *)IdlePTD;
 #ifdef PMAP_PAE_COMP
 	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(KERNBASE + IdlePDPT);
 #endif

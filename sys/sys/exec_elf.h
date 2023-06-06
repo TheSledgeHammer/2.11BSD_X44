@@ -693,31 +693,48 @@ typedef struct {
 	Elf64_Half n_type;
 } Elf64_Nhdr;
 
-#define	ELF_NOTE_TYPE_OSVERSION			1
 
-/* NetBSD-specific note type: OS Version.  desc is 4-byte NetBSD integer. */
-#define	ELF_NOTE_211BSD_TYPE_OSVERSION	ELF_NOTE_TYPE_OSVERSION
+#define	ELF_NOTE_TYPE_ABI_TAG			1
+
+/* GNU-specific note name and description sizes */
+#define	ELF_NOTE_ABI_NAMESZ				4
+#define	ELF_NOTE_ABI_DESCSZ				16
+/* GNU-specific note name */
+#define	ELF_NOTE_ABI_NAME				"GNU\0"
+
+/* GNU-specific OS/version value stuff */
+#define	ELF_NOTE_ABI_OS_LINUX			0
+#define	ELF_NOTE_ABI_OS_HURD			1
+#define	ELF_NOTE_ABI_OS_SOLARIS			2
 
 /* NetBSD-specific note type: Emulation name.  desc is emul name string. */
-#define	ELF_NOTE_211BSD_TYPE_EMULNAME	2
-
-/* NetBSD-specific note name and description sizes */
 #define ELF_NOTE_TYPE_211BSD_TAG		1
+/* NetBSD-specific note name and description sizes */
 #define	ELF_NOTE_211BSD_NAMESZ			7
 #define	ELF_NOTE_211BSD_DESCSZ			4
 /* NetBSD-specific note name */
 #define	ELF_NOTE_211BSD_NAME			"211BSD\0\0"
 
-/* GNU-specific note name and description sizes */
-#define	ELF_NOTE_GNU_NAMESZ				4
-#define	ELF_NOTE_GNU_DESCSZ				4
-/* GNU-specific note name */
-#define	ELF_NOTE_GNU_NAME				"GNU\0"
+/* NetBSD-specific note type: Checksum.  There should be 1 NOTE per PT_LOAD
+   section.  desc is a tuple of <phnum>(16),<chk-type>(16),<chk-value>. */
+#define	ELF_NOTE_TYPE_CHECKSUM_TAG		2
+#define	ELF_NOTE_CHECKSUM_CRC32			1
+#define	ELF_NOTE_CHECKSUM_MD5			2
+#define	ELF_NOTE_CHECKSUM_SHA1			3
+#define	ELF_NOTE_CHECKSUM_SHA256		4
 
-/* GNU-specific OS/version value stuff */
-#define	ELF_NOTE_GNU_OSMASK				(u_int32_t)0xff000000
-#define	ELF_NOTE_GNU_OSLINUX			(u_int32_t)0x01000000
-#define	ELF_NOTE_GNU_OSMACH				(u_int32_t)0x00000000
+/* NetBSD-specific note type: PaX.  There should be 1 NOTE per executable.
+   section.  desc is a 32 bit bitmask */
+#define ELF_NOTE_TYPE_PAX_TAG			3
+#define ELF_NOTE_PAX_MPROTECT			0x01	/* Force enable Mprotect */
+#define ELF_NOTE_PAX_NOMPROTECT			0x02	/* Force disable Mprotect */
+#define ELF_NOTE_PAX_GUARD				0x04	/* Force enable Segvguard */
+#define ELF_NOTE_PAX_NOGUARD			0x08	/* Force disable Segvguard */
+#define ELF_NOTE_PAX_ASLR				0x10	/* Force enable ASLR */
+#define ELF_NOTE_PAX_NOASLR				0x20	/* Force disable ASLR */
+#define ELF_NOTE_PAX_NAMESZ				4
+#define ELF_NOTE_PAX_NAME				"PaX\0"
+#define ELF_NOTE_PAX_DESCSZ				4
 
 #if !defined(ELFSIZE)
 # if !defined(_KERNEL)

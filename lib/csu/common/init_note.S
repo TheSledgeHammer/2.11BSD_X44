@@ -65,3 +65,12 @@
 		.long	ELF_NOTE_TYPE_211BSD_TAG
 		.ascii	"211BSD\0\0"				/* ELF_NOTE_211BSD_NAME */
 		.long	__211BSD_Version__
+
+		.section ".note.211bsd.pax", "a"
+		.p2align 2
+
+		.long	ELF_NOTE_PAX_NAMESZ
+		.long	ELF_NOTE_PAX_DESCSZ
+		.long	ELF_NOTE_TYPE_PAX_TAG
+		.ascii	"PaX\0"						/* ELF_NOTE_PAX_NAME */
+		.long	0
