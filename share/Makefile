@@ -3,8 +3,10 @@
 .include <bsd.own.mk>
 
 .if ${MKSHARE} != "no" || make(clean) || make(cleandir) || make(distclean) || make(obj)
-SUBDIR= 	adb dict font fontinfo learn man me misc mk ms \
-			tabset term termcap tmac wscons lint zoneinfo
+SUBDIR= 	dict man me misc mk tabset term 		\
+			termcap tmac wscons lint zoneinfo			
+# 2.11BSD:
+SUBDIR+=	adb font fontinfo learn ms pascal lint
 
 .if ${MKGROFF} != "no"
 SUBDIR+=doc
@@ -18,7 +20,7 @@ SUBDIR+=locale
 SUBDIR.roff+= doc
 
 # Speedup stubs for some subtrees that don't need to run these rules
-includes-examples includes-man:
+includes-man:
 	@true
 	
 .include <bsd.subdir.mk>
