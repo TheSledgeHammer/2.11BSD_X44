@@ -50,13 +50,18 @@ LOADER_INTERP?=	${LOADER_DEFAULT_INTERP}
 # BINDIR is where we install
 BINDIR?=					/boot
 
-# Machine support
-LOADER_MACHINE?=			${MACHINE}
-LOADER_MACHINE_ARCH?=		${MACHINE_ARCH}
-
 # Machine Dependent
-MK_EFI=						no
-MK_FDT=						no
+.if ${MACHINE} == "i386" || ${MACHINE} == "x86_64"
+HAVE_BCACHE?=				yes
+HAVE_ISABUS?=				yes
+HAVE_PNP?=					yes
+.else
+HAVE_BCACHE?=				no
+HAVE_ISABUS?=				no
+HAVE_PNP?=					no
+.endif
+LOADER_EFI_SUPPORT?=		no
+LOADER_FDT_SUPPORT?=		no
 
 # Filesystem support
 LOADER_CD9660_SUPPORT?=		yes

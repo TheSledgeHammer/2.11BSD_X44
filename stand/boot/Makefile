@@ -7,9 +7,11 @@ SUBDIR= 	arch common dloader
 .if ${MK_LOADER_LUA} == "yes"
 SUBDIR+=	lua
 .endif
-
-.if ${MK_EFI} == "yes"
-SUBDIR+=	efi fdt
+.if ${LOADER_EFI_SUPPORT} == "yes"
+SUBDIR+=	efi
+.endif
+.if ${LOADER_FDT_SUPPORT} == "yes"
+SUBDIR+=	fdt
 .endif
 
 INCSDIR= 	/usr/include/stand/boot

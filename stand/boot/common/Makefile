@@ -16,8 +16,6 @@ SRCS+=	interp_dloader.c
 .error Unknown interpreter ${LOADER_INTERP}
 .endif
 
-INCS=		boot2.h bootstrap.h commands.h paths.h rbx.h smbios.h
-
 .if ${LOADER_NET_SUPPORT} == "yes"
 SRCS+= 	dev_net.c
 INCS+=	dev_net.h
@@ -36,5 +34,7 @@ INCS+= 	isapnp.h
 .if ${HAVE_PNP} == "yes"
 SRCS+=	pnp.c
 .endif
+
+INCS=		boot2.h bootstrap.h commands.h paths.h rbx.h smbios.h
 
 .include <bsd.kinc.mk>

@@ -8,7 +8,7 @@ INTERNALPROG=
 NEWVERSWHAT?=	"bootstrap loader" i386
 #VERSION_FILE=	${.CURDIR}/../loader/version
 
-.PATH:			${BOOTSRC}/i386/loader
+.PATH:			${BOOTARCH}/i386/loader
 
 # architecture-specific loader code
 SRCS=			main.c conf.c
@@ -27,8 +27,8 @@ CFLAGS+=		-Wall
 LDFLAGS+=		-static ${LDFLAGS_ORG} -Wl,--gc-sections
 
 # i386 standalone support library
-LIBI386=		${BOOTOBJ}/i386/libi386/libi386.a
-CFLAGS+=		-I${BOOTSRC}/i386
+LIBI386=		${BOOTARCH}/i386/libi386/libi386.a
+CFLAGS+=		-I${BOOTARCH}/i386
 
 # BTX components
 LOADER_ADDRESS?=	0x200000
@@ -36,18 +36,19 @@ LDFLAGS+=	    	-nostdlib
 LDFLAGS.lld+=		-Wl,--no-rosegment
 MK_PIE:=	    	no
 
-BTXDIR=			${BOOTOBJ}/i386/btx
-BTXLDR=			${BTXDIR}/btxldr/btxldr
-BTXKERN=		${BTXDIR}/btx/btx
-BTXCRT=			${BTXDIR}/lib/crt0.o
+BTXDIR=			${BOOTARCH}/i386/btx
+BTXBTXDIR=		${BTXDIR}/btx
+BTXLDRDIR=		${BTXDIR}/btxldr
+BTXLIBDIR=		${BTXDIR}/lib
 
-BTXSRC=			${BOOTSRC}/i386/btx
-BTXLIB=			${BTXSRC}/lib
+BTXLDR=			${BTXLDRDIR}
+BTXKERN=		${BTXBTXDIR}
+BTXCRT=			${BTXLIBDIR}/crt0.o
 
 CFLAGS+=		-I${BTXLIB}
 
 # compact binary with no padding between text, data, bss
-LDSCRIPT=	    	${BOOTSRC}/i386/boot.ldscript
+LDSCRIPT=	    	${BOOTARCH}/i386/boot.ldscript
 LDFLAGS_ORG=	-Wl,--defsym,ORG=${ORG},-T,${LDSCRIPT}
 LDFLAGS_BIN=	-e start ${LDFLAGS_ORG} -Wl,-N,-S,--oformat,binary
 .if ${LINKER_FEATURES:Mbuild-id} != ""
