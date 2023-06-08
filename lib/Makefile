@@ -35,8 +35,11 @@ SUBDIR+=	libarch libcompat
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 			${USRLIBDIR}/libdbm 	\
+			${USRLIBDIR}/libkvm 	\
 			${USRLIBDIR}/libm 		\
 			${USRLIBDIR}/libmp 		\
+			${USRLIBDIR}/libom 		\
+			${USRLIBDIR}/libresolv 	\
 			${USRLIBDIR}/libpci		\
 			${USRLIBDIR}/libtermcap \
 			${USRLIBDIR}/libutil 	\
@@ -51,6 +54,7 @@ SUBDIR+=	libsa
 
 SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/elftoolchain/lib/libelf
+SUBDIR+=	../contrib/expat/lib
 
 SUBDIR+=	../contrib/gnu/libmalloc
 

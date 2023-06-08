@@ -56,23 +56,62 @@ LIBCRTI=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o
 #     E.g. LIBC?=${DESTDIR}/usr/lib/libc.a
 #     etc..
 #
-LIBC?=			${DESTDIR}/usr/lib/libc.a
-LIBCOMPAT?=		${DESTDIR}/usr/lib/libcompat.a
-LIBCURSES?=		${DESTDIR}/usr.lib/libcurses.a
-LIBDBM?=		${DESTDIR}/usr.lib/libdbm.a
-LIBMP?=			${DESTDIR}/usr.lib/libmp.a
-LIBOM?=			${DESTDIR}/usr.lib/libom.a
-LIBTERMCAP?=	${DESTDIR}/usr.lib/libtermcap.a
-LIBTERMINFO=	LIBTERMCAP
-LIBUTIL?=		${DESTDIR}/usr.lib/libutil.a
-LIBVMF?=		${DESTDIR}/usr.lib/libvmf.a
-LIBY?=			${DESTDIR}/usr.lib/liby.a
-LIBZ?=			${DESTDIR}/usr.lib/libz.a
+
+USRSLASHLIB=	${DESTDIR}/usr/lib # Modern BSD's (i.e. 4.4 and above)
+USRDOTLIB=		${DESTDIR}/usr.lib # Older BSD's (i.e. 4.3 and below)
+
+_USRSLASHLIBLIST=	C COMPAT
+
+.for _var in ${_USRSLASHLIBLIST}
+.ifndef LIB${_var}
+LIB${_var}:=	 ${USRSLASHLIB}/lib${_var:tl}.a
+.MADE: ${LIB${_var}}
+.endif
+.endfor
+
+_USRDOTLIBLIST=		BZ2 CURSES DBM EDIT EXECINFO EXPAT FORM GCC GNUMALLOC  \
+					KVM M MENU MP OM PANEL PCI RESOLV TERMCAP UTIL VMF Y Z
+
+.for _var in ${_USRDOTLIBLIST}
+.ifndef LIB${_var}
+LIB${_var}:=	 ${USRDOTLIB}/lib${_var:tl}.a
+.MADE: ${LIB${_var}}
+.endif
+.endfor
+
+.ifndef LIBTERMINFO
+LIBTERMINFO = ${USRDOTLIB}/libtermcap.a
+.MADE: 		${LIBTERMINFO}
+.endif
 
 .ifndef LIBSTDCXX
-LIBSTDCXX=	${DESTDIR}/usr/lib/libstdc++.a
+LIBSTDCXX=	${USRSLASHLIB}/libstdc++.a
 .MADE: 		${LIBSTDCXX}
 .endif
+
+#LIBC?=			${USRSLASHLIB}/libc.a
+#LIBCOMPAT?=		${USRSLASHLIB}/libcompat.a
+#LIBBZ2?=		${USRDOTLIB}/libbz2.a
+#LIBCURSES?=		${USRDOTLIB}/libcurses.a
+#LIBDBM?=		${USRDOTLIB}/libdbm.a
+#LIBEDIT?=		${USRDOTLIB}/libedit.a
+#LIBEXECINFO?=	${USRDOTLIB}/libexecinfo.a
+#LIBEXPAT?=		${USRDOTLIB}/libexpat.a
+#LIBFORM?=		${USRDOTLIB}/libform.a
+#LIBKVM?=		${USRDOTLIB}/libkvm.a
+#LIBM?=			${USRDOTLIB}/libm.a
+#LIBMENU?=		${USRDOTLIB}/libmenu.a
+#LIBMP?=			${USRDOTLIB}/libmp.a
+#LIBOM?=			${USRDOTLIB}/libom.a
+#LIBPANEL?=		${USRDOTLIB}/libpanel.a
+#LIBPCI?=		${USRDOTLIB}/libpci.a
+#LIBRESOLV?=		${USRDOTLIB}/libresolv.a
+#LIBTERMCAP?=	${USRDOTLIB}/libtermcap.a
+#LIBTERMINFO=	LIBTERMCAP
+#LIBUTIL?=		${USRDOTLIB}/libutil.a
+#LIBVMF?=		${USRDOTLIB}/libvmf.a
+#LIBY?=			${USRDOTLIB}/liby.a
+#LIBZ?=			${USRDOTLIB}/libz.a
 
 ##### Build and install rules
 .if defined(SHAREDSTRINGS)
