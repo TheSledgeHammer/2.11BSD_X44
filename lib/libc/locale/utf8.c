@@ -298,8 +298,6 @@ _UTF8_sputmbrune(_UTF8EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF8Sta
 err:
 	*nresult = (size_t) - 1;
 	return ret;
-
-	return (_UTF8_sputrune(wc, s, n, nresult));
 }
 
 rune_t
