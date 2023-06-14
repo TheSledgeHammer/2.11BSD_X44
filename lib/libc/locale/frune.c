@@ -40,9 +40,95 @@ static char sccsid[] = "@(#)frune.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <limits.h>
+#include <encoding.h>
 #include <rune.h>
 #include <stddef.h>
 #include <stdio.h>
+
+int
+fgetmbrune(fp, ei, pwc, psenc)
+    FILE            *fp;
+    _ENCODING_INFO  *ei;
+    wchar_t         *pwc;
+    _ENCODING_STATE *psenc;
+{
+	int r, c;
+	size_t len;
+	const char buf[MB_LEN_MAX];
+	size_t nresult;
+
+	len = _ENCODING_MB_CUR_MAX(ei);
+	do {
+		c = getc(fp);
+		if (c == EOF) {
+			if (len) {
+				break;
+			}
+			return (EOF);
+		}
+		buf[len++] = c;
+
+		r = sgetmbrune(ei, pwc, &buf, len, psenc, &nresult);
+		if (r) {
+			return (0);
+		}
+	} while (nresult == buf && len < MB_LEN_MAX);
+
+	while (--len > 0) {
+		ungetc(buf[len], fp);
+	}
+    return (_INVALID_RUNE);
+}
+
+int
+fungetmbrune(fp, ei, pwc, psenc)
+    FILE            *fp;
+    _ENCODING_INFO  *ei;
+    wchar_t         *pwc;
+    _ENCODING_STATE *psenc;
+{
+	int r, c;
+	size_t len;
+	const char buf[MB_LEN_MAX];
+	size_t nresult;
+
+	len = _ENCODING_MB_CUR_MAX(ei);
+	r = sputmbrune(ei, &buf, len, pwc, psenc, &nresult);
+	if (r) {
+		while (len-- > 0) {
+			c = ungetc(buf[len], fp);
+			if (c == EOF) {
+				return (EOF);
+			}
+		}
+	}
+	return (0);
+}
+
+int
+fputmbrune(fp, ei, pwc, psenc)
+	FILE 			*fp;
+    _ENCODING_INFO  *ei;
+    wchar_t         *pwc;
+    _ENCODING_STATE *psenc;
+{
+	int r, i, c;
+    size_t len;
+	char buf[MB_LEN_MAX];
+	size_t nresult;
+
+    len = _ENCODING_MB_CUR_MAX(ei);
+	r = sputmbrune(ei, &buf, len, pwc, psenc, &nresult);
+    if (r) {
+	    for (i = 0; i < len; ++i) {
+            c = putc(buf[i], fp);
+		    if (c == EOF) {
+			    return (EOF);
+            }
+        }
+    }
+	return (0);
+}
 
 long
 fgetrune(fp)

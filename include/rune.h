@@ -66,11 +66,15 @@ __BEGIN_DECLS
 char			*mbrune(const char *, rune_t);
 char			*mbrrune(const char *, rune_t);
 char			*mbmb(const char *, char *);
+int	 			setrunelocale(char *);
+void			setinvalidrune(rune_t);
 long			fgetrune(FILE *);
 int	 			fputrune(rune_t, FILE *);
 int	 			fungetrune(rune_t, FILE *);
-int	 			setrunelocale(char *);
-void			setinvalidrune(rune_t);
+
+int				fgetmbrune(FILE *, _ENCODING_INFO *, wchar_t *, _ENCODING_STATE *);
+int				fungetmbrune(FILE *, _ENCODING_INFO *, wchar_t *, _ENCODING_STATE *);
+int				fputmbrune(FILE *, _ENCODING_INFO *, wchar_t *, _ENCODING_STATE *);
 
 /* emulated 4.4BSD's sgetrune & sputrune */
 rune_t			emulated_sgetrune(const char *, size_t, char const **);
