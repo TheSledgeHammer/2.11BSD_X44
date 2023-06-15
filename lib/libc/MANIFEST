@@ -1,6 +1,7 @@
 Folder			Version
 ------			---
 arch/i386/		4.4BSD-Lite2
+citrus/			NetBSD
 compat-4.1/		2.11BSD
 compat-4.3/		2.11BSD
 compat-sys5/	2.11BSD
@@ -9,9 +10,10 @@ dlfcn/			NetBSD
 gen/			2.11BSD/4.4BSD-lite2/NetBSD
 gmon/			4.4BSD-Lite2
 hash/			NetBSD
+iconv/			NetBSD
 include/		NetBSD
 inet/			2.11BSD
-locale/			4.4BSD-Lite2/NetBSD
+locale/			4.4BSD-Lite2/NetBSD/FreeBSD
 net/			2.11BSD
 ns/				2.11BSD
 quad/			4.4BSD-Lite2

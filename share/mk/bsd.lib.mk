@@ -4,6 +4,7 @@
 .include <bsd.init.mk>
 .include <bsd.shlib.mk>
 .include <bsd.gcc.mk>
+.include <bsd.sanitizer.mk>
 
 # Pull in <bsd.sys.mk> here so we can override its .c.o rule
 .include <bsd.sys.mk>
@@ -17,7 +18,7 @@ _LIB_PREFIX?=	# empty
 MKDEBUGLIB:=	no
 MKLINT:=		no
 MKPICINSTALL:=	no
-MKPROFILE:=	no
+MKPROFILE:=		no
 MKSTATICLIB:=	no
 .else
 _LIB_PREFIX?=	lib
@@ -25,14 +26,14 @@ _LIB_PREFIX?=	lib
 
 .if ${LIBISPRIVATE} != "no"
 MKDEBUGLIB:=	no
-MKLINT:=	no
+MKLINT:=		no
 MKPICINSTALL:=	no
 . if defined(NOSTATICLIB) && ${MKPICLIB} != "no"
 MKSTATICLIB:=	no
 . elif ${LIBISPRIVATE} != "pic"
-MKPIC:=		no
+MKPIC:=			no
 . endif
-MKPROFILE:=	no
+MKPROFILE:=		no
 .endif
 
 ##### Basic targets

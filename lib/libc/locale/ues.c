@@ -43,7 +43,7 @@ __RCSID("$NetBSD: citrus_ues.c,v 1.5 2022/04/19 20:32:14 rillig Exp $");
 #include <sys/types.h>
 #include <sys/endian.h>
 
-#include "citrus_ctype.h"
+#include <citrus/citrus_ctype.h>
 
 typedef _Encoding_Info				_UESEncodingInfo;
 typedef _Encoding_TypeInfo 			_UESCTypeInfo;

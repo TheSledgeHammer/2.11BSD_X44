@@ -120,6 +120,28 @@ do {																				\
 	}																				\
 } while (/*CONSTCOND*/0)
 
+
+int
+_citrus_ctype_open(char const *encname, void *variable, size_t lenvar, size_t szpriv)
+{
+	int ret;
+
+	_DIAGASSERT(encname != NULL);
+	_DIAGASSERT(!lenvar || variable!=NULL);
+	_DIAGASSERT(rcc != NULL);
+
+	if (!strcmp(encname, _CITRUS_DEFAULT_CTYPE_NAME)) {
+		*rcc = &_citrus_ctype_default;
+		return (0);
+	}
+}
+
+int
+_citrus_ctype_getops(size_t lenops, u_int32_t expected_version)
+{
+	return (0);
+}
+
 unsigned
 /*ARGSUSED*/
 _citrus_ctype_get_mb_cur_max(void *cl)

@@ -67,7 +67,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 
-#include "citrus_ctype.h"
+#include <citrus/citrus_ctype.h>
 
 typedef _Encoding_Info				_UTF8EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF8CTypeInfo;

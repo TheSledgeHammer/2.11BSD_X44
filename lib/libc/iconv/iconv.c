@@ -37,18 +37,18 @@ __RCSID("$NetBSD: iconv.c,v 1.14 2019/10/24 18:17:59 kamil Exp $");
 #include <sys/queue.h>
 
 //#include <iconv.h>
+typedef void *iconv_t;
+
+#ifdef CITRUS_ICONV
+#include <sys/types.h>
+
+#define ISBADF(_h_)	(!(_h_) || (_h_) == (iconv_t)-1)
 
 #ifdef __weak_alias
 __weak_alias(iconv, _iconv)
 __weak_alias(iconv_open, _iconv_open)
 __weak_alias(iconv_close, _iconv_close)
 #endif
-
-#include <sys/types.h>
-
-typedef void *iconv_t;
-
-#define ISBADF(_h_)	(!(_h_) || (_h_) == (iconv_t)-1)
 
 iconv_t
 iconv_open(out, in)
@@ -133,3 +133,47 @@ __iconv(handle, in, szin, out, szout, flags, invalids)
 
 	return (ret);
 }
+#else
+iconv_t
+iconv_open(out, in)
+    const char *out;
+    const char *in;
+{
+    errno = EINVAL;
+    return ((iconv_t)-1);
+}
+
+int
+iconv_close(handle)
+    iconv_t handle;
+{
+	errno = EBADF;
+	return (-1);
+}
+
+size_t
+iconv(handle, in, szin, out, szout)
+    iconv_t handle;
+    char **in;
+    size_t *szin;
+    char **out;
+    size_t *szout;
+{
+    errno = EBADF;
+    return ((size_t) - 1);
+}
+
+size_t
+__iconv(handle, in, szin, out, szout, flags, invalids)
+    iconv_t handle;
+    char **in;
+    size_t *szin;
+    char **out;
+    size_t *szout;
+    u_int32_t flags;
+    size_t *invalids;
+{
+	errno = EBADF;
+	return ((size_t) - 1);
+}
+#endif

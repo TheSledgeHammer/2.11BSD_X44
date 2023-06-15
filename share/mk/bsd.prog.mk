@@ -6,10 +6,17 @@
 .include <bsd.init.mk>
 .include <bsd.shlib.mk>
 .include <bsd.gcc.mk>
+.include <bsd.sanitizer.mk>
 
 .if defined(PROG_CXX)
 PROG=	${PROG_CXX}
 .endif
+
+##### Sanitizer specific flags.
+
+CFLAGS+=	${SANITIZERFLAGS} ${LIBCSANITIZERFLAGS}
+CXXFLAGS+=	${SANITIZERFLAGS} ${LIBCSANITIZERFLAGS}
+LDFLAGS+=	${SANITIZERFLAGS}
 
 ##### Basic targets
 realinstall:	proginstall scriptsinstall
@@ -88,30 +95,6 @@ LIBTERMINFO = ${USRDOTLIB}/libtermcap.a
 LIBSTDCXX=	${USRSLASHLIB}/libstdc++.a
 .MADE: 		${LIBSTDCXX}
 .endif
-
-#LIBC?=			${USRSLASHLIB}/libc.a
-#LIBCOMPAT?=		${USRSLASHLIB}/libcompat.a
-#LIBBZ2?=		${USRDOTLIB}/libbz2.a
-#LIBCURSES?=		${USRDOTLIB}/libcurses.a
-#LIBDBM?=		${USRDOTLIB}/libdbm.a
-#LIBEDIT?=		${USRDOTLIB}/libedit.a
-#LIBEXECINFO?=	${USRDOTLIB}/libexecinfo.a
-#LIBEXPAT?=		${USRDOTLIB}/libexpat.a
-#LIBFORM?=		${USRDOTLIB}/libform.a
-#LIBKVM?=		${USRDOTLIB}/libkvm.a
-#LIBM?=			${USRDOTLIB}/libm.a
-#LIBMENU?=		${USRDOTLIB}/libmenu.a
-#LIBMP?=			${USRDOTLIB}/libmp.a
-#LIBOM?=			${USRDOTLIB}/libom.a
-#LIBPANEL?=		${USRDOTLIB}/libpanel.a
-#LIBPCI?=		${USRDOTLIB}/libpci.a
-#LIBRESOLV?=		${USRDOTLIB}/libresolv.a
-#LIBTERMCAP?=	${USRDOTLIB}/libtermcap.a
-#LIBTERMINFO=	LIBTERMCAP
-#LIBUTIL?=		${USRDOTLIB}/libutil.a
-#LIBVMF?=		${USRDOTLIB}/libvmf.a
-#LIBY?=			${USRDOTLIB}/liby.a
-#LIBZ?=			${USRDOTLIB}/libz.a
 
 ##### Build and install rules
 .if defined(SHAREDSTRINGS)

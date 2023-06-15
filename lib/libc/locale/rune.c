@@ -101,8 +101,9 @@ setrunelocale(encoding)
 		return (0);
 	}
 
-	if (!PathLocale && !(PathLocale = getenv("PATH_LOCALE")))
+	if (!PathLocale && !(PathLocale = getenv("PATH_LOCALE"))) {
 		PathLocale = _PATH_LOCALE;
+	}
 
 	sprintf(name, "%s/%s/LC_CTYPE", PathLocale, encoding);
 

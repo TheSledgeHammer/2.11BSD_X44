@@ -3,7 +3,9 @@
 # locale sources
 .PATH: ${ARCHDIR}/locale ${.CURDIR}/locale
 
-SRCS+=	ansi.c citrus_ctype.c ctype.c euc.c frune.c isctype.c lconv.c 	\
+#citrus_ctype.c
+
+SRCS+=	ansi.c ctype.c euc.c frune.c isctype.c lconv.c 	\
 		localeconv.c mbrune.c __mb_cur_max.c none.c rune.c setlocale.c 	\
 		srune.c table.c ues.c utf1632.c utf2.c utf8.c wcscoll.c wcstod.c \
 		wcstol.c wcstoll.c wcstoimax.c wcstoul.c wcstoull.c wcstoumax.c \

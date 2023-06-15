@@ -87,12 +87,14 @@ assym.h: ${ARCHDIR}/genassym.cf
 
 .include "${.CURDIR}/db/Makefile.inc"
 .include "${.CURDIR}/dlfcn/Makefile.inc"
+.include "${.CURDIR}/citrus/Makefile.inc"
 .include "${.CURDIR}/compat-4.1/Makefile.inc"
 .include "${.CURDIR}/compat-4.3/Makefile.inc"
 .include "${.CURDIR}/compat-sys5/Makefile.inc"
 .include "${.CURDIR}/gen/Makefile.inc"
 .include "${.CURDIR}/gmon/Makefile.inc"
 .include "${.CURDIR}/hash/Makefile.inc"
+.include "${.CURDIR}/iconv/Makefile.inc"
 .include "${.CURDIR}/inet/Makefile.inc"
 .include "${.CURDIR}/locale/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"
@@ -105,9 +107,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/string/Makefile.inc"
 .include "${.CURDIR}/termios/Makefile.inc"
 .include "${.CURDIR}/time/Makefile.inc"
-
 .include "${.CURDIR}/sys/Makefile.inc"
-
 .include "${.CURDIR}/uuid/Makefile.inc"
 
 # Remove from SRCS the .c files for any .S files added by the MD makefiles,

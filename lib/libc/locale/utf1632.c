@@ -41,7 +41,7 @@ __RCSID("$NetBSD: citrus_utf1632.c,v 1.3 2003/06/27 12:55:13 yamt Exp $");
 #include <sys/types.h>
 #include <sys/endian.h>
 
-#include "citrus_ctype.h"
+#include <citrus/citrus_ctype.h>
 
 typedef _Encoding_Info				_UTF1632EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF1632CTypeInfo;

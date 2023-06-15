@@ -38,7 +38,8 @@ __RCSID("$NetBSD: multibyte_c90.c,v 1.4 2003/03/05 20:18:16 tshiozak Exp $");
 #include <errno.h>
 #include <wchar.h>
 #include <rune.h>
-#include "citrus_ctype.h"
+
+#include <citrus/citrus_ctype.h>
 #include "multibyte.h"
 
 int

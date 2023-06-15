@@ -72,7 +72,7 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 #include <errno.h>
 #include <stdlib.h>
 
-#include "citrus_ctype.h"
+#include <citrus/citrus_ctype.h>
 
 #define _FUNCNAME(m)				_none_citrus_ctype_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	1
