@@ -37,13 +37,13 @@ CFLAGS+=	-Wcast-qual -Wwrite-strings
 # Readd -Wno-sign-compare to override -Wextra with clang
 CFLAGS+=	-Wno-sign-compare
 .endif
-
 .if ${WARNS} > 3 && (defined(HAVE_GCC) || defined(HAVE_LLVM))
 .if ${WARNS} > 4
 CFLAGS+=	-Wold-style-definition
 .endif
 .if ${WARNS} > 5
 CFLAGS+=	-Wconversion
+.endif
 .endif
 .endif
 
