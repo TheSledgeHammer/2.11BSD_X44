@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)herror.c	6.1 (Berkeley) 12/4/87";
 #include <sys/types.h>
 #include <sys/uio.h>
 
+#include <netdb.h>
+
 char	*h_errlist[] = {
 	"Error 0",
 	"Unknown host",				/* 1 HOST_NOT_FOUND */
@@ -26,8 +28,9 @@ extern int	h_errno;
  * herror --
  *	print the error indicated by the h_errno value.
  */
+void
 herror(s)
-	char *s;
+	const char *s;
 {
 	struct iovec iov[4];
 	register struct iovec *v = iov;

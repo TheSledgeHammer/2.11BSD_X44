@@ -26,8 +26,10 @@ static char sccsid[] = "@(#)res_comp.c	6.13 (Berkeley) 3/13/88";
  * 'exp_dn' is a pointer to a buffer of size 'length' for the result.
  * Return size of compressed name or -1 if there was an error.
  */
+int
 dn_expand(msg, eomorig, comp_dn, exp_dn, length)
-	u_char *msg, *eomorig, *comp_dn, *exp_dn;
+	const u_char *msg, *eomorig, *comp_dn;
+	u_char *exp_dn;
 	int length;
 {
 	register u_char *cp, *dn;
@@ -105,8 +107,10 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
  * If 'dnptr' is NULL, we don't try to compress names. If 'lastdnptr'
  * is NULL, we don't update the list.
  */
+int
 dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
-	u_char *exp_dn, *comp_dn;
+	const u_char *exp_dn;
+	u_char *comp_dn;
 	int length;
 	u_char **dnptrs, **lastdnptr;
 {
@@ -174,8 +178,9 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 /*
  * Skip over a compressed domain name. Return the size or -1.
  */
+int
 dn_skipname(comp_dn, eom)
-	u_char *comp_dn, *eom;
+	const u_char *comp_dn, *eom;
 {
 	register u_char *cp;
 	register int n;
@@ -205,7 +210,7 @@ dn_skipname(comp_dn, eom)
  * dnptrs is the pointer to the first name on the list,
  * not the pointer to the start of the message.
  */
-static
+static int
 dn_find(exp_dn, msg, dnptrs, lastdnptr)
 	u_char *exp_dn, *msg;
 	u_char **dnptrs, **lastdnptr;
@@ -288,7 +293,7 @@ _getlong(msgp)
 	return (u | *p);
 }
 
-
+void
 putshort(s, msgp)
 	register u_short s;
 	register u_char *msgp;
@@ -298,6 +303,7 @@ putshort(s, msgp)
 	msgp[0] = s >> 8;
 }
 
+void
 putlong(l, msgp)
 	register u_long l;
 	register u_char *msgp;

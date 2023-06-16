@@ -6,6 +6,9 @@
 
 /*	@(#)timed.h	1.6	(Berkeley)	5/28/86	*/
 
+#ifndef	_TIMED_H_
+#define	_TIMED_H_
+
 /*
  * Time Synchronization Protocol
  */
@@ -65,3 +68,5 @@ char *tsptype[TSPTYPENUMBER] =
   "DATE", "DATEREQ", "DATEACK", "TRACEON", "TRACEOFF", "MSITE", "MSITEREQ",
   "TEST", "SETDATE", "SETDATEREQ", "LOOP" };
 #endif
+
+#endif /* !_TIMED_H_ */

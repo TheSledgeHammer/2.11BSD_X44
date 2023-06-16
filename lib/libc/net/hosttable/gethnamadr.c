@@ -78,10 +78,10 @@ fetchhost(key)
 
 struct hostent *
 gethostbyname(nam)
-	register char *nam;
+	register const char *nam;
 {
 	register struct hostent *hp;
-	register char **cp;
+	register const char **cp;
         datum key;
 	char lowname[128];
 	register char *lp = lowname;
@@ -122,7 +122,7 @@ gethostbyname(nam)
 
 struct hostent *
 gethostbyaddr(addr, length, type)
-	char *addr;
+	const char *addr;
 	register int length;
 	register int type;
 {

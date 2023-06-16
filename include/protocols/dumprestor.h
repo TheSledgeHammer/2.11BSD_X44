@@ -6,6 +6,9 @@
  *	@(#)dumprestor.h	5.1 (Berkeley) 12/13/86
  */
 
+#ifndef _DUMPRESTORE_H_
+#define _DUMPRESTORE_H_
+
 #define NTREC		10
 #define MLEN		16
 #define MSIZ		4096
@@ -44,3 +47,5 @@ struct	idates {
 #define	DUMPOUTFMT	"%-16s %c %s"		/* for printf */
 										/* name, incno, ctime(date) */
 #define	DUMPINFMT	"%16s %c %[^\n]\n"	/* inverse for scanf */
+
+#endif /* !_DUMPRESTORE_H_ */

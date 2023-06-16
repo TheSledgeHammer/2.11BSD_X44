@@ -23,8 +23,8 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 #include <stdio.h>
 #include <arpa/nameser.h>
 
-extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
-extern char *inet_ntoa();
+//extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
+//extern char *inet_ntoa();
 
 char *_res_opcodes[] = {
 	"QUERY",
@@ -64,6 +64,7 @@ char *_res_resultcodes[] = {
 	"NOCHANGE",
 };
 
+void
 p_query(msg)
 	char *msg;
 {
@@ -76,6 +77,7 @@ p_query(msg)
  * Print the contents of a query.
  * This is intended to be primarily a debugging routine.
  */
+void
 fp_query(msg,file)
 	char *msg;
 	FILE *file;

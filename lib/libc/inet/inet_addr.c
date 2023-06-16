@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)inet_addr.c	5.2.1 (2.11BSD GTE) 1/1/94";
  */
 u_long
 inet_addr(cp)
-	register char *cp;
+	register const char *cp;
 {
 	register u_long val, base;
 	register u_int n; /* can't switch on longs - should be an int anyway */

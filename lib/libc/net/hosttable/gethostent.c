@@ -41,6 +41,7 @@ DBM	*_host_db;	/* set by gethostbyname(), gethostbyaddr() */
 
 static char *any();
 
+void
 sethostent(f)
 	int f;
 {
@@ -49,7 +50,8 @@ sethostent(f)
 	_host_stayopen |= f;
 }
 
-endhostent()
+void
+endhostent(void)
 {
 	if (hostf) {
 		fclose(hostf);
@@ -63,7 +65,7 @@ endhostent()
 }
 
 struct hostent *
-gethostent()
+gethostent(void)
 {
 	char *p;
 	register char *cp, **q;
@@ -110,6 +112,7 @@ again:
 	return (&host);
 }
 
+void
 sethostfile(file)
 	char *file;
 {

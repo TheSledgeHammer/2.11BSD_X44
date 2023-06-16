@@ -6,6 +6,9 @@
  *	@(#)protocol.h	5.1 (Berkeley) 6/4/85
  */
 
+#ifndef _ROUTED_H_
+#define	_ROUTED_H_
+
 /*
  * Routing Information Protocol
  *
@@ -62,3 +65,5 @@ char *ripcmds[RIPCMD_MAX] =
 
 #define	EXPIRE_TIME			180	/* time to mark entry invalid */
 #define	GARBAGE_TIME		240	/* time to garbage collect */
+
+#endif /* !_ROUTED_H_ */

@@ -15,7 +15,7 @@ extern int _serv_stayopen;
 struct servent *
 getservbyport(port, proto)
 	int port;
-	char *proto;
+	const char *proto;
 {
 	register struct servent *p;
 

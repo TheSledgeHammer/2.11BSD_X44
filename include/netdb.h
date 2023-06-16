@@ -29,6 +29,12 @@ typedef _BSD_SIZE_T_	size_t;
 #undef  _BSD_SIZE_T_
 #endif
 
+#define	_PATH_HEQUIV	"/etc/hosts.equiv"
+#define	_PATH_HOSTS		"/etc/hosts"
+#define	_PATH_NETWORKS	"/etc/networks"
+#define	_PATH_PROTOCOLS	"/etc/protocols"
+#define	_PATH_SERVICES	"/etc/services"
+
 /*
  * Structures returned by network
  * data base library.  All addresses
@@ -83,10 +89,27 @@ struct	protoent {
 unsigned long	gethostid();
 
 __BEGIN_DECLS
-struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
-struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
-struct servent	*getservbyname(), *getservbyport(), *getservent();
-struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
+void			endhostent(void);
+void			endnetent(void);
+void			endprotoent(void);
+void			endservent(void);
+struct hostent	*gethostbyaddr(const char *, int, int);
+struct hostent	*gethostbyname(const char *);
+struct hostent	*gethostent(void);
+struct netent	*getnetbyaddr(long, int); /* u_long? */
+struct netent	*getnetbyname(const char *);
+struct netent	*getnetent(void);
+struct servent	*getservbyname(const char *, const char *);
+struct servent	*getservbyport(int, const char *);
+struct servent	*getservent(void);
+struct protoent	*getprotobyname(const char *);
+struct protoent	*getprotobynumber(int);
+struct protoent	*getprotoent(void);
+void			herror(const char *);
+void			sethostent(int);
+void			setnetent(int);
+void			setprotoent(int);
+void			setservent(int);
 __END_DECLS
 
 #endif /* !_NETDB_H_ */

@@ -17,13 +17,23 @@
  *	@(#)inet.h	5.2.2 (2.11BSD GTE) 12/31/93
  */
 
+#ifndef _INET_H_
+#define	_INET_H_
+
 /*
  * External definitions for
  * functions in inet(3N)
  */
-unsigned long 	inet_addr();
-char			*inet_ntoa();
-struct	in_addr inet_makeaddr();
-unsigned long 	inet_network();
-unsigned long 	inet_netof();
-unsigned long 	inet_lnaof();
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+unsigned long 	inet_addr(const char *);
+char			*inet_ntoa(struct in_addr);
+struct	in_addr inet_makeaddr(long , long);
+unsigned long 	inet_network(const char *);
+unsigned long 	inet_netof(struct in_addr);
+unsigned long 	inet_lnaof(struct in_addr);
+__END_DECLS
+
+#endif /* !_INET_H_ */

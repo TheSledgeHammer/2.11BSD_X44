@@ -14,7 +14,7 @@ extern int _serv_stayopen;
 
 struct servent *
 getservbyname(name, proto)
-	char *name, *proto;
+	const char *name, *proto;
 {
 	register struct servent *p;
 	register char **cp;

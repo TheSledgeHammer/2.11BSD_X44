@@ -52,7 +52,8 @@ struct state _res = {
  *
  * Return 0 if completes successfully, -1 on error
  */
-res_init()
+int
+res_init(void)
 {
     register FILE *fp;
     register char *cp, **pp;
@@ -134,5 +135,5 @@ res_init()
 	*pp++ = ++cp;
     }
     _res.options |= RES_INIT;
-    return(0);
+    return (0);
 }

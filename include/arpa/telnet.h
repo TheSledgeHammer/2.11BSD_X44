@@ -17,6 +17,9 @@
  *	@(#)telnet.h	5.4 (Berkeley) 2/15/89
  */
 
+#ifndef _TELNET_H_
+#define	_TELNET_H_
+
 /*
  * Definitions for the TELNET protocol.
  */
@@ -101,3 +104,5 @@ char *telopts[NTELOPTS] = {
 /* sub-option qualifiers */
 #define	TELQUAL_IS		0	/* option is... */
 #define	TELQUAL_SEND	1	/* send option */
+
+#endif /* !_TELNET_H_ */

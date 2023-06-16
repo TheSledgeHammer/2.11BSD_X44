@@ -17,6 +17,9 @@
  *	@(#)nameser.h	5.20.1 (2.11BSD GTE) 12/31/93
 */
 
+#ifndef _NAMESER_H_
+#define	_NAMESER_H_
+
 /*
  * Define constants based on rfc883
  */
@@ -245,3 +248,5 @@ extern	u_long	_getlong();
 	(cp)[0] = l >> 8; \
 	(cp) += sizeof(u_long); \
 }
+
+#endif /* !_NAMESER_H_ */

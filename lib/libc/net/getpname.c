@@ -14,7 +14,7 @@ extern int _proto_stayopen;
 
 struct protoent *
 getprotobyname(name)
-	register char *name;
+	register const char *name;
 {
 	register struct protoent *p;
 	register char **cp;

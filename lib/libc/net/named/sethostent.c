@@ -13,22 +13,25 @@ static char sccsid[] = "@(#)sethostent.c	6.3 (Berkeley) 4/10/86";
 #include <netinet/in.h>
 #include <resolv.h>
 
+void
 sethostent(stayopen)
 {
 	if (stayopen)
 		_res.options |= RES_STAYOPEN | RES_USEVC;
 }
 
+void
 endhostent()
 {
 	_res.options &= ~(RES_STAYOPEN | RES_USEVC);
 	_res_close();
 }
 
+void
 sethostfile(name)
-char *name;
+	char *name;
 {
 #ifdef lint
-name = name;
+	name = name;
 #endif
 }

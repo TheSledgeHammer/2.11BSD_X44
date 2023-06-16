@@ -25,6 +25,7 @@ static char *serv_aliases[MAXALIASES];
 static char *any();
 int _serv_stayopen;
 
+void
 setservent(f)
 	int f;
 {
@@ -35,7 +36,8 @@ setservent(f)
 	_serv_stayopen |= f;
 }
 
-endservent()
+void
+endservent(void)
 {
 	if (servf) {
 		fclose(servf);

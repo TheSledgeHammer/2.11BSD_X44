@@ -44,6 +44,7 @@ int h_errno;
  * Error number is left in h_errno.
  * Caller must parse answer and determine whether it answers the question.
  */
+int
 res_query(name, class, type, answer, anslen)
 	char *name;		/* domain name */
 	int class, type;	/* class and type of query */
@@ -118,6 +119,7 @@ res_query(name, class, type, answer, anslen)
  * Only useful for queries in the same name hierarchy as the local host
  * (not, for example, for host address-to-name lookups in domain in-addr.arpa).
  */
+int
 res_search(name, class, type, answer, anslen)
 	char *name;		/* domain name */
 	int class, type;	/* class and type of query */
@@ -180,6 +182,7 @@ res_search(name, class, type, answer, anslen)
  * Perform a call on res_query on the concatenation of name and domain,
  * removing a trailing dot from name if domain is NULL.
  */
+int
 res_querydomain(name, domain, class, type, answer, anslen)
 	char *name, *domain;
 	int class, type;	/* class and type of query */
@@ -215,7 +218,7 @@ res_querydomain(name, domain, class, type, answer, anslen)
 
 char *
 hostalias(name)
-	register char *name;
+	register const char *name;
 {
 	register char *C1, *C2;
 	FILE *fp;

@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)inet_network.c	5.2 (Berkeley) 3/9/86";
  */
 u_long
 inet_network(cp)
-	register char *cp;
+	register const char *cp;
 {
 	register u_long val, base, n;
 	register char c;

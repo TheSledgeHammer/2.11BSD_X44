@@ -280,6 +280,7 @@ gethostbyaddr(addr, len, type)
 	return(hp);
 }
 
+void
 _sethtent(f)
 	int f;
 {
@@ -290,6 +291,7 @@ _sethtent(f)
 	stayopen |= f;
 }
 
+void
 _endhtent()
 {
 	if (hostf && !stayopen) {

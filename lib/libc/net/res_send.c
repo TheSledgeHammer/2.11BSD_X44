@@ -45,8 +45,9 @@ static struct sockaddr no_addr;
 
 #define KEEPOPEN (RES_USEVC|RES_STAYOPEN)
 
+int
 res_send(buf, buflen, answer, anslen)
-	char *buf;
+	const char *buf;
 	int buflen;
 	char *answer;
 	int anslen;
@@ -355,7 +356,8 @@ wait:
  *
  * This routine is not expected to be user visible.
  */
-_res_close()
+void
+_res_close(void)
 {
 	if (s != -1) {
 		(void) close(s);
