@@ -112,6 +112,7 @@
 ./var							type=dir  mode=0755
 ./var/account					type=dir  mode=0755
 ./var/account/acct				type=file mode=0644 optional tags=exclude
+./var/at						type=dir  mode=0755 ignore
 ./var/backups					type=dir  mode=0755 ignore
 ./var/chroot					type=dir  mode=0755
 ./var/cron						type=dir  mode=0755
@@ -130,3 +131,5 @@
 ./var/run/utmp					type=file mode=0664 gname=utmp tags=exclude
 ./var/run/utmpx					type=file mode=0664 gname=utmp tags=exclude
 ./var/spool						type=dir  mode=0755
+./var/spool/uucp				type=dir  mode=0755 uname=uucp gname=daemon ignore optional
+./var/spool/uucppublic			type=dir  mode=1777 uname=uucp gname=daemon ignore optional
