@@ -565,8 +565,7 @@ opty)
 	done
 	chmod 666 ttyp[0-9a-f] ptyp[0-9a-f]
 	;;
-
-		
+	
 pty*)
 	class=${i#pty}
 	name=`echo pqrstuvwxyzPQRST | dd bs=1 count=1 skip=$class 2>/dev/null`
