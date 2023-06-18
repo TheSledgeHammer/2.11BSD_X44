@@ -40,6 +40,11 @@ typedef struct {
 } _Encoding_State;
 
 typedef struct {
+	size_t				state_size;
+	size_t				mb_cur_max;
+} _Encoding_Traits;
+
+typedef struct {
 	int					preffered_endian; 	/* UTF16 & UTF32 needs this */
 	uint32_t			mode;
 #define _ENDIAN_UNKNOWN	0
@@ -50,6 +55,7 @@ typedef struct {
 	wchar_t				bits[4];
 	wchar_t				mask;
 	unsigned			mb_cur_max;
+	_Encoding_Traits	*traits;
 } _Encoding_Info;
 
 typedef struct {
@@ -81,6 +87,7 @@ typedef struct {
 #define _ENCODING_INFO						_Encoding_Info
 #define _CTYPE_INFO							_Encoding_TypeInfo
 #define _ENCODING_STATE						_Encoding_State
+#define _ENCODING_TRAITS					_Encoding_Traits
 #define _ENCODING_MB_CUR_MAX(_ei_)			(_ei_)->mb_cur_max
 #define _ENCODING_IS_STATE_DEPENDENT		0
 #define _STATE_NEEDS_EXPLICIT_INIT(_ps_)	0

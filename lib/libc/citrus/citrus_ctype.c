@@ -82,19 +82,19 @@ _citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict ei, char * __restrict s, 
  */
 
 void
-_citrus_ctype_init_state(_ENCODING_INFO *ei, _ENCODING_STATE *s)
+_citrus_ctype_init_state(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __restrict s)
 {
 	memset(s, 0, sizeof(*s));
 }
 
 void
-_citrus_ctype_pack_state(_ENCODING_INFO *ei, void *pspriv, const _ENCODING_STATE *s)
+_citrus_ctype_pack_state(_ENCODING_INFO * __restrict ei, void * __restrict pspriv, const _ENCODING_STATE * __restrict s)
 {
 	memcpy(pspriv, (const void *)s, sizeof(*s));
 }
 
 void
-_citrus_ctype_unpack_state(_ENCODING_INFO *ei, _ENCODING_STATE *s, const void *pspriv)
+_citrus_ctype_unpack_state(_ENCODING_INFO *__restrict ei, _ENCODING_STATE * __restrict s, const void *__restrict pspriv)
 {
 	memcpy((void *)s, pspriv, sizeof(*s));
 }
@@ -119,28 +119,6 @@ do {																				\
 		_citrus_ctype_pack_state(_CEI_TO_EI(_cei_), _pspriv_, _pse_);				\
 	}																				\
 } while (/*CONSTCOND*/0)
-
-
-int
-_citrus_ctype_open(char const *encname, void *variable, size_t lenvar, size_t szpriv)
-{
-	int ret;
-
-	_DIAGASSERT(encname != NULL);
-	_DIAGASSERT(!lenvar || variable!=NULL);
-	_DIAGASSERT(rcc != NULL);
-
-	if (!strcmp(encname, _CITRUS_DEFAULT_CTYPE_NAME)) {
-		*rcc = &_citrus_ctype_default;
-		return (0);
-	}
-}
-
-int
-_citrus_ctype_getops(size_t lenops, u_int32_t expected_version)
-{
-	return (0);
-}
 
 unsigned
 /*ARGSUSED*/
@@ -175,6 +153,8 @@ _citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar, 
 	}
 
 	*cl = (void *)cei;
+
+	//return _FUNCNAME(encoding_module_init)(_CEI_TO_EI(cei), var, lenvar);
 	return (0);
 }
 
@@ -182,6 +162,7 @@ void
 _citrus_ctype_uninit(void *cl)
 {
 	if (cl) {
+		//_FUNCNAME(encoding_module_uninit)(_CEI_TO_EI(_TO_CEI(cl)));
 		free(cl);
 	}
 }

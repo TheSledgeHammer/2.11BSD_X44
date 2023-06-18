@@ -125,6 +125,7 @@
 
 /* prototypes */
 __BEGIN_DECLS
+
 /*
  * standard form of mbrtowc_priv.
  *

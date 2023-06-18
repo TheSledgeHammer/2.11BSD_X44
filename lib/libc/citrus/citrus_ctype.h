@@ -37,26 +37,27 @@ __BEGIN_DECLS
 int 		_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 int 		_citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 
-void		_citrus_ctype_init_state(_ENCODING_INFO *ei, _ENCODING_STATE *s);
-void		_citrus_ctype_pack_state(_ENCODING_INFO *ei, void *pspriv, const _ENCODING_STATE *s);
-void		_citrus_ctype_unpack_state(_ENCODING_INFO *ei, _ENCODING_STATE *s, const void *pspriv);
+void		_citrus_ctype_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
+void		_citrus_ctype_pack_state(_ENCODING_INFO * __restrict, void * __restrict, const _ENCODING_STATE * __restrict);
+void		_citrus_ctype_unpack_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict, const void * __restrict);
 
-void		_citrus_ctype_encoding_init(_ENCODING_INFO *ei, _ENCODING_STATE *s);
-unsigned 	_citrus_ctype_get_mb_cur_max(void *cl);
-int			_citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar, size_t );
-void		_citrus_ctype_uninit(void *cl);
-int 		_citrus_ctype_mblen(void * __restrict cl, const char * __restrict s, size_t n, int * __restrict nresult);
-int 		_citrus_ctype_mbrlen(void * __restrict cl, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult);
-int 		_citrus_ctype_mbrtowc(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult);
-int 		_citrus_ctype_mbsinit(void * __restrict cl, const void * __restrict pspriv, int * __restrict nresult);
-int 		_citrus_ctype_mbsrtowcs(void * __restrict cl, wchar_t * __restrict pwcs, const char ** __restrict s, size_t n, void * __restrict pspriv, size_t * __restrict nresult);
-int 		_citrus_ctype_mbstowcs(void * __restrict cl, wchar_t * __restrict pwcs, const char * __restrict s, size_t n, size_t * __restrict nresult);
-int 		_citrus_ctype_mbtowc(void * __restrict cl, wchar_t * __restrict pwc, const char * __restrict s, size_t n, int * __restrict nresult);
-int 		_citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t wc, void * __restrict pspriv, size_t * __restrict nresult);
-int 		_citrus_ctype_wcsrtombs(void * __restrict cl, char * __restrict s, const wchar_t ** __restrict pwcs, size_t n, void * __restrict pspriv, size_t * __restrict nresult);
-int 		_citrus_ctype_wcstombs(void * __restrict cl, char * __restrict s, const wchar_t * __restrict pwcs, size_t n, size_t * __restrict nresult);
-int 		_citrus_ctype_wctomb(void * __restrict cl, char * __restrict s, wchar_t wc, int * __restrict nresult);
-int 		_citrus_ctype_btowc(void * __restrict cl, int c, wint_t * __restrict wcresult);
-int 		_citrus_ctype_wctob(void * __restrict cl, wint_t wc, int * __restrict cresult);
+void		_citrus_ctype_encoding_init(_ENCODING_INFO *, _ENCODING_STATE *);
+
+unsigned 	_citrus_ctype_get_mb_cur_max(void *);
+int			_citrus_ctype_init(void ** __restrict, void * __restrict, size_t, size_t);
+void		_citrus_ctype_uninit(void *);
+int 		_citrus_ctype_mblen(void * __restrict, const char * __restrict, size_t, int * __restrict);
+int 		_citrus_ctype_mbrlen(void * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
+int 		_citrus_ctype_mbrtowc(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
+int 		_citrus_ctype_mbsinit(void * __restrict, const void * __restrict, int * __restrict);
+int 		_citrus_ctype_mbsrtowcs(void * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, void * __restrict, size_t * __restrict);
+int 		_citrus_ctype_mbstowcs(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, size_t * __restrict);
+int 		_citrus_ctype_mbtowc(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, int * __restrict);
+int 		_citrus_ctype_wcrtomb(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
+int 		_citrus_ctype_wcsrtombs(void * __restrict, char * __restrict, const wchar_t ** __restrict, size_t, void * __restrict, size_t * __restrict);
+int 		_citrus_ctype_wcstombs(void * __restrict, char * __restrict, const wchar_t * __restrict, size_t, size_t * __restrict);
+int 		_citrus_ctype_wctomb(void * __restrict, char * __restrict, wchar_t, int * __restrict);
+int 		_citrus_ctype_btowc(void * __restrict, int, wint_t * __restrict);
+int 		_citrus_ctype_wctob(void * __restrict, wint_t, int * __restrict);
 __END_DECLS
 #endif /* _CITRUS_CTYPE_H_ */
