@@ -1,9 +1,11 @@
-/*
- * Copyright (c) 1989, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*	$NetBSD: mknod.c,v 1.42 2014/08/22 22:28:50 mlelstv Exp $	*/
+
+/*-
+ * Copyright (c) 1998, 2001 The NetBSD Foundation, Inc.
+ * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * Kevin Fall.
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Charles M. Hannum.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,21 +15,18 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #if HAVE_NBTOOL_CONFIG_H
@@ -35,135 +34,158 @@
 #endif
 
 #include <sys/cdefs.h>
+#ifndef lint
+__COPYRIGHT("@(#) Copyright (c) 1998\
+ The NetBSD Foundation, Inc.  All rights reserved.");
+__RCSID("$NetBSD: mknod.c,v 1.42 2014/08/22 22:28:50 mlelstv Exp $");
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/param.h>
+#if !HAVE_NBTOOL_CONFIG_H
+#include <sys/sysctl.h>
+#endif
 
 #include <err.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <grp.h>
 #include <pwd.h>
+#include <grp.h>
 #include <string.h>
+#include <ctype.h>
 
-static void
-usage()
-{
-	errx(1, "usage: mknod name [b | c] major minor [owner:group]\n");
-}
+#include "pack_dev.h"
 
-static u_long
-id(name, type)
-	char *name, *type;
-{
-	u_long val;
-	char *ep;
+static int gid_name(const char *, gid_t *);
+static dev_t callPack(pack_t *, int, u_long *);
 
-	/*
-	 * XXX
-	 * We know that uid_t's and gid_t's are unsigned longs.
-	 */
-	errno = 0;
-	val = strtoul(name, &ep, 10);
-	if (errno) {
-		err(1, "%s", name);
-	}
-	if (*ep != '\0') {
-		errx(1, "%s: illegal %s name", name, type);
-	}
-	return (val);
-}
+__dead static	void	usage(void);
 
-static gid_t
-a_gid(s)
-	char *s;
-{
-	struct group *gr;
-	gid_t gid;
+#ifdef KERN_DRIVERS
+static struct kinfo_drivers *kern_drivers;
+static int num_drivers;
 
-	if (*s == '\0')	{
-		errx(1, "group must be specified when the owner is");
-	}
+static void get_device_info(void);
+static void print_device_info(char **);
+static int major_from_name(const char *, mode_t);
+#endif
 
-	gr = getgrnam(s);
-	gid = ((gr == NULL) ? id(s, "group") : gr->gr_gid);
-	return (gid);
-}
-
-static uid_t
-a_uid(s)
-	char *s;
-{
-	struct passwd *pw;
-	uid_t uid;
-
-	if (*s == '\0')	{
-		errx(1, "owner must be specified when the group is");
-	}
-
-	pw = getpwnam(s);
-	uid = ((pw == NULL) ? id(s, "user") : pw->pw_uid);
-	return (uid);
-}
-
-static dev_t
-mkdevice(argc, argv)
-	int argc;
-	char **argv;
-{
-	dev_t dev;
-	char *endp;
-	unsigned long major, minor;
-
-	if (argc < 4) {
-		usage();
-	}
-
-	major = strtoul(argv[2], &endp, 0);
-	if (endp == argv[2] || *endp != '\0') {
-		errx(1, "invalid major number '%s'", argv[2]);
-	}
-	if (errno == ERANGE && major == ULONG_MAX) {
-		errx(1, "major number too large: '%s'", argv[2]);
-	}
-	errno = 0;
-	minor = strtoul(argv[3], &endp, 0);
-	if (endp == argv[3] || *endp != '\0') {
-		errx(1, "invalid minor number '%s'", argv[3]);
-	}
-	if (errno == ERANGE && minor == ULONG_MAX) {
-		errx(1, "minor number too large: '%s'", argv[3]);
-	}
-
-	dev = makedev(major, minor);
-	if (major(dev) != major || minor(dev) != minor) {
-		errx(1, "major or minor number too large (%lu %lu)", major, minor);
-	}
-	return (dev);
-}
+#define	MAXARGS	3		/* 3 for bsdos, 2 for rest */
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
-	dev_t dev;
-	mode_t mode;
-	uid_t uid;
-	gid_t gid;
-	char *cp;
-	int error;
+	char	*name, *p;
+	mode_t	 mode;
+	dev_t	 dev;
+	pack_t	*pack;
+	u_long	 numbers[MAXARGS];
+	int	 n, ch, fifo, hasformat;
+	int	 r_flag = 0;		/* force: delete existing entry */
+#ifdef KERN_DRIVERS
+	int	 l_flag = 0;		/* list device names and numbers */
+	int	 major;
+#endif
+	void	*modes = 0;
+	uid_t	 uid = -1;
+	gid_t	 gid = -1;
+	int	 rval;
 
-	if (argc != 5 && argc != 6) {
+	dev = 0;
+	fifo = hasformat = 0;
+	pack = pack_native;
+
+#ifdef KERN_DRIVERS
+	while ((ch = getopt(argc, argv, "lrRF:g:m:u:")) != -1) {
+#else
+	while ((ch = getopt(argc, argv, "rRF:g:m:u:")) != -1) {
+#endif
+		switch (ch) {
+
+#ifdef KERN_DRIVERS
+		case 'l':
+			l_flag = 1;
+			break;
+#endif
+
+		case 'r':
+			r_flag = 1;
+			break;
+
+		case 'R':
+			r_flag = 2;
+			break;
+
+		case 'F':
+			pack = pack_find(optarg);
+			if (pack == NULL)
+				errx(1, "invalid format: %s", optarg);
+			hasformat++;
+			break;
+
+		case 'g':
+			if (optarg[0] == '#') {
+				gid = strtol(optarg + 1, &p, 10);
+				if (*p == 0)
+					break;
+			}
+			if (gid_name(optarg, &gid) == 0)
+				break;
+			gid = strtol(optarg, &p, 10);
+			if (*p == 0)
+				break;
+			errx(1, "%s: invalid group name", optarg);
+
+		case 'm':
+			modes = setmode(optarg);
+			if (modes == NULL)
+				err(1, "Cannot set file mode `%s'", optarg);
+			break;
+
+		case 'u':
+			if (optarg[0] == '#') {
+				uid = strtol(optarg + 1, &p, 10);
+				if (*p == 0)
+					break;
+			}
+			if (uid_from_user(optarg, &uid) == 0)
+				break;
+			uid = strtol(optarg, &p, 10);
+			if (*p == 0)
+				break;
+			errx(1, "%s: invalid user name", optarg);
+
+		default:
+		case '?':
+			usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+#ifdef KERN_DRIVERS
+	if (l_flag) {
+		print_device_info(argv);
+		return 0;
+	}
+#endif
+
+	if (argc < 2 || argc > 10)
 		usage();
-	}
 
-	mode = 0666;
-	if (argv[0][1] != '\0') {
+	name = *argv;
+	argc--;
+	argv++;
+
+	umask(mode = umask(0));
+	mode = (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) & ~mode;
+
+	if (argv[0][1] != '\0')
 		goto badtype;
-	}
 	switch (*argv[0]) {
 	case 'c':
 		mode |= S_IFCHR;
@@ -173,34 +195,199 @@ main(argc, argv)
 		mode |= S_IFBLK;
 		break;
 
+	case 'p':
+		if (hasformat)
+			errx(1, "format is meaningless for fifos");
+		mode |= S_IFIFO;
+		fifo = 1;
+		break;
+
 	default:
  badtype:
-		errx(1, "node type must be 'b', 'c'.");
+		errx(1, "node type must be 'b', 'c' or 'p'.");
 	}
+	argc--;
+	argv++;
 
-	dev = mkdevice(argc, argv);
-	uid = -1;
-	gid = -1;
-	if (6 == argc) {
-		cp = strchr(argv[5], ':');
-		/* have owner:group */
-		if (cp != NULL) {
-			*cp++ = '\0';
-			gid = a_gid(cp);
-		} else {
+	if (fifo) {
+		if (argc != 0)
 			usage();
-			uid = a_uid(argv[5]);
-		}
+	} else {
+		if (argc < 1 || argc > MAXARGS)
+			usage();
 	}
 
-	error = mknod(argv[1], mode, dev);
-	if (error != 0) {
-		err(1, "%s", argv[1]);
+	for (n = 0; n < argc; n++) {
+		errno = 0;
+		numbers[n] = strtoul(argv[n], &p, 0);
+		if (*p == 0 && errno == 0)
+			continue;
+#ifdef KERN_DRIVERS
+		if (argc == 2 && n == 0) {
+			major = major_from_name(argv[0], mode);
+			if (major != -1) {
+				numbers[0] = major;
+				continue;
+			}
+			if (!isdigit(*(unsigned char *)argv[0]))
+				errx(1, "unknown driver: %s", argv[0]);
+		}
+#endif
+		errx(1, "invalid number: %s", argv[n]);
 	}
-	if (6 == argc) {
-		if (chown(argv[1], uid, gid)) {
-			err(1, "setting ownership on %s", argv[1]);
+
+	switch (argc) {
+	case 0:
+		dev = 0;
+		break;
+
+	case 1:
+		dev = numbers[0];
+		break;
+
+	default:
+		dev = callPack(pack, argc, numbers);
+		break;
+	}
+
+	if (modes != NULL)
+		mode = getmode(modes, mode);
+	umask(0);
+	rval = fifo ? mkfifo(name, mode) : mknod(name, mode, dev);
+	if (rval < 0 && errno == EEXIST && r_flag) {
+		struct stat sb;
+		if (lstat(name, &sb) != 0 || (!fifo && sb.st_rdev != dev))
+			sb.st_mode = 0;
+
+		if ((sb.st_mode & S_IFMT) == (mode & S_IFMT)) {
+			if (r_flag == 1)
+				/* Ignore permissions and user/group */
+				return 0;
+			if (sb.st_mode != mode)
+				rval = chmod(name, mode);
+			else
+				rval = 0;
+		} else {
+			unlink(name);
+			rval = fifo ? mkfifo(name, mode)
+				    : mknod(name, mode, dev);
 		}
 	}
-	exit(0);
+	if (rval < 0)
+		err(1, "%s", name);
+	if ((uid != (uid_t)-1 || gid != (uid_t)-1) && chown(name, uid, gid) == -1)
+		/* XXX Should we unlink the files here? */
+		warn("%s: uid/gid not changed", name);
+
+	return 0;
 }
+
+static void
+usage(void)
+{
+	const char *progname = getprogname();
+
+	(void)fprintf(stderr,
+	    "usage: %s [-rR] [-F format] [-m mode] [-u user] [-g group]\n",
+	    progname);
+	(void)fprintf(stderr,
+#ifdef KERN_DRIVERS
+	    "                   [ name [b | c] [major | driver] minor\n"
+#else
+	    "                   [ name [b | c] major minor\n"
+#endif
+	    "                   | name [b | c] major unit subunit\n"
+	    "                   | name [b | c] number\n"
+	    "                   | name p ]\n");
+#ifdef KERN_DRIVERS
+	(void)fprintf(stderr, "       %s -l [driver] ...\n", progname);
+#endif
+	exit(1);
+}
+
+static int
+gid_name(const char *name, gid_t *gid)
+{
+	struct group *g;
+
+	g = getgrnam(name);
+	if (!g)
+		return -1;
+	*gid = g->gr_gid;
+	return 0;
+}
+
+static dev_t
+callPack(pack_t *f, int n, u_long *numbers)
+{
+	dev_t d;
+	const char *error = NULL;
+
+	d = (*f)(n, numbers, &error);
+	if (error != NULL)
+		errx(1, "%s", error);
+	return d;
+}
+
+#ifdef KERN_DRIVERS
+static void
+get_device_info(void)
+{
+	static int mib[2] = {CTL_KERN, KERN_DRIVERS};
+	size_t len;
+
+	if (sysctl(mib, 2, NULL, &len, NULL, 0) != 0)
+		err(1, "kern.drivers" );
+	kern_drivers = malloc(len);
+	if (kern_drivers == NULL)
+		err(1, "malloc");
+	if (sysctl(mib, 2, kern_drivers, &len, NULL, 0) != 0)
+		err(1, "kern.drivers" );
+
+	num_drivers = len / sizeof *kern_drivers;
+}
+
+static void
+print_device_info(char **names)
+{
+	int i;
+	struct kinfo_drivers *kd;
+
+	if (kern_drivers == NULL)
+		get_device_info();
+
+	do {
+		kd = kern_drivers;
+		for (i = 0; i < num_drivers; kd++, i++) {
+			if (*names && strcmp(*names, kd->d_name))
+				continue;
+			printf("%s", kd->d_name);
+			if (kd->d_cmajor != -1)
+				printf(" character major %d", kd->d_cmajor);
+			if (kd->d_bmajor != -1)
+				printf(" block major %d", kd->d_bmajor);
+			printf("\n");
+		}
+	} while (*names && *++names);
+}
+
+static int
+major_from_name(const char *name, mode_t mode)
+{
+	int i;
+	struct kinfo_drivers *kd;
+
+	if (kern_drivers == NULL)
+		get_device_info();
+
+	kd = kern_drivers;
+	for (i = 0; i < num_drivers; kd++, i++) {
+		if (strcmp(name, kd->d_name))
+			continue;
+		if (S_ISCHR(mode))
+			return kd->d_cmajor;
+		return kd->d_bmajor;
+	}
+	return -1;
+}
+#endif
