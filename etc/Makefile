@@ -243,7 +243,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 		${BINOWN} ${BINGRP}		600	/var/log/xferlog 			\
 		daemon staff			664	/var/msgs/bounds 			\
 		${BINOWN} ${UTMPGRP}	664	/var/run/utmp 				\
-		${BINOWN} ${UTMPGRP}	664	/var/run/utmpx 				\	
+		${BINOWN} ${UTMPGRP}	664	/var/run/utmpx 				\
 		games games				664	/var/games/atc_score 		\
 		games games				664	/var/games/battlestar.log 	\
 		games games				664	/var/games/cfscores 		\
