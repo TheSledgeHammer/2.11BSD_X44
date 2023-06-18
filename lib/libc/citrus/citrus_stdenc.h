@@ -27,6 +27,8 @@
  *
  */
 
+/* Work In Progress */
+
 #ifndef _CITRUS_STDENC_H_
 #define _CITRUS_STDENC_H_
 
@@ -45,8 +47,8 @@ int		_citrus_stdenc_init(_ENCODING_INFO * __restrict,  const void * __restrict, 
 void	_citrus_stdenc_uninit(_ENCODING_INFO * __restrict);
 int		_citrus_stdenc_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
 
-int 	_citrus_stenc_cstowc(_ENCODING_INFO * __restrict,  wchar_t * __restrict, _csid_t, _index_t);
-int 	_citrus_stenc_wctocs(_ENCODING_INFO * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+int 	_citrus_stdenc_cstowc(_ENCODING_INFO * __restrict,  wchar_t * __restrict, _csid_t, _index_t);
+int 	_citrus_stdenc_wctocs(_ENCODING_INFO * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 int 	_citrus_stdenc_mbtocs(_ENCODING_INFO * __restrict, _citrus_csid_t * __restrict, _citrus_index_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 int 	_citrus_stdenc_cstomb(_ENCODING_INFO * __restrict, char * __restrict, size_t, _citrus_csid_t, _citrus_index_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 int 	_citrus_stdenc_mbtowc(_ENCODING_INFO * __restrict, _citrus_wc_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);

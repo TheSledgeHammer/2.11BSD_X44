@@ -26,6 +26,8 @@
  * SUCH DAMAGE.
  */
 
+/* Work In Progress */
+
 /*
  * CAUTION: THIS IS NOT STANDALONE FILE
  *
@@ -79,13 +81,13 @@ _citrus_stdenc_init_state(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __re
 }
 
 int
-_citrus_stenc_cstowc(_ENCODING_INFO * __restrict ei,  wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+_citrus_stdenc_cstowc(_ENCODING_INFO * __restrict ei,  wchar_t * __restrict wc, _csid_t csid, _index_t idx)
 {
 	return (sgetcsrune(ei, wc, csid, idx));
 }
 
 int
-_citrus_stenc_wctocs(_ENCODING_INFO * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+_citrus_stdenc_wctocs(_ENCODING_INFO * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
 {
 	return (sputcsrune(ei, csid, idx, wc));
 }
