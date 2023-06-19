@@ -154,7 +154,7 @@ _citrus_ctype_init(void ** __restrict cl, void * __restrict var, size_t lenvar, 
 
 	*cl = (void *)cei;
 
-	//return _FUNCNAME(encoding_module_init)(_CEI_TO_EI(cei), var, lenvar);
+	//return _FUNCNAME(encoding_init)(_CEI_TO_EI(cei), var, lenvar);
 	return (0);
 }
 
@@ -162,7 +162,7 @@ void
 _citrus_ctype_uninit(void *cl)
 {
 	if (cl) {
-		//_FUNCNAME(encoding_module_uninit)(_CEI_TO_EI(_TO_CEI(cl)));
+		//_FUNCNAME(encoding_uninit)(_CEI_TO_EI(_TO_CEI(cl)));
 		free(cl);
 	}
 }

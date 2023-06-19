@@ -32,17 +32,17 @@
 
 #include <rune.h>
 
+/* Stdenc types */
+typedef uint32_t	_wc_t;
+typedef uint32_t	_index_t;
+typedef uint32_t 	_csid_t;
+
 /* generic encoding structures */
 typedef struct {
 	wchar_t				*ch;
 	int 				chlen;
 	int					current_endian;		/* UTF16 & UTF32 needs this */
 } _Encoding_State;
-
-typedef struct {
-	size_t				state_size;
-	size_t				mb_cur_max;
-} _Encoding_Traits;
 
 typedef struct {
 	int					preffered_endian; 	/* UTF16 & UTF32 needs this */
@@ -77,6 +77,11 @@ typedef struct {
 #define _MODE_UTF32							0x00000001U
 #define _MODE_FORCE_ENDIAN					0x00000002U
 
+typedef struct {
+	size_t				state_size;
+	size_t				mb_cur_max;
+} _Encoding_Traits;
+
 /*
  * macros
  */
@@ -91,4 +96,5 @@ typedef struct {
 #define _ENCODING_MB_CUR_MAX(_ei_)			(_ei_)->mb_cur_max
 #define _ENCODING_IS_STATE_DEPENDENT		0
 #define _STATE_NEEDS_EXPLICIT_INIT(_ps_)	0
+
 #endif /* _ENCODING_H_ */

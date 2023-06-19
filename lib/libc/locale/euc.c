@@ -148,6 +148,7 @@ _EUC_init(rl)
 
 	return (0);
 }
+
 int
 _EUC_sgetmbrune(_EUCEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _EUCState *psenc, size_t *nresult)
 {

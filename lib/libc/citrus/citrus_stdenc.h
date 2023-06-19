@@ -32,13 +32,9 @@
 #ifndef _CITRUS_STDENC_H_
 #define _CITRUS_STDENC_H_
 
-typedef uint32_t			_citrus_wc_t;
-typedef uint32_t			_citrus_index_t;
-typedef uint32_t			_citrus_csid_t;
-
-typedef _citrus_wc_t		_wc_t;
-typedef _citrus_index_t		_index_t;
-typedef _citrus_csid_t		_csid_t;
+typedef _wc_t		_citrus_wc_t;
+typedef _index_t	_citrus_index_t;
+typedef _csid_t		_citrus_csid_t;
 
 #define _CITRUS_CSID_INVALID	((_citrus_csid_t)-1)
 

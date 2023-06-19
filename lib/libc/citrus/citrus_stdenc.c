@@ -54,7 +54,7 @@ _citrus_stdenc_init(_ENCODING_INFO * __restrict ei,  const void * __restrict var
 		}
 	}
 
-	ret = _FUNCNAME(encoding_module_init)(ei, var, lenvar);
+	ret = _FUNCNAME(encoding_init)(ei, var, lenvar);
 	if (ret) {
 		free((void*) ei);
 		return (ret);
@@ -68,7 +68,7 @@ void
 _citrus_stdenc_uninit(_ENCODING_INFO * __restrict ei)
 {
 	if (ce) {
-		_FUNCNAME(encoding_module_uninit)(ei);
+		_FUNCNAME(encoding_uninit)(ei);
 		free(ei);
 	}
 }
