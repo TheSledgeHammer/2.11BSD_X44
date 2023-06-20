@@ -74,7 +74,7 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 
 #include <citrus/citrus_ctype.h>
 
-#define _FUNCNAME(m)				_none_citrus_ctype_##m
+#define _FUNCNAME(m)				_none_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	1
 
 rune_t		_none_sgetrune(const char *, size_t, char const **);

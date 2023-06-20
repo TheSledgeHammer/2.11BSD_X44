@@ -51,6 +51,7 @@ typedef union _RuneState {
 #define rs_runelocale		__priv.__runelocale
 #define rs_private			__priv.__private
 } _RuneState;
+#define _PRIVSIZE	(sizeof(mbstate_t)-offsetof(_RuneStatePriv, __private))
 
 #define _RUNE_LOCALE(loc) \
 	((_RuneLocale *)((loc)[(size_t)LC_CTYPE]))

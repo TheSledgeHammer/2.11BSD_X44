@@ -51,7 +51,7 @@ typedef _Encoding_Info				_UTF2EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF2CTypeInfo;
 typedef _Encoding_State				_UTF2State;
 
-#define _FUNCNAME(m)				_UTF2_citrus_ctype_##m
+#define _FUNCNAME(m)				_UTF2_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	3
 
 rune_t	_UTF2_sgetrune(const char *, size_t, char const **);
@@ -69,16 +69,20 @@ _UTF2_init(rl)
 	_RuneLocale *rl;
 {
 	_UTF2EncodingInfo 	*info;
-	_UTF2State 			*state;
+	int err;
 
 	rl->ops->ro_sgetrune = _UTF2_sgetrune;
 	rl->ops->ro_sputrune = _UTF2_sputrune;
 	rl->ops->ro_sgetmbrune = _UTF2_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UTF2_sputmbrune;
 
-	_CurrentRuneLocale = rl;
+	err = _citrus_ctype_init(&rl);
+	if (err != 0) {
+		return (err);
+	}
+	_citrus_ctype_encoding_init(info);
 
-	_citrus_ctype_encoding_init(info, state);
+	_CurrentRuneLocale = rl;
 
 	return (0);
 }

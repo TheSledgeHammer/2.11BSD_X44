@@ -49,7 +49,7 @@ typedef _Encoding_Info				_UESEncodingInfo;
 typedef _Encoding_TypeInfo 			_UESCTypeInfo;
 typedef _Encoding_State				_UESState;
 
-#define _FUNCNAME(m)				_UES_citrus_ctype_##m
+#define _FUNCNAME(m)				_UES_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	((_ei_)->cur_max)
 
 rune_t	_UES_sgetrune(const char *, size_t, char const **);
@@ -57,7 +57,7 @@ int		_UES_sputrune(rune_t, char *, size_t, char **);
 int		_UES_sgetmbrune(_UESEncodingInfo *, wchar_t *, const char **, size_t, _UESState *, size_t *);
 int 	_UES_sputmbrune(_UESEncodingInfo *, char *, wchar_t, _UESState *, size_t *);
 
-static void parse_variable(_RuneLocale *rl, _UESEncodingInfo * __restrict ei);
+static void parse_variable(_UESEncodingInfo * __restrict ei, _RuneLocale *rl);
 
 static __inline int
 to_int(int ch)
@@ -147,6 +147,13 @@ is_basic(wchar_t wc)
 	return (uint32_t) wc <= 0x9F && wc != 0x24 && wc != 0x40 && wc != 0x60;
 }
 
+static __inline void
+/*ARGSUSED*/
+_UES_init_state(_UESEncodingInfo * __restrict ei, _UESState * __restrict psenc)
+{
+	psenc->chlen = 0;
+}
+
 int
 _UES_init(rl)
 	_RuneLocale *rl;
@@ -159,10 +166,15 @@ _UES_init(rl)
 	rl->ops->ro_sgetmbrune = _UES_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UES_sputmbrune;
 
-	_CurrentRuneLocale = rl;
+	err = _citrus_ctype_init(&rl);
+	if (err != 0) {
+		return (err);
+	}
 
-	_citrus_ctype_encoding_init(info, state);
-	parse_variable(rl, info);
+	_citrus_ctype_encoding_init(info);
+	parse_variable(info, rl);
+
+	_CurrentRuneLocale = rl;
 
 	return (0);
 }
@@ -181,7 +193,7 @@ _UES_sgetmbrune(_UESEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _U
 	_DIAGASSERT(nresult != NULL);
 
 	if (*s == NULL) {
-		_citrus_ctype_init_state(ei, psenc);
+		_UES_init_state(ei, psenc);
 		*nresult = 0;
 		return 0;
 	}
@@ -346,7 +358,7 @@ _UES_sputrune(rune_t c, char *string, size_t n, char **result)
 } while (/*CONSTCOND*/0);
 
 static void
-parse_variable(_RuneLocale *rl, _UESEncodingInfo * __restrict ei)
+parse_variable(_UESEncodingInfo * __restrict ei, _RuneLocale *rl)
 {
 	const char *p;
 	size_t lenvar;

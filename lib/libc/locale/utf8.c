@@ -73,7 +73,7 @@ typedef _Encoding_Info				_UTF8EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF8CTypeInfo;
 typedef _Encoding_State				_UTF8State;
 
-#define _FUNCNAME(m)				_UTF8_citrus_ctype_##m
+#define _FUNCNAME(m)				_UTF8_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	6
 
 rune_t	_UTF8_sgetrune(const char *, size_t, char const **);
@@ -81,6 +81,10 @@ int		_UTF8_sputrune(rune_t, char *, size_t, char **);
 int		_UTF8_sgetmbrune(_UTF8EncodingInfo *, wchar_t *, const char **, size_t, _UTF8State *, size_t *);
 int 	_UTF8_sputmbrune(_UTF8EncodingInfo *, char *, wchar_t, _UTF8State *, size_t *);
 
+#ifdef notyet
+int		_UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int		_UTF8_sputcsrune(_UTF8EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+#endif
 static int _UTF8_count_array[256];
 static int const *_UTF8_count = NULL;
 
@@ -132,19 +136,32 @@ int
 _UTF8_init(_RuneLocale *rl)
 {
 	_UTF8EncodingInfo 	*info;
-	_UTF8State 			*state;
+	int err;
 
 	rl->ops->ro_sgetrune = _UTF8_sgetrune;
 	rl->ops->ro_sputrune = _UTF8_sputrune;
 	rl->ops->ro_sgetmbrune = _UTF8_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UTF8_sputmbrune;
 
+#ifdef notyet
+	rl->ops->ro_sgetcsrune = _UTF8_sgetcsrune;
+	rl->ops->ro_sputcsrune = _UTF8_sputcsrune;
+#endif
+	err = _citrus_ctype_init(&rl);
+	if (err != 0) {
+		return (err);
+	}
+	_UTF8_init_count();
+
 	_CurrentRuneLocale = rl;
 
-	_UTF8_init_count();
-	_citrus_ctype_encoding_init(info, state);
-
 	return (0);
+}
+
+static __inline void
+_UTF8_init_state(_UTF8EncodingInfo * __restrict  ei, _UTF8State * __restrict psenc)
+{
+	psenc->chlen = 0;
 }
 
 int
@@ -164,7 +181,7 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, 
 	s0 = *s;
 
 	if (s0 == NULL) {
-		_citrus_ctype_init_state(ei, psenc);
+		_UTF8_init_state(ei, psenc);
 		*nresult = 0; /* state independent */
 		return 0;
 	}
@@ -311,3 +328,32 @@ _UTF8_sputrune(rune_t c, char *string, size_t n, char **result)
 {
 	return (emulated_sputrune(c, string, n, result));
 }
+
+
+#ifdef notyet
+int
+_UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict ei, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+{
+	_DIAGASSERT(wc != NULL);
+
+	if (csid != 0) {
+		return (EILSEQ);
+	}
+
+	*wc = (wchar_t)idx;
+
+	return (0);
+}
+
+int
+_UTF8_sputcsrune(_UTF8EncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+{
+
+	_DIAGASSERT(csid != NULL && idx != NULL);
+
+	*csid = 0;
+	*idx = (_citrus_index_t)wc;
+
+	return (0);
+}
+#endif

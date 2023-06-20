@@ -62,7 +62,6 @@
  * SUCH DAMAGE.
  */
 
-
 /*
  * CAUTION: THIS IS NOT STANDALONE FILE
  *
@@ -125,36 +124,38 @@
 
 /* prototypes */
 __BEGIN_DECLS
+ /*
+  * standard form of mbrtowc_priv.
+  *
+  * note (differences from real mbrtowc):
+  *   - 3rd parameter is not "const char *s" but "const char **s".
+  *     after the call of the function, *s will point the first byte of
+  *     the next character.
+  *   - additional 4th parameter is the size of src buffer.
+  *   - 5th parameter is unpacked encoding-dependent state structure.
+  *   - additional 6th parameter is the storage to be stored
+  *     the return value in the real mbrtowc context.
+  *   - return value means "errno" in the real mbrtowc context.
+  */
+ //static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+int	_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 
-/*
- * standard form of mbrtowc_priv.
- *
- * note (differences from real mbrtowc):
- *   - 3rd parameter is not "const char *s" but "const char **s".
- *     after the call of the function, *s will point the first byte of
- *     the next character.
- *   - additional 4th parameter is the size of src buffer.
- *   - 5th parameter is unpacked encoding-dependent state structure.
- *   - additional 6th parameter is the storage to be stored
- *     the return value in the real mbrtowc context.
- *   - return value means "errno" in the real mbrtowc context.
- */
-//static int 	_FUNCNAME(mbrtowc_priv)(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+ /*
+  * standard form of wcrtomb_priv.
+  *
+  * note (differences from real wcrtomb):
+  *   - additional 3th parameter is the size of src buffer.
+  *   - 5th parameter is unpacked encoding-dependent state structure.
+  *   - additional 6th parameter is the storage to be stored
+  *     the return value in the real mbrtowc context.
+  *   - return value means "errno" in the real wcrtomb context.
+  *   - caller should ensure that 2nd parameter isn't NULL.
+  *     (XXX inconsist with mbrtowc_priv)
+  */
+ //static int 	_FUNCNAME(wcrtomb_priv)(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+int	_citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 
-/*
- * standard form of wcrtomb_priv.
- *
- * note (differences from real wcrtomb):
- *   - additional 3th parameter is the size of src buffer.
- *   - 5th parameter is unpacked encoding-dependent state structure.
- *   - additional 6th parameter is the storage to be stored
- *     the return value in the real mbrtowc context.
- *   - return value means "errno" in the real wcrtomb context.
- *   - caller should ensure that 2nd parameter isn't NULL.
- *     (XXX inconsist with mbrtowc_priv)
- */
-//static int 	_FUNCNAME(wcrtomb_priv)(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
-__END_DECLS
+ __END_DECLS
 
 /* internal routines */
 static __inline int
@@ -168,6 +169,7 @@ _FUNCNAME(mbtowc_priv)(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc,
 	_DIAGASSERT(psenc != NULL);
 
 	if (s == NULL) {
+		_citrus_ctype_init_state(ei, psenc);
 		*nresult = _ENCODING_IS_STATE_DEPENDENT;
 		return (0);
 	}
@@ -244,6 +246,62 @@ bye:
 }
 
 static int
+_FUNCNAME(mbsnrtowcs_priv)(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwcs, const char ** __restrict s, size_t in, size_t n, _ENCODING_STATE * __restrict psenc,size_t * __restrict nresult)
+{
+	int err;
+	size_t cnt, siz;
+	const char *s0, *se;
+
+	_DIAGASSERT(nresult != 0);
+	_DIAGASSERT(ei != NULL);
+	_DIAGASSERT(psenc != NULL);
+	_DIAGASSERT(s != NULL);
+	_DIAGASSERT(*s != NULL);
+
+	/* if pwcs is NULL, ignore n */
+	if (pwcs == NULL)
+		n = 1; /* arbitrary >0 value */
+
+	err = 0;
+	cnt = 0;
+	se = *s + in;
+	s0 = *s; /* to keep *s unchanged for now, use copy instead. */
+	while (s0 < se && n > 0) {
+		err = _citrus_ctype_mbrtowc_priv(ei, pwcs, &s0, se - s0, psenc, &siz);
+		if (err) {
+			cnt = (size_t)-1;
+			goto bye;
+		}
+		if (siz == (size_t)-2) {
+			s0 = se;
+			goto bye;
+		}
+		switch (siz) {
+		case 0:
+			if (pwcs) {
+				_citrus_ctype_init_state(ei, psenc);
+			}
+			s0 = 0;
+			goto bye;
+		default:
+			if (pwcs) {
+				pwcs++;
+				n--;
+			}
+			cnt++;
+			break;
+		}
+	}
+bye:
+	if (pwcs)
+		*s = s0;
+
+	*nresult = cnt;
+
+	return err;
+}
+
+static int
 _FUNCNAME(wcsrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s, const wchar_t ** __restrict pwcs, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
 	int cnt = 0, err;
@@ -290,6 +348,62 @@ _FUNCNAME(wcsrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s, c
 			break;
 		}
 		pwcs0++;
+	}
+	if (s)
+		*pwcs = pwcs0;
+
+	*nresult = (size_t)cnt;
+	return (0);
+}
+
+static int
+_FUNCNAME(wcsnrtombs_priv)(_ENCODING_INFO * __restrict ei, char * __restrict s, const wchar_t ** __restrict pwcs, size_t in, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
+{
+	int cnt = 0, err;
+	char buf[MB_LEN_MAX];
+	size_t siz;
+	const wchar_t* pwcs0;
+#if _ENCODING_IS_STATE_DEPENDENT
+	_ENCODING_STATE state;
+#endif
+
+	pwcs0 = *pwcs;
+
+	if (!s)
+		n = 1;
+
+	while (in > 0 && n > 0) {
+#if _ENCODING_IS_STATE_DEPENDENT
+		state = *psenc;
+#endif
+		err = _citrus_ctype_wcrtomb_priv(ei, buf, sizeof(buf), *pwcs0, psenc, &siz);
+		if (siz == (size_t)-1) {
+			*nresult = siz;
+			return (err);
+		}
+
+		if (s) {
+			if (n < siz) {
+#if _ENCODING_IS_STATE_DEPENDENT
+				*psenc = state;
+#endif
+				break;
+			}
+			memcpy(s, buf, siz);
+			s += siz;
+			n -= siz;
+		}
+		cnt += siz;
+		if (!*pwcs0) {
+			if (s) {
+				_citrus_ctype_init_state(ei, psenc);
+			}
+			pwcs0 = 0;
+			cnt--; /* don't include terminating null */
+			break;
+		}
+		pwcs0++;
+		--in;
 	}
 	if (s)
 		*pwcs = pwcs0;

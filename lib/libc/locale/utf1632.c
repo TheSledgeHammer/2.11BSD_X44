@@ -47,32 +47,33 @@ typedef _Encoding_Info				_UTF1632EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF1632CTypeInfo;
 typedef _Encoding_State				_UTF1632State;
 
-#define _FUNCNAME(m)				_UTF1632_citrus_ctype_##m
+#define _FUNCNAME(m)				_UTF1632_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	((_ei_)->cur_max)
 
 rune_t	_UTF1632_sgetrune(const char *, size_t, char const **);
 int		_UTF1632_sputrune(rune_t, char *, size_t, char **);
 int		_UTF1632_sgetmbrune(_UTF1632EncodingInfo *, wchar_t *, const char **, size_t, _UTF1632State *, size_t *);
 int 	_UTF1632_sputmbrune(_UTF1632EncodingInfo *, char *, wchar_t, _UTF1632State *, size_t *);
-
-static void parse_variable(_RuneLocale *rl, _UTF1632EncodingInfo * __restrict ei);
+static void parse_variable(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl);
 
 int
 _UTF1632_init(rl)
 	_RuneLocale *rl;
 {
 	_UTF1632EncodingInfo 	*info;
-	_UTF1632State 			*state;
+	int err;
 
 	rl->ops->ro_sgetrune = _UTF1632_sgetrune;
 	rl->ops->ro_sputrune = _UTF1632_sputrune;
 	rl->ops->ro_sgetmbrune = _UTF1632_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UTF1632_sputmbrune;
 
-	_CurrentRuneLocale = rl;
-
-	_citrus_ctype_encoding_init(info, state);
-	parse_variable(rl, info);
+	err = _citrus_ctype_init(&rl);
+	if (err != 0) {
+		return (err);
+	}
+	_citrus_ctype_encoding_init(info);
+	parse_variable(info, rl);
 
     if ((info->mode & _MODE_UTF32) == 0) {
         info->mb_cur_max = 6; /* endian + surrogate */
@@ -87,6 +88,8 @@ _UTF1632_init(rl)
 		info->preffered_endian = _ENDIAN_LITTLE;
 #endif
 	}
+
+	_CurrentRuneLocale = rl;
 
 	return (0);
 }
@@ -331,6 +334,37 @@ _UTF1632_sputrune(rune_t c, char *string, size_t n, char **result)
 	return (emulated_sputrune(c, string, n, result));
 }
 
+int
+_UTF1632_encoding_init(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl)
+{
+	_DIAGASSERT(ei != NULL);
+
+	memset((void *)ei, 0, sizeof(*ei));
+	parse_variable(ei, rl);
+
+    if ((ei->mode & _MODE_UTF32) == 0) {
+    	ei->mb_cur_max = 6; /* endian + surrogate */
+    } else {
+    	ei->mb_cur_max = 8; /* endian + normal */
+    }
+
+	if (ei->preffered_endian == _ENDIAN_UNKNOWN) {
+#if BYTE_ORDER == BIG_ENDIAN
+		ei->preffered_endian = _ENDIAN_BIG;
+#else
+		ei->preffered_endian = _ENDIAN_LITTLE;
+#endif
+	}
+
+	return (0);
+}
+
+void
+_UTF1632_encoding_uninit(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl)
+{
+
+}
+
 #define MATCH(x, act) 										\
 	do {													\
 		if (lenvar >= (sizeof(#x)-1) &&						\
@@ -342,7 +376,7 @@ _UTF1632_sputrune(rune_t c, char *string, size_t n, char **result)
 } while (/*CONSTCOND*/0);
 
 static void
-parse_variable(_RuneLocale *rl, _UTF1632EncodingInfo * __restrict ei)
+parse_variable(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl)
 {
 	const char *p;
 	size_t lenvar;

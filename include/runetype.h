@@ -141,10 +141,16 @@ typedef struct _WCTypeEntry {
 #define _WCTYPE_NINDEXES		12
 
 typedef struct {
+	/* ctype: 4.4BSD / citrus */
 	rune_t						(*ro_sgetrune)(const char *, size_t, char const **);
 	int							(*ro_sputrune)(rune_t, char *, size_t, char **);
-	int 						(*ro_sgetmbrune)(_Encoding_Info *, wchar_t *, const char **, size_t, _Encoding_State *, size_t *);
-	int							(*ro_sputmbrune)(_Encoding_Info *, char *, size_t, wchar_t, _Encoding_State *, size_t *);
+	int 						(*ro_sgetmbrune)(_Encoding_Info * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _Encoding_State * __restrict, size_t * __restrict);
+	int							(*ro_sputmbrune)(_Encoding_Info * __restrict, char * __restrict, size_t, wchar_t, _Encoding_State * __restrict, size_t * __restrict);
+#ifdef notyet
+	/* stdenc */
+	int 						(*ro_sgetcsrune)(_Encoding_Info * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+	int 						(*ro_sputcsrune)(_Encoding_Info * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+#endif
 } _RuneOps;
 
 /*

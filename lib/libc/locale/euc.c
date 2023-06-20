@@ -114,7 +114,7 @@ typedef _Encoding_State				_EUCState;
 #define	_SS2						0x008e
 #define	_SS3						0x008f
 
-#define _FUNCNAME(m)				_EUC_citrus_ctype_##m
+#define _FUNCNAME(m)				_EUC_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	3
 
 rune_t	_EUC_sgetrune(const char *, size_t, char const **);
@@ -122,14 +122,13 @@ int		_EUC_sputrune(rune_t, char *, size_t, char **);
 int		_EUC_sgetmbrune(_EUCEncodingInfo *, wchar_t *, const char **, size_t, _EUCState *, size_t *);
 int 	_EUC_sputmbrune(_EUCEncodingInfo *, char *, wchar_t, _EUCState *, size_t *);
 static int _EUC_set(u_int);
-static int parse_variable(_RuneLocale *, _EUCEncodingInfo *);
+static int parse_variable(_EUCEncodingInfo *, _RuneLocale *);
 
 int
 _EUC_init(rl)
 	_RuneLocale *rl;
 {
 	_EUCCTypeInfo 	*info;
-	_EUCState 		*state;
 	int err;
 
 	rl->ops->ro_sgetrune = _EUC_sgetrune;
@@ -137,14 +136,17 @@ _EUC_init(rl)
 	rl->ops->ro_sgetmbrune = _EUC_sgetmbrune;
 	rl->ops->ro_sputmbrune = _EUC_sputmbrune;
 
-	_CurrentRuneLocale = rl;
-
-	_citrus_ctype_encoding_init(info, state);
-
-	err = parse_variable(rl, info);
+	err = _citrus_ctype_init(&rl);
 	if (err != 0) {
 		return (err);
 	}
+	_citrus_ctype_encoding_init(info);
+	err = parse_variable(info, rl);
+	if (err != 0) {
+		return (err);
+	}
+
+	_CurrentRuneLocale = rl;
 
 	return (0);
 }
@@ -321,7 +323,7 @@ _EUC_set(u_int c)
 }
 
 static int
-parse_variable(_RuneLocale *rl, _EUCEncodingInfo *ei)
+parse_variable(_EUCEncodingInfo *ei, _RuneLocale *rl)
 {
 	const char *v, *e;
 	size_t lenvar;
@@ -332,7 +334,7 @@ parse_variable(_RuneLocale *rl, _EUCEncodingInfo *ei)
 		return (EFTYPE);
 	}
 
-	v = rl->variable;
+	v = (const char *)rl->variable;
 	lenvar = rl->variable_len;
 
 	while (*v == ' ' || *v == '\t') {
