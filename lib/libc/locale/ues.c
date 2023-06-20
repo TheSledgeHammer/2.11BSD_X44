@@ -159,7 +159,7 @@ _UES_init(rl)
 	_RuneLocale *rl;
 {
 	_UESEncodingInfo 	*info;
-	_UESState 			*state;
+	int err
 
 	rl->ops->ro_sgetrune = _UES_sgetrune;
 	rl->ops->ro_sputrune = _UES_sputrune;
