@@ -79,7 +79,7 @@ _citrus_stdenc_init(_ENCODING_INFO * __restrict info)
 void
 _citrus_stdenc_uninit(_ENCODING_INFO * __restrict ei)
 {
-	if (ce) {
+	if (ei) {
 		_citrus_ctype_encoding_uninit(ei);
 		free(ei);
 	}
