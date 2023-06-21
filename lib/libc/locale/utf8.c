@@ -68,6 +68,7 @@
 #include <wchar.h>
 
 #include <citrus/citrus_ctype.h>
+#include <citrus/citrus_stdenc.h>
 
 typedef _Encoding_Info				_UTF8EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF8CTypeInfo;
@@ -80,13 +81,20 @@ rune_t	_UTF8_sgetrune(const char *, size_t, char const **);
 int		_UTF8_sputrune(rune_t, char *, size_t, char **);
 int		_UTF8_sgetmbrune(_UTF8EncodingInfo *, wchar_t *, const char **, size_t, _UTF8State *, size_t *);
 int 	_UTF8_sputmbrune(_UTF8EncodingInfo *, char *, wchar_t, _UTF8State *, size_t *);
-
-#ifdef notyet
 int		_UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF8_sputcsrune(_UTF8EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-#endif
+
 static int _UTF8_count_array[256];
 static int const *_UTF8_count = NULL;
+
+struct _RuneOps _utf8_runeops = {
+		.ro_sgetrune 	=  	_UTF8_sgetrune,
+		.ro_sgetrune 	=  	_UTF8_sgetrune,
+		.ro_sgetmbrune 	=  	_UTF8_sgetmbrune,
+		.ro_sgetmbrune 	=  	_UTF8_sgetmbrune,
+		.ro_sgetcsrune  =	_UTF8_sgetcsrune,
+		.ro_sputcsrune	= 	_UTF8_sputcsrune,
+};
 
 static u_int32_t _UTF8_range[] = {
 	0,	/*dummy*/
@@ -136,20 +144,24 @@ int
 _UTF8_init(_RuneLocale *rl)
 {
 	_UTF8EncodingInfo 	*info;
-	int err;
+	int ret;
 
+	rl->ops = &_utf8_runeops;
+/*
 	rl->ops->ro_sgetrune = _UTF8_sgetrune;
 	rl->ops->ro_sputrune = _UTF8_sputrune;
 	rl->ops->ro_sgetmbrune = _UTF8_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UTF8_sputmbrune;
-
-#ifdef notyet
 	rl->ops->ro_sgetcsrune = _UTF8_sgetcsrune;
 	rl->ops->ro_sputcsrune = _UTF8_sputcsrune;
-#endif
-	err = _citrus_ctype_init(&rl);
-	if (err != 0) {
-		return (err);
+*/
+	ret = _citrus_ctype_init(&rl);
+	if (ret != 0) {
+		return (ret);
+	}
+	ret = _citrus_stdenc_init(info);
+	if (ret != 0) {
+		return (ret);
 	}
 	_UTF8_init_count();
 
@@ -329,8 +341,6 @@ _UTF8_sputrune(rune_t c, char *string, size_t n, char **result)
 	return (emulated_sputrune(c, string, n, result));
 }
 
-
-#ifdef notyet
 int
 _UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict ei, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
 {
@@ -356,4 +366,3 @@ _UTF8_sputcsrune(_UTF8EncodingInfo * __restrict ei, _csid_t * __restrict csid, _
 
 	return (0);
 }
-#endif

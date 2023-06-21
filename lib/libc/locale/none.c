@@ -73,6 +73,7 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 #include <stdlib.h>
 
 #include <citrus/citrus_ctype.h>
+#include <citrus/citrus_stdenc.h>
 
 #define _FUNCNAME(m)				_none_##m
 #define _ENCODING_MB_CUR_MAX(_ei_)	1
@@ -81,16 +82,29 @@ rune_t		_none_sgetrune(const char *, size_t, char const **);
 int			_none_sputrune(rune_t, char *, size_t, char **);
 int			_none_sgetmbrune(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
 int 		_none_sputmbrune(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
+int			_none_sgetcsrune(void * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int			_none_sputcsrune(void * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+
+struct _RuneOps _none_runeops = {
+		.ro_sgetrune 	=  	_none_sgetrune,
+		.ro_sgetrune 	=  	_none_sgetrune,
+		.ro_sgetmbrune 	=  	_none_sgetmbrune,
+		.ro_sgetmbrune 	=  	_none_sgetmbrune,
+		.ro_sgetcsrune  =	_none_sgetcsrune,
+		.ro_sputcsrune	= 	_none_sputcsrune,
+};
 
 int
 _none_init(rl)
 	_RuneLocale *rl;
 {
+	rl->ops = &_none_runeops;
+/*
 	rl->ops->ro_sgetrune = _none_sgetrune;
 	rl->ops->ro_sputrune = _none_sputrune;
 	rl->ops->ro_sgetmbrune = _none_sgetmbrune;
 	rl->ops->ro_sputmbrune = _none_sputmbrune;
-
+*/
 	_CurrentRuneLocale = rl;
 
 	return (0);
@@ -147,4 +161,16 @@ int
 _none_sputrune(rune_t c, char *string, size_t n, char **result)
 {
 	return (emulated_sputrune(c, string, n, result));
+}
+
+int
+_none_sgetcsrune(void * __restrict cl, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+{
+	return (0);
+}
+
+int
+_none_sputcsrune(void * __restrict cl, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+{
+	return (0);
 }

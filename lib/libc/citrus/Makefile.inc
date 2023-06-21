@@ -2,4 +2,4 @@
 
 .PATH: ${ARCHDIR}/citrus ${.CURDIR}/citrus
 
-SRCS+=	citrus_ctype.c
+SRCS+=	citrus_ctype.c citrus_stdenc.c

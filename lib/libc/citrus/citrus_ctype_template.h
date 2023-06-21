@@ -119,8 +119,8 @@
  *
  */
 
-#include <sys/cdefs.h>
-#include "citrus_ctype.h"
+//#include <sys/cdefs.h>
+//#include "citrus_ctype.h"
 
 /* prototypes */
 __BEGIN_DECLS

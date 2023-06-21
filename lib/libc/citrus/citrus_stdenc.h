@@ -39,8 +39,9 @@ typedef _csid_t		_citrus_csid_t;
 #define _CITRUS_CSID_INVALID	((_citrus_csid_t)-1)
 
 __BEGIN_DECLS
-int		_citrus_stdenc_init(_ENCODING_INFO * __restrict,  const void * __restrict, size_t, _ENCODING_TRAITS * __restrict);
+int		_citrus_stdenc_init(_ENCODING_INFO * __restrict);
 void	_citrus_stdenc_uninit(_ENCODING_INFO * __restrict);
+
 int		_citrus_stdenc_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
 
 int 	_citrus_stdenc_cstowc(_ENCODING_INFO * __restrict,  wchar_t * __restrict, _csid_t, _index_t);

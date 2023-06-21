@@ -46,6 +46,7 @@ static char sccsid[] = "@(#)utf2.c	8.1 (Berkeley) 6/4/93";
 #include <stdlib.h>
 
 #include <citrus/citrus_ctype.h>
+#include <citrus/citrus_stdenc.h>
 
 typedef _Encoding_Info				_UTF2EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF2CTypeInfo;
@@ -58,6 +59,17 @@ rune_t	_UTF2_sgetrune(const char *, size_t, char const **);
 int		_UTF2_sputrune(rune_t, char *, size_t, char **);
 int		_UTF2_sgetmbrune(_UTF2EncodingInfo *, wchar_t *, const char **, size_t, _UTF2State *, size_t *);
 int 	_UTF2_sputmbrune(_UTF2EncodingInfo *, char *, wchar_t, _UTF2State *, size_t *);
+int		_UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int		_UTF2_sputcsrune(_UTF2EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+
+struct _RuneOps _utf2_runeops = {
+		.ro_sgetrune 	=  	_UTF2_sgetrune,
+		.ro_sgetrune 	=  	_UTF2_sgetrune,
+		.ro_sgetmbrune 	=  	_UTF2_sgetmbrune,
+		.ro_sgetmbrune 	=  	_UTF2_sgetmbrune,
+		.ro_sgetcsrune  =	_UTF2_sgetcsrune,
+		.ro_sputcsrune	= 	_UTF2_sputcsrune,
+};
 
 static _utf_count[16] = {
 	1, 1, 1, 1, 1, 1, 1, 1,
@@ -69,18 +81,23 @@ _UTF2_init(rl)
 	_RuneLocale *rl;
 {
 	_UTF2EncodingInfo 	*info;
-	int err;
+	int ret;
 
+	rl->ops = &_utf2_runeops;
+/*
 	rl->ops->ro_sgetrune = _UTF2_sgetrune;
 	rl->ops->ro_sputrune = _UTF2_sputrune;
 	rl->ops->ro_sgetmbrune = _UTF2_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UTF2_sputmbrune;
-
-	err = _citrus_ctype_init(&rl);
-	if (err != 0) {
-		return (err);
+*/
+	ret = _citrus_ctype_init(&rl);
+	if (ret != 0) {
+		return (ret);
 	}
-	_citrus_ctype_encoding_init(info);
+	ret = _citrus_stdenc_init(info);
+	if (ret != 0) {
+		return (ret);
+	}
 
 	_CurrentRuneLocale = rl;
 
@@ -206,4 +223,16 @@ _UTF2_sputrune(c, string, n, result)
 			*result = NULL;
 		return (1);
 	}
+}
+
+int
+_UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict ei, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+{
+	return (0);
+}
+
+int
+_UTF2_sputcsrune(_UTF2EncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+{
+	return (0);
 }

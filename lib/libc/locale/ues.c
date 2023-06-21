@@ -44,6 +44,7 @@ __RCSID("$NetBSD: citrus_ues.c,v 1.5 2022/04/19 20:32:14 rillig Exp $");
 #include <sys/endian.h>
 
 #include <citrus/citrus_ctype.h>
+#include <citrus/citrus_stdenc.h>
 
 typedef _Encoding_Info				_UESEncodingInfo;
 typedef _Encoding_TypeInfo 			_UESCTypeInfo;
@@ -56,8 +57,18 @@ rune_t	_UES_sgetrune(const char *, size_t, char const **);
 int		_UES_sputrune(rune_t, char *, size_t, char **);
 int		_UES_sgetmbrune(_UESEncodingInfo *, wchar_t *, const char **, size_t, _UESState *, size_t *);
 int 	_UES_sputmbrune(_UESEncodingInfo *, char *, wchar_t, _UESState *, size_t *);
-
+int		_UES_sgetcsrune(_UESEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int		_UES_sputcsrune(_UESEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 static void parse_variable(_UESEncodingInfo * __restrict ei, _RuneLocale *rl);
+
+struct _RuneOps _ues_runeops = {
+		.ro_sgetrune 	=  	_UES_sgetrune,
+		.ro_sgetrune 	=  	_UES_sgetrune,
+		.ro_sgetmbrune 	=  	_UES_sgetmbrune,
+		.ro_sgetmbrune 	=  	_UES_sgetmbrune,
+		.ro_sgetcsrune  =	_UES_sgetcsrune,
+		.ro_sputcsrune	= 	_UES_sputcsrune,
+};
 
 static __inline int
 to_int(int ch)
@@ -159,20 +170,26 @@ _UES_init(rl)
 	_RuneLocale *rl;
 {
 	_UESEncodingInfo 	*info;
-	int err
+	int ret;
 
+	rl->ops = &_ues_runeops;
+/*
 	rl->ops->ro_sgetrune = _UES_sgetrune;
 	rl->ops->ro_sputrune = _UES_sputrune;
 	rl->ops->ro_sgetmbrune = _UES_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UES_sputmbrune;
-
-	err = _citrus_ctype_init(&rl);
-	if (err != 0) {
-		return (err);
+*/
+	ret = _citrus_ctype_init(&rl);
+	if (ret != 0) {
+		return (ret);
 	}
-
-	_citrus_ctype_encoding_init(info);
-	parse_variable(info, rl);
+	ret = _citrus_stdenc_init(info);
+	if (ret != 0) {
+		return (ret);
+	}
+	if (info != NULL) {
+		parse_variable(info, rl);
+	}
 
 	_CurrentRuneLocale = rl;
 
@@ -345,6 +362,33 @@ int
 _UES_sputrune(rune_t c, char *string, size_t n, char **result)
 {
 	return (emulated_sputrune(c, string, n, result));
+}
+
+int
+_UES_sgetcsrune(_UESEncodingInfo * __restrict ei, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+{
+	/* ei seem to be unused */
+	_DIAGASSERT(wc != NULL);
+
+	if (csid != 0) {
+		return EILSEQ;
+	}
+	*wc = (wchar_t)idx;
+
+	return (0);
+}
+
+int
+_UES_sputcsrune(_UESEncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+{
+	/* ei seem to be unused */
+	_DIAGASSERT(csid != NULL);
+	_DIAGASSERT(idx != NULL);
+
+	*csid = 0;
+	*idx = (_index_t)wc;
+
+	return (0);
 }
 
 #define MATCH(x, act) 										\

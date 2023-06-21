@@ -118,6 +118,11 @@ setrunelocale(encoding)
 	wctype_init(rl);
 	wctrans_init(rl);
 
+	rl->ops = (_RuneOps)malloc(sizeof(*rl->ops));
+	if (rl->ops == NULL) {
+		return (ENOMEM);
+	}
+
 	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF-8")) {
 		return (_UTF8_init(rl));
 	} else if (!strcmp(rl->encoding, "UTF-1632")) {

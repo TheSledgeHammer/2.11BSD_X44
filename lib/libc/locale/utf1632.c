@@ -42,6 +42,7 @@ __RCSID("$NetBSD: citrus_utf1632.c,v 1.3 2003/06/27 12:55:13 yamt Exp $");
 #include <sys/endian.h>
 
 #include <citrus/citrus_ctype.h>
+#include <citrus/citrus_stdenc.h>
 
 typedef _Encoding_Info				_UTF1632EncodingInfo;
 typedef _Encoding_TypeInfo 			_UTF1632CTypeInfo;
@@ -54,26 +55,44 @@ rune_t	_UTF1632_sgetrune(const char *, size_t, char const **);
 int		_UTF1632_sputrune(rune_t, char *, size_t, char **);
 int		_UTF1632_sgetmbrune(_UTF1632EncodingInfo *, wchar_t *, const char **, size_t, _UTF1632State *, size_t *);
 int 	_UTF1632_sputmbrune(_UTF1632EncodingInfo *, char *, wchar_t, _UTF1632State *, size_t *);
+int		_UTF1632_sgetcsrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int		_UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 static void parse_variable(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl);
+
+struct _RuneOps _utf1632_runeops = {
+		.ro_sgetrune 	=  	_UTF1632_sgetrune,
+		.ro_sgetrune 	=  	_UTF1632_sgetrune,
+		.ro_sgetmbrune 	=  	_UTF1632_sgetmbrune,
+		.ro_sgetmbrune 	=  	_UTF1632_sgetmbrune,
+		.ro_sgetcsrune  =	_UTF1632_sgetcsrune,
+		.ro_sputcsrune	= 	_UTF1632_sputcsrune,
+};
 
 int
 _UTF1632_init(rl)
 	_RuneLocale *rl;
 {
 	_UTF1632EncodingInfo 	*info;
-	int err;
+	int ret;
 
+	rl->ops = &_utf1632_runeops;
+/*
 	rl->ops->ro_sgetrune = _UTF1632_sgetrune;
 	rl->ops->ro_sputrune = _UTF1632_sputrune;
 	rl->ops->ro_sgetmbrune = _UTF1632_sgetmbrune;
 	rl->ops->ro_sputmbrune = _UTF1632_sputmbrune;
-
-	err = _citrus_ctype_init(&rl);
-	if (err != 0) {
-		return (err);
+*/
+	ret = _citrus_ctype_init(&rl);
+	if (ret != 0) {
+		return (ret);
 	}
-	_citrus_ctype_encoding_init(info);
-	parse_variable(info, rl);
+	ret = _citrus_stdenc_init(info);
+	if (ret != 0) {
+		return (ret);
+	}
+	if (info != NULL) {
+		parse_variable(info, rl);
+	}
 
     if ((info->mode & _MODE_UTF32) == 0) {
         info->mb_cur_max = 6; /* endian + surrogate */
@@ -241,7 +260,7 @@ restart:
 }
 
 int
-_UTF1632_sputmbrune(_UTF1632EncodingInfo  *ei, char *s, size_t n, wchar_t wc, _UTF1632State *psenc, size_t *nresult)
+_UTF1632_sputmbrune(_UTF1632EncodingInfo *ei, char *s, size_t n, wchar_t wc, _UTF1632State *psenc, size_t *nresult)
 {
 	int ret;
 	wchar_t wc2;
@@ -335,34 +354,28 @@ _UTF1632_sputrune(rune_t c, char *string, size_t n, char **result)
 }
 
 int
-_UTF1632_encoding_init(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl)
+_UTF1632_sgetcsrune(_UTF1632EncodingInfo * __restrict ei, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
 {
-	_DIAGASSERT(ei != NULL);
+	_DIAGASSERT(wc != NULL);
 
-	memset((void *)ei, 0, sizeof(*ei));
-	parse_variable(ei, rl);
-
-    if ((ei->mode & _MODE_UTF32) == 0) {
-    	ei->mb_cur_max = 6; /* endian + surrogate */
-    } else {
-    	ei->mb_cur_max = 8; /* endian + normal */
-    }
-
-	if (ei->preffered_endian == _ENDIAN_UNKNOWN) {
-#if BYTE_ORDER == BIG_ENDIAN
-		ei->preffered_endian = _ENDIAN_BIG;
-#else
-		ei->preffered_endian = _ENDIAN_LITTLE;
-#endif
+	if (csid != 0) {
+		return (EILSEQ);
 	}
+
+	*wc = (_wc_t)idx;
 
 	return (0);
 }
 
-void
-_UTF1632_encoding_uninit(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl)
+int
+_UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
 {
+	_DIAGASSERT(csid != NULL && idx != NULL);
 
+	*csid = 0;
+	*idx = (_index_t)wc;
+
+	return (0);
 }
 
 #define MATCH(x, act) 										\

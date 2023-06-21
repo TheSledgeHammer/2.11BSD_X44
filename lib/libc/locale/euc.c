@@ -106,6 +106,7 @@ static char sccsid[] = "@(#)euc.c	8.1 (Berkeley) 6/4/93";
 #include <stdlib.h>
 
 #include <citrus/citrus_ctype.h>
+#include <citrus/citrus_stdenc.h>
 
 typedef _Encoding_Info				_EUCEncodingInfo;
 typedef _Encoding_TypeInfo 			_EUCCTypeInfo;
@@ -121,29 +122,48 @@ rune_t	_EUC_sgetrune(const char *, size_t, char const **);
 int		_EUC_sputrune(rune_t, char *, size_t, char **);
 int		_EUC_sgetmbrune(_EUCEncodingInfo *, wchar_t *, const char **, size_t, _EUCState *, size_t *);
 int 	_EUC_sputmbrune(_EUCEncodingInfo *, char *, wchar_t, _EUCState *, size_t *);
+int		_EUC_sgetcsrune(_EUCEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
+int		_EUC_sputcsrune(_EUCEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
+
 static int _EUC_set(u_int);
 static int parse_variable(_EUCEncodingInfo *, _RuneLocale *);
+
+struct _RuneOps _euc_runeops = {
+		.ro_sgetrune 	=  	_EUC_sgetrune,
+		.ro_sgetrune 	=  	_EUC_sgetrune,
+		.ro_sgetmbrune 	=  	_EUC_sgetmbrune,
+		.ro_sgetmbrune 	=  	_EUC_sgetmbrune,
+		.ro_sgetcsrune  =	_EUC_sgetcsrune,
+		.ro_sputcsrune	= 	_EUC_sputcsrune,
+};
 
 int
 _EUC_init(rl)
 	_RuneLocale *rl;
 {
 	_EUCCTypeInfo 	*info;
-	int err;
+	int ret;
 
+	rl->ops = &_euc_runeops;
+	/*
 	rl->ops->ro_sgetrune = _EUC_sgetrune;
 	rl->ops->ro_sputrune = _EUC_sputrune;
 	rl->ops->ro_sgetmbrune = _EUC_sgetmbrune;
 	rl->ops->ro_sputmbrune = _EUC_sputmbrune;
-
-	err = _citrus_ctype_init(&rl);
-	if (err != 0) {
-		return (err);
+	*/
+	ret = _citrus_ctype_init(&rl);
+	if (ret != 0) {
+		return (ret);
 	}
-	_citrus_ctype_encoding_init(info);
-	err = parse_variable(info, rl);
-	if (err != 0) {
-		return (err);
+	ret = _citrus_stdenc_init(info);
+	if (ret != 0) {
+		return (ret);
+	}
+	if (info != NULL) {
+		ret = parse_variable(info, rl);
+		if (ret != 0) {
+			return (ret);
+		}
 	}
 
 	_CurrentRuneLocale = rl;
@@ -312,6 +332,37 @@ int
 _EUC_sputrune(rune_t c, char *string, size_t n, char **result)
 {
 	return (emulated_sputrune(c, string, n, result));
+}
+
+int
+_EUC_sgetcsrune(_EUCEncodingInfo * __restrict ei, wchar_t * __restrict wc, _csid_t csid, _index_t idx)
+{
+
+	_DIAGASSERT(ei != NULL && wc != NULL);
+
+	if ((csid & ~ei->mask) != 0 || (idx & ei->mask) != 0) {
+		return (EINVAL);
+	}
+
+	*wc = (wchar_t)csid | (wchar_t)idx;
+
+	return (0);
+}
+
+int
+_EUC_sputcsrune(_EUCEncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+{
+	wchar_t m, nm;
+
+	_DIAGASSERT(ei != NULL && csid != NULL && idx != NULL);
+
+	m = wc & ei->mask;
+	nm = wc & ~m;
+
+	*csid = (_citrus_csid_t)m;
+	*idx  = (_citrus_index_t)nm;
+
+	return (0);
 }
 
 static int

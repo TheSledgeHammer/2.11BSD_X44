@@ -35,6 +35,11 @@
  *
  */
 
+#include <sys/cdefs.h>
+#include <sys/null.h>
+#include <errno.h>
+
+#include "citrus_ctype.h"
 #include "citrus_ctype_template.h"
 #include "citrus_stdenc.h"
 
@@ -43,24 +48,31 @@
  */
 
 int
-_citrus_stdenc_init(_ENCODING_INFO * __restrict ei,  const void * __restrict var, size_t lenvar, _ENCODING_TRAITS * __restrict et)
+_citrus_stdenc_init(_ENCODING_INFO * __restrict info)
 {
+	_ENCODING_INFO *ei;
+	_ENCODING_TRAITS *et;
 	int ret;
 
 	if (sizeof(_ENCODING_INFO) > 0) {
 		ei = calloc(1, sizeof(_ENCODING_INFO));
 		if (ei == NULL) {
+			free((void*) ei);
 			return (errno);
 		}
 	}
 
-	ret = _FUNCNAME(encoding_init)(ei, var, lenvar);
-	if (ret) {
-		free((void*) ei);
-		return (ret);
+	_citrus_ctype_encoding_init(ei);
+
+	et = malloc(sizeof(*et));
+	if (et == NULL) {
+		free((void*) et);
+		return (errno);
 	}
 	et->state_size = sizeof(_ENCODING_STATE);
 	et->mb_cur_max = _ENCODING_MB_CUR_MAX(ei);
+	ei->traits = et;
+	info = ei;
 	return (0);
 }
 
@@ -68,7 +80,7 @@ void
 _citrus_stdenc_uninit(_ENCODING_INFO * __restrict ei)
 {
 	if (ce) {
-		_FUNCNAME(encoding_uninit)(ei);
+		_citrus_ctype_encoding_uninit(ei);
 		free(ei);
 	}
 }
@@ -76,7 +88,7 @@ _citrus_stdenc_uninit(_ENCODING_INFO * __restrict ei)
 int
 _citrus_stdenc_init_state(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __restrict ps)
 {
-	_FUNCNAME(init_state)(ei, ps);
+	_citrus_ctype_init_state(ei, ps);
 	return (0);
 }
 
@@ -102,7 +114,7 @@ _citrus_stdenc_mbtocs(_ENCODING_INFO * __restrict ei, _citrus_csid_t * __restric
 
 	ret = _citrus_ctype_mbrtowc_priv(ei, &wc, s, n, ps, nresult);
 	if (!ret && *nresult != (size_t)-2) {
-		_citrus_stenc_wctocs(ei, csid, idx, wc);
+		_citrus_stdenc_wctocs(ei, csid, idx, wc);
 	}
 	return (ret);
 }
@@ -118,7 +130,7 @@ _citrus_stdenc_cstomb(_ENCODING_INFO * __restrict ei, char * __restrict s, size_
 	wc = 0;
 
 	if (csid != _CITRUS_CSID_INVALID) {
-		ret = _citrus_stenc_cstowc(ei, &wc, csid, idx);
+		ret = _citrus_stdenc_cstowc(ei, &wc, csid, idx);
 		if (ret) {
 			return (ret);
 		}
