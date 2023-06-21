@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 
 #include "runefile.h"
 #include <citrus/citrus_ctype.h>
+#include <citrus/citrus_stdenc.h>
 
 extern struct _RuneOps _none_runeops;
 
