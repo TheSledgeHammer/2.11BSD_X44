@@ -170,12 +170,6 @@ _UTF8_init(_RuneLocale *rl)
 	return (0);
 }
 
-static __inline void
-_UTF8_init_state(_UTF8EncodingInfo * __restrict  ei, _UTF8State * __restrict psenc)
-{
-	psenc->chlen = 0;
-}
-
 int
 _UTF8_sgetmbrune(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _UTF8State *psenc, size_t *nresult)
 {
@@ -184,7 +178,7 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, 
 	int c;
 	int i;
 	int chlenbak;
-
+s
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(s != NULL);
@@ -193,7 +187,7 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, 
 	s0 = *s;
 
 	if (s0 == NULL) {
-		_UTF8_init_state(ei, psenc);
+		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0; /* state independent */
 		return 0;
 	}

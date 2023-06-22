@@ -158,13 +158,6 @@ is_basic(wchar_t wc)
 	return (uint32_t) wc <= 0x9F && wc != 0x24 && wc != 0x40 && wc != 0x60;
 }
 
-static __inline void
-/*ARGSUSED*/
-_UES_init_state(_UESEncodingInfo * __restrict ei, _UESState * __restrict psenc)
-{
-	psenc->chlen = 0;
-}
-
 int
 _UES_init(rl)
 	_RuneLocale *rl;
@@ -210,7 +203,7 @@ _UES_sgetmbrune(_UESEncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, _U
 	_DIAGASSERT(nresult != NULL);
 
 	if (*s == NULL) {
-		_UES_init_state(ei, psenc);
+		_citrus_ctype_init_state(ei, psenc);
 		*nresult = 0;
 		return 0;
 	}
