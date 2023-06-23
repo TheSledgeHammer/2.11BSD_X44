@@ -52,8 +52,8 @@ struct cfresource {
 	} cr_u;
 };
 
-extern struct cfhint 	allhints[];				/* head of list of device hints */
-extern int 				cfhint_count; 			/* hint count */
+//extern struct cfhint 	allhints[];				/* head of list of device hints */
+//extern int 				cfhint_count; 			/* hint count */
 
 /* Access functions for device resources. */
 int				resource_int_value(const char *, int, const char *, int *);
