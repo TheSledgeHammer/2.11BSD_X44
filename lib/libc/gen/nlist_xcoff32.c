@@ -113,7 +113,7 @@ XCOFFNAMEEND(__fdnlist)(fd, list)
 	 */
 	if (check(0, sizeof *exechdrp))
 		BADUNMAP;
-	exechdrp = (struct ecoff_exechdr *)&mappedfile[0];
+	exechdrp = (xcoff_exechdr *)&mappedfile[0];
 
 	if (XCOFF_BADMAG(exechdrp))
 		BADUNMAP;
@@ -127,12 +127,12 @@ XCOFFNAMEEND(__fdnlist)(fd, list)
 	if (check(symhdroff, sizeof *symhdrp) ||
 	    sizeof *symhdrp != symhdrsize)
 		BADUNMAP;
-	symhdrp = (struct ecoff_symhdr *)&mappedfile[symhdroff];
+	symhdrp = (xcoff_symhdr *)&mappedfile[symhdroff];
 
 	nesyms = symhdrp->esymMax;
 	if (check(symhdrp->cbExtOffset, nesyms * sizeof *esyms))
 		BADUNMAP;
-	esyms = (struct ecoff_extsym *)&mappedfile[symhdrp->cbExtOffset];
+	esyms = (struct xcoff_extsym *)&mappedfile[symhdrp->cbExtOffset];
 	extstroff = symhdrp->cbSsExtOffset;
 
 	/*
