@@ -1,1 +1,11 @@
-127.0.0.1	localhost.2bsd.com localhost.arpa localhost
+# Host Database
+# This file should contain the addresses and aliases
+# for local hosts that share this file.
+# It is used only for "ifconfig" and other operations
+# before the nameserver is started.
+#
+#
+
+#127.0.0.1		localhost.2bsd.com localhost.arpa localhost
+::1				localhost localhost.
+127.0.0.1		localhost localhost.

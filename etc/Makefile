@@ -87,10 +87,11 @@ INSTALLATION_DIRS=	binary binary/sets binary/kernel installation
 BINOWN= root
 BINGRP= wheel
 UTMPGRP= utmp
-BIN1+=	csh.cshrc csh.login csh.logout gettytab group hosts	locate.conf 	\
-		login.conf man.conf passwd.conf phones profile 	protocols rc 		\
-		rc.firewall rc.network rc.resume rc.shutdown rc.subr rc.suspend 	\
-		rc.sysctl services shells shrc syslog.conf wscons.conf 	
+BIN1+=	csh.cshrc csh.login csh.logout ftpusers gettytab group hosts 	\
+		hosts.allow hosts.deny inetd.conf man.conf netstart networks 	\
+		ntp.conf passwd.conf printcap phones profile protocols rc 		\
+		rc.firewall rc.network rc.resume rc.shutdown rc.subr rc.suspend \
+		rc.sysctl remote services shells shrc syslog.conf wscons.conf 	
 
 # Use machine-specific disktab if it exists, or the MI one otherwise
 .if exists(etc.${MACHINE}/disktab)
@@ -226,6 +227,7 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 555 \
 		${.CURDIR}/MAKEDEV.local ${.CURDIR}/etc.${MACHINE_CPU}/MAKEDEV ${DESTDIR}/dev
 .for owner group mode file in 									\
+		
 		${BINOWN} operator		664	/etc/dumpdates  			\
 		${BINOWN} operator		600	/etc/skeykeys 				\
 		root wheel				600	/var/at/at.deny 			\

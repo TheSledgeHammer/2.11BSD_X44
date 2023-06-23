@@ -64,6 +64,7 @@ static int emitloc(FILE *);
 static int emitpseudo(FILE *);
 static int emitpv(FILE *);
 static int emitroots(FILE *);
+static int emithints(FILE *);
 
 #define	SEP(pos, max)	(((u_int)(pos) % (max)) == 0 ? "\n\t" : " ")
 
@@ -90,7 +91,7 @@ mkioconf(void)
 	v = emithdr(fp);
 	if (v != 0 || emitexterns(fp) || emitloc(fp)
 			|| emitpv(fp) || emitcfdata(fp) || emitroots(fp)
-			|| emitpseudo(fp)) {
+			|| emitpseudo(fp) || emithints(fp)) {
 		if (v >= 0)
 			(void)fprintf(stderr,
 			    "config: error writing ioconf.c: %s\n",
@@ -396,4 +397,33 @@ emitpseudo(FILE *fp)
 			return (1);
 	}
 	return (fputs("\t{ 0, 0 }\n};\n", fp) < 0);
+}
+
+/*
+ * Emit the cfhints array.
+ */
+static int
+emithints(FILE *fp)
+{
+	struct devi **p, *i;
+	int count;
+
+	if (fprint(fp, "\n\ struct cfhint cfhints[] = {\n\ ") < 0) {
+		return (1);
+	}
+	if (fprintf(fp, "int cfhint_count = %d;\n", count) < 0) {
+		return (1);
+	}
+	for (p = packed; (i = *p) != NULL; p++) {
+		count++;
+		if (fprintf(fp, "%s %d\n", i->i_name, i->i_unit) < 0) {
+			return (1);
+		}
+
+		if (fputs(" */\n", fp) < 0) {
+			return (-1);
+		}
+	}
+
+	return (fputs("    {0}\n};\n", fp) < 0);
 }
