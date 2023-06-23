@@ -43,8 +43,8 @@
  * Access functions for device resources.
  */
 /* Supplied by config(8) in ioconf.c */
-struct cfhint allhints[0];	/* head of list of device hints */
-int cfhint_count; 			/* hint count */
+extern struct cfhint allhints[];	/* head of list of device hints */
+extern int cfhint_count; 		/* hint count */
 
 /* Runtime version */
 struct cfhint *hint = allhints;
