@@ -156,6 +156,7 @@ emithdr(FILE *ofp)
 #include <sys/param.h>\n\
 #include <sys/conf.h>\n\
 #include <sys/device.h>\n\
+#include <sys/hint.h>\n\
 #include <sys/mount.h>\n", ofp) < 0)
 			rv = 1;
 	}
@@ -400,6 +401,15 @@ emitpseudo(FILE *fp)
 }
 
 /*
+ * Emit the cfhint_counter.
+ */
+static int
+emithintcount(FILE *fp, int count)
+{
+    return (fprintf(fp, "\nint cfhint_count = %d;\n", count) < 0);
+}
+
+/*
  * Emit the cfhints array.
  */
 static int
@@ -407,23 +417,31 @@ emithints(FILE *fp)
 {
 	struct devi **p, *i;
 	int count;
+    char buf[80];
 
-	if (fprint(fp, "\n\ struct cfhint cfhints[] = {\n\ ") < 0) {
-		return (1);
-	}
-	if (fprintf(fp, "int cfhint_count = %d;\n", count) < 0) {
+    count = 0;
+
+    if (fprintf(fp,"\n/* NOTE: cfhints is a work in progress and is not ready for production use!! */\n") < 0) {
+        return (1);
+    }
+    if (fprintf(fp,"\nstruct cfhint allhints[] = {\n") < 0) {
 		return (1);
 	}
 	for (p = packed; (i = *p) != NULL; p++) {
-		count++;
-		if (fprintf(fp, "%s %d\n", i->i_name, i->i_unit) < 0) {
-			return (1);
-		}
-
-		if (fputs(" */\n", fp) < 0) {
-			return (-1);
-		}
+        if (i->i_name) {
+            if (i->i_unit >= 0) {
+                  snprintf(buf, sizeof(buf), "%s%d", i->i_name, i->i_unit);
+            } else {
+                  snprintf(buf, sizeof(buf), "%s", i->i_name);
+            }
+            if (fprintf(fp, "\t\"%s\",\n", buf) < 0) {
+                return (1);
+            }
+            count++;
+        }
 	}
-
-	return (fputs("    {0}\n};\n", fp) < 0);
+    if (fprintf(fp,"};\n") < 0) {
+        return (1);
+    }
+    return (emithintcount(fp, count));
 }
