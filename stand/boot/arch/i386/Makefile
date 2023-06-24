@@ -16,7 +16,9 @@ SUBDIR+= boot0 boot0sio boot2 cdboot isoboot
 
 .if ${LOADER_GPT_SUPPORT} == "yes"
 SUBDIR+= gptboot
-.endif		
+.endif	
+
+SUBDIR+= loader	
 
 INCSDIR= 	/usr/include/stand/boot/arch/i386
 

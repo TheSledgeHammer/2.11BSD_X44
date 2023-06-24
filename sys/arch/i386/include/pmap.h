@@ -270,8 +270,7 @@ struct pmap {
 #else
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
 #endif
-	vm_offset_t				*pm_pdirpa;		/* PA of PD (read-only after create) */
-
+	vm_offset_t				pm_pdirpa[NPGPTD];/* PA of PD (read-only after create) */
 	bool_t					pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
 	short					pm_count;		/* pmap reference count */
