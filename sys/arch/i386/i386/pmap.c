@@ -580,7 +580,7 @@ pmap_bootstrap(firstaddr)
 	}
 	kernel_pmap->pm_pdpt = (pdpt_entry_t *)(KERNBASE + IdlePDPT);
 #else
-	kernel_pmap->pm_pdirpa[0] = (vm_offset_t *)IdlePTD;
+	kernel_pmap->pm_pdirpa[0] = (vm_offset_t)IdlePTD;
 #endif
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
 	LIST_INIT(&pmap_header);
@@ -934,7 +934,7 @@ pmap_create(size)
 static void
 pmap_pinit_pdir(pdir, pdirpa)
 	pd_entry_t *pdir;
-	vm_offset_t pdirpa;
+	vm_offset_t *pdirpa;
 {
 	int i;
 
@@ -950,7 +950,7 @@ pmap_pinit_pdir(pdir, pdirpa)
 	bzero(pdir, PDIR_SLOT_PTE * sizeof(pd_entry_t));
 
 	/* put in recursive PDE to map the PTEs */
-	pdir[PDIR_SLOT_PTE] = pdirpa | PG_V | PG_KW;
+	pdir[PDIR_SLOT_PTE] = pdirpa[0] | PG_V | PG_KW;
 
 	bcopy(&PDP_BASE[PDIR_SLOT_KERN], &pdir[PDIR_SLOT_KERN], sizeof(pd_entry_t));
 
