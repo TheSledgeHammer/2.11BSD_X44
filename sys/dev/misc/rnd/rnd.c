@@ -136,10 +136,10 @@ static u_char 		rs_buf[CHACHA20_BUF_SIZE];
 static size_t 		rs_have;		/* valid bytes at end of rs_buf */
 static size_t 		rs_count;		/* bytes till reseed */
 
-static inline void	_rs_init(u_char *, size_t);
-static void			_rs_stir(int);
-static inline void 	_rs_rekey(u_char *, size_t);
-static inline void	_rs_stir_if_needed(size_t);
+static inline void	_chacha20_init(u_char *, size_t);
+static void			_chacha20_stir(int);
+static inline void 	_chacha20_rekey(u_char *, size_t);
+static inline void	_chacha20_stir_if_needed(size_t);
 
 dev_type_open(rndopen);
 dev_type_read(rndread);
@@ -235,7 +235,7 @@ rnd_init(void)
 		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
 	}
 	
-	_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
+	_chacha20_init(rs_buf, CHACHA20_EBUF_SIZE);
 
 	rnd_ready = 1;
 
@@ -558,7 +558,7 @@ rnd_extract_data(p, len)
 		/* Try once again to put something in the pool */
 		c = rnd_counter();
 		rndpool_add_data(&rnd_pool, &c, sizeof(u_int32_t), 1);
-		_rs_stir_if_needed(len);
+		_chacha20_stir_if_needed(len);
 	}
 	retval = rndpool_extract_data(&rnd_pool, p, len);
 	splx(s);
@@ -568,7 +568,7 @@ rnd_extract_data(p, len)
 /* random keystream by ChaCha */
 
 static inline void
-_rs_init(buf, n)
+_chacha20_init(buf, n)
 	u_char *buf;
 	size_t n;
 {
@@ -578,11 +578,11 @@ _rs_init(buf, n)
 }
 
 static void
-_rs_seed(buf, n)
+_chacha20_seed(buf, n)
 	u_char *buf;
 	size_t n;
 {
-	_rs_rekey(buf, n);
+	_chacha20_rekey(buf, n);
 
 	/* invalidate rs_buf */
 	rs_have = 0;
@@ -592,7 +592,7 @@ _rs_seed(buf, n)
 }
 
 static void
-_rs_stir(do_lock)
+_chacha20_stir(do_lock)
 	int do_lock;
 {
 	u_int8_t buf[CHACHA20_EBUF_SIZE], *p;
@@ -607,7 +607,7 @@ _rs_stir(do_lock)
 	 if (do_lock) {
 		 simple_lock(&rnd_lock);
 	 }
-	 _rs_seed(buf, sizeof(buf));
+	 _chacha20_seed(buf, sizeof(buf));
 	 if (do_lock) {
 		 simple_unlock(&rnd_lock);
 	 }
@@ -615,25 +615,25 @@ _rs_stir(do_lock)
 }
 
 static inline void
-_rs_stir_if_needed(len)
+_chacha20_stir_if_needed(len)
 	size_t len;
 {
 	static int rs_initialized;
 
 	if (!rs_initialized) {
 		/* seeds cannot be cleaned yet, random_start() will do so */
-		_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
+		_chacha20_init(rs_buf, CHACHA20_EBUF_SIZE);
 		rs_count = 1024 * 1024 * 1024; /* until main() runs */
 		rs_initialized = 1;
 	} else if (rs_count <= len) {
-		_rs_stir(0);
+		_chacha20_stir(0);
 	} else {
 		rs_count -= len;
 	}
 }
 
 static inline void
-_rs_rekey(dat, datlen)
+_chacha20_rekey(dat, datlen)
 	u_char *dat;
 	size_t datlen;
 {
@@ -654,7 +654,7 @@ _rs_rekey(dat, datlen)
 	}
 
 	/* immediately reinit for backtracking resistance */
-	_rs_init(rs_buf, CHACHA20_EBUF_SIZE);
+	_chacha20_init(rs_buf, CHACHA20_EBUF_SIZE);
 	memset(rs_buf, 0, CHACHA20_EBUF_SIZE);
 	rs_have = sizeof(rs_buf) - CHACHA20_KEY_SIZE - CHACHA20_IV_SIZE;
 }

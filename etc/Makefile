@@ -115,11 +115,11 @@ BIN2+=	motd
 # -rw-------
 BIN3+=	hosts.equiv
 
-#SYSPKG=	etc
-#ETC_PKG=-T etc_pkg
-#BASE_PKG=-T base_pkg
-#ETC_INSTALL_FILE=cd ${.CURDIR} && ${INSTALL_FILE} ${ETC_PKG}
-#ETC_INSTALL_OBJ_FILE=cd ${.OBJDIR} && ${INSTALL_FILE} ${ETC_PKG}
+SYSPKG=	etc
+ETC_PKG=-T etc_pkg
+BASE_PKG=-T base_pkg
+ETC_INSTALL_FILE=cd ${.CURDIR} && ${INSTALL_FILE} ${ETC_PKG}
+ETC_INSTALL_OBJ_FILE=cd ${.OBJDIR} && ${INSTALL_FILE} ${ETC_PKG}
 
 .if ${TARGET_ENDIANNESS} == "1234"
 PWD_MKDB_ENDIAN=	-L
@@ -296,7 +296,7 @@ TAR_SUFF=${"${USE_XZ_SETS:Uno}"!="no":?tar.xz:tgz}
 
 # TODO: Complete when ready
 
-SUBDIR=	defaults rc.d mtree
+SUBDIR=	defaults periodic rc.d mtree
 
 .include <bsd.prog.mk>
 .include <bsd.subdir.mk>

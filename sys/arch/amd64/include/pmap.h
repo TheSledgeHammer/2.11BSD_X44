@@ -279,7 +279,7 @@ struct pmap {
 	pml4_entry_t   			*pm_pml4;       /* KVA of page map level 4 (top level) */
 	pml5_entry_t   			*pm_pml5;       /* KVA of page map level 5 (top level if la57 enabled) */
 
-	vm_offset_t				pm_pdirpa;		/* PA of PD (read-only after create) */
+	vm_offset_t				pm_pdirpa[NPGPTD];		/* PA of PD (read-only after create) */
 
 	enum pmap_type			pm_type;		/* regular or nested tables */
 

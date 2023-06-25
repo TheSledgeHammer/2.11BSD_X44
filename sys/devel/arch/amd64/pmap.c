@@ -294,7 +294,7 @@ pmap_bootstrap_la57(firstaddr)
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
 	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + IdlePML4);
 	kernel_pmap->pm_pml5 = (pml5_entry_t *)(KERNBASE + IdlePML5);
-	kernel_pmap->pm_pdirpa = (vm_offset_t)IdlePTD;
+	kernel_pmap->pm_pdirpa[0] = (vm_offset_t)IdlePTD;
 }
 
 void
