@@ -5,6 +5,7 @@
 #
 
 PROG=	chflags
+SRCS= 	chflags.c
 MAN=	chflags.1
 
 .include <bsd.prog.mk>

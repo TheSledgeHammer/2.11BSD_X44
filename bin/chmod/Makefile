@@ -2,5 +2,7 @@
 #	@(#)Makefile	8.1 (Berkeley) 5/31/93
 
 PROG=	chmod
+SRCS=	chmod.c
+MAN=	chmod.1
 
 .include <bsd.prog.mk>
