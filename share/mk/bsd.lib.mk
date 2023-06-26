@@ -34,7 +34,10 @@ MKSTATICLIB:=	no
 MKPIC:=			no
 . endif
 MKPROFILE:=		no
+_LINTINSTALL?=	no
 .endif
+
+_LINTINSTALL?=	${MKLINT}
 
 ##### Basic targets
 .PHONY:		checkver libinstall
@@ -67,10 +70,16 @@ LIBDO.${_lib}!=	cd "${_dir}" && ${PRINTOBJDIR}
 LDADD+=		-l${_lib}
 .else
 LDADD+=		-L${LIBDO.${_lib}} -l${_lib}
-DPADD+=		${LIBDO.${_lib}}/lib${_lib}.so	# Don't use _LIB_PREFIX
+.if exists(${LIBDO.${_lib}}/lib${_lib}_pic.a)
+DPADD+=         ${LIBDO.${_lib}}/lib${_lib}_pic.a
+.elif exists(${LIBDO.${_lib}}/lib${_lib}.so)
+DPADD+=         ${LIBDO.${_lib}}/lib${_lib}.so
+.else
+DPADD+=         ${LIBDO.${_lib}}/lib${_lib}.a
+.endif
 .endif
 .endfor
-.endif									# }
+.endif										# }
 
 ##### Build and install rules
 MKDEP_SUFFIXES?=	.o .po .pico .go .ln .d
