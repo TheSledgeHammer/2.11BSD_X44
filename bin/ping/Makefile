@@ -3,6 +3,7 @@
 #
 
 PROG= 	ping
+SRCS=	ping.c
 MAN=	ping.8
 
 .include <bsd.prog.mk>

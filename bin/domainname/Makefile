@@ -2,5 +2,6 @@
 #	@(#)Makefile	8.1 (Berkeley) 5/31/93
 
 PROG=	domainname
+SRCS=	domainname.c
 
 .include <bsd.prog.mk>

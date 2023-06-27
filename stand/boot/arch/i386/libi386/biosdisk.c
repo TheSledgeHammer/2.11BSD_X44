@@ -256,6 +256,8 @@ bd_print(int verbose)
 		dev.d_kind.biosdisk.unit = i;
 		dev.d_kind.biosdisk.slice = -1;
 		dev.d_kind.biosdisk.partition = -1;
+		dev.d_kind.biosdisk.adaptor = -1;
+		dev.d_kind.biosdisk.controller = -1;
 
 		if (!bd_opendisk(&od, &dev)) {
 
@@ -1267,4 +1269,37 @@ bd_getdev(struct i386_devdesc *dev)
 			  dev->d_kind.biosdisk.partition);
     DEBUG("dev is 0x%x\n", rootdev);
     return(rootdev);
+}
+
+int
+bd_makebootdev1(int major, int adaptor, int controller, int unit, int partition)
+{
+	return (MAKEBOOTDEV1(major, adaptor, controller, unit, partition));
+}
+
+int
+bd_makebootdev1(int major, int slice, int unit, int partition)
+{
+	return (MAKEBOOTDEV2(major, slice, unit, partition));
+}
+
+int
+bd_slicetoadaptor(int slice)
+{
+	return ((slice + 1) >> 4);
+}
+
+int
+bd_slicetocontroller(int slice)
+{
+	return ((slice + 1) & 0xf);
+}
+
+void
+bd_setbootdev(struct i386_devdesc *dev, int slice, int partition)
+{
+	dev->d_kind.biosdisk.slice = slice;
+	dev->d_kind.biosdisk.partition = partition;
+	dev->d_kind.biosdisk.adaptor = slicetoadaptor(slice);
+	dev->d_kind.biosdisk.controller =  slicetocontroller(slice);
 }

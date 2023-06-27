@@ -3,6 +3,7 @@
 .include <bsd.own.mk>
 
 PROG=	rmail
+SRCS=	rmail.c
 MAN=	rmail.8
 
 .include <bsd.prog.mk>

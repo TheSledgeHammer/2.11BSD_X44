@@ -5,5 +5,6 @@
 #
 
 PROG= hostname
+SRCS= hostname.c
 
 .include <bsd.prog.mk>
