@@ -1,10 +1,25 @@
-#	$NetBSD: Makefile,v 1.9 2014/07/05 19:22:42 dholland Exp $
 #
-#	@(#)Makefile	8.1 (Berkeley) 6/8/93
-
-SECTION=reference/ref7
-ARTICLE=quotas
+# Copyright (c) 1986 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	6.1 (Berkeley) 5/13/86
+#
 SRCS=	quotas.ms
-MACROS=	-ms
+MACROS=	-msU
+PRINTER=Pdp
+TROFF=	ditroff -${PRINTER}
 
-.include <bsd.doc.mk>
+paper:	paper.${PRINTER}
+	lpr -${PRINTER} -n paper.${PRINTER}
+
+paper.${PRINTER}: ${SRCS}
+	${TROFF} ${MACROS} -t ${SRCS} > paper.${PRINTER}
+
+clean:
+	rm -f paper.[PT]* *.spell errs Errs make.out
+
+spell:	${SRCS}
+	@for i in ${SRCS}; do \
+		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
+	done

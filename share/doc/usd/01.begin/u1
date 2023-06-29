@@ -1,42 +1,9 @@
-.\"	$NetBSD: u1,v 1.1 2007/11/29 12:35:06 mjf Exp $
-.\"
-.\" Copyright (C) Caldera International Inc.  2001-2002.
-.\" All rights reserved.
-.\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code and documentation must retain the above
-.\"    copyright notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed or owned by Caldera
-.\"	International, Inc.
-.\" 4. Neither the name of Caldera International, Inc. nor the names of other
-.\"    contributors may be used to endorse or promote products derived from
-.\"    this software without specific prior written permission.
-.\"
-.\" USE OF THE SOFTWARE PROVIDED FOR UNDER THIS LICENSE BY CALDERA
-.\" INTERNATIONAL, INC. AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-.\" IN NO EVENT SHALL CALDERA INTERNATIONAL, INC. BE LIABLE FOR ANY DIRECT,
-.\" INDIRECT INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-.\" (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-.\" SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-.\" STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.\" IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-.\" POSSIBILITY OF SUCH DAMAGE.
-.\"
-.\"	@(#)u1	8.1 (Berkeley) 6/8/93
+.\"	@(#)u1	6.1 (Berkeley) 5/22/86
 .\"
 .nr PS 9
 .if t .nr VS 11
 .if n .ls 2
+.if t .2C
 .nr PI .25i
 .SH
 INTRODUCTION
@@ -311,6 +278,7 @@ You can often fix this by logging out and logging back in.\(dg
 will often reset a terminal apparently in a strange state because a fullscreen
 editor crashed.
 .FE
+.FE
 Or you can read the description of the command
 .UL stty
 in section 1 of the manual.
@@ -325,6 +293,10 @@ stty \-tabs
 .P2
 and the system will convert each tab into the right number
 of blanks for you.
+If your terminal does have computer-settable tabs,
+the command
+.UL tabs
+will set the stops correctly for you.
 .SH
 Mistakes in Typing
 .PP
@@ -415,7 +387,7 @@ In a few programs, like the text editor,
 stops whatever the program is doing but leaves you in that program.
 Hanging up the phone will stop most programs.\(dd
 .FS
-\(dd In most modern shells, programs running in the background continue 
+\(dd If you use the c shell, programs running in the background continue 
 running even if you hang up.
 .FE
 .SH
@@ -452,12 +424,24 @@ type the command
 .P1
 mail
 .P2
-The headers of your mail will be printed, in the order of their receipt.
-A message can be read with the
-.UL print
-command,
-or specified directly by number.
-Other commands are described in the manual.
+Your mail will be printed,
+one message at a time,
+most recent message first.\(dd
+.FS
+\(dd The Berkeley mail program lists the headers of some number of unread pieces 
+of mail in the order of their receipt.
+.FE
+After each message,
+.UL mail
+waits for you to say what to do with it.
+The two basic responses are
+.UL d ,
+which deletes the message,
+and
+.UC RETURN ,
+which does not
+(so it will still be there the next time you read your mailbox).
+Other responses are described in the manual.
 (Earlier versions of
 .UL mail
 do not process one message at a time,
@@ -472,12 +456,15 @@ mail joe
 now type in the text of the letter
 on as many lines as you like ...
 After the last line of the letter
-type the character ``.'',
-alone on the last line,
-like so:
-\&.
+type the character ``control-d'',
+that is, hold down ``control'' and type
+a letter ``d''.
 .P2
 And that's it.
+The ``control-d'' sequence, often called ``EOF'' for end-of-file, is used throughout 
+the system
+to mark the end of input from a terminal,
+so you might as well get used to it.
 .PP
 For practice, send mail to yourself.
 (This isn't as strange as it might sound \(em
@@ -486,7 +473,7 @@ mail to oneself is a handy reminder mechanism.)
 There are other ways to send mail \(em
 you can send a previously prepared letter,
 and you can mail to a number of people all at once.
-For more details, see
+For more details see
 .UL mail (1).
 (The notation
 .UL mail (1)
@@ -572,7 +559,7 @@ and out''.
 To terminate
 the conversation, each side must
 type a ``control-d'' character alone
-on a line.
+on a line. (``Delete'' also works.)
 When the other person types his ``control-d'',
 you will get the message
 .UL EOF

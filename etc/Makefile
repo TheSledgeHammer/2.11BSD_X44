@@ -227,7 +227,6 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 555 \
 		${.CURDIR}/MAKEDEV.local ${.CURDIR}/etc.${MACHINE_CPU}/MAKEDEV ${DESTDIR}/dev
 .for owner group mode file in 									\
-		
 		${BINOWN} operator		664	/etc/dumpdates  			\
 		${BINOWN} operator		600	/etc/skeykeys 				\
 		root wheel				600	/var/at/at.deny 			\
