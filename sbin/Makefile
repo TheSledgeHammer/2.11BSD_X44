@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	disklabel fdisk fsck init ldconfig mknod mount 
+SUBDIR=	disklabel fdisk fsck init ldconfig mknod mount swapctl
 
 # support for various file systems
 SUBDIR+= newfs dumpfs
