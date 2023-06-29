@@ -4,7 +4,12 @@
 .include <bsd.own.mk>
 
 SUBDIR=	boot0cfg btxld catman chown chroot config cron dev_mkdb \
-		link mtree postinstall pwd_mkdb unlink zdump zic
+		link makefs mtree periodic postinstall pwd_mkdb unlink  \
+        zdump zic
+
+.if ${MKMAKEMANDB} != "no"
+SUBDIR+= makemandb
+.endif
 
 .if ${TOOLCHAIN_MISSING} != "no"
 SUBDIR+= mdsetimage
