@@ -129,7 +129,7 @@ vm_pmap_bootstrap(void)
 /*
  * vm_pmap_bootinit:
  *
- * Allocates item from space made available by vm_pbootstrap.
+ * Allocates item from space made available by vm_pmap_bootstrap.
  */
 void *
 vm_pmap_bootinit(item, size, nitems)
