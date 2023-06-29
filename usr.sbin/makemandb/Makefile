@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-MDOCDIR=${NETBSDSRCDIR}/external/bsd/mdocml
+MDOCDIR=${NETBSDSRCDIR}/contrib/mdocml
 MANCONFDIR=${NETBSDSRCDIR}/usr.bin/man
 
 PROGS=			makemandb apropos whatis
