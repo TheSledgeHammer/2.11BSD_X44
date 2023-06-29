@@ -7,6 +7,7 @@
 PROG=	init
 SRCS=	init.c
 MAN=	init.8
+
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
 

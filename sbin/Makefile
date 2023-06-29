@@ -14,6 +14,7 @@ SUBDIR+= mount_fdesc
 SUBDIR+= mount_lfs
 SUBDIR+= mount_lofs
 SUBDIR+= mount_msdos
+SUBDIR+= mount_ufml
 SUBDIR+= mount_union
 
 .include <bsd.subdir.mk>

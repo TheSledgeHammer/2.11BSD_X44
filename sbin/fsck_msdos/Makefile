@@ -12,4 +12,7 @@ FSCK=	${NETBSDSRCDIR}/sbin/fsck
 CPPFLAGS+= -I${FSCK}
 .PATH:	${FSCK}
 
+LDADD+=-lutil
+DPADD+=${LIBUTIL}
+
 .include <bsd.prog.mk>

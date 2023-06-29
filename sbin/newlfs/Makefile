@@ -8,7 +8,9 @@ PROG=	newlfs
 SRCS=	dkcksum.c lfs.c lfs_cksum.c misc.c newfs.c
 MAN=	newlfs.8
 
-.PATH:	/sys/ufs/lfs ${.CURDIR}/../disklabel
+DISKLABEL= ${NETBSDSRCDIR}/sbin/disklabel
+
+.PATH:	${NETBSDSRCDIR}/sys/ufs/lfs ${DISKLABEL}
 
 DPADD=  ${LIBUTIL}
 LDADD=  -lutil

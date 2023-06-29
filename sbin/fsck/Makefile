@@ -8,4 +8,7 @@ MAN=	fsck.8
 CPPFLAGS+= -D_PATH_RESCUE=\"${RESCUEDIR}\"
 .endif
 
+LDADD+=-lutil
+DPADD+=${LIBUTIL}
+
 .include <bsd.prog.mk>

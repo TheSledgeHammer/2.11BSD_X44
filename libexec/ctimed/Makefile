@@ -6,29 +6,11 @@
 
 .include <bsd.own.mk>
 
-CFLAGS=	 -O
-SEPFLAG= -i
+PROG= 	ctimed
 SRCS=	ctimed.c
-OBJS=	ctimed.o
+BINDIR=	/usr/libexec
 
-all: ctimed
-
-ctimed: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
-
-clean:
-	rm -f ${OBJS} ctimed tags 
-
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
-
-install: ctimed
-	install -s -o root -g bin -m 755 ctimed ${DESTDIR}/usr/libexec/ctimed
-
-lint: ${SRCS}
-	lint -hax ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+BINOWN=		root
+BINMODE=	755
 
 .include <bsd.prog.mk>

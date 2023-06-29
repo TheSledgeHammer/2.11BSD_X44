@@ -8,6 +8,7 @@
 
 PROG=	getty
 SRCS=	get_date.c gettytab.c main.c init.c subr.c
+
 DPADD+=	${LIBUTIL} ${LIBTERMINFO}
 LDADD+=	-lutil -lterminfo
 #MAN=

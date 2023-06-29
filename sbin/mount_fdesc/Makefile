@@ -6,8 +6,11 @@ PROG=	mount_fdesc
 SRCS=	mount_fdesc.c getmntopts.c
 MAN=	mount_fdesc.8
 
-MOUNT=	${.CURDIR}/../mount
-CFLAGS+= -I${MOUNT}
+MOUNT=	${NETBSDSRCDIR}/sbin/mount
+CPPFLAGS+= -I${NETBSDSRCDIR}/sys -I${MOUNT}
 .PATH:	${MOUNT}
+
+DPADD+=${LIBUTIL}
+LDADD+=-lutil
 
 .include <bsd.prog.mk>

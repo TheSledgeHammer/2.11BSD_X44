@@ -1,11 +1,9 @@
-#	$NetBSD: Makefile,v 1.12 2003/03/22 12:44:02 jdolecek Exp $
-#	@(#)Makefile	8.4 (Berkeley) 7/13/94
+#	@(#)Makefile	5.2 (Berkeley) 7/5/92
 
 .include <bsd.own.mk>
 
-PROG=	mount_union
-SRCS=	mount_union.c
-MAN=	mount_union.8
+PROG=	mount_ufml
+SRCS=	mount_ufml.c
 
 MOUNT=  ${NETBSDSRCDIR}/sbin/mount
 CPPFLAGS+= -I${NETBSDSRCDIR}/sys -I${MOUNT}
