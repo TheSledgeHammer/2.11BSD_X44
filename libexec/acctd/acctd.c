@@ -42,10 +42,14 @@ struct ACCTPARM Acctparms;
 FILE *Acctfp;
 char *Acctdcf = _PATH_ACCTDCF;
 
-int checkacctspace(), hupcatch(void), terminate(void);
-void usage(void), errline(int);
-void die(char *, ...), reportit(char *, ...);
-
+int	checkacctspace(void);
+int hupcatch(void);
+int terminate(void);
+void usage(void);
+void errline(int);
+void die(char *, ...);
+void reportit(char *, ...);
+void doit(void);
 extern	char	*__progname;
 
 int
@@ -160,8 +164,8 @@ main(argc, argv)
  * The central loop is here.  Try to read 4 accounting records at a time
  * to cut the overhead down some.  
 */
-
-doit()
+void
+doit(void)
 {
 	struct	acct	abuf[4];
 	struct	ACCTPARM ajunk;
@@ -457,7 +461,8 @@ reportit(char *str, ...)
 	va_end(ap);
 }
 
-void usage()
+void
+usage(void)
 {
 
 	die(

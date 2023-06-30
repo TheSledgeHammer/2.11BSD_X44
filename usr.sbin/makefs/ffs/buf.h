@@ -66,11 +66,10 @@ struct m_buf {
 };
 
 void		bcleanup(void);
-int		bread(struct m_vnode *, daddr_t, int, struct ucred *,
-    struct m_buf **);
+int			bread(struct m_vnode *, daddr_t, int, struct ucred *, struct m_buf **);
 void		brelse(struct m_buf *);
-int		bwrite(struct m_buf *);
-struct m_buf *	getblk(struct m_vnode *, daddr_t, int, int, int, int);
+int			bwrite(struct m_buf *);
+struct m_buf *getblk(struct m_vnode *, daddr_t, int, int, int, int);
 
 #define	bdwrite(bp)	bwrite(bp)
 #define	clrbuf(bp)	memset((bp)->b_data, 0, (u_int)(bp)->b_bcount)
