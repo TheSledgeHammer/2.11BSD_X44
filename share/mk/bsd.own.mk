@@ -856,38 +856,38 @@ MKSTATICPIE?=	no
 # MKBOOT: to be added to MKVARS.yes once current issues are fixed. see TODO.md 
 #
 
-
 #
 # MK* options which default to "yes".
 #
 _MKVARS.yes= \
-	MKATF \
 	MKBINUTILS \
 	MKBSDTAR \
-	MKCOMPLEX MKCVS MKCXX \
-	MKDOC MKDTC \
+	MKCOMPLEX \
+    MKCXX \
+	MKDOC \
 	MKDYNAMICROOT \
-	MKGCC MKGDB MKGROFF \
-	MKHESIOD MKHTML \
-	MKIEEEFP MKINET6 MKINFO MKIPFILTER MKISCSI \
-	MKKERBEROS \
-	MKKMOD \
-	MKLDAP MKLIBSTDCXX MKLINKLIB MKLVM \
-	MKMAN MKMANDOC \
-	MKMDNS \
+	MKGCC \
+    MKGDB \
+    MKGROFF \
+	MKHTML \
+	MKINFO \
+	MKLIBSTDCXX \
+    MKLINKLIB \
+	MKMAN \
+    MKMANDOC \
 	MKMAKEMANDB \
 	MKNLS \
-	MKNPF \
 	MKOBJ \
-	MKPAM MKPERFUSE \
-	MKPF MKPIC MKPICLIB MKPOSTFIX MKPROFILE \
-	MKRUMP \
-	MKSHARE MKSKEY MKSTATICLIB \
-	MKUNBOUND \
-	MKX11FONTS \
-	MKYP
+	MKPIC \
+    MKPICLIB \
+    MKPOSTFIX \
+    MKPROFILE \
+	MKSHARE \
+    MKSKEY \
+    MKSTATICLIB
+	
 .for var in ${_MKVARS.yes}
-${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
+${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uyes}}
 .endfor
 
 #
@@ -908,29 +908,83 @@ USE_SANITIZER?=		address
 MKLIBCSANITIZER?=	no
 USE_LIBCSANITIZER?=	undefined
 
+.if defined(MKREPRO)
+MKARZERO ?= ${MKREPRO}
+GROFF_FLAGS ?= -dpaper=letter
+ROFF_PAGESIZE ?= -P-pletter
+.endif
+
+#
+# Install the kernel as /netbsd/kernel and the modules in /netbsd/modules
+#
+KERNEL_DIR?=	no
+
 #
 # MK* options which default to "no".
 #
 _MKVARS.no= \
+    MKATF   \
 	MKARGON2 \
 	MKARZERO \
 	MKBSDGREP \
-	MKCATPAGES MKCOMPATTESTS MKCOMPATX11 MKCTF \
-	MKDEBUG MKDEBUGLIB MKDTB MKDTRACE \
+	MKCATPAGES \
+    MKCOMPATTESTS \
+    MKCOMPATX11 \
+    MKCTF \
+    MKCVS \
+	MKDEBUG \
+    MKDEBUGLIB \
+    MKDTC \
+    MKDTB \
+    MKDTRACE \
 	MKEXTSRC \
 	MKFIRMWARE \
+    MKHESIOD \
 	MKGROFFHTMLDOC \
+    MKIEEEFP \
+    MKINET6 \
+    MKIPFILTER \
+    MKISCSI \
+    MKKERBEROS \
 	MKKYUA \
-	MKLIBCXX MKLLD MKLLDB MKLLVM MKLLVMRT MKLINT \
-	MKMANZ MKMCLINKER \
-	MKNOUVEAUFIRMWARE MKNSD \
+	MKLIBCXX \
+    MKLDAP \
+    MKLLD \
+    MKLLDB \
+    MKLLVM \
+    MKLLVMRT \
+    MKLINT \
+    MKLVM \
+	MKMANZ \
+    MKMCLINKER \
+    MKMDNS \
+    MKKMOD \
+	MKNOUVEAUFIRMWARE \
+    MKNPF \
+    MKNSD \
 	MKOBJDIRS \
-	MKPCC MKPICINSTALL MKPIGZGZIP \
-	MKRADEONFIRMWARE MKREPRO \
-	MKSLJIT MKSOFTFLOAT MKSTRIPIDENT \
-	MKTEGRAFIRMWARE MKTPM \
-	MKUNPRIVED MKUPDATE \
-	MKX11 MKX11MOTIF MKXORG_SERVER \
+    MKPAM \
+	MKPCC \
+    MKPERFUSE \
+    MKPF \
+    MKPICINSTALL \
+    MKPIGZGZIP \
+	MKRADEONFIRMWARE \
+    MKREPRO \
+    MKRUMP \
+	MKSLJIT \
+    MKSOFTFLOAT \
+    MKSTRIPIDENT \
+	MKTEGRAFIRMWARE \
+    MKTPM \
+	MKUNBOUND \
+    MKUNPRIVED \
+    MKUPDATE \
+	MKX11 \
+    MKX11FONTS \
+    MKX11MOTIF \
+    MKXORG_SERVER \
+    MKYP \
 	MKZFS
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
@@ -1013,7 +1067,7 @@ METALOG?=	${DESTDIR}/METALOG
 METALOG.add?=	${TOOL_CAT} -l >> ${METALOG}
 .if (${_SRC_TOP_} != "")	# only set INSTPRIV if inside ${NETBSDSRCDIR}
 .if ${MKUNPRIVED} != "no"
-INSTPRIV.unpriv=-U -M ${METALOG} -D ${DESTDIR} -h sha1
+INSTPRIV.unpriv=-U -M ${METALOG} -D ${DESTDIR} -h sha256
 .else
 INSTPRIV.unpriv=
 .endif
@@ -1023,12 +1077,25 @@ SYSPKGTAG?=		${SYSPKG:D-T ${SYSPKG}_pkg}
 SYSPKGDOCTAG?=	${SYSPKG:D-T ${SYSPKG}-doc_pkg}
 STRIPFLAG?=	
 
-.if ${NEED_OWN_INSTALL_TARGET} != "no"
+#.if ${NEED_OWN_INSTALL_TARGET} != "no"
 INSTALL_DIR?=		${INSTALL} ${INSTPRIV} -d
 INSTALL_FILE?=		${INSTALL} ${INSTPRIV} ${COPY} ${PRESERVE} ${RENAME}
 INSTALL_LINK?=		${INSTALL} ${INSTPRIV} ${HRDLINK} ${RENAME}
 INSTALL_SYMLINK?=	${INSTALL} ${INSTPRIV} ${SYMLINK} ${RENAME}
 HOST_INSTALL_FILE?=	${INSTALL} ${COPY} ${PRESERVE} ${RENAME}
+#.endif
+
+
+# for crunchide & ldd, define the OBJECT_FMTS used by a MACHINE_ARCH
+#
+OBJECT_FMTS=
+.if	${MACHINE_ARCH} != "alpha" && ${MACHINE_ARCH} != "ia64"
+OBJECT_FMTS+=	elf32
+.endif
+.if	${MACHINE_ARCH} == "alpha" || ${MACHINE_ARCH:M*64*} != ""
+. if !(${MKCOMPAT:Uyes} == "no" && ${MACHINE_CPU} == "mips")
+OBJECT_FMTS+=	elf64
+. endif
 .endif
 
 #
@@ -1130,14 +1197,17 @@ _MKSHECHO?=	echo
 _MKMSG_BUILD?=		${_MKMSG} "  build "
 _MKMSG_CREATE?=		${_MKMSG} " create "
 _MKMSG_COMPILE?=	${_MKMSG} "compile "
+_MKMSG_EXECUTE?=	${_MKMSG} "execute "
 _MKMSG_FORMAT?=		${_MKMSG} " format "
 _MKMSG_INSTALL?=	${_MKMSG} "install "
 _MKMSG_LINK?=		${_MKMSG} "   link "
 _MKMSG_LEX?=		${_MKMSG} "    lex "
 _MKMSG_REMOVE?=		${_MKMSG} " remove "
+_MKMSG_REGEN?=		${_MKMSG} "  regen "
 _MKMSG_YACC?=		${_MKMSG} "   yacc "
 
 _MKSHMSG_CREATE?=	${_MKSHMSG} " create "
+_MKSHMSG_FORMAT?=	${_MKSHMSG} " format "
 _MKSHMSG_INSTALL?=	${_MKSHMSG} "install "
 
 _MKTARGET_BUILD?=	${_MKMSG_BUILD} ${.CURDIR:T}/${.TARGET}
