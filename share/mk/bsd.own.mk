@@ -890,7 +890,6 @@ _MKVARS.yes= \
 ${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
 .endfor
 
-
 #
 # MKGCCCMDS is only valid if we are building GCC so make it dependent on that.
 #

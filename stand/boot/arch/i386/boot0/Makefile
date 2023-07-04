@@ -1,12 +1,11 @@
 # $FreeBSD$
 
 PROG=		boot0
-NOMAN=
 STRIP=
+NOMAN=
+SRCS=		${PROG}.S
 BINDIR?=	/boot
 BINMODE=	444
-
-M4?=	m4
 
 # The default set of flags compiled into boot0.  This enables update (writing
 # the modified boot0 back to disk after running so that the selection made is

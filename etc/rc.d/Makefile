@@ -3,9 +3,11 @@
 
 .include <bsd.own.mk>
 
-CONFIGFILES=	DAEMON LOGIN NETWORKING SERVERS \
-				ccd local moused root ttys wscons wsmoused
-
+CONFIGFILES=	DAEMON DISKS LOGIN NETWORKING SERVERS 	\
+		bootconf.sh bootparams			\
+		ccd cron fsck ldconfig local 		\
+		makemandb motd mountcritlocal moused root \
+		ttys wscons wsmoused
 
 FILESDIR=		/etc/rc.d
 FILESMODE=		${BINMODE}

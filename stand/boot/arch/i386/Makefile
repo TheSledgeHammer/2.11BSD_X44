@@ -12,7 +12,7 @@ SUBDIR+= .WAIT
 SUBDIR+= mbr pmbr
 .endif
 
-SUBDIR+= boot0 boot0sio boot2 cdboot isoboot
+SUBDIR+= boot0 boot2 cdboot isoboot
 
 .if ${LOADER_GPT_SUPPORT} == "yes"
 SUBDIR+= gptboot

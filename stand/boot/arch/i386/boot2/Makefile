@@ -1,18 +1,17 @@
 # $FreeBSD$
 
-PROG=		boot2
+PROG=			boot2
 NOMAN=
 STRIP=
-BINDIR?=	/boot
-BINMODE=	444
+BINDIR?=		/boot
+BINMODE=		444
 CLEANFILES+=	boot1 boot1.out boot1.o \
-		boot2.ldr boot2.bin boot2.ld boot2.out boot2.o boot2.h \
-		boot2.s sio.o
-
-NM?=		nm
+				boot2.ldr boot2.bin boot2.ld boot2.out boot2.o boot2.h \
+				boot2.s sio.o
+NM?=			nm
 
 # A value of 0x80 enables LBA support.
-B1FLAGS=	0x80
+BOOT_BOOT1_FLAGS=	0x80
 
 BOOT_COMCONSOLE_PORT?= 0x3f8
 BOOT_COMCONSOLE_SPEED?= 9600
@@ -39,6 +38,7 @@ CFLAGS=	-elf -ffreestanding -Os -fno-builtin \
 	-mno-align-long-strings \
 	-mrtd \
 	-D${BOOT2_UFS} \
+	-DFLAGS=${BOOT_BOOT1_FLAGS} \
 	-I${.CURDIR}/../../common \
 	-I${.CURDIR}/../btx/lib -I. \
 	-Wall -Waggregate-return -Wbad-function-cast -Wcast-align \

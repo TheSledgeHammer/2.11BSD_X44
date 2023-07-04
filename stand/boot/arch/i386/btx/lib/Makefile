@@ -1,6 +1,6 @@
 # $FreeBSD$
 
-OBJS=		btxcsu.o btxsys.o btxv86.o
+OBJS=			btxcsu.o btxsys.o btxv86.o
 CLEANFILES+=	crt0.o ${OBJS}
 
 all: crt0.o
