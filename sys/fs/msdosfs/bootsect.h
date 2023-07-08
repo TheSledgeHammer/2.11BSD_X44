@@ -15,8 +15,8 @@
  *
  * October 1992
  */
-#ifndef _FS_MSDOSFS_BOOTSECT_H_
-#define	_FS_MSDOSFS_BOOTSECT_H_
+#ifndef _MSDOSFS_BOOTSECT_H_
+#define _MSDOSFS_BOOTSECT_H_
 
 /*
  * Format of a boot sector.  This is the first sector on a DOS floppy disk
@@ -97,4 +97,4 @@ union bootsector {
 #define	bsHugeSectors	bsBPB.bpbHugeSectors
 #endif
 
-#endif /* !_FS_MSDOSFS_BOOTSECT_H_ */
+#endif /* !_MSDOSFS_BOOTSECT_H_ */

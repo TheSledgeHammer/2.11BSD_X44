@@ -197,7 +197,7 @@ main(argc, argv)
 	int fsi, fso, len, n;
 	char *cp, *s1, *s2, *special, *opstring, buf[BUFSIZ];
 
-	if (progname = strrchr(*argv, '/'))
+	if (progname == strrchr(*argv, '/'))
 		++progname;
 	else
 		progname = *argv;

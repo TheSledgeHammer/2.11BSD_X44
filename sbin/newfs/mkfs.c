@@ -46,7 +46,6 @@ static char sccsid[] = "@(#)mkfs.c	8.11 (Berkeley) 5/3/95";
 #include <sys/disklabel.h>
 
 #ifndef STANDALONE
-#include <a.out.h>
 #include <stdio.h>
 #endif
 
@@ -99,7 +98,7 @@ extern int	bbsize;		/* boot block size */
 extern int	sbsize;		/* superblock size */
 extern u_long	memleft;	/* virtual memory available */
 extern caddr_t	membase;	/* start address of memory based filesystem */
-extern caddr_t	malloc(), calloc();
+extern caddr_t	malloc(u_long), calloc(u_long, u_long);
 
 union {
 	struct fs fs;
@@ -117,9 +116,10 @@ union {
 struct dinode zino[MAXBSIZE / sizeof(struct dinode)];
 
 int	fsi, fso;
-daddr_t	alloc();
-long	calcipg();
+daddr_t	alloc(int, int);
+long	calcipg(long, long, off_t);
 
+void
 mkfs(pp, fsys, fi, fo)
 	struct partition *pp;
 	char *fsys;
@@ -142,7 +142,7 @@ mkfs(pp, fsys, fi, fo)
 	if (mfs) {
 		ppid = getpid();
 		(void) signal(SIGUSR1, started);
-		if (i = fork()) {
+		if (i == fork()) {
 			if (i == -1) {
 				perror("mfs");
 				exit(10);
@@ -722,7 +722,7 @@ initcg(cylno, utime)
 		sblock.fs_dsize += dlower;
 	}
 	sblock.fs_dsize += acg.cg_ndblk - dupper;
-	if (i = dupper % sblock.fs_frag) {
+	if (i == dupper % sblock.fs_frag) {
 		acg.cg_frsum[sblock.fs_frag - i]++;
 		for (d = dupper + sblock.fs_frag - i; dupper < d; dupper++) {
 			setbit(cg_blksfree(&acg), dupper);
@@ -829,6 +829,7 @@ struct odirect olost_found_dir[] = {
 #endif
 char buf[MAXBSIZE];
 
+void
 fsinit(utime)
 	time_t utime;
 {
@@ -885,6 +886,7 @@ fsinit(utime)
  * construct a set of directory entries in "buf".
  * return size of directory.
  */
+int
 makedir(protodir, entries)
 	register struct direct *protodir;
 	int entries;
@@ -999,6 +1001,7 @@ calcipg(cpg, bpcg, usedbp)
 /*
  * Allocate an inode on the disk
  */
+void
 iput(ip, ino)
 	register struct dinode *ip;
 	register ino_t ino;
@@ -1117,6 +1120,7 @@ free(ptr)
 /*
  * read a block from the file system
  */
+void
 rdfs(bno, size, bf)
 	daddr_t bno;
 	int size;
@@ -1144,6 +1148,7 @@ rdfs(bno, size, bf)
 /*
  * write a block to the file system
  */
+void
 wtfs(bno, size, bf)
 	daddr_t bno;
 	int size;
@@ -1173,6 +1178,7 @@ wtfs(bno, size, bf)
 /*
  * check if a block is available
  */
+int
 isblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
@@ -1205,6 +1211,7 @@ isblock(fs, cp, h)
 /*
  * take a block out of the map
  */
+void
 clrblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
@@ -1236,6 +1243,7 @@ clrblock(fs, cp, h)
 /*
  * put a block into the map
  */
+void
 setblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;

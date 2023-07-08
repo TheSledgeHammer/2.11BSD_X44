@@ -38,6 +38,9 @@
  *	@(#)cd9660_node.h	8.6 (Berkeley) 5/14/95
  */
 
+#ifndef _ISOFS_CD9660_CD9660_NODE_H_
+#define _ISOFS_CD9660_CD9660_NODE_H_
+
 /*
  * Theoretically, directories can be more than 2Gb in length,
  * however, in practice this seems unlikely. So, we define
@@ -143,3 +146,4 @@ int cd9660_tstamp_conv17(u_char *, struct timespec *);
 struct iso_dnode *iso_dmap(dev_t, ino_t, int);
 void  iso_dunmap(dev_t);
 #endif
+#endif /* !_ISOFS_CD9660_CD9660_NODE_H_ */

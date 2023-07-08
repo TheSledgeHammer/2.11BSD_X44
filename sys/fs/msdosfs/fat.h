@@ -47,8 +47,8 @@
  * October 1992
  */
 
-#ifndef _FS_MSDOSFS_FAT_H_
-#define	_FS_MSDOSFS_FAT_H_
+#ifndef _MSDOSFS_FAT_H_
+#define	_MSDOSFS_FAT_H_
 
 /*
  * Some useful cluster numbers.

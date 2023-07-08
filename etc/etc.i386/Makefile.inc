@@ -3,9 +3,6 @@
 #	etc.i386/Makefile.inc -- i386-specific etc Makefile targets
 #
 
-# If you change the list of distributed kernels, don't forget
-# to update the release documentation in distrib/notes/common/contents
-
 KERNEL_SETS=		GENERIC.i386
 KERNEL_SETS+=		GENERIC_PAE.i386
 KERNEL_SETS+=		GENERIC_SMP.i386

@@ -38,6 +38,9 @@
  *	@(#)iso.h	8.6 (Berkeley) 5/10/95
  */
 
+#ifndef _ISOFS_CD9660_ISO_H_
+#define _ISOFS_CD9660_ISO_H_
+
 #define ISODCL(from, to) (to - from + 1)
 
 struct iso_volume_descriptor {
@@ -258,3 +261,5 @@ ino_t isodirino(struct iso_directory_record *, struct iso_mnt *);
  * Associated files have a leading '='.
  */
 #define	ASSOCCHAR	'='
+
+#endif /* !_ISOFS_CD9660_ISO_H_ */

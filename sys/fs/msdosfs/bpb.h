@@ -16,8 +16,8 @@
  * October 1992
  */
 
-#ifndef _FS_MSDOSFS_BPB_H_
-#define	_FS_MSDOSFS_BPB_H_
+#ifndef _MSDOSFS_BPB_H_
+#define	_MSDOSFS_BPB_H_
 /*
  * BIOS Parameter Block (BPB) for DOS 3.3
  */
@@ -210,4 +210,4 @@ struct fsinfo {
 	u_int8_t fsisig4[4];
 };
 
-#endif /* !_FS_MSDOSFS_BPB_H_ */
+#endif /* !_MSDOSFS_BPB_H_ */

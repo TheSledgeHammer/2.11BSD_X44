@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	disklabel fdisk fsck init ldconfig mknod mount swapctl
+SUBDIR=	disklabel fastboot fdisk fsck init ldconfig mknod mount swapctl
 
 # support for various file systems
 SUBDIR+= newfs dumpfs
@@ -16,5 +16,9 @@ SUBDIR+= mount_lofs
 SUBDIR+= mount_msdos
 SUBDIR+= mount_ufml
 SUBDIR+= mount_union
+
+.if (${USE_INET6} != "no")
+SUBDIR+= ping6
+.endif
 
 .include <bsd.subdir.mk>

@@ -38,6 +38,9 @@
  *	@(#)cd9660_mount.h	8.1 (Berkeley) 5/24/95
  */
 
+#ifndef _ISOFS_CD9660_CD9660_MOUNT_H_
+#define _ISOFS_CD9660_CD9660_MOUNT_H_
+
 /*
  * Arguments to mount ISO 9660 filesystems.
  */
@@ -52,3 +55,5 @@ struct iso_args {
 #define	ISOFSMNT_NOJOLIET		0x00000008 	/* disable Joliet extensions */
 #define	ISOFSMNT_NOCASETRANS	0x00000010 	/* do not make names lower case */
 #define	ISOFSMNT_RRCASEINS		0x00000020 	/* case insensitive Rock Ridge */
+
+#endif /* !_ISOFS_CD9660_CD9660_MOUNT_H_ */

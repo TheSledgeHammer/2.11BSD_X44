@@ -37,6 +37,8 @@
  *
  *	@(#)cd9660_rrip.h	8.2 (Berkeley) 12/5/94
  */
+#ifndef _ISOFS_CD9660_CD9660_RRIP_H_
+#define _ISOFS_CD9660_CD9660_RRIP_H_
 
 typedef struct {
 	char   type				[ISODCL (  0,    1)];
@@ -138,3 +140,5 @@ typedef struct {
 	char offset				[ISODCL ( 12,	19)];
 	char length				[ISODCL ( 20,	27)];
 } ISO_RRIP_CONT;
+
+#endif /* _ISOFS_CD9660_CD9660_RRIP_H_ */
