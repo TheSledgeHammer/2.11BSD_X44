@@ -17,8 +17,8 @@ SUBDIR+= mount_msdos
 SUBDIR+= mount_ufml
 SUBDIR+= mount_union
 
-.if (${USE_INET6} != "no")
-SUBDIR+= ping6
-.endif
+#.if (${USE_INET6} != "no")
+#SUBDIR+= ping6
+#.endif
 
 .include <bsd.subdir.mk>
