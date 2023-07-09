@@ -189,7 +189,7 @@ vm_psegment_alloc(pseg, mp, size, addr, type)
 	case PSEG_DATA:
 		data = pseg->ps_data;
 		if (data != NULL) {
-			rmallocate(mp, (long)addr, size, 1);
+			rmallocate(mp, (long)addr, size, nswapmap);
 		} else {
 			data = (vm_data_t)rmalloc(mp, size);
 		}
@@ -200,7 +200,7 @@ vm_psegment_alloc(pseg, mp, size, addr, type)
 	case PSEG_STACK:
 		stack = pseg->ps_stack;
 		if (stack != NULL) {
-			rmallocate(mp, (long)addr, size, 1);
+			rmallocate(mp, (long)addr, size, nswapmap);
 		} else {
 			stack = (vm_stack_t)rmalloc(mp, size);
 		}
@@ -211,7 +211,7 @@ vm_psegment_alloc(pseg, mp, size, addr, type)
 	case PSEG_TEXT:
 		text = pseg->ps_text;
 		if (text != NULL) {
-			rmallocate(mp, (long)addr, size, 1);
+			rmallocate(mp, (long)addr, size, nswapmap);
 		} else {
 			text = (vm_text_t)rmalloc(mp, size);
 		}
