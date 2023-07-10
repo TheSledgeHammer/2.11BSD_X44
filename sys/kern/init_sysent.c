@@ -52,6 +52,7 @@ int	stat();
 int	getlogin();
 int	lstat();
 int	dup();
+int	pipe();
 int	setlogin();
 int	profil();
 int	setuid();
@@ -253,7 +254,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    dup },				/* 41 = dup */
 	{ 0, 0,
-	    nosys },				/* 42 = obsolete old pipe */
+	    pipe },				/* 42 = pipe */
 	{ 0, 0,
 	    setlogin },				/* 43 = setlogin */
 	{ 0, 0,

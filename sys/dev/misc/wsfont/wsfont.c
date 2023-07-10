@@ -367,6 +367,17 @@ wsfont_find(const char *name, int width, int height, int stride, int bito, int b
 	return (-1);
 }
 
+
+void
+wsfont_walk(void (*matchfunc)(struct wsdisplay_font *, void *, int), void *cookie)
+{
+	struct font *ent;
+
+	TAILQ_FOREACH(ent, &list, chain) {
+		matchfunc(ent->font, cookie, ent->cookie);
+	}
+}
+
 static struct font *
 wsfont_add0(struct wsdisplay_font *font, int copy)
 {

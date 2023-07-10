@@ -328,12 +328,10 @@ TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
 YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
 TOOL_AWK=			${TOOLDIR}/bin/${_TOOL_PREFIX}awk
-TOOL_BOOT0CFG=		${TOOLDIR}/bin/${_TOOL_PREFIX}boot0cfg
-TOOL_BTXLD=			${TOOLDIR}/bin/${_TOOL_PREFIX}btxld
 TOOL_CAP_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}cap_mkdb
 TOOL_CAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}cat
 TOOL_CKSUM=			${TOOLDIR}/bin/${_TOOL_PREFIX}cksum
-
+TOOL_CLANG_TBLGEN=	${TOOLDIR}/bin/${_TOOL_PREFIX}clang-tblgen
 TOOL_COMPILE_ET=	${TOOLDIR}/bin/${_TOOL_PREFIX}compile_et
 TOOL_CONFIG=		${TOOLDIR}/bin/${_TOOL_PREFIX}config
 TOOL_CRUNCHGEN=		MAKE=${.MAKE:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}crunchgen
@@ -406,6 +404,7 @@ TOOL_SED=			${TOOLDIR}/bin/${_TOOL_PREFIX}sed
 TOOL_SOELIM=		${TOOLDIR}/bin/${_TOOL_PREFIX}soelim
 TOOL_SORTINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}sortinfo
 TOOL_STAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}stat
+TOOL_STRFILE=		${TOOLDIR}/bin/${_TOOL_PREFIX}strfile
 TOOL_TIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}tic
 TOOL_UUDECODE=		${TOOLDIR}/bin/${_TOOL_PREFIX}uudecode
 TOOL_VGRIND=		${TOOLDIR}/bin/${_TOOL_PREFIX}vgrind -f
@@ -434,8 +433,6 @@ TOOL_CXX.pcc=		p++
 
 TOOL_ASN1_COMPILE=	asn1_compile
 TOOL_AWK=			awk
-TOOL_BOOT0CFG=		boot0cfg
-TOOL_BTXLD=			btxld
 TOOL_CAP_MKDB=		cap_mkdb
 TOOL_CAT=			cat
 TOOL_CKSUM=			cksum
@@ -520,7 +517,7 @@ TOOL_ZIC=			zic
 
 # Standalone code should not be compiled with PIE or CTF
 # Should create a better test
-.if defined(BINDIR) && ${BINDIR} == "/usr/mdec"
+.if defined(BINDIR) && ${BINDIR} == "/usr/mdec" || ${BINDIR} == "/boot"
 NOPIE=			# defined
 NOCTF=			# defined
 .elif ${MACHINE} == "sun2"
@@ -599,7 +596,7 @@ MANDIR?=		/usr/share/man
 MANGRP?=		wheel
 MANOWN?=		root
 MANMODE?=		${NONBINMODE}
-MANINSTALL?=	maninstall catinstall
+#MANINSTALL?=	maninstall catinstall
 
 LIBDIR?=		/usr/lib
 LINTLIBDIR?=	/usr/libdata/lint
@@ -621,6 +618,19 @@ LOCALEDIR?=		/usr/share/locale
 LOCALEGRP?=		wheel
 LOCALEOWN?=		root
 LOCALEMODE?=	${NONBINMODE}
+
+DEBUGDIR?=		/usr/libdata/debug
+DEBUGGRP?=		wheel
+DEBUGOWN?=		root
+DEBUGMODE?=		${NONBINMODE}
+
+DTBDIR?=		/boot/dtb
+DTBGRP?=		wheel
+DTBOWN?=		root
+DTBMODE?=		${NONBINMODE}
+
+MKDIRMODE?=		0755
+MKDIRPERM?=		-m ${MKDIRMODE}
 
 # Data-driven table using make variables to control how 
 # toolchain-dependent targets and shared libraries are built

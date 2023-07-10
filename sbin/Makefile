@@ -3,7 +3,14 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	disklabel fastboot fdisk fsck init ldconfig mknod mount swapctl
+SUBDIR=	ccdconfig 				\
+		disklabel 				\
+		fastboot fdisk fsck 	\
+		init 					\
+		ldconfig 				\
+		mknod mount 			\
+		swapctl					\
+		wsconsctl
 
 # support for various file systems
 SUBDIR+= newfs dumpfs

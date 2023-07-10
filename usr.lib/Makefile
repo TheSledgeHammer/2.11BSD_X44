@@ -11,7 +11,7 @@
 .include <bsd.own.mk>
 
 SUBDIR= 	libbz2 libcurses libdbm libedit libexecinfo libform libkvm 		\
-			libm libmenu libmp libom libpanel libpci libresolv libtermcap 	\
-			libutil libvmf liby libz
+			libm libmenu libmp libom libpanel libpci libresolv libstubs		\
+			libtermcap libutil libvmf liby libz
 
 .include <bsd.subdir.mk>

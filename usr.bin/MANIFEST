@@ -34,9 +34,11 @@ rpcgen/		NetBSD
 sed/		NetBSD
 sortinfo/	NetBSD
 stat/		NetBSD
+strfile/	NetBSD
 time/		NetBSD
 touch/		NetBSD
 tsort/		NetBSD
+unstr/		NetBSD
 uudecode/	NetBSD
 uuencode/	NetBSD
 vgrind/		NetBSD

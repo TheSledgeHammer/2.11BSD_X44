@@ -52,15 +52,15 @@ __FBSDID("$FreeBSD$");
 #define	fs_old_rotbloff		fs_spare5[1]
 #define	fs_old_postbl_start	fs_maxbsize
 #define	fs_old_headswitch	fs_id[0]
-#define	fs_old_trkseek	fs_id[1]
-#define	fs_old_csmask	fs_spare1[0]
-#define	fs_old_csshift	fs_spare1[1]
+#define	fs_old_trkseek		fs_id[1]
+#define	fs_old_csmask		fs_spare1[0]
+#define	fs_old_csshift		fs_spare1[1]
 
 #define	FS_42POSTBLFMT		-1	/* 4.2BSD rotational table format */
 #define	FS_DYNAMICPOSTBLFMT	1	/* dynamic rotational table format */
 
 void ffs_csum_swap(struct csum *o, struct csum *n, int size);
-void ffs_csumtotal_swap(struct csum_total *o, struct csum_total *n);
+//void ffs_csumtotal_swap(struct csum_total *o, struct csum_total *n);
 
 void
 ffs_sb_swap(struct fs *o, struct fs *n)
@@ -78,21 +78,22 @@ ffs_sb_swap(struct fs *o, struct fs *n)
 	for (i = 0; i < offsetof(struct fs, fs_fmod) / sizeof(u_int32_t); i++)
 		n32[i] = bswap32(o32[i]);
 
-	n->fs_swuid = bswap64(o->fs_swuid);
+	//n->fs_swuid = bswap64(o->fs_swuid);
 	n->fs_cgrotor = bswap32(o->fs_cgrotor); /* Unused */
-	n->fs_old_cpc = bswap32(o->fs_old_cpc);
+	//n->fs_old_cpc = bswap32(o->fs_old_cpc);
 
 	/* These fields overlap with a possible location for the
 	 * historic FS_DYNAMICPOSTBLFMT postbl table, and with the
 	 * first half of the historic FS_42POSTBLFMT postbl table.
 	 */
-	n->fs_maxbsize = bswap32(o->fs_maxbsize);
+	//n->fs_maxbsize = bswap32(o->fs_maxbsize);
 	n->fs_sblockloc = bswap64(o->fs_sblockloc);
-	ffs_csumtotal_swap(&o->fs_cstotal, &n->fs_cstotal);
+	//ffs_csumtotal_swap(&o->fs_cstotal, &n->fs_cstotal);
 	n->fs_time = bswap64(o->fs_time);
 	n->fs_size = bswap64(o->fs_size);
 	n->fs_dsize = bswap64(o->fs_dsize);
 	n->fs_csaddr = bswap64(o->fs_csaddr);
+#ifdef notyet
 	n->fs_pendingblocks = bswap64(o->fs_pendingblocks);
 	n->fs_pendinginodes = bswap32(o->fs_pendinginodes);
 
@@ -103,6 +104,7 @@ ffs_sb_swap(struct fs *o, struct fs *n)
 		n->fs_snapinum[i] = bswap32(o->fs_snapinum[i]);
 	n->fs_avgfilesize = bswap32(o->fs_avgfilesize);
 	n->fs_avgfpdir = bswap32(o->fs_avgfpdir);
+#endif
 	/* fs_sparecon[28] - ignore for now */
 	n->fs_flags = bswap32(o->fs_flags);
 	n->fs_contigsumsize = bswap32(o->fs_contigsumsize);
@@ -112,11 +114,12 @@ ffs_sb_swap(struct fs *o, struct fs *n)
 	n->fs_qbmask = bswap64(o->fs_qbmask);
 	n->fs_qfmask = bswap64(o->fs_qfmask);
 	n->fs_state = bswap32(o->fs_state);
+#ifdef notyet
 	n->fs_old_postblformat = bswap32(o->fs_old_postblformat);
 	n->fs_old_nrpos = bswap32(o->fs_old_nrpos);
 	n->fs_old_postbloff = bswap32(o->fs_old_postbloff);
 	n->fs_old_rotbloff = bswap32(o->fs_old_rotbloff);
-
+#endif
 	n->fs_magic = bswap32(o->fs_magic);
 }
 
@@ -181,16 +184,17 @@ ffs_csum_swap(struct csum *o, struct csum *n, int size)
 	for (i = 0; i < size / sizeof(u_int32_t); i++)
 		nint[i] = bswap32(oint[i]);
 }
-
+#ifdef notyet
 void
 ffs_csumtotal_swap(struct csum_total *o, struct csum_total *n)
 {
+
 	n->cs_ndir = bswap64(o->cs_ndir);
 	n->cs_nbfree = bswap64(o->cs_nbfree);
 	n->cs_nifree = bswap64(o->cs_nifree);
 	n->cs_nffree = bswap64(o->cs_nffree);
 }
-
+#endif
 /*
  * Note that ffs_cg_swap may be called with o == n.
  */
@@ -204,10 +208,12 @@ ffs_cg_swap(struct cg *o, struct cg *n, struct fs *fs)
 
 	n->cg_firstfield = bswap32(o->cg_firstfield);
 	n->cg_magic = bswap32(o->cg_magic);
-	n->cg_old_time = bswap32(o->cg_old_time);
+	//n->cg_old_time = bswap32(o->cg_old_time);
 	n->cg_cgx = bswap32(o->cg_cgx);
+#ifdef notyet
 	n->cg_old_ncyl = bswap16(o->cg_old_ncyl);
 	n->cg_old_niblk = bswap16(o->cg_old_niblk);
+#endif
 	n->cg_ndblk = bswap32(o->cg_ndblk);
 	n->cg_cs.cs_ndir = bswap32(o->cg_cs.cs_ndir);
 	n->cg_cs.cs_nbfree = bswap32(o->cg_cs.cs_nbfree);
@@ -218,9 +224,10 @@ ffs_cg_swap(struct cg *o, struct cg *n, struct fs *fs)
 	n->cg_irotor = bswap32(o->cg_irotor);
 	for (i = 0; i < MAXFRAG; i++)
 		n->cg_frsum[i] = bswap32(o->cg_frsum[i]);
-	
+#ifdef notyet
 	n->cg_old_btotoff = bswap32(o->cg_old_btotoff);
 	n->cg_old_boff = bswap32(o->cg_old_boff);
+#endif
 	n->cg_iusedoff = bswap32(o->cg_iusedoff);
 	n->cg_freeoff = bswap32(o->cg_freeoff);
 	n->cg_nextfreeoff = bswap32(o->cg_nextfreeoff);
@@ -228,32 +235,36 @@ ffs_cg_swap(struct cg *o, struct cg *n, struct fs *fs)
 	n->cg_clusteroff = bswap32(o->cg_clusteroff);
 	n->cg_nclusterblks = bswap32(o->cg_nclusterblks);
 	n->cg_niblk = bswap32(o->cg_niblk);
-	n->cg_initediblk = bswap32(o->cg_initediblk);
+	//n->cg_initediblk = bswap32(o->cg_initediblk);
 	n->cg_time = bswap64(o->cg_time);
 
 	if (fs->fs_magic == FS_UFS2_MAGIC)
 		return;
 
 	if (n->cg_magic == CG_MAGIC) {
+#ifdef notyet
 		btotoff = n->cg_old_btotoff;
 		boff = n->cg_old_boff;
+#endif
 		clustersumoff = n->cg_clustersumoff;
 	} else {
+#ifdef notyet
 		btotoff = bswap32(n->cg_old_btotoff);
 		boff = bswap32(n->cg_old_boff);
+#endif
 		clustersumoff = bswap32(n->cg_clustersumoff);
 	}
 	n32 = (u_int32_t *)((u_int8_t *)n + btotoff);
 	o32 = (u_int32_t *)((u_int8_t *)o + btotoff);
 	n16 = (u_int16_t *)((u_int8_t *)n + boff);
 	o16 = (u_int16_t *)((u_int8_t *)o + boff);
-
+#ifdef notyet
 	for (i = 0; i < fs->fs_old_cpg; i++)
 		n32[i] = bswap32(o32[i]);
 	
 	for (i = 0; i < fs->fs_old_cpg * fs->fs_old_nrpos; i++)
 		n16[i] = bswap16(o16[i]);
-
+#endif
 	n32 = (u_int32_t *)((u_int8_t *)n + clustersumoff);
 	o32 = (u_int32_t *)((u_int8_t *)o + clustersumoff);
 	for (i = 1; i < fs->fs_contigsumsize + 1; i++)

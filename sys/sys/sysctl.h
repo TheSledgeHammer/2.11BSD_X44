@@ -147,7 +147,7 @@ struct ctlname {
 #define	KERN_BOOTFILE		30	/* string: name of booted kernel */
 #define	KERN_MAXID			31	/* number of valid kern ids */
 
-#define CTL_KERN_NAMES { \
+#define CTL_KERN_NAMES { 				\
 	{ 0, 0 }, 							\
 	{ "ostype", CTLTYPE_STRING }, 		\
 	{ "osrelease", CTLTYPE_STRING }, 	\

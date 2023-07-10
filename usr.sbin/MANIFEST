@@ -17,5 +17,10 @@ periodic/   FreeBSD
 postinstall/	NetBSD
 pwd_mkdb/		NetBSD
 unlink/			NetBSD
+vnconfig/		NetBSD
+wsconscfg/		NetBSD
+wsfontload/		NetBSD
+wsmoused/		NetBSD
+wsmuxctl/		NetBSD
 zdump/			2.11BSD
 zic/			  2.11BSD

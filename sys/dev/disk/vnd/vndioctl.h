@@ -137,6 +137,7 @@ struct vnd_ioctl {
 #define	VNDIOF_HASGEOM	0x01		/* use specified geometry */
 #define	VNDIOF_READONLY	0x02		/* as read-only device */
 #define	VNDIOF_FORCE	0x04		/* force close */
+#define	VNDIOF_FILEIO	0x08		/* have to use read/write */
 
 #ifdef _KERNEL
 

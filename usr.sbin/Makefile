@@ -3,8 +3,14 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	boot0cfg btxld catman chown chroot config cron dev_mkdb \
-		link mtree periodic postinstall pwd_mkdb unlink  \
+SUBDIR=	boot0cfg btxld 											\
+		catman chown chroot config cron 						\
+		dev_mkdb 												\
+		link mtree 												\
+		periodic postinstall pwd_mkdb 							\
+		unlink  												\
+		vnconfig 												\
+		wsconscfg wsfontload wsmoused wsmuxctl					\
         zdump zic
 
 .if ${MKMAKEMANDB} != "no"

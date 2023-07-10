@@ -48,6 +48,7 @@ extern int	stat();
 extern int	getlogin();
 extern int	lstat();
 extern int	dup();
+extern int	pipe();
 extern int	setlogin();
 extern int	profil();
 extern int	setuid();

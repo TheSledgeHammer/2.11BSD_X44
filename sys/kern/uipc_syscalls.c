@@ -736,6 +736,69 @@ bad:
 	return (u.u_error);
 }
 
+
+/* ARGSUSED */
+int
+pipe()
+{
+	void *uap;
+	register_t *retval;
+	register struct filedesc *fdp;
+	struct file *rf, *wf;
+	struct socket *rso, *wso;
+	int fd, error;
+
+	uap = u.u_ap;
+	fdp = u.u_procp->p_fd;
+	error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0);
+	if (error) {
+		return (error);
+	}
+	error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0);
+	if (error) {
+		goto free1;
+	}
+	rf = falloc();
+	if (rf == NULL) {
+		goto free2;
+	}
+	retval[0] = fd;
+	u.r_val1 = retval[0];
+	rf->f_flag = FREAD;
+	rf->f_type = DTYPE_SOCKET;
+	rf->f_ops = &socketops;
+	rf->f_data = (caddr_t)rso;
+	wf = falloc();
+	if (wf == NULL) {
+		goto free3;
+	}
+	wf->f_flag = FWRITE;
+	wf->f_type = DTYPE_SOCKET;
+	wf->f_ops = &socketops;
+	wf->f_data = (caddr_t)wso;
+	retval[1] = fd;
+	u.r_val2 = retval[1];
+	error = unp_connect2(wso, rso);
+	if (error) {
+		goto free4;
+	}
+	return (0);
+
+free4:
+	ffree(wf);
+	fdp->fd_ofiles[retval[1]] = 0;
+free3:
+	ffree(rf);
+	fdp->fd_ofiles[retval[0]] = 0;
+free2:
+	(void)soclose(wso);
+free1:
+	(void)soclose(rso);
+
+	u.u_error = error;
+	return (error);
+}
+
 /*
  * Get socket name.
  */

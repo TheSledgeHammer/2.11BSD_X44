@@ -72,6 +72,9 @@ struct wscons_event {
 #define	WSCONS_EVENT_MOUSE_DELTA_Z		10	/* Z delta amount */
 #define	WSCONS_EVENT_MOUSE_ABSOLUTE_Z	11	/* Z location */
 #define	WSCONS_EVENT_SCREEN_SWITCH		12	/* New screen number */
+#define	WSCONS_EVENT_ASCII				13	/* key code is already ascii */
+#define	WSCONS_EVENT_MOUSE_DELTA_W		14	/* W delta amount */
+#define	WSCONS_EVENT_MOUSE_ABSOLUTE_W	15	/* W location */
 
 /*
  * Keyboard ioctls (0 - 31)
@@ -454,6 +457,7 @@ struct wsmux_device {
 #define	WSMUX_KBD	2
 #define	WSMUX_EVDEV	3
 #define	WSMUX_MUX	4
+#define	WSMUX_BELL	5
 	int 			idx;
 };
 #define	WSMUXIO_ADD_DEVICE			_IOW('W', 97, struct wsmux_device)
@@ -468,5 +472,26 @@ struct wsmux_device_list {
 };
 #define	WSMUXIO_LIST_DEVICES		_IOWR('W', 99, struct wsmux_device_list)
 #define	WSMUX_LIST_DEVICES			WSMUXIO_LIST_DEVICES /* XXX compat */
+
+
+struct wsdisplayio_fontdesc {
+		char fd_name[64];
+		uint16_t fd_height;
+		uint16_t fd_width;
+};
+
+struct wsdisplayio_fontinfo {
+	uint32_t fi_buffersize;
+	uint32_t fi_numentries;
+	struct wsdisplayio_fontdesc *fi_fonts;
+};
+
+/*
+ * fill buffer pointed at by fi_fonts with wsdisplayio_fontdesc until either
+ * full or all fonts are listed
+ * just return the number of entries needed if fi_fonts is NULL
+ */
+
+#define WSDISPLAYIO_LISTFONTS	_IOWR('W', 107, struct wsdisplayio_fontinfo)
 
 #endif /* _DEV_WSCONS_WSCONSIO_H_ */

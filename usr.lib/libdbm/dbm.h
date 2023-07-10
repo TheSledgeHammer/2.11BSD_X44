@@ -10,12 +10,11 @@
 
 #include "ndbm.h"
 
-datum	fetch();
-datum	firstkey();
-datum	nextkey();
+datum	fetch(datum);
+datum	firstkey(void);
+datum	nextkey(datum);
 #if 0
-datum	makdatum();
-datum	firsthash();
-long	calchash();
-long	hashinc();
+datum	makdatum(char *, int);
+long	dcalchash(datum);
+long	hashinc(DBM *, long);
 #endif

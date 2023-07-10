@@ -44,6 +44,7 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/systm.h>
+#include <sys/boot.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/kernel.h>
@@ -170,7 +171,7 @@ char hostname[MAXHOSTNAMELEN];
 int hostnamelen;
 long hostid;
 //int securelevel;
-char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
+char kernelname[MAXPATHLEN] = PATH_KERNEL;	/* XXX bloat */
 char osversion[0];
 //char osrelease[];
 long osrevision[0];
@@ -256,6 +257,8 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VERSION));
 	case KERN_SAVED_IDS:
 		return (sysctl_rdint(oldp, oldlenp, newp, 0));
+	case KERN_BOOTFILE:
+		return (sysctl_string(oldp, oldlenp, newp, newlen, kernelname, sizeof(kernelname)));
 	default:
 		return (EOPNOTSUPP);
 	}
