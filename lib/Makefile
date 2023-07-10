@@ -41,6 +41,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 			${USRLIBDIR}/libom 		\
 			${USRLIBDIR}/libresolv 	\
 			${USRLIBDIR}/libpci		\
+			${USRLIBDIR}/libstubs  \
 			${USRLIBDIR}/libtermcap \
 			${USRLIBDIR}/libutil 	\
 			${USRLIBDIR}/libvmf 	\
