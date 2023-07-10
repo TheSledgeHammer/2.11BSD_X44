@@ -20,6 +20,7 @@
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/uio.h>
+#include <sys/un.h>
 #include <sys/domain.h>
 #include <sys/mount.h>
 #include <sys/sysdecl.h>
@@ -763,7 +764,7 @@ pipe()
 		goto free2;
 	}
 	retval[0] = fd;
-	u.r_val1 = retval[0];
+	u.u_r.r_val1 = retval[0];
 	rf->f_flag = FREAD;
 	rf->f_type = DTYPE_SOCKET;
 	rf->f_ops = &socketops;
@@ -777,7 +778,7 @@ pipe()
 	wf->f_ops = &socketops;
 	wf->f_data = (caddr_t)wso;
 	retval[1] = fd;
-	u.r_val2 = retval[1];
+	u.u_r.r_val2 = retval[1];
 	error = unp_connect2(wso, rso);
 	if (error) {
 		goto free4;
