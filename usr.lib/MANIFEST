@@ -13,9 +13,10 @@ libmp/		4.3BSD
 libom/		4.3BSD  	   	(used for both libom.a and libm.a)
 libpanel/	NetBSD
 libpci/		NetBSD
+libstubs/	2.11BSD
 libtermcap/	4.4BSD-Lite2
 libutil/	4.4BSD-Lite2
-libvmf		4.3BSD
+libvmf/		4.3BSD
 liby/		4.3BSD
 libz/		NetBSD
 
