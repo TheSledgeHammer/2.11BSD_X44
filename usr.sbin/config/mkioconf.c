@@ -409,6 +409,29 @@ emithintcount(FILE *fp, int count)
     return (fprintf(fp, "\nint cfhint_count = %d;\n", count) < 0);
 }
 
+static void
+write_device_resources(FILE *fp, struct devi *i)
+{
+    char buf[80];
+    int unit;
+    const char *state, *basename;
+
+    basename = i->i_base->d_name;
+    if (i->i_unit == STAR) {
+		unit = i->i_base->d_umax;
+		state = "STAR";
+    } else {
+    	unit = i->i_unit;
+		state = "NORM";
+    }
+    if (unit >= 0) {
+        snprintf(buf, sizeof(buf), "%s%d", basename, unit);
+    } else {
+        snprintf(buf, sizeof(buf), "%s", basename);
+    }
+    fprintf(fp, "\t{ \"at\",\tRES_STRING,\t{ (long)\"%s\" }},\n", buf);
+}
+
 /*
  * Emit the cfhints array.
  */
@@ -429,6 +452,7 @@ emithints(FILE *fp)
 	}
 	for (p = packed; (i = *p) != NULL; p++) {
         if (i->i_name) {
+/*
             if (i->i_unit >= 0) {
                   snprintf(buf, sizeof(buf), "%s%d", i->i_name, i->i_unit);
             } else {
@@ -437,6 +461,8 @@ emithints(FILE *fp)
             if (fprintf(fp, "\t\"%s\",\n", buf) < 0) {
                 return (1);
             }
+*/
+            write_device_resources(fp, i);
             count++;
         }
 	}
