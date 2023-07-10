@@ -517,7 +517,9 @@ TOOL_ZIC=			zic
 
 # Standalone code should not be compiled with PIE or CTF
 # Should create a better test
-.if defined(BINDIR) && ${BINDIR} == "/usr/mdec" || ${BINDIR} == "/boot"
+
+#|| ${BINDIR} == "/boot"
+.if defined(BINDIR) && ${BINDIR} == "/usr/mdec"
 NOPIE=			# defined
 NOCTF=			# defined
 .elif ${MACHINE} == "sun2"
