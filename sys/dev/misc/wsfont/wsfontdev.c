@@ -60,6 +60,13 @@ const struct cdevsw wsfont_cdevsw = {
 	.d_type = D_OTHER
 };
 
+
+#ifdef WSFONT_DEBUG
+#define DPRINTF printf
+#else
+#define DPRINTF while (0) printf
+#endif
+
 static int wsfont_isopen;
 
 void
@@ -153,7 +160,7 @@ wsfontioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 #undef d
 		return (res);
 	case WSDISPLAYIO_LISTFONTS:
-			return wsdisplayio_listfonts(data);
+			return wsdisplayio_listfonts((void *)data);
 	default:
 		return (EINVAL);
 	}

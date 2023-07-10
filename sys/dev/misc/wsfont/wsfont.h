@@ -63,6 +63,9 @@ struct wsdisplay_font;
 void	wsfont_init(void);
 int	wsfont_matches(struct wsdisplay_font *, const char *, int, int, int);
 int	wsfont_find(const char *, int, int, int, int, int);
+
+void	wsfont_walk(void (*)(struct wsdisplay_font *, void *, int), void *);
+
 int	wsfont_add(struct wsdisplay_font *, int);
 int	wsfont_remove(int);
 void	wsfont_enum(void (*)(const char *, int, int, int));
