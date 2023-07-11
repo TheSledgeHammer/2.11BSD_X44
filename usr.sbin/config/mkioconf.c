@@ -412,24 +412,24 @@ emithintcount(FILE *fp, int count)
 static void
 write_device_resources(FILE *fp, struct devi *i)
 {
+    struct devi **ps;
+	struct nvlist *nv;
+	struct attr *a;
     char buf[80];
-    int unit;
-    const char *state, *basename;
+    int unit, v;
+    const char *lastname = "";
 
-    basename = i->i_base->d_name;
-    if (i->i_unit == STAR) {
-		unit = i->i_base->d_umax;
-		state = "STAR";
-    } else {
-    	unit = i->i_unit;
-		state = "NORM";
-    }
-    if (unit >= 0) {
-        snprintf(buf, sizeof(buf), "%s%d", basename, unit);
-    } else {
-        snprintf(buf, sizeof(buf), "%s", basename);
-    }
-    fprintf(fp, "\t{ \"at\",\tRES_STRING,\t{ (long)\"%s\" }},\n", buf);
+    fprintf(fp, "\t{ \"at\",\tRES_STRING,\t{ (long)\"%s\" }},\n", i->i_name);
+
+    a = i->i_atattr;
+    for (nv = a->a_locs, v = 0; nv != NULL; nv = nv->nv_next, v++) {
+		if (ARRNAME(nv->nv_name, lastname)) {
+            fprintf(fp, "\t{ \"%s\",\tRES_INT,\t{ (int)\"%s\" }},\n", nv->nv_name, i->i_locs[v]);
+		} else {
+           fprintf(fp, "\t{ \"%s\",\tRES_INT,\t{ (int)\"%s\" }},\n", nv->nv_name, i->i_locs[v]);
+		   lastname = nv->nv_name;
+		}
+	}
 }
 
 /*
