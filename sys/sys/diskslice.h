@@ -97,5 +97,8 @@ struct diskslices 	*dsmakeslicestruct(int, struct disklabel *);
 char				*dsname(struct dkdevice *, dev_t, int, int, int, char *);
 int					dsopen(struct dkdevice *, dev_t, int, u_int, struct disklabel *);
 int					dssize(struct dkdevice *, dev_t);
+char 				*devtoname(dev_t);
+
+int					dsinit(dev_t, struct disklabel *, struct diskslices **);
 #endif /* _KERNEL */
 #endif /* _SYS_DISKSLICE_H_ */

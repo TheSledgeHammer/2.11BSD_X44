@@ -56,7 +56,6 @@ static void set_ds_label(struct diskslices *, int, struct disklabel *);
 static void set_ds_labeldevs(dev_t, struct diskslices *);
 static void set_ds_wlabel(struct diskslices *, int, int);
 static void set_ds_klabel(struct diskslices *, int, int);
-static char *devtoname(dev_t);
 
 static struct disklabel *
 clone_label(lp)
@@ -571,12 +570,13 @@ dsopen(disk, dev, mode, flags, lp)
 	struct disklabel *lp1;
 	char *msg;
 	u_char mask;
+	bool_t	need_init;
 	int part;
 	char partname[2];
 	int slice;
 	char *sname;
 	struct diskslice *sp;
-	struct diskslices *ssp;
+	struct diskslices *ssp, *ds, **sspp;
 	int unit;
 
 	unit = dkunit(dev);
@@ -589,16 +589,30 @@ dsopen(disk, dev, mode, flags, lp)
 	 * XXX reinitialize the slice table unless there is an open device
 	 * on the unit.  This should only be done if the media has changed.
 	 */
-	ssp = disk_slices(disk, dev);
-	if (!dsisopen(ssp)) {
-		if (ssp != NULL)
-			dsgone(&ssp);
+	ds = disk_slices(disk, dev);
+	sspp = &ds;
+	ssp = *sspp;
+	need_init = !dsisopen(ssp);
+	if (ssp != NULL && need_init) {
+		dsgone(sspp);
+	}
+	if (need_init) {
 		/*
 		 * Allocate a minimal slices "struct".  This will become
 		 * the final slices "struct" if we don't want real slices
 		 * or if we can't find any real slices.
 		 */
-		ssp = dsmakeslicestruct(BASE_SLICE, lp);
+		*sspp = dsmakeslicestruct(BASE_SLICE, lp);
+
+		if (!(flags & DSO_ONESLICE)) {
+			TRACE(("dsinit\n"));
+			error = dsinit(dev, lp, sspp);
+			if (error != 0) {
+				dsgone(sspp);
+				return (error);
+			}
+		}
+		ssp = *sspp;
 		ssp->dss_oflags = flags;
 
 		/*
@@ -899,7 +913,7 @@ set_ds_klabel(ssp, slice, klabel)
 		ssp->dss_slices[COMPATIBILITY_SLICE].ds_klabel = klabel;
 }
 
-static char *
+char *
 devtoname(dev)
     dev_t dev;
 {
