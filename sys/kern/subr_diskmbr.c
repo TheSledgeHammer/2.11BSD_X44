@@ -52,6 +52,7 @@
 #include <sys/diskslice.h>
 #include <sys/malloc.h>
 #include <sys/syslog.h>
+#include <sys/vnode.h>
 
 #define TRACE(str)	do { if (dsi_debug) printf str; } while (0)
 
@@ -83,7 +84,7 @@ static struct dos_partition historical_bogus_partition_table_fixed[NDOSPART] = {
 
 static int check_part(char *sname, struct dos_partition *dp, u_long offset,
 		int nsectors, int ntracks, u_long mbr_offset);
-static void mbr_extended(dev_t dev, struct disklabel *lp,
+static void mbr_extended(struct dkdevice *disk, dev_t dev, struct disklabel *lp,
 		struct diskslices *ssp, u_long ext_offset, u_long ext_size,
 		u_long base_ext_offset, int nsectors, int ntracks, u_long mbr_offset,
 		int level);
@@ -167,7 +168,8 @@ check_part(sname, dp, offset, nsectors, ntracks, mbr_offset)
 }
 
 int
-dsinit(dev, lp, sspp)
+dsinit(disk, dev, lp, sspp)
+    struct dkdevice *disk;
 	dev_t	dev;
 	struct disklabel *lp;
 	struct diskslices **sspp;
@@ -198,8 +200,7 @@ reread_mbr:
 	bp->b_bcount = lp->d_secsize;
 	VOP_STRATEGY(bp);
 	if (biowait(bp) != 0) {
-		diskerr(bp, "reading primary partition table: error", LOG_PRINTF, 0,
-				(struct disklabel*) NULL);
+		diskerr(bp, disk->dk_name, "reading primary partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
 		printf("\n");
 		error = EIO;
 		goto done;
@@ -207,7 +208,7 @@ reread_mbr:
 
 	/* Weakly verify it. */
 	cp = bp->b_data;
-	sname = dsname(dev, dkunit(dev), WHOLE_DISK_SLICE, RAW_PART, partname);
+	sname = dsname(disk, dev, dkunit(dev), WHOLE_DISK_SLICE, RAW_PART, partname);
 	if (cp[0x1FE] != 0x55 || cp[0x1FF] != 0xAA) {
 		if (bootverbose)
 			printf("%s: invalid primary partition table: no magic\n", sname);
@@ -285,8 +286,7 @@ reread_mbr:
 		if (dp->dp_scyl == 0 && dp->dp_shd == 0 && dp->dp_ssect == 0
 				&& dp->dp_start == 0 && dp->dp_size == 0)
 			continue;
-		sname = dsname(dev, dkunit(dev), BASE_SLICE + dospart, RAW_PART,
-				partname);
+		sname = dsname(disk, dev, dkunit(dev), BASE_SLICE + dospart, RAW_PART, partname);
 
 		/*
 		 * Temporarily ignore errors from this check.  We could
@@ -295,8 +295,7 @@ reread_mbr:
 		 * accept the table if the magic is right but not let
 		 * bad entries affect the geometry.
 		 */
-		check_part(sname, dp, mbr_offset, max_nsectors, max_ntracks,
-				mbr_offset);
+		check_part(sname, dp, mbr_offset, max_nsectors, max_ntracks, mbr_offset);
 	}
 	if (error != 0)
 		goto done;
@@ -328,7 +327,7 @@ reread_mbr:
 	/* Initialize normal slices. */
 	sp = &ssp->dss_slices[BASE_SLICE];
 	for (dospart = 0, dp = dp0; dospart < NDOSPART; dospart++, dp++, sp++) {
-		sname = dsname(dev, dkunit(dev), BASE_SLICE + dospart,
+		sname = dsname(disk, dev, dkunit(dev), BASE_SLICE + dospart,
 		RAW_PART, partname);
 		(void) mbr_setslice(sname, lp, sp, dp, mbr_offset);
 	}
@@ -338,7 +337,7 @@ reread_mbr:
 	sp -= NDOSPART;
 	for (dospart = 0; dospart < NDOSPART; dospart++, sp++)
 		if (sp->ds_type == DOSPTYP_EXTENDED || sp->ds_type == DOSPTYP_EXTENDEDX)
-			mbr_extended(bp->b_dev, lp, ssp, sp->ds_offset, sp->ds_size,
+			mbr_extended(disk, bp->b_dev, lp, ssp, sp->ds_offset, sp->ds_size,
 					sp->ds_offset, max_nsectors, max_ntracks, mbr_offset, 1);
 
 	/*
@@ -358,8 +357,9 @@ done:
 }
 
 void
-mbr_extended(dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntracks, mbr_offset, level)
-	dev_t	dev;
+mbr_extended(disk, dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntracks, mbr_offset, level)
+    struct dkdevice *disk;	
+    dev_t	dev;
 	struct disklabel *lp;
 	struct diskslices *ssp;
 	u_long	ext_offset;
@@ -385,7 +385,7 @@ mbr_extended(dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntra
 	if (level >= 16) {
 		printf(
 				"%s: excessive recursion in search for slices; aborting search\n",
-				devtoname(dev));
+				disk->dk_name);
 		return;
 	}
 
@@ -397,8 +397,7 @@ mbr_extended(dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntra
 	bp->b_flags |= B_READ;
 	VOP_STRATEGY(bp);
 	if (biowait(bp) != 0) {
-		diskerr(bp, "reading extended partition table: error", LOG_PRINTF, 0,
-				(struct disklabel*) NULL);
+		diskerr(bp, disk->dk_name, "reading extended partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
 		printf("\n");
 		goto done;
 	}
@@ -406,7 +405,7 @@ mbr_extended(dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntra
 	/* Weakly verify it. */
 	cp = bp->b_data;
 	if (cp[0x1FE] != 0x55 || cp[0x1FF] != 0xAA) {
-		sname = dsname(dev, dkunit(dev), WHOLE_DISK_SLICE, RAW_PART, partname);
+		sname = dsname(disk, dev, dkunit(dev), WHOLE_DISK_SLICE, RAW_PART, partname);
 		if (bootverbose)
 			printf("%s: invalid extended partition table: no magic\n", sname);
 		goto done;
@@ -424,7 +423,7 @@ mbr_extended(dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntra
 		if (dp->dp_typ == DOSPTYP_EXTENDED || dp->dp_typ == DOSPTYP_EXTENDEDX) {
 			static char buf[32];
 
-			sname = dsname(dev, dkunit(dev), WHOLE_DISK_SLICE,
+			sname = dsname(disk, dev, dkunit(dev), WHOLE_DISK_SLICE,
 			RAW_PART, partname);
 			snprintf(buf, sizeof(buf), "%s", sname);
 			if (strlen(buf) < sizeof buf - 11)
@@ -433,7 +432,7 @@ mbr_extended(dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntra
 			ext_offsets[dospart] = base_ext_offset + dp->dp_start;
 			ext_sizes[dospart] = dp->dp_size;
 		} else {
-			sname = dsname(dev, dkunit(dev), slice, RAW_PART, partname);
+			sname = dsname(disk, dev, dkunit(dev), slice, RAW_PART, partname);
 			check_part(sname, dp, ext_offset, nsectors, ntracks, mbr_offset);
 			if (slice >= MAX_SLICES) {
 				printf("%s: too many slices\n", sname);
@@ -451,7 +450,7 @@ mbr_extended(dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors, ntra
 	/* If we found any more slices, recursively find all the subslices. */
 	for (dospart = 0; dospart < NDOSPART; dospart++)
 		if (ext_sizes[dospart] != 0)
-			mbr_extended(dev, lp, ssp, ext_offsets[dospart], ext_sizes[dospart],
+			mbr_extended(disk, dev, lp, ssp, ext_offsets[dospart], ext_sizes[dospart],
 					base_ext_offset, nsectors, ntracks, mbr_offset, ++level);
 
 done:
