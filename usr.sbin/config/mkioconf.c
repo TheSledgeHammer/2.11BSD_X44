@@ -432,6 +432,66 @@ write_device_resources(FILE *fp, struct devi *i)
 	}
 }
 
+static const char *
+devstr(struct devi *dp)
+{
+	static char buf[100];
+
+	if (dp->i_unit >= 0) {
+		snprintf(buf, sizeof(buf), "%s%d", dp->i_base->d_name, dp->i_unit);
+		return (buf);
+	} else {
+		return (dp->i_name);
+	}
+}
+
+static void
+write_device_resources1(FILE *fp, struct devi *dp)
+{
+	struct devi **ps;
+	struct nvlist *nv;
+	struct attr *a;
+    int count, v;
+    char buf[80];
+    const char *lastname = "";
+
+    count = 0;
+	//fprintf(fp,"\nstruct cfresource %s_cfresources[] = {\n", devstr(dp));
+    if (dp->i_base->d_name) {
+    	if (dp->i_unit >= 0) {
+    		snprintf(buf, sizeof(buf), "%s%d", dp->i_base->d_name, dp->i_unit);
+    	} else {
+    		snprintf(buf, sizeof(buf), "%s", dp->i_name);
+    	}
+    	fprintf(fp, "\t{ \"at\",\tRES_STRING,\t{ (long)\"%s\" }},\n", buf);
+    	count++;
+    }
+    /*
+    ps = dp->i_parents;
+    for (v = 0; v < dp->i_pvlen; v++) {
+    	fprintf(fp, "%s%s", v == 0 ? "" : "|", dp->i_parents[v]->i_name);
+    }
+    */
+
+    if (dp->i_cfflags) {
+    	fprintf(fp, "\t{ \"flags\",\tRES_INT,\t{ 0x%x }},\n", dp->i_cfflags);
+    	count++;
+    }
+    a = dp->i_atattr;
+    for (nv = a->a_locs, v = 0; nv != NULL; nv = nv->nv_next, v++) {
+		if (ARRNAME(nv->nv_name, lastname)) {
+            fprintf(fp, "\t{ \"%s\",\tRES_INT,\t{ (int)\"%s\" }},\n", nv->nv_name, dp->i_locs[v]);
+            count++;
+		} else {
+           fprintf(fp, "\t{ \"%s\",\tRES_INT,\t{ (int)\"%s\" }},\n", nv->nv_name, dp->i_locs[v]);
+		   lastname = nv->nv_name;
+		   count++;
+		}
+	}
+    //fprintf(fp,"};\n");
+ //   fprintf(fp, "#define %s_count %d\n", devstr(dp), count);
+}
+
 /*
  * Emit the cfhints array.
  */
@@ -451,8 +511,8 @@ emithints(FILE *fp)
 		return (1);
 	}
 	for (p = packed; (i = *p) != NULL; p++) {
-        if (i->i_name) {
 /*
+        if (i->i_name) {
             if (i->i_unit >= 0) {
                   snprintf(buf, sizeof(buf), "%s%d", i->i_name, i->i_unit);
             } else {
@@ -461,10 +521,13 @@ emithints(FILE *fp)
             if (fprintf(fp, "\t\"%s\",\n", buf) < 0) {
                 return (1);
             }
-*/
+
             write_device_resources(fp, i);
             count++;
         }
+*/
+        write_device_resources1(fp, i);
+        count++;
 	}
     if (fprintf(fp,"};\n") < 0) {
         return (1);
