@@ -67,20 +67,18 @@ __RCSID("$NetBSD: mount.c,v 1.68 2004/03/27 06:11:48 cgd Exp $");
 
 static int	debug, verbose;
 
-static void	catopt __P((char **, const char *));
-static const char *
-		getfslab __P((const char *str));
-static struct statfs *
-		getmntpt __P((const char *));
-static int 	getmntargs __P((struct statfs *, char *, size_t));
-static int	hasopt __P((const char *, const char *));
-static void	mangle __P((char *, int *, const char ***, int *));
-static int	mountfs __P((const char *, const char *, const char *,
-		    int, const char *, const char *, int, char *, size_t));
-static void	prmount __P((struct statfs *));
-static void	usage __P((void));
+static void	catopt(char **, const char *);
+static const char *getfslab(const char *str);
+static struct statfs *getmntpt(const char *);
+static int 	getmntargs(struct statfs *, char *, size_t);
+static int	hasopt(const char *, const char *);
+static void	mangle(char *, int *, const char ***, int *);
+static int	mountfs(const char *, const char *, const char *,
+		    int, const char *, const char *, int, char *, size_t);
+static void	prmount(struct statfs *);
+static void	usage(void);
 
-int	main __P((int, char *[]));
+int	main(int, char *[]);
 
 /* Map from mount otions to printable formats. */
 static const struct opt {

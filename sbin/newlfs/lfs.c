@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)lfs.c	8.5 (Berkeley) 5/24/95";
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "config.h"
 #include "extern.h"
 
@@ -109,7 +110,7 @@ static struct lfs lfs_default =  {
 	/* lfs_minfree */	MINFREE,
 	/* lfs_maxfilesize */	0,
 	/* lfs_dbpseg */	DFL_LFSSEG/DEV_BSIZE,
-	/* lfs_inopb */		DFL_LFSBLOCK/sizeof(struct dinode),
+	/* lfs_inopb */		DFL_LFSBLOCK/sizeof(struct ufs1_dinode),
 	/* lfs_ifpb */		DFL_LFSBLOCK/sizeof(IFILE),
 	/* lfs_sepb */		DFL_LFSBLOCK/sizeof(SEGUSE),
 	/* lfs_nindir */	DFL_LFSBLOCK/sizeof(daddr_t),
@@ -147,7 +148,6 @@ static struct lfs lfs_default =  {
 	/* lfs_maxsymlinklen */ MAXSYMLINKLEN
 };
 
-
 struct direct lfs_root_dir[] = {
 	{ ROOTINO, sizeof(struct direct), DT_DIR, 1, "."},
 	{ ROOTINO, sizeof(struct direct), DT_DIR, 2, ".."},
@@ -160,10 +160,10 @@ struct direct lfs_lf_dir[] = {
         { ROOTINO, sizeof(struct direct), DT_DIR, 2, ".." },
 };
 
-static daddr_t make_dinode 
-	__P((ino_t, struct dinode *, int, daddr_t, struct lfs *));
-static void make_dir __P(( void *, struct direct *, int));
-static void put __P((int, off_t, void *, size_t));
+static ufs1_daddr_t make_ufs1_dinode(ino_t, struct ufs1_dinode *, int, ufs1_daddr_t, struct lfs *, int);
+static ufs2_daddr_t make_ufs2_dinode(ino_t, struct ufs2_dinode *, int, ufs2_daddr_t, struct lfs *, int);
+static void make_dir( void *, struct direct *, int);
+static void put(int, off_t, void *, size_t);
 
 int
 make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
@@ -175,37 +175,37 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 	int frag_size;
 	int seg_size;
 {
-	struct dinode *dip;	/* Pointer to a disk inode */
-	struct dinode *dpagep;	/* Pointer to page of disk inodes */
-	CLEANERINFO *cleaninfo;	/* Segment cleaner information table */
-	FINFO file_info;	/* File info structure in summary blocks */
-	IFILE *ifile;		/* Pointer to array of ifile structures */
-	IFILE *ip;		/* Pointer to array of ifile structures */
-	struct lfs *lfsp;	/* Superblock */
-	SEGUSE *segp;		/* Segment usage table */
-	SEGUSE *segtable;	/* Segment usage table */
-	SEGSUM summary;		/* Segment summary structure */
-	SEGSUM *sp;		/* Segment summary pointer */
-	daddr_t	last_sb_addr;	/* Address of superblocks */
-	daddr_t last_addr;	/* Previous segment address */
-	daddr_t	sb_addr;	/* Address of superblocks */
-	daddr_t	seg_addr;	/* Address of current segment */
-	void *ipagep;		/* Pointer to the page we use to write stuff */
-	void *sump;		/* Used to copy stuff into segment buffer */
-	u_long *block_array;	/* Array of logical block nos to put in sum */
-	u_long blocks_used;	/* Number of blocks in first segment */
-	u_long *dp;		/* Used to computed checksum on data */
-	u_long *datasump;	/* Used to computed checksum on data */
-	int block_array_size;	/* How many entries in block array */
-	int bsize;		/* Block size */
-	int fsize;		/* Fragment size */
-	int db_per_fb;		/* Disk blocks per file block */
+	union ufs1_dinode *dip;		/* Pointer to a disk inode */
+	struct ufs1_dinode *dpagep;	/* Pointer to page of disk inodes */
+	CLEANERINFO *cleaninfo;		/* Segment cleaner information table */
+	FINFO file_info;			/* File info structure in summary blocks */
+	IFILE *ifile;				/* Pointer to array of ifile structures */
+	IFILE *ip;					/* Pointer to array of ifile structures */
+	struct lfs *lfsp;			/* Superblock */
+	SEGUSE *segp;				/* Segment usage table */
+	SEGUSE *segtable;			/* Segment usage table */
+	SEGSUM summary;				/* Segment summary structure */
+	SEGSUM *sp;					/* Segment summary pointer */
+	daddr_t	last_sb_addr;		/* Address of superblocks */
+	daddr_t last_addr;			/* Previous segment address */
+	daddr_t	sb_addr;			/* Address of superblocks */
+	daddr_t	seg_addr;			/* Address of current segment */
+	void *ipagep;				/* Pointer to the page we use to write stuff */
+	void *sump;					/* Used to copy stuff into segment buffer */
+	u_long *block_array;		/* Array of logical block nos to put in sum */
+	u_long blocks_used;			/* Number of blocks in first segment */
+	u_long *dp;					/* Used to computed checksum on data */
+	u_long *datasump;			/* Used to computed checksum on data */
+	int block_array_size;		/* How many entries in block array */
+	int bsize;					/* Block size */
+	int fsize;					/* Fragment size */
+	int db_per_fb;				/* Disk blocks per file block */
 	int i, j;
-	int off;		/* Offset at which to write */
-	int sb_interval;	/* number of segs between super blocks */
-	int seg_seek;		/* Seek offset for a segment */
-	int ssize;		/* Segment size */
-	int sum_size;		/* Size of the summary block */
+	int off;					/* Offset at which to write */
+	int sb_interval;			/* number of segs between super blocks */
+	int seg_seek;				/* Seek offset for a segment */
+	int ssize;					/* Segment size */
+	int sum_size;				/* Size of the summary block */
 
 	lfsp = &lfs_default;
 
@@ -224,7 +224,7 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 		lfsp->lfs_bsize = bsize;
 		lfsp->lfs_fsize = fsize;
 		lfsp->lfs_bmask = bsize - 1;
-		lfsp->lfs_inopb = bsize / sizeof(struct dinode);
+		lfsp->lfs_inopb = bsize / sizeof(struct ufs1_dinode);
 		lfsp->lfs_ffmask = fsize - 1;
 		lfsp->lfs_ffshift = log2(fsize);
 		if (1 << lfsp->lfs_ffshift != fsize)
@@ -320,7 +320,7 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 	segp = segtable;
 	blocks_used = lfsp->lfs_segtabsz + lfsp->lfs_cleansz + 4;
 	segp->su_nbytes = ((blocks_used - 1) << lfsp->lfs_bshift) +
-	    3 * sizeof(struct dinode) + LFS_SUMMARY_SIZE;
+	    3 * sizeof(struct ufs1_dinode) + LFS_SUMMARY_SIZE;
 	segp->su_lastmod = lfsp->lfs_tstamp;
 	segp->su_nsums = 1;	/* 1 summary blocks */
 	segp->su_ninos = 1;	/* 1 inode block */
@@ -374,7 +374,7 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 	/* Now create a block of disk inodes */
 	if (!(dpagep = malloc(lfsp->lfs_bsize)))
 		fatal("%s", strerror(errno));
-	dip = (struct dinode *)dpagep;
+	dip = (struct ufs1_dinode *)dpagep;
 	memset(dip, 0, lfsp->lfs_bsize);
 
 	/* Create a block of IFILE structures. */
@@ -388,7 +388,7 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 	 * lfsp->lfs_idaddr;
 	 */
 	sb_addr = lfsp->lfs_idaddr + lfsp->lfs_bsize / lp->d_secsize;
-	sb_addr = make_dinode(LFS_IFILE_INUM, dip, 
+	sb_addr = make_ufs1_dinode(LFS_IFILE_INUM, dip,
 	    lfsp->lfs_cleansz + lfsp->lfs_segtabsz+1, sb_addr, lfsp);
 	dip->di_mode = IFREG|IREAD|IWRITE;
 	ip = &ifile[LFS_IFILE_INUM];
@@ -396,7 +396,7 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 	ip->if_daddr = lfsp->lfs_idaddr;
 
 	/* Initialize the ROOT Directory */
-	sb_addr = make_dinode(ROOTINO, ++dip, 1, sb_addr, lfsp);
+	sb_addr = make_ufs1_dinode(ROOTINO, ++dip, 1, sb_addr, lfsp);
 	dip->di_mode = IFDIR|IREAD|IWRITE|IEXEC;
 	dip->di_size = DIRBLKSIZ;
 	dip->di_nlink = 3;
@@ -405,7 +405,7 @@ make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 	ip->if_daddr = lfsp->lfs_idaddr;
 
 	/* Initialize the lost+found Directory */
-	sb_addr = make_dinode(LOSTFOUNDINO, ++dip, 1, sb_addr, lfsp);
+	sb_addr = make_ufs1_dinode(LOSTFOUNDINO, ++dip, 1, sb_addr, lfsp);
 	dip->di_mode = IFDIR|IREAD|IWRITE|IEXEC;
 	dip->di_size = DIRBLKSIZ;
 	dip->di_nlink = 2;
@@ -623,14 +623,27 @@ put(fd, off, p, len)
 
 void
 lfsinit()
-{}
+{
 
-static daddr_t
-make_dinode(ino, dip, nblocks, saddr, lfsp)
-	ino_t ino;				/* inode we're creating */
-	struct dinode *dip;			/* disk inode */
+}
+
+static void
+segerror(nblocks)
+	int nblocks;
+{
+#define	SEGERR \
+"File requires more than the number of direct blocks; increase block or segment size."
+	if (NDADDR < nblocks) {
+		fatal("%s", SEGERR);
+	}
+}
+
+static ufs1_daddr_t
+make_ufs1_dinode(ino, dip, nblocks, saddr, lfsp)
+	ino_t ino;					/* inode we're creating */
+	struct ufs1_dinode *dip;	/* disk inode */
 	int nblocks;				/* number of blocks in file */
-	daddr_t saddr;				/* starting block address */
+	ufs1_daddr_t saddr;				/* starting block address */
 	struct lfs *lfsp;			/* superblock */
 {
 	int db_per_fb, i;
@@ -643,19 +656,43 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 	dip->di_atimensec = dip->di_mtimensec = dip->di_ctimensec = 0;
 	dip->di_inumber = ino;
 
-#define	SEGERR \
-"File requires more than the number of direct blocks; increase block or segment size."
-	if (NDADDR < nblocks)
-		fatal("%s", SEGERR);
+	segerror(nblocks);
 
 	/* Assign the block addresses for the ifile */
 	db_per_fb = 1 << lfsp->lfs_fsbtodb;
-	for (i = 0; i < nblocks; i++, saddr += db_per_fb)
+	for (i = 0; i < nblocks; i++, saddr += db_per_fb) {
 		dip->di_db[i] = saddr;
-
+	}
 	return (saddr);
 }
 
+static ufs2_daddr_t
+make_ufs2_dinode(ino, dip, nblocks, saddr, lfsp)
+	ino_t ino;					/* inode we're creating */
+	struct ufs2_dinode *dip;	/* disk inode */
+	int nblocks;				/* number of blocks in file */
+	ufs2_daddr_t saddr;			/* starting block address */
+	struct lfs *lfsp;			/* superblock */
+{
+	int db_per_fb, i;
+
+	dip->di_nlink = 1;
+	dip->di_blocks = nblocks << lfsp->lfs_fsbtodb;
+
+	dip->di_size = (nblocks << lfsp->lfs_bshift);
+	dip->di_atime = dip->di_mtime = dip->di_ctime = lfsp->lfs_tstamp;
+	dip->di_atimensec = dip->di_mtimensec = dip->di_ctimensec = 0;
+	dip->di_inumber = ino;
+
+	segerror(nblocks);
+
+	/* Assign the block addresses for the ifile */
+	db_per_fb = 1 << lfsp->lfs_fsbtodb;
+	for (i = 0; i < nblocks; i++, saddr += db_per_fb) {
+		dip->di_db[i] = saddr;
+	}
+	return (saddr);
+}
 
 /*
  * Construct a set of directory entries in "bufp".  We assume that all the

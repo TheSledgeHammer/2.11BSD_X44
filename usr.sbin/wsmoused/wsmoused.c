@@ -41,7 +41,7 @@ __RCSID("$NetBSD: wsmoused.c,v 1.29 2022/05/20 21:31:24 andvar Exp $");
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/tty.h>
-#include <dev/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsconsio.h>
 
 #include <err.h>
 #include <errno.h>

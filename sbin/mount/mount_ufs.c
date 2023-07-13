@@ -55,7 +55,7 @@ static char sccsid[] = "@(#)mount_ufs.c	8.4 (Berkeley) 4/26/95";
 
 #include "mntopts.h"
 
-void	ufs_usage __P((void));
+void	ufs_usage(void);
 
 static struct mntopt mopts[] = {
 	MOPT_STDOPTS,

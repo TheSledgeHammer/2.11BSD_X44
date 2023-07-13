@@ -1,8 +1,11 @@
-/* $NetBSD: fattr.h,v 1.1 2000/10/30 20:56:58 jdolecek Exp $ */
+/*	$NetBSD: catclose.c,v 1.11 1999/08/17 04:00:51 mycroft Exp $	*/
 
 /*-
- * Copyright (c) 2000 The NetBSD Foundation, Inc.
+ * Copyright (c) 1996 The NetBSD Foundation, Inc.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by J.T. Conklin.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,8 +17,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
  * 4. Neither the name of The NetBSD Foundation nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
@@ -33,6 +36,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-gid_t a_gid(char *);
-uid_t a_uid(char *);
-mode_t a_mask(char *);
+#define _NLS_PRIVATE
+
+#include "namespace.h"
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <nl_types.h>
+
+#ifdef __weak_alias
+__weak_alias(catclose, _catclose)
+#endif
+
+int
+_catclose(catd)
+	nl_catd catd;
+{
+	if (catd == (nl_catd) -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (catd) {
+		munmap(catd->__data, (size_t)catd->__size);
+		free (catd);
+	}
+
+	return 0;
+}

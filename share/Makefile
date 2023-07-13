@@ -3,17 +3,17 @@
 .include <bsd.own.mk>
 
 .if ${MKSHARE} != "no" || make(clean) || make(cleandir) || make(distclean) || make(obj)
-SUBDIR= 	dict man me misc mk tabset term 		\
+SUBDIR= dict man me misc mk tabset term 		\
 		termcap tmac wscons lint zoneinfo			
 # 2.11BSD:
-SUBDIR+=	adb font fontinfo learn ms pascal
+SUBDIR+= adb font fontinfo learn ms pascal
 
 .if ${MKGROFF} != "no"
 SUBDIR+=doc
 .endif
 
 .if ${MKNLS} != "no"
-SUBDIR+=locale
+SUBDIR+=locale nls
 .endif
 .endif
 

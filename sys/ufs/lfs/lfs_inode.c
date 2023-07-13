@@ -104,6 +104,7 @@ lfs_ifind(fs, ino, bp)
 	struct ufs1_dinode *din1;
 	struct ufs2_dinode *din2;
 	void 			   *data;
+
 	if(UFS1) {
 		din1 = lfs1_ifind(fs, ino, bp);
 		data = din1;

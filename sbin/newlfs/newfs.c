@@ -109,10 +109,10 @@ int	unlabeled;
 char	device[MAXPATHLEN];
 char	*progname, *special;
 
-static struct disklabel *getdisklabel __P((char *, int));
-static struct disklabel *debug_readlabel __P((int));
-static void rewritelabel __P((char *, int, struct disklabel *));
-static void usage __P((void));
+static struct disklabel *getdisklabel(char *, int);
+static struct disklabel *debug_readlabel(int);
+static void rewritelabel(char *, int, struct disklabel *);
+static void usage(void);
 
 int
 main(argc, argv)
@@ -127,7 +127,7 @@ main(argc, argv)
 	int debug, lfs, fsi, fso, segsize;
 	char *cp, *opstring;
 
-	if (progname = strrchr(*argv, '/'))
+	if (progname == strrchr(*argv, '/'))
 		++progname;
 	else
 		progname = *argv;
@@ -294,7 +294,7 @@ main(argc, argv)
 		(void)printf("%s: %s: not a character-special device\n",
 		    progname, special);
 	cp = strchr(argv[0], '\0') - 1;
-	if (!debug && (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp)))
+	if (!debug && (cp == 0 || ((*cp < 'a' || *cp > 'h') && !isdigit(*cp))))
 		fatal("%s: can't figure out file system partition", argv[0]);
 
 #ifdef COMPAT

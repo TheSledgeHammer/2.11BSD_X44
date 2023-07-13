@@ -3,13 +3,12 @@
 # locale sources
 .PATH: ${ARCHDIR}/locale ${.CURDIR}/locale
 
-#citrus_ctype.c
-
-SRCS+=	ansi.c ctype.c euc.c frune.c isctype.c lconv.c 	\
-		localeconv.c mbrune.c __mb_cur_max.c none.c rune.c setlocale.c 	\
-		srune.c table.c ues.c utf1632.c utf2.c utf8.c wcscoll.c wcstod.c \
+SRCS+=	ansi.c ctype.c euc.c frune.c isctype.c lconv.c 	localeconv.c 	\
+		mbrune.c __mb_cur_max.c none.c rune.c setlocale.c srune.c 		\
+		table.c ues.c utf1632.c utf2.c utf8.c wcscoll.c wcstod.c 		\
 		wcstol.c wcstoll.c wcstoimax.c wcstoul.c wcstoull.c wcstoumax.c \
 		wcsxfrm.c aliasname.c
+
 SRCS+=	multibyte.c _wctrans.c iswctype.c
 SRCS+=	multibyte_sb.c iswctype_sb.c
 SRC+=	setlocale32.c

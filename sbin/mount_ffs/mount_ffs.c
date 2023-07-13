@@ -57,23 +57,23 @@ __RCSID("$NetBSD: mount_ffs.c,v 1.15 2003/08/07 10:04:27 agc Exp $");
 
 #include <mntopts.h>
 
-static void	ffs_usage __P((void));
-int	main __P((int, char *[]));
-int	mount_ffs __P((int argc, char **argv));
+static void	ffs_usage(void);
+int	main(int, char *[]);
+int	mount_ffs(int argc, char **argv);
 
 static const struct mntopt mopts[] = {
 	MOPT_STDOPTS,
 	MOPT_ASYNC,
 	MOPT_SYNC,
 	MOPT_UPDATE,
-	MOPT_RELOAD,
-	MOPT_NOATIME,
-	MOPT_NODEVMTIME,
 	MOPT_FORCE,
-	MOPT_SOFTDEP,
-	MOPT_GETARGS,
 	{ NULL }
 };
+//MOPT_RELOAD,
+//MOPT_NOATIME,
+//MOPT_NODEVMTIME,
+//MOPT_SOFTDEP,
+//MOPT_GETARGS,
 
 #ifndef MOUNT_NOMAIN
 int
