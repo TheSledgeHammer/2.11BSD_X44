@@ -250,7 +250,6 @@ wsmouse_attach(parent, self, aux)
 	int mux, error;
 #endif
 
-	sc->sc_base.me_dv = self;
 	sc->sc_accessops = ap->accessops;
 	sc->sc_accesscookie = ap->accesscookie;
 
@@ -577,12 +576,12 @@ wsmouse_precision_scroll(wsmousedev, x, y)
 	struct device *wsmousedev;
 	int x, y;
 {
-	struct wsmouse_softc *sc = (struct wsmouse_softc *)wsmousedev;
+	struct wsmouse_softc *sc;
 	struct wseventvar *evar;
 	struct wscons_event events[2];
 	int nevents = 0;
 
-	sc =
+	sc = (struct wsmouse_softc *)wsmousedev;
 	evar = sc->sc_base.me_evp;
 	if (evar == NULL)
 		return;
