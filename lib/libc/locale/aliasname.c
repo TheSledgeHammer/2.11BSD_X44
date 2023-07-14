@@ -39,7 +39,8 @@ __RCSID("$NetBSD: aliasname.c,v 1.1 2002/02/13 07:45:52 yamt Exp $");
 
 __inline int __is_ws(char);
 
-__inline int __is_ws(char ch)
+__inline int 
+__is_ws(char ch)
 {
 	return (ch == ' ' || ch == '\t');
 }
