@@ -41,7 +41,9 @@
 
 #include "citrus_ctype.h"
 #include "citrus_ctype_template.h"
+#include "citrus_types.h"
 #include "citrus_stdenc.h"
+
 
 /* ----------------------------------------------------------------------
  * templates for public functions
@@ -162,4 +164,15 @@ _citrus_stdenc_get_mb_cur_max(_ENCODING_INFO *ei)
 {
 	_DIAGASSERT(ei && ei->traits);
 	return (ei->traits->mb_cur_max);
+}
+
+int
+_citrus_stdenc_put_state_reset(void * __restrict ei, char * __restrict s, size_t n, void * __restrict ps, size_t * __restrict nresult)
+{
+#if _ENCODING_IS_STATE_DEPENDENT
+	return (_citrus_ctype_put_state_reset(ei, s, n, ps, nresult));
+#else
+	*nresult = 0;
+	return (0);
+#endif
 }

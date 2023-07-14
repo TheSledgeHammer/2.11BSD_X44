@@ -32,12 +32,6 @@
 #ifndef _CITRUS_STDENC_H_
 #define _CITRUS_STDENC_H_
 
-typedef _wc_t		_citrus_wc_t;
-typedef _index_t	_citrus_index_t;
-typedef _csid_t		_citrus_csid_t;
-
-#define _CITRUS_CSID_INVALID	((_citrus_csid_t)-1)
-
 __BEGIN_DECLS
 int		_citrus_stdenc_init(_ENCODING_INFO * __restrict);
 void	_citrus_stdenc_uninit(_ENCODING_INFO * __restrict);
@@ -52,5 +46,6 @@ int 	_citrus_stdenc_mbtowc(_ENCODING_INFO * __restrict, _citrus_wc_t * __restric
 int 	_citrus_stdenc_wctomb(_ENCODING_INFO * __restrict, char * __restrict, size_t, _citrus_wc_t, _ENCODING_STATE * __restrict, size_t * __restrict);
 size_t 	_citrus_stdenc_get_state_size(_ENCODING_INFO *);
 size_t 	_citrus_stdenc_get_mb_cur_max(_ENCODING_INFO *);
+int		_citrus_stdenc_put_state_reset(void * __restrict, char * __restrict, size_t, void * __restrict, size_t * __restrict);
 __END_DECLS
 #endif /* _CITRUS_STDENC_H_ */

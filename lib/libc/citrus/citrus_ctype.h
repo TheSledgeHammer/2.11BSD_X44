@@ -35,16 +35,15 @@
 
 /* prototypes */
 __BEGIN_DECLS
-void		_citrus_ctype_encoding_init(_ENCODING_INFO * __restrict);
-void		_citrus_ctype_encoding_uninit(_ENCODING_INFO * __restrict);
-
 void		_citrus_ctype_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
 void		_citrus_ctype_pack_state(_ENCODING_INFO * __restrict, void * __restrict, const _ENCODING_STATE * __restrict);
 void		_citrus_ctype_unpack_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict, const void * __restrict);
-
 unsigned 	_citrus_ctype_get_mb_cur_max(void *);
+void		_citrus_ctype_encoding_init(_ENCODING_INFO * __restrict);
+void		_citrus_ctype_encoding_uninit(_ENCODING_INFO * __restrict);
 int			_citrus_ctype_init(void ** __restrict/*, size_t*/);
 void		_citrus_ctype_uninit(void *);
+int			_citrus_ctype_put_state_reset(void * __restrict, char * __restrict, size_t, void * __restrict, size_t * __restrict);
 int 		_citrus_ctype_mblen(void * __restrict, const char * __restrict, size_t, int * __restrict);
 int 		_citrus_ctype_mbrlen(void * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
 int 		_citrus_ctype_mbrtowc(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);

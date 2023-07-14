@@ -352,7 +352,6 @@ _citrus_ctype_wcrtomb(void * __restrict cl, char * __restrict s, wchar_t wc, voi
 #if _ENCODING_IS_STATE_DEPENDENT
 	if (wc == L'\0') {
 		/* reset state */
-
 		err = _citrus_ctype_put_state_reset(_CEI_TO_EI(_TO_CEI(cl)), s, sz, psenc, &rsz);
 		if (err) {
 			*nresult = -1;
