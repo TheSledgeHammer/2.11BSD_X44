@@ -867,6 +867,13 @@ wsmousedoopen(sc, evp)
 	sc->sc_x = INVALID_X;
 	sc->sc_y = INVALID_Y;
 	sc->sc_z = INVALID_Z;
+	
+	/* Stop button repeating when messing with the device. */
+	if (sc->sc_repeat_button != -1) {
+		KASSERT(sc->sc_repeat_button >= 0);
+		sc->sc_repeat_button = -1;
+		callout_stop(&sc->sc_repeat_callout);
+	}
 
 	/* enable the device, and punt if that's not possible */
 	return (*sc->sc_accessops->enable)(sc->sc_accesscookie);
