@@ -143,11 +143,7 @@ void	callout_schedule(struct callout *, int);
 void	callout_stop(struct callout *);
 int		callout_hardclock(int);
 void	callout_softclock(void);
-
-#define	callout_setfunc(c, f, a) do {							\
-	(c)->c_func = (f);											\
-	(c)->c_arg = (a);											\
-} while (/*CONSTCOND*/0)
+void	callout_setfunc(struct callout *, void (*)(void *), void *);
 
 #define	callout_pending(c)	((c)->c_flags & CALLOUT_PENDING)
 #define	callout_expired(c)	((c)->c_flags & CALLOUT_FIRED)

@@ -355,6 +355,20 @@ callout_softclock(void)
 	CALLOUT_UNLOCK(s);
 }
 
+void
+callout_setfunc(struct callout *cs, void (*func)(void *), void *arg)
+{
+	struct callout *c = cs;
+	int s;
+
+	KASSERT(func != NULL);
+
+	CALLOUT_LOCK(s);
+	c->c_func = func;
+	c->c_arg = arg;
+	CALLOUT_UNLOCK(s);
+}
+
 #ifdef DDB
 static void
 db_show_callout_bucket(struct callout_circq *bucket)

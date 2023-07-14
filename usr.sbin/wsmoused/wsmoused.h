@@ -35,11 +35,9 @@
 #define IS_MOTION_EVENT(type) (((type) == WSCONS_EVENT_MOUSE_DELTA_X) || \
                                ((type) == WSCONS_EVENT_MOUSE_DELTA_Y) || \
                                ((type) == WSCONS_EVENT_MOUSE_DELTA_Z) || \
-                               ((type) == WSCONS_EVENT_MOUSE_DELTA_W) || \
                                ((type) == WSCONS_EVENT_MOUSE_ABSOLUTE_X) || \
                                ((type) == WSCONS_EVENT_MOUSE_ABSOLUTE_Y) || \
-                               ((type) == WSCONS_EVENT_MOUSE_ABSOLUTE_Z) || \
-                               ((type) == WSCONS_EVENT_MOUSE_ABSOLUTE_W))
+                               ((type) == WSCONS_EVENT_MOUSE_ABSOLUTE_Z))
 
 #define IS_BUTTON_EVENT(type) (((type) == WSCONS_EVENT_MOUSE_UP) || \
                                ((type) == WSCONS_EVENT_MOUSE_DOWN))

@@ -38,7 +38,7 @@ __RCSID("$NetBSD: config_yacc.y,v 1.4 2008/07/17 16:24:56 drochner Exp $");
 #endif /* not lint */
 
 #include <sys/time.h>
-#include <dev/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsconsio.h>
 #include <err.h>
 #include <errno.h>
 #include <stdio.h>

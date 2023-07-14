@@ -95,6 +95,8 @@
 #include <sys/device.h>
 #include <sys/devsw.h>
 #include <sys/vnode.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
 
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsmousevar.h>
@@ -121,7 +123,6 @@ extern int wsmuxdebug;
 
 struct wsmouse_softc {
 	struct wsevsrc					sc_base;
-
 	struct device					sc_dv;
 
 	const struct wsmouse_accessops 	*sc_accessops;
@@ -140,6 +141,16 @@ struct wsmouse_softc {
 
 	int								sc_refcnt;
 	u_char							sc_dying;	/* device is being detached */
+
+	struct wsmouse_repeat			sc_repeat;
+	int								sc_repeat_button;
+	struct callout					sc_repeat_callout;
+	unsigned int					sc_repeat_delay;
+
+	int								sc_reverse_scroll;
+	int								sc_horiz_scroll_dist;
+	int								sc_vert_scroll_dist;
+
 #ifdef EVDEV_SUPPORT
 	struct evdev_softc				*sc_evsc;	/* pointer to evdev softc */
 #endif
@@ -149,6 +160,10 @@ int			wsmouse_match(struct device *, struct cfdata *, void *);
 void		wsmouse_attach(struct device *, struct device *, void *);
 int  		wsmouse_detach(struct device *, int);
 int  		wsmouse_activate(struct device *, enum devact);
+
+static int  wsmouse_set_params(struct wsmouse_softc *, struct wsmouse_param *, size_t);
+static int  wsmouse_get_params(struct wsmouse_softc *, struct wsmouse_param *, size_t);
+static int  wsmouse_handle_params(struct wsmouse_softc *, struct wsmouse_parameters *, bool_t);
 
 static int  wsmouse_do_ioctl(struct wsmouse_softc *, u_long, caddr_t, int, struct proc *);
 #ifdef EVDEV_SUPPORT
@@ -163,6 +178,7 @@ static int  wsmouse_mux_close(struct wsevsrc *);
 static int  wsmousedoioctl(struct device *, u_long, caddr_t, int, struct proc *);
 
 static int  wsmousedoopen(struct wsmouse_softc *, struct wseventvar *);
+static void wsmouse_repeat(void *v);
 
 CFOPS_DECL(wsmouse, wsmouse_match, wsmouse_attach, wsmouse_detach, wsmouse_activate);
 CFDRIVER_DECL(NULL, wsmouse, DV_DULL);
@@ -234,8 +250,19 @@ wsmouse_attach(parent, self, aux)
 	int mux, error;
 #endif
 
+	sc->sc_base.me_dv = self;
 	sc->sc_accessops = ap->accessops;
 	sc->sc_accesscookie = ap->accesscookie;
+
+	/* Initialize button repeating. */
+	memset(&sc->sc_repeat, 0, sizeof(sc->sc_repeat));
+	sc->sc_repeat_button = -1;
+	sc->sc_repeat_delay = 0;
+	sc->sc_reverse_scroll = 0;
+	sc->sc_horiz_scroll_dist = WSMOUSE_DEFAULT_SCROLL_DIST;
+	sc->sc_vert_scroll_dist = WSMOUSE_DEFAULT_SCROLL_DIST;
+	callout_init(&sc->sc_repeat_callout);
+	callout_setfunc(&sc->sc_repeat_callout, wsmouse_repeat, sc);
 
 #ifdef EVDEV_SUPPORT
 	evdev_wsmouse_init(sc->sc_evsc);
@@ -490,6 +517,17 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 	mb = sc->sc_mb;
 	while ((d = mb ^ ub) != 0) {
 		/*
+		 * Cancel button repeating if button status changed.
+		 */
+		if (sc->sc_repeat_button != -1) {
+			KASSERT(sc->sc_repeat_button >= 0);
+			KASSERT(sc->sc_repeat.wr_buttons & (1 << sc->sc_repeat_button));
+			ub &= ~(1 << sc->sc_repeat_button);
+			sc->sc_repeat_button = -1;
+			callout_stop(&sc->sc_repeat_callout);
+		}
+
+		/*
 		 * Mouse button change.  Find the first change and drop
 		 * it into the event queue.
 		 */
@@ -505,6 +543,17 @@ wsmouse_input(wsmousedev, btns, x, y, z, flags)
 		ADVANCE
 		;
 		ub ^= d;
+
+		/*
+		 * Program button repeating if configured for this button.
+		 */
+		if ((mb & d) && (sc->sc_repeat.wr_buttons & (1 << ev->value))
+				&& sc->sc_repeat.wr_delay_first > 0) {
+			sc->sc_repeat_button = ev->value;
+			sc->sc_repeat_delay = sc->sc_repeat.wr_delay_first;
+			callout_schedule(&sc->sc_repeat_callout,
+					mstohz(sc->sc_repeat_delay));
+		}
 	}
 
 #ifdef EVDEV_SUPPORT
@@ -521,6 +570,182 @@ out:
 			    sc->sc_base.me_dv.dv_xname, evar));
 #endif
 	}
+}
+
+void
+wsmouse_precision_scroll(wsmousedev, x, y)
+	struct device *wsmousedev;
+	int x, y;
+{
+	struct wsmouse_softc *sc = (struct wsmouse_softc *)wsmousedev;
+	struct wseventvar *evar;
+	struct wscons_event events[2];
+	int nevents = 0;
+
+	sc =
+	evar = sc->sc_base.me_evp;
+	if (evar == NULL)
+		return;
+
+	if (sc->sc_reverse_scroll) {
+		x = -x;
+		y = -y;
+	}
+
+	x = (x * 4096) / sc->sc_horiz_scroll_dist;
+	y = (y * 4096) / sc->sc_vert_scroll_dist;
+
+	if (x != 0) {
+		events[nevents].type = WSCONS_EVENT_HSCROLL;
+		events[nevents].value = x;
+		nevents++;
+	}
+
+	if (y != 0) {
+		events[nevents].type = WSCONS_EVENT_VSCROLL;
+		events[nevents].value = y;
+		nevents++;
+	}
+
+	(void)wsevent_inject(evar, events, nevents);
+}
+
+static void
+wsmouse_repeat(void *v)
+{
+	int oldspl;
+	unsigned int newdelay;
+	struct wsmouse_softc *sc;
+	struct wscons_event events[2];
+
+	oldspl = spltty();
+	sc = (struct wsmouse_softc *)v;
+
+	if (sc->sc_repeat_button == -1) {
+		/* Race condition: a "button up" event came in when
+		 * this function was already called but did not do
+		 * spltty() yet. */
+		splx(oldspl);
+		return;
+	}
+	KASSERT(sc->sc_repeat_button >= 0);
+
+	KASSERT(sc->sc_repeat.wr_buttons & (1 << sc->sc_repeat_button));
+
+	newdelay = sc->sc_repeat_delay;
+
+	events[0].type = WSCONS_EVENT_MOUSE_UP;
+	events[0].value = sc->sc_repeat_button;
+	events[1].type = WSCONS_EVENT_MOUSE_DOWN;
+	events[1].value = sc->sc_repeat_button;
+
+	if (wsevent_inject(sc->sc_base.me_evp, events, 2) == 0) {
+		sc->sc_ub = 1 << sc->sc_repeat_button;
+
+		if (newdelay - sc->sc_repeat.wr_delay_decrement <
+		    sc->sc_repeat.wr_delay_minimum)
+			newdelay = sc->sc_repeat.wr_delay_minimum;
+		else if (newdelay > sc->sc_repeat.wr_delay_minimum)
+			newdelay -= sc->sc_repeat.wr_delay_decrement;
+		KASSERT(newdelay >= sc->sc_repeat.wr_delay_minimum);
+		KASSERT(newdelay <= sc->sc_repeat.wr_delay_first);
+	}
+
+	/*
+	 * Reprogram the repeating event.
+	 */
+	sc->sc_repeat_delay = newdelay;
+	callout_schedule(&sc->sc_repeat_callout, mstohz(newdelay));
+
+	splx(oldspl);
+}
+
+static int
+wsmouse_set_params(sc, buf, nparams)
+	struct wsmouse_softc *sc;
+	struct wsmouse_param *buf;
+	size_t nparams;
+{
+	size_t i = 0;
+
+	for (i = 0; i < nparams; ++i) {
+		switch (buf[i].key) {
+		case WSMOUSECFG_REVERSE_SCROLLING:
+			sc->sc_reverse_scroll = (buf[i].value != 0);
+			break;
+		case WSMOUSECFG_HORIZSCROLLDIST:
+			sc->sc_horiz_scroll_dist = buf[i].value;
+			break;
+		case WSMOUSECFG_VERTSCROLLDIST:
+			sc->sc_vert_scroll_dist = buf[i].value;
+			break;
+		}
+	}
+	return 0;
+}
+
+static int
+wsmouse_get_params(sc, buf, nparams)
+	struct wsmouse_softc *sc;
+	struct wsmouse_param *buf;
+	size_t nparams;
+{
+	size_t i = 0;
+
+	for (i = 0; i < nparams; ++i) {
+		switch (buf[i].key) {
+		case WSMOUSECFG_REVERSE_SCROLLING:
+			buf[i].value = sc->sc_reverse_scroll;
+			break;
+		case WSMOUSECFG_HORIZSCROLLDIST:
+			buf[i].value = sc->sc_horiz_scroll_dist;
+			break;
+		case WSMOUSECFG_VERTSCROLLDIST:
+			buf[i].value = sc->sc_vert_scroll_dist;
+			break;
+		}
+	}
+	return 0;
+}
+
+static int
+wsmouse_handle_params(sc, upl, set)
+	struct wsmouse_softc *sc;
+	struct wsmouse_parameters *upl;
+	bool_t set;
+{
+	size_t len;
+	struct wsmouse_param *buf;
+	int error = 0;
+
+	if (upl->params == NULL || upl->nparams > WSMOUSECFG_MAX)
+		return EINVAL;
+	if (upl->nparams == 0)
+		return 0;
+
+	len = upl->nparams * sizeof(struct wsmouse_param);
+
+	buf = (struct wsmouse_param *)malloc(len, M_DEVBUF, M_WAITOK);
+	if (buf == NULL)
+		return ENOMEM;
+	if ((error = copyin(upl->params, buf, len)) != 0)
+		goto error;
+
+	if (set) {
+		error = wsmouse_set_params(sc, buf, upl->nparams);
+		if (error != 0)
+			goto error;
+	} else {
+		error = wsmouse_get_params(sc, buf, upl->nparams);
+		if (error != 0)
+			goto error;
+		if ((error = copyout(buf, upl->params, len)) != 0)
+			goto error;
+	}
+
+error:
+	free(buf, M_DEVBUF);
+	return error;
 }
 
 #ifdef EVDEV_SUPPORT
@@ -713,6 +938,7 @@ wsmouse_do_ioctl(sc, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
+	struct wsmouse_repeat *wr;
 	int error;
 
 	if (sc->sc_dying)
@@ -745,6 +971,46 @@ wsmouse_do_ioctl(sc, cmd, data, flag, p)
 		if (*(int*) data != sc->sc_base.me_evp->io->p_pgid)
 			return (EPERM);
 		return (0);
+	}
+
+	/*
+	 * Try the wsmouse specific ioctls.
+	 */
+	switch (cmd) {
+	case WSMOUSEIO_GETREPEAT:
+		wr = (struct wsmouse_repeat *)data;
+		memcpy(wr, &sc->sc_repeat, sizeof(sc->sc_repeat));
+		return 0;
+
+	case WSMOUSEIO_SETREPEAT:
+		if ((flag & FWRITE) == 0)
+			return EACCES;
+
+		/* Validate input data. */
+		wr = (struct wsmouse_repeat *)data;
+		if (wr->wr_delay_first != 0 &&
+		    (wr->wr_delay_first < wr->wr_delay_decrement ||
+		     wr->wr_delay_first < wr->wr_delay_minimum ||
+		     wr->wr_delay_first < wr->wr_delay_minimum +
+		     wr->wr_delay_decrement))
+			return EINVAL;
+
+		/* Stop current repeating and set new data. */
+		sc->sc_repeat_button = -1;
+		callout_stop(&sc->sc_repeat_callout);
+		memcpy(&sc->sc_repeat, wr, sizeof(sc->sc_repeat));
+
+		return 0;
+
+	case WSMOUSEIO_GETPARAMS:
+		return wsmouse_handle_params(sc,
+		    (struct wsmouse_parameters *)data, FALSE);
+
+	case WSMOUSEIO_SETPARAMS:
+		if ((flag & FWRITE) == 0)
+			return EACCES;
+		return wsmouse_handle_params(sc,
+		    (struct wsmouse_parameters *)data, TRUE);
 	}
 
 	/*

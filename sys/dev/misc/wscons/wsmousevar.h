@@ -71,4 +71,6 @@ int	wsmousedevprint(void *, const char *);
 #define WSMOUSE_INPUT_ABSOLUTE_X	(1<<0)
 #define WSMOUSE_INPUT_ABSOLUTE_Y	(1<<1)
 #define WSMOUSE_INPUT_ABSOLUTE_Z	(1<<2)
-void wsmouse_input(struct device *kbddev, u_int btns, int dx, int dy, int dz, u_int flags);
+void wsmouse_input(struct device *, u_int, int, int, int, u_int);
+#define WSMOUSE_DEFAULT_SCROLL_DIST	(12)
+void wsmouse_precision_scroll(struct device *, int, int);

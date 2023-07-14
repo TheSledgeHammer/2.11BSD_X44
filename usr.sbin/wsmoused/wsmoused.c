@@ -261,12 +261,12 @@ open_device(unsigned int secs)
 	Mouse.m_devfd = open(Mouse.m_devname, O_RDONLY | O_NONBLOCK, 0);
 	if (Mouse.m_devfd == -1)
 		log_err(EXIT_FAILURE, "cannot open %s", Mouse.m_devname);
-
+/*
 	const int version = WSMOUSE_EVENT_VERSION;
 	status = ioctl(Mouse.m_devfd, WSMOUSEIO_SETVERSION, &version);
 	if (status == -1)
 		log_err(EXIT_FAILURE, "cannot set version %s", Mouse.m_devname);
-
+*/
 
 	/*
 	 * Get calibration data for touch panel.  Not fatal if we can't.

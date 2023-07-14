@@ -160,10 +160,10 @@ struct wsemuldisplaydev_attach_args {
 #define WSDISPLAYDEVCF_KBDMUX					0
 
 struct wscons_syncops {
-	int 	(*detach) (void *, int, void (*)(void *, int, int), void *);
-	int 	(*attach) (void *, int, void (*)(void *, int, int), void *);
-	int 	(*check) (void *);
-	void 	(*destroy) (void *);
+	int 	(*detach)(void *, int, void (*)(void *, int, int), void *);
+	int 	(*attach)(void *, int, void (*)(void *, int, int), void *);
+	int 	(*check)(void *);
+	void 	(*destroy)(void *);
 };
 
 /*
@@ -192,7 +192,7 @@ int wsdisplay_screenstate(struct wsdisplay_softc *, int);
 int wsdisplay_getactivescreen(struct wsdisplay_softc *);
 int wsscreen_switchwait(struct wsdisplay_softc *, int);
 
-int wsdisplay_internal_ioctl(struct wsdisplay_softc *sc, struct wsscreen *, u_long cmd, caddr_t data, int flag, struct proc *p);
+int wsdisplay_internal_ioctl(struct wsdisplay_softc *, struct wsscreen *, u_long , caddr_t, int, struct proc *);
 
 int wsdisplay_usl_ioctl1(struct wsdisplay_softc *, u_long, caddr_t, int, struct proc *);
 
@@ -200,10 +200,10 @@ int wsdisplay_usl_ioctl2(struct wsdisplay_softc *, struct wsscreen *, u_long, ca
 
 int wsdisplay_stat_ioctl(struct wsdisplay_softc *, u_long, caddr_t, int, struct proc *);
 
-int wsdisplay_cfg_ioctl(struct wsdisplay_softc *sc, u_long cmd, caddr_t data, int flag, struct proc *p);
+int wsdisplay_cfg_ioctl(struct wsdisplay_softc *, u_long, caddr_t, int, struct proc *);
 
 #ifdef WSDISPLAY_SCROLLSUPPORT
-void wsdisplay_scroll (void *v, int op);
+void wsdisplay_scroll(void *v, int op);
 #endif
 
 #define WSDISPLAY_SCROLL_BACKWARD	1
@@ -211,7 +211,7 @@ void wsdisplay_scroll (void *v, int op);
 #define WSDISPLAY_SCROLL_RESET		(1 << 2)
 #define WSDISPLAY_SCROLL_LOW		(1 << 3)
 
-int wsdisplay_stat_inject(struct device *dev, u_int type, int value);
+int wsdisplay_stat_inject(struct device *, u_int, int);
 
 /*
  * for general use

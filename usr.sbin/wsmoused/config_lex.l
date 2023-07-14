@@ -40,7 +40,7 @@ __RCSID("$NetBSD: config_lex.l,v 1.7 2009/10/29 14:40:09 christos Exp $");
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#include <dev/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsconsio.h>
 
 #include "wsmoused.h"
 #include "config_yacc.h"

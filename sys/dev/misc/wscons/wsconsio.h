@@ -238,6 +238,41 @@ struct wsmouse_id {
 };
 #define	WSMOUSEIO_GETID				_IOWR('W', 38, struct wsmouse_id)
 
+/* Get/set button repeating. */
+struct wsmouse_repeat {
+	unsigned long	wr_buttons;
+	unsigned int	wr_delay_first;
+	unsigned int	wr_delay_decrement;
+	unsigned int	wr_delay_minimum;
+};
+#define WSMOUSEIO_GETREPEAT			_IOR('W', 39, struct wsmouse_repeat)
+#define WSMOUSEIO_SETREPEAT			_IOW('W', 40, struct wsmouse_repeat)
+
+#define WSMOUSEIO_SETVERSION		_IOW('W', 41, int)
+#define WSMOUSE_EVENT_VERSION		WSEVENT_VERSION
+
+enum wsmousecfg {
+	WSMOUSECFG_REVERSE_SCROLLING = 0,
+	/* Touchpad parameters */
+	WSMOUSECFG_HORIZSCROLLDIST,
+	WSMOUSECFG_VERTSCROLLDIST
+};
+
+struct wsmouse_param {
+	enum wsmousecfg key;
+	int value;
+};
+
+struct wsmouse_parameters {
+	struct wsmouse_param *params;
+	unsigned int nparams;
+};
+
+#define WSMOUSECFG_MAX			(128) /* maximum number of wsmouse_params */
+
+#define WSMOUSEIO_GETPARAMS		_IOW('W', 42, struct wsmouse_parameters)
+#define WSMOUSEIO_SETPARAMS		_IOW('W', 43, struct wsmouse_parameters)
+
 /*
  * Display ioctls (64 - 95)
  */
@@ -472,7 +507,6 @@ struct wsmux_device_list {
 };
 #define	WSMUXIO_LIST_DEVICES		_IOWR('W', 99, struct wsmux_device_list)
 #define	WSMUX_LIST_DEVICES			WSMUXIO_LIST_DEVICES /* XXX compat */
-
 
 struct wsdisplayio_fontdesc {
 		char fd_name[64];
