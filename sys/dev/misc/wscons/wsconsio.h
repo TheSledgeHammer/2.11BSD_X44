@@ -75,6 +75,8 @@ struct wscons_event {
 #define	WSCONS_EVENT_ASCII				13	/* key code is already ascii */
 #define	WSCONS_EVENT_MOUSE_DELTA_W		14	/* W delta amount */
 #define	WSCONS_EVENT_MOUSE_ABSOLUTE_W	15	/* W location */
+#define	WSCONS_EVENT_HSCROLL		    16	/* X axis precision scrolling */
+#define	WSCONS_EVENT_VSCROLL		    17	/* Y axis precision scrolling */
 
 /*
  * Keyboard ioctls (0 - 31)
