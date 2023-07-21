@@ -87,7 +87,7 @@ int		_UTF8_sputcsrune(_UTF8EncodingInfo * __restrict, _csid_t * __restrict, _ind
 static int _UTF8_count_array[256];
 static int const *_UTF8_count = NULL;
 
-struct _RuneOps _utf8_runeops = {
+_RuneOps _utf8_runeops = {
 		.ro_sgetrune 	=  	_UTF8_sgetrune,
 		.ro_sgetrune 	=  	_UTF8_sgetrune,
 		.ro_sgetmbrune 	=  	_UTF8_sgetmbrune,
@@ -97,7 +97,7 @@ struct _RuneOps _utf8_runeops = {
 };
 
 static u_int32_t _UTF8_range[] = {
-	0,	/*dummy*/
+	0,	/* dummy */
 	0x00000000, 0x00000080, 0x00000800, 0x00010000,
 	0x00200000, 0x04000000, 0x80000000,
 };
@@ -115,7 +115,7 @@ _UTF8_findlen(wchar_t v)
 		}
 	}
 
-	return (-1);	/*out of range*/
+	return (-1);	/* out of range */
 }
 
 static __inline void
@@ -147,14 +147,6 @@ _UTF8_init(_RuneLocale *rl)
 	int ret;
 
 	rl->ops = &_utf8_runeops;
-/*
-	rl->ops->ro_sgetrune = _UTF8_sgetrune;
-	rl->ops->ro_sputrune = _UTF8_sputrune;
-	rl->ops->ro_sgetmbrune = _UTF8_sgetmbrune;
-	rl->ops->ro_sputmbrune = _UTF8_sputmbrune;
-	rl->ops->ro_sgetcsrune = _UTF8_sgetcsrune;
-	rl->ops->ro_sputcsrune = _UTF8_sputcsrune;
-*/
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);
@@ -178,7 +170,7 @@ _UTF8_sgetmbrune(_UTF8EncodingInfo *ei, wchar_t *pwc, const char **s, size_t n, 
 	int c;
 	int i;
 	int chlenbak;
-s
+
 	_DIAGASSERT(nresult != 0);
 	_DIAGASSERT(ei != NULL);
 	_DIAGASSERT(s != NULL);
@@ -352,7 +344,6 @@ _UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict ei, wchar_t * __restrict wc, _cs
 int
 _UTF8_sputcsrune(_UTF8EncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
 {
-
 	_DIAGASSERT(csid != NULL && idx != NULL);
 
 	*csid = 0;

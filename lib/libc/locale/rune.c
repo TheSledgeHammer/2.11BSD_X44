@@ -107,10 +107,13 @@ setrunelocale(encoding)
 
 	sprintf(name, "%s/%s/LC_CTYPE", PathLocale, encoding);
 
-	if ((fp = fopen(name, "r")) == NULL)
+	fp = fopen(name, "r");
+	if (fp == NULL) {
 		return (ENOENT);
+	}
 
-	if ((rl = _Read_RuneMagi(fp)) == 0) {
+	rl = _Read_RuneMagi(fp);
+	if (rl == NULL) {
 		fclose(fp);
 		return (EFTYPE);
 	}

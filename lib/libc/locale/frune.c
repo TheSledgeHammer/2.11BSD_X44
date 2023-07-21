@@ -181,7 +181,6 @@ fputrune(r, fp)
 	char buf[MB_LEN_MAX];
 
 	len = sputrune(r, buf, MB_LEN_MAX, 0);
-
 	for (i = 0; i < len; ++i)
 		if (putc(buf[i], fp) == EOF)
 			return (EOF);

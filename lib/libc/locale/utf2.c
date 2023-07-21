@@ -62,7 +62,7 @@ int 	_UTF2_sputmbrune(_UTF2EncodingInfo *, char *, wchar_t, _UTF2State *, size_t
 int		_UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF2_sputcsrune(_UTF2EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
-struct _RuneOps _utf2_runeops = {
+_RuneOps _utf2_runeops = {
 		.ro_sgetrune 	=  	_UTF2_sgetrune,
 		.ro_sgetrune 	=  	_UTF2_sgetrune,
 		.ro_sgetmbrune 	=  	_UTF2_sgetmbrune,
@@ -84,12 +84,6 @@ _UTF2_init(rl)
 	int ret;
 
 	rl->ops = &_utf2_runeops;
-/*
-	rl->ops->ro_sgetrune = _UTF2_sgetrune;
-	rl->ops->ro_sputrune = _UTF2_sputrune;
-	rl->ops->ro_sgetmbrune = _UTF2_sgetmbrune;
-	rl->ops->ro_sputmbrune = _UTF2_sputmbrune;
-*/
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);

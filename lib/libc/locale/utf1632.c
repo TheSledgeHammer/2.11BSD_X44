@@ -59,7 +59,7 @@ int		_UTF1632_sgetcsrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict
 int		_UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 static void parse_variable(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl);
 
-struct _RuneOps _utf1632_runeops = {
+_RuneOps _utf1632_runeops = {
 		.ro_sgetrune 	=  	_UTF1632_sgetrune,
 		.ro_sgetrune 	=  	_UTF1632_sgetrune,
 		.ro_sgetmbrune 	=  	_UTF1632_sgetmbrune,
@@ -76,12 +76,6 @@ _UTF1632_init(rl)
 	int ret;
 
 	rl->ops = &_utf1632_runeops;
-/*
-	rl->ops->ro_sgetrune = _UTF1632_sgetrune;
-	rl->ops->ro_sputrune = _UTF1632_sputrune;
-	rl->ops->ro_sgetmbrune = _UTF1632_sgetmbrune;
-	rl->ops->ro_sputmbrune = _UTF1632_sputmbrune;
-*/
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);

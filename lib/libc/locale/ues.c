@@ -61,7 +61,7 @@ int		_UES_sgetcsrune(_UESEncodingInfo * __restrict, wchar_t * __restrict, _csid_
 int		_UES_sputcsrune(_UESEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 static void parse_variable(_UESEncodingInfo * __restrict ei, _RuneLocale *rl);
 
-struct _RuneOps _ues_runeops = {
+_RuneOps _ues_runeops = {
 		.ro_sgetrune 	=  	_UES_sgetrune,
 		.ro_sgetrune 	=  	_UES_sgetrune,
 		.ro_sgetmbrune 	=  	_UES_sgetmbrune,
@@ -166,12 +166,6 @@ _UES_init(rl)
 	int ret;
 
 	rl->ops = &_ues_runeops;
-/*
-	rl->ops->ro_sgetrune = _UES_sgetrune;
-	rl->ops->ro_sputrune = _UES_sputrune;
-	rl->ops->ro_sgetmbrune = _UES_sgetmbrune;
-	rl->ops->ro_sputmbrune = _UES_sputmbrune;
-*/
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);

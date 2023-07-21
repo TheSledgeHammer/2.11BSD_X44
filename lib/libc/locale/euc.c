@@ -128,7 +128,7 @@ int		_EUC_sputcsrune(_EUCEncodingInfo * __restrict, _csid_t * __restrict, _index
 static int _EUC_set(u_int);
 static int parse_variable(_EUCEncodingInfo *, _RuneLocale *);
 
-struct _RuneOps _euc_runeops = {
+_RuneOps _euc_runeops = {
 		.ro_sgetrune 	=  	_EUC_sgetrune,
 		.ro_sgetrune 	=  	_EUC_sgetrune,
 		.ro_sgetmbrune 	=  	_EUC_sgetmbrune,
@@ -145,12 +145,6 @@ _EUC_init(rl)
 	int ret;
 
 	rl->ops = &_euc_runeops;
-	/*
-	rl->ops->ro_sgetrune = _EUC_sgetrune;
-	rl->ops->ro_sputrune = _EUC_sputrune;
-	rl->ops->ro_sgetmbrune = _EUC_sgetmbrune;
-	rl->ops->ro_sputmbrune = _EUC_sputmbrune;
-	*/
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);

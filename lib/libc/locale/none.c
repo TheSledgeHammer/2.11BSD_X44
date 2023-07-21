@@ -85,7 +85,7 @@ int 		_none_sputmbrune(void * __restrict, char * __restrict, wchar_t, void * __r
 int			_none_sgetcsrune(void * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int			_none_sputcsrune(void * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
-struct _RuneOps _none_runeops = {
+_RuneOps _none_runeops = {
 		.ro_sgetrune 	=  	_none_sgetrune,
 		.ro_sgetrune 	=  	_none_sgetrune,
 		.ro_sgetmbrune 	=  	_none_sgetmbrune,
@@ -99,12 +99,6 @@ _none_init(rl)
 	_RuneLocale *rl;
 {
 	rl->ops = &_none_runeops;
-/*
-	rl->ops->ro_sgetrune = _none_sgetrune;
-	rl->ops->ro_sputrune = _none_sputrune;
-	rl->ops->ro_sgetmbrune = _none_sgetmbrune;
-	rl->ops->ro_sputmbrune = _none_sputmbrune;
-*/
 	_CurrentRuneLocale = rl;
 
 	return (0);

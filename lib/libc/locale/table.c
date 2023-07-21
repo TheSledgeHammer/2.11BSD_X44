@@ -53,11 +53,6 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 
 extern struct _RuneOps _none_runeops;
 
-extern rune_t	_none_sgetrune (const char *, size_t, char const **);
-extern int		_none_sputrune (rune_t, char *, size_t, char **);
-extern int		_none_sgetmbrune(void * __restrict, wchar_t * __restrict, const char * __restrict, size_t, void * __restrict, size_t * __restrict);
-extern int 		_none_sputmbrune(void * __restrict, char * __restrict, wchar_t, void * __restrict, size_t * __restrict);
-
 _RuneLocale _DefaultRuneLocale = {
     _RUNE_MAGIC_1,
     "none",
@@ -263,14 +258,6 @@ _RuneLocale _DefaultRuneLocale = {
 	NULL, 0,
 	"646",
 	&_none_runeops,
-	/*
-	{
-			_none_sgetrune,
-			_none_sputrune,
-			_none_sgetmbrune,
-			_none_sputmbrune
-	},
-	*/
     {
     		{   "towlower",
     				__UNCONST(&_DefaultRuneLocale.maplower[0]),

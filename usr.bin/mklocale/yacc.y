@@ -73,17 +73,17 @@ rune_t	charsetmask = (rune_t)0x0000007f;
 #endif
 rune_t	charsetmask = (rune_t)0xffffffff;
 
-void set_map (rune_map *, rune_list *, u_int32_t);
-void set_digitmap (rune_map *, rune_list *);
-void add_map (rune_map *, rune_list *, u_int32_t);
+void set_map(rune_map *, rune_list *, u_int32_t);
+void set_digitmap(rune_map *, rune_list *);
+void add_map(rune_map *, rune_list *, u_int32_t);
 
-int		main (int, char *[]);
-int		yyerror (const char *s);
-void		*xmalloc (unsigned int sz);
-u_int32_t	*xlalloc (unsigned int sz);
-u_int32_t	*xrelalloc (u_int32_t *old, unsigned int sz);
-void		dump_tables (void);
-int		yyparse (void);
+int		main(int, char *[]);
+int		yyerror(const char *s);
+void		*xmalloc(unsigned int sz);
+u_int32_t	*xlalloc(unsigned int sz);
+u_int32_t	*xrelalloc(u_int32_t *old, unsigned int sz);
+void		dump_tables(void);
+int		yyparse(void);
 extern int	yylex(void);
 
 %}
