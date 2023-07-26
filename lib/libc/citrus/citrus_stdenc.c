@@ -71,10 +71,12 @@ _citrus_stdenc_init(_ENCODING_INFO * __restrict info)
 		free((void*) et);
 		return (errno);
 	}
+
 	et->state_size = sizeof(_ENCODING_STATE);
 	et->mb_cur_max = _ENCODING_MB_CUR_MAX(ei);
 	ei->traits = et;
 	info = ei;
+
 	return (0);
 }
 

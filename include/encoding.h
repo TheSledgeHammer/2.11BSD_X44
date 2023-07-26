@@ -88,6 +88,8 @@ typedef struct {
 #define _CEI_TO_EI(_cei_)					(&(_cei_)->ei)
 #define _CEI_TO_STATE(_cei_, _func_)		(_cei_)->states.s_##_func_
 #define _TO_CEI(_cl_)						((_CTYPE_INFO*)(_cl_))
+#define _TO_EI(_cl_)						((_ENCODING_INFO*)(_cl_))
+#define _TO_STATE(_ps_)					((_ENCODING_STATE*)(_ps_))
 
 #define _ENCODING_INFO						_Encoding_Info
 #define _CTYPE_INFO							_Encoding_TypeInfo

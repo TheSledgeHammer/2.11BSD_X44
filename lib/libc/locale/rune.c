@@ -83,6 +83,32 @@ wctrans_init(_RuneLocale *rl)
 }
 
 int
+initrunelocale(rl)
+	_RuneLocale *rl;
+{
+	rl->ops = (_RuneOps)malloc(sizeof(*rl->ops));
+	if (rl->ops == NULL) {
+		return (ENOMEM);
+	}
+
+	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF-8")) {
+		return (_UTF8_init(rl));
+	} else if (!strcmp(rl->encoding, "UTF-1632")) {
+		return (_UTF1632_init(rl));
+	} else if (!strcmp(rl->encoding, "UES")) {
+		return (_UES_init(rl));
+	} else if (!strcmp(rl->encoding, "UTF-2")) {
+		return (_UTF2_init(rl));
+	} else if (!strcmp(rl->encoding, "NONE")) {
+		return (_none_init(rl));
+	} else if (!strcmp(rl->encoding, "EUC")) {
+		return (_EUC_init(rl));
+	} else {
+		return (EINVAL);
+	}
+}
+
+int
 setrunelocale(encoding)
 	char *encoding;
 {
@@ -121,26 +147,7 @@ setrunelocale(encoding)
 	wctype_init(rl);
 	wctrans_init(rl);
 
-	rl->ops = (_RuneOps)malloc(sizeof(*rl->ops));
-	if (rl->ops == NULL) {
-		return (ENOMEM);
-	}
-
-	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF-8")) {
-		return (_UTF8_init(rl));
-	} else if (!strcmp(rl->encoding, "UTF-1632")) {
-		return (_UTF1632_init(rl));
-	} else if (!strcmp(rl->encoding, "UES")) {
-		return (_UES_init(rl));
-	} else if (!strcmp(rl->encoding, "UTF-2")) {
-		return (_UTF2_init(rl));
-	} else if (!strcmp(rl->encoding, "NONE")) {
-		return (_none_init(rl));
-	} else if (!strcmp(rl->encoding, "EUC")) {
-		return (_EUC_init(rl));
-	} else {
-		return (EINVAL);
-	}
+	return (initrunelocale(rl));
 }
 
 void
