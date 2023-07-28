@@ -60,8 +60,8 @@ int 	_UES_sputmbrune(_UESEncodingInfo *, char *, wchar_t, _UESState *, size_t *)
 int		_UES_sgetcsrune(_UESEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UES_sputcsrune(_UESEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
-static void parse_variable(_UESEncodingInfo * __restrict ei, const void * __restrict, size_t);
-static int _UES_module_init(_UESEncodingInfo * __restrict, const void * __restrict, size_t);
+//static void parse_variable(_UESEncodingInfo * __restrict ei, const void * __restrict, size_t);
+static int _UES_encoding_module_init(_UESEncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _ues_runeops = {
 		.ro_sgetrune 	=  	_UES_sgetrune,
@@ -168,7 +168,15 @@ _UES_init(rl)
 	int ret;
 
 	rl->ops = &_ues_runeops;
-
+	ret = _citrus_ctype_open(&rl, rl->variable, rl->variable_len, _UES_encoding_module_init);
+	if (ret != 0) {
+		return (ret);
+	}
+	ret = _citrus_stdenc_open(&rl, rl->variable, rl->variable_len, _UES_encoding_module_init);
+	if (ret != 0) {
+		return (ret);
+	}
+/*
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);
@@ -180,7 +188,7 @@ _UES_init(rl)
 	if (info != NULL) {
 		parse_variable(info, rl->variable, rl->variable_len);
 	}
-
+*/
 	_CurrentRuneLocale = rl;
 
 	return (0);
@@ -395,13 +403,9 @@ static void
 parse_variable(_UESEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	const char *p;
-	size_t lenvar;
 
-	_DIAGASSERT(ei != NULL);
-
-	p = rl->variable;
-	lenvar = rl->variable_len;
-
+    p = var;
+    memset((void *)ei, 0, sizeof(*ei));
 	while (lenvar > 0) {
 		switch (toupper(*p)) {
 		case 'C':
@@ -415,8 +419,11 @@ parse_variable(_UESEncodingInfo * __restrict ei, const void * __restrict var, si
 }
 
 static int
-_UES_module_init(_UESEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+_UES_encoding_module_init(_UESEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
+    _DIAGASSERT(ei != NULL);
+
+    parse_variable(ei, var, lenvar);
 
 	return (0);
 }

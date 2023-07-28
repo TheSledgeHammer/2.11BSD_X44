@@ -84,7 +84,7 @@ int 	_UTF8_sputmbrune(_UTF8EncodingInfo *, char *, wchar_t, _UTF8State *, size_t
 int		_UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF8_sputcsrune(_UTF8EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
-static int _UTF8_module_init(_UTF8EncodingInfo * __restrict, const void * __restrict, size_t);
+static int _UTF8_encoding_module_init(_UTF8EncodingInfo * __restrict, const void * __restrict, size_t);
 
 static int _UTF8_count_array[256];
 static int const *_UTF8_count = NULL;
@@ -149,6 +149,16 @@ _UTF8_init(_RuneLocale *rl)
 	int ret;
 
 	rl->ops = &_utf8_runeops;
+	ret = _citrus_ctype_open(&rl, rl->variable, rl->variable_len, _UTF8_encoding_module_init);
+	if (ret != 0) {
+		return (ret);
+	}
+	ret = _citrus_stdenc_open(&rl, rl->variable, rl->variable_len, _UTF8_encoding_module_init);
+	if (ret != 0) {
+		return (ret);
+	}
+
+/*
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);
@@ -158,7 +168,7 @@ _UTF8_init(_RuneLocale *rl)
 		return (ret);
 	}
 	_UTF8_init_count();
-
+*/
 	_CurrentRuneLocale = rl;
 
 	return (0);
@@ -355,7 +365,7 @@ _UTF8_sputcsrune(_UTF8EncodingInfo * __restrict ei, _csid_t * __restrict csid, _
 }
 
 static int
-_UTF8_module_init(_UTF8EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+_UTF8_encoding_module_init(_UTF8EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	_UTF8_init_count();
 

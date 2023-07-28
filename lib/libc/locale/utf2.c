@@ -62,7 +62,7 @@ int 	_UTF2_sputmbrune(_UTF2EncodingInfo *, char *, wchar_t, _UTF2State *, size_t
 int		_UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF2_sputcsrune(_UTF2EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
-static int _UTF2_module_init(_UTF2EncodingInfo * __restrict, const void * __restrict, size_t);
+static int _UTF2_encoding_module_init(_UTF2EncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _utf2_runeops = {
 		.ro_sgetrune 	=  	_UTF2_sgetrune,
@@ -86,6 +86,15 @@ _UTF2_init(rl)
 	int ret;
 
 	rl->ops = &_utf2_runeops;
+	ret = _citrus_ctype_open(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
+	if (ret != 0) {
+		return (ret);
+	}
+	ret = _citrus_stdenc_open(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
+	if (ret != 0) {
+		return (ret);
+	}
+/*
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);
@@ -94,7 +103,7 @@ _UTF2_init(rl)
 	if (ret != 0) {
 		return (ret);
 	}
-
+*/
 	_CurrentRuneLocale = rl;
 
 	return (0);
@@ -234,7 +243,7 @@ _UTF2_sputcsrune(_UTF2EncodingInfo * __restrict ei, _csid_t * __restrict csid, _
 }
 
 static int
-_UTF2_module_init(_UTF2EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+_UTF2_encoding_module_init(_UTF2EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	return (0);
 }
