@@ -43,8 +43,21 @@
 #include "citrus_ctype_template.h"
 #include "citrus_types.h"
 #include "citrus_stdenc.h"
+#include "citrus_stdenc_template.h"
 
+int
+_citrus_stdenc_open(void ** __restrict cl, void * __restrict var, size_t lenvar, module_init_t module)
+{
+    return (_citrus_stdenc_init(cl, var, lenvar, module));
+}
 
+void
+_citrus_stdenc_close(void)
+{
+
+}
+
+#ifdef notyet
 /* ----------------------------------------------------------------------
  * templates for public functions
  */
@@ -178,3 +191,5 @@ _citrus_stdenc_put_state_reset(void * __restrict ei, char * __restrict s, size_t
 	return (0);
 #endif
 }
+
+#endif

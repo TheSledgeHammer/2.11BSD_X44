@@ -33,14 +33,18 @@
 #include <encoding.h>
 #include <rune.h>
 
-/*
+
 typedef int (*module_init_t)(_ENCODING_INFO * __restrict , const void * __restrict, size_t);
 
-int _citrus_init(void ** __restrict, const void * __restrict, size_t, module_init_t);
+//int _citrus_init(void ** __restrict, const void * __restrict, size_t, module_init_t);
 */
 
 /* prototypes */
 __BEGIN_DECLS
+
+int		_citrus_stdenc_open(void ** __restrict, void * __restrict, size_t, module_init_t);
+
+#ifdef notyet
 void		_citrus_ctype_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
 void		_citrus_ctype_pack_state(_ENCODING_INFO * __restrict, void * __restrict, const _ENCODING_STATE * __restrict);
 void		_citrus_ctype_unpack_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict, const void * __restrict);
@@ -65,5 +69,6 @@ int 		_citrus_ctype_wcstombs(void * __restrict, char * __restrict, const wchar_t
 int 		_citrus_ctype_wctomb(void * __restrict, char * __restrict, wchar_t, int * __restrict);
 int 		_citrus_ctype_btowc(void * __restrict, int, wint_t * __restrict);
 int 		_citrus_ctype_wctob(void * __restrict, wint_t, int * __restrict);
+#endif
 __END_DECLS
 #endif /* _CITRUS_CTYPE_H_ */

@@ -64,6 +64,20 @@
 #include "citrus_ctype.h"
 #include "citrus_ctype_template.h"
 
+int
+_citrus_ctype_open(void ** __restrict cl, void * __restrict var, size_t lenvar, module_init_t module)
+{
+    return (_citrus_ctype_init(cl, var, lenvar, module));
+}
+
+void
+_citrus_ctype_close(void)
+{
+
+}
+
+#ifdef notyet
+
 /* internal routines */
 int
 _citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
@@ -531,3 +545,5 @@ _citrus_ctype_wctob(void * __restrict cl, wint_t wc, int * __restrict cresult)
 
 	return 0;
 }
+
+#endif
