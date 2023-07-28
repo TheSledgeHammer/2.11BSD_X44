@@ -126,7 +126,8 @@ int		_EUC_sgetcsrune(_EUCEncodingInfo * __restrict, wchar_t * __restrict, _csid_
 int		_EUC_sputcsrune(_EUCEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
 static int _EUC_set(u_int);
-static int parse_variable(_EUCEncodingInfo *, _RuneLocale *);
+static int parse_variable(_EUCEncodingInfo *, const void * __restrict, size_t);
+static int _EUC_encoding_module_init(_EUCEncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _euc_runeops = {
 		.ro_sgetrune 	=  	_EUC_sgetrune,
@@ -145,6 +146,7 @@ _EUC_init(rl)
 	int ret;
 
 	rl->ops = &_euc_runeops;
+
 	ret = _citrus_ctype_init(&rl);
 	if (ret != 0) {
 		return (ret);
@@ -154,7 +156,7 @@ _EUC_init(rl)
 		return (ret);
 	}
 	if (info != NULL) {
-		ret = parse_variable(info, rl);
+		ret = parse_variable(info, rl->variable, rl->variable_len);
 		if (ret != 0) {
 			return (ret);
 		}
@@ -368,19 +370,19 @@ _EUC_set(u_int c)
 }
 
 static int
-parse_variable(_EUCEncodingInfo *ei, _RuneLocale *rl)
+parse_variable(_EUCEncodingInfo *ei, const void *var, size_t lenvar)
 {
 	const char *v, *e;
-	size_t lenvar;
+	//size_t lenvar;
 	int x;
 
 	/* parse variable string */
-	if (!rl->variable) {
+	if (!var) {
 		return (EFTYPE);
 	}
 
-	v = (const char *)rl->variable;
-	lenvar = rl->variable_len;
+	v = (const char *)var;
+	//lenvar = rl->variable_len;
 
 	while (*v == ' ' || *v == '\t') {
 		++v;
@@ -411,4 +413,12 @@ parse_variable(_EUCEncodingInfo *ei, _RuneLocale *rl)
 	}
 
 	return 0;
+}
+
+static int
+_EUC_encoding_module_init(_EUCEncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+{
+	_DIAGASSERT(ei != NULL);
+
+	return (parse_variable(ei, var, lenvar));
 }

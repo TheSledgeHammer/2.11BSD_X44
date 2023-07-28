@@ -84,6 +84,8 @@ int 	_UTF8_sputmbrune(_UTF8EncodingInfo *, char *, wchar_t, _UTF8State *, size_t
 int		_UTF8_sgetcsrune(_UTF8EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF8_sputcsrune(_UTF8EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
+static int _UTF8_module_init(_UTF8EncodingInfo * __restrict, const void * __restrict, size_t);
+
 static int _UTF8_count_array[256];
 static int const *_UTF8_count = NULL;
 
@@ -348,6 +350,14 @@ _UTF8_sputcsrune(_UTF8EncodingInfo * __restrict ei, _csid_t * __restrict csid, _
 
 	*csid = 0;
 	*idx = (_citrus_index_t)wc;
+
+	return (0);
+}
+
+static int
+_UTF8_module_init(_UTF8EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+{
+	_UTF8_init_count();
 
 	return (0);
 }

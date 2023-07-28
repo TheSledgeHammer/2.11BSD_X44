@@ -33,6 +33,12 @@
 #include <encoding.h>
 #include <rune.h>
 
+/*
+typedef int (*module_init_t)(_ENCODING_INFO * __restrict , const void * __restrict, size_t);
+
+int _citrus_init(void ** __restrict, const void * __restrict, size_t, module_init_t);
+*/
+
 /* prototypes */
 __BEGIN_DECLS
 void		_citrus_ctype_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);

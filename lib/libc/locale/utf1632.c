@@ -57,7 +57,9 @@ int		_UTF1632_sgetmbrune(_UTF1632EncodingInfo *, wchar_t *, const char **, size_
 int 	_UTF1632_sputmbrune(_UTF1632EncodingInfo *, char *, wchar_t, _UTF1632State *, size_t *);
 int		_UTF1632_sgetcsrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
-static void parse_variable(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl);
+
+static void parse_variable(_UTF1632EncodingInfo * __restrict, const void * __restrict, size_t);
+static int _UTF1632_module_init(_UTF1632EncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _utf1632_runeops = {
 		.ro_sgetrune 	=  	_UTF1632_sgetrune,
@@ -85,7 +87,7 @@ _UTF1632_init(rl)
 		return (ret);
 	}
 	if (info != NULL) {
-		parse_variable(info, rl);
+		parse_variable(info, rl->variable, rl->variable_len);
 	}
 
     if ((info->mode & _MODE_UTF32) == 0) {
@@ -383,14 +385,11 @@ _UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict ei, _csid_t * __restrict c
 } while (/*CONSTCOND*/0);
 
 static void
-parse_variable(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl)
+parse_variable(_UTF1632EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	const char *p;
-	size_t lenvar;
 
-	p = rl->variable;
-	lenvar = rl->variable_len;
-
+	p = var;
 	while (lenvar > 0) {
 		switch (*p) {
 		case 'B':
@@ -413,4 +412,27 @@ parse_variable(_UTF1632EncodingInfo * __restrict ei, _RuneLocale *rl)
 		p++;
 		lenvar--;
 	}
+}
+
+static int
+_UTF1632_module_init(_UTF1632EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
+{
+	_DIAGASSERT(ei != NULL);
+
+	parse_variable(ei, var, lenvar);
+
+    if ((ei->mode & _MODE_UTF32) == 0) {
+    	ei->mb_cur_max = 6; /* endian + surrogate */
+    } else {
+    	ei->mb_cur_max = 8; /* endian + normal */
+    }
+
+	if (ei->preffered_endian == _ENDIAN_UNKNOWN) {
+#if BYTE_ORDER == BIG_ENDIAN
+		ei->preffered_endian = _ENDIAN_BIG;
+#else
+		ei->preffered_endian = _ENDIAN_LITTLE;
+#endif
+	}
+	return (0);
 }

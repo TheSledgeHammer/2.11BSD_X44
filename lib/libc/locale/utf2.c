@@ -62,6 +62,8 @@ int 	_UTF2_sputmbrune(_UTF2EncodingInfo *, char *, wchar_t, _UTF2State *, size_t
 int		_UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF2_sputcsrune(_UTF2EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
+static int _UTF2_module_init(_UTF2EncodingInfo * __restrict, const void * __restrict, size_t);
+
 _RuneOps _utf2_runeops = {
 		.ro_sgetrune 	=  	_UTF2_sgetrune,
 		.ro_sgetrune 	=  	_UTF2_sgetrune,
@@ -227,6 +229,12 @@ _UTF2_sgetcsrune(_UTF2EncodingInfo * __restrict ei, wchar_t * __restrict wc, _cs
 
 int
 _UTF2_sputcsrune(_UTF2EncodingInfo * __restrict ei, _csid_t * __restrict csid, _index_t * __restrict idx, wchar_t wc)
+{
+	return (0);
+}
+
+static int
+_UTF2_module_init(_UTF2EncodingInfo * __restrict ei, const void * __restrict var, size_t lenvar)
 {
 	return (0);
 }
