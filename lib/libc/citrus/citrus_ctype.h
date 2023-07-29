@@ -37,6 +37,36 @@ typedef int (*module_init_t)(_ENCODING_INFO * __restrict , const void * __restri
 
 /* prototypes */
 __BEGIN_DECLS
+
+/*
+ * standard form of mbrtowc_priv.
+ *
+ * note (differences from real mbrtowc):
+ *   - 3rd parameter is not "const char *s" but "const char **s".
+ *     after the call of the function, *s will point the first byte of
+ *     the next character.
+ *   - additional 4th parameter is the size of src buffer.
+ *   - 5th parameter is unpacked encoding-dependent state structure.
+ *   - additional 6th parameter is the storage to be stored
+ *     the return value in the real mbrtowc context.
+ *   - return value means "errno" in the real mbrtowc context.
+ */
+static int	_citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict, wchar_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+
+/*
+ * standard form of wcrtomb_priv.
+ *
+ * note (differences from real wcrtomb):
+ *   - additional 3th parameter is the size of src buffer.
+ *   - 5th parameter is unpacked encoding-dependent state structure.
+ *   - additional 6th parameter is the storage to be stored
+ *     the return value in the real mbrtowc context.
+ *   - return value means "errno" in the real wcrtomb context.
+ *   - caller should ensure that 2nd parameter isn't NULL.
+ *     (XXX inconsist with mbrtowc_priv)
+ */
+static int	_citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict, char * __restrict, size_t, wchar_t, _ENCODING_STATE * __restrict, size_t * __restrict);
+
 void		_citrus_ctype_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
 void		_citrus_ctype_pack_state(_ENCODING_INFO * __restrict, void * __restrict, const _ENCODING_STATE * __restrict);
 void		_citrus_ctype_unpack_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict, const void * __restrict);

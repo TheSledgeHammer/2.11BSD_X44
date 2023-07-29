@@ -65,37 +65,12 @@
 
 /* internal routines */
 
- /*
-  * standard form of mbrtowc_priv.
-  *
-  * note (differences from real mbrtowc):
-  *   - 3rd parameter is not "const char *s" but "const char **s".
-  *     after the call of the function, *s will point the first byte of
-  *     the next character.
-  *   - additional 4th parameter is the size of src buffer.
-  *   - 5th parameter is unpacked encoding-dependent state structure.
-  *   - additional 6th parameter is the storage to be stored
-  *     the return value in the real mbrtowc context.
-  *   - return value means "errno" in the real mbrtowc context.
-  */
 static int
 _citrus_ctype_mbrtowc_priv(_ENCODING_INFO * __restrict ei, wchar_t * __restrict pwc, const char ** __restrict s, size_t n, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
 	return (sgetmbrune(ei, pwc, s, n, psenc, nresult));
 }
 
-/*
- * standard form of wcrtomb_priv.
- *
- * note (differences from real wcrtomb):
- *   - additional 3th parameter is the size of src buffer.
- *   - 5th parameter is unpacked encoding-dependent state structure.
- *   - additional 6th parameter is the storage to be stored
- *     the return value in the real mbrtowc context.
- *   - return value means "errno" in the real wcrtomb context.
- *   - caller should ensure that 2nd parameter isn't NULL.
- *     (XXX inconsist with mbrtowc_priv)
- */
 static int
 _citrus_ctype_wcrtomb_priv(_ENCODING_INFO * __restrict ei, char * __restrict s, size_t n, wchar_t pwc, _ENCODING_STATE * __restrict psenc, size_t * __restrict nresult)
 {
