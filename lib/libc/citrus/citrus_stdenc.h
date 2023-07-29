@@ -27,21 +27,13 @@
  *
  */
 
-/* Work In Progress */
-
 #ifndef _CITRUS_STDENC_H_
 #define _CITRUS_STDENC_H_
 
 __BEGIN_DECLS
-
-int		_citrus_stdenc_open(void ** __restrict, void * __restrict, size_t, module_init_t);
-
-#ifdef notyet
-int		_citrus_stdenc_init(_ENCODING_INFO * __restrict);
+int		_citrus_stdenc_init(void ** __restrict, void * __restrict, size_t, module_init_t);
 void	_citrus_stdenc_uninit(_ENCODING_INFO * __restrict);
-
 int		_citrus_stdenc_init_state(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict);
-
 int 	_citrus_stdenc_cstowc(_ENCODING_INFO * __restrict,  wchar_t * __restrict, _csid_t, _index_t);
 int 	_citrus_stdenc_wctocs(_ENCODING_INFO * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 int 	_citrus_stdenc_mbtocs(_ENCODING_INFO * __restrict, _citrus_csid_t * __restrict, _citrus_index_t * __restrict, const char ** __restrict, size_t, _ENCODING_STATE * __restrict, size_t * __restrict);
@@ -51,6 +43,6 @@ int 	_citrus_stdenc_wctomb(_ENCODING_INFO * __restrict, char * __restrict, size_
 size_t 	_citrus_stdenc_get_state_size(_ENCODING_INFO *);
 size_t 	_citrus_stdenc_get_mb_cur_max(_ENCODING_INFO *);
 int		_citrus_stdenc_put_state_reset(void * __restrict, char * __restrict, size_t, void * __restrict, size_t * __restrict);
-#endif
 __END_DECLS
+
 #endif /* _CITRUS_STDENC_H_ */

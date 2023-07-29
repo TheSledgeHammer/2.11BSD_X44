@@ -40,44 +40,33 @@
 #include <errno.h>
 
 #include "citrus_ctype.h"
-#include "citrus_ctype_template.h"
 #include "citrus_types.h"
 #include "citrus_stdenc.h"
-#include "citrus_stdenc_template.h"
 
-int
-_citrus_stdenc_open(void ** __restrict cl, void * __restrict var, size_t lenvar, module_init_t module)
-{
-    return (_citrus_stdenc_init(cl, var, lenvar, module));
-}
-
-void
-_citrus_stdenc_close(void)
-{
-
-}
-
-#ifdef notyet
 /* ----------------------------------------------------------------------
  * templates for public functions
  */
 
 int
-_citrus_stdenc_init(_ENCODING_INFO * __restrict info)
+_citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar, module_init_t module)
 {
-	_ENCODING_INFO *ei;
-	_ENCODING_TRAITS *et;
+	_ENCODING_INFO 		*ei;
+	_ENCODING_TRAITS 	*et;
 	int ret;
 
+	ei = NULL;
 	if (sizeof(_ENCODING_INFO) > 0) {
 		ei = calloc(1, sizeof(_ENCODING_INFO));
 		if (ei == NULL) {
-			free((void*) ei);
 			return (errno);
 		}
 	}
 
-	_citrus_ctype_encoding_init(ei);
+	ret = (*module)(ei, var, lenvar);
+	if (ret) {
+		free((void *)ei);
+		return (ret);
+	}
 
 	et = malloc(sizeof(*et));
 	if (et == NULL) {
@@ -88,7 +77,6 @@ _citrus_stdenc_init(_ENCODING_INFO * __restrict info)
 	et->state_size = sizeof(_ENCODING_STATE);
 	et->mb_cur_max = _ENCODING_MB_CUR_MAX(ei);
 	ei->traits = et;
-	info = ei;
 
 	return (0);
 }
@@ -191,5 +179,3 @@ _citrus_stdenc_put_state_reset(void * __restrict ei, char * __restrict s, size_t
 	return (0);
 #endif
 }
-
-#endif

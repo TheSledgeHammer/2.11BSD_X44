@@ -58,7 +58,6 @@ int 	_UTF1632_sputmbrune(_UTF1632EncodingInfo *, char *, wchar_t, _UTF1632State 
 int		_UTF1632_sgetcsrune(_UTF1632EncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UTF1632_sputcsrune(_UTF1632EncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
-//static void parse_variable(_UTF1632EncodingInfo * __restrict, const void * __restrict, size_t);
 static int _UTF1632_encoding_module_init(_UTF1632EncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _utf1632_runeops = {
@@ -78,41 +77,15 @@ _UTF1632_init(rl)
 	int ret;
 
 	rl->ops = &_utf1632_runeops;
-	ret = _citrus_ctype_open(&rl, rl->variable, rl->variable_len, _UTF1632_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _UTF1632_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_open(&rl, rl->variable, rl->variable_len, _UTF1632_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _UTF1632_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
-	}
-/*
-	ret = _citrus_ctype_init(&rl);
-	if (ret != 0) {
-		return (ret);
-	}
-	ret = _citrus_stdenc_init(info);
-	if (ret != 0) {
-		return (ret);
-	}
-	if (info != NULL) {
-		parse_variable(info, rl->variable, rl->variable_len);
 	}
 
-    if ((info->mode & _MODE_UTF32) == 0) {
-        info->mb_cur_max = 6; /* endian + surrogate */
-//    } else {
-//      info->mb_cur_max = 8; /* endian + normal */
-/*   }
-
-	if (info->preffered_endian == _ENDIAN_UNKNOWN) {
-#if BYTE_ORDER == BIG_ENDIAN
-		info->preffered_endian = _ENDIAN_BIG;
-#else
-		info->preffered_endian = _ENDIAN_LITTLE;
-#endif
-	}
-*/
 	_CurrentRuneLocale = rl;
 
 	return (0);

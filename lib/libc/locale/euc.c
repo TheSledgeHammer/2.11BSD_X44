@@ -126,7 +126,6 @@ int		_EUC_sgetcsrune(_EUCEncodingInfo * __restrict, wchar_t * __restrict, _csid_
 int		_EUC_sputcsrune(_EUCEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
 static int _EUC_set(u_int);
-//static int parse_variable(_EUCEncodingInfo *, const void * __restrict, size_t);
 static int _EUC_encoding_module_init(_EUCEncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _euc_runeops = {
@@ -147,22 +146,14 @@ _EUC_init(rl)
 
 	rl->ops = &_euc_runeops;
 
-	ret = _citrus_ctype_open(&rl, rl->variable, rl->variable_len, _EUC_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _EUC_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_open(&rl, rl->variable, rl->variable_len, _EUC_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _EUC_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
 	}
-/*
-	if (info != NULL) {
-		ret = parse_variable(info, rl->variable, rl->variable_len);
-		if (ret != 0) {
-			return (ret);
-		}
-	}
-*/
 	_CurrentRuneLocale = rl;
 
 	return (0);

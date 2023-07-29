@@ -86,24 +86,15 @@ _UTF2_init(rl)
 	int ret;
 
 	rl->ops = &_utf2_runeops;
-	ret = _citrus_ctype_open(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_open(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _UTF2_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
 	}
-/*
-	ret = _citrus_ctype_init(&rl);
-	if (ret != 0) {
-		return (ret);
-	}
-	ret = _citrus_stdenc_init(info);
-	if (ret != 0) {
-		return (ret);
-	}
-*/
+
 	_CurrentRuneLocale = rl;
 
 	return (0);

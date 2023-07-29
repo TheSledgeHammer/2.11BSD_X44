@@ -60,7 +60,6 @@ int 	_UES_sputmbrune(_UESEncodingInfo *, char *, wchar_t, _UESState *, size_t *)
 int		_UES_sgetcsrune(_UESEncodingInfo * __restrict, wchar_t * __restrict, _csid_t, _index_t);
 int		_UES_sputcsrune(_UESEncodingInfo * __restrict, _csid_t * __restrict, _index_t * __restrict, wchar_t);
 
-//static void parse_variable(_UESEncodingInfo * __restrict ei, const void * __restrict, size_t);
 static int _UES_encoding_module_init(_UESEncodingInfo * __restrict, const void * __restrict, size_t);
 
 _RuneOps _ues_runeops = {
@@ -168,27 +167,15 @@ _UES_init(rl)
 	int ret;
 
 	rl->ops = &_ues_runeops;
-	ret = _citrus_ctype_open(&rl, rl->variable, rl->variable_len, _UES_encoding_module_init);
+	ret = _citrus_ctype_init(&rl, rl->variable, rl->variable_len, _UES_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
 	}
-	ret = _citrus_stdenc_open(&rl, rl->variable, rl->variable_len, _UES_encoding_module_init);
+	ret = _citrus_stdenc_init(&rl, rl->variable, rl->variable_len, _UES_encoding_module_init);
 	if (ret != 0) {
 		return (ret);
 	}
-/*
-	ret = _citrus_ctype_init(&rl);
-	if (ret != 0) {
-		return (ret);
-	}
-	ret = _citrus_stdenc_init(info);
-	if (ret != 0) {
-		return (ret);
-	}
-	if (info != NULL) {
-		parse_variable(info, rl->variable, rl->variable_len);
-	}
-*/
+
 	_CurrentRuneLocale = rl;
 
 	return (0);
