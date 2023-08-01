@@ -107,5 +107,9 @@
 #define	MAX_SLICES			32
 #define	WHOLE_DISK_SLICE	1
 
+/* Slice Conversion: */
+#define B_SLICE_TO_B_ADAPTOR(slice)		((slice + 1) >> 4)
+#define B_SLICE_TO_B_CONTROLLER(slice)	((slice + 1) & 0xf)
+
 #endif /* !_LOCORE */
 #endif

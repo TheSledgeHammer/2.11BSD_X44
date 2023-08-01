@@ -84,6 +84,13 @@ int			i386_setcurrdev(struct env_var *, int , const void *);
 void		bsd_slices(struct i386_devdesc, int, int);
 void		bsd_traditional(struct i386_devdesc, int, int);
 
+/* setup traditional from slices */
+void		bd_setbootdev(struct i386_devdesc *, int);
+/* traditional */
+int 		bd_makebootdev1(int, int, int, int, int);
+/* slices */
+int 		bd_makebootdev2(int, int, int, int);
+
 struct preloaded_file;
 void		bios_getmem(void);
 

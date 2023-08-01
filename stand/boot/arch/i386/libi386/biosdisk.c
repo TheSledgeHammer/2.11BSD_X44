@@ -1262,11 +1262,16 @@ bd_getdev(struct i386_devdesc *dev)
 			unit = i;
 		}
 	}
+
+	bd_setbootdev(dev, dev->d_kind.biosdisk.slice);
+	rootdev = bd_makebootdev1(major, dev->d_kind.biosdisk.adaptor, dev->d_kind.biosdisk.controller, unit, dev->d_kind.biosdisk.partition);
+#ifdef notyet
     rootdev = MAKEBOOTDEV1(major,
 			  (dev->d_kind.biosdisk.slice + 1) >> 4, 	/* XXX slices may be wrong here */
 			  (dev->d_kind.biosdisk.slice + 1) & 0xf,
 			  unit,
 			  dev->d_kind.biosdisk.partition);
+#endif
     DEBUG("dev is 0x%x\n", rootdev);
     return(rootdev);
 }
@@ -1278,28 +1283,14 @@ bd_makebootdev1(int major, int adaptor, int controller, int unit, int partition)
 }
 
 int
-bd_makebootdev1(int major, int slice, int unit, int partition)
+bd_makebootdev2(int major, int slice, int unit, int partition)
 {
 	return (MAKEBOOTDEV2(major, slice, unit, partition));
 }
 
-int
-bd_slicetoadaptor(int slice)
-{
-	return ((slice + 1) >> 4);
-}
-
-int
-bd_slicetocontroller(int slice)
-{
-	return ((slice + 1) & 0xf);
-}
-
 void
-bd_setbootdev(struct i386_devdesc *dev, int slice, int partition)
+bd_setbootdev(struct i386_devdesc *dev, int slice)
 {
-	dev->d_kind.biosdisk.slice = slice;
-	dev->d_kind.biosdisk.partition = partition;
-	dev->d_kind.biosdisk.adaptor = slicetoadaptor(slice);
-	dev->d_kind.biosdisk.controller =  slicetocontroller(slice);
+	dev->d_kind.biosdisk.adaptor = B_SLICE_TO_B_ADAPTOR(slice);
+	dev->d_kind.biosdisk.controller =  B_SLICE_TO_B_CONTROLLER(slice);
 }
