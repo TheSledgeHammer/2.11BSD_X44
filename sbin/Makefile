@@ -9,7 +9,8 @@ SUBDIR=	ccdconfig 				\
 		init 					\
 		ldconfig 				\
 		mknod mount 			\
-		swapctl					\
+        reboot rcorder restore  \
+		shutdown swapctl		\
 		wsconsctl
 
 # support for various file systems
