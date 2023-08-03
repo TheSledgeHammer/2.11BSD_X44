@@ -8,7 +8,7 @@ SUBDIR= at 															\
 		c11 c89 c99 cap_mkdb cksum crontab crunch ctags 			\
 		db 															\
 		elf2aout elf2ecoff 											\
-		genassym gencat getopt gprof 								\
+		genassym gencat getopt getconf getent gprof 				\
 		hexdump 													\
 		join ldd lorder 											\
 		m4 make man menuc mkdep mkfifo mklocale mkstr mktemp msgc 	\
