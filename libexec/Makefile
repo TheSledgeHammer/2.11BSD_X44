@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= acctd atrun ctimed getty ld.aout_so ld.elf_so lfs_cleanerd makekey
+SUBDIR= acctd atrun comsat ctimed getty ld.aout_so ld.elf_so lfs_cleanerd makekey
 
 .if ${MKMAKEMANDB} == "no"
 SUBDIR+= getNAME makewhatis
