@@ -6,8 +6,10 @@
 SUBDIR=	boot0cfg btxld 											\
 		catman chown chroot config cron 						\
 		dev_mkdb 												\
-		link mtree 												\
+		link                                                    \
+        mtree moused                                            \
 		periodic postinstall pwd_mkdb 							\
+        rmt                                                     \
 		unlink  												\
 		vnconfig 												\
 		wsconscfg wsfontload wsmoused wsmuxctl					\
