@@ -428,6 +428,7 @@ struct wsdisplay_usefontdata {
 	char 							*name;
 };
 #define WSDISPLAYIO_USEFONT			_IOW('W', 80, struct wsdisplay_usefontdata)
+#define WSDISPLAYIO_SFONT			WSDISPLAYIO_USEFONT
 
 /* Obsolete, replaced by WSMUXIO_{ADD,REMOVE}_DEVICE */
 struct wsdisplay_kbddata {
@@ -477,6 +478,13 @@ struct wsdisplay_scroll_data {
 
 #define	WSDISPLAYIO_DGSCROLL		_IOR('W', 87, struct wsdisplay_scroll_data)
 #define	WSDISPLAYIO_DSSCROLL		_IOW('W', 88, struct wsdisplay_scroll_data)
+
+#define	WSDISPLAYIO_GBORDER			_IOR('W', 91, int)
+#define	WSDISPLAYIO_SBORDER			_IOW('W', 92, int)
+
+/* Splash screen control */
+#define	WSDISPLAYIO_SSPLASH			_IOW('W', 93, int)
+#define	WSDISPLAYIO_SPROGRESS		_IOW('W', 94, int)
 
 /* XXX NOT YET DEFINED */
 /* Mapping information retrieval. */

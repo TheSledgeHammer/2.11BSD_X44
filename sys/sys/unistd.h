@@ -37,7 +37,7 @@
 #define	_SYS_UNISTD_H_
 
 /* compile-time symbolic constants */
-#define	_POSIX_JOB_CONTROL	/* implementation supports job control */
+#define	_POSIX_JOB_CONTROL	1/* implementation supports job control */
 
 /*
  * Although we have saved user/group IDs, we do not use them in setuid
@@ -81,6 +81,11 @@
 #define	_PC_CHOWN_RESTRICTED 	7
 #define	_PC_NO_TRUNC		 	8
 #define	_PC_VDISABLE		 	9
+#define	_PC_SYNC_IO				10
+#define	_PC_FILESIZEBITS		11
+#define	_PC_SYMLINK_MAX			12
+#define	_PC_2_SYMLINKS			13
+#define	_PC_ACL_EXTENDED		14
 
 /* configurable system variables */
 #define	_SC_ARG_MAX		 		1
@@ -110,6 +115,9 @@
 #define	_SC_2_UPE				25
 #define	_SC_STREAM_MAX			26
 #define	_SC_TZNAME_MAX			27
+#define	_SC_PAGESIZE			28
+#define	_SC_PAGE_SIZE			_SC_PAGESIZE	/* 1170 compatibility */
+#define	_SC_FSYNC				29
 
 /* configurable system strings */
 #define	_CS_PATH		 		1

@@ -67,7 +67,7 @@ static char sccsid[] = "@(#)kvm.c	8.2 (Berkeley) 2/13/94";
 
 #include "kvm_private.h"
 
-static int kvm_dbopen (kvm_t *, const char *);
+static int kvm_dbopen(kvm_t *, const char *);
 
 char *
 kvm_geterr(kd)

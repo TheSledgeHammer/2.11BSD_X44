@@ -53,7 +53,7 @@ struct conf_variable
 static void print_longvar(const char *, long);
 static void print_strvar(const char *, const char *);
 static void printvar(const struct conf_variable *, const char *);
-static void usage(void) __dead;
+static void usage(void);
 
 static const struct conf_variable conf_table[] =
 {
@@ -135,6 +135,7 @@ static const struct conf_variable conf_table[] =
   { "_POSIX_NO_TRUNC",		PATHCONF,	_PC_NO_TRUNC		},
   { "_POSIX_VDISABLE",		PATHCONF,	_PC_VDISABLE		},
 
+#ifdef notyet /* not implemented */
   /* POSIX.1b Configurable System Variables */
   { "PAGESIZE",			SYSCONF,	_SC_PAGESIZE		},
   { "_POSIX_ASYNCHRONOUS_IO",	SYSCONF,	_SC_ASYNCHRONOUS_IO	},
@@ -176,13 +177,7 @@ static const struct conf_variable conf_table[] =
   /* POSIX.1-2001 TSF Configurable System Variables */
   { "GETGR_R_SIZE_MAX",		SYSCONF,	_SC_GETGR_R_SIZE_MAX	},
   { "GETPW_R_SIZE_MAX",		SYSCONF,	_SC_GETPW_R_SIZE_MAX	},
-
-#ifdef _NETBSD_SOURCE
-  /* Commonly provided extensions */
-  { "NPROCESSORS_CONF",		SYSCONF,	_SC_NPROCESSORS_CONF	},
-  { "NPROCESSORS_ONLN",		SYSCONF,	_SC_NPROCESSORS_ONLN	},
-#endif	/* _NETBSD_SOURCE */
-
+#endif
   { NULL, CONSTANT, 0L }
 };
 

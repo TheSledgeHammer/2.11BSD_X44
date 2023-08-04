@@ -41,8 +41,10 @@
 
 #ifndef _UNISTD_H_
 #define	_UNISTD_H_
+
 #include <machine/ansi.h>
 #include <machine/types.h>
+
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/unistd.h>
@@ -112,7 +114,7 @@ extern	int	    opterr, optind, optopt;
 struct timeval;				/* select(2) */
 #endif
 //int	 			acct(const char *);
-//char			*brk();
+char			*brk();
 char			*crypt(char *, char *);
 void	 		endusershell(void);
 unsigned long	gethostid(void);

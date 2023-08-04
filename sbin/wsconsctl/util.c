@@ -74,9 +74,11 @@ static struct nameint kbtype_tab[] = {
 	{ WSKBD_TYPE_ATARI,		"atari" },
 	{ WSKBD_TYPE_SUN,		"sun" },
 	{ WSKBD_TYPE_SUN5,		"sun-type5" },
+#ifdef notyet
 	{ WSKBD_TYPE_SGI,		"sgi" },
 	{ WSKBD_TYPE_MATRIXKP,		"matrix-keypad" },
 	{ WSKBD_TYPE_BLUETOOTH,		"bluetooth" },
+#endif
 };
 
 static struct nameint mstype_tab[] = {
@@ -92,7 +94,9 @@ static struct nameint mstype_tab[] = {
 	{ WSMOUSE_TYPE_AMIGA,		"amiga" },
 	{ WSMOUSE_TYPE_MAXINE,		"dec-maxine" },
 	{ WSMOUSE_TYPE_MAPLE,		"maple" },
+#ifdef notyet
 	{ WSMOUSE_TYPE_BLUETOOTH,	"bluetooth" },
+#endif
 };
 
 static struct nameint dpytype_tab[] = {
@@ -121,15 +125,15 @@ static struct nameint dpytype_tab[] = {
 	{ WSDISPLAY_TYPE_SB_P9100,	"sparcbook-p9100" },
 	{ WSDISPLAY_TYPE_EGA,		"ega" },
 	{ WSDISPLAY_TYPE_DCPVR,		"dreamcast-pvr" },
-	{ WSDISPLAY_TYPE_GBOX,		"hp-gator" },
+	//{ WSDISPLAY_TYPE_GBOX,		"hp-gator" },
 	{ WSDISPLAY_TYPE_TOPCAT,	"hp-topcat" },
-	{ WSDISPLAY_TYPE_RBOX,		"hp-renaissance" },
+	//{ WSDISPLAY_TYPE_RBOX,		"hp-renaissance" },
 	{ WSDISPLAY_TYPE_CATSEYE,	"hp-catseye" },
-	{ WSDISPLAY_TYPE_DVBOX,		"hp-davinci" },
-	{ WSDISPLAY_TYPE_TVRX,		"hp-tiger" },
+	//{ WSDISPLAY_TYPE_DVBOX,		"hp-davinci" },
+	//{ WSDISPLAY_TYPE_TVRX,		"hp-tiger" },
 	{ WSDISPLAY_TYPE_HYPERION,	"hp-hyperion" },
 	{ WSDISPLAY_TYPE_AMIGACC,	"amiga-cc" },
-	{ WSDISPLAY_TYPE_GRF,		"grf" },
+	//{ WSDISPLAY_TYPE_GRF,		"grf" },
 	{ WSDISPLAY_TYPE_SUN24,		"sun24" },
 	{ WSDISPLAY_TYPE_NEWPORT,	"sgi-newport" },
 	{ WSDISPLAY_TYPE_GR2,		"sgi-gr2" },

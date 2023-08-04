@@ -36,7 +36,7 @@
 #ifndef _LIMITS_H_
 #define	_LIMITS_H_
 
-#if defined(_POSIX_C_SOURCE)
+#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE)
 #define	_POSIX_AIO_LISTIO_MAX	2
 #define	_POSIX_AIO_MAX			1
 #define	_POSIX_ARG_MAX			4096
@@ -59,6 +59,7 @@
 #define	_POSIX_SYMLINK_MAX		255
 #define	_POSIX_SYMLOOP_MAX		8
 
+/*
 #define	_POSIX_ARG_MAX			4096
 #define	_POSIX_CHILD_MAX		6
 #define	_POSIX_LINK_MAX			8
@@ -72,17 +73,49 @@
 #define	_POSIX_SSIZE_MAX		32767
 #define	_POSIX_STREAM_MAX		8
 #define	_POSIX_TZNAME_MAX		3
+*/
 
 #define	_POSIX2_BC_BASE_MAX		99
 #define	_POSIX2_BC_DIM_MAX		2048
 #define	_POSIX2_BC_SCALE_MAX	99
 #define	_POSIX2_BC_STRING_MAX	1000
+#define	_POSIX2_CHARCLASS_NAME_MAX	14
+#define	_POSIX2_COLL_WEIGHTS_MAX	2
 #define	_POSIX2_EQUIV_CLASS_MAX	2
 #define	_POSIX2_EXPR_NEST_MAX	32
 #define	_POSIX2_LINE_MAX		2048
 #define	_POSIX2_RE_DUP_MAX		255
 
-#endif /* _POSIX_C_SOURCE */
+/*
+ * X/Open CAE Specifications,
+ * adopted in IEEE Std 1003.1-2001 XSI.
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || defined(_XOPEN_SOURCE)
+#define	_XOPEN_IOV_MAX		16
+#define	_XOPEN_NAME_MAX		256
+#define	_XOPEN_PATH_MAX		1024
+
+#define PASS_MAX		128		/* Legacy */
+
+#define CHARCLASS_NAME_MAX	14
+#define NL_ARGMAX		9
+#define NL_LANGMAX		14
+#define NL_MSGMAX		32767
+#define NL_NMAX			1
+#define NL_SETMAX		255
+#define NL_TEXTMAX		2048
+
+	/* IEEE Std 1003.1-2001 TSF */
+#define	_GETGR_R_SIZE_MAX	1024
+#define	_GETPW_R_SIZE_MAX	1024
+
+/* Always ensure that this is consistent with <stdio.h> */
+#ifndef TMP_MAX
+#define TMP_MAX			308915776	/* Legacy */
+#endif
+#endif /* _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE */
+
+#endif /* _POSIX_C_SOURCE  || _XOPEN_SOURCE */
 
 #define MB_LEN_MAX		32	/* Allow ISO/IEC 2022 */
 

@@ -99,22 +99,22 @@ mouse_get_values(int fd)
 		if (ioctl(fd, WSMOUSEIO_GTYPE, &mstype) < 0)
 			err(EXIT_FAILURE, "WSMOUSEIO_GTYPE");
 
-	if (field_by_value(&calibration.minx)->flags & FLG_GET ||
-	    field_by_value(&calibration.miny)->flags & FLG_GET ||
-	    field_by_value(&calibration.maxx)->flags & FLG_GET ||
-	    field_by_value(&calibration.maxy)->flags & FLG_GET ||
-	    field_by_value(&calibration_samples)->flags & FLG_GET)
+	if ((field_by_value(&calibration.minx)->flags & FLG_GET) ||
+	    (field_by_value(&calibration.miny)->flags & FLG_GET) ||
+	    (field_by_value(&calibration.maxx)->flags & FLG_GET) ||
+	    (field_by_value(&calibration.maxy)->flags & FLG_GET) ||
+	    (field_by_value(&calibration_samples)->flags & FLG_GET))
 		mouse_get_calibration(fd);
 
-	if (field_by_value(&repeat.wr_buttons)->flags & FLG_GET ||
-	    field_by_value(&repeat.wr_delay_first)->flags & FLG_GET ||
-	    field_by_value(&repeat.wr_delay_decrement)->flags & FLG_GET ||
-	    field_by_value(&repeat.wr_delay_minimum)->flags & FLG_GET)
+	if ((field_by_value(&repeat.wr_buttons)->flags & FLG_GET) ||
+	    (field_by_value(&repeat.wr_delay_first)->flags & FLG_GET) ||
+	    (field_by_value(&repeat.wr_delay_decrement)->flags & FLG_GET) ||
+	    (field_by_value(&repeat.wr_delay_minimum)->flags & FLG_GET))
 		mouse_get_repeat(fd);
 
-	if (field_by_value(&horiz_scroll_dist)->flags & FLG_GET ||
-	    field_by_value(&vert_scroll_dist)->flags & FLG_GET ||
-	    field_by_value(&reverse_scrolling)->flags & FLG_GET)
+	if ((field_by_value(&horiz_scroll_dist)->flags & FLG_GET) ||
+	    (field_by_value(&vert_scroll_dist)->flags & FLG_GET) ||
+	    (field_by_value(&reverse_scrolling)->flags & FLG_GET))
 		mouse_get_parameters(fd);
 }
 
@@ -249,22 +249,22 @@ mouse_put_values(int fd)
 		pr_field(field_by_value(&samplerate), " -> ");
 	}
 
-	if (field_by_value(&calibration.minx)->flags & FLG_SET ||
-	    field_by_value(&calibration.miny)->flags & FLG_SET ||
-	    field_by_value(&calibration.maxx)->flags & FLG_SET ||
-	    field_by_value(&calibration.maxy)->flags & FLG_SET ||
-	    field_by_value(&calibration_samples)->flags & FLG_SET)
+	if ((field_by_value(&calibration.minx)->flags & FLG_SET) ||
+	    (field_by_value(&calibration.miny)->flags & FLG_SET) ||
+	    (field_by_value(&calibration.maxx)->flags & FLG_SET) ||
+	    (field_by_value(&calibration.maxy)->flags & FLG_SET) ||
+	    (field_by_value(&calibration_samples)->flags & FLG_SET))
 		mouse_put_calibration(fd);
 
-	if (field_by_value(&repeat.wr_buttons)->flags & FLG_SET ||
-	    field_by_value(&repeat.wr_delay_first)->flags & FLG_SET ||
-	    field_by_value(&repeat.wr_delay_decrement)->flags & FLG_SET ||
-	    field_by_value(&repeat.wr_delay_minimum)->flags & FLG_SET)
+	if ((field_by_value(&repeat.wr_buttons)->flags & FLG_SET) ||
+	    (field_by_value(&repeat.wr_delay_first)->flags & FLG_SET) ||
+	    (field_by_value(&repeat.wr_delay_decrement)->flags & FLG_SET) ||
+	    (field_by_value(&repeat.wr_delay_minimum)->flags & FLG_SET))
 		mouse_put_repeat(fd);
 
-	if (field_by_value(&horiz_scroll_dist)->flags & FLG_SET ||
-	    field_by_value(&vert_scroll_dist)->flags & FLG_SET ||
-	    field_by_value(&reverse_scrolling)->flags & FLG_SET)
+	if ((field_by_value(&horiz_scroll_dist)->flags & FLG_SET) ||
+	    (field_by_value(&vert_scroll_dist)->flags & FLG_SET) ||
+	    (field_by_value(&reverse_scrolling)->flags & FLG_SET))
 		mouse_put_parameters(fd);
 }
 

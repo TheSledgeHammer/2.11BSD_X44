@@ -6,6 +6,7 @@
 SUBDIR=	boot0cfg btxld 											\
 		catman chown chroot config cron 						\
 		dev_mkdb 												\
+		etcupdate 												\
 		link                                                    \
         mtree moused                                            \
 		periodic postinstall pwd_mkdb 							\

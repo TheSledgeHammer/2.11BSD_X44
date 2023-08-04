@@ -196,7 +196,7 @@ FILESDIR_minfree=	/var/crash
 FILESMODE_minfree=	600
 
 CONFIGSYMLINKS+=	${TZDIR}/${LOCALTIME}	/etc/localtime \
-					/usr/sbin/rmt		/etc/rmt
+					/usr/sbin/rmt			/etc/rmt
 						    
 # install-etc-files --
 #	Install etc (config) files; not performed by "make build"
@@ -292,6 +292,15 @@ distrib-dirs: .PHONY check_DESTDIR
 COMPRESS_PROGRAM=${"${USE_XZ_SETS:Uno}"!="no":?${TOOL_XZ}:${TOOL_GZIP}}
 XZ_OPT=-9
 TAR_SUFF=${"${USE_XZ_SETS:Uno}"!="no":?tar.xz:tgz}
+
+# release, snapshot --
+#	Build a full distribution including kernels & install media.
+#
+release snapshot: .PHONY .MAKE check_DESTDIR check_RELEASEDIR snap_md_post
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/distrib/sets sets
+	${MAKESUMS} -A -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/sets \
+		${KERNEL_SETS:@.SETS.@kern-${.SETS.}.${TAR_SUFF}@}
+	${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel '*.gz'
 
 # TODO: Complete when ready
 

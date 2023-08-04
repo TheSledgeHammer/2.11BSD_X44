@@ -87,6 +87,10 @@ extern struct pagerops vnodepagerops;
 extern struct pagerops devicepagerops;
 #endif
 
+#ifdef OVERLAYPAGER
+extern struct pagerops overlaypagerops;
+#endif
+
 struct pagerops *pagertab[] = {
 #ifdef SWAPPAGER
 	&swappagerops,		/* PG_SWAP */

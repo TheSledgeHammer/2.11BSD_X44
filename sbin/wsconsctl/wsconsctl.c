@@ -40,7 +40,7 @@
 #include "wsconsctl.h"
 
 #define PATH_KEYBOARD		"/dev/wskbd"
-#define PATH_MOUSE		"/dev/wsmouse"
+#define PATH_MOUSE			"/dev/wsmouse"
 #define PATH_DISPLAY		"/dev/ttyE0"
 
 extern struct field keyboard_field_tab[];
@@ -177,7 +177,7 @@ main(int argc, char **argv)
 				    " to view.",
 				    field_tab[i].name,
 				    getprogname(), field_tab[i].name);
-			else if (field_tab[i].flags & FLG_GET &&
+			else if ((field_tab[i].flags & FLG_GET) &&
 				 !(field_tab[i].flags & FLG_DISABLED))
 				pr_field(field_tab + i, sep);
 	} else if (argc > 0) {

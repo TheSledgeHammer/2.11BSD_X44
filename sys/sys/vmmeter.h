@@ -62,14 +62,14 @@ struct vmrate {
 	/* Distribution of anon usages. */
 	unsigned	v_nanon;					/* total number of anons in system */
 	unsigned	v_nfreeanon;				/* number of anons free */
-	unsigned        v_flt_acow;
-	unsigned        v_fltnoanon;
-	unsigned        v_fltnoram;
-	unsigned        v_flt_anon;
-	unsigned        v_fltanget;
-	unsigned        v_fltanretry;
-	unsigned        v_fltrelck;
-	unsigned        v_fltrelckok;
+	unsigned        v_flt_acow;				/* number of times fault anon cow (case 1b) */
+	unsigned        v_fltnoanon;			/* number of times fault was out of anons */
+	unsigned        v_fltnoram;				/* number of times fault was out of ram */
+	unsigned        v_flt_anon;				/* number of times fault anon (case 1a) */
+	unsigned        v_fltanget;				/* number of times fault gets anon page */
+	unsigned        v_fltanretry;			/* number of times fault retrys an anon get */
+	unsigned        v_fltrelck;				/* number of times fault relock called */
+	unsigned        v_fltrelckok;			/* number of times fault relock is a success */
 
 	/* Distribution of page usages. */
 	unsigned 	v_page_size;				/* page size in bytes */
