@@ -28,6 +28,15 @@ static char sccsid[] = "@(#)shutdown.c	5.6.3 (2.11BSD GTE) 1997/10/3";
 #include <sys/resource.h>
 #include <sys/syslog.h>
 
+#include "pathnames.h"
+
+#ifdef DEBUG
+#undef _PATH_NOLOGIN
+#define	_PATH_NOLOGIN	"./nologin"
+#undef _PATH_FASTBOOT
+#define	_PATH_FASTBOOT	"./fastboot"
+#endif
+
 /*
  *	shutdown when [messages]
  *
@@ -37,8 +46,8 @@ static char sccsid[] = "@(#)shutdown.c	5.6.3 (2.11BSD GTE) 1997/10/3";
  *	and even reboot or halt the machine if they desire
  */
 
-#define	REBOOT		"/sbin/reboot"
-#define	HALT		"/sbin/halt"
+#define	REBOOT		_PATH_REBOOT
+#define	HALT		_PATH_HALT
 #define MAXINTS 	20
 #define	HOURS		*3600
 #define MINUTES		*60
@@ -68,11 +77,11 @@ char	tbuf[BUFSIZ];
 char	nolog1[] = "\n\nNO LOGINS: System going down at %5.5s\n\n";
 char	nolog2[NLOG+1];
 #ifdef	DEBUG
-char	nologin[] = "nologin";
-char    fastboot[] = "fastboot";
+char	nologin[] = _PATH_NOLOGIN;
+char    fastboot[] = _PATH_FASTBOOT;
 #else
 char	nologin[] = _PATH_NOLOGIN;
-char	fastboot[] = "/fastboot";
+char	fastboot[] = _PATH_FASTBOOT;
 #endif
 time_t	nowtime;
 jmp_buf	alarmbuf;
@@ -95,6 +104,7 @@ struct interval {
 
 char *shutter;
 
+int
 main(argc,argv)
 	int argc;
 	char **argv;
@@ -330,7 +340,9 @@ getsdt(s)
 		printf("That must be tomorrow\nCan't you wait till then?\n");
 		finish();
 	}
+
 	return (t1 + tim - t);
+
 badform:
 	printf("Bad time format\n");
 	finish();
