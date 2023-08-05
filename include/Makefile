@@ -22,17 +22,24 @@ INCS=		a.out.h ar.h assert.h atomic.h bitstring.h complex.h cpio.h ctype.h \
 			sysexits.h tar.h time.h ttyent.h tzfile.h ucontext.h ulimit.h 		\
 			unistd.h util.h utime.h utmp.h uuid.h varargs.h vfont.h vis.h vmf.h \
 			wchar.h wctype.h
-INCS+=		arpa/ftp.h arpa/inet.h arpa/nameser.h arpa/telnet.h arpa/tftp.h
-INCS+=		hash/md2.h hash/md4.h hash/md5.h hash/rmd160.h hash/sha1.h 			\
-			hash/sha2.h hash/sha3.h
-INCS+=		OLD/dk.h OLD/psout.h
-INCS+=		protocols/dumprestore.h protocols/routed.h protocols/rwhod.h 		\
-			protocols/talkd.h protocols/timed.h
-INCS+=		hesiod
+
+.include    "arpa/Makefile.inc"
+.include    "hash/Makefile.inc"
+.include    "OLD/Makefile.inc"
+.include    "protocols/Makefile.inc"
+
+#INCS+=		arpa/ftp.h arpa/inet.h arpa/nameser.h arpa/telnet.h arpa/tftp.h
+#INCS+=		hash/md2.h hash/md4.h hash/md5.h hash/rmd160.h hash/sha1.h 			\
+#			hash/sha2.h hash/sha3.h
+#INCS+=		OLD/dk.h OLD/psout.h
+#INCS+=		protocols/dumprestore.h protocols/routed.h protocols/rwhod.h 		\
+#			protocols/talkd.h protocols/timed.h
+INCS+=		hesiod.h
 
 .include <bsd.own.mk>
 
-INCS+=  	ssp/ssp.h ssp/stdio.h ssp/string.h ssp/strings.h ssp/unistd.h
+.include    "ssp/Makefile.inc"
+#INCS+=  	ssp/ssp.h ssp/stdio.h ssp/string.h ssp/strings.h ssp/unistd.h
 
 INCSDIR=  	/usr/include
 
