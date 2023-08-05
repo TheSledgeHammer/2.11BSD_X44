@@ -163,7 +163,6 @@ int
 _UES_init(rl)
 	_RuneLocale *rl;
 {
-	_UESEncodingInfo 	*info;
 	int ret;
 
 	rl->ops = &_ues_runeops;

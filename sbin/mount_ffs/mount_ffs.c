@@ -123,6 +123,7 @@ mount_ffs(argc, argv)
 		args.export.ex_flags = 0;
 
 	if (mount(MOUNT_FFS, fs_name, mntflags, &args) < 0) {
+		(void)fprintf(stderr, "%s on %s: ", args.fspec, fs_name);
 		switch (errno) {
 		case EMFILE:
 			errcause = "mount table full";

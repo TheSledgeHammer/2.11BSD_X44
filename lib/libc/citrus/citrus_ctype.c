@@ -425,7 +425,7 @@ void
 _citrus_ctype_uninit(void *cl)
 {
 	if (cl) {
-		citrus_encoding_uninit(_CEI_TO_EI(_TO_CEI(cl)));
+		_citrus_ctype_encoding_uninit(_CEI_TO_EI(_TO_CEI(cl)));
 		free(cl);
 	}
 }

@@ -10,33 +10,33 @@
 
 NOOBJ=		# defined
 
-INCS=		a.out.h ar.h assert.h atomic.h bitstring.h complex.h cpio.h ctype.h \
-		db.h dirent.h dlfcn.h encoding.h endian.h err.h errlst.h  \
+INCS=	a.out.h ar.h assert.h atomic.h bitstring.h complex.h cpio.h ctype.h \
+		db.h dirent.h dlfcn.h encoding.h endian.h err.h errlst.h  			\
 		errno.h fmtmsg.h fnmatch.h fstab.h fts.h ftw.h getopt.h glob.h      \
 		grp.h ident.h inttypes.h iso646.h kenv.h kvm.h langinfo.h 			\
 		lastlog.h libgen.h limits.h link_aout.h link_elf.h 					\
 		link.h locale.h login_cap.h math.h memory.h mp.h mpool.h mtab.h 	\
-		nl_types.h ndbm.h netdb.h nlist.h paths.h pwd.h ranlib.h regex.c 	\
-		regexp.h resolv.h rune.h runetype.h setjmp.h sgtty.h signal.h 		\
-		stab.h stdio.h stdlib.h string.h stringlist.h strings.h struct.h 	\
-		sysexits.h tar.h time.h ttyent.h tzfile.h ucontext.h ulimit.h 		\
-		unistd.h util.h utime.h utmp.h uuid.h varargs.h vfont.h vis.h vmf.h \
-		wchar.h wctype.h
+		nl_types.h ndbm.h netdb.h nlist.h paths.h pwd.h ranlib.h 			\
+		regex.c regexp.h resolv.h rune.h runetype.h setjmp.h sgtty.h 		\
+		signal.h stab.h stdio.h stdlib.h string.h stringlist.h strings.h 	\
+		struct.h sysexits.h tar.h time.h ttyent.h tzfile.h ucontext.h 		\
+		ulimit.h unistd.h util.h utime.h utmp.h uuid.h varargs.h vfont.h 	\
+		vis.h vmf.h wchar.h wctype.h
 
-.include    	"arpa/Makefile.inc"
-.include    	"hash/Makefile.inc"
-.include    	"OLD/Makefile.inc"
-.include    	"protocols/Makefile.inc"
+.include "arpa/Makefile.inc"
+.include "hash/Makefile.inc"
+.include "OLD/Makefile.inc"
+.include "protocols/Makefile.inc"
 
-INCS+=		hesiod.h
+INCS+=	hesiod.h
 
 .include <bsd.own.mk>
 
-.include    	"ssp/Makefile.inc"
+.include "ssp/Makefile.inc"
 
-INCSDIR=  	/usr/include
+INCSDIR= /usr/include
 
-SUBDIR=		rpc
+SUBDIR=	 rpc
 
 .include <bsd.prog.mk>
 .include <bsd.subdir.mk>

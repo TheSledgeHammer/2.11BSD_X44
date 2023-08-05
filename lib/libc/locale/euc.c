@@ -141,7 +141,6 @@ int
 _EUC_init(rl)
 	_RuneLocale *rl;
 {
-	_EUCCTypeInfo 	*info;
 	int ret;
 
 	rl->ops = &_euc_runeops;

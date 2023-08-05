@@ -145,7 +145,6 @@ _UTF8_init_count(void)
 int
 _UTF8_init(_RuneLocale *rl)
 {
-	_UTF8EncodingInfo 	*info;
 	int ret;
 
 	rl->ops = &_utf8_runeops;

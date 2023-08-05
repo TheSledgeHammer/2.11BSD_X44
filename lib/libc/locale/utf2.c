@@ -82,7 +82,6 @@ int
 _UTF2_init(rl)
 	_RuneLocale *rl;
 {
-	_UTF2EncodingInfo 	*info;
 	int ret;
 
 	rl->ops = &_utf2_runeops;

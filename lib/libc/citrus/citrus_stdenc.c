@@ -179,3 +179,24 @@ _citrus_stdenc_put_state_reset(void * __restrict ei, char * __restrict s, size_t
 	return (0);
 #endif
 }
+
+int
+_citrus_stdenc_get_state_desc(_ENCODING_INFO * __restrict ei, _ENCODING_STATE * __restrict psenc, int id, int * __restrict rstate)
+{
+	int ret;
+
+	switch (id) {
+	case _CITRUS_STDENC_SDID_GENERIC:
+		if (psenc->chlen == 0) {
+			*rstate = _CITRUS_STDENC_SDGEN_INITIAL;
+		} else {
+			*rstate = _CITRUS_STDENC_SDGEN_INCOMPLETE_CHAR;
+		}
+		ret = 0;
+		break;
+
+	default:
+		ret = EOPNOTSUPP;
+	}
+	return (ret);
+}

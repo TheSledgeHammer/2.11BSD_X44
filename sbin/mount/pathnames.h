@@ -31,6 +31,6 @@
  *	@(#)pathnames.h	8.2 (Berkeley) 3/27/94
  */
 
-#define _PATH_SBIN	"/sbin"
+#define _PATH_SBIN		"/sbin"
 #define _PATH_USRSBIN	"/usr/sbin"
 #define	_PATH_MOUNTDPID	"/var/run/mountd.pid"

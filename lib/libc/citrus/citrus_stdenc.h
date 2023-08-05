@@ -30,6 +30,15 @@
 #ifndef _CITRUS_STDENC_H_
 #define _CITRUS_STDENC_H_
 
+/* get_state_desc id */
+#define _CITRUS_STDENC_SDID_GENERIC				0
+/* get_state_desc rstate */
+#define _CITRUS_STDENC_SDGEN_UNKNOWN			0
+#define _CITRUS_STDENC_SDGEN_INITIAL			1
+#define _CITRUS_STDENC_SDGEN_STABLE				2
+#define _CITRUS_STDENC_SDGEN_INCOMPLETE_CHAR	3
+#define _CITRUS_STDENC_SDGEN_INCOMPLETE_SHIFT	4
+
 __BEGIN_DECLS
 int		_citrus_stdenc_init(void ** __restrict, void * __restrict, size_t, module_init_t);
 void	_citrus_stdenc_uninit(_ENCODING_INFO * __restrict);
@@ -43,6 +52,7 @@ int 	_citrus_stdenc_wctomb(_ENCODING_INFO * __restrict, char * __restrict, size_
 size_t 	_citrus_stdenc_get_state_size(_ENCODING_INFO *);
 size_t 	_citrus_stdenc_get_mb_cur_max(_ENCODING_INFO *);
 int		_citrus_stdenc_put_state_reset(void * __restrict, char * __restrict, size_t, void * __restrict, size_t * __restrict);
+int		_citrus_stdenc_get_state_desc(_ENCODING_INFO * __restrict, _ENCODING_STATE * __restrict, int, int * __restrict);
 __END_DECLS
 
 #endif /* _CITRUS_STDENC_H_ */

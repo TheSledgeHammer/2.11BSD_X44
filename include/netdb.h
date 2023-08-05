@@ -35,6 +35,8 @@ typedef _BSD_SIZE_T_	size_t;
 #define	_PATH_PROTOCOLS	"/etc/protocols"
 #define	_PATH_SERVICES	"/etc/services"
 
+extern int h_errno;
+
 /*
  * Structures returned by network
  * data base library.  All addresses
@@ -76,15 +78,108 @@ struct	protoent {
 };
 
 /*
+ * Note: ai_addrlen used to be a size_t, per RFC 2553.
+ * In XNS5.2, and subsequently in POSIX-2001 and
+ * draft-ietf-ipngwg-rfc2553bis-02.txt it was changed to a socklen_t.
+ * To accommodate for this while preserving binary compatibility with the
+ * old interface, we prepend or append 32 bits of padding, depending on
+ * the (LP64) architecture's endianness.
+ *
+ * This should be deleted the next time the libc major number is
+ * incremented.
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 520 || __BSD_VISIBLE
+struct addrinfo {
+	int				ai_flags;		/*%< AI_PASSIVE, AI_CANONNAME */
+	int				ai_family;		/*%< PF_xxx */
+	int				ai_socktype;	/*%< SOCK_xxx */
+	int				ai_protocol;	/*%< 0 or IPPROTO_xxx for IPv4 and IPv6 */
+	socklen_t	 	ai_addrlen;		/*%< length of ai_addr */
+	char			*ai_canonname;	/*%< canonical name for hostname */
+	struct sockaddr	*ai_addr; 		/*%< binary address */
+	struct addrinfo	*ai_next; 		/*%< next structure in linked list */
+};
+#endif
+
+/*
  * Error return codes from gethostbyname() and gethostbyaddr()
  * (left in extern int h_errno).
  */
 
+#define	NETDB_INTERNAL	-1	/* see errno */
+#define	NETDB_SUCCESS	0	/* no problem */
 #define	HOST_NOT_FOUND	1 /* Authoritative Answer Host not found */
 #define	TRY_AGAIN		2 /* Non-Authoritive Host not found, or SERVERFAIL */
 #define	NO_RECOVERY		3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
 #define	NO_DATA			4 /* Valid name, no data record of requested type */
 #define	NO_ADDRESS		NO_DATA		/* no address, look for MX record */
+
+/*
+ * Error return codes from getaddrinfo()
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 520 || __BSD_VISIBLE
+#define	EAI_ADDRFAMILY	1	/*%< address family for hostname not supported */
+#define	EAI_AGAIN	 	2	/*%< temporary failure in name resolution */
+#define	EAI_BADFLAGS	3	/*%< invalid value for ai_flags */
+#define	EAI_FAIL	 	4	/*%< non-recoverable failure in name resolution */
+#define	EAI_FAMILY	 	5	/*%< ai_family not supported */
+#define	EAI_MEMORY	 	6	/*%< memory allocation failure */
+#define	EAI_NODATA	 	7	/*%< no address associated with hostname */
+#define	EAI_NONAME	 	8	/*%< hostname nor servname provided, or not known */
+#define	EAI_SERVICE	 	9	/*%< servname not supported for ai_socktype */
+#define	EAI_SOCKTYPE	10	/*%< ai_socktype not supported */
+#define	EAI_SYSTEM		11	/*%< system error returned in errno */
+#define	EAI_BADHINTS	12	/* invalid value for hints */
+#define	EAI_PROTOCOL	13	/* resolved protocol is unknown */
+#define	EAI_OVERFLOW	14	/* argument buffer overflow */
+#define	EAI_MAX			15
+#endif /* _POSIX_C_SOURCE >= 200112 || _XOPEN_SOURCE >= 520 || __BSD_VISIBLE */
+
+/*%
+ * Flag values for getaddrinfo()
+ */
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 520 || __BSD_VISIBLE
+#define	AI_PASSIVE		0x00000001 /* get address to use bind() */
+#define	AI_CANONNAME	0x00000002 /* fill ai_canonname */
+#define	AI_NUMERICHOST	0x00000004 /* prevent host name resolution */
+#define	AI_NUMERICSERV	0x00000008 /* prevent service name resolution */
+#define	AI_ADDRCONFIG	0x00000400 /* only if any address is assigned */
+/* valid flags for addrinfo (not a standard def, apps should not use it) */
+#ifdef __BSD_VISIBLE
+#define	AI_SRV			0x00000800 /* do _srv lookups */
+#define	AI_MASK	    	(AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV | AI_ADDRCONFIG | AI_SRV)
+#else
+#define	AI_MASK	   		(AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV | AI_ADDRCONFIG)
+#endif
+#endif
+
+#if (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 520 || __BSD_VISIBLE
+/*%
+ * Constants for getnameinfo()
+ */
+#if __BSD_VISIBLE
+#define	NI_MAXHOST		1025
+#define	NI_MAXSERV		32
+#endif
+
+/*%
+ * Flag values for getnameinfo()
+ */
+#define	NI_NOFQDN		0x00000001
+#define	NI_NUMERICHOST	0x00000002
+#define	NI_NAMEREQD		0x00000004
+#define	NI_NUMERICSERV	0x00000008
+#define	NI_DGRAM		0x00000010
+#define	NI_WITHSCOPEID	0x00000020
+#define	NI_NUMERICSCOPE	0x00000040
+
+/*%
+ * Scope delimit character
+ */
+#if __BSD_VISIBLE
+#define	SCOPE_DELIMITER	'%'
+#endif
+#endif /* (_POSIX_C_SOURCE - 0) >= 200112L || ... */
 
 unsigned long	gethostid();
 

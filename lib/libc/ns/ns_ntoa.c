@@ -12,6 +12,8 @@ static char sccsid[] = "@(#)ns_ntoa.c	6.3 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <netns/ns.h>
 
+static char *spectHex(char *);
+
 char *
 ns_ntoa(addr)
 struct ns_addr addr;
@@ -52,22 +54,44 @@ struct ns_addr addr;
 
 static char *
 spectHex(p0)
-char *p0;
+	char *p0;
 {
 	int ok = 0;
 	int nonzero = 0;
 	register char *p = p0;
-	for (; *p; p++) switch (*p) {
 
-	case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-		*p += ('A' - 'a');
-		/* fall into . . . */
-	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-		ok = 1;
-	case '1': case '2': case '3': case '4': case '5':
-	case '6': case '7': case '8': case '9':
-		nonzero = 1;
+	for (; *p; p++) {
+		switch (*p) {
+		case 'a':
+		case 'b':
+		case 'c':
+		case 'd':
+		case 'e':
+		case 'f':
+			*p += ('A' - 'a');
+			/* fall into . . . */
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'E':
+		case 'F':
+			ok = 1;
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			nonzero = 1;
+		}
 	}
-	if (nonzero && !ok) { *p++ = 'H'; *p = 0; }
+	if (nonzero && !ok) {
+		*p++ = 'H';
+		*p = 0;
+	}
 	return (p);
 }

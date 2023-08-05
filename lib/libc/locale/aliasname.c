@@ -136,3 +136,16 @@ quit:
 
 	return result;
 }
+
+int
+__isforcemapping(const char *name)
+{
+	/* don't use strcasecmp, it owes locale. */
+	return name[0] == '/'
+			&& (name[1] == 'F' || name[1] == 'f')
+			&& (name[2] == 'O' || name[2] == 'o')
+			&& (name[3] == 'R' || name[3] == 'r')
+			&& (name[4] == 'C' || name[4] == 'c')
+			&& (name[5] == 'E' || name[5] == 'e')
+			&& name[6] == '\0';
+}

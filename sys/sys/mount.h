@@ -58,6 +58,7 @@ struct statfs {
 /*
  * File system types.
  */
+#define	MOUNT_NONE		"none"
 #define	MOUNT_FFS		"ffs"		/* UNIX "Fast" Filesystem */
 #define	MOUNT_UFS		"ufs"		/* for compatibility */
 #define	MOUNT_NFS		"nfs"		/* Network Filesystem */
@@ -70,6 +71,21 @@ struct statfs {
 #define	MOUNT_UNION		"union"		/* Union (translucent) Filesystem */
 #define	MOUNT_UFS211	"ufs211"	/* 2.11BSD UFS Filesystem */
 #define	MOUNT_UFML		"ufml"		/* UFML Filesystem */
+
+#define	INITMOUNTNAMES { 	\
+	MOUNT_NONE,				\
+	MOUNT_UFS,				\
+	MOUNT_FFS,				\
+	MOUNT_MFS,				\
+	MOUNT_LFS,  			\
+	MOUNT_MSDOS, 			\
+	MOUNT_FDESC,			\
+	MOUNT_LOFS,				\
+	MOUNT_UNION,			\
+	MOUNT_UFS211,			\
+	MOUNT_UFML, 			\
+	0,						\
+}
 
 /*
  * Mount structure.

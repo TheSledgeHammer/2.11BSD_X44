@@ -103,7 +103,7 @@ mount_ufs(argc, argv)
 	else
 		args.export.ex_flags = 0;
 
-	if (mount("ufs", fs_name, mntflags, &args) < 0) {
+	if (mount(MOUNT_UFS, fs_name, mntflags, &args) < 0) {
 		(void)fprintf(stderr, "%s on %s: ", args.fspec, fs_name);
 		switch (errno) {
 		case EMFILE:

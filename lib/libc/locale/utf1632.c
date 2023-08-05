@@ -73,7 +73,6 @@ int
 _UTF1632_init(rl)
 	_RuneLocale *rl;
 {
-	_UTF1632EncodingInfo 	*info;
 	int ret;
 
 	rl->ops = &_utf1632_runeops;

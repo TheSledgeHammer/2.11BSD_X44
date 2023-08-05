@@ -25,6 +25,7 @@ static char *net_aliases[MAXALIASES];
 int _net_stayopen;
 static char *any();
 
+void
 setnetent(f)
 	int f;
 {
@@ -35,6 +36,7 @@ setnetent(f)
 	_net_stayopen |= f;
 }
 
+void
 endnetent()
 {
 	if (netf) {

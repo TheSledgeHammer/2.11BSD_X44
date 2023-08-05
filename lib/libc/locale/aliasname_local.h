@@ -26,4 +26,10 @@
  * SUCH DAMAGE.
  */
 
-const char *__unaliasname(const char *, const char *, void *, size_t);
+#ifndef _ALIASNAME_LOCAL_H_
+#define _ALIASNAME_LOCAL_H_
+
+const char 	*__unaliasname(const char *, const char *, void *, size_t);
+int 		__isforcemapping(const char *);
+
+#endif /*_ALIASNAME_LOCAL_H_*/
