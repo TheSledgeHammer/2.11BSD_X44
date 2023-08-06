@@ -8,9 +8,11 @@ SUBDIR=	ccdconfig 				\
 		fastboot fdisk fsck 	\
 		init 					\
 		ldconfig 				\
-		mknod mount 			\
-        reboot rcorder restore  \
-		shutdown swapctl		\
+		mknod mount mountd		\
+        reboot rcorder 			\
+		savecore shutdown 		\
+		swapctl					\
+		umount					\
 		wsconsctl
 
 # support for various file systems

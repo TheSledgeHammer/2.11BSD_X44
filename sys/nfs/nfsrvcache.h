@@ -2,6 +2,9 @@
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Rick Macklem at The University of Guelph.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -29,19 +32,57 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)nfsrvcache.h	8.3 (Berkeley) 3/30/95
  */
 
-#include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)creat.c	8.1.1 (2.11BSD) 1997/8/28";
-#endif /* LIBC_SCCS and not lint */
 
-#include <fcntl.h>
+#ifndef _NFS_NFSRVCACHE_H_
+#define _NFS_NFSRVCACHE_H_
 
-int
-creat(path, mode)
-	char *path;
-	mode_t mode;
-{
-	return (open(path, O_WRONLY|O_CREAT|O_TRUNC, mode));
-}
+/*
+ * Definitions for the server recent request cache
+ */
+
+#define	NFSRVCACHESIZ	64
+
+struct nfsrvcache {
+	TAILQ_ENTRY(nfsrvcache) rc_lru;		/* LRU chain */
+	LIST_ENTRY(nfsrvcache) rc_hash;		/* Hash chain */
+	u_long	rc_xid;				/* rpc id number */
+	union {
+		struct mbuf *ru_repmb;		/* Reply mbuf list OR */
+		int ru_repstat;			/* Reply status */
+	} rc_un;
+	union nethostaddr rc_haddr;		/* Host address */
+	short	rc_proc;			/* rpc proc number */
+	u_char	rc_state;		/* Current state of request */
+	u_char	rc_flag;		/* Flag bits */
+};
+
+#define	rc_reply	rc_un.ru_repmb
+#define	rc_status	rc_un.ru_repstat
+#define	rc_inetaddr	rc_haddr.had_inetaddr
+#define	rc_nam		rc_haddr.had_nam
+
+/* Cache entry states */
+#define	RC_UNUSED	0
+#define	RC_INPROG	1
+#define	RC_DONE		2
+
+/* Return values */
+#define	RC_DROPIT	0
+#define	RC_REPLY	1
+#define	RC_DOIT		2
+#define	RC_CHECKIT	3
+
+/* Flag bits */
+#define	RC_LOCKED	0x01
+#define	RC_WANTED	0x02
+#define	RC_REPSTATUS	0x04
+#define	RC_REPMBUF	0x08
+#define	RC_NQNFS	0x10
+#define	RC_INETADDR	0x20
+#define	RC_NAM		0x40
+
+#endif

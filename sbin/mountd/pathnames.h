@@ -29,19 +29,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)pathnames.h	8.1 (Berkeley) 6/5/93
  */
+#include <paths.h>
 
-#include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)creat.c	8.1.1 (2.11BSD) 1997/8/28";
-#endif /* LIBC_SCCS and not lint */
-
-#include <fcntl.h>
-
-int
-creat(path, mode)
-	char *path;
-	mode_t mode;
-{
-	return (open(path, O_WRONLY|O_CREAT|O_TRUNC, mode));
-}
+#define	_PATH_EXPORTS		"/etc/exports"
+#define	_PATH_RMOUNTLIST	"/var/db/mountdtab"
+#define _PATH_MOUNTDPID		"/var/run/mountd.pid"
