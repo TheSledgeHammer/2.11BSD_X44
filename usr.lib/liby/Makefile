@@ -10,6 +10,6 @@
 NOPIC=		# defined
 
 LIB=		y
-SRCS=		libmai.c libzer.c.c
+SRCS=		libmai.c libzer.c
 
 .include <bsd.lib.mk>
