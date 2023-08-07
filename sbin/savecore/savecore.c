@@ -151,7 +151,6 @@ void	save_core(void);
 void	usage(void);
 void 	Write(int, void *, int);
 
-
 int
 main(argc, argv)
 	char *argv[];
@@ -480,29 +479,6 @@ path(file)
 	return (cp);
 }
 
-check_space()
-{
-	struct stat dsb;
-	register char *ddev;
-	register int dfd;
-	struct fs sblk;
-
-	if (stat(dirname, &dsb) < 0) {
-		perror(dirname);
-		exit(1);
-	}
-	ddev = find_dev(dsb.st_dev, S_IFBLK);
-	dfd = Open(ddev, 0);
-	Lseek(dfd, (off_t)SUPERB*DEV_BSIZE, 0);
-	Read(dfd, (char *)&sblk, sizeof sblk);
-	close(dfd);
-	if (read_number("minfree") > sblk.fs_tfree) {
-		fprintf(stderr, "Dump omitted, not enough space on device\n");
-		return (0);
-	}
-	return (1);
-}
-
 char buf[1024 * 1024];
 
 int
@@ -709,13 +685,11 @@ check_space()
 
 	needed = (dumpsize + vmunixsize) / 1024;
  	if (minfree > 0 && spacefree - needed < minfree) {
-		syslog(LOG_WARNING,
-		    "no dump, not enough free space on device");
+		syslog(LOG_WARNING, "no dump, not enough free space on device");
 		return (0);
 	}
 	if (spacefree - needed < minfree)
-		syslog(LOG_WARNING,
-		    "dump performed, but free space threshold crossed");
+		syslog(LOG_WARNING, "dump performed, but free space threshold crossed");
 	return (1);
 }
 
