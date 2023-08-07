@@ -17,4 +17,4 @@ INSTALLATION_DIRS+=	installation/floppy
 
 # i386 specific distrib stuff
 #snap_md_post:
-#	cd stand/boot/arch/i386
+#	cd ${NETBSDSRCDIR}/stand/boot/arch/i386 && ${MAKE} release

@@ -186,6 +186,10 @@ FILESDIR_aliases=	/etc/mail
 FILESMODE_aliases=	644
 .endif
 
+CONFIGFILES+=		MAKEDEV.local
+FILESDIR_MAKEDEV.local=	/dev
+FILESMODE_MAKEDEV.local=${BINMODE}
+
 CONFIGFILES+=		crontab
 FILESDIR_crontab=	/var/cron/tabs
 FILESNAME_crontab=	root
@@ -276,18 +280,8 @@ install-etc-files: .PHONY .MAKE check_DESTDIR
 # distrib-dirs --
 #	Populate $DESTDIR with directories needed by NetBSD
 #
-.if ${MKUNPRIVED} == "no"
-TOOL_MTREE.unpriv=
-.else
-TOOL_MTREE.unpriv=	-W
-.endif
-
 distrib-dirs: .PHONY check_DESTDIR
-.if !defined(DISTRIBUTION_DONE)
-	${INSTALL_DIR} -o root -g wheel -m 755 ${BASE_PKG} ${DESTDIR}
-.endif
-	${TOOL_MTREE} -def ${.CURDIR}/mtree/211BSD.dist -N ${.CURDIR} \
-	    -p ${DESTDIR}/ -U ${TOOL_MTREE.unpriv}
+	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
 	    
 COMPRESS_PROGRAM=${"${USE_XZ_SETS:Uno}"!="no":?${TOOL_XZ}:${TOOL_GZIP}}
 XZ_OPT=-9

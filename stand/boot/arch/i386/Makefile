@@ -18,8 +18,10 @@ SUBDIR+= boot0 boot2 cdboot isoboot
 SUBDIR+= gptboot
 .endif	
 
-SUBDIR+= loader	
+SUBDIR+= loader
 
 INCSDIR= 	/usr/include/stand/boot/arch/i386
+
+release: check_RELEASEDIR
 
 .include <bsd.kinc.mk>
