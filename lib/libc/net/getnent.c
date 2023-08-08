@@ -4,31 +4,41 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)getnetent.c	5.3 (Berkeley) 5/19/86";
 #endif LIBC_SCCS and not lint
 
-#include <stdio.h>
+#include "namespace.h"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+
+#ifdef __weak_alias
+__weak_alias(endnetent,_endnetent)
+__weak_alias(getnetent,_getnetent)
+__weak_alias(setnetent,_setnetent)
+#endif
 
 #define	MAXALIASES	35
 
-static char NETDB[] = "/etc/networks";
+static char NETDB[] = _PATH_NETWORKS;
 static FILE *netf = NULL;
-static char line[256+1];
+static char line[BUFSIZ+1];
 static struct netent net;
 static char *net_aliases[MAXALIASES];
 int _net_stayopen;
-static char *any();
+static char *any(char *, char *);
 
 void
 setnetent(f)
 	int f;
 {
+	sethostent(f);
 	if (netf == NULL)
 		netf = fopen(NETDB, "r" );
 	else
@@ -39,6 +49,7 @@ setnetent(f)
 void
 endnetent()
 {
+	endhostent();
 	if (netf) {
 		fclose(netf);
 		netf = NULL;
@@ -54,6 +65,7 @@ getnetent()
 
 	if (netf == NULL && (netf = fopen(NETDB, "r" )) == NULL)
 		return (NULL);
+
 again:
 	p = fgets(line, sizeof(line)-1, netf);
 	if (p == NULL)

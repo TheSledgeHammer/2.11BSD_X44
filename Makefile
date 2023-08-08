@@ -138,7 +138,7 @@ _SRC_TOP_OBJ_=
 #
 _SUBDIR=	tools .WAIT lib
 _SUBDIR+=	include contrib bin games 
-_SUBDIR+=	libexec sbin usr.bin usr.lib
+_SUBDIR+=	libexec sbin usr.bin #usr.lib
 _SUBDIR+=	usr.sbin share sys stand etc #tests
 #_SUBDIR+=	.WAIT rescue .WAIT distrib regress
 

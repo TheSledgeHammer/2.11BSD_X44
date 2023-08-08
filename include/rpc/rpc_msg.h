@@ -185,6 +185,22 @@ extern bool_t	xdr_callhdr(XDR *, struct rpc_msg *);
 extern bool_t	xdr_replymsg(XDR *, struct rpc_msg *);
 
 /*
+ * XDR routine to handle a accepted rpc reply.
+ * xdr_accepted_reply(xdrs, rej)
+ * 	XDR *xdrs;
+ * 	struct accepted_reply *rej;
+ */
+extern bool_t	xdr_accepted_reply(XDR *, struct accepted_reply *);
+
+/*
+ * XDR routine to handle a rejected rpc reply.
+ * xdr_rejected_reply(xdrs, rej)
+ * 	XDR *xdrs;
+ * 	struct rejected_reply *rej;
+ */
+extern bool_t	xdr_rejected_reply(XDR *, struct rejected_reply *);
+
+/*
  * Fills in the error part of a reply message.
  * _seterr_reply(msg, error)
  * 	struct rpc_msg *msg;

@@ -1,4 +1,4 @@
-/*	$NetBSD: types.h,v 1.8 1995/04/29 05:28:05 cgd Exp $	*/
+/*	$NetBSD: nettype.h,v 1.3 2005/02/03 04:39:32 perry Exp $	*/
 
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -7,76 +7,57 @@
  * may copy or modify Sun RPC without charge, but are not authorized
  * to license or distribute it to anyone else except as part of a product or
  * program developed by the user.
- * 
+ *
  * SUN RPC IS PROVIDED AS IS WITH NO WARRANTIES OF ANY KIND INCLUDING THE
  * WARRANTIES OF DESIGN, MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE PRACTICE.
- * 
+ *
  * Sun RPC is provided with no support and without any obligation on the
  * part of Sun Microsystems, Inc. to assist in its use, correction,
  * modification or enhancement.
- * 
+ *
  * SUN MICROSYSTEMS, INC. SHALL HAVE NO LIABILITY WITH RESPECT TO THE
  * INFRINGEMENT OF COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY SUN RPC
  * OR ANY PART THEREOF.
- * 
+ *
  * In no event will Sun Microsystems, Inc. be liable for any lost revenue
  * or profits or other special, indirect and consequential damages, even if
  * Sun has been advised of the possibility of such damages.
- * 
+ *
  * Sun Microsystems, Inc.
  * 2550 Garcia Avenue
  * Mountain View, California  94043
- *
- *	from: @(#)types.h 1.18 87/07/24 SMI
- *	@(#)types.h	2.3 88/08/15 4.0 RPCSRC
+ */
+/*
+ * Copyright (c) 1986 - 1991 by Sun Microsystems, Inc.
  */
 
 /*
- * Rpc additions to <sys/types.h>
- */
-#ifndef _RPC_TYPES_H
-#define _RPC_TYPES_H
-
-/* #pragma ident	"@(#)raw.h	1.11	94/04/25 SMI" */
-/*	@(#)raw.h 1.2 88/10/25 SMI	*/
-
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-/*
- * raw.h
+ * nettype.h, Nettype definitions.
+ * All for the topmost layer of rpc
  *
- * Raw interface
- * The common memory area over which they will communicate
  */
-extern char *__rpc_rawcombuf;
 
-#ifdef	__cplusplus
-}
-#endif
+#ifndef	_RPC_NETTYPE_H
+#define	_RPC_NETTYPE_H
 
-#define	bool_t	int32_t
-#define	enum_t	int32_t
-#define __dontcare__	-1
+#include <netconfig.h>
 
-#ifndef FALSE
-#	define FALSE	(0)
-#endif
-#ifndef TRUE
-#	define TRUE	(1)
-#endif
-#ifndef NULL
-#	define NULL	0
-#endif
+#define	_RPC_NONE		0
+#define	_RPC_NETPATH	1
+#define	_RPC_VISIBLE	2
+#define	_RPC_CIRCUIT_V	3
+#define	_RPC_DATAGRAM_V	4
+#define	_RPC_CIRCUIT_N	5
+#define	_RPC_DATAGRAM_N	6
+#define	_RPC_TCP		7
+#define	_RPC_UDP		8
 
-#define mem_alloc(bsize)		malloc(bsize)
-#define mem_free(ptr, bsize)	free(ptr)
+__BEGIN_DECLS
+extern void *__rpc_setconf(const char *);
+extern void __rpc_endconf(void *);
+extern struct netconfig *__rpc_getconf(void *);
+extern struct netconfig *__rpc_getconfip(const char *);
+__END_DECLS
 
-#ifndef makedev /* ie, we haven't already included it */
-#include <sys/types.h>
-#endif
-#include <sys/time.h>
-
-#endif /* !_RPC_TYPES_H */
+#endif	/* !_RPC_NETTYPE_H */

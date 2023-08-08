@@ -43,46 +43,68 @@
 #include <sys/cdefs.h>
 
 /*
+ * Well-known IPV6 RPC broadcast address.
+ */
+#define RPCB_MULTICAST_ADDR "ff02::202"
+
+/*
  * Rpc calls return an enum clnt_stat.  This should be looked at more,
  * since each implementation is required to live with this (implementation
  * independent) list of errors.
  */
 enum clnt_stat {
-	RPC_SUCCESS=0,			/* call succeeded */
+	RPC_SUCCESS=0,				/* call succeeded */
 	/*
 	 * local errors
 	 */
 	RPC_CANTENCODEARGS=1,		/* can't encode arguments */
 	RPC_CANTDECODERES=2,		/* can't decode results */
-	RPC_CANTSEND=3,			/* failure in sending call */
-	RPC_CANTRECV=4,			/* failure in receiving result */
-	RPC_TIMEDOUT=5,			/* call timed out */
+	RPC_CANTSEND=3,				/* failure in sending call */
+	RPC_CANTRECV=4,				/* failure in receiving result */
+	RPC_TIMEDOUT=5,				/* call timed out */
+
 	/*
 	 * remote errors
 	 */
-	RPC_VERSMISMATCH=6,		/* rpc versions not compatible */
-	RPC_AUTHERROR=7,		/* authentication error */
-	RPC_PROGUNAVAIL=8,		/* program not available */
+	RPC_VERSMISMATCH=6,			/* rpc versions not compatible */
+	RPC_AUTHERROR=7,			/* authentication error */
+	RPC_PROGUNAVAIL=8,			/* program not available */
 	RPC_PROGVERSMISMATCH=9,		/* program version mismatched */
-	RPC_PROCUNAVAIL=10,		/* procedure unavailable */
+	RPC_PROCUNAVAIL=10,			/* procedure unavailable */
 	RPC_CANTDECODEARGS=11,		/* decode arguments error */
-	RPC_SYSTEMERROR=12,		/* generic "other problem" */
+	RPC_SYSTEMERROR=12,			/* generic "other problem" */
 
 	/*
 	 * callrpc & clnt_create errors
 	 */
-	RPC_UNKNOWNHOST=13,		/* unknown host name */
+	RPC_UNKNOWNHOST=13,			/* unknown host name */
 	RPC_UNKNOWNPROTO=17,		/* unkown protocol */
+	RPC_UNKNOWNADDR = 19,		/* Remote address unknown */
+	RPC_NOBROADCAST = 21,		/* Broadcasting not supported */
 
 	/*
 	 * _ create errors
 	 */
-	RPC_PMAPFAILURE=14,		/* the pmapper failed in its call */
+	RPC_PMAPFAILURE=14,			/* the pmapper failed in its call */
+#define RPC_PMAPFAILURE RPC_RPCBFAILURE
 	RPC_PROGNOTREGISTERED=15,	/* remote program is not registered */
+	RPC_N2AXLATEFAILURE = 22,	/* name -> addr translation failed */
+
+	/*
+	 * Misc error in the TLI library (provided for compatibility)
+	 */
+	RPC_TLIERROR = 20,
+
 	/*
 	 * unspecified error
 	 */
-	RPC_FAILED=16
+	RPC_FAILED=16,
+
+	/*
+	 * asynchronous errors
+	 */
+	RPC_INPROGRESS = 24,
+	RPC_STALERACHANDLE = 25
 };
 
 
@@ -119,26 +141,44 @@ typedef struct __rpc_client {
 	AUTH	*cl_auth;			/* authenticator */
 	struct clnt_ops {
 		/* call remote procedure */
-		enum clnt_stat	(*cl_call) __P((struct __rpc_client *,
-				    u_long, xdrproc_t, caddr_t, xdrproc_t,
-				    caddr_t, struct timeval));
+		enum clnt_stat	(*cl_call)(struct __rpc_client *, u_long, xdrproc_t, caddr_t, xdrproc_t, caddr_t, struct timeval);
 		/* abort a call */
-		void		(*cl_abort) __P((struct __rpc_client *));
+		void		(*cl_abort)(struct __rpc_client *);
 		/* get specific error code */
-		void		(*cl_geterr) __P((struct __rpc_client *,
-				    struct rpc_err *));
+		void		(*cl_geterr)(struct __rpc_client *, struct rpc_err *);
 		/* frees results */
-		bool_t		(*cl_freeres) __P((struct __rpc_client *,
-				    xdrproc_t, caddr_t));
+		bool_t		(*cl_freeres)(struct __rpc_client *, xdrproc_t, caddr_t);
 		/* destroy this structure */
-		void		(*cl_destroy) __P((struct __rpc_client *));
+		void		(*cl_destroy)(struct __rpc_client *);
 		/* the ioctl() of rpc */
-		bool_t          (*cl_control) __P((struct __rpc_client *, u_int,
-				    char *));
+		bool_t      (*cl_control)(struct __rpc_client *, u_int, char *);
 	} *cl_ops;
-	caddr_t			cl_private;	/* private stuff */
+	void			*cl_private;	/* private stuff */
+	char			*cl_netid;		/* network token */
+	char			*cl_tp;			/* device name */
 } CLIENT;
 
+/*
+ * Timers used for the pseudo-transport protocol when using datagrams
+ */
+struct rpc_timers {
+	unsigned short	rt_srtt;	/* smoothed round-trip time */
+	unsigned short	rt_deviate;	/* estimated deviation */
+	unsigned long	rt_rtxcur;	/* current (backed-off) rto */
+};
+
+/*
+ * Feedback values used for possible congestion and rate control
+ */
+#define FEEDBACK_REXMIT1	1	/* first retransmit */
+#define FEEDBACK_OK			2	/* no retransmits */
+
+/* Used to set version of portmapper used in broadcast */
+
+#define CLCR_SET_LOWVERS	3
+#define CLCR_GET_LOWVERS	4
+
+#define RPCSMALLMSGSIZE 400	/* a more reasonable packet size */
 
 /*
  * client side rpc interface ops
@@ -208,6 +248,19 @@ typedef struct __rpc_client {
 #define CLSET_TIMEOUT       1   /* set timeout (timeval) */
 #define CLGET_TIMEOUT       2   /* get timeout (timeval) */
 #define CLGET_SERVER_ADDR   3   /* get server's address (sockaddr) */
+#define	CLGET_FD			6	/* get connections file descriptor */
+#define	CLGET_SVC_ADDR		7	/* get server's address (netbuf) */
+#define	CLSET_FD_CLOSE		8	/* close fd while clnt_destroy */
+#define	CLSET_FD_NCLOSE		9	/* Do not close fd while clnt_destroy */
+#define	CLGET_XID 			10	/* Get xid */
+#define	CLSET_XID			11	/* Set xid */
+#define	CLGET_VERS			12	/* Get version number */
+#define	CLSET_VERS			13	/* Set version number */
+#define	CLGET_PROG			14	/* Get program number */
+#define	CLSET_PROG			15	/* Set program number */
+#define	CLSET_SVC_ADDR		16	/* get server's address (netbuf) */
+#define	CLSET_PUSH_TIMOD	17	/* push timod if not already present */
+#define	CLSET_POP_TIMOD		18	/* pop timod */
 /*
  * udp only control operations
  */
@@ -229,9 +282,9 @@ typedef struct __rpc_client {
  * and network administration.
  */
 
-#define RPCTEST_PROGRAM		((u_long)1)
-#define RPCTEST_VERSION		((u_long)1)
-#define RPCTEST_NULL_PROC	((u_long)2)
+#define RPCTEST_PROGRAM			((u_long)1)
+#define RPCTEST_VERSION			((u_long)1)
+#define RPCTEST_NULL_PROC		((u_long)2)
 #define RPCTEST_NULL_BATCH_PROC	((u_long)3)
 
 /*
@@ -254,7 +307,7 @@ typedef struct __rpc_client {
  *	u_long vers;
  */
 __BEGIN_DECLS
-extern CLIENT *clntraw_create	__P((u_long, u_long));
+extern CLIENT *clntraw_create(u_long, u_long);
 __END_DECLS
 
 
@@ -268,7 +321,7 @@ __END_DECLS
  *	char *prot;	-- protocol
  */
 __BEGIN_DECLS
-extern CLIENT *clnt_create	__P((char *, u_long, u_long, char *));
+extern CLIENT *clnt_create(char *, u_long, u_long, char *);
 __END_DECLS
 
 
@@ -284,12 +337,7 @@ __END_DECLS
  *	u_int recvsz;
  */
 __BEGIN_DECLS
-extern CLIENT *clnttcp_create	__P((struct sockaddr_in *,
-				     u_long,
-				     u_long,
-				     int *,
-				     u_int,
-				     u_int));
+extern CLIENT *clnttcp_create(struct sockaddr_in *, u_long, u_long, int *, u_int, u_int);
 __END_DECLS
 
 
@@ -315,18 +363,8 @@ __END_DECLS
  *	u_int recvsz;
  */
 __BEGIN_DECLS
-extern CLIENT *clntudp_create	__P((struct sockaddr_in *,
-				     u_long,
-				     u_long,
-				     struct timeval,
-				     int *));
-extern CLIENT *clntudp_bufcreate __P((struct sockaddr_in *,
-				     u_long,
-				     u_long,
-				     struct timeval,
-				     int *,
-				     u_int,
-				     u_int));
+extern CLIENT *clntudp_create(struct sockaddr_in *, u_long, u_long, struct timeval, int *);
+extern CLIENT *clntudp_bufcreate(struct sockaddr_in *, u_long, u_long, struct timeval, int *, u_int, u_int);
 __END_DECLS
 
 
@@ -334,24 +372,24 @@ __END_DECLS
  * Print why creation failed
  */
 __BEGIN_DECLS
-extern void clnt_pcreateerror	__P((char *));			/* stderr */
-extern char *clnt_spcreateerror	__P((char *));			/* string */
+extern void clnt_pcreateerror(char *);			/* stderr */
+extern char *clnt_spcreateerror(char *);			/* string */
 __END_DECLS
 
 /*
  * Like clnt_perror(), but is more verbose in its output
  */ 
 __BEGIN_DECLS
-extern void clnt_perrno		__P((enum clnt_stat));		/* stderr */
-extern char *clnt_sperrno	__P((enum clnt_stat));		/* string */
+extern void clnt_perrno(enum clnt_stat);		/* stderr */
+extern char *clnt_sperrno(enum clnt_stat);		/* string */
 __END_DECLS
 
 /*
  * Print an English error message, given the client error code
  */
 __BEGIN_DECLS
-extern void clnt_perror		__P((CLIENT *, char *)); 	/* stderr */
-extern char *clnt_sperror	__P((CLIENT *, char *));	/* string */
+extern void clnt_perror(CLIENT *, char *); 		/* stderr */
+extern char *clnt_sperror(CLIENT *, char *);	/* string */
 __END_DECLS
 
 

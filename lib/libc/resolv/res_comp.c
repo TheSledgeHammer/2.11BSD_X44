@@ -15,9 +15,14 @@ static char sccsid[] = "@(#)res_comp.c	6.13 (Berkeley) 3/13/88";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <stdio.h>
+#include <sys/param.h>
+#include <netinet/in.h>
 #include <arpa/nameser.h>
-
+#include <ctype.h>
+#include <resolv.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.

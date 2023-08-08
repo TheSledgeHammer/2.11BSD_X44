@@ -10,6 +10,7 @@
  * is provided ``as is'' without express or implied warranty.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)gethostnamadr.c	6.31.2 (2.11BSD GTE) 6/27/94";
 #endif /* LIBC_SCCS and not lint */
@@ -17,13 +18,26 @@ static char sccsid[] = "@(#)gethostnamadr.c	6.31.2 (2.11BSD GTE) 6/27/94";
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <ctype.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <errno.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
+
+#include <ctype.h>
+#include <netdb.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <errno.h>
 #include <resolv.h>
+#include <syslog.h>
+
+#include <nsswitch.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef YP
+#include <rpc/rpc.h>
+#include <rpcsvc/yp_prot.h>
+#include <rpcsvc/ypclnt.h>
+#endif
 
 #define	MAXALIASES	16
 #define	MAXADDRS	16

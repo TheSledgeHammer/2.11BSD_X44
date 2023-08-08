@@ -9,9 +9,16 @@ static char sccsid[] = "@(#)herror.c	6.1 (Berkeley) 12/4/87";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/uio.h>
 
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+
 #include <netdb.h>
+#include <resolv.h>
+#include <string.h>
+#include <unistd.h>
 
 char	*h_errlist[] = {
 	"Error 0",

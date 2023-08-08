@@ -19,10 +19,22 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) 3/7/88";
 #endif
 
 #include <sys/types.h>
+#include <sys/param.h>
+#include <sys/socket.h>
+
 #include <netinet/in.h>
-#include <stdio.h>
+#include <arpa/inet.h>
 #include <arpa/nameser.h>
 
+#include <ctype.h>
+#include <errno.h>
+#include <math.h>
+#include <netdb.h>
+#include <resolv.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 //extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
 //extern char *inet_ntoa();
 

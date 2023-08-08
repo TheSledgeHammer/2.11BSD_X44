@@ -40,6 +40,7 @@
 #include "citrus_ctype.h"
 #include "citrus_types.h"
 #include "citrus_stdenc.h"
+#include "citrus_iconv.h"
 #include "citrus_iconv_std.h"
 
 /*

@@ -12,12 +12,14 @@ gmon/			4.4BSD-Lite2
 hash/			NetBSD
 iconv/			NetBSD
 include/		NetBSD
-inet/			2.11BSD
+inet/			2.11BSD/NetBSD
 locale/			4.4BSD-Lite2/NetBSD/FreeBSD
-net/			2.11BSD
-ns/				2.11BSD
+net/			2.11BSD/NetBSD
+ns/				2.11BSD/NetBSD
 quad/			4.4BSD-Lite2
 regex/			NetBSD
+resolv/			2.11BSD/NetBSD
+rpc/			NetBSD
 ssp/			NetBSD
 stdio/			2.11BSD/4.4BSD-lite2/NetBSD
 stdlib/			2.11BSD/4.4BSD-lite2/NetBSD

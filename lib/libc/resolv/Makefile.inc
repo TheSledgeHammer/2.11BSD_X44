@@ -12,18 +12,9 @@
 #	@(#)Makefile	5.16 (Berkeley) 3/14/88
 #
 # machine-independent net sources
-.PATH:	${ARCHDIR}/net ${.CURDIR}/net
+.PATH: ${.CURDIR}/resolv
 
-SRCS+=	getnbyaddr.c getnbyname.c getnent.c getpent.c getpname.c	\
-		getproto.c getsbyname.c getsbyport.c getsent.c rcmd.c 		\
-		rexec.c ruserpass.c
+SRCS+=	herror.c res_comp.c res_debug.c res_init.c res_mkquery.c		\
+		res_query.c res_send.c											\
 
-# sub-directories net sources
-.include "${.CURDIR}/net/hosttable/Makefile.inc"
-.include "${.CURDIR}/net/named/Makefile.inc"
-
-.if (${USE_INET6} != "no")
-SRCS+=	ip6opt.c rthdr.c inet6_scopeid.c
-.endif
-
-.include "${ARCHDIR}/net/Makefile.inc"
+COPTS.res_query.c+=	${CC_WNO_STRINGOP_OVERFLOW}

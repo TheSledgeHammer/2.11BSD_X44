@@ -42,6 +42,8 @@
 #define _RPC_SVC_H
 #include <sys/cdefs.h>
 
+#include <sys/select.h>
+
 /*
  * This interface must manage two items concerning remote procedure calling:
  *
@@ -63,6 +65,14 @@
  * those of the registered service.  The dispatch function is passed two
  * parameters, struct svc_req * and SVCXPRT *, defined below.
  */
+
+/*
+ *	Service control requests
+ */
+#define SVCGET_VERSQUIET	1
+#define SVCSET_VERSQUIET	2
+#define SVCGET_CONNMAXREC	3
+#define SVCSET_CONNMAXREC	4
 
 enum xprt_stat {
 	XPRT_DIED,
@@ -90,11 +100,21 @@ typedef struct __rpc_svcxprt {
 		/* destroy this struct */
 		void	(*xp_destroy)(struct __rpc_svcxprt *);
 	} *xp_ops;
-	int			xp_addrlen;	 /* length of remote address */
-	struct sockaddr_in xp_raddr;	 /* remote address */
+	int				xp_addrlen;	 /* length of remote address */
+	struct sockaddr_in 	xp_raddr;	 /* remote address */
+	const struct xp_ops2 {
+		/* catch-all function */
+		bool_t  (*xp_control)(struct __rpc_svcxprt *, const unsigned int, void *);
+	} *xp_ops2;
+	char			*xp_tp;		 /* transport provider device name */
+	char			*xp_netid;	 /* network token */
+	struct netbuf	xp_ltaddr;	 /* local transport address */
+	struct netbuf	xp_rtaddr;	 /* remote transport address */
 	struct opaque_auth xp_verf;	 /* raw response verifier */
-	caddr_t		xp_p1;		 /* private */
-	caddr_t		xp_p2;		 /* private */
+	void			*xp_p1;		 /* private */
+	void			*xp_p2;		 /* private */
+	void			*xp_p3;		 /* private: for use by svc lib */
+	int				xp_type;	 /* transport type */
 } SVCXPRT;
 
 /*
@@ -200,8 +220,6 @@ extern void	xprt_unregister(SVCXPRT *);
 __END_DECLS
 
 
-
-
 /*
  * When the service routine is called, it must first check to see if it
  * knows about the procedure;  if not, it should call svcerr_noproc
@@ -257,6 +275,10 @@ __END_DECLS
 extern int svc_maxfd;
 #ifdef FD_SETSIZE
 extern fd_set svc_fdset;
+#define svc_maxfd 		(*svc_fdset_getmax())
+#define svc_fdset 		(*svc_fdset_get())
+#define svc_pollfd 		svc_pollfd_get()
+#define svc_max_pollfd (*svc_fdset_getmax())
 #define svc_fds svc_fdset.fds_bits[0]	/* compatibility */
 #else
 extern int svc_fds;
@@ -266,7 +288,7 @@ extern int svc_fds;
  * a small program implemented by the svc_rpc implementation itself;
  * also see clnt.h for protocol numbers.
  */
-extern void rpctest_service();				/* XXX relic? */
+extern void rpctest_service(void);				/* XXX relic? */
 
 __BEGIN_DECLS
 extern void	svc_getreq(int);

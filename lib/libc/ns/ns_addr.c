@@ -7,12 +7,16 @@
  * Used by permission.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)ns_addr.c	6.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
 #include <netns/ns.h>
+
+#include <stdio.h>
+#include <string.h>
 
 static struct ns_addr addr, zero_addr;
 
@@ -65,9 +69,9 @@ ns_addr(name)
 
 static
 Field(buf, out, len)
-char *buf;
-u_char *out;
-int len;
+	char *buf;
+	u_char *out;
+	int len;
 {
 	register char *bp = buf;
 	int i, ibase, base16 = 0, base10 = 0, clen = 0;

@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  *
  */
+#include <sys/cdefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)ns_ntoa.c	6.3 (Berkeley) 3/9/86";
@@ -11,12 +12,13 @@ static char sccsid[] = "@(#)ns_ntoa.c	6.3 (Berkeley) 3/9/86";
 
 #include <sys/types.h>
 #include <netns/ns.h>
+#include <stdio.h>
 
 static char *spectHex(char *);
 
 char *
 ns_ntoa(addr)
-struct ns_addr addr;
+	struct ns_addr addr;
 {
 	static char obuf[40];
 	char *spectHex();

@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_iconv_std_local.h,v 1.2 2003/07/01 09:42:16 tshiozak Exp $	*/
+/*	$NetBSD: citrus_iconv_local.h,v 1.3 2008/02/09 14:56:20 junyoung Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,56 +26,25 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_ICONV_STD_H_
-#define _CITRUS_ICONV_STD_H_
+#ifndef _CITRUS_ICONV_H_
+#define _CITRUS_ICONV_H_
 
-/*
- * encoding
- */
-struct _citrus_iconv_std_encoding {
-	_ENCODING_INFO 						*se_handle;
-	void								*se_ps;
-	void								*se_pssaved;
+#define _CITRUS_ICONV_F_HIDE_INVALID			0x0001
+
+struct _citrus_iconv_shared {
+	//struct _citrus_iconv_ops					*ci_ops;
+	void										*ci_closure;
+	/* private */
+	_CITRUS_HASH_ENTRY(_citrus_iconv_shared)	ci_hash_entry;
+	TAILQ_ENTRY(_citrus_iconv_shared)			ci_tailq_entry;
+	_citrus_module_t							ci_module;
+	unsigned int								ci_used_count;
+	char										*ci_convname;
 };
 
-/*
- * dst
- */
-struct _citrus_iconv_std_dst {
-	TAILQ_ENTRY(_citrus_iconv_std_dst)	sd_entry;
-	_citrus_csid_t						sd_csid;
-	unsigned long						sd_norm;
-	struct _citrus_csmapper				*sd_mapper;
-};
-TAILQ_HEAD(_citrus_iconv_std_dst_list, _citrus_iconv_std_dst);
-
-/*
- * src
- */
-struct _citrus_iconv_std_src {
-	TAILQ_ENTRY(_citrus_iconv_std_src)	ss_entry;
-	_citrus_csid_t						ss_csid;
-	struct _citrus_iconv_std_dst_list	ss_dsts;
-};
-TAILQ_HEAD(_citrus_iconv_std_src_list, _citrus_iconv_std_src);
-
-/*
- * iconv_std handle
- */
-struct _citrus_iconv_std_shared {
-	_ENCODING_INFO						*is_src_encoding;
-	_ENCODING_INFO						*is_dst_encoding;
-	struct _citrus_iconv_std_src_list	is_srcs;
-	int									is_use_invalid;
-	_citrus_wc_t						is_invalid;
-};
-
-/*
- * iconv_std context
- */
-struct _citrus_iconv_std_context {
-	struct _citrus_iconv_std_encoding	sc_src_encoding;
-	struct _citrus_iconv_std_encoding	sc_dst_encoding;
+struct _citrus_iconv {
+	struct _citrus_iconv_shared					*cv_shared;
+	void										*cv_closure;
 };
 
 #endif
