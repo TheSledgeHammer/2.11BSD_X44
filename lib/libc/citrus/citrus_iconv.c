@@ -26,6 +26,7 @@
  * SUCH DAMAGE.
  */
 
+
 #include "citrus_iconv.h"
 
 #define _CITRUS_ICONV_DIR		"iconv.dir"
@@ -61,9 +62,8 @@ close_shared(struct _citrus_iconv_shared *ci)
 static __inline int
 open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci, const char * __restrict basedir, const char * __restrict convname, const char * __restrict src, const char * __restrict dst)
 {
-
+	return 0;
 }
-
 
 static __inline int
 hash_func(const char *key)
@@ -81,7 +81,7 @@ match_func(struct _citrus_iconv_shared * __restrict ci,
 static int
 get_shared(struct _citrus_iconv_shared * __restrict * __restrict rci, const char *basedir, const char *src, const char *dst)
 {
-
+	return 0;
 }
 
 static void

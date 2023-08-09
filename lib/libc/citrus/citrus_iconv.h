@@ -37,7 +37,6 @@ struct _citrus_iconv_shared {
 	/* private */
 	_CITRUS_HASH_ENTRY(_citrus_iconv_shared)	ci_hash_entry;
 	TAILQ_ENTRY(_citrus_iconv_shared)			ci_tailq_entry;
-	_citrus_module_t							ci_module;
 	unsigned int								ci_used_count;
 	char										*ci_convname;
 };

@@ -129,6 +129,61 @@ init_encoding(struct _citrus_iconv_std_encoding *se, _ENCODING_INFO *cs, void *p
 	return ret;
 }
 
+static int
+open_csmapper(struct _csmapper **rcm, const char *src, const char *dst, unsigned long *rnorm)
+{
+	int ret;
+	struct _csmapper *cm;
+
+	ret = _csmapper_open(&cm, src, dst, 0, rnorm);
+	if (ret)
+		return ret;
+	if (_csmapper_get_src_max(cm) != 1 || _csmapper_get_dst_max(cm) != 1 || _csmapper_get_state_size(cm) != 0) {
+		_csmapper_close(cm);
+		return EINVAL;
+	}
+
+	*rcm = cm;
+
+	return 0;
+}
+
+static void
+close_dsts(struct _citrus_iconv_std_dst_list *dl)
+{
+	struct _citrus_iconv_std_dst *sd;
+
+	while ((sd=TAILQ_FIRST(dl)) != NULL) {
+		TAILQ_REMOVE(dl, sd, sd_entry);
+		_csmapper_close(sd->sd_mapper);
+		free(sd);
+	}
+}
+
+static int
+open_dsts(struct _citrus_iconv_std_dst_list *dl, const struct _esdb_charset *ec, const struct _esdb *dbdst)
+{
+
+}
+
+static void
+close_srcs(struct _citrus_iconv_std_src_list *sl)
+{
+	struct _citrus_iconv_std_src *ss;
+
+	while ((ss=TAILQ_FIRST(sl)) != NULL) {
+		TAILQ_REMOVE(sl, ss, ss_entry);
+		close_dsts(&ss->ss_dsts);
+		free(ss);
+	}
+}
+
+static int
+open_srcs(struct _citrus_iconv_std_src_list *sl, const struct _esdb *dbsrc, const struct _esdb *dbdst)
+{
+
+}
+
 /* do convert a character */
 #define E_NO_CORRESPONDING_CHAR ENOENT /* XXX */
 static int

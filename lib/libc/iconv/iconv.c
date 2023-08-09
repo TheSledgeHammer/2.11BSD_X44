@@ -57,7 +57,7 @@ iconv_open(out, in)
 {
     int ret;
 
-    ret = 0; /* _citrus_iconv_open */
+    ret = _citrus_iconv_open(&handle, _PATH_ICONV, in, out);
 	if (ret) {
 		errno = ret == ENOENT? EINVAL : ret;
 		return ((iconv_t)-1);
@@ -75,7 +75,7 @@ iconv_close(handle)
 		return (-1);
 	}
 
-	/* _citrus_iconv_close; */
+	_citrus_iconv_close((struct _citrus_iconv *)(void *)handle);
 
 	return (0);
 }
@@ -96,7 +96,7 @@ iconv(handle, in, szin, out, szout)
 		return ((size_t)-1);
 	}
 
-	err = 0; /* _citrus_iconv_convert */
+	err = _citrus_iconv_convert((struct _citrus_iconv *)(void *)handle, (const char **)(void *)in, szin, out, szout, 0, &ret);
 	if (err) {
 		errno = err;
 		ret = (size_t)-1;
@@ -122,7 +122,7 @@ __iconv(handle, in, szin, out, szout, flags, invalids)
 		errno = EBADF;
 		return ((size_t)-1);
 	}
-	err = 0;  /* _citrus_iconv_convert */
+	err = _citrus_iconv_convert((struct _citrus_iconv *)(void *)handle, (const char **)(void *)in, szin, out, szout, flags, &ret);
 	if (invalids) {
 		*invalids = ret;
 	}
