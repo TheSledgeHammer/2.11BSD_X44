@@ -33,6 +33,11 @@
  *	@(#)ffs_tables.c	8.1 (Berkeley) 6/11/93
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
+#include <sys/cdefs.h>
 #include <sys/param.h>
 
 /*
