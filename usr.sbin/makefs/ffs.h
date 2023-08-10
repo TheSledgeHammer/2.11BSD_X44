@@ -46,8 +46,6 @@
 #include <ufs/ffs/fs.h>
 #include <stdbool.h>
 
-#define MAXVOLLEN 32
-
 typedef struct {
 	char	label[MAXVOLLEN];	/* volume name/label */
 	int		bsize;		/* block size */
