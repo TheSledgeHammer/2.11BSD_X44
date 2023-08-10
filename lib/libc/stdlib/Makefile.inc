@@ -11,12 +11,15 @@
 
 SRCS+=	abort.c abs.c atexit.c atof.c atoi.c atol.c bsearch.c calloc.c div.c exit.c getenv.c 	\
 		getopt_long.c getopt.c getsubopt.c heapsort.c labs.c ldiv.c malloc.c merge.c qsort.c 	\
-		radixsort.c random.c reallocarr.c reallocarray.c setenv.c strod.c strtoi.c strtoimax.c strtol.c 	\
-		strtoll.c strtou.c strtoul.c strtoumax.c strtouq.c system.c
+		radixsort.c random.c reallocarr.c reallocarray.c setenv.c strod.c strsuftoll.c strtoi.c \
+        strtoimax.c strtol.c strtoll.c strtou.c strtoul.c strtoumax.c strtouq.c system.c
 
 .include "${ARCHDIR}/stdlib/Makefile.inc"
 
 MAN+= 	abort.3 abs.3 atexit.3 atof.3 atoi.3 atol.3 bsearch.3 calloc.3 div.3 exit.3				\
 		getopt_long.3 getopt.3 getsubopt.3 labs.3 ldiv.3 malloc.3 qsort.3 radixsort.3 random.3 	\
-		reallocarr.3 reallocarray.3 strod.3 strol.3 stroul.3 system.3
+		reallocarr.3 reallocarray.3 strod.3 strol.3 stroul.3 strsuftoll.3 system.3
 
+MLINKS+=strsuftoll.3 strsuftollx.3
+MLINKS+=strtod.3 strtof.3 strtod.3 strtold.3
+MLINKS+=strtol.3 strtoimax.3
