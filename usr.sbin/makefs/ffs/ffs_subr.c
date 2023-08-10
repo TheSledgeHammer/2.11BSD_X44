@@ -33,14 +33,19 @@
  *	@(#)ffs_subr.c	8.5 (Berkeley) 3/21/95
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+//__FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #include <sys/types.h>
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+
 #include "ffs/ffs_extern.h"
 #include "ffs/ufs_bswap.h"
 
@@ -75,12 +80,6 @@ ffs_fragacct_swap(struct fs *fs, int fragmap, uint32_t fraglist[], int cnt, int 
 			subfield <<= 1;
 		}
 	}
-}
-
-void
-ffs_fragacct(struct fs *fs, int fragmap, uint32_t fraglist[], int cnt, int needswap)
-{
-	ffs_fragacct_swap(fs, fragmap, fraglist, cnt, needswap);
 }
 
 /*

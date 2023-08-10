@@ -61,7 +61,7 @@ void ffs_blkfree(struct inode *, daddr_t, long);
 void ffs_clusteracct(struct fs *, struct cg *, int32_t, int);
 
 	/* ffs_balloc.c */
-int ffs_balloc(struct inode *, off_t, int, struct m_buf **);
+int ffs_balloc(struct inode *, off_t, int, struct buf **);
 
 	/* ffs_bswap.c */
 void ffs_sb_swap(struct fs*, struct fs *);
@@ -71,7 +71,7 @@ void ffs_csum_swap(struct csum *, struct csum *, int);
 void ffs_cg_swap(struct cg *, struct cg *, struct fs *);
 
 	/* ffs_subr.c */
-void ffs_fragacct(struct fs *, int, int32_t[], int, int);
+void   ffs_fragacct_swap(struct fs *, int, uint32_t [], int, int);
 int ffs_isblock(struct fs *, u_char *, int32_t);
 int ffs_isfreeblock(struct fs *, u_char *, int32_t);
 void ffs_clrblock(struct fs *, u_char *, int32_t);

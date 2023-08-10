@@ -55,8 +55,10 @@ __RCSID("$NetBSD: buf.c,v 1.11.2.1 2004/06/22 07:16:55 tron Exp $");
 
 #include "makefs.h"
 
-//#include <ufs/ufs/dinode.h>
-//#include <ufs/ffs/fs.h>
+//#if HAVE_NBTOOL_CONFIG_H
+#include <ufs/ufs/dinode.h>
+#include <ufs/ffs/fs.h>
+//#endif
 
 #include "buf.h"
 #include "ufs_inode.h"

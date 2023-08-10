@@ -27,8 +27,11 @@
  *
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #if defined(_KERNEL)
@@ -75,9 +78,10 @@ ffs_sb_swap(struct fs *o, struct fs *n)
 	 */
 	o32 = (u_int32_t *)o;
 	n32 = (u_int32_t *)n;
+#ifdef notyet
 	for (i = 0; i < offsetof(struct fs, fs_fmod) / sizeof(u_int32_t); i++)
 		n32[i] = bswap32(o32[i]);
-
+#endif
 	//n->fs_swuid = bswap64(o->fs_swuid);
 	n->fs_cgrotor = bswap32(o->fs_cgrotor); /* Unused */
 	//n->fs_old_cpc = bswap32(o->fs_old_cpc);
@@ -86,7 +90,7 @@ ffs_sb_swap(struct fs *o, struct fs *n)
 	 * historic FS_DYNAMICPOSTBLFMT postbl table, and with the
 	 * first half of the historic FS_42POSTBLFMT postbl table.
 	 */
-	//n->fs_maxbsize = bswap32(o->fs_maxbsize);
+	n->fs_maxbsize = bswap32(o->fs_maxbsize);
 	n->fs_sblockloc = bswap64(o->fs_sblockloc);
 	//ffs_csumtotal_swap(&o->fs_cstotal, &n->fs_cstotal);
 	n->fs_time = bswap64(o->fs_time);

@@ -44,6 +44,7 @@ union dinode {
 
 struct inode {
 	ino_t	  		i_number;	/* The identity of the inode. */
+    struct vnode	*i_devvp;	/* device vnode for block I/O */
 	struct fs		*i_fs;		/* File system */
 	union dinode	i_din;
 	int				i_fd;		/* File descriptor */
@@ -94,3 +95,20 @@ struct inode {
 #define DIP(ip, field) \
         (((ip)->i_fs->fs_magic == FS_UFS1_MAGIC) ? \
         (ip)->i_ffs1_##field : (ip)->i_ffs2_##field)
+
+
+#define DIP_ASSIGN(ip, field, value)					\
+	do {								\
+		if ((ip)->i_fs->fs_magic == FS_UFS1_MAGIC)		\
+			(ip)->i_ffs1_##field = (value);			\
+		else							\
+			(ip)->i_ffs2_##field = (value);			\
+	} while(0)
+
+#define DIP_ADD(ip, field, value)					\
+	do {								\
+		if ((ip)->i_fs->fs_magic == FS_UFS1_MAGIC)		\
+			(ip)->i_ffs1_##field += (value);		\
+		else							\
+			(ip)->i_ffs2_##field += (value);		\
+	} while(0)

@@ -75,6 +75,7 @@ __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
 #endif	/* !__lint */
 
 #include <sys/param.h>
+#include <sys/stat.h>
 
 #if !HAVE_NBTOOL_CONFIG_H
 #include <sys/mount.h>
@@ -83,21 +84,20 @@ __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <util.h>
 
 #include "makefs.h"
 #include "ffs.h"
 
-#if HAVE_STRUCT_STATVFS_F_IOSIZE && HAVE_FSTATVFS
-#include <sys/statvfs.h>
-#endif
-
 #include <ufs/ufs/dinode.h>
+
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
 
@@ -1219,11 +1219,9 @@ ffs_write_inode(union dinode *dp, uint32_t ino, const fsinfo_t *fsopts)
 	ffs_rdfs(d, fs->fs_bsize, buf, fsopts);
 	if (fsopts->needswap) {
 		if (ffs_opts->version == 1)
-			ffs_dinode1_swap(&dp->ffs1_din,
-			    &dp1[ino_to_fsbo(fs, ino)]);
+			ffs_dinode1_swap(&dp->ffs1_din, &dp1[ino_to_fsbo(fs, ino)]);
 		else
-			ffs_dinode2_swap(&dp->ffs2_din,
-			    &dp2[ino_to_fsbo(fs, ino)]);
+			ffs_dinode2_swap(&dp->ffs2_din, &dp2[ino_to_fsbo(fs, ino)]);
 	} else {
 		if (ffs_opts->version == 1)
 			dp1[ino_to_fsbo(fs, ino)] = dp->ffs1_din;

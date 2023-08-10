@@ -169,6 +169,13 @@ typedef struct makefs_fsinfo  {
 	option_t *fs_options;	/* File system specific options */
 } fsinfo_t;
 
+/*
+void        ffs_prep_opts(fsinfo_t *)
+int         ffs_parse_opts(const char *, fsinfo_t *)
+void        ffs_cleanup_opts(fsinfo_t *);
+void        ffs_makefs(const char *, const char *, fsnode *, fsinfo_t *);
+*/
+
 void		apply_specfile(const char *, const char *, fsnode *, int);
 void		dump_fsnodes(fsnode *);
 const char 	*inode_type(mode_t);
@@ -270,8 +277,8 @@ extern	struct stat stampst;
 #define        DINODE1_SIZE    (sizeof(struct ufs1_dinode))
 #define        DINODE2_SIZE    (sizeof(struct ufs2_dinode))
 
-#define UFS1_MAXSYMLINKLEN   ((UFS_NDADDR + UFS_NIADDR) * sizeof(ufs1_daddr_t))
-#define UFS2_MAXSYMLINKLEN   ((UFS_NDADDR + UFS_NIADDR) * sizeof(ufs2_daddr_t))
+//#define UFS1_MAXSYMLINKLEN   ((UFS_NDADDR + UFS_NIADDR) * sizeof(ufs1_daddr_t))
+//#define UFS2_MAXSYMLINKLEN   ((UFS_NDADDR + UFS_NIADDR) * sizeof(ufs2_daddr_t))
 
 #if (BYTE_ORDER == LITTLE_ENDIAN)
 #define DIRSIZ_SWAP(oldfmt, dp, needswap)      \

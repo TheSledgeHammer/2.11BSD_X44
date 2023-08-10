@@ -119,7 +119,7 @@ ffs_alloc(struct inode *ip, daddr_t lbn, daddr_t bpref, int size, daddr_t *bnp)
 		cg = dtog(fs, bpref);
 	bno = ffs_hashalloc(ip, cg, bpref, size, ffs_alloccg);
 	if (bno > 0) {
-		DIP(ip, blocks) += size / DEV_BSIZE;
+		DIP_ADD(ip, blocks, size / DEV_BSIZE);
 		*bnp = bno;
 		return (0);
 	}
@@ -448,7 +448,7 @@ ffs_blkfree(struct inode *ip, daddr_t bno, long size)
 	}
 	cg = dtog(fs, bno);
 	if (bno >= fs->fs_size) {
-		warnx("bad block %lld, ino %d", (long long)bno, ip->i_number);
+		warnx("bad block %lld, ino %llu", (long long)bno, (unsigned long long)ip->i_number);
 		return;
 	}
 	error = bread(ip->i_fd, ip->i_fs, fsbtodb(fs, cgtod(fs, cg)),
@@ -466,8 +466,7 @@ ffs_blkfree(struct inode *ip, daddr_t bno, long size)
 	if (size == fs->fs_bsize) {
 		fragno = fragstoblks(fs, cgbno);
 		if (!ffs_isfreeblock(fs, cg_blksfree_swap(cgp, needswap), fragno)) {
-			errx(1, "blkfree: freeing free block %lld",
-			    (long long)bno);
+			errx(1, "blkfree: freeing free block %lld", (long long)bno);
 		}
 		ffs_setblock(fs, cg_blksfree_swap(cgp, needswap), fragno);
 		ffs_clusteracct(fs, cgp, fragno, 1);
@@ -480,7 +479,7 @@ ffs_blkfree(struct inode *ip, daddr_t bno, long size)
 		 * decrement the counts associated with the old frags
 		 */
 		blk = blkmap(fs, cg_blksfree_swap(cgp, needswap), bbase);
-		ffs_fragacct(fs, blk, cgp->cg_frsum, -1, needswap);
+		ffs_fragacct_swap(fs, blk, cgp->cg_frsum, -1, needswap);
 		/*
 		 * deallocate the fragment
 		 */
@@ -499,7 +498,7 @@ ffs_blkfree(struct inode *ip, daddr_t bno, long size)
 		 * add back in counts associated with the new frags
 		 */
 		blk = blkmap(fs, cg_blksfree_swap(cgp, needswap), bbase);
-		ffs_fragacct(fs, blk, cgp->cg_frsum, 1, needswap);
+		ffs_fragacct_swap(fs, blk, cgp->cg_frsum, 1, needswap);
 		/*
 		 * if a complete block has been reassembled, account for it
 		 */

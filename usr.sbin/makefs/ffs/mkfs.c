@@ -64,6 +64,7 @@ __RCSID("$NetBSD: mkfs.c,v 1.18.2.2 2004/06/25 02:34:40 jmc Exp $");
 #include <errno.h>
 
 #include "makefs.h"
+#include "ffs.h"
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>

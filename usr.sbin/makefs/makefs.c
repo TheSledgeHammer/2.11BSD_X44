@@ -54,9 +54,11 @@ __RCSID("$NetBSD: makefs.c,v 1.55 2022/04/09 10:05:35 riastradh Exp $");
 #include <unistd.h>
 #include <stdbool.h>
 #include <util.h>
+#include <time.h>
 
 #include "makefs.h"
 #include "mtree.h"
+
 /*
  * list of supported file systems and dispatch functions
  */
