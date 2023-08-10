@@ -531,6 +531,11 @@ void strmode(mode_t, char *);
 char *strsep(char **, const char *);
 #endif
 
+#if !HAVE_DECL_STRSUFTOLL
+long long strsuftoll(const char *, const char *, long long, long long);
+long long strsuftollx(const char *, const char *, long long, long long, char *, size_t);
+#endif
+
 #if !HAVE_DECL_STRTOLL
 long long strtoll(const char *, char **, int);
 #endif
