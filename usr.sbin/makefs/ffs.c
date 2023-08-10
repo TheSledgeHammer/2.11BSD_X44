@@ -1,8 +1,6 @@
-/*	$NetBSD: ffs.c,v 1.45 2011/10/09 22:49:26 christos Exp $	*/
+/*	$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $	*/
 
-/*-
- * SPDX-License-Identifier: BSD-4-Clause
- *
+/*
  * Copyright (c) 2001 Wasabi Systems, Inc.
  * All rights reserved.
  *
@@ -67,45 +65,46 @@
  *	@(#)ffs_alloc.c	8.19 (Berkeley) 7/13/95
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #if HAVE_NBTOOL_CONFIG_H
 #include "nbtool_config.h"
 #endif
 
+#include <sys/cdefs.h>
+#if defined(__RCSID) && !defined(__lint)
+__RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
+#endif	/* !__lint */
+
 #include <sys/param.h>
 
+#if !HAVE_NBTOOL_CONFIG_H
 #include <sys/mount.h>
+#endif
 
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 #include <util.h>
+
+#include "makefs.h"
+#include "ffs.h"
 
 #if HAVE_STRUCT_STATVFS_F_IOSIZE && HAVE_FSTATVFS
 #include <sys/statvfs.h>
 #endif
 
 #include <ufs/ufs/dinode.h>
-//#include <ufs/ufs/dir.h>
-//#include <ufs/ffs/fs.h>
+#include <ufs/ufs/dir.h>
+#include <ufs/ffs/fs.h>
 
 #include "ffs/ufs_bswap.h"
 #include "ffs/ufs_inode.h"
 #include "ffs/newfs_extern.h"
 #include "ffs/ffs_extern.h"
-
-#undef clrbuf
-#include "makefs.h"
-#include "ffs.h"
 
 #undef DIP
 #define DIP(dp, field) \
@@ -134,11 +133,11 @@ typedef struct {
 } dirbuf_t;
 
 
-static	int	ffs_create_image(const char *, fsinfo_t *);
+static	int		ffs_create_image(const char *, fsinfo_t *);
 static	void	ffs_dump_fsinfo(fsinfo_t *);
 static	void	ffs_dump_dirbuf(dirbuf_t *, const char *, int);
 static	void	ffs_make_dirbuf(dirbuf_t *, const char *, fsnode *, int);
-static	int	ffs_populate_dir(const char *, fsnode *, fsinfo_t *);
+static	int		ffs_populate_dir(const char *, fsnode *, fsinfo_t *);
 static	void	ffs_size_dir(fsnode *, fsinfo_t *);
 static	void	ffs_validate(const char *, fsnode *, fsinfo_t *);
 static	void	ffs_write_file(union dinode *, uint32_t, void *, fsinfo_t *);
@@ -251,6 +250,67 @@ ffs_parse_opts(const char *option, fsinfo_t *fsopts)
 	return 1;
 }
 
+void
+ffs_makefs(const char *image, const char *dir, fsnode *root, fsinfo_t *fsopts)
+{
+	struct fs	*superblock;
+	struct timeval	start;
+
+	assert(image != NULL);
+	assert(dir != NULL);
+	assert(root != NULL);
+	assert(fsopts != NULL);
+
+	if (debug & DEBUG_FS_MAKEFS)
+		printf("ffs_makefs: image %s directory %s root %p\n",
+		    image, dir, root);
+
+		/* validate tree and options */
+	TIMER_START(start);
+	ffs_validate(dir, root, fsopts);
+	TIMER_RESULTS(start, "ffs_validate");
+
+	printf("Calculated size of `%s': %lld bytes, %lld inodes\n",
+	    image, (long long)fsopts->size, (long long)fsopts->inodes);
+
+		/* create image */
+	TIMER_START(start);
+	if (ffs_create_image(image, fsopts) == -1)
+		errx(1, "Image file `%s' not created.", image);
+	TIMER_RESULTS(start, "ffs_create_image");
+
+	fsopts->curinode = UFS_ROOTINO;
+
+	if (debug & DEBUG_FS_MAKEFS)
+		putchar('\n');
+
+		/* populate image */
+	printf("Populating `%s'\n", image);
+	TIMER_START(start);
+	if (! ffs_populate_dir(dir, root, fsopts))
+		errx(1, "Image file `%s' not populated.", image);
+	TIMER_RESULTS(start, "ffs_populate_dir");
+
+		/* ensure no outstanding buffers remain */
+	if (debug & DEBUG_FS_MAKEFS)
+		bcleanup();
+
+		/* update various superblock parameters */
+	superblock = fsopts->superblock;
+	superblock->fs_fmod = 0;
+#ifdef notyet
+	superblock->fs_old_cstotal.cs_ndir   = superblock->fs_cstotal.cs_ndir;
+	superblock->fs_old_cstotal.cs_nbfree = superblock->fs_cstotal.cs_nbfree;
+	superblock->fs_old_cstotal.cs_nifree = superblock->fs_cstotal.cs_nifree;
+	superblock->fs_old_cstotal.cs_nffree = superblock->fs_cstotal.cs_nffree;
+#endif
+		/* write out superblock; image is now complete */
+	ffs_write_superblock(fsopts->superblock, fsopts);
+	if (close(fsopts->fd) == -1)
+		err(1, "Closing `%s'", image);
+	fsopts->fd = -1;
+	printf("Image `%s' complete\n", image);
+}
 
 void
 ffs_makefs(const char *image, const char *dir, fsnode *root, fsinfo_t *fsopts)
@@ -305,11 +365,12 @@ ffs_makefs(const char *image, const char *dir, fsnode *root, fsinfo_t *fsopts)
 		/* update various superblock parameters */
 	superblock = fsopts->superblock;
 	superblock->fs_fmod = 0;
+#ifdef notyet
 	superblock->fs_old_cstotal.cs_ndir   = superblock->fs_cstotal.cs_ndir;
 	superblock->fs_old_cstotal.cs_nbfree = superblock->fs_cstotal.cs_nbfree;
 	superblock->fs_old_cstotal.cs_nifree = superblock->fs_cstotal.cs_nifree;
 	superblock->fs_old_cstotal.cs_nffree = superblock->fs_cstotal.cs_nffree;
-
+#endif
 		/* write out superblock; image is now complete */
 	ffs_write_superblock(fsopts->superblock, fsopts);
 	if (close(fsopts->fd) == -1)
@@ -324,7 +385,8 @@ ffs_makefs(const char *image, const char *dir, fsnode *root, fsinfo_t *fsopts)
 static void
 ffs_validate(const char *dir, fsnode *root, fsinfo_t *fsopts)
 {
-#ifdef notyet
+	int32_t	ncg = 1;
+#if notyet
 	int32_t	spc, nspf, ncyl, fssize;
 #endif
 	ffs_opt_t	*ffs_opts = fsopts->fs_specific;
@@ -368,14 +430,6 @@ ffs_validate(const char *dir, fsnode *root, fsinfo_t *fsopts)
 	if (ffs_opts->avgfpdir == -1)
 		ffs_opts->avgfpdir = AFPDIR;
 
-	if (fsopts->maxsize > 0 &&
-	    roundup(fsopts->minsize, ffs_opts->bsize) > fsopts->maxsize)
-		errx(1, "`%s' minsize of %lld rounded up to ffs bsize of %d "
-		    "exceeds maxsize %lld.  Lower bsize, or round the minimum "
-		    "and maximum sizes to bsize.", dir,
-		    (long long)fsopts->minsize, ffs_opts->bsize,
-		    (long long)fsopts->maxsize);
-
 		/* calculate size of tree */
 	ffs_size_dir(root, fsopts);
 	fsopts->inodes += UFS_ROOTINO;		/* include first two inodes */
@@ -394,26 +448,22 @@ ffs_validate(const char *dir, fsnode *root, fsinfo_t *fsopts)
 		fsopts->size =
 		    fsopts->size * (100 + fsopts->freeblockpc) / 100;
 
+		/* add space needed for superblocks */
 	/*
-	 * Add space needed for superblock, cylblock and to store inodes.
-	 * All of those segments are aligned to the block size.
-	 * XXX: This has to match calculations done in ffs_mkfs.
+	 * The old SBOFF (SBLOCK_UFS1) is used here because makefs is
+	 * typically used for small filesystems where space matters.
+	 * XXX make this an option.
 	 */
-	if (ffs_opts->version == 1) {
-		fsopts->size +=
-		    roundup(SBLOCK_UFS1 + SBLOCKSIZE, ffs_opts->bsize);
-		fsopts->size += roundup(SBLOCKSIZE, ffs_opts->bsize);
-		fsopts->size += ffs_opts->bsize;
-		fsopts->size +=  DINODE1_SIZE *
-		    roundup(fsopts->inodes, ffs_opts->bsize / DINODE1_SIZE);
-	} else {
-		fsopts->size +=
-		    roundup(SBLOCK_UFS2 + SBLOCKSIZE, ffs_opts->bsize);
-		fsopts->size += roundup(SBLOCKSIZE, ffs_opts->bsize);
-		fsopts->size += ffs_opts->bsize;
-		fsopts->size += DINODE2_SIZE *
-		    roundup(fsopts->inodes, ffs_opts->bsize / DINODE2_SIZE);
-	}
+	fsopts->size += (SBLOCK_UFS1 + SBLOCKSIZE) * ncg;
+		/* add space needed to store inodes, x3 for blockmaps, etc */
+	if (ffs_opts->version == 1)
+		fsopts->size += ncg * DINODE1_SIZE *
+		    roundup(fsopts->inodes / ncg,
+			ffs_opts->bsize / DINODE1_SIZE);
+	else
+		fsopts->size += ncg * DINODE2_SIZE *
+		    roundup(fsopts->inodes / ncg,
+			ffs_opts->bsize / DINODE2_SIZE);
 
 		/* add minfree */
 	if (ffs_opts->minfree > 0)
@@ -429,11 +479,7 @@ ffs_validate(const char *dir, fsnode *root, fsinfo_t *fsopts)
 		/* round up to the next block */
 	fsopts->size = roundup(fsopts->size, ffs_opts->bsize);
 
-		/* round up to requested block size, if any */
-	if (fsopts->roundup > 0)
-		fsopts->size = roundup(fsopts->size, fsopts->roundup);
-
-		/* calculate density to just fit inodes if no free space */
+		/* calculate density if necessary */
 	if (ffs_opts->density == -1)
 		ffs_opts->density = fsopts->size / fsopts->inodes + 1;
 
@@ -449,7 +495,6 @@ ffs_validate(const char *dir, fsnode *root, fsinfo_t *fsopts)
 		    dir, (long long)fsopts->size, (long long)fsopts->maxsize);
 	}
 }
-
 
 static void
 ffs_dump_fsinfo(fsinfo_t *f)
@@ -723,8 +768,7 @@ ffs_build_dinode1(struct ufs1_dinode *dinp, dirbuf_t *dbufp, fsnode *cur,
 }
 
 static void *
-ffs_build_dinode2(struct ufs2_dinode *dinp, dirbuf_t *dbufp, fsnode *cur,
-		 fsnode *root, fsinfo_t *fsopts)
+ffs_build_dinode2(struct ufs2_dinode *dinp, dirbuf_t *dbufp, fsnode *cur, fsnode *root, fsinfo_t *fsopts)
 {
 	size_t slen;
 	void *membuf;
@@ -843,10 +887,8 @@ ffs_populate_dir(const char *dir, fsnode *root, fsinfo_t *fsopts)
 			continue;		/* skip hard-linked entries */
 		cur->inode->flags |= FI_WRITTEN;
 
-		if (cur->contents == NULL) {
-			if (snprintf(path, sizeof(path), "%s/%s/%s", cur->root,
-			    cur->path, cur->name) >= (int)sizeof(path))
-				errx(1, "Pathname too long.");
+		if ((size_t)snprintf(path, sizeof(path), "%s/%s/%s", cur->root, cur->path, cur->name) >= sizeof(path)) {
+			errx(1, "Pathname too long.");
 		}
 
 		if (cur->child != NULL)
@@ -871,8 +913,7 @@ ffs_populate_dir(const char *dir, fsnode *root, fsinfo_t *fsopts)
 		if (membuf != NULL) {
 			ffs_write_file(&din, cur->inode->ino, membuf, fsopts);
 		} else if (S_ISREG(cur->type)) {
-			ffs_write_file(&din, cur->inode->ino,
-			    (cur->contents) ?  cur->contents : path, fsopts);
+			ffs_write_file(&din, cur->inode->ino, path, fsopts);
 		} else {
 			assert (! S_ISDIR(cur->type));
 			ffs_write_inode(&din, cur->inode->ino, fsopts);
@@ -903,18 +944,17 @@ ffs_populate_dir(const char *dir, fsnode *root, fsinfo_t *fsopts)
 	return (1);
 }
 
-
 static void
 ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 {
-	int	isfile, ffd;
+	int 	isfile, ffd;
 	char	*fbuf, *p;
 	off_t	bufleft, chunk, offset;
 	ssize_t nread;
 	struct inode	in;
-	struct m_buf *	bp;
+	struct buf *	bp;
 	ffs_opt_t	*ffs_opts = fsopts->fs_specific;
-	struct m_vnode vp = { fsopts, NULL };
+	struct vnode vp = { fsopts, NULL };
 
 	assert (din != NULL);
 	assert (buf != NULL);
@@ -927,7 +967,7 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 	p = NULL;
 
 	in.i_fs = (struct fs *)fsopts->superblock;
-	in.i_devvp = (void *)&vp;
+	in.i_devvp = &vp;
 
 	if (debug & DEBUG_FS_WRITE_FILE) {
 		printf(
@@ -954,8 +994,9 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 
 	if (isfile) {
 		fbuf = emalloc(ffs_opts->bsize);
-		if ((ffd = open((char *)buf, O_RDONLY)) == -1) {
-			err(EXIT_FAILURE, "Can't open `%s' for reading", (char *)buf);
+		if ((ffd = open((char *)buf, O_RDONLY, 0444)) == -1) {
+			warn("Can't open `%s' for reading", (char *)buf);
+			goto leave_ffs_write_file;
 		}
 	} else {
 		p = buf;
@@ -1005,15 +1046,16 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 		if (!isfile)
 			p += chunk;
 	}
-  
+
  write_inode_and_leave:
 	ffs_write_inode(&in.i_din, in.i_number, fsopts);
+
+ leave_ffs_write_file:
 	if (fbuf)
 		free(fbuf);
 	if (ffd != -1)
 		close(ffd);
 }
-
 
 static void
 ffs_dump_dirbuf(dirbuf_t *dbuf, const char *dir, int needswap)
@@ -1126,7 +1168,7 @@ ffs_write_inode(union dinode *dp, uint32_t ino, const fsinfo_t *fsopts)
 	if (!cg_chkmagic_swap(cgp, fsopts->needswap))
 		errx(1, "ffs_write_inode: cg %d: bad magic number", cg);
 
-	assert (isclr(cg_inosused_swap(cgp, fsopts->needswap), cgino));
+	assert(isclr(cg_inosused_swap(cgp, fsopts->needswap), cgino));
 
 	buf = emalloc(fs->fs_bsize);
 	dp1 = (struct ufs1_dinode *)buf;

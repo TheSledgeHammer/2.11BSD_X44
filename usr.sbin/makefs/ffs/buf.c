@@ -1,8 +1,6 @@
-/*	$NetBSD: buf.c,v 1.13 2004/06/20 22:20:18 jmc Exp $	*/
+/*	$NetBSD: buf.c,v 1.11.2.1 2004/06/22 07:16:55 tron Exp $	*/
 
-/*-
- * SPDX-License-Identifier: BSD-4-Clause
- *
+/*
  * Copyright (c) 2001 Wasabi Systems, Inc.
  * All rights reserved.
  *
@@ -37,8 +35,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if defined(__RCSID) && !defined(__lint)
+__RCSID("$NetBSD: buf.c,v 1.11.2.1 2004/06/22 07:16:55 tron Exp $");
+#endif	/* !__lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
@@ -47,53 +51,57 @@ __FBSDID("$FreeBSD$");
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <util.h>
 
 #include "makefs.h"
-#include "buf.h"
 
-static TAILQ_HEAD(buftailhead, m_buf) buftail;
+//#include <ufs/ufs/dinode.h>
+//#include <ufs/ffs/fs.h>
+
+#include "buf.h"
+#include "ufs_inode.h"
+
+extern int sectorsize;		/* XXX: from ffs.c & mkfs.c */
+
+TAILQ_HEAD(buftailhead, buf) buftail;
 
 int
-bread(struct m_vnode *vp, daddr_t blkno, int size, struct ucred *u1 __unused,
-    struct m_buf **bpp)
+bread(int fd, struct fs *fs, daddr_t blkno, int size, struct buf **bpp)
 {
 	off_t	offset;
 	ssize_t	rv;
-	fsinfo_t *fs = vp->fs;
 
+	assert (fs != NULL);
 	assert (bpp != NULL);
 
 	if (debug & DEBUG_BUF_BREAD)
-		printf("%s: blkno %lld size %d\n", __func__, (long long)blkno,
-		    size);
-	*bpp = getblk(vp, blkno, size, 0, 0, 0);
-	offset = (off_t)(*bpp)->b_blkno * fs->sectorsize + fs->offset;
+		printf("bread: fs %p blkno %lld size %d\n",
+		    fs, (long long)blkno, size);
+	*bpp = getblk(fd, fs, blkno, size);
+	offset = (*bpp)->b_blkno * sectorsize;	/* XXX */
 	if (debug & DEBUG_BUF_BREAD)
-		printf("%s: blkno %lld offset %lld bcount %ld\n", __func__,
-		    (long long)(*bpp)->b_blkno, (long long) offset,
+		printf("bread: bp %p blkno %lld offset %lld bcount %ld\n",
+		    (*bpp), (long long)(*bpp)->b_blkno, (long long) offset,
 		    (*bpp)->b_bcount);
-	if (lseek((*bpp)->b_fs->fd, offset, SEEK_SET) == -1)
-		err(1, "%s: lseek %lld (%lld)", __func__,
+	if (lseek((*bpp)->b_fd, offset, SEEK_SET) == -1)
+		err(1, "bread: lseek %lld (%lld)",
 		    (long long)(*bpp)->b_blkno, (long long)offset);
-	rv = read((*bpp)->b_fs->fd, (*bpp)->b_data, (size_t)(*bpp)->b_bcount);
+	rv = read((*bpp)->b_fd, (*bpp)->b_data, (*bpp)->b_bcount);
 	if (debug & DEBUG_BUF_BREAD)
-		printf("%s: read %ld (%lld) returned %d\n", __func__,
+		printf("bread: read %ld (%lld) returned %d\n",
 		    (*bpp)->b_bcount, (long long)offset, (int)rv);
 	if (rv == -1)				/* read error */
-		err(1, "%s: read %ld (%lld) returned %d", __func__,
+		err(1, "bread: read %ld (%lld) returned %d",
 		    (*bpp)->b_bcount, (long long)offset, (int)rv);
 	else if (rv != (*bpp)->b_bcount)	/* short read */
-		err(1, "%s: read %ld (%lld) returned %d", __func__,
+		err(1, "bread: read %ld (%lld) returned %d",
 		    (*bpp)->b_bcount, (long long)offset, (int)rv);
 	else
 		return (0);
 }
 
 void
-brelse(struct m_buf *bp)
+brelse(struct buf *bp)
 {
 
 	assert (bp != NULL);
@@ -123,41 +131,35 @@ brelse(struct m_buf *bp)
 }
 
 int
-bwrite(struct m_buf *bp)
+bwrite(struct buf *bp)
 {
 	off_t	offset;
 	ssize_t	rv;
-	size_t	bytes;
-	int	e;
-	fsinfo_t *fs = bp->b_fs;
 
 	assert (bp != NULL);
-	offset = (off_t)bp->b_blkno * fs->sectorsize + fs->offset;
-	bytes = (size_t)bp->b_bcount;
+	offset = bp->b_blkno * sectorsize;	/* XXX */
 	if (debug & DEBUG_BUF_BWRITE)
-		printf("%s: blkno %lld offset %lld bcount %zu\n", __func__,
-		    (long long)bp->b_blkno, (long long) offset, bytes);
-	if (lseek(bp->b_fs->fd, offset, SEEK_SET) == -1) {
-		brelse(bp);
+		printf("bwrite: bp %p blkno %lld offset %lld bcount %ld\n",
+		    bp, (long long)bp->b_blkno, (long long) offset,
+		    bp->b_bcount);
+	if (lseek(bp->b_fd, offset, SEEK_SET) == -1)
 		return (errno);
-	}
-	rv = write(bp->b_fs->fd, bp->b_data, bytes);
-	e = errno;
+	rv = write(bp->b_fd, bp->b_data, bp->b_bcount);
 	if (debug & DEBUG_BUF_BWRITE)
-		printf("%s: write %ld (offset %lld) returned %lld\n", __func__,
+		printf("bwrite: write %ld (offset %lld) returned %lld\n",
 		    bp->b_bcount, (long long)offset, (long long)rv);
-	brelse(bp);
-	if (rv == (ssize_t)bytes)
+	if (rv == bp->b_bcount)
 		return (0);
-	if (rv == -1)		/* write error */
-		return (e);
-	return (EAGAIN);
+	else if (rv == -1)		/* write error */
+		return (errno);
+	else				/* short write ? */
+		return (EAGAIN);
 }
 
 void
 bcleanup(void)
 {
-	struct m_buf *bp;
+	struct buf *bp;
 
 	/*
 	 * XXX	this really shouldn't be necessary, but i'm curious to
@@ -168,31 +170,31 @@ bcleanup(void)
 	if (TAILQ_EMPTY(&buftail))
 		return;
 
-	printf("%s: unflushed buffers:\n", __func__);
+	printf("bcleanup: unflushed buffers:\n");
 	TAILQ_FOREACH(bp, &buftail, b_tailq) {
 		printf("\tlblkno %10lld  blkno %10lld  count %6ld  bufsize %6ld\n",
 		    (long long)bp->b_lblkno, (long long)bp->b_blkno,
 		    bp->b_bcount, bp->b_bufsize);
 	}
-	printf("%s: done\n", __func__);
+	printf("bcleanup: done\n");
 }
 
-struct m_buf *
-getblk(struct m_vnode *vp, daddr_t blkno, int size, int u1 __unused,
-    int u2 __unused, int u3 __unused)
+struct buf *
+getblk(int fd, struct fs *fs, daddr_t blkno, int size)
 {
 	static int buftailinitted;
-	struct m_buf *bp;
+	struct buf *bp;
 	void *n;
 
+	assert (fs != NULL);
 	if (debug & DEBUG_BUF_GETBLK)
-		printf("%s: blkno %lld size %d\n", __func__, (long long)blkno,
-		    size);
+		printf("getblk: fs %p blkno %lld size %d\n", fs,
+		    (long long)blkno, size);
 
 	bp = NULL;
 	if (!buftailinitted) {
 		if (debug & DEBUG_BUF_GETBLK)
-			printf("%s: initialising tailq\n", __func__);
+			printf("getblk: initialising tailq\n");
 		TAILQ_INIT(&buftail);
 		buftailinitted = 1;
 	} else {
@@ -203,17 +205,21 @@ getblk(struct m_vnode *vp, daddr_t blkno, int size, int u1 __unused,
 		}
 	}
 	if (bp == NULL) {
-		bp = ecalloc(1, sizeof(*bp));
+		if ((bp = calloc(1, sizeof(struct buf))) == NULL)
+			err(1, "getblk: calloc");
+
 		bp->b_bufsize = 0;
 		bp->b_blkno = bp->b_lblkno = blkno;
-		bp->b_fs = vp->fs;
+		bp->b_fd = fd;
+		bp->b_fs = fs;
 		bp->b_data = NULL;
 		TAILQ_INSERT_HEAD(&buftail, bp, b_tailq);
 	}
 	bp->b_bcount = size;
 	if (bp->b_data == NULL || bp->b_bcount > bp->b_bufsize) {
-		n = erealloc(bp->b_data, (size_t)size);
-		memset(n, 0, (size_t)size);
+		n = realloc(bp->b_data, size);
+		if (n == NULL)
+			err(1, "getblk: realloc b_data %ld", bp->b_bcount);
 		bp->b_data = n;
 		bp->b_bufsize = size;
 	}

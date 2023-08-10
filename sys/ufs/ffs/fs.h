@@ -75,6 +75,8 @@
 #define SBLOCKSEARCH 	\
 	{ SBLOCK_UFS2, SBLOCK_UFS1, SBLOCK_FLOPPY, SBLOCK_PIGGY, -1 }
 
+#define	SBLOCKSIZE		SBSIZE
+
 /*
  * Max number of fragments per block. This value is NOT tweakable.
  */
@@ -118,6 +120,12 @@
 #define MAXMNTLEN		512
 
 /*
+ * The volume name for this filesystem is maintained in fs_volname.
+ * MAXVOLLEN defines the length of the buffer allocated.
+ */
+#define	MAXVOLLEN		32
+
+/*
  * The limit on the amount of summary information per file system
  * is defined by MAXCSBUFS. It is currently parameterized for a
  * size of 128 bytes (2 million cylinder groups on machines with
@@ -147,8 +155,20 @@
  * default value. With 10% free space, fragmentation is not a
  * problem, so we choose to optimize for time.
  */
-#define MINFREE			5
+#define MINFREE			8
 #define DEFAULTOPT		FS_OPTTIME
+
+/*
+ * Grigoriy Orlov <gluk@ptci.ru> has done some extensive work to fine
+ * tune the layout preferences for directories within a filesystem.
+ * His algorithm can be tuned by adjusting the following parameters
+ * which tell the system the average file size and the average number
+ * of files per directory. These defaults are well selected for typical
+ * filesystems, but may need to be tuned for odd cases like filesystems
+ * being used for squid caches or news spools.
+ */
+#define	AVFILESIZ		16384	/* expected average file size */
+#define	AFPDIR			64		/* expected number of files per directory */
 
 /*
  * Per cylinder group information; summarized in blocks allocated
@@ -208,6 +228,7 @@ struct fs {
 	int32_t	 		fs_nspf;			/* value of NSPF */
 /* yet another configuration parameter */
 	int32_t	 		fs_optim;			/* optimization preference, see below */
+	int32_t	 		fs_id[2];			/* unique filesystem id */
 /* these fields are derived from the hardware */
 	int32_t	 		fs_npsect;			/* # sectors/track including spares */
 	int32_t	 		fs_interleave;		/* hardware sector interleave */
@@ -242,6 +263,7 @@ struct fs {
 	int32_t	 		*fs_maxcluster;		/* max cluster in each cyl group */
 	int32_t	 		fs_cpc;				/* cyl per cycle in postbl */
 	int16_t	 		fs_opostbl[16][8];	/* old rotation block list head */
+	int32_t	 		fs_maxbsize;		/* maximum blocking factor permitted */
 	int32_t	 		fs_sparecon[50];	/* reserved for future constants */
 	int64_t	 		fs_sblockloc;		/* byte offset of standard superblock */
 	int32_t	 		fs_contigsumsize;	/* size of cluster summary array */
@@ -348,6 +370,8 @@ struct cg {
 	int32_t	 		cg_clustersumoff;	/* (u_int32) counts of avail clusters */
 	int32_t	 		cg_clusteroff;		/* (u_int8) free cluster map */
 	int32_t	 		cg_nclusterblks;	/* number of clusters this cg */
+
+	uint32_t 		cg_initediblk;		/* last initialized inode */
 	int32_t	 		cg_sparecon[13];	/* reserved for future use */
 	u_int8_t 		cg_space[1];		/* space for cylinder group maps */
 /* actually longer */

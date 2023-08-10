@@ -48,6 +48,7 @@
  * numerous dump tapes make this assumption, so we are stuck with it).
  */
 #define	ROOTINO		((ino_t)2)
+#define UFS_ROOTINO	ROOTINO
 
 /*
  * The Whiteout inode# is a dummy non-zero inode number which will
@@ -56,7 +57,7 @@
  * See the comments about ROOTINO above.
  */
 #define	WINO		((ino_t)1)
-
+#define UFS_WINO	WINO
 /*
  * A dinode contains all the meta-data associated with a UFS file.
  * This structure defines the on-disk format of a dinode. Since
@@ -72,6 +73,8 @@ typedef int64_t 	ufs_time_t;
 #define	NXADDR		2				/* External addresses in inode. */
 #define	NDADDR		12				/* Direct addresses in inode. */
 #define	NIADDR		3				/* Indirect addresses in inode. */
+#define UFS_NDADDR	 NDADDR
+#define UFS_NIADDR	 NIADDR
 
 struct ufs1_dinode {
 	u_int16_t		di_mode;		/*   0: IFMT, permissions; see below. */

@@ -77,6 +77,12 @@ ffs_fragacct_swap(struct fs *fs, int fragmap, uint32_t fraglist[], int cnt, int 
 	}
 }
 
+void
+ffs_fragacct(struct fs *fs, int fragmap, uint32_t fraglist[], int cnt, int needswap)
+{
+	ffs_fragacct_swap(fs, fragmap, fraglist, cnt, needswap);
+}
+
 /*
  * block operations
  *

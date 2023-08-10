@@ -75,8 +75,10 @@
  * dp->d_ino set to 0.
  */
 
-#define DIRBLKSIZ	DEV_BSIZE
-#define	MAXNAMLEN	255
+#define DIRBLKSIZ		DEV_BSIZE
+#define	MAXNAMLEN		255
+#define UFS_DIRBLKSIZ	DIRBLKSIZ
+#define UFS_MAXNAMLEN	MAXNAMLEN
 
 struct direct {
 	u_int32_t d_ino;				/* inode number of entry */

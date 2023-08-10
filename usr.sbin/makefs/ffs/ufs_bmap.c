@@ -1,9 +1,7 @@
-/*	$NetBSD: ufs_bmap.c,v 1.14 2004/06/20 22:20:18 jmc Exp $	*/
+/*	$NetBSD: ufs_bmap.c,v 1.13.2.1 2004/06/22 07:18:49 tron Exp $	*/
 /* From: NetBSD: ufs_bmap.c,v 1.14 2001/11/08 05:00:51 chs Exp */
 
-/*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
+/*
  * Copyright (c) 1989, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -39,8 +37,14 @@
  *	@(#)ufs_bmap.c	8.8 (Berkeley) 8/11/95
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if defined(__RCSID) && !defined(__lint)
+__RCSID("$NetBSD: ufs_bmap.c,v 1.13.2.1 2004/06/22 07:18:49 tron Exp $");
+#endif	/* !__lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
@@ -84,17 +88,17 @@ ufs_getlbns(struct inode *ip, daddr_t bn, struct indir *ap, int *nump)
 	if ((long)bn < 0)
 		bn = -(long)bn;
 
-	assert (bn >= UFS_NDADDR);
+	assert (bn >= NDADDR);
 
-	/* 
+	/*
 	 * Determine the number of levels of indirection.  After this loop
 	 * is done, blockcnt indicates the number of data blocks possible
-	 * at the given level of indirection, and UFS_NIADDR - i is the number
+	 * at the given level of indirection, and NIADDR - i is the number
 	 * of levels of indirection needed to locate the requested block.
 	 */
 
-	bn -= UFS_NDADDR;
-	for (lbc = 0, i = UFS_NIADDR;; i--, bn -= blockcnt) {
+	bn -= NDADDR;
+	for (lbc = 0, i = NIADDR;; i--, bn -= blockcnt) {
 		if (i == 0)
 			return (EFBIG);
 
@@ -107,20 +111,21 @@ ufs_getlbns(struct inode *ip, daddr_t bn, struct indir *ap, int *nump)
 
 	/* Calculate the address of the first meta-block. */
 	if (realbn >= 0)
-		metalbn = -(realbn - bn + UFS_NIADDR - i);
+		metalbn = -(realbn - bn + NIADDR - i);
 	else
-		metalbn = -(-realbn - bn + UFS_NIADDR - i);
+		metalbn = -(-realbn - bn + NIADDR - i);
 
-	/* 
+	/*
 	 * At each iteration, off is the offset into the bap array which is
 	 * an array of disk addresses at the current level of indirection.
 	 * The logical block number and the offset in that block are stored
 	 * into the argument array.
 	 */
 	ap->in_lbn = metalbn;
-	ap->in_off = off = UFS_NIADDR - i;
+	ap->in_off = off = NIADDR - i;
+	ap->in_exists = 0;
 	ap++;
-	for (++numlevels; i <= UFS_NIADDR; i++) {
+	for (++numlevels; i <= NIADDR; i++) {
 		/* If searching for a meta-data block, quit when found. */
 		if (metalbn == realbn)
 			break;
@@ -132,6 +137,7 @@ ufs_getlbns(struct inode *ip, daddr_t bn, struct indir *ap, int *nump)
 		++numlevels;
 		ap->in_lbn = metalbn;
 		ap->in_off = off;
+		ap->in_exists = 0;
 		++ap;
 
 		metalbn -= -1 + (off << lbc);

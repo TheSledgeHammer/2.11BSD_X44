@@ -48,11 +48,12 @@
 #undef 	cgbase
 #define cgbase(fs, c)   ((ufs2_daddr_t)((fs)->fs_fpg * (c)))
 #endif
-
+/*
 #define UFS_MAXNAMLEN			MAXNAMLEN
 #define UFS_ROOTINO				ROOTINO
 #define UFS_NDADDR				NDADDR
 #define SBLOCKSIZE				SBSIZE
+*/
 
 /*
  * We use 4k `virtual' blocks for filesystem data, whatever the actual

@@ -29,4 +29,4 @@
  */
 
 /* pri, kflag, pflag, tflag, dolong (1 for long, 0 for short) */
-void list_swap __P((int, int, int, int, int));
+void list_swap(int, int, int, int, int);

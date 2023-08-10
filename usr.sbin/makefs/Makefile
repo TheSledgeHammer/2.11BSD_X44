@@ -3,7 +3,8 @@
 .include <bsd.own.mk>
 
 PROG=	makefs
-SRCS=	cd9660.c ffs.c makefs.c msdos.c mtree.c walk.c
+SRCS=	ffs.c
+SRCS+=  makefs.c msdos.c walk.c
 MAN=	makefs.8
 
 MKNODSRC=	${NETBSDSRCDIR}/sbin/mknod

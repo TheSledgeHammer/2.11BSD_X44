@@ -1,8 +1,6 @@
-/*	$NetBSD: makefs.c,v 1.26 2006/10/22 21:11:56 christos Exp $	*/
+/*	$NetBSD: makefs.c,v 1.55 2022/04/09 10:05:35 riastradh Exp $	*/
 
-/*-
- * SPDX-License-Identifier: BSD-4-Clause
- *
+/*
  * Copyright (c) 2001-2003 Wasabi Systems, Inc.
  * All rights reserved.
  *
@@ -37,11 +35,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
 
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <sys/cdefs.h>
+#if defined(__RCSID) && !defined(__lint)
+__RCSID("$NetBSD: makefs.c,v 1.55 2022/04/09 10:05:35 riastradh Exp $");
+#endif	/* !__lint */
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -49,24 +51,21 @@ __FBSDID("$FreeBSD$");
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <util.h>
 
 #include "makefs.h"
 #include "mtree.h"
-
 /*
  * list of supported file systems and dispatch functions
  */
 typedef struct {
 	const char	*type;
 	void		(*prepare_options)(fsinfo_t *);
-	int		(*parse_options)(const char *, fsinfo_t *);
+	int			(*parse_options)(const char *, fsinfo_t *);
 	void		(*cleanup_options)(fsinfo_t *);
-	void		(*make_fs)(const char *, const char *, fsnode *,
-				fsinfo_t *);
+	void		(*make_fs)(const char *, const char *, fsnode *, fsinfo_t *);
 } fstype_t;
 
 static fstype_t fstypes[] = {
@@ -74,17 +73,11 @@ static fstype_t fstypes[] = {
 	# name, name ## _prep_opts, name ## _parse_opts, \
 	name ## _cleanup_opts, name ## _makefs  \
 }
-	ENTRY(cd9660),
 	ENTRY(ffs),
-	ENTRY(msdos),
-#ifdef HAVE_ZFS
-	ENTRY(zfs),
-#endif
 	{ .type = NULL	},
 };
 
 u_int		debug;
-int		dupsok;
 struct timespec	start_time;
 struct stat stampst;
 
@@ -95,14 +88,12 @@ static	void	usage(fstype_t *, fsinfo_t *);
 int
 main(int argc, char *argv[])
 {
-	struct stat	 sb;
 	struct timeval	 start;
 	fstype_t	*fstype;
 	fsinfo_t	 fsoptions;
 	fsnode		*root;
-	int		 ch, i, len;
-	const char	*subtree;
-	const char	*specfile;
+	int	 	 ch, i, len;
+	char		*specfile;
 
 	setprogname(argv[0]);
 
@@ -130,7 +121,7 @@ main(int argc, char *argv[])
 		err(1, "Unable to get system time");
 
 
-	while ((ch = getopt(argc, argv, "B:b:Dd:f:F:M:m:N:O:o:pR:s:S:t:T:xZ")) != -1) {
+	while ((ch = getopt(argc, argv, "B:b:d:f:F:LM:m:N:O:o:rs:S:t:T:xZ")) != -1) {
 		switch (ch) {
 
 		case 'B':
@@ -166,10 +157,6 @@ main(int argc, char *argv[])
 			}
 			break;
 
-		case 'D':
-			dupsok = 1;
-			break;
-
 		case 'd':
 			debug = strtoll(optarg, NULL, 0);
 			break;
@@ -190,6 +177,10 @@ main(int argc, char *argv[])
 
 		case 'F':
 			specfile = optarg;
+			break;
+
+		case 'L':
+			fsoptions.follow = true;
 			break;
 
 		case 'M':
@@ -226,15 +217,9 @@ main(int argc, char *argv[])
 			}
 			break;
 		}
-		case 'p':
-			/* Deprecated in favor of 'Z' */
-			fsoptions.sparse = 1;
-			break;
 
-		case 'R':
-			/* Round image size up to specified block size */
-			fsoptions.roundup =
-			    strsuftoll("roundup-size", optarg, 0, LLONG_MAX);
+		case 'r':
+			fsoptions.replace = 1;
 			break;
 
 		case 's':
@@ -269,10 +254,10 @@ main(int argc, char *argv[])
 			break;
 
 		case 'Z':
-			/* Superscedes 'p' for compatibility with NetBSD makefs(8) */
 			fsoptions.sparse = 1;
 			break;
 
+		case '?':
 		default:
 			usage(fstype, &fsoptions);
 			/* NOTREACHED */
@@ -295,58 +280,40 @@ main(int argc, char *argv[])
 	if (fsoptions.onlyspec != 0 && specfile == NULL)
 		errx(1, "-x requires -F mtree-specfile.");
 
-	/* Accept '-' as meaning "read from standard input". */
-	if (strcmp(argv[1], "-") == 0)
-		sb.st_mode = S_IFREG;
-	else {
-		if (stat(argv[1], &sb) == -1)
-			err(1, "Can't stat `%s'", argv[1]);
-	}
-
-	switch (sb.st_mode & S_IFMT) {
-	case S_IFDIR:		/* walk the tree */
-		subtree = argv[1];
-		TIMER_START(start);
-		root = walk_dir(subtree, ".", NULL, NULL);
-		TIMER_RESULTS(start, "walk_dir");
-		break;
-	case S_IFREG:		/* read the manifest file */
-		subtree = ".";
-		TIMER_START(start);
-		root = read_mtree(argv[1], NULL);
-		TIMER_RESULTS(start, "manifest");
-		break;
-	default:
-		errx(1, "%s: not a file or directory", argv[1]);
-		/* NOTREACHED */
-	}
+				/* walk the tree */
+	TIMER_START(start);
+	root = walk_dir(argv[1], ".", NULL, NULL, fsoptions.replace,
+	    fsoptions.follow);
+	TIMER_RESULTS(start, "walk_dir");
 
 	/* append extra directory */
 	for (i = 2; i < argc; i++) {
+		struct stat sb;
 		if (stat(argv[i], &sb) == -1)
 			err(1, "Can't stat `%s'", argv[i]);
 		if (!S_ISDIR(sb.st_mode))
 			errx(1, "%s: not a directory", argv[i]);
 		TIMER_START(start);
-		root = walk_dir(argv[i], ".", NULL, root);
+		root = walk_dir(argv[i], ".", NULL, root, fsoptions.replace,
+		    fsoptions.follow);
 		TIMER_RESULTS(start, "walk_dir2");
 	}
 
 	if (specfile) {		/* apply a specfile */
 		TIMER_START(start);
-		apply_specfile(specfile, subtree, root, fsoptions.onlyspec);
+		apply_specfile(specfile, argv[1], root, fsoptions.onlyspec);
 		TIMER_RESULTS(start, "apply_specfile");
 	}
 
 	if (debug & DEBUG_DUMP_FSNODES) {
-		printf("\nparent: %s\n", subtree);
+		printf("\nparent: %s\n", argv[1]);
 		dump_fsnodes(root);
 		putchar('\n');
 	}
 
 				/* build the file system */
 	TIMER_START(start);
-	fstype->make_fs(argv[0], subtree, root, &fsoptions);
+	fstype->make_fs(argv[0], argv[1], root, &fsoptions);
 	TIMER_RESULTS(start, "make_fs");
 
 	free_fsnodes(root);
@@ -464,6 +431,10 @@ get_tstamp(const char *b, struct stat *st)
 	if (stat(b, st) != -1)
 		return 0;
 
+#ifndef HAVE_NBTOOL_CONFIG_H
+	errno = 0;
+	if ((when = parsedate(b, NULL, NULL)) == -1 && errno != 0)
+#endif
 	{
 		errno = 0;
 		l = strtoll(b, &eb, 0);
@@ -473,7 +444,7 @@ get_tstamp(const char *b, struct stat *st)
 	}
 
 	st->st_ino = 1;
-#ifdef HAVE_STRUCT_STAT_BIRTHTIME
+#if HAVE_STRUCT_STAT_BIRTHTIME
 	st->st_birthtime =
 #endif
 	st->st_mtime = st->st_ctime = st->st_atime = when;
@@ -487,11 +458,11 @@ usage(fstype_t *fstype, fsinfo_t *fsoptions)
 
 	prog = getprogname();
 	fprintf(stderr,
-"Usage: %s [-xZ] [-B endian] [-b free-blocks] [-d debug-mask]\n"
+"Usage: %s [-rxZ] [-B endian] [-b free-blocks] [-d debug-mask]\n"
 "\t[-F mtree-specfile] [-f free-files] [-M minimum-size] [-m maximum-size]\n"
-"\t[-N userdb-dir] [-O offset] [-o fs-options] [-R roundup-size]\n"
-"\t[-S sector-size] [-s image-size] [-T <timestamp/file>] [-t fs-type]\n"
-"\timage-file directory | manifest [extra-directory ...]\n",
+"\t[-N userdb-dir] [-O offset] [-o fs-options] [-S sector-size]\n"
+"\t[-s image-size] [-T <timestamp/file>] [-t fs-type]"
+" image-file directory [extra-directory ...]\n",
 	    prog);
 
 	if (fstype) {

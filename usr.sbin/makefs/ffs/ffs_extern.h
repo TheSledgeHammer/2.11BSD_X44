@@ -45,11 +45,13 @@ struct inode;
  */
 struct indir {
 	daddr_t in_lbn;		/* Logical block number. */
-	int	in_off;			/* Offset in buffer. */
+	int		in_off;		/* Offset in buffer. */
+	int		in_exists;	/* Flag if the block exists. */
 };
 
 	/* ffs.c */
-_Noreturn void panic(const char *, ...) __printflike(1, 2);
+void panic(const char *, ...)
+__attribute__((__noreturn__,__format__(__printf__,1,2)));
 
 	/* ffs_alloc.c */
 int ffs_alloc(struct inode *, daddr_t, daddr_t, int, daddr_t *);

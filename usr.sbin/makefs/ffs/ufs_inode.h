@@ -1,9 +1,7 @@
 /*	$NetBSD: ufs_inode.h,v 1.3 2003/08/07 11:25:34 agc Exp $	*/
 /* From:  NetBSD: inode.h,v 1.27 2001/12/18 10:57:23 fvdl Exp $ */
 
-/*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
+/*
  * Copyright (c) 1982, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -37,7 +35,6 @@
  * SUCH DAMAGE.
  *
  *	@(#)inode.h	8.9 (Berkeley) 5/14/95
- * $FreeBSD$
  */
 
 union dinode {
@@ -46,10 +43,10 @@ union dinode {
 };
 
 struct inode {
-	ino_t			i_number;	/* The identity of the inode. */
-	struct vnode	*i_devvp;	/* vnode pointer (contains fsopts) */
+	ino_t	  		i_number;	/* The identity of the inode. */
 	struct fs		*i_fs;		/* File system */
 	union dinode	i_din;
+	int				i_fd;		/* File descriptor */
 	uint64_t		i_size;
 };
 
@@ -68,7 +65,7 @@ struct inode {
 #define	i_ffs1_mtimensec	i_din.ffs1_din.di_mtimensec
 #define	i_ffs1_nlink		i_din.ffs1_din.di_nlink
 #define	i_ffs1_rdev			i_din.ffs1_din.di_rdev
-#define	i_ffs1_shortlink	i_din.ffs1_din.di_shortlink
+#define	i_ffs1_shortlink	i_din.ffs1_din.db
 #define	i_ffs1_size			i_din.ffs1_din.di_size
 #define	i_ffs1_uid			i_din.ffs1_din.di_uid
 
@@ -89,7 +86,7 @@ struct inode {
 #define	i_ffs2_mtimensec	i_din.ffs2_din.di_mtimensec
 #define	i_ffs2_nlink		i_din.ffs2_din.di_nlink
 #define	i_ffs2_rdev			i_din.ffs2_din.di_rdev
-#define	i_ffs2_shortlink	i_din.ffs2_din.di_shortlink
+#define	i_ffs2_shortlink	i_din.ffs2_din.db
 #define	i_ffs2_size			i_din.ffs2_din.di_size
 #define	i_ffs2_uid			i_din.ffs2_din.di_uid
 

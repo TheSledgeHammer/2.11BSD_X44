@@ -46,29 +46,31 @@
 #include <ufs/ffs/fs.h>
 #include <stdbool.h>
 
+#define MAXVOLLEN 32
+
 typedef struct {
 	char	label[MAXVOLLEN];	/* volume name/label */
-	int	bsize;		/* block size */
-	int	fsize;		/* fragment size */
-	int	cpg;		/* cylinders per group */
-	int	cpgflg;		/* cpg was specified by user */
-	int	density;	/* bytes per inode */
+	int		bsize;		/* block size */
+	int		fsize;		/* fragment size */
+	int		cpg;		/* cylinders per group */
+	int		cpgflg;		/* cpg was specified by user */
+	int		density;	/* bytes per inode */
 	bool	min_inodes;	/* allocate minimum number of inodes */
-	int	ntracks;	/* number of tracks */
-	int	nsectors;	/* number of sectors */
-	int	rpm;		/* rpm */
-	int	minfree;	/* free space threshold */
-	int	optimization;	/* optimization (space or time) */
-	int	maxcontig;	/* max contiguous blocks to allocate */
-	int	rotdelay;	/* rotational delay between blocks */
-	int	maxbpg;		/* maximum blocks per file in a cyl group */
-	int	nrpos;		/* # of distinguished rotational positions */
-	int	avgfilesize;	/* expected average file size */
-	int	avgfpdir;	/* expected # of files per directory */
-	int	version;	/* filesystem version (1 = FFS, 2 = UFS2) */
-	int	maxbsize;	/* maximum extent size */
-	int	maxblkspercg;	/* max # of blocks per cylinder group */
-	int	softupdates;	/* soft updates */
+	int		ntracks;	/* number of tracks */
+	int		nsectors;	/* number of sectors */
+	int		rpm;		/* rpm */
+	int		minfree;	/* free space threshold */
+	int		optimization;	/* optimization (space or time) */
+	int		maxcontig;	/* max contiguous blocks to allocate */
+	int		rotdelay;	/* rotational delay between blocks */
+	int		maxbpg;		/* maximum blocks per file in a cyl group */
+	int		nrpos;		/* # of distinguished rotational positions */
+	int		avgfilesize;	/* expected average file size */
+	int		avgfpdir;	/* expected # of files per directory */
+	int		version;	/* filesystem version (1 = FFS, 2 = UFS2) */
+	int		maxbsize;	/* maximum extent size */
+	int		maxblkspercg;	/* max # of blocks per cylinder group */
+	int		softupdates;	/* soft updates */
 		/* XXX: support `old' file systems ? */
 } ffs_opt_t;
 

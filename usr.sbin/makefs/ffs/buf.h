@@ -1,8 +1,6 @@
-/*	$NetBSD: buf.h,v 1.3 2001/11/02 03:12:49 lukem Exp $	*/
+/*	$NetBSD: buf.h,v 1.2 2001/11/02 03:12:49 lukem Exp $	*/
 
-/*-
- * SPDX-License-Identifier: BSD-4-Clause
- *
+/*
  * Copyright (c) 2001 Wasabi Systems, Inc.
  * All rights reserved.
  *
@@ -35,8 +33,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
  */
 
 #ifndef _FFS_BUF_H
@@ -45,31 +41,23 @@
 #include <sys/param.h>
 #include <sys/queue.h>
 
-struct componentname;
-struct makefs_fsinfo;
-struct ucred;
-
-struct m_vnode {
-	struct makefs_fsinfo *fs;
-	void *v_data;
-};
-
-struct m_buf {
-	char *		b_data;
+struct buf {
+	void *		b_data;
 	long		b_bufsize;
 	long		b_bcount;
 	daddr_t		b_blkno;
 	daddr_t		b_lblkno;
-	struct makefs_fsinfo *b_fs;
+	int			b_fd;
+	struct fs 	*b_fs;
 
-	TAILQ_ENTRY(m_buf)	b_tailq;
+	TAILQ_ENTRY(buf)	b_tailq;
 };
 
 void		bcleanup(void);
-int			bread(struct m_vnode *, daddr_t, int, struct ucred *, struct m_buf **);
-void		brelse(struct m_buf *);
-int			bwrite(struct m_buf *);
-struct m_buf *getblk(struct m_vnode *, daddr_t, int, int, int, int);
+int			bread(int, struct fs *, daddr_t, int, struct buf **);
+void		brelse(struct buf *);
+int			bwrite(struct buf *);
+struct buf 	*getblk(int, struct fs *, daddr_t, int);
 
 #define	bdwrite(bp)	bwrite(bp)
 #define	clrbuf(bp)	memset((bp)->b_data, 0, (u_int)(bp)->b_bcount)

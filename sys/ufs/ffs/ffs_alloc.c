@@ -1300,6 +1300,7 @@ norot:
 	cgp->cg_rotor = bno;
 
 gotit:
+
 	blkno = fragstoblks(fs, bno);
 	ffs_clrblock(fs, cg_blksfree(cgp), (long)blkno);
 	ffs_clusteracct(fs, cgp, blkno, -1);
@@ -1427,6 +1428,40 @@ fail:
 	return (0);
 }
 
+#ifdef notyet
+static inline struct buf *
+getinobuf(struct inode *ip, uint64_t cg, uint32_t cginoblk)
+{
+	struct fs *fs;
+
+	fs = ip->i_fs;
+	return (getblk(ITOV(ip), fsbtodb(fs, ino_to_fsba(fs, cg * fs->fs_ipg + cginoblk)), (int)fs->fs_bsize, 0, 0));
+}
+
+ffs_initediblk(fs, cgp, cg, ipref)
+	register struct fs *fs;
+	register struct cg *cgp;
+	int cg;
+	ufs2_daddr_t ipref;
+{
+	struct buf *bp, *ibp;
+	uint32_t old_initediblk;
+
+	if (fs->fs_magic == FS_UFS2_MAGIC &&
+		    ipref + INOPB(fs) > cgp->cg_initediblk &&
+		    cgp->cg_initediblk < cgp->cg_niblk) {
+		old_initediblk = cgp->cg_initediblk;
+
+		ibp = getinobuf(ip, cg, old_initediblk);
+		brelse(bp);
+		if (ibp == NULL) {
+			ibp = getinobuf(ip, cg, old_initediblk);
+			brelse(ibp);
+		}
+		bzero(ibp->b_data, (int)fs->fs_bsize);
+	}
+}
+#endif
 /*
  * Determine whether an inode can be allocated.
  *

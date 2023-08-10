@@ -55,7 +55,8 @@
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/swap.h>
+
+#include <sys/vm/include/vm_swap.h>
 
 #include <unistd.h>
 #include <err.h>
@@ -110,17 +111,17 @@ char	*tflag;		/* swap device type (blk or noblk) */
 
 int	pri;		/* uses 0 as default pri */
 
-static	void change_priority __P((const char *));
-static	int  add_swap __P((const char *, int));
-static	int  delete_swap __P((const char *));
-static	void set_dumpdev __P((const char *));
-static	void get_dumpdev __P((void));
-	int  main __P((int, char *[]));
-static	void do_fstab __P((int));
-static	void usage __P((void));
-static	void swapon_command __P((int, char **));
+static	void change_priority(const char *);
+static	int  add_swap(const char *, int);
+static	int  delete_swap(const char *);
+static	void set_dumpdev(const char *);
+static	void get_dumpdev(void);
+int  main(int, char *[]);
+static	void do_fstab(int);
+static	void usage(void);
+static	void swapon_command(int, char **);
 #if 0
-static	void swapoff_command __P((int, char **));
+static	void swapoff_command(int, char **);
 #endif
 
 int
