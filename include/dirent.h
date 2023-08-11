@@ -46,11 +46,13 @@
  */
 #include <sys/dirent.h>
 
-#ifdef _POSIX_SOURCE
-typedef void *	DIR;
-#else
-
+#if !defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE)
 #define	d_ino		d_fileno	/* backward compatibility */
+#endif
+
+#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE)
+typedef void *DIR;
+#else
 
 /* definitions for library routines operating on directories. */
 #define	DIRBLKSIZ	1024
@@ -77,7 +79,7 @@ typedef struct _dirdesc {
 
 #include <sys/null.h>
 
-#endif /* _POSIX_SOURCE */
+#endif /* _POSIX_C_SOURCE || _XOPEN_SOURCE */
 
 #ifndef _KERNEL
 
