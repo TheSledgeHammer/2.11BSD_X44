@@ -37,8 +37,8 @@
 #ifndef _SYS_DIRENT_H_
 #define _SYS_DIRENT_H_
 
-//#include <sys/cdefs.h>
-//#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/stddef.h>
 
 /*
@@ -51,22 +51,21 @@
  * byte boundary with null bytes.  All names are guaranteed null terminated.
  * The maximum length of a name in a directory is MAXNAMLEN.
  */
-#if __BSD_VISIBLE
-#define	MAXNAMLEN	255
-#endif
 
 struct dirent {
 	unsigned long	d_fileno;				/* file number of entry */
 	unsigned short	d_reclen;				/* length of this record */
 	unsigned char	d_type; 				/* file type, see below */
 	unsigned char	d_namlen;				/* length of string in d_name */
-#if __BSD_VISIBLE
-	char			d_name[MAXNAMLEN + 1];	/* name must be no longer than this */
+#if defined(_POSIX_C_SOURCE) || defined(_XOPEN_SOURCE)
+    char			d_name[255 + 1];		/* name must be no longer than this */
 #else
-	char			d_name[255 + 1];		/* name must be no longer than this */
+#define	MAXNAMLEN	255                     /* must be kept in sync with NAME_MAX */
+	char			d_name[MAXNAMLEN + 1];	/* name must be no longer than this */
 #endif
 };
 
+#if !defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE)
 /*
  * File types
  */
@@ -86,6 +85,8 @@ struct dirent {
 #define	IFTODT(mode)	(((mode) & 0170000) >> 12)
 #define	DTTOIF(dirtype)	((dirtype) << 12)
 
+#endif /* !defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE) */
+
 /*
  * The DIRSIZ macro gives the minimum record length which will hold
  * the directory entry.  This requires the amount of space in struct direct
@@ -100,4 +101,5 @@ struct dirent {
 #ifdef _KERNEL
 #define	GENERIC_DIRSIZ(dp)	_GENERIC_DIRSIZ(dp)
 #endif
+
 #endif /* !_SYS_DIRENT_H_ */
