@@ -522,8 +522,10 @@ ffs_mkfs(const char *fsys, const fsinfo_t *fsopts)
 	 * writing out in each cylinder group.
 	 */
 	memcpy(writebuf, &sblock, sbsize);
+#ifdef notyet
 	if (fsopts->needswap)
 		ffs_sb_swap(&sblock, (struct fs*)writebuf);
+#endif
 	memcpy(iobuf, writebuf, SBLOCKSIZE);
 
 	printf("super-block backups (for fsck -b #) at:");
@@ -549,9 +551,9 @@ ffs_mkfs(const char *fsys, const fsinfo_t *fsopts)
 		sblock.fs_old_cstotal.cs_nifree = sblock.fs_cstotal.cs_nifree;
 		sblock.fs_old_cstotal.cs_nffree = sblock.fs_cstotal.cs_nffree;
 	}
-#endif
 	if (fsopts->needswap)
 		sblock.fs_flags |= FS_SWAPPED;
+#endif
 	ffs_write_superblock(&sblock, fsopts);
 	return (&sblock);
 }
@@ -570,15 +572,16 @@ ffs_write_superblock(struct fs *fs, const fsinfo_t *fsopts)
 	saveflag = fs->fs_flags & FS_INTERNAL;
 	fs->fs_flags &= ~FS_INTERNAL;
 
-        memcpy(writebuf, &sblock, sbsize);
+	memcpy(writebuf, &sblock, sbsize);
+#ifdef notyet
 	if (fsopts->needswap)
-		ffs_sb_swap(fs, (struct fs*)writebuf);
+		ffs_sb_swap(fs, (struct fs*) writebuf);
+#endif
 	ffs_wtfs(fs->fs_sblockloc / sectorsize, sbsize, writebuf, fsopts);
 
 	/* Write out the duplicate super blocks */
 	for (cylno = 0; cylno < fs->fs_ncg; cylno++)
-		ffs_wtfs(fsbtodb(fs, cgsblock(fs, cylno)),
-		    sbsize, writebuf, fsopts);
+		ffs_wtfs(fsbtodb(fs, cgsblock(fs, cylno)), sbsize, writebuf, fsopts);
 
 	/* Write out the cylinder group summaries */
 	size = fs->fs_cssize;
@@ -590,10 +593,12 @@ ffs_write_superblock(struct fs *fs, const fsinfo_t *fsopts)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
+#ifdef notyet
 		if (fsopts->needswap)
 			ffs_csum_swap((struct csum *)space,
 			    (struct csum *)wrbuf, size);
 		else
+#endif
 			memcpy(wrbuf, space, (u_int)size);
 		ffs_wtfs(fsbtodb(fs, fs->fs_csaddr + i), size, wrbuf, fsopts);
 		space = (char *)space + size;
@@ -752,8 +757,10 @@ initcg(int cylno, time_t utime, const fsinfo_t *fsopts)
 	 */
 	start = sblock.fs_bsize > SBLOCKSIZE ? sblock.fs_bsize : SBLOCKSIZE;
 	memcpy(&iobuf[start], &acg, sblock.fs_cgsize);
+#ifdef notyet
 	if (fsopts->needswap)
 		ffs_cg_swap(&acg, (struct cg*)&iobuf[start], &sblock);
+#endif
 	start += sblock.fs_bsize;
 	dp1 = (struct ufs1_dinode *)(&iobuf[start]);
 	dp2 = (struct ufs2_dinode *)(&iobuf[start]);

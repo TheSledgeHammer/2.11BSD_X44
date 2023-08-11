@@ -63,12 +63,14 @@ void ffs_clusteracct(struct fs *, struct cg *, int32_t, int);
 	/* ffs_balloc.c */
 int ffs_balloc(struct inode *, off_t, int, struct buf **);
 
+#ifdef notyet
 	/* ffs_bswap.c */
 void ffs_sb_swap(struct fs*, struct fs *);
 void ffs_dinode1_swap(struct ufs1_dinode *, struct ufs1_dinode *);
 void ffs_dinode2_swap(struct ufs2_dinode *, struct ufs2_dinode *);
 void ffs_csum_swap(struct csum *, struct csum *, int);
 void ffs_cg_swap(struct cg *, struct cg *, struct fs *);
+#endif
 
 	/* ffs_subr.c */
 void   ffs_fragacct_swap(struct fs *, int, uint32_t [], int, int);

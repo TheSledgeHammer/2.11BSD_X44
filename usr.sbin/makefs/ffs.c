@@ -1217,17 +1217,19 @@ ffs_write_inode(union dinode *dp, uint32_t ino, const fsinfo_t *fsopts)
 					/* now write inode */
 	d = fsbtodb(fs, ino_to_fsba(fs, ino));
 	ffs_rdfs(d, fs->fs_bsize, buf, fsopts);
+#ifdef notyet
 	if (fsopts->needswap) {
 		if (ffs_opts->version == 1)
 			ffs_dinode1_swap(&dp->ffs1_din, &dp1[ino_to_fsbo(fs, ino)]);
 		else
 			ffs_dinode2_swap(&dp->ffs2_din, &dp2[ino_to_fsbo(fs, ino)]);
 	} else {
+#endif
 		if (ffs_opts->version == 1)
 			dp1[ino_to_fsbo(fs, ino)] = dp->ffs1_din;
 		else
 			dp2[ino_to_fsbo(fs, ino)] = dp->ffs2_din;
-	}
+	//}
 	ffs_wtfs(d, fs->fs_bsize, buf, fsopts);
 	free(buf);
 }
