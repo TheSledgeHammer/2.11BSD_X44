@@ -10,21 +10,16 @@ MAN=	makefs.8
 MKNODSRC=	${NETBSDSRCDIR}/sbin/mknod
 MTREESRC=	${NETBSDSRCDIR}/usr.sbin/mtree
 
-CPPFLAGS+=	-I${.CURDIR} -I${MKNODSRC} -I${MTREESRC} -DMAKEFS
+CPPFLAGS+=	-I${.CURDIR} -I${MKNODSRC} -I${MTREESRC}
 .PATH:		${MKNODSRC} ${MTREESRC}
 
 #.include "${.CURDIR}/cd9660/Makefile.inc"
 .include "${.CURDIR}/ffs/Makefile.inc"
 #.include "${.CURDIR}/msdos/Makefile.inc"
 
-.if defined(HOSTPROG)
-LDADD+=	-lm
-.else
-DPADD+= ${LIBUTIL} ${LIBM}
-LDADD+= -lutil -lm
-
-#COPTS.cd9660.c+=		${CC_WNO_STRINGOP_TRUNCATION} ${CC_WNO_FORMAT_TRUNCATION}
-#COPTS.cd9660_conversion.c+=	${CC_WNO_FORMAT_TRUNCATION}
+.if !defined(HOSTPROG)
+DPADD+= ${LIBUTIL}
+LDADD+= -lutil
 .endif
 
 .include <bsd.prog.mk>

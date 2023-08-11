@@ -69,6 +69,7 @@
 #include "nbtool_config.h"
 #endif
 
+
 #include <sys/cdefs.h>
 #if defined(__RCSID) && !defined(__lint)
 __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
@@ -84,7 +85,6 @@ __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,7 +97,6 @@ __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
 #include "ffs.h"
 
 #include <ufs/ufs/dinode.h>
-
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
 
@@ -110,6 +109,17 @@ __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
 #define DIP(dp, field) \
 	((ffs_opts->version == 1) ? \
 	(dp)->ffs1_din.di_##field : (dp)->ffs2_din.di_##field)
+
+
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+#define DIRSIZ_SWAP(oldfmt, dp, needswap)       \
+	(((oldfmt) && !(needswap)) ?                \
+    DIRSIZ((oldfmt), (dp)->d_type) : DIRSIZ((oldfmt), (dp)->d_namlen))
+#else
+#define DIRSIZ_SWAP(oldfmt, dp, needswap)       \
+    (((oldfmt) && (needswap)) ?                 \
+    DIRSIZ((oldfmt), (dp)->d_type) : DIRSIZ((oldfmt), (dp)->d_namlen))
+#endif
 
 /*
  * Various file system defaults (cribbed from newfs(8)).
@@ -142,10 +152,8 @@ static	void	ffs_size_dir(fsnode *, fsinfo_t *);
 static	void	ffs_validate(const char *, fsnode *, fsinfo_t *);
 static	void	ffs_write_file(union dinode *, uint32_t, void *, fsinfo_t *);
 static	void	ffs_write_inode(union dinode *, uint32_t, const fsinfo_t *);
-static  void	*ffs_build_dinode1(struct ufs1_dinode *, dirbuf_t *, fsnode *,
-				 fsnode *, fsinfo_t *);
-static  void	*ffs_build_dinode2(struct ufs2_dinode *, dirbuf_t *, fsnode *,
-				 fsnode *, fsinfo_t *);
+static  void	*ffs_build_dinode1(struct ufs1_dinode *, dirbuf_t *, fsnode *, fsnode *, fsinfo_t *);
+static  void	*ffs_build_dinode2(struct ufs2_dinode *, dirbuf_t *, fsnode *, fsnode *, fsinfo_t *);
 
 
 	/* publicly visible functions */
@@ -264,73 +272,6 @@ ffs_makefs(const char *image, const char *dir, fsnode *root, fsinfo_t *fsopts)
 	if (debug & DEBUG_FS_MAKEFS)
 		printf("ffs_makefs: image %s directory %s root %p\n",
 		    image, dir, root);
-
-		/* validate tree and options */
-	TIMER_START(start);
-	ffs_validate(dir, root, fsopts);
-	TIMER_RESULTS(start, "ffs_validate");
-
-	printf("Calculated size of `%s': %lld bytes, %lld inodes\n",
-	    image, (long long)fsopts->size, (long long)fsopts->inodes);
-
-		/* create image */
-	TIMER_START(start);
-	if (ffs_create_image(image, fsopts) == -1)
-		errx(1, "Image file `%s' not created.", image);
-	TIMER_RESULTS(start, "ffs_create_image");
-
-	fsopts->curinode = UFS_ROOTINO;
-
-	if (debug & DEBUG_FS_MAKEFS)
-		putchar('\n');
-
-		/* populate image */
-	printf("Populating `%s'\n", image);
-	TIMER_START(start);
-	if (! ffs_populate_dir(dir, root, fsopts))
-		errx(1, "Image file `%s' not populated.", image);
-	TIMER_RESULTS(start, "ffs_populate_dir");
-
-		/* ensure no outstanding buffers remain */
-	if (debug & DEBUG_FS_MAKEFS)
-		bcleanup();
-
-		/* update various superblock parameters */
-	superblock = fsopts->superblock;
-	superblock->fs_fmod = 0;
-#ifdef notyet
-	superblock->fs_old_cstotal.cs_ndir   = superblock->fs_cstotal.cs_ndir;
-	superblock->fs_old_cstotal.cs_nbfree = superblock->fs_cstotal.cs_nbfree;
-	superblock->fs_old_cstotal.cs_nifree = superblock->fs_cstotal.cs_nifree;
-	superblock->fs_old_cstotal.cs_nffree = superblock->fs_cstotal.cs_nffree;
-#endif
-		/* write out superblock; image is now complete */
-	ffs_write_superblock(fsopts->superblock, fsopts);
-	if (close(fsopts->fd) == -1)
-		err(1, "Closing `%s'", image);
-	fsopts->fd = -1;
-	printf("Image `%s' complete\n", image);
-}
-
-void
-ffs_makefs(const char *image, const char *dir, fsnode *root, fsinfo_t *fsopts)
-{
-	struct fs	*superblock;
-	struct timeval	start;
-
-	assert(image != NULL);
-	assert(dir != NULL);
-	assert(root != NULL);
-	assert(fsopts != NULL);
-
-	if (debug & DEBUG_FS_MAKEFS)
-		printf("ffs_makefs: image %s directory %s root %p\n",
-		    image, dir, root);
-
-		/* if user wants no free space, use minimum number of inodes */
-	if (fsopts->minsize == 0 && fsopts->freeblockpc == 0 &&
-	    fsopts->freeblocks == 0)
-		((ffs_opt_t *)fsopts->fs_specific)->min_inodes = true;
 
 		/* validate tree and options */
 	TIMER_START(start);
@@ -611,7 +552,7 @@ ffs_create_image(const char *image, fsinfo_t *fsopts)
 
 	srandom(tstamp);
 
-	fs = ffs_mkfs(image, fsopts, tstamp);
+	fs = ffs_mkfs(image, fsopts);
 	fsopts->superblock = (void *)fs;
 	if (debug & DEBUG_FS_CREATE_IMAGE) {
 		time_t t;
@@ -952,7 +893,7 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 	off_t	bufleft, chunk, offset;
 	ssize_t nread;
 	struct inode	in;
-	struct buf *	bp;
+	struct buf  *bp;
 	ffs_opt_t	*ffs_opts = fsopts->fs_specific;
 	struct vnode vp = { fsopts, NULL };
 

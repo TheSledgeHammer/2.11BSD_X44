@@ -279,17 +279,17 @@ extern	struct stat stampst;
 
 //#define UFS1_MAXSYMLINKLEN   ((UFS_NDADDR + UFS_NIADDR) * sizeof(ufs1_daddr_t))
 //#define UFS2_MAXSYMLINKLEN   ((UFS_NDADDR + UFS_NIADDR) * sizeof(ufs2_daddr_t))
-
+/*
 #if (BYTE_ORDER == LITTLE_ENDIAN)
 #define DIRSIZ_SWAP(oldfmt, dp, needswap)      \
 	(((oldfmt) && !(needswap)) ?       \
-    DIRECTSIZ((dp)->d_type) : DIRECTSIZ((dp)->d_namlen))
+    DIRSIZ((oldfmt), (dp)->d_type) : DIRSIZ((oldfmt), (dp)->d_namlen))
 #else
 #define DIRSIZ_SWAP(oldfmt, dp, needswap)      \
     (((oldfmt) && (needswap)) ?                \
-    DIRECTSIZ((dp)->d_type) : DIRECTSIZ((dp)->d_namlen))
+    DIRSIZ((oldfmt), (dp)->d_type) : DIRSIZ(((oldfmt), dp)->d_namlen))
 #endif
-
+*/
 #define        cg_chkmagic_swap(cgp, ns) \
     (ufs_rw32((cgp)->cg_magic, (ns)) == CG_MAGIC)
 #define        cg_inosused_swap(cgp, ns) \

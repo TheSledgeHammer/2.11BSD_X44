@@ -39,6 +39,7 @@
 #include "nbtool_config.h"
 #endif
 
+
 #include <sys/cdefs.h>
 #if defined(__RCSID) && !defined(__lint)
 __RCSID("$NetBSD: makefs.c,v 1.55 2022/04/09 10:05:35 riastradh Exp $");

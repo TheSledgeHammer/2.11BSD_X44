@@ -419,9 +419,11 @@ ffs_mkfs(const char *fsys, const fsinfo_t *fsopts)
 	blks = howmany(size, sblock.fs_fsize);
 	if (sblock.fs_contigsumsize > 0)
 		size += sblock.fs_ncg * sizeof(int32_t);
-	if ((space = (char *)calloc(1, size)) == NULL)
-		err(1, "memory allocation error for cg summaries");
-	sblock.fs_csp = space;
+    space = calloc(1, size);
+    if (space == NULL) {
+        err(1, "memory allocation error for cg summaries");
+    }
+	sblock.fs_csp[0] = space;
 	space = (char *)space + sblock.fs_cssize;
 	if (sblock.fs_contigsumsize > 0) {
 		int32_t *lp;
