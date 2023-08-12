@@ -587,7 +587,7 @@ BINGRP?=		wheel
 BINOWN?=		root
 BINMODE?=		555
 NONBINMODE?=	444
-DIRMODE?=		755
+#DIRMODE?=		755
 
 SHAREDIR?=		/usr/share
 SHAREGRP?=		wheel
