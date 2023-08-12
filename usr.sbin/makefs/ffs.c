@@ -96,6 +96,18 @@ __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
 #include "makefs.h"
 #include "ffs.h"
 
+#if HAVE_NBTOOL_CONFIG_H
+#undef	DT_UNKNOWN
+#undef	DT_FIFO
+#undef	DT_CHR
+#undef	DT_DIR
+#undef	DT_BLK
+#undef	DT_REG
+#undef	DT_LNK
+#undef	DT_SOCK
+#undef	DT_WHT
+#endif
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
@@ -110,16 +122,7 @@ __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
 	((ffs_opts->version == 1) ? \
 	(dp)->ffs1_din.di_##field : (dp)->ffs2_din.di_##field)
 
-
-#if (BYTE_ORDER == LITTLE_ENDIAN)
-#define DIRSIZ_SWAP(oldfmt, dp, needswap)       \
-	(((oldfmt) && !(needswap)) ?                \
-    DIRSIZ((oldfmt), (dp)->d_type) : DIRSIZ((oldfmt), (dp)->d_namlen))
-#else
-#define DIRSIZ_SWAP(oldfmt, dp, needswap)       \
-    (((oldfmt) && (needswap)) ?                 \
-    DIRSIZ((oldfmt), (dp)->d_type) : DIRSIZ((oldfmt), (dp)->d_namlen))
-#endif
+#define DIRSIZ_SWAP(oldfmt, dp, needswap) DIRSIZ(oldfmt, dp)
 
 /*
  * Various file system defaults (cribbed from newfs(8)).
@@ -895,7 +898,7 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 	struct inode	in;
 	struct buf  *bp;
 	ffs_opt_t	*ffs_opts = fsopts->fs_specific;
-	struct vnode vp = { fsopts, NULL };
+	//struct vnode vp = { fsopts, NULL };
 
 	assert (din != NULL);
 	assert (buf != NULL);
@@ -908,7 +911,7 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 	p = NULL;
 
 	in.i_fs = (struct fs *)fsopts->superblock;
-	in.i_devvp = &vp;
+	//in.i_devvp = &vp;
 
 	if (debug & DEBUG_FS_WRITE_FILE) {
 		printf(
