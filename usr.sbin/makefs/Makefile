@@ -10,7 +10,7 @@ MAN=	makefs.8
 MKNODSRC=	${NETBSDSRCDIR}/sbin/mknod
 MTREESRC=	${NETBSDSRCDIR}/usr.sbin/mtree
 
-CPPFLAGS+=	-I${.CURDIR} -I${MKNODSRC} -I${MTREESRC}
+CPPFLAGS+=	-I${.CURDIR} -I${MKNODSRC} -I${MTREESRC} -DMAKEFS
 .PATH:		${MKNODSRC} ${MTREESRC}
 
 #.include "${.CURDIR}/cd9660/Makefile.inc"
