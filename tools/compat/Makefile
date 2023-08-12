@@ -13,8 +13,8 @@ SRCS=		basename.c dirname.c err.c fgetln.c flock.c fparseln.c 		\
 			regexec.c regfree.c 										\
 			setenv.c setgroupent.c setpassent.c setprogname.c 			\
 			snprintf.c stat_flags.c strlcat.c strlcpy.c strmode.c 		\
-			strcasecmp.c strndup.c strnlen.c strsep.c strtoll.c 		\
-			strtoi.c strtou.c											\
+			strcasecmp.c strndup.c strnlen.c strsep.c strsuftoll.c      \
+            	strtoll.c strtoi.c strtou.c										\
 			unvis.c vis.c fts.c glob.c efun.c
 SRCS+= 		md2.c md2hl.c md4c.c md4hl.c md5c.c md5hl.c rmd160.c 		\
 			rmd160hl.c sha1.c sha1hl.c sha2.c sha256hl.c sha384hl.c 	\
