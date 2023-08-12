@@ -69,7 +69,6 @@
 #include "nbtool_config.h"
 #endif
 
-
 #include <sys/cdefs.h>
 #if defined(__RCSID) && !defined(__lint)
 __RCSID("$NetBSD: ffs.c,v 1.74 2023/01/07 19:41:30 chs Exp $");
