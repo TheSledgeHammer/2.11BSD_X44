@@ -8,7 +8,7 @@ HOST_SRCS=		disklabel.c
 
 HOST_CPPFLAGS=	-DDEFAULT_BOOTDIR=\"${DESTDIR}/boot\"
 
-.include "${.CURDIR}/../Makefile.nbincludes"
+#.include "${.CURDIR}/../Makefile.nbincludes"
 .include "${.CURDIR}/../Makefile.host"
 
 .PATH: ${.CURDIR}/../../lib/libc/gen
