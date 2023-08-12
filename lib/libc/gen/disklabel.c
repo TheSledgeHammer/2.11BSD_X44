@@ -49,11 +49,7 @@ __RCSID("$NetBSD: disklabel.c,v 1.37 2012/06/25 22:32:43 abs Exp $");
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 
-#if HAVE_NBTOOL_CONFIG_H
-#include <nbinclude/sys/disklabel.h>
-#else
 #include <sys/disklabel.h>
-#endif /* HAVE_NBTOOL_CONFIG_H */
 
 #include <assert.h>
 #include <ctype.h>
