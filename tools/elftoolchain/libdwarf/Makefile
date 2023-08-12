@@ -91,5 +91,5 @@ CPPFLAGS+=	-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 HOST_CPPFLAGS:=	${CPPFLAGS} ${HOST_CPPFLAGS}
 CPPFLAGS:=	# empty
 
-.include "${.CURDIR}/../Makefile.nbincludes"
+#.include "${.CURDIR}/../Makefile.nbincludes"
 .include <bsd.hostlib.mk>
