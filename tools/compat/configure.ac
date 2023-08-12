@@ -84,7 +84,7 @@ AC_CHECK_HEADERS(machine/bswap.h sys/bswap.h sys/cdefs.h machine/endian.h sys/en
 	[test -f include/$ac_header || touch include/$ac_header])
 AC_CHECK_HEADERS(rpc/types.h,,
 	[echo '#include "nbtool_config.h"' >include/$ac_header.new
-	echo '#include "'$srcdir/../../common/include/$ac_header'"' 				\
+	echo '#include "'$srcdir/../../include/$ac_header'"' 				\
 		>>include/$ac_header.new
 	if cmp include/$ac_header.new include/$ac_header >/dev/null 2>&1; then
 		rm -f include/$ac_header.new
