@@ -75,7 +75,9 @@
  * dp->d_ino set to 0.
  */
 
+#undef	DIRBLKSIZ
 #define DIRBLKSIZ		DEV_BSIZE
+#undef	MAXNAMLEN
 #define	MAXNAMLEN		255
 #define UFS_DIRBLKSIZ	DIRBLKSIZ
 #define UFS_MAXNAMLEN	MAXNAMLEN
@@ -114,14 +116,17 @@ struct direct {
  * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
  */
 
+#define	DIRECTSIZ(namlen) 	\
+	((sizeof(struct direct) - (MAXNAMLEN+1)) + (((namlen)+1 + 3) &~ 3))
+
 #if (BYTE_ORDER == LITTLE_ENDIAN)
-#define DIRSIZ(oldfmt, dp) 														\
-    ((oldfmt) ? 																\
-    ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_type+1 + 3) &~ 3)) : 	\
-    ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3)))
+#define DIRSIZ(oldfmt, dp)	\
+    ((oldfmt) ?	            	\
+    DIRECTSIZ((dp)->d_type) : DIRECTSIZ((dp)->d_namlen))
 #else
-#define DIRSIZ(oldfmt, dp) \
-    ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3));
+#define DIRSIZ(oldfmt, dp)	\
+    ((oldfmt) ?		        \
+    DIRECTSIZ((dp)->d_type) : DIRECTSIZ((dp)->d_namlen))
 #endif
 #define OLDDIRFMT	1
 #define NEWDIRFMT	0
