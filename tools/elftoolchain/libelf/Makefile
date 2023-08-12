@@ -50,7 +50,7 @@ LIBELF_DIR=	${.CURDIR}/../../contrib/elftoolchain/dist/libelf
 
 CLEANFILES+=	${LIBELF_GENSRCS}
 CPPFLAGS+=		-I${.CURDIR}/../compat -I${LIBELF_DIR} -I${LIBELF_DIR}/../common
-CPPFLAGS+=		-I${TOOLDIR}/include/nbinclude
+#CPPFLAGS+=		-I${TOOLDIR}/include/nbinclude
 
 CPPFLAGS+=	-DLIBELF_TEST_HOOKS
 
