@@ -8,7 +8,7 @@ SUBDIR=	boot0cfg btxld 											\
 		dev_mkdb 												\
 		etcupdate 												\
 		link                                                    \
-        mtree moused                                            \
+        makefs mtree moused                                            \
 		periodic postinstall pwd_mkdb 							\
         rmt                                                     \
 		unlink  												\
