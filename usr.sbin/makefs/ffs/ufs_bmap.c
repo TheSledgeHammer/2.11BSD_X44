@@ -56,9 +56,9 @@ __RCSID("$NetBSD: ufs_bmap.c,v 1.13.2.1 2004/06/22 07:18:49 tron Exp $");
 #include "makefs.h"
 
 #include <ufs/ufs/dinode.h>
+#include "ffs/ufs_bswap.h"
 #include <ufs/ffs/fs.h>
 
-#include "ffs/ufs_bswap.h"
 #include "ffs/ufs_inode.h"
 #include "ffs/ffs_extern.h"
 

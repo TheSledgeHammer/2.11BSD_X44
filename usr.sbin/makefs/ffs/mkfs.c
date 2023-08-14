@@ -67,9 +67,9 @@ __RCSID("$NetBSD: mkfs.c,v 1.18.2.2 2004/06/25 02:34:40 jmc Exp $");
 #include "ffs.h"
 
 #include <ufs/ufs/dinode.h>
+#include "ffs/ufs_bswap.h"
 #include <ufs/ffs/fs.h>
 
-#include "ffs/ufs_bswap.h"
 #include "ffs/ufs_inode.h"
 #include "ffs/ffs_extern.h"
 #include "ffs/newfs_extern.h"

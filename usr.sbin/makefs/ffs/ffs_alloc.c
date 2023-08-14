@@ -59,9 +59,9 @@ __RCSID("$NetBSD: ffs_alloc.c,v 1.13.2.1 2004/06/22 07:18:49 tron Exp $");
 #include "makefs.h"
 
 #include <ufs/ufs/dinode.h>
+#include "ffs/ufs_bswap.h"
 #include <ufs/ffs/fs.h>
 
-#include "ffs/ufs_bswap.h"
 #include "ffs/buf.h"
 #include "ffs/ufs_inode.h"
 #include "ffs/ffs_extern.h"
@@ -73,10 +73,6 @@ static daddr_t ffs_alloccg(struct inode *, int, daddr_t, int);
 static daddr_t ffs_alloccgblk(struct inode *, struct buf *, daddr_t);
 static daddr_t ffs_hashalloc(struct inode *, int, daddr_t, int, daddr_t (*)(struct inode *, int, daddr_t, int));
 static int32_t ffs_mapsearch(struct fs *, struct cg *, daddr_t, int);
-
-/* in ffs_tables.c */
-//extern const int inside[], around[];
-//extern const u_char * const fragtbl[];
 
 /*
  * Allocate a block in the file system.

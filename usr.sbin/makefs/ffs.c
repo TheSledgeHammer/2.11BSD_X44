@@ -158,6 +158,8 @@ static  void	*ffs_build_dinode1(struct ufs1_dinode *, dirbuf_t *, fsnode *, fsno
 static  void	*ffs_build_dinode2(struct ufs2_dinode *, dirbuf_t *, fsnode *, fsnode *, fsinfo_t *);
 
 
+int	sectorsize;		/* XXX: for buf.c::getblk() */
+
 	/* publicly visible functions */
 
 void
@@ -432,6 +434,7 @@ ffs_validate(const char *dir, fsnode *root, fsinfo_t *fsopts)
 		printf("ffs_validate: dir %s; %lld bytes, %lld inodes\n",
 		    dir, (long long)fsopts->size, (long long)fsopts->inodes);
 	}
+    sectorsize = fsopts->sectorsize;	/* XXX - see earlier */
 		/* now check calculated sizes vs requested sizes */
 	if (fsopts->maxsize > 0 && fsopts->size > fsopts->maxsize) {
 		errx(1, "`%s' size of %lld is larger than the maxsize of %lld.",
@@ -897,7 +900,7 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 	struct inode	in;
 	struct buf  *bp;
 	ffs_opt_t	*ffs_opts = fsopts->fs_specific;
-	//struct vnode vp = { fsopts, NULL };
+	//struct vnode vp = (struct vnode *)fsopts;
 
 	assert (din != NULL);
 	assert (buf != NULL);
@@ -910,7 +913,7 @@ ffs_write_file(union dinode *din, uint32_t ino, void *buf, fsinfo_t *fsopts)
 	p = NULL;
 
 	in.i_fs = (struct fs *)fsopts->superblock;
-	//in.i_devvp = &vp;
+//	in.i_devvp = vp;
 
 	if (debug & DEBUG_FS_WRITE_FILE) {
 		printf(

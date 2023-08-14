@@ -45,7 +45,6 @@ __RCSID("$NetBSD: walk.c,v 1.32 2022/04/09 10:05:35 riastradh Exp $");
 #endif	/* !__lint */
 
 #include <sys/param.h>
-#include <sys/stat.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -55,7 +54,8 @@ __RCSID("$NetBSD: walk.c,v 1.32 2022/04/09 10:05:35 riastradh Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <util.h>
+//#include <util.h>
+#include <sys/stat.h>
 
 #include "makefs.h"
 #include "mtree.h"

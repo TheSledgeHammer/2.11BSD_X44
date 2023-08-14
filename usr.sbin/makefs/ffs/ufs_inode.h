@@ -44,7 +44,7 @@ union dinode {
 
 struct inode {
 	ino_t	  		i_number;	/* The identity of the inode. */
-    struct vnode	*i_devvp;	/* device vnode for block I/O */
+    //struct vnode	*i_devvp;	/* device vnode for block I/O */
 	struct fs		*i_fs;		/* File system */
 	union dinode	i_din;
 	int				i_fd;		/* File descriptor */
