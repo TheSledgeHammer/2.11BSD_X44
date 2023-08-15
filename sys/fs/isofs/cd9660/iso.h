@@ -41,10 +41,6 @@
 #ifndef _ISOFS_CD9660_ISO_H_
 #define _ISOFS_CD9660_ISO_H_
 
-#include <sys/mount.h>
-
-//struct netexport;
-
 #define ISODCL(from, to) (to - from + 1)
 
 struct iso_volume_descriptor {
@@ -170,6 +166,19 @@ struct iso_extended_attributes {
 	u_char len_au			    [ISODCL (247, 250)]; /* 723 */
 };
 
+/* start: cd9660_extern.h */
+
+#include <sys/mount.h>
+
+struct fid;
+struct mbuf;
+struct nameidata;
+struct netexport;
+struct proc;
+struct statfs;
+struct ucred;
+struct vfsconf;
+
 /* CD-ROM Format type */
 enum ISO_FTYPE  { ISO_FTYPE_DEFAULT, ISO_FTYPE_9660, ISO_FTYPE_RRIP, ISO_FTYPE_ECMA };
 
@@ -208,14 +217,6 @@ struct iso_mnt {
 #define lblkno(imp, loc)		((loc) >> (imp)->im_bshift)
 #define blksize(imp, ip, lbn)	((imp)->logical_block_size)
 
-struct fid;
-struct mbuf;
-struct nameidata;
-struct proc;
-struct statfs;
-struct ucred;
-struct vfsconf;
-
 int cd9660_mount(struct mount *, char *, caddr_t, struct nameidata *, struct proc *);
 int cd9660_start(struct mount *, int, struct proc *);
 int cd9660_unmount(struct mount *, int, struct proc *);
@@ -236,6 +237,8 @@ extern struct vnodeops cd9660_specops;
 #ifdef FIFO
 extern struct vnodeops cd9660_fifoops;
 #endif
+
+/* end: cd9660_extern.h */
 
 /* 7.1.1: unsigned char */
 static __inline int
