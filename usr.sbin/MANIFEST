@@ -9,7 +9,7 @@ config/			NetBSD
 cron/			  2.11BSD
 dev_mkdb/		NetBSD
 link/			  NetBSD
-makefs/     FreeBSD
+makefs/     NetBSD / FreeBSD
 makemandb/  NetBSD
 mdsetimage/	NetBSD
 mtree/			NetBSD
