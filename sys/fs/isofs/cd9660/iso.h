@@ -137,6 +137,14 @@ enum ISO_FTYPE  { ISO_FTYPE_DEFAULT, ISO_FTYPE_9660, ISO_FTYPE_RRIP, ISO_FTYPE_E
 #define	ISOFSMNT_ROOT	0
 #endif
 
+struct fid;
+struct mbuf;
+struct nameidata;
+struct proc;
+struct statfs;
+struct ucred;
+struct vfsconf;
+
 struct iso_mnt {
 	int im_flags;
 	int im_joliet_level;
