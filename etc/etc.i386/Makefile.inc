@@ -16,5 +16,11 @@ INSTALLATION_DIRS+=	installation/cdrom
 INSTALLATION_DIRS+=	installation/floppy
 
 # i386 specific distrib stuff
-#snap_md_post:
-#	cd ${NETBSDSRCDIR}/stand/boot/arch/i386 && ${MAKE} release
+snap_md_post:
+	  cd ${NETBSDSRCDIR}/distrib && ${MAKE} depend && ${MAKE}
+	  cd ${NETBSDSRCDIR}/distrib/i386 && ${MAKE} release
+	  cd ${NETBSDSRCDIR}/distrib/notes && ${MAKE} release
+	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/cdrom '*.iso'
+	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/floppy '*.fs'
+	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/miniroot '*.*'
+	  ${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/misc '*.*'
