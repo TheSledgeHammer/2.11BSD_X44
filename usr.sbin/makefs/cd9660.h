@@ -39,6 +39,10 @@
 #ifndef _MAKEFS_CD9660_H
 #define _MAKEFS_CD9660_H
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <inttypes.h>
 #include <assert.h>
 #include <errno.h>
@@ -320,7 +324,7 @@ void	debug_print_volume_descriptor_information(iso9660_disk *);
 void	debug_dump_to_xml_ptentry(path_table_entry *,int, int);
 void	debug_dump_to_xml_path_table(FILE *, off_t, int, int);
 void	debug_dump_to_xml(FILE *);
-int	debug_get_encoded_number(const unsigned char *, int);
+int		debug_get_encoded_number(const unsigned char *, int);
 void	debug_dump_integer(const char *, const unsigned char *, int);
 void	debug_dump_string(const char *, const unsigned char *, int);
 void	debug_dump_directory_record_9_1(unsigned char *);

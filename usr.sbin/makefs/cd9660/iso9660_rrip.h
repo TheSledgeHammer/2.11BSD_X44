@@ -50,44 +50,44 @@
 #include "cd9660.h"
 #include <sys/queue.h>
 
-#define	 PX_LENGTH	   0x2C
-#define	 PN_LENGTH	   0x14
-#define	 TF_CREATION	   0x01
-#define	 TF_MODIFY	   0x02
-#define	 TF_ACCESS	   0x04
-#define	 TF_ATTRIBUTES	   0x08
-#define	 TF_BACKUP	   0x10
-#define	 TF_EXPIRATION	   0x20
-#define	 TF_EFFECTIVE	   0x40
-#define	 TF_LONG_FORM	   0x80
-#define	 NM_CONTINUE	   0x01
-#define	 NM_CURRENT	   0x02
-#define	 NM_PARENT	   0x04
+#define	 PX_LENGTH	   		0x2C
+#define	 PN_LENGTH	   		0x14
+#define	 TF_CREATION	   	0x00
+#define	 TF_MODIFY	   		0x01
+#define	 TF_ACCESS	  	 	0x02
+#define	 TF_ATTRIBUTES	   	0x04
+#define	 TF_BACKUP	   		0x08
+#define	 TF_EXPIRATION	   	0x10
+#define	 TF_EFFECTIVE	   	0x20
+#define	 TF_LONGFORM	   	0x40
+#define  NM_CONTINUE	   	0x80
+#define	 NM_CURRENT	   		0x100
+#define	 NM_PARENT	   		0x200
 
 
-#define	 SUSP_LOC_ENTRY	   0x01
-#define	 SUSP_LOC_DOT	   0x02
-#define	 SUSP_LOC_DOTDOT   0x04
+#define	 SUSP_LOC_ENTRY	   	0x01
+#define	 SUSP_LOC_DOT	   	0x02
+#define	 SUSP_LOC_DOTDOT   	0x04
 
-#define SUSP_TYPE_SUSP		1
-#define SUSP_TYPE_RRIP		2
+#define SUSP_TYPE_SUSP			1
+#define SUSP_TYPE_RRIP			2
 
-#define SUSP_ENTRY_SUSP_CE	1
-#define SUSP_ENTRY_SUSP_PD	2
-#define SUSP_ENTRY_SUSP_SP	3
-#define SUSP_ENTRY_SUSP_ST	4
-#define SUSP_ENTRY_SUSP_ER	5
-#define SUSP_ENTRY_SUSP_ES	6
+#define SUSP_ENTRY_SUSP_CE		1
+#define SUSP_ENTRY_SUSP_PD		2
+#define SUSP_ENTRY_SUSP_SP		3
+#define SUSP_ENTRY_SUSP_ST		4
+#define SUSP_ENTRY_SUSP_ER		5
+#define SUSP_ENTRY_SUSP_ES		6
 
-#define SUSP_ENTRY_RRIP_PX	1
-#define SUSP_ENTRY_RRIP_PN	2
-#define SUSP_ENTRY_RRIP_SL	3
-#define SUSP_ENTRY_RRIP_NM	4
-#define SUSP_ENTRY_RRIP_CL	5
-#define SUSP_ENTRY_RRIP_PL	6
-#define SUSP_ENTRY_RRIP_RE	7
-#define SUSP_ENTRY_RRIP_TF	8
-#define SUSP_ENTRY_RRIP_SF	9
+#define SUSP_ENTRY_RRIP_PX		1
+#define SUSP_ENTRY_RRIP_PN		2
+#define SUSP_ENTRY_RRIP_SL		3
+#define SUSP_ENTRY_RRIP_NM		4
+#define SUSP_ENTRY_RRIP_CL		5
+#define SUSP_ENTRY_RRIP_PL		6
+#define SUSP_ENTRY_RRIP_RE		7
+#define SUSP_ENTRY_RRIP_TF		8
+#define SUSP_ENTRY_RRIP_SF		9
 
 #define SUSP_RRIP_ER_EXT_ID "IEEE_P1282"
 #define SUSP_RRIP_ER_EXT_DES "THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS."
@@ -101,17 +101,17 @@
 
 typedef struct {
 	ISO_SUSP_HEADER		 h;
-	u_char mode		[ISODCL(5,12)];
+	u_char mode			[ISODCL(5,12)];
 	u_char links		[ISODCL(13,20)];
-	u_char uid		[ISODCL(21,28)];
-	u_char gid		[ISODCL(29,36)];
+	u_char uid			[ISODCL(21,28)];
+	u_char gid			[ISODCL(29,36)];
 	u_char serial		[ISODCL(37,44)];
 } ISO_RRIP_PX;
 
 typedef struct {
 	ISO_SUSP_HEADER		 h;
-	u_char high		[ISODCL(5,12)];
-	u_char low		[ISODCL(13,20)];
+	u_char high			[ISODCL(5,12)];
+	u_char low			[ISODCL(13,20)];
 } ISO_RRIP_PN;
 
 typedef struct {
@@ -179,23 +179,23 @@ typedef struct {
 } ISO_SUSP_ES;
 
 typedef union {
-	ISO_RRIP_PX			PX;
-	ISO_RRIP_PN			PN;
-	ISO_RRIP_SL			SL;
-	ISO_RRIP_NM			NM;
+	ISO_RRIP_PX				PX;
+	ISO_RRIP_PN				PN;
+	ISO_RRIP_SL				SL;
+	ISO_RRIP_NM				NM;
 	ISO_RRIP_CLINK			CL;
 	ISO_RRIP_PLINK			PL;
 	ISO_RRIP_RELDIR			RE;
-	ISO_RRIP_TF			TF;
+	ISO_RRIP_TF				TF;
 } rrip_entry;
 
 typedef union {
-	ISO_SUSP_CE			CE;
-	ISO_SUSP_PD			PD;
-	ISO_SUSP_SP			SP;
-	ISO_SUSP_ST			ST;
-	ISO_SUSP_ER			ER;
-	ISO_SUSP_ES			ES;
+	ISO_SUSP_CE				CE;
+	ISO_SUSP_PD				PD;
+	ISO_SUSP_SP				SP;
+	ISO_SUSP_ST				ST;
+	ISO_SUSP_ER				ER;
+	ISO_SUSP_ES				ES;
 } susp_entry;
 
 typedef union {
