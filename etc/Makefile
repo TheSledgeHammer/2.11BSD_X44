@@ -296,7 +296,78 @@ release snapshot: .PHONY .MAKE check_DESTDIR check_RELEASEDIR snap_md_post
 		${KERNEL_SETS:@.SETS.@kern-${.SETS.}.${TAR_SUFF}@}
 	${MAKESUMS} -t ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel '*.gz'
 
+# iso-image --
+#	Standalone target to create a CDROM image after the release
+#	was composed.  Should be run after "make release" in src and xsrc.
+#	The do-iso-image is to be called from etc.$MACHINE/Makefile.inc
+#
+#	Note: At least mkisofs 2.0 should be used.
+#
+CDROM_NAME_ADD?=
+CDROM_IMAGE?=${RELEASEDIR}/images/211BSD-${DISTRIBVER}-${MACHINE}.iso
+CDROM.dir=	${.OBJDIR}/cdrom.dir
+CDROM.pathlist=	${.OBJDIR}/cdrom.pathlist
+
+iso-image:
+
+.if ${MKISOFS} != true
+do-iso-image: .PHONY check_DESTDIR check_RELEASEDIR iso-image-md-post
+	${MAKESUMS} -t ${RELEASEDIR}/images/ '*.iso'
+	@echo "iso-image created as: ${CDROM_IMAGE}"
+.else
+do-iso-image:
+	@echo iso-image: mkisofs not found
+.endif
+
+iso-image-setup: .PHONY check_RELEASEDIR
+	rm -f ${CDROM.pathlist}
+.for extra in README SOURCE_DATE source
+.if exists(${RELEASEDIR}/${extra})
+	echo "${extra}=${RELEASEDIR}/${extra}" >> ${CDROM.pathlist}
+.endif
+.endfor
+	echo "${MACHINE}/=${RELEASEDIR}/${RELEASEMACHINEDIR}/" >> ${CDROM.pathlist}
+	mkdir -p ${CDROM.dir}
+
+check_imagedir:
+	mkdir -p ${RELEASEDIR}/images
+
+# iso-image-mi --
+#	Create the image after the MD operations have completed.
+#
+iso-image-mi: .PHONY check_DESTDIR check_RELEASEDIR iso-image-md-pre check_imagedir
+	@if ! ${MKISOFS} --version; then \
+		echo "install pkgsrc/sysutils/cdrtools and run 'make iso-image'." ; \
+		false; \
+	fi
+	${MKISOFS} ${MKISOFS_FLAGS} -graft-points -path-list ${CDROM.pathlist} \
+	    -o ${CDROM_IMAGE} ${CDROM.dir}
+
+# iso-image-md-pre --
+#	Setup ${CDROM.dir} to produce a bootable CD image.
+#	Overridden by etc.$MACHINE/Makefile.inc
+#
+iso-image-md-pre: .PHONY check_DESTDIR check_RELEASEDIR iso-image-setup
+#	(empty -- look in the machine-dependent Makefile.inc)
+
+# iso-image-md-post --
+#	Fixup the CD-image to be bootable.
+#	Overridden by etc.$MACHINE/Makefile.inc
+#
+iso-image-md-post: .PHONY check_DESTDIR check_RELEASEDIR iso-image-mi
+#	(empty -- look in the machine-dependent Makefile.inc)
+
 # TODO: Complete when ready
+
+# snap_md_post --
+#	Machine dependent distribution media operations.
+#	Overridden by etc.$MACHINE/Makefile.inc
+#
+snap_md_post: .PHONY check_DESTDIR check_RELEASEDIR snap_post
+#	(empty -- look in the machine-dependent Makefile.inc)
+
+clean:
+	-rm -rf ${CDROM.dir} ${CDROM.pathlist}
 
 SUBDIR=	defaults periodic rc.d mtree
 
