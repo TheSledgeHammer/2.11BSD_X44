@@ -1,8 +1,6 @@
-/* $NetBSD: cd9660_archimedes.c,v 1.1 2009/01/10 22:06:29 bjh21 Exp $ */
+/* $NetBSD: cd9660_archimedes.c,v 1.3 2022/04/09 10:05:35 riastradh Exp $ */
 
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
  * Copyright (c) 1998, 2009 Ben Harris
  * All rights reserved.
  *
@@ -16,7 +14,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -39,8 +37,14 @@
  * RISC OS filenames do).
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+#if defined(__RCSID) && !defined(__lint)
+__RCSID("$NetBSD: cd9660_archimedes.c,v 1.3 2022/04/09 10:05:35 riastradh Exp $");
+#endif  /* !__lint */
 
 #include <assert.h>
 #include <stdint.h>

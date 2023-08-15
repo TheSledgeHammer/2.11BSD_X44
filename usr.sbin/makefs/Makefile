@@ -4,7 +4,7 @@
 .include <bsd.own.mk>
 
 PROG=	makefs
-SRCS=   ffs.c
+SRCS=   ffs.c #cd9660.c 
 SRCS+=	getid.c makefs.c misc.c pack_dev.c spec.c walk.c 
 MAN=	makefs.8
 

@@ -1,8 +1,6 @@
-/* $NetBSD: cd9660_archimedes.h,v 1.1 2009/01/10 22:06:29 bjh21 Exp $ */
+/* $NetBSD: cd9660_archimedes.h,v 1.2 2022/04/09 10:05:35 riastradh Exp $ */
 
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
  * Copyright (c) 1998, 2009 Ben Harris
  * All rights reserved.
  *
@@ -16,7 +14,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -30,23 +28,21 @@
  */
 /*
  * cd9660_archimedes.c - support for RISC OS "ARCHIMEDES" extension
- *
- * $FreeBSD$
  */
 
 struct ISO_ARCHIMEDES {
-	char		magic[10];	/* "ARCHIMEDES" */
-	unsigned char	loadaddr[4];	/* Load address, little-endian */
-	unsigned char	execaddr[4];	/* Exec address, little-endian */
-	unsigned char	ro_attr;	/* RISC OS attributes */
+	char		        magic[10];	    /* "ARCHIMEDES" */
+	unsigned char	    loadaddr[4];	/* Load address, little-endian */
+	unsigned char	    execaddr[4];	/* Exec address, little-endian */
+	unsigned char	    ro_attr;	    /* RISC OS attributes */
 #define RO_ACCESS_UR	0x01 /* Owner read */
 #define RO_ACCESS_UW	0x02 /* Owner write */
-#define RO_ACCESS_L	0x04 /* Locked */
+#define RO_ACCESS_L	    0x04 /* Locked */
 #define RO_ACCESS_OR	0x10 /* Public read */
 #define RO_ACCESS_OW	0x20 /* Public write */
-	unsigned char	cdfs_attr;	/* Extra attributes for CDFS */
-#define CDFS_PLING	0x01	/* Filename begins with '!' */
-	char		reserved[12];
+	unsigned char	    cdfs_attr;	    /* Extra attributes for CDFS */
+#define CDFS_PLING	    0x01	        /* Filename begins with '!' */
+	char		        reserved[12];
 };
 
 extern void archimedes_convert_tree(cd9660node *);

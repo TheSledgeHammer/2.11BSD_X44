@@ -1,8 +1,6 @@
 /*	$NetBSD: cd9660_strings.c,v 1.4 2007/01/16 17:32:05 hubertf Exp $	*/
 
-/*-
- * SPDX-License-Identifier: BSD-2-Clause
- *
+/*
  * Copyright (c) 2005 Daniel Watt, Walter Deignan, Ryan Gabrys, Alan
  * Perez-Rathke and Ram Vedam.  All rights reserved.
  *
@@ -34,21 +32,28 @@
  * OF SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#else
 #include <sys/mount.h>
+#endif
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <ctype.h>
 
 #include "makefs.h"
 #include "cd9660.h"
 
+#if defined(__RCSID) && !defined(__lint)
+__RCSID("$NetBSD: cd9660_strings.c,v 1.4 2007/01/16 17:32:05 hubertf Exp $");
+#endif  /* !__lint */
+
 
 void
-cd9660_uppercase_characters(char *str, size_t len)
+cd9660_uppercase_characters(char *str, int len)
 {
-	size_t p;
+	int p;
 
 	for (p = 0; p < len; p++) {
 		if (islower((unsigned char)str[p]) )
@@ -57,19 +62,19 @@ cd9660_uppercase_characters(char *str, size_t len)
 }
 
 static inline int
-cd9660_is_d_char(char c)
-{
-	return (isupper((unsigned char)c)
-		|| c == '_'
-		|| (c >= '0' && c <= '9'));
-}
-
-static inline int
 cd9660_is_a_char(char c)
 {
 	return (isupper((unsigned char)c)
+		|| c == '_'
+		|| (c >= '0' && c <= '?'));
+}
+
+static inline int
+cd9660_is_d_char(char c)
+{
+	return (isupper((unsigned char)c)
 			|| c == '_'
-			|| (c >= '%' && c <= '?')
+			|| (c >= '%' && c <= '9')
 			|| (c >= ' ' && c <= '\"'));
 }
 

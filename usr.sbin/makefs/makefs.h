@@ -174,6 +174,11 @@ void        ffs_prep_opts(fsinfo_t *)
 int         ffs_parse_opts(const char *, fsinfo_t *)
 void        ffs_cleanup_opts(fsinfo_t *);
 void        ffs_makefs(const char *, const char *, fsnode *, fsinfo_t *);
+
+void		cd9660_prep_opts(fsinfo_t *);
+int		    cd9660_parse_opts(const char *, fsinfo_t *);
+void		cd9660_cleanup_opts(fsinfo_t *);
+void		cd9660_makefs(const char *, const char *, fsnode *, fsinfo_t *);
 */
 
 void		apply_specfile(const char *, const char *, fsnode *, int);
@@ -192,6 +197,7 @@ void		fs ## _cleanup_opts(fsinfo_t *);					\
 void		fs ## _makefs(const char *, const char *, fsnode *, fsinfo_t *)
 
 DECLARE_FUN(ffs);
+//DECLARE_FUN(cd9660);
 
 extern	u_int		debug;
 extern	struct timespec	start_time;
