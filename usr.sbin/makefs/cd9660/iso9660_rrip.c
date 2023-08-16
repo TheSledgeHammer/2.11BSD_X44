@@ -1,4 +1,4 @@
-/*	$NetBSD: iso9660_rrip.c,v 1.16 2023/04/18 23:02:51 christos Exp $	*/
+/*	$NetBSD: iso9660_rrip.c,v 1.14 2014/05/30 13:14:47 martin Exp $	*/
 
 /*
  * Copyright (c) 2005 Daniel Watt, Walter Deignan, Ryan Gabrys, Alan
@@ -40,15 +40,17 @@
 #include "iso9660_rrip.h"
 #include <sys/queue.h>
 #include <stdio.h>
+#include <util.h>
 
 #include <sys/cdefs.h>
 #if defined(__RCSID) && !defined(__lint)
-__RCSID("$NetBSD: iso9660_rrip.c,v 1.4.18.5 2011/07/15 22:39:02 riz Exp $");
+__RCSID("$NetBSD: iso9660_rrip.c,v 1.14 2014/05/30 13:14:47 martin Exp $");
 #endif  /* !__lint */
 
 static void cd9660_rrip_initialize_inode(cd9660node *);
 static int cd9660_susp_handle_continuation(iso9660_disk *, cd9660node *);
-static int cd9660_susp_handle_continuation_common(iso9660_disk *, cd9660node *, int);
+static int cd9660_susp_handle_continuation_common(iso9660_disk *, cd9660node *,
+    int);
 
 int
 cd9660_susp_initialize(iso9660_disk *diskStructure, cd9660node *node,
@@ -166,7 +168,8 @@ cd9660_susp_finalize_node(iso9660_disk *diskStructure, cd9660node *node)
 }
 
 int
-cd9660_rrip_finalize_node(iso9660_disk *diskStructure __unused, cd9660node *node)
+cd9660_rrip_finalize_node(iso9660_disk *diskStructure __unused,
+    cd9660node *node)
 {
 	struct ISO_SUSP_ATTRIBUTES *t;
 
@@ -199,7 +202,8 @@ cd9660_rrip_finalize_node(iso9660_disk *diskStructure __unused, cd9660node *node
 }
 
 static int
-cd9660_susp_handle_continuation_common(iso9660_disk *diskStructure, cd9660node *node, int space)
+cd9660_susp_handle_continuation_common(iso9660_disk *diskStructure,
+    cd9660node *node, int space)
 {
 	int ca_used, susp_used, susp_used_pre_ce, working;
 	struct ISO_SUSP_ATTRIBUTES *temp, *pre_ce, *last, *CE, *ST;
@@ -241,10 +245,11 @@ cd9660_susp_handle_continuation_common(iso9660_disk *diskStructure, cd9660node *
 			SUSP_ENTRY_SUSP_CE, "CE", SUSP_LOC_ENTRY);
 		cd9660_susp_ce(CE, node);
 		/* This will automatically insert at the appropriate location */
-		if (pre_ce != NULL)
+		if (pre_ce != NULL) {
 			TAILQ_INSERT_AFTER(&node->head, pre_ce, CE, rr_ll);
-		else
+		} else {
 			TAILQ_INSERT_HEAD(&node->head, CE, rr_ll);
+        }
 		last = CE;
 		susp_used = susp_used_pre_ce + 28;
 		/* Count how much CA data is necessary */
@@ -259,15 +264,17 @@ cd9660_susp_handle_continuation_common(iso9660_disk *diskStructure, cd9660node *
 		ST = cd9660node_susp_create_node(SUSP_TYPE_SUSP,
 		    SUSP_ENTRY_SUSP_ST, "ST", SUSP_LOC_ENTRY);
 		cd9660_susp_st(ST, node);
-		if (last != NULL)
+		if (last != NULL) {
 			TAILQ_INSERT_AFTER(&node->head, last, ST, rr_ll);
-		else
+		} else {
 			TAILQ_INSERT_HEAD(&node->head, ST, rr_ll);
+        }
 		last = ST;
 		susp_used += 4;
 	}
-	if (last != NULL)
+	if (last != NULL) {
 		last->last_in_suf = 1;
+    }
 
 	node->susp_entry_size = susp_used;
 	node->susp_entry_ce_length = ca_used;
@@ -409,11 +416,25 @@ cd9660_rrip_initialize_node(iso9660_disk *diskStructure, cd9660node *node,
 	} else {
 		cd9660_rrip_initialize_inode(node);
 
+		/*
+		 * Not every node needs a NM set - only if the name is
+		 * actually different. IE: If a file is TEST -> TEST,
+		 * no NM. test -> TEST, need a NM
+		 *
+		 * The rr_moved_dir needs to be assigned a NM record as well.
+		 */
 		if (node == diskStructure->rr_moved_dir) {
 			cd9660_rrip_add_NM(node, RRIP_DEFAULT_MOVE_DIR_NAME);
-		} else if (node->node != NULL) {
+		}
+		else if ((node->node != NULL) &&
+			((strlen(node->node->name) !=
+			    (uint8_t)node->isoDirRecord->name_len[0]) ||
+			(memcmp(node->node->name,node->isoDirRecord->name,
+				(uint8_t)node->isoDirRecord->name_len[0]) != 0))) {
 			cd9660_rrip_NM(node);
 		}
+
+
 
 		/* Rock ridge directory relocation code here. */
 
@@ -679,11 +700,11 @@ cd9660node_rrip_tf(struct ISO_SUSP_ATTRIBUTES *p, fsnode *_node)
 	 */
 
 	cd9660_time_915(p->attr.rr_entry.TF.timestamp,
-		_node->inode->st.st_mtime);
+		_node->inode->st.st_atime);
 	p->attr.rr_entry.TF.h.length[0] += 7;
 
 	cd9660_time_915(p->attr.rr_entry.TF.timestamp + 7,
-		_node->inode->st.st_atime);
+		_node->inode->st.st_mtime);
 	p->attr.rr_entry.TF.h.length[0] += 7;
 
 	cd9660_time_915(p->attr.rr_entry.TF.timestamp + 14,

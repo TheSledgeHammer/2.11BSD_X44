@@ -4,7 +4,7 @@
 .include <bsd.own.mk>
 
 PROG=	makefs
-SRCS=   ffs.c #cd9660.c 
+SRCS=   cd9660.c ffs.c
 SRCS+=	getid.c makefs.c misc.c pack_dev.c spec.c walk.c 
 MAN=	makefs.8
 
@@ -15,15 +15,20 @@ CPPFLAGS+=	-I${.CURDIR} -I${MKNODSRC} -I${MTREESRC}
 #CPPFLAGS+=	-DMSDOSFS_DEBUG
 .PATH:		${MKNODSRC} ${MTREESRC}
 
-#.include "${.CURDIR}/cd9660/Makefile.inc"
+.include "${.CURDIR}/cd9660/Makefile.inc"
 .include "${.CURDIR}/ffs/Makefile.inc"
 #.include "${.CURDIR}/msdos/Makefile.inc"
 
-.if (${HOSTPROG:U} == "")
-DPADD+= ${LIBUTIL}
-LDADD+= -lutil
+.if defined(HOSTPROG)
+LDADD+=	-lm
+.else
+DPADD+= ${LIBUTIL} ${LIBM}
+LDADD+= -lutil -lm
+
+COPTS.cd9660.c+=		${GCC_NO_STRINGOP_TRUNCATION} ${GCC_NO_FORMAT_TRUNCATION}
+COPTS.cd9660_conversion.c+=	${GCC_NO_FORMAT_TRUNCATION}
 .endif
 
-WARNS?=	3
+WARNS?=5
 
 .include <bsd.prog.mk>

@@ -31,18 +31,18 @@
  */
 
 struct ISO_ARCHIMEDES {
-	char		        magic[10];	    /* "ARCHIMEDES" */
-	unsigned char	    loadaddr[4];	/* Load address, little-endian */
-	unsigned char	    execaddr[4];	/* Exec address, little-endian */
-	unsigned char	    ro_attr;	    /* RISC OS attributes */
+	char		magic[10];	/* "ARCHIMEDES" */
+	unsigned char	loadaddr[4];	/* Load address, little-endian */
+	unsigned char	execaddr[4];	/* Exec address, little-endian */
+	unsigned char	ro_attr;	/* RISC OS attributes */
 #define RO_ACCESS_UR	0x01 /* Owner read */
 #define RO_ACCESS_UW	0x02 /* Owner write */
-#define RO_ACCESS_L	    0x04 /* Locked */
+#define RO_ACCESS_L	0x04 /* Locked */
 #define RO_ACCESS_OR	0x10 /* Public read */
 #define RO_ACCESS_OW	0x20 /* Public write */
-	unsigned char	    cdfs_attr;	    /* Extra attributes for CDFS */
-#define CDFS_PLING	    0x01	        /* Filename begins with '!' */
-	char		        reserved[12];
+	unsigned char	cdfs_attr;	/* Extra attributes for CDFS */
+#define CDFS_PLING	0x01	/* Filename begins with '!' */
+	char		reserved[12];
 };
 
 extern void archimedes_convert_tree(cd9660node *);

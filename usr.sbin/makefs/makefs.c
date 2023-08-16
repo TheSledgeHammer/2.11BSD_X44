@@ -55,11 +55,11 @@ __RCSID("$NetBSD: makefs.c,v 1.55 2022/04/09 10:05:35 riastradh Exp $");
 #include <stdbool.h>
 #include <time.h>
 #include <unistd.h>
-//#include <util.h>
+#include <util.h>
 
 #include "makefs.h"
 #include "mtree.h"
-//#include "cd9660.h"
+#include "cd9660.h"
 
 /*
  * list of supported file systems and dispatch functions
@@ -78,7 +78,7 @@ static fstype_t fstypes[] = {
 	name ## _cleanup_opts, name ## _makefs  \
 }
 	ENTRY(ffs),
-//    ENTRY(cd9660),
+    ENTRY(cd9660),
 	{ .type = NULL	},
 };
 

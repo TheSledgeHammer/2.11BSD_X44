@@ -1,4 +1,4 @@
-/*	$NetBSD: cd9660_write.c,v 1.9.4.1 2010/01/02 06:45:03 snj Exp $	*/
+/*	$NetBSD: cd9660_write.c,v 1.17 2013/10/19 17:16:37 christos Exp $	*/
 
 /*
  * Copyright (c) 2005 Daniel Watt, Walter Deignan, Ryan Gabrys, Alan
@@ -37,27 +37,17 @@
 
 #include <sys/cdefs.h>
 #if defined(__RCSID) && !defined(__lint)
-__RCSID("$NetBSD: cd9660_write.c,v 1.9.4.1 2010/01/02 06:45:03 snj Exp $");
+__RCSID("$NetBSD: cd9660_write.c,v 1.17 2013/10/19 17:16:37 christos Exp $");
 #endif  /* !__lint */
 
-//#include <util.h>
-
-static int cd9660_write_volume_descriptors(FILE *);
-static int cd9660_write_path_table(FILE *, int, int);
-static int cd9660_write_path_tables(FILE *);
-static int cd9660_write_file(FILE *, cd9660node *);
-static int cd9660_write_filedata(FILE *, int, const unsigned char *, int);
-#if 0
-static int cd9660_write_buffered(FILE *, int, int, const unsigned char*);
-#endif
-static void cd9660_write_rr(FILE *, cd9660node *, int, int);
-
+#include <util.h>
 
 static int cd9660_write_volume_descriptors(iso9660_disk *, FILE *);
 static int cd9660_write_path_table(iso9660_disk *, FILE *, off_t, int);
 static int cd9660_write_path_tables(iso9660_disk *, FILE *);
 static int cd9660_write_file(iso9660_disk *, FILE *, cd9660node *);
-static int cd9660_write_filedata(iso9660_disk *, FILE *, off_t, const unsigned char *, int);
+static int cd9660_write_filedata(iso9660_disk *, FILE *, off_t,
+    const unsigned char *, int);
 #if 0
 static int cd9660_write_buffered(FILE *, off_t, int, const unsigned char *);
 #endif
@@ -172,7 +162,8 @@ cd9660_write_volume_descriptors(iso9660_disk *diskStructure, FILE *fd)
  * @returns int 1 on success, 0 on failure
  */
 static int
-cd9660_write_path_table(iso9660_disk *diskStructure, FILE *fd, off_t sector, int mode)
+cd9660_write_path_table(iso9660_disk *diskStructure, FILE *fd, off_t sector,
+    int mode)
 {
 	int path_table_sectors = CD9660_BLOCKS(diskStructure->sectorSize,
 	    diskStructure->pathTableLength);
@@ -220,7 +211,8 @@ cd9660_write_path_table(iso9660_disk *diskStructure, FILE *fd, off_t sector, int
 		ptcur = ptcur->ptnext;
 	}
 
-	return cd9660_write_filedata(diskStructure, fd, sector, buffer_head, path_table_sectors);
+	return cd9660_write_filedata(diskStructure, fd, sector, buffer_head,
+	    path_table_sectors);
 }
 
 
@@ -416,11 +408,11 @@ cd9660_write_filedata(iso9660_disk *diskStructure, FILE *fd, off_t sector,
 
 #if 0
 static int
-cd9660_write_buffered(FILE *fd, int offset, int buff_len,
+cd9660_write_buffered(FILE *fd, off_t offset, int buff_len,
 		      const unsigned char* buffer)
 {
 	static int working_sector = -1;
-	static char buf[2048];
+	static char buf[CD9660_SECTOR_SIZE];
 
 	return 0;
 }
@@ -472,7 +464,6 @@ cd9660_copy_file(iso9660_disk *diskStructure, FILE *fd, off_t start_sector,
 	free(buf);
 	return 1;
 }
-
 
 static void
 cd9660_write_rr(iso9660_disk *diskStructure, FILE *fd, cd9660node *writenode,

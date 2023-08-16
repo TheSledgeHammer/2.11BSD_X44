@@ -35,7 +35,7 @@
 
 #include <sys/cdefs.h>
 #if defined(__RCSID) && !defined(__lint)
-__RCSID("$NetBSD: cd9660_conversion.c,v 1.4 2007/03/14 14:11:17 christos Exp $");
+__RCSID("$NetBSD: cd9660_conversion.c,v 1.5 2017/02/08 21:33:12 christos Exp $");
 #endif  /* !__lint */
 
 

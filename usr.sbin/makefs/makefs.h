@@ -197,7 +197,7 @@ void		fs ## _cleanup_opts(fsinfo_t *);					\
 void		fs ## _makefs(const char *, const char *, fsnode *, fsinfo_t *)
 
 DECLARE_FUN(ffs);
-//DECLARE_FUN(cd9660);
+DECLARE_FUN(cd9660);
 
 extern	u_int		debug;
 extern	struct timespec	start_time;

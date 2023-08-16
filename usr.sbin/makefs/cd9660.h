@@ -1,4 +1,4 @@
-/*	$NetBSD: cd9660.h,v 1.12.4.1 2010/01/02 06:45:03 snj Exp $	*/
+/*	$NetBSD: cd9660.h,v 1.21 2015/12/24 15:52:37 christos Exp $	*/
 
 /*
  * Copyright (c) 2005 Daniel Watt, Walter Deignan, Ryan Gabrys, Alan
@@ -51,6 +51,7 @@
 #include <limits.h>
 #include <sys/queue.h>
 #include <sys/param.h>
+#include <sys/endian.h>
 
 #include "makefs.h"
 #include "iso.h"
@@ -120,22 +121,16 @@ typedef struct {
 #define CD9660_MEM_ALLOC_ERROR(_F)	\
     err(EXIT_FAILURE, "%s, %s l. %d", _F, __FILE__, __LINE__)
 
-#define CD9660_IS_COMMAND_ARG_DUAL(var,short,long)\
-		(strcmp((var),(short)) == 0) || (strcmp((var),(long))==0)
-
-#define CD9660_IS_COMMAND_ARG(var,arg)\
-		(strcmp((var),(arg)) == 0)
-
 #define CD9660_TYPE_FILE	0x01
 #define CD9660_TYPE_DIR		0x02
 #define CD9660_TYPE_DOT		0x04
 #define CD9660_TYPE_DOTDOT	0x08
-#define CD9660_TYPE_VIRTUAL 0x80
+#define CD9660_TYPE_VIRTUAL	0x80
 
-#define CD9660_INODE_HASH_SIZE 1024
+#define CD9660_INODE_HASH_SIZE	1024
 #define CD9660_SECTOR_SIZE	2048
 
-#define CD9660_END_PADDING 150
+#define CD9660_END_PADDING	150
 
 /* Slight modification of the ISO structure in iso.h */
 typedef struct _iso_directory_record_cd9660 {
@@ -181,10 +176,7 @@ typedef struct _cd9660node {
 	 */
 	int64_t fileDataLength;
 
-	/*
-	 * XXXfvdl sectors are int
-	 */
-	int fileSectorsUsed;
+	int64_t fileSectorsUsed;
 	int fileRecordSize;/*copy of a variable, int for quicker calculations*/
 
 	/* Old name, used for renaming - needs to be optimized but low priority */
@@ -196,21 +188,21 @@ typedef struct _cd9660node {
 	/* For Rock Ridge */
 	struct _cd9660node *rr_real_parent, *rr_relocated;
 
-	int susp_entry_size;
-	int susp_dot_entry_size;
-	int susp_dot_dot_entry_size;
+	int64_t susp_entry_size;
+	int64_t susp_dot_entry_size;
+	int64_t susp_dot_dot_entry_size;
 
 	/* Continuation area stuff */
-	int susp_entry_ce_start;
-	int susp_dot_ce_start;
-	int susp_dot_dot_ce_start;
+	int64_t susp_entry_ce_start;
+	int64_t susp_dot_ce_start;
+	int64_t susp_dot_dot_ce_start;
 
-	int susp_entry_ce_length;
-	int susp_dot_ce_length;
-	int susp_dot_dot_ce_length;
+	int64_t susp_entry_ce_length;
+	int64_t susp_dot_ce_length;
+	int64_t susp_dot_dot_ce_length;
 
 	/* Data to put at the end of the System Use field */
-	int su_tail_size;
+	int64_t su_tail_size;
 	char *su_tail_data;
 
 	/*** PATH TABLE STUFF ***/
@@ -234,7 +226,7 @@ typedef struct _path_table_entry
 typedef struct _volume_descriptor
 {
 	u_char *volumeDescriptorData; /*ALWAYS 2048 bytes long*/
-	int sector;
+	int64_t sector;
 	struct _volume_descriptor *next;
 } volume_descriptor;
 
@@ -247,26 +239,24 @@ typedef struct _iso9660_disk {
 
 	cd9660node *rootNode;
 
-	const char *rootFilesystemPath;
-
 	/* Important sector numbers here */
 	/* primaryDescriptor.type_l_path_table*/
-	int primaryBigEndianTableSector;
+	int64_t primaryBigEndianTableSector;
 
 	/* primaryDescriptor.type_m_path_table*/
-	int primaryLittleEndianTableSector;
+	int64_t primaryLittleEndianTableSector;
 
 	/* primaryDescriptor.opt_type_l_path_table*/
-	int secondaryBigEndianTableSector;
+	int64_t secondaryBigEndianTableSector;
 
 	/* primaryDescriptor.opt_type_m_path_table*/
-	int secondaryLittleEndianTableSector;
+	int64_t secondaryLittleEndianTableSector;
 
 	/* primaryDescriptor.path_table_size*/
 	int pathTableLength;
-	int dataFirstSector;
+	int64_t dataFirstSector;
 
-	int totalSectors;
+	int64_t totalSectors;
 	/* OPTIONS GO HERE */
 	int	isoLevel;
 
@@ -278,9 +268,9 @@ typedef struct _iso9660_disk {
 	int keep_bad_images;
 
 	/* SUSP options and variables */
-	int susp_continuation_area_start_sector;
-	int susp_continuation_area_size;
-	int susp_continuation_area_current_free;
+	int64_t susp_continuation_area_start_sector;
+	int64_t susp_continuation_area_size;
+	int64_t susp_continuation_area_current_free;
 
 	int rock_ridge_enabled;
 	/* Other Rock Ridge Variables */
@@ -305,7 +295,7 @@ typedef struct _iso9660_disk {
 	char *generic_bootimage;
 
 	int is_bootable;/* Default to 0 */
-	int boot_catalog_sector;
+	int64_t boot_catalog_sector;
 	boot_volume_descriptor *boot_descriptor;
 	char * boot_image_directory;
 
@@ -314,9 +304,6 @@ typedef struct _iso9660_disk {
 	LIST_HEAD(boot_catalog_entries,boot_catalog_entry) boot_entries;
 
 } iso9660_disk;
-
-/******** GLOBAL VARIABLES ***********/
-extern iso9660_disk diskStructure;
 
 /************ FUNCTIONS **************/
 int			cd9660_valid_a_chars(const char *);
