@@ -229,11 +229,6 @@ isonum_733(p)
 	return (p[0] |(p[1] << 8)|(p[2] << 16)|(p[3] << 24));
 }
 
-int isochar(const u_char *, const u_char *, int, u_char *);
-int isofncmp(const u_char *, int, const u_char *, int, int);
-void isofntrans(u_char *, int, u_char *, u_short *, int, int, int, int);
-ino_t isodirino(struct iso_directory_record *, struct iso_mnt *);
-
 /*
  * Associated files have a leading '='.
  */
