@@ -40,6 +40,8 @@
 __RCSID("$NetBSD: cd9660_write.c,v 1.9.4.1 2010/01/02 06:45:03 snj Exp $");
 #endif  /* !__lint */
 
+//#include <util.h>
+
 static int cd9660_write_volume_descriptors(FILE *);
 static int cd9660_write_path_table(FILE *, int, int);
 static int cd9660_write_path_tables(FILE *);
@@ -50,6 +52,17 @@ static int cd9660_write_buffered(FILE *, int, int, const unsigned char*);
 #endif
 static void cd9660_write_rr(FILE *, cd9660node *, int, int);
 
+
+static int cd9660_write_volume_descriptors(iso9660_disk *, FILE *);
+static int cd9660_write_path_table(iso9660_disk *, FILE *, off_t, int);
+static int cd9660_write_path_tables(iso9660_disk *, FILE *);
+static int cd9660_write_file(iso9660_disk *, FILE *, cd9660node *);
+static int cd9660_write_filedata(iso9660_disk *, FILE *, off_t, const unsigned char *, int);
+#if 0
+static int cd9660_write_buffered(FILE *, off_t, int, const unsigned char *);
+#endif
+static void cd9660_write_rr(iso9660_disk *, FILE *, cd9660node *, off_t, off_t);
+
 /*
  * Write the image
  * Writes the entire image
@@ -57,23 +70,23 @@ static void cd9660_write_rr(FILE *, cd9660node *, int, int);
  * @returns int 1 on success, 0 on failure
  */
 int
-cd9660_write_image(const char* image)
+cd9660_write_image(iso9660_disk *diskStructure, const char* image)
 {
 	FILE *fd;
 	int status;
-	char buf[2048];
+	char buf[CD9660_SECTOR_SIZE];
 
 	if ((fd = fopen(image, "w+")) == NULL) {
 		err(EXIT_FAILURE, "%s: Can't open `%s' for writing", __func__,
 		    image);
 	}
 
-	if (diskStructure.verbose_level > 0)
+	if (diskStructure->verbose_level > 0)
 		printf("Writing image\n");
 
-	if (diskStructure.has_generic_bootimage) {
-		status = cd9660_copy_file(fd, 0,
-		    diskStructure.generic_bootimage);
+	if (diskStructure->has_generic_bootimage) {
+		status = cd9660_copy_file(diskStructure, fd, 0,
+		    diskStructure->generic_bootimage);
 		if (status == 0) {
 			warnx("%s: Error writing generic boot image",
 			    __func__);
@@ -82,70 +95,68 @@ cd9660_write_image(const char* image)
 	}
 
 	/* Write the volume descriptors */
-	status = cd9660_write_volume_descriptors(fd);
+	status = cd9660_write_volume_descriptors(diskStructure, fd);
 	if (status == 0) {
 		warnx("%s: Error writing volume descriptors to image",
 		    __func__);
 		goto cleanup_bad_image;
 	}
 
-	if (diskStructure.verbose_level > 0)
+	if (diskStructure->verbose_level > 0)
 		printf("Volume descriptors written\n");
 
 	/*
 	 * Write the path tables: there are actually four, but right
 	 * now we are only concearned with two.
 	 */
-	status = cd9660_write_path_tables(fd);
+	status = cd9660_write_path_tables(diskStructure, fd);
 	if (status == 0) {
 		warnx("%s: Error writing path tables to image", __func__);
 		goto cleanup_bad_image;
 	}
 
-	if (diskStructure.verbose_level > 0)
+	if (diskStructure->verbose_level > 0)
 		printf("Path tables written\n");
 
 	/* Write the directories and files */
-	status = cd9660_write_file(fd, diskStructure.rootNode);
+	status = cd9660_write_file(diskStructure, fd, diskStructure->rootNode);
 	if (status == 0) {
 		warnx("%s: Error writing files to image", __func__);
 		goto cleanup_bad_image;
 	}
 
-	if (diskStructure.is_bootable) {
-		cd9660_write_boot(fd);
+	if (diskStructure->is_bootable) {
+		cd9660_write_boot(diskStructure, fd);
 	}
 
 	/* Write padding bits. This is temporary */
-	memset(buf, 0, 2048);
-	cd9660_write_filedata(fd, diskStructure.totalSectors - 1, buf, 1);
+	memset(buf, 0, CD9660_SECTOR_SIZE);
+	cd9660_write_filedata(diskStructure, fd,
+	    diskStructure->totalSectors - 1, buf, 1);
 
-	if (diskStructure.verbose_level > 0)
+	if (diskStructure->verbose_level > 0)
 		printf("Files written\n");
 	fclose(fd);
 
-	if (diskStructure.verbose_level > 0)
+	if (diskStructure->verbose_level > 0)
 		printf("Image closed\n");
 	return 1;
 
 cleanup_bad_image:
 	fclose(fd);
-	if (!diskStructure.keep_bad_images)
+	if (!diskStructure->keep_bad_images)
 		unlink(image);
-	if (diskStructure.verbose_level > 0)
+	if (diskStructure->verbose_level > 0)
 		printf("Bad image cleaned up\n");
 	return 0;
 }
 
 static int
-cd9660_write_volume_descriptors(FILE *fd)
+cd9660_write_volume_descriptors(iso9660_disk *diskStructure, FILE *fd)
 {
-	volume_descriptor *vd_temp = diskStructure.firstVolumeDescriptor;
-	int pos;
-
+	volume_descriptor *vd_temp = diskStructure->firstVolumeDescriptor;
 	while (vd_temp != NULL) {
-		pos = vd_temp->sector*diskStructure.sectorSize;
-		cd9660_write_filedata(fd, vd_temp->sector,
+		cd9660_write_filedata(diskStructure, fd, vd_temp->sector,
 		    vd_temp->volumeDescriptorData, 1);
 		vd_temp = vd_temp->next;
 	}
@@ -161,26 +172,20 @@ cd9660_write_volume_descriptors(FILE *fd)
  * @returns int 1 on success, 0 on failure
  */
 static int
-cd9660_write_path_table(FILE *fd, int sector, int mode)
+cd9660_write_path_table(iso9660_disk *diskStructure, FILE *fd, off_t sector, int mode)
 {
-	int path_table_sectors = CD9660_BLOCKS(diskStructure.sectorSize,
-	    diskStructure.pathTableLength);
+	int path_table_sectors = CD9660_BLOCKS(diskStructure->sectorSize,
+	    diskStructure->pathTableLength);
 	unsigned char *buffer;
 	unsigned char *buffer_head;
 	int len;
 	path_table_entry temp_entry;
 	cd9660node *ptcur;
 
-	buffer = malloc(diskStructure.sectorSize * path_table_sectors);
-	if (buffer == NULL) {
-		warnx("%s: Memory allocation error allocating buffer",
-		    __func__);
-		return 0;
-	}
+	buffer = ecalloc(path_table_sectors, diskStructure->sectorSize);
 	buffer_head = buffer;
-	memset(buffer, 0, diskStructure.sectorSize * path_table_sectors);
 
-	ptcur = diskStructure.rootNode;
+	ptcur = diskStructure->rootNode;
 
 	while (ptcur != NULL) {
 		memset(&temp_entry, 0, sizeof(path_table_entry));
@@ -215,8 +220,7 @@ cd9660_write_path_table(FILE *fd, int sector, int mode)
 		ptcur = ptcur->ptnext;
 	}
 
-	return cd9660_write_filedata(fd, sector, buffer_head,
-	    path_table_sectors);
+	return cd9660_write_filedata(diskStructure, fd, sector, buffer_head, path_table_sectors);
 }
 
 
@@ -235,14 +239,14 @@ cd9660_write_path_table(FILE *fd, int sector, int mode)
  * @returns int 0 on failure, 1 on success
  */
 static int
-cd9660_write_path_tables(FILE *fd)
+cd9660_write_path_tables(iso9660_disk *diskStructure, FILE *fd)
 {
-	if (cd9660_write_path_table(fd,
-	    diskStructure.primaryLittleEndianTableSector, LITTLE_ENDIAN) == 0)
+	if (cd9660_write_path_table(diskStructure, fd,
+	    diskStructure->primaryLittleEndianTableSector, LITTLE_ENDIAN) == 0)
 		return 0;
 
-	if (cd9660_write_path_table(fd,
-	    diskStructure.primaryBigEndianTableSector, BIG_ENDIAN) == 0)
+	if (cd9660_write_path_table(diskStructure, fd,
+	    diskStructure->primaryBigEndianTableSector, BIG_ENDIAN) == 0)
 		return 0;
 
 	/* @TODO: handle remaining two path tables */
@@ -261,30 +265,21 @@ cd9660_write_path_tables(FILE *fd)
  * @returns int 0 on failure, 1 on success
  */
 static int
-cd9660_write_file(FILE *fd, cd9660node *writenode)
+cd9660_write_file(iso9660_disk *diskStructure, FILE *fd, cd9660node *writenode)
 {
 	char *buf;
 	char *temp_file_name;
 	int ret;
-	int working_sector;
+	off_t working_sector;
 	int cur_sector_offset;
-	int written;
 	iso_directory_record_cd9660 temp_record;
 	cd9660node *temp;
 	int rv = 0;
 
 	/* Todo : clean up variables */
 
-	temp_file_name = malloc(CD9660MAXPATH + 1);
-	if (temp_file_name == NULL)
-		err(EXIT_FAILURE, "%s: malloc", __func__);
-
-	memset(temp_file_name, 0, CD9660MAXPATH + 1);
-
-	buf = malloc(diskStructure.sectorSize);
-	if (buf == NULL)
-		err(EXIT_FAILURE, "%s: malloc", __func__);
-
+	temp_file_name = ecalloc(CD9660MAXPATH + 1, 1);
+	buf = emalloc(diskStructure->sectorSize);
 	if ((writenode->level != 0) &&
 	    !(writenode->node->type & S_IFDIR)) {
 		fsinode *inode = writenode->node->inode;
@@ -297,9 +292,9 @@ cd9660_write_file(FILE *fd, cd9660node *writenode)
 			    __func__, (int)inode->st.st_ino, inode->ino));
 			inode->flags |= FI_WRITTEN;
 			cd9660_compute_full_filename(writenode,
-			    temp_file_name, 0);
-			ret = cd9660_copy_file(fd, writenode->fileDataSector,
 			    temp_file_name);
+			ret = cd9660_copy_file(diskStructure, fd,
+			    writenode->fileDataSector, temp_file_name);
 			if (ret == 0)
 				goto out;
 		}
@@ -316,7 +311,9 @@ cd9660_write_file(FILE *fd, cd9660node *writenode)
 		 */
 		cur_sector_offset = 0;
 		working_sector = writenode->fileDataSector;
-		fseek(fd, working_sector * diskStructure.sectorSize, SEEK_SET);
+		if (fseeko(fd, working_sector * diskStructure->sectorSize,
+		    SEEK_SET) == -1)
+			err(1, "fseeko");
 
 		/*
 		 * Now loop over children, writing out their directory
@@ -331,30 +328,30 @@ cd9660_write_file(FILE *fd, cd9660node *writenode)
 			    sizeof(iso_directory_record_cd9660));
 
 			temp_record.length[0] =
-			    cd9660_compute_record_size(temp);
+			    cd9660_compute_record_size(diskStructure, temp);
 
 			if (temp_record.length[0] + cur_sector_offset >=
-			    diskStructure.sectorSize) {
+			    diskStructure->sectorSize) {
 				cur_sector_offset = 0;
 				working_sector++;
 
 				/* Seek to the next sector. */
-				fseek(fd,
-				    working_sector * diskStructure.sectorSize,
-				    SEEK_SET);
+				if (fseeko(fd, working_sector *
+				    diskStructure->sectorSize, SEEK_SET) == -1)
+					err(1, "fseeko");
 			}
 			/* Write out the basic ISO directory record */
-			written = fwrite(&temp_record, 1,
+			(void)fwrite(&temp_record, 1,
 			    temp->isoDirRecord->length[0], fd);
-			if (diskStructure.rock_ridge_enabled) {
-				cd9660_write_rr(fd, temp,
+			if (diskStructure->rock_ridge_enabled) {
+				cd9660_write_rr(diskStructure, fd, temp,
 				    cur_sector_offset, working_sector);
 			}
-			fseek(fd,
-			    working_sector * diskStructure.sectorSize +
-			    cur_sector_offset + temp_record.length[0] -
-			    temp->su_tail_size,
-			    SEEK_SET);
+			if (fseeko(fd, working_sector *
+			    diskStructure->sectorSize + cur_sector_offset +
+			    temp_record.length[0] - temp->su_tail_size,
+			    SEEK_SET) == -1)
+				err(1, "fseeko");
 			if (temp->su_tail_size > 0)
 				fwrite(temp->su_tail_data, 1,
 				    temp->su_tail_size, fd);
@@ -370,7 +367,8 @@ cd9660_write_file(FILE *fd, cd9660node *writenode)
 		 * Recurse on children.
 		 */
 		TAILQ_FOREACH(temp, &writenode->cn_children, cn_next_child) {
-			if ((ret = cd9660_write_file(fd, temp)) == 0)
+			if ((ret = cd9660_write_file(diskStructure, fd, temp))
+			    == 0)
 				goto out;
 		}
 	}
@@ -395,22 +393,24 @@ out:
  *                             is written, the rest should be set to 0.
  */
 static int
-cd9660_write_filedata(FILE *fd, int sector, const unsigned char *buf,
-		      int numsecs)
+cd9660_write_filedata(iso9660_disk *diskStructure, FILE *fd, off_t sector,
+    const unsigned char *buf, int numsecs)
 {
 	off_t curpos;
 	size_t success;
 
 	curpos = ftello(fd);
 
-	fseek(fd, sector * diskStructure.sectorSize, SEEK_SET);
+	if (fseeko(fd, sector * diskStructure->sectorSize, SEEK_SET) == -1)
+		err(1, "fseeko");
 
-	success = fwrite(buf, diskStructure.sectorSize * numsecs, 1, fd);
+	success = fwrite(buf, diskStructure->sectorSize * numsecs, 1, fd);
 
-	fseek(fd, curpos, SEEK_SET);
+	if (fseeko(fd, curpos, SEEK_SET) == -1)
+		err(1, "fseeko");
 
 	if (success == 1)
-		success = diskStructure.sectorSize * numsecs;
+		success = diskStructure->sectorSize * numsecs;
 	return success;
 }
 
@@ -427,34 +427,34 @@ cd9660_write_buffered(FILE *fd, int offset, int buff_len,
 #endif
 
 int
-cd9660_copy_file(FILE *fd, int start_sector, const char *filename)
+cd9660_copy_file(iso9660_disk *diskStructure, FILE *fd, off_t start_sector,
+    const char *filename)
 {
 	FILE *rf;
 	int bytes_read;
-	int sector = start_sector;
-	int buf_size = diskStructure.sectorSize;
+	off_t sector = start_sector;
+	int buf_size = diskStructure->sectorSize;
 	char *buf;
 
-	buf = malloc(buf_size);
-	if (buf == NULL)
-		err(EXIT_FAILURE, "%s: malloc", __func__);
-
+	buf = emalloc(buf_size);
 	if ((rf = fopen(filename, "rb")) == NULL) {
 		warn("%s: cannot open %s", __func__, filename);
 		free(buf);
 		return 0;
 	}
 
-	if (diskStructure.verbose_level > 1)
+	if (diskStructure->verbose_level > 1)
 		printf("Writing file: %s\n",filename);
 
-	fseek(fd, start_sector * diskStructure.sectorSize, SEEK_SET);
+	if (fseeko(fd, start_sector * diskStructure->sectorSize, SEEK_SET) == -1)
+		err(1, "fseeko");
 
 	while (!feof(rf)) {
 		bytes_read = fread(buf,1,buf_size,rf);
 		if (ferror(rf)) {
 			warn("%s: fread", __func__);
 			free(buf);
+			(void)fclose(rf);
 			return 0;
 		}
 
@@ -462,6 +462,7 @@ cd9660_copy_file(FILE *fd, int start_sector, const char *filename)
 		if (ferror(fd)) {
 			warn("%s: fwrite", __func__);
 			free(buf);
+			(void)fclose(rf);
 			return 0;
 		}
 		sector++;
@@ -472,14 +473,18 @@ cd9660_copy_file(FILE *fd, int start_sector, const char *filename)
 	return 1;
 }
 
+
 static void
-cd9660_write_rr(FILE *fd, cd9660node *writenode, int offset, int sector)
+cd9660_write_rr(iso9660_disk *diskStructure, FILE *fd, cd9660node *writenode,
+    off_t offset, off_t sector)
 {
 	int in_ca = 0;
 	struct ISO_SUSP_ATTRIBUTES *myattr;
 
 	offset += writenode->isoDirRecord->length[0];
-	fseek(fd, sector * diskStructure.sectorSize + offset, SEEK_SET);
+	if (fseeko(fd, sector * diskStructure->sectorSize + offset, SEEK_SET) ==
+	    -1)
+		err(1, "fseeko");
 	/* Offset now points at the end of the record */
 	TAILQ_FOREACH(myattr, &writenode->head, rr_ll) {
 		fwrite(&(myattr->attr), CD9660_SUSP_ENTRY_SIZE(myattr), 1, fd);
@@ -491,20 +496,23 @@ cd9660_write_rr(FILE *fd, cd9660node *writenode, int offset, int sector)
 				 * Point the offset to the start of this
 				 * record's CE area
 				 */
-				fseek(fd, (diskStructure.
-					susp_continuation_area_start_sector *
-					diskStructure.sectorSize)
+				if (fseeko(fd, ((off_t)diskStructure->
+				    susp_continuation_area_start_sector *
+				    diskStructure->sectorSize)
 				    + writenode->susp_entry_ce_start,
-				    SEEK_SET);
+				    SEEK_SET) == -1)
+					err(1, "fseeko");
 				in_ca = 1;
 			}
 		}
 	}
 
 	/*
-	 * If we had to go the the continuation area, head back to
+	 * If we had to go to the continuation area, head back to
 	 * where we should be.
 	 */
 	if (in_ca)
-		fseek(fd, sector * diskStructure.sectorSize + offset, SEEK_SET);
+		if (fseeko(fd, sector * diskStructure->sectorSize + offset,
+		    SEEK_SET) == -1)
+			err(1, "fseeko");
 }

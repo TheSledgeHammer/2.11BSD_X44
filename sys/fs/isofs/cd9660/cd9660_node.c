@@ -52,6 +52,7 @@
 #include <sys/stat.h>
 
 #include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
 #include <fs/isofs/cd9660/cd9660_mount.h>
 #include <fs/isofs/cd9660/iso_rrip.h>

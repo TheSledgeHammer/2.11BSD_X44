@@ -133,6 +133,7 @@ typedef struct {
 #define CD9660_TYPE_VIRTUAL 0x80
 
 #define CD9660_INODE_HASH_SIZE 1024
+#define CD9660_SECTOR_SIZE	2048
 
 #define CD9660_END_PADDING 150
 
@@ -287,6 +288,8 @@ typedef struct _iso9660_disk {
 	int rock_ridge_move_count;
 	cd9660node *rr_moved_dir;
 
+	int archimedes_enabled;
+	int chrp_boot;
 
 	/* Spec breaking options */
 	u_char allow_deep_trees;
@@ -318,7 +321,7 @@ extern iso9660_disk diskStructure;
 /************ FUNCTIONS **************/
 int			cd9660_valid_a_chars(const char *);
 int			cd9660_valid_d_chars(const char *);
-void			cd9660_uppercase_characters(char *, int);
+void			cd9660_uppercase_characters(char *, size_t);
 
 /* ISO Data Types */
 void			cd9660_721(uint16_t, unsigned char *);
@@ -333,29 +336,30 @@ void			cd9660_time_915(unsigned char *, time_t);
 
 /*** Boot Functions ***/
 int	cd9660_write_generic_bootimage(FILE *);
-int	cd9660_add_generic_bootimage(const char *);
-int	cd9660_write_boot(FILE *);
-int	cd9660_add_boot_disk(const char *);
-int	cd9660_eltorito_add_boot_option(const char *, const char *);
-int	cd9660_setup_boot(int);
-int	cd9660_setup_boot_volume_descriptor(volume_descriptor *);
+int	cd9660_write_boot(iso9660_disk *, FILE *);
+int	cd9660_add_boot_disk(iso9660_disk *, const char *);
+int	cd9660_eltorito_add_boot_option(iso9660_disk *, const char *,
+    const char *);
+int	cd9660_setup_boot(iso9660_disk *, int);
+int	cd9660_setup_boot_volume_descriptor(iso9660_disk *,
+    volume_descriptor *);
 
 
 /*** Write Functions ***/
-int	cd9660_write_image(const char *image);
-int	cd9660_copy_file(FILE *, int, const char *);
+int	cd9660_write_image(iso9660_disk *, const char *image);
+int	cd9660_copy_file(iso9660_disk *, FILE *, off_t, const char *);
 
-void	cd9660_compute_full_filename(cd9660node *, char *, int);
-int	cd9660_compute_record_size(cd9660node *);
+void	cd9660_compute_full_filename(cd9660node *, char *);
+int	cd9660_compute_record_size(iso9660_disk *, cd9660node *);
 
 /* Debugging functions */
-void	debug_print_tree(cd9660node *,int);
+void	debug_print_tree(iso9660_disk *, cd9660node *,int);
 void	debug_print_path_tree(cd9660node *);
-void	debug_print_volume_descriptor_information(void);
+void	debug_print_volume_descriptor_information(iso9660_disk *);
 void	debug_dump_to_xml_ptentry(path_table_entry *,int, int);
-void	debug_dump_to_xml_path_table(FILE *, int, int, int);
+void	debug_dump_to_xml_path_table(FILE *, off_t, int, int);
 void	debug_dump_to_xml(FILE *);
-int	    debug_get_encoded_number(unsigned char *, int);
+int	debug_get_encoded_number(unsigned char *, int);
 void	debug_dump_integer(const char *, char *,int);
 void	debug_dump_string(const char *,unsigned char *,int);
 void	debug_dump_directory_record_9_1(unsigned char *);

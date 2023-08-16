@@ -1,4 +1,4 @@
-/*	$NetBSD: iso9660_rrip.h,v 1.4.26.1 2010/01/02 06:45:03 snj Exp $	*/
+/*	$NetBSD: iso9660_rrip.h,v 1.8 2023/04/18 22:58:14 christos Exp $	*/
 
 /*
  * Copyright (c) 2005 Daniel Watt, Walter Deignan, Ryan Gabrys, Alan
@@ -46,19 +46,21 @@
 #include "cd9660.h"
 #include <sys/queue.h>
 
-#define	 PX_LENGTH	   0x2C
-#define	 PN_LENGTH	   0x14
-#define	 TF_CREATION	   0x00
-#define	 TF_MODIFY	   0x01
-#define	 TF_ACCESS	   0x02
-#define	 TF_ATTRIBUTES	   0x04
-#define	 TF_BACKUP	   0x08
-#define	 TF_EXPIRATION	   0x10
-#define	 TF_EFFECTIVE	   0x20
-#define	 TF_LONGFORM	   0x40
-#define  NM_CONTINUE	   0x80
-#define	 NM_CURRENT	   0x100
-#define	 NM_PARENT	   0x200
+#define	 PX_LENGTH	   		0x2C
+#define	 PN_LENGTH	   		0x14
+
+#define	 TF_CREATION	   	0x01
+#define	 TF_MODIFY	   		0x02
+#define	 TF_ACCESS	   		0x04
+#define	 TF_ATTRIBUTES	   	0x08
+#define	 TF_BACKUP	   		0x10
+#define	 TF_EXPIRATION	   	0x20
+#define	 TF_EFFECTIVE	   	0x40
+#define	 TF_LONGFORM	   	0x80
+
+#define	 NM_CONTINUE	   	0x01
+#define	 NM_CURRENT	   		0x02
+#define	 NM_PARENT	   		0x04
 
 
 #define	 SUSP_LOC_ENTRY	   0x01
@@ -97,17 +99,17 @@
 
 typedef struct {
 	ISO_SUSP_HEADER		 h;
-	u_char mode		[ISODCL(5,12)];
+	u_char mode			[ISODCL(5,12)];
 	u_char links		[ISODCL(13,20)];
-	u_char uid		[ISODCL(21,28)];
-	u_char gid		[ISODCL(29,36)];
+	u_char uid			[ISODCL(21,28)];
+	u_char gid			[ISODCL(29,36)];
 	u_char serial		[ISODCL(37,44)];/* Not used */
 } ISO_RRIP_PX;
 
 typedef struct {
 	ISO_SUSP_HEADER		 h;
-	u_char high		[ISODCL(5,12)];
-	u_char low		[ISODCL(13,20)];
+	u_char high			[ISODCL(5,12)];
+	u_char low			[ISODCL(13,20)];
 } ISO_RRIP_PN;
 
 typedef struct {
@@ -215,11 +217,11 @@ struct ISO_SUSP_ATTRIBUTES {
 	((int) ((entry)->attr.su_entry.SP.h.length[0]))
 
 /* Recursive function - move later to func pointer code*/
-int cd9660_susp_finalize(cd9660node *);
+int cd9660_susp_finalize(iso9660_disk *, cd9660node *);
 
 /* These two operate on single nodes */
-int cd9660_susp_finalize_node(cd9660node *);
-int cd9660_rrip_finalize_node(cd9660node *);
+int cd9660_susp_finalize_node(iso9660_disk *, cd9660node *);
+int cd9660_rrip_finalize_node(iso9660_disk *, cd9660node *);
 
 /* POSIX File attribute */
 int cd9660node_rrip_px(struct ISO_SUSP_ATTRIBUTES *, fsnode *);
@@ -270,19 +272,20 @@ struct ISO_SUSP_ATTRIBUTES *cd9660_susp_ES(struct ISO_SUSP_ATTRIBUTES*,
 /* Helper functions */
 
 /* Common SUSP/RRIP functions */
-int cd9660_susp_initialize(cd9660node *, cd9660node *, cd9660node *);
-int cd9660_susp_initialize_node(cd9660node *);
+int cd9660_susp_initialize(iso9660_disk *, cd9660node *, cd9660node *,
+    cd9660node *);
+int cd9660_susp_initialize_node(iso9660_disk *, cd9660node *);
 struct ISO_SUSP_ATTRIBUTES *cd9660node_susp_create_node(int, int, const char *,
     int);
 struct ISO_SUSP_ATTRIBUTES *cd9660node_susp_add_entry(cd9660node *,
     struct ISO_SUSP_ATTRIBUTES *, struct ISO_SUSP_ATTRIBUTES *, int);
 
 /* RRIP specific functions */
-int cd9660_rrip_initialize_node(cd9660node *, cd9660node *, cd9660node *);
+int cd9660_rrip_initialize_node(iso9660_disk *, cd9660node *, cd9660node *,
+    cd9660node *);
 void cd9660_createSL(cd9660node *);
 
 /* Functions that probably can be removed */
 /* int cd9660node_initialize_node(int, char *); */
-
 
 #endif

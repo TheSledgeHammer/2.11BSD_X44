@@ -68,7 +68,7 @@ void vm_psegment_init(vm_psegment_t);
 void vm_psegment_release(vm_psegment_t);
 void vm_psegment_expand(vm_psegment_t, segsz_t, caddr_t, int);
 void vm_psegment_shrink(vm_psegment_t, segsz_t, caddr_t, int);
-void vm_psegment_alloc(vm_psegment_t, struct map *, segsz_t, caddr_t, int);
+void vm_psegment_alloc(vm_psegment_t, struct map *, segsz_t, caddr_t, int, int);
 void vm_psegment_free(vm_psegment_t, struct map *, segsz_t, caddr_t, int);
 
 #endif /* _KERNEL */
