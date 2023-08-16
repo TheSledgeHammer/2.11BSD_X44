@@ -44,6 +44,7 @@
 #include <sys/mount.h>
 
 struct fid;
+struct iso_directory_record;
 struct mbuf;
 struct nameidata;
 struct netexport;
@@ -105,6 +106,11 @@ int cd9660_vptofh(struct vnode *, struct fid *);
 int cd9660_init(struct vfsconf *);
 int cd9660_sysctl(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 int cd9660_mountroot(void);
+
+int isochar(const u_char *, const u_char *, int, u_char *);
+int isofncmp(const u_char *, int, const u_char *, int, int);
+void isofntrans(u_char *, int, u_char *, u_short *, int, int, int, int);
+ino_t isodirino(struct iso_directory_record *, struct iso_mnt *);
 __END_DECLS
 
 extern struct vnodeops cd9660_vnodeops;
