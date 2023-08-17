@@ -60,6 +60,12 @@ struct gsched_edf {
 #define P_EDFFAIL 		0x8000	/* Failed EDF Test */
 #define P_EDFPREEMPT 	0x16000 /* Preemption Flag: Suggest to CFS to preempt this process */
 
+/* edf macros */
+#define SLACK(d, t, c)          ((d - t) - c)
+#define UTILIZATION(r, c)       (c / r)
+#define DEMAND(t, d, r, c)      (((t - d + r) * c) / r)
+#define WORKLOAD(t, r, c)       ((t / r) * c)
+
 u_char 	edf_slack(char, u_char, char);
 int 	edf_utilization(char, char);
 int 	edf_demand(char, char, char, char);

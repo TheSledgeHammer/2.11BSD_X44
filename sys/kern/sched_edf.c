@@ -53,7 +53,8 @@ edf_slack(deadline, timo, cost)
 	char deadline, cost;
 	u_char timo;
 {
-	return ((deadline - timo) - cost);
+	u_char S = SLACK(deadline, timo, cost);
+	return (S);
 }
 
 /* CPU Utilization per task (U <= 1) */
@@ -61,7 +62,7 @@ int
 edf_utilization(release, cost)
 	char release, cost;
 {
-	u_char U = (cost / release);
+	u_char U = UTILIZATION(cost, release);
 	if(U <= 1) { 							/* test if can be scheduled */
 		return (0);
 	}
@@ -73,8 +74,11 @@ int
 edf_demand(timo, deadline, release, cost)
 	char timo, deadline, release, cost;
 {
+	/*
 	u_char N = (timo - deadline + release);
-	u_char H = (N * cost) / release;
+	u_char H = ((N * cost) / release);
+	*/
+	u_char H = DEMAND(timo, deadline, release, cost);
 	if(H >= 0 && H <= timo) {				/* test if can be scheduled */
 		return (0);
 	}
@@ -86,8 +90,11 @@ int
 edf_workload(timo, release, cost)
 	char timo, release, cost;
 {
+	/*
 	u_char N = (timo / release);
 	u_char W = (N * cost);
+	*/
+	u_char W = WORKLOAD(timo, release, cost);
 	if(W >= 0 && W <= timo) {				/* test if can be scheduled */
 		return (0);
 	}
