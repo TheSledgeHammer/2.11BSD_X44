@@ -132,22 +132,36 @@ procxmt(p)
 		/* write user I */
 		/* Must set up to allow writing */
 	case PT_WRITE_I:
+		register vm_text_t xp;
+		struct vattr vattr;
+
+		xp = u.u_procp->p_textp;
+		if (xp) {
+			if (VOP_GETATTR(xp->psx_vptr, &vattr, u.u_ucred, u.u_procp)) {
+				if ((xp->psx_count != 1) || (vattr->va_mode & VSVTX)) {
+					goto error;
+				}
+			} else {
+				if ((xp->psx_count != 1) || (vattr->va_mode & VSVTX)) {
+					goto error;
+				}
+			}
+			xp->psx_flag |= XTRC;
+		}
 		if ((i = suiword((caddr_t) ipc.ip_addr, ipc.ip_data)) < 0) {
 			vm_offset_t sa, ea;
 			int rv;
 
 			sa = trunc_page((vm_offset_t )ipc.ip_addr);
 			ea = round_page((vm_offset_t )ipc.ip_addr + sizeof(int));
-			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_DEFAULT,
-					FALSE);
+			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_DEFAULT, FALSE);
 
 			if (rv == KERN_SUCCESS) {
-				//vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RW);
+				vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, SEG_RW);
 				i = suiword((caddr_t) ipc.ip_addr, 0);
 				suiword((caddr_t) ipc.ip_addr, ipc.ip_data);
-				(void) vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
-						VM_PROT_READ | VM_PROT_EXECUTE, FALSE);
-				//vm_estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RO);
+				(void) vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_READ | VM_PROT_EXECUTE, FALSE);
+				vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, SEG_RO);
 			}
 		}
 		if (i < 0)
