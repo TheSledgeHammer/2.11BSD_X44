@@ -97,6 +97,8 @@ procxmt(p)
 {
 	register int i, *poff, *paln;
 	extern vm_offset_t 	proc0kstack;
+	vm_text_t xp;
+	struct vattr vattr;
 
 	if (ipc.ip_lock != u.u_procp->p_pid)
 		return (0);
@@ -132,17 +134,14 @@ procxmt(p)
 		/* write user I */
 		/* Must set up to allow writing */
 	case PT_WRITE_I:
-		register vm_text_t xp;
-		struct vattr vattr;
-
 		xp = u.u_procp->p_textp;
 		if (xp) {
 			if (VOP_GETATTR(xp->psx_vptr, &vattr, u.u_ucred, u.u_procp)) {
-				if ((xp->psx_count != 1) || (vattr->va_mode & VSVTX)) {
+				if ((xp->psx_count != 1) || (vattr.va_mode & VSVTX)) {
 					goto error;
 				}
 			} else {
-				if ((xp->psx_count != 1) || (vattr->va_mode & VSVTX)) {
+				if ((xp->psx_count != 1) || (vattr.va_mode & VSVTX)) {
 					goto error;
 				}
 			}
