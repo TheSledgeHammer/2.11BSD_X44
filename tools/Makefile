@@ -85,7 +85,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cap_mkdb crunchgen ctags gencat hexdump 								\
 		${LINT_BITS} 															\
 		makewhatis mtree .WAIT uudecode 										\
-		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
+		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
 		xz-include .WAIT grep pax xz-lib										\
 		.WAIT texinfo 															\
 		.WAIT 																	\
