@@ -165,6 +165,40 @@ tgfind(pgid)
 	return (NULL);
 }
 
+/* Insert a kthread onto allkthread list and remove kthread from the freekthread list */
+void
+kthread_enqueue(kt)
+	struct kthread *kt;
+{
+	LIST_REMOVE(kt, kt_list);			/* off freekthread */
+	LIST_INSERT_HEAD(kt, &allkthread, kt_list);	/* onto allkthread */
+}
+
+/* Remove a kthread from allkthread list and insert kthread onto the zombkthread list */
+void
+kthread_dequeue(kt)
+	struct kthread *kt;
+{
+	LIST_REMOVE(kt, kt_list);			/* off allkthread */
+	LIST_INSERT_HEAD(kt, &zombkthread, kt_list);	/* onto zombkthread */
+	kt->kt_state = KT_SZOMB;
+}
+
+/* return kthread from kthreadlist (i.e. allkthread, freekthread, zombkthread) list if not null and matching tid */
+struct kthread *
+kthread_find(ktlist, tid)
+	struct kthreadlist *ktlist;
+	pid_t tid;
+{
+	struct kthread *kt;
+	LIST_FOREACH(kt, ktlist, kt_list) {
+		if (kt != NULL && kt->kt_tid == tid) {
+			return (kt);
+		}
+	}
+	return (NULL);
+}
+
 /*
  * An mxthread is a multiplexed kernel thread.
  * Mxthreads are confined to the kthread which created it.
