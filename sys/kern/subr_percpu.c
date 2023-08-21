@@ -210,7 +210,7 @@ percpu_extent_free(pc, start, end, flags)
 		printf("percpu_extent_free: no extent to free");
 	}
 
-	error = extent_free(ext, start, end, NULL);
+	error = extent_free(ext, start, end, flags);
 	if (error != 0) {
 		panic("percpu_extent_free: failed to free extent region");
 	} else {
