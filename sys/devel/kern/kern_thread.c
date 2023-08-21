@@ -199,6 +199,20 @@ kthread_find(ktlist, tid)
 	return (NULL);
 }
 
+/* reap all non-null zombie kthreads from zombkthread list */
+void
+kthread_zombie(void)
+{
+	if (!LIST_EMPTY(&zombkthread)) {
+		LIST_FOREACH(kt, &zombkthread, kt_list) {
+			if (kt != NULL) {
+				LIST_REMOVE(kt, kt_list);			/* off zombkthread */
+				LIST_INSERT_HEAD(kt, &freekthread, kt_list);	/* onto freekthread */
+			}
+		}
+	}
+}
+
 /*
  * An mxthread is a multiplexed kernel thread.
  * Mxthreads are confined to the kthread which created it.
