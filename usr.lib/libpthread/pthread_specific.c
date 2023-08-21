@@ -1,7 +1,7 @@
-/*	$NetBSD: pthread_specific.c,v 1.21 2008/06/23 10:38:39 ad Exp $	*/
+/*	$NetBSD: pthread_specific.c,v 1.10 2003/08/13 18:52:01 nathanw Exp $	*/
 
 /*-
- * Copyright (c) 2001, 2007 The NetBSD Foundation, Inc.
+ * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -15,6 +15,13 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -30,18 +37,15 @@
  */
 
 #include <sys/cdefs.h>
-__RCSID("$NetBSD: pthread_specific.c,v 1.21 2008/06/23 10:38:39 ad Exp $");
+__RCSID("$NetBSD: pthread_specific.c,v 1.10 2003/08/13 18:52:01 nathanw Exp $");
 
 /* Functions and structures dealing with thread-specific data */
 
 #include "pthread.h"
 #include "pthread_int.h"
 
-#include <sys/lwpctl.h>
-
 __strong_alias(__libc_thr_setspecific,pthread_setspecific)
 __strong_alias(__libc_thr_getspecific,pthread_getspecific)
-__strong_alias(__libc_thr_curcpu,pthread_curcpu_np)
 
 int
 pthread_setspecific(pthread_key_t key, const void *value)
@@ -57,21 +61,15 @@ pthread_setspecific(pthread_key_t key, const void *value)
 	 */
 	/*LINTED const cast*/
 	self->pt_specific[key] = (void *) value;
-	self->pt_havespecific = 1;
 
 	return 0;
 }
 
-void *
+void*
 pthread_getspecific(pthread_key_t key)
 {
+	pthread_t self;
 
-	return pthread__self()->pt_specific[key];
-}
-
-unsigned int
-pthread_curcpu_np(void)
-{
-
-	return pthread__self()->pt_lwpctl->lc_curcpu;
+	self = pthread__self();
+	return (self->pt_specific[key]);
 }

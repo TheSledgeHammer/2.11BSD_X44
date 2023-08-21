@@ -1,4 +1,4 @@
-.\" $NetBSD: pthread_barrier_destroy.3,v 1.7 2008/05/26 08:43:57 wiz Exp $
+.\" $NetBSD: pthread_barrier_destroy.3,v 1.3.4.1 2005/06/21 22:38:19 riz Exp $
 .\"
 .\" Copyright (c) 2002 The NetBSD Foundation, Inc.
 .\" All rights reserved.
@@ -10,6 +10,9 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of The NetBSD Foundation nor the names of its
+.\"    contributors may be used to endorse or promote products derived
+.\"    from this software without specific prior written permission.
 .\" THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
 .\" ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 .\" TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -39,8 +42,7 @@ The
 .Fn pthread_barrier_destroy
 function causes the resources allocated to
 .Fa barrier
-to be released.
-No threads should be blocked on
+to be released.  No threads should be blocked on
 .Fa barrier .
 .Sh RETURN VALUES
 If successful,
@@ -51,14 +53,14 @@ Otherwise an error value will be returned.
 .Fn pthread_barrier_destroy
 may fail if:
 .Bl -tag -width Er
-.It Bq Er EBUSY
-The
-.Fa barrier
-still has active threads associated with it.
 .It Bq Er EINVAL
 The value specified by
 .Fa barrier
 is invalid.
+.It Bq Er EBUSY
+The
+.Fa barrier
+still has active threads associated with it.
 .El
 .Sh SEE ALSO
 .Xr pthread_barrier_init 3 ,

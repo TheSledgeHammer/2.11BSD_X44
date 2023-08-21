@@ -1,7 +1,7 @@
-/*	$NetBSD: pthread_types.h,v 1.13 2008/08/02 19:46:30 matt Exp $	*/
+/*	$NetBSD: pthread_types.h,v 1.5 2003/09/26 22:48:23 nathanw Exp $	*/
 
 /*-
- * Copyright (c) 2001, 2008 The NetBSD Foundation, Inc.
+ * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -15,6 +15,13 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -36,19 +43,19 @@
  * We use the "pthread_spin_t" name internally; "pthread_spinlock_t" is the
  * POSIX spinlock object. 
  */
-typedef simple_lock_t	pthread_spin_t;
+typedef	__cpu_simple_lock_t	_simple_lock_t
+typedef __cpu_simple_lock_t	pthread_spin_t;
 
 /*
  * Copied from PTQ_HEAD in pthread_queue.h
  */
-#define _PTQ_HEAD(name, type)	       				\
+#define _PTQ_HEAD(name, type)	       					\
 struct name {								\
 	struct type *ptqh_first;/* first element */			\
 	struct type **ptqh_last;/* addr of last next element */		\
 }
 
-_PTQ_HEAD(pthread_queue_struct_t, __pthread_st);
-typedef struct pthread_queue_struct_t pthread_queue_t;
+_PTQ_HEAD(pthread_queue_t, __pthread_st);
 
 struct	__pthread_st;
 struct	__pthread_attr_st;
@@ -83,53 +90,35 @@ struct	__pthread_attr_st {
 	void	*pta_private;
 };
 
-/*
- * ptm_owner is the actual lock field which is locked via CAS operation.
- * This structure's layout is designed to compatible with the previous
- * version used in SA pthreads.
- */
-#ifdef __CPU_SIMPLE_LOCK_PAD
-/*
- * If __SIMPLE_UNLOCKED != 0 and we have to pad, we have to worry about
- * endianness.  Currently that isn't an issue but put in a check in case
- * something changes in the future.
- */
-#if __SIMPLELOCK_UNLOCKED != 0
-#error __CPU_SIMPLE_LOCK_PAD incompatible with __SIMPLELOCK_UNLOCKED == 0
-#endif
-#endif
 struct	__pthread_mutex_st {
 	unsigned int	ptm_magic;
-	pthread_spin_t	ptm_errorcheck;
-#ifdef __CPU_SIMPLE_LOCK_PAD
-	uint8_t		ptm_pad1[3];
-#endif
-	pthread_spin_t	ptm_interlock;	/* unused - backwards compat */
-#ifdef __CPU_SIMPLE_LOCK_PAD
-	uint8_t		ptm_pad2[3];
-#endif
-	volatile pthread_t ptm_owner;
-	pthread_t * volatile ptm_waiters;
-	unsigned int	ptm_recursed;
-	void		*ptm_spare2;	/* unused - backwards compat */
+
+	/* Not a real spinlock; will never be spun on. Locked with
+	 * pthread__simple_lock_try() or not at all. Therefore, not
+	 * subject to preempted-spinlock-continuation.
+	 * 
+	 * Open research question: Would it help threaded applications if
+	 * preempted-lock-continuation were applied to mutexes?
+	 */
+	pthread_spin_t	ptm_lock; 
+
+	/* Protects the owner and blocked queue */
+	pthread_spin_t	ptm_interlock;
+	pthread_t	ptm_owner;
+	struct pthread_queue_t	ptm_blocked;
+	void	*ptm_private;
 };
 
 #define	_PT_MUTEX_MAGIC	0x33330003
 #define	_PT_MUTEX_DEAD	0xDEAD0003
 
-#ifdef __CPU_SIMPLE_LOCK_PAD
-#define _PTHREAD_MUTEX_INITIALIZER { _PT_MUTEX_MAGIC, 			\
-				    __SIMPLELOCK_UNLOCKED, { 0, 0, 0 },	\
-				    __SIMPLELOCK_UNLOCKED, { 0, 0, 0 },	\
-				    NULL, NULL, 0, NULL			\
-				  }
-#else
 #define _PTHREAD_MUTEX_INITIALIZER { _PT_MUTEX_MAGIC, 			\
 				    __SIMPLELOCK_UNLOCKED,		\
 				    __SIMPLELOCK_UNLOCKED,		\
-				    NULL, NULL, 0, NULL			\
+				    NULL,				\
+				    {NULL, NULL},			\
+				    NULL				\
 				  }
-#endif /* __CPU_SIMPLE_LOCK_PAD */
 	
 
 struct	__pthread_mutexattr_st {
@@ -146,7 +135,7 @@ struct	__pthread_cond_st {
 
 	/* Protects the queue of waiters */
 	pthread_spin_t	ptc_lock;
-	pthread_queue_t	ptc_waiters;
+	struct pthread_queue_t	ptc_waiters;
 
 	pthread_mutex_t	*ptc_mutex;	/* Current mutex */
 	void	*ptc_private;
@@ -199,10 +188,10 @@ struct	__pthread_rwlock_st {
 	/* Protects data below */
 	pthread_spin_t	ptr_interlock;
 
-	pthread_queue_t	ptr_rblocked;
-	pthread_queue_t	ptr_wblocked;
+	struct pthread_queue_t	ptr_rblocked;
+	struct pthread_queue_t	ptr_wblocked;
 	unsigned int	ptr_nreaders;
-	volatile pthread_t ptr_owner;
+	pthread_t	ptr_writer;
 	void	*ptr_private;
 };
 
@@ -232,7 +221,7 @@ struct	__pthread_barrier_st {
 	/* Protects data below */
 	pthread_spin_t	ptb_lock;
 
-	pthread_queue_t	ptb_waiters;
+	struct pthread_queue_t	ptb_waiters;
 	unsigned int	ptb_initcount;
 	unsigned int	ptb_curcount;
 	unsigned int	ptb_generation;

@@ -1,4 +1,4 @@
-.\" $NetBSD: pthread_barrier_init.3,v 1.9 2008/05/26 08:43:57 wiz Exp $
+.\" $NetBSD: pthread_barrier_init.3,v 1.5.4.1 2005/06/21 22:38:22 riz Exp $
 .\"
 .\" Copyright (c) 2002 The NetBSD Foundation, Inc.
 .\" All rights reserved.
@@ -10,6 +10,9 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of The NetBSD Foundation nor the names of its
+.\"    contributors may be used to endorse or promote products derived
+.\"    from this software without specific prior written permission.
 .\" THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
 .\" ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 .\" TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -33,7 +36,7 @@
 .Sh SYNOPSIS
 .In pthread.h
 .Ft int
-.Fn pthread_barrier_init "pthread_barrier_t * restrict barrier" "const pthread_barrierattr_t * restrict attr" "unsigned int count"
+.Fn pthread_barrier_init "pthread_barrier_t *barrier" "const pthread_barrierattr_t *attr" "unsigned int count"
 .Sh DESCRIPTION
 The
 .Fn pthread_barrier_init
@@ -71,12 +74,12 @@ Insufficient memory exists to initialize the barrier.
 .Fn pthread_barrier_init
 may fail if:
 .Bl -tag -width Er
-.It Bq Er EBUSY
-The barrier structure has been initialized already.
 .It Bq Er EINVAL
 The value specified by
 .Fa attr
 is invalid.
+.It Bq Er EBUSY
+The barrier structure has been initialized already.
 .El
 .Sh SEE ALSO
 .Xr pthread_barrier_destroy 3 ,

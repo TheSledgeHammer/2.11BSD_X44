@@ -1,4 +1,4 @@
-.\" $NetBSD: pthread_rwlock_destroy.3,v 1.6 2008/05/04 19:43:05 martin Exp $
+.\" $NetBSD: pthread_rwlock_destroy.3,v 1.4 2003/07/04 08:41:25 wiz Exp $
 .\"
 .\" Copyright (c) 2002 The NetBSD Foundation, Inc.
 .\" All rights reserved.
@@ -10,6 +10,9 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of The NetBSD Foundation nor the names of its
+.\"    contributors may be used to endorse or promote products derived
+.\"    from this software without specific prior written permission.
 .\" THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
 .\" ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 .\" TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -68,8 +71,8 @@ function is used to destroy a read/write lock previously created with
 .Sh RETURN VALUES
 If successful, the
 .Fn pthread_rwlock_destroy
-function will return zero.
-Otherwise an error number will be returned to indicate the error.
+function will return zero.  Otherwise an error number will be returned
+to indicate the error.
 .Sh ERRORS
 The
 .Fn pthread_rwlock_destroy

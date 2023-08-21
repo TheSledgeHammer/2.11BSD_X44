@@ -93,7 +93,7 @@ mpx_free(mpx)
 }
 
 static int
-mpx_set(mpx)
+mpx_copyin(mpx)
 	struct mpx *mpx;
 {
 	struct mpx mx;
@@ -104,7 +104,7 @@ mpx_set(mpx)
 }
 
 static int
-mpx_get(mpx)
+mpx_copyout(mpx)
 	struct mpx *mpx;
 {
 	struct mpx mx;
@@ -125,7 +125,7 @@ mpxcall(cmd, type, mpx, idx)
 	nchans = NCHANS;
 	ngroups = NGROUPS;
 
-	error = mpx_set(mpx);
+	error = mpx_copyin(mpx);
 	if (error) {
 		switch (type) {
 		case MPXCHANNEL:
@@ -142,7 +142,7 @@ mpxcall(cmd, type, mpx, idx)
 		return (error);
 	}
 
-	error = mpx_get(mpx);
+	error = mpx_copyout(mpx);
 	return (error);
 }
 

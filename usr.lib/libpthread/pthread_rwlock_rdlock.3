@@ -1,4 +1,4 @@
-.\" $NetBSD: pthread_rwlock_rdlock.3,v 1.10 2008/05/04 19:43:05 martin Exp $
+.\" $NetBSD: pthread_rwlock_rdlock.3,v 1.7 2003/07/04 11:57:58 wiz Exp $
 .\"
 .\" Copyright (c) 2002 The NetBSD Foundation, Inc.
 .\" All rights reserved.
@@ -10,6 +10,9 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of The NetBSD Foundation nor the names of its
+.\"    contributors may be used to endorse or promote products derived
+.\"    from this software without specific prior written permission.
 .\" THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
 .\" ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 .\" TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -63,7 +66,7 @@
 .Ft int
 .Fn pthread_rwlock_rdlock "pthread_rwlock_t *lock"
 .Ft int
-.Fn pthread_rwlock_timedrdlock "pthread_rwlock_t * restrict lock" "const struct timespec * restrict abstime"
+.Fn pthread_rwlock_timedrdlock "pthread_rwlock_t *lock" "const struct timespec *abstime"
 .Ft int
 .Fn pthread_rwlock_tryrdlock "pthread_rwlock_t *lock"
 .Sh DESCRIPTION
@@ -74,9 +77,9 @@ function acquires a read lock on
 provided that
 .Fa lock
 is not presently held for writing and no writer threads are
-presently blocked on the lock.
-If the read lock cannot be immediately acquired, the calling thread
-blocks until it can acquire the lock.
+presently blocked on the lock.  If the read lock cannot be
+immediately acquired, the calling thread blocks until it can
+acquire the lock.
 .Pp
 The
 .Fn pthread_rwlock_timedrdlock
@@ -91,8 +94,7 @@ function performs the same action as
 but does not block if the lock cannot be immediately obtained (i.e.,
 the lock is held for writing or there are waiting writers).
 .Pp
-A thread may hold multiple concurrent read locks.
-If so,
+A thread may hold multiple concurrent read locks.  If so,
 .Fn pthread_rwlock_unlock
 must be called once for each lock obtained.
 .Pp
@@ -104,8 +106,8 @@ If successful, the
 .Fn pthread_rwlock_timedrdlock ,
 and
 .Fn pthread_rwlock_tryrdlock
-functions will return zero.
-Otherwise an error number will be returned to indicate the error.
+functions will return zero.  Otherwise an error number will be returned
+to indicate the error.
 .Sh ERRORS
 The
 .Fn pthread_rwlock_tryrdlock

@@ -1,7 +1,7 @@
-/*	$NetBSD: pthread_attr.c,v 1.11 2008/10/10 09:13:20 ad Exp $	*/
+/*	$NetBSD: pthread_attr.c,v 1.3 2003/11/09 18:56:48 christos Exp $	*/
 
 /*-
- * Copyright (c) 2001, 2002, 2003, 2008 The NetBSD Foundation, Inc.
+ * Copyright (c) 2001,2002,2003 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -15,6 +15,13 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -30,7 +37,7 @@
  */
 
 #include <sys/cdefs.h>
-__RCSID("$NetBSD: pthread_attr.c,v 1.11 2008/10/10 09:13:20 ad Exp $");
+__RCSID("$NetBSD: pthread_attr.c,v 1.3 2003/11/09 18:56:48 christos Exp $");
 
 #include <errno.h>
 #include <stdio.h>
@@ -41,8 +48,6 @@ __RCSID("$NetBSD: pthread_attr.c,v 1.11 2008/10/10 09:13:20 ad Exp $");
 #include "pthread.h"
 #include "pthread_int.h"
 
-static struct pthread_attr_private *pthread__attr_init_private(
-    pthread_attr_t *);
 
 static struct pthread_attr_private *
 pthread__attr_init_private(pthread_attr_t *attr)
@@ -56,7 +61,6 @@ pthread__attr_init_private(pthread_attr_t *attr)
 	if (p != NULL) {
 		memset(p, 0, sizeof(*p));
 		attr->pta_private = p;
-		p->ptap_policy = SCHED_OTHER;
 	}
 	return p;
 }
@@ -102,7 +106,8 @@ pthread_attr_get_np(pthread_t thread, pthread_attr_t *attr)
 	p->ptap_stackaddr = thread->pt_stack.ss_sp;
 	p->ptap_stacksize = thread->pt_stack.ss_size;
 	p->ptap_guardsize = (size_t)sysconf(_SC_PAGESIZE);
-	return pthread_getschedparam(thread, &p->ptap_policy, &p->ptap_sp);
+
+	return 0;
 }
 
 
@@ -232,73 +237,32 @@ pthread_attr_setscope(pthread_attr_t *attr, int scope)
 
 
 int
+/*ARGSUSED*/
 pthread_attr_setschedparam(pthread_attr_t *attr,
-			   const struct sched_param *param)
+    const struct sched_param *param)
 {
-	struct pthread_attr_private *p;
-	int error;
 
 	if (param == NULL)
 		return EINVAL;
-	p = pthread__attr_init_private(attr);
-	if (p == NULL)
-		return ENOMEM;
-	error = pthread__checkpri(param->sched_priority);
-	if (error == 0)
-		p->ptap_sp = *param;
-	return error;
-}
 
-
-int
-pthread_attr_getschedparam(const pthread_attr_t *attr,
-			   struct sched_param *param)
-{
-	struct pthread_attr_private *p;
-
-	if (param == NULL)
+	if (param->sched_priority != 0)
 		return EINVAL;
-	p = attr->pta_private;
-	if (p == NULL)
-		memset(param, 0, sizeof(*param));
-	else 
-		*param = p->ptap_sp;
+
 	return 0;
 }
 
 
 int
-pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
+/*ARGSUSED*/
+pthread_attr_getschedparam(const pthread_attr_t *attr,
+    struct sched_param *param)
 {
-	struct pthread_attr_private *p;
 
+	if (param == NULL)
+		return EINVAL;
 
-	switch (policy) {
-	case SCHED_OTHER:
-	case SCHED_FIFO:
-	case SCHED_RR:
-		p = pthread__attr_init_private(attr);
-		if (p == NULL)
-			return ENOMEM;
-		p->ptap_policy = policy;
-		return 0;
-	default:
-		return ENOTSUP;
-	}
-}
+	param->sched_priority = 0;
 
-
-int
-pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
-{
-	struct pthread_attr_private *p;
-
-	p = attr->pta_private;
-	if (p == NULL) {
-		*policy = SCHED_OTHER;
-		return 0;
-	}
-	*policy = p->ptap_policy;
 	return 0;
 }
 
@@ -310,7 +274,7 @@ pthread_attr_getstack(const pthread_attr_t *attr, void **addr, size_t *size)
 
 	if ((p = attr->pta_private) == NULL) {
 		*addr = NULL;
-		*size = pthread__stacksize;
+		*size = PT_STACKSIZE;
 	} else {
 		*addr = p->ptap_stackaddr;
 		*size = p->ptap_stacksize;
@@ -342,7 +306,7 @@ pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *size)
 	struct pthread_attr_private *p;
 
 	if ((p = attr->pta_private) == NULL)
-		*size = pthread__stacksize;
+		*size = PT_STACKSIZE;
 	else
 		*size = p->ptap_stacksize;
 
@@ -354,9 +318,6 @@ int
 pthread_attr_setstacksize(pthread_attr_t *attr, size_t size)
 {
 	struct pthread_attr_private *p;
-
-	if (size < sysconf(_SC_THREAD_STACK_MIN))
-		return EINVAL;
 
 	p = pthread__attr_init_private(attr);
 	if (p == NULL)

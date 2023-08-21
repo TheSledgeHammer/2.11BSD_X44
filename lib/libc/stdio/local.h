@@ -36,8 +36,12 @@
  *	@(#)local.h	8.3 (Berkeley) 7/3/94
  */
 
+#include "wcio.h"
+#include "fileext.h"
+
 #include <limits.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 /*
  * Information local to this implementation of stdio,
@@ -88,3 +92,15 @@ extern int		__sdidinit;
 	free((char *)(fp)->_lb._base); 		\
 	(fp)->_lb._base = NULL; 			\
 }
+
+/*
+ * test for an fgetln() buffer.
+ */
+#define	FREELB(fp) { \
+	free(_EXT(fp)->_fgetstr_buf); \
+	_EXT(fp)->_fgetstr_buf = NULL; \
+	_EXT(fp)->_fgetstr_len = 0; \
+}
+
+extern void __flockfile_internal(FILE *, int);
+extern void __funlockfile_internal(FILE *, int);

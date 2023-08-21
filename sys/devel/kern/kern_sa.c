@@ -246,14 +246,14 @@ sa_release(struct proc *p)
 	KDASSERT(sa != NULL);
 	KASSERT(p->p_nlwps <= 1);
 
-	for (sast = SPLAY_MIN(sasttree, &sa->sa_stackstree); sast != NULL; sast = next) {
-		next = SPLAY_NEXT(sasttree, &sa->sa_stackstree, sast);
+	SPLAY_FOREACH(sast, sasttree, &sa->sa_stackstree){
 		SPLAY_REMOVE(sasttree, &sa->sa_stackstree, sast);
 		pool_put(&sastack_pool, sast);
 	}
 
 	p->p_flag &= ~P_SA;
-	while ((vp = SLIST_FIRST(&p->p_sa->sa_vps)) != NULL) {
+	vp = SLIST_FIRST(sa->sa_vps);
+	while (vp != NULL) {
 		SLIST_REMOVE_HEAD(&p->p_sa->sa_vps, savp_next);
 		pool_put(&savp_pool, vp);
 	}

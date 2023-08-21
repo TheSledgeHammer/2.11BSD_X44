@@ -12,6 +12,6 @@
 
 SUBDIR= 	libbz2 libcurses libdbm libedit libexecinfo libform libkvm 		\
 			libm libmenu libmp libom libpanel libpci libresolv libstubs		\
-			libtermcap libutil libvmf liby libz
+			libtermcap libutil libvmf liby libz libpthread libpthread_dbg					
 
 .include <bsd.subdir.mk>
