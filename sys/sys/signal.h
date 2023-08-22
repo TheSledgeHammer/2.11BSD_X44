@@ -86,6 +86,7 @@ typedef	void (*sig_t)(int);		        /* type of signal function */
 typedef struct sigaltstack stack_t;
 struct	sigaltstack {
 	void			*ss_base;		    /* signal stack base */
+#define ss_sp		ss_base
 	size_t			ss_size;		    /* signal stack length */
 	int				ss_flags;		    /* SA_DISABLE and/or SA_ONSTACK */
 };

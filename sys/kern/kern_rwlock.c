@@ -257,11 +257,10 @@ rwlock_pause(rwl, wanted)
 		}
 		rwlock_lock(rwl);
 	}
-	/*
+
 	if (!(wanted)) {
-		break;
+		return;
 	}
-	*/
 }
 
 void

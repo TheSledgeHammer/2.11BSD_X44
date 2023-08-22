@@ -44,6 +44,20 @@
 extern struct kthread 		 kthread0;
 struct kthread *curkthread = &kthread0;
 
+
+int	maxthread;// = NTHREAD;
+
+struct tidhashhead *tidhashtbl;
+u_long tidhash;
+struct tgrphashhead *tgrphashtbl;
+u_long tgrphash;
+
+struct kthreadlist 	allkthread;
+struct kthreadlist 	zombkthread;
+struct kthreadlist 	freekthread;
+
+struct lock_holder 	kthread_loholder;
+
 void
 kthread_init(p, kt)
 	register struct proc  	*p;
@@ -70,20 +84,6 @@ kthread_init(p, kt)
 	kt->kt_ucred = p->p_ucred;
 	crhold(kt->kt_ucred);
 }
-
-
-int	maxthread;// = NTHREAD;
-
-struct tidhashhead *tidhashtbl;
-u_long tidhash;
-struct tgrphashhead *tgrphashtbl;
-u_long tgrphash;
-
-struct kthreadlist 	allkthread;
-struct kthreadlist 	zombkthread;
-struct kthreadlist 	freekthread;
-
-struct lock_holder 	kthread_loholder;
 
 void
 kthreadinit(kt)
@@ -139,7 +139,7 @@ ktfind(tid)
  */
 int
 leavektgrp(kt)
-	register struct kthread *kt;
+	struct kthread *kt;
 {
 	LIST_REMOVE(kt, kt_pglist);
 	if (LIST_FIRST(&kt->kt_pgrp->pg_mem) == 0) {
@@ -170,8 +170,8 @@ void
 kthread_enqueue(kt)
 	struct kthread *kt;
 {
-	LIST_REMOVE(kt, kt_list);			/* off freekthread */
-	LIST_INSERT_HEAD(kt, &allkthread, kt_list);	/* onto allkthread */
+	LIST_REMOVE(kt, kt_list);						/* off freekthread */
+	LIST_INSERT_HEAD(&allkthread, kt, kt_list);		/* onto allkthread */
 }
 
 /* Remove a kthread from allkthread list and insert kthread onto the zombkthread list */
@@ -179,9 +179,9 @@ void
 kthread_dequeue(kt)
 	struct kthread *kt;
 {
-	LIST_REMOVE(kt, kt_list);			/* off allkthread */
-	LIST_INSERT_HEAD(kt, &zombkthread, kt_list);	/* onto zombkthread */
-	kt->kt_state = KT_SZOMB;
+	LIST_REMOVE(kt, kt_list);						/* off allkthread */
+	LIST_INSERT_HEAD(&zombkthread, kt, kt_list);	/* onto zombkthread */
+	kt->kt_stat = KT_SZOMB;
 }
 
 /* return kthread from kthreadlist (i.e. allkthread, freekthread, zombkthread) list if not null and matching tid */
@@ -203,11 +203,12 @@ kthread_find(ktlist, tid)
 void
 kthread_zombie(void)
 {
+	struct kthread *kt;
 	if (!LIST_EMPTY(&zombkthread)) {
 		LIST_FOREACH(kt, &zombkthread, kt_list) {
 			if (kt != NULL) {
-				LIST_REMOVE(kt, kt_list);			/* off zombkthread */
-				LIST_INSERT_HEAD(kt, &freekthread, kt_list);	/* onto freekthread */
+				LIST_REMOVE(kt, kt_list);						/* off zombkthread */
+				LIST_INSERT_HEAD(&freekthread, kt, kt_list);	/* onto freekthread */
 			}
 		}
 	}
@@ -218,7 +219,6 @@ kthread_zombie(void)
  * Mxthreads are confined to the kthread which created it.
  * A single kthread can create a limited number (TBA) of mxthreads.
  */
-
 #define M_MXTHREAD 95
 
 struct mxthread {
@@ -314,3 +314,23 @@ mxthread_remove(kt, channel)
 	KTHREAD_UNLOCK(kt);
 }
 
+int
+kthread_alloc(func, arg, kt)
+	void (*func)(void *);
+	void *arg;
+	struct kthread *kt;
+{
+	struct proc *p;
+	int error;
+
+	error = kthread_create(func, arg, &p, "kthread_allocation");
+	if (error != 0) {
+		return (error);
+	}
+	kt = p->p_kthreado;
+	if (kt != NULL) {
+		kt->kt_flag |= KT_INMEM | KT_SYSTEM | KT_NOCLDWAIT;
+	}
+
+	return (0);
+}

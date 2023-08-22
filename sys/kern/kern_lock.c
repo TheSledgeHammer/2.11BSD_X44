@@ -187,7 +187,6 @@ lockmgr(lkp, flags, interlkp, pid)
 		 */
 		lkp->lk_sharecount++;
 		/* fall into downgrade */
-		break;
 
 	case LK_DOWNGRADE:
 		if (LOCKHOLDER_PID(&lkp->lk_lockholder) != pid || lkp->lk_exclusivecount == 0)
@@ -212,7 +211,6 @@ lockmgr(lkp, flags, interlkp, pid)
 			break;
 		}
 		/* fall into normal upgrade */
-		break;
 
 	case LK_UPGRADE:
 		/*
@@ -261,7 +259,6 @@ lockmgr(lkp, flags, interlkp, pid)
 		if (lkp->lk_sharecount == 0 && lkp->lk_waitcount)
 			wakeup((void *)lkp);
 		/* fall into exclusive request */
-		break;
 
 	case LK_EXCLUSIVE:
 		if (LOCKHOLDER_PID(&lkp->lk_lockholder) == pid && pid != LK_KERNPROC) {
@@ -410,11 +407,10 @@ lock_pause(lkp, wanted)
 		}
 		lkp_lock(lkp);
 	}
-	/*
+
 	if (!(wanted)) {
-		break;
+		return;
 	}
-	*/
 }
 
 void

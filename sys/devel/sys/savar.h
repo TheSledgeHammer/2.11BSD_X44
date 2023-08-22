@@ -92,8 +92,8 @@ struct sadata_vp {
 	struct proc						*savp_blocker;			/* recently blocked proc */
 	struct proc						*savp_wokenq_head; 		/* list of woken procs */
 	struct proc						**savp_wokenq_tailp; 	/* list of woken procs */
-	vaddr_t							savp_faultaddr;			/* page fault address */
-	vaddr_t							savp_ofaultaddr;		/* old page fault address */
+	vm_offset_t						savp_faultaddr;			/* page fault address */
+	vm_offset_t						savp_ofaultaddr;		/* old page fault address */
 	LIST_HEAD(, proc)				savp_proccache; 		/* list of available procs */
 	int								savp_ncached;			/* list length */
 	SIMPLEQ_HEAD(, sadata_upcall)	savp_upcalls; 			/* pending upcalls */
@@ -113,11 +113,6 @@ struct sadata {
 };
 
 #define SA_FLAG_ALL	SA_FLAG_PREEMPT
-
-extern struct pool sadata_pool;		/* memory pool for sadata structures */
-extern struct pool saupcall_pool;	/* memory pool for pending upcalls */
-extern struct pool sastack_pool;	/* memory pool for sastack structs */
-extern struct pool savp_pool;		/* memory pool for sadata_vp structures */
 
 #define	SA_MAXNUMSTACKS	16			/* Maximum number of upcall stacks per VP. */
 

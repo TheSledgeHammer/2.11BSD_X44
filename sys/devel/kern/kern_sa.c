@@ -89,24 +89,15 @@ int	sadebug = 0;
 
 #define SA_PROC_STATE_LOCK(p, f) do {		\
 	(f) = (p)->p_flag;     					\
-	(p)->p_flag &= ~L_SA;					\
+	(p)->p_flag &= ~P_SA;					\
 } while (/*CONSTCOND*/ 0)
 
 #define SA_PROC_STATE_UNLOCK(p, f) do {		\
-	(p)->p_flag |= (f) & L_SA;				\
+	(p)->p_flag |= (f) & P_SA;				\
 } while (/*CONSTCOND*/ 0)
 
 SPLAY_PROTOTYPE(sasttree, sastack, sast_node, sast_compare);
 SPLAY_GENERATE(sasttree, sastack, sast_node, sast_compare);
-
-void
-sa_init()
-{
-	MALLOC(&saupcall_pool, struct sadata_upcall *, sizeof(struct sadata_upcall *), M_SA, M_WAITOK | M_NOWAIT);
-	MALLOC(&sadata_pool, struct sadata *, sizeof(struct sadata *), M_SA, M_WAITOK | M_NOWAIT);
-	MALLOC(&sastack_pool, struct sastack *, sizeof(struct sastack *), M_SA, M_WAITOK | M_NOWAIT);
-	MALLOC(&savp_pool, struct sadata_vp *, sizeof(struct sadata_vp *), M_SA, M_WAITOK | M_NOWAIT);
-}
 
 /*
  * sadata_upcall_alloc:
@@ -117,7 +108,7 @@ struct sadata_upcall *
 sadata_upcall_alloc(int waitok)
 {
 	struct sadata_upcall *sau;
-	sau = &saupcall_pool; //(struct sadata_upcall *)malloc(sizeof(struct sadata_upcall), M_SA, waitok ? M_WAITOK : M_NOWAIT);
+	sau = (struct sadata_upcall *)malloc(sizeof(struct sadata_upcall), M_SA, waitok ? M_WAITOK : M_NOWAIT);
 	if (sau) {
 		sau->sau_arg = NULL;
 	}
@@ -148,9 +139,9 @@ sa_newsavp(struct sadata *sa)
 	struct sadata_vp *vp, *qvp;
 
 	/* Allocate virtual processor data structure */
-	vp = &sadata_pool;
+	vp = (struct sadata_vp *)malloc(sizeof(struct sadata_vp), M_SA, M_WAITOK);
 	/* Initialize. */
-	memset(vp, 0, sizeof(*vp));
+	bzero(vp, sizeof(*vp));
 	simple_lock_init(&vp->savp_lock);
 	vp->savp_proc = NULL;
 	vp->savp_wokenq_head = NULL;
@@ -199,7 +190,7 @@ sys_sa_register(struct lwp *l, void *v, register_t *retval)
 
 	if (p->p_sa == NULL) {
 		/* Allocate scheduler activations data structure */
-		sa = pool_get(&sadata_pool, PR_WAITOK);
+		sa =  (struct sadata *)malloc(sizeof(struct sadata), M_SA, M_WAITOK);
 		/* Initialize. */
 		memset(sa, 0, sizeof(*sa));
 		simple_lock_init(&sa->sa_lock);
@@ -248,16 +239,16 @@ sa_release(struct proc *p)
 
 	SPLAY_FOREACH(sast, sasttree, &sa->sa_stackstree){
 		SPLAY_REMOVE(sasttree, &sa->sa_stackstree, sast);
-		pool_put(&sastack_pool, sast);
+		free(sast, M_SA);
 	}
 
 	p->p_flag &= ~P_SA;
 	vp = SLIST_FIRST(sa->sa_vps);
 	while (vp != NULL) {
 		SLIST_REMOVE_HEAD(&p->p_sa->sa_vps, savp_next);
-		pool_put(&savp_pool, vp);
+		free(vp, M_SA);
 	}
-	pool_put(&sadata_pool, sa);
+	free(sa, M_SA);
 	p->p_sa = NULL;
 	l = LIST_FIRST(&p->p_ktds);
 	if (l) {
@@ -295,7 +286,7 @@ sa_setstackfree(struct sastack *sast, struct sadata *sa)
 #ifdef DIAGNOSTIC
 		printf("sa_setstackfree: couldn't copyin sasi_stackgen");
 #endif
-		sigexit(curlwp, SIGILL);
+		sigexit(curproc, SIGILL);
 		/* NOTREACHED */
 	}
 }
@@ -363,7 +354,8 @@ sys_sa_stacks(struct lwp *l, void *v, register_t *retval)
 		syscallarg(int) num;
 		syscallarg(stack_t *) stacks;
 	} *uap = v;
-	struct sadata *sa = l->l_proc->p_sa;
+	struct proc *p;
+	struct sadata *sa = p->p_sa;
 	struct sastack *sast, newsast;
 	int count, error, f, i;
 
@@ -403,10 +395,8 @@ sys_sa_stacks(struct lwp *l, void *v, register_t *retval)
 			error = ENOMEM;
 			break;
 		} else {
-			DPRINTFN(9, ("sa_stacks(%d.%d) adding stack %p\n",
-				     l->l_proc->p_pid, l->l_lid,
-				     newsast.sast_stack.ss_sp));
-			sast = pool_get(&sastack_pool, PR_WAITOK);
+			DPRINTFN(9, ("sa_stacks(%d.%d) adding stack %p\n", p->p_pid, l->l_lid, newsast.sast_stack.ss_sp));
+			sast = (struct sastack *)malloc(sizeof(struct sastack), M_SA, M_WAITOK);
 			sast->sast_stack = newsast.sast_stack;
 			SPLAY_INSERT(sasttree, &sa->sa_stackstree, sast);
 			sa->sa_nstacks++;
@@ -428,8 +418,7 @@ sys_sa_enable(struct lwp *l, void *v, register_t *retval)
 	struct sadata_vp *vp = l->l_savp;
 	int error;
 
-	DPRINTF(("sys_sa_enable(%d.%d)\n", l->l_proc->p_pid,
-	    l->l_lid));
+	DPRINTF(("sys_sa_enable(%d.%d)\n", l->l_proc->p_pid, l->l_lid));
 
 	/* We have to be using scheduler activations */
 	if (sa == NULL || vp == NULL)
@@ -455,10 +444,9 @@ sys_sa_enable(struct lwp *l, void *v, register_t *retval)
 
 #ifdef SMP
 static int
-sa_increaseconcurrency(struct lwp *l, int concurrency)
+sa_increaseconcurrency(struct proc *p, int concurrency)
 {
-	struct proc *p;
-	struct lwp *l2;
+	struct proc *p2;
 	struct sadata *sa;
 	vaddr_t uaddr;
 	bool_t inmem;
@@ -494,9 +482,8 @@ sa_increaseconcurrency(struct lwp *l, int concurrency)
 				    NULL, NULL, 0, NULL);
 				if (error) {
 					/* free new savp */
-					SLIST_REMOVE(&sa->sa_vps, l2->l_savp,
-					    sadata_vp, savp_next);
-					pool_put(&savp_pool, l2->l_savp);
+					SLIST_REMOVE(&sa->sa_vps, l2->l_savp, sadata_vp, savp_next);
+					free(l2->l_savp, M_SA);
 				}
 			} else
 				error = 1;

@@ -35,7 +35,6 @@
 /* kernel threads */
 typedef struct kthread 	*kthread_t;
 struct kthread {
-
 	LIST_ENTRY(kthread)	kt_list;				/* List of all kernel threads */
 
     struct mtx			*kt_mtx;				/* kthread structure mutex */
@@ -49,14 +48,7 @@ struct kthread {
 
 	/* Substructures: */
 	struct pcred 	 	*kt_cred;				/* Thread owner's identity. */
-	struct filedesc 	*kt_fd;					/* Ptr to open files structure. */
-	struct pstats 	 	*kt_stats;				/* Accounting/statistics (THREAD ONLY). */
-	struct plimit 	 	*kt_limit;				/* Process limits. */
-	struct vmspace  	*kt_vmspace;			/* Address space. */
-	struct sigacts 		*kt_sigacts;			/* Signal actions, state (THREAD ONLY). */
-
 #define	kt_ucred		kt_cred->pc_ucred
-#define	kt_rlimit		kt_limit->pl_rlimit
 
 	struct proc 		*kt_procp;				/* pointer to proc */
 	struct uthread		*kt_uthreado;			/* uthread overseer (original uthread)  */
@@ -67,38 +59,7 @@ struct kthread {
 	LIST_HEAD(, kthread)kt_children;			/* Pointer to list of children. */
 	LIST_ENTRY(proc)	kt_hash;				/* Hash chain. */
 
-#define	kt_startzero	kt_oppid
-
-	pid_t				kt_oppid;	    		/* Save parent pid during ptrace. XXX */
-
-    u_int				kt_estcpu;	 			/* Time averaged value of p_cpticks. */
-
-    caddr_t				kt_wchan;				/* event process is awaiting */
-    caddr_t				kt_wmesg;	 			/* Reason for sleep. */
-
-	struct itimerval   	kt_realtimer;			/* Alarm timer. */
-	struct timeval     	kt_rtime;	    		/* Real time. */
-
-	struct vnode 	    *kt_textvp;				/* Vnode of executable. */
-
-#define	kt_endzero		kt_startcopy
-#define	kt_startcopy	kt_sigmask
-
-    sigset_t 			kt_sigmask;				/* Current signal mask. */
-    sigset_t 			kt_sigignore;			/* Signals being ignored */
-    sigset_t 			kt_sigcatch;			/* Signals being caught by user */
-
-	u_char				kt_pri;					/* thread  priority, negative is high */
-	u_char				kt_cpu;					/* cpu usage for scheduling */
-	char				kt_nice;				/* nice for cpu usage */
-	char				kt_slptime;				/* Time since last blocked. secs sleeping */
-	char				kt_comm[MAXCOMLEN+1];	/* p: basename of last exec file */
-
 	struct pgrp 	    *kt_pgrp;       		/* Pointer to proc group. */
-	struct sysentvec	*kt_sysent;				/* System call dispatch information. */
-
-#define kt_endcopy
-
 	struct kthread 		*kt_link;				/* linked list of running kthreads */
 
     u_short 			kt_acflag;	    		/* Accounting flags. */
@@ -107,7 +68,6 @@ struct kthread {
 
 	//void				*kt_ctxlink;			/* uc_link {get,set}context */
     //struct sadata_vp 	*kt_savp; 				/* SA "virtual processor" */
-
 	LIST_HEAD(, mxthread)kt_mxthreads;			/* list of mxthreads */
 };
 #define	kt_session		kt_pgrp->pg_session
