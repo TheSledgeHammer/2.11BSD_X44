@@ -92,7 +92,7 @@ static void	threadpool_job_rele(struct threadpool_job *);
 
 static int	threadpool_percpu_create(struct threadpool_percpu **, pri_t);
 static void	threadpool_percpu_destroy(struct threadpool_percpu *);
-static void	threadpool_percpu_init(void *, void *, struct cpu_info *);
+static void	threadpool_percpu_init(pri_t);
 static void	threadpool_percpu_fini(void);
 
 static void	threadpool_overseer_thread(void *);
@@ -682,16 +682,49 @@ threadpool_cancel_job(pool, job)
 	}
 }
 
+static void threadpool_overseer_proc(struct proc *, struct threadpool_thread *const, struct threadpool *const);
+static void threadpool_proc(struct proc *, struct threadpool_thread *const, struct threadpool *const);
+
 static void
 threadpool_overseer_thread(arg)
 	void *arg;
 {
-	struct threadpool_thread *const overseer = arg;
-	struct threadpool *const pool = overseer->tpt_pool;
-	struct proc *p = NULL;
+	struct threadpool_thread *const overseer;
+
+	overseer = arg;
+	threadpool_overseer_proc(NULL, overseer, overseer->tpt_pool);
+}
+
+static void
+threadpool_thread(arg)
+	void *arg;
+{
+	struct threadpool_thread *const thread;
+
+	thread = arg;
+	threadpool_proc(curproc, thread, thread->tpt_pool);
+}
+
+static void
+threadpool_wait(p, chan, pri)
+	struct proc *p;
+	const void *chan;
+	int pri;
+{
+	sleep(chan, pri);
+	unsleep(p);
+}
+
+static void
+threadpool_overseer_proc(p, overseer, pool)
+	struct proc *p;
+	struct threadpool_thread *const overseer;
+	struct threadpool *const pool;
+{
 	int ktflags;
 	int error;
 
+	p = NULL;
 	/* Wait until we're initialized.  */
 	simple_lock(&pool->tp_lock);
 	while (overseer->tpt_proc == NULL) {
@@ -794,19 +827,15 @@ threadpool_overseer_thread(arg)
 }
 
 static void
-threadpool_thread(arg)
-	void *arg;
-{
+threadpool_proc(p, thread, pool)
+	struct proc *p;
 	struct threadpool_thread *const thread;
 	struct threadpool *const pool;
-
-	thread = arg;
-	pool = thread->tpt_pool;
-
+{
 	/* Wait until we're initialized and on the queue.  */
 	simple_lock(&pool->tp_lock);
 
-	KASSERT(thread->tpt_proc == curproc);
+	KASSERT(thread->tpt_proc == p);
 	for (;;) {
 		/* Wait until we are assigned a job.  */
 		while (thread->tpt_job == NULL) {
@@ -822,11 +851,11 @@ threadpool_thread(arg)
 		KASSERT(job != NULL);
 
 		/* Set our proc name to reflect what job we're doing.  */
-		PROC_LOCK(curproc);
-		char *const proc_name = curproc->p_name;
-		thread->tpt_proc_savedname = curproc->p_name;
-		curproc->p_name = job->job_name;
-		PROC_UNLOCK(curproc);
+		PROC_LOCK(p);
+		char *const proc_name = p->p_name;
+		thread->tpt_proc_savedname = p->p_name;
+		p->p_name = job->job_name;
+		PROC_UNLOCK(p);
 
 		simple_unlock(&pool->tp_lock);
 
@@ -834,7 +863,7 @@ threadpool_thread(arg)
 		(*job->job_func)(job);
 
 		/* proc name restored in threadpool_job_done(). */
-		KASSERTMSG((curproc->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
+		KASSERTMSG((p->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
 
 		/*
 		 * We can compare pointers, but we can no longer deference
@@ -851,14 +880,4 @@ threadpool_thread(arg)
 	simple_unlock(&pool->tp_lock);
 
 	kthread_exit(0);
-}
-
-static void
-threadpool_wait(p, chan, pri)
-	struct proc *p;
-	const void *chan;
-	int pri;
-{
-	sleep(chan, pri);
-	unsleep(p);
 }
