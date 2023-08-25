@@ -83,15 +83,15 @@ __weak_alias(xdrrec_eof,_xdrrec_eof)
 __weak_alias(xdrrec_skiprecord,_xdrrec_skiprecord)
 #endif
 
-static bool_t	xdrrec_getlong __P((XDR *, long *));
-static bool_t	xdrrec_putlong __P((XDR *, const long *));
-static bool_t	xdrrec_getbytes __P((XDR *, char *, u_int));
+static bool_t	xdrrec_getlong(XDR *, long *);
+static bool_t	xdrrec_putlong(XDR *, const long *);
+static bool_t	xdrrec_getbytes(XDR *, char *, u_int);
 
-static bool_t	xdrrec_putbytes __P((XDR *, const char *, u_int));
-static u_int	xdrrec_getpos __P((XDR *));
-static bool_t	xdrrec_setpos __P((XDR *, u_int));
-static int32_t *xdrrec_inline __P((XDR *, u_int));
-static void	xdrrec_destroy __P((XDR *));
+static bool_t	xdrrec_putbytes(XDR *, const char *, u_int);
+static u_int	xdrrec_getpos(XDR *);
+static bool_t	xdrrec_setpos(XDR *, u_int);
+static int32_t *xdrrec_inline(XDR *, u_int);
+static void	xdrrec_destroy(XDR *);
 
 static const struct  xdr_ops xdrrec_ops = {
 	xdrrec_getlong,
@@ -124,7 +124,7 @@ typedef struct rec_strm {
 	/*
 	 * out-goung bits
 	 */
-	int (*writeit) __P((char *, char *, int));
+	int (*writeit)(char *, char *, int);
 	char *out_base;	/* output buffer (points to frag header) */
 	char *out_finger;	/* next output position */
 	char *out_boundry;	/* data cannot up to this address */
@@ -133,7 +133,7 @@ typedef struct rec_strm {
 	/*
 	 * in-coming bits
 	 */
-	int (*readit) __P((char *, char *, int));
+	int (*readit)(char *, char *, int);
 	u_long in_size;	/* fixed size of the input buffer */
 	char *in_base;
 	char *in_finger;	/* location of next byte to be had */
@@ -153,13 +153,13 @@ typedef struct rec_strm {
 	int in_maxrec;
 } RECSTREAM;
 
-static u_int	fix_buf_size __P((u_int));
-static bool_t	flush_out __P((RECSTREAM *, bool_t));
-static bool_t	fill_input_buf __P((RECSTREAM *));
-static bool_t	get_input_bytes __P((RECSTREAM *, char *, int));
-static bool_t	set_input_fragment __P((RECSTREAM *));
-static bool_t	skip_input_bytes __P((RECSTREAM *, long));
-static bool_t	realloc_stream __P((RECSTREAM *, int));
+static u_int	fix_buf_size(u_int);
+static bool_t	flush_out(RECSTREAM *, bool_t);
+static bool_t	fill_input_buf(RECSTREAM *);
+static bool_t	get_input_bytes(RECSTREAM *, char *, int);
+static bool_t	set_input_fragment(RECSTREAM *);
+static bool_t	skip_input_bytes(RECSTREAM *, long);
+static bool_t	realloc_stream(RECSTREAM *, int);
 
 
 /*
@@ -178,9 +178,9 @@ xdrrec_create(xdrs, sendsize, recvsize, tcp_handle, readit, writeit)
 	u_int recvsize;
 	char *tcp_handle;
 	/* like read, but pass it a tcp_handle, not sock */
-	int (*readit) __P((char *, char *, int));
+	int (*readit)(char *, char *, int);
 	/* like write, but pass it a tcp_handle, not sock */
-	int (*writeit) __P((char *, char *, int));
+	int (*writeit)(char *, char *, int);
 {
 	RECSTREAM *rstrm = mem_alloc(sizeof(RECSTREAM));
 

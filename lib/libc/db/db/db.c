@@ -47,7 +47,7 @@ __RCSID("$NetBSD: db.c,v 1.13 2003/08/07 16:42:42 agc Exp $");
 #include <stdio.h>
 
 #include <db.h>
-static int __dberr __P((void));
+static int __dberr(void);
 
 #ifdef __weak_alias
 __weak_alias(dbopen,_dbopen)

@@ -103,7 +103,7 @@ extern "C" {
 #endif
 
 /* === regerror.c === */
-static char *regatoi __P((const regex_t *preg, char *localbuf, size_t buflen));
+static char *regatoi(const regex_t *preg, char *localbuf, size_t buflen);
 
 #ifdef __cplusplus
 }

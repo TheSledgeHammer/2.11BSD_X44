@@ -66,11 +66,11 @@ __weak_alias(authnone_create,_authnone_create)
  * Authenticator operations routines
  */
 
-static bool_t authnone_marshal __P((AUTH *, XDR *));
-static void authnone_verf __P((AUTH *));
-static bool_t authnone_validate __P((AUTH *, struct opaque_auth *));
-static bool_t authnone_refresh __P((AUTH *));
-static void authnone_destroy __P((AUTH *));
+static bool_t authnone_marshal(AUTH *, XDR *);
+static void authnone_verf(AUTH *);
+static bool_t authnone_validate(AUTH *, struct opaque_auth *);
+static bool_t authnone_refresh(AUTH *);
+static void authnone_destroy(AUTH *);
 
 static const struct auth_ops ops = {
 	authnone_verf,

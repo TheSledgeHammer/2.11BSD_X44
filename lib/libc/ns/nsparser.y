@@ -52,7 +52,7 @@ __RCSID("$NetBSD: nsparser.y,v 1.9 2004/01/25 16:38:15 lukem Exp $");
 #include <syslog.h>
 
 
-static	void	_nsaddsrctomap __P((const char *));
+static	void	_nsaddsrctomap(const char *);
 
 static	ns_dbt		curdbt;
 static	ns_src		cursrc;

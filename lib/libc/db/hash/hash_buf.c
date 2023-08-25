@@ -77,7 +77,7 @@ __RCSID("$NetBSD: hash_buf.c,v 1.10.2.1 2004/06/22 07:16:34 tron Exp $");
 #include "page.h"
 #include "extern.h"
 
-static BUFHEAD *newbuf __P((HTAB *, u_int32_t, BUFHEAD *));
+static BUFHEAD *newbuf(HTAB *, u_int32_t, BUFHEAD *);
 
 /* Unlink B from its place in the lru */
 #define BUF_REMOVE(B) { \

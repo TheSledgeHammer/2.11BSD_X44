@@ -79,8 +79,8 @@ __RCSID("$NetBSD: hash_bigkey.c,v 1.17.2.1 2004/06/22 07:21:53 tron Exp $");
 #include "page.h"
 #include "extern.h"
 
-static int collect_key __P((HTAB *, BUFHEAD *, int, DBT *, int));
-static int collect_data __P((HTAB *, BUFHEAD *, int, int));
+static int collect_key(HTAB *, BUFHEAD *, int, DBT *, int);
+static int collect_data(HTAB *, BUFHEAD *, int, int);
 
 /*
  * Big_insert

@@ -15,7 +15,7 @@ __indr_reference(_inet_aton,inet_aton)
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-extern int	_inet_aton __P((const char *, struct in_addr *));
+extern int	_inet_aton(const char *, struct in_addr *);
 
 int
 inet_aton(cp, addr)

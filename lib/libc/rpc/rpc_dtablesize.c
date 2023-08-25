@@ -43,7 +43,7 @@ __RCSID("$NetBSD: rpc_dtablesize.c,v 1.14 1998/11/15 17:32:43 christos Exp $");
 
 #include <unistd.h>
 
-int _rpc_dtablesize __P((void));	/* XXX */
+int _rpc_dtablesize(void);	/* XXX */
 
 /*
  * Cache the result of sysconf(_SC_OPEN_MAX), so we don't have to do an

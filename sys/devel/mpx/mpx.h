@@ -44,6 +44,8 @@ struct mpx_channel {
     LIST_ENTRY(mpx_channel) mpc_node;       /* channel node in list */
     struct mpx_group	    *mpc_group;     /* this channels group */
     int 	                mpc_index;      /* channel index */
+    void                    *mpc_data;		/* channel data */
+    int                     mpc_refcnt;		/* channel reference count */
 };
 
 struct grouprbtree;
@@ -83,6 +85,26 @@ extern struct channellist   mpx_channels[];
 extern int groupcount;
 extern int channelcount;
 
+/* common routines */
+void                		mpx_init(void);
+struct mpx 					*mpx_alloc(void);
+void						mpx_free(struct mpx *);
+
+/* syscall callback */
+int 						mpxcall(int, int, struct mpx *, int, void *);
+
+/* channels */
+struct mpx_channel 			*mpx_allocate_channels(struct mpx *, int);
+void						mpx_deallocate_channels(struct mpx *, struct mpx_channel *);
+void						mpx_add_channel(struct mpx_channel *, int, void *);
+void						mpx_remove_channel(struct mpx_channel *, int, void *);
+void                		mpx_create_channel(struct mpx *, int, void *, int);
+void						mpx_destroy_channel(struct mpx *, int, void *);
+struct mpx_channel     		*mpx_get_channel(int, void *);
+
+#ifdef notyet
+struct mpx_channel 			*mpx_get_channel_from_group(int);
+
 /* groups */
 struct mpx_group 			*mpx_allocate_groups(struct mpx *, int);
 void						mpx_deallocate_groups(struct mpx *, struct mpx_group *);
@@ -92,15 +114,7 @@ void						mpx_destroy_group(struct mpx *, int);
 struct mpx_group    		*mpx_get_group(int);
 struct mpx_group 			*mpx_get_group_from_channel(int);
 void						mpx_remove_group(struct mpx_group *, int);
-/* channels */
-struct mpx_channel 			*mpx_allocate_channels(struct mpx *, int);
-void						mpx_deallocate_channels(struct mpx *, struct mpx_channel *);
-void						mpx_add_channel(struct mpx_channel *, int);
-void                		mpx_create_channel(struct mpx *, int, int);
-void						mpx_destroy_channel(struct mpx *, int);
-struct mpx_channel     		*mpx_get_channel(int);
-struct mpx_channel 			*mpx_get_channel_from_group(int);
-void						mpx_remove_channel(struct mpx_channel *, int);
+
 /* common routines */
 void                		mpx_init(void);
 struct mpx 					*mpx_alloc(void);
@@ -111,7 +125,6 @@ void						mpx_attach(struct mpx_channel *, struct mpx_group *);
 void						mpx_detach(struct mpx_channel *, struct mpx_group *);
 int							mpx_connect(struct mpx_channel *, struct mpx_channel *);
 struct mpx_channel 			*mpx_disconnect(struct mpx_channel *, int);
+#endif
 
-/* syscall callback */
-int 						mpxcall(int, int, struct mpx *, int);
 #endif /* SYS_MPX_H_ */

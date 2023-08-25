@@ -52,7 +52,7 @@ __RCSID("$NetBSD: bt_put.c,v 1.14 2003/12/30 21:20:16 martin Exp $");
 #include <db.h>
 #include "btree.h"
 
-static EPG *bt_fast __P((BTREE *, const DBT *, const DBT *, int *));
+static EPG *bt_fast(BTREE *, const DBT *, const DBT *, int *);
 
 /*
  * __BT_PUT -- Add a btree item to the tree.

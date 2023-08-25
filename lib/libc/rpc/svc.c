@@ -107,7 +107,7 @@ static struct svc_callout {
 	rpcprog_t	    sc_prog;
 	rpcvers_t	    sc_vers;
 	char		   *sc_netid;
-	void		    (*sc_dispatch) __P((struct svc_req *, SVCXPRT *));
+	void		    (*sc_dispatch)(struct svc_req *, SVCXPRT *);
 } *svc_head;
 
 #ifdef _REENTRANT
@@ -115,9 +115,9 @@ extern rwlock_t svc_lock;
 extern rwlock_t svc_fd_lock;
 #endif
 
-static struct svc_callout *svc_find __P((rpcprog_t, rpcvers_t,
-					 struct svc_callout **, char *));
-static void __xprt_do_unregister __P((SVCXPRT *xprt, bool_t dolock));
+static struct svc_callout *svc_find(rpcprog_t, rpcvers_t,
+					 struct svc_callout **, char *);
+static void __xprt_do_unregister(SVCXPRT *xprt, bool_t dolock);
 
 /* ***************  SVCXPRT related stuff **************** */
 
@@ -201,7 +201,7 @@ svc_reg(xprt, prog, vers, dispatch, nconf)
 	SVCXPRT *xprt;
 	const rpcprog_t prog;
 	const rpcvers_t vers;
-	void (*dispatch) __P((struct svc_req *, SVCXPRT *));
+	void (*dispatch)(struct svc_req *, SVCXPRT *);
 	const struct netconfig *nconf;
 {
 	bool_t dummy;
@@ -311,7 +311,7 @@ svc_register(xprt, prog, vers, dispatch, protocol)
 	SVCXPRT *xprt;
 	u_long prog;
 	u_long vers;
-	void (*dispatch) __P((struct svc_req *, SVCXPRT *));
+	void (*dispatch)(struct svc_req *, SVCXPRT *);
 	int protocol;
 {
 	struct svc_callout *prev;

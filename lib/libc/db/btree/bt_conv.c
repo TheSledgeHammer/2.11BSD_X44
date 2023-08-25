@@ -50,7 +50,7 @@ __RCSID("$NetBSD: bt_conv.c,v 1.10.2.1 2004/06/22 07:16:34 tron Exp $");
 #include <db.h>
 #include "btree.h"
 
-static void mswap __P((PAGE *));
+static void mswap(PAGE *);
 
 /*
  * __BT_BPGIN, __BT_BPGOUT --

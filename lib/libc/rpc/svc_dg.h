@@ -41,7 +41,7 @@ struct svc_dg_data {
 	/* XXX: optbuf should be the first field, used by ti_opts.c code */
 	size_t		su_iosz;		/* size of send.recv buffer */
 	u_int32_t	su_xid;			/* transaction id */
-	XDR		su_xdrs;			/* XDR handle */
+	XDR			su_xdrs;			/* XDR handle */
 	char		su_verfbody[MAX_AUTH_BYTES];	/* verifier body */
 	void		*su_cache;		/* cached data, NULL if none */
 };

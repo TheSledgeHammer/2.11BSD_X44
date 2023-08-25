@@ -53,14 +53,14 @@ __RCSID("$NetBSD: hash_func.c,v 1.9.2.1 2004/06/22 07:15:27 tron Exp $");
 #include "extern.h"
 
 #if 0
-static u_int32_t hash1 __P((const void *, size_t)) __attribute__((__unused__));
-static u_int32_t hash2 __P((const void *, size_t)) __attribute__((__unused__));
-static u_int32_t hash3 __P((const void *, size_t)) __attribute__((__unused__));
+static u_int32_t hash1(const void *, size_t) __attribute__((__unused__));
+static u_int32_t hash2(const void *, size_t) __attribute__((__unused__));
+static u_int32_t hash3(const void *, size_t) __attribute__((__unused__));
 #endif
-static u_int32_t hash4 __P((const void *, size_t)) __attribute__((__unused__));
+static u_int32_t hash4(const void *, size_t) __attribute__((__unused__));
 
 /* Global default hash function */
-u_int32_t (*__default_hash) __P((const void *, size_t)) = hash4;
+u_int32_t (*__default_hash)(const void *, size_t) = hash4;
 #if 0
 /*
  * HASH FUNCTIONS

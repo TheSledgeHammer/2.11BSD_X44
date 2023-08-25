@@ -52,7 +52,7 @@ __RCSID("$NetBSD: bt_close.c,v 1.11 2003/08/07 16:42:40 agc Exp $");
 #include <db.h>
 #include "btree.h"
 
-static int bt_meta __P((BTREE *));
+static int bt_meta(BTREE *);
 
 /*
  * BT_CLOSE -- Close a btree.

@@ -684,6 +684,7 @@ threadpool_cancel_job(pool, job)
 
 static void threadpool_overseer_proc(struct proc *, struct threadpool_thread *const, struct threadpool *const);
 static void threadpool_proc(struct proc *, struct threadpool_thread *const, struct threadpool *const);
+static void threadpool_processor(char *, struct threadpool_thread *const, struct threadpool *const, struct mtx *, struct lock_holder *);
 
 static void
 threadpool_overseer_thread(arg)
@@ -832,10 +833,21 @@ threadpool_proc(p, thread, pool)
 	struct threadpool_thread *const thread;
 	struct threadpool *const pool;
 {
+	KASSERT(thread->tpt_proc == p);
+	threadpool_processor(p->p_name, thread, pool, p->p_mtx, &proc_loholder);
+}
+
+static void
+threadpool_processor(name, thread, pool, mtx, loh)
+	char *name;
+	struct threadpool_thread *const thread;
+	struct threadpool *const pool;
+	struct mtx *mtx;
+	struct lock_holder *loh;
+{
 	/* Wait until we're initialized and on the queue.  */
 	simple_lock(&pool->tp_lock);
 
-	KASSERT(thread->tpt_proc == p);
 	for (;;) {
 		/* Wait until we are assigned a job.  */
 		while (thread->tpt_job == NULL) {
@@ -851,11 +863,11 @@ threadpool_proc(p, thread, pool)
 		KASSERT(job != NULL);
 
 		/* Set our proc name to reflect what job we're doing.  */
-		PROC_LOCK(p);
-		char *const proc_name = p->p_name;
-		thread->tpt_proc_savedname = p->p_name;
-		p->p_name = job->job_name;
-		PROC_UNLOCK(p);
+		mtx_lock(mtx, loh);
+		char *const proc_name = name;
+		thread->tpt_proc_savedname = name;
+		name = job->job_name;
+		mtx_unlock(mtx, loh);
 
 		simple_unlock(&pool->tp_lock);
 
@@ -863,7 +875,7 @@ threadpool_proc(p, thread, pool)
 		(*job->job_func)(job);
 
 		/* proc name restored in threadpool_job_done(). */
-		KASSERTMSG((p->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
+		KASSERTMSG((name == proc_name), "someone forgot to call threadpool_job_done()!");
 
 		/*
 		 * We can compare pointers, but we can no longer deference

@@ -51,7 +51,7 @@ __RCSID("$NetBSD: rec_delete.c,v 1.13 2003/08/07 16:42:44 agc Exp $");
 #include <db.h>
 #include "recno.h"
 
-static int rec_rdelete __P((BTREE *, recno_t));
+static int rec_rdelete(BTREE *, recno_t);
 
 /*
  * __REC_DELETE -- Delete the item(s) referenced by a key.

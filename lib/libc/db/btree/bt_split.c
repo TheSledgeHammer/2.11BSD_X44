@@ -52,16 +52,16 @@ __RCSID("$NetBSD: bt_split.c,v 1.13 2003/08/07 16:42:41 agc Exp $");
 #include <db.h>
 #include "btree.h"
 
-static int	 bt_broot __P((BTREE *, PAGE *, PAGE *, PAGE *));
+static int	 bt_broot(BTREE *, PAGE *, PAGE *, PAGE *);
 static PAGE	*bt_page
-		    __P((BTREE *, PAGE *, PAGE **, PAGE **, indx_t *, size_t));
-static int	 bt_preserve __P((BTREE *, pgno_t));
+		   (BTREE *, PAGE *, PAGE **, PAGE **, indx_t *, size_t);
+static int	 bt_preserve(BTREE *, pgno_t);
 static PAGE	*bt_psplit
-		    __P((BTREE *, PAGE *, PAGE *, PAGE *, indx_t *, size_t));
+		   (BTREE *, PAGE *, PAGE *, PAGE *, indx_t *, size_t);
 static PAGE	*bt_root
-		    __P((BTREE *, PAGE *, PAGE **, PAGE **, indx_t *, size_t));
-static int	 bt_rroot __P((BTREE *, PAGE *, PAGE *, PAGE *));
-static recno_t	 rec_total __P((PAGE *));
+		   (BTREE *, PAGE *, PAGE **, PAGE **, indx_t *, size_t);
+static int	 bt_rroot(BTREE *, PAGE *, PAGE *, PAGE *);
+static recno_t	 rec_total(PAGE *);
 
 #ifdef STATISTICS
 u_long	bt_rootsplit, bt_split, bt_sortsplit, bt_pfxsaved;

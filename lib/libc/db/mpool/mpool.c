@@ -63,9 +63,9 @@ __weak_alias(mpool_put,_mpool_put)
 __weak_alias(mpool_sync,_mpool_sync)
 #endif
 
-static BKT *mpool_bkt __P((MPOOL *));
-static BKT *mpool_look __P((MPOOL *, pgno_t));
-static int  mpool_write __P((MPOOL *, BKT *));
+static BKT *mpool_bkt(MPOOL *);
+static BKT *mpool_look(MPOOL *, pgno_t);
+static int  mpool_write(MPOOL *, BKT *);
 
 /*
  * mpool_open --
@@ -115,8 +115,8 @@ mpool_open(key, fd, pagesize, maxcache)
 void
 mpool_filter(mp, pgin, pgout, pgcookie)
 	MPOOL *mp;
-	void (*pgin) __P((void *, pgno_t, void *));
-	void (*pgout) __P((void *, pgno_t, void *));
+	void (*pgin)(void *, pgno_t, void *);
+	void (*pgout)(void *, pgno_t, void *);
 	void *pgcookie;
 {
 	mp->pgin = pgin;

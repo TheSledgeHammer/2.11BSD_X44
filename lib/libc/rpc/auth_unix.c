@@ -74,13 +74,13 @@ __weak_alias(authunix_create_default,_authunix_create_default)
 
 
 /* auth_unix.c */
-static void authunix_nextverf __P((AUTH *));
-static bool_t authunix_marshal __P((AUTH *, XDR *));
-static bool_t authunix_validate __P((AUTH *, struct opaque_auth *));
-static bool_t authunix_refresh __P((AUTH *));
-static void authunix_destroy __P((AUTH *));
-static void marshal_new_auth __P((AUTH *));
-static const struct auth_ops *authunix_ops __P((void));
+static void authunix_nextverf(AUTH *);
+static bool_t authunix_marshal(AUTH *, XDR *);
+static bool_t authunix_validate(AUTH *, struct opaque_auth *);
+static bool_t authunix_refresh(AUTH *);
+static void authunix_destroy(AUTH *);
+static void marshal_new_auth(AUTH *);
+static const struct auth_ops *authunix_ops(void);
 
 /*
  * This struct is pointed to by the ah_private field of an auth_handle.

@@ -26,6 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* mpx groups have not been implemented */
+
 #include <sys/cdefs.h>
 #include <sys/systm.h>
 #include <sys/param.h>
@@ -46,31 +48,17 @@
 #include <devel/sys/malloctypes.h>
 
 int mpxchan(int, int, struct mpx *, int);
-int mpxgroup(int, int, struct mpx *, int);
 
-RB_PROTOTYPE(grouprbtree, mpx_group, mpg_node, mpx_compare_groups);
-RB_GENERATE(grouprbtree, mpx_group, mpg_node, mpx_compare_groups);
-
-struct grouprbtree  mpx_groups[NGROUPS];
 struct channellist  mpx_channels[NCHANS];
-int groupcount;
-int channelcount;
 
 void
 mpx_init(void)
 {
-	register int i, j;
-
-    for(i = 0; i < NGROUPS; i++) {
-    	RB_INIT(&mpx_groups[i]);
-    }
+	register int i;
 
 	for(j = 0; j < NCHANS; j++) {
 		LIST_INIT(&mpx_channels[j]);
 	}
-	/* A count of -1 indicates no channel or group exists */
-	groupcount = -1;
-	channelcount = -1;
 }
 
 struct mpx *
@@ -116,26 +104,18 @@ mpx_copyout(mpx)
 
 /* mpx callback */
 int
-mpxcall(cmd, type, mpx, idx)
-	int cmd, type, idx;
+mpxcall(cmd, mpx, idx, data)
+	int cmd, idx;
 	struct mpx *mpx;
+	void *data;
 {
-	int error, nchans, ngroups;
+	int error, nchans;
 
 	nchans = NCHANS;
-	ngroups = NGROUPS;
 
 	error = mpx_copyin(mpx);
 	if (error) {
-		switch (type) {
-		case MPXCHANNEL:
-			error = mpxchan(cmd, idx, mpx, nchans);
-			break;
-
-		case MPXGROUP:
-			error = mpxgroup(cmd, idx, mpx, ngroups);
-			break;
-		}
+		error = mpxchan(cmd, idx, data, mpx, nchans);
 	}
 
 	if (error != 0) {
@@ -152,305 +132,85 @@ mpx()
 {
 	register struct mpx_args {
 		syscallarg(int) cmd;
-		syscallarg(int) type; /* channel or group */
 		syscallarg(struct mpx *) mpx;
 		syscallarg(int) idx; /* channel or group index */
+		syscallarg(void *) data;
 	} *uap = (struct mpx_args *)u.u_ap;
 
 	int error;
 
-	error = mpxcall(SCARG(uap, cmd), SCARG(uap, type), SCARG(uap, mpx), SCARG(uap, idx));
+	error = mpxcall(SCARG(uap, cmd), SCARG(uap, mpx), SCARG(uap, idx), SCARG(uap, data));
 	return (error);
 }
 
 int
-mpxchan(cmd, idx, mpx, nchans)
+mpxchan(cmd, idx, data, mpx, nchans)
 	int cmd, idx, nchans;
 	struct mpx *mpx;
+    void *data;
 {
-	int error;
-
 	switch (cmd) {
 	case MPXCREATE:
-		if (channelcount < 0) {
+		create:
+		if (mpx->mpx_channel->mpc_refcnt == 0) {
 			idx = 0;
 		}
-		mpx_create_channel(mpx, idx, nchans);
+		mpx_create_channel(mpx, idx, data, nchans);
 		printf("create channel: %d\n", idx);
-		break;
+		return (0);
 
 	case MPXDESTROY:
-		if (channelcount <= 0) {
-			idx = -1;
+		if (idx >= 0) {
+			mpx_destroy_channel(mpx, idx, data);
 		}
-        if (idx >= 0) {
-            mpx_destroy_channel(mpx, idx);
-        }
-        printf("destroy channel: %d\n", idx);
-		break;
+		return (0);
 
 	case MPXPUT:
 		if (mpx->mpx_channel != NULL) {
-			if (channelcount < 0) {
+			if (mpx->mpx_channel->mpc_refcnt == 0) {
 				idx = 0;
-				mpx_add_channel(mpx->mpx_channel, idx);
-			} else {
-				if (mpx->mpx_channel->mpc_index == idx) {
-		             printf("add channel: channel %d already exists\n", idx);
-		             break;
-				}
-				mpx_add_channel(mpx->mpx_channel, idx);
 			}
+			if (mpx->mpx_channel->mpc_index == idx
+					&& mpx->mpx_channel->mpc_data == data) {
+				printf("add channel: channel %d already exists\n", idx);
+				return (EEXIST);
+			}
+			mpx_add_channel(mpx->mpx_channel, idx, data);
 		} else {
-			idx = 0;
-			mpx_create_channel(mpx, idx, nchans);
-		}
-		if (mpx->mpx_group != NULL) {
-			mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
+			goto create;
 		}
 		printf("add channel: %d\n", idx);
-		break;
+		return (0);
 
 	case MPXREMOVE:
 		if (mpx->mpx_channel != NULL) {
-			mpx_remove_channel(mpx->mpx_channel, idx);
+			mpx_remove_channel(mpx->mpx_channel, idx, data);
 		}
 		printf("remove channel: %d\n", idx);
-		break;
+		return (0);
 
 	case MPXGET:
-		if(idx >= 0) {
-			mpx->mpx_channel = mpx_get_channel(idx);
-		}
-		if (idx < 0 || mpx->mpx_channel == NULL) {
+		mpx->mpx_channel = mpx_get_channel(idx, data);
+		if (mpx->mpx_channel == NULL) {
 			printf("get channel: no channel %d found\n", idx);
 			return (ENOMEM);
 		}
 		printf("get channel: %d\n", idx);
-		break;
+		return (0);
 	}
+
 	return (0);
-}
-
-int
-mpxgroup(cmd, idx, mpx, ngroups)
-	int cmd, idx, ngroups;
-	struct mpx *mpx;
-{
-	switch (cmd) {
-	case MPXCREATE:
-		if (groupcount < 0) {
-			idx = 0;
-		}
-		printf("create group: %d\n", idx);
-		break;
-
-	case MPXDESTROY:
-		if (groupcount <= 0) {
-			idx = -1;
-		}
-		if (idx >= 0) {
-			mpx_destroy_group(mpx, idx);
-		}
-		printf("destroy group: %d\n", idx);
-		break;
-
-	case MPXPUT:
-		if (mpx->mpx_group != NULL) {
-			if (groupcount < 0) {
-				idx = 0;
-				mpx_add_group(mpx->mpx_group, idx);
-			} else {
-				if (mpx->mpx_group->mpg_index == idx) {
-		             printf("add group: group %d already exists\n", idx);
-		             break;
-				}
-				mpx_add_group(mpx->mpx_group, idx);
-			}
-		} else {
-			idx = 0;
-			mpx_create_group(mpx, idx, ngroups);
-		}
-		if (mpx->mpx_channel != NULL) {
-			mpx_set_channelgroup(mpx->mpx_channel, mpx->mpx_group);
-		}
-		printf("add group: %d\n", idx);
-		break;
-
-	case MPXREMOVE:
-		if (mpx->mpx_group != NULL) {
-			mpx_remove_group(mpx->mpx_group, idx);
-		}
-		printf("remove group: %d\n", idx);
-		break;
-
-	case MPXGET:
-		if(idx >= 0) {
-			mpx->mpx_group = mpx_get_group(idx);
-		}
-		if (idx < 0 || mpx->mpx_group == NULL) {
-			printf("get group: no group %d found\n", idx);
-			return (ENOMEM);
-		}
-		printf("get group: %d\n", idx);
-		break;
-	}
-	return (0);
-}
-
-void
-mpx_set_channelgroup(cp, gp)
-	struct mpx_channel 	*cp;
-	struct mpx_group 	*gp;
-{
-	if (cp == NULL && gp == NULL) {
-		return;
-	}
-	cp->mpc_group = gp;
-	gp->mpg_channel = cp;
-}
-
-void
-mpx_set_grouppgrp(gp, pgrp)
-	struct mpx_group 	*gp;
-	struct pgrp 		*pgrp;
-{
-	gp->mpg_pgrp = pgrp;
-}
-
-struct mpx_group *
-mpx_allocate_groups(mpx, ngroups)
-	struct mpx 	*mpx;
-	int 		ngroups;
-{
-	register struct mpx_group *result;
-
-	result = (struct mpx_group *)calloc(ngroups, sizeof(struct mpx_group *), M_MPX, M_WAITOK);
-	result->mpg_index = -1;
-	mpx->mpx_group = result;
-	return (result);
-}
-
-void
-mpx_deallocate_groups(mpx, gp)
-	struct mpx 		 *mpx;
-	struct mpx_group *gp;
-{
-	if(gp == NULL) {
-		return;
-	}
-
-	mpx->mpx_group = mpx_get_group(gp->mpg_index);
-	if(mpx->mpx_group != gp) {
-		return;
-	}
-
-	free(gp, M_MPX);
-	mpx->mpx_group = gp;
-}
-
-void
-mpx_add_group(gp, idx)
-	struct mpx_group *gp;
-	int idx;
-{
-	struct grouprbtree *group;
-
-	if(gp == NULL) {
-	        return;
-	}
-	group = &mpx_groups[idx];
-    gp->mpg_index = idx;
-    RB_INSERT(grouprbtree, group, gp);
-    groupcount++;
-}
-
-void
-mpx_create_group(mpx, idx, ngroups)
-	struct mpx 	*mpx;
-	int idx, ngroups;
-{
-	struct mpx_group *gp;
-
-	gp = mpx_allocate_groups(mpx, ngroups);
-	mpx_add_group(gp, idx);
-}
-
-void
-mpx_destroy_group(mpx, idx)
-	struct mpx 	*mpx;
-	int idx;
-{
-	struct mpx_group *gp;
-
-	gp = mpx_get_group(idx);
-	mpx_remove_group(gp, gp->mpg_index);
-	mpx_deallocate_groups(mpx, gp);
-}
-
-struct mpx_group *
-mpx_get_group(idx)
-    int idx;
-{
-    struct grouprbtree *group;
-    struct mpx_group *gp;
-
-    KASSERT(idx < NGROUPS);
-    group = &mpx_groups[idx];
-    RB_FOREACH(gp, grouprbtree, group) {
-        if (gp->mpg_index == idx) {
-            return (gp);
-        }
-    }
-    return (NULL);
-}
-
-/*
- * returns the associated group from channel index
- */
-struct mpx_group *
-mpx_get_group_from_channel(idx)
-	int idx;
-{
-    struct mpx_group    *gp;
-    struct mpx_channel  *cp;
-
-    cp = mpx_get_channel(idx);
-    if(cp != NULL) {
-        gp = cp->mpc_group;
-        if(gp != NULL) {
-            return (gp);
-        }
-    }
-    return (NULL);
-}
-
-void
-mpx_remove_group(gp, idx)
-	struct mpx_group *gp;
-	int idx;
-{
-	struct grouprbtree *group;
-
-	group = &mpx_groups[idx];
-	if(gp->mpg_index == idx) {
-		RB_REMOVE(grouprbtree, group, gp);
-	} else {
-		gp = mpx_get_group(idx);
-		RB_REMOVE(grouprbtree, group, gp);
-	}
-	groupcount--;
 }
 
 struct mpx_channel *
 mpx_allocate_channels(mpx, nchans)
 	struct mpx 	*mpx;
-	int 		nchans;
+	int nchans;
 {
 	register struct mpx_channel *result;
 
 	result = (struct mpx_channel *)calloc(nchans, sizeof(struct mpx_chan *), M_MPX, M_WAITOK);
-	result->mpc_index = -1;
+    result->mpc_refcnt = 0;
 	mpx->mpx_channel = result;
 	return (result);
 }
@@ -464,7 +224,7 @@ mpx_deallocate_channels(mpx, cp)
 		return;
 	}
 
-	mpx->mpx_channel = mpx_get_group(cp->mpc_index);
+	mpx->mpx_channel = mpx_get_channel(cp->mpc_index, cp->mpc_data);
 	if(mpx->mpx_channel != cp) {
 		return;
 	}
@@ -473,75 +233,19 @@ mpx_deallocate_channels(mpx, cp)
 	mpx->mpx_channel = cp;
 }
 
-void
-mpx_add_channel(cp, idx)
-	struct mpx_channel *cp;
-	int idx;
-{
-	struct channellist *chan;
-    if (cp == NULL) {
-        return;
-    }
-    chan = &mpx_channels[idx];
-    cp->mpc_index = idx;
-    LIST_INSERT_HEAD(chan, cp, mpc_node);
-    channelcount++;
-}
-
-void
-mpx_create_channel(mpx, idx, nchans)
-	struct mpx 			*mpx;
-	int 				idx, nchans;
-{
-    struct mpx_channel *cp;
-
-    cp = mpx_allocate_channels(mpx, nchans);
-    mpx_add_channel(cp, idx);
-}
-
-void
-mpx_destroy_channel(mpx, idx)
-	struct mpx 	*mpx;
-	int idx;
-{
-	struct mpx_channel *cp;
-
-	cp = mpx_get_channel(idx);
-	mpx_remove_channel(cp, cp->mpc_index);
-	mpx_deallocate_channels(mpx, cp);
-}
-
 struct mpx_channel *
-mpx_get_channel(idx)
+mpx_get_channel(idx, data)
     int idx;
+    void *data;
 {
     struct channellist *chan;
     struct mpx_channel *cp;
 
     KASSERT(idx < NCHANS);
+
     chan = &mpx_channels[idx];
     LIST_FOREACH(cp, chan, mpc_node) {
-        if(cp->mpc_index == idx) {
-            return (cp);
-        }
-    }
-    return (NULL);
-}
-
-/*
- * returns the associated channel from group index
- */
-struct mpx_channel *
-mpx_get_channel_from_group(idx)
-	int idx;
-{
-	struct mpx_group *gp;
-    struct mpx_channel  *cp;
-
-    gp = mpx_get_group(idx);
-    if(gp != NULL) {
-        cp = gp->mpg_channel;
-        if(cp != NULL) {
+        if(cp->mpc_index == idx && cp->mpc_data == data) {
             return (cp);
         }
     }
@@ -549,266 +253,60 @@ mpx_get_channel_from_group(idx)
 }
 
 void
-mpx_remove_channel(cp, idx)
+mpx_add_channel(cp, idx, data)
 	struct mpx_channel *cp;
 	int idx;
+	void *data;
 {
-	if (cp->mpc_index == idx) {
-		LIST_REMOVE(cp, mpc_node);
-	} else {
-		cp = mpx_get_channel(idx);
-		LIST_REMOVE(cp, mpc_node);
-	}
-	channelcount--;
-}
+	struct channellist *chan;
 
-/*
- * Attach an existing channel to an existing group, if channels are free
- * within that group.
- * Note: This does not add a new channel to the channels list.
- */
-void
-mpx_attach(cp, gp)
-	struct mpx_channel 	*cp;
-	struct mpx_group 	*gp;
-{
-	register int i;
-
-	KASSERT(cp != NULL);
-	for (i = 0; i < NGROUPS; i++) {
-		 RB_FOREACH(gp, grouprbtree, &mpx_groups[i]) {
-			 if (gp->mpg_channel == NULL) {
-				 gp->mpg_channel = cp;
-			 }
-		 }
-	}
-}
-
-/*
- * Detach an existing channel (if not empty) from an existing group.
- * Note: This does not remove channel from the channels list.
- */
-void
-mpx_detach(cp, gp)
-	struct mpx_channel 	*cp;
-	struct mpx_group 	*gp;
-{
-	register int i;
-
-	for (i = 0; i < NGROUPS; i++) {
-		 RB_FOREACH(gp, grouprbtree, &mpx_groups[i]) {
-			 if (gp->mpg_channel == cp && cp != NULL) {
-				 gp->mpg_channel = NULL;
-			 }
-		}
-	}
-}
-
-/* merges two channels into one and removing both original channels */
-struct mpx_channel *
-mpx_merge_channels(cp1, cp2)
-    struct mpx_channel *cp1, *cp2;
-{
-    struct mpx_channel *cp3;
-    int i;
-    for(i = 0; i < NCHANS; i++) {
-        LIST_FOREACH(cp1, &mpx_channels[i], mpc_node) {
-            LIST_FOREACH(cp2, &mpx_channels[i], mpc_node) {
-                if(cp1 != NULL && cp2 != NULL) {
-                    cp3 = mpx_get_channel(i);
-                    mpx_remove_channel(cp1, i);
-                    mpx_remove_channel(cp2, i);
-                }
-            }
-        }
-        if (cp3 != NULL) {
-            LIST_INSERT_HEAD(&mpx_channels[i], cp3, mpc_node);
-            break;
-        }
+    if (cp == NULL) {
+        return;
     }
-    return (cp3);
+
+    chan = &mpx_channels[idx];
+    cp->mpc_index = idx;
+    cp->mpc_data = data;
+    LIST_INSERT_HEAD(chan, cp, mpc_node);
+    cp->mpc_refcnt++;
 }
 
-int
-mpx_connect(cp1, cp2)
-	struct mpx_channel 	*cp1, *cp2;
+void
+mpx_remove_channel(cp, idx, data)
+	struct mpx_channel *cp;
+	int idx;
+    void *data;
 {
-	struct mpx_channel 	*cp3;
-	int i, cnt, total;
-
-	/* check channels used */
-	cnt = 0;
-	for (i = 0; i < NCHANS; i++) {
-		cp1 = mpx_get_channel(i);
-		cp2 = mpx_get_channel(i);
-		if (mpx_compare_channels(cp1, cp2) != 0) {
-			if ((cp1->mpc_index == i && cp1 != NULL)
-					|| (cp2->mpc_index == i && cp2 != NULL)) {
-				cnt++;
-			}
-		} else {
-			cnt++;
-		}
-	}
-
-	/* merge channels */
-	total = cnt;
-	if (total < NCHANS) {
-		cp3 = mpx_merge_channels(cp1, cp2);
-		if (cp3) {
-			return (0);
-		}
-	}
-	return (1);
+	cp = mpx_get_channel(idx, data);
+    if (cp != NULL) {
+        LIST_REMOVE(cp, mpc_node);
+        cp->mpc_refcnt--;
+    }
 }
 
-/*
- * splits a single channel into two channels, depending on the channel
- * index specified. Whilst removing the specified channel at index from the original channel.
- */
-struct mpx_channel *
-mpx_split_channels(cp, idx)
+void
+mpx_create_channel(mpx, idx, data, nchans)
+	struct mpx 			*mpx;
+	int 				idx, nchans;
+    void                *data;
+{
     struct mpx_channel *cp;
-    int idx;
-{
-    struct mpx_channel *other;
-    int i;
 
-	for (i = 0; i < NCHANS; i++) {
-		LIST_FOREACH(cp, &mpx_channels[i], mpc_node) {
-			other = mpx_get_channel(i);
-		}
-		if (other != NULL) {
-			if (idx == i) {
-				LIST_INSERT_HEAD(&mpx_channels[idx], other, mpc_node);
-				mpx_remove_channel(cp, idx);
-			} else {
-				LIST_REMOVE(other, mpc_node);
-			}
-			break;
-		}
-	}
-    return (other);
+    cp = mpx_allocate_channels(mpx, nchans);
+    mpx_add_channel(cp, idx, data);
 }
 
-/*
- * Similar to mpx_split_channels but takes multiple elements to form a new channel
- * with those elements
- */
-struct mpx_channel *
-mpx_disconnect(cp, nchans)
+void
+mpx_destroy_channel(mpx, idx, data)
+	struct mpx 	*mpx;
+	int idx;
+    void *data;
+{
 	struct mpx_channel *cp;
-	int nchans;
-{
-	struct mpx_channel *cp1;
-	int i;
 
-	KASSERT(nchans >= 1);
-	for (i = 0; i < nchans; i++) {
-		LIST_FOREACH(cp, &mpx_channels[i], mpc_node) {
-			cp1 = mpx_split_channels(cp, i);
-		}
-		break;
-	}
-	return (cp1);
-}
-
-mpx_join()
-{
-
-}
-
-mpx_leave()
-{
-
-}
-
-int
-mpx_compare_index(idx1, idx2)
-	int idx1, idx2;
-{
-	if (idx1 < idx2) {
-		return (-1);
-	} else if (idx1 > idx2) {
-		return (1);
-	} else {
-		return (0);
-	}
-}
-
-int
-mpx_compare_groups(gp1, gp2)
-	struct mpx_group *gp1, *gp2;
-{
-	if (gp1 < gp2) {
-		return (-1);
-	} else if(gp1 > gp2) {
-		return (1);
-	} else {
-		return (mpx_compare_index(gp1->mpg_index, gp2->mpg_index));
-	}
-}
-
-int
-mpx_compare_channels(cp1, cp2)
-	struct mpx_channel 	*cp1, *cp2;
-{
-	if (cp1 < cp2) {
-		return (-1);
-	} else if(cp1 > cp2) {
-		return (1);
-	} else {
-		return (mpx_compare_index(cp1->mpc_index, cp2->mpc_index));
-	}
-}
-
-/*
- * Lock a mpx for I/O, blocking other access
- * Called with mpx spin lock held.
- * Return with mpx spin lock released on success.
- */
-static int
-mpxlock(mpx, catch)
-	struct mpx 	*mpx;
-	int catch;
-{
-	int error;
-
-	while (1) {
-		error = lockmgr(&mpx->mpx_lock, LK_EXCLUSIVE | LK_INTERLOCK,
-				&mpx->mpx_slock, LOCKHOLDER_PID(&mpx->mpx_lock.lk_lockholder));
-		if (error == 0) {
-			break;
-		}
-		simple_lock(&mpx->mpx_slock);
-		if ( catch || (error != EINTR && error != ERESTART)) {
-			break;
-		}
-		/*
-		 * XXX XXX XXX
-		 * The mpx lock is initialised with PCATCH on and we cannot
-		 * override this in a lockmgr() call. Thus a pending signal
-		 * will cause lockmgr() to return with EINTR or ERESTART.
-		 * We cannot simply re-enter lockmgr() at this point since
-		 * the pending signals have not yet been posted and would
-		 * cause an immediate EINTR/ERESTART return again.
-		 * As a workaround we pause for a while here, giving the lock
-		 * a chance to drain, before trying again.
-		 * XXX XXX XXX
-		 *
-		 * NOTE: Consider dropping PCATCH from this lock; in practice
-		 * it is never held for long enough periods for having it
-		 * interruptable at the start of pipe_read/pipe_write to be
-		 * beneficial.
-		 */
-		(void) ltsleep(&lbolt, PSOCK, "rstrtmpxlock", hz, &mpx->mpx_slock);
-	}
-	return (error);
-}
-
-static __inline void
-mpxunlock(mpx)
-	struct mpx 	*mpx;
-{
-	lockmgr(&mpx->mpx_lock, LK_RELEASE, NULL, LOCKHOLDER_PID(&mpx->mpx_lock.lk_lockholder));
+	cp = mpx_get_channel(idx, data);
+    if (cp != NULL) {
+        mpx_remove_channel(cp, cp->mpc_index, cp->mpc_data);
+        mpx_deallocate_channels(mpx, cp);
+    }
 }

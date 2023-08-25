@@ -70,9 +70,9 @@ __RCSID("$NetBSD: bt_open.c,v 1.17 2003/08/07 16:42:41 agc Exp $");
 #define	MINPSIZE	128
 #endif
 
-static int byteorder __P((void));
-static int nroot __P((BTREE *));
-static int tmp __P((void));
+static int byteorder(void);
+static int nroot(BTREE *);
+static int tmp(void);
 
 /*
  * __BT_OPEN -- Open a btree.

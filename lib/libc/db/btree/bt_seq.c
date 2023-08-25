@@ -52,9 +52,9 @@ __RCSID("$NetBSD: bt_seq.c,v 1.13 2003/08/07 16:42:41 agc Exp $");
 #include <db.h>
 #include "btree.h"
 
-static int __bt_first __P((BTREE *, const DBT *, EPG *, int *));
-static int __bt_seqadv __P((BTREE *, EPG *, int));
-static int __bt_seqset __P((BTREE *, EPG *, DBT *, int));
+static int __bt_first(BTREE *, const DBT *, EPG *, int *);
+static int __bt_seqadv(BTREE *, EPG *, int);
+static int __bt_seqset(BTREE *, EPG *, DBT *, int);
 
 /*
  * Sequential scan support.
