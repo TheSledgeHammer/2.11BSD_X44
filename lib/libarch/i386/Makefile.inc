@@ -3,7 +3,7 @@
 
 MANSUBDIR=i386
 
-.if (${MACHINE} == "i386 || ${MLIBDIR:Unone} == "i386")
+.if (${MACHINE} == "i386" || ${MLIBDIR:Unone} == "i386")
 SRCS+=	i386_iopl.c i386_vm86.c \
 		i386_get_fsbase.c i386_get_gsbase.c i386_get_ldt.c i386_get_ioperm.c \
 		i386_set_fsbase.c i386_set_gsbase.c i386_set_ldt.c i386_set_ioperm.c 
