@@ -34,6 +34,7 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
+            	${USRLIBDIR}libcrypt    \
 			${USRLIBDIR}/libdbm 	\
 			${USRLIBDIR}/libkvm 	\
 			${USRLIBDIR}/libm 		\
