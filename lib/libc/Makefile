@@ -141,7 +141,7 @@ REGEX_SPECIALS=[][)(^$$.?*\\;]
 MKREPRO_SED=   -e 's;${NETBSDSRCDIR:C/${REGEX_SPECIALS}/\\\\&/g};/usr/src;'
 .endif
 
-.if !defined(MLIBDIR) != "yes"
+.if !defined(MLIBDIR)
 realall: tags
 tags: ${SRCS}
 	${_MKTARGET_CREATE}
