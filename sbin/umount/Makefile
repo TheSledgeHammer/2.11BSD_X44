@@ -11,7 +11,6 @@ MOUNT=	${NETBSDSRCDIR}/sbin/mount
 CPPFLAGS+= -I${MOUNT}
 .PATH:	${MOUNT}
 SRCS+=	vfslist.c
-.endif
 LDADD+=-lutil
 DPADD+=${LIBUTIL}
 
