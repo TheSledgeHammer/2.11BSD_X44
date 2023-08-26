@@ -144,7 +144,7 @@ static void nonnewline(struct parse *p);
 static void repeat(struct parse *p, sopno start, int from, int to);
 static int seterr(struct parse *p, int e);
 static cset *allocset(struct parse *p);
-static void freeset(struct parse *p, cset *cs));
+static void freeset(struct parse *p, cset *cs);
 static int freezeset(struct parse *p, cset *cs);
 static int firstch(struct parse *p, cset *cs);
 static int nch(struct parse *p, cset *cs);
