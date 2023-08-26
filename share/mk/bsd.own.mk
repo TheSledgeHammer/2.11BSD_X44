@@ -20,6 +20,15 @@ MAKECONF?=	/etc/mk.conf
 #
 MACHINE_CPU= ${MACHINE_ARCH:C/e?arm.*/arm/:S/aarch64eb/aarch64/:C/riscv../riscv/}
 
+.if (${MACHINE_ARCH} == "mips64el" || \
+     ${MACHINE_ARCH} == "mips64eb" || \
+     ${MACHINE_ARCH} == "mipsn64el" || \
+     ${MACHINE_ARCH} == "mipsn64eb")
+MACHINE_MIPS64= 	1
+.else
+MACHINE_MIPS64= 	0
+.endif
+
 #
 # Subdirectory used below ${RELEASEDIR} when building a release
 #
