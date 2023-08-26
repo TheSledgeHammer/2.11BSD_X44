@@ -31,6 +31,17 @@ CPPFLAGS+=	-D_DIAGNOSTIC
 CPPFLAGS+=	-DMLIBDIR=\"${MLIBDIR}\"
 .endif
 
+# needed for csu_common.h
+CPPFLAGS+=	-I${NETBSDSRCDIR}/lib/csu/common
+
+.if (${USE_HESIOD} != "no")
+CPPFLAGS+=	-DHESIOD
+.endif
+
+.if (${USE_INET6} != "no")
+CPPFLAGS+=	-DINET6
+.endif
+
 CPPFLAGS+=	-DNLS
 
 # Set lint to exit on warnings
