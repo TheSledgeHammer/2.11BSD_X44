@@ -66,7 +66,7 @@ PGFLAGS+=	-fPIC
 LIBDO.${_lib}!=	cd "${_dir}" && ${PRINTOBJDIR}
 .MAKEOVERRIDES+=LIBDO.${_lib}
 .endif
-.if ${LIBDO.${_lib}} == "_external"
+.if ${LIBDO.${_lib}} == "_contrib"
 LDADD+=		-l${_lib}
 .else
 LDADD+=		-L${LIBDO.${_lib}} -l${_lib}
