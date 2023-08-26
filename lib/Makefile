@@ -34,7 +34,7 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
-            	${USRLIBDIR}libcrypt    \
+            	${USRLIBDIR}/libcrypt    \
 			${USRLIBDIR}/libdbm 	\
 			${USRLIBDIR}/libkvm 	\
 			${USRLIBDIR}/libm 		\
@@ -136,15 +136,15 @@ SUBDIR+=	../crypto/external/bsd/heimdal/lib	# depends on libcrypto
 							# libedit, libterminfo,
 .endif
 
-SUBDIR+=	../crypto/external/bsd/openssh/lib # depends on libcrypto, libz
-SUBDIR+=	../crypto/external/bsd/netpgp/lib  # depends on libcrypto, ...
+#SUBDIR+=	../crypto/external/bsd/openssh/lib # depends on libcrypto, libz
+#SUBDIR+=	../crypto/external/bsd/netpgp/lib  # depends on libcrypto, ...
 
-SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
+#SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+=	../crypto/external/bsd/libsaslc	# depends on heimdal, openssl
+#SUBDIR+=	../crypto/external/bsd/libsaslc	# depends on heimdal, openssl
 SUBDIR+=	../contrib/mdocml/lib
 
 .include <bsd.buildinstall.mk>
