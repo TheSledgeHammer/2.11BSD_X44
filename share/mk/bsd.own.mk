@@ -789,9 +789,9 @@ dependall:	.NOTMAIN realdepend .MAKE
 # regardless of user's mk.conf setting).
 #
 .for var in \
-	COMPAT CRYPTO DOC HTML INFO LIBCSANITIZER LINKLIB \
-	LINT MAN NLS OBJ PIC PICINSTALL PROFILE SHARE \
-	STATICLIB DEBUGLIB SANITIZER RELRO
+	COMPAT DEBUGLIB DOC HTML INFO LIBCSANITIZER LINKLIB \
+	LINT MAN NLS OBJ PIC PICINSTALL PROFILE RELRO SANITIZER \
+    SHARE STATICLIB 
 .if defined(NO${var})
 MK${var}:=	no
 .endif
@@ -874,6 +874,7 @@ MKSTATICPIE?=	no
 _MKVARS.yes= \
 	MKBINUTILS \
 	MKBSDTAR \
+    MKCLEANSRC \
 	MKCOMPLEX \
     MKCXX \
 	MKDOC \
@@ -881,22 +882,33 @@ _MKVARS.yes= \
 	MKGCC \
     MKGDB \
     MKGROFF \
+    MKHESIOD \
 	MKHTML \
+    MKIEEEFP \
+    MKINET6 \
 	MKINFO \
+    MKKERBEROS \
+    MKLDAP \
 	MKLIBSTDCXX \
     MKLINKLIB \
+	MKMAKEMANDB \
 	MKMAN \
     MKMANDOC \
-	MKMAKEMANDB \
+    MKMDNS \
 	MKNLS \
+	MKNPF \
 	MKOBJ \
+    MKPAM \
+    MKPF \
 	MKPIC \
     MKPICLIB \
     MKPOSTFIX \
     MKPROFILE \
 	MKSHARE \
     MKSKEY \
-    MKSTATICLIB
+    MKSTATICLIB \
+    MKSTRIPSYM \
+    MKUNBOUND
 	
 .for var in ${_MKVARS.yes}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uyes}}
@@ -951,16 +963,11 @@ _MKVARS.no= \
     MKDTRACE \
 	MKEXTSRC \
 	MKFIRMWARE \
-    MKHESIOD \
 	MKGROFFHTMLDOC \
-    MKIEEEFP \
-    MKINET6 \
     MKIPFILTER \
     MKISCSI \
-    MKKERBEROS \
 	MKKYUA \
 	MKLIBCXX \
-    MKLDAP \
     MKLLD \
     MKLLDB \
     MKLLVM \
@@ -969,16 +976,12 @@ _MKVARS.no= \
     MKLVM \
 	MKMANZ \
     MKMCLINKER \
-    MKMDNS \
     MKKMOD \
 	MKNOUVEAUFIRMWARE \
-    MKNPF \
     MKNSD \
 	MKOBJDIRS \
-    MKPAM \
 	MKPCC \
     MKPERFUSE \
-    MKPF \
     MKPICINSTALL \
     MKPIGZGZIP \
 	MKRADEONFIRMWARE \
@@ -989,7 +992,6 @@ _MKVARS.no= \
     MKSTRIPIDENT \
 	MKTEGRAFIRMWARE \
     MKTPM \
-	MKUNBOUND \
     MKUNPRIVED \
     MKUPDATE \
 	MKX11 \
@@ -1111,13 +1113,37 @@ OBJECT_FMTS+=	elf64
 .endif
 
 #
+# Bootloader is supported
+#
+MKBOOT?=	 	yes
+
+#
 # Set defaults for the USE_xxx variables.
 #
 
 #
-# Bootloader is supported
+# USE_* options which default to "no" and will be forced to "no" if their
+# corresponding MK* variable is set to "no".
 #
-MKBOOT?=	 	yes
+.for var in USE_SKEY
+.if (${${var:S/USE_/MK/}} == "no")
+${var}:= no
+.else
+${var}?= no
+.endif
+.endfor
+
+#
+# USE_* options which default to "yes" unless their corresponding MK*
+# variable is set to "no".
+#
+.for var in USE_HESIOD USE_INET6 USE_KERBEROS USE_LDAP USE_PAM USE_YP
+.if (${${var:S/USE_/MK/}} == "no")
+${var}:= no
+.else
+${var}?= yes
+.endif
+.endfor
 
 #
 # USE_* options which default to "no".
