@@ -10,7 +10,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= 	libbz2 libcurses libdbm libedit libexecinfo libform libkvm 		\
+SUBDIR= 	libbz2 libcrypt libcurses libdbm libedit libexecinfo libform libkvm 		\
 			libm libmenu libmp libom libpanel libpci libpthread             \
             libpthread_dbg libresolv libstubs libtermcap libutil libvmf     \
             liby libz 					

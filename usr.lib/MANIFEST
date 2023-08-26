@@ -1,6 +1,7 @@
 Application	Version
 -----------	-------
 libbz2/		NetBSD
+libcrypt/   NetBSD
 libcurses/	4.4BSD-Lite2
 libdbm/		4.3BSD		 	(dbm & ndbm before it was merged into Berkley DB)
 libedit/	4.4BSD-Lite2
