@@ -15,6 +15,10 @@ elf2aout/	NetBSD
 elf2ecoff/	NetBSD
 genassym/	NetBSD
 gencat/		NetBSD
+genaddrinfo/NetBSD
+genconf/	NetBSD
+genopt/ 	NetBSD
+gentext/	NetBSD
 gprof/		NetBSD
 grep/		NetBSD
 gzip/		NetBSD
@@ -31,6 +35,7 @@ mklocale/	NetBSD
 mktemp/		NetBSD
 msgc/		NetBSD
 rpcgen/		NetBSD
+rpcinfo/	NetBSD
 sed/		NetBSD
 sortinfo/	NetBSD
 stat/		NetBSD
