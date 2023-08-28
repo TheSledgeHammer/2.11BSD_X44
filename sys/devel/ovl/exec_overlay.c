@@ -303,7 +303,7 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 		/*
 		 * read in data segment
 		 */
-		estabur(elp->el_proc, ds, 0, 0, 0, SEG_RO);
+		vm_estabur(elp->el_proc, ds, 0, 0, 0, SEG_RO);
 		offset = sizeof(struct exec);
 		if (ovflag) {
 			offset += sizeof(ovhead);
