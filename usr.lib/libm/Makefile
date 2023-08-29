@@ -466,7 +466,7 @@ COPTS.compat_cabs.c+=	${${ACTIVE_CC} == "clang":? -Wno-incompatible-library-rede
 COPTS.compat_cabsf.c+=	${${ACTIVE_CC} == "clang":? -Wno-incompatible-library-redeclaration :}
 CWARNFLAGS.clang+=		-Wno-error=implicit-int-float-conversion
 
-.include "${.CURDIR}/compiler_rt/Makefile.inc"
+#.include "${.CURDIR}/compiler_rt/Makefile.inc"
 .include "${.CURDIR}/gen/Makefile.inc"
 
 .include <bsd.lib.mk>
