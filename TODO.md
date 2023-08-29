@@ -48,7 +48,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - libkvm:
 	- Needs work.
  - libm
- 	- Requires compiler_rt. Not currently implemented or ported.
+ 	- Makefile: Add parameter USE_COMPILER_RT instead of just blanking it out
 
 ## usr.sbin:
 
