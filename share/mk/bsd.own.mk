@@ -1155,6 +1155,13 @@ ${var}?= yes
 .endfor
 
 #
+# USE_* options which default to "yes".
+#
+.for var in LIBSTDCXX
+USE_${var}?= yes
+.endfor
+
+#
 # USE_* options which default to "no".
 #
 # For now, disable pigz as compressor by default
