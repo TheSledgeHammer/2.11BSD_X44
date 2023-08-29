@@ -9,6 +9,5 @@ SRCS= 		vmf.c
 INCSDIR=	/usr/include
 
 MAN=		vmf.3
-MLINKS=		vmf.3
 
 .include <bsd.lib.mk>
