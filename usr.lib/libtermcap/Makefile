@@ -9,59 +9,49 @@ WARNS?=			5
 
 CPPFLAGS+=		-I${.CURDIR}
 SRCS=			termcap.c tgoto.c tputs.c
-INCSDIR=		/usr/include
-
-COPTS.tparm.c = -Wno-format-nonliteral
 
 MAN=	termcap.3
 MLINKS=	termcap.3 tgetent.3 termcap.3 tgetflag.3 termcap.3 tgetnum.3 \
-		termcap.3 tgetstr.3 termcap.3 tgoto.3 termcap.3 tputs.3
-
-CPPFLAGS+=		-I${.OBJDIR}
+	termcap.3 tgetstr.3 termcap.3 tgoto.3 termcap.3 tputs.3 \
+	termcap.3 t_getent.3 termcap.3 t_getflag.3 termcap.3 t_getnum.3 \
+	termcap.3 t_getstr.3 termcap.3 t_goto.3 termcap.3 t_puts.3 \
+	termcap.3 t_freent.3
+INCS=	termcap.h
+INCSDIR=/usr/include
 
 .include <bsd.shlib.mk>
-		
+
 .if ${MKLINKLIB} != "no"
-SYMLINKS+=	libtermcap.a ${LIBDIR}/libtermcap.a
 SYMLINKS+=	libtermcap.a ${LIBDIR}/libtermlib.a
 .endif
 
+
 .if ${MKPROFILE} != "no"
-SYMLINKS+=	libtermcap_p.a ${LIBDIR}/libtermcap_p.a
 SYMLINKS+=	libtermcap_p.a ${LIBDIR}/libtermlib_p.a
 .endif
+
 
 .if ${MKPIC} != "no"
 
 .if ${MKPICINSTALL} != "no"
-SYMLINKS+=	libtermcap_pic.a ${LIBDIR}/libtermcap_pic.a
 SYMLINKS+=	libtermcap_pic.a ${LIBDIR}/libtermlib_pic.a
 .endif
 
-if exists(${.CURDIR}/shlib_version)
+.if exists(${.CURDIR}/shlib_version)
 SYMLINKS+=	libtermcap.so.${SHLIB_FULLVERSION} \
-		${_LIBSODIR}/libtermcap.so.0.6
-SYMLINKS+=	libtermcap.so.${SHLIB_FULLVERSION} \
-		${_LIBSODIR}/libtermlib.so.0.6
+		${_LIBSODIR}/libtermlib.so.${SHLIB_FULLVERSION}
+		
 .if ${_LIBSODIR} != ${LIBDIR}
 SYMLINKS+=	libtermcap.so.${SHLIB_FULLVERSION} \
-		${LIBDIR}/libtermcap.so.0.6
-SYMLINKS+=	libtermcap.so.${SHLIB_FULLVERSION} \
-		${LIBDIR}/libtermlib.so.0.6
+		${LIBDIR}/libtermlib.so.${SHLIB_FULLVERSION}
 .endif
 
 SYMLINKS+=	libtermcap.so.${SHLIB_MAJOR} \
-		${_LIBSODIR}/libtermcap.so.0
-SYMLINKS+=	libtermcap.so ${_LIBSODIR}/libtermcap.so
-SYMLINKS+=	libtermcap.so.${SHLIB_MAJOR} \
-		${_LIBSODIR}/libtermlib.so.0
+		${_LIBSODIR}/libtermlib.so.${SHLIB_MAJOR}
 SYMLINKS+=	libtermcap.so ${_LIBSODIR}/libtermlib.so
 .if ${_LIBSODIR} != ${LIBDIR}
 SYMLINKS+=	libtermcap.so.${SHLIB_MAJOR} \
-		${LIBDIR}/libtermcap.so.0
-SYMLINKS+=	libtermcap.so ${LIBDIR}/libtermcap.so
-SYMLINKS+=	libtermcap.so.${SHLIB_MAJOR} \
-		${LIBDIR}/libtermlib.so.0
+		${LIBDIR}/libtermlib.so.${SHLIB_MAJOR}
 SYMLINKS+=	libtermcap.so ${LIBDIR}/libtermlib.so
 .endif
 .endif	# exists shlib_version
