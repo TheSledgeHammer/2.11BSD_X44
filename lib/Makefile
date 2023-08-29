@@ -57,7 +57,7 @@ SUBDIR+=	libsa
 .endif
 
 SUBDIR+=	../contrib/flex/lib
-SUBDIR+=	../contrib/elftoolchain/lib/libelf
+SUBDIR+=	../contrib/elftoolchain/libelf
 SUBDIR+=	../contrib/expat/lib
 
 SUBDIR+=	../contrib/gnu/libmalloc
@@ -83,7 +83,7 @@ SUBDIR+=	../contrib/gnu/mpc/lib/libmpc
 SUBDIR+=	.WAIT
 
 SUBDIR+=	../contrib/xz/lib			# depends on libpthread
-SUBDIR+=	../contrib/elftoolchain/lib/libdwarf # depends on libelf
+SUBDIR+=	../contrib/elftoolchain/libdwarf # depends on libelf
 SUBDIR+=	../contrib/lua/lib          # depends on libm
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
@@ -131,10 +131,10 @@ SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 
-.if (${MKKERBEROS} != "no")
-SUBDIR+=	../crypto/external/bsd/heimdal/lib	# depends on libcrypto
+#.if (${MKKERBEROS} != "no")
+#SUBDIR+=	../crypto/external/bsd/heimdal/lib	# depends on libcrypto
 							# libedit, libterminfo,
-.endif
+#.endif
 
 #SUBDIR+=	../crypto/external/bsd/openssh/lib # depends on libcrypto, libz
 #SUBDIR+=	../crypto/external/bsd/netpgp/lib  # depends on libcrypto, ...
