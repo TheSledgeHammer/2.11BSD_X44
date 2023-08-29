@@ -25,11 +25,9 @@ INCSDIR=/usr/include
 SYMLINKS+=	libtermcap.a ${LIBDIR}/libtermlib.a
 .endif
 
-
 .if ${MKPROFILE} != "no"
 SYMLINKS+=	libtermcap_p.a ${LIBDIR}/libtermlib_p.a
 .endif
-
 
 .if ${MKPIC} != "no"
 
