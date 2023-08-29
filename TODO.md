@@ -3,12 +3,6 @@ A General todo list. Don't hesitate to add to this list. :)
 # TODO:
 ## Compiler:
 ### Tools:
-- Needs Fixing:
-	- Disklabel Associated
-		- disklabel
-		- fdisk
-- Unimplemented:
-	- rpcgen
 			
 ### Kernel:
 - Building Kernel/Arch:
@@ -21,7 +15,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/ (User & OS Libraries):
 ## Contrib:
-	- Add Lua
 	
 ## lib:
 - libc
@@ -36,6 +29,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## share:
 
 ## tools:
+- add fgen
+- Fix: Below will compile but not as a part of the host toolchain
+	- Disklabel
+ 	- Fdisk
 
 ## stand:
 - boot:
@@ -48,7 +45,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## usr.bin:
 
 ## usr.lib:
-- libkvm: missing functions
+- libkvm:
+	- Needs work.
+ - libm
+ 	- Requires compiler_rt. Not currently implemented or ported.
 
 ## usr.sbin:
 
