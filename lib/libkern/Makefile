@@ -39,6 +39,5 @@ KERNDIR=	${S}/lib/libkern
 .BEGIN:
 	@echo no ARCHSUBDIR for ${MACHINE_ARCH} nor ${MACHINE_CPU}
 	@false
-.endif
 
 .include <bsd.lib.mk>
