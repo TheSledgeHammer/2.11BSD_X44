@@ -16,7 +16,7 @@ MLINKS=	termcap.3 tgetent.3 termcap.3 tgetflag.3 termcap.3 tgetnum.3 \
 	termcap.3 t_getent.3 termcap.3 t_getflag.3 termcap.3 t_getnum.3 \
 	termcap.3 t_getstr.3 termcap.3 t_goto.3 termcap.3 t_puts.3 \
 	termcap.3 t_freent.3
-#INCS=	termcap.h
+INCS=	termcap.h
 INCSDIR=/usr/include
 
 .include <bsd.shlib.mk>
