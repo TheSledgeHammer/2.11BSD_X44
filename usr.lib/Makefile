@@ -1,71 +1,18 @@
-#	@(#)Makefile	8.1 (Berkeley) 6/4/93
+#	$NetBSD: Makefile,v 1.292 2021/04/25 23:43:48 christos Exp $
+#	from: @(#)Makefile	5.25.1.1 (Berkeley) 5/7/91
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.4.1 (2.11BSD) 1996/1/11
+#
 
 .include <bsd.own.mk>
 
-USE_SHLIBDIR=	yes
+SUBDIR= 	libbz2 libcrypt libcurses libdbm libedit libexecinfo libform libkvm 		\
+		libm libmenu libmp libom libpanel libpci libpthread             \
+            libpthread_dbg libresolv libstubs libtermcap libutil libvmf     \
+            liby libz 					
 
-LIB=			termcap
-WARNS?=			5
-
-CPPFLAGS+=		-I${.CURDIR}
-SRCS=			termcap.c tgoto.c tputs.c
-INCSDIR=		/usr/include
-
-COPTS.tparm.c = -Wno-format-nonliteral
-
-MAN=	termcap.3
-MLINKS=	termcap.3 tgetent.3 termcap.3 tgetflag.3 termcap.3 tgetnum.3 \
-		termcap.3 tgetstr.3 termcap.3 tgoto.3 termcap.3 tputs.3
-
-CPPFLAGS+=		-I${.OBJDIR}
-
-.include <bsd.shlib.mk>
-		
-.if ${MKLINKLIB} != "no"
-SYMLINKS+=	libterminfo.a ${LIBDIR}/libtermcap.a
-SYMLINKS+=	libterminfo.a ${LIBDIR}/libtermlib.a
-.endif
-
-.if ${MKPROFILE} != "no"
-SYMLINKS+=	libterminfo_p.a ${LIBDIR}/libtermcap_p.a
-SYMLINKS+=	libterminfo_p.a ${LIBDIR}/libtermlib_p.a
-.endif
-
-.if ${MKPIC} != "no"
-
-.if ${MKPICINSTALL} != "no"
-SYMLINKS+=	libterminfo_pic.a ${LIBDIR}/libtermcap_pic.a
-SYMLINKS+=	libterminfo_pic.a ${LIBDIR}/libtermlib_pic.a
-.endif
-
-.if exists(${.CURDIR}/shlib_version)
-SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
-		${_LIBSODIR}/libtermcap.so.0.6
-SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
-		${_LIBSODIR}/libtermlib.so.0.6
-.if ${_LIBSODIR} != ${LIBDIR}
-SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
-		${LIBDIR}/libtermcap.so.0.6
-SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
-		${LIBDIR}/libtermlib.so.0.6
-.endif
-
-SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
-		${_LIBSODIR}/libtermcap.so.0
-SYMLINKS+=	libterminfo.so ${_LIBSODIR}/libtermcap.so
-SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
-		${_LIBSODIR}/libtermlib.so.0
-SYMLINKS+=	libterminfo.so ${_LIBSODIR}/libtermlib.so
-.if ${_LIBSODIR} != ${LIBDIR}
-SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
-		${LIBDIR}/libtermcap.so.0
-SYMLINKS+=	libterminfo.so ${LIBDIR}/libtermcap.so
-SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
-		${LIBDIR}/libtermlib.so.0
-SYMLINKS+=	libterminfo.so ${LIBDIR}/libtermlib.so
-.endif
-.endif	# exists shlib_version
-
-.endif	# ${MKPIC} != "no"
-
-.include <bsd.lib.mk>
+.include <bsd.subdir.mk>
