@@ -98,6 +98,7 @@
 #include <machine/npx.h>
 #include <machine/proc.h>
 #include <machine/pmap.h>
+#include <machine/ram.h>
 
 #include <machine/apic/lapicvar.h>
 #include <machine/isa/isa_machdep.h>
@@ -163,11 +164,6 @@ int cpureset_delay = CPURESET_DELAY;
 int cpureset_delay = 2000; /* default to 2s */
 #endif
 
-#define PHYSSEG_MAX 32
-typedef struct {
-	u_quad_t	start;		/* Physical start address	*/
-	u_quad_t	size;		/* Size in bytes		*/
-} phys_ram_seg_t;
 phys_ram_seg_t mem_clusters[PHYSSEG_MAX];
 int	mem_cluster_cnt = 0;
 

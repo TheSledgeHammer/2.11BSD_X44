@@ -57,6 +57,8 @@ struct __kvm {
 	int			arglen;		/* length of the above */
 	char		**argv;		/* (dynamic) storage for argv pointers */
 	int			argc;		/* length of above (not actual # present) */
+
+	off_t		dump_off;	/* Where the actual dump starts	*/
 	/*
 	 * Kernel virtual address translation state.  This only gets filled
 	 * in for dead kernels; otherwise, the running kernel (i.e. kmem)
@@ -69,12 +71,12 @@ struct __kvm {
 /*
  * Functions used internally by kvm, but across kvm modules.
  */
-void	_kvm_err (kvm_t *, const char *, const char *, ...);
-void	_kvm_freeprocs (kvm_t *);
-void	_kvm_freevtop (kvm_t *);
-int	 	_kvm_initvtop (kvm_t *);
-int	 	_kvm_kvatop (kvm_t *, u_long, u_long *);
-void	*_kvm_malloc (kvm_t *, size_t);
-void	*_kvm_realloc (kvm_t *, void *, size_t);
-void	_kvm_syserr (kvm_t *, const char *, const char *, ...);
-int	 	_kvm_uvatop (kvm_t *, const struct proc *, u_long, u_long *);
+void	_kvm_err(kvm_t *, const char *, const char *, ...);
+void	_kvm_freeprocs(kvm_t *);
+void	_kvm_freevtop(kvm_t *);
+int	 	_kvm_initvtop(kvm_t *);
+int	 	_kvm_kvatop(kvm_t *, u_long, u_long *);
+void	*_kvm_malloc(kvm_t *, size_t);
+void	*_kvm_realloc(kvm_t *, void *, size_t);
+void	_kvm_syserr(kvm_t *, const char *, const char *, ...);
+int	 	_kvm_uvatop(kvm_t *, const struct proc *, u_long, u_long *);

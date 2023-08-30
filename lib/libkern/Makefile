@@ -35,9 +35,9 @@ KERN_AS=	library
 KERNDIR=	${S}/lib/libkern
 
 .include "${KERNDIR}/Makefile.libkern"
-
+.ifndef ARCHSUBDIR
 .BEGIN:
-	@echo no ARCHSUBDIR for ${MACHINE_ARCH} nor ${MACHINE_CPU}
-	@false
-
+		@echo no ARCHSUBDIR for ${MACHINE_ARCH} nor ${MACHINE_CPU}
+		@false
+.endif
 .include <bsd.lib.mk>

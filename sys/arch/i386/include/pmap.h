@@ -222,6 +222,10 @@ typedef uint64_t 				ovl_entry_t;		/* OVL */
 #define PL2_I(VA)			(((VA_SIGN_POS(VA)) & L2_FRAME) >> L2_SHIFT)
 #define PL_I(va, lvl) 		(((VA_SIGN_POS(va)) & ptp_masks[(lvl)-1]) >> ptp_shifts[(lvl)-1])
 
+#define PL1_PI(VA)			(((VA_SIGN_POS(VA)) & L1_MASK) >> L1_SHIFT)
+#define PL2_PI(VA)			(((VA_SIGN_POS(VA)) & L2_MASK) >> L2_SHIFT)
+#define PL_PI(va, lvl)      (((VA_SIGN_POS(va)) & ptp_masks[(lvl)-1]) >> ptp_shifts[(lvl)-1])
+
 #define PTP_MASK_INITIALIZER	{ L1_FRAME, L2_FRAME }
 #define PTP_SHIFT_INITIALIZER	{ L1_SHIFT, L2_SHIFT }
 #define PDES_INITIALIZER		{ L2_BASE }
