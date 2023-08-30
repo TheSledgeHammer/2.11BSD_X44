@@ -392,7 +392,7 @@ _kvm_uvatop(kd, p, va, pa)
 
 	vms = p->p_vmspace;
 
-	return (_kvm_vatop(kd, kva, va, pa));
+	return (_kvm_vatop(kd, va, pa));
 }
 
 /*
