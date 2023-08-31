@@ -165,7 +165,7 @@ _kvm_initvtop(kd)
 	vm->ptd = 0;
 
 	nlist[0].n_name = "kernbase";
-	nlist[3].n_name = 0;
+	nlist[1].n_name = 0;
 
 	if (kvm_nlist(kd, nlist) != 0) {
 		vm->kernbase = KERNBASE; 			/* for old kernels */
