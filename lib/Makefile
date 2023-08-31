@@ -100,7 +100,7 @@ SUBDIR+=	../contrib/libc++
 .endif
 
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
-SUBDIR+=	../contri/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
+SUBDIR+=	../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
 SUBDIR+=	../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
 .endif
 
