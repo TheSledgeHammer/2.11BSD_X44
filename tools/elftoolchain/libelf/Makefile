@@ -46,7 +46,7 @@ SRCS=	elf_begin.c							\
 
 LIBELF_GENSRCS=	libelf_fsize.c libelf_msize.c libelf_convert.c
 
-LIBELF_DIR=	${.CURDIR}/../../contrib/elftoolchain/dist/libelf
+LIBELF_DIR=	${.CURDIR}/../../contrib/elftoolchain/libelf
 
 CLEANFILES+=	${LIBELF_GENSRCS}
 CPPFLAGS+=		-I${.CURDIR}/../compat -I${LIBELF_DIR} -I${LIBELF_DIR}/../common
