@@ -105,6 +105,7 @@ OR
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
 ## Building:
+
 You can cross-build 211BSD_X44 from most UNIX-like operating systems. To build for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 -O ~/obj release
@@ -137,6 +138,9 @@ Cross-Compiler Compatability Table:
 ** GCC: No NPF
 
 *** Clang: Library needs updating and fixing along with the relevent toolchain components.
+
+### Known OS's Supported:
+- Ubuntu (20.04 to 23.04)
 
 ## Contribution:
 
