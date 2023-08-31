@@ -79,7 +79,7 @@ COMPATLIB_NO_LIB= yes # only the include files, not the library
 HOST_CPPFLAGS:=	${CPPFLAGS} ${HOST_CPPFLAGS}
 CPPFLAGS:=	# empty
 
-.include "${.CURDIR}/../Makefile.nbincludes"
+#.include "${.CURDIR}/../Makefile.nbincludes"
 .include <bsd.hostlib.mk>
 
 # Keep the .SUFFIXES line after the include of bsd.hostlib.mk
