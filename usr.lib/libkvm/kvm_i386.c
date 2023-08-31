@@ -183,8 +183,8 @@ _kvm_initvtop(kd)
 		nlist[0].n_name = "IdlePDPT";
 		nlist[1].n_name = 0;
 		return (i386_initvtop_pae(kd, vm, nlist));
+	} else {
 #endif
-	//} else {
 	if (kvm_nlist(kd, nlist) != 0) {
 		nlist[0].n_name = "IdlePTD";
 		nlist[1].n_name = 0;
