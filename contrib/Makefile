@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=  	byacc elftoolchain/common expat file \
+SUBDIR=  	byacc expat file \
 		flex gnu libarchive lua mdocml nawk \
 		oscompat xz
 
