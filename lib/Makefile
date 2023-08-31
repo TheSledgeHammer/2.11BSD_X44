@@ -53,7 +53,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
-SUBDIR+=	libsa
+#SUBDIR+=	libsa	
 .endif
 
 SUBDIR+=	../contrib/flex/lib
