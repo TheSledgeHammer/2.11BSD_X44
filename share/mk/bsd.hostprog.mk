@@ -9,7 +9,7 @@
 ##### Default values
 LIBC?=				/usr/lib/libc.a
 LIBCOMPAT?=			/usr/lib/libcompat.a
-#LIBCRYPT?=			/usr/lib/libcrypt.a
+LIBCRYPT?=			/usr/lib/libcrypt.a
 LIBCURSES?=			/usr/lib/libcurses.a
 LIBC_PIC?=			/usr/lib/libc_pic.a
 LIBC_SO?=			/usr/lib/libc.so
@@ -18,7 +18,7 @@ LIBDBM?=			/usr/lib/libdbm.a
 LIBEDIT?=			/usr/lib/libedit.a
 LIBGCC?=			/usr/lib/libgcc.a
 #LIBGNUMALLOC?=		/usr/lib/libgnumalloc.a
-#LIBKVM?=			/usr/lib/libkvm.a
+LIBKVM?=			/usr/lib/libkvm.a
 LIBL?=				/usr/lib/libl.a
 LIBLZMA?=			/usr/lib/liblzma.a
 LIBM?=				/usr/lib/libm.a
