@@ -125,7 +125,7 @@ SUBDIR+= ../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
 SUBDIR+=	../contrib/llvm/librt
 .endif
 
-SUBDIR+=	../contrib/libarchive/lib	# depends on libxz
+#SUBDIR+=	../contrib/libarchive/lib	# depends on libxz, libcrypto
 
 SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
