@@ -9,9 +9,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Compile Issues/Errors:
 		- Linker: None atm, Yay! :)
 		- Compiler: None atm, Yay! :)
-- Config: Fix and update arch/conf.c.
-	- Device driver's setup, that need-count and may not have any initalized device. 
-	- current examples: video, pc speaker, apm & tabldisc
 
 # usr/ (User & OS Libraries):
 ## Contrib:
@@ -45,8 +42,12 @@ A General todo list. Don't hesitate to add to this list. :)
 ## usr.bin:
 
 ## usr.lib:
+- libcrypto:
+	- add crypto libraries (i.e. heimdal, openssh, etc)
+- librt: (Needed in order to compile c++)
+	- needs aio and sem support
 - libkvm:
-	- Needs work.
+	- i386: support pae
  - libm
  	- Makefile: Add parameter USE_COMPILER_RT instead of just blanking it out
 
