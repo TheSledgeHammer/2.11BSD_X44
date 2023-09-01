@@ -9,7 +9,7 @@ SUBDIR=	boot0cfg btxld 											\
 		etcupdate 												\
 		link                                                    \
         makefs mtree moused                                            \
-		periodic postinstall pwd_mkdb 							\
+		periodic pwd_mkdb 							\
         rmt                                                     \
 		unlink  												\
 		vnconfig 												\
