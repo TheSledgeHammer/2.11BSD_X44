@@ -885,20 +885,16 @@ _MKVARS.yes= \
 	MKBSDTAR \
     MKCLEANSRC \
 	MKCOMPLEX \
-    MKCXX \
 	MKDOC \
 	MKDYNAMICROOT \
 	MKGCC \
     MKGDB \
     MKGROFF \
-    MKHESIOD \
 	MKHTML \
     MKIEEEFP \
     MKINET6 \
 	MKINFO \
-    MKKERBEROS \
     MKLDAP \
-	MKLIBSTDCXX \
     MKLINKLIB \
 	MKMAKEMANDB \
 	MKMAN \
@@ -907,14 +903,12 @@ _MKVARS.yes= \
 	MKNLS \
 	MKNPF \
 	MKOBJ \
-    MKPAM \
     MKPF \
 	MKPIC \
     MKPICLIB \
     MKPOSTFIX \
     MKPROFILE \
 	MKSHARE \
-    MKSKEY \
     MKSTATICLIB \
     MKSTRIPSYM \
     MKUNBOUND
@@ -965,6 +959,7 @@ _MKVARS.no= \
     MKCOMPATX11 \
     MKCTF \
     MKCVS \
+       MKCXX \
 	MKDEBUG \
     MKDEBUGLIB \
     MKDTC \
@@ -982,6 +977,7 @@ _MKVARS.no= \
     MKLLVM \
     MKLLVMRT \
     MKLINT \
+    MKLIBSTDCXX \
     MKLVM \
 	MKMANZ \
     MKMCLINKER \
@@ -1008,7 +1004,11 @@ _MKVARS.no= \
     MKX11MOTIF \
     MKXORG_SERVER \
     MKYP \
-	MKZFS
+	MKZFS \
+	MKKERBEROS \
+	MKHESIOD \
+	MKSKEY \
+	MKPAM
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
 .endfor
