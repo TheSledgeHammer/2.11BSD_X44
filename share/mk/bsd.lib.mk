@@ -59,6 +59,13 @@ PGFLAGS+=	-pg
 PGFLAGS+=	-fPIC
 .endif
 
+##### Library directories
+LIBBZ2_DIR=		usr.lib/libbz2
+LIBM_DIR=		usr.lib/libm
+LIBPTHREAD_DIR= usr.lib/libpthread
+LIBRT_DIR=		usr.lib/librt
+LIBZ_DIR=		usr.lib/libz
+
 ##### Libraries that this may depend upon.
 .if defined(LIBDPLIBS) && ${MKPIC} != "no"				# {
 .for _lib _dir in ${LIBDPLIBS}

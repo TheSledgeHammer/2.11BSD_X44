@@ -22,8 +22,8 @@ LINTFLAGS+=	-X 247		# pointer cast from 'pointer to struct
 				# GCObject' to 'pointer to union GCUnion' may
 				# be troublesome
 
-LIBDPLIBS+=	m		${NETBSDSRCDIR}/lib/libm
+LIBDPLIBS+=	m		${NETBSDSRCDIR}/${LIBM_DIR}
 
-.PATH:		${NETBSDSRCDIR}/external/mit/lua/dist/src
+.PATH:		${NETBSDSRCDIR}/contrib/lua/dist/src
 
 .include <bsd.lib.mk>

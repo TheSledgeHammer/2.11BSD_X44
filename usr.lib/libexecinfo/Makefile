@@ -12,7 +12,7 @@ INCS=execinfo.h
 #CPPFLAGS+=-I/usr/include/libelf
 #COPTS+=-std=gnu99
 
-LIBDPLIBS+= elf	${NETBSDSRCDIR}/contrib/elftoolchain/lib/libelf
+LIBDPLIBS+= elf	${NETBSDSRCDIR}/contrib/elftoolchain/libelf
 
 LIB=execinfo
 SRCS=symtab.c backtrace.c

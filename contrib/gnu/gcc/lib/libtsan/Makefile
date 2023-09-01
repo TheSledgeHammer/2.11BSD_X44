@@ -62,9 +62,9 @@ TSAN_SRCS+= tsan_rtl_ppc64.S
 
 LIB=	tsan
 SRCS+=	${TSAN_SRCS}
-LIBDPLIBS+= rt ${NETBSDSRCDIR}/lib/librt
-LIBDPLIBS+= m  ${NETBSDSRCDIR}/lib/libm
-LIBDPLIBS+= pthread ${NETBSDSRCDIR}/lib/libpthread
+LIBDPLIBS+= rt ${NETBSDSRCDIR}/${LIBRT_DIR}
+LIBDPLIBS+= m  ${NETBSDSRCDIR}/${LIBM_DIR}
+LIBDPLIBS+= pthread ${NETBSDSRCDIR}/${LIBPTHREAD_DIR}
 CPPFLAGS+=-DCAN_SANITIZE_UB=0
 COPTS.tsan_interceptors.cc += -Wno-unused-function
 

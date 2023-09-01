@@ -7,11 +7,11 @@
 LIB=		archive
 
 
-LIBDPLIBS+=	bz2	${NETBSDSRCDIR}/lib/libbz2 \
+LIBDPLIBS+=	bz2	${NETBSDSRCDIR}/${LIBBZ2_DIR} \
 		crypto	${NETBSDSRCDIR}/crypto/external/bsd/${EXTERNAL_OPENSSL_SUBDIR}/lib/libcrypto \
-		expat	${NETBSDSRCDIR}/external/mit/expat/lib/libexpat \
-		lzma	${NETBSDSRCDIR}/external/public-domain/xz/lib \
-		z	${NETBSDSRCDIR}/lib/libz
+		expat	${NETBSDSRCDIR}/contrib/expat/lib/libexpat \
+		lzma	${NETBSDSRCDIR}/contrib/xz/lib \
+		z	${NETBSDSRCDIR}/${LIBZ_DIR}
 
 SRCS=		archive_acl.c \
 		archive_blake2sp_ref.c \
