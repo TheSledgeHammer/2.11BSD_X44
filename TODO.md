@@ -24,6 +24,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## sbin:
 
 ## share:
+- man:
+	- Fix: Causes problems when compiling a release
+ 		- Issue is believed to be caused by man0 
 
 ## tools:
 - add fgen
