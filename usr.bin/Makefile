@@ -15,7 +15,7 @@ SUBDIR= at 															\
 		m4 make man menuc mkdep mkfifo mklocale mkstr mktemp msgc 	\
 		rpcgen rpcinfo												\
 		sed sortinfo stat strfile 									\
-		tic time touch tsort 										\
+		time touch tsort 										\
 		unstr uudecode uuencode 									\
 		vgrind 														\
 		write 														\
