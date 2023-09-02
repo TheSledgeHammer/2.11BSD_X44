@@ -121,6 +121,15 @@ EXTERNAL_GDB_SUBDIR=		/does/not/exist
 #
 # What OpenSSL is used?
 # 
+HAVE_OPENSSL?=	11
+
+.if ${HAVE_OPENSSL} == 11
+EXTERNAL_OPENSSL_SUBDIR=openssl
+.elif ${HAVE_OPENSSL} == 10
+EXTERNAL_OPENSSL_SUBDIR=openssl.old
+.else
+EXTERNAL_OPENSSL_SUBDIR=/does/not/exist
+.endif
 
 #
 # Does the platform support ACPI?
@@ -896,7 +905,6 @@ _MKVARS.yes= \
 	MKINFO \
     MKLDAP \
     MKLINKLIB \
-	MKMAKEMANDB \
 	MKMAN \
     MKMANDOC \
     MKMDNS \
@@ -906,7 +914,6 @@ _MKVARS.yes= \
     MKPF \
 	MKPIC \
     MKPICLIB \
-    MKPOSTFIX \
     MKPROFILE \
 	MKSHARE \
     MKSTATICLIB \
@@ -1008,7 +1015,9 @@ _MKVARS.no= \
 	MKKERBEROS \
 	MKHESIOD \
 	MKSKEY \
-	MKPAM
+	MKPAM \
+	MKMAKEMANDB \
+	 MKPOSTFIX 
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
 .endfor
