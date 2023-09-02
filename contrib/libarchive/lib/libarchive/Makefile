@@ -8,7 +8,7 @@ LIB=		archive
 
 
 LIBDPLIBS+=	bz2	${NETBSDSRCDIR}/${LIBBZ2_DIR} \
-		crypto	${NETBSDSRCDIR}/crypto/external/bsd/${EXTERNAL_OPENSSL_SUBDIR}/lib/libcrypto \
+		crypto	${NETBSDSRCDIR}/crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib/libcrypto \
 		expat	${NETBSDSRCDIR}/contrib/expat/lib/libexpat \
 		lzma	${NETBSDSRCDIR}/contrib/xz/lib \
 		z	${NETBSDSRCDIR}/${LIBZ_DIR}
