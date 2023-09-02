@@ -89,6 +89,7 @@ SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	${USRLIBDIR}/libexecinfo 	# depends on libelf
 
+SUBDIR+=	../crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib # depends on libcrypt
 SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
 
 .if (${MKBINUTILS} != "no")
@@ -125,26 +126,24 @@ SUBDIR+= ../contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
 SUBDIR+=	../contrib/llvm/librt
 .endif
 
-#SUBDIR+=	../contrib/libarchive/lib	# depends on libxz, libcrypto
+SUBDIR+=	../contrib/libarchive/lib	# depends on libxz, libcrypto
 
 SUBDIR+=	${USRLIBDIR}/libform		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libmenu		# depends on libcurses
 SUBDIR+=	${USRLIBDIR}/libpanel		# depends on libcurses
 
-#.if (${MKKERBEROS} != "no")
-#SUBDIR+=	../crypto/external/bsd/heimdal/lib	# depends on libcrypto
+.if (${MKKERBEROS} != "no")
+SUBDIR+=	../crypto/heimdal/lib	# depends on libcrypto
 							# libedit, libterminfo,
-#.endif
+.endif
 
-#SUBDIR+=	../crypto/external/bsd/openssh/lib # depends on libcrypto, libz
-#SUBDIR+=	../crypto/external/bsd/netpgp/lib  # depends on libcrypto, ...
+SUBDIR+=	../crypto/openssh/lib # depends on libcrypto, libz
 
 #SUBDIR+=	../contrib/fetch/lib	    # depends on libssl
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-#SUBDIR+=	../crypto/external/bsd/libsaslc	# depends on heimdal, openssl
 SUBDIR+=	../contrib/mdocml/lib
 
 .include <bsd.buildinstall.mk>
