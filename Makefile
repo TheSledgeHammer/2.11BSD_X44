@@ -137,7 +137,7 @@ _SRC_TOP_OBJ_=
 # BUILD_${dir}=no, or that have no ${dir}/Makefile.
 #
 _SUBDIR=	tools .WAIT lib
-_SUBDIR+=	include contrib crypto/external bin 
+_SUBDIR+=	include contrib crypto bin 
 _SUBDIR+=	games libexec sbin usr.bin usr.lib
 _SUBDIR+=	usr.sbin share sys etc #tests
 #_SUBDIR+=	stand
