@@ -16,8 +16,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## lib:
 - libc
 	- citrus:
-		- change init_state to be per encoding, instead of generic.
-		- add encoding_module init & uninit in same manner as above point
+		- implement iconv 
 
 ## libexec:
 
