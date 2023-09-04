@@ -61,8 +61,9 @@ PGFLAGS+=	-fPIC
 
 ##### Library directories
 LIBBZ2_DIR=		usr.lib/libbz2
+LIBCRYPT_DIR=		usr.lib/libcrypt
 LIBM_DIR=		usr.lib/libm
-LIBPTHREAD_DIR= usr.lib/libpthread
+LIBPTHREAD_DIR= 	usr.lib/libpthread
 LIBRT_DIR=		usr.lib/librt
 LIBZ_DIR=		usr.lib/libz
 
