@@ -424,7 +424,7 @@ pmap_bootstrap(firstaddr)
 
 	kernel_pmap->pm_pdir = (pd_entry_t *)(KERNBASE + IdlePTD);
 	kernel_pmap->pm_pml4 = (pml4_entry_t *)(KERNBASE + IdlePML4);
-	kernel_pmap->pm_pdirpa = (vm_offset_t)IdlePTD;
+	kernel_pmap->pm_pdirpa[0] = (vm_offset_t)IdlePTD;
 	pmap_lock_init(kernel_pmap, "kernel_pmap_lock");
 	LIST_INIT(&pmap_header);
 	kernel_pmap->pm_count = 1;

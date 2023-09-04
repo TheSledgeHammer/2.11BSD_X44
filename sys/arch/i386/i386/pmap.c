@@ -217,6 +217,7 @@ static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
 static vm_offset_t	pmap_bootstrap_valloc(size_t);
 static vm_offset_t	pmap_bootstrap_palloc(size_t);
 static pd_entry_t 	*pmap_valid_entry(pmap_t, pd_entry_t *, vm_offset_t);
+static pd_entry_t 	*pmap_table(pmap_t, vm_offset_t, int);
 static pt_entry_t 	*pmap_pte(pmap_t, vm_offset_t);
 
 vm_offset_t
@@ -1455,6 +1456,21 @@ pmap_valid_entry(pmap, pdir, va)
 	return (NULL);
 }
 
+static pd_entry_t *
+pmap_table(pmap, va, lvl)
+	register pmap_t pmap;
+	vm_offset_t va;
+	int lvl;
+{
+	pd_entry_t *ptab;
+
+	ptab = pmap_pde(pmap, va, lvl);
+	if (pmap_valid_entry(pmap, ptab, va)) {
+		return (ptab);
+	}
+	return (NULL);
+}
+
 /*
  *	Routine:	pmap_pte
  *	Function:
@@ -1469,8 +1485,8 @@ pmap_pte(pmap, va)
 {
 	pt_entry_t *pte;
 
-	pte = (pt_entry_t *)pmap_pde(pmap, va, 1);
-	if (pmap_valid_entry(pmap, (pt_entry_t *)pte, va)) {
+	pte = (pt_entry_t *)pmap_table(pmap, va, 1);
+	if (pte != NULL) {
 		return (pte);
 	}
 	return (NULL);

@@ -66,6 +66,10 @@ static char sccsid[] = "@(#)kvm_hp300.c	8.1 (Berkeley) 6/4/93";
 #define	btop(x)		(i386_btop(x)) //(((unsigned)(x)) >> PGSHIFT)	/* XXX */
 #define	ptob(x)		(i386_ptob(x)) //((caddr_t)((x) << PGSHIFT))		/* XXX */
 #endif
+#ifndef btod
+#define btod(x)		(i386_btod(x))
+#define dtob(x)		(i386_dtob(x))
+#endif
 
 off_t _kvm_pa2off(kvm_t *, u_long *);
 
@@ -110,39 +114,6 @@ i386_initvtop(kd, vm, nlist)
 	}
 	vm->ptd = ptd;
 	vm->pae = 1;
-	return (0);
-}
-
-static int
-i386_initvtop_pae(kd, vm, nlist)
-	kvm_t *kd;
-	struct vmstate *vm;
-	struct nlist *nlist;
-{
-	u_long pa;
-	pd_entry_t ptd;
-	uint64_t pa64;
-	int i;
-
-	if (KREAD(kd, (nlist[0].n_value - vm->kernbase), &pa)) {
-		_kvm_err(kd, kd->program, "cannot read IdlePDPT");
-		return (-1);
-	}
-	pa = le32toh(pa);
-	ptd = _kvm_malloc(kd, 4 * I386_PAGE_SIZE);
-	if (ptd == NULL) {
-		_kvm_err(kd, kd->program, "cannot allocate PTD");
-		return (-1);
-	}
-	for (i = 0; i < 4; i++) {
-		if (KREAD(kd, pa + (i * sizeof(pa64)), &pa64)) {
-			_kvm_err(kd, kd->program, "cannot read PDPT");
-			free(ptd);
-			return (-1);
-		}
-	}
-	vm->ptd = ptd;
-	vm->pae = 0;
 	return (0);
 }
 
@@ -194,7 +165,7 @@ _kvm_initvtop(kd)
 }
 
 static int
-_kvm_vatop(kd, va, pa)
+_i386_vatop(kd, va, pa)
 	kvm_t *kd;
 	u_long va;
 	u_long *pa;
@@ -223,7 +194,7 @@ _kvm_vatop(kd, va, pa)
 		*pa = va;
 		return (PAGE_SIZE - offset);
 	}
-	pdeindex = va >> PDRSHIFT;
+	pdeindex = PL1_I(va);
 	pde = vm->ptd[pdeindex];
 	if (((u_long)pde & PG_V) == 0) {
 		goto invalid;
@@ -261,104 +232,8 @@ invalid:
 	return (0);
 }
 
-#ifdef notyet
 static int
-_i386_vatop_pae(kd, va, pa)
-	kvm_t *kd;
-	u_long va;
-	u_long *pa;
-{
-	struct vmstate *vm;
-	i386_physaddr_pae_t offset;
-	i386_physaddr_pae_t pte_pa;
-	i386_pde_pae_t pde;
-	i386_pte_pae_t pte;
-	kvaddr_t pdeindex;
-	kvaddr_t pteindex;
-	size_t s;
-	i386_physaddr_pae_t a;
-	off_t ofs;
-	i386_pde_pae_t *PTD;
-
-	vm = kd->vmst;
-	PTD = (i386_pde_pae_t *)vm->ptd;
-	offset = va & I386_PAGE_MASK;
-
-	/*
-	 * If we are initializing (kernel page table descriptor pointer
-	 * not yet set) then return pa == va to avoid infinite recursion.
-	 */
-	if (PTD == NULL) {
-		s = _kvm_pa2off(kd, va, pa);
-		if (s == 0) {
-			_kvm_err(kd, kd->program,
-			    "_i386_vatop_pae: bootstrap data not in dump");
-			goto invalid;
-		} else
-			return (I386_PAGE_SIZE - offset);
-	}
-
-	pdeindex = va >> I386_PDRSHIFT_PAE;
-	pde = le64toh(PTD[pdeindex]);
-	if ((pde & PG_V) == 0) {
-		_kvm_err(kd, kd->program, "_kvm_kvatop_pae: pde not valid");
-		goto invalid;
-	}
-
-	if (pde & PG_PS) {
-		/*
-		 * No second-level page table; ptd describes one 2MB
-		 * page.  (We assume that the kernel wouldn't set
-		 * PG_PS without enabling it cr0).
-		 */
-		offset = va & I386_PAGE_PS_MASK_PAE;
-		a = (pde & I386_PG_PS_FRAME_PAE) + offset;
-		s = _kvm_pa2off(kd, a, pa);
-		if (s == 0) {
-			_kvm_err(kd, kd->program,
-			    "_i386_vatop: 2MB page address not in dump");
-			goto invalid;
-		}
-		return (I386_NBPDR_PAE - offset);
-	}
-
-	pteindex = (va >> I386_PAGE_SHIFT) & (I386_NPTEPG_PAE - 1);
-	pte_pa = (pde & I386_PG_FRAME_PAE) + (pteindex * sizeof(pde));
-
-	s = _kvm_pa2off(kd, pte_pa, &ofs);
-	if (s < sizeof(pte)) {
-		_kvm_err(kd, kd->program, "_i386_vatop_pae: pdpe_pa not found");
-		goto invalid;
-	}
-
-	/* XXX This has to be a physical address read, kvm_read is virtual */
-	if (pread(kd->pmfd, &pte, sizeof(pte), ofs) != sizeof(pte)) {
-		_kvm_syserr(kd, kd->program, "_i386_vatop_pae: read");
-		goto invalid;
-	}
-	pte = le64toh(pte);
-	if ((pte & PG_V) == 0) {
-		_kvm_err(kd, kd->program, "_i386_vatop_pae: pte not valid");
-		goto invalid;
-	}
-
-	a = (pte & I386_PG_FRAME_PAE) + offset;
-	s = _kvm_pa2off(kd, a, pa);
-	if (s == 0) {
-		_kvm_err(kd, kd->program, "_i386_vatop_pae: address not in dump");
-		goto invalid;
-	} else {
-		return (I386_PAGE_SIZE - offset);
-	}
-
-invalid:
-	_kvm_err(kd, 0, "invalid address (0x%jx)", (uintmax_t)va);
-	return (0);
-}
-#endif
-
-int
-_kvm_kvatop(kd, va, pa)
+_kvm_vatop(kd, va, pa)
 	kvm_t *kd;
 	u_long va;
 	u_long *pa;
@@ -371,15 +246,55 @@ _kvm_kvatop(kd, va, pa)
 	if (kd->vmst->pae) {
 		return (_i386_vatop_pae(kd, va, pa));
 	} else {
-		return (_kvm_vatop(kd, va, pa));
+		return (_i386_vatop(kd, va, pa));
 	}
 #endif
+	return (_i386_vatop(kd, va, pa));
+}
+
+int
+_kvm_kvatop(kd, va, pa)
+	kvm_t *kd;
+	u_long va;
+	u_long *pa;
+{
 	return (_kvm_vatop(kd, va, pa));
 }
 
 /*
  * Translate a user virtual address to a physical address.
  */
+static int
+_i386_uvatop(kd, vms, va, pa)
+	kvm_t *kd;
+	struct vmspace *vms;
+	u_long va;
+	u_long *pa;
+{
+	pd_entry_t *pdir;
+	pt_entry_t pte;
+	u_long kva, index, offset;
+
+	if (ISALIVE(kd)) {
+		kva = (u_long)&vms->vm_pmap.pm_pdir;
+		if (KREAD(kd, kva, &pdir)) {
+			_kvm_err(kd, kd->program, "invalid address (%x)", va);
+			return (0);
+		}
+		index = PL1_I(va);
+		kva = &pdir[index];
+		if (KREAD(kd, kva, &pte) || (pte & PG_V) == 0) {
+			_kvm_err(kd, kd->program, "invalid address (%x)", va);
+			return (0);
+		}
+		offset = va & (NBPD_L1 - 1);
+		*pa = ((pte & L1_FRAME) + offset);
+		return (NBPD_L1 - offset);
+	}
+
+	return (_i386_vatop(kd, va, pa));
+}
+
 int
 _kvm_uvatop(kd, p, va, pa)
 	kvm_t *kd;
@@ -388,11 +303,16 @@ _kvm_uvatop(kd, p, va, pa)
 	u_long *pa;
 {
 	register struct vmspace *vms;
-	int kva;
 
 	vms = p->p_vmspace;
-
-	return (_kvm_vatop(kd, va, pa));
+#ifdef notyet
+	if (kd->vmst->pae) {
+		return (_i386_uvatop_pae(kd, vms, va, pa));
+	} else {
+		return (_i386_uvatop(kd, vms, va, pa));
+	}
+#endif
+	return (_i386_uvatop(kd, vms, va, pa));
 }
 
 /*
