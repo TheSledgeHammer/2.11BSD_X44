@@ -49,7 +49,7 @@ CRYPTODIST=	${NETBSDSRCDIR}/crypto
 .include "srcs.inc"
 
 AFLAGS+=-DELF
-LIBDPLIBS+= crypt ${NETBSDSRCDIR}/lib/libcrypt
+LIBDPLIBS+= crypt ${NETBSDSRCDIR}/${LIBCRYPT_DIR}
 
 OS_VERSION!= ${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh
 
