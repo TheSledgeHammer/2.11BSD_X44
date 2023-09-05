@@ -60,12 +60,12 @@ PGFLAGS+=	-fPIC
 .endif
 
 ##### Library directories
-LIBBZ2_DIR=		usr.lib/libbz2
+LIBBZ2_DIR=			usr.lib/libbz2
 LIBCRYPT_DIR=		usr.lib/libcrypt
-LIBM_DIR=		usr.lib/libm
+LIBM_DIR=			usr.lib/libm
 LIBPTHREAD_DIR= 	usr.lib/libpthread
-LIBRT_DIR=		usr.lib/librt
-LIBZ_DIR=		usr.lib/libz
+LIBRT_DIR=			usr.lib/librt
+LIBZ_DIR=			usr.lib/libz
 
 ##### Libraries that this may depend upon.
 .if defined(LIBDPLIBS) && ${MKPIC} != "no"				# {

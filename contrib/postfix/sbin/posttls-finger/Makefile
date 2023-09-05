@@ -7,7 +7,7 @@ NOMAN=	# defined
 PROG=	posttls-finger
 SRCS=	posttls-finger.c tlsmgrmem.c
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 DPADD+= ${LIBPDNS} ${LIBPTLS} ${LIBPGLOBAL} ${LIBPUTIL}

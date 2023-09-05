@@ -9,12 +9,12 @@
 ##### Default values
 LIBC?=				/usr/lib/libc.a
 LIBCOMPAT?=			/usr/lib/libcompat.a
-LIBCRYPT?=			/usr/lib/libcrypt.a
+LIBCRYPT?=			/usr.lib/libcrypt.a
 LIBCURSES?=			/usr/lib/libcurses.a
 LIBC_PIC?=			/usr/lib/libc_pic.a
 LIBC_SO?=			/usr/lib/libc.so
 LIBGCC?=			/usr/lib/libgcc.a
-#LIBGNUMALLOC?=			/usr/lib/libgnumalloc.a
+#LIBGNUMALLOC?=		/usr/lib/libgnumalloc.a
 LIBL?=				/usr/lib/libl.a
 LIBLZMA?=			/usr/lib/liblzma.a
 LIBMAGIC?=			/usr/lib/libmagic.a

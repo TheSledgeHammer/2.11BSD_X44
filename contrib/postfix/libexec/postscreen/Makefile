@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	postscreen
 
-DIST=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist/src/${PROG}
+DIST=	${NETBSDSRCDIR}/contrib/postfix/dist/src/${PROG}
 .PATH:	${DIST}
 
 SRCS=	postscreen.c postscreen_dict.c postscreen_dnsbl.c \

@@ -6,7 +6,7 @@ NOMAN=	# defined
 
 PROG=	smtpd
 
-TOP=	${NETBSDSRCDIR}/external/ibm-public/postfix/dist
+TOP=	${NETBSDSRCDIR}/contrib/postfix/dist
 DIST=${TOP}/src/${PROG}
 .PATH:	${DIST}
 
