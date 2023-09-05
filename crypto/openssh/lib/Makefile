@@ -106,8 +106,8 @@ CPPFLAGS+=	-I${SSHDIST}
 .PATH:		${SSHDIST}
 
 LIBDPLIBS+=	crypto	${NETBSDSRCDIR}/crypto/${EXTERNAL_OPENSSL_SUBDIR}/lib/libcrypto \
-		crypt	${NETBSDSRCDIR}/lib/libcrypt \
-		z	${NETBSDSRCDIR}/lib/libz
+		crypt	${NETBSDSRCDIR}/${LIBCRYPT_DIR} \
+		z	${NETBSDSRCDIR}/${LIBZ_DIR}
 
 .for f in dns channels hostfile ssh-pkcs11
 COPTS.${f}.c+=	-Wno-pointer-sign
