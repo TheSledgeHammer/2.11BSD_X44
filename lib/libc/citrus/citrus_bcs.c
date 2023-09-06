@@ -85,6 +85,7 @@ _citrus_bcs_skip_ws(const char *p)
 	while (*p && isspace(*p)) {
 		p++;
 	}
+	
 	return (p);
 }
 
@@ -94,9 +95,10 @@ _citrus_bcs_skip_ws(const char *p)
 const char *
 _citrus_bcs_skip_nonws(const char *p)
 {
-	while (*p && !isspace(*p))
+	while (*p && !isspace(*p)) {
 		p++;
-
+	}
+	
 	return (p);
 }
 
