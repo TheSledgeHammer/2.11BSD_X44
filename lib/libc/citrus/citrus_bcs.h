@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_iconv_local.h,v 1.3 2008/02/09 14:56:20 junyoung Exp $	*/
+/*	$NetBSD: citrus_bcs.h,v 1.6 2009/01/11 02:46:24 christos Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,32 +26,23 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_ICONV_H_
-#define _CITRUS_ICONV_H_
-
-#define _CITRUS_ICONV_F_HIDE_INVALID			0x0001
-
-struct _citrus_iconv_shared {
-	//struct _citrus_iconv_ops					*ci_ops;
-	void										*ci_closure;
-	/* private */
-	_CITRUS_HASH_ENTRY(_citrus_iconv_shared)	ci_hash_entry;
-	TAILQ_ENTRY(_citrus_iconv_shared)			ci_tailq_entry;
-	unsigned int								ci_used_count;
-	char										*ci_convname;
-};
-
-struct _citrus_iconv {
-	struct _citrus_iconv_shared					*cv_shared;
-	void										*cv_closure;
-};
+#ifndef _CITRUS_BCS_H_
+#define _CITRUS_BCS_H_
 
 __BEGIN_DECLS
-int  _citrus_iconv_init_shared(struct _citrus_iconv_shared *, const char * __restrict, const char * __restrict, const char * __restrict, const void * __restrict, size_t);
-void _citrus_iconv_uninit_shared(struct _citrus_iconv_shared *);
-int  _citrus_iconv_init_context(struct _citrus_iconv *);
-void _citrus_iconv_uninit_context(struct _citrus_iconv *);
-int  _citrus_iconv_convert(struct _citrus_iconv * __restrict, const char * __restrict * __restrict, size_t * __restrict, char * __restrict * __restrict, size_t * __restrict, u_int32_t, size_t * __restrict);
+int _citrus_bcs_strcasecmp(const char * __restrict, const char * __restrict);
+int _citrus_bcs_strncasecmp(const char * __restrict, const char * __restrict, size_t);
+const char *_citrus_bcs_skip_ws(const char * __restrict);
+const char *_citrus_bcs_skip_nonws(const char * __restrict);
+const char *_citrus_bcs_skip_ws_len(const char * __restrict, size_t * __restrict);
+const char *_citrus_bcs_skip_nonws_len(const char * __restrict, size_t * __restrict);
+void _citrus_bcs_trunc_rws_len(const char * __restrict, size_t * __restrict);
+void _citrus_bcs_convert_to_lower(char *);
+void _citrus_bcs_convert_to_upper(char *);
+
+long int _citrus_bcs_strtol(const char * __restrict, char ** __restrict, int);
+unsigned long int _citrus_bcs_strtoul(const char * __restrict, char ** __restrict, int);
+
 __END_DECLS
 
 #endif

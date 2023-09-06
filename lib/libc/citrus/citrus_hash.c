@@ -1,4 +1,4 @@
-/*	$NetBSD: citrus_iconv_local.h,v 1.3 2008/02/09 14:56:20 junyoung Exp $	*/
+/*	$NetBSD: citrus_hash.c,v 1.1 2003/06/25 09:51:32 tshiozak Exp $	*/
 
 /*-
  * Copyright (c)2003 Citrus Project,
@@ -26,32 +26,30 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _CITRUS_ICONV_H_
-#define _CITRUS_ICONV_H_
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: citrus_hash.c,v 1.1 2003/06/25 09:51:32 tshiozak Exp $");
+#endif /* LIBC_SCCS and not lint */
 
-#define _CITRUS_ICONV_F_HIDE_INVALID			0x0001
+#include "namespace.h"
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 
-struct _citrus_iconv_shared {
-	//struct _citrus_iconv_ops					*ci_ops;
-	void										*ci_closure;
-	/* private */
-	_CITRUS_HASH_ENTRY(_citrus_iconv_shared)	ci_hash_entry;
-	TAILQ_ENTRY(_citrus_iconv_shared)			ci_tailq_entry;
-	unsigned int								ci_used_count;
-	char										*ci_convname;
-};
+#include "citrus_namespace.h"
+#include "citrus_types.h"
+#include "citrus_region.h"
+#include "citrus_hash.h"
+#include "citrus_db_hash.h"
 
-struct _citrus_iconv {
-	struct _citrus_iconv_shared					*cv_shared;
-	void										*cv_closure;
-};
+int
+_citrus_string_hash_func(const char *key, int hashsize)
+{
+	struct _region r;
 
-__BEGIN_DECLS
-int  _citrus_iconv_init_shared(struct _citrus_iconv_shared *, const char * __restrict, const char * __restrict, const char * __restrict, const void * __restrict, size_t);
-void _citrus_iconv_uninit_shared(struct _citrus_iconv_shared *);
-int  _citrus_iconv_init_context(struct _citrus_iconv *);
-void _citrus_iconv_uninit_context(struct _citrus_iconv *);
-int  _citrus_iconv_convert(struct _citrus_iconv * __restrict, const char * __restrict * __restrict, size_t * __restrict, char * __restrict * __restrict, size_t * __restrict, u_int32_t, size_t * __restrict);
-__END_DECLS
+	/* LINTED: discard const */
+	_region_init(&r, (char *)key, strlen(key));
 
-#endif
+	return (int)(_db_hash_std(NULL, &r) % (u_int32_t)hashsize);
+}

@@ -153,7 +153,7 @@ close_dsts(struct _citrus_iconv_std_dst_list *dl)
 {
 	struct _citrus_iconv_std_dst *sd;
 
-	while ((sd=TAILQ_FIRST(dl)) != NULL) {
+	while ((sd = TAILQ_FIRST(dl)) != NULL) {
 		TAILQ_REMOVE(dl, sd, sd_entry);
 		_csmapper_close(sd->sd_mapper);
 		free(sd);
@@ -171,7 +171,7 @@ close_srcs(struct _citrus_iconv_std_src_list *sl)
 {
 	struct _citrus_iconv_std_src *ss;
 
-	while ((ss=TAILQ_FIRST(sl)) != NULL) {
+	while ((ss = TAILQ_FIRST(sl)) != NULL) {
 		TAILQ_REMOVE(sl, ss, ss_entry);
 		close_dsts(&ss->ss_dsts);
 		free(ss);
@@ -224,6 +224,31 @@ do_conv(const struct _citrus_iconv_std_shared *is, struct _citrus_iconv_std_cont
 }
 
 static int
+/*ARGSUSED*/
+_citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *ci, const char * __restrict curdir, const char * __restrict src, const char * __restrict dst, const void * __restrict var, size_t lenvar)
+{
+
+}
+
+static void
+_citrus_iconv_std_iconv_uninit_shared(struct _citrus_iconv_shared *ci)
+{
+
+}
+
+static int
+_citrus_iconv_std_iconv_init_context(struct _citrus_iconv *cv)
+{
+
+}
+
+static void
+_citrus_iconv_std_iconv_uninit_context(struct _citrus_iconv *cv)
+{
+
+}
+
+static int
 _citrus_iconv_std_iconv_convert(struct _citrus_iconv * __restrict cv, const char * __restrict * __restrict in, size_t * __restrict inbytes, char * __restrict * __restrict out, size_t * __restrict outbytes, u_int32_t flags, size_t * __restrict invalids)
 {
 	const struct _citrus_iconv_std_shared *is = cv->cv_shared->ci_closure;
@@ -236,9 +261,9 @@ _citrus_iconv_std_iconv_convert(struct _citrus_iconv * __restrict cv, const char
 	const char *tmpin;
 
     inval = 0;
-	if (in==NULL || *in==NULL) {
+	if (in == NULL || *in == NULL) {
 		/* special cases */
-		if (out!=NULL && *out!=NULL) {
+		if (out != NULL && *out != NULL) {
 			/* init output state and store the shift sequence */
 			save_encoding_state(&sc->sc_src_encoding);
 			save_encoding_state(&sc->sc_dst_encoding);
@@ -341,4 +366,34 @@ err_norestore:
 	*invalids = inval;
 
 	return ret;
+}
+
+int
+_citrus_iconv_init_shared(struct _citrus_iconv_shared *ci, const char * __restrict curdir, const char * __restrict src, const char * __restrict dst, const void * __restrict var, size_t lenvar)
+{
+	return (_citrus_iconv_std_iconv_init_shared(ci, curdir, src, dst, var, lenvar));
+}
+
+void
+_citrus_iconv_uninit_shared(struct _citrus_iconv_shared *ci)
+{
+	_citrus_iconv_std_iconv_uninit_shared(ci);
+}
+
+int
+_citrus_iconv_init_context(struct _citrus_iconv *cv)
+{
+	return (_citrus_iconv_std_iconv_init_context(cv));
+}
+
+void
+_citrus_iconv_uninit_context(struct _citrus_iconv *cv)
+{
+	_citrus_iconv_std_iconv_uninit_context(cv);
+}
+
+int
+_citrus_iconv_convert(struct _citrus_iconv * __restrict cv, const char * __restrict * __restrict in, size_t * __restrict inbytes, char * __restrict * __restrict out, size_t * __restrict outbytes, u_int32_t flags, size_t * __restrict invalids)
+{
+	return (_citrus_iconv_std_iconv_convert(cv, in, inbytes, out, outbytes, flags, invalids));
 }
