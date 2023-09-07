@@ -32,37 +32,6 @@ SRCS=	XNSrouted.8 adduser.8 autoconfig.8 \
 	sticky.8 sync.8 \
 	timed.8 timedc.8 uucico.8 \
 	uuclean.8 uupoll.8 uusnap.8 uuxqt.8
-OBJS=	XNSrouted.0 adduser.0 autoconfig.0 \
-	bugfiler.0 crash.0 \
-	boot.0 \
-	drtest.0 dump.0 dumpdir.0 \
-	format.0 fsck.0 \
-	getty.0 htable.0 \
-	intro.0 lpc.0 lpd.0 makedev.0 \
-	makekey.0 \
-	named.0 pac.0 \
-	rc.0 rdump.0 \
-	routed.0 rrestore.0 \
-	sendmail.0 \
-	sticky.0 sync.0 \
-	timed.0 timedc.0 uucico.0 \
-	uuclean.0 uupoll.0 uusnap.0 uuxqt.0
 
-.SUFFIXES: .8 .0
-
-.8.0:
-	${DESTDIR}/usr/man/manroff $*.8 > $*.0
-
-all: _make_01
-
-_make_01: ${OBJS}
-
-clean: FRC
-	rm -f ${OBJS}
-
-install: _make_01
-	install -c -o bin -g bin -m 444 ${OBJS} ${DESTDIR}${MDIR}
-	rm -f ${DESTDIR}${MDIR}/uucpd.0
-	ln ${DESTDIR}${MDIR}/uucico.0 ${DESTDIR}${MDIR}/uucpd.0
-
-FRC:
+.include <bsd.man.mk>
+.include <bsd.subdir.mk>
