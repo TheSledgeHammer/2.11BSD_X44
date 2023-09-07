@@ -179,6 +179,16 @@ USE_SSP?=	yes
 .endif
 .endif
 
+#
+# What version of jemalloc we use (100 is the one
+# built-in to libc from 2005 (pre version 3).
+#
+.if ${MACHINE_ARCH} == "vax" || ${MACHINE} == "sun2"
+HAVE_JEMALLOC?=		100
+.else
+HAVE_JEMALLOC?=		510
+.endif
+
 .if empty(.MAKEFLAGS:tW:M*-V .OBJDIR*)
 .if defined(MAKEOBJDIRPREFIX) || defined(MAKEOBJDIR)
 PRINTOBJDIR=	${MAKE} -r -V .OBJDIR -f /dev/null xxx
@@ -218,6 +228,11 @@ _SRC_TOP_OBJ_!=		cd ${_SRC_TOP_} && ${PRINTOBJDIR}
 .MAKEOVERRIDES+=	_SRC_TOP_OBJ_
 .endif
 
+_NETBSD_VERSION_DEPENDS=	${_SRC_TOP_OBJ_}/params
+_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/sys/param.h
+_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/newvers.sh
+_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/osrelease.sh
+${_SRC_TOP_OBJ_}/params: .NOTMAIN .OPTIONAL # created by top level "make build"
 .endif	# _SRC_TOP_ != ""		# }
 
 
@@ -770,27 +785,29 @@ GENASSYM_CPPFLAGS+=	${${ACTIVE_CC} == "clang":? -no-integrated-as :}
 
 TARGETS+=		all clean cleandir depend dependall includes 					\
 				install lint obj regress tags html analyze describe 		
-.PHONY:			all clean cleandir depend dependall distclean includes 			\
-				install lint obj regress beforedepend afterdepend 				\
-				beforeinstall afterinstall realinstall realdepend realall 		\
-				html subdir-all subdir-install subdir-depend analyze describe 	\
+PHONY_NOTMAIN:		all clean cleandir depend dependall distclean includes 			\
+			install lint obj regress beforedepend afterdepend 				\
+			beforeinstall afterinstall realinstall realdepend realall 		\
+			html subdir-all subdir-install subdir-depend analyze describe 	
+.PHONY:		${PHONY_NOTMAIN}
+.NOTMAIN:	${PHONY_NOTMAIN}
 
 .if ${NEED_OWN_INSTALL_TARGET} != "no"
 .if !target(install)
-install:		.NOTMAIN beforeinstall .WAIT subdir-install realinstall .WAIT afterinstall
-beforeinstall:	.NOTMAIN
-subdir-install:	.NOTMAIN beforeinstall
-realinstall:	.NOTMAIN beforeinstall
-afterinstall:	.NOTMAIN subdir-install realinstall
+install:		beforeinstall .WAIT subdir-install realinstall .WAIT afterinstall
+beforeinstall:
+subdir-install:
+realinstall:
+afterinstall:
 .endif
-all:			.NOTMAIN realall subdir-all
-subdir-all:		.NOTMAIN
-realall:		.NOTMAIN
-depend:			.NOTMAIN realdepend subdir-depend
-subdir-depend:	.NOTMAIN
-realdepend:		.NOTMAIN
-distclean:		.NOTMAIN cleandir
-cleandir:		.NOTMAIN clean
+all:			realall subdir-all
+subdir-all:		
+realall:		
+depend:			realdepend subdir-depend
+subdir-depend:	
+realdepend:		
+distclean:		cleandir
+cleandir:		clean
 
 dependall:	.NOTMAIN realdepend .MAKE
 	@cd "${.CURDIR}"; ${MAKE} realall
