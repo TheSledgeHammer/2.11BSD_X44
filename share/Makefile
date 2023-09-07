@@ -6,7 +6,7 @@
 SUBDIR= dict man me misc mk tabset term 		\
 		termcap tmac wscons lint zoneinfo			
 # 2.11BSD:
-SUBDIR+= adb font fontinfo learn ms pascal
+#SUBDIR+= adb font fontinfo learn ms pascal
 
 .if ${MKGROFF} != "no"
 SUBDIR+=doc
