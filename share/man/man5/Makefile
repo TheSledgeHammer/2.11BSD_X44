@@ -25,35 +25,6 @@ SRCS=	L-devices.5 L-dialcodes.5 L.aliases.5 L.cmds.5 L.sys.5 \
 	services.5 shells.5 stack.5 tar.5 termcap.5 tp.5 ttys.5 types.5 \
 	syserrlst.5 \
 	tzfile.5 utmp.5 uuencode.5 vfont.5 vgrindefs.5
-OBJS=	L-devices.0 L-dialcodes.0 L.aliases.0 L.cmds.0 L.sys.0 \
-	USERFILE.0 a.out.0 acct.0 aliases.0 core.0 dbx.0 \
-	dir.0 disktab.0 dtab.0 dump.0 fs.0 fstab.0 gettytab.0 \
-	group.0 hosts.0 map3270.0 networks.0 passwd.0 \
-	phones.0 plot.0 printcap.0 protocols.0 remote.0 resolver.0 \
-	services.0 shells.0 stack.0 tar.0 termcap.0 tp.0 ttys.0 types.0 \
-	syserrlst.0 \
-	tzfile.0 utmp.0 uuencode.0 vfont.0 vgrindefs.0
 
-.SUFFIXES: .5 .0
-
-.5.0:
-	${DESTDIR}/usr/man/manroff $*.5 > $*.0
-
-all: _make_01
-
-_make_01: ${OBJS}
-
-clean: FRC
-	rm -f ${OBJS}
-
-install: _make_01
-	install -c -o bin -g bin -m 444 ${OBJS} ${DESTDIR}${MDIR}
-	rm -f ${DESTDIR}${MDIR}/inode.0
-	ln ${DESTDIR}${MDIR}/fs.0 ${DESTDIR}${MDIR}/inode.0
-	rm -f ${DESTDIR}${MDIR}/dumpdates.0
-	ln ${DESTDIR}${MDIR}/dump.0 ${DESTDIR}${MDIR}/dumpdates.0
-	rm -f ${DESTDIR}${MDIR}/wtmp.0
-	ln ${DESTDIR}${MDIR}/utmp.0 ${DESTDIR}${MDIR}/wtmp.0
-
-FRC:
-
+.include <bsd.man.mk>
+.include <bsd.subdir.mk>
