@@ -4,8 +4,8 @@
 .include <bsd.own.mk>
 
 .if ${MKSHARE} != "no"
-SUBDIR+=	man0 man1 man2 man3 man3f man4 man5 man6 man7 man8 man9
-SUBDIR+=	cat1 cat2 cat3 cat3f cat4 cat5 cat6 cat7 cat8 cat9
+SUBDIR+=	man0 man1 man2 man3 man3f man4 man5 man6 man7 man8 #man9
+#SUBDIR+=	cat1 cat2 cat3 cat3f cat4 cat5 cat6 cat7 cat8 #cat9
 
 WHATISDBDIR?=	/usr/share/man
 
