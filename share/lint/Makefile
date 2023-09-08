@@ -19,7 +19,6 @@ install:${FILES}
 
 libs:
 	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-port | ${LINT} -puv > ${FILESDIR}/llib-port.ln
-	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-port | ${LINT} -puv > ${FILESDIR}/llib-port.ln
 	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-ldbm | ${LINT} -uv > ${FILESDIR}/llib-ldbm.ln
 	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-lm | ${LINT} -uv > ${FILESDIR}/llib-lm.ln
 	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-lmp | ${LINT} -uv > ${FILESDIR}/llib-lmp.ln
