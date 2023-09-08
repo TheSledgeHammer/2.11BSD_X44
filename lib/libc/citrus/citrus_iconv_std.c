@@ -314,6 +314,7 @@ _citrus_iconv_std_iconv_init_shared(struct _citrus_iconv_shared *ci, const char 
 	if (ret) {
 		goto err2;
 	}
+	/* Fix: Incorrect parameters and won't work as is */
 	ret = _citrus_stdenc_init(&is->is_src_encoding, esdbsrc.db_encname, esdbsrc.db_variable, esdbsrc.db_len_variable);
 	if (ret) {
 		goto err3;
