@@ -52,6 +52,9 @@ A General todo list. Don't hesitate to add to this list. :)
 	- i386: support pae
  - libm
  	- Makefile: Add parameter USE_COMPILER_RT instead of just blanking it out
+  - add: following 2.11BSD usr.lib's:
+  	- libln: few compiler issues
+   	- libF77, libI77 and libU77: some compile issues, seems to work for the most part.
 
 ## usr.sbin:
 
