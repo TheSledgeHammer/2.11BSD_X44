@@ -5,32 +5,29 @@
 #
 #  Makefile for the lint libraries.
 #
-LINT1=/usr/libexec/lint/lint1
-C=/lib/cpp
-S=${DESTDIR}/usr/share/lint
 
-SRCS= llib-lc llib-lcurses llib-ldbm llib-lm llib-lmp \
-	llib-lplot llib-ltermcap llib-port
+FILES= 	llib-lc llib-lcurses llib-ldbm llib-lm llib-lmp \
+ 	llib-lplot llib-ltermcap llib-port
+FILESDIR= /usr/share/lint
 
 all:
 
-install:${SRCS}
-	-mkdir -p ${S}
-	-chmod a+r,a+x ${S}
-	install -c -m 444 ${SRCS} ${S}
-
-clean:
-
-tags:
+install:${FILES}
+	-mkdir -p ${FILESDIR}
+	-chmod a+r,a+x ${FILESDIR}
+	install -c -m 444 ${FILES} ${FILESDIR}
 
 libs:
-	${C} -C -Dlint ${S}/llib-port | ${LINT1} -puv > ${S}/llib-port.ln
-	${C} -C -Dlint ${S}/llib-ldbm | ${LINT1} -uv > ${S}/llib-ldbm.ln
-	${C} -C -Dlint ${S}/llib-lm | ${LINT1} -uv > ${S}/llib-lm.ln
-	${C} -C -Dlint ${S}/llib-lmp | ${LINT1} -uv > ${S}/llib-lmp.ln
-	${C} -C -Dlint ${S}/llib-lplot | ${LINT1} -uv > ${S}/llib-lplot.ln
-	${C} -C -Dlint ${S}/llib-ltermcap | ${LINT1} -uv > ${S}/llib-ltermcap.ln
-	${C} -C -Dlint ${S}/llib-lc | ${LINT1} -v > ${S}/llib-lc.ln
-	${C} -C -Dlint ${S}/llib-lcurses | ${LINT1} -v > ${S}/llib-lcurses.ln
-
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-port | ${LINT} -puv > ${FILESDIR}/llib-port.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-port | ${LINT} -puv > ${FILESDIR}/llib-port.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-ldbm | ${LINT} -uv > ${FILESDIR}/llib-ldbm.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-lm | ${LINT} -uv > ${FILESDIR}/llib-lm.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-lmp | ${LINT} -uv > ${FILESDIR}/llib-lmp.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-lplot | ${LINT} -uv > ${FILESDIR}/llib-lplot.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-ltermcap | ${LINT} -uv > ${FILESDIR}/llib-ltermcap.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-lc | ${LINT} -v > ${FILESDIR}/llib-lc.ln
+	${TOOL_CC} -C -Dlint ${FILESDIR}/llib-lcurses | ${LINT} -v > ${FILESDIR}/llib-lcurses.ln
+	
 depend:
+
+.include <bsd.prog.mk>
