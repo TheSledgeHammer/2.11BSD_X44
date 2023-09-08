@@ -58,6 +58,9 @@ __RCSID("$NetBSD: citrus_iconv.c,v 1.11 2019/10/09 23:24:00 christos Exp $");
 #define CI_INITIAL_MAX_REUSE	5
 #define CI_ENV_MAX_REUSE		"ICONV_MAX_REUSE"
 
+#ifdef _REENTRANT
+static rwlock_t lock = RWLOCK_INITIALIZER;
+#endif
 static bool isinit = false;
 static _CITRUS_HASH_HEAD(, _citrus_iconv_shared, CI_HASH_SIZE) shared_pool;
 static TAILQ_HEAD(, _citrus_iconv_shared) shared_unused;
@@ -66,6 +69,7 @@ static int shared_num_unused, shared_max_reuse;
 static __inline void
 init_cache(void)
 {
+	rwlock_wrlock(&lock);
 	if (!isinit) {
 		_CITRUS_HASH_INIT(&shared_pool, CI_HASH_SIZE);
 		TAILQ_INIT(&shared_unused);
@@ -78,6 +82,7 @@ init_cache(void)
 		}
 		isinit = true;
 	}
+	rwlock_unlock(&lock);
 }
 
 /*
@@ -136,7 +141,48 @@ close_shared(struct _citrus_iconv_shared *ci)
 static __inline int
 open_shared(struct _citrus_iconv_shared * __restrict * __restrict rci, const char * __restrict basedir, const char * __restrict convname, const char * __restrict src, const char * __restrict dst)
 {
+	int ret;
+	struct _citrus_iconv_shared *ci;
+	_citrus_iconv_getops_t getops;
+	char linebuf[LINE_MAX];
+	const char *module, *variable;
+	size_t len_convname;
+
+	/* search converter entry */
+	ret = lookup_iconv_entry(basedir, convname, linebuf, sizeof(linebuf), &module, &variable);
+	if (ret) {
+		if (ret == ENOENT) {
+			/* fallback */
+			ret = lookup_iconv_entry(basedir, "*", linebuf, PATH_MAX, &module, &variable);
+		}
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* initialize iconv handle */
+	len_convname = strlen(convname);
+	ci = malloc(sizeof(*ci)+len_convname+1);
+	if (!ci) {
+		ret = errno;
+		goto err;
+	}
+	ci->ci_closure = NULL;
+	ci->ci_convname = (void *)&ci[1];
+	memcpy(ci->ci_convname, convname, len_convname+1);
+
+	/* initialize the converter */
+	ret = _citrus_iconv_init_shared(ci, basedir, src, dst, (const void *)variable, strlen(variable)+1);
+	if (ret) {
+		goto err;
+	}
+
+	*rci = ci;
+
 	return 0;
+err:
+	close_shared(ci);
+	return ret;
 }
 
 static __inline int
@@ -155,13 +201,66 @@ match_func(struct _citrus_iconv_shared * __restrict ci,
 static int
 get_shared(struct _citrus_iconv_shared * __restrict * __restrict rci, const char *basedir, const char *src, const char *dst)
 {
-	return 0;
+	int ret = 0;
+	int hashval;
+	struct _citrus_iconv_shared * ci;
+	char convname[PATH_MAX];
+
+	snprintf(convname, sizeof(convname), "%s/%s", src, dst);
+
+	rwlock_wrlock(&lock);
+
+	/* lookup alread existing entry */
+	hashval = hash_func(convname);
+	_CITRUS_HASH_SEARCH(&shared_pool, ci, ci_hash_entry, match_func, convname, hashval);
+	if (ci != NULL) {
+		/* found */
+		if (ci->ci_used_count == 0) {
+			TAILQ_REMOVE(&shared_unused, ci, ci_tailq_entry);
+			shared_num_unused--;
+		}
+		ci->ci_used_count++;
+		*rci = ci;
+		goto quit;
+	}
+
+	/* create new entry */
+	ret = open_shared(&ci, basedir, convname, src, dst);
+	if (ret)
+		goto quit;
+
+	_CITRUS_HASH_INSERT(&shared_pool, ci, ci_hash_entry, hashval);
+	ci->ci_used_count = 1;
+	*rci = ci;
+
+quit:
+	rwlock_unlock(&lock);
+
+	return ret;
 }
 
 static void
 release_shared(struct _citrus_iconv_shared * __restrict ci)
 {
+	rwlock_wrlock(&lock);
 
+	ci->ci_used_count--;
+	if (ci->ci_used_count == 0) {
+		/* put it into unused list */
+		shared_num_unused++;
+		TAILQ_INSERT_TAIL(&shared_unused, ci, ci_tailq_entry);
+		/* flood out */
+		while (shared_num_unused > shared_max_reuse) {
+			ci = TAILQ_FIRST(&shared_unused);
+			_DIAGASSERT(ci != NULL);
+			TAILQ_REMOVE(&shared_unused, ci, ci_tailq_entry);
+			_CITRUS_HASH_REMOVE(ci, ci_hash_entry);
+			shared_num_unused--;
+			close_shared(ci);
+		}
+	}
+
+	rwlock_unlock(&lock);
 }
 
 /*
@@ -181,7 +280,35 @@ _citrus_iconv_open(struct _citrus_iconv * __restrict * __restrict rcv, const cha
 
 	/* resolve codeset name aliases */
 	snprintf(path, sizeof(path), "%s/%s", basedir, _CITRUS_ICONV_ALIAS);
+	strlcpy(realsrc, _lookup_alias(path, src, buf, PATH_MAX), PATH_MAX);
+	strlcpy(realdst, _lookup_alias(path, dst, buf, PATH_MAX), PATH_MAX);
 
+	/* sanity check */
+	if (strchr(realsrc, '/') != NULL || strchr(realdst, '/')) {
+		return EINVAL;
+	}
+
+	/* get shared record */
+	ret = get_shared(&ci, basedir, realsrc, realdst);
+	if (ret) {
+		return ret;
+	}
+
+	/* create/init context */
+	cv = malloc(sizeof(*cv));
+	if (cv == NULL) {
+		ret = errno;
+		release_shared(ci);
+		return ret;
+	}
+	cv->cv_shared = ci;
+	ret = _citrus_iconv_init_context(cv);
+	if (ret) {
+		release_shared(ci);
+		free(cv);
+		return ret;
+	}
+	*rcv = cv;
 
 	return 0;
 }

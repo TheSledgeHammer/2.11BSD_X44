@@ -26,8 +26,6 @@
  * SUCH DAMAGE.
  */
 
-/* Work In Progress */
-
 /*
  * CAUTION: THIS IS NOT STANDALONE FILE
  *
@@ -54,6 +52,8 @@ _citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar,
 	_ENCODING_TRAITS 	*et;
 	int ret;
 
+	_DIAGASSERT(cl != NULL);
+
 	ei = NULL;
 	if (sizeof(_ENCODING_INFO) > 0) {
 		ei = calloc(1, sizeof(_ENCODING_INFO));
@@ -78,6 +78,7 @@ _citrus_stdenc_init(void ** __restrict cl, void * __restrict var, size_t lenvar,
 	et->mb_cur_max = _ENCODING_MB_CUR_MAX(ei);
 	ei->traits = et;
 
+	*cl = (void *)ei;
 	return (0);
 }
 
