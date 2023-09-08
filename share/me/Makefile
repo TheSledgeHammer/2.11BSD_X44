@@ -10,36 +10,66 @@
 #	This makefile strips comments from the source files and
 #	installs them in the expected directories.
 #
-DESTDIR=
-LIB =	/usr/share/me
 
-SRCS =	tmac.e acm.me chars.me deltext.me eqn.me \
+.include <bsd.prog.mk>
+
+MELIB=	${BINDIR}/me
+#TMLIB=	${BINDIR}/tmac
+MESRCS=	tmac.e acm.me chars.me deltext.me eqn.me \
 	float.me footnote.me index.me local.me null.me \
 	refer.me sh.me tbl.me thesis.me
+#TMSRCS=	tmac.e
 
-MISC = 	summary.extern test.accent test.umlaut
+.if ${MKGROFF} == "no"
+MAN=	me.7
+.endif
 
-all: revisions $(SRCS)
+CLEANFILES+= ${MESRCS:=.tmp}
 
-install: revisions $(SRCS)
-	-if [ ! -d ${DESTDIR}${LIB} ]; then \
-		rm -f ${DESTDIR}${LIB}; \
-		mkdir ${DESTDIR}${LIB}; \
-	fi
-	-for i in ${SRCS}; do \
-		sed -e '/%beginstrip%/{' \
-		    -e 'h' \
-		    -e 's/.*/.\\" This version has had comments stripped; an unstripped version is available./p' \
-		    -e 'g' \
-		    -e '}' \
-		    -e '/%beginstrip%/,$$s/[. 	][ 	]*\\".*//' \
-		    -e '/^$$/d' \
-		    -e '/\\n@/d' $$i > _mac_tmp_; \
-		install -m 0444 _mac_tmp_ ${DESTDIR}${LIB}/$$i; \
-	done
-	-mkdir -p ${DESTDIR}/usr/share/tmac
-	mv ${DESTDIR}${LIB}/tmac.e ${DESTDIR}/usr/share/tmac/tmac.e
-	install -c -m 0444 revisions ${DESTDIR}${LIB}/revisions
-	install -c -m 444 ${MISC} ${DESTDIR}${LIB}
+.for M in ${MESRCS}
 
-clean:
+proginstall:: ${DESTDIR}${MELIB}/${M}
+.if ${MKUPDATE} == "no"
+.PHONY: ${DESTDIR}${MELIB}/${M}
+.endif
+.if !defined(BUILD)
+${DESTDIR}${MELIB}/${M}: .MADE
+.endif
+
+${DESTDIR}${MELIB}/${M}: ${M}
+	@rm -f ${.TARGET} ${M}.tmp
+	${TOOL_SED} -f ${.CURDIR}/strip.sed < ${.ALLSRC} > ${M}.tmp
+	${INSTALL_FILE:N-c} -o ${BINOWN} -g ${BINGRP} -m ${NONBINMODE} \
+		${M}.tmp ${.TARGET}
+	@rm -f ${M}.tmp
+.endfor
+
+#.for M in ${TMSRCS}
+
+#proginstall:: ${DESTDIR}${TMLIB}/${M}
+#.if ${MKUPDATE} == "no"
+#.PHONY: ${DESTDIR}${TMLIB}/${M}
+#.endif
+#.if !defined(BUILD)
+#${DESTDIR}${TMLIB}/${M}: .MADE
+#.endif
+
+#${DESTDIR}${TMLIB}/${M}: ${M}
+#	@rm -f ${.TARGET} ${M}.tmp
+#	${TOOL_SED} -f ${.CURDIR}/strip.sed < ${.ALLSRC} > ${M}.tmp
+#	${INSTALL_FILE:N-c} -o ${BINOWN} -g ${BINGRP} -m ${NONBINMODE} \
+#		${M}.tmp ${.TARGET}
+#.endfor
+
+proginstall:: ${DESTDIR}${MELIB}/revisions
+.if ${MKUPDATE} == "no"
+.PHONY: ${DESTDIR}${MELIB}/revisions
+.endif
+.if !defined(BUILD)
+${DESTDIR}${MELIB}/revisions: .MADE
+.endif
+
+${DESTDIR}${MELIB}/revisions: revisions
+	${INSTALL_FILE} -o ${BINOWN} -g ${BINGRP} -m ${NONBINMODE} \
+	    ${.ALLSRC} ${.TARGET}
+
