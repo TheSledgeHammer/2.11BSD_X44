@@ -44,8 +44,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## usr.bin:
 
 ## usr.lib:
-- libcrypto:
-	- add crypto libraries (i.e. heimdal, openssh, etc)
 - librt: (Needed in order to compile c++)
 	- needs aio and sem support
 - libkvm:
