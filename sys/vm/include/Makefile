@@ -3,7 +3,7 @@
 INCSDIR= 	/usr/include/vm/include
 
 INCS+= 		device_pager.h pmap.h swap_pager.h vm_extern.h 	\
-			vm_inherit.h vm_kern.h vm_mac.h vm_map.h		\ 
+			vm_inherit.h vm_kern.h vm_mac.h vm_map.h		\
 			vm_object.h vm_page.h vm_pageout.h vm_pager.h	\
 			vm_param.h vm_prot.h vm.h vnode_pager.h
 			
