@@ -6,14 +6,8 @@
 #  Makefile for misc data files (lib.b from 'bc', usw.)
 #
 
-SRCS= 	eign lib.b Mail.help Mail.tildehelp units gprof.callg gprof.flat \
-		vlpmacs mkproto.data
+FILES= 	eign lib.b Mail.help Mail.tildehelp units gprof.callg gprof.flat \
+ 	vlpmacs mkproto.data
+FILESDIR=${BINDIR}/misc
 
-all:	${SRCS}
-
-install:${SRCS}
-	-mkdir -p ${DESTDIR}/usr/share/misc
-	-chmod a+r,a+x ${DESTDIR}/usr/share/misc
-	install -c -m 444 ${SRCS} ${DESTDIR}/usr/share/misc
-
-clean:
+.include <bsd.prog.mk>
