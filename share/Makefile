@@ -2,9 +2,8 @@
 
 .include <bsd.own.mk>
 
-# TODO: Fix man
 .if ${MKSHARE} != "no" || make(clean) || make(cleandir) || make(distclean) || make(obj)
-SUBDIR= dict me misc mk term termcap \
+SUBDIR= dict man me misc mk term termcap \
 	tmac wscons lint zoneinfo
 		
 # 2.11BSD: tabset is placed in termcap
