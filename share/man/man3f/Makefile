@@ -17,13 +17,13 @@
 #	@(#)Makefile	5.4.1 (2.11BSD) 1996/01/26
 #
 MDIR=	/usr/man/cat3f
-SRCS=	abort.3 access.3 alarm.3 bessel.3 bit.3 chdir.3 chmod.3 etime.3 \
-	exit.3 fdate.3 flmin.3 flush.3 fork.3 fseek.3 getarg.3 getc.3 \
-	getcwd.3 getenv.3 getlog.3 getpid.3 getuid.3 hostnm.3 idate.3 \
-	index.3 intro.3 ioinit.3 kill.3 link.3 loc.3 long.3 malloc.3 \
-	perror.3 plot.3 putc.3 qsort.3 rand.3 random.3 rename.3 signal.3 \
-	sleep.3 stat.3 system.3 time.3 topen.3 traper.3 trapov.3 trpfpe.3 \
-	ttynam.3 unlink.3 wait.3
+SRCS=	abort.3f access.3f alarm.3f bessel.3f bit.3f chdir.3f chmod.3f etime.3f \
+	exit.3f fdate.3f flmin.3f flush.3f fork.3f fseek.3f getarg.3f getc.3f \
+	getcwd.3f getenv.3f getlog.3f getpid.3f getuid.3f hostnm.3f idate.3f \
+	index.3f intro.3f ioinit.3f kill.3f link.3f loc.3f long.3f malloc.3f \
+	perror.3f plot.3f putc.3 qsort.3f rand.3f random.3f rename.3f signal.3f \
+	sleep.3f stat.3f system.3f time.3f topen.3f traper.3f trapov.3f trpfpe.3f \
+	ttynam.3f unlink.3f wait.3f
 
 .include <bsd.man.mk>
 .include <bsd.subdir.mk>
