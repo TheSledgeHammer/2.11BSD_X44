@@ -4,7 +4,18 @@
 # specifies the terms and conditions for redistribution.
 #
 #	@(#)Makefile	6.2 (Berkeley) 5/15/86
-#
+#	from: @(#)Makefile	5.9 (Berkeley) 7/1/91
+#	$NetBSD: Makefile,v 1.17 2012/02/07 19:13:31 joerg Exp $
+
+NOOBJ=		# defined
+
+.include <bsd.own.mk>
+
+.if ${MKSHARE} != "no" && ${MKMAKEMANDB} == "no"
+FILES=		makewhatis.sed
+FILESDIR=	/usr/share/man
+.endif
+
 TOCS=	toc1 toc2 toc3 toc3f toc4 toc5 toc6 toc7 toc8 \
 	tocx1 tocx2 tocx3 tocx3f tocx4 tocx5 tocx6 tocx7 tocx8
 MACROS=	-msU
@@ -45,3 +56,5 @@ ptxx:
 clean:
 	rm -f title.urm.[PT]* preface.[PT]* intro.[PT]* toc.[PT]* ptx.[PT]* \
 	title.prm.[PT]* ${TOCS} ptxx *.spell errs Errs make.out
+	
+.include <bsd.prog.mk>
