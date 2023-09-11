@@ -503,6 +503,7 @@ fakeintr(spic, fakehand, level)
 	struct intrhand *fakehand;
 	u_int level;
 {
+	void *si;
 	u_int which;
 
 	switch (level) {
@@ -512,14 +513,23 @@ fakeintr(spic, fakehand, level)
 
 	case IPL_SOFTCLOCK:
 		which = I386_SOFTINTR_SOFTCLOCK;
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+		softintr_distpatch(which);
+#endif
 		break;
 
 	case IPL_SOFTNET:
 		which = I386_SOFTINTR_SOFTNET;
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+		softintr_distpatch(which);
+#endif
 		break;
 
 	case IPL_SOFTSERIAL:
 		which = I386_SOFTINTR_SOFTSERIAL;
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+		softintr_distpatch(which);
+#endif
 		break;
 
 	default:

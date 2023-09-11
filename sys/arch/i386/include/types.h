@@ -38,6 +38,9 @@
 #ifndef	_I386_MACHTYPES_H_
 #define	_I386_MACHTYPES_H_
 
+/* Machine-dependent: global defines */
+//#define	__HAVE_GENERIC_SOFT_INTERRUPTS
+
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 typedef struct _physadr {
 	int 	r[1];

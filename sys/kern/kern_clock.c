@@ -21,6 +21,9 @@
 #include <sys/types.h>
 
 #include <machine/cpu.h>
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+#include <machine/intr.h>
+#endif
 
 #ifdef GPROF
 #include <sys/gmon.h>
@@ -42,6 +45,11 @@ long cp_time[CPUSTATES];
 volatile struct timeval time;
 volatile struct	timeval mono_time;
 
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+static void softclockintr(void *);
+void *softclock_si;
+#endif
+
 /*
  * Initialize clock frequencies and start both clocks running.
  */
@@ -49,6 +57,13 @@ void
 initclocks()
 {
 	register int i;
+
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+	softclock_si = softintr_establish(IPL_SOFTCLOCK, softclockintr, NULL);
+	if (softclock_si == NULL) {
+	    panic("initclocks: unable to register softclock intr");
+	}
+#endif
 
 	/*
 	 * Set divisors to 1 (normal case) and let the machine-specific
@@ -168,9 +183,17 @@ hardclock(frame, pc)
 		++time.tv_sec;
 	}
 
-	if(callout_hardclock(needsoft) && CLKF_BASEPRI(frame)) {
-		(void) splsoftclock();
-		softclock(frame, pc);
+	if (callout_hardclock(needsoft)) {
+		if (CLKF_BASEPRI(frame)) {
+			(void) splsoftclock();
+			softclock(frame, pc);
+		} else {
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+			softintr_schedule(softclock_si);
+#else
+			setsoftclock();
+#endif
+		}
 	}
 }
 
@@ -282,6 +305,16 @@ softclock(frame, pc)
 		}
 	}
 }
+
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+static void
+softclockintr(void *arg)
+{
+    struct clockframe *frame = arg;
+
+    softclock(frame, arg);
+}
+#endif
 
 typedef void (*fun_t)(void *);
 /*
