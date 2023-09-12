@@ -916,14 +916,17 @@ _MKVARS.yes= \
 	MKGCC \
     MKGDB \
     MKGROFF \
+    	MKHESIOD \
 	MKHTML \
     MKIEEEFP \
     MKINET6 \
 	MKINFO \
     MKLDAP \
     MKLINKLIB \
+    MKKERBEROS \
 	MKMAN \
     MKMANDOC \
+    MKMAKEMANDB \
     MKMDNS \
 	MKNLS \
 	MKNPF \
@@ -1029,11 +1032,8 @@ _MKVARS.no= \
     MKXORG_SERVER \
     MKYP \
 	MKZFS \
-	MKKERBEROS \
-	MKHESIOD \
 	MKSKEY \
 	MKPAM \
-	MKMAKEMANDB \
 	 MKPOSTFIX 
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
@@ -1183,7 +1183,7 @@ ${var}?= yes
 #
 # USE_* options which default to "yes".
 #
-.for var in LIBSTDCXX
+.for var in LIBSTDCXX JEMALLOC
 USE_${var}?= yes
 .endfor
 
@@ -1191,8 +1191,8 @@ USE_${var}?= yes
 # USE_* options which default to "no".
 #
 # For now, disable pigz as compressor by default
-.for var in USE_PIGZGZIP
-${var}?= no
+.for var in PIGZGZIP
+USE_${var}?= no
 .endfor
 
 # Default to USE_XZ_SETS on some 64bit architectures where decompressor
