@@ -95,6 +95,18 @@ sbrk()
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
 }
+
+/* ARGSUSED */
+int
+sstk()
+{
+	register struct sstk_args {
+		syscallarg(int) incr;
+	} *uap = (struct sstk_args *) u.u_ap;
+
+	/* Not yet implemented */
+	return (EOPNOTSUPP);
+}
 #endif
 
 /* ARGSUSED */
@@ -138,16 +150,44 @@ sbrk()
 	return (0);
 }
 
+/* A copy of sbrk (above) but targets the stack instead */
 /* ARGSUSED */
 int
 sstk()
 {
 	register struct sstk_args {
+		syscallarg(int)	type;
+		syscallarg(segsz_t)	size;
+		syscallarg(caddr_t)	addr;
+		syscallarg(int)	sep;
+		syscallarg(int)	flags;
 		syscallarg(int) incr;
 	} *uap = (struct sstk_args *) u.u_ap;
-
-	/* Not yet implemented */
-	return (EOPNOTSUPP);
+	struct proc *p;
+	register_t *retval;
+	register segsz_t n, s;
+	
+	p = u.u_procp;
+	n = btoc(SCARG(uap, size));
+	if (!SCARG(uap, sep)) {
+		SCARG(uap, sep) = PSEG_NOSEP;
+	} else {
+		n -= ctos(p->p_tsize) * stoc(1);
+	}
+	if (n < 0) {
+		n = 0;
+	}
+	if (vm_estabur(p, p->p_dsize, n, p->p_tsize, SCARG(uap, sep), SEG_RO)) {
+		return (0);
+	}
+	vm_expand(p, n, S_STACK);
+	/* set s to (new - old) */
+	s = n - p->p_ssize;
+	if (s > 0) {
+		bzero(p->p_saddr + p->p_ssize, s);
+	}
+	p->p_ssize = n;
+	return (0);
 }
 
 int
