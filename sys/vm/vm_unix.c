@@ -164,7 +164,7 @@ grow(p, sp)
 		return (0);
 	}
 
-	if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
+	if (vm_estabur(p, u.u_dsize, u.u_ssize + si, u.u_tsize, u.u_sep, SEG_RO)) {
 		return (0);
 	}
 
