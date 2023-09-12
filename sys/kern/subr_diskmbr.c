@@ -200,7 +200,7 @@ reread_mbr:
 	bp->b_bcount = lp->d_secsize;
 	VOP_STRATEGY(bp);
 	if (biowait(bp) != 0) {
-		diskerr(bp, disk->dk_name, "reading primary partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
+		diskerr(bp, devtoname(dev), "reading primary partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
 		printf("\n");
 		error = EIO;
 		goto done;
@@ -385,7 +385,7 @@ mbr_extended(disk, dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors
 	if (level >= 16) {
 		printf(
 				"%s: excessive recursion in search for slices; aborting search\n",
-				disk->dk_name);
+				devtoname(dev));
 		return;
 	}
 
@@ -397,7 +397,7 @@ mbr_extended(disk, dev, lp, ssp, ext_offset, ext_size, base_ext_offset, nsectors
 	bp->b_flags |= B_READ;
 	VOP_STRATEGY(bp);
 	if (biowait(bp) != 0) {
-		diskerr(bp, disk->dk_name, "reading extended partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
+		diskerr(bp, devtoname(dev), "reading extended partition table: error", LOG_PRINTF, 0, (struct disklabel*) NULL);
 		printf("\n");
 		goto done;
 	}

@@ -540,12 +540,12 @@ disk_partition(disk, dev)
 	return (disk[dkunit(dev)].dk_parts);
 }
 
-struct device
+struct device *
 disk_device(disk, dev)
 	struct dkdevice *disk;
 	dev_t 			dev;
 {
-	return (disk[dkunit(dev)].dk_dev);
+	return (&disk[dkunit(dev)].dk_dev);
 }
 
 struct dkdevice *
@@ -560,6 +560,23 @@ disk_find_by_dev(dev)
         }
     }
     return (NULL);
+}
+
+char *
+devtoname(dev)
+    dev_t dev;
+{
+	 struct dkdevice *diskp;
+	 struct device   *dvp;
+
+	 diskp = disk_find_by_dev(dev);
+	 if (diskp != NULL) {
+		 dvp = disk_device(diskp, dev);
+		 if (dvp != NULL) {
+			 return (dvp->dv_xname);
+		 }
+	 }
+	 return (NULL);
 }
 
 struct dkdevice *

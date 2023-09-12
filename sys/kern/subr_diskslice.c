@@ -56,7 +56,7 @@ static void set_ds_label(struct diskslices *, int, struct disklabel *);
 static void set_ds_labeldevs(dev_t, struct diskslices *);
 static void set_ds_wlabel(struct diskslices *, int, int);
 static void set_ds_klabel(struct diskslices *, int, int);
-static char *devtoname(dev_t);
+//static char *devtoname(dev_t);
 
 static struct disklabel *
 clone_label(lp)
@@ -914,6 +914,7 @@ set_ds_klabel(ssp, slice, klabel)
 		ssp->dss_slices[COMPATIBILITY_SLICE].ds_klabel = klabel;
 }
 
+#ifdef notyet
 static char *
 devtoname(dev)
     dev_t dev;
@@ -928,3 +929,4 @@ devtoname(dev)
     }
     return (dvp->dv_xname);
 }
+#endif
