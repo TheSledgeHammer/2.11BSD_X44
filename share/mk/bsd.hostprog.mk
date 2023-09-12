@@ -39,11 +39,15 @@ LIBPTHREAD?=			/usr.lib/libpthread.a
 LIBRESOLV?=			/usr.lib/libresolv.a
 LIBSTUBS?=			/usr.lib/libstubs.a
 LIBTERMCAP?=			/usr.lib/libtermcap.a
-LIBTERMINFO=			LIBTERMCAP
+LIBTERMINFO=			${LIBTERMCAP}
 LIBUTIL?=			/usr.lib/libutil.a
 #LIBWRAP?=			/usr.lib/libwrap.a
 LIBY?=				/usr.lib/liby.a
 LIBZ?=				/usr.lib/libz.a
+LIBFORTRAN=			/usr.lib/libfortran
+LIBF77?=			${LIBFORTRAN}/libF77.a
+LIBI77?=			${LIBFORTRAN}/libI77.a
+LIBU77?=			${LIBFORTRAN}/libU77.a
 
 MKDEP_SUFFIXES?=	.lo .ln .d
 
