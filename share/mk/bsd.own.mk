@@ -923,7 +923,6 @@ _MKVARS.yes= \
 	MKINFO \
     MKLDAP \
     MKLINKLIB \
-    MKKERBEROS \
 	MKMAN \
     MKMANDOC \
     MKMAKEMANDB \
@@ -1034,6 +1033,7 @@ _MKVARS.no= \
 	MKZFS \
 	MKSKEY \
 	MKPAM \
+    MKKERBEROS \
 	 MKPOSTFIX 
 .for var in ${_MKVARS.no}
 ${var}?=	${${var}.${MACHINE_ARCH}:U${${var}.${MACHINE}:Uno}}
