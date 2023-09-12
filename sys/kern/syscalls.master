@@ -108,7 +108,7 @@
 64	UNIMPL	old getpagesize
 65  STD     	{ int pselect(); }
 66  STD     	{ int vfork(); }
-67	UNIMPL
+67	STD		{ int obreak(); } break
 68  STD   		{ int sbrk(); }
 69	STD			{ int sstk(); }
 70	STD			{ int mmap(); }

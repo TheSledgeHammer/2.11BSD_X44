@@ -56,6 +56,7 @@
 #include <sys/proc.h>
 #include <sys/resourcevar.h>
 #include <sys/map.h>
+#include <sys/sysdecl.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_text.h>
@@ -65,22 +66,21 @@
 
 static int 	estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
 
-struct obreak_args {
-	char	*nsiz;
-};
-
 /* ARGSUSED */
 int
-obreak(p, uap, retval)
-	struct proc *p;
-	struct obreak_args *uap;
-	int *retval;
+obreak()
 {
+	register struct obreak_args {
+		syscallarg(char	*)nsiz;
+	} *uap = (struct obreak_args *)u.u_ap;
+	struct proc *p;
+	int *retval;
 	register struct vmspace *vm;
 	vm_offset_t new, old;
 	int rv;
 	register int diff;
 
+	p = u.u_procp;
 	vm = p->p_vmspace;
 	old = (vm_offset_t)vm->vm_daddr;
 	new = round_page(uap->nsiz);

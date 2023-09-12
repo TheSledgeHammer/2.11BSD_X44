@@ -72,6 +72,7 @@ extern int	fstat();
 extern int	undelete();
 extern int	pselect();
 extern int	vfork();
+extern int	obreak();
 extern int	sbrk();
 extern int	sstk();
 extern int	mmap();

@@ -72,6 +72,7 @@
 #define	SYS_undelete	63
 #define	SYS_pselect	65
 #define	SYS_vfork	66
+#define	SYS_break	67
 #define	SYS_sbrk	68
 #define	SYS_sstk	69
 #define	SYS_mmap	70

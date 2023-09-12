@@ -40,7 +40,7 @@
 
 #include "SYS.h"
 
-#define	SYS_brk		17
+#define	SYS_brk		SYS_break
 
 	.globl	curbrk
 	.globl	minbrk

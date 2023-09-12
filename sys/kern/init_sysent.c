@@ -76,6 +76,7 @@ int	fstat();
 int	undelete();
 int	pselect();
 int	vfork();
+int	obreak();
 int	sbrk();
 int	sstk();
 int	mmap();
@@ -304,7 +305,7 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    vfork },				/* 66 = vfork */
 	{ 0, 0,
-	    nosys },				/* 67 = unused */
+	    obreak },				/* 67 = break */
 	{ 0, 0,
 	    sbrk },				/* 68 = sbrk */
 	{ 0, 0,

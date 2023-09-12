@@ -56,9 +56,6 @@ void		 	chgkprot(caddr_t, int, int);
 #endif
 
 #ifdef _KERNEL
-#ifdef TYPEDEF_FOR_UAP
-int		 		obreak(struct proc *, void *, int *);
-#endif
 
 void		 	assert_wait(void *, bool_t);
 int		 		grow(struct proc *, vm_offset_t);
