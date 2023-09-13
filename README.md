@@ -10,6 +10,7 @@
 | --------- | ----------- |
 | bin | System/user commands. |
 | contrib | Packages contributed by 3rd parties. |
+| crypto | Cryptography stuff. |
 | etc | Template files for /etc. |
 | include | System include files. |
 | lib | System libraries. |
@@ -141,7 +142,7 @@ Cross-Compiler Compatability Table:
 
 ### Known OS's Supported:
 - Ubuntu (20.04 to 23.04)
-- Mint	 (21.1 & 21.2): has problems when compiling a release
+- Mint	 (21.1 & 21.2)
 
 ## Contribution:
 
