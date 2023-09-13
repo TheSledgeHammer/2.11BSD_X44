@@ -83,7 +83,7 @@ obreak()
 	p = u.u_procp;
 	vm = p->p_vmspace;
 	old = (vm_offset_t)vm->vm_daddr;
-	new = round_page(uap->nsiz);
+	new = (vm_offset_t)round_page(SCARG(uap, nsiz));
 	if ((int)(new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
 		return(ENOMEM);
 	old = round_page(old + ctob(vm->vm_dsize));
