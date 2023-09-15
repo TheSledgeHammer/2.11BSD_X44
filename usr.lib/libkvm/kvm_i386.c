@@ -291,7 +291,11 @@ _i386_uvatop(kd, vms, va, pa)
 		*pa = ((pte & L1_FRAME) + offset);
 		return (NBPD_L1 - offset);
 	}
-
+	kva = (u_long)&vms->vm_pmap.pm_pdir;
+	if (KREAD(kd, kva, &kva)) {
+		_kvm_err(kd, kd->program, "invalid address (%x)", va);
+		return (0);
+	}
 	return (_i386_vatop(kd, va, pa));
 }
 
