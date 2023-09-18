@@ -751,6 +751,12 @@ vga_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 		vga_set_video(vc, *(int *)data == WSDISPLAYIO_VIDEO_ON);
 		return 0;
 
+	case WSDISPLAYIO_GBORDER:
+		//return (vga_getborder(vc, (u_int *)data));
+
+	case WSDISPLAYIO_SBORDER:
+		//return (vga_setborder(vc, *(u_int *)data));
+
 	case WSDISPLAYIO_GETCMAP:
 	case WSDISPLAYIO_PUTCMAP:
 	case WSDISPLAYIO_GCURPOS:
