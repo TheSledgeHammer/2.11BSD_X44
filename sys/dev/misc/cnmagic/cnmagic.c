@@ -37,6 +37,7 @@ __KERNEL_RCSID(0, "$NetBSD: cnmagic.c,v 1.5 2003/08/22 02:01:32 junyoung Exp $")
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/errno.h>
+#include <sys/sysctl.h>
 
 #include <dev/misc/cnmagic/cnmagic.h>
 
@@ -160,4 +161,24 @@ cn_get_magic(char *magic, size_t maglen)
 		}
 	}
 	return (EINVAL);
+}
+
+int
+sysctl_cnmagic(where, given, newp, newlen)
+	char 	*where;
+	size_t	*given;
+	void	*newp;
+	size_t	newlen;
+{
+	char magic[CNS_LEN];
+	int error;
+
+	if (where) {
+		cn_get_magic(magic, CNS_LEN);
+	}
+	error = sysctl_string(where, given, newp, newlen, magic, sizeof(magic));
+	if (newp && !error) {
+		error = cn_set_magic(magic);
+	}
+	return (error);
 }

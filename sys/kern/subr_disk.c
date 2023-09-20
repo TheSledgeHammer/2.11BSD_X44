@@ -82,6 +82,7 @@
 #include <sys/buf.h>
 #include <sys/bufq.h>
 #include <sys/syslog.h>
+#include <sys/sysctl.h>
 #include <sys/time.h>
 #include <sys/disklabel.h>
 #include <sys/diskslice.h>
@@ -591,4 +592,51 @@ disk_find_by_slice(slicep)
         }
     }
     return (NULL);
+}
+
+int
+sysctl_disknames(where, sizep)
+	char *where;
+	size_t *sizep;
+{
+	struct dkdevice *diskp;
+	char buf[DK_DISKNAMELEN + 1];
+	size_t needed, left, slen;
+	int error, first;
+
+	first = 1;
+	error = 0;
+	needed = 0;
+	left = *sizep;
+
+	TAILQ_FOREACH(diskp, &disklist, dk_link) {
+		if (where == NULL) {
+			needed += strlen(diskp->dk_name) + 1;
+		} else {
+			bzero(buf, sizeof(buf));
+			if (first) {
+				strncpy(buf, diskp->dk_name, sizeof(buf));
+				first = 0;
+			} else {
+				buf[0] = ' ';
+				strncpy(buf + 1, diskp->dk_name, sizeof(buf) - 1);
+			}
+			buf[DK_DISKNAMELEN] = '\0';
+			slen = strlen(buf);
+			if (left < slen + 1) {
+				break;
+			}
+			/* +1 to copy out the trailing NUL byte */
+			error = copyout(buf, where, slen + 1);
+			if (error) {
+				break;
+			}
+			where += slen;
+			needed += slen;
+			left -= slen;
+		}
+	}
+
+	*sizep = needed;
+	return (error);
 }

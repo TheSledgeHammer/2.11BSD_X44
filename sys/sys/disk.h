@@ -123,6 +123,9 @@ struct dkdevice {
 	struct partition 	dk_parts[MAXPARTITIONS];/* in-kernel portion */
 	struct cpu_disklabel *dk_cpulabel;
 };
+
+#define	DK_DISKNAMELEN	16
+
 /*
 struct cpu_disklabel {
 #define __HAVE_DISKLABEL_DKBAD

@@ -245,7 +245,8 @@ struct kinfo_proc {
 #define	HW_DISKNAMES	8		/* strings: disk drive names */
 #define	HW_DISKSTATS	9		/* struct: diskstats[] */
 #define HW_DEVCONF		10		/* node: device configuration */
-#define	HW_MAXID		11		/* number of valid hw ids */
+#define HW_CNMAGIC		11		/* node: device configuration */
+#define	HW_MAXID		12		/* number of valid hw ids */
 
 #define CTL_HW_NAMES { 					\
 	{ 0, 0 }, 							\
@@ -260,6 +261,7 @@ struct kinfo_proc {
 	{ "diskstats", CTLTYPE_STRUCT }, 	\
 	{ "floatingpoint", CTLTYPE_INT }, 	\
 	{ "devconf", CTLTYPE_NODE }, 		\
+	{ "cnmagic", CTLTYPE_STRING }, 		\
 }
 
 /*
@@ -382,6 +384,8 @@ int sysctl_rdbool(void *, size_t *, void *, bool_t);
 int sysctl_file(char *, size_t *);
 int	sysctl_clockrate(char *, size_t *);
 int	sysctl_doproc(int *, u_int, char *, size_t *);
+int	sysctl_disknames(char *, size_t *);
+int sysctl_cnmagic(char *, size_t *, void *, size_t);
 int	sysctl_vnode(char *, size_t *, struct proc *);
 int sysctl_text(char *, size_t *);
 void fill_eproc(struct proc *, struct eproc *);

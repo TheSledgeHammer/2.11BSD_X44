@@ -59,6 +59,9 @@ static char sccsid[] = "@(#)vmstat.c	5.4.2 (2.11BSD GTE) 1997/3/28";
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
+#include <sys/time.h>
+#include <sys/disk.h>
+#include <sys/vmmeter.h>
 #include <vm/include/vm.h>
 
 #include <time.h>
@@ -127,9 +130,11 @@ struct nlist namelist[] = {
 		{ .n_name = "_dk_name" },
 #define	X_DK_UNIT		25
 		{ .n_name = "_dk_unit" },
-#define X_FREEMEM		26
+#define	X_DK_DISKLIST 	26
+		{ .n_name = "_dk_disklist" },
+#define X_FREEMEM		27
 		{ .n_name = "_freemem" },
-#define X_END			27
+#define X_END			28
 		{ .n_name = NULL },
 };
 
@@ -137,7 +142,15 @@ struct disk_sysctl {
 	int					busy;
 	long				time[CPUSTATES];
 	long				*xfer;
-};
+} cur, last;
+
+static struct dkdevice *dk_drivehead = NULL;
+char **dk_name;
+int	 *dk_unit;
+char **dr_name;
+int	 *dr_select;
+int	 dk_ndrive;
+int	 ndrives = 0;
 
 struct vm_sysctl {
 	struct	vmrate   	Rate;
@@ -146,19 +159,19 @@ struct vm_sysctl {
 	struct	forkstat 	Forkstat;
 	unsigned 			rectime;
 	unsigned 			pgintime;
-};
+} vms, vms1;
 
-struct disk_sysctl cur, last;
-struct vm_sysctl vms, vms1;
+#define rate 		vms.Rate
+#define total 		vms.Total
+#define	sum			vms.Sum
+#define	forkstat	vms.Forkstat
+
+struct vmsum osum;
 struct vm_xstats pxstats, cxstats;
-struct vmsum sum, osum;
 static kvm_t *kd;
 
 char *defdrives[] = { 0 };
-char **dr_name;
-int	*dr_select;
-int	dk_ndrive;
-int	ndrives = 0;
+
 int	hz, phz, HZ, hdrcnt;
 int deficit;
 int	winlines = 20;
@@ -186,7 +199,9 @@ static void	dkstats(void);
 static void	cpustats(void);
 static void	dointr(void);
 static void	domem(void);
+static int dkinit(char *, char *, int);
 static void	kread(int, void *, size_t);
+static void kread2(void *, void *, size_t);
 static void	usage(void);
 
 int
@@ -277,6 +292,10 @@ main(argc, argv)
 	if (todo & VMSTAT) {
 		struct winsize winsize;
 
+		dkinit(memf, nlistf, 0);	/* Initialize disk stats, no disks selected. */
+
+		(void)setgid(getgid()); 	/* don't need privs anymore */
+
 		argv = getdrivedata(argv);
 		winsize.ws_row = 0;
 		(void) ioctl(STDOUT_FILENO, TIOCGWINSZ, (char *)&winsize);
@@ -332,28 +351,6 @@ getdrivedata(argv)
 	register char **cp;
 	char buf[30];
 
-	kread(X_DK_NDRIVE, &dk_ndrive, sizeof(dk_ndrive));
-	if (dk_ndrive <= 0) {
-		(void)fprintf(stderr, "vmstat: dk_ndrive %d\n", dk_ndrive);
-		exit(1);
-	}
-	dr_select = calloc((size_t)dk_ndrive, sizeof(int));
-	dr_name = calloc((size_t)dk_ndrive, sizeof(char *));
-	for (i = 0; i < dk_ndrive; i++) {
-		dr_name[i] = NULL;
-	}
-	cur.xfer = calloc((size_t)dk_ndrive, sizeof(long));
-	last.xfer = calloc((size_t)dk_ndrive, sizeof(long));
-	if (!read_names()) {
-		exit (1);
-	}
-	for (i = 0; i < dk_ndrive; i++) {
-		if (dr_name[i] == NULL) {
-			(void)sprintf(buf, "??%d", i);
-			dr_name[i] = strdup(buf);
-		}
-	}
-
 	/*
 	 * Choose drives to be displayed.  Priority goes to (in order) drives
 	 * supplied as arguments, default drives.  If everything isn't filled
@@ -376,6 +373,7 @@ getdrivedata(argv)
 			break;
 		}
 	}
+	/*
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
 		if (dr_select[i])
 			continue;
@@ -387,6 +385,7 @@ getdrivedata(argv)
 			}
 		}
 	}
+	*/
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
 		if (dr_select[i]) {
 			continue;
@@ -397,53 +396,22 @@ getdrivedata(argv)
 	return (argv);
 }
 
-static void
-dorate(nitv)
-	time_t nitv;
-{
-	kread(X_XSTATS, &cxstats, sizeof(cxstats));
-	if (nitv != 1) {
-		kread(X_SUM, &sum, sizeof(sum));
-		rate.v_swtch = sum.v_swtch;
-		rate.v_trap = sum.v_trap;
-		rate.v_syscall = sum.v_syscall;
-		rate.v_intr = sum.v_intr;
-		rate.v_pdma = sum.v_pdma;
-		rate.v_ovly = sum.v_ovly;
-		rate.v_pgin = sum.v_pgin;
-		rate.v_pgout = sum.v_pgout;
-		rate.v_swpin = sum.v_swpin;
-		rate.v_swpout = sum.v_swpout;
-	} else {
-		kread(X_RATE, &rate, sizeof(rate));
-		kread(X_SUM, &sum, sizeof(sum));
-	}
-	pxstats = cxstats;
-	kread(X_XSTATS, &cxstats, sizeof(cxstats));
-	kread(X_FREEMEM, &pfree, sizeof(pfree));
-	kread(X_TOTAL, &total, sizeof(total));
-	osum = sum;
-	kread(X_SUM, &sum, sizeof(sum));
-	kread(X_DEFICIT, &deficit, sizeof(deficit));
-}
-
 static long
 getuptime(void)
 {
 	static time_t now, boottime;
 	time_t uptime;
 
-	kread(X_FIRSTFREE, &firstfree, sizeof(firstfree));
-	kread(X_MAXFREE, &maxfree, sizeof(maxfree));
-
 	if (boottime == 0) {
 		kread(X_BOOTTIME, &boottime, sizeof(boottime));
 	}
+	/*
 	kread(X_HZ, &hz, sizeof(hz));
 	if (hz != 0) {
 		kread(X_PHZ, &phz, sizeof(phz));
 	}
 	HZ = phz ? phz : hz;
+	*/
 	(void) time(&now);
 	uptime = now - boottime;
 	if (uptime <= 0 || uptime > 60 * 60 * 24 * 365 * 10) {
@@ -698,7 +666,7 @@ dkstats(void)
 	if (etime == 0) {
 		etime = 1;
 	}
-	etime /= hz;
+	etime /= HZ;
 	for (dn = 0; dn < dk_ndrive; ++dn) {
 		if (!dr_select[dn]) {
 			continue;
@@ -711,14 +679,14 @@ static void
 cpustats(void)
 {
 	register int state;
-	double pct, total;
+	double pct, tot;
 
-	total = 0;
+	tot = 0;
 	for (state = 0; state < CPUSTATES; ++state) {
-		total += cur.time[state];
+		tot += cur.time[state];
 	}
 	if (total) {
-		pct = 100 / total;
+		pct = 100 / tot;
 	} else {
 		pct = 0;
 	}
@@ -758,6 +726,81 @@ dointr(void)
 	(void)printf("Total        %8ld %8ld\n", inttotal, inttotal / uptime);
 }
 
+static void
+dorate(nitv)
+	time_t nitv;
+{
+	kread(X_XSTATS, &cxstats, sizeof(cxstats));
+	if (nitv != 1) {
+		kread(X_SUM, &sum, sizeof(sum));
+		rate.v_swtch = sum.v_swtch;
+		rate.v_trap = sum.v_trap;
+		rate.v_syscall = sum.v_syscall;
+		rate.v_intr = sum.v_intr;
+		rate.v_pdma = sum.v_pdma;
+		rate.v_ovly = sum.v_ovly;
+		rate.v_pgin = sum.v_pgin;
+		rate.v_pgout = sum.v_pgout;
+		rate.v_swpin = sum.v_swpin;
+		rate.v_swpout = sum.v_swpout;
+		rate.v_lookups = sum.v_lookups;
+		rate.v_hits = sum.v_hits;
+		rate.v_vm_faults = sum.v_vm_faults;
+		rate.v_cow_faults = sum.v_cow_faults;
+		rate.v_pageins = sum.v_pageins;
+		rate.v_pageouts = sum.v_pageouts;
+		rate.v_pgpgin = sum.v_pgpgin;
+		rate.v_pgpgout = sum.v_pgpgout;
+		rate.v_intrans = sum.v_intrans;
+		rate.v_reactivated = sum.v_reactivated;
+		rate.v_rev = sum.v_rev;
+		rate.v_scan = sum.v_scan;
+		rate.v_dfree = sum.v_dfree;
+		rate.v_pfree = sum.v_pfree;
+		rate.v_tfree = sum.v_tfree;
+		rate.v_zfod = sum.v_zfod;
+		rate.v_nzfod = sum.v_nzfod;
+		rate.v_nswapdev = sum.v_nswapdev;
+		rate.v_swpages = sum.v_swpages;
+		rate.v_swpgavail = sum.v_swpgavail;
+		rate.v_swpginuse = sum.v_swpginuse;
+		rate.v_swpgonly = sum.v_swpgonly;
+		rate.v_nswget = sum.v_nswget;
+		rate.v_nanon = sum.v_nanon;
+		rate.v_nfreeanon = sum.v_nfreeanon;
+		rate.v_flt_acow = sum.v_flt_acow;
+		rate.v_fltnoanon = sum.v_fltnoanon;
+		rate.v_fltnoram = sum.v_fltnoram;
+		rate.v_flt_anon = sum.v_flt_anon;
+		rate.v_fltanget = sum.v_fltanget;
+		rate.v_fltanretry = sum.v_fltanretry;
+		rate.v_fltrelck = sum.v_fltrelck;
+		rate.v_fltrelckok = sum.v_fltrelckok;
+		rate.v_page_size = sum.v_page_size;
+		rate.v_page_free_target = sum.v_page_free_target;
+		rate.v_page_free_min = sum.v_page_free_min;
+		rate.v_page_free_count = sum.v_page_free_count;
+		rate.v_page_wire_count = sum.v_page_wire_count;
+		rate.v_page_active_count = sum.v_page_active_count;
+		rate.v_page_inactive_target = sum.v_page_inactive_target;
+		rate.v_page_inactive_count = sum.v_page_inactive_count;
+		rate.v_segment_size = sum.v_segment_size;
+		rate.v_segment_free_count = sum.v_segment_free_count;
+		rate.v_segment_active_count = sum.v_segment_active_count;
+		rate.v_segment_inactive_count = sum.v_segment_inactive_count;
+	} else {
+		kread(X_RATE, &rate, sizeof(rate));
+		kread(X_SUM, &sum, sizeof(sum));
+	}
+	pxstats = cxstats;
+	kread(X_XSTATS, &cxstats, sizeof(cxstats));
+	kread(X_FREEMEM, &pfree, sizeof(pfree));
+	kread(X_TOTAL, &total, sizeof(total));
+	osum = sum;
+	kread(X_SUM, &sum, sizeof(sum));
+	kread(X_DEFICIT, &deficit, sizeof(deficit));
+}
+
 /*
  * These names are defined in <sys/malloc.h>.
  */
@@ -776,6 +819,8 @@ domem(void)
 	struct kmemstats kmemstats[M_LAST];
 	struct kmemslabs slabbuckets[MINBUCKET + 16];
 
+	kread(X_FIRSTFREE, &firstfree, sizeof(firstfree));
+	kread(X_MAXFREE, &maxfree, sizeof(maxfree));
 	kread(X_KMEMBUCKETS, slabbuckets, sizeof(slabbuckets));
 	(void)printf("Memory statistics by bucket size\n");
 	(void)printf(
@@ -863,9 +908,126 @@ domem(void)
 }
 
 /*
+ * Perform all of the initialization and memory allocation needed to
+ * track disk statistics.
+ */
+static int
+dkinit(memf, nlistf, select)
+	char *memf, *nlistf;
+	int select;
+{
+	struct disklist_head disk_head;
+	struct dkdevice	cur_disk, *p;
+	struct clockinfo clockinfo;
+	size_t size;
+	int	i, mib[2];
+	char buf[30];
+	static int	once = 0;
+
+	if (once) {
+		return (1);
+	}
+
+	if (memf == NULL) {
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_CLOCKRATE;
+		size = sizeof(clockinfo);
+		if (sysctl(mib, 2, &clockinfo, &size, NULL, 0) < 0) {
+			(void)fprintf(stderr, "vmstat: Can't get sysctl kern.clockrate %d\n", strerror(errno));
+		}
+
+		kread(X_HZ, &hz, sizeof(hz));
+		if (hz != 0 || hz != clockinfo.stathz) {
+			hz = clockinfo.hz;
+			kread(X_PHZ, &phz, sizeof(phz));
+		}
+		HZ = phz ? phz : hz;
+
+		mib[0] = CTL_HW;
+		mib[1] = HW_DISKNAMES;
+		size = 0;
+		if (sysctl(mib, 2, NULL, &size, NULL, 0) < 0) {
+			(void)fprintf(stderr, "vmstat: Can't get sysctl hw.diskstats %d\n", strerror(errno));
+		}
+		if (size == 0) {
+			(void)fprintf(stderr, "vmstat: No drives attached %s\n", strerror(errno));
+		}
+	}
+
+	kread(X_DK_NDRIVE, &dk_ndrive, sizeof(dk_ndrive));
+	if (dk_ndrive <= 0) {
+		(void)fprintf(stderr, "vmstat: invalid disk count dk_ndrive %d\n", dk_ndrive);
+		exit(1);
+	} else if (dk_ndrive == 0){
+		(void)fprintf(stderr, "vmstat: no drives attached dk_ndrive %d\n", dk_ndrive);
+		exit(1);
+	} else {
+		/* Get a pointer to the first disk. */
+		kread(X_DK_DISKLIST, &disk_head, sizeof(disk_head));
+		dk_drivehead = TAILQ_FIRST(disk_head);
+	}
+
+	/* Get ticks per second. */
+	kread(X_STATHZ, &hz, sizeof(hz));
+	if (hz != 0) {
+		kread(X_HZ, &hz, sizeof(hz));
+	}
+
+	/* Allocate space for the statistics. */
+	dr_select = (int *)calloc(dk_ndrive, sizeof (int));
+	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
+	dk_name = (char **)calloc(dk_ndrive, sizeof (char *));
+	dk_unit = (int *)calloc(dk_ndrive, sizeof (int));
+	cur.xfer = calloc((size_t)dk_ndrive, sizeof(long));
+	last.xfer = calloc((size_t)dk_ndrive, sizeof(long));
+
+	p = dk_drivehead;
+	for (i = 0; i < dk_ndrive; i++) {
+		(void)sprintf(buf, "dk%d", i);
+		//(void)sprintf(buf, "??%d", i);
+		kread2(p, &cur_disk, sizeof(cur_disk));
+		kread2(cur_disk.dk_name, buf, sizeof(buf));
+		dr_name[i] = strdup(buf);
+		if (dr_name[i] == NULL) {
+			err(1, "strdup");
+		}
+		dr_select[i] = select;
+		p = TAILQ_NEXT(cur_disk, dk_link);
+	}
+
+	/* Never do this initialization again. */
+	once = 1;
+	return (1);
+}
+
+#ifdef notyet
+void
+read_names(void)
+{
+	struct disklist_head disk_head;
+	struct dkdevice	cur_disk, *p;
+
+	char two_char[2];
+	register int i;
+
+	kread(X_DK_NAME, &dk_name, dk_ndrive * sizeof(char *));
+	kread(X_DK_UNIT, &dk_unit, dk_ndrive * sizeof(int));
+
+	p = dk_drivehead;
+	for (i = 0; dk_ndrive; i++) {
+		kread2(p, &cur_disk, sizeof(cur_disk));
+		dk_name[i] = &cur_disk.dk_name;
+		kread2(dk_name[i], two_char, sizeof(two_char));
+		sprintf(dr_name[i], "%c%c%d", two_char[0], two_char[1], dk_unit[i]);
+		p = TAILQ_NEXT(cur_disk, dk_link);
+	}
+}
+#endif
+
+/*
  * kread reads something from the kernel, given its nlist index.
  */
-void
+static void
 kread(nlx, addr, size)
 	int nlx;
 	void *addr;
@@ -891,7 +1053,27 @@ kread(nlx, addr, size)
 	}
 }
 
-void
+static void
+kread2(ptr, addr, size)
+	void *ptr, *addr;
+	size_t size;
+{
+	char buf[128];
+	int nlx;
+
+	nlx = (int)ptr;
+	if (isdigit(nlx) == 0) {
+		kread(nlx, addr, size);
+	} else {
+		if (kvm_read(kd, (u_long)ptr, (char *)addr, size) != size) {
+			memset(buf, 0, sizeof(buf));
+			(void)snprintf(buf, sizeof(buf), "can't dereference ptr 0x%lx", (u_long)ptr);
+			(void)fprintf(stderr, "vmstat: %s: %s\n", buf, kvm_geterr(kd));
+		}
+	}
+}
+
+static void
 usage()
 {
 	(void)fprintf(stderr, "usage: vmstat [-fimst] [-c count] [-M core] [-N system] [-w wait] [disks]\n");

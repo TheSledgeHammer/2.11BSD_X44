@@ -298,6 +298,10 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)physmem - freemem)));
 	case HW_PAGESIZE:
 		return (sysctl_rdint(oldp, oldlenp, newp, PAGE_SIZE));
+	case HW_DISKNAMES:
+		return (sysctl_disknames(oldp, oldlenp));
+	case HW_CNMAGIC:
+		return (sysctl_cnmagic(oldp, oldlenp, newp, newlen));
 	default:
 		return (EOPNOTSUPP);
 	}
