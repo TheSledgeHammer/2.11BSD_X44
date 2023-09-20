@@ -28,6 +28,7 @@
  * SUCH DAMAGE.
  */
 
+int aout_ldd(int, char *, const char *, const char *);
 int elf32_ldd(int, char *, const char *, const char *);
 
 #ifdef _LP64

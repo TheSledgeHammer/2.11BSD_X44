@@ -164,7 +164,7 @@
 ./usr/share/skel
 ./usr/share/term
 ./usr/share/termcap
-./usr/share/tabset
+./usr/share/termcap/tabset
 ./usr/share/tmac
 ./usr/share/wscons
 ./usr/share/wscons/fonts

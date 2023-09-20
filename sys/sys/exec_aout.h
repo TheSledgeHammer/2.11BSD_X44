@@ -70,6 +70,41 @@
 	 N_GETMAGIC_NET(ex) == ZMAGIC || N_GETMAGIC_NET(ex) == QMAGIC ? 		\
 	 ((x) + __LDPGSZ - 1) & ~(__LDPGSZ - 1) : (x))
 
+
+//#ifdef OVERLAY
+#ifdef notyet /* Not ready to be used system-wide */
+
+#define	N_BADMAG(ex) 														\
+	(N_GETMAGIC(ex) != OMAGIC && N_GETMAGIC(ex) != NMAGIC && 				\
+	 N_GETMAGIC(ex) != ZMAGIC && N_GETMAGIC(ex) != QMAGIC && 				\
+	 N_GETMAGIC(ex) != A_MAGIC3 && N_GETMAGIC(ex) != A_MAGIC4 &&			\
+	 N_GETMAGIC(ex) != A_MAGIC5 && N_GETMAGIC(ex) != A_MAGIC6 &&			\
+	 N_GETMAGIC_NET(ex) != OMAGIC && N_GETMAGIC_NET(ex) != NMAGIC && 		\
+	 N_GETMAGIC_NET(ex) != ZMAGIC && N_GETMAGIC_NET(ex) != QMAGIC &&		\
+	 N_GETMAGIC_NET(ex) != A_MAGIC3 && N_GETMAGIC_NET(ex) != A_MAGIC4 &&	\
+	 N_GETMAGIC_NET(ex) != A_MAGIC5 && N_GETMAGIC_NET(ex) != A_MAGIC6)
+
+/* Address of the bottom of the text segment. */
+#define N_TXTADDR(ex) 														\
+	((N_GETMAGIC(ex) == OMAGIC || N_GETMAGIC(ex) == NMAGIC || 				\
+	N_GETMAGIC(ex) == ZMAGIC || N_GETMAGIC(ex) == A_MAGIC5 || 				\
+	N_GETMAGIC(ex) == A_MAGIC6) ? 0 : __LDPGSZ)
+
+/* Address of the bottom of the data segment. */
+#define N_DATADDR(ex) 														\
+	N_ALIGN(ex, N_TXTADDR(ex) + (ex).a_text)
+
+/* Text segment offset. */
+#define	N_TXTOFF(ex) 														\
+	(N_GETMAGIC(ex) == ZMAGIC ? __LDPGSZ : (N_GETMAGIC(ex) == QMAGIC || 	\
+	N_GETMAGIC_NET(ex) == ZMAGIC) ? 0 : sizeof(struct exec)) ||				\
+	(N_GETMAGIC(ex) == A_MAGIC5 || N_GETMAGIC(ex) == A_MAGIC6 ?				\
+	sizeof(struct ovlhdr) + sizeof(struct exec) : sizeof(struct exec))
+
+#endif /* notyet */
+
+//#else
+
 /* Valid magic number check. */
 #define	N_BADMAG(ex) 														\
 	(N_GETMAGIC(ex) != OMAGIC && N_GETMAGIC(ex) != NMAGIC && 				\
@@ -90,6 +125,8 @@
 #define	N_TXTOFF(ex) 														\
 	(N_GETMAGIC(ex) == ZMAGIC ? __LDPGSZ : (N_GETMAGIC(ex) == QMAGIC || 	\
 	N_GETMAGIC_NET(ex) == ZMAGIC) ? 0 : sizeof(struct exec))
+
+//#endif /* OVERLAY */
 
 /* Data segment offset. */
 #define	N_DATOFF(ex) 														\
