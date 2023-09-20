@@ -10,10 +10,8 @@
 *.ipr
 *.iws
 *.idea
-*.dist
 *.vscode
 *.code-workspace
 *.metadata
-*.dist
 *.codelite
 *.workspace
