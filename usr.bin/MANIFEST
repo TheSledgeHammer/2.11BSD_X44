@@ -46,6 +46,7 @@ tsort/		NetBSD
 unstr/		NetBSD
 uudecode/	NetBSD
 uuencode/	NetBSD
+vmstat/   4.4BSD-Lite2 / 2.11BSD
 vgrind/		NetBSD
 write/		NetBSD
 xinstall/	NetBSD
