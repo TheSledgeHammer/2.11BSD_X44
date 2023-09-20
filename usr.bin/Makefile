@@ -17,7 +17,7 @@ SUBDIR= at 															\
 		sed sortinfo stat strfile 									\
 		time touch tsort 										\
 		unstr uudecode uuencode 									\
-		vgrind 														\
+		vmstat vgrind 														\
 		write 														\
 		xinstall xlint
 												
