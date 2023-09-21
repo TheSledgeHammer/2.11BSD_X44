@@ -360,6 +360,7 @@ PAXCTL=				${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
 TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
 YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
+TOOL_AR=            	${TOOLDIR}/bin/${_TOOL_PREFIX}ar
 TOOL_AWK=			${TOOLDIR}/bin/${_TOOL_PREFIX}awk
 TOOL_CAP_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}cap_mkdb
 TOOL_CAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}cat
@@ -464,6 +465,7 @@ TOOL_CC.pcc=		pcc
 TOOL_CPP.pcc=		pcpp
 TOOL_CXX.pcc=		p++
 
+TOOL_AR=			ar
 TOOL_ASN1_COMPILE=	asn1_compile
 TOOL_AWK=			awk
 TOOL_CAP_MKDB=		cap_mkdb
