@@ -63,6 +63,7 @@ static char sccsid[] = "@(#)archive.c	5.7 (Berkeley) 3/21/91";
 extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
 extern int errno;
+extern u_int options;
 
 typedef struct ar_hdr HDR;
 static char hb[sizeof(HDR) + 1];	/* real header */
@@ -204,7 +205,7 @@ static int already_written;
  * put_arobj --
  *	Write an archive member to a file.
  */
-int
+void
 put_arobj(cfp, sb)
 	CF *cfp;
 	struct stat *sb;
@@ -312,12 +313,12 @@ copy_ar(cfp, size)
 		error(cfp->rname);
 	}
 
-	if (cfp->flags & RPAD && size & 1 && (nr = read(from, buf, 1)) != 1) {
+	if ((cfp->flags & RPAD) && (size & 1) && (nr = read(from, buf, 1)) != 1) {
 		if (nr == 0)
 			badfmt();
 		error(cfp->rname);
 	}
-	if (cfp->flags & WPAD && (size + already_written) & 1 &&
+	if ((cfp->flags & WPAD) && ((size + already_written) & 1) &&
 	    write(to, &pad, 1) != 1)
 		error(cfp->wname);
 }

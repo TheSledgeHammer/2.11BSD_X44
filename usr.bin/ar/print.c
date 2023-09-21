@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)print.c	5.6 (Berkeley) 3/12/91";
 
 extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
+extern u_int options;
 
 /*
  * print --

@@ -103,7 +103,7 @@ files(argv)
 	for (list = argv; *list; ++list)
 		if (compare(*list)) {
 			p = *list;
-			for (; list[0] = list[1]; ++list);
+			for (; list[0] == list[1]; ++list);
 			return(p);
 		}
 	return(NULL);

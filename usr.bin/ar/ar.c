@@ -34,6 +34,10 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if	defined(DOSCCS) && !defined(lint)
 char copyright[] =
@@ -78,8 +82,7 @@ main(argc, argv)
 	extern int optind;
 	int c;
 	char *p;
-	int (*fcall)(), append(), contents(), delete(), extract(),
-	    move(), print(), replace();
+	int (*fcall)();//, append(), contents(), delete(), extract(), move(), print(), replace();
 
 	if (argc < 3)
 		usage();
@@ -112,36 +115,36 @@ main(argc, argv)
 			break;
 		case 'd':
 			options |= AR_D;
-			fcall = delete;
+			fcall = delete(argv);
 			break;
 		case 'l':		/* not documented, compatibility only */
 			envtmp = ".";
 			break;
 		case 'm':
 			options |= AR_M;
-			fcall = move;
+			fcall = move(argv);
 			break;
 		case 'o':
 			options |= AR_O;
 			break;
 		case 'p':
 			options |= AR_P;
-			fcall = print;
+			fcall = print(argv);
 			break;
 		case 'q':
 			options |= AR_Q;
-			fcall = append;
+			fcall = append(argv);
 			break;
 		case 'r':
 			options |= AR_R;
-			fcall = replace;
+			fcall = replace(argv);
 			break;
 		case 'T':
 			options |= AR_TR;
 			break;
 		case 't':
 			options |= AR_T;
-			fcall = contents;
+			fcall = contents(argv);
 			break;
 		case 'u':
 			options |= AR_U;
@@ -151,7 +154,7 @@ main(argc, argv)
 			break;
 		case 'x':
 			options |= AR_X;
-			fcall = extract;
+			fcall = extract(argv);
 			break;
 		default:
 			usage();
@@ -168,7 +171,7 @@ main(argc, argv)
 		usage();
 	}
 	/* Only one of -a and -bi allowed. */
-	if (options & AR_A && options & AR_B) {
+	if ((options & AR_A) && (options & AR_B)) {
 		(void)fprintf(stderr,
 		    "ar: only one of -a and -[bi] options allowed.\n");
 		usage();
@@ -183,25 +186,25 @@ main(argc, argv)
 		posname = rname(posarg);
 	}
 	/* -d only valid with -Tv. */
-	if (options & AR_D && options & ~(AR_D|AR_TR|AR_V))
+	if ((options & AR_D) && (options & ~(AR_D|AR_TR|AR_V)))
 		badoptions("-d");
 	/* -m only valid with -abiTv. */
-	if (options & AR_M && options & ~(AR_A|AR_B|AR_M|AR_TR|AR_V))
+	if ((options & AR_M) && (options & ~(AR_A|AR_B|AR_M|AR_TR|AR_V)))
 		badoptions("-m");
 	/* -p only valid with -Tv. */
-	if (options & AR_P && options & ~(AR_P|AR_TR|AR_V))
+	if ((options & AR_P) && (options & ~(AR_P|AR_TR|AR_V)))
 		badoptions("-p");
 	/* -q only valid with -cTv. */
-	if (options & AR_Q && options & ~(AR_C|AR_Q|AR_TR|AR_V))
+	if ((options & AR_Q) && (options & ~(AR_C|AR_Q|AR_TR|AR_V)))
 		badoptions("-q");
 	/* -r only valid with -abcuTv. */
-	if (options & AR_R && options & ~(AR_A|AR_B|AR_C|AR_R|AR_U|AR_TR|AR_V))
+	if ((options & AR_R) && (options & ~(AR_A|AR_B|AR_C|AR_R|AR_U|AR_TR|AR_V)))
 		badoptions("-r");
 	/* -t only valid with -Tv. */
-	if (options & AR_T && options & ~(AR_T|AR_TR|AR_V))
+	if ((options & AR_T) && (options & ~(AR_T|AR_TR|AR_V)))
 		badoptions("-t");
 	/* -x only valid with -ouTv. */
-	if (options & AR_X && options & ~(AR_O|AR_U|AR_TR|AR_V|AR_X))
+	if ((options & AR_X) && (options & ~(AR_O|AR_U|AR_TR|AR_V|AR_X)))
 		badoptions("-x");
 
 	if (!(archive = *argv++)) {
@@ -210,7 +213,7 @@ main(argc, argv)
 	}
 
 	/* -dmqr require a list of archive elements. */
-	if (options & (AR_D|AR_M|AR_Q|AR_R) && !*argv) {
+	if ((options & (AR_D|AR_M|AR_Q|AR_R)) && !*argv) {
 		(void)fprintf(stderr, "ar: no archive members specified.\n");
 		usage();
 	}

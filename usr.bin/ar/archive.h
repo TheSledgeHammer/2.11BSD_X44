@@ -95,7 +95,8 @@ typedef struct {
 struct stat;
 void close_archive(int);
 void skip_arobj(int);
-void	copy_ar(CF *, off_t);
+void copy_ar(CF *, off_t);
 int	get_arobj(int);
 int	open_archive(int);
-int	put_arobj(CF *, struct stat *);
+void put_arobj(CF *, struct stat *);
+

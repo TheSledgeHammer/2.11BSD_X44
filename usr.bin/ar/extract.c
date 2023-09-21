@@ -59,6 +59,7 @@ static char sccsid[] = "@(#)extract.c	5.5 (Berkeley) 3/12/91";
 extern int errno;
 extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
+extern u_int options;
 
 /*
  * extract --
@@ -92,7 +93,7 @@ extract(argv)
 			continue;
 		}
 
-		if (options & AR_U && !stat(file, &sb) &&
+		if ((options & AR_U) && !stat(file, &sb) &&
 		    sb.st_mtime > chdr.date)
 			continue;
 

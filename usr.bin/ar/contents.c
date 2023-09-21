@@ -59,7 +59,8 @@ static char sccsid[] = "@(#)contents.c	5.6 (Berkeley) 3/12/91";
 #include "extern.h"
 
 extern CHDR chdr;			/* converted header */
-extern char *archive;			/* archive name */
+extern char *archive;		/* archive name */
+extern u_int options;
 
 /*
  * contents --
