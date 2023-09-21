@@ -42,8 +42,8 @@ struct	vseg {                    	/* structure of a segment in memory */
 	union {
 		int			_winfo[WORDSPERSEG];/* the actual segment */
 		char		_cinfo[BYTESPERSEG];
-		} v_un;
-	};
+	} v_un;
+};
 
 #define	s_winfo	v_un._winfo
 #define	s_cinfo	v_un._cinfo
@@ -54,10 +54,15 @@ struct	vseg {                    	/* structure of a segment in memory */
 long	nswaps;         			/* number of swaps */
 long	nmapsegs;       			/* number of mapseg calls */
 
-int		vminit(), vmopen();
-struct	vseg	*vmmapseg();
-void	vmlock(), vmunlock(), vmclrseg(), vmmodify();
-void	vmflush(), vmclose();
+int		vminit(int);
+int		vmopen(struct vspace *, char *);
+struct vseg	*vmmapseg(struct vspace *, u_short);
+void	vmlock(struct vseg *);
+void 	vmunlock(struct vseg *);
+void 	vmclrseg(struct vseg *);
+void 	vmmodify(struct vseg *);
+void	vmflush(void);
+void	vmclose(struct vspace *);
 
 typedef	long	VADDR;
 #define	VMMODIFY(seg) 	(seg->s_flags |= S_DIRTY)

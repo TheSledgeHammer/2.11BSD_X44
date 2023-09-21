@@ -29,9 +29,9 @@
 #define LRS                     /* Least Recently Swapped */
 
 #ifndef DEBUG
-#define debugseg(s,m)           /* do nothing */
+#define debugseg(s, m)           /* do nothing */
 #else
-static void debugseg();
+static void debugseg(struct vseg *, char *);
 #endif
 
 /*
@@ -47,9 +47,10 @@ static void debugseg();
 
 static	struct dlink seghead[1];
 long	nswaps, nmapsegs;      /* statistics */
-extern	int	read(), write(), errno;
-static	int	swap();
-static	void	promote(), vmerror();
+//extern	int	read(), write(), errno;
+static	int		swap(struct vseg *, int (*iofunc)());
+static	void	promote(struct vseg *);
+static	void	vmerror(char *);
 
 /*
  * vminit --- initialize virtual memory system with 'n' in-memory segments
@@ -113,7 +114,8 @@ vmmapseg(vspace, segno)
 				if (s == (struct vseg*) seghead)
 					vmerror("Too many locked segs!");
 				debugseg(s, "back skip");
-			} debugseg(s, "dump on");
+			}
+			debugseg(s, "dump on");
 			if (s->s_flags & S_DIRTY)
 				if (swap(s, write) != 0) {
 					fprintf(stderr, "write swap, v=%d fd=%d\n", s->s_vspace,
@@ -248,7 +250,7 @@ vmmodify(seg)
  */
 
 void
-vmflush()
+vmflush(void)
 {
 	register struct vseg *s;
 
@@ -332,7 +334,7 @@ promote(s)
 	register struct vseg *s;
 {
 
-        s->s_link.fwd->back = s->s_link.back;         /* delete */
+    s->s_link.fwd->back = s->s_link.back;         /* delete */
 	s->s_link.back->fwd = s->s_link.fwd;
 
 	s->s_link.fwd = seghead[0].fwd;   /* insert at top of totem pole */
