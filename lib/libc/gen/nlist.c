@@ -146,8 +146,10 @@ __fdnlist(fd, list)
 	_DIAGASSERT(fd != -1);
 	_DIAGASSERT(list != NULL);
 
-	for (i = 0; i < sizeof(fdnlist_fmts) / sizeof(fdnlist_fmts[0]); i++)
-		if ((rv = (*fdnlist_fmts[i].fdnlist)(fd, list)) != -1)
+	for (i = 0; i < sizeof(fdnlist_fmts) / sizeof(fdnlist_fmts[0]); i++) {
+		if ((rv = (*fdnlist_fmts[i].fdnlist)(fd, list)) != -1) {
 			return (rv);
+		}
+	}
 	return (-1);
 }

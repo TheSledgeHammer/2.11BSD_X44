@@ -98,20 +98,21 @@ __fdnlist_aout(fd, list)
 	int nent;
 	size_t strsize, symsize, cc;
 	struct nlist nbuf[1024];
-	struct exec exec;
+	struct xexec ebuf;
+	//struct exec exec;
 	struct stat st;
 	char *scoreboard, *scored;
 
 	_DIAGASSERT(fd != -1);
 	_DIAGASSERT(list != NULL);
 
-	if (pread(fd, &exec, sizeof(exec), (off_t)0) != sizeof(exec) ||
-	    N_BADMAG(exec) || fstat(fd, &st) < 0)
+	if (pread(fd, &ebuf, sizeof(ebuf), (off_t)0) != sizeof(ebuf.e) || N_BADMAG(ebuf.e) || fstat(fd, &st) < 0) {
 		return (-1);
+	}
 
-	symoff = N_SYMOFF(exec);
-	symsize = (size_t)exec.a_syms;
-	stroff = symoff + symsize;
+	symoff = N_SYMOFF(ebuf);
+	symsize = (size_t)ebuf.e.a_syms;
+	stroff = symoff + symsize; //N_STROFF(ebuf);
 
 	/* Check for files too large to mmap. */
 	if (st.st_size - stroff > SIZE_T_MAX) {
@@ -142,6 +143,7 @@ __fdnlist_aout(fd, list)
 	nent = 0;
 	for (p = list; !ISLAST(p); ++p) {
 		p->n_type = 0;
+		p->n_ovly = 0;
 		p->n_other = 0;
 		p->n_desc = 0;
 		p->n_value = 0;
@@ -166,11 +168,11 @@ __fdnlist_aout(fd, list)
 			for (p = list, scored = scoreboard; !ISLAST(p);
 			    p++, scored++)
 				if (*scored == 0 &&
-				    !strcmp(&strtab[(size_t)soff],
-				    p->n_un.n_name)) {
+				    !strcmp(&strtab[(size_t)soff], p->n_un.n_name)) {
 					p->n_value = s->n_value;
 					p->n_type = s->n_type;
 					p->n_desc = s->n_desc;
+					p->n_ovly = s->n_ovly;
 					p->n_other = s->n_other;
 					*scored = 1;
 					if (--nent <= 0)

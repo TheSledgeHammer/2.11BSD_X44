@@ -64,6 +64,7 @@ struct	nlist {
 #endif
 	u_char	n_type;			/* Type of symbol - see below */
 	char	n_ovly;			/* Overlay number */
+	char 	n_other;		/* spare */
 #define	n_hash	n_desc		/* used internally by ld(1); XXX */
 	short 	n_desc;			/* used by stab entries */
 	u_long	n_value;		/* Symbol value */
@@ -93,6 +94,7 @@ struct	nlist {
 #define	N_TYPE		0x1e		/* mask for all the type bits */
 
 #define	N_FORMAT	"%06o"		/* namelist value format; XXX */
+//#define	N_FORMAT	"%08x"		/* namelist value format; XXX */
 #define	N_STAB		0x0e0		/* mask for debugger symbols -- stab(5) */
 
 __BEGIN_DECLS

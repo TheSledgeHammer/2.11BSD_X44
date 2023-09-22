@@ -108,7 +108,7 @@
  */
 typedef struct {
 	const char	 *src;
-	int		(*callback) __P((void *, void *, _BSD_VA_LIST_));
+	int		(*callback)(void *, void *, _BSD_VA_LIST_);
 	void		 *cb_data;
 } ns_dtab;
 
