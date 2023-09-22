@@ -1033,24 +1033,7 @@ kread(nlx, addr, size)
 	void *addr;
 	size_t size;
 {
-	char *sym;
-
-	if (namelist[nlx].n_type == 0 || namelist[nlx].n_value == 0) {
-		sym = namelist[nlx].n_name;
-		if (*sym == '_') {
-			++sym;
-		}
-		(void)fprintf(stderr, "vmstat: symbol %s not defined\n", sym);
-		exit(1);
-	}
-	if (kvm_read(kd, namelist[nlx].n_value, addr, size) != size) {
-		sym = namelist[nlx].n_name;
-		if (*sym == '_') {
-			++sym;
-		}
-		(void)fprintf(stderr, "vmstat: %s: %s\n", sym, kvm_geterr(kd));
-		exit(1);
-	}
+	kread2(nlx, addr, size);
 }
 
 static void
@@ -1058,17 +1041,33 @@ kread2(ptr, addr, size)
 	void *ptr, *addr;
 	size_t size;
 {
+	char *sym;
 	char buf[128];
 	int nlx;
 
 	nlx = (int)ptr;
 	if (isdigit(nlx) == 0) {
-		kread(nlx, addr, size);
+		if (namelist[nlx].n_type == 0 || namelist[nlx].n_value == 0) {
+			sym = namelist[nlx].n_name;
+			if (*sym == '_') {
+				++sym;
+			}
+			(void)fprintf(stderr, "vmstat: symbol %s not defined\n", sym);
+			exit(1);
+		}
+		if (kvm_read(kd, namelist[nlx].n_value, addr, size) != size) {
+			sym = namelist[nlx].n_name;
+			if (*sym == '_') {
+				++sym;
+			}
+			(void)fprintf(stderr, "vmstat: %s: %s\n", sym, kvm_geterr(kd));
+			exit(1);
+		}
 	} else {
 		if (kvm_read(kd, (u_long)ptr, (char *)addr, size) != size) {
 			memset(buf, 0, sizeof(buf));
-			(void)snprintf(buf, sizeof(buf), "can't dereference ptr 0x%lx", (u_long)ptr);
-			(void)fprintf(stderr, "vmstat: %s: %s\n", buf, kvm_geterr(kd));
+			(void)fprintf(stderr, "vmstat: can't dereference ptr 0x%lx: %s: %s\n", (u_long)ptr, buf, kvm_geterr(kd));
+			exit(1);
 		}
 	}
 }
