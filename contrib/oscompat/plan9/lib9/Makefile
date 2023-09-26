@@ -20,73 +20,60 @@ TGZFILES=
 
 CLEANFILES=
 
-LIB=libfmt.a
+LIB=lib9.a
 VERSION=2.0
-PORTPLACE=devel/libfmt
-NAME=libfmt
-
-NUM=\
-	charstod.$O\
-	pow10.$O\
+PORTPLACE=devel/lib9
+NAME=lib9
 
 OFILES=\
-	dofmt.$O\
-	dorfmt.$O\
-	errfmt.$O\
-	fltfmt.$O\
-	fmt.$O\
-	fmtfd.$O\
-	fmtfdflush.$O\
-	fmtlocale.$O\
-	fmtlock.$O\
-	fmtnull.$O\
-	fmtprint.$O\
-	fmtquote.$O\
-	fmtrune.$O\
-	fmtstr.$O\
-	fmtvprint.$O\
-	fprint.$O\
-	print.$O\
-	runefmtstr.$O\
-	runeseprint.$O\
-	runesmprint.$O\
-	runesnprint.$O\
-	runesprint.$O\
-	runevseprint.$O\
-	runevsmprint.$O\
-	runevsnprint.$O\
-	seprint.$O\
-	smprint.$O\
-	snprint.$O\
-	sprint.$O\
-	strtod.$O\
-	vfprint.$O\
-	vseprint.$O\
-	vsmprint.$O\
-	vsnprint.$O\
-	$(NUM)\
-	$(NAN)\
+	_p9dir.$O\
+	_exits.$O\
+	argv0.$O\
+	atoi.$O\
+	cleanname.$O\
+	create.$O\
+	dirfstat.$O\
+	dirfwstat.$O\
+	dirstat.$O\
+	dirwstat.$O\
+	dup.$O\
+	errstr.$O\
+	exec.$O\
+	execl.$O\
+	exitcode.$O\
+	exits.$O\
+	getenv.$O\
+	getfields.$O\
+	getwd.$O\
+	main.$O\
+	nulldir.$O\
+	open.$O\
+	readn.$O\
+	seek.$O\
+	strecpy.$O\
+	sysfatal.$O\
+	time.$O\
+	tokenize.$O\
+	await.$O\
+	getuser.$O\
+	jmp.$O\
+	notify.$O\
+	rfork.$O\
 
 HFILES=\
-	fmtdef.h\
-	fmt.h\
+    libc.h\
+    u.h\
 
 all: $(LIB)
 
 install: $(LIB)
 	test -d $(PREFIX)/share/man/man3 || mkdir -p $(PREFIX)/share/man/man3
 	install -m 0644 print.3 $(PREFIX)/share/man/man3/print.3
-	install -m 0644 fmtinstall.3 $(PREFIX)/share/man/man3/fmtinstall.3
+#	install -m 0644 fmtinstall.3 $(PREFIX)/share/man/man3/fmtinstall.3
 	mkdir -p $(PREFIX)/include
-	install -m 0644 fmt.h $(PREFIX)/include/fmt.h
+#	install -m 0644 fmt.h $(PREFIX)/include/fmt.h
 	mkdir -p $(PREFIX)/lib
 	install -m 0644 $(LIB) $(PREFIX)/lib/$(LIB)
-
-$(NAN).$O: nan.h
-strtod.$O: nan.h
-
-test: $(LIB) test.$O
-	$(CC) -o test test.$O $(LIB) -L$(PREFIX)/lib -lutf
 
 $(LIB): $(OFILES)
 	$(AR) $(ARFLAGS) $(LIB) $(OFILES)
