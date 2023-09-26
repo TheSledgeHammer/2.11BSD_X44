@@ -141,7 +141,8 @@
 	(N_RELOFF(ex) + (ex).a_trsize + (ex).a_drsize)
 
 /* String table offset. */
-#define	N_STROFF(ex) 	(N_SYMOFF(ex) + (ex).a_syms)
+#define	N_STROFF(ex) 														\
+	(N_SYMOFF(ex) + (ex).a_syms)
 
 /*
  * Header prepended to each a.out file.
