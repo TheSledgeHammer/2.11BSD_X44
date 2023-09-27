@@ -35,6 +35,13 @@ THE SOFTWARE.
  * Unix C libraries.
  */
 
+#ifndef _LIBC_H_
+#define _LIBC_H_ 1
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+#include <utf.h>
 #include <fmt.h>
 
 /*
@@ -392,3 +399,8 @@ extern void __fixargv0(void);
 				(*_argt? _argt: argv[1]? (argc--, *++argv): ((x), abort(), (char*)0)))
 
 #define	ARGC()		_argc
+
+#if defined(__cplusplus)
+}
+#endif
+#endif	/* _LIB9_H_ */

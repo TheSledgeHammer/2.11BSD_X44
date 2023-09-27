@@ -23,6 +23,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifndef _U_H_
+#define _U_H_ 1
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #define __BSD_VISIBLE 1 /* FreeBSD 5.x */
 #if defined(__sun__)
 #	define __EXTENSIONS__ 1 /* SunOS */
@@ -34,7 +40,6 @@ THE SOFTWARE.
 #endif
 #define _BSD_SOURCE 1
 #define _NETBSD_SOURCE 1	/* NetBSD */
-#define _DEFAULT_SOURCE 1	/* glibc > 2.19 */
 #define _SVID_SOURCE 1
 #if !defined(__APPLE__) && !defined(__OpenBSD__)
 #	define _XOPEN_SOURCE 1000
@@ -183,8 +188,6 @@ typedef u32int uint32;
 typedef s64int int64;
 typedef u64int uint64;
 
-typedef float float32;
-typedef double float64;
 
 #undef _NEEDUCHAR
 #undef _NEEDUSHORT
@@ -219,4 +222,9 @@ typedef double float64;
 #		undef AUTOFRAMEWORK
 #		define AUTOFRAMEWORK(x) static int __p9l_autoframework_ ## x __attribute__ ((unused));
 #	endif
+#endif
+
+#if defined(__cplusplus)
+}
+#endif
 #endif

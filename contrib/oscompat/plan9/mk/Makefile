@@ -1,15 +1,4 @@
-
-# this works in gnu make
-SYSNAME:=${shell uname}
-
-# this works in bsd make
-SYSNAME!=uname
-
-# the gnu rules will mess up bsd but not vice versa,
-# hence the gnu rules come first.
-
-RANLIB=true
-
+include ../Make.inc
 include ../unix/Make.$(SYSNAME)
 
 PREFIX=/usr/local
@@ -69,22 +58,9 @@ install: $(TARG)
 	mkdir -p $(PREFIX)/doc
 	install -m 0644 mk.pdf $(PREFIX)/doc/mk.pdf
 
-$(LIB): $(OFILES)
-	$(AR) $(ARFLAGS) $(LIB) $(OFILES)
-	$(RANLIB) $(LIB)
-
-NUKEFILES+=$(LIB)
-.c.$O:
-	$(CC) $(CFLAGS) -I../libutf -I../libfmt -I../libbio -I../libregexp -I../lib9 -I$(PREFIX)/include $*.c
-
-%.$O: %.c
-	$(CC) $(CFLAGS) -I../libutf -I../libfmt -I../libbio -I../libregexp -I../lib9 -I$(PREFIX)/include $*.c
-
-
-$(OFILES): $(HFILES)
-
+include ../Make.clib
 include ../unix/Make.package
 
 $(TARG): $(OFILES)
-	$(CC) -o $(TARG) $(OFILES) -L$(PREFIX)/lib -L../libutf -L../libfmt -L../libbio -L../libregexp -L../lib9 -lregexp9 -lbio -lfmt -lutf -l9
+	$(CC) -o $(TARG) $(OFILES) -L$(PREFIX)/lib -L../libutf -L../libfmt -L../libbio -L../libregexp -L../lib9 -lregexp9 -lbio -lfmt -lutf
 
