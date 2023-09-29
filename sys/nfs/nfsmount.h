@@ -84,7 +84,7 @@ struct	nfsmount {
 	LIST_HEAD(, nfsuid) nm_uidhashtbl[NFS_MUIDHASHSIZ];
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 /*
  * Convert mount ptr to nfsmount ptr.
  */
@@ -94,48 +94,15 @@ struct	nfsmount {
 /*
  * Prototypes for NFS mount operations
  */
-int	nfs_mount __P((
-		struct mount *mp,
-		char *path,
-		caddr_t data,
-		struct nameidata *ndp,
-		struct proc *p));
-int	nfs_start __P((
-		struct mount *mp,
-		int flags,
-		struct proc *p));
-int	nfs_unmount __P((
-		struct mount *mp,
-		int mntflags,
-		struct proc *p));
-int	nfs_root __P((
-		struct mount *mp,
-		struct vnode **vpp));
-int	nfs_quotactl __P((
-		struct mount *mp,
-		int cmds,
-		uid_t uid,
-		caddr_t arg,
-		struct proc *p));
-int	nfs_statfs __P((
-		struct mount *mp,
-		struct statfs *sbp,
-		struct proc *p));
-int	nfs_sync __P((
-		struct mount *mp,
-		int waitfor,
-		struct ucred *cred,
-		struct proc *p));
-int	nfs_fhtovp __P((
-		struct mount *mp,
-		struct fid *fhp,
-		struct mbuf *nam,
-		struct vnode **vpp,
-		int *exflagsp,
-		struct ucred **credanonp));
-int	nfs_vptofh __P((
-		struct vnode *vp,
-		struct fid *fhp));
-int	nfs_init __P(());
+int	nfs_mount(struct mount *mp, char *path, caddr_t data, struct nameidata *ndp, struct proc *p);
+int nfs_start(struct mount *mp, int flags, struct proc *p);
+int nfs_unmount(struct mount *mp, int mntflags, struct proc *p);
+int nfs_root(struct mount *mp, struct vnode **vpp);
+int nfs_quotactl(struct mount *mp, int cmds, uid_t uid, caddr_t arg, struct proc *p);
+int nfs_statfs(struct mount *mp, struct statfs *sbp, struct proc *p);
+int nfs_sync(struct mount *mp, int waitfor, struct ucred *cred, struct proc *p);
+int nfs_fhtovp(struct mount *mp, struct fid *fhp, struct mbuf *nam, struct vnode **vpp, int *exflagsp, struct ucred **credanonp);
+int nfs_vptofh(struct vnode *vp, struct fid *fhp);
+int	nfs_init();
 
 #endif

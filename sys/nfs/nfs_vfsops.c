@@ -96,12 +96,12 @@ struct vfsops nfs_vfsops = {
 struct nfs_diskless nfs_diskless = { 0 };
 int nfs_diskless_valid = 0;
 
-void nfs_disconnect __P((struct nfsmount *));
-void nfsargs_ntoh __P((struct nfs_args *));
-int nfs_fsinfo __P((struct nfsmount *, struct vnode *, struct ucred *, 
-	struct proc *));
-static int nfs_mountdiskless __P((char *, char *, int, struct sockaddr_in *,
-	struct nfs_args *, struct proc *, struct vnode **, struct mount **));
+void nfs_disconnect(struct nfsmount *);
+void nfsargs_ntoh(struct nfs_args *);
+int nfs_fsinfo(struct nfsmount *, struct vnode *, struct ucred *,
+	struct proc *);
+static int nfs_mountdiskless(char *, char *, int, struct sockaddr_in *,
+	struct nfs_args *, struct proc *, struct vnode **, struct mount **);
 
 /*
  * nfs statfs call

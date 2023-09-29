@@ -48,7 +48,7 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 #include <nfs/rpcv2.h>
 #include <nfs/nfsproto.h>

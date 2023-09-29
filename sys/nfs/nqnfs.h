@@ -197,17 +197,17 @@ u_long nqfhhash;
 #define	NQNFS_EXPIRED	500
 #define	NQNFS_TRYLATER	501
 
-#ifdef KERNEL
-void	nqnfs_lease_updatetime __P((int));
-int	nqsrv_cmpnam __P((struct nfssvc_sock *,struct mbuf *,struct nqhost *));
-int	nqsrv_getlease __P((struct vnode *, u_long *, int,
+#ifdef _KERNEL
+void	nqnfs_lease_updatetime(int);
+int	nqsrv_cmpnam(struct nfssvc_sock *,struct mbuf *,struct nqhost *);
+int	nqsrv_getlease(struct vnode *, u_long *, int,
 		struct nfssvc_sock *, struct proc *, struct mbuf *, int *,
-		u_quad_t *, struct ucred *));
-int	nqnfs_getlease __P((struct vnode *, int, struct ucred *,struct proc *));
-int	nqnfs_callback __P((struct nfsmount *, struct mbuf *, struct mbuf *,
-		caddr_t));
-int	nqnfs_clientd __P((struct nfsmount *, struct ucred *,
-		struct nfsd_cargs *, int, caddr_t, struct proc *));
+		u_quad_t *, struct ucred *);
+int	nqnfs_getlease(struct vnode *, int, struct ucred *,struct proc *);
+int	nqnfs_callback(struct nfsmount *, struct mbuf *, struct mbuf *,
+		caddr_t);
+int	nqnfs_clientd(struct nfsmount *, struct ucred *,
+		struct nfsd_cargs *, int, caddr_t, struct proc *);
 #endif
 
 #endif

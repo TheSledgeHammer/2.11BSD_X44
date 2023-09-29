@@ -57,7 +57,7 @@
 #include <sys/fcntl.h>
 #include <ufs/ufs/dir.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 #include <miscfs/specfs/specdev.h>
 #include <miscfs/fifofs/fifo.h>

@@ -71,7 +71,7 @@
 #include <nfs/nqnfs.h>
 #include <nfs/nfsrtt.h>
 
-void	nfsrv_zapsock	__P((struct nfssvc_sock *));
+void	nfsrv_zapsock(struct nfssvc_sock *);
 
 /* Global defs. */
 extern int (*nfsrv3_procs[NFS_NPROCS])();
