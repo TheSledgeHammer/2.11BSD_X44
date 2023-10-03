@@ -34,6 +34,6 @@ distrib-dirs: .PHONY check_DESTDIR 211BSD.dist
 .endif	# MKUNPRIVED							# }
 .endif	# DISTRIBUTION_DONE						# }
 
-CLEANFILES+=	211BSD.dist
+#CLEANFILES+=	211BSD.dist
 
 .include <bsd.prog.mk>
