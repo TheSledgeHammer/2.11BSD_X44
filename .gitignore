@@ -1,5 +1,4 @@
 *.[1-9].gz
-!share/examples/splash/dfly.bmp.gz
 *.bak
 *.core
 *.diff
