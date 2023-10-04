@@ -1185,7 +1185,7 @@ ${var}?= yes
 #
 # USE_* options which default to "yes".
 #
-.for var in LIBSTDCXX JEMALLOC
+.for var in LIBSTDCXX
 USE_${var}?= yes
 .endfor
 
@@ -1193,7 +1193,7 @@ USE_${var}?= yes
 # USE_* options which default to "no".
 #
 # For now, disable pigz as compressor by default
-.for var in PIGZGZIP
+.for var in PIGZGZIP JEMALLOC
 USE_${var}?= no
 .endfor
 
