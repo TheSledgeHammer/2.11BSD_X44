@@ -11,8 +11,11 @@
 .include <bsd.own.mk>
 
 SUBDIR= 	libbz2 libcrypt libcurses libdbm libedit libexecinfo libform libkvm 		\
-		libm libmenu libmp libom libpanel libpci libpthread             \
+		libm libmenu libmp libom libpanel libpcap libpci libpthread             \
             libpthread_dbg libresolv libstubs libtermcap libutil libvmf     \
-            liby libz 					
+            liby libz
+                        
+# IPv6/IPsec
+SUBDIR+=	libipsec					
 
 .include <bsd.subdir.mk>

@@ -41,6 +41,7 @@ SUBDIR+=  	${USRLIBDIR}/libbz2 	\
 			${USRLIBDIR}/libmp 		\
 			${USRLIBDIR}/libom 		\
 			${USRLIBDIR}/libresolv 	\
+			${USRLIBDIR}/libpcap	\
 			${USRLIBDIR}/libpci		\
 			${USRLIBDIR}/libpthread \
 			${USRLIBDIR}/libpthread_dbg \

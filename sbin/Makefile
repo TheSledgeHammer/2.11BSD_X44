@@ -9,6 +9,7 @@ SUBDIR=	ccdconfig 				\
 		init 					\
 		ldconfig 				\
 		mknod mount mountd		\
+	ping				\
         reboot rcorder 			\
 		savecore shutdown 		\
 		swapctl					\

@@ -61,13 +61,13 @@
 #define DLT_HIPPI				15	/* HIPPI */
 #define DLT_HDLC				16	/* HDLC framing */
 
-#define DLT_PFSYNC	18	/* Packet filter state syncing */
-#define DLT_ATM_CLIP	19	/* Linux Classical-IP over ATM */
-#define DLT_ENC		109	/* Encapsulated packets for IPsec */
-#define DLT_LINUX_SLL	113	/* Linux cooked sockets */
-#define DLT_LTALK	114	/* Apple LocalTalk hardware */
-#define DLT_PFLOG	117	/* Packet filter logging, by pcap people */
-#define DLT_CISCO_IOS	118	/* Registered for Cisco-internal use */
+#define DLT_PFSYNC				18	/* Packet filter state syncing */
+#define DLT_ATM_CLIP			19	/* Linux Classical-IP over ATM */
+#define DLT_ENC					109	/* Encapsulated packets for IPsec */
+#define DLT_LINUX_SLL			113	/* Linux cooked sockets */
+#define DLT_LTALK				114	/* Apple LocalTalk hardware */
+#define DLT_PFLOG				117	/* Packet filter logging, by pcap people */
+#define DLT_CISCO_IOS			118	/* Registered for Cisco-internal use */
 
 /* NetBSD-specific types */
 #define	DLT_PPP_SERIAL			50	/* PPP over serial (async and sync) */
