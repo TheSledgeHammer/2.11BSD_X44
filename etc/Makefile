@@ -89,7 +89,7 @@ BINGRP= wheel
 UTMPGRP= utmp
 BIN1+=	csh.cshrc csh.login csh.logout ftpusers gettytab group hosts 	\
 		hosts.allow hosts.deny inetd.conf man.conf netstart networks 	\
-		ntp.conf passwd.conf printcap phones profile protocols rc 		\
+		ntp.conf passwd.conf pf.conf pf.os printcap phones profile protocols rc 		\
 		rc.firewall rc.network rc.resume rc.shutdown rc.subr rc.suspend \
 		rc.sysctl remote services shells shrc syslog.conf wscons.conf 	
 
