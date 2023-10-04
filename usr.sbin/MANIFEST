@@ -1,5 +1,6 @@
 Application	Version
 -----------	-------
+authpf/		NetBSD
 bootcfg/		FreeBSD
 btxld/			FreeBSD
 catman/			NetBSD

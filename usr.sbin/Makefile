@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	boot0cfg btxld 											\
+SUBDIR=	authpf boot0cfg btxld 											\
 		catman chown chroot config cron 						\
 		dev_mkdb 												\
 		etcupdate 												\
