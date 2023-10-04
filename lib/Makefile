@@ -36,6 +36,7 @@ USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libbz2 	\
             	${USRLIBDIR}/libcrypt    \
 			${USRLIBDIR}/libdbm 	\
+			${USRLIBDIR}/libipsec 	\
 			${USRLIBDIR}/libkvm 	\
 			${USRLIBDIR}/libm 		\
 			${USRLIBDIR}/libmp 		\
