@@ -18,7 +18,7 @@ SUBDIR=	ccdconfig 				\
 
 # support for various file systems
 SUBDIR+= newfs dumpfs
-SUBDIR+= newlfs dumplfs
+SUBDIR+= newfs_lfs dumpfs_lfs
 SUBDIR+= newfs_msdos fsck_msdos
 SUBDIR+= mount_cd9660
 SUBDIR+= mount_fdesc

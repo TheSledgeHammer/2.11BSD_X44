@@ -21,6 +21,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## libexec:
 
 ## sbin:
+- ifconfig: finish updates and fixes
 
 ## share:
 
