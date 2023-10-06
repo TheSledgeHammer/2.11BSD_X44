@@ -88,6 +88,24 @@
 
 #include "ifconfig.h"
 
+void settunnel(const char *, const char *);
+void deletetunnel(const char *, int);
+
+const struct cmd tunnel_cmds[] = {
+		{ "tunnel",	NEXTARG2,	0,		NULL, settunnel } ,
+		{ "deletetunnel", 0,		0,		deletetunnel },
+};
+
+void
+tunnel_init(void)
+{
+	size_t i;
+
+	for (i = 0; i < nitems(tunnel_cmds);  i++) {
+		cmd_register(&tunnel_cmds[i]);
+	}
+}
+
 void
 settunnel(const char *src, const char *dst)
 {

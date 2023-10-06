@@ -594,70 +594,9 @@ kdbobj_compare(struct kdbobj *obj1, struct kdbobj *obj2)
 int
 kdbprop_compare(struct kdbprop *pr1, struct kdbprop *pr2)
 {
-	if (op1 < op2) {
+	if (pr1 < pr2) {
 		return (-1);
-	} else if (op1 > op2) {
-		return (1);
-	} else {
-		if ()
-		return (0);
-	}
-}
-
-static int
-opaque_object_compare(opaque_t op1, opaque_t op2)
-{
-	if (op1 < op2) {
-		return (-1);
-	} else if (op1 > op2) {
-		return (1);
-	} else {
-		return (0);
-	}
-}
-
-static int
-kdbprop_compare_name(const char	*name1, const char *name2)
-{
-	if (strcmp(name1, name2) < 0) {
-		return (-1);
-	} else if (strcmp(name1, name2) > 0) {
-		return (1);
-	} else {
-		return (0);
-	}
-}
-
-static int
-kdbprop_compare_val(const char *val1, const char *val2)
-{
-	if (strcmp(val1, val2) < 0) {
-		return (-1);
-	} else if (strcmp(val1, val2) > 0) {
-		return (1);
-	} else {
-		return (0);
-	}
-}
-
-static int
-kdbprop_compare_len(int len1, int len2)
-{
-	if (len1 < len2) {
-		return (-1);
-	} else if (len1 > len2) {
-		return (1);
-	} else {
-		return (0);
-	}
-}
-
-static int
-kdbprop_compare_type(int type1, int type2)
-{
-	if (type1 < type2) {
-		return (-1);
-	} else if (type1 > type2) {
+	} else if (pr1 > pr2) {
 		return (1);
 	} else {
 		return (0);

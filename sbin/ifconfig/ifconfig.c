@@ -131,6 +131,7 @@ int	explicit_prefix = 0;
 struct ifcapreq g_ifcr;
 int	g_ifcr_updated;
 
+struct afswtch *afp;
 struct cmd_head cmdlist = LIST_HEAD_INITIALIZER(cmdlist);
 struct afswtch_head aflist = LIST_HEAD_INITIALIZER(aflist);
 
@@ -173,8 +174,6 @@ const struct cmd if_cmds[] = {
 		{ "broadcast",	NEXTARG,	0,		setifbroadaddr },
 		{ "ipdst",	NEXTARG,	0,		setifipdst },
 		{ "prefixlen",	NEXTARG,	0,		setifprefixlen},
-		{ "tunnel",	NEXTARG2,	0,		NULL, settunnel } ,
-		{ "deletetunnel", 0,		0,		deletetunnel },
 #if 0
 		/* XXX `create' special-cased below */
 		{ "create",	0,		0,		clone_create } ,
@@ -247,7 +246,6 @@ usage(void)
 int
 main(int argc, char *argv[])
  {
-	struct afswtch *afp;
 	int ch;
 
 	cmds_init();
@@ -541,6 +539,7 @@ cmds_init(void)
 #endif
 	media_init();
 	ieee80211_init();
+	tunnel_init();
 	xns_init();
 	//vlan_init();
 }

@@ -106,9 +106,9 @@ struct afswtch {
 	LIST_ENTRY(afswtch) af_next;
 };
 
-void af_register(struct afswtch *p);
-struct afswtch *af_getbyname(const char *name);
-struct afswtch *af_getbyfamily(int af);
+void af_register(struct afswtch *);
+struct afswtch *af_getbyname(const char *);
+struct afswtch *af_getbyfamily(int);
 
 #define RIDADDR 0
 #define ADDR	1
@@ -118,6 +118,7 @@ struct afswtch *af_getbyfamily(int af);
 extern struct ifreq			ifr, ridreq;
 extern struct ifaliasreq	addreq __attribute__((aligned(4)));
 extern struct in_aliasreq	in_addreq;
+extern struct afswtch		*afp;
 #ifdef INET6
 extern struct in6_ifreq		ifr6;
 extern struct in6_ifreq		in6_ridreq;
@@ -164,8 +165,7 @@ void process_media_commands(void);
 int  carrier(void);
 
 /* tunnel */
-void settunnel(const char *, const char *);
-void deletetunnel(const char *, int);
+void tunnel_init(void);
 void tunnel_status(void);
 
 /* ifvlan */
