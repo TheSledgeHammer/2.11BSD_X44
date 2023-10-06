@@ -6,7 +6,7 @@
 SUBDIR=	ccdconfig 				\
 		disklabel 				\
 		fastboot fdisk fsck 	\
-		init 					\
+		ifconfig init 					\
 		ldconfig 				\
 		mknod mount mountd		\
 	    pfctl pflogd ping		\
