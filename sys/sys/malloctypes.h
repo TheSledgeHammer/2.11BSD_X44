@@ -242,11 +242,11 @@
 	"VM amap",					/* 92 M_VMAMAP */		\
 	"VM aobject",				/* 93 M_VMAOBJ */		\
 	"AGP", 						/* 94 M_AGP */			\
-	"OVL map",					/* 30 M_OVLMAP */ 		\
-	"OVL mapent",				/* 31 M_OVLMAPENT */ 	\
-	"OVL object",				/* 32 M_OVLOBJ */ 		\
-	"OVL objhash",				/* 33 M_OVLOBJHASH */	\
-	"temp",						/* 95 M_TEMP */ 		\
+	"OVL map",					/* 95 M_OVLMAP */ 		\
+	"OVL mapent",				/* 96 M_OVLMAPENT */ 	\
+	"OVL object",				/* 97 M_OVLOBJ */ 		\
+	"OVL objhash",				/* 98 M_OVLOBJHASH */	\
+	"temp",						/* 99 M_TEMP */ 		\
 }
 
 #endif /* _SYS_MALLOCTYPES_H_ */
