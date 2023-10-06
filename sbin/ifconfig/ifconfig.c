@@ -353,8 +353,6 @@ main(int argc, char *argv[])
 		}
 		if (afp) {
 			af = ifr.ifr_addr.sa_family = afp->af_af;
-		} else {
-			af = ifr.ifr_addr.sa_family = afs[0].af_af;
 		}
 		printall(NULL);
 		exit(0);
@@ -393,7 +391,9 @@ main(int argc, char *argv[])
 	}
 
 	/* Initialize af, just for use in getinfo(). */
-	af = afp->af_af;
+	if (afp) {
+		af = afp->af_af;
+	}
 
 	/* Get information about the interface. */
 	(void) strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
